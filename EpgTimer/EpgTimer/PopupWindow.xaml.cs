@@ -34,12 +34,32 @@ namespace EpgTimer {
                     "(\\[[^\\]]+\\])+" +
                     "|" +
                     "(【[^】]+】)+" +
+                    "|" +
+                    "(［[^］]+］)+" +
                 ")";
             foreach (string str1 in new string[] { "^((５．１)|" + markExp1 + ")+", markExp1 + "$" }) {
-                keyword0 = Regex.Replace(keyword0, str1, string.Empty);
+                keyword0 = Regex.Replace(keyword0, str1, string.Empty).Trim();
             }
             //
-            this.proc_Browser = Process.Start("http://www.google.co.jp/#hl=ja&sclient=psy-ab&q=" + Uri.EscapeUriString(keyword0));
+            this.proc_Browser = Process.Start("https://www.google.co.jp/search?hl=ja&q=" + UrlEncode(keyword0, System.Text.Encoding.UTF8));
+        }
+
+
+        //
+        // HttpUtility を使わないUrlEncodeの実装
+        // From http://d.hatena.ne.jp/kazuv3/20080605/1212656674
+        //
+        public static string UrlEncode(string s, System.Text.Encoding enc)
+        {
+            System.Text.StringBuilder rt = new System.Text.StringBuilder();
+            foreach (byte i in enc.GetBytes(s))
+                if (i == 0x20)
+                    rt.Append('+');
+                else if (i >= 0x30 && i <= 0x39 || i >= 0x41 && i <= 0x5a || i >= 0x61 && i <= 0x7a)
+                    rt.Append((char)i);
+                else
+                    rt.Append("%" + i.ToString("X2"));
+            return rt.ToString();
         }
 
         public void show(string text0) {
