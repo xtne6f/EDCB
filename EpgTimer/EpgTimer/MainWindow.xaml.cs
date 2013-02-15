@@ -690,14 +690,19 @@ namespace EpgTimer
 
         void SearchCmd()
         {
-            SearchWindow search = new SearchWindow();
-            PresentationSource topWindow = PresentationSource.FromVisual(this);
-            if (topWindow != null)
+            if (BlackoutWindow.unvisibleSearchWindow == null)
             {
-                search.Owner = (Window)topWindow.RootVisual;
+                SearchWindow search = new SearchWindow();
+                PresentationSource topWindow = PresentationSource.FromVisual(this);
+                if (topWindow != null)
+                {
+                    search.Owner = (Window)topWindow.RootVisual;
+                }
+                search.SetViewMode(0);
+                search.ShowDialog();
             }
-            search.SetViewMode(0);
-            search.ShowDialog();
+            else
+                BlackoutWindow.unvisibleSearchWindow.ShowDialog(); 
         }
 
         void closeButton_Click(object sender, RoutedEventArgs e)
