@@ -120,6 +120,7 @@
                     <CheckBox Content="休止／スタンバイ移行時にEpgTimerNWを終了する" Height="16" HorizontalAlignment="Left" Margin="6,232,0,0" Name="checkBox_suspendClose" VerticalAlignment="Top" />
                     <CheckBox Content="EPGデータを自動的に読み込まない" Height="16" HorizontalAlignment="Left" Margin="6,254,0,0" Name="checkBox_ngAutoEpgLoad" VerticalAlignment="Top" />
                     <CheckBox Content="録画済み一覧のダブルクリックで再生を行う" Height="16" HorizontalAlignment="Left" Margin="6,276,0,0" Name="checkBox_playDClick" VerticalAlignment="Top" />
+                    <CheckBox Content="検索結果の番組内容を省略する" Height="16" HorizontalAlignment="Left" Margin="6,298,0,0" Name="checkBox_fixSearchResult" VerticalAlignment="Top" />
                 </Grid>
             </TabItem>
             <TabItem Header="カスタムボタン" Name="tabItem5">

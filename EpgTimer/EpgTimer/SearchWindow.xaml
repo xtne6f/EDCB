@@ -87,6 +87,11 @@
                             <GridViewColumnHeader Content="サービス名" HorizontalContentAlignment="Left"/>
                         </GridViewColumn.Header>
                     </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=ProgramContent}">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="番組内容" HorizontalContentAlignment="Left" />
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=JyanruKey}">
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="ジャンル" HorizontalContentAlignment="Left" />
