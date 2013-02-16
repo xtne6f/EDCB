@@ -1,43 +1,43 @@
-���X�V������
-13/02/15�@�l���łP�O�D�U�X mod4k10
-�E�ԑg���ŃO�O��΍�
-�E�ԑg�\�փW�����v�Ō����������A�ł��Ȃ��s��̃p�b�`
-13/02/15�@�l���łP�O�D�U�X mod4k9 by Velmy
-�E�������ʈꗗ����폜���ꂽ�ԑg�ڍׂ̕��A
-�E�ݒ��ʂɌ������ʂ��ȗ�����X�C�b�`��ǉ�
-�EEPG�ԑg�\�̃��j���[�Ɂu�\�񁩁������v��ǉ��i�X��27/621�j
-�EEPG�ԑg�\�̃��j���[�Ɂu�ԑg���ŃO�O��v��ǉ��i�X��27/622�j
-13/02/13�@�l���łP�O�D�U�X mod4k8
-�EVS2012�ł��r���h�\�Ȃ悤�ɕύX�i�X��27/591�j
-�E�u�yEDCB�zEpgDataCap_Bon�ɂ��Č��X�� 27�v580���񋟂�Bitrate.ini�ɍ����ւ�
-�ECtrlCmdCLI: ���ʌ��ꃉ���^�C���̃r���h�I�v�V�����ύX�i/cls -> /clr:pure�j
-13/02/11�@�l���łP�O�D�U�X mod4k7
-�E�`�����l���X�L�������f���t�@�C���̒��g���D�݂̏��Ԃɕ��ёւ���i�X��27/495�j
-�E�����\��o�^�ҏW���ɍs����\��o�^�������A�ύX�̂�����EPG�\��ɂ��Ă̂ݍs���悤�ɂ���i�X��27/495�j
-13/02/10�@�l���łP�O�D�U�X mod4k6
-�E�X���[�v�}�~�g����K�p�i�X���L���J�S�[�����Łj�i�ݒ���@�̏ڍׂ�Readme_EpgTimer.txt�Q�Ɓj
-13/02/10�@�l���łP�O�D�U�X mod4k5
-�E�ԑg�\�̘g���̐F�Ƒ����A�\�����Ԃ̈ʒu�ƃt�H���g�A�\���ʒu�𒲐�
-�E�t�H���g�T�C�Y�Ȃǂ̐ݒ�ɂ���ĕ������͂ݏo�錻�ۂ����P
-�E�������ʂ̕\�����ڂ̏��Ԃ�ύX
-13/02/05�@�l���łP�O�D�U�X mod4k4
-�ENW�ł̃T�[�o�w�肪IP�ȊO�̎��Ɏ����ڑ������s����o�O���C�����}�[�W�i�X��27/239�j
-�E�������ʂ̍s�Ԃ����ɂȂ�Ȃ��_���C���i�ݒ���@�̏ڍׂ�Readme_EpgTimer.txt�Q�Ɓj�i�X��27/246�j
-�E0.0�i�E�C���h�E�̈�ԍ���j�̎��A���W���L�����ꂸ����N�����ɂ����_�̑΍�i�X��27/259�j
-13/02/05�@�l���łP�O�D�U�X mod3k3
-�E�g�{�^���̕��Ȃǂ�ύX����ꍇ�̏C���ӏ��h��K�p�i�X��27/225�j
-13/02/04�@�l���łP�O�D�U�X mod3k2
-�EEPGTimer�̌����@�\���������ȍ~��Ώۂɂ���i�X��27/196�j
-13/02/03�@�l���łP�O�D�U�X
-�E�u�����\��o�^�v�̕��ёւ������ǂ��Ă݂��i���̂S�j�̌������ʂ̍s�Ԃ����ɂȂ�Ȃ��_���C��
-12/11/03�@�l���łP�O�D�U�X mod3k1
-�EWin8�ł̟��ݑ΍�
-12/10/15�@�l���łP�O�D�U�X mod2k1
-�EEPG�f�[�^�ɕs���ȕ����R�[�h���܂܂�Ă���ꍇ�̑΍�
-�@�f�B�X�N���v�^�����Ă�EIT�Ɋւ��Ă����ɔj��������AddEIT�ɓ����ăZ�N�V�����̃t���O�������Ă�悤�ɂ���
-�@�ݒ�ύX�FEpgCapTimeOut=3 EpgCapSaveTimeOut=1
-12/05/26�@�l���łP�O�D�U�X mod1k1
-�E�u�����\��o�^�v�̕��ёւ������ǂ��Ă݂��i���̂S�j���}�[�W
-12/05/26�@�l���łP�O�D�U�X mod1
-�E�X�N�����u���������W���[�����g�p����@�\�����ǂ�
-�EBonDeiver�X�y���~�X�C��
+■更新履歴■
+13/02/15　人柱版１０．６９ mod4k10
+・番組名でググる対策
+・番組表へジャンプで検索窓が復帰できない不具合のパッチ
+13/02/15　人柱版１０．６９ mod4k9 by Velmy
+・検索結果一覧から削除された番組詳細の復帰
+・設定画面に検索結果を省略するスイッチを追加
+・EPG番組表のメニューに「予約←→無効」を追加（スレ27/621）
+・EPG番組表のメニューに「番組名でググる」を追加（スレ27/622）
+13/02/13　人柱版１０．６９ mod4k8
+・VS2012でもビルド可能なように変更（スレ27/591）
+・「【EDCB】EpgDataCap_Bonについて語るスレ 27」580氏提供のBitrate.iniに差し替え
+・CtrlCmdCLI: 共通言語ランタイムのビルドオプション変更（/cls -> /clr:pure）
+13/02/11　人柱版１０．６９ mod4k7
+・チャンネルスキャンが吐くファイルの中身を好みの順番に並び替える（スレ27/495）
+・自動予約登録編集時に行われる予約登録処理を、変更のあったEPG予約についてのみ行うようにする（スレ27/495）
+13/02/10　人柱版１０．６９ mod4k6
+・スリープ抑止拡張を適用（スモキンカゴーン氏版）（設定方法の詳細はReadme_EpgTimer.txt参照）
+13/02/10　人柱版１０．６９ mod4k5
+・番組表の枠線の色と太さ、表示時間の位置とフォント、表示位置を調整
+・フォントサイズなどの設定によって文字がはみ出る現象を改善
+・検索結果の表示項目の順番を変更
+13/02/05　人柱版１０．６９ mod4k4
+・NWでのサーバ指定がIP以外の時に自動接続が失敗するバグを修正をマージ（スレ27/239）
+・検索結果の行間が一定にならない点を修正（設定方法の詳細はReadme_EpgTimer.txt参照）（スレ27/246）
+・0.0（ウインドウの一番左上）の時、座標が記憶されず次回起動時にずれる点の対策（スレ27/259）
+13/02/05　人柱版１０．６９ mod3k3
+・“ボタンの幅などを変更する場合の修正箇所”を適用（スレ27/225）
+13/02/04　人柱版１０．６９ mod3k2
+・EPGTimerの検索機能を現時刻以降を対象にする（スレ27/196）
+13/02/03　人柱版１０．６９
+・「自動予約登録」の並び替えを改良してみた（その４）の検索結果の行間が一定にならない点を修正
+12/11/03　人柱版１０．６９ mod3k1
+・Win8での滲み対策
+12/10/15　人柱版１０．６９ mod2k1
+・EPGデータに不正な文字コードが含まれている場合の対策
+　ディスクリプタが壊れてるEITに関してすぐに破棄せずにAddEITに投げてセクションのフラグだけ立てるようにする
+　設定変更：EpgCapTimeOut=3 EpgCapSaveTimeOut=1
+12/05/26　人柱版１０．６９ mod1k1
+・「自動予約登録」の並び替えを改良してみた（その４）をマージ
+12/05/26　人柱版１０．６９ mod1
+・スクランブル解除モジュールを使用する機能をもどす
+・BonDeiverスペルミス修正
