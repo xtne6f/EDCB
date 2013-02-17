@@ -36,9 +36,6 @@
     <ClInclude Include="WinHTTPUtil.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="ProxyUtil.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Common\NWStructDef.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
@@ -69,6 +66,9 @@
     <ClInclude Include="resource.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Common\ProxyUtil.h">
+      <Filter>ヘッダー ファイル\Common</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -81,9 +81,6 @@
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="WinHTTPUtil.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="ProxyUtil.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Common\Util.cpp">
@@ -100,6 +97,9 @@
     </ClCompile>
     <ClCompile Include="RequestUtil.cpp">
       <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Common\ProxyUtil.cpp">
+      <Filter>ソース ファイル\Common</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

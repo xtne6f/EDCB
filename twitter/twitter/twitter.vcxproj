@@ -152,10 +152,10 @@
   <ItemGroup>
     <ClInclude Include="..\..\Common\ErrDef.h" />
     <ClInclude Include="..\..\Common\NWStructDef.h" />
+    <ClInclude Include="..\..\Common\ProxyUtil.h" />
     <ClInclude Include="..\..\Common\StringUtil.h" />
     <ClInclude Include="..\..\Common\Util.h" />
     <ClInclude Include="OAuthUtil.h" />
-    <ClInclude Include="ProxyUtil.h" />
     <ClInclude Include="RequestUtil.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="stdafx.h" />
@@ -166,6 +166,7 @@
     <ClInclude Include="WinHTTPUtil.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\Common\ProxyUtil.cpp" />
     <ClCompile Include="..\..\Common\StringUtil.cpp" />
     <ClCompile Include="..\..\Common\Util.cpp" />
     <ClCompile Include="dllmain.cpp">
@@ -183,7 +184,6 @@
       </PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="OAuthUtil.cpp" />
-    <ClCompile Include="ProxyUtil.cpp" />
     <ClCompile Include="RequestUtil.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>

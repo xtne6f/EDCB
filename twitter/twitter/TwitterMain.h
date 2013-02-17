@@ -2,9 +2,9 @@
 
 #include "../../Common/ErrDef.h"
 #include "../../Common/NWStructDef.h"
+#include "../../Common/ProxyUtil.h"
 #include "WinHTTPUtil.h"
 #include "twitterDef.h"
-#include "ProxyUtil.h"
 
 class CTwitterMain
 {
