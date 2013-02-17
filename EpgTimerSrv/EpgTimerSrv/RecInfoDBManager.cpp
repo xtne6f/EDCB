@@ -170,7 +170,7 @@ void CRecInfoDBManager::AddInfo(EPGDB_EVENT_INFO* info)
 
 	wstring iniAppPath = L"";
 	GetModuleIniPath(iniAppPath);
-	int maxSize = GetPrivateProfileInt(L"SET", L"RecInfo2Max", 1000, iniAppPath.c_str());
+	UINT maxSize = GetPrivateProfileInt(L"SET", L"RecInfo2Max", 1000, iniAppPath.c_str());
 
 	EPGDB_EVENT_INFO* item = new EPGDB_EVENT_INFO;
 
