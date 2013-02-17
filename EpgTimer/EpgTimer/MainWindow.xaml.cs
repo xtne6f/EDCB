@@ -37,7 +37,6 @@ namespace EpgTimer
         private bool initExe = false;
 
         private bool needUnRegist = true;
-        private bool iniConnectNW = false;
 
         private bool idleShowBalloon = false;
 
