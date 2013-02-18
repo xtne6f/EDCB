@@ -15,6 +15,10 @@ using System.Windows.Shapes;
 using CtrlCmdCLI;
 using CtrlCmdCLI.Def;
 
+using System.Threading; //紅
+using System.Windows.Interop; //紅
+using System.Runtime.InteropServices; //紅
+
 namespace EpgTimer
 {
     /// <summary>
@@ -689,19 +693,14 @@ namespace EpgTimer
 
         void SearchCmd()
         {
-            if (BlackoutWindow.unvisibleSearchWindow == null)
+            SearchWindow search = new SearchWindow();
+            PresentationSource topWindow = PresentationSource.FromVisual(this);
+            if (topWindow != null)
             {
-                SearchWindow search = new SearchWindow();
-                PresentationSource topWindow = PresentationSource.FromVisual(this);
-                if (topWindow != null)
-                {
-                    search.Owner = (Window)topWindow.RootVisual;
-                }
-                search.SetViewMode(0);
-                search.ShowDialog();
+                search.Owner = (Window)topWindow.RootVisual;
             }
-            else
-                BlackoutWindow.unvisibleSearchWindow.ShowDialog(); 
+            search.SetViewMode(0);
+            search.ShowDialog();
         }
 
         void closeButton_Click(object sender, RoutedEventArgs e)
@@ -1082,7 +1081,13 @@ namespace EpgTimer
                         UInt16 param = 0;
                         CmdStreamUtil.ReadStreamData(ref param, pCmdParam);
 
-                        Byte reboot = (Byte)((param & 0xFF00) >> 8);
+                        ///////////////////////////////////////////紅////////////////////////////////////
+                        ParameterizedThreadStart ts = new ParameterizedThreadStart(SuspendThread);
+                        Thread thread = new Thread(ts);
+                        thread.Start(param);
+                        /////////////////////////////////////////////////////////////////////////////////////
+
+                        /*Byte reboot = (Byte)((param & 0xFF00) >> 8);
                         Byte suspendMode = (Byte)(param & 0x00FF);
 
                         Dispatcher.BeginInvoke(new Action(() =>
@@ -1093,7 +1098,7 @@ namespace EpgTimer
                             {
                                 cmd.SendSuspend(param);
                             }
-                        }));
+                        }));*/
                     }
                     break;
                 case CtrlCmd.CMD_TIMER_GUI_QUERY_REBOOT:
@@ -1182,6 +1187,75 @@ namespace EpgTimer
                     break;
             }
             return 0;
+        }
+
+        internal struct LASTINPUTINFO
+        {
+            public uint cbSize;
+            public uint dwTime;
+        }
+
+        [DllImport("User32.dll")]
+        private static extern bool GetLastInputInfo(ref LASTINPUTINFO plii);
+
+        [DllImport("Kernel32.dll")]
+        public static extern UInt32 GetTickCount();
+
+        private void SuspendThread(object obj)
+        {
+            LASTINPUTINFO info = new LASTINPUTINFO();
+            info.cbSize = (uint)System.Runtime.InteropServices.Marshal.SizeOf(info);
+            GetLastInputInfo(ref info);
+
+            // 現在時刻取得
+            UInt64 dwNow = GetTickCount();
+
+            // GetTickCount()は49.7日周期でリセットされるので桁上りさせる
+            if (info.dwTime > dwNow)
+            {
+                dwNow += 0x100000000;
+            }
+
+            StringBuilder sb = new StringBuilder(1024);
+            IniFileHandler.GetPrivateProfileString("SET", "RecCloseCheck", "False", sb, (uint)sb.Capacity, SettingPath.TimerSrvIniPath);
+            bool BoolTryParse = false, BoolCheck = false; ;
+            if (bool.TryParse(sb.ToString(), out BoolCheck))//紅
+                BoolTryParse = BoolCheck;
+
+            if (BoolTryParse)
+            {
+                UInt32 RecCloseTime = UInt32.Parse(IniFileHandler.GetPrivateProfileInt("SET", "RecCloseTime", 0, SettingPath.TimerSrvIniPath).ToString()); //紅
+
+                UInt32 threshold = RecCloseTime * 60 * 1000;
+
+                if (RecCloseTime != 0 && dwNow - info.dwTime >= threshold)
+                {
+                    SleepDialog(obj);
+                }
+            }
+            else SleepDialog(obj);
+        }
+
+        void SleepDialog(object obj)
+        {
+            UInt16 param = (UInt16)obj;
+            Byte reboot = (Byte)((param & 0xFF00) >> 8);
+            Byte suspendMode = (Byte)(param & 0x00FF);
+
+            Int32 sleepmin = (Int32)IniFileHandler.GetPrivateProfileInt("SET", "RecMarginTime", 0, SettingPath.TimerSrvIniPath);
+
+            sleepmin = sleepmin * 60000;
+            Thread.Sleep(sleepmin);
+
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                SuspendCheckWindow dlg = new SuspendCheckWindow();
+                dlg.SetMode(0, suspendMode);
+                if (dlg.ShowDialog() != true)
+                {
+                    cmd.SendSuspend(param);
+                }
+            }));
         }
 
         void NotifyStatus(NotifySrvInfo status)
