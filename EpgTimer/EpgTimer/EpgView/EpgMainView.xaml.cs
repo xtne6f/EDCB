@@ -65,8 +65,6 @@ namespace EpgTimer
             nowViewTimer = new DispatcherTimer(DispatcherPriority.Normal);
             nowViewTimer.Tick += new EventHandler(WaitReDrawNowLine);
 
-            _popupWindow = new PopupWindow(Window.GetWindow(this));
-
         }
 
 
@@ -1218,6 +1216,7 @@ namespace EpgTimer
                     }
                 }
             }
+            _popupWindow = new PopupWindow(Window.GetWindow(this));
         }
 
         private bool ReloadEpgData()
@@ -2025,6 +2024,11 @@ namespace EpgTimer
                 }
                 BlackoutWindow.selectedSearchItem = null;
             }
+        }
+
+        private void UserControl_Unloaded(object sender, RoutedEventArgs e)
+        {
+            _popupWindow.Close();
         }
 
     }
