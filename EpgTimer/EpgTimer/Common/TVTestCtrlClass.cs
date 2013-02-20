@@ -204,7 +204,12 @@ namespace EpgTimer
                 {
                     UInt32 ip = 0;
                     Int32 shift = 24;
-                    foreach (string word in CommonManager.Instance.NW.ConnectedIP.Split('.'))
+                    String srvIP = CommonManager.Instance.NW.ConnectedIP;
+                    foreach (IPAddress address in Dns.GetHostAddresses(CommonManager.Instance.NW.ConnectedIP))
+                    {
+                        srvIP = address.ToString();
+                    }
+                    foreach (string word in srvIP.Split('.'))
                     {
                         ip |= Convert.ToUInt32(word) << shift;
                         shift -= 8;
@@ -275,6 +280,12 @@ namespace EpgTimer
 
                 UInt32 ip = 0;
                 Int32 shift = 24;
+                //srvIP = CommonManager.Instance.NW.ConnectedIP;
+                foreach (IPAddress address in Dns.GetHostAddresses(srvIP))
+                {
+                    srvIP = address.ToString();
+                }
+
                 foreach (string word in srvIP.Split('.'))
                 {
                     ip |= Convert.ToUInt32(word) << shift;
