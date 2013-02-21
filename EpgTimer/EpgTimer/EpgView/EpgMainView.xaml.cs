@@ -374,6 +374,10 @@ namespace EpgTimer
                 }
                 ContextMenu menu = new ContextMenu();
 
+                MenuItem menuItemNew = new MenuItem();
+                menuItemNew.Header = "簡易予約";
+                menuItemNew.Click += new RoutedEventHandler(cm_new_Click);
+
                 Separator separate = new Separator();
                 MenuItem menuItemAdd = new MenuItem();
                 menuItemAdd.Header = "予約追加 (_C)";
@@ -541,10 +545,12 @@ namespace EpgTimer
 
                 if (noItem == true)
                 {
+                    menuItemNew.IsEnabled = false;
                     menuItemAdd.IsEnabled = false;
                     menuItemChg.IsEnabled = false;
                     menuItemDel.IsEnabled = false;
                     menuItemReverse.IsEnabled = false;
+                    menuItemGoogle.IsEnabled = false;
                     menuItemAutoAdd.IsEnabled = false;
                     menuItemTimeshift.IsEnabled = false;
                     menuItemView.IsEnabled = true;
@@ -553,26 +559,31 @@ namespace EpgTimer
                 {
                     if (addMode == false)
                     {
+                        menuItemNew.IsEnabled = false;
                         menuItemAdd.IsEnabled = false;
                         menuItemChg.IsEnabled = true;
                         menuItemDel.IsEnabled = true;
                         menuItemReverse.IsEnabled = true;
+                        menuItemGoogle.IsEnabled = true;
                         menuItemAutoAdd.IsEnabled = true;
                         menuItemTimeshift.IsEnabled = true;
                         menuItemView.IsEnabled = true;
                     }
                     else
                     {
+                        menuItemNew.IsEnabled = true;
                         menuItemAdd.IsEnabled = true;
                         menuItemChg.IsEnabled = false;
                         menuItemDel.IsEnabled = false;
                         menuItemReverse.IsEnabled = false;
+                        menuItemGoogle.IsEnabled = true;
                         menuItemAutoAdd.IsEnabled = true;
                         menuItemTimeshift.IsEnabled = false;
                         menuItemView.IsEnabled = true;
                     }
                 }
 
+                menu.Items.Add(menuItemNew);
                 menu.Items.Add(menuItemAdd);
                 menu.Items.Add(menuItemChg);
                 menu.Items.Add(menuItemDel);
@@ -903,6 +914,81 @@ namespace EpgTimer
 
                 this._popupWindow.google(program.ShortInfo.event_name);
 
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+            }
+        }
+        
+        /// <summary>
+        /// 右クリックメニュー 簡易予約イベント呼び出し
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void cm_new_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                EpgEventInfo eventInfo = new EpgEventInfo();
+                if (GetProgramItem(clickPos, ref eventInfo) == false)
+                {
+                    return;
+                }
+                
+                if (eventInfo.StartTimeFlag == 0)
+                {
+                    MessageBox.Show("開始時間未定のため予約できません");
+                    return;
+                }
+
+                ReserveData reserveInfo = new ReserveData();
+                if (eventInfo.ShortInfo != null)
+                {
+                    reserveInfo.Title = eventInfo.ShortInfo.event_name;
+                }
+
+                reserveInfo.StartTime = eventInfo.start_time;
+                reserveInfo.StartTimeEpg = eventInfo.start_time;
+
+                if (eventInfo.DurationFlag == 0)
+                {
+                    reserveInfo.DurationSecond = 10 * 60;
+                }
+                else
+                {
+                    reserveInfo.DurationSecond = eventInfo.durationSec;
+                }
+
+                UInt64 key = CommonManager.Create64Key(eventInfo.original_network_id, eventInfo.transport_stream_id, eventInfo.service_id);
+                if (ChSet5.Instance.ChList.ContainsKey(key) == true)
+                {
+                    reserveInfo.StationName = ChSet5.Instance.ChList[key].ServiceName;
+                }
+                reserveInfo.OriginalNetworkID = eventInfo.original_network_id;
+                reserveInfo.TransportStreamID = eventInfo.transport_stream_id;
+                reserveInfo.ServiceID = eventInfo.service_id;
+                reserveInfo.EventID = eventInfo.event_id;
+
+                RecSettingData setInfo = new RecSettingData();
+                Settings.GetDefRecSetting(0, ref setInfo);  //  デフォルトをとって来てくれる？
+                reserveInfo.RecSetting = setInfo;
+
+                List<ReserveData> list = new List<ReserveData>();
+                list.Add(reserveInfo);
+                ErrCode err = (ErrCode)cmd.SendAddReserve(list);
+                if (err == ErrCode.CMD_ERR_CONNECT)
+                {
+                    MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
+                }
+                if (err == ErrCode.CMD_ERR_TIMEOUT)
+                {
+                    MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
+                }
+                if (err != ErrCode.CMD_SUCCESS)
+                {
+                    MessageBox.Show("簡易予約でエラーが発生しました。終了時間がすでに過ぎている可能性があります。");
+                }
             }
             catch (Exception ex)
             {
