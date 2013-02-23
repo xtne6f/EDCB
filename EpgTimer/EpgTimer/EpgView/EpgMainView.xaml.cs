@@ -44,8 +44,6 @@ namespace EpgTimer
         private bool updateEpgData = true;
         private bool updateReserveData = true;
 
-        PopupWindow _popupWindow;
-
         public EpgMainView()
         {
             InitializeComponent();
@@ -911,9 +909,9 @@ namespace EpgTimer
                 {
                     return;
                 }
-
-                this._popupWindow.google(program.ShortInfo.event_name);
-
+                PopupWindow _popupWindow　= new PopupWindow(Window.GetWindow(this));
+                _popupWindow.google(program.ShortInfo.event_name);
+                _popupWindow.Close();
             }
             catch (Exception ex)
             {
@@ -1302,7 +1300,6 @@ namespace EpgTimer
                     }
                 }
             }
-            _popupWindow = new PopupWindow(Window.GetWindow(this));
         }
 
         private bool ReloadEpgData()
@@ -2111,11 +2108,5 @@ namespace EpgTimer
                 BlackoutWindow.selectedSearchItem = null;
             }
         }
-
-        private void UserControl_Unloaded(object sender, RoutedEventArgs e)
-        {
-            _popupWindow.Close();
-        }
-
     }
 }
