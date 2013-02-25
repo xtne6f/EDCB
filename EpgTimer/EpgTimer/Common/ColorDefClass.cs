@@ -164,6 +164,19 @@ namespace EpgTimer
                 "WhiteSmoke",
                 "Yellow",
                 "YellowGreen",
+                "News",
+                "Sports",
+                "Information",
+                "Drama",
+                "Music",
+                "Variety",
+                "Movie",
+                "Anime",
+                "Documentary",
+                "Theater",
+                "Education",
+                "Welfare",
+                "Other",
                 "カスタム",
                 };
                 return colorName;
@@ -318,6 +331,19 @@ namespace EpgTimer
                     colorTable.Add("WhiteSmoke", Brushes.WhiteSmoke);
                     colorTable.Add("Yellow", Brushes.Yellow);
                     colorTable.Add("YellowGreen", Brushes.YellowGreen);
+                    colorTable.Add("News", new SolidColorBrush(Color.FromArgb(0xFF, 0xFF, 0xFF, 0xE0)));
+                    colorTable.Add("Sports", new SolidColorBrush(Color.FromArgb(0xFF, 0xE0, 0xE0, 0xFF)));
+                    colorTable.Add("Information", new SolidColorBrush(Color.FromArgb(0xFF, 0xFF, 0xE0, 0xF0)));
+                    colorTable.Add("Drama", new SolidColorBrush(Color.FromArgb(0xFF, 0xFF, 0xE0, 0xE0)));
+                    colorTable.Add("Music", new SolidColorBrush(Color.FromArgb(0xFF, 0xE0, 0xFF, 0xE0)));
+                    colorTable.Add("Variety", new SolidColorBrush(Color.FromArgb(0xFF, 0xE0, 0xFF, 0xFF)));
+                    colorTable.Add("Movie", new SolidColorBrush(Color.FromArgb(0xFF, 0xFF, 0xF0, 0xE0)));
+                    colorTable.Add("Anime", new SolidColorBrush(Color.FromArgb(0xFF, 0xFF, 0xE0, 0xFF)));
+                    colorTable.Add("Documentary", new SolidColorBrush(Color.FromArgb(0xFF, 0xFF, 0xFF, 0xE0)));
+                    colorTable.Add("Theater", new SolidColorBrush(Color.FromArgb(0xFF, 0xFF, 0xF0, 0xE0)));
+                    colorTable.Add("Education", new SolidColorBrush(Color.FromArgb(0xFF, 0xE0, 0xF0, 0xFF)));
+                    colorTable.Add("Welfare", new SolidColorBrush(Color.FromArgb(0xFF, 0xE0, 0xF0, 0xFF)));
+                    colorTable.Add("Other", new SolidColorBrush(Color.FromArgb(0xFF, 0xF0, 0xF0, 0xF0)));
                     colorTable.Add("カスタム", Brushes.White);
                 }
                 return colorTable;

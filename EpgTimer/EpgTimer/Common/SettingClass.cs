@@ -1138,10 +1138,23 @@ namespace EpgTimer
             {
                 if (Instance.contentColorList.Count == 0)
                 {
-                    for (int i = 0; i < 0x11; i++)
-                    {
-                        Instance.contentColorList.Add("White");
-                    }
+                    Instance.contentColorList.Add("News");
+                    Instance.contentColorList.Add("Sports");
+                    Instance.contentColorList.Add("Information");
+                    Instance.contentColorList.Add("Drama");
+                    Instance.contentColorList.Add("Music");
+                    Instance.contentColorList.Add("Variety");
+                    Instance.contentColorList.Add("Movie");
+                    Instance.contentColorList.Add("Anime");
+                    Instance.contentColorList.Add("Documentary");
+                    Instance.contentColorList.Add("Theater");
+                    Instance.contentColorList.Add("Education");
+                    Instance.contentColorList.Add("Welfare");
+                    Instance.contentColorList.Add("White");
+                    Instance.contentColorList.Add("White");
+                    Instance.contentColorList.Add("White");
+                    Instance.contentColorList.Add("Other");
+                    Instance.contentColorList.Add("White");
                 }
                 else if (Instance.contentColorList.Count == 0x10)
                 {
