@@ -235,8 +235,7 @@ namespace EpgTimer.EpgView
                 foreach (ReserveViewItem info in reserveList)
                 {
                     Rectangle rect = new Rectangle();
-                    //rect.Opacity = 0.5;
-                    rect.Opacity = 0.9;
+                    rect.Opacity = 0.5;
                     rect.Effect = new System.Windows.Media.Effects.DropShadowEffect() { BlurRadius = 10 };
 
                     SolidColorBrush color;
