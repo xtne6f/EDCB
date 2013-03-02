@@ -156,7 +156,7 @@ namespace EpgTimer.EpgView
                             min = "未定 ";
                         }
                         double useHeight = 0;
-                        if (RenderText(min, ref textDrawList, glyphTypefaceTitle, sizeTitle - 0.5, info.Width - 4, info.Height + 10, info.LeftPos, info.TopPos - 1, ref useHeight, CommonManager.Instance.CustTitle1Color, m) == false)
+                        if (RenderText(min, ref textDrawList, glyphTypefaceTitle, sizeTitle - 0.5, info.Width - 4, info.Height + 10, info.LeftPos - 1, info.TopPos - 1, ref useHeight, CommonManager.Instance.CustTitle1Color, m) == false)
                         {
                             info.TitleDrawErr = true;
                             continue;
