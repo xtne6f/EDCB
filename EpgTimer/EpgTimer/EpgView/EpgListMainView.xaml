@@ -68,6 +68,7 @@
                 </ListView.View>
                 <ListView.ContextMenu>
                     <ContextMenu x:Name="listView_event_contextMenu">
+                        <MenuItem x:Name="cm_new" Header="簡易予約" Click="cm_new_Click" />
                         <MenuItem x:Name="cm_add" Header="予約追加 (_C)">
                             <MenuItem Header="ダイアログ表示 (_X)" Click="cm_add_Click" />
                             <Separator/>
@@ -94,6 +95,8 @@
                         </MenuItem>
                         <MenuItem x:Name="cm_del" Header="予約削除 (_D)" Click="cm_del_Click" />
                         <MenuItem x:Name="cm_autoadd" Header="自動予約登録 (_A)" Click="cm_autoadd_Click" />
+                        <MenuItem x:Name="cm_google" Header="番組名でググる (_G)" Click="cm_google_Click" />
+                        <MenuItem x:Name="cm_Reverse" Header="予約←→無効 (_R)" Click="cm_reverse_Click" />
                         <MenuItem x:Name="cm_timeshift" Header="追っかけ再生 (_P)" Click="cm_timeShiftPlay_Click" />
                         <Separator/>
                         <MenuItem x:Name="cm_view" Header="表示モード (_W)">
