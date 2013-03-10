@@ -1,6 +1,6 @@
-[ãƒ“ãƒ«ãƒ‰ç’°å¢ƒ]
+[ƒrƒ‹ƒhŠÂ‹«]
 
-Visual Studio 2010 Professionalï¼ˆExpressã¯ä¸å¯ï¼‰
+Visual Studio 2010 ProfessionaliExpress‚Í•s‰Âj
 http://www.microsoft.com/japan/visualstudio/try
 
 Visual Studio 2010 Service Pack 1
@@ -9,18 +9,18 @@ http://www.microsoft.com/ja-jp/download/details.aspx?id=23691
 Windows SDK 7.1
 http://www.microsoft.com/en-us/download/details.aspx?id=8279
 
-Windows SDK 7.1 ç”¨ Microsoft Visual C++ 2010 Service Pack 1 ã‚³ãƒ³ãƒ‘ã‚¤ãƒ©æ›´æ–°ãƒ—ãƒ­ã‚°ãƒ©ãƒ 
+Windows SDK 7.1 —p Microsoft Visual C++ 2010 Service Pack 1 ƒRƒ“ƒpƒCƒ‰XVƒvƒƒOƒ‰ƒ€
 http://www.microsoft.com/ja-jp/download/details.aspx?id=4422
 
 
-[äº‹å‰æº–å‚™] 
-ï¼ˆWrite_AVIVOã‚’ãƒ“ãƒ«ãƒ‰ã™ã‚‹ã®ã«å¿…è¦ï¼‰
+[–‘O€”õ] 
+iWrite_AVIVO‚ğƒrƒ‹ƒh‚·‚é‚Ì‚É•K—vj
 
-1.C:\Program Files\Microsoft SDKs\Windows\v7.1\Samples\multimedia\directshow\baseclasses\baseclasses.slnã‚’é–‹ãï¼ˆWin7x64ã€Win8x64ã®å ´åˆ/ç’°å¢ƒã«ã‚ˆã£ã¦ãƒ‘ã‚¹ãŒé•ã†ã‹ã‚‚ï¼‰
-ã€ã‚¢ã‚¯ã‚»ã‚¹è¨±å¯ã‚’å¼•ãä¸Šã’ã¦ã‚¢ãƒ—ãƒªã‚±ãƒ¼ã‚·ãƒ§ãƒ³ã‚’å†èµ·å‹•ã—ã¾ã™ã‹ï¼Ÿã€ã¨èã‹ã‚ŒãŸã‚‰ã€ç•°ãªã‚‹è³‡æ ¼æƒ…å ±ã§ã“ã®ã‚¢ãƒ—ãƒªã‚±ãƒ¼ã‚·ãƒ§ãƒ³ã‚’å†èµ·å‹•ã€ã‚’é¸æŠ
-ã€æ¬¡ã®ãƒ—ãƒ­ã‚°ãƒ©ãƒ ã«ã“ã®ã‚³ãƒ³ãƒ”ãƒ¥ãƒ¼ã‚¿ãƒ¼ã¸ã®å¤‰æ›´ã‚’è¨±å¯ã—ã¾ã™ã‹?ã€ã¨èã‹ã‚ŒãŸã‚‰ã€ã¯ã„ã€ã‚’é¸æŠ
+1.C:\Program Files\Microsoft SDKs\Windows\v7.1\Samples\multimedia\directshow\baseclasses\baseclasses.sln‚ğŠJ‚­iWin7x64AWin8x64‚Ìê‡/ŠÂ‹«‚É‚æ‚Á‚ÄƒpƒX‚ªˆá‚¤‚©‚àj
+wƒAƒNƒZƒX‹–‰Â‚ğˆø‚«ã‚°‚ÄƒAƒvƒŠƒP[ƒVƒ‡ƒ“‚ğÄ‹N“®‚µ‚Ü‚·‚©Hx‚Æ•·‚©‚ê‚½‚çwˆÙ‚È‚é‘Šiî•ñ‚Å‚±‚ÌƒAƒvƒŠƒP[ƒVƒ‡ƒ“‚ğÄ‹N“®x‚ğ‘I‘ğ
+wŸ‚ÌƒvƒƒOƒ‰ƒ€‚É‚±‚ÌƒRƒ“ƒsƒ…[ƒ^[‚Ö‚Ì•ÏX‚ğ‹–‰Â‚µ‚Ü‚·‚©?x‚Æ•·‚©‚ê‚½‚çw‚Í‚¢x‚ğ‘I‘ğ
 
-2.ãƒ„ãƒ¼ãƒ«ãƒãƒ¼ã«ã‚ã‚‹ç·‘è‰²ã®æ¨ªå‘ãä¸‰è§’ãƒœã‚¿ãƒ³ã®å³å´ã«ã‚ã‚‹ãƒ—ãƒ«ãƒ€ã‚¦ãƒ³ãƒ¡ãƒ‹ãƒ¥ãƒ¼ãŒã€Releaseã€ã«å¤‰æ›´
-ã‚½ãƒªãƒ¥ãƒ¼ã‚·ãƒ§ãƒ³ã‚¨ã‚¯ã‚¹ãƒ—ãƒ­ãƒ¼ãƒ©ãƒ¼ä¸Šã®ã€BaseClassesã€ã‚’å³ã‚¯ãƒªãƒƒã‚¯ã—ã¦ã€ãƒ“ãƒ«ãƒ‰ã€
+2.ƒc[ƒ‹ƒo[‚É‚ ‚é—ÎF‚Ì‰¡Œü‚«OŠpƒ{ƒ^ƒ“‚Ì‰E‘¤‚É‚ ‚éƒvƒ‹ƒ_ƒEƒ“ƒƒjƒ…[‚ªwReleasex‚É•ÏX
+ƒ\ƒŠƒ…[ƒVƒ‡ƒ“ƒGƒNƒXƒvƒ[ƒ‰[ã‚ÌwBaseClassesx‚ğ‰EƒNƒŠƒbƒN‚µ‚Äwƒrƒ‹ƒhx
 C:\Program Files\Microsoft SDKs\Windows\v7.1\Samples\multimedia\directshow\baseclasses\Release\strmbase.lib
-ãŒä½œæˆã•ã‚Œã¦ã„ã‚‹ã®ã‚’ç¢ºèª
+‚ªì¬‚³‚ê‚Ä‚¢‚é‚Ì‚ğŠm”F
