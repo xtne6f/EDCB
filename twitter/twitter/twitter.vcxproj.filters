@@ -67,7 +67,7 @@
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Common\ProxyUtil.h">
-      <Filter>ヘッダー ファイル\Common</Filter>
+      <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -99,7 +99,7 @@
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Common\ProxyUtil.cpp">
-      <Filter>ソース ファイル\Common</Filter>
+      <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

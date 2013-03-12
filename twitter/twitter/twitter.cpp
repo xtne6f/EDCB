@@ -246,3 +246,45 @@ DWORD WINAPI GetTweetQueTW(
 
 	return itr->second->GetTweetQue();
 }
+
+//ストリーミングを開始する
+//戻り値：
+// エラーコード
+//引数：
+// track		[IN]filterのtrack
+// streamingID	[OUT]ストリーミング識別ID
+DWORD WINAPI StartTweetStreamingTW(
+	DWORD id,
+	LPCWSTR track,
+	TW_CALLBACK_Streaming callbackFunc,
+	void* callbackFuncParam,
+	DWORD* streamingID
+	)
+{
+	map<DWORD, CTwitterMain*>::iterator itr;
+	itr = g_List.find(id);
+	if( itr == g_List.end() ){
+		return FALSE;
+	}
+
+	return itr->second->StartTweetStreaming(track, callbackFunc, callbackFuncParam, streamingID);
+}
+
+//ストリーミングを停止する
+//戻り値：
+// エラーコード
+//引数：
+// streamingID	[IN]ストリーミング識別ID
+DWORD WINAPI StopTweetStreamingTW(
+	DWORD id,
+	DWORD streamingID
+	)
+{
+	map<DWORD, CTwitterMain*>::iterator itr;
+	itr = g_List.find(id);
+	if( itr == g_List.end() ){
+		return FALSE;
+	}
+
+	return itr->second->StopTweetStreaming(streamingID);
+}

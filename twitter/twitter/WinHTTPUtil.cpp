@@ -19,6 +19,9 @@ CWinHTTPUtil::CWinHTTPUtil(void)
     this->upStopEvent = _CreateEvent(FALSE, FALSE, NULL);
 	this->writeCompEvent = _CreateEvent(FALSE, FALSE, NULL);
 	this->responseCompEvent = _CreateEvent(FALSE, FALSE, NULL);
+
+	this->callbackRevFunc = NULL;
+	this->callbackRecvFuncParam = NULL;
 }
 
 
@@ -163,6 +166,8 @@ DWORD CWinHTTPUtil::SendRequest(
 	NW_VERB_MODE verbMode,			//[IN] VERBの種類
 	LPCWSTR addHttpHeader,			//[IN] Httpヘッダに追加するものあるなら指定
 	LPCWSTR saveFilePath,			//[IN] DLファイル名、NULL時は内部メモリバッファにDL
+	RESPONSE_READ callbackFunc,		//[IN] レスポンス受信時に呼び出すコールバック
+	void* callbackFuncParam,		//[IN] RESPONSE_READの第一引数に入る物
 	UPLOAD_DATA_LIST* upList		//[IN] サーバーに送信するデータ(PUT or POST)
 	)
 {
@@ -314,6 +319,9 @@ DWORD CWinHTTPUtil::SendRequest(
 	}else{
 		this->saveFilePath = L"";
 	}
+
+	this->callbackRevFunc = callbackFunc;
+	this->callbackRecvFuncParam = callbackFuncParam;
 
 	ResetEvent(this->upStopEvent);
 	ResetEvent(this->responseCompEvent);
@@ -482,7 +490,12 @@ void CWinHTTPUtil::StatusDataAvailable(DWORD size)
 
 			SAFE_DELETE(item);
 		}else{
-			this->dlBuffList.push_back(item);
+			if( this->callbackRevFunc != NULL ){
+				this->callbackRevFunc(this->callbackRecvFuncParam, item->data, item->size);
+				SAFE_DELETE(item);
+			}else{
+				this->dlBuffList.push_back(item);
+			}
 		}
 
 		WinHttpQueryDataAvailable( this->request, NULL);

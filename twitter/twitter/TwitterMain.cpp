@@ -45,6 +45,12 @@ CTwitterMain::~CTwitterMain(void)
 		this->tweetSetEvent = NULL;
 	}
 
+	map<DWORD, STREAMING_INFO*>::iterator itr;
+	for( itr = streamingList.begin(); itr != streamingList.end(); itr++ ){
+		itr->second->httpUtil.CloseSession();
+		SAFE_DELETE(itr->second);
+	}
+
 	SAFE_DELETE_ARRAY(this->authorizationUrl);
 	this->httpUtil.CloseSession();
 	if( this->lockEvent != NULL ){
@@ -198,7 +204,7 @@ DWORD CTwitterMain::GetAuthorizationUrl(
 	key += L"&";
 	requestUtil.CreateRequestToken(CONSUMER_KEY, key, requestUrl, httpHeader);
 
-	ret = SendCmd(FALSE, NW_VERB_POST, requestUrl.c_str(), httpHeader.c_str(), NULL, L"");
+	ret = SendCmd(&this->httpUtil, FALSE, NW_VERB_POST, requestUrl.c_str(), httpHeader.c_str(), NULL, L"");
 	if( ret == NO_ERR ){
 		//レスポンス取得して解析
 		wstring buff = this->lastResponse;
@@ -238,7 +244,7 @@ DWORD CTwitterMain::SetAuthorizationPWD(
 	key += this->authorization_token_secret.c_str();
 
 	requestUtil.CreateAccessToken(CONSUMER_KEY, key, this->authorization_token.c_str(), password, requestUrl, httpHeader);
-	ret = SendCmd(FALSE, NW_VERB_POST, requestUrl.c_str(), httpHeader.c_str(), NULL, L"");
+	ret = SendCmd(&this->httpUtil, FALSE, NW_VERB_POST, requestUrl.c_str(), httpHeader.c_str(), NULL, L"");
 	if( ret == NO_ERR ){
 		//レスポンス取得して解析
 		wstring buff = this->lastResponse;
@@ -294,7 +300,7 @@ DWORD CTwitterMain::SendTweet(
 			key += L"&";
 			key += this->oauth_token_secret.c_str();
 			requestUtil.CreateSendTweet(CONSUMER_KEY, key, this->oauth_token.c_str(), buff.c_str(), requestUrl, httpHeader);
-			if(SendCmd(FALSE, NW_VERB_POST, requestUrl.c_str(), httpHeader.c_str(), NULL, L"") != NO_ERR ){
+			if(SendCmd(&this->httpUtil, FALSE, NW_VERB_POST, requestUrl.c_str(), httpHeader.c_str(), NULL, L"") != NO_ERR ){
 				_OutputDebugString(L"★tweet send Err:%s", this->lastResponse.c_str());
 				_OutputDebugString(buff.c_str());
 				ret = ERR_FALSE;
@@ -345,7 +351,7 @@ UINT WINAPI CTwitterMain::TweetThread(LPVOID param)
 						key += L"&";
 						key += sys->oauth_token_secret.c_str();
 						requestUtil.CreateSendTweet(CONSUMER_KEY, key, sys->oauth_token.c_str(), text, requestUrl, httpHeader);
-						if(sys->SendCmd(FALSE, NW_VERB_POST, requestUrl.c_str(), httpHeader.c_str(), NULL, L"") != NO_ERR ){
+						if(sys->SendCmd(&sys->httpUtil, FALSE, NW_VERB_POST, requestUrl.c_str(), httpHeader.c_str(), NULL, L"") != NO_ERR ){
 							_OutputDebugString(L"★tweet send Err:%s", sys->lastResponse.c_str());
 						}
 					}
@@ -363,26 +369,26 @@ UINT WINAPI CTwitterMain::TweetThread(LPVOID param)
 	return 0;
 }
 
-DWORD CTwitterMain::SendCmd(BOOL asyncMode, NW_VERB_MODE verbMode, wstring url, wstring httpHead, UPLOAD_DATA_LIST* upList, wstring saveFilePath)
+DWORD CTwitterMain::SendCmd(CWinHTTPUtil* httpUtil, BOOL asyncMode, NW_VERB_MODE verbMode, wstring url, wstring httpHead, UPLOAD_DATA_LIST* upList, wstring saveFilePath, RESPONSE_READ callbackFunc, void* callbackFuncParam)
 {
 	DWORD ret = NO_ERR;
 
-	if( asyncMode != this->httpUtil.IsOpenASync() ){
-		this->httpUtil.CloseSession();
+	if( asyncMode != httpUtil->IsOpenASync() ){
+		httpUtil->CloseSession();
 	}else
 	if( this->chgProxy == TRUE ){
-		this->httpUtil.CloseSession();
+		httpUtil->CloseSession();
 		this->chgProxy = FALSE;
 	}
-	if( this->httpUtil.IsOpenSession() == FALSE ){
-		ret = this->httpUtil.OpenSession(L"", asyncMode, this->useProxy, &this->proxyInfo);
+	if( httpUtil->IsOpenSession() == FALSE ){
+		ret = httpUtil->OpenSession(L"", asyncMode, this->useProxy, &this->proxyInfo);
 		if( ret != NO_ERR ){
-			this->httpUtil.CloseSession();
+			httpUtil->CloseSession();
 			return ret;
 		}
 	}
 
-	ret = this->httpUtil.SendRequest(url.c_str(), verbMode, httpHead.c_str(), saveFilePath.c_str(), upList);
+	ret = httpUtil->SendRequest(url.c_str(), verbMode, httpHead.c_str(), saveFilePath.c_str(), callbackFunc, callbackFuncParam, upList);
 	//エラーチェック
 	if( ret == 0x8197 ){
 		ret = ERR_NW_PROXY_LOGIN;
@@ -393,11 +399,11 @@ DWORD CTwitterMain::SendCmd(BOOL asyncMode, NW_VERB_MODE verbMode, wstring url, 
 		this->lastResponse = L"";
 
 		DWORD dlSize = 0;
-		this->httpUtil.GetDLBuff(NULL,&dlSize);
+		httpUtil->GetDLBuff(NULL,&dlSize);
 		if( dlSize > 0 ){
 			BYTE* responseBuff = new BYTE[dlSize+1];
 			ZeroMemory(responseBuff, dlSize+1);
-			this->httpUtil.GetDLBuff(responseBuff,&dlSize);
+			httpUtil->GetDLBuff(responseBuff,&dlSize);
 
 			UTF8toW((char*)responseBuff, this->lastResponse);
 
@@ -420,4 +426,102 @@ DWORD CTwitterMain::GetTweetQue(
 
 	UnLock();
 	return ret;
+}
+
+//ストリーミングを開始する
+//戻り値：
+// エラーコード
+//引数：
+// track		[IN]filterのtrack
+// streamingID	[OUT]ストリーミング識別ID
+DWORD CTwitterMain::StartTweetStreaming(
+	LPCWSTR track,
+	TW_CALLBACK_Streaming callbackFunc,
+	void* callbackFuncParam,
+	DWORD* streamingID
+	)
+{
+	if( Lock() == FALSE ) return ERR_FALSE;
+
+	if(streamingID == NULL || callbackFunc == NULL ){
+		UnLock();
+		return ERR_FALSE;
+	}
+
+	DWORD ret = NO_ERR;
+	if( this->oauth_token.size() > 0 && this->oauth_token_secret.size() > 0 ){
+		wstring buff = track;
+
+		CRequestUtil requestUtil;
+		STREAMING_INFO* info = new STREAMING_INFO();
+		info->sys = this;
+		info->streamingID = nextStreamingID;
+		info->callbackFunc = callbackFunc;
+		info->callbackFuncParam = callbackFuncParam;
+
+		*streamingID = nextStreamingID;
+
+		wstring requestUrl;
+		wstring httpHeader;
+
+		wstring key = CONSUMER_SECRET_KEY;
+		key += L"&";
+		key += this->oauth_token_secret.c_str();
+		requestUtil.CreateStreaming(CONSUMER_KEY, key, this->oauth_token.c_str(), buff.c_str(), requestUrl, httpHeader);
+		if(SendCmd(&info->httpUtil, TRUE, NW_VERB_POST, requestUrl.c_str(), httpHeader.c_str(), NULL, L"", StreamingCallback, info) != NO_ERR ){
+			_OutputDebugString(L"★tweet send Err:%s", this->lastResponse.c_str());
+			_OutputDebugString(buff.c_str());
+			ret = ERR_FALSE;
+			SAFE_DELETE(info);
+		}else{
+			streamingList.insert(pair<DWORD, STREAMING_INFO*>(info->streamingID, info));
+		}
+
+	}else{
+		ret = ERR_INIT;
+	}
+
+	UnLock();
+	return ret;
+}
+
+//ストリーミングを停止する
+//戻り値：
+// エラーコード
+//引数：
+// streamingID	[IN]ストリーミング識別ID
+DWORD CTwitterMain::StopTweetStreaming(
+	DWORD streamingID
+	)
+{
+	if( Lock() == FALSE ) return 0;
+
+	DWORD ret = NO_ERR;
+
+	map<DWORD, STREAMING_INFO*>::iterator itr;
+	itr = streamingList.find(streamingID);
+	if( itr != streamingList.end() ){
+		itr->second->httpUtil.CloseSession();
+		SAFE_DELETE(itr->second);
+
+		streamingList.erase(itr);
+	}
+
+	UnLock();
+	return ret;
+}
+
+int CALLBACK CTwitterMain::StreamingCallback(void* param, BYTE* data, DWORD dataSize)
+{
+	STREAMING_INFO* info = (STREAMING_INFO*)param;
+	if( info == NULL ){
+		return -1;
+	}
+	CTwitterMain* sys = (CTwitterMain*)info->sys;
+
+	if( info->callbackFunc != NULL ){
+		info->callbackFunc(info->callbackFuncParam, info->streamingID, (const char*)data, dataSize);
+	}
+
+	return 0;
 }

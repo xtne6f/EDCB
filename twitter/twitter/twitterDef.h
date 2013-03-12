@@ -8,6 +8,8 @@
 #define OAUTH_API_URL		_T("https://api.twitter.com/")
 //通常コマンド送信先
 #define SEND_API_URL		_T("https://api.twitter.com/")
+//Streamingコマンド送信先
+#define SEND_STREAMING_API_URL		_T("https://stream.twitter.com/")
 
 //登録したアプリのAPIキー
 #define CONSUMER_KEY		_T("取得したものを入力してください")

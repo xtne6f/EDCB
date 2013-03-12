@@ -9,6 +9,8 @@
 
 #define SEND_BUFF_SIZE 64*1024
 
+typedef int (CALLBACK *RESPONSE_READ)(void* param, BYTE* data, DWORD dataSize);
+
 class CWinHTTPUtil
 {
 public:
@@ -46,7 +48,9 @@ public:
 		LPCWSTR url,					//[IN] アクセスするURL
 		NW_VERB_MODE verbMode,			//[IN] VERBの種類
 		LPCWSTR addHttpHeader,			//[IN] Httpヘッダに追加するものあるなら指定
-		LPCWSTR saveFilePath,			//[IN] DLファイル名、NULL時は内部メモリバッファにDL
+		LPCWSTR saveFilePath,			//[IN] DLファイル名、callbackFuncもNULL時は内部メモリバッファにDL
+		RESPONSE_READ callbackFunc,		//[IN] レスポンス受信時に呼び出すコールバック
+		void* callbackFuncParam,		//[IN] RESPONSE_READの第一引数に入る物
 		UPLOAD_DATA_LIST* upList		//[IN] サーバーに送信するデータ(PUT or POST)
 		);
 
@@ -99,6 +103,9 @@ protected:
 		};
 	} DL_DATA;
 	vector<DL_DATA*> dlBuffList;
+
+	RESPONSE_READ callbackRevFunc;
+	void* callbackRecvFuncParam;
 
 protected:
 	static void CALLBACK StatusCallback (

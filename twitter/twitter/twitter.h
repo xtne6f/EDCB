@@ -3,6 +3,17 @@
 
 #include "../../Common/NWStructDef.h"
 
+
+//SetAVTransportURI
+//戻り値：
+// エラーコード(DMR_CALLBACK_ERR_INVALID_ARGS, DMR_CALLBACK_ERR_MIMETYPE, DMR_CALLBACK_ERR_BUSY, DMR_CALLBACK_ERR_NOT_FOUND, DMR_CALLBACK_ERR_INVALID_ID)
+//引数：
+// param			[IN] DLNAM_INIT_PARAM_DMRのSetAVTransportURIFuncParam
+// streamingID		[IN] 識別ID
+// json				[IN] json形式の受信データ
+typedef int (CALLBACK *TW_CALLBACK_Streaming)(void* param, DWORD streamingID, const char* data, DWORD dataSize);
+
+
 //DLLの初期化
 //戻り値：
 // エラーコード
@@ -114,6 +125,32 @@ DWORD WINAPI SendTweetTW(
 __declspec(dllexport)
 DWORD WINAPI GetTweetQueTW(
 	DWORD id
+	);
+
+//ストリーミングを開始する
+//戻り値：
+// エラーコード
+//引数：
+// track		[IN]filterのtrack
+// streamingID	[OUT]ストリーミング識別ID
+__declspec(dllexport)
+DWORD WINAPI StartTweetStreamingTW(
+	DWORD id,
+	LPCWSTR track,
+	TW_CALLBACK_Streaming callbackFunc,
+	void* callbackFuncParam,
+	DWORD* streamingID
+	);
+
+//ストリーミングを停止する
+//戻り値：
+// エラーコード
+//引数：
+// streamingID	[IN]ストリーミング識別ID
+__declspec(dllexport)
+DWORD WINAPI StopTweetStreamingTW(
+	DWORD id,
+	DWORD streamingID
 	);
 
 #endif

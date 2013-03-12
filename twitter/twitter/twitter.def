@@ -11,3 +11,5 @@ EXPORTS
 	SetAuthorizationPWDTW	@8
 	SendTweetTW			@9
 	GetTweetQueTW		@10
+	StartTweetStreamingTW	@11
+	StopTweetStreamingTW	@12

@@ -5,6 +5,7 @@
 #include "../../Common/ProxyUtil.h"
 #include "WinHTTPUtil.h"
 #include "twitterDef.h"
+#include "twitter.h"
 
 class CTwitterMain
 {
@@ -99,6 +100,29 @@ public:
 	// 個数
 	DWORD GetTweetQue(
 		);
+
+	//ストリーミングを開始する
+	//戻り値：
+	// エラーコード
+	//引数：
+	// track		[IN]filterのtrack
+	// streamingID	[OUT]ストリーミング識別ID
+	DWORD StartTweetStreaming(
+		LPCWSTR track,
+		TW_CALLBACK_Streaming callbackFunc,
+		void* callbackFuncParam,
+		DWORD* streamingID
+		);
+
+	//ストリーミングを停止する
+	//戻り値：
+	// エラーコード
+	//引数：
+	// streamingID	[IN]ストリーミング識別ID
+	DWORD StopTweetStreaming(
+		DWORD streamingID
+		);
+
 protected:
 	BOOL useProxy;
 	USE_PROXY_INFO proxyInfo;
@@ -125,11 +149,24 @@ protected:
 
 	DWORD sendWaitSec;
 
+	typedef struct _STREAMING_INFO{
+		CTwitterMain* sys;
+		TW_CALLBACK_Streaming callbackFunc;
+		void* callbackFuncParam;
+		DWORD streamingID;
+		CWinHTTPUtil httpUtil;
+	}STREAMING_INFO;
+	map<DWORD, STREAMING_INFO*> streamingList;
+	DWORD nextStreamingID;
+
 protected:
 	BOOL Lock(LPCWSTR log = NULL, DWORD timeOut = 15*1000);
 	void UnLock(LPCWSTR log = NULL);
 	static UINT WINAPI TweetThread(LPVOID param);
 
-	DWORD SendCmd(BOOL asyncMode, NW_VERB_MODE verbMode, wstring url, wstring httpHead, UPLOAD_DATA_LIST* upList, wstring saveFilePath);
+	static int CALLBACK StreamingCallback(void* param, BYTE* data, DWORD dataSize);
+
+
+	DWORD SendCmd(CWinHTTPUtil* httpUtil, BOOL asyncMode, NW_VERB_MODE verbMode, wstring url, wstring httpHead, UPLOAD_DATA_LIST* upList, wstring saveFilePath, RESPONSE_READ callbackFunc=NULL, void* callbackFuncParam=NULL);
 };
 

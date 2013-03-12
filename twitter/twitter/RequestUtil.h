@@ -39,4 +39,13 @@ public:
 		wstring& url,
 		wstring& httpHeader
 		);
+
+	BOOL CreateStreaming(
+		wstring consumerKey,
+		wstring secretKey,
+		wstring oauthToken,
+		wstring text,
+		wstring& url,
+		wstring& httpHeader
+		);
 };
