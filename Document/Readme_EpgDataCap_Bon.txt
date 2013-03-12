@@ -4,6 +4,7 @@ EpgTimerSrv.exe（EpgTimer.exe）からの制御で予約録画を行うこともできます。
 
 最新の変更内容はReadme.txtの更新履歴を参照してください。
 
+
 ■使用前の準備■
 　Readme.txtの■基本的な使用準備■を参照
 
@@ -79,6 +80,7 @@ EpgTimerSrv.exe（EpgTimer.exe）からの制御で予約録画を行うこともできます。
 　・ステータス表示２
 　　　Signal、ドロップ、スクランブル、UDP送信先などのステータスを表示
 　　　します。
+
 
 ■設定■
 　●基本設定タブ
@@ -271,6 +273,7 @@ EpgTimerSrv.exe（EpgTimer.exe）からの制御で予約録画を行うこともできます。
 ・スクランブルが解除できない
 ＝＞B25Decoder.dllの同梱をやめましたので、別途どこからか手に入れてください。
 
+
 ★以下わかる人用★
 ■ネットワーク毎にスクランブル解除モジュールを変更する■
 　B25Decoder.dll以外のスクランブル解除モジュールを使用したい場合、
@@ -287,6 +290,7 @@ EpgTimerSrv.exe（EpgTimer.exe）からの制御で予約録画を行うこともできます。
 　　OriginalNetworkID 0x0004はデフォルトB25Decoder.dllで解除
 　　OriginalNetworkID 0x0004 TransportStreamID 0x0001はB25Decoder2.dllで解除
 
+
 ■強制的に起動時のBonDriverとサービス指定を行う■
 　この設定はEpgDataCap_Bon.exeを単独で起動したときのみ、有効な設定にな
 　ります。予約録画時などは無視されます。
@@ -299,6 +303,7 @@ EpgTimerSrv.exe（EpgTimer.exe）からの制御で予約録画を行うこともできます。
 　　FixTSID：TransportStreamIDの10進数
 　　FixSID：ServiceIDの10進数
 
+
 ■TSデータのバッファリング最大値を変更する■
 　TSデータのバッファリング最大値を設定します。
 　設定値はBonDriverからのTSデータ取得を何回バッファリングするかになります。
@@ -306,6 +311,7 @@ EpgTimerSrv.exe（EpgTimer.exe）からの制御で予約録画を行うこともできます。
 　（例：BonDriver_PT-STの場合、1回で取得するTSデータは 188*256=48128バイト）
 　EpgDataCap_Bon.iniのSETにTsBuffMaxCountを追加すること設定可能。
 　（デフォルト:5000）
+
 
 ■ファイル出力データのバッファリング最大値を変更する■
 　ファイル出力データのバッファリング最大値を設定します。
@@ -321,6 +327,7 @@ EpgTimerSrv.exe（EpgTimer.exe）からの制御で予約録画を行うこともできます。
 　エラーログなどの数値はファイル出力処理を行う前までのTSデータに対しての数値にな
 　ります。
 
+
 ■予約録画時に強制的に起動時のサービス指定を行う■
 　この設定はEpgDataCap_Bon.exeが予約録画用に起動したときのみ、有効な設定にな
 　ります。
@@ -333,15 +340,18 @@ EpgTimerSrv.exe（EpgTimer.exe）からの制御で予約録画を行うこともできます。
 　　OpenWait：チューナーオープン後のWait(msec単位)（デフォルト値:0）
 　　ChgWait：チャンネル切換後のWait(msec単位)（デフォルト値:0）
 
+
 ■EPG取得のタイムアウト値を変更する■
 　EPG取得時に蓄積判定を行えない場合に、タイムアウトするまでの時間を変更します。
 　BonCtrl.iniのEPGCAPにEpgCapTimeOutを追加すること設定可能。
 　　EpgCapTimeOut:10進数で分数（デフォルト:10）
 
+
 ■EPG取得でタイムアウト発生時にファイルを保存する■
 　EPG取得時に蓄積判定を行えずタイムアウトした場合は、異常としてEPGデータの保存を行いません。
 　BonCtrl.iniのEPGCAPにEpgCapSaveTimeOutを追加すること設定可能。
 　　EpgCapSaveTimeOut: 0:保存しない、1:保存する
+
 
 ■チャンネルスキャンのタイムアウト値を変更する■
 　チャンネルスキャン時のタイムアウト値を変更します。
@@ -349,10 +359,10 @@ EpgTimerSrv.exe（EpgTimer.exe）からの制御で予約録画を行うこともできます。
 　　ChChgTimeOut：有効なTSデータが流れてくるまでのチェック秒数（デフォルト:9）
 　　ServiceChkTimeOut：サービスの一覧を確認できるまでのチェック秒数（デフォルト:8）
 
+
 ■BonDriverオープン後にwaitを入れる■
 　BonDriverオープン後にwaitを入れます。
 　BonDriverオープン後にすぐにチャンネル切換処理をすると、正常に切り替わらない
 　場合のある環境で試してみてください。
 　EpgDataCap_Bon.iniのSETにOpenWaitを追加すること設定可能。
 　　OpenWait：10進数でmsec（デフォルト：200）
-

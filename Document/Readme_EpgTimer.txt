@@ -8,7 +8,8 @@ EpgTimerNW.exe‚ÍEpgTimer‚Ìƒlƒbƒgƒ[ƒN”Å‚Æ‚È‚Á‚Ä‚¨‚èAƒ[ƒJƒ‹‚É‘Î‚·‚é
 ƒT[ƒo[‚Æ‚È‚éPC‚ÌEpgTimer‘¤‚Åƒlƒbƒgƒ[ƒNÚ‘±‚ª‹–‰Â‚³‚ê‚Ä‚¢‚é•K—v‚ª‚ 
 ‚è‚Ü‚·B
 
-ÅV‚Ì•ÏX“à—e‚ÍReadme.txt‚ÌXV—š—ð‚ðŽQÆ‚µ‚Ä‚­‚¾‚³‚¢B
+ÅV‚Ì•ÏX“à—e‚ÍHistory.txt‚ðŽQÆ‚µ‚Ä‚­‚¾‚³‚¢B
+
 
 ¡Žg—p‘O‚Ì€”õ¡
 @Readme.txt‚Ì¡Šî–{“I‚ÈŽg—p€”õ¡‚ðŽQÆ
@@ -36,6 +37,7 @@ EpgTimerNW.exe‚ÍEpgTimer‚Ìƒlƒbƒgƒ[ƒN”Å‚Æ‚È‚Á‚Ä‚¨‚èAƒ[ƒJƒ‹‚É‘Î‚·‚é
 E•”•ªŽóMiƒƒ“ƒZƒOj‚Ì“¯Žž•Û‘¶‚ª‰Â”\iƒTƒCƒ}ƒ‹•ú‘—‘O’ñj
 EƒT[ƒo[˜AŒg‚ðs‚¤‚±‚Æ‚Åƒ`ƒ…[ƒi[•s‘«‚Ì—\–ñ‚ð•ÊƒT[ƒo[‚É“o˜^‰Â”\
 EƒT[ƒo[˜AŒg‚ðs‚¤‚±‚Æ‚Å•ÊƒT[ƒo[‚ÌÅVEPGƒf[ƒ^‚ðŽæ“¾‰Â”\
+
 
 ¡Žg‚¢•û¡
 @ƒ`ƒƒƒ“ƒlƒ‹ƒXƒLƒƒƒ“‚ÌŒ‹‰Ê‚ÆEPGƒf[ƒ^‚ðŒ³‚É“®ì‚µ‚Ü‚·B
@@ -287,6 +289,7 @@ EpgTimerNW.exe‚ÍEpgTimer‚Ìƒlƒbƒgƒ[ƒN”Å‚Æ‚È‚Á‚Ä‚¨‚èAƒ[ƒJƒ‹‚É‘Î‚·‚é
 @@@@EpgTimerNW‚Ì‚Ý•\Ž¦‰Â”\B
 @@@@ƒT[ƒo[‚Ö‚ÌÄÚ‘±‚ðs‚¤‚½‚ß‚Ìƒ_ƒCƒAƒƒO‚ª•\Ž¦‚³‚ê‚Ü‚·B
 
+
 ¡ŒŸõðŒ¡
 @EPGƒf[ƒ^‚ÌŒŸõ‚ðs‚¤ê‡‚ÌðŒ‚Å‚·B
 @ŒŸõAŽ©“®—\–ñ“o˜^‚È‚Ç‚ÅŽg—p‚³‚ê‚Ü‚·B
@@ -344,6 +347,7 @@ EpgTimerNW.exe‚ÍEpgTimer‚Ìƒlƒbƒgƒ[ƒN”Å‚Æ‚È‚Á‚Ä‚¨‚èAƒ[ƒJƒ‹‚É‘Î‚·‚é
 @@Ú×‚È“®ìŽd—l‚ÍŒãq‚Ì¡“¯ˆê”Ô‘g–³Œø“o˜^‚ÌŽd—l¡‚ðŽQÆB
 @@EŠm”F‘ÎÛŠúŠÔ
 @@@“¯ˆê”Ô‘g–¼‚ªŽw’èŠúŠÔˆÈ“à‚É‚ ‚Á‚½ê‡‚É–³Œøˆ—‚ðs‚¢‚Ü‚·B
+
 
 ¡˜^‰æÝ’è¡
 @˜^‰æ‚ðs‚¤‚Æ‚«‚ÌÝ’è’l‚Æ‚È‚è‚Ü‚·B
@@ -426,6 +430,7 @@ EpgTimerNW.exe‚ÍEpgTimer‚Ìƒlƒbƒgƒ[ƒN”Å‚Æ‚È‚Á‚Ä‚¨‚èAƒ[ƒJƒ‹‚É‘Î‚·‚é
 @@@ê‡‚É•Êƒ`ƒ…[ƒi[‚Ö‚ÌˆÚs‚às‚í‚ê‚Ü‚¹‚ñB
 @@@ƒ`ƒ…[ƒi[\¬i—Dæ“xŠÜ‚Þj‚ª•Ï‚í‚Á‚½ê‡‚ÉAID‚ÆBonDeriver‚ÌŠÖ
 @@@˜A•t‚¯‚ª•Ï‚í‚é‰Â”\«‚ª‚ ‚é‚½‚ßBŒÂ•Ê‚ÉŽw’è‚µ’¼‚·•K—v‚ª‚ ‚è‚Ü‚·B
+
 
 ¡Ý’è¡
 @œŠî–{Ý’èƒ^ƒu
@@ -780,6 +785,7 @@ EpgTimerNW.exe‚ÍEpgTimer‚Ìƒlƒbƒgƒ[ƒN”Å‚Æ‚È‚Á‚Ä‚¨‚èAƒ[ƒJƒ‹‚É‘Î‚·‚é
 @’Ç‰Á‚Å‚«‚éƒ^ƒu‚É“Á‚É§ŒÀ”‚Í‚ ‚è‚Ü‚¹‚ñ‚ªA‘½‚­‚È‚é‚Æƒƒ‚ƒŠŽg—p—Ê‚à‘
 @‚¦‚Ü‚·B
 
+
 ¡TVTest˜AŒg¡
 @EpgTimerPlugIn.tvtp‚ðTVTest‚ÌPlugIn‚Æ‚µ‚ÄŽg—p‚·‚é‚±‚Æ‚ÅA”Ô‘g•\‚©‚ç
 @TVTest‚Ì‹N“®‚Æƒ`ƒƒƒ“ƒlƒ‹Ø‚èŠ·‚¦A’Ç‚Á‚©‚¯Ä¶A˜^‰æƒtƒ@ƒCƒ‹‚ÌƒXƒg
@@ -792,6 +798,7 @@ EpgTimerNW.exe‚ÍEpgTimer‚Ìƒlƒbƒgƒ[ƒN”Å‚Æ‚È‚Á‚Ä‚¨‚èAƒ[ƒJƒ‹‚É‘Î‚·‚é
 @‚ÉÝ’è‚³‚ê‚Ä‚¢‚é•K—v‚ª‚ ‚è‚Ü‚·B
 @’Ç‚Á‚©‚¯Ä¶AƒXƒgƒŠ[ƒ~ƒ“ƒOÄ¶‚ð‚·‚é‚É‚ÍBonDriver_UDP.dll‚©
 @BonDriver_TCP.dll‚ªŽg—p‚Å‚«‚é‚æ‚¤‚ÉÝ’è‚³‚ê‚Ä‚¢‚é•K—v‚ª‚ ‚è‚Ü‚·B
+
 
 ¡ƒT[ƒo[ŠÔ˜AŒg¡
 @ƒlƒbƒgƒ[ƒNÚ‘±‚ð‹–‰Â‚µAƒT[ƒo[ŠÔ˜AŒg‚ª—LŒø‚É‚È‚Á‚Ä‚¢‚éƒT[ƒo[‚É
@@ -811,6 +818,7 @@ EpgTimerNW.exe‚ÍEpgTimer‚Ìƒlƒbƒgƒ[ƒN”Å‚Æ‚È‚Á‚Ä‚¨‚èAƒ[ƒJƒ‹‚É‘Î‚·‚é
 @@Žž‚ÌV‚µ‚¢EPGƒf[ƒ^‚ª‚ ‚Á‚½ê‡‚ÉAŽæ“¾‚ðs‚¢‚Ü‚·B
 @@ƒAƒbƒvƒ[ƒh‚·‚é‘¤‚ÌƒT[ƒo[‚ÍƒAƒbƒvƒ[ƒh’†‚Éˆ—‚ªˆê•”Ž~‚Ü‚é‚½‚ßA
 @@’á‘¬‚È‰ñü‚Å‚ÌŽg—p‚Í„§‚µ‚Ü‚¹‚ñB
+
 
 ¡˜^‰æƒtƒ@ƒCƒ‹Ž©“®íœ‚ÌŽd—l¡
 @íœ‘ÎÛ‚É‚È‚é‚Ì‚Ííœ‘ÎÛƒtƒHƒ‹ƒ_‚ÉŽw’è‚³‚ê‚Ä‚¢‚éƒtƒHƒ‹ƒ_“à‚É‚ ‚é
@@ -852,6 +860,7 @@ EpgTimerNW.exe‚ÍEpgTimer‚Ìƒlƒbƒgƒ[ƒN”Å‚Æ‚È‚Á‚Ä‚¨‚èAƒ[ƒJƒ‹‚É‘Î‚·‚é
 @@u˜^‰æƒtƒ@ƒCƒ‹.program.txtv‚Ìƒtƒ@ƒCƒ‹–¼‚Å”Ô‘gî•ñ‚ðo—Í‚µ‚Ü‚·B
 @@EpgDataCap_Bon‚Å•\Ž¦‚³‚ê‚Ä‚¢‚é“à—e‚Æ“¯‚¶‚à‚Ì‚Å‚·B
 @@Ý’è‚Åo—Í‚µ‚È‚¢‚æ‚¤‚É‚Å‚«‚Ü‚·B
+
 
 ¡Write_AVIVO o—ÍPlugIn¡
 @Windows7 + RadeonHD‚ÈŠÂ‹«‚Ìê‡‚Ì‚ÝŽg—p‚Å‚«‚éPlugIn‚Å‚·B
@@ -998,6 +1007,7 @@ $AddKey$	EPGŽ©“®—\–ñ‚Å“o˜^‚³‚ê‚½ƒL[ƒ[ƒhiƒoƒbƒ`‚Ì‚Ýj
 $SubTitle$	ƒTƒuƒ^ƒCƒgƒ‹i”Ô‘g“à—ejiEPGƒf[ƒ^‘¶ÝŽž‚Ì‚ÝjiRecName_Macro.dll‚Ì‚Ýj
 $SubTitle2$	$SubTitle$‚Ì“à—e‚Åu^[#”‘æ][0-9‚O‚P‚Q‚R‚S‚T‚U‚V‚W‚X]v‚ÌŒŸõ‚Éƒqƒbƒg‚µ‚½ê‡‚Ì‚ÝiEPGƒf[ƒ^‘¶ÝŽž‚Ì‚ÝjiRecName_Macro.dll‚Ì‚Ýj
 
+
 ¡’Ç]‚ÌŽd—l¡
 @’Ç]ˆ—‚É‚Í‘å‚«‚­2Ží—Þ‚ ‚è‚Ü‚·B
 @EEPGƒf[ƒ^“Ç‚Ýž‚ÝŽž‚ÉA“Ç‚Ýž‚ñ‚¾EPGƒf[ƒ^‚©‚ç’Ç]‚ðs‚¤
@@ -1046,6 +1056,7 @@ $SubTitle2$	$SubTitle$‚Ì“à—e‚Åu^[#”‘æ][0-9‚O‚P‚Q‚R‚S‚T‚U‚V‚W‚X]v‚ÌŒŸõ‚Éƒqƒbƒ
 @@—\–ñ‚Q‚Í—\–ñ‚P‚Æƒ`ƒƒƒ“ƒlƒ‹‚ªˆá‚¤‚½‚ßA”Ô‘gî•ñŽæ“¾‚Å‚«‚¸‚É0:30ŠJŽn
 @@‚Ì‚Ü‚Ü‚Æ”»’f‚µ‚Ü‚·B‚»‚Ì‚½‚ß0:30‚ÌŽž“_‚Å—\–ñ‚P‚ªI‚í‚ç‚È‚¢‚½‚ßA—\
 @@–ñ‚P‚ðŽÀs‚µ‚Ü‚¹‚ñB
+
 
 ¡Twitter‹@”\¡
 @“Á’è‚Ì“®ìó‹µ‚ðTwitter‚ÉƒcƒC[ƒg‚·‚é‹@”\‚Å‚·BŽŸ‚Ì‚æ‚¤‚Èó‘Ô‚ª”­¶‚µ
@@ -1194,6 +1205,7 @@ $Drops$		˜^‰æŒ‹‰Ê‚Ìƒhƒƒbƒv”
 $Scrambles$	˜^‰æŒ‹‰Ê‚ÌƒXƒNƒ‰ƒ“ƒuƒ‹”
 $Result$	˜^‰æŒ‹‰Ê‚ÌƒRƒƒ“ƒg
 
+
 ¡“¯ˆê”Ô‘g–³Œø“o˜^‚ÌŽd—l¡
 Žå‚ÉCS‚È‚Ç‚Å[Ä]‚È‚Ç‚ª”Ô‘g–¼‚É‚Â‚©‚È‚¢ê‡‚ÉAŽ©“®—\–ñ“o˜^‚Å•¡”“o˜^‚³‚ê‚é•¨‚Ì‰ñ
 ”ð‚Æ‚µ‚Ä‚ÌŽg—p‚ð‘z’è‚µ‚½‚à‚ÌB
@@ -1215,6 +1227,7 @@ $Result$	˜^‰æŒ‹‰Ê‚ÌƒRƒƒ“ƒg
 
 Œë”»’è‚Å–³Œø‚É‚È‚éê‡‚ÍAŽ©“®—\–ñ“o˜^‚ÌðŒ‚ð•ÏX‚µ‚Ä‚­‚¾‚³‚¢B
 –³ŒøˆÈŠO‚É•ÏX‚µ‚Ä‚àAÄƒ`ƒFƒbƒN‚Å–³Œø‚É‚³‚ê‚Ü‚·B
+
 
 ¡Q&A¡
 E‚È‚ñ‚Å.Net FrameworkŽg‚¤‚æ‚¤‚É‚È‚Á‚½‚ÌH
@@ -1421,6 +1434,7 @@ ID@@@F“à•”‚ÅŽg—p‚·‚éID
 @@Ž‹’®Žž‚ÌEPGƒf[ƒ^Žæ“¾‚ð—LŒø‚É‚µA˜^‰æƒAƒvƒŠ‹N“®ŠJŽnŽžŠÔ‚ð‘½‚ß‚É‚·‚é
 @@‚±‚Æ‚ÅA˜^‰æ’¼‘O‚ÌEPGƒf[ƒ^‚ðŽæ“¾‚·‚é‚±‚Æ‚à‰Â”\‚Å‚·B
 
+
 šˆÈ‰º‚í‚©‚él—pš
 ¡‹ó‚«—e—Ê‚ÌŒvŽZ’l‚È‚Ç‚ð•ÏX‚·‚é¡
 @Bitrate.ini‚ð•ÒW‚·‚é‚±‚Æ‚ÅA‹ó‚«—e—ÊŒvŽZ‚ÉŽg—p‚·‚éƒrƒbƒgƒŒ[ƒg‚Ì’l
@@ -1430,11 +1444,13 @@ ID@@@F“à•”‚ÅŽg—p‚·‚éID
 @’nƒfƒW‚Í’nˆæ‚É‚æ‚Á‚ÄServiceID‚È‚Ç‚ªˆá‚¤‚½‚ßAƒT[ƒrƒX‚É‚æ‚Á‚ÄŒÂ•Ê‚É
 @Žw’è‚µ‚½‚¢ê‡‚Í’Ç‰Á‚µ‚Ä‚­‚¾‚³‚¢B
 
+
 ¡ƒL[ƒ[ƒhŒŸõ‚Ì’u‚«Š·‚¦•¶Žš‚ð•ÏX‚·‚é¡
 @ConvertText.txt‚ð•ÒW‚·‚é‚±‚Æ‚ÅAEPG‚ÌƒL[ƒ[ƒhŒŸõŽž‚É“à•”ˆ—‚Å’u
 @‚«Š·‚¦‚é•¶Žš‚ð’Ç‰Á‚Å‚«‚Ü‚·B
 @ƒ^ƒu‹æØ‚è‚ÅA¶‚Ì•¶Žš—ñ‚ªŒ©‚Â‚©‚ê‚ÎA‰E‚Ì•¶Žš—ñ‚É’u‚«Š·‚¦‚Ä‚¢‚Ü‚·B
 @‰½‚©‚Ì’PŒê‚ð—ªŒê‚É‚·‚é‚È‚ÇB
+
 
 ¡Ž©“®—\–ñ“o˜^‚Å—\–ñ‘ÎÛŠúŠÔ‚ðŽw’è‚·‚é¡
 @Ž©“®—\–ñ“o˜^‚Å—\–ñ‘ÎÛ‚Í‰½“úŒã‚Ü‚Å‚É‚·‚é‚©Žw’è‚·‚é‚±‚Æ‚ª‚Å‚«‚Ü‚·B
@@ -1447,10 +1463,12 @@ ID@@@F“à•”‚ÅŽg—p‚·‚éID
 @EPG‚ÌÄ“Ç‚Ýž‚Ý‚Ìƒ^ƒCƒ~ƒ“ƒO‚Å‚µ‚©—\–ñ‚Í’Ç‰Á‚³‚ê‚È‚¢‚Ì‚ÅA‚ ‚Ü‚è‚É‚à’Z‚¢
 @ŠÔŠu‚Å‚Í“®ìó‹µ‚É‚æ‚Á‚Ä—\–ñ‚ª“o˜^‚³‚ê‚È‚¢‚±‚Æ‚ª‚ ‚è‚Ü‚·B
 
+
 ¡Ž©“®—\–ñ“o˜^‚ÅƒCƒxƒ“ƒgƒOƒ‹[ƒv‚ð–³Ž‹‚µ‚Ä“o˜^‚·‚é¡
 @ƒCƒxƒ“ƒgƒOƒ‹[ƒv‚ðl—¶‚µ‚Ä—\–ñ“o˜^‚ð‚·‚é‚©Žw’è‚·‚é‚±‚Æ‚ª‚Å‚«‚Ü‚·B
 @EpgTimerSrv.ini‚ÌSET‚ÉChkGroupEvent‚ð’Ç‰Á‚·‚é‚±‚Æ‚Å•ÏX‰Â”\‚Å‚·B
 @0:l—¶‚µ‚È‚¢A1:l—¶‚·‚éiƒfƒtƒHƒ‹ƒg 1j
+
 
 ¡’Ç]“®ì‚ÌƒJƒXƒ^ƒ}ƒCƒY¡
 @‰„’·‚È‚Ç‚Í‚¢‚ë‚¢‚ë‚Èƒpƒ^[ƒ“‚ª‚ ‚é‚½‚ßA‚¢‚­‚Â‚©’Ç]ˆ—‚ð•ÏX‚Å‚«‚é
@@ -1469,6 +1487,7 @@ ID@@@F“à•”‚ÅŽg—p‚·‚éID
 @E˜^‰æŽžŠÔ’†‚ÉŽžŠÔ–¢’è‚Ì”Ô‘g‚ª‚ ‚éê‡AŒp‘±’Ç]‚ðs‚¤ŽžŠÔ‚ðÝ’è
 @@EpgTimerSrv.ini‚ÌSET‚ÉTuijyuHour‚ð’Ç‰Á‚·‚é‚±‚Æ‚ÅŽžŠÔ’PˆÊ‚Å•ÏX‰Â”\B
 @@iƒfƒtƒHƒ‹ƒg6ŽžŠÔj
+
 
 ¡—\–ñŠ„‚èU‚è‚ÌƒAƒ‹ƒSƒŠƒYƒ€‚Ì•ÏX¡
 @œƒAƒ‹ƒSƒŠƒYƒ€1
@@ -1490,11 +1509,13 @@ ID@@@F“à•”‚ÅŽg—p‚·‚éID
 @2:ƒAƒ‹ƒSƒŠƒYƒ€2
 @3:ƒAƒ‹ƒSƒŠƒYƒ€3
 
+
 ¡˜^‰æŒãŽÀsbat‚ÌŽÀsðŒ‚Ì•ÏX¡
 @’Êí‚Í³í‚É—\–ñ˜^‰æ‚Ìs‚¦‚½•¨‚¾‚¯˜^‰æŒãŽÀsbat‚ðs‚¤‚æ‚¤‚É‚µ‚Ä‚¢‚Ü‚·
 @‚ªAƒGƒ‰[‚ª”­¶‚µ‚½—\–ñ‚Å‚à˜^‰æŒãŽÀsbat‚ðs‚¤‚æ‚¤‚É•ÏX‚µ‚Ü‚·B
 @EpgTimerSrv.ini‚ÌSET‚ÉErrEndBatRun‚ð’Ç‰Á‚·‚é‚±‚Æ‚Å•ÏX‰Â”\‚Å‚·B
 @0:³í‚É—\–ñ˜^‰æ‚Ìs‚¦‚½•¨‚¾‚¯ŽÀsA1:ƒGƒ‰[‚ª”­¶‚µ‚½—\–ñ˜^‰æ‚Å‚àŽÀsiƒfƒtƒHƒ‹ƒg 0j
+
 
 ¡TVTest˜AŒg‚ÅTVTest‹N“®Žž‚ÆBonDriverØŠ·Žž‚Ìwait‚ð•ÏX¡
 @Spinel‚ðBonDriver‚Æ‚µ‚ÄŽg—p‚·‚éê‡A˜A‘±‚ÅƒRƒ}ƒ“ƒh‚ð”­s‚·‚é‚Æ³í‚É
@@ -1503,6 +1524,7 @@ ID@@@F“à•”‚ÅŽg—p‚·‚éID
 @‚±‚Æ‚Å‰Â”\‚Å‚·Bi‘¶Ý‚µ‚È‚¢ê‡‚ÍÝ’è‚ðˆê“x•Û‘¶‚µ‚È‚¨‚µ‚Ä‚­‚¾‚³‚¢j
 @<TvTestOpenWait>FTVTest‹N“®Œã‚ÌWait‚ðƒ~ƒŠ•b’PˆÊiƒfƒtƒHƒ‹ƒg 2000j
 @<TvTestChgBonWait>FBonDriverØŠ·Œã‚ÌWait‚ðƒ~ƒŠ•b’PˆÊiƒfƒtƒHƒ‹ƒg 2000j
+
 
 ¡˜^‰æÏ‚Ýˆê——‚Ì”wŒiF‚ð•ÏX¡
 @Drop‚©Scramble‚ª0ˆÈŠO‚Ìê‡‚É•\Ž¦‚·‚é”wŒiF‚ðRGB‚Å•ÏX‚·‚éB
@@ -1517,6 +1539,7 @@ ID@@@F“à•”‚ÅŽg—p‚·‚éID
 @<RecEndDefColorR>FƒfƒtƒHƒ‹ƒg—pRiƒfƒtƒHƒ‹ƒg 255j
 @<RecEndDefColorG>FƒfƒtƒHƒ‹ƒg—pGiƒfƒtƒHƒ‹ƒg 255j
 @<RecEndDefColorB>FƒfƒtƒHƒ‹ƒg—pBiƒfƒtƒHƒ‹ƒg 255j
+
 
 ¡—\–ñˆê——‚Ì”wŒiF‚ð•ÏX¡
 @ƒ`ƒ…[ƒi[•s‘«Aˆê•”‚Ì‚ÝŽÀsA–³Œø‚Ìê‡‚É•\Ž¦‚·‚é”wŒiF‚ðRGB‚Å•ÏX‚·‚éB
@@ -1535,6 +1558,7 @@ ID@@@F“à•”‚ÅŽg—p‚·‚éID
 @<ResNoColorG>F–³Œø—pGiƒfƒtƒHƒ‹ƒg 169j
 @<ResNoColorB>F–³Œø—pBiƒfƒtƒHƒ‹ƒg 169j
 
+
 ¡”Ô‘g•\‚Å•\Ž¦‚·‚éƒc[ƒ‹ƒ`ƒbƒv‚Ì”wŒiF‚Æ•¶ŽšF‚ð•ÏX¡
 @”Ô‘g•\‚Å•\Ž¦‚·‚éƒc[ƒ‹ƒ`ƒbƒv‚Ì”wŒiF‚Æ•¶ŽšF‚ðRGB‚Å•ÏX‚·‚éB
 @EpgTimer.exe.xml‚Ì—v‘f‚ð•ÏX‚·‚é‚±‚Æ‚Å‰Â”\‚Å‚·B
@@ -1546,11 +1570,13 @@ ID@@@F“à•”‚ÅŽg—p‚·‚éID
 @<EpgTipsForeColorG>F•¶Žš—pGiƒfƒtƒHƒ‹ƒg 0j
 @<EpgTipsForeColorB>F•¶Žš—pBiƒfƒtƒHƒ‹ƒg 0j
 
+
 ¡˜^‰æŽž‚Ì”Ô‘gî•ñ‚ÆƒGƒ‰[ƒƒO‚ðŽw’èƒtƒHƒ‹ƒ_‚É•Û‘¶‚·‚é¡
 @’ÊíTSƒtƒ@ƒCƒ‹•Û‘¶æ‚É•Û‘¶‚³‚ê‚é.program.txt‚Æ.errƒtƒ@ƒCƒ‹‚ðŽw’è‚µ‚½
 @ƒtƒHƒ‹ƒ_‚É•Û‘¶‚µ‚Ü‚·B
 @Common.ini‚ÌSET‚ÉRecInfoFolder‚ð’Ç‰Á‚·‚é‚±‚Æ‚Å•ÏX‰Â”\‚Å‚·B
 @•Û‘¶ƒtƒHƒ‹ƒ_ƒpƒX‚ðŽw’èiƒfƒtƒHƒ‹ƒg ‰½‚à‚È‚µj
+
 
 ¡˜^‰æÏ‚Ýˆê——‚©‚çíœ‚ðs‚¤‚Æ‚«‚ÉTSƒtƒ@ƒCƒ‹‚àˆê‚Éíœ‚·‚é¡
 @˜^‰æÏ‚Ýˆê——‚©‚ç€–Ú‚ðíœ‚·‚é‚Æ‚«A.tsA.program.txtA.errƒtƒ@ƒCƒ‹‚à
@@ -1560,20 +1586,24 @@ ID@@@F“à•”‚ÅŽg—p‚·‚éID
 @Common.ini‚ÌSET‚ÉRecInfoDelFile‚ð’Ç‰Á‚·‚é‚±‚Æ‚Å•ÏX‰Â”\‚Å‚·B
 @0:‰½‚à‚µ‚È‚¢A1:ƒtƒ@ƒCƒ‹‚Ìíœ‚ð‚·‚éiƒfƒtƒHƒ‹ƒg 0j
 
+
 ¡‹Ö‘¥•¶Žšƒ`ƒFƒbƒN‚Åu\v‚Ì•ÏŠ·‚ðs‚í‚È‚¢¡
 @˜^‰æƒtƒ@ƒCƒ‹ƒpƒX‚Ì‹Ö‘¥•¶Žšƒ`ƒFƒbƒN‚Åu\v‚ð•ÏŠ·‘ÎÛ‚©‚çœŠO‚µ‚Ü‚·B
 @EpgTimerSrv.ini‚ÌSET‚ÉNoChkYen‚ð’Ç‰Á‚·‚é‚±‚Æ‚Å•ÏX‰Â”\‚Å‚·B
 @0:u\v‚Ì•ÏŠ·‚ð‚·‚éA1:u\v‚Ì•ÏŠ·‚ð‚µ‚È‚¢iƒfƒtƒHƒ‹ƒg 0j
+
 
 ¡³í‚É˜^‰æ‚ðs‚¦‚½”Ô‘gî•ñ‚Ì’~Ï”‚ð•ÏX‚·‚é¡
 @³í‚É˜^‰æ‚ðs‚¦‚½”Ô‘gî•ñ‚Ì’~Ï”‚ð•ÏX‚µ‚Ü‚·B
 @EpgTimerSrv.ini‚ÌSET‚ÉRecInfo2Max‚ð’Ç‰Á‚·‚é‚±‚Æ‚ÅŒ”‚ð•ÏX‰Â”\‚Å‚·B
 @ƒfƒtƒHƒ‹ƒg‚Í3000‚Æ‚È‚Á‚Ä‚¢‚Ü‚·B
 
+
 ¡³í‚É˜^‰æ‚ðs‚¦‚½”Ô‘gî•ñ‚Æ‚µ‚Ä”»’f‚·‚é‚½‚ß‚Ìƒhƒƒbƒv”‚ð•ÏX‚·‚é¡
 @³í‚É˜^‰æ‚ðs‚¦‚½”Ô‘gî•ñ‚Æ‚µ‚Ä’~Ï‚·‚éê‡‚Éƒhƒƒbƒv”‚à”»’fŠî€‚É‚È‚è‚Ü‚·B
 @EpgTimerSrv.ini‚ÌSET‚ÉRecInfo2DropChk‚ð’Ç‰Á‚·‚é‚±‚Æ‚Å”‚ð•ÏX‰Â”\‚Å‚·B
 @ƒfƒtƒHƒ‹ƒg‚Í15‚Æ‚È‚Á‚Ä‚¢‚Ü‚·B
+
 
 ¡ƒuƒ‰ƒEƒU‚©‚ç•\Ž¦‚Å‚«‚é‚æ‚¤‚É‚·‚é¡
 @Žg—p‘O‚Éˆê“xEpgTimer‚ÌÝ’è‚ðŠJ‚¢‚ÄOK‚Å•Â‚¶‚Ä‚­‚¾‚³‚¢B“®ì‚É•K—v‚Èî
@@ -1607,6 +1637,7 @@ ID@@@F“à•”‚ÅŽg—p‚·‚éID
 @BackColor11@•ŸŽƒiƒfƒtƒHƒ‹ƒg FFFFFFj
 @BackColor15@‚»‚Ì‘¼iƒfƒtƒHƒ‹ƒg FFFFFFj
 
+
 ¡˜^‰æI—¹‚ÌƒcƒC[ƒg‚ðƒGƒ‰[Žž‚Æƒhƒƒbƒv”‚É‚æ‚Á‚Äs‚¤¡
 @˜^‰æI—¹‚ÌƒcƒC[ƒg‚ðs‚¤ê‡‚ÉAƒGƒ‰[”­¶Žž‚ÆŽw’èƒhƒƒbƒv”ˆÈã‚ÌŽž
 @‚És‚¤‚æ‚¤‚É‚µ‚Ü‚·B
@@ -1616,10 +1647,12 @@ ID@@@F“à•”‚ÅŽg—p‚·‚éID
 @RecEndTweetErrF0:í‚ÉƒcƒC[ƒgA1F³íI—¹ˆÈŠO‚ÅƒcƒC[ƒgiƒfƒtƒHƒ‹ƒgF0j
 @RecEndTweetDropFŽw’è”ˆÈã‚Ìƒhƒƒbƒv‚ÅƒcƒC[ƒgiƒfƒtƒHƒ‹ƒgF0j
 
+
 ¡˜^‰æŠJŽnŽž‚ÉƒfƒBƒXƒN‚ÌŠm•Û‚ðs‚í‚È‚¢‚æ‚¤‚É‚·‚é¡
 @˜^‰æŠJŽnŽž‚ÉƒfƒBƒXƒN‚ÌŠm•Û‚ðs‚í‚È‚¢‚Å˜^‰æ‚·‚é‚æ‚¤‚É‚µ‚Ü‚·B
 @EpgTimerSrv.ini‚ÌSET‚ÉKeepDisk‚ð’Ç‰Á‚·‚é‚±‚Æ‚Å•ÏX‰Â”\‚Å‚·B
 @0:‹ó‚«‚ðŠm•Û‚µ‚È‚¢‚Å˜^‰æ‚·‚éA1:‹ó‚«‚ðŠm•Û‚µ‚Ä‚©‚ç˜^‰æ‚·‚éiƒfƒtƒHƒ‹ƒg 1j
+
 
 ¡˜^‰æŒãbat‹N“®Žž‚ÌŒ`Ž®‚ð•Ï‚¦‚é¡
 @˜^‰æŒãbat‹N“®Žž‚ÌŒ`Ž®‚ðÅ¬‰»A”ñ•\Ž¦A’Êí‚É•ÏX‚·‚é‚±‚Æ‚ª‚Å‚«‚Ü‚·B
@@ -1627,11 +1660,13 @@ ID@@@F“à•”‚ÅŽg—p‚·‚éID
 @i‘¶Ý‚µ‚È‚¢ê‡‚ÍÝ’è‚ðˆê“x•Û‘¶‚µ‚È‚¨‚µ‚Ä‚­‚¾‚³‚¢j
 @0:Å¬‰»A1:”ñ•\Ž¦A2:’ÊíiƒfƒtƒHƒ‹ƒg 0j
 
+
 ¡‹xŽ~AƒXƒ^ƒ“ƒoƒCƒ{ƒ^ƒ“‚ð‰Ÿ‚µ‚½ê‡‚ÉŠm”Fƒ_ƒCƒAƒƒO‚ðo‚·¡
 @‹xŽ~AƒXƒ^ƒ“ƒoƒCƒ{ƒ^ƒ“‚ð‰Ÿ‚µ‚½ê‡‚É‚àŠm”Fƒ_ƒCƒAƒƒO‚ðo‚·‚±‚Æ‚ª‚Å‚«‚Ü‚·B
 @EpgTimer.exe.xml‚Ì<SuspendChk>‚Ì—v‘f‚ð•ÏX‚·‚é‚±‚Æ‚Å‰Â”\‚Å‚·B
 @i‘¶Ý‚µ‚È‚¢ê‡‚ÍÝ’è‚ðˆê“x•Û‘¶‚µ‚È‚¨‚µ‚Ä‚­‚¾‚³‚¢j
 @0:•\Ž¦‚µ‚È‚¢A1:•\Ž¦‚·‚éiƒfƒtƒHƒ‹ƒg 0j
+
 
 ¡î•ñ’Ê’mƒƒO‚ðŽ©“®“I‚Éƒtƒ@ƒCƒ‹‚É•Û‘¶‚·‚é¡
 @î•ñ’Ê’mƒƒO‚ðŽ©“®“I‚Éƒtƒ@ƒCƒ‹‚É•Û‘¶‚·‚é‚±‚Æ‚ª‚Å‚«‚Ü‚·B
@@ -1641,12 +1676,14 @@ ID@@@F“à•”‚ÅŽg—p‚·‚éID
 @i‘¶Ý‚µ‚È‚¢ê‡‚ÍÝ’è‚ðˆê“x•Û‘¶‚µ‚È‚¨‚µ‚Ä‚­‚¾‚³‚¢j
 @0:•Û‘¶‚µ‚È‚¢A1:•Û‘¶‚·‚éiƒfƒtƒHƒ‹ƒg 0j
 
+
 ¡ƒfƒUƒCƒ“‚ðƒ[ƒh‚µ‚È‚¢¡
 @ƒfƒUƒCƒ“‚Ìƒ[ƒh‚ðs‚í‚È‚¢‚æ‚¤‚É‚·‚é‚±‚Æ‚ª‚Å‚«‚Ü‚·B
 @OSƒfƒtƒHƒ‹ƒg‚ÌƒfƒUƒCƒ“‚Å•\Ž¦‚µ‚½‚¢ê‡‚ÉŽg—p‚µ‚Ä‚­‚¾‚³‚¢B
 @EpgTimer.exe.xml‚Ì<NoStyle>‚Ì—v‘f‚ð•ÏX‚·‚é‚±‚Æ‚Å‰Â”\‚Å‚·B
 @i‘¶Ý‚µ‚È‚¢ê‡‚ÍÝ’è‚ðˆê“x•Û‘¶‚µ‚È‚¨‚µ‚Ä‚­‚¾‚³‚¢j
 @0:ƒ[ƒh‚·‚éA1:ƒ[ƒh‚µ‚È‚¢iƒfƒtƒHƒ‹ƒg 0j
+
 
 ¡‚µ‚å‚Ú‚¢ƒJƒŒƒ“ƒ_[‚É—\–ñ‚ðƒAƒbƒvƒ[ƒh‚·‚é¡
 @‚µ‚å‚Ú‚¢ƒJƒŒƒ“ƒ_[‚É—\–ñ‚ðƒAƒbƒvƒ[ƒh‚·‚é‚æ‚¤‚É‚µ‚Ü‚·B
@@ -1671,6 +1708,7 @@ ID@@@F“à•”‚ÅŽg—p‚·‚éID
 @‘Ž®‚Íƒ^ƒu‹æØ‚è‚ÅuƒT[ƒrƒX–¼	‚µ‚å‚Ú‚¢ƒJƒŒƒ“ƒ_[‚Ì•ú‘—‹Ç–¼v‚É‚È‚è‚Ü‚·B
 @i—áF‚m‚g‚j‘‡‚PE‘åã	NHK‘‡j
 
+
 ¡DLNA‚ÌDMS‚Û‚¢‹@”\‚ðŽg‚¤¡
 @DLNA‚ÌDMS‚Æ‚µ‚Ä”FŽ¯‚³‚ê‚é‚æ‚¤‚È‹@”\‚ð—LŒø‚É‚µ‚Ü‚·Bi‹KŠi‘‚Æ‚©‚Íˆê”ÊŒöŠJ‚³‚ê‚Ä
 @‚È‚¢‚Ì‚Å‚È‚ñ‚Æ‚È‚­‰ðÍ‚Å‚«‚½”ÍˆÍ‚Ì‚Ýj
@@ -1683,10 +1721,12 @@ ID@@@F“à•”‚ÅŽg—p‚·‚éID
 @EpgTimerSrv.ini‚ÌSET‚ÉˆÈ‰º‚Ì•¨‚ð’Ç‰Á‚·‚é‚±‚Æ‚Å‹@”\‚µ‚Ü‚·B
 @EnableDMSF0:‹@”\‚ð–³ŒøA1:‹@”\‚ð—LŒøiƒfƒtƒHƒ‹ƒg 0j
 
+
 ¡ŒŸõŒ‹‰Ê‚ÌsŠÔ‚ªˆê’è‚É‚È‚ç‚È‚¢“_‚ðC³¡
 @ˆê“x‹N“®‚µAI—¹‚·‚é‚Æ EPGTimer.exe.xml/EPGTimerNW.exe.xml ‚É
 @FixSearchResult ‚Æ‚¢‚¤€–Ú‚ªì¬‚³‚ê‚Ü‚·B
 @‚±‚ê‚ðtrue‚É‚·‚é‚±‚Æ‚ÅAŽŸ‰ñ‹N“®Žž‚©‚ç—LŒø‚Æ‚È‚è‚Ü‚·Bi‰Šú’l‚Ífalsej
+
 
 ¡ƒXƒŠ[ƒv—}Ž~Šg’£iƒXƒ‚ƒLƒ“ƒJƒS[ƒ“Ž”Åj¡
 EpgTimer‚ð‹N“®‚·‚é‚ÆA[Ý’è]->[“®ìÝ’è]->[˜^‰æ“®ì]->[—}Ž~ðŒ]‚ÉA
@@ -1700,4 +1740,3 @@ EpgTimer‚ð‹N“®‚·‚é‚ÆA[Ý’è]->[“®ìÝ’è]->[˜^‰æ“®ì]->[—}Ž~ðŒ]‚ÉA
 ‚±‚±‚ð0‚É‚µ‚½ê‡‚Íí‚ÉŽg—p’†‚Å‚ ‚é‚Æ‚Ý‚È‚µ‚Ü‚·(ƒXƒŠ[ƒv‚µ‚È‚­‚È‚è‚Ü‚·j 
 y’ˆÓŽ–€z
 EVistaˆÈ~‚ÌOS‚ÅEDCB‚ðƒT[ƒrƒX‚Æ‚µ‚Ä“®ì‚³‚¹‚Ä‚¢‚éê‡‚¤‚Ü‚­‹@”\‚µ‚È‚¢‚æ‚¤‚Å‚·(‚½‚Ô‚ñƒZƒbƒVƒ‡ƒ“0•ª—£‚Ì‰e‹¿)
-
