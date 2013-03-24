@@ -37,3 +37,7 @@ C:\Program Files\Microsoft SDKs\Windows\v7.1\Samples\multimedia\directshow\basec
 ・Write_Default
 
 ただし、EpgTimerNW をビルドすると CtrlCmdCLI と EpgTimer も同時にビルドされる。
+
+
+[注意]
+ビルドオプションに /arch:SSE2 を指定しているため、SSE2非搭載環境で利用する場合は変更する必要あり。

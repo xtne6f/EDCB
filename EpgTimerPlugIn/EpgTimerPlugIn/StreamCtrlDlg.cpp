@@ -15,6 +15,8 @@ CStreamCtrlDlg::CStreamCtrlDlg(void)
 	this->iniTCP = FALSE;
 	this->iniUDP = FALSE;
 	this->timeShiftMode = FALSE;
+	this->callbackFunc = NULL;
+	this->callbackParam = NULL;
 }
 
 CStreamCtrlDlg::~CStreamCtrlDlg(void)
@@ -31,6 +33,12 @@ void CStreamCtrlDlg::SetCtrlCmd(CSendCtrlCmd* ctrlCmd, DWORD ctrlID, BOOL chkUdp
 	if( this->hwnd != NULL ){
 		PostMessage(this->hwnd, WM_RESET_GUI, play, 0);
 	}
+}
+
+void CStreamCtrlDlg::SetMessageCallback(MessageCallbackFunc func, void* param)
+{
+	this->callbackFunc = func;
+	this->callbackParam = param;
 }
 
 DWORD CStreamCtrlDlg::CreateStreamCtrlDialog(HINSTANCE hInstance, HWND parentHWND)
@@ -125,7 +133,7 @@ LRESULT CALLBACK CStreamCtrlDlg::DlgProc(HWND hDlgWnd, UINT msg, WPARAM wp, LPAR
 						SendMessage(GetDlgItem(sys->hwnd, IDC_CHECK_TCP), BM_SETCHECK, BST_UNCHECKED, 0);
 						sys->SetNWModeSend();
 						ShowWindow(hDlgWnd, SW_HIDE);
-						PostMessage(sys->parentHwnd, WM_PLAY_CLOSE, 0, 0);
+						PostMessage(hDlgWnd, WM_PLAY_CLOSE, 0, 0);
 						break;
 					default:
 						break;
@@ -273,6 +281,9 @@ LRESULT CALLBACK CStreamCtrlDlg::DlgProc(HWND hDlgWnd, UINT msg, WPARAM wp, LPAR
 			}
 			break;
 		default:
+			if( (msg == WM_CHG_PORT || msg == WM_PLAY_CLOSE || msg >= WM_CUSTOM) && sys->callbackFunc != NULL ){
+				return sys->callbackFunc(hDlgWnd, msg, wp, lp, sys->callbackParam);
+			}
 			return FALSE;
 	}
 
@@ -307,7 +318,7 @@ void CStreamCtrlDlg::SetNWModeSend()
 	if( nwPlayInfo.tcp == 1 ){
 		tcpPort = nwPlayInfo.tcpPort;
 	}
-	PostMessage(this->parentHwnd, WM_CHG_PORT, udpPort, tcpPort);
+	PostMessage(this->hwnd, WM_CHG_PORT, udpPort, tcpPort);
 }
 
 void CStreamCtrlDlg::EnumIP()

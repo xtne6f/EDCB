@@ -4,17 +4,22 @@
 #include "../../Common/StringUtil.h"
 
 
-#define WM_RESET_GUI (WM_USER+0x1001)
-#define WM_CHG_PORT (WM_USER+0x1101)
-#define WM_PLAY_CLOSE (WM_USER+0x1102)
-
 class CStreamCtrlDlg
 {
 public:
+	enum {
+		WM_RESET_GUI = WM_APP,
+		WM_CHG_PORT,
+		WM_PLAY_CLOSE,
+		WM_CUSTOM = WM_APP + 0x100
+	};
+	typedef LRESULT (CALLBACK *MessageCallbackFunc)(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp, void* param);
+
 	CStreamCtrlDlg(void);
 	~CStreamCtrlDlg(void);
 
 	void SetCtrlCmd(CSendCtrlCmd* ctrlCmd, DWORD ctrlID, BOOL chkUdp, BOOL chkTcp, BOOL play, BOOL timeShiftMode);
+	void SetMessageCallback(MessageCallbackFunc func, void* param = NULL);
 	DWORD CreateStreamCtrlDialog(HINSTANCE hInstance, HWND parentHWND);
 	void CloseStreamCtrlDialog();
 
@@ -40,6 +45,8 @@ protected:
 	BOOL iniTCP;
 	BOOL iniUDP;
 	BOOL timeShiftMode;
+	MessageCallbackFunc callbackFunc;
+	void* callbackParam;
 
 	NWPLAY_PLAY_INFO nwPlayInfo;
 };
