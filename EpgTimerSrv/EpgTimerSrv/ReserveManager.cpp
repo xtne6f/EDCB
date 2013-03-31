@@ -366,6 +366,14 @@ void CReserveManager::ReloadSetting()
 		wstring selectKey;
 		Format(selectKey, L"%dSelect", i);
 		if( GetPrivateProfileInt(L"EPG_CAP", selectKey.c_str(), 0, iniAppPath.c_str()) == 1 ){
+
+			wstring basicKey;
+			Format(basicKey, L"%dBasic", i);
+			bool swBasicOnly = false;
+			if( GetPrivateProfileInt(L"EPG_CAP", basicKey.c_str(), 0, iniAppPath.c_str()) == 1 ){
+				swBasicOnly = true;
+			}
+
 			wstring timeKey;
 			Format(timeKey, L"%d", i);
 			WCHAR buff[256] = L"";
@@ -377,7 +385,10 @@ void CReserveManager::ReloadSetting()
 				Separate(time, L":", left, right);
 
 				DWORD second = _wtoi(left.c_str()) * 60 * 60 + _wtoi(right.c_str()) * 60;
-				this->epgCapTimeList.push_back(second);
+				EPGTIME_INFO _ei;
+				_ei.time = second;
+				_ei.swBasicOnly = swBasicOnly;
+				this->epgCapTimeList.push_back(_ei);
 			}
 		}
 	}
@@ -3158,7 +3169,8 @@ UINT WINAPI CReserveManager::BankCheckThread(LPVOID param)
 		//EPG取得時間の確認
 		if( sys->Lock(L"BankCheckThread6") == TRUE){
 			LONGLONG capTime = 0;
-			if( sys->GetNextEpgcapTime(&capTime, -1) == TRUE ){
+			BOOL swBasicOnly = false;
+			if( sys->GetNextEpgcapTime(&capTime, -1,&swBasicOnly) == TRUE ){
 				if( sys->useSrvCoop == TRUE &&sys->useEpgSrvCoop == TRUE){
 					if( (GetNowI64Time()+10*60*I64_1SEC) > capTime ){
 						//10分前になったらサーバー連携EPGチェックをやめる
@@ -3202,6 +3214,25 @@ UINT WINAPI CReserveManager::BankCheckThread(LPVOID param)
 				}
 				if( GetNowI64Time() > capTime && sys->_IsEpgCap() == FALSE){
 					//開始時間過ぎたので開始
+					wstring iniCommonPath = L"";
+					GetCommonIniPath(iniCommonPath);
+					if(swBasicOnly){
+						// 基本情報のみ取得に変更
+						sys->BSOnly = true;
+						sys->CS1Only = true;
+						sys->CS2Only = true;
+						WritePrivateProfileString(L"SET",L"BSBasicOnly",L"1",iniCommonPath.c_str());
+						WritePrivateProfileString(L"SET",L"CS1BasicOnly",L"1",iniCommonPath.c_str());
+						WritePrivateProfileString(L"SET",L"CS2BasicOnly",L"1",iniCommonPath.c_str());
+					} else {
+						// 基本情報以外も取得に変更
+						sys->BSOnly = false;
+						sys->CS1Only = false;
+						sys->CS2Only = false;
+						WritePrivateProfileString(L"SET",L"BSBasicOnly",L"0",iniCommonPath.c_str());
+						WritePrivateProfileString(L"SET",L"CS1BasicOnly",L"0",iniCommonPath.c_str());
+						WritePrivateProfileString(L"SET",L"CS2BasicOnly",L"0",iniCommonPath.c_str());
+					}
 					sys->_StartEpgCap();
 				}
 			}else{
@@ -4684,8 +4715,9 @@ BOOL CReserveManager::_IsSuspendOK(BOOL rebootFlag)
 		}
 	}
 
+	BOOL swBasicOnly;	//	dummy
 	LONGLONG epgcapTime = 0;
-	if( GetNextEpgcapTime(&epgcapTime, 0) == TRUE ){
+	if( GetNextEpgcapTime(&epgcapTime, 0,&swBasicOnly) == TRUE ){
 		if( epgcapTime < chkWakeTime ){
 			//EPG取得
 			OutputDebugString(L"_IsSuspendOK EpgCapTime");
@@ -4815,8 +4847,9 @@ BOOL CReserveManager::GetSleepReturnTime(
 		}
 	}
 
+	BOOL swBasicOnly;	//	dummy
 	LONGLONG epgcapTime = 0;
-	GetNextEpgcapTime(&epgcapTime, 0);
+	GetNextEpgcapTime(&epgcapTime, 0,&swBasicOnly);
 
 
 	if( nextRec == 0 && epgcapTime == 0 ){
@@ -4835,7 +4868,7 @@ BOOL CReserveManager::GetSleepReturnTime(
 	return TRUE;
 }
 
-BOOL CReserveManager::GetNextEpgcapTime(LONGLONG* capTime, LONGLONG chkMargineMin)
+BOOL CReserveManager::GetNextEpgcapTime(LONGLONG* capTime, LONGLONG chkMargineMin, BOOL* swBasicOnly)
 {
 	if( capTime == NULL ){
 		return FALSE;
@@ -4852,13 +4885,13 @@ BOOL CReserveManager::GetNextEpgcapTime(LONGLONG* capTime, LONGLONG chkMargineMi
 	srcTime.wHour = 0;
 	srcTime.wMilliseconds = 0;
 
-	map<LONGLONG,LONGLONG> timeList;
+	map<LONGLONG,BOOL> timeList;
 
 	for( size_t i=0; i<this->epgCapTimeList.size(); i++ ){
-		LONGLONG chkTime = GetSumTime(srcTime, this->epgCapTimeList[i]);
-		timeList.insert(pair<LONGLONG,LONGLONG>(chkTime,chkTime));
-		chkTime = GetSumTime(srcTime, this->epgCapTimeList[i] + 24*60*60);
-		timeList.insert(pair<LONGLONG,LONGLONG>(chkTime,chkTime));
+		LONGLONG chkTime = GetSumTime(srcTime, this->epgCapTimeList[i].time);
+		timeList.insert(pair<LONGLONG,BOOL>(chkTime,this->epgCapTimeList[i].swBasicOnly));
+		chkTime = GetSumTime(srcTime, this->epgCapTimeList[i].time + 24*60*60);
+		timeList.insert(pair<LONGLONG,BOOL>(chkTime,this->epgCapTimeList[i].swBasicOnly));
 	}
 
 	if( timeList.size() == 0 ){
@@ -4867,10 +4900,11 @@ BOOL CReserveManager::GetNextEpgcapTime(LONGLONG* capTime, LONGLONG chkMargineMi
 
 	//そのまま判定したら直前で次の日になってしまうのでマージン分現在の時刻を調整
 	LONGLONG nowTime = GetNowI64Time() + (chkMargineMin*60*I64_1SEC);
-	map<LONGLONG,LONGLONG>::iterator itr;
+	map<LONGLONG,BOOL>::iterator itr;
 	for( itr = timeList.begin(); itr != timeList.end(); itr++){
 		if( nowTime < itr->first ){
 			*capTime = itr->first;
+			*swBasicOnly = itr->second;
 			break;
 		}
 	}
@@ -4965,7 +4999,7 @@ BOOL CReserveManager::StartEpgCap()
 {
 	if( Lock(L"StartEpgCap") == FALSE ) return FALSE;
 
-	BOOL ret = _StartEpgCap();
+	BOOL ret = _StartEpgCap();		//	基本情報以外も取得する
 
 	UnLock();
 	return ret;
@@ -5032,17 +5066,17 @@ BOOL CReserveManager::_StartEpgCap()
 	itrCtrl = epgCapCtrl.begin();
 	map<DWORD, CH_DATA5>::iterator itrAdd;
 	for( itrAdd = serviceList.begin(); itrAdd != serviceList.end(); itrAdd++ ){
-		if( itrAdd->second.originalNetworkID == 4 && this->BSOnly == TRUE ){
+		if( itrAdd->second.originalNetworkID == 4 && this->BSOnly == TRUE){
 			if( inBS == TRUE ){
 				continue;
 			}
 		}
-		if( itrAdd->second.originalNetworkID == 6 && this->CS1Only == TRUE ){
+		if( itrAdd->second.originalNetworkID == 6 && this->CS1Only == TRUE){
 			if( inCS1 == TRUE ){
 				continue;
 			}
 		}
-		if( itrAdd->second.originalNetworkID == 7 && this->CS2Only == TRUE ){
+		if( itrAdd->second.originalNetworkID == 7 && this->CS2Only == TRUE){
 			if( inCS2 == TRUE ){
 				continue;
 			}

@@ -134,6 +134,8 @@ namespace EpgTimer.Setting
                 comboBox_MM.DataContext = CommonManager.Instance.MinDictionary.Values;
                 comboBox_MM.SelectedIndex = 0;
 
+                chkEPGBasicOnly.IsChecked = false;
+
                 serviceList = new List<ServiceItem2>();
                 try
                 {
@@ -189,6 +191,7 @@ namespace EpgTimer.Setting
                 {
                     EpgCaptime item = new EpgCaptime();
                     item.IsSelected = true;
+                    item.IsBasicOnly = false;
                     item.Time = "23:00";
                     timeList.Add(item);
                 }
@@ -207,6 +210,14 @@ namespace EpgTimer.Setting
                         else
                         {
                             item.IsSelected = false;
+                        }
+                        if (IniFileHandler.GetPrivateProfileInt("EPG_CAP", i.ToString() + "Basic", 0, SettingPath.TimerSrvIniPath) == 1)
+                        {
+                            item.IsBasicOnly = true;
+                        }
+                        else
+                        {
+                            item.IsBasicOnly = false;
                         }
                         timeList.Add(item);
                     }
@@ -338,6 +349,14 @@ namespace EpgTimer.Setting
                     else
                     {
                         IniFileHandler.WritePrivateProfileString("EPG_CAP", i.ToString() + "Select", "0", SettingPath.TimerSrvIniPath);
+                    }
+                    if (item.IsBasicOnly == true)
+                    {
+                        IniFileHandler.WritePrivateProfileString("EPG_CAP", i.ToString() + "Basic", "1", SettingPath.TimerSrvIniPath);
+                    }
+                    else
+                    {
+                        IniFileHandler.WritePrivateProfileString("EPG_CAP", i.ToString() + "Basic", "0", SettingPath.TimerSrvIniPath);
                     }
                 }
 
@@ -664,6 +683,14 @@ namespace EpgTimer.Setting
                     EpgCaptime item = new EpgCaptime();
                     item.IsSelected = true;
                     item.Time = time;
+                    if (chkEPGBasicOnly.IsChecked==true)
+                    {
+                        item.IsBasicOnly = true;
+                    }
+                    else
+                    {
+                        item.IsBasicOnly = false;
+                    }
                     timeList.Add(item);
                 }
             }

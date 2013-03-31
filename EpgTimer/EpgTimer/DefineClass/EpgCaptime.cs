@@ -10,6 +10,7 @@ namespace EpgTimer
     {
         public event PropertyChangedEventHandler PropertyChanged;
         private bool selected = false;
+        private bool basiconly = false;
 
         private void NotifyPropertyChanged(String info)
         {
@@ -29,6 +30,34 @@ namespace EpgTimer
             {
                 this.selected = value;
                 NotifyPropertyChanged("IsSelected");
+            }
+        }
+
+        public string txtBasicOnly
+        {
+            get
+            {
+                if (this.basiconly)
+                {
+                    return "基本のみ";
+                }
+                else
+                {
+                    return "";
+                }
+            }
+        }
+
+        public bool IsBasicOnly
+        {
+            get
+            {
+                return this.basiconly;
+            }
+            set
+            {
+                this.basiconly = value;
+                NotifyPropertyChanged("IsBasicOnly");
             }
         }
 

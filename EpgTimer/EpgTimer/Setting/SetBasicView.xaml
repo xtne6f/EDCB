@@ -84,7 +84,7 @@
                     <Button Content="全クリア" Height="23" HorizontalAlignment="Left" Margin="234,104,0,0" Name="button_allClear" VerticalAlignment="Top" Width="169" Click="button_allClear_Click" Style="{StaticResource ButtonStyle1}" />
                     <Label Content="EPG取得開始時間 (有効にするものにチェック)" Height="28" HorizontalAlignment="Left" Margin="12,235,0,0" Name="label24" VerticalAlignment="Top" />
 
-                    <ListView Height="86" HorizontalAlignment="Left" Margin="32,270,0,0" Name="ListView_time" VerticalAlignment="Top" Width="176" ItemsSource="{Binding}">
+                    <ListView Height="86" HorizontalAlignment="Left" Margin="32,270,0,0" Name="ListView_time" VerticalAlignment="Top" Width="230" ItemsSource="{Binding}">
                         <ListView.View>
                             <GridView x:Name="gridView_time">
                                 <GridViewColumn>
@@ -99,20 +99,26 @@
                                         <GridViewColumnHeader Content="開始時間" HorizontalContentAlignment="Left" Width="100" />
                                     </GridViewColumn.Header>
                                 </GridViewColumn>
+                                <GridViewColumn DisplayMemberBinding="{Binding Path=txtBasicOnly}" >
+                                    <GridViewColumn.Header>
+                                        <GridViewColumnHeader Content="取得種別" HorizontalContentAlignment="Left" Width="100" />
+                                    </GridViewColumn.Header>
+                                </GridViewColumn>
                             </GridView>
                         </ListView.View>
                     </ListView>
-                    <Button Content="追加" Height="23" HorizontalAlignment="Left" Margin="214,270,0,0" Name="button_addTime" VerticalAlignment="Top" Width="75" Click="button_addTime_Click" Style="{StaticResource ButtonStyle1}" />
-                    <Button Content="削除" Height="23" HorizontalAlignment="Left" Margin="214,299,0,0" Name="button_delTime" VerticalAlignment="Top" Width="75" Click="button_delTime_Click" Style="{StaticResource ButtonStyle1}" />
-                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="304,269,0,0" Name="comboBox_HH" VerticalAlignment="Top" Width="47" ItemsSource="{Binding}" />
-                    <Label Content="：" Height="28" HorizontalAlignment="Left" Margin="357,268,0,0" Name="label25" VerticalAlignment="Top" />
-                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="385,269,0,0" Name="comboBox_MM" VerticalAlignment="Top" Width="47" ItemsSource="{Binding}" />
+                    <Button Content="追加" Height="23" HorizontalAlignment="Left" Margin="286,274,0,0" Name="button_addTime" VerticalAlignment="Top" Width="75" Click="button_addTime_Click" Style="{StaticResource ButtonStyle1}" />
+                    <Button Content="削除" Height="23" HorizontalAlignment="Left" Margin="286,303,0,0" Name="button_delTime" VerticalAlignment="Top" Width="75" Click="button_delTime_Click" Style="{StaticResource ButtonStyle1}" />
+                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="376,273,0,0" Name="comboBox_HH" VerticalAlignment="Top" Width="47" ItemsSource="{Binding}" />
+                    <Label Content="：" Height="28" HorizontalAlignment="Left" Margin="429,272,0,0" Name="label25" VerticalAlignment="Top" />
+                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="457,273,0,0" Name="comboBox_MM" VerticalAlignment="Top" Width="47" ItemsSource="{Binding}" />
                     <Label Content="実行抑制条件" Height="28" HorizontalAlignment="Left" Margin="12,360,0,0" Name="label26" VerticalAlignment="Top" />
                     <TextBox Height="24" HorizontalAlignment="Left" Margin="159,362,0,0" Name="textBox_ngCapMin" VerticalAlignment="Top" Width="49" />
                     <Label Content="分以内に予約がある場合、実行しない　(0で録画時も実行)" Height="28" HorizontalAlignment="Left" Margin="226,360,0,0" Name="label27" VerticalAlignment="Top" />
                     <Label Content="使用チューナー条件" Height="28" HorizontalAlignment="Left" Margin="12,394,0,0" Name="label28" VerticalAlignment="Top" />
                     <TextBox Height="24" HorizontalAlignment="Left" Margin="159,396,0,0" Name="textBox_ngTunerMin" VerticalAlignment="Top" Width="49" />
                     <Label Content="分以内に予約がある場合、使用しない" Height="28" HorizontalAlignment="Left" Margin="226,394,0,0" Name="label29" VerticalAlignment="Top" />
+                    <CheckBox Content="基本情報のみ" Height="16" HorizontalAlignment="Left" Margin="528,277,0,0" Name="chkEPGBasicOnly" VerticalAlignment="Top" />
                 </Grid>
             </TabItem>
         </TabControl>

@@ -290,7 +290,11 @@ protected:
 	BOOL CS2Only;
 	LONGLONG ngCapMin;
 	LONGLONG ngCapTunerMin;
-	vector<DWORD> epgCapTimeList;
+	typedef struct _EPGTIME_INFO{
+		DWORD time;
+		BOOL swBasicOnly;
+	}EPGTIME_INFO;
+	vector<EPGTIME_INFO> epgCapTimeList;
 	int wakeTime;
 	BYTE defSuspendMode;
 	BYTE defRebootFlag;
@@ -395,7 +399,7 @@ protected:
 	BOOL IsFindNoSuspendExe();
 	BOOL IsFindShareTSFile();
 
-	BOOL GetNextEpgcapTime(LONGLONG* capTime, LONGLONG chkMargineMin);
+	BOOL GetNextEpgcapTime(LONGLONG* capTime, LONGLONG chkMargineMin,BOOL* swBasicOnly);
 
 	BOOL _StartEpgCap();
 	BOOL _IsEpgCap();
