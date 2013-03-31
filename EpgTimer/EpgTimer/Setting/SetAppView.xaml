@@ -133,6 +133,8 @@
                         </Grid>
                     </GroupBox>
                     <CheckBox Content="検索結果の番組内容を省略する" Height="16" HorizontalAlignment="Left" Margin="6,225,0,0" Name="checkBox_fixSearchResult" VerticalAlignment="Top" />
+                    <Label Content="Baloonを閉じる時間" Height="28" HorizontalAlignment="Left" Margin="409,75,0,0" Name="label19" VerticalAlignment="Top" />
+                    <TextBox Height="24" HorizontalAlignment="Left" Margin="528,78,0,0" Name="textBox_baloonclose" VerticalAlignment="Top" Width="62" />
                 </Grid>
             </TabItem>
             <TabItem Header="カスタムボタン" Name="tabItem5">
