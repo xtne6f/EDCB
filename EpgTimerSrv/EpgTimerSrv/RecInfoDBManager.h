@@ -5,6 +5,8 @@
 #include "../../Common/StringUtil.h"
 #include "../../Common/PathUtil.h"
 
+#import "RegExp.tlb" no_namespace named_guids
+
 class CRecInfoDBManager
 {
 public:
@@ -17,6 +19,7 @@ public:
 	void AddInfo(EPGDB_EVENT_INFO* info);
 
 	BOOL IsFindTitleInfo(EPGDB_EVENT_INFO* info, WORD chkDay);
+	void ReplaceRegExp(wstring &strBuff, wstring strReg, wstring strNew);
 protected:
 	typedef struct _RECINFO_LIST_ITEM{
 		vector<EPGDB_EVENT_INFO*> infoList;
@@ -26,6 +29,8 @@ protected:
 
 	vector<EPGDB_EVENT_INFO*> recInfoList;
 	map<wstring, RECINFO_LIST_ITEM*> titleMap;
+
+	IRegExpPtr regExp;
 protected:
 	//PublicAPIîrëºêßå‰óp
 	BOOL Lock(LPCWSTR log = NULL, DWORD timeOut = 60*1000);
