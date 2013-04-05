@@ -566,6 +566,10 @@ namespace EpgTimer
             {
                 EpgCapCmd();
             }
+            else if (String.Compare("再接続", tag) == 0)
+            {
+                ConnectCmd(true);
+            }
         }
 
         private void ResetTaskMenu()
