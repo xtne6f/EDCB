@@ -119,7 +119,6 @@
                     <TextBox Height="24" HorizontalAlignment="Left" Margin="159,396,0,0" Name="textBox_ngTunerMin" VerticalAlignment="Top" Width="49" />
                     <Label Content="分以内に予約がある場合、使用しない" Height="28" HorizontalAlignment="Left" Margin="226,394,0,0" Name="label29" VerticalAlignment="Top" />
                     <CheckBox Content="基本情報のみ" Height="16" HorizontalAlignment="Left" Margin="528,277,0,0" Name="chkEPGBasicOnly" VerticalAlignment="Top" />
-                    <CheckBox Content="タイマー取得時の取得種別を有効にする" Height="16" HorizontalAlignment="Left" Margin="286,241,0,0" Name="chkEnableEPGTimerType" VerticalAlignment="Top" />
                 </Grid>
             </TabItem>
         </TabControl>

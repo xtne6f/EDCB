@@ -135,7 +135,6 @@ namespace EpgTimer.Setting
                 comboBox_MM.SelectedIndex = 0;
 
                 chkEPGBasicOnly.IsChecked = false;
-                chkEnableEPGTimerType.IsChecked = false;
 
                 serviceList = new List<ServiceItem2>();
                 try
@@ -183,14 +182,6 @@ namespace EpgTimer.Setting
                 else
                 {
                     checkBox_cs2.IsChecked = false;
-                }
-                if (IniFileHandler.GetPrivateProfileInt("SET", "EnableEPGTimerType", 0, SettingPath.CommonIniPath) == 1)
-                {
-                    chkEnableEPGTimerType.IsChecked = true;
-                }
-                else
-                {
-                    chkEnableEPGTimerType.IsChecked = false;
                 }
 
                 buff.Clear();
@@ -325,14 +316,6 @@ namespace EpgTimer.Setting
                 else
                 {
                     IniFileHandler.WritePrivateProfileString("SET", "CS2BasicOnly", "0", SettingPath.CommonIniPath);
-                }
-                if (chkEnableEPGTimerType.IsChecked == true)
-                {
-                    IniFileHandler.WritePrivateProfileString("SET", "EnableEPGTimerType", "1", SettingPath.CommonIniPath);
-                }
-                else
-                {
-                    IniFileHandler.WritePrivateProfileString("SET", "EnableEPGTimerType", "0", SettingPath.CommonIniPath);
                 }
 
                 foreach (ServiceItem2 info in serviceList)
