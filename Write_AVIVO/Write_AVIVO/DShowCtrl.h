@@ -1,6 +1,5 @@
 #pragma once
 
-#include <atlbase.h>
 #include "TSSrcFilter.h"
 
 #define SAFE_RELEASE(p) { if(p) { (p)->Release(); (p)=NULL; } }
@@ -103,3 +102,23 @@ protected:
 		);
 };
 
+#ifndef __ATLBASE_H__
+template <class T> class CComPtr
+{
+public:
+	CComPtr() : p(NULL) {}
+	CComPtr(T *lp) : p(lp) { if (p) p->AddRef(); }
+	CComPtr(const CComPtr<T> &other) { p = other.p; if (p) p->AddRef(); }
+	~CComPtr() { Release(); }
+	T *operator=(T *lp) { Attach(lp); if (p) p->AddRef(); return p; }
+	T *operator=(const CComPtr<T> &other) { return *this = other.p; }
+	bool operator==(T *lp) const { return p == lp; }
+	operator T*() const { return p; }
+	T **operator&() { _ASSERT(!p); return &p; }
+	T *operator->() const { _ASSERT(p); return p; }
+	void Release() { if (p) p->Release(); p = NULL; }
+	void Attach(T *lp) { Release(); p = lp; }
+	HRESULT CopyTo(T **lpp) { _ASSERT(lpp); if (!lpp) return E_POINTER; *lpp = p; if (p) p->AddRef(); return S_OK; }
+	T *p;
+};
+#endif
