@@ -1,4 +1,6 @@
 #include "StdAfx.h"
+#define COLOR_DEF_H_IMPLEMENT_TABLE
+#define ARIB8CHAR_DECODE_H_IMPLEMENT_TABLE
 #include "ARIB8CharDecode.h"
 
 CARIB8CharDecode::CARIB8CharDecode(void)

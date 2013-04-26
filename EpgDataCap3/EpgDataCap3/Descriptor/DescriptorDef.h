@@ -222,6 +222,8 @@ typedef struct _DESCRIPTOR_DATA{
 	};
 }DESCRIPTOR_DATA;
 
+#ifdef DESCRIPTOR_DEF_H_IMPLEMENT_TABLE
+
 //////////////////////////////////////////////////////
 //限定受信方式識別の割当状況
 typedef struct _CA_SYSTEM_TABLE{
@@ -499,6 +501,8 @@ static SERVICE_TYPE_TABLE serviceTypeTable[]={
 	{ 0xC0, L"データサービス" },
 	{ 0xC1, L"TLVを用いた蓄積型サービス" }
 };
+
+#endif //DESCRIPTOR_DEF_H_IMPLEMENT_TABLE
 
 //->サービス形式種別
 #endif
