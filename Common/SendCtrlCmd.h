@@ -4,6 +4,9 @@
 #include "StructDef.h"
 
 #include "CtrlCmdDef.h"
+#include "ErrDef.h"
+#include "CtrlCmdUtil.h"
+#include "CtrlCmdUtil2.h"
 
 class CSendCtrlCmd
 {
@@ -837,5 +840,123 @@ protected:
 
 	DWORD SendPipe(LPCWSTR pipeName, LPCWSTR eventName, DWORD timeOut, CMD_STREAM* send, CMD_STREAM* res);
 	DWORD SendTCP(wstring ip, DWORD port, DWORD timeOut, CMD_STREAM* sendCmd, CMD_STREAM* resCmd);
+
+	DWORD SendCmdStream(CMD_STREAM* send, CMD_STREAM* res);
+	DWORD SendCmdWithoutData(DWORD param, CMD_STREAM* res = NULL);
+	DWORD SendCmdWithoutData2(DWORD param, CMD_STREAM* res = NULL);
+	template<class T> DWORD SendCmdData(DWORD param, const T& val, CMD_STREAM* res = NULL);
+	template<class T> DWORD SendCmdData2(DWORD param, const T& val, CMD_STREAM* res = NULL);
+	template<class T> DWORD ReceiveCmdData(DWORD param, T* resVal);
+	template<class T> DWORD ReceiveCmdData2(DWORD param, T* resVal);
+	template<class T, class U> DWORD SendAndReceiveCmdData(DWORD param, const T& val, U* resVal);
+	template<class T, class U> DWORD SendAndReceiveCmdData2(DWORD param, const T& val, U* resVal);
 };
 
+#if 1 //インライン/テンプレート定義
+
+inline DWORD CSendCtrlCmd::SendCmdWithoutData(DWORD param, CMD_STREAM* res)
+{
+	CMD_STREAM send;
+	send.param = param;
+	return SendCmdStream(&send, res);
+}
+
+inline DWORD CSendCtrlCmd::SendCmdWithoutData2(DWORD param, CMD_STREAM* res)
+{
+	return SendCmdData(param, (WORD)CMD_VER, res);
+}
+
+template<class T>
+DWORD CSendCtrlCmd::SendCmdData(DWORD param, const T& val, CMD_STREAM* res)
+{
+	CMD_STREAM send;
+	send.param = param;
+	send.dataSize = GetVALUESize(val);
+	send.data = new BYTE[send.dataSize];
+
+	if( WriteVALUE(val, send.data, send.dataSize, NULL) == FALSE ){
+		return CMD_ERR;
+	}
+	return SendCmdStream(&send, res);
+}
+
+template<class T>
+DWORD CSendCtrlCmd::SendCmdData2(DWORD param, const T& val, CMD_STREAM* res)
+{
+	WORD ver = CMD_VER;
+	CMD_STREAM send;
+	send.param = param;
+	send.dataSize = GetVALUESize(ver) + GetVALUESize2(ver, val);
+	send.data = new BYTE[send.dataSize];
+
+	DWORD writeSize = 0;
+	if( WriteVALUE(ver, send.data, send.dataSize, &writeSize) == FALSE ||
+		WriteVALUE2(ver, val, send.data + writeSize, send.dataSize - writeSize, NULL) == FALSE ){
+		return CMD_ERR;
+	}
+	return SendCmdStream(&send, res);
+}
+
+template<class T>
+DWORD CSendCtrlCmd::ReceiveCmdData(DWORD param, T* resVal)
+{
+	CMD_STREAM res;
+	DWORD ret = SendCmdWithoutData(param, &res);
+
+	if( ret == CMD_SUCCESS ){
+		if( ReadVALUE(resVal, res.data, res.dataSize, NULL) == FALSE ){
+			ret = CMD_ERR;
+		}
+	}
+	return ret;
+}
+
+template<class T>
+DWORD CSendCtrlCmd::ReceiveCmdData2(DWORD param, T* resVal)
+{
+	CMD_STREAM res;
+	DWORD ret = SendCmdWithoutData2(param, &res);
+
+	if( ret == CMD_SUCCESS ){
+		WORD ver = 0;
+		DWORD readSize = 0;
+		if( ReadVALUE(&ver, res.data, res.dataSize, &readSize) == FALSE ||
+			ReadVALUE2(ver, resVal, res.data + readSize, res.dataSize - readSize, NULL) == FALSE ){
+			ret = CMD_ERR;
+		}
+	}
+	return ret;
+}
+
+template<class T, class U>
+DWORD CSendCtrlCmd::SendAndReceiveCmdData(DWORD param, const T& val, U* resVal)
+{
+	CMD_STREAM res;
+	DWORD ret = SendCmdData(param, val, &res);
+
+	if( ret == CMD_SUCCESS ){
+		if( ReadVALUE(resVal, res.data, res.dataSize, NULL) == FALSE ){
+			ret = CMD_ERR;
+		}
+	}
+	return ret;
+}
+
+template<class T, class U>
+DWORD CSendCtrlCmd::SendAndReceiveCmdData2(DWORD param, const T& val, U* resVal)
+{
+	CMD_STREAM res;
+	DWORD ret = SendCmdData2(param, val, &res);
+
+	if( ret == CMD_SUCCESS ){
+		WORD ver = 0;
+		DWORD readSize = 0;
+		if( ReadVALUE(&ver, res.data, res.dataSize, &readSize) == FALSE ||
+			ReadVALUE2(ver, resVal, res.data + readSize, res.dataSize - readSize, NULL) == FALSE ){
+			ret = CMD_ERR;
+		}
+	}
+	return ret;
+}
+
+#endif

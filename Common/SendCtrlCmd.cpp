@@ -7,10 +7,6 @@
 #pragma comment(lib, "Ws2_32.lib")
 */
 #include "StringUtil.h"
-#include "CtrlCmdUtil.h"
-#include "CtrlCmdUtil2.h"
-#include "CtrlCmdDef.h"
-#include "ErrDef.h"
 
 #include <Objbase.h>
 #pragma comment(lib, "Ole32.lib")
@@ -295,343 +291,67 @@ DWORD CSendCtrlCmd::SendTCP(wstring ip, DWORD port, DWORD timeOut, CMD_STREAM* s
 
 DWORD CSendCtrlCmd::SendAddloadReserve()
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_EPG_SRV_ADDLOAD_RESERVE;
-	send.dataSize = 0;
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-	UnLock();
-	return ret;
+	return SendCmdWithoutData(CMD2_EPG_SRV_ADDLOAD_RESERVE);
 }
 
 DWORD CSendCtrlCmd::SendReloadEpg()
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_EPG_SRV_RELOAD_EPG;
-	send.dataSize = 0;
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-
-	UnLock();
-	return ret;
+	return SendCmdWithoutData(CMD2_EPG_SRV_RELOAD_EPG);
 }
 
 DWORD CSendCtrlCmd::SendReloadSetting()
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_EPG_SRV_RELOAD_SETTING;
-	send.dataSize = 0;
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-
-	UnLock();
-	return ret;
+	return SendCmdWithoutData(CMD2_EPG_SRV_RELOAD_SETTING);
 }
 
 DWORD CSendCtrlCmd::SendClose()
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_EPG_SRV_CLOSE;
-	send.dataSize = 0;
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-
-	UnLock();
-	return ret;
+	return SendCmdWithoutData(CMD2_EPG_SRV_CLOSE);
 }
 
 DWORD CSendCtrlCmd::SendRegistGUI(DWORD processID)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_EPG_SRV_REGIST_GUI;
-	send.dataSize = 0;
-
-	send.dataSize = GetVALUESize(processID);
-	send.data = new BYTE[send.dataSize];
-	if( WriteVALUE(processID, send.data, send.dataSize, NULL) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-
-	UnLock();
-	return ret;
+	return SendCmdData(CMD2_EPG_SRV_REGIST_GUI, processID);
 }
 
 DWORD CSendCtrlCmd::SendUnRegistGUI(DWORD processID)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_EPG_SRV_UNREGIST_GUI;
-	send.dataSize = 0;
-
-	send.dataSize = GetVALUESize(processID);
-	send.data = new BYTE[send.dataSize];
-	if( WriteVALUE(processID, send.data, send.dataSize, NULL) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-
-	UnLock();
-	return ret;
+	return SendCmdData(CMD2_EPG_SRV_UNREGIST_GUI, processID);
 }
 
 DWORD CSendCtrlCmd::SendRegistTCP(DWORD port)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_EPG_SRV_REGIST_GUI_TCP;
-	send.dataSize = 0;
-
-	send.dataSize = GetVALUESize(port);
-	send.data = new BYTE[send.dataSize];
-	if( WriteVALUE(port, send.data, send.dataSize, NULL) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-	UnLock();
-	return ret;
+	return SendCmdData(CMD2_EPG_SRV_REGIST_GUI_TCP, port);
 }
 
 DWORD CSendCtrlCmd::SendUnRegistTCP(DWORD port)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_EPG_SRV_UNREGIST_GUI_TCP;
-	send.dataSize = 0;
-
-	send.dataSize = GetVALUESize(port);
-	send.data = new BYTE[send.dataSize];
-	if( WriteVALUE(port, send.data, send.dataSize, NULL) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-	UnLock();
-	return ret;
+	return SendCmdData(CMD2_EPG_SRV_UNREGIST_GUI_TCP, port);
 }
 
 DWORD CSendCtrlCmd::SendEnumReserve(vector<RESERVE_DATA>* val)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_EPG_SRV_ENUM_RESERVE;
-	send.dataSize = 0;
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-
-	if( ret == CMD_SUCCESS ){
-		if( ReadVALUE(val, res.data, res.dataSize, NULL) == FALSE ){
-			UnLock();
-			return CMD_ERR;
-		}
-	}
-	UnLock();
-	return ret;
+	return ReceiveCmdData(CMD2_EPG_SRV_ENUM_RESERVE, val);
 }
 
 DWORD CSendCtrlCmd::SendGetReserve(DWORD reserveID, RESERVE_DATA* val)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_EPG_SRV_GET_RESERVE;
-	send.dataSize = 0;
-
-	send.dataSize = GetVALUESize(reserveID);
-	send.data = new BYTE[send.dataSize];
-	if( WriteVALUE(reserveID, send.data, send.dataSize, NULL) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-
-	if( ret == CMD_SUCCESS ){
-		if( ReadVALUE(val, res.data, res.dataSize, NULL) == FALSE ){
-			UnLock();
-			return CMD_ERR;
-		}
-	}
-	UnLock();
-	return ret;
+	return SendAndReceiveCmdData(CMD2_EPG_SRV_GET_RESERVE, reserveID, val);
 }
 
 DWORD CSendCtrlCmd::SendAddReserve(vector<RESERVE_DATA>* val)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_EPG_SRV_ADD_RESERVE;
-	send.dataSize = 0;
-
-	send.dataSize = GetVALUESize(val);
-	send.data = new BYTE[send.dataSize];
-	if( WriteVALUE(val, send.data, send.dataSize, NULL) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-
-	UnLock();
-	return ret;
+	return SendCmdData(CMD2_EPG_SRV_ADD_RESERVE, val);
 }
 
 DWORD CSendCtrlCmd::SendDelReserve(vector<DWORD>* val)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_EPG_SRV_DEL_RESERVE;
-	send.dataSize = 0;
-
-	send.dataSize = GetVALUESize(val);
-	send.data = new BYTE[send.dataSize];
-	if( WriteVALUE(val, send.data, send.dataSize, NULL) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-
-	UnLock();
-	return ret;
+	return SendCmdData(CMD2_EPG_SRV_DEL_RESERVE, val);
 }
 
 DWORD CSendCtrlCmd::SendChgReserve(vector<RESERVE_DATA>* val)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_EPG_SRV_CHG_RESERVE;
-	send.dataSize = 0;
-
-	send.dataSize = GetVALUESize(val);
-	send.data = new BYTE[send.dataSize];
-	if( WriteVALUE(val, send.data, send.dataSize, NULL) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-	UnLock();
-	return ret;
+	return SendCmdData(CMD2_EPG_SRV_CHG_RESERVE, val);
 }
 
 //チューナーごとの予約一覧を取得する
@@ -641,31 +361,7 @@ DWORD CSendCtrlCmd::SendChgReserve(vector<RESERVE_DATA>* val)
 // val				[IN]予約一覧
 DWORD CSendCtrlCmd::SendEnumTunerReserve(vector<TUNER_RESERVE_INFO>* val)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_EPG_SRV_ENUM_TUNER_RESERVE;
-	send.dataSize = 0;
-
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-	if( ret == CMD_SUCCESS ){
-		if( ReadVALUE(val, res.data, res.dataSize, NULL) == FALSE ){
-			UnLock();
-			return CMD_ERR;
-		}
-	}
-
-	UnLock();
-	return ret;
+	return ReceiveCmdData(CMD2_EPG_SRV_ENUM_TUNER_RESERVE, val);
 }
 
 //録画済み情報一覧取得
@@ -677,31 +373,7 @@ DWORD CSendCtrlCmd::SendEnumRecInfo(
 	vector<REC_FILE_INFO>* val
 	)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_EPG_SRV_ENUM_RECINFO;
-	send.dataSize = 0;
-
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-	if( ret == CMD_SUCCESS ){
-		if( ReadVALUE(val, res.data, res.dataSize, NULL) == FALSE ){
-			UnLock();
-			return CMD_ERR;
-		}
-	}
-
-	UnLock();
-	return ret;
+	return ReceiveCmdData(CMD2_EPG_SRV_ENUM_RECINFO, val);
 }
 
 //録画済み情報を削除する
@@ -711,31 +383,7 @@ DWORD CSendCtrlCmd::SendEnumRecInfo(
 // val				[IN]削除するID一覧
 DWORD CSendCtrlCmd::SendDelRecInfo(vector<DWORD>* val)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_EPG_SRV_DEL_RECINFO;
-	send.dataSize = 0;
-
-	send.dataSize = GetVALUESize(val);
-	send.data = new BYTE[send.dataSize];
-	if( WriteVALUE(val, send.data, send.dataSize, NULL) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-
-	UnLock();
-	return ret;
+	return SendCmdData(CMD2_EPG_SRV_DEL_RECINFO, val);
 }
 
 //サービス一覧を取得する
@@ -747,31 +395,7 @@ DWORD CSendCtrlCmd::SendEnumService(
 	vector<EPGDB_SERVICE_INFO>* val
 	)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_EPG_SRV_ENUM_SERVICE;
-	send.dataSize = 0;
-
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-	if( ret == CMD_SUCCESS ){
-		if( ReadVALUE(val, res.data, res.dataSize, NULL) == FALSE ){
-			UnLock();
-			return CMD_ERR;
-		}
-	}
-
-	UnLock();
-	return ret;
+	return ReceiveCmdData(CMD2_EPG_SRV_ENUM_SERVICE, val);
 }
 
 //サービス指定で番組情報を一覧を取得する
@@ -785,37 +409,7 @@ DWORD CSendCtrlCmd::SendEnumPgInfo(
 	vector<EPGDB_EVENT_INFO*>* val
 	)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_EPG_SRV_ENUM_PG_INFO;
-	send.dataSize = 0;
-
-	send.dataSize = GetVALUESize(service);
-	send.data = new BYTE[send.dataSize];
-	if( WriteVALUE(service, send.data, send.dataSize, NULL) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-	if( ret == CMD_SUCCESS ){
-		if( ReadVALUE(val, res.data, res.dataSize, NULL) == FALSE ){
-			UnLock();
-			return CMD_ERR;
-		}
-	}
-
-	UnLock();
-	return ret;
+	return SendAndReceiveCmdData(CMD2_EPG_SRV_ENUM_PG_INFO, service, val);
 }
 
 //指定イベントの番組情報を取得する
@@ -829,37 +423,7 @@ DWORD CSendCtrlCmd::SendGetPgInfo(
 	EPGDB_EVENT_INFO* val
 	)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_EPG_SRV_GET_PG_INFO;
-	send.dataSize = 0;
-
-	send.dataSize = GetVALUESize(pgID);
-	send.data = new BYTE[send.dataSize];
-	if( WriteVALUE(pgID, send.data, send.dataSize, NULL) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-	if( ret == CMD_SUCCESS ){
-		if( ReadVALUE(val, res.data, res.dataSize, NULL) == FALSE ){
-			UnLock();
-			return CMD_ERR;
-		}
-	}
-
-	UnLock();
-	return ret;
+	return SendAndReceiveCmdData(CMD2_EPG_SRV_GET_PG_INFO, pgID, val);
 }
 
 //指定キーワードで番組情報を検索する
@@ -873,37 +437,7 @@ DWORD CSendCtrlCmd::SendSearchPg(
 	vector<EPGDB_EVENT_INFO*>* val
 	)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_EPG_SRV_SEARCH_PG;
-	send.dataSize = 0;
-
-	send.dataSize = GetVALUESize(key);
-	send.data = new BYTE[send.dataSize];
-	if( WriteVALUE(key, send.data, send.dataSize, NULL) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-	if( ret == CMD_SUCCESS ){
-		if( ReadVALUE(val, res.data, res.dataSize, NULL) == FALSE ){
-			UnLock();
-			return CMD_ERR;
-		}
-	}
-
-	UnLock();
-	return ret;
+	return SendAndReceiveCmdData(CMD2_EPG_SRV_SEARCH_PG, key, val);
 }
 
 //番組情報一覧を取得する
@@ -915,30 +449,7 @@ DWORD CSendCtrlCmd::SendEnumPgAll(
 	vector<EPGDB_SERVICE_EVENT_INFO*>* val
 	)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_EPG_SRV_ENUM_PG_ALL;
-	send.dataSize = 0;
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-	if( ret == CMD_SUCCESS ){
-		if( ReadVALUE(val, res.data, res.dataSize, NULL) == FALSE ){
-			UnLock();
-			return CMD_ERR;
-		}
-	}
-
-	UnLock();
-	return ret;
+	return ReceiveCmdData(CMD2_EPG_SRV_ENUM_PG_ALL, val);
 }
 
 //自動予約登録条件一覧を取得する
@@ -950,29 +461,7 @@ DWORD CSendCtrlCmd::SendEnumEpgAutoAdd(
 	vector<EPG_AUTO_ADD_DATA>* val
 	)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_EPG_SRV_ENUM_AUTO_ADD;
-	send.dataSize = 0;
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-
-	if( ret == CMD_SUCCESS ){
-		if( ReadVALUE(val, res.data, res.dataSize, NULL) == FALSE ){
-			UnLock();
-			return CMD_ERR;
-		}
-	}
-	UnLock();
-	return ret;
+	return ReceiveCmdData(CMD2_EPG_SRV_ENUM_AUTO_ADD, val);
 }
 
 //自動予約登録条件を追加する
@@ -984,31 +473,7 @@ DWORD CSendCtrlCmd::SendAddEpgAutoAdd(
 	vector<EPG_AUTO_ADD_DATA>* val
 	)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_EPG_SRV_ADD_AUTO_ADD;
-	send.dataSize = 0;
-
-	send.dataSize = GetVALUESize(val);
-	send.data = new BYTE[send.dataSize];
-	if( WriteVALUE(val, send.data, send.dataSize, NULL) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-
-	UnLock();
-	return ret;
+	return SendCmdData(CMD2_EPG_SRV_ADD_AUTO_ADD, val);
 }
 
 //自動予約登録条件を削除する
@@ -1020,31 +485,7 @@ DWORD CSendCtrlCmd::SendDelEpgAutoAdd(
 	vector<DWORD>* val
 	)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_EPG_SRV_DEL_AUTO_ADD;
-	send.dataSize = 0;
-
-	send.dataSize = GetVALUESize(val);
-	send.data = new BYTE[send.dataSize];
-	if( WriteVALUE(val, send.data, send.dataSize, NULL) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-
-	UnLock();
-	return ret;
+	return SendCmdData(CMD2_EPG_SRV_DEL_AUTO_ADD, val);
 }
 
 //自動予約登録条件を変更する
@@ -1056,30 +497,7 @@ DWORD CSendCtrlCmd::SendChgEpgAutoAdd(
 	vector<EPG_AUTO_ADD_DATA>* val
 	)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_EPG_SRV_CHG_AUTO_ADD;
-	send.dataSize = 0;
-
-	send.dataSize = GetVALUESize(val);
-	send.data = new BYTE[send.dataSize];
-	if( WriteVALUE(val, send.data, send.dataSize, NULL) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-	UnLock();
-	return ret;
+	return SendCmdData(CMD2_EPG_SRV_CHG_AUTO_ADD, val);
 }
 
 //自動予約登録条件一覧を取得する
@@ -1091,29 +509,7 @@ DWORD CSendCtrlCmd::SendEnumManualAdd(
 	vector<MANUAL_AUTO_ADD_DATA>* val
 	)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_EPG_SRV_ENUM_MANU_ADD;
-	send.dataSize = 0;
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-
-	if( ret == CMD_SUCCESS ){
-		if( ReadVALUE(val, res.data, res.dataSize, NULL) == FALSE ){
-			UnLock();
-			return CMD_ERR;
-		}
-	}
-	UnLock();
-	return ret;
+	return ReceiveCmdData(CMD2_EPG_SRV_ENUM_MANU_ADD, val);
 }
 
 //自動予約登録条件を追加する
@@ -1125,31 +521,7 @@ DWORD CSendCtrlCmd::SendAddManualAdd(
 	vector<MANUAL_AUTO_ADD_DATA>* val
 	)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_EPG_SRV_ADD_MANU_ADD;
-	send.dataSize = 0;
-
-	send.dataSize = GetVALUESize(val);
-	send.data = new BYTE[send.dataSize];
-	if( WriteVALUE(val, send.data, send.dataSize, NULL) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-
-	UnLock();
-	return ret;
+	return SendCmdData(CMD2_EPG_SRV_ADD_MANU_ADD, val);
 }
 
 //プログラム予約自動登録の条件削除
@@ -1161,31 +533,7 @@ DWORD CSendCtrlCmd::SendDelManualAdd(
 	vector<DWORD>* val
 	)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_EPG_SRV_DEL_MANU_ADD;
-	send.dataSize = 0;
-
-	send.dataSize = GetVALUESize(val);
-	send.data = new BYTE[send.dataSize];
-	if( WriteVALUE(val, send.data, send.dataSize, NULL) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-
-	UnLock();
-	return ret;
+	return SendCmdData(CMD2_EPG_SRV_DEL_MANU_ADD, val);
 }
 
 //プログラム予約自動登録の条件変更
@@ -1197,124 +545,30 @@ DWORD CSendCtrlCmd::SendChgManualAdd(
 	vector<MANUAL_AUTO_ADD_DATA>* val
 	)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_EPG_SRV_CHG_MANU_ADD;
-	send.dataSize = 0;
-
-	send.dataSize = GetVALUESize(val);
-	send.data = new BYTE[send.dataSize];
-	if( WriteVALUE(val, send.data, send.dataSize, NULL) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-	UnLock();
-	return ret;
+	return SendCmdData(CMD2_EPG_SRV_CHG_MANU_ADD, val);
 }
 
 
 DWORD CSendCtrlCmd::SendChkSuspend()
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_EPG_SRV_CHK_SUSPEND;
-	send.dataSize = 0;
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-
-	UnLock();
-	return ret;
+	return SendCmdWithoutData(CMD2_EPG_SRV_CHK_SUSPEND);
 }
 
 DWORD CSendCtrlCmd::SendSuspend(
 	WORD val
 	)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_EPG_SRV_SUSPEND;
-	send.dataSize = 0;
-
-	send.dataSize = GetVALUESize(val);
-	send.data = new BYTE[send.dataSize];
-	if( WriteVALUE(val, send.data, send.dataSize, NULL) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-
-	UnLock();
-	return ret;
+	return SendCmdData(CMD2_EPG_SRV_SUSPEND, val);
 }
 
 DWORD CSendCtrlCmd::SendReboot()
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_EPG_SRV_REBOOT;
-	send.dataSize = 0;
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-
-	UnLock();
-	return ret;
+	return SendCmdWithoutData(CMD2_EPG_SRV_REBOOT);
 }
 
 DWORD CSendCtrlCmd::SendEpgCapNow()
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_EPG_SRV_EPG_CAP_NOW;
-	send.dataSize = 0;
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-
-	UnLock();
-	return ret;
+	return SendCmdWithoutData(CMD2_EPG_SRV_EPG_CAP_NOW);
 }
 
 DWORD CSendCtrlCmd::SendFileCopy(
@@ -1323,38 +577,17 @@ DWORD CSendCtrlCmd::SendFileCopy(
 	DWORD* resValSize
 	)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-	CMD_STREAM send;
 	CMD_STREAM res;
-
-	send.param = CMD2_EPG_SRV_FILE_COPY;
-	send.dataSize = 0;
-
-	send.dataSize = GetVALUESize(val);
-	send.data = new BYTE[send.dataSize];
-	if( WriteVALUE(val, send.data, send.dataSize, NULL) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
+	DWORD ret = SendCmdData(CMD2_EPG_SRV_FILE_COPY, val, &res);
 
 	if( ret == CMD_SUCCESS ){
 		if( res.dataSize == 0 ){
-			UnLock();
 			return CMD_ERR;
 		}
 		*resValSize = res.dataSize;
 		*resVal = new BYTE[res.dataSize];
 		memcpy(*resVal, res.data, res.dataSize);
 	}
-
-	UnLock();
 	return ret;
 }
 
@@ -1369,36 +602,7 @@ DWORD CSendCtrlCmd::SendEnumPlugIn(
 	vector<wstring>* resVal
 	)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_EPG_SRV_ENUM_PLUGIN;
-	send.dataSize = 0;
-
-	send.dataSize = GetVALUESize(val);
-	send.data = new BYTE[send.dataSize];
-	if( WriteVALUE(val, send.data, send.dataSize, NULL) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-	if( ret == CMD_SUCCESS ){
-		if( ReadVALUE(resVal, res.data, res.dataSize, NULL) == FALSE ){
-			UnLock();
-			return CMD_ERR;
-		}
-	}
-
-	UnLock();
-	return ret;
+	return SendAndReceiveCmdData(CMD2_EPG_SRV_ENUM_PLUGIN, val, resVal);
 }
 
 //TVTestのチャンネル切り替え用の情報を取得する
@@ -1412,36 +616,7 @@ DWORD CSendCtrlCmd::SendGetChgChTVTest(
 	TVTEST_CH_CHG_INFO* resVal
 	)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_EPG_SRV_GET_CHG_CH_TVTEST;
-	send.dataSize = 0;
-
-	send.dataSize = GetVALUESize(val);
-	send.data = new BYTE[send.dataSize];
-	if( WriteVALUE(val, send.data, send.dataSize, NULL) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-	if( ret == CMD_SUCCESS ){
-		if( ReadVALUE(resVal, res.data, res.dataSize, NULL) == FALSE ){
-			UnLock();
-			return CMD_ERR;
-		}
-	}
-
-	UnLock();
-	return ret;
+	return SendAndReceiveCmdData(CMD2_EPG_SRV_GET_CHG_CH_TVTEST, val, resVal);
 }
 
 //ネットワークモードのEpgDataCap_Bonのチャンネルを切り替え
@@ -1453,30 +628,7 @@ DWORD CSendCtrlCmd::SendNwTVSetCh(
 	SET_CH_INFO* val
 	)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_EPG_SRV_NWTV_SET_CH;
-	send.dataSize = 0;
-
-	send.dataSize = GetVALUESize(val);
-	send.data = new BYTE[send.dataSize];
-	if( WriteVALUE(val, send.data, send.dataSize, NULL) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-
-	UnLock();
-	return ret;
+	return SendCmdData(CMD2_EPG_SRV_NWTV_SET_CH, val);
 }
 
 //ネットワークモードで起動中のEpgDataCap_Bonを終了
@@ -1487,23 +639,7 @@ DWORD CSendCtrlCmd::SendNwTVSetCh(
 DWORD CSendCtrlCmd::SendNwTVClose(
 	)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_EPG_SRV_NWTV_CLOSE;
-	send.dataSize = 0;
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-
-	UnLock();
-	return ret;
+	return SendCmdWithoutData(CMD2_EPG_SRV_NWTV_CLOSE);
 }
 
 //ネットワークモードで起動するときのモード
@@ -1515,30 +651,7 @@ DWORD CSendCtrlCmd::SendNwTVMode(
 	DWORD val
 	)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_EPG_SRV_NWTV_MODE;
-	send.dataSize = 0;
-
-	send.dataSize = GetVALUESize(val);
-	send.data = new BYTE[send.dataSize];
-	if( WriteVALUE(val, send.data, send.dataSize, NULL) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-
-	UnLock();
-	return ret;
+	return SendCmdData(CMD2_EPG_SRV_NWTV_MODE, val);
 }
 
 //ストリーム配信用ファイルを開く
@@ -1552,36 +665,7 @@ DWORD CSendCtrlCmd::SendNwPlayOpen(
 	DWORD* resVal
 	)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_EPG_SRV_NWPLAY_OPEN;
-	send.dataSize = 0;
-
-	send.dataSize = GetVALUESize(val);
-	send.data = new BYTE[send.dataSize];
-	if( WriteVALUE(val, send.data, send.dataSize, NULL) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-	if( ret == CMD_SUCCESS ){
-		if( ReadVALUE(resVal, res.data, res.dataSize, NULL) == FALSE ){
-			UnLock();
-			return CMD_ERR;
-		}
-	}
-
-	UnLock();
-	return ret;
+	return SendAndReceiveCmdData(CMD2_EPG_SRV_NWPLAY_OPEN, val, resVal);
 }
 
 //ストリーム配信用ファイルを閉じる
@@ -1593,29 +677,7 @@ DWORD CSendCtrlCmd::SendNwPlayClose(
 	DWORD val
 	)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_EPG_SRV_NWPLAY_CLOSE;
-	send.dataSize = 0;
-
-	send.dataSize = GetVALUESize(val);
-	send.data = new BYTE[send.dataSize];
-	if( WriteVALUE(val, send.data, send.dataSize, NULL) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-	UnLock();
-	return ret;
+	return SendCmdData(CMD2_EPG_SRV_NWPLAY_CLOSE, val);
 }
 
 //ストリーム配信開始
@@ -1627,29 +689,7 @@ DWORD CSendCtrlCmd::SendNwPlayStart(
 	DWORD val
 	)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_EPG_SRV_NWPLAY_PLAY;
-	send.dataSize = 0;
-
-	send.dataSize = GetVALUESize(val);
-	send.data = new BYTE[send.dataSize];
-	if( WriteVALUE(val, send.data, send.dataSize, NULL) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-	UnLock();
-	return ret;
+	return SendCmdData(CMD2_EPG_SRV_NWPLAY_PLAY, val);
 }
 
 //ストリーム配信停止
@@ -1661,29 +701,7 @@ DWORD CSendCtrlCmd::SendNwPlayStop(
 	DWORD val
 	)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_EPG_SRV_NWPLAY_STOP;
-	send.dataSize = 0;
-
-	send.dataSize = GetVALUESize(val);
-	send.data = new BYTE[send.dataSize];
-	if( WriteVALUE(val, send.data, send.dataSize, NULL) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-	UnLock();
-	return ret;
+	return SendCmdData(CMD2_EPG_SRV_NWPLAY_STOP, val);
 }
 
 //ストリーム配信で現在の送信位置と総ファイルサイズを取得する
@@ -1695,36 +713,7 @@ DWORD CSendCtrlCmd::SendNwPlayGetPos(
 	NWPLAY_POS_CMD* val
 	)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_EPG_SRV_NWPLAY_GET_POS;
-	send.dataSize = 0;
-
-	send.dataSize = GetVALUESize(val);
-	send.data = new BYTE[send.dataSize];
-	if( WriteVALUE(val, send.data, send.dataSize, NULL) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-	if( ret == CMD_SUCCESS ){
-		if( ReadVALUE(val, res.data, res.dataSize, NULL) == FALSE ){
-			UnLock();
-			return CMD_ERR;
-		}
-	}
-
-	UnLock();
-	return ret;
+	return SendAndReceiveCmdData(CMD2_EPG_SRV_NWPLAY_GET_POS, val, val);
 }
 
 //ストリーム配信で送信位置をシークする
@@ -1736,29 +725,7 @@ DWORD CSendCtrlCmd::SendNwPlaySetPos(
 	NWPLAY_POS_CMD* val
 	)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_EPG_SRV_NWPLAY_SET_POS;
-	send.dataSize = 0;
-
-	send.dataSize = GetVALUESize(val);
-	send.data = new BYTE[send.dataSize];
-	if( WriteVALUE(val, send.data, send.dataSize, NULL) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-	UnLock();
-	return ret;
+	return SendCmdData(CMD2_EPG_SRV_NWPLAY_SET_POS, val);
 }
 
 //ストリーム配信で送信先を設定する
@@ -1770,36 +737,7 @@ DWORD CSendCtrlCmd::SendNwPlaySetIP(
 	NWPLAY_PLAY_INFO* val
 	)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_EPG_SRV_NWPLAY_SET_IP;
-	send.dataSize = 0;
-
-	send.dataSize = GetVALUESize(val);
-	send.data = new BYTE[send.dataSize];
-	if( WriteVALUE(val, send.data, send.dataSize, NULL) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-	
-	if( ret == CMD_SUCCESS ){
-		if( ReadVALUE(val, res.data, res.dataSize, NULL) == FALSE ){
-			UnLock();
-			return CMD_ERR;
-		}
-	}
-
-	UnLock();
-	return ret;
+	return SendAndReceiveCmdData(CMD2_EPG_SRV_NWPLAY_SET_IP, val, val);
 }
 
 //ストリーム配信用ファイルをタイムシフトモードで開く
@@ -1813,194 +751,27 @@ DWORD CSendCtrlCmd::SendNwTimeShiftOpen(
 	NWPLAY_TIMESHIFT_INFO* resVal
 	)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_EPG_SRV_NWPLAY_TF_OPEN;
-	send.dataSize = 0;
-
-	send.dataSize = GetVALUESize(val);
-	send.data = new BYTE[send.dataSize];
-	if( WriteVALUE(val, send.data, send.dataSize, NULL) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-	if( ret == CMD_SUCCESS ){
-		if( ReadVALUE(resVal, res.data, res.dataSize, NULL) == FALSE ){
-			UnLock();
-			return CMD_ERR;
-		}
-	}
-
-	UnLock();
-	return ret;
+	return SendAndReceiveCmdData(CMD2_EPG_SRV_NWPLAY_TF_OPEN, val, resVal);
 }
 
 DWORD CSendCtrlCmd::SendEnumReserve2(vector<RESERVE_DATA>* val)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	WORD ver = (WORD)CMD_VER;
-
-	send.param = CMD2_EPG_SRV_ENUM_RESERVE2;
-	send.dataSize = 0;
-
-	send.dataSize = GetVALUESize2(ver, ver);
-	send.data = new BYTE[send.dataSize];
-	if( WriteVALUE2(ver, ver, send.data, send.dataSize, NULL) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-
-	if( ret == CMD_SUCCESS ){
-		DWORD readSize = 0;
-		if( ReadVALUE2(ver, &ver, res.data, res.dataSize, &readSize) == FALSE ){
-			UnLock();
-			return CMD_ERR;
-		}
-		if( ReadVALUE2(ver, val, res.data+readSize, res.dataSize-readSize, NULL) == FALSE ){
-			UnLock();
-			return CMD_ERR;
-		}
-	}
-	UnLock();
-	return ret;
+	return ReceiveCmdData2(CMD2_EPG_SRV_ENUM_RESERVE2, val);
 }
 
 DWORD CSendCtrlCmd::SendGetReserve2(DWORD reserveID, RESERVE_DATA* val)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	WORD ver = (WORD)CMD_VER;
-	DWORD writeSize = 0;
-
-	send.param = CMD2_EPG_SRV_GET_RESERVE2;
-	send.dataSize = 0;
-
-	send.dataSize = GetVALUESize2(ver, reserveID)+GetVALUESize2(ver, ver);
-	send.data = new BYTE[send.dataSize];
-	if( WriteVALUE2(ver, ver, send.data, send.dataSize, &writeSize) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-	if( WriteVALUE2(ver, reserveID, send.data+writeSize, send.dataSize-writeSize, NULL) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-	if( ret == CMD_SUCCESS ){
-		DWORD readSize = 0;
-		if( ReadVALUE2(ver, &ver, res.data, res.dataSize, &readSize) == FALSE ){
-			UnLock();
-			return CMD_ERR;
-		}
-		if( ReadVALUE2(ver, val, res.data+readSize, res.dataSize-readSize, NULL) == FALSE ){
-			UnLock();
-			return CMD_ERR;
-		}
-	}
-	UnLock();
-	return ret;
+	return SendAndReceiveCmdData2(CMD2_EPG_SRV_GET_RESERVE2, reserveID, val);
 }
 
 DWORD CSendCtrlCmd::SendAddReserve2(vector<RESERVE_DATA>* val)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	WORD ver = (WORD)CMD_VER;
-	DWORD writeSize = 0;
-
-	send.param = CMD2_EPG_SRV_ADD_RESERVE2;
-	send.dataSize = 0;
-
-	send.dataSize = GetVALUESize2(ver, val)+GetVALUESize2(ver, ver);
-	send.data = new BYTE[send.dataSize];
-	if( WriteVALUE2(ver, ver, send.data, send.dataSize, &writeSize) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-	if( WriteVALUE2(ver, val, send.data+writeSize, send.dataSize-writeSize, NULL) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-
-	UnLock();
-	return ret;
+	return SendCmdData2(CMD2_EPG_SRV_ADD_RESERVE2, val);
 }
 
 DWORD CSendCtrlCmd::SendChgReserve2(vector<RESERVE_DATA>* val)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	WORD ver = (WORD)CMD_VER;
-	DWORD writeSize = 0;
-
-	send.param = CMD2_EPG_SRV_CHG_RESERVE2;
-	send.dataSize = 0;
-
-	send.dataSize = GetVALUESize2(ver, val)+GetVALUESize2(ver, ver);
-	send.data = new BYTE[send.dataSize];
-	if( WriteVALUE2(ver, ver, send.data, send.dataSize, &writeSize) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-	if( WriteVALUE2(ver, val, send.data+writeSize, send.dataSize-writeSize, NULL) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-	UnLock();
-	return ret;
+	return SendCmdData2(CMD2_EPG_SRV_CHG_RESERVE2, val);
 }
 
 //予約追加が可能か確認する
@@ -2011,49 +782,7 @@ DWORD CSendCtrlCmd::SendChgReserve2(vector<RESERVE_DATA>* val)
 // resVal			[OUT]追加可能かのステータス
 DWORD CSendCtrlCmd::SendAddChkReserve2(RESERVE_DATA* val, WORD* resVal)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	WORD ver = (WORD)CMD_VER;
-	DWORD writeSize = 0;
-
-	send.param = CMD2_EPG_SRV_ADDCHK_RESERVE2;
-	send.dataSize = 0;
-
-	send.dataSize = GetVALUESize2(ver, val)+GetVALUESize2(ver, ver);
-	send.data = new BYTE[send.dataSize];
-	if( WriteVALUE2(ver, ver, send.data, send.dataSize, &writeSize) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-	if( WriteVALUE2(ver, val, send.data+writeSize, send.dataSize-writeSize, NULL) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-	if( ret == CMD_SUCCESS ){
-		DWORD readSize = 0;
-		if( ReadVALUE2(ver, &ver, res.data, res.dataSize, &readSize) == FALSE ){
-			UnLock();
-			return CMD_ERR;
-		}
-		if( ReadVALUE2(ver, resVal, res.data+readSize, res.dataSize-readSize, NULL) == FALSE ){
-			UnLock();
-			return CMD_ERR;
-		}
-	}
-
-	UnLock();
-	return ret;
+	return SendAndReceiveCmdData2(CMD2_EPG_SRV_ADDCHK_RESERVE2, val, resVal);
 }
 
 
@@ -2065,49 +794,7 @@ DWORD CSendCtrlCmd::SendAddChkReserve2(RESERVE_DATA* val, WORD* resVal)
 // resVal			[OUT]タイムスタンプ
 DWORD CSendCtrlCmd::SendGetEpgFileTime2(wstring val, LONGLONG* resVal)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	WORD ver = (WORD)CMD_VER;
-	DWORD writeSize = 0;
-
-	send.param = CMD2_EPG_SRV_GET_EPG_FILETIME2;
-	send.dataSize = 0;
-
-	send.dataSize = GetVALUESize2(ver, val)+GetVALUESize2(ver, ver);
-	send.data = new BYTE[send.dataSize];
-	if( WriteVALUE2(ver, ver, send.data, send.dataSize, &writeSize) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-	if( WriteVALUE2(ver, val, send.data+writeSize, send.dataSize-writeSize, NULL) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-	if( ret == CMD_SUCCESS ){
-		DWORD readSize = 0;
-		if( ReadVALUE2(ver, &ver, res.data, res.dataSize, &readSize) == FALSE ){
-			UnLock();
-			return CMD_ERR;
-		}
-		if( ReadVALUE2(ver, resVal, res.data+readSize, res.dataSize-readSize, NULL) == FALSE ){
-			UnLock();
-			return CMD_ERR;
-		}
-	}
-
-	UnLock();
-	return ret;
+	return SendAndReceiveCmdData2(CMD2_EPG_SRV_GET_EPG_FILETIME2, val, resVal);
 }
 
 //EPGデータファイル取得
@@ -2123,51 +810,19 @@ DWORD CSendCtrlCmd::SendGetEpgFile2(
 	DWORD* resValSize
 	)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-
-	CMD_STREAM send;
 	CMD_STREAM res;
-
-	WORD ver = (WORD)CMD_VER;
-	DWORD writeSize = 0;
-
-	send.param = CMD2_EPG_SRV_GET_EPG_FILE2;
-	send.dataSize = 0;
-
-	send.dataSize = GetVALUESize2(ver, val)+GetVALUESize2(ver, ver);
-	send.data = new BYTE[send.dataSize];
-	if( WriteVALUE2(ver, ver, send.data, send.dataSize, &writeSize) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-	if( WriteVALUE2(ver, val, send.data+writeSize, send.dataSize-writeSize, NULL) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
+	DWORD ret = SendCmdData2(CMD2_EPG_SRV_GET_EPG_FILE2, val, &res);
 
 	if( ret == CMD_SUCCESS ){
+		WORD ver = 0;
 		DWORD readSize = 0;
-		if( ReadVALUE2(ver, &ver, res.data, res.dataSize, &readSize) == FALSE ){
-			UnLock();
-			return CMD_ERR;
-		}
-		if( res.dataSize - readSize <= 0 ){
-			UnLock();
+		if( ReadVALUE(&ver, res.data, res.dataSize, &readSize) == FALSE || res.dataSize <= readSize ){
 			return CMD_ERR;
 		}
 		*resValSize = res.dataSize - readSize;
 		*resVal = new BYTE[*resValSize];
 		memcpy(*resVal, res.data + readSize, *resValSize);
 	}
-
-	UnLock();
 	return ret;
 }
 
@@ -2180,43 +835,7 @@ DWORD CSendCtrlCmd::SendEnumEpgAutoAdd2(
 	vector<EPG_AUTO_ADD_DATA>* val
 	)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	WORD ver = (WORD)CMD_VER;
-
-	send.param = CMD2_EPG_SRV_ENUM_AUTO_ADD2;
-	send.dataSize = 0;
-
-	send.dataSize = GetVALUESize2(ver, ver);
-	send.data = new BYTE[send.dataSize];
-	if( WriteVALUE2(ver, ver, send.data, send.dataSize, NULL) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-
-	if( ret == CMD_SUCCESS ){
-		DWORD readSize = 0;
-		if( ReadVALUE2(ver, &ver, res.data, res.dataSize, &readSize) == FALSE ){
-			UnLock();
-			return CMD_ERR;
-		}
-		if( ReadVALUE2(ver, val, res.data+readSize, res.dataSize-readSize, NULL) == FALSE ){
-			UnLock();
-			return CMD_ERR;
-		}
-	}
-	UnLock();
-	return ret;
+	return ReceiveCmdData2(CMD2_EPG_SRV_ENUM_AUTO_ADD2, val);
 }
 
 //自動予約登録条件を追加する
@@ -2228,38 +847,7 @@ DWORD CSendCtrlCmd::SendAddEpgAutoAdd2(
 	vector<EPG_AUTO_ADD_DATA>* val
 	)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	WORD ver = (WORD)CMD_VER;
-	DWORD writeSize = 0;
-
-	send.param = CMD2_EPG_SRV_ADD_AUTO_ADD2;
-	send.dataSize = 0;
-
-	send.dataSize = GetVALUESize2(ver, val)+GetVALUESize2(ver, ver);
-	send.data = new BYTE[send.dataSize];
-	if( WriteVALUE2(ver, ver, send.data, send.dataSize, &writeSize) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-	if( WriteVALUE2(ver, val, send.data+writeSize, send.dataSize-writeSize, NULL) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-
-	UnLock();
-	return ret;
+	return SendCmdData2(CMD2_EPG_SRV_ADD_AUTO_ADD2, val);
 }
 
 //自動予約登録条件を変更する
@@ -2271,37 +859,7 @@ DWORD CSendCtrlCmd::SendChgEpgAutoAdd2(
 	vector<EPG_AUTO_ADD_DATA>* val
 	)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	WORD ver = (WORD)CMD_VER;
-	DWORD writeSize = 0;
-
-	send.param = CMD2_EPG_SRV_CHG_AUTO_ADD2;
-	send.dataSize = 0;
-
-	send.dataSize = GetVALUESize2(ver, val)+GetVALUESize2(ver, ver);
-	send.data = new BYTE[send.dataSize];
-	if( WriteVALUE2(ver, ver, send.data, send.dataSize, &writeSize) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-	if( WriteVALUE2(ver, val, send.data+writeSize, send.dataSize-writeSize, NULL) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-	UnLock();
-	return ret;
+	return SendCmdData2(CMD2_EPG_SRV_CHG_AUTO_ADD2, val);
 }
 
 //自動予約登録条件一覧を取得する
@@ -2313,43 +871,7 @@ DWORD CSendCtrlCmd::SendEnumManualAdd2(
 	vector<MANUAL_AUTO_ADD_DATA>* val
 	)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	WORD ver = (WORD)CMD_VER;
-
-	send.param = CMD2_EPG_SRV_ENUM_MANU_ADD2;
-	send.dataSize = 0;
-
-	send.dataSize = GetVALUESize2(ver, ver);
-	send.data = new BYTE[send.dataSize];
-	if( WriteVALUE2(ver, ver, send.data, send.dataSize, NULL) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-
-	if( ret == CMD_SUCCESS ){
-		DWORD readSize = 0;
-		if( ReadVALUE2(ver, &ver, res.data, res.dataSize, &readSize) == FALSE ){
-			UnLock();
-			return CMD_ERR;
-		}
-		if( ReadVALUE2(ver, val, res.data+readSize, res.dataSize-readSize, NULL) == FALSE ){
-			UnLock();
-			return CMD_ERR;
-		}
-	}
-	UnLock();
-	return ret;
+	return ReceiveCmdData2(CMD2_EPG_SRV_ENUM_MANU_ADD2, val);
 }
 
 //自動予約登録条件を追加する
@@ -2361,38 +883,7 @@ DWORD CSendCtrlCmd::SendAddManualAdd2(
 	vector<MANUAL_AUTO_ADD_DATA>* val
 	)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	WORD ver = (WORD)CMD_VER;
-	DWORD writeSize = 0;
-
-	send.param = CMD2_EPG_SRV_ADD_MANU_ADD2;
-	send.dataSize = 0;
-
-	send.dataSize = GetVALUESize2(ver, val)+GetVALUESize2(ver, ver);
-	send.data = new BYTE[send.dataSize];
-	if( WriteVALUE2(ver, ver, send.data, send.dataSize, &writeSize) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-	if( WriteVALUE2(ver, val, send.data+writeSize, send.dataSize-writeSize, NULL) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-
-	UnLock();
-	return ret;
+	return SendCmdData2(CMD2_EPG_SRV_ADD_MANU_ADD2, val);
 }
 
 //プログラム予約自動登録の条件変更
@@ -2404,37 +895,7 @@ DWORD CSendCtrlCmd::SendChgManualAdd2(
 	vector<MANUAL_AUTO_ADD_DATA>* val
 	)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	WORD ver = (WORD)CMD_VER;
-	DWORD writeSize = 0;
-
-	send.param = CMD2_EPG_SRV_CHG_MANU_ADD2;
-	send.dataSize = 0;
-
-	send.dataSize = GetVALUESize2(ver, val)+GetVALUESize2(ver, ver);
-	send.data = new BYTE[send.dataSize];
-	if( WriteVALUE2(ver, ver, send.data, send.dataSize, &writeSize) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-	if( WriteVALUE2(ver, val, send.data+writeSize, send.dataSize-writeSize, NULL) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-	UnLock();
-	return ret;
+	return SendCmdData2(CMD2_EPG_SRV_CHG_MANU_ADD2, val);
 }
 
 //自動予約登録条件一覧を取得する
@@ -2446,78 +907,12 @@ DWORD CSendCtrlCmd::SendEnumRecInfo2(
 	vector<REC_FILE_INFO>* val
 	)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	WORD ver = (WORD)CMD_VER;
-
-	send.param = CMD2_EPG_SRV_ENUM_RECINFO2;
-	send.dataSize = 0;
-
-	send.dataSize = GetVALUESize2(ver, ver);
-	send.data = new BYTE[send.dataSize];
-	if( WriteVALUE2(ver, ver, send.data, send.dataSize, NULL) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-
-	if( ret == CMD_SUCCESS ){
-		DWORD readSize = 0;
-		if( ReadVALUE2(ver, &ver, res.data, res.dataSize, &readSize) == FALSE ){
-			UnLock();
-			return CMD_ERR;
-		}
-		if( ReadVALUE2(ver, val, res.data+readSize, res.dataSize-readSize, NULL) == FALSE ){
-			UnLock();
-			return CMD_ERR;
-		}
-	}
-	UnLock();
-	return ret;
+	return ReceiveCmdData2(CMD2_EPG_SRV_ENUM_RECINFO2, val);
 }
 
 DWORD CSendCtrlCmd::SendChgProtectRecInfo2(vector<REC_FILE_INFO>* val)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	WORD ver = (WORD)CMD_VER;
-	DWORD writeSize = 0;
-
-	send.param = CMD2_EPG_SRV_CHG_PROTECT_RECINFO2;
-	send.dataSize = 0;
-
-	send.dataSize = GetVALUESize2(ver, val)+GetVALUESize2(ver, ver);
-	send.data = new BYTE[send.dataSize];
-	if( WriteVALUE2(ver, ver, send.data, send.dataSize, &writeSize) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-	if( WriteVALUE2(ver, val, send.data+writeSize, send.dataSize-writeSize, NULL) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-	UnLock();
-	return ret;
+	return SendCmdData2(CMD2_EPG_SRV_CHG_PROTECT_RECINFO2, val);
 }
 
 //ダイアログを前面に表示
@@ -2526,23 +921,7 @@ DWORD CSendCtrlCmd::SendChgProtectRecInfo2(vector<REC_FILE_INFO>* val)
 DWORD CSendCtrlCmd::SendGUIShowDlg(
 	)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_TIMER_GUI_SHOW_DLG;
-	send.dataSize = 0;
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-
-	UnLock();
-	return ret;
+	return SendCmdWithoutData(CMD2_TIMER_GUI_SHOW_DLG);
 }
 
 //予約一覧の情報が更新された
@@ -2551,23 +930,7 @@ DWORD CSendCtrlCmd::SendGUIShowDlg(
 DWORD CSendCtrlCmd::SendGUIUpdateReserve(
 	)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_TIMER_GUI_UPDATE_RESERVE;
-	send.dataSize = 0;
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-
-	UnLock();
-	return ret;
+	return SendCmdWithoutData(CMD2_TIMER_GUI_UPDATE_RESERVE);
 }
 
 //EPGデータの再読み込みが完了した
@@ -2576,58 +939,12 @@ DWORD CSendCtrlCmd::SendGUIUpdateReserve(
 DWORD CSendCtrlCmd::SendGUIUpdateEpgData(
 	)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_TIMER_GUI_UPDATE_EPGDATA;
-	send.dataSize = 0;
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-
-	UnLock();
-	return ret;
+	return SendCmdWithoutData(CMD2_TIMER_GUI_UPDATE_EPGDATA);
 }
 
 DWORD CSendCtrlCmd::SendGUINotifyInfo2(NOTIFY_SRV_INFO* val)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	WORD ver = (WORD)CMD_VER;
-	DWORD writeSize = 0;
-
-	send.param = CMD2_TIMER_GUI_SRV_STATUS_NOTIFY2;
-	send.dataSize = 0;
-
-	send.dataSize = GetVALUESize2(ver, val)+GetVALUESize2(ver, ver);
-	send.data = new BYTE[send.dataSize];
-	if( WriteVALUE2(ver, ver, send.data, send.dataSize, &writeSize) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-	if( WriteVALUE2(ver, val, send.data+writeSize, send.dataSize-writeSize, NULL) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-	UnLock();
-	return ret;
+	return SendCmdData2(CMD2_TIMER_GUI_SRV_STATUS_NOTIFY2, val);
 }
 
 //Viewアプリ（EpgDataCap_Bon.exe）を起動
@@ -2641,36 +958,7 @@ DWORD CSendCtrlCmd::SendGUIExecute(
 	DWORD* PID
 	)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_TIMER_GUI_VIEW_EXECUTE;
-	send.dataSize = 0;
-
-	send.dataSize = GetVALUESize(exeCmd);
-	send.data = new BYTE[send.dataSize];
-	if( WriteVALUE(exeCmd, send.data, send.dataSize, NULL) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-	if( ret == CMD_SUCCESS ){
-		if( ReadVALUE(PID, res.data, res.dataSize, NULL) == FALSE ){
-			UnLock();
-			return CMD_ERR;
-		}
-	}
-
-	UnLock();
-	return ret;
+	return SendAndReceiveCmdData(CMD2_TIMER_GUI_VIEW_EXECUTE, exeCmd, PID);
 }
 
 //スタンバイ、休止、シャットダウンに入っていいかの確認をユーザーに行う
@@ -2681,32 +969,7 @@ DWORD CSendCtrlCmd::SendGUIQuerySuspend(
 	BYTE suspendMode
 	)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	WORD param = ((WORD)rebootFlag)<<8 | suspendMode;
-
-	send.param = CMD2_TIMER_GUI_QUERY_SUSPEND;
-	send.dataSize = 0;
-
-	send.dataSize = GetVALUESize(param);
-	send.data = new BYTE[send.dataSize];
-	if( WriteVALUE(param, send.data, send.dataSize, NULL) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-
-	UnLock();
-	return ret;
+	return SendCmdData(CMD2_TIMER_GUI_QUERY_SUSPEND, (WORD)(rebootFlag<<8|suspendMode));
 }
 
 //PC再起動に入っていいかの確認をユーザーに行う
@@ -2716,32 +979,7 @@ DWORD CSendCtrlCmd::SendGUIQueryReboot(
 	BYTE rebootFlag
 	)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	WORD param = ((WORD)rebootFlag)<<8;
-
-	send.param = CMD2_TIMER_GUI_QUERY_REBOOT;
-	send.dataSize = 0;
-
-	send.dataSize = GetVALUESize(param);
-	send.data = new BYTE[send.dataSize];
-	if( WriteVALUE(param, send.data, send.dataSize, NULL) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-
-	UnLock();
-	return ret;
+	return SendCmdData(CMD2_TIMER_GUI_QUERY_REBOOT, (WORD)(rebootFlag<<8));
 }
 
 //サーバーのステータス変更通知
@@ -2751,30 +989,7 @@ DWORD CSendCtrlCmd::SendGUIStatusChg(
 	WORD status
 	)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_TIMER_GUI_SRV_STATUS_CHG;
-	send.dataSize = 0;
-
-	send.dataSize = GetVALUESize(status);
-	send.data = new BYTE[send.dataSize];
-	if( WriteVALUE(status, send.data, send.dataSize, NULL) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-
-	UnLock();
-	return ret;
+	return SendCmdData(CMD2_TIMER_GUI_SRV_STATUS_CHG, status);
 }
 
 //BonDriverの切り替え
@@ -2786,30 +1001,7 @@ DWORD CSendCtrlCmd::SendViewSetBonDrivere(
 	wstring bonDriver
 	)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_VIEW_APP_SET_BONDRIVER;
-	send.dataSize = 0;
-
-	send.dataSize = GetVALUESize(bonDriver);
-	send.data = new BYTE[send.dataSize];
-	if( WriteVALUE(bonDriver, send.data, send.dataSize, NULL) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-
-	UnLock();
-	return ret;
+	return SendCmdData(CMD2_VIEW_APP_SET_BONDRIVER, bonDriver);
 }
 
 //使用中のBonDriverのファイル名を取得
@@ -2821,29 +1013,7 @@ DWORD CSendCtrlCmd::SendViewGetBonDrivere(
 	wstring* bonDriver
 	)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_VIEW_APP_GET_BONDRIVER;
-	send.dataSize = 0;
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-	if( ret == CMD_SUCCESS ){
-		if( ReadVALUE(bonDriver, res.data, res.dataSize, NULL) == FALSE ){
-			UnLock();
-			return CMD_ERR;
-		}
-	}
-
-	UnLock();
-	return ret;
+	return ReceiveCmdData(CMD2_VIEW_APP_GET_BONDRIVER, bonDriver);
 }
 
 //チャンネル切り替え
@@ -2855,30 +1025,7 @@ DWORD CSendCtrlCmd::SendViewSetCh(
 	SET_CH_INFO* chInfo
 	)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_VIEW_APP_SET_CH;
-	send.dataSize = 0;
-
-	send.dataSize = GetVALUESize(chInfo);
-	send.data = new BYTE[send.dataSize];
-	if( WriteVALUE(chInfo, send.data, send.dataSize, NULL) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-
-	UnLock();
-	return ret;
+	return SendCmdData(CMD2_VIEW_APP_SET_CH, chInfo);
 }
 
 //放送波の時間とPC時間の誤差取得
@@ -2890,29 +1037,7 @@ DWORD CSendCtrlCmd::SendViewGetDelay(
 	int* delaySec
 	)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_VIEW_APP_GET_DELAY;
-	send.dataSize = 0;
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-	if( ret == CMD_SUCCESS ){
-		if( ReadVALUE(delaySec, res.data, res.dataSize, NULL) == FALSE ){
-			UnLock();
-			return CMD_ERR;
-		}
-	}
-
-	UnLock();
-	return ret;
+	return ReceiveCmdData(CMD2_VIEW_APP_GET_DELAY, delaySec);
 }
 
 //現在の状態を取得
@@ -2924,29 +1049,7 @@ DWORD CSendCtrlCmd::SendViewGetStatus(
 	DWORD* status
 	)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_VIEW_APP_GET_STATUS;
-	send.dataSize = 0;
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-	if( ret == CMD_SUCCESS ){
-		if( ReadVALUE(status, res.data, res.dataSize, NULL) == FALSE ){
-			UnLock();
-			return CMD_ERR;
-		}
-	}
-
-	UnLock();
-	return ret;
+	return ReceiveCmdData(CMD2_VIEW_APP_GET_STATUS, status);
 }
 
 //現在の状態を取得
@@ -2955,22 +1058,7 @@ DWORD CSendCtrlCmd::SendViewGetStatus(
 DWORD CSendCtrlCmd::SendViewAppClose(
 	)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_VIEW_APP_CLOSE;
-	send.dataSize = 0;
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-	UnLock();
-	return ret;
+	return SendCmdWithoutData(CMD2_VIEW_APP_CLOSE);
 }
 
 //識別用IDの設定
@@ -2982,30 +1070,7 @@ DWORD CSendCtrlCmd::SendViewSetID(
 	int id
 	)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_VIEW_APP_SET_ID;
-	send.dataSize = 0;
-
-	send.dataSize = GetVALUESize(id);
-	send.data = new BYTE[send.dataSize];
-	if( WriteVALUE(id, send.data, send.dataSize, NULL) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-
-	UnLock();
-	return ret;
+	return SendCmdData(CMD2_VIEW_APP_SET_ID, id);
 }
 
 //識別用IDの取得
@@ -3017,29 +1082,7 @@ DWORD CSendCtrlCmd::SendViewGetID(
 	int* id
 	)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_VIEW_APP_GET_ID;
-	send.dataSize = 0;
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-	if( ret == CMD_SUCCESS ){
-		if( ReadVALUE(id, res.data, res.dataSize, NULL) == FALSE ){
-			UnLock();
-			return CMD_ERR;
-		}
-	}
-
-	UnLock();
-	return ret;
+	return ReceiveCmdData(CMD2_VIEW_APP_GET_ID, id);
 }
 
 //予約録画用にGUIキープ
@@ -3049,29 +1092,7 @@ DWORD CSendCtrlCmd::SendViewSetStandbyRec(
 	DWORD keepFlag
 	)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_VIEW_APP_SET_STANDBY_REC;
-	send.dataSize = 0;
-
-	send.dataSize = GetVALUESize(keepFlag);
-	send.data = new BYTE[send.dataSize];
-	if( WriteVALUE(keepFlag, send.data, send.dataSize, NULL) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-	UnLock();
-	return ret;
+	return SendCmdData(CMD2_VIEW_APP_SET_STANDBY_REC, keepFlag);
 }
 
 //ストリーム制御用コントロール作成
@@ -3083,29 +1104,7 @@ DWORD CSendCtrlCmd::SendViewCreateCtrl(
 	DWORD* ctrlID
 	)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_VIEW_APP_CREATE_CTRL;
-	send.dataSize = 0;
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-	if( ret == CMD_SUCCESS ){
-		if( ReadVALUE(ctrlID, res.data, res.dataSize, NULL) == FALSE ){
-			UnLock();
-			return CMD_ERR;
-		}
-	}
-
-	UnLock();
-	return ret;
+	return ReceiveCmdData(CMD2_VIEW_APP_CREATE_CTRL, ctrlID);
 }
 
 //ストリーム制御用コントロール作成
@@ -3117,29 +1116,7 @@ DWORD CSendCtrlCmd::SendViewDeleteCtrl(
 	DWORD ctrlID
 	)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_VIEW_APP_DELETE_CTRL;
-	send.dataSize = 0;
-
-	send.dataSize = GetVALUESize(ctrlID);
-	send.data = new BYTE[send.dataSize];
-	if( WriteVALUE(ctrlID, send.data, send.dataSize, NULL) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-	UnLock();
-	return ret;
+	return SendCmdData(CMD2_VIEW_APP_DELETE_CTRL, ctrlID);
 }
 
 //制御コントロールの設定
@@ -3151,29 +1128,7 @@ DWORD CSendCtrlCmd::SendViewSetCtrlMode(
 	SET_CTRL_MODE val
 	)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_VIEW_APP_SET_CTRLMODE;
-	send.dataSize = 0;
-
-	send.dataSize = GetVALUESize(&val);
-	send.data = new BYTE[send.dataSize];
-	if( WriteVALUE(&val, send.data, send.dataSize, NULL) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-	UnLock();
-	return ret;
+	return SendCmdData(CMD2_VIEW_APP_SET_CTRLMODE, &val);
 }
 
 //録画処理開始
@@ -3185,29 +1140,7 @@ DWORD CSendCtrlCmd::SendViewStartRec(
 	SET_CTRL_REC_PARAM val
 	)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_VIEW_APP_REC_START_CTRL;
-	send.dataSize = 0;
-
-	send.dataSize = GetVALUESize(&val);
-	send.data = new BYTE[send.dataSize];
-	if( WriteVALUE(&val, send.data, send.dataSize, NULL) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-	UnLock();
-	return ret;
+	return SendCmdData(CMD2_VIEW_APP_REC_START_CTRL, &val);
 }
 
 //録画処理開始
@@ -3220,36 +1153,7 @@ DWORD CSendCtrlCmd::SendViewStopRec(
 	SET_CTRL_REC_STOP_RES_PARAM* resVal
 	)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_VIEW_APP_REC_STOP_CTRL;
-	send.dataSize = 0;
-
-	send.dataSize = GetVALUESize(&val);
-	send.data = new BYTE[send.dataSize];
-	if( WriteVALUE(&val, send.data, send.dataSize, NULL) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-	if( ret == CMD_SUCCESS ){
-		if( ReadVALUE(resVal, res.data, res.dataSize, NULL) == FALSE ){
-			UnLock();
-			return CMD_ERR;
-		}
-	}
-
-	UnLock();
-	return ret;
+	return SendAndReceiveCmdData(CMD2_VIEW_APP_REC_STOP_CTRL, &val, resVal);
 }
 
 //録画中のファイルパスを取得
@@ -3262,36 +1166,7 @@ DWORD CSendCtrlCmd::SendViewGetRecFilePath(
 	wstring* resVal
 	)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_VIEW_APP_REC_FILE_PATH;
-	send.dataSize = 0;
-
-	send.dataSize = GetVALUESize(ctrlID);
-	send.data = new BYTE[send.dataSize];
-	if( WriteVALUE(ctrlID, send.data, send.dataSize, NULL) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-	if( ret == CMD_SUCCESS ){
-		if( ReadVALUE(resVal, res.data, res.dataSize, NULL) == FALSE ){
-			UnLock();
-			return CMD_ERR;
-		}
-	}
-
-	UnLock();
-	return ret;
+	return SendAndReceiveCmdData(CMD2_VIEW_APP_REC_FILE_PATH, ctrlID, resVal);
 }
 
 //録画処理開始
@@ -3300,22 +1175,7 @@ DWORD CSendCtrlCmd::SendViewGetRecFilePath(
 DWORD CSendCtrlCmd::SendViewStopRecAll(
 	)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_VIEW_APP_REC_STOP_ALL;
-	send.dataSize = 0;
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-	UnLock();
-	return ret;
+	return SendCmdWithoutData(CMD2_VIEW_APP_REC_STOP_ALL);
 }
 
 //ファイル出力したサイズを取得
@@ -3328,36 +1188,7 @@ DWORD CSendCtrlCmd::SendViewGetWriteSize(
 	__int64* resVal
 	)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_VIEW_APP_REC_WRITE_SIZE;
-	send.dataSize = 0;
-
-	send.dataSize = GetVALUESize(ctrlID);
-	send.data = new BYTE[send.dataSize];
-	if( WriteVALUE(ctrlID, send.data, send.dataSize, NULL) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-	if( ret == CMD_SUCCESS ){
-		if( ReadVALUE(resVal, res.data, res.dataSize, NULL) == FALSE ){
-			UnLock();
-			return CMD_ERR;
-		}
-	}
-
-	UnLock();
-	return ret;
+	return SendAndReceiveCmdData(CMD2_VIEW_APP_REC_WRITE_SIZE, ctrlID, resVal);
 }
 
 //EPG取得開始
@@ -3369,29 +1200,7 @@ DWORD CSendCtrlCmd::SendViewEpgCapStart(
 	vector<SET_CH_INFO>* val
 	)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_VIEW_APP_EPGCAP_START;
-	send.dataSize = 0;
-
-	send.dataSize = GetVALUESize(val);
-	send.data = new BYTE[send.dataSize];
-	if( WriteVALUE(val, send.data, send.dataSize, NULL) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-	UnLock();
-	return ret;
+	return SendCmdData(CMD2_VIEW_APP_EPGCAP_START, val);
 }
 
 //EPG取得キャンセル
@@ -3400,22 +1209,7 @@ DWORD CSendCtrlCmd::SendViewEpgCapStart(
 DWORD CSendCtrlCmd::SendViewEpgCapStop(
 	)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_VIEW_APP_EPGCAP_STOP;
-	send.dataSize = 0;
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-	UnLock();
-	return ret;
+	return SendCmdWithoutData(CMD2_VIEW_APP_EPGCAP_STOP);
 }
 
 //EPGデータの検索
@@ -3428,36 +1222,7 @@ DWORD CSendCtrlCmd::SendViewSearchEvent(
 	EPGDB_EVENT_INFO* resVal
 	)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_VIEW_APP_SEARCH_EVENT;
-	send.dataSize = 0;
-
-	send.dataSize = GetVALUESize(val);
-	send.data = new BYTE[send.dataSize];
-	if( WriteVALUE(val, send.data, send.dataSize, NULL) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-	if( ret == CMD_SUCCESS ){
-		if( ReadVALUE(resVal, res.data, res.dataSize, NULL) == FALSE ){
-			UnLock();
-			return CMD_ERR;
-		}
-	}
-
-	UnLock();
-	return ret;
+	return SendAndReceiveCmdData(CMD2_VIEW_APP_SEARCH_EVENT, val, resVal);
 }
 
 //現在or次の番組情報を取得する
@@ -3470,36 +1235,7 @@ DWORD CSendCtrlCmd::SendViewGetEventPF(
 	EPGDB_EVENT_INFO* resVal
 	)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_VIEW_APP_GET_EVENT_PF;
-	send.dataSize = 0;
-
-	send.dataSize = GetVALUESize(val);
-	send.data = new BYTE[send.dataSize];
-	if( WriteVALUE(val, send.data, send.dataSize, NULL) == FALSE ){
-		UnLock();
-		return CMD_ERR;
-	}
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-	if( ret == CMD_SUCCESS ){
-		if( ReadVALUE(resVal, res.data, res.dataSize, NULL) == FALSE ){
-			UnLock();
-			return CMD_ERR;
-		}
-	}
-
-	UnLock();
-	return ret;
+	return SendAndReceiveCmdData(CMD2_VIEW_APP_GET_EVENT_PF, val, resVal);
 }
 
 //Viewボタン登録アプリ起動
@@ -3508,22 +1244,7 @@ DWORD CSendCtrlCmd::SendViewGetEventPF(
 DWORD CSendCtrlCmd::SendViewExecViewApp(
 	)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
-	DWORD ret = CMD_ERR;
-	CMD_STREAM send;
-	CMD_STREAM res;
-
-	send.param = CMD2_VIEW_APP_EXEC_VIEW_APP;
-	send.dataSize = 0;
-
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
-	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
-	}
-
-	UnLock();
-	return ret;
+	return SendCmdWithoutData(CMD2_VIEW_APP_EXEC_VIEW_APP);
 }
 
 //ストリーミング配信制御IDの設定
@@ -3533,25 +1254,22 @@ DWORD CSendCtrlCmd::SendViewSetStreamingInfo(
 	TVTEST_STREAMING_INFO* val
 	)
 {
+	return SendCmdData(CMD2_VIEW_APP_TT_SET_CTRL, val);
+}
+
+DWORD CSendCtrlCmd::SendCmdStream(CMD_STREAM* send, CMD_STREAM* res)
+{
 	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
 	DWORD ret = CMD_ERR;
-	CMD_STREAM send;
-	CMD_STREAM res;
+	CMD_STREAM tmpRes;
 
-	send.param = CMD2_VIEW_APP_TT_SET_CTRL;
-	send.dataSize = 0;
-
-	send.dataSize = GetVALUESize(val);
-	send.data = new BYTE[send.dataSize];
-	if( WriteVALUE(val, send.data, send.dataSize, NULL) == FALSE ){
-		UnLock();
-		return CMD_ERR;
+	if( res == NULL ){
+		res = &tmpRes;
 	}
-
 	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, &send, &res);
+		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, send, res);
 	}else{
-		ret = SendTCP(this->ip.c_str(), this->port, this->connectTimeOut, &send, &res);
+		ret = SendTCP(this->ip, this->port, this->connectTimeOut, send, res);
 	}
 
 	UnLock();
