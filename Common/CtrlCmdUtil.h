@@ -3,43 +3,52 @@
 
 #include "StructDef.h"
 
+BOOL CCUTIL_WriteStream_( const void* val, DWORD valSize, BYTE* buff, DWORD buffSize, DWORD* writeSize );
+BOOL CCUTIL_ReadStream_( void* val, DWORD valSize, const BYTE* buff, DWORD buffSize, DWORD* readSize );
+
+#define CCUTIL_BASETYPE_GET_SIZE_		{ val; return sizeof(val); }
+#define CCUTIL_BASETYPE_GET_SIZE_PTR_	{ val; return sizeof(*val); }
+#define CCUTIL_BASETYPE_WRITE_			return CCUTIL_WriteStream_(&val, sizeof(val), buff, buffSize, writeSize)
+#define CCUTIL_BASETYPE_WRITE_PTR_		return CCUTIL_WriteStream_(val, sizeof(*val), buff, buffSize, writeSize)
+#define CCUTIL_BASETYPE_READ_			return CCUTIL_ReadStream_(val, sizeof(*val), buff, buffSize, readSize)
+
 ////////////////////////////////////////////////////////////////////////////////////////////
 //コマンド送信用バイナリ作成関数
 
-DWORD GetVALUESize( char val );
-BOOL WriteVALUE( char val, BYTE* buff, DWORD buffSize, DWORD* writeSize );
-BOOL ReadVALUE( char* val, BYTE* buff, DWORD buffSize, DWORD* readSize );
-DWORD GetVALUESize( unsigned char val );
-BOOL WriteVALUE( unsigned char val, BYTE* buff, DWORD buffSize, DWORD* writeSize );
-BOOL ReadVALUE( unsigned char* val, BYTE* buff, DWORD buffSize, DWORD* readSize );
+inline DWORD GetVALUESize( char val ){ CCUTIL_BASETYPE_GET_SIZE_; }
+inline BOOL WriteVALUE( char val, BYTE* buff, DWORD buffSize, DWORD* writeSize ){ CCUTIL_BASETYPE_WRITE_; }
+inline BOOL ReadVALUE( char* val, BYTE* buff, DWORD buffSize, DWORD* readSize ){ CCUTIL_BASETYPE_READ_; }
+inline DWORD GetVALUESize( unsigned char val ){ CCUTIL_BASETYPE_GET_SIZE_; }
+inline BOOL WriteVALUE( unsigned char val, BYTE* buff, DWORD buffSize, DWORD* writeSize ){ CCUTIL_BASETYPE_WRITE_; }
+inline BOOL ReadVALUE( unsigned char* val, BYTE* buff, DWORD buffSize, DWORD* readSize ){ CCUTIL_BASETYPE_READ_; }
 
-DWORD GetVALUESize( short val );
-BOOL WriteVALUE( short val, BYTE* buff, DWORD buffSize, DWORD* writeSize );
-BOOL ReadVALUE( short* val, BYTE* buff, DWORD buffSize, DWORD* readSize );
-DWORD GetVALUESize( unsigned short val );
-BOOL WriteVALUE( unsigned short val, BYTE* buff, DWORD buffSize, DWORD* writeSize );
-BOOL ReadVALUE( unsigned short* val, BYTE* buff, DWORD buffSize, DWORD* readSize );
+inline DWORD GetVALUESize( short val ){ CCUTIL_BASETYPE_GET_SIZE_; }
+inline BOOL WriteVALUE( short val, BYTE* buff, DWORD buffSize, DWORD* writeSize ){ CCUTIL_BASETYPE_WRITE_; }
+inline BOOL ReadVALUE( short* val, BYTE* buff, DWORD buffSize, DWORD* readSize ){ CCUTIL_BASETYPE_READ_; }
+inline DWORD GetVALUESize( unsigned short val ){ CCUTIL_BASETYPE_GET_SIZE_; }
+inline BOOL WriteVALUE( unsigned short val, BYTE* buff, DWORD buffSize, DWORD* writeSize ){ CCUTIL_BASETYPE_WRITE_; }
+inline BOOL ReadVALUE( unsigned short* val, BYTE* buff, DWORD buffSize, DWORD* readSize ){ CCUTIL_BASETYPE_READ_; }
 
-DWORD GetVALUESize( int val );
-BOOL WriteVALUE( int val, BYTE* buff, DWORD buffSize, DWORD* writeSize );
-BOOL ReadVALUE( int* val, BYTE* buff, DWORD buffSize, DWORD* readSize );
-DWORD GetVALUESize( unsigned int val );
-BOOL WriteVALUE( unsigned int val, BYTE* buff, DWORD buffSize, DWORD* writeSize );
-BOOL ReadVALUE( unsigned int* val, BYTE* buff, DWORD buffSize, DWORD* readSize );
+inline DWORD GetVALUESize( int val ){ CCUTIL_BASETYPE_GET_SIZE_; }
+inline BOOL WriteVALUE( int val, BYTE* buff, DWORD buffSize, DWORD* writeSize ){ CCUTIL_BASETYPE_WRITE_; }
+inline BOOL ReadVALUE( int* val, BYTE* buff, DWORD buffSize, DWORD* readSize ){ CCUTIL_BASETYPE_READ_; }
+inline DWORD GetVALUESize( unsigned int val ){ CCUTIL_BASETYPE_GET_SIZE_; }
+inline BOOL WriteVALUE( unsigned int val, BYTE* buff, DWORD buffSize, DWORD* writeSize ){ CCUTIL_BASETYPE_WRITE_; }
+inline BOOL ReadVALUE( unsigned int* val, BYTE* buff, DWORD buffSize, DWORD* readSize ){ CCUTIL_BASETYPE_READ_; }
 
-DWORD GetVALUESize( long val );
-BOOL WriteVALUE( long val, BYTE* buff, DWORD buffSize, DWORD* writeSize );
-BOOL ReadVALUE( long* val, BYTE* buff, DWORD buffSize, DWORD* readSize );
-DWORD GetVALUESize( unsigned long val );
-BOOL WriteVALUE( unsigned long val, BYTE* buff, DWORD buffSize, DWORD* writeSize );
-BOOL ReadVALUE( unsigned long* val, BYTE* buff, DWORD buffSize, DWORD* readSize );
+inline DWORD GetVALUESize( long val ){ CCUTIL_BASETYPE_GET_SIZE_; }
+inline BOOL WriteVALUE( long val, BYTE* buff, DWORD buffSize, DWORD* writeSize ){ CCUTIL_BASETYPE_WRITE_; }
+inline BOOL ReadVALUE( long* val, BYTE* buff, DWORD buffSize, DWORD* readSize ){ CCUTIL_BASETYPE_READ_; }
+inline DWORD GetVALUESize( unsigned long val ){ CCUTIL_BASETYPE_GET_SIZE_; }
+inline BOOL WriteVALUE( unsigned long val, BYTE* buff, DWORD buffSize, DWORD* writeSize ){ CCUTIL_BASETYPE_WRITE_; }
+inline BOOL ReadVALUE( unsigned long* val, BYTE* buff, DWORD buffSize, DWORD* readSize ){ CCUTIL_BASETYPE_READ_; }
 
-DWORD GetVALUESize( __int64 val );
-BOOL WriteVALUE( __int64 val, BYTE* buff, DWORD buffSize, DWORD* writeSize );
-BOOL ReadVALUE( __int64* val, BYTE* buff, DWORD buffSize, DWORD* readSize );
-DWORD GetVALUESize( unsigned __int64 val );
-BOOL WriteVALUE( unsigned __int64 val, BYTE* buff, DWORD buffSize, DWORD* writeSize );
-BOOL ReadVALUE( unsigned __int64* val, BYTE* buff, DWORD buffSize, DWORD* readSize );
+inline DWORD GetVALUESize( __int64 val ){ CCUTIL_BASETYPE_GET_SIZE_; }
+inline BOOL WriteVALUE( __int64 val, BYTE* buff, DWORD buffSize, DWORD* writeSize ){ CCUTIL_BASETYPE_WRITE_; }
+inline BOOL ReadVALUE( __int64* val, BYTE* buff, DWORD buffSize, DWORD* readSize ){ CCUTIL_BASETYPE_READ_; }
+inline DWORD GetVALUESize( unsigned __int64 val ){ CCUTIL_BASETYPE_GET_SIZE_; }
+inline BOOL WriteVALUE( unsigned __int64 val, BYTE* buff, DWORD buffSize, DWORD* writeSize ){ CCUTIL_BASETYPE_WRITE_; }
+inline BOOL ReadVALUE( unsigned __int64* val, BYTE* buff, DWORD buffSize, DWORD* readSize ){ CCUTIL_BASETYPE_READ_; }
 
 DWORD GetVALUESize( vector<unsigned short>* val);
 BOOL WriteVALUE( vector<unsigned short>* val, BYTE* buff, DWORD buffSize, DWORD* writeSize );
@@ -53,17 +62,17 @@ DWORD GetVALUESize( vector<__int64>* val);
 BOOL WriteVALUE( vector<__int64>* val, BYTE* buff, DWORD buffSize, DWORD* writeSize );
 BOOL ReadVALUE( vector<__int64>* val, BYTE* buff, DWORD buffSize, DWORD* readSize );
 
-DWORD GetVALUESize( wstring val );
-BOOL WriteVALUE( wstring val, BYTE* buff, DWORD buffSize, DWORD* writeSize );
+DWORD GetVALUESize( const wstring& val );
+BOOL WriteVALUE( const wstring& val, BYTE* buff, DWORD buffSize, DWORD* writeSize );
 BOOL ReadVALUE( wstring* val, BYTE* buff, DWORD buffSize, DWORD* readSize );
 
 DWORD GetVALUESize( vector<wstring>* val );
 BOOL WriteVALUE( vector<wstring>* val, BYTE* buff, DWORD buffSize, DWORD* writeSize );
 BOOL ReadVALUE( vector<wstring>* val, BYTE* buff, DWORD buffSize, DWORD* readSize );
 
-DWORD GetVALUESize( SYSTEMTIME* val );
-BOOL WriteVALUE( SYSTEMTIME* val, BYTE* buff, DWORD buffSize, DWORD* writeSize );
-BOOL ReadVALUE( SYSTEMTIME* val, BYTE* buff, DWORD buffSize, DWORD* readSize );
+inline DWORD GetVALUESize( SYSTEMTIME* val ){ CCUTIL_BASETYPE_GET_SIZE_PTR_; }
+inline BOOL WriteVALUE( SYSTEMTIME* val, BYTE* buff, DWORD buffSize, DWORD* writeSize ){ CCUTIL_BASETYPE_WRITE_PTR_; }
+inline BOOL ReadVALUE( SYSTEMTIME* val, BYTE* buff, DWORD buffSize, DWORD* readSize ){ CCUTIL_BASETYPE_READ_; }
 
 DWORD GetVALUESize( REC_SETTING_DATA* val );
 BOOL WriteVALUE( REC_SETTING_DATA* val, BYTE* buff, DWORD buffSize, DWORD* writeSize );
