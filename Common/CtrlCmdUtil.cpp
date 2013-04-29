@@ -2,6 +2,10 @@
 #include "CtrlCmdUtil.h"
 #include "Util.h"
 
+//^\s*if *\( *WriteVALUE *\(.*?, *buff *\+ *pos *, *buffSize *- *pos *, *&size *\) *== *FALSE *\) *{ *\r\n^\s*return *FALSE; *\r\n^\s*} *\r\n^\s*pos *\+= *size; *\r\n
+#define WRITE_VALUE_OR_FAIL(buff,buffSize,pos,size,val)		{ if( WriteVALUE(val,(buff)+pos,(buffSize)-pos,&size) == FALSE ) return FALSE; pos+=size; }
+#define READ_VALUE_OR_FAIL(buff,buffSize,pos,size,val)		{ if( ReadVALUE(val,(buff)+pos,(buffSize)-pos,&size) == FALSE ) return FALSE; pos+=size; }
+
 DWORD GetVALUESize( vector<unsigned short>* val)
 {
 	DWORD size = sizeof(DWORD)*2;
@@ -76,10 +80,7 @@ BOOL ReadVALUE( wstring* val, BYTE* buff, DWORD buffSize, DWORD* readSize )
 	DWORD size = 0;
 	DWORD valSize = 0;
 	//全体のサイズ
-	if( ReadVALUE( &valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &valSize );
 	if( buffSize < valSize ){
 		return FALSE;
 	}
@@ -127,72 +128,24 @@ BOOL WriteVALUE( REC_SETTING_DATA* val, BYTE* buff, DWORD buffSize, DWORD* write
 
 	DWORD pos = 0;
 	DWORD size = 0;
-	if( WriteVALUE( valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, valSize );
 
 	if (val != NULL ){
-		if( WriteVALUE( val->recMode, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->priority, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->tuijyuuFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->serviceMode, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->pittariFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->batFilePath, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( &val->recFolderList, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->suspendMode, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->rebootFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->useMargineFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->startMargine, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->endMargine, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->continueRecFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->partialRecFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->tunerID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->recMode );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->priority );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->tuijyuuFlag );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->serviceMode );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->pittariFlag );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->batFilePath );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->recFolderList );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->suspendMode );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->rebootFlag );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->useMargineFlag );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->startMargine );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->endMargine );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->continueRecFlag );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->partialRecFlag );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->tunerID );
 	}
 
 	if( writeSize != NULL ){
@@ -210,75 +163,27 @@ BOOL ReadVALUE( REC_SETTING_DATA* val, BYTE* buff, DWORD buffSize, DWORD* readSi
 	DWORD pos = 0;
 	DWORD size = 0;
 	DWORD valSize = 0;
-	if( ReadVALUE( &valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &valSize );
 	if( buffSize < valSize ){
 		return FALSE;
 	}
 
 	if( pos < valSize ){
-		if( ReadVALUE( &val->recMode, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->priority, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->tuijyuuFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->serviceMode, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->pittariFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->batFilePath, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->recFolderList, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->suspendMode, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->rebootFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->useMargineFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->startMargine, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->endMargine, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->continueRecFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->partialRecFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->tunerID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->recMode );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->priority );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->tuijyuuFlag );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->serviceMode );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->pittariFlag );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->batFilePath );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->recFolderList );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->suspendMode );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->rebootFlag );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->useMargineFlag );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->startMargine );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->endMargine );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->continueRecFlag );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->partialRecFlag );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->tunerID );
 	}
 
 	if( readSize != NULL ){
@@ -324,76 +229,25 @@ BOOL WriteVALUE( RESERVE_DATA* val, BYTE* buff, DWORD buffSize, DWORD* writeSize
 
 	DWORD pos = 0;
 	DWORD size = 0;
-	if( WriteVALUE( valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, valSize );
 
 	if(val != NULL ){
-		if( WriteVALUE( val->title, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( &val->startTime, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->durationSecond, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->stationName, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->originalNetworkID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->transportStreamID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->serviceID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->eventID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->comment, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->reserveID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->recWaitFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->overlapMode, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->recFilePath, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( &val->startTimeEpg, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( &val->recSetting, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->reserveStatus, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->title );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->startTime );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->durationSecond );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->stationName );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->originalNetworkID );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->transportStreamID );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->serviceID );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->eventID );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->comment );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->reserveID );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->recWaitFlag );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->overlapMode );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->recFilePath );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->startTimeEpg );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->recSetting );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->reserveStatus );
 	}
 
 	if( writeSize != NULL ){
@@ -411,79 +265,28 @@ BOOL ReadVALUE( RESERVE_DATA* val, BYTE* buff, DWORD buffSize, DWORD* readSize )
 	DWORD pos = 0;
 	DWORD size = 0;
 	DWORD valSize = 0;
-	if( ReadVALUE( &valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &valSize );
 	if( buffSize < valSize ){
 		return FALSE;
 	}
 
 	if( pos < valSize ){
-		if( ReadVALUE( &val->title, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->startTime, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->durationSecond, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->stationName, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->originalNetworkID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->transportStreamID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->serviceID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->eventID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->comment, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->reserveID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->recWaitFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->overlapMode, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->recFilePath, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->startTimeEpg, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->recSetting, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->reserveStatus, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->title );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->startTime );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->durationSecond );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->stationName );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->originalNetworkID );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->transportStreamID );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->serviceID );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->eventID );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->comment );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->reserveID );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->recWaitFlag );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->overlapMode );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->recFilePath );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->startTimeEpg );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->recSetting );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->reserveStatus );
 	}
 
 	if( readSize != NULL ){
@@ -523,52 +326,19 @@ BOOL WriteVALUE( EPGDB_SERVICE_INFO* val, BYTE* buff, DWORD buffSize, DWORD* wri
 
 	DWORD pos = 0;
 	DWORD size = 0;
-	if( WriteVALUE( valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, valSize );
 
 	if(val != NULL ){
-		if( WriteVALUE( val->ONID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->TSID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->SID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->service_type, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->partialReceptionFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->service_provider_name, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->service_name, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->network_name, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->ts_name, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->remote_control_key_id, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->ONID );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->TSID );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->SID );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->service_type );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->partialReceptionFlag );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->service_provider_name );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->service_name );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->network_name );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->ts_name );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->remote_control_key_id );
 	}
 
 	if( writeSize != NULL ){
@@ -586,55 +356,22 @@ BOOL ReadVALUE( EPGDB_SERVICE_INFO* val, BYTE* buff, DWORD buffSize, DWORD* read
 	DWORD pos = 0;
 	DWORD size = 0;
 	DWORD valSize = 0;
-	if( ReadVALUE( &valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &valSize );
 	if( buffSize < valSize ){
 		return FALSE;
 	}
 
 	if( pos < valSize ){
-		if( ReadVALUE( &val->ONID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->TSID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->SID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->service_type, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->partialReceptionFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->service_provider_name, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->service_name, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->network_name, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->ts_name, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->remote_control_key_id, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->ONID );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->TSID );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->SID );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->service_type );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->partialReceptionFlag );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->service_provider_name );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->service_name );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->network_name );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->ts_name );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->remote_control_key_id );
 	}
 
 	if( readSize != NULL ){
@@ -666,20 +403,11 @@ BOOL WriteVALUE( EPGDB_SHORT_EVENT_INFO* val, BYTE* buff, DWORD buffSize, DWORD*
 
 	DWORD pos = 0;
 	DWORD size = 0;
-	if( WriteVALUE( valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, valSize );
 
 	if(val != NULL ){
-		if( WriteVALUE( val->event_name, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->text_char, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->event_name );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->text_char );
 	}
 
 	if( writeSize != NULL ){
@@ -697,23 +425,14 @@ BOOL ReadVALUE( EPGDB_SHORT_EVENT_INFO* val, BYTE* buff, DWORD buffSize, DWORD* 
 	DWORD pos = 0;
 	DWORD size = 0;
 	DWORD valSize = 0;
-	if( ReadVALUE( &valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &valSize );
 	if( buffSize < valSize ){
 		return FALSE;
 	}
 
 	if( pos < valSize ){
-		if( ReadVALUE( &val->event_name, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->text_char, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->event_name );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->text_char );
 	}
 
 	if( readSize != NULL ){
@@ -744,16 +463,10 @@ BOOL WriteVALUE( EPGDB_EXTENDED_EVENT_INFO* val, BYTE* buff, DWORD buffSize, DWO
 
 	DWORD pos = 0;
 	DWORD size = 0;
-	if( WriteVALUE( valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, valSize );
 
 	if(val != NULL ){
-		if( WriteVALUE( val->text_char, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->text_char );
 	}
 
 	if( writeSize != NULL ){
@@ -771,19 +484,13 @@ BOOL ReadVALUE( EPGDB_EXTENDED_EVENT_INFO* val, BYTE* buff, DWORD buffSize, DWOR
 	DWORD pos = 0;
 	DWORD size = 0;
 	DWORD valSize = 0;
-	if( ReadVALUE( &valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &valSize );
 	if( buffSize < valSize ){
 		return FALSE;
 	}
 
 	if( pos < valSize ){
-		if( ReadVALUE( &val->text_char, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->text_char );
 	}
 
 	if( readSize != NULL ){
@@ -817,28 +524,13 @@ BOOL WriteVALUE( EPGDB_CONTENT_DATA* val, BYTE* buff, DWORD buffSize, DWORD* wri
 
 	DWORD pos = 0;
 	DWORD size = 0;
-	if( WriteVALUE( valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, valSize );
 
 	if(val != NULL ){
-		if( WriteVALUE( val->content_nibble_level_1, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->content_nibble_level_2, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->user_nibble_1, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->user_nibble_2, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->content_nibble_level_1 );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->content_nibble_level_2 );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->user_nibble_1 );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->user_nibble_2 );
 	}
 
 	if( writeSize != NULL ){
@@ -856,31 +548,16 @@ BOOL ReadVALUE( EPGDB_CONTENT_DATA* val, BYTE* buff, DWORD buffSize, DWORD* read
 	DWORD pos = 0;
 	DWORD size = 0;
 	DWORD valSize = 0;
-	if( ReadVALUE( &valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &valSize );
 	if( buffSize < valSize ){
 		return FALSE;
 	}
 
 	if( pos < valSize ){
-		if( ReadVALUE( &val->content_nibble_level_1, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->content_nibble_level_2, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->user_nibble_1, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->user_nibble_2, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->content_nibble_level_1 );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->content_nibble_level_2 );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->user_nibble_1 );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->user_nibble_2 );
 	}
 
 	if( readSize != NULL ){
@@ -911,16 +588,10 @@ BOOL WriteVALUE( EPGDB_CONTEN_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writ
 
 	DWORD pos = 0;
 	DWORD size = 0;
-	if( WriteVALUE( valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, valSize );
 
 	if(val != NULL ){
-		if( WriteVALUE( &val->nibbleList, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->nibbleList );
 	}
 
 	if( writeSize != NULL ){
@@ -938,19 +609,13 @@ BOOL ReadVALUE( EPGDB_CONTEN_INFO* val, BYTE* buff, DWORD buffSize, DWORD* readS
 	DWORD pos = 0;
 	DWORD size = 0;
 	DWORD valSize = 0;
-	if( ReadVALUE( &valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &valSize );
 	if( buffSize < valSize ){
 		return FALSE;
 	}
 
 	if( pos < valSize ){
-		if( ReadVALUE( &val->nibbleList, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->nibbleList );
 	}
 
 	if( readSize != NULL ){
@@ -984,28 +649,13 @@ BOOL WriteVALUE( EPGDB_COMPONENT_INFO* val, BYTE* buff, DWORD buffSize, DWORD* w
 
 	DWORD pos = 0;
 	DWORD size = 0;
-	if( WriteVALUE( valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, valSize );
 
 	if(val != NULL ){
-		if( WriteVALUE( val->stream_content, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->component_type, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->component_tag, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->text_char, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->stream_content );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->component_type );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->component_tag );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->text_char );
 	}
 
 	if( writeSize != NULL ){
@@ -1023,31 +673,16 @@ BOOL ReadVALUE( EPGDB_COMPONENT_INFO* val, BYTE* buff, DWORD buffSize, DWORD* re
 	DWORD pos = 0;
 	DWORD size = 0;
 	DWORD valSize = 0;
-	if( ReadVALUE( &valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &valSize );
 	if( buffSize < valSize ){
 		return FALSE;
 	}
 
 	if( pos < valSize ){
-		if( ReadVALUE( &val->stream_content, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->component_type, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->component_tag, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->text_char, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->stream_content );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->component_type );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->component_tag );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->text_char );
 	}
 
 	if( readSize != NULL ){
@@ -1087,52 +722,19 @@ BOOL WriteVALUE( EPGDB_AUDIO_COMPONENT_INFO_DATA* val, BYTE* buff, DWORD buffSiz
 
 	DWORD pos = 0;
 	DWORD size = 0;
-	if( WriteVALUE( valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, valSize );
 
 	if(val != NULL ){
-		if( WriteVALUE( val->stream_content, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->component_type, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->component_tag, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->stream_type, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->simulcast_group_tag, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->ES_multi_lingual_flag, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->main_component_flag, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->quality_indicator, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->sampling_rate, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->text_char, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->stream_content );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->component_type );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->component_tag );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->stream_type );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->simulcast_group_tag );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->ES_multi_lingual_flag );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->main_component_flag );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->quality_indicator );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->sampling_rate );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->text_char );
 	}
 
 	if( writeSize != NULL ){
@@ -1150,55 +752,22 @@ BOOL ReadVALUE( EPGDB_AUDIO_COMPONENT_INFO_DATA* val, BYTE* buff, DWORD buffSize
 	DWORD pos = 0;
 	DWORD size = 0;
 	DWORD valSize = 0;
-	if( ReadVALUE( &valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &valSize );
 	if( buffSize < valSize ){
 		return FALSE;
 	}
 
 	if( pos < valSize ){
-		if( ReadVALUE( &val->stream_content, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->component_type, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->component_tag, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->stream_type, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->simulcast_group_tag, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->ES_multi_lingual_flag, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->main_component_flag, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->quality_indicator, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->sampling_rate, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->text_char, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->stream_content );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->component_type );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->component_tag );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->stream_type );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->simulcast_group_tag );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->ES_multi_lingual_flag );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->main_component_flag );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->quality_indicator );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->sampling_rate );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->text_char );
 	}
 
 	if( readSize != NULL ){
@@ -1229,16 +798,10 @@ BOOL WriteVALUE( EPGDB_AUDIO_COMPONENT_INFO* val, BYTE* buff, DWORD buffSize, DW
 
 	DWORD pos = 0;
 	DWORD size = 0;
-	if( WriteVALUE( valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, valSize );
 
 	if(val != NULL ){
-		if( WriteVALUE( &val->componentList, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->componentList );
 	}
 
 	if( writeSize != NULL ){
@@ -1256,19 +819,13 @@ BOOL ReadVALUE( EPGDB_AUDIO_COMPONENT_INFO* val, BYTE* buff, DWORD buffSize, DWO
 	DWORD pos = 0;
 	DWORD size = 0;
 	DWORD valSize = 0;
-	if( ReadVALUE( &valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &valSize );
 	if( buffSize < valSize ){
 		return FALSE;
 	}
 
 	if( pos < valSize ){
-		if( ReadVALUE( &val->componentList, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->componentList );
 	}
 
 	if( readSize != NULL ){
@@ -1302,28 +859,13 @@ BOOL WriteVALUE( EPGDB_EVENT_DATA* val, BYTE* buff, DWORD buffSize, DWORD* write
 
 	DWORD pos = 0;
 	DWORD size = 0;
-	if( WriteVALUE( valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, valSize );
 
 	if(val != NULL ){
-		if( WriteVALUE( val->original_network_id, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->transport_stream_id, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->service_id, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->event_id, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->original_network_id );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->transport_stream_id );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->service_id );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->event_id );
 	}
 
 	if( writeSize != NULL ){
@@ -1341,31 +883,16 @@ BOOL ReadVALUE( EPGDB_EVENT_DATA* val, BYTE* buff, DWORD buffSize, DWORD* readSi
 	DWORD pos = 0;
 	DWORD size = 0;
 	DWORD valSize = 0;
-	if( ReadVALUE( &valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &valSize );
 	if( buffSize < valSize ){
 		return FALSE;
 	}
 
 	if( pos < valSize ){
-		if( ReadVALUE( &val->original_network_id, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->transport_stream_id, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->service_id, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->event_id, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->original_network_id );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->transport_stream_id );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->service_id );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->event_id );
 	}
 
 	if( readSize != NULL ){
@@ -1397,20 +924,11 @@ BOOL WriteVALUE( EPGDB_EVENTGROUP_INFO* val, BYTE* buff, DWORD buffSize, DWORD* 
 
 	DWORD pos = 0;
 	DWORD size = 0;
-	if( WriteVALUE( valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, valSize );
 
 	if(val != NULL ){
-		if( WriteVALUE( val->group_type, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( &val->eventDataList, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->group_type );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->eventDataList );
 	}
 
 	if( writeSize != NULL ){
@@ -1428,23 +946,14 @@ BOOL ReadVALUE( EPGDB_EVENTGROUP_INFO* val, BYTE* buff, DWORD buffSize, DWORD* r
 	DWORD pos = 0;
 	DWORD size = 0;
 	DWORD valSize = 0;
-	if( ReadVALUE( &valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &valSize );
 	if( buffSize < valSize ){
 		return FALSE;
 	}
 
 	if( pos < valSize ){
-		if( ReadVALUE( &val->group_type, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->eventDataList, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->group_type );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->eventDataList );
 	}
 
 	if( readSize != NULL ){
@@ -1492,77 +1001,26 @@ BOOL WriteVALUE( EPGDB_EVENT_INFO* val, BYTE* buff, DWORD buffSize, DWORD* write
 
 	DWORD pos = 0;
 	DWORD size = 0;
-	if( WriteVALUE( valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, valSize );
 
 	if( val != NULL ){
-		if( WriteVALUE( val->original_network_id, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->transport_stream_id, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->service_id, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->event_id, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->StartTimeFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( &val->start_time, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->DurationFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->durationSec, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->original_network_id );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->transport_stream_id );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->service_id );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->event_id );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->StartTimeFlag );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->start_time );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->DurationFlag );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->durationSec );
 
-		if( WriteVALUE( val->shortInfo, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->extInfo, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->contentInfo, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->componentInfo, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->audioInfo, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->eventGroupInfo, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->eventRelayInfo, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->freeCAFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->shortInfo );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->extInfo );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->contentInfo );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->componentInfo );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->audioInfo );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->eventGroupInfo );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->eventRelayInfo );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->freeCAFlag );
 	}
 
 	if( writeSize != NULL ){
@@ -1580,47 +1038,20 @@ BOOL ReadVALUE( EPGDB_EVENT_INFO* val, BYTE* buff, DWORD buffSize, DWORD* readSi
 	DWORD pos = 0;
 	DWORD size = 0;
 	DWORD valSize = 0;
-	if( ReadVALUE( &valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &valSize );
 	if( buffSize < valSize ){
 		return FALSE;
 	}
 
 	if( pos < valSize ){
-		if( ReadVALUE( &val->original_network_id, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->transport_stream_id, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->service_id, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->event_id, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->StartTimeFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->start_time, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->DurationFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->durationSec, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->original_network_id );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->transport_stream_id );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->service_id );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->event_id );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->StartTimeFlag );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->start_time );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->DurationFlag );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->durationSec );
 
 		{
 			EPGDB_SHORT_EVENT_INFO* info = new EPGDB_SHORT_EVENT_INFO;
@@ -1767,36 +1198,15 @@ BOOL WriteVALUE( EPGDB_SEARCH_DATE_INFO* val, BYTE* buff, DWORD buffSize, DWORD*
 
 	DWORD pos = 0;
 	DWORD size = 0;
-	if( WriteVALUE( valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, valSize );
 
 	if(val != NULL ){
-		if( WriteVALUE( val->startDayOfWeek, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->startHour, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->startMin, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->endDayOfWeek, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->endHour, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->endMin, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->startDayOfWeek );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->startHour );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->startMin );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->endDayOfWeek );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->endHour );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->endMin );
 	}
 
 	if( writeSize != NULL ){
@@ -1814,39 +1224,18 @@ BOOL ReadVALUE( EPGDB_SEARCH_DATE_INFO* val, BYTE* buff, DWORD buffSize, DWORD* 
 	DWORD pos = 0;
 	DWORD size = 0;
 	DWORD valSize = 0;
-	if( ReadVALUE( &valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &valSize );
 	if( buffSize < valSize ){
 		return FALSE;
 	}
 
 	if( pos < valSize ){
-		if( ReadVALUE( &val->startDayOfWeek, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->startHour, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->startMin, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->endDayOfWeek, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->endHour, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->endMin, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->startDayOfWeek );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->startHour );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->startMin );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->endDayOfWeek );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->endHour );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->endMin );
 	}
 
 	if( readSize != NULL ){
@@ -1889,64 +1278,22 @@ BOOL WriteVALUE( EPGDB_SEARCH_KEY_INFO* val, BYTE* buff, DWORD buffSize, DWORD* 
 
 	DWORD pos = 0;
 	DWORD size = 0;
-	if( WriteVALUE( valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, valSize );
 
 	if(val != NULL ){
-		if( WriteVALUE( val->andKey, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->notKey, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->regExpFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->titleOnlyFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( &val->contentList, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( &val->dateList, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( &val->serviceList, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( &val->videoList, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( &val->audioList, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->aimaiFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->notContetFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->notDateFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->freeCAFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->andKey );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->notKey );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->regExpFlag );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->titleOnlyFlag );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->contentList );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->dateList );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->serviceList );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->videoList );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->audioList );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->aimaiFlag );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->notContetFlag );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->notDateFlag );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->freeCAFlag );
 	}
 
 	if( writeSize != NULL ){
@@ -1964,67 +1311,25 @@ BOOL ReadVALUE( EPGDB_SEARCH_KEY_INFO* val, BYTE* buff, DWORD buffSize, DWORD* r
 	DWORD pos = 0;
 	DWORD size = 0;
 	DWORD valSize = 0;
-	if( ReadVALUE( &valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &valSize );
 	if( buffSize < valSize ){
 		return FALSE;
 	}
 
 	if( pos < valSize ){
-		if( ReadVALUE( &val->andKey, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->notKey, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->regExpFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->titleOnlyFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->contentList, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->dateList, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->serviceList, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->videoList, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->audioList, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->aimaiFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->notContetFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->notDateFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->freeCAFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->andKey );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->notKey );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->regExpFlag );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->titleOnlyFlag );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->contentList );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->dateList );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->serviceList );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->videoList );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->audioList );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->aimaiFlag );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->notContetFlag );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->notDateFlag );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->freeCAFlag );
 	}
 
 	if( readSize != NULL ){
@@ -2061,40 +1366,16 @@ BOOL WriteVALUE( SET_CH_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize 
 
 	DWORD pos = 0;
 	DWORD size = 0;
-	if( WriteVALUE( valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, valSize );
 
 	if(val != NULL ){
-		if( WriteVALUE( val->useSID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->ONID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->TSID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->SID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->useBonCh, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->space, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->ch, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->useSID );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->ONID );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->TSID );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->SID );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->useBonCh );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->space );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->ch );
 	}
 
 	if( writeSize != NULL ){
@@ -2112,43 +1393,19 @@ BOOL ReadVALUE( SET_CH_INFO* val, BYTE* buff, DWORD buffSize, DWORD* readSize )
 	DWORD pos = 0;
 	DWORD size = 0;
 	DWORD valSize = 0;
-	if( ReadVALUE( &valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &valSize );
 	if( buffSize < valSize ){
 		return FALSE;
 	}
 
 	if( pos < valSize ){
-		if( ReadVALUE( &val->useSID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->ONID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->TSID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->SID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->useBonCh, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->space, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->ch, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->useSID );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->ONID );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->TSID );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->SID );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->useBonCh );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->space );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->ch );
 	}
 
 	if( readSize != NULL ){
@@ -2183,32 +1440,14 @@ BOOL WriteVALUE( SET_CTRL_MODE* val, BYTE* buff, DWORD buffSize, DWORD* writeSiz
 
 	DWORD pos = 0;
 	DWORD size = 0;
-	if( WriteVALUE( valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, valSize );
 
 	if(val != NULL ){
-		if( WriteVALUE( val->ctrlID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->SID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->enableScramble, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->enableCaption, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->enableData, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->ctrlID );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->SID );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->enableScramble );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->enableCaption );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->enableData );
 
 	}
 
@@ -2227,35 +1466,17 @@ BOOL ReadVALUE( SET_CTRL_MODE* val, BYTE* buff, DWORD buffSize, DWORD* readSize 
 	DWORD pos = 0;
 	DWORD size = 0;
 	DWORD valSize = 0;
-	if( ReadVALUE( &valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &valSize );
 	if( buffSize < valSize ){
 		return FALSE;
 	}
 
 	if( pos < valSize ){
-		if( ReadVALUE( &val->ctrlID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->SID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->enableScramble, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->enableCaption, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->enableData, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->ctrlID );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->SID );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->enableScramble );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->enableCaption );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->enableData );
 
 	}
 
@@ -2290,28 +1511,13 @@ BOOL WriteVALUE( REC_FILE_SET_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writ
 
 	DWORD pos = 0;
 	DWORD size = 0;
-	if( WriteVALUE( valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, valSize );
 
 	if(val != NULL ){
-		if( WriteVALUE( val->recFolder, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->writePlugIn, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->recNamePlugIn, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->recFileName, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->recFolder );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->writePlugIn );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->recNamePlugIn );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->recFileName );
 	}
 
 	if( writeSize != NULL ){
@@ -2329,31 +1535,16 @@ BOOL ReadVALUE( REC_FILE_SET_INFO* val, BYTE* buff, DWORD buffSize, DWORD* readS
 	DWORD pos = 0;
 	DWORD size = 0;
 	DWORD valSize = 0;
-	if( ReadVALUE( &valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &valSize );
 	if( buffSize < valSize ){
 		return FALSE;
 	}
 
 	if( pos < valSize ){
-		if( ReadVALUE( &val->recFolder, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->writePlugIn, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->recNamePlugIn, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->recFileName, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->recFolder );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->writePlugIn );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->recNamePlugIn );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->recFileName );
 	}
 
 	if( readSize != NULL ){
@@ -2393,52 +1584,19 @@ BOOL WriteVALUE( SET_CTRL_REC_PARAM* val, BYTE* buff, DWORD buffSize, DWORD* wri
 
 	DWORD pos = 0;
 	DWORD size = 0;
-	if( WriteVALUE( valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, valSize );
 
 	if(val != NULL ){
-		if( WriteVALUE( val->ctrlID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->fileName, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->overWriteFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->createSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( &val->saveFolder, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->pittariFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->pittariONID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->pittariTSID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->pittariSID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->pittariEventID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->ctrlID );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->fileName );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->overWriteFlag );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->createSize );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->saveFolder );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->pittariFlag );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->pittariONID );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->pittariTSID );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->pittariSID );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->pittariEventID );
 
 	}
 
@@ -2457,55 +1615,22 @@ BOOL ReadVALUE( SET_CTRL_REC_PARAM* val, BYTE* buff, DWORD buffSize, DWORD* read
 	DWORD pos = 0;
 	DWORD size = 0;
 	DWORD valSize = 0;
-	if( ReadVALUE( &valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &valSize );
 	if( buffSize < valSize ){
 		return FALSE;
 	}
 
 	if( pos < valSize ){
-		if( ReadVALUE( &val->ctrlID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->fileName, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->overWriteFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->createSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->saveFolder, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->pittariFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->pittariONID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->pittariTSID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->pittariSID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->pittariEventID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->ctrlID );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->fileName );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->overWriteFlag );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->createSize );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->saveFolder );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->pittariFlag );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->pittariONID );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->pittariTSID );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->pittariSID );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->pittariEventID );
 
 	}
 
@@ -2538,20 +1663,11 @@ BOOL WriteVALUE( SET_CTRL_REC_STOP_PARAM* val, BYTE* buff, DWORD buffSize, DWORD
 
 	DWORD pos = 0;
 	DWORD size = 0;
-	if( WriteVALUE( valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, valSize );
 
 	if(val != NULL ){
-		if( WriteVALUE( val->ctrlID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->saveErrLog, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->ctrlID );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->saveErrLog );
 	}
 
 	if( writeSize != NULL ){
@@ -2569,23 +1685,14 @@ BOOL ReadVALUE( SET_CTRL_REC_STOP_PARAM* val, BYTE* buff, DWORD buffSize, DWORD*
 	DWORD pos = 0;
 	DWORD size = 0;
 	DWORD valSize = 0;
-	if( ReadVALUE( &valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &valSize );
 	if( buffSize < valSize ){
 		return FALSE;
 	}
 
 	if( pos < valSize ){
-		if( ReadVALUE( &val->ctrlID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->saveErrLog, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->ctrlID );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->saveErrLog );
 	}
 
 	if( readSize != NULL ){
@@ -2619,28 +1726,13 @@ BOOL WriteVALUE( SET_CTRL_REC_STOP_RES_PARAM* val, BYTE* buff, DWORD buffSize, D
 
 	DWORD pos = 0;
 	DWORD size = 0;
-	if( WriteVALUE( valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, valSize );
 
 	if(val != NULL ){
-		if( WriteVALUE( val->recFilePath, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->drop, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->scramble, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->subRecFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->recFilePath );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->drop );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->scramble );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->subRecFlag );
 	}
 
 	if( writeSize != NULL ){
@@ -2658,31 +1750,16 @@ BOOL ReadVALUE( SET_CTRL_REC_STOP_RES_PARAM* val, BYTE* buff, DWORD buffSize, DW
 	DWORD pos = 0;
 	DWORD size = 0;
 	DWORD valSize = 0;
-	if( ReadVALUE( &valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &valSize );
 	if( buffSize < valSize ){
 		return FALSE;
 	}
 
 	if( pos < valSize ){
-		if( ReadVALUE( &val->recFilePath, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->drop, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->scramble, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->subRecFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->recFilePath );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->drop );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->scramble );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->subRecFlag );
 	}
 
 	if( readSize != NULL ){
@@ -2729,80 +1806,26 @@ BOOL WriteVALUE( REC_FILE_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSiz
 
 	DWORD pos = 0;
 	DWORD size = 0;
-	if( WriteVALUE( valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, valSize );
 
 	if(val != NULL ){
-		if( WriteVALUE( val->id, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->recFilePath, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->title, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( &val->startTime, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->durationSecond, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->serviceName, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->originalNetworkID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->transportStreamID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->serviceID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->eventID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->drops, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->scrambles, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->recStatus, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( &val->startTimeEpg, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->comment, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->programInfo, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->errInfo, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->id );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->recFilePath );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->title );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->startTime );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->durationSecond );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->serviceName );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->originalNetworkID );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->transportStreamID );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->serviceID );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->eventID );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->drops );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->scrambles );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->recStatus );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->startTimeEpg );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->comment );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->programInfo );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->errInfo );
 	}
 
 	if( writeSize != NULL ){
@@ -2820,83 +1843,29 @@ BOOL ReadVALUE( REC_FILE_INFO* val, BYTE* buff, DWORD buffSize, DWORD* readSize 
 	DWORD pos = 0;
 	DWORD size = 0;
 	DWORD valSize = 0;
-	if( ReadVALUE( &valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &valSize );
 	if( buffSize < valSize ){
 		return FALSE;
 	}
 
 	if( pos < valSize ){
-		if( ReadVALUE( &val->id, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->recFilePath, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->title, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->startTime, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->durationSecond, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->serviceName, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->originalNetworkID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->transportStreamID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->serviceID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->eventID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->drops, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->scrambles, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->recStatus, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->startTimeEpg, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->comment, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->programInfo, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->errInfo, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->id );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->recFilePath );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->title );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->startTime );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->durationSecond );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->serviceName );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->originalNetworkID );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->transportStreamID );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->serviceID );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->eventID );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->drops );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->scrambles );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->recStatus );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->startTimeEpg );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->comment );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->programInfo );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->errInfo );
 	}
 
 	if( readSize != NULL ){
@@ -2929,24 +1898,12 @@ BOOL WriteVALUE( EPG_AUTO_ADD_DATA* val, BYTE* buff, DWORD buffSize, DWORD* writ
 
 	DWORD pos = 0;
 	DWORD size = 0;
-	if( WriteVALUE( valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, valSize );
 
 	if(val != NULL ){
-		if( WriteVALUE( val->dataID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( &val->searchInfo, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( &val->recSetting, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->dataID );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->searchInfo );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->recSetting );
 	}
 
 	if( writeSize != NULL ){
@@ -2964,27 +1921,15 @@ BOOL ReadVALUE( EPG_AUTO_ADD_DATA* val, BYTE* buff, DWORD buffSize, DWORD* readS
 	DWORD pos = 0;
 	DWORD size = 0;
 	DWORD valSize = 0;
-	if( ReadVALUE( &valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &valSize );
 	if( buffSize < valSize ){
 		return FALSE;
 	}
 
 	if( pos < valSize ){
-		if( ReadVALUE( &val->dataID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->searchInfo, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->recSetting, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->dataID );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->searchInfo );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->recSetting );
 	}
 
 	if( readSize != NULL ){
@@ -3019,32 +1964,14 @@ BOOL WriteVALUE( SEARCH_EPG_INFO_PARAM* val, BYTE* buff, DWORD buffSize, DWORD* 
 
 	DWORD pos = 0;
 	DWORD size = 0;
-	if( WriteVALUE( valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, valSize );
 
 	if(val != NULL ){
-		if( WriteVALUE( val->ONID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->TSID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->SID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->eventID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->pfOnlyFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->ONID );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->TSID );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->SID );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->eventID );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->pfOnlyFlag );
 	}
 
 	if( writeSize != NULL ){
@@ -3062,35 +1989,17 @@ BOOL ReadVALUE( SEARCH_EPG_INFO_PARAM* val, BYTE* buff, DWORD buffSize, DWORD* r
 	DWORD pos = 0;
 	DWORD size = 0;
 	DWORD valSize = 0;
-	if( ReadVALUE( &valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &valSize );
 	if( buffSize < valSize ){
 		return FALSE;
 	}
 
 	if( pos < valSize ){
-		if( ReadVALUE( &val->ONID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->TSID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->SID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->eventID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->pfOnlyFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->ONID );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->TSID );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->SID );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->eventID );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->pfOnlyFlag );
 	}
 
 	if( readSize != NULL ){
@@ -3124,28 +2033,13 @@ BOOL WriteVALUE( GET_EPG_PF_INFO_PARAM* val, BYTE* buff, DWORD buffSize, DWORD* 
 
 	DWORD pos = 0;
 	DWORD size = 0;
-	if( WriteVALUE( valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, valSize );
 
 	if(val != NULL ){
-		if( WriteVALUE( val->ONID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->TSID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->SID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->pfNextFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->ONID );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->TSID );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->SID );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->pfNextFlag );
 	}
 
 	if( writeSize != NULL ){
@@ -3163,31 +2057,16 @@ BOOL ReadVALUE( GET_EPG_PF_INFO_PARAM* val, BYTE* buff, DWORD buffSize, DWORD* r
 	DWORD pos = 0;
 	DWORD size = 0;
 	DWORD valSize = 0;
-	if( ReadVALUE( &valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &valSize );
 	if( buffSize < valSize ){
 		return FALSE;
 	}
 
 	if( pos < valSize ){
-		if( ReadVALUE( &val->ONID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->TSID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->SID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->pfNextFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->ONID );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->TSID );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->SID );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->pfNextFlag );
 	}
 
 	if( readSize != NULL ){
@@ -3227,52 +2106,19 @@ BOOL WriteVALUE( MANUAL_AUTO_ADD_DATA* val, BYTE* buff, DWORD buffSize, DWORD* w
 
 	DWORD pos = 0;
 	DWORD size = 0;
-	if( WriteVALUE( valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, valSize );
 
 	if(val != NULL ){
-		if( WriteVALUE( val->dataID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->dayOfWeekFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->startTime, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->durationSecond, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->title, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->stationName, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->originalNetworkID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->transportStreamID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->serviceID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( &val->recSetting, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->dataID );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->dayOfWeekFlag );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->startTime );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->durationSecond );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->title );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->stationName );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->originalNetworkID );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->transportStreamID );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->serviceID );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->recSetting );
 	}
 
 	if( writeSize != NULL ){
@@ -3290,55 +2136,22 @@ BOOL ReadVALUE( MANUAL_AUTO_ADD_DATA* val, BYTE* buff, DWORD buffSize, DWORD* re
 	DWORD pos = 0;
 	DWORD size = 0;
 	DWORD valSize = 0;
-	if( ReadVALUE( &valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &valSize );
 	if( buffSize < valSize ){
 		return FALSE;
 	}
 
 	if( pos < valSize ){
-		if( ReadVALUE( &val->dataID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->dayOfWeekFlag, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->startTime, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->durationSecond, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->title, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->stationName, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->originalNetworkID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->transportStreamID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->serviceID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->recSetting, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->dataID );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->dayOfWeekFlag );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->startTime );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->durationSecond );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->title );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->stationName );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->originalNetworkID );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->transportStreamID );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->serviceID );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->recSetting );
 	}
 
 	if( readSize != NULL ){
@@ -3371,24 +2184,12 @@ BOOL WriteVALUE( TUNER_RESERVE_INFO* val, BYTE* buff, DWORD buffSize, DWORD* wri
 
 	DWORD pos = 0;
 	DWORD size = 0;
-	if( WriteVALUE( valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, valSize );
 
 	if(val != NULL ){
-		if( WriteVALUE( val->tunerID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->tunerName, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( &val->reserveList, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->tunerID );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->tunerName );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->reserveList );
 
 	}
 
@@ -3407,27 +2208,15 @@ BOOL ReadVALUE( TUNER_RESERVE_INFO* val, BYTE* buff, DWORD buffSize, DWORD* read
 	DWORD pos = 0;
 	DWORD size = 0;
 	DWORD valSize = 0;
-	if( ReadVALUE( &valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &valSize );
 	if( buffSize < valSize ){
 		return FALSE;
 	}
 
 	if( pos < valSize ){
-		if( ReadVALUE( &val->tunerID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->tunerName, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->reserveList, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->tunerID );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->tunerName );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->reserveList );
 
 	}
 
@@ -3460,20 +2249,11 @@ BOOL WriteVALUE( REGIST_TCP_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeS
 
 	DWORD pos = 0;
 	DWORD size = 0;
-	if( WriteVALUE( valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, valSize );
 
 	if(val != NULL ){
-		if( WriteVALUE( val->ip, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->port, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->ip );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->port );
 	}
 
 	if( writeSize != NULL ){
@@ -3491,23 +2271,14 @@ BOOL ReadVALUE( REGIST_TCP_INFO* val, BYTE* buff, DWORD buffSize, DWORD* readSiz
 	DWORD pos = 0;
 	DWORD size = 0;
 	DWORD valSize = 0;
-	if( ReadVALUE( &valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &valSize );
 	if( buffSize < valSize ){
 		return FALSE;
 	}
 
 	if( pos < valSize ){
-		if( ReadVALUE( &val->ip, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->port, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->ip );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->port );
 	}
 
 	if( readSize != NULL ){
@@ -3539,20 +2310,11 @@ BOOL WriteVALUE( EPGDB_SERVICE_EVENT_INFO* val, BYTE* buff, DWORD buffSize, DWOR
 
 	DWORD pos = 0;
 	DWORD size = 0;
-	if( WriteVALUE( valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, valSize );
 
 	if(val != NULL ){
-		if( WriteVALUE( &val->serviceInfo, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( &val->eventList, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->serviceInfo );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->eventList );
 	}
 
 	if( writeSize != NULL ){
@@ -3570,23 +2332,14 @@ BOOL ReadVALUE( EPGDB_SERVICE_EVENT_INFO* val, BYTE* buff, DWORD buffSize, DWORD
 	DWORD pos = 0;
 	DWORD size = 0;
 	DWORD valSize = 0;
-	if( ReadVALUE( &valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &valSize );
 	if( buffSize < valSize ){
 		return FALSE;
 	}
 
 	if( pos < valSize ){
-		if( ReadVALUE( &val->serviceInfo, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->eventList, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->serviceInfo );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->eventList );
 	}
 
 	if( readSize != NULL ){
@@ -3618,20 +2371,11 @@ BOOL WriteVALUE( TVTEST_CH_CHG_INFO* val, BYTE* buff, DWORD buffSize, DWORD* wri
 
 	DWORD pos = 0;
 	DWORD size = 0;
-	if( WriteVALUE( valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, valSize );
 
 	if(val != NULL ){
-		if( WriteVALUE( val->bonDriver, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( &val->chInfo, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->bonDriver );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->chInfo );
 	}
 
 	if( writeSize != NULL ){
@@ -3649,23 +2393,14 @@ BOOL ReadVALUE( TVTEST_CH_CHG_INFO* val, BYTE* buff, DWORD buffSize, DWORD* read
 	DWORD pos = 0;
 	DWORD size = 0;
 	DWORD valSize = 0;
-	if( ReadVALUE( &valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &valSize );
 	if( buffSize < valSize ){
 		return FALSE;
 	}
 
 	if( pos < valSize ){
-		if( ReadVALUE( &val->bonDriver, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->chInfo, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->bonDriver );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->chInfo );
 	}
 
 	if( readSize != NULL ){
@@ -3701,36 +2436,15 @@ BOOL WriteVALUE( NWPLAY_PLAY_INFO* val, BYTE* buff, DWORD buffSize, DWORD* write
 
 	DWORD pos = 0;
 	DWORD size = 0;
-	if( WriteVALUE( valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, valSize );
 
 	if(val != NULL ){
-		if( WriteVALUE( val->ctrlID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->ip, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->udp, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->tcp, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->udpPort, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->tcpPort, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->ctrlID );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->ip );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->udp );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->tcp );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->udpPort );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->tcpPort );
 	}
 
 	if( writeSize != NULL ){
@@ -3748,39 +2462,18 @@ BOOL ReadVALUE( NWPLAY_PLAY_INFO* val, BYTE* buff, DWORD buffSize, DWORD* readSi
 	DWORD pos = 0;
 	DWORD size = 0;
 	DWORD valSize = 0;
-	if( ReadVALUE( &valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &valSize );
 	if( buffSize < valSize ){
 		return FALSE;
 	}
 
 	if( pos < valSize ){
-		if( ReadVALUE( &val->ctrlID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->ip, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->udp, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->tcp, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->udpPort, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->tcpPort, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->ctrlID );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->ip );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->udp );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->tcp );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->udpPort );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->tcpPort );
 	}
 
 	if( readSize != NULL ){
@@ -3813,24 +2506,12 @@ BOOL WriteVALUE( NWPLAY_POS_CMD* val, BYTE* buff, DWORD buffSize, DWORD* writeSi
 
 	DWORD pos = 0;
 	DWORD size = 0;
-	if( WriteVALUE( valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, valSize );
 
 	if(val != NULL ){
-		if( WriteVALUE( val->ctrlID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->currentPos, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->totalPos, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->ctrlID );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->currentPos );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->totalPos );
 	}
 
 	if( writeSize != NULL ){
@@ -3848,27 +2529,15 @@ BOOL ReadVALUE( NWPLAY_POS_CMD* val, BYTE* buff, DWORD buffSize, DWORD* readSize
 	DWORD pos = 0;
 	DWORD size = 0;
 	DWORD valSize = 0;
-	if( ReadVALUE( &valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &valSize );
 	if( buffSize < valSize ){
 		return FALSE;
 	}
 
 	if( pos < valSize ){
-		if( ReadVALUE( &val->ctrlID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->currentPos, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->totalPos, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->ctrlID );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->currentPos );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->totalPos );
 	}
 
 	if( readSize != NULL ){
@@ -3906,44 +2575,17 @@ BOOL WriteVALUE( TVTEST_STREAMING_INFO* val, BYTE* buff, DWORD buffSize, DWORD* 
 
 	DWORD pos = 0;
 	DWORD size = 0;
-	if( WriteVALUE( valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, valSize );
 
 	if(val != NULL ){
-		if( WriteVALUE( val->enableMode, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->ctrlID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->serverIP, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->serverPort, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->filePath, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->udpSend, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->tcpSend, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->timeShiftMode, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->enableMode );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->ctrlID );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->serverIP );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->serverPort );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->filePath );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->udpSend );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->tcpSend );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->timeShiftMode );
 	}
 
 	if( writeSize != NULL ){
@@ -3961,47 +2603,20 @@ BOOL ReadVALUE( TVTEST_STREAMING_INFO* val, BYTE* buff, DWORD buffSize, DWORD* r
 	DWORD pos = 0;
 	DWORD size = 0;
 	DWORD valSize = 0;
-	if( ReadVALUE( &valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &valSize );
 	if( buffSize < valSize ){
 		return FALSE;
 	}
 
 	if( pos < valSize ){
-		if( ReadVALUE( &val->enableMode, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->ctrlID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->serverIP, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->serverPort, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->filePath, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->udpSend, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->tcpSend, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->timeShiftMode, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->enableMode );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->ctrlID );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->serverIP );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->serverPort );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->filePath );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->udpSend );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->tcpSend );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->timeShiftMode );
 	}
 
 	if( readSize != NULL ){
@@ -4033,20 +2648,11 @@ BOOL WriteVALUE( NWPLAY_TIMESHIFT_INFO* val, BYTE* buff, DWORD buffSize, DWORD* 
 
 	DWORD pos = 0;
 	DWORD size = 0;
-	if( WriteVALUE( valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, valSize );
 
 	if(val != NULL ){
-		if( WriteVALUE( val->ctrlID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( WriteVALUE( val->filePath, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->ctrlID );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->filePath );
 	}
 
 	if( writeSize != NULL ){
@@ -4064,23 +2670,14 @@ BOOL ReadVALUE( NWPLAY_TIMESHIFT_INFO* val, BYTE* buff, DWORD buffSize, DWORD* r
 	DWORD pos = 0;
 	DWORD size = 0;
 	DWORD valSize = 0;
-	if( ReadVALUE( &valSize, buff + pos, buffSize - pos, &size ) == FALSE ){
-		return FALSE;
-	}
-	pos += size;
+	READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &valSize );
 	if( buffSize < valSize ){
 		return FALSE;
 	}
 
 	if( pos < valSize ){
-		if( ReadVALUE( &val->ctrlID, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
-		if( ReadVALUE( &val->filePath, buff + pos, buffSize - pos, &size ) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->ctrlID );
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->filePath );
 	}
 
 	if( readSize != NULL ){
