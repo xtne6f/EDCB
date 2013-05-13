@@ -149,6 +149,21 @@ LRESULT CEpgTimerTaskDlg::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 			{
 				//タスクトレイ関係
 				switch(LOWORD(lParam)){
+					case WM_LBUTTONUP:
+						{
+							//EpgTimer.exeがあれば起動
+							wstring strPath;
+							GetModuleFolderPath(strPath);
+							strPath += L"\\EpgTimer.exe";
+							PROCESS_INFORMATION pi;
+							STARTUPINFO si = {};
+							si.cb = sizeof(si);
+							if( CreateProcess(strPath.c_str(), NULL, NULL, NULL, FALSE, GetPriorityClass(GetCurrentProcess()), NULL, NULL, &si, &pi) != FALSE ){
+								CloseHandle(pi.hThread);
+								CloseHandle(pi.hProcess);
+							}
+						}
+						break;
 					case WM_RBUTTONUP:
 						{
 							HMENU hMenu = LoadMenu(GetModuleHandle(NULL), MAKEINTRESOURCE(IDR_MENU_TRAY));
