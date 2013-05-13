@@ -45,6 +45,7 @@ protected:
 	HICON m_hIconRed;
 	HICON m_hIconGreen;
 	HWND m_hDlg;
+	UINT m_uMsgTaskbarCreated;
 
 	CPipeServer m_cPipe;
 	DWORD m_dwSrvStatus;

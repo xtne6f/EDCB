@@ -20,6 +20,8 @@ CEpgTimerTaskDlg::CEpgTimerTaskDlg()
 	m_hIcon2 = (HICON)LoadImage( GetModuleHandle(NULL), MAKEINTRESOURCE( IDR_MAINFRAME ), IMAGE_ICON, 32, 32, LR_DEFAULTCOLOR);
 	m_hIconRed = (HICON)LoadImage( GetModuleHandle(NULL), MAKEINTRESOURCE( IDI_ICON_RED ), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
 	m_hIconGreen = (HICON)LoadImage( GetModuleHandle(NULL), MAKEINTRESOURCE( IDI_ICON_GREEN ), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+
+	m_uMsgTaskbarCreated = RegisterWindowMessage(L"TaskbarCreated");
 }
 
 INT_PTR CEpgTimerTaskDlg::DoModal()
@@ -187,6 +189,10 @@ LRESULT CEpgTimerTaskDlg::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 			}
 			break;
 		default:
+			if( message == m_uMsgTaskbarCreated ){
+				//ÉVÉFÉãÇÃçƒãNìÆéû
+				SetTimer(m_hDlg, RETRY_ADD_TRAY, 0, NULL);
+			}
 			break;
 	}
 
