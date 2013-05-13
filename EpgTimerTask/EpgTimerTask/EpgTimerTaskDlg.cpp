@@ -5,11 +5,6 @@
 #include "stdafx.h"
 #include "EpgTimerTask.h"
 #include "EpgTimerTaskDlg.h"
-#include "afxdialogex.h"
-
-#ifdef _DEBUG
-#define new DEBUG_NEW
-#endif
 
 
 // CEpgTimerTaskDlg ダイアログ
@@ -17,46 +12,45 @@
 
 
 
-CEpgTimerTaskDlg::CEpgTimerTaskDlg(CWnd* pParent /*=NULL*/)
-	: CDialogEx(CEpgTimerTaskDlg::IDD, pParent)
+CEpgTimerTaskDlg::CEpgTimerTaskDlg()
+	: m_hDlg(NULL)
 {
 	//m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
-	m_hIcon = (HICON)LoadImage( AfxGetInstanceHandle(), MAKEINTRESOURCE( IDR_MAINFRAME ), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
-	m_hIcon2 = (HICON)LoadImage( AfxGetInstanceHandle(), MAKEINTRESOURCE( IDR_MAINFRAME ), IMAGE_ICON, 32, 32, LR_DEFAULTCOLOR);
-	m_hIconRed = (HICON)LoadImage( AfxGetInstanceHandle(), MAKEINTRESOURCE( IDI_ICON_RED ), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
-	m_hIconBlue = (HICON)LoadImage( AfxGetInstanceHandle(), MAKEINTRESOURCE( IDI_ICON_BLUE ), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
-	m_hIconGreen = (HICON)LoadImage( AfxGetInstanceHandle(), MAKEINTRESOURCE( IDI_ICON_GREEN ), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
-	m_hIconGray = (HICON)LoadImage( AfxGetInstanceHandle(), MAKEINTRESOURCE( IDI_ICON_GRAY ), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+	m_hIcon = (HICON)LoadImage( GetModuleHandle(NULL), MAKEINTRESOURCE( IDR_MAINFRAME ), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+	m_hIcon2 = (HICON)LoadImage( GetModuleHandle(NULL), MAKEINTRESOURCE( IDR_MAINFRAME ), IMAGE_ICON, 32, 32, LR_DEFAULTCOLOR);
+	m_hIconRed = (HICON)LoadImage( GetModuleHandle(NULL), MAKEINTRESOURCE( IDI_ICON_RED ), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+	m_hIconGreen = (HICON)LoadImage( GetModuleHandle(NULL), MAKEINTRESOURCE( IDI_ICON_GREEN ), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
 }
 
-void CEpgTimerTaskDlg::DoDataExchange(CDataExchange* pDX)
+INT_PTR CEpgTimerTaskDlg::DoModal()
 {
-	CDialogEx::DoDataExchange(pDX);
-
+	//return DialogBoxParam(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD), NULL, DlgProc, (LPARAM)this);
+	//最小化起動のため↑とだいたい同じ挙動になるようにメッセージを回す
+	HWND hDlg = CreateDialogParam(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD), NULL, DlgProc, (LPARAM)this);
+	if( hDlg != NULL ){
+		MSG msg;
+		while( m_hDlg != NULL && GetMessage(&msg, NULL, 0, 0) > 0 ){
+			if( msg.hwnd == hDlg && msg.message == WM_END_DIALOG ){
+				DestroyWindow(hDlg);
+				return (INT_PTR)msg.wParam;
+			}else if( !IsDialogMessage(hDlg, &msg) ){
+				TranslateMessage(&msg);
+				DispatchMessage(&msg);
+			}
+		}
+	}
+	return IDCANCEL;
 }
-
-BEGIN_MESSAGE_MAP(CEpgTimerTaskDlg, CDialogEx)
-	ON_WM_PAINT()
-	ON_WM_QUERYDRAGICON()
-	ON_WM_WINDOWPOSCHANGING()
-	ON_BN_CLICKED(IDC_BUTTON_END, &CEpgTimerTaskDlg::OnBnClickedButtonEnd)
-	ON_BN_CLICKED(IDC_BUTTON_S4, &CEpgTimerTaskDlg::OnBnClickedButtonS4)
-	ON_BN_CLICKED(IDC_BUTTON_S3, &CEpgTimerTaskDlg::OnBnClickedButtonS3)
-	ON_WM_DESTROY()
-	ON_WM_TIMER()
-END_MESSAGE_MAP()
 
 
 // CEpgTimerTaskDlg メッセージ ハンドラー
 
 BOOL CEpgTimerTaskDlg::OnInitDialog()
 {
-	CDialogEx::OnInitDialog();
-
 	// このダイアログのアイコンを設定します。アプリケーションのメイン ウィンドウがダイアログでない場合、
 	//  Framework は、この設定を自動的に行います。
-	SetIcon(m_hIcon, TRUE);			// 大きいアイコンの設定
-	SetIcon(m_hIcon, FALSE);		// 小さいアイコンの設定
+	SendMessage(m_hDlg, WM_SETICON, ICON_BIG, (LPARAM)m_hIcon);		// 大きいアイコンの設定
+	SendMessage(m_hDlg, WM_SETICON, ICON_SMALL, (LPARAM)m_hIcon);	// 小さいアイコンの設定
 
 	// TODO: 初期化をここに追加します。
 	wstring pipeName = L"";
@@ -75,73 +69,23 @@ BOOL CEpgTimerTaskDlg::OnInitDialog()
 	Pos.rcNormalPosition.right = 0;
 	Pos.rcNormalPosition.top = 0;
 	Pos.rcNormalPosition.bottom = 0;
-	SetWindowPlacement(&Pos);
+	SetWindowPlacement(m_hDlg, &Pos);
 
-	CString strBuff=L"";
-	if( AddTaskBar( GetSafeHwnd(),
-			WM_TRAY_PUSHICON,
-			TRAYICON_ID,
-			m_hIconBlue,
-			strBuff ) == FALSE ){
-				SetTimer(RETRY_ADD_TRAY, 5000, NULL);
-	}
+	m_dwSrvStatus = 0;
+	SendMessage(m_hDlg, WM_TIMER, RETRY_ADD_TRAY, 0);
 
 	CSendCtrlCmd cmd;
     if( cmd.SendRegistGUI(GetCurrentProcessId()) != CMD_SUCCESS ){
-		MessageBox(L"EpgTimerSrv.exeの起動を確認できませんでした。\r\n終了してください。");
+		TCHAR szCaption[64];
+		GetWindowText(m_hDlg, szCaption, _countof(szCaption));
+		MessageBox(m_hDlg, L"EpgTimerSrv.exeの起動を確認できませんでした。\r\n終了してください。", szCaption, MB_OK);
 	}
 
 	return TRUE;  // フォーカスをコントロールに設定した場合を除き、TRUE を返します。
 }
 
-// ダイアログに最小化ボタンを追加する場合、アイコンを描画するための
-//  下のコードが必要です。ドキュメント/ビュー モデルを使う MFC アプリケーションの場合、
-//  これは、Framework によって自動的に設定されます。
 
-void CEpgTimerTaskDlg::OnPaint()
-{
-	if (IsIconic())
-	{
-		CPaintDC dc(this); // 描画のデバイス コンテキスト
-
-		SendMessage(WM_ICONERASEBKGND, reinterpret_cast<WPARAM>(dc.GetSafeHdc()), 0);
-
-		// クライアントの四角形領域内の中央
-		int cxIcon = GetSystemMetrics(SM_CXICON);
-		int cyIcon = GetSystemMetrics(SM_CYICON);
-		CRect rect;
-		GetClientRect(&rect);
-		int x = (rect.Width() - cxIcon + 1) / 2;
-		int y = (rect.Height() - cyIcon + 1) / 2;
-
-		// アイコンの描画
-		dc.DrawIcon(x, y, m_hIcon);
-	}
-	else
-	{
-		CDialogEx::OnPaint();
-	}
-}
-
-// ユーザーが最小化したウィンドウをドラッグしているときに表示するカーソルを取得するために、
-//  システムがこの関数を呼び出します。
-HCURSOR CEpgTimerTaskDlg::OnQueryDragIcon()
-{
-	return static_cast<HCURSOR>(m_hIcon);
-}
-
-
-
-void CEpgTimerTaskDlg::OnWindowPosChanging(WINDOWPOS* lpwndpos)
-{
-	lpwndpos->flags &= ~SWP_SHOWWINDOW;
-	CDialogEx::OnWindowPosChanging(lpwndpos);
-
-	// TODO: ここにメッセージ ハンドラー コードを追加します。
-}
-
-
-BOOL CEpgTimerTaskDlg::AddTaskBar(HWND hWnd, UINT uiMsg, UINT uiID, HICON hIcon, CString strTips)
+BOOL CEpgTimerTaskDlg::AddTaskBar(HWND hWnd, UINT uiMsg, UINT uiID, HICON hIcon, wstring strTips)
 { 
 	BOOL bRet;
 	NOTIFYICONDATA stData;
@@ -154,16 +98,14 @@ BOOL CEpgTimerTaskDlg::AddTaskBar(HWND hWnd, UINT uiMsg, UINT uiID, HICON hIcon,
 	stData.uCallbackMessage = uiMsg; 
 	stData.hIcon = hIcon; 
 
-	if( strTips.IsEmpty() == false ){
-		wcsncpy_s(stData.szTip, sizeof(stData.szTip), strTips.GetBuffer(0), sizeof(stData.szTip) );
-	}
+	wcsncpy_s(stData.szTip, strTips.c_str(), _countof(stData.szTip));
  
 	bRet = Shell_NotifyIcon(NIM_ADD, &stData);
   
 	return bRet; 
 }
 
-BOOL CEpgTimerTaskDlg::ChgTipsTaskBar(HWND hWnd, UINT uiID, HICON hIcon, CString strTips)
+BOOL CEpgTimerTaskDlg::ChgTipsTaskBar(HWND hWnd, UINT uiID, HICON hIcon, wstring strTips)
 { 
 	BOOL bRet;
 	NOTIFYICONDATA stData;
@@ -175,9 +117,7 @@ BOOL CEpgTimerTaskDlg::ChgTipsTaskBar(HWND hWnd, UINT uiID, HICON hIcon, CString
 	stData.hIcon = hIcon; 
 	stData.uFlags = NIF_ICON | NIF_TIP; 
 
-	if( strTips.IsEmpty() == false ){
-		wcsncpy_s(stData.szTip, sizeof(stData.szTip), strTips.GetBuffer(0), sizeof(stData.szTip) );
-	}
+	wcsncpy_s(stData.szTip, strTips.c_str(), _countof(stData.szTip));
  
 	bRet = Shell_NotifyIcon(NIM_MODIFY, &stData); 
  
@@ -201,23 +141,25 @@ BOOL CEpgTimerTaskDlg::DeleteTaskBar(HWND hWnd, UINT uiID)
 
 LRESULT CEpgTimerTaskDlg::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 {
-	// TODO: ここに特定なコードを追加するか、もしくは基本クラスを呼び出してください。
+	//ここではWM_USER以上のメッセージのみ取得できる
 	switch(message){
 		case WM_TRAY_PUSHICON:
 			{
 				//タスクトレイ関係
 				switch(LOWORD(lParam)){
-					case WM_RBUTTONDOWN:
+					case WM_RBUTTONUP:
 						{
-							CMenu menu;
-							CPoint point;
-							menu.LoadMenu(IDR_MENU_TRAY);
-							CMenu* pPopup = menu.GetSubMenu(0);
-
-							GetCursorPos(&point);
-							SetForegroundWindow();
-							pPopup->TrackPopupMenu(TPM_LEFTALIGN | TPM_RIGHTBUTTON, point.x, point.y, AfxGetMainWnd());
-							pPopup->DestroyMenu();
+							HMENU hMenu = LoadMenu(GetModuleHandle(NULL), MAKEINTRESOURCE(IDR_MENU_TRAY));
+							if( hMenu != NULL ){
+								HMENU hPopup = GetSubMenu(hMenu, 0);
+								if( hPopup != NULL ){
+									POINT point;
+									GetCursorPos(&point);
+									SetForegroundWindow(m_hDlg);
+									TrackPopupMenu(hPopup, TPM_LEFTALIGN | TPM_RIGHTBUTTON, point.x, point.y, 0, m_hDlg, NULL);
+								}
+								DestroyMenu(hMenu);
+							}
 						}
 						break;
 					default :
@@ -248,14 +190,14 @@ LRESULT CEpgTimerTaskDlg::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 			break;
 	}
 
-	return CDialogEx::WindowProc(message, wParam, lParam);
+	return FALSE;
 }
 
 
 void CEpgTimerTaskDlg::OnBnClickedButtonEnd()
 {
 	// TODO: ここにコントロール通知ハンドラ コードを追加します。
-	EndDialog(0);
+	PostMessage(m_hDlg, WM_END_DIALOG, 0, 0);
 }
 
 void CEpgTimerTaskDlg::OnBnClickedButtonS3()
@@ -263,7 +205,9 @@ void CEpgTimerTaskDlg::OnBnClickedButtonS3()
 	// TODO: ここにコントロール通知ハンドラ コードを追加します。
 	CSendCtrlCmd cmd;
 	if(cmd.SendChkSuspend() != 1 ){
-		MessageBox(L"スタンバイに移行できる状態ではありません。\r\n（もうすぐ予約が始まる。または抑制条件のexeが起動している。など）");
+		TCHAR szCaption[64];
+		GetWindowText(m_hDlg, szCaption, _countof(szCaption));
+		MessageBox(m_hDlg, L"スタンバイに移行できる状態ではありません。\r\n（もうすぐ予約が始まる。または抑制条件のexeが起動している。など）", szCaption, MB_OK);
 	}else{
 		cmd.SendSuspend(0xFF01);
 	}
@@ -274,7 +218,9 @@ void CEpgTimerTaskDlg::OnBnClickedButtonS4()
 	// TODO: ここにコントロール通知ハンドラ コードを追加します。
 	CSendCtrlCmd cmd;
 	if(cmd.SendChkSuspend() != 1 ){
-		MessageBox(L"休止に移行できる状態ではありません。\r\n（もうすぐ予約が始まる。または抑制条件のexeが起動している。など）");
+		TCHAR szCaption[64];
+		GetWindowText(m_hDlg, szCaption, _countof(szCaption));
+		MessageBox(m_hDlg, L"休止に移行できる状態ではありません。\r\n（もうすぐ予約が始まる。または抑制条件のexeが起動している。など）", szCaption, MB_OK);
 	}else{
 		cmd.SendSuspend(0xFF02);
 	}
@@ -283,14 +229,12 @@ void CEpgTimerTaskDlg::OnBnClickedButtonS4()
 
 void CEpgTimerTaskDlg::OnDestroy()
 {
-	KillTimer(RETRY_ADD_TRAY);
-	KillTimer(RETRY_CHG_TRAY);
-	DeleteTaskBar(GetSafeHwnd(), TRAYICON_ID);
+	KillTimer(m_hDlg, RETRY_ADD_TRAY);
+	KillTimer(m_hDlg, RETRY_CHG_TRAY);
+	DeleteTaskBar(m_hDlg, TRAYICON_ID);
 
 	CSendCtrlCmd cmd;
     cmd.SendUnRegistGUI(GetCurrentProcessId());
-
-	CDialogEx::OnDestroy();
 
 	// TODO: ここにメッセージ ハンドラー コードを追加します。
 }
@@ -300,8 +244,8 @@ void CEpgTimerTaskDlg::OnTimer(UINT_PTR nIDEvent)
 {
 	// TODO: ここにメッセージ ハンドラー コードを追加するか、既定の処理を呼び出します。
 	if( nIDEvent == RETRY_ADD_TRAY ){
-		KillTimer(RETRY_ADD_TRAY);
-		CString strBuff=L"";
+		KillTimer(m_hDlg, RETRY_ADD_TRAY);
+		wstring strBuff=L"";
 /*		RESERVE_DATA Item;
 		if( GetNextReserve(&Item) == TRUE ){
 			wstring strTime;
@@ -314,7 +258,7 @@ void CEpgTimerTaskDlg::OnTimer(UINT_PTR nIDEvent)
 		}else{
 			strBuff += L"次の予約 なし";
 		}*/
-		HICON hSetIcon = m_hIconBlue;
+		HICON hSetIcon = m_hIcon;
 		switch(m_dwSrvStatus){
 			case 1:
 				hSetIcon = m_hIconRed;
@@ -325,16 +269,16 @@ void CEpgTimerTaskDlg::OnTimer(UINT_PTR nIDEvent)
 			default:
 				break;
 		}
-		if( AddTaskBar( GetSafeHwnd(),
+		if( AddTaskBar( m_hDlg,
 				WM_TRAY_PUSHICON,
 				TRAYICON_ID,
 				hSetIcon,
 				strBuff ) == FALSE ){
-					SetTimer(RETRY_ADD_TRAY, 5000, NULL);
+					SetTimer(m_hDlg, RETRY_ADD_TRAY, 5000, NULL);
 		}
 	}else if( nIDEvent == RETRY_CHG_TRAY ){
-		KillTimer(RETRY_CHG_TRAY);
-		CString strBuff=L"";
+		KillTimer(m_hDlg, RETRY_CHG_TRAY);
+		wstring strBuff=L"";
 /*		RESERVE_DATA Item;
 		if( GetNextReserve(&Item) == TRUE ){
 			wstring strTime;
@@ -348,7 +292,7 @@ void CEpgTimerTaskDlg::OnTimer(UINT_PTR nIDEvent)
 			strBuff += L"次の予約 なし";
 		}
 */
-		HICON hSetIcon = m_hIconBlue;
+		HICON hSetIcon = m_hIcon;
 		switch(m_dwSrvStatus){
 			case 1:
 				hSetIcon = m_hIconRed;
@@ -359,14 +303,13 @@ void CEpgTimerTaskDlg::OnTimer(UINT_PTR nIDEvent)
 			default:
 				break;
 		}
-		if( ChgTipsTaskBar( GetSafeHwnd(),
+		if( ChgTipsTaskBar( m_hDlg,
 				TRAYICON_ID,
 				hSetIcon,
 				strBuff ) == FALSE ){
-					SetTimer(RETRY_CHG_TRAY, 5000, NULL);
+					SetTimer(m_hDlg, RETRY_CHG_TRAY, 5000, NULL);
 		}
 	}
-	CDialogEx::OnTimer(nIDEvent);
 }
 
 int CALLBACK CEpgTimerTaskDlg::OutsideCmdCallback(void* pParam, CMD_STREAM* pCmdParam, CMD_STREAM* pResParam)
@@ -432,7 +375,7 @@ void CEpgTimerTaskDlg::CmdViewQuerySuspend(CMD_STREAM* pCmdParam, CMD_STREAM* pR
 	WORD val = 0;
 	ReadVALUE(&val, pCmdParam->data, pCmdParam->dataSize, NULL);
 
-	PostMessage(WM_QUERY_SUSPEND, val, 0);
+	PostMessage(m_hDlg, WM_QUERY_SUSPEND, val, 0);
 
 	pResParam->param = CMD_SUCCESS;
 }
@@ -444,7 +387,7 @@ void CEpgTimerTaskDlg::CmdViewQueryReboot(CMD_STREAM* pCmdParam, CMD_STREAM* pRe
 	WORD val = 0;
 	ReadVALUE(&val, pCmdParam->data, pCmdParam->dataSize, NULL);
 
-	PostMessage(WM_QUERY_REBOOT, val, 0);
+	PostMessage(m_hDlg, WM_QUERY_REBOOT, val, 0);
 
 	pResParam->param = CMD_SUCCESS;
 }
@@ -460,27 +403,8 @@ void CEpgTimerTaskDlg::CmdSrvStatusChg(CMD_STREAM* pCmdParam, CMD_STREAM* pResPa
 	if( ReadVALUE2(ver, &status, pCmdParam->data+readSize, pCmdParam->dataSize-readSize, NULL) == TRUE ){
 		switch(status.notifyID){
 		case NOTIFY_UPDATE_SRV_STATUS:
-			{
-				CString strBuff = L"";
-				HICON hSetIcon = m_hIconBlue;
-				switch(status.param1){
-					case 1:
-						hSetIcon = m_hIconRed;
-						break;
-					case 2:
-						hSetIcon = m_hIconGreen;
-						break;
-					default:
-						break;
-				}
-				m_dwSrvStatus = status.param1;
-				if( ChgTipsTaskBar( GetSafeHwnd(),
-						TRAYICON_ID,
-						hSetIcon,
-						strBuff ) == FALSE ){
-							SetTimer(RETRY_CHG_TRAY, 5000, NULL);
-				}
-			}
+			m_dwSrvStatus = status.param1;
+			SetTimer(m_hDlg, RETRY_CHG_TRAY, 0, NULL);
 			break;
 		default:
 			break;
@@ -489,4 +413,48 @@ void CEpgTimerTaskDlg::CmdSrvStatusChg(CMD_STREAM* pCmdParam, CMD_STREAM* pResPa
 	}else{
 		pResParam->param = CMD_ERR;
 	}
+}
+
+INT_PTR CALLBACK CEpgTimerTaskDlg::DlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	CEpgTimerTaskDlg* pSys = (CEpgTimerTaskDlg*)GetWindowLongPtr(hDlg, GWLP_USERDATA);
+	switch( uMsg ){
+	case WM_INITDIALOG:
+		SetWindowLongPtr(hDlg, GWLP_USERDATA, lParam);
+		pSys = (CEpgTimerTaskDlg*)lParam;
+		pSys->m_hDlg = hDlg;
+		return pSys->OnInitDialog();
+	case WM_NCDESTROY:
+		pSys->m_hDlg = NULL;
+		break;
+	case WM_DESTROY:
+		pSys->OnDestroy();
+		break;
+	case WM_TIMER:
+		pSys->OnTimer(wParam);
+		break;
+	case WM_COMMAND:
+		switch( LOWORD(wParam) ){
+		case IDOK:
+		case IDCANCEL:
+			PostMessage(hDlg, WM_END_DIALOG, LOWORD(wParam), 0);
+			return TRUE;
+		case IDC_BUTTON_S3:
+			pSys->OnBnClickedButtonS3();
+			break;
+		case IDC_BUTTON_S4:
+			pSys->OnBnClickedButtonS4();
+			break;
+		case IDC_BUTTON_END:
+			pSys->OnBnClickedButtonEnd();
+			break;
+		}
+		break;
+	default:
+		if( uMsg >= WM_USER ){
+			pSys->WindowProc(uMsg, wParam, lParam);
+		}
+		break;
+	}
+	return FALSE;
 }

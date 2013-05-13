@@ -5,37 +5,20 @@
 
 #pragma once
 
-#ifndef _SECURE_ATL
-#define _SECURE_ATL 1
-#endif
-
-#ifndef VC_EXTRALEAN
-#define VC_EXTRALEAN            // Windows ヘッダーから使用されていない部分を除外します。
-#endif
-
 #include "targetver.h"
 
-#define _ATL_CSTRING_EXPLICIT_CONSTRUCTORS      // 一部の CString コンストラクターは明示的です。
+#define WIN32_LEAN_AND_MEAN             // Windows ヘッダーから使用されていない部分を除外します。
+// Windows ヘッダー ファイル:
+#include <windows.h>
+#include <commctrl.h>
+#include <shellapi.h>
+#include <winsock2.h>
+#pragma comment(lib, "comctl32.lib")
+#pragma comment(lib, "ws2_32.lib")
 
-// 一般的で無視しても安全な MFC の警告メッセージの一部の非表示を解除します。
-#define _AFX_ALL_WARNINGS
-
-#include <afxwin.h>         // MFC のコアおよび標準コンポーネント
-#include <afxext.h>         // MFC の拡張部分
-
-
-#include <afxdisp.h>        // MFC オートメーション クラス
-
-
-
-#ifndef _AFX_NO_OLE_SUPPORT
-#include <afxdtctl.h>           // MFC の Internet Explorer 4 コモン コントロール サポート
-#endif
-#ifndef _AFX_NO_AFXCMN_SUPPORT
-#include <afxcmn.h>             // MFC の Windows コモン コントロール サポート
-#endif // _AFX_NO_AFXCMN_SUPPORT
-
-#include <afxcontrolbars.h>     // MFC におけるリボンとコントロール バーのサポート
+// C ランタイム ヘッダー ファイル
+#include <tchar.h>
+#include <string>
 
 
 
