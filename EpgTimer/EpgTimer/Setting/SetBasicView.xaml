@@ -45,7 +45,7 @@
                     <Label Content="※ 上にあるBonDriverから優先的に使用します" Height="28" HorizontalAlignment="Left" Margin="40,218,0,0" Name="label13" VerticalAlignment="Top" />
                     <Label Content="※ 設定を変更した場合、一度終了してください。次回起動時に設定が有効になります。" Foreground="Red" Height="28" HorizontalAlignment="Left" Margin="12,277,0,0" Name="label14" VerticalAlignment="Top" />
                     <Label Content="※ Windowsサービスとして動作させている場合は、Windowsサービスを一度停止してください。" Foreground="Red" Height="28" HorizontalAlignment="Left" Margin="12,311,0,0" Name="label15" VerticalAlignment="Top" />
-                    <TextBox Height="24" HorizontalAlignment="Left" Margin="579,84,0,0" Name="textBox_bon_epgnum" Text="{Binding Path=EPGNum}" VerticalAlignment="Top" Width="68" />
+                    <TextBox Height="24" HorizontalAlignment="Left" Margin="579,86,0,0" Name="textBox_bon_epgnum" Text="{Binding Path=EPGNum}" VerticalAlignment="Top" Width="68" ToolTip="EPG取得に使用するチューナー数を指定します。０の場合は全チューナーを使用します。" />
                 </Grid>
             </TabItem>
             <TabItem Header="EPG取得" Name="tabItem3">
