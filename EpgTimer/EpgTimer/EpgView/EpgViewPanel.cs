@@ -103,7 +103,7 @@ namespace EpgTimer.EpgView
 
                                 if (  pr.prevTop == 0) {   pr.prevTop =   pr.TopPos; }
                                 pr.Height -= wk2;                                      // 高さと
-                                if (pr.Height >= minimum) { pr.TopPos -= wk3; }        // 開始位置 の調整
+                                if (pr.Height >= minimum) { pr.TopPos -= wk3; }        // 開始位置の調整
 
                                 pr = pr.prevItem;                                      // 次(前)
                                 if (pr == null) { break; }                             // が無い？なら終わり
@@ -115,12 +115,12 @@ namespace EpgTimer.EpgView
                                 if (info.prevTop == 0) { info.prevTop = info.TopPos; }
                             }
 
-                            info.TopPos -= wk1;                                        //  開始位置 の調整
+                            info.TopPos -= wk1;                                        //  開始位置の調整
                             info.Height  = minimum;                                    //  最低表示dot数
                         }
                         else
                         {
-                            info.TopPos -= wk;      //  先頭位置をずらす
+                            info.TopPos -= wk1;      //  先頭位置をずらす
                             info.Height = minimum;    //  最低表示dot数
                         }
                     }
@@ -322,7 +322,6 @@ namespace EpgTimer.EpgView
                         else
                         {
                             //次の行いけるので今までの分出力
-                            //次の行いける
                             double dpix = Math.Ceiling((x + 2) * m.M11);
                             double dpiy = Math.Ceiling((y + totalHeight) * m.M22);
                             Point origin = new Point(dpix / m.M11, dpiy / m.M22); 
