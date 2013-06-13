@@ -71,12 +71,12 @@ namespace EpgTimer
             set;
         }
 
-        public SolidColorBrush ContentColor
+        public Brush ContentColor
         {
             get
             {
                 //return null;
-                SolidColorBrush color = Brushes.White;
+                Brush color = Brushes.White;
                 if (EventInfo != null)
                 {
                     if (EventInfo.ContentInfo != null)

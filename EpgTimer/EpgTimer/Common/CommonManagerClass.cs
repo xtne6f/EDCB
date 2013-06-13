@@ -89,7 +89,7 @@ namespace EpgTimer
             get;
             set;
         }
-        public List<SolidColorBrush> CustContentColorList
+        public List<Brush> CustContentColorList
         {
             get;
             set;
@@ -450,7 +450,7 @@ namespace EpgTimer
             }
             if( CustContentColorList == null )
             {
-                CustContentColorList = new List<SolidColorBrush>();
+                CustContentColorList = new List<Brush>();
             }
         }
 
@@ -1050,16 +1050,12 @@ namespace EpgTimer
                         byte g = (byte)((argb & 0x0000FF00) >> 8);
                         byte b = (byte)(argb & 0x000000FF);
 
-                        Color item = Color.FromArgb(0xFF, r, g, b);
-                        SolidColorBrush backColor = new SolidColorBrush();
-                        backColor.Color = item;
-                        backColor.Freeze();
-
-                        CustContentColorList.Add(backColor);
+                        Color color = Color.FromArgb(0xFF, r, g, b);
+                        CustContentColorList.Add(ColorDef.GradientBrush(color));
                     }
                     else
                     {
-                        CustContentColorList.Add(ColorDef.Instance.ColorTable[name]);
+                        CustContentColorList.Add(ColorDef.GradientBrush(ColorDef.ColorFromName(name)));
                     }
                 }
                 if (String.Compare(Settings.Instance.ReserveRectColorNormal, "カスタム") == 0)

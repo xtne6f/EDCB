@@ -238,7 +238,7 @@ namespace EpgTimer.EpgView
                     rect.Opacity = 0.5;
                     rect.Effect = new System.Windows.Media.Effects.DropShadowEffect() { BlurRadius = 10 };
 
-                    SolidColorBrush color;
+                    Brush color;
                     if (info.ReserveInfo.RecSetting.RecMode == 5)
                     {
                         color = CommonManager.Instance.CustContentColorList[0x12];
