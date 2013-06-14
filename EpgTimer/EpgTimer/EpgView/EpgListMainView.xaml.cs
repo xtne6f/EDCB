@@ -602,6 +602,7 @@ namespace EpgTimer
         private void listView_event_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             richTextBox_eventInfo.Document.Blocks.Clear();
+            scrollViewer1.ScrollToHome();
             if (listView_event.SelectedItem != null)
             {
                 SearchItem item = listView_event.SelectedItem as SearchItem;
