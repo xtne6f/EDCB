@@ -27,7 +27,9 @@ namespace EpgTimer
             get
             {
                 PropertyInfo[] props = typeof(Colors).GetProperties();
-                return props.Select(s => s.Name).ToArray();
+                List<string> colorName = props.Select(s => s.Name).ToList<string>();
+                colorName.Add("カスタム");
+                return colorName.ToArray();
             }
         }
 
