@@ -121,6 +121,8 @@ namespace EpgTimer
         private double dragScroll;
         private List<string> contentColorList;
         private List<UInt32> contentCustColorList;
+        private List<string> timeColorList;
+        private List<UInt32> timeCustColorList;
         private string reserveRectColorNormal;
         private string reserveRectColorNo;
         private string reserveRectColorNoTuner;
@@ -129,6 +131,8 @@ namespace EpgTimer
         private string titleColor2;
         private UInt32 titleCustColor1;
         private UInt32 titleCustColor2;
+        private string serviceColor;
+        private UInt32 serviceCustColor;
         private bool reserveRectBackground;
         private bool epgToolTip;
         private bool epgTitleIndent;
@@ -329,6 +333,16 @@ namespace EpgTimer
             get { return contentCustColorList; }
             set { contentCustColorList = value; }
         }
+        public List<string> TimeColorList
+        {
+            get { return timeColorList; }
+            set { timeColorList = value; }
+        }
+        public List<UInt32> TimeCustColorList
+        {
+            get { return timeCustColorList; }
+            set { timeCustColorList = value; }
+        }
         public string ReserveRectColorNormal
         {
             get { return reserveRectColorNormal; }
@@ -373,6 +387,16 @@ namespace EpgTimer
         {
             get { return titleCustColor2; }
             set { titleCustColor2 = value; }
+        }
+        public string ServiceColor
+        {
+            get { return serviceColor; }
+            set { serviceColor = value; }
+        }
+        public UInt32 ServiceCustColor
+        {
+            get { return serviceCustColor; }
+            set { serviceCustColor = value; }
         }
         public bool EpgToolTip
         {
@@ -967,6 +991,8 @@ namespace EpgTimer
             titleColor2 = "Black";
             titleCustColor1 = 0xFFFFFFFF;
             titleCustColor2 = 0xFFFFFFFF;
+            serviceColor = "LightSlateGray";
+            serviceCustColor = 0xFFFFFFFF;
             reserveRectBackground = false;
             epgToolTip = false;
             epgTitleIndent = true;
@@ -1104,6 +1130,15 @@ namespace EpgTimer
             Instance.contentColorList.Add("White");
         }
 
+        //番組表の時間軸のデフォルトの背景色
+        private static void DefaulttimeColorList()
+        {
+            Instance.timeColorList.Add("MediumPurple");
+            Instance.timeColorList.Add("LightSeaGreen");
+            Instance.timeColorList.Add("Salmon");
+            Instance.timeColorList.Add("CornflowerBlue");
+        }
+
         /// <summary>
         /// EpgTimer用設定ファイルロード関数
         /// </summary>
@@ -1178,6 +1213,17 @@ namespace EpgTimer
                     for (int i = 0; i < 0x11+4; i++)
                     {
                         Instance.ContentCustColorList.Add(0xFFFFFFFF);
+                    }
+                }
+                if (Instance.timeColorList.Count == 0)
+                {
+                    DefaulttimeColorList();
+                }
+                if (Instance.TimeCustColorList.Count == 0)
+                {
+                    for (int i = 0; i < 4; i++)
+                    {
+                        Instance.TimeCustColorList.Add(0xFFFFFFFF);
                     }
                 }
                 if (Instance.viewButtonList.Count == 0)
@@ -1319,6 +1365,17 @@ namespace EpgTimer
                     for (int i = 0; i < 0x11+4; i++)
                     {
                         Instance.ContentCustColorList.Add(0xFFFFFFFF);
+                    }
+                }
+                if (Instance.timeColorList.Count == 0)
+                {
+                    DefaulttimeColorList();
+                }
+                if (Instance.TimeCustColorList.Count == 0)
+                {
+                    for (int i = 0; i < 4; i++)
+                    {
+                        Instance.TimeCustColorList.Add(0xFFFFFFFF);
                     }
                 }
                 if (Instance.viewButtonList.Count == 0)

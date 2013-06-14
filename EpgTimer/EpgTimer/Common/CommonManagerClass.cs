@@ -104,6 +104,16 @@ namespace EpgTimer
             get;
             set;
         }
+        public List<Brush> CustTimeColorList
+        {
+            get;
+            set;
+        }
+        public Brush CustServiceColor
+        {
+            get;
+            set;
+        }
 
         private static CommonManager _instance;
         public static CommonManager Instance
@@ -451,6 +461,10 @@ namespace EpgTimer
             if( CustContentColorList == null )
             {
                 CustContentColorList = new List<Brush>();
+            }
+            if (CustTimeColorList == null)
+            {
+                CustTimeColorList = new List<Brush>();
             }
         }
 
@@ -1172,6 +1186,43 @@ namespace EpgTimer
                 else
                 {
                     CustTitle2Color = ColorDef.Instance.ColorTable[Settings.Instance.TitleColor2];
+                }
+                CustTimeColorList.Clear();
+                for (int i = 0; i < Settings.Instance.TimeColorList.Count; i++)
+                {
+                    String name = Settings.Instance.TimeColorList[i];
+                    if (String.Compare(name, "カスタム") == 0)
+                    {
+                        UInt32 argb = Settings.Instance.TimeCustColorList[i];
+
+                        byte r = (byte)((argb & 0x00FF0000) >> 16);
+                        byte g = (byte)((argb & 0x0000FF00) >> 8);
+                        byte b = (byte)(argb & 0x000000FF);
+
+                        Color color = Color.FromArgb(0xFF, r, g, b);
+                        CustTimeColorList.Add(ColorDef.GradientBrush(color, 0.9, 1.1));
+                    }
+                    else
+                    {
+                        CustTimeColorList.Add(ColorDef.GradientBrush(ColorDef.ColorFromName(name), 0.9, 1.1));
+                    }
+                }
+                if (String.Compare(Settings.Instance.ServiceColor, "カスタム") == 0)
+                {
+                    UInt32 argb = Settings.Instance.ServiceCustColor;
+
+                    byte r = (byte)((argb & 0x00FF0000) >> 16);
+                    byte g = (byte)((argb & 0x0000FF00) >> 8);
+                    byte b = (byte)(argb & 0x000000FF);
+
+                    Color item = Color.FromArgb(0xFF, r, g, b);
+                    Brush backColor = ColorDef.GradientBrush(item, 1.0, 2.0);
+
+                    CustServiceColor = backColor;
+                }
+                else
+                {
+                    CustServiceColor = ColorDef.GradientBrush(ColorDef.ColorFromName(Settings.Instance.ServiceColor), 1.0, 2.0);
                 }
             }
             catch (Exception ex)
