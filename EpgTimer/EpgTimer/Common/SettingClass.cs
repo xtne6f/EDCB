@@ -1135,7 +1135,7 @@ namespace EpgTimer
         {
             Instance.timeColorList.Add("MediumPurple");
             Instance.timeColorList.Add("LightSeaGreen");
-            Instance.timeColorList.Add("Salmon");
+            Instance.timeColorList.Add("LightSalmon");
             Instance.timeColorList.Add("CornflowerBlue");
         }
 

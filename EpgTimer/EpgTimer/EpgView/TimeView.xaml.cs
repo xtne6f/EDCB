@@ -138,7 +138,7 @@ namespace EpgTimer.EpgView
         private static void PutTime(InlineCollection inline, DateTime time)
         {
             Run text = new Run(time.ToString("%H"));
-            text.FontSize = 15;
+            text.FontSize = 13;
             text.FontWeight = FontWeights.Bold;
             inline.Add(text);
         }
