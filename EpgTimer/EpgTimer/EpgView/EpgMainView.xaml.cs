@@ -140,6 +140,7 @@ namespace EpgTimer
                     nowLine.StrokeThickness = 3;
                     nowLine.Opacity = 0.7;
                     nowLine.Effect = new System.Windows.Media.Effects.DropShadowEffect() { BlurRadius = 10 };
+                    nowLine.IsHitTestVisible = false;
                     epgProgramView.canvas.Children.Add(nowLine);
                 }
 
