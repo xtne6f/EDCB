@@ -134,10 +134,7 @@ namespace EpgTimer
         private string serviceColor;
         private UInt32 serviceCustColor;
         private bool reserveRectBackground;
-        private bool epgToolTip;
         private bool epgTitleIndent;
-        private bool epgToolTipNoViewOnly;
-        private int epgToolTipViewWait;
         private double resColumnWidth0;
         private double resColumnWidth1;
         private double resColumnWidth2;
@@ -398,25 +395,10 @@ namespace EpgTimer
             get { return serviceCustColor; }
             set { serviceCustColor = value; }
         }
-        public bool EpgToolTip
-        {
-            get { return epgToolTip; }
-            set { epgToolTip = value; }
-        }
         public bool EpgTitleIndent
         {
             get { return epgTitleIndent; }
             set { epgTitleIndent = value; }
-        }
-        public bool EpgToolTipNoViewOnly
-        {
-            get { return epgToolTipNoViewOnly; }
-            set { epgToolTipNoViewOnly = value; }
-        }
-        public int EpgToolTipViewWait
-        {
-            get { return epgToolTipViewWait; }
-            set { epgToolTipViewWait = value; }
         }
         public double ResColumnWidth0
         {
@@ -994,10 +976,7 @@ namespace EpgTimer
             serviceColor = "LightSlateGray";
             serviceCustColor = 0xFFFFFFFF;
             reserveRectBackground = false;
-            epgToolTip = false;
             epgTitleIndent = true;
-            epgToolTipNoViewOnly = true;
-            epgToolTipViewWait = 1500;
             resColumnHead = "";
             resSortDirection = ListSortDirection.Ascending;
             lastWindowState = System.Windows.WindowState.Normal;

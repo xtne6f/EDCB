@@ -26,8 +26,23 @@
     <Grid>
         <ScrollViewer Name="scrollViewer" HorizontalScrollBarVisibility="Visible" ScrollChanged="scrollViewer_ScrollChanged">
             <Canvas Name="canvas" HorizontalAlignment="Left" VerticalAlignment="Top">
-
-                <local:EpgViewPanel x:Name="epgViewPanel" Background="DarkGray" MouseMove="epgViewPanel_MouseMove" MouseLeftButtonDown="epgViewPanel_MouseLeftButtonDown" MouseLeftButtonUp="epgViewPanel_MouseLeftButtonUp" HorizontalAlignment="Left" VerticalAlignment="Top" MouseRightButtonDown="epgViewPanel_MouseRightButtonDown" />
+                <local:EpgViewPanel x:Name="epgViewPanel" Background="DarkGray" MouseMove="epgViewPanel_MouseMove" MouseLeftButtonDown="epgViewPanel_MouseLeftButtonDown" MouseLeftButtonUp="epgViewPanel_MouseLeftButtonUp" HorizontalAlignment="Left" VerticalAlignment="Top" MouseRightButtonDown="epgViewPanel_MouseRightButtonDown" MouseLeave="epgViewPanel_MouseLeave"/>
+                <Border x:Name="popupItem" Visibility="Hidden" IsHitTestVisible="False" Canvas.ZIndex="20" BorderBrush="DarkGray" BorderThickness="0.5">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="12" Opacity="0.5"/>
+                    </Border.Effect>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition x:Name="minGrid"/>
+                            <ColumnDefinition x:Name="infoGrid"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock x:Name="minText" Grid.Column="0"/>
+                        <StackPanel Orientation="Vertical" Grid.Column="1">
+                            <TextBlock x:Name="titleText" TextWrapping="Wrap" LineStackingStrategy="BlockLineHeight"/>
+                            <TextBlock x:Name="infoText" TextWrapping="Wrap" LineStackingStrategy="BlockLineHeight"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
             </Canvas>
         </ScrollViewer>            
     </Grid>
