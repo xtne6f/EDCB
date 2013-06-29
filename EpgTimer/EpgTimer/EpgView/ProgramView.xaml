@@ -27,22 +27,38 @@
         <ScrollViewer Name="scrollViewer" HorizontalScrollBarVisibility="Visible" ScrollChanged="scrollViewer_ScrollChanged">
             <Canvas Name="canvas" HorizontalAlignment="Left" VerticalAlignment="Top">
                 <local:EpgViewPanel x:Name="epgViewPanel" Background="DarkGray" MouseMove="epgViewPanel_MouseMove" MouseLeftButtonDown="epgViewPanel_MouseLeftButtonDown" MouseLeftButtonUp="epgViewPanel_MouseLeftButtonUp" HorizontalAlignment="Left" VerticalAlignment="Top" MouseRightButtonDown="epgViewPanel_MouseRightButtonDown" MouseLeave="epgViewPanel_MouseLeave"/>
-                <Border x:Name="popupItem" Visibility="Hidden" IsHitTestVisible="False" Canvas.ZIndex="20" BorderBrush="DarkGray" BorderThickness="0.5">
-                    <Border.Effect>
-                        <DropShadowEffect BlurRadius="12" Opacity="0.5"/>
-                    </Border.Effect>
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition x:Name="minGrid"/>
-                            <ColumnDefinition x:Name="infoGrid"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock x:Name="minText" Grid.Column="0"/>
-                        <StackPanel Orientation="Vertical" Grid.Column="1">
-                            <TextBlock x:Name="titleText" TextWrapping="Wrap" LineStackingStrategy="BlockLineHeight"/>
-                            <TextBlock x:Name="infoText" TextWrapping="Wrap" LineStackingStrategy="BlockLineHeight"/>
-                        </StackPanel>
-                    </Grid>
-                </Border>
+                <Canvas Canvas.ZIndex="20" x:Name="popupItem" IsHitTestVisible="False" Visibility="Hidden">
+                    <Border x:Name="popupItemContainer" BorderBrush="DarkGray" BorderThickness="0.5">
+                        <Border.Effect>
+                            <DropShadowEffect BlurRadius="12" Opacity="0.5"/>
+                        </Border.Effect>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition x:Name="minGrid"/>
+                                <ColumnDefinition x:Name="infoGrid"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock x:Name="minText" Grid.Column="0"/>
+                            <StackPanel Orientation="Vertical" Grid.Column="1">
+                                <TextBlock x:Name="titleText" TextWrapping="Wrap" LineStackingStrategy="BlockLineHeight"/>
+                                <TextBlock x:Name="infoText" TextWrapping="Wrap" LineStackingStrategy="BlockLineHeight"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <Rectangle x:Name="popupItemReserveRect" Opacity="0.3" StrokeThickness="3" Fill="Transparent" IsHitTestVisible="False">
+                        <Rectangle.Stroke>
+                            <SolidColorBrush>Blue</SolidColorBrush>
+                        </Rectangle.Stroke>
+                        <Rectangle.Width>
+                            <Binding ElementName="popupItemContainer" Path="Width"/>
+                        </Rectangle.Width>
+                        <Rectangle.Height>
+                            <Binding ElementName="popupItemContainer" Path="ActualHeight"/>
+                        </Rectangle.Height>
+                        <Rectangle.Effect>
+                            <DropShadowEffect BlurRadius="6"/>
+                        </Rectangle.Effect>
+                    </Rectangle>
+                </Canvas>
             </Canvas>
         </ScrollViewer>            
     </Grid>
