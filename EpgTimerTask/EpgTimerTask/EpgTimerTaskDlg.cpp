@@ -12,8 +12,10 @@
 
 
 
-CEpgTimerTaskDlg::CEpgTimerTaskDlg()
+CEpgTimerTaskDlg::CEpgTimerTaskDlg(BOOL bStartSrv)
 	: m_hDlg(NULL)
+	, m_bStartSrv(bStartSrv)
+	, m_hBonLiteMutex(NULL)
 {
 	//m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 	m_hIcon = (HICON)LoadImage( GetModuleHandle(NULL), MAKEINTRESOURCE( IDR_MAINFRAME ), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
@@ -77,10 +79,47 @@ BOOL CEpgTimerTaskDlg::OnInitDialog()
 	SendMessage(m_hDlg, WM_TIMER, RETRY_ADD_TRAY, 0);
 
 	CSendCtrlCmd cmd;
-    if( cmd.SendRegistGUI(GetCurrentProcessId()) != CMD_SUCCESS ){
-		TCHAR szCaption[64];
-		GetWindowText(m_hDlg, szCaption, _countof(szCaption));
-		MessageBox(m_hDlg, L"EpgTimerSrv.exeの起動を確認できませんでした。\r\n終了してください。", szCaption, MB_OK);
+	BOOL bError = FALSE;
+	if( m_bStartSrv == FALSE ){
+		if( cmd.SendRegistGUI(GetCurrentProcessId()) != CMD_SUCCESS ){
+			bError = TRUE;
+		}
+	}else{
+		//EpgTimer/MainWindow.xaml.cs/MainWindow()と近似な処理
+		m_hBonLiteMutex = _CreateMutex(FALSE, EPG_TIMER_BON_LITE_MUTEX);
+		if( m_hBonLiteMutex != NULL ){
+			if( WaitForSingleObject(m_hBonLiteMutex, 0) != WAIT_OBJECT_0 ){
+				CloseHandle(m_hBonLiteMutex);
+				m_hBonLiteMutex = NULL;
+			}else{
+				if( IsInstallService(SERVICE_NAME) == FALSE ){
+					wstring strPath;
+					GetModuleFolderPath(strPath);
+					strPath += L"\\EpgTimerSrv.exe";
+					PROCESS_INFORMATION pi;
+					STARTUPINFO si = {};
+					si.cb = sizeof(si);
+					if( CreateProcess(strPath.c_str(), NULL, NULL, NULL, FALSE, GetPriorityClass(GetCurrentProcess()), NULL, NULL, &si, &pi) != FALSE ){
+						CloseHandle(pi.hThread);
+						CloseHandle(pi.hProcess);
+					}
+				}
+				if( cmd.SendRegistGUI(GetCurrentProcessId()) != CMD_SUCCESS ){
+					ReleaseMutex(m_hBonLiteMutex);
+					CloseHandle(m_hBonLiteMutex);
+					m_hBonLiteMutex = NULL;
+				}
+			}
+		}
+		if( m_hBonLiteMutex == NULL ){
+			bError = TRUE;
+		}
+	}
+	if( bError != FALSE ){
+		//初期化中にメッセージボックスを出すのもなんなので
+		PostMessage(m_hDlg, WM_SHOW_ERROR_AND_CLOSE, 0, 0);
+	}else{
+		SetTimer(m_hDlg, WATCH_SRV_STATUS, 5000, NULL);
 	}
 
 	return TRUE;  // フォーカスをコントロールに設定した場合を除き、TRUE を返します。
@@ -203,6 +242,14 @@ LRESULT CEpgTimerTaskDlg::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 				}
 			}
 			break;
+		case WM_SHOW_ERROR_AND_CLOSE:
+			{
+				TCHAR szCaption[128];
+				GetWindowText(m_hDlg, szCaption, _countof(szCaption));
+				MessageBox(m_hDlg, L"多重起動しているか、EpgTimerSrv.exeの起動を確認できませんでした。\r\n終了します。", szCaption, MB_OK);
+				PostMessage(m_hDlg, WM_END_DIALOG, 0, 0);
+			}
+			break;
 		default:
 			if( message == m_uMsgTaskbarCreated ){
 				//シェルの再起動時
@@ -252,10 +299,25 @@ void CEpgTimerTaskDlg::OnDestroy()
 {
 	KillTimer(m_hDlg, RETRY_ADD_TRAY);
 	KillTimer(m_hDlg, RETRY_CHG_TRAY);
+	KillTimer(m_hDlg, WATCH_SRV_STATUS);
 	DeleteTaskBar(m_hDlg, TRAYICON_ID);
 
 	CSendCtrlCmd cmd;
-    cmd.SendUnRegistGUI(GetCurrentProcessId());
+	cmd.SetConnectTimeOut(3000);
+	if( m_bStartSrv == FALSE ){
+		cmd.SendUnRegistGUI(GetCurrentProcessId());
+	}else{
+		//EpgTimer/MainWindow.xaml.cs/Window_Closing()と近似な処理
+		if( m_hBonLiteMutex != NULL ){
+			cmd.SendUnRegistGUI(GetCurrentProcessId());
+			if( IsInstallService(SERVICE_NAME) == FALSE ){
+				cmd.SendClose();
+			}
+			ReleaseMutex(m_hBonLiteMutex);
+			CloseHandle(m_hBonLiteMutex);
+			m_hBonLiteMutex = NULL;
+		}
+	}
 
 	// TODO: ここにメッセージ ハンドラー コードを追加します。
 }
@@ -286,6 +348,10 @@ void CEpgTimerTaskDlg::OnTimer(UINT_PTR nIDEvent)
 				break;
 			case 2:
 				hSetIcon = m_hIconGreen;
+				break;
+			case 3:
+				hSetIcon = (HICON)LoadImage(NULL, IDI_ERROR, IMAGE_ICON, 0, 0, LR_DEFAULTSIZE | LR_SHARED);
+				strBuff += L"EpgTimerTask - Error: EpgTimerSrv.exeが停止しました。";
 				break;
 			default:
 				break;
@@ -321,6 +387,10 @@ void CEpgTimerTaskDlg::OnTimer(UINT_PTR nIDEvent)
 			case 2:
 				hSetIcon = m_hIconGreen;
 				break;
+			case 3:
+				hSetIcon = (HICON)LoadImage(NULL, IDI_ERROR, IMAGE_ICON, 0, 0, LR_DEFAULTSIZE | LR_SHARED);
+				strBuff += L"EpgTimerTask - Error: EpgTimerSrv.exeが停止しました。";
+				break;
 			default:
 				break;
 		}
@@ -329,6 +399,15 @@ void CEpgTimerTaskDlg::OnTimer(UINT_PTR nIDEvent)
 				hSetIcon,
 				strBuff ) == FALSE ){
 					SetTimer(m_hDlg, RETRY_CHG_TRAY, 5000, NULL);
+		}
+	}else if( nIDEvent == WATCH_SRV_STATUS ){
+		//サーバが停止していないか監視
+		HANDLE hMutex = OpenMutex(SYNCHRONIZE, FALSE, EPG_TIMER_BON_SRV_MUTEX);
+		if( hMutex != NULL ){
+			CloseHandle(hMutex);
+		}else if( m_dwSrvStatus != 3 ){
+			m_dwSrvStatus = 3;
+			SetTimer(m_hDlg, RETRY_CHG_TRAY, 0, NULL);
 		}
 	}
 }

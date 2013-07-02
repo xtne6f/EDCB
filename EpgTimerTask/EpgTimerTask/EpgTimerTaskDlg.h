@@ -10,23 +10,26 @@
 #include "../../Common/SendCtrlCmd.h"
 #include "../../Common/CtrlCmdUtil.h"
 #include "../../Common/CtrlCmdUtil2.h"
+#include "../../Common/ServiceUtil.h"
 #include "QueryWaitDlg.h"
 
 #define WM_TRAY_PUSHICON (WM_USER+51) //トレイアイコン押された
 #define WM_QUERY_SUSPEND (WM_USER+52)
 #define WM_QUERY_REBOOT (WM_USER+53)
 #define WM_END_DIALOG (WM_USER+54)
+#define WM_SHOW_ERROR_AND_CLOSE (WM_USER+55)
 
 #define TRAYICON_ID 200
 #define RETRY_ADD_TRAY 1000
 #define RETRY_CHG_TRAY 1001
+#define WATCH_SRV_STATUS 1002
 
 // CEpgTimerTaskDlg ダイアログ
 class CEpgTimerTaskDlg
 {
 // コンストラクション
 public:
-	CEpgTimerTaskDlg();	// 標準コンストラクター
+	CEpgTimerTaskDlg(BOOL bStartSrv = FALSE);
 	INT_PTR DoModal();
 
 // ダイアログ データ
@@ -46,6 +49,8 @@ protected:
 	HICON m_hIconGreen;
 	HWND m_hDlg;
 	UINT m_uMsgTaskbarCreated;
+	BOOL m_bStartSrv;
+	HANDLE m_hBonLiteMutex;
 
 	CPipeServer m_cPipe;
 	DWORD m_dwSrvStatus;
