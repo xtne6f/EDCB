@@ -73,11 +73,6 @@
                             <GridViewColumnHeader Content="番組名" HorizontalContentAlignment="Left"/>
                         </GridViewColumn.Header>
                     </GridViewColumn>
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=RecMode}">
-                        <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="録画モード" HorizontalContentAlignment="Left" />
-                        </GridViewColumn.Header>
-                    </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=NetworkName}">
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="ネットワーク" HorizontalContentAlignment="Left"/>
