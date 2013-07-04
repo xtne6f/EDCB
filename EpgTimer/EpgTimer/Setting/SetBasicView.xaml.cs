@@ -135,9 +135,6 @@ namespace EpgTimer.Setting
                 comboBox_MM.DataContext = CommonManager.Instance.MinDictionary.Values;
                 comboBox_MM.SelectedIndex = 0;
 
-                chkEPGBasicOnly.IsChecked = false;
-                chkEnableEPGTimerType.IsChecked = false;
-
                 serviceList = new List<ServiceItem2>();
                 try
                 {
@@ -185,14 +182,7 @@ namespace EpgTimer.Setting
                 {
                     checkBox_cs2.IsChecked = false;
                 }
-                if (IniFileHandler.GetPrivateProfileInt("SET", "EnableEPGTimerType", 0, SettingPath.CommonIniPath) == 1)
-                {
-                    chkEnableEPGTimerType.IsChecked = true;
-                }
-                else
-                {
-                    chkEnableEPGTimerType.IsChecked = false;
-                }
+
                 buff.Clear();
                 timeList = new ObservableCollection<EpgCaptime>();
                 int capCount = IniFileHandler.GetPrivateProfileInt("EPG_CAP", "Count", 0, SettingPath.TimerSrvIniPath);
@@ -200,7 +190,6 @@ namespace EpgTimer.Setting
                 {
                     EpgCaptime item = new EpgCaptime();
                     item.IsSelected = true;
-                    item.IsBasicOnly = false;
                     item.Time = "23:00";
                     timeList.Add(item);
                 }
@@ -219,14 +208,6 @@ namespace EpgTimer.Setting
                         else
                         {
                             item.IsSelected = false;
-                        }
-                        if (IniFileHandler.GetPrivateProfileInt("EPG_CAP", i.ToString() + "Basic", 0, SettingPath.TimerSrvIniPath) == 1)
-                        {
-                            item.IsBasicOnly = true;
-                        }
-                        else
-                        {
-                            item.IsBasicOnly = false;
                         }
                         timeList.Add(item);
                     }
@@ -327,14 +308,6 @@ namespace EpgTimer.Setting
                 {
                     IniFileHandler.WritePrivateProfileString("SET", "CS2BasicOnly", "0", SettingPath.CommonIniPath);
                 }
-                if (chkEnableEPGTimerType.IsChecked == true)
-                {
-                    IniFileHandler.WritePrivateProfileString("SET", "EnableEPGTimerType", "1", SettingPath.CommonIniPath);
-                }
-                else
-                {
-                    IniFileHandler.WritePrivateProfileString("SET", "EnableEPGTimerType", "0", SettingPath.CommonIniPath);
-                }
 
                 foreach (ServiceItem2 info in serviceList)
                 {
@@ -367,14 +340,6 @@ namespace EpgTimer.Setting
                     else
                     {
                         IniFileHandler.WritePrivateProfileString("EPG_CAP", i.ToString() + "Select", "0", SettingPath.TimerSrvIniPath);
-                    }
-                    if (item.IsBasicOnly == true)
-                    {
-                        IniFileHandler.WritePrivateProfileString("EPG_CAP", i.ToString() + "Basic", "1", SettingPath.TimerSrvIniPath);
-                    }
-                    else
-                    {
-                        IniFileHandler.WritePrivateProfileString("EPG_CAP", i.ToString() + "Basic", "0", SettingPath.TimerSrvIniPath);
                     }
                 }
 
@@ -702,14 +667,6 @@ namespace EpgTimer.Setting
                     EpgCaptime item = new EpgCaptime();
                     item.IsSelected = true;
                     item.Time = time;
-                    if (chkEPGBasicOnly.IsChecked==true)
-                    {
-                        item.IsBasicOnly = true;
-                    }
-                    else
-                    {
-                        item.IsBasicOnly = false;
-                    }
                     timeList.Add(item);
                 }
             }
