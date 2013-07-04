@@ -191,6 +191,9 @@ namespace EpgTimer.Setting
                     EpgCaptime item = new EpgCaptime();
                     item.IsSelected = true;
                     item.Time = "23:00";
+                    item.BSBasicOnly = checkBox_bs.IsChecked == true;
+                    item.CS1BasicOnly = checkBox_cs1.IsChecked == true;
+                    item.CS2BasicOnly = checkBox_cs2.IsChecked == true;
                     timeList.Add(item);
                 }
                 else
@@ -208,6 +211,20 @@ namespace EpgTimer.Setting
                         else
                         {
                             item.IsSelected = false;
+                        }
+                        // 取得種別(bit0(LSB)=BS,bit1=CS1,bit2=CS2)。負値のときは共通設定に従う
+                        int flags = IniFileHandler.GetPrivateProfileInt("EPG_CAP", i.ToString() + "BasicOnlyFlags", -1, SettingPath.TimerSrvIniPath);
+                        if (flags >= 0)
+                        {
+                            item.BSBasicOnly = (flags & 1) != 0;
+                            item.CS1BasicOnly = (flags & 2) != 0;
+                            item.CS2BasicOnly = (flags & 4) != 0;
+                        }
+                        else
+                        {
+                            item.BSBasicOnly = checkBox_bs.IsChecked == true;
+                            item.CS1BasicOnly = checkBox_cs1.IsChecked == true;
+                            item.CS2BasicOnly = checkBox_cs2.IsChecked == true;
                         }
                         timeList.Add(item);
                     }
@@ -341,6 +358,8 @@ namespace EpgTimer.Setting
                     {
                         IniFileHandler.WritePrivateProfileString("EPG_CAP", i.ToString() + "Select", "0", SettingPath.TimerSrvIniPath);
                     }
+                    int flags = (item.BSBasicOnly ? 1 : 0) | (item.CS1BasicOnly ? 2 : 0) | (item.CS2BasicOnly ? 4 : 0);
+                    IniFileHandler.WritePrivateProfileString("EPG_CAP", i.ToString() + "BasicOnlyFlags", flags.ToString(), SettingPath.TimerSrvIniPath);
                 }
 
 
@@ -655,6 +674,12 @@ namespace EpgTimer.Setting
                     UInt16 hh = (UInt16)comboBox_HH.SelectedItem;
                     UInt16 mm = (UInt16)comboBox_MM.SelectedItem;
                     String time = hh.ToString("D2") + ":" + mm.ToString("D2");
+                    int wday = comboBox_wday.SelectedIndex;
+                    if (1 <= wday && wday <= 7)
+                    {
+                        // 曜日指定接尾辞(w1=Mon,...,w7=Sun)
+                        time += "w" + ((wday + 5) % 7 + 1);
+                    }
 
                     foreach (EpgCaptime info in timeList)
                     {
@@ -667,6 +692,9 @@ namespace EpgTimer.Setting
                     EpgCaptime item = new EpgCaptime();
                     item.IsSelected = true;
                     item.Time = time;
+                    item.BSBasicOnly = checkBox_bs.IsChecked == true;
+                    item.CS1BasicOnly = checkBox_cs1.IsChecked == true;
+                    item.CS2BasicOnly = checkBox_cs2.IsChecked == true;
                     timeList.Add(item);
                 }
             }
