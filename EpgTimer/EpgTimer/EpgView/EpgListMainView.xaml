@@ -30,6 +30,8 @@
                     <Style TargetType="ListViewItem">
                         <Setter Property="Background" Value="{Binding BackColor}" />
                         <EventSetter Event="MouseDoubleClick" Handler="listView_event_MouseDoubleClick"/>
+                        <Setter Property="BorderThickness" Value="5,0,0,1" />
+                        <Setter Property="BorderBrush" Value="{Binding BorderBrush}" />
                     </Style>
                 </ListView.Resources>
                 <ListView.View>
