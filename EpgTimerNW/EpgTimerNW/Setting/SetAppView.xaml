@@ -84,6 +84,7 @@
                             <Button Content="←" Height="23" HorizontalAlignment="Left" Margin="205,106,0,0" Name="button_btnAdd" VerticalAlignment="Top" Width="47" Click="button_btnAdd_Click" Style="{StaticResource ButtonStyle1}" />
                             <Label Content="項目" Height="28" HorizontalAlignment="Left" Margin="281,6,0,0" Name="label32" VerticalAlignment="Top" />
                             <ListBox Height="124" HorizontalAlignment="Left" Margin="281,40,0,0" Name="listBox_itemBtn" VerticalAlignment="Top" Width="172" />
+                            <CheckBox Content="タブの位置に表示" Height="16" HorizontalAlignment="Left" Margin="469,40,0,0" Name="checkBox_showAsTab" VerticalAlignment="Top" Width="108" />
                         </Grid>
                     </GroupBox>
                     <GroupBox Header="タスクアイコン 右クリック表示項目" Height="197" Margin="12,217,12,0" Name="groupBox32" VerticalAlignment="Top">

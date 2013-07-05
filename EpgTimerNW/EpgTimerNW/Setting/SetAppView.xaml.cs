@@ -252,6 +252,8 @@ namespace EpgTimer.Setting
 
                 Settings.GetDefSearchSetting(ref defSearchKey);
 
+                checkBox_showAsTab.IsChecked = Settings.Instance.ViewButtonShowAsTab;
+
                 buttonItem.Add(new ViewMenuItem("（空白）", false));
                 buttonItem.Add(new ViewMenuItem("設定", false));
                 buttonItem.Add(new ViewMenuItem("検索", false));
@@ -274,6 +276,11 @@ namespace EpgTimer.Setting
 
                 foreach (String info in Settings.Instance.ViewButtonList)
                 {
+                    //リストが空であることを示す特殊なアイテムを無視
+                    if (String.Compare(info, "（なし）") == 0)
+                    {
+                        continue;
+                    }
                     //.NET的に同一文字列のStringを入れると選択動作がおかしくなるみたいなので毎回作成しておく
                     listBox_viewBtn.Items.Add(new ViewMenuItem(info, true));
                     if (String.Compare(info, "（空白）") != 0)
@@ -707,10 +714,16 @@ namespace EpgTimer.Setting
             Settings.Instance.SearchKeyChkRecEnd = defSearchKey.chkRecEnd;
             Settings.Instance.SearchKeyChkRecDay = defSearchKey.chkRecDay;
 
+            Settings.Instance.ViewButtonShowAsTab = checkBox_showAsTab.IsChecked == true;
             Settings.Instance.ViewButtonList.Clear();
             foreach (ViewMenuItem info in listBox_viewBtn.Items)
             {
                 Settings.Instance.ViewButtonList.Add(info.MenuName);
+            }
+            if (Settings.Instance.ViewButtonList.Count == 0)
+            {
+                //リストが空であることを示す特殊なアイテムを追加
+                Settings.Instance.ViewButtonList.Add("（なし）");
             }
 
             Settings.Instance.TaskMenuList.Clear();
@@ -792,8 +805,19 @@ namespace EpgTimer.Setting
                 ViewMenuItem info = listBox_viewBtn.SelectedItem as ViewMenuItem;
                 if (String.Compare(info.MenuName, "設定") == 0)
                 {
-                    MessageBox.Show("設定は非表示にすることができません");
-                    return;
+                    bool found = false;
+                    foreach (ViewMenuItem item in listBox_viewTask.Items)
+                    {
+                        if ((found = item.MenuName == "設定") != false)
+                        {
+                            break;
+                        }
+                    }
+                    if (!found)
+                    {
+                        MessageBox.Show("設定は上部表示ボタンか右クリック表示項目のどちらかに必要です");
+                        return;
+                    }
                 }
                 if (String.Compare(info.MenuName, "（空白）") != 0)
                 {
@@ -860,6 +884,22 @@ namespace EpgTimer.Setting
             if (listBox_viewTask.SelectedItem != null)
             {
                 ViewMenuItem info = listBox_viewTask.SelectedItem as ViewMenuItem;
+                if (String.Compare(info.MenuName, "設定") == 0)
+                {
+                    bool found = false;
+                    foreach (ViewMenuItem item in listBox_viewBtn.Items)
+                    {
+                        if ((found = item.MenuName == "設定") != false)
+                        {
+                            break;
+                        }
+                    }
+                    if (!found)
+                    {
+                        MessageBox.Show("設定は上部表示ボタンか右クリック表示項目のどちらかに必要です");
+                        return;
+                    }
+                }
                 if (String.Compare(info.MenuName, "（セパレータ）") != 0)
                 {
                     foreach (ViewMenuItem item in taskItem)

@@ -461,6 +461,15 @@ namespace EpgTimer
         private void ResetButtonView()
         {
             stackPanel_button.Children.Clear();
+            for (int i = 0; i < tabControl_main.Items.Count; i++)
+            {
+                TabItem ti = tabControl_main.Items.GetItemAt(i) as TabItem;
+                if (ti != null && ti.Tag is string && (string)ti.Tag == "PushLike")
+                {
+                    tabControl_main.Items.Remove(ti);
+                    i--;
+                }
+            }
             foreach (string info in Settings.Instance.ViewButtonList)
             {
                 if (String.Compare(info, "（空白）") == 0)
@@ -482,9 +491,31 @@ namespace EpgTimer
                             buttonList[info].Content = Settings.Instance.Cust2BtnName;
                         }
                         stackPanel_button.Children.Add(buttonList[info]);
+
+                        if (Settings.Instance.ViewButtonShowAsTab)
+                        {
+                            //ボタン風のタブを追加する
+                            TabItem ti = new TabItem();
+                            ti.Header = info;
+                            ti.Tag = "PushLike";
+                            ti.Background = null;
+                            ti.BorderBrush = null;
+                            //タブ移動をキャンセルしつつ擬似的に対応するボタンを押す
+                            ti.PreviewMouseDown += (sender, e) =>
+                            {
+                                if (e.ChangedButton == MouseButton.Left)
+                                {
+                                    buttonList[(string)((TabItem)sender).Header].RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                                    e.Handled = true;
+                                }
+                            };
+                            tabControl_main.Items.Add(ti);
+                        }
                     }
                 }
             }
+            //タブとして表示するかボタンが1つもないときは行を隠す
+            rowDefinition_row0.Height = new GridLength(Settings.Instance.ViewButtonShowAsTab || stackPanel_button.Children.Count == 0 ? 0 : 30);
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
