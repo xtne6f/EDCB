@@ -163,6 +163,7 @@ void MP_THREAD_WaitEndThread(
 	if( info != NULL ){
 #ifdef _WIN32
 		WaitForSingleObject(info->thread, INFINITE);
+		CloseHandle(info->thread);
 #else
 		pthread_join(info->thread);
 #endif
