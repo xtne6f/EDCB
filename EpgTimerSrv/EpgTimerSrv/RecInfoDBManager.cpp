@@ -7,11 +7,6 @@
 CRecInfoDBManager::CRecInfoDBManager(void)
 {
 	this->lockEvent = _CreateEvent(FALSE, TRUE, NULL);
-	::CoInitialize( NULL );
-	HRESULT hr=regExp.CreateInstance(CLSID_RegExp);
-	if(FAILED(hr)){
-		regExp = NULL;
-	}
 }
 
 
@@ -24,12 +19,6 @@ CRecInfoDBManager::~CRecInfoDBManager(void)
 		CloseHandle(this->lockEvent);
 		this->lockEvent = NULL;
 	}
-
-	if( regExp != NULL ){
-		regExp.Release();
-	}
-
-	::CoUninitialize();
 }
 
 BOOL CRecInfoDBManager::Lock(LPCWSTR log, DWORD timeOut)
@@ -133,11 +122,14 @@ void CRecInfoDBManager::CreateKeyMap()
 	GetPrivateProfileString(L"SET", L"RecInfo2RegExp", L"", buff, 1024, iniAppPath.c_str());
 	wstring strReg = buff;
 
+	CoInitialize(NULL);
+	{
+	IRegExpPtr regExp;
 	for( size_t i=0 ;i<this->recInfoList.size(); i++ ){
 		wstring title = L"";
 		if( this->recInfoList[i]->shortInfo != NULL ){
 			title = this->recInfoList[i]->shortInfo->event_name;
-			ReplaceRegExp(title, strReg, L"");
+			ReplaceRegExp(title, strReg, L"", regExp);
 		}
 		map<wstring, RECINFO_LIST_ITEM*>::iterator itrTitle;
 		RECINFO_LIST_ITEM* itemTitle = NULL;
@@ -150,6 +142,8 @@ void CRecInfoDBManager::CreateKeyMap()
 		}
 		itemTitle->infoList.push_back(this->recInfoList[i]);
 	}
+	}
+	CoUninitialize();
 }
 
 void CRecInfoDBManager::SaveRecInfo()
@@ -253,7 +247,12 @@ BOOL CRecInfoDBManager::IsFindTitleInfo(EPGDB_EVENT_INFO* info, WORD chkDay)
 	wstring title = L"";
 	if( info->shortInfo != NULL ){
 		title = info->shortInfo->event_name;
-		ReplaceRegExp(title, strReg, L"");
+		CoInitialize(NULL);
+		{
+			IRegExpPtr regExp;
+			ReplaceRegExp(title, strReg, L"", regExp);
+		}
+		CoUninitialize();
 	}
 	__int64 weekSec = chkDay*24*60*60;
 	weekSec *= I64_1SEC;
@@ -281,18 +280,21 @@ BOOL CRecInfoDBManager::IsFindTitleInfo(EPGDB_EVENT_INFO* info, WORD chkDay)
 	return ret;
 }
 
-void CRecInfoDBManager::ReplaceRegExp(wstring &strBuff, wstring strReg, wstring strNew)
+void CRecInfoDBManager::ReplaceRegExp(wstring &strBuff, wstring strReg, wstring strNew, IRegExpPtr& regExp)
 {
-	if( this->regExp != NULL && strBuff.size() > 0 && strReg.size() > 0 ){
+	if( regExp == NULL ){
+		regExp.CreateInstance(CLSID_RegExp);
+	}
+	if( regExp != NULL && strBuff.size() > 0 && strReg.size() > 0 ){
 		try{
 			_bstr_t target( strBuff.c_str() );
 			_bstr_t pattern( strReg.c_str() );
 			_bstr_t replace( strNew.c_str() );
 
-			this->regExp->PutGlobal( VARIANT_TRUE );
-			this->regExp->PutPattern( pattern );
+			regExp->PutGlobal( VARIANT_TRUE );
+			regExp->PutPattern( pattern );
 
-			strBuff = (wstring)this->regExp->Replace( target, replace );
+			strBuff = (wstring)regExp->Replace( target, replace );
 		}catch(...){
 			strBuff = L"";
 		}

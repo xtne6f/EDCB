@@ -14,7 +14,7 @@
 
 HANDLE g_hMutex;
 SERVICE_STATUS_HANDLE g_hStatusHandle;
-CEpgTimerSrvMain g_cMain;
+CEpgTimerSrvMain* g_pMain;
 DWORD g_dwCurrentSSState = SERVICE_STOPPED;
 
 int APIENTRY _tWinMain(HINSTANCE hInstance,
@@ -123,8 +123,8 @@ DWORD WINAPI service_ctrl(DWORD dwControl, DWORD dwEventType, LPVOID lpEventData
 			OutputDebugString(_T("SERVICE_CONTROL_POWEREVENT"));
 			if ( dwEventType == PBT_APMQUERYSUSPEND ){
 				OutputDebugString(_T("PBT_APMQUERYSUSPEND"));
-				if( g_cMain.IsSuspending() == FALSE ){
-					if( g_cMain.ChkSuspend() == FALSE ){
+				if( g_pMain != NULL && g_pMain->IsSuspending() == FALSE ){
+					if( g_pMain->ChkSuspend() == FALSE ){
 						OutputDebugString(_T("BROADCAST_QUERY_DENY"));
 						return BROADCAST_QUERY_DENY;
 					}
@@ -160,10 +160,20 @@ BOOL SendStatusScm(int iState, int iExitcode, int iProgress)
 
 void StartMain(BOOL bService)
 {
-	g_cMain.StartMain(bService);
+	//メインスレッドに対するCOMの初期化
+	CoInitialize(NULL);
+
+	g_pMain = new CEpgTimerSrvMain;
+	g_pMain->StartMain(bService);
+	delete g_pMain;
+	g_pMain = NULL;
+
+	CoUninitialize();
 }
 
 void StopMain()
 {
-	g_cMain.StopMain();
+	if( g_pMain != NULL ){
+		g_pMain->StopMain();
+	}
 }
