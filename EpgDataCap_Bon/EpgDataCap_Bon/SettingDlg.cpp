@@ -4,15 +4,13 @@
 #include "stdafx.h"
 #include "EpgDataCap_Bon.h"
 #include "SettingDlg.h"
-#include "afxdialogex.h"
 
 
 // CSettingDlg ダイアログ
 
-IMPLEMENT_DYNAMIC(CSettingDlg, CDialog)
-
-CSettingDlg::CSettingDlg(CWnd* pParent /*=NULL*/)
-	: CDialog(CSettingDlg::IDD, pParent)
+CSettingDlg::CSettingDlg(HWND hWndOwner)
+	: m_hWnd(NULL)
+	, m_hWndOwner(hWndOwner)
 {
 
 }
@@ -21,18 +19,10 @@ CSettingDlg::~CSettingDlg()
 {
 }
 
-void CSettingDlg::DoDataExchange(CDataExchange* pDX)
+INT_PTR CSettingDlg::DoModal()
 {
-	CDialog::DoDataExchange(pDX);
-	DDX_Control(pDX, IDC_TAB, dlgTab);
+	return DialogBoxParam(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD), m_hWndOwner, DlgProc, (LPARAM)this);
 }
-
-
-BEGIN_MESSAGE_MAP(CSettingDlg, CDialog)
-	ON_BN_CLICKED(IDOK, &CSettingDlg::OnBnClickedOk)
-	ON_NOTIFY(TCN_SELCHANGING, IDC_TAB, &CSettingDlg::OnTcnSelchangingTab)
-	ON_NOTIFY(TCN_SELCHANGE, IDC_TAB, &CSettingDlg::OnTcnSelchangeTab)
-END_MESSAGE_MAP()
 
 
 // CSettingDlg メッセージ ハンドラー
@@ -40,8 +30,6 @@ END_MESSAGE_MAP()
 
 BOOL CSettingDlg::OnInitDialog()
 {
-	CDialog::OnInitDialog();
-
 	// TODO:  ここに初期化を追加してください
 	wstring path = L"";
 	GetCommonIniPath(path);
@@ -60,43 +48,45 @@ BOOL CSettingDlg::OnInitDialog()
 	Item.mask = TCIF_TEXT;
 
 	Item.pszText = L"基本設定";
-	dlgTab.InsertItem(0, &Item);
+	TabCtrl_InsertItem(GetDlgItem(IDC_TAB), 0, &Item);
 
 	Item.pszText = L"動作設定";
-	dlgTab.InsertItem(1, &Item);
+	TabCtrl_InsertItem(GetDlgItem(IDC_TAB), 1, &Item);
 
 	Item.pszText = L"EPG取得設定";
-	dlgTab.InsertItem(2, &Item);
+	TabCtrl_InsertItem(GetDlgItem(IDC_TAB), 2, &Item);
 
 	Item.pszText = L"サービス表示設定";
-	dlgTab.InsertItem(3, &Item);
+	TabCtrl_InsertItem(GetDlgItem(IDC_TAB), 3, &Item);
 
 	Item.pszText = L"ネットワーク設定";
-	dlgTab.InsertItem(4, &Item);
+	TabCtrl_InsertItem(GetDlgItem(IDC_TAB), 4, &Item);
 
 	Item.pszText = L"外部アプリケーション設定";
-	dlgTab.InsertItem(5, &Item);
+	TabCtrl_InsertItem(GetDlgItem(IDC_TAB), 5, &Item);
 
-	basicDlg.Create( MAKEINTRESOURCE(IDD_DIALOG_SET_BASIC), CWnd::FromHandle( dlgTab.GetSafeHwnd() ) );
-	appDlg.Create( MAKEINTRESOURCE(IDD_DIALOG_SET_APP), CWnd::FromHandle( dlgTab.GetSafeHwnd() ) );
-	epgDlg.Create( MAKEINTRESOURCE(IDD_DIALOG_SET_EPG), CWnd::FromHandle( dlgTab.GetSafeHwnd() ) );
-	networkDlg.Create( MAKEINTRESOURCE(IDD_DIALOG_SET_NW), CWnd::FromHandle( dlgTab.GetSafeHwnd() ) );
-	appBtnDlg.Create( MAKEINTRESOURCE(IDD_DIALOG_SET_APPBTN), CWnd::FromHandle( dlgTab.GetSafeHwnd() ) );
-	serviceDlg.Create( MAKEINTRESOURCE(IDD_DIALOG_SET_SERVICE), CWnd::FromHandle( dlgTab.GetSafeHwnd() ) );
+	basicDlg.Create( MAKEINTRESOURCE(IDD_DIALOG_SET_BASIC), GetDlgItem(IDC_TAB) );
+	appDlg.Create( MAKEINTRESOURCE(IDD_DIALOG_SET_APP), GetDlgItem(IDC_TAB) );
+	epgDlg.Create( MAKEINTRESOURCE(IDD_DIALOG_SET_EPG), GetDlgItem(IDC_TAB) );
+	networkDlg.Create( MAKEINTRESOURCE(IDD_DIALOG_SET_NW), GetDlgItem(IDC_TAB) );
+	appBtnDlg.Create( MAKEINTRESOURCE(IDD_DIALOG_SET_APPBTN), GetDlgItem(IDC_TAB) );
+	serviceDlg.Create( MAKEINTRESOURCE(IDD_DIALOG_SET_SERVICE), GetDlgItem(IDC_TAB) );
 
-	CRect rc;
-	dlgTab.GetClientRect(rc);
-	dlgTab.AdjustRect(FALSE, rc);
+	RECT rc;
+	GetClientRect(GetDlgItem(IDC_TAB), &rc);
+	TabCtrl_AdjustRect(GetDlgItem(IDC_TAB), FALSE, &rc);
 
-	basicDlg.MoveWindow(rc);
-	appDlg.MoveWindow(rc);
-	epgDlg.MoveWindow(rc);
-	networkDlg.MoveWindow(rc);
-	appBtnDlg.MoveWindow(rc);
-	serviceDlg.MoveWindow(rc);
+	rc.right -= rc.left;
+	rc.bottom -= rc.top;
+	MoveWindow(basicDlg.GetSafeHwnd(), rc.left, rc.top, rc.right, rc.bottom, TRUE);
+	MoveWindow(appDlg.GetSafeHwnd(), rc.left, rc.top, rc.right, rc.bottom, TRUE);
+	MoveWindow(epgDlg.GetSafeHwnd(), rc.left, rc.top, rc.right, rc.bottom, TRUE);
+	MoveWindow(networkDlg.GetSafeHwnd(), rc.left, rc.top, rc.right, rc.bottom, TRUE);
+	MoveWindow(appBtnDlg.GetSafeHwnd(), rc.left, rc.top, rc.right, rc.bottom, TRUE);
+	MoveWindow(serviceDlg.GetSafeHwnd(), rc.left, rc.top, rc.right, rc.bottom, TRUE);
 
-	dlgTab.SetCurSel(0);
-	basicDlg.ShowWindow(SW_SHOW);
+	TabCtrl_SetCurSel(GetDlgItem(IDC_TAB), 0);
+	ShowWindow(basicDlg.GetSafeHwnd(), SW_SHOW);
 
 	return TRUE;  // return TRUE unless you set the focus to a control
 	// 例外 : OCX プロパティ ページは必ず FALSE を返します。
@@ -112,33 +102,31 @@ void CSettingDlg::OnBnClickedOk()
 	networkDlg.SaveIni();
 	appBtnDlg.SaveIni();
 	serviceDlg.SaveIni();
-
-	CDialog::OnOK();
 }
 
 
 void CSettingDlg::OnTcnSelchangingTab(NMHDR *pNMHDR, LRESULT *pResult)
 {
 	// TODO: ここにコントロール通知ハンドラー コードを追加します。
-	int index = dlgTab.GetCurSel();
+	int index = TabCtrl_GetCurSel(GetDlgItem(IDC_TAB));
 	switch(index){
 		case 0:
-			basicDlg.ShowWindow(SW_HIDE);
+			ShowWindow(basicDlg.GetSafeHwnd(), SW_HIDE);
 			break;
 		case 1:
-			appDlg.ShowWindow(SW_HIDE);
+			ShowWindow(appDlg.GetSafeHwnd(), SW_HIDE);
 			break;
 		case 2:
-			epgDlg.ShowWindow(SW_HIDE);
+			ShowWindow(epgDlg.GetSafeHwnd(), SW_HIDE);
 			break;
 		case 3:
-			serviceDlg.ShowWindow(SW_HIDE);
+			ShowWindow(serviceDlg.GetSafeHwnd(), SW_HIDE);
 			break;
 		case 4:
-			networkDlg.ShowWindow(SW_HIDE);
+			ShowWindow(networkDlg.GetSafeHwnd(), SW_HIDE);
 			break;
 		case 5:
-			appBtnDlg.ShowWindow(SW_HIDE);
+			ShowWindow(appBtnDlg.GetSafeHwnd(), SW_HIDE);
 			break;
 		default:
 			break;
@@ -150,29 +138,77 @@ void CSettingDlg::OnTcnSelchangingTab(NMHDR *pNMHDR, LRESULT *pResult)
 void CSettingDlg::OnTcnSelchangeTab(NMHDR *pNMHDR, LRESULT *pResult)
 {
 	// TODO: ここにコントロール通知ハンドラー コードを追加します。
-	int index = dlgTab.GetCurSel();
+	int index = TabCtrl_GetCurSel(GetDlgItem(IDC_TAB));
 	switch(index){
 		case 0:
-			basicDlg.ShowWindow(SW_SHOW);
+			ShowWindow(basicDlg.GetSafeHwnd(), SW_SHOW);
 			break;
 		case 1:
-			appDlg.ShowWindow(SW_SHOW);
+			ShowWindow(appDlg.GetSafeHwnd(), SW_SHOW);
 			break;
 		case 2:
-			epgDlg.ShowWindow(SW_SHOW);
+			ShowWindow(epgDlg.GetSafeHwnd(), SW_SHOW);
 			break;
 		case 3:
-			serviceDlg.ShowWindow(SW_SHOW);
+			ShowWindow(serviceDlg.GetSafeHwnd(), SW_SHOW);
 			break;
 		case 4:
-			networkDlg.ShowWindow(SW_SHOW);
+			ShowWindow(networkDlg.GetSafeHwnd(), SW_SHOW);
 			break;
 		case 5:
-			appBtnDlg.ShowWindow(SW_SHOW);
+			ShowWindow(appBtnDlg.GetSafeHwnd(), SW_SHOW);
 			break;
 		default:
 			break;
 	}
 
 	*pResult = 0;
+}
+
+
+INT_PTR CALLBACK CSettingDlg::DlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	CSettingDlg* pSys = (CSettingDlg*)GetWindowLongPtr(hDlg, GWLP_USERDATA);
+	if( pSys == NULL && uMsg != WM_INITDIALOG ){
+		return FALSE;
+	}
+	switch( uMsg ){
+	case WM_INITDIALOG:
+		SetWindowLongPtr(hDlg, GWLP_USERDATA, lParam);
+		pSys = (CSettingDlg*)lParam;
+		pSys->m_hWnd = hDlg;
+		return pSys->OnInitDialog();
+	case WM_NCDESTROY:
+		pSys->m_hWnd = NULL;
+		break;
+	case WM_NOTIFY:
+		{
+			LPNMHDR pNMHDR = (LPNMHDR)lParam;
+			if( pNMHDR->idFrom	== IDC_TAB ){
+				LRESULT result = 0;
+				if( pNMHDR->code == TCN_SELCHANGING ){
+					pSys->OnTcnSelchangingTab(pNMHDR, &result);
+					SetWindowLongPtr(hDlg, DWLP_MSGRESULT, result);
+					return TRUE;
+				}else if( pNMHDR->code == TCN_SELCHANGE ){
+					pSys->OnTcnSelchangeTab(pNMHDR, &result);
+					SetWindowLongPtr(hDlg, DWLP_MSGRESULT, result);
+					return TRUE;
+				}
+			}
+		}
+		break;
+	case WM_COMMAND:
+		switch( LOWORD(wParam) ){
+		case IDOK:
+			pSys->OnBnClickedOk();
+			//FALL THROUGH!
+		case IDCANCEL:
+			EndDialog(hDlg, LOWORD(wParam));
+			SetWindowLongPtr(hDlg, DWLP_MSGRESULT, 0);
+			return TRUE;
+		}
+		break;
+	}
+	return FALSE;
 }

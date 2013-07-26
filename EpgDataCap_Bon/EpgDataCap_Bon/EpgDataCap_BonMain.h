@@ -155,7 +155,7 @@ public:
 	// epgInfo					[OUT]EPG情報
 	DWORD GetEpgInfo(
 		BOOL nextFlag,
-		CString* epgInfo
+		wstring* epgInfo
 		);
 
 	//シグナルレベルの取得

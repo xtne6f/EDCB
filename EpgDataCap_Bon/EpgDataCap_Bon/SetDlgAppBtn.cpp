@@ -4,17 +4,12 @@
 #include "stdafx.h"
 #include "EpgDataCap_Bon.h"
 #include "SetDlgAppBtn.h"
-#include "afxdialogex.h"
 
 
 // CSetDlgAppBtn ダイアログ
 
-IMPLEMENT_DYNAMIC(CSetDlgAppBtn, CDialog)
-
-CSetDlgAppBtn::CSetDlgAppBtn(CWnd* pParent /*=NULL*/)
-	: CDialog(CSetDlgAppBtn::IDD, pParent)
-	, viewExe(_T(""))
-	, viewOpt(_T(""))
+CSetDlgAppBtn::CSetDlgAppBtn()
+	: m_hWnd(NULL)
 {
 
 }
@@ -23,17 +18,10 @@ CSetDlgAppBtn::~CSetDlgAppBtn()
 {
 }
 
-void CSetDlgAppBtn::DoDataExchange(CDataExchange* pDX)
+BOOL CSetDlgAppBtn::Create(LPCTSTR lpszTemplateName, HWND hWndParent)
 {
-	CDialog::DoDataExchange(pDX);
-	DDX_Text(pDX, IDC_EDIT_VIEW_EXE, viewExe);
-	DDX_Text(pDX, IDC_EDIT_VIEW_OPT, viewOpt);
+	return CreateDialogParam(GetModuleHandle(NULL), lpszTemplateName, hWndParent, DlgProc, (LPARAM)this) != NULL;
 }
-
-
-BEGIN_MESSAGE_MAP(CSetDlgAppBtn, CDialog)
-	ON_BN_CLICKED(IDC_BUTTON_VIEW_EXE, &CSetDlgAppBtn::OnBnClickedButtonViewExe)
-END_MESSAGE_MAP()
 
 
 // CSetDlgAppBtn メッセージ ハンドラー
@@ -41,44 +29,33 @@ END_MESSAGE_MAP()
 
 BOOL CSetDlgAppBtn::OnInitDialog()
 {
-	CDialog::OnInitDialog();
-
 	// TODO:  ここに初期化を追加してください
 	WCHAR buff[512]=L"";
-	GetPrivateProfileString( L"SET", L"ViewPath", L"", buff, 512, appIniPath );
-	this->viewExe = buff;
-	GetPrivateProfileString( L"SET", L"ViewOption", L"", buff, 512, appIniPath );
-	this->viewOpt = buff;
+	GetPrivateProfileString( L"SET", L"ViewPath", L"", buff, 512, appIniPath.c_str() );
+	SetDlgItemText(m_hWnd, IDC_EDIT_VIEW_EXE, buff);
+	GetPrivateProfileString( L"SET", L"ViewOption", L"", buff, 512, appIniPath.c_str() );
+	SetDlgItemText(m_hWnd, IDC_EDIT_VIEW_OPT, buff);
 
-	UpdateData(FALSE);
 	return TRUE;  // return TRUE unless you set the focus to a control
 	// 例外 : OCX プロパティ ページは必ず FALSE を返します。
 }
 
 void CSetDlgAppBtn::SaveIni(void)
 {
-	UpdateData(TRUE);
-
-	WritePrivateProfileString( L"SET", L"ViewPath", this->viewExe.GetBuffer(0), appIniPath );
-	WritePrivateProfileString( L"SET", L"ViewOption", this->viewOpt.GetBuffer(0), appIniPath );
-}
-
-BOOL CSetDlgAppBtn::PreTranslateMessage(MSG* pMsg)
-{
-	// TODO: ここに特定なコードを追加するか、もしくは基本クラスを呼び出してください。
-	if( pMsg->message == WM_KEYDOWN ){
-		if( pMsg->wParam  == VK_RETURN || pMsg->wParam  == VK_ESCAPE ){
-			return FALSE;
-		}
+	if( m_hWnd == NULL ){
+		return;
 	}
-	return CDialog::PreTranslateMessage(pMsg);
-}
 
+	WCHAR buff[512]=L"";
+	GetDlgItemText(m_hWnd, IDC_EDIT_VIEW_EXE, buff, 512);
+	WritePrivateProfileString( L"SET", L"ViewPath", buff, appIniPath.c_str() );
+	GetDlgItemText(m_hWnd, IDC_EDIT_VIEW_OPT, buff, 512);
+	WritePrivateProfileString( L"SET", L"ViewOption", buff, appIniPath.c_str() );
+}
 
 void CSetDlgAppBtn::OnBnClickedButtonViewExe()
 {
 	// TODO: ここにコントロール通知ハンドラー コードを追加します。
-	UpdateData(TRUE);
 	WCHAR strFile[MAX_PATH]=L"";
 	OPENFILENAME ofn;
 	memset(&ofn, 0, sizeof(OPENFILENAME));
@@ -92,6 +69,31 @@ void CSetDlgAppBtn::OnBnClickedButtonViewExe()
 	if (GetOpenFileName(&ofn) == 0) {
 		return ;
 	}
-	this->viewExe = strFile;
-	UpdateData(FALSE);
+	SetDlgItemText(m_hWnd, IDC_EDIT_VIEW_EXE, strFile);
+}
+
+INT_PTR CALLBACK CSetDlgAppBtn::DlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	CSetDlgAppBtn* pSys = (CSetDlgAppBtn*)GetWindowLongPtr(hDlg, GWLP_USERDATA);
+	if( pSys == NULL && uMsg != WM_INITDIALOG ){
+		return FALSE;
+	}
+	switch( uMsg ){
+	case WM_INITDIALOG:
+		SetWindowLongPtr(hDlg, GWLP_USERDATA, lParam);
+		pSys = (CSetDlgAppBtn*)lParam;
+		pSys->m_hWnd = hDlg;
+		return pSys->OnInitDialog();
+	case WM_NCDESTROY:
+		pSys->m_hWnd = NULL;
+		break;
+	case WM_COMMAND:
+		switch( LOWORD(wParam) ){
+		case IDC_BUTTON_VIEW_EXE:
+			pSys->OnBnClickedButtonViewExe();
+			break;
+		}
+		break;
+	}
+	return FALSE;
 }

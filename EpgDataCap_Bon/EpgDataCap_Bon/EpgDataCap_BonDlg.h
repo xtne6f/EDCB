@@ -3,22 +3,23 @@
 //
 
 #pragma once
-#include "afxwin.h"
 
 #include "EpgDataCap_BonDef.h"
 #include "EpgDataCap_BonMain.h"
 #include "SettingDlg.h"
 
 // CEpgDataCap_BonDlg ダイアログ
-class CEpgDataCap_BonDlg : public CDialogEx
+class CEpgDataCap_BonDlg
 {
 // コンストラクション
 public:
-	CEpgDataCap_BonDlg(CWnd* pParent = NULL);	// 標準コンストラクター
+	CEpgDataCap_BonDlg();	// 標準コンストラクター
+	INT_PTR DoModal();
+	HWND GetSafeHwnd() const{ return m_hWnd; }
 
 
 	void UnInit();
-	void SetInitBon(CString bonFile);
+	void SetInitBon(LPCWSTR bonFile);
 	void SetIniMin(BOOL minFlag){ iniMin = minFlag; };
 	void SetIniNW(BOOL networkFlag){ iniNetwork = networkFlag; };
 	void SetIniView(BOOL viewFlag){ iniView = viewFlag; };
@@ -28,18 +29,15 @@ public:
 // ダイアログ データ
 	enum { IDD = IDD_EPGDATACAP_BON_DIALOG };
 
-	protected:
-	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV サポート
-
-
 protected:
 	static UINT taskbarCreated;
+	static BOOL disableKeyboardHook;
 protected:
 	void BtnUpdate(DWORD guiMode);
 	//タスクトレイ
 	BOOL DeleteTaskBar(HWND wnd, UINT id);
-	BOOL AddTaskBar(HWND wnd, UINT msg, UINT id, HICON icon, CString tips);
-	BOOL ChgTipsTaskBar(HWND wnd, UINT id, HICON icon, CString tips);
+	BOOL AddTaskBar(HWND wnd, UINT msg, UINT id, HICON icon, wstring tips);
+	BOOL ChgTipsTaskBar(HWND wnd, UINT id, HICON icon, wstring tips);
 	void ChgIconStatus();
 
 	void ReloadBonDriver();
@@ -50,6 +48,8 @@ protected:
 	DWORD SelectService(WORD ONID, WORD TSID, WORD SID,	DWORD space, DWORD ch);
 // 実装
 protected:
+	HWND m_hWnd;
+	HHOOK m_hKeyboardHook;
 	HICON m_hIcon;
 	HICON m_hIcon2;
 
@@ -59,11 +59,11 @@ protected:
 	HICON iconGray;
 	BOOL minTask;
 
-	CString moduleIniPath;
-	CString commonIniPath;
-	CString timerSrvIniPath;
+	wstring moduleIniPath;
+	wstring commonIniPath;
+	wstring timerSrvIniPath;
 
-	CString iniBonDriver;
+	wstring iniBonDriver;
 	int initONID;
 	int initTSID;
 	int initSID;
@@ -82,35 +82,12 @@ protected:
 	vector<CH_DATA4> serviceList;
 
 	// 生成された、メッセージ割り当て関数
-	virtual BOOL OnInitDialog();
-	afx_msg void OnPaint();
-	afx_msg HCURSOR OnQueryDragIcon();
-	DECLARE_MESSAGE_MAP()
-public:
-	CComboBox combTuner;
-	CComboBox combService;
-	CButton btnChScan;
-	CButton btnEpg;
-	CButton btnSet;
-	CButton btnRec;
-	CComboBox combRecH;
-	CComboBox combRecM;
-	CButton chkRecSet;
-	CButton btnCancel;
-	CButton btnView;
-	CButton chkUDP;
-	CButton chkTCP;
-	CString log;
-	CString statusLog;
-	CString pgInfo;
-	virtual BOOL PreTranslateMessage(MSG* pMsg);
-	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
-	afx_msg void OnSysCommand(UINT nID, LPARAM lParam);
-	afx_msg void OnClose();
+	BOOL OnInitDialog();
+	afx_msg void OnSysCommand(UINT nID, LPARAM lParam, BOOL* pbProcessed);
 	afx_msg void OnDestroy();
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
 	afx_msg void OnSize(UINT nType, int cx, int cy);
-	virtual LRESULT WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
+	LRESULT WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
 	afx_msg LRESULT OnTaskbarCreated(WPARAM, LPARAM);
 	afx_msg void OnCbnSelchangeComboTuner();
 	afx_msg void OnCbnSelchangeComboService();
@@ -123,11 +100,13 @@ public:
 	afx_msg void OnBnClickedCheckUdp();
 	afx_msg void OnBnClickedCheckTcp();
 	afx_msg void OnBnClickedCheckRecSet();
-	CEdit editStatus;
-	CButton btnPgNext;
 	afx_msg void OnBnClickedCheckNextpg();
-	CButton btnTimeShift;
 	afx_msg void OnBnClickedButtonTimeshift();
 	afx_msg BOOL OnQueryEndSession();
 	afx_msg void OnEndSession(BOOL bEnding);
+	static LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam);
+	static INT_PTR CALLBACK DlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	HWND GetDlgItem(int nID) const{ return ::GetDlgItem(m_hWnd, nID); }
+	UINT_PTR SetTimer(UINT_PTR nIDEvent, UINT uElapse, TIMERPROC lpTimerFunc){ return ::SetTimer(m_hWnd, nIDEvent, uElapse, lpTimerFunc); }
+	BOOL KillTimer(UINT_PTR uIDEvent){ return ::KillTimer(m_hWnd, uIDEvent); }
 };

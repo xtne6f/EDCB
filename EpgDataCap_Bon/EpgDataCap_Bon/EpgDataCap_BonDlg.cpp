@@ -5,7 +5,6 @@
 #include "stdafx.h"
 #include "EpgDataCap_Bon.h"
 #include "EpgDataCap_BonDlg.h"
-#include "afxdialogex.h"
 
 #include "../../Common/TimeUtil.h"
 
@@ -18,19 +17,18 @@
 
 
 UINT CEpgDataCap_BonDlg::taskbarCreated = 0;
+BOOL CEpgDataCap_BonDlg::disableKeyboardHook = FALSE;
 
-CEpgDataCap_BonDlg::CEpgDataCap_BonDlg(CWnd* pParent /*=NULL*/)
-	: CDialogEx(CEpgDataCap_BonDlg::IDD, pParent)
-	, log(_T(""))
-	, statusLog(_T(""))
-	, pgInfo(_T(""))
+CEpgDataCap_BonDlg::CEpgDataCap_BonDlg()
+	: m_hWnd(NULL)
+	, m_hKeyboardHook(NULL)
 {
-	m_hIcon = (HICON)LoadImage( AfxGetInstanceHandle(), MAKEINTRESOURCE( IDI_ICON_BLUE ), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
-	m_hIcon2 = (HICON)LoadImage( AfxGetInstanceHandle(), MAKEINTRESOURCE( IDI_ICON_BLUE ), IMAGE_ICON, 32, 32, LR_DEFAULTCOLOR);
-	iconRed = (HICON)LoadImage( AfxGetInstanceHandle(), MAKEINTRESOURCE( IDI_ICON_RED ), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
-	iconBlue = (HICON)LoadImage( AfxGetInstanceHandle(), MAKEINTRESOURCE( IDI_ICON_BLUE ), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
-	iconGreen = (HICON)LoadImage( AfxGetInstanceHandle(), MAKEINTRESOURCE( IDI_ICON_GREEN ), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
-	iconGray = (HICON)LoadImage( AfxGetInstanceHandle(), MAKEINTRESOURCE( IDI_ICON_GRAY ), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+	m_hIcon = (HICON)LoadImage( GetModuleHandle(NULL), MAKEINTRESOURCE( IDI_ICON_BLUE ), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+	m_hIcon2 = (HICON)LoadImage( GetModuleHandle(NULL), MAKEINTRESOURCE( IDI_ICON_BLUE ), IMAGE_ICON, 32, 32, LR_DEFAULTCOLOR);
+	iconRed = (HICON)LoadImage( GetModuleHandle(NULL), MAKEINTRESOURCE( IDI_ICON_RED ), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+	iconBlue = (HICON)LoadImage( GetModuleHandle(NULL), MAKEINTRESOURCE( IDI_ICON_BLUE ), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+	iconGreen = (HICON)LoadImage( GetModuleHandle(NULL), MAKEINTRESOURCE( IDI_ICON_GREEN ), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+	iconGray = (HICON)LoadImage( GetModuleHandle(NULL), MAKEINTRESOURCE( IDI_ICON_GRAY ), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
 
 	wstring strPath = L"";
 	GetModuleIniPath(strPath);
@@ -40,11 +38,11 @@ CEpgDataCap_BonDlg::CEpgDataCap_BonDlg(CWnd* pParent /*=NULL*/)
 	GetEpgTimerSrvIniPath(strPath);
 	this->timerSrvIniPath = strPath.c_str();
 
-	this->initONID = GetPrivateProfileInt( L"Set", L"LastONID", -1, this->moduleIniPath );
-	this->initTSID = GetPrivateProfileInt( L"Set", L"LastTSID", -1, this->moduleIniPath );
-	this->initSID = GetPrivateProfileInt( L"Set", L"LastSID", -1, this->moduleIniPath );
+	this->initONID = GetPrivateProfileInt( L"Set", L"LastONID", -1, this->moduleIniPath.c_str() );
+	this->initTSID = GetPrivateProfileInt( L"Set", L"LastTSID", -1, this->moduleIniPath.c_str() );
+	this->initSID = GetPrivateProfileInt( L"Set", L"LastSID", -1, this->moduleIniPath.c_str() );
 	WCHAR buff[512]=L"";
-	GetPrivateProfileString( L"Set", L"LastBon", L"", buff, 512, this->moduleIniPath );
+	GetPrivateProfileString( L"Set", L"LastBon", L"", buff, 512, this->moduleIniPath.c_str() );
 	this->iniBonDriver = buff;
 
 	iniView = FALSE;
@@ -53,14 +51,14 @@ CEpgDataCap_BonDlg::CEpgDataCap_BonDlg(CWnd* pParent /*=NULL*/)
 	this->iniUDP = FALSE;
 	this->iniTCP = FALSE;
 	
-	this->minTask = GetPrivateProfileInt( L"Set", L"MinTask", 0, this->moduleIniPath );
-	this->openLastCh = GetPrivateProfileInt( L"Set", L"OpenLast", 1, this->moduleIniPath );
+	this->minTask = GetPrivateProfileInt( L"Set", L"MinTask", 0, this->moduleIniPath.c_str() );
+	this->openLastCh = GetPrivateProfileInt( L"Set", L"OpenLast", 1, this->moduleIniPath.c_str() );
 	if( this->openLastCh == 0 ){
-		if( GetPrivateProfileInt( L"Set", L"OpenFix", 0, this->moduleIniPath ) == 1){
-			this->initONID = GetPrivateProfileInt( L"Set", L"FixONID", -1, this->moduleIniPath );
-			this->initTSID = GetPrivateProfileInt( L"Set", L"FixTSID", -1, this->moduleIniPath );
-			this->initSID = GetPrivateProfileInt( L"Set", L"FixSID", -1, this->moduleIniPath );
-			GetPrivateProfileString( L"Set", L"FixBon", L"", buff, 512, this->moduleIniPath );
+		if( GetPrivateProfileInt( L"Set", L"OpenFix", 0, this->moduleIniPath.c_str() ) == 1){
+			this->initONID = GetPrivateProfileInt( L"Set", L"FixONID", -1, this->moduleIniPath.c_str() );
+			this->initTSID = GetPrivateProfileInt( L"Set", L"FixTSID", -1, this->moduleIniPath.c_str() );
+			this->initSID = GetPrivateProfileInt( L"Set", L"FixSID", -1, this->moduleIniPath.c_str() );
+			GetPrivateProfileString( L"Set", L"FixBon", L"", buff, 512, this->moduleIniPath.c_str() );
 			this->iniBonDriver = buff;
 		}else{
 			this->initONID = -1;
@@ -73,108 +71,60 @@ CEpgDataCap_BonDlg::CEpgDataCap_BonDlg(CWnd* pParent /*=NULL*/)
 	this->initChgWait = 0;
 }
 
-void CEpgDataCap_BonDlg::DoDataExchange(CDataExchange* pDX)
+INT_PTR CEpgDataCap_BonDlg::DoModal()
 {
-	CDialogEx::DoDataExchange(pDX);
-	DDX_Control(pDX, IDC_COMBO_TUNER, combTuner);
-	DDX_Control(pDX, IDC_COMBO_SERVICE, combService);
-	DDX_Control(pDX, IDC_BUTTON_CHSCAN, btnChScan);
-	DDX_Control(pDX, IDC_BUTTON_EPG, btnEpg);
-	DDX_Control(pDX, IDC_BUTTON_SET, btnSet);
-	DDX_Control(pDX, IDC_BUTTON_REC, btnRec);
-	DDX_Control(pDX, IDC_COMBO_REC_H, combRecH);
-	DDX_Control(pDX, IDC_COMBO_REC_M, combRecM);
-	DDX_Control(pDX, IDC_CHECK_REC_SET, chkRecSet);
-	DDX_Control(pDX, IDC_BUTTON_CANCEL, btnCancel);
-	DDX_Control(pDX, IDC_BUTTON_VIEW, btnView);
-	DDX_Control(pDX, IDC_CHECK_UDP, chkUDP);
-	DDX_Control(pDX, IDC_CHECK_TCP, chkTCP);
-	DDX_Text(pDX, IDC_EDIT_LOG, log);
-	DDX_Text(pDX, IDC_EDIT_STATUS, statusLog);
-	DDX_Text(pDX, IDC_EDIT_PG_INFO, pgInfo);
-	DDX_Control(pDX, IDC_EDIT_STATUS, editStatus);
-	DDX_Control(pDX, IDC_CHECK_NEXTPG, btnPgNext);
-	DDX_Control(pDX, IDC_BUTTON_TIMESHIFT, btnTimeShift);
+	return DialogBoxParam(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD), NULL, DlgProc, (LPARAM)this);
 }
-
-BEGIN_MESSAGE_MAP(CEpgDataCap_BonDlg, CDialogEx)
-	ON_WM_PAINT()
-	ON_WM_QUERYDRAGICON()
-	ON_WM_CREATE()
-	ON_WM_SYSCOMMAND()
-	ON_WM_CLOSE()
-	ON_WM_DESTROY()
-	ON_WM_TIMER()
-	ON_WM_SIZE()
-	ON_REGISTERED_MESSAGE(CEpgDataCap_BonDlg::taskbarCreated, OnTaskbarCreated)
-	ON_CBN_SELCHANGE(IDC_COMBO_TUNER, &CEpgDataCap_BonDlg::OnCbnSelchangeComboTuner)
-	ON_CBN_SELCHANGE(IDC_COMBO_SERVICE, &CEpgDataCap_BonDlg::OnCbnSelchangeComboService)
-	ON_BN_CLICKED(IDC_BUTTON_SET, &CEpgDataCap_BonDlg::OnBnClickedButtonSet)
-	ON_BN_CLICKED(IDC_BUTTON_CHSCAN, &CEpgDataCap_BonDlg::OnBnClickedButtonChscan)
-	ON_BN_CLICKED(IDC_BUTTON_EPG, &CEpgDataCap_BonDlg::OnBnClickedButtonEpg)
-	ON_BN_CLICKED(IDC_BUTTON_REC, &CEpgDataCap_BonDlg::OnBnClickedButtonRec)
-	ON_BN_CLICKED(IDC_BUTTON_CANCEL, &CEpgDataCap_BonDlg::OnBnClickedButtonCancel)
-	ON_BN_CLICKED(IDC_BUTTON_VIEW, &CEpgDataCap_BonDlg::OnBnClickedButtonView)
-	ON_BN_CLICKED(IDC_CHECK_UDP, &CEpgDataCap_BonDlg::OnBnClickedCheckUdp)
-	ON_BN_CLICKED(IDC_CHECK_TCP, &CEpgDataCap_BonDlg::OnBnClickedCheckTcp)
-	ON_BN_CLICKED(IDC_CHECK_REC_SET, &CEpgDataCap_BonDlg::OnBnClickedCheckRecSet)
-	ON_BN_CLICKED(IDC_CHECK_NEXTPG, &CEpgDataCap_BonDlg::OnBnClickedCheckNextpg)
-	ON_BN_CLICKED(IDC_BUTTON_TIMESHIFT, &CEpgDataCap_BonDlg::OnBnClickedButtonTimeshift)
-	ON_WM_QUERYENDSESSION()
-	ON_WM_ENDSESSION()
-END_MESSAGE_MAP()
 
 
 // CEpgDataCap_BonDlg メッセージ ハンドラー
-void CEpgDataCap_BonDlg::SetInitBon(CString bonFile)
+void CEpgDataCap_BonDlg::SetInitBon(LPCWSTR bonFile)
 {
 	iniBonDriver = bonFile;
-	if( GetPrivateProfileInt( iniBonDriver.GetBuffer(0), L"OpenFix", 0, this->moduleIniPath ) == 1){
+	if( GetPrivateProfileInt( iniBonDriver.c_str(), L"OpenFix", 0, this->moduleIniPath.c_str() ) == 1){
 		OutputDebugString(L"強制サービス指定 設定値ロード");
-		this->initONID = GetPrivateProfileInt( iniBonDriver.GetBuffer(0), L"FixONID", -1, this->moduleIniPath );
-		this->initTSID = GetPrivateProfileInt( iniBonDriver.GetBuffer(0), L"FixTSID", -1, this->moduleIniPath );
-		this->initSID = GetPrivateProfileInt( iniBonDriver.GetBuffer(0), L"FixSID", -1, this->moduleIniPath );
-		this->initOpenWait = GetPrivateProfileInt( iniBonDriver.GetBuffer(0), L"OpenWait", 0, this->moduleIniPath );
-		this->initChgWait = GetPrivateProfileInt( iniBonDriver.GetBuffer(0), L"ChgWait", 0, this->moduleIniPath );
+		this->initONID = GetPrivateProfileInt( iniBonDriver.c_str(), L"FixONID", -1, this->moduleIniPath.c_str() );
+		this->initTSID = GetPrivateProfileInt( iniBonDriver.c_str(), L"FixTSID", -1, this->moduleIniPath.c_str() );
+		this->initSID = GetPrivateProfileInt( iniBonDriver.c_str(), L"FixSID", -1, this->moduleIniPath.c_str() );
+		this->initOpenWait = GetPrivateProfileInt( iniBonDriver.c_str(), L"OpenWait", 0, this->moduleIniPath.c_str() );
+		this->initChgWait = GetPrivateProfileInt( iniBonDriver.c_str(), L"ChgWait", 0, this->moduleIniPath.c_str() );
 		_OutputDebugString(L"%d,%d,%d,%d,%d",initONID,initTSID,initSID,initOpenWait,initChgWait );
 	}
 }
 
 BOOL CEpgDataCap_BonDlg::OnInitDialog()
 {
-	CDialogEx::OnInitDialog();
-
 	// このダイアログのアイコンを設定します。アプリケーションのメイン ウィンドウがダイアログでない場合、
 	//  Framework は、この設定を自動的に行います。
-	SetIcon(m_hIcon2, TRUE);			// 大きいアイコンの設定
-	SetIcon(m_hIcon, FALSE);		// 小さいアイコンの設定
+	SendMessage(m_hWnd, WM_SETICON, ICON_BIG, (LPARAM)m_hIcon2);	// 大きいアイコンの設定
+	SendMessage(m_hWnd, WM_SETICON, ICON_SMALL, (LPARAM)m_hIcon);	// 小さいアイコンの設定
 
 	// TODO: 初期化をここに追加します。
 	this->main.ReloadSetting();
 
 	for( int i=0; i<25; i++ ){
-		CString buff;
-		buff.Format(L"%d",i);
-		int index = combRecH.AddString(buff);
-		combRecH.SetItemData(index, i);
+		WCHAR buff[32];
+		wsprintf(buff, L"%d",i);
+		int index = ComboBox_AddString(GetDlgItem(IDC_COMBO_REC_H), buff);
+		ComboBox_SetItemData(GetDlgItem(IDC_COMBO_REC_H), index, i);
 	}
-	combRecH.SetCurSel(0);
+	ComboBox_SetCurSel(GetDlgItem(IDC_COMBO_REC_H), 0);
 
 	for( int i=0; i<59; i++ ){
-		CString buff;
-		buff.Format(L"%d",i);
-		int index = combRecM.AddString(buff);
-		combRecM.SetItemData(index, i);
+		WCHAR buff[32];
+		wsprintf(buff, L"%d",i);
+		int index = ComboBox_AddString(GetDlgItem(IDC_COMBO_REC_M), buff);
+		ComboBox_SetItemData(GetDlgItem(IDC_COMBO_REC_M), index, i);
 	}
-	combRecM.SetCurSel(0);
+	ComboBox_SetCurSel(GetDlgItem(IDC_COMBO_REC_M), 0);
 
 	//BonDriverの一覧取得
 	ReloadBonDriver();
 
 	//BonDriverのオープン
 	DWORD err = NO_ERR;
-	if( this->iniBonDriver.IsEmpty() == false ){
-		err = SelectBonDriver(this->iniBonDriver.GetBuffer(0), TRUE);
+	if( this->iniBonDriver.empty() == false ){
+		err = SelectBonDriver(this->iniBonDriver.c_str(), TRUE);
 		Sleep(this->initOpenWait);
 	}else{
 		map<int, wstring>::iterator itr;
@@ -183,7 +133,10 @@ BOOL CEpgDataCap_BonDlg::OnInitDialog()
 			err = SelectBonDriver(itr->second.c_str());
 		}else{
 			err = ERR_FALSE;
-			this->log += L"BonDriverが見つかりませんでした\r\n";
+			WCHAR log[512 + 64] = L"";
+			GetDlgItemText(m_hWnd, IDC_EDIT_LOG, log, 512);
+			lstrcat(log, L"BonDriverが見つかりませんでした\r\n");
+			SetDlgItemText(m_hWnd, IDC_EDIT_LOG, log);
 		}
 	}
 
@@ -196,9 +149,9 @@ BOOL CEpgDataCap_BonDlg::OnInitDialog()
 			this->initSID = -1;
 			Sleep(this->initChgWait);
 		}else{
-			int sel = this->combService.GetCurSel();
+			int sel = ComboBox_GetCurSel(GetDlgItem(IDC_COMBO_SERVICE));
 			if( sel != CB_ERR ){
-				DWORD index = (DWORD)this->combService.GetItemData(sel);
+				DWORD index = (DWORD)ComboBox_GetItemData(GetDlgItem(IDC_COMBO_SERVICE), sel);
 				SelectService(this->serviceList[index].originalNetworkID, this->serviceList[index].transportStreamID, this->serviceList[index].serviceID, this->serviceList[index].space, this->serviceList[index].ch );
 			}
 		}
@@ -213,15 +166,15 @@ BOOL CEpgDataCap_BonDlg::OnInitDialog()
 	}else{
 		Pos.showCmd = SW_SHOWMINNOACTIVE;
 	}
-	Pos.rcNormalPosition.left = GetPrivateProfileInt(L"SET_WINDOW", L"left", 0, this->moduleIniPath);
-	Pos.rcNormalPosition.right = GetPrivateProfileInt(L"SET_WINDOW", L"right", 0, this->moduleIniPath);
-	Pos.rcNormalPosition.top = GetPrivateProfileInt(L"SET_WINDOW", L"top", 0, this->moduleIniPath);
-	Pos.rcNormalPosition.bottom = GetPrivateProfileInt(L"SET_WINDOW", L"bottom", 0, this->moduleIniPath);
+	Pos.rcNormalPosition.left = GetPrivateProfileInt(L"SET_WINDOW", L"left", 0, this->moduleIniPath.c_str());
+	Pos.rcNormalPosition.right = GetPrivateProfileInt(L"SET_WINDOW", L"right", 0, this->moduleIniPath.c_str());
+	Pos.rcNormalPosition.top = GetPrivateProfileInt(L"SET_WINDOW", L"top", 0, this->moduleIniPath.c_str());
+	Pos.rcNormalPosition.bottom = GetPrivateProfileInt(L"SET_WINDOW", L"bottom", 0, this->moduleIniPath.c_str());
 	if( Pos.rcNormalPosition.left != 0 &&
 		Pos.rcNormalPosition.right != 0 &&
 		Pos.rcNormalPosition.top != 0 &&
 		Pos.rcNormalPosition.bottom != 0 ){
-		SetWindowPlacement(&Pos);
+		SetWindowPlacement(m_hWnd, &Pos);
 	}
 	SetTimer(TIMER_STATUS_UPDATE, 1000, NULL);
 	SetTimer(TIMER_INIT_DLG, 1, NULL);
@@ -230,117 +183,48 @@ BOOL CEpgDataCap_BonDlg::OnInitDialog()
 	if( this->iniNetwork == TRUE ){
 		if( this->iniUDP == TRUE || this->iniTCP == TRUE ){
 			if( this->iniUDP == TRUE ){
-				this->chkUDP.SetCheck(TRUE);
+				Button_SetCheck(GetDlgItem(IDC_CHECK_UDP), BST_CHECKED);
 			}
 			if( this->iniTCP == TRUE ){
-				this->chkTCP.SetCheck(TRUE);
+				Button_SetCheck(GetDlgItem(IDC_CHECK_TCP), BST_CHECKED);
 			}
 		}else{
-			this->chkUDP.SetCheck(GetPrivateProfileInt(L"SET", L"ChkUDP", 0, this->moduleIniPath));
-			this->chkTCP.SetCheck(GetPrivateProfileInt(L"SET", L"ChkTCP", 0, this->moduleIniPath));
+			Button_SetCheck(GetDlgItem(IDC_CHECK_UDP), GetPrivateProfileInt(L"SET", L"ChkUDP", 0, this->moduleIniPath.c_str()));
+			Button_SetCheck(GetDlgItem(IDC_CHECK_TCP), GetPrivateProfileInt(L"SET", L"ChkTCP", 0, this->moduleIniPath.c_str()));
 		}
 	}
 
 	ReloadNWSet();
-	UpdateData(FALSE);
 
 	this->main.StartServer();
 
 	return TRUE;  // フォーカスをコントロールに設定した場合を除き、TRUE を返します。
 }
 
-// ダイアログに最小化ボタンを追加する場合、アイコンを描画するための
-//  下のコードが必要です。ドキュメント/ビュー モデルを使う MFC アプリケーションの場合、
-//  これは、Framework によって自動的に設定されます。
 
-void CEpgDataCap_BonDlg::OnPaint()
-{
-	if (IsIconic())
-	{
-		CPaintDC dc(this); // 描画のデバイス コンテキスト
-
-		SendMessage(WM_ICONERASEBKGND, reinterpret_cast<WPARAM>(dc.GetSafeHdc()), 0);
-
-		// クライアントの四角形領域内の中央
-		int cxIcon = GetSystemMetrics(SM_CXICON);
-		int cyIcon = GetSystemMetrics(SM_CYICON);
-		CRect rect;
-		GetClientRect(&rect);
-		int x = (rect.Width() - cxIcon + 1) / 2;
-		int y = (rect.Height() - cyIcon + 1) / 2;
-
-		// アイコンの描画
-		dc.DrawIcon(x, y, m_hIcon);
-	}
-	else
-	{
-		CDialogEx::OnPaint();
-	}
-}
-
-// ユーザーが最小化したウィンドウをドラッグしているときに表示するカーソルを取得するために、
-//  システムがこの関数を呼び出します。
-HCURSOR CEpgDataCap_BonDlg::OnQueryDragIcon()
-{
-	return static_cast<HCURSOR>(m_hIcon);
-}
-
-
-
-BOOL CEpgDataCap_BonDlg::PreTranslateMessage(MSG* pMsg)
-{
-	// TODO: ここに特定なコードを追加するか、もしくは基本クラスを呼び出してください。
-	if( pMsg->message == WM_KEYDOWN ){
-		if( pMsg->wParam  == VK_RETURN || pMsg->wParam  == VK_ESCAPE ){
-			return FALSE;
-		}
-	}
-	return CDialogEx::PreTranslateMessage(pMsg);
-}
-
-
-int CEpgDataCap_BonDlg::OnCreate(LPCREATESTRUCT lpCreateStruct)
-{
-	if (CDialogEx::OnCreate(lpCreateStruct) == -1)
-		return -1;
-
-	// TODO:  ここに特定な作成コードを追加してください。
-
-	return 0;
-}
-
-
-void CEpgDataCap_BonDlg::OnSysCommand(UINT nID, LPARAM lParam)
+void CEpgDataCap_BonDlg::OnSysCommand(UINT nID, LPARAM lParam, BOOL* pbProcessed)
 {
 	// TODO: ここにメッセージ ハンドラー コードを追加するか、既定の処理を呼び出します。
 	if( nID == SC_CLOSE ){
 		if( this->main.IsRec() == TRUE ){
-			if( AfxMessageBox( L"録画中ですが終了しますか？", MB_YESNO ) == IDNO ){
+			WCHAR caption[128] = L"";
+			GetWindowText(m_hWnd, caption, 128);
+			disableKeyboardHook = TRUE;
+			int result = MessageBox( m_hWnd, L"録画中ですが終了しますか？", caption, MB_YESNO | MB_ICONQUESTION );
+			disableKeyboardHook = FALSE;
+			if( result == IDNO ){
+				*pbProcessed = TRUE;
 				return ;
 			}
 			this->main.StopReserveRec();
 			this->main.StopRec();
 		}
 	}
-
-	CDialogEx::OnSysCommand(nID, lParam);
-}
-
-
-void CEpgDataCap_BonDlg::OnClose()
-{
-	// TODO: ここにメッセージ ハンドラー コードを追加するか、既定の処理を呼び出します。
-	KillTimer(TIMER_STATUS_UPDATE);
-	this->main.StopServer();
-	this->main.CloseBonDriver();
-
-	CDialogEx::OnClose();
 }
 
 
 void CEpgDataCap_BonDlg::OnDestroy()
 {
-	UpdateData(TRUE);
 	this->main.StopServer();
 	this->main.CloseBonDriver();
 	KillTimer(TIMER_STATUS_UPDATE);
@@ -349,48 +233,33 @@ void CEpgDataCap_BonDlg::OnDestroy()
 	DeleteTaskBar(GetSafeHwnd(), TRAYICON_ID);
 
 	WINDOWPLACEMENT Pos;
-	GetWindowPlacement(&Pos);
-	CString strAdd;
+	GetWindowPlacement(m_hWnd, &Pos);
 
-	strAdd.Format(L"%d", Pos.rcNormalPosition.top );
-	WritePrivateProfileString(L"SET_WINDOW", L"top", strAdd.GetBuffer(0), this->moduleIniPath);
-	strAdd.Format(L"%d", Pos.rcNormalPosition.left );
-	WritePrivateProfileString(L"SET_WINDOW", L"left", strAdd.GetBuffer(0), this->moduleIniPath);
-	strAdd.Format(L"%d", Pos.rcNormalPosition.bottom );
-	WritePrivateProfileString(L"SET_WINDOW", L"bottom", strAdd.GetBuffer(0), this->moduleIniPath);
-	strAdd.Format(L"%d", Pos.rcNormalPosition.right );
-	WritePrivateProfileString(L"SET_WINDOW", L"right", strAdd.GetBuffer(0), this->moduleIniPath);
+	WritePrivateProfileInt(L"SET_WINDOW", L"top", Pos.rcNormalPosition.top, this->moduleIniPath.c_str());
+	WritePrivateProfileInt(L"SET_WINDOW", L"left", Pos.rcNormalPosition.left, this->moduleIniPath.c_str());
+	WritePrivateProfileInt(L"SET_WINDOW", L"bottom", Pos.rcNormalPosition.bottom, this->moduleIniPath.c_str());
+	WritePrivateProfileInt(L"SET_WINDOW", L"right", Pos.rcNormalPosition.right, this->moduleIniPath.c_str());
 
 	int selONID = -1;
 	int selTSID = -1;
 	int selSID = -1;
-	CString bon = L"";
+	WCHAR bon[512] = L"";
 
-	this->combTuner.GetWindowText(bon);
-	int sel = this->combService.GetCurSel();
+	GetWindowText(GetDlgItem(IDC_COMBO_TUNER), bon, 512);
+	int sel = ComboBox_GetCurSel(GetDlgItem(IDC_COMBO_SERVICE));
 	if( sel != CB_ERR ){
-		DWORD index = (DWORD)this->combService.GetItemData(sel);
+		DWORD index = (DWORD)ComboBox_GetItemData(GetDlgItem(IDC_COMBO_SERVICE), sel);
 		selONID = this->serviceList[index].originalNetworkID;
 		selTSID = this->serviceList[index].transportStreamID;
 		selSID = this->serviceList[index].serviceID;
 	}
 
-	strAdd.Format(L"%d", selONID );
-	WritePrivateProfileString(L"SET", L"LastONID", strAdd.GetBuffer(0), this->moduleIniPath);
-	strAdd.Format(L"%d", selTSID );
-	WritePrivateProfileString(L"SET", L"LastTSID", strAdd.GetBuffer(0), this->moduleIniPath);
-	strAdd.Format(L"%d", selSID );
-	WritePrivateProfileString(L"SET", L"LastSID", strAdd.GetBuffer(0), this->moduleIniPath);
-
-	WritePrivateProfileString(L"SET", L"LastBon", bon.GetBuffer(0), this->moduleIniPath);
-
-	strAdd.Format(L"%d", this->chkUDP.GetCheck() );
-	WritePrivateProfileString(L"SET", L"ChkUDP", strAdd.GetBuffer(0), this->moduleIniPath);
-	strAdd.Format(L"%d", this->chkTCP.GetCheck() );
-	WritePrivateProfileString(L"SET", L"ChkTCP", strAdd.GetBuffer(0), this->moduleIniPath);
-
-
-	CDialogEx::OnDestroy();
+	WritePrivateProfileInt(L"SET", L"LastONID", selONID, this->moduleIniPath.c_str());
+	WritePrivateProfileInt(L"SET", L"LastTSID", selTSID, this->moduleIniPath.c_str());
+	WritePrivateProfileInt(L"SET", L"LastSID", selSID, this->moduleIniPath.c_str());
+	WritePrivateProfileString(L"SET", L"LastBon", bon, this->moduleIniPath.c_str());
+	WritePrivateProfileInt(L"SET", L"ChkUDP", Button_GetCheck(GetDlgItem(IDC_CHECK_UDP)), this->moduleIniPath.c_str());
+	WritePrivateProfileInt(L"SET", L"ChkTCP", Button_GetCheck(GetDlgItem(IDC_CHECK_TCP)), this->moduleIniPath.c_str());
 
 	// TODO: ここにメッセージ ハンドラー コードを追加します。
 }
@@ -404,7 +273,7 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 			{
 				KillTimer( TIMER_INIT_DLG );
 				if( this->iniMin == TRUE && this->minTask == TRUE){
-				    ShowWindow(SW_HIDE);
+				    ShowWindow(m_hWnd, SW_HIDE);
 				}
 			}
 			break;
@@ -413,7 +282,7 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 				KillTimer( TIMER_STATUS_UPDATE );
 				SetThreadExecutionState(ES_SYSTEM_REQUIRED);
 
-				int iLine = this->editStatus.GetFirstVisibleLine();
+				int iLine = Edit_GetFirstVisibleLine(GetDlgItem(IDC_EDIT_STATUS));
 				float signal = 0;
 				DWORD space = 0;
 				DWORD ch = 0;
@@ -424,49 +293,51 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 
 				BOOL ret = this->main.GetViewStatusInfo(&signal, &space, &ch, &drop, &scramble, &udpSendList, &tcpSendList);
 
+				wstring statusLog = L"";
 				if(ret==TRUE){
-					this->statusLog.Format(L"Signal: %.02f Drop: %I64d Scramble: %I64d  space: %d ch: %d",signal, drop, scramble, space, ch);
+					Format(statusLog, L"Signal: %.02f Drop: %I64d Scramble: %I64d  space: %d ch: %d",signal, drop, scramble, space, ch);
 				}else{
-					this->statusLog.Format(L"Signal: %.02f Drop: %I64d Scramble: %I64d",signal, drop, scramble);
+					Format(statusLog, L"Signal: %.02f Drop: %I64d Scramble: %I64d",signal, drop, scramble);
 				}
-				this->statusLog += L"\r\n";
+				statusLog += L"\r\n";
 
-				CString udp = L"";
+				wstring udp = L"";
 				if( udpSendList.size() > 0 ){
-					udp = "UDP送信：";
+					udp = L"UDP送信：";
 					for( size_t i=0; i<udpSendList.size(); i++ ){
-						CString buff;
+						wstring buff;
 						if( udpSendList[i].broadcastFlag == FALSE ){
-							buff.Format(L"%s:%d ",udpSendList[i].ipString.c_str(), udpSendList[i].port);
+							Format(buff, L"%s:%d ",udpSendList[i].ipString.c_str(), udpSendList[i].port);
 						}else{
-							buff.Format(L"%s:%d(Broadcast) ",udpSendList[i].ipString.c_str(), udpSendList[i].port);
+							Format(buff, L"%s:%d(Broadcast) ",udpSendList[i].ipString.c_str(), udpSendList[i].port);
 						}
 						udp += buff;
 					}
 					udp += L"\r\n";
 				}
-				this->statusLog += udp;
+				statusLog += udp;
 
-				CString tcp = L"";
+				wstring tcp = L"";
 				if( tcpSendList.size() > 0 ){
-					tcp = "TCP送信：";
+					tcp = L"TCP送信：";
 					for( size_t i=0; i<tcpSendList.size(); i++ ){
-						CString buff;
-						buff.Format(L"%s:%d ",tcpSendList[i].ipString.c_str(), tcpSendList[i].port);
+						wstring buff;
+						Format(buff, L"%s:%d ",tcpSendList[i].ipString.c_str(), tcpSendList[i].port);
 						tcp += buff;
 					}
 					tcp += L"\r\n";
 				}
-				this->statusLog += tcp;
+				statusLog += tcp;
 
-				SetDlgItemText(IDC_EDIT_STATUS, this->statusLog);
-				editStatus.LineScroll(iLine);
+				SetDlgItemText(m_hWnd, IDC_EDIT_STATUS, statusLog.c_str());
+				Edit_Scroll(GetDlgItem(IDC_EDIT_STATUS), iLine, 0);
 
-				CString info = L"";
-				this->main.GetEpgInfo(this->btnPgNext.GetCheck(), &info);
-				if( this->pgInfo.Compare(info) != 0 ){
-					this->pgInfo = info;
-					SetDlgItemText(IDC_EDIT_PG_INFO, this->pgInfo);
+				wstring info = L"";
+				this->main.GetEpgInfo(Button_GetCheck(GetDlgItem(IDC_CHECK_NEXTPG)), &info);
+				WCHAR pgInfo[512] = L"";
+				GetDlgItemText(m_hWnd, IDC_EDIT_PG_INFO, pgInfo, 512);
+				if( info.substr(0, 511).compare(pgInfo) != 0 ){
+					SetDlgItemText(m_hWnd, IDC_EDIT_PG_INFO, info.c_str());
 				}
 				SetTimer(TIMER_STATUS_UPDATE, 1000, NULL);
 			}
@@ -481,21 +352,20 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 				DWORD totalNum = 0;
 				DWORD status = this->main.GetChScanStatus(&space, &ch, &chName, &chkNum, &totalNum);
 				if( status == ST_WORKING ){
-					this->log.Format(L"%s (%d/%d 残り約 %d 秒)\r\n", chName.c_str(), chkNum, totalNum, (totalNum - chkNum)*10);
-					SetDlgItemText(IDC_EDIT_LOG, this->log);
+					wstring log;
+					Format(log, L"%s (%d/%d 残り約 %d 秒)\r\n", chName.c_str(), chkNum, totalNum, (totalNum - chkNum)*10);
+					SetDlgItemText(m_hWnd, IDC_EDIT_LOG, log.c_str());
 					SetTimer(TIMER_CHSCAN_STATSU, 1000, NULL);
 				}else if( status == ST_CANCEL ){
 					KillTimer(TIMER_CHSCAN_STATSU);
-					this->log = L"キャンセルされました\r\n";
-					SetDlgItemText(IDC_EDIT_LOG, this->log);
+					SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"キャンセルされました\r\n");
 				}else if( status == ST_COMPLETE ){
 					KillTimer(TIMER_CHSCAN_STATSU);
-					this->log = L"終了しました\r\n";
-					SetDlgItemText(IDC_EDIT_LOG, this->log);
+					SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"終了しました\r\n");
 					ReloadServiceList();
-					int sel = this->combService.GetCurSel();
+					int sel = ComboBox_GetCurSel(GetDlgItem(IDC_COMBO_SERVICE));
 					if( sel != CB_ERR ){
-						DWORD index = (DWORD)this->combService.GetItemData(sel);
+						DWORD index = (DWORD)ComboBox_GetItemData(GetDlgItem(IDC_COMBO_SERVICE), sel);
 						SelectService(this->serviceList[index].originalNetworkID, this->serviceList[index].transportStreamID, this->serviceList[index].serviceID, this->serviceList[index].space, this->serviceList[index].ch );
 					}
 					BtnUpdate(GUI_NORMAL);
@@ -524,7 +394,7 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 					if( msg.size() > 0){
 						wstring log = L"同一サービスが複数の物理チャンネルで検出されました。\r\n受信環境のよい物理チャンネルのサービスのみ残すように設定を行ってください。\r\n正常に録画できない可能性が出てきます。\r\n\r\n";
 						log += msg;
-						MessageBox(log.c_str());
+						MessageBox(m_hWnd, log.c_str(), NULL, MB_OK);
 					}
 				}
 			}
@@ -535,9 +405,9 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 				EPGCAP_SERVICE_INFO info;
 				DWORD status = this->main.GetEpgCapStatus(&info);
 				if( status == ST_WORKING ){
-					int sel = this->combService.GetCurSel();
+					int sel = ComboBox_GetCurSel(GetDlgItem(IDC_COMBO_SERVICE));
 					if( sel != CB_ERR ){
-						DWORD index = (DWORD)this->combService.GetItemData(sel);
+						DWORD index = (DWORD)ComboBox_GetItemData(GetDlgItem(IDC_COMBO_SERVICE), sel);
 						if( info.ONID != this->serviceList[index].originalNetworkID ||
 							info.TSID != this->serviceList[index].transportStreamID ||
 							info.SID != this->serviceList[index].serviceID ){
@@ -549,17 +419,14 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 						this->main.SetSID(info.SID);
 					}
 
-					this->log = L"EPG取得中\r\n";
-					SetDlgItemText(IDC_EDIT_LOG, this->log);
+					SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"EPG取得中\r\n");
 					SetTimer(TIMER_EPGCAP_STATSU, 1000, NULL);
 				}else if( status == ST_CANCEL ){
 					KillTimer(TIMER_EPGCAP_STATSU);
-					this->log = L"キャンセルされました\r\n";
-					SetDlgItemText(IDC_EDIT_LOG, this->log);
+					SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"キャンセルされました\r\n");
 				}else if( status == ST_COMPLETE ){
 					KillTimer(TIMER_EPGCAP_STATSU);
-					this->log = L"終了しました\r\n";
-					SetDlgItemText(IDC_EDIT_LOG, this->log);
+					SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"終了しました\r\n");
 					BtnUpdate(GUI_NORMAL);
 					ChgIconStatus();
 				}
@@ -569,22 +436,21 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 			{
 				this->main.StopRec();
 				KillTimer(TIMER_REC_END);
-				this->log = L"録画停止しました\r\n";
-				SetDlgItemText(IDC_EDIT_LOG, this->log);
+				SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"録画停止しました\r\n");
 				BtnUpdate(GUI_NORMAL);
-				chkRecSet.SetCheck(FALSE);
+				Button_SetCheck(GetDlgItem(IDC_CHECK_REC_SET), BST_UNCHECKED);
 				ChgIconStatus();
 			}
 			break;
 		case RETRY_ADD_TRAY:
 			{
 				KillTimer(RETRY_ADD_TRAY);
-				CString buff=L"";
+				wstring buff=L"";
 				wstring bonFile = L"";
 				this->main.GetOpenBonDriver(&bonFile);
-				CString strBuff2=L"";
-				this->combService.GetWindowText(strBuff2);
-				buff.Format(L"%s ： %s", bonFile.c_str(), strBuff2.GetBuffer(0));
+				WCHAR szBuff2[256]=L"";
+				GetWindowText(GetDlgItem(IDC_COMBO_SERVICE), szBuff2, 256);
+				Format(buff, L"%s ： %s", bonFile.c_str(), szBuff2);
 
 				HICON setIcon = this->iconBlue;
 				if( this->main.IsRec() == TRUE ){
@@ -607,22 +473,19 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 		default:
 			break;
 	}
-	CDialogEx::OnTimer(nIDEvent);
 }
 
 
 void CEpgDataCap_BonDlg::OnSize(UINT nType, int cx, int cy)
 {
-	CDialogEx::OnSize(nType, cx, cy);
-
 	// TODO: ここにメッセージ ハンドラー コードを追加します。
 	if( nType == SIZE_MINIMIZED && this->minTask == TRUE){
-		CString buff=L"";
+		wstring buff=L"";
 		wstring bonFile = L"";
 		this->main.GetOpenBonDriver(&bonFile);
-		CString strBuff2=L"";
-		this->combService.GetWindowText(strBuff2);
-		buff.Format(L"%s ： %s", bonFile.c_str(), strBuff2.GetBuffer(0));
+		WCHAR szBuff2[256]=L"";
+		GetWindowText(GetDlgItem(IDC_COMBO_SERVICE), szBuff2, 256);
+		Format(buff, L"%s ： %s", bonFile.c_str(), szBuff2);
 
 		HICON setIcon = this->iconBlue;
 		if( this->main.IsRec() == TRUE ){
@@ -640,7 +503,7 @@ void CEpgDataCap_BonDlg::OnSize(UINT nType, int cx, int cy)
 				buff ) == FALSE ){
 					SetTimer(RETRY_ADD_TRAY, 5000, NULL);
 		}
-		if(!this->iniMin) ShowWindow(SW_HIDE);
+		if(!this->iniMin) ShowWindow(m_hWnd, SW_HIDE);
 	}
 }
 
@@ -652,9 +515,11 @@ LRESULT CEpgDataCap_BonDlg::WindowProc(UINT message, WPARAM wParam, LPARAM lPara
 	case WM_RESERVE_REC_START:
 		{
 			BtnUpdate(GUI_OTHER_CTRL);
-			if( this->log.Find(L"予約録画中") < 0 ){
-				this->log = L"予約録画中\r\n";
-				SetDlgItemText(IDC_EDIT_LOG, this->log);
+			WCHAR log[512 + 64] = L"";
+			GetDlgItemText(m_hWnd, IDC_EDIT_LOG, log, 512);
+			if( wstring(log).find(L"予約録画中\r\n") == wstring::npos ){
+				lstrcat(log, L"予約録画中\r\n");
+				SetDlgItemText(m_hWnd, IDC_EDIT_LOG, log);
 			}
 			ChgIconStatus();
 		}
@@ -662,8 +527,7 @@ LRESULT CEpgDataCap_BonDlg::WindowProc(UINT message, WPARAM wParam, LPARAM lPara
 	case WM_RESERVE_REC_STOP:
 		{
 			BtnUpdate(GUI_NORMAL);
-			this->log = L"予約録画終了しました\r\n";
-			SetDlgItemText(IDC_EDIT_LOG, this->log);
+			SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"予約録画終了しました\r\n");
 			ChgIconStatus();
 		}
 		break;
@@ -705,16 +569,13 @@ LRESULT CEpgDataCap_BonDlg::WindowProc(UINT message, WPARAM wParam, LPARAM lPara
 		{
 			if( wParam == 1 ){
 				BtnUpdate(GUI_REC_STANDBY);
-				this->log = L"予約録画待機中\r\n";
-				SetDlgItemText(IDC_EDIT_LOG, this->log);
+				SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"予約録画待機中\r\n");
 			}else if( wParam == 2 ){
 				BtnUpdate(GUI_NORMAL);
-				this->log = L"視聴モード\r\n";
-				SetDlgItemText(IDC_EDIT_LOG, this->log);
+				SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"視聴モード\r\n");
 			}else{
 				BtnUpdate(GUI_NORMAL);
-				this->log = L"";
-				SetDlgItemText(IDC_EDIT_LOG, this->log);
+				SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"");
 			}
 		}
 		break;
@@ -725,8 +586,8 @@ LRESULT CEpgDataCap_BonDlg::WindowProc(UINT message, WPARAM wParam, LPARAM lPara
 				case WM_LBUTTONDOWN:
 					{
 						this->iniMin = FALSE;
-						ShowWindow(SW_RESTORE);
-						SetForegroundWindow();
+						ShowWindow(m_hWnd, SW_RESTORE);
+						SetForegroundWindow(m_hWnd);
 						KillTimer(RETRY_ADD_TRAY);
 						DeleteTaskBar(GetSafeHwnd(), TRAYICON_ID);
 					}
@@ -740,11 +601,11 @@ LRESULT CEpgDataCap_BonDlg::WindowProc(UINT message, WPARAM wParam, LPARAM lPara
 		break;
 	}
 
-	return CDialogEx::WindowProc(message, wParam, lParam);
+	return 0;
 }
 
 
-BOOL CEpgDataCap_BonDlg::AddTaskBar(HWND wnd, UINT msg, UINT id, HICON icon, CString tips)
+BOOL CEpgDataCap_BonDlg::AddTaskBar(HWND wnd, UINT msg, UINT id, HICON icon, wstring tips)
 { 
 	BOOL ret=TRUE;
 	NOTIFYICONDATA data;
@@ -757,16 +618,14 @@ BOOL CEpgDataCap_BonDlg::AddTaskBar(HWND wnd, UINT msg, UINT id, HICON icon, CSt
 	data.uCallbackMessage = msg; 
 	data.hIcon = icon; 
 
-	if( tips.IsEmpty() == false ){
-		wcsncpy_s(data.szTip, sizeof(data.szTip), tips.GetBuffer(0), sizeof(data.szTip) );
-	}
+	wcsncpy_s(data.szTip, tips.c_str(), _TRUNCATE);
  
 	ret = Shell_NotifyIcon(NIM_ADD, &data);
   
 	return ret; 
 }
 
-BOOL CEpgDataCap_BonDlg::ChgTipsTaskBar(HWND wnd, UINT id, HICON icon, CString tips)
+BOOL CEpgDataCap_BonDlg::ChgTipsTaskBar(HWND wnd, UINT id, HICON icon, wstring tips)
 { 
 	BOOL ret=TRUE;
 	NOTIFYICONDATA data;
@@ -778,9 +637,7 @@ BOOL CEpgDataCap_BonDlg::ChgTipsTaskBar(HWND wnd, UINT id, HICON icon, CString t
 	data.hIcon = icon; 
 	data.uFlags = NIF_ICON | NIF_TIP; 
 
-	if( tips.IsEmpty() == false ){
-		wcsncpy_s(data.szTip, sizeof(data.szTip), tips.GetBuffer(0), sizeof(data.szTip) );
-	}
+	wcsncpy_s(data.szTip, tips.c_str(), _TRUNCATE);
  
 	ret = Shell_NotifyIcon(NIM_MODIFY, &data); 
  
@@ -804,12 +661,12 @@ BOOL CEpgDataCap_BonDlg::DeleteTaskBar(HWND wnd, UINT id)
 
 void CEpgDataCap_BonDlg::ChgIconStatus(){
 	if( this->minTask == TRUE){
-		CString buff=L"";
+		wstring buff=L"";
 		wstring bonFile = L"";
 		this->main.GetOpenBonDriver(&bonFile);
-		CString strBuff2=L"";
-		this->combService.GetWindowText(strBuff2);
-		buff.Format(L"%s ： %s", bonFile.c_str(), strBuff2.GetBuffer(0));
+		WCHAR szBuff2[256]=L"";
+		GetWindowText(GetDlgItem(IDC_COMBO_SERVICE), szBuff2, 256);
+		Format(buff, L"%s ： %s", bonFile.c_str(), szBuff2);
 
 		HICON setIcon = this->iconBlue;
 		if( this->main.IsRec() == TRUE ){
@@ -829,13 +686,13 @@ void CEpgDataCap_BonDlg::ChgIconStatus(){
 
 LRESULT CEpgDataCap_BonDlg::OnTaskbarCreated(WPARAM, LPARAM)
 {
-	if( IsWindowVisible() == FALSE && this->minTask == TRUE){
-		CString buff=L"";
+	if( IsWindowVisible(m_hWnd) == FALSE && this->minTask == TRUE){
+		wstring buff=L"";
 		wstring bonFile = L"";
 		this->main.GetOpenBonDriver(&bonFile);
-		CString strBuff2=L"";
-		this->combService.GetWindowText(strBuff2);
-		buff.Format(L"%s ： %s", bonFile.c_str(), strBuff2.GetBuffer(0));
+		WCHAR szBuff2[256]=L"";
+		GetWindowText(GetDlgItem(IDC_COMBO_SERVICE), szBuff2, 256);
+		Format(buff, L"%s ： %s", bonFile.c_str(), szBuff2);
 
 		HICON setIcon = this->iconBlue;
 		if( this->main.IsRec() == TRUE ){
@@ -858,122 +715,124 @@ LRESULT CEpgDataCap_BonDlg::OnTaskbarCreated(WPARAM, LPARAM)
 	return 0;
 }
 
+#define ENABLE_ITEM(nItem,bEnable) EnableWindow(GetDlgItem(nItem),(bEnable))
+
 void CEpgDataCap_BonDlg::BtnUpdate(DWORD guiMode)
 {
 	switch(guiMode){
 		case GUI_NORMAL:
-			this->combTuner.EnableWindow(TRUE);
-			this->combService.EnableWindow(TRUE);
-			this->btnChScan.EnableWindow(TRUE);
-			this->btnEpg.EnableWindow(TRUE);
-			this->btnSet.EnableWindow(TRUE);
-			this->btnRec.EnableWindow(TRUE);
-			this->combRecH.EnableWindow(FALSE);
-			this->combRecM.EnableWindow(FALSE);
-			this->chkRecSet.EnableWindow(FALSE);
-			this->chkRecSet.SetCheck(FALSE);
-			this->btnCancel.EnableWindow(FALSE);
-			this->btnView.EnableWindow(TRUE);
-			this->chkUDP.EnableWindow(TRUE);
-			this->chkTCP.EnableWindow(TRUE);
-			this->btnTimeShift.EnableWindow(FALSE);
+			ENABLE_ITEM(IDC_COMBO_TUNER, TRUE);
+			ENABLE_ITEM(IDC_COMBO_SERVICE, TRUE);
+			ENABLE_ITEM(IDC_BUTTON_CHSCAN, TRUE);
+			ENABLE_ITEM(IDC_BUTTON_EPG, TRUE);
+			ENABLE_ITEM(IDC_BUTTON_SET, TRUE);
+			ENABLE_ITEM(IDC_BUTTON_REC, TRUE);
+			ENABLE_ITEM(IDC_COMBO_REC_H, FALSE);
+			ENABLE_ITEM(IDC_COMBO_REC_M, FALSE);
+			ENABLE_ITEM(IDC_CHECK_REC_SET, FALSE);
+			Button_SetCheck(GetDlgItem(IDC_CHECK_REC_SET), BST_UNCHECKED);
+			ENABLE_ITEM(IDC_BUTTON_CANCEL, FALSE);
+			ENABLE_ITEM(IDC_BUTTON_VIEW, TRUE);
+			ENABLE_ITEM(IDC_CHECK_UDP, TRUE);
+			ENABLE_ITEM(IDC_CHECK_TCP, TRUE);
+			ENABLE_ITEM(IDC_BUTTON_TIMESHIFT, FALSE);
 			break;
 		case GUI_CANCEL_ONLY:
-			this->combTuner.EnableWindow(FALSE);
-			this->combService.EnableWindow(FALSE);
-			this->btnChScan.EnableWindow(FALSE);
-			this->btnEpg.EnableWindow(FALSE);
-			this->btnSet.EnableWindow(FALSE);
-			this->btnRec.EnableWindow(FALSE);
-			this->combRecH.EnableWindow(FALSE);
-			this->combRecM.EnableWindow(FALSE);
-			this->chkRecSet.EnableWindow(FALSE);
-			this->btnCancel.EnableWindow(TRUE);
-			this->btnView.EnableWindow(TRUE);
-			this->chkUDP.EnableWindow(TRUE);
-			this->chkTCP.EnableWindow(TRUE);
-			this->btnTimeShift.EnableWindow(FALSE);
+			ENABLE_ITEM(IDC_COMBO_TUNER, FALSE);
+			ENABLE_ITEM(IDC_COMBO_SERVICE, FALSE);
+			ENABLE_ITEM(IDC_BUTTON_CHSCAN, FALSE);
+			ENABLE_ITEM(IDC_BUTTON_EPG, FALSE);
+			ENABLE_ITEM(IDC_BUTTON_SET, FALSE);
+			ENABLE_ITEM(IDC_BUTTON_REC, FALSE);
+			ENABLE_ITEM(IDC_COMBO_REC_H, FALSE);
+			ENABLE_ITEM(IDC_COMBO_REC_M, FALSE);
+			ENABLE_ITEM(IDC_CHECK_REC_SET, FALSE);
+			ENABLE_ITEM(IDC_BUTTON_CANCEL, TRUE);
+			ENABLE_ITEM(IDC_BUTTON_VIEW, TRUE);
+			ENABLE_ITEM(IDC_CHECK_UDP, TRUE);
+			ENABLE_ITEM(IDC_CHECK_TCP, TRUE);
+			ENABLE_ITEM(IDC_BUTTON_TIMESHIFT, FALSE);
 			break;
 		case GUI_OPEN_FAIL:
-			this->combTuner.EnableWindow(TRUE);
-			this->combService.EnableWindow(FALSE);
-			this->btnChScan.EnableWindow(FALSE);
-			this->btnEpg.EnableWindow(FALSE);
-			this->btnSet.EnableWindow(TRUE);
-			this->btnRec.EnableWindow(FALSE);
-			this->combRecH.EnableWindow(FALSE);
-			this->combRecM.EnableWindow(FALSE);
-			this->chkRecSet.EnableWindow(FALSE);
-			this->btnCancel.EnableWindow(FALSE);
-			this->btnView.EnableWindow(TRUE);
-			this->chkUDP.EnableWindow(FALSE);
-			this->chkTCP.EnableWindow(FALSE);
-			this->btnTimeShift.EnableWindow(FALSE);
+			ENABLE_ITEM(IDC_COMBO_TUNER, TRUE);
+			ENABLE_ITEM(IDC_COMBO_SERVICE, FALSE);
+			ENABLE_ITEM(IDC_BUTTON_CHSCAN, FALSE);
+			ENABLE_ITEM(IDC_BUTTON_EPG, FALSE);
+			ENABLE_ITEM(IDC_BUTTON_SET, TRUE);
+			ENABLE_ITEM(IDC_BUTTON_REC, FALSE);
+			ENABLE_ITEM(IDC_COMBO_REC_H, FALSE);
+			ENABLE_ITEM(IDC_COMBO_REC_M, FALSE);
+			ENABLE_ITEM(IDC_CHECK_REC_SET, FALSE);
+			ENABLE_ITEM(IDC_BUTTON_CANCEL, FALSE);
+			ENABLE_ITEM(IDC_BUTTON_VIEW, TRUE);
+			ENABLE_ITEM(IDC_CHECK_UDP, FALSE);
+			ENABLE_ITEM(IDC_CHECK_TCP, FALSE);
+			ENABLE_ITEM(IDC_BUTTON_TIMESHIFT, FALSE);
 			break;
 		case GUI_REC:
-			this->combTuner.EnableWindow(FALSE);
-			this->combService.EnableWindow(FALSE);
-			this->btnChScan.EnableWindow(FALSE);
-			this->btnEpg.EnableWindow(FALSE);
-			this->btnSet.EnableWindow(FALSE);
-			this->btnRec.EnableWindow(FALSE);
-			this->combRecH.EnableWindow(TRUE);
-			this->combRecM.EnableWindow(TRUE);
-			this->chkRecSet.EnableWindow(TRUE);
-			this->chkRecSet.SetCheck(FALSE);
-			this->btnCancel.EnableWindow(TRUE);
-			this->btnView.EnableWindow(TRUE);
-			this->chkUDP.EnableWindow(TRUE);
-			this->chkTCP.EnableWindow(TRUE);
-			this->btnTimeShift.EnableWindow(TRUE);
+			ENABLE_ITEM(IDC_COMBO_TUNER, FALSE);
+			ENABLE_ITEM(IDC_COMBO_SERVICE, FALSE);
+			ENABLE_ITEM(IDC_BUTTON_CHSCAN, FALSE);
+			ENABLE_ITEM(IDC_BUTTON_EPG, FALSE);
+			ENABLE_ITEM(IDC_BUTTON_SET, FALSE);
+			ENABLE_ITEM(IDC_BUTTON_REC, FALSE);
+			ENABLE_ITEM(IDC_COMBO_REC_H, TRUE);
+			ENABLE_ITEM(IDC_COMBO_REC_M, TRUE);
+			ENABLE_ITEM(IDC_CHECK_REC_SET, TRUE);
+			Button_SetCheck(GetDlgItem(IDC_CHECK_REC_SET), BST_UNCHECKED);
+			ENABLE_ITEM(IDC_BUTTON_CANCEL, TRUE);
+			ENABLE_ITEM(IDC_BUTTON_VIEW, TRUE);
+			ENABLE_ITEM(IDC_CHECK_UDP, TRUE);
+			ENABLE_ITEM(IDC_CHECK_TCP, TRUE);
+			ENABLE_ITEM(IDC_BUTTON_TIMESHIFT, TRUE);
 			break;
 		case GUI_REC_SET_TIME:
-			this->combTuner.EnableWindow(FALSE);
-			this->combService.EnableWindow(FALSE);
-			this->btnChScan.EnableWindow(FALSE);
-			this->btnEpg.EnableWindow(FALSE);
-			this->btnSet.EnableWindow(FALSE);
-			this->btnRec.EnableWindow(FALSE);
-			this->combRecH.EnableWindow(FALSE);
-			this->combRecM.EnableWindow(FALSE);
-			this->chkRecSet.EnableWindow(TRUE);
-			this->btnCancel.EnableWindow(TRUE);
-			this->btnView.EnableWindow(TRUE);
-			this->chkUDP.EnableWindow(TRUE);
-			this->chkTCP.EnableWindow(TRUE);
-			this->btnTimeShift.EnableWindow(TRUE);
+			ENABLE_ITEM(IDC_COMBO_TUNER, FALSE);
+			ENABLE_ITEM(IDC_COMBO_SERVICE, FALSE);
+			ENABLE_ITEM(IDC_BUTTON_CHSCAN, FALSE);
+			ENABLE_ITEM(IDC_BUTTON_EPG, FALSE);
+			ENABLE_ITEM(IDC_BUTTON_SET, FALSE);
+			ENABLE_ITEM(IDC_BUTTON_REC, FALSE);
+			ENABLE_ITEM(IDC_COMBO_REC_H, FALSE);
+			ENABLE_ITEM(IDC_COMBO_REC_M, FALSE);
+			ENABLE_ITEM(IDC_CHECK_REC_SET, TRUE);
+			ENABLE_ITEM(IDC_BUTTON_CANCEL, TRUE);
+			ENABLE_ITEM(IDC_BUTTON_VIEW, TRUE);
+			ENABLE_ITEM(IDC_CHECK_UDP, TRUE);
+			ENABLE_ITEM(IDC_CHECK_TCP, TRUE);
+			ENABLE_ITEM(IDC_BUTTON_TIMESHIFT, TRUE);
 			break;
 		case GUI_OTHER_CTRL:
-			this->combTuner.EnableWindow(FALSE);
-			this->combService.EnableWindow(FALSE);
-			this->btnChScan.EnableWindow(FALSE);
-			this->btnEpg.EnableWindow(FALSE);
-			this->btnSet.EnableWindow(FALSE);
-			this->btnRec.EnableWindow(FALSE);
-			this->combRecH.EnableWindow(FALSE);
-			this->combRecM.EnableWindow(FALSE);
-			this->chkRecSet.EnableWindow(FALSE);
-			this->btnCancel.EnableWindow(TRUE);
-			this->btnView.EnableWindow(TRUE);
-			this->chkUDP.EnableWindow(TRUE);
-			this->chkTCP.EnableWindow(TRUE);
-			this->btnTimeShift.EnableWindow(TRUE);
+			ENABLE_ITEM(IDC_COMBO_TUNER, FALSE);
+			ENABLE_ITEM(IDC_COMBO_SERVICE, FALSE);
+			ENABLE_ITEM(IDC_BUTTON_CHSCAN, FALSE);
+			ENABLE_ITEM(IDC_BUTTON_EPG, FALSE);
+			ENABLE_ITEM(IDC_BUTTON_SET, FALSE);
+			ENABLE_ITEM(IDC_BUTTON_REC, FALSE);
+			ENABLE_ITEM(IDC_COMBO_REC_H, FALSE);
+			ENABLE_ITEM(IDC_COMBO_REC_M, FALSE);
+			ENABLE_ITEM(IDC_CHECK_REC_SET, FALSE);
+			ENABLE_ITEM(IDC_BUTTON_CANCEL, TRUE);
+			ENABLE_ITEM(IDC_BUTTON_VIEW, TRUE);
+			ENABLE_ITEM(IDC_CHECK_UDP, TRUE);
+			ENABLE_ITEM(IDC_CHECK_TCP, TRUE);
+			ENABLE_ITEM(IDC_BUTTON_TIMESHIFT, TRUE);
 			break;
 		case GUI_REC_STANDBY:
-			this->combTuner.EnableWindow(FALSE);
-			this->combService.EnableWindow(FALSE);
-			this->btnChScan.EnableWindow(FALSE);
-			this->btnEpg.EnableWindow(FALSE);
-			this->btnSet.EnableWindow(FALSE);
-			this->btnRec.EnableWindow(FALSE);
-			this->combRecH.EnableWindow(FALSE);
-			this->combRecM.EnableWindow(FALSE);
-			this->chkRecSet.EnableWindow(FALSE);
-			this->btnCancel.EnableWindow(FALSE);
-			this->btnView.EnableWindow(TRUE);
-			this->chkUDP.EnableWindow(TRUE);
-			this->chkTCP.EnableWindow(TRUE);
-			this->btnTimeShift.EnableWindow(FALSE);
+			ENABLE_ITEM(IDC_COMBO_TUNER, FALSE);
+			ENABLE_ITEM(IDC_COMBO_SERVICE, FALSE);
+			ENABLE_ITEM(IDC_BUTTON_CHSCAN, FALSE);
+			ENABLE_ITEM(IDC_BUTTON_EPG, FALSE);
+			ENABLE_ITEM(IDC_BUTTON_SET, FALSE);
+			ENABLE_ITEM(IDC_BUTTON_REC, FALSE);
+			ENABLE_ITEM(IDC_COMBO_REC_H, FALSE);
+			ENABLE_ITEM(IDC_COMBO_REC_M, FALSE);
+			ENABLE_ITEM(IDC_CHECK_REC_SET, FALSE);
+			ENABLE_ITEM(IDC_BUTTON_CANCEL, FALSE);
+			ENABLE_ITEM(IDC_BUTTON_VIEW, TRUE);
+			ENABLE_ITEM(IDC_CHECK_UDP, TRUE);
+			ENABLE_ITEM(IDC_CHECK_TCP, TRUE);
+			ENABLE_ITEM(IDC_BUTTON_TIMESHIFT, FALSE);
 			break;
 		default:
 			break;
@@ -986,15 +845,13 @@ void CEpgDataCap_BonDlg::OnCbnSelchangeComboTuner()
 {
 	// TODO: ここにコントロール通知ハンドラー コードを追加します。
 	KillTimer(TIMER_STATUS_UPDATE);
-	CString buff=L"";
-	this->combTuner.GetWindowText(buff);
+	WCHAR buff[512];
+	if( GetWindowText(GetDlgItem(IDC_COMBO_TUNER), buff, 512) > 0 ){
+		SelectBonDriver(buff);
 
-	if( buff.IsEmpty() == false ){
-		SelectBonDriver(buff.GetBuffer(0));
-
-		int sel = this->combService.GetCurSel();
+		int sel = ComboBox_GetCurSel(GetDlgItem(IDC_COMBO_SERVICE));
 		if( sel != CB_ERR ){
-			DWORD index = (DWORD)this->combService.GetItemData(sel);
+			DWORD index = (DWORD)ComboBox_GetItemData(GetDlgItem(IDC_COMBO_SERVICE), sel);
 			SelectService(this->serviceList[index].originalNetworkID, this->serviceList[index].transportStreamID, this->serviceList[index].serviceID, this->serviceList[index].space, this->serviceList[index].ch );
 		}
 	}
@@ -1006,9 +863,9 @@ void CEpgDataCap_BonDlg::OnCbnSelchangeComboTuner()
 void CEpgDataCap_BonDlg::OnCbnSelchangeComboService()
 {
 	// TODO: ここにコントロール通知ハンドラー コードを追加します。
-	int sel = this->combService.GetCurSel();
+	int sel = ComboBox_GetCurSel(GetDlgItem(IDC_COMBO_SERVICE));
 	if( sel != CB_ERR ){
-		DWORD index = (DWORD)this->combService.GetItemData(sel);
+		DWORD index = (DWORD)ComboBox_GetItemData(GetDlgItem(IDC_COMBO_SERVICE), sel);
 		SelectService(this->serviceList[index].originalNetworkID, this->serviceList[index].transportStreamID, this->serviceList[index].serviceID, this->serviceList[index].space, this->serviceList[index].ch );
 	}
 	ChgIconStatus();
@@ -1018,8 +875,11 @@ void CEpgDataCap_BonDlg::OnCbnSelchangeComboService()
 void CEpgDataCap_BonDlg::OnBnClickedButtonSet()
 {
 	// TODO: ここにコントロール通知ハンドラー コードを追加します。
-	CSettingDlg setDlg;
-	if( setDlg.DoModal() == IDOK ){
+	CSettingDlg setDlg(m_hWnd);
+	disableKeyboardHook = TRUE;
+	INT_PTR result = setDlg.DoModal();
+	disableKeyboardHook = FALSE;
+	if( result == IDOK ){
 
 		this->main.ReloadSetting();
 
@@ -1034,7 +894,7 @@ void CEpgDataCap_BonDlg::OnBnClickedButtonSet()
 		this->initSID = SID;
 		ReloadServiceList();
 		
-		this->minTask = GetPrivateProfileInt( L"Set", L"MinTask", 0, this->moduleIniPath );
+		this->minTask = GetPrivateProfileInt( L"Set", L"MinTask", 0, this->moduleIniPath.c_str() );
 	}
 }
 
@@ -1043,58 +903,60 @@ void CEpgDataCap_BonDlg::ReloadNWSet()
 	this->main.SendUDP(FALSE);
 	this->main.SendTCP(FALSE);
 	if( this->main.GetCountUDP() > 0 ){
-		this->chkUDP.EnableWindow(TRUE);
+		EnableWindow(GetDlgItem(IDC_CHECK_UDP), TRUE);
 	}else{
-		this->chkUDP.EnableWindow(FALSE);
-		this->chkUDP.SetCheck(FALSE);
+		EnableWindow(GetDlgItem(IDC_CHECK_UDP), FALSE);
+		Button_SetCheck(GetDlgItem(IDC_CHECK_UDP), BST_UNCHECKED);
 	}
 	if( this->main.GetCountTCP() > 0 ){
-		this->chkTCP.EnableWindow(TRUE);
+		EnableWindow(GetDlgItem(IDC_CHECK_TCP), TRUE);
 	}else{
-		this->chkTCP.EnableWindow(FALSE);
-		this->chkTCP.SetCheck(FALSE);
+		EnableWindow(GetDlgItem(IDC_CHECK_TCP), FALSE);
+		Button_SetCheck(GetDlgItem(IDC_CHECK_TCP), BST_UNCHECKED);
 	}
-	this->main.SendUDP(this->chkUDP.GetCheck());
-	this->main.SendTCP(this->chkTCP.GetCheck());
+	this->main.SendUDP(Button_GetCheck(GetDlgItem(IDC_CHECK_UDP)));
+	this->main.SendTCP(Button_GetCheck(GetDlgItem(IDC_CHECK_TCP)));
 }
 
 void CEpgDataCap_BonDlg::ReloadBonDriver()
 {
 	this->bonList.clear();
-	this->combTuner.ResetContent();
+	ComboBox_ResetContent(GetDlgItem(IDC_COMBO_TUNER));
 
 	this->main.EnumBonDriver(&bonList);
 
 	int selectIndex = 0;
 	map<int, wstring>::iterator itr;
 	for( itr = this->bonList.begin(); itr != this->bonList.end(); itr++ ){
-		int index = this->combTuner.AddString(itr->second.c_str());
-		if( this->iniBonDriver.IsEmpty() == false ){
-			if( this->iniBonDriver.Compare(itr->second.c_str()) == 0 ){
+		int index = ComboBox_AddString(GetDlgItem(IDC_COMBO_TUNER), itr->second.c_str());
+		if( this->iniBonDriver.empty() == false ){
+			if( this->iniBonDriver.compare(itr->second) == 0 ){
 				selectIndex = index;
 			}
 		}
 	}
 	if( this->bonList.size() > 0){
-		this->combTuner.SetCurSel(selectIndex);
+		ComboBox_SetCurSel(GetDlgItem(IDC_COMBO_TUNER), selectIndex);
 	}
 }
 
 void CEpgDataCap_BonDlg::ReloadServiceList(BOOL ini)
 {
 	this->serviceList.clear();
-	this->combService.ResetContent();
+	ComboBox_ResetContent(GetDlgItem(IDC_COMBO_SERVICE));
 
 	DWORD ret = this->main.GetServiceList(&this->serviceList);
 	if( ret != NO_ERR || this->serviceList.size() == 0 ){
-		this->log += L"チャンネル情報の読み込みに失敗しました\r\n";
-		SetDlgItemText(IDC_EDIT_LOG, this->log);
+		WCHAR log[512 + 64] = L"";
+		GetDlgItemText(m_hWnd, IDC_EDIT_LOG, log, 512);
+		lstrcat(log, L"チャンネル情報の読み込みに失敗しました\r\n");
+		SetDlgItemText(m_hWnd, IDC_EDIT_LOG, log);
 	}else{
 		int selectSel = 0;
 		for( size_t i=0; i<this->serviceList.size(); i++ ){
 			if( this->serviceList[i].useViewFlag == TRUE ){
-				int index = this->combService.AddString(this->serviceList[i].serviceName.c_str());
-				this->combService.SetItemData(index, (DWORD)i);
+				int index = ComboBox_AddString(GetDlgItem(IDC_COMBO_SERVICE), this->serviceList[i].serviceName.c_str());
+				ComboBox_SetItemData(GetDlgItem(IDC_COMBO_SERVICE), index, i);
 				if( this->serviceList[i].originalNetworkID == this->initONID &&
 					this->serviceList[i].transportStreamID == this->initTSID &&
 					this->serviceList[i].serviceID == this->initSID ){
@@ -1107,8 +969,8 @@ void CEpgDataCap_BonDlg::ReloadServiceList(BOOL ini)
 				}
 			}
 		}
-		if( this->combService.GetCount() > 0 ){
-			this->combService.SetCurSel(selectSel);
+		if( ComboBox_GetCount(GetDlgItem(IDC_COMBO_SERVICE)) > 0 ){
+			ComboBox_SetCurSel(GetDlgItem(IDC_COMBO_SERVICE), selectSel);
 		}
 
 	}
@@ -1120,12 +982,12 @@ DWORD CEpgDataCap_BonDlg::SelectBonDriver(LPCWSTR fileName, BOOL ini)
 	this->main.CloseBonDriver();
 	DWORD err = this->main.OpenBonDriver(fileName);
 	if( err != NO_ERR ){
-		this->log.Format(L"BonDriverのオープンができませんでした\r\n%s\r\n", fileName);
-		SetDlgItemText(IDC_EDIT_LOG, this->log);
+		wstring log;
+		Format(log, L"BonDriverのオープンができませんでした\r\n%s\r\n", fileName);
+		SetDlgItemText(m_hWnd, IDC_EDIT_LOG, log.c_str());
 		BtnUpdate(GUI_OPEN_FAIL);
 	}else{
-		this->log = L"";
-		SetDlgItemText(IDC_EDIT_LOG, this->log);
+		SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"");
 		BtnUpdate(GUI_NORMAL);
 	}
 	ReloadServiceList(ini);
@@ -1148,8 +1010,7 @@ void CEpgDataCap_BonDlg::OnBnClickedButtonChscan()
 {
 	// TODO: ここにコントロール通知ハンドラー コードを追加します。
 	if( this->main.StartChScan() != NO_ERR ){
-		this->log.Format(L"チャンネルスキャンを開始できませんでした\r\n");
-		SetDlgItemText(IDC_EDIT_LOG, this->log);
+		SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"チャンネルスキャンを開始できませんでした\r\n");
 		return;
 	}
 	SetTimer(TIMER_CHSCAN_STATSU, 1000, NULL);
@@ -1161,8 +1022,7 @@ void CEpgDataCap_BonDlg::OnBnClickedButtonEpg()
 {
 	// TODO: ここにコントロール通知ハンドラー コードを追加します。
 	if( this->main.StartEpgCap() != NO_ERR ){
-		this->log.Format(L"EPG取得を開始できませんでした\r\n");
-		SetDlgItemText(IDC_EDIT_LOG, this->log);
+		SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"EPG取得を開始できませんでした\r\n");
 		return;
 	}
 	SetTimer(TIMER_EPGCAP_STATSU, 1000, NULL);
@@ -1175,8 +1035,7 @@ void CEpgDataCap_BonDlg::OnBnClickedButtonRec()
 {
 	// TODO: ここにコントロール通知ハンドラー コードを追加します。
 	if( this->main.StartRec() != NO_ERR ){
-		this->log.Format(L"録画を開始できませんでした\r\n");
-		SetDlgItemText(IDC_EDIT_LOG, this->log);
+		SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"録画を開始できませんでした\r\n");
 		return;
 	}
 	SYSTEMTIME now;
@@ -1184,11 +1043,10 @@ void CEpgDataCap_BonDlg::OnBnClickedButtonRec()
 	SYSTEMTIME end;
 	GetSumTime(now, 30*60, &end);
 
-	this->combRecH.SetCurSel(end.wHour);
-	this->combRecM.SetCurSel(end.wMinute);
+	ComboBox_SetCurSel(GetDlgItem(IDC_COMBO_REC_H), end.wHour);
+	ComboBox_SetCurSel(GetDlgItem(IDC_COMBO_REC_M), end.wMinute);
 
-	this->log = L"録画中\r\n";
-	SetDlgItemText(IDC_EDIT_LOG, this->log);
+	SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"録画中\r\n");
 
 	BtnUpdate(GUI_REC);
 	ChgIconStatus();
@@ -1199,12 +1057,16 @@ void CEpgDataCap_BonDlg::OnBnClickedButtonCancel()
 {
 	// TODO: ここにコントロール通知ハンドラー コードを追加します。
 	if( this->main.IsRec() == TRUE ){
-		if( AfxMessageBox( L"録画を停止しますか？", MB_YESNO ) == IDNO ){
+		WCHAR caption[128] = L"";
+		GetWindowText(m_hWnd, caption, 128);
+		disableKeyboardHook = TRUE;
+		int result = MessageBox( m_hWnd, L"録画を停止しますか？", caption, MB_YESNO | MB_ICONQUESTION );
+		disableKeyboardHook = FALSE;
+		if( result == IDNO ){
 			return ;
 		}
 	}
-	this->log = L"キャンセルされました\r\n";
-	SetDlgItemText(IDC_EDIT_LOG, this->log);
+	SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"キャンセルされました\r\n");
 
 	this->main.StopChScan();
 	KillTimer(TIMER_CHSCAN_STATSU);
@@ -1230,27 +1092,27 @@ void CEpgDataCap_BonDlg::OnBnClickedButtonView()
 void CEpgDataCap_BonDlg::OnBnClickedCheckUdp()
 {
 	// TODO: ここにコントロール通知ハンドラー コードを追加します。
-	this->main.SendUDP(this->chkUDP.GetCheck());
+	this->main.SendUDP(Button_GetCheck(GetDlgItem(IDC_CHECK_UDP)));
 }
 
 
 void CEpgDataCap_BonDlg::OnBnClickedCheckTcp()
 {
 	// TODO: ここにコントロール通知ハンドラー コードを追加します。
-	this->main.SendTCP(this->chkTCP.GetCheck());
+	this->main.SendTCP(Button_GetCheck(GetDlgItem(IDC_CHECK_TCP)));
 }
 
 
 void CEpgDataCap_BonDlg::OnBnClickedCheckRecSet()
 {
 	// TODO: ここにコントロール通知ハンドラー コードを追加します。
-	if( chkRecSet.GetCheck() == TRUE ){
+	if( Button_GetCheck(GetDlgItem(IDC_CHECK_REC_SET)) != BST_UNCHECKED ){
 		BtnUpdate(GUI_REC_SET_TIME);
 		SYSTEMTIME now;
 		GetLocalTime(&now);
 
-		int selH = this->combRecH.GetCurSel();
-		int selM = this->combRecM.GetCurSel();
+		int selH = ComboBox_GetCurSel(GetDlgItem(IDC_COMBO_REC_H));
+		int selM = ComboBox_GetCurSel(GetDlgItem(IDC_COMBO_REC_M));
 
 		DWORD nowTime = now.wHour*60*60 + now.wMinute*60 + now.wSecond;
 		DWORD endTime = selH*60*60 + selM*60;
@@ -1269,11 +1131,12 @@ void CEpgDataCap_BonDlg::OnBnClickedCheckRecSet()
 void CEpgDataCap_BonDlg::OnBnClickedCheckNextpg()
 {
 	// TODO: ここにコントロール通知ハンドラー コードを追加します。
-	CString info = L"";
-	this->main.GetEpgInfo(this->btnPgNext.GetCheck(), &info);
-	if( this->pgInfo.Compare(info) != 0 ){
-		this->pgInfo = info;
-		SetDlgItemText(IDC_EDIT_PG_INFO, this->pgInfo);
+	wstring info = L"";
+	this->main.GetEpgInfo(Button_GetCheck(GetDlgItem(IDC_CHECK_NEXTPG)), &info);
+	WCHAR pgInfo[512] = L"";
+	GetDlgItemText(m_hWnd, IDC_EDIT_PG_INFO, pgInfo, 512);
+	if( info.substr(0, 511).compare(pgInfo) != 0 ){
+		SetDlgItemText(m_hWnd, IDC_EDIT_PG_INFO, info.c_str());
 	}
 }
 
@@ -1288,12 +1151,9 @@ void CEpgDataCap_BonDlg::OnBnClickedButtonTimeshift()
 
 BOOL CEpgDataCap_BonDlg::OnQueryEndSession()
 {
-	if (!CDialogEx::OnQueryEndSession())
-		return FALSE;
-
 	// TODO:  ここに特定なクエリの終了セッション コードを追加してください。
 	if( this->main.IsRec() == TRUE ){
-		ShowWindow(SW_SHOW);
+		ShowWindow(m_hWnd, SW_SHOW);
 		return FALSE;
 	}
 	return TRUE;
@@ -1302,8 +1162,6 @@ BOOL CEpgDataCap_BonDlg::OnQueryEndSession()
 
 void CEpgDataCap_BonDlg::OnEndSession(BOOL bEnding)
 {
-	CDialogEx::OnEndSession(bEnding);
-
 	// TODO: ここにメッセージ ハンドラー コードを追加します。
 	if( bEnding == TRUE ){
 		if( this->main.IsRec() == TRUE ){
@@ -1311,4 +1169,118 @@ void CEpgDataCap_BonDlg::OnEndSession(BOOL bEnding)
 			this->main.StopRec();
 		}
 	}
+}
+
+
+LRESULT CALLBACK CEpgDataCap_BonDlg::KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
+{
+	//Enter,Escを無視する
+	if( disableKeyboardHook == FALSE && nCode == HC_ACTION && (wParam == VK_RETURN || wParam == VK_ESCAPE) && (lParam & (1 << 30)) == 0 ){
+		return TRUE;
+	}
+	return CallNextHookEx(NULL, nCode, wParam, lParam);
+}
+
+
+INT_PTR CALLBACK CEpgDataCap_BonDlg::DlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	CEpgDataCap_BonDlg* pSys = (CEpgDataCap_BonDlg*)GetWindowLongPtr(hDlg, GWLP_USERDATA);
+	if( pSys == NULL && uMsg != WM_INITDIALOG ){
+		return FALSE;
+	}
+	switch( uMsg ){
+	case WM_INITDIALOG:
+		SetWindowLongPtr(hDlg, GWLP_USERDATA, lParam);
+		pSys = (CEpgDataCap_BonDlg*)lParam;
+		pSys->m_hWnd = hDlg;
+		pSys->m_hKeyboardHook = SetWindowsHookEx(WH_KEYBOARD, KeyboardProc, NULL, GetCurrentThreadId());
+		return pSys->OnInitDialog();
+	case WM_NCDESTROY:
+		UnhookWindowsHookEx(pSys->m_hKeyboardHook);
+		pSys->m_hWnd = NULL;
+		break;
+	case WM_DESTROY:
+		pSys->OnDestroy();
+		break;
+	case WM_TIMER:
+		pSys->OnTimer(wParam);
+		break;
+	case WM_SIZE:
+		pSys->OnSize((UINT)wParam, LOWORD(lParam), HIWORD(lParam));
+		break;
+	case WM_QUERYENDSESSION:
+		SetWindowLongPtr(hDlg, DWLP_MSGRESULT, pSys->OnQueryEndSession());
+		return TRUE;
+	case WM_ENDSESSION:
+		pSys->OnEndSession((BOOL)wParam);
+		break;
+	case WM_COMMAND:
+		switch( LOWORD(wParam) ){
+		case IDC_COMBO_TUNER:
+			if( HIWORD(wParam) == CBN_SELCHANGE ){
+				pSys->OnCbnSelchangeComboTuner();
+			}
+			break;
+		case IDC_COMBO_SERVICE:
+			if( HIWORD(wParam) == CBN_SELCHANGE ){
+				pSys->OnCbnSelchangeComboService();
+			}
+			break;
+		case IDC_BUTTON_SET:
+			pSys->OnBnClickedButtonSet();
+			break;
+		case IDC_BUTTON_CHSCAN:
+			pSys->OnBnClickedButtonChscan();
+			break;
+		case IDC_BUTTON_EPG:
+			pSys->OnBnClickedButtonEpg();
+			break;
+		case IDC_BUTTON_REC:
+			pSys->OnBnClickedButtonRec();
+			break;
+		case IDC_CHECK_REC_SET:
+			pSys->OnBnClickedCheckRecSet();
+			break;
+		case IDC_BUTTON_CANCEL:
+			pSys->OnBnClickedButtonCancel();
+			break;
+		case IDC_CHECK_TCP:
+			pSys->OnBnClickedCheckTcp();
+			break;
+		case IDC_CHECK_UDP:
+			pSys->OnBnClickedCheckUdp();
+			break;
+		case IDC_BUTTON_VIEW:
+			pSys->OnBnClickedButtonView();
+			break;
+		case IDC_CHECK_NEXTPG:
+			pSys->OnBnClickedCheckNextpg();
+			break;
+		case IDC_BUTTON_TIMESHIFT:
+			pSys->OnBnClickedButtonTimeshift();
+			break;
+		case IDOK:
+		case IDCANCEL:
+			EndDialog(hDlg, LOWORD(wParam));
+			SetWindowLongPtr(hDlg, DWLP_MSGRESULT, 0);
+			return TRUE;
+		}
+		break;
+	case WM_SYSCOMMAND:
+		{
+			BOOL bProcessed = FALSE;
+			pSys->OnSysCommand((UINT)(wParam & 0xFFF0), lParam, &bProcessed);
+			if( bProcessed != FALSE ){
+				SetWindowLongPtr(hDlg, DWLP_MSGRESULT, 0);
+				return TRUE;
+			}
+		}
+		break;
+	default:
+		if( uMsg >= WM_USER ){
+			pSys->WindowProc(uMsg, wParam, lParam);
+		}
+		break;
+	}
+	return FALSE;
 }

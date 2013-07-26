@@ -4,18 +4,12 @@
 #include "stdafx.h"
 #include "EpgDataCap_Bon.h"
 #include "SetDlgApp.h"
-#include "afxdialogex.h"
 
 
 // CSetDlgApp ダイアログ
 
-IMPLEMENT_DYNAMIC(CSetDlgApp, CDialog)
-
-CSetDlgApp::CSetDlgApp(CWnd* pParent /*=NULL*/)
-	: CDialog(CSetDlgApp::IDD, pParent)
-	, startMargine(0)
-	, endMargine(0)
-	, epgCapBackStartWaitSec(0)
+CSetDlgApp::CSetDlgApp()
+	: m_hWnd(NULL)
 {
 
 }
@@ -24,27 +18,10 @@ CSetDlgApp::~CSetDlgApp()
 {
 }
 
-void CSetDlgApp::DoDataExchange(CDataExchange* pDX)
+BOOL CSetDlgApp::Create(LPCTSTR lpszTemplateName, HWND hWndParent)
 {
-	CDialog::DoDataExchange(pDX);
-	DDX_Control(pDX, IDC_CHECK_ENABLE_DECODE, btnEnableScramble);
-	DDX_Control(pDX, IDC_CHECK_NEED_CAPTION, btnNeedCaption);
-	DDX_Control(pDX, IDC_CHECK_NEED_DATA, btnNeedData);
-	DDX_Text(pDX, IDC_EDIT_START_MARGINE, startMargine);
-	DDX_Text(pDX, IDC_EDIT_END_MARGINE, endMargine);
-	DDX_Control(pDX, IDC_CHECK_OVER_WRITE, btnOverWrite);
-	DDX_Control(pDX, IDC_CHECK_ALL_SERVICE, btnAllService);
-	DDX_Control(pDX, IDC_CHECK_EPGCAP_LIVE, btnEpgCapLive);
-	DDX_Control(pDX, IDC_CHECK_EPGCAP_REC, btnEpgCapRec);
-	DDX_Control(pDX, IDC_CHECK_TASKMIN, btnTaskMin);
-	DDX_Control(pDX, IDC_CHECK_EMM, btnEnableEMM);
-	DDX_Control(pDX, IDC_CHECK_OPENLAST, btnOpenLast);
-	DDX_Text(pDX, IDC_EDIT_BACKSTART_WAITSEC, epgCapBackStartWaitSec);
+	return CreateDialogParam(GetModuleHandle(NULL), lpszTemplateName, hWndParent, DlgProc, (LPARAM)this) != NULL;
 }
-
-
-BEGIN_MESSAGE_MAP(CSetDlgApp, CDialog)
-END_MESSAGE_MAP()
 
 
 // CSetDlgApp メッセージ ハンドラー
@@ -52,28 +29,24 @@ END_MESSAGE_MAP()
 
 BOOL CSetDlgApp::OnInitDialog()
 {
-	CDialog::OnInitDialog();
-
 	// TODO:  ここに初期化を追加してください
 
-	btnAllService.SetCheck( GetPrivateProfileInt( L"SET", L"AllService", 0, appIniPath ) );
-	btnEnableScramble.SetCheck( GetPrivateProfileInt( L"SET", L"Scramble", 1, appIniPath ) );
-	btnEnableEMM.SetCheck( GetPrivateProfileInt( L"SET", L"EMM", 0, appIniPath ) );
-	btnNeedCaption.SetCheck( GetPrivateProfileInt( L"SET", L"Caption", 1, appIniPath ) );
-	btnNeedData.SetCheck( GetPrivateProfileInt( L"SET", L"Data", 0, appIniPath ) );
+	Button_SetCheck(GetDlgItem(IDC_CHECK_ALL_SERVICE), GetPrivateProfileInt(L"SET", L"AllService", 0, appIniPath.c_str()));
+	Button_SetCheck(GetDlgItem(IDC_CHECK_ENABLE_DECODE), GetPrivateProfileInt(L"SET", L"Scramble", 1, appIniPath.c_str()));
+	Button_SetCheck(GetDlgItem(IDC_CHECK_EMM), GetPrivateProfileInt(L"SET", L"EMM", 0, appIniPath.c_str()));
+	Button_SetCheck(GetDlgItem(IDC_CHECK_NEED_CAPTION), GetPrivateProfileInt(L"SET", L"Caption", 1, appIniPath.c_str()));
+	Button_SetCheck(GetDlgItem(IDC_CHECK_NEED_DATA), GetPrivateProfileInt(L"SET", L"Data", 0, appIniPath.c_str()));
 
-	startMargine = GetPrivateProfileInt( L"SET", L"StartMargine", 5, appIniPath );
-	endMargine = GetPrivateProfileInt( L"SET", L"EndMargine", 5, appIniPath );
-	btnOverWrite.SetCheck( GetPrivateProfileInt( L"SET", L"OverWrite", 0, appIniPath ) );
+	SetDlgItemInt(m_hWnd, IDC_EDIT_START_MARGINE, GetPrivateProfileInt(L"SET", L"StartMargine", 5, appIniPath.c_str()), FALSE);
+	SetDlgItemInt(m_hWnd, IDC_EDIT_END_MARGINE, GetPrivateProfileInt(L"SET", L"EndMargine", 5, appIniPath.c_str()), FALSE);
+	Button_SetCheck(GetDlgItem(IDC_CHECK_OVER_WRITE), GetPrivateProfileInt(L"SET", L"OverWrite", 0, appIniPath.c_str()));
 	
-	btnEpgCapLive.SetCheck( GetPrivateProfileInt( L"SET", L"EpgCapLive", 1, appIniPath ) );
-	btnEpgCapRec.SetCheck( GetPrivateProfileInt( L"SET", L"EpgCapRec", 1, appIniPath ) );
-	btnTaskMin.SetCheck( GetPrivateProfileInt( L"SET", L"MinTask", 0, appIniPath ) );
-	btnOpenLast.SetCheck( GetPrivateProfileInt( L"SET", L"OpenLast", 1, appIniPath ) );
+	Button_SetCheck(GetDlgItem(IDC_CHECK_EPGCAP_LIVE), GetPrivateProfileInt(L"SET", L"EpgCapLive", 1, appIniPath.c_str()));
+	Button_SetCheck(GetDlgItem(IDC_CHECK_EPGCAP_REC), GetPrivateProfileInt(L"SET", L"EpgCapRec", 1, appIniPath.c_str()));
+	Button_SetCheck(GetDlgItem(IDC_CHECK_TASKMIN), GetPrivateProfileInt(L"SET", L"MinTask", 0, appIniPath.c_str()));
+	Button_SetCheck(GetDlgItem(IDC_CHECK_OPENLAST), GetPrivateProfileInt(L"SET", L"OpenLast", 1, appIniPath.c_str()));
 
-	epgCapBackStartWaitSec = GetPrivateProfileInt( L"SET", L"EpgCapBackStartWaitSec", 30, appIniPath );
-
-	UpdateData(FALSE);
+	SetDlgItemInt(m_hWnd, IDC_EDIT_BACKSTART_WAITSEC, GetPrivateProfileInt(L"SET", L"EpgCapBackStartWaitSec", 30, appIniPath.c_str()), TRUE);
 
 	return TRUE;  // return TRUE unless you set the focus to a control
 	// 例外 : OCX プロパティ ページは必ず FALSE を返します。
@@ -81,50 +54,46 @@ BOOL CSetDlgApp::OnInitDialog()
 
 void CSetDlgApp::SaveIni(void)
 {
-	UpdateData(TRUE);
+	if( m_hWnd == NULL ){
+		return;
+	}
 
-	CString val = L"";
-	val.Format(L"%d",btnAllService.GetCheck());
-	WritePrivateProfileString( L"SET", L"AllService", val.GetBuffer(0), appIniPath );
-	val.Format(L"%d",btnEnableScramble.GetCheck());
-	WritePrivateProfileString( L"SET", L"Scramble", val.GetBuffer(0), appIniPath );
-	val.Format(L"%d",btnEnableEMM.GetCheck());
-	WritePrivateProfileString( L"SET", L"EMM", val.GetBuffer(0), appIniPath );
-	val.Format(L"%d",btnNeedCaption.GetCheck());
-	WritePrivateProfileString( L"SET", L"Caption", val.GetBuffer(0), appIniPath );
-	val.Format(L"%d",btnNeedData.GetCheck());
-	WritePrivateProfileString( L"SET", L"Data", val.GetBuffer(0), appIniPath );
+	WritePrivateProfileInt( L"SET", L"AllService", Button_GetCheck(GetDlgItem(IDC_CHECK_ALL_SERVICE)), appIniPath.c_str() );
+	WritePrivateProfileInt( L"SET", L"Scramble", Button_GetCheck(GetDlgItem(IDC_CHECK_ENABLE_DECODE)), appIniPath.c_str() );
+	WritePrivateProfileInt( L"SET", L"EMM", Button_GetCheck(GetDlgItem(IDC_CHECK_EMM)), appIniPath.c_str() );
+	WritePrivateProfileInt( L"SET", L"Caption", Button_GetCheck(GetDlgItem(IDC_CHECK_NEED_CAPTION)), appIniPath.c_str() );
+	WritePrivateProfileInt( L"SET", L"Data", Button_GetCheck(GetDlgItem(IDC_CHECK_NEED_DATA)), appIniPath.c_str() );
 
-	val.Format(L"%d",startMargine);
-	WritePrivateProfileString( L"SET", L"StartMargine", val.GetBuffer(0), appIniPath );
-	val.Format(L"%d",endMargine);
-	WritePrivateProfileString( L"SET", L"EndMargine", val.GetBuffer(0), appIniPath );
+	WritePrivateProfileInt( L"SET", L"StartMargine", GetDlgItemInt(m_hWnd, IDC_EDIT_START_MARGINE, NULL, FALSE), appIniPath.c_str() );
+	WritePrivateProfileInt( L"SET", L"EndMargine", GetDlgItemInt(m_hWnd, IDC_EDIT_END_MARGINE, NULL, FALSE), appIniPath.c_str() );
 
-	val.Format(L"%d",btnOverWrite.GetCheck());
-	WritePrivateProfileString( L"SET", L"OverWrite", val.GetBuffer(0), appIniPath );
+	WritePrivateProfileInt( L"SET", L"OverWrite", Button_GetCheck(GetDlgItem(IDC_CHECK_OVER_WRITE)), appIniPath.c_str() );
 
-	val.Format(L"%d",btnEpgCapLive.GetCheck());
-	WritePrivateProfileString( L"SET", L"EpgCapLive", val.GetBuffer(0), appIniPath );
-	val.Format(L"%d",btnEpgCapRec.GetCheck());
-	WritePrivateProfileString( L"SET", L"EpgCapRec", val.GetBuffer(0), appIniPath );
-	val.Format(L"%d",btnTaskMin.GetCheck());
-	WritePrivateProfileString( L"SET", L"MinTask", val.GetBuffer(0), appIniPath );
-	val.Format(L"%d",btnOpenLast.GetCheck());
-	WritePrivateProfileString( L"SET", L"OpenLast", val.GetBuffer(0), appIniPath );
+	WritePrivateProfileInt( L"SET", L"EpgCapLive", Button_GetCheck(GetDlgItem(IDC_CHECK_EPGCAP_LIVE)), appIniPath.c_str() );
+	WritePrivateProfileInt( L"SET", L"EpgCapRec", Button_GetCheck(GetDlgItem(IDC_CHECK_EPGCAP_REC)), appIniPath.c_str() );
+	WritePrivateProfileInt( L"SET", L"MinTask", Button_GetCheck(GetDlgItem(IDC_CHECK_TASKMIN)), appIniPath.c_str() );
+	WritePrivateProfileInt( L"SET", L"OpenLast", Button_GetCheck(GetDlgItem(IDC_CHECK_OPENLAST)), appIniPath.c_str() );
 
-	val.Format(L"%d",epgCapBackStartWaitSec);
-	WritePrivateProfileString( L"SET", L"EpgCapBackStartWaitSec", val.GetBuffer(0), appIniPath );
+	WritePrivateProfileInt( L"SET", L"EpgCapBackStartWaitSec", GetDlgItemInt(m_hWnd, IDC_EDIT_BACKSTART_WAITSEC, NULL, TRUE), appIniPath.c_str() );
 
 }
 
 
-BOOL CSetDlgApp::PreTranslateMessage(MSG* pMsg)
+INT_PTR CALLBACK CSetDlgApp::DlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	// TODO: ここに特定なコードを追加するか、もしくは基本クラスを呼び出してください。
-	if( pMsg->message == WM_KEYDOWN ){
-		if( pMsg->wParam  == VK_RETURN || pMsg->wParam  == VK_ESCAPE ){
-			return FALSE;
-		}
+	CSetDlgApp* pSys = (CSetDlgApp*)GetWindowLongPtr(hDlg, GWLP_USERDATA);
+	if( pSys == NULL && uMsg != WM_INITDIALOG ){
+		return FALSE;
 	}
-	return CDialog::PreTranslateMessage(pMsg);
+	switch( uMsg ){
+	case WM_INITDIALOG:
+		SetWindowLongPtr(hDlg, GWLP_USERDATA, lParam);
+		pSys = (CSetDlgApp*)lParam;
+		pSys->m_hWnd = hDlg;
+		return pSys->OnInitDialog();
+	case WM_NCDESTROY:
+		pSys->m_hWnd = NULL;
+		break;
+	}
+	return FALSE;
 }

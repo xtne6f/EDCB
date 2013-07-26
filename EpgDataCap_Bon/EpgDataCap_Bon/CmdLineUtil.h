@@ -1,10 +1,8 @@
 #pragma once
-#include "afxwin.h"
 #include <map>
 using namespace std;
 
-class CCmdLineUtil :
-	public CCommandLineInfo
+class CCmdLineUtil
 {
 public:
 	CCmdLineUtil(void);
@@ -12,9 +10,9 @@ public:
 
 	void ParseParam( const TCHAR* pszParam, BOOL bFlag, BOOL bLast );
 	
-	map<CString, CString> m_CmdList;
+	map<wstring, wstring> m_CmdList;
 
 protected:
-	CString m_strOpt;
-	CString m_strOpt2;
+	wstring m_strOpt;
+	wstring m_strOpt2;
 };
