@@ -104,7 +104,7 @@ BOOL CEpgDataCap_BonDlg::OnInitDialog()
 	// TODO: ‰Šú‰»‚ð‚±‚±‚É’Ç‰Á‚µ‚Ü‚·B
 	this->main.ReloadSetting();
 
-	for( int i=0; i<25; i++ ){
+	for( int i=0; i<24; i++ ){
 		WCHAR buff[32];
 		wsprintf(buff, L"%d",i);
 		int index = ComboBox_AddString(GetDlgItem(IDC_COMBO_REC_H), buff);
@@ -112,7 +112,7 @@ BOOL CEpgDataCap_BonDlg::OnInitDialog()
 	}
 	ComboBox_SetCurSel(GetDlgItem(IDC_COMBO_REC_H), 0);
 
-	for( int i=0; i<59; i++ ){
+	for( int i=0; i<60; i++ ){
 		WCHAR buff[32];
 		wsprintf(buff, L"%d",i);
 		int index = ComboBox_AddString(GetDlgItem(IDC_COMBO_REC_M), buff);
