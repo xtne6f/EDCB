@@ -30,6 +30,8 @@ CEpgDataCap_BonDlg::CEpgDataCap_BonDlg()
 	iconGreen = (HICON)LoadImage( GetModuleHandle(NULL), MAKEINTRESOURCE( IDI_ICON_GREEN ), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
 	iconGray = (HICON)LoadImage( GetModuleHandle(NULL), MAKEINTRESOURCE( IDI_ICON_GRAY ), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
 
+	taskbarCreated = RegisterWindowMessage(L"TaskbarCreated");
+
 	wstring strPath = L"";
 	GetModuleIniPath(strPath);
 	this->moduleIniPath = strPath.c_str();
@@ -1277,7 +1279,9 @@ INT_PTR CALLBACK CEpgDataCap_BonDlg::DlgProc(HWND hDlg, UINT uMsg, WPARAM wParam
 		}
 		break;
 	default:
-		if( uMsg >= WM_USER ){
+		if( uMsg == taskbarCreated ){
+			pSys->OnTaskbarCreated(wParam, lParam);
+		}else if( uMsg >= WM_USER ){
 			pSys->WindowProc(uMsg, wParam, lParam);
 		}
 		break;
