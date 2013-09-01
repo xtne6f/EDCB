@@ -163,7 +163,7 @@ namespace EpgTimer.EpgView
                 infoText.FontSize = sizeNormal;
                 infoText.FontWeight = FontWeights.Normal;
                 infoText.Foreground = CommonManager.Instance.CustTitle2Color;
-                infoText.Margin = new Thickness(1, 0, 9.5, 1);
+                infoText.Margin = new Thickness(epgViewPanel.IsTitleIndent ? minGrid.Width.Value : 1, 0, 9.5, 1);
                 infoText.LineHeight = sizeNormal + 2;
             }
             else

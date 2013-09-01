@@ -32,17 +32,17 @@
                         <Border.Effect>
                             <DropShadowEffect BlurRadius="12" Opacity="0.5"/>
                         </Border.Effect>
-                        <Grid>
+                        <StackPanel Orientation="Vertical" >
+                            <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition x:Name="minGrid"/>
                                 <ColumnDefinition x:Name="infoGrid"/>
                             </Grid.ColumnDefinitions>
                             <TextBlock x:Name="minText" Grid.Column="0"/>
-                            <StackPanel Orientation="Vertical" Grid.Column="1">
-                                <TextBlock x:Name="titleText" TextWrapping="Wrap" LineStackingStrategy="BlockLineHeight"/>
-                                <TextBlock x:Name="infoText" TextWrapping="Wrap" LineStackingStrategy="BlockLineHeight"/>
-                            </StackPanel>
-                        </Grid>
+                            <TextBlock x:Name="titleText" Grid.Column="1" TextWrapping="Wrap" LineStackingStrategy="BlockLineHeight"/>
+                            </Grid>
+                            <TextBlock x:Name="infoText" TextWrapping="Wrap" LineStackingStrategy="BlockLineHeight"/>
+                        </StackPanel>
                     </Border>
                     <Rectangle x:Name="popupItemReserveRect" Opacity="0.3" StrokeThickness="3" Fill="Transparent" IsHitTestVisible="False">
                         <Rectangle.Stroke>
