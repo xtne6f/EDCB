@@ -356,13 +356,10 @@ protected:
 	BOOL _ChgReserveData(RESERVE_DATA* reserve, BOOL chgTime);
 
 	void _ReloadBankMap();
-	void _ReloadBankMapAlgo0();
-	void _ReloadBankMapAlgo1();
-	void _ReloadBankMapAlgo2();
-	void _ReloadBankMapAlgo3();
+	void _ReloadBankMapAlgo(BOOL do2Pass, BOOL ignoreUseTunerID, BOOL backPriority, BOOL noTuner);
 	void CheckOverTimeReserve();
 	void CreateWorkData(CReserveInfo* reserveInfo, BANK_WORK_INFO* workInfo, BOOL backPriority, DWORD reserveCount, DWORD reserveNum, BOOL noTuner = FALSE);
-	DWORD ChkInsertStatus(BANK_INFO* bank, BANK_WORK_INFO* inItem);
+	DWORD ChkInsertStatus(BANK_INFO* bank, BANK_WORK_INFO* inItem, BOOL reCheck = FALSE, BOOL mustOverlap = FALSE);
 	DWORD ReChkInsertStatus(BANK_INFO* bank, BANK_WORK_INFO* inItem);
 	DWORD ChkInsertNGStatus(BANK_INFO* bank, BANK_WORK_INFO* inItem);
 	BOOL ChangeNGReserve(BANK_WORK_INFO* inItem);
