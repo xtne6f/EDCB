@@ -2276,10 +2276,10 @@ void CReserveManager::CreateWorkData(CReserveInfo* reserveInfo, BANK_WORK_INFO* 
 
 	if( backPriority == TRUE ){
 		//Œã‚Ì”Ô‘g—Dæ
-		Format(workInfo->sortKey, L"%01d%01d%08I64x%05d", tunerManual, 9-workInfo->priority, workInfo->startTime*(-1), reserveNum-reserveCount);
+		Format(workInfo->sortKey, L"%01d%02x%016I64x%08x", tunerManual, 255-workInfo->priority, workInfo->startTime*(-1), UINT_MAX-reserveCount);
 	}else{
 		//‘O‚Ì”Ô‘g—Dæ
-		Format(workInfo->sortKey, L"%01d%01d%08I64x%05d", tunerManual, 9-workInfo->priority, workInfo->startTime, reserveCount);
+		Format(workInfo->sortKey, L"%01d%02x%016I64x%08x", tunerManual, 255-workInfo->priority, workInfo->startTime, reserveCount);
 	}
 }
 
