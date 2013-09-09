@@ -1775,6 +1775,11 @@ void CReserveManager::_ReloadBankMap()
 
 void CReserveManager::_ReloadBankMapAlgo0()
 {
+	BOOL do2Pass = FALSE;
+	BOOL ignoreUseTunerID = FALSE;
+	BOOL backPriority = this->backPriorityFlag;
+	BOOL noTuner = FALSE;
+
 	map<DWORD, BANK_INFO*>::iterator itrBank;
 	map<DWORD, BANK_WORK_INFO*>::iterator itrNG;
 
@@ -1804,13 +1809,13 @@ void CReserveManager::_ReloadBankMapAlgo0()
 			itrBank = this->bankMap.find(tunerID);
 			if( itrBank != this->bankMap.end() ){
 				BANK_WORK_INFO* item = new BANK_WORK_INFO;
-				CreateWorkData(itrSortInfo->second, item, this->backPriorityFlag, reserveCount, reserveNum);
+				CreateWorkData(itrSortInfo->second, item, backPriority, reserveCount, reserveNum, noTuner);
 				itrBank->second->reserveList.insert(pair<DWORD, BANK_WORK_INFO*>(item->reserveID,item));
 			}
 		}else{
 			//まだ録画処理されていないのでソートに追加
 			BANK_WORK_INFO* item = new BANK_WORK_INFO;
-			CreateWorkData(itrSortInfo->second, item, this->backPriorityFlag, reserveCount, reserveNum);
+			CreateWorkData(itrSortInfo->second, item, backPriority, reserveCount, reserveNum, noTuner);
 			sortReserveMap.insert(pair<wstring, BANK_WORK_INFO*>(item->sortKey, item));
 		}
 		reserveCount++;
@@ -1819,12 +1824,16 @@ void CReserveManager::_ReloadBankMapAlgo0()
 	Sleep(0);
 
 	//予約の割り振り
-	multimap<wstring, BANK_WORK_INFO*> tempMap;
-	multimap<wstring, BANK_WORK_INFO*> tempNGMap;
+	multimap<wstring, BANK_WORK_INFO*> tempNGMap1Pass;
+	multimap<wstring, BANK_WORK_INFO*> tempMap2Pass;
+	multimap<wstring, BANK_WORK_INFO*> tempNGMap2Pass;
 	multimap<wstring, BANK_WORK_INFO*>::iterator itrSort;
-	for( itrSort = sortReserveMap.begin(); itrSort !=  sortReserveMap.end(); itrSort++ ){
+
+	//2Pass
+	multimap<wstring, BANK_WORK_INFO*>& targetMap = do2Pass ? tempNGMap1Pass : sortReserveMap;
+	for( itrSort = targetMap.begin(); itrSort !=  targetMap.end(); itrSort++ ){
 		BOOL insert = FALSE;
-		if( itrSort->second->useTunerID == 0 ){
+		if( ignoreUseTunerID || itrSort->second->useTunerID == 0 ){
 			//チューナー優先度より同一物理チャンネルで連続となるチューナーの使用を優先する
 			if( this->sameChPriorityFlag == TRUE ){
 				for( itrBank = this->bankMap.begin(); itrBank != this->bankMap.end(); itrBank++){
@@ -1850,7 +1859,7 @@ void CReserveManager::_ReloadBankMapAlgo0()
 						//仮追加
 						itrBank->second->reserveList.insert(pair<DWORD, BANK_WORK_INFO*>(itrSort->second->reserveID,itrSort->second));
 						itrSort->second->preTunerID = itrBank->first;
-						tempMap.insert(pair<wstring, BANK_WORK_INFO*>(itrSort->first, itrSort->second));
+						tempMap2Pass.insert(pair<wstring, BANK_WORK_INFO*>(itrSort->first, itrSort->second));
 						insert = TRUE;
 						break;
 					}
@@ -1859,7 +1868,7 @@ void CReserveManager::_ReloadBankMapAlgo0()
 		}else{
 			//チューナー固定
 			if( this->tunerManager.IsSupportService(itrSort->second->useTunerID, itrSort->second->ONID, itrSort->second->TSID, itrSort->second->SID) == TRUE ){
-				if( itrSort->second->reserveInfo->IsNGTuner(itrSort->second->useTunerID) == FALSE ){
+				if( do2Pass || itrSort->second->reserveInfo->IsNGTuner(itrSort->second->useTunerID) == FALSE ){
 					map<DWORD, BANK_INFO*>::iterator itrManual;
 					itrManual = this->bankMap.find(itrSort->second->useTunerID);
 					if( itrManual != this->bankMap.end() ){
@@ -1874,14 +1883,14 @@ void CReserveManager::_ReloadBankMapAlgo0()
 			itrSort->second->reserveInfo->SetOverlapMode(2);
 			this->NGReserveMap.insert(pair<DWORD, BANK_WORK_INFO*>(itrSort->second->reserveID, itrSort->second));
 
-			tempNGMap.insert(pair<wstring, BANK_WORK_INFO*>(itrSort->first, itrSort->second));
+			tempNGMap2Pass.insert(pair<wstring, BANK_WORK_INFO*>(itrSort->first, itrSort->second));
 		}
 	}
 
 	Sleep(0);
 
 	//開始終了重なっている予約で、他のチューナーに回せるやつあるかチェック
-	for( itrSort = tempMap.begin(); itrSort !=  tempMap.end(); itrSort++ ){
+	for( itrSort = tempMap2Pass.begin(); itrSort !=  tempMap2Pass.end(); itrSort++ ){
 		BOOL insert = FALSE;
 		for( itrBank = this->bankMap.begin(); itrBank != this->bankMap.end(); itrBank++){
 			if( itrBank->second->tunerID == itrSort->second->preTunerID ){
@@ -1917,8 +1926,8 @@ void CReserveManager::_ReloadBankMapAlgo0()
 
 	multimap<wstring, BANK_WORK_INFO*>::iterator itrSortNG;
 	//NGでチューナー入れ替えで録画できるものあるかチェック
-	itrSortNG = tempNGMap.begin();
-	while(itrSortNG != tempNGMap.end() ){
+	itrSortNG = tempNGMap2Pass.begin();
+	while(itrSortNG != tempNGMap2Pass.end() ){
 		if( itrSortNG->second->useTunerID != 0 ){
 			//チューナー固定でNGになっているのは無視
 			itrSortNG++;
@@ -1931,7 +1940,7 @@ void CReserveManager::_ReloadBankMapAlgo0()
 			if( itrNG != this->NGReserveMap.end() ){
 				this->NGReserveMap.erase(itrNG);
 			}
-			tempNGMap.erase(itrSortNG++);
+			tempNGMap2Pass.erase(itrSortNG++);
 		}else{
 			itrSortNG++;
 		}
@@ -1952,7 +1961,7 @@ void CReserveManager::_ReloadBankMapAlgo0()
 	}*/
 
 	//NGで少しでも録画できるかチェック
-	for( itrSortNG = tempNGMap.begin(); itrSortNG != tempNGMap.end(); itrSortNG++){
+	for( itrSortNG = tempNGMap2Pass.begin(); itrSortNG != tempNGMap2Pass.end(); itrSortNG++){
 
 		if( itrSortNG->second->useTunerID != 0 ){
 			//チューナー固定でNGになっているのは無視
@@ -1990,6 +1999,11 @@ void CReserveManager::_ReloadBankMapAlgo0()
 
 void CReserveManager::_ReloadBankMapAlgo1()
 {
+	BOOL do2Pass = TRUE;
+	BOOL ignoreUseTunerID = FALSE;
+	BOOL backPriority = this->backPriorityFlag;
+	BOOL noTuner = FALSE;
+
 	map<DWORD, BANK_INFO*>::iterator itrBank;
 	map<DWORD, BANK_WORK_INFO*>::iterator itrNG;
 
@@ -2019,13 +2033,13 @@ void CReserveManager::_ReloadBankMapAlgo1()
 			itrBank = this->bankMap.find(tunerID);
 			if( itrBank != this->bankMap.end() ){
 				BANK_WORK_INFO* item = new BANK_WORK_INFO;
-				CreateWorkData(itrSortInfo->second, item, this->backPriorityFlag, reserveCount, reserveNum);
+				CreateWorkData(itrSortInfo->second, item, backPriority, reserveCount, reserveNum, noTuner);
 				itrBank->second->reserveList.insert(pair<DWORD, BANK_WORK_INFO*>(item->reserveID,item));
 			}
 		}else{
 			//まだ録画処理されていないのでソートに追加
 			BANK_WORK_INFO* item = new BANK_WORK_INFO;
-			CreateWorkData(itrSortInfo->second, item, this->backPriorityFlag, reserveCount, reserveNum);
+			CreateWorkData(itrSortInfo->second, item, backPriority, reserveCount, reserveNum, noTuner);
 			sortReserveMap.insert(pair<wstring, BANK_WORK_INFO*>(item->sortKey, item));
 		}
 		reserveCount++;
@@ -2038,9 +2052,9 @@ void CReserveManager::_ReloadBankMapAlgo1()
 	multimap<wstring, BANK_WORK_INFO*> tempMap2Pass;
 	multimap<wstring, BANK_WORK_INFO*> tempNGMap2Pass;
 	multimap<wstring, BANK_WORK_INFO*>::iterator itrSort;
-	for( itrSort = sortReserveMap.begin(); itrSort !=  sortReserveMap.end(); itrSort++ ){
+	for( itrSort = do2Pass ? sortReserveMap.begin() : sortReserveMap.end(); itrSort !=  sortReserveMap.end(); itrSort++ ){
 		BOOL insert = FALSE;
-		if( itrSort->second->useTunerID == 0 ){
+		if( ignoreUseTunerID || itrSort->second->useTunerID == 0 ){
 			//チューナー優先度より同一物理チャンネルで連続となるチューナーの使用を優先する
 			if( this->sameChPriorityFlag == TRUE ){
 				for( itrBank = this->bankMap.begin(); itrBank != this->bankMap.end(); itrBank++){
@@ -2084,9 +2098,10 @@ void CReserveManager::_ReloadBankMapAlgo1()
 	}
 
 	//2Pass
-	for( itrSort = tempNGMap1Pass.begin(); itrSort !=  tempNGMap1Pass.end(); itrSort++ ){
+	multimap<wstring, BANK_WORK_INFO*>& targetMap = do2Pass ? tempNGMap1Pass : sortReserveMap;
+	for( itrSort = targetMap.begin(); itrSort !=  targetMap.end(); itrSort++ ){
 		BOOL insert = FALSE;
-		if( itrSort->second->useTunerID == 0 ){
+		if( ignoreUseTunerID || itrSort->second->useTunerID == 0 ){
 			//チューナー優先度より同一物理チャンネルで連続となるチューナーの使用を優先する
 			if( this->sameChPriorityFlag == TRUE ){
 				for( itrBank = this->bankMap.begin(); itrBank != this->bankMap.end(); itrBank++){
@@ -2121,11 +2136,13 @@ void CReserveManager::_ReloadBankMapAlgo1()
 		}else{
 			//チューナー固定
 			if( this->tunerManager.IsSupportService(itrSort->second->useTunerID, itrSort->second->ONID, itrSort->second->TSID, itrSort->second->SID) == TRUE ){
+				if( do2Pass || itrSort->second->reserveInfo->IsNGTuner(itrSort->second->useTunerID) == FALSE ){
 				map<DWORD, BANK_INFO*>::iterator itrManual;
 				itrManual = this->bankMap.find(itrSort->second->useTunerID);
 				if( itrManual != this->bankMap.end() ){
 					itrManual->second->reserveList.insert(pair<DWORD, BANK_WORK_INFO*>(itrSort->second->reserveID,itrSort->second));
 					insert = TRUE;
+				}
 				}
 			}
 		}
@@ -2235,6 +2252,11 @@ void CReserveManager::_ReloadBankMapAlgo1()
 
 void CReserveManager::_ReloadBankMapAlgo2()
 {
+	BOOL do2Pass = TRUE;
+	BOOL ignoreUseTunerID = TRUE;
+	BOOL backPriority = this->backPriorityFlag;
+	BOOL noTuner = TRUE;
+
 	map<DWORD, BANK_INFO*>::iterator itrBank;
 	map<DWORD, BANK_WORK_INFO*>::iterator itrNG;
 
@@ -2264,13 +2286,13 @@ void CReserveManager::_ReloadBankMapAlgo2()
 			itrBank = this->bankMap.find(tunerID);
 			if( itrBank != this->bankMap.end() ){
 				BANK_WORK_INFO* item = new BANK_WORK_INFO;
-				CreateWorkData(itrSortInfo->second, item, this->backPriorityFlag, reserveCount, reserveNum, TRUE);
+				CreateWorkData(itrSortInfo->second, item, backPriority, reserveCount, reserveNum, noTuner);
 				itrBank->second->reserveList.insert(pair<DWORD, BANK_WORK_INFO*>(item->reserveID,item));
 			}
 		}else{
 			//まだ録画処理されていないのでソートに追加
 			BANK_WORK_INFO* item = new BANK_WORK_INFO;
-			CreateWorkData(itrSortInfo->second, item, this->backPriorityFlag, reserveCount, reserveNum, TRUE);
+			CreateWorkData(itrSortInfo->second, item, backPriority, reserveCount, reserveNum, noTuner);
 			sortReserveMap.insert(pair<wstring, BANK_WORK_INFO*>(item->sortKey, item));
 		}
 		reserveCount++;
@@ -2283,8 +2305,9 @@ void CReserveManager::_ReloadBankMapAlgo2()
 	multimap<wstring, BANK_WORK_INFO*> tempMap2Pass;
 	multimap<wstring, BANK_WORK_INFO*> tempNGMap2Pass;
 	multimap<wstring, BANK_WORK_INFO*>::iterator itrSort;
-	for( itrSort = sortReserveMap.begin(); itrSort !=  sortReserveMap.end(); itrSort++ ){
+	for( itrSort = do2Pass ? sortReserveMap.begin() : sortReserveMap.end(); itrSort !=  sortReserveMap.end(); itrSort++ ){
 		BOOL insert = FALSE;
+		if( ignoreUseTunerID || itrSort->second->useTunerID == 0 ){
 		//チューナー優先度より同一物理チャンネルで連続となるチューナーの使用を優先する
 		if( this->sameChPriorityFlag == TRUE ){
 			for( itrBank = this->bankMap.begin(); itrBank != this->bankMap.end(); itrBank++){
@@ -2308,7 +2331,7 @@ void CReserveManager::_ReloadBankMapAlgo2()
 				}
 			}
 		}
-
+		}
 		if( insert == FALSE ){
 			//追加できなかった
 			tempNGMap1Pass.insert(pair<wstring, BANK_WORK_INFO*>(itrSort->first, itrSort->second));
@@ -2316,8 +2339,11 @@ void CReserveManager::_ReloadBankMapAlgo2()
 	}
 
 	//2Pass
-	for( itrSort = tempNGMap1Pass.begin(); itrSort !=  tempNGMap1Pass.end(); itrSort++ ){
+	multimap<wstring, BANK_WORK_INFO*>& targetMap = do2Pass ? tempNGMap1Pass : sortReserveMap;
+	for( ; itrSort != itrEnd; itrSort++ ){
+	for( itrSort = targetMap.begin(); itrSort !=  targetMap.end(); itrSort++ ){
 		BOOL insert = FALSE;
+		if( ignoreUseTunerID || itrSort->second->useTunerID == 0 ){
 		//チューナー優先度より同一物理チャンネルで連続となるチューナーの使用を優先する
 		if( this->sameChPriorityFlag == TRUE ){
 			for( itrBank = this->bankMap.begin(); itrBank != this->bankMap.end(); itrBank++){
@@ -2348,6 +2374,7 @@ void CReserveManager::_ReloadBankMapAlgo2()
 					break;
 				}
 			}
+		}
 		}
 		if( insert == FALSE ){
 			//追加できなかった
@@ -2455,6 +2482,11 @@ void CReserveManager::_ReloadBankMapAlgo2()
 
 void CReserveManager::_ReloadBankMapAlgo3()
 {
+	BOOL do2Pass = TRUE;
+	BOOL ignoreUseTunerID = TRUE;
+	BOOL backPriority = FALSE;
+	BOOL noTuner = TRUE;
+
 	map<DWORD, BANK_INFO*>::iterator itrBank;
 	map<DWORD, BANK_WORK_INFO*>::iterator itrNG;
 
@@ -2484,13 +2516,13 @@ void CReserveManager::_ReloadBankMapAlgo3()
 			itrBank = this->bankMap.find(tunerID);
 			if( itrBank != this->bankMap.end() ){
 				BANK_WORK_INFO* item = new BANK_WORK_INFO;
-				CreateWorkData(itrSortInfo->second, item, FALSE, reserveCount, reserveNum, TRUE);
+				CreateWorkData(itrSortInfo->second, item, backPriority, reserveCount, reserveNum, noTuner);
 				itrBank->second->reserveList.insert(pair<DWORD, BANK_WORK_INFO*>(item->reserveID,item));
 			}
 		}else{
 			//まだ録画処理されていないのでソートに追加
 			BANK_WORK_INFO* item = new BANK_WORK_INFO;
-			CreateWorkData(itrSortInfo->second, item, FALSE, reserveCount, reserveNum, TRUE);
+			CreateWorkData(itrSortInfo->second, item, backPriority, reserveCount, reserveNum, noTuner);
 			sortReserveMap.insert(pair<wstring, BANK_WORK_INFO*>(item->sortKey, item));
 		}
 		reserveCount++;
@@ -2503,8 +2535,9 @@ void CReserveManager::_ReloadBankMapAlgo3()
 	multimap<wstring, BANK_WORK_INFO*> tempMap2Pass;
 	multimap<wstring, BANK_WORK_INFO*> tempNGMap2Pass;
 	multimap<wstring, BANK_WORK_INFO*>::iterator itrSort;
-	for( itrSort = sortReserveMap.begin(); itrSort !=  sortReserveMap.end(); itrSort++ ){
+	for( itrSort = do2Pass ? sortReserveMap.begin() : sortReserveMap.end(); itrSort !=  sortReserveMap.end(); itrSort++ ){
 		BOOL insert = FALSE;
+		if( ignoreUseTunerID || itrSort->second->useTunerID == 0 ){
 		//チューナー優先度より同一物理チャンネルで連続となるチューナーの使用を優先する
 		if( this->sameChPriorityFlag == TRUE ){
 			for( itrBank = this->bankMap.begin(); itrBank != this->bankMap.end(); itrBank++){
@@ -2528,7 +2561,7 @@ void CReserveManager::_ReloadBankMapAlgo3()
 				}
 			}
 		}
-
+		}
 		if( insert == FALSE ){
 			//追加できなかった
 			tempNGMap1Pass.insert(pair<wstring, BANK_WORK_INFO*>(itrSort->first, itrSort->second));
@@ -2536,8 +2569,10 @@ void CReserveManager::_ReloadBankMapAlgo3()
 	}
 
 	//2Pass
-	for( itrSort = tempNGMap1Pass.begin(); itrSort !=  tempNGMap1Pass.end(); itrSort++ ){
+	multimap<wstring, BANK_WORK_INFO*>& targetMap = do2Pass ? tempNGMap1Pass : sortReserveMap;
+	for( itrSort = targetMap.begin(); itrSort !=  targetMap.end(); itrSort++ ){
 		BOOL insert = FALSE;
+		if( ignoreUseTunerID || itrSort->second->useTunerID == 0 ){
 		//チューナー優先度より同一物理チャンネルで連続となるチューナーの使用を優先する
 		if( this->sameChPriorityFlag == TRUE ){
 			for( itrBank = this->bankMap.begin(); itrBank != this->bankMap.end(); itrBank++){
@@ -2568,6 +2603,7 @@ void CReserveManager::_ReloadBankMapAlgo3()
 					break;
 				}
 			}
+		}
 		}
 		if( insert == FALSE ){
 			//追加できなかった
@@ -2937,17 +2973,22 @@ void CReserveManager::CreateWorkData(CReserveInfo* reserveInfo, BANK_WORK_INFO* 
 
 DWORD CReserveManager::ChkInsertSameChStatus(BANK_INFO* bank, BANK_WORK_INFO* inItem)
 {
+	BOOL reCheck = FALSE;
+	BOOL mustOverlap = TRUE;
+
 	if( bank == NULL || inItem == NULL ){
 		return 0;
 	}
 	if( inItem->reserveInfo->IsNGTuner(bank->tunerID) == TRUE ){
 		return 0;
 	}
-	DWORD status = 0;
+	DWORD status = mustOverlap ? 0 : 1;
 	map<DWORD, BANK_WORK_INFO*>::iterator itrBank;
 	for( itrBank = bank->reserveList.begin(); itrBank != bank->reserveList.end(); itrBank++ ){
+		if( !reCheck || itrBank->second->reserveID != inItem->reserveID ){
 		if( itrBank->second->chID == inItem->chID ){
 			//同一チャンネル
+			if( mustOverlap ){
 			if(( itrBank->second->startTime <= inItem->startTime && inItem->startTime <= itrBank->second->endTime ) ||
 				( itrBank->second->startTime <= inItem->endTime && inItem->endTime <= itrBank->second->endTime ) ||
 				( inItem->startTime <= itrBank->second->startTime && itrBank->second->startTime <= inItem->endTime ) ||
@@ -2956,13 +2997,15 @@ DWORD CReserveManager::ChkInsertSameChStatus(BANK_INFO* bank, BANK_WORK_INFO* in
 					//開始時間か終了時間が重なっている
 					status = 1;
 			}
-			
+			}
 		}else{
 			//別チャンネルで開始時間と終了時間が重なっていないかチェック
 			if( itrBank->second->startTime == inItem->endTime || itrBank->second->endTime == inItem->startTime ){
 				//連続予約の可能性あり
 				status = 2;
-				break;
+				if( mustOverlap ){
+					break;
+				}
 			}else if(( itrBank->second->startTime <= inItem->startTime && inItem->startTime <= itrBank->second->endTime ) ||
 				( itrBank->second->startTime <= inItem->endTime && inItem->endTime <= itrBank->second->endTime ) ||
 				( inItem->startTime <= itrBank->second->startTime && itrBank->second->startTime <= inItem->endTime ) ||
@@ -2973,6 +3016,7 @@ DWORD CReserveManager::ChkInsertSameChStatus(BANK_INFO* bank, BANK_WORK_INFO* in
 					break;
 			}
 		}
+		}
 	}
 
 	return status;
@@ -2980,15 +3024,19 @@ DWORD CReserveManager::ChkInsertSameChStatus(BANK_INFO* bank, BANK_WORK_INFO* in
 
 DWORD CReserveManager::ChkInsertStatus(BANK_INFO* bank, BANK_WORK_INFO* inItem)
 {
+	BOOL reCheck = FALSE;
+	BOOL mustOverlap = FALSE;
+
 	if( bank == NULL || inItem == NULL ){
 		return 0;
 	}
 	if( inItem->reserveInfo->IsNGTuner(bank->tunerID) == TRUE ){
 		return 0;
 	}
-	DWORD status = 1;
+	DWORD status = mustOverlap ? 0 : 1;
 	map<DWORD, BANK_WORK_INFO*>::iterator itrBank;
 	for( itrBank = bank->reserveList.begin(); itrBank != bank->reserveList.end(); itrBank++ ){
+		if( !reCheck || itrBank->second->reserveID != inItem->reserveID ){
 		if( itrBank->second->chID == inItem->chID ){
 			//同一チャンネルなのでOK
 			continue;
@@ -3007,6 +3055,7 @@ DWORD CReserveManager::ChkInsertStatus(BANK_INFO* bank, BANK_WORK_INFO* inItem)
 				status = 0;
 				break;
 		}
+		}
 	}
 
 	return status;
@@ -3014,16 +3063,19 @@ DWORD CReserveManager::ChkInsertStatus(BANK_INFO* bank, BANK_WORK_INFO* inItem)
 
 DWORD CReserveManager::ReChkInsertStatus(BANK_INFO* bank, BANK_WORK_INFO* inItem)
 {
+	BOOL reCheck = TRUE;
+	BOOL mustOverlap = FALSE;
+
 	if( bank == NULL || inItem == NULL ){
 		return 0;
 	}
 	if( inItem->reserveInfo->IsNGTuner(bank->tunerID) == TRUE ){
 		return 0;
 	}
-	DWORD status = 1;
+	DWORD status = mustOverlap ? 0 : 1;
 	map<DWORD, BANK_WORK_INFO*>::iterator itrBank;
 	for( itrBank = bank->reserveList.begin(); itrBank != bank->reserveList.end(); itrBank++ ){
-		if( itrBank->second->reserveID != inItem->reserveID ){
+		if( !reCheck || itrBank->second->reserveID != inItem->reserveID ){
 			if( itrBank->second->chID == inItem->chID ){
 				//同一チャンネルなのでOK
 				continue;
