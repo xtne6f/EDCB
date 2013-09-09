@@ -280,7 +280,7 @@ void CTunerBankCtrl::ChgReserve(
 
 		LONGLONG stratTime = ConvertI64Time(reserve->startTime);
 		if( reserve->recSetting.useMargineFlag == TRUE ){
-			stratTime -= ((LONGLONG)reserve->recSetting.useMargineFlag) * I64_1SEC;
+			stratTime -= ((LONGLONG)reserve->recSetting.startMargine) * I64_1SEC;
 		}else{
 			stratTime -= this->defStartMargine;
 		}

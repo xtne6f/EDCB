@@ -2878,10 +2878,10 @@ void CReserveManager::CheckBatWork()
 					LONGLONG startTime = ConvertI64Time(itr->second->startTime);
 					LONGLONG endTime = GetSumTime(itr->second->startTime, itr->second->durationSecond);
 					if( itr->second->recSetting.useMargineFlag == 1 ){
-						startTime += ((LONGLONG)itr->second->recSetting.startMargine)*I64_1SEC;
+						startTime -= ((LONGLONG)itr->second->recSetting.startMargine)*I64_1SEC;
 						endTime += ((LONGLONG)itr->second->recSetting.endMargine)*I64_1SEC;
 					}else{
-						startTime += ((LONGLONG)this->defStartMargine)*I64_1SEC;
+						startTime -= ((LONGLONG)this->defStartMargine)*I64_1SEC;
 						endTime += ((LONGLONG)this->defEndMargine)*I64_1SEC;
 					}
 
@@ -3197,7 +3197,7 @@ void CReserveManager::CheckTuijyu()
 										LONGLONG endTime = GetSumTime(data.startTime, data.durationSecond);
 										if( data.recSetting.useMargineFlag == 1 ){
 											if( data.recSetting.endMargine < 0 ){
-												endTime -= ((LONGLONG)data.recSetting.endMargine)*I64_1SEC;
+												endTime += ((LONGLONG)data.recSetting.endMargine)*I64_1SEC;
 											}
 										}
 										if( nowTime + 2*60*I64_1SEC > endTime ){
@@ -3997,10 +3997,10 @@ BOOL CReserveManager::_IsSuspendOK(BOOL rebootFlag)
 				}
 				LONGLONG endTime = GetSumTime(data.startTime, sec);
 				if( data.recSetting.useMargineFlag == 1 ){
-					startTime += ((LONGLONG)data.recSetting.startMargine)*I64_1SEC;
+					startTime -= ((LONGLONG)data.recSetting.startMargine)*I64_1SEC;
 					endTime += ((LONGLONG)data.recSetting.endMargine)*I64_1SEC;
 				}else{
-					startTime += ((LONGLONG)this->defStartMargine)*I64_1SEC;
+					startTime -= ((LONGLONG)this->defStartMargine)*I64_1SEC;
 					endTime += ((LONGLONG)this->defEndMargine)*I64_1SEC;
 				}
 
