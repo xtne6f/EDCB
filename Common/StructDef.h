@@ -117,6 +117,7 @@ typedef struct _RESERVE_DATA{
 		ZeroMemory(&startTimeEpg, sizeof(SYSTEMTIME));
 		recFilePath = L"";
 		reserveStatus = 0;
+		param1 = 0;
 	};
 	~_RESERVE_DATA(void){
 	}
@@ -137,6 +138,8 @@ typedef struct _RESERVE_DATA{
 		startTimeEpg = o.startTimeEpg;
 		recSetting  = o.recSetting;
 		reserveStatus = o.reserveStatus;
+		recFileNameList = o.recFileNameList;
+		param1 = o.param1;
 		return *this;
 	};
 } RESERVE_DATA;
