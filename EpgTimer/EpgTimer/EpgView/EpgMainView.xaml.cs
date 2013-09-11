@@ -1521,7 +1521,7 @@ namespace EpgTimer
                                 //viewItem.TopPos = Math.Floor((startTime - topTime.Time).TotalMinutes * Settings.Instance.MinHeight);
 
                                 viewItem.Height = Math.Floor((duration / 60) * Settings.Instance.MinHeight);
-                                if (viewItem.Height == 0)
+                                if (viewItem.Height < Settings.Instance.MinHeight)
                                 {
                                     viewItem.Height = Settings.Instance.MinHeight;
                                 }
