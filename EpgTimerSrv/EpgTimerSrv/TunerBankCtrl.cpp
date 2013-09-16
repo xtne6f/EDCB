@@ -1119,25 +1119,11 @@ BOOL CTunerBankCtrl::CheckOtherChCreate(LONGLONG nowTime, RESERVE_WORK* reserve)
 		map<DWORD, RESERVE_WORK*>::iterator itr;
 		for( itr = this->createCtrlList.begin(); itr != this->createCtrlList.end(); itr++ ){
 			LONGLONG chkEndTime = itr->second->endTime;
-			if( reserve->endMargine < 0 ){
-				chkEndTime += reserve->endMargine;
+			if( itr->second->endMargine < 0 ){
+				chkEndTime += itr->second->endMargine;
 			}
-			if( chkEndTime == chkStartTime ){
-				//開始と終了が同じ
-				if( itr->second->priority < reserve->priority ||
-					(itr->second->priority == reserve->priority && this->backPriority == TRUE )){
-						//後が優先なので終了15秒前に停止させる
-						if( chgTimeHPriority > chkEndTime - 15*I64_1SEC || chgTimeHPriority == 0 ){
-							chgTimeHPriority = chkEndTime - 15*I64_1SEC;
-						}
-				}else{
-					//前の録画優先なので終わりまで待つ
-					if( chgTimeLPriority < chkEndTime || chgTimeLPriority == 0 ){
-						chgTimeLPriority = chkEndTime;
-					}
-				}
-			}else if( chkEndTime > chkStartTime ){
-				//開始と終了が違う
+			if( chkEndTime + 15*I64_1SEC >= chkStartTime ){
+				//このコントロールの終了はreserveの録画開始と重なる
 				if( itr->second->priority < reserve->priority ||
 					(itr->second->priority == reserve->priority && this->backPriority == TRUE )){
 					//後ろ優先なので開始15秒前に停止させる
@@ -1146,8 +1132,8 @@ BOOL CTunerBankCtrl::CheckOtherChCreate(LONGLONG nowTime, RESERVE_WORK* reserve)
 					}
 				}else{
 					//前の録画優先なので終わりまで待つ
-					if( chgTimeLPriority < itr->second->endTime + reserve->endMargine || chgTimeLPriority == 0 ){
-						chgTimeLPriority = itr->second->endTime + reserve->endMargine;
+					if( chgTimeLPriority < itr->second->endTime + itr->second->endMargine || chgTimeLPriority == 0 ){
+						chgTimeLPriority = itr->second->endTime + itr->second->endMargine;
 					}
 				}
 			}
