@@ -279,11 +279,15 @@ void CTunerBankCtrl::ChgReserve(
 		itr->second->reserveInfo->SetData(reserve);
 
 		LONGLONG stratTime = ConvertI64Time(reserve->startTime);
+		LONGLONG endTime = stratTime + reserve->durationSecond * I64_1SEC;
+		LONGLONG startMargin;
 		if( reserve->recSetting.useMargineFlag == TRUE ){
-			stratTime -= ((LONGLONG)reserve->recSetting.startMargine) * I64_1SEC;
+			startMargin = ((LONGLONG)reserve->recSetting.startMargine) * I64_1SEC;
 		}else{
-			stratTime -= this->defStartMargine;
+			startMargin = this->defStartMargine;
 		}
+		//開始マージンは元の予約終了時刻を超えて負であってはならない
+		stratTime -= max(startMargin, stratTime - endTime);
 
 		if( GetNowI64Time() < stratTime ){
 			//開始時間遅くなったのでコントロール削除の必要あり
@@ -629,7 +633,7 @@ void CTunerBankCtrl::GetCheckList(multimap<LONGLONG, RESERVE_WORK*>* sortList)
 		itr->second->TSID = data.transportStreamID;
 		itr->second->SID = data.serviceID;
 
-		LONGLONG sortKey = itr->second->stratTime - itr->second->startMargine;
+		LONGLONG sortKey = itr->second->stratTime - max(itr->second->startMargine, itr->second->stratTime - itr->second->endTime);
 
 		sortList->insert(pair<LONGLONG, RESERVE_WORK*>(sortKey, itr->second));
 	}
@@ -649,7 +653,7 @@ BOOL CTunerBankCtrl::IsNeedOpenTuner(multimap<LONGLONG, RESERVE_WORK*>* sortList
 	BOOL ret = FALSE;
 	multimap<LONGLONG, RESERVE_WORK*>::iterator itr;
 	itr = sortList->begin();
-	if( itr->second->stratTime - this->recWakeTime - itr->second->startMargine < nowTime ){
+	if( itr->second->stratTime - this->recWakeTime - max(itr->second->startMargine, itr->second->stratTime - itr->second->endTime) < nowTime ){
 		ret =  TRUE;
 		BYTE recMode=0;
 		itr->second->reserveInfo->GetRecMode(&recMode);
@@ -930,7 +934,7 @@ void CTunerBankCtrl::CreateCtrl(multimap<LONGLONG, RESERVE_WORK*>* sortList, LON
 	for( itr = sortList->begin(); itr != sortList->end(); itr++ ){
 		if( itr->second->ctrlID.size() == 0 ){
 			//録画開始１分前になったらコントロール作成
-			LONGLONG chkStartTime = itr->second->stratTime - (60*I64_1SEC) - itr->second->startMargine;
+			LONGLONG chkStartTime = itr->second->stratTime - (60*I64_1SEC) - max(itr->second->startMargine, itr->second->stratTime - itr->second->endTime);
 
 			if( chkStartTime < nowTime ){
 				BOOL createFlag = FALSE;
@@ -1108,9 +1112,7 @@ BOOL CTunerBankCtrl::CheckOtherChCreate(LONGLONG nowTime, RESERVE_WORK* reserve)
 	BOOL createFlag = FALSE;
 
 	LONGLONG chkStartTime = reserve->stratTime;
-	if( reserve->startMargine < 0 ){
-		chkStartTime -= reserve->startMargine;
-	}
+	chkStartTime -= max(reserve->startMargine, reserve->stratTime - reserve->endTime);
 
 	LONGLONG chgTimeHPriority = 0;
 	LONGLONG chgTimeLPriority = 0;
@@ -1119,9 +1121,7 @@ BOOL CTunerBankCtrl::CheckOtherChCreate(LONGLONG nowTime, RESERVE_WORK* reserve)
 		map<DWORD, RESERVE_WORK*>::iterator itr;
 		for( itr = this->createCtrlList.begin(); itr != this->createCtrlList.end(); itr++ ){
 			LONGLONG chkEndTime = itr->second->endTime;
-			if( itr->second->endMargine < 0 ){
-				chkEndTime += itr->second->endMargine;
-			}
+			chkEndTime += max(itr->second->endMargine, itr->second->stratTime - min(itr->second->startMargine, 0) - itr->second->endTime);
 			if( chkEndTime + 15*I64_1SEC >= chkStartTime ){
 				//このコントロールの終了はreserveの録画開始と重なる
 				if( itr->second->priority < reserve->priority ||
@@ -1132,8 +1132,8 @@ BOOL CTunerBankCtrl::CheckOtherChCreate(LONGLONG nowTime, RESERVE_WORK* reserve)
 					}
 				}else{
 					//前の録画優先なので終わりまで待つ
-					if( chgTimeLPriority < itr->second->endTime + itr->second->endMargine || chgTimeLPriority == 0 ){
-						chgTimeLPriority = itr->second->endTime + itr->second->endMargine;
+					if( chgTimeLPriority < chkEndTime || chgTimeLPriority == 0 ){
+						chgTimeLPriority = chkEndTime;
 					}
 				}
 			}
@@ -1218,8 +1218,8 @@ void CTunerBankCtrl::CheckRec(LONGLONG delay, BOOL* needShortCheck, DWORD wait)
 		RESERVE_DATA data;
 		itr->second->reserveInfo->GetData(&data);
 
-		LONGLONG chkStartTime = 0;
-		LONGLONG chkEndTime = 0;
+		LONGLONG chkStartTime = ConvertI64Time(data.startTime);
+		LONGLONG chkEndTime = chkStartTime + data.durationSecond * I64_1SEC;
 
 		LONGLONG startMargine = 0;
 		LONGLONG endMargine = 0;
@@ -1231,8 +1231,10 @@ void CTunerBankCtrl::CheckRec(LONGLONG delay, BOOL* needShortCheck, DWORD wait)
 			endMargine = this->defEndMargine;
 		}
 
-		chkStartTime = ConvertI64Time(data.startTime) - startMargine - I64_1SEC;
-		chkEndTime = GetSumTime(data.startTime, data.durationSecond) + endMargine;
+		startMargine = max(startMargine, chkStartTime - chkEndTime);
+		endMargine = max(endMargine, chkStartTime - min(startMargine, 0) - chkEndTime);
+		chkStartTime -= startMargine + I64_1SEC;
+		chkEndTime += endMargine;
 
 		if( nowTime < chkStartTime ){
 			if( chkStartTime - 5*I64_1SEC < nowTime){
@@ -1973,7 +1975,7 @@ BOOL CTunerBankCtrl::IsEpgCapOK(LONGLONG ngCapMin)
 
 	multimap<LONGLONG, RESERVE_WORK*>::iterator itr;
 	itr = sortList.begin();
-	LONGLONG startTime = itr->second->stratTime - itr->second->startMargine;
+	LONGLONG startTime = itr->second->stratTime - max(itr->second->startMargine, itr->second->stratTime - itr->second->endTime);
 
 	if( startTime < GetNowI64Time() + (ngCapMin*60*I64_1SEC) ){
 		ret = FALSE;

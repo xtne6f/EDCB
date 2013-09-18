@@ -250,8 +250,8 @@ protected:
 
 	typedef struct _BANK_WORK_INFO{
 		CReserveInfo* reserveInfo;
-		LONGLONG startTime;//マイナス値マージン考慮した開始時間
-		LONGLONG endTime;//マイナス値マージン考慮した終了時間
+		LONGLONG startTime;//マージン考慮した開始時間
+		LONGLONG endTime;//マージン考慮した終了時間
 		BYTE priority;
 		BOOL recWaitFlag;
 		wstring sortKey;
@@ -357,6 +357,7 @@ protected:
 
 	void _ReloadBankMap();
 	void _ReloadBankMapAlgo(BOOL do2Pass, BOOL ignoreUseTunerID, BOOL backPriority, BOOL noTuner);
+	void CalcEntireReserveTime(LONGLONG* startTime, LONGLONG* endTime, const RESERVE_DATA& data);
 	void CheckOverTimeReserve();
 	void CreateWorkData(CReserveInfo* reserveInfo, BANK_WORK_INFO* workInfo, BOOL backPriority, DWORD reserveCount, DWORD reserveNum, BOOL noTuner = FALSE);
 	DWORD ChkInsertStatus(BANK_INFO* bank, BANK_WORK_INFO* inItem, BOOL reCheck = FALSE, BOOL mustOverlap = FALSE);
