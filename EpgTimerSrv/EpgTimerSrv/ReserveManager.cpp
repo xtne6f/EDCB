@@ -1780,6 +1780,7 @@ void CReserveManager::_ReloadBankMapAlgo(BOOL do2Pass, BOOL ignoreUseTunerID, BO
 	map<DWORD, CReserveInfo*>::iterator itrInfo;
 	multimap<wstring, BANK_WORK_INFO*> sortReserveMap;
 	for( itrInfo = this->reserveInfoMap.begin(); itrInfo != this->reserveInfoMap.end(); itrInfo++ ){
+		itrInfo->second->SetOverlapMode(0);
 		BYTE recMode = 0;
 		itrInfo->second->GetRecMode(&recMode);
 		if( recMode == RECMODE_NO ){
