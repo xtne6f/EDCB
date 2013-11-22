@@ -596,7 +596,7 @@ namespace EpgTimer
             for (int i = 0; i < tabControl_main.Items.Count; i++)
             {
                 TabItem ti = tabControl_main.Items.GetItemAt(i) as TabItem;
-                if (ti != null && ti.Tag is string && (string)ti.Tag == "PushLike")
+                if (ti != null && ti.Tag is string && ((string)ti.Tag).StartsWith("PushLike"))
                 {
                     tabControl_main.Items.Remove(ti);
                     i--;
@@ -628,8 +628,8 @@ namespace EpgTimer
                         {
                             //ボタン風のタブを追加する
                             TabItem ti = new TabItem();
-                            ti.Header = info;
-                            ti.Tag = "PushLike";
+                            ti.Header = buttonList[info].Content;
+                            ti.Tag = "PushLike" + info;
                             ti.Background = null;
                             ti.BorderBrush = null;
                             //タブ移動をキャンセルしつつ擬似的に対応するボタンを押す
@@ -637,7 +637,7 @@ namespace EpgTimer
                             {
                                 if (e.ChangedButton == MouseButton.Left)
                                 {
-                                    buttonList[(string)((TabItem)sender).Header].RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                                    buttonList[((string)((TabItem)sender).Tag).Substring(8)].RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                                     e.Handled = true;
                                 }
                             };
