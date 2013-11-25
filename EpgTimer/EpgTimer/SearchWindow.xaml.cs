@@ -698,9 +698,8 @@ namespace EpgTimer
                     else
                     {
                         this.Hide();
-                        BlackoutWindow.blinkSearchButton_Start(
-                            this,
-                            mainWindow1.getSearchButton(true));
+                        mainWindow1.EmphasizeSearchButton(true);
+                        BlackoutWindow.unvisibleSearchWindow = this;
                     }
                     mainWindow1.moveTo_tabItem_epg();
                     mainWindow1.Hide(); // EpgDataView.UserControl_IsVisibleChangedイベントを発生させる
@@ -714,9 +713,11 @@ namespace EpgTimer
             MainWindow mainWindow1 = this.Owner as MainWindow;
             if (this.IsVisible)
             {
-                BlackoutWindow.blinkSearchButton_Stop(
-                    this,
-                    mainWindow1.getSearchButton(false));
+                if (BlackoutWindow.unvisibleSearchWindow == this)
+                {
+                    mainWindow1.EmphasizeSearchButton(false);
+                    BlackoutWindow.unvisibleSearchWindow = null;
+                }
             }
         }
 

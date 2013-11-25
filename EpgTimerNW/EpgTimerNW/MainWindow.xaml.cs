@@ -1640,12 +1640,12 @@ namespace EpgTimer
             this.tabItem_epg.IsSelected = true;
         }
 
-        public Button getSearchButton(bool isShowButton0)
+        public void EmphasizeSearchButton(bool emphasize)
         {
             Button button1 = buttonList["検索"];
             if (Settings.Instance.ViewButtonList.Contains("検索") == false)
             {
-                if (isShowButton0)
+                if (emphasize)
                 {
                     stackPanel_button.Children.Add(button1);
                 }
@@ -1654,7 +1654,52 @@ namespace EpgTimer
                     stackPanel_button.Children.Remove(button1);
                 }
             }
-            return button1;
+
+            //検索ボタンを点滅させる
+            if (emphasize)
+            {
+                button1.Effect = new System.Windows.Media.Effects.DropShadowEffect();
+                var animation = new System.Windows.Media.Animation.DoubleAnimation
+                {
+                    From = 1.0,
+                    To = 0.7,
+                    RepeatBehavior = System.Windows.Media.Animation.RepeatBehavior.Forever,
+                    AutoReverse = true
+                };
+                button1.BeginAnimation(Button.OpacityProperty, animation);
+            }
+            else
+            {
+                button1.BeginAnimation(Button.OpacityProperty, null);
+                button1.Opacity = 1;
+                button1.Effect = null;
+            }
+
+            //もしあればタブとして表示のタブも点滅させる
+            foreach (var item in tabControl_main.Items)
+            {
+                TabItem ti = item as TabItem;
+                if (ti != null && ti.Tag is string && (string)ti.Tag == "PushLike検索")
+                {
+                    if (emphasize)
+                    {
+                        var animation = new System.Windows.Media.Animation.DoubleAnimation
+                        {
+                            From = 1.0,
+                            To = 0.1,
+                            RepeatBehavior = System.Windows.Media.Animation.RepeatBehavior.Forever,
+                            AutoReverse = true
+                        };
+                        ti.BeginAnimation(TabItem.OpacityProperty, animation);
+                    }
+                    else
+                    {
+                        ti.BeginAnimation(TabItem.OpacityProperty, null);
+                        ti.Opacity = 1;
+                    }
+                    break;
+                }
+            }
         }
 
     }
