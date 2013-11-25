@@ -38,7 +38,7 @@
                     <MenuItem Header="予約←→無効 (_R)" Click="MenuItem_Click_ChangeRecMode"  InputGestureText="BackSpace" />
                     <MenuItem Header="番組詳細 (_B)" Click="MenuItem_Click_ProgramDetail" />
                     <MenuItem  x:Name="MenuItem_Google" Header="番組名でググる (_G)" Click="MenuItem_Click_Google" InputGestureText="F2" />
-                    <MenuItem Header="番組表へジャンプ (_J)" Click="MenuItem_Click_ProgramTable"  InputGestureText="F3" IsVisibleChanged="MenuItem_ProgramTable_IsVisibleChanged" />
+                    <MenuItem Header="番組表へジャンプ (_J)" Click="MenuItem_Click_ProgramTable"  InputGestureText="F3" />
                 </ContextMenu>
                 <Style TargetType="ListViewItem">
                     <Setter Property="ToolTipService.ShowDuration" Value="20000" />

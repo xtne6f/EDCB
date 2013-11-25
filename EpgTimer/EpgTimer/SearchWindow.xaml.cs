@@ -690,10 +690,18 @@ namespace EpgTimer
                 MainWindow mainWindow1 = this.Owner as MainWindow;
                 if (mainWindow1 != null)
                 {
-                    base.Hide();
-                    BlackoutWindow.blinkSearchButton_Start(
-                        this,
-                        mainWindow1.getSearchButton(true));
+                    if (BlackoutWindow.unvisibleSearchWindow != null)
+                    {
+                        // 非表示で保存するSearchWindowを1つに限定するため
+                        this.Close();
+                    }
+                    else
+                    {
+                        this.Hide();
+                        BlackoutWindow.blinkSearchButton_Start(
+                            this,
+                            mainWindow1.getSearchButton(true));
+                    }
                     mainWindow1.moveTo_tabItem_epg();
                     mainWindow1.Hide(); // EpgDataView.UserControl_IsVisibleChangedイベントを発生させる
                     mainWindow1.Show();
@@ -709,22 +717,6 @@ namespace EpgTimer
                 BlackoutWindow.blinkSearchButton_Stop(
                     this,
                     mainWindow1.getSearchButton(false));
-            }
-        }
-
-        private void MenuItem_ProgramTable_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
-        {
-            MenuItem item1 = (MenuItem)sender;
-            if (item1.IsVisible)
-            {
-                if (BlackoutWindow.unvisibleSearchWindow != null)
-                {
-                    item1.IsEnabled = false;
-                }
-                else
-                {
-                    item1.IsEnabled = true;
-                }
             }
         }
 
