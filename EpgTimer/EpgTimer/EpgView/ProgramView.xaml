@@ -28,11 +28,16 @@
             <Canvas Name="canvas" HorizontalAlignment="Left" VerticalAlignment="Top">
                 <local:EpgViewPanel x:Name="epgViewPanel" Background="DarkGray" MouseMove="epgViewPanel_MouseMove" MouseLeftButtonDown="epgViewPanel_MouseLeftButtonDown" MouseLeftButtonUp="epgViewPanel_MouseLeftButtonUp" HorizontalAlignment="Left" VerticalAlignment="Top" MouseRightButtonDown="epgViewPanel_MouseRightButtonDown" MouseLeave="epgViewPanel_MouseLeave"/>
                 <Canvas Canvas.ZIndex="20" x:Name="popupItem" IsHitTestVisible="False" Visibility="Hidden">
-                    <Border x:Name="popupItemContainer" BorderBrush="DarkGray" BorderThickness="0.5">
-                        <Border.Effect>
-                            <DropShadowEffect BlurRadius="12" Opacity="0.5"/>
-                        </Border.Effect>
-                        <StackPanel Orientation="Vertical" >
+                    <Grid x:Name="popupItemContainer">
+                        <Border BorderBrush="DarkGray" BorderThickness="0,0.5,1,0.5">
+                            <Border.Background>
+                                <Binding ElementName="popupItemContainer" Path="Background"/>
+                            </Border.Background>
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="12" Opacity="0.5"/>
+                            </Border.Effect>
+                        </Border>
+                        <StackPanel Orientation="Vertical" Margin="0.5">
                             <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition x:Name="minGrid"/>
@@ -43,7 +48,7 @@
                             </Grid>
                             <TextBlock x:Name="infoText" TextWrapping="Wrap" LineStackingStrategy="BlockLineHeight"/>
                         </StackPanel>
-                    </Border>
+                    </Grid>
                     <Rectangle x:Name="popupItemReserveRect" Opacity="0.3" StrokeThickness="3" Fill="Transparent" IsHitTestVisible="False">
                         <Rectangle.Stroke>
                             <SolidColorBrush>Blue</SolidColorBrush>
