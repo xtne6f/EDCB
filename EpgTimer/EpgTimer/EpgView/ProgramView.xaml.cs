@@ -150,7 +150,8 @@ namespace EpgTimer.EpgView
 
             if (info.EventInfo.ShortInfo != null)
             {
-                titleText.Text = info.EventInfo.ShortInfo.event_name;
+                //必ず文字単位で折り返すためにZWSPを挿入
+                titleText.Text = System.Text.RegularExpressions.Regex.Replace(info.EventInfo.ShortInfo.event_name, "\\w", "$0\u200b");
                 titleText.FontFamily = fontTitle;
                 titleText.FontSize = sizeTitle;
                 titleText.FontWeight = titleWeight;
@@ -158,7 +159,7 @@ namespace EpgTimer.EpgView
                 titleText.Margin = new Thickness(1, 1.5, 5.5, sizeNormal / 2);
                 titleText.LineHeight = sizeTitle + 2;
 
-                infoText.Text = info.EventInfo.ShortInfo.text_char;
+                infoText.Text = System.Text.RegularExpressions.Regex.Replace(info.EventInfo.ShortInfo.text_char, "\\w", "$0\u200b");
                 infoText.FontFamily = fontNormal;
                 infoText.FontSize = sizeNormal;
                 infoText.FontWeight = FontWeights.Normal;
