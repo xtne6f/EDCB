@@ -72,11 +72,11 @@
             <TabItem Header="録画設定2" Name="tabItem2">
                 <Grid>
                     <Label Content="録画マージン" Height="28" HorizontalAlignment="Left" Margin="6,6,0,0" Name="label12" VerticalAlignment="Top" />
-                    <CheckBox Content="デフォルト設定を使用" Height="16" HorizontalAlignment="Left" Margin="162,11,0,0" Name="checkBox_margineDef" VerticalAlignment="Top" IsChecked="True" />
+                    <CheckBox Content="デフォルト設定を使用" Height="16" HorizontalAlignment="Left" Margin="162,11,0,0" Name="checkBox_margineDef" VerticalAlignment="Top" Checked="checkBox_margineDef_Checked" Unchecked="checkBox_margineDef_Unchecked" />
                     <Label Content="開始" Height="28" HorizontalAlignment="Left" Margin="323,6,0,0" Name="label13" VerticalAlignment="Top" />
-                    <TextBox Height="24" HorizontalAlignment="Left" Margin="369,8,0,0" Name="textBox_margineStart" VerticalAlignment="Top" Width="57" Text="5" />
+                    <TextBox Height="24" HorizontalAlignment="Left" Margin="369,8,0,0" Name="textBox_margineStart" VerticalAlignment="Top" Width="57" Text="0" />
                     <Label Content="終了" Height="28" HorizontalAlignment="Left" Margin="453,6,0,0" Name="label14" VerticalAlignment="Top" />
-                    <TextBox Height="24" HorizontalAlignment="Left" Margin="493,8,0,0" Name="textBox_margineEnd" VerticalAlignment="Top" Width="57" Text="2" />
+                    <TextBox Height="24" HorizontalAlignment="Left" Margin="493,8,0,0" Name="textBox_margineEnd" VerticalAlignment="Top" Width="57" Text="0" />
                     <Label Content="指定サービス対象データ" Height="28" HorizontalAlignment="Left" Margin="6,40,0,0" Name="label15" VerticalAlignment="Top" />
                     <CheckBox Content="デフォルト設定を使用" Height="16" HorizontalAlignment="Left" Margin="162,45,0,0" Name="checkBox_serviceMode" VerticalAlignment="Top" IsChecked="True" Click="checkBox_serviceMode_Checked" />
                     <CheckBox Content="字幕データを含める" Height="16" HorizontalAlignment="Left" Margin="330,45,0,0" Name="checkBox_serviceCaption" VerticalAlignment="Top" Click="checkBox_serviceCaption_Checked" />
