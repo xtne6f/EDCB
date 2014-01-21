@@ -1483,6 +1483,10 @@ namespace EpgTimer
             }
             try
             {
+                //TODO: ここでデフォルトマージンを確認するがEpgTimerNWでは無意味。根本的にはSendCtrlCmdの拡張が必要
+                int defStartMargin = IniFileHandler.GetPrivateProfileInt("SET", "StartMargin", 0, SettingPath.TimerSrvIniPath);
+                int defEndMargin = IniFileHandler.GetPrivateProfileInt("SET", "EndMargin", 0, SettingPath.TimerSrvIniPath);
+
                 foreach (ReserveData info in CommonManager.Instance.DB.ReserveList.Values)
                 {
                     UInt64 key = CommonManager.Create64Key(info.OriginalNetworkID, info.TransportStreamID, info.ServiceID);
@@ -1510,6 +1514,18 @@ namespace EpgTimer
                                     if (info.RecSetting.EndMargine < 0)
                                     {
                                         duration += info.RecSetting.EndMargine;
+                                    }
+                                }
+                                else
+                                {
+                                    if (defStartMargin < 0)
+                                    {
+                                        startTime = info.StartTime.AddSeconds(defStartMargin * -1);
+                                        duration += defStartMargin;
+                                    }
+                                    if (defEndMargin < 0)
+                                    {
+                                        duration += defEndMargin;
                                     }
                                 }
                                 //if ((duration/60) < Settings.Instance.MinHeight)
