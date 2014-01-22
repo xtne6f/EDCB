@@ -107,7 +107,6 @@ namespace EpgTimer
         private bool useCustomEpgView;
         private List<CustomEpgTabInfo> customEpgTabList;
         private double minHeight;
-        private double minimumHeight;
         private double serviceWidth;
         private double scrollSize;
         private string fontName;
@@ -269,11 +268,6 @@ namespace EpgTimer
         {
             get { return scrollSize; }
             set { scrollSize = value; }
-        }
-        public double MinimumHeight
-        {
-            get { return minimumHeight; }
-            set { minimumHeight = value; }
         }
         public string FontName
         {
@@ -952,7 +946,6 @@ namespace EpgTimer
             useCustomEpgView = false;
             customEpgTabList = new List<CustomEpgTabInfo>();
             minHeight = 2;
-            minimumHeight = 0;
             serviceWidth = 150;
             scrollSize = 240;
             fontName = "メイリオ";

@@ -59,74 +59,6 @@ namespace EpgTimer.EpgView
                 return;
             }
 
-            if (Settings.Instance.MinimumHeight > 0)
-            {
-                // Items を表示順にソートする
-                Items.Sort(Compare);
-                // 前番組へのリンク
-                ProgramViewItem wkPrev = null;
-                String wkPrevDate = "";
-                foreach (ProgramViewItem info in Items)
-                {
-                    if (wkPrev != null)
-                    {
-                        if (wkPrev.EventInfo.service_id != wkPrev.EventInfo.service_id)
-                        {   //  サービスIDが変わる => 局が変わる => その局の一番先頭の番組
-                            wkPrev = null;
-                        }
-                        if (!wkPrevDate.Equals(info.EventInfo.start_time.AddHours(-4).ToShortDateString()))
-                        {   //  1週間モード時、先頭は4時に切り替わる＝4時間前に日付が変わるタイミング
-                            wkPrev = null;
-                        }
-                    }
-                    info.prevItem = wkPrev;
-                    wkPrev = info;
-                    wkPrevDate = info.EventInfo.start_time.AddHours(-4).ToShortDateString();
-                }
-
-                double minimum = (Settings.Instance.FontSizeTitle + 2) * Settings.Instance.MinimumHeight;
-
-                foreach (ProgramViewItem info in Items)
-                {
-                    // 最低表示dot数よりも小さければ
-                    if (info.Height < minimum)
-                    {
-                        double wk1 = minimum - info.Height;                            // 調整幅(Total)
-                        double wk2 = 0;                                                // 調整可能幅
-                        double wk3 = wk1;                                              // 調整後の要再調整幅
-                        ProgramViewItem pr = info.prevItem;
-                        if (pr != null) {                                              // 先頭ならやりようがない
-                            while (pr.Height < minimum + wk3) {                        // 調整できるだけの十分な高さが無い
-                                wk2 = pr.Height - minimum;                             // 無理にでも調整可能な幅を求める
-                                if (wk2 > 0) {} else { wk2 = 0; }                      // 念の為マイナスを排除
-                                wk3 = wk3 - wk2;                                       // 調整後の要再調整幅
-
-                                if (  pr.prevTop == 0) {   pr.prevTop =   pr.TopPos; }
-                                pr.Height -= wk2;                                      // 高さと
-                                if (pr.Height >= minimum) { pr.TopPos -= wk3; }        // 開始位置の調整
-
-                                pr = pr.prevItem;                                      // 次(前)
-                                if (pr == null) { break; }                             // が無い？なら終わり
-                            }
-
-                            if (pr != null) {
-                                if (  pr.prevTop == 0) {   pr.prevTop =   pr.TopPos; }
-                                pr.Height -= wk3;                                      //  高さと
-                                if (info.prevTop == 0) { info.prevTop = info.TopPos; }
-                            }
-
-                            info.TopPos -= wk1;                                        //  開始位置の調整
-                            info.Height  = minimum;                                    //  最低表示dot数
-                        }
-                        else
-                        {
-                            info.TopPos -= wk1;      //  先頭位置をずらす
-                            info.Height = minimum;    //  最低表示dot数
-                        }
-                    }
-                }
-            }
-
             Typeface typefaceNormal = null;
             Typeface typefaceTitle = null;
             GlyphTypeface glyphTypefaceNormal = null;
@@ -224,7 +156,6 @@ namespace EpgTimer.EpgView
                         {
                             min = "未定 ";
                         }
-
                         double useHeight = 0;
                         if (RenderText(min, ref textDrawList, glyphTypefaceTitle, sizeTitle - 0.5, info.Width - 4, info.Height + 10, info.LeftPos - 1, info.TopPos - 1, ref useHeight, CommonManager.Instance.CustTitle1Color, m) == false)
                         {
@@ -322,6 +253,7 @@ namespace EpgTimer.EpgView
                         else
                         {
                             //次の行いけるので今までの分出力
+                            //次の行いける
                             double dpix = Math.Ceiling((x + 2) * m.M11);
                             double dpiy = Math.Ceiling((y + totalHeight) * m.M22);
                             Point origin = new Point(dpix / m.M11, dpiy / m.M22); 
@@ -398,61 +330,6 @@ namespace EpgTimer.EpgView
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
-
-        // サービスID/開始日付/TopPos 順にソート
-        public static int Compare(ProgramViewItem x, ProgramViewItem y)
-        {
-            //nullが最も小さいとする
-            if (x == null && y == null)
-            {
-                return 0;
-            }
-            if (x == null)
-            {
-                return -1;
-            }
-            if (y == null)
-            {
-                return 1;
-            }
-
-            if (x.EventInfo.service_id < y.EventInfo.service_id)
-            {
-                return -1;
-            }
-            else if (x.EventInfo.service_id > y.EventInfo.service_id)
-            {
-                return 1;
-            }
-            else
-            {
-                if (x.EventInfo.start_time < y.EventInfo.start_time)
-                {
-                    return -1;
-                }
-                else if (x.EventInfo.start_time > y.EventInfo.start_time)
-                {
-                    return 1;
-                }
-                else
-                {
-                    return 0;
-                    //// 不必要？
-                    //if (x.TopPos < y.TopPos)
-                    //{
-                    //    return -1;
-                    //}
-                    //else if (x.TopPos > y.TopPos)
-                    //{
-                    //    return 1;
-                    //}
-                    //else
-                    //{
-                    //    return 0;
-                    //}
-                }
             }
         }
     }
