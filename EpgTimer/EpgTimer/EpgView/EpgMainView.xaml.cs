@@ -1548,15 +1548,38 @@ namespace EpgTimer
                                 if (timeList.ContainsKey(chkTime) == true)
                                 {
                                     TimePosInfo time = timeList[chkTime] as TimePosInfo;
-                                    int index = timeList.IndexOfKey(chkTime);
-                                    viewItem.TopPos = index * 60 * Settings.Instance.MinHeight;
-                                    viewItem.TopPos += Math.Floor((startTime - chkTime).TotalMinutes * Settings.Instance.MinHeight);
-                                    foreach (ProgramViewItem pgInfo in time.ProgramList)
+                                    bool modified = false;
+                                    if (Settings.Instance.MinimumHeight > 0 && viewItem.ReserveInfo.EventID != 0xFFFF)
                                     {
-                                        if (pgInfo.LeftPos == viewItem.LeftPos && pgInfo.TopPos <= viewItem.TopPos && viewItem.TopPos < pgInfo.TopPos + pgInfo.Height)
+                                        //予約情報から番組情報を特定し、枠表示位置を再設定する
+                                        foreach (ProgramViewItem pgInfo in time.ProgramList)
                                         {
-                                            viewItem.Width = pgInfo.Width;
-                                            break;
+                                            if (viewItem.ReserveInfo.OriginalNetworkID == pgInfo.EventInfo.original_network_id &&
+                                                viewItem.ReserveInfo.TransportStreamID == pgInfo.EventInfo.transport_stream_id &&
+                                                viewItem.ReserveInfo.ServiceID == pgInfo.EventInfo.service_id &&
+                                                viewItem.ReserveInfo.EventID == pgInfo.EventInfo.event_id &&
+                                                info.DurationSecond != 0)
+                                            {
+                                                viewItem.TopPos = pgInfo.TopPos + pgInfo.Height * (startTime - info.StartTime).TotalSeconds / info.DurationSecond;
+                                                viewItem.Width = pgInfo.Width;
+                                                viewItem.Height = Math.Max(pgInfo.Height * duration / info.DurationSecond, Settings.Instance.MinHeight);
+                                                modified = true;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    if (modified == false)
+                                    {
+                                        int index = timeList.IndexOfKey(chkTime);
+                                        viewItem.TopPos = index * 60 * Settings.Instance.MinHeight;
+                                        viewItem.TopPos += Math.Floor((startTime - chkTime).TotalMinutes * Settings.Instance.MinHeight);
+                                        foreach (ProgramViewItem pgInfo in time.ProgramList)
+                                        {
+                                            if (pgInfo.LeftPos == viewItem.LeftPos && pgInfo.TopPos <= viewItem.TopPos && viewItem.TopPos < pgInfo.TopPos + pgInfo.Height)
+                                            {
+                                                viewItem.Width = pgInfo.Width;
+                                                break;
+                                            }
                                         }
                                     }
                                 }
@@ -1567,7 +1590,7 @@ namespace EpgTimer
                                 EndTime = startTime.AddSeconds(duration);
 
                                 DateTime chkStartTime = new DateTime(startTime.Year, startTime.Month, startTime.Day, startTime.Hour, 0, 0);
-                                while (chkStartTime <= EndTime)
+                                while (chkStartTime < EndTime.AddHours(1))
                                 {
                                     if (timeList.ContainsKey(chkStartTime) != false)
                                     {
@@ -1735,7 +1758,7 @@ namespace EpgTimer
                         }
                         //必要時間リストと時間と番組の関連づけ
                         DateTime chkStartTime = new DateTime(eventInfo.start_time.Year, eventInfo.start_time.Month, eventInfo.start_time.Day, eventInfo.start_time.Hour, 0, 0);
-                        while (chkStartTime <= EndTime)
+                        while (chkStartTime < EndTime.AddHours(1))
                         {
                             if (timeList.ContainsKey(chkStartTime) == false)
                             {
@@ -1784,6 +1807,30 @@ namespace EpgTimer
                             int index = timeList.IndexOfKey(chkStartTime);
                             item.TopPos = (index * 60 + (item.EventInfo.start_time - chkStartTime).TotalMinutes) * Settings.Instance.MinHeight;
                         }
+                    }
+                }
+
+                if (Settings.Instance.MinimumHeight > 0)
+                {
+                    //最低表示行数を適用
+                    programList.Sort((x, y) => Math.Sign(x.LeftPos - y.LeftPos) * 2 + Math.Sign(x.TopPos - y.TopPos));
+                    double minimum = (Settings.Instance.FontSizeTitle + 2) * Settings.Instance.MinimumHeight;
+                    double lastLeft = double.MinValue;
+                    double lastBottom = 0;
+                    foreach (ProgramViewItem item in programList)
+                    {
+                        if (lastLeft != item.LeftPos)
+                        {
+                            lastLeft = item.LeftPos;
+                            lastBottom = double.MinValue;
+                        }
+                        item.Height = Math.Max(item.Height, minimum);
+                        if (item.TopPos < lastBottom)
+                        {
+                            item.Height = Math.Max(item.TopPos + item.Height - lastBottom, minimum);
+                            item.TopPos = lastBottom;
+                        }
+                        lastBottom = item.TopPos + item.Height;
                     }
                 }
 
@@ -1984,7 +2031,7 @@ namespace EpgTimer
                         }
                         //必要時間リストと時間と番組の関連づけ
                         DateTime chkStartTime = new DateTime(eventInfo.start_time.Year, eventInfo.start_time.Month, eventInfo.start_time.Day, eventInfo.start_time.Hour, 0, 0);
-                        while (chkStartTime <= EndTime)
+                        while (chkStartTime < EndTime.AddHours(1))
                         {
                             if (timeList.ContainsKey(chkStartTime) == false)
                             {
@@ -2033,6 +2080,30 @@ namespace EpgTimer
                             int index = timeList.IndexOfKey(chkStartTime);
                             item.TopPos = (index * 60 + (item.EventInfo.start_time - chkStartTime).TotalMinutes) * Settings.Instance.MinHeight;
                         }
+                    }
+                }
+
+                if (Settings.Instance.MinimumHeight > 0)
+                {
+                    //最低表示行数を適用
+                    programList.Sort((x, y) => Math.Sign(x.LeftPos - y.LeftPos) * 2 + Math.Sign(x.TopPos - y.TopPos));
+                    double minimum = (Settings.Instance.FontSizeTitle + 2) * Settings.Instance.MinimumHeight;
+                    double lastLeft = double.MinValue;
+                    double lastBottom = 0;
+                    foreach (ProgramViewItem item in programList)
+                    {
+                        if (lastLeft != item.LeftPos)
+                        {
+                            lastLeft = item.LeftPos;
+                            lastBottom = double.MinValue;
+                        }
+                        item.Height = Math.Max(item.Height, minimum);
+                        if (item.TopPos < lastBottom)
+                        {
+                            item.Height = Math.Max(item.TopPos + item.Height - lastBottom, minimum);
+                            item.TopPos = lastBottom;
+                        }
+                        lastBottom = item.TopPos + item.Height;
                     }
                 }
 
