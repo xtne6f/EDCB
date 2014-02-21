@@ -97,33 +97,37 @@ int CSOAPUtil::ParseSOAPRequest(char* xml, int xmlSize, SOAP_REQUEST_INFO* info)
 
 	for( int i=0; i<pElemRoot->childNodes->length; i++ ){
 		MSXML2::IXMLDOMNodePtr bodyNode = pElemRoot->childNodes->Getitem(i);
-		CComBSTR localName;
+		BSTR localName;
 		bodyNode->get_baseName(&localName);
-		if( localName == NULL ){
+		_bstr_t bsLocalName(localName, false);
+		if( (LPCWSTR)bsLocalName == NULL ){
 			continue;
 		}
-		if(CompareNoCase(L"Body", localName.m_str) == 0 ){
+		if(CompareNoCase(L"Body", (LPCWSTR)bsLocalName) == 0 ){
 			for( int j=0; j<bodyNode->childNodes->length; j++ ){
 				MSXML2::IXMLDOMNodePtr actionNode = bodyNode->childNodes->Getitem(j);
-				CComBSTR actionName;
+				BSTR actionName;
 				actionNode->get_baseName(&actionName);
-				if( actionName == NULL ){
+				_bstr_t bsActionName(actionName, false);
+				if( (LPCWSTR)bsActionName == NULL ){
 					continue;
 				}
 
-				info->actionName = actionName;
+				info->actionName = (LPCWSTR)bsActionName;
 				for( int k=0; k<actionNode->childNodes->length; k++){
 					MSXML2::IXMLDOMNodePtr argNode = actionNode->childNodes->Getitem(k);
-					CComBSTR argName;
+					BSTR argName;
 					argNode->get_baseName(&argName);
-					if( argName == NULL ){
+					_bstr_t bsArgName(argName, false);
+					if( (LPCWSTR)bsArgName == NULL ){
 						continue;
 					}
 
-					CComBSTR argVal;
+					BSTR argVal;
 					argNode->get_text(&argVal);
+					_bstr_t bsArgVal(argVal, false);
 
-					info->argList.insert(pair<wstring,wstring>(argName.m_str, argVal.m_str));
+					info->argList.insert(pair<wstring,wstring>((LPCWSTR)bsArgName, (LPCWSTR)bsArgVal == NULL ? L"" : (LPCWSTR)bsArgVal));
 				}
 			}
 			break;

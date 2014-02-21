@@ -76,8 +76,8 @@ void CEpgDataCap_BonMain::ReloadSetting()
 		this->recFolderList.push_back( settingPath );
 	}else{
 		for( int i = 0; i < iNum; i++ ){
-			CString key = L"";
-			key.Format(L"RecFolderPath%d", i );
+			WCHAR key[64];
+			wsprintf(key, L"RecFolderPath%d", i );
 			WCHAR wBuff[512]=L"";
 			GetPrivateProfileString( L"SET", key, L"", wBuff, 512, commonIniPath.c_str() );
 
@@ -341,18 +341,18 @@ BOOL CEpgDataCap_BonMain::SendUDP(
 		for( int i = 0; i < udpCount; i++ ){
 			NW_SEND_INFO item;
 
-			CString key = L"";
-			key.Format(L"IP%d",i);
-			item.ip = GetPrivateProfileInt( L"SET_UDP", key.GetBuffer(0), 2130706433, appIniPath.c_str() );
-			key.Format(L"Port%d",i);
-			item.port = GetPrivateProfileInt( L"SET_UDP", key.GetBuffer(0), 1234, appIniPath.c_str() );
+			WCHAR key[64];
+			wsprintf(key, L"IP%d",i);
+			item.ip = GetPrivateProfileInt( L"SET_UDP", key, 2130706433, appIniPath.c_str() );
+			wsprintf(key, L"Port%d",i);
+			item.port = GetPrivateProfileInt( L"SET_UDP", key, 1234, appIniPath.c_str() );
 			Format(item.ipString, L"%d.%d.%d.%d",
 				(item.ip&0xFF000000)>>24,
 				(item.ip&0x00FF0000)>>16,
 				(item.ip&0x0000FF00)>>8,
 				(item.ip&0x000000FF) );
-			key.Format(L"BroadCast%d",i);
-			item.broadcastFlag = GetPrivateProfileInt( L"SET_UDP", key.GetBuffer(0), 0, appIniPath.c_str() );
+			wsprintf(key, L"BroadCast%d",i);
+			item.broadcastFlag = GetPrivateProfileInt( L"SET_UDP", key, 0, appIniPath.c_str() );
 
 			udpSendList.push_back(item);
 		}
@@ -408,11 +408,11 @@ BOOL CEpgDataCap_BonMain::SendTCP(
 		for( int i = 0; i < tcpCount; i++ ){
 			NW_SEND_INFO item;
 
-			CString key = L"";
-			key.Format(L"IP%d",i);
-			item.ip = GetPrivateProfileInt( L"SET_TCP", key.GetBuffer(0), 2130706433, appIniPath.c_str() );
-			key.Format(L"Port%d",i);
-			item.port = GetPrivateProfileInt( L"SET_TCP", key.GetBuffer(0), 2230, appIniPath.c_str() );
+			WCHAR key[64];
+			wsprintf(key, L"IP%d",i);
+			item.ip = GetPrivateProfileInt( L"SET_TCP", key, 2130706433, appIniPath.c_str() );
+			wsprintf(key, L"Port%d",i);
+			item.port = GetPrivateProfileInt( L"SET_TCP", key, 2230, appIniPath.c_str() );
 			Format(item.ipString, L"%d.%d.%d.%d",
 				(item.ip&0xFF000000)>>24,
 				(item.ip&0x00FF0000)>>16,
@@ -503,7 +503,7 @@ BOOL CEpgDataCap_BonMain::GetSendTCPList(
 // epgInfo					[OUT]EPG情報（DLL内で自動的にdeleteする。次に取得を行うまで有効）
 DWORD CEpgDataCap_BonMain::GetEpgInfo(
 	BOOL nextFlag,
-	CString* epgInfo
+	wstring* epgInfo
 	)
 {
 	WORD ONID = 0;
@@ -728,10 +728,13 @@ void CEpgDataCap_BonMain::ViewAppOpen()
 		ZeroMemory(&si,sizeof(si));
 		si.cb=sizeof(si);
 
-		CString strOpen;
-		strOpen.Format(L"\"%s\" %s", this->viewPath.c_str(), this->viewOpt.c_str());
+		wstring strOpen;
+		Format(strOpen, L"\"%s\" %s", this->viewPath.c_str(), this->viewOpt.c_str());
 
-		CreateProcess( NULL, strOpen.GetBuffer(0), NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi );
+		WCHAR* pszOpen = new WCHAR[strOpen.size() + 1];
+		lstrcpy(pszOpen, strOpen.c_str());
+		CreateProcess( NULL, pszOpen, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi );
+		delete [] pszOpen;
 
 		CloseHandle(pi.hThread);
 		CloseHandle(pi.hProcess);
@@ -781,10 +784,13 @@ void CEpgDataCap_BonMain::StartTimeShift()
 		ZeroMemory(&si,sizeof(si));
 		si.cb=sizeof(si);
 
-		CString strOpen;
-		strOpen.Format(L"\"%s\" \"%s\" -pid %d -ctrlid %d", appPath.c_str(), saveFile.c_str(), GetCurrentProcessId(), ctrlID);
+		wstring strOpen;
+		Format(strOpen, L"\"%s\" \"%s\" -pid %d -ctrlid %d", appPath.c_str(), saveFile.c_str(), GetCurrentProcessId(), ctrlID);
 
-		CreateProcess( NULL, strOpen.GetBuffer(0), NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi );
+		WCHAR* pszOpen = new WCHAR[strOpen.size() + 1];
+		lstrcpy(pszOpen, strOpen.c_str());
+		CreateProcess( NULL, pszOpen, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi );
+		delete [] pszOpen;
 
 		CloseHandle(pi.hThread);
 		CloseHandle(pi.hProcess);
