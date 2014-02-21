@@ -145,6 +145,7 @@ namespace EpgTimer.Setting
                 textBox_minHeight.Text = Settings.Instance.MinHeight.ToString();
                 textBox_service_width.Text = Settings.Instance.ServiceWidth.ToString();
                 textBox_dragScroll.Text = Settings.Instance.DragScroll.ToString();
+                textBox_minimumHeight.Text = Settings.Instance.MinimumHeight.ToString();
                 checkBox_descToolTip.IsChecked = Settings.Instance.EpgToolTip;
                 checkBox_title_indent.IsChecked = Settings.Instance.EpgTitleIndent;
                 checkBox_toolTip_noView_only.IsChecked = Settings.Instance.EpgToolTipNoViewOnly;
@@ -259,6 +260,7 @@ namespace EpgTimer.Setting
                 Settings.Instance.MinHeight = Convert.ToDouble(textBox_minHeight.Text);
                 Settings.Instance.ServiceWidth = Convert.ToDouble(textBox_service_width.Text);
                 Settings.Instance.DragScroll = Convert.ToDouble(textBox_dragScroll.Text);
+                Settings.Instance.MinimumHeight = Convert.ToDouble(textBox_minimumHeight.Text);
                 if (checkBox_descToolTip.IsChecked == true)
                 {
                     Settings.Instance.EpgToolTip = true;

@@ -4,6 +4,8 @@
 #include "ErrDef.h"
 #include "CtrlCmdUtil.h"
 
+#define CONTENT_LENGTH_MAX	(1024 * 1024 * 10)
+
 CHttpServer::CHttpServer(void)
 {
 	m_pHttpProc = NULL;
@@ -230,7 +232,7 @@ UINT WINAPI CHttpServer::ServerThread(LPVOID pParam)
 					}
 					if( chkBody == TRUE ){
 						if( recvData.dataSize > 0 ){
-							memcpy(recvData.data + readBody, recvBuff+offset, iRet-offset);
+							memcpy(recvData.data + readBody, recvBuff+offset, min(iRet-offset, (int)(recvData.dataSize-readBody)));
 							readBody+=iRet-offset;
 						}
 						if( recvData.dataSize <= readBody ){
@@ -273,10 +275,8 @@ DWORD CHttpServer::ChkContentLength(string httpHeader)
 	DWORD ret = 0;
 	if( httpHeader.find("Content-Length: ") != string::npos){
 		int pos1 = (int)httpHeader.find("Content-Length: ");
-		int pos2 = (int)httpHeader.find("\r\n", pos1+16);
-		string length = httpHeader.substr(pos1+16, pos2-pos1-16);
-		ret = atoi(length.c_str());
+		ret = atoi(httpHeader.c_str()+pos1+16);
 	}
-	return ret;
+	return min(ret, CONTENT_LENGTH_MAX);
 }
 

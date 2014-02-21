@@ -535,12 +535,11 @@ namespace EpgTimer
                 {
                     menuItemChgViewMode1.IsChecked = true;
                 }
-                menuItemView.Items.Add(menuItemViewSetDlg);
-                menuItemView.Items.Add(separate3);
-                menuItemView.Items.Add(menuItemChgViewMode1);
+                //menuItemView.Items.Add(menuItemChgViewMode1);
                 menuItemView.Items.Add(menuItemChgViewMode2);
                 menuItemView.Items.Add(menuItemChgViewMode3);
-
+                menuItemView.Items.Add(separate3);
+                menuItemView.Items.Add(menuItemViewSetDlg);                
                 if (noItem == true)
                 {
                     menuItemNew.IsEnabled = false;
@@ -1104,6 +1103,17 @@ namespace EpgTimer
                     CustomEpgTabInfo setInfo = new CustomEpgTabInfo();
                     setViewInfo.CopyTo(ref setInfo);
                     setInfo.ViewMode = (int)item.DataContext;
+                    EpgEventInfo program = new EpgEventInfo();
+                    if (GetProgramItem(clickPos, ref program) == true)
+                    {
+                        SearchItem searchitem = new SearchItem();
+                        searchitem.EventInfo = program;
+                        BlackoutWindow.selectedSearchItem = searchitem;
+                    }
+                    else
+                    {
+                        BlackoutWindow.selectedSearchItem = null;
+                    }
                     ViewSettingClick(this, setInfo);
                 }
             }
@@ -1524,6 +1534,23 @@ namespace EpgTimer
                                     TimePosInfo time = timeList[chkTime] as TimePosInfo;
                                     int index = timeList.IndexOfKey(chkTime);
                                     viewItem.TopPos = index * 60 * Settings.Instance.MinHeight;
+                                    if (Settings.Instance.MinimumHeight > 0)
+                                    {   //  予約情報から番組情報を特定し、枠表示位置を再設定する。
+                                        foreach (ProgramViewItem pgInfo in time.ProgramList)
+                                        {
+                                            if (viewItem.ReserveInfo.ServiceID == pgInfo.EventInfo.service_id)
+                                            {
+                                                if (viewItem.ReserveInfo.EventID == pgInfo.EventInfo.event_id)
+                                                {
+                                                    if (pgInfo.prevTop != 0)
+                                                    {
+                                                        viewItem.TopPos -= pgInfo.prevTop - pgInfo.TopPos;
+                                                    }
+                                                    viewItem.Height = pgInfo.Height;
+                                                }
+                                            }
+                                        }
+                                    }
                                     viewItem.TopPos += Math.Floor((startTime - chkTime).TotalMinutes * Settings.Instance.MinHeight);
                                     foreach (ProgramViewItem pgInfo in time.ProgramList)
                                     {

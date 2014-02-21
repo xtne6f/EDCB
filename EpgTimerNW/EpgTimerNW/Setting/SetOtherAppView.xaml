@@ -25,7 +25,7 @@
                     <Button Content="削除" Height="23" HorizontalAlignment="Left" Margin="297,178,0,0" Name="button_del" VerticalAlignment="Top" Width="56" Click="button_del_Click" Style="{StaticResource ButtonStyle1}" IsEnabled="False" />
                     <Button Content="追加" Height="23" HorizontalAlignment="Left" Margin="297,248,0,0" Name="button_add" VerticalAlignment="Top" Width="56" Click="button_add_Click" Style="{StaticResource ButtonStyle1}" IsEnabled="False" />
                     <ComboBox Height="24" HorizontalAlignment="Left" Margin="44,248,0,0" Name="comboBox_bon" VerticalAlignment="Top" Width="247" IsEnabled="False" />
-                    <CheckBox Content="NetworkTVモード(EpgDataCap__BonからのUDP、TCP送信で行う)" Height="16" HorizontalAlignment="Left" Margin="12,277,0,0" Name="checkBox_nwTvMode" VerticalAlignment="Top" IsEnabled="False" IsChecked="True" />
+                    <CheckBox Content="NetworkTVモード(EpgDataCap__BonからのUDP、TCP送信で行う)" Height="16" HorizontalAlignment="Left" Margin="12,277,0,0" Name="checkBox_nwTvMode" VerticalAlignment="Top" IsEnabled="True" IsChecked="False" />
                     <CheckBox Content="UDP有効" Height="16" HorizontalAlignment="Left" Margin="44,299,0,0" Name="checkBox_nwUDP" VerticalAlignment="Top" />
                     <CheckBox Content="TCP有効" Height="16" HorizontalAlignment="Left" Margin="134,299,0,0" Name="checkBox_nwTCP" VerticalAlignment="Top" />
                     <Label Content="(BonDriverに関するオプションは自動的に付加されます)" Height="28" HorizontalAlignment="Left" Margin="134,110,0,0" Name="label5" VerticalAlignment="Top" />

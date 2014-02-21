@@ -357,7 +357,7 @@ BOOL CWriteTSFile::AddTSBuff(
 	memcpy(item->data, data, size);
 	if( WaitForSingleObject( this->buffLockEvent, 500 ) == WAIT_OBJECT_0 ){
 		if( this->maxBuffCount > 0 ){
-			if(this->TSBuff.size() > this->maxBuffCount){
+			if(this->TSBuff.size() > (unsigned)this->maxBuffCount){
 				_OutputDebugString(L"šwriteBuffList MaxOver");
 				this->buffOverErr = TRUE;
 				size_t startIndex = this->maxBuffCount;

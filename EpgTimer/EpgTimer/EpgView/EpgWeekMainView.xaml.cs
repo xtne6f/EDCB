@@ -567,12 +567,11 @@ namespace EpgTimer
                 {
                     menuItemChgViewMode1.IsChecked = true;
                 }
-                menuItemView.Items.Add(menuItemViewSetDlg);
-                menuItemView.Items.Add(separate3);
                 menuItemView.Items.Add(menuItemChgViewMode1);
-                menuItemView.Items.Add(menuItemChgViewMode2);
+                //menuItemView.Items.Add(menuItemChgViewMode2);
                 menuItemView.Items.Add(menuItemChgViewMode3);
-
+                menuItemView.Items.Add(separate3);
+                menuItemView.Items.Add(menuItemViewSetDlg);
                 if (noItem == true)
                 {
                     menuItemAdd.IsEnabled = false;
@@ -1133,6 +1132,18 @@ namespace EpgTimer
                     CustomEpgTabInfo setInfo = new CustomEpgTabInfo();
                     setViewInfo.CopyTo(ref setInfo);
                     setInfo.ViewMode = (int)item.DataContext;
+                    EpgEventInfo program = new EpgEventInfo();
+                    if (GetProgramItem(clickPos, ref program) == true)
+                    {
+                        SearchItem searchitem = new SearchItem();
+                        searchitem.EventInfo = program;
+                        BlackoutWindow.selectedSearchItem = searchitem;
+                    }
+                    else
+                    {
+                        BlackoutWindow.selectedSearchItem = null;
+                    }
+
                     ViewSettingClick(this, setInfo);
                 }
             }
@@ -1919,7 +1930,12 @@ namespace EpgTimer
                 BlackoutWindow.selectedSearchItem = null;
             }
         }
-
-
+        private void button1_Click(object sender, RoutedEventArgs e)
+        {
+            CustomEpgTabInfo setInfo = new CustomEpgTabInfo();
+            setViewInfo.CopyTo(ref setInfo);
+            setInfo.ViewMode = 0;
+            ViewSettingClick(this, setInfo);
+        }
     }
 }

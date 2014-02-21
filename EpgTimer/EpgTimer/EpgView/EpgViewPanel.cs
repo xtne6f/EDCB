@@ -59,6 +59,81 @@ namespace EpgTimer.EpgView
                 return;
             }
 
+            if (Settings.Instance.MinimumHeight > 0)
+            {
+                // Items を表示順にソートする
+                Items.Sort(Compare);
+                // 前番組へのリンク
+                ProgramViewItem wkPrev = null;
+                String wkPrevDate = "";
+                foreach (ProgramViewItem info in Items)
+                {
+                    if (wkPrev != null)
+                    {
+                        if (wkPrev.EventInfo.service_id != wkPrev.EventInfo.service_id)
+                        {   //  サービスIDが変わる => 局が変わる => その局の一番先頭の番組
+                            wkPrev = null;
+                        }
+                        if (!wkPrevDate.Equals(info.EventInfo.start_time.AddHours(-4).ToShortDateString()))
+                        {   //  1週間モード時、先頭は4時に切り替わる＝4時間前に日付が変わるタイミング
+                            wkPrev = null;
+                        }
+                    }
+                    info.prevItem = wkPrev;
+                    wkPrev = info;
+                    wkPrevDate = info.EventInfo.start_time.AddHours(-4).ToShortDateString();
+                }
+
+                double minimum = (Settings.Instance.FontSizeTitle + 2) * Settings.Instance.MinimumHeight;
+
+                foreach (ProgramViewItem info in Items)
+                {
+                    // 最低表示dot数よりも小さければ
+                    if (info.Height < minimum)
+                    {
+                        double wk = minimum - info.Height;    // 調整幅
+                        ProgramViewItem pr = info.prevItem;
+                        if (pr != null)                             // 先頭ならやりようがない
+                        {
+                            while (pr.Height < minimum + wk)      // 調整できるだけの高さが無ければ
+                            {
+                                if (pr.prevTop == 0)
+                                {
+                                    pr.prevTop = pr.TopPos;
+                                }
+
+                                // 番組表先頭が欠けないための処理
+                                //if (pr.Height >= minimum && pr.prevItem != null)
+                                if (pr.Height >= minimum)
+                                {
+                                    pr.TopPos -= wk;    // 先頭位置のみ更新
+                                }
+                                pr = pr.prevItem;
+                                if (pr == null)
+                                {
+                                    break;
+                                }
+                            }
+
+                            if (pr != null)
+                            {
+                                if (pr.prevTop == 0)
+                                {
+                                    pr.prevTop = pr.TopPos;
+                                }
+                                pr.Height -= wk;        //  高さと
+                                if (info.prevTop == 0)
+                                {
+                                    info.prevTop = info.TopPos;
+                                }
+                            }
+                            info.TopPos -= wk;      //  先頭位置をずらす
+                            info.Height = minimum;    //  最低表示dot数
+                        }
+                    }
+                }
+            }
+
             Typeface typefaceNormal = null;
             Typeface typefaceTitle = null;
             GlyphTypeface glyphTypefaceNormal = null;
@@ -138,6 +213,12 @@ namespace EpgTimer.EpgView
                     textDrawDict[info] = textDrawList;
                     if (info.Height > 2)
                     {
+                        if (info.Height < sizeTitle + 3)
+                        {
+                            //高さ足りない
+                            info.TitleDrawErr = true;
+                        }
+
                         double totalHeight = -2;
 
                         //分
@@ -150,6 +231,7 @@ namespace EpgTimer.EpgView
                         {
                             min = "未定 ";
                         }
+
                         double useHeight = 0;
                         if (RenderText(min, ref textDrawList, glyphTypefaceTitle, sizeTitle - 0.5, info.Width - 4, info.Height + 10, info.LeftPos - 1, info.TopPos - 1, ref useHeight, CommonManager.Instance.CustTitle1Color, m) == false)
                         {
@@ -324,6 +406,61 @@ namespace EpgTimer.EpgView
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+            }
+        }
+
+        // サービスID/開始日付/TopPos 順にソート
+        public static int Compare(ProgramViewItem x, ProgramViewItem y)
+        {
+            //nullが最も小さいとする
+            if (x == null && y == null)
+            {
+                return 0;
+            }
+            if (x == null)
+            {
+                return -1;
+            }
+            if (y == null)
+            {
+                return 1;
+            }
+
+            if (x.EventInfo.service_id < y.EventInfo.service_id)
+            {
+                return -1;
+            }
+            else if (x.EventInfo.service_id > y.EventInfo.service_id)
+            {
+                return 1;
+            }
+            else
+            {
+                if (x.EventInfo.start_time < y.EventInfo.start_time)
+                {
+                    return -1;
+                }
+                else if (x.EventInfo.start_time > y.EventInfo.start_time)
+                {
+                    return 1;
+                }
+                else
+                {
+                    return 0;
+                    //// 不必要？
+                    //if (x.TopPos < y.TopPos)
+                    //{
+                    //    return -1;
+                    //}
+                    //else if (x.TopPos > y.TopPos)
+                    //{
+                    //    return 1;
+                    //}
+                    //else
+                    //{
+                    //    return 0;
+                    //}
+                }
             }
         }
     }
