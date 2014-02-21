@@ -85,6 +85,7 @@ typedef struct _RESERVE_DATA{
 		ZeroMemory(&startTimeEpg, sizeof(SYSTEMTIME));
 		recFilePath = L"";
 		reserveStatus = 0;
+		param1 = 0;
 	};
 } RESERVE_DATA;
 
