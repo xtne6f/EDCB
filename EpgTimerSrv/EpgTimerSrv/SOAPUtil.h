@@ -2,7 +2,6 @@
 
 #include "../../Common/CommonDef.h"
 
-#include <atlbase.h>
 #import <msxml3.dll> named_guids
 
 typedef struct _SOAP_REQUEST_INFO{

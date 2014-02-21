@@ -87,7 +87,6 @@ SORT_LIST_HANDLE MP_NIC_GetNICInfo(void)
 	ULONG len = 0;
 	WSADATA data;
 	PIP_ADAPTER_ADDRESSES adpts = NULL;
-	CoInitialize(NULL);
 	DWORD res = 0;
 	int i=0;
 
@@ -179,7 +178,6 @@ Err_End:
 		free(adpts);
 	}
 	WSACleanup();
-	CoUninitialize();
 
 #elif defined(__APPLE__)
 	struct ifaddrs *ifa_list = NULL;

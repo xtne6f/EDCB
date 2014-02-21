@@ -4,15 +4,12 @@
 #include "stdafx.h"
 #include "EpgDataCap_Bon.h"
 #include "SetDlgEpg.h"
-#include "afxdialogex.h"
 
 #include "../../Common/PathUtil.h"
 // CSetDlgEpg ダイアログ
 
-IMPLEMENT_DYNAMIC(CSetDlgEpg, CDialog)
-
-CSetDlgEpg::CSetDlgEpg(CWnd* pParent /*=NULL*/)
-	: CDialog(CSetDlgEpg::IDD, pParent)
+CSetDlgEpg::CSetDlgEpg()
+	: m_hWnd(NULL)
 {
 
 }
@@ -21,21 +18,10 @@ CSetDlgEpg::~CSetDlgEpg()
 {
 }
 
-void CSetDlgEpg::DoDataExchange(CDataExchange* pDX)
+BOOL CSetDlgEpg::Create(LPCTSTR lpszTemplateName, HWND hWndParent)
 {
-	CDialog::DoDataExchange(pDX);
-	DDX_Control(pDX, IDC_LIST_SERVICE, serviceList);
-	DDX_Control(pDX, IDC_CHECK_BS, btnBS);
-	DDX_Control(pDX, IDC_CHECK_CS1, btnCS1);
-	DDX_Control(pDX, IDC_CHECK_CS2, btnCS2);
+	return CreateDialogParam(GetModuleHandle(NULL), lpszTemplateName, hWndParent, DlgProc, (LPARAM)this) != NULL;
 }
-
-
-BEGIN_MESSAGE_MAP(CSetDlgEpg, CDialog)
-	ON_BN_CLICKED(IDC_BUTTON_ALL_CHK, &CSetDlgEpg::OnBnClickedButtonAllChk)
-	ON_BN_CLICKED(IDC_BUTTON_VIDEO_CHK, &CSetDlgEpg::OnBnClickedButtonVideoChk)
-	ON_BN_CLICKED(IDC_BUTTON_ALL_CLEAR, &CSetDlgEpg::OnBnClickedButtonAllClear)
-END_MESSAGE_MAP()
 
 
 // CSetDlgEpg メッセージ ハンドラー
@@ -43,22 +29,35 @@ END_MESSAGE_MAP()
 
 BOOL CSetDlgEpg::OnInitDialog()
 {
-	CDialog::OnInitDialog();
-
 	// TODO:  ここに初期化を追加してください
-	btnBS.SetCheck( GetPrivateProfileInt( L"SET", L"BSBasicOnly", 1, commonIniPath ) );
-	btnCS1.SetCheck( GetPrivateProfileInt( L"SET", L"CS1BasicOnly", 1, commonIniPath ) );
-	btnCS2.SetCheck( GetPrivateProfileInt( L"SET", L"CS2BasicOnly", 1, commonIniPath ) );
+	Button_SetCheck( GetDlgItem(IDC_CHECK_BS), GetPrivateProfileInt( L"SET", L"BSBasicOnly", 1, commonIniPath.c_str() ) );
+	Button_SetCheck( GetDlgItem(IDC_CHECK_CS1), GetPrivateProfileInt( L"SET", L"CS1BasicOnly", 1, commonIniPath.c_str() ) );
+	Button_SetCheck( GetDlgItem(IDC_CHECK_CS2), GetPrivateProfileInt( L"SET", L"CS2BasicOnly", 1, commonIniPath.c_str() ) );
 
 	wstring path;
 	GetSettingPath(path);
 	path += L"\\ChSet5.txt";
 	this->chSet.ParseText(path.c_str());
 
+	//リストビューにチェックボックスと列をつくる
+	HWND hItem = GetDlgItem(IDC_LIST_SERVICE);
+	ListView_SetExtendedListViewStyleEx(hItem, LVS_EX_CHECKBOXES | LVS_EX_FULLROWSELECT, LVS_EX_CHECKBOXES | LVS_EX_FULLROWSELECT);
+	RECT rc;
+	GetClientRect(hItem, &rc);
+	LVCOLUMN lvc;
+	lvc.mask = LVCF_WIDTH;
+	lvc.cx = rc.right - GetSystemMetrics(SM_CXVSCROLL) - 4;
+	ListView_InsertColumn(hItem, 0, &lvc);
+
 	map<LONGLONG, CH_DATA5>::iterator itr;
 	for( itr = this->chSet.chList.begin(); itr != this->chSet.chList.end(); itr++ ){
-		int index = this->serviceList.AddString(itr->second.serviceName.c_str());
-		this->serviceList.SetCheck(index, itr->second.epgCapFlag);
+		LVITEM lvi;
+		lvi.mask = LVIF_TEXT;
+		lvi.iItem = ListView_GetItemCount(hItem);
+		lvi.iSubItem = 0;
+		lvi.pszText = (LPWSTR)itr->second.serviceName.c_str();
+		int index = ListView_InsertItem(hItem, &lvi);
+		ListView_SetCheckState(hItem, index, itr->second.epgCapFlag);
 	}
 
 	return TRUE;  // return TRUE unless you set the focus to a control
@@ -67,17 +66,15 @@ BOOL CSetDlgEpg::OnInitDialog()
 
 void CSetDlgEpg::SaveIni(void)
 {
-	UpdateData(TRUE);
+	if( m_hWnd == NULL ){
+		return;
+	}
 
-	CString val = L"";
-	val.Format(L"%d",btnBS.GetCheck());
-	WritePrivateProfileString( L"SET", L"BSBasicOnly", val.GetBuffer(0), commonIniPath );
-	val.Format(L"%d",btnCS1.GetCheck());
-	WritePrivateProfileString( L"SET", L"CS1BasicOnly", val.GetBuffer(0), commonIniPath );
-	val.Format(L"%d",btnCS2.GetCheck());
-	WritePrivateProfileString( L"SET", L"CS2BasicOnly", val.GetBuffer(0), commonIniPath );
+	WritePrivateProfileInt( L"SET", L"BSBasicOnly", Button_GetCheck(GetDlgItem(IDC_CHECK_BS)), commonIniPath.c_str() );
+	WritePrivateProfileInt( L"SET", L"CS1BasicOnly", Button_GetCheck(GetDlgItem(IDC_CHECK_CS1)), commonIniPath.c_str() );
+	WritePrivateProfileInt( L"SET", L"CS2BasicOnly", Button_GetCheck(GetDlgItem(IDC_CHECK_CS2)), commonIniPath.c_str() );
 
-	for( int i=0; i<this->serviceList.GetCount(); i++ ){
+	for( int i=0; i<ListView_GetItemCount(GetDlgItem(IDC_LIST_SERVICE)); i++ ){
 		map<LONGLONG, CH_DATA5>::iterator itr;
 		itr = this->chSet.chList.begin();
 		advance(itr, i);
@@ -85,30 +82,18 @@ void CSetDlgEpg::SaveIni(void)
 			itr->second.originalNetworkID,
 			itr->second.transportStreamID,
 			itr->second.serviceID,
-			(BOOL)this->serviceList.GetCheck(i)
+			ListView_GetCheckState(GetDlgItem(IDC_LIST_SERVICE), i)
 			);
 	}
 	this->chSet.SaveChText();
-}
-
-BOOL CSetDlgEpg::PreTranslateMessage(MSG* pMsg)
-{
-	// TODO: ここに特定なコードを追加するか、もしくは基本クラスを呼び出してください。
-	if( pMsg->message == WM_KEYDOWN ){
-		if( pMsg->wParam  == VK_RETURN || pMsg->wParam  == VK_ESCAPE ){
-			return FALSE;
-		}
-	}
-
-	return CDialog::PreTranslateMessage(pMsg);
 }
 
 
 void CSetDlgEpg::OnBnClickedButtonAllChk()
 {
 	// TODO: ここにコントロール通知ハンドラー コードを追加します。
-	for( int i=0; i<this->serviceList.GetCount(); i++ ){
-		this->serviceList.SetCheck(i, TRUE);
+	for( int i=0; i<ListView_GetItemCount(GetDlgItem(IDC_LIST_SERVICE)); i++ ){
+		ListView_SetCheckState(GetDlgItem(IDC_LIST_SERVICE), i, TRUE);
 	}
 }
 
@@ -116,15 +101,11 @@ void CSetDlgEpg::OnBnClickedButtonAllChk()
 void CSetDlgEpg::OnBnClickedButtonVideoChk()
 {
 	// TODO: ここにコントロール通知ハンドラー コードを追加します。
-	for( int i=0; i<this->serviceList.GetCount(); i++ ){
+	for( int i=0; i<ListView_GetItemCount(GetDlgItem(IDC_LIST_SERVICE)); i++ ){
 		map<LONGLONG, CH_DATA5>::iterator itr;
 		itr = this->chSet.chList.begin();
 		advance(itr, i);
-		if( itr->second.serviceType == 0x01 || itr->second.serviceType == 0xA5 ){
-			this->serviceList.SetCheck(i, TRUE);
-		}else{
-			this->serviceList.SetCheck(i, FALSE);
-		}
+		ListView_SetCheckState(GetDlgItem(IDC_LIST_SERVICE), i, itr->second.serviceType == 0x01 || itr->second.serviceType == 0xA5);
 	}
 }
 
@@ -132,7 +113,40 @@ void CSetDlgEpg::OnBnClickedButtonVideoChk()
 void CSetDlgEpg::OnBnClickedButtonAllClear()
 {
 	// TODO: ここにコントロール通知ハンドラー コードを追加します。
-	for( int i=0; i<this->serviceList.GetCount(); i++ ){
-		this->serviceList.SetCheck(i, FALSE);
+	for( int i=0; i<ListView_GetItemCount(GetDlgItem(IDC_LIST_SERVICE)); i++ ){
+		ListView_SetCheckState(GetDlgItem(IDC_LIST_SERVICE), i, FALSE);
 	}
+}
+
+
+INT_PTR CALLBACK CSetDlgEpg::DlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	CSetDlgEpg* pSys = (CSetDlgEpg*)GetWindowLongPtr(hDlg, GWLP_USERDATA);
+	if( pSys == NULL && uMsg != WM_INITDIALOG ){
+		return FALSE;
+	}
+	switch( uMsg ){
+	case WM_INITDIALOG:
+		SetWindowLongPtr(hDlg, GWLP_USERDATA, lParam);
+		pSys = (CSetDlgEpg*)lParam;
+		pSys->m_hWnd = hDlg;
+		return pSys->OnInitDialog();
+	case WM_NCDESTROY:
+		pSys->m_hWnd = NULL;
+		break;
+	case WM_COMMAND:
+		switch( LOWORD(wParam) ){
+		case IDC_BUTTON_ALL_CHK:
+			pSys->OnBnClickedButtonAllChk();
+			break;
+		case IDC_BUTTON_VIDEO_CHK:
+			pSys->OnBnClickedButtonVideoChk();
+			break;
+		case IDC_BUTTON_ALL_CLEAR:
+			pSys->OnBnClickedButtonAllClear();
+			break;
+		}
+		break;
+	}
+	return FALSE;
 }

@@ -40,142 +40,160 @@ void Format(wstring& strBuff, const WCHAR *format, ...)
     va_end(params);
 }
 
-void Replace(string& strBuff, const string strOld, const string strNew)
+void Replace(string& strBuff, const string& strOld, const string& strNew)
 {
 	string::size_type Pos = 0;
-	string::size_type OldPos = 0;
+	string* strWork = &strBuff;
+	string strForAlias;
 
-	while ((Pos = strBuff.find(strOld,OldPos)) != string::npos)
+	if( strWork == &strOld || strWork == &strNew ){
+		strForAlias = strBuff;
+		strWork = &strForAlias;
+	}
+	while ((Pos = strWork->find(strOld,Pos)) != string::npos)
 	{
-		strBuff.replace(Pos,strOld.size(),strNew);
-		OldPos = Pos + strNew.size();
+		strWork->replace(Pos,strOld.size(),strNew);
+		Pos += strNew.size();
+	}
+	if( strWork == &strForAlias ){
+		strBuff = strForAlias;
 	}
 }
 
-void Replace(wstring& strBuff, const wstring strOld, const wstring strNew)
+void Replace(wstring& strBuff, const wstring& strOld, const wstring& strNew)
 {
 	string::size_type Pos = 0;
-	string::size_type OldPos = 0;
+	wstring* strWork = &strBuff;
+	wstring strForAlias;
 
-	while ((Pos = strBuff.find(strOld,OldPos)) != string::npos)
+	if( strWork == &strOld || strWork == &strNew ){
+		strForAlias = strBuff;
+		strWork = &strForAlias;
+	}
+	while ((Pos = strWork->find(strOld,Pos)) != string::npos)
 	{
-		strBuff.replace(Pos,strOld.size(),strNew);
-		OldPos = Pos + strNew.size();
+		strWork->replace(Pos,strOld.size(),strNew);
+		Pos += strNew.size();
+	}
+	if( strWork == &strForAlias ){
+		strBuff = strForAlias;
 	}
 }
 
-void WtoA(wstring strIn, string& strOut)
+void WtoA(const wstring& strIn, string& strOut)
 {
-	if( strIn.empty() == true ){
-		strOut="";
-		return ;
+	strOut.clear();
+	int iLen = (int)strIn.size() * 2 + 1;
+	char* pszBuff = new char[iLen];
+	if( WideCharToMultiByte( 932, 0, strIn.c_str(), -1, pszBuff, iLen, NULL, NULL ) != 0 ){
+		strOut = pszBuff;
+		delete[] pszBuff;
+	}else{
+		//rare case
+		delete[] pszBuff;
+		iLen = WideCharToMultiByte( 932, 0, strIn.c_str(), -1, NULL, 0, NULL, NULL );
+		if( iLen > 0 ){
+			pszBuff = new char[iLen];
+			if( WideCharToMultiByte( 932, 0, strIn.c_str(), -1, pszBuff, iLen, NULL, NULL ) != 0 ){
+				strOut = pszBuff;
+			}
+			delete[] pszBuff;
+		}
 	}
-	int iLen = 0;
-	iLen = WideCharToMultiByte( 932, 0, strIn.c_str(), -1, NULL, 0, NULL, NULL );
-	char* pszBuff = new char[iLen+1];
-	ZeroMemory(pszBuff, sizeof(char)*(iLen+1));
-	WideCharToMultiByte( 932, 0, strIn.c_str(), -1, pszBuff, iLen, NULL, NULL );
-	strOut = pszBuff;
-	
-	delete[] pszBuff;
 }
 
-void WtoUTF8(wstring strIn, string& strOut)
+void WtoUTF8(const wstring& strIn, string& strOut)
 {
-	if( strIn.empty() == true ){
-		strOut="";
-		return ;
+	strOut.clear();
+	int iLen = (int)strIn.size() * 3 + 1;
+	char* pszBuff = new char[iLen];
+	if( WideCharToMultiByte( CP_UTF8, 0, strIn.c_str(), -1, pszBuff, iLen, NULL, NULL ) != 0 ){
+		strOut = pszBuff;
+		delete[] pszBuff;
+	}else{
+		//rare case
+		delete[] pszBuff;
+		iLen = WideCharToMultiByte( CP_UTF8, 0, strIn.c_str(), -1, NULL, 0, NULL, NULL );
+		if( iLen > 0 ){
+			pszBuff = new char[iLen];
+			if( WideCharToMultiByte( CP_UTF8, 0, strIn.c_str(), -1, pszBuff, iLen, NULL, NULL ) != 0 ){
+				strOut = pszBuff;
+			}
+			delete[] pszBuff;
+		}
 	}
-	int iLen = 0;
-	iLen = WideCharToMultiByte( CP_UTF8, 0, strIn.c_str(), -1, NULL, 0, NULL, NULL );
-	char* pszBuff = new char[iLen+1];
-	ZeroMemory(pszBuff, sizeof(char)*(iLen+1));
-	WideCharToMultiByte( CP_UTF8, 0, strIn.c_str(), -1, pszBuff, iLen, NULL, NULL );
-	strOut = pszBuff;
-	
-	delete[] pszBuff;
 }
 
-void AtoW(string strIn, wstring& strOut)
+void AtoW(const string& strIn, wstring& strOut)
 {
-	if( strIn.empty() == true ){
-		strOut=L"";
-		return ;
+	strOut.clear();
+	int iLen = (int)strIn.size() + 1;
+	WCHAR* pwszBuff = new WCHAR[iLen];
+	if( MultiByteToWideChar( 932, 0, strIn.c_str(), -1, pwszBuff, iLen ) != 0 ){
+		strOut = pwszBuff;
+		delete[] pwszBuff;
+	}else{
+		//rare case
+		delete[] pwszBuff;
+		iLen = MultiByteToWideChar( 932, 0, strIn.c_str(), -1, NULL, 0 );
+		if( iLen > 0 ){
+			pwszBuff = new WCHAR[iLen];
+			if( MultiByteToWideChar( 932, 0, strIn.c_str(), -1, pwszBuff, iLen ) != 0 ){
+				strOut = pwszBuff;
+			}
+			delete[] pwszBuff;
+		}
 	}
-	int iLen = MultiByteToWideChar( 932, 0, strIn.c_str(), -1, NULL, 0 );
-	WCHAR* pwszBuff = new WCHAR[iLen+1];
-	ZeroMemory(pwszBuff, sizeof(WCHAR)*(iLen+1));
-	MultiByteToWideChar( 932, 0, strIn.c_str(), -1, pwszBuff, iLen );
-
-	strOut = pwszBuff;
-	
-	delete[] pwszBuff;
 }
 
-void UTF8toW(string strIn, wstring& strOut)
+void UTF8toW(const string& strIn, wstring& strOut)
 {
-	if( strIn.empty() == true ){
-		strOut=L"";
-		return ;
+	strOut.clear();
+	int iLen = (int)strIn.size() + 1;
+	WCHAR* pwszBuff = new WCHAR[iLen];
+	if( MultiByteToWideChar( CP_UTF8, 0, strIn.c_str(), -1, pwszBuff, iLen ) != 0 ){
+		strOut = pwszBuff;
+		delete[] pwszBuff;
+	}else{
+		//rare case
+		delete[] pwszBuff;
+		iLen = MultiByteToWideChar( CP_UTF8, 0, strIn.c_str(), -1, NULL, 0 );
+		if( iLen > 0 ){
+			pwszBuff = new WCHAR[iLen];
+			if( MultiByteToWideChar( CP_UTF8, 0, strIn.c_str(), -1, pwszBuff, iLen ) != 0 ){
+				strOut = pwszBuff;
+			}
+			delete[] pwszBuff;
+		}
 	}
-	int iLen = MultiByteToWideChar( CP_UTF8, 0, strIn.c_str(), -1, NULL, 0 );
-	WCHAR* pwszBuff = new WCHAR[iLen+1];
-	ZeroMemory(pwszBuff, sizeof(WCHAR)*(iLen+1));
-	MultiByteToWideChar( CP_UTF8, 0, strIn.c_str(), -1, pwszBuff, iLen );
-
-	strOut = pwszBuff;
-	
-	delete[] pwszBuff;
 }
 
-BOOL Separate(string strIn, string strSep, string& strLeft, string& strRight)
+BOOL Separate(const string& strIn, const char *sep, string& strLeft, string& strRight)
 {
-	if( strIn.empty() == true ){
-		strLeft = "";
+	string::size_type Pos = strIn.find(sep);
+	string strL(strIn, 0, Pos);
+	if( Pos == string::npos ){
 		strRight = "";
+		strLeft = strL;
 		return FALSE;
 	}
-	
-	strLeft = "";
-	strRight = "";
-	int iPos = (int)strIn.find(strSep);
-	if( iPos == (int)string::npos ){
-		strLeft = strIn;
-		return FALSE;
-	}else if( iPos == 0 ){
-		strIn.erase(0, iPos+strSep.length());
-		strRight = strIn;
-		return TRUE;
-	}
-	strLeft = strIn.substr(0,iPos);
-	strIn.erase(0, iPos+strSep.length());
-	strRight = strIn;
+	strRight = strIn.substr(Pos+strlen(sep));
+	strLeft = strL;
 	
 	return TRUE;
 }
 
-BOOL Separate(wstring strIn, wstring strSep, wstring& strLeft, wstring& strRight)
+BOOL Separate(const wstring& strIn, const WCHAR *sep, wstring& strLeft, wstring& strRight)
 {
-	if( strIn.empty() == true ){
-		strLeft = L"";
+	wstring::size_type Pos = strIn.find(sep);
+	wstring strL(strIn, 0, Pos);
+	if( Pos == string::npos ){
 		strRight = L"";
+		strLeft = strL;
 		return FALSE;
 	}
-	
-	strLeft = L"";
-	strRight = L"";
-	int iPos = (int)strIn.find(strSep);
-	if( iPos == (int)string::npos ){
-		strLeft = strIn;
-		return FALSE;
-	}else if( iPos == 0 ){
-		strIn.erase(0, iPos+strSep.length());
-		strRight = strIn;
-		return TRUE;
-	}
-	strLeft = strIn.substr(0,iPos);
-	strIn.erase(0, iPos+strSep.length());
-	strRight = strIn;
+	strRight = strIn.substr(Pos+wcslen(sep));
+	strLeft = strL;
 	
 	return TRUE;
 }
@@ -234,7 +252,7 @@ void ChkFileName(wstring& strPath)
 	Replace(strPath, L"|",L"Åb");
 }
 
-int CompareNoCase(string str1, string str2)
+int CompareNoCase(const string& str1, const string& str2)
 {
 	DWORD dwSize1 = (DWORD)str1.length()+1;
 	DWORD dwSize2 = (DWORD)str2.length()+1;
@@ -242,25 +260,21 @@ int CompareNoCase(string str1, string str2)
 	char* szBuff1 = new char[dwSize1];
 	char* szBuff2 = new char[dwSize2];
 
-	ZeroMemory(szBuff1, sizeof(char)*dwSize1);
-	ZeroMemory(szBuff2, sizeof(char)*dwSize2);
-
 	strcpy_s(szBuff1, dwSize1, str1.c_str());
 	strcpy_s(szBuff2, dwSize2, str2.c_str());
 
 	_strlwr_s(szBuff1, dwSize1);
 	_strlwr_s(szBuff2, dwSize2);
 
-	string strBuff1 = szBuff1;
-	string strBuff2 = szBuff2;
+	int iRet = string(szBuff1).compare(szBuff2);
 
 	delete[] szBuff1;
 	delete[] szBuff2;
 
-	return strBuff1.compare(strBuff2);
+	return iRet;
 }
 
-int CompareNoCase(wstring str1, wstring str2)
+int CompareNoCase(const wstring& str1, const wstring& str2)
 {
 	DWORD dwSize1 = (DWORD)str1.length()+1;
 	DWORD dwSize2 = (DWORD)str2.length()+1;
@@ -268,22 +282,18 @@ int CompareNoCase(wstring str1, wstring str2)
 	WCHAR* szBuff1 = new WCHAR[dwSize1];
 	WCHAR* szBuff2 = new WCHAR[dwSize2];
 
-	ZeroMemory(szBuff1, sizeof(WCHAR)*dwSize1);
-	ZeroMemory(szBuff2, sizeof(WCHAR)*dwSize2);
-
 	wcscpy_s(szBuff1, dwSize1, str1.c_str());
 	wcscpy_s(szBuff2, dwSize2, str2.c_str());
 
 	_wcslwr_s(szBuff1, dwSize1);
 	_wcslwr_s(szBuff2, dwSize2);
 
-	wstring strBuff1 = szBuff1;
-	wstring strBuff2 = szBuff2;
+	int iRet = wstring(szBuff1).compare(szBuff2);
 
 	delete[] szBuff1;
 	delete[] szBuff2;
 
-	return strBuff1.compare(strBuff2);
+	return iRet;
 }
 
 BOOL UrlDecode(LPCSTR src, DWORD srcSize, string& dest)
@@ -404,13 +414,11 @@ void Trim(wstring& strBuff)
 	}
 }
 
-string Tolower(string src)
+string Tolower(const string& src)
 {
 	DWORD dwSize1 = (DWORD)src.length()+1;
 
 	char* szBuff1 = new char[dwSize1];
-
-	ZeroMemory(szBuff1, sizeof(char)*dwSize1);
 
 	strcpy_s(szBuff1, dwSize1, src.c_str());
 
@@ -423,13 +431,11 @@ string Tolower(string src)
 	return strBuff1;
 }
 
-wstring Tolower(wstring src)
+wstring Tolower(const wstring& src)
 {
 	DWORD dwSize1 = (DWORD)src.length()+1;
 
 	WCHAR* szBuff1 = new WCHAR[dwSize1];
-
-	ZeroMemory(szBuff1, sizeof(WCHAR)*dwSize1);
 
 	wcscpy_s(szBuff1, dwSize1, src.c_str());
 

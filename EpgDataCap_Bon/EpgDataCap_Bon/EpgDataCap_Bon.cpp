@@ -15,11 +15,6 @@
 
 // CEpgDataCap_BonApp
 
-BEGIN_MESSAGE_MAP(CEpgDataCap_BonApp, CWinApp)
-	ON_COMMAND(ID_HELP, &CWinApp::OnHelp)
-END_MESSAGE_MAP()
-
-
 // CEpgDataCap_BonApp コンストラクション
 
 CEpgDataCap_BonApp::CEpgDataCap_BonApp()
@@ -48,53 +43,44 @@ BOOL CEpgDataCap_BonApp::InitInstance()
 	InitCtrls.dwICC = ICC_WIN95_CLASSES;
 	InitCommonControlsEx(&InitCtrls);
 
-	CWinApp::InitInstance();
-
 	SetProcessShutdownParameters(0x300, 0);
 
-	AfxEnableControlContainer();
-
-	// ダイアログにシェル ツリー ビューまたはシェル リスト ビュー コントロールが
-	// 含まれている場合にシェル マネージャーを作成します。
-	CShellManager *pShellManager = new CShellManager;
-
-	// 標準初期化
-	// これらの機能を使わずに最終的な実行可能ファイルの
-	// サイズを縮小したい場合は、以下から不要な初期化
-	// ルーチンを削除してください。
-	// 設定が格納されているレジストリ キーを変更します。
-	// TODO: 会社名または組織名などの適切な文字列に
-	// この文字列を変更してください。
-	SetRegistryKey(_T("アプリケーション ウィザードで生成されたローカル アプリケーション"));
-
+	// コマンドオプションを解析
 	CCmdLineUtil cCmdUtil;
-	ParseCommandLine(cCmdUtil);
+	int argc;
+	LPWSTR *argv = CommandLineToArgvW(GetCommandLine(), &argc);
+	if (argv != NULL) {
+		for (int i = 1; i < argc; i++) {
+			BOOL bFlag = argv[i][0] == L'-' || argv[i][0] == L'/' ? TRUE : FALSE;
+			cCmdUtil.ParseParam(&argv[i][bFlag ? 1 : 0], bFlag, i == argc - 1 ? TRUE : FALSE);
+		}
+		LocalFree(argv);
+	}
 
 	CEpgDataCap_BonDlg dlg;
 
-	map<CString, CString>::iterator itr;
+	map<wstring, wstring>::iterator itr;
 	dlg.SetIniMin(FALSE);
 	dlg.SetIniView(TRUE);
 	dlg.SetIniNW(TRUE);
 	for( itr = cCmdUtil.m_CmdList.begin(); itr != cCmdUtil.m_CmdList.end(); itr++ ){
-		if( itr->first.CompareNoCase(L"d") == 0 ){
-			dlg.SetInitBon(itr->second);
-			OutputDebugString(itr->second);
-		}else if( itr->first.CompareNoCase(L"min") == 0 ){
+		if( lstrcmpi(itr->first.c_str(), L"d") == 0 ){
+			dlg.SetInitBon(itr->second.c_str());
+			OutputDebugString(itr->second.c_str());
+		}else if( lstrcmpi(itr->first.c_str(), L"min") == 0 ){
 			dlg.SetIniMin(TRUE);
-		}else if( itr->first.CompareNoCase(L"noview") == 0 ){
+		}else if( lstrcmpi(itr->first.c_str(), L"noview") == 0 ){
 			dlg.SetIniView(FALSE);
-		}else if( itr->first.CompareNoCase(L"nonw") == 0 ){
+		}else if( lstrcmpi(itr->first.c_str(), L"nonw") == 0 ){
 			dlg.SetIniNW(FALSE);
-		}else if( itr->first.CompareNoCase(L"nwudp") == 0 ){
+		}else if( lstrcmpi(itr->first.c_str(), L"nwudp") == 0 ){
 			dlg.SetIniNWUDP(TRUE);
-		}else if( itr->first.CompareNoCase(L"nwtcp") == 0 ){
+		}else if( lstrcmpi(itr->first.c_str(), L"nwtcp") == 0 ){
 			dlg.SetIniNWTCP(TRUE);
 		}
 	}
 
 
-	m_pMainWnd = &dlg;
 	INT_PTR nResponse = dlg.DoModal();
 	if (nResponse == IDOK)
 	{
@@ -107,14 +93,20 @@ BOOL CEpgDataCap_BonApp::InitInstance()
 		//  記述してください。
 	}
 
-	// 上で作成されたシェル マネージャーを削除します。
-	if (pShellManager != NULL)
-	{
-		delete pShellManager;
-	}
-
 	// ダイアログは閉じられました。アプリケーションのメッセージ ポンプを開始しないで
 	//  アプリケーションを終了するために FALSE を返してください。
 	return FALSE;
 }
 
+int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow)
+{
+	theApp.InitInstance();
+	return 0;
+}
+
+BOOL WritePrivateProfileInt(LPCTSTR lpAppName, LPCTSTR lpKeyName, int value, LPCTSTR lpFileName)
+{
+	TCHAR sz[32];
+	wsprintf(sz, TEXT("%d"), value);
+	return WritePrivateProfileString(lpAppName, lpKeyName, sz, lpFileName);
+}

@@ -4,19 +4,14 @@
 #include "stdafx.h"
 #include "EpgDataCap_Bon.h"
 #include "SetDlgBasic.h"
-#include "afxdialogex.h"
 
 #include "../../Common/PathUtil.h"
 #include "../../Common/StringUtil.h"
 
 // CSetDlgBasic ダイアログ
 
-IMPLEMENT_DYNAMIC(CSetDlgBasic, CDialog)
-
-CSetDlgBasic::CSetDlgBasic(CWnd* pParent /*=NULL*/)
-	: CDialog(CSetDlgBasic::IDD, pParent)
-	, settingFolderPath(_T(""))
-	, recFolderPath(_T(""))
+CSetDlgBasic::CSetDlgBasic()
+	: m_hWnd(NULL)
 {
 
 }
@@ -25,50 +20,33 @@ CSetDlgBasic::~CSetDlgBasic()
 {
 }
 
-void CSetDlgBasic::DoDataExchange(CDataExchange* pDX)
+BOOL CSetDlgBasic::Create(LPCTSTR lpszTemplateName, HWND hWndParent)
 {
-	CDialog::DoDataExchange(pDX);
-	DDX_Text(pDX, IDC_EDIT_SET_PATH, settingFolderPath);
-	DDX_Text(pDX, IDC_EDIT_REC_FOLDER, recFolderPath);
-	DDX_Control(pDX, IDC_LIST_REC_FOLDER, recFolderList);
+	return CreateDialogParam(GetModuleHandle(NULL), lpszTemplateName, hWndParent, DlgProc, (LPARAM)this) != NULL;
 }
-
-
-BEGIN_MESSAGE_MAP(CSetDlgBasic, CDialog)
-	ON_BN_CLICKED(IDC_BUTTON_REC_PATH, &CSetDlgBasic::OnBnClickedButtonRecPath)
-	ON_BN_CLICKED(IDC_BUTTON_REC_ADD, &CSetDlgBasic::OnBnClickedButtonRecAdd)
-	ON_BN_CLICKED(IDC_BUTTON_REC_DEL, &CSetDlgBasic::OnBnClickedButtonRecDel)
-	ON_BN_CLICKED(IDC_BUTTON_REC_UP, &CSetDlgBasic::OnBnClickedButtonRecUp)
-	ON_BN_CLICKED(IDC_BUTTON_REC_DOWN, &CSetDlgBasic::OnBnClickedButtonRecDown)
-	ON_BN_CLICKED(IDC_BUTTON_SET_PATH, &CSetDlgBasic::OnBnClickedButtonSetPath)
-END_MESSAGE_MAP()
 
 
 // CSetDlgBasic メッセージ ハンドラー
 BOOL CSetDlgBasic::OnInitDialog()
 {
-	CDialog::OnInitDialog();
-
 	// TODO:  ここに初期化を追加してください
 	wstring path;
 	GetSettingPath(path);
-	settingFolderPath = path.c_str();
+	SetDlgItemText(m_hWnd, IDC_EDIT_SET_PATH, path.c_str());
 
-	int iNum = GetPrivateProfileInt( L"SET", L"RecFolderNum", 0, commonIniPath );
+	int iNum = GetPrivateProfileInt( L"SET", L"RecFolderNum", 0, commonIniPath.c_str() );
 	if( iNum == 0 ){
 		GetDefSettingPath(path);
-		recFolderList.AddString( path.c_str() );
+		ListBox_AddString(GetDlgItem(IDC_LIST_REC_FOLDER), path.c_str());
 	}else{
 		for( int i = 0; i < iNum; i++ ){
-			CString key = L"";
-			key.Format(L"RecFolderPath%d", i );
+			WCHAR key[64];
+			wsprintf(key, L"RecFolderPath%d", i);
 			WCHAR buff[512]=L"";
-			GetPrivateProfileString( L"SET", key, L"", buff, 512, commonIniPath );
-			recFolderList.AddString( buff );
+			GetPrivateProfileString( L"SET", key, L"", buff, 512, commonIniPath.c_str() );
+			ListBox_AddString(GetDlgItem(IDC_LIST_REC_FOLDER), buff);
 		}
 	}
-
-	UpdateData(FALSE);
 
 	return TRUE;  // return TRUE unless you set the focus to a control
 	// 例外 : OCX プロパティ ページは必ず FALSE を返します。
@@ -76,30 +54,32 @@ BOOL CSetDlgBasic::OnInitDialog()
 
 void CSetDlgBasic::SaveIni()
 {
-	UpdateData(TRUE);
-	WritePrivateProfileString(L"SET", L"DataSavePath", settingFolderPath.GetBuffer(0), commonIniPath);
-	_CreateDirectory(settingFolderPath);
-
-	int iNum = recFolderList.GetCount();
-	CString strVal;
-	strVal.Format( L"%d", iNum );
-	WritePrivateProfileString(L"SET", L"RecFolderNum", strVal.GetBuffer(0), commonIniPath);
-	for( int i = 0; i < iNum; i++ ){
-		CString strKey = L"";
-		strKey.Format(L"RecFolderPath%d", i );
-		CString strFolder = L"";
-		recFolderList.GetText( i, strFolder );
-		WritePrivateProfileString(L"SET", strKey, strFolder, commonIniPath);
+	if( m_hWnd == NULL ){
+		return;
 	}
 
-	UpdateData(FALSE);
+	WCHAR settingFolderPath[512] = L"";
+	GetDlgItemText(m_hWnd, IDC_EDIT_SET_PATH, settingFolderPath, 512);
+	WritePrivateProfileString(L"SET", L"DataSavePath", settingFolderPath, commonIniPath.c_str());
+	_CreateDirectory(settingFolderPath);
+
+	int iNum = ListBox_GetCount(GetDlgItem(IDC_LIST_REC_FOLDER));
+	WritePrivateProfileInt(L"SET", L"RecFolderNum", iNum, commonIniPath.c_str());
+	for( int i = 0; i < iNum; i++ ){
+		WCHAR key[64];
+		wsprintf(key, L"RecFolderPath%d", i);
+		WCHAR folder[512] = L"";
+		int len = ListBox_GetTextLen(GetDlgItem(IDC_LIST_REC_FOLDER), i);
+		if( 0 <= len && len < 512 ){
+			ListBox_GetText(GetDlgItem(IDC_LIST_REC_FOLDER), i, folder);
+		}
+		WritePrivateProfileString(L"SET", key, folder, commonIniPath.c_str());
+	}
 }
 
 void CSetDlgBasic::OnBnClickedButtonRecPath()
 {
 	// TODO: ここにコントロール通知ハンドラー コードを追加します。
-	UpdateData(TRUE);
-
 	BROWSEINFO bi;
 	LPWSTR lpBuffer;
 	LPITEMIDLIST pidlRoot = NULL;
@@ -112,7 +92,9 @@ void CSetDlgBasic::OnBnClickedButtonRecPath()
 	if ((lpBuffer = (LPWSTR) lpMalloc->Alloc(_MAX_PATH*2)) == NULL) {
 		return;
 	}
-	if( recFolderPath.IsEmpty() != 0 ){
+	WCHAR recFolderPath[512];
+	if( GetDlgItemText(m_hWnd, IDC_EDIT_REC_FOLDER, recFolderPath, 512) <= 0 ){
+		recFolderPath[0] = L'\0';
 		if (!SUCCEEDED(SHGetSpecialFolderLocation( m_hWnd,CSIDL_DESKTOP,&pidlRoot ) )){ 
 			lpMalloc->Free(lpBuffer);
 			return;
@@ -125,12 +107,12 @@ void CSetDlgBasic::OnBnClickedButtonRecPath()
 	bi.lpszTitle = L"録画ファイル保存フォルダを選択してください";
 	bi.ulFlags = 0;
 	bi.lpfn = NULL;
-	bi.lParam = (LPARAM)recFolderPath.GetBuffer(0);
+	bi.lParam = (LPARAM)recFolderPath;
 
 	pidlBrowse = SHBrowseForFolder(&bi);
 	if (pidlBrowse != NULL) {  
 		if (SHGetPathFromIDList(pidlBrowse, lpBuffer)) {
-			recFolderPath = lpBuffer;
+			SetDlgItemText(m_hWnd, IDC_EDIT_REC_FOLDER, lpBuffer);
 		}
 		lpMalloc->Free(pidlBrowse);
 	}
@@ -139,28 +121,29 @@ void CSetDlgBasic::OnBnClickedButtonRecPath()
 	}
 	lpMalloc->Free(lpBuffer);
 	lpMalloc->Release();
-	
-	UpdateData(FALSE);
 }
 
 
 void CSetDlgBasic::OnBnClickedButtonRecAdd()
 {
 	// TODO: ここにコントロール通知ハンドラー コードを追加します。
-	UpdateData(TRUE);
-	if( recFolderPath.IsEmpty() == true ){
+	WCHAR recFolderPath[512];
+	if( GetDlgItemText(m_hWnd, IDC_EDIT_REC_FOLDER, recFolderPath, 512) <= 0 ){
 		return ;
 	}
-	wstring addPath = recFolderPath.GetBuffer(0);
+	wstring addPath = recFolderPath;
 	ChkFolderPath( addPath );
 
 	//同一フォルダがすでにあるかチェック
-	int iNum = recFolderList.GetCount();
+	int iNum = ListBox_GetCount(GetDlgItem(IDC_LIST_REC_FOLDER));
 	BOOL findFlag = FALSE;
 	for( int i = 0; i < iNum; i++ ){
-		CString folder = L"";
-		recFolderList.GetText( i, folder );
-		wstring strPath = folder.GetBuffer(0);
+		WCHAR folder[512] = L"";
+		int len = ListBox_GetTextLen(GetDlgItem(IDC_LIST_REC_FOLDER), i);
+		if( 0 <= len && len < 512 ){
+			ListBox_GetText(GetDlgItem(IDC_LIST_REC_FOLDER), i, folder);
+		}
+		wstring strPath = folder;
 		ChkFolderPath( strPath );
 
 		if( CompareNoCase( addPath, strPath ) == 0 ){
@@ -169,59 +152,63 @@ void CSetDlgBasic::OnBnClickedButtonRecAdd()
 		}
 	}
 	if( findFlag == FALSE ){
-		recFolderList.AddString( addPath.c_str() );
+		ListBox_AddString(GetDlgItem(IDC_LIST_REC_FOLDER), addPath.c_str());
 	}
-
-	UpdateData(FALSE);
 }
 
 
 void CSetDlgBasic::OnBnClickedButtonRecDel()
 {
 	// TODO: ここにコントロール通知ハンドラー コードを追加します。
-	int sel = recFolderList.GetCurSel();
+	int sel = ListBox_GetCurSel(GetDlgItem(IDC_LIST_REC_FOLDER));
 	if( sel == LB_ERR ){
 		return ;
 	}
-	recFolderList.DeleteString( sel );
+	ListBox_DeleteString(GetDlgItem(IDC_LIST_REC_FOLDER), sel);
 }
 
 
 void CSetDlgBasic::OnBnClickedButtonRecUp()
 {
 	// TODO: ここにコントロール通知ハンドラー コードを追加します。
-	int sel = recFolderList.GetCurSel();
+	HWND hItem = GetDlgItem(IDC_LIST_REC_FOLDER);
+	int sel = ListBox_GetCurSel(hItem);
 	if( sel == LB_ERR || sel == 0){
 		return ;
 	}
-	CString folder = L"";
-	recFolderList.GetText( sel, folder );
-	recFolderList.DeleteString( sel );
-	recFolderList.InsertString( sel-1, folder );
-	recFolderList.SetCurSel( sel-1 );
+	WCHAR folder[512] = L"";
+	int len = ListBox_GetTextLen(hItem, sel);
+	if( 0 <= len && len < 512 ){
+		ListBox_GetText(hItem, sel, folder);
+		ListBox_DeleteString(hItem, sel);
+		ListBox_InsertString(hItem, sel - 1, folder);
+		ListBox_SetCurSel(hItem, sel - 1);
+	}
 }
 
 
 void CSetDlgBasic::OnBnClickedButtonRecDown()
 {
 	// TODO: ここにコントロール通知ハンドラー コードを追加します。
-	int sel = recFolderList.GetCurSel();
-	if( sel == LB_ERR || sel == recFolderList.GetCount() - 1 ){
+	HWND hItem = GetDlgItem(IDC_LIST_REC_FOLDER);
+	int sel = ListBox_GetCurSel(hItem);
+	if( sel == LB_ERR || sel == ListBox_GetCount(hItem) - 1 ){
 		return ;
 	}
-	CString folder = L"";
-	recFolderList.GetText( sel, folder );
-	recFolderList.DeleteString( sel );
-	recFolderList.InsertString( sel+1, folder );
-	recFolderList.SetCurSel( sel+1 );
+	WCHAR folder[512] = L"";
+	int len = ListBox_GetTextLen(hItem, sel);
+	if( 0 <= len && len < 512 ){
+		ListBox_GetText(hItem, sel, folder);
+		ListBox_DeleteString(hItem, sel);
+		ListBox_InsertString(hItem, sel + 1, folder);
+		ListBox_SetCurSel(hItem, sel + 1);
+	}
 }
 
 
 void CSetDlgBasic::OnBnClickedButtonSetPath()
 {
 	// TODO: ここにコントロール通知ハンドラー コードを追加します。
-	UpdateData(TRUE);
-
 	BROWSEINFO bi;
 	LPWSTR lpBuffer;
 	LPITEMIDLIST pidlRoot = NULL;
@@ -234,7 +221,9 @@ void CSetDlgBasic::OnBnClickedButtonSetPath()
 	if ((lpBuffer = (LPWSTR) lpMalloc->Alloc(_MAX_PATH*2)) == NULL) {
 		return;
 	}
-	if( settingFolderPath.IsEmpty() != 0 ){
+	WCHAR settingFolderPath[512];
+	if( GetDlgItemText(m_hWnd, IDC_EDIT_SET_PATH, settingFolderPath, 512) <= 0 ){
+		settingFolderPath[0] = L'\0';
 		if (!SUCCEEDED(SHGetSpecialFolderLocation( m_hWnd,CSIDL_DESKTOP,&pidlRoot ) )){ 
 			lpMalloc->Free(lpBuffer);
 			return;
@@ -247,12 +236,12 @@ void CSetDlgBasic::OnBnClickedButtonSetPath()
 	bi.lpszTitle = L"設定関係保存フォルダを選択してください";
 	bi.ulFlags = 0;
 	bi.lpfn = NULL;
-	bi.lParam = (LPARAM)settingFolderPath.GetBuffer(0);
+	bi.lParam = (LPARAM)settingFolderPath;
 
 	pidlBrowse = SHBrowseForFolder(&bi);
 	if (pidlBrowse != NULL) {  
 		if (SHGetPathFromIDList(pidlBrowse, lpBuffer)) {
-			settingFolderPath = lpBuffer;
+			SetDlgItemText(m_hWnd, IDC_EDIT_SET_PATH, lpBuffer);
 		}
 		lpMalloc->Free(pidlBrowse);
 	}
@@ -261,19 +250,47 @@ void CSetDlgBasic::OnBnClickedButtonSetPath()
 	}
 	lpMalloc->Free(lpBuffer);
 	lpMalloc->Release();
-	
-	UpdateData(FALSE);
 }
 
 
-BOOL CSetDlgBasic::PreTranslateMessage(MSG* pMsg)
+INT_PTR CALLBACK CSetDlgBasic::DlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	// TODO: ここに特定なコードを追加するか、もしくは基本クラスを呼び出してください。
-	if( pMsg->message == WM_KEYDOWN ){
-		if( pMsg->wParam  == VK_RETURN || pMsg->wParam  == VK_ESCAPE ){
-			return FALSE;
-		}
+	CSetDlgBasic* pSys = (CSetDlgBasic*)GetWindowLongPtr(hDlg, GWLP_USERDATA);
+	if( pSys == NULL && uMsg != WM_INITDIALOG ){
+		return FALSE;
 	}
-	return CDialog::PreTranslateMessage(pMsg);
+	switch( uMsg ){
+	case WM_INITDIALOG:
+		SetWindowLongPtr(hDlg, GWLP_USERDATA, lParam);
+		pSys = (CSetDlgBasic*)lParam;
+		pSys->m_hWnd = hDlg;
+		return pSys->OnInitDialog();
+	case WM_NCDESTROY:
+		pSys->m_hWnd = NULL;
+		break;
+	case WM_COMMAND:
+		switch( LOWORD(wParam) ){
+		case IDC_BUTTON_REC_PATH:
+			pSys->OnBnClickedButtonRecPath();
+			break;
+		case IDC_BUTTON_REC_ADD:
+			pSys->OnBnClickedButtonRecAdd();
+			break;
+		case IDC_BUTTON_REC_DEL:
+			pSys->OnBnClickedButtonRecDel();
+			break;
+		case IDC_BUTTON_REC_UP:
+			pSys->OnBnClickedButtonRecUp();
+			break;
+		case IDC_BUTTON_REC_DOWN:
+			pSys->OnBnClickedButtonRecDown();
+			break;
+		case IDC_BUTTON_SET_PATH:
+			pSys->OnBnClickedButtonSetPath();
+			break;
+		}
+		break;
+	}
+	return FALSE;
 }
 

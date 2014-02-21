@@ -13,6 +13,7 @@ typedef struct _CLUT_DAT{
 	unsigned char ucAlpha;
 } CLUT_DAT;
 
+#ifdef COLOR_DEF_H_IMPLEMENT_TABLE
 static CLUT_DAT DefClut[]={
 	{  0,  0,  0,255}, //0
 	{255,  0,  0,255},
@@ -143,6 +144,7 @@ static CLUT_DAT DefClut[]={
 	{255,170,255,128},
 	{255,255, 85,128}
 };
+#endif //COLOR_DEF_H_IMPLEMENT_TABLE
 
 
 #endif

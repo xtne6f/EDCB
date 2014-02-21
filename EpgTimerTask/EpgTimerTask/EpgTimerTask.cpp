@@ -13,18 +13,10 @@
 
 // CEpgTimerTaskApp
 
-BEGIN_MESSAGE_MAP(CEpgTimerTaskApp, CWinApp)
-	ON_COMMAND(ID_HELP, &CWinApp::OnHelp)
-END_MESSAGE_MAP()
-
-
 // CEpgTimerTaskApp コンストラクション
 
 CEpgTimerTaskApp::CEpgTimerTaskApp()
 {
-	// 再起動マネージャーをサポートします
-	m_dwRestartManagerSupportFlags = AFX_RESTART_MANAGER_SUPPORT_RESTART;
-
 	// TODO: この位置に構築用コードを追加してください。
 	// ここに InitInstance 中の重要な初期化処理をすべて記述してください。
 }
@@ -49,26 +41,21 @@ BOOL CEpgTimerTaskApp::InitInstance()
 	InitCtrls.dwICC = ICC_WIN95_CLASSES;
 	InitCommonControlsEx(&InitCtrls);
 
-	CWinApp::InitInstance();
+	// コマンドオプションを解析
+	BOOL bStartSrv = FALSE;
+	int argc;
+	LPWSTR *argv = CommandLineToArgvW(GetCommandLine(), &argc);
+	if (argv != NULL) {
+		for (int i = 1; i < argc; i++) {
+			if (!lstrcmpi(argv[i], L"/startsrv")) {
+				bStartSrv = TRUE;
+				break;
+			}
+		}
+		LocalFree(argv);
+	}
 
-
-	AfxEnableControlContainer();
-
-	// ダイアログにシェル ツリー ビューまたはシェル リスト ビュー コントロールが
-	// 含まれている場合にシェル マネージャーを作成します。
-	CShellManager *pShellManager = new CShellManager;
-
-	// 標準初期化
-	// これらの機能を使わずに最終的な実行可能ファイルの
-	// サイズを縮小したい場合は、以下から不要な初期化
-	// ルーチンを削除してください。
-	// 設定が格納されているレジストリ キーを変更します。
-	// TODO: 会社名または組織名などの適切な文字列に
-	// この文字列を変更してください。
-	SetRegistryKey(_T("アプリケーション ウィザードで生成されたローカル アプリケーション"));
-
-	CEpgTimerTaskDlg dlg;
-	m_pMainWnd = &dlg;
+	CEpgTimerTaskDlg dlg(bStartSrv);
 	INT_PTR nResponse = dlg.DoModal();
 	if (nResponse == IDOK)
 	{
@@ -81,14 +68,13 @@ BOOL CEpgTimerTaskApp::InitInstance()
 		//  記述してください。
 	}
 
-	// 上で作成されたシェル マネージャーを削除します。
-	if (pShellManager != NULL)
-	{
-		delete pShellManager;
-	}
-
 	// ダイアログは閉じられました。アプリケーションのメッセージ ポンプを開始しないで
 	//  アプリケーションを終了するために FALSE を返してください。
 	return FALSE;
 }
 
+int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow)
+{
+	theApp.InitInstance();
+	return 0;
+}

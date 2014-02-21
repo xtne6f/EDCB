@@ -1,5 +1,4 @@
 #pragma once
-#include "afxwin.h"
 
 #include "../../Common/PathUtil.h"
 #include "../../Common/StringUtil.h"
@@ -8,15 +7,15 @@
 
 // CSetDlgService ダイアログ
 
-class CSetDlgService : public CDialog
+class CSetDlgService
 {
-	DECLARE_DYNAMIC(CSetDlgService)
-
 public:
-	CSetDlgService(CWnd* pParent = NULL);   // 標準コンストラクター
-	virtual ~CSetDlgService();
+	CSetDlgService();   // 標準コンストラクター
+	~CSetDlgService();
+	BOOL Create(LPCTSTR lpszTemplateName, HWND hWndParent);
+	HWND GetSafeHwnd() const{ return m_hWnd; }
 
-	void SetIniPath(CString commonIniPath, CString appIniPath){
+	void SetIniPath(wstring commonIniPath, wstring appIniPath){
 		this->commonIniPath = commonIniPath;
 		this->appIniPath = appIniPath;
 	};
@@ -27,8 +26,9 @@ public:
 
 
 protected:
-	CString commonIniPath;
-	CString appIniPath;
+	HWND m_hWnd;
+	wstring commonIniPath;
+	wstring appIniPath;
 
 	typedef struct _CH_SET_INFO{
 		wstring bonFile;
@@ -40,22 +40,15 @@ protected:
 
 	BOOL FindBonFileName(wstring src, wstring& dllName);
 	void ReloadList();
+	void SynchronizeCheckState();
 
-protected:
-	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV サポート
-
-	DECLARE_MESSAGE_MAP()
-public:
-	CComboBox combBon;
-	CCheckListBox listService;
 	afx_msg void OnBnClickedButtonChkAll();
 	afx_msg void OnBnClickedButtonChkVideo();
 	afx_msg void OnBnClickedButtonChkClear();
-	virtual BOOL PreTranslateMessage(MSG* pMsg);
-	virtual BOOL OnInitDialog();
+	BOOL OnInitDialog();
 	afx_msg void OnCbnSelchangeComboBon();
-	afx_msg void OnChkChange();
-	CEdit editCh;
 	afx_msg void OnBnClickedButtonDel();
 	afx_msg void OnLbnSelchangeListService();
+	static INT_PTR CALLBACK DlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	HWND GetDlgItem(int nID) const{ return ::GetDlgItem(m_hWnd, nID); }
 };
