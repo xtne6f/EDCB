@@ -3167,9 +3167,10 @@ UINT WINAPI CReserveManager::BankCheckThread(LPVOID param)
 		}
 
 		//EPG取得開始時の設定の一時保存
-		BOOL Tmp_BSOnly;
-		BOOL Tmp_CS1Only;
-		BOOL Tmp_CS2Only;
+		BOOL Tmp_BSOnly = false;
+		BOOL Tmp_CS1Only = false;
+		BOOL Tmp_CS2Only = false;
+		BOOL Tmp_EPGChg = false;
 
 		//EPG取得時間の確認
 		if( sys->Lock(L"BankCheckThread6") == TRUE){
@@ -3221,10 +3222,11 @@ UINT WINAPI CReserveManager::BankCheckThread(LPVOID param)
 					//開始時間過ぎたので開始
 					wstring iniCommonPath = L"";
 					GetCommonIniPath(iniCommonPath);
-					Tmp_BSOnly = sys->BSOnly;
-					Tmp_CS1Only = sys->CS1Only;
-					Tmp_CS2Only = sys->CS2Only;
 					if(GetPrivateProfileInt(L"SET", L"EnableEPGTimerType", 0, iniCommonPath.c_str()) == 1 && swBasicOnly == TRUE){
+						Tmp_BSOnly = sys->BSOnly;
+						Tmp_CS1Only = sys->CS1Only;
+						Tmp_CS2Only = sys->CS2Only;
+						Tmp_EPGChg = true;
 						// 基本情報のみ取得
 						sys->BSOnly = true;
 						sys->CS1Only = true;
@@ -3232,9 +3234,11 @@ UINT WINAPI CReserveManager::BankCheckThread(LPVOID param)
 						WritePrivateProfileString(L"SET",L"BSBasicOnly",L"1",iniCommonPath.c_str());
 						WritePrivateProfileString(L"SET",L"CS1BasicOnly",L"1",iniCommonPath.c_str());
 						WritePrivateProfileString(L"SET",L"CS2BasicOnly",L"1",iniCommonPath.c_str());
+					OutputDebugString(L"CS2BasicOnly");
 						sys->notifyManager->AddNotifyMsg(NOTIFY_UPDATE_PRE_EPGCAP_START, L"基本情報のみ取得します");
 					}
 					sys->_StartEpgCap();
+					OutputDebugString(L"_StartEpgCap();");
 				}
 			}else{
 				//EPGの取得予定なし
@@ -3279,15 +3283,18 @@ UINT WINAPI CReserveManager::BankCheckThread(LPVOID param)
 		if( sys->epgCapCheckFlag == TRUE ){
 			if( sys->Lock(L"BankCheckThread9") == TRUE){
 				if( sys->_IsEpgCap() == FALSE ){
-					// EPG取得開始時の設定を書き戻し
-					wstring iniCommonPath = L"";
-					GetCommonIniPath(iniCommonPath);
-					sys->BSOnly = Tmp_BSOnly;
-					sys->CS1Only = Tmp_CS1Only;
-					sys->CS2Only = Tmp_CS2Only;
-					WritePrivateProfileString(L"SET",L"BSBasicOnly", sys->BSOnly  ? L"1" : L"0",iniCommonPath.c_str());
-					WritePrivateProfileString(L"SET",L"CS1BasicOnly",sys->CS1Only ? L"1" : L"0",iniCommonPath.c_str());
-					WritePrivateProfileString(L"SET",L"CS2BasicOnly",sys->CS2Only ? L"1" : L"0",iniCommonPath.c_str());
+					if(Tmp_EPGChg){
+						// EPG取得開始時の設定を書き戻し
+						wstring iniCommonPath = L"";
+						GetCommonIniPath(iniCommonPath);
+						sys->BSOnly = Tmp_BSOnly;
+						sys->CS1Only = Tmp_CS1Only;
+						sys->CS2Only = Tmp_CS2Only;
+						WritePrivateProfileString(L"SET",L"BSBasicOnly", sys->BSOnly  ? L"1" : L"0",iniCommonPath.c_str());
+						WritePrivateProfileString(L"SET",L"CS1BasicOnly",sys->CS1Only ? L"1" : L"0",iniCommonPath.c_str());
+						WritePrivateProfileString(L"SET",L"CS2BasicOnly",sys->CS2Only ? L"1" : L"0",iniCommonPath.c_str());
+						Tmp_EPGChg = false;
+					}
 					//取得完了
 					sys->_SendNotifyStatus(0);
 					sys->_SendNotifyUpdate(NOTIFY_UPDATE_EPGCAP_END);

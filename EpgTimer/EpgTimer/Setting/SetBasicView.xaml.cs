@@ -101,6 +101,7 @@ namespace EpgTimer.Setting
                         {
                             item.IsEpgCap = true;
                         }
+                        item.EPGNum = IniFileHandler.GetPrivateProfileInt(item.BonDriver, "EPGCount", 0, SettingPath.TimerSrvIniPath).ToString();
                         int priority = IniFileHandler.GetPrivateProfileInt(item.BonDriver, "Priority", 0xFFFF, SettingPath.TimerSrvIniPath);
                         while (true)
                         {
@@ -298,6 +299,7 @@ namespace EpgTimer.Setting
                     {
                         IniFileHandler.WritePrivateProfileString(info.BonDriver, "GetEpg", "0", SettingPath.TimerSrvIniPath);
                     }
+                    IniFileHandler.WritePrivateProfileString(info.BonDriver, "EPGCount", info.EPGNum, SettingPath.TimerSrvIniPath);
                     IniFileHandler.WritePrivateProfileString(info.BonDriver, "Priority", i.ToString(), SettingPath.TimerSrvIniPath);
                 }
 
@@ -618,6 +620,7 @@ namespace EpgTimer.Setting
                     TunerInfo info = listBox_bon.SelectedItem as TunerInfo;
                     textBox_bon_num.DataContext = info;
                     checkBox_bon_epg.DataContext = info;
+                    textBox_bon_epgnum.DataContext = info;
                 }
             }
             catch (Exception ex)

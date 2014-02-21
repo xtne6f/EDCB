@@ -196,8 +196,12 @@ namespace EpgTimer.TunerReserveViewCtrl
                 double sizeTitle = Settings.Instance.FontSizeTitle;
                 foreach (ReserveViewItem info in Items)
                 {
-                    dc.DrawRectangle(Brushes.LightGray, null, new Rect(info.LeftPos, info.TopPos, info.Width, info.Height));
-                    if (info.Height > 2)
+                    // ビットマップフォントがかすれる問題
+                    double dInfoTopPos = Math.Floor(info.TopPos);
+                    double dInfoHeight = Math.Floor(info.Height);
+
+                    dc.DrawRectangle(Brushes.LightGray, null, new Rect(info.LeftPos, dInfoTopPos, info.Width, dInfoHeight));
+                    if (dInfoHeight > 2)
                     {
                         SolidColorBrush color = Brushes.White;
                         if (info.ReserveInfo.OverlapMode == 1)
@@ -205,8 +209,8 @@ namespace EpgTimer.TunerReserveViewCtrl
                             color = Brushes.Yellow;
                             //color = CommonManager.Instance.CustContentColorList[0x14];
                         }
-                        dc.DrawRectangle(color, null, new Rect(info.LeftPos + 1, info.TopPos + 1, info.Width - 2, info.Height - 2));
-                        if (info.Height < 4 + sizeTitle + 2)
+                        dc.DrawRectangle(color, null, new Rect(info.LeftPos + 1, dInfoTopPos + 1, info.Width - 2, dInfoHeight - 2));
+                        if (dInfoHeight < 4 + sizeTitle + 2)
                         {
                             //高さ足りない
                             info.TitleDrawErr = true;
@@ -220,7 +224,7 @@ namespace EpgTimer.TunerReserveViewCtrl
                         min = info.ReserveInfo.StartTime.Minute.ToString("d02") + "  ";
 
                         double useHeight = 0;
-                        if (RenderText(min, dc, glyphTypefaceNormal, sizeNormal, info.Width - 4, info.Height - 4, info.LeftPos, info.TopPos, ref useHeight) == false)
+                        if (RenderText(min, dc, glyphTypefaceNormal, sizeNormal, info.Width - 4, dInfoHeight - 4, info.LeftPos, dInfoTopPos, ref useHeight) == false)
                         {
                             info.TitleDrawErr = true;
                             continue;
@@ -252,18 +256,19 @@ namespace EpgTimer.TunerReserveViewCtrl
                             {
                                 serviceName += " (その他)";
                             }
-                            if (RenderText(serviceName, dc, glyphTypefaceTitle, sizeTitle, info.Width - 6 - widthOffset, info.Height - 6 - totalHeight, info.LeftPos + widthOffset, info.TopPos + totalHeight, ref useHeight) == false)
+                            if (RenderText(serviceName, dc, glyphTypefaceTitle, sizeTitle, info.Width - 6 - widthOffset, dInfoHeight - 6 - totalHeight, info.LeftPos + widthOffset, dInfoTopPos + totalHeight, ref useHeight) == false)
                             {
                                 info.TitleDrawErr = true;
                                 continue;
                             }
-                            totalHeight += useHeight + (sizeNormal / 2);
+                            // ビットマップフォントがかすれる問題
+                            totalHeight += useHeight + Math.Floor(sizeNormal / 2);
                         }
                         widthOffset = 2;
                         //番組名
                         if (info.ReserveInfo.Title.Length > 0)
                         {
-                            if (RenderText(info.ReserveInfo.Title, dc, glyphTypefaceNormal, sizeNormal, info.Width - 6 - widthOffset, info.Height - 6 - totalHeight, info.LeftPos + widthOffset, info.TopPos + totalHeight, ref useHeight) == false)
+                            if (RenderText(info.ReserveInfo.Title, dc, glyphTypefaceNormal, sizeNormal, info.Width - 6 - widthOffset, dInfoHeight - 6 - totalHeight, info.LeftPos + widthOffset, dInfoTopPos + totalHeight, ref useHeight) == false)
                             {
                                 info.TitleDrawErr = true;
                                 continue;

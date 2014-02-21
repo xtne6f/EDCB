@@ -16,12 +16,6 @@ CEpgDBManager::CEpgDBManager(void)
 	textPath += L"\\ConvertText.txt";
 
 	this->chgText.ParseReserveText(textPath.c_str() );
-
-	::CoInitialize( NULL );
-	HRESULT hr=regExp.CreateInstance(CLSID_RegExp);
-	if(FAILED(hr)){
-		regExp = NULL;
-	}
 }
 
 CEpgDBManager::~CEpgDBManager(void)
@@ -47,12 +41,6 @@ CEpgDBManager::~CEpgDBManager(void)
 		CloseHandle(this->lockEvent);
 		this->lockEvent = NULL;
 	}
-
-	if( regExp != NULL ){
-		regExp.Release();
-	}
-
-	::CoUninitialize();
 }
 
 BOOL CEpgDBManager::Lock(LPCWSTR log, DWORD timeOut)
@@ -407,9 +395,14 @@ BOOL CEpgDBManager::SearchEpg(vector<EPGDB_SEARCH_KEY_INFO>* key, vector<EPGDB_E
 	BOOL ret = TRUE;
 
 	map<ULONGLONG, SEARCH_RESULT_EVENT> resultMap;
-	for( size_t i=0; i<key->size(); i++ ){
-		SearchEvent( &(*key)[i], &resultMap );
+	CoInitialize(NULL);
+	{
+		IRegExpPtr regExp;
+		for( size_t i=0; i<key->size(); i++ ){
+			SearchEvent( &(*key)[i], &resultMap, regExp );
+		}
 	}
+	CoUninitialize();
 
 	map<ULONGLONG, SEARCH_RESULT_EVENT>::iterator itr;
 	for( itr = resultMap.begin(); itr != resultMap.end(); itr++ ){
@@ -431,7 +424,12 @@ BOOL CEpgDBManager::SearchEpg(EPGDB_SEARCH_KEY_INFO* key, vector<SEARCH_RESULT_E
 	BOOL ret = TRUE;
 
 	map<ULONGLONG, SEARCH_RESULT_EVENT> resultMap;
-	SearchEvent( key, &resultMap );
+	CoInitialize(NULL);
+	{
+		IRegExpPtr regExp;
+		SearchEvent( key, &resultMap, regExp );
+	}
+	CoUninitialize();
 
 	map<ULONGLONG, SEARCH_RESULT_EVENT>::iterator itr;
 	for( itr = resultMap.begin(); itr != resultMap.end(); itr++ ){
@@ -442,7 +440,7 @@ BOOL CEpgDBManager::SearchEpg(EPGDB_SEARCH_KEY_INFO* key, vector<SEARCH_RESULT_E
 	return ret;
 }
 
-void CEpgDBManager::SearchEvent(EPGDB_SEARCH_KEY_INFO* key, map<ULONGLONG, SEARCH_RESULT_EVENT>* resultMap)
+void CEpgDBManager::SearchEvent(EPGDB_SEARCH_KEY_INFO* key, map<ULONGLONG, SEARCH_RESULT_EVENT>* resultMap, IRegExpPtr& regExp)
 {
 	if( key == NULL || resultMap == NULL ){
 		return ;
@@ -686,7 +684,7 @@ void CEpgDBManager::SearchEvent(EPGDB_SEARCH_KEY_INFO* key, map<ULONGLONG, SEARC
 
 				//キーワード確認
 				if( notKeyList.size() != 0 ){
-					if( IsFindKeyword(key->regExpFlag, key->titleOnlyFlag, &notKeyList, itrEvent->second->shortInfo, itrEvent->second->extInfo, FALSE) == TRUE ){
+					if( IsFindKeyword(key->regExpFlag, regExp, key->titleOnlyFlag, &notKeyList, itrEvent->second->shortInfo, itrEvent->second->extInfo, FALSE) == TRUE ){
 						//notキーワード見つかったので対象外
 						continue;
 					}
@@ -716,7 +714,7 @@ void CEpgDBManager::SearchEvent(EPGDB_SEARCH_KEY_INFO* key, map<ULONGLONG, SEARC
 							continue;
 						}
 					}else{
-						if( IsFindKeyword(key->regExpFlag, key->titleOnlyFlag, &andKeyList, itrEvent->second->shortInfo, itrEvent->second->extInfo, TRUE, &matchKey) == FALSE ){
+						if( IsFindKeyword(key->regExpFlag, regExp, key->titleOnlyFlag, &andKeyList, itrEvent->second->shortInfo, itrEvent->second->extInfo, TRUE, &matchKey) == FALSE ){
 							//andキーワード見つからなかったので対象外
 							continue;
 						}
@@ -793,7 +791,7 @@ BOOL CEpgDBManager::IsInDateTime(vector<TIME_SEARCH>* timeList, SYSTEMTIME start
 	return FALSE;
 }
 
-BOOL CEpgDBManager::IsFindKeyword(BOOL regExpFlag, BOOL titleOnlyFlag, vector<wstring>* keyList, EPGDB_SHORT_EVENT_INFO* shortInfo, EPGDB_EXTENDED_EVENT_INFO* extInfo, BOOL andMode, wstring* findKey)
+BOOL CEpgDBManager::IsFindKeyword(BOOL regExpFlag, IRegExpPtr& regExp, BOOL titleOnlyFlag, vector<wstring>* keyList, EPGDB_SHORT_EVENT_INFO* shortInfo, EPGDB_EXTENDED_EVENT_INFO* extInfo, BOOL andMode, wstring* findKey)
 {
 	if( shortInfo == NULL ){
 		//基本情報ないので対象外
@@ -811,15 +809,18 @@ BOOL CEpgDBManager::IsFindKeyword(BOOL regExpFlag, BOOL titleOnlyFlag, vector<ws
 
 	if( regExpFlag == TRUE ){
 		//正規表現モード
-		if( this->regExp != NULL && word.size() > 0 && keyList->size() > 0 ){
+		if( regExp == NULL ){
+			regExp.CreateInstance(CLSID_RegExp);
+		}
+		if( regExp != NULL && word.size() > 0 && keyList->size() > 0 ){
 			try{
 				_bstr_t target( word.c_str() );
 				_bstr_t pattern( (*keyList)[0].c_str() );
 
-				this->regExp->PutGlobal( VARIANT_TRUE );
-				this->regExp->PutPattern( pattern );
+				regExp->PutGlobal( VARIANT_TRUE );
+				regExp->PutPattern( pattern );
 
-				IMatchCollectionPtr pMatchCol( this->regExp->Execute( target ) );
+				IMatchCollectionPtr pMatchCol( regExp->Execute( target ) );
 
 				if( pMatchCol->Count > 0 ){
 					if( findKey != NULL ){

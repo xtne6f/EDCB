@@ -8,13 +8,8 @@
 */
 #include "StringUtil.h"
 
-#include <Objbase.h>
-#pragma comment(lib, "Ole32.lib")
-
 CSendCtrlCmd::CSendCtrlCmd(void)
 {
-	CoInitialize(NULL);
-
 	WSAData wsaData;
 	WSAStartup(MAKEWORD(2,0), &wsaData);
 
@@ -40,8 +35,6 @@ CSendCtrlCmd::~CSendCtrlCmd(void)
 		this->lockEvent = NULL;
 	}
 	WSACleanup();
-
-	CoUninitialize();
 }
 
 BOOL CSendCtrlCmd::Lock(LPCWSTR log, DWORD timeOut)

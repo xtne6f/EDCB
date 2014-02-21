@@ -241,7 +241,6 @@ UPNP_SERVER_HANDLE UPNP_SERVER_CreateHandle(
 
 		item->notifyDeviceList = SORT_LIST_CreateHandle(0, SORT_LIST_COMPDEF_strcmp, NULL, UPNP_SSDP_NOTIFY_DEVICE_INFO_Delete);
 #ifdef _WIN32
-		CoInitialize(NULL);
 		ZeroMemory(&wsaData, sizeof(wsaData));
 		WSAStartup(MAKEWORD(2, 2), &wsaData);
 #endif
@@ -276,7 +275,6 @@ void UPNP_SERVER_CloseHandle(
 		
 #ifdef _WIN32
 		WSACleanup();
-		CoUninitialize();
 #endif
 		free(item);
 	}

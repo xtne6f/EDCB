@@ -91,44 +91,32 @@ namespace EpgTimer.EpgView
                     // 最低表示dot数よりも小さければ
                     if (info.Height < minimum)
                     {
-                        double wk = minimum - info.Height;    // 調整幅
+                        double wk1 = minimum - info.Height;                            // 調整幅(Total)
+                        double wk2 = 0;                                                // 調整可能幅
+                        double wk3 = wk1;                                              // 調整後の要再調整幅
                         ProgramViewItem pr = info.prevItem;
-                        if (pr != null)                             // 先頭ならやりようがない
-                        {
-                            while (pr.Height < minimum + wk)      // 調整できるだけの高さが無ければ
-                            {
-                                if (pr.prevTop == 0)
-                                {
-                                    pr.prevTop = pr.TopPos;
-                                }
+                        if (pr != null) {                                              // 先頭ならやりようがない
+                            while (pr.Height < minimum + wk3) {                        // 調整できるだけの十分な高さが無い
+                                wk2 = pr.Height - minimum;                             // 無理にでも調整可能な幅を求める
+                                if (wk2 > 0) {} else { wk2 = 0; }                      // 念の為マイナスを排除
+                                wk3 = wk3 - wk2;                                       // 調整後の要再調整幅
 
-                                // 番組表先頭が欠けないための処理
-                                //if (pr.Height >= minimum && pr.prevItem != null)
-                                if (pr.Height >= minimum)
-                                {
-                                    pr.TopPos -= wk;    // 先頭位置のみ更新
-                                }
-                                pr = pr.prevItem;
-                                if (pr == null)
-                                {
-                                    break;
-                                }
+                                if (  pr.prevTop == 0) {   pr.prevTop =   pr.TopPos; }
+                                pr.Height -= wk2;                                      // 高さと
+                                if (pr.Height >= minimum) { pr.TopPos -= wk3; }        // 開始位置 の調整
+
+                                pr = pr.prevItem;                                      // 次(前)
+                                if (pr == null) { break; }                             // が無い？なら終わり
                             }
 
-                            if (pr != null)
-                            {
-                                if (pr.prevTop == 0)
-                                {
-                                    pr.prevTop = pr.TopPos;
-                                }
-                                pr.Height -= wk;        //  高さと
-                                if (info.prevTop == 0)
-                                {
-                                    info.prevTop = info.TopPos;
-                                }
+                            if (pr != null) {
+                                if (  pr.prevTop == 0) {   pr.prevTop =   pr.TopPos; }
+                                pr.Height -= wk3;                                      //  高さと
+                                if (info.prevTop == 0) { info.prevTop = info.TopPos; }
                             }
-                            info.TopPos -= wk;      //  先頭位置をずらす
-                            info.Height = minimum;    //  最低表示dot数
+
+                            info.TopPos -= wk1;                                        //  開始位置 の調整
+                            info.Height  = minimum;                                    //  最低表示dot数
                         }
                     }
                 }
@@ -239,7 +227,7 @@ namespace EpgTimer.EpgView
                             continue;
                         }
 
-                        double widthOffset = sizeNormal * 1.5;
+                        double widthOffset = sizeNormal * 1.7;
                         //番組情報
                         if (info.EventInfo.ShortInfo != null)
                         {
@@ -260,7 +248,7 @@ namespace EpgTimer.EpgView
                             //説明
                             if (info.EventInfo.ShortInfo.text_char.Length > 0)
                             {
-                                if (RenderText(info.EventInfo.ShortInfo.text_char, ref textDrawList, glyphTypefaceNormal, sizeNormal, info.Width - 6 - widthOffset, info.Height - 6 - totalHeight, info.LeftPos + widthOffset, info.TopPos + totalHeight, ref useHeight, CommonManager.Instance.CustTitle2Color, m) == false)
+                                if (RenderText(info.EventInfo.ShortInfo.text_char, ref textDrawList, glyphTypefaceNormal, sizeNormal, info.Width - 10 - widthOffset, info.Height - 5 - totalHeight, info.LeftPos + widthOffset, info.TopPos + totalHeight, ref useHeight, CommonManager.Instance.CustTitle2Color, m) == false)
                                 {
                                     continue;
                                 }
@@ -390,10 +378,10 @@ namespace EpgTimer.EpgView
                     dc.DrawRectangle(Brushes.DarkGray, null, new Rect(info.LeftPos, info.TopPos, info.Width, info.Height));
                     if (info.Height > 2)
                     {
-                        dc.DrawRectangle(info.ContentColor, null, new Rect(info.LeftPos + 0, info.TopPos + 1, info.Width - 1, info.Height - 1));
+                        dc.DrawRectangle(info.ContentColor, null, new Rect(info.LeftPos + 0, info.TopPos + 0.5, info.Width - 1, info.Height - 0.5));
                         if (textDrawDict.ContainsKey(info))
                         {
-                            dc.PushClip(new RectangleGeometry(new Rect(info.LeftPos + 1, info.TopPos + 1, info.Width - 2, info.Height - 2)));
+                            dc.PushClip(new RectangleGeometry(new Rect(info.LeftPos + 0, info.TopPos + 0.5, info.Width - 1, info.Height - 0.5)));
                             foreach (TextDrawItem txtinfo in textDrawDict[info])
                             {
                                 dc.DrawGlyphRun(txtinfo.FontColor, txtinfo.Text);

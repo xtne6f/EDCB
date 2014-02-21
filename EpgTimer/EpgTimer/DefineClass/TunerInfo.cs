@@ -17,6 +17,11 @@ namespace EpgTimer
             get;
             set;
         }
+        public String EPGNum
+        {
+            get;
+            set;
+        }
         public bool IsEpgCap
         {
             get;

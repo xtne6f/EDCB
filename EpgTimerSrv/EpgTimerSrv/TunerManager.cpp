@@ -87,12 +87,18 @@ BOOL CTunerManager::ReloadTuner()
 					//カウント0以上のものだけ利用
 					WORD priority = (WORD)GetPrivateProfileInt(bonFileName.c_str(), L"Priority", 0, srvIniPath.c_str());
 					BOOL epgCapFlag = (BOOL)GetPrivateProfileInt(bonFileName.c_str(), L"GetEpg", 1, srvIniPath.c_str());
+					WORD EPGcount = (WORD)GetPrivateProfileInt(bonFileName.c_str(), L"EPGCount", -1, srvIniPath.c_str());
+					if(EPGcount<0) EPGcount = count;
 
 					for( WORD i=1; i<=count; i++ ){
 						TUNER_INFO* item = new TUNER_INFO;
 						item->bonID = priority;
 						item->tunerID = i;
-						item->epgCapFlag = epgCapFlag;
+						if(EPGcount<i){		//	EPGCountを超えていたらEPG取得に使用しない
+							item->epgCapFlag = 0;
+						} else {
+							item->epgCapFlag = epgCapFlag;
+						}
 						item->bonFileName = bonFileName;
 						item->chUtil.ParseText(chSetPath.c_str());
 						item->chSet4FilePath = chSetPath;

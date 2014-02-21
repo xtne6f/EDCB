@@ -127,12 +127,16 @@ BOOL CARIB8CharDecode::PSISI( const BYTE* pbSrc, DWORD dwSrcSize, string* strDec
 	InitPSISI();
 	DWORD dwReadSize = 0;
 
-	BOOL bRet = Analyze(pbSrc, dwSrcSize, &dwReadSize );
-	if( bRet == TRUE ){
-		*strDec = m_strDecode;
-	}else{
-		*strDec = "";
-	}
+	//入力の範囲検査が各所で省略され符号列によっては数byteオーバーランし得るので対処
+	vector<BYTE> bSrcList;
+	bSrcList.reserve(dwSrcSize + 8);
+	bSrcList.assign(pbSrc, pbSrc + dwSrcSize);
+	//各所の無限whileを寸止めする番兵をまぜる
+	static const BYTE bMargin[8] = {0,0,0x20,0,0x4F,0x43,0x9B,0};
+	bSrcList.insert(bSrcList.end(), bMargin, bMargin + 8);
+
+	BOOL bRet = Analyze(bSrcList.data(), dwSrcSize, &dwReadSize );
+	*strDec = m_strDecode;
 	return bRet;
 }
 
