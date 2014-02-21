@@ -7,6 +7,8 @@
 #include "../../UPnPCtrl/CharUtil.h"
 #include "../../Common/TimeUtil.h"
 
+#include <shlwapi.h>
+
 static WCHAR DIDLStart[] = L"<DIDL-Lite xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns=\"urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/\" xmlns:upnp=\"urn:schemas-upnp-org:metadata-1-0/upnp/\" >";
 static WCHAR DIDLEnd[] = L"</DIDL-Lite>";
 

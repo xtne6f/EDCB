@@ -10,43 +10,47 @@
 #include "../../Common/SendCtrlCmd.h"
 #include "../../Common/CtrlCmdUtil.h"
 #include "../../Common/CtrlCmdUtil2.h"
+#include "../../Common/ServiceUtil.h"
 #include "QueryWaitDlg.h"
 
 #define WM_TRAY_PUSHICON (WM_USER+51) //トレイアイコン押された
 #define WM_QUERY_SUSPEND (WM_USER+52)
 #define WM_QUERY_REBOOT (WM_USER+53)
+#define WM_END_DIALOG (WM_USER+54)
+#define WM_SHOW_ERROR_AND_CLOSE (WM_USER+55)
 
 #define TRAYICON_ID 200
 #define RETRY_ADD_TRAY 1000
 #define RETRY_CHG_TRAY 1001
+#define WATCH_SRV_STATUS 1002
 
 // CEpgTimerTaskDlg ダイアログ
-class CEpgTimerTaskDlg : public CDialogEx
+class CEpgTimerTaskDlg
 {
 // コンストラクション
 public:
-	CEpgTimerTaskDlg(CWnd* pParent = NULL);	// 標準コンストラクター
+	CEpgTimerTaskDlg(BOOL bStartSrv = FALSE);
+	INT_PTR DoModal();
 
 // ダイアログ データ
 	enum { IDD = IDD_EPGTIMERTASK_DIALOG };
 
-	protected:
-	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV サポート
-
 protected:
 	//タスクトレイ
 	BOOL DeleteTaskBar(HWND hWnd, UINT uiID);
-	BOOL AddTaskBar(HWND hWnd, UINT uiMsg, UINT uiID, HICON hIcon, CString strTips);
-	BOOL ChgTipsTaskBar(HWND hWnd, UINT uiID, HICON hIcon, CString strTips);
+	BOOL AddTaskBar(HWND hWnd, UINT uiMsg, UINT uiID, HICON hIcon, wstring strTips);
+	BOOL ChgTipsTaskBar(HWND hWnd, UINT uiID, HICON hIcon, wstring strTips);
 
 // 実装
 protected:
 	HICON m_hIcon;
 	HICON m_hIcon2;
 	HICON m_hIconRed;
-	HICON m_hIconBlue;
 	HICON m_hIconGreen;
-	HICON m_hIconGray;
+	HWND m_hDlg;
+	UINT m_uMsgTaskbarCreated;
+	BOOL m_bStartSrv;
+	HANDLE m_hBonLiteMutex;
 
 	CPipeServer m_cPipe;
 	DWORD m_dwSrvStatus;
@@ -63,16 +67,13 @@ protected:
 	void CmdSrvStatusChg(CMD_STREAM* pCmdParam, CMD_STREAM* pResParam);
 
 	// 生成された、メッセージ割り当て関数
-	virtual BOOL OnInitDialog();
-	afx_msg void OnPaint();
-	afx_msg HCURSOR OnQueryDragIcon();
-	DECLARE_MESSAGE_MAP()
-public:
-	afx_msg void OnWindowPosChanging(WINDOWPOS* lpwndpos);
-	virtual LRESULT WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
-	afx_msg void OnBnClickedButtonEnd();
-	afx_msg void OnBnClickedButtonS4();
-	afx_msg void OnBnClickedButtonS3();
-	afx_msg void OnDestroy();
-	afx_msg void OnTimer(UINT_PTR nIDEvent);
+	BOOL OnInitDialog();
+	LRESULT WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
+	void OnBnClickedButtonEnd();
+	void OnBnClickedButtonS4();
+	void OnBnClickedButtonS3();
+	void OnDestroy();
+	void OnTimer(UINT_PTR nIDEvent);
+
+	static INT_PTR CALLBACK DlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
 };

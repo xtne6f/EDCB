@@ -4,16 +4,12 @@
 #include "stdafx.h"
 #include "EpgTimerTask.h"
 #include "QueryWaitDlg.h"
-#include "afxdialogex.h"
 
 
 // CQueryWaitDlg ダイアログ
 
-IMPLEMENT_DYNAMIC(CQueryWaitDlg, CDialogEx)
-
-CQueryWaitDlg::CQueryWaitDlg(CWnd* pParent /*=NULL*/)
-	: CDialogEx(CQueryWaitDlg::IDD, pParent)
-	, msgText(_T(""))
+CQueryWaitDlg::CQueryWaitDlg()
+	: m_hDlg(NULL)
 {
 	m_bReboot = FALSE;
 }
@@ -22,18 +18,10 @@ CQueryWaitDlg::~CQueryWaitDlg()
 {
 }
 
-void CQueryWaitDlg::DoDataExchange(CDataExchange* pDX)
+INT_PTR CQueryWaitDlg::DoModal()
 {
-	CDialogEx::DoDataExchange(pDX);
-	DDX_Text(pDX, IDC_STATIC_MSG, msgText);
-	DDX_Control(pDX, IDC_PROGRESS1, waitProg);
+	return DialogBoxParam(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD), NULL, DlgProc, (LPARAM)this);
 }
-
-
-BEGIN_MESSAGE_MAP(CQueryWaitDlg, CDialogEx)
-	ON_WM_TIMER()
-	ON_BN_CLICKED(IDCANCEL, &CQueryWaitDlg::OnBnClickedCancel)
-END_MESSAGE_MAP()
 
 
 // CQueryWaitDlg メッセージ ハンドラー
@@ -41,27 +29,22 @@ END_MESSAGE_MAP()
 
 BOOL CQueryWaitDlg::OnInitDialog()
 {
-	CDialogEx::OnInitDialog();
-
 	// TODO:  ここに初期化を追加してください
-	ModifyStyleEx(0, WS_EX_DLGMODALFRAME);
+	SetWindowLong(m_hDlg, GWL_EXSTYLE, GetWindowLong(m_hDlg, GWL_EXSTYLE) | WS_EX_DLGMODALFRAME);
 
-	ShowWindow(SW_SHOW);
-	SetForegroundWindow();
+	SetWindowPos(m_hDlg, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW|SWP_NOMOVE|SWP_NOSIZE);
+	SetForegroundWindow(m_hDlg);
 	if( m_bReboot == FALSE ){
-		waitProg.SetRange(0,15);
-		waitProg.SetPos(15);
 		dwCount = 15;
-		msgText = L"スタンバイ、休止、またはシャットダウンへ移行を行います";
+		SetDlgItemText(m_hDlg, IDC_STATIC_MSG, L"スタンバイ、休止、またはシャットダウンへ移行を行います");
 	}else{
-		msgText = L"PCを再起動します";
-		SetWindowText(L"PC再起動");
-		waitProg.SetRange(0,30);
-		waitProg.SetPos(30);
+		SetDlgItemText(m_hDlg, IDC_STATIC_MSG, L"PCを再起動します");
+		SetWindowText(m_hDlg, L"PC再起動");
 		dwCount = 30;
 	}
-	SetTimer(TIMER_WAIT_SLEEP, 1000, NULL );
-	UpdateData(FALSE);
+	SetTimer(m_hDlg, TIMER_WAIT_SLEEP, 1000, NULL );
+	SendDlgItemMessage(m_hDlg, IDC_PROGRESS1, PBM_SETRANGE, 0, MAKELONG(0, dwCount));
+	SendDlgItemMessage(m_hDlg, IDC_PROGRESS1, PBM_SETPOS, dwCount, 0);
 
 	return TRUE;  // return TRUE unless you set the focus to a control
 	// 例外 : OCX プロパティ ページは必ず FALSE を返します。
@@ -73,20 +56,38 @@ void CQueryWaitDlg::OnTimer(UINT_PTR nIDEvent)
 	// TODO: ここにメッセージ ハンドラー コードを追加するか、既定の処理を呼び出します。
 	if( nIDEvent == TIMER_WAIT_SLEEP ){
 		if( dwCount == 0 ){
-			KillTimer(TIMER_WAIT_SLEEP);
-			EndDialog(IDOK);
+			KillTimer(m_hDlg, TIMER_WAIT_SLEEP);
+			EndDialog(m_hDlg, IDOK);
+		}else{
+			SendDlgItemMessage(m_hDlg, IDC_PROGRESS1, PBM_SETPOS, --dwCount, 0);
 		}
-		dwCount--;
-		waitProg.SetPos(dwCount);
-		UpdateData(FALSE);
 	}
-
-	CDialogEx::OnTimer(nIDEvent);
 }
 
 
-void CQueryWaitDlg::OnBnClickedCancel()
+INT_PTR CALLBACK CQueryWaitDlg::DlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	// TODO: ここにコントロール通知ハンドラー コードを追加します。
-	CDialogEx::OnCancel();
+	CQueryWaitDlg* pSys = (CQueryWaitDlg*)GetWindowLongPtr(hDlg, GWLP_USERDATA);
+	switch( uMsg ){
+	case WM_INITDIALOG:
+		SetWindowLongPtr(hDlg, GWLP_USERDATA, lParam);
+		pSys = (CQueryWaitDlg*)lParam;
+		pSys->m_hDlg = hDlg;
+		return pSys->OnInitDialog();
+	case WM_NCDESTROY:
+		pSys->m_hDlg = NULL;
+		break;
+	case WM_TIMER:
+		pSys->OnTimer(wParam);
+		break;
+	case WM_COMMAND:
+		switch( LOWORD(wParam) ){
+		case IDOK:
+		case IDCANCEL:
+			EndDialog(hDlg, LOWORD(wParam));
+			return TRUE;
+		}
+		break;
+	}
+	return FALSE;
 }

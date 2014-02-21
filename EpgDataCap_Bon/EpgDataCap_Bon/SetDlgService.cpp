@@ -4,15 +4,23 @@
 #include "stdafx.h"
 #include "EpgDataCap_Bon.h"
 #include "SetDlgService.h"
-#include "afxdialogex.h"
 
+static LPARAM ListView_GetItemParam(HWND hItem, int iItem, int iSubItem)
+{
+	LVITEM lvi;
+	lvi.mask = LVIF_PARAM;
+	lvi.iItem = iItem;
+	lvi.iSubItem = iSubItem;
+	if( ListView_GetItem(hItem, &lvi) != FALSE ){
+		return lvi.lParam;
+	}
+	return 0;
+}
 
 // CSetDlgService ダイアログ
 
-IMPLEMENT_DYNAMIC(CSetDlgService, CDialog)
-
-CSetDlgService::CSetDlgService(CWnd* pParent /*=NULL*/)
-	: CDialog(CSetDlgService::IDD, pParent)
+CSetDlgService::CSetDlgService()
+	: m_hWnd(NULL)
 {
 
 }
@@ -25,24 +33,10 @@ CSetDlgService::~CSetDlgService()
 	}
 }
 
-void CSetDlgService::DoDataExchange(CDataExchange* pDX)
+BOOL CSetDlgService::Create(LPCTSTR lpszTemplateName, HWND hWndParent)
 {
-	CDialog::DoDataExchange(pDX);
-	DDX_Control(pDX, IDC_COMBO_BON, combBon);
-	DDX_Control(pDX, IDC_LIST_SERVICE, listService);
-	DDX_Control(pDX, IDC_EDIT_CH, editCh);
+	return CreateDialogParam(GetModuleHandle(NULL), lpszTemplateName, hWndParent, DlgProc, (LPARAM)this) != NULL;
 }
-
-
-BEGIN_MESSAGE_MAP(CSetDlgService, CDialog)
-	ON_BN_CLICKED(IDC_BUTTON_CHK_ALL, &CSetDlgService::OnBnClickedButtonChkAll)
-	ON_BN_CLICKED(IDC_BUTTON_CHK_VIDEO, &CSetDlgService::OnBnClickedButtonChkVideo)
-	ON_BN_CLICKED(IDC_BUTTON_CHK_CLEAR, &CSetDlgService::OnBnClickedButtonChkClear)
-	ON_CBN_SELCHANGE(IDC_COMBO_BON, &CSetDlgService::OnCbnSelchangeComboBon)
-	ON_CONTROL(CLBN_CHKCHANGE, IDC_LIST_SERVICE, OnChkChange)
-	ON_BN_CLICKED(IDC_BUTTON_DEL, &CSetDlgService::OnBnClickedButtonDel)
-	ON_LBN_SELCHANGE(IDC_LIST_SERVICE, &CSetDlgService::OnLbnSelchangeListService)
-END_MESSAGE_MAP()
 
 
 // CSetDlgService メッセージ ハンドラー
@@ -51,10 +45,8 @@ END_MESSAGE_MAP()
 void CSetDlgService::OnBnClickedButtonChkAll()
 {
 	// TODO: ここにコントロール通知ハンドラー コードを追加します。
-	for( int i=0; i<this->listService.GetCount(); i++ ){
-		CH_DATA4* chSet = (CH_DATA4*)listService.GetItemDataPtr(i);
-		chSet->useViewFlag = TRUE;
-		this->listService.SetCheck(i, TRUE);
+	for( int i=0; i<ListView_GetItemCount(GetDlgItem(IDC_LIST_SERVICE)); i++ ){
+		ListView_SetCheckState(GetDlgItem(IDC_LIST_SERVICE), i, TRUE);
 	}
 }
 
@@ -62,14 +54,10 @@ void CSetDlgService::OnBnClickedButtonChkAll()
 void CSetDlgService::OnBnClickedButtonChkVideo()
 {
 	// TODO: ここにコントロール通知ハンドラー コードを追加します。
-	for( int i=0; i<this->listService.GetCount(); i++ ){
-		CH_DATA4* chSet = (CH_DATA4*)listService.GetItemDataPtr(i);
-		if( chSet->serviceType == 0x01 || chSet->serviceType == 0xA5 ){
-			chSet->useViewFlag = TRUE;
-			this->listService.SetCheck(i, TRUE);
-		}else{
-			chSet->useViewFlag = FALSE;
-			this->listService.SetCheck(i, FALSE);
+	for( int i=0; i<ListView_GetItemCount(GetDlgItem(IDC_LIST_SERVICE)); i++ ){
+		CH_DATA4* chSet = (CH_DATA4*)ListView_GetItemParam(GetDlgItem(IDC_LIST_SERVICE), i, 0);
+		if( chSet != NULL ){
+			ListView_SetCheckState(GetDlgItem(IDC_LIST_SERVICE), i, chSet->serviceType == 0x01 || chSet->serviceType == 0xA5);
 		}
 	}
 }
@@ -78,31 +66,25 @@ void CSetDlgService::OnBnClickedButtonChkVideo()
 void CSetDlgService::OnBnClickedButtonChkClear()
 {
 	// TODO: ここにコントロール通知ハンドラー コードを追加します。
-	for( int i=0; i<this->listService.GetCount(); i++ ){
-		CH_DATA4* chSet = (CH_DATA4*)listService.GetItemDataPtr(i);
-		chSet->useViewFlag = FALSE;
-		this->listService.SetCheck(i, FALSE);
+	for( int i=0; i<ListView_GetItemCount(GetDlgItem(IDC_LIST_SERVICE)); i++ ){
+		ListView_SetCheckState(GetDlgItem(IDC_LIST_SERVICE), i, FALSE);
 	}
-}
-
-
-BOOL CSetDlgService::PreTranslateMessage(MSG* pMsg)
-{
-	// TODO: ここに特定なコードを追加するか、もしくは基本クラスを呼び出してください。
-	if( pMsg->message == WM_KEYDOWN ){
-		if( pMsg->wParam  == VK_RETURN || pMsg->wParam  == VK_ESCAPE ){
-			return FALSE;
-		}
-	}
-	return CDialog::PreTranslateMessage(pMsg);
 }
 
 
 BOOL CSetDlgService::OnInitDialog()
 {
-	CDialog::OnInitDialog();
-
 	// TODO:  ここに初期化を追加してください
+
+	//リストビューにチェックボックスと列をつくる
+	HWND hItem = GetDlgItem(IDC_LIST_SERVICE);
+	ListView_SetExtendedListViewStyleEx(hItem, LVS_EX_CHECKBOXES | LVS_EX_FULLROWSELECT, LVS_EX_CHECKBOXES | LVS_EX_FULLROWSELECT);
+	RECT rc;
+	GetClientRect(hItem, &rc);
+	LVCOLUMN lvc;
+	lvc.mask = LVCF_WIDTH;
+	lvc.cx = rc.right - GetSystemMetrics(SM_CXVSCROLL) - 4;
+	ListView_InsertColumn(hItem, 0, &lvc);
 
 	wstring path = L"";
 	GetSettingPath(path);
@@ -142,19 +124,19 @@ BOOL CSetDlgService::OnInitDialog()
 
 				chList.insert(pair<wstring, CH_SET_INFO*>(item->bonFile, item));
 
-				combBon.AddString(item->bonFile.c_str());
+				ComboBox_AddString(GetDlgItem(IDC_COMBO_BON), item->bonFile.c_str());
 			}
 		}
 	}while(FindNextFile(find, &findData));
 
 	FindClose(find);
 	if( chList.size() > 0 ){
-		combBon.SetCurSel(0);
+		ComboBox_SetCurSel(GetDlgItem(IDC_COMBO_BON), 0);
 		ReloadList();
 
-		CString text = L"";
-		combBon.GetWindowText(text);
-		lastSelect = text.GetBuffer(0);
+		WCHAR text[512] = L"";
+		GetDlgItemText(m_hWnd, IDC_COMBO_BON, text, 512);
+		lastSelect = text;
 	}
 
 	return TRUE;  // return TRUE unless you set the focus to a control
@@ -163,23 +145,39 @@ BOOL CSetDlgService::OnInitDialog()
 
 void CSetDlgService::ReloadList()
 {
-	listService.ResetContent();
+	HWND hItem = GetDlgItem(IDC_LIST_SERVICE);
+	ListView_DeleteAllItems(hItem);
 
-	CString text = L"";
-	combBon.GetWindowText(text);
+	WCHAR text[512] = L"";
+	GetDlgItemText(m_hWnd, IDC_COMBO_BON, text, 512);
 
-	wstring key = text.GetBuffer(0);
+	wstring key = text;
 	map<wstring, CH_SET_INFO*>::iterator itr;
 	itr = chList.find(key);
 	if( itr != chList.end()){
 		multimap<LONGLONG, CH_DATA4>::iterator itrCh;
 		for( itrCh = itr->second->chSet.chList.begin(); itrCh != itr->second->chSet.chList.end(); itrCh++ ){
-			int index = listService.AddString(itrCh->second.serviceName.c_str());
-			listService.SetCheck(index, itrCh->second.useViewFlag);
-			listService.SetItemDataPtr(index, &itrCh->second);
+			LVITEM lvi;
+			lvi.mask = LVIF_TEXT | LVIF_PARAM;
+			lvi.iItem = ListView_GetItemCount(hItem);
+			lvi.iSubItem = 0;
+			lvi.pszText = (LPWSTR)itrCh->second.serviceName.c_str();
+			lvi.lParam = (LPARAM)&itrCh->second;
+			int index = ListView_InsertItem(hItem, &lvi);
+			ListView_SetCheckState(hItem, index, itrCh->second.useViewFlag);
 		}
 	}
-	editCh.SetWindowText(L"");
+	SetDlgItemText(m_hWnd, IDC_EDIT_CH, L"");
+}
+
+void CSetDlgService::SynchronizeCheckState()
+{
+	for( int i=0; i<ListView_GetItemCount(GetDlgItem(IDC_LIST_SERVICE)); i++ ){
+		CH_DATA4* chSet = (CH_DATA4*)ListView_GetItemParam(GetDlgItem(IDC_LIST_SERVICE), i, 0);
+		if( chSet != NULL ){
+			chSet->useViewFlag = ListView_GetCheckState(GetDlgItem(IDC_LIST_SERVICE), i);
+		}
+	}
 }
 
 BOOL CSetDlgService::FindBonFileName(wstring src, wstring& dllName)
@@ -209,33 +207,26 @@ BOOL CSetDlgService::FindBonFileName(wstring src, wstring& dllName)
 
 void CSetDlgService::SaveIni()
 {
-	UpdateData(TRUE);
+	if( m_hWnd == NULL ){
+		return;
+	}
+
+	SynchronizeCheckState();
 
 	map<wstring, CH_SET_INFO*>::iterator itr;
 	for( itr = chList.begin(); itr != chList.end(); itr++ ){
 		itr->second->chSet.SaveChText();
 	}
-
-	UpdateData(FALSE);
-}
-
-void CSetDlgService::OnChkChange() 
-{
-	int sel = listService.GetCurSel();
-	if( sel == LB_ERR ){
-		return ;
-	}
-	CH_DATA4* chSet = (CH_DATA4*)listService.GetItemDataPtr(sel);
-	chSet->useViewFlag = listService.GetCheck(sel);
 }
 
 void CSetDlgService::OnCbnSelchangeComboBon()
 {
 	// TODO: ここにコントロール通知ハンドラー コードを追加します。
-	int sel = combBon.GetCurSel();
+	int sel = ComboBox_GetCurSel(GetDlgItem(IDC_COMBO_BON));
 	if( sel == CB_ERR ){
 		return;
 	}
+	SynchronizeCheckState();
 	ReloadList();
 }
 
@@ -243,20 +234,23 @@ void CSetDlgService::OnCbnSelchangeComboBon()
 void CSetDlgService::OnBnClickedButtonDel()
 {
 	// TODO: ここにコントロール通知ハンドラー コードを追加します。
-	int sel = listService.GetCurSel();
-	if( sel == LB_ERR ){
+	int sel = ListView_GetNextItem(GetDlgItem(IDC_LIST_SERVICE), -1, LVNI_SELECTED);
+	if( sel < 0 ){
 		return ;
 	}
-	if( MessageBox(L"削除を行うと、再度チャンネルスキャンを行うまで項目が表示されなくなります。\r\nよろしいですか？",L"", MB_OKCANCEL) == IDOK ){
-		CH_DATA4* chSet = (CH_DATA4*)listService.GetItemDataPtr(sel);
+	CH_DATA4* chSet = (CH_DATA4*)ListView_GetItemParam(GetDlgItem(IDC_LIST_SERVICE), sel, 0);
+	if( chSet == NULL ){
+		return ;
+	}
+	if( MessageBox(m_hWnd, L"削除を行うと、再度チャンネルスキャンを行うまで項目が表示されなくなります。\r\nよろしいですか？",L"", MB_OKCANCEL) == IDOK ){
+		WCHAR text[512] = L"";
+		GetDlgItemText(m_hWnd, IDC_COMBO_BON, text, 512);
 
-		CString text = L"";
-		combBon.GetWindowText(text);
-
-		wstring key = text.GetBuffer(0);
+		wstring key = text;
 		map<wstring, CH_SET_INFO*>::iterator itr;
 		itr = chList.find(key);
 		if( itr != chList.end()){
+			SynchronizeCheckState();
 			itr->second->chSet.DelChService(chSet->space, chSet->ch, chSet->serviceID);
 			ReloadList();
 		}
@@ -267,13 +261,16 @@ void CSetDlgService::OnBnClickedButtonDel()
 void CSetDlgService::OnLbnSelchangeListService()
 {
 	// TODO: ここにコントロール通知ハンドラー コードを追加します。
-	int sel = listService.GetCurSel();
-	if( sel == LB_ERR ){
+	int sel = ListView_GetNextItem(GetDlgItem(IDC_LIST_SERVICE), -1, LVNI_SELECTED);
+	if( sel < 0 ){
 		return ;
 	}
-	CH_DATA4* chSet = (CH_DATA4*)listService.GetItemDataPtr(sel);
-	CString info = L"";
-	info.Format(L"space: %d ch: %d (%s)\r\nOriginalNetworkID: %d(0x%04X)\r\nTransportStreamID: %d(0x%04X)\r\nServiceID: %d(0x%04X)\r\nServiceType: %d(0x%02X)\r\n",
+	CH_DATA4* chSet = (CH_DATA4*)ListView_GetItemParam(GetDlgItem(IDC_LIST_SERVICE), sel, 0);
+	if( chSet == NULL ){
+		return ;
+	}
+	wstring info = L"";
+	Format(info, L"space: %d ch: %d (%s)\r\nOriginalNetworkID: %d(0x%04X)\r\nTransportStreamID: %d(0x%04X)\r\nServiceID: %d(0x%04X)\r\nServiceType: %d(0x%02X)\r\n",
 		chSet->space,
 		chSet->ch,
 		chSet->chName.c_str(),
@@ -286,6 +283,57 @@ void CSetDlgService::OnLbnSelchangeListService()
 		chSet->serviceType,
 		chSet->serviceType
 		);
-	editCh.SetWindowText(info);
+	SetDlgItemText(m_hWnd, IDC_EDIT_CH, info.c_str());
 
+}
+
+
+INT_PTR CALLBACK CSetDlgService::DlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	CSetDlgService* pSys = (CSetDlgService*)GetWindowLongPtr(hDlg, GWLP_USERDATA);
+	if( pSys == NULL && uMsg != WM_INITDIALOG ){
+		return FALSE;
+	}
+	switch( uMsg ){
+	case WM_INITDIALOG:
+		SetWindowLongPtr(hDlg, GWLP_USERDATA, lParam);
+		pSys = (CSetDlgService*)lParam;
+		pSys->m_hWnd = hDlg;
+		return pSys->OnInitDialog();
+	case WM_NCDESTROY:
+		pSys->m_hWnd = NULL;
+		break;
+	case WM_NOTIFY:
+		{
+			LPNMHDR pNMHDR = (LPNMHDR)lParam;
+			if( pNMHDR->idFrom	== IDC_LIST_SERVICE ){
+				if( pNMHDR->code == LVN_ITEMCHANGED ){
+					pSys->OnLbnSelchangeListService();
+				}
+			}
+		}
+		break;
+	case WM_COMMAND:
+		switch( LOWORD(wParam) ){
+		case IDC_BUTTON_CHK_ALL:
+			pSys->OnBnClickedButtonChkAll();
+			break;
+		case IDC_BUTTON_CHK_VIDEO:
+			pSys->OnBnClickedButtonChkVideo();
+			break;
+		case IDC_BUTTON_CHK_CLEAR:
+			pSys->OnBnClickedButtonChkClear();
+			break;
+		case IDC_COMBO_BON:
+			if( HIWORD(wParam) == CBN_SELCHANGE ){
+				pSys->OnCbnSelchangeComboBon();
+			}
+			break;
+		case IDC_BUTTON_DEL:
+			pSys->OnBnClickedButtonDel();
+			break;
+		}
+		break;
+	}
+	return FALSE;
 }

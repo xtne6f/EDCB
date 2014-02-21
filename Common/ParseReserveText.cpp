@@ -11,10 +11,6 @@ CParseReserveText::CParseReserveText(void)
 
 CParseReserveText::~CParseReserveText(void)
 {
-	multimap<wstring, RESERVE_DATA*>::iterator itr;
-	for( itr = this->reserveMap.begin(); itr != this->reserveMap.end(); itr++ ){
-		SAFE_DELETE(itr->second)
-	}
 }
 
 BOOL CParseReserveText::ParseReserveText(LPCWSTR filePath)
@@ -23,11 +19,6 @@ BOOL CParseReserveText::ParseReserveText(LPCWSTR filePath)
 		return FALSE;
 	}
 
-	multimap<wstring, RESERVE_DATA*>::iterator itr;
-	for( itr = this->reserveMap.begin(); itr != this->reserveMap.end(); itr++ ){
-		SAFE_DELETE(itr->second)
-	}
-	this->reserveMap.clear();
 	this->reserveIDMap.clear();
 	this->nextID = 1;
 
@@ -73,24 +64,11 @@ BOOL CParseReserveText::ParseReserveText(LPCWSTR filePath)
 		if( parseLine.find(";") != 0 ){
 			//空行？
 			if( parseLine.find("\t") != string::npos ){
-				RESERVE_DATA* item = new RESERVE_DATA;
-				BOOL bRet = Parse1Line(parseLine, item);
-				if( bRet == FALSE ){
-					SAFE_DELETE(item)
-				}else{
-					wstring strKey;
-					Format(strKey, L"%04d%02d%02d%02d%02d%02d%04X",
-							item->startTime.wYear,
-							item->startTime.wMonth,
-							item->startTime.wDay,
-							item->startTime.wHour,
-							item->startTime.wMinute,
-							item->startTime.wSecond,
-							item->transportStreamID);
-
-					item->reserveID = GetNextReserveID();
-					this->reserveMap.insert( pair<wstring, RESERVE_DATA*>(strKey,item) );
-					this->reserveIDMap.insert( pair<DWORD, RESERVE_DATA*>(item->reserveID,item) );
+				RESERVE_DATA item;
+				BOOL bRet = Parse1Line(parseLine, &item);
+				if( bRet != FALSE ){
+					item.reserveID = GetNextReserveID();
+					this->reserveIDMap.insert( pair<DWORD, RESERVE_DATA>(item.reserveID,item) );
 				}
 			}
 		}
@@ -111,7 +89,7 @@ BOOL CParseReserveText::AddParseReserveText(LPCWSTR filePath)
 	}else{
 		load_filePath = this->loadFilePath;
 	}
-	if( this->reserveMap.size() == 0 ){
+	if( this->reserveIDMap.size() == 0 ){
 		BOOL bRet = ParseReserveText(load_filePath.c_str());
 		return bRet;
 	}
@@ -156,28 +134,11 @@ BOOL CParseReserveText::AddParseReserveText(LPCWSTR filePath)
 		if( parseLine.find(";") != 0 ){
 			//空行？
 			if( parseLine.find("\t") != string::npos ){
-				RESERVE_DATA* item = new RESERVE_DATA;
-				BOOL bRet = Parse1Line(parseLine, item);
-				if( bRet == FALSE ){
-					SAFE_DELETE(item)
-				}else{
-					wstring strKey;
-					Format(strKey, L"%04d%02d%02d%02d%02d%02d%04X",
-							item->startTime.wYear,
-							item->startTime.wMonth,
-							item->startTime.wDay,
-							item->startTime.wHour,
-							item->startTime.wMinute,
-							item->startTime.wSecond,
-							item->transportStreamID);
-
-					if( item->reserveID == 0 ){
-						item->reserveID = GetNextReserveID();
-						this->reserveMap.insert( pair<wstring, RESERVE_DATA*>(strKey,item) );
-						this->reserveIDMap.insert( pair<DWORD, RESERVE_DATA*>(item->reserveID,item) );
-					}else{
-						SAFE_DELETE(item);
-					}
+				RESERVE_DATA item;
+				BOOL bRet = Parse1Line(parseLine, &item);
+				if( bRet != FALSE && item.reserveID == 0 ){
+					item.reserveID = GetNextReserveID();
+					this->reserveIDMap.insert( pair<DWORD, RESERVE_DATA>(item.reserveID,item) );
 				}
 			}
 		}
@@ -521,7 +482,7 @@ DWORD CParseReserveText::GetNextReserveID()
 {
 	DWORD reserveID = 0xFFFFFFFF;
 
-	map<DWORD, RESERVE_DATA*>::iterator itr;
+	map<DWORD, RESERVE_DATA>::iterator itr;
 	itr = this->reserveIDMap.find(this->nextID);
 	if( itr == this->reserveIDMap.end() ){
 		reserveID = this->nextID;
@@ -569,8 +530,9 @@ BOOL CParseReserveText::SaveReserveText(LPCWSTR filePath)
 		return FALSE;
 	}
 
-	multimap<wstring, RESERVE_DATA*>::iterator itr;
-	for( itr=this->reserveMap.begin(); itr != this->reserveMap.end(); itr++ ){
+	vector<pair<LONGLONG, const RESERVE_DATA*> > sortedList = GetReserveList();
+	vector<pair<LONGLONG, const RESERVE_DATA*> >::iterator itr;
+	for( itr = sortedList.begin(); itr != sortedList.end(); itr++ ){
 		string strWrite="";
 		string strBuff="";
 		DWORD dwWrite;
@@ -744,25 +706,15 @@ BOOL CParseReserveText::AddReserve(RESERVE_DATA* item, DWORD* reserveID)
 		return FALSE;
 	}
 
-	wstring strKey;
-	Format(strKey, L"%04d%02d%02d%02d%02d%02d%04X",
-		item->startTime.wYear,
-		item->startTime.wMonth,
-		item->startTime.wDay,
-		item->startTime.wHour,
-		item->startTime.wMinute,
-		item->startTime.wSecond,
-		item->transportStreamID);
-
-	RESERVE_DATA* pSetItem = new RESERVE_DATA;
-	*pSetItem = *item;
-
-	pSetItem->reserveID = GetNextReserveID();
+	DWORD reserveID_ = GetNextReserveID();
 	if( reserveID != NULL ){
-		*reserveID = pSetItem->reserveID;
+		*reserveID = reserveID_;
 	}
-	this->reserveMap.insert( pair<wstring, RESERVE_DATA*>(strKey,pSetItem) );
-	this->reserveIDMap.insert( pair<DWORD, RESERVE_DATA*>(pSetItem->reserveID,pSetItem));
+	map<DWORD, RESERVE_DATA>::_Pairib ret = this->reserveIDMap.insert( pair<DWORD, RESERVE_DATA>(reserveID_, *item) );
+	if( ret.second == false ){
+		return FALSE;
+	}
+	ret.first->second.reserveID = reserveID_;
 	return TRUE;
 }
 
@@ -772,59 +724,61 @@ BOOL CParseReserveText::ChgReserve(RESERVE_DATA* item)
 		return FALSE;
 	}
 
-	map<DWORD, RESERVE_DATA*>::iterator itr;
+	map<DWORD, RESERVE_DATA>::iterator itr;
 	itr = this->reserveIDMap.find(item->reserveID);
 	if( itr == this->reserveIDMap.end() ){
 		return FALSE;
 	}
-	*(itr->second) = *item;
-
-	multimap<wstring, RESERVE_DATA*>::iterator itr2;
-	for( itr2 = this->reserveMap.begin(); itr2 != this->reserveMap.end(); itr2++ ){
-		if( itr2->second->reserveID == item->reserveID ){
-			this->reserveMap.erase(itr2);
-
-			wstring strKey;
-			Format(strKey, L"%04d%02d%02d%02d%02d%02d%04X",
-				item->startTime.wYear,
-				item->startTime.wMonth,
-				item->startTime.wDay,
-				item->startTime.wHour,
-				item->startTime.wMinute,
-				item->startTime.wSecond,
-				item->transportStreamID);
-
-			this->reserveMap.insert( pair<wstring, RESERVE_DATA*>(strKey,itr->second) );
-
-			break;
-		}
-	}
+	itr->second = *item;
 
 	return TRUE;
 }
 
 BOOL CParseReserveText::DelReserve(DWORD reserveID)
 {
-	multimap<wstring, RESERVE_DATA*>::iterator itr;
-	for( itr = this->reserveMap.begin(); itr != this->reserveMap.end(); itr++ ){
-		if( itr->second->reserveID == reserveID ){
-			SAFE_DELETE(itr->second);
-			this->reserveMap.erase(itr);
-			break;
-		}
-	}
-	map<DWORD, RESERVE_DATA*>::iterator itr2;
-	itr2 = this->reserveIDMap.find(reserveID);
-	if( itr2 != this->reserveIDMap.end() ){
-		this->reserveIDMap.erase(itr2);
-	}
+	this->reserveIDMap.erase(reserveID);
 
 	return TRUE;
 }
 
 void CParseReserveText::SwapMap()
 {
-	multimap<wstring, RESERVE_DATA*>(this->reserveMap).swap(this->reserveMap);
-	map<DWORD, RESERVE_DATA*>(this->reserveIDMap).swap(this->reserveIDMap);
+	map<DWORD, RESERVE_DATA>(this->reserveIDMap).swap(this->reserveIDMap);
+}
+
+vector<pair<LONGLONG, const RESERVE_DATA*> > CParseReserveText::GetReserveList(BOOL calcMargin, int defStartMargin) const
+{
+	vector<pair<LONGLONG, const RESERVE_DATA*> > retList;
+	retList.reserve(this->reserveIDMap.size());
+
+	//日時順にソート
+	map<DWORD, RESERVE_DATA>::const_iterator itr;
+	for( itr = this->reserveIDMap.begin(); itr != this->reserveIDMap.end(); itr++ ){
+		LONGLONG startTime = ConvertI64Time(itr->second.startTime);
+		if( calcMargin != FALSE ){
+			LONGLONG endTime = startTime + itr->second.durationSecond * I64_1SEC;
+			LONGLONG startMargin = defStartMargin * I64_1SEC;
+			if( itr->second.recSetting.useMargineFlag == TRUE ){
+				startMargin = itr->second.recSetting.startMargine * I64_1SEC;
+			}
+			//開始マージンは元の予約終了時刻を超えて負であってはならない
+			startTime -= max(startMargin, startTime - endTime);
+		}
+		retList.push_back( pair<LONGLONG, const RESERVE_DATA*>((startTime / I64_1SEC) << 16 | itr->second.transportStreamID, &itr->second) );
+	}
+	sort(retList.begin(), retList.end());
+	return retList;
+}
+
+vector<pair<DWORD, const RESERVE_DATA*> > CParseReserveText::GetReserveIDList() const
+{
+	vector<pair<DWORD, const RESERVE_DATA*> > retList;
+	retList.reserve(this->reserveIDMap.size());
+
+	map<DWORD, RESERVE_DATA>::const_iterator itr;
+	for( itr = this->reserveIDMap.begin(); itr != this->reserveIDMap.end(); itr++ ){
+		retList.push_back( pair<DWORD, const RESERVE_DATA*>(itr->first, &itr->second) );
+	}
+	return retList;
 }
 

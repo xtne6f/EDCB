@@ -11,14 +11,11 @@
 class CParseReserveText
 {
 public:
-	//予約一覧のmultimap
+	//ソートされた予約一覧を取得する。戻り値は次に何らかのメンバを呼ぶまで有効
 	//キーは録画開始日時
-	//Readのみで追加などの操作はメンバ関数使用すること
-	multimap<wstring, RESERVE_DATA*> reserveMap;
-	//予約一覧のmap
+	vector<pair<LONGLONG, const RESERVE_DATA*> > GetReserveList(BOOL calcMargin = FALSE, int defStartMargin = 0) const;
 	//キーは通し番号
-	//Readのみで追加などの操作はメンバ関数使用すること
-	map<DWORD, RESERVE_DATA*> reserveIDMap;
+	vector<pair<DWORD, const RESERVE_DATA*> > GetReserveIDList() const;
 
 public:
 	CParseReserveText(void);
@@ -68,6 +65,7 @@ protected:
 	wstring loadFilePath;
 
 	DWORD nextID;
+	map<DWORD, RESERVE_DATA> reserveIDMap;
 protected:
 	BOOL Parse1Line(string parseLine, RESERVE_DATA* item );
 	DWORD GetNextReserveID();

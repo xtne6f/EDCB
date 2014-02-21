@@ -3,15 +3,15 @@
 
 // CSetDlgAppBtn ダイアログ
 
-class CSetDlgAppBtn : public CDialog
+class CSetDlgAppBtn
 {
-	DECLARE_DYNAMIC(CSetDlgAppBtn)
-
 public:
-	CSetDlgAppBtn(CWnd* pParent = NULL);   // 標準コンストラクター
-	virtual ~CSetDlgAppBtn();
+	CSetDlgAppBtn();   // 標準コンストラクター
+	~CSetDlgAppBtn();
+	BOOL Create(LPCTSTR lpszTemplateName, HWND hWndParent);
+	HWND GetSafeHwnd() const{ return m_hWnd; }
 	
-	void SetIniPath(CString commonIniPath, CString appIniPath){
+	void SetIniPath(std::wstring commonIniPath, std::wstring appIniPath){
 		this->commonIniPath = commonIniPath;
 		this->appIniPath = appIniPath;
 	};
@@ -21,17 +21,12 @@ public:
 	enum { IDD = IDD_DIALOG_SET_APPBTN };
 
 protected:
-	CString commonIniPath;
-	CString appIniPath;
+	HWND m_hWnd;
+	std::wstring commonIniPath;
+	std::wstring appIniPath;
 
-protected:
-	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV サポート
-
-	DECLARE_MESSAGE_MAP()
-public:
-	CString viewExe;
-	CString viewOpt;
-	virtual BOOL OnInitDialog();
-	virtual BOOL PreTranslateMessage(MSG* pMsg);
+	BOOL OnInitDialog();
 	afx_msg void OnBnClickedButtonViewExe();
+	static INT_PTR CALLBACK DlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	HWND GetDlgItem(int nID) const{ return ::GetDlgItem(m_hWnd, nID); }
 };

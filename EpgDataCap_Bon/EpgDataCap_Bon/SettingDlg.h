@@ -10,24 +10,24 @@
 #include "SetDlgAppBtn.h"
 #include "SetDlgService.h"
 
-#include "afxcmn.h"
-
 // CSettingDlg ダイアログ
 
-class CSettingDlg : public CDialog
+class CSettingDlg
 {
-	DECLARE_DYNAMIC(CSettingDlg)
-
 public:
-	CSettingDlg(CWnd* pParent = NULL);   // 標準コンストラクター
-	virtual ~CSettingDlg();
+	CSettingDlg(HWND hWndOwner = NULL);   // 標準コンストラクター
+	~CSettingDlg();
+	INT_PTR DoModal();
+	HWND GetSafeHwnd() const{ return m_hWnd; }
 
 // ダイアログ データ
 	enum { IDD = IDD_DIALOG_SETTING };
 
 protected:
-	CString commonIniPath;
-	CString appIniPath;
+	HWND m_hWnd;
+	HWND m_hWndOwner;
+	std::wstring commonIniPath;
+	std::wstring appIniPath;
 
 	CSetDlgBasic basicDlg;
 	CSetDlgApp appDlg;
@@ -36,14 +36,10 @@ protected:
 	CSetDlgAppBtn appBtnDlg;
 	CSetDlgService serviceDlg;
 
-protected:
-	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV サポート
-
-	DECLARE_MESSAGE_MAP()
-public:
-	virtual BOOL OnInitDialog();
+	BOOL OnInitDialog();
 	afx_msg void OnBnClickedOk();
 	afx_msg void OnTcnSelchangingTab(NMHDR *pNMHDR, LRESULT *pResult);
 	afx_msg void OnTcnSelchangeTab(NMHDR *pNMHDR, LRESULT *pResult);
-	CTabCtrl dlgTab;
+	static INT_PTR CALLBACK DlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	HWND GetDlgItem(int nID) const{ return ::GetDlgItem(m_hWnd, nID); }
 };

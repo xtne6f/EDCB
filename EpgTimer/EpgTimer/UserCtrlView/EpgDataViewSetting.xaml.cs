@@ -165,6 +165,15 @@ namespace EpgTimer
                     listBox_jyanruView.Items.Add(CommonManager.Instance.ContentKindDictionary[id]);
                 }
             }
+
+            if (setInfo.FilterEnded == true)
+            {
+                checkBox_filterEnded.IsChecked = true;
+            }
+            else
+            {
+                checkBox_filterEnded.IsChecked = false;
+            }
         }
 
         /// <summary>
@@ -215,6 +224,15 @@ namespace EpgTimer
             else
             {
                 info.SearchMode = false;
+            }
+
+            if (checkBox_filterEnded.IsChecked == true)
+            {
+                info.FilterEnded = true;
+            }
+            else
+            {
+                info.FilterEnded = false;
             }
 
             info.SearchKey.aimaiFlag = searchKey.aimaiFlag;

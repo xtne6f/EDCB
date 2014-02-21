@@ -1,11 +1,9 @@
 #include "StdAfx.h"
 #include "WinHTTPUtil.h"
 #include <process.h>
-#include <Objbase.h>
 
 CWinHTTPUtil::CWinHTTPUtil(void)
 {
-	CoInitialize(NULL);
 	this->session = NULL;
 	this->connect = NULL;
 	this->request = NULL;
@@ -44,8 +42,6 @@ CWinHTTPUtil::~CWinHTTPUtil(void)
 		CloseHandle(this->responseCompEvent);
 		this->responseCompEvent = NULL;
 	}
-
-	CoUninitialize();
 }
 
 void CWinHTTPUtil::ClearUpList()

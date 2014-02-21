@@ -962,23 +962,16 @@ BOOL CReserveManager::ReloadReserveData()
 
 	ret = this->reserveText.ParseReserveText(reserveFilePath.c_str());
 	if( ret == TRUE ){
-		map<DWORD, RESERVE_DATA*>::iterator itrData;
-		for( itrData = this->reserveText.reserveIDMap.begin(); itrData != this->reserveText.reserveIDMap.end(); itrData++){
-			LONGLONG chkEndTime = GetSumTime(itrData->second->startTime, itrData->second->durationSecond);
-			if( itrData->second->recSetting.useMargineFlag == 1){
-				if( itrData->second->recSetting.endMargine < 0 ){
-					chkEndTime += ((LONGLONG)itrData->second->recSetting.endMargine) * I64_1SEC;
-				}
-			}else{
-				if( this->defEndMargine < 0 ){
-					chkEndTime += ((LONGLONG)this->defEndMargine) * I64_1SEC;
-				}
-			}
+		vector<pair<DWORD, const RESERVE_DATA*> > resList = this->reserveText.GetReserveIDList();
+		vector<pair<DWORD, const RESERVE_DATA*> >::iterator itrData;
+		for( itrData = resList.begin(); itrData != resList.end(); itrData++){
+			LONGLONG chkEndTime;
+			CalcEntireReserveTime(NULL, &chkEndTime, *itrData->second);
 			chkEndTime -= 60*I64_1SEC;
 
 			if( nowTime < chkEndTime ){
 				CReserveInfo* item = new CReserveInfo;
-				item->SetData(itrData->second);
+				item->SetData(const_cast<RESERVE_DATA*>(itrData->second));
 
 				//サービスサポートしてないチューナー検索
 				if( itrData->second->recSetting.tunerID == 0 ){
@@ -1062,13 +1055,14 @@ BOOL CReserveManager::AddLoadReserveData()
 
 	ret = this->reserveText.AddParseReserveText(filePath.c_str());
 	if( ret == TRUE ){
-		map<DWORD, RESERVE_DATA*>::iterator itrData;
-		for( itrData = this->reserveText.reserveIDMap.begin(); itrData != this->reserveText.reserveIDMap.end(); itrData++){
+		vector<pair<DWORD, const RESERVE_DATA*> > resList = this->reserveText.GetReserveIDList();
+		vector<pair<DWORD, const RESERVE_DATA*> >::iterator itrData;
+		for( itrData = resList.begin(); itrData != resList.end(); itrData++){
 			map<DWORD, CReserveInfo*>::iterator itrInfo;
 			itrInfo = this->reserveInfoMap.find(itrData->second->reserveID);
 			if( itrInfo == this->reserveInfoMap.end() ){
 				CReserveInfo* item = new CReserveInfo;
-				item->SetData(itrData->second);
+				item->SetData(const_cast<RESERVE_DATA*>(itrData->second));
 
 				//サービスサポートしてないチューナー検索
 				if( itrData->second->recSetting.tunerID == 0){
@@ -1363,12 +1357,14 @@ BOOL CReserveManager::_AddReserveData(RESERVE_DATA* reserve, BOOL tweet)
 	if( this->reserveText.AddReserve(reserve, &reserveID) == FALSE ){
 		return FALSE;
 	}
-	map<DWORD, RESERVE_DATA*>::iterator itrData;
-	itrData = this->reserveText.reserveIDMap.find(reserveID);
-	if( itrData != this->reserveText.reserveIDMap.end() ){
+	vector<pair<DWORD, const RESERVE_DATA*> > resList = this->reserveText.GetReserveIDList();
+	vector<pair<DWORD, const RESERVE_DATA*> >::iterator itrData;
+	//既ソートなので2分探索(pair::secondが第2キーであることに注意)
+	itrData = lower_bound(resList.begin(), resList.end(), pair<DWORD, const RESERVE_DATA*>(reserveID, nullptr));
+	if( itrData != resList.end() && itrData->second->reserveID == reserveID ){
 		if( this->reserveInfoMap.find(itrData->second->reserveID) == this->reserveInfoMap.end() ){
 			CReserveInfo* item = new CReserveInfo;
-			item->SetData(itrData->second);
+			item->SetData(const_cast<RESERVE_DATA*>(itrData->second));
 
 			if( itrData->second->recSetting.tunerID == 0 ){
 				//サービスサポートしてないチューナー検索
@@ -1401,7 +1397,8 @@ BOOL CReserveManager::_AddReserveData(RESERVE_DATA* reserve, BOOL tweet)
 			this->reserveInfoIDMap.insert(pair<LONGLONG, DWORD>(keyID, itrData->second->reserveID));
 
 			if( tweet == TRUE && itrData->second->recSetting.recMode != RECMODE_NO){
-				_SendTweet(TW_ADD_RESERVE, itrData->second, NULL, NULL);
+				RESERVE_DATA resTweet = *itrData->second;
+				_SendTweet(TW_ADD_RESERVE, &resTweet, NULL, NULL);
 			}
 		}
 	}
@@ -1568,8 +1565,9 @@ BOOL CReserveManager::_ChgReserveData(RESERVE_DATA* reserve, BOOL chgTime)
 
 	//EventID変わってる可能性あるのでリスト再構築
 	this->reserveInfoIDMap.clear();
-	map<DWORD, RESERVE_DATA*>::iterator itrData;
-	for( itrData = this->reserveText.reserveIDMap.begin(); itrData != this->reserveText.reserveIDMap.end(); itrData++){
+	vector<pair<DWORD, const RESERVE_DATA*> > resList = this->reserveText.GetReserveIDList();
+	vector<pair<DWORD, const RESERVE_DATA*> >::iterator itrData;
+	for( itrData = resList.begin(); itrData != resList.end(); itrData++){
 		LONGLONG keyID = _Create64Key2(
 			itrData->second->originalNetworkID,
 			itrData->second->transportStreamID,
@@ -1728,19 +1726,19 @@ void CReserveManager::_ReloadBankMap()
 
 	switch(this->reloadBankMapAlgo){
 	case 0:
-		_ReloadBankMapAlgo0();
+		_ReloadBankMapAlgo(FALSE, FALSE, this->backPriorityFlag, FALSE);
 		break;
 	case 1:
-		_ReloadBankMapAlgo1();
+		_ReloadBankMapAlgo(TRUE, FALSE, this->backPriorityFlag, FALSE);
 		break;
 	case 2:
-		_ReloadBankMapAlgo2();
+		_ReloadBankMapAlgo(TRUE, TRUE, this->backPriorityFlag, TRUE);
 		break;
 	case 3:
-		_ReloadBankMapAlgo3();
+		_ReloadBankMapAlgo(TRUE, TRUE, FALSE, TRUE);
 		break;
 	default:
-		_ReloadBankMapAlgo0();
+		_ReloadBankMapAlgo(FALSE, FALSE, this->backPriorityFlag, FALSE);
 		break;
 	}
 
@@ -1773,262 +1771,38 @@ void CReserveManager::_ReloadBankMap()
 	_OutputDebugString(L"End _ReloadBankMap %dmsec\r\n", GetTickCount()-time);
 }
 
-void CReserveManager::_ReloadBankMapAlgo0()
+void CReserveManager::_ReloadBankMapAlgo(BOOL do2Pass, BOOL ignoreUseTunerID, BOOL backPriority, BOOL noTuner)
 {
 	map<DWORD, BANK_INFO*>::iterator itrBank;
 	map<DWORD, BANK_WORK_INFO*>::iterator itrNG;
 
 	//録画待機中のものをバンクに登録＆優先度と時間でソート
 	map<DWORD, CReserveInfo*>::iterator itrInfo;
-	multimap<LONGLONG, CReserveInfo*> sortTimeMap;
+	multimap<wstring, BANK_WORK_INFO*> sortReserveMap;
 	for( itrInfo = this->reserveInfoMap.begin(); itrInfo != this->reserveInfoMap.end(); itrInfo++ ){
+		itrInfo->second->SetOverlapMode(0);
 		BYTE recMode = 0;
 		itrInfo->second->GetRecMode(&recMode);
-		if( recMode != RECMODE_NO ){
-			SYSTEMTIME time;
-			itrInfo->second->GetStartTime(&time);
-			sortTimeMap.insert(pair<LONGLONG, CReserveInfo*>(ConvertI64Time(time), itrInfo->second));
+		if( recMode == RECMODE_NO ){
+			continue;
 		}
-	}
-	multimap<wstring, BANK_WORK_INFO*> sortReserveMap;
-	multimap<LONGLONG, CReserveInfo*>::iterator itrSortInfo;
-	DWORD reserveNum = (DWORD)this->reserveInfoMap.size();
-	DWORD reserveCount = 0;
-	for( itrSortInfo = sortTimeMap.begin(); itrSortInfo != sortTimeMap.end(); itrSortInfo++ ){
-		itrSortInfo->second->SetOverlapMode(0);
 		BOOL recWaitFlag = FALSE;
 		DWORD tunerID = 0;
-		itrSortInfo->second->GetRecWaitMode(&recWaitFlag, &tunerID);
+		itrInfo->second->GetRecWaitMode(&recWaitFlag, &tunerID);
 		if( recWaitFlag == TRUE ){
 			//録画処理中なのでバンクに登録
 			itrBank = this->bankMap.find(tunerID);
 			if( itrBank != this->bankMap.end() ){
 				BANK_WORK_INFO* item = new BANK_WORK_INFO;
-				CreateWorkData(itrSortInfo->second, item, this->backPriorityFlag, reserveCount, reserveNum);
+				CreateWorkData(itrInfo->second, item, backPriority, 0, 0, noTuner);
 				itrBank->second->reserveList.insert(pair<DWORD, BANK_WORK_INFO*>(item->reserveID,item));
 			}
 		}else{
 			//まだ録画処理されていないのでソートに追加
 			BANK_WORK_INFO* item = new BANK_WORK_INFO;
-			CreateWorkData(itrSortInfo->second, item, this->backPriorityFlag, reserveCount, reserveNum);
+			CreateWorkData(itrInfo->second, item, backPriority, 0, 0, noTuner);
 			sortReserveMap.insert(pair<wstring, BANK_WORK_INFO*>(item->sortKey, item));
 		}
-		reserveCount++;
-	}
-
-	Sleep(0);
-
-	//予約の割り振り
-	multimap<wstring, BANK_WORK_INFO*> tempMap;
-	multimap<wstring, BANK_WORK_INFO*> tempNGMap;
-	multimap<wstring, BANK_WORK_INFO*>::iterator itrSort;
-	for( itrSort = sortReserveMap.begin(); itrSort !=  sortReserveMap.end(); itrSort++ ){
-		BOOL insert = FALSE;
-		if( itrSort->second->useTunerID == 0 ){
-			//チューナー優先度より同一物理チャンネルで連続となるチューナーの使用を優先する
-			if( this->sameChPriorityFlag == TRUE ){
-				for( itrBank = this->bankMap.begin(); itrBank != this->bankMap.end(); itrBank++){
-					DWORD status = ChkInsertSameChStatus(itrBank->second, itrSort->second);
-					if( status == 1 ){
-						//問題なく追加可能
-						itrBank->second->reserveList.insert(pair<DWORD, BANK_WORK_INFO*>(itrSort->second->reserveID,itrSort->second));
-						insert = TRUE;
-						break;
-					}
-				}
-			}
-			if( insert == FALSE ){
-				for( itrBank = this->bankMap.begin(); itrBank != this->bankMap.end(); itrBank++){
-					DWORD status = ChkInsertStatus(itrBank->second, itrSort->second);
-					if( status == 1 ){
-						//問題なく追加可能
-						itrBank->second->reserveList.insert(pair<DWORD, BANK_WORK_INFO*>(itrSort->second->reserveID,itrSort->second));
-						insert = TRUE;
-						break;
-					}else if( status == 2 ){
-						//追加可能だが終了時間と開始時間の重なった予約あり
-						//仮追加
-						itrBank->second->reserveList.insert(pair<DWORD, BANK_WORK_INFO*>(itrSort->second->reserveID,itrSort->second));
-						itrSort->second->preTunerID = itrBank->first;
-						tempMap.insert(pair<wstring, BANK_WORK_INFO*>(itrSort->first, itrSort->second));
-						insert = TRUE;
-						break;
-					}
-				}
-			}
-		}else{
-			//チューナー固定
-			if( this->tunerManager.IsSupportService(itrSort->second->useTunerID, itrSort->second->ONID, itrSort->second->TSID, itrSort->second->SID) == TRUE ){
-				if( itrSort->second->reserveInfo->IsNGTuner(itrSort->second->useTunerID) == FALSE ){
-					map<DWORD, BANK_INFO*>::iterator itrManual;
-					itrManual = this->bankMap.find(itrSort->second->useTunerID);
-					if( itrManual != this->bankMap.end() ){
-						itrManual->second->reserveList.insert(pair<DWORD, BANK_WORK_INFO*>(itrSort->second->reserveID,itrSort->second));
-						insert = TRUE;
-					}
-				}
-			}
-		}
-		if( insert == FALSE ){
-			//追加できなかった
-			itrSort->second->reserveInfo->SetOverlapMode(2);
-			this->NGReserveMap.insert(pair<DWORD, BANK_WORK_INFO*>(itrSort->second->reserveID, itrSort->second));
-
-			tempNGMap.insert(pair<wstring, BANK_WORK_INFO*>(itrSort->first, itrSort->second));
-		}
-	}
-
-	Sleep(0);
-
-	//開始終了重なっている予約で、他のチューナーに回せるやつあるかチェック
-	for( itrSort = tempMap.begin(); itrSort !=  tempMap.end(); itrSort++ ){
-		BOOL insert = FALSE;
-		for( itrBank = this->bankMap.begin(); itrBank != this->bankMap.end(); itrBank++){
-			if( itrBank->second->tunerID == itrSort->second->preTunerID ){
-				if(ReChkInsertStatus(itrBank->second, itrSort->second) == 1 ){
-					//前の予約移動した？このままでもOK
-					break;
-				}else{
-					continue;
-				}
-			}
-			DWORD status = ChkInsertStatus(itrBank->second, itrSort->second);
-			if( status == 1 ){
-				//問題なく追加可能
-				itrBank->second->reserveList.insert(pair<DWORD, BANK_WORK_INFO*>(itrSort->second->reserveID,itrSort->second));
-				insert = TRUE;
-				break;
-			}
-		}
-		if( insert == TRUE ){
-			//仮追加を削除
-			itrBank = this->bankMap.find(itrSort->second->preTunerID);
-			if( itrBank != this->bankMap.end() ){
-				map<DWORD, BANK_WORK_INFO*>::iterator itrDel;
-				itrDel = itrBank->second->reserveList.find(itrSort->second->reserveID);
-				if( itrDel != itrBank->second->reserveList.end() ){
-					itrBank->second->reserveList.erase(itrDel);
-				}
-			}
-		}
-	}
-
-	Sleep(0);
-
-	multimap<wstring, BANK_WORK_INFO*>::iterator itrSortNG;
-	//NGでチューナー入れ替えで録画できるものあるかチェック
-	itrSortNG = tempNGMap.begin();
-	while(itrSortNG != tempNGMap.end() ){
-		if( itrSortNG->second->useTunerID != 0 ){
-			//チューナー固定でNGになっているのは無視
-			itrSortNG++;
-			continue;
-		}
-		if( ChangeNGReserve(itrSortNG->second) == TRUE ){
-			//登録できたのでNGから削除
-			itrSortNG->second->reserveInfo->SetOverlapMode(0);
-			itrNG = this->NGReserveMap.find(itrSortNG->second->reserveID);
-			if( itrNG != this->NGReserveMap.end() ){
-				this->NGReserveMap.erase(itrNG);
-			}
-			tempNGMap.erase(itrSortNG++);
-		}else{
-			itrSortNG++;
-		}
-	}
-/*	for( itrSortNG = tempNGMap.begin(); itrSortNG != tempNGMap.end(); itrSortNG++){
-		if( itrSortNG->second->useTunerID != 0 ){
-			//チューナー固定でNGになっているのは無視
-			continue;
-		}
-		if( ChangeNGReserve(itrSortNG->second) == TRUE ){
-			//登録できたのでNGから削除
-			itrSortNG->second->reserveInfo->SetOverlapMode(0);
-			itrNG = this->NGReserveMap.find(itrSortNG->second->reserveID);
-			if( itrNG != this->NGReserveMap.end() ){
-				this->NGReserveMap.erase(itrNG);
-			}
-		}
-	}*/
-
-	//NGで少しでも録画できるかチェック
-	for( itrSortNG = tempNGMap.begin(); itrSortNG != tempNGMap.end(); itrSortNG++){
-
-		if( itrSortNG->second->useTunerID != 0 ){
-			//チューナー固定でNGになっているのは無視
-			continue;
-		}
-		DWORD maxDuration = 0;
-		DWORD maxID = 0xFFFFFFFF;
-		for( itrBank = this->bankMap.begin(); itrBank != this->bankMap.end(); itrBank++){
-			DWORD duration = ChkInsertNGStatus(itrBank->second, itrSortNG->second);
-			if( maxDuration < duration && duration > 0){
-				maxDuration = duration;
-				maxID = itrBank->second->tunerID;
-			}
-		}
-		if( maxDuration > 0 && maxID != 0xFFFFFFFF ){
-			//少しでも録画できる場所あった
-			itrBank = this->bankMap.find(maxID);
-			if( itrBank != this->bankMap.end() ){
-				itrSortNG->second->reserveInfo->SetOverlapMode(1);
-				itrBank->second->reserveList.insert(pair<DWORD, BANK_WORK_INFO*>(itrSortNG->second->reserveID,itrSortNG->second));
-
-				//登録できたのでNGから削除
-				itrNG = this->NGReserveMap.find(itrSortNG->second->reserveID);
-				if( itrNG != this->NGReserveMap.end() ){
-					this->NGReserveMap.erase(itrNG);
-				}
-				if( this->useResSrvCoop == TRUE && this->useSrvCoop == TRUE){
-					//全部は録画できないもの
-					this->nwCoopManager.AddChkReserve(itrSortNG->second->reserveInfo);
-				}
-			}
-		}
-	}
-}
-
-void CReserveManager::_ReloadBankMapAlgo1()
-{
-	map<DWORD, BANK_INFO*>::iterator itrBank;
-	map<DWORD, BANK_WORK_INFO*>::iterator itrNG;
-
-	//録画待機中のものをバンクに登録＆優先度と時間でソート
-	map<DWORD, CReserveInfo*>::iterator itrInfo;
-	multimap<LONGLONG, CReserveInfo*> sortTimeMap;
-	for( itrInfo = this->reserveInfoMap.begin(); itrInfo != this->reserveInfoMap.end(); itrInfo++ ){
-		BYTE recMode = 0;
-		itrInfo->second->GetRecMode(&recMode);
-		if( recMode != RECMODE_NO ){
-			SYSTEMTIME time;
-			itrInfo->second->GetStartTime(&time);
-			sortTimeMap.insert(pair<LONGLONG, CReserveInfo*>(ConvertI64Time(time), itrInfo->second));
-		}
-	}
-	multimap<wstring, BANK_WORK_INFO*> sortReserveMap;
-	multimap<LONGLONG, CReserveInfo*>::iterator itrSortInfo;
-	DWORD reserveNum = (DWORD)this->reserveInfoMap.size();
-	DWORD reserveCount = 0;
-	for( itrSortInfo = sortTimeMap.begin(); itrSortInfo != sortTimeMap.end(); itrSortInfo++ ){
-		itrSortInfo->second->SetOverlapMode(0);
-		BOOL recWaitFlag = FALSE;
-		DWORD tunerID = 0;
-		itrSortInfo->second->GetRecWaitMode(&recWaitFlag, &tunerID);
-		if( recWaitFlag == TRUE ){
-			//録画処理中なのでバンクに登録
-			itrBank = this->bankMap.find(tunerID);
-			if( itrBank != this->bankMap.end() ){
-				BANK_WORK_INFO* item = new BANK_WORK_INFO;
-				CreateWorkData(itrSortInfo->second, item, this->backPriorityFlag, reserveCount, reserveNum);
-				itrBank->second->reserveList.insert(pair<DWORD, BANK_WORK_INFO*>(item->reserveID,item));
-			}
-		}else{
-			//まだ録画処理されていないのでソートに追加
-			BANK_WORK_INFO* item = new BANK_WORK_INFO;
-			CreateWorkData(itrSortInfo->second, item, this->backPriorityFlag, reserveCount, reserveNum);
-			sortReserveMap.insert(pair<wstring, BANK_WORK_INFO*>(item->sortKey, item));
-		}
-		reserveCount++;
 	}
 
 	Sleep(0);
@@ -2038,9 +1812,9 @@ void CReserveManager::_ReloadBankMapAlgo1()
 	multimap<wstring, BANK_WORK_INFO*> tempMap2Pass;
 	multimap<wstring, BANK_WORK_INFO*> tempNGMap2Pass;
 	multimap<wstring, BANK_WORK_INFO*>::iterator itrSort;
-	for( itrSort = sortReserveMap.begin(); itrSort !=  sortReserveMap.end(); itrSort++ ){
+	for( itrSort = do2Pass ? sortReserveMap.begin() : sortReserveMap.end(); itrSort !=  sortReserveMap.end(); itrSort++ ){
 		BOOL insert = FALSE;
-		if( itrSort->second->useTunerID == 0 ){
+		if( ignoreUseTunerID || itrSort->second->useTunerID == 0 ){
 			//チューナー優先度より同一物理チャンネルで連続となるチューナーの使用を優先する
 			if( this->sameChPriorityFlag == TRUE ){
 				for( itrBank = this->bankMap.begin(); itrBank != this->bankMap.end(); itrBank++){
@@ -2084,9 +1858,10 @@ void CReserveManager::_ReloadBankMapAlgo1()
 	}
 
 	//2Pass
-	for( itrSort = tempNGMap1Pass.begin(); itrSort !=  tempNGMap1Pass.end(); itrSort++ ){
+	multimap<wstring, BANK_WORK_INFO*>& targetMap = do2Pass ? tempNGMap1Pass : sortReserveMap;
+	for( itrSort = targetMap.begin(); itrSort !=  targetMap.end(); itrSort++ ){
 		BOOL insert = FALSE;
-		if( itrSort->second->useTunerID == 0 ){
+		if( ignoreUseTunerID || itrSort->second->useTunerID == 0 ){
 			//チューナー優先度より同一物理チャンネルで連続となるチューナーの使用を優先する
 			if( this->sameChPriorityFlag == TRUE ){
 				for( itrBank = this->bankMap.begin(); itrBank != this->bankMap.end(); itrBank++){
@@ -2121,451 +1896,13 @@ void CReserveManager::_ReloadBankMapAlgo1()
 		}else{
 			//チューナー固定
 			if( this->tunerManager.IsSupportService(itrSort->second->useTunerID, itrSort->second->ONID, itrSort->second->TSID, itrSort->second->SID) == TRUE ){
-				map<DWORD, BANK_INFO*>::iterator itrManual;
-				itrManual = this->bankMap.find(itrSort->second->useTunerID);
-				if( itrManual != this->bankMap.end() ){
-					itrManual->second->reserveList.insert(pair<DWORD, BANK_WORK_INFO*>(itrSort->second->reserveID,itrSort->second));
-					insert = TRUE;
-				}
-			}
-		}
-		if( insert == FALSE ){
-			//追加できなかった
-			itrSort->second->reserveInfo->SetOverlapMode(2);
-			this->NGReserveMap.insert(pair<DWORD, BANK_WORK_INFO*>(itrSort->second->reserveID, itrSort->second));
-
-			tempNGMap2Pass.insert(pair<wstring, BANK_WORK_INFO*>(itrSort->first, itrSort->second));
-		}
-	}
-
-	Sleep(0);
-
-	//開始終了重なっている予約で、他のチューナーに回せるやつあるかチェック
-	for( itrSort = tempMap2Pass.begin(); itrSort !=  tempMap2Pass.end(); itrSort++ ){
-		BOOL insert = FALSE;
-		for( itrBank = this->bankMap.begin(); itrBank != this->bankMap.end(); itrBank++){
-			if( itrBank->second->tunerID == itrSort->second->preTunerID ){
-				if(ReChkInsertStatus(itrBank->second, itrSort->second) == 1 ){
-					//前の予約移動した？このままでもOK
-					break;
-				}else{
-					continue;
-				}
-			}
-			DWORD status = ChkInsertStatus(itrBank->second, itrSort->second);
-			if( status == 1 ){
-				//問題なく追加可能
-				itrBank->second->reserveList.insert(pair<DWORD, BANK_WORK_INFO*>(itrSort->second->reserveID,itrSort->second));
-				insert = TRUE;
-				break;
-			}
-		}
-		if( insert == TRUE ){
-			//仮追加を削除
-			itrBank = this->bankMap.find(itrSort->second->preTunerID);
-			if( itrBank != this->bankMap.end() ){
-				map<DWORD, BANK_WORK_INFO*>::iterator itrDel;
-				itrDel = itrBank->second->reserveList.find(itrSort->second->reserveID);
-				if( itrDel != itrBank->second->reserveList.end() ){
-					itrBank->second->reserveList.erase(itrDel);
-				}
-			}
-		}
-	}
-
-	Sleep(0);
-
-	multimap<wstring, BANK_WORK_INFO*>::iterator itrSortNG;
-	//NGでチューナー入れ替えで録画できるものあるかチェック
-	itrSortNG = tempNGMap2Pass.begin();
-	while(itrSortNG != tempNGMap2Pass.end() ){
-		if( itrSortNG->second->useTunerID != 0 ){
-			//チューナー固定でNGになっているのは無視
-			itrSortNG++;
-			continue;
-		}
-		if( ChangeNGReserve(itrSortNG->second) == TRUE ){
-			//登録できたのでNGから削除
-			itrSortNG->second->reserveInfo->SetOverlapMode(0);
-			itrNG = this->NGReserveMap.find(itrSortNG->second->reserveID);
-			if( itrNG != this->NGReserveMap.end() ){
-				this->NGReserveMap.erase(itrNG);
-			}
-			tempNGMap2Pass.erase(itrSortNG++);
-		}else{
-			itrSortNG++;
-		}
-	}
-
-	//NGで少しでも録画できるかチェック
-	for( itrSortNG = tempNGMap2Pass.begin(); itrSortNG != tempNGMap2Pass.end(); itrSortNG++){
-		if( itrSortNG->second->useTunerID != 0 ){
-			//チューナー固定でNGになっているのは無視
-			continue;
-		}
-		DWORD maxDuration = 0;
-		DWORD maxID = 0xFFFFFFFF;
-		for( itrBank = this->bankMap.begin(); itrBank != this->bankMap.end(); itrBank++){
-			DWORD duration = ChkInsertNGStatus(itrBank->second, itrSortNG->second);
-			if( maxDuration < duration && duration > 0){
-				maxDuration = duration;
-				maxID = itrBank->second->tunerID;
-			}
-		}
-		if( maxDuration > 0 && maxID != 0xFFFFFFFF ){
-			//少しでも録画できる場所あった
-			itrBank = this->bankMap.find(maxID);
-			if( itrBank != this->bankMap.end() ){
-				itrSortNG->second->reserveInfo->SetOverlapMode(1);
-				itrBank->second->reserveList.insert(pair<DWORD, BANK_WORK_INFO*>(itrSortNG->second->reserveID,itrSortNG->second));
-
-				//登録できたのでNGから削除
-				itrNG = this->NGReserveMap.find(itrSortNG->second->reserveID);
-				if( itrNG != this->NGReserveMap.end() ){
-					this->NGReserveMap.erase(itrNG);
-				}
-				if( this->useResSrvCoop == TRUE && this->useSrvCoop == TRUE){
-					//全部は録画できないもの
-					this->nwCoopManager.AddChkReserve(itrSortNG->second->reserveInfo);
-				}
-			}
-		}
-	}
-}
-
-void CReserveManager::_ReloadBankMapAlgo2()
-{
-	map<DWORD, BANK_INFO*>::iterator itrBank;
-	map<DWORD, BANK_WORK_INFO*>::iterator itrNG;
-
-	//録画待機中のものをバンクに登録＆優先度と時間でソート
-	map<DWORD, CReserveInfo*>::iterator itrInfo;
-	multimap<LONGLONG, CReserveInfo*> sortTimeMap;
-	for( itrInfo = this->reserveInfoMap.begin(); itrInfo != this->reserveInfoMap.end(); itrInfo++ ){
-		BYTE recMode = 0;
-		itrInfo->second->GetRecMode(&recMode);
-		if( recMode != RECMODE_NO ){
-			SYSTEMTIME time;
-			itrInfo->second->GetStartTime(&time);
-			sortTimeMap.insert(pair<LONGLONG, CReserveInfo*>(ConvertI64Time(time), itrInfo->second));
-		}
-	}
-	multimap<wstring, BANK_WORK_INFO*> sortReserveMap;
-	multimap<LONGLONG, CReserveInfo*>::iterator itrSortInfo;
-	DWORD reserveNum = (DWORD)this->reserveInfoMap.size();
-	DWORD reserveCount = 0;
-	for( itrSortInfo = sortTimeMap.begin(); itrSortInfo != sortTimeMap.end(); itrSortInfo++ ){
-		itrSortInfo->second->SetOverlapMode(0);
-		BOOL recWaitFlag = FALSE;
-		DWORD tunerID = 0;
-		itrSortInfo->second->GetRecWaitMode(&recWaitFlag, &tunerID);
-		if( recWaitFlag == TRUE ){
-			//録画処理中なのでバンクに登録
-			itrBank = this->bankMap.find(tunerID);
-			if( itrBank != this->bankMap.end() ){
-				BANK_WORK_INFO* item = new BANK_WORK_INFO;
-				CreateWorkData(itrSortInfo->second, item, this->backPriorityFlag, reserveCount, reserveNum, TRUE);
-				itrBank->second->reserveList.insert(pair<DWORD, BANK_WORK_INFO*>(item->reserveID,item));
-			}
-		}else{
-			//まだ録画処理されていないのでソートに追加
-			BANK_WORK_INFO* item = new BANK_WORK_INFO;
-			CreateWorkData(itrSortInfo->second, item, this->backPriorityFlag, reserveCount, reserveNum, TRUE);
-			sortReserveMap.insert(pair<wstring, BANK_WORK_INFO*>(item->sortKey, item));
-		}
-		reserveCount++;
-	}
-
-	Sleep(0);
-
-	//予約の割り振り
-	multimap<wstring, BANK_WORK_INFO*> tempNGMap1Pass;
-	multimap<wstring, BANK_WORK_INFO*> tempMap2Pass;
-	multimap<wstring, BANK_WORK_INFO*> tempNGMap2Pass;
-	multimap<wstring, BANK_WORK_INFO*>::iterator itrSort;
-	for( itrSort = sortReserveMap.begin(); itrSort !=  sortReserveMap.end(); itrSort++ ){
-		BOOL insert = FALSE;
-		//チューナー優先度より同一物理チャンネルで連続となるチューナーの使用を優先する
-		if( this->sameChPriorityFlag == TRUE ){
-			for( itrBank = this->bankMap.begin(); itrBank != this->bankMap.end(); itrBank++){
-				DWORD status = ChkInsertSameChStatus(itrBank->second, itrSort->second);
-				if( status == 1 ){
-					//問題なく追加可能
-					itrBank->second->reserveList.insert(pair<DWORD, BANK_WORK_INFO*>(itrSort->second->reserveID,itrSort->second));
-					insert = TRUE;
-					break;
-				}
-			}
-		}
-		if( insert == FALSE ){
-			for( itrBank = this->bankMap.begin(); itrBank != this->bankMap.end(); itrBank++){
-				DWORD status = ChkInsertStatus(itrBank->second, itrSort->second);
-				if( status == 1 ){
-					//問題なく追加可能
-					itrBank->second->reserveList.insert(pair<DWORD, BANK_WORK_INFO*>(itrSort->second->reserveID,itrSort->second));
-					insert = TRUE;
-					break;
-				}
-			}
-		}
-
-		if( insert == FALSE ){
-			//追加できなかった
-			tempNGMap1Pass.insert(pair<wstring, BANK_WORK_INFO*>(itrSort->first, itrSort->second));
-		}
-	}
-
-	//2Pass
-	for( itrSort = tempNGMap1Pass.begin(); itrSort !=  tempNGMap1Pass.end(); itrSort++ ){
-		BOOL insert = FALSE;
-		//チューナー優先度より同一物理チャンネルで連続となるチューナーの使用を優先する
-		if( this->sameChPriorityFlag == TRUE ){
-			for( itrBank = this->bankMap.begin(); itrBank != this->bankMap.end(); itrBank++){
-				DWORD status = ChkInsertSameChStatus(itrBank->second, itrSort->second);
-				if( status == 1 ){
-					//問題なく追加可能
-					itrBank->second->reserveList.insert(pair<DWORD, BANK_WORK_INFO*>(itrSort->second->reserveID,itrSort->second));
-					insert = TRUE;
-					break;
-				}
-			}
-		}
-		if( insert == FALSE ){
-			for( itrBank = this->bankMap.begin(); itrBank != this->bankMap.end(); itrBank++){
-				DWORD status = ChkInsertStatus(itrBank->second, itrSort->second);
-				if( status == 1 ){
-					//問題なく追加可能
-					itrBank->second->reserveList.insert(pair<DWORD, BANK_WORK_INFO*>(itrSort->second->reserveID,itrSort->second));
-					insert = TRUE;
-					break;
-				}else if( status == 2 ){
-					//追加可能だが終了時間と開始時間の重なった予約あり
-					//仮追加
-					itrBank->second->reserveList.insert(pair<DWORD, BANK_WORK_INFO*>(itrSort->second->reserveID,itrSort->second));
-					itrSort->second->preTunerID = itrBank->first;
-					tempMap2Pass.insert(pair<wstring, BANK_WORK_INFO*>(itrSort->first, itrSort->second));
-					insert = TRUE;
-					break;
-				}
-			}
-		}
-		if( insert == FALSE ){
-			//追加できなかった
-			itrSort->second->reserveInfo->SetOverlapMode(2);
-			this->NGReserveMap.insert(pair<DWORD, BANK_WORK_INFO*>(itrSort->second->reserveID, itrSort->second));
-
-			tempNGMap2Pass.insert(pair<wstring, BANK_WORK_INFO*>(itrSort->first, itrSort->second));
-		}
-	}
-
-	Sleep(0);
-
-	//開始終了重なっている予約で、他のチューナーに回せるやつあるかチェック
-	for( itrSort = tempMap2Pass.begin(); itrSort !=  tempMap2Pass.end(); itrSort++ ){
-		BOOL insert = FALSE;
-		for( itrBank = this->bankMap.begin(); itrBank != this->bankMap.end(); itrBank++){
-			if( itrBank->second->tunerID == itrSort->second->preTunerID ){
-				if(ReChkInsertStatus(itrBank->second, itrSort->second) == 1 ){
-					//前の予約移動した？このままでもOK
-					break;
-				}else{
-					continue;
-				}
-			}
-			DWORD status = ChkInsertStatus(itrBank->second, itrSort->second);
-			if( status == 1 ){
-				//問題なく追加可能
-				itrBank->second->reserveList.insert(pair<DWORD, BANK_WORK_INFO*>(itrSort->second->reserveID,itrSort->second));
-				insert = TRUE;
-				break;
-			}
-		}
-		if( insert == TRUE ){
-			//仮追加を削除
-			itrBank = this->bankMap.find(itrSort->second->preTunerID);
-			if( itrBank != this->bankMap.end() ){
-				map<DWORD, BANK_WORK_INFO*>::iterator itrDel;
-				itrDel = itrBank->second->reserveList.find(itrSort->second->reserveID);
-				if( itrDel != itrBank->second->reserveList.end() ){
-					itrBank->second->reserveList.erase(itrDel);
-				}
-			}
-		}
-	}
-
-	Sleep(0);
-
-	multimap<wstring, BANK_WORK_INFO*>::iterator itrSortNG;
-	//NGでチューナー入れ替えで録画できるものあるかチェック
-	itrSortNG = tempNGMap2Pass.begin();
-	while(itrSortNG != tempNGMap2Pass.end() ){
-		if( itrSortNG->second->useTunerID != 0 ){
-			//チューナー固定でNGになっているのは無視
-			itrSortNG++;
-			continue;
-		}
-		if( ChangeNGReserve(itrSortNG->second) == TRUE ){
-			//登録できたのでNGから削除
-			itrSortNG->second->reserveInfo->SetOverlapMode(0);
-			itrNG = this->NGReserveMap.find(itrSortNG->second->reserveID);
-			if( itrNG != this->NGReserveMap.end() ){
-				this->NGReserveMap.erase(itrNG);
-			}
-			tempNGMap2Pass.erase(itrSortNG++);
-		}else{
-			itrSortNG++;
-		}
-	}
-
-	//NGで少しでも録画できるかチェック
-	for( itrSortNG = tempNGMap2Pass.begin(); itrSortNG != tempNGMap2Pass.end(); itrSortNG++){
-		if( itrSortNG->second->useTunerID != 0 ){
-			//チューナー固定でNGになっているのは無視
-			continue;
-		}
-		DWORD maxDuration = 0;
-		DWORD maxID = 0xFFFFFFFF;
-		for( itrBank = this->bankMap.begin(); itrBank != this->bankMap.end(); itrBank++){
-			DWORD duration = ChkInsertNGStatus(itrBank->second, itrSortNG->second);
-			if( maxDuration < duration && duration > 0){
-				maxDuration = duration;
-				maxID = itrBank->second->tunerID;
-			}
-		}
-		if( maxDuration > 0 && maxID != 0xFFFFFFFF ){
-			//少しでも録画できる場所あった
-			itrBank = this->bankMap.find(maxID);
-			if( itrBank != this->bankMap.end() ){
-				itrSortNG->second->reserveInfo->SetOverlapMode(1);
-				itrBank->second->reserveList.insert(pair<DWORD, BANK_WORK_INFO*>(itrSortNG->second->reserveID,itrSortNG->second));
-
-				//登録できたのでNGから削除
-				itrNG = this->NGReserveMap.find(itrSortNG->second->reserveID);
-				if( itrNG != this->NGReserveMap.end() ){
-					this->NGReserveMap.erase(itrNG);
-				}
-				if( this->useResSrvCoop == TRUE && this->useSrvCoop == TRUE){
-					//全部は録画できないもの
-					this->nwCoopManager.AddChkReserve(itrSortNG->second->reserveInfo);
-				}
-			}
-		}
-	}
-}
-
-void CReserveManager::_ReloadBankMapAlgo3()
-{
-	map<DWORD, BANK_INFO*>::iterator itrBank;
-	map<DWORD, BANK_WORK_INFO*>::iterator itrNG;
-
-	//録画待機中のものをバンクに登録＆優先度と時間でソート
-	map<DWORD, CReserveInfo*>::iterator itrInfo;
-	multimap<LONGLONG, CReserveInfo*> sortTimeMap;
-	for( itrInfo = this->reserveInfoMap.begin(); itrInfo != this->reserveInfoMap.end(); itrInfo++ ){
-		BYTE recMode = 0;
-		itrInfo->second->GetRecMode(&recMode);
-		if( recMode != RECMODE_NO ){
-			SYSTEMTIME time;
-			itrInfo->second->GetStartTime(&time);
-			sortTimeMap.insert(pair<LONGLONG, CReserveInfo*>(ConvertI64Time(time), itrInfo->second));
-		}
-	}
-	multimap<wstring, BANK_WORK_INFO*> sortReserveMap;
-	multimap<LONGLONG, CReserveInfo*>::iterator itrSortInfo;
-	DWORD reserveNum = (DWORD)this->reserveInfoMap.size();
-	DWORD reserveCount = 0;
-	for( itrSortInfo = sortTimeMap.begin(); itrSortInfo != sortTimeMap.end(); itrSortInfo++ ){
-		itrSortInfo->second->SetOverlapMode(0);
-		BOOL recWaitFlag = FALSE;
-		DWORD tunerID = 0;
-		itrSortInfo->second->GetRecWaitMode(&recWaitFlag, &tunerID);
-		if( recWaitFlag == TRUE ){
-			//録画処理中なのでバンクに登録
-			itrBank = this->bankMap.find(tunerID);
-			if( itrBank != this->bankMap.end() ){
-				BANK_WORK_INFO* item = new BANK_WORK_INFO;
-				CreateWorkData(itrSortInfo->second, item, FALSE, reserveCount, reserveNum, TRUE);
-				itrBank->second->reserveList.insert(pair<DWORD, BANK_WORK_INFO*>(item->reserveID,item));
-			}
-		}else{
-			//まだ録画処理されていないのでソートに追加
-			BANK_WORK_INFO* item = new BANK_WORK_INFO;
-			CreateWorkData(itrSortInfo->second, item, FALSE, reserveCount, reserveNum, TRUE);
-			sortReserveMap.insert(pair<wstring, BANK_WORK_INFO*>(item->sortKey, item));
-		}
-		reserveCount++;
-	}
-
-	Sleep(0);
-
-	//予約の割り振り
-	multimap<wstring, BANK_WORK_INFO*> tempNGMap1Pass;
-	multimap<wstring, BANK_WORK_INFO*> tempMap2Pass;
-	multimap<wstring, BANK_WORK_INFO*> tempNGMap2Pass;
-	multimap<wstring, BANK_WORK_INFO*>::iterator itrSort;
-	for( itrSort = sortReserveMap.begin(); itrSort !=  sortReserveMap.end(); itrSort++ ){
-		BOOL insert = FALSE;
-		//チューナー優先度より同一物理チャンネルで連続となるチューナーの使用を優先する
-		if( this->sameChPriorityFlag == TRUE ){
-			for( itrBank = this->bankMap.begin(); itrBank != this->bankMap.end(); itrBank++){
-				DWORD status = ChkInsertSameChStatus(itrBank->second, itrSort->second);
-				if( status == 1 ){
-					//問題なく追加可能
-					itrBank->second->reserveList.insert(pair<DWORD, BANK_WORK_INFO*>(itrSort->second->reserveID,itrSort->second));
-					insert = TRUE;
-					break;
-				}
-			}
-		}
-		if( insert == FALSE ){
-			for( itrBank = this->bankMap.begin(); itrBank != this->bankMap.end(); itrBank++){
-				DWORD status = ChkInsertStatus(itrBank->second, itrSort->second);
-				if( status == 1 ){
-					//問題なく追加可能
-					itrBank->second->reserveList.insert(pair<DWORD, BANK_WORK_INFO*>(itrSort->second->reserveID,itrSort->second));
-					insert = TRUE;
-					break;
-				}
-			}
-		}
-
-		if( insert == FALSE ){
-			//追加できなかった
-			tempNGMap1Pass.insert(pair<wstring, BANK_WORK_INFO*>(itrSort->first, itrSort->second));
-		}
-	}
-
-	//2Pass
-	for( itrSort = tempNGMap1Pass.begin(); itrSort !=  tempNGMap1Pass.end(); itrSort++ ){
-		BOOL insert = FALSE;
-		//チューナー優先度より同一物理チャンネルで連続となるチューナーの使用を優先する
-		if( this->sameChPriorityFlag == TRUE ){
-			for( itrBank = this->bankMap.begin(); itrBank != this->bankMap.end(); itrBank++){
-				DWORD status = ChkInsertSameChStatus(itrBank->second, itrSort->second);
-				if( status == 1 ){
-					//問題なく追加可能
-					itrBank->second->reserveList.insert(pair<DWORD, BANK_WORK_INFO*>(itrSort->second->reserveID,itrSort->second));
-					insert = TRUE;
-					break;
-				}
-			}
-		}
-		if( insert == FALSE ){
-			for( itrBank = this->bankMap.begin(); itrBank != this->bankMap.end(); itrBank++){
-				DWORD status = ChkInsertStatus(itrBank->second, itrSort->second);
-				if( status == 1 ){
-					//問題なく追加可能
-					itrBank->second->reserveList.insert(pair<DWORD, BANK_WORK_INFO*>(itrSort->second->reserveID,itrSort->second));
-					insert = TRUE;
-					break;
-				}else if( status == 2 ){
-					//追加可能だが終了時間と開始時間の重なった予約あり
-					//仮追加
-					itrBank->second->reserveList.insert(pair<DWORD, BANK_WORK_INFO*>(itrSort->second->reserveID,itrSort->second));
-					itrSort->second->preTunerID = itrBank->first;
-					tempMap2Pass.insert(pair<wstring, BANK_WORK_INFO*>(itrSort->first, itrSort->second));
-					insert = TRUE;
-					break;
+				if( do2Pass || itrSort->second->reserveInfo->IsNGTuner(itrSort->second->useTunerID) == FALSE ){
+					map<DWORD, BANK_INFO*>::iterator itrManual;
+					itrManual = this->bankMap.find(itrSort->second->useTunerID);
+					if( itrManual != this->bankMap.end() ){
+						itrManual->second->reserveList.insert(pair<DWORD, BANK_WORK_INFO*>(itrSort->second->reserveID,itrSort->second));
+						insert = TRUE;
+					}
 				}
 			}
 		}
@@ -2807,6 +2144,29 @@ BOOL CReserveManager::ChangeNGReserve(BANK_WORK_INFO* inItem)
 	return ret;
 }
 
+//マージンを考慮した予約時刻を計算する(常にendTime>=startTime)
+void CReserveManager::CalcEntireReserveTime(LONGLONG* startTime, LONGLONG* endTime, const RESERVE_DATA& data)
+{
+	LONGLONG startTime_ = ConvertI64Time(data.startTime);
+	LONGLONG endTime_ = startTime_ + data.durationSecond * I64_1SEC;
+	LONGLONG startMargin = this->defStartMargine * I64_1SEC;
+	LONGLONG endMargin = this->defEndMargine * I64_1SEC;
+	if( data.recSetting.useMargineFlag == TRUE ){
+		startMargin = data.recSetting.startMargine * I64_1SEC;
+		endMargin = data.recSetting.endMargine * I64_1SEC;
+	}
+	//開始マージンは元の予約終了時刻を超えて負であってはならない
+	startMargin = max(startMargin, startTime_ - endTime_);
+	//終了マージンは元の予約開始時刻を超えて負であってはならない
+	endMargin = max(endMargin, startTime_ - min(startMargin, 0) - endTime_);
+	if( startTime != NULL ){
+		*startTime = startTime_ - startMargin;
+	}
+	if( endTime != NULL ){
+		*endTime = endTime_ + endMargin;
+	}
+}
+
 void CReserveManager::CheckOverTimeReserve()
 {
 	LONGLONG nowTime = GetNowI64Time();
@@ -2822,27 +2182,8 @@ void CReserveManager::CheckOverTimeReserve()
 			RESERVE_DATA data;
 			itrInfo->second->GetData(&data);
 
-			int startMargine = 0;
-			int endMargine = 0;
-			if( data.recSetting.useMargineFlag == TRUE ){
-				startMargine = data.recSetting.startMargine;
-				endMargine = data.recSetting.endMargine;
-			}else{
-				startMargine = this->defStartMargine;
-				endMargine = this->defEndMargine;
-			}
-
-			LONGLONG startTime = ConvertI64Time(data.startTime);
-			if(startMargine < 0 ){
-				//マージンマイナス値なら開始時間も考慮する
-				startTime -= ((LONGLONG)startMargine) * I64_1SEC;
-			}
-
-			LONGLONG endTime = GetSumTime(data.startTime, data.durationSecond);
-			if(endMargine < 0 ){
-				//マージンマイナス値なら終了時間も考慮する
-				endTime += ((LONGLONG)endMargine) * I64_1SEC;
-			}
+			LONGLONG endTime;
+			CalcEntireReserveTime(NULL, &endTime, data);
 
 			if( endTime < nowTime ){
 				//終了時間過ぎてしまっている
@@ -2886,26 +2227,7 @@ void CReserveManager::CreateWorkData(CReserveInfo* reserveInfo, BANK_WORK_INFO* 
 	DWORD tunerID = 0;
 	reserveInfo->GetRecWaitMode(&workInfo->recWaitFlag, &tunerID);
 
-	int startMargine = 0;
-	int endMargine = 0;
-	if( data.recSetting.useMargineFlag == TRUE ){
-		startMargine = data.recSetting.startMargine;
-		endMargine = data.recSetting.endMargine;
-	}else{
-		startMargine = this->defStartMargine;
-		endMargine = this->defEndMargine;
-	}
-	workInfo->startTime = ConvertI64Time(data.startTime);
-	if(startMargine < 0 ){
-		//マージンマイナス値なら開始時間も考慮する
-		workInfo->startTime -= ((LONGLONG)startMargine) * I64_1SEC;
-	}
-
-	workInfo->endTime = GetSumTime(data.startTime, data.durationSecond);
-	if(endMargine < 0 ){
-		//マージンマイナス値なら終了時間も考慮する
-		workInfo->endTime += ((LONGLONG)endMargine) * I64_1SEC;
-	}
+	CalcEntireReserveTime(&workInfo->startTime, &workInfo->endTime, data);
 
 	workInfo->priority = data.recSetting.priority;
 
@@ -2928,14 +2250,14 @@ void CReserveManager::CreateWorkData(CReserveInfo* reserveInfo, BANK_WORK_INFO* 
 
 	if( backPriority == TRUE ){
 		//後の番組優先
-		Format(workInfo->sortKey, L"%01d%01d%08I64x%05d", tunerManual, 9-workInfo->priority, workInfo->startTime*(-1), reserveNum-reserveCount);
+		Format(workInfo->sortKey, L"%01d%02x%016I64x%08x", tunerManual, 255-workInfo->priority, workInfo->startTime*(-1), UINT_MAX-reserveCount);
 	}else{
 		//前の番組優先
-		Format(workInfo->sortKey, L"%01d%01d%08I64x%05d", tunerManual, 9-workInfo->priority, workInfo->startTime, reserveCount);
+		Format(workInfo->sortKey, L"%01d%02x%016I64x%08x", tunerManual, 255-workInfo->priority, workInfo->startTime, reserveCount);
 	}
 }
 
-DWORD CReserveManager::ChkInsertSameChStatus(BANK_INFO* bank, BANK_WORK_INFO* inItem)
+DWORD CReserveManager::ChkInsertStatus(BANK_INFO* bank, BANK_WORK_INFO* inItem, BOOL reCheck, BOOL mustOverlap)
 {
 	if( bank == NULL || inItem == NULL ){
 		return 0;
@@ -2943,26 +2265,32 @@ DWORD CReserveManager::ChkInsertSameChStatus(BANK_INFO* bank, BANK_WORK_INFO* in
 	if( inItem->reserveInfo->IsNGTuner(bank->tunerID) == TRUE ){
 		return 0;
 	}
-	DWORD status = 0;
+	DWORD status = mustOverlap ? 0 : 1;
 	map<DWORD, BANK_WORK_INFO*>::iterator itrBank;
 	for( itrBank = bank->reserveList.begin(); itrBank != bank->reserveList.end(); itrBank++ ){
-		if( itrBank->second->chID == inItem->chID ){
-			//同一チャンネル
-			if(( itrBank->second->startTime <= inItem->startTime && inItem->startTime <= itrBank->second->endTime ) ||
-				( itrBank->second->startTime <= inItem->endTime && inItem->endTime <= itrBank->second->endTime ) ||
-				( inItem->startTime <= itrBank->second->startTime && itrBank->second->startTime <= inItem->endTime ) ||
-				( inItem->startTime <= itrBank->second->endTime && itrBank->second->endTime <= inItem->endTime ) 
-				){
-					//開始時間か終了時間が重なっている
-					status = 1;
+		if( !reCheck || itrBank->second->reserveID != inItem->reserveID ){
+			if( itrBank->second->chID == inItem->chID ){
+				//同一チャンネル
+				if( mustOverlap ){
+					if(( itrBank->second->startTime <= inItem->startTime && inItem->startTime <= itrBank->second->endTime ) ||
+						( itrBank->second->startTime <= inItem->endTime && inItem->endTime <= itrBank->second->endTime ) ||
+						( inItem->startTime <= itrBank->second->startTime && itrBank->second->startTime <= inItem->endTime ) ||
+						( inItem->startTime <= itrBank->second->endTime && itrBank->second->endTime <= inItem->endTime ) 
+						){
+							//開始時間か終了時間が重なっている
+							status = 1;
+					}
+				}
+				continue;
 			}
-			
-		}else{
+
 			//別チャンネルで開始時間と終了時間が重なっていないかチェック
 			if( itrBank->second->startTime == inItem->endTime || itrBank->second->endTime == inItem->startTime ){
 				//連続予約の可能性あり
 				status = 2;
-				break;
+				if( mustOverlap ){
+					break;
+				}
 			}else if(( itrBank->second->startTime <= inItem->startTime && inItem->startTime <= itrBank->second->endTime ) ||
 				( itrBank->second->startTime <= inItem->endTime && inItem->endTime <= itrBank->second->endTime ) ||
 				( inItem->startTime <= itrBank->second->startTime && itrBank->second->startTime <= inItem->endTime ) ||
@@ -2972,40 +2300,6 @@ DWORD CReserveManager::ChkInsertSameChStatus(BANK_INFO* bank, BANK_WORK_INFO* in
 					status = 0;
 					break;
 			}
-		}
-	}
-
-	return status;
-}
-
-DWORD CReserveManager::ChkInsertStatus(BANK_INFO* bank, BANK_WORK_INFO* inItem)
-{
-	if( bank == NULL || inItem == NULL ){
-		return 0;
-	}
-	if( inItem->reserveInfo->IsNGTuner(bank->tunerID) == TRUE ){
-		return 0;
-	}
-	DWORD status = 1;
-	map<DWORD, BANK_WORK_INFO*>::iterator itrBank;
-	for( itrBank = bank->reserveList.begin(); itrBank != bank->reserveList.end(); itrBank++ ){
-		if( itrBank->second->chID == inItem->chID ){
-			//同一チャンネルなのでOK
-			continue;
-		}
-
-		//開始時間と終了時間が重なっていないかチェック
-		if( itrBank->second->startTime == inItem->endTime || itrBank->second->endTime == inItem->startTime ){
-			//連続予約の可能性あり
-			status = 2;
-		}else if(( itrBank->second->startTime <= inItem->startTime && inItem->startTime <= itrBank->second->endTime ) ||
-			( itrBank->second->startTime <= inItem->endTime && inItem->endTime <= itrBank->second->endTime ) ||
-			( inItem->startTime <= itrBank->second->startTime && itrBank->second->startTime <= inItem->endTime ) ||
-			( inItem->startTime <= itrBank->second->endTime && itrBank->second->endTime <= inItem->endTime ) 
-			){
-				//開始時間か終了時間が重なっている
-				status = 0;
-				break;
 		}
 	}
 
@@ -3014,38 +2308,12 @@ DWORD CReserveManager::ChkInsertStatus(BANK_INFO* bank, BANK_WORK_INFO* inItem)
 
 DWORD CReserveManager::ReChkInsertStatus(BANK_INFO* bank, BANK_WORK_INFO* inItem)
 {
-	if( bank == NULL || inItem == NULL ){
-		return 0;
-	}
-	if( inItem->reserveInfo->IsNGTuner(bank->tunerID) == TRUE ){
-		return 0;
-	}
-	DWORD status = 1;
-	map<DWORD, BANK_WORK_INFO*>::iterator itrBank;
-	for( itrBank = bank->reserveList.begin(); itrBank != bank->reserveList.end(); itrBank++ ){
-		if( itrBank->second->reserveID != inItem->reserveID ){
-			if( itrBank->second->chID == inItem->chID ){
-				//同一チャンネルなのでOK
-				continue;
-			}
+	return ChkInsertStatus(bank, inItem, TRUE, FALSE);
+}
 
-			//開始時間と終了時間が重なっていないかチェック
-			if( itrBank->second->startTime == inItem->endTime || itrBank->second->endTime == inItem->startTime ){
-				//連続予約の可能性あり
-				status = 2;
-			}else if(( itrBank->second->startTime <= inItem->startTime && inItem->startTime <= itrBank->second->endTime ) ||
-				( itrBank->second->startTime <= inItem->endTime && inItem->endTime <= itrBank->second->endTime ) ||
-				( inItem->startTime <= itrBank->second->startTime && itrBank->second->startTime <= inItem->endTime ) ||
-				( inItem->startTime <= itrBank->second->endTime && itrBank->second->endTime <= inItem->endTime ) 
-				){
-					//開始時間か終了時間が重なっている
-					status = 0;
-					break;
-			}
-		}
-	}
-
-	return status;
+DWORD CReserveManager::ChkInsertSameChStatus(BANK_INFO* bank, BANK_WORK_INFO* inItem)
+{
+	return ChkInsertStatus(bank, inItem, FALSE, TRUE);
 }
 
 DWORD CReserveManager::ChkInsertNGStatus(BANK_INFO* bank, BANK_WORK_INFO* inItem)
@@ -3585,18 +2853,13 @@ void CReserveManager::CheckBatWork()
 			}
 
 			LONGLONG chkTime = GetNowI64Time() + this->batMargin*60*I64_1SEC;
-			multimap<wstring, RESERVE_DATA*>::iterator itr;
-			for( itr = this->reserveText.reserveMap.begin(); itr != this->reserveText.reserveMap.end(); itr++ ){
+			vector<pair<LONGLONG, const RESERVE_DATA*> > resList = this->reserveText.GetReserveList(TRUE, this->defStartMargine);
+			vector<pair<LONGLONG, const RESERVE_DATA*> >::iterator itr;
+			for( itr = resList.begin(); itr != resList.end(); itr++ ){
 				if( itr->second->recSetting.recMode != RECMODE_VIEW && itr->second->recSetting.recMode != RECMODE_NO ){
-					LONGLONG startTime = ConvertI64Time(itr->second->startTime);
-					LONGLONG endTime = GetSumTime(itr->second->startTime, itr->second->durationSecond);
-					if( itr->second->recSetting.useMargineFlag == 1 ){
-						startTime += ((LONGLONG)itr->second->recSetting.startMargine)*I64_1SEC;
-						endTime += ((LONGLONG)itr->second->recSetting.endMargine)*I64_1SEC;
-					}else{
-						startTime += ((LONGLONG)this->defStartMargine)*I64_1SEC;
-						endTime += ((LONGLONG)this->defEndMargine)*I64_1SEC;
-					}
+					LONGLONG startTime;
+					LONGLONG endTime;
+					CalcEntireReserveTime(&startTime, &endTime, *itr->second);
 
 					if( startTime <= chkTime && chkTime < endTime ){
 						//次の予約時間にかぶる
@@ -3908,10 +3171,10 @@ void CReserveManager::CheckTuijyu()
 										LONGLONG delay = itrCtrl->second->DelayTime();
 										LONGLONG nowTime = GetNowI64Time() + delay;
 										LONGLONG endTime = GetSumTime(data.startTime, data.durationSecond);
-										if( data.recSetting.useMargineFlag == 1 ){
-											if( data.recSetting.endMargine < 0 ){
-												endTime -= ((LONGLONG)data.recSetting.endMargine)*I64_1SEC;
-											}
+										LONGLONG endTimeE;
+										CalcEntireReserveTime(NULL, &endTimeE, data);
+										if( endTime > endTimeE ){
+											endTime = endTimeE;
 										}
 										if( nowTime + 2*60*I64_1SEC > endTime ){
 											//終了2分前だけどEPGなし
@@ -4318,14 +3581,6 @@ BOOL CReserveManager::CheckNotFindChgEvent(RESERVE_DATA* data, CTunerBankCtrl* c
 		//イベントリレーは追従の必要なし
 	}else if(data->reserveStatus == ADD_RESERVE_NORMAL || data->reserveStatus == ADD_RESERVE_CHG_PF){
 		//6時間追従用予約へ移行
-		LONGLONG chkEndTime = 0;
-		LONGLONG endMargine = 0;
-		if( data->recSetting.useMargineFlag == 1 ){
-			endMargine = ((LONGLONG)data->recSetting.endMargine)*I64_1SEC;
-		}else{
-			endMargine = ((LONGLONG)this->defEndMargine)*I64_1SEC;
-		}
-		chkEndTime = GetSumTime(data->startTime, data->durationSecond) + endMargine;
 		LONGLONG delay = ctrl->DelayTime();
 		LONGLONG nowTime = GetNowI64Time()+delay;
 		//if( nowTime + 60*I64_1SEC > chkEndTime ){
@@ -4333,17 +3588,13 @@ BOOL CReserveManager::CheckNotFindChgEvent(RESERVE_DATA* data, CTunerBankCtrl* c
 			OutputDebugString(L"●6時間追従用予約へ移行");
 
 			//開始時間を延ばす
-			LONGLONG chgStart = nowTime;
-			if( data->recSetting.useMargineFlag == 1 ){
-				if( data->recSetting.startMargine < 0 ){
-					chgStart += ((LONGLONG)data->recSetting.startMargine)*I64_1SEC;
-				}
-			}else{
-				if( this->defStartMargine < 0 ){
-					chgStart += ((LONGLONG)this->defStartMargine)*I64_1SEC;
-				}
+			LONGLONG chgStart = nowTime - 30*I64_1SEC;
+			LONGLONG chgStartE;
+			ConvertSystemTime( chgStart, &data->startTime);
+			CalcEntireReserveTime(&chgStartE, NULL, *data);
+			if( chgStart < chgStartE ){
+				chgStart -= chgStartE - chgStart;
 			}
-			chgStart -= 30*I64_1SEC;
 			ConvertSystemTime( chgStart, &data->startTime);
 			data->reserveStatus = ADD_RESERVE_NO_FIND;
 			_ChgReserveData( data, TRUE );
@@ -4369,17 +3620,13 @@ BOOL CReserveManager::CheckNotFindChgEvent(RESERVE_DATA* data, CTunerBankCtrl* c
 
 		}else{
 			//開始時間を延ばす
-			LONGLONG chgStart = nowTime;
-			if( data->recSetting.useMargineFlag == 1 ){
-				if( data->recSetting.startMargine < 0 ){
-					chgStart += ((LONGLONG)data->recSetting.startMargine)*I64_1SEC;
-				}
-			}else{
-				if( this->defStartMargine < 0 ){
-					chgStart += ((LONGLONG)this->defStartMargine)*I64_1SEC;
-				}
+			LONGLONG chgStart = nowTime - 30*I64_1SEC;
+			LONGLONG chgStartE;
+			ConvertSystemTime( chgStart, &data->startTime);
+			CalcEntireReserveTime(&chgStartE, NULL, *data);
+			if( chgStart < chgStartE ){
+				chgStart -= chgStartE - chgStart;
 			}
-			chgStart -= 30*I64_1SEC;
 			ConvertSystemTime( chgStart, &data->startTime);
 			_ChgReserveData( data, TRUE );
 
@@ -4448,8 +3695,9 @@ BOOL CReserveManager::CheckEventRelay(EPGDB_EVENT_INFO* info, RESERVE_DATA* data
 
 				//同一イベント予約済みかチェック
 				BOOL find = FALSE;
-				multimap<wstring, RESERVE_DATA*>::iterator itrRes;
-				for( itrRes = this->reserveText.reserveMap.begin(); itrRes != this->reserveText.reserveMap.end(); itrRes++ ){
+				vector<pair<LONGLONG, const RESERVE_DATA*> > resList = this->reserveText.GetReserveList();
+				vector<pair<LONGLONG, const RESERVE_DATA*> >::iterator itrRes;
+				for( itrRes = resList.begin(); itrRes != resList.end(); itrRes++ ){
 					if( itrRes->second->originalNetworkID == info->eventRelayInfo->eventDataList[i].original_network_id &&
 						itrRes->second->transportStreamID == info->eventRelayInfo->eventDataList[i].transport_stream_id &&
 						itrRes->second->serviceID == info->eventRelayInfo->eventDataList[i].service_id &&
@@ -4703,18 +3951,12 @@ BOOL CReserveManager::_IsSuspendOK(BOOL rebootFlag)
 		itr->second->GetData(&data);
 		if( data.overlapMode == 0 ){
 			if( data.recSetting.recMode != RECMODE_NO ){
-				LONGLONG startTime = ConvertI64Time(data.startTime);
-				DWORD sec = data.durationSecond;
-				if( sec < (DWORD)wakeMargin*60 ){
-					sec = (DWORD)wakeMargin*60;
-				}
-				LONGLONG endTime = GetSumTime(data.startTime, sec);
-				if( data.recSetting.useMargineFlag == 1 ){
-					startTime += ((LONGLONG)data.recSetting.startMargine)*I64_1SEC;
-					endTime += ((LONGLONG)data.recSetting.endMargine)*I64_1SEC;
-				}else{
-					startTime += ((LONGLONG)this->defStartMargine)*I64_1SEC;
-					endTime += ((LONGLONG)this->defEndMargine)*I64_1SEC;
+				LONGLONG startTime;
+				LONGLONG endTime;
+				CalcEntireReserveTime(&startTime, &endTime, data);
+				//短い予約のチェック漏れを防ぐ
+				if( endTime < startTime + wakeMargin*60*I64_1SEC ){
+					endTime = startTime + wakeMargin*60*I64_1SEC;
 				}
 
 				if( startTime <= chkWakeTime && chkWakeTime < endTime ){
@@ -4847,19 +4089,11 @@ BOOL CReserveManager::GetSleepReturnTime(
 		return FALSE;
 	}
 	LONGLONG nextRec = 0;
-	multimap<wstring, RESERVE_DATA*>::iterator itr;
-	for( itr = this->reserveText.reserveMap.begin(); itr != this->reserveText.reserveMap.end(); itr++ ){
+	vector<pair<LONGLONG, const RESERVE_DATA*> > resList = this->reserveText.GetReserveList(TRUE, this->defStartMargine);
+	vector<pair<LONGLONG, const RESERVE_DATA*> >::iterator itr;
+	for( itr = resList.begin(); itr != resList.end(); itr++ ){
 		if( itr->second->recSetting.recMode != RECMODE_NO ){
-			LONGLONG startTime = ConvertI64Time(itr->second->startTime);
-			LONGLONG endTime = GetSumTime(itr->second->startTime, itr->second->durationSecond);
-			if( itr->second->recSetting.useMargineFlag == 1 ){
-				startTime -= ((LONGLONG)itr->second->recSetting.startMargine)*I64_1SEC;
-			}else{
-				startTime -= ((LONGLONG)this->defStartMargine)*I64_1SEC;
-			}
-
-			nextRec = startTime;
-
+			CalcEntireReserveTime(&nextRec, NULL, *itr->second);
 			break;
 		}
 	}

@@ -59,6 +59,8 @@ using namespace std;
 #define MF_MODE_DRCS 2 //DRCS
 #define MF_MODE_OTHER 3 //ÇªÇÃëº
 
+#ifdef ARIB8CHAR_DECODE_H_IMPLEMENT_TABLE
+
 static char AsciiTable[][3]={
 	"ÅI","Åh","Åî","Åê","Åì","Åï","Åf",
 	"Åi","Åj","Åñ","Å{","ÅC","Å|","ÅD","Å^",
@@ -104,7 +106,7 @@ static char KanaTable[][3]={
 
 typedef struct _GAIJI_TABLE{
 	unsigned short usARIB8;
-	string strChar;
+	const char* strChar;
 } GAIJI_TABLE;
 
 static GAIJI_TABLE GaijiTable[]={
@@ -588,6 +590,8 @@ static BYTE DefaultMacroE[]={
 static BYTE DefaultMacroF[]={
 	0x1B,0x28,0x4A,0x1B,0x29,0x32,0x1B,0x2A,0x20,0x41,0x1B,0x2B,0x20,0x70,0x0F,0x1B,0x7D
 };
+
+#endif //ARIB8CHAR_DECODE_H_IMPLEMENT_TABLE
 
 //ï∂éöÉTÉCÉY
 typedef enum{

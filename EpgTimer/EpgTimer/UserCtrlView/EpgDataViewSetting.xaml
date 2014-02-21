@@ -24,6 +24,7 @@
                     <Label Content="タブ名" Height="28" HorizontalAlignment="Left" Margin="6,6,0,0" Name="label2" VerticalAlignment="Top" />
                     <TextBox Height="24" HorizontalAlignment="Left" Margin="58,8,0,0" Name="textBox_tabName" VerticalAlignment="Top" Width="200" />
                     <Label Content="表示モード" Height="28" HorizontalAlignment="Left" Margin="6,40,0,0" Name="label3" VerticalAlignment="Top" />
+                    <CheckBox Content="終了済みの番組は表示しない" Height="16" HorizontalAlignment="Left" Margin="52,218,0,0" Name="checkBox_filterEnded" VerticalAlignment="Top" />
                 </Grid>
             </TabItem>
             <TabItem Header="表示条件" Name="tabItem_key">

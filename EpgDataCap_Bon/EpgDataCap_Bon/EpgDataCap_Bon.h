@@ -4,10 +4,6 @@
 
 #pragma once
 
-#ifndef __AFXWIN_H__
-	#error "PCH に対してこのファイルをインクルードする前に 'stdafx.h' をインクルードしてください"
-#endif
-
 #include "resource.h"		// メイン シンボル
 
 
@@ -15,18 +11,15 @@
 // このクラスの実装については、EpgDataCap_Bon.cpp を参照してください。
 //
 
-class CEpgDataCap_BonApp : public CWinApp
+class CEpgDataCap_BonApp
 {
 public:
 	CEpgDataCap_BonApp();
 
-// オーバーライド
 public:
-	virtual BOOL InitInstance();
-
-// 実装
-
-	DECLARE_MESSAGE_MAP()
+	BOOL InitInstance();
 };
+
+BOOL WritePrivateProfileInt(LPCTSTR lpAppName, LPCTSTR lpKeyName, int value, LPCTSTR lpFileName);
 
 extern CEpgDataCap_BonApp theApp;
