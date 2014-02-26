@@ -99,8 +99,6 @@ protected:
 	wstring httpPublicFolder;
 
 	BOOL awayMode;
-
-	vector<OLD_EVENT_INFO_DATA3> oldSearchList;
 protected:
 	//コマンド関係排他制御用
 	BOOL Lock(LPCWSTR log = NULL, DWORD timeOut = 60*1000);
