@@ -612,7 +612,7 @@ BOOL CEpgTimerSrvMain::CheckTuijyu()
 		}
 
 		RESERVE_DATA oldData = *(reserveList[i]);
-		EPGDB_EVENT_INFO* info;
+		EPGDB_EVENT_INFO info;
 		if( this->epgDB.SearchEpg(
 			reserveList[i]->originalNetworkID,
 			reserveList[i]->transportStreamID,
@@ -622,22 +622,22 @@ BOOL CEpgTimerSrvMain::CheckTuijyu()
 			) == TRUE){
 
 				BOOL chgRes = FALSE;
-				if( info->StartTimeFlag == 1 ){
-					if( ConvertI64Time(reserveList[i]->startTime) != ConvertI64Time(info->start_time) ){
-						reserveList[i]->startTime = info->start_time;
+				if( info.StartTimeFlag == 1 ){
+					if( ConvertI64Time(reserveList[i]->startTime) != ConvertI64Time(info.start_time) ){
+						reserveList[i]->startTime = info.start_time;
 						chgRes = TRUE;
 					}
 				}
-				if( info->DurationFlag == 1 ){
-					if( reserveList[i]->durationSecond != info->durationSec ){
-						reserveList[i]->durationSecond = info->durationSec;
+				if( info.DurationFlag == 1 ){
+					if( reserveList[i]->durationSecond != info.durationSec ){
+						reserveList[i]->durationSecond = info.durationSec;
 						chgRes = TRUE;
 					}
 				}
 				if( chgTitle == TRUE ){
-					if( info->shortInfo != NULL ){
-						if( CompareNoCase(reserveList[i]->title, info->shortInfo->event_name) != 0 ){
-							reserveList[i]->title = info->shortInfo->event_name;
+					if( info.shortInfo != NULL ){
+						if( CompareNoCase(reserveList[i]->title, info.shortInfo->event_name) != 0 ){
+							reserveList[i]->title = info.shortInfo->event_name;
 							chgRes = TRUE;
 						}
 					}
@@ -658,12 +658,12 @@ BOOL CEpgTimerSrvMain::CheckTuijyu()
 				&info
 				) == TRUE){
 
-					reserveList[i]->eventID = info->event_id;
+					reserveList[i]->eventID = info.event_id;
 
 					if( chkTime == FALSE ){
 						//”Ô‘g–¼‚à“¯‚¶‚©Šm”F
-						if( info->shortInfo != NULL ){
-							if( CompareNoCase(reserveList[i]->title, info->shortInfo->event_name) == 0 ){
+						if( info.shortInfo != NULL ){
+							if( CompareNoCase(reserveList[i]->title, info.shortInfo->event_name) == 0 ){
 								chgList.push_back(*(reserveList[i]));
 
 								this->reserveManager.SendTweet(TW_CHG_RESERVE_RELOADEPG, &oldData, reserveList[i], NULL);
@@ -672,9 +672,9 @@ BOOL CEpgTimerSrvMain::CheckTuijyu()
 					}else{
 						//ŽžŠÔ‚Ì‚Ý‚Å”»’f
 						if( chgTitle == TRUE ){
-							if( info->shortInfo != NULL ){
-								if( CompareNoCase(reserveList[i]->title, info->shortInfo->event_name) != 0 ){
-									reserveList[i]->title = info->shortInfo->event_name;
+							if( info.shortInfo != NULL ){
+								if( CompareNoCase(reserveList[i]->title, info.shortInfo->event_name) != 0 ){
+									reserveList[i]->title = info.shortInfo->event_name;
 								}
 							}
 						}
@@ -746,10 +746,11 @@ BOOL CEpgTimerSrvMain::AutoAddReserveEPG(int targetSize, EPG_AUTO_ADD_DATA* targ
 
 		itrKey->second->addCount = 0;
 
-		vector<CEpgDBManager::SEARCH_RESULT_EVENT> resultList;
-		this->epgDB.SearchEpg(&itrKey->second->searchInfo, &resultList);
+		vector<unique_ptr<CEpgDBManager::SEARCH_RESULT_EVENT_DATA>> resultList;
+		vector<EPGDB_SEARCH_KEY_INFO> key(1, itrKey->second->searchInfo);
+		this->epgDB.SearchEpg(&key, &resultList);
 		for( size_t i=0; i<resultList.size(); i++ ){
-			EPGDB_EVENT_INFO* result = resultList[i].info;
+			EPGDB_EVENT_INFO* result = &resultList[i]->info;
 			if( result->StartTimeFlag == 0 || result->DurationFlag == 0 ){
 				//ŽžŠÔ–¢’è‚È‚Ì‚Å‘ÎÛŠO
 				continue;
@@ -838,8 +839,8 @@ BOOL CEpgTimerSrvMain::AutoAddReserveEPG(int targetSize, EPG_AUTO_ADD_DATA* targ
 								addItem->recSetting.recMode = RECMODE_NO;
 							}
 						}
-						if( resultList[i].findKey.size() > 0 ){
-							Format(addItem->comment, L"EPGŽ©“®—\–ñ(%s)", resultList[i].findKey.c_str());
+						if( resultList[i]->findKey.size() > 0 ){
+							Format(addItem->comment, L"EPGŽ©“®—\–ñ(%s)", resultList[i]->findKey.c_str());
 						}else{
 							addItem->comment = L"EPGŽ©“®—\–ñ";
 						}
@@ -961,6 +962,53 @@ BOOL CEpgTimerSrvMain::AutoAddReserveProgram()
 	reserveList.clear();
 
 	return ret;
+}
+
+static void SearchPgCallback(vector<CEpgDBManager::SEARCH_RESULT_EVENT>* pval, void* param)
+{
+	vector<EPGDB_EVENT_INFO*> valp;
+	for( size_t i = 0; i < pval->size(); i++ ){
+		valp.push_back((*pval)[i].info);
+	}
+	CMD_STREAM *resParam = (CMD_STREAM*)param;
+	resParam->param = CMD_SUCCESS;
+	resParam->dataSize = GetVALUESize(&valp);
+	resParam->data = new BYTE[resParam->dataSize];
+	if( WriteVALUE(&valp, resParam->data, resParam->dataSize, NULL) == FALSE ){
+		_OutputDebugString(L"err Write res CMD2_EPG_SRV_SEARCH_PG\r\n");
+		resParam->dataSize = 0;
+		resParam->param = CMD_ERR;
+	}
+}
+
+static void EnumPgInfoCallback(vector<EPGDB_EVENT_INFO*>* pval, void* param)
+{
+	CMD_STREAM *resParam = (CMD_STREAM*)param;
+	resParam->param = CMD_SUCCESS;
+	resParam->dataSize = GetVALUESize(pval);
+	resParam->data = new BYTE[resParam->dataSize];
+	if( WriteVALUE(pval, resParam->data, resParam->dataSize, NULL) == FALSE ){
+		_OutputDebugString(L"err Write res CMD2_EPG_SRV_ENUM_PG_INFO\r\n");
+		resParam->dataSize = 0;
+		resParam->param = CMD_ERR;
+	}
+}
+
+static void EnumPgAllCallback(vector<EPGDB_SERVICE_EVENT_INFO>* pval, void* param)
+{
+	vector<EPGDB_SERVICE_EVENT_INFO*> valp;
+	for( size_t i = 0; i < pval->size(); i++ ){
+		valp.push_back(&(*pval)[i]);
+	}
+	CMD_STREAM *resParam = (CMD_STREAM*)param;
+	resParam->param = CMD_SUCCESS;
+	resParam->dataSize = GetVALUESize(&valp);
+	resParam->data = new BYTE[resParam->dataSize];
+	if( WriteVALUE(&valp, resParam->data, resParam->dataSize, NULL) == FALSE ){
+		_OutputDebugString(L"err Write res CMD2_EPG_SRV_ENUM_PG_ALL\r\n");
+		resParam->dataSize = 0;
+		resParam->param = CMD_ERR;
+	}
 }
 
 int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STREAM* resParam)
@@ -1214,20 +1262,10 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 			}else{
 				if( sys->Lock() == TRUE ){
 					resParam->param = CMD_ERR;
-					vector<EPGDB_EVENT_INFO*> val;
 					LONGLONG serviceKey = 0;
 
 					if( ReadVALUE(&serviceKey, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
-						if( sys->epgDB.EnumEventInfo(serviceKey, &val) == TRUE){
-							resParam->param = CMD_SUCCESS;
-							resParam->dataSize = GetVALUESize(&val);
-							resParam->data = new BYTE[resParam->dataSize];
-							if( WriteVALUE(&val, resParam->data, resParam->dataSize, NULL) == FALSE ){
-								_OutputDebugString(L"err Write res CMD2_EPG_SRV_ENUM_PG_INFO\r\n");
-								resParam->dataSize = 0;
-								resParam->param = CMD_ERR;
-							}
-						}
+						sys->epgDB.EnumEventInfo(serviceKey, EnumPgInfoCallback, resParam);
 					}
 					sys->UnLock();
 				}else{
@@ -1244,19 +1282,9 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 			}else{
 				if( sys->Lock() == TRUE ){
 					vector<EPGDB_SEARCH_KEY_INFO> key;
-					vector<EPGDB_EVENT_INFO*> val;
 
 					if( ReadVALUE( &key, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
-						if( sys->epgDB.SearchEpg(&key, &val) == TRUE ){
-							resParam->param = CMD_SUCCESS;
-							resParam->dataSize = GetVALUESize(&val);
-							resParam->data = new BYTE[resParam->dataSize];
-							if( WriteVALUE(&val, resParam->data, resParam->dataSize, NULL) == FALSE ){
-								_OutputDebugString(L"err Write res CMD2_EPG_SRV_SEARCH_PG\r\n");
-								resParam->dataSize = 0;
-								resParam->param = CMD_ERR;
-							}
-						}
+						sys->epgDB.SearchEpg(&key, SearchPgCallback, resParam);
 					}
 					sys->UnLock();
 				}else{
@@ -1273,7 +1301,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 			}else{
 				if( sys->Lock() == TRUE ){
 					ULONGLONG key;
-					EPGDB_EVENT_INFO* val;
+					EPGDB_EVENT_INFO val;
 
 					if( ReadVALUE( &key, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
 						WORD ONID = (WORD)(key>>48);
@@ -1282,9 +1310,9 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 						WORD eventID = (WORD)(key&0x000000000000FFFF);
 						if( sys->epgDB.SearchEpg(ONID, TSID, SID, eventID, &val) == TRUE ){
 							resParam->param = CMD_SUCCESS;
-							resParam->dataSize = GetVALUESize(val);
+							resParam->dataSize = GetVALUESize(&val);
 							resParam->data = new BYTE[resParam->dataSize];
-							if( WriteVALUE(val, resParam->data, resParam->dataSize, NULL) == FALSE ){
+							if( WriteVALUE(&val, resParam->data, resParam->dataSize, NULL) == FALSE ){
 								_OutputDebugString(L"err Write res CMD2_EPG_SRV_GET_PG_INFO\r\n");
 								resParam->dataSize = 0;
 								resParam->param = CMD_ERR;
@@ -1636,21 +1664,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 			}else{
 				if( sys->Lock() == TRUE ){
 					resParam->param = CMD_ERR;
-					vector<EPGDB_SERVICE_EVENT_INFO*> val;
-
-					if( sys->epgDB.EnumEventAll(&val) == TRUE){
-						resParam->param = CMD_SUCCESS;
-						resParam->dataSize = GetVALUESize(&val);
-						resParam->data = new BYTE[resParam->dataSize];
-						if( WriteVALUE(&val, resParam->data, resParam->dataSize, NULL) == FALSE ){
-							_OutputDebugString(L"err Write res CMD2_EPG_SRV_ENUM_PG_ALL\r\n");
-							resParam->dataSize = 0;
-							resParam->param = CMD_ERR;
-						}
-						for( size_t i=0;i<val.size(); i++ ){
-							SAFE_DELETE(val[i]);
-						}
-					}
+					sys->epgDB.EnumEventAll(EnumPgAllCallback, resParam);
 					sys->UnLock();
 				}else{
 					resParam->param = CMD_ERR_BUSY;
@@ -2507,9 +2521,9 @@ int CALLBACK CEpgTimerSrvMain::HttpCallback(void* param, HTTP_STREAM* recvParam,
 				if(sys->reserveManager.GetReserveData(reserveID, &reserveData) == TRUE ){
 					wstring eventText = L"";
 					if( reserveData.eventID != 0xFFFF ){
-						EPGDB_EVENT_INFO* eventData;
+						EPGDB_EVENT_INFO eventData;
 						if(sys->epgDB.SearchEpg(reserveData.originalNetworkID, reserveData.transportStreamID, reserveData.serviceID, reserveData.eventID, &eventData) == TRUE ){
-							_ConvertEpgInfoText2(eventData, eventText, reserveData.stationName);
+							_ConvertEpgInfoText2(&eventData, eventText, reserveData.stationName);
 						}
 					}
 					vector<TUNER_RESERVE_INFO> tunerList;
@@ -2621,9 +2635,9 @@ int CALLBACK CEpgTimerSrvMain::HttpCallback(void* param, HTTP_STREAM* recvParam,
 				if(sys->reserveManager.GetReserveData(reserveID, &reserveData) == TRUE ){
 					wstring eventText = L"";
 					if( reserveData.eventID != 0xFFFF ){
-						EPGDB_EVENT_INFO* eventData;
+						EPGDB_EVENT_INFO eventData;
 						if(sys->epgDB.SearchEpg(reserveData.originalNetworkID, reserveData.transportStreamID, reserveData.serviceID, reserveData.eventID, &eventData) == TRUE ){
-							_ConvertEpgInfoText2(eventData, eventText, reserveData.stationName);
+							_ConvertEpgInfoText2(&eventData, eventText, reserveData.stationName);
 						}
 					}
 					vector<TUNER_RESERVE_INFO> tunerList;

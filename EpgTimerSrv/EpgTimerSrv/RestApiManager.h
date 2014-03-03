@@ -17,7 +17,9 @@ private:
 	void LoadRecSetData(WORD preset, REC_SETTING_DATA* recSetData);
 
 	DWORD GetEnumService(string param, HTTP_STREAM* sendParam, CEpgDBManager* epgDB);
+	static void EnumEventInfoCallback(vector<EPGDB_SERVICE_EVENT_INFO>* pval, void* param);
 	DWORD GetEnumEventInfo(string param, HTTP_STREAM* sendParam, CEpgDBManager* epgDB);
+	DWORD GetEnumEventInfo(string param, HTTP_STREAM* sendParam, CEpgDBManager* epgDB, vector<EPGDB_SERVICE_EVENT_INFO>* list);
 	DWORD GetEnumReserveInfo(string param, HTTP_STREAM* sendParam, vector<RESERVE_DATA*>* list);
 	DWORD GetEnumRecPresetInfo(string param, HTTP_STREAM* sendParam);
 	DWORD GetReserveDataEPG(string param, CEpgDBManager* epgDB, RESERVE_DATA* reserveData);

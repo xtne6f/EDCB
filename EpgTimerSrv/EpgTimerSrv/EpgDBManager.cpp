@@ -384,7 +384,23 @@ BOOL CEpgDBManager::CancelLoadData()
 	return TRUE;
 }
 
-BOOL CEpgDBManager::SearchEpg(vector<EPGDB_SEARCH_KEY_INFO>* key, vector<EPGDB_EVENT_INFO*>* result)
+static void SearchEpgCallback(vector<CEpgDBManager::SEARCH_RESULT_EVENT>* pval, void* param)
+{
+	vector<unique_ptr<CEpgDBManager::SEARCH_RESULT_EVENT_DATA>>* result = (vector<unique_ptr<CEpgDBManager::SEARCH_RESULT_EVENT_DATA>>*)param;
+	vector<CEpgDBManager::SEARCH_RESULT_EVENT>::iterator itr;
+	for( itr = pval->begin(); itr != pval->end(); itr++ ){
+		result->push_back(unique_ptr<CEpgDBManager::SEARCH_RESULT_EVENT_DATA>(new CEpgDBManager::SEARCH_RESULT_EVENT_DATA));
+		result->back()->info.DeepCopy(*itr->info);
+		result->back()->findKey = itr->findKey;
+	}
+}
+
+BOOL CEpgDBManager::SearchEpg(vector<EPGDB_SEARCH_KEY_INFO>* key, vector<unique_ptr<SEARCH_RESULT_EVENT_DATA>>* result)
+{
+	return SearchEpg(key, SearchEpgCallback, result);
+}
+
+BOOL CEpgDBManager::SearchEpg(vector<EPGDB_SEARCH_KEY_INFO>* key, void (*enumProc)(vector<SEARCH_RESULT_EVENT>*, void*), void* param)
 {
 	if( Lock() == FALSE ) return FALSE;
 	if( _IsLoadingData() == TRUE ){
@@ -404,37 +420,13 @@ BOOL CEpgDBManager::SearchEpg(vector<EPGDB_SEARCH_KEY_INFO>* key, vector<EPGDB_E
 	}
 	CoUninitialize();
 
+	vector<SEARCH_RESULT_EVENT> result;
 	map<ULONGLONG, SEARCH_RESULT_EVENT>::iterator itr;
 	for( itr = resultMap.begin(); itr != resultMap.end(); itr++ ){
-		result->push_back(itr->second.info);
+		result.push_back(itr->second);
 	}
-
-	UnLock();
-	return ret;
-}
-
-BOOL CEpgDBManager::SearchEpg(EPGDB_SEARCH_KEY_INFO* key, vector<SEARCH_RESULT_EVENT>* result)
-{
-	if( Lock() == FALSE ) return FALSE;
-	if( _IsLoadingData() == TRUE ){
-		UnLock();
-		return FALSE;
-	}
-
-	BOOL ret = TRUE;
-
-	map<ULONGLONG, SEARCH_RESULT_EVENT> resultMap;
-	CoInitialize(NULL);
-	{
-		IRegExpPtr regExp;
-		SearchEvent( key, &resultMap, regExp );
-	}
-	CoUninitialize();
-
-	map<ULONGLONG, SEARCH_RESULT_EVENT>::iterator itr;
-	for( itr = resultMap.begin(); itr != resultMap.end(); itr++ ){
-		result->push_back(itr->second);
-	}
+	//ここはロック状態なのでコールバック先で排他制御すべきでない
+	enumProc(&result, param);
 
 	UnLock();
 	return ret;
@@ -948,7 +940,22 @@ BOOL CEpgDBManager::GetServiceList(vector<EPGDB_SERVICE_INFO>* list)
 	return ret;
 }
 
-BOOL CEpgDBManager::EnumEventInfo(LONGLONG serviceKey, vector<EPGDB_EVENT_INFO*>* result)
+static void EnumEventInfoCallback(vector<EPGDB_EVENT_INFO*>* pval, void* param)
+{
+	vector<unique_ptr<EPGDB_EVENT_INFO>>* result = (vector<unique_ptr<EPGDB_EVENT_INFO>>*)param;
+	vector<EPGDB_EVENT_INFO*>::iterator itr;
+	for( itr = pval->begin(); itr != pval->end(); itr++ ){
+		result->push_back(unique_ptr<EPGDB_EVENT_INFO>(new EPGDB_EVENT_INFO));
+		result->back()->DeepCopy(**itr);
+	}
+}
+
+BOOL CEpgDBManager::EnumEventInfo(LONGLONG serviceKey, vector<unique_ptr<EPGDB_EVENT_INFO>>* result)
+{
+	return EnumEventInfo(serviceKey, EnumEventInfoCallback, result);
+}
+
+BOOL CEpgDBManager::EnumEventInfo(LONGLONG serviceKey, void (*enumProc)(vector<EPGDB_EVENT_INFO*>*, void*), void* param)
 {
 	if( Lock() == FALSE ) return FALSE;
 	if( _IsLoadingData() == TRUE ){
@@ -956,24 +963,28 @@ BOOL CEpgDBManager::EnumEventInfo(LONGLONG serviceKey, vector<EPGDB_EVENT_INFO*>
 		return FALSE;
 	}
 
+	vector<EPGDB_EVENT_INFO*> result;
 	BOOL ret = TRUE;
 	map<LONGLONG, EPGDB_SERVICE_DATA*>::iterator itr;
 	itr = this->epgMap.find(serviceKey);
 	if( itr != this->epgMap.end() ){
 		map<WORD, EPGDB_EVENT_INFO*>::iterator itrInfo;
 		for( itrInfo = itr->second->eventMap.begin(); itrInfo != itr->second->eventMap.end(); itrInfo++ ){
-			result->push_back(itrInfo->second);
+			result.push_back(itrInfo->second);
 		}
 	}
-	if( result->size() == 0 ){
+	if( result.size() == 0 ){
 		ret = FALSE;
+	}else{
+		//ここはロック状態なのでコールバック先で排他制御すべきでない
+		enumProc(&result, param);
 	}
 
 	UnLock();
 	return ret;
 }
 
-BOOL CEpgDBManager::EnumEventAll(vector<EPGDB_SERVICE_EVENT_INFO*>* result)
+BOOL CEpgDBManager::EnumEventAll(void (*enumProc)(vector<EPGDB_SERVICE_EVENT_INFO>*, void*), void* param)
 {
 	if( Lock() == FALSE ) return FALSE;
 	if( _IsLoadingData() == TRUE ){
@@ -981,19 +992,22 @@ BOOL CEpgDBManager::EnumEventAll(vector<EPGDB_SERVICE_EVENT_INFO*>* result)
 		return FALSE;
 	}
 
+	vector<EPGDB_SERVICE_EVENT_INFO> result;
 	BOOL ret = TRUE;
 	map<LONGLONG, EPGDB_SERVICE_DATA*>::iterator itr;
 	for( itr = this->epgMap.begin(); itr != this->epgMap.end(); itr++ ){
-		EPGDB_SERVICE_EVENT_INFO* item = new EPGDB_SERVICE_EVENT_INFO;
-		item->serviceInfo = itr->second->serviceInfo;
+		result.resize(result.size() + 1);
+		result.back().serviceInfo = itr->second->serviceInfo;
 		map<WORD, EPGDB_EVENT_INFO*>::iterator itrInfo;
 		for( itrInfo = itr->second->eventMap.begin(); itrInfo != itr->second->eventMap.end(); itrInfo++ ){
-			item->eventList.push_back(itrInfo->second);
+			result.back().eventList.push_back(itrInfo->second);
 		}
-		result->push_back(item);
 	}
-	if( result->size() == 0 ){
+	if( result.size() == 0 ){
 		ret = FALSE;
+	}else{
+		//ここはロック状態なのでコールバック先で排他制御すべきでない
+		enumProc(&result, param);
 	}
 
 	UnLock();
@@ -1005,7 +1019,7 @@ BOOL CEpgDBManager::SearchEpg(
 	WORD TSID,
 	WORD SID,
 	WORD EventID,
-	EPGDB_EVENT_INFO** result
+	EPGDB_EVENT_INFO* result
 	)
 {
 	if( Lock() == FALSE ) return FALSE;
@@ -1023,7 +1037,7 @@ BOOL CEpgDBManager::SearchEpg(
 		map<WORD, EPGDB_EVENT_INFO*>::iterator itrInfo;
 		itrInfo = itr->second->eventMap.find(EventID);
 		if( itrInfo != itr->second->eventMap.end() ){
-			*result = itrInfo->second;
+			result->DeepCopy(*itrInfo->second);
 			ret = TRUE;
 		}
 	}
@@ -1038,7 +1052,7 @@ BOOL CEpgDBManager::SearchEpg(
 	WORD SID,
 	LONGLONG startTime,
 	DWORD durationSec,
-	EPGDB_EVENT_INFO** result
+	EPGDB_EVENT_INFO* result
 	)
 {
 	if( Lock() == FALSE ) return FALSE;
@@ -1059,7 +1073,7 @@ BOOL CEpgDBManager::SearchEpg(
 				if( startTime == ConvertI64Time(itrInfo->second->start_time) &&
 					durationSec == itrInfo->second->durationSec
 					){
-						*result = itrInfo->second;
+						result->DeepCopy(*itrInfo->second);
 						ret = TRUE;
 						break;
 				}
