@@ -147,9 +147,6 @@
     <ClInclude Include="BatManager.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="SleepUtil.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Common\ParseEpgAutoAddText.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
@@ -384,9 +381,6 @@
       <Filter>ソース ファイル\Common</Filter>
     </ClCompile>
     <ClCompile Include="BatManager.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="SleepUtil.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Common\ParseEpgAutoAddText.cpp">
