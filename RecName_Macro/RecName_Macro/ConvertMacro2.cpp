@@ -50,6 +50,17 @@ BOOL CConvertMacro2::Convert(wstring macro, PLUGIN_RESERVE_INFO* info, EPG_EVENT
 
 static BOOL ExpandMacro(wstring var, PLUGIN_RESERVE_INFO* info, EPG_EVENT_INFO* epgInfo, wstring& convert)
 {
+	//ŠÖ”‚ğÏ‚Ş
+	vector<wstring> funcStack;
+	while( !var.empty() && var.back() == L')' ){
+		size_t n = var.find(L'(');
+		if( n == wstring::npos ){
+			return FALSE;
+		}
+		funcStack.push_back(var.substr(0, n));
+		var = var.substr(n + 1, var.size() - 1 - (n + 1));
+	}
+
 	wstring strSDW28;
 	SYSTEMTIME t28TimeS;
 	if( 0 <= info->startTime.wHour && info->startTime.wHour < 4 ){
@@ -175,6 +186,66 @@ static BOOL ExpandMacro(wstring var, PLUGIN_RESERVE_INFO* info, EPG_EVENT_INFO* 
 		}
 	}else{
 		return FALSE;
+	}
+
+	//ŠÖ”‚ğ“K—p
+	while( !funcStack.empty() ){
+		wstring func = funcStack.back();
+		funcStack.pop_back();
+		for( size_t i = 0; i < func.size(); i++ ){
+			//”’l•¶šQÆ(&•¶šƒR[ƒh;)‚ğ“WŠJ
+			if( func[i] == L'&' ){
+				wchar_t* p;
+				wchar_t c = (wchar_t)wcstol(&func.c_str()[i + 1], &p, 10);
+				func.replace(i, p - func.c_str() - i + (*p ? 1 : 0), 1, c);
+			}
+		}
+		if( func == L"HtoZ" ){
+			funcStack.push_back(L"Tr_ !\"#&36;%&38;'&40;)*+,-./:;<=>?@[\\]^_`{|}~_@Ih”“•fij–{C|D^FGƒ„H—mnOQeobpP_");
+			funcStack.push_back(L"HtoZ<alnum>");
+		}else if( func == L"ZtoH" ){
+			funcStack.push_back(L"Tr_@Ih”“•fij–{C|D^FGƒ„H—mnOQeobpP_ !\"#&36;%&38;'&40;)*+,-./:;<=>?@[\\]^_`{|}~_");
+			funcStack.push_back(L"ZtoH<alnum>");
+		}else if( func == L"HtoZ<alnum>" ){
+			funcStack.push_back(L"Tr/0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz/‚O‚P‚Q‚R‚S‚T‚U‚V‚W‚X‚`‚a‚b‚c‚d‚e‚f‚g‚h‚i‚j‚k‚l‚m‚n‚o‚p‚q‚r‚s‚t‚u‚v‚w‚x‚y‚‚‚‚ƒ‚„‚…‚†‚‡‚ˆ‚‰‚Š‚‹‚Œ‚‚‚‚‚‘‚’‚“‚”‚•‚–‚—‚˜‚™‚š/");
+		}else if( func == L"ZtoH<alnum>" ){
+			funcStack.push_back(L"Tr/‚O‚P‚Q‚R‚S‚T‚U‚V‚W‚X‚`‚a‚b‚c‚d‚e‚f‚g‚h‚i‚j‚k‚l‚m‚n‚o‚p‚q‚r‚s‚t‚u‚v‚w‚x‚y‚‚‚‚ƒ‚„‚…‚†‚‡‚ˆ‚‰‚Š‚‹‚Œ‚‚‚‚‚‘‚’‚“‚”‚•‚–‚—‚˜‚™‚š/0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz/");
+		}else if( func.compare(0, 2, L"Tr") == 0 && func.size() >= 3 ){
+			//•¶š’uŠ·(Tr/’uŠ·•¶šƒŠƒXƒg/’uŠ·Œã/)
+			size_t n = func.find(func[2], 3);
+			if( n == wstring::npos ){
+				return FALSE;
+			}
+			if( func.find(func[2], n + 1) != 4 + (n - 3) * 2 ){
+				return FALSE;
+			}
+			wstring cmp(func, 3, n - 3);
+			for( wstring::iterator itr = ret.begin(); itr != ret.end(); itr++ ){
+				size_t m = cmp.find(*itr);
+				if( m != wstring::npos ){
+					*itr = func[n + 1 + m];
+				}
+			}
+		}else if( func.compare(0, 2, L"Rm") == 0 && func.size() >= 3 ){
+			//•¶šíœ(Rm/íœ•¶šƒŠƒXƒg/)
+			size_t n = func.find(func[2], 3);
+			if( n == wstring::npos ){
+				return FALSE;
+			}
+			wstring cmp(func, 3, n - 3);
+			for( wstring::iterator itr = ret.begin(); itr != ret.end(); ){
+				if( cmp.find(*itr) != wstring::npos ){
+					itr = ret.erase(itr);
+				}else{
+					itr++;
+				}
+			}
+		}else if( func.compare(0, 2, L"Head") && func.size() >= 5 ){
+			//‘«Ø‚è(Head•¶š”)
+			ret = ret.substr(0, wcstol(&func.c_str()[4], NULL, 10));
+		}else{
+			return FALSE;
+		}
 	}
 
 	convert += ret;
