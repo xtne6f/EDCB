@@ -8,21 +8,11 @@
 
 CConvertMacro2::CConvertMacro2(void)
 {
-	::CoInitialize( NULL );
-	HRESULT hr=regExp.CreateInstance(CLSID_RegExp);
-	if(FAILED(hr)){
-		regExp = NULL;
-	}
 }
 
 
 CConvertMacro2::~CConvertMacro2(void)
 {
-	if( regExp != NULL ){
-		regExp.Release();
-	}
-
-	::CoUninitialize();
 }
 
 BOOL CConvertMacro2::Convert(wstring macro, PLUGIN_RESERVE_INFO* info, EPG_EVENT_INFO* epgInfo, wstring& convert)
@@ -205,7 +195,19 @@ BOOL CConvertMacro2::Convert(wstring macro, PLUGIN_RESERVE_INFO* info, EPG_EVENT
 			strSubTitle2 = epgInfo->shortInfo->text_char;
 			wstring r;
 			Separate(strSubTitle2, L"\r\n", strSubTitle2, r);
-			if( IsFindKey(strSubTitle2, L"^[#ÅîëÊ][0-9ÇOÇPÇQÇRÇSÇTÇUÇVÇWÇX]") == FALSE ){
+			LPCWSTR startsWith[] = { L"#ÅîëÊ", L"0123456789ÇOÇPÇQÇRÇSÇTÇUÇVÇWÇX", NULL };
+			BOOL found = FALSE;
+			for( size_t j, i = 0; i < strSubTitle2.size(); i++ ){
+				for( j = 0; startsWith[i][j] && startsWith[i][j] != strSubTitle2[i]; j++ );
+				if( startsWith[i][j] == L'\0' ){
+					break;
+				}
+				if( startsWith[i+1] == NULL ){
+					found = TRUE;
+					break;
+				}
+			}
+			if( found == FALSE ){
 				strSubTitle2 = L"";
 			}
 		}
@@ -280,26 +282,3 @@ BOOL CConvertMacro2::Convert(wstring macro, PLUGIN_RESERVE_INFO* info, EPG_EVENT
 
 	return TRUE;
 }
-
-BOOL CConvertMacro2::IsFindKey(wstring src, wstring key)
-{
-	//ê≥ãKï\åªÉÇÅ[Éh
-	if( this->regExp != NULL && src.size() > 0 && key.size() > 0 ){
-		try{
-			_bstr_t target( src.c_str() );
-			_bstr_t pattern( key.c_str() );
-
-			this->regExp->PutGlobal( VARIANT_TRUE );
-			this->regExp->PutPattern( pattern );
-
-			IMatchCollectionPtr pMatchCol( this->regExp->Execute( target ) );
-
-			if( pMatchCol->Count > 0 ){
-				return TRUE;
-			}
-		}catch(...){
-		}
-	}
-	return FALSE;
-}
-
