@@ -157,11 +157,11 @@ static BOOL ExpandMacro(wstring var, PLUGIN_RESERVE_INFO* info, EPG_EVENT_INFO* 
 			ret += strSep1;
 		}
 	}else if( var == L"Genre" ){
-		if( epgInfo->contentInfo != NULL && epgInfo->contentInfo != NULL && epgInfo->contentInfo->listSize > 0 ){
+		if( epgInfo != NULL && epgInfo->contentInfo != NULL && epgInfo->contentInfo->listSize > 0 ){
 			GetGenreName(epgInfo->contentInfo->nibbleList[0].content_nibble_level_1, 0xFF, ret);
 		}
 	}else if( var == L"Genre2" ){
-		if( epgInfo->contentInfo != NULL && epgInfo->contentInfo != NULL && epgInfo->contentInfo->listSize > 0 ){
+		if( epgInfo != NULL && epgInfo->contentInfo != NULL && epgInfo->contentInfo->listSize > 0 ){
 			GetGenreName(epgInfo->contentInfo->nibbleList[0].content_nibble_level_1, epgInfo->contentInfo->nibbleList[0].content_nibble_level_2, ret);
 		}
 	}else if( var == L"SubTitle" ){
