@@ -147,6 +147,8 @@ namespace EpgTimer.Setting
                 textBox_dragScroll.Text = Settings.Instance.DragScroll.ToString();
                 textBox_minimumHeight.Text = Settings.Instance.MinimumHeight.ToString();
                 checkBox_title_indent.IsChecked = Settings.Instance.EpgTitleIndent;
+                checkBox_gradation.IsChecked = Settings.Instance.EpgGradation;
+                checkBox_gradationHeader.IsChecked = Settings.Instance.EpgGradationHeader;
 
                 if (Settings.Instance.UseCustomEpgView == false)
                 {
@@ -265,6 +267,22 @@ namespace EpgTimer.Setting
                 else
                 {
                     Settings.Instance.EpgTitleIndent = false;
+                }
+                if (checkBox_gradation.IsChecked == true)
+                {
+                    Settings.Instance.EpgGradation = true;
+                }
+                else
+                {
+                    Settings.Instance.EpgGradation = false;
+                }
+                if (checkBox_gradationHeader.IsChecked == true)
+                {
+                    Settings.Instance.EpgGradationHeader = true;
+                }
+                else
+                {
+                    Settings.Instance.EpgGradationHeader = false;
                 }
 
                 Settings.Instance.ContentColorList[0x00] = ((ColorSelectionItem)(comboBox0.SelectedItem)).ColorName;

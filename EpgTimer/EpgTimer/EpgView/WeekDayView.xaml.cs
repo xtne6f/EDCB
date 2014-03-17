@@ -43,20 +43,29 @@ namespace EpgTimer.EpgView
                     item.Text = time.ToString("M/d\r\n(ddd)");
 
 
+                    Color backgroundColor;
                     if (time.DayOfWeek == DayOfWeek.Saturday)
                     {
                         item.Foreground = Brushes.DarkBlue;
-                        item.Background = ColorDef.GradientBrush(Colors.Lavender, 0.8);
+                        backgroundColor = Colors.Lavender;
                     }
                     else if (time.DayOfWeek == DayOfWeek.Sunday)
                     {
                         item.Foreground = Brushes.DarkRed;
-                        item.Background = ColorDef.GradientBrush(Colors.MistyRose, 0.8);
+                        backgroundColor = Colors.MistyRose;
                     }
                     else
                     {
                         item.Foreground = Brushes.Black;
-                        item.Background = ColorDef.GradientBrush(Colors.White, 0.8);
+                        backgroundColor = Colors.White;
+                    }
+                    if (Settings.Instance.EpgGradationHeader == false)
+                    {
+                        item.Background = new SolidColorBrush(backgroundColor);
+                    }
+                    else
+                    {
+                        item.Background = ColorDef.GradientBrush(backgroundColor, 0.8);
                     }
 
                     item.Margin = new Thickness(1, 1, 1, 1);

@@ -135,6 +135,8 @@ namespace EpgTimer
         private UInt32 serviceCustColor;
         private bool reserveRectBackground;
         private bool epgTitleIndent;
+        private bool epgGradation;
+        private bool epgGradationHeader;
         private double resColumnWidth0;
         private double resColumnWidth1;
         private double resColumnWidth2;
@@ -399,6 +401,16 @@ namespace EpgTimer
         {
             get { return epgTitleIndent; }
             set { epgTitleIndent = value; }
+        }
+        public bool EpgGradation
+        {
+            get { return epgGradation; }
+            set { epgGradation = value; }
+        }
+        public bool EpgGradationHeader
+        {
+            get { return epgGradationHeader; }
+            set { epgGradationHeader = value; }
         }
         public double ResColumnWidth0
         {
@@ -979,6 +991,8 @@ namespace EpgTimer
             serviceCustColor = 0xFFFFFFFF;
             reserveRectBackground = false;
             epgTitleIndent = true;
+            epgGradation = true;
+            epgGradationHeader = true;
             resColumnHead = "";
             resSortDirection = ListSortDirection.Ascending;
             lastWindowState = System.Windows.WindowState.Normal;

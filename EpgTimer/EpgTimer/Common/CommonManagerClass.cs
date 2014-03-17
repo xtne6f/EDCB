@@ -1056,6 +1056,7 @@ namespace EpgTimer
                 for (int i = 0; i < Settings.Instance.ContentColorList.Count; i++)
                 {
                     String name = Settings.Instance.ContentColorList[i];
+                    Color color;
                     if (String.Compare(name, "カスタム") == 0)
                     {
                         UInt32 argb = Settings.Instance.ContentCustColorList[i];
@@ -1064,12 +1065,20 @@ namespace EpgTimer
                         byte g = (byte)((argb & 0x0000FF00) >> 8);
                         byte b = (byte)(argb & 0x000000FF);
 
-                        Color color = Color.FromArgb(0xFF, r, g, b);
-                        CustContentColorList.Add(ColorDef.GradientBrush(color));
+                        color = Color.FromArgb(0xFF, r, g, b);
                     }
                     else
                     {
-                        CustContentColorList.Add(ColorDef.GradientBrush(ColorDef.ColorFromName(name)));
+                        color = ColorDef.ColorFromName(name);
+                    }
+                    if (Settings.Instance.EpgGradation == false)
+                    {
+                        CustContentColorList.Add(new SolidColorBrush(color));
+                        CustContentColorList[CustContentColorList.Count - 1].Freeze();
+                    }
+                    else
+                    {
+                        CustContentColorList.Add(ColorDef.GradientBrush(color));
                     }
                 }
                 if (String.Compare(Settings.Instance.ReserveRectColorNormal, "カスタム") == 0)
@@ -1191,6 +1200,7 @@ namespace EpgTimer
                 for (int i = 0; i < Settings.Instance.TimeColorList.Count; i++)
                 {
                     String name = Settings.Instance.TimeColorList[i];
+                    Color color;
                     if (String.Compare(name, "カスタム") == 0)
                     {
                         UInt32 argb = Settings.Instance.TimeCustColorList[i];
@@ -1199,14 +1209,23 @@ namespace EpgTimer
                         byte g = (byte)((argb & 0x0000FF00) >> 8);
                         byte b = (byte)(argb & 0x000000FF);
 
-                        Color color = Color.FromArgb(0xFF, r, g, b);
-                        CustTimeColorList.Add(ColorDef.GradientBrush(color, 0.9, 1.1));
+                        color = Color.FromArgb(0xFF, r, g, b);
                     }
                     else
                     {
-                        CustTimeColorList.Add(ColorDef.GradientBrush(ColorDef.ColorFromName(name), 0.9, 1.1));
+                        color = ColorDef.ColorFromName(name);
+                    }
+                    if (Settings.Instance.EpgGradationHeader == false)
+                    {
+                        CustTimeColorList.Add(new SolidColorBrush(color));
+                        CustTimeColorList[CustTimeColorList.Count - 1].Freeze();
+                    }
+                    else
+                    {
+                        CustTimeColorList.Add(ColorDef.GradientBrush(color, 0.9, 1.1));
                     }
                 }
+                Color serviceColor;
                 if (String.Compare(Settings.Instance.ServiceColor, "カスタム") == 0)
                 {
                     UInt32 argb = Settings.Instance.ServiceCustColor;
@@ -1215,14 +1234,20 @@ namespace EpgTimer
                     byte g = (byte)((argb & 0x0000FF00) >> 8);
                     byte b = (byte)(argb & 0x000000FF);
 
-                    Color item = Color.FromArgb(0xFF, r, g, b);
-                    Brush backColor = ColorDef.GradientBrush(item, 1.0, 2.0);
-
-                    CustServiceColor = backColor;
+                    serviceColor = Color.FromArgb(0xFF, r, g, b);
                 }
                 else
                 {
-                    CustServiceColor = ColorDef.GradientBrush(ColorDef.ColorFromName(Settings.Instance.ServiceColor), 1.0, 2.0);
+                    serviceColor = ColorDef.ColorFromName(Settings.Instance.ServiceColor);
+                }
+                if (Settings.Instance.EpgGradationHeader == false)
+                {
+                    CustServiceColor = new SolidColorBrush(serviceColor);
+                    CustServiceColor.Freeze();
+                }
+                else
+                {
+                    CustServiceColor = ColorDef.GradientBrush(serviceColor, 1.0, 2.0);
                 }
             }
             catch (Exception ex)
