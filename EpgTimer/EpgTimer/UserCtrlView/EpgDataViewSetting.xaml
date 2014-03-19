@@ -33,7 +33,7 @@
                     <TabControl Margin="6,65,6,6" Name="tabControl1" >
                         <TabItem Header="表示サービス" Name="tabItem_service">
                             <Grid>
-                                <Label Content="表示サービス" Height="28" HorizontalAlignment="Left" Margin="6,6,0,0" Name="label31" VerticalAlignment="Top" />
+                                <Label Content="表示サービス (同一TSでSIDを逆順にすると結合)" Height="28" HorizontalAlignment="Left" Margin="6,6,0,0" Name="label31" VerticalAlignment="Top" />
                                 <ListBox Height="186" HorizontalAlignment="Left" Margin="6,40,0,0" Name="listBox_serviceView" VerticalAlignment="Top" Width="134" SelectionChanged="listBox_serviceView_SelectionChanged" />
                                 <Label Content="サービス一覧" Height="28" HorizontalAlignment="Left" Margin="267,6,0,0" Name="label32" VerticalAlignment="Top" />
                                 <TabControl Height="186" HorizontalAlignment="Left" Margin="268,40,0,0" Name="tabControl2" VerticalAlignment="Top" Width="244">

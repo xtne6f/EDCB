@@ -1490,15 +1490,34 @@ namespace EpgTimer
                 foreach (ReserveData info in CommonManager.Instance.DB.ReserveList.Values)
                 {
                     {
+                        int mergePos = 0;
+                        int mergeNum = 0;
+                        int servicePos = -1;
                         for (int i = 0; i < serviceList.Count; i++)
                         {
-                            EpgServiceInfo srvInfo = serviceList[i];
+                            //TSIDが同じでSIDが逆順に登録されているときは併合する
+                            if (--mergePos < i - mergeNum)
+                            {
+                                EpgServiceInfo curr = serviceList[i];
+                                for (mergePos = i; mergePos + 1 < serviceList.Count; mergePos++)
+                                {
+                                    EpgServiceInfo next = serviceList[mergePos + 1];
+                                    if (next.ONID != curr.ONID || next.TSID != curr.TSID || next.SID >= curr.SID)
+                                    {
+                                        break;
+                                    }
+                                    curr = next;
+                                }
+                                mergeNum = mergePos + 1 - i;
+                                servicePos++;
+                            }
+                            EpgServiceInfo srvInfo = serviceList[mergePos];
                             if (srvInfo.ONID == info.OriginalNetworkID &&
                                 srvInfo.TSID == info.TransportStreamID &&
                                 srvInfo.SID == info.ServiceID)
                             {
                                 ReserveViewItem viewItem = new ReserveViewItem(info);
-                                viewItem.LeftPos = i * Settings.Instance.ServiceWidth;
+                                viewItem.LeftPos = Settings.Instance.ServiceWidth * (servicePos + (double)((mergeNum + i - mergePos - 1) / 2) / mergeNum);
 
                                 Int32 duration = (Int32)info.DurationSecond;
                                 DateTime startTime = info.StartTime;
@@ -1539,7 +1558,7 @@ namespace EpgTimer
                                 {
                                     viewItem.Height = Settings.Instance.MinHeight;
                                 }
-                                viewItem.Width = Settings.Instance.ServiceWidth;
+                                viewItem.Width = Settings.Instance.ServiceWidth / mergeNum;
 
                                 reserveList.Add(viewItem);
                                 DateTime chkTime = new DateTime(startTime.Year, startTime.Month, startTime.Day, startTime.Hour, 0, 0);
@@ -1646,9 +1665,47 @@ namespace EpgTimer
 
 
                 //必要番組の抽出と時間チェック
+                List<EpgServiceInfo> primeServiceList = new List<EpgServiceInfo>();
+                int mergePos = 0;
+                int mergeNum = 0;
+                int servicePos = -1;
                 for (int i = 0; i < serviceList.Count; i++)
                 {
-                    EpgServiceInfo serviceInfo = serviceList[i];
+                    //TSIDが同じでSIDが逆順に登録されているときは併合する
+                    int spanCheckNum = 1;
+                    if (--mergePos < i - mergeNum)
+                    {
+                        EpgServiceInfo curr = serviceList[i];
+                        for (mergePos = i; mergePos + 1 < serviceList.Count; mergePos++)
+                        {
+                            EpgServiceInfo next = serviceList[mergePos + 1];
+                            if (next.ONID != curr.ONID || next.TSID != curr.TSID || next.SID >= curr.SID)
+                            {
+                                break;
+                            }
+                            curr = next;
+                        }
+                        mergeNum = mergePos + 1 - i;
+                        servicePos++;
+                        //正順のときは貫きチェックするサービス数を調べる
+                        for (; mergeNum == 1 && i + spanCheckNum < serviceList.Count; spanCheckNum++)
+                        {
+                            EpgServiceInfo next = serviceList[i + spanCheckNum];
+                            if (next.ONID != curr.ONID || next.TSID != curr.TSID)
+                            {
+                                break;
+                            }
+                            else if (next.SID < curr.SID)
+                            {
+                                spanCheckNum--;
+                                break;
+                            }
+                            curr = next;
+                        }
+                        primeServiceList.Add(serviceList[mergePos]);
+                    }
+
+                    EpgServiceInfo serviceInfo = serviceList[mergePos];
                     UInt64 id = CommonManager.Create64Key(serviceInfo.ONID, serviceInfo.TSID, serviceInfo.SID);
                     foreach (EpgEventInfo eventInfo in CommonManager.Instance.DB.ServiceEventList[id].eventList)
                     {
@@ -1713,9 +1770,9 @@ namespace EpgTimer
                             {
                                 //横にどれだけ貫くかチェック
                                 int count = 1;
-                                while (i + count < serviceList.Count)
+                                while (mergeNum == 1 ? count < spanCheckNum : count < mergeNum - (mergeNum+i-mergePos-1)/2)
                                 {
-                                    EpgServiceInfo nextInfo = serviceList[i + count];
+                                    EpgServiceInfo nextInfo = serviceList[mergeNum == 1 ? i + count : mergePos - count];
                                     bool findNext = false;
                                     foreach (EpgEventData data in eventInfo.EventGroupInfo.eventDataList)
                                     {
@@ -1738,8 +1795,8 @@ namespace EpgTimer
 
                         ProgramViewItem viewItem = new ProgramViewItem(eventInfo);
                         viewItem.Height = (eventInfo.durationSec * Settings.Instance.MinHeight) / 60;
-                        viewItem.Width = Settings.Instance.ServiceWidth * widthSpan;
-                        viewItem.LeftPos = Settings.Instance.ServiceWidth * i;
+                        viewItem.Width = Settings.Instance.ServiceWidth * widthSpan / mergeNum;
+                        viewItem.LeftPos = Settings.Instance.ServiceWidth * (servicePos + (double)((mergeNum+i-mergePos-1)/2) / mergeNum);
                         //viewItem.TopPos = (eventInfo.start_time - startTime).TotalMinutes * Settings.Instance.MinHeight;
                         programList.Add(viewItem);
 
@@ -1845,12 +1902,12 @@ namespace EpgTimer
 
                 epgProgramView.SetProgramList(
                     programList,
-                    serviceList.Count * Settings.Instance.ServiceWidth,
+                    primeServiceList.Count() * Settings.Instance.ServiceWidth,
                     timeList.Count * 60 * Settings.Instance.MinHeight);
 
                 timeView.SetTime(timeList, viewCustNeedTimeOnly, false);
                 dateView.SetTime(timeList);
-                serviceView.SetService(serviceList);
+                serviceView.SetService(primeServiceList);
 
                 ReDrawNowLine();
             }
@@ -1923,9 +1980,47 @@ namespace EpgTimer
 
 
                 //必要番組の抽出と時間チェック
+                List<EpgServiceInfo> primeServiceList = new List<EpgServiceInfo>();
+                int mergePos = 0;
+                int mergeNum = 0;
+                int servicePos = -1;
                 for (int i = 0; i < serviceList.Count; i++)
                 {
-                    EpgServiceInfo serviceInfo = serviceList[i];
+                    //TSIDが同じでSIDが逆順に登録されているときは併合する
+                    int spanCheckNum = 1;
+                    if (--mergePos < i - mergeNum)
+                    {
+                        EpgServiceInfo curr = serviceList[i];
+                        for (mergePos = i; mergePos + 1 < serviceList.Count; mergePos++)
+                        {
+                            EpgServiceInfo next = serviceList[mergePos + 1];
+                            if (next.ONID != curr.ONID || next.TSID != curr.TSID || next.SID >= curr.SID)
+                            {
+                                break;
+                            }
+                            curr = next;
+                        }
+                        mergeNum = mergePos + 1 - i;
+                        servicePos++;
+                        //正順のときは貫きチェックするサービス数を調べる
+                        for (; mergeNum == 1 && i + spanCheckNum < serviceList.Count; spanCheckNum++)
+                        {
+                            EpgServiceInfo next = serviceList[i + spanCheckNum];
+                            if (next.ONID != curr.ONID || next.TSID != curr.TSID)
+                            {
+                                break;
+                            }
+                            else if (next.SID < curr.SID)
+                            {
+                                spanCheckNum--;
+                                break;
+                            }
+                            curr = next;
+                        }
+                        primeServiceList.Add(serviceList[mergePos]);
+                    }
+
+                    EpgServiceInfo serviceInfo = serviceList[mergePos];
                     UInt64 id = CommonManager.Create64Key(serviceInfo.ONID, serviceInfo.TSID, serviceInfo.SID);
                     foreach (EpgEventInfo eventInfo in serviceEventList[id].eventList)
                     {
@@ -1990,9 +2085,9 @@ namespace EpgTimer
                             {
                                 //横にどれだけ貫くかチェック
                                 int count = 1;
-                                while (i + count < serviceList.Count)
+                                while (mergeNum == 1 ? count < spanCheckNum : count < mergeNum - (mergeNum+i-mergePos-1)/2)
                                 {
-                                    EpgServiceInfo nextInfo = serviceList[i + count];
+                                    EpgServiceInfo nextInfo = serviceList[mergeNum == 1 ? i + count : mergePos - count];
                                     bool findNext = false;
                                     foreach (EpgEventData data in eventInfo.EventGroupInfo.eventDataList)
                                     {
@@ -2015,8 +2110,8 @@ namespace EpgTimer
 
                         ProgramViewItem viewItem = new ProgramViewItem(eventInfo);
                         viewItem.Height = (eventInfo.durationSec * Settings.Instance.MinHeight) / 60;
-                        viewItem.Width = Settings.Instance.ServiceWidth * widthSpan;
-                        viewItem.LeftPos = Settings.Instance.ServiceWidth * i;
+                        viewItem.Width = Settings.Instance.ServiceWidth * widthSpan / mergeNum;
+                        viewItem.LeftPos = Settings.Instance.ServiceWidth * (servicePos + (double)((mergeNum+i-mergePos-1)/2) / mergeNum);
                         //viewItem.TopPos = (eventInfo.start_time - startTime).TotalMinutes * Settings.Instance.MinHeight;
                         programList.Add(viewItem);
 
@@ -2122,12 +2217,12 @@ namespace EpgTimer
 
                 epgProgramView.SetProgramList(
                     programList,
-                    serviceList.Count * Settings.Instance.ServiceWidth,
+                    primeServiceList.Count() * Settings.Instance.ServiceWidth,
                     timeList.Count * 60 * Settings.Instance.MinHeight);
 
                 timeView.SetTime(timeList, viewCustNeedTimeOnly, false);
                 dateView.SetTime(timeList);
-                serviceView.SetService(serviceList);
+                serviceView.SetService(primeServiceList);
 
                 ReDrawNowLine();
             }
