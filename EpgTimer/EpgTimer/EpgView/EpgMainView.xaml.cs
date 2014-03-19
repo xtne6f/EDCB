@@ -32,7 +32,7 @@ namespace EpgTimer
         private List<UInt64> viewCustServiceList = null;
         private Dictionary<UInt16, UInt16> viewCustContentKindList = new Dictionary<UInt16, UInt16>();
         private bool viewCustNeedTimeOnly = false;
-        private Dictionary<UInt64, EpgServiceInfo> serviceList = new Dictionary<UInt64, EpgServiceInfo>();
+        private List<EpgServiceInfo> serviceList = new List<EpgServiceInfo>();
         private SortedList timeList = new SortedList();
         private List<ProgramViewItem> programList = new List<ProgramViewItem>();
         private List<ReserveViewItem> reserveList = new List<ReserveViewItem>();
@@ -92,7 +92,7 @@ namespace EpgTimer
             timeList = null;
             timeList = new SortedList();
             serviceList = null;
-            serviceList = new Dictionary<ulong, EpgServiceInfo>();
+            serviceList = new List<EpgServiceInfo>();
             programList = null;
             programList = new List<ProgramViewItem>();
             reserveList = null;
@@ -1489,12 +1489,10 @@ namespace EpgTimer
 
                 foreach (ReserveData info in CommonManager.Instance.DB.ReserveList.Values)
                 {
-                    UInt64 key = CommonManager.Create64Key(info.OriginalNetworkID, info.TransportStreamID, info.ServiceID);
-                    if (serviceList.ContainsKey(key) == true)
                     {
-                        for (int i = 0; i < serviceList.Values.Count; i++)
+                        for (int i = 0; i < serviceList.Count; i++)
                         {
-                            EpgServiceInfo srvInfo = serviceList.Values.ElementAt(i);
+                            EpgServiceInfo srvInfo = serviceList[i];
                             if (srvInfo.ONID == info.OriginalNetworkID &&
                                 srvInfo.TSID == info.TransportStreamID &&
                                 srvInfo.SID == info.ServiceID)
@@ -1638,7 +1636,11 @@ namespace EpgTimer
                 {
                     if (CommonManager.Instance.DB.ServiceEventList.ContainsKey(id) == true)
                     {
-                        serviceList.Add(id, CommonManager.Instance.DB.ServiceEventList[id].serviceInfo);
+                        EpgServiceInfo serviceInfo = CommonManager.Instance.DB.ServiceEventList[id].serviceInfo;
+                        if (serviceList.Exists(i => i.ONID == serviceInfo.ONID && i.TSID == serviceInfo.TSID && i.SID == serviceInfo.SID) == false)
+                        {
+                            serviceList.Add(serviceInfo);
+                        }
                     }
                 }
 
@@ -1646,8 +1648,8 @@ namespace EpgTimer
                 //必要番組の抽出と時間チェック
                 for (int i = 0; i < serviceList.Count; i++)
                 {
-                    UInt64 id = serviceList.Keys.ElementAt(i);
-                    EpgServiceInfo serviceInfo = serviceList.Values.ElementAt(i);
+                    EpgServiceInfo serviceInfo = serviceList[i];
+                    UInt64 id = CommonManager.Create64Key(serviceInfo.ONID, serviceInfo.TSID, serviceInfo.SID);
                     foreach (EpgEventInfo eventInfo in CommonManager.Instance.DB.ServiceEventList[id].eventList)
                     {
                         if (eventInfo.StartTimeFlag == 0)
@@ -1713,7 +1715,7 @@ namespace EpgTimer
                                 int count = 1;
                                 while (i + count < serviceList.Count)
                                 {
-                                    EpgServiceInfo nextInfo = serviceList.Values.ElementAt(i + count);
+                                    EpgServiceInfo nextInfo = serviceList[i + count];
                                     bool findNext = false;
                                     foreach (EpgEventData data in eventInfo.EventGroupInfo.eventDataList)
                                     {
@@ -1911,7 +1913,11 @@ namespace EpgTimer
                 {
                     if (serviceEventList.ContainsKey(id) == true)
                     {
-                        serviceList.Add(id, serviceEventList[id].serviceInfo);
+                        EpgServiceInfo serviceInfo = serviceEventList[id].serviceInfo;
+                        if (serviceList.Exists(i => i.ONID == serviceInfo.ONID && i.TSID == serviceInfo.TSID && i.SID == serviceInfo.SID) == false)
+                        {
+                            serviceList.Add(serviceInfo);
+                        }
                     }
                 }
 
@@ -1919,8 +1925,8 @@ namespace EpgTimer
                 //必要番組の抽出と時間チェック
                 for (int i = 0; i < serviceList.Count; i++)
                 {
-                    UInt64 id = serviceList.Keys.ElementAt(i);
-                    EpgServiceInfo serviceInfo = serviceList.Values.ElementAt(i);
+                    EpgServiceInfo serviceInfo = serviceList[i];
+                    UInt64 id = CommonManager.Create64Key(serviceInfo.ONID, serviceInfo.TSID, serviceInfo.SID);
                     foreach (EpgEventInfo eventInfo in serviceEventList[id].eventList)
                     {
                         if (eventInfo.StartTimeFlag == 0)
@@ -1986,7 +1992,7 @@ namespace EpgTimer
                                 int count = 1;
                                 while (i + count < serviceList.Count)
                                 {
-                                    EpgServiceInfo nextInfo = serviceList.Values.ElementAt(i + count);
+                                    EpgServiceInfo nextInfo = serviceList[i + count];
                                     bool findNext = false;
                                     foreach (EpgEventData data in eventInfo.EventGroupInfo.eventDataList)
                                     {
