@@ -230,13 +230,8 @@ namespace EpgTimer.EpgView
                     double width = glyphType.AdvanceWidths[glyphIndex] * fontSize;
                     if (totalWidth + width > maxWidth)
                     {
-                        if (totalHeight > maxHeight)
+                        if (glyphIndexes.Count > 0)
                         {
-                            //次の行無理
-//                            glyphIndex = glyphType.CharacterToGlyphMap['…'];
-//                            glyphIndexes[glyphIndexes.Count - 1] = glyphIndex;
-//                            advanceWidths[advanceWidths.Count - 1] = width;
-
                             double dpix = Math.Ceiling((x + 2) * m.M11);
                             double dpiy = Math.Ceiling((y + totalHeight) * m.M22);
                             Point origin = new Point(dpix / m.M11, dpiy / m.M22);
@@ -247,23 +242,16 @@ namespace EpgTimer.EpgView
                                 null, null);
                             textDrawList.Add(item);
 
+                        }
+                        if (totalHeight > maxHeight)
+                        {
+                            //次の行無理
                             useHeight = totalHeight;
                             return false;
                         }
                         else
                         {
-                            //次の行いけるので今までの分出力
                             //次の行いける
-                            double dpix = Math.Ceiling((x + 2) * m.M11);
-                            double dpiy = Math.Ceiling((y + totalHeight) * m.M22);
-                            Point origin = new Point(dpix / m.M11, dpiy / m.M22); 
-                            TextDrawItem item = new TextDrawItem();
-                            item.FontColor = fontColor;
-                            item.Text = new GlyphRun(glyphType, 0, false, fontSize,
-                                glyphIndexes, origin, advanceWidths, null, null, null, null,
-                                null, null);
-                            textDrawList.Add(item);
-
                             totalHeight += fontSize + 2;
 
                             glyphIndexes = new List<ushort>();
