@@ -34,8 +34,6 @@ namespace EpgTimer
 
         private UInt32 autoAddID = 0;
 
-        PopupWindow _popupWindow;
-
         public SearchWindow()
         {
             InitializeComponent();
@@ -555,18 +553,10 @@ namespace EpgTimer
             {
                 switch (e.Key)
                 {
-                    case Key.F2:
-                        this.MenuItem_Click_Google(this, new RoutedEventArgs(Button.ClickEvent));
-                        break;
                     case Key.F3:
                         this.MenuItem_Click_ProgramTable(this, new RoutedEventArgs(Button.ClickEvent));
                         break;
                     case Key.Escape:
-                        if (this._popupWindow.IsVisible)
-                        {
-                            this._popupWindow.Hide();
-                        }
-                        else
                         {
                             this.Close();
                         }
@@ -585,21 +575,14 @@ namespace EpgTimer
             {
                 this.SearchPg();
             }
-            this._popupWindow = new PopupWindow(this);
         }
 
         void listView_result_KeyDown(object sender, KeyEventArgs e)
         {
             switch (e.Key)
             {
-                case Key.F2:
-                    this.MenuItem_Click_Google(this, new RoutedEventArgs(Button.ClickEvent));
-                    break;
                 case Key.Enter:
                     this.MenuItem_Click_ShowDialog(listView_result.SelectedItem, new RoutedEventArgs());
-                    break;
-                case Key.Back:
-                    this.MenuItem_Click_ChangeRecMode(listView_result.SelectedItem, new RoutedEventArgs());
                     break;
             }
         }
@@ -617,67 +600,6 @@ namespace EpgTimer
                 {
                     AddReserve(item.EventInfo);
                 }
-            }
-        }
-
-        private void MenuItem_Click_ChangeRecMode(object sender, RoutedEventArgs e)
-        {
-            new BlackoutWindow(this).showWindow("予約←→無効");
-            if (listView_result.SelectedItem != null)
-            {
-                SearchItem item = listView_result.SelectedItem as SearchItem;
-                if (item.IsReserved == true)
-                {
-                    ChgReserveWindow dlg = new ChgReserveWindow();
-                    dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-
-                    if (item.ReserveInfo.RecSetting.RecMode == 5)
-                    {
-                        // 無効 => 予約
-                        RecSettingData defSet = new RecSettingData();
-                        Settings.GetDefRecSetting(0, ref defSet);
-                        item.ReserveInfo.RecSetting.RecMode = defSet.RecMode;
-                    }
-                    else
-                    {
-                        //予約 => 無効
-                        item.ReserveInfo.RecSetting.RecMode = 5;
-                    }
-
-                    dlg.SetReserveInfo(item.ReserveInfo);
-                    dlg.button_chg_reserve.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-                }
-                else
-                {
-                    AddReserveEpgWindow dlg = new AddReserveEpgWindow();
-                    dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-                    dlg.SetEventInfo(item.EventInfo);
-                    dlg.button_add_reserve.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-                }
-                //
-                CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.ReserveInfo);
-                CommonManager.Instance.DB.ReloadReserveInfo();
-                SearchPg();
-                //
-                listView_result.SelectedItem = null;
-            }
-        }
-
-        private void MenuItem_Click_ProgramDetail(object sender, RoutedEventArgs e)
-        {
-            SearchItem item1 = this.listView_result.SelectedItem as SearchItem;
-            if (item1 != null)
-            {
-                this._popupWindow.show(item1.ProgramDetail);
-            }
-        }
-
-        private void MenuItem_Click_Google(object sender, RoutedEventArgs e)
-        {
-            SearchItem item1 = this.listView_result.SelectedItem as SearchItem;
-            if (item1 != null)
-            {
-                this._popupWindow.google(item1.EventName);
             }
         }
 

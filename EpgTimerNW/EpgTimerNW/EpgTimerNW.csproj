@@ -100,10 +100,6 @@
     <Compile Include="..\..\EpgTimer\EpgTimer\DefineClass\ListColumnInfo.cs">
       <Link>DefineClass\ListColumnInfo.cs</Link>
     </Compile>
-    <Compile Include="..\..\EpgTimer\EpgTimer\PopupWindow.xaml.cs">
-      <Link>PopupWindow.xaml.cs</Link>
-      <DependentUpon>PopupWindow.xaml</DependentUpon>
-    </Compile>
     <Compile Include="ConnectWindow.xaml.cs">
       <DependentUpon>ConnectWindow.xaml</DependentUpon>
     </Compile>
@@ -216,11 +212,6 @@
     </Page>
     <Page Include="..\..\EpgTimer\EpgTimer\NotifyLogWindow.xaml">
       <Link>NotifyLogWindow.xaml</Link>
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Include="..\..\EpgTimer\EpgTimer\PopupWindow.xaml">
-      <Link>PopupWindow.xaml</Link>
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>

@@ -42,11 +42,7 @@
                     <MenuItem Header="5 (_5)" Name="priority_5" Click="priority_Click" InputGestureText="Ctrl + Alt + 5" />
                 </MenuItem>
             </MenuItem>
-            <MenuItem Header="予約詳細 (_V)" Click="MenuItem_Click_ReserveDetail" />
-            <MenuItem Header="番組詳細 (_B)" Click="MenuItem_Click_PogramDetail" />
-            <MenuItem Header="番組名でググる (_G)" Click="MenuItem_Click_Google" InputGestureText="F2" />
             <MenuItem Header="番組表へジャンプ (_J)" Click="MenuItem_Click_ProgramTable"  InputGestureText="F3" />
-            <MenuItem Header="予約←→無効 (_R)" Click="MenuItem_Click_ChangeRecMode"  InputGestureText="BackSpace" />
             <MenuItem Header="自動予約登録 (_A)" Click="autoadd_Click" InputGestureText="Ctrl + A" />
             <MenuItem Header="追っかけ再生 (_P)" Click="timeShiftPlay_Click" InputGestureText="Ctrl + P" />
         </ContextMenu>
