@@ -412,9 +412,6 @@ namespace EpgTimer
                 menuItemChg.Items.Add(menuItemChgDlg);
                 menuItemChg.Items.Add(separate2);
 
-                MenuItem menuItemChgRecMode = new MenuItem();
-                menuItemChgRecMode.Header = "録画モード (_R)";
-
                 MenuItem menuItemChgRecMode0 = new MenuItem();
                 menuItemChgRecMode0.Header = "全サービス (_0)";
                 menuItemChgRecMode0.DataContext = 0;
@@ -440,14 +437,14 @@ namespace EpgTimer
                 menuItemChgRecMode5.DataContext = 5;
                 menuItemChgRecMode5.Click += new RoutedEventHandler(cm_chg_recmode_Click);
 
-                menuItemChgRecMode.Items.Add(menuItemChgRecMode0);
-                menuItemChgRecMode.Items.Add(menuItemChgRecMode1);
-                menuItemChgRecMode.Items.Add(menuItemChgRecMode2);
-                menuItemChgRecMode.Items.Add(menuItemChgRecMode3);
-                menuItemChgRecMode.Items.Add(menuItemChgRecMode4);
-                menuItemChgRecMode.Items.Add(menuItemChgRecMode5);
+                menuItemChg.Items.Add(menuItemChgRecMode0);
+                menuItemChg.Items.Add(menuItemChgRecMode1);
+                menuItemChg.Items.Add(menuItemChgRecMode2);
+                menuItemChg.Items.Add(menuItemChgRecMode3);
+                menuItemChg.Items.Add(menuItemChgRecMode4);
+                menuItemChg.Items.Add(menuItemChgRecMode5);
 
-                menuItemChg.Items.Add(menuItemChgRecMode);
+                menuItemChg.Items.Add(new Separator());
 
                 MenuItem menuItemChgRecPri = new MenuItem();
                 menuItemChgRecPri.Header = "優先度 (_E)";

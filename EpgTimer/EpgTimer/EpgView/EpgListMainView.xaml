@@ -77,14 +77,13 @@
                         <MenuItem x:Name="cm_chg" Header="予約変更 (_C)">
                             <MenuItem Header="ダイアログ表示 (_X)" Click="cm_change_Click" />
                             <Separator/>
-                            <MenuItem Header="録画モード (_R)">
-                                <MenuItem Header="全サービス (_0)" Name="recmode_all" Click="cm_chg_recmode_Click" />
-                                <MenuItem Header="指定サービス (_1)" Name="recmode_only" Click="cm_chg_recmode_Click" />
-                                <MenuItem Header="全サービス（デコード処理なし） (_2)" Name="recmode_all_nodec" Click="cm_chg_recmode_Click" />
-                                <MenuItem Header="指定サービス（デコード処理なし） (_3)" Name="recmode_only_nodec" Click="cm_chg_recmode_Click" />
-                                <MenuItem Header="視聴 (_4)" Name="recmode_view" Click="cm_chg_recmode_Click" />
-                                <MenuItem Header="無効 (_5)" Name="recmode_no" Click="cm_chg_recmode_Click" />
-                            </MenuItem>
+                            <MenuItem Header="全サービス (_0)" Name="recmode_all" Click="cm_chg_recmode_Click" />
+                            <MenuItem Header="指定サービス (_1)" Name="recmode_only" Click="cm_chg_recmode_Click" />
+                            <MenuItem Header="全サービス（デコード処理なし） (_2)" Name="recmode_all_nodec" Click="cm_chg_recmode_Click" />
+                            <MenuItem Header="指定サービス（デコード処理なし） (_3)" Name="recmode_only_nodec" Click="cm_chg_recmode_Click" />
+                            <MenuItem Header="視聴 (_4)" Name="recmode_view" Click="cm_chg_recmode_Click" />
+                            <MenuItem Header="無効 (_5)" Name="recmode_no" Click="cm_chg_recmode_Click" />
+                            <Separator/>
                             <MenuItem Header="優先度 (_E)">
                                 <MenuItem Header="1 (_1)" Name="priority_1" Click="cm_chg_priority_Click" />
                                 <MenuItem Header="2 (_2)" Name="priority_2" Click="cm_chg_priority_Click" />
