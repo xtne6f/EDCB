@@ -826,6 +826,57 @@ namespace EpgTimer
             }
         }
 
+        private void cmdMenu_Loaded(object sender, RoutedEventArgs e)
+        {
+            //選択されているすべての予約が同じ設定の場合だけチェックを表示する
+            byte recMode = 0xFF;
+            byte priority = 0xFF;
+            foreach (ReserveItem item in listView_reserve.SelectedItems)
+            {
+                if (recMode == 0xFF)
+                {
+                    recMode = item.ReserveInfo.RecSetting.RecMode;
+                }
+                else if (recMode != item.ReserveInfo.RecSetting.RecMode)
+                {
+                    recMode = 0xFE;
+                }
+                if (priority == 0xFF)
+                {
+                    priority = item.ReserveInfo.RecSetting.Priority;
+                }
+                else if (priority != item.ReserveInfo.RecSetting.Priority)
+                {
+                    priority = 0xFE;
+                }
+            }
+            foreach (object item in ((ContextMenu)sender).Items)
+            {
+                if (item is MenuItem && ((string)((MenuItem)item).Header).StartsWith("変更"))
+                {
+                    for (int i = 0; i < ((MenuItem)item).Items.Count; i++)
+                    {
+                        MenuItem subItem = ((MenuItem)item).Items[i] as MenuItem;
+                        if (subItem != null && subItem.Name == "recmode_all")
+                        {
+                            for (int j = 0; j <= 5; j++)
+                            {
+                                ((MenuItem)((MenuItem)item).Items[i + j]).IsChecked = (j == recMode);
+                            }
+                        }
+                        if (subItem != null && subItem.Name == "cm_pri")
+                        {
+                            for (int j = 0; j < subItem.Items.Count; j++)
+                            {
+                                ((MenuItem)subItem.Items[j]).IsChecked = (j + 1 == priority);
+                            }
+                            subItem.Header = string.Format((string)subItem.Tag, priority < 0xFE ? "" + priority : "*");
+                        }
+                    }
+                    break;
+                }
+            }
+        }
 
     }
 }

@@ -757,6 +757,15 @@ namespace EpgTimer
                         {
                             cm_del.IsEnabled = true;
                             cm_chg.IsEnabled = true;
+                            for (int i = 0; i <= 5; i++)
+                            {
+                                ((MenuItem)cm_chg.Items[cm_chg.Items.IndexOf(recmode_all) + i]).IsChecked = (i == item.ReserveInfo.RecSetting.RecMode);
+                            }
+                            for (int i = 0; i < cm_pri.Items.Count; i++)
+                            {
+                                ((MenuItem)cm_pri.Items[i]).IsChecked = (i + 1 == item.ReserveInfo.RecSetting.Priority);
+                            }
+                            cm_pri.Header = string.Format((string)cm_pri.Tag, item.ReserveInfo.RecSetting.Priority);
                             cm_add.IsEnabled = false;
                             cm_autoadd.IsEnabled = true;
                             cm_timeshift.IsEnabled = true;

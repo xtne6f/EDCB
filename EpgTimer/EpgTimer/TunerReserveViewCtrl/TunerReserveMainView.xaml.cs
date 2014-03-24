@@ -249,7 +249,7 @@ namespace EpgTimer
                 menuItemChg.Items.Add(new Separator());
 
                 MenuItem menuItemChgRecPri = new MenuItem();
-                menuItemChgRecPri.Header = "優先度";
+                menuItemChgRecPri.Tag = "優先度 {0}";
 
                 MenuItem menuItemChgRecPri1 = new MenuItem();
                 menuItemChgRecPri1.Header = "1";
@@ -293,6 +293,9 @@ namespace EpgTimer
 
 
                 menuItemChg.IsEnabled = true;
+                ((MenuItem)menuItemChg.Items[menuItemChg.Items.IndexOf(menuItemChgRecMode0) + Math.Min((int)reserve.RecSetting.RecMode, 5)]).IsChecked = true;
+                ((MenuItem)menuItemChgRecPri.Items[Math.Min((int)(reserve.RecSetting.Priority - 1), 4)]).IsChecked = true;
+                menuItemChgRecPri.Header = string.Format((string)menuItemChgRecPri.Tag, reserve.RecSetting.Priority);
                 menuItemDel.IsEnabled = true;
                 menuItemAutoAdd.IsEnabled = true;
                 menuItemTimeshift.IsEnabled = true;

@@ -21,7 +21,7 @@
             <MenuItem Header="予定ファイル名" Name="RecFileName" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="ぴったり（？）" Name="Pittari" IsCheckable="True" Click="headerSelect_Click" />
         </ContextMenu>
-        <ContextMenu x:Key="itemMenu" x:Name="cmdMenu" >
+        <ContextMenu x:Key="itemMenu" x:Name="cmdMenu" Loaded="cmdMenu_Loaded">
             <MenuItem Header="削除 (_D)" Click="button_del_Click" InputGestureText="Delete" />
             <MenuItem Header="変更 (_C)">
                 <MenuItem Header="ダイアログ表示 (_X)" Click="button_change_Click" InputGestureText="Enter" />
@@ -33,7 +33,7 @@
                 <MenuItem Header="視聴 (_4)" Name="recmode_view" Click="recmode_Click" InputGestureText="Alt + 4" />
                 <MenuItem Header="無効 (_5)" Name="recmode_no" Click="button_no_Click" InputGestureText="Alt + 5" />
                 <Separator/>
-                <MenuItem Header="優先度 (_E)">
+                <MenuItem Name="cm_pri" Tag="優先度 {0} (_E)">
                     <MenuItem Header="1 (_1)" Name="priority_1" Click="priority_Click" InputGestureText="Ctrl + Alt + 1" />
                     <MenuItem Header="2 (_2)" Name="priority_2" Click="priority_Click" InputGestureText="Ctrl + Alt + 2" />
                     <MenuItem Header="3 (_3)" Name="priority_3" Click="priority_Click" InputGestureText="Ctrl + Alt + 3" />
