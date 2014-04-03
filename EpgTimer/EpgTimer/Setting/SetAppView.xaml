@@ -118,6 +118,9 @@
                     <Label Content="（※EpgTimerSrv.exeが管理者権限で起動している必要があります）" Height="28" HorizontalAlignment="Left" Margin="276,132,0,0" Name="label43" VerticalAlignment="Top" Foreground="Red" />
                     <CheckBox Content="ツールチップの表示を抑制する" Height="16" HorizontalAlignment="Left" Margin="6,159,0,0" Name="checkBox_noToolTips" VerticalAlignment="Top" />
                     <CheckBox Content="バルーンチップでの動作通知を抑制する" Height="16" HorizontalAlignment="Left" Margin="6,181,0,0" Name="checkBox_noBallonTips" VerticalAlignment="Top" />
+                    <CheckBox Content="起動時に前回接続サーバーに接続する" Height="16" HorizontalAlignment="Left" Margin="351,159,0,0" Name="checkBox_wakeReconnect" VerticalAlignment="Top" IsEnabled="False" />
+                    <CheckBox Content="休止／スタンバイ移行時にEpgTimerNWを終了する" Height="16" HorizontalAlignment="Left" Margin="351,181,0,0" Name="checkBox_suspendClose" VerticalAlignment="Top" IsEnabled="False" />
+                    <CheckBox Content="EPGデータを自動的に読み込まない" Height="16" HorizontalAlignment="Left" Margin="351,203,0,0" Name="checkBox_ngAutoEpgLoad" VerticalAlignment="Top" IsEnabled="False" />
                     <CheckBox Content="録画済み一覧のダブルクリックで再生を行う" Height="16" HorizontalAlignment="Left" Margin="6,203,0,0" Name="checkBox_playDClick" VerticalAlignment="Top" />
                     <GroupBox Header="サーバー間連携" Height="202" Margin="8,248,8,0" Name="groupBox3" VerticalAlignment="Top" Width="758">
                         <Grid>

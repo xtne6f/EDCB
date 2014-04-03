@@ -30,6 +30,21 @@ namespace EpgTimer.Setting
         {
             InitializeComponent();
 
+            if (CommonManager.Instance.NWMode == true)
+            {
+                tabItem2.IsEnabled = false;
+                tabItem3.IsEnabled = false;
+                textBox_exe.IsEnabled = false;
+                button_exe.IsEnabled = false;
+                listBox_recFolder.IsEnabled = false;
+                button_rec_up.IsEnabled = false;
+                button_rec_down.IsEnabled = false;
+                button_rec_del.IsEnabled = false;
+                textBox_recFolder.IsEnabled = false;
+                button_rec_open.IsEnabled = false;
+                button_rec_add.IsEnabled = false;
+            }
+
             try
             {
                 if (Settings.Instance.NoStyle == 1)

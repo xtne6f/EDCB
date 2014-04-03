@@ -46,6 +46,25 @@ namespace EpgTimer.Setting
         {
             InitializeComponent();
 
+            if (CommonManager.Instance.NWMode == true)
+            {
+                tabItem1.IsEnabled = false;
+                tabItem2.IsEnabled = false;
+                tabItem7.IsEnabled = false;
+                tabControl1.SelectedItem = tabItem3;
+                checkBox_tcpServer.IsEnabled = false;
+                label41.IsEnabled = false;
+                textBox_tcpPort.IsEnabled = false;
+                checkBox_autoDelRecInfo.IsEnabled = false;
+                label42.IsEnabled = false;
+                textBox_autoDelRecInfo.IsEnabled = false;
+                checkBox_timeSync.IsEnabled = false;
+                checkBox_wakeReconnect.IsEnabled = true;
+                checkBox_suspendClose.IsEnabled = true;
+                checkBox_ngAutoEpgLoad.IsEnabled = true;
+                groupBox3.IsEnabled = false;
+            }
+
             try
             {
                 if (Settings.Instance.NoStyle == 1)
@@ -263,6 +282,10 @@ namespace EpgTimer.Setting
                     checkBox_playDClick.IsChecked = Settings.Instance.PlayDClick;
                     checkBox_fixSearchResult.IsChecked = Settings.Instance.FixSearchResult;
                     checkBox_minHide.IsChecked = Settings.Instance.MinHide;
+
+                    checkBox_wakeReconnect.IsChecked = Settings.Instance.WakeReconnectNW;
+                    checkBox_suspendClose.IsChecked = Settings.Instance.SuspendCloseNW;
+                    checkBox_ngAutoEpgLoad.IsChecked = Settings.Instance.NgAutoEpgLoadNW;
                 }
                 catch
                 {
@@ -754,6 +777,32 @@ namespace EpgTimer.Setting
             {
                 Settings.Instance.FixSearchResult = false;
             }
+
+            if (checkBox_wakeReconnect.IsChecked == true)
+            {
+                Settings.Instance.WakeReconnectNW = true;
+            }
+            else
+            {
+                Settings.Instance.WakeReconnectNW = false;
+            }
+            if (checkBox_suspendClose.IsChecked == true)
+            {
+                Settings.Instance.SuspendCloseNW = true;
+            }
+            else
+            {
+                Settings.Instance.SuspendCloseNW = false;
+            }
+            if (checkBox_ngAutoEpgLoad.IsChecked == true)
+            {
+                Settings.Instance.NgAutoEpgLoadNW = true;
+            }
+            else
+            {
+                Settings.Instance.NgAutoEpgLoadNW = false;
+            }
+
 
             if (defSearchKey.regExpFlag == 0)
             {
