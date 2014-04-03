@@ -177,6 +177,7 @@ BOOL CTunerCtrl::OpenExe(wstring bonDriver, DWORD id, BOOL minWake, BOOL noView,
 					default:
 						break;
 					}
+					CloseHandle(hProcess);
 				}
 			}
 		}

@@ -12,9 +12,6 @@ CNotifyManager::CNotifyManager(void)
 
 	this->notifyThread = NULL;
 	this->notifyStopEvent = _CreateEvent(FALSE, FALSE, NULL);
-
-	this->sendEvent = _CreateEvent(TRUE, TRUE, NULL);
-
 }
 
 CNotifyManager::~CNotifyManager(void)

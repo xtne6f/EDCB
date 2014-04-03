@@ -140,6 +140,7 @@ namespace EpgTimer
                     nowLine.StrokeThickness = 3;
                     nowLine.Opacity = 0.7;
                     nowLine.Effect = new System.Windows.Media.Effects.DropShadowEffect() { BlurRadius = 10 };
+                    nowLine.IsHitTestVisible = false;
                     epgProgramView.canvas.Children.Add(nowLine);
                 }
 
@@ -2125,7 +2126,10 @@ namespace EpgTimer
             {
                 foreach (ProgramViewItem programViewItem1 in this.programList)
                 {
-                    if (programViewItem1.EventInfo.event_id == BlackoutWindow.selectedSearchItem.EventInfo.event_id)
+                    if (programViewItem1.EventInfo.event_id == BlackoutWindow.selectedSearchItem.EventInfo.event_id &&
+                        programViewItem1.EventInfo.original_network_id == BlackoutWindow.selectedSearchItem.EventInfo.original_network_id &&
+                        programViewItem1.EventInfo.service_id == BlackoutWindow.selectedSearchItem.EventInfo.service_id &&
+                        programViewItem1.EventInfo.transport_stream_id == BlackoutWindow.selectedSearchItem.EventInfo.transport_stream_id)
                     {
                         this.epgProgramView.scrollViewer.ScrollToHorizontalOffset(programViewItem1.LeftPos - 100);
                         this.epgProgramView.scrollViewer.ScrollToVerticalOffset(programViewItem1.TopPos - 100);

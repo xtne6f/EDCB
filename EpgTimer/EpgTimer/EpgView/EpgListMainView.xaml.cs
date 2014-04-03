@@ -458,6 +458,7 @@ namespace EpgTimer
                     eventList = CommonManager.Instance.DB.ServiceEventList;
                 }
 
+                DateTime now = DateTime.Now;
                 foreach (ServiceItem info in serviceList)
                 {
                     if (info.IsSelected == true)
@@ -470,6 +471,11 @@ namespace EpgTimer
                                 {
                                     //開始未定は除外
                                     continue;
+                                }
+                                if (setViewInfo.FilterEnded)
+                                {
+                                    if (eventInfo.start_time.AddSeconds(eventInfo.durationSec) < now)
+                                        continue;
                                 }
                                 //ジャンル絞り込み
                                 if (this.viewCustContentKindList.Count > 0)
@@ -602,6 +608,7 @@ namespace EpgTimer
         private void listView_event_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             richTextBox_eventInfo.Document.Blocks.Clear();
+            scrollViewer1.ScrollToHome();
             if (listView_event.SelectedItem != null)
             {
                 SearchItem item = listView_event.SelectedItem as SearchItem;

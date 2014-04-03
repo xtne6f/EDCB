@@ -32,8 +32,6 @@ protected:
 	HANDLE notifyThread;
 	HANDLE notifyStopEvent;
 
-	HANDLE sendEvent;
-
 	map<DWORD, DWORD> registGUIMap;
 	map<wstring, REGIST_TCP_INFO> registTCPMap;
 

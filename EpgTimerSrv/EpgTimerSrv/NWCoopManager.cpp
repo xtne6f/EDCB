@@ -56,6 +56,12 @@ CNWCoopManager::~CNWCoopManager(void)
 
 	WSACleanup();
 
+	if( this->lockQueue != NULL ){
+		QueueUnLock();
+		CloseHandle(this->lockQueue);
+		this->lockQueue = NULL;
+	}
+
 	if( this->lockEvent != NULL ){
 		UnLock();
 		CloseHandle(this->lockEvent);

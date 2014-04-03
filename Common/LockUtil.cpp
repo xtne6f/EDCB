@@ -11,6 +11,11 @@ CLockUtil::CLockUtil(void)
 
 CLockUtil::~CLockUtil(void)
 {
+	if( this->lockEvent != NULL ){
+		UnLock();
+		CloseHandle(this->lockEvent);
+		this->lockEvent = NULL;
+	}
 }
 
 BOOL CLockUtil::Lock(LPCWSTR log, DWORD timeOut)
