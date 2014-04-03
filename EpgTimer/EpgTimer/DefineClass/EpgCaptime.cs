@@ -10,7 +10,6 @@ namespace EpgTimer
     {
         public event PropertyChangedEventHandler PropertyChanged;
         private bool selected = false;
-        private bool basiconly = false;
 
         private void NotifyPropertyChanged(String info)
         {
@@ -33,38 +32,48 @@ namespace EpgTimer
             }
         }
 
-        public string txtBasicOnly
-        {
-            get
-            {
-                if (this.basiconly)
-                {
-                    return "基本のみ";
-                }
-                else
-                {
-                    return "";
-                }
-            }
-        }
-
-        public bool IsBasicOnly
-        {
-            get
-            {
-                return this.basiconly;
-            }
-            set
-            {
-                this.basiconly = value;
-                NotifyPropertyChanged("IsBasicOnly");
-            }
-        }
-
         public string Time
         {
             get;
             set;
+        }
+        public bool BSBasicOnly
+        {
+            get;
+            set;
+        }
+        public bool CS1BasicOnly
+        {
+            get;
+            set;
+        }
+        public bool CS2BasicOnly
+        {
+            get;
+            set;
+        }
+
+        public string ViewTime
+        {
+            get
+            {
+                int i = Time.IndexOf('w');
+                if (i >= 0)
+                {
+                    uint wday;
+                    uint.TryParse(Time.Substring(i + 1), out wday);
+                    return "日月火水木金土"[(int)(wday % 7)] + " " + Time.Substring(0, i);
+                }
+                return Time;
+            }
+        }
+
+        public string ViewBasicOnly
+        {
+            get
+            {
+                return (BSBasicOnly ? "基本" : "詳細") + "," + (CS1BasicOnly ? "基本" : "詳細") + "," + (CS2BasicOnly ? "基本" : "詳細");
+            }
         }
     }
 }

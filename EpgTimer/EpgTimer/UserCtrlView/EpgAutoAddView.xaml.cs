@@ -600,16 +600,6 @@ namespace EpgTimer
             base.OnPreviewKeyDown(e);
         }
 
-        private void MenuItem_Click_AutoAddContent(object sender, RoutedEventArgs e)
-        {
-            EpgAutoDataItem item1 = this.listView_key.SelectedItem as EpgAutoDataItem;
-            if (item1 != null)
-            {
-                this.myPopupText.Text = item1.SearchInfoText;
-                this.myPopup.IsOpen = true;
-            }
-        }
-
         private void button_up_Click2(object sender, RoutedEventArgs e)
         {
             this.moveItem(itemMoveDirections.up);

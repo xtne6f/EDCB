@@ -461,6 +461,15 @@ namespace EpgTimer
         private void ResetButtonView()
         {
             stackPanel_button.Children.Clear();
+            for (int i = 0; i < tabControl_main.Items.Count; i++)
+            {
+                TabItem ti = tabControl_main.Items.GetItemAt(i) as TabItem;
+                if (ti != null && ti.Tag is string && ((string)ti.Tag).StartsWith("PushLike"))
+                {
+                    tabControl_main.Items.Remove(ti);
+                    i--;
+                }
+            }
             foreach (string info in Settings.Instance.ViewButtonList)
             {
                 if (String.Compare(info, "（空白）") == 0)
@@ -482,9 +491,31 @@ namespace EpgTimer
                             buttonList[info].Content = Settings.Instance.Cust2BtnName;
                         }
                         stackPanel_button.Children.Add(buttonList[info]);
+
+                        if (Settings.Instance.ViewButtonShowAsTab)
+                        {
+                            //ボタン風のタブを追加する
+                            TabItem ti = new TabItem();
+                            ti.Header = buttonList[info].Content;
+                            ti.Tag = "PushLike" + info;
+                            ti.Background = null;
+                            ti.BorderBrush = null;
+                            //タブ移動をキャンセルしつつ擬似的に対応するボタンを押す
+                            ti.PreviewMouseDown += (sender, e) =>
+                            {
+                                if (e.ChangedButton == MouseButton.Left)
+                                {
+                                    buttonList[((string)((TabItem)sender).Tag).Substring(8)].RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                                    e.Handled = true;
+                                }
+                            };
+                            tabControl_main.Items.Add(ti);
+                        }
                     }
                 }
             }
+            //タブとして表示するかボタンが1つもないときは行を隠す
+            rowDefinition_row0.Height = new GridLength(Settings.Instance.ViewButtonShowAsTab || stackPanel_button.Children.Count == 0 ? 0 : 30);
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -1495,12 +1526,12 @@ namespace EpgTimer
             this.tabItem_epg.IsSelected = true;
         }
 
-        public Button getSearchButton(bool isShowButton0)
+        public void EmphasizeSearchButton(bool emphasize)
         {
             Button button1 = buttonList["検索"];
             if (Settings.Instance.ViewButtonList.Contains("検索") == false)
             {
-                if (isShowButton0)
+                if (emphasize)
                 {
                     stackPanel_button.Children.Add(button1);
                 }
@@ -1509,7 +1540,52 @@ namespace EpgTimer
                     stackPanel_button.Children.Remove(button1);
                 }
             }
-            return button1;
+
+            //検索ボタンを点滅させる
+            if (emphasize)
+            {
+                button1.Effect = new System.Windows.Media.Effects.DropShadowEffect();
+                var animation = new System.Windows.Media.Animation.DoubleAnimation
+                {
+                    From = 1.0,
+                    To = 0.7,
+                    RepeatBehavior = System.Windows.Media.Animation.RepeatBehavior.Forever,
+                    AutoReverse = true
+                };
+                button1.BeginAnimation(Button.OpacityProperty, animation);
+            }
+            else
+            {
+                button1.BeginAnimation(Button.OpacityProperty, null);
+                button1.Opacity = 1;
+                button1.Effect = null;
+            }
+
+            //もしあればタブとして表示のタブも点滅させる
+            foreach (var item in tabControl_main.Items)
+            {
+                TabItem ti = item as TabItem;
+                if (ti != null && ti.Tag is string && (string)ti.Tag == "PushLike検索")
+                {
+                    if (emphasize)
+                    {
+                        var animation = new System.Windows.Media.Animation.DoubleAnimation
+                        {
+                            From = 1.0,
+                            To = 0.1,
+                            RepeatBehavior = System.Windows.Media.Animation.RepeatBehavior.Forever,
+                            AutoReverse = true
+                        };
+                        ti.BeginAnimation(TabItem.OpacityProperty, animation);
+                    }
+                    else
+                    {
+                        ti.BeginAnimation(TabItem.OpacityProperty, null);
+                        ti.Opacity = 1;
+                    }
+                    break;
+                }
+            }
         }
 
     }

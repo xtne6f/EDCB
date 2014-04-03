@@ -21,20 +21,19 @@
             <MenuItem Header="予定ファイル名" Name="RecFileName" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="ぴったり（？）" Name="Pittari" IsCheckable="True" Click="headerSelect_Click" />
         </ContextMenu>
-        <ContextMenu x:Key="itemMenu" x:Name="cmdMenu" >
+        <ContextMenu x:Key="itemMenu" x:Name="cmdMenu" Loaded="cmdMenu_Loaded">
             <MenuItem Header="削除 (_D)" Click="button_del_Click" InputGestureText="Delete" />
             <MenuItem Header="変更 (_C)">
                 <MenuItem Header="ダイアログ表示 (_X)" Click="button_change_Click" InputGestureText="Enter" />
                 <Separator/>
-                <MenuItem Header="録画モード (_R)">
-                    <MenuItem Header="全サービス (_0)" Name="recmode_all" Click="recmode_Click" InputGestureText="Alt + 0" />
-                    <MenuItem Header="指定サービス (_1)" Name="recmode_only" Click="recmode_Click" InputGestureText="Alt + 1" />
-                    <MenuItem Header="全サービス（デコード処理なし） (_2)" Name="recmode_all_nodec" Click="recmode_Click" InputGestureText="Alt + 2" />
-                    <MenuItem Header="指定サービス（デコード処理なし） (_3)" Name="recmode_only_nodec" Click="recmode_Click" InputGestureText="Alt + 3" />
-                    <MenuItem Header="視聴 (_4)" Name="recmode_view" Click="recmode_Click" InputGestureText="Alt + 4" />
-                    <MenuItem Header="無効 (_5)" Name="recmode_no" Click="button_no_Click" InputGestureText="Alt + 5" />
-                </MenuItem>
-                <MenuItem Header="優先度 (_E)">
+                <MenuItem Header="全サービス (_0)" Name="recmode_all" Click="recmode_Click" InputGestureText="Alt + 0" />
+                <MenuItem Header="指定サービス (_1)" Name="recmode_only" Click="recmode_Click" InputGestureText="Alt + 1" />
+                <MenuItem Header="全サービス（デコード処理なし） (_2)" Name="recmode_all_nodec" Click="recmode_Click" InputGestureText="Alt + 2" />
+                <MenuItem Header="指定サービス（デコード処理なし） (_3)" Name="recmode_only_nodec" Click="recmode_Click" InputGestureText="Alt + 3" />
+                <MenuItem Header="視聴 (_4)" Name="recmode_view" Click="recmode_Click" InputGestureText="Alt + 4" />
+                <MenuItem Header="無効 (_5)" Name="recmode_no" Click="button_no_Click" InputGestureText="Alt + 5" />
+                <Separator/>
+                <MenuItem Name="cm_pri" Tag="優先度 {0} (_E)">
                     <MenuItem Header="1 (_1)" Name="priority_1" Click="priority_Click" InputGestureText="Ctrl + Alt + 1" />
                     <MenuItem Header="2 (_2)" Name="priority_2" Click="priority_Click" InputGestureText="Ctrl + Alt + 2" />
                     <MenuItem Header="3 (_3)" Name="priority_3" Click="priority_Click" InputGestureText="Ctrl + Alt + 3" />
@@ -42,11 +41,7 @@
                     <MenuItem Header="5 (_5)" Name="priority_5" Click="priority_Click" InputGestureText="Ctrl + Alt + 5" />
                 </MenuItem>
             </MenuItem>
-            <MenuItem Header="予約詳細 (_V)" Click="MenuItem_Click_ReserveDetail" />
-            <MenuItem Header="番組詳細 (_B)" Click="MenuItem_Click_PogramDetail" />
-            <MenuItem Header="番組名でググる (_G)" Click="MenuItem_Click_Google" InputGestureText="F2" />
             <MenuItem Header="番組表へジャンプ (_J)" Click="MenuItem_Click_ProgramTable"  InputGestureText="F3" />
-            <MenuItem Header="予約←→無効 (_R)" Click="MenuItem_Click_ChangeRecMode"  InputGestureText="BackSpace" />
             <MenuItem Header="自動予約登録 (_A)" Click="autoadd_Click" InputGestureText="Ctrl + A" />
             <MenuItem Header="追っかけ再生 (_P)" Click="timeShiftPlay_Click" InputGestureText="Ctrl + P" />
         </ContextMenu>

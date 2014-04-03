@@ -276,14 +276,16 @@ namespace EpgTimer
                     }
                 }
 
-                datePicker_start.SelectedDate = reserveInfo.StartTime;
-                datePicker_end.SelectedDate = reserveInfo.StartTime.AddSeconds(reserveInfo.DurationSecond);
-                comboBox_sh.SelectedIndex = datePicker_start.SelectedDate.Value.Hour;
-                comboBox_sm.SelectedIndex = datePicker_start.SelectedDate.Value.Minute;
-                comboBox_ss.SelectedIndex = datePicker_start.SelectedDate.Value.Second;
-                comboBox_eh.SelectedIndex = datePicker_end.SelectedDate.Value.Hour;
-                comboBox_em.SelectedIndex = datePicker_end.SelectedDate.Value.Minute;
-                comboBox_es.SelectedIndex = datePicker_end.SelectedDate.Value.Second;
+                DateTime startTime = reserveInfo.StartTime;
+                DateTime endTime = startTime.AddSeconds(reserveInfo.DurationSecond);
+                datePicker_start.SelectedDate = startTime;
+                datePicker_end.SelectedDate = endTime;
+                comboBox_sh.SelectedIndex = startTime.Hour;
+                comboBox_sm.SelectedIndex = startTime.Minute;
+                comboBox_ss.SelectedIndex = startTime.Second;
+                comboBox_eh.SelectedIndex = endTime.Hour;
+                comboBox_em.SelectedIndex = endTime.Minute;
+                comboBox_es.SelectedIndex = endTime.Second;
             }
             catch (Exception ex)
             {
