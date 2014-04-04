@@ -48,7 +48,7 @@ namespace EpgTimer
         {
             get
             {
-                string iniPath = System.IO.Path.GetDirectoryName(Environment.GetCommandLineArgs()[0]);
+                string iniPath = ModulePath.TrimEnd('\\');
                 iniPath += "\\Common.ini";
                 return iniPath;
             }
@@ -57,7 +57,7 @@ namespace EpgTimer
         {
             get
             {
-                string iniPath = System.IO.Path.GetDirectoryName(Environment.GetCommandLineArgs()[0]);
+                string iniPath = ModulePath.TrimEnd('\\');
                 iniPath += "\\EpgTimerSrv.ini";
                 return iniPath;
             }
@@ -68,7 +68,7 @@ namespace EpgTimer
             {
 //                string defSetPath = System.Environment.GetFolderPath(Environment.SpecialFolder.Personal);
 //                defSetPath += "\\EpgTimerBon";
-                string defSetPath = System.IO.Path.GetDirectoryName(Environment.GetCommandLineArgs()[0]);
+                string defSetPath = ModulePath.TrimEnd('\\');
                 defSetPath += "\\Setting";
 
                 return defSetPath;
@@ -78,13 +78,9 @@ namespace EpgTimer
         {
             get
             {
-                string iniPath = System.IO.Path.GetDirectoryName(Environment.GetCommandLineArgs()[0]);
-                iniPath += "\\Common.ini";
-                string defSetPath = System.IO.Path.GetDirectoryName(Environment.GetCommandLineArgs()[0]);
-                defSetPath += "\\Setting";
                 StringBuilder buff = new StringBuilder(512);
-                IniFileHandler.GetPrivateProfileString("SET", "DataSavePath", defSetPath, buff, 512, iniPath);
-                return  buff.ToString();
+                IniFileHandler.GetPrivateProfileString("SET", "DataSavePath", DefSettingFolderPath, buff, 512, CommonIniPath);
+                return (Path.IsPathRooted(buff.ToString()) ? "" : ModulePath.TrimEnd('\\') + "\\") + buff.ToString();
             }
         }
         public static void CheckFolderPath(ref string folderPath)
@@ -97,7 +93,7 @@ namespace EpgTimer
         {
             get
             {
-                return System.IO.Path.GetDirectoryName(Environment.GetCommandLineArgs()[0]);
+                return Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
             }
         }
     }
@@ -1117,11 +1113,6 @@ namespace EpgTimer
         public static void LoadFromXmlFile()
         {
             string path = GetSettingPath();
-            if (path.IndexOf("EpgTimer.exe.xml") < 0)
-            {
-                path = System.IO.Path.GetDirectoryName(Environment.GetCommandLineArgs()[0]);
-                path += "\\EpgTimer.exe.xml";
-            }
             try
             {
                 FileStream fs = new FileStream(path,
@@ -1400,11 +1391,6 @@ namespace EpgTimer
             try
             {
                 string path = GetSettingPath();
-                if (path.IndexOf("EpgTimer.exe.xml") < 0 && path.IndexOf("EpgTimerNW.exe.xml") < 0)
-                {
-                    path = System.IO.Path.GetDirectoryName(Environment.GetCommandLineArgs()[0]);
-                    path += "\\EpgTimer.exe.xml";
-                }
 
                 if (System.IO.File.Exists(path) == true)
                 {

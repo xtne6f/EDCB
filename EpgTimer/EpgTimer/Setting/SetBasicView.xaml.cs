@@ -73,7 +73,7 @@ namespace EpgTimer.Setting
                 IniFileHandler.GetPrivateProfileString("SET", "DataSavePath", SettingPath.DefSettingFolderPath, buff, 512, SettingPath.CommonIniPath);
                 textBox_setPath.Text = buff.ToString();
 
-                string defRecExe = System.IO.Path.GetDirectoryName(Environment.GetCommandLineArgs()[0]) + "\\EpgDataCap_Bon.exe";
+                string defRecExe = SettingPath.ModulePath.TrimEnd('\\') +"\\EpgDataCap_Bon.exe";
                 buff.Clear();
                 IniFileHandler.GetPrivateProfileString("SET", "RecExePath", defRecExe, buff, 512, SettingPath.CommonIniPath);
                 textBox_exe.Text = buff.ToString();

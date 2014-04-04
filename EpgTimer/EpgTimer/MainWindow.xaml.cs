@@ -138,7 +138,7 @@ namespace EpgTimer
                 {
                     if (serviceMode == false)
                     {
-                        String moduleFolder = System.IO.Path.GetDirectoryName(Environment.GetCommandLineArgs()[0]);
+                        String moduleFolder = SettingPath.ModulePath.TrimEnd('\\');
                         String exePath = moduleFolder + "\\EpgTimerSrv.exe";
                         System.Diagnostics.Process process = System.Diagnostics.Process.Start(exePath);
                         startExe = true;
