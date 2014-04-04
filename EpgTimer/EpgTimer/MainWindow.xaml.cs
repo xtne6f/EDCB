@@ -805,6 +805,58 @@ namespace EpgTimer
             }
         }
 
+        private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (Keyboard.Modifiers == ModifierKeys.Control)
+            {
+                switch (e.Key)
+                {
+                    case Key.F:
+                        if (e.IsRepeat == false)
+                        {
+                            this.buttonList["検索"].RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                        }
+                        e.Handled = true;
+                        break;
+                    case Key.D1:
+                        if (e.IsRepeat == false)
+                        {
+                            this.tabItem_reserve.IsSelected = true;
+                        }
+                        e.Handled = true;
+                        break;
+                    case Key.D2:
+                        if (e.IsRepeat == false)
+                        {
+                            this.tabItem_tunerReserve.IsSelected = true;
+                        }
+                        e.Handled = true;
+                        break;
+                    case Key.D3:
+                        if (e.IsRepeat == false)
+                        {
+                            this.tabItem_recinfo.IsSelected = true;
+                        }
+                        e.Handled = true;
+                        break;
+                    case Key.D4:
+                        if (e.IsRepeat == false)
+                        {
+                            this.tabItem_epgAutoAdd.IsSelected = true;
+                        }
+                        e.Handled = true;
+                        break;
+                    case Key.D5:
+                        if (e.IsRepeat == false)
+                        {
+                            this.tabItem_epg.IsSelected = true;
+                        }
+                        e.Handled = true;
+                        break;
+                }
+            }
+        }
+
         void settingButton_Click(object sender, RoutedEventArgs e)
         {
             SettingCmd();
