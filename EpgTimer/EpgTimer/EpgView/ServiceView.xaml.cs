@@ -33,10 +33,10 @@ namespace EpgTimer.EpgView
             stackPanel_service.Children.Clear();
         }
 
-        public void SetService(Dictionary<UInt64, EpgServiceInfo> serviceList)
+        public void SetService(List<EpgServiceInfo> serviceList)
         {
             stackPanel_service.Children.Clear();
-            foreach (EpgServiceInfo info in serviceList.Values)
+            foreach (EpgServiceInfo info in serviceList)
             {
                 TextBlock item = new TextBlock();
                 item.Text = info.service_name;

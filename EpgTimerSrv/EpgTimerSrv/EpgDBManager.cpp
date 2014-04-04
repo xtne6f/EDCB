@@ -450,6 +450,10 @@ void CEpgDBManager::SearchEvent(EPGDB_SEARCH_KEY_INFO* key, map<ULONGLONG, SEARC
 		//キーワードもジャンル指定もないので検索しない
 		return ;
 	}
+	if( key->andKey.compare(0, 7, L"^!{999}") == 0 ){
+		//無効を示すキーワードが指定されているので検索しない
+		return ;
+	}
 	
 	//キーワード分解
 	vector<wstring> andKeyList;

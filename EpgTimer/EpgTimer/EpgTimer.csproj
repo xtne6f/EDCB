@@ -97,11 +97,11 @@
       <DependentUpon>BlackoutWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="Common\GridViewSorter.cs" />
+    <Compile Include="ConnectWindow.xaml.cs">
+      <DependentUpon>ConnectWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="DefineClass\CoopServerInfo.cs" />
     <Compile Include="DefineClass\ListColumnInfo.cs" />
-    <Compile Include="PopupWindow.xaml.cs">
-      <DependentUpon>PopupWindow.xaml</DependentUpon>
-    </Compile>
     <Compile Include="SetCoopSrvWindow.xaml.cs">
       <DependentUpon>SetCoopSrvWindow.xaml</DependentUpon>
     </Compile>
@@ -262,7 +262,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="PopupWindow.xaml">
+    <Page Include="ConnectWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>

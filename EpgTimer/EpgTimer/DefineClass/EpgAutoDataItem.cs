@@ -37,7 +37,7 @@ namespace EpgTimer
                 String view = "";
                 if (EpgAutoAddInfo != null)
                 {
-                    view = EpgAutoAddInfo.searchInfo.andKey;
+                    view = EpgAutoAddInfo.searchInfo.andKey.Substring(EpgAutoAddInfo.searchInfo.andKey.StartsWith("^!{999}") ? 7 : 0);
                 }
                 return view;
             }
@@ -363,6 +363,42 @@ namespace EpgTimer
                     }
                 }
                 return view;
+            }
+        }
+
+        public String KeyEnabled
+        {
+            get
+            {
+                String view = "";
+                if (EpgAutoAddInfo != null)
+                {
+                    if (EpgAutoAddInfo.searchInfo.andKey.StartsWith("^!{999}"))
+                    {
+                        view = "いいえ";
+                    }
+                    else
+                    {
+                        view = "はい";
+                    }
+                }
+                return view;
+            }
+        }
+
+        public SolidColorBrush BackColor
+        {
+            get
+            {
+                SolidColorBrush color = CommonManager.Instance.ResDefBackColor;
+                if (EpgAutoAddInfo != null)
+                {
+                    if (EpgAutoAddInfo.searchInfo.andKey.StartsWith("^!{999}"))
+                    {
+                        color = CommonManager.Instance.ResNoBackColor;
+                    }
+                }
+                return color;
             }
         }
 

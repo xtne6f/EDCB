@@ -37,7 +37,6 @@ namespace EpgTimer
         private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
 
         MainWindow _mainWindow;
-        PopupWindow _popupWindow;
 
         public ReserveView()
         {
@@ -146,7 +145,6 @@ namespace EpgTimer
                 }
             }
             this._mainWindow = (MainWindow)Window.GetWindow(this);
-            this._popupWindow = new PopupWindow(Window.GetWindow(this));
         }
 
         /// <summary>
@@ -713,15 +711,8 @@ namespace EpgTimer
             {
                 switch (e.Key)
                 {
-                    case Key.F2:
-                        this.MenuItem_Click_Google(this, new RoutedEventArgs(Button.ClickEvent));
-                        break;
                     case Key.F3:
                         this.MenuItem_Click_ProgramTable(this, new RoutedEventArgs(Button.ClickEvent));
-                        break;
-                    case Key.Back:
-                        new BlackoutWindow(Window.GetWindow(this)).showWindow("予約←→無効");
-                        this.MenuItem_Click_ChangeRecMode(this.listView_reserve.SelectedItem, new RoutedEventArgs(Button.ClickEvent));
                         break;
                     case Key.Enter:
                         this.button_change_Click(this.listView_reserve.SelectedItem, new RoutedEventArgs(Button.ClickEvent));
@@ -825,81 +816,6 @@ namespace EpgTimer
             }
         }
 
-        private void MenuItem_Click_ChangeRecMode(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                List<ReserveData> list = new List<ReserveData>();
-                foreach (ReserveItem item in listView_reserve.SelectedItems)
-                {
-                    ReserveData reserveInfo = item.ReserveInfo;
-
-                    if (item.ReserveInfo.RecSetting.RecMode == 5)
-                    {
-                        // 無効 => 予約
-                        RecSettingData defSet = new RecSettingData();
-                        Settings.GetDefRecSetting(0, ref defSet);
-                        item.ReserveInfo.RecSetting.RecMode = defSet.RecMode;
-                    }
-                    else
-                    {
-                        //予約 => 無効
-                        item.ReserveInfo.RecSetting.RecMode = 5;
-                    }
-
-                    list.Add(reserveInfo);
-                }
-                if (list.Count > 0)
-                {
-                    ErrCode err = (ErrCode)cmd.SendChgReserve(list);
-                    if (err == ErrCode.CMD_ERR_CONNECT)
-                    {
-                        MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-                    }
-                    if (err == ErrCode.CMD_ERR_TIMEOUT)
-                    {
-                        MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-                    }
-                    if (err != ErrCode.CMD_SUCCESS)
-                    {
-                        MessageBox.Show("チューナー一覧の取得でエラーが発生しました。");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
-
-        private void MenuItem_Click_ReserveDetail(object sender, RoutedEventArgs e)
-        {
-            ReserveItem item1 = this.listView_reserve.SelectedItem as ReserveItem;
-            if (item1 != null)
-            {
-                this._popupWindow.show(
-                    CommonManager.Instance.ConvertReserveText(item1.ReserveInfo));
-            }
-        }
-
-        private void MenuItem_Click_PogramDetail(object sender, RoutedEventArgs e)
-        {
-            ReserveItem item1 = this.listView_reserve.SelectedItem as ReserveItem;
-            if (item1 != null)
-            {
-                this._popupWindow.show(item1.ProgramDetail);
-            }
-        }
-
-        private void MenuItem_Click_Google(object sender, RoutedEventArgs e)
-        {
-            ReserveItem item1 = this.listView_reserve.SelectedItem as ReserveItem;
-            if (item1 != null)
-            {
-                this._popupWindow.google(item1.EventName);
-            }
-        }
-
         private void MenuItem_Click_ProgramTable(object sender, RoutedEventArgs e)
         {
             ReserveItem item1 = this.listView_reserve.SelectedItem as ReserveItem;
@@ -910,6 +826,57 @@ namespace EpgTimer
             }
         }
 
+        private void cmdMenu_Loaded(object sender, RoutedEventArgs e)
+        {
+            //選択されているすべての予約が同じ設定の場合だけチェックを表示する
+            byte recMode = 0xFF;
+            byte priority = 0xFF;
+            foreach (ReserveItem item in listView_reserve.SelectedItems)
+            {
+                if (recMode == 0xFF)
+                {
+                    recMode = item.ReserveInfo.RecSetting.RecMode;
+                }
+                else if (recMode != item.ReserveInfo.RecSetting.RecMode)
+                {
+                    recMode = 0xFE;
+                }
+                if (priority == 0xFF)
+                {
+                    priority = item.ReserveInfo.RecSetting.Priority;
+                }
+                else if (priority != item.ReserveInfo.RecSetting.Priority)
+                {
+                    priority = 0xFE;
+                }
+            }
+            foreach (object item in ((ContextMenu)sender).Items)
+            {
+                if (item is MenuItem && ((string)((MenuItem)item).Header).StartsWith("変更"))
+                {
+                    for (int i = 0; i < ((MenuItem)item).Items.Count; i++)
+                    {
+                        MenuItem subItem = ((MenuItem)item).Items[i] as MenuItem;
+                        if (subItem != null && subItem.Name == "recmode_all")
+                        {
+                            for (int j = 0; j <= 5; j++)
+                            {
+                                ((MenuItem)((MenuItem)item).Items[i + j]).IsChecked = (j == recMode);
+                            }
+                        }
+                        if (subItem != null && subItem.Name == "cm_pri")
+                        {
+                            for (int j = 0; j < subItem.Items.Count; j++)
+                            {
+                                ((MenuItem)subItem.Items[j]).IsChecked = (j + 1 == priority);
+                            }
+                            subItem.Header = string.Format((string)subItem.Tag, priority < 0xFE ? "" + priority : "*");
+                        }
+                    }
+                    break;
+                }
+            }
+        }
 
     }
 }

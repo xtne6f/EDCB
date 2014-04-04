@@ -591,6 +591,18 @@ namespace EpgTimer
             checkBox_suspendDef.IsChecked = false;
         }
 
+        private void checkBox_margineDef_Checked(object sender, RoutedEventArgs e)
+        {
+            textBox_margineStart.IsEnabled = false;
+            textBox_margineEnd.IsEnabled = false;
+        }
+
+        private void checkBox_margineDef_Unchecked(object sender, RoutedEventArgs e)
+        {
+            textBox_margineStart.IsEnabled = true;
+            textBox_margineEnd.IsEnabled = true;
+        }
+
         private void checkBox_serviceMode_Checked(object sender, RoutedEventArgs e)
         {
             checkBox_serviceCaption.IsChecked = false;

@@ -29,6 +29,17 @@ namespace EpgTimer.Setting
         {
             InitializeComponent();
 
+            if (CommonManager.Instance.NWMode == true)
+            {
+                tabItem_play.IsEnabled = false;
+                tabItem_twitter.IsEnabled = false;
+                label3.IsEnabled = false;
+                listBox_bon.IsEnabled = false;
+                button_del.IsEnabled = false;
+                button_add.IsEnabled = false;
+                comboBox_bon.IsEnabled = false;
+            }
+
             try
             {
                 if (Settings.Instance.NoStyle == 1)

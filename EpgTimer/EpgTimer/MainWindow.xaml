@@ -11,7 +11,7 @@ TextOptions.TextFormattingMode="Display"
 -->
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="30" />
+            <RowDefinition Height="30" Name="rowDefinition_row0" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
         <Grid Grid.Row="0">

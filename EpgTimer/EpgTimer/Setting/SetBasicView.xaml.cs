@@ -30,6 +30,21 @@ namespace EpgTimer.Setting
         {
             InitializeComponent();
 
+            if (CommonManager.Instance.NWMode == true)
+            {
+                tabItem2.IsEnabled = false;
+                tabItem3.IsEnabled = false;
+                textBox_exe.IsEnabled = false;
+                button_exe.IsEnabled = false;
+                listBox_recFolder.IsEnabled = false;
+                button_rec_up.IsEnabled = false;
+                button_rec_down.IsEnabled = false;
+                button_rec_del.IsEnabled = false;
+                textBox_recFolder.IsEnabled = false;
+                button_rec_open.IsEnabled = false;
+                button_rec_add.IsEnabled = false;
+            }
+
             try
             {
                 if (Settings.Instance.NoStyle == 1)
@@ -135,9 +150,6 @@ namespace EpgTimer.Setting
                 comboBox_MM.DataContext = CommonManager.Instance.MinDictionary.Values;
                 comboBox_MM.SelectedIndex = 0;
 
-                chkEPGBasicOnly.IsChecked = false;
-                chkEnableEPGTimerType.IsChecked = false;
-
                 serviceList = new List<ServiceItem2>();
                 try
                 {
@@ -185,14 +197,7 @@ namespace EpgTimer.Setting
                 {
                     checkBox_cs2.IsChecked = false;
                 }
-                if (IniFileHandler.GetPrivateProfileInt("SET", "EnableEPGTimerType", 0, SettingPath.CommonIniPath) == 1)
-                {
-                    chkEnableEPGTimerType.IsChecked = true;
-                }
-                else
-                {
-                    chkEnableEPGTimerType.IsChecked = false;
-                }
+
                 buff.Clear();
                 timeList = new ObservableCollection<EpgCaptime>();
                 int capCount = IniFileHandler.GetPrivateProfileInt("EPG_CAP", "Count", 0, SettingPath.TimerSrvIniPath);
@@ -200,8 +205,10 @@ namespace EpgTimer.Setting
                 {
                     EpgCaptime item = new EpgCaptime();
                     item.IsSelected = true;
-                    item.IsBasicOnly = false;
                     item.Time = "23:00";
+                    item.BSBasicOnly = checkBox_bs.IsChecked == true;
+                    item.CS1BasicOnly = checkBox_cs1.IsChecked == true;
+                    item.CS2BasicOnly = checkBox_cs2.IsChecked == true;
                     timeList.Add(item);
                 }
                 else
@@ -220,13 +227,19 @@ namespace EpgTimer.Setting
                         {
                             item.IsSelected = false;
                         }
-                        if (IniFileHandler.GetPrivateProfileInt("EPG_CAP", i.ToString() + "Basic", 0, SettingPath.TimerSrvIniPath) == 1)
+                        // 取得種別(bit0(LSB)=BS,bit1=CS1,bit2=CS2)。負値のときは共通設定に従う
+                        int flags = IniFileHandler.GetPrivateProfileInt("EPG_CAP", i.ToString() + "BasicOnlyFlags", -1, SettingPath.TimerSrvIniPath);
+                        if (flags >= 0)
                         {
-                            item.IsBasicOnly = true;
+                            item.BSBasicOnly = (flags & 1) != 0;
+                            item.CS1BasicOnly = (flags & 2) != 0;
+                            item.CS2BasicOnly = (flags & 4) != 0;
                         }
                         else
                         {
-                            item.IsBasicOnly = false;
+                            item.BSBasicOnly = checkBox_bs.IsChecked == true;
+                            item.CS1BasicOnly = checkBox_cs1.IsChecked == true;
+                            item.CS2BasicOnly = checkBox_cs2.IsChecked == true;
                         }
                         timeList.Add(item);
                     }
@@ -327,14 +340,6 @@ namespace EpgTimer.Setting
                 {
                     IniFileHandler.WritePrivateProfileString("SET", "CS2BasicOnly", "0", SettingPath.CommonIniPath);
                 }
-                if (chkEnableEPGTimerType.IsChecked == true)
-                {
-                    IniFileHandler.WritePrivateProfileString("SET", "EnableEPGTimerType", "1", SettingPath.CommonIniPath);
-                }
-                else
-                {
-                    IniFileHandler.WritePrivateProfileString("SET", "EnableEPGTimerType", "0", SettingPath.CommonIniPath);
-                }
 
                 foreach (ServiceItem2 info in serviceList)
                 {
@@ -368,14 +373,8 @@ namespace EpgTimer.Setting
                     {
                         IniFileHandler.WritePrivateProfileString("EPG_CAP", i.ToString() + "Select", "0", SettingPath.TimerSrvIniPath);
                     }
-                    if (item.IsBasicOnly == true)
-                    {
-                        IniFileHandler.WritePrivateProfileString("EPG_CAP", i.ToString() + "Basic", "1", SettingPath.TimerSrvIniPath);
-                    }
-                    else
-                    {
-                        IniFileHandler.WritePrivateProfileString("EPG_CAP", i.ToString() + "Basic", "0", SettingPath.TimerSrvIniPath);
-                    }
+                    int flags = (item.BSBasicOnly ? 1 : 0) | (item.CS1BasicOnly ? 2 : 0) | (item.CS2BasicOnly ? 4 : 0);
+                    IniFileHandler.WritePrivateProfileString("EPG_CAP", i.ToString() + "BasicOnlyFlags", flags.ToString(), SettingPath.TimerSrvIniPath);
                 }
 
 
@@ -690,6 +689,12 @@ namespace EpgTimer.Setting
                     UInt16 hh = (UInt16)comboBox_HH.SelectedItem;
                     UInt16 mm = (UInt16)comboBox_MM.SelectedItem;
                     String time = hh.ToString("D2") + ":" + mm.ToString("D2");
+                    int wday = comboBox_wday.SelectedIndex;
+                    if (1 <= wday && wday <= 7)
+                    {
+                        // 曜日指定接尾辞(w1=Mon,...,w7=Sun)
+                        time += "w" + ((wday + 5) % 7 + 1);
+                    }
 
                     foreach (EpgCaptime info in timeList)
                     {
@@ -702,14 +707,9 @@ namespace EpgTimer.Setting
                     EpgCaptime item = new EpgCaptime();
                     item.IsSelected = true;
                     item.Time = time;
-                    if (chkEPGBasicOnly.IsChecked==true)
-                    {
-                        item.IsBasicOnly = true;
-                    }
-                    else
-                    {
-                        item.IsBasicOnly = false;
-                    }
+                    item.BSBasicOnly = checkBox_bs.IsChecked == true;
+                    item.CS1BasicOnly = checkBox_cs1.IsChecked == true;
+                    item.CS2BasicOnly = checkBox_cs2.IsChecked == true;
                     timeList.Add(item);
                 }
             }

@@ -16,9 +16,7 @@ namespace EpgTimer
     {
         public ProgramViewItem()
         {
-            prevItem = null;
             TitleDrawErr = false;
-            prevTop = 0;
         }
         public ProgramViewItem(EpgEventInfo info)
         {
@@ -26,16 +24,6 @@ namespace EpgTimer
             TitleDrawErr = false;
         }
 
-        public ProgramViewItem prevItem
-        {
-            get;
-            set;
-        }
-        public double prevTop
-        {
-            get;
-            set;
-        }
         public EpgEventInfo EventInfo
         {
             get;

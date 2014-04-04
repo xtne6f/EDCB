@@ -444,9 +444,6 @@ namespace EpgTimer
                 menuItemChg.Items.Add(menuItemChgDlg);
                 menuItemChg.Items.Add(separate2);
 
-                MenuItem menuItemChgRecMode = new MenuItem();
-                menuItemChgRecMode.Header = "録画モード (_R)";
-
                 MenuItem menuItemChgRecMode0 = new MenuItem();
                 menuItemChgRecMode0.Header = "全サービス (_0)";
                 menuItemChgRecMode0.DataContext = 0;
@@ -472,17 +469,17 @@ namespace EpgTimer
                 menuItemChgRecMode5.DataContext = 5;
                 menuItemChgRecMode5.Click += new RoutedEventHandler(cm_chg_recmode_Click);
 
-                menuItemChgRecMode.Items.Add(menuItemChgRecMode0);
-                menuItemChgRecMode.Items.Add(menuItemChgRecMode1);
-                menuItemChgRecMode.Items.Add(menuItemChgRecMode2);
-                menuItemChgRecMode.Items.Add(menuItemChgRecMode3);
-                menuItemChgRecMode.Items.Add(menuItemChgRecMode4);
-                menuItemChgRecMode.Items.Add(menuItemChgRecMode5);
+                menuItemChg.Items.Add(menuItemChgRecMode0);
+                menuItemChg.Items.Add(menuItemChgRecMode1);
+                menuItemChg.Items.Add(menuItemChgRecMode2);
+                menuItemChg.Items.Add(menuItemChgRecMode3);
+                menuItemChg.Items.Add(menuItemChgRecMode4);
+                menuItemChg.Items.Add(menuItemChgRecMode5);
 
-                menuItemChg.Items.Add(menuItemChgRecMode);
+                menuItemChg.Items.Add(new Separator());
 
                 MenuItem menuItemChgRecPri = new MenuItem();
-                menuItemChgRecPri.Header = "優先度 (_E)";
+                menuItemChgRecPri.Tag = "優先度 {0} (_E)";
 
                 MenuItem menuItemChgRecPri1 = new MenuItem();
                 menuItemChgRecPri1.Header = "1 (_1)";
@@ -520,15 +517,6 @@ namespace EpgTimer
                 MenuItem menuItemAutoAdd = new MenuItem();
                 menuItemAutoAdd.Header = "自動予約登録 (_A)";
                 menuItemAutoAdd.Click += new RoutedEventHandler(cm_autoadd_Click);
-
-                MenuItem menuItemGoogle = new MenuItem();
-                menuItemGoogle.Header = "番組名でググる (_G)";
-                menuItemGoogle.Click += new RoutedEventHandler(cm_google_Click);
-
-                MenuItem menuItemReverse = new MenuItem();
-                menuItemReverse.Header = "予約←→無効 (_R)";
-                menuItemReverse.Click += new RoutedEventHandler(cm_reverse_Click);
-
                 MenuItem menuItemTimeshift = new MenuItem();
                 menuItemTimeshift.Header = "追っかけ再生 (_P)";
                 menuItemTimeshift.Click += new RoutedEventHandler(cm_timeShiftPlay_Click);
@@ -588,9 +576,10 @@ namespace EpgTimer
                         menuItemNew.IsEnabled = false;
                         menuItemAdd.IsEnabled = false;
                         menuItemChg.IsEnabled = true;
+                        ((MenuItem)menuItemChg.Items[menuItemChg.Items.IndexOf(menuItemChgRecMode0) + Math.Min((int)reserve.RecSetting.RecMode, 5)]).IsChecked = true;
+                        ((MenuItem)menuItemChgRecPri.Items[Math.Min((int)(reserve.RecSetting.Priority - 1), 4)]).IsChecked = true;
+                        menuItemChgRecPri.Header = string.Format((string)menuItemChgRecPri.Tag, reserve.RecSetting.Priority);
                         menuItemDel.IsEnabled = true;
-                        menuItemReverse.IsEnabled = true;
-                        menuItemGoogle.IsEnabled = true;
                         menuItemAutoAdd.IsEnabled = true;
                         menuItemTimeshift.IsEnabled = true;
                         menuItemView.IsEnabled = true;
@@ -601,8 +590,6 @@ namespace EpgTimer
                         menuItemAdd.IsEnabled = true;
                         menuItemChg.IsEnabled = false;
                         menuItemDel.IsEnabled = false;
-                        menuItemReverse.IsEnabled = false;
-                        menuItemGoogle.IsEnabled = true;
                         menuItemAutoAdd.IsEnabled = true;
                         menuItemTimeshift.IsEnabled = false;
                         menuItemView.IsEnabled = true;
@@ -614,8 +601,6 @@ namespace EpgTimer
                 menu.Items.Add(menuItemChg);
                 menu.Items.Add(menuItemDel);
                 menu.Items.Add(menuItemAutoAdd);
-                menu.Items.Add(menuItemGoogle);
-                menu.Items.Add(menuItemReverse);
                 menu.Items.Add(menuItemTimeshift);
                 menu.Items.Add(menuItemView);
                 menu.IsOpen = true;
@@ -918,35 +903,6 @@ namespace EpgTimer
         }
 
         /// <summary>
-        /// 右クリックメニュー 番組名でググるイベント呼び出し
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void cm_google_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                if (sender.GetType() != typeof(MenuItem))
-                {
-                    return;
-                }
-
-                EpgEventInfo program = new EpgEventInfo();
-                if (GetProgramItem(clickPos, ref program) == false)
-                {
-                    return;
-                }
-                PopupWindow _popupWindow = new PopupWindow(Window.GetWindow(this));
-                _popupWindow.google(program.ShortInfo.event_name);
-                _popupWindow.Close();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
-
-        /// <summary>
         /// 右クリックメニュー 簡易予約イベント呼び出し
         /// </summary>
         /// <param name="sender"></param>
@@ -1021,58 +977,6 @@ namespace EpgTimer
             }
         }
 
-        /// <summary>
-        /// 右クリックメニュー 予約←→無効クリックイベント呼び出し
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void cm_reverse_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                ReserveData reserve = new ReserveData();
-                if (GetReserveItem(clickPos, ref reserve) == false)
-                {
-                    return;
-                }
-
-                if (reserve.RecSetting.RecMode == 5)
-                {
-                    // 無効 => 予約
-                    RecSettingData defSet = new RecSettingData();
-                    Settings.GetDefRecSetting(0, ref defSet);
-                    reserve.RecSetting.RecMode = defSet.RecMode;
-                }
-                else
-                {
-                    //予約 => 無効
-                    reserve.RecSetting.RecMode = 5;
-                }
-
-                List<ReserveData> list = new List<ReserveData>();
-                list.Add(reserve);
-                ErrCode err = (ErrCode)cmd.SendChgReserve(list);
-
-                if (err == ErrCode.CMD_ERR_CONNECT)
-                {
-                    MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-                }
-                if (err == ErrCode.CMD_ERR_TIMEOUT)
-                {
-                    MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-                }
-                if (err != ErrCode.CMD_SUCCESS)
-                {
-                    MessageBox.Show("予約←→無効でエラーが発生しました。");
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
-        
-        
         /// <summary>
         /// 右クリックメニュー 追っかけ再生イベント呼び出し
         /// </summary>
@@ -1432,6 +1336,10 @@ namespace EpgTimer
                     selectID = CommonManager.Create64Key(serviceInfo.ONID, serviceInfo.TSID, serviceInfo.SID);
                 }
 
+                //TODO: ここでデフォルトマージンを確認するがEpgTimerNWでは無意味。根本的にはSendCtrlCmdの拡張が必要
+                int defStartMargin = IniFileHandler.GetPrivateProfileInt("SET", "StartMargin", 0, SettingPath.TimerSrvIniPath);
+                int defEndMargin = IniFileHandler.GetPrivateProfileInt("SET", "EndMargin", 0, SettingPath.TimerSrvIniPath);
+
                 foreach (ReserveData info in CommonManager.Instance.DB.ReserveList.Values)
                 {
                     UInt64 key = CommonManager.Create64Key(info.OriginalNetworkID, info.TransportStreamID, info.ServiceID);
@@ -1449,6 +1357,7 @@ namespace EpgTimer
                             chkStartTime = new DateTime(2001, 1, 1, info.StartTime.Hour, 0, 0);
                             startTime = new DateTime(2001, 1, 1, info.StartTime.Hour, info.StartTime.Minute, info.StartTime.Second);
                         }
+                        DateTime baseStartTime = startTime;
                         Int32 duration = (Int32)info.DurationSecond;
                         if (info.RecSetting.UseMargineFlag == 1)
                         {
@@ -1460,6 +1369,18 @@ namespace EpgTimer
                             if (info.RecSetting.EndMargine < 0)
                             {
                                 duration += info.RecSetting.EndMargine;
+                            }
+                        }
+                        else
+                        {
+                            if (defStartMargin < 0)
+                            {
+                                startTime = startTime.AddSeconds(defStartMargin * -1);
+                                duration += defStartMargin;
+                            }
+                            if (defEndMargin < 0)
+                            {
+                                duration += defEndMargin;
                             }
                         }
                         DateTime EndTime;
@@ -1478,16 +1399,38 @@ namespace EpgTimer
                         //viewItem.LeftPos = i * Settings.Instance.ServiceWidth;
 
                         viewItem.Height = Math.Floor((duration / 60) * Settings.Instance.MinHeight);
-                        if (viewItem.Height == 0)
+                        if (viewItem.Height < Settings.Instance.MinHeight)
                         {
                             viewItem.Height = Settings.Instance.MinHeight;
                         }
                         viewItem.Width = Settings.Instance.ServiceWidth;
 
                         TimePosInfo time = timeList[chkStartTime] as TimePosInfo;
-                        int index = timeList.IndexOfKey(chkStartTime);
-                        viewItem.TopPos = index * 60 * Settings.Instance.MinHeight;
-                        viewItem.TopPos += Math.Floor((startTime - chkStartTime).TotalMinutes * Settings.Instance.MinHeight);
+                        bool modified = false;
+                        if (Settings.Instance.MinimumHeight > 0 && viewItem.ReserveInfo.EventID != 0xFFFF)
+                        {
+                            //予約情報から番組情報を特定し、枠表示位置を再設定する
+                            foreach (ProgramViewItem pgInfo in time.ProgramList)
+                            {
+                                if (viewItem.ReserveInfo.OriginalNetworkID == pgInfo.EventInfo.original_network_id &&
+                                    viewItem.ReserveInfo.TransportStreamID == pgInfo.EventInfo.transport_stream_id &&
+                                    viewItem.ReserveInfo.ServiceID == pgInfo.EventInfo.service_id &&
+                                    viewItem.ReserveInfo.EventID == pgInfo.EventInfo.event_id &&
+                                    info.DurationSecond != 0)
+                                {
+                                    viewItem.TopPos = pgInfo.TopPos + pgInfo.Height * (startTime - baseStartTime).TotalSeconds / info.DurationSecond;
+                                    viewItem.Height = Math.Max(pgInfo.Height * duration / info.DurationSecond, Settings.Instance.MinHeight);
+                                    modified = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if (modified == false)
+                        {
+                            int index = timeList.IndexOfKey(chkStartTime);
+                            viewItem.TopPos = index * 60 * Settings.Instance.MinHeight;
+                            viewItem.TopPos += Math.Floor((startTime - chkStartTime).TotalMinutes * Settings.Instance.MinHeight);
+                        }
 
                         DateTime chkDay;
                         if (info.StartTime.Hour < setViewInfo.StartTimeWeek)
@@ -1503,7 +1446,7 @@ namespace EpgTimer
 
 
                         //必要時間リストと時間と番組の関連づけ
-                        while (chkStartTime <= EndTime)
+                        while (chkStartTime < EndTime.AddHours(1))
                         {
                             if (timeList.ContainsKey(chkStartTime) != false)
                             {
@@ -1790,7 +1733,7 @@ namespace EpgTimer
                         EndTime = startTime.AddSeconds(eventInfo.durationSec);
                     }
 
-                    while (chkStartTime <= EndTime)
+                    while (chkStartTime < EndTime.AddHours(1))
                     {
                         if (timeList.ContainsKey(chkStartTime) == false)
                         {
@@ -1855,6 +1798,30 @@ namespace EpgTimer
                         item.LeftPos = index * Settings.Instance.ServiceWidth;
                     }
                 }
+                if (Settings.Instance.MinimumHeight > 0)
+                {
+                    //最低表示行数を適用
+                    programList.Sort((x, y) => Math.Sign(x.LeftPos - y.LeftPos) * 2 + Math.Sign(x.TopPos - y.TopPos));
+                    double minimum = (Settings.Instance.FontSizeTitle + 2) * Settings.Instance.MinimumHeight;
+                    double lastLeft = double.MinValue;
+                    double lastBottom = 0;
+                    foreach (ProgramViewItem item in programList)
+                    {
+                        if (lastLeft != item.LeftPos)
+                        {
+                            lastLeft = item.LeftPos;
+                            lastBottom = double.MinValue;
+                        }
+                        item.Height = Math.Max(item.Height, minimum);
+                        if (item.TopPos < lastBottom)
+                        {
+                            item.Height = Math.Max(item.TopPos + item.Height - lastBottom, minimum);
+                            item.TopPos = lastBottom;
+                        }
+                        lastBottom = item.TopPos + item.Height;
+                    }
+                }
+
                 epgProgramView.SetProgramList(
                     programList,
                     dayList.Count * Settings.Instance.ServiceWidth,
