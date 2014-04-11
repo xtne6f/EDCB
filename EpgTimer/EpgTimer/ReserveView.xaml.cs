@@ -672,42 +672,16 @@ namespace EpgTimer
 
         void listView_reserve_KeyDown(object sender, KeyEventArgs e)
         {
-            if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control) && Keyboard.Modifiers.HasFlag(ModifierKeys.Alt))
-            {
-                switch (e.SystemKey)
-                {
-                    case Key.D1: this.setPriority(1); break;
-                    case Key.D2: this.setPriority(2); break;
-                    case Key.D3: this.setPriority(3); break;
-                    case Key.D4: this.setPriority(4); break;
-                    case Key.D5: this.setPriority(5); break;
-                }
-            }
-            else if (Keyboard.Modifiers.HasFlag(ModifierKeys.Alt))
-            {
-                switch (e.SystemKey)
-                {
-                    case Key.D0: this.setRecMode(0); break;
-                    case Key.D1: this.setRecMode(1); break;
-                    case Key.D2: this.setRecMode(2); break;
-                    case Key.D3: this.setRecMode(3); break;
-                    case Key.D4: this.setRecMode(4); break;
-                    case Key.D5: this.setRecMode(5); break;
-                }
-            }
-            else if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
+            if (Keyboard.Modifiers == ModifierKeys.Control)
             {
                 switch (e.Key)
                 {
-                    case Key.A:
-                        this.autoadd_Click(this.listView_reserve.SelectedItem, new RoutedEventArgs(Button.ClickEvent));
-                        break;
                     case Key.P:
                         this.timeShiftPlay_Click(this.listView_reserve.SelectedItem, new RoutedEventArgs(Button.ClickEvent));
                         break;
                 }
             }
-            else
+            else if (Keyboard.Modifiers == ModifierKeys.None)
             {
                 switch (e.Key)
                 {

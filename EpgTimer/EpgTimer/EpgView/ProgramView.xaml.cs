@@ -30,7 +30,7 @@ namespace EpgTimer.EpgView
         public event ProgramViewClickHandler LeftDoubleClick = null;
         public event ProgramViewClickHandler RightClick = null;
         private List<Rectangle> reserveBorder = new List<Rectangle>();
-        private List<KeyValuePair<DateTime, List<ProgramViewItem>>> programTimeList = null;
+        private SortedList<DateTime, List<ProgramViewItem>> programTimeList = null;
 
         private Point lastDownMousePos;
         private double lastDownHOffset;
@@ -64,7 +64,7 @@ namespace EpgTimer.EpgView
                 int index = (int)(cursorPos.Y / epgViewPanel.Height * programTimeList.Count);
                 if (0 <= index && index < programTimeList.Count)
                 {
-                    foreach (ProgramViewItem item in programTimeList[index].Value)
+                    foreach (ProgramViewItem item in programTimeList.Values[index])
                     {
                         if (item.LeftPos <= cursorPos.X && cursorPos.X < item.LeftPos + item.Width)
                         {
@@ -259,7 +259,7 @@ namespace EpgTimer.EpgView
             }
         }
 
-        public void SetProgramList(List<ProgramViewItem> programList, List<KeyValuePair<DateTime, List<ProgramViewItem>>> timeList, double width, double height)
+        public void SetProgramList(List<ProgramViewItem> programList, SortedList<DateTime, List<ProgramViewItem>> timeList, double width, double height)
         {
             try
             {
