@@ -29,12 +29,12 @@ namespace EpgTimer.EpgView
             stackPanel_time.Children.Clear();
         }
 
-        public void SetTime(System.Collections.SortedList timeList, bool NeedTimeOnly, bool weekMode)
+        public void SetTime(List<DateTime> timeList, bool NeedTimeOnly, bool weekMode)
         {
             try
             {
                 stackPanel_time.Children.Clear();
-                foreach (TimePosInfo info in timeList.Values)
+                foreach (DateTime time in timeList)
                 {
                     TextBlock item = new TextBlock();
 
@@ -43,46 +43,46 @@ namespace EpgTimer.EpgView
 
                     if (weekMode == true)
                     {
-                        item.Text = info.Time.Hour.ToString();
+                        item.Text = time.Hour.ToString();
                     }
                     else
                     {
-                        if (info.Time.Hour % 3 == 0 || NeedTimeOnly == true)
+                        if (time.Hour % 3 == 0 || NeedTimeOnly == true)
                         {
                             if (height < 1)
                             {
-                                item.Text = info.Time.ToString("M/d\r\nH");
+                                item.Text = time.ToString("M/d\r\nH");
                             }
                             else if (height < 1.5)
                             {
-                                item.Text = info.Time.ToString("M/d\r\n(ddd)\r\nH");
+                                item.Text = time.ToString("M/d\r\n(ddd)\r\nH");
                             }
                             else
                             {
-                                item.Text = info.Time.ToString("M/d\r\n(ddd)\r\n\r\nH");
+                                item.Text = time.ToString("M/d\r\n(ddd)\r\n\r\nH");
                             }
                         }
                         else
                         {
                             if (height < 1)
                             {
-                                item.Text = info.Time.Hour.ToString();
+                                item.Text = time.Hour.ToString();
                             }
                             else if (height < 1.5)
                             {
-                                item.Text = info.Time.ToString("\r\nH");
+                                item.Text = time.ToString("\r\nH");
                             }
                             else
                             {
-                                item.Text = info.Time.ToString("\r\n\r\n\r\nH");
+                                item.Text = time.ToString("\r\n\r\n\r\nH");
                             }
                         }
 
-                        if (info.Time.DayOfWeek == DayOfWeek.Saturday)
+                        if (time.DayOfWeek == DayOfWeek.Saturday)
                         {
                             item.Foreground = Brushes.Blue;
                         }
-                        else if (info.Time.DayOfWeek == DayOfWeek.Sunday)
+                        else if (time.DayOfWeek == DayOfWeek.Sunday)
                         {
                             item.Foreground = Brushes.Red;
                         }

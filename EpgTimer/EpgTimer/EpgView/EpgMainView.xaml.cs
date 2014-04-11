@@ -33,7 +33,7 @@ namespace EpgTimer
         private Dictionary<UInt16, UInt16> viewCustContentKindList = new Dictionary<UInt16, UInt16>();
         private bool viewCustNeedTimeOnly = false;
         private List<EpgServiceInfo> serviceList = new List<EpgServiceInfo>();
-        private SortedList timeList = new SortedList();
+        private List<KeyValuePair<DateTime, List<ProgramViewItem>>> timeList = new List<KeyValuePair<DateTime, List<ProgramViewItem>>>();
         private List<ProgramViewItem> programList = new List<ProgramViewItem>();
         private List<ReserveViewItem> reserveList = new List<ReserveViewItem>();
         private Point clickPos;
@@ -43,6 +43,18 @@ namespace EpgTimer
 
         private bool updateEpgData = true;
         private bool updateReserveData = true;
+
+        class TimeKeyComparer : IComparer<KeyValuePair<DateTime, List<ProgramViewItem>>>
+        {
+            public int Compare(KeyValuePair<DateTime, List<ProgramViewItem>> x, KeyValuePair<DateTime, List<ProgramViewItem>> y)
+            {
+                return x.Key.CompareTo(y.Key);
+            }
+            public static KeyValuePair<DateTime, List<ProgramViewItem>> ComparedItem(DateTime key)
+            {
+                return new KeyValuePair<DateTime, List<ProgramViewItem>>(key, null);
+            }
+        }
 
         public EpgMainView()
         {
@@ -89,8 +101,6 @@ namespace EpgTimer
             programList.Clear();
             reserveList.Clear();
 
-            timeList = null;
-            timeList = new SortedList();
             serviceList = null;
             serviceList = new List<EpgServiceInfo>();
             programList = null;
@@ -120,8 +130,7 @@ namespace EpgTimer
             {
                 nowViewTimer.Stop();
                 DateTime nowTime = DateTime.Now;
-                TimePosInfo startTime = timeList.GetByIndex(0) as TimePosInfo;
-                if (nowTime < startTime.Time)
+                if (timeList.Count < 1 || nowTime < timeList[0].Key)
                 {
                     if (nowLine != null)
                     {
@@ -146,17 +155,17 @@ namespace EpgTimer
 
                 double posY = 0;
                 DateTime chkNowTime = new DateTime(nowTime.Year, nowTime.Month, nowTime.Day, nowTime.Hour, 0, 0);
-                foreach (TimePosInfo time in timeList.Values)
+                for (int i = 0; i < timeList.Count; i++)
                 {
-                    if (chkNowTime == time.Time)
+                    if (chkNowTime == timeList[i].Key)
                     {
-                        posY = Math.Ceiling(time.TopPos + ((nowTime - chkNowTime).TotalMinutes * Settings.Instance.MinHeight));
+                        posY = Math.Ceiling((i * 60 + (nowTime - chkNowTime).TotalMinutes) * Settings.Instance.MinHeight);
                         break;
                     }
-                    else if (chkNowTime < time.Time)
+                    else if (chkNowTime < timeList[i].Key)
                     {
                         //時間省かれてる
-                        posY = Math.Ceiling(time.TopPos);
+                        posY = Math.Ceiling(i * 60 * Settings.Instance.MinHeight);
                         break;
                     }
                 }
@@ -262,11 +271,8 @@ namespace EpgTimer
         {
             try
             {
-                if (timeList.Count > 0)
                 {
-                    int timeIndex = (int)Math.Floor(cursorPos.Y / (60 * Settings.Instance.MinHeight));
-                    TimePosInfo time = timeList.GetByIndex(timeIndex) as TimePosInfo;
-                    foreach (ReserveViewItem resInfo in time.ReserveList)
+                    foreach (ReserveViewItem resInfo in reserveList)
                     {
                         if (resInfo.LeftPos <= cursorPos.X && cursorPos.X < resInfo.LeftPos + resInfo.Width &&
                             resInfo.TopPos <= cursorPos.Y && cursorPos.Y < resInfo.TopPos + resInfo.Height)
@@ -294,11 +300,10 @@ namespace EpgTimer
         {
             try
             {
-                if (timeList.Count > 0)
+                int timeIndex = (int)(cursorPos.Y / (60 * Settings.Instance.MinHeight));
+                if (0 <= timeIndex && timeIndex < timeList.Count)
                 {
-                    int timeIndex = (int)Math.Floor(cursorPos.Y / (60 * Settings.Instance.MinHeight));
-                    TimePosInfo time = timeList.GetByIndex(timeIndex) as TimePosInfo;
-                    foreach (ProgramViewItem pgInfo in time.ProgramList)
+                    foreach (ProgramViewItem pgInfo in timeList[timeIndex].Value)
                     {
                         if (pgInfo.LeftPos <= cursorPos.X && cursorPos.X < pgInfo.LeftPos + pgInfo.Width &&
                             pgInfo.TopPos <= cursorPos.Y && cursorPos.Y < pgInfo.TopPos + pgInfo.Height)
@@ -1083,11 +1088,8 @@ namespace EpgTimer
             {
                 Button timeButton = sender as Button;
 
-                TimePosInfo startPos = timeList.GetByIndex(0) as TimePosInfo;
-                DateTime startTime = startPos.Time;
-
                 DateTime time = (DateTime)timeButton.DataContext;
-                if (time < startTime)
+                if (timeList.Count < 1 || time < timeList[0].Key)
                 {
                     epgProgramView.scrollViewer.ScrollToVerticalOffset(0);
                 }
@@ -1095,8 +1097,7 @@ namespace EpgTimer
                 {
                     for (int i = 0; i < timeList.Count; i++)
                     {
-                        TimePosInfo info = timeList.GetByIndex(i) as TimePosInfo;
-                        if (time <= info.Time)
+                        if (time <= timeList[i].Key)
                         {
                             epgProgramView.scrollViewer.ScrollToVerticalOffset(Math.Ceiling(i * 60 * Settings.Instance.MinHeight));
                             break;
@@ -1157,8 +1158,7 @@ namespace EpgTimer
                 {
                     return;
                 }
-                TimePosInfo startPos = timeList.GetByIndex(0) as TimePosInfo;
-                DateTime startTime = startPos.Time;
+                DateTime startTime = timeList[0].Key;
 
                 DateTime time = DateTime.Now;
                 if (time < startTime)
@@ -1169,8 +1169,7 @@ namespace EpgTimer
                 {
                     for (int i = 0; i < timeList.Count; i++)
                     {
-                        TimePosInfo info = timeList.GetByIndex(i) as TimePosInfo;
-                        if (time <= info.Time)
+                        if (time <= timeList[i].Key)
                         {
                             double pos = ((i - 1) * 60 * Settings.Instance.MinHeight) - 100;
                             if (pos < 0)
@@ -1378,12 +1377,6 @@ namespace EpgTimer
             reserveList.Clear();
             reserveList = null;
             reserveList = new List<ReserveViewItem>();
-            foreach (TimePosInfo time in timeList.Values)
-            {
-                time.ReserveList.Clear();
-                time.ReserveList = null;
-                time.ReserveList = new List<ReserveViewItem>();
-            }
             try
             {
                 //TODO: ここでデフォルトマージンを確認するがEpgTimerNWでは無意味。根本的にはSendCtrlCmdの拡張が必要
@@ -1465,14 +1458,14 @@ namespace EpgTimer
 
                                 reserveList.Add(viewItem);
                                 DateTime chkTime = new DateTime(startTime.Year, startTime.Month, startTime.Day, startTime.Hour, 0, 0);
-                                if (timeList.ContainsKey(chkTime) == true)
+                                int index = timeList.BinarySearch(TimeKeyComparer.ComparedItem(chkTime), new TimeKeyComparer());
+                                if (index >= 0)
                                 {
-                                    TimePosInfo time = timeList[chkTime] as TimePosInfo;
                                     bool modified = false;
                                     if (Settings.Instance.MinimumHeight > 0 && viewItem.ReserveInfo.EventID != 0xFFFF)
                                     {
                                         //予約情報から番組情報を特定し、枠表示位置を再設定する
-                                        foreach (ProgramViewItem pgInfo in time.ProgramList)
+                                        foreach (ProgramViewItem pgInfo in timeList[index].Value)
                                         {
                                             if (viewItem.ReserveInfo.OriginalNetworkID == pgInfo.EventInfo.original_network_id &&
                                                 viewItem.ReserveInfo.TransportStreamID == pgInfo.EventInfo.transport_stream_id &&
@@ -1490,10 +1483,9 @@ namespace EpgTimer
                                     }
                                     if (modified == false)
                                     {
-                                        int index = timeList.IndexOfKey(chkTime);
                                         viewItem.TopPos = index * 60 * Settings.Instance.MinHeight;
                                         viewItem.TopPos += Math.Floor((startTime - chkTime).TotalMinutes * Settings.Instance.MinHeight);
-                                        foreach (ProgramViewItem pgInfo in time.ProgramList)
+                                        foreach (ProgramViewItem pgInfo in timeList[index].Value)
                                         {
                                             if (pgInfo.LeftPos == viewItem.LeftPos && pgInfo.TopPos <= viewItem.TopPos && viewItem.TopPos < pgInfo.TopPos + pgInfo.Height)
                                             {
@@ -1502,22 +1494,6 @@ namespace EpgTimer
                                             }
                                         }
                                     }
-                                }
-
-
-                                //必要時間リストと時間と番組の関連づけ
-                                DateTime EndTime;
-                                EndTime = startTime.AddSeconds(duration);
-
-                                DateTime chkStartTime = new DateTime(startTime.Year, startTime.Month, startTime.Day, startTime.Hour, 0, 0);
-                                while (chkStartTime < EndTime.AddHours(1))
-                                {
-                                    if (timeList.ContainsKey(chkStartTime) != false)
-                                    {
-                                        TimePosInfo timeInfo = timeList[chkStartTime] as TimePosInfo;
-                                        timeInfo.ReserveList.Add(viewItem);
-                                    }
-                                    chkStartTime = chkStartTime.AddHours(1);
                                 }
 
                                 break;
@@ -1543,14 +1519,10 @@ namespace EpgTimer
                 epgProgramView.ClearInfo();
                 timeList.Clear();
                 programList.Clear();
-                timeList = null;
-                timeList = new SortedList();
                 programList = null;
                 programList = new List<ProgramViewItem>();
                 nowViewTimer.Stop();
 
-                DateTime currentStart = new DateTime();
-                DateTime currentEnd = new DateTime();
                 //必要サービスの抽出
                 serviceList.Clear();
 
@@ -1714,20 +1686,15 @@ namespace EpgTimer
                         {
                             EndTime = eventInfo.start_time.AddSeconds(eventInfo.durationSec);
                         }
-                        if (viewCustNeedTimeOnly == false)
-                        {
-                            CheckTime(eventInfo.start_time, EndTime, ref currentStart, ref currentEnd);
-                        }
-                        //必要時間リストと時間と番組の関連づけ
+                        //必要時間リストの構築
                         DateTime chkStartTime = new DateTime(eventInfo.start_time.Year, eventInfo.start_time.Month, eventInfo.start_time.Day, eventInfo.start_time.Hour, 0, 0);
-                        while (chkStartTime < EndTime.AddHours(1))
+                        while (chkStartTime <= EndTime)
                         {
-                            if (timeList.ContainsKey(chkStartTime) == false)
+                            int index = timeList.BinarySearch(TimeKeyComparer.ComparedItem(chkStartTime), new TimeKeyComparer());
+                            if (index < 0)
                             {
-                                timeList.Add(chkStartTime, new TimePosInfo(chkStartTime, 0));
+                                timeList.Insert(~index, new KeyValuePair<DateTime, List<ProgramViewItem>>(chkStartTime, new List<ProgramViewItem>()));
                             }
-                            TimePosInfo timeInfo = timeList[chkStartTime] as TimePosInfo;
-                            timeInfo.ProgramList.Add(viewItem);
                             chkStartTime = chkStartTime.AddHours(1);
                         }
                     }
@@ -1737,20 +1704,18 @@ namespace EpgTimer
                 if (viewCustNeedTimeOnly == false)
                 {
                     //番組のない時間帯を追加
-                    DateTime chkStartTime = new DateTime(currentStart.Year, currentStart.Month, currentStart.Day, currentStart.Hour, 0, 0);
-                    while (chkStartTime < currentEnd)
+                    for (int i = 1; i < timeList.Count; i++)
                     {
-                        if (timeList.ContainsKey(chkStartTime) == false)
+                        if (timeList[i].Key > timeList[i - 1].Key.AddHours(1))
                         {
-                            timeList.Add(chkStartTime, new TimePosInfo(chkStartTime, 0));
+                            timeList.Insert(i, new KeyValuePair<DateTime, List<ProgramViewItem>>(timeList[i - 1].Key.AddHours(1), new List<ProgramViewItem>()));
                         }
-                        chkStartTime = chkStartTime.AddHours(1);
                     }
 
                     //番組の表示位置設定
                     foreach (ProgramViewItem item in programList)
                     {
-                        item.TopPos = (item.EventInfo.start_time - currentStart).TotalMinutes * Settings.Instance.MinHeight;
+                        item.TopPos = (item.EventInfo.start_time - timeList[0].Key).TotalMinutes * Settings.Instance.MinHeight;
                     }
                 }
                 else
@@ -1764,9 +1729,9 @@ namespace EpgTimer
                             item.EventInfo.start_time.Hour,
                             0,
                             0);
-                        if (timeList.ContainsKey(chkStartTime) == true)
+                        int index = timeList.BinarySearch(TimeKeyComparer.ComparedItem(chkStartTime), new TimeKeyComparer());
+                        if (index >= 0)
                         {
-                            int index = timeList.IndexOfKey(chkStartTime);
                             item.TopPos = (index * 60 + (item.EventInfo.start_time - chkStartTime).TotalMinutes) * Settings.Instance.MinHeight;
                         }
                     }
@@ -1796,11 +1761,14 @@ namespace EpgTimer
                     }
                 }
 
-                double topPos = 0;
-                foreach (TimePosInfo time in timeList.Values)
+                //必要時間リストと時間と番組の関連づけ
+                foreach (ProgramViewItem item in programList)
                 {
-                    time.TopPos = topPos;
-                    topPos += 60 * Settings.Instance.MinHeight;
+                    int index = Math.Max((int)(item.TopPos / (60 * Settings.Instance.MinHeight)), 0);
+                    while (index < Math.Min((int)((item.TopPos + item.Height) / (60 * Settings.Instance.MinHeight)) + 1, timeList.Count))
+                    {
+                        timeList[index++].Value.Add(item);
+                    }
                 }
 
                 epgProgramView.SetProgramList(
@@ -1808,8 +1776,13 @@ namespace EpgTimer
                     primeServiceList.Count() * Settings.Instance.ServiceWidth,
                     timeList.Count * 60 * Settings.Instance.MinHeight);
 
-                timeView.SetTime(timeList, viewCustNeedTimeOnly, false);
-                dateView.SetTime(timeList);
+                List<DateTime> dateTimeList = new List<DateTime>();
+                foreach (var item in timeList)
+                {
+                    dateTimeList.Add(item.Key);
+                }
+                timeView.SetTime(dateTimeList, viewCustNeedTimeOnly, false);
+                dateView.SetTime(dateTimeList);
                 serviceView.SetService(primeServiceList);
 
                 ReDrawNowLine();
@@ -1832,8 +1805,6 @@ namespace EpgTimer
                 programList.Clear();
                 nowViewTimer.Stop();
 
-                DateTime currentStart = new DateTime();
-                DateTime currentEnd = new DateTime();
                 serviceList.Clear();
 
                 //番組情報の検索
@@ -2029,20 +2000,15 @@ namespace EpgTimer
                         {
                             EndTime = eventInfo.start_time.AddSeconds(eventInfo.durationSec);
                         }
-                        if (viewCustNeedTimeOnly == false)
-                        {
-                            CheckTime(eventInfo.start_time, EndTime, ref currentStart, ref currentEnd);
-                        }
-                        //必要時間リストと時間と番組の関連づけ
+                        //必要時間リストの構築
                         DateTime chkStartTime = new DateTime(eventInfo.start_time.Year, eventInfo.start_time.Month, eventInfo.start_time.Day, eventInfo.start_time.Hour, 0, 0);
-                        while (chkStartTime < EndTime.AddHours(1))
+                        while (chkStartTime <= EndTime)
                         {
-                            if (timeList.ContainsKey(chkStartTime) == false)
+                            int index = timeList.BinarySearch(TimeKeyComparer.ComparedItem(chkStartTime), new TimeKeyComparer());
+                            if (index < 0)
                             {
-                                timeList.Add(chkStartTime, new TimePosInfo(chkStartTime, 0));
+                                timeList.Insert(~index, new KeyValuePair<DateTime, List<ProgramViewItem>>(chkStartTime, new List<ProgramViewItem>()));
                             }
-                            TimePosInfo timeInfo = timeList[chkStartTime] as TimePosInfo;
-                            timeInfo.ProgramList.Add(viewItem);
                             chkStartTime = chkStartTime.AddHours(1);
                         }
                     }
@@ -2052,20 +2018,18 @@ namespace EpgTimer
                 if (viewCustNeedTimeOnly == false)
                 {
                     //番組のない時間帯を追加
-                    DateTime chkStartTime = new DateTime(currentStart.Year, currentStart.Month, currentStart.Day, currentStart.Hour, 0, 0);
-                    while (chkStartTime < currentEnd)
+                    for (int i = 1; i < timeList.Count; i++)
                     {
-                        if (timeList.ContainsKey(chkStartTime) == false)
+                        if (timeList[i].Key > timeList[i - 1].Key.AddHours(1))
                         {
-                            timeList.Add(chkStartTime, new TimePosInfo(chkStartTime, 0));
+                            timeList.Insert(i, new KeyValuePair<DateTime, List<ProgramViewItem>>(timeList[i - 1].Key.AddHours(1), new List<ProgramViewItem>()));
                         }
-                        chkStartTime = chkStartTime.AddHours(1);
                     }
 
                     //番組の表示位置設定
                     foreach (ProgramViewItem item in programList)
                     {
-                        item.TopPos = (item.EventInfo.start_time - currentStart).TotalMinutes * Settings.Instance.MinHeight;
+                        item.TopPos = (item.EventInfo.start_time - timeList[0].Key).TotalMinutes * Settings.Instance.MinHeight;
                     }
                 }
                 else
@@ -2079,9 +2043,9 @@ namespace EpgTimer
                             item.EventInfo.start_time.Hour,
                             0,
                             0);
-                        if (timeList.ContainsKey(chkStartTime) == true)
+                        int index = timeList.BinarySearch(TimeKeyComparer.ComparedItem(chkStartTime), new TimeKeyComparer());
+                        if (index >= 0)
                         {
-                            int index = timeList.IndexOfKey(chkStartTime);
                             item.TopPos = (index * 60 + (item.EventInfo.start_time - chkStartTime).TotalMinutes) * Settings.Instance.MinHeight;
                         }
                     }
@@ -2111,11 +2075,14 @@ namespace EpgTimer
                     }
                 }
 
-                double topPos = 0;
-                foreach (TimePosInfo time in timeList.Values)
+                //必要時間リストと時間と番組の関連づけ
+                foreach (ProgramViewItem item in programList)
                 {
-                    time.TopPos = topPos;
-                    topPos += 60 * Settings.Instance.MinHeight;
+                    int index = Math.Max((int)(item.TopPos / (60 * Settings.Instance.MinHeight)), 0);
+                    while (index < Math.Min((int)((item.TopPos + item.Height) / (60 * Settings.Instance.MinHeight)) + 1, timeList.Count))
+                    {
+                        timeList[index++].Value.Add(item);
+                    }
                 }
 
                 epgProgramView.SetProgramList(
@@ -2123,8 +2090,13 @@ namespace EpgTimer
                     primeServiceList.Count() * Settings.Instance.ServiceWidth,
                     timeList.Count * 60 * Settings.Instance.MinHeight);
 
-                timeView.SetTime(timeList, viewCustNeedTimeOnly, false);
-                dateView.SetTime(timeList);
+                List<DateTime> dateTimeList = new List<DateTime>();
+                foreach (var item in timeList)
+                {
+                    dateTimeList.Add(item.Key);
+                }
+                timeView.SetTime(dateTimeList, viewCustNeedTimeOnly, false);
+                dateView.SetTime(dateTimeList);
                 serviceView.SetService(primeServiceList);
 
                 ReDrawNowLine();
@@ -2132,49 +2104,6 @@ namespace EpgTimer
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
-
-        private void CheckTime(DateTime newStart, DateTime newEnd, ref DateTime currentStart, ref DateTime currentEnd)
-        {
-            if (currentStart.Ticks == TimeSpan.Zero.Ticks)
-            {
-                currentStart = newStart;
-                currentStart = new DateTime(currentStart.Year, currentStart.Month, currentStart.Day, currentStart.Hour, 0, 0);
-            }
-            else
-            {
-                if (newStart.Ticks != TimeSpan.Zero.Ticks)
-                {
-                    if (currentStart > newStart)
-                    {
-                        currentStart = newStart;
-                        currentStart = new DateTime(currentStart.Year, currentStart.Month, currentStart.Day, currentStart.Hour, 0, 0);
-                    }
-                }
-            }
-
-            if (currentEnd.Ticks == TimeSpan.Zero.Ticks)
-            {
-                currentEnd = newEnd;
-                if (currentEnd.Minute != 0)
-                {
-                    currentEnd = new DateTime(currentEnd.Year, currentEnd.Month, currentEnd.Day, currentEnd.Hour, 0, 0).AddHours(1);
-                }
-            }
-            else
-            {
-                if (newEnd.Ticks != TimeSpan.Zero.Ticks)
-                {
-                    if (currentEnd < newEnd)
-                    {
-                        currentEnd = newEnd;
-                        if (currentEnd.Minute != 0)
-                        {
-                            currentEnd = new DateTime(currentEnd.Year, currentEnd.Month, currentEnd.Day, currentEnd.Hour, 0, 0).AddHours(1);
-                        }
-                    }
-                }
             }
         }
 

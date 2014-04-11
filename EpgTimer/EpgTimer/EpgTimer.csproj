@@ -184,7 +184,6 @@
     <Compile Include="DefineClass\PriorityInfo.cs" />
     <Compile Include="DefineClass\RecModeInfo.cs" />
     <Compile Include="DefineClass\YesNoInfo.cs" />
-    <Compile Include="DefineClass\TimePosInfo.cs" />
     <Compile Include="EpgDataViewItem.xaml.cs">
       <DependentUpon>EpgDataViewItem.xaml</DependentUpon>
     </Compile>
