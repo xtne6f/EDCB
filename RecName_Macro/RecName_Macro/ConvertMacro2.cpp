@@ -8,108 +8,60 @@
 
 CConvertMacro2::CConvertMacro2(void)
 {
-	::CoInitialize( NULL );
-	HRESULT hr=regExp.CreateInstance(CLSID_RegExp);
-	if(FAILED(hr)){
-		regExp = NULL;
-	}
 }
 
 
 CConvertMacro2::~CConvertMacro2(void)
 {
-	if( regExp != NULL ){
-		regExp.Release();
-	}
-
-	::CoUninitialize();
 }
+
+static BOOL ExpandMacro(wstring var, PLUGIN_RESERVE_INFO* info, EPG_EVENT_INFO* epgInfo, wstring& convert);
 
 BOOL CConvertMacro2::Convert(wstring macro, PLUGIN_RESERVE_INFO* info, EPG_EVENT_INFO* epgInfo, wstring& convert)
 {
-	convert = macro;
-	wstring strTitle=L"";
-	wstring strSDYYYY=L"";
-	wstring strSDYY=L"";
-	wstring strSDMM=L"";
-	wstring strSDM=L"";
-	wstring strSDDD=L"";
-	wstring strSDD=L"";
-	wstring strSDW=L"";
-	wstring strSTHH=L"";
-	wstring strSTH=L"";
-	wstring strSTMM=L"";
-	wstring strSTM=L"";
-	wstring strSTSS=L"";
-	wstring strSTS=L"";
-	wstring strEDYYYY=L"";
-	wstring strEDYY=L"";
-	wstring strEDMM=L"";
-	wstring strEDM=L"";
-	wstring strEDDD=L"";
-	wstring strEDD=L"";
-	wstring strEDW=L"";
-	wstring strETHH=L"";
-	wstring strETH=L"";
-	wstring strETMM=L"";
-	wstring strETM=L"";
-	wstring strETSS=L"";
-	wstring strETS=L"";
-	wstring strONID10=L"";
-	wstring strTSID10=L"";
-	wstring strSID10=L"";
-	wstring strEID10=L"";
-	wstring strONID16=L"";
-	wstring strTSID16=L"";
-	wstring strSID16=L"";
-	wstring strEID16=L"";
-	wstring strServiceName=L"";
-	wstring strSDYYYY28=L"";
-	wstring strSDYY28=L"";
-	wstring strSDMM28=L"";
-	wstring strSDM28=L"";
-	wstring strSDDD28=L"";
-	wstring strSDD28=L"";
-	wstring strSDW28=L"";
-	wstring strSTHH28=L"";
-	wstring strSTH28=L"";
-	wstring strEDYYYY28=L"";
-	wstring strEDYY28=L"";
-	wstring strEDMM28=L"";
-	wstring strEDM28=L"";
-	wstring strEDDD28=L"";
-	wstring strEDD28=L"";
-	wstring strEDW28=L"";
-	wstring strETHH28=L"";
-	wstring strETH28=L"";
-	wstring strDUH=L"";
-	wstring strDUHH=L"";
-	wstring strDUM=L"";
-	wstring strDUMM=L"";
-	wstring strDUS=L"";
-	wstring strDUSS=L"";
-	wstring strTitle2=L"";
-	wstring strGenre=L"";
-	wstring strGenre2=L"";
-	wstring strSubTitle=L"";
-	wstring strSubTitle2=L"";
+	convert = L"";
 
-	strTitle = info->eventName;
+	for( size_t pos = 0;; ){
+		size_t next = macro.find(L'$', pos);
+		if( next == wstring::npos ){
+			convert.append(macro, pos, wstring::npos);
+			break;
+		}
+		convert.append(macro, pos, next - pos);
+		pos = next;
 
-	Format(strSDYYYY, L"%04d", info->startTime.wYear);
-	Format(strSDYY, L"%02d", info->startTime.wYear%100);
-	Format(strSDMM, L"%02d", info->startTime.wMonth);
-	Format(strSDM, L"%d", info->startTime.wMonth);
-	Format(strSDDD, L"%02d", info->startTime.wDay);
-	Format(strSDD, L"%d", info->startTime.wDay);
-	GetDayOfWeekString2(info->startTime, strSDW);
-	Format(strSTHH, L"%02d", info->startTime.wHour);
-	Format(strSTH, L"%d", info->startTime.wHour);
-	Format(strSTMM, L"%02d", info->startTime.wMinute);
-	Format(strSTM, L"%d", info->startTime.wMinute);
-	Format(strSTSS, L"%02d", info->startTime.wSecond);
-	Format(strSTS, L"%d", info->startTime.wSecond);
+		next = macro.find(L'$', pos + 1);
+		if( next == wstring::npos ){
+			convert.append(macro, pos, wstring::npos);
+			break;
+		}
+		if( ExpandMacro(macro.substr(pos + 1, next - pos - 1), info, epgInfo, convert) == FALSE ){
+			convert += L'$';
+			pos++;
+		}else{
+			pos = next + 1;
+		}
+	}
+	Replace(convert, L"\r", L"");
+	Replace(convert, L"\n", L"");
 
+	return TRUE;
+}
+
+static BOOL ExpandMacro(wstring var, PLUGIN_RESERVE_INFO* info, EPG_EVENT_INFO* epgInfo, wstring& convert)
+{
+	//ŠÖ”‚ğÏ‚Ş
+	vector<wstring> funcStack;
+	while( !var.empty() && var.back() == L')' ){
+		size_t n = var.find(L'(');
+		if( n == wstring::npos ){
+			return FALSE;
+		}
+		funcStack.push_back(var.substr(0, n));
+		var = var.substr(n + 1, var.size() - 1 - (n + 1));
+	}
+
+	wstring strSDW28;
 	SYSTEMTIME t28TimeS;
 	if( 0 <= info->startTime.wHour && info->startTime.wHour < 4 ){
 		GetSumTime(info->startTime, -24*60*60, &t28TimeS);
@@ -120,32 +72,10 @@ BOOL CConvertMacro2::Convert(wstring macro, PLUGIN_RESERVE_INFO* info, EPG_EVENT
 		GetDayOfWeekString2(t28TimeS, strSDW28);
 	}
 
-	Format(strSDYYYY28, L"%04d", t28TimeS.wYear);
-	Format(strSDYY28, L"%02d", t28TimeS.wYear%100);
-	Format(strSDMM28, L"%02d", t28TimeS.wMonth);
-	Format(strSDM28, L"%d", t28TimeS.wMonth);
-	Format(strSDDD28, L"%02d", t28TimeS.wDay);
-	Format(strSDD28, L"%d", t28TimeS.wDay);
-	Format(strSTHH28, L"%02d", t28TimeS.wHour);
-	Format(strSTH28, L"%d", t28TimeS.wHour);
-
 	SYSTEMTIME tEnd;
 	GetI64Time(info->startTime, info->durationSec, NULL, NULL, &tEnd);
 
-	Format(strEDYYYY, L"%04d", tEnd.wYear);
-	Format(strEDYY, L"%02d", tEnd.wYear%100);
-	Format(strEDMM, L"%02d", tEnd.wMonth);
-	Format(strEDM, L"%d", tEnd.wMonth);
-	Format(strEDDD, L"%02d", tEnd.wDay);
-	Format(strEDD, L"%d", tEnd.wDay);
-	GetDayOfWeekString2(tEnd, strEDW);
-	Format(strETHH, L"%02d", tEnd.wHour);
-	Format(strETH, L"%d", tEnd.wHour);
-	Format(strETMM, L"%02d", tEnd.wMinute);
-	Format(strETM, L"%d", tEnd.wMinute);
-	Format(strETSS, L"%02d", tEnd.wSecond);
-	Format(strETS, L"%d", tEnd.wSecond);
-
+	wstring strEDW28;
 	SYSTEMTIME t28TimeE;
 	if( 0 <= tEnd.wHour && tEnd.wHour < 4 ){
 		GetSumTime(tEnd, -24*60*60, &t28TimeE);
@@ -156,150 +86,169 @@ BOOL CConvertMacro2::Convert(wstring macro, PLUGIN_RESERVE_INFO* info, EPG_EVENT
 		GetDayOfWeekString2(t28TimeE, strEDW28);
 	}
 
-	Format(strEDYYYY28, L"%04d", t28TimeE.wYear);
-	Format(strEDYY28, L"%02d", t28TimeE.wYear%100);
-	Format(strEDMM28, L"%02d", t28TimeE.wMonth);
-	Format(strEDM28, L"%d", t28TimeE.wMonth);
-	Format(strEDDD28, L"%02d", t28TimeE.wDay);
-	Format(strEDD28, L"%d", t28TimeE.wDay);
-	Format(strETHH28, L"%02d", t28TimeE.wHour);
-	Format(strETH28, L"%d", t28TimeE.wHour);
-
-	Format(strONID10, L"%d", info->ONID);
-	Format(strTSID10, L"%d", info->TSID);
-	Format(strSID10, L"%d", info->SID);
-	Format(strEID10, L"%d", info->EventID);
-	Format(strONID16, L"%04X", info->ONID);
-	Format(strTSID16, L"%04X", info->TSID);
-	Format(strSID16, L"%04X", info->SID);
-	Format(strEID16, L"%04X", info->EventID);
-
-	strServiceName = info->serviceName;
-
-	Format(strDUHH, L"%02d", info->durationSec/(60*60));
-	Format(strDUH, L"%d", info->durationSec/(60*60));
-	Format(strDUMM, L"%02d", (info->durationSec%(60*60))/60);
-	Format(strDUM, L"%d", (info->durationSec%(60*60))/60);
-	Format(strDUSS, L"%02d", info->durationSec%60);
-	Format(strDUS, L"%d", info->durationSec%60);
-
-	strTitle2 = info->eventName;
-	while( (strTitle2.find(L"[") != string::npos) && (strTitle2.find(L"]") != string::npos) ){
-		wstring strSep1=L"";
-		wstring strSep2=L"";
-		Separate(strTitle2, L"[", strSep1, strTitle2);
-		Separate(strTitle2, L"]", strSep2, strTitle2);
-		strSep1 += strTitle2;
-		strTitle2 = strSep1;
-	}
-
-	if(epgInfo != NULL ){
-		if( epgInfo->contentInfo != NULL ){
-			if( epgInfo->contentInfo->listSize > 0 ){
-				GetGenreName(epgInfo->contentInfo->nibbleList[0].content_nibble_level_1, 0xFF, strGenre);
-				GetGenreName(epgInfo->contentInfo->nibbleList[0].content_nibble_level_1, epgInfo->contentInfo->nibbleList[0].content_nibble_level_2, strGenre2);
+	wstring ret;
+	if( var == L"Title" )	ret = info->eventName;
+	else if( var == L"SDYYYY" )	Format(ret, L"%04d", info->startTime.wYear);
+	else if( var == L"SDYY" )	Format(ret, L"%02d", info->startTime.wYear%100);
+	else if( var == L"SDMM" )	Format(ret, L"%02d", info->startTime.wMonth);
+	else if( var == L"SDM" )	Format(ret, L"%d", info->startTime.wMonth);
+	else if( var == L"SDDD" )	Format(ret, L"%02d", info->startTime.wDay);
+	else if( var == L"SDD" )	Format(ret, L"%d", info->startTime.wDay);
+	else if( var == L"SDW" )	GetDayOfWeekString2(info->startTime, ret);
+	else if( var == L"STHH" )	Format(ret, L"%02d", info->startTime.wHour);
+	else if( var == L"STH" )	Format(ret, L"%d", info->startTime.wHour);
+	else if( var == L"STMM" )	Format(ret, L"%02d", info->startTime.wMinute);
+	else if( var == L"STM" )	Format(ret, L"%d", info->startTime.wMinute);
+	else if( var == L"STSS" )	Format(ret, L"%02d", info->startTime.wSecond);
+	else if( var == L"STS" )	Format(ret, L"%d", info->startTime.wSecond);
+	else if( var == L"EDYYYY" )	Format(ret, L"%04d", tEnd.wYear);
+	else if( var == L"EDYY" )	Format(ret, L"%02d", tEnd.wYear%100);
+	else if( var == L"EDMM" )	Format(ret, L"%02d", tEnd.wMonth);
+	else if( var == L"EDM" )	Format(ret, L"%d", tEnd.wMonth);
+	else if( var == L"EDDD" )	Format(ret, L"%02d", tEnd.wDay);
+	else if( var == L"EDD" )	Format(ret, L"%d", tEnd.wDay);
+	else if( var == L"EDW" )	GetDayOfWeekString2(tEnd, ret);
+	else if( var == L"ETHH" )	Format(ret, L"%02d", tEnd.wHour);
+	else if( var == L"ETH" )	Format(ret, L"%d", tEnd.wHour);
+	else if( var == L"ETMM" )	Format(ret, L"%02d", tEnd.wMinute);
+	else if( var == L"ETM" )	Format(ret, L"%d", tEnd.wMinute);
+	else if( var == L"ETSS" )	Format(ret, L"%02d", tEnd.wSecond);
+	else if( var == L"ETS" )	Format(ret, L"%d", tEnd.wSecond);
+	else if( var == L"ONID10" )	Format(ret, L"%d", info->ONID);
+	else if( var == L"TSID10" )	Format(ret, L"%d", info->TSID);
+	else if( var == L"SID10" )	Format(ret, L"%d", info->SID);
+	else if( var == L"EID10" )	Format(ret, L"%d", info->EventID);
+	else if( var == L"ONID16" )	Format(ret, L"%04X", info->ONID);
+	else if( var == L"TSID16" )	Format(ret, L"%04X", info->TSID);
+	else if( var == L"SID16" )	Format(ret, L"%04X", info->SID);
+	else if( var == L"EID16" )	Format(ret, L"%04X", info->EventID);
+	else if( var == L"ServiceName" )	ret = info->serviceName;
+	else if( var == L"SDYYYY28" )	Format(ret, L"%04d", t28TimeS.wYear);
+	else if( var == L"SDYY28" )	Format(ret, L"%02d", t28TimeS.wYear%100);
+	else if( var == L"SDMM28" )	Format(ret, L"%02d", t28TimeS.wMonth);
+	else if( var == L"SDM28" )	Format(ret, L"%d", t28TimeS.wMonth);
+	else if( var == L"SDDD28" )	Format(ret, L"%02d", t28TimeS.wDay);
+	else if( var == L"SDD28" )	Format(ret, L"%d", t28TimeS.wDay);
+	else if( var == L"SDW28" )	ret = strSDW28;
+	else if( var == L"STHH28" )	Format(ret, L"%02d", t28TimeS.wHour);
+	else if( var == L"STH28" )	Format(ret, L"%d", t28TimeS.wHour);
+	else if( var == L"EDYYYY28" )	Format(ret, L"%04d", t28TimeE.wYear);
+	else if( var == L"EDYY28" )	Format(ret, L"%02d", t28TimeE.wYear%100);
+	else if( var == L"EDMM28" )	Format(ret, L"%02d", t28TimeE.wMonth);
+	else if( var == L"EDM28" )	Format(ret, L"%d", t28TimeE.wMonth);
+	else if( var == L"EDDD28" )	Format(ret, L"%02d", t28TimeE.wDay);
+	else if( var == L"EDD28" )	Format(ret, L"%d", t28TimeE.wDay);
+	else if( var == L"EDW28" )	ret = strEDW28;
+	else if( var == L"ETHH28" )	Format(ret, L"%02d", t28TimeE.wHour);
+	else if( var == L"ETH28" )	Format(ret, L"%d", t28TimeE.wHour);
+	else if( var == L"DUHH" )	Format(ret, L"%02d", info->durationSec/(60*60));
+	else if( var == L"DUH" )	Format(ret, L"%d", info->durationSec/(60*60));
+	else if( var == L"DUMM" )	Format(ret, L"%02d", (info->durationSec%(60*60))/60);
+	else if( var == L"DUM" )	Format(ret, L"%d", (info->durationSec%(60*60))/60);
+	else if( var == L"DUSS" )	Format(ret, L"%02d", info->durationSec%60);
+	else if( var == L"DUS" )	Format(ret, L"%d", info->durationSec%60);
+	else if( var == L"Title2" ){
+		ret = info->eventName;
+		while( ret.find(L"[") != wstring::npos && ret.find(L"]") != wstring::npos ){
+			wstring strSep1;
+			wstring strSep2;
+			Separate(ret, L"[", ret, strSep1);
+			Separate(strSep1, L"]", strSep2, strSep1);
+			ret += strSep1;
+		}
+	}else if( var == L"Genre" ){
+		if( epgInfo != NULL && epgInfo->contentInfo != NULL && epgInfo->contentInfo->listSize > 0 ){
+			GetGenreName(epgInfo->contentInfo->nibbleList[0].content_nibble_level_1, 0xFF, ret);
+		}
+	}else if( var == L"Genre2" ){
+		if( epgInfo != NULL && epgInfo->contentInfo != NULL && epgInfo->contentInfo->listSize > 0 ){
+			GetGenreName(epgInfo->contentInfo->nibbleList[0].content_nibble_level_1, epgInfo->contentInfo->nibbleList[0].content_nibble_level_2, ret);
+		}
+	}else if( var == L"SubTitle" ){
+		if( epgInfo != NULL && epgInfo->shortInfo != NULL ){
+			ret = epgInfo->shortInfo->text_char;
+		}
+	}else if( var == L"SubTitle2" ){
+		if( epgInfo != NULL && epgInfo->shortInfo != NULL ){
+			wstring strSubTitle2 = epgInfo->shortInfo->text_char;
+			strSubTitle2 = strSubTitle2.substr(0, strSubTitle2.find(L"\r\n"));
+			LPCWSTR startsWith[] = { L"#”‘æ", L"0123456789‚O‚P‚Q‚R‚S‚T‚U‚V‚W‚X", NULL };
+			for( size_t j, i = 0; i < strSubTitle2.size(); i++ ){
+				for( j = 0; startsWith[i][j] && startsWith[i][j] != strSubTitle2[i]; j++ );
+				if( startsWith[i][j] == L'\0' ){
+					break;
+				}
+				if( startsWith[i+1] == NULL ){
+					ret = strSubTitle2;
+					break;
+				}
 			}
 		}
-		if( epgInfo->shortInfo != NULL ){
-			strSubTitle = epgInfo->shortInfo->text_char;
-			strSubTitle2 = epgInfo->shortInfo->text_char;
-			wstring r;
-			Separate(strSubTitle2, L"\r\n", strSubTitle2, r);
-			if( IsFindKey(strSubTitle2, L"^[#”‘æ][0-9‚O‚P‚Q‚R‚S‚T‚U‚V‚W‚X]") == FALSE ){
-				strSubTitle2 = L"";
+	}else{
+		return FALSE;
+	}
+
+	//ŠÖ”‚ğ“K—p
+	while( !funcStack.empty() ){
+		wstring func = funcStack.back();
+		funcStack.pop_back();
+		for( size_t i = 0; i < func.size(); i++ ){
+			//”’l•¶šQÆ(&•¶šƒR[ƒh;)‚ğ“WŠJ
+			if( func[i] == L'&' ){
+				wchar_t* p;
+				wchar_t c = (wchar_t)wcstol(&func.c_str()[i + 1], &p, 10);
+				func.replace(i, p - func.c_str() - i + (*p ? 1 : 0), 1, c);
 			}
+		}
+		if( func == L"HtoZ" ){
+			funcStack.push_back(L"Tr_ !\"#&36;%&38;'&40;)*+,-./:;<=>?@[\\]^_`{|}~_@Ih”“•fij–{C|D^FGƒ„H—mnOQeobpP_");
+			funcStack.push_back(L"HtoZ<alnum>");
+		}else if( func == L"ZtoH" ){
+			funcStack.push_back(L"Tr_@Ih”“•fij–{C|D^FGƒ„H—mnOQeobpP_ !\"#&36;%&38;'&40;)*+,-./:;<=>?@[\\]^_`{|}~_");
+			funcStack.push_back(L"ZtoH<alnum>");
+		}else if( func == L"HtoZ<alnum>" ){
+			funcStack.push_back(L"Tr/0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz/‚O‚P‚Q‚R‚S‚T‚U‚V‚W‚X‚`‚a‚b‚c‚d‚e‚f‚g‚h‚i‚j‚k‚l‚m‚n‚o‚p‚q‚r‚s‚t‚u‚v‚w‚x‚y‚‚‚‚ƒ‚„‚…‚†‚‡‚ˆ‚‰‚Š‚‹‚Œ‚‚‚‚‚‘‚’‚“‚”‚•‚–‚—‚˜‚™‚š/");
+		}else if( func == L"ZtoH<alnum>" ){
+			funcStack.push_back(L"Tr/‚O‚P‚Q‚R‚S‚T‚U‚V‚W‚X‚`‚a‚b‚c‚d‚e‚f‚g‚h‚i‚j‚k‚l‚m‚n‚o‚p‚q‚r‚s‚t‚u‚v‚w‚x‚y‚‚‚‚ƒ‚„‚…‚†‚‡‚ˆ‚‰‚Š‚‹‚Œ‚‚‚‚‚‘‚’‚“‚”‚•‚–‚—‚˜‚™‚š/0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz/");
+		}else if( func.compare(0, 2, L"Tr") == 0 && func.size() >= 3 ){
+			//•¶š’uŠ·(Tr/’uŠ·•¶šƒŠƒXƒg/’uŠ·Œã/)
+			size_t n = func.find(func[2], 3);
+			if( n == wstring::npos ){
+				return FALSE;
+			}
+			if( func.find(func[2], n + 1) != 4 + (n - 3) * 2 ){
+				return FALSE;
+			}
+			wstring cmp(func, 3, n - 3);
+			for( wstring::iterator itr = ret.begin(); itr != ret.end(); itr++ ){
+				size_t m = cmp.find(*itr);
+				if( m != wstring::npos ){
+					*itr = func[n + 1 + m];
+				}
+			}
+		}else if( func.compare(0, 2, L"Rm") == 0 && func.size() >= 3 ){
+			//•¶šíœ(Rm/íœ•¶šƒŠƒXƒg/)
+			size_t n = func.find(func[2], 3);
+			if( n == wstring::npos ){
+				return FALSE;
+			}
+			wstring cmp(func, 3, n - 3);
+			for( wstring::iterator itr = ret.begin(); itr != ret.end(); ){
+				if( cmp.find(*itr) != wstring::npos ){
+					itr = ret.erase(itr);
+				}else{
+					itr++;
+				}
+			}
+		}else if( func.compare(0, 2, L"Head") && func.size() >= 5 ){
+			//‘«Ø‚è(Head•¶š”)
+			ret = ret.substr(0, wcstol(&func.c_str()[4], NULL, 10));
+		}else{
+			return FALSE;
 		}
 	}
 
-	Replace(convert, L"$Title$", strTitle);
-	Replace(convert, L"$SDYYYY$", strSDYYYY);
-	Replace(convert, L"$SDYY$", strSDYY);
-	Replace(convert, L"$SDMM$", strSDMM);
-	Replace(convert, L"$SDM$", strSDM);
-	Replace(convert, L"$SDDD$", strSDDD);
-	Replace(convert, L"$SDD$", strSDD);
-	Replace(convert, L"$SDW$", strSDW);
-	Replace(convert, L"$STHH$", strSTHH);
-	Replace(convert, L"$STH$", strSTH);
-	Replace(convert, L"$STMM$", strSTMM);
-	Replace(convert, L"$STM$", strSTM);
-	Replace(convert, L"$STSS$", strSTSS);
-	Replace(convert, L"$STS$", strSTS);
-	Replace(convert, L"$EDYYYY$", strEDYYYY);
-	Replace(convert, L"$EDYY$", strEDYY);
-	Replace(convert, L"$EDMM$", strEDMM);
-	Replace(convert, L"$EDM$", strEDM);
-	Replace(convert, L"$EDDD$", strEDDD);
-	Replace(convert, L"$EDD$", strEDD);
-	Replace(convert, L"$EDW$", strEDW);
-	Replace(convert, L"$ETHH$", strETHH);
-	Replace(convert, L"$ETH$", strETH);
-	Replace(convert, L"$ETMM$", strETMM);
-	Replace(convert, L"$ETM$", strETM);
-	Replace(convert, L"$ETSS$", strETSS);
-	Replace(convert, L"$ETS$", strETS);
-	Replace(convert, L"$ONID10$", strONID10);
-	Replace(convert, L"$TSID10$", strTSID10);
-	Replace(convert, L"$SID10$", strSID10);
-	Replace(convert, L"$EID10$", strEID10);
-	Replace(convert, L"$ONID16$", strONID16);
-	Replace(convert, L"$TSID16$", strTSID16);
-	Replace(convert, L"$SID16$", strSID16);
-	Replace(convert, L"$EID16$", strEID16);
-	Replace(convert, L"$ServiceName$", strServiceName);
-	Replace(convert, L"$SDYYYY28$", strSDYYYY28);
-	Replace(convert, L"$SDYY28$", strSDYY28);
-	Replace(convert, L"$SDMM28$", strSDMM28);
-	Replace(convert, L"$SDM28$", strSDM28);
-	Replace(convert, L"$SDDD28$", strSDDD28);
-	Replace(convert, L"$SDD28$", strSDD28);
-	Replace(convert, L"$SDW28$", strSDW28);
-	Replace(convert, L"$STHH28$", strSTHH28);
-	Replace(convert, L"$STH28$", strSTH28);
-	Replace(convert, L"$EDYYYY28$", strEDYYYY28);
-	Replace(convert, L"$EDYY28$", strEDYY28);
-	Replace(convert, L"$EDMM28$", strEDMM28);
-	Replace(convert, L"$EDM28$", strEDM28);
-	Replace(convert, L"$EDDD28$", strEDDD28);
-	Replace(convert, L"$EDD28$", strEDD28);
-	Replace(convert, L"$EDW28$", strEDW28);
-	Replace(convert, L"$ETHH28$", strETHH28);
-	Replace(convert, L"$ETH28$", strETH28);
-	Replace(convert, L"$DUHH$", strDUHH);
-	Replace(convert, L"$DUH$", strDUH);
-	Replace(convert, L"$DUMM$", strDUMM);
-	Replace(convert, L"$DUM$", strDUM);
-	Replace(convert, L"$DUSS$", strDUSS);
-	Replace(convert, L"$DUS$", strDUS);
-	Replace(convert, L"$Title2$", strTitle2);
-	Replace(convert, L"$Genre$", strGenre);
-	Replace(convert, L"$Genre2$", strGenre2);
-	Replace(convert, L"$SubTitle$", strSubTitle);
-	Replace(convert, L"$SubTitle2$", strSubTitle2);
-	Replace(convert, L"\r\n", L"");
+	convert += ret;
 
 	return TRUE;
 }
-
-BOOL CConvertMacro2::IsFindKey(wstring src, wstring key)
-{
-	//³‹K•\Œ»ƒ‚[ƒh
-	if( this->regExp != NULL && src.size() > 0 && key.size() > 0 ){
-		try{
-			_bstr_t target( src.c_str() );
-			_bstr_t pattern( key.c_str() );
-
-			this->regExp->PutGlobal( VARIANT_TRUE );
-			this->regExp->PutPattern( pattern );
-
-			IMatchCollectionPtr pMatchCol( this->regExp->Execute( target ) );
-
-			if( pMatchCol->Count > 0 ){
-				return TRUE;
-			}
-		}catch(...){
-		}
-	}
-	return FALSE;
-}
-

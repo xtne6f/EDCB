@@ -6,7 +6,6 @@
 
 #include "RecName_PlugIn.h"
 #include "SettingDlg.h"
-#include "ConvertMacro.h"
 #include "ConvertMacro2.h"
 #include <tchar.h>
 
@@ -86,33 +85,7 @@ BOOL WINAPI ConvertRecName(
 	DWORD* recNamesize
 	)
 {
-	if( recNamesize == NULL ){
-		return FALSE;
-	}
-	WCHAR dllPath[512] = L"";
-	GetModuleFileName(g_instance, dllPath, 512);
-
-	wstring iniPath = dllPath;
-	iniPath += L".ini";
-
-	WCHAR buff[1024] = L"";
-	GetPrivateProfileString(L"SET", L"Macro", L"$Title$.ts", buff, 1024, iniPath.c_str());
-
-	wstring convert = L"";
-	CConvertMacro convertMacro;
-	BOOL ret = convertMacro.Convert(buff, info, convert);
-	if( recName == NULL ){
-		*recNamesize = (DWORD)convert.size()+1;
-	}else{
-		if( *recNamesize < (DWORD)convert.size()+1 ){
-			*recNamesize = (DWORD)convert.size()+1;
-			ret = FALSE;
-		}else{
-			wcscpy_s(recName, *recNamesize, convert.c_str());
-		}
-	}
-
-	return ret;
+	return ConvertRecName2(info, NULL, recName, recNamesize);
 }
 
 //入力された予約情報を元に、録画時のファイル名を作成する（拡張子含む）
