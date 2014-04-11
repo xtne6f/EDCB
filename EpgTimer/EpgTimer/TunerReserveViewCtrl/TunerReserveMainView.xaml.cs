@@ -25,7 +25,6 @@ namespace EpgTimer
     /// </summary>
     public partial class TunerReserveMainView : UserControl
     {
-        private SortedList timeList = new SortedList();
         private List<TunerNameViewItem> tunerList = new List<TunerNameViewItem>();
         private List<ReserveViewItem> reserveList = new List<ReserveViewItem>();
         private Point clickPos;
@@ -55,7 +54,6 @@ namespace EpgTimer
             tunerReserveView.ClearInfo();
             tunerReserveTimeView.ClearInfo();
             tunerReserveNameView.ClearInfo();
-            timeList.Clear();
             tunerList.Clear();
             reserveList.Clear();
 
@@ -140,11 +138,8 @@ namespace EpgTimer
         {
             try
             {
-                if (timeList.Count > 0)
                 {
-                    int timeIndex = (int)Math.Floor(cursorPos.Y / (60 * Settings.Instance.MinHeight));
-                    TimePosInfo time = timeList.GetByIndex(timeIndex) as TimePosInfo;
-                    foreach (ReserveViewItem resInfo in time.ReserveList)
+                    foreach (ReserveViewItem resInfo in reserveList)
                     {
                         if (resInfo.LeftPos <= cursorPos.X && cursorPos.X < resInfo.LeftPos + resInfo.Width &&
                             resInfo.TopPos <= cursorPos.Y && cursorPos.Y < resInfo.TopPos + resInfo.Height)
@@ -623,7 +618,7 @@ namespace EpgTimer
             tunerReserveView.ClearInfo();
             tunerReserveTimeView.ClearInfo();
             tunerReserveNameView.ClearInfo();
-            timeList.Clear();
+            List<DateTime> timeList = new List<DateTime>();
             tunerList.Clear();
             reserveList.Clear();
             try
@@ -716,17 +711,16 @@ namespace EpgTimer
                         reserveList.Add(viewItem);
                         tunerAddList.Add(viewItem);
 
-                        //必要時間リストと時間と番組の関連づけ
+                        //必要時間リストの構築
 
                         DateTime chkStartTime = new DateTime(startTime.Year, startTime.Month, startTime.Day, startTime.Hour, 0, 0);
                         while (chkStartTime <= EndTime)
                         {
-                            if (timeList.ContainsKey(chkStartTime) == false)
+                            int index = timeList.BinarySearch(chkStartTime);
+                            if (index < 0)
                             {
-                                timeList.Add(chkStartTime, new TimePosInfo(chkStartTime, 0));
+                                timeList.Insert(~index, chkStartTime);
                             }
-                            TimePosInfo timeInfo = timeList[chkStartTime] as TimePosInfo;
-                            timeInfo.ReserveList.Add(viewItem);
                             chkStartTime = chkStartTime.AddHours(1);
                         }
 
@@ -753,18 +747,11 @@ namespace EpgTimer
                         startTime.Hour,
                         0,
                         0);
-                    if (timeList.ContainsKey(chkStartTime) == true)
+                    int index = timeList.BinarySearch(chkStartTime);
+                    if (index >= 0)
                     {
-                        int index = timeList.IndexOfKey(chkStartTime);
                         item.TopPos = (index * 60 + (startTime - chkStartTime).TotalMinutes) * Settings.Instance.MinHeight;
                     }
-                }
-
-                double topPos = 0;
-                foreach (TimePosInfo time in timeList.Values)
-                {
-                    time.TopPos = topPos;
-                    topPos += 60 * Settings.Instance.MinHeight;
                 }
 
                 tunerReserveTimeView.SetTime(timeList, true);

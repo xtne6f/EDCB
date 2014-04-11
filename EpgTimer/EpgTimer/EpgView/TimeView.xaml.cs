@@ -29,12 +29,12 @@ namespace EpgTimer.EpgView
             stackPanel_time.Children.Clear();
         }
 
-        public void SetTime(System.Collections.SortedList timeList, bool NeedTimeOnly, bool weekMode)
+        public void SetTime(List<DateTime> timeList, bool NeedTimeOnly, bool weekMode)
         {
             try
             {
                 stackPanel_time.Children.Clear();
-                foreach (TimePosInfo info in timeList.Values)
+                foreach (DateTime time in timeList)
                 {
                     TextBlock item = new TextBlock();
 
@@ -45,55 +45,55 @@ namespace EpgTimer.EpgView
                     {
                         if (height >= 1) item.Inlines.Add(new LineBreak());
                         if (height >= 1.5) item.Inlines.Add(new LineBreak());
-                        PutTime(item.Inlines, info.Time);
+                        PutTime(item.Inlines, time);
                     }
                     else
                     {
-                        if (info.Time.Hour % 3 == 0 || NeedTimeOnly == true)
+                        if (time.Hour % 3 == 0 || NeedTimeOnly == true)
                         {
                             if (height < 1)
                             {
-                                PutDate(item.Inlines, info.Time);
-                                PutTime(item.Inlines, info.Time);
+                                PutDate(item.Inlines, time);
+                                PutTime(item.Inlines, time);
 
                             }
                             else if (height < 1.5)
                             {
-                                PutDate(item.Inlines, info.Time);
-                                PutWeekDay(item.Inlines, info.Time);
-                                PutTime(item.Inlines, info.Time);
+                                PutDate(item.Inlines, time);
+                                PutWeekDay(item.Inlines, time);
+                                PutTime(item.Inlines, time);
                             }
                             else
                             {
-                                PutDate(item.Inlines, info.Time);
-                                PutWeekDay(item.Inlines, info.Time);
+                                PutDate(item.Inlines, time);
+                                PutWeekDay(item.Inlines, time);
                                 item.Inlines.Add(new LineBreak());
-                                PutTime(item.Inlines, info.Time);
+                                PutTime(item.Inlines, time);
                             }
                         }
                         else
                         {
                             if (height < 1)
                             {
-                                PutTime(item.Inlines, info.Time);
+                                PutTime(item.Inlines, time);
                             }
                             else if (height < 1.5)
                             {
                                 item.Inlines.Add(new LineBreak());
-                                PutTime(item.Inlines, info.Time);
+                                PutTime(item.Inlines, time);
                             }
                             else
                             {
                                 item.Inlines.Add(new LineBreak());
                                 item.Inlines.Add(new LineBreak());
                                 item.Inlines.Add(new LineBreak());
-                                PutTime(item.Inlines, info.Time);
+                                PutTime(item.Inlines, time);
                             }
                         }
                     }
 
                     item.Margin = new Thickness(1, 1, 1, 0);
-                    item.Background = CommonManager.Instance.CustTimeColorList[info.Time.Hour / 6];
+                    item.Background = CommonManager.Instance.CustTimeColorList[time.Hour / 6];
                     item.TextAlignment = TextAlignment.Center;
                     item.Foreground = Brushes.White;
                     item.FontSize = 12;
