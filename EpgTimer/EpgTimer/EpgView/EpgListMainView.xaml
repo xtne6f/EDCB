@@ -92,8 +92,8 @@
                                 <MenuItem Header="5 (_5)" Name="priority_5" Click="cm_chg_priority_Click" />
                             </MenuItem>
                         </MenuItem>
-                        <MenuItem x:Name="cm_del" Header="予約削除 (_D)" Click="cm_del_Click" />
-                        <MenuItem x:Name="cm_autoadd" Header="自動予約登録 (_A)" Click="cm_autoadd_Click" />
+                        <MenuItem x:Name="cm_del" Header="予約削除" Click="cm_del_Click" />
+                        <MenuItem x:Name="cm_autoadd" Header="自動予約登録" Click="cm_autoadd_Click" />
                         <MenuItem x:Name="cm_timeshift" Header="追っかけ再生 (_P)" Click="cm_timeShiftPlay_Click" />
                         <Separator/>
                         <MenuItem x:Name="cm_view" Header="表示モード (_W)">

@@ -485,11 +485,11 @@ namespace EpgTimer
                 menuItemChg.Items.Add(menuItemChgRecPri);
 
                 MenuItem menuItemDel = new MenuItem();
-                menuItemDel.Header = "予約削除 (_D)";
+                menuItemDel.Header = "予約削除";
                 menuItemDel.Click += new RoutedEventHandler(cm_del_Click);
 
                 MenuItem menuItemAutoAdd = new MenuItem();
-                menuItemAutoAdd.Header = "自動予約登録 (_A)";
+                menuItemAutoAdd.Header = "自動予約登録";
                 menuItemAutoAdd.Click += new RoutedEventHandler(cm_autoadd_Click);
                 MenuItem menuItemTimeshift = new MenuItem();
                 menuItemTimeshift.Header = "追っかけ再生 (_P)";
@@ -501,7 +501,7 @@ namespace EpgTimer
                 menuItemView.Header = "表示モード (_W)";
 
                 MenuItem menuItemViewSetDlg = new MenuItem();
-                menuItemViewSetDlg.Header = "表示設定 (_0)";
+                menuItemViewSetDlg.Header = "表示設定";
                 menuItemViewSetDlg.Click += new RoutedEventHandler(cm_viewSet_Click);
 
                 MenuItem menuItemChgViewMode1 = new MenuItem();

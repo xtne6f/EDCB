@@ -33,9 +33,9 @@
         <ListView Grid.Row="2" Name="listView_result" Margin="10" SelectionMode="Single" ItemsSource="{Binding}" GridViewColumnHeader.Click="GridViewColumnHeader_Click">
             <ListView.Resources>
                 <ContextMenu x:Key="itemMenu" x:Name="cmdMenu" >
-                    <MenuItem Header="ダイアログ表示 (_O)" Click="MenuItem_Click_ShowDialog"  InputGestureText="Enter" />
+                    <MenuItem Header="ダイアログ表示" Click="MenuItem_Click_ShowDialog"  InputGestureText="Enter" />
                     <MenuItem Header="番組名で再検索" Click="MenuItem_Click_Research" />
-                    <MenuItem Header="番組表へジャンプ (_J)" Click="MenuItem_Click_ProgramTable"  InputGestureText="F3" />
+                    <MenuItem Header="番組表へジャンプ" Click="MenuItem_Click_ProgramTable"  InputGestureText="F3" />
                 </ContextMenu>
                 <Style TargetType="ListViewItem">
                     <Setter Property="ToolTipService.ShowDuration" Value="20000" />
