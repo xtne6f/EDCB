@@ -49,20 +49,6 @@
                             <TextBlock x:Name="infoText" TextWrapping="Wrap" LineStackingStrategy="BlockLineHeight"/>
                         </StackPanel>
                     </Grid>
-                    <Rectangle x:Name="popupItemReserveRect" Opacity="0.3" StrokeThickness="3" Fill="Transparent" IsHitTestVisible="False">
-                        <Rectangle.Stroke>
-                            <SolidColorBrush>Blue</SolidColorBrush>
-                        </Rectangle.Stroke>
-                        <Rectangle.Width>
-                            <Binding ElementName="popupItemContainer" Path="Width"/>
-                        </Rectangle.Width>
-                        <Rectangle.Height>
-                            <Binding ElementName="popupItemContainer" Path="ActualHeight"/>
-                        </Rectangle.Height>
-                        <Rectangle.Effect>
-                            <DropShadowEffect BlurRadius="6"/>
-                        </Rectangle.Effect>
-                    </Rectangle>
                 </Canvas>
             </Canvas>
         </ScrollViewer>            

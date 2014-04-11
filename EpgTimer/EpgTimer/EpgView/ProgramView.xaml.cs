@@ -39,7 +39,6 @@ namespace EpgTimer.EpgView
 
         private Point lastPopupPos;
         private ProgramViewItem lastPopupInfo = null;
-        private Rectangle popupReserve = null;
 
         public ProgramView()
         {
@@ -75,13 +74,6 @@ namespace EpgTimer.EpgView
                         }
                     }
                 }
-            }
-
-            if (popupReserve != null)
-            {
-                popupReserve.Visibility = System.Windows.Visibility.Visible;
-                popupReserve = null;
-                popupItemReserveRect.Visibility = System.Windows.Visibility.Hidden;
             }
 
             if (info == null)
@@ -174,26 +166,11 @@ namespace EpgTimer.EpgView
             }
 
             popupItem.Visibility = System.Windows.Visibility.Visible;
-
-            foreach (Rectangle rect in reserveBorder)
-            {
-                if (Canvas.GetLeft(rect) == info.LeftPos && Canvas.GetTop(rect) == info.TopPos)
-                {
-                    popupReserve = rect;
-                    rect.Visibility = System.Windows.Visibility.Hidden;
-                    popupItemReserveRect.Stroke = rect.Stroke;
-                    popupItemReserveRect.Fill = rect.Fill;
-                    popupItemReserveRect.Visibility = System.Windows.Visibility.Visible;
-                    break;
-                }
-            }
         }
 
         public void ClearInfo()
         {
             lastPopupInfo = null;
-            popupReserve = null;
-            popupItemReserveRect.Visibility = System.Windows.Visibility.Hidden;
             popupItem.Visibility = System.Windows.Visibility.Hidden;
 
             foreach (Rectangle info in reserveBorder)
@@ -218,13 +195,11 @@ namespace EpgTimer.EpgView
         {
             try
             {
-                popupReserve = null;
                 foreach (Rectangle info in reserveBorder)
                 {
                     canvas.Children.Remove(info);
                 }
                 reserveBorder.Clear();
-                popupItemReserveRect.Visibility = System.Windows.Visibility.Hidden;
 
                 foreach (ReserveViewItem info in reserveList)
                 {
@@ -264,15 +239,6 @@ namespace EpgTimer.EpgView
                     rect.Width = info.Width;
                     rect.Height = info.Height;
                     rect.IsHitTestVisible = false;
-
-                    if (lastPopupInfo != null && lastPopupInfo.LeftPos == info.LeftPos && lastPopupInfo.TopPos == info.TopPos)
-                    {
-                        popupReserve = rect;
-                        rect.Visibility = System.Windows.Visibility.Hidden;
-                        popupItemReserveRect.Visibility = System.Windows.Visibility.Visible;
-                        popupItemReserveRect.Stroke = rect.Stroke;
-                        popupItemReserveRect.Fill = rect.Fill;
-                    }
 
                     Canvas.SetLeft(rect, info.LeftPos);
                     Canvas.SetTop(rect, info.TopPos - 2);
@@ -435,14 +401,8 @@ namespace EpgTimer.EpgView
         private void epgViewPanel_MouseLeave(object sender, MouseEventArgs e)
         {
             popupItem.Visibility = System.Windows.Visibility.Hidden;
-            popupItemReserveRect.Visibility = System.Windows.Visibility.Hidden;
             lastPopupInfo = null;
             lastPopupPos = new Point(-1, -1);
-            if (popupReserve != null)
-            {
-                popupReserve.Visibility = System.Windows.Visibility.Visible;
-                popupReserve = null;
-            }
         }
     }
 }
