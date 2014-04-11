@@ -54,16 +54,12 @@ BOOL WriteVALUE( const wstring& val, BYTE* buff, DWORD buffSize, DWORD* writeSiz
 		return FALSE;
 	}
 
-	ZeroMemory( buff, stringBuffSize );
 	//まず全体のサイズ
 	DWORD size = 0;
 	if( WriteVALUE( stringBuffSize, buff, stringBuffSize, &size ) == FALSE ){
 		return FALSE;
 	}
-	//文字あれば
-	if( val.size() > 0 ){
-		memcpy(buff + size, val.c_str(), val.size()*sizeof(WCHAR));
-	}
+	memcpy(buff + size, val.c_str(), (val.size()+1)*sizeof(WCHAR));
 	if( writeSize != NULL ){
 		*writeSize = stringBuffSize;
 	}
@@ -85,6 +81,7 @@ BOOL ReadVALUE( wstring* val, BYTE* buff, DWORD buffSize, DWORD* readSize )
 		return FALSE;
 	}
 	
+	//TODO: あまりよろしくない(がx86なら辛うじて動く)
 	*val = (WCHAR*)(buff + size);
 
 	if( readSize != NULL ){
