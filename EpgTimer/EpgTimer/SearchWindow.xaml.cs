@@ -603,6 +603,84 @@ namespace EpgTimer
             }
         }
 
+        private void MenuItem_Click_RecMode(object sender, RoutedEventArgs e)
+        {
+            if (listView_result.SelectedItem != null)
+            {
+                SearchItem item = listView_result.SelectedItem as SearchItem;
+                if (item.IsReserved == true)
+                {
+                    try
+                    {
+                        List<ReserveData> list = new List<ReserveData>();
+                        list.Add(item.ReserveInfo);
+                        list[0].RecSetting.RecMode = byte.Parse((string)((MenuItem)sender).Tag);
+
+                        ErrCode err = (ErrCode)cmd.SendChgReserve(list);
+                        if (err == ErrCode.CMD_ERR_CONNECT)
+                        {
+                            MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
+                        }
+                        if (err == ErrCode.CMD_ERR_TIMEOUT)
+                        {
+                            MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
+                        }
+                        if (err != ErrCode.CMD_SUCCESS)
+                        {
+                            MessageBox.Show("予約変更でエラーが発生しました。");
+                        }
+
+                        CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.ReserveInfo);
+                        CommonManager.Instance.DB.ReloadReserveInfo();
+                        SearchPg();
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                    }
+                }
+            }
+        }
+
+        private void MenuItem_Click_Priority(object sender, RoutedEventArgs e)
+        {
+            if (listView_result.SelectedItem != null)
+            {
+                SearchItem item = listView_result.SelectedItem as SearchItem;
+                if (item.IsReserved == true)
+                {
+                    try
+                    {
+                        List<ReserveData> list = new List<ReserveData>();
+                        list.Add(item.ReserveInfo);
+                        list[0].RecSetting.Priority = byte.Parse((string)((MenuItem)sender).Tag);
+
+                        ErrCode err = (ErrCode)cmd.SendChgReserve(list);
+                        if (err == ErrCode.CMD_ERR_CONNECT)
+                        {
+                            MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
+                        }
+                        if (err == ErrCode.CMD_ERR_TIMEOUT)
+                        {
+                            MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
+                        }
+                        if (err != ErrCode.CMD_SUCCESS)
+                        {
+                            MessageBox.Show("予約変更でエラーが発生しました。");
+                        }
+
+                        CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.ReserveInfo);
+                        CommonManager.Instance.DB.ReloadReserveInfo();
+                        SearchPg();
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                    }
+                }
+            }
+        }
+
         private void MenuItem_Click_ProgramTable(object sender, RoutedEventArgs e)
         {
             SearchItem item1 = this.listView_result.SelectedItem as SearchItem;
@@ -662,6 +740,46 @@ namespace EpgTimer
                 searchKeyView.SetSearchKey(defKey);
 
                 button_search_Click(sender, e);
+            }
+        }
+
+        private void cmdMenu_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (listView_result.SelectedItem != null)
+            {
+                SearchItem selItem = listView_result.SelectedItem as SearchItem;
+                foreach (object item in ((ContextMenu)sender).Items)
+                {
+                    if (item is MenuItem && ((MenuItem)item).Name == "cmdChg")
+                    {
+                        if (selItem.IsReserved == true)
+                        {
+                            ((MenuItem)item).IsEnabled = true;
+                            for (int i = 0; i <= 5; i++)
+                            {
+                                ((MenuItem)((MenuItem)item).Items[i]).IsChecked = (i == selItem.ReserveInfo.RecSetting.RecMode);
+                            }
+                            for (int i = 6; i < ((MenuItem)item).Items.Count; i++)
+                            {
+                                MenuItem subItem = ((MenuItem)item).Items[i] as MenuItem;
+                                if (subItem != null && subItem.Name == "cmdPri")
+                                {
+                                    for (int j = 0; j < subItem.Items.Count; j++)
+                                    {
+                                        ((MenuItem)subItem.Items[j]).IsChecked = (j + 1 == selItem.ReserveInfo.RecSetting.Priority);
+                                    }
+                                    subItem.Header = string.Format((string)subItem.Tag, selItem.ReserveInfo.RecSetting.Priority);
+                                    break;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            ((MenuItem)item).IsEnabled = false;
+                        }
+                        break;
+                    }
+                }
             }
         }
 
