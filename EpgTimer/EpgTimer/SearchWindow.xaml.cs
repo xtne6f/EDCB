@@ -236,66 +236,69 @@ namespace EpgTimer
             {
                 if (listView_result.SelectedItem != null)
                 {
-                    SearchItem item = listView_result.SelectedItem as SearchItem;
-                    EpgEventInfo eventInfo = item.EventInfo;
-
-                    if (eventInfo.StartTimeFlag == 0)
-                    {
-                        MessageBox.Show("開始時間未定のため予約できません");
-                        return;
-                    }
-
-                    ReserveData reserveInfo = new ReserveData();
-                    if (eventInfo.ShortInfo != null)
-                    {
-                        reserveInfo.Title = eventInfo.ShortInfo.event_name;
-                    }
-
-                    reserveInfo.StartTime = eventInfo.start_time;
-                    reserveInfo.StartTimeEpg = eventInfo.start_time;
-
-                    if (eventInfo.DurationFlag == 0)
-                    {
-                        reserveInfo.DurationSecond = 10 * 60;
-                    }
-                    else
-                    {
-                        reserveInfo.DurationSecond = eventInfo.durationSec;
-                    }
-
-                    UInt64 key = CommonManager.Create64Key(eventInfo.original_network_id, eventInfo.transport_stream_id, eventInfo.service_id);
-                    if (ChSet5.Instance.ChList.ContainsKey(key) == true)
-                    {
-                        reserveInfo.StationName = ChSet5.Instance.ChList[key].ServiceName;
-                    }
-                    reserveInfo.OriginalNetworkID = eventInfo.original_network_id;
-                    reserveInfo.TransportStreamID = eventInfo.transport_stream_id;
-                    reserveInfo.ServiceID = eventInfo.service_id;
-                    reserveInfo.EventID = eventInfo.event_id;
-
+                    List<ReserveData> list = new List<ReserveData>();
                     RecSettingData setInfo = new RecSettingData();
                     recSettingView.GetRecSetting(ref setInfo);
-                    reserveInfo.RecSetting = setInfo;
 
-                    List<ReserveData> list = new List<ReserveData>();
-                    list.Add(reserveInfo);
-                    ErrCode err = (ErrCode)cmd.SendAddReserve(list);
-                    if (err == ErrCode.CMD_ERR_CONNECT)
+                    foreach (SearchItem item in listView_result.SelectedItems)
                     {
-                        MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-                    }
-                    if (err == ErrCode.CMD_ERR_TIMEOUT)
-                    {
-                        MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-                    }
-                    if (err != ErrCode.CMD_SUCCESS)
-                    {
-                        MessageBox.Show("予約登録でエラーが発生しました。終了時間がすでに過ぎている可能性があります。");
+                        EpgEventInfo eventInfo = item.EventInfo;
+                        if (item.IsReserved == false && eventInfo.StartTimeFlag != 0)
+                        {
+                            ReserveData reserveInfo = new ReserveData();
+                            if (eventInfo.ShortInfo != null)
+                            {
+                                reserveInfo.Title = eventInfo.ShortInfo.event_name;
+                            }
+
+                            reserveInfo.StartTime = eventInfo.start_time;
+                            reserveInfo.StartTimeEpg = eventInfo.start_time;
+
+                            if (eventInfo.DurationFlag == 0)
+                            {
+                                reserveInfo.DurationSecond = 10 * 60;
+                            }
+                            else
+                            {
+                                reserveInfo.DurationSecond = eventInfo.durationSec;
+                            }
+
+                            UInt64 key = CommonManager.Create64Key(eventInfo.original_network_id, eventInfo.transport_stream_id, eventInfo.service_id);
+                            if (ChSet5.Instance.ChList.ContainsKey(key) == true)
+                            {
+                                reserveInfo.StationName = ChSet5.Instance.ChList[key].ServiceName;
+                            }
+                            reserveInfo.OriginalNetworkID = eventInfo.original_network_id;
+                            reserveInfo.TransportStreamID = eventInfo.transport_stream_id;
+                            reserveInfo.ServiceID = eventInfo.service_id;
+                            reserveInfo.EventID = eventInfo.event_id;
+
+                            reserveInfo.RecSetting = setInfo;
+
+                            list.Add(reserveInfo);
+                        }
                     }
 
-                    CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.ReserveInfo);
-                    CommonManager.Instance.DB.ReloadReserveInfo();
-                    SearchPg();
+                    if (list.Count > 0)
+                    {
+                        ErrCode err = (ErrCode)cmd.SendAddReserve(list);
+                        if (err == ErrCode.CMD_ERR_CONNECT)
+                        {
+                            MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
+                        }
+                        if (err == ErrCode.CMD_ERR_TIMEOUT)
+                        {
+                            MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
+                        }
+                        if (err != ErrCode.CMD_SUCCESS)
+                        {
+                            MessageBox.Show("予約登録でエラーが発生しました。終了時間がすでに過ぎている可能性があります。");
+                        }
+
+                        CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.ReserveInfo);
+                        CommonManager.Instance.DB.ReloadReserveInfo();
+                        SearchPg();
+                    }
                 }
             }
             catch (Exception ex)
