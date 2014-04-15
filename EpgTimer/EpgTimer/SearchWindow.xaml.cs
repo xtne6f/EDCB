@@ -163,6 +163,7 @@ namespace EpgTimer
 
                 EpgSearchKeyInfo key = new EpgSearchKeyInfo();
                 searchKeyView.GetSearchKey(ref key);
+                key.andKey = key.andKey.Substring(key.andKey.StartsWith("^!{999}") ? 7 : 0);
                 List<EpgSearchKeyInfo> keyList = new List<EpgSearchKeyInfo>();
 
                 keyList.Add(key);
