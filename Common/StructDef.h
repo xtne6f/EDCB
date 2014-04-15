@@ -366,6 +366,7 @@ typedef struct _EPGDB_EVENT_INFO{
 		start_time = o.start_time;
 		DurationFlag = o.DurationFlag;
 		durationSec = o.durationSec;
+		freeCAFlag = o.freeCAFlag;
 		SAFE_DELETE(shortInfo);
 		SAFE_DELETE(extInfo);
 		SAFE_DELETE(contentInfo);
