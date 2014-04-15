@@ -568,7 +568,7 @@ namespace EpgTimer
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            if (string.IsNullOrWhiteSpace(this.searchKeyView.ComboBox_andKey.Text))
+            if (Title == "検索")
             {
                 this.searchKeyView.ComboBox_andKey.Focus();
             }
