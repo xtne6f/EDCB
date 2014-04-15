@@ -630,6 +630,77 @@ namespace EpgTimer
             }
         }
 
+        private void MenuItem_Click_ChangeOnOff(object sender, RoutedEventArgs e)
+        {
+            if (listView_result.SelectedItem != null)
+            {
+                new BlackoutWindow(this).showWindow("予約←→無効");
+
+                List<ReserveData> list = new List<ReserveData>();
+                bool IsExistNewReserve = false;
+
+                foreach (SearchItem item in listView_result.SelectedItems)
+                {
+                    if (item.IsReserved == true)
+                    {
+                        if (item.ReserveInfo.RecSetting.RecMode == 5)
+                        {
+                            // 無効 => 予約
+                            RecSettingData defSet = new RecSettingData();
+                            Settings.GetDefRecSetting(0, ref defSet);
+                            item.ReserveInfo.RecSetting.RecMode = defSet.RecMode;
+                        }
+                        else
+                        {
+                            //予約 => 無効
+                            item.ReserveInfo.RecSetting.RecMode = 5;
+                        }
+
+                        list.Add(item.ReserveInfo);
+                    }
+                    else
+                    {
+                        IsExistNewReserve = true;
+                    }
+                }
+
+                if (list.Count > 0)
+                {
+                    try
+                    {
+                        ErrCode err = (ErrCode)cmd.SendChgReserve(list);
+                        if (err == ErrCode.CMD_ERR_CONNECT)
+                        {
+                            MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
+                        }
+                        if (err == ErrCode.CMD_ERR_TIMEOUT)
+                        {
+                            MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
+                        }
+                        if (err != ErrCode.CMD_SUCCESS)
+                        {
+                            MessageBox.Show("予約変更でエラーが発生しました。");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                    }
+                }
+
+                if (IsExistNewReserve == true)
+                {
+                    button_add_reserve_Click(sender, e);
+                }
+                else
+                {
+                    CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.ReserveInfo);
+                    CommonManager.Instance.DB.ReloadReserveInfo();
+                    SearchPg();
+                }
+            }
+        }
+        
         private void MenuItem_Click_ShowDialog(object sender, RoutedEventArgs e)
         {
             if (listView_result.SelectedItem != null)

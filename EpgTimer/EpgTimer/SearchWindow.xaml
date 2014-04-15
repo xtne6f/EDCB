@@ -33,6 +33,8 @@
         <ListView Grid.Row="2" Name="listView_result" Margin="10" SelectionMode="Extended" ItemsSource="{Binding}" GridViewColumnHeader.Click="GridViewColumnHeader_Click">
             <ListView.Resources>
                 <ContextMenu x:Key="itemMenu" x:Name="cmdMenu" Loaded="cmdMenu_Loaded">
+                    <MenuItem Name="cmdDlt" Header="予約削除" Click="MenuItem_Click_DeleteItem" />
+                    <MenuItem Name="cmdOnOff" Header="予約←→無効" Click="MenuItem_Click_ChangeOnOff"  InputGestureText="BackSpace" />
                     <MenuItem Header="ダイアログ表示" Click="MenuItem_Click_ShowDialog"  InputGestureText="Enter" />
                     <MenuItem Name="cmdChg" Header="予約変更 (_C)">
                         <MenuItem Header="全サービス (_0)" Tag="0" Click="MenuItem_Click_RecMode" />
@@ -50,7 +52,6 @@
                             <MenuItem Header="5 (_5)" Tag="5" Click="MenuItem_Click_Priority" />
                         </MenuItem>
                     </MenuItem>
-                    <MenuItem Name="cmdDlt" Header="予約削除" Click="MenuItem_Click_DeleteItem" />
                     <MenuItem Header="番組名で再検索" Click="MenuItem_Click_Research" />
                     <MenuItem Header="番組表へジャンプ" Click="MenuItem_Click_ProgramTable"  InputGestureText="F3" />
                 </ContextMenu>
