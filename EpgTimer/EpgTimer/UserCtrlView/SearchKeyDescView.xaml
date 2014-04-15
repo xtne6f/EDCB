@@ -18,7 +18,7 @@
         <CheckBox Content="正規表現モード" Height="16" HorizontalAlignment="Left" Margin="100,12,0,0" Name="checkBox_regExp" VerticalAlignment="Top" />
         <CheckBox Content="あいまい検索モード" Height="16" HorizontalAlignment="Left" Margin="233,12,0,0" Name="checkBox_aimai" VerticalAlignment="Top" />
         <CheckBox Content="番組名のみ検索対象にする" Height="16" HorizontalAlignment="Left" Margin="382,12,0,0" Name="checkBox_titleOnly" VerticalAlignment="Top" />
-        <CheckBox Content="検索を無効にする" Height="16" HorizontalAlignment="Left" Margin="570,12,0,0" Name="checkBox_keyDisabled" VerticalAlignment="Top" />
+        <CheckBox Content="自動登録を無効にする" Height="16" HorizontalAlignment="Left" Margin="570,12,0,0" Name="checkBox_keyDisabled" VerticalAlignment="Top" />
         <TabControl Grid.Row="1" Name="tabControl1" TabStripPlacement="Bottom">
             <TabItem Header="詳細1" Name="tabItem1">
                 <Grid>
