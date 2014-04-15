@@ -12,7 +12,7 @@
     </UserControl.Resources>
     <Grid>
         <ScrollViewer Name="scrollViewer" VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Hidden">
-            <StackPanel Name="stackPanel_service" Background="LightSlateGray" Orientation="Horizontal"/>
+            <StackPanel Name="stackPanel_service" Background="Silver" Orientation="Horizontal"/>
         </ScrollViewer>
     </Grid>
 </UserControl>

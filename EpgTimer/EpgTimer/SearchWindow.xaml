@@ -61,6 +61,8 @@
                     <Setter Property="ContextMenu" Value="{DynamicResource itemMenu}" />
                     <EventSetter Event="MouseDoubleClick" Handler="listView_result_MouseDoubleClick" />
                     <EventSetter Event="KeyDown" Handler="listView_result_KeyDown" />
+                    <Setter Property="BorderThickness" Value="5,0,0,1" />
+                    <Setter Property="BorderBrush" Value="{Binding BorderBrush}" />
                 </Style>
             </ListView.Resources>
             <ListView.View>

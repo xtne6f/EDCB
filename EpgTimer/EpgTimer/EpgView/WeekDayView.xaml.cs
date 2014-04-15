@@ -39,27 +39,39 @@ namespace EpgTimer.EpgView
                 {
                     TextBlock item = new TextBlock();
 
-                    item.Width = Settings.Instance.ServiceWidth - 4;
+                    item.Width = Settings.Instance.ServiceWidth - 2;
                     item.Text = time.ToString("M/d\r\n(ddd)");
 
 
+                    Color backgroundColor;
                     if (time.DayOfWeek == DayOfWeek.Saturday)
                     {
-                        item.Foreground = Brushes.Blue;
+                        item.Foreground = Brushes.DarkBlue;
+                        backgroundColor = Colors.Lavender;
                     }
                     else if (time.DayOfWeek == DayOfWeek.Sunday)
                     {
-                        item.Foreground = Brushes.Red;
+                        item.Foreground = Brushes.DarkRed;
+                        backgroundColor = Colors.MistyRose;
                     }
                     else
                     {
                         item.Foreground = Brushes.Black;
+                        backgroundColor = Colors.White;
+                    }
+                    if (Settings.Instance.EpgGradationHeader == false)
+                    {
+                        item.Background = new SolidColorBrush(backgroundColor);
+                    }
+                    else
+                    {
+                        item.Background = ColorDef.GradientBrush(backgroundColor, 0.8);
                     }
 
-                    item.Margin = new Thickness(2, 2, 2, 2);
-                    item.Background = Brushes.AliceBlue;
+                    item.Margin = new Thickness(1, 1, 1, 1);
                     item.TextAlignment = TextAlignment.Center;
                     item.FontSize = 12;
+                    item.FontWeight = FontWeights.Bold;
                     stackPanel_day.Children.Add(item);
                 }
             }
