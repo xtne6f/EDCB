@@ -22,28 +22,28 @@
             <MenuItem Header="ぴったり（？）" Name="Pittari" IsCheckable="True" Click="headerSelect_Click" />
         </ContextMenu>
         <ContextMenu x:Key="itemMenu" x:Name="cmdMenu" Loaded="cmdMenu_Loaded">
-            <MenuItem Header="削除 (_D)" Click="button_del_Click" InputGestureText="Delete" />
+            <MenuItem Header="削除" Click="button_del_Click" InputGestureText="Delete" />
             <MenuItem Header="変更 (_C)">
                 <MenuItem Header="ダイアログ表示 (_X)" Click="button_change_Click" InputGestureText="Enter" />
                 <Separator/>
-                <MenuItem Header="全サービス (_0)" Name="recmode_all" Click="recmode_Click" InputGestureText="Alt + 0" />
-                <MenuItem Header="指定サービス (_1)" Name="recmode_only" Click="recmode_Click" InputGestureText="Alt + 1" />
-                <MenuItem Header="全サービス（デコード処理なし） (_2)" Name="recmode_all_nodec" Click="recmode_Click" InputGestureText="Alt + 2" />
-                <MenuItem Header="指定サービス（デコード処理なし） (_3)" Name="recmode_only_nodec" Click="recmode_Click" InputGestureText="Alt + 3" />
-                <MenuItem Header="視聴 (_4)" Name="recmode_view" Click="recmode_Click" InputGestureText="Alt + 4" />
-                <MenuItem Header="無効 (_5)" Name="recmode_no" Click="button_no_Click" InputGestureText="Alt + 5" />
+                <MenuItem Header="全サービス (_0)" Name="recmode_all" Click="recmode_Click" />
+                <MenuItem Header="指定サービス (_1)" Name="recmode_only" Click="recmode_Click" />
+                <MenuItem Header="全サービス（デコード処理なし） (_2)" Name="recmode_all_nodec" Click="recmode_Click" />
+                <MenuItem Header="指定サービス（デコード処理なし） (_3)" Name="recmode_only_nodec" Click="recmode_Click" />
+                <MenuItem Header="視聴 (_4)" Name="recmode_view" Click="recmode_Click" />
+                <MenuItem Header="無効 (_5)" Name="recmode_no" Click="button_no_Click" />
                 <Separator/>
                 <MenuItem Name="cm_pri" Tag="優先度 {0} (_E)">
-                    <MenuItem Header="1 (_1)" Name="priority_1" Click="priority_Click" InputGestureText="Ctrl + Alt + 1" />
-                    <MenuItem Header="2 (_2)" Name="priority_2" Click="priority_Click" InputGestureText="Ctrl + Alt + 2" />
-                    <MenuItem Header="3 (_3)" Name="priority_3" Click="priority_Click" InputGestureText="Ctrl + Alt + 3" />
-                    <MenuItem Header="4 (_4)" Name="priority_4" Click="priority_Click" InputGestureText="Ctrl + Alt + 4" />
-                    <MenuItem Header="5 (_5)" Name="priority_5" Click="priority_Click" InputGestureText="Ctrl + Alt + 5" />
+                    <MenuItem Header="1 (_1)" Name="priority_1" Click="priority_Click" />
+                    <MenuItem Header="2 (_2)" Name="priority_2" Click="priority_Click" />
+                    <MenuItem Header="3 (_3)" Name="priority_3" Click="priority_Click" />
+                    <MenuItem Header="4 (_4)" Name="priority_4" Click="priority_Click" />
+                    <MenuItem Header="5 (_5)" Name="priority_5" Click="priority_Click" />
                 </MenuItem>
             </MenuItem>
-            <MenuItem Header="番組表へジャンプ (_J)" Click="MenuItem_Click_ProgramTable"  InputGestureText="F3" />
-            <MenuItem Header="自動予約登録 (_A)" Click="autoadd_Click" InputGestureText="Ctrl + A" />
-            <MenuItem Header="追っかけ再生 (_P)" Click="timeShiftPlay_Click" InputGestureText="Ctrl + P" />
+            <MenuItem Header="番組表へジャンプ" Click="MenuItem_Click_ProgramTable"  InputGestureText="F3" />
+            <MenuItem Header="自動予約登録" Click="autoadd_Click" />
+            <MenuItem Header="追っかけ再生" Click="timeShiftPlay_Click" InputGestureText="Ctrl + P" />
         </ContextMenu>
     </UserControl.Resources>
     <Grid>
@@ -155,8 +155,8 @@
         <StackPanel Grid.Column="1" Name="stackPanel_button">
             <Button Content="削除" Height="23" Name="button_del" Margin="0,10,0,10" Click="button_del_Click" Style="{StaticResource ButtonStyle1}" ToolTip="Delete" />
             <Button Content="変更" Height="23" Name="button_change" Margin="0,10,0,10" Click="button_change_Click" Style="{StaticResource ButtonStyle1}" ToolTip="Enter" />
-            <Button Content="無効" Height="23" Name="button_no" Margin="0,10,0,10" Click="button_no_Click" Style="{StaticResource ButtonStyle1}" ToolTip="Alt + 5" />
-            <Button Content="プログラム予約追加" Height="23" Name="button_add_manual" Margin="0,10,0,10" Click="button_add_manual_Click" Style="{StaticResource ButtonStyle1}" ToolTip="Ctrl + A" />
+            <Button Content="無効" Height="23" Name="button_no" Margin="0,10,0,10" Click="button_no_Click" Style="{StaticResource ButtonStyle1}" />
+            <Button Content="プログラム予約追加" Height="23" Name="button_add_manual" Margin="0,10,0,10" Click="button_add_manual_Click" Style="{StaticResource ButtonStyle1}" />
             <Button Content="追っかけ再生" Height="23" Name="button_timeShiftPlay" Margin="0,10,0,10" Click="timeShiftPlay_Click" Style="{StaticResource ButtonStyle1}" ToolTip="Ctrl + P" />
         </StackPanel>
     </Grid>

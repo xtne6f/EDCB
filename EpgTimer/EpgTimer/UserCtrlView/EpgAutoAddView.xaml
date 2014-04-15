@@ -24,8 +24,8 @@
             <MenuItem Header="有効" Name="KeyEnabled" IsCheckable="True" Click="headerSelect_Click" />
         </ContextMenu>
         <ContextMenu x:Key="itemMenu" x:Name="cmdMenu" >
-            <MenuItem Header="削除 (_D)" Click="button_del_Click" InputGestureText="Delete" />
-            <MenuItem Header="変更 (_C)" Click="button_change_Click"  InputGestureText="Enter "/>
+            <MenuItem Header="削除" Click="button_del_Click" InputGestureText="Delete" />
+            <MenuItem Header="変更" Click="button_change_Click"  InputGestureText="Enter "/>
         </ContextMenu>
     </UserControl.Resources>
     <Grid>
