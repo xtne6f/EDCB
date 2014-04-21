@@ -25,6 +25,7 @@
         </ContextMenu>
         <ContextMenu x:Key="itemMenu" x:Name="cmdMenu" >
             <MenuItem Header="削除" Click="button_del_Click" InputGestureText="Delete" />
+            <MenuItem Header="削除(予約ごと削除)" Click="button_del2_Click" />
             <MenuItem Header="変更" Click="button_change_Click"  InputGestureText="Enter "/>
         </ContextMenu>
     </UserControl.Resources>
@@ -124,9 +125,10 @@
                 </ListView.View>
             </ListView>
             <StackPanel Grid.Column="1" Name="stackPanel_button">
-                <Button Content="追加" Height="23" Name="button_add" Margin="0,10,0,10" Click="button_add_Click" Style="{StaticResource ButtonStyle1}" />
-                <Button Content="削除" Height="23" Name="button_del" Margin="0,10,0,10" Click="button_del_Click" Style="{StaticResource ButtonStyle1}" />
-                <Button Content="変更" Height="23" Name="button_change" Margin="0,10,0,10" Click="button_change_Click" Style="{StaticResource ButtonStyle1}" />
+                <Button Content="追加" Height="23" Name="button_add" Margin="0,10,0,5" Click="button_add_Click" Style="{StaticResource ButtonStyle1}" />
+                <Button Content="削除" Height="23" Name="button_del" Margin="0,5,0,5" Click="button_del_Click" Style="{StaticResource ButtonStyle1}" />
+                <Button Content="削除(予約ごと削除)" Height="23" Name="button_del2" Margin="0,5,0,5" Click="button_del2_Click" Style="{StaticResource ButtonStyle1}" />
+                <Button Content="変更" Height="23" Name="button_change" Margin="0,5,0,10" Click="button_change_Click" Style="{StaticResource ButtonStyle1}" />
                 <!--<Button Content="↑" Height="23" Name="button_up" Margin="0,20,0,5" Click="button_up_Click" Style="{StaticResource ButtonStyle1}" />-->
                 <!--<Button Content="↓" Height="23" Name="button_down" Margin="0,5,0,10" Click="button_down_Click" Style="{StaticResource ButtonStyle1}" />-->
                 <Button Content="↑" Height="23" Name="button_up" Margin="0,20,0,5" Click="button_up_Click2" Style="{StaticResource ButtonStyle1}" ToolTip="Ctrl + ↑" />
