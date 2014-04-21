@@ -192,6 +192,77 @@ namespace EpgTimer
             }
         }
 
+        private void button_del2_Click(object sender, RoutedEventArgs e)
+        {
+            if (listView_key.SelectedItems.Count == 0) { return; }
+
+            string text1 = "予約項目ごと削除してよろしいですか?\r\n"
+                            + "(無効の「自動予約登録項目」による予約は削除されません。)";
+            string caption1 = "削除(予約ごと削除)の確認";
+            if (MessageBox.Show(text1, caption1, MessageBoxButton.OKCancel, 
+                MessageBoxImage.Exclamation, MessageBoxResult.OK) != MessageBoxResult.OK)
+            {
+                return;
+            }
+
+            try
+            {
+                //配下の予約の削除
+
+                //検索リストの取得
+                List<EpgSearchKeyInfo> keyList = new List<EpgSearchKeyInfo>();
+                List<EpgEventInfo> list = new List<EpgEventInfo>();
+
+                foreach (EpgAutoDataItem info in listView_key.SelectedItems)
+                {
+                    if (info.KeyEnabled == "はい")
+                    {
+                        keyList.Add(info.EpgAutoAddInfo.searchInfo);
+                    }
+                }
+
+                if( keyList.Count>0 )//ここが0(=全て無効)でも予約項目自体の削除あるのでreturnはしない。
+                {
+                    cmd.SendSearchPg(keyList, ref list);
+
+                    List<UInt32> dellist = new List<UInt32>();
+
+                    foreach (EpgEventInfo info in list)
+                    {
+                        if (info.start_time.AddSeconds(info.durationSec) > DateTime.Now)
+                        {
+                            foreach (ReserveData info2 in CommonManager.Instance.DB.ReserveList.Values)
+                            {
+                                if (info.original_network_id == info2.OriginalNetworkID &&
+                                    info.transport_stream_id == info2.TransportStreamID &&
+                                    info.service_id == info2.ServiceID &&
+                                    info.event_id == info2.EventID)
+                                {
+                                    //重複したEpgEventInfoは送られてこないので、登録時の重複チェックは不要
+                                    dellist.Add(info2.ReserveID);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    if (dellist.Count > 0)
+                    {
+                        cmd.SendDelReserve(dellist);
+                        CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.ReserveInfo);
+                        CommonManager.Instance.DB.ReloadReserveInfo();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+            }
+
+            //自動予約登録項目自体の削除
+            button_del_Click(sender, e);
+        }
+
         private void button_change_Click(object sender, RoutedEventArgs e)
         {
             try
