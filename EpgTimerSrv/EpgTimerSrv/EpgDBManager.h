@@ -32,6 +32,8 @@ public:
 
 	BOOL IsLoadingData();
 
+	BOOL IsInitialLoadingDataDone();
+
 	BOOL CancelLoadData();
 
 	BOOL SearchEpg(vector<EPGDB_SEARCH_KEY_INFO>* key, vector<unique_ptr<SEARCH_RESULT_EVENT_DATA>>* result);
@@ -71,10 +73,11 @@ public:
 		);
 
 protected:
-	HANDLE lockEvent;
+	CRITICAL_SECTION epgMapLock;
 
 	HANDLE loadThread;
-	HANDLE loadStopEvent;
+	BOOL loadStop;
+	BOOL initialLoadDone;
 
 	CParseSearchChgText chgText;
 
@@ -97,15 +100,9 @@ protected:
 
 	map<LONGLONG, EPGDB_SERVICE_DATA*> epgMap;
 protected:
-	//PublicAPIîrëºêßå‰óp
-	BOOL Lock(LPCWSTR log = NULL, DWORD timeOut = 60*1000);
-	void UnLock(LPCWSTR log = NULL);
-
 	BOOL ConvertEpgInfo(WORD ONID, WORD TSID, WORD SID, EPG_EVENT_INFO* src, EPGDB_EVENT_INFO* dest);
 	void ClearEpgData();
 	static UINT WINAPI LoadThread(LPVOID param);
-
-	BOOL _IsLoadingData();
 
 	void SearchEvent(EPGDB_SEARCH_KEY_INFO* key, map<ULONGLONG, SEARCH_RESULT_EVENT>* resultMap, IRegExpPtr& regExp);
 	BOOL IsEqualContent(vector<EPGDB_CONTENT_DATA>* searchKey, vector<EPGDB_CONTENT_DATA>* eventData);

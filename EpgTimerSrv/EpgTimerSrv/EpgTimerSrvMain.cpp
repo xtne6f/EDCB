@@ -1140,7 +1140,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 	case CMD2_EPG_SRV_ENUM_SERVICE:
 		{
 			OutputDebugString(L"CMD2_EPG_SRV_ENUM_SERVICE");
-			if( sys->epgDB.IsLoadingData() == TRUE ){
+			if( sys->epgDB.IsInitialLoadingDataDone() == FALSE ){
 				resParam->param = CMD_ERR_BUSY;
 			}else{
 				{
@@ -1162,7 +1162,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 	case CMD2_EPG_SRV_ENUM_PG_INFO:
 		{
 			OutputDebugString(L"CMD2_EPG_SRV_ENUM_PG_INFO");
-			if( sys->epgDB.IsLoadingData() == TRUE ){
+			if( sys->epgDB.IsInitialLoadingDataDone() == FALSE ){
 				resParam->param = CMD_ERR_BUSY;
 			}else{
 				{
@@ -1179,7 +1179,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 	case CMD2_EPG_SRV_SEARCH_PG:
 		{
 			OutputDebugString(L"CMD2_EPG_SRV_SEARCH_PG");
-			if( sys->epgDB.IsLoadingData() == TRUE ){
+			if( sys->epgDB.IsInitialLoadingDataDone() == FALSE ){
 				resParam->param = CMD_ERR_BUSY;
 			}else{
 				{
@@ -1195,7 +1195,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 	case CMD2_EPG_SRV_GET_PG_INFO:
 		{
 			OutputDebugString(L"CMD2_EPG_SRV_GET_PG_INFO");
-			if( sys->epgDB.IsLoadingData() == TRUE ){
+			if( sys->epgDB.IsInitialLoadingDataDone() == FALSE ){
 				resParam->param = CMD_ERR_BUSY;
 			}else{
 				{
@@ -1516,7 +1516,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 	case CMD2_EPG_SRV_ENUM_PG_ALL:
 		{
 			OutputDebugString(L"CMD2_EPG_SRV_ENUM_PG_ALL");
-			if( sys->epgDB.IsLoadingData() == TRUE ){
+			if( sys->epgDB.IsInitialLoadingDataDone() == FALSE ){
 				resParam->param = CMD_ERR_BUSY;
 			}else{
 				resParam->param = CMD_ERR;
