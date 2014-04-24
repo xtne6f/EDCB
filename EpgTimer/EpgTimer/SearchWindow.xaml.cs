@@ -102,29 +102,23 @@ namespace EpgTimer
 
         public void SetViewMode(UInt16 mode)
         {
-            if (mode == 1)
+            if (mode == 1)//新規
             {
-                button_add_reserve.Visibility = System.Windows.Visibility.Hidden;
-                button_add_epgAutoAdd.Visibility = System.Windows.Visibility.Visible;
+                Title = "EPG予約条件";
                 button_chg_epgAutoAdd.Visibility = System.Windows.Visibility.Hidden;
-
-                Title = "EPG予約条件";
+                button_del_epgAutoAdd.Visibility = System.Windows.Visibility.Hidden;
             }
-            else if (mode == 2)
+            else if (mode == 2)//変更
             {
-                button_add_reserve.Visibility = System.Windows.Visibility.Hidden;
-                button_add_epgAutoAdd.Visibility = System.Windows.Visibility.Visible;
-                button_chg_epgAutoAdd.Visibility = System.Windows.Visibility.Visible;
-
                 Title = "EPG予約条件";
+                button_chg_epgAutoAdd.Visibility = System.Windows.Visibility.Visible;
+                button_del_epgAutoAdd.Visibility = System.Windows.Visibility.Visible;
             }
             else
             {
-                button_add_reserve.Visibility = System.Windows.Visibility.Visible;
-                button_add_epgAutoAdd.Visibility = System.Windows.Visibility.Visible;
-                button_chg_epgAutoAdd.Visibility = System.Windows.Visibility.Hidden;
-
                 Title = "検索";
+                button_chg_epgAutoAdd.Visibility = System.Windows.Visibility.Hidden;
+                button_del_epgAutoAdd.Visibility = System.Windows.Visibility.Hidden;
             }
         }
 
@@ -307,6 +301,18 @@ namespace EpgTimer
             }
         }
 
+        private void button_delall_reserve_Click(object sender, RoutedEventArgs e)
+        {
+            string text1 = "予約されている全ての項目を削除しますか?";
+            string caption1 = "予約全削除の確認";
+            if (MessageBox.Show(text1, caption1, MessageBoxButton.OKCancel, MessageBoxImage.Exclamation, MessageBoxResult.OK) == MessageBoxResult.OK)
+            {
+                listView_result.SelectAll();
+                MenuItem_Click_DeleteItem(listView_result.SelectedItem, new RoutedEventArgs());
+                //button_del_epgAutoAdd_Click(sender, e);//「予約ごと自動登録削除」の頃の名残
+            }
+        }
+
         private void button_add_epgAutoAdd_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -374,6 +380,22 @@ namespace EpgTimer
             {
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
+        }
+
+        private void button_del_epgAutoAdd_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                List<UInt32> delIDList = new List<uint>();
+                delIDList.Add(autoAddID);
+                cmd.SendDelEpgAutoAdd(delIDList);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+            }
+
+            SetViewMode(1);
         }
 
         private void listView_result_MouseDoubleClick(object sender, MouseButtonEventArgs e)
