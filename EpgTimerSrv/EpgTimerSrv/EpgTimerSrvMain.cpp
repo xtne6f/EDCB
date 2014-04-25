@@ -259,7 +259,7 @@ void CEpgTimerSrvMain::StartMain(
 			}
 			countChkSuspend = 0;
 
-			SetResumeTimer(resumeTimer, rebootFlag == 1);
+			SetResumeTimer(resumeTimer, FALSE);
 		}
 		countChkSuspend++;
 	}
