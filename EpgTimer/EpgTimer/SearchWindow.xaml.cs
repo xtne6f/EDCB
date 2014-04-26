@@ -891,13 +891,58 @@ namespace EpgTimer
             }
         }
 
+        private void MenuItem_Click_Research2(object sender, RoutedEventArgs e)
+        {
+            //「番組名で再検索」と比べてどうなのという感じだが、元の検索を残したまま作業できる
+            //新番組チェックなんかには向いてるかもしれないが、機能としては微妙なところ。
+            if (listView_result.SelectedItem != null)
+            {
+                SearchItem item = listView_result.SelectedItem as SearchItem;
+
+                SearchWindow dlg = new SearchWindow();
+
+                //SearchWindowからの呼び出しを記録する。表示制御などでも使う。
+                dlg.Owner = this;
+                dlg.SetViewMode((ushort)(Title == "検索" ? 3 : 1));
+
+                EpgSearchKeyInfo key = new EpgSearchKeyInfo();
+                key.andKey = item.EventName;
+
+                Int64 sidKey = ((Int64)item.EventInfo.original_network_id) << 32 | ((Int64)item.EventInfo.transport_stream_id) << 16 | ((Int64)item.EventInfo.service_id);
+                key.serviceList.Add(sidKey);
+
+                dlg.SetSearchDefKey(key);
+
+                //録画条件を現在のウィンドウから引っ張れるが、他との整合からしてもデフォルトでよさそう
+                //if (CommonManager.Instance.DB.EpgAutoAddList.ContainsKey(this.autoAddID) == true)
+                //{
+                //    dlg.SetRecInfoDef(CommonManager.Instance.DB.EpgAutoAddList[this.autoAddID].recSetting);
+                //}
+
+                dlg.Title += "(サブウィンドウ)";
+
+                //dlg.Left += 50;//なぜか動かせない‥
+                //dlg.Top += 50;
+                dlg.ShowDialog();
+            }
+        }
+
         private void cmdMenu_Loaded(object sender, RoutedEventArgs e)
         {
             if (listView_result.SelectedItem != null)
             {
                 foreach (object item in ((ContextMenu)sender).Items)
                 {
-                    if (item is MenuItem && (((MenuItem)item).Name == "cmdDlt"))
+                    //孫ウィンドウは禁止。番組表表示とも相性悪いのでキャンセル。
+                    if (item is MenuItem && ((((MenuItem)item).Name == "cmdResearch2") || (((MenuItem)item).Name == "cmdProgramTable")))
+                    {
+                        if (this.Owner as SearchWindow != null)
+                        {
+                            ((MenuItem)item).IsEnabled = false;
+                            ((MenuItem)item).Header += ((MenuItem)item).Header.ToString().EndsWith("(無効)") ? "" : "(無効)";
+                        }
+                    }
+                    else if (item is MenuItem && (((MenuItem)item).Name == "cmdDlt"))
                     {
                         bool isReserved = false;
                         foreach (SearchItem selItem in listView_result.SelectedItems)
@@ -964,5 +1009,13 @@ namespace EpgTimer
             }
         }
 
+        private void Window_Closed(object sender, System.EventArgs e)
+        {
+            if (this.Owner as SearchWindow != null)
+            {
+                (this.Owner as SearchWindow).SearchPg();
+            }
+        }
+        
     }
 }
