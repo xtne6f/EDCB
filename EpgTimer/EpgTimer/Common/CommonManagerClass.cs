@@ -267,6 +267,11 @@ namespace EpgTimer
 
                 ContentKindDictionary.Add(0x0FFF, new ContentKindInfo("その他", "", 0x0F, 0xFF));
                 ContentKindDictionary.Add(0xFFFF, new ContentKindInfo("なし", "", 0xFF, 0xFF));
+
+                foreach( ContentKindInfo info in ContentKindDictionary.Values )
+                {
+                    info.SubName += "(" + info.ContentName + ")";
+                }
             }
             if (ContentKindDictionary2 == null)
             {
