@@ -902,7 +902,10 @@ namespace EpgTimer
             {
                 if (win1.GetType() == typeof(SearchWindow))
                 {
-                    win1.Show();
+                    //他で予約情報が更新されてたりするので情報を再読み込みさせる。その後はモーダルウィンドウに。
+                    //ウィンドウ管理を真面目にやればモードレスもありか
+                    (win1 as SearchWindow).button_search.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                    win1.ShowDialog();
                     return;
                 }
             }
