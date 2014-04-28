@@ -109,7 +109,7 @@ protected:
 	BOOL QuerySleep(BYTE rebootFlag, BYTE suspendMode);
 	BOOL QueryReboot(BYTE rebootFlag);
 
-	BOOL SetResumeTimer(HANDLE* resumeTimer, BOOL rebootFlag);
+	BOOL SetResumeTimer(HANDLE* resumeTimer, LONGLONG* resumeTime, BOOL rebootFlag);
 	void ResetServer(CTCPServer& tcpServer, CHttpServer& httpServer, CTCPServerUtil& tcpSrvUtil);
 	void ReloadSetting();
 

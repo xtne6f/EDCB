@@ -113,9 +113,8 @@ void CEpgTimerSrvMain::StartMain(
 	CHttpServer httpServer;
 	CTCPServerUtil tcpSrvUtil;
 
-	HANDLE resumeTimer[2];
-	resumeTimer[0] = CreateWaitableTimer(NULL, FALSE, NULL);
-	resumeTimer[1] = CreateWaitableTimer(NULL, FALSE, NULL);
+	HANDLE resumeTimer = NULL;
+	LONGLONG resumeTime = 0;
 
 	CSendCtrlCmd sendCtrl;
 	DWORD countChkSuspend = 11;
@@ -143,7 +142,7 @@ void CEpgTimerSrvMain::StartMain(
 				this->streamingManager.CloseAllFile();
 				SetThreadExecutionState(ES_CONTINUOUS);
 				//タイマを正常にセットしたor不要だったときだけ続行
-				if( SetResumeTimer(resumeTimer, rebootFlagWork_ == 1) == TRUE ){
+				if( SetResumeTimer(&resumeTimer, &resumeTime, rebootFlagWork_ == 1) == TRUE ){
 					if( suspendModeWork_ == 1 || suspendModeWork_ == 2 ){
 						SetShutdown(suspendModeWork_);
 						if( rebootFlagWork_ == 1 ){
@@ -259,13 +258,14 @@ void CEpgTimerSrvMain::StartMain(
 			}
 			countChkSuspend = 0;
 
-			SetResumeTimer(resumeTimer, FALSE);
+			SetResumeTimer(&resumeTimer, &resumeTime, FALSE);
 		}
 		countChkSuspend++;
 	}
 
-	CloseHandle(resumeTimer[0]);
-	CloseHandle(resumeTimer[1]);
+	if( resumeTimer != NULL ){
+		CloseHandle(resumeTimer);
+	}
 
 	tcpSrvUtil.StopServer();
 	httpServer.StopServer();
@@ -273,13 +273,8 @@ void CEpgTimerSrvMain::StartMain(
 	pipeServer.StopServer();
 }
 
-BOOL CEpgTimerSrvMain::SetResumeTimer(HANDLE* resumeTimer, BOOL rebootFlag)
+BOOL CEpgTimerSrvMain::SetResumeTimer(HANDLE* resumeTimer, LONGLONG* resumeTime, BOOL rebootFlag)
 {
-	//タイマのわずかな隙間をなくすため交互に使う
-	HANDLE tmpTimer = resumeTimer[0];
-	resumeTimer[0] = resumeTimer[1];
-	resumeTimer[1] = tmpTimer;
-
 	BOOL ret = TRUE;
 	LONGLONG returnTime = 0;
 	if( this->reserveManager.GetSleepReturnTime(&returnTime) == TRUE ){
@@ -287,13 +282,34 @@ BOOL CEpgTimerSrvMain::SetResumeTimer(HANDLE* resumeTimer, BOOL rebootFlag)
 		ret = FALSE;
 		//rebootFlag時は(指定+5分前)に復帰
 		LARGE_INTEGER setTime;
-		setTime.QuadPart = GetNowI64Time() - returnTime + 60 * I64_1SEC * (this->wakeMargin + (rebootFlag ? 5 : 0));
+		LONGLONG nowTime = GetNowI64Time();
+		setTime.QuadPart = nowTime - returnTime + 60 * I64_1SEC * (this->wakeMargin + (rebootFlag ? 5 : 0));
 		if( setTime.QuadPart < 0 ){
-			SetWaitableTimer(resumeTimer[0], &setTime, 0, NULL, NULL, TRUE);
-			ret = TRUE;
+			if( *resumeTimer != NULL && *resumeTime == nowTime - setTime.QuadPart ){
+				//同時刻でセット済み
+				ret = TRUE;
+			}else{
+				if( *resumeTimer == NULL ){
+					*resumeTimer = CreateWaitableTimer(NULL, FALSE, NULL);
+				}
+				if( *resumeTimer != NULL ){
+					if( SetWaitableTimer(*resumeTimer, &setTime, 0, NULL, NULL, TRUE) != FALSE ){
+						*resumeTime = nowTime - setTime.QuadPart;
+						ret = TRUE;
+					}else{
+						CloseHandle(*resumeTimer);
+						*resumeTimer = NULL;
+					}
+				}
+			}
+		}else if( *resumeTimer != NULL ){
+			CloseHandle(*resumeTimer);
+			*resumeTimer = NULL;
 		}
+	}else if( *resumeTimer != NULL ){
+		CloseHandle(*resumeTimer);
+		*resumeTimer = NULL;
 	}
-	CancelWaitableTimer(resumeTimer[1]);
 	return ret;
 }
 
