@@ -2268,6 +2268,198 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 			}
 		}
 		break;
+	////////////////////////////////////////////////////////////
+	//旧バージョン互換コマンド
+	case CMD_EPG_SRV_GET_RESERVE_INFO:
+		{
+			resParam->param = OLD_CMD_ERR;
+			{
+				DWORD reserveID = 0;
+				if( ReadVALUE(&reserveID, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
+					RESERVE_DATA info;
+					if(sys->reserveManager.GetReserveData(reserveID, &info) == TRUE ){
+						OLD_RESERVE_DATA oldInfo;
+						oldInfo = info;
+						CreateReserveDataStream(&oldInfo, resParam);
+						resParam->param = OLD_CMD_SUCCESS;
+					}
+				}
+			}
+		}
+		break;
+	case CMD_EPG_SRV_ADD_RESERVE:
+		{
+			resParam->param = OLD_CMD_ERR;
+			{
+				OLD_RESERVE_DATA oldItem;
+				if( CopyReserveData(&oldItem, cmdParam) == TRUE){
+					RESERVE_DATA item;
+					CopyOldNew(&oldItem, &item);
+
+					vector<RESERVE_DATA> list;
+					list.push_back(item);
+					if(sys->reserveManager.AddReserveData(&list) == TRUE ){
+						resParam->param = OLD_CMD_SUCCESS;
+					}
+				}
+			}
+		}
+		break;
+	case CMD_EPG_SRV_DEL_RESERVE:
+		{
+			resParam->param = OLD_CMD_ERR;
+			{
+				OLD_RESERVE_DATA oldItem;
+				if( CopyReserveData(&oldItem, cmdParam) == TRUE){
+					vector<DWORD> list;
+					list.push_back(oldItem.dwReserveID);
+					if(sys->reserveManager.DelReserveData(&list) == TRUE ){
+						resParam->param = OLD_CMD_SUCCESS;
+					}
+				}
+			}
+		}
+		break;
+	case CMD_EPG_SRV_CHG_RESERVE:
+		{
+			resParam->param = OLD_CMD_ERR;
+			{
+				OLD_RESERVE_DATA oldItem;
+				if( CopyReserveData(&oldItem, cmdParam) == TRUE){
+					RESERVE_DATA item;
+					CopyOldNew(&oldItem, &item);
+
+					vector<RESERVE_DATA> list;
+					list.push_back(item);
+					if(sys->reserveManager.ChgReserveData(&list) == TRUE ){
+						resParam->param = OLD_CMD_SUCCESS;
+					}
+				}
+			}
+		}
+
+		break;
+	case CMD_EPG_SRV_ADD_AUTO_ADD:
+		{
+			resParam->param = OLD_CMD_ERR;
+			{
+				OLD_SEARCH_KEY oldItem;
+				if( CopySearchKeyData(&oldItem, cmdParam) == TRUE){
+					EPG_AUTO_ADD_DATA item;
+					CopyOldNew(&oldItem, &item);
+
+					{
+						CBlockLock lock(&sys->settingLock);
+						sys->epgAutoAdd.AddData(&item);
+						sys->epgAutoAdd.SaveText();
+					}
+					resParam->param = OLD_CMD_SUCCESS;
+					sys->AutoAddReserveEPG(1, &item);
+					sys->reserveManager.SendNotifyUpdate(NOTIFY_UPDATE_AUTOADD_EPG);
+				}
+			}
+		}
+		break;
+	case CMD_EPG_SRV_DEL_AUTO_ADD:
+		{
+			resParam->param = OLD_CMD_ERR;
+			{
+				OLD_SEARCH_KEY oldItem;
+				if( CopySearchKeyData(&oldItem, cmdParam) == TRUE){
+					{
+						CBlockLock lock(&sys->settingLock);
+						sys->epgAutoAdd.DelData((DWORD)oldItem.iAutoAddID);
+						sys->epgAutoAdd.SaveText();
+					}
+					resParam->param = OLD_CMD_SUCCESS;
+					sys->reserveManager.SendNotifyUpdate(NOTIFY_UPDATE_AUTOADD_EPG);
+				}
+			}
+		}
+		break;
+	case CMD_EPG_SRV_CHG_AUTO_ADD:
+		{
+			resParam->param = OLD_CMD_ERR;
+			{
+				OLD_SEARCH_KEY oldItem;
+				if( CopySearchKeyData(&oldItem, cmdParam) == TRUE){
+					EPG_AUTO_ADD_DATA item;
+					CopyOldNew(&oldItem, &item);
+
+					{
+						CBlockLock lock(&sys->settingLock);
+						sys->epgAutoAdd.ChgData(&item);
+						sys->epgAutoAdd.SaveText();
+					}
+					resParam->param = OLD_CMD_SUCCESS;
+					sys->AutoAddReserveEPG(1, &item);
+					sys->reserveManager.SendNotifyUpdate(NOTIFY_UPDATE_AUTOADD_EPG);
+				}
+			}
+		}
+		break;
+	case CMD_EPG_SRV_SEARCH_PG_FIRST:
+		{
+			resParam->param = OLD_CMD_ERR;
+			if( sys->epgDB.IsInitialLoadingDataDone() == FALSE ){
+				resParam->param = CMD_ERR_BUSY;
+			}else{
+				{
+					OLD_SEARCH_KEY oldItem;
+					if( CopySearchKeyData(&oldItem, cmdParam) == TRUE){
+						EPGDB_SEARCH_KEY_INFO item;
+						CopyOldNew(&oldItem, &item);
+
+						vector<EPGDB_SEARCH_KEY_INFO> key;
+						vector<unique_ptr<CEpgDBManager::SEARCH_RESULT_EVENT_DATA>> val;
+						key.push_back(item);
+						if( sys->epgDB.SearchEpg(&key, &val) == TRUE ){
+							CBlockLock lock(&sys->settingLock);
+
+							sys->oldSearchList.clear();
+							for( size_t i=0; i<val.size(); i++ ){
+								OLD_EVENT_INFO_DATA3 add;
+								add = val[i]->info;
+								sys->oldSearchList.push_back(add);
+							}
+							if( sys->oldSearchList.size() == 0 ){
+								resParam->param = OLD_CMD_ERR;
+							}else{
+								if( sys->oldSearchList.size() == 1 ){
+									resParam->param = OLD_CMD_SUCCESS;
+								}else{
+									resParam->param = OLD_CMD_NEXT;
+								}
+								CreateEventInfoData3Stream(&sys->oldSearchList[0], resParam);
+								sys->oldSearchList.erase(sys->oldSearchList.begin());
+								vector<OLD_EVENT_INFO_DATA3>(sys->oldSearchList).swap(sys->oldSearchList);
+							}
+						}
+					}
+				}
+			}
+		}
+		break;
+	case CMD_EPG_SRV_SEARCH_PG_NEXT:
+		{
+			CBlockLock lock(&sys->settingLock);
+
+			resParam->param = OLD_CMD_ERR;
+			if( sys->oldSearchList.size() == 0 ){
+				resParam->param = OLD_CMD_ERR;
+			}else{
+				{
+					if( sys->oldSearchList.size() == 1 ){
+						resParam->param = OLD_CMD_SUCCESS;
+					}else{
+						resParam->param = OLD_CMD_NEXT;
+					}
+					CreateEventInfoData3Stream(&sys->oldSearchList[0], resParam);
+					sys->oldSearchList.erase(sys->oldSearchList.begin());
+				}
+			}
+		}
+		break;
 	default:
 		_OutputDebugString(L"err default cmd %d\r\n", cmdParam->param);
 		resParam->param = CMD_NON_SUPPORT;

@@ -627,4 +627,218 @@ typedef struct _GENRU_INFO{
 	};
 } GENRU_INFO;
 
+
+////////////////////////////////////////////////////////////////////////////////////////////
+//旧バージョンコマンド送信用
+typedef struct _OLD_RESERVE_DATA{
+	wstring strTitle;
+	SYSTEMTIME StartTime;
+	DWORD dwDurationSec;
+	wstring strStationName;
+	unsigned short usONID;
+	unsigned short usTSID;
+	unsigned short usServiceID;
+	unsigned short usEventID;
+	unsigned char ucPriority;
+	unsigned char ucTuijyuu;
+	wstring strComment;
+	DWORD dwRecMode;
+	BOOL bPittari;
+	wstring strBatPath;
+	DWORD dwReserveID; //同一番組判別用ID
+	BOOL bSetWait; //予約待機入った？
+	DWORD dwPiledUpMode; //かぶり状態 1:かぶってチューナー足りない予約あり 2:チューナー足りなくて予約できない
+	wstring strRecFolder;
+	WORD wSuspendMode;
+	BOOL bReboot;
+	wstring strRecFilePath;
+	BOOL bUseMargine;
+	int iStartMargine;
+	int iEndMargine;
+	DWORD dwServiceMode;
+	_OLD_RESERVE_DATA & operator= (const _RESERVE_DATA & o) {
+		strTitle=o.title;
+		StartTime = o.startTime;
+		dwDurationSec = o.durationSecond;
+		strStationName = o.stationName;
+		usONID = o.originalNetworkID;
+		usTSID = o.transportStreamID;
+		usServiceID = o.serviceID;
+		usEventID = o.eventID;
+		ucPriority = o.recSetting.priority;
+		ucTuijyuu = o.recSetting.tuijyuuFlag;
+		strComment = o.comment;
+		dwRecMode = o.recSetting.recMode;
+		bPittari = o.recSetting.pittariFlag;
+		strBatPath = o.recSetting.batFilePath;
+		dwReserveID = o.reserveID;
+		bSetWait = 0;
+		dwPiledUpMode = o.overlapMode;
+		if( o.recSetting.recFolderList.size() >0 ){
+			strRecFolder = o.recSetting.recFolderList[0].recFolder;
+		}else{
+			strRecFolder = L"";
+		}
+		wSuspendMode = o.recSetting.suspendMode;
+		bReboot = o.recSetting.rebootFlag;
+		strRecFilePath = o.recFilePath;
+		bUseMargine = o.recSetting.useMargineFlag;
+		iStartMargine = o.recSetting.startMargine;
+		iEndMargine = o.recSetting.endMargine;
+		dwServiceMode = o.recSetting.serviceMode;
+		return *this;
+	};
+} OLD_RESERVE_DATA;
+
+
+typedef struct _OLD_SEARCH_KEY{
+	wstring strAnd;
+	wstring strNot;
+	BOOL bTitle;
+	int iJanru;
+	int iSH;
+	int iSM;
+	int iEH;
+	int iEM;
+	BOOL bChkMon;
+	BOOL bChkTue;
+	BOOL bChkWed;
+	BOOL bChkThu;
+	BOOL bChkFri;
+	BOOL bChkSat;
+	BOOL bChkSun;
+	vector<__int64> CHIDList; //ONID<<24 | TSID<<16 | SID
+	//以下自動予約登録時関係のみ使用
+	int iAutoAddID; //自動予約登録一覧の識別用キー
+	int iPriority;
+	int iTuijyuu;
+	int iRecMode;
+	int iPittari;
+	wstring strBat;
+	wstring strRecFolder;
+	WORD wSuspendMode;
+	BOOL bReboot;
+	BOOL bUseMargine;
+	int iStartMargine;
+	int iEndMargine;
+	DWORD dwServiceMode;
+
+	BOOL bRegExp;
+	wstring strPattern;
+} OLD_SEARCH_KEY;
+
+typedef struct _OLD_EVENT_ID_INFO{
+	DWORD dwOriginalNID;
+	DWORD dwTSID;
+	DWORD dwServiceID;
+	DWORD dwEventID;
+}OLD_EVENT_ID_INFO;
+
+typedef struct _OLD_NIBBLE_DATA{
+	unsigned char ucContentNibbleLv1; //content_nibble_level_1
+	unsigned char ucContentNibbleLv2; //content_nibble_level_2
+	unsigned char ucUserNibbleLv1; //user_nibble
+	unsigned char ucUserNibbleLv2; //user_nibble
+}OLD_NIBBLE_DATA;
+
+typedef struct _OLD_EVENT_INFO_DATA3{
+	WORD wOriginalNID;
+	WORD wTSID;
+	WORD wServiceID;
+	WORD wEventID;
+	wstring strEventName;
+	wstring strEventText;
+	wstring strEventExtText;
+	SYSTEMTIME stStartTime;
+	DWORD dwDurationSec;
+	unsigned char ucComponentType;
+	wstring strComponentTypeText;
+	unsigned char ucAudioComponentType;
+	unsigned char ucESMultiLangFlag;
+	unsigned char ucMainComponentFlag;
+	unsigned char ucSamplingRate;
+	wstring strAudioComponentTypeText;
+	vector<OLD_NIBBLE_DATA> NibbleList;
+	vector<OLD_EVENT_ID_INFO> EventRelayList;
+
+	wstring strSearchTitle;
+	wstring strSearchInfo;
+	vector<OLD_EVENT_ID_INFO> EventGroupList;
+
+	_OLD_EVENT_INFO_DATA3 & operator= (const _EPGDB_EVENT_INFO & o) {
+		wOriginalNID = o.original_network_id;
+		wTSID = o.transport_stream_id;
+		wServiceID = o.service_id;
+		wEventID = o.event_id;
+		if( o.shortInfo != NULL ){
+			strEventName = o.shortInfo->event_name;
+		}else{
+			strEventName = L"";
+		}
+		if( o.shortInfo != NULL ){
+			strEventText = o.shortInfo->text_char;
+		}else{
+			strEventText = L"";
+		}
+		if( o.extInfo != NULL ){
+			strEventText = o.extInfo->text_char;
+		}else{
+			strEventText = L"";
+		}
+		stStartTime = o.start_time;
+		dwDurationSec = o.durationSec;
+		if( o.componentInfo != NULL ){
+			ucComponentType = o.componentInfo->component_type;
+			strComponentTypeText = o.componentInfo->text_char;
+		}else{
+			ucComponentType = 0;
+			strComponentTypeText = L"";
+		}
+		if( o.audioInfo != NULL ){
+			if( o.audioInfo->componentList.size() > 0 ){
+				ucAudioComponentType = o.audioInfo->componentList[0].component_type;
+				ucESMultiLangFlag = o.audioInfo->componentList[0].ES_multi_lingual_flag;
+				ucMainComponentFlag = o.audioInfo->componentList[0].main_component_flag;
+				ucSamplingRate = o.audioInfo->componentList[0].sampling_rate;
+				strAudioComponentTypeText = o.audioInfo->componentList[0].text_char;
+			}
+		}
+		if( o.contentInfo != NULL ){
+			NibbleList.clear();
+			for( size_t i=0; i<o.contentInfo->nibbleList.size(); i++ ){
+				OLD_NIBBLE_DATA item;
+				item.ucContentNibbleLv1 = o.contentInfo->nibbleList[i].content_nibble_level_1;
+				item.ucContentNibbleLv2 = o.contentInfo->nibbleList[i].content_nibble_level_2;
+				item.ucUserNibbleLv1 = o.contentInfo->nibbleList[i].user_nibble_1;
+				item.ucUserNibbleLv2 = o.contentInfo->nibbleList[i].user_nibble_2;
+				NibbleList.push_back(item);
+			}
+		}
+		if( o.eventGroupInfo != NULL ){
+			EventGroupList.clear();
+			for( size_t i=0; i<o.eventGroupInfo->eventDataList.size(); i++ ){
+				OLD_EVENT_ID_INFO item;
+				item.dwOriginalNID = o.eventGroupInfo->eventDataList[i].original_network_id;
+				item.dwTSID = o.eventGroupInfo->eventDataList[i].transport_stream_id;
+				item.dwServiceID = o.eventGroupInfo->eventDataList[i].service_id;
+				item.dwEventID = o.eventGroupInfo->eventDataList[i].event_id;
+				EventGroupList.push_back(item);
+			}
+		}
+		if( o.eventRelayInfo != NULL ){
+			EventRelayList.clear();
+			for( size_t i=0; i<o.eventRelayInfo->eventDataList.size(); i++ ){
+				OLD_EVENT_ID_INFO item;
+				item.dwOriginalNID = o.eventRelayInfo->eventDataList[i].original_network_id;
+				item.dwTSID = o.eventRelayInfo->eventDataList[i].transport_stream_id;
+				item.dwServiceID = o.eventRelayInfo->eventDataList[i].service_id;
+				item.dwEventID = o.eventRelayInfo->eventDataList[i].event_id;
+				EventRelayList.push_back(item);
+			}
+		}
+
+		return *this;
+	};
+}OLD_EVENT_INFO_DATA3;
+
 #endif

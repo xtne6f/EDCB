@@ -286,6 +286,21 @@ BOOL WriteVALUE( NWPLAY_TIMESHIFT_INFO* val, BYTE* buff, DWORD buffSize, DWORD* 
 BOOL ReadVALUE( NWPLAY_TIMESHIFT_INFO* val, BYTE* buff, DWORD buffSize, DWORD* readSize );
 
 ////////////////////////////////////////////////////////////////////////////////////////////
+//旧バージョンコマンド送信用バイナリ作成関数
+BOOL CreateReserveDataStream(OLD_RESERVE_DATA* pData, CMD_STREAM* pCmd);
+BOOL CopyReserveData(OLD_RESERVE_DATA* pstData, CMD_STREAM* pCmd);
+
+BOOL CreateSearchKeyDataStream(OLD_SEARCH_KEY* pData, CMD_STREAM* pCmd);
+BOOL CopySearchKeyData(OLD_SEARCH_KEY* pstData, CMD_STREAM* pCmd);
+
+BOOL CreateEventInfoData3Stream(OLD_EVENT_INFO_DATA3* pData, CMD_STREAM* pCmd);
+BOOL CopyEventInfoData3(OLD_EVENT_INFO_DATA3* pstData, CMD_STREAM* pCmd);
+
+void CopyOldNew(OLD_RESERVE_DATA* src, RESERVE_DATA* dest);
+void CopyOldNew(OLD_SEARCH_KEY* src, EPG_AUTO_ADD_DATA* dest);
+void CopyOldNew(OLD_SEARCH_KEY* src, EPGDB_SEARCH_KEY_INFO* dest);
+
+////////////////////////////////////////////////////////////////////////////////////////////
 //テンプレート定義
 
 template<class T>

@@ -141,6 +141,18 @@
 //TVTest連携のストリーミング配信専用
 #define CMD2_VIEW_APP_TT_SET_CTRL			1261 //ストリーミング配信制御IDの設定
 
+
+//旧バージョン互換コマンド
+#define CMD_EPG_SRV_GET_RESERVE_INFO	12 //予約情報取得
+#define CMD_EPG_SRV_ADD_RESERVE			13 //予約追加
+#define CMD_EPG_SRV_DEL_RESERVE			14 //予約削除
+#define CMD_EPG_SRV_CHG_RESERVE			15 //予約変更
+#define CMD_EPG_SRV_SEARCH_PG_FIRST		21 //番組検索（先頭）
+#define CMD_EPG_SRV_SEARCH_PG_NEXT		22 //番組検索の続き
+#define CMD_EPG_SRV_ADD_AUTO_ADD		32 //自動予約登録の条件追加
+#define CMD_EPG_SRV_DEL_AUTO_ADD		33 //自動予約登録の条件削除
+#define CMD_EPG_SRV_CHG_AUTO_ADD		34 //自動予約登録の条件変更
+
 #define OLD_CMD_SUCCESS			0 //成功
 #define OLD_CMD_ERR				1 //汎用エラー
 #define OLD_CMD_NEXT			2 //Enumコマンド用、続きあり

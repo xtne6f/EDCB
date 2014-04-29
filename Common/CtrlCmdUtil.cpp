@@ -2687,6 +2687,981 @@ BOOL ReadVALUE( NWPLAY_TIMESHIFT_INFO* val, BYTE* buff, DWORD buffSize, DWORD* r
 	return TRUE;
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////
+//旧バージョンコマンド送信用バイナリ作成関数
+BOOL CreateReserveDataStream(OLD_RESERVE_DATA* pData, CMD_STREAM* pCmd)
+{
+	if( pData == NULL || pCmd == NULL ){
+		return FALSE;
+	}
+	pCmd->dataSize = sizeof(DWORD)*11 + sizeof(SYSTEMTIME) + sizeof(unsigned short)*4
+		+ sizeof(unsigned char)*2 + sizeof(BOOL)*4 + sizeof(WORD)*1+ sizeof(int)*2;
+	pCmd->dataSize += (DWORD)(pData->strTitle.length()+1)*sizeof(WCHAR);
+	pCmd->dataSize += (DWORD)(pData->strStationName.length()+1)*sizeof(WCHAR);
+	pCmd->dataSize += (DWORD)(pData->strComment.length()+1)*sizeof(WCHAR);
+	pCmd->dataSize += (DWORD)(pData->strBatPath.length()+1)*sizeof(WCHAR);
+	pCmd->dataSize += (DWORD)(pData->strRecFolder.length()+1)*sizeof(WCHAR);
+	pCmd->dataSize += (DWORD)(pData->strRecFilePath.length()+1)*sizeof(WCHAR);
+	pCmd->data = new BYTE[pCmd->dataSize];
+	ZeroMemory(pCmd->data, pCmd->dataSize);
+
+	DWORD dwStrSize = 0;
+	DWORD dwPos = 0;
+
+	dwStrSize = (DWORD)(pData->strTitle.length()+1)*sizeof(WCHAR);
+	memcpy(pCmd->data + dwPos, &dwStrSize, sizeof(DWORD));
+	dwPos+=sizeof(DWORD);
+	memcpy(pCmd->data + dwPos, pData->strTitle.c_str(), dwStrSize);
+	dwPos+=dwStrSize;
+
+	memcpy(pCmd->data + dwPos, &pData->StartTime, sizeof(SYSTEMTIME));
+	dwPos+=sizeof(SYSTEMTIME);
+
+	memcpy(pCmd->data + dwPos, &pData->dwDurationSec, sizeof(DWORD));
+	dwPos+=sizeof(DWORD);
+
+	dwStrSize = (DWORD)(pData->strStationName.length()+1)*sizeof(WCHAR);
+	memcpy(pCmd->data + dwPos, &dwStrSize, sizeof(DWORD));
+	dwPos+=sizeof(DWORD);
+	memcpy(pCmd->data + dwPos, pData->strStationName.c_str(), dwStrSize);
+	dwPos+=dwStrSize;
+
+	memcpy(pCmd->data + dwPos, &pData->usONID, sizeof(unsigned short));
+	dwPos+=sizeof(unsigned short);
+
+	memcpy(pCmd->data + dwPos, &pData->usTSID, sizeof(unsigned short));
+	dwPos+=sizeof(unsigned short);
+
+	memcpy(pCmd->data + dwPos, &pData->usServiceID, sizeof(unsigned short));
+	dwPos+=sizeof(unsigned short);
+
+	memcpy(pCmd->data + dwPos, &pData->usEventID, sizeof(unsigned short));
+	dwPos+=sizeof(unsigned short);
+
+	memcpy(pCmd->data + dwPos, &pData->ucPriority, sizeof(unsigned char));
+	dwPos+=sizeof(unsigned char);
+
+	memcpy(pCmd->data + dwPos, &pData->ucTuijyuu, sizeof(unsigned char));
+	dwPos+=sizeof(unsigned char);
+
+	dwStrSize = (DWORD)(pData->strComment.length()+1)*sizeof(WCHAR);
+	memcpy(pCmd->data + dwPos, &dwStrSize, sizeof(DWORD));
+	dwPos+=sizeof(DWORD);
+	memcpy(pCmd->data + dwPos, pData->strComment.c_str(), dwStrSize);
+	dwPos+=dwStrSize;
+
+	memcpy(pCmd->data + dwPos, &pData->dwRecMode, sizeof(DWORD));
+	dwPos+=sizeof(DWORD);
+
+	memcpy(pCmd->data + dwPos, &pData->bPittari, sizeof(BOOL));
+	dwPos+=sizeof(BOOL);
+
+	dwStrSize = (DWORD)(pData->strBatPath.length()+1)*sizeof(WCHAR);
+	memcpy(pCmd->data + dwPos, &dwStrSize, sizeof(DWORD));
+	dwPos+=sizeof(DWORD);
+	memcpy(pCmd->data + dwPos, pData->strBatPath.c_str(), dwStrSize);
+	dwPos+=dwStrSize;
+
+	memcpy(pCmd->data + dwPos, &pData->dwReserveID, sizeof(DWORD));
+	dwPos+=sizeof(DWORD);
+
+	memcpy(pCmd->data + dwPos, &pData->bSetWait, sizeof(BOOL));
+	dwPos+=sizeof(BOOL);
+
+	memcpy(pCmd->data + dwPos, &pData->dwPiledUpMode, sizeof(DWORD));
+	dwPos+=sizeof(BOOL);
+
+	dwStrSize = (DWORD)(pData->strRecFolder.length()+1)*sizeof(WCHAR);
+	memcpy(pCmd->data + dwPos, &dwStrSize, sizeof(DWORD));
+	dwPos+=sizeof(DWORD);
+	memcpy(pCmd->data + dwPos, pData->strRecFolder.c_str(), dwStrSize);
+	dwPos+=dwStrSize;
+
+	memcpy(pCmd->data + dwPos, &pData->wSuspendMode, sizeof(WORD));
+	dwPos+=sizeof(WORD);
+
+	memcpy(pCmd->data + dwPos, &pData->bReboot, sizeof(BOOL));
+	dwPos+=sizeof(BOOL);
+
+	dwStrSize = (DWORD)(pData->strRecFilePath.length()+1)*sizeof(WCHAR);
+	memcpy(pCmd->data + dwPos, &dwStrSize, sizeof(DWORD));
+	dwPos+=sizeof(DWORD);
+	memcpy(pCmd->data + dwPos, pData->strRecFilePath.c_str(), dwStrSize);
+	dwPos+=dwStrSize;
+
+	memcpy(pCmd->data + dwPos, &pData->bUseMargine, sizeof(BOOL));
+	dwPos+=sizeof(BOOL);
+	memcpy(pCmd->data + dwPos, &pData->iStartMargine, sizeof(int));
+	dwPos+=sizeof(int);
+	memcpy(pCmd->data + dwPos, &pData->iEndMargine, sizeof(int));
+	dwPos+=sizeof(int);
+	memcpy(pCmd->data + dwPos, &pData->dwServiceMode, sizeof(DWORD));
+	dwPos+=sizeof(DWORD);
+	
+
+	return TRUE;
+}
+
+BOOL CopyReserveData(OLD_RESERVE_DATA* pstData, CMD_STREAM* pCmd)
+{
+	if( pstData == NULL || pCmd == NULL ){
+		return FALSE;
+	}
+	if(pCmd->data == NULL ){
+		OutputDebugString(L"●CopyReserveData　NULL");
+		return FALSE;
+	}
+	if(pCmd->dataSize == 0 ){
+		OutputDebugString(L"●CopyReserveData　0");
+		return FALSE;
+	}
+	BYTE* pBuff = pCmd->data;
+	DWORD dwPos = 0;
+	DWORD dwStrSize=0;
+
+	dwStrSize = *(DWORD*)(pBuff+dwPos);
+	dwPos+=sizeof(DWORD);
+	pstData->strTitle = (WCHAR*)(pBuff+dwPos);
+	dwPos+=dwStrSize;
+
+	pstData->StartTime = *(SYSTEMTIME*)(pBuff+dwPos);
+	dwPos+=sizeof(SYSTEMTIME);
+
+	pstData->dwDurationSec = *(DWORD*)(pBuff+dwPos);
+	dwPos+=sizeof(DWORD);
+
+	dwStrSize = *(DWORD*)(pBuff+dwPos);
+	dwPos+=sizeof(DWORD);
+	pstData->strStationName = (WCHAR*)(pBuff+dwPos);
+	dwPos+=dwStrSize;
+
+	pstData->usONID = *(unsigned short*)(pBuff+dwPos);
+	dwPos+=sizeof(unsigned short);
+
+	pstData->usTSID = *(unsigned short*)(pBuff+dwPos);
+	dwPos+=sizeof(unsigned short);
+
+	pstData->usServiceID = *(unsigned short*)(pBuff+dwPos);
+	dwPos+=sizeof(unsigned short);
+
+	pstData->usEventID = *(unsigned short*)(pBuff+dwPos);
+	dwPos+=sizeof(unsigned short);
+
+	pstData->ucPriority = *(unsigned char*)(pBuff+dwPos);
+	dwPos+=sizeof(unsigned char);
+
+	pstData->ucTuijyuu = *(unsigned char*)(pBuff+dwPos);
+	dwPos+=sizeof(unsigned char);
+
+	dwStrSize = *(DWORD*)(pBuff+dwPos);
+	dwPos+=sizeof(DWORD);
+	pstData->strComment = (WCHAR*)(pBuff+dwPos);
+	dwPos+=dwStrSize;
+
+	pstData->dwRecMode = *(DWORD*)(pBuff+dwPos);
+	dwPos+=sizeof(DWORD);
+
+	pstData->bPittari = *(BOOL*)(pBuff+dwPos);
+	dwPos+=sizeof(BOOL);
+
+	dwStrSize = *(DWORD*)(pBuff+dwPos);
+	dwPos+=sizeof(DWORD);
+	pstData->strBatPath = (WCHAR*)(pBuff+dwPos);
+	dwPos+=dwStrSize;
+
+	pstData->dwReserveID = *(DWORD*)(pBuff+dwPos);
+	dwPos+=sizeof(DWORD);
+
+	pstData->bSetWait = *(BOOL*)(pBuff+dwPos);
+	dwPos+=sizeof(BOOL);
+
+	pstData->dwPiledUpMode = *(DWORD*)(pBuff+dwPos);
+	dwPos+=sizeof(DWORD);
+
+	dwStrSize = *(DWORD*)(pBuff+dwPos);
+	dwPos+=sizeof(DWORD);
+	pstData->strRecFolder = (WCHAR*)(pBuff+dwPos);
+	dwPos+=dwStrSize;
+
+	pstData->wSuspendMode = *(WORD*)(pBuff+dwPos);
+	dwPos+=sizeof(WORD);
+
+	pstData->bReboot = *(BOOL*)(pBuff+dwPos);
+	dwPos+=sizeof(BOOL);
+
+	dwStrSize = *(DWORD*)(pBuff+dwPos);
+	dwPos+=sizeof(DWORD);
+	pstData->strRecFilePath = (WCHAR*)(pBuff+dwPos);
+	dwPos+=dwStrSize;
+
+	if( dwPos < pCmd->dataSize ){
+		pstData->bUseMargine = *(BOOL*)(pBuff+dwPos);
+		dwPos+=sizeof(BOOL);
+		pstData->iStartMargine = *(int*)(pBuff+dwPos);
+		dwPos+=sizeof(int);
+		pstData->iEndMargine = *(int*)(pBuff+dwPos);
+		dwPos+=sizeof(int);
+		pstData->dwServiceMode = *(DWORD*)(pBuff+dwPos);
+		dwPos+=sizeof(DWORD);
+	}else{
+		pstData->bUseMargine = FALSE;
+		pstData->iStartMargine = 10;
+		pstData->iEndMargine = 2;
+		pstData->dwServiceMode = 0;
+	}
+
+
+	return TRUE;
+}
+
+BOOL CreateSearchKeyDataStream(OLD_SEARCH_KEY* pData, CMD_STREAM* pCmd)
+{
+	if( pData == NULL || pCmd == NULL ){
+		return FALSE;
+	}
+	pCmd->dataSize = sizeof(DWORD)*7 + sizeof(BOOL)*11 + sizeof(int)*12 + sizeof(WORD)*1;
+	pCmd->dataSize += (DWORD)(pData->strAnd.length()+1)*sizeof(WCHAR);
+	pCmd->dataSize += (DWORD)(pData->strNot.length()+1)*sizeof(WCHAR);
+	pCmd->dataSize += (DWORD)(pData->CHIDList.size())*sizeof(__int64);
+	pCmd->dataSize += (DWORD)(pData->strBat.length()+1)*sizeof(WCHAR);
+	pCmd->dataSize += (DWORD)(pData->strRecFolder.length()+1)*sizeof(WCHAR);
+	pCmd->dataSize += (DWORD)(pData->strPattern.length()+1)*sizeof(WCHAR);
+	pCmd->data = new BYTE[pCmd->dataSize];
+	ZeroMemory(pCmd->data, pCmd->dataSize);
+
+	DWORD dwStrSize = 0;
+	DWORD dwPos = 0;
+
+	dwStrSize = (DWORD)(pData->strAnd.length()+1)*sizeof(WCHAR);
+	memcpy(pCmd->data + dwPos, &dwStrSize, sizeof(DWORD));
+	dwPos+=sizeof(DWORD);
+	memcpy(pCmd->data + dwPos, pData->strAnd.c_str(), dwStrSize);
+	dwPos+=dwStrSize;
+
+	dwStrSize = (DWORD)(pData->strNot.length()+1)*sizeof(WCHAR);
+	memcpy(pCmd->data + dwPos, &dwStrSize, sizeof(DWORD));
+	dwPos+=sizeof(DWORD);
+	memcpy(pCmd->data + dwPos, pData->strNot.c_str(), dwStrSize);
+	dwPos+=dwStrSize;
+
+	memcpy(pCmd->data + dwPos, &pData->bTitle, sizeof(BOOL));
+	dwPos+=sizeof(BOOL);
+
+	memcpy(pCmd->data + dwPos, &pData->iJanru, sizeof(int));
+	dwPos+=sizeof(int);
+
+	memcpy(pCmd->data + dwPos, &pData->iSH, sizeof(int));
+	dwPos+=sizeof(int);
+
+	memcpy(pCmd->data + dwPos, &pData->iSM, sizeof(int));
+	dwPos+=sizeof(int);
+
+	memcpy(pCmd->data + dwPos, &pData->iEH, sizeof(int));
+	dwPos+=sizeof(int);
+
+	memcpy(pCmd->data + dwPos, &pData->iEM, sizeof(int));
+	dwPos+=sizeof(int);
+
+	memcpy(pCmd->data + dwPos, &pData->bChkMon, sizeof(BOOL));
+	dwPos+=sizeof(BOOL);
+
+	memcpy(pCmd->data + dwPos, &pData->bChkTue, sizeof(BOOL));
+	dwPos+=sizeof(BOOL);
+
+	memcpy(pCmd->data + dwPos, &pData->bChkWed, sizeof(BOOL));
+	dwPos+=sizeof(BOOL);
+
+	memcpy(pCmd->data + dwPos, &pData->bChkThu, sizeof(BOOL));
+	dwPos+=sizeof(BOOL);
+
+	memcpy(pCmd->data + dwPos, &pData->bChkFri, sizeof(BOOL));
+	dwPos+=sizeof(BOOL);
+
+	memcpy(pCmd->data + dwPos, &pData->bChkSat, sizeof(BOOL));
+	dwPos+=sizeof(BOOL);
+
+	memcpy(pCmd->data + dwPos, &pData->bChkSun, sizeof(BOOL));
+	dwPos+=sizeof(BOOL);
+
+	DWORD dwTemp = (DWORD)pData->CHIDList.size();
+	memcpy(pCmd->data + dwPos, &dwTemp, sizeof(__int64));
+	dwPos+=sizeof(DWORD);
+
+	for( int i=0; i<(int)pData->CHIDList.size(); i++ ){
+		memcpy(pCmd->data + dwPos, &pData->CHIDList[i], sizeof(__int64));
+		dwPos+=sizeof(__int64);
+	}
+
+	memcpy(pCmd->data + dwPos, &pData->iAutoAddID, sizeof(int));
+	dwPos+=sizeof(int);
+
+	memcpy(pCmd->data + dwPos, &pData->iPriority, sizeof(int));
+	dwPos+=sizeof(int);
+
+	memcpy(pCmd->data + dwPos, &pData->iTuijyuu, sizeof(int));
+	dwPos+=sizeof(int);
+
+	memcpy(pCmd->data + dwPos, &pData->iRecMode, sizeof(int));
+	dwPos+=sizeof(int);
+
+	memcpy(pCmd->data + dwPos, &pData->iPittari, sizeof(int));
+	dwPos+=sizeof(int);
+
+	dwStrSize = (DWORD)(pData->strBat.length()+1)*sizeof(WCHAR);
+	memcpy(pCmd->data + dwPos, &dwStrSize, sizeof(DWORD));
+	dwPos+=sizeof(DWORD);
+	memcpy(pCmd->data + dwPos, pData->strBat.c_str(), dwStrSize);
+	dwPos+=dwStrSize;
+
+	dwStrSize = (DWORD)(pData->strRecFolder.length()+1)*sizeof(WCHAR);
+	memcpy(pCmd->data + dwPos, &dwStrSize, sizeof(DWORD));
+	dwPos+=sizeof(DWORD);
+	memcpy(pCmd->data + dwPos, pData->strRecFolder.c_str(), dwStrSize);
+	dwPos+=dwStrSize;
+
+	memcpy(pCmd->data + dwPos, &pData->wSuspendMode, sizeof(WORD));
+	dwPos+=sizeof(WORD);
+
+	memcpy(pCmd->data + dwPos, &pData->bReboot, sizeof(BOOL));
+	dwPos+=sizeof(BOOL);
+
+	memcpy(pCmd->data + dwPos, &pData->bUseMargine, sizeof(BOOL));
+	dwPos+=sizeof(BOOL);
+	memcpy(pCmd->data + dwPos, &pData->iStartMargine, sizeof(int));
+	dwPos+=sizeof(int);
+	memcpy(pCmd->data + dwPos, &pData->iEndMargine, sizeof(int));
+	dwPos+=sizeof(int);
+	memcpy(pCmd->data + dwPos, &pData->dwServiceMode, sizeof(DWORD));
+	dwPos+=sizeof(DWORD);
+
+	memcpy(pCmd->data + dwPos, &pData->bRegExp, sizeof(BOOL));
+	dwPos+=sizeof(BOOL);
+	dwStrSize = (DWORD)(pData->strPattern.length()+1)*sizeof(WCHAR);
+	memcpy(pCmd->data + dwPos, &dwStrSize, sizeof(DWORD));
+	dwPos+=sizeof(DWORD);
+	memcpy(pCmd->data + dwPos, pData->strPattern.c_str(), dwStrSize);
+	dwPos+=dwStrSize;
+
+	return TRUE;
+}
+
+BOOL CopySearchKeyData(OLD_SEARCH_KEY* pstData, CMD_STREAM* pCmd)
+{
+	if( pstData == NULL || pCmd == NULL ){
+		return FALSE;
+	}
+	if(pCmd->data == NULL ){
+		OutputDebugString(L"●CopySearchKeyData　NULL");
+		return FALSE;
+	}
+	if(pCmd->dataSize == 0 ){
+		OutputDebugString(L"●CopySearchKeyData　0");
+		return FALSE;
+	}
+	BYTE* pBuff = pCmd->data;
+	DWORD dwPos = 0;
+	DWORD dwStrSize=0;
+
+	dwStrSize = *(DWORD*)(pBuff+dwPos);
+	dwPos+=sizeof(DWORD);
+	pstData->strAnd = (WCHAR*)(pBuff+dwPos);
+	dwPos+=dwStrSize;
+
+	dwStrSize = *(DWORD*)(pBuff+dwPos);
+	dwPos+=sizeof(DWORD);
+	pstData->strNot = (WCHAR*)(pBuff+dwPos);
+	dwPos+=dwStrSize;
+
+	pstData->bTitle = *(BOOL*)(pBuff+dwPos);
+	dwPos+=sizeof(BOOL);
+
+	pstData->iJanru = *(int*)(pBuff+dwPos);
+	dwPos+=sizeof(int);
+
+	pstData->iSH = *(int*)(pBuff+dwPos);
+	dwPos+=sizeof(int);
+
+	pstData->iSM = *(int*)(pBuff+dwPos);
+	dwPos+=sizeof(int);
+
+	pstData->iEH = *(int*)(pBuff+dwPos);
+	dwPos+=sizeof(int);
+
+	pstData->iEM = *(int*)(pBuff+dwPos);
+	dwPos+=sizeof(int);
+
+	pstData->bChkMon = *(BOOL*)(pBuff+dwPos);
+	dwPos+=sizeof(BOOL);
+
+	pstData->bChkTue = *(BOOL*)(pBuff+dwPos);
+	dwPos+=sizeof(BOOL);
+
+	pstData->bChkWed = *(BOOL*)(pBuff+dwPos);
+	dwPos+=sizeof(BOOL);
+
+	pstData->bChkThu = *(BOOL*)(pBuff+dwPos);
+	dwPos+=sizeof(BOOL);
+
+	pstData->bChkFri = *(BOOL*)(pBuff+dwPos);
+	dwPos+=sizeof(BOOL);
+
+	pstData->bChkSat = *(BOOL*)(pBuff+dwPos);
+	dwPos+=sizeof(BOOL);
+
+	pstData->bChkSun = *(BOOL*)(pBuff+dwPos);
+	dwPos+=sizeof(BOOL);
+
+	DWORD dwCount = *(DWORD*)(pBuff+dwPos);
+	dwPos+=sizeof(DWORD);
+	for( DWORD i=0; i<dwCount; i++ ){
+		__int64 Item;
+		Item = *(__int64*)(pBuff+dwPos);
+		dwPos+=sizeof(__int64);
+		pstData->CHIDList.push_back(Item);
+	}
+
+	pstData->iAutoAddID = *(int*)(pBuff+dwPos);
+	dwPos+=sizeof(int);
+
+	pstData->iPriority = *(int*)(pBuff+dwPos);
+	dwPos+=sizeof(int);
+
+	pstData->iTuijyuu = *(int*)(pBuff+dwPos);
+	dwPos+=sizeof(int);
+
+	pstData->iRecMode = *(int*)(pBuff+dwPos);
+	dwPos+=sizeof(int);
+
+	pstData->iPittari = *(int*)(pBuff+dwPos);
+	dwPos+=sizeof(int);
+
+	dwStrSize = *(DWORD*)(pBuff+dwPos);
+	dwPos+=sizeof(DWORD);
+	pstData->strBat = (WCHAR*)(pBuff+dwPos);
+	dwPos+=dwStrSize;
+
+	dwStrSize = *(DWORD*)(pBuff+dwPos);
+	dwPos+=sizeof(DWORD);
+	pstData->strRecFolder = (WCHAR*)(pBuff+dwPos);
+	dwPos+=dwStrSize;
+
+	pstData->wSuspendMode = *(WORD*)(pBuff+dwPos);
+	dwPos+=sizeof(WORD);
+
+	pstData->bReboot = *(BOOL*)(pBuff+dwPos);
+	dwPos+=sizeof(BOOL);
+
+	if( dwPos < pCmd->dataSize ){
+		pstData->bUseMargine = *(BOOL*)(pBuff+dwPos);
+		dwPos+=sizeof(BOOL);
+		pstData->iStartMargine = *(int*)(pBuff+dwPos);
+		dwPos+=sizeof(int);
+		pstData->iEndMargine = *(int*)(pBuff+dwPos);
+		dwPos+=sizeof(int);
+		pstData->dwServiceMode = *(DWORD*)(pBuff+dwPos);
+		dwPos+=sizeof(DWORD);
+		if( dwPos < pCmd->dataSize ){
+			pstData->bRegExp = *(BOOL*)(pBuff+dwPos);
+			dwPos+=sizeof(BOOL);
+
+			dwStrSize = *(DWORD*)(pBuff+dwPos);
+			dwPos+=sizeof(DWORD);
+			pstData->strPattern = (WCHAR*)(pBuff+dwPos);
+			dwPos+=dwStrSize;
+		}else{
+			pstData->bRegExp = FALSE;
+			pstData->strPattern = L"";
+		}
+	}else{
+		pstData->bUseMargine = FALSE;
+		pstData->iStartMargine = 10;
+		pstData->iEndMargine = 2;
+		pstData->dwServiceMode = 0;
+		pstData->bRegExp = FALSE;
+		pstData->strPattern = L"";
+	}
+
+	return TRUE;
+}
+
+BOOL CreateEventInfoData3Stream(OLD_EVENT_INFO_DATA3* pData, CMD_STREAM* pCmd)
+{
+	if( pData == NULL || pCmd == NULL ){
+		return FALSE;
+	}
+	pCmd->dataSize = sizeof(DWORD)*9 + sizeof(SYSTEMTIME) + sizeof(WORD)*4
+		+ sizeof(unsigned char)*5;
+	pCmd->dataSize += (DWORD)(pData->strEventName.length()+1)*sizeof(WCHAR);
+	pCmd->dataSize += (DWORD)(pData->strEventText.length()+1)*sizeof(WCHAR);
+	pCmd->dataSize += (DWORD)(pData->strEventExtText.length()+1)*sizeof(WCHAR);
+	pCmd->dataSize += (DWORD)(pData->strComponentTypeText.length()+1)*sizeof(WCHAR);
+	pCmd->dataSize += (DWORD)(pData->strAudioComponentTypeText.length()+1)*sizeof(WCHAR);
+	pCmd->dataSize += (DWORD)(pData->NibbleList.size())*sizeof(OLD_NIBBLE_DATA);
+	pCmd->dataSize += (DWORD)(pData->EventRelayList.size())*sizeof(OLD_EVENT_ID_INFO);
+	pCmd->dataSize += (DWORD)(pData->EventGroupList.size())*sizeof(OLD_EVENT_ID_INFO);
+	pCmd->data = new BYTE[pCmd->dataSize];
+	ZeroMemory(pCmd->data, pCmd->dataSize);
+
+	DWORD dwStrSize = 0;
+	DWORD dwPos = 0;
+
+	memcpy(pCmd->data + dwPos, &pData->wOriginalNID, sizeof(WORD));
+	dwPos+=sizeof(WORD);
+
+	memcpy(pCmd->data + dwPos, &pData->wTSID, sizeof(WORD));
+	dwPos+=sizeof(WORD);
+
+	memcpy(pCmd->data + dwPos, &pData->wServiceID, sizeof(WORD));
+	dwPos+=sizeof(WORD);
+
+	memcpy(pCmd->data + dwPos, &pData->wEventID, sizeof(WORD));
+	dwPos+=sizeof(WORD);
+
+	dwStrSize = (DWORD)(pData->strEventName.length()+1)*sizeof(WCHAR);
+	memcpy(pCmd->data + dwPos, &dwStrSize, sizeof(DWORD));
+	dwPos+=sizeof(DWORD);
+	memcpy(pCmd->data + dwPos, pData->strEventName.c_str(), dwStrSize);
+	dwPos+=dwStrSize;
+
+	dwStrSize = (DWORD)(pData->strEventText.length()+1)*sizeof(WCHAR);
+	memcpy(pCmd->data + dwPos, &dwStrSize, sizeof(DWORD));
+	dwPos+=sizeof(DWORD);
+	memcpy(pCmd->data + dwPos, pData->strEventText.c_str(), dwStrSize);
+	dwPos+=dwStrSize;
+
+	dwStrSize = (DWORD)(pData->strEventExtText.length()+1)*sizeof(WCHAR);
+	memcpy(pCmd->data + dwPos, &dwStrSize, sizeof(DWORD));
+	dwPos+=sizeof(DWORD);
+	memcpy(pCmd->data + dwPos, pData->strEventExtText.c_str(), dwStrSize);
+	dwPos+=dwStrSize;
+
+	memcpy(pCmd->data + dwPos, &pData->stStartTime, sizeof(SYSTEMTIME));
+	dwPos+=sizeof(SYSTEMTIME);
+
+	memcpy(pCmd->data + dwPos, &pData->dwDurationSec, sizeof(DWORD));
+	dwPos+=sizeof(DWORD);
+
+	memcpy(pCmd->data + dwPos, &pData->ucComponentType, sizeof(unsigned char));
+	dwPos+=sizeof(unsigned char);
+
+	dwStrSize = (DWORD)(pData->strComponentTypeText.length()+1)*sizeof(WCHAR);
+	memcpy(pCmd->data + dwPos, &dwStrSize, sizeof(DWORD));
+	dwPos+=sizeof(DWORD);
+	memcpy(pCmd->data + dwPos, pData->strComponentTypeText.c_str(), dwStrSize);
+	dwPos+=dwStrSize;
+
+	memcpy(pCmd->data + dwPos, &pData->ucAudioComponentType, sizeof(unsigned char));
+	dwPos+=sizeof(unsigned char);
+
+	memcpy(pCmd->data + dwPos, &pData->ucESMultiLangFlag, sizeof(unsigned char));
+	dwPos+=sizeof(unsigned char);
+
+	memcpy(pCmd->data + dwPos, &pData->ucMainComponentFlag, sizeof(unsigned char));
+	dwPos+=sizeof(unsigned char);
+
+	memcpy(pCmd->data + dwPos, &pData->ucSamplingRate, sizeof(unsigned char));
+	dwPos+=sizeof(unsigned char);
+
+	dwStrSize = (DWORD)(pData->strAudioComponentTypeText.length()+1)*sizeof(WCHAR);
+	memcpy(pCmd->data + dwPos, &dwStrSize, sizeof(DWORD));
+	dwPos+=sizeof(DWORD);
+	memcpy(pCmd->data + dwPos, pData->strAudioComponentTypeText.c_str(), dwStrSize);
+	dwPos+=dwStrSize;
+
+	DWORD dwTemp = (DWORD)pData->NibbleList.size();
+	memcpy(pCmd->data + dwPos, &dwTemp, sizeof(DWORD));
+	dwPos+=sizeof(DWORD);
+
+	for( int i=0; i<(int)pData->NibbleList.size(); i++ ){
+		memcpy(pCmd->data + dwPos, &pData->NibbleList[i], sizeof(OLD_NIBBLE_DATA));
+		dwPos+=sizeof(OLD_NIBBLE_DATA);
+	}
+
+	dwTemp = (DWORD)pData->EventRelayList.size();
+	memcpy(pCmd->data + dwPos, &dwTemp, sizeof(DWORD));
+	dwPos+=sizeof(DWORD);
+
+	for( int i=0; i<(int)pData->EventRelayList.size(); i++ ){
+		memcpy(pCmd->data + dwPos, &pData->EventRelayList[i], sizeof(OLD_EVENT_ID_INFO));
+		dwPos+=sizeof(OLD_EVENT_ID_INFO);
+	}
+
+	dwTemp = (DWORD)pData->EventGroupList.size();
+	memcpy(pCmd->data + dwPos, &dwTemp, sizeof(DWORD));
+	dwPos+=sizeof(DWORD);
+
+	for( int i=0; i<(int)pData->EventGroupList.size(); i++ ){
+		memcpy(pCmd->data + dwPos, &pData->EventGroupList[i], sizeof(OLD_EVENT_ID_INFO));
+		dwPos+=sizeof(OLD_EVENT_ID_INFO);
+	}
+
+	return TRUE;
+}
+
+BOOL CopyEventInfoData3(OLD_EVENT_INFO_DATA3* pstData, CMD_STREAM* pCmd)
+{
+	if( pstData == NULL || pCmd == NULL ){
+		return FALSE;
+	}
+	if(pCmd->data == NULL ){
+		OutputDebugString(L"●CopyEventInfoData3　NULL");
+		return FALSE;
+	}
+	if(pCmd->dataSize == 0 ){
+		OutputDebugString(L"●CopyEventInfoData3　0");
+		return FALSE;
+	}
+	BYTE* pBuff = pCmd->data;
+	DWORD dwPos = 0;
+	DWORD dwStrSize=0;
+
+	pstData->wOriginalNID = *(WORD*)(pBuff+dwPos);
+	dwPos+=sizeof(WORD);
+
+	pstData->wTSID = *(WORD*)(pBuff+dwPos);
+	dwPos+=sizeof(WORD);
+
+	pstData->wServiceID = *(WORD*)(pBuff+dwPos);
+	dwPos+=sizeof(WORD);
+
+	pstData->wEventID = *(WORD*)(pBuff+dwPos);
+	dwPos+=sizeof(WORD);
+
+	dwStrSize = *(DWORD*)(pBuff+dwPos);
+	dwPos+=sizeof(DWORD);
+	pstData->strEventName = (WCHAR*)(pBuff+dwPos);
+	dwPos+=dwStrSize;
+
+	dwStrSize = *(DWORD*)(pBuff+dwPos);
+	dwPos+=sizeof(DWORD);
+	pstData->strEventText = (WCHAR*)(pBuff+dwPos);
+	dwPos+=dwStrSize;
+
+	dwStrSize = *(DWORD*)(pBuff+dwPos);
+	dwPos+=sizeof(DWORD);
+	pstData->strEventExtText = (WCHAR*)(pBuff+dwPos);
+	dwPos+=dwStrSize;
+
+	pstData->stStartTime = *(SYSTEMTIME*)(pBuff+dwPos);
+	dwPos+=sizeof(SYSTEMTIME);
+
+	pstData->dwDurationSec = *(DWORD*)(pBuff+dwPos);
+	dwPos+=sizeof(DWORD);
+
+	pstData->ucComponentType = *(unsigned char*)(pBuff+dwPos);
+	dwPos+=sizeof(unsigned char);
+
+	dwStrSize = *(DWORD*)(pBuff+dwPos);
+	dwPos+=sizeof(DWORD);
+	pstData->strComponentTypeText = (WCHAR*)(pBuff+dwPos);
+	dwPos+=dwStrSize;
+
+	pstData->ucAudioComponentType = *(unsigned char*)(pBuff+dwPos);
+	dwPos+=sizeof(unsigned char);
+
+	pstData->ucESMultiLangFlag = *(unsigned char*)(pBuff+dwPos);
+	dwPos+=sizeof(unsigned char);
+
+	pstData->ucMainComponentFlag = *(unsigned char*)(pBuff+dwPos);
+	dwPos+=sizeof(unsigned char);
+
+	pstData->ucSamplingRate = *(unsigned char*)(pBuff+dwPos);
+	dwPos+=sizeof(unsigned char);
+
+	dwStrSize = *(DWORD*)(pBuff+dwPos);
+	dwPos+=sizeof(DWORD);
+	pstData->strAudioComponentTypeText = (WCHAR*)(pBuff+dwPos);
+	dwPos+=dwStrSize;
+
+	DWORD dwCount = *(DWORD*)(pBuff+dwPos);
+	dwPos+=sizeof(DWORD);
+	for( DWORD i=0; i<dwCount; i++ ){
+		OLD_NIBBLE_DATA Item;
+		Item = *(OLD_NIBBLE_DATA*)(pBuff+dwPos);
+		dwPos+=sizeof(OLD_NIBBLE_DATA);
+		pstData->NibbleList.push_back(Item);
+	}
+
+	dwCount = *(DWORD*)(pBuff+dwPos);
+	dwPos+=sizeof(DWORD);
+	for( DWORD i=0; i<dwCount; i++ ){
+		OLD_EVENT_ID_INFO Item;
+		Item = *(OLD_EVENT_ID_INFO*)(pBuff+dwPos);
+		dwPos+=sizeof(OLD_EVENT_ID_INFO);
+		pstData->EventRelayList.push_back(Item);
+	}
+
+	dwCount = *(DWORD*)(pBuff+dwPos);
+	dwPos+=sizeof(DWORD);
+	for( DWORD i=0; i<dwCount; i++ ){
+		OLD_EVENT_ID_INFO Item;
+		Item = *(OLD_EVENT_ID_INFO*)(pBuff+dwPos);
+		dwPos+=sizeof(OLD_EVENT_ID_INFO);
+		pstData->EventGroupList.push_back(Item);
+	}
+	return TRUE;
+}
+
+void CopyOldNew(OLD_RESERVE_DATA* src, RESERVE_DATA* dest)
+{
+	dest->title = src->strTitle;
+	dest->startTime = src->StartTime;
+	dest->durationSecond = src->dwDurationSec;
+	dest->stationName = src->strStationName;
+	dest->originalNetworkID = src->usONID;
+	dest->transportStreamID = src->usTSID;
+	dest->serviceID = src->usServiceID;
+	dest->eventID = src->usEventID;
+	dest->comment = src->strComment;
+	dest->reserveID = src->dwReserveID;
+	dest->recWaitFlag = 0;
+	dest->overlapMode = 0;
+	dest->recFilePath = L"";
+	dest->startTimeEpg = src->StartTime;
+	dest->recSetting.recMode = (BYTE)src->dwRecMode;
+	dest->recSetting.priority = src->ucPriority;
+	dest->recSetting.tuijyuuFlag = src->ucTuijyuu;
+	dest->recSetting.serviceMode = src->dwServiceMode;
+	dest->recSetting.pittariFlag = src->bPittari;
+	dest->recSetting.batFilePath = src->strBatPath;
+	if( src->wSuspendMode == 0 ){
+		dest->recSetting.suspendMode = 4;
+	}else if( src->wSuspendMode == 4 ){
+		dest->recSetting.suspendMode = 0;
+	}else{
+		dest->recSetting.suspendMode = (BYTE)src->wSuspendMode;
+	}
+	dest->recSetting.rebootFlag = src->bReboot;
+	dest->recSetting.useMargineFlag = src->bUseMargine;
+	dest->recSetting.startMargine = src->iStartMargine;
+	dest->recSetting.endMargine = src->iEndMargine;
+	dest->recSetting.continueRecFlag = 0;
+	dest->recSetting.partialRecFlag = 0;
+	dest->recSetting.tunerID = 0;
+	if( src->strRecFolder.size() > 0 ){
+		REC_FILE_SET_INFO folder;
+		folder.recFolder = src->strRecFolder;
+		folder.writePlugIn = L"Write_Default.dll";
+		dest->recSetting.recFolderList.push_back(folder);
+	}
+}
+
+void CopyOldNew(OLD_SEARCH_KEY* src, EPG_AUTO_ADD_DATA* dest)
+{
+	dest->dataID = (DWORD)src->iAutoAddID;
+	if( src->bRegExp == FALSE ){
+		dest->searchInfo.andKey = src->strAnd;
+		dest->searchInfo.notKey = src->strNot;
+	}else{
+		dest->searchInfo.andKey = src->strPattern;
+	}
+	dest->searchInfo.regExpFlag = (BYTE)src->bRegExp;
+	dest->searchInfo.titleOnlyFlag = src->bTitle;
+	if( src->iJanru != -1 ){
+		EPGDB_CONTENT_DATA content;
+		content.user_nibble_1 = (BYTE)src->iJanru;
+		content.user_nibble_2 = 0xFF;
+		dest->searchInfo.contentList.push_back(content);
+	}
+	if( !(src->bChkSun == TRUE && src->bChkMon == TRUE && src->bChkTue == TRUE && src->bChkWed == TRUE &&
+		src->bChkThu == TRUE && src->bChkFri == TRUE && src->bChkSat == TRUE && 
+		src->iSH == 0 && src->iSM == 0 && src->iEH == 23 && src->iEM == 59)
+		){
+			if(src->bChkSun == TRUE){
+				EPGDB_SEARCH_DATE_INFO date;
+				date.startDayOfWeek = 0;
+				date.endDayOfWeek = 0;
+				date.startHour = (WORD)src->iSH;
+				date.startMin = (WORD)src->iSM;
+				date.endHour = (WORD)src->iEH;
+				date.endMin = (WORD)src->iEM;
+				dest->searchInfo.dateList.push_back(date);
+			}
+			if(src->bChkMon == TRUE){
+				EPGDB_SEARCH_DATE_INFO date;
+				date.startDayOfWeek = 1;
+				date.endDayOfWeek = 1;
+				date.startHour = (WORD)src->iSH;
+				date.startMin = (WORD)src->iSM;
+				date.endHour = (WORD)src->iEH;
+				date.endMin = (WORD)src->iEM;
+				dest->searchInfo.dateList.push_back(date);
+			}
+			if(src->bChkTue == TRUE){
+				EPGDB_SEARCH_DATE_INFO date;
+				date.startDayOfWeek = 2;
+				date.endDayOfWeek = 2;
+				date.startHour = (WORD)src->iSH;
+				date.startMin = (WORD)src->iSM;
+				date.endHour = (WORD)src->iEH;
+				date.endMin = (WORD)src->iEM;
+				dest->searchInfo.dateList.push_back(date);
+			}
+			if(src->bChkWed == TRUE){
+				EPGDB_SEARCH_DATE_INFO date;
+				date.startDayOfWeek = 3;
+				date.endDayOfWeek = 3;
+				date.startHour = (WORD)src->iSH;
+				date.startMin = (WORD)src->iSM;
+				date.endHour = (WORD)src->iEH;
+				date.endMin = (WORD)src->iEM;
+				dest->searchInfo.dateList.push_back(date);
+			}
+			if(src->bChkThu == TRUE){
+				EPGDB_SEARCH_DATE_INFO date;
+				date.startDayOfWeek = 4;
+				date.endDayOfWeek = 4;
+				date.startHour = (WORD)src->iSH;
+				date.startMin = (WORD)src->iSM;
+				date.endHour = (WORD)src->iEH;
+				date.endMin = (WORD)src->iEM;
+				dest->searchInfo.dateList.push_back(date);
+			}
+			if(src->bChkFri == TRUE){
+				EPGDB_SEARCH_DATE_INFO date;
+				date.startDayOfWeek = 5;
+				date.endDayOfWeek = 5;
+				date.startHour = (WORD)src->iSH;
+				date.startMin = (WORD)src->iSM;
+				date.endHour = (WORD)src->iEH;
+				date.endMin = (WORD)src->iEM;
+				dest->searchInfo.dateList.push_back(date);
+			}
+			if(src->bChkSat == TRUE){
+				EPGDB_SEARCH_DATE_INFO date;
+				date.startDayOfWeek = 6;
+				date.endDayOfWeek = 6;
+				date.startHour = (WORD)src->iSH;
+				date.startMin = (WORD)src->iSM;
+				date.endHour = (WORD)src->iEH;
+				date.endMin = (WORD)src->iEM;
+				dest->searchInfo.dateList.push_back(date);
+			}
+	}
+	dest->searchInfo.serviceList = src->CHIDList;
+
+	dest->recSetting.recMode = (BYTE)src->iRecMode;
+	dest->recSetting.priority = (BYTE)src->iPriority;
+	dest->recSetting.tuijyuuFlag = (BYTE)src->iTuijyuu;
+	dest->recSetting.serviceMode = src->dwServiceMode;
+	dest->recSetting.pittariFlag = (BYTE)src->iPittari;
+	dest->recSetting.batFilePath = src->strBat;
+	if( src->wSuspendMode == 0 ){
+		dest->recSetting.suspendMode = 4;
+	}else if( src->wSuspendMode == 4 ){
+		dest->recSetting.suspendMode = 0;
+	}else{
+		dest->recSetting.suspendMode = (BYTE)src->wSuspendMode;
+	}
+	dest->recSetting.rebootFlag = src->bReboot;
+	dest->recSetting.useMargineFlag = src->bUseMargine;
+	dest->recSetting.startMargine = src->iStartMargine;
+	dest->recSetting.endMargine = src->iEndMargine;
+	dest->recSetting.continueRecFlag = 0;
+	dest->recSetting.partialRecFlag = 0;
+	dest->recSetting.tunerID = 0;
+	if( src->strRecFolder.size() > 0 ){
+		REC_FILE_SET_INFO folder;
+		folder.recFolder = src->strRecFolder;
+		folder.writePlugIn = L"Write_Default.dll";
+		dest->recSetting.recFolderList.push_back(folder);
+	}
+}
+
+void CopyOldNew(OLD_SEARCH_KEY* src, EPGDB_SEARCH_KEY_INFO* dest)
+{
+	if( src->bRegExp == FALSE ){
+		dest->andKey = src->strAnd;
+		dest->notKey = src->strNot;
+	}else{
+		dest->andKey = src->strPattern;
+	}
+	dest->regExpFlag = (BYTE)src->bRegExp;
+	dest->titleOnlyFlag = src->bTitle;
+	if( src->iJanru != -1 ){
+		EPGDB_CONTENT_DATA content;
+		content.user_nibble_1 = (BYTE)src->iJanru;
+		content.user_nibble_2 = 0xFF;
+		dest->contentList.push_back(content);
+	}
+	if( !(src->bChkSun == TRUE && src->bChkMon == TRUE && src->bChkTue == TRUE && src->bChkWed == TRUE &&
+		src->bChkThu == TRUE && src->bChkFri == TRUE && src->bChkSat == TRUE && 
+		src->iSH == 0 && src->iSM == 0 && src->iEH == 23 && src->iEM == 59)
+		){
+			if(src->bChkSun == TRUE){
+				EPGDB_SEARCH_DATE_INFO date;
+				date.startDayOfWeek = 0;
+				date.endDayOfWeek = 0;
+				date.startHour = (WORD)src->iSH;
+				date.startMin = (WORD)src->iSM;
+				date.endHour = (WORD)src->iEH;
+				date.endMin = (WORD)src->iEM;
+				dest->dateList.push_back(date);
+			}
+			if(src->bChkMon == TRUE){
+				EPGDB_SEARCH_DATE_INFO date;
+				date.startDayOfWeek = 1;
+				date.endDayOfWeek = 1;
+				date.startHour = (WORD)src->iSH;
+				date.startMin = (WORD)src->iSM;
+				date.endHour = (WORD)src->iEH;
+				date.endMin = (WORD)src->iEM;
+				dest->dateList.push_back(date);
+			}
+			if(src->bChkTue == TRUE){
+				EPGDB_SEARCH_DATE_INFO date;
+				date.startDayOfWeek = 2;
+				date.endDayOfWeek = 2;
+				date.startHour = (WORD)src->iSH;
+				date.startMin = (WORD)src->iSM;
+				date.endHour = (WORD)src->iEH;
+				date.endMin = (WORD)src->iEM;
+				dest->dateList.push_back(date);
+			}
+			if(src->bChkWed == TRUE){
+				EPGDB_SEARCH_DATE_INFO date;
+				date.startDayOfWeek = 3;
+				date.endDayOfWeek = 3;
+				date.startHour = (WORD)src->iSH;
+				date.startMin = (WORD)src->iSM;
+				date.endHour = (WORD)src->iEH;
+				date.endMin = (WORD)src->iEM;
+				dest->dateList.push_back(date);
+			}
+			if(src->bChkThu == TRUE){
+				EPGDB_SEARCH_DATE_INFO date;
+				date.startDayOfWeek = 4;
+				date.endDayOfWeek = 4;
+				date.startHour = (WORD)src->iSH;
+				date.startMin = (WORD)src->iSM;
+				date.endHour = (WORD)src->iEH;
+				date.endMin = (WORD)src->iEM;
+				dest->dateList.push_back(date);
+			}
+			if(src->bChkFri == TRUE){
+				EPGDB_SEARCH_DATE_INFO date;
+				date.startDayOfWeek = 5;
+				date.endDayOfWeek = 5;
+				date.startHour = (WORD)src->iSH;
+				date.startMin = (WORD)src->iSM;
+				date.endHour = (WORD)src->iEH;
+				date.endMin = (WORD)src->iEM;
+				dest->dateList.push_back(date);
+			}
+			if(src->bChkSat == TRUE){
+				EPGDB_SEARCH_DATE_INFO date;
+				date.startDayOfWeek = 6;
+				date.endDayOfWeek = 6;
+				date.startHour = (WORD)src->iSH;
+				date.startMin = (WORD)src->iSM;
+				date.endHour = (WORD)src->iEH;
+				date.endMin = (WORD)src->iEM;
+				dest->dateList.push_back(date);
+			}
+	}
+	dest->serviceList = src->CHIDList;
+}
+
 BOOL CCUTIL_WriteStream_( const void* val, DWORD valSize, BYTE* buff, DWORD buffSize, DWORD* writeSize )
 {
 	if( val == NULL || buff == NULL || valSize > buffSize ){
