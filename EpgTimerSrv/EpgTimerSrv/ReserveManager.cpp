@@ -4085,7 +4085,7 @@ BOOL CReserveManager::GetSleepReturnTime(
 	LONGLONG* returnTime
 	)
 {
-	if( returnTime == NULL ){
+	if( returnTime == NULL || Lock(L"GetSleepReturnTime") == FALSE ){
 		return FALSE;
 	}
 	LONGLONG nextRec = 0;
@@ -4102,6 +4102,7 @@ BOOL CReserveManager::GetSleepReturnTime(
 	LONGLONG epgcapTime = 0;
 	GetNextEpgcapTime(&epgcapTime, 0,&swBasicOnly);
 
+	UnLock();
 
 	if( nextRec == 0 && epgcapTime == 0 ){
 		return FALSE;
