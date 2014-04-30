@@ -4088,13 +4088,23 @@ BOOL CReserveManager::GetSleepReturnTime(
 	if( returnTime == NULL || Lock(L"GetSleepReturnTime") == FALSE ){
 		return FALSE;
 	}
+	//最も近い予約開始時刻を得る(計算量の関係でGetReserveIDListを使う)
 	LONGLONG nextRec = 0;
-	vector<pair<LONGLONG, const RESERVE_DATA*> > resList = this->reserveText.GetReserveList(TRUE, this->defStartMargine);
-	vector<pair<LONGLONG, const RESERVE_DATA*> >::iterator itr;
+	vector<pair<DWORD, const RESERVE_DATA*> > resList = this->reserveText.GetReserveIDList();
+	vector<pair<DWORD, const RESERVE_DATA*> >::iterator itr;
 	for( itr = resList.begin(); itr != resList.end(); itr++ ){
 		if( itr->second->recSetting.recMode != RECMODE_NO ){
-			CalcEntireReserveTime(&nextRec, NULL, *itr->second);
-			break;
+			LONGLONG startTime = ConvertI64Time(itr->second->startTime);
+			LONGLONG endTime = startTime + itr->second->durationSecond * I64_1SEC;
+			LONGLONG startMargin = this->defStartMargine * I64_1SEC;
+			if( itr->second->recSetting.useMargineFlag == TRUE ){
+				startMargin = itr->second->recSetting.startMargine * I64_1SEC;
+			}
+			//開始マージンは元の予約終了時刻を超えて負であってはならない
+			startTime -= max(startMargin, startTime - endTime);
+			if( nextRec == 0 || nextRec > startTime ){
+				nextRec = startTime;
+			}
 		}
 	}
 

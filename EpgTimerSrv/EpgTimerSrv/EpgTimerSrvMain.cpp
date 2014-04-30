@@ -257,10 +257,10 @@ void CEpgTimerSrvMain::StartMain(
 				SetThreadExecutionState(ES_CONTINUOUS);
 			}
 			countChkSuspend = 0;
-
-			SetResumeTimer(&resumeTimer, &resumeTime, FALSE);
 		}
 		countChkSuspend++;
+
+		SetResumeTimer(&resumeTimer, &resumeTime, FALSE);
 	}
 
 	if( resumeTimer != NULL ){
