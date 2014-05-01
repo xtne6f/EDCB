@@ -35,7 +35,7 @@
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="130" />
             </Grid.ColumnDefinitions>
-            <ListView Name="listView_key" Margin="10" SelectionMode="Extended" ItemsSource="{Binding}" ContextMenu="{DynamicResource itemHeader}" ContextMenuOpening="ContextMenu_Header_ContextMenuOpening" AllowDrop="False" GridViewColumnHeader.Click="GridViewColumnHeader_Click" AlternationCount="2">
+            <ListView Name="listView_key" Margin="10" SelectionMode="Extended" ItemsSource="{Binding}" ContextMenu="{DynamicResource itemHeader}" ContextMenuOpening="ContextMenu_Header_ContextMenuOpening" AllowDrop="False" GridViewColumnHeader.Click="GridViewColumnHeader_Click" AlternationCount="2" MouseUp="listView_key_MouseUp">
                 <ListView.Resources>
                     <Style TargetType="ListViewItem">
                         <Setter Property="ToolTipService.ShowDuration" Value="20000" />

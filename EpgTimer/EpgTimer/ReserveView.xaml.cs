@@ -358,6 +358,8 @@ namespace EpgTimer
             if (listView_reserve.SelectedItem != null)
             {
                 ReserveItem item = listView_reserve.SelectedItem as ReserveItem;
+                listView_reserve.UnselectAll();
+                listView_reserve.SelectedItem = item;
                 ChgReserveWindow dlg = new ChgReserveWindow();
                 dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
                 dlg.SetReserveInfo(item.ReserveInfo);
@@ -542,6 +544,8 @@ namespace EpgTimer
                 EpgSearchKeyInfo key = new EpgSearchKeyInfo();
 
                 ReserveItem item = listView_reserve.SelectedItem as ReserveItem;
+                listView_reserve.UnselectAll();
+                listView_reserve.SelectedItem = item;
 
                 key.andKey = item.ReserveInfo.Title;
                 Int64 sidKey = ((Int64)item.ReserveInfo.OriginalNetworkID) << 32 | ((Int64)item.ReserveInfo.TransportStreamID) << 16 | ((Int64)item.ReserveInfo.ServiceID);
@@ -557,6 +561,8 @@ namespace EpgTimer
             if (listView_reserve.SelectedItem != null)
             {
                 ReserveItem info = listView_reserve.SelectedItem as ReserveItem;
+                listView_reserve.UnselectAll();
+                listView_reserve.SelectedItem = info;
                 CommonManager.Instance.TVTestCtrl.StartTimeShift(info.ReserveInfo.ReserveID);
             }
         }
@@ -597,6 +603,7 @@ namespace EpgTimer
 
         private void button_add_manual_Click(object sender, RoutedEventArgs e)
         {
+            listView_reserve.UnselectAll();
             ChgReserveWindow dlg = new ChgReserveWindow();
             dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
             dlg.AddReserveMode(true);
@@ -689,7 +696,7 @@ namespace EpgTimer
                         this.MenuItem_Click_ProgramTable(this, new RoutedEventArgs(Button.ClickEvent));
                         break;
                     case Key.Enter:
-                        this.button_change_Click(this.listView_reserve.SelectedItem, new RoutedEventArgs(Button.ClickEvent));
+                        this.ChangeReserve();
                         break;
                     case Key.Delete:
                         this.deleteItem();
@@ -702,23 +709,15 @@ namespace EpgTimer
         {
             if (listView_reserve.SelectedItems.Count == 0) { return; }
             //
-            try
+            string text1 = "削除しますか？" + "　[削除アイテム数: " + listView_reserve.SelectedItems.Count + "]" + "\n\n";
+            foreach (ReserveItem info in listView_reserve.SelectedItems)
             {
-                string text1 = "削除しますか？" + "　[削除アイテム数: " + listView_reserve.SelectedItems.Count + "]" + "\n\n";
-                List<UInt32> dataIDList = new List<uint>();
-                foreach (ReserveItem info in listView_reserve.SelectedItems)
-                {
-                    text1 += " ・ " + info.ReserveInfo.Title + "\n";
-                }
-                string caption1 = "登録項目削除の確認";
-                if (MessageBox.Show(text1, caption1, MessageBoxButton.OKCancel, MessageBoxImage.Exclamation, MessageBoxResult.OK) == MessageBoxResult.OK)
-                {
-                    this.button_del_Click(this.listView_reserve.SelectedItem, new RoutedEventArgs(Button.ClickEvent));
-                }
+                text1 += " ・ " + info.ReserveInfo.Title + "\n";
             }
-            catch (Exception ex)
+            string caption1 = "登録項目削除の確認";
+            if (MessageBox.Show(text1, caption1, MessageBoxButton.OKCancel, MessageBoxImage.Exclamation, MessageBoxResult.OK) == MessageBoxResult.OK)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                this.button_del_Click(this.listView_reserve.SelectedItem, new RoutedEventArgs(Button.ClickEvent));
             }
         }
 
@@ -795,6 +794,8 @@ namespace EpgTimer
             ReserveItem item1 = this.listView_reserve.SelectedItem as ReserveItem;
             if (item1 != null)
             {
+                listView_reserve.UnselectAll();
+                listView_reserve.SelectedItem = item1;
                 BlackoutWindow.selectedReserveItem = item1;
                 this._mainWindow.moveTo_tabItem_epg();
             }

@@ -400,25 +400,7 @@ namespace EpgTimer
 
         private void listView_result_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            try
-            {
-                if (listView_result.SelectedItem != null)
-                {
-                    SearchItem item = listView_result.SelectedItem as SearchItem;
-                    if (item.IsReserved == true)
-                    {
-                        ChangeReserve(item.ReserveInfo);
-                    }
-                    else
-                    {
-                        AddReserve(item.EventInfo);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            this.MenuItem_Click_ShowDialog(listView_result.SelectedItem, new RoutedEventArgs());
         }
 
         private void ChangeReserve(ReserveData reserveInfo)
@@ -583,9 +565,7 @@ namespace EpgTimer
                         this.MenuItem_Click_ProgramTable(this, new RoutedEventArgs(Button.ClickEvent));
                         break;
                     case Key.Escape:
-                        {
-                            this.Close();
-                        }
+                        this.Close();
                         break;
                 }
             }
@@ -725,17 +705,26 @@ namespace EpgTimer
         
         private void MenuItem_Click_ShowDialog(object sender, RoutedEventArgs e)
         {
-            if (listView_result.SelectedItem != null)
+            try
             {
-                SearchItem item = listView_result.SelectedItem as SearchItem;
-                if (item.IsReserved == true)
+                if (listView_result.SelectedItem != null)
                 {
-                    ChangeReserve(item.ReserveInfo);
+                    SearchItem item = listView_result.SelectedItem as SearchItem;
+                    listView_result.UnselectAll();
+                    listView_result.SelectedItem = item;
+                    if (item.IsReserved == true)
+                    {
+                        ChangeReserve(item.ReserveInfo);
+                    }
+                    else
+                    {
+                        AddReserve(item.EventInfo);
+                    }
                 }
-                else
-                {
-                    AddReserve(item.EventInfo);
-                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
 
@@ -834,6 +823,8 @@ namespace EpgTimer
             SearchItem item1 = this.listView_result.SelectedItem as SearchItem;
             if (item1 != null)
             {
+                listView_result.UnselectAll();
+                listView_result.SelectedItem = item1;
                 BlackoutWindow.selectedSearchItem = item1;
                 MainWindow mainWindow1 = this.Owner as MainWindow;
                 if (mainWindow1 != null)
@@ -898,6 +889,8 @@ namespace EpgTimer
             if (listView_result.SelectedItem != null)
             {
                 SearchItem item = listView_result.SelectedItem as SearchItem;
+                listView_result.UnselectAll();
+                listView_result.SelectedItem = item;
 
                 SearchWindow dlg = new SearchWindow();
 

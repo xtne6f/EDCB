@@ -271,45 +271,23 @@ namespace EpgTimer
 
         private void button_change_Click(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                if (listView_key.SelectedItem != null)
-                {
-                    EpgAutoDataItem info = listView_key.SelectedItem as EpgAutoDataItem;
-                    SearchWindow dlg = new SearchWindow();
-                    dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-                    dlg.SetViewMode(2);
-                    dlg.SetChgAutoAddID(info.EpgAutoAddInfo.dataID);
-                    dlg.SetSearchDefKey(info.EpgAutoAddInfo.searchInfo);
-                    dlg.SetRecInfoDef(info.EpgAutoAddInfo.recSetting);
-                    dlg.ShowDialog();
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            this.showDialog();
         }
 
+        //SearchWindowからのリスト選択状態の変更を優先するために、MouseUpイベントによる
+        //listViewによるアイテム選択処理より後でダイアログを出すようにする。
+        private bool doubleClicked = false;
         private void listView_key_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            try
+            doubleClicked = true;
+        }
+
+        private void listView_key_MouseUp(object sender, MouseButtonEventArgs e)
+        {
+            if (doubleClicked == true)
             {
-                if (listView_key.SelectedItem != null)
-                {
-                    EpgAutoDataItem info = listView_key.SelectedItem as EpgAutoDataItem;
-                    SearchWindow dlg = new SearchWindow();
-                    dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-                    dlg.SetViewMode(2);
-                    dlg.SetChgAutoAddID(info.EpgAutoAddInfo.dataID);
-                    dlg.SetSearchDefKey(info.EpgAutoAddInfo.searchInfo);
-                    dlg.SetRecInfoDef(info.EpgAutoAddInfo.recSetting);
-                    dlg.ShowDialog();
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                doubleClicked = false;
+                this.showDialog();
             }
         }
 
@@ -471,24 +449,15 @@ namespace EpgTimer
         {
             if (listView_key.SelectedItems.Count == 0) { return; }
             //
-            try
+            string text1 = "削除しますか？" + "　[削除アイテム数: " + listView_key.SelectedItems.Count + "]" + "\n\n";
+            foreach (EpgAutoDataItem info in listView_key.SelectedItems)
             {
-                string text1 = "削除しますか？" + "　[削除アイテム数: " + listView_key.SelectedItems.Count + "]" + "\n\n";
-                List<UInt32> dataIDList = new List<uint>();
-                foreach (EpgAutoDataItem info in listView_key.SelectedItems)
-                {
-                    dataIDList.Add(info.EpgAutoAddInfo.dataID);
-                    text1 += "「" + info.AndKey + "」" + "\n";
-                }
-                string caption1 = "登録項目削除の確認";
-                if (MessageBox.Show(text1, caption1, MessageBoxButton.OKCancel, MessageBoxImage.Exclamation, MessageBoxResult.OK) == MessageBoxResult.OK)
-                {
-                    cmd.SendDelEpgAutoAdd(dataIDList);
-                }
+                text1 += "「" + info.AndKey + "」" + "\n";
             }
-            catch (Exception ex)
+            string caption1 = "登録項目削除の確認";
+            if (MessageBox.Show(text1, caption1, MessageBoxButton.OKCancel, MessageBoxImage.Exclamation, MessageBoxResult.OK) == MessageBoxResult.OK)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                button_del_Click(listView_key, new RoutedEventArgs());
             }
         }
 
@@ -499,6 +468,8 @@ namespace EpgTimer
             try
             {
                 EpgAutoDataItem info = listView_key.SelectedItem as EpgAutoDataItem;
+                listView_key.UnselectAll();
+                listView_key.SelectedItem = info;
                 SearchWindow dlg = new SearchWindow();
                 dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
                 dlg.SetViewMode(2);

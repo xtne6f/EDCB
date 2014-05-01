@@ -368,6 +368,8 @@ namespace EpgTimer
             if (listView_recinfo.SelectedItem != null)
             {
                 RecInfoItem info = listView_recinfo.SelectedItem as RecInfoItem;
+                listView_recinfo.UnselectAll();
+                listView_recinfo.SelectedItem = info;
                 if (info.RecInfo.RecFilePath.Length > 0)
                 {
                     try
@@ -393,6 +395,8 @@ namespace EpgTimer
                 EpgSearchKeyInfo key = new EpgSearchKeyInfo();
 
                 RecInfoItem item = listView_recinfo.SelectedItem as RecInfoItem;
+                listView_recinfo.UnselectAll();
+                listView_recinfo.SelectedItem = item;
 
                 key.andKey = item.RecInfo.Title;
                 Int64 sidKey = ((Int64)item.RecInfo.OriginalNetworkID) << 32 | ((Int64)item.RecInfo.TransportStreamID) << 16 | ((Int64)item.RecInfo.ServiceID);
@@ -419,6 +423,8 @@ namespace EpgTimer
             if (listView_recinfo.SelectedItem != null)
             {
                 RecInfoItem info = listView_recinfo.SelectedItem as RecInfoItem;
+                listView_recinfo.UnselectAll();
+                listView_recinfo.SelectedItem = info;
                 RecInfoDescWindow dlg = new RecInfoDescWindow();
                 dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
                 dlg.SetRecInfo(info.RecInfo);
@@ -431,6 +437,8 @@ namespace EpgTimer
             if (listView_recinfo.SelectedItem != null && CommonManager.Instance.NWMode == false)
             {
                 RecInfoItem info = listView_recinfo.SelectedItem as RecInfoItem;
+                listView_recinfo.UnselectAll();
+                listView_recinfo.SelectedItem = info;
                 if (info.RecFilePath.Length == 0)
                 {
                     MessageBox.Show("録画ファイルが存在しません");
