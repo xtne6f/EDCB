@@ -63,5 +63,15 @@ namespace EpgTimer
                 }
             }
         }        
+
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            switch (e.Key)
+            {
+                case Key.Escape:
+                    this.Close();
+                    break;
+            }
+        }
     }
 }
