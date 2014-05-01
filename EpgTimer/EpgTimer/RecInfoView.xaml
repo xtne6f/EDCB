@@ -45,12 +45,12 @@
             <MenuItem Header="結果" Name="Result" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="録画ファイル" Name="RecFilePath" IsCheckable="True" Click="headerSelect_Click" />
         </ContextMenu>
-        <ContextMenu x:Key="itemMenu" x:Name="cmdMenu">
+        <ContextMenu x:Key="itemMenu" x:Name="cmdMenu" Loaded="cmdMenu_Loaded">
             <MenuItem Header="録画情報" Click="button_recInfo_Click" />
             <MenuItem Header="削除" Click="button_del_Click" />
             <MenuItem Header="再生" Click="button_play_Click" />
             <MenuItem Header="自動予約登録" Click="autoadd_Click" />
-            <MenuItem Header="録画フォルダを開く" Click="openFolder_Click" />
+            <MenuItem Name="cmdopenFolder" Header="録画フォルダを開く" Click="openFolder_Click" />
         </ContextMenu>
 
     </UserControl.Resources>

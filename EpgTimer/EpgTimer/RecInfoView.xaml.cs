@@ -434,28 +434,32 @@ namespace EpgTimer
 
         private void openFolder_Click(object sender, RoutedEventArgs e)
         {
-            if (listView_recinfo.SelectedItem != null && CommonManager.Instance.NWMode == false)
+            if (listView_recinfo.SelectedItem != null)
             {
                 RecInfoItem info = listView_recinfo.SelectedItem as RecInfoItem;
                 listView_recinfo.UnselectAll();
                 listView_recinfo.SelectedItem = info;
-                if (info.RecFilePath.Length == 0)
-                {
-                    MessageBox.Show("録画ファイルが存在しません");
-                }
-                else
-                {
-                    if (System.IO.File.Exists(info.RecFilePath) == true)
-                    {
-                        String cmd = "/select,";
-                        cmd += "\"" + info.RecFilePath + "\"";
 
-                        System.Diagnostics.Process.Start("EXPLORER.EXE", cmd);
+                if (CommonManager.Instance.NWMode == false)//一応残す
+                {
+                    if (info.RecFilePath.Length == 0)
+                    {
+                        MessageBox.Show("録画ファイルが存在しません");
                     }
                     else
                     {
-                        String folderPath = System.IO.Path.GetDirectoryName(info.RecFilePath);
-                        System.Diagnostics.Process.Start("EXPLORER.EXE", folderPath);
+                        if (System.IO.File.Exists(info.RecFilePath) == true)
+                        {
+                            String cmd = "/select,";
+                            cmd += "\"" + info.RecFilePath + "\"";
+
+                            System.Diagnostics.Process.Start("EXPLORER.EXE", cmd);
+                        }
+                        else
+                        {
+                            String folderPath = System.IO.Path.GetDirectoryName(info.RecFilePath);
+                            System.Diagnostics.Process.Start("EXPLORER.EXE", folderPath);
+                        }
                     }
                 }
             }
@@ -515,6 +519,25 @@ namespace EpgTimer
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+            }
+        }
+
+        private void cmdMenu_Loaded(object sender, RoutedEventArgs e)
+        {
+            if(CommonManager.Instance.NWMode == true)
+            {
+                if (listView_recinfo.SelectedItem != null)
+                {
+                    foreach (object item in ((ContextMenu)sender).Items)
+                    {
+                        if (item is MenuItem && ((((MenuItem)item).Name == "cmdopenFolder")))
+                        {
+                            ((MenuItem)item).IsEnabled = false;
+                            ((MenuItem)item).Header += ((MenuItem)item).Header.ToString().EndsWith("(EpgTimerNWで無効)") ? "" : "(EpgTimerNWで無効)";
+                            break;
+                        }
+                    }
+                }
             }
         }
     }
