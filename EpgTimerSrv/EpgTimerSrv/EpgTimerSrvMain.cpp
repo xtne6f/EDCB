@@ -281,11 +281,9 @@ BOOL CEpgTimerSrvMain::SetResumeTimer(HANDLE* resumeTimer, LONGLONG* resumeTime,
 		CBlockLock lock(&this->settingLock);
 		ret = FALSE;
 		//rebootFlag時は(指定+5分前)に復帰
-		LARGE_INTEGER setTime;
-		LONGLONG nowTime = GetNowI64Time();
-		setTime.QuadPart = nowTime - returnTime + 60 * I64_1SEC * (this->wakeMargin + (rebootFlag ? 5 : 0));
-		if( setTime.QuadPart < 0 ){
-			if( *resumeTimer != NULL && *resumeTime == nowTime - setTime.QuadPart ){
+		LONGLONG setTime = returnTime - 60 * I64_1SEC * (this->wakeMargin + (rebootFlag ? 5 : 0));
+		if( setTime > GetNowI64Time() ){
+			if( *resumeTimer != NULL && *resumeTime == setTime ){
 				//同時刻でセット済み
 				ret = TRUE;
 			}else{
@@ -293,8 +291,15 @@ BOOL CEpgTimerSrvMain::SetResumeTimer(HANDLE* resumeTimer, LONGLONG* resumeTime,
 					*resumeTimer = CreateWaitableTimer(NULL, FALSE, NULL);
 				}
 				if( *resumeTimer != NULL ){
-					if( SetWaitableTimer(*resumeTimer, &setTime, 0, NULL, NULL, TRUE) != FALSE ){
-						*resumeTime = nowTime - setTime.QuadPart;
+					FILETIME locTime;
+					locTime.dwLowDateTime = (DWORD)setTime;
+					locTime.dwHighDateTime = (DWORD)(setTime >> 32);
+					FILETIME utcTime = {};
+					LocalFileTimeToFileTime(&locTime, &utcTime);
+					LARGE_INTEGER liTime;
+					liTime.QuadPart = (LONGLONG)utcTime.dwHighDateTime << 32 | utcTime.dwLowDateTime;
+					if( SetWaitableTimer(*resumeTimer, &liTime, 0, NULL, NULL, TRUE) != FALSE ){
+						*resumeTime = setTime;
 						ret = TRUE;
 					}else{
 						CloseHandle(*resumeTimer);
