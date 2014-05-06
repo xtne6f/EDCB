@@ -81,13 +81,11 @@ CRC_32（CRC）：これはARIB STD-B10 の付録B で定義するデコーダにおいて、セクション
 
 #include "../../../Common/Util.h"
 #include "../Descriptor/DescriptorDef.h"
+#include "PSITable.h"
 
-class CCDTTable
+class CCDTTable : public CPSITable
 {
 public:
-	BYTE table_id;
-	BYTE section_syntax_indicator;
-	WORD section_length;
 	WORD download_data_id;
 	BYTE version_number;
 	BYTE current_next_indicator;
@@ -99,7 +97,6 @@ public:
 	vector<DESCRIPTOR_DATA*> descriptorList;
 	WORD data_module_byteSize;
 	BYTE* data_module_byte;
-	DWORD crc32;
 
 public:
 	CCDTTable(void);

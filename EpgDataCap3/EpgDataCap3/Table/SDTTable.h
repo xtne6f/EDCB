@@ -103,8 +103,9 @@ CRC_32（CRC）：これは付録B で定義するデコーダにおいて、セクション全体を処理し
 
 #include "../../../Common/Util.h"
 #include "../Descriptor/DescriptorDef.h"
+#include "PSITable.h"
 
-class CSDTTable
+class CSDTTable : public CPSITable
 {
 public:
 	typedef struct _SERVICE_INFO_DATA{
@@ -123,9 +124,6 @@ public:
 			descriptorList.clear();
 		};
 	} SERVICE_INFO_DATA;
-	BYTE table_id;
-	BYTE section_syntax_indicator;
-	WORD section_length;
 	WORD transport_stream_id;
 	BYTE version_number;
 	BYTE current_next_indicator;
@@ -133,7 +131,6 @@ public:
 	BYTE last_section_number;
 	WORD original_network_id;
 	vector<SERVICE_INFO_DATA*> serviceInfoList;
-	DWORD crc32;
 
 public:
 	CSDTTable(void);

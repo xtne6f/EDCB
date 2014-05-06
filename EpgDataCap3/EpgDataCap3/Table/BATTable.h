@@ -84,8 +84,9 @@ CRC_32（CRC）：これは付録B で定義するデコーダにおいて、セクション全体を処理し
 
 #include "../../../Common/Util.h"
 #include "../Descriptor/DescriptorDef.h"
+#include "PSITable.h"
 
-class CBATTable
+class CBATTable : public CPSITable
 {
 public:
 	typedef struct _TS_INFO_DATA{
@@ -100,9 +101,6 @@ public:
 			descriptorList.clear();
 		};
 	} TS_INFO_DATA;
-	BYTE table_id;
-	BYTE section_syntax_indicator;
-	WORD section_length;
 	WORD bouquet_id;
 	BYTE version_number;
 	BYTE current_next_indicator;
@@ -112,7 +110,6 @@ public:
 	vector<DESCRIPTOR_DATA*> descriptorList;
 	WORD transport_stream_loop_length;
 	vector<TS_INFO_DATA*> TSInfoList;
-	DWORD crc32;
 
 public:
 	CBATTable(void);

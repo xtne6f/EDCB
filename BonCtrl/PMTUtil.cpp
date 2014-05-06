@@ -75,7 +75,7 @@ BOOL CPMTUtil::DecodePMT(BYTE* data, DWORD dataSize)
 		_OutputDebugString(L"CPMTUtil::table_id Err");
 		return FALSE;
 	}
-	if( readSize+section_length > dataSize && section_length > 3){
+	if( readSize+section_length > dataSize || section_length < 4){
 		//ƒTƒCƒYˆÙí
 		_OutputDebugString(L"CPMTUtil::section_length %d Err", section_length);
 		return FALSE;

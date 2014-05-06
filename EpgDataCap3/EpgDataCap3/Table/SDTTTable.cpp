@@ -23,26 +23,10 @@ void CSDTTTable::Clear()
 
 BOOL CSDTTTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 {
-	if( data == NULL ){
+	if( InitDecode(data, dataSize, decodeReadSize, TRUE) == FALSE ){
 		return FALSE;
 	}
 	Clear();
-
-	//////////////////////////////////////////////////////
-	//サイズのチェック
-	//最低限table_idとsection_length+CRCのサイズは必須
-	if( dataSize < 7 ){
-		return FALSE;
-	}
-	//->サイズのチェック
-
-	DWORD readSize = 0;
-	//////////////////////////////////////////////////////
-	//解析処理
-	table_id = data[0];
-	section_syntax_indicator = (data[1]&0x80)>>7;
-	section_length = ((WORD)data[1]&0x0F)<<8 | data[2];
-	readSize+=3;
 
 	if( section_syntax_indicator != 1 ){
 		//固定値がおかしい
@@ -52,20 +36,6 @@ BOOL CSDTTTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 	if( table_id != 0xC3 ){
 		//table_idがおかしい
 		_OutputDebugString( L"++CSDTTTable:: table_id err 0xC3 != 0x%02X", table_id );
-		return FALSE;
-	}
-	if( readSize+section_length > dataSize && section_length > 3){
-		//サイズ異常
-		_OutputDebugString( L"++CSDTTTable:: size err %d > %d", readSize+section_length, dataSize );
-		return FALSE;
-	}
-	//CRCチェック
-	crc32 = ((DWORD)data[3+section_length-4])<<24 |
-		((DWORD)data[3+section_length-3])<<16 |
-		((DWORD)data[3+section_length-2])<<8 |
-		data[3+section_length-1];
-	if( crc32 != _Crc32(3+section_length-4, data) ){
-		_OutputDebugString( L"++CSDTTTable:: CRC err" );
 		return FALSE;
 	}
 
@@ -127,11 +97,6 @@ BOOL CSDTTTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 
 	}else{
 		return FALSE;
-	}
-	//->解析処理
-
-	if( decodeReadSize != NULL ){
-		*decodeReadSize = 3+section_length;
 	}
 
 	return TRUE;

@@ -1,7 +1,6 @@
 #include "StdAfx.h"
 #include "SDTTable.h"
 
-#include "../../../Common/EpgTimerUtil.h"
 #include "../Descriptor/Descriptor.h"
 #include "../ARIB8CharDecode.h"
 
@@ -24,26 +23,10 @@ void CSDTTable::Clear()
 
 BOOL CSDTTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 {
-	if( data == NULL ){
+	if( InitDecode(data, dataSize, decodeReadSize, TRUE) == FALSE ){
 		return FALSE;
 	}
 	Clear();
-
-	//////////////////////////////////////////////////////
-	//サイズのチェック
-	//最低限table_idとsection_length+CRCのサイズは必須
-	if( dataSize < 7 ){
-		return FALSE;
-	}
-	//->サイズのチェック
-
-	DWORD readSize = 0;
-	//////////////////////////////////////////////////////
-	//解析処理
-	table_id = data[0];
-	section_syntax_indicator = (data[1]&0x80)>>7;
-	section_length = ((WORD)data[1]&0x0F)<<8 | data[2];
-	readSize+=3;
 
 	if( section_syntax_indicator != 1 ){
 		//固定値がおかしい
@@ -53,20 +36,6 @@ BOOL CSDTTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 	if( table_id != 0x42 && table_id != 0x46 ){
 		//table_idがおかしい
 		_OutputDebugString( L"++CSDTTable:: table_id err 0x%02X", table_id );
-		return FALSE;
-	}
-	if( readSize+section_length > dataSize && section_length > 3){
-		//サイズ異常
-		_OutputDebugString( L"++CSDTTable:: size err %d > %d", readSize+section_length, dataSize );
-		return FALSE;
-	}
-	//CRCチェック
-	crc32 = ((DWORD)data[3+section_length-4])<<24 |
-		((DWORD)data[3+section_length-3])<<16 |
-		((DWORD)data[3+section_length-2])<<8 |
-		data[3+section_length-1];
-	if( crc32 != _Crc32(3+section_length-4, data) ){
-		_OutputDebugString( L"++CSDTTable:: CRC err" );
 		return FALSE;
 	}
 
@@ -119,11 +88,6 @@ BOOL CSDTTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 		}
 	}else{
 		return FALSE;
-	}
-	//->解析処理
-
-	if( decodeReadSize != NULL ){
-		*decodeReadSize = 3+section_length;
 	}
 
 	return TRUE;

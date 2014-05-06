@@ -119,7 +119,7 @@ DWORD CCreatePMTPacket::DecodePMT(BYTE* data, DWORD dataSize)
 		_OutputDebugString(L"CCreatePMTPacket::table_id Err");
 		return ERR_FALSE;
 	}
-	if( readSize+section_length > dataSize && section_length > 3){
+	if( readSize+section_length > dataSize || section_length < 4){
 		//ƒTƒCƒYˆÙí
 		_OutputDebugString(L"CCreatePMTPacket::section_length Err");
 		return ERR_FALSE;

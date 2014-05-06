@@ -59,7 +59,7 @@ BOOL CCATUtil::DecodeCAT(BYTE* data, DWORD dataSize)
 		//table_id‚ª‚¨‚©‚µ‚¢
 		return FALSE;
 	}
-	if( readSize+section_length > dataSize && section_length > 3){
+	if( readSize+section_length > dataSize || section_length < 4){
 		//ƒTƒCƒYˆÙí
 		return FALSE;
 	}

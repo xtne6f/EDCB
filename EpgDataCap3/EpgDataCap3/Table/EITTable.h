@@ -124,8 +124,9 @@ CRC_32（CRC）：これは付録B で定義するデコーダにおいて、セクション全体を処理し
 
 #include "../../../Common/Util.h"
 #include "../Descriptor/DescriptorDef.h"
+#include "PSITable.h"
 
-class CEITTable
+class CEITTable : public CPSITable
 {
 public:
 	typedef struct _EVENT_INFO_DATA{
@@ -147,9 +148,6 @@ public:
 			descriptorList.clear();
 		};
 	} EVENT_INFO_DATA;
-	BYTE table_id;
-	BYTE section_syntax_indicator;
-	WORD section_length;
 	WORD service_id;
 	BYTE version_number;
 	BYTE current_next_indicator;
@@ -160,7 +158,6 @@ public:
 	BYTE segment_last_section_number;
 	BYTE last_table_id;
 	vector<EVENT_INFO_DATA*> eventInfoList;
-	DWORD crc32;
 
 	BOOL failure;
 

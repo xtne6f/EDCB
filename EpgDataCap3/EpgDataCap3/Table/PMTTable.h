@@ -41,8 +41,9 @@ TS_program_map_section(){
 
 #include "../../../Common/Util.h"
 #include "../Descriptor/DescriptorDef.h"
+#include "PSITable.h"
 
-class CPMTTable
+class CPMTTable : public CPSITable
 {
 public:
 	typedef struct _ES_INFO_DATA{
@@ -57,9 +58,6 @@ public:
 			descriptorList.clear();
 		};
 	} ES_INFO_DATA;
-	BYTE table_id;
-	BYTE section_syntax_indicator;
-	WORD section_length;
 	WORD program_number;
 	BYTE version_number;
 	BYTE current_next_indicator;
@@ -69,7 +67,6 @@ public:
 	WORD program_info_length;
 	vector<DESCRIPTOR_DATA*> descriptorList;
 	vector<ES_INFO_DATA*> ESInfoList;
-	DWORD crc32;
 
 public:
 	CPMTTable(void);

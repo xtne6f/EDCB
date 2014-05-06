@@ -42,17 +42,14 @@ CRC_32（CRC）：これは付録B で定義するデコーダにおいて、セクション全体を処理
 
 #include "../../../Common/Util.h"
 #include "../Descriptor/DescriptorDef.h"
+#include "PSITable.h"
 
-class CTOTTable
+class CTOTTable : public CPSITable
 {
 public:
-	BYTE table_id;
-	BYTE section_syntax_indicator;
-	WORD section_length;
 	SYSTEMTIME jst_time;
 	WORD descriptors_loop_length;
 	vector<DESCRIPTOR_DATA*> descriptorList;
-	DWORD crc32;
 public:
 	CTOTTable(void);
 	~CTOTTable(void);

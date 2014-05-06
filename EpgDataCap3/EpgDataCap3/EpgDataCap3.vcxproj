@@ -231,6 +231,7 @@
     <ClInclude Include="Table\NITTable.h" />
     <ClInclude Include="Table\PATTable.h" />
     <ClInclude Include="Table\PMTTable.h" />
+    <ClInclude Include="Table\PSITable.h" />
     <ClInclude Include="Table\SDTTable.h" />
     <ClInclude Include="Table\SDTTTable.h" />
     <ClInclude Include="Table\SITTable.h" />
@@ -338,6 +339,7 @@
     <ClCompile Include="Table\NITTable.cpp" />
     <ClCompile Include="Table\PATTable.cpp" />
     <ClCompile Include="Table\PMTTable.cpp" />
+    <ClCompile Include="Table\PSITable.cpp" />
     <ClCompile Include="Table\SDTTable.cpp" />
     <ClCompile Include="Table\SDTTTable.cpp" />
     <ClCompile Include="Table\SITTable.cpp" />
