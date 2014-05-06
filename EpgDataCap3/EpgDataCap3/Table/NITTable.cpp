@@ -42,7 +42,7 @@ BOOL CNITTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 		return FALSE;
 	}
 
-	if( section_length > 8 ){
+	if( section_length - 4 > 8 ){
 		network_id = ((WORD)data[readSize])<<8 | data[readSize+1];
 		version_number = (data[readSize+2]&0x3E)>>1;
 		current_next_indicator = data[readSize+2]&0x01;
@@ -65,7 +65,7 @@ BOOL CNITTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 		transport_stream_loop_length = ((WORD)data[readSize]&0x0F)<<8 | data[readSize+1];
 		readSize += 2;
 		WORD tsLoopReadSize = 0;
-		while( readSize < (DWORD)section_length+3-4 && tsLoopReadSize < transport_stream_loop_length){
+		while( readSize+5 < (DWORD)section_length+3-4 && tsLoopReadSize < transport_stream_loop_length){
 			TS_INFO_DATA* item = new TS_INFO_DATA;
 			item->transport_stream_id = ((WORD)data[readSize])<<8 | data[readSize+1];
 			item->original_network_id = ((WORD)data[readSize+2])<<8 | data[readSize+3];

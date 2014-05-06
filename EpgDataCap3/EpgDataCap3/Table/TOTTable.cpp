@@ -38,7 +38,7 @@ BOOL CTOTTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 		return FALSE;
 	}
 
-	if( section_length > 4 ){
+	if( section_length - 4 > 6 ){
 		DWORD mjd = ((DWORD)data[readSize])<<8 | data[readSize+1];
 		_MJDtoSYSTEMTIME(mjd, &jst_time);
 		jst_time.wHour = (WORD)_BCDtoDWORD(data+readSize+2, 1, 2);

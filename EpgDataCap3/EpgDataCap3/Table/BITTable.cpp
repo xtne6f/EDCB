@@ -42,7 +42,7 @@ BOOL CBITTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 		return FALSE;
 	}
 
-	if( section_length > 8 ){
+	if( section_length - 4 > 6 ){
 		original_network_id = ((WORD)data[readSize])<<8 | data[readSize+1];
 		version_number = (data[readSize+2]&0x3E)>>1;
 		current_next_indicator = data[readSize+2]&0x01;
@@ -59,7 +59,7 @@ BOOL CBITTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 			}
 			readSize+=first_descriptors_length;
 		}
-		while( readSize < (DWORD)section_length+3-4 ){
+		while( readSize+2 < (DWORD)section_length+3-4 ){
 			BROADCASTER_DATA* item = new BROADCASTER_DATA;
 			item->broadcaster_id = data[readSize];
 			item->broadcaster_descriptors_length = ((WORD)data[readSize+1]&0x0F)<<8 | data[readSize+2];

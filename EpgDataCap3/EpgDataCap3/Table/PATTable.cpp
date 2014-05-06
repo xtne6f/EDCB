@@ -27,14 +27,14 @@ BOOL CPATTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 		return FALSE;
 	}
 
-	if( section_length > 4 ){
+	if( section_length - 4 > 4 ){
 		transport_stream_id = ((WORD)data[readSize])<<8 | data[readSize+1];
 		version_number = (data[readSize+2]&0x3E)>>1;
 		current_next_indicator = data[readSize+2]&0x01;
 		section_number = data[readSize+3];
 		last_section_number = data[readSize+4];
 		readSize += 5;
-		while( readSize < (DWORD)section_length+3-4 ){
+		while( readSize+3 < (DWORD)section_length+3-4 ){
 			PMT_DATA item;
 			item.program_number = ((WORD)data[readSize])<<8 | data[readSize+1];
 			item.PID = ((WORD)data[readSize+2]&0x1F)<<8 | data[readSize+3];

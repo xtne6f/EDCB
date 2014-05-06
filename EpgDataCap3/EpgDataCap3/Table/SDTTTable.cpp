@@ -39,7 +39,7 @@ BOOL CSDTTTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 		return FALSE;
 	}
 
-	if( section_length > 12 ){
+	if( section_length - 4 > 11 ){
 		maker_id = data[readSize];
 		model_id = data[readSize+1];
 		version_number = (data[readSize+2]&0x3E)>>1;
@@ -52,7 +52,7 @@ BOOL CSDTTTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 		num_of_contents = data[readSize+11];
 		readSize += 12;
 
-		for( BYTE i=0; i<num_of_contents; i++ ){
+		for( BYTE i=0; readSize+7 < (DWORD)section_length+3-4 && i<num_of_contents; i++ ){
 			CONTENT_INFO_DATA* item = new CONTENT_INFO_DATA;
 			item->group = (data[readSize]&0xF0)>>4;
 			item->target_version = ((WORD)data[readSize]&0x0F)<<8 | data[readSize+1];
@@ -64,7 +64,7 @@ BOOL CSDTTTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 			item->schedule_time_shift_information = data[readSize+7]&0x0F;
 			readSize += 8;
 
-			for( WORD j=0; j<item->schedule_description_length; j+=8){
+			for( WORD j=0; readSize+7 < (DWORD)section_length+3-4 && j<item->schedule_description_length; j+=8){
 				SCHEDULE_INFO_DATA time;
 
 				DWORD mjd = ((DWORD)data[readSize])<<8 | data[readSize+1];
@@ -83,7 +83,7 @@ BOOL CSDTTTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 			}
 
 			WORD descLength = item->content_description_length - item->schedule_description_length;
-			if( descLength > 0 ){
+			if( readSize+descLength <= (DWORD)section_length+3-4 && descLength > 0 ){
 				CDescriptor descriptor;
 				if( descriptor.Decode( data+readSize, descLength, &item->descriptorList, NULL ) == FALSE ){
 					_OutputDebugString( L"++CSDTTTable:: descriptor err" );

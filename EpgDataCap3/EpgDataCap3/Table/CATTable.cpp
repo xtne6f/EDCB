@@ -38,7 +38,7 @@ BOOL CCATTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 		return FALSE;
 	}
 
-	if( section_length > 4 ){
+	if( section_length - 4 > 4 ){
 		version_number = (data[readSize+2]&0x3E)>>1;
 		current_next_indicator = data[readSize+2]&0x01;
 		section_number = data[readSize+3];

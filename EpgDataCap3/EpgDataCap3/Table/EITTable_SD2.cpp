@@ -39,7 +39,7 @@ BOOL CEITTable_SD2::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 		return FALSE;
 	}
 
-	if( section_length > 4 ){
+	if( section_length - 4 > 18 ){
 		service_id = ((WORD)data[readSize])<<8 | data[readSize+1];
 		version_number = (data[readSize+2]&0x3E)>>1;
 		current_next_indicator = data[readSize+2]&0x01;
@@ -64,7 +64,7 @@ BOOL CEITTable_SD2::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 		end_time.wSecond = (WORD)_BCDtoDWORD(data+readSize+4, 1, 2);
 		readSize += 5;
 
-		while( readSize < (DWORD)section_length+3-4 ){
+		while( readSize+3 < (DWORD)section_length+3-4 ){
 			EVENT_MAP_INFO* item = new EVENT_MAP_INFO;
 			item->descriptor_length = ((WORD)data[readSize]&0x03)<<8 | data[readSize+1];
 
@@ -74,7 +74,7 @@ BOOL CEITTable_SD2::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 			DWORD readDesc = 4;
 			DWORD max = item->descriptor_length;
 			max+=2;
-			while(readDesc < max ){
+			while( readSize+readDesc+6 < (DWORD)section_length+3-4 && readDesc < max ){
 				EVENT_MAP_DATA dataInfo;
 				dataInfo.event_id = ((WORD)data[readSize+readDesc])<<8 | data[readSize+readDesc+1];
 				dataInfo.hour = data[readSize+readDesc+2]>>3;
@@ -82,7 +82,7 @@ BOOL CEITTable_SD2::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 				dataInfo.minute += data[readSize+readDesc+3]>>4;
 				BYTE length = data[readSize+readDesc+3]&0x0F;
 				dataInfo.a4table_eventID = ((WORD)data[readSize+readDesc+5])<<8 | data[readSize+readDesc+6];
-				if( length == 7 ){
+				if( readSize+readDesc+10 < (DWORD)section_length+3-4 && length == 7 ){
 					dataInfo.duration = _BCDtoDWORD(data+readSize+readDesc+8, 1, 2)*60*60;
 					dataInfo.duration += _BCDtoDWORD(data+readSize+readDesc+9, 1, 2)*60;
 					dataInfo.duration += _BCDtoDWORD(data+readSize+readDesc+10, 1, 2);

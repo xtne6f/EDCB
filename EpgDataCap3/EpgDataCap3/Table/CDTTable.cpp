@@ -41,7 +41,7 @@ BOOL CCDTTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 		return FALSE;
 	}
 
-	if( section_length > 10 ){
+	if( section_length - 4 > 9 ){
 		download_data_id = ((WORD)data[readSize])<<8 | data[readSize+1];
 		version_number = (data[readSize+2]&0x3E)>>1;
 		current_next_indicator = data[readSize+2]&0x01;
@@ -52,7 +52,7 @@ BOOL CCDTTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 		descriptors_loop_length = ((WORD)data[readSize+8]&0x0F)<<8 | data[readSize+9];
 		readSize += 10;
 
-		if( descriptors_loop_length > 0 ){
+		if( readSize+descriptors_loop_length <= (DWORD)section_length+3-4 && descriptors_loop_length > 0 ){
 			CDescriptor descriptor;
 			if( descriptor.Decode( data+readSize, descriptors_loop_length, &descriptorList, NULL ) == FALSE ){
 				_OutputDebugString( L"++CCDTTable:: descriptor err" );

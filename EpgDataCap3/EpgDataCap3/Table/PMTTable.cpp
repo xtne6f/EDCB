@@ -42,7 +42,7 @@ BOOL CPMTTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 		return FALSE;
 	}
 
-	if( section_length > 8 ){
+	if( section_length - 4 > 8 ){
 		program_number = ((WORD)data[readSize])<<8 | data[readSize+1];
 		version_number = (data[readSize+2]&0x3E)>>1;
 		current_next_indicator = data[readSize+2]&0x01;
@@ -59,7 +59,7 @@ BOOL CPMTTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 			}
 			readSize+=program_info_length;
 		}
-		while( readSize < (DWORD)section_length+3-4 ){
+		while( readSize+4 < (DWORD)section_length+3-4 ){
 			ES_INFO_DATA* item = new ES_INFO_DATA;
 			item->stream_type = data[readSize];
 			item->elementary_PID = ((WORD)data[readSize+1]&0x1F)<<8 | data[readSize+2];

@@ -39,7 +39,7 @@ BOOL CSDTTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 		return FALSE;
 	}
 
-	if( section_length > 4 ){
+	if( section_length - 4 > 7 ){
 		transport_stream_id = ((WORD)data[readSize])<<8 | data[readSize+1];
 		version_number = (data[readSize+2]&0x3E)>>1;
 		current_next_indicator = data[readSize+2]&0x01;
@@ -47,7 +47,7 @@ BOOL CSDTTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 		last_section_number = data[readSize+4];
 		original_network_id = ((WORD)data[readSize+5])<<8 | data[readSize+6];
 		readSize += 8;
-		while( readSize < (DWORD)section_length+3-4 ){
+		while( readSize+4 < (DWORD)section_length+3-4 ){
 			SERVICE_INFO_DATA* item = new SERVICE_INFO_DATA;
 			//if( original_network_id == 0x0001 || original_network_id == 0x0003 || original_network_id == 0x000A ){
 			//	item->service_id = ((WORD)data[readSize]&0x0F)<<8 | data[readSize+1];

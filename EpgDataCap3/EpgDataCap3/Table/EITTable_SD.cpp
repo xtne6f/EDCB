@@ -39,7 +39,7 @@ BOOL CEITTable_SD::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 		return FALSE;
 	}
 
-	if( section_length > 4 ){
+	if( section_length - 4 > 8 ){
 		service_id = ((WORD)data[readSize])<<8 | data[readSize+1];
 		version_number = (data[readSize+2]&0x3E)>>1;
 		current_next_indicator = data[readSize+2]&0x01;
@@ -49,7 +49,7 @@ BOOL CEITTable_SD::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 		original_network_id = ((WORD)data[readSize+7])<<8 | data[readSize+8];
 
 		readSize += 9;
-		while( readSize < (DWORD)section_length+3-4 ){
+		while( readSize+11 < (DWORD)section_length+3-4 ){
 			EVENT_INFO_DATA* item = new EVENT_INFO_DATA;
 			item->event_id = ((WORD)data[readSize])<<8 | data[readSize+1];
 			if( data[readSize+2] == 0xFF && data[readSize+3] == 0xFF && data[readSize+4] == 0xFF &&

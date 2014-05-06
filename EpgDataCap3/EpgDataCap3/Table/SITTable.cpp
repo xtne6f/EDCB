@@ -43,7 +43,7 @@ BOOL CSITTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 		return FALSE;
 	}
 
-	if( section_length > 8 ){
+	if( section_length - 4 > 6 ){
 		version_number = (data[readSize+2]&0x3E)>>1;
 		current_next_indicator = data[readSize+2]&0x01;
 		section_number = data[readSize+3];
@@ -58,7 +58,7 @@ BOOL CSITTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 			}
 			readSize+=transmission_info_loop_length;
 		}
-		while( readSize < (DWORD)section_length+3-4 ){
+		while( readSize+3 < (DWORD)section_length+3-4 ){
 			SERVICE_LOOP_DATA* item = new SERVICE_LOOP_DATA;
 			item->service_id = ((WORD)data[readSize])<<8 | data[readSize+1];
 			item->running_status = (data[readSize+2]&0x70)>>4;
