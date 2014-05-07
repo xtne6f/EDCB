@@ -9,7 +9,7 @@
 
 CEpgDBUtil::CEpgDBUtil(void)
 {
-	this->lockEvent = _CreateEvent(FALSE, TRUE, NULL);
+	InitializeCriticalSection(&this->dbLock);
 
 	this->sectionNowFlag = 0;
 
@@ -46,41 +46,20 @@ CEpgDBUtil::~CEpgDBUtil(void)
 	SAFE_DELETE_ARRAY(this->epgSearchList);
 	this->epgSearchListSize = 0;
 
-	if( this->lockEvent != NULL ){
-		UnLock();
-		CloseHandle(this->lockEvent);
-		this->lockEvent = NULL;
-	}
+	DeleteCriticalSection(&this->dbLock);
 
 	SAFE_DELETE_ARRAY(this->serviceDBList);
 	this->serviceDBListSize = 0;
 }
 
-BOOL CEpgDBUtil::Lock(LPCWSTR log, DWORD timeOut)
+class CBlockLock
 {
-	if( this->lockEvent == NULL ){
-		return FALSE;
-	}
-	if( log != NULL ){
-		OutputDebugString(log);
-	}
-	DWORD dwRet = WaitForSingleObject(this->lockEvent, timeOut);
-	if( dwRet == WAIT_ABANDONED || 
-		dwRet == WAIT_FAILED){
-		return FALSE;
-	}
-	return TRUE;
-}
-
-void CEpgDBUtil::UnLock(LPCWSTR log)
-{
-	if( this->lockEvent != NULL ){
-		SetEvent(this->lockEvent);
-	}
-	if( log != NULL ){
-		OutputDebugString(log);
-	}
-}
+public:
+	CBlockLock(CRITICAL_SECTION* lock_) : lock(lock_) { EnterCriticalSection(lock); }
+	~CBlockLock() { LeaveCriticalSection(lock); }
+private:
+	CRITICAL_SECTION* lock;
+};
 
 void CEpgDBUtil::Clear()
 {
@@ -98,14 +77,13 @@ void CEpgDBUtil::Clear()
 
 void CEpgDBUtil::SetStreamChangeEvent()
 {
-	if( Lock() == FALSE ) return ;
+	CBlockLock lock(&this->dbLock);
 	//ストリーム変わったのでp/fをリセット
 	map<ULONGLONG, SERVICE_EVENT_INFO*>::iterator itr;
 	for( itr = this->serviceEventMap.begin(); itr != this->serviceEventMap.end(); itr++ ){
 		itr->second->nowEvent = NULL;
 		itr->second->nextEvent = NULL;
 	}
-	UnLock();
 }
 
 BOOL CEpgDBUtil::AddEIT(WORD PID, CEITTable* eit)
@@ -113,7 +91,7 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, CEITTable* eit)
 	if( eit == NULL ){
 		return FALSE;
 	}
-	if( Lock() == FALSE ) return FALSE;
+	CBlockLock lock(&this->dbLock);
 
 	ULONGLONG key = _Create64Key(eit->original_network_id, eit->transport_stream_id, eit->service_id);
 
@@ -224,8 +202,6 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, CEITTable* eit)
 	}
 
 	if( eit->original_network_id == 0x0003 ){
-		UnLock();
-
 		return !eit->failure;
 	}
 	
@@ -262,7 +238,6 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, CEITTable* eit)
 			itrFlag->second.sectionFlag |= 1<<sectionNo;
 		}
 		if (eit->failure){
-			UnLock();
 			return FALSE;
 		}
 	}else{
@@ -313,7 +288,6 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, CEITTable* eit)
 			}
 		}
 		if (eit->failure){
-			UnLock();
 			return FALSE;
 		}
 		if( eit->table_id == 0x4E && eit->section_number == 0){
@@ -345,7 +319,6 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, CEITTable* eit)
 			}
 		}
 	}
-	UnLock();
 
 	return TRUE;
 }
@@ -355,11 +328,10 @@ BOOL CEpgDBUtil::AddEIT_SD(WORD PID, CEITTable_SD* eit)
 	if( eit == NULL ){
 		return FALSE;
 	}
-	if( Lock() == FALSE ) return FALSE;
+	CBlockLock lock(&this->dbLock);
 
 	if( eit->original_network_id == 0x0003 && eit->table_id != 0x4E && eit->table_id != 0x4F){
 		BOOL ret = AddSDEventMap(eit);
-		UnLock();
 		return ret;
 	}
 
@@ -562,7 +534,6 @@ BOOL CEpgDBUtil::AddEIT_SD(WORD PID, CEITTable_SD* eit)
 	//		}
 	//	}
 	//}
-	UnLock();
 
 	return TRUE;
 }
@@ -1210,7 +1181,7 @@ BOOL CEpgDBUtil::CheckUpdate_SD(CEITTable_SD* eit, BYTE tableID, BYTE version)
 
 void CEpgDBUtil::ClearSectionStatus()
 {
-	if( Lock() == FALSE ) return ;
+	CBlockLock lock(&this->dbLock);
 
 	map<ULONGLONG, SECTION_STATUS_INFO*>::iterator itr;
 	for( itr = this->sectionMap.begin(); itr != this->sectionMap.end(); itr++ ){
@@ -1218,8 +1189,6 @@ void CEpgDBUtil::ClearSectionStatus()
 	}
 	this->sectionMap.clear();
 	this->sectionNowFlag = 0;
-
-	UnLock();
 }
 
 BOOL CEpgDBUtil::CheckSectionAll(map<WORD, SECTION_FLAG_INFO>* sectionMap, BOOL leitFlag)
@@ -1253,11 +1222,10 @@ BOOL CEpgDBUtil::CheckSectionAll(map<WORD, SECTION_FLAG_INFO>* sectionMap, BOOL 
 
 EPG_SECTION_STATUS CEpgDBUtil::GetSectionStatus(BOOL l_eitFlag)
 {
-	if( Lock() == FALSE ) return EpgNoData;
+	CBlockLock lock(&this->dbLock);
 
 	EPG_SECTION_STATUS status = EpgNoData;
 	if( this->sectionMap.size() == 0 ){
-		UnLock();
 		return status;
 	}
 
@@ -1331,7 +1299,6 @@ EPG_SECTION_STATUS CEpgDBUtil::GetSectionStatus(BOOL l_eitFlag)
 			status = EpgNeedData;
 		}
 	}
-	UnLock();
 	return status;
 }
 
@@ -1340,7 +1307,7 @@ BOOL CEpgDBUtil::AddServiceList(CNITTable* nit)
 	if( nit == NULL ){
 		return FALSE;
 	}
-	if( Lock() == FALSE ) return FALSE;
+	CBlockLock lock(&this->dbLock);
 
 	wstring network_nameW = L"";
 
@@ -1402,13 +1369,12 @@ BOOL CEpgDBUtil::AddServiceList(CNITTable* nit)
 		}
 	}
 
-	UnLock();
 	return TRUE;
 }
 
 BOOL CEpgDBUtil::AddServiceList(WORD TSID, CSITTable* sit)
 {
-	if( Lock() == FALSE ) return FALSE;
+	CBlockLock lock(&this->dbLock);
 
 	WORD ONID = 0xFFFF;
 	for( size_t i=0; i<sit->descriptorList.size(); i++ ){
@@ -1417,7 +1383,6 @@ BOOL CEpgDBUtil::AddServiceList(WORD TSID, CSITTable* sit)
 		}
 	}
 	if(ONID == 0xFFFF){
-		UnLock();
 		return FALSE;
 	}
 
@@ -1459,13 +1424,12 @@ BOOL CEpgDBUtil::AddServiceList(WORD TSID, CSITTable* sit)
 	}
 
 
-	UnLock();
 	return TRUE;
 }
 
 BOOL CEpgDBUtil::AddSDT(CSDTTable* sdt)
 {
-	if( Lock() == FALSE ) return FALSE;
+	CBlockLock lock(&this->dbLock);
 
 	DWORD key = ((DWORD)sdt->original_network_id)<<16 | sdt->transport_stream_id;
 	map<DWORD, DB_TS_INFO*>::iterator itrTS;
@@ -1535,7 +1499,6 @@ BOOL CEpgDBUtil::AddSDT(CSDTTable* sdt)
 		}
 	}
 
-	UnLock();
 	return TRUE;
 }
 
@@ -1558,7 +1521,7 @@ DWORD CEpgDBUtil::GetEpgInfoList(
 	if( epgInfoListSize == NULL || epgInfoList == NULL ){
 		return ERR_INVALID_ARG;
 	}
-	if( Lock() == FALSE ) return ERR_FALSE;
+	CBlockLock lock(&this->dbLock);
 
 	SAFE_DELETE_ARRAY(this->epgInfoList);
 	this->epgInfoListSize = 0;
@@ -1568,13 +1531,11 @@ DWORD CEpgDBUtil::GetEpgInfoList(
 	map<ULONGLONG, SERVICE_EVENT_INFO*>::iterator itr;
 	itr = serviceEventMap.find(key);
 	if( itr == serviceEventMap.end() ){
-		UnLock();
 		return ERR_NOT_FIND;
 	}
 
 	this->epgInfoListSize = (DWORD)itr->second->eventMap.size();
 	if( this->epgInfoListSize == 0 ){
-		UnLock();
 		return ERR_NOT_FIND;
 	}
 	this->epgInfoList = new EPG_EVENT_INFO[this->epgInfoListSize];
@@ -1589,7 +1550,6 @@ DWORD CEpgDBUtil::GetEpgInfoList(
 	*epgInfoListSize = this->epgInfoListSize;
 	*epgInfoList = this->epgInfoList;
 
-	UnLock();
 	return NO_ERR;
 }
 
@@ -1744,6 +1704,8 @@ DWORD CEpgDBUtil::GetServiceListEpgDB(
 	SERVICE_INFO** serviceList
 	)
 {
+	CBlockLock lock(&this->dbLock);
+
 	SAFE_DELETE_ARRAY(this->serviceDBList);
 	this->serviceDBListSize = 0;
 
@@ -1826,7 +1788,7 @@ DWORD CEpgDBUtil::GetEpgInfo(
 	if( epgInfo == NULL ){
 		return ERR_INVALID_ARG;
 	}
-	if( Lock() == FALSE ) return ERR_FALSE;
+	CBlockLock lock(&this->dbLock);
 
 	SAFE_DELETE(this->epgInfo);
 
@@ -1835,7 +1797,6 @@ DWORD CEpgDBUtil::GetEpgInfo(
 	map<ULONGLONG, SERVICE_EVENT_INFO*>::iterator itr;
 	itr = serviceEventMap.find(key);
 	if( itr == serviceEventMap.end() ){
-		UnLock();
 		return ERR_NOT_FIND;
 	}
 
@@ -1917,12 +1878,10 @@ DWORD CEpgDBUtil::GetEpgInfo(
 	*/
 Err_End:
 	if( this->epgInfo == NULL ){
-		UnLock();
 		return ERR_NOT_FIND;
 	}
 	*epgInfo = this->epgInfo;
 
-	UnLock();
 	return NO_ERR;
 }
 
@@ -1948,7 +1907,7 @@ DWORD CEpgDBUtil::SearchEpgInfo(
 	if( epgInfo == NULL ){
 		return ERR_INVALID_ARG;
 	}
-	if( Lock() == FALSE ) return ERR_FALSE;
+	CBlockLock lock(&this->dbLock);
 
 	SAFE_DELETE(this->searchEpgInfo);
 
@@ -1957,7 +1916,6 @@ DWORD CEpgDBUtil::SearchEpgInfo(
 	map<ULONGLONG, SERVICE_EVENT_INFO*>::iterator itr;
 	itr = serviceEventMap.find(key);
 	if( itr == serviceEventMap.end() ){
-		UnLock();
 		return ERR_NOT_FIND;
 	}
 
@@ -1988,12 +1946,10 @@ DWORD CEpgDBUtil::SearchEpgInfo(
 
 Err_End:
 	if( this->searchEpgInfo == NULL ){
-		UnLock();
 		return ERR_NOT_FIND;
 	}
 	*epgInfo = this->searchEpgInfo;
 
-	UnLock();
 	return NO_ERR;
 }
 
@@ -2086,7 +2042,7 @@ BOOL CEpgDBUtil::AddEIT_SD2(WORD PID, CEITTable_SD2* eit)
 	if( eit == NULL ){
 		return FALSE;
 	}
-	if( Lock() == FALSE ) return FALSE;
+	CBlockLock lock(&this->dbLock);
 
 	ULONGLONG key = _Create64Key(eit->original_network_id, 0, eit->service_id2);
 
@@ -2164,6 +2120,5 @@ BOOL CEpgDBUtil::AddEIT_SD2(WORD PID, CEITTable_SD2* eit)
 		}
 	}
 
-	UnLock();
 	return NO_ERR;
 }
