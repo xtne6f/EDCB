@@ -11,6 +11,8 @@ CEpgDataCap3Main::CEpgDataCap3Main(void)
 
 CEpgDataCap3Main::~CEpgDataCap3Main(void)
 {
+	decodeUtilClass.SetEpgDB(NULL);
+
 	if( this->lockEvent != NULL ){
 		UnLock();
 		CloseHandle(this->lockEvent);
