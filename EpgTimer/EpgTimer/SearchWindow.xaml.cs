@@ -144,6 +144,11 @@ namespace EpgTimer
         {
             try
             {
+                //更新前の選択情報の保存
+                EpgEventInfo oldItem = null;
+                List<EpgEventInfo> oldItems = new List<EpgEventInfo>();
+                StoreListViewSelected(ref oldItem, ref oldItems);
+
                 ICollectionView dataView = CollectionViewSource.GetDefaultView(listView_result.DataContext);
                 if (dataView != null)
                 {
@@ -217,10 +222,60 @@ namespace EpgTimer
                 }
 
                 searchKeyView.SaveSearchLog();
+
+                //選択情報の復元
+                RestoreListViewSelected(oldItem, oldItems);
             }
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+            }
+        }
+
+        private void StoreListViewSelected(ref EpgEventInfo oldItem, ref List<EpgEventInfo> oldItems)
+        {
+            if (listView_result.SelectedItem != null)
+            {
+                oldItem = (listView_result.SelectedItem as SearchItem).EventInfo;
+                foreach (SearchItem item in listView_result.SelectedItems)
+                {
+                    oldItems.Add(item.EventInfo);
+                }
+            }
+        }
+
+        private void RestoreListViewSelected(EpgEventInfo oldItem, List<EpgEventInfo> oldItems)
+        {
+            if (oldItem != null)
+            {
+                //このUnselectAll()は無いと正しく復元出来ない状況があり得る
+                listView_result.UnselectAll();
+
+                foreach (SearchItem item in listView_result.Items)
+                {
+                    if (item.EventInfo.original_network_id == oldItem.original_network_id &&
+                        item.EventInfo.transport_stream_id == oldItem.transport_stream_id &&
+                        item.EventInfo.service_id == oldItem.service_id &&
+                        item.EventInfo.event_id == oldItem.event_id)
+                    {
+                        listView_result.SelectedItem = item;
+                    }
+                }
+
+                foreach (EpgEventInfo oldItem1 in oldItems)
+                {
+                    foreach (SearchItem item in listView_result.Items)
+                    {
+                        if (item.EventInfo.original_network_id == oldItem1.original_network_id &&
+                            item.EventInfo.transport_stream_id == oldItem1.transport_stream_id &&
+                            item.EventInfo.service_id == oldItem1.service_id &&
+                            item.EventInfo.event_id == oldItem1.event_id)
+                        {
+                            listView_result.SelectedItems.Add(item);
+                            break;
+                        }
+                    }
+                }
             }
         }
 
@@ -307,9 +362,16 @@ namespace EpgTimer
             string caption1 = "予約全削除の確認";
             if (MessageBox.Show(text1, caption1, MessageBoxButton.OKCancel, MessageBoxImage.Exclamation, MessageBoxResult.OK) == MessageBoxResult.OK)
             {
+                //更新前の選択情報の保存
+                EpgEventInfo oldItem = null;
+                List<EpgEventInfo> oldItems = new List<EpgEventInfo>();
+                StoreListViewSelected(ref oldItem, ref oldItems);
+
                 listView_result.SelectAll();
                 MenuItem_Click_DeleteItem(listView_result.SelectedItem, new RoutedEventArgs());
-                //button_del_epgAutoAdd_Click(sender, e);//「予約ごと自動登録削除」の頃の名残
+                listView_result.UnselectAll();//一つも予約が解除されなかった時用
+
+                RestoreListViewSelected(oldItem, oldItems);
             }
         }
 

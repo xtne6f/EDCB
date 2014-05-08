@@ -222,6 +222,11 @@ namespace EpgTimer
         {
             try
             {
+                //更新前の選択情報の保存
+                uint oldItem = 0;
+                List<uint> oldItems = new List<uint>();
+                StoreListViewSelected(ref oldItem, ref oldItems);
+
                 ICollectionView dataView = CollectionViewSource.GetDefaultView(listView_recinfo.DataContext);
                 if (dataView != null)
                 {
@@ -295,6 +300,9 @@ namespace EpgTimer
                         _lastHeaderClicked = header;
                     }
                 }
+
+                //選択情報の復元
+                RestoreListViewSelected(oldItem, oldItems);
             }
             catch (Exception ex)
             {
@@ -305,6 +313,47 @@ namespace EpgTimer
                 return false;
             } 
             return true;
+        }
+
+        private void StoreListViewSelected(ref uint oldItem, ref List<uint> oldItems)
+        {
+            if (listView_recinfo.SelectedItem != null)
+            {
+                oldItem = (listView_recinfo.SelectedItem as RecInfoItem).RecInfo.ID;
+                foreach (RecInfoItem item in listView_recinfo.SelectedItems)
+                {
+                    oldItems.Add(item.RecInfo.ID);
+                }
+            }
+        }
+
+        private void RestoreListViewSelected(uint oldItem, List<uint> oldItems)
+        {
+            if (oldItem != 0)
+            {
+                //このUnselectAll()は無いと正しく復元出来ない状況があり得る
+                listView_recinfo.UnselectAll();
+
+                foreach (RecInfoItem item in listView_recinfo.Items)
+                {
+                    if (item.RecInfo.ID == oldItem)
+                    {
+                        listView_recinfo.SelectedItem = item;
+                    }
+                }
+
+                foreach (uint oldItem1 in oldItems)
+                {
+                    foreach (RecInfoItem item in listView_recinfo.Items)
+                    {
+                        if (item.RecInfo.ID == oldItem1)
+                        {
+                            listView_recinfo.SelectedItems.Add(item);
+                            break;
+                        }
+                    }
+                }
+            }
         }
 
         /// <summary>

@@ -109,6 +109,11 @@ namespace EpgTimer
         {
             try
             {
+                //更新前の選択情報の保存
+                uint oldItem = 0;
+                List<uint> oldItems = new List<uint>();
+                StoreListViewSelected(ref oldItem, ref oldItems);
+
                 listView_key.DataContext = null;
                 resultList.Clear();
 
@@ -145,6 +150,9 @@ namespace EpgTimer
                 }
 
                 listView_key.DataContext = resultList;
+
+                //選択情報の復元
+                RestoreListViewSelected(oldItem, oldItems);
             }
             catch (Exception ex)
             {
@@ -157,6 +165,47 @@ namespace EpgTimer
             return true;
         }
 
+        private void StoreListViewSelected(ref uint oldItem, ref List<uint> oldItems)
+        {
+            if (listView_key.SelectedItem != null)
+            {
+                oldItem = (listView_key.SelectedItem as EpgAutoDataItem).EpgAutoAddInfo.dataID;
+                foreach (EpgAutoDataItem item in listView_key.SelectedItems)
+                {
+                    oldItems.Add(item.EpgAutoAddInfo.dataID);
+                }
+            }
+        }
+
+        private void RestoreListViewSelected(uint oldItem, List<uint> oldItems)
+        {
+            if (oldItem != 0)
+            {
+                //このUnselectAll()は無いと正しく復元出来ない状況があり得る
+                listView_key.UnselectAll();
+
+                foreach (EpgAutoDataItem item in listView_key.Items)
+                {
+                    if (item.EpgAutoAddInfo.dataID == oldItem)
+                    {
+                        listView_key.SelectedItem = item;
+                    }
+                }
+
+                foreach (uint oldItem1 in oldItems)
+                {
+                    foreach (EpgAutoDataItem item in listView_key.Items)
+                    {
+                        if (item.EpgAutoAddInfo.dataID == oldItem1)
+                        {
+                            listView_key.SelectedItems.Add(item);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        
         private void button_add_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -506,7 +555,19 @@ namespace EpgTimer
         {
             if (listView_key.SelectedItem == null) { return; }
 
-            EpgAutoDataItem item_Src1 = listView_key.SelectedItems[listView_key.SelectedItems.Count - 1] as EpgAutoDataItem;
+            //更新前の選択情報の保存
+            uint oldItem = 0;
+            List<uint> oldItems = new List<uint>();
+            StoreListViewSelected(ref oldItem, ref oldItems);
+
+            //選択状態の維持しながらSelectedItemを切り替える
+            EpgAutoDataItem item1 = listView_key.SelectedItems[listView_key.SelectedItems.Count - 1] as EpgAutoDataItem;
+            oldItem = (uint)(item1.EpgAutoAddInfo.dataID);
+
+            //選択情報の復元
+            RestoreListViewSelected(oldItem, oldItems);
+
+            EpgAutoDataItem item_Src1 = listView_key.SelectedItem as EpgAutoDataItem;
             int index_Src1 = resultList.IndexOf(item_Src1);
             int index_Dst1 = index_Src1 - 1;
             if (moveDirection0 == itemMoveDirections.down)
