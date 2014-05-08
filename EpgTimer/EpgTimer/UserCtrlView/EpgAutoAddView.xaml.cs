@@ -467,7 +467,7 @@ namespace EpgTimer
             //
             try
             {
-                EpgAutoDataItem info = listView_key.SelectedItem as EpgAutoDataItem;
+                EpgAutoDataItem info = listView_key.SelectedItems[listView_key.SelectedItems.Count - 1] as EpgAutoDataItem;
                 listView_key.UnselectAll();
                 listView_key.SelectedItem = info;
                 SearchWindow dlg = new SearchWindow();
@@ -504,8 +504,9 @@ namespace EpgTimer
         /// <param name="up0">true: up, false: down</param>
         void moveItem(itemMoveDirections moveDirection0)
         {
-            EpgAutoDataItem item_Src1 = listView_key.SelectedItem as EpgAutoDataItem;
-            if (item_Src1 == null) { return; }
+            if (listView_key.SelectedItem == null) { return; }
+
+            EpgAutoDataItem item_Src1 = listView_key.SelectedItems[listView_key.SelectedItems.Count - 1] as EpgAutoDataItem;
             int index_Src1 = resultList.IndexOf(item_Src1);
             int index_Dst1 = index_Src1 - 1;
             if (moveDirection0 == itemMoveDirections.down)

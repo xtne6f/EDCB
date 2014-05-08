@@ -367,7 +367,7 @@ namespace EpgTimer
         {
             if (listView_recinfo.SelectedItem != null)
             {
-                RecInfoItem info = listView_recinfo.SelectedItem as RecInfoItem;
+                RecInfoItem info = listView_recinfo.SelectedItems[listView_recinfo.SelectedItems.Count-1] as RecInfoItem;
                 listView_recinfo.UnselectAll();
                 listView_recinfo.SelectedItem = info;
                 if (info.RecInfo.RecFilePath.Length > 0)
@@ -394,7 +394,7 @@ namespace EpgTimer
 
                 EpgSearchKeyInfo key = new EpgSearchKeyInfo();
 
-                RecInfoItem item = listView_recinfo.SelectedItem as RecInfoItem;
+                RecInfoItem item = listView_recinfo.SelectedItems[listView_recinfo.SelectedItems.Count - 1] as RecInfoItem;
                 listView_recinfo.UnselectAll();
                 listView_recinfo.SelectedItem = item;
 
@@ -422,7 +422,7 @@ namespace EpgTimer
         {
             if (listView_recinfo.SelectedItem != null)
             {
-                RecInfoItem info = listView_recinfo.SelectedItem as RecInfoItem;
+                RecInfoItem info = listView_recinfo.SelectedItems[listView_recinfo.SelectedItems.Count - 1] as RecInfoItem;
                 listView_recinfo.UnselectAll();
                 listView_recinfo.SelectedItem = info;
                 RecInfoDescWindow dlg = new RecInfoDescWindow();
@@ -436,7 +436,7 @@ namespace EpgTimer
         {
             if (listView_recinfo.SelectedItem != null)
             {
-                RecInfoItem info = listView_recinfo.SelectedItem as RecInfoItem;
+                RecInfoItem info = listView_recinfo.SelectedItems[listView_recinfo.SelectedItems.Count - 1] as RecInfoItem;
                 listView_recinfo.UnselectAll();
                 listView_recinfo.SelectedItem = info;
 

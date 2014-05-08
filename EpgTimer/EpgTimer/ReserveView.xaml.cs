@@ -357,7 +357,7 @@ namespace EpgTimer
         {
             if (listView_reserve.SelectedItem != null)
             {
-                ReserveItem item = listView_reserve.SelectedItem as ReserveItem;
+                ReserveItem item = listView_reserve.SelectedItems[listView_reserve.SelectedItems.Count-1] as ReserveItem;
                 listView_reserve.UnselectAll();
                 listView_reserve.SelectedItem = item;
                 ChgReserveWindow dlg = new ChgReserveWindow();
@@ -543,7 +543,7 @@ namespace EpgTimer
 
                 EpgSearchKeyInfo key = new EpgSearchKeyInfo();
 
-                ReserveItem item = listView_reserve.SelectedItem as ReserveItem;
+                ReserveItem item = listView_reserve.SelectedItems[listView_reserve.SelectedItems.Count - 1] as ReserveItem;
                 listView_reserve.UnselectAll();
                 listView_reserve.SelectedItem = item;
 
@@ -560,7 +560,7 @@ namespace EpgTimer
         {
             if (listView_reserve.SelectedItem != null)
             {
-                ReserveItem info = listView_reserve.SelectedItem as ReserveItem;
+                ReserveItem info = listView_reserve.SelectedItems[listView_reserve.SelectedItems.Count - 1] as ReserveItem;
                 listView_reserve.UnselectAll();
                 listView_reserve.SelectedItem = info;
                 CommonManager.Instance.TVTestCtrl.StartTimeShift(info.ReserveInfo.ReserveID);
@@ -791,9 +791,9 @@ namespace EpgTimer
 
         private void MenuItem_Click_ProgramTable(object sender, RoutedEventArgs e)
         {
-            ReserveItem item1 = this.listView_reserve.SelectedItem as ReserveItem;
-            if (item1 != null)
+            if (listView_reserve.SelectedItem != null)
             {
+                ReserveItem item1 = listView_reserve.SelectedItems[listView_reserve.SelectedItems.Count - 1] as ReserveItem;
                 listView_reserve.UnselectAll();
                 listView_reserve.SelectedItem = item1;
                 BlackoutWindow.selectedReserveItem = item1;

@@ -709,7 +709,7 @@ namespace EpgTimer
             {
                 if (listView_result.SelectedItem != null)
                 {
-                    SearchItem item = listView_result.SelectedItem as SearchItem;
+                    SearchItem item = listView_result.SelectedItems[listView_result.SelectedItems.Count-1] as SearchItem;
                     listView_result.UnselectAll();
                     listView_result.SelectedItem = item;
                     if (item.IsReserved == true)
@@ -820,9 +820,9 @@ namespace EpgTimer
 
         private void MenuItem_Click_ProgramTable(object sender, RoutedEventArgs e)
         {
-            SearchItem item1 = this.listView_result.SelectedItem as SearchItem;
-            if (item1 != null)
+            if (listView_result.SelectedItem != null)
             {
+                SearchItem item1 = listView_result.SelectedItems[listView_result.SelectedItems.Count-1] as SearchItem;
                 listView_result.UnselectAll();
                 listView_result.SelectedItem = item1;
                 BlackoutWindow.selectedSearchItem = item1;
@@ -864,7 +864,7 @@ namespace EpgTimer
         {
             if (listView_result.SelectedItem != null)
             {
-                SearchItem item = listView_result.SelectedItem as SearchItem;
+                SearchItem item = listView_result.SelectedItems[listView_result.SelectedItems.Count - 1] as SearchItem;
                 EpgSearchKeyInfo defKey = new EpgSearchKeyInfo();
                 defKey.andKey = item.EventName;
                 defKey.serviceList.Clear();
@@ -888,7 +888,7 @@ namespace EpgTimer
             //新番組チェックなんかには向いてるかもしれないが、機能としては微妙なところ。
             if (listView_result.SelectedItem != null)
             {
-                SearchItem item = listView_result.SelectedItem as SearchItem;
+                SearchItem item = listView_result.SelectedItems[listView_result.SelectedItems.Count - 1] as SearchItem;
                 listView_result.UnselectAll();
                 listView_result.SelectedItem = item;
 
