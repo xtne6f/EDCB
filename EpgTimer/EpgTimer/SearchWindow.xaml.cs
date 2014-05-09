@@ -34,8 +34,6 @@ namespace EpgTimer
 
         private UInt32 autoAddID = 0;
 
-        PopupWindow _popupWindow;
-
         public SearchWindow()
         {
             InitializeComponent();
@@ -555,18 +553,10 @@ namespace EpgTimer
             {
                 switch (e.Key)
                 {
-                    case Key.F2:
-                        this.MenuItem_Click_Google(this, new RoutedEventArgs(Button.ClickEvent));
-                        break;
                     case Key.F3:
                         this.MenuItem_Click_ProgramTable(this, new RoutedEventArgs(Button.ClickEvent));
                         break;
                     case Key.Escape:
-                        if (this._popupWindow.IsVisible)
-                        {
-                            this._popupWindow.Hide();
-                        }
-                        else
                         {
                             this.Close();
                         }
@@ -585,21 +575,14 @@ namespace EpgTimer
             {
                 this.SearchPg();
             }
-            this._popupWindow = new PopupWindow(this);
         }
 
         void listView_result_KeyDown(object sender, KeyEventArgs e)
         {
             switch (e.Key)
             {
-                case Key.F2:
-                    this.MenuItem_Click_Google(this, new RoutedEventArgs(Button.ClickEvent));
-                    break;
                 case Key.Enter:
                     this.MenuItem_Click_ShowDialog(listView_result.SelectedItem, new RoutedEventArgs());
-                    break;
-                case Key.Back:
-                    this.MenuItem_Click_ChangeRecMode(listView_result.SelectedItem, new RoutedEventArgs());
                     break;
             }
         }
@@ -620,64 +603,81 @@ namespace EpgTimer
             }
         }
 
-        private void MenuItem_Click_ChangeRecMode(object sender, RoutedEventArgs e)
+        private void MenuItem_Click_RecMode(object sender, RoutedEventArgs e)
         {
-            new BlackoutWindow(this).showWindow("予約←→無効");
             if (listView_result.SelectedItem != null)
             {
                 SearchItem item = listView_result.SelectedItem as SearchItem;
                 if (item.IsReserved == true)
                 {
-                    ChgReserveWindow dlg = new ChgReserveWindow();
-                    dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-
-                    if (item.ReserveInfo.RecSetting.RecMode == 5)
+                    try
                     {
-                        // 無効 => 予約
-                        RecSettingData defSet = new RecSettingData();
-                        Settings.GetDefRecSetting(0, ref defSet);
-                        item.ReserveInfo.RecSetting.RecMode = defSet.RecMode;
-                    }
-                    else
-                    {
-                        //予約 => 無効
-                        item.ReserveInfo.RecSetting.RecMode = 5;
-                    }
+                        List<ReserveData> list = new List<ReserveData>();
+                        list.Add(item.ReserveInfo);
+                        list[0].RecSetting.RecMode = byte.Parse((string)((MenuItem)sender).Tag);
 
-                    dlg.SetReserveInfo(item.ReserveInfo);
-                    dlg.button_chg_reserve.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                        ErrCode err = (ErrCode)cmd.SendChgReserve(list);
+                        if (err == ErrCode.CMD_ERR_CONNECT)
+                        {
+                            MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
+                        }
+                        if (err == ErrCode.CMD_ERR_TIMEOUT)
+                        {
+                            MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
+                        }
+                        if (err != ErrCode.CMD_SUCCESS)
+                        {
+                            MessageBox.Show("予約変更でエラーが発生しました。");
+                        }
+
+                        CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.ReserveInfo);
+                        CommonManager.Instance.DB.ReloadReserveInfo();
+                        SearchPg();
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                    }
                 }
-                else
+            }
+        }
+
+        private void MenuItem_Click_Priority(object sender, RoutedEventArgs e)
+        {
+            if (listView_result.SelectedItem != null)
+            {
+                SearchItem item = listView_result.SelectedItem as SearchItem;
+                if (item.IsReserved == true)
                 {
-                    AddReserveEpgWindow dlg = new AddReserveEpgWindow();
-                    dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-                    dlg.SetEventInfo(item.EventInfo);
-                    dlg.button_add_reserve.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                    try
+                    {
+                        List<ReserveData> list = new List<ReserveData>();
+                        list.Add(item.ReserveInfo);
+                        list[0].RecSetting.Priority = byte.Parse((string)((MenuItem)sender).Tag);
+
+                        ErrCode err = (ErrCode)cmd.SendChgReserve(list);
+                        if (err == ErrCode.CMD_ERR_CONNECT)
+                        {
+                            MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
+                        }
+                        if (err == ErrCode.CMD_ERR_TIMEOUT)
+                        {
+                            MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
+                        }
+                        if (err != ErrCode.CMD_SUCCESS)
+                        {
+                            MessageBox.Show("予約変更でエラーが発生しました。");
+                        }
+
+                        CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.ReserveInfo);
+                        CommonManager.Instance.DB.ReloadReserveInfo();
+                        SearchPg();
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                    }
                 }
-                //
-                CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.ReserveInfo);
-                CommonManager.Instance.DB.ReloadReserveInfo();
-                SearchPg();
-                //
-                listView_result.SelectedItem = null;
-            }
-        }
-
-        private void MenuItem_Click_ProgramDetail(object sender, RoutedEventArgs e)
-        {
-            SearchItem item1 = this.listView_result.SelectedItem as SearchItem;
-            if (item1 != null)
-            {
-                this._popupWindow.show(item1.ProgramDetail);
-            }
-        }
-
-        private void MenuItem_Click_Google(object sender, RoutedEventArgs e)
-        {
-            SearchItem item1 = this.listView_result.SelectedItem as SearchItem;
-            if (item1 != null)
-            {
-                this._popupWindow.google(item1.EventName);
             }
         }
 
@@ -690,10 +690,17 @@ namespace EpgTimer
                 MainWindow mainWindow1 = this.Owner as MainWindow;
                 if (mainWindow1 != null)
                 {
-                    base.Hide();
-                    BlackoutWindow.blinkSearchButton_Start(
-                        this,
-                        mainWindow1.getSearchButton(true));
+                    if (BlackoutWindow.unvisibleSearchWindow != null)
+                    {
+                        // 非表示で保存するSearchWindowを1つに限定するため
+                        this.Close();
+                    }
+                    else
+                    {
+                        this.Hide();
+                        mainWindow1.EmphasizeSearchButton(true);
+                        BlackoutWindow.unvisibleSearchWindow = this;
+                    }
                     mainWindow1.moveTo_tabItem_epg();
                     mainWindow1.Hide(); // EpgDataView.UserControl_IsVisibleChangedイベントを発生させる
                     mainWindow1.Show();
@@ -706,24 +713,10 @@ namespace EpgTimer
             MainWindow mainWindow1 = this.Owner as MainWindow;
             if (this.IsVisible)
             {
-                BlackoutWindow.blinkSearchButton_Stop(
-                    this,
-                    mainWindow1.getSearchButton(false));
-            }
-        }
-
-        private void MenuItem_ProgramTable_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
-        {
-            MenuItem item1 = (MenuItem)sender;
-            if (item1.IsVisible)
-            {
-                if (BlackoutWindow.unvisibleSearchWindow != null)
+                if (BlackoutWindow.unvisibleSearchWindow == this)
                 {
-                    item1.IsEnabled = false;
-                }
-                else
-                {
-                    item1.IsEnabled = true;
+                    mainWindow1.EmphasizeSearchButton(false);
+                    BlackoutWindow.unvisibleSearchWindow = null;
                 }
             }
         }
@@ -747,6 +740,46 @@ namespace EpgTimer
                 searchKeyView.SetSearchKey(defKey);
 
                 button_search_Click(sender, e);
+            }
+        }
+
+        private void cmdMenu_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (listView_result.SelectedItem != null)
+            {
+                SearchItem selItem = listView_result.SelectedItem as SearchItem;
+                foreach (object item in ((ContextMenu)sender).Items)
+                {
+                    if (item is MenuItem && ((MenuItem)item).Name == "cmdChg")
+                    {
+                        if (selItem.IsReserved == true)
+                        {
+                            ((MenuItem)item).IsEnabled = true;
+                            for (int i = 0; i <= 5; i++)
+                            {
+                                ((MenuItem)((MenuItem)item).Items[i]).IsChecked = (i == selItem.ReserveInfo.RecSetting.RecMode);
+                            }
+                            for (int i = 6; i < ((MenuItem)item).Items.Count; i++)
+                            {
+                                MenuItem subItem = ((MenuItem)item).Items[i] as MenuItem;
+                                if (subItem != null && subItem.Name == "cmdPri")
+                                {
+                                    for (int j = 0; j < subItem.Items.Count; j++)
+                                    {
+                                        ((MenuItem)subItem.Items[j]).IsChecked = (j + 1 == selItem.ReserveInfo.RecSetting.Priority);
+                                    }
+                                    subItem.Header = string.Format((string)subItem.Tag, selItem.ReserveInfo.RecSetting.Priority);
+                                    break;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            ((MenuItem)item).IsEnabled = false;
+                        }
+                        break;
+                    }
+                }
             }
         }
 

@@ -131,6 +131,14 @@ namespace EpgTimer
                 {
                     key.titleOnlyFlag = 0;
                 }
+                if (checkBox_keyDisabled.IsChecked == true)
+                {
+                    key.andKey = (key.andKey.StartsWith("^!{999}") ? "" : "^!{999}") + key.andKey;
+                }
+                else
+                {
+                    key.andKey = key.andKey.Substring(key.andKey.StartsWith("^!{999}") ? 7 : 0);
+                }
 
                 key.contentList.Clear();
                 foreach (ContentKindInfo info in listBox_content.Items)
@@ -231,6 +239,14 @@ namespace EpgTimer
                 else
                 {
                     checkBox_titleOnly.IsChecked = false;
+                }
+                if (defKey.andKey.StartsWith("^!{999}"))
+                {
+                    checkBox_keyDisabled.IsChecked = true;
+                }
+                else
+                {
+                    checkBox_keyDisabled.IsChecked = false;
                 }
 
                 listBox_content.Items.Clear();

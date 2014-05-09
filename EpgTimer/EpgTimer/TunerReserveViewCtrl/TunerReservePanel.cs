@@ -200,7 +200,7 @@ namespace EpgTimer.TunerReserveViewCtrl
                     double dInfoTopPos = Math.Floor(info.TopPos);
                     double dInfoHeight = Math.Floor(info.Height);
 
-                    dc.DrawRectangle(Brushes.LightGray, null, new Rect(info.LeftPos, dInfoTopPos, info.Width, dInfoHeight));
+                    dc.DrawRectangle(Brushes.LightGray, null, new Rect(info.LeftPos, dInfoTopPos, info.Width, Math.Max(dInfoHeight, 0)));
                     if (dInfoHeight > 2)
                     {
                         SolidColorBrush color = Brushes.White;

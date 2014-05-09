@@ -21,11 +21,11 @@
             <MenuItem Header="ジャンル" Name="JyanruKey" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="ネットワーク" Name="NetworkKey" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="サービス名" Name="ServiceKey" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="有効" Name="KeyEnabled" IsCheckable="True" Click="headerSelect_Click" />
         </ContextMenu>
         <ContextMenu x:Key="itemMenu" x:Name="cmdMenu" >
-            <MenuItem Header="削除 (_D)" Click="button_del_Click" InputGestureText="Delete" />
-            <MenuItem Header="変更 (_C)" Click="button_change_Click"  InputGestureText="Enter "/>
-            <MenuItem Header="自動登録詳細 (_V)" Click="MenuItem_Click_AutoAddContent" />
+            <MenuItem Header="削除" Click="button_del_Click" InputGestureText="Delete" />
+            <MenuItem Header="変更" Click="button_change_Click"  InputGestureText="Enter "/>
         </ContextMenu>
     </UserControl.Resources>
     <Grid>
@@ -40,6 +40,7 @@
                         <Setter Property="ToolTipService.ShowDuration" Value="20000" />
                         <Setter Property="ToolTip" Value="{Binding ToolTipView}"/>
                         <Setter Property="ContextMenu" Value="{DynamicResource itemMenu}" />
+                        <Setter Property="Background" Value="{Binding BackColor}" />
                         <Setter Property="BorderThickness" Value="5,0,0,1" />
                         <Setter Property="BorderBrush" Value="{Binding BorderBrush}" />
                         <EventSetter Event="MouseDoubleClick" Handler="listView_key_MouseDoubleClick"/>
@@ -112,6 +113,11 @@
                         <GridViewColumn DisplayMemberBinding="{Binding Path=ServiceKey}">
                             <GridViewColumn.Header>
                                 <GridViewColumnHeader Content="サービス名" Tag="ServiceKey" HorizontalContentAlignment="Left" ToolTip="Ctrl + クリック（マルチ・ソート）"/>
+                            </GridViewColumn.Header>
+                        </GridViewColumn>
+                        <GridViewColumn DisplayMemberBinding="{Binding Path=KeyEnabled}">
+                            <GridViewColumn.Header>
+                                <GridViewColumnHeader Content="有効" Tag="KeyEnabled" HorizontalContentAlignment="Left" ToolTip="Ctrl + クリック（マルチ・ソート）"/>
                             </GridViewColumn.Header>
                         </GridViewColumn>
                     </GridView>

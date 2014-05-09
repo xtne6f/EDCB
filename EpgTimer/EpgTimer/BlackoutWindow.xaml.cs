@@ -53,33 +53,5 @@ namespace EpgTimer {
             bgw1.RunWorkerAsync();
         }
 
-        /// <summary>
-        /// Hide()した検索ウィンドウがあることを知らせるため、検索ボタンを点滅させる
-        /// </summary>
-        /// <param name="button0"></param>
-        /// <param name="isBlink0"></param>
-        public static void blinkSearchButton_Start(SearchWindow searchWindow0, Button button0) {
-            BlackoutWindow.unvisibleSearchWindow = searchWindow0;
-            //
-            button0.Effect = new System.Windows.Media.Effects.DropShadowEffect();
-            var animation = new System.Windows.Media.Animation.DoubleAnimation {
-                From = 1.0,
-                To = 0.7,
-                RepeatBehavior = System.Windows.Media.Animation.RepeatBehavior.Forever,
-                AutoReverse = true
-            };
-            button0.BeginAnimation(Button.OpacityProperty, animation);
-        }
-
-        public static void blinkSearchButton_Stop(SearchWindow searchWindow0, Button button0) {
-            if (searchWindow0 == BlackoutWindow.unvisibleSearchWindow) {
-                BlackoutWindow.unvisibleSearchWindow = null;
-                //
-                button0.BeginAnimation(Button.OpacityProperty, null);
-                button0.Opacity = 1;
-                button0.Effect = null;
-            }
-        }
-
     }
 }
