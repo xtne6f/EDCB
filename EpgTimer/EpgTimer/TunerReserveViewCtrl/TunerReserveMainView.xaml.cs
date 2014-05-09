@@ -201,7 +201,7 @@ namespace EpgTimer
 
                 Separator separate2 = new Separator();
                 MenuItem menuItemChg = new MenuItem();
-                menuItemChg.Header = "予約変更";
+                menuItemChg.Header = "変更";
                 MenuItem menuItemChgDlg = new MenuItem();
                 menuItemChgDlg.Header = "ダイアログ表示";
                 menuItemChgDlg.Click += new RoutedEventHandler(cm_chg_Click);
@@ -210,27 +210,27 @@ namespace EpgTimer
                 menuItemChg.Items.Add(separate2);
 
                 MenuItem menuItemChgRecMode0 = new MenuItem();
-                menuItemChgRecMode0.Header = "全サービス";
+                menuItemChgRecMode0.Header = "全サービス (_0)";
                 menuItemChgRecMode0.DataContext = 0;
                 menuItemChgRecMode0.Click += new RoutedEventHandler(cm_chg_recmode_Click);
                 MenuItem menuItemChgRecMode1 = new MenuItem();
-                menuItemChgRecMode1.Header = "指定サービス";
+                menuItemChgRecMode1.Header = "指定サービス (_1)";
                 menuItemChgRecMode1.DataContext = 1;
                 menuItemChgRecMode1.Click += new RoutedEventHandler(cm_chg_recmode_Click);
                 MenuItem menuItemChgRecMode2 = new MenuItem();
-                menuItemChgRecMode2.Header = "全サービス（デコード処理なし）";
+                menuItemChgRecMode2.Header = "全サービス（デコード処理なし） (_2)";
                 menuItemChgRecMode2.DataContext = 2;
                 menuItemChgRecMode2.Click += new RoutedEventHandler(cm_chg_recmode_Click);
                 MenuItem menuItemChgRecMode3 = new MenuItem();
-                menuItemChgRecMode3.Header = "指定サービス（デコード処理なし）";
+                menuItemChgRecMode3.Header = "指定サービス（デコード処理なし） (_3)";
                 menuItemChgRecMode3.DataContext = 3;
                 menuItemChgRecMode3.Click += new RoutedEventHandler(cm_chg_recmode_Click);
                 MenuItem menuItemChgRecMode4 = new MenuItem();
-                menuItemChgRecMode4.Header = "視聴";
+                menuItemChgRecMode4.Header = "視聴 (_4)";
                 menuItemChgRecMode4.DataContext = 4;
                 menuItemChgRecMode4.Click += new RoutedEventHandler(cm_chg_recmode_Click);
                 MenuItem menuItemChgRecMode5 = new MenuItem();
-                menuItemChgRecMode5.Header = "無効";
+                menuItemChgRecMode5.Header = "無効 (_5)";
                 menuItemChgRecMode5.DataContext = 5;
                 menuItemChgRecMode5.Click += new RoutedEventHandler(cm_chg_recmode_Click);
 
@@ -247,23 +247,23 @@ namespace EpgTimer
                 menuItemChgRecPri.Tag = "優先度 {0}";
 
                 MenuItem menuItemChgRecPri1 = new MenuItem();
-                menuItemChgRecPri1.Header = "1";
+                menuItemChgRecPri1.Header = "1 (_1)";
                 menuItemChgRecPri1.DataContext = 1;
                 menuItemChgRecPri1.Click += new RoutedEventHandler(cm_chg_priority_Click);
                 MenuItem menuItemChgRecPri2 = new MenuItem();
-                menuItemChgRecPri2.Header = "2";
+                menuItemChgRecPri2.Header = "2 (_2)";
                 menuItemChgRecPri2.DataContext = 2;
                 menuItemChgRecPri2.Click += new RoutedEventHandler(cm_chg_priority_Click);
                 MenuItem menuItemChgRecPri3 = new MenuItem();
-                menuItemChgRecPri3.Header = "3";
+                menuItemChgRecPri3.Header = "3 (_3)";
                 menuItemChgRecPri3.DataContext = 3;
                 menuItemChgRecPri3.Click += new RoutedEventHandler(cm_chg_priority_Click);
                 MenuItem menuItemChgRecPri4 = new MenuItem();
-                menuItemChgRecPri4.Header = "4";
+                menuItemChgRecPri4.Header = "4 (_4)";
                 menuItemChgRecPri4.DataContext = 4;
                 menuItemChgRecPri4.Click += new RoutedEventHandler(cm_chg_priority_Click);
                 MenuItem menuItemChgRecPri5 = new MenuItem();
-                menuItemChgRecPri5.Header = "5";
+                menuItemChgRecPri5.Header = "5 (_5)";
                 menuItemChgRecPri5.DataContext = 5;
                 menuItemChgRecPri5.Click += new RoutedEventHandler(cm_chg_priority_Click);
 
@@ -276,7 +276,7 @@ namespace EpgTimer
                 menuItemChg.Items.Add(menuItemChgRecPri);
 
                 MenuItem menuItemDel = new MenuItem();
-                menuItemDel.Header = "予約削除";
+                menuItemDel.Header = "削除";
                 menuItemDel.Click += new RoutedEventHandler(cm_del_Click);
 
                 MenuItem menuItemAutoAdd = new MenuItem();

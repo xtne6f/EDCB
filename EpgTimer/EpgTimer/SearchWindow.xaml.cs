@@ -287,7 +287,21 @@ namespace EpgTimer
                 {
                     List<ReserveData> list = new List<ReserveData>();
                     RecSettingData setInfo = new RecSettingData();
-                    recSettingView.GetRecSetting(ref setInfo);
+
+                    if ((sender.GetType() == typeof(MenuItem)) &&
+                        (((MenuItem)sender).Parent != null) &&
+                        ((((MenuItem)sender).Parent).GetType() == typeof(MenuItem)) &&
+                        (((MenuItem)(((MenuItem)sender).Parent)).Name == "cmdPreset"))
+                    {
+                        //プリセットからの呼び出し
+                        UInt32 presetID = (UInt32)(((MenuItem)sender).DataContext);
+                        Settings.GetDefRecSetting(presetID, ref setInfo);
+                    }
+                    else
+                    {
+                        //現在の設定画面の設定を呼び出し
+                        recSettingView.GetRecSetting(ref setInfo);
+                    }
 
                     foreach (SearchItem item in listView_result.SelectedItems)
                     {
@@ -619,7 +633,7 @@ namespace EpgTimer
                         break;
                 }
             }
-            else
+            else if (Keyboard.Modifiers == ModifierKeys.None)
             {
                 switch (e.Key)
                 {
@@ -628,6 +642,9 @@ namespace EpgTimer
                         break;
                     case Key.Escape:
                         this.Close();
+                        break;
+                    case Key.Delete:
+                        this.deleteItem();
                         break;
                 }
             }
@@ -652,6 +669,32 @@ namespace EpgTimer
                 case Key.Enter:
                     this.MenuItem_Click_ShowDialog(listView_result.SelectedItem, new RoutedEventArgs());
                     break;
+            }
+        }
+
+        void deleteItem()
+        {
+            if (listView_result.SelectedItem == null) { return; }
+            //
+            List<ReserveData> delList = new List<ReserveData>();
+            foreach (SearchItem item in listView_result.SelectedItems)
+            {
+                if (item.IsReserved == true)
+                {
+                    delList.Add(item.ReserveInfo);
+                }
+            }
+            if (delList.Count == 0) { return; }
+
+            string text1 = "削除しますか？" + "　[削除アイテム数: " + delList.Count + "]" + "\n\n";
+            foreach (ReserveData item in delList)
+            {
+                text1 += " ・ " + item.Title + "\n";
+            }
+            string caption1 = "登録項目削除の確認";
+            if (MessageBox.Show(text1, caption1, MessageBoxButton.OKCancel, MessageBoxImage.Exclamation, MessageBoxResult.OK) == MessageBoxResult.OK)
+            {
+                this.MenuItem_Click_DeleteItem(this.listView_result.SelectedItem, new RoutedEventArgs(Button.ClickEvent));
             }
         }
 
@@ -698,7 +741,7 @@ namespace EpgTimer
         {
             if (listView_result.SelectedItem != null)
             {
-                new BlackoutWindow(this).showWindow("予約←→無効");
+                //new BlackoutWindow(this).showWindow("予約←→無効");
 
                 List<ReserveData> list = new List<ReserveData>();
                 bool IsExistNewReserve = false;
@@ -1006,6 +1049,31 @@ namespace EpgTimer
                         }
                         ((MenuItem)item).IsEnabled = isReserved;
                     }
+                    else if (item is MenuItem && (((MenuItem)item).Name == "cmdAdd"))
+                    {
+                        bool isReserved = true;
+                        foreach (SearchItem selItem in listView_result.SelectedItems)
+                        {
+                            isReserved &= selItem.IsReserved;
+                        }
+                        ((MenuItem)item).IsEnabled = !isReserved;
+
+                        if (((MenuItem)item).IsEnabled == true)
+                        {
+                            MenuItem subItem = ((MenuItem)item).Items[2] as MenuItem;
+                            subItem.Items.Clear();
+
+                            foreach (RecPresetItem info in Settings.Instance.RecPresetList)
+                            {
+                                MenuItem menuItem = new MenuItem();
+                                menuItem.Header = info.DisplayName;
+                                menuItem.DataContext = info.ID;
+                                menuItem.Click += new RoutedEventHandler(button_add_reserve_Click);
+
+                                subItem.Items.Add(menuItem);
+                            }
+                        }
+                    }
                     else if (item is MenuItem && ((MenuItem)item).Name == "cmdChg")
                     {
                         //選択されているすべての予約が同じ設定の場合だけチェックを表示する
@@ -1039,9 +1107,9 @@ namespace EpgTimer
                             ((MenuItem)item).IsEnabled = true;
                             for (int i = 0; i <= 5; i++)
                             {
-                                ((MenuItem)((MenuItem)item).Items[i]).IsChecked = (i == recMode);
+                                ((MenuItem)((MenuItem)item).Items[i + 2]).IsChecked = (i == recMode);
                             }
-                            for (int i = 6; i < ((MenuItem)item).Items.Count; i++)
+                            for (int i = 6 + 2; i < ((MenuItem)item).Items.Count; i++)
                             {
                                 MenuItem subItem = ((MenuItem)item).Items[i] as MenuItem;
                                 if (subItem != null && subItem.Name == "cmdPri")

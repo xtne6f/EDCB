@@ -46,10 +46,10 @@
             <MenuItem Header="録画ファイル" Name="RecFilePath" IsCheckable="True" Click="headerSelect_Click" />
         </ContextMenu>
         <ContextMenu x:Key="itemMenu" x:Name="cmdMenu" Loaded="cmdMenu_Loaded">
-            <MenuItem Header="録画情報" Click="button_recInfo_Click" />
-            <MenuItem Header="削除" Click="button_del_Click" />
-            <MenuItem Header="再生" Click="button_play_Click" />
+            <MenuItem Header="録画情報" Click="button_recInfo_Click" InputGestureText="Enter" />
+            <MenuItem Header="削除" Click="button_del_Click" InputGestureText="Delete" />
             <MenuItem Header="自動予約登録" Click="autoadd_Click" />
+            <MenuItem Header="再生" Click="button_play_Click" InputGestureText="Ctrl + P" />
             <MenuItem Name="cmdopenFolder" Header="録画フォルダを開く" Click="openFolder_Click" />
         </ContextMenu>
 
@@ -59,7 +59,7 @@
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="100" />
         </Grid.ColumnDefinitions>
-        <ListView Name="listView_recinfo" Margin="10" SelectionMode="Extended" ItemsSource="{Binding}" GridViewColumnHeader.Click="GridViewColumnHeader_Click" ContextMenu="{DynamicResource itemHeader}" ContextMenuOpening="ContextMenu_Header_ContextMenuOpening" >
+        <ListView Name="listView_recinfo" Margin="10" SelectionMode="Extended" ItemsSource="{Binding}" GridViewColumnHeader.Click="GridViewColumnHeader_Click" ContextMenu="{DynamicResource itemHeader}" ContextMenuOpening="ContextMenu_Header_ContextMenuOpening" KeyDown="listView_recinfo_KeyDown">
             <ListView.Resources>
                 <Style TargetType="ListViewItem">
                     <Setter Property="ToolTipService.ShowDuration" Value="20000" />
@@ -127,8 +127,8 @@
             </ListView.View>
         </ListView>
         <StackPanel Grid.Column="1" Name="stackPanel_button">
-            <Button Content="削除" Height="23" Name="button_del" Margin="0,10,0,10" Click="button_del_Click" />
-            <Button Content="再生" Height="23" Name="button_play" Margin="0,10,0,10" Click="button_play_Click" />
+            <Button Content="再生" Height="23" Name="button_play" Margin="0,10,0,10" Click="button_play_Click" ToolTip="Ctrl + P" />
+            <Button Content="削除" Height="23" Name="button_del" Margin="0,10,0,10" Click="button_del_Click" ToolTip="Delete" />
         </StackPanel>
     </Grid>
 </UserControl>

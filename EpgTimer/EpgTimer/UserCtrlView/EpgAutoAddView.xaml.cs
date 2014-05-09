@@ -340,62 +340,6 @@ namespace EpgTimer
             }
         }
 
-        private void button_up_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                if (listView_key.SelectedIndex > 0 && listView_key.SelectedItem != null)
-                {
-                    EpgAutoDataItem info1 = listView_key.SelectedItem as EpgAutoDataItem;
-                    EpgAutoDataItem info2 = listView_key.Items.GetItemAt(listView_key.SelectedIndex - 1) as EpgAutoDataItem;
-
-                    UInt32 tempId = info1.EpgAutoAddInfo.dataID;
-                    info1.EpgAutoAddInfo.dataID = info2.EpgAutoAddInfo.dataID;
-                    info2.EpgAutoAddInfo.dataID = tempId;
-
-                    List<EpgAutoAddData> addList = new List<EpgAutoAddData>();
-                    addList.Add(info1.EpgAutoAddInfo);
-                    addList.Add(info2.EpgAutoAddInfo);
-                    if (cmd.SendChgEpgAutoAdd(addList) != 1)
-                    {
-                        MessageBox.Show("変更に失敗しました");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
-
-        private void button_down_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                if (listView_key.SelectedIndex + 1 < listView_key.Items.Count && listView_key.SelectedItem != null)
-                {
-                    EpgAutoDataItem info1 = listView_key.SelectedItem as EpgAutoDataItem;
-                    EpgAutoDataItem info2 = listView_key.Items.GetItemAt(listView_key.SelectedIndex + 1) as EpgAutoDataItem;
-
-                    UInt32 tempId = info1.EpgAutoAddInfo.dataID;
-                    info1.EpgAutoAddInfo.dataID = info2.EpgAutoAddInfo.dataID;
-                    info2.EpgAutoAddInfo.dataID = tempId;
-
-                    List<EpgAutoAddData> addList = new List<EpgAutoAddData>();
-                    addList.Add(info1.EpgAutoAddInfo);
-                    addList.Add(info2.EpgAutoAddInfo);
-                    if (cmd.SendChgEpgAutoAdd(addList) != 1)
-                    {
-                        MessageBox.Show("変更に失敗しました");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
-
         private void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
             if (ReloadInfo == true && this.IsVisible == true)

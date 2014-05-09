@@ -382,6 +382,43 @@ namespace EpgTimer
             }
         }
 
+        void listView_recinfo_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (Keyboard.Modifiers == ModifierKeys.Control)
+            {
+                switch (e.Key)
+                {
+                    case Key.P:
+                        this.button_play_Click(this.listView_recinfo.SelectedItem, new RoutedEventArgs(Button.ClickEvent));
+                        break;
+                }
+            }
+            else if (Keyboard.Modifiers == ModifierKeys.None)
+            {
+                switch (e.Key)
+                {
+                    case Key.Enter:
+                        this.button_recInfo_Click(this.listView_recinfo.SelectedItem, new RoutedEventArgs(Button.ClickEvent));
+                        break;
+                    case Key.Delete:
+                        this.deleteItem();
+                        break;
+                }
+            }
+        }
+
+        void deleteItem()
+        {
+            if (listView_recinfo.SelectedItems.Count == 0) { return; }
+            //
+            string text1 = "削除しますか？" + "　[削除アイテム数: " + listView_recinfo.SelectedItems.Count + "]" + "\n\n";
+            string caption1 = "項目削除の確認";
+            if (MessageBox.Show(text1, caption1, MessageBoxButton.OKCancel, MessageBoxImage.Exclamation, MessageBoxResult.OK) == MessageBoxResult.OK)
+            {
+                this.button_del_Click(this.listView_recinfo.SelectedItem, new RoutedEventArgs(Button.ClickEvent));
+            }
+        }
+
         private void listView_recinfo_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             if (listView_recinfo.SelectedItem != null)

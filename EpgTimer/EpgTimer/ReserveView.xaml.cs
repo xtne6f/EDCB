@@ -48,7 +48,7 @@ namespace EpgTimer
                 {
                     button_del.Style = null;
                     button_change.Style = null;
-                    button_no.Style = null;
+                    button_on_off.Style = null;
                     button_add_manual.Style = null;
                     button_timeShiftPlay.Style = null;
                 }
@@ -489,40 +489,55 @@ namespace EpgTimer
             }
         }
 
-        private void button_no_Click(object sender, RoutedEventArgs e)
+        private void button_on_off_Click(object sender, RoutedEventArgs e)
         {
-            try
+            if (listView_reserve.SelectedItem != null)
             {
                 List<ReserveData> list = new List<ReserveData>();
+
                 foreach (ReserveItem item in listView_reserve.SelectedItems)
                 {
-                    ReserveData reserveInfo = item.ReserveInfo;
+                    if (item.ReserveInfo.RecSetting.RecMode == 5)
+                    {
+                        // 無効 => 予約
+                        RecSettingData defSet = new RecSettingData();
+                        Settings.GetDefRecSetting(0, ref defSet);
+                        item.ReserveInfo.RecSetting.RecMode = defSet.RecMode;
+                    }
+                    else
+                    {
+                        //予約 => 無効
+                        item.ReserveInfo.RecSetting.RecMode = 5;
+                    }
 
-                    reserveInfo.RecSetting.RecMode = 5;
-
-                    list.Add(reserveInfo);
+                    list.Add(item.ReserveInfo);
                 }
+
                 if (list.Count > 0)
                 {
-                    ErrCode err = (ErrCode)cmd.SendChgReserve(list);
-                    if (err == ErrCode.CMD_ERR_CONNECT)
+                    try
                     {
-                        MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
+                        ErrCode err = (ErrCode)cmd.SendChgReserve(list);
+                        if (err == ErrCode.CMD_ERR_CONNECT)
+                        {
+                            MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
+                        }
+                        if (err == ErrCode.CMD_ERR_TIMEOUT)
+                        {
+                            MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
+                        }
+                        if (err != ErrCode.CMD_SUCCESS)
+                        {
+                            MessageBox.Show("予約変更でエラーが発生しました。");
+                        }
                     }
-                    if (err == ErrCode.CMD_ERR_TIMEOUT)
+                    catch (Exception ex)
                     {
-                        MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-                    }
-                    if (err != ErrCode.CMD_SUCCESS)
-                    {
-                        MessageBox.Show("チューナー一覧の取得でエラーが発生しました。");
+                        MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
                     }
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+        
         }
 
         private void priority_Click(object sender, RoutedEventArgs e)

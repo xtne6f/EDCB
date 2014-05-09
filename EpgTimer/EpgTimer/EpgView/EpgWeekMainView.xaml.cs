@@ -398,23 +398,27 @@ namespace EpgTimer
                 }
                 ContextMenu menu = new ContextMenu();
 
-                MenuItem menuItemNew = new MenuItem();
-                menuItemNew.Header = "簡易予約";
-                menuItemNew.Click += new RoutedEventHandler(cm_new_Click);
+                MenuItem menuItemReverse = new MenuItem();
+                menuItemReverse.Header = "簡易予約/予約←→無効";
+                menuItemReverse.Click += new RoutedEventHandler(cm_reverse_Click);
+
+                //MenuItem menuItemNew = new MenuItem();
+                //menuItemNew.Header = "簡易予約";
+                //menuItemNew.Click += new RoutedEventHandler(cm_new_Click);
 
                 Separator separate = new Separator();
                 MenuItem menuItemAdd = new MenuItem();
-                menuItemAdd.Header = "予約追加 (_C)";
+                menuItemAdd.Header = "予約追加";
 
                 MenuItem menuItemAddDlg = new MenuItem();
-                menuItemAddDlg.Header = "ダイアログ表示 (_X)";
+                menuItemAddDlg.Header = "ダイアログ表示";
                 menuItemAddDlg.Click += new RoutedEventHandler(cm_add_Click);
 
                 menuItemAdd.Items.Add(menuItemAddDlg);
                 menuItemAdd.Items.Add(separate);
 
                 MenuItem menuItemPreset = new MenuItem();
-                menuItemPreset.Header = "プリセット (_Z)";
+                menuItemPreset.Header = "プリセット";
 
                 foreach (RecPresetItem info in Settings.Instance.RecPresetList)
                 {
@@ -430,9 +434,9 @@ namespace EpgTimer
 
                 Separator separate2 = new Separator();
                 MenuItem menuItemChg = new MenuItem();
-                menuItemChg.Header = "予約変更 (_C)";
+                menuItemChg.Header = "変更";
                 MenuItem menuItemChgDlg = new MenuItem();
-                menuItemChgDlg.Header = "ダイアログ表示 (_X)";
+                menuItemChgDlg.Header = "ダイアログ表示";
                 menuItemChgDlg.Click += new RoutedEventHandler(cm_chg_Click);
 
                 menuItemChg.Items.Add(menuItemChgDlg);
@@ -473,7 +477,7 @@ namespace EpgTimer
                 menuItemChg.Items.Add(new Separator());
 
                 MenuItem menuItemChgRecPri = new MenuItem();
-                menuItemChgRecPri.Tag = "優先度 {0} (_E)";
+                menuItemChgRecPri.Tag = "優先度 {0}";
 
                 MenuItem menuItemChgRecPri1 = new MenuItem();
                 menuItemChgRecPri1.Header = "1 (_1)";
@@ -505,20 +509,20 @@ namespace EpgTimer
                 menuItemChg.Items.Add(menuItemChgRecPri);
 
                 MenuItem menuItemDel = new MenuItem();
-                menuItemDel.Header = "予約削除";
+                menuItemDel.Header = "削除";
                 menuItemDel.Click += new RoutedEventHandler(cm_del_Click);
 
                 MenuItem menuItemAutoAdd = new MenuItem();
                 menuItemAutoAdd.Header = "自動予約登録";
                 menuItemAutoAdd.Click += new RoutedEventHandler(cm_autoadd_Click);
                 MenuItem menuItemTimeshift = new MenuItem();
-                menuItemTimeshift.Header = "追っかけ再生 (_P)";
+                menuItemTimeshift.Header = "追っかけ再生";
                 menuItemTimeshift.Click += new RoutedEventHandler(cm_timeShiftPlay_Click);
 
                 //表示モード
                 Separator separate3 = new Separator();
                 MenuItem menuItemView = new MenuItem();
-                menuItemView.Header = "表示モード (_W)";
+                menuItemView.Header = "表示モード";
 
                 MenuItem menuItemViewSetDlg = new MenuItem();
                 menuItemViewSetDlg.Header = "表示設定";
@@ -556,6 +560,8 @@ namespace EpgTimer
                 menuItemView.Items.Add(menuItemViewSetDlg);
                 if (noItem == true)
                 {
+                    menuItemReverse.Header = "簡易予約";
+                    menuItemReverse.IsEnabled = false;
                     menuItemAdd.IsEnabled = false;
                     menuItemChg.IsEnabled = false;
                     menuItemDel.IsEnabled = false;
@@ -567,7 +573,9 @@ namespace EpgTimer
                 {
                     if (addMode == false)
                     {
-                        menuItemNew.IsEnabled = false;
+                        menuItemReverse.Header = "予約←→無効";
+                        menuItemReverse.IsEnabled = true;
+                        //menuItemNew.IsEnabled = false;
                         menuItemAdd.IsEnabled = false;
                         menuItemChg.IsEnabled = true;
                         ((MenuItem)menuItemChg.Items[menuItemChg.Items.IndexOf(menuItemChgRecMode0) + Math.Min((int)reserve.RecSetting.RecMode, 5)]).IsChecked = true;
@@ -580,7 +588,9 @@ namespace EpgTimer
                     }
                     else
                     {
-                        menuItemNew.IsEnabled = true;
+                        menuItemReverse.Header = "簡易予約";
+                        menuItemReverse.IsEnabled = true;
+                        //menuItemNew.IsEnabled = true;
                         menuItemAdd.IsEnabled = true;
                         menuItemChg.IsEnabled = false;
                         menuItemDel.IsEnabled = false;
@@ -590,12 +600,14 @@ namespace EpgTimer
                     }
                 }
 
-                menu.Items.Add(menuItemNew);
+                menu.Items.Add(menuItemReverse);
+                //menu.Items.Add(menuItemNew);
                 menu.Items.Add(menuItemAdd);
                 menu.Items.Add(menuItemChg);
                 menu.Items.Add(menuItemDel);
                 menu.Items.Add(menuItemAutoAdd);
                 menu.Items.Add(menuItemTimeshift);
+                menu.Items.Add(new Separator());
                 menu.Items.Add(menuItemView);
                 menu.IsOpen = true;
             }
@@ -1008,6 +1020,58 @@ namespace EpgTimer
             if (ViewSettingClick != null)
             {
                 ViewSettingClick(this, null);
+            }
+        }
+
+        /// <summary>
+        /// 右クリックメニュー 予約←→無効クリックイベント呼び出し
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void cm_reverse_Click(object sender, RoutedEventArgs e)
+        {
+            ReserveData reserve = new ReserveData();
+            if (GetReserveItem(clickPos, ref reserve) == false)
+            {
+                cm_new_Click(sender, e);
+                return;
+            }
+
+            try
+            {
+                if (reserve.RecSetting.RecMode == 5)
+                {
+                    // 無効 => 予約
+                    RecSettingData defSet = new RecSettingData();
+                    Settings.GetDefRecSetting(0, ref defSet);
+                    reserve.RecSetting.RecMode = defSet.RecMode;
+                }
+                else
+                {
+                    //予約 => 無効
+                    reserve.RecSetting.RecMode = 5;
+                }
+
+                List<ReserveData> list = new List<ReserveData>();
+                list.Add(reserve);
+                ErrCode err = (ErrCode)cmd.SendChgReserve(list);
+
+                if (err == ErrCode.CMD_ERR_CONNECT)
+                {
+                    MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
+                }
+                if (err == ErrCode.CMD_ERR_TIMEOUT)
+                {
+                    MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
+                }
+                if (err != ErrCode.CMD_SUCCESS)
+                {
+                    MessageBox.Show("予約←→無効でエラーが発生しました。");
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
 

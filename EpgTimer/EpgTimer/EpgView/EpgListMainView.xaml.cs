@@ -762,6 +762,7 @@ namespace EpgTimer
                         SearchItem item = listView_event.SelectedItem as SearchItem;
                         if (item.IsReserved == true)
                         {
+                            cm_Reverse.Header = "予約←→無効";
                             cm_del.IsEnabled = true;
                             cm_chg.IsEnabled = true;
                             for (int i = 0; i <= 5; i++)
@@ -779,6 +780,7 @@ namespace EpgTimer
                         }
                         else
                         {
+                            cm_Reverse.Header = "簡易予約";
                             cm_del.IsEnabled = false;
                             cm_chg.IsEnabled = false;
                             cm_add.IsEnabled = true;
@@ -802,6 +804,39 @@ namespace EpgTimer
                 catch (Exception ex)
                 {
                     MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                }
+            }
+        }
+
+        void listView_event_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (Keyboard.Modifiers == ModifierKeys.Control)
+            {
+                switch (e.Key)
+                {
+                    case Key.P:
+                        this.cm_timeShiftPlay_Click(this.listView_event.SelectedItem, new RoutedEventArgs(Button.ClickEvent));
+                        break;
+                }
+            }
+            else if (Keyboard.Modifiers == ModifierKeys.None)
+            {
+                switch (e.Key)
+                {
+                    case Key.Enter:
+                        if (listView_event.SelectedItem != null)
+                        {
+                            SearchItem item = listView_event.SelectedItem as SearchItem;
+                            if (item.IsReserved == true)
+                            {
+                                ChangeReserve(item.ReserveInfo);
+                            }
+                            else
+                            {
+                                AddReserve(item.EventInfo);
+                            }
+                        }
+                        break;
                 }
             }
         }
@@ -1340,5 +1375,76 @@ namespace EpgTimer
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
+
+        /// <summary>
+        /// 右クリックメニュー 予約←→無効クリックイベント呼び出し
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void cm_reverse_Click(object sender, RoutedEventArgs e)
+        {
+
+            if (listView_event.SelectedItem == null) return;
+
+            List<ReserveData> list = new List<ReserveData>();
+            bool IsExistNewReserve = false;
+
+            foreach (SearchItem item in listView_event.SelectedItems)
+            {
+                if (item.IsReserved == true)
+                {
+                    if (item.ReserveInfo.RecSetting.RecMode == 5)
+                    {
+                        // 無効 => 予約
+                        RecSettingData defSet = new RecSettingData();
+                        Settings.GetDefRecSetting(0, ref defSet);
+                        item.ReserveInfo.RecSetting.RecMode = defSet.RecMode;
+                    }
+                    else
+                    {
+                        //予約 => 無効
+                        item.ReserveInfo.RecSetting.RecMode = 5;
+                    }
+
+                    list.Add(item.ReserveInfo);
+                }
+                else
+                {
+                    IsExistNewReserve = true;
+                }
+            }
+
+            if (list.Count > 0)
+            {
+                try
+                {
+                    ErrCode err = (ErrCode)cmd.SendChgReserve(list);
+
+                    if (err == ErrCode.CMD_ERR_CONNECT)
+                    {
+                        MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
+                    }
+                    if (err == ErrCode.CMD_ERR_TIMEOUT)
+                    {
+                        MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
+                    }
+                    if (err != ErrCode.CMD_SUCCESS)
+                    {
+                        MessageBox.Show("予約←→無効でエラーが発生しました。");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                }
+            }
+
+            if (IsExistNewReserve == true)
+            {
+                cm_new_Click(sender, e);
+            }
+
+        }
+
     }
 }

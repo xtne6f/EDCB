@@ -25,7 +25,7 @@
                 <RichTextBox Name="richTextBox_eventInfo" IsReadOnly="True" />
             </ScrollViewer>
             <GridSplitter Grid.RowSpan="1" Height="5" Name="gridSplitter2" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" />
-            <ListView Grid.Row="1" Name="listView_event" SelectionMode="Single" ItemsSource="{Binding}" SelectionChanged="listView_event_SelectionChanged" ContextMenuOpening="listView_event_ContextMenuOpening" GridViewColumnHeader.Click="GridViewColumnHeader_Click" >
+            <ListView Grid.Row="1" Name="listView_event" SelectionMode="Single" ItemsSource="{Binding}" SelectionChanged="listView_event_SelectionChanged" ContextMenuOpening="listView_event_ContextMenuOpening" GridViewColumnHeader.Click="GridViewColumnHeader_Click" KeyDown="listView_event_KeyDown">
                 <ListView.Resources>
                     <Style TargetType="ListViewItem">
                         <Setter Property="Background" Value="{Binding BackColor}" />
@@ -68,14 +68,15 @@
                 </ListView.View>
                 <ListView.ContextMenu>
                     <ContextMenu x:Name="listView_event_contextMenu">
-                        <MenuItem x:Name="cm_new" Header="簡易予約" Click="cm_new_Click" />
-                        <MenuItem x:Name="cm_add" Header="予約追加 (_C)">
-                            <MenuItem Header="ダイアログ表示 (_X)" Click="cm_add_Click" />
+                        <MenuItem x:Name="cm_Reverse" Header="簡易予約/予約←→無効" Click="cm_reverse_Click" />
+                        <!-- <MenuItem x:Name="cm_new" Header="簡易予約" Click="cm_new_Click" /> -->
+                        <MenuItem x:Name="cm_add" Header="予約追加">
+                            <MenuItem Header="ダイアログ表示" Click="cm_add_Click" InputGestureText="Enter"/>
                             <Separator/>
-                            <MenuItem x:Name="cm_add_preset" Header="プリセット (_Z)" />
+                            <MenuItem x:Name="cm_add_preset" Header="プリセット" />
                         </MenuItem>
-                        <MenuItem x:Name="cm_chg" Header="予約変更 (_C)">
-                            <MenuItem Header="ダイアログ表示 (_X)" Click="cm_change_Click" />
+                        <MenuItem x:Name="cm_chg" Header="変更">
+                            <MenuItem Header="ダイアログ表示" Click="cm_change_Click" InputGestureText="Enter" />
                             <Separator/>
                             <MenuItem Header="全サービス (_0)" Name="recmode_all" Click="cm_chg_recmode_Click" />
                             <MenuItem Header="指定サービス (_1)" Name="recmode_only" Click="cm_chg_recmode_Click" />
@@ -84,7 +85,7 @@
                             <MenuItem Header="視聴 (_4)" Name="recmode_view" Click="cm_chg_recmode_Click" />
                             <MenuItem Header="無効 (_5)" Name="recmode_no" Click="cm_chg_recmode_Click" />
                             <Separator/>
-                            <MenuItem Name="cm_pri" Tag="優先度 {0} (_E)">
+                            <MenuItem Name="cm_pri" Tag="優先度 {0}">
                                 <MenuItem Header="1 (_1)" Name="priority_1" Click="cm_chg_priority_Click" />
                                 <MenuItem Header="2 (_2)" Name="priority_2" Click="cm_chg_priority_Click" />
                                 <MenuItem Header="3 (_3)" Name="priority_3" Click="cm_chg_priority_Click" />
@@ -92,11 +93,11 @@
                                 <MenuItem Header="5 (_5)" Name="priority_5" Click="cm_chg_priority_Click" />
                             </MenuItem>
                         </MenuItem>
-                        <MenuItem x:Name="cm_del" Header="予約削除" Click="cm_del_Click" />
+                        <MenuItem x:Name="cm_del" Header="削除" Click="cm_del_Click" />
                         <MenuItem x:Name="cm_autoadd" Header="自動予約登録" Click="cm_autoadd_Click" />
-                        <MenuItem x:Name="cm_timeshift" Header="追っかけ再生 (_P)" Click="cm_timeShiftPlay_Click" />
+                        <MenuItem x:Name="cm_timeshift" Header="追っかけ再生" Click="cm_timeShiftPlay_Click" InputGestureText="Ctrl + P" />
                         <Separator/>
-                        <MenuItem x:Name="cm_view" Header="表示モード (_W)">
+                        <MenuItem x:Name="cm_view" Header="表示モード">
                             <MenuItem Header="表示設定" Click="cm_viewSet_Click" />
                             <Separator/>
                             <MenuItem x:Name="cm_chg_viewMode1" Header="標準モード (_1)" Click="cm_chg_viewMode_Click"  />
