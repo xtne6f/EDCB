@@ -356,8 +356,21 @@ namespace EpgTimer
         {
             if (listBox_content.SelectedItem != null)
             {
-                listBox_content.Items.RemoveAt(listBox_content.SelectedIndex);
+                List<ContentKindInfo> delList = new List<ContentKindInfo>(listBox_content.SelectedItems.Count);
+                foreach (ContentKindInfo info in listBox_content.SelectedItems)
+                {
+                    delList.Add(info);
+                }
+                foreach (ContentKindInfo info in delList)
+                {
+                    listBox_content.Items.Remove(info);
+                }
             }
+        }
+
+        private void button_content_clear_Click(object sender, RoutedEventArgs e)
+        {
+            listBox_content.Items.Clear();
         }
 
         private void button_all_on_Click(object sender, RoutedEventArgs e)
