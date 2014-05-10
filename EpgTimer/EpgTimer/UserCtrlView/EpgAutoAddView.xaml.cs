@@ -96,6 +96,25 @@ namespace EpgTimer
             }
         }
 
+        public void UpdateListViewSelection(uint autoAddID)
+        {
+            if (this.IsVisible == true)
+            {
+                listView_key.UnselectAll();
+
+                if (autoAddID == 0) return;//無くても結果は同じ
+
+                foreach (EpgAutoDataItem item in listView_key.Items)
+                {
+                    if (item.EpgAutoAddInfo.dataID == autoAddID)
+                    {
+                        listView_key.SelectedItem = item;
+                        break;
+                    }
+                }
+            }
+        }
+
         private void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
             if (ReloadInfo == true && this.IsVisible == true)

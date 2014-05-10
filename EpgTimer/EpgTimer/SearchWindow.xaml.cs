@@ -472,6 +472,7 @@ namespace EpgTimer
             }
 
             SetViewMode(1);
+            this.autoAddID = 0;
         }
 
         private void listView_result_MouseDoubleClick(object sender, MouseButtonEventArgs e)
@@ -1140,5 +1141,15 @@ namespace EpgTimer
             }
         }
         
+        private void Window_Activated(object sender, EventArgs e)
+        {
+            UpdateEpgAutoAddViewSelection();
+        }
+
+        private void UpdateEpgAutoAddViewSelection()
+        {
+            MainWindow mainWindow = Application.Current.MainWindow as MainWindow;
+            mainWindow.autoAddView.epgAutoAddView.UpdateListViewSelection(this.autoAddID);
+        }
     }
 }
