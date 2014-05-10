@@ -447,8 +447,24 @@ namespace EpgTimer
             }
         }
 
+        private bool CheckExistAutoAddItem()
+        {
+            bool retval = CommonManager.Instance.DB.EpgAutoAddList.ContainsKey(this.autoAddID);
+            if (retval == false)
+            {
+                MessageBox.Show("項目がありません。\r\n" +
+                    "既に削除されています。\r\n" +
+                    "(別のEpgtimerによる操作など)");
+                SetViewMode(1);
+                this.autoAddID = 0;
+            }
+            return retval;
+        }
+
         private void button_chg_epgAutoAdd_Click(object sender, RoutedEventArgs e)
         {
+            if (CheckExistAutoAddItem() == false) return;
+
             try
             {
                 EpgAutoAddData addItem = new EpgAutoAddData();

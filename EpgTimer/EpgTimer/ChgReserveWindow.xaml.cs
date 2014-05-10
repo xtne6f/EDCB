@@ -292,9 +292,28 @@ namespace EpgTimer
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
-        
+
+        private bool CheckExistReserveItem()
+        {
+            bool retval = CommonManager.Instance.DB.ReserveList.ContainsKey(this.reserveInfo.ReserveID);
+            if (retval == false)
+            {
+                MessageBox.Show("項目がありません。\r\n" +
+                    "既に削除されています。\r\n" +
+                    "(別のEpgtimerによる操作など)");
+
+                //予約復旧を提示。これだけで大丈夫だったりする。
+                manualAddMode = true;
+                button_chg_reserve.Content = "再予約";
+                this.button_del_reserve.IsEnabled = false;
+            }
+            return retval;
+        }
+
         private void button_chg_reserve_Click(object sender, RoutedEventArgs e)
         {
+            if (manualAddMode == false && CheckExistReserveItem() == false) return;
+
             if (checkBox_program.IsChecked == true)
             {
                 reserveInfo.Title = textBox_title.Text;
@@ -388,6 +407,8 @@ namespace EpgTimer
 
         private void button_del_reserve_Click(object sender, RoutedEventArgs e)
         {
+            if (CheckExistReserveItem() == false) return;
+
             List<UInt32> list = new List<UInt32>();
             list.Add(reserveInfo.ReserveID);
             ErrCode err = (ErrCode)cmd.SendDelReserve(list);

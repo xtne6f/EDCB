@@ -89,8 +89,26 @@ namespace EpgTimer
             defKey = item;
         }
 
+        private bool CheckExistAutoAddItem()
+        {
+            bool retval = CommonManager.Instance.DB.ManualAutoAddList.ContainsKey(this.defKey.dataID);
+            if (retval == false)
+            {
+                MessageBox.Show("項目がありません。\r\n" +
+                    "既に削除されています。\r\n" +
+                    "(別のEpgtimerによる操作など)");
+
+                //追加モードに変更
+                SetChangeMode(false);
+                defKey = null;
+            }
+            return retval;
+        }
+
         private void button_add_Click(object sender, RoutedEventArgs e)
         {
+            if (changeModeFlag == true && CheckExistAutoAddItem() == false) return;
+
             if (defKey == null)
             {
                 defKey = new ManualAutoAddData();
