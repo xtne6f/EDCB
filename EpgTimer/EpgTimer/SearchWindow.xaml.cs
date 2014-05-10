@@ -412,6 +412,30 @@ namespace EpgTimer
                 }
                 else
                 {
+                    List<uint> oldlist = CommonManager.Instance.DB.EpgAutoAddList.Keys.ToList();
+
+                    CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.AutoAddEpgInfo);
+                    CommonManager.Instance.DB.ReloadEpgAutoAddInfo();
+                    
+                    List<uint> newlist = CommonManager.Instance.DB.EpgAutoAddList.Keys.ToList();
+                    List<uint> diflist = newlist.Except(oldlist).ToList();
+
+                    if (diflist.Count == 1)
+                    {
+                        EpgAutoAddData newinfo = CommonManager.Instance.DB.EpgAutoAddList[diflist[0]];
+                        this.SetViewMode(2);
+                        this.SetChgAutoAddID(newinfo.dataID);
+                        
+                        //情報の再読み込みは不要なはずだが、安全のため実行しておく
+                        this.SetSearchDefKey(newinfo.searchInfo);
+                        this.SetRecInfoDef(newinfo.recSetting);
+
+                        MainWindow mainWindow = Application.Current.MainWindow as MainWindow;
+                        mainWindow.autoAddView.epgAutoAddView.UpdateInfo();
+                        UpdateEpgAutoAddViewSelection();
+                    }
+                    //
+
                     CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.ReserveInfo);
                     CommonManager.Instance.DB.ReloadReserveInfo();
                     SearchPg();
