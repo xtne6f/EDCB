@@ -1446,5 +1446,44 @@ namespace EpgTimer
 
         }
 
+        private void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            if (this.IsVisible == false) { return; }
+
+            EpgEventInfo selectedItem = null;
+            if (BlackoutWindow.selectedReserveItem != null)
+            {
+                selectedItem = BlackoutWindow.selectedReserveItem.EventInfo;
+                BlackoutWindow.selectedReserveItem = null;
+            }
+            else if (BlackoutWindow.selectedSearchItem != null)
+            {
+                selectedItem = BlackoutWindow.selectedSearchItem.EventInfo;
+                BlackoutWindow.selectedSearchItem = null;
+            }
+
+            if (selectedItem != null)
+            {
+                foreach (SearchItem item in listView_event.Items)
+                {
+                    if (selectedItem.event_id == item.EventInfo.event_id &&
+                        selectedItem.original_network_id == item.EventInfo.original_network_id &&
+                        selectedItem.service_id == item.EventInfo.service_id &&
+                        selectedItem.transport_stream_id == item.EventInfo.transport_stream_id)
+                    {
+                        listView_event.SelectedItem = item;
+                        listView_event.ScrollIntoView(item);
+                        //画面更新されないので無意味
+                        //listView_event.ScrollIntoView(listView_event.Items[0]);
+                        //listView_event.ScrollIntoView(listView_event.Items[listView_event.Items.Count-1]);
+                        //int scrollpos = ((listView_event.SelectedIndex - 5) >=0 ? scrollpos : 0);
+                        //listView_event.ScrollIntoView(listView_event.Items[scrollpos]);
+                        break;
+                    }
+                }
+            }
+
+        }
+
     }
 }
