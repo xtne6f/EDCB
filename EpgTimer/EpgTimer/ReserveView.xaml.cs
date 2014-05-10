@@ -200,8 +200,8 @@ namespace EpgTimer
                 }
 
                 //更新前の選択情報の保存
-                EpgEventInfo oldItem = null;
-                List<EpgEventInfo> oldItems = new List<EpgEventInfo>();
+                uint oldItem = 0;
+                List<uint> oldItems = new List<uint>();
                 StoreListViewSelected(ref oldItem, ref oldItems);
 
                 ICollectionView dataView = CollectionViewSource.GetDefaultView(listView_reserve.DataContext);
@@ -279,44 +279,38 @@ namespace EpgTimer
             return true;
         }
 
-        private void StoreListViewSelected(ref EpgEventInfo oldItem, ref List<EpgEventInfo> oldItems)
+        private void StoreListViewSelected(ref uint oldItem, ref List<uint> oldItems)
         {
             if (listView_reserve.SelectedItem != null)
             {
-                oldItem = (listView_reserve.SelectedItem as ReserveItem).EventInfo;
+                oldItem = (listView_reserve.SelectedItem as ReserveItem).ReserveInfo.ReserveID;
                 foreach (ReserveItem item in listView_reserve.SelectedItems)
                 {
-                    oldItems.Add(item.EventInfo);
+                    oldItems.Add(item.ReserveInfo.ReserveID);
                 }
             }
         }
 
-        private void RestoreListViewSelected(EpgEventInfo oldItem, List<EpgEventInfo> oldItems)
+        private void RestoreListViewSelected(uint oldItem, List<uint> oldItems)
         {
-            if (oldItem != null)
+            if (oldItem != 0)
             {
                 //このUnselectAll()は無いと正しく復元出来ない状況があり得る
                 listView_reserve.UnselectAll();
 
                 foreach (ReserveItem item in listView_reserve.Items)
                 {
-                    if (item.EventInfo.original_network_id == oldItem.original_network_id &&
-                        item.EventInfo.transport_stream_id == oldItem.transport_stream_id &&
-                        item.EventInfo.service_id == oldItem.service_id &&
-                        item.EventInfo.event_id == oldItem.event_id)
+                    if (item.ReserveInfo.ReserveID == oldItem)
                     {
                         listView_reserve.SelectedItem = item;
                     }
                 }
 
-                foreach (EpgEventInfo oldItem1 in oldItems)
+                foreach (uint oldItem1 in oldItems)
                 {
                     foreach (ReserveItem item in listView_reserve.Items)
                     {
-                        if (item.EventInfo.original_network_id == oldItem1.original_network_id &&
-                            item.EventInfo.transport_stream_id == oldItem1.transport_stream_id &&
-                            item.EventInfo.service_id == oldItem1.service_id &&
-                            item.EventInfo.event_id == oldItem1.event_id)
+                        if (item.ReserveInfo.ReserveID == oldItem1)
                         {
                             listView_reserve.SelectedItems.Add(item);
                             break;
