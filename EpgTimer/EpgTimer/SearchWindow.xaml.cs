@@ -500,6 +500,8 @@ namespace EpgTimer
 
         private void button_del_epgAutoAdd_Click(object sender, RoutedEventArgs e)
         {
+            if (CheckExistAutoAddItem() == false) return;
+
             try
             {
                 List<UInt32> delIDList = new List<uint>();
