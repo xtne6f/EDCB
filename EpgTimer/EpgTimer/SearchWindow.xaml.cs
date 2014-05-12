@@ -383,7 +383,7 @@ namespace EpgTimer
 
                 listView_result.SelectAll();
                 MenuItem_Click_DeleteItem(listView_result.SelectedItem, new RoutedEventArgs());
-                listView_result.UnselectAll();//一つも予約が解除されなかった時用
+                listView_result.UnselectAll();//未選択から実行された場合は後ろのRestoreが動かないので先に解除する。
 
                 RestoreListViewSelected(oldItem, oldItems);
             }
@@ -405,6 +405,12 @@ namespace EpgTimer
 
                 List<EpgAutoAddData> addList = new List<EpgAutoAddData>();
                 addList.Add(addItem);
+
+                if (CommonManager.Instance.DB.EpgAutoAddList.Count == 0)
+                {
+                    CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.AutoAddEpgInfo);
+                    CommonManager.Instance.DB.ReloadEpgAutoAddInfo();
+                }
 
                 if (cmd.SendAddEpgAutoAdd(addList) != 1)
                 {
