@@ -101,7 +101,7 @@ DWORD CTSOut::SetChChangeEvent(BOOL resetEpgUtil)
 
 	this->chChangeFlag = TRUE;
 	this->chChangeErr = FALSE;
-	this->chChangeTime = GetTimeCount();
+	this->chChangeTime = GetTickCount();
 
 	this->decodeUtil.UnLoadDll();
 
@@ -125,11 +125,9 @@ BOOL CTSOut::IsChChanging(BOOL* chChgErr)
 		*chChgErr = this->chChangeErr;
 	}
 
-	if( this->chChangeTime == 0 ){
-		this->chChangeTime = GetTimeCount();
-	}else if( GetTimeCount() > this->chChangeTime + 15 ){
-		ret = FALSE;
-		if( this->chChangeFlag == TRUE ){
+	if( this->chChangeFlag == TRUE ){
+		if( GetTickCount() - this->chChangeTime > 15000 ){
+			ret = FALSE;
 			if( chChgErr != NULL ){
 				*chChgErr = TRUE;
 			}
@@ -217,7 +215,7 @@ DWORD CTSOut::AddTSBuff(TS_DATA* data)
 			if( packet.Set188TS(data->data + i, 188) == TRUE ){
 				if( this->chChangeFlag == TRUE ){
 					//チャンネル切り替え中
-					if(GetTimeCount() < this->chChangeTime + 1){
+					if( GetTickCount() - this->chChangeTime < 1000 ){
 						//1秒間は切り替え前のパケット来る可能性を考慮して無視する
 						UnLock();
 						return NO_ERR;
@@ -253,7 +251,7 @@ DWORD CTSOut::AddTSBuff(TS_DATA* data)
 						_OutputDebugString(L"★Ch 0x%04X 0x%04X => 0x%04X 0x%04X\r\n", this->lastONID, this->lastTSID, onid, tsid);
 							OnChChanged(onid, tsid);
 
-						}else if( GetTimeCount() > this->chChangeTime + 7 ){
+						}else if( GetTickCount() - this->chChangeTime > 7000 ){
 							OutputDebugString(L"★Ch NoChange\r\n");
 							OnChChanged(onid, tsid);
 						}else{
@@ -261,7 +259,7 @@ DWORD CTSOut::AddTSBuff(TS_DATA* data)
 						}
 					}
 					else{
-						if( GetTimeCount() > this->chChangeTime + 15 ){
+						if( GetTickCount() - this->chChangeTime > 15000 ){
 							//15秒以上たってるなら切り替わったとする
 							OutputDebugString(L"★GetTSID Err\r\n");
 							//this->chChangeFlag = FALSE;
@@ -352,7 +350,7 @@ DWORD CTSOut::AddTSBuff(TS_DATA* data)
 				}
 			}else{
 				if( this->chChangeFlag == TRUE ){
-					if( GetTimeCount() > this->chChangeTime + 15 ){
+					if( GetTickCount() - this->chChangeTime > 15000 ){
 						//15秒以上たってるなら切り替わったとする
 						//OutputDebugString(L"★Ch Change Err NoPacket\r\n");
 						//this->chChangeFlag = FALSE;

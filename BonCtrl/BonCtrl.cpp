@@ -1254,7 +1254,7 @@ UINT WINAPI CBonCtrl::ChScanThread(LPVOID param)
 
 	DWORD wait = 0;
 	BOOL chkNext = TRUE;
-	LONGLONG startTime = 0;
+	DWORD startTime = 0;
 	DWORD chkWait = 0;
 	DWORD chkCount = 0;
 	BOOL firstChg = FALSE;
@@ -1274,20 +1274,20 @@ UINT WINAPI CBonCtrl::ChScanThread(LPVOID param)
 				firstChg = TRUE;
 				sys->tsOut.ResetChChange();
 			}
-			startTime = GetTimeCount();
+			startTime = GetTickCount();
 			chkNext = FALSE;
 			wait = 1000;
 			chkWait = chChgTimeOut;
 		}else{
 			BOOL chChgErr = FALSE;
 			if( sys->tsOut.IsChChanging(&chChgErr) == TRUE ){
-				if( startTime + chkWait < GetTimeCount() ){
+				if( GetTickCount() - startTime > chkWait * 1000 ){
 					//チャンネル切り替えに8秒以上かかってるので無信号と判断
 					OutputDebugString(L"★AutoScan Ch Change timeout\r\n");
 					chkNext = TRUE;
 				}
 			}else{
-				if( startTime + chkWait+serviceChkTimeOut < GetTimeCount() || chChgErr == TRUE){
+				if( GetTickCount() - startTime > (chkWait + serviceChkTimeOut) * 1000 || chChgErr == TRUE){
 					//チャンネル切り替え成功したけどサービス一覧とれないので無信号と判断
 					OutputDebugString(L"★AutoScan GetService timeout\r\n");
 					chkNext = TRUE;
@@ -1455,7 +1455,7 @@ UINT WINAPI CBonCtrl::EpgCapThread(LPVOID param)
 	BOOL chkNext = TRUE;
 	BOOL startCap = FALSE;
 	DWORD wait = 0;
-	LONGLONG startTime = 0;
+	DWORD startTime = 0;
 	DWORD chkCount = 0;
 	DWORD chkWait = 8;
 
@@ -1487,7 +1487,7 @@ UINT WINAPI CBonCtrl::EpgCapThread(LPVOID param)
 			DWORD ch = 0;
 			sys->chUtil.GetCh(sys->epgCapChList[chkCount].ONID, sys->epgCapChList[chkCount].TSID, space, ch);
 			sys->_SetCh(space, ch);
-			startTime = GetTimeCount();
+			startTime = GetTickCount();
 			chkNext = FALSE;
 			startCap = FALSE;
 			wait = 1000;
@@ -1502,18 +1502,18 @@ UINT WINAPI CBonCtrl::EpgCapThread(LPVOID param)
 		}else{
 			BOOL chChgErr = FALSE;
 			if( sys->tsOut.IsChChanging(&chChgErr) == TRUE ){
-				if( startTime + chkWait < GetTimeCount() ){
+				if( GetTickCount() - startTime > chkWait * 1000 ){
 					//チャンネル切り替えに10秒以上かかってるので無信号と判断
 					chkNext = TRUE;
 				}
 			}else{
-				if( (startTime + chkWait + timeOut*60 < GetTimeCount()) || chChgErr == TRUE){
+				if( GetTickCount() - startTime > (chkWait + timeOut * 60) * 1000 || chChgErr == TRUE){
 					//15分以上かかっているなら停止
 					sys->tsOut.StopSaveEPG(saveTimeOut);
 					chkNext = TRUE;
 					wait = 0;
 					_OutputDebugString(L"++%d分でEPG取得完了せず or Ch変更でエラー", timeOut);
-				}else if(startTime + chkWait < GetTimeCount() ){
+				}else if( GetTickCount() - startTime > chkWait * 1000 ){
 					//切り替えから15秒以上過ぎているので取得処理
 					if( startCap == FALSE ){
 						//取得開始
@@ -1760,7 +1760,7 @@ UINT WINAPI CBonCtrl::EpgCapBackThread(LPVOID param)
 		}
 	}
 
-	LONGLONG startTime = GetTimeCount();
+	DWORD startTime = GetTickCount();
 
 	wstring epgDataPath = L"";
 	WORD ONID;
@@ -1812,7 +1812,7 @@ UINT WINAPI CBonCtrl::EpgCapBackThread(LPVOID param)
 			cmd.SendReloadEpg();
 			break;
 		}else{
-			if( (startTime + timeOut*60 < GetTimeCount()) ){
+			if( GetTickCount() - startTime > timeOut * 60 * 1000 ){
 				//15分以上かかっているなら停止
 				sys->tsOut.StopSaveEPG(saveTimeOut);
 				CSendCtrlCmd cmd;

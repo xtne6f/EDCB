@@ -326,7 +326,7 @@ protected:
 
 	BOOL chChangeFlag;
 	BOOL chChangeErr;
-	LONGLONG chChangeTime;
+	DWORD chChangeTime;
 	WORD lastONID;
 	WORD lastTSID;
 

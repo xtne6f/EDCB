@@ -157,7 +157,7 @@ void CDropCount::CheckCounter(CTSPacketUtil* tsPacket, DROP_INFO* info)
 
 CHK_END:
 	info->lastCounter = tsPacket->continuity_counter;
-	if( this->lastLogTime + 5 < GetTimeCount() ){
+	if( GetTickCount() - this->lastLogTime > 5000 ){
 		if( this->lastLogDrop != this->drop ||
 			this->lastLogScramble != this->scramble
 			){
@@ -179,7 +179,7 @@ CHK_END:
 				this->lastLogDrop = this->drop;
 				this->lastLogScramble = this->scramble;
 		}
-		this->lastLogTime = GetTimeCount();
+		this->lastLogTime = GetTickCount();
 	}
 }
 

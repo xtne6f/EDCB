@@ -49,7 +49,7 @@ protected:
 	ULONGLONG drop;
 	ULONGLONG scramble;
 	vector<wstring> log;
-	LONGLONG lastLogTime;
+	DWORD lastLogTime;
 	ULONGLONG lastLogDrop;
 	ULONGLONG lastLogScramble;
 	float signalLv;
