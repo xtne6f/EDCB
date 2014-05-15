@@ -5,178 +5,18 @@ CPacketInit::CPacketInit(void)
 {
 	this->nextStartSize = 0;
 	this->nextStartBuff = new BYTE[256];
-	this->TSMode = TS_188;
-	this->lastOffset = 0;
-
-	this->copyBuff = NULL;
-	this->copyBuffSize = 0;
+	this->packetSize = 0;
 }
 
 CPacketInit::~CPacketInit(void)
 {
 	SAFE_DELETE_ARRAY(this->nextStartBuff);
-	SAFE_DELETE_ARRAY(this->copyBuff);
 }
 
 void CPacketInit::ClearBuff()
 {
 	this->nextStartSize = 0;
-	this->TSMode = TS_188;
-	this->lastOffset = 0;
-}
-
-//入力バッファを188バイト単位のTSにするoffset位置と1パケットのサイズを取得する
-//戻り値：
-// TRUE（成功）、FALSE（失敗）
-//引数：
-// data				[IN]入力TSデータ
-// size				[IN]dataのサイズ（BYTE単位）
-// offset			[OUT]nextStartBuffの先頭を0とした開始オフセット位置
-// packetSize		[OUT]1パケットのサイズ
-BOOL CPacketInit::CheckSync(
-	BYTE* data,
-	DWORD size,
-	DWORD* offset,
-	DWORD* packetSize
-)
-{
-	DWORD maxCheckSize = 204;
-	if( this->nextStartSize + size < 204 ){
-		maxCheckSize = this->nextStartSize + size;
-	}
-	//188バイト単位かチェック
-	for( DWORD pos = 0; pos<maxCheckSize; pos++ ){
-		if( pos < this->nextStartSize ){
-			//前回の残りチェック
-			if( this->nextStartBuff[pos] == 0x47 ){
-				BOOL AllOK = TRUE;
-				for( DWORD j=pos; j<this->nextStartSize + size; j+=188 ){
-					//前回の残りチェック
-					if( j < this->nextStartSize ){
-						if( this->nextStartBuff[j] != 0x47 ){
-							AllOK = FALSE;
-							break;
-						}
-					}else{
-						if( data[j-this->nextStartSize] != 0x47 ){
-							AllOK = FALSE;
-							break;
-						}
-					}
-				}
-				if( AllOK == TRUE ){
-					*offset = pos;
-					*packetSize = 188;
-					return TRUE;
-				}
-			}
-		}else{
-			//今回のデータ部分
-			if( data[pos-this->nextStartSize] == 0x47 ){
-				BOOL AllOK = TRUE;
-				for( DWORD j=pos; j<this->nextStartSize + size; j+=188 ){
-					if( data[j-this->nextStartSize] != 0x47 ){
-						AllOK = FALSE;
-						break;
-					}
-				}
-				if( AllOK == TRUE ){
-					*offset = pos;
-					*packetSize = 188;
-					return TRUE;
-				}
-			}
-		}
-	}
-	//192バイト単位かチェック
-	for( DWORD pos = 0; pos<maxCheckSize; pos++ ){
-		if( pos < this->nextStartSize ){
-			//前回の残りチェック
-			if( this->nextStartBuff[pos] == 0x47 ){
-				BOOL AllOK = TRUE;
-				for( DWORD j=pos; j<this->nextStartSize + size; j+=192 ){
-					//前回の残りチェック
-					if( j < this->nextStartSize ){
-						if( this->nextStartBuff[j] != 0x47 ){
-							AllOK = FALSE;
-							break;
-						}
-					}else{
-						if( data[j-this->nextStartSize] != 0x47 ){
-							AllOK = FALSE;
-							break;
-						}
-					}
-				}
-				if( AllOK == TRUE ){
-					*offset = pos;
-					*packetSize = 192;
-					return TRUE;
-				}
-			}
-		}else{
-			//今回のデータ部分
-			if( data[pos-this->nextStartSize] == 0x47 ){
-				BOOL AllOK = TRUE;
-				for( DWORD j=pos; j<this->nextStartSize + size; j+=192 ){
-					if( data[j-this->nextStartSize] != 0x47 ){
-						AllOK = FALSE;
-						break;
-					}
-				}
-				if( AllOK == TRUE ){
-					*offset = pos;
-					*packetSize = 192;
-					return TRUE;
-				}
-			}
-		}
-	}
-	//204バイト単位かチェック
-	for( DWORD pos = 0; pos<maxCheckSize; pos++ ){
-		if( pos < this->nextStartSize ){
-			//前回の残りチェック
-			if( this->nextStartBuff[pos] == 0x47 ){
-				BOOL AllOK = TRUE;
-				for( DWORD j=pos; j<this->nextStartSize + size; j+=204 ){
-					//前回の残りチェック
-					if( j < this->nextStartSize ){
-						if( this->nextStartBuff[j] != 0x47 ){
-							AllOK = FALSE;
-							break;
-						}
-					}else{
-						if( data[j-this->nextStartSize] != 0x47 ){
-							AllOK = FALSE;
-							break;
-						}
-					}
-				}
-				if( AllOK == TRUE ){
-					*offset = pos;
-					*packetSize = 204;
-					return TRUE;
-				}
-			}
-		}else{
-			//今回のデータ部分
-			if( data[pos-this->nextStartSize] == 0x47 ){
-				BOOL AllOK = TRUE;
-				for( DWORD j=pos; j<this->nextStartSize + size; j+=204 ){
-					if( data[j-this->nextStartSize] != 0x47 ){
-						AllOK = FALSE;
-						break;
-					}
-				}
-				if( AllOK == TRUE ){
-					*offset = pos;
-					*packetSize = 204;
-					return TRUE;
-				}
-			}
-		}
-	}
-	return FALSE;
+	this->packetSize = 0;
 }
 
 //入力バッファを188バイト単位のTSに変換し、188の倍数になるようにそろえる
@@ -195,76 +35,89 @@ BOOL CPacketInit::GetTSData(
 )
 {
 	if( inData == NULL || inSize == 0 || outData == NULL || outSize == NULL ){
-		this->nextStartSize = 0;
 		return FALSE;
 	}
 
-	DWORD offset = 0;
-	DWORD packetSize = 0;
-	if( CheckSync(inData, inSize, &offset, &packetSize) == FALSE ){
-		this->nextStartSize = 0;
-		return FALSE;
-	}
-
-	*outSize = 188 * (((this->nextStartSize + inSize)-offset)/packetSize);
-	*outData = new BYTE[*outSize];
-
-	if( packetSize == 188 ){
-		DWORD copyOffset = 0;
-		DWORD copySize = 0;
-		if( offset < this->nextStartSize ){
-			copyOffset = this->nextStartSize - offset;
-			if(*outSize == 0){
-				// 出力できるパケットがないので断片として取り込む
-				memmove( this->nextStartBuff, this->nextStartBuff + offset, copyOffset);
-				memcpy( this->nextStartBuff + copyOffset, inData, inSize);
-				this->nextStartSize = copyOffset + inSize;
+	if( this->packetSize != 0 ){
+		//同期済み
+		for( DWORD i = this->packetSize - this->nextStartSize; i < inSize; i += this->packetSize ){
+			if( inData[i] != 0x47 ){
+				//再同期が必要
+				this->packetSize = 0;
+				break;
 			}
-			else {
-				copySize = *outSize-copyOffset;
+		}
+		if( this->packetSize != 0 ){
+			*outSize = 188 * ((this->nextStartSize + inSize) / this->packetSize);
+			*outData = new BYTE[*outSize];
+			if( *outSize == 0 ){
+				//繰り越すだけ
+				memcpy( this->nextStartBuff + this->nextStartSize, inData, inSize );
+				this->nextStartSize += inSize;
+			}else{
+				if( this->nextStartSize >= 188 ){
+					memcpy(*outData, this->nextStartBuff, 188);
+				}else{
+					memcpy(*outData, this->nextStartBuff, this->nextStartSize);
+					memcpy(*outData + this->nextStartSize, inData, 188 - this->nextStartSize);
+				}
+				DWORD inPos = this->packetSize - this->nextStartSize;
+				DWORD outPos = 188;
+				for( ; inPos + this->packetSize <= inSize; inPos += this->packetSize, outPos += 188 ){
+					memcpy(*outData + outPos, inData + inPos, 188);
+				}
+				//繰り越す
+				memcpy(this->nextStartBuff, inData + inPos, inSize - inPos);
+				this->nextStartSize = inSize - inPos;
+			}
+			return TRUE;
+		}
+	}
 
-				memcpy( *outData, this->nextStartBuff + offset, copyOffset);
-				memcpy( (*outData) + copyOffset, inData, copySize);
+	DWORD nss = this->nextStartSize;
 
-				this->nextStartSize = inSize - copySize;
-				if( this->nextStartSize > 0 ){
-					memcpy( this->nextStartBuff, inData+copySize, this->nextStartSize);
+	for( DWORD pos = 0; pos + 188 < nss + inSize; pos++ ){
+		if( pos < nss && this->nextStartBuff[pos] == 0x47 || pos >= nss && inData[pos - nss] == 0x47 ){
+			for( int i = 0; i < 3; i++ ){
+				this->packetSize = (i == 0 ? 188 : i == 1 ? 192 : 204);
+				BOOL syncOK = FALSE;
+				for( DWORD j = pos + this->packetSize; j < nss + inSize; j += this->packetSize ){
+					if( j < nss && this->nextStartBuff[j] != 0x47 || j >= nss && inData[j - nss] != 0x47 ){
+						syncOK = FALSE;
+						break;
+					}
+					syncOK = TRUE;
+				}
+				if( syncOK == FALSE ){
+					this->packetSize = 0;
+				}else if( pos < nss ){
+					this->nextStartSize -= pos;
+					memmove(this->nextStartBuff, this->nextStartBuff + pos, this->nextStartSize);
+					//同期済みのときの繰り越しサイズはパケットサイズ未満でなければならない
+					if( this->nextStartSize >= this->packetSize ){
+						this->nextStartSize -= this->packetSize;
+						memmove(this->nextStartBuff, this->nextStartBuff + this->packetSize, this->nextStartSize);
+					}
+					return GetTSData(inData, inSize, outData, outSize);
+				}else{
+					this->nextStartSize = 0;
+					return GetTSData(inData + (pos - nss), inSize - (pos - nss), outData, outSize);
 				}
 			}
-		}else{
-			copyOffset = offset - this->nextStartSize;
-			copySize = *outSize+copyOffset;
-
-			memcpy( (*outData), inData + copyOffset, *outSize);
-
-			this->nextStartSize = inSize - copySize;
-			if( this->nextStartSize > 0 ){
-				memcpy( this->nextStartBuff, inData+copySize, this->nextStartSize);
-			}
-		}
-	}else{
-		if( this->nextStartSize + inSize > this->copyBuffSize ){
-			SAFE_DELETE_ARRAY(this->copyBuff);
-			this->copyBuffSize = (this->nextStartSize + inSize)*2;
-			this->copyBuff = new BYTE[this->copyBuffSize];
-		}
-		DWORD buffSize = 0;
-		if( this->nextStartSize > 0 ){
-			memcpy(this->copyBuff, this->nextStartBuff, this->nextStartSize);
-			buffSize += this->nextStartSize;
-		}
-		memcpy(this->copyBuff + buffSize, inData, inSize);
-		buffSize += inSize;
-
-		DWORD copyPos = 0;
-		for( DWORD i=offset; i<buffSize; i+=packetSize){
-			memcpy( (*outData) + copyPos, this->copyBuff + i, 188);
-			copyPos += 188;
-		}
-		this->nextStartSize = (buffSize-offset)%packetSize;
-		if( this->nextStartSize > 0 ){
-			memcpy(this->nextStartBuff, this->copyBuff + (buffSize-this->nextStartSize), this->nextStartSize);
 		}
 	}
-	return TRUE;
+
+	//再同期に失敗。可能なだけ繰り越しておく
+	if( inSize >= 256 ){
+		memcpy(this->nextStartBuff, inData + (inSize - 256), 256);
+		this->nextStartSize = 256;
+	}else if( this->nextStartSize + inSize <= 256 ){
+		memcpy(this->nextStartBuff + this->nextStartSize, inData, inSize);
+		this->nextStartSize += inSize;
+	}else{
+		memmove(this->nextStartBuff, this->nextStartBuff + (this->nextStartSize + inSize - 256), 256 - inSize);
+		memcpy(this->nextStartBuff + (256 - inSize), inData, inSize);
+		this->nextStartSize = 256;
+	}
+	return FALSE;
 }
