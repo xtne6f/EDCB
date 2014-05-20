@@ -4070,7 +4070,7 @@ BOOL CReserveManager::IsFindShareTSFile()
 				FILE_INFO_3* info = (FILE_INFO_3*)(bufptr+(sizeof(FILE_INFO_3)*i));
 
 				wstring filePath = info->fi3_pathname;
-				_OutputDebugString(filePath.c_str());
+				OutputDebugString(filePath.c_str());
 				if( IsExt(filePath, L".ts") == TRUE ){
 					ret = TRUE;
 				}

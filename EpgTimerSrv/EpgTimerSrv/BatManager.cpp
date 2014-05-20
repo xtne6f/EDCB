@@ -266,7 +266,7 @@ UINT WINAPI CBatManager::BatWorkThread(LPVOID param)
 						}
 					}
 				}else{
-					_OutputDebugString(L"BATファイル作成エラー：%s", work.reserveInfo.recSetting.batFilePath);
+					_OutputDebugString(L"BATファイル作成エラー：%s", work.reserveInfo.recSetting.batFilePath.c_str());
 				}
 			}
 
