@@ -4,45 +4,24 @@
 
 CEpgDataCap3Main::CEpgDataCap3Main(void)
 {
-	this->lockEvent = _CreateEvent(FALSE, TRUE, NULL);
+	InitializeCriticalSection(&this->utilLock);
 
 	decodeUtilClass.SetEpgDB(&(this->epgDBUtilClass));
 }
 
 CEpgDataCap3Main::~CEpgDataCap3Main(void)
 {
-	if( this->lockEvent != NULL ){
-		UnLock();
-		CloseHandle(this->lockEvent);
-		this->lockEvent = NULL;
-	}
+	DeleteCriticalSection(&this->utilLock);
 }
 
-BOOL CEpgDataCap3Main::Lock(LPCWSTR log, DWORD timeOut)
+class CBlockLock
 {
-	if( this->lockEvent == NULL ){
-		return FALSE;
-	}
-	if( log != NULL ){
-		OutputDebugString(log);
-	}
-	DWORD dwRet = WaitForSingleObject(this->lockEvent, timeOut);
-	if( dwRet == WAIT_ABANDONED || 
-		dwRet == WAIT_FAILED){
-		return FALSE;
-	}
-	return TRUE;
-}
-
-void CEpgDataCap3Main::UnLock(LPCWSTR log)
-{
-	if( this->lockEvent != NULL ){
-		SetEvent(this->lockEvent);
-	}
-	if( log != NULL ){
-		OutputDebugString(log);
-	}
-}
+public:
+	CBlockLock(CRITICAL_SECTION* lock_) : lock(lock_) { EnterCriticalSection(lock); }
+	~CBlockLock() { LeaveCriticalSection(lock); }
+private:
+	CRITICAL_SECTION* lock;
+};
 
 //DLLの初期化
 //戻り値：
@@ -79,7 +58,7 @@ DWORD CEpgDataCap3Main::AddTSPacket(
 		return ERR_INVALID_ARG;
 	}
 
-	if( Lock() == FALSE ) return ERR_FALSE;
+	CBlockLock lock(&this->utilLock);
 
 	DWORD stratPos = 0;
 	if( size > 188 ){
@@ -98,7 +77,6 @@ DWORD CEpgDataCap3Main::AddTSPacket(
 		}
 	}
 	DWORD err = this->decodeUtilClass.AddTSData(data+stratPos, 188);
-	UnLock();
 	return err;
 }
 
@@ -113,9 +91,8 @@ DWORD CEpgDataCap3Main::GetTSID(
 	WORD* transportStreamID
 	)
 {
-	if( Lock() == FALSE ) return ERR_FALSE;
+	CBlockLock lock(&this->utilLock);
 	DWORD err = this->decodeUtilClass.GetTSID(originalNetworkID, transportStreamID);
-	UnLock();
 	return err;
 }
 
@@ -130,9 +107,8 @@ DWORD CEpgDataCap3Main::GetServiceListActual(
 	SERVICE_INFO** serviceList
 	)
 {
-	if( Lock() == FALSE ) return ERR_FALSE;
+	CBlockLock lock(&this->utilLock);
 	DWORD err = this->decodeUtilClass.GetServiceListActual(serviceListSize, serviceList);
-	UnLock();
 	return err;
 }
 
@@ -148,9 +124,8 @@ DWORD CEpgDataCap3Main::GetServiceListEpgDB(
 	SERVICE_INFO** serviceList
 	)
 {
-	if( Lock() == FALSE ) return ERR_FALSE;
+	CBlockLock lock(&this->utilLock);
 	DWORD err = this->epgDBUtilClass.GetServiceListEpgDB(serviceListSize, serviceList);
-	UnLock();
 	return err;
 }
 
@@ -171,9 +146,8 @@ DWORD CEpgDataCap3Main::GetEpgInfoList(
 	EPG_EVENT_INFO** epgInfoList
 	)
 {
-	if( Lock() == FALSE ) return ERR_FALSE;
+	CBlockLock lock(&this->utilLock);
 	DWORD err = this->epgDBUtilClass.GetEpgInfoList(originalNetworkID, transportStreamID, serviceID, epgInfoListSize, epgInfoList);
-	UnLock();
 	return err;
 }
 
@@ -194,13 +168,12 @@ DWORD CEpgDataCap3Main::GetEpgInfo(
 	EPG_EVENT_INFO** epgInfo
 	)
 {
-	if( Lock() == FALSE ) return ERR_FALSE;
+	CBlockLock lock(&this->utilLock);
 	SYSTEMTIME nowTime;
 	if( this->decodeUtilClass.GetNowTime(&nowTime) != NO_ERR ){
 		GetLocalTime(&nowTime);
 	}
 	DWORD err = this->epgDBUtilClass.GetEpgInfo(originalNetworkID, transportStreamID, serviceID, nextFlag, nowTime, epgInfo);
-	UnLock();
 	return err;
 }
 
@@ -223,19 +196,17 @@ DWORD CEpgDataCap3Main::SearchEpgInfo(
 	EPG_EVENT_INFO** epgInfo
 	)
 {
-	if( Lock() == FALSE ) return ERR_FALSE;
+	CBlockLock lock(&this->utilLock);
 
 	DWORD err = this->epgDBUtilClass.SearchEpgInfo(originalNetworkID, transportStreamID, serviceID, eventID, pfOnlyFlag, epgInfo);
-	UnLock();
 	return err;
 }
 
 //EPGデータの蓄積状態をリセットする
 void CEpgDataCap3Main::ClearSectionStatus()
 {
-	if( Lock() == FALSE ) return ;
+	CBlockLock lock(&this->utilLock);
 	this->epgDBUtilClass.ClearSectionStatus();
-	UnLock();
 	return ;
 }
 
@@ -246,9 +217,8 @@ void CEpgDataCap3Main::ClearSectionStatus()
 // l_eitFlag		[IN]L-EITのステータスを取得
 EPG_SECTION_STATUS CEpgDataCap3Main::GetSectionStatus(BOOL l_eitFlag)
 {
-	if( Lock() == FALSE ) return EpgNoData;
+	CBlockLock lock(&this->utilLock);
 	EPG_SECTION_STATUS status = this->epgDBUtilClass.GetSectionStatus(l_eitFlag);
-	UnLock();
 	return status;
 }
 
@@ -258,8 +228,7 @@ EPG_SECTION_STATUS CEpgDataCap3Main::GetSectionStatus(BOOL l_eitFlag)
 int CEpgDataCap3Main::GetTimeDelay(
 	)
 {
-	if( Lock() == FALSE ) return 0;
+	CBlockLock lock(&this->utilLock);
 	int delay = this->decodeUtilClass.GetTimeDelay();
-	UnLock();
 	return delay;
 }

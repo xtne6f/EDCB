@@ -237,7 +237,7 @@ public:
 		);
 
 protected:
-	HANDLE lockEvent;
+	CRITICAL_SECTION dbLock;
 
 	map<ULONGLONG, SERVICE_EVENT_INFO*> serviceEventMap;
 	map<ULONGLONG, SECTION_STATUS_INFO*> sectionMap;
@@ -300,10 +300,6 @@ protected:
 	DWORD serviceDBListSize;
 	SERVICE_INFO* serviceDBList;
 protected:
-	//PublicAPIîrëºêßå‰óp
-	BOOL Lock(LPCWSTR log = NULL, DWORD timeOut = 60*1000);
-	void UnLock(LPCWSTR log = NULL);
-
 	void Clear();
 	
 	BOOL AddShortEvent(CEITTable* eit, EVENT_INFO* eventInfo, CShortEventDesc* shortEvent);
