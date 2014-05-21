@@ -1574,11 +1574,11 @@ BOOL CTunerBankCtrl::RecStart(LONGLONG nowTime, RESERVE_WORK* reserve, BOOL send
 				info.tunerID = this->tunerID & 0x0000FFFF;
 
 				EPG_EVENT_INFO* epgInfo = NULL;
-				EPGDB_EVENT_INFO* epgDBInfo;
+				EPGDB_EVENT_INFO epgDBInfo;
 				if( this->epgDBManager != NULL && info.EventID != 0xFFFF ){
 					if( this->epgDBManager->SearchEpg(info.ONID, info.TSID, info.SID, info.EventID, &epgDBInfo) == TRUE ){
 						epgInfo = new EPG_EVENT_INFO;
-						CopyEpgInfo(epgInfo, epgDBInfo);
+						CopyEpgInfo(epgInfo, &epgDBInfo);
 					}
 				}
 				if( epgInfo != NULL ){
@@ -1665,11 +1665,11 @@ BOOL CTunerBankCtrl::RecStart(LONGLONG nowTime, RESERVE_WORK* reserve, BOOL send
 							info.tunerID = this->tunerID & 0x0000FFFF;
 
 							EPG_EVENT_INFO* epgInfo = NULL;
-							EPGDB_EVENT_INFO* epgDBInfo;
+							EPGDB_EVENT_INFO epgDBInfo;
 							if( this->epgDBManager != NULL && info.EventID != 0xFFFF ){
 								if( this->epgDBManager->SearchEpg(info.ONID, info.TSID, info.SID, info.EventID, &epgDBInfo) == TRUE ){
 									epgInfo = new EPG_EVENT_INFO;
-									CopyEpgInfo(epgInfo, epgDBInfo);
+									CopyEpgInfo(epgInfo, &epgDBInfo);
 								}
 							}
 							if( epgInfo != NULL ){
@@ -1726,11 +1726,11 @@ BOOL CTunerBankCtrl::RecStart(LONGLONG nowTime, RESERVE_WORK* reserve, BOOL send
 							info.tunerID = this->tunerID & 0x0000FFFF;
 
 							EPG_EVENT_INFO* epgInfo = NULL;
-							EPGDB_EVENT_INFO* epgDBInfo;
+							EPGDB_EVENT_INFO epgDBInfo;
 							if( this->epgDBManager != NULL && info.EventID != 0xFFFF ){
 								if( this->epgDBManager->SearchEpg(info.ONID, info.TSID, info.SID, info.EventID, &epgDBInfo) == TRUE ){
 									epgInfo = new EPG_EVENT_INFO;
-									CopyEpgInfo(epgInfo, epgDBInfo);
+									CopyEpgInfo(epgInfo, &epgDBInfo);
 								}
 							}
 							if( epgInfo != NULL ){

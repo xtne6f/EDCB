@@ -101,7 +101,7 @@ DWORD CTSOut::SetChChangeEvent(BOOL resetEpgUtil)
 
 	this->chChangeFlag = TRUE;
 	this->chChangeErr = FALSE;
-	this->chChangeTime = GetTimeCount();
+	this->chChangeTime = GetTickCount();
 
 	this->decodeUtil.UnLoadDll();
 
@@ -125,11 +125,9 @@ BOOL CTSOut::IsChChanging(BOOL* chChgErr)
 		*chChgErr = this->chChangeErr;
 	}
 
-	if( this->chChangeTime == 0 ){
-		this->chChangeTime = GetTimeCount();
-	}else if( GetTimeCount() > this->chChangeTime + 15 ){
-		ret = FALSE;
-		if( this->chChangeFlag == TRUE ){
+	if( this->chChangeFlag == TRUE ){
+		if( GetTickCount() - this->chChangeTime > 15000 ){
+			ret = FALSE;
 			if( chChgErr != NULL ){
 				*chChgErr = TRUE;
 			}
@@ -164,8 +162,35 @@ BOOL CTSOut::GetStreamID(WORD* ONID, WORD* TSID)
 	return ret;
 }
 
+void CTSOut::OnChChanged(WORD onid, WORD tsid)
+{
+	this->chChangeFlag = FALSE;
+	this->chChangeErr = FALSE;
+	this->lastONID = onid;
+	this->lastTSID = tsid;
+	this->epgUtil.ClearSectionStatus();
+
+	if( this->enableDecodeFlag != FALSE || this->emmEnableFlag != FALSE ){
+		//スクランブル解除かEMM処理が設定されている場合だけ実行
+		if( this->decodeUtil.SetNetwork(onid, tsid) == FALSE ){
+			OutputDebugString(L"★★Decode DLL load err [CTSOut::OnChChanged()]\r\n");
+			//再試行は意味がなさそうなので廃止
+		}
+		this->decodeUtil.SetEmm(this->emmEnableFlag);
+	}
+	ResetErrCount();
+
+	map<WORD, CPMTUtil*>::iterator itrPmt;
+	for( itrPmt = this->pmtUtilMap.begin(); itrPmt != this->pmtUtilMap.end(); itrPmt++ ){
+		SAFE_DELETE(itrPmt->second);
+	}
+	this->pmtUtilMap.clear();
+}
+
 DWORD CTSOut::AddTSBuff(TS_DATA* data)
 {
+	//dataは同期済みかつそのサイズは188の整数倍であること
+
 	if( Lock(L"AddTSBuff") == FALSE ) return ERR_FALSE;
 	if( data == NULL ){
 		UnLock();
@@ -184,14 +209,13 @@ DWORD CTSOut::AddTSBuff(TS_DATA* data)
 
 	BYTE* decodeData = NULL;
 	DWORD decodeSize = 0;
-	BOOL chChgComp = FALSE;
 	try{
 		for( DWORD i=0; i<data->size; i+=188 ){
 			CTSPacketUtil packet;
 			if( packet.Set188TS(data->data + i, 188) == TRUE ){
 				if( this->chChangeFlag == TRUE ){
 					//チャンネル切り替え中
-					if(GetTimeCount() < this->chChangeTime + 1){
+					if( GetTickCount() - this->chChangeTime < 1000 ){
 						//1秒間は切り替え前のパケット来る可能性を考慮して無視する
 						UnLock();
 						return NO_ERR;
@@ -225,86 +249,17 @@ DWORD CTSOut::AddTSBuff(TS_DATA* data)
 						if( onid != this->lastONID || tsid != this->lastTSID ){
 							OutputDebugString(L"★Ch Change Complete\r\n");
 						_OutputDebugString(L"★Ch 0x%04X 0x%04X => 0x%04X 0x%04X\r\n", this->lastONID, this->lastTSID, onid, tsid);
-							this->chChangeFlag = FALSE;
-							this->chChangeErr = FALSE;
-							this->lastONID = onid;
-							this->lastTSID = tsid;
-							this->epgUtil.ClearSectionStatus();
-							if( this->decodeUtil.SetNetwork(onid, tsid) == FALSE ){
-								OutputDebugString(L"★★Decode DLL load err\r\n");
-								Sleep(100);
-								this->decodeUtil.SetNetwork(onid, tsid);
-							}
-							this->decodeUtil.SetEmm(this->emmEnableFlag);
-							ResetErrCount();
-							chChgComp = TRUE;
+							OnChChanged(onid, tsid);
 
-							map<WORD, CPMTUtil*>::iterator itrPmt;
-							for( itrPmt = this->pmtUtilMap.begin(); itrPmt != this->pmtUtilMap.end(); itrPmt++ ){
-								SAFE_DELETE(itrPmt->second);
-							}
-							this->pmtUtilMap.clear();
-
-						}else if( this->lastONID == onid && this->lastTSID == tsid &&
-							(GetTimeCount() > this->chChangeTime + 7)
-							){
+						}else if( GetTickCount() - this->chChangeTime > 7000 ){
 							OutputDebugString(L"★Ch NoChange\r\n");
-								this->chChangeFlag = FALSE;
-								this->chChangeErr = FALSE;
-								this->lastONID = onid;
-								this->lastTSID = tsid;
-								this->epgUtil.ClearSectionStatus();
-								if( this->decodeUtil.SetNetwork(onid, tsid) == FALSE ){
-									OutputDebugString(L"★★Decode DLL load err\r\n");
-									Sleep(100);
-									this->decodeUtil.SetNetwork(onid, tsid);
-								}
-								this->decodeUtil.SetEmm(this->emmEnableFlag);
-								ResetErrCount();
-								chChgComp = TRUE;
-
-								map<WORD, CPMTUtil*>::iterator itrPmt;
-								for( itrPmt = this->pmtUtilMap.begin(); itrPmt != this->pmtUtilMap.end(); itrPmt++ ){
-									SAFE_DELETE(itrPmt->second);
-								}
-								this->pmtUtilMap.clear();
-						}else if( GetTimeCount() > this->chChangeTime + 15 ){
-							if( this->lastONID == onid && this->lastTSID == tsid ){
-								this->chChangeFlag = FALSE;
-								this->chChangeErr = FALSE;
-								this->lastONID = onid;
-								this->lastTSID = tsid;
-								this->epgUtil.ClearSectionStatus();
-								if( this->decodeUtil.SetNetwork(onid, tsid) == FALSE ){
-									OutputDebugString(L"★★Decode DLL load err\r\n");
-									Sleep(100);
-									this->decodeUtil.SetNetwork(onid, tsid);
-								}
-								this->decodeUtil.SetEmm(this->emmEnableFlag);
-								ResetErrCount();
-								chChgComp = TRUE;
-
-								map<WORD, CPMTUtil*>::iterator itrPmt;
-								for( itrPmt = this->pmtUtilMap.begin(); itrPmt != this->pmtUtilMap.end(); itrPmt++ ){
-									SAFE_DELETE(itrPmt->second);
-								}
-								this->pmtUtilMap.clear();
-							}else{
-//								OutputDebugString(L"★Ch Change Err\r\n");
-								//10秒以上たってるなら切り替わったとする
-								this->chChangeErr = TRUE;
-								//this->chChangeFlag = FALSE;
-								this->lastONID = onid;
-								this->lastTSID = tsid;
-							}
-							//this->epgUtil.ClearSectionStatus();
-							//this->decodeUtil.SetNetwork(onid, tsid);
-							//this->decodeUtil.SetEmm(this->emmEnableFlag);
-							//ResetErrCount();
+							OnChChanged(onid, tsid);
+						}else{
+							continue;
 						}
 					}
 					else{
-						if( GetTimeCount() > this->chChangeTime + 15 ){
+						if( GetTickCount() - this->chChangeTime > 15000 ){
 							//15秒以上たってるなら切り替わったとする
 							OutputDebugString(L"★GetTSID Err\r\n");
 							//this->chChangeFlag = FALSE;
@@ -316,6 +271,7 @@ DWORD CTSOut::AddTSBuff(TS_DATA* data)
 							//this->decodeUtil.SetEmm(this->emmEnableFlag);
 							//ResetErrCount();
 						}
+						continue;
 					}
 
 				}else{
@@ -394,7 +350,7 @@ DWORD CTSOut::AddTSBuff(TS_DATA* data)
 				}
 			}else{
 				if( this->chChangeFlag == TRUE ){
-					if( GetTimeCount() > this->chChangeTime + 15 ){
+					if( GetTickCount() - this->chChangeTime > 15000 ){
 						//15秒以上たってるなら切り替わったとする
 						//OutputDebugString(L"★Ch Change Err NoPacket\r\n");
 						//this->chChangeFlag = FALSE;
@@ -407,6 +363,7 @@ DWORD CTSOut::AddTSBuff(TS_DATA* data)
 						//ResetErrCount();
 					}
 				}
+				continue;
 			}
 		}
 		if( this->chChangeFlag == FALSE ){
@@ -416,25 +373,7 @@ DWORD CTSOut::AddTSBuff(TS_DATA* data)
 				if( onid != this->lastONID || tsid != this->lastTSID ){
 					OutputDebugString(L"★UnKnown Ch Change \r\n");
 					_OutputDebugString(L"★Ch 0x%04X 0x%04X => 0x%04X 0x%04X\r\n", this->lastONID, this->lastTSID, onid, tsid);
-					this->chChangeFlag = FALSE;
-					this->chChangeErr = FALSE;
-					this->lastONID = onid;
-					this->lastTSID = tsid;
-					this->epgUtil.ClearSectionStatus();
-					if( this->decodeUtil.SetNetwork(onid, tsid) == FALSE ){
-						OutputDebugString(L"★★Decode DLL load err\r\n");
-						Sleep(100);
-						this->decodeUtil.SetNetwork(onid, tsid);
-					}
-					this->decodeUtil.SetEmm(this->emmEnableFlag);
-					ResetErrCount();
-					chChgComp = TRUE;
-
-					map<WORD, CPMTUtil*>::iterator itrPmt;
-					for( itrPmt = this->pmtUtilMap.begin(); itrPmt != this->pmtUtilMap.end(); itrPmt++ ){
-						SAFE_DELETE(itrPmt->second);
-					}
-					this->pmtUtilMap.clear();
+					OnChChanged(onid, tsid);
 
 				}
 			}
@@ -446,7 +385,7 @@ DWORD CTSOut::AddTSBuff(TS_DATA* data)
 	}
 	try{
 		if( this->deocdeBuffWriteSize > 0 ){
-			if( this->enableDecodeFlag == TRUE && this->chChangeFlag == FALSE && chChgComp == FALSE){
+			if( this->enableDecodeFlag == TRUE && this->chChangeFlag == FALSE ){
 				//デコード必要
 
 				if( decodeUtil.Decode(this->decodeBuff, this->deocdeBuffWriteSize, &decodeData, &decodeSize) == FALSE ){
@@ -729,6 +668,22 @@ BOOL CTSOut::SetEmm(
 	)
 {
 	if( Lock(L"SetEmm") == FALSE ) return FALSE;
+
+	try{
+		if( this->lastONID != 0xFFFF && this->lastTSID != 0xFFFF ){
+			//チューニング済みで
+			if( enable != FALSE && this->enableDecodeFlag == FALSE && this->emmEnableFlag == FALSE ){
+				//最初に EMM 処理が設定される場合は DLL を読み込む
+				//スクランブル解除が設定されている場合は読み込み済みなので除外
+				if( this->decodeUtil.SetNetwork(this->lastONID, this->lastTSID) == FALSE ){
+					OutputDebugString(L"★★Decode DLL load err [CTSOut::SetEmm()]\r\n");
+				}
+			}
+		}
+	}catch(...){
+		UnLock();
+		return FALSE;
+	}
 
 	BOOL err = this->decodeUtil.SetEmm(enable);
 	this->emmEnableFlag = enable;
@@ -1253,6 +1208,22 @@ BOOL CTSOut::SetScramble(
 	)
 {
 	if( Lock(L"SetScramble") == FALSE ) return FALSE;
+
+	try{
+		if( this->lastONID != 0xFFFF && this->lastTSID != 0xFFFF ){
+			//チューニング済みで
+			if( enable != FALSE && this->enableDecodeFlag == FALSE && this->emmEnableFlag == FALSE ){
+				//最初にスクランブル解除が設定される場合は DLL を再読み込みする
+				//EMM 処理が設定されている場合は読み込み済みなので除外
+				if( this->decodeUtil.SetNetwork(this->lastONID, this->lastTSID) == FALSE ){
+					OutputDebugString(L"★★Decode DLL load err [CTSOut::SetScramble()]\r\n");
+				}
+			}
+		}
+	}catch(...){
+		UnLock();
+		return FALSE;
+	}
 
 	map<DWORD, COneServiceUtil*>::iterator itr;
 	itr = serviceUtilMap.find(id);

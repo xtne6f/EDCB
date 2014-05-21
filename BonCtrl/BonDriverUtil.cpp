@@ -208,7 +208,7 @@ DWORD CBonDriverUtil::OpenBonDriver(
 	}
 	if( err == ERR_FIND_TUNER ){
 		_OutputDebugString(L"šOpen‚·‚éBonDriver‚ªŒ©‚Â‚©‚è‚Ü‚¹‚ñ");
-		_OutputDebugString(bonDriverFile);
+		OutputDebugString(bonDriverFile);
 	}
 
 	UnLock();

@@ -31,24 +31,21 @@ program_association_section(){
 */
 
 #include "../../../Common/Util.h"
+#include "PSITable.h"
 
-class CPATTable
+class CPATTable : public CPSITable
 {
 public:
 	typedef struct _PMT_DATA{
 		WORD program_number;
 		WORD PID;
 	} PMT_DATA;
-	BYTE table_id;
-	BYTE section_syntax_indicator;
-	WORD section_length;
 	WORD transport_stream_id;
 	BYTE version_number;
 	BYTE current_next_indicator;
 	BYTE section_number;
 	BYTE last_section_number;
 	map<WORD, PMT_DATA> pmtMap;	//ÉLÅ[program_number(ServiceID)
-	DWORD crc32;
 
 public:
 	CPATTable(void);

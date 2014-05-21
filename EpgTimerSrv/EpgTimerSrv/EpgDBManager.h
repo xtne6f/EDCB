@@ -19,6 +19,11 @@ public:
 		wstring findKey;
 	}SEARCH_RESULT_EVENT;
 
+	typedef struct _SEARCH_RESULT_EVENT_DATA{
+		EPGDB_EVENT_INFO info;
+		wstring findKey;
+	}SEARCH_RESULT_EVENT_DATA;
+
 public:
 	CEpgDBManager(void);
 	~CEpgDBManager(void);
@@ -27,22 +32,28 @@ public:
 
 	BOOL IsLoadingData();
 
+	BOOL IsInitialLoadingDataDone();
+
 	BOOL CancelLoadData();
 
-	BOOL SearchEpg(vector<EPGDB_SEARCH_KEY_INFO>* key, vector<EPGDB_EVENT_INFO*>* result);
+	BOOL SearchEpg(vector<EPGDB_SEARCH_KEY_INFO>* key, vector<unique_ptr<SEARCH_RESULT_EVENT_DATA>>* result);
+
+	BOOL SearchEpg(vector<EPGDB_SEARCH_KEY_INFO>* key, void (*enumProc)(vector<SEARCH_RESULT_EVENT>*, void*), void* param);
 
 	BOOL GetServiceList(vector<EPGDB_SERVICE_INFO>* list);
 
-	BOOL EnumEventInfo(LONGLONG serviceKey, vector<EPGDB_EVENT_INFO*>* result);
+	BOOL EnumEventInfo(LONGLONG serviceKey, vector<unique_ptr<EPGDB_EVENT_INFO>>* result);
 
-	BOOL EnumEventAll(vector<EPGDB_SERVICE_EVENT_INFO*>* result);
+	BOOL EnumEventInfo(LONGLONG serviceKey, void (*enumProc)(vector<EPGDB_EVENT_INFO*>*, void*), void* param);
+
+	BOOL EnumEventAll(void (*enumProc)(vector<EPGDB_SERVICE_EVENT_INFO>*, void*), void* param);
 
 	BOOL SearchEpg(
 		WORD ONID,
 		WORD TSID,
 		WORD SID,
 		WORD EventID,
-		EPGDB_EVENT_INFO** result
+		EPGDB_EVENT_INFO* result
 		);
 
 	BOOL SearchEpg(
@@ -51,7 +62,7 @@ public:
 		WORD SID,
 		LONGLONG startTime,
 		DWORD durationSec,
-		EPGDB_EVENT_INFO** result
+		EPGDB_EVENT_INFO* result
 		);
 
 	BOOL SearchServiceName(
@@ -61,13 +72,12 @@ public:
 		wstring& serviceName
 		);
 
-	BOOL SearchEpg(EPGDB_SEARCH_KEY_INFO* key, vector<SEARCH_RESULT_EVENT>* result);
-
 protected:
-	HANDLE lockEvent;
+	CRITICAL_SECTION epgMapLock;
 
 	HANDLE loadThread;
-	HANDLE loadStopEvent;
+	BOOL loadStop;
+	BOOL initialLoadDone;
 
 	CParseSearchChgText chgText;
 
@@ -90,15 +100,9 @@ protected:
 
 	map<LONGLONG, EPGDB_SERVICE_DATA*> epgMap;
 protected:
-	//PublicAPIîrëºêßå‰óp
-	BOOL Lock(LPCWSTR log = NULL, DWORD timeOut = 60*1000);
-	void UnLock(LPCWSTR log = NULL);
-
 	BOOL ConvertEpgInfo(WORD ONID, WORD TSID, WORD SID, EPG_EVENT_INFO* src, EPGDB_EVENT_INFO* dest);
 	void ClearEpgData();
 	static UINT WINAPI LoadThread(LPVOID param);
-
-	BOOL _IsLoadingData();
 
 	void SearchEvent(EPGDB_SEARCH_KEY_INFO* key, map<ULONGLONG, SEARCH_RESULT_EVENT>* resultMap, IRegExpPtr& regExp);
 	BOOL IsEqualContent(vector<EPGDB_CONTENT_DATA>* searchKey, vector<EPGDB_CONTENT_DATA>* eventData);

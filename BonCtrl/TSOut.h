@@ -326,7 +326,7 @@ protected:
 
 	BOOL chChangeFlag;
 	BOOL chChangeErr;
-	LONGLONG chChangeTime;
+	DWORD chChangeTime;
 	WORD lastONID;
 	WORD lastTSID;
 
@@ -365,5 +365,7 @@ protected:
 	BOOL ConvertEpgInfo(EPG_EVENT_INFO* src, EPGDB_EVENT_INFO* dest);
 
 	void ResetErrCount();
+
+	void OnChChanged(WORD onid, WORD tsid);
 };
 

@@ -581,6 +581,11 @@ LRESULT CEpgDataCap_BonDlg::WindowProc(UINT message, WPARAM wParam, LPARAM lPara
 			}
 		}
 		break;
+	case WM_INVOKE_CTRL_CMD:
+		{
+			this->main.CtrlCmdCallbackInvoked();
+		}
+		break;
 	case WM_TRAY_PUSHICON:
 		{
 			//タスクトレイ関係

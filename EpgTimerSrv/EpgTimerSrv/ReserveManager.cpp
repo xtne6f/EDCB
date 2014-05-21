@@ -1162,11 +1162,11 @@ BOOL CReserveManager::GetReserveDataAll(
 			info.tunerID = itrTune->second.tunerID & 0x0000FFFF;
 
 			EPG_EVENT_INFO* epgInfo = NULL;
-			EPGDB_EVENT_INFO* epgDBInfo;
+			EPGDB_EVENT_INFO epgDBInfo;
 			if( this->epgDBManager != NULL && info.EventID != 0xFFFF ){
 				if( this->epgDBManager->SearchEpg(info.ONID, info.TSID, info.SID, info.EventID, &epgDBInfo) == TRUE ){
 					epgInfo = new EPG_EVENT_INFO;
-					CopyEpgInfo(epgInfo, epgDBInfo);
+					CopyEpgInfo(epgInfo, &epgDBInfo);
 				}
 			}
 
@@ -4068,7 +4068,7 @@ BOOL CReserveManager::IsFindShareTSFile()
 				FILE_INFO_3* info = (FILE_INFO_3*)(bufptr+(sizeof(FILE_INFO_3)*i));
 
 				wstring filePath = info->fi3_pathname;
-				_OutputDebugString(filePath.c_str());
+				OutputDebugString(filePath.c_str());
 				if( IsExt(filePath, L".ts") == TRUE ){
 					ret = TRUE;
 				}
@@ -4083,22 +4083,33 @@ BOOL CReserveManager::GetSleepReturnTime(
 	LONGLONG* returnTime
 	)
 {
-	if( returnTime == NULL ){
+	if( returnTime == NULL || Lock(L"GetSleepReturnTime") == FALSE ){
 		return FALSE;
 	}
+	//最も近い予約開始時刻を得る(計算量の関係でGetReserveIDListを使う)
 	LONGLONG nextRec = 0;
-	vector<pair<LONGLONG, const RESERVE_DATA*> > resList = this->reserveText.GetReserveList(TRUE, this->defStartMargine);
-	vector<pair<LONGLONG, const RESERVE_DATA*> >::iterator itr;
+	vector<pair<DWORD, const RESERVE_DATA*> > resList = this->reserveText.GetReserveIDList();
+	vector<pair<DWORD, const RESERVE_DATA*> >::iterator itr;
 	for( itr = resList.begin(); itr != resList.end(); itr++ ){
 		if( itr->second->recSetting.recMode != RECMODE_NO ){
-			CalcEntireReserveTime(&nextRec, NULL, *itr->second);
-			break;
+			LONGLONG startTime = ConvertI64Time(itr->second->startTime);
+			LONGLONG endTime = startTime + itr->second->durationSecond * I64_1SEC;
+			LONGLONG startMargin = this->defStartMargine * I64_1SEC;
+			if( itr->second->recSetting.useMargineFlag == TRUE ){
+				startMargin = itr->second->recSetting.startMargine * I64_1SEC;
+			}
+			//開始マージンは元の予約終了時刻を超えて負であってはならない
+			startTime -= max(startMargin, startTime - endTime);
+			if( nextRec == 0 || nextRec > startTime ){
+				nextRec = startTime;
+			}
 		}
 	}
 
 	LONGLONG epgcapTime = 0;
 	GetNextEpgcapTime(&epgcapTime, 0);
 
+	UnLock();
 
 	if( nextRec == 0 && epgcapTime == 0 ){
 		return FALSE;

@@ -257,6 +257,8 @@ public:
 		vector<NW_SEND_INFO>* sendTcpList
 		);
 
+	void CtrlCmdCallbackInvoked();
+
 protected:
 	HWND msgWnd;
 
@@ -302,6 +304,9 @@ protected:
 	wstring currentBonDriver;
 	int outCtrlID;
 	map<DWORD, DWORD> ctrlMap;
+
+	CMD_STREAM* cmdCapture;
+	CMD_STREAM* resCapture;
 
 protected:
 	//外部制御コマンド関係

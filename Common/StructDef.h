@@ -357,6 +357,31 @@ typedef struct _EPGDB_EVENT_INFO{
 		delete eventGroupInfo;
 		delete eventRelayInfo;
 	};
+	void DeepCopy(const _EPGDB_EVENT_INFO & o){
+		original_network_id = o.original_network_id;
+		transport_stream_id = o.transport_stream_id;
+		service_id = o.service_id;
+		event_id = o.event_id;
+		StartTimeFlag = o.StartTimeFlag;
+		start_time = o.start_time;
+		DurationFlag = o.DurationFlag;
+		durationSec = o.durationSec;
+		freeCAFlag = o.freeCAFlag;
+		SAFE_DELETE(shortInfo);
+		SAFE_DELETE(extInfo);
+		SAFE_DELETE(contentInfo);
+		SAFE_DELETE(componentInfo);
+		SAFE_DELETE(audioInfo);
+		SAFE_DELETE(eventGroupInfo);
+		SAFE_DELETE(eventRelayInfo);
+		if( o.shortInfo ) shortInfo = new EPGDB_SHORT_EVENT_INFO(*o.shortInfo);
+		if( o.extInfo ) extInfo = new EPGDB_EXTENDED_EVENT_INFO(*o.extInfo);
+		if( o.contentInfo ) contentInfo = new EPGDB_CONTEN_INFO(*o.contentInfo);
+		if( o.componentInfo ) componentInfo = new EPGDB_COMPONENT_INFO(*o.componentInfo);
+		if( o.audioInfo ) audioInfo = new EPGDB_AUDIO_COMPONENT_INFO(*o.audioInfo);
+		if( o.eventGroupInfo ) eventGroupInfo = new EPGDB_EVENTGROUP_INFO(*o.eventGroupInfo);
+		if( o.eventRelayInfo ) eventRelayInfo = new EPGDB_EVENTGROUP_INFO(*o.eventRelayInfo);
+	};
 private:
 	_EPGDB_EVENT_INFO(const _EPGDB_EVENT_INFO &);
 	_EPGDB_EVENT_INFO & operator= (const _EPGDB_EVENT_INFO &);

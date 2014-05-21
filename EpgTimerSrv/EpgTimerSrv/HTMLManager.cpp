@@ -1330,7 +1330,7 @@ BOOL CHTMLManager::CreateDefEpgPage(CEpgDBManager* epgDB, vector<RESERVE_DATA*>*
 	LONGLONG startTime = 0;
 	LONGLONG endTime = 0;
 	for( size_t i=0; i<useServiceList.size(); i++ ){
-		vector<EPGDB_EVENT_INFO*> eventList;
+		vector<unique_ptr<EPGDB_EVENT_INFO>> eventList;
 		LONGLONG key = _Create64Key(useServiceList[i].ONID, useServiceList[i].TSID, useServiceList[i].SID); 
 		viewServiceList.push_back(key);
 		epgDB->EnumEventInfo(key, &eventList);
@@ -1507,14 +1507,14 @@ BOOL CHTMLManager::CreateDefEpgPage(CEpgDBManager* epgDB, vector<RESERVE_DATA*>*
 	LONGLONG chkEndTime = chkStartTime + 24*60*60*I64_1SEC;
 	for( size_t i=0; i<useServiceList.size(); i++ ){
 		//必要な物抽出
-		vector<EPGDB_EVENT_INFO*> eventList;
+		vector<unique_ptr<EPGDB_EVENT_INFO>> eventList;
 		LONGLONG key = _Create64Key(useServiceList[i].ONID, useServiceList[i].TSID, useServiceList[i].SID); 
 		epgDB->EnumEventInfo(key, &eventList);
 		map<LONGLONG, EPGDB_EVENT_INFO*> sortMap;
 		for(size_t j=0; j<eventList.size(); j++){
 			LONGLONG chk = ConvertI64Time(eventList[j]->start_time);
 			if( chkStartTime <= chk && chk < chkEndTime ){
-				sortMap.insert(pair<LONGLONG, EPGDB_EVENT_INFO*>(chk, eventList[j]));
+				sortMap.insert(pair<LONGLONG, EPGDB_EVENT_INFO*>(chk, eventList[j].get()));
 			}
 		}
 
@@ -1778,7 +1778,7 @@ BOOL CHTMLManager::CreateCustEpgPage(CEpgDBManager* epgDB, vector<RESERVE_DATA*>
 	LONGLONG startTime = 0;
 	LONGLONG endTime = 0;
 	for( size_t i=0; i<viewServiceList.size(); i++ ){
-		vector<EPGDB_EVENT_INFO*> eventList;
+		vector<unique_ptr<EPGDB_EVENT_INFO>> eventList;
 		epgDB->EnumEventInfo(viewServiceList[i], &eventList);
 		for(size_t j=0; j<eventList.size(); j++){
 			if( contentMap.size() > 0 ){
@@ -2011,7 +2011,7 @@ BOOL CHTMLManager::CreateCustEpgPage(CEpgDBManager* epgDB, vector<RESERVE_DATA*>
 
 		if( useServiceList.size() > 0 ){
 			//必要な物抽出
-			vector<EPGDB_EVENT_INFO*> eventList;
+			vector<unique_ptr<EPGDB_EVENT_INFO>> eventList;
 			epgDB->EnumEventInfo(useServiceList[0], &eventList);
 			map<LONGLONG, EPGDB_EVENT_INFO*> sortMap;
 			for(size_t j=0; j<eventList.size(); j++){
@@ -2036,7 +2036,7 @@ BOOL CHTMLManager::CreateCustEpgPage(CEpgDBManager* epgDB, vector<RESERVE_DATA*>
 				}
 
 				LONGLONG chk = ConvertI64Time(eventList[j]->start_time);
-				sortMap.insert(pair<LONGLONG, EPGDB_EVENT_INFO*>(chk, eventList[j]));
+				sortMap.insert(pair<LONGLONG, EPGDB_EVENT_INFO*>(chk, eventList[j].get()));
 			}
 
 			int columPos = 0;
@@ -2187,7 +2187,7 @@ BOOL CHTMLManager::CreateCustEpgPage(CEpgDBManager* epgDB, vector<RESERVE_DATA*>
 
 		for( size_t i=0; i<useServiceList.size(); i++ ){
 			//必要な物抽出
-			vector<EPGDB_EVENT_INFO*> eventList;
+			vector<unique_ptr<EPGDB_EVENT_INFO>> eventList;
 			epgDB->EnumEventInfo(useServiceList[i], &eventList);
 			map<LONGLONG, EPGDB_EVENT_INFO*> sortMap;
 			for(size_t j=0; j<eventList.size(); j++){
@@ -2213,7 +2213,7 @@ BOOL CHTMLManager::CreateCustEpgPage(CEpgDBManager* epgDB, vector<RESERVE_DATA*>
 
 				LONGLONG chk = ConvertI64Time(eventList[j]->start_time);
 				if( chkStartTime <= chk && chk < chkEndTime ){
-					sortMap.insert(pair<LONGLONG, EPGDB_EVENT_INFO*>(chk, eventList[j]));
+					sortMap.insert(pair<LONGLONG, EPGDB_EVENT_INFO*>(chk, eventList[j].get()));
 				}
 			}
 
@@ -2369,14 +2369,14 @@ BOOL CHTMLManager::GetEpgInfoPage(CEpgDBManager* epgDB, vector<RESERVE_DATA*>* r
 		}
 	}
 
-	EPGDB_EVENT_INFO* eventInfo;
+	EPGDB_EVENT_INFO eventInfo;
 	if( epgDB->SearchEpg(onid, tsid, sid, evid, &eventInfo) == FALSE ){
 		return FALSE;
 	}
 	wstring serviceName;
 	epgDB->SearchServiceName(onid, tsid, sid, serviceName);
 	wstring eventText;
-	_ConvertEpgInfoText2(eventInfo, eventText, serviceName);
+	_ConvertEpgInfoText2(&eventInfo, eventText, serviceName);
 	string buff;
 	WtoA(eventText, buff);
 
@@ -2544,26 +2544,26 @@ BOOL CHTMLManager::GetAddReserveData(CEpgDBManager* epgDB, RESERVE_DATA* reserve
 		evid = (WORD)atoi(itr->second.c_str());
 	}
 
-	EPGDB_EVENT_INFO* eventInfo;
+	EPGDB_EVENT_INFO eventInfo;
 	if( epgDB->SearchEpg(onid, tsid, sid, evid, &eventInfo) == FALSE ){
 		return FALSE;
 	}
-	if( eventInfo->shortInfo != NULL ){
-		reserveData->title = eventInfo->shortInfo->event_name;
+	if( eventInfo.shortInfo != NULL ){
+		reserveData->title = eventInfo.shortInfo->event_name;
 	}
-	reserveData->startTime = eventInfo->start_time;
-	reserveData->startTimeEpg = eventInfo->start_time;
-	reserveData->durationSecond = eventInfo->durationSec;
+	reserveData->startTime = eventInfo.start_time;
+	reserveData->startTimeEpg = eventInfo.start_time;
+	reserveData->durationSecond = eventInfo.durationSec;
 	epgDB->SearchServiceName(
-		eventInfo->original_network_id,
-		eventInfo->transport_stream_id,
-		eventInfo->service_id,
+		eventInfo.original_network_id,
+		eventInfo.transport_stream_id,
+		eventInfo.service_id,
 		reserveData->stationName
 		);
-	reserveData->originalNetworkID = eventInfo->original_network_id;
-	reserveData->transportStreamID = eventInfo->transport_stream_id;
-	reserveData->serviceID = eventInfo->service_id;
-	reserveData->eventID = eventInfo->event_id;
+	reserveData->originalNetworkID = eventInfo.original_network_id;
+	reserveData->transportStreamID = eventInfo.transport_stream_id;
+	reserveData->serviceID = eventInfo.service_id;
+	reserveData->eventID = eventInfo.event_id;
 
 	itr = paramMap.find("presetID");
 	if( itr == paramMap.end() ){

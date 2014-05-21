@@ -76,8 +76,9 @@ CRC_32 (CRC)：これはARIB STD-B10 の付録B で定義するデコーダにおいて、セク
 
 #include "../../../Common/Util.h"
 #include "../Descriptor/DescriptorDef.h"
+#include "PSITable.h"
 
-class CSITTable
+class CSITTable : public CPSITable
 {
 public:
 	typedef struct _SERVICE_LOOP_DATA{
@@ -92,9 +93,6 @@ public:
 			descriptorList.clear();
 		};
 	} SERVICE_LOOP_DATA;
-	BYTE table_id;
-	BYTE section_syntax_indicator;
-	WORD section_length;
 	BYTE version_number;
 	BYTE current_next_indicator;
 	BYTE section_number;
@@ -102,7 +100,6 @@ public:
 	WORD transmission_info_loop_length;
 	vector<DESCRIPTOR_DATA*> descriptorList;
 	vector<SERVICE_LOOP_DATA*> serviceLoopList;
-	DWORD crc32;
 
 public:
 	CSITTable(void);

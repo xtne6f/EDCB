@@ -246,7 +246,6 @@
     <ClInclude Include="Resource.h" />
     <ClInclude Include="RestApiManager.h" />
     <ClInclude Include="ServiceUtil.h" />
-    <ClInclude Include="SleepUtil.h" />
     <ClInclude Include="SOAPUtil.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="SyoboiCalUtil.h" />
@@ -325,7 +324,6 @@
     <ClCompile Include="ReserveManager.cpp" />
     <ClCompile Include="RestApiManager.cpp" />
     <ClCompile Include="ServiceUtil.cpp" />
-    <ClCompile Include="SleepUtil.cpp" />
     <ClCompile Include="SOAPUtil.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>

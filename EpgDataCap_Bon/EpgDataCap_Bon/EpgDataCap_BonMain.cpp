@@ -38,6 +38,9 @@ CEpgDataCap_BonMain::CEpgDataCap_BonMain(void)
 	this->currentBonDriver = L"";
 	this->outCtrlID = -1;
 
+	this->cmdCapture = NULL;
+	this->resCapture = NULL;
+
 	this->openWait = 200;
 }
 
@@ -819,6 +822,22 @@ int CALLBACK CEpgDataCap_BonMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdPa
 	resParam->dataSize = 0;
 	resParam->param = CMD_ERR;
 
+	//CtrlCmdCallbackInvoked()をメインスレッドで呼ぶ
+	//注意: CPipeServerがアクティブな間、ウィンドウは確実に存在しなければならない
+	sys->cmdCapture = cmdParam;
+	sys->resCapture = resParam;
+	SendMessage(sys->msgWnd, WM_INVOKE_CTRL_CMD, 0, 0);
+	sys->cmdCapture = NULL;
+	sys->resCapture = NULL;
+	return 0;
+}
+
+void CEpgDataCap_BonMain::CtrlCmdCallbackInvoked()
+{
+	CMD_STREAM* cmdParam = this->cmdCapture;
+	CMD_STREAM* resParam = this->resCapture;
+	CEpgDataCap_BonMain* sys = this;
+
 	switch( cmdParam->param ){
 	case CMD2_VIEW_APP_SET_BONDRIVER:
 		OutputDebugString(L"CMD2_VIEW_APP_SET_BONDRIVER");
@@ -1204,6 +1223,4 @@ int CALLBACK CEpgDataCap_BonMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdPa
 		resParam->param = CMD_NON_SUPPORT;
 		break;
 	}
-
-	return 0;
 }

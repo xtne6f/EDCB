@@ -275,18 +275,6 @@ BOOL GetDayOfWeekString2( SYSTEMTIME Time, string& strWeek )
 	return TRUE;
 }
 
-__int64 GetTimeCount()
-{
-	SYSTEMTIME sTime;
-	GetLocalTime(&sTime);
-	FILETIME fTime;
-	SystemTimeToFileTime( &sTime, &fTime );
-	__int64 i64Time = 0;
-	i64Time = ((__int64)fTime.dwHighDateTime)<<32 | fTime.dwLowDateTime;
-
-	return i64Time/I64_1SEC;
-}
-
 __int64 GetNowI64Time()
 {
 	SYSTEMTIME sTime;

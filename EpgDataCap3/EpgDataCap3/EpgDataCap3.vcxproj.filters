@@ -309,6 +309,9 @@
     <ClInclude Include="Table\EITTable_SD2.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="Table\PSITable.h">
+      <Filter>ヘッダー ファイル\Table</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -565,6 +568,9 @@
     </ClCompile>
     <ClCompile Include="Table\EITTable_SD2.cpp">
       <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Table\PSITable.cpp">
+      <Filter>ソース ファイル\Table</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

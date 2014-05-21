@@ -218,7 +218,22 @@ DWORD CRestApiManager::GetEnumService(string param, HTTP_STREAM* sendParam, CEpg
 	return ret;
 }
 
+void CRestApiManager::EnumEventInfoCallback(vector<EPGDB_SERVICE_EVENT_INFO>* pval, void* param)
+{
+	void** p = (void**)param;
+	p[0] = (void*)((CRestApiManager*)p[1])->GetEnumEventInfo(*(string*)p[2], (HTTP_STREAM*)p[3], (CEpgDBManager*)p[4], pval);
+}
+
 DWORD CRestApiManager::GetEnumEventInfo(string param, HTTP_STREAM* sendParam, CEpgDBManager* epgDB)
+{
+	void* p[] = {0, this, &param, sendParam, epgDB};
+	if( epgDB->EnumEventAll(EnumEventInfoCallback, p) == FALSE ){
+		return GetEnumEventInfo(param, sendParam, epgDB, NULL);
+	}
+	return (DWORD)p[0];
+}
+
+DWORD CRestApiManager::GetEnumEventInfo(string param, HTTP_STREAM* sendParam, CEpgDBManager* epgDB, vector<EPGDB_SERVICE_EVENT_INFO>* list)
 {
 	DWORD ret = NO_ERR;
 
@@ -266,10 +281,9 @@ DWORD CRestApiManager::GetEnumEventInfo(string param, HTTP_STREAM* sendParam, CE
 		count = (DWORD)atoi(itr->second.c_str());
 	}
 
-	vector<EPGDB_SERVICE_EVENT_INFO*> list;
 	wstring xml = L"";
 	string utf8 = "";
-	if( epgDB->EnumEventAll(&list) == TRUE ){
+	if( list != NULL ){
 		wstring buff = L"";
 		DWORD total = 0;
 		DWORD findCount = 0;
@@ -278,9 +292,9 @@ DWORD CRestApiManager::GetEnumEventInfo(string param, HTTP_STREAM* sendParam, CE
 
 		wstring serviceinfo = L"";
 		serviceinfo += L"<items>";
-		for( size_t i=0; i<list.size(); i++ ){
-			for( size_t j=0; j<list[i]->eventList.size(); j++){
-				EPGDB_EVENT_INFO* eventInfo = list[i]->eventList[j];
+		for( size_t i=0; i<list->size(); i++ ){
+			for( size_t j=0; j<(*list)[i].eventList.size(); j++){
+				EPGDB_EVENT_INFO* eventInfo = (*list)[i].eventList[j];
 				if( eventInfo->original_network_id != ONID && ONID != 0xFFFF ){
 					continue;
 				}
@@ -408,8 +422,6 @@ DWORD CRestApiManager::GetEnumEventInfo(string param, HTTP_STREAM* sendParam, CE
 				serviceinfo += L"</eventinfo>";
 
 			}
-			list[i]->eventList.clear();
-			SAFE_DELETE(list[i]);
 		}
 		serviceinfo += L"</items>";
 
@@ -725,26 +737,26 @@ DWORD CRestApiManager::GetReserveDataEPG(string param, CEpgDBManager* epgDB, RES
 		evid = (WORD)atoi(itr->second.c_str());
 	}
 
-	EPGDB_EVENT_INFO* eventInfo;
+	EPGDB_EVENT_INFO eventInfo;
 	if( epgDB->SearchEpg(onid, tsid, sid, evid, &eventInfo) == FALSE ){
 		return FALSE;
 	}
-	if( eventInfo->shortInfo != NULL ){
-		reserveData->title = eventInfo->shortInfo->event_name;
+	if( eventInfo.shortInfo != NULL ){
+		reserveData->title = eventInfo.shortInfo->event_name;
 	}
-	reserveData->startTime = eventInfo->start_time;
-	reserveData->startTimeEpg = eventInfo->start_time;
-	reserveData->durationSecond = eventInfo->durationSec;
+	reserveData->startTime = eventInfo.start_time;
+	reserveData->startTimeEpg = eventInfo.start_time;
+	reserveData->durationSecond = eventInfo.durationSec;
 	epgDB->SearchServiceName(
-		eventInfo->original_network_id,
-		eventInfo->transport_stream_id,
-		eventInfo->service_id,
+		eventInfo.original_network_id,
+		eventInfo.transport_stream_id,
+		eventInfo.service_id,
 		reserveData->stationName
 		);
-	reserveData->originalNetworkID = eventInfo->original_network_id;
-	reserveData->transportStreamID = eventInfo->transport_stream_id;
-	reserveData->serviceID = eventInfo->service_id;
-	reserveData->eventID = eventInfo->event_id;
+	reserveData->originalNetworkID = eventInfo.original_network_id;
+	reserveData->transportStreamID = eventInfo.transport_stream_id;
+	reserveData->serviceID = eventInfo.service_id;
+	reserveData->eventID = eventInfo.event_id;
 
 	itr = paramMap.find("presetID");
 	if( itr == paramMap.end() ){
@@ -1021,7 +1033,7 @@ DWORD CRestApiManager::GetSearchEvent(string param, HTTP_STREAM* sendParam, CEpg
 
 	vector<EPGDB_SEARCH_KEY_INFO> keyList;
 	keyList.push_back(searchKey);
-	vector<EPGDB_EVENT_INFO*> resultList;
+	vector<unique_ptr<CEpgDBManager::SEARCH_RESULT_EVENT_DATA>> resultList;
 	wstring xml = L"";
 	string utf8 = "";
 	epgDB->SearchEpg(&keyList, &resultList);
@@ -1036,17 +1048,17 @@ DWORD CRestApiManager::GetSearchEvent(string param, HTTP_STREAM* sendParam, CEpg
 		wstring buff;
 		for( size_t i = 0; i<resultList.size(); i++){
 			if( days > 0 ){
-				if( chkTime < ConvertI64Time(resultList[i]->start_time)){
+				if( chkTime < ConvertI64Time(resultList[i]->info.start_time)){
 					continue;
 				}
 			}
-			if( resultList[i]->eventGroupInfo != NULL ){
+			if( resultList[i]->info.eventGroupInfo != NULL ){
 				BOOL find = FALSE;
-				for( size_t j=0; j<resultList[i]->eventGroupInfo->eventDataList.size(); j++ ){
-					__int64 evid = _Create64Key2(resultList[i]->eventGroupInfo->eventDataList[j].original_network_id,
-						resultList[i]->eventGroupInfo->eventDataList[j].transport_stream_id,
-						resultList[i]->eventGroupInfo->eventDataList[j].service_id,
-						resultList[i]->eventGroupInfo->eventDataList[j].event_id);
+				for( size_t j=0; j<resultList[i]->info.eventGroupInfo->eventDataList.size(); j++ ){
+					__int64 evid = _Create64Key2(resultList[i]->info.eventGroupInfo->eventDataList[j].original_network_id,
+						resultList[i]->info.eventGroupInfo->eventDataList[j].transport_stream_id,
+						resultList[i]->info.eventGroupInfo->eventDataList[j].service_id,
+						resultList[i]->info.eventGroupInfo->eventDataList[j].event_id);
 					itrAdd = addID.find(evid);
 					if( itrAdd != addID.end() ){
 						find = TRUE;
@@ -1056,10 +1068,10 @@ DWORD CRestApiManager::GetSearchEvent(string param, HTTP_STREAM* sendParam, CEpg
 					continue;
 				}
 			}
-			__int64 evid = _Create64Key2(resultList[i]->original_network_id,
-				resultList[i]->transport_stream_id,
-				resultList[i]->service_id,
-				resultList[i]->event_id);
+			__int64 evid = _Create64Key2(resultList[i]->info.original_network_id,
+				resultList[i]->info.transport_stream_id,
+				resultList[i]->info.service_id,
+				resultList[i]->info.event_id);
 			addID.insert(pair<__int64, __int64>(evid,evid));
 			if( total < index ){
 				total++;
@@ -1072,7 +1084,7 @@ DWORD CRestApiManager::GetSearchEvent(string param, HTTP_STREAM* sendParam, CEpg
 			total++;
 			findCount++;
 
-			EPGDB_EVENT_INFO* eventInfo = resultList[i];
+			EPGDB_EVENT_INFO* eventInfo = &resultList[i]->info;
 
 			serviceinfo += L"<eventinfo>";
 			Format(buff, L"<ONID>%d</ONID>", eventInfo->original_network_id);
