@@ -591,7 +591,7 @@ BOOL CTSOut::StartSaveEPG(
 	_OutputDebugString(L"š%s\r\n", this->epgTempFilePath.c_str());
 
 	BOOL ret = TRUE;
-	this->epgFile = _CreateFile2(this->epgTempFilePath.c_str(), GENERIC_WRITE, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL );
+	this->epgFile = _CreateDirectoryAndFile(this->epgTempFilePath.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL );
 	if( this->epgFile == INVALID_HANDLE_VALUE ){
 		this->epgFile = NULL;
 		ret = FALSE;

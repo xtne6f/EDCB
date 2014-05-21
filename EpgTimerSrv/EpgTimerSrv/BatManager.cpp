@@ -294,7 +294,7 @@ BOOL CBatManager::CreateBatFile(BAT_WORK_INFO* info, wstring batSrcFilePath, wst
 	if( hRead == INVALID_HANDLE_VALUE ){
 		return FALSE;
 	}
-	HANDLE hWrite = _CreateFile2( batFilePath.c_str(), GENERIC_WRITE, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL );
+	HANDLE hWrite = CreateFile( batFilePath.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL );
 	if( hWrite == INVALID_HANDLE_VALUE ){
 		CloseHandle(hRead);
 		return FALSE;

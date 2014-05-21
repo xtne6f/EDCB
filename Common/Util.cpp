@@ -148,27 +148,12 @@ HANDLE _CreateFile( LPCTSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode
 	sa.lpSecurityDescriptor = &sd;
 	sa.bInheritHandle       = FALSE;
 */
-	HANDLE hFile =  ::CreateFile( lpFileName, dwDesiredAccess, dwShareMode, &sa, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile );
-	if( hFile == INVALID_HANDLE_VALUE ){
-		TCHAR* p = (TCHAR*)_tcsrchr(lpFileName, '\\');
-		TCHAR* szDirPath = NULL;
-		if( p != NULL ){
-			int iSize = (int)(p - lpFileName);
-			szDirPath = new TCHAR[iSize+1];
-			_tcsncpy_s(szDirPath, iSize+1, lpFileName, iSize);
-		}
-		if( szDirPath != NULL ){
-			_CreateDirectory(szDirPath);
-			delete[] szDirPath;
-			hFile =  ::CreateFile( lpFileName, dwDesiredAccess, dwShareMode, &sa, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile );
-		}
-	}
-	return hFile;
+	return ::CreateFile( lpFileName, dwDesiredAccess, dwShareMode, &sa, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile );
 }
 
-HANDLE _CreateFile2( LPCTSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile )
+HANDLE _CreateDirectoryAndFile( LPCTSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, LPSECURITY_ATTRIBUTES lpsa, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile )
 {
-	HANDLE hFile =  ::CreateFile( lpFileName, dwDesiredAccess, dwShareMode, NULL, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile );
+	HANDLE hFile =  ::CreateFile( lpFileName, dwDesiredAccess, dwShareMode, lpsa, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile );
 	if( hFile == INVALID_HANDLE_VALUE ){
 		TCHAR* p = (TCHAR*)_tcsrchr(lpFileName, '\\');
 		TCHAR* szDirPath = NULL;
@@ -180,7 +165,7 @@ HANDLE _CreateFile2( LPCTSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMod
 		if( szDirPath != NULL ){
 			_CreateDirectory(szDirPath);
 			delete[] szDirPath;
-			hFile =  ::CreateFile( lpFileName, dwDesiredAccess, dwShareMode, NULL, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile );
+			hFile =  ::CreateFile( lpFileName, dwDesiredAccess, dwShareMode, lpsa, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile );
 		}
 	}
 	return hFile;

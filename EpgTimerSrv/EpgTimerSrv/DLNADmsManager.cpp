@@ -273,7 +273,7 @@ int CDLNADmsManager::SendDDD(wstring filePath, SOCKET clientSock, HANDLE stopEve
 	__int64 fileSize = 0;
 	nocase::map<string, string> httpResHeader;
 
-	HANDLE hFile = _CreateFile2( filePath.c_str(), GENERIC_READ, FILE_SHARE_READ, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
+	HANDLE hFile = CreateFile( filePath.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
 	if( hFile == INVALID_HANDLE_VALUE ){
 		return 404;
 	}
@@ -997,7 +997,10 @@ int CDLNADmsManager::UploadFile(nocase::map<string, string>* headerList, CHttpRe
 		}
 	}
 
-	HANDLE file = _CreateFile(L"uploaddata.bin", GENERIC_READ|GENERIC_WRITE, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	wstring filePath;
+	GetModuleFolderPath(filePath);
+	filePath += L"\\uploaddata.bin";
+	HANDLE file = CreateFile(filePath.c_str(), GENERIC_READ|GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 
 	do{
 		result = reqReader->ReadBody((BYTE*)body, &bodySize);

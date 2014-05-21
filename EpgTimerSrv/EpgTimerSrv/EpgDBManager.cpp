@@ -121,7 +121,7 @@ UINT WINAPI CEpgDBManager::LoadThread(LPVOID param)
 
 	//EPGƒtƒ@ƒCƒ‹‚Ì‰ğÍ
 	for( size_t i=0; i<epgFileList.size(); i++ ){
-		HANDLE file = _CreateFile( epgFileList[i].c_str(), GENERIC_READ, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
+		HANDLE file = CreateFile( epgFileList[i].c_str(), GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
 		if( file != INVALID_HANDLE_VALUE ){
 			FILETIME CreationTime;
 			FILETIME LastAccessTime;

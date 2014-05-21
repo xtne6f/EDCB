@@ -1517,7 +1517,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 					GetSettingPath(path);
 					path += L"\\ChSet5.txt";
 
-					HANDLE file = _CreateFile(path.c_str(), GENERIC_READ, FILE_SHARE_READ|FILE_SHARE_WRITE, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
+					HANDLE file = CreateFile(path.c_str(), GENERIC_READ, FILE_SHARE_READ|FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
 					if( file != INVALID_HANDLE_VALUE){
 						DWORD dwFileSize = GetFileSize( file, NULL );
 						if( dwFileSize > 0 ){
@@ -1929,7 +1929,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 						epgDataPath += L"\\";
 						epgDataPath += val;
 
-						HANDLE file = _CreateFile(epgDataPath.c_str(), GENERIC_READ, FILE_SHARE_READ|FILE_SHARE_WRITE, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
+						HANDLE file = CreateFile(epgDataPath.c_str(), GENERIC_READ, FILE_SHARE_READ|FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
 						if( file != INVALID_HANDLE_VALUE){
 							FILETIME CreationTime;
 							FILETIME LastAccessTime;
@@ -1974,7 +1974,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 						epgDataPath += L"\\";
 						epgDataPath += val;
 
-						HANDLE file = _CreateFile(epgDataPath.c_str(), GENERIC_READ, FILE_SHARE_READ|FILE_SHARE_WRITE, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
+						HANDLE file = CreateFile(epgDataPath.c_str(), GENERIC_READ, FILE_SHARE_READ|FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
 						if( file != INVALID_HANDLE_VALUE){
 							DWORD dwFileSize = GetFileSize( file, NULL );
 							if( dwFileSize > 0 ){

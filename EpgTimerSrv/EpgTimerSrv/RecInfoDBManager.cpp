@@ -72,7 +72,7 @@ void CRecInfoDBManager::LoadRecInfo()
 	GetSettingPath(filePath);
 	filePath += L"\\RecInfo2Data.bin";
 
-	HANDLE hFile = _CreateFile2( filePath.c_str(), GENERIC_READ, FILE_SHARE_READ, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
+	HANDLE hFile = CreateFile( filePath.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
 	if( hFile == INVALID_HANDLE_VALUE ){
 		UnLock();
 		return ;
@@ -154,7 +154,7 @@ void CRecInfoDBManager::SaveRecInfo()
 	GetSettingPath(filePath);
 	filePath += L"\\RecInfo2Data.bin";
 
-	HANDLE hFile = _CreateFile2( filePath.c_str(), GENERIC_WRITE, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL );
+	HANDLE hFile = _CreateDirectoryAndFile( filePath.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL );
 	if( hFile == INVALID_HANDLE_VALUE ){
 		UnLock();
 		return ;

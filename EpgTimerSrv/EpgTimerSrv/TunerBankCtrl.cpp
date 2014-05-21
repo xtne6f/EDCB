@@ -1516,13 +1516,13 @@ void CTunerBankCtrl::SaveProgramInfo(wstring savePath, EPGDB_EVENT_INFO* info, B
 
 	HANDLE file = INVALID_HANDLE_VALUE;
 	if(addMode == TRUE ){
-		file = _CreateFile2( savePath.c_str(), GENERIC_WRITE|GENERIC_READ, FILE_SHARE_READ, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL );
+		file = _CreateDirectoryAndFile( savePath.c_str(), GENERIC_WRITE|GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL );
 		SetFilePointer(file, 0, NULL, FILE_END);
 		string buff2 = "\r\n-----------------------\r\n";
 		DWORD dwWrite;
 		WriteFile(file, buff2.c_str(), (DWORD)buff2.size(), &dwWrite, NULL);
 	}else{
-		file = _CreateFile2( savePath.c_str(), GENERIC_WRITE|GENERIC_READ, FILE_SHARE_READ, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL );
+		file = _CreateDirectoryAndFile( savePath.c_str(), GENERIC_WRITE|GENERIC_READ, FILE_SHARE_READ, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL );
 	}
 	if( file != INVALID_HANDLE_VALUE ){
 		DWORD dwWrite;
