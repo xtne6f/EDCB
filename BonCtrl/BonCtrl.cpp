@@ -8,16 +8,16 @@
 
 CBonCtrl::CBonCtrl(void)
 {
-	this->lockEvent = _CreateEvent(FALSE, TRUE, NULL);
-	this->buffLockEvent = _CreateEvent(FALSE, TRUE, NULL);
+	this->lockEvent = CreateEvent(NULL, FALSE, TRUE, NULL);
+	this->buffLockEvent = CreateEvent(NULL, FALSE, TRUE, NULL);
 
     this->recvThread = NULL;
-    this->recvStopEvent = _CreateEvent(FALSE, FALSE, NULL);
+    this->recvStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
     this->analyzeThread = NULL;
-    this->analyzeStopEvent = _CreateEvent(FALSE, FALSE, NULL);
+    this->analyzeStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 
     this->chScanThread = NULL;
-    this->chScanStopEvent = _CreateEvent(FALSE, FALSE, NULL);
+    this->chScanStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	this->chSt_space = 0;
 	this->chSt_ch = 0;
 	this->chSt_chName = L"";
@@ -26,14 +26,14 @@ CBonCtrl::CBonCtrl(void)
 	this->chSt_err = ST_STOP;
 
 	this->epgCapThread = NULL;
-	this->epgCapStopEvent = _CreateEvent(FALSE, FALSE, NULL);
+	this->epgCapStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	this->BSBasic = TRUE;
 	this->CS1Basic = TRUE;
 	this->CS2Basic = TRUE;
 	this->epgSt_err = ST_STOP;
 
 	this->epgCapBackThread = NULL;
-	this->epgCapBackStopEvent = _CreateEvent(FALSE, FALSE, NULL);
+	this->epgCapBackStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	this->enableLiveEpgCap = FALSE;
 	this->enableRecEpgCap = FALSE;
 

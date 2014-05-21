@@ -7,9 +7,9 @@
 CSendUDP::CSendUDP(void)
 {
     m_hSendThread = NULL;
-    m_hSendStopEvent = _CreateEvent(FALSE, FALSE, NULL);
+    m_hSendStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 
-	m_hCriticalEvent = _CreateEvent(FALSE, TRUE, NULL);
+	m_hCriticalEvent = CreateEvent(NULL, FALSE, TRUE, NULL);
 
 	WSAData wsaData;
 	WSAStartup(MAKEWORD(2,0), &wsaData);

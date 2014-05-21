@@ -15,7 +15,7 @@ CPipeServer::CPipeServer(void)
 	this->eventName = L"";
 	this->pipeName = L"";
 
-	this->stopEvent = _CreateEvent(FALSE, FALSE, NULL);
+	this->stopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	this->workThread = NULL;
 }
 
@@ -96,7 +96,7 @@ UINT WINAPI CPipeServer::ServerThread(LPVOID pParam)
 	}
 	hEventConnect = _CreateEvent(FALSE, FALSE, pSys->eventName.c_str());
 	hEventArray[0] = pSys->stopEvent;
-	hEventArray[1] = _CreateEvent(FALSE, FALSE, NULL);
+	hEventArray[1] = CreateEvent(NULL, FALSE, FALSE, NULL);
 	
 	if( hPipe == NULL ){
 		while(1){

@@ -66,7 +66,7 @@ CPushVideoPin::CPushVideoPin(HRESULT *phr, CSource *pFilter)
 
 	m_mt = amTypeVideo;
 
-	this->buffLockEvent = _CreateEvent(FALSE, TRUE, NULL);
+	this->buffLockEvent = CreateEvent(NULL, FALSE, TRUE, NULL);
 }
 
 CPushVideoPin::~CPushVideoPin() {
@@ -254,7 +254,7 @@ CPushAudioPin::CPushAudioPin(HRESULT *phr, CSource *pFilter)
 
 	m_mt = amTypeAudio;
 
-	this->buffLockEvent = _CreateEvent(FALSE, TRUE, NULL);
+	this->buffLockEvent = CreateEvent(NULL, FALSE, TRUE, NULL);
 }
 
 CPushAudioPin::~CPushAudioPin() {

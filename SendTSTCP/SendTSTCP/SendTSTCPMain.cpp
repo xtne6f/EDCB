@@ -5,12 +5,12 @@
 
 CSendTSTCPMain::CSendTSTCPMain(void)
 {
-	m_hStopSendEvent = _CreateEvent(FALSE, FALSE, NULL);
+	m_hStopSendEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	m_hSendThread = NULL;
-	m_hStopConnectEvent = _CreateEvent(FALSE, FALSE, NULL);
+	m_hStopConnectEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	m_hConnectThread = NULL;
 
-	m_hEvent = _CreateEvent(FALSE, TRUE, NULL );
+	m_hEvent = CreateEvent(NULL, FALSE, TRUE, NULL );
 
 	WSAData wsaData;
 	WSAStartup(MAKEWORD(2,0), &wsaData);

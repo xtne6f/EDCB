@@ -7,14 +7,14 @@ extern HINSTANCE g_Instance;
 
 CTwitterMain::CTwitterMain(void)
 {
-	this->lockEvent = _CreateEvent(FALSE, TRUE, NULL);
+	this->lockEvent = CreateEvent(NULL, FALSE, TRUE, NULL);
 	this->authorizationUrl = NULL;
 	this->useProxy = FALSE;
 	this->chgProxy = TRUE;
 
     this->tweetThread = NULL;
-    this->tweetStopEvent = _CreateEvent(FALSE, FALSE, NULL);
-	this->tweetSetEvent = _CreateEvent(FALSE, FALSE, NULL);
+    this->tweetStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+	this->tweetSetEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 
 	WCHAR filePath[512] = L"";
 	GetModuleFileName(g_Instance, filePath, 512);

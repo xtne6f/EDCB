@@ -8,12 +8,12 @@
 
 CBatManager::CBatManager(void)
 {
-	this->lockEvent = _CreateEvent(FALSE, TRUE, NULL);
+	this->lockEvent = CreateEvent(NULL, FALSE, TRUE, NULL);
 
 	this->workFlag = FALSE;
 
 	this->batWorkThread = NULL;
-	this->batWorkStopEvent = _CreateEvent(FALSE, FALSE, NULL);
+	this->batWorkStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 
 	this->lastSuspendMode = 0xFF;
 	this->lastRebootFlag = 0xFF;

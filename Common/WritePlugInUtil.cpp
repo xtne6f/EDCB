@@ -9,7 +9,7 @@ CWritePlugInUtil::CWritePlugInUtil(void)
 	module = NULL;
 
 	this->id = 0;
-	this->lockEvent = _CreateEvent(FALSE, TRUE, NULL );
+	this->lockEvent = CreateEvent(NULL, FALSE, TRUE, NULL );
 }
 
 CWritePlugInUtil::~CWritePlugInUtil(void)

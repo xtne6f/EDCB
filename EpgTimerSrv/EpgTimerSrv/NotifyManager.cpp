@@ -7,11 +7,11 @@
 
 CNotifyManager::CNotifyManager(void)
 {
-	this->lockEvent = _CreateEvent(FALSE, TRUE, NULL);
-	this->lockNotify = _CreateEvent(FALSE, TRUE, NULL);
+	this->lockEvent = CreateEvent(NULL, FALSE, TRUE, NULL);
+	this->lockNotify = CreateEvent(NULL, FALSE, TRUE, NULL);
 
 	this->notifyThread = NULL;
-	this->notifyStopEvent = _CreateEvent(FALSE, FALSE, NULL);
+	this->notifyStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 }
 
 CNotifyManager::~CNotifyManager(void)

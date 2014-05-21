@@ -14,9 +14,9 @@ CWinHTTPUtil::CWinHTTPUtil(void)
 	this->lastPort = 0;
 
     this->upThread = NULL;
-    this->upStopEvent = _CreateEvent(FALSE, FALSE, NULL);
-	this->writeCompEvent = _CreateEvent(FALSE, FALSE, NULL);
-	this->responseCompEvent = _CreateEvent(FALSE, FALSE, NULL);
+    this->upStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+	this->writeCompEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+	this->responseCompEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 }
 
 

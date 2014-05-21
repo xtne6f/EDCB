@@ -10,7 +10,7 @@ CTCPServer::CTCPServer(void)
 	m_pParam = NULL;
 	m_dwPort = 8081;
 
-	m_hStopEvent = _CreateEvent(FALSE, FALSE, NULL);
+	m_hStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	m_hThread = NULL;
 
 	m_sock = NULL;

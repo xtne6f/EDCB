@@ -4,11 +4,11 @@
 
 CTimeShiftUtil::CTimeShiftUtil(void)
 {
-	this->lockEvent = _CreateEvent(FALSE, TRUE, NULL);
-	this->lockBuffEvent = _CreateEvent(FALSE, TRUE, NULL);
+	this->lockEvent = CreateEvent(NULL, FALSE, TRUE, NULL);
+	this->lockBuffEvent = CreateEvent(NULL, FALSE, TRUE, NULL);
 
     this->readThread = NULL;
-    this->readStopEvent = _CreateEvent(FALSE, FALSE, NULL);
+    this->readStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 
 	this->packetInit = NULL;
 	this->sendUdp = NULL;

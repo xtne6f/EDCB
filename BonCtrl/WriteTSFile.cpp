@@ -6,11 +6,11 @@
 
 CWriteTSFile::CWriteTSFile(void)
 {
-	this->lockEvent = _CreateEvent(FALSE, TRUE, NULL);
-	this->buffLockEvent = _CreateEvent(FALSE, TRUE, NULL);
+	this->lockEvent = CreateEvent(NULL, FALSE, TRUE, NULL);
+	this->buffLockEvent = CreateEvent(NULL, FALSE, TRUE, NULL);
 
     this->outThread = NULL;
-    this->outStopEvent = _CreateEvent(FALSE, FALSE, NULL);
+    this->outStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	this->writeTotalSize = 0;
 	this->maxBuffCount = -1;
 	this->buffOverErr = FALSE;

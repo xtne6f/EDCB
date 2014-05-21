@@ -8,14 +8,14 @@
 
 CNWCoopManager::CNWCoopManager(void)
 {
-	this->lockEvent = _CreateEvent(FALSE, TRUE, NULL);
-	this->lockQueue = _CreateEvent(FALSE, TRUE, NULL);
+	this->lockEvent = CreateEvent(NULL, FALSE, TRUE, NULL);
+	this->lockQueue = CreateEvent(NULL, FALSE, TRUE, NULL);
 
 	this->chkThread = NULL;
-	this->chkStopEvent = _CreateEvent(FALSE, FALSE, NULL);
+	this->chkStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 
 	this->chkEpgThread = NULL;
-	this->chkEpgStopEvent = _CreateEvent(FALSE, FALSE, NULL);
+	this->chkEpgStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 
 	this->updateEpgData = FALSE;
 

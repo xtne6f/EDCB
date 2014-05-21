@@ -9,10 +9,10 @@
 
 CTunerBankCtrl::CTunerBankCtrl(void)
 {
-	this->lockEvent = _CreateEvent(FALSE, TRUE, NULL);
+	this->lockEvent = CreateEvent(NULL, FALSE, TRUE, NULL);
 
 	this->checkThread = NULL;
-	this->checkStopEvent = _CreateEvent(FALSE, FALSE, NULL);
+	this->checkStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 
 	this->openTuner = FALSE;
 	this->processID = 0;

@@ -5,7 +5,7 @@
 
 CTSOut::CTSOut(void)
 {
-	this->lockEvent = _CreateEvent(FALSE, TRUE, NULL);
+	this->lockEvent = CreateEvent(NULL, FALSE, TRUE, NULL);
 
 	this->chChangeFlag = FALSE;
 	this->chChangeErr = FALSE;

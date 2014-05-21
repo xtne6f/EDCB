@@ -13,7 +13,7 @@ CSendCtrlCmd::CSendCtrlCmd(void)
 	WSAData wsaData;
 	WSAStartup(MAKEWORD(2,0), &wsaData);
 
-	this->lockEvent = _CreateEvent(FALSE, TRUE, NULL);
+	this->lockEvent = CreateEvent(NULL, FALSE, TRUE, NULL);
 
 	this->tcpFlag = FALSE;
 	this->connectTimeOut = CONNECT_TIMEOUT;
