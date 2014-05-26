@@ -8,6 +8,7 @@
 #include "../../Common/EpgDataCap3Util.h"
 #include "../../Common/EpgDataCap3Def.h"
 #include "../../Common/ParseSearchChgText.h"
+#include <memory>
 
 #import "RegExp.tlb" no_namespace named_guids
 
