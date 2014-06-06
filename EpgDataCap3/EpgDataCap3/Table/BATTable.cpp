@@ -1,8 +1,6 @@
 #include "StdAfx.h"
 #include "BATTable.h"
 
-#include "../Descriptor/Descriptor.h"
-
 CBATTable::CBATTable(void)
 {
 }
@@ -51,8 +49,7 @@ BOOL CBATTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 		bouquet_descriptors_length = ((WORD)data[readSize+5]&0x0F)<<8 | data[readSize+6];
 		readSize += 7;
 		if( readSize+bouquet_descriptors_length <= (DWORD)section_length+3-4 && bouquet_descriptors_length > 0){
-			CDescriptor descriptor;
-			if( descriptor.Decode( data+readSize, bouquet_descriptors_length, &descriptorList, NULL ) == FALSE ){
+			if( AribDescriptor::CreateDescriptors( data+readSize, bouquet_descriptors_length, &descriptorList, NULL ) == FALSE ){
 				_OutputDebugString( L"++CBATTable:: descriptor err" );
 				return FALSE;
 			}
@@ -68,9 +65,9 @@ BOOL CBATTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 			item->transport_descriptors_length = ((WORD)data[readSize+4]&0x0F)<<8 | data[readSize+5];
 			readSize += 6;
 			if( readSize+item->transport_descriptors_length <= (DWORD)section_length+3-4 && item->transport_descriptors_length > 0){
-				CDescriptor descriptor;
-				if( descriptor.Decode( data+readSize, item->transport_descriptors_length, &(item->descriptorList), NULL ) == FALSE ){
+				if( AribDescriptor::CreateDescriptors( data+readSize, item->transport_descriptors_length, &(item->descriptorList), NULL ) == FALSE ){
 					_OutputDebugString( L"++CBATTable:: descriptor2 err" );
+					SAFE_DELETE(item);
 					return FALSE;
 				}
 			}

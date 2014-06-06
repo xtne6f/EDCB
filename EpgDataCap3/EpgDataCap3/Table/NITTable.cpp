@@ -1,8 +1,6 @@
 #include "StdAfx.h"
 #include "NITTable.h"
 
-#include "../Descriptor/Descriptor.h"
-
 CNITTable::CNITTable(void)
 {
 }
@@ -54,8 +52,7 @@ BOOL CNITTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 			if( network_id == 0x0001 || network_id == 0x0003 ){
 				SDDecode( data+readSize, network_descriptors_length, &descriptorList, NULL );
 			}else{
-				CDescriptor descriptor;
-				if( descriptor.Decode( data+readSize, network_descriptors_length, &descriptorList, NULL ) == FALSE ){
+				if( AribDescriptor::CreateDescriptors( data+readSize, network_descriptors_length, &descriptorList, NULL ) == FALSE ){
 					_OutputDebugString( L"++CNITTable:: descriptor err" );
 					return FALSE;
 				}
@@ -72,9 +69,9 @@ BOOL CNITTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 			item->transport_descriptors_length = ((WORD)data[readSize+4]&0x0F)<<8 | data[readSize+5];
 			readSize += 6;
 			if( readSize+item->transport_descriptors_length <= (DWORD)section_length+3-4 && item->transport_descriptors_length > 0){
-				CDescriptor descriptor;
-				if( descriptor.Decode( data+readSize, item->transport_descriptors_length, &(item->descriptorList), NULL ) == FALSE ){
+				if( AribDescriptor::CreateDescriptors( data+readSize, item->transport_descriptors_length, &(item->descriptorList), NULL ) == FALSE ){
 					_OutputDebugString( L"++CNITTable:: descriptor2 err" );
+					SAFE_DELETE(item);
 					return FALSE;
 				}
 			}
@@ -91,7 +88,7 @@ BOOL CNITTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 	return TRUE;
 }
 
-BOOL CNITTable::SDDecode( BYTE* data, DWORD dataSize, vector<DESCRIPTOR_DATA*>* descriptorList, DWORD* decodeReadSize )
+BOOL CNITTable::SDDecode( BYTE* data, DWORD dataSize, vector<AribDescriptor::CDescriptor*>* descriptorList, DWORD* decodeReadSize )
 {
 	BOOL ret = TRUE;
 	if( data == NULL || dataSize == 0 || descriptorList == NULL ){
@@ -99,25 +96,36 @@ BOOL CNITTable::SDDecode( BYTE* data, DWORD dataSize, vector<DESCRIPTOR_DATA*>* 
 	}
 	DWORD decodeSize = 0;
 
-	DESCRIPTOR_DATA* item = new DESCRIPTOR_DATA;
-	item->networkName = new CNetworkNameDesc;
+	AribDescriptor::CDescriptor* item = new AribDescriptor::CDescriptor;
 
-	while( decodeSize < dataSize ){
+	static const short parser0x82[] = {
+		AribDescriptor::descriptor_tag, 8,
+		AribDescriptor::descriptor_length, AribDescriptor::D_LOCAL, 8,
+		AribDescriptor::D_BEGIN, AribDescriptor::descriptor_length,
+			AribDescriptor::reserved, AribDescriptor::D_LOCAL, 8,
+			AribDescriptor::d_char, AribDescriptor::D_STRING_TO_END,
+		AribDescriptor::D_END,
+		AribDescriptor::D_FIN,
+	};
+	AribDescriptor::PARSER_PAIR parserList[] = {{0x82, parser0x82}, {0, NULL}};
+
+	while( decodeSize + 2 < dataSize ){
 		BYTE* readPos = data+decodeSize;
 		if( readPos[0] == 0x82 ){
 			//サービス名
 			if( readPos[2] == 0x01 ){
 				//日本語版？
-				item->networkName->char_nameLength = readPos[1]-1;
-				item->networkName->char_name = new CHAR[item->networkName->char_nameLength];
-				memcpy(item->networkName->char_name, readPos+3, item->networkName->char_nameLength);
+				if( item->Decode(readPos, dataSize - decodeSize, NULL, parserList) != false ){
+					//ネットワーク名記述子にキャスト
+					item->SetNumber(AribDescriptor::descriptor_tag, AribDescriptor::network_name_descriptor);
+				}
 			}
 			decodeSize += readPos[1]+2;
 		}else{
 			decodeSize += readPos[1]+2;
 		}
 	}
-	if( item->networkName->char_nameLength == 0 ){
+	if( item->Has(AribDescriptor::d_char) == false ){
 		SAFE_DELETE(item);
 		ret = FALSE;
 	}else{

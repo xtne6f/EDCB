@@ -2,7 +2,6 @@
 #include "TDTTable.h"
 
 #include "../../../Common/EpgTimerUtil.h"
-#include "../Descriptor/Descriptor.h"
 
 CTDTTable::CTDTTable(void)
 {

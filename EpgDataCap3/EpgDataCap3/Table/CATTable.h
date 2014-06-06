@@ -24,7 +24,7 @@ CA_section(){
 */
 
 #include "../../../Common/Util.h"
-#include "../Descriptor/DescriptorDef.h"
+#include "../AribDescriptor.h"
 #include "PSITable.h"
 
 class CCATTable : public CPSITable
@@ -34,7 +34,7 @@ public:
 	BYTE current_next_indicator;
 	BYTE section_number;
 	BYTE last_section_number;
-	vector<DESCRIPTOR_DATA*> descriptorList;
+	vector<AribDescriptor::CDescriptor*> descriptorList;
 
 public:
 	CCATTable(void);

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../../../Common/Util.h"
-#include "../Descriptor/DescriptorDef.h"
 #include "PSITable.h"
 
 class CEITTable_SD2 : public CPSITable

@@ -4,6 +4,20 @@
 #include "./Table/TableUtil.h"
 #include "../../Common/EpgDataCap3Def.h"
 
+typedef struct _NIBBLE_DATA{
+	BYTE content_nibble_level_1;
+	BYTE content_nibble_level_2;
+	BYTE user_nibble_1;
+	BYTE user_nibble_2;
+}NIBBLE_DATA;
+
+typedef struct _EVENT_DATA2{
+	WORD original_network_id;
+	WORD transport_stream_id;
+	WORD service_id;
+	WORD event_id;
+}EVENT_DATA2;
+
 typedef struct _SHORT_EVENT_INFO{
 	BYTE tableID;		//データ追加時のtable_id （優先度 0x4E > 0x50-0x5F > 0x4F > 0x60-0x6F)
 	BYTE version;		//データ追加時のバージョン
@@ -20,7 +34,7 @@ typedef struct _EXTENDED_EVENT_INFO{
 typedef struct _CONTENT_INFO{
 	BYTE tableID;		//データ追加時のtable_id （優先度 0x4E > 0x50-0x5F > 0x4F > 0x60-0x6F)
 	BYTE version;		//データ追加時のバージョン
-	vector<CContentDesc::NIBBLE_DATA> nibbleList;
+	vector<NIBBLE_DATA> nibbleList;
 } CONTEN_INFO;
 
 typedef struct _COMPONENT_INFO{
@@ -56,7 +70,7 @@ typedef struct _EVENTGROUP_INFO{
 	BYTE version;		//データ追加時のバージョン
 	BYTE group_type;
 	BYTE event_count;
-	vector<CEventGroupDesc::EVENT_DATA2> eventData2List;
+	vector<EVENT_DATA2> eventData2List;
 } EVENTGROUP_INFO;
 
 typedef struct _EVENT_INFO{
@@ -302,20 +316,20 @@ protected:
 protected:
 	void Clear();
 	
-	BOOL AddShortEvent(CEITTable* eit, EVENT_INFO* eventInfo, CShortEventDesc* shortEvent);
-	BOOL AddExtEvent(CEITTable* eit, EVENT_INFO* eventInfo, vector<DESCRIPTOR_DATA*>* descriptorList);
-	BOOL AddContent(CEITTable* eit, EVENT_INFO* eventInfo, CContentDesc* content);
-	BOOL AddComponent(CEITTable* eit, EVENT_INFO* eventInfo, CComponentDesc* component);
-	BOOL AddAudioComponent(CEITTable* eit, EVENT_INFO* eventInfo, vector<DESCRIPTOR_DATA*>* descriptorList);
-	BOOL AddEventGroup(CEITTable* eit, EVENT_INFO* eventInfo, CEventGroupDesc* eventGroup);
-	BOOL AddEventRelay(CEITTable* eit, EVENT_INFO* eventInfo, CEventGroupDesc* eventGroup);
+	BOOL AddShortEvent(CEITTable* eit, EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* shortEvent);
+	BOOL AddExtEvent(CEITTable* eit, EVENT_INFO* eventInfo, vector<AribDescriptor::CDescriptor*>* descriptorList);
+	BOOL AddContent(CEITTable* eit, EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* content);
+	BOOL AddComponent(CEITTable* eit, EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* component);
+	BOOL AddAudioComponent(CEITTable* eit, EVENT_INFO* eventInfo, vector<AribDescriptor::CDescriptor*>* descriptorList);
+	BOOL AddEventGroup(CEITTable* eit, EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* eventGroup);
+	BOOL AddEventRelay(CEITTable* eit, EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* eventGroup);
 	BOOL CheckUpdate(CEITTable* eit, BYTE tableID, BYTE version);
 
-	BOOL AddShortEvent_SD(CEITTable_SD* eit, EVENT_INFO* eventInfo, CShortEventDesc* shortEvent);
-	BOOL AddExtEvent_SD(CEITTable_SD* eit, EVENT_INFO* eventInfo, vector<DESCRIPTOR_DATA*>* descriptorList);
-	BOOL AddContent_SD(CEITTable_SD* eit, EVENT_INFO* eventInfo, CContentDesc* content);
-	BOOL AddComponent_SD(CEITTable_SD* eit, EVENT_INFO* eventInfo, CComponentDesc* component);
-	BOOL AddAudioComponent_SD(CEITTable_SD* eit, EVENT_INFO* eventInfo, vector<DESCRIPTOR_DATA*>* descriptorList);
+	BOOL AddShortEvent_SD(CEITTable_SD* eit, EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* shortEvent);
+	BOOL AddExtEvent_SD(CEITTable_SD* eit, EVENT_INFO* eventInfo, vector<AribDescriptor::CDescriptor*>* descriptorList);
+	BOOL AddContent_SD(CEITTable_SD* eit, EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* content);
+	BOOL AddComponent_SD(CEITTable_SD* eit, EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* component);
+	BOOL AddAudioComponent_SD(CEITTable_SD* eit, EVENT_INFO* eventInfo, vector<AribDescriptor::CDescriptor*>* descriptorList);
 	BOOL CheckUpdate_SD(CEITTable_SD* eit, BYTE tableID, BYTE version);
 
 	BOOL AddSDEventMap(CEITTable_SD* eit);

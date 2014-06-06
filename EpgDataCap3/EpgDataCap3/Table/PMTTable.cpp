@@ -1,8 +1,6 @@
 #include "StdAfx.h"
 #include "PMTTable.h"
 
-#include "../Descriptor/Descriptor.h"
-
 CPMTTable::CPMTTable(void)
 {
 }
@@ -52,8 +50,7 @@ BOOL CPMTTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 		program_info_length = ((WORD)data[readSize+7]&0x0F)<<8 | data[readSize+8];
 		readSize += 9;
 		if( readSize+program_info_length <= (DWORD)section_length+3-4 && program_info_length > 0){
-			CDescriptor descriptor;
-			if( descriptor.Decode( data+readSize, program_info_length, &descriptorList, NULL ) == FALSE ){
+			if( AribDescriptor::CreateDescriptors( data+readSize, program_info_length, &descriptorList, NULL ) == FALSE ){
 				_OutputDebugString( L"++CPMTTable:: descriptor err" );
 				return FALSE;
 			}
@@ -66,9 +63,9 @@ BOOL CPMTTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 			item->ES_info_length = ((WORD)data[readSize+3]&0x0F)<<8 | data[readSize+4];
 			readSize += 5;
 			if( readSize+item->ES_info_length <= (DWORD)section_length+3-4 && item->ES_info_length > 0){
-				CDescriptor descriptor;
-				if( descriptor.Decode( data+readSize, item->ES_info_length, &(item->descriptorList), NULL ) == FALSE ){
+				if( AribDescriptor::CreateDescriptors( data+readSize, item->ES_info_length, &(item->descriptorList), NULL ) == FALSE ){
 					_OutputDebugString( L"++CPMTTable:: descriptor2 err" );
+					SAFE_DELETE(item);
 					return FALSE;
 				}
 			}

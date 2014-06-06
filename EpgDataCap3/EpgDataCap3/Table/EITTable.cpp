@@ -2,7 +2,6 @@
 #include "EITTable.h"
 
 #include "../../../Common/EpgTimerUtil.h"
-#include "../Descriptor/Descriptor.h"
 
 CEITTable::CEITTable(void)
 {
@@ -85,9 +84,9 @@ BOOL CEITTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 				if( original_network_id == 0x0001 || original_network_id == 0x0003 ){
 					SDDecode( data+readSize, item->descriptors_loop_length, &(item->descriptorList), NULL );
 				}else{
-					CDescriptor descriptor;
-					if( descriptor.Decode( data+readSize, item->descriptors_loop_length, &(item->descriptorList), NULL ) == FALSE ){
+					if( AribDescriptor::CreateDescriptors( data+readSize, item->descriptors_loop_length, &(item->descriptorList), NULL ) == FALSE ){
 						_OutputDebugString( L"++CEITTable:: descriptor2 err" );
+						SAFE_DELETE(item);
 						this->failure = TRUE;
 						return TRUE;
 					}
@@ -105,7 +104,7 @@ BOOL CEITTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 	return TRUE;
 }
 
-BOOL CEITTable::SDDecode( BYTE* data, DWORD dataSize, vector<DESCRIPTOR_DATA*>* descriptorList, DWORD* decodeReadSize )
+BOOL CEITTable::SDDecode( BYTE* data, DWORD dataSize, vector<AribDescriptor::CDescriptor*>* descriptorList, DWORD* decodeReadSize )
 {
 	BOOL ret = TRUE;
 	if( data == NULL || dataSize == 0 || descriptorList == NULL ){
@@ -113,107 +112,128 @@ BOOL CEITTable::SDDecode( BYTE* data, DWORD dataSize, vector<DESCRIPTOR_DATA*>* 
 	}
 	DWORD decodeSize = 0;
 
-	DESCRIPTOR_DATA* extItem = NULL;
-	DESCRIPTOR_DATA* shortItem = NULL;
+	AribDescriptor::CDescriptor* shortItem = NULL;
 
-	while( decodeSize < dataSize ){
+	static const short parser0x82[] = {
+		AribDescriptor::descriptor_tag, 8,
+		AribDescriptor::descriptor_length, AribDescriptor::D_LOCAL, 8,
+		AribDescriptor::D_BEGIN, AribDescriptor::descriptor_length,
+			AribDescriptor::reserved, AribDescriptor::D_LOCAL, 8,
+			AribDescriptor::event_name_char, AribDescriptor::D_STRING_TO_END,
+		AribDescriptor::D_END,
+		AribDescriptor::D_FIN,
+	};
+	static const short parser0x83[] = {
+		AribDescriptor::descriptor_tag, 8,
+		AribDescriptor::descriptor_length, AribDescriptor::D_LOCAL, 8,
+		AribDescriptor::D_BEGIN, AribDescriptor::descriptor_length,
+			AribDescriptor::reserved, AribDescriptor::D_LOCAL, 8,
+			AribDescriptor::D_BEGIN_FOR_TO_END,
+				AribDescriptor::item_description_char, AribDescriptor::D_STRING_TO_END,
+			AribDescriptor::D_END,
+		AribDescriptor::D_END,
+		AribDescriptor::D_FIN,
+	};
+	static const short parser0x85[] = {
+		AribDescriptor::descriptor_tag, 8,
+		AribDescriptor::descriptor_length, AribDescriptor::D_LOCAL, 8,
+		AribDescriptor::D_BEGIN, AribDescriptor::descriptor_length,
+			AribDescriptor::reserved, AribDescriptor::D_LOCAL, 4,
+			AribDescriptor::stream_content, 4,
+			AribDescriptor::component_type, 8,
+			AribDescriptor::component_tag, 8,
+			AribDescriptor::reserved, AribDescriptor::D_LOCAL, 8,
+			AribDescriptor::text_char, AribDescriptor::D_STRING_TO_END,
+		AribDescriptor::D_END,
+		AribDescriptor::D_FIN,
+	};
+	AribDescriptor::PARSER_PAIR parserList[] = {{0x82, parser0x82}, {0x83, parser0x83}, {0x85, parser0x85}, {0, NULL}};
+
+	while( decodeSize + 2 < dataSize ){
 		BYTE* readPos = data+decodeSize;
 
 		if( readPos[0] == 0x54 ){
-			DESCRIPTOR_DATA* item = new DESCRIPTOR_DATA;
-			item->content = new CContentDesc;
-			item->content->Decode(readPos, readPos[1]+2, NULL);
-
-
-			for( size_t i=0; i<item->content->nibbleList.size(); i++ ){
-				switch(item->content->nibbleList[i].user_nibble_1){
-				case 0x00:
-					//映画？
-					item->content->nibbleList[i].content_nibble_level_1 = 0x06;
-					item->content->nibbleList[i].content_nibble_level_2 = 0x0F;
-					break;
-				case 0x02:
-					//スポーツ？
-					item->content->nibbleList[i].content_nibble_level_1 = 0x01;
-					item->content->nibbleList[i].content_nibble_level_2 = 0x0F;
-					break;
-				case 0x04:
-					//音楽？
-					item->content->nibbleList[i].content_nibble_level_1 = 0x04;
-					item->content->nibbleList[i].content_nibble_level_2 = 0x0F;
-					break;
-				case 0x05:
-					//ドラマ？
-					item->content->nibbleList[i].content_nibble_level_1 = 0x03;
-					item->content->nibbleList[i].content_nibble_level_2 = 0x0F;
-					break;
-				case 0x06:
-					//ニュース？
-					item->content->nibbleList[i].content_nibble_level_1 = 0x00;
-					item->content->nibbleList[i].content_nibble_level_2 = 0x0F;
-					break;
-				case 0x07:
-					//バラエティ？
-					item->content->nibbleList[i].content_nibble_level_1 = 0x05;
-					item->content->nibbleList[i].content_nibble_level_2 = 0x0F;
-					break;
-				case 0x08:
-					//趣味／教育？
-					item->content->nibbleList[i].content_nibble_level_1 = 0x0A;
-					item->content->nibbleList[i].content_nibble_level_2 = 0x0F;
-					break;
-				case 0x09:
-					//アニメ？
-					item->content->nibbleList[i].content_nibble_level_1 = 0x07;
-					item->content->nibbleList[i].content_nibble_level_2 = 0x0F;
-					break;
-				case 0x0A:
-					//ドキュメンタリー／教養？
-					item->content->nibbleList[i].content_nibble_level_1 = 0x08;
-					item->content->nibbleList[i].content_nibble_level_2 = 0x0F;
-					break;
-				default:
-					break;
+			AribDescriptor::CDescriptor* item = new AribDescriptor::CDescriptor;
+			if( item->Decode(readPos, decodeSize - dataSize, NULL) == false ){
+				delete item;
+			}else{
+				if( item->EnterLoop() ){
+					for( DWORD i = 0; item->SetLoopIndex(i); i++ ){
+						switch( item->GetNumber(AribDescriptor::user_nibble_1) ){
+						case 0x00:
+							//映画？
+							item->SetNumber(AribDescriptor::content_nibble_level_1, 0x06);
+							item->SetNumber(AribDescriptor::content_nibble_level_2, 0x0F);
+							break;
+						case 0x02:
+							//スポーツ？
+							item->SetNumber(AribDescriptor::content_nibble_level_1, 0x01);
+							item->SetNumber(AribDescriptor::content_nibble_level_2, 0x0F);
+							break;
+						case 0x04:
+							//音楽？
+							item->SetNumber(AribDescriptor::content_nibble_level_1, 0x04);
+							item->SetNumber(AribDescriptor::content_nibble_level_2, 0x0F);
+							break;
+						case 0x05:
+							//ドラマ？
+							item->SetNumber(AribDescriptor::content_nibble_level_1, 0x03);
+							item->SetNumber(AribDescriptor::content_nibble_level_2, 0x0F);
+							break;
+						case 0x06:
+							//ニュース？
+							item->SetNumber(AribDescriptor::content_nibble_level_1, 0x00);
+							item->SetNumber(AribDescriptor::content_nibble_level_2, 0x0F);
+							break;
+						case 0x07:
+							//バラエティ？
+							item->SetNumber(AribDescriptor::content_nibble_level_1, 0x05);
+							item->SetNumber(AribDescriptor::content_nibble_level_2, 0x0F);
+							break;
+						case 0x08:
+							//趣味／教育？
+							item->SetNumber(AribDescriptor::content_nibble_level_1, 0x0A);
+							item->SetNumber(AribDescriptor::content_nibble_level_2, 0x0F);
+							break;
+						case 0x09:
+							//アニメ？
+							item->SetNumber(AribDescriptor::content_nibble_level_1, 0x07);
+							item->SetNumber(AribDescriptor::content_nibble_level_2, 0x0F);
+							break;
+						case 0x0A:
+							//ドキュメンタリー／教養？
+							item->SetNumber(AribDescriptor::content_nibble_level_1, 0x08);
+							item->SetNumber(AribDescriptor::content_nibble_level_2, 0x0F);
+							break;
+						default:
+							break;
+						}
+					}
+					item->LeaveLoop();
 				}
+				descriptorList->push_back(item);
 			}
-
-			descriptorList->push_back(item);
 
 			decodeSize += readPos[1]+2;
 		}else
 		if( readPos[0] == 0x85 ){
 			//コンポーネント
-			if( (readPos[2]&0x0F) == 0x01 ){
-				//映像
-				DESCRIPTOR_DATA* item = new DESCRIPTOR_DATA;
-				item->component = new CComponentDesc;
-
-				item->component->stream_content = readPos[2]&0x0F;
-				item->component->component_type = readPos[3];
-				item->component->component_tag = readPos[4];
-
-				item->component->text_charLength = readPos[1]-4;
-				item->component->text_char = new BYTE[item->component->text_charLength+1];
-				
-				memcpy(item->component->text_char, readPos+6, item->component->text_charLength);
-				item->component->text_char[item->component->text_charLength] = '\0';
-				descriptorList->push_back(item);
-			}else
-			if( (readPos[2]&0x0F) == 0x02 ){
-				//音声
-				DESCRIPTOR_DATA* item = new DESCRIPTOR_DATA;
-				item->audioComponent = new CAudioComponentDesc;
-
-				item->audioComponent->stream_content = readPos[2]&0x0F;
-				item->audioComponent->component_type = readPos[3];
-				item->audioComponent->component_tag = readPos[4];
-
-				item->audioComponent->text_charLength = readPos[1]-4;
-				item->audioComponent->text_char = new CHAR[item->audioComponent->text_charLength+1];
-				
-				memcpy(item->audioComponent->text_char, readPos+6, item->audioComponent->text_charLength);
-				item->audioComponent->text_char[item->audioComponent->text_charLength] = '\0';
-				descriptorList->push_back(item);
+			AribDescriptor::CDescriptor* item = new AribDescriptor::CDescriptor;
+			if( item->Decode(readPos, decodeSize - dataSize, NULL, parserList) == false ){
+				delete item;
+			}else{
+				if( item->GetNumber(AribDescriptor::stream_content) == 0x01 ){
+					//映像。コンポーネント記述子にキャスト
+					item->SetNumber(AribDescriptor::descriptor_tag, AribDescriptor::component_descriptor);
+					descriptorList->push_back(item);
+				}else
+				if( item->GetNumber(AribDescriptor::stream_content) == 0x02 ){
+					//音声。音声コンポーネント記述子にキャスト
+					item->SetNumber(AribDescriptor::descriptor_tag, AribDescriptor::audio_component_descriptor);
+					descriptorList->push_back(item);
+				}else{
+					delete item;
+				}
 			}
 			decodeSize += readPos[1]+2;
 		}else
@@ -221,54 +241,39 @@ BOOL CEITTable::SDDecode( BYTE* data, DWORD dataSize, vector<DESCRIPTOR_DATA*>* 
 			//番組名
 			if( readPos[2] == 0x01 ){
 				if( shortItem == NULL ){
-					shortItem = new DESCRIPTOR_DATA;
+					shortItem = new AribDescriptor::CDescriptor;
 				}
-				shortItem->shortEvent = new CShortEventDesc;
-
-				//日本語版？
-				shortItem->shortEvent->event_name_length = readPos[1]-1;
-				shortItem->shortEvent->event_name_char = new CHAR[shortItem->shortEvent->event_name_length+1];
-				
-				memcpy(shortItem->shortEvent->event_name_char, readPos+3, shortItem->shortEvent->event_name_length);
-				shortItem->shortEvent->event_name_char[shortItem->shortEvent->event_name_length] = '\0';
-				descriptorList->push_back(shortItem);
+				if( shortItem->Decode(readPos, decodeSize - dataSize, NULL, parserList) == false ){
+					delete shortItem;
+					shortItem = NULL;
+				}else{
+					//日本語版？
+					//短形式イベント記述子にキャスト
+					shortItem->SetNumber(AribDescriptor::descriptor_tag, AribDescriptor::short_event_descriptor);
+				}
 			}else if( readPos[2] == 0x02 && shortItem == NULL){
-				if( shortItem == NULL ){
-					shortItem = new DESCRIPTOR_DATA;
+				shortItem = new AribDescriptor::CDescriptor;
+				if( shortItem->Decode(readPos, decodeSize - dataSize, NULL, parserList) == false ){
+					delete shortItem;
+					shortItem = NULL;
+				}else{
+					//英語版？
+					//短形式イベント記述子にキャスト
+					shortItem->SetNumber(AribDescriptor::descriptor_tag, AribDescriptor::short_event_descriptor);
 				}
-				shortItem->shortEvent = new CShortEventDesc;
-
-				//英語版？
-				shortItem->shortEvent->event_name_length = readPos[1]-1;
-				shortItem->shortEvent->event_name_char = new CHAR[shortItem->shortEvent->event_name_length+1];
-				
-				memcpy(shortItem->shortEvent->event_name_char, readPos+3, shortItem->shortEvent->event_name_length);
-				shortItem->shortEvent->event_name_char[shortItem->shortEvent->event_name_length] = '\0';
-				descriptorList->push_back(shortItem);
 			}
 			decodeSize += readPos[1]+2;
 		}else
 		if( readPos[0] == 0x83 ){
 			//詳細情報
-			if( extItem == NULL ){
-				extItem = new DESCRIPTOR_DATA;
-				extItem->extendedEvent = new CExtendedEventDesc;
-
-				CExtendedEventDesc::ITEM_DATA* data = new CExtendedEventDesc::ITEM_DATA;
-				data->item_description_length = readPos[1]-1;
-				data->item_description_char = new CHAR[data->item_description_length+1];
-				memcpy(data->item_description_char, readPos+3, data->item_description_length);
-				data->item_description_char[data->item_description_length] = '\0';
-
-				extItem->extendedEvent->itemList.push_back(data);
+			AribDescriptor::CDescriptor* item = new AribDescriptor::CDescriptor;
+			if( item->Decode(readPos, decodeSize - dataSize, NULL, parserList) == false ){
+				delete item;
 			}else{
-				CExtendedEventDesc::ITEM_DATA* data = new CExtendedEventDesc::ITEM_DATA;
-				data->item_description_length = readPos[1]-1;
-				data->item_description_char = new CHAR[data->item_description_length+1];
-				memcpy(data->item_description_char, readPos+3, data->item_description_length);
-				data->item_description_char[data->item_description_length] = '\0';
-
-				extItem->extendedEvent->itemList.push_back(data);
+				//拡張形式イベント記述子にキャスト
+				//TODO: 本当はdescriptor_number等調整すべきだが、後続の処理で一切利用されないので省略する
+				item->SetNumber(AribDescriptor::descriptor_tag, AribDescriptor::extended_event_descriptor);
+				descriptorList->push_back(item);
 			}
 
 			decodeSize += readPos[1]+2;
@@ -276,8 +281,8 @@ BOOL CEITTable::SDDecode( BYTE* data, DWORD dataSize, vector<DESCRIPTOR_DATA*>* 
 			decodeSize += readPos[1]+2;
 		}
 	}
-	if( extItem != NULL ){
-		descriptorList->push_back(extItem);
+	if( shortItem != NULL ){
+		descriptorList->push_back(shortItem);
 	}
 
 	if( descriptorList->size() == 0 ){

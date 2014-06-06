@@ -4,6 +4,7 @@
 #include "../../Common/StringUtil.h"
 #include "../../Common/TimeUtil.h"
 #include "ARIB8CharDecode.h"
+#include "../../Common/EpgTimerUtil.h"
 
 CDecodeUtil::CDecodeUtil(void)
 {
@@ -756,12 +757,26 @@ BOOL CDecodeUtil::CheckSIT(WORD PID, CSITTable* sit)
 	//ŽžŠÔŒvŽZ
 	if( this->totInfo == NULL && this->tdtInfo == NULL ){
 		for( size_t i=0; i<sit->descriptorList.size(); i++ ){
-			if( sit->descriptorList[i]->partialTSTime != NULL ){
-				if( sit->descriptorList[i]->partialTSTime->jst_time_flag == 1 ){
-					__int64 nowTime = GetNowI64Time();
-					__int64 streamTime = ConvertI64Time( sit->descriptorList[i]->partialTSTime->jst_time );
+			if( sit->descriptorList[i]->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::partialTS_time_descriptor ){
+				if( sit->descriptorList[i]->GetNumber(AribDescriptor::jst_time_flag) == 1 ){
+					DWORD timeBytesSize;
+					const BYTE* timeBytes = sit->descriptorList[i]->GetBinary(AribDescriptor::jst_time, &timeBytesSize);
+					if( timeBytes != NULL && timeBytesSize >= 5 ){
+						DWORD mjd = timeBytes[0] << 8 | timeBytes[1];
+						SYSTEMTIME time;
+						_MJDtoSYSTEMTIME(mjd, &time);
+						BYTE b = timeBytes[2];
+						time.wHour = (WORD)_BCDtoDWORD(&b, 1, 2);
+						b = timeBytes[3];
+						time.wMinute = (WORD)_BCDtoDWORD(&b, 1, 2);
+						b = timeBytes[4];
+						time.wSecond = (WORD)_BCDtoDWORD(&b, 1, 2);
 
-					this->delaySec = (int)((streamTime - nowTime)/I64_1SEC);
+						__int64 nowTime = GetNowI64Time();
+						__int64 streamTime = ConvertI64Time(time);
+
+						this->delaySec = (int)((streamTime - nowTime)/I64_1SEC);
+					}
 				}
 			}
 		}
@@ -810,8 +825,8 @@ DWORD CDecodeUtil::GetTSID(
 		//ONID
 		WORD ONID = 0xFFFF;
 		for( size_t i=0; i<this->sitInfo->descriptorList.size(); i++ ){
-			if( this->sitInfo->descriptorList[i]->networkIdentification != NULL ){
-				*originalNetworkID = this->sitInfo->descriptorList[i]->networkIdentification->network_id;
+			if( this->sitInfo->descriptorList[i]->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::network_identification_descriptor ){
+				*originalNetworkID = (WORD)this->sitInfo->descriptorList[i]->GetNumber(AribDescriptor::network_id);
 				return NO_ERR;
 			}
 		}
@@ -865,30 +880,40 @@ DWORD CDecodeUtil::GetServiceListActual(
 	map<BYTE, CNITTable*>::iterator itrNit;
 	for( itrNit = this->nitActualInfo->nitSection.begin(); itrNit != this->nitActualInfo->nitSection.end(); itrNit++ ){
 		for( size_t i=0; i<itrNit->second->descriptorList.size(); i++ ){
-			if( itrNit->second->descriptorList[i]->networkName != NULL ){
-				CNetworkNameDesc* networkName = itrNit->second->descriptorList[i]->networkName;
-				if( networkName->char_nameLength > 0 ){
+			if( itrNit->second->descriptorList[i]->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::network_name_descriptor ){
+				AribDescriptor::CDescriptor* networkName = itrNit->second->descriptorList[i];
+				DWORD srcSize;
+				const char* src = networkName->GetStringOrEmpty(AribDescriptor::d_char, &srcSize);
+				if( srcSize > 0 ){
 					CARIB8CharDecode arib;
 					string network_name = "";
-					arib.PSISI((const BYTE*)networkName->char_name, networkName->char_nameLength, &network_name);
+					arib.PSISI((const BYTE*)src, srcSize, &network_name);
 					AtoW(network_name, network_nameW);
 				}
 			}
 		}
 		for( size_t i=0; i<itrNit->second->TSInfoList.size(); i++ ){
 			for( size_t j=0; j<itrNit->second->TSInfoList[i]->descriptorList.size(); j++ ){
-				if( itrNit->second->TSInfoList[i]->descriptorList[j]->TSInfo != NULL ){
-					CTSInfoDesc* TSInfo = itrNit->second->TSInfoList[i]->descriptorList[j]->TSInfo;
-					if( TSInfo->length_of_ts_name > 0 ){
+				if( itrNit->second->TSInfoList[i]->descriptorList[j]->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::ts_information_descriptor ){
+					AribDescriptor::CDescriptor* TSInfo = itrNit->second->TSInfoList[i]->descriptorList[j];
+					DWORD srcSize;
+					const char* src = TSInfo->GetStringOrEmpty(AribDescriptor::ts_name_char, &srcSize);
+					if( srcSize > 0 ){
 						CARIB8CharDecode arib;
 						string ts_name = "";
-						arib.PSISI((const BYTE*)TSInfo->ts_name_char, TSInfo->length_of_ts_name, &ts_name);
+						arib.PSISI((const BYTE*)src, srcSize, &ts_name);
 						AtoW(ts_name, ts_nameW);
 					}
-					remote_control_key_id = TSInfo->remote_control_key_id;
+					remote_control_key_id = (BYTE)TSInfo->GetNumber(AribDescriptor::remote_control_key_id);
 				}
-				if( itrNit->second->TSInfoList[i]->descriptorList[j]->partialReception != NULL ){
-					partialServiceList = itrNit->second->TSInfoList[i]->descriptorList[j]->partialReception->service_idList;
+				if( itrNit->second->TSInfoList[i]->descriptorList[j]->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::partial_reception_descriptor ){
+					partialServiceList.clear();
+					if( itrNit->second->TSInfoList[i]->descriptorList[j]->EnterLoop() ){
+						for( DWORD k=0; itrNit->second->TSInfoList[i]->descriptorList[j]->SetLoopIndex(k); k++ ){
+							partialServiceList.push_back((WORD)itrNit->second->TSInfoList[i]->descriptorList[j]->GetNumber(AribDescriptor::service_id));
+						}
+						itrNit->second->TSInfoList[i]->descriptorList[j]->LeaveLoop();
+					}
 				}
 			}
 		}
@@ -903,23 +928,27 @@ DWORD CDecodeUtil::GetServiceListActual(
 			this->serviceList[count].extInfo = new SERVICE_EXT_INFO;
 
 			for( size_t j=0; j<itrSdt->second->serviceInfoList[i]->descriptorList.size(); j++ ){
-				if( itrSdt->second->serviceInfoList[i]->descriptorList[j]->service != NULL ){
-					CServiceDesc* service = itrSdt->second->serviceInfoList[i]->descriptorList[j]->service;
+				if( itrSdt->second->serviceInfoList[i]->descriptorList[j]->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::service_descriptor ){
+					AribDescriptor::CDescriptor* service = itrSdt->second->serviceInfoList[i]->descriptorList[j];
 					CARIB8CharDecode arib;
 					string service_provider_name = "";
 					string service_name = "";
-					if( service->service_provider_name_length > 0 ){
-						arib.PSISI((const BYTE*)service->char_service_provider_name, service->service_provider_name_length, &service_provider_name);
+					const char* src;
+					DWORD srcSize;
+					src = service->GetStringOrEmpty(AribDescriptor::service_provider_name, &srcSize);
+					if( srcSize > 0 ){
+						arib.PSISI((const BYTE*)src, srcSize, &service_provider_name);
 					}
-					if( service->service_name_length > 0 ){
-						arib.PSISI((const BYTE*)service->char_service_name, service->service_name_length, &service_name);
+					src = service->GetStringOrEmpty(AribDescriptor::service_name, &srcSize);
+					if( srcSize > 0 ){
+						arib.PSISI((const BYTE*)src, srcSize, &service_name);
 					}
 					wstring service_provider_nameW = L"";
 					wstring service_nameW = L"";
 					AtoW(service_provider_name, service_provider_nameW);
 					AtoW(service_name, service_nameW);
 
-					this->serviceList[count].extInfo->service_type = service->service_type;
+					this->serviceList[count].extInfo->service_type = (BYTE)service->GetNumber(AribDescriptor::service_type);
 					if( service_provider_nameW.size() > 0 ){
 						this->serviceList[count].extInfo->service_provider_name = new WCHAR[service_provider_nameW.size()+1];
 						wcscpy_s(this->serviceList[count].extInfo->service_provider_name, service_provider_nameW.size()+1, service_provider_nameW.c_str());
@@ -980,8 +1009,8 @@ DWORD CDecodeUtil::GetServiceListSIT(
 	//ONID
 	WORD ONID = 0xFFFF;
 	for( size_t i=0; i<this->sitInfo->descriptorList.size(); i++ ){
-		if( this->sitInfo->descriptorList[i]->networkIdentification != NULL ){
-			ONID = this->sitInfo->descriptorList[i]->networkIdentification->network_id;
+		if( this->sitInfo->descriptorList[i]->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::network_identification_descriptor ){
+			ONID = (WORD)this->sitInfo->descriptorList[i]->GetNumber(AribDescriptor::network_id);
 		}
 	}
 
@@ -1004,23 +1033,27 @@ DWORD CDecodeUtil::GetServiceListSIT(
 		this->serviceList[i].extInfo = new SERVICE_EXT_INFO;
 
 		for( size_t j=0; j<this->sitInfo->serviceLoopList[i]->descriptorList.size(); j++ ){
-			if( this->sitInfo->serviceLoopList[i]->descriptorList[j]->service != NULL ){
-				CServiceDesc* service = this->sitInfo->serviceLoopList[i]->descriptorList[j]->service;
+			if( this->sitInfo->serviceLoopList[i]->descriptorList[j]->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::service_descriptor ){
+				AribDescriptor::CDescriptor* service = this->sitInfo->serviceLoopList[i]->descriptorList[j];
 				CARIB8CharDecode arib;
 				string service_provider_name = "";
 				string service_name = "";
-				if( service->service_provider_name_length > 0 ){
-					arib.PSISI((const BYTE*)service->char_service_provider_name, service->service_provider_name_length, &service_provider_name);
+				const char* src;
+				DWORD srcSize;
+				src = service->GetStringOrEmpty(AribDescriptor::service_provider_name, &srcSize);
+				if( srcSize > 0 ){
+					arib.PSISI((const BYTE*)src, srcSize, &service_provider_name);
 				}
-				if( service->service_name_length > 0 ){
-					arib.PSISI((const BYTE*)service->char_service_name, service->service_name_length, &service_name);
+				src = service->GetStringOrEmpty(AribDescriptor::service_name, &srcSize);
+				if( srcSize > 0 ){
+					arib.PSISI((const BYTE*)src, srcSize, &service_name);
 				}
 				wstring service_provider_nameW = L"";
 				wstring service_nameW = L"";
 				AtoW(service_provider_name, service_provider_nameW);
 				AtoW(service_name, service_nameW);
 
-				this->serviceList[i].extInfo->service_type = service->service_type;
+				this->serviceList[i].extInfo->service_type = (BYTE)service->GetNumber(AribDescriptor::service_type);
 				if( service_provider_nameW.size() > 0 ){
 					this->serviceList[i].extInfo->service_provider_name = new WCHAR[service_provider_nameW.size()+1];
 					wcscpy_s(this->serviceList[i].extInfo->service_provider_name, service_provider_nameW.size()+1, service_provider_nameW.c_str());
@@ -1070,10 +1103,21 @@ DWORD CDecodeUtil::GetNowTime(
 	}else{
 		if( this->sitInfo != NULL ){
 			for( size_t i=0; i<this->sitInfo->descriptorList.size(); i++ ){
-				if( this->sitInfo->descriptorList[i]->partialTSTime != NULL ){
-					if( this->sitInfo->descriptorList[i]->partialTSTime->jst_time_flag == 1 ){
-						*time = this->sitInfo->descriptorList[i]->partialTSTime->jst_time;
-						return NO_ERR;
+				if( this->sitInfo->descriptorList[i]->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::partialTS_time_descriptor ){
+					if( this->sitInfo->descriptorList[i]->GetNumber(AribDescriptor::jst_time_flag) == 1 ){
+						DWORD timeBytesSize;
+						const BYTE* timeBytes = this->sitInfo->descriptorList[i]->GetBinary(AribDescriptor::jst_time, &timeBytesSize);
+						if( timeBytes != NULL && timeBytesSize >= 5 ){
+							DWORD mjd = timeBytes[0] << 8 | timeBytes[1];
+							_MJDtoSYSTEMTIME(mjd, time);
+							BYTE b = timeBytes[2];
+							time->wHour = (WORD)_BCDtoDWORD(&b, 1, 2);
+							b = timeBytes[3];
+							time->wMinute = (WORD)_BCDtoDWORD(&b, 1, 2);
+							b = timeBytes[4];
+							time->wSecond = (WORD)_BCDtoDWORD(&b, 1, 2);
+							return NO_ERR;
+						}
 					}
 				}
 			}

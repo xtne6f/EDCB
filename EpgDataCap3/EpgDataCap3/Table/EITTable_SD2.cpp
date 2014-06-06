@@ -2,7 +2,6 @@
 #include "EITTable_SD2.h"
 
 #include "../../../Common/EpgTimerUtil.h"
-#include "../Descriptor/Descriptor.h"
 
 CEITTable_SD2::CEITTable_SD2(void)
 {

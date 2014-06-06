@@ -2,7 +2,6 @@
 #include "SDTTTable.h"
 
 #include "../../../Common/EpgTimerUtil.h"
-#include "../Descriptor/Descriptor.h"
 
 CSDTTTable::CSDTTTable(void)
 {
@@ -84,9 +83,9 @@ BOOL CSDTTTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 
 			WORD descLength = item->content_description_length - item->schedule_description_length;
 			if( readSize+descLength <= (DWORD)section_length+3-4 && descLength > 0 ){
-				CDescriptor descriptor;
-				if( descriptor.Decode( data+readSize, descLength, &item->descriptorList, NULL ) == FALSE ){
+				if( AribDescriptor::CreateDescriptors( data+readSize, descLength, &item->descriptorList, NULL ) == FALSE ){
 					_OutputDebugString( L"++CSDTTTable:: descriptor err" );
+					SAFE_DELETE(item);
 					return FALSE;
 				}
 				readSize+=descLength;

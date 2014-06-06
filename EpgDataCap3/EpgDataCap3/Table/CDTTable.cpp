@@ -1,8 +1,6 @@
 #include "StdAfx.h"
 #include "CDTTable.h"
 
-#include "../Descriptor/Descriptor.h"
-
 CCDTTable::CCDTTable(void)
 {
 	data_module_byteSize = 0;
@@ -53,8 +51,7 @@ BOOL CCDTTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 		readSize += 10;
 
 		if( readSize+descriptors_loop_length <= (DWORD)section_length+3-4 && descriptors_loop_length > 0 ){
-			CDescriptor descriptor;
-			if( descriptor.Decode( data+readSize, descriptors_loop_length, &descriptorList, NULL ) == FALSE ){
+			if( AribDescriptor::CreateDescriptors( data+readSize, descriptors_loop_length, &descriptorList, NULL ) == FALSE ){
 				_OutputDebugString( L"++CCDTTable:: descriptor err" );
 				return FALSE;
 			}

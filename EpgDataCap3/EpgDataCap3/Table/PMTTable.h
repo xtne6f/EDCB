@@ -40,7 +40,7 @@ TS_program_map_section(){
 */
 
 #include "../../../Common/Util.h"
-#include "../Descriptor/DescriptorDef.h"
+#include "../AribDescriptor.h"
 #include "PSITable.h"
 
 class CPMTTable : public CPSITable
@@ -50,7 +50,7 @@ public:
 		BYTE stream_type;
 		WORD elementary_PID;
 		WORD ES_info_length;
-		vector<DESCRIPTOR_DATA*> descriptorList;
+		vector<AribDescriptor::CDescriptor*> descriptorList;
 		~_ES_INFO_DATA(void){
 			for( size_t i=0; i<descriptorList.size(); i++ ){
 				SAFE_DELETE(descriptorList[i]);
@@ -65,7 +65,7 @@ public:
 	BYTE last_section_number;
 	WORD PCR_PID;
 	WORD program_info_length;
-	vector<DESCRIPTOR_DATA*> descriptorList;
+	vector<AribDescriptor::CDescriptor*> descriptorList;
 	vector<ES_INFO_DATA*> ESInfoList;
 
 public:

@@ -1,8 +1,6 @@
 #include "StdAfx.h"
 #include "CATTable.h"
 
-#include "../Descriptor/Descriptor.h"
-
 CCATTable::CCATTable(void)
 {
 }
@@ -47,8 +45,7 @@ BOOL CCATTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 		if( readSize <= (DWORD)section_length+3-4 ){
 			DWORD descriptorSize = (DWORD)(section_length+3-4) - readSize;
 			if( descriptorSize > 0 ){
-				CDescriptor descriptor;
-				if( descriptor.Decode( data+readSize, descriptorSize, &descriptorList, NULL ) == FALSE ){
+				if( AribDescriptor::CreateDescriptors( data+readSize, descriptorSize, &descriptorList, NULL ) == FALSE ){
 					_OutputDebugString( L"++CCATTable:: descriptor err" );
 					return FALSE;
 				}

@@ -104,7 +104,7 @@ CRC_32（CRC）：これは付録B で定義するデコーダにおいて、セクション全体を処理し
 */
 
 #include "../../../Common/Util.h"
-#include "../Descriptor/DescriptorDef.h"
+#include "../AribDescriptor.h"
 #include "PSITable.h"
 
 class CNITTable : public CPSITable
@@ -114,7 +114,7 @@ public:
 		WORD transport_stream_id;
 		WORD original_network_id;
 		WORD transport_descriptors_length;
-		vector<DESCRIPTOR_DATA*> descriptorList;
+		vector<AribDescriptor::CDescriptor*> descriptorList;
 		~_TS_INFO_DATA(void){
 			for( size_t i=0; i<descriptorList.size(); i++ ){
 				SAFE_DELETE(descriptorList[i]);
@@ -128,7 +128,7 @@ public:
 	BYTE section_number;
 	BYTE last_section_number;
 	WORD network_descriptors_length;
-	vector<DESCRIPTOR_DATA*> descriptorList;
+	vector<AribDescriptor::CDescriptor*> descriptorList;
 	WORD transport_stream_loop_length;
 	vector<TS_INFO_DATA*> TSInfoList;
 
@@ -140,5 +140,5 @@ public:
 protected:
 	void Clear();
 
-	BOOL SDDecode( BYTE* data, DWORD dataSize, vector<DESCRIPTOR_DATA*>* descriptorList, DWORD* decodeReadSize );
+	BOOL SDDecode( BYTE* data, DWORD dataSize, vector<AribDescriptor::CDescriptor*>* descriptorList, DWORD* decodeReadSize );
 };

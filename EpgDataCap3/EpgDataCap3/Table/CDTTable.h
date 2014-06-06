@@ -80,7 +80,7 @@ CRC_32（CRC）：これはARIB STD-B10 の付録B で定義するデコーダにおいて、セクション
 */
 
 #include "../../../Common/Util.h"
-#include "../Descriptor/DescriptorDef.h"
+#include "../AribDescriptor.h"
 #include "PSITable.h"
 
 class CCDTTable : public CPSITable
@@ -94,7 +94,7 @@ public:
 	WORD original_network_id;
 	BYTE data_type;
 	WORD descriptors_loop_length;
-	vector<DESCRIPTOR_DATA*> descriptorList;
+	vector<AribDescriptor::CDescriptor*> descriptorList;
 	WORD data_module_byteSize;
 	BYTE* data_module_byte;
 

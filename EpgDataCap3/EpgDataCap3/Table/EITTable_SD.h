@@ -123,7 +123,7 @@ CRC_32（CRC）：これは付録B で定義するデコーダにおいて、セクション全体を処理し
 */
 
 #include "../../../Common/Util.h"
-#include "../Descriptor/DescriptorDef.h"
+#include "../AribDescriptor.h"
 #include "PSITable.h"
 
 class CEITTable_SD : public CPSITable
@@ -140,7 +140,7 @@ public:
 		BYTE running_status;
 		BYTE free_CA_mode;
 		WORD descriptors_loop_length;
-		vector<DESCRIPTOR_DATA*> descriptorList;
+		vector<AribDescriptor::CDescriptor*> descriptorList;
 		~_EVENT_INFO_DATA(void){
 			for( size_t i=0; i<descriptorList.size(); i++ ){
 				SAFE_DELETE(descriptorList[i]);
@@ -165,6 +165,6 @@ public:
 protected:
 	void Clear();
 
-	BOOL SDDecode( BYTE* data, DWORD dataSize, vector<DESCRIPTOR_DATA*>* descriptorList, DWORD* decodeReadSize );
+	BOOL SDDecode( BYTE* data, DWORD dataSize, vector<AribDescriptor::CDescriptor*>* descriptorList, DWORD* decodeReadSize );
 
 };

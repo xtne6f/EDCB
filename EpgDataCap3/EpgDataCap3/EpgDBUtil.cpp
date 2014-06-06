@@ -177,24 +177,25 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, CEITTable* eit)
 		BOOL checkExtFlag = FALSE;
 		BOOL checkAudioFlag = FALSE;
 		for( size_t j=0; j<eitEventInfo->descriptorList.size(); j++ ){
-			if( eitEventInfo->descriptorList[j]->shortEvent != NULL ){
-				AddShortEvent( eit, eventInfo, eitEventInfo->descriptorList[j]->shortEvent );
-			}else if( eitEventInfo->descriptorList[j]->extendedEvent != NULL && checkExtFlag == FALSE){
+			DWORD tag = eitEventInfo->descriptorList[j]->GetNumber(AribDescriptor::descriptor_tag);
+			if( tag == AribDescriptor::short_event_descriptor ){
+				AddShortEvent( eit, eventInfo, eitEventInfo->descriptorList[j] );
+			}else if( tag == AribDescriptor::extended_event_descriptor && checkExtFlag == FALSE){
 				AddExtEvent(eit, eventInfo, &eitEventInfo->descriptorList );
 				checkExtFlag = TRUE;
-			}else if( eitEventInfo->descriptorList[j]->content != NULL ){
-				AddContent( eit, eventInfo, eitEventInfo->descriptorList[j]->content );
-			}else if( eitEventInfo->descriptorList[j]->component != NULL ){
-				AddComponent( eit, eventInfo, eitEventInfo->descriptorList[j]->component );
-			}else if( eitEventInfo->descriptorList[j]->audioComponent != NULL && checkAudioFlag == FALSE ){
+			}else if( tag == AribDescriptor::content_descriptor ){
+				AddContent( eit, eventInfo, eitEventInfo->descriptorList[j] );
+			}else if( tag == AribDescriptor::component_descriptor ){
+				AddComponent( eit, eventInfo, eitEventInfo->descriptorList[j] );
+			}else if( tag == AribDescriptor::audio_component_descriptor && checkAudioFlag == FALSE ){
 				AddAudioComponent( eit, eventInfo, &eitEventInfo->descriptorList );
 				checkAudioFlag = TRUE;
-			}else if( eitEventInfo->descriptorList[j]->eventGroup != NULL ){
-				if( eitEventInfo->descriptorList[j]->eventGroup->group_type == 0x01 ){
-					AddEventGroup( eit, eventInfo, eitEventInfo->descriptorList[j]->eventGroup );
-				}else if( eitEventInfo->descriptorList[j]->eventGroup->group_type == 0x02 ||
-					eitEventInfo->descriptorList[j]->eventGroup->group_type == 0x04){
-					AddEventRelay( eit, eventInfo, eitEventInfo->descriptorList[j]->eventGroup );
+			}else if( tag == AribDescriptor::event_group_descriptor ){
+				if( eitEventInfo->descriptorList[j]->GetNumber(AribDescriptor::group_type) == 0x01 ){
+					AddEventGroup( eit, eventInfo, eitEventInfo->descriptorList[j] );
+				}else if( eitEventInfo->descriptorList[j]->GetNumber(AribDescriptor::group_type) == 0x02 ||
+					eitEventInfo->descriptorList[j]->GetNumber(AribDescriptor::group_type) == 0x04){
+					AddEventRelay( eit, eventInfo, eitEventInfo->descriptorList[j] );
 				}
 			}
 		}
@@ -402,16 +403,17 @@ BOOL CEpgDBUtil::AddEIT_SD(WORD PID, CEITTable_SD* eit)
 		BOOL checkExtFlag = FALSE;
 		BOOL checkAudioFlag = FALSE;
 		for( size_t j=0; j<eitEventInfo->descriptorList.size(); j++ ){
-			if( eitEventInfo->descriptorList[j]->shortEvent != NULL ){
-				AddShortEvent_SD( eit, eventInfo, eitEventInfo->descriptorList[j]->shortEvent );
-			}else if( eitEventInfo->descriptorList[j]->extendedEvent != NULL && checkExtFlag == FALSE){
+			DWORD tag = eitEventInfo->descriptorList[j]->GetNumber(AribDescriptor::descriptor_tag);
+			if( tag == AribDescriptor::short_event_descriptor ){
+				AddShortEvent_SD( eit, eventInfo, eitEventInfo->descriptorList[j] );
+			}else if( tag == AribDescriptor::extended_event_descriptor && checkExtFlag == FALSE){
 				AddExtEvent_SD(eit, eventInfo, &eitEventInfo->descriptorList );
 				checkExtFlag = TRUE;
-			}else if( eitEventInfo->descriptorList[j]->content != NULL ){
-				AddContent_SD( eit, eventInfo, eitEventInfo->descriptorList[j]->content );
-			}else if( eitEventInfo->descriptorList[j]->component != NULL ){
-				AddComponent_SD( eit, eventInfo, eitEventInfo->descriptorList[j]->component );
-			}else if( eitEventInfo->descriptorList[j]->audioComponent != NULL && checkAudioFlag == FALSE ){
+			}else if( tag == AribDescriptor::content_descriptor ){
+				AddContent_SD( eit, eventInfo, eitEventInfo->descriptorList[j] );
+			}else if( tag == AribDescriptor::component_descriptor ){
+				AddComponent_SD( eit, eventInfo, eitEventInfo->descriptorList[j] );
+			}else if( tag == AribDescriptor::audio_component_descriptor && checkAudioFlag == FALSE ){
 				AddAudioComponent_SD( eit, eventInfo, &eitEventInfo->descriptorList );
 				checkAudioFlag = TRUE;
 			//}else if( eitEventInfo->descriptorList[j]->eventGroup != NULL ){
@@ -538,7 +540,7 @@ BOOL CEpgDBUtil::AddEIT_SD(WORD PID, CEITTable_SD* eit)
 	return TRUE;
 }
 
-BOOL CEpgDBUtil::AddShortEvent(CEITTable* eit, EVENT_INFO* eventInfo, CShortEventDesc* shortEvent)
+BOOL CEpgDBUtil::AddShortEvent(CEITTable* eit, EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* shortEvent)
 {
 	BOOL updateFlag = FALSE;
 	if( eventInfo->shortInfo == NULL ){
@@ -555,8 +557,12 @@ BOOL CEpgDBUtil::AddShortEvent(CEITTable* eit, EVENT_INFO* eventInfo, CShortEven
 		CARIB8CharDecode arib;
 		string event_name = "";
 		string text_char = "";
-		arib.PSISI((const BYTE*)shortEvent->event_name_char, shortEvent->event_name_length, &event_name);
-		arib.PSISI((const BYTE*)shortEvent->text_char, shortEvent->text_length, &text_char);
+		const char* src;
+		DWORD srcSize;
+		src = shortEvent->GetStringOrEmpty(AribDescriptor::event_name_char, &srcSize);
+		arib.PSISI((const BYTE*)src, srcSize, &event_name);
+		src = shortEvent->GetStringOrEmpty(AribDescriptor::text_char, &srcSize);
+		arib.PSISI((const BYTE*)src, srcSize, &text_char);
 
 		AtoW(event_name, eventInfo->shortInfo->event_name);
 		AtoW(text_char, eventInfo->shortInfo->text_char);
@@ -565,7 +571,7 @@ BOOL CEpgDBUtil::AddShortEvent(CEITTable* eit, EVENT_INFO* eventInfo, CShortEven
 	return updateFlag;
 }
 
-BOOL CEpgDBUtil::AddShortEvent_SD(CEITTable_SD* eit, EVENT_INFO* eventInfo, CShortEventDesc* shortEvent)
+BOOL CEpgDBUtil::AddShortEvent_SD(CEITTable_SD* eit, EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* shortEvent)
 {
 	BOOL updateFlag = FALSE;
 	if( eventInfo->shortInfo == NULL ){
@@ -582,8 +588,12 @@ BOOL CEpgDBUtil::AddShortEvent_SD(CEITTable_SD* eit, EVENT_INFO* eventInfo, CSho
 		CARIB8CharDecode arib;
 		string event_name = "";
 		string text_char = "";
-		arib.PSISI((const BYTE*)shortEvent->event_name_char, shortEvent->event_name_length, &event_name);
-		arib.PSISI((const BYTE*)shortEvent->text_char, shortEvent->text_length, &text_char);
+		const char* src;
+		DWORD srcSize;
+		src = shortEvent->GetStringOrEmpty(AribDescriptor::event_name_char, &srcSize);
+		arib.PSISI((const BYTE*)src, srcSize, &event_name);
+		src = shortEvent->GetStringOrEmpty(AribDescriptor::text_char, &srcSize);
+		arib.PSISI((const BYTE*)src, srcSize, &text_char);
 
 		AtoW(event_name, eventInfo->shortInfo->event_name);
 		AtoW(text_char, eventInfo->shortInfo->text_char);
@@ -592,7 +602,7 @@ BOOL CEpgDBUtil::AddShortEvent_SD(CEITTable_SD* eit, EVENT_INFO* eventInfo, CSho
 	return updateFlag;
 }
 
-BOOL CEpgDBUtil::AddExtEvent(CEITTable* eit, EVENT_INFO* eventInfo, vector<DESCRIPTOR_DATA*>* descriptorList)
+BOOL CEpgDBUtil::AddExtEvent(CEITTable* eit, EVENT_INFO* eventInfo, vector<AribDescriptor::CDescriptor*>* descriptorList)
 {
 	BOOL updateFlag = FALSE;
 	if( eventInfo->extInfo == NULL ){
@@ -616,46 +626,52 @@ BOOL CEpgDBUtil::AddExtEvent(CEITTable* eit, EVENT_INFO* eventInfo, vector<DESCR
 //		string textBuff = "";
 
 		for( size_t i=0; i<descriptorList->size(); i++ ){
-			if( (*descriptorList)[i]->extendedEvent != NULL ){
-				CExtendedEventDesc* extEvent = (*descriptorList)[i]->extendedEvent;
-				for( size_t j=0; j<extEvent->itemList.size(); j++ ){
-					CExtendedEventDesc::ITEM_DATA* item = extEvent->itemList[j];
-					if( item->item_description_length > 0 ){
-						//if( textBuff.size() > 0 ){
-						//	string buff = "";
-						//	arib.PSISI((const BYTE*)textBuff.c_str(), textBuff.length(), &buff);
-						//	buff += "\r\n";
-						//	extendText += buff;
-						//	textBuff = "";
-						//}
-						if( itemBuff.size() > 0 ){
-							string buff = "";
-							arib.PSISI((const BYTE*)itemBuff.c_str(), (DWORD)itemBuff.length(), &buff);
-							buff += "\r\n";
-							extendText += buff;
-							itemBuff = "";
-						}
+			if( (*descriptorList)[i]->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::extended_event_descriptor ){
+				AribDescriptor::CDescriptor* extEvent = (*descriptorList)[i];
+				if( extEvent->EnterLoop() ){
+					for( DWORD j=0; extEvent->SetLoopIndex(j); j++ ){
+						const char* src;
+						DWORD srcSize;
+						src = extEvent->GetStringOrEmpty(AribDescriptor::item_description_char, &srcSize);
+						if( srcSize > 0 ){
+							//if( textBuff.size() > 0 ){
+							//	string buff = "";
+							//	arib.PSISI((const BYTE*)textBuff.c_str(), textBuff.length(), &buff);
+							//	buff += "\r\n";
+							//	extendText += buff;
+							//	textBuff = "";
+							//}
+							if( itemBuff.size() > 0 ){
+								string buff = "";
+								arib.PSISI((const BYTE*)itemBuff.c_str(), (DWORD)itemBuff.length(), &buff);
+								buff += "\r\n";
+								extendText += buff;
+								itemBuff = "";
+							}
 
-						itemDescBuff += item->item_description_char;
-					}
-					if( item->item_length > 0 ){
-						//if( textBuff.size() > 0 ){
-						//	string buff = "";
-						//	arib.PSISI((const BYTE*)textBuff.c_str(), textBuff.length(), &buff);
-						//	buff += "\r\n";
-						//	extendText += buff;
-						//	textBuff = "";
-						//}
-						if( itemDescBuff.size() > 0 ){
-							string buff = "";
-							arib.PSISI((const BYTE*)itemDescBuff.c_str(), (DWORD)itemDescBuff.length(), &buff);
-							buff += "\r\n";
-							extendText += buff;
-							itemDescBuff = "";
+							itemDescBuff += src;
 						}
+						src = extEvent->GetStringOrEmpty(AribDescriptor::item_char, &srcSize);
+						if( srcSize > 0 ){
+							//if( textBuff.size() > 0 ){
+							//	string buff = "";
+							//	arib.PSISI((const BYTE*)textBuff.c_str(), textBuff.length(), &buff);
+							//	buff += "\r\n";
+							//	extendText += buff;
+							//	textBuff = "";
+							//}
+							if( itemDescBuff.size() > 0 ){
+								string buff = "";
+								arib.PSISI((const BYTE*)itemDescBuff.c_str(), (DWORD)itemDescBuff.length(), &buff);
+								buff += "\r\n";
+								extendText += buff;
+								itemDescBuff = "";
+							}
 
-						itemBuff += item->item_char;
+							itemBuff += src;
+						}
 					}
+					extEvent->LeaveLoop();
 				}
 				//if( extEvent->text_length > 0 ){
 				//	if( itemDescBuff.size() > 0 ){
@@ -706,7 +722,7 @@ BOOL CEpgDBUtil::AddExtEvent(CEITTable* eit, EVENT_INFO* eventInfo, vector<DESCR
 	return updateFlag;
 }
 
-BOOL CEpgDBUtil::AddExtEvent_SD(CEITTable_SD* eit, EVENT_INFO* eventInfo, vector<DESCRIPTOR_DATA*>* descriptorList)
+BOOL CEpgDBUtil::AddExtEvent_SD(CEITTable_SD* eit, EVENT_INFO* eventInfo, vector<AribDescriptor::CDescriptor*>* descriptorList)
 {
 	BOOL updateFlag = FALSE;
 	if( eventInfo->extInfo == NULL ){
@@ -730,46 +746,52 @@ BOOL CEpgDBUtil::AddExtEvent_SD(CEITTable_SD* eit, EVENT_INFO* eventInfo, vector
 //		string textBuff = "";
 
 		for( size_t i=0; i<descriptorList->size(); i++ ){
-			if( (*descriptorList)[i]->extendedEvent != NULL ){
-				CExtendedEventDesc* extEvent = (*descriptorList)[i]->extendedEvent;
-				for( size_t j=0; j<extEvent->itemList.size(); j++ ){
-					CExtendedEventDesc::ITEM_DATA* item = extEvent->itemList[j];
-					if( item->item_description_length > 0 ){
-						//if( textBuff.size() > 0 ){
-						//	string buff = "";
-						//	arib.PSISI((const BYTE*)textBuff.c_str(), textBuff.length(), &buff);
-						//	buff += "\r\n";
-						//	extendText += buff;
-						//	textBuff = "";
-						//}
-						if( itemBuff.size() > 0 ){
-							string buff = "";
-							arib.PSISI((const BYTE*)itemBuff.c_str(), (DWORD)itemBuff.length(), &buff);
-							buff += "\r\n";
-							extendText += buff;
-							itemBuff = "";
-						}
+			if( (*descriptorList)[i]->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::extended_event_descriptor ){
+				AribDescriptor::CDescriptor* extEvent = (*descriptorList)[i];
+				if( extEvent->EnterLoop() ){
+					for( DWORD j=0; extEvent->SetLoopIndex(j); j++ ){
+						const char* src;
+						DWORD srcSize;
+						src = extEvent->GetStringOrEmpty(AribDescriptor::item_description_char, &srcSize);
+						if( srcSize > 0 ){
+							//if( textBuff.size() > 0 ){
+							//	string buff = "";
+							//	arib.PSISI((const BYTE*)textBuff.c_str(), textBuff.length(), &buff);
+							//	buff += "\r\n";
+							//	extendText += buff;
+							//	textBuff = "";
+							//}
+							if( itemBuff.size() > 0 ){
+								string buff = "";
+								arib.PSISI((const BYTE*)itemBuff.c_str(), (DWORD)itemBuff.length(), &buff);
+								buff += "\r\n";
+								extendText += buff;
+								itemBuff = "";
+							}
 
-						itemDescBuff += item->item_description_char;
-					}
-					if( item->item_length > 0 ){
-						//if( textBuff.size() > 0 ){
-						//	string buff = "";
-						//	arib.PSISI((const BYTE*)textBuff.c_str(), textBuff.length(), &buff);
-						//	buff += "\r\n";
-						//	extendText += buff;
-						//	textBuff = "";
-						//}
-						if( itemDescBuff.size() > 0 ){
-							string buff = "";
-							arib.PSISI((const BYTE*)itemDescBuff.c_str(), (DWORD)itemDescBuff.length(), &buff);
-							buff += "\r\n";
-							extendText += buff;
-							itemDescBuff = "";
+							itemDescBuff += src;
 						}
+						src = extEvent->GetStringOrEmpty(AribDescriptor::item_char, &srcSize);
+						if( srcSize > 0 ){
+							//if( textBuff.size() > 0 ){
+							//	string buff = "";
+							//	arib.PSISI((const BYTE*)textBuff.c_str(), textBuff.length(), &buff);
+							//	buff += "\r\n";
+							//	extendText += buff;
+							//	textBuff = "";
+							//}
+							if( itemDescBuff.size() > 0 ){
+								string buff = "";
+								arib.PSISI((const BYTE*)itemDescBuff.c_str(), (DWORD)itemDescBuff.length(), &buff);
+								buff += "\r\n";
+								extendText += buff;
+								itemDescBuff = "";
+							}
 
-						itemBuff += item->item_char;
+							itemBuff += src;
+						}
 					}
+					extEvent->LeaveLoop();
 				}
 				//if( extEvent->text_length > 0 ){
 				//	if( itemDescBuff.size() > 0 ){
@@ -820,7 +842,7 @@ BOOL CEpgDBUtil::AddExtEvent_SD(CEITTable_SD* eit, EVENT_INFO* eventInfo, vector
 	return updateFlag;
 }
 
-BOOL CEpgDBUtil::AddContent(CEITTable* eit, EVENT_INFO* eventInfo, CContentDesc* content)
+BOOL CEpgDBUtil::AddContent(CEITTable* eit, EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* content)
 {
 	BOOL updateFlag = FALSE;
 	if( eventInfo->contentInfo == NULL ){
@@ -834,13 +856,24 @@ BOOL CEpgDBUtil::AddContent(CEITTable* eit, EVENT_INFO* eventInfo, CContentDesc*
 		eventInfo->contentInfo->tableID = eit->table_id;
 		eventInfo->contentInfo->version = eit->version_number;
 
-		eventInfo->contentInfo->nibbleList = content->nibbleList;
+		eventInfo->contentInfo->nibbleList.clear();
+		if( content->EnterLoop() ){
+			for( DWORD i=0; content->SetLoopIndex(i); i++ ){
+				NIBBLE_DATA nibble;
+				nibble.content_nibble_level_1 = (BYTE)content->GetNumber(AribDescriptor::content_nibble_level_1);
+				nibble.content_nibble_level_2 = (BYTE)content->GetNumber(AribDescriptor::content_nibble_level_2);
+				nibble.user_nibble_1 = (BYTE)content->GetNumber(AribDescriptor::user_nibble_1);
+				nibble.user_nibble_2 = (BYTE)content->GetNumber(AribDescriptor::user_nibble_2);
+				eventInfo->contentInfo->nibbleList.push_back(nibble);
+			}
+			content->LeaveLoop();
+		}
 	}
 
 	return updateFlag;
 }
 
-BOOL CEpgDBUtil::AddContent_SD(CEITTable_SD* eit, EVENT_INFO* eventInfo, CContentDesc* content)
+BOOL CEpgDBUtil::AddContent_SD(CEITTable_SD* eit, EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* content)
 {
 	BOOL updateFlag = FALSE;
 	if( eventInfo->contentInfo == NULL ){
@@ -854,13 +887,24 @@ BOOL CEpgDBUtil::AddContent_SD(CEITTable_SD* eit, EVENT_INFO* eventInfo, CConten
 		eventInfo->contentInfo->tableID = eit->table_id;
 		eventInfo->contentInfo->version = eit->version_number;
 
-		eventInfo->contentInfo->nibbleList = content->nibbleList;
+		eventInfo->contentInfo->nibbleList.clear();
+		if( content->EnterLoop() ){
+			for( DWORD i=0; content->SetLoopIndex(i); i++ ){
+				NIBBLE_DATA nibble;
+				nibble.content_nibble_level_1 = (BYTE)content->GetNumber(AribDescriptor::content_nibble_level_1);
+				nibble.content_nibble_level_2 = (BYTE)content->GetNumber(AribDescriptor::content_nibble_level_2);
+				nibble.user_nibble_1 = (BYTE)content->GetNumber(AribDescriptor::user_nibble_1);
+				nibble.user_nibble_2 = (BYTE)content->GetNumber(AribDescriptor::user_nibble_2);
+				eventInfo->contentInfo->nibbleList.push_back(nibble);
+			}
+			content->LeaveLoop();
+		}
 	}
 
 	return updateFlag;
 }
 
-BOOL CEpgDBUtil::AddComponent(CEITTable* eit, EVENT_INFO* eventInfo, CComponentDesc* component)
+BOOL CEpgDBUtil::AddComponent(CEITTable* eit, EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* component)
 {
 	BOOL updateFlag = FALSE;
 	if( eventInfo->componentInfo == NULL ){
@@ -874,14 +918,16 @@ BOOL CEpgDBUtil::AddComponent(CEITTable* eit, EVENT_INFO* eventInfo, CComponentD
 		eventInfo->componentInfo->tableID = eit->table_id;
 		eventInfo->componentInfo->version = eit->version_number;
 
-		eventInfo->componentInfo->stream_content = component->stream_content;
-		eventInfo->componentInfo->component_type = component->component_type;
-		eventInfo->componentInfo->component_tag = component->component_tag;
+		eventInfo->componentInfo->stream_content = (BYTE)component->GetNumber(AribDescriptor::stream_content);
+		eventInfo->componentInfo->component_type = (BYTE)component->GetNumber(AribDescriptor::component_type);
+		eventInfo->componentInfo->component_tag = (BYTE)component->GetNumber(AribDescriptor::component_tag);
 
 		CARIB8CharDecode arib;
 		string text_char = "";
-		if( component->text_charLength > 0 ){
-			arib.PSISI((const BYTE*)component->text_char, component->text_charLength, &text_char);
+		DWORD srcSize;
+		const char* src = component->GetStringOrEmpty(AribDescriptor::text_char, &srcSize);
+		if( srcSize > 0 ){
+			arib.PSISI((const BYTE*)src, srcSize, &text_char);
 
 			AtoW(text_char, eventInfo->componentInfo->text_char);
 		}
@@ -891,7 +937,7 @@ BOOL CEpgDBUtil::AddComponent(CEITTable* eit, EVENT_INFO* eventInfo, CComponentD
 	return updateFlag;
 }
 
-BOOL CEpgDBUtil::AddComponent_SD(CEITTable_SD* eit, EVENT_INFO* eventInfo, CComponentDesc* component)
+BOOL CEpgDBUtil::AddComponent_SD(CEITTable_SD* eit, EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* component)
 {
 	BOOL updateFlag = FALSE;
 	if( eventInfo->componentInfo == NULL ){
@@ -905,14 +951,16 @@ BOOL CEpgDBUtil::AddComponent_SD(CEITTable_SD* eit, EVENT_INFO* eventInfo, CComp
 		eventInfo->componentInfo->tableID = eit->table_id;
 		eventInfo->componentInfo->version = eit->version_number;
 
-		eventInfo->componentInfo->stream_content = component->stream_content;
-		eventInfo->componentInfo->component_type = component->component_type;
-		eventInfo->componentInfo->component_tag = component->component_tag;
+		eventInfo->componentInfo->stream_content = (BYTE)component->GetNumber(AribDescriptor::stream_content);
+		eventInfo->componentInfo->component_type = (BYTE)component->GetNumber(AribDescriptor::component_type);
+		eventInfo->componentInfo->component_tag = (BYTE)component->GetNumber(AribDescriptor::component_tag);
 
 		CARIB8CharDecode arib;
 		string text_char = "";
-		if( component->text_charLength > 0 ){
-			arib.PSISI((const BYTE*)component->text_char, component->text_charLength, &text_char);
+		DWORD srcSize;
+		const char* src = component->GetStringOrEmpty(AribDescriptor::text_char, &srcSize);
+		if( srcSize > 0 ){
+			arib.PSISI((const BYTE*)src, srcSize, &text_char);
 
 			AtoW(text_char, eventInfo->componentInfo->text_char);
 		}
@@ -922,7 +970,7 @@ BOOL CEpgDBUtil::AddComponent_SD(CEITTable_SD* eit, EVENT_INFO* eventInfo, CComp
 	return updateFlag;
 }
 
-BOOL CEpgDBUtil::AddAudioComponent(CEITTable* eit, EVENT_INFO* eventInfo, vector<DESCRIPTOR_DATA*>* descriptorList)
+BOOL CEpgDBUtil::AddAudioComponent(CEITTable* eit, EVENT_INFO* eventInfo, vector<AribDescriptor::CDescriptor*>* descriptorList)
 {
 	BOOL updateFlag = FALSE;
 	if( eventInfo->audioInfo == NULL ){
@@ -938,26 +986,28 @@ BOOL CEpgDBUtil::AddAudioComponent(CEITTable* eit, EVENT_INFO* eventInfo, vector
 		eventInfo->audioInfo->componentList.clear();
 
 		for( size_t i=0; i<descriptorList->size(); i++ ){
-			if( (*descriptorList)[i]->audioComponent != NULL ){
-				CAudioComponentDesc* audioComponent = (*descriptorList)[i]->audioComponent;
+			if( (*descriptorList)[i]->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::audio_component_descriptor ){
+				AribDescriptor::CDescriptor* audioComponent = (*descriptorList)[i];
 				AUDIO_COMPONENT_INFO_DATA item;
 
-				item.stream_content = audioComponent->stream_content;
-				item.component_type = audioComponent->component_type;
-				item.component_tag = audioComponent->component_tag;
+				item.stream_content = (BYTE)audioComponent->GetNumber(AribDescriptor::stream_content);
+				item.component_type = (BYTE)audioComponent->GetNumber(AribDescriptor::component_type);
+				item.component_tag = (BYTE)audioComponent->GetNumber(AribDescriptor::component_tag);
 
-				item.stream_type = audioComponent->stream_type;
-				item.simulcast_group_tag = audioComponent->simulcast_group_tag;
-				item.ES_multi_lingual_flag = audioComponent->ES_multi_lingual_flag;
-				item.main_component_flag = audioComponent->main_component_flag;
-				item.quality_indicator = audioComponent->quality_indicator;
-				item.sampling_rate = audioComponent->sampling_rate;
+				item.stream_type = (BYTE)audioComponent->GetNumber(AribDescriptor::stream_type);
+				item.simulcast_group_tag = (BYTE)audioComponent->GetNumber(AribDescriptor::simulcast_group_tag);
+				item.ES_multi_lingual_flag = (BYTE)audioComponent->GetNumber(AribDescriptor::ES_multi_lingual_flag);
+				item.main_component_flag = (BYTE)audioComponent->GetNumber(AribDescriptor::main_component_flag);
+				item.quality_indicator = (BYTE)audioComponent->GetNumber(AribDescriptor::quality_indicator);
+				item.sampling_rate = (BYTE)audioComponent->GetNumber(AribDescriptor::sampling_rate);
 
 
 				CARIB8CharDecode arib;
 				string text_char = "";
-				if( audioComponent->text_charLength > 0 ){
-					arib.PSISI((const BYTE*)audioComponent->text_char, audioComponent->text_charLength, &text_char);
+				DWORD srcSize;
+				const char* src = audioComponent->GetStringOrEmpty(AribDescriptor::text_char, &srcSize);
+				if( srcSize > 0 ){
+					arib.PSISI((const BYTE*)src, srcSize, &text_char);
 
 					AtoW(text_char, item.text_char);
 				}
@@ -971,7 +1021,7 @@ BOOL CEpgDBUtil::AddAudioComponent(CEITTable* eit, EVENT_INFO* eventInfo, vector
 	return updateFlag;
 }
 
-BOOL CEpgDBUtil::AddAudioComponent_SD(CEITTable_SD* eit, EVENT_INFO* eventInfo, vector<DESCRIPTOR_DATA*>* descriptorList)
+BOOL CEpgDBUtil::AddAudioComponent_SD(CEITTable_SD* eit, EVENT_INFO* eventInfo, vector<AribDescriptor::CDescriptor*>* descriptorList)
 {
 	BOOL updateFlag = FALSE;
 	if( eventInfo->audioInfo == NULL ){
@@ -987,26 +1037,28 @@ BOOL CEpgDBUtil::AddAudioComponent_SD(CEITTable_SD* eit, EVENT_INFO* eventInfo, 
 		eventInfo->audioInfo->componentList.clear();
 
 		for( size_t i=0; i<descriptorList->size(); i++ ){
-			if( (*descriptorList)[i]->audioComponent != NULL ){
-				CAudioComponentDesc* audioComponent = (*descriptorList)[i]->audioComponent;
+			if( (*descriptorList)[i]->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::audio_component_descriptor ){
+				AribDescriptor::CDescriptor* audioComponent = (*descriptorList)[i];
 				AUDIO_COMPONENT_INFO_DATA item;
 
-				item.stream_content = audioComponent->stream_content;
-				item.component_type = audioComponent->component_type;
-				item.component_tag = audioComponent->component_tag;
+				item.stream_content = (BYTE)audioComponent->GetNumber(AribDescriptor::stream_content);
+				item.component_type = (BYTE)audioComponent->GetNumber(AribDescriptor::component_type);
+				item.component_tag = (BYTE)audioComponent->GetNumber(AribDescriptor::component_tag);
 
-				item.stream_type = audioComponent->stream_type;
-				item.simulcast_group_tag = audioComponent->simulcast_group_tag;
-				item.ES_multi_lingual_flag = audioComponent->ES_multi_lingual_flag;
-				item.main_component_flag = audioComponent->main_component_flag;
-				item.quality_indicator = audioComponent->quality_indicator;
-				item.sampling_rate = audioComponent->sampling_rate;
+				item.stream_type = (BYTE)audioComponent->GetNumber(AribDescriptor::stream_type);
+				item.simulcast_group_tag = (BYTE)audioComponent->GetNumber(AribDescriptor::simulcast_group_tag);
+				item.ES_multi_lingual_flag = (BYTE)audioComponent->GetNumber(AribDescriptor::ES_multi_lingual_flag);
+				item.main_component_flag = (BYTE)audioComponent->GetNumber(AribDescriptor::main_component_flag);
+				item.quality_indicator = (BYTE)audioComponent->GetNumber(AribDescriptor::quality_indicator);
+				item.sampling_rate = (BYTE)audioComponent->GetNumber(AribDescriptor::sampling_rate);
 
 
 				CARIB8CharDecode arib;
 				string text_char = "";
-				if( audioComponent->text_charLength > 0 ){
-					arib.PSISI((const BYTE*)audioComponent->text_char, audioComponent->text_charLength, &text_char);
+				DWORD srcSize;
+				const char* src = audioComponent->GetStringOrEmpty(AribDescriptor::text_char, &srcSize);
+				if( srcSize > 0 ){
+					arib.PSISI((const BYTE*)src, srcSize, &text_char);
 
 					AtoW(text_char, item.text_char);
 				}
@@ -1020,7 +1072,7 @@ BOOL CEpgDBUtil::AddAudioComponent_SD(CEITTable_SD* eit, EVENT_INFO* eventInfo, 
 	return updateFlag;
 }
 
-BOOL CEpgDBUtil::AddEventGroup(CEITTable* eit, EVENT_INFO* eventInfo, CEventGroupDesc* eventGroup)
+BOOL CEpgDBUtil::AddEventGroup(CEITTable* eit, EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* eventGroup)
 {
 	BOOL updateFlag = FALSE;
 	if( eventInfo->eventGroupInfo == NULL ){
@@ -1035,23 +1087,26 @@ BOOL CEpgDBUtil::AddEventGroup(CEITTable* eit, EVENT_INFO* eventInfo, CEventGrou
 		eventInfo->eventGroupInfo->version = eit->version_number;
 		eventInfo->eventGroupInfo->eventData2List.clear();
 
-		eventInfo->eventGroupInfo->group_type = eventGroup->group_type;
-		eventInfo->eventGroupInfo->event_count = eventGroup->event_count;
-		for( size_t i=0; i<eventGroup->eventDataList.size(); i++ ){
-			CEventGroupDesc::EVENT_DATA2 item;
-			item.event_id = eventGroup->eventDataList[i].event_id;
-			item.service_id = eventGroup->eventDataList[i].service_id;
-			item.original_network_id = eit->original_network_id;
-			item.transport_stream_id = eit->transport_stream_id;
+		eventInfo->eventGroupInfo->group_type = (BYTE)eventGroup->GetNumber(AribDescriptor::group_type);
+		eventInfo->eventGroupInfo->event_count = (BYTE)eventGroup->GetNumber(AribDescriptor::event_count);
+		if( eventGroup->EnterLoop() ){
+			for( DWORD i=0; eventGroup->SetLoopIndex(i); i++ ){
+				EVENT_DATA2 item;
+				item.event_id = (WORD)eventGroup->GetNumber(AribDescriptor::event_id);
+				item.service_id = (WORD)eventGroup->GetNumber(AribDescriptor::service_id);
+				item.original_network_id = eit->original_network_id;
+				item.transport_stream_id = eit->transport_stream_id;
 
-			eventInfo->eventGroupInfo->eventData2List.push_back(item);
+				eventInfo->eventGroupInfo->eventData2List.push_back(item);
+			}
+			eventGroup->LeaveLoop();
 		}
 	}
 
 	return updateFlag;
 }
 
-BOOL CEpgDBUtil::AddEventRelay(CEITTable* eit, EVENT_INFO* eventInfo, CEventGroupDesc* eventGroup)
+BOOL CEpgDBUtil::AddEventRelay(CEITTable* eit, EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* eventGroup)
 {
 	BOOL updateFlag = FALSE;
 	if( eventInfo->eventRelayInfo == NULL ){
@@ -1066,20 +1121,34 @@ BOOL CEpgDBUtil::AddEventRelay(CEITTable* eit, EVENT_INFO* eventInfo, CEventGrou
 		eventInfo->eventRelayInfo->version = eit->version_number;
 		eventInfo->eventRelayInfo->eventData2List.clear();
 
-		eventInfo->eventRelayInfo->group_type = eventGroup->group_type;
-		eventInfo->eventRelayInfo->event_count = eventGroup->event_count;
-		if( eventGroup->group_type == 0x02 ){
-			for( size_t i=0; i<eventGroup->eventDataList.size(); i++ ){
-				CEventGroupDesc::EVENT_DATA2 item;
-				item.event_id = eventGroup->eventDataList[i].event_id;
-				item.service_id = eventGroup->eventDataList[i].service_id;
-				item.original_network_id = eit->original_network_id;
-				item.transport_stream_id = eit->transport_stream_id;
+		eventInfo->eventRelayInfo->group_type = (BYTE)eventGroup->GetNumber(AribDescriptor::group_type);
+		eventInfo->eventRelayInfo->event_count = (BYTE)eventGroup->GetNumber(AribDescriptor::event_count);
+		if( eventInfo->eventRelayInfo->group_type == 0x02 ){
+			if( eventGroup->EnterLoop() ){
+				for( DWORD i=0; eventGroup->SetLoopIndex(i); i++ ){
+					EVENT_DATA2 item;
+					item.event_id = (WORD)eventGroup->GetNumber(AribDescriptor::event_id);
+					item.service_id = (WORD)eventGroup->GetNumber(AribDescriptor::service_id);
+					item.original_network_id = eit->original_network_id;
+					item.transport_stream_id = eit->transport_stream_id;
 
-				eventInfo->eventRelayInfo->eventData2List.push_back(item);
+					eventInfo->eventRelayInfo->eventData2List.push_back(item);
+				}
+				eventGroup->LeaveLoop();
 			}
 		}else{
-			eventInfo->eventRelayInfo->eventData2List = eventGroup->eventData2List;
+			if( eventGroup->EnterLoop(1) ){
+				for( DWORD i=0; eventGroup->SetLoopIndex(i); i++ ){
+					EVENT_DATA2 item;
+					item.event_id = (WORD)eventGroup->GetNumber(AribDescriptor::event_id);
+					item.service_id = (WORD)eventGroup->GetNumber(AribDescriptor::service_id);
+					item.original_network_id = (WORD)eventGroup->GetNumber(AribDescriptor::original_network_id);
+					item.transport_stream_id = (WORD)eventGroup->GetNumber(AribDescriptor::transport_stream_id);
+
+					eventInfo->eventRelayInfo->eventData2List.push_back(item);
+				}
+				eventGroup->LeaveLoop();
+			}
 		}
 
 	}
@@ -1312,12 +1381,14 @@ BOOL CEpgDBUtil::AddServiceList(CNITTable* nit)
 	wstring network_nameW = L"";
 
 	for( size_t i=0; i<nit->descriptorList.size(); i++ ){
-		if( nit->descriptorList[i]->networkName != NULL ){
-			CNetworkNameDesc* networkName = nit->descriptorList[i]->networkName;
-			if( networkName->char_nameLength > 0 ){
+		if( nit->descriptorList[i]->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::network_name_descriptor ){
+			AribDescriptor::CDescriptor* networkName = nit->descriptorList[i];
+			DWORD srcSize;
+			const char* src = networkName->GetStringOrEmpty(AribDescriptor::d_char, &srcSize);
+			if( srcSize > 0 ){
 				CARIB8CharDecode arib;
 				string network_name = "";
-				arib.PSISI((const BYTE*)networkName->char_name, networkName->char_nameLength, &network_name);
+				arib.PSISI((const BYTE*)src, srcSize, &network_name);
 				AtoW(network_name, network_nameW);
 			}
 		}
@@ -1334,36 +1405,43 @@ BOOL CEpgDBUtil::AddServiceList(CNITTable* nit)
 		}
 
 		for( size_t j=0; j<tsInfo->descriptorList.size(); j++ ){
-			DESCRIPTOR_DATA* desc = tsInfo->descriptorList[j];
-			if( desc->serviceList != NULL ){
-				for( size_t k=0; k<desc->serviceList->serviceList.size(); k++ ){
-					CServiceListDesc::SERVICE_LIST_DATA serviceData = desc->serviceList->serviceList[k];
-					ULONGLONG key = _Create64Key(tsInfo->original_network_id, tsInfo->transport_stream_id, serviceData.service_id);
-					map<ULONGLONG, BYTE>::iterator itrService;
-					itrService = this->serviceList.find(key);
-					if( itrService == this->serviceList.end() ){
-						this->serviceList.insert(pair<ULONGLONG, BYTE>(key, serviceData.service_type));
+			AribDescriptor::CDescriptor* desc = tsInfo->descriptorList[j];
+			if( desc->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::service_list_descriptor ){
+				if( desc->EnterLoop() ){
+					for( DWORD k=0; desc->SetLoopIndex(k); k++ ){
+						ULONGLONG key = _Create64Key(tsInfo->original_network_id, tsInfo->transport_stream_id, (WORD)desc->GetNumber(AribDescriptor::service_id));
+						map<ULONGLONG, BYTE>::iterator itrService;
+						itrService = this->serviceList.find(key);
+						if( itrService == this->serviceList.end() ){
+							this->serviceList.insert(pair<ULONGLONG, BYTE>(key, (BYTE)desc->GetNumber(AribDescriptor::service_type)));
+						}
 					}
+					desc->LeaveLoop();
 				}
 			}
-			if( desc->TSInfo != NULL && itrFind != this->serviceInfoList.end()){
+			if( desc->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::ts_information_descriptor && itrFind != this->serviceInfoList.end()){
 				//ts_nameÇ∆remote_control_key_id
-				if( desc->TSInfo->length_of_ts_name > 0 ){
+				DWORD srcSize;
+				const char* src = desc->GetStringOrEmpty(AribDescriptor::ts_name_char, &srcSize);
+				if( srcSize > 0 ){
 					CARIB8CharDecode arib;
 					string ts_name = "";
-					arib.PSISI((const BYTE*)desc->TSInfo->ts_name_char, desc->TSInfo->length_of_ts_name, &ts_name);
+					arib.PSISI((const BYTE*)src, srcSize, &ts_name);
 					AtoW(ts_name, itrFind->second->ts_name);
 				}
-				itrFind->second->remote_control_key_id = desc->TSInfo->remote_control_key_id;
+				itrFind->second->remote_control_key_id = (BYTE)desc->GetNumber(AribDescriptor::remote_control_key_id);
 			}
-			if( desc->partialReception != NULL && itrFind != this->serviceInfoList.end()){
+			if( desc->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::partial_reception_descriptor && itrFind != this->serviceInfoList.end()){
 				//ïîï™éÛêMÉtÉâÉO
-				map<WORD,DB_SERVICE_INFO*>::iterator itrService;
-				for( size_t k=0; k<desc->partialReception->service_idList.size(); k++ ){
-					itrService = itrFind->second->serviceList.find(desc->partialReception->service_idList[k]);
-					if( itrService != itrFind->second->serviceList.end() ){
-						itrService->second->partialReceptionFlag = 1;
+				if( desc->EnterLoop() ){
+					map<WORD,DB_SERVICE_INFO*>::iterator itrService;
+					for( DWORD k=0; desc->SetLoopIndex(k); k++ ){
+						itrService = itrFind->second->serviceList.find((WORD)desc->GetNumber(AribDescriptor::service_id));
+						if( itrService != itrFind->second->serviceList.end() ){
+							itrService->second->partialReceptionFlag = 1;
+						}
 					}
+					desc->LeaveLoop();
 				}
 			}
 		}
@@ -1378,8 +1456,8 @@ BOOL CEpgDBUtil::AddServiceList(WORD TSID, CSITTable* sit)
 
 	WORD ONID = 0xFFFF;
 	for( size_t i=0; i<sit->descriptorList.size(); i++ ){
-		if( sit->descriptorList[i]->networkIdentification != NULL ){
-			ONID = sit->descriptorList[i]->networkIdentification->network_id;
+		if( sit->descriptorList[i]->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::network_identification_descriptor ){
+			ONID = (WORD)sit->descriptorList[i]->GetNumber(AribDescriptor::network_id);
 		}
 	}
 	if(ONID == 0xFFFF){
@@ -1401,21 +1479,25 @@ BOOL CEpgDBUtil::AddServiceList(WORD TSID, CSITTable* sit)
 			item->service_id = sit->serviceLoopList[i]->service_id;
 
 			for( size_t j=0; j<sit->serviceLoopList[i]->descriptorList.size(); j++ ){
-				if( sit->serviceLoopList[i]->descriptorList[j]->service != NULL ){
-					CServiceDesc* service = sit->serviceLoopList[i]->descriptorList[j]->service;
+				if( sit->serviceLoopList[i]->descriptorList[j]->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::service_descriptor ){
+					AribDescriptor::CDescriptor* service = sit->serviceLoopList[i]->descriptorList[j];
 					CARIB8CharDecode arib;
 					string service_provider_name = "";
 					string service_name = "";
-					if( service->service_provider_name_length > 0 ){
-						arib.PSISI((const BYTE*)service->char_service_provider_name, service->service_provider_name_length, &service_provider_name);
+					const char* src;
+					DWORD srcSize;
+					src = service->GetStringOrEmpty(AribDescriptor::service_provider_name, &srcSize);
+					if( srcSize > 0 ){
+						arib.PSISI((const BYTE*)src, srcSize, &service_provider_name);
 					}
-					if( service->service_name_length > 0 ){
-						arib.PSISI((const BYTE*)service->char_service_name, service->service_name_length, &service_name);
+					src = service->GetStringOrEmpty(AribDescriptor::service_name, &srcSize);
+					if( srcSize > 0 ){
+						arib.PSISI((const BYTE*)src, srcSize, &service_name);
 					}
 					AtoW(service_provider_name, item->service_provider_name);
 					AtoW(service_name, item->service_name);
 
-					item->service_type = service->service_type;
+					item->service_type = (BYTE)service->GetNumber(AribDescriptor::service_type);
 				}
 			}
 			info->serviceList.insert(pair<WORD,DB_SERVICE_INFO*>(item->service_id, item));
@@ -1446,21 +1528,25 @@ BOOL CEpgDBUtil::AddSDT(CSDTTable* sdt)
 			item->service_id = sdt->serviceInfoList[i]->service_id;
 
 			for( size_t j=0; j<sdt->serviceInfoList[i]->descriptorList.size(); j++ ){
-				if( sdt->serviceInfoList[i]->descriptorList[j]->service != NULL ){
-					CServiceDesc* service = sdt->serviceInfoList[i]->descriptorList[j]->service;
+				if( sdt->serviceInfoList[i]->descriptorList[j]->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::service_descriptor ){
+					AribDescriptor::CDescriptor* service = sdt->serviceInfoList[i]->descriptorList[j];
 					CARIB8CharDecode arib;
 					string service_provider_name = "";
 					string service_name = "";
-					if( service->service_provider_name_length > 0 ){
-						arib.PSISI((const BYTE*)service->char_service_provider_name, service->service_provider_name_length, &service_provider_name);
+					const char* src;
+					DWORD srcSize;
+					src = service->GetStringOrEmpty(AribDescriptor::service_provider_name, &srcSize);
+					if( srcSize > 0 ){
+						arib.PSISI((const BYTE*)src, srcSize, &service_provider_name);
 					}
-					if( service->service_name_length > 0 ){
-						arib.PSISI((const BYTE*)service->char_service_name, service->service_name_length, &service_name);
+					src = service->GetStringOrEmpty(AribDescriptor::service_name, &srcSize);
+					if( srcSize > 0 ){
+						arib.PSISI((const BYTE*)src, srcSize, &service_name);
 					}
 					AtoW(service_provider_name, item->service_provider_name);
 					AtoW(service_name, item->service_name);
 
-					item->service_type = service->service_type;
+					item->service_type = (BYTE)service->GetNumber(AribDescriptor::service_type);
 				}
 			}
 			info->serviceList.insert(pair<WORD,DB_SERVICE_INFO*>(item->service_id, item));
@@ -1477,21 +1563,25 @@ BOOL CEpgDBUtil::AddSDT(CSDTTable* sdt)
 				item->service_id = sdt->serviceInfoList[i]->service_id;
 
 				for( size_t j=0; j<sdt->serviceInfoList[i]->descriptorList.size(); j++ ){
-					if( sdt->serviceInfoList[i]->descriptorList[j]->service != NULL ){
-						CServiceDesc* service = sdt->serviceInfoList[i]->descriptorList[j]->service;
+					if( sdt->serviceInfoList[i]->descriptorList[j]->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::service_descriptor ){
+						AribDescriptor::CDescriptor* service = sdt->serviceInfoList[i]->descriptorList[j];
 						CARIB8CharDecode arib;
 						string service_provider_name = "";
 						string service_name = "";
-						if( service->service_provider_name_length > 0 ){
-							arib.PSISI((const BYTE*)service->char_service_provider_name, service->service_provider_name_length, &service_provider_name);
+						const char* src;
+						DWORD srcSize;
+						src = service->GetStringOrEmpty(AribDescriptor::service_provider_name, &srcSize);
+						if( srcSize > 0 ){
+							arib.PSISI((const BYTE*)src, srcSize, &service_provider_name);
 						}
-						if( service->service_name_length > 0 ){
-							arib.PSISI((const BYTE*)service->char_service_name, service->service_name_length, &service_name);
+						src = service->GetStringOrEmpty(AribDescriptor::service_name, &srcSize);
+						if( srcSize > 0 ){
+							arib.PSISI((const BYTE*)src, srcSize, &service_name);
 						}
 						AtoW(service_provider_name, item->service_provider_name);
 						AtoW(service_name, item->service_name);
 
-						item->service_type = service->service_type;
+						item->service_type = (BYTE)service->GetNumber(AribDescriptor::service_type);
 					}
 				}
 				itrTS->second->serviceList.insert(pair<WORD,DB_SERVICE_INFO*>(item->service_id, item));
@@ -2018,16 +2108,17 @@ BOOL CEpgDBUtil::AddSDEventMap(CEITTable_SD* eit)
 		BOOL checkExtFlag = FALSE;
 		BOOL checkAudioFlag = FALSE;
 		for( size_t j=0; j<eitEventInfo->descriptorList.size(); j++ ){
-			if( eitEventInfo->descriptorList[j]->shortEvent != NULL ){
-				AddShortEvent_SD( eit, eventInfo, eitEventInfo->descriptorList[j]->shortEvent );
-			}else if( eitEventInfo->descriptorList[j]->extendedEvent != NULL && checkExtFlag == FALSE){
+			DWORD tag = eitEventInfo->descriptorList[i]->GetNumber(AribDescriptor::descriptor_tag);
+			if( tag == AribDescriptor::short_event_descriptor ){
+				AddShortEvent_SD( eit, eventInfo, eitEventInfo->descriptorList[j] );
+			}else if( tag == AribDescriptor::extended_event_descriptor && checkExtFlag == FALSE){
 				AddExtEvent_SD(eit, eventInfo, &eitEventInfo->descriptorList );
 				checkExtFlag = TRUE;
-			}else if( eitEventInfo->descriptorList[j]->content != NULL ){
-				AddContent_SD( eit, eventInfo, eitEventInfo->descriptorList[j]->content );
-			}else if( eitEventInfo->descriptorList[j]->component != NULL ){
-				AddComponent_SD( eit, eventInfo, eitEventInfo->descriptorList[j]->component );
-			}else if( eitEventInfo->descriptorList[j]->audioComponent != NULL && checkAudioFlag == FALSE ){
+			}else if( tag == AribDescriptor::content_descriptor ){
+				AddContent_SD( eit, eventInfo, eitEventInfo->descriptorList[j] );
+			}else if( tag == AribDescriptor::component_descriptor ){
+				AddComponent_SD( eit, eventInfo, eitEventInfo->descriptorList[j] );
+			}else if( tag == AribDescriptor::audio_component_descriptor && checkAudioFlag == FALSE ){
 				AddAudioComponent_SD( eit, eventInfo, &eitEventInfo->descriptorList );
 				checkAudioFlag = TRUE;
 			}

@@ -1,8 +1,6 @@
 #include "StdAfx.h"
 #include "BITTable.h"
 
-#include "../Descriptor/Descriptor.h"
-
 CBITTable::CBITTable(void)
 {
 }
@@ -52,8 +50,7 @@ BOOL CBITTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 		first_descriptors_length = ((WORD)data[readSize+5]&0x0F)<<8 | data[readSize+6];
 		readSize += 7;
 		if( readSize+first_descriptors_length <= (DWORD)section_length+3-4 && first_descriptors_length > 0){
-			CDescriptor descriptor;
-			if( descriptor.Decode( data+readSize, first_descriptors_length, &descriptorList, NULL ) == FALSE ){
+			if( AribDescriptor::CreateDescriptors( data+readSize, first_descriptors_length, &descriptorList, NULL ) == FALSE ){
 				_OutputDebugString( L"++CBITTable:: descriptor err" );
 				return FALSE;
 			}
@@ -65,9 +62,9 @@ BOOL CBITTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 			item->broadcaster_descriptors_length = ((WORD)data[readSize+1]&0x0F)<<8 | data[readSize+2];
 			readSize+=3;
 			if( readSize+item->broadcaster_descriptors_length <= (DWORD)section_length+3-4 && item->broadcaster_descriptors_length > 0){
-				CDescriptor descriptor;
-				if( descriptor.Decode( data+readSize, item->broadcaster_descriptors_length, &(item->descriptorList), NULL ) == FALSE ){
+				if( AribDescriptor::CreateDescriptors( data+readSize, item->broadcaster_descriptors_length, &(item->descriptorList), NULL ) == FALSE ){
 					_OutputDebugString( L"++CBITTable:: descriptor2 err" );
+					SAFE_DELETE(item);
 					return FALSE;
 				}
 			}

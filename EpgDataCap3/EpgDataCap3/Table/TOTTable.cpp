@@ -2,7 +2,6 @@
 #include "TOTTable.h"
 
 #include "../../../Common/EpgTimerUtil.h"
-#include "../Descriptor/Descriptor.h"
 
 CTOTTable::CTOTTable(void)
 {
@@ -50,8 +49,7 @@ BOOL CTOTTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 		readSize += 2;
 
 		if( readSize+descriptors_loop_length <= (DWORD)section_length+3-4 && descriptors_loop_length > 0){
-			CDescriptor descriptor;
-			if( descriptor.Decode( data+readSize, descriptors_loop_length, &descriptorList, NULL ) == FALSE ){
+			if( AribDescriptor::CreateDescriptors( data+readSize, descriptors_loop_length, &descriptorList, NULL ) == FALSE ){
 				_OutputDebugString( L"++CTOTTable:: descriptor2 err" );
 				return FALSE;
 			}

@@ -32,7 +32,6 @@ JST_time（現在日付、現在時刻）：この40 ビットのフィールドは、日本標準時（JST）
 */
 
 #include "../../../Common/Util.h"
-#include "../Descriptor/DescriptorDef.h"
 #include "PSITable.h"
 
 class CTDTTable : public CPSITable

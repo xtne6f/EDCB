@@ -94,7 +94,7 @@ duration（継続時間）：配信継続時間
 
 
 #include "../../../Common/Util.h"
-#include "../Descriptor/DescriptorDef.h"
+#include "../AribDescriptor.h"
 #include "PSITable.h"
 
 class CSDTTTable : public CPSITable
@@ -114,7 +114,7 @@ public:
 		WORD schedule_description_length;
 		BYTE schedule_time_shift_information;
 		vector<SCHEDULE_INFO_DATA> scheduleList;
-		vector<DESCRIPTOR_DATA*> descriptorList;
+		vector<AribDescriptor::CDescriptor*> descriptorList;
 		~_CONTENT_INFO_DATA(void){
 			for( size_t i=0; i<descriptorList.size(); i++ ){
 				SAFE_DELETE(descriptorList[i]);
