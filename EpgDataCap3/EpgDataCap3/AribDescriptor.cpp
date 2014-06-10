@@ -938,12 +938,12 @@ void CDescriptor::ClearProperty(std::vector<DESCRIPTOR_PROPERTY>* pp)
 			break;
 		case 2: //String
 			if( (pp->back().type & 0xFFF) >= 4 ){
-				delete pp->back().ps;
+				delete[] pp->back().ps;
 			}
 			break;
 		case 3: //Binary
 			if( (pp->back().type & 0xFFF) >= 5 ){
-				delete pp->back().pb;
+				delete[] pp->back().pb;
 			}
 			break;
 		}
