@@ -764,8 +764,10 @@ BOOL CEpgDBManager::IsFindKeyword(BOOL regExpFlag, IRegExpPtr& regExp, BOOL titl
 	//ŒŸõ‘ÎÛ‚Ì•¶Žš—ñì¬
 	wstring word = shortInfo->search_event_name;
 	if( titleOnlyFlag == FALSE ){
+		word += L"\r\n";
 		word += shortInfo->search_text_char;
 		if( extInfo != NULL ){
+			word += L"\r\n";
 			word += extInfo->search_text_char;
 		}
 	}
@@ -837,8 +839,10 @@ BOOL CEpgDBManager::IsFindLikeKeyword(BOOL titleOnlyFlag, vector<wstring>* keyLi
 	//ŒŸõ‘ÎÛ‚Ì•¶Žš—ñì¬
 	wstring word = shortInfo->search_event_name;
 	if( titleOnlyFlag == FALSE ){
+		word += L"\r\n";
 		word += shortInfo->search_text_char;
 		if( extInfo != NULL ){
+			word += L"\r\n";
 			word += extInfo->search_text_char;
 		}
 	}
