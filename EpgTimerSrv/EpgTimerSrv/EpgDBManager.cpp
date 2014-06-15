@@ -20,12 +20,6 @@ CEpgDBManager::CEpgDBManager(void)
     this->loadThread = NULL;
     this->loadStop = FALSE;
     this->initialLoadDone = FALSE;
-
-	wstring textPath;
-	GetModuleFolderPath(textPath);
-	textPath += L"\\ConvertText.txt";
-
-	this->chgText.ParseReserveText(textPath.c_str() );
 }
 
 CEpgDBManager::~CEpgDBManager(void)
@@ -239,16 +233,10 @@ BOOL CEpgDBManager::ConvertEpgInfo(WORD ONID, WORD TSID, WORD SID, EPG_EVENT_INF
 		dest->shortInfo = new EPGDB_SHORT_EVENT_INFO;
 		dest->shortInfo->event_name = src->shortInfo->event_name;
 		dest->shortInfo->text_char = src->shortInfo->text_char;
-		dest->shortInfo->search_event_name = src->shortInfo->event_name;
-		dest->shortInfo->search_text_char = src->shortInfo->text_char;
-		this->chgText.ChgText(dest->shortInfo->search_event_name);
-		this->chgText.ChgText(dest->shortInfo->search_text_char);
 	}
 	if( src->extInfo != NULL ){
 		dest->extInfo = new EPGDB_EXTENDED_EVENT_INFO;
 		dest->extInfo->text_char = src->extInfo->text_char;
-		dest->extInfo->search_text_char = src->extInfo->text_char;
-		this->chgText.ChgText(dest->extInfo->search_text_char);
 	}
 	if( src->contentInfo != NULL ){
 		dest->contentInfo = new EPGDB_CONTEN_INFO;
@@ -405,12 +393,19 @@ void CEpgDBManager::SearchEvent(EPGDB_SEARCH_KEY_INFO* key, map<ULONGLONG, SEARC
 		return ;
 	}
 	
-	if( key->andKey.size() == 0 && key->notKey.size() == 0 && key->contentList.size() == 0 && key->videoList.size() == 0 && key->audioList.size() == 0){
-		//キーワードもジャンル指定もないので検索しない
-		return ;
-	}
 	if( key->andKey.compare(0, 7, L"^!{999}") == 0 ){
 		//無効を示すキーワードが指定されているので検索しない
+		return ;
+	}
+	wstring andKey = key->andKey;
+	BOOL caseFlag = FALSE;
+	if( andKey.compare(0, 7, L"C!{999}") == 0 ){
+		//大小文字を区別するキーワードが指定されている
+		andKey.erase(0, 7);
+		caseFlag = TRUE;
+	}
+	if( andKey.size() == 0 && key->notKey.size() == 0 && key->contentList.size() == 0 && key->videoList.size() == 0 && key->audioList.size() == 0){
+		//キーワードもジャンル指定もないので検索しない
 		return ;
 	}
 	
@@ -421,12 +416,12 @@ void CEpgDBManager::SearchEvent(EPGDB_SEARCH_KEY_INFO* key, map<ULONGLONG, SEARC
 	if( key->regExpFlag == FALSE ){
 		//正規表現ではないのでキーワードの分解
 		wstring buff = L"";
-		if( key->andKey.size() > 0 ){
-			wstring andBuff = key->andKey;
+		if( andKey.size() > 0 ){
+			wstring andBuff = andKey;
 			Replace(andBuff, L"　", L" ");
 			do{
 				Separate(andBuff, L" ", buff, andBuff);
-				chgText.ChgText(buff);
+				ConvertSearchText(buff);
 				if( buff.size() > 0 ){
 					andKeyList.push_back(buff);
 				}
@@ -438,15 +433,15 @@ void CEpgDBManager::SearchEvent(EPGDB_SEARCH_KEY_INFO* key, map<ULONGLONG, SEARC
 			Replace(notBuff, L"　", L" ");
 			do{
 				Separate(notBuff, L" ", buff, notBuff);
-				chgText.ChgText(buff);
+				ConvertSearchText(buff);
 				if( buff.size() > 0 ){
 					notKeyList.push_back(buff);
 				}
 			}while( notBuff.size() != 0 );
 		}
 	}else{
-		if( key->andKey.size() > 0 ){
-			andKeyList.push_back(key->andKey);
+		if( andKey.size() > 0 ){
+			andKeyList.push_back(andKey);
 		}
 		if( key->notKey.size() > 0 ){
 			notKeyList.push_back(key->notKey);
@@ -647,7 +642,7 @@ void CEpgDBManager::SearchEvent(EPGDB_SEARCH_KEY_INFO* key, map<ULONGLONG, SEARC
 
 				//キーワード確認
 				if( notKeyList.size() != 0 ){
-					if( IsFindKeyword(key->regExpFlag, regExp, key->titleOnlyFlag, &notKeyList, itrEvent->second->shortInfo, itrEvent->second->extInfo, FALSE) == TRUE ){
+					if( IsFindKeyword(key->regExpFlag, regExp, key->titleOnlyFlag, caseFlag, &notKeyList, itrEvent->second->shortInfo, itrEvent->second->extInfo, FALSE) == TRUE ){
 						//notキーワード見つかったので対象外
 						continue;
 					}
@@ -672,12 +667,12 @@ void CEpgDBManager::SearchEvent(EPGDB_SEARCH_KEY_INFO* key, map<ULONGLONG, SEARC
 					//}
 					if( key->regExpFlag == FALSE && key->aimaiFlag == 1){
 						//あいまい検索
-						if( IsFindLikeKeyword(key->titleOnlyFlag, &andKeyList, itrEvent->second->shortInfo, itrEvent->second->extInfo, TRUE, &matchKey) == FALSE ){
+						if( IsFindLikeKeyword(key->titleOnlyFlag, caseFlag, &andKeyList, itrEvent->second->shortInfo, itrEvent->second->extInfo, TRUE, &matchKey) == FALSE ){
 							//andキーワード見つからなかったので対象外
 							continue;
 						}
 					}else{
-						if( IsFindKeyword(key->regExpFlag, regExp, key->titleOnlyFlag, &andKeyList, itrEvent->second->shortInfo, itrEvent->second->extInfo, TRUE, &matchKey) == FALSE ){
+						if( IsFindKeyword(key->regExpFlag, regExp, key->titleOnlyFlag, caseFlag, &andKeyList, itrEvent->second->shortInfo, itrEvent->second->extInfo, TRUE, &matchKey) == FALSE ){
 							//andキーワード見つからなかったので対象外
 							continue;
 						}
@@ -754,7 +749,13 @@ BOOL CEpgDBManager::IsInDateTime(vector<TIME_SEARCH>* timeList, SYSTEMTIME start
 	return FALSE;
 }
 
-BOOL CEpgDBManager::IsFindKeyword(BOOL regExpFlag, IRegExpPtr& regExp, BOOL titleOnlyFlag, vector<wstring>* keyList, EPGDB_SHORT_EVENT_INFO* shortInfo, EPGDB_EXTENDED_EVENT_INFO* extInfo, BOOL andMode, wstring* findKey)
+struct IGNORE_CASE_COMPARATOR{
+	bool operator()(wchar_t l, wchar_t r){
+		return (L'a' <= l && l <= L'z' ? l - L'a' + L'A' : l) == (L'a' <= r && r <= L'z' ? r - L'a' + L'A' : r);
+	}
+};
+
+BOOL CEpgDBManager::IsFindKeyword(BOOL regExpFlag, IRegExpPtr& regExp, BOOL titleOnlyFlag, BOOL caseFlag, vector<wstring>* keyList, EPGDB_SHORT_EVENT_INFO* shortInfo, EPGDB_EXTENDED_EVENT_INFO* extInfo, BOOL andMode, wstring* findKey)
 {
 	if( shortInfo == NULL ){
 		//基本情報ないので対象外
@@ -762,13 +763,14 @@ BOOL CEpgDBManager::IsFindKeyword(BOOL regExpFlag, IRegExpPtr& regExp, BOOL titl
 	}
 
 	//検索対象の文字列作成
-	wstring word = shortInfo->search_event_name;
+	wstring word = shortInfo->event_name;
 	if( titleOnlyFlag == FALSE ){
-		word += shortInfo->search_text_char;
+		word += shortInfo->text_char;
 		if( extInfo != NULL ){
-			word += extInfo->search_text_char;
+			word += extInfo->text_char;
 		}
 	}
+	ConvertSearchText(word);
 
 	if( regExpFlag == TRUE ){
 		//正規表現モード
@@ -781,6 +783,7 @@ BOOL CEpgDBManager::IsFindKeyword(BOOL regExpFlag, IRegExpPtr& regExp, BOOL titl
 				_bstr_t pattern( (*keyList)[0].c_str() );
 
 				regExp->PutGlobal( VARIANT_TRUE );
+				regExp->PutIgnoreCase( caseFlag == FALSE ? VARIANT_TRUE : VARIANT_FALSE );
 				regExp->PutPattern( pattern );
 
 				IMatchCollectionPtr pMatchCol( regExp->Execute( target ) );
@@ -802,7 +805,8 @@ BOOL CEpgDBManager::IsFindKeyword(BOOL regExpFlag, IRegExpPtr& regExp, BOOL titl
 		//通常
 		if( andMode == TRUE ){
 			for( size_t i=0; i<keyList->size(); i++ ){
-				if( word.find((*keyList)[i]) == string::npos ){
+				if( caseFlag != FALSE && word.find((*keyList)[i]) == string::npos ||
+				    caseFlag == FALSE && search(word.begin(), word.end(), (*keyList)[i].begin(), (*keyList)[i].end(), IGNORE_CASE_COMPARATOR()) == word.end() ){
 					//見つからなかったので終了
 					return FALSE;
 				}else{
@@ -817,7 +821,8 @@ BOOL CEpgDBManager::IsFindKeyword(BOOL regExpFlag, IRegExpPtr& regExp, BOOL titl
 			return TRUE;
 		}else{
 			for( size_t i=0; i<keyList->size(); i++ ){
-				if( word.find((*keyList)[i]) != string::npos ){
+				if( caseFlag != FALSE && word.find((*keyList)[i]) != string::npos ||
+				    caseFlag == FALSE && search(word.begin(), word.end(), (*keyList)[i].begin(), (*keyList)[i].end(), IGNORE_CASE_COMPARATOR()) != word.end() ){
 					//見つかったので終了
 					return TRUE;
 				}
@@ -827,7 +832,7 @@ BOOL CEpgDBManager::IsFindKeyword(BOOL regExpFlag, IRegExpPtr& regExp, BOOL titl
 	}
 }
 
-BOOL CEpgDBManager::IsFindLikeKeyword(BOOL titleOnlyFlag, vector<wstring>* keyList, EPGDB_SHORT_EVENT_INFO* shortInfo, EPGDB_EXTENDED_EVENT_INFO* extInfo, BOOL andMode, wstring* findKey)
+BOOL CEpgDBManager::IsFindLikeKeyword(BOOL titleOnlyFlag, BOOL caseFlag, vector<wstring>* keyList, EPGDB_SHORT_EVENT_INFO* shortInfo, EPGDB_EXTENDED_EVENT_INFO* extInfo, BOOL andMode, wstring* findKey)
 {
 	if( shortInfo == NULL ){
 		//基本情報ないので対象外
@@ -835,13 +840,14 @@ BOOL CEpgDBManager::IsFindLikeKeyword(BOOL titleOnlyFlag, vector<wstring>* keyLi
 	}
 
 	//検索対象の文字列作成
-	wstring word = shortInfo->search_event_name;
+	wstring word = shortInfo->event_name;
 	if( titleOnlyFlag == FALSE ){
-		word += shortInfo->search_text_char;
+		word += shortInfo->text_char;
 		if( extInfo != NULL ){
-			word += extInfo->search_text_char;
+			word += extInfo->text_char;
 		}
 	}
+	ConvertSearchText(word);
 	BOOL ret = FALSE;
 
 	DWORD hitCount = 0;
@@ -850,10 +856,12 @@ BOOL CEpgDBManager::IsFindLikeKeyword(BOOL titleOnlyFlag, vector<wstring>* keyLi
 		wstring key= L"";
 		for( size_t j=0; j<(*keyList)[i].size(); j++ ){
 			key += (*keyList)[i].at(j);
-			if( word.find(key) == string::npos ){
+			if( caseFlag != FALSE && word.find(key) == string::npos ||
+			    caseFlag == FALSE && search(word.begin(), word.end(), key.begin(), key.end(), IGNORE_CASE_COMPARATOR()) == word.end() ){
 				missCount+=1;
 				key = (*keyList)[i].at(j);
-				if( word.find(key) == string::npos ){
+				if( caseFlag != FALSE && word.find(key) == string::npos ||
+				    caseFlag == FALSE && search(word.begin(), word.end(), key.begin(), key.end(), IGNORE_CASE_COMPARATOR()) == word.end() ){
 					missCount+=1;
 					key = L"";
 				}else{
@@ -1051,5 +1059,62 @@ BOOL CEpgDBManager::SearchServiceName(
 	}
 
 	return ret;
+}
+
+//検索対象や検索パターンから全半角の区別を取り除く(旧ConvertText.txtに相当)
+//ConvertText.txtと異なり半角濁点カナを(意図通り)置換する点、［］，．全角空白を置換する点、―(U+2015)ゐヰゑヱΖ(U+0396)を置換しない点に注意
+void CEpgDBManager::ConvertSearchText(wstring& str)
+{
+	//全角英数およびこのテーブルにある文字列を置換する
+	static const wchar_t convertFrom[][3] = {
+		L"’", L"”", L"　",
+		L"！", L"＃", L"＄", L"％", L"＆", L"（", L"）", L"＊", L"＋", L"，", L"－", L"．", L"／",
+		L"：", L"；", L"＜", L"＝", L"＞", L"？", L"＠", L"［", L"］", L"＾", L"＿", L"｀", L"｛", L"｜", L"｝", L"～",
+		L"｡", L"｢", L"｣", L"､", L"･", L"ｦ", L"ｧ", L"ｨ", L"ｩ", L"ｪ", L"ｫ", L"ｬ", L"ｭ", L"ｮ", L"ｯ", L"ｰ", L"ｱ", L"ｲ", L"ｳ", L"ｴ", L"ｵ",
+		L"ｶﾞ", L"ｷﾞ", L"ｸﾞ", L"ｹﾞ", L"ｺﾞ", L"ｶ", L"ｷ", L"ｸ", L"ｹ", L"ｺ",
+		L"ｻﾞ", L"ｼﾞ", L"ｽﾞ", L"ｾﾞ", L"ｿﾞ", L"ｻ", L"ｼ", L"ｽ", L"ｾ", L"ｿ",
+		L"ﾀﾞ", L"ﾁﾞ", L"ﾂﾞ", L"ﾃﾞ", L"ﾄﾞ", L"ﾀ", L"ﾁ", L"ﾂ", L"ﾃ", L"ﾄ",
+		L"ﾅ", L"ﾆ", L"ﾇ", L"ﾈ", L"ﾉ",
+		L"ﾊﾞ", L"ﾋﾞ", L"ﾌﾞ", L"ﾍﾞ", L"ﾎﾞ", L"ﾊﾟ", L"ﾋﾟ", L"ﾌﾟ", L"ﾍﾟ", L"ﾎﾟ", L"ﾊ", L"ﾋ", L"ﾌ", L"ﾍ", L"ﾎ",
+		L"ﾏ", L"ﾐ", L"ﾑ", L"ﾒ", L"ﾓ", L"ﾔ", L"ﾕ", L"ﾖ", L"ﾗ", L"ﾘ", L"ﾙ", L"ﾚ", L"ﾛ", L"ﾜ", L"ﾝ", L"ﾞ", L"ﾟ",
+		L"￥",
+	};
+	static const wchar_t convertTo[][2] = {
+		L"'", L"\"", L" ",
+		L"!", L"#", L"$", L"%", L"&", L"(", L")", L"*", L"+", L",", L"-", L".", L"/",
+		L":", L";", L"<", L"=", L">", L"?", L"@", L"[", L"]", L"^", L"_", L"`", L"{", L"|", L"}", L"~",
+		L"。", L"「", L"」", L"、", L"・", L"ヲ", L"ァ", L"ィ", L"ゥ", L"ェ", L"ォ", L"ャ", L"ュ", L"ョ", L"ッ", L"ー", L"ア", L"イ", L"ウ", L"エ", L"オ",
+		L"ガ", L"ギ", L"グ", L"ゲ", L"ゴ", L"カ", L"キ", L"ク", L"ケ", L"コ",
+		L"ザ", L"ジ", L"ズ", L"ゼ", L"ゾ", L"サ", L"シ", L"ス", L"セ", L"ソ",
+		L"ダ", L"ヂ", L"ヅ", L"デ", L"ド", L"タ", L"チ", L"ツ", L"テ", L"ト",
+		L"ナ", L"ニ", L"ヌ", L"ネ", L"ノ",
+		L"バ", L"ビ", L"ブ", L"ベ", L"ボ", L"パ", L"ピ", L"プ", L"ペ", L"ポ", L"ハ", L"ヒ", L"フ", L"ヘ", L"ホ",
+		L"マ", L"ミ", L"ム", L"メ", L"モ", L"ヤ", L"ユ", L"ヨ", L"ラ", L"リ", L"ル", L"レ", L"ロ", L"ワ", L"ン", L"゛", L"゜",
+		L"\\",
+	};
+
+	for( size_t i = 0; i < str.size(); i++ ){
+		if( L'０' <= str[i] && str[i] <= L'９' ){
+			str[i] = str[i] - L'０' + L'0';
+		}else if( L'Ａ' <= str[i] && str[i] <= L'Ｚ' ){
+			str[i] = str[i] - L'Ａ' + L'A';
+		}else if( L'ａ' <= str[i] && str[i] <= L'ｚ' ){
+			str[i] = str[i] - L'ａ' + L'a';
+		}
+		//注意: これは符号位置の連続性を利用してテーブル参照を減らすための条件。上記のテーブルを弄る場合はここを確認すること
+		else if( str[i] == L'’' || str[i] == L'”' || str[i] == L'　' || L'！' <= str[i] && str[i] <= L'￥' ){
+			for( size_t j = 0; j < _countof(convertFrom); j++ ){
+				if( str[i] == convertFrom[j][0] ){
+					if( convertFrom[j][1] == L'\0' ){
+						str.replace(i, 1, convertTo[j]);
+						break;
+					}else if( i + 1 < str.size() && str[i + 1] == convertFrom[j][1] ){
+						str.replace(i, 2, convertTo[j]);
+						break;
+					}
+				}
+			}
+		}
+	}
 }
 

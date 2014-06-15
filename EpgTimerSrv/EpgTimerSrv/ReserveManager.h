@@ -7,7 +7,6 @@
 #include "../../Common/ParseReserveText.h"
 #include "../../Common/ParseRecInfoText.h"
 #include "../../Common/ParseChText5.h"
-#include "../../Common/ParseSearchChgText.h"
 
 #include "TwitterManager.h"
 
@@ -238,7 +237,6 @@ protected:
 	CParseRecInfoText recInfoText;
 
 	CParseChText5 chUtil;
-	CParseSearchChgText chgText;
 
 	CTunerManager tunerManager;
 	CBatManager batManager;

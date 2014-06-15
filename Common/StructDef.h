@@ -256,14 +256,11 @@ private:
 typedef struct _EPGDB_SHORT_EVENT_INFO{
 	wstring event_name;			//イベント名
 	wstring text_char;			//情報
-	wstring search_event_name;	//検索使用時のイベント名
-	wstring search_text_char;	//検索使用時の情報
 } EPGDB_SHORT_EVENT_INFO;
 
 //EPG拡張情報
 typedef struct _EPGDB_EXTENDED_EVENT_INFO{
 	wstring text_char;			//詳細情報
-	wstring search_text_char;	//検索使用時の情報
 } EPGDB_EXTENDED_EVENT_INFO;
 
 //EPGジャンルデータ

@@ -191,7 +191,6 @@
     <ClInclude Include="..\..\Common\ParseManualAutoAddText.h" />
     <ClInclude Include="..\..\Common\ParseRecInfoText.h" />
     <ClInclude Include="..\..\Common\ParseReserveText.h" />
-    <ClInclude Include="..\..\Common\ParseSearchChgText.h" />
     <ClInclude Include="..\..\Common\ParseServiceChgText.h" />
     <ClInclude Include="..\..\Common\PathUtil.h" />
     <ClInclude Include="..\..\Common\PipeServer.h" />
@@ -274,7 +273,6 @@
     <ClCompile Include="..\..\Common\ParseManualAutoAddText.cpp" />
     <ClCompile Include="..\..\Common\ParseRecInfoText.cpp" />
     <ClCompile Include="..\..\Common\ParseReserveText.cpp" />
-    <ClCompile Include="..\..\Common\ParseSearchChgText.cpp" />
     <ClCompile Include="..\..\Common\ParseServiceChgText.cpp" />
     <ClCompile Include="..\..\Common\PathUtil.cpp" />
     <ClCompile Include="..\..\Common\PipeServer.cpp" />

@@ -84,12 +84,6 @@ CReserveManager::CReserveManager(void)
 	this->useEpgSrvCoop = FALSE;
 	this->errEndBatRun = FALSE;
 
-	wstring textPath;
-	GetModuleFolderPath(textPath);
-	textPath += L"\\ConvertText.txt";
-
-	this->chgText.ParseReserveText(textPath.c_str() );
-
 	this->ngShareFile = FALSE;
 	this->epgDBManager = NULL;
 
@@ -3400,8 +3394,8 @@ BOOL CReserveManager::CheckChgEventID(EPGDB_EVENT_INFO* info, RESERVE_DATA* data
 			Replace(title1, L" ", L"");
 			Replace(title2, L" ", L"");
 			//î‰ärópÇ…ï∂éöí≤êÆ
-			this->chgText.ChgText(title1);
-			this->chgText.ChgText(title2);
+			this->epgDBManager->ConvertSearchText(title1);
+			this->epgDBManager->ConvertSearchText(title2);
 
 			//Ç†Ç¢Ç‹Ç¢åüçı
 			DWORD hitCount = 0;

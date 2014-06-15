@@ -7,7 +7,6 @@
 #include "../../Common/EpgTimerUtil.h"
 #include "../../Common/EpgDataCap3Util.h"
 #include "../../Common/EpgDataCap3Def.h"
-#include "../../Common/ParseSearchChgText.h"
 
 #import "RegExp.tlb" no_namespace named_guids
 
@@ -72,14 +71,14 @@ public:
 		wstring& serviceName
 		);
 
+	static void ConvertSearchText(wstring& str);
+
 protected:
 	CRITICAL_SECTION epgMapLock;
 
 	HANDLE loadThread;
 	BOOL loadStop;
 	BOOL initialLoadDone;
-
-	CParseSearchChgText chgText;
 
 	typedef struct _EPGDB_SERVICE_DATA{
 		EPGDB_SERVICE_INFO serviceInfo;
@@ -107,8 +106,8 @@ protected:
 	void SearchEvent(EPGDB_SEARCH_KEY_INFO* key, map<ULONGLONG, SEARCH_RESULT_EVENT>* resultMap, IRegExpPtr& regExp);
 	BOOL IsEqualContent(vector<EPGDB_CONTENT_DATA>* searchKey, vector<EPGDB_CONTENT_DATA>* eventData);
 	BOOL IsInDateTime(vector<TIME_SEARCH>* timeList, SYSTEMTIME startTime);
-	static BOOL IsFindKeyword(BOOL regExpFlag, IRegExpPtr& regExp, BOOL titleOnlyFlag, vector<wstring>* keyList, EPGDB_SHORT_EVENT_INFO* shortInfo, EPGDB_EXTENDED_EVENT_INFO* extInfo, BOOL andMode, wstring* findKey = NULL);
-	BOOL IsFindLikeKeyword(BOOL titleOnlyFlag, vector<wstring>* keyList, EPGDB_SHORT_EVENT_INFO* shortInfo, EPGDB_EXTENDED_EVENT_INFO* extInfo, BOOL andMode, wstring* findKey = NULL);
+	static BOOL IsFindKeyword(BOOL regExpFlag, IRegExpPtr& regExp, BOOL titleOnlyFlag, BOOL caseFlag, vector<wstring>* keyList, EPGDB_SHORT_EVENT_INFO* shortInfo, EPGDB_EXTENDED_EVENT_INFO* extInfo, BOOL andMode, wstring* findKey = NULL);
+	BOOL IsFindLikeKeyword(BOOL titleOnlyFlag, BOOL caseFlag, vector<wstring>* keyList, EPGDB_SHORT_EVENT_INFO* shortInfo, EPGDB_EXTENDED_EVENT_INFO* extInfo, BOOL andMode, wstring* findKey = NULL);
 
 };
 

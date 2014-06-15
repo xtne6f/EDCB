@@ -93,9 +93,6 @@
     <ClInclude Include="..\..\Common\EpgTimerUtil.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Common\ParseSearchChgText.h">
-      <Filter>ヘッダー ファイル\Common</Filter>
-    </ClInclude>
     <ClInclude Include="ReserveManager.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
@@ -333,9 +330,6 @@
       <Filter>ソース ファイル\Common</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Common\EpgTimerUtil.cpp">
-      <Filter>ソース ファイル\Common</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Common\ParseSearchChgText.cpp">
       <Filter>ソース ファイル\Common</Filter>
     </ClCompile>
     <ClCompile Include="ReserveManager.cpp">
