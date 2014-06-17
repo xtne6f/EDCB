@@ -90,15 +90,15 @@ BOOL CTunerManager::ReloadTuner()
 					WORD EPGcount = (WORD)GetPrivateProfileInt(bonFileName.c_str(), L"EPGCount", count, srvIniPath.c_str());
 					if(EPGcount==0)	EPGcount = count;
 
+					if( this->tunerMap.find((DWORD)priority<<16 | 1) != this->tunerMap.end() ){
+						OutputDebugString(L"CTunerManager::ReloadTuner(): Duplicate bonID\r\n");
+						count = 0;
+					}
 					for( WORD i=1; i<=count; i++ ){
 						TUNER_INFO* item = new TUNER_INFO;
 						item->bonID = priority;
 						item->tunerID = i;
-						if(EPGcount<i){		//	EPGCountを超えていたらEPG取得に使用しない
-							item->epgCapFlag = 0;
-						} else {
-							item->epgCapFlag = epgCapFlag;
-						}
+						item->epgCapMaxOfThisBon = min(epgCapFlag == FALSE ? 0 : EPGcount, count);
 						item->bonFileName = bonFileName;
 						item->chUtil.ParseText(chSetPath.c_str());
 						item->chSet4FilePath = chSetPath;
@@ -237,8 +237,9 @@ BOOL CTunerManager::GetCh(
 	return FALSE;
 }
 
+//ドライバ毎のチューナー一覧とEPG取得に使用できるチューナー数のペアを取得する
 BOOL CTunerManager::GetEnumEpgCapTuner(
-	vector<DWORD>* idList
+	vector<pair<vector<DWORD>, WORD>>* idList
 	)
 {
 	if( idList == NULL ){
@@ -246,9 +247,10 @@ BOOL CTunerManager::GetEnumEpgCapTuner(
 	}
 	map<DWORD, TUNER_INFO*>::iterator itr;
 	for( itr = this->tunerMap.begin(); itr != this->tunerMap.end(); itr++ ){
-		if( itr->second->epgCapFlag == TRUE ){
-			idList->push_back(itr->first);
+		if( idList->empty() || idList->back().first.back() >> 16 != itr->first >> 16 ){
+			idList->push_back(pair<vector<DWORD>, WORD>(vector<DWORD>(), itr->second->epgCapMaxOfThisBon));
 		}
+		idList->back().first.push_back(itr->first);
 	}
 	return TRUE;
 }
