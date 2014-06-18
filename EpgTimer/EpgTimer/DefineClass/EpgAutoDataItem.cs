@@ -38,6 +38,7 @@ namespace EpgTimer
                 if (EpgAutoAddInfo != null)
                 {
                     view = EpgAutoAddInfo.searchInfo.andKey.Substring(EpgAutoAddInfo.searchInfo.andKey.StartsWith("^!{999}") ? 7 : 0);
+                    view = view.Substring(view.StartsWith("C!{999}") ? 7 : 0);
                 }
                 return view;
             }

@@ -131,13 +131,15 @@ namespace EpgTimer
                 {
                     key.titleOnlyFlag = 0;
                 }
+                key.andKey = key.andKey.Substring(key.andKey.StartsWith("^!{999}") ? 7 : 0);
+                key.andKey = key.andKey.Substring(key.andKey.StartsWith("C!{999}") ? 7 : 0);
+                if (checkBox_case.IsChecked == true)
+                {
+                    key.andKey = "C!{999}" + key.andKey;
+                }
                 if (checkBox_keyDisabled.IsChecked == true)
                 {
-                    key.andKey = (key.andKey.StartsWith("^!{999}") ? "" : "^!{999}") + key.andKey;
-                }
-                else
-                {
-                    key.andKey = key.andKey.Substring(key.andKey.StartsWith("^!{999}") ? 7 : 0);
+                    key.andKey = "^!{999}" + key.andKey;
                 }
 
                 key.contentList.Clear();
@@ -247,6 +249,14 @@ namespace EpgTimer
                 else
                 {
                     checkBox_keyDisabled.IsChecked = false;
+                }
+                if (defKey.andKey.StartsWith("C!{999}") || defKey.andKey.StartsWith("^!{999}C!{999}"))
+                {
+                    checkBox_case.IsChecked = true;
+                }
+                else
+                {
+                    checkBox_case.IsChecked = false;
                 }
 
                 listBox_content.Items.Clear();
