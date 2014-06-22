@@ -154,7 +154,7 @@ BOOL CEITTable::SDDecode( BYTE* data, DWORD dataSize, vector<AribDescriptor::CDe
 
 		if( readPos[0] == 0x54 ){
 			AribDescriptor::CDescriptor* item = new AribDescriptor::CDescriptor;
-			if( item->Decode(readPos, decodeSize - dataSize, NULL) == false ){
+			if( item->Decode(readPos, dataSize - decodeSize, NULL) == false ){
 				delete item;
 			}else{
 				if( item->EnterLoop() ){
@@ -219,7 +219,7 @@ BOOL CEITTable::SDDecode( BYTE* data, DWORD dataSize, vector<AribDescriptor::CDe
 		if( readPos[0] == 0x85 ){
 			//コンポーネント
 			AribDescriptor::CDescriptor* item = new AribDescriptor::CDescriptor;
-			if( item->Decode(readPos, decodeSize - dataSize, NULL, parserList) == false ){
+			if( item->Decode(readPos, dataSize - decodeSize, NULL, parserList) == false ){
 				delete item;
 			}else{
 				if( item->GetNumber(AribDescriptor::stream_content) == 0x01 ){
@@ -243,7 +243,7 @@ BOOL CEITTable::SDDecode( BYTE* data, DWORD dataSize, vector<AribDescriptor::CDe
 				if( shortItem == NULL ){
 					shortItem = new AribDescriptor::CDescriptor;
 				}
-				if( shortItem->Decode(readPos, decodeSize - dataSize, NULL, parserList) == false ){
+				if( shortItem->Decode(readPos, dataSize - decodeSize, NULL, parserList) == false ){
 					delete shortItem;
 					shortItem = NULL;
 				}else{
@@ -253,7 +253,7 @@ BOOL CEITTable::SDDecode( BYTE* data, DWORD dataSize, vector<AribDescriptor::CDe
 				}
 			}else if( readPos[2] == 0x02 && shortItem == NULL){
 				shortItem = new AribDescriptor::CDescriptor;
-				if( shortItem->Decode(readPos, decodeSize - dataSize, NULL, parserList) == false ){
+				if( shortItem->Decode(readPos, dataSize - decodeSize, NULL, parserList) == false ){
 					delete shortItem;
 					shortItem = NULL;
 				}else{
@@ -267,7 +267,7 @@ BOOL CEITTable::SDDecode( BYTE* data, DWORD dataSize, vector<AribDescriptor::CDe
 		if( readPos[0] == 0x83 ){
 			//詳細情報
 			AribDescriptor::CDescriptor* item = new AribDescriptor::CDescriptor;
-			if( item->Decode(readPos, decodeSize - dataSize, NULL, parserList) == false ){
+			if( item->Decode(readPos, dataSize - decodeSize, NULL, parserList) == false ){
 				delete item;
 			}else{
 				//拡張形式イベント記述子にキャスト
