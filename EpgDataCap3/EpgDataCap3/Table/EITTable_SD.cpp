@@ -125,7 +125,7 @@ BOOL CEITTable_SD::SDDecode( BYTE* data, DWORD dataSize, vector<AribDescriptor::
 		AribDescriptor::descriptor_length, AribDescriptor::D_LOCAL, 8,
 		AribDescriptor::D_BEGIN, AribDescriptor::descriptor_length,
 			AribDescriptor::reserved, AribDescriptor::D_LOCAL, 8,
-			AribDescriptor::D_BEGIN_FOR_TO_END,
+			AribDescriptor::D_BEGIN_FOR, 8,
 				AribDescriptor::item_description_char, AribDescriptor::D_STRING_TO_END,
 			AribDescriptor::D_END,
 		AribDescriptor::D_END,
