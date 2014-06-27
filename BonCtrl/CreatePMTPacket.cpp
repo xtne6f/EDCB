@@ -181,7 +181,9 @@ DWORD CCreatePMTPacket::DecodePMT(BYTE* data, DWORD dataSize)
 		if( descriptor_tag == 0x09 && descriptor_length >= 4){
 			//CA
 			WORD CA_PID = ((WORD)data[readSize+2]&0x1F)<<8 | (WORD)data[readSize+3];
-			this->emmPIDMap.insert(pair<WORD,WORD>(CA_PID, 0));
+			if (CA_PID != 0x1fff) {
+				this->emmPIDMap.insert(pair<WORD,WORD>(CA_PID, 0));
+			}
 		}
 		readSize += descriptor_length;
 
@@ -210,7 +212,9 @@ DWORD CCreatePMTPacket::DecodePMT(BYTE* data, DWORD dataSize)
 			if( descriptor_tag == 0x09 && descriptor_length >= 4){
 				//CA
 				WORD CA_PID = ((WORD)data[2+readSize+2]&0x1F)<<8 | (WORD)data[2+readSize+3];
-				this->emmPIDMap.insert(pair<WORD,WORD>(CA_PID, 0));
+				if (CA_PID != 0x1fff) {
+					this->emmPIDMap.insert(pair<WORD,WORD>(CA_PID, 0));
+				}
 
 				memcpy(item->descBuff+5+infoRead, data+readSize, 2+descriptor_length);
 			}else if( descriptor_tag == 0xC0 ){

@@ -110,7 +110,9 @@ BOOL CPMTUtil::DecodePMT(BYTE* data, DWORD dataSize)
 			if( descriptor_tag == 0x09 && descriptor_length >= 4 && readSize+3 < (DWORD)section_length+3-4 ){
 				//CA
 				WORD CA_PID = ((WORD)data[readSize+2]&0x1F)<<8 | (WORD)data[readSize+3];
-				PIDList.insert(pair<WORD,WORD>(CA_PID, 0));
+				if (CA_PID != 0x1fff) {
+					PIDList.insert(pair<WORD,WORD>(CA_PID, 0));
+				}
 			}
 			readSize += descriptor_length;
 
@@ -136,7 +138,9 @@ BOOL CPMTUtil::DecodePMT(BYTE* data, DWORD dataSize)
 				if( descriptor_tag == 0x09 && descriptor_length >= 4 && readSize+3 < (DWORD)section_length+3-4 ){
 					//CA
 					WORD CA_PID = ((WORD)data[readSize+2]&0x1F)<<8 | (WORD)data[readSize+3];
-					PIDList.insert(pair<WORD,WORD>(CA_PID, 0));
+					if (CA_PID != 0x1fff) {
+						PIDList.insert(pair<WORD,WORD>(CA_PID, 0));
+					}
 				}
 				readSize += descriptor_length;
 

@@ -89,8 +89,10 @@ BOOL CCATUtil::DecodeCAT(BYTE* data, DWORD dataSize)
 				if( descriptor_tag == 0x09 && descriptor_length >= 4 && infoRead+5 < descriptorSize ){
 					//CA
 					WORD CA_PID = ((WORD)data[readSize+2]&0x1F)<<8 | (WORD)data[readSize+3];
-					PIDList.insert(pair<WORD,WORD>(CA_PID, 0));
-					//_OutputDebugString(L"CA_PID:0x%04x\r\n",CA_PID);
+					if (CA_PID != 0x1fff) {
+						PIDList.insert(pair<WORD,WORD>(CA_PID, 0));
+						//_OutputDebugString(L"CA_PID:0x%04x\r\n",CA_PID);
+					}
 				}
 				readSize += descriptor_length;
 
