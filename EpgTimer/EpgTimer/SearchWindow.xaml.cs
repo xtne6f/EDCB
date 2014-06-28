@@ -107,19 +107,32 @@ namespace EpgTimer
                 Title = "EPG予約条件";
                 button_chg_epgAutoAdd.Visibility = System.Windows.Visibility.Hidden;
                 button_del_epgAutoAdd.Visibility = System.Windows.Visibility.Hidden;
+                button_up_epgAutoAdd.Visibility = System.Windows.Visibility.Hidden;
+                button_down_epgAutoAdd.Visibility = System.Windows.Visibility.Hidden;
             }
             else if (mode == 2)//変更
             {
                 Title = "EPG予約条件";
                 button_chg_epgAutoAdd.Visibility = System.Windows.Visibility.Visible;
                 button_del_epgAutoAdd.Visibility = System.Windows.Visibility.Visible;
+                button_up_epgAutoAdd.Visibility = System.Windows.Visibility.Visible;
+                button_down_epgAutoAdd.Visibility = System.Windows.Visibility.Visible;
             }
             else
             {
                 Title = "検索";
                 button_chg_epgAutoAdd.Visibility = System.Windows.Visibility.Hidden;
                 button_del_epgAutoAdd.Visibility = System.Windows.Visibility.Hidden;
+                button_up_epgAutoAdd.Visibility = System.Windows.Visibility.Hidden;
+                button_down_epgAutoAdd.Visibility = System.Windows.Visibility.Hidden;
             }
+        }
+
+        private void SetMode_UpDownButtons()
+        {
+            MainWindow mainWindow = Application.Current.MainWindow as MainWindow;
+            button_up_epgAutoAdd.IsEnabled = mainWindow.autoAddView.epgAutoAddView.IsVisible;
+            button_down_epgAutoAdd.IsEnabled = mainWindow.autoAddView.epgAutoAddView.IsVisible;
         }
 
         public void SetChgAutoAddID(UInt32 id)
@@ -451,6 +464,35 @@ namespace EpgTimer
             {
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
+        }
+
+        private void button_up_epgAutoAdd_Click(object sender, RoutedEventArgs e)
+        {
+            Move_epgAutoAdd(-1);
+        }
+
+        private void button_down_epgAutoAdd_Click(object sender, RoutedEventArgs e)
+        {
+            Move_epgAutoAdd(1);
+        }
+
+        private void Move_epgAutoAdd(int direction)
+        {
+            MainWindow mainWindow = Application.Current.MainWindow as MainWindow;
+            ListView epglist = mainWindow.autoAddView.epgAutoAddView.listView_key;
+
+            //念のため
+            UpdateEpgAutoAddViewSelection();
+            if (epglist.SelectedIndex == -1) return;
+
+            epglist.SelectedIndex = (epglist.SelectedIndex + direction + epglist.Items.Count) % epglist.Items.Count;
+            EpgAutoAddData newinfo = (epglist.SelectedItem as EpgAutoDataItem).EpgAutoAddInfo;
+
+            this.SetChgAutoAddID(newinfo.dataID);
+            this.SetSearchDefKey(newinfo.searchInfo);
+            this.SetRecInfoDef(newinfo.recSetting);
+
+            SearchPg();
         }
 
         private bool CheckExistAutoAddItem()
@@ -1192,6 +1234,7 @@ namespace EpgTimer
         private void Window_Activated(object sender, EventArgs e)
         {
             UpdateEpgAutoAddViewSelection();
+            SetMode_UpDownButtons();
         }
 
         private void UpdateEpgAutoAddViewSelection()
