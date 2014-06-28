@@ -485,7 +485,7 @@ namespace EpgTimer
             UpdateEpgAutoAddViewSelection();
             if (epglist.SelectedIndex == -1) return;
 
-            epglist.SelectedIndex = (epglist.SelectedIndex + direction + epglist.Items.Count) % epglist.Items.Count;
+            epglist.SelectedIndex = ((epglist.SelectedIndex + direction) % epglist.Items.Count + epglist.Items.Count) % epglist.Items.Count;
             EpgAutoAddData newinfo = (epglist.SelectedItem as EpgAutoDataItem).EpgAutoAddInfo;
 
             this.SetChgAutoAddID(newinfo.dataID);
