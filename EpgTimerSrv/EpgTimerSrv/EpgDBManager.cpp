@@ -238,6 +238,8 @@ BOOL CEpgDBManager::ConvertEpgInfo(WORD ONID, WORD TSID, WORD SID, EPG_EVENT_INF
 	if( src->shortInfo != NULL ){
 		dest->shortInfo = new EPGDB_SHORT_EVENT_INFO;
 		dest->shortInfo->event_name = src->shortInfo->event_name;
+		//‚²‚­‹H‚ÉAPR(‰üs)‚ðŠÜ‚Þ‚½‚ß
+		Replace(dest->shortInfo->event_name, L"\r\n", L"");
 		dest->shortInfo->text_char = src->shortInfo->text_char;
 		dest->shortInfo->search_event_name = src->shortInfo->event_name;
 		dest->shortInfo->search_text_char = src->shortInfo->text_char;
