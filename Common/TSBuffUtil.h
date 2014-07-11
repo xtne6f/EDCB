@@ -8,7 +8,7 @@
 class CTSBuffUtil
 {
 public:
-	CTSBuffUtil(void);
+	CTSBuffUtil(BOOL supportPES = FALSE);
 	~CTSBuffUtil(void);
 
 	DWORD Add188TS(CTSPacketUtil* tsPacket);
@@ -37,6 +37,7 @@ protected:
 	BYTE lastCounter;
 	BOOL duplicateFlag;
 
+	BOOL supportPES;
 	BOOL PESMode;
 
 	SECTION_BUFF* creatingBuff;
