@@ -3,7 +3,7 @@
 
 #include "../../Common/StringUtil.h"
 #include "../../Common/PathUtil.h"
-#include "../../Common/ParseContentTypeText.h"
+#include "../../Common/ParseTextInstances.h"
 #include "../../Common/ErrDef.h"
 
 typedef struct _RANGE_ITEM{

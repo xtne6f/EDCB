@@ -49,8 +49,8 @@ BOOL CSetDlgEpg::OnInitDialog()
 	lvc.cx = rc.right - GetSystemMetrics(SM_CXVSCROLL) - 4;
 	ListView_InsertColumn(hItem, 0, &lvc);
 
-	map<LONGLONG, CH_DATA5>::iterator itr;
-	for( itr = this->chSet.chList.begin(); itr != this->chSet.chList.end(); itr++ ){
+	map<LONGLONG, CH_DATA5>::const_iterator itr;
+	for( itr = this->chSet.GetMap().begin(); itr != this->chSet.GetMap().end(); itr++ ){
 		LVITEM lvi;
 		lvi.mask = LVIF_TEXT;
 		lvi.iItem = ListView_GetItemCount(hItem);
@@ -75,8 +75,8 @@ void CSetDlgEpg::SaveIni(void)
 	WritePrivateProfileInt( L"SET", L"CS2BasicOnly", Button_GetCheck(GetDlgItem(IDC_CHECK_CS2)), commonIniPath.c_str() );
 
 	for( int i=0; i<ListView_GetItemCount(GetDlgItem(IDC_LIST_SERVICE)); i++ ){
-		map<LONGLONG, CH_DATA5>::iterator itr;
-		itr = this->chSet.chList.begin();
+		map<LONGLONG, CH_DATA5>::const_iterator itr;
+		itr = this->chSet.GetMap().begin();
 		advance(itr, i);
 		this->chSet.SetEpgCapMode(
 			itr->second.originalNetworkID,
@@ -85,7 +85,7 @@ void CSetDlgEpg::SaveIni(void)
 			ListView_GetCheckState(GetDlgItem(IDC_LIST_SERVICE), i)
 			);
 	}
-	this->chSet.SaveChText();
+	this->chSet.SaveText();
 }
 
 
@@ -102,8 +102,8 @@ void CSetDlgEpg::OnBnClickedButtonVideoChk()
 {
 	// TODO: ここにコントロール通知ハンドラー コードを追加します。
 	for( int i=0; i<ListView_GetItemCount(GetDlgItem(IDC_LIST_SERVICE)); i++ ){
-		map<LONGLONG, CH_DATA5>::iterator itr;
-		itr = this->chSet.chList.begin();
+		map<LONGLONG, CH_DATA5>::const_iterator itr;
+		itr = this->chSet.GetMap().begin();
 		advance(itr, i);
 		ListView_SetCheckState(GetDlgItem(IDC_LIST_SERVICE), i, itr->second.serviceType == 0x01 || itr->second.serviceType == 0xA5);
 	}

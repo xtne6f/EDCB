@@ -8,7 +8,7 @@
 #include "../../Common/ProxyUtil.h"
 #include "../../Common/StringUtil.h"
 #include "../../Common/TimeUtil.h"
-#include "../../Common/ParseServiceChgText.h"
+#include "../../Common/ParseTextInstances.h"
 
 #define SYOBOI_UP_URL L"http://cal.syoboi.jp/sch_upload"
 

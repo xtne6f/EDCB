@@ -5,8 +5,7 @@
 #include "FileStreamingManager.h"
 #include "NotifyManager.h"
 
-#include "../../Common/ParseEpgAutoAddText.h"
-#include "../../Common/ParseManualAutoAddText.h"
+#include "../../Common/ParseTextInstances.h"
 #include "../../Common/PipeServer.h"
 #include "../../Common/TCPServer.h"
 #include "../../Common/HttpServer.h"

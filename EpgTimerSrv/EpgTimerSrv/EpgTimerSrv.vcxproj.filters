@@ -96,9 +96,6 @@
     <ClInclude Include="ReserveManager.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Common\ParseReserveText.h">
-      <Filter>ヘッダー ファイル\Common</Filter>
-    </ClInclude>
     <ClInclude Include="ReserveInfo.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
@@ -126,10 +123,10 @@
     <ClInclude Include="..\..\Common\ErrDef.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Common\ParseChText4.h">
+    <ClInclude Include="..\..\Common\ParseText.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Common\ParseChText5.h">
+    <ClInclude Include="..\..\Common\ParseTextInstances.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
     <ClInclude Include="TunerBankCtrl.h">
@@ -138,20 +135,11 @@
     <ClInclude Include="..\..\Common\ReNamePlugInUtil.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Common\ParseRecInfoText.h">
-      <Filter>ヘッダー ファイル\Common</Filter>
-    </ClInclude>
     <ClInclude Include="BatManager.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Common\ParseEpgAutoAddText.h">
-      <Filter>ヘッダー ファイル\Common</Filter>
-    </ClInclude>
     <ClInclude Include="CheckRecFile.h">
       <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Common\ParseManualAutoAddText.h">
-      <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Common\TCPServer.h">
       <Filter>ヘッダー ファイル\Common</Filter>
@@ -231,9 +219,6 @@
     <ClInclude Include="SyoboiCalUtil.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Common\ParseServiceChgText.h">
-      <Filter>ヘッダー ファイル\Common</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Common\TCPServerUtil.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
@@ -245,9 +230,6 @@
     </ClInclude>
     <ClInclude Include="HttpFileSend.h">
       <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Common\ParseContentTypeText.h">
-      <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
     <ClInclude Include="DLNAManager.h">
       <Filter>ヘッダー ファイル</Filter>
@@ -335,9 +317,6 @@
     <ClCompile Include="ReserveManager.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Common\ParseReserveText.cpp">
-      <Filter>ソース ファイル\Common</Filter>
-    </ClCompile>
     <ClCompile Include="ReserveInfo.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
@@ -359,10 +338,7 @@
     <ClCompile Include="..\..\Common\PipeServer.cpp">
       <Filter>ソース ファイル\Common</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Common\ParseChText4.cpp">
-      <Filter>ソース ファイル\Common</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Common\ParseChText5.cpp">
+    <ClCompile Include="..\..\Common\ParseTextInstances.cpp">
       <Filter>ソース ファイル\Common</Filter>
     </ClCompile>
     <ClCompile Include="TunerBankCtrl.cpp">
@@ -371,20 +347,11 @@
     <ClCompile Include="..\..\Common\ReNamePlugInUtil.cpp">
       <Filter>ソース ファイル\Common</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Common\ParseRecInfoText.cpp">
-      <Filter>ソース ファイル\Common</Filter>
-    </ClCompile>
     <ClCompile Include="BatManager.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Common\ParseEpgAutoAddText.cpp">
-      <Filter>ソース ファイル\Common</Filter>
-    </ClCompile>
     <ClCompile Include="CheckRecFile.cpp">
       <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Common\ParseManualAutoAddText.cpp">
-      <Filter>ソース ファイル\Common</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Common\TCPServer.cpp">
       <Filter>ソース ファイル\Common</Filter>
@@ -458,9 +425,6 @@
     <ClCompile Include="SyoboiCalUtil.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Common\ParseServiceChgText.cpp">
-      <Filter>ソース ファイル\Common</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\Common\TCPServerUtil.cpp">
       <Filter>ソース ファイル\Common</Filter>
     </ClCompile>
@@ -472,9 +436,6 @@
     </ClCompile>
     <ClCompile Include="HttpFileSend.cpp">
       <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Common\ParseContentTypeText.cpp">
-      <Filter>ソース ファイル\Common</Filter>
     </ClCompile>
     <ClCompile Include="DLNAManager.cpp">
       <Filter>ソース ファイル</Filter>

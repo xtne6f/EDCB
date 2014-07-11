@@ -176,10 +176,13 @@ BOOL CTunerManager::GetNotSupportServiceTuner(
 	}
 	map<DWORD, TUNER_INFO*>::iterator itr;
 	for( itr = this->tunerMap.begin(); itr != this->tunerMap.end(); itr++ ){
-		multimap<LONGLONG, CH_DATA4>::iterator itrCh;
-		LONGLONG key = _Create64Key(ONID, TSID, SID);
-		itrCh = itr->second->chUtil.chList.find(key);
-		if( itrCh == itr->second->chUtil.chList.end() ){
+		map<DWORD, CH_DATA4>::const_iterator itrCh;
+		for( itrCh = itr->second->chUtil.GetMap().begin(); itrCh != itr->second->chUtil.GetMap().end(); itrCh++ ){
+			if( itrCh->second.originalNetworkID == ONID && itrCh->second.transportStreamID == TSID && itrCh->second.serviceID == SID ){
+				break;
+			}
+		}
+		if( itrCh == itr->second->chUtil.GetMap().end() ){
 			idList->push_back(itr->first);
 		}
 
@@ -199,11 +202,12 @@ BOOL CTunerManager::GetSupportServiceTuner(
 	}
 	map<DWORD, TUNER_INFO*>::iterator itr;
 	for( itr = this->tunerMap.begin(); itr != this->tunerMap.end(); itr++ ){
-		multimap<LONGLONG, CH_DATA4>::iterator itrCh;
-		LONGLONG key = _Create64Key(ONID, TSID, SID);
-		itrCh = itr->second->chUtil.chList.find(key);
-		if( itrCh != itr->second->chUtil.chList.end() ){
-			idList->push_back(itr->first);
+		map<DWORD, CH_DATA4>::const_iterator itrCh;
+		for( itrCh = itr->second->chUtil.GetMap().begin(); itrCh != itr->second->chUtil.GetMap().end(); itrCh++ ){
+			if( itrCh->second.originalNetworkID == ONID && itrCh->second.transportStreamID == TSID && itrCh->second.serviceID == SID ){
+				idList->push_back(itr->first);
+				break;
+			}
 		}
 
 	}
@@ -221,17 +225,17 @@ BOOL CTunerManager::GetCh(
 {
 	map<DWORD, TUNER_INFO*>::iterator itr;
 	for( itr = this->tunerMap.begin(); itr != this->tunerMap.end(); itr++ ){
-		multimap<LONGLONG, CH_DATA4>::iterator itrCh;
-		LONGLONG key = _Create64Key(ONID, TSID, SID);
-		itrCh = itr->second->chUtil.chList.find(key);
-		if( itrCh != itr->second->chUtil.chList.end() ){
-			if( space != NULL ){
-				*space = itrCh->second.space;
+		map<DWORD, CH_DATA4>::const_iterator itrCh;
+		for( itrCh = itr->second->chUtil.GetMap().begin(); itrCh != itr->second->chUtil.GetMap().end(); itrCh++ ){
+			if( itrCh->second.originalNetworkID == ONID && itrCh->second.transportStreamID == TSID && itrCh->second.serviceID == SID ){
+				if( space != NULL ){
+					*space = itrCh->second.space;
+				}
+				if( ch != NULL ){
+					*ch = itrCh->second.ch;
+				}
+				return TRUE;
 			}
-			if( ch != NULL ){
-				*ch = itrCh->second.ch;
-			}
-			return TRUE;
 		}
 	}
 	return FALSE;
@@ -266,13 +270,13 @@ BOOL CTunerManager::IsSupportService(
 		return FALSE;
 	}
 
-	multimap<LONGLONG, CH_DATA4>::iterator itrCh;
-	LONGLONG key = _Create64Key(ONID, TSID, SID);
-	itrCh = itr->second->chUtil.chList.find(key);
-	if( itrCh == itr->second->chUtil.chList.end() ){
-		return FALSE;
+	map<DWORD, CH_DATA4>::const_iterator itrCh;
+	for( itrCh = itr->second->chUtil.GetMap().begin(); itrCh != itr->second->chUtil.GetMap().end(); itrCh++ ){
+		if( itrCh->second.originalNetworkID == ONID && itrCh->second.transportStreamID == TSID && itrCh->second.serviceID == SID ){
+			return TRUE;
+		}
 	}
-	return TRUE;
+	return FALSE;
 }
 
 BOOL CTunerManager::GetBonFileName(

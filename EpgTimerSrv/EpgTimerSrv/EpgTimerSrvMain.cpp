@@ -677,12 +677,12 @@ BOOL CEpgTimerSrvMain::AutoAddReserveEPG(int targetSize, EPG_AUTO_ADD_DATA* targ
 	{ //CBlockLock
 	CBlockLock lock(&this->settingLock);
 
-	map<DWORD, EPG_AUTO_ADD_DATA*>::iterator itrKey;
-	for( itrKey = this->epgAutoAdd.dataIDMap.begin(); itrKey != this->epgAutoAdd.dataIDMap.end(); itrKey++ ){
+	map<DWORD, EPG_AUTO_ADD_DATA>::const_iterator itrKey;
+	for( itrKey = this->epgAutoAdd.GetMap().begin(); itrKey != this->epgAutoAdd.GetMap().end(); itrKey++ ){
 		if( targetSize >= 0 ){
 			BOOL findData = FALSE;
 			for( int i=0; i < targetSize; i++ ){
-				if( target[i].dataID == itrKey->second->dataID ){
+				if( target[i].dataID == itrKey->second.dataID ){
 					findData = TRUE;
 					break;
 				}
@@ -692,10 +692,10 @@ BOOL CEpgTimerSrvMain::AutoAddReserveEPG(int targetSize, EPG_AUTO_ADD_DATA* targ
 			}
 		}
 
-		itrKey->second->addCount = 0;
+		this->epgAutoAdd.SetAddCount(itrKey->first, 0);
 
 		vector<unique_ptr<CEpgDBManager::SEARCH_RESULT_EVENT_DATA>> resultList;
-		vector<EPGDB_SEARCH_KEY_INFO> key(1, itrKey->second->searchInfo);
+		vector<EPGDB_SEARCH_KEY_INFO> key(1, itrKey->second.searchInfo);
 		this->epgDB.SearchEpg(&key, &resultList);
 		for( size_t i=0; i<resultList.size(); i++ ){
 			EPGDB_EVENT_INFO* result = &resultList[i]->info;
@@ -712,7 +712,7 @@ BOOL CEpgTimerSrvMain::AutoAddReserveEPG(int targetSize, EPG_AUTO_ADD_DATA* targ
 				continue;
 			}
 
-			itrKey->second->addCount++;
+			this->epgAutoAdd.SetAddCount(itrKey->first, itrKey->second.addCount + 1);
 
 			if(this->reserveManager.IsFindReserve(
 				result->original_network_id,
@@ -781,9 +781,9 @@ BOOL CEpgTimerSrvMain::AutoAddReserveEPG(int targetSize, EPG_AUTO_ADD_DATA* targ
 						addItem->serviceID = result->service_id;
 						addItem->eventID = result->event_id;
 
-						addItem->recSetting = itrKey->second->recSetting;
-						if( itrKey->second->searchInfo.chkRecEnd == 1 ){
-							if( this->reserveManager.IsFindRecEventInfo(result, itrKey->second->searchInfo.chkRecDay) == TRUE ){
+						addItem->recSetting = itrKey->second.recSetting;
+						if( itrKey->second.searchInfo.chkRecEnd == 1 ){
+							if( this->reserveManager.IsFindRecEventInfo(result, itrKey->second.searchInfo.chkRecDay) == TRUE ){
 								addItem->recSetting.recMode = RECMODE_NO;
 							}
 						}
@@ -796,12 +796,12 @@ BOOL CEpgTimerSrvMain::AutoAddReserveEPG(int targetSize, EPG_AUTO_ADD_DATA* targ
 						addMap.insert(pair<ULONGLONG, RESERVE_DATA*>(eventKey, addItem));
 					}else{
 						//–³Œø‚È‚ç‚»‚ê‚ð—Dæ
-						if( itrKey->second->recSetting.recMode == RECMODE_NO ){
+						if( itrKey->second.recSetting.recMode == RECMODE_NO ){
 							itrAdd->second->recSetting.recMode = RECMODE_NO;
 						}
 					}
-			}else if( itrKey->second->searchInfo.chkRecEnd == 1 ){
-				if( this->reserveManager.IsFindRecEventInfo(result, itrKey->second->searchInfo.chkRecDay) == TRUE ){
+			}else if( itrKey->second.searchInfo.chkRecEnd == 1 ){
+				if( this->reserveManager.IsFindRecEventInfo(result, itrKey->second.searchInfo.chkRecDay) == TRUE ){
 					this->reserveManager.ChgAutoAddNoRec(result);
 					chgRecEnd = TRUE;
 				}
@@ -853,12 +853,12 @@ BOOL CEpgTimerSrvMain::AutoAddReserveProgram()
 	{ //CBlockLock
 	CBlockLock lock(&this->settingLock);
 
-	map<DWORD, MANUAL_AUTO_ADD_DATA*>::iterator itr;
-	for( itr = this->manualAutoAdd.dataIDMap.begin(); itr != this->manualAutoAdd.dataIDMap.end(); itr++){
+	map<DWORD, MANUAL_AUTO_ADD_DATA>::const_iterator itr;
+	for( itr = this->manualAutoAdd.GetMap().begin(); itr != this->manualAutoAdd.GetMap().end(); itr++){
 		BYTE weekChkFlag = (BYTE)(1<<nowTime.wDayOfWeek);
 		for( BYTE i=0; i<8; i++ ){
-			if( (itr->second->dayOfWeekFlag & weekChkFlag) != 0 ){
-				LONGLONG startTime = baseStartTime + ((LONGLONG)itr->second->startTime) * I64_1SEC + (((LONGLONG)i) * 24*60*60*I64_1SEC);
+			if( (itr->second.dayOfWeekFlag & weekChkFlag) != 0 ){
+				LONGLONG startTime = baseStartTime + ((LONGLONG)itr->second.startTime) * I64_1SEC + (((LONGLONG)i) * 24*60*60*I64_1SEC);
 
 				if( startTime > now ){
 					//ŽžŠÔ“I‚É—\–ñ’Ç‰ÁŒó•â
@@ -868,14 +868,14 @@ BOOL CEpgTimerSrvMain::AutoAddReserveProgram()
 						if( reserveList[j]->eventID != 0xFFFF ){
 							continue;
 						}
-						if( reserveList[j]->originalNetworkID != itr->second->originalNetworkID ||
-							reserveList[j]->transportStreamID != itr->second->transportStreamID ||
-							reserveList[j]->serviceID != itr->second->serviceID 
+						if( reserveList[j]->originalNetworkID != itr->second.originalNetworkID ||
+							reserveList[j]->transportStreamID != itr->second.transportStreamID ||
+							reserveList[j]->serviceID != itr->second.serviceID 
 							){
 							continue;
 						}
 						if( ConvertI64Time(reserveList[j]->startTime) == startTime &&
-							reserveList[j]->durationSecond == itr->second->durationSecond
+							reserveList[j]->durationSecond == itr->second.durationSecond
 							){
 							find = TRUE;
 							break;
@@ -884,16 +884,16 @@ BOOL CEpgTimerSrvMain::AutoAddReserveProgram()
 					if( find == FALSE ){
 						//Œ©‚Â‚©‚ç‚È‚©‚Á‚½‚Ì‚Å—\–ñ’Ç‰Á
 						RESERVE_DATA item;
-						item.title = itr->second->title;
+						item.title = itr->second.title;
 						ConvertSystemTime(startTime, &item.startTime); 
 						item.startTimeEpg = item.startTime;
-						item.durationSecond = itr->second->durationSecond;
-						item.stationName = itr->second->stationName;
-						item.originalNetworkID = itr->second->originalNetworkID;
-						item.transportStreamID = itr->second->transportStreamID;
-						item.serviceID = itr->second->serviceID;
+						item.durationSecond = itr->second.durationSecond;
+						item.stationName = itr->second.stationName;
+						item.originalNetworkID = itr->second.originalNetworkID;
+						item.transportStreamID = itr->second.transportStreamID;
+						item.serviceID = itr->second.serviceID;
 						item.eventID = 0xFFFF;
-						item.recSetting = itr->second->recSetting;
+						item.recSetting = itr->second.recSetting;
 
 						setList.push_back(item);
 					}
@@ -976,13 +976,6 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 
 
 	switch( cmdParam->param ){
-	case CMD2_EPG_SRV_ADDLOAD_RESERVE:
-		{
-			if( sys->reserveManager.AddLoadReserveData() == TRUE ){
-				resParam->param = CMD_SUCCESS;
-			}
-		}
-		break;
 	case CMD2_EPG_SRV_RELOAD_EPG:
 		if( sys->epgDB.IsLoadingData() == TRUE ){
 			resParam->param = CMD_ERR_BUSY;
@@ -1314,9 +1307,9 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 				vector<EPG_AUTO_ADD_DATA> val;
 				{
 					CBlockLock lock(&sys->settingLock);
-					map<DWORD, EPG_AUTO_ADD_DATA*>::iterator itr;
-					for( itr = sys->epgAutoAdd.dataIDMap.begin(); itr != sys->epgAutoAdd.dataIDMap.end(); itr++ ){
-						val.push_back(*(itr->second));
+					map<DWORD, EPG_AUTO_ADD_DATA>::const_iterator itr;
+					for( itr = sys->epgAutoAdd.GetMap().begin(); itr != sys->epgAutoAdd.GetMap().end(); itr++ ){
+						val.push_back(itr->second);
 					}
 				}
 				resParam->param = CMD_SUCCESS;
@@ -1338,7 +1331,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 					{
 						CBlockLock lock(&sys->settingLock);
 						for( size_t i=0; i<val.size(); i++ ){
-							sys->epgAutoAdd.AddData(&val[i]);
+							val[i].dataID = sys->epgAutoAdd.AddData(val[i]);
 						}
 						sys->epgAutoAdd.SaveText();
 					}
@@ -1383,7 +1376,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 					{
 						CBlockLock lock(&sys->settingLock);
 						for( size_t i=0; i<val.size(); i++ ){
-							sys->epgAutoAdd.ChgData(&val[i]);
+							sys->epgAutoAdd.ChgData(val[i]);
 						}
 						sys->epgAutoAdd.SaveText();
 					}
@@ -1405,9 +1398,9 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 				vector<MANUAL_AUTO_ADD_DATA> val;
 				{
 					CBlockLock lock(&sys->settingLock);
-					map<DWORD, MANUAL_AUTO_ADD_DATA*>::iterator itr;
-					for( itr = sys->manualAutoAdd.dataIDMap.begin(); itr != sys->manualAutoAdd.dataIDMap.end(); itr++ ){
-						val.push_back(*(itr->second));
+					map<DWORD, MANUAL_AUTO_ADD_DATA>::const_iterator itr;
+					for( itr = sys->manualAutoAdd.GetMap().begin(); itr != sys->manualAutoAdd.GetMap().end(); itr++ ){
+						val.push_back(itr->second);
 					}
 				}
 				resParam->param = CMD_SUCCESS;
@@ -1430,7 +1423,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 					{
 						CBlockLock lock(&sys->settingLock);
 						for( size_t i=0; i<val.size(); i++ ){
-							sys->manualAutoAdd.AddData(&val[i]);
+							sys->manualAutoAdd.AddData(val[i]);
 						}
 						sys->manualAutoAdd.SaveText();
 					}
@@ -1475,7 +1468,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 					{
 						CBlockLock lock(&sys->settingLock);
 						for( size_t i=0; i<val.size(); i++ ){
-							sys->manualAutoAdd.ChgData(&val[i]);
+							sys->manualAutoAdd.ChgData(val[i]);
 						}
 						sys->manualAutoAdd.SaveText();
 					}
@@ -2005,9 +1998,9 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 				vector<EPG_AUTO_ADD_DATA> val;
 				{
 					CBlockLock lock(&sys->settingLock);
-					map<DWORD, EPG_AUTO_ADD_DATA*>::iterator itr;
-					for( itr = sys->epgAutoAdd.dataIDMap.begin(); itr != sys->epgAutoAdd.dataIDMap.end(); itr++ ){
-						val.push_back(*(itr->second));
+					map<DWORD, EPG_AUTO_ADD_DATA>::const_iterator itr;
+					for( itr = sys->epgAutoAdd.GetMap().begin(); itr != sys->epgAutoAdd.GetMap().end(); itr++ ){
+						val.push_back(itr->second);
 					}
 				}
 				
@@ -2045,7 +2038,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 						{
 							CBlockLock lock(&sys->settingLock);
 							for( size_t i=0; i<list.size(); i++ ){
-								sys->epgAutoAdd.AddData(&list[i]);
+								list[i].dataID = sys->epgAutoAdd.AddData(list[i]);
 							}
 							sys->epgAutoAdd.SaveText();
 						}
@@ -2083,7 +2076,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 						{
 							CBlockLock lock(&sys->settingLock);
 							for( size_t i=0; i<list.size(); i++ ){
-								sys->epgAutoAdd.ChgData(&list[i]);
+								sys->epgAutoAdd.ChgData(list[i]);
 							}
 							sys->epgAutoAdd.SaveText();
 						}
@@ -2115,9 +2108,9 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 				vector<MANUAL_AUTO_ADD_DATA> val;
 				{
 					CBlockLock lock(&sys->settingLock);
-					map<DWORD, MANUAL_AUTO_ADD_DATA*>::iterator itr;
-					for( itr = sys->manualAutoAdd.dataIDMap.begin(); itr != sys->manualAutoAdd.dataIDMap.end(); itr++ ){
-						val.push_back(*(itr->second));
+					map<DWORD, MANUAL_AUTO_ADD_DATA>::const_iterator itr;
+					for( itr = sys->manualAutoAdd.GetMap().begin(); itr != sys->manualAutoAdd.GetMap().end(); itr++ ){
+						val.push_back(itr->second);
 					}
 				}
 				
@@ -2155,7 +2148,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 						{
 							CBlockLock lock(&sys->settingLock);
 							for( size_t i=0; i<list.size(); i++ ){
-								sys->manualAutoAdd.AddData(&list[i]);
+								sys->manualAutoAdd.AddData(list[i]);
 							}
 							sys->manualAutoAdd.SaveText();
 						}
@@ -2193,7 +2186,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 						{
 							CBlockLock lock(&sys->settingLock);
 							for( size_t i=0; i<list.size(); i++ ){
-								sys->manualAutoAdd.ChgData(&list[i]);
+								sys->manualAutoAdd.ChgData(list[i]);
 							}
 							sys->manualAutoAdd.SaveText();
 						}
@@ -2355,7 +2348,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 
 					{
 						CBlockLock lock(&sys->settingLock);
-						sys->epgAutoAdd.AddData(&item);
+						item.dataID = sys->epgAutoAdd.AddData(item);
 						sys->epgAutoAdd.SaveText();
 					}
 					resParam->param = OLD_CMD_SUCCESS;
@@ -2393,7 +2386,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 
 					{
 						CBlockLock lock(&sys->settingLock);
-						sys->epgAutoAdd.ChgData(&item);
+						sys->epgAutoAdd.ChgData(item);
 						sys->epgAutoAdd.SaveText();
 					}
 					resParam->param = OLD_CMD_SUCCESS;
@@ -2609,9 +2602,9 @@ int CALLBACK CEpgTimerSrvMain::HttpCallback(void* param, HTTP_STREAM* recvParam,
 				vector<EPG_AUTO_ADD_DATA> list;
 				{
 					CBlockLock lock(&sys->settingLock);
-					map<DWORD, EPG_AUTO_ADD_DATA*>::iterator itr;
-					for( itr = sys->epgAutoAdd.dataIDMap.begin(); itr != sys->epgAutoAdd.dataIDMap.end(); itr++ ){
-						list.push_back(*(itr->second));
+					map<DWORD, EPG_AUTO_ADD_DATA>::const_iterator itr;
+					for( itr = sys->epgAutoAdd.GetMap().begin(); itr != sys->epgAutoAdd.GetMap().end(); itr++ ){
+						list.push_back(itr->second);
 					}
 				}
 
@@ -2634,10 +2627,11 @@ int CALLBACK CEpgTimerSrvMain::HttpCallback(void* param, HTTP_STREAM* recvParam,
 
 				{
 					CBlockLock lock(&sys->settingLock);
-					map<DWORD, EPG_AUTO_ADD_DATA*>::iterator itr;
-					itr = sys->epgAutoAdd.dataIDMap.find(atoi(param.c_str()));
-					if( itr != sys->epgAutoAdd.dataIDMap.end() ){
-						htmlManager.GetChgAutoEpgPage(itr->second, "", &tunerList, sendParam);
+					map<DWORD, EPG_AUTO_ADD_DATA>::const_iterator itr;
+					itr = sys->epgAutoAdd.GetMap().find(atoi(param.c_str()));
+					if( itr != sys->epgAutoAdd.GetMap().end() ){
+						EPG_AUTO_ADD_DATA val = itr->second;
+						htmlManager.GetChgAutoEpgPage(&val, "", &tunerList, sendParam);
 					}
 				}
 			}
@@ -2779,7 +2773,7 @@ int CALLBACK CEpgTimerSrvMain::HttpCallback(void* param, HTTP_STREAM* recvParam,
 				if( htmlManager.GetAutoEpgParam(&val, recvParam) == TRUE ){
 					{
 						CBlockLock lock(&sys->settingLock);
-						sys->epgAutoAdd.AddData(&val);
+						val.dataID = sys->epgAutoAdd.AddData(val);
 						sys->epgAutoAdd.SaveText();
 					}
 
@@ -2801,10 +2795,11 @@ int CALLBACK CEpgTimerSrvMain::HttpCallback(void* param, HTTP_STREAM* recvParam,
 
 				{
 					CBlockLock lock(&sys->settingLock);
-					map<DWORD, EPG_AUTO_ADD_DATA*>::iterator itr;
-					itr = sys->epgAutoAdd.dataIDMap.find(atoi(id.c_str()));
-					if( itr != sys->epgAutoAdd.dataIDMap.end() ){
-						htmlManager.GetChgAutoEpgPage(itr->second, param, &tunerList, sendParam);
+					map<DWORD, EPG_AUTO_ADD_DATA>::const_iterator itr;
+					itr = sys->epgAutoAdd.GetMap().find(atoi(id.c_str()));
+					if( itr != sys->epgAutoAdd.GetMap().end() ){
+						EPG_AUTO_ADD_DATA val = itr->second;
+						htmlManager.GetChgAutoEpgPage(&val, param, &tunerList, sendParam);
 					}
 				}
 			}
@@ -2818,7 +2813,7 @@ int CALLBACK CEpgTimerSrvMain::HttpCallback(void* param, HTTP_STREAM* recvParam,
 				if( htmlManager.GetAutoEpgParam(&val, recvParam) == TRUE ){
 					{
 						CBlockLock lock(&sys->settingLock);
-						sys->epgAutoAdd.ChgData(&val);
+						sys->epgAutoAdd.ChgData(val);
 						sys->epgAutoAdd.SaveText();
 					}
 

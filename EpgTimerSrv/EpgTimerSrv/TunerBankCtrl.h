@@ -4,9 +4,8 @@
 #include "../../Common/EpgTimerUtil.h"
 #include "../../Common/PathUtil.h"
 #include "../../Common/StringUtil.h"
-#include "../../Common/ParseReserveText.h"
+#include "../../Common/ParseTextInstances.h"
 #include "../../Common/SendCtrlCmd.h"
-#include "../../Common/ParseChText4.h"
 
 #include "ReserveInfo.h"
 #include "TunerCtrl.h"

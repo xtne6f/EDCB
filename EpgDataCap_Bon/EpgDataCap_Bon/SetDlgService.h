@@ -2,7 +2,7 @@
 
 #include "../../Common/PathUtil.h"
 #include "../../Common/StringUtil.h"
-#include "../../Common/ParseChText4.h"
+#include "../../Common/ParseTextInstances.h"
 
 
 // CSetDlgService ダイアログ

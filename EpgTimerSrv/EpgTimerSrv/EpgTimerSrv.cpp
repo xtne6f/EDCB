@@ -10,7 +10,6 @@
 
 #include "../../Common/CommonDef.h"
 #include "../../Common/Util.h"
-#include "../../Common/SendCtrlCmd.h"
 
 HANDLE g_hMutex;
 SERVICE_STATUS_HANDLE g_hStatusHandle;
@@ -49,19 +48,9 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 			if( err != ERROR_ALREADY_EXISTS ) {
 				//起動
 				StartMain(FALSE);
-			}else{
-				// 起動されているので予約追加の確認
-				CSendCtrlCmd cmd;
-				cmd.SetConnectTimeOut(1000);
-				cmd.SendAddloadReserve();
 			}
 			::ReleaseMutex(g_hMutex);
 			::CloseHandle(g_hMutex);
-		}else{
-			// 起動されているので予約追加の確認
-			CSendCtrlCmd cmd;
-			cmd.SetConnectTimeOut(1000);
-			cmd.SendAddloadReserve();
 		}
 	}else{
 		//サービスとしてインストール済み
@@ -77,11 +66,6 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 				if( StartServiceCtrlDispatcher(dispatchTable) == FALSE ){
 					OutputDebugString(_T("StartServiceCtrlDispatcher failed"));
 				}
-			}else{
-				// 起動されているので予約追加の確認
-				CSendCtrlCmd cmd;
-				cmd.SetConnectTimeOut(1000);
-				cmd.SendAddloadReserve();
 			}
 		}else{
 			//Stop状態なので起動する

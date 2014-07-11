@@ -404,9 +404,9 @@ void CHTMLManager::CreateSearchSetForm(EPGDB_SEARCH_KEY_INFO* setData, CParseChT
 	}
 	htmlText+="<BR><BR>\r\n";
 
-	map<LONGLONG, CH_DATA5>::iterator itrCh;
+	map<LONGLONG, CH_DATA5>::const_iterator itrCh;
 	htmlText+="サービス絞り込み\r\n<BR><select name=\"serviceList\" multiple size=5>\r\n";
-	for(itrCh = chSet5->chList.begin(); itrCh != chSet5->chList.end(); itrCh++ ){
+	for(itrCh = chSet5->GetMap().begin(); itrCh != chSet5->GetMap().end(); itrCh++ ){
 		string select = "";
 		for( size_t j=0; j<setData->serviceList.size(); j++ ){
 			if( itrCh->first == setData->serviceList[j] ){
@@ -3073,8 +3073,8 @@ BOOL CHTMLManager::GetAddProgramReservePage(CEpgDBManager* epgDB, vector<TUNER_R
 	chSet5.ParseText(chSet5Path.c_str());
 
 	html+="サービス\r\n<select name=\"serviceID\">\r\n";
-	map<LONGLONG, CH_DATA5>::iterator itrCh;
-	for(itrCh = chSet5.chList.begin(); itrCh != chSet5.chList.end(); itrCh++ ){
+	map<LONGLONG, CH_DATA5>::const_iterator itrCh;
+	for(itrCh = chSet5.GetMap().begin(); itrCh != chSet5.GetMap().end(); itrCh++ ){
 		if( itrCh->second.serviceType == 0x01 || itrCh->second.serviceType == 0xA5 ){
 			__int64 key = _Create64Key(itrCh->second.originalNetworkID,itrCh->second.transportStreamID, itrCh->second.serviceID);
 			string name;
@@ -3329,9 +3329,9 @@ BOOL CHTMLManager::GetAddReservePgData(CEpgDBManager* epgDB, RESERVE_DATA* reser
 		CHAR *endstr;
 		chID = _strtoi64(itr->second.c_str(), &endstr, 10);
 	}
-	map<LONGLONG, CH_DATA5>::iterator itrCh;
-	itrCh = chSet5.chList.find(chID);
-	if( itrCh == chSet5.chList.end()){
+	map<LONGLONG, CH_DATA5>::const_iterator itrCh;
+	itrCh = chSet5.GetMap().find(chID);
+	if( itrCh == chSet5.GetMap().end()){
 		return FALSE;
 	}
 
@@ -3575,9 +3575,9 @@ BOOL CHTMLManager::GetAutoAddEpgPage(vector<EPG_AUTO_ADD_DATA>* val, int pageInd
 
 
 				if( (*val)[i].searchInfo.serviceList.size() > 0 ){
-					map<LONGLONG, CH_DATA5>::iterator itrCh;
-					itrCh = chSet5.chList.find((*val)[i].searchInfo.serviceList[0]);
-					if( itrCh != chSet5.chList.end()){
+					map<LONGLONG, CH_DATA5>::const_iterator itrCh;
+					itrCh = chSet5.GetMap().find((*val)[i].searchInfo.serviceList[0]);
+					if( itrCh != chSet5.GetMap().end()){
 						WtoA(itrCh->second.serviceName, service);
 					}
 					if((*val)[i].searchInfo.serviceList.size() > 1 ){

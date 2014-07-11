@@ -5,7 +5,6 @@
 #include <process.h>
 
 #include "../../Common/ReNamePlugInUtil.h"
-#include "../../Common/ParseRecInfoText.h"
 
 CTunerBankCtrl::CTunerBankCtrl(void)
 {
@@ -908,8 +907,8 @@ BOOL CTunerBankCtrl::OpenTuner(BOOL viewMode, SET_CH_INFO* initCh)
 
 BOOL CTunerBankCtrl::FindPartialService(WORD ONID, WORD TSID, WORD SID, WORD* partialSID, wstring* serviceName)
 {
-	multimap<LONGLONG, CH_DATA4>::iterator itr;
-	for( itr = this->chUtil.chList.begin(); itr != this->chUtil.chList.end(); itr++ ){
+	map<DWORD, CH_DATA4>::const_iterator itr;
+	for( itr = this->chUtil.GetMap().begin(); itr != this->chUtil.GetMap().end(); itr++ ){
 		if( itr->second.originalNetworkID == ONID && itr->second.transportStreamID == TSID && itr->second.partialFlag == TRUE ){
 			if( itr->second.serviceID != SID ){
 				if( partialSID != NULL ){
@@ -1503,11 +1502,14 @@ void CTunerBankCtrl::SaveProgramInfo(wstring savePath, EPGDB_EVENT_INFO* info, B
 {
 	wstring outText = L"";
 	wstring serviceName = L"";
-	multimap<LONGLONG, CH_DATA4>::iterator itr;
-	LONGLONG key = _Create64Key(info->original_network_id, info->transport_stream_id, info->service_id);
-	itr = chUtil.chList.find(key);
-	if( itr != chUtil.chList.end() ){
-		serviceName = itr->second.serviceName;
+	map<DWORD, CH_DATA4>::const_iterator itr;
+	for( itr = chUtil.GetMap().begin(); itr != chUtil.GetMap().end(); itr++ ){
+		if( itr->second.originalNetworkID == info->original_network_id &&
+		    itr->second.transportStreamID == info->transport_stream_id &&
+		    itr->second.serviceID == info->service_id ){
+			serviceName = itr->second.serviceName;
+			break;
+		}
 	}
 	_ConvertEpgInfoText2(info, outText, serviceName);
 
