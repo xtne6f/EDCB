@@ -789,6 +789,8 @@ BOOL CEpgTimerSrvMain::AutoAddReserveEPG(int targetSize, EPG_AUTO_ADD_DATA* targ
 						}
 						if( resultList[i]->findKey.size() > 0 ){
 							Format(addItem->comment, L"EPGŽ©“®—\–ñ(%s)", resultList[i]->findKey.c_str());
+							Replace(addItem->comment, L"\r", L"");
+							Replace(addItem->comment, L"\n", L"");
 						}else{
 							addItem->comment = L"EPGŽ©“®—\–ñ";
 						}
