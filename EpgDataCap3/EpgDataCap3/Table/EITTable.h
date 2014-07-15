@@ -159,8 +159,6 @@ public:
 	BYTE last_table_id;
 	vector<EVENT_INFO_DATA*> eventInfoList;
 
-	BOOL failure;
-
 public:
 	CEITTable(void);
 	~CEITTable(void);

@@ -5,7 +5,6 @@
 
 CEITTable::CEITTable(void)
 {
-	this->failure = FALSE;
 }
 
 CEITTable::~CEITTable(void)
@@ -87,8 +86,7 @@ BOOL CEITTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 					if( AribDescriptor::CreateDescriptors( data+readSize, item->descriptors_loop_length, &(item->descriptorList), NULL ) == FALSE ){
 						_OutputDebugString( L"++CEITTable:: descriptor2 err" );
 						SAFE_DELETE(item);
-						this->failure = TRUE;
-						return TRUE;
+						return FALSE;
 					}
 				}
 			}
