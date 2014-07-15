@@ -5,6 +5,7 @@
 #include "../../Common/StringUtil.h"
 #include "../../Common/TimeUtil.h"
 #include "../../Common/ErrDef.h"
+#include "../../Common/BlockLock.h"
 #include "ARIB8CharDecode.h"
 
 CEpgDBUtil::CEpgDBUtil(void)
@@ -51,15 +52,6 @@ CEpgDBUtil::~CEpgDBUtil(void)
 	SAFE_DELETE_ARRAY(this->serviceDBList);
 	this->serviceDBListSize = 0;
 }
-
-class CBlockLock
-{
-public:
-	CBlockLock(CRITICAL_SECTION* lock_) : lock(lock_) { EnterCriticalSection(lock); }
-	~CBlockLock() { LeaveCriticalSection(lock); }
-private:
-	CRITICAL_SECTION* lock;
-};
 
 void CEpgDBUtil::Clear()
 {

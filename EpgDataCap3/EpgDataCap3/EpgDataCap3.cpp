@@ -5,43 +5,112 @@
 
 #include "EpgDataCap3Main.h"
 #include "../../Common/ErrDef.h"
+#include "../../Common/BlockLock.h"
 
-map<DWORD, CEpgDataCap3Main*> g_List;
-DWORD g_nextID = 1;
-
-DWORD GetNextID()
+class CInstanceManager
 {
-	DWORD nextID = 0xFFFFFFFF;
+public:
+	static const DWORD INVALID_ID = 0xFFFFFFFF;
 
-	map<DWORD, CEpgDataCap3Main*>::iterator itr;
-	itr = g_List.find(g_nextID);
-	if( itr == g_List.end() ){
-		nextID = g_nextID;
-		g_nextID++;
-		if( g_nextID == 0 || g_nextID == 0xFFFFFFFF){
-			g_nextID = 1;
-		}
-	}else{
-		for( DWORD i=1; i<0xFFFFFFFF; i++ ){
-			itr = g_List.find(g_nextID);
-			if( itr == g_List.end() ){
-				nextID = g_nextID;
-				g_nextID++;
-				if( g_nextID == 0 || g_nextID == 0xFFFFFFFF){
-					g_nextID = 1;
-				}
-				break;
-			}else{
-				g_nextID++;
-			}
-			if( g_nextID == 0 || g_nextID == 0xFFFFFFFF){
-				g_nextID = 1;
-			}
-		}
+	CInstanceManager()
+	{
+		InitializeCriticalSection(&(this->m_lock));
+		this->m_nextID = 1;
 	}
 
-	return nextID;
-}
+	~CInstanceManager()
+	{
+		DeleteCriticalSection(&(this->m_lock));
+	}
+
+	DWORD initialize(BOOL asyncFlag, DWORD *id)
+	{
+		CBlockLock lock(&(this->m_lock));
+
+		std::shared_ptr<CEpgDataCap3Main> ptr;
+
+		*id = INVALID_ID;
+
+		try {
+			ptr = std::make_shared<CEpgDataCap3Main>();
+		} catch (std::bad_alloc &) {
+			return ERR_FALSE;
+		}
+
+		DWORD err = ptr->Initialize(asyncFlag);
+		if (err != NO_ERR) {
+			return err;
+		}
+
+		try {
+			*id = this->getNextID();
+			this->m_list.insert(std::make_pair(*id,ptr));
+		} catch (std::bad_alloc &) {
+			*id = INVALID_ID;
+			return ERR_FALSE;
+		}
+
+		return err;
+	}
+
+	DWORD uninitialize(DWORD id)
+	{
+		CBlockLock lock(&(this->m_lock));
+
+		std::shared_ptr<CEpgDataCap3Main> ptr = this->find(id);
+		if (ptr == NULL) {
+			return ERR_NOT_INIT;
+		}
+
+		DWORD err = ptr->UnInitialize();
+		this->m_list.erase(id);
+
+		return err;
+	}
+
+	std::shared_ptr<CEpgDataCap3Main> find(DWORD id)
+	{
+		CBlockLock lock(&(this->m_lock));
+
+		if (this->m_list.count(id) == 0) {
+			return NULL;
+		}
+
+		return this->m_list.at(id);
+	}
+
+protected:
+	std::map<DWORD, std::shared_ptr<CEpgDataCap3Main> > m_list;
+	DWORD m_nextID;
+	CRITICAL_SECTION m_lock;
+
+	DWORD getNextID()
+	{
+		CBlockLock lock(&(this->m_lock));
+
+		DWORD nextID = INVALID_ID;
+		int count = 0;
+		do {
+			if (this->m_list.count(this->m_nextID) == 0) {
+				nextID = this->m_nextID;
+			}
+
+			this->m_nextID += 1;
+			if ((this->m_nextID == 0)|| (this->m_nextID == INVALID_ID)) {
+				this->m_nextID = 1;
+			}
+			count += 1;
+
+			// 65536 回試してダメだったら断念
+			// 1 プロセスから (2^16) 以上のインスタンスを同時に作成することはないはず
+
+		} while ((nextID == INVALID_ID) && (count < (1<<16))); 
+
+		return nextID;
+	}
+};
+
+CInstanceManager g_instMng;
 
 //DLLの初期化
 //戻り値：
@@ -54,16 +123,14 @@ DWORD WINAPI InitializeEP(
 	DWORD* id
 	)
 {
-	if( id == NULL ){
+	if (id == NULL) {
 		return ERR_INVALID_ARG;
 	}
 
-	CEpgDataCap3Main* main = new CEpgDataCap3Main;
-	DWORD err = main->Initialize(asyncFlag);
-	if( err == NO_ERR ){
-		*id = GetNextID();
-		g_List.insert(pair<DWORD, CEpgDataCap3Main*>(*id, main));
-	}
+	DWORD err = g_instMng.initialize(asyncFlag, id);
+
+	_OutputDebugString(L"EgpDataCap3.dll [InitializeEP : id=%d]\n", *id);
+
 	return err;
 }
 
@@ -76,17 +143,9 @@ DWORD WINAPI UnInitializeEP(
 	DWORD id
 	)
 {
-	map<DWORD, CEpgDataCap3Main*>::iterator itr;
-	itr = g_List.find(id);
-	if( itr == g_List.end() ){
-		return ERR_NOT_INIT;
-	}
+	_OutputDebugString(L"EgpDataCap3.dll [UnInitializeEP : id=%d]\n", id);
 
-	DWORD err = itr->second->UnInitialize();
-
-	SAFE_DELETE(itr->second);
-
-	g_List.erase(itr);
+	DWORD err = g_instMng.uninitialize(id);
 
 	return err;
 }
@@ -103,13 +162,12 @@ DWORD WINAPI AddTSPacketEP(
 	DWORD size
 	)
 {
-	map<DWORD, CEpgDataCap3Main*>::iterator itr;
-	itr = g_List.find(id);
-	if( itr == g_List.end() ){
+	std::shared_ptr<CEpgDataCap3Main> ptr = g_instMng.find(id);
+	if (ptr == NULL) {
 		return ERR_NOT_INIT;
 	}
 
-	return itr->second->AddTSPacket(data, size);
+	return ptr->AddTSPacket(data, size);
 }
 
 //解析データの現在のストリームＩＤを取得する
@@ -124,13 +182,12 @@ DWORD WINAPI GetTSIDEP(
 	WORD* transportStreamID
 	)
 {
-	map<DWORD, CEpgDataCap3Main*>::iterator itr;
-	itr = g_List.find(id);
-	if( itr == g_List.end() ){
+	std::shared_ptr<CEpgDataCap3Main> ptr = g_instMng.find(id);
+	if (ptr == NULL) {
 		return ERR_NOT_INIT;
 	}
 
-	return itr->second->GetTSID(originalNetworkID, transportStreamID);
+	return ptr->GetTSID(originalNetworkID, transportStreamID);
 }
 
 //自ストリームのサービス一覧を取得する
@@ -146,13 +203,12 @@ DWORD WINAPI GetServiceListActualEP(
 	SERVICE_INFO** serviceList
 	)
 {
-	map<DWORD, CEpgDataCap3Main*>::iterator itr;
-	itr = g_List.find(id);
-	if( itr == g_List.end() ){
+	std::shared_ptr<CEpgDataCap3Main> ptr = g_instMng.find(id);
+	if (ptr == NULL) {
 		return ERR_NOT_INIT;
 	}
 
-	return itr->second->GetServiceListActual(serviceListSize, serviceList);
+	return ptr->GetServiceListActual(serviceListSize, serviceList);
 }
 
 //蓄積されたEPG情報のあるサービス一覧を取得する
@@ -169,13 +225,12 @@ DWORD WINAPI GetServiceListEpgDBEP(
 	SERVICE_INFO** serviceList
 	)
 {
-	map<DWORD, CEpgDataCap3Main*>::iterator itr;
-	itr = g_List.find(id);
-	if( itr == g_List.end() ){
+	std::shared_ptr<CEpgDataCap3Main> ptr = g_instMng.find(id);
+	if (ptr == NULL) {
 		return ERR_NOT_INIT;
 	}
 
-	return itr->second->GetServiceListEpgDB(serviceListSize, serviceList);
+	return ptr->GetServiceListEpgDB(serviceListSize, serviceList);
 }
 
 //指定サービスの全EPG情報を取得する
@@ -197,13 +252,12 @@ DWORD WINAPI GetEpgInfoListEP(
 	EPG_EVENT_INFO** epgInfoList
 	)
 {
-	map<DWORD, CEpgDataCap3Main*>::iterator itr;
-	itr = g_List.find(id);
-	if( itr == g_List.end() ){
+	std::shared_ptr<CEpgDataCap3Main> ptr = g_instMng.find(id);
+	if (ptr == NULL) {
 		return ERR_NOT_INIT;
 	}
 
-	return itr->second->GetEpgInfoList(originalNetworkID, transportStreamID, serviceID, epgInfoListSize, epgInfoList);
+	return ptr->GetEpgInfoList(originalNetworkID, transportStreamID, serviceID, epgInfoListSize, epgInfoList);
 }
 
 //指定サービスの現在or次のEPG情報を取得する
@@ -224,13 +278,12 @@ DWORD WINAPI GetEpgInfoEP(
 	EPG_EVENT_INFO** epgInfo
 	)
 {
-	map<DWORD, CEpgDataCap3Main*>::iterator itr;
-	itr = g_List.find(id);
-	if( itr == g_List.end() ){
+	std::shared_ptr<CEpgDataCap3Main> ptr = g_instMng.find(id);
+	if (ptr == NULL) {
 		return ERR_NOT_INIT;
 	}
 
-	return itr->second->GetEpgInfo(originalNetworkID, transportStreamID, serviceID, nextFlag, epgInfo);
+	return ptr->GetEpgInfo(originalNetworkID, transportStreamID, serviceID, nextFlag, epgInfo);
 }
 
 //指定イベントのEPG情報を取得する
@@ -254,13 +307,12 @@ DWORD WINAPI SearchEpgInfoEP(
 	EPG_EVENT_INFO** epgInfo
 	)
 {
-	map<DWORD, CEpgDataCap3Main*>::iterator itr;
-	itr = g_List.find(id);
-	if( itr == g_List.end() ){
+	std::shared_ptr<CEpgDataCap3Main> ptr = g_instMng.find(id);
+	if (ptr == NULL) {
 		return ERR_NOT_INIT;
 	}
 
-	return itr->second->SearchEpgInfo(originalNetworkID, transportStreamID, serviceID, eventID, pfOnlyFlag, epgInfo);
+	return ptr->SearchEpgInfo(originalNetworkID, transportStreamID, serviceID, eventID, pfOnlyFlag, epgInfo);
 }
 
 //EPGデータの蓄積状態をリセットする
@@ -270,13 +322,12 @@ void WINAPI ClearSectionStatusEP(
 	DWORD id
 	)
 {
-	map<DWORD, CEpgDataCap3Main*>::iterator itr;
-	itr = g_List.find(id);
-	if( itr == g_List.end() ){
-		return ;
+	std::shared_ptr<CEpgDataCap3Main> ptr = g_instMng.find(id);
+	if (ptr == NULL) {
+		return;
 	}
 
-	itr->second->ClearSectionStatus();
+	ptr->ClearSectionStatus();
 }
 
 //EPGデータの蓄積状態を取得する
@@ -290,13 +341,12 @@ EPG_SECTION_STATUS WINAPI GetSectionStatusEP(
 	BOOL l_eitFlag
 	)
 {
-	map<DWORD, CEpgDataCap3Main*>::iterator itr;
-	itr = g_List.find(id);
-	if( itr == g_List.end() ){
+	std::shared_ptr<CEpgDataCap3Main> ptr = g_instMng.find(id);
+	if (ptr == NULL) {
 		return EpgNoData;
 	}
 
-	return itr->second->GetSectionStatus(l_eitFlag);
+	return ptr->GetSectionStatus(l_eitFlag);
 }
 
 //PC時計を元としたストリーム時間との差を取得する
@@ -308,11 +358,10 @@ int WINAPI GetTimeDelayEP(
 	DWORD id
 	)
 {
-	map<DWORD, CEpgDataCap3Main*>::iterator itr;
-	itr = g_List.find(id);
-	if( itr == g_List.end() ){
+	std::shared_ptr<CEpgDataCap3Main> ptr = g_instMng.find(id);
+	if (ptr == NULL) {
 		return EpgNoData;
 	}
 
-	return itr->second->GetTimeDelay();
+	return ptr->GetTimeDelay();
 }
