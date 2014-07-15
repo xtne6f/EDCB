@@ -8,6 +8,7 @@
 #include "../../Common/CtrlCmdUtil.h"
 #include "../../Common/CtrlCmdUtil2.h"
 #include "../../Common/StringUtil.h"
+#include "../../Common/BlockLock.h"
 
 #include "HttpPublicFileSend.h"
 #include "HttpRecFileSend.h"

@@ -5,112 +5,9 @@
 
 #include "EpgDataCap3Main.h"
 #include "../../Common/ErrDef.h"
-#include "../../Common/BlockLock.h"
+#include "../../Common/InstanceManager.h"
 
-class CInstanceManager
-{
-public:
-	static const DWORD INVALID_ID = 0xFFFFFFFF;
-
-	CInstanceManager()
-	{
-		InitializeCriticalSection(&(this->m_lock));
-		this->m_nextID = 1;
-	}
-
-	~CInstanceManager()
-	{
-		DeleteCriticalSection(&(this->m_lock));
-	}
-
-	DWORD initialize(BOOL asyncFlag, DWORD *id)
-	{
-		CBlockLock lock(&(this->m_lock));
-
-		std::shared_ptr<CEpgDataCap3Main> ptr;
-
-		*id = INVALID_ID;
-
-		try {
-			ptr = std::make_shared<CEpgDataCap3Main>();
-		} catch (std::bad_alloc &) {
-			return ERR_FALSE;
-		}
-
-		DWORD err = ptr->Initialize(asyncFlag);
-		if (err != NO_ERR) {
-			return err;
-		}
-
-		try {
-			*id = this->getNextID();
-			this->m_list.insert(std::make_pair(*id,ptr));
-		} catch (std::bad_alloc &) {
-			*id = INVALID_ID;
-			return ERR_FALSE;
-		}
-
-		return err;
-	}
-
-	DWORD uninitialize(DWORD id)
-	{
-		CBlockLock lock(&(this->m_lock));
-
-		std::shared_ptr<CEpgDataCap3Main> ptr = this->find(id);
-		if (ptr == NULL) {
-			return ERR_NOT_INIT;
-		}
-
-		DWORD err = ptr->UnInitialize();
-		this->m_list.erase(id);
-
-		return err;
-	}
-
-	std::shared_ptr<CEpgDataCap3Main> find(DWORD id)
-	{
-		CBlockLock lock(&(this->m_lock));
-
-		if (this->m_list.count(id) == 0) {
-			return NULL;
-		}
-
-		return this->m_list.at(id);
-	}
-
-protected:
-	std::map<DWORD, std::shared_ptr<CEpgDataCap3Main> > m_list;
-	DWORD m_nextID;
-	CRITICAL_SECTION m_lock;
-
-	DWORD getNextID()
-	{
-		CBlockLock lock(&(this->m_lock));
-
-		DWORD nextID = INVALID_ID;
-		int count = 0;
-		do {
-			if (this->m_list.count(this->m_nextID) == 0) {
-				nextID = this->m_nextID;
-			}
-
-			this->m_nextID += 1;
-			if ((this->m_nextID == 0)|| (this->m_nextID == INVALID_ID)) {
-				this->m_nextID = 1;
-			}
-			count += 1;
-
-			// 65536 回試してダメだったら断念
-			// 1 プロセスから (2^16) 以上のインスタンスを同時に作成することはないはず
-
-		} while ((nextID == INVALID_ID) && (count < (1<<16))); 
-
-		return nextID;
-	}
-};
-
-CInstanceManager g_instMng;
+CInstanceManager<CEpgDataCap3Main> g_instMng;
 
 //DLLの初期化
 //戻り値：
@@ -127,7 +24,18 @@ DWORD WINAPI InitializeEP(
 		return ERR_INVALID_ARG;
 	}
 
-	DWORD err = g_instMng.initialize(asyncFlag, id);
+	DWORD err = ERR_FALSE;
+	*id = g_instMng.INVALID_ID;
+
+	try {
+		std::shared_ptr<CEpgDataCap3Main> ptr = std::make_shared<CEpgDataCap3Main>();
+		err = ptr->Initialize(asyncFlag);
+		if (err == NO_ERR) {
+			*id = g_instMng.push(ptr);
+		}
+	} catch (std::bad_alloc &) {
+		err = ERR_FALSE;
+	}
 
 	_OutputDebugString(L"EgpDataCap3.dll [InitializeEP : id=%d]\n", *id);
 
@@ -145,7 +53,13 @@ DWORD WINAPI UnInitializeEP(
 {
 	_OutputDebugString(L"EgpDataCap3.dll [UnInitializeEP : id=%d]\n", id);
 
-	DWORD err = g_instMng.uninitialize(id);
+	DWORD err = ERR_NOT_INIT;
+	{
+		std::shared_ptr<CEpgDataCap3Main> ptr = g_instMng.pop(id);
+		if (ptr != NULL) {
+			err = ptr->UnInitialize();
+		}
+	}
 
 	return err;
 }
