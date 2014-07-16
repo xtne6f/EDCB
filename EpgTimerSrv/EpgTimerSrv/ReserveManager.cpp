@@ -2464,7 +2464,7 @@ UINT WINAPI CReserveManager::BankCheckThread(LPVOID param)
 					for( size_t i=0; i<tunerIDList.size(); i++ ){
 						WORD epgCapMax = tunerIDList[i].second;
 						WORD ngCapCount = 0;
-						for( size_t j=0; i<tunerIDList[i].first.size() && epgCapMax > 0; j++ ){
+						for( size_t j=0; j<tunerIDList[i].first.size() && epgCapMax > 0; j++ ){
 							itrCtrl = sys->tunerBankMap.find(tunerIDList[i].first[j]);
 							if( itrCtrl != sys->tunerBankMap.end() && itrCtrl->second->IsEpgCapWorking() == FALSE ){
 								itrCtrl->second->ClearEpgCapItem();
