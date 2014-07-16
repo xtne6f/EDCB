@@ -94,8 +94,7 @@ BOOL CWriteMain::_StartSave(
 		stPos.QuadPart = createSize;
 		SetFilePointerEx( this->file, stPos, NULL, FILE_BEGIN );
 		SetEndOfFile( this->file );
-		CloseHandle( this->file );
-		this->file = _CreateDirectoryAndFile( recFilePath.c_str(), GENERIC_WRITE, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
+		FlushFileBuffers( this->file );
 		SetFilePointer( this->file, 0, NULL, FILE_BEGIN );
 	}
 
