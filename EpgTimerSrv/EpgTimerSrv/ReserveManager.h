@@ -233,7 +233,7 @@ protected:
 
 	CTunerManager tunerManager;
 	CBatManager batManager;
-	CTwitterManager twitterManager;
+	CTwitterManager* twitterManager;
 	CNWCoopManager nwCoopManager;
 	CRecInfoDBManager recInfoManager;
 

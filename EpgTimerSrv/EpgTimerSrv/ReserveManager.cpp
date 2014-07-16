@@ -73,6 +73,7 @@ CReserveManager::CReserveManager(void)
 	this->NWTVUDP = FALSE;
 	this->NWTVTCP = FALSE;
 
+	this->twitterManager = NULL;
 	this->useTweet = FALSE;
 	this->useProxy = FALSE;
 
@@ -174,6 +175,8 @@ CReserveManager::~CReserveManager(void)
 	for( itr = this->reserveInfoMap.begin(); itr != this->reserveInfoMap.end(); itr++ ){
 		SAFE_DELETE(itr->second);
 	}
+
+	SAFE_DELETE(this->twitterManager);
 	/*
 	if( this->lockNotify != NULL ){
 		NotifyUnLock();
@@ -519,12 +522,17 @@ void CReserveManager::ReloadSetting()
 			wcscpy_s(proxyInfo.password, this->proxyPWD.size()+1, this->proxyPWD.c_str());
 		}
 	}
-	this->twitterManager.SetProxy(this->useProxy, &proxyInfo);
+	if( this->useTweet == TRUE ){
+		if( this->twitterManager == NULL ){
+			this->twitterManager = new CTwitterManager;
+		}
+		this->twitterManager->SetProxy(this->useProxy, &proxyInfo);
+	}
 
 	map<DWORD, CTunerBankCtrl*>::iterator itr;
 	for(itr = this->tunerBankMap.begin(); itr != this->tunerBankMap.end(); itr++ ){
 		if(this->useTweet == 1 ){
-			itr->second->SetTwitterCtrl(&this->twitterManager);
+			itr->second->SetTwitterCtrl(this->twitterManager);
 		}else{
 			itr->second->SetTwitterCtrl(NULL);
 		}
@@ -3768,7 +3776,7 @@ BOOL CReserveManager::IsEnableSuspend(
 	if( this->enableSetSuspendMode == 0xFF && this->enableSetRebootFlag == 0xFF ){
 		ret = FALSE;
 	}else{
-		if( this->twitterManager.GetTweetQue() == 0){
+		if( this->useTweet != TRUE || this->twitterManager->GetTweetQue() == 0){
 			*suspendMode = this->enableSetSuspendMode;
 			*rebootFlag = this->enableSetRebootFlag;
 
@@ -4644,7 +4652,7 @@ void CReserveManager::_SendTweet(
 	)
 {
 	if( this->useTweet == TRUE ){
-		this->twitterManager.SendTweet(mode, param1, param2, param3);
+		this->twitterManager->SendTweet(mode, param1, param2, param3);
 	}
 }
 
