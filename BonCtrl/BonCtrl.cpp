@@ -5,11 +5,13 @@
 #include "../Common/ErrDef.h"
 #include "../Common/TimeUtil.h"
 #include "../Common/SendCtrlCmd.h"
+#include "../Common/BlockLock.h"
 
 CBonCtrl::CBonCtrl(void)
 {
 	this->lockEvent = _CreateEvent(FALSE, TRUE, NULL);
-	this->buffLockEvent = _CreateEvent(FALSE, TRUE, NULL);
+	InitializeCriticalSection(&this->buffLock);
+	this->totalTSBuffSize = 0;
 
     this->recvThread = NULL;
     this->recvStopEvent = _CreateEvent(FALSE, FALSE, NULL);
@@ -122,10 +124,7 @@ CBonCtrl::~CBonCtrl(void)
 		CloseHandle(this->lockEvent);
 		this->lockEvent = NULL;
 	}
-	if( this->buffLockEvent != NULL ){
-		CloseHandle(this->buffLockEvent);
-		this->buffLockEvent = NULL;
-	}
+	DeleteCriticalSection(&this->buffLock);
 }
 
 BOOL CBonCtrl::Lock(LPCWSTR log, DWORD timeOut)
@@ -591,14 +590,13 @@ DWORD CBonCtrl::_CloseBonDriver()
 
 	DWORD ret = this->bonUtil.CloseBonDriver();
 
-	if( WaitForSingleObject( this->buffLockEvent, 1000 ) == WAIT_OBJECT_0 ){
+	{
+		CBlockLock lock(&this->buffLock);
 		for( size_t i=0; i<this->TSBuff.size(); i++ ){
 			SAFE_DELETE(this->TSBuff[i])
 		}
 		this->TSBuff.clear();
-	}
-	if( this->buffLockEvent != NULL ){
-		SetEvent(this->buffLockEvent);
+		this->totalTSBuffSize = 0;
 	}
 	this->packetInit.ClearBuff();
 
@@ -622,30 +620,16 @@ UINT WINAPI CBonCtrl::RecvThread(LPVOID param)
 					TS_DATA* item = new TS_DATA;
 					try{
 						if( sys->packetInit.GetTSData(data, size, &item->data, &item->size) == TRUE ){
-							if( WaitForSingleObject( sys->buffLockEvent, 50000 ) == WAIT_OBJECT_0 ){
-								if(sys->TSBuff.size() > sys->tsBuffMaxCount){
-									size_t startIndex = sys->tsBuffMaxCount;
-									if( sys->tsBuffMaxCount < 1000 ){
-										startIndex = 0;
-									}else{
-										startIndex -= 1000;
-									}
-									for( size_t i=startIndex; i<sys->TSBuff.size(); i++ ){
-										SAFE_DELETE(sys->TSBuff[i]);
-									}
-									vector<TS_DATA*>::iterator itr;
-									itr = sys->TSBuff.begin();
-									advance(itr,startIndex);
-									sys->TSBuff.erase( itr, sys->TSBuff.end() );
+							CBlockLock lock(&sys->buffLock);
+							if( sys->totalTSBuffSize / 48128 > sys->tsBuffMaxCount ){
+								while( sys->TSBuff.empty() == false && sys->totalTSBuffSize / 48128 + 1000 > sys->tsBuffMaxCount ){
+									sys->totalTSBuffSize -= sys->TSBuff.back()->size;
+									SAFE_DELETE(sys->TSBuff.back());
+									sys->TSBuff.pop_back();
 								}
-								sys->TSBuff.push_back(item);
-								if( sys->buffLockEvent != NULL ){
-									SetEvent(sys->buffLockEvent);
-								}
-							}else{
-								delete item;
-								_OutputDebugString(L"★★Buff Write TimeOut");
 							}
+							sys->TSBuff.push_back(item);
+							sys->totalTSBuffSize += sys->TSBuff.back()->size;
 						}else{
 							delete item;
 						}
@@ -678,41 +662,13 @@ UINT WINAPI CBonCtrl::AnalyzeThread(LPVOID param)
 
 		//バッファからデータ取り出し
 		TS_DATA* data = NULL;
-		try{
-			if( WaitForSingleObject( sys->buffLockEvent, 5000 ) == WAIT_OBJECT_0 ){
-				if(sys->TSBuff.size() > sys->tsBuffMaxCount){
-					size_t startIndex = sys->tsBuffMaxCount;
-					if( sys->tsBuffMaxCount < 1000 ){
-						startIndex = 0;
-					}else{
-						startIndex -= 1000;
-					}
-					for( size_t i=startIndex; i<sys->TSBuff.size(); i++ ){
-						SAFE_DELETE(sys->TSBuff[i]);
-					}
-					vector<TS_DATA*>::iterator itr;
-					itr = sys->TSBuff.begin();
-					advance(itr,startIndex);
-					sys->TSBuff.erase( itr, sys->TSBuff.end() );
-				}
-				if( sys->TSBuff.size() != 0 ){
-					data = sys->TSBuff[0];
-					sys->TSBuff.erase( sys->TSBuff.begin() );
-				}
-				if( sys->buffLockEvent != NULL ){
-					SetEvent(sys->buffLockEvent);
-				}
-			}else{
-				Sleep(10);
-				continue ;
+		{
+			CBlockLock lock(&sys->buffLock);
+			if( sys->TSBuff.empty() == false ){
+				data = sys->TSBuff.front();
+				sys->totalTSBuffSize -= data->size;
+				sys->TSBuff.erase(sys->TSBuff.begin());
 			}
-		}catch(...){
-			_OutputDebugString(L"★★AnalyzeThread Exception1");
-			if( data != NULL ){
-				sys->tsOut.AddTSBuff(data);
-				SAFE_DELETE(data);
-			}
-			continue ;
 		}
 		try{
 			if( data != NULL ){

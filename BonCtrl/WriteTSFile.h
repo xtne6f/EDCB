@@ -102,8 +102,9 @@ protected:
 	BOOL GetNextFileName(wstring recFolder, wstring fileName, wstring& recPath);
 
 protected:
-	HANDLE buffLockEvent;
+	CRITICAL_SECTION outThreadLock;
 	vector<TS_DATA*> TSBuff;
+	DWORD totalTSBuffSize;
 
 	HANDLE outThread;
 	HANDLE outStopEvent;

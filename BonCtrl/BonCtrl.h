@@ -495,8 +495,9 @@ protected:
 
 	HANDLE lockEvent;
 
-	HANDLE buffLockEvent;
+	CRITICAL_SECTION buffLock;
 	vector<TS_DATA*> TSBuff;
+	DWORD totalTSBuffSize;
 
 	HANDLE recvThread;
 	HANDLE recvStopEvent;

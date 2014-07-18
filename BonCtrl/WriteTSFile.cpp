@@ -3,10 +3,12 @@
 #include <process.h>
 
 #include "../Common/PathUtil.h"
+#include "../Common/BlockLock.h"
 
 CWriteTSFile::CWriteTSFile(void)
 {
-	this->buffLockEvent = _CreateEvent(FALSE, TRUE, NULL);
+	InitializeCriticalSection(&this->outThreadLock);
+	this->totalTSBuffSize = 0;
 
     this->outThread = NULL;
     this->outStopEvent = _CreateEvent(FALSE, FALSE, NULL);
@@ -32,10 +34,7 @@ CWriteTSFile::~CWriteTSFile(void)
 	}
 
 
-	if( this->buffLockEvent != NULL ){
-		CloseHandle(this->buffLockEvent);
-		this->buffLockEvent = NULL;
-	}
+	DeleteCriticalSection(&this->outThreadLock);
 	for( size_t i=0; i<this->TSBuff.size(); i++ ){
 		SAFE_DELETE(this->TSBuff[i])
 	}
@@ -252,7 +251,8 @@ BOOL CWriteTSFile::EndSave()
 	}
 
 	//残っているバッファを書き出し
-	if( WaitForSingleObject( this->buffLockEvent, 500 ) == WAIT_OBJECT_0 ){
+	{
+		CBlockLock lock(&this->outThreadLock);
 		for( size_t i=0; i<this->TSBuff.size(); i++ ){
 			for( size_t j=0; j<this->fileList.size(); j++ ){
 				if( this->fileList[j]->writeUtil != NULL ){
@@ -263,9 +263,7 @@ BOOL CWriteTSFile::EndSave()
 			SAFE_DELETE(this->TSBuff[i]);
 		}
 		this->TSBuff.clear();
-		if( this->buffLockEvent != NULL ){
-			SetEvent(this->buffLockEvent);
-		}
+		this->totalTSBuffSize = 0;
 	}
 
 	for( size_t i=0; i<this->fileList.size(); i++ ){
@@ -308,30 +306,20 @@ BOOL CWriteTSFile::AddTSBuff(
 	item->size = size;
 	item->data = new BYTE[size];
 	memcpy(item->data, data, size);
-	if( WaitForSingleObject( this->buffLockEvent, 500 ) == WAIT_OBJECT_0 ){
+	{
+		CBlockLock lock(&this->outThreadLock);
 		if( this->maxBuffCount > 0 ){
-			if(this->TSBuff.size() > (unsigned)this->maxBuffCount){
+			if( this->totalTSBuffSize / 48128 > (DWORD)this->maxBuffCount ){
 				_OutputDebugString(L"★writeBuffList MaxOver");
-				this->buffOverErr = TRUE;
-				size_t startIndex = this->maxBuffCount;
-				if( this->maxBuffCount < 1000 ){
-					startIndex = 0;
-				}else{
-					startIndex -= 1000;
+				while( this->TSBuff.empty() == false && this->totalTSBuffSize / 48128 + 1000 > (DWORD)this->maxBuffCount ){
+					this->totalTSBuffSize -= this->TSBuff.back()->size;
+					SAFE_DELETE(this->TSBuff.back());
+					this->TSBuff.pop_back();
 				}
-				for( size_t i=startIndex; i<this->TSBuff.size(); i++ ){
-					SAFE_DELETE(this->TSBuff[i]);
-				}
-				vector<TS_DATA*>::iterator itr;
-				itr = this->TSBuff.begin();
-				advance(itr,startIndex);
-				this->TSBuff.erase( itr, this->TSBuff.end() );
 			}
 		}
 		this->TSBuff.push_back(item);
-		if( this->buffLockEvent != NULL ){
-			SetEvent(this->buffLockEvent);
-		}
+		this->totalTSBuffSize += this->TSBuff.back()->size;
 	}
 	return ret;
 }
@@ -346,23 +334,13 @@ UINT WINAPI CWriteTSFile::OutThread(LPVOID param)
 		}
 		//バッファからデータ取り出し
 		TS_DATA* data = NULL;
-		try{
-			if( WaitForSingleObject( sys->buffLockEvent, 500 ) == WAIT_OBJECT_0 ){
-				if( sys->TSBuff.size() != 0 ){
-					data = sys->TSBuff[0];
-					sys->TSBuff.erase( sys->TSBuff.begin() );
-				}
-				if( sys->buffLockEvent != NULL ){
-					SetEvent(sys->buffLockEvent);
-				}
-			}else{
-				Sleep(10);
-				continue ;
+		{
+			CBlockLock lock(&sys->outThreadLock);
+			if( sys->TSBuff.empty() == false ){
+				data = sys->TSBuff.front();
+				sys->totalTSBuffSize -= data->size;
+				sys->TSBuff.erase(sys->TSBuff.begin());
 			}
-		}catch(...){
-			_OutputDebugString(L"★★CWriteTSFile::OutThread Exception1");
-			sys->exceptionErr = TRUE;
-			continue ;
 		}
 
 		if( data != NULL ){
