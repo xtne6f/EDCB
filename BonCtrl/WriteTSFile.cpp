@@ -75,7 +75,7 @@ BOOL CWriteTSFile::StartSave(
 		return FALSE;
 	}
 	
-	if( this->outThread == NULL || this->fileList.size() == 0 ){
+	if( this->outThread == NULL && this->fileList.size() == 0 ){
 		this->writeTotalSize = 0;
 		this->subRecFlag = FALSE;
 		this->saveFileName = fileName;
@@ -350,7 +350,10 @@ UINT WINAPI CWriteTSFile::OutThread(LPVOID param)
 						DWORD write = 0;
 						if( sys->fileList[i]->writeUtil->AddTSBuff( data->data, data->size, &write) == FALSE ){
 							//‹ó‚«‚ª‚È‚­‚È‚Á‚½
-							sys->writeTotalSize = -1;
+							{
+								CBlockLock lock(&sys->outThreadLock);
+								sys->writeTotalSize = -1;
+							}
 							sys->fileList[i]->writeUtil->StopSave();
 
 							if( sys->fileList[i]->freeChk == TRUE ){
@@ -387,7 +390,10 @@ UINT WINAPI CWriteTSFile::OutThread(LPVOID param)
 				}
 			}
 
-			sys->writeTotalSize += data->size;
+			{
+				CBlockLock lock(&sys->outThreadLock);
+				sys->writeTotalSize += data->size;
+			}
 
 			SAFE_DELETE(data);
 		}else{
@@ -418,6 +424,7 @@ void CWriteTSFile::GetRecWriteSize(
 	)
 {
 	if( writeSize != NULL ){
+		CBlockLock lock(&this->outThreadLock);
 		*writeSize = this->writeTotalSize;
 	}
 }
