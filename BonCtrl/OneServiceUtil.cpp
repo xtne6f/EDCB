@@ -384,12 +384,15 @@ BOOL COneServiceUtil::StartSave(
 	int maxBuffCount
 )
 {
-	this->maxBuffCount = maxBuffCount;
 	if( pittariFlag == FALSE ){
 		if( this->writeFile == NULL ){
 			OutputDebugString(L"*:StartSave");
+			this->pittariRecFilePath = L"";
+			this->pittariStart = FALSE;
+			this->pittariEndChk = FALSE;
+
 			this->writeFile = new CWriteTSFile;
-			return this->writeFile->StartSave(fileName, overWriteFlag, createSize, saveFolder, saveFolderSub, this->maxBuffCount);
+			return this->writeFile->StartSave(fileName, overWriteFlag, createSize, saveFolder, saveFolderSub, maxBuffCount);
 		}
 	}else{
 		if( this->writeFile == NULL ){
@@ -400,6 +403,7 @@ BOOL COneServiceUtil::StartSave(
 			this->createSize = createSize;
 			this->saveFolder = *saveFolder;
 			this->saveFolderSub = *saveFolderSub;
+			this->maxBuffCount = maxBuffCount;
 			this->pittariONID = pittariONID;
 			this->pittariTSID = pittariTSID;
 			this->pittariSID = pittariSID;
@@ -442,6 +446,10 @@ void COneServiceUtil::StopPittariRec()
 // TRUE（成功）、FALSE（失敗）
 BOOL COneServiceUtil::EndSave()
 {
+	this->pittariRecFilePath = L"";
+	this->pittariStart = FALSE;
+	this->pittariEndChk = FALSE;
+
 	if( this->writeFile == NULL ){
 		return FALSE;
 	}
