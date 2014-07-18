@@ -6,7 +6,6 @@
 
 CWriteTSFile::CWriteTSFile(void)
 {
-	this->lockEvent = _CreateEvent(FALSE, TRUE, NULL);
 	this->buffLockEvent = _CreateEvent(FALSE, TRUE, NULL);
 
     this->outThread = NULL;
@@ -46,44 +45,6 @@ CWriteTSFile::~CWriteTSFile(void)
 		SAFE_DELETE(this->fileList[i]);
 	}
 	this->fileList.clear();
-
-	if( this->lockEvent != NULL ){
-		UnLock();
-		CloseHandle(this->lockEvent);
-		this->lockEvent = NULL;
-	}
-}
-
-BOOL CWriteTSFile::Lock(LPCWSTR log, DWORD timeOut)
-{
-	if( this->lockEvent == NULL ){
-		return FALSE;
-	}
-	//if( log != NULL ){
-	//	OutputDebugString(log);
-	//}
-	DWORD dwRet = WaitForSingleObject(this->lockEvent, timeOut);
-	if( dwRet == WAIT_ABANDONED || 
-		dwRet == WAIT_FAILED ||
-		dwRet == WAIT_TIMEOUT){
-			if( log != NULL ){
-				_OutputDebugString(L"◆CWriteTSFile::Lock FALSE : %s", log);
-			}else{
-				OutputDebugString(L"◆CWriteTSFile::Lock FALSE");
-			}
-		return FALSE;
-	}
-	return TRUE;
-}
-
-void CWriteTSFile::UnLock(LPCWSTR log)
-{
-	if( this->lockEvent != NULL ){
-		SetEvent(this->lockEvent);
-	}
-	if( log != NULL ){
-		OutputDebugString(log);
-	}
 }
 
 //ファイル保存を開始する
@@ -104,7 +65,6 @@ BOOL CWriteTSFile::StartSave(
 	int maxBuffCount
 )
 {
-	if( Lock(L"StartSave") == FALSE ) return FALSE;
 	BOOL ret = TRUE;
 
 	this->exceptionErr = FALSE;
@@ -112,7 +72,6 @@ BOOL CWriteTSFile::StartSave(
 	this->maxBuffCount = maxBuffCount;
 
 	if( saveFolder->size() == 0 ){
-		UnLock();
 		_OutputDebugString(L"CWriteTSFile::StartSave Err saveFolder 0");
 		return FALSE;
 	}
@@ -219,7 +178,6 @@ BOOL CWriteTSFile::StartSave(
 		ret = FALSE;
 	}
 
-	UnLock();
 	return ret;
 }
 
@@ -281,7 +239,6 @@ BOOL CWriteTSFile::ChkFreeFolder(
 // TRUE（成功）、FALSE（失敗）
 BOOL CWriteTSFile::EndSave()
 {
-	if( Lock(L"EndSave") == FALSE ) return FALSE;
 	BOOL ret = TRUE;
 
 	if( this->outThread != NULL ){
@@ -327,7 +284,6 @@ BOOL CWriteTSFile::EndSave()
 		ret = FALSE;
 	}
 
-	UnLock();
 	return ret;
 }
 
@@ -342,10 +298,7 @@ BOOL CWriteTSFile::AddTSBuff(
 	DWORD size
 	)
 {
-	if( Lock(L"AddTSBuff") == FALSE ) return FALSE;
-
 	if( data == NULL || size == 0 || this->outThread == NULL){
-		UnLock();
 		return FALSE;
 	}
 
@@ -380,7 +333,6 @@ BOOL CWriteTSFile::AddTSBuff(
 			SetEvent(this->buffLockEvent);
 		}
 	}
-	UnLock();
 	return ret;
 }
 
@@ -476,12 +428,8 @@ void CWriteTSFile::GetSaveFilePath(
 	BOOL* subRecFlag
 	)
 {
-	if( Lock(L"GetSaveFilePath") == FALSE ) return ;
-
 	*filePath = this->mainSaveFilePath;
 	*subRecFlag = this->subRecFlag;
-
-	UnLock();
 }
 
 //録画中のファイルの出力サイズを取得する
@@ -491,10 +439,7 @@ void CWriteTSFile::GetRecWriteSize(
 	__int64* writeSize
 	)
 {
-	if( Lock(L"GetRecWriteSize") == FALSE ) return ;
-
 	if( writeSize != NULL ){
 		*writeSize = this->writeTotalSize;
 	}
-	UnLock();
 }
