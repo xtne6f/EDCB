@@ -286,10 +286,6 @@ protected:
 	BOOL needCaption;
 	BOOL needData;
 
-	BOOL BSBasic;
-	BOOL CS1Basic;
-	BOOL CS2Basic;
-
 	int openWait;
 
 	wstring viewPath;

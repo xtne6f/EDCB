@@ -22,10 +22,6 @@ CEpgDataCap_BonMain::CEpgDataCap_BonMain(void)
 	this->needCaption = TRUE;
 	this->needData = FALSE;
 
-	this->BSBasic = TRUE;
-	this->CS1Basic = TRUE;
-	this->CS2Basic = TRUE;
-
 	this->viewPath = L"";
 	this->viewOpt = L"";
 
@@ -99,10 +95,6 @@ void CEpgDataCap_BonMain::ReloadSetting()
 
 	this->overWriteFlag = GetPrivateProfileInt( L"SET", L"OverWrite", 0, appIniPath.c_str() );
 
-	this->BSBasic = GetPrivateProfileInt( L"SET", L"BSBasicOnly", 1, commonIniPath.c_str() );
-	this->CS1Basic = GetPrivateProfileInt( L"SET", L"CS1BasicOnly", 1, commonIniPath.c_str() );
-	this->CS2Basic = GetPrivateProfileInt( L"SET", L"CS2BasicOnly", 1, commonIniPath.c_str() );
-
 	WCHAR buff[512]=L"";
 	GetPrivateProfileString( L"SET", L"ViewPath", L"", buff, 512, appIniPath.c_str() );
 	this->viewPath = buff;
@@ -122,9 +114,12 @@ void CEpgDataCap_BonMain::ReloadSetting()
 
 	BOOL epgCapLive = (BOOL)GetPrivateProfileInt( L"SET", L"EpgCapLive", 1, appIniPath.c_str() );
 	BOOL epgCapRec = (BOOL)GetPrivateProfileInt( L"SET", L"EpgCapRec", 1, appIniPath.c_str() );
+	BOOL epgCapBackBSBasic = GetPrivateProfileInt( L"SET", L"EpgCapBackBSBasicOnly", 1, appIniPath.c_str() );
+	BOOL epgCapBackCS1Basic = GetPrivateProfileInt( L"SET", L"EpgCapBackCS1BasicOnly", 1, appIniPath.c_str() );
+	BOOL epgCapBackCS2Basic = GetPrivateProfileInt( L"SET", L"EpgCapBackCS2BasicOnly", 1, appIniPath.c_str() );
 	DWORD epgCapBackStartWaitSec = (DWORD)GetPrivateProfileInt( L"SET", L"EpgCapBackStartWaitSec", 30, appIniPath.c_str() );
 
-	this->bonCtrl.SetBackGroundEpgCap(epgCapLive, epgCapRec, this->BSBasic, this->CS1Basic, this->CS2Basic, epgCapBackStartWaitSec);
+	this->bonCtrl.SetBackGroundEpgCap(epgCapLive, epgCapRec, epgCapBackBSBasic, epgCapBackCS1Basic, epgCapBackCS2Basic, epgCapBackStartWaitSec);
 	if( this->sendTcpFlag == FALSE && this->sendUdpFlag == FALSE ){
 		this->bonCtrl.SetScramble(this->nwCtrlID, this->enableScrambleFlag);
 	}
@@ -698,7 +693,7 @@ DWORD CEpgDataCap_BonMain::StartEpgCap(
 	if( chList.size() == 0 ){
 		return ERR_FALSE;
 	}
-	return this->bonCtrl.StartEpgCap(&chList, this->BSBasic, this->CS1Basic, this->CS2Basic);
+	return this->bonCtrl.StartEpgCap(&chList);
 }
 
 //EPGŽæ“¾‚ð’âŽ~‚·‚é
@@ -1131,7 +1126,7 @@ void CEpgDataCap_BonMain::CtrlCmdCallbackInvoked()
 					item.SID = val[i].SID;
 					chList.push_back(item);
 				}
-				if( sys->bonCtrl.StartEpgCap(&chList, sys->BSBasic, sys->CS1Basic, sys->CS2Basic) == NO_ERR ){
+				if( sys->bonCtrl.StartEpgCap(&chList) == NO_ERR ){
 					PostMessage(sys->msgWnd, WM_RESERVE_EPGCAP_START, 0, 0);
 					
 					resParam->param = CMD_SUCCESS;

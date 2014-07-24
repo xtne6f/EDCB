@@ -33,6 +33,9 @@ BOOL CSetDlgEpg::OnInitDialog()
 	Button_SetCheck( GetDlgItem(IDC_CHECK_BS), GetPrivateProfileInt( L"SET", L"BSBasicOnly", 1, commonIniPath.c_str() ) );
 	Button_SetCheck( GetDlgItem(IDC_CHECK_CS1), GetPrivateProfileInt( L"SET", L"CS1BasicOnly", 1, commonIniPath.c_str() ) );
 	Button_SetCheck( GetDlgItem(IDC_CHECK_CS2), GetPrivateProfileInt( L"SET", L"CS2BasicOnly", 1, commonIniPath.c_str() ) );
+	Button_SetCheck( GetDlgItem(IDC_CHECK_BACK_BS), GetPrivateProfileInt( L"SET", L"EpgCapBackBSBasicOnly", 1, appIniPath.c_str() ) );
+	Button_SetCheck( GetDlgItem(IDC_CHECK_BACK_CS1), GetPrivateProfileInt( L"SET", L"EpgCapBackCS1BasicOnly", 1, appIniPath.c_str() ) );
+	Button_SetCheck( GetDlgItem(IDC_CHECK_BACK_CS2), GetPrivateProfileInt( L"SET", L"EpgCapBackCS2BasicOnly", 1, appIniPath.c_str() ) );
 
 	wstring path;
 	GetSettingPath(path);
@@ -73,6 +76,9 @@ void CSetDlgEpg::SaveIni(void)
 	WritePrivateProfileInt( L"SET", L"BSBasicOnly", Button_GetCheck(GetDlgItem(IDC_CHECK_BS)), commonIniPath.c_str() );
 	WritePrivateProfileInt( L"SET", L"CS1BasicOnly", Button_GetCheck(GetDlgItem(IDC_CHECK_CS1)), commonIniPath.c_str() );
 	WritePrivateProfileInt( L"SET", L"CS2BasicOnly", Button_GetCheck(GetDlgItem(IDC_CHECK_CS2)), commonIniPath.c_str() );
+	WritePrivateProfileInt( L"SET", L"EpgCapBackBSBasicOnly", Button_GetCheck(GetDlgItem(IDC_CHECK_BACK_BS)), appIniPath.c_str() );
+	WritePrivateProfileInt( L"SET", L"EpgCapBackCS1BasicOnly", Button_GetCheck(GetDlgItem(IDC_CHECK_BACK_CS1)), appIniPath.c_str() );
+	WritePrivateProfileInt( L"SET", L"EpgCapBackCS2BasicOnly", Button_GetCheck(GetDlgItem(IDC_CHECK_BACK_CS2)), appIniPath.c_str() );
 
 	for( int i=0; i<ListView_GetItemCount(GetDlgItem(IDC_LIST_SERVICE)); i++ ){
 		map<LONGLONG, CH_DATA5>::const_iterator itr;

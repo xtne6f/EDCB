@@ -439,10 +439,7 @@ public:
 	// CS1Basic		[IN]CS1で１チャンネルから基本情報のみ取得するかどうか
 	// CS2Basic		[IN]CS2で１チャンネルから基本情報のみ取得するかどうか
 	DWORD StartEpgCap(
-		vector<EPGCAP_SERVICE_INFO>* chList,
-		BOOL BSBasic,
-		BOOL CS1Basic,
-		BOOL CS2Basic
+		vector<EPGCAP_SERVICE_INFO>* chList
 		);
 
 	//EPG取得を停止する
@@ -523,9 +520,6 @@ protected:
 	HANDLE epgCapThread;
 	HANDLE epgCapStopEvent;
 	vector<EPGCAP_SERVICE_INFO> epgCapChList;
-	BOOL BSBasic;
-	BOOL CS1Basic;
-	BOOL CS2Basic;
 	EPGCAP_SERVICE_INFO epgSt_ch;
 	DWORD epgSt_err;
 
@@ -535,6 +529,9 @@ protected:
 	BOOL enableRecEpgCap;
 	WORD lastSID;
 
+	BOOL epgCapBackBSBasic;
+	BOOL epgCapBackCS1Basic;
+	BOOL epgCapBackCS2Basic;
 	DWORD epgCapBackStartWaitSec;
 	DWORD tsBuffMaxCount;
 	int writeBuffMaxCount;
@@ -559,7 +556,7 @@ protected:
 		BOOL chScan = FALSE
 		);
 
-	void GetEpgDataFilePath(WORD ONID, WORD TSID, wstring& epgDataFilePath);
+	static void GetEpgDataFilePath(WORD ONID, WORD TSID, wstring& epgDataFilePath, BOOL BSBasic, BOOL CS1Basic, BOOL CS2Basic);
 
 	static UINT WINAPI RecvThread(LPVOID param);
 	static UINT WINAPI AnalyzeThread(LPVOID param);
