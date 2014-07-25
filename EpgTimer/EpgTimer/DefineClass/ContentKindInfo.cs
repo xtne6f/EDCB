@@ -47,14 +47,7 @@ namespace EpgTimer
         {
             get
             {
-                if (SubName == "")
-                {
-                    return ContentName;
-                }
-                else
-                {
-                    return ContentName + " - " +SubName;
-                }
+                return ContentName + (SubName == "" ? "" : " - " + SubName); 
             }
         }
         public override string ToString()
