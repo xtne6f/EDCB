@@ -2101,7 +2101,7 @@ BOOL CEpgDBUtil::AddSDEventMap(CEITTable_SD* eit)
 		BOOL checkExtFlag = FALSE;
 		BOOL checkAudioFlag = FALSE;
 		for( size_t j=0; j<eitEventInfo->descriptorList.size(); j++ ){
-			DWORD tag = eitEventInfo->descriptorList[i]->GetNumber(AribDescriptor::descriptor_tag);
+			DWORD tag = eitEventInfo->descriptorList[j]->GetNumber(AribDescriptor::descriptor_tag);
 			if( tag == AribDescriptor::short_event_descriptor ){
 				AddShortEvent_SD( eit, eventInfo, eitEventInfo->descriptorList[j] );
 			}else if( tag == AribDescriptor::extended_event_descriptor && checkExtFlag == FALSE){
