@@ -178,16 +178,16 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, CEITTable* eit)
 		for( size_t j=0; j<eitEventInfo->descriptorList.size(); j++ ){
 			DWORD tag = eitEventInfo->descriptorList[j]->GetNumber(AribDescriptor::descriptor_tag);
 			if( tag == AribDescriptor::short_event_descriptor ){
-				AddShortEvent( eit, eventInfo, eitEventInfo->descriptorList[j] );
+				AddShortEvent( eit->table_id, eit->version_number, eventInfo, eitEventInfo->descriptorList[j], FALSE );
 			}else if( tag == AribDescriptor::extended_event_descriptor && checkExtFlag == FALSE){
-				AddExtEvent(eit, eventInfo, &eitEventInfo->descriptorList );
+				AddExtEvent(eit->table_id, eit->version_number, eventInfo, &eitEventInfo->descriptorList, FALSE );
 				checkExtFlag = TRUE;
 			}else if( tag == AribDescriptor::content_descriptor ){
-				AddContent( eit, eventInfo, eitEventInfo->descriptorList[j] );
+				AddContent( eit->table_id, eit->version_number, eventInfo, eitEventInfo->descriptorList[j], FALSE );
 			}else if( tag == AribDescriptor::component_descriptor ){
-				AddComponent( eit, eventInfo, eitEventInfo->descriptorList[j] );
+				AddComponent( eit->table_id, eit->version_number, eventInfo, eitEventInfo->descriptorList[j], FALSE );
 			}else if( tag == AribDescriptor::audio_component_descriptor && checkAudioFlag == FALSE ){
-				AddAudioComponent( eit, eventInfo, &eitEventInfo->descriptorList );
+				AddAudioComponent( eit->table_id, eit->version_number, eventInfo, &eitEventInfo->descriptorList, FALSE );
 				checkAudioFlag = TRUE;
 			}else if( tag == AribDescriptor::event_group_descriptor ){
 				if( eitEventInfo->descriptorList[j]->GetNumber(AribDescriptor::group_type) == 0x01 ){
@@ -398,16 +398,16 @@ BOOL CEpgDBUtil::AddEIT_SD(WORD PID, CEITTable_SD* eit)
 		for( size_t j=0; j<eitEventInfo->descriptorList.size(); j++ ){
 			DWORD tag = eitEventInfo->descriptorList[j]->GetNumber(AribDescriptor::descriptor_tag);
 			if( tag == AribDescriptor::short_event_descriptor ){
-				AddShortEvent_SD( eit, eventInfo, eitEventInfo->descriptorList[j] );
+				AddShortEvent( eit->table_id, eit->version_number, eventInfo, eitEventInfo->descriptorList[j], TRUE );
 			}else if( tag == AribDescriptor::extended_event_descriptor && checkExtFlag == FALSE){
-				AddExtEvent_SD(eit, eventInfo, &eitEventInfo->descriptorList );
+				AddExtEvent(eit->table_id, eit->version_number, eventInfo, &eitEventInfo->descriptorList, TRUE );
 				checkExtFlag = TRUE;
 			}else if( tag == AribDescriptor::content_descriptor ){
-				AddContent_SD( eit, eventInfo, eitEventInfo->descriptorList[j] );
+				AddContent( eit->table_id, eit->version_number, eventInfo, eitEventInfo->descriptorList[j], TRUE );
 			}else if( tag == AribDescriptor::component_descriptor ){
-				AddComponent_SD( eit, eventInfo, eitEventInfo->descriptorList[j] );
+				AddComponent( eit->table_id, eit->version_number, eventInfo, eitEventInfo->descriptorList[j], TRUE );
 			}else if( tag == AribDescriptor::audio_component_descriptor && checkAudioFlag == FALSE ){
-				AddAudioComponent_SD( eit, eventInfo, &eitEventInfo->descriptorList );
+				AddAudioComponent( eit->table_id, eit->version_number, eventInfo, &eitEventInfo->descriptorList, TRUE );
 				checkAudioFlag = TRUE;
 			//}else if( eitEventInfo->descriptorList[j]->eventGroup != NULL ){
 			//	if( eitEventInfo->descriptorList[j]->eventGroup->group_type == 0x01 ){
@@ -533,19 +533,19 @@ BOOL CEpgDBUtil::AddEIT_SD(WORD PID, CEITTable_SD* eit)
 	return TRUE;
 }
 
-BOOL CEpgDBUtil::AddShortEvent(CEITTable* eit, EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* shortEvent)
+BOOL CEpgDBUtil::AddShortEvent(BYTE table_id, BYTE version_number, EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* shortEvent, BOOL skySDFlag)
 {
 	BOOL updateFlag = FALSE;
 	if( eventInfo->shortInfo == NULL ){
 		eventInfo->shortInfo = new SHORT_EVENT_INFO;
 		updateFlag = TRUE;
 	}else{
-		updateFlag = CheckUpdate(eit, eventInfo->shortInfo->tableID, eventInfo->shortInfo->version);
+		updateFlag = CheckUpdate(table_id, version_number, eventInfo->shortInfo->tableID, eventInfo->shortInfo->version, skySDFlag);
 	}
 	if( updateFlag == TRUE ){
 		//更新必要
-		eventInfo->shortInfo->tableID = eit->table_id;
-		eventInfo->shortInfo->version = eit->version_number;
+		eventInfo->shortInfo->tableID = table_id;
+		eventInfo->shortInfo->version = version_number;
 
 		CARIB8CharDecode arib;
 		string event_name = "";
@@ -564,38 +564,7 @@ BOOL CEpgDBUtil::AddShortEvent(CEITTable* eit, EVENT_INFO* eventInfo, AribDescri
 	return updateFlag;
 }
 
-BOOL CEpgDBUtil::AddShortEvent_SD(CEITTable_SD* eit, EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* shortEvent)
-{
-	BOOL updateFlag = FALSE;
-	if( eventInfo->shortInfo == NULL ){
-		eventInfo->shortInfo = new SHORT_EVENT_INFO;
-		updateFlag = TRUE;
-	}else{
-		updateFlag = CheckUpdate_SD(eit, eventInfo->shortInfo->tableID, eventInfo->shortInfo->version);
-	}
-	if( updateFlag == TRUE ){
-		//更新必要
-		eventInfo->shortInfo->tableID = eit->table_id;
-		eventInfo->shortInfo->version = eit->version_number;
-
-		CARIB8CharDecode arib;
-		string event_name = "";
-		string text_char = "";
-		const char* src;
-		DWORD srcSize;
-		src = shortEvent->GetStringOrEmpty(AribDescriptor::event_name_char, &srcSize);
-		arib.PSISI((const BYTE*)src, srcSize, &event_name);
-		src = shortEvent->GetStringOrEmpty(AribDescriptor::text_char, &srcSize);
-		arib.PSISI((const BYTE*)src, srcSize, &text_char);
-
-		AtoW(event_name, eventInfo->shortInfo->event_name);
-		AtoW(text_char, eventInfo->shortInfo->text_char);
-	}
-
-	return updateFlag;
-}
-
-BOOL CEpgDBUtil::AddExtEvent(CEITTable* eit, EVENT_INFO* eventInfo, vector<AribDescriptor::CDescriptor*>* descriptorList)
+BOOL CEpgDBUtil::AddExtEvent(BYTE table_id, BYTE version_number, EVENT_INFO* eventInfo, vector<AribDescriptor::CDescriptor*>* descriptorList, BOOL skySDFlag)
 {
 	BOOL updateFlag = FALSE;
 	if( eventInfo->extInfo == NULL ){
@@ -603,13 +572,13 @@ BOOL CEpgDBUtil::AddExtEvent(CEITTable* eit, EVENT_INFO* eventInfo, vector<AribD
 
 		updateFlag = TRUE;
 	}else{
-		updateFlag = CheckUpdate(eit, eventInfo->extInfo->tableID, eventInfo->extInfo->version);
+		updateFlag = CheckUpdate(table_id, version_number, eventInfo->extInfo->tableID, eventInfo->extInfo->version, skySDFlag);
 	}
 
 	if( updateFlag == TRUE ){
 		//更新必要
-		eventInfo->extInfo->tableID = eit->table_id;
-		eventInfo->extInfo->version = eit->version_number;
+		eventInfo->extInfo->tableID = table_id;
+		eventInfo->extInfo->version = version_number;
 
 		CARIB8CharDecode arib;
 		string extendText = "";
@@ -715,139 +684,19 @@ BOOL CEpgDBUtil::AddExtEvent(CEITTable* eit, EVENT_INFO* eventInfo, vector<AribD
 	return updateFlag;
 }
 
-BOOL CEpgDBUtil::AddExtEvent_SD(CEITTable_SD* eit, EVENT_INFO* eventInfo, vector<AribDescriptor::CDescriptor*>* descriptorList)
-{
-	BOOL updateFlag = FALSE;
-	if( eventInfo->extInfo == NULL ){
-		eventInfo->extInfo = new EXTENDED_EVENT_INFO;
-
-		updateFlag = TRUE;
-	}else{
-		updateFlag = CheckUpdate_SD(eit, eventInfo->extInfo->tableID, eventInfo->extInfo->version);
-	}
-
-	if( updateFlag == TRUE ){
-		//更新必要
-		eventInfo->extInfo->tableID = eit->table_id;
-		eventInfo->extInfo->version = eit->version_number;
-
-		CARIB8CharDecode arib;
-		string extendText = "";
-		string itemDescBuff = "";
-		string itemBuff = "";
-		//text_lengthは0で運用される
-//		string textBuff = "";
-
-		for( size_t i=0; i<descriptorList->size(); i++ ){
-			if( (*descriptorList)[i]->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::extended_event_descriptor ){
-				AribDescriptor::CDescriptor* extEvent = (*descriptorList)[i];
-				if( extEvent->EnterLoop() ){
-					for( DWORD j=0; extEvent->SetLoopIndex(j); j++ ){
-						const char* src;
-						DWORD srcSize;
-						src = extEvent->GetStringOrEmpty(AribDescriptor::item_description_char, &srcSize);
-						if( srcSize > 0 ){
-							//if( textBuff.size() > 0 ){
-							//	string buff = "";
-							//	arib.PSISI((const BYTE*)textBuff.c_str(), textBuff.length(), &buff);
-							//	buff += "\r\n";
-							//	extendText += buff;
-							//	textBuff = "";
-							//}
-							if( itemBuff.size() > 0 ){
-								string buff = "";
-								arib.PSISI((const BYTE*)itemBuff.c_str(), (DWORD)itemBuff.length(), &buff);
-								buff += "\r\n";
-								extendText += buff;
-								itemBuff = "";
-							}
-
-							itemDescBuff += src;
-						}
-						src = extEvent->GetStringOrEmpty(AribDescriptor::item_char, &srcSize);
-						if( srcSize > 0 ){
-							//if( textBuff.size() > 0 ){
-							//	string buff = "";
-							//	arib.PSISI((const BYTE*)textBuff.c_str(), textBuff.length(), &buff);
-							//	buff += "\r\n";
-							//	extendText += buff;
-							//	textBuff = "";
-							//}
-							if( itemDescBuff.size() > 0 ){
-								string buff = "";
-								arib.PSISI((const BYTE*)itemDescBuff.c_str(), (DWORD)itemDescBuff.length(), &buff);
-								buff += "\r\n";
-								extendText += buff;
-								itemDescBuff = "";
-							}
-
-							itemBuff += src;
-						}
-					}
-					extEvent->LeaveLoop();
-				}
-				//if( extEvent->text_length > 0 ){
-				//	if( itemDescBuff.size() > 0 ){
-				//		string buff = "";
-				//		arib.PSISI((const BYTE*)itemDescBuff.c_str(), itemDescBuff.length(), &buff);
-				//		buff += "\r\n";
-				//		extendText += buff;
-				//		itemDescBuff = "";
-				//	}
-				//	if( itemBuff.size() > 0 ){
-				//		string buff = "";
-				//		arib.PSISI((const BYTE*)itemBuff.c_str(), itemBuff.length(), &buff);
-				//		buff += "\r\n";
-				//		extendText += buff;
-				//		itemBuff = "";
-				//	}
-
-				//	textBuff += extEvent->text_char;
-				//}
-			}
-		}
-
-		if( itemDescBuff.size() > 0 ){
-			string buff = "";
-			arib.PSISI((const BYTE*)itemDescBuff.c_str(), (DWORD)itemDescBuff.length(), &buff);
-			buff += "\r\n";
-			extendText += buff;
-			itemDescBuff = "";
-		}
-		if( itemBuff.size() > 0 ){
-			string buff = "";
-			arib.PSISI((const BYTE*)itemBuff.c_str(), (DWORD)itemBuff.length(), &buff);
-			buff += "\r\n";
-			extendText += buff;
-			itemBuff = "";
-		}
-		//if( textBuff.size() > 0 ){
-		//	string buff = "";
-		//	arib.PSISI((const BYTE*)textBuff.c_str(), textBuff.length(), &buff);
-		//	buff += "\r\n";
-		//	extendText += buff;
-		//	textBuff = "";
-		//}
-
-		AtoW(extendText, eventInfo->extInfo->text_char);
-	}
-
-	return updateFlag;
-}
-
-BOOL CEpgDBUtil::AddContent(CEITTable* eit, EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* content)
+BOOL CEpgDBUtil::AddContent(BYTE table_id, BYTE version_number, EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* content, BOOL skySDFlag)
 {
 	BOOL updateFlag = FALSE;
 	if( eventInfo->contentInfo == NULL ){
 		eventInfo->contentInfo = new CONTEN_INFO;
 		updateFlag = TRUE;
 	}else{
-		updateFlag = CheckUpdate(eit, eventInfo->contentInfo->tableID, eventInfo->contentInfo->version);
+		updateFlag = CheckUpdate(table_id, version_number, eventInfo->contentInfo->tableID, eventInfo->contentInfo->version, skySDFlag);
 	}
 	if( updateFlag == TRUE ){
 		//更新必要
-		eventInfo->contentInfo->tableID = eit->table_id;
-		eventInfo->contentInfo->version = eit->version_number;
+		eventInfo->contentInfo->tableID = table_id;
+		eventInfo->contentInfo->version = version_number;
 
 		eventInfo->contentInfo->nibbleList.clear();
 		if( content->EnterLoop() ){
@@ -866,50 +715,19 @@ BOOL CEpgDBUtil::AddContent(CEITTable* eit, EVENT_INFO* eventInfo, AribDescripto
 	return updateFlag;
 }
 
-BOOL CEpgDBUtil::AddContent_SD(CEITTable_SD* eit, EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* content)
-{
-	BOOL updateFlag = FALSE;
-	if( eventInfo->contentInfo == NULL ){
-		eventInfo->contentInfo = new CONTEN_INFO;
-		updateFlag = TRUE;
-	}else{
-		updateFlag = CheckUpdate_SD(eit, eventInfo->contentInfo->tableID, eventInfo->contentInfo->version);
-	}
-	if( updateFlag == TRUE ){
-		//更新必要
-		eventInfo->contentInfo->tableID = eit->table_id;
-		eventInfo->contentInfo->version = eit->version_number;
-
-		eventInfo->contentInfo->nibbleList.clear();
-		if( content->EnterLoop() ){
-			for( DWORD i=0; content->SetLoopIndex(i); i++ ){
-				NIBBLE_DATA nibble;
-				nibble.content_nibble_level_1 = (BYTE)content->GetNumber(AribDescriptor::content_nibble_level_1);
-				nibble.content_nibble_level_2 = (BYTE)content->GetNumber(AribDescriptor::content_nibble_level_2);
-				nibble.user_nibble_1 = (BYTE)content->GetNumber(AribDescriptor::user_nibble_1);
-				nibble.user_nibble_2 = (BYTE)content->GetNumber(AribDescriptor::user_nibble_2);
-				eventInfo->contentInfo->nibbleList.push_back(nibble);
-			}
-			content->LeaveLoop();
-		}
-	}
-
-	return updateFlag;
-}
-
-BOOL CEpgDBUtil::AddComponent(CEITTable* eit, EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* component)
+BOOL CEpgDBUtil::AddComponent(BYTE table_id, BYTE version_number, EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* component, BOOL skySDFlag)
 {
 	BOOL updateFlag = FALSE;
 	if( eventInfo->componentInfo == NULL ){
 		eventInfo->componentInfo = new COMPONENT_INFO;
 		updateFlag = TRUE;
 	}else{
-		updateFlag = CheckUpdate(eit, eventInfo->componentInfo->tableID, eventInfo->componentInfo->version);
+		updateFlag = CheckUpdate(table_id, version_number, eventInfo->componentInfo->tableID, eventInfo->componentInfo->version, skySDFlag);
 	}
 	if( updateFlag == TRUE ){
 		//更新必要
-		eventInfo->componentInfo->tableID = eit->table_id;
-		eventInfo->componentInfo->version = eit->version_number;
+		eventInfo->componentInfo->tableID = table_id;
+		eventInfo->componentInfo->version = version_number;
 
 		eventInfo->componentInfo->stream_content = (BYTE)component->GetNumber(AribDescriptor::stream_content);
 		eventInfo->componentInfo->component_type = (BYTE)component->GetNumber(AribDescriptor::component_type);
@@ -930,103 +748,19 @@ BOOL CEpgDBUtil::AddComponent(CEITTable* eit, EVENT_INFO* eventInfo, AribDescrip
 	return updateFlag;
 }
 
-BOOL CEpgDBUtil::AddComponent_SD(CEITTable_SD* eit, EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* component)
-{
-	BOOL updateFlag = FALSE;
-	if( eventInfo->componentInfo == NULL ){
-		eventInfo->componentInfo = new COMPONENT_INFO;
-		updateFlag = TRUE;
-	}else{
-		updateFlag = CheckUpdate_SD(eit, eventInfo->componentInfo->tableID, eventInfo->componentInfo->version);
-	}
-	if( updateFlag == TRUE ){
-		//更新必要
-		eventInfo->componentInfo->tableID = eit->table_id;
-		eventInfo->componentInfo->version = eit->version_number;
-
-		eventInfo->componentInfo->stream_content = (BYTE)component->GetNumber(AribDescriptor::stream_content);
-		eventInfo->componentInfo->component_type = (BYTE)component->GetNumber(AribDescriptor::component_type);
-		eventInfo->componentInfo->component_tag = (BYTE)component->GetNumber(AribDescriptor::component_tag);
-
-		CARIB8CharDecode arib;
-		string text_char = "";
-		DWORD srcSize;
-		const char* src = component->GetStringOrEmpty(AribDescriptor::text_char, &srcSize);
-		if( srcSize > 0 ){
-			arib.PSISI((const BYTE*)src, srcSize, &text_char);
-
-			AtoW(text_char, eventInfo->componentInfo->text_char);
-		}
-
-	}
-
-	return updateFlag;
-}
-
-BOOL CEpgDBUtil::AddAudioComponent(CEITTable* eit, EVENT_INFO* eventInfo, vector<AribDescriptor::CDescriptor*>* descriptorList)
+BOOL CEpgDBUtil::AddAudioComponent(BYTE table_id, BYTE version_number, EVENT_INFO* eventInfo, vector<AribDescriptor::CDescriptor*>* descriptorList, BOOL skySDFlag)
 {
 	BOOL updateFlag = FALSE;
 	if( eventInfo->audioInfo == NULL ){
 		eventInfo->audioInfo = new AUDIO_COMPONENT_INFO;
 		updateFlag = TRUE;
 	}else{
-		updateFlag = CheckUpdate(eit, eventInfo->audioInfo->tableID, eventInfo->audioInfo->version);
+		updateFlag = CheckUpdate(table_id, version_number, eventInfo->audioInfo->tableID, eventInfo->audioInfo->version, skySDFlag);
 	}
 	if( updateFlag == TRUE ){
 		//更新必要
-		eventInfo->audioInfo->tableID = eit->table_id;
-		eventInfo->audioInfo->version = eit->version_number;
-		eventInfo->audioInfo->componentList.clear();
-
-		for( size_t i=0; i<descriptorList->size(); i++ ){
-			if( (*descriptorList)[i]->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::audio_component_descriptor ){
-				AribDescriptor::CDescriptor* audioComponent = (*descriptorList)[i];
-				AUDIO_COMPONENT_INFO_DATA item;
-
-				item.stream_content = (BYTE)audioComponent->GetNumber(AribDescriptor::stream_content);
-				item.component_type = (BYTE)audioComponent->GetNumber(AribDescriptor::component_type);
-				item.component_tag = (BYTE)audioComponent->GetNumber(AribDescriptor::component_tag);
-
-				item.stream_type = (BYTE)audioComponent->GetNumber(AribDescriptor::stream_type);
-				item.simulcast_group_tag = (BYTE)audioComponent->GetNumber(AribDescriptor::simulcast_group_tag);
-				item.ES_multi_lingual_flag = (BYTE)audioComponent->GetNumber(AribDescriptor::ES_multi_lingual_flag);
-				item.main_component_flag = (BYTE)audioComponent->GetNumber(AribDescriptor::main_component_flag);
-				item.quality_indicator = (BYTE)audioComponent->GetNumber(AribDescriptor::quality_indicator);
-				item.sampling_rate = (BYTE)audioComponent->GetNumber(AribDescriptor::sampling_rate);
-
-
-				CARIB8CharDecode arib;
-				string text_char = "";
-				DWORD srcSize;
-				const char* src = audioComponent->GetStringOrEmpty(AribDescriptor::text_char, &srcSize);
-				if( srcSize > 0 ){
-					arib.PSISI((const BYTE*)src, srcSize, &text_char);
-
-					AtoW(text_char, item.text_char);
-				}
-
-				eventInfo->audioInfo->componentList.push_back(item);
-
-			}
-		}
-	}
-
-	return updateFlag;
-}
-
-BOOL CEpgDBUtil::AddAudioComponent_SD(CEITTable_SD* eit, EVENT_INFO* eventInfo, vector<AribDescriptor::CDescriptor*>* descriptorList)
-{
-	BOOL updateFlag = FALSE;
-	if( eventInfo->audioInfo == NULL ){
-		eventInfo->audioInfo = new AUDIO_COMPONENT_INFO;
-		updateFlag = TRUE;
-	}else{
-		updateFlag = CheckUpdate_SD(eit, eventInfo->audioInfo->tableID, eventInfo->audioInfo->version);
-	}
-	if( updateFlag == TRUE ){
-		//更新必要
-		eventInfo->audioInfo->tableID = eit->table_id;
-		eventInfo->audioInfo->version = eit->version_number;
+		eventInfo->audioInfo->tableID = table_id;
+		eventInfo->audioInfo->version = version_number;
 		eventInfo->audioInfo->componentList.clear();
 
 		for( size_t i=0; i<descriptorList->size(); i++ ){
@@ -1072,7 +806,7 @@ BOOL CEpgDBUtil::AddEventGroup(CEITTable* eit, EVENT_INFO* eventInfo, AribDescri
 		eventInfo->eventGroupInfo = new EVENTGROUP_INFO;
 		updateFlag = TRUE;
 	}else{
-		updateFlag = CheckUpdate(eit, eventInfo->eventGroupInfo->tableID, eventInfo->eventGroupInfo->version);
+		updateFlag = CheckUpdate(eit->table_id, eit->version_number, eventInfo->eventGroupInfo->tableID, eventInfo->eventGroupInfo->version, FALSE);
 	}
 	if( updateFlag == TRUE ){
 		//更新必要
@@ -1106,7 +840,7 @@ BOOL CEpgDBUtil::AddEventRelay(CEITTable* eit, EVENT_INFO* eventInfo, AribDescri
 		eventInfo->eventRelayInfo = new EVENTGROUP_INFO;
 		updateFlag = TRUE;
 	}else{
-		updateFlag = CheckUpdate(eit, eventInfo->eventRelayInfo->tableID, eventInfo->eventRelayInfo->version);
+		updateFlag = CheckUpdate(eit->table_id, eit->version_number, eventInfo->eventRelayInfo->tableID, eventInfo->eventRelayInfo->version, FALSE);
 	}
 	if( updateFlag == TRUE ){
 		//更新必要
@@ -1149,12 +883,15 @@ BOOL CEpgDBUtil::AddEventRelay(CEITTable* eit, EVENT_INFO* eventInfo, AribDescri
 	return updateFlag;
 }
 
-BOOL CEpgDBUtil::CheckUpdate(CEITTable* eit, BYTE tableID, BYTE version)
+BOOL CEpgDBUtil::CheckUpdate(BYTE eit_table_id, BYTE eit_version_number, BYTE tableID, BYTE version, BOOL skySDFlag)
 {
+	if( skySDFlag != FALSE ){
+		return CheckUpdate_SD(eit_table_id, eit_version_number, tableID, version);
+	}
 	BOOL changeFlag = FALSE;
-	if( eit->table_id == 0x4E ){
+	if( eit_table_id == 0x4E ){
 		if( tableID == 0x4E ){
-			if( version != eit->version_number ){
+			if( version != eit_version_number ){
 				//バージョン変わったので更新
 				changeFlag = TRUE;
 			}else{
@@ -1164,9 +901,9 @@ BOOL CEpgDBUtil::CheckUpdate(CEITTable* eit, BYTE tableID, BYTE version)
 			//[p/f]が最新のはずなので更新
 			changeFlag = TRUE;
 		}
-	}else if( eit->table_id == 0x4F ){
+	}else if( eit_table_id == 0x4F ){
 		if( tableID == 0x4F ){
-			if( version != eit->version_number ){
+			if( version != eit_version_number ){
 				//バージョン変わったので更新
 				changeFlag = TRUE;
 			}else{
@@ -1178,10 +915,10 @@ BOOL CEpgDBUtil::CheckUpdate(CEITTable* eit, BYTE tableID, BYTE version)
 		}else{
 			//自ストリーム情報なので更新しない
 		}
-	}else if( 0x50 <= eit->table_id && eit->table_id <= 0x5F ){
+	}else if( 0x50 <= eit_table_id && eit_table_id <= 0x5F ){
 		if( 0x50 <= tableID && tableID <= 0x5F ){
-			if( tableID == eit->table_id ){
-				if( version != eit->version_number ){
+			if( tableID == eit_table_id ){
+				if( version != eit_version_number ){
 					//バージョン変わったので更新
 					changeFlag = TRUE;
 				}else{
@@ -1198,10 +935,10 @@ BOOL CEpgDBUtil::CheckUpdate(CEITTable* eit, BYTE tableID, BYTE version)
 		}else{
 			//[p/f]が最新のはずなので更新しない
 		}
-	}else if( 0x60 <= eit->table_id && eit->table_id <= 0x6F ){
+	}else if( 0x60 <= eit_table_id && eit_table_id <= 0x6F ){
 		if( 0x60 <= tableID && tableID <= 0x6F ){
-			if( tableID == eit->table_id ){
-				if( version != eit->version_number ){
+			if( tableID == eit_table_id ){
+				if( version != eit_version_number ){
 					//バージョン変わったので更新
 					changeFlag = TRUE;
 				}else{
@@ -1218,13 +955,13 @@ BOOL CEpgDBUtil::CheckUpdate(CEITTable* eit, BYTE tableID, BYTE version)
 	return changeFlag;
 }
 
-BOOL CEpgDBUtil::CheckUpdate_SD(CEITTable_SD* eit, BYTE tableID, BYTE version)
+BOOL CEpgDBUtil::CheckUpdate_SD(BYTE eit_table_id, BYTE eit_version_number, BYTE tableID, BYTE version)
 {
 	BOOL changeFlag = FALSE;
-	if( 0xA0 <= eit->table_id && eit->table_id <= 0xAF ){
+	if( 0xA0 <= eit_table_id && eit_table_id <= 0xAF ){
 		if( 0xA0 <= tableID && tableID <= 0xAF ){
-			if( tableID == eit->table_id ){
-				if( version != eit->version_number ){
+			if( tableID == eit_table_id ){
+				if( version != eit_version_number ){
 					//バージョン変わったので更新
 					changeFlag = TRUE;
 				}else{
@@ -2103,16 +1840,16 @@ BOOL CEpgDBUtil::AddSDEventMap(CEITTable_SD* eit)
 		for( size_t j=0; j<eitEventInfo->descriptorList.size(); j++ ){
 			DWORD tag = eitEventInfo->descriptorList[j]->GetNumber(AribDescriptor::descriptor_tag);
 			if( tag == AribDescriptor::short_event_descriptor ){
-				AddShortEvent_SD( eit, eventInfo, eitEventInfo->descriptorList[j] );
+				AddShortEvent( eit->table_id, eit->version_number, eventInfo, eitEventInfo->descriptorList[j], TRUE );
 			}else if( tag == AribDescriptor::extended_event_descriptor && checkExtFlag == FALSE){
-				AddExtEvent_SD(eit, eventInfo, &eitEventInfo->descriptorList );
+				AddExtEvent(eit->table_id, eit->version_number, eventInfo, &eitEventInfo->descriptorList, TRUE );
 				checkExtFlag = TRUE;
 			}else if( tag == AribDescriptor::content_descriptor ){
-				AddContent_SD( eit, eventInfo, eitEventInfo->descriptorList[j] );
+				AddContent( eit->table_id, eit->version_number, eventInfo, eitEventInfo->descriptorList[j], TRUE );
 			}else if( tag == AribDescriptor::component_descriptor ){
-				AddComponent_SD( eit, eventInfo, eitEventInfo->descriptorList[j] );
+				AddComponent( eit->table_id, eit->version_number, eventInfo, eitEventInfo->descriptorList[j], TRUE );
 			}else if( tag == AribDescriptor::audio_component_descriptor && checkAudioFlag == FALSE ){
-				AddAudioComponent_SD( eit, eventInfo, &eitEventInfo->descriptorList );
+				AddAudioComponent( eit->table_id, eit->version_number, eventInfo, &eitEventInfo->descriptorList, TRUE );
 				checkAudioFlag = TRUE;
 			}
 		}

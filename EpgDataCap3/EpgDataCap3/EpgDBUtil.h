@@ -316,21 +316,16 @@ protected:
 protected:
 	void Clear();
 	
-	BOOL AddShortEvent(CEITTable* eit, EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* shortEvent);
-	BOOL AddExtEvent(CEITTable* eit, EVENT_INFO* eventInfo, vector<AribDescriptor::CDescriptor*>* descriptorList);
-	BOOL AddContent(CEITTable* eit, EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* content);
-	BOOL AddComponent(CEITTable* eit, EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* component);
-	BOOL AddAudioComponent(CEITTable* eit, EVENT_INFO* eventInfo, vector<AribDescriptor::CDescriptor*>* descriptorList);
-	BOOL AddEventGroup(CEITTable* eit, EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* eventGroup);
-	BOOL AddEventRelay(CEITTable* eit, EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* eventGroup);
-	BOOL CheckUpdate(CEITTable* eit, BYTE tableID, BYTE version);
+	static BOOL AddShortEvent(BYTE table_id, BYTE version_number, EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* shortEvent, BOOL skySDFlag);
+	static BOOL AddExtEvent(BYTE table_id, BYTE version_number, EVENT_INFO* eventInfo, vector<AribDescriptor::CDescriptor*>* descriptorList, BOOL skySDFlag);
+	static BOOL AddContent(BYTE table_id, BYTE version_number, EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* content, BOOL skySDFlag);
+	static BOOL AddComponent(BYTE table_id, BYTE version_number, EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* component, BOOL skySDFlag);
+	static BOOL AddAudioComponent(BYTE table_id, BYTE version_number, EVENT_INFO* eventInfo, vector<AribDescriptor::CDescriptor*>* descriptorList, BOOL skySDFlag);
+	static BOOL AddEventGroup(CEITTable* eit, EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* eventGroup);
+	static BOOL AddEventRelay(CEITTable* eit, EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* eventGroup);
+	static BOOL CheckUpdate(BYTE eit_table_id, BYTE eit_version_number, BYTE tableID, BYTE version, BOOL skySDFlag);
 
-	BOOL AddShortEvent_SD(CEITTable_SD* eit, EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* shortEvent);
-	BOOL AddExtEvent_SD(CEITTable_SD* eit, EVENT_INFO* eventInfo, vector<AribDescriptor::CDescriptor*>* descriptorList);
-	BOOL AddContent_SD(CEITTable_SD* eit, EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* content);
-	BOOL AddComponent_SD(CEITTable_SD* eit, EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* component);
-	BOOL AddAudioComponent_SD(CEITTable_SD* eit, EVENT_INFO* eventInfo, vector<AribDescriptor::CDescriptor*>* descriptorList);
-	BOOL CheckUpdate_SD(CEITTable_SD* eit, BYTE tableID, BYTE version);
+	static BOOL CheckUpdate_SD(BYTE eit_table_id, BYTE eit_version_number, BYTE tableID, BYTE version);
 
 	BOOL AddSDEventMap(CEITTable_SD* eit);
 
