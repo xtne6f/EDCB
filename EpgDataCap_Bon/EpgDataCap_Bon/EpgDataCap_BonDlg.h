@@ -101,7 +101,6 @@ protected:
 	afx_msg void OnBnClickedCheckTcp();
 	afx_msg void OnBnClickedCheckRecSet();
 	afx_msg void OnBnClickedCheckNextpg();
-	afx_msg void OnBnClickedButtonTimeshift();
 	afx_msg BOOL OnQueryEndSession();
 	afx_msg void OnEndSession(BOOL bEnding);
 	static LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam);

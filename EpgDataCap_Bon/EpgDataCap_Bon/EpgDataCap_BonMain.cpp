@@ -757,44 +757,6 @@ void CEpgDataCap_BonMain::StopServer()
 	this->pipeServer.StopServer();
 }
 
-void CEpgDataCap_BonMain::StartTimeShift()
-{
-	wstring saveFile = L"";
-	DWORD ctrlID = 0;
-	if( this->recCtrlID != 0 ){
-		BOOL subRec = FALSE;
-		this->bonCtrl.GetSaveFilePath(this->recCtrlID, &saveFile, &subRec);
-		ctrlID = this->recCtrlID;
-	}else if(this->bonCtrl.IsRec() == TRUE){
-		map<DWORD,DWORD>::iterator itr;
-		itr = this->ctrlMap.begin();
-		BOOL subRec = FALSE;
-		this->bonCtrl.GetSaveFilePath(itr->second, &saveFile, &subRec);
-		ctrlID = itr->second;
-	}
-	if( saveFile.size() > 0 ){
-		wstring appPath = L"";
-		GetModuleFolderPath(appPath);
-		appPath += L"\\FilePlay.exe";
-
-		PROCESS_INFORMATION pi;
-		STARTUPINFO si;
-		ZeroMemory(&si,sizeof(si));
-		si.cb=sizeof(si);
-
-		wstring strOpen;
-		Format(strOpen, L"\"%s\" \"%s\" -pid %d -ctrlid %d", appPath.c_str(), saveFile.c_str(), GetCurrentProcessId(), ctrlID);
-
-		WCHAR* pszOpen = new WCHAR[strOpen.size() + 1];
-		lstrcpy(pszOpen, strOpen.c_str());
-		CreateProcess( NULL, pszOpen, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi );
-		delete [] pszOpen;
-
-		CloseHandle(pi.hThread);
-		CloseHandle(pi.hProcess);
-	}
-}
-
 BOOL CEpgDataCap_BonMain::GetViewStatusInfo(
 	float* signal,
 	DWORD* space,

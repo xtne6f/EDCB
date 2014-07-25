@@ -742,7 +742,6 @@ void CEpgDataCap_BonDlg::BtnUpdate(DWORD guiMode)
 			ENABLE_ITEM(IDC_BUTTON_VIEW, TRUE);
 			ENABLE_ITEM(IDC_CHECK_UDP, TRUE);
 			ENABLE_ITEM(IDC_CHECK_TCP, TRUE);
-			ENABLE_ITEM(IDC_BUTTON_TIMESHIFT, FALSE);
 			break;
 		case GUI_CANCEL_ONLY:
 			ENABLE_ITEM(IDC_COMBO_TUNER, FALSE);
@@ -758,7 +757,6 @@ void CEpgDataCap_BonDlg::BtnUpdate(DWORD guiMode)
 			ENABLE_ITEM(IDC_BUTTON_VIEW, TRUE);
 			ENABLE_ITEM(IDC_CHECK_UDP, TRUE);
 			ENABLE_ITEM(IDC_CHECK_TCP, TRUE);
-			ENABLE_ITEM(IDC_BUTTON_TIMESHIFT, FALSE);
 			break;
 		case GUI_OPEN_FAIL:
 			ENABLE_ITEM(IDC_COMBO_TUNER, TRUE);
@@ -774,7 +772,6 @@ void CEpgDataCap_BonDlg::BtnUpdate(DWORD guiMode)
 			ENABLE_ITEM(IDC_BUTTON_VIEW, TRUE);
 			ENABLE_ITEM(IDC_CHECK_UDP, FALSE);
 			ENABLE_ITEM(IDC_CHECK_TCP, FALSE);
-			ENABLE_ITEM(IDC_BUTTON_TIMESHIFT, FALSE);
 			break;
 		case GUI_REC:
 			ENABLE_ITEM(IDC_COMBO_TUNER, FALSE);
@@ -791,7 +788,6 @@ void CEpgDataCap_BonDlg::BtnUpdate(DWORD guiMode)
 			ENABLE_ITEM(IDC_BUTTON_VIEW, TRUE);
 			ENABLE_ITEM(IDC_CHECK_UDP, TRUE);
 			ENABLE_ITEM(IDC_CHECK_TCP, TRUE);
-			ENABLE_ITEM(IDC_BUTTON_TIMESHIFT, TRUE);
 			break;
 		case GUI_REC_SET_TIME:
 			ENABLE_ITEM(IDC_COMBO_TUNER, FALSE);
@@ -807,7 +803,6 @@ void CEpgDataCap_BonDlg::BtnUpdate(DWORD guiMode)
 			ENABLE_ITEM(IDC_BUTTON_VIEW, TRUE);
 			ENABLE_ITEM(IDC_CHECK_UDP, TRUE);
 			ENABLE_ITEM(IDC_CHECK_TCP, TRUE);
-			ENABLE_ITEM(IDC_BUTTON_TIMESHIFT, TRUE);
 			break;
 		case GUI_OTHER_CTRL:
 			ENABLE_ITEM(IDC_COMBO_TUNER, FALSE);
@@ -823,7 +818,6 @@ void CEpgDataCap_BonDlg::BtnUpdate(DWORD guiMode)
 			ENABLE_ITEM(IDC_BUTTON_VIEW, TRUE);
 			ENABLE_ITEM(IDC_CHECK_UDP, TRUE);
 			ENABLE_ITEM(IDC_CHECK_TCP, TRUE);
-			ENABLE_ITEM(IDC_BUTTON_TIMESHIFT, TRUE);
 			break;
 		case GUI_REC_STANDBY:
 			ENABLE_ITEM(IDC_COMBO_TUNER, FALSE);
@@ -839,7 +833,6 @@ void CEpgDataCap_BonDlg::BtnUpdate(DWORD guiMode)
 			ENABLE_ITEM(IDC_BUTTON_VIEW, TRUE);
 			ENABLE_ITEM(IDC_CHECK_UDP, TRUE);
 			ENABLE_ITEM(IDC_CHECK_TCP, TRUE);
-			ENABLE_ITEM(IDC_BUTTON_TIMESHIFT, FALSE);
 			break;
 		default:
 			break;
@@ -1148,14 +1141,6 @@ void CEpgDataCap_BonDlg::OnBnClickedCheckNextpg()
 }
 
 
-
-void CEpgDataCap_BonDlg::OnBnClickedButtonTimeshift()
-{
-	// TODO: ここにコントロール通知ハンドラー コードを追加します。
-	this->main.StartTimeShift();
-}
-
-
 BOOL CEpgDataCap_BonDlg::OnQueryEndSession()
 {
 	// TODO:  ここに特定なクエリの終了セッション コードを追加してください。
@@ -1262,9 +1247,6 @@ INT_PTR CALLBACK CEpgDataCap_BonDlg::DlgProc(HWND hDlg, UINT uMsg, WPARAM wParam
 			break;
 		case IDC_CHECK_NEXTPG:
 			pSys->OnBnClickedCheckNextpg();
-			break;
-		case IDC_BUTTON_TIMESHIFT:
-			pSys->OnBnClickedButtonTimeshift();
 			break;
 		case IDOK:
 		case IDCANCEL:

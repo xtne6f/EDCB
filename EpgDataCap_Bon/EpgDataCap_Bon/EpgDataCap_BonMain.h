@@ -245,8 +245,6 @@ public:
 	void StartServer();
 	void StopServer();
 
-	void StartTimeShift();
-
 	BOOL GetViewStatusInfo(
 		float* signal,
 		DWORD* space,
