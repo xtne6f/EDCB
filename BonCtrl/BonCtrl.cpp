@@ -159,22 +159,15 @@ void CBonCtrl::UnLock(LPCWSTR log)
 	}
 }
 
-//初期設定
-//設定ファイル保存先とBonDriverフォルダを指定
+//BonDriverフォルダを指定
 //引数：
-// settingFolderPath		[IN]設定ファイル保存フォルダパス
 // bonDriverFolderPath		[IN]BonDriverフォルダパス
-void CBonCtrl::SetSettingFolder(
-	LPCWSTR settingFolderPath,
+void CBonCtrl::SetBonDriverFolder(
 	LPCWSTR bonDriverFolderPath
 )
 {
 	if( Lock(L"SetSettingFolder") == FALSE ) return ;
-	this->bonUtil.SetSettingFolder(settingFolderPath, bonDriverFolderPath);
-
-	if( this->bonUtil.GetOpenBonDriverIndex() != -1 ){
-		this->chUtil.LoadChSet( this->bonUtil.GetChSet4Path(), this->bonUtil.GetChSet5Path() );
-	}
+	this->bonUtil.SetBonDriverFolder(bonDriverFolderPath);
 
 	UnLock();
 }
@@ -202,43 +195,13 @@ void CBonCtrl::SetTsBuffMaxCount(DWORD tsBuffMaxCount, int writeBuffMaxCount)
 //戻り値：
 // エラーコード
 //引数：
-// bonList			[OUT]検索できたBonDriver一覧（mapのキー 内部インデックス値、mapの値 BonDriverファイル名）
+// bonList			[OUT]検索できたBonDriver一覧
 DWORD CBonCtrl::EnumBonDriver(
-	map<int, wstring>* bonList
+	vector<wstring>* bonList
 )
 {
 	if( Lock(L"EnumBonDriver") == FALSE ) return ERR_FALSE;
 	DWORD ret = this->bonUtil.EnumBonDriver(bonList);
-	UnLock();
-	return ret;
-}
-
-//BonDriverのロード
-//BonDriverをロードしてチャンネル情報などを取得（インデックス値で指定）
-//戻り値：
-// エラーコード
-//引数：
-// iIndex			[IN]EnumBonDriverで取得されたBonDriverのインデックス値
-DWORD CBonCtrl::OpenBonDriver(
-	int index,
-	int openWait
-)
-{
-	if( Lock(L"OpenBonDriver") == FALSE ) return ERR_FALSE;
-	_CloseBonDriver();
-	DWORD ret = this->bonUtil.OpenBonDriver(index, openWait);
-	if( ret == NO_ERR ){
-		ret = _OpenBonDriver();
-		this->tsOut.ResetChChange();
-
-		wstring bonFile;
-		bonFile = this->bonUtil.GetOpenBonDriverFileName();
-		this->tsOut.SetBonDriver(bonFile);
-	}
-	if( this->bonUtil.GetOpenBonDriverIndex() != -1 ){
-		this->chUtil.LoadChSet( this->bonUtil.GetChSet4Path(), this->bonUtil.GetChSet5Path() );
-	}
-
 	UnLock();
 	return ret;
 }
@@ -256,16 +219,21 @@ DWORD CBonCtrl::OpenBonDriver(
 	if( Lock(L"OpenBonDriver-2") == FALSE ) return ERR_FALSE;
 	_CloseBonDriver();
 	DWORD ret = this->bonUtil.OpenBonDriver(bonDriverFile, openWait);
+	wstring bonFile = this->bonUtil.GetOpenBonDriverFileName();
 	if( ret == NO_ERR ){
 		ret = _OpenBonDriver();
 		this->tsOut.ResetChChange();
 
-		wstring bonFile;
-		bonFile = this->bonUtil.GetOpenBonDriverFileName();
 		this->tsOut.SetBonDriver(bonFile);
 	}
-	if( this->bonUtil.GetOpenBonDriverIndex() != -1 ){
-		this->chUtil.LoadChSet( this->bonUtil.GetChSet4Path(), this->bonUtil.GetChSet5Path() );
+	if( bonFile.empty() == false ){
+		wstring settingPath;
+		GetSettingPath(settingPath);
+		wstring bonFileTitle;
+		GetFileTitle(bonFile, bonFileTitle);
+		wstring tunerName = this->bonUtil.GetTunerName();
+		CheckFileName(tunerName);
+		this->chUtil.LoadChSet( settingPath + L"\\" + bonFileTitle + L"(" + tunerName + L").ChSet4.txt", settingPath + L"\\ChSet5.txt" );
 	}
 
 	UnLock();
@@ -297,10 +265,11 @@ BOOL CBonCtrl::GetOpenBonDriver(
 
 	BOOL ret = FALSE;
 
-	if( this->bonUtil.GetOpenBonDriverIndex() != -1 ){
+	wstring strBonDriverFile = this->bonUtil.GetOpenBonDriverFileName();
+	if( strBonDriverFile.empty() == false ){
 		ret = TRUE;
 		if( bonDriverFile != NULL ){
-			*bonDriverFile = this->bonUtil.GetOpenBonDriverFileName();
+			*bonDriverFile = strBonDriverFile;
 		}
 	}
 
@@ -430,9 +399,9 @@ DWORD CBonCtrl::_SetCh(
 	DWORD chNow=0;
 
 	DWORD ret = ERR_FALSE;
-	if( this->bonUtil.GetNowCh(&spaceNow, &chNow) == TRUE ){
+	if( this->bonUtil.GetOpenBonDriverFileName().empty() == false ){
 		ret = NO_ERR;
-		if( space != spaceNow || ch != chNow ){
+		if( this->bonUtil.GetNowCh(&spaceNow, &chNow) == FALSE || space != spaceNow || ch != chNow ){
 			this->tsOut.SetChChangeEvent(chScan);
 			_OutputDebugString(L"SetCh space %d, ch %d", space, ch);
 			ret = this->bonUtil.SetCh(space, ch);
@@ -465,21 +434,6 @@ DWORD CBonCtrl::_SetCh(
 	}
 	return ret;
 }
-
-BOOL CBonCtrl::GetCh(
-	DWORD* space,
-	DWORD* ch
-	)
-{
-	if( Lock(L"GetCh") == FALSE ) return FALSE;
-	BOOL ret = FALSE;
-	if( this->bonUtil.GetSetCh(space, ch) == TRUE ){
-		ret = TRUE;
-	}
-	UnLock();
-	return ret;
-}
-
 
 //チャンネル変更中かどうか
 //戻り値：
@@ -1080,7 +1034,7 @@ DWORD CBonCtrl::StartChScan()
 
 	DWORD ret = ERR_FALSE;
 	if( this->chScanThread == NULL ){
-		if( this->bonUtil.GetOpenBonDriverIndex() != -1 ){
+		if( this->bonUtil.GetOpenBonDriverFileName().empty() == false ){
 			ret = NO_ERR;
 			this->chSt_space = 0;
 			this->chSt_ch = 0;
@@ -1169,8 +1123,15 @@ UINT WINAPI CBonCtrl::ChScanThread(LPVOID param)
 
 	sys->chUtil.Clear();
 
-	wstring chSet4 = sys->bonUtil.GetChSet4Path();
-	wstring chSet5 = sys->bonUtil.GetChSet5Path();
+	wstring settingPath;
+	GetSettingPath(settingPath);
+	wstring bonFileTitle;
+	GetFileTitle(sys->bonUtil.GetOpenBonDriverFileName(), bonFileTitle);
+	wstring tunerName = sys->bonUtil.GetTunerName();
+	CheckFileName(tunerName);
+
+	wstring chSet4 = settingPath + L"\\" + bonFileTitle + L"(" + tunerName + L").ChSet4.txt";
+	wstring chSet5 = settingPath + L"\\ChSet5.txt";
 
 	vector<CHK_CH_INFO> chkList;
 	map<DWORD, BON_SPACE_INFO> spaceMap;
@@ -1182,13 +1143,13 @@ UINT WINAPI CBonCtrl::ChScanThread(LPVOID param)
 	map<DWORD, BON_SPACE_INFO>::iterator itrSpace;
 	for( itrSpace = spaceMap.begin(); itrSpace != spaceMap.end(); itrSpace++ ){
 		sys->chSt_totalNum += (DWORD)itrSpace->second.chMap.size();
-		map<DWORD, BON_CH_INFO>::iterator itrCh;
+		map<DWORD, wstring>::iterator itrCh;
 		for( itrCh = itrSpace->second.chMap.begin(); itrCh != itrSpace->second.chMap.end(); itrCh++ ){
 			CHK_CH_INFO item;
-			item.space = itrSpace->second.space;
+			item.space = itrSpace->first;
 			item.spaceName = itrSpace->second.spaceName;
-			item.ch = itrCh->second.ch;
-			item.chName = itrCh->second.chName;
+			item.ch = itrCh->first;
+			item.chName = itrCh->second;
 			chkList.push_back(item);
 		}
 	}
@@ -1339,7 +1300,7 @@ DWORD CBonCtrl::StartEpgCap(
 
 	DWORD ret = ERR_FALSE;
 	if( this->epgCapThread == NULL ){
-		if( this->bonUtil.GetOpenBonDriverIndex() != -1 ){
+		if( this->bonUtil.GetOpenBonDriverFileName().empty() == false ){
 			ret = NO_ERR;
 			this->epgCapChList = *chList;
 			this->BSBasic = BSBasic;
@@ -1667,7 +1628,7 @@ void CBonCtrl::StartBackgroundEpgCap()
 {
 	StopBackgroundEpgCap();
 	if( this->epgCapBackThread == NULL && this->epgCapThread == NULL ){
-		if( this->bonUtil.GetOpenBonDriverIndex() != -1 ){
+		if( this->bonUtil.GetOpenBonDriverFileName().empty() == false ){
 			//受信スレッド起動
 			ResetEvent(this->epgCapBackStopEvent);
 			this->epgCapBackThread = (HANDLE)_beginthreadex(NULL, 0, EpgCapBackThread, (LPVOID)this, CREATE_SUSPENDED, NULL);
@@ -1806,7 +1767,7 @@ BOOL CBonCtrl::GetViewStatusInfo(
 	*signal = this->bonUtil.GetSignalLevel();
 	this->tsOut.SetSignalLevel(*signal);
 
-	if( this->bonUtil.GetSetCh(space, ch) == TRUE ){
+	if( this->bonUtil.GetNowCh(space, ch) == TRUE ){
 		ret = TRUE;
 	}
 

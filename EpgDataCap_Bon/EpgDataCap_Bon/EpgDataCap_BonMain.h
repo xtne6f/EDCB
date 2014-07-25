@@ -21,9 +21,9 @@ public:
 	//戻り値：
 	// エラーコード
 	//引数：
-	// bonList			[OUT]検索できたBonDriver一覧（mapのキー 内部インデックス値、mapの値 BonDriverファイル名）
+	// bonList			[OUT]検索できたBonDriver一覧
 	DWORD EnumBonDriver(
-		map<int, wstring>* bonList
+		vector<wstring>* bonList
 		);
 
 	//BonDriverをロードしてチャンネル情報などを取得（ファイル名で指定）
@@ -99,11 +99,6 @@ public:
 		WORD* ONID,
 		WORD* TSID,
 		WORD* SID
-		);
-
-	BOOL GetCh(
-		DWORD* space,
-		DWORD* ch
 		);
 
 	//チャンネル変更中かどうか
