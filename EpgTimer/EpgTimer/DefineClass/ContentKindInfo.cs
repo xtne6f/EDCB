@@ -43,6 +43,20 @@ namespace EpgTimer
             get;
             set;
         }
+        public String ListBoxView
+        {
+            get
+            {
+                if (SubName == "")
+                {
+                    return ContentName;
+                }
+                else
+                {
+                    return ContentName + " - " +SubName;
+                }
+            }
+        }
         public override string ToString()
         {
             if (Nibble2 == 0xFF)
