@@ -330,9 +330,7 @@ protected:
 	WORD lastONID;
 	WORD lastTSID;
 
-	BYTE* decodeBuff;
-	DWORD decodeBuffSize;
-	DWORD deocdeBuffWriteSize;
+	vector<BYTE> decodeBuff;
 
 	BOOL enableDecodeFlag;
 	BOOL emmEnableFlag;

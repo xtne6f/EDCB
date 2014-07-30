@@ -15,10 +15,6 @@ CTSOut::CTSOut(void)
 
 	this->epgUtil.Initialize(FALSE);
 
-	this->decodeBuff = 0;
-	this->decodeBuffSize = 0;
-	this->deocdeBuffWriteSize = 0;
-
 	this->enableDecodeFlag = TRUE;
 	this->emmEnableFlag = FALSE;
 	this->serviceOnlyFlag = FALSE;
@@ -59,8 +55,6 @@ CTSOut::~CTSOut(void)
 	SAFE_DELETE(this->catUtil);
 
 	this->epgUtil.UnInitialize();
-
-	SAFE_DELETE_ARRAY(this->decodeBuff);
 }
 
 BOOL CTSOut::Lock(LPCWSTR log, DWORD timeOut)
@@ -200,12 +194,7 @@ DWORD CTSOut::AddTSBuff(TS_DATA* data)
 		UnLock();
 		return ERR_FALSE;
 	}
-	if( data->size > this->decodeBuffSize ){
-		SAFE_DELETE_ARRAY(this->decodeBuff);
-		this->decodeBuff = new BYTE[data->size*2];
-		this->decodeBuffSize = data->size*2;
-	}
-	this->deocdeBuffWriteSize = 0;
+	this->decodeBuff.clear();
 
 	BYTE* decodeData = NULL;
 	DWORD decodeSize = 0;
@@ -322,8 +311,7 @@ DWORD CTSOut::AddTSBuff(TS_DATA* data)
 					//デコード用のバッファ作成
 					if( this->serviceOnlyFlag == FALSE ){
 						//全サービス
-						memcpy(this->decodeBuff + this->deocdeBuffWriteSize, data->data + i, 188);
-						this->deocdeBuffWriteSize += 188;
+						this->decodeBuff.insert(this->decodeBuff.end(), data->data + i, data->data + i + 188);
 					}else{
 						//指定サービス
 						if( IsNeedPID(&packet) == TRUE ){
@@ -332,12 +320,12 @@ DWORD CTSOut::AddTSBuff(TS_DATA* data)
 								BYTE* patBuff = NULL;
 								DWORD patBuffSize = 0;
 								if( patUtil.GetPacket(&patBuff, &patBuffSize) == TRUE ){
-									memcpy(this->decodeBuff + this->deocdeBuffWriteSize, patBuff, patBuffSize);
-									this->deocdeBuffWriteSize += patBuffSize;
+									if( packet.payload_unit_start_indicator == 1 ){
+										this->decodeBuff.insert(this->decodeBuff.end(), patBuff, patBuff + patBuffSize);
+									}
 								}
 							}else{
-								memcpy(this->decodeBuff + this->deocdeBuffWriteSize, data->data + i, 188);
-								this->deocdeBuffWriteSize += 188;
+								this->decodeBuff.insert(this->decodeBuff.end(), data->data + i, data->data + i + 188);
 							}
 						}
 					}
@@ -384,14 +372,14 @@ DWORD CTSOut::AddTSBuff(TS_DATA* data)
 		return ERR_FALSE;
 	}
 	try{
-		if( this->deocdeBuffWriteSize > 0 ){
+		if( this->decodeBuff.empty() == false ){
 			if( this->enableDecodeFlag == TRUE && this->chChangeFlag == FALSE ){
 				//デコード必要
 
-				if( decodeUtil.Decode(this->decodeBuff, this->deocdeBuffWriteSize, &decodeData, &decodeSize) == FALSE ){
+				if( decodeUtil.Decode(&this->decodeBuff.front(), (DWORD)this->decodeBuff.size(), &decodeData, &decodeSize) == FALSE ){
 					//デコード失敗
-					decodeData = this->decodeBuff;
-					decodeSize = this->deocdeBuffWriteSize;
+					decodeData = &this->decodeBuff.front();
+					decodeSize = (DWORD)this->decodeBuff.size();
 				}else{
 					if( decodeData == NULL || decodeSize == 0 ){
 						decodeData = NULL;
@@ -400,15 +388,15 @@ DWORD CTSOut::AddTSBuff(TS_DATA* data)
 				}
 			}else{
 				//デコードの必要なし
-				decodeData = this->decodeBuff;
-				decodeSize = this->deocdeBuffWriteSize;
+				decodeData = &this->decodeBuff.front();
+				decodeSize = (DWORD)this->decodeBuff.size();
 			}
 		}
 	}catch(...){
 		_OutputDebugString(L"★★CTSOut::AddTSBuff Exception2");
 		//デコード失敗
-		decodeData = this->decodeBuff;
-		decodeSize = this->deocdeBuffWriteSize;
+		decodeData = &this->decodeBuff.front();
+		decodeSize = (DWORD)this->decodeBuff.size();
 	}
 	
 	//デコード済みのデータを解析させる

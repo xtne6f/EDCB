@@ -1,6 +1,7 @@
 #include "StdAfx.h"
 #include "EpgDataCap3Main.h"
 
+#include "../../Common/BlockLock.h"
 
 CEpgDataCap3Main::CEpgDataCap3Main(void)
 {
@@ -15,15 +16,6 @@ CEpgDataCap3Main::~CEpgDataCap3Main(void)
 
 	DeleteCriticalSection(&this->utilLock);
 }
-
-class CBlockLock
-{
-public:
-	CBlockLock(CRITICAL_SECTION* lock_) : lock(lock_) { EnterCriticalSection(lock); }
-	~CBlockLock() { LeaveCriticalSection(lock); }
-private:
-	CRITICAL_SECTION* lock;
-};
 
 //DLL‚Ì‰Šú‰»
 //–ß‚è’lF

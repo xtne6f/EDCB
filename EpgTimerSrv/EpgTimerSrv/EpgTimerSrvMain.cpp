@@ -8,6 +8,7 @@
 #include "../../Common/CtrlCmdUtil.h"
 #include "../../Common/CtrlCmdUtil2.h"
 #include "../../Common/StringUtil.h"
+#include "../../Common/BlockLock.h"
 
 #include "HttpPublicFileSend.h"
 #include "HttpRecFileSend.h"
@@ -789,6 +790,8 @@ BOOL CEpgTimerSrvMain::AutoAddReserveEPG(int targetSize, EPG_AUTO_ADD_DATA* targ
 						}
 						if( resultList[i]->findKey.size() > 0 ){
 							Format(addItem->comment, L"EPGŽ©“®—\–ñ(%s)", resultList[i]->findKey.c_str());
+							Replace(addItem->comment, L"\r", L"");
+							Replace(addItem->comment, L"\n", L"");
 						}else{
 							addItem->comment = L"EPGŽ©“®—\–ñ";
 						}

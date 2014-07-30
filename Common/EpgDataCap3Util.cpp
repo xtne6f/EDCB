@@ -181,6 +181,7 @@ DWORD CEpgDataCap3Util::UnInitialize(
 		return ERR_NOT_INIT;
 	}
 	DWORD err = pfnUnInitializeEP3(id);
+	id = 0; // © ‚±‚ê‚ª‚È‚¢‚Æ‰º‚Ì UnLoadDll ‚ÅÄ“x UnInitializeEP ‚ªŒÄ‚Î‚ê‚é
 	UnLoadDll();
 	return err;
 }

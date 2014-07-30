@@ -11,10 +11,6 @@ COneServiceUtil::COneServiceUtil(void)
 	this->sendTcp = NULL;
 	this->writeFile = NULL;
 
-	this->buff = 0;
-	this->buffSize = 0;
-	this->buffWriteSize = 0;
-
 	this->pmtPID = 0xFFFF;
 
 	this->enableScramble = TRUE;
@@ -31,8 +27,6 @@ COneServiceUtil::~COneServiceUtil(void)
 	SAFE_DELETE(this->sendUdp);
 	SAFE_DELETE(this->sendTcp);
 	SAFE_DELETE(this->writeFile);
-
-	SAFE_DELETE_ARRAY(this->buff);
 }
 
 void COneServiceUtil::SetEpgUtil(
@@ -207,7 +201,9 @@ BOOL COneServiceUtil::AddTSBuff(
 	BOOL ret = TRUE;
 	if( this->SID == 0xFFFF || this->sendTcp != NULL || this->sendUdp != NULL){
 		//全サービス扱い
-		ret = WriteData(data, size);
+		if( data != NULL ){
+			ret = WriteData(data, size);
+		}
 		for( DWORD i=0; i<size; i+=188 ){
 			CTSPacketUtil packet;
 			if( packet.Set188TS(data + i, 188) == TRUE ){
@@ -217,12 +213,7 @@ BOOL COneServiceUtil::AddTSBuff(
 			}
 		}
 	}else{
-		if( size > this->buffSize ){
-			SAFE_DELETE_ARRAY(this->buff);
-			this->buff = new BYTE[size*2];
-			this->buffSize = size*2;
-		}
-		this->buffWriteSize = 0;
+		this->buff.clear();
 
 		for( DWORD i=0; i<size; i+=188 ){
 			CTSPacketUtil packet;
@@ -232,8 +223,9 @@ BOOL COneServiceUtil::AddTSBuff(
 					BYTE* patBuff = NULL;
 					DWORD patBuffSize = 0;
 					if( createPat.GetPacket(&patBuff, &patBuffSize) == TRUE ){
-						memcpy(this->buff + this->buffWriteSize, patBuff, patBuffSize);
-						this->buffWriteSize+=patBuffSize;
+						if( packet.payload_unit_start_indicator == 1 ){
+							this->buff.insert(this->buff.end(), patBuff, patBuff + patBuffSize);
+						}
 					}
 				}else if( packet.PID == this->pmtPID ){
 					//PMT
@@ -242,38 +234,32 @@ BOOL COneServiceUtil::AddTSBuff(
 						BYTE* pmtBuff = NULL;
 						DWORD pmtBuffSize = 0;
 						if( createPmt.GetPacket(&pmtBuff, &pmtBuffSize) == TRUE ){
-							memcpy(this->buff + this->buffWriteSize, pmtBuff, pmtBuffSize);
-							this->buffWriteSize+=pmtBuffSize;
+							this->buff.insert(this->buff.end(), pmtBuff, pmtBuff + pmtBuffSize);
 						}else{
 							_OutputDebugString(L"createPmt.GetPacket Err");
 							//そのまま
-							memcpy(this->buff + this->buffWriteSize, data+i, 188);
-							this->buffWriteSize+=188;
+							this->buff.insert(this->buff.end(), data + i, data + i + 188);
 						}
 					}else if( err == FALSE ){
 						_OutputDebugString(L"createPmt.AddData Err");
 						//そのまま
-						memcpy(this->buff + this->buffWriteSize, data+i, 188);
-						this->buffWriteSize+=188;
+						this->buff.insert(this->buff.end(), data + i, data + i + 188);
 					}
 				}else{
 					//その他
 					if( packet.PID < 0x0030 ){
 						//そのまま
-						memcpy(this->buff + this->buffWriteSize, data+i, 188);
-						this->buffWriteSize+=188;
+						this->buff.insert(this->buff.end(), data + i, data + i + 188);
 					}else{
 						if( createPmt.IsNeedPID(packet.PID) == TRUE ){
 							//PMTで定義されてる
-							memcpy(this->buff + this->buffWriteSize, data+i, 188);
-							this->buffWriteSize+=188;
+							this->buff.insert(this->buff.end(), data + i, data + i + 188);
 						}else{
 							//EMMなら必要
 							map<WORD,WORD>::iterator itr;
 							itr = this->emmPIDMap.find(packet.PID);
 							if( itr != this->emmPIDMap.end() ){
-								memcpy(this->buff + this->buffWriteSize, data+i, 188);
-								this->buffWriteSize+=188;
+								this->buff.insert(this->buff.end(), data + i, data + i + 188);
 							}
 						}
 					}
@@ -281,7 +267,9 @@ BOOL COneServiceUtil::AddTSBuff(
 			}
 		}
 
-		WriteData(this->buff, this->buffWriteSize);
+		if( this->buff.empty() == false ){
+			ret = WriteData(&this->buff.front(), (DWORD)this->buff.size());
+		}
 	}
 
 	if( this->pittariStart == TRUE ){
@@ -396,12 +384,15 @@ BOOL COneServiceUtil::StartSave(
 	int maxBuffCount
 )
 {
-	this->maxBuffCount = maxBuffCount;
 	if( pittariFlag == FALSE ){
 		if( this->writeFile == NULL ){
 			OutputDebugString(L"*:StartSave");
+			this->pittariRecFilePath = L"";
+			this->pittariStart = FALSE;
+			this->pittariEndChk = FALSE;
+
 			this->writeFile = new CWriteTSFile;
-			return this->writeFile->StartSave(fileName, overWriteFlag, createSize, saveFolder, saveFolderSub, this->maxBuffCount);
+			return this->writeFile->StartSave(fileName, overWriteFlag, createSize, saveFolder, saveFolderSub, maxBuffCount);
 		}
 	}else{
 		if( this->writeFile == NULL ){
@@ -412,6 +403,7 @@ BOOL COneServiceUtil::StartSave(
 			this->createSize = createSize;
 			this->saveFolder = *saveFolder;
 			this->saveFolderSub = *saveFolderSub;
+			this->maxBuffCount = maxBuffCount;
 			this->pittariONID = pittariONID;
 			this->pittariTSID = pittariTSID;
 			this->pittariSID = pittariSID;
@@ -454,6 +446,10 @@ void COneServiceUtil::StopPittariRec()
 // TRUE（成功）、FALSE（失敗）
 BOOL COneServiceUtil::EndSave()
 {
+	this->pittariRecFilePath = L"";
+	this->pittariStart = FALSE;
+	this->pittariEndChk = FALSE;
+
 	if( this->writeFile == NULL ){
 		return FALSE;
 	}

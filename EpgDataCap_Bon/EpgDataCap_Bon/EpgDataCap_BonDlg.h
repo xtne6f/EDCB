@@ -78,7 +78,7 @@ protected:
 
 	CEpgDataCap_BonMain main;
 
-	map<int, wstring> bonList;
+	vector<wstring> bonList;
 	vector<CH_DATA4> serviceList;
 
 	// 生成された、メッセージ割り当て関数

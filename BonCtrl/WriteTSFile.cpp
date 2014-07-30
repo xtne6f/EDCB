@@ -3,11 +3,12 @@
 #include <process.h>
 
 #include "../Common/PathUtil.h"
+#include "../Common/BlockLock.h"
 
 CWriteTSFile::CWriteTSFile(void)
 {
-	this->lockEvent = CreateEvent(NULL, FALSE, TRUE, NULL);
-	this->buffLockEvent = CreateEvent(NULL, FALSE, TRUE, NULL);
+	InitializeCriticalSection(&this->outThreadLock);
+	this->totalTSBuffSize = 0;
 
     this->outThread = NULL;
     this->outStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
@@ -33,10 +34,7 @@ CWriteTSFile::~CWriteTSFile(void)
 	}
 
 
-	if( this->buffLockEvent != NULL ){
-		CloseHandle(this->buffLockEvent);
-		this->buffLockEvent = NULL;
-	}
+	DeleteCriticalSection(&this->outThreadLock);
 	for( size_t i=0; i<this->TSBuff.size(); i++ ){
 		SAFE_DELETE(this->TSBuff[i])
 	}
@@ -46,44 +44,6 @@ CWriteTSFile::~CWriteTSFile(void)
 		SAFE_DELETE(this->fileList[i]);
 	}
 	this->fileList.clear();
-
-	if( this->lockEvent != NULL ){
-		UnLock();
-		CloseHandle(this->lockEvent);
-		this->lockEvent = NULL;
-	}
-}
-
-BOOL CWriteTSFile::Lock(LPCWSTR log, DWORD timeOut)
-{
-	if( this->lockEvent == NULL ){
-		return FALSE;
-	}
-	//if( log != NULL ){
-	//	OutputDebugString(log);
-	//}
-	DWORD dwRet = WaitForSingleObject(this->lockEvent, timeOut);
-	if( dwRet == WAIT_ABANDONED || 
-		dwRet == WAIT_FAILED ||
-		dwRet == WAIT_TIMEOUT){
-			if( log != NULL ){
-				_OutputDebugString(L"◆CWriteTSFile::Lock FALSE : %s", log);
-			}else{
-				OutputDebugString(L"◆CWriteTSFile::Lock FALSE");
-			}
-		return FALSE;
-	}
-	return TRUE;
-}
-
-void CWriteTSFile::UnLock(LPCWSTR log)
-{
-	if( this->lockEvent != NULL ){
-		SetEvent(this->lockEvent);
-	}
-	if( log != NULL ){
-		OutputDebugString(log);
-	}
 }
 
 //ファイル保存を開始する
@@ -104,7 +64,6 @@ BOOL CWriteTSFile::StartSave(
 	int maxBuffCount
 )
 {
-	if( Lock(L"StartSave") == FALSE ) return FALSE;
 	BOOL ret = TRUE;
 
 	this->exceptionErr = FALSE;
@@ -112,12 +71,11 @@ BOOL CWriteTSFile::StartSave(
 	this->maxBuffCount = maxBuffCount;
 
 	if( saveFolder->size() == 0 ){
-		UnLock();
 		_OutputDebugString(L"CWriteTSFile::StartSave Err saveFolder 0");
 		return FALSE;
 	}
 	
-	if( this->outThread == NULL || this->fileList.size() == 0 ){
+	if( this->outThread == NULL && this->fileList.size() == 0 ){
 		this->writeTotalSize = 0;
 		this->subRecFlag = FALSE;
 		this->saveFileName = fileName;
@@ -219,7 +177,6 @@ BOOL CWriteTSFile::StartSave(
 		ret = FALSE;
 	}
 
-	UnLock();
 	return ret;
 }
 
@@ -281,7 +238,6 @@ BOOL CWriteTSFile::ChkFreeFolder(
 // TRUE（成功）、FALSE（失敗）
 BOOL CWriteTSFile::EndSave()
 {
-	if( Lock(L"EndSave") == FALSE ) return FALSE;
 	BOOL ret = TRUE;
 
 	if( this->outThread != NULL ){
@@ -295,7 +251,8 @@ BOOL CWriteTSFile::EndSave()
 	}
 
 	//残っているバッファを書き出し
-	if( WaitForSingleObject( this->buffLockEvent, 500 ) == WAIT_OBJECT_0 ){
+	{
+		CBlockLock lock(&this->outThreadLock);
 		for( size_t i=0; i<this->TSBuff.size(); i++ ){
 			for( size_t j=0; j<this->fileList.size(); j++ ){
 				if( this->fileList[j]->writeUtil != NULL ){
@@ -306,9 +263,7 @@ BOOL CWriteTSFile::EndSave()
 			SAFE_DELETE(this->TSBuff[i]);
 		}
 		this->TSBuff.clear();
-		if( this->buffLockEvent != NULL ){
-			SetEvent(this->buffLockEvent);
-		}
+		this->totalTSBuffSize = 0;
 	}
 
 	for( size_t i=0; i<this->fileList.size(); i++ ){
@@ -327,7 +282,6 @@ BOOL CWriteTSFile::EndSave()
 		ret = FALSE;
 	}
 
-	UnLock();
 	return ret;
 }
 
@@ -342,10 +296,7 @@ BOOL CWriteTSFile::AddTSBuff(
 	DWORD size
 	)
 {
-	if( Lock(L"AddTSBuff") == FALSE ) return FALSE;
-
 	if( data == NULL || size == 0 || this->outThread == NULL){
-		UnLock();
 		return FALSE;
 	}
 
@@ -355,32 +306,21 @@ BOOL CWriteTSFile::AddTSBuff(
 	item->size = size;
 	item->data = new BYTE[size];
 	memcpy(item->data, data, size);
-	if( WaitForSingleObject( this->buffLockEvent, 500 ) == WAIT_OBJECT_0 ){
+	{
+		CBlockLock lock(&this->outThreadLock);
 		if( this->maxBuffCount > 0 ){
-			if(this->TSBuff.size() > (unsigned)this->maxBuffCount){
+			if( this->totalTSBuffSize / 48128 > (DWORD)this->maxBuffCount ){
 				_OutputDebugString(L"★writeBuffList MaxOver");
-				this->buffOverErr = TRUE;
-				size_t startIndex = this->maxBuffCount;
-				if( this->maxBuffCount < 1000 ){
-					startIndex = 0;
-				}else{
-					startIndex -= 1000;
+				while( this->TSBuff.empty() == false && this->totalTSBuffSize / 48128 + 1000 > (DWORD)this->maxBuffCount ){
+					this->totalTSBuffSize -= this->TSBuff.back()->size;
+					SAFE_DELETE(this->TSBuff.back());
+					this->TSBuff.pop_back();
 				}
-				for( size_t i=startIndex; i<this->TSBuff.size(); i++ ){
-					SAFE_DELETE(this->TSBuff[i]);
-				}
-				vector<TS_DATA*>::iterator itr;
-				itr = this->TSBuff.begin();
-				advance(itr,startIndex);
-				this->TSBuff.erase( itr, this->TSBuff.end() );
 			}
 		}
 		this->TSBuff.push_back(item);
-		if( this->buffLockEvent != NULL ){
-			SetEvent(this->buffLockEvent);
-		}
+		this->totalTSBuffSize += this->TSBuff.back()->size;
 	}
-	UnLock();
 	return ret;
 }
 
@@ -394,23 +334,13 @@ UINT WINAPI CWriteTSFile::OutThread(LPVOID param)
 		}
 		//バッファからデータ取り出し
 		TS_DATA* data = NULL;
-		try{
-			if( WaitForSingleObject( sys->buffLockEvent, 500 ) == WAIT_OBJECT_0 ){
-				if( sys->TSBuff.size() != 0 ){
-					data = sys->TSBuff[0];
-					sys->TSBuff.erase( sys->TSBuff.begin() );
-				}
-				if( sys->buffLockEvent != NULL ){
-					SetEvent(sys->buffLockEvent);
-				}
-			}else{
-				Sleep(10);
-				continue ;
+		{
+			CBlockLock lock(&sys->outThreadLock);
+			if( sys->TSBuff.empty() == false ){
+				data = sys->TSBuff.front();
+				sys->totalTSBuffSize -= data->size;
+				sys->TSBuff.erase(sys->TSBuff.begin());
 			}
-		}catch(...){
-			_OutputDebugString(L"★★CWriteTSFile::OutThread Exception1");
-			sys->exceptionErr = TRUE;
-			continue ;
 		}
 
 		if( data != NULL ){
@@ -420,7 +350,10 @@ UINT WINAPI CWriteTSFile::OutThread(LPVOID param)
 						DWORD write = 0;
 						if( sys->fileList[i]->writeUtil->AddTSBuff( data->data, data->size, &write) == FALSE ){
 							//空きがなくなった
-							sys->writeTotalSize = -1;
+							{
+								CBlockLock lock(&sys->outThreadLock);
+								sys->writeTotalSize = -1;
+							}
 							sys->fileList[i]->writeUtil->StopSave();
 
 							if( sys->fileList[i]->freeChk == TRUE ){
@@ -457,7 +390,10 @@ UINT WINAPI CWriteTSFile::OutThread(LPVOID param)
 				}
 			}
 
-			sys->writeTotalSize += data->size;
+			{
+				CBlockLock lock(&sys->outThreadLock);
+				sys->writeTotalSize += data->size;
+			}
 
 			SAFE_DELETE(data);
 		}else{
@@ -476,12 +412,8 @@ void CWriteTSFile::GetSaveFilePath(
 	BOOL* subRecFlag
 	)
 {
-	if( Lock(L"GetSaveFilePath") == FALSE ) return ;
-
 	*filePath = this->mainSaveFilePath;
 	*subRecFlag = this->subRecFlag;
-
-	UnLock();
 }
 
 //録画中のファイルの出力サイズを取得する
@@ -491,10 +423,8 @@ void CWriteTSFile::GetRecWriteSize(
 	__int64* writeSize
 	)
 {
-	if( Lock(L"GetRecWriteSize") == FALSE ) return ;
-
 	if( writeSize != NULL ){
+		CBlockLock lock(&this->outThreadLock);
 		*writeSize = this->writeTotalSize;
 	}
-	UnLock();
 }

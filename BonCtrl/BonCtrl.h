@@ -18,13 +18,10 @@ public:
 	CBonCtrl(void);
 	~CBonCtrl(void);
 
-	//初期設定
-	//設定ファイル保存先とBonDriverフォルダを指定
+	//BonDriverフォルダを指定
 	//引数：
-	// settingFolderPath		[IN]設定ファイル保存フォルダパス
 	// bonDriverFolderPath		[IN]BonDriverフォルダパス
-	void SetSettingFolder(
-		LPCWSTR settingFolderPath,
+	void SetBonDriverFolder(
 		LPCWSTR bonDriverFolderPath
 		);
 
@@ -36,20 +33,9 @@ public:
 	//戻り値：
 	// エラーコード
 	//引数：
-	// bonList			[OUT]検索できたBonDriver一覧（mapのキー 内部インデックス値、mapの値 BonDriverファイル名）
+	// bonList			[OUT]検索できたBonDriver一覧
 	DWORD EnumBonDriver(
-		map<int, wstring>* bonList
-		);
-
-	//BonDriverのロード
-	//BonDriverをロードしてチャンネル情報などを取得（インデックス値で指定）
-	//戻り値：
-	// エラーコード
-	//引数：
-	// index			[IN]EnumBonDriverで取得されたBonDriverのインデックス値
-	DWORD OpenBonDriver(
-		int index,
-		int openWait = 200
+		vector<wstring>* bonList
 		);
 
 	//BonDriverをロードしてチャンネル情報などを取得（ファイル名で指定）
@@ -126,11 +112,6 @@ public:
 		WORD ONID,
 		WORD TSID,
 		WORD SID
-		);
-
-	BOOL GetCh(
-		DWORD* space,
-		DWORD* ch
 		);
 
 	//チャンネル変更中かどうか
@@ -492,8 +473,9 @@ protected:
 
 	HANDLE lockEvent;
 
-	HANDLE buffLockEvent;
+	CRITICAL_SECTION buffLock;
 	vector<TS_DATA*> TSBuff;
+	DWORD totalTSBuffSize;
 
 	HANDLE recvThread;
 	HANDLE recvStopEvent;

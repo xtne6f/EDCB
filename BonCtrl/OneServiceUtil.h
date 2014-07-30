@@ -208,9 +208,7 @@ protected:
 	CSendTCP* sendTcp;
 	CWriteTSFile* writeFile;
 
-	BYTE* buff;
-	DWORD buffSize;
-	DWORD buffWriteSize;
+	vector<BYTE> buff;
 
 	CCreatePATPacket createPat;
 	CCreatePMTPacket createPmt;

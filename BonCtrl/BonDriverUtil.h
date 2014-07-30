@@ -17,13 +17,10 @@ public:
 	CBonDriverUtil(void);
 	~CBonDriverUtil(void);
 
-	//初期設定
-	//設定ファイル保存先とBonDriverフォルダを指定
+	//BonDriverフォルダを指定
 	//引数：
-	// settingFolderPath		[IN]設定ファイル保存フォルダパス
 	// bonDriverFolderPath		[IN]BonDriverフォルダパス
-	void SetSettingFolder(
-		LPCWSTR settingFolderPath,
+	void SetBonDriverFolder(
 		LPCWSTR bonDriverFolderPath
 		);
 
@@ -31,20 +28,9 @@ public:
 	//戻り値：
 	// エラーコード
 	//引数：
-	// bonList			[OUT]検索できたBonDriver一覧（mapのキー 内部インデックス値、mapの値 BonDriverファイル名）
+	// bonList			[OUT]検索できたBonDriver一覧
 	DWORD EnumBonDriver(
-		map<int, wstring>* bonList
-		);
-
-	//BonDriverのロード
-	//BonDriverをロードしてチャンネル情報などを取得（インデックス値で指定）
-	//戻り値：
-	// エラーコード
-	//引数：
-	// index			[IN]EnumBonDriverで取得されたBonDriverのインデックス値
-	DWORD OpenBonDriver(
-		int index,
-		int openWait = 200
+		vector<wstring>* bonList
 		);
 
 	//BonDriverをロードしてチャンネル情報などを取得（ファイル名で指定）
@@ -99,11 +85,6 @@ public:
 		DWORD* ch
 		);
 
-	BOOL GetSetCh(
-		DWORD* space,
-		DWORD* ch
-		);
-
 	//TSストリームを取得
 	//戻り値：
 	// TRUE（成功）、FALSE（失敗）
@@ -122,60 +103,27 @@ public:
 	// シグナルレベル
 	float GetSignalLevel();
 
-	//Ch設定3のファイルパスを取得
-	//戻り値：
-	// Ch設定3のファイルパス
-	wstring GetChSet4Path();
-
-	//Ch設定4のファイルパスを取得
-	//戻り値：
-	// Ch設定4のファイルパス
-	wstring GetChSet5Path();
-
-	//OpenしたBonDriverのインデックス値を取得
-	//戻り値：
-	// インデックス値（-1で未Open）
-	int GetOpenBonDriverIndex();
-
 	//OpenしたBonDriverのファイル名を取得
 	//戻り値：
-	// BonDriverのファイル名（拡張子含む）
+	// BonDriverのファイル名（拡張子含む）（emptyで未Open）
 	wstring GetOpenBonDriverFileName();
-
-	//指定物理チャンネルのチャンネル名を取得
-	//戻り値：
-	// BonDriverで定義されている物理チャンネル名
-	wstring GetChName(DWORD space, DWORD ch);
 
 protected:
 	HANDLE lockEvent;
 
-	wstring settingFolderPath;
-	wstring bonDriverFolderPath;
+	vector<wstring> bonDllList;
 
-	map<int, BON_DRIVER_INFO> bonDllMap;
-
-	int loadIndex;
+	wstring loadDllPath;
 	wstring loadTunerName;
 	map<DWORD, BON_SPACE_INFO> loadChMap;
 	BOOL initChSetFlag;
 	IBonDriver* bonIF;
 	IBonDriver2* bon2IF;
 	HMODULE module;
-
-	DWORD setSpace;
-	DWORD setCh;
 protected:
 	//PublicAPI排他制御用
 	BOOL Lock(LPCWSTR log = NULL, DWORD timeOut = 5*1000);
 	void UnLock(LPCWSTR log = NULL);
-
-	//ファイル名の最後が本当に「.dll」か確認
-	//戻り値：
-	// TRUE（「.dll」が最後）、FALSE（「.dll」が最後ではない）
-	//引数：
-	// name						[IN]確認する文字列
-	BOOL IsDllFile(wstring name);
 
 	//BonDriverをロード時の本体
 	//戻り値：

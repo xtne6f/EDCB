@@ -3,15 +3,7 @@
 #include <process.h>
 
 #include "../../Common/TimeUtil.h"
-
-class CBlockLock
-{
-public:
-	CBlockLock(CRITICAL_SECTION* lock_) : lock(lock_) { EnterCriticalSection(lock); }
-	~CBlockLock() { LeaveCriticalSection(lock); }
-private:
-	CRITICAL_SECTION* lock;
-};
+#include "../../Common/BlockLock.h"
 
 CEpgDBManager::CEpgDBManager(void)
 {
@@ -232,6 +224,8 @@ BOOL CEpgDBManager::ConvertEpgInfo(WORD ONID, WORD TSID, WORD SID, EPG_EVENT_INF
 	if( src->shortInfo != NULL ){
 		dest->shortInfo = new EPGDB_SHORT_EVENT_INFO;
 		dest->shortInfo->event_name = src->shortInfo->event_name;
+		//‚²‚­‹H‚ÉAPR(‰üs)‚ðŠÜ‚Þ‚½‚ß
+		Replace(dest->shortInfo->event_name, L"\r\n", L"");
 		dest->shortInfo->text_char = src->shortInfo->text_char;
 	}
 	if( src->extInfo != NULL ){
@@ -765,8 +759,10 @@ BOOL CEpgDBManager::IsFindKeyword(BOOL regExpFlag, IRegExpPtr& regExp, BOOL titl
 	//ŒŸõ‘ÎÛ‚Ì•¶Žš—ñì¬
 	wstring word = shortInfo->event_name;
 	if( titleOnlyFlag == FALSE ){
+		word += L"\r\n";
 		word += shortInfo->text_char;
 		if( extInfo != NULL ){
+			word += L"\r\n";
 			word += extInfo->text_char;
 		}
 	}
@@ -842,8 +838,10 @@ BOOL CEpgDBManager::IsFindLikeKeyword(BOOL titleOnlyFlag, BOOL caseFlag, vector<
 	//ŒŸõ‘ÎÛ‚Ì•¶Žš—ñì¬
 	wstring word = shortInfo->event_name;
 	if( titleOnlyFlag == FALSE ){
+		word += L"\r\n";
 		word += shortInfo->text_char;
 		if( extInfo != NULL ){
+			word += L"\r\n";
 			word += extInfo->text_char;
 		}
 	}

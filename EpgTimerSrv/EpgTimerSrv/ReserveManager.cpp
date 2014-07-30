@@ -2390,26 +2390,33 @@ UINT WINAPI CReserveManager::BankCheckThread(LPVOID param)
 				}
 				if( (sendPreEpgCap == FALSE) && ((GetNowI64Time()+60*I64_1SEC) > capTime) ){
 					BOOL bUseTuner = FALSE;
-					vector<DWORD> tunerIDList;
+					vector<pair<vector<DWORD>, WORD>> tunerIDList;
 					sys->tunerManager.GetEnumEpgCapTuner(&tunerIDList);
 					map<DWORD, CTunerBankCtrl*>::iterator itrCtrl;
 					for( size_t i=0; i<tunerIDList.size(); i++ ){
-						itrCtrl = sys->tunerBankMap.find(tunerIDList[i]);
-						if( itrCtrl != sys->tunerBankMap.end() ){
-							if( itrCtrl->second->IsEpgCapWorking() == FALSE ){
+						WORD epgCapMax = tunerIDList[i].second;
+						WORD ngCapCount = 0;
+						for( size_t j=0; j<tunerIDList[i].first.size() && epgCapMax > 0; j++ ){
+							itrCtrl = sys->tunerBankMap.find(tunerIDList[i].first[j]);
+							if( itrCtrl != sys->tunerBankMap.end() && itrCtrl->second->IsEpgCapWorking() == FALSE ){
 								itrCtrl->second->ClearEpgCapItem();
 								if( sys->ngCapMin != 0 ){
 									if( itrCtrl->second->IsEpgCapOK(sys->ngCapMin) == FALSE ){
 										//実行しちゃいけない
-										bUseTuner = FALSE;
-										break;
+										ngCapCount++;
+										continue;
 									}
 								}
 								if( itrCtrl->second->IsEpgCapOK(sys->ngCapTunerMin) == TRUE ){
 									//使えるチューナー
 									bUseTuner = TRUE;
+									epgCapMax--;
 								}
 							}
+						}
+						if( tunerIDList[i].second > tunerIDList[i].first.size() - ngCapCount ){
+							bUseTuner = FALSE;
+							break;
 						}
 					}
 
@@ -4196,27 +4203,34 @@ BOOL CReserveManager::_StartEpgCap()
 	}
 
 	//利用可能なチューナーの抽出
-	vector<DWORD> tunerIDList;
+	vector<pair<vector<DWORD>, WORD>> tunerIDList;
 	this->tunerManager.GetEnumEpgCapTuner(&tunerIDList);
 
 	map<DWORD, CTunerBankCtrl*> epgCapCtrl;
 	map<DWORD, CTunerBankCtrl*>::iterator itrCtrl;
 	for( size_t i=0; i<tunerIDList.size(); i++ ){
-		itrCtrl = this->tunerBankMap.find(tunerIDList[i]);
-		if( itrCtrl != this->tunerBankMap.end() ){
-			if( itrCtrl->second->IsEpgCapWorking() == FALSE ){
+		WORD epgCapMax = tunerIDList[i].second;
+		WORD ngCapCount = 0;
+		for( size_t j=0; j<tunerIDList[i].first.size() && epgCapMax > 0; j++ ){
+			itrCtrl = this->tunerBankMap.find(tunerIDList[i].first[j]);
+			if( itrCtrl != this->tunerBankMap.end() && itrCtrl->second->IsEpgCapWorking() == FALSE ){
 				itrCtrl->second->ClearEpgCapItem();
 				if( ngCapMin != 0 ){
 					if( itrCtrl->second->IsEpgCapOK(this->ngCapMin) == FALSE ){
 						//実行しちゃいけない
-						return FALSE;
+						ngCapCount++;
+						continue;
 					}
 				}
 				if( itrCtrl->second->IsEpgCapOK(this->ngCapTunerMin) == TRUE ){
 					//使えるチューナー
 					epgCapCtrl.insert(pair<DWORD, CTunerBankCtrl*>(itrCtrl->first, itrCtrl->second));
+					epgCapMax--;
 				}
 			}
+		}
+		if( tunerIDList[i].second > tunerIDList[i].first.size() - ngCapCount ){
+			return FALSE;
 		}
 	}
 	if( epgCapCtrl.size() == 0 ){

@@ -67,7 +67,7 @@ void CEpgDataCap_BonMain::ReloadSetting()
 	GetModuleFolderPath(bonDriverPath);
 	bonDriverPath += BON_DLL_FOLDER;
 
-	this->bonCtrl.SetSettingFolder( settingPath.c_str(), bonDriverPath.c_str() );
+	this->bonCtrl.SetBonDriverFolder( bonDriverPath.c_str() );
 
 	this->recFolderList.clear();
 	int iNum = GetPrivateProfileInt( L"SET", L"RecFolderNum", 0, commonIniPath.c_str() );
@@ -136,9 +136,9 @@ void CEpgDataCap_BonMain::ReloadSetting()
 //戻り値：
 // エラーコード
 //引数：
-// bonList			[OUT]検索できたBonDriver一覧（mapのキー 内部インデックス値、mapの値 BonDriverファイル名）
+// bonList			[OUT]検索できたBonDriver一覧
 DWORD CEpgDataCap_BonMain::EnumBonDriver(
-	map<int, wstring>* bonList
+	vector<wstring>* bonList
 )
 {
 	return this->bonCtrl.EnumBonDriver(bonList);
@@ -296,14 +296,6 @@ void CEpgDataCap_BonMain::GetCh(
 	*ONID = this->lastONID;
 	*TSID = this->lastTSID;
 	*SID = this->lastSID;
-}
-
-BOOL CEpgDataCap_BonMain::GetCh(
-	DWORD* space,
-	DWORD* ch
-	)
-{
-	return this->bonCtrl.GetCh(space, ch);
 }
 
 //チャンネル変更中かどうか

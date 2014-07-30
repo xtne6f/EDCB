@@ -8,57 +8,10 @@
 #define CHSET_SAVE_EVENT_WAIT		 _T("Global\\EpgTimer_ChSet")
 
 
-//BonDriverのファイルパス情報
-typedef struct _BON_DRIVER_INFO{
-	wstring filePath;	//BonDriver.dllのファイルパス
-	wstring fileName;	//BonDriver.dllのファイル名（拡張子含む）
-	wstring fileTitle;	//BonDriver.dllのファイル名（拡張子含まない）
-	_BON_DRIVER_INFO(void){
-		filePath = L"";
-		fileName = L"";
-		fileTitle = L"";
-	}
-	//=オペレーターの処理
-	_BON_DRIVER_INFO & operator= (const _BON_DRIVER_INFO & o) {
-		filePath = o.filePath;
-		fileName = o.fileName;
-		fileTitle = o.fileTitle;
-		return *this;
-	}
-} BON_DRIVER_INFO;
-
-//BonDriverの物理チャンネル情報
-typedef struct _BON_CH_INFO{
-	wstring chName;		//チャンネル名
-	DWORD ch;			//CH
-	_BON_CH_INFO(void){
-		chName = L"";
-		ch = 0;
-	}
-	//=オペレーターの処理
-	_BON_CH_INFO & operator= (const _BON_CH_INFO & o) {
-		chName = o.chName;
-		ch = o.ch;
-		return *this;
-	}
-}BON_CH_INFO;
-
 //BonDriverのチューナー空間情報
 typedef struct _BON_SPACE_INFO{
 	wstring spaceName;					//チューナー空間名
-	DWORD space;						//Space
-	map<DWORD, BON_CH_INFO> chMap;		//チャンネルリスト（キー CH）
-	_BON_SPACE_INFO(void){
-		spaceName = L"";
-		space = 0;
-	}
-	//=オペレーターの処理
-	_BON_SPACE_INFO & operator= (const _BON_SPACE_INFO & o) {
-		spaceName = o.spaceName;
-		space = o.space;
-		chMap = o.chMap;
-		return *this;
-	}
+	map<DWORD, wstring> chMap;			//チャンネルリスト（キー CH）
 }BON_SPACE_INFO;
 
 //受信データのバッファリング用

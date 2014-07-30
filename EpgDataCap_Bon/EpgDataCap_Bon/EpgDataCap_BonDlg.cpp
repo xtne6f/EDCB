@@ -129,10 +129,8 @@ BOOL CEpgDataCap_BonDlg::OnInitDialog()
 		err = SelectBonDriver(this->iniBonDriver.c_str(), TRUE);
 		Sleep(this->initOpenWait);
 	}else{
-		map<int, wstring>::iterator itr;
-		itr = this->bonList.begin();
-		if( itr != this->bonList.end() ){
-			err = SelectBonDriver(itr->second.c_str());
+		if( this->bonList.empty() == false ){
+			err = SelectBonDriver(this->bonList.front().c_str());
 		}else{
 			err = ERR_FALSE;
 			WCHAR log[512 + 64] = L"";
@@ -926,11 +924,11 @@ void CEpgDataCap_BonDlg::ReloadBonDriver()
 	this->main.EnumBonDriver(&bonList);
 
 	int selectIndex = 0;
-	map<int, wstring>::iterator itr;
+	vector<wstring>::iterator itr;
 	for( itr = this->bonList.begin(); itr != this->bonList.end(); itr++ ){
-		int index = ComboBox_AddString(GetDlgItem(IDC_COMBO_TUNER), itr->second.c_str());
+		int index = ComboBox_AddString(GetDlgItem(IDC_COMBO_TUNER), itr->c_str());
 		if( this->iniBonDriver.empty() == false ){
-			if( this->iniBonDriver.compare(itr->second) == 0 ){
+			if( this->iniBonDriver.compare(*itr) == 0 ){
 				selectIndex = index;
 			}
 		}

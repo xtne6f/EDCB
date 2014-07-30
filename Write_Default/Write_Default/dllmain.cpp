@@ -1,11 +1,6 @@
 // dllmain.cpp : DLL アプリケーションのエントリ ポイントを定義します。
 #include "stdafx.h"
 
-#include "WriteMain.h"
-#include <map>
-using namespace std;
-
-map<DWORD, CWriteMain*> g_List;
 HINSTANCE g_instance = NULL;
 
 BOOL APIENTRY DllMain( HMODULE hModule,
@@ -20,13 +15,6 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 	case DLL_THREAD_DETACH:
 		break;
 	case DLL_PROCESS_DETACH:
-		if( g_List.size() > 0 ){
-			map<DWORD, CWriteMain*>::iterator itr;
-			for( itr = g_List.begin(); itr != g_List.end(); itr++ ){
-				itr->second->_StopSave();
-				delete itr->second;
-			}
-		}
 		break;
 	}
 	g_instance = hModule;

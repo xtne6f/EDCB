@@ -430,6 +430,8 @@ void CPushAudioPin::ClearData()
 
 CTSSrcFilter::CTSSrcFilter(IUnknown *pUnk, HRESULT *phr)
 	:CSource(NAME("TSSrc"), pUnk, CLSID_TSSrc)
+	,videoBuff(TRUE)
+	,audioBuff(TRUE)
 {
 	m_pVideoPin = new CPushVideoPin(phr, this);
 	m_pAudioPin = new CPushAudioPin(phr, this);
