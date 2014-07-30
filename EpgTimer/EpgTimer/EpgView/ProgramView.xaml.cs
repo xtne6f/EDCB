@@ -235,8 +235,6 @@ namespace EpgTimer.EpgView
                 foreach (ReserveViewItem info in reserveList)
                 {
                     Rectangle rect = new Rectangle();
-                    rect.Opacity = 0.5;
-                    rect.Effect = new System.Windows.Media.Effects.DropShadowEffect() { BlurRadius = 10 };
 
                     SolidColorBrush color;
                     if (info.ReserveInfo.RecSetting.RecMode == 5)
@@ -258,6 +256,8 @@ namespace EpgTimer.EpgView
 
                     if (Settings.Instance.ReserveRectBackground == false)
                     {
+                        rect.Opacity = 0.5;
+                        rect.Effect = new System.Windows.Media.Effects.DropShadowEffect() { BlurRadius = 10 };
                         rect.Fill = System.Windows.Media.Brushes.Transparent;
                         rect.StrokeThickness = 3;
 
@@ -265,6 +265,8 @@ namespace EpgTimer.EpgView
                     }
                     else
                     {
+                        rect.Opacity = 0.3;
+                        rect.Effect = new System.Windows.Media.Effects.DropShadowEffect() { BlurRadius = 6 };
                         rect.Fill = color;
                     }
                     rect.Width = info.Width;
@@ -275,7 +277,7 @@ namespace EpgTimer.EpgView
                     rect.MouseRightButtonDown += new MouseButtonEventHandler(epgViewPanel_MouseRightButtonDown);
 
                     Canvas.SetLeft(rect, info.LeftPos);
-                    Canvas.SetTop(rect, info.TopPos - 2);
+                    Canvas.SetTop(rect, info.TopPos);
                     Canvas.SetZIndex(rect, 10);
                     canvas.Children.Add(rect);
                     reserveBorder.Add(rect);
