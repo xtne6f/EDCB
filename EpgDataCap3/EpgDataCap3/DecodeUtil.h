@@ -4,7 +4,6 @@
 #include "../../Common/TSPacketUtil.h"
 #include "../../Common/TSBuffUtil.h"
 #include "../../Common/Util.h"
-#include "../../Common/ErrDef.h"
 #include "../../Common/EpgDataCap3Def.h"
 
 #include "./Table/TableUtil.h"
@@ -16,36 +15,30 @@ public:
 	~CDecodeUtil(void);
 
 	void SetEpgDB(CEpgDBUtil* epgDBUtil);
-	DWORD AddTSData(BYTE* data, DWORD dataSize);
+	void AddTSData(BYTE* data);
 
 	//解析データの現在のストリームＩＤを取得する
-	//戻り値：
-	// エラーコード
 	//引数：
 	// originalNetworkID		[OUT]現在のoriginalNetworkID
 	// transportStreamID		[OUT]現在のtransportStreamID
-	DWORD GetTSID(
+	BOOL GetTSID(
 		WORD* originalNetworkID,
 		WORD* transportStreamID
 		);
 
 	//自ストリームのサービス一覧を取得する
-	//戻り値：
-	// エラーコード
 	//引数：
 	// serviceListSize			[OUT]serviceListの個数
 	// serviceList				[OUT]サービス情報のリスト（DLL内で自動的にdeleteする。次に取得を行うまで有効）
-	DWORD GetServiceListActual(
+	BOOL GetServiceListActual(
 		DWORD* serviceListSize,
 		SERVICE_INFO** serviceList
 		);
 
 	//ストリーム内の現在の時間情報を取得する
-	//戻り値：
-	// エラーコード
 	//引数：
 	// time				[OUT]ストリーム内の現在の時間
-	DWORD GetNowTime(
+	BOOL GetNowTime(
 		SYSTEMTIME* time
 		);
 
@@ -128,12 +121,10 @@ protected:
 	BOOL CheckEIT_SD2(WORD PID, CEITTable_SD2* eit);
 
 	//自ストリームのサービス一覧をSITから取得する
-	//戻り値：
-	// エラーコード
 	//引数：
 	// serviceListSize			[OUT]serviceListの個数
 	// serviceList				[OUT]サービス情報のリスト（DLL内で自動的にdeleteする。次に取得を行うまで有効）
-	DWORD GetServiceListSIT(
+	BOOL GetServiceListSIT(
 		DWORD* serviceListSize,
 		SERVICE_INFO** serviceList
 		);

@@ -123,15 +123,13 @@ void CDecodeUtil::ChangeTSIDClear(WORD noClearPid)
 	this->delaySec = 0;
 }
 
-DWORD CDecodeUtil::AddTSData(BYTE* data, DWORD dataSize)
+void CDecodeUtil::AddTSData(BYTE* data)
 {
-	DWORD err = TRUE;
-
-	for( DWORD i=0; i<dataSize; i+=188 ){
+	{
 		CTSPacketUtil tsPacket;
-		if( tsPacket.Set188TS(data + i, 188) == TRUE ){
+		if( tsPacket.Set188TS(data, 188) == TRUE ){
 			if( tsPacket.PID == 0x1FFF ){
-				continue;
+				return;
 			}
 			CTSBuffUtil* buffUtil = NULL;
 
@@ -140,11 +138,7 @@ DWORD CDecodeUtil::AddTSData(BYTE* data, DWORD dataSize)
 			if( itr == this->buffUtilMap.end() ){
 				//まだPIDがないので新規
 				buffUtil = new CTSBuffUtil;
-				if( this->buffUtilMap.insert(pair<WORD, CTSBuffUtil*>(tsPacket.PID, buffUtil)).second== false ){
-					//追加に失敗？
-					SAFE_DELETE(buffUtil);
-					continue;
-				}
+				this->buffUtilMap.insert(pair<WORD, CTSBuffUtil*>(tsPacket.PID, buffUtil));
 			}else{
 				buffUtil = itr->second;
 			}
@@ -229,7 +223,6 @@ DWORD CDecodeUtil::AddTSData(BYTE* data, DWORD dataSize)
 			}
 		}
 	}
-	return err;
 }
 
 BOOL CDecodeUtil::CheckPAT(WORD PID, CPATTable* pat)
@@ -806,11 +799,9 @@ BOOL CDecodeUtil::CheckSIT(WORD PID, CSITTable* sit)
 }
 
 //解析データの現在のストリームＩＤを取得する
-//戻り値：
-// エラーコード
 // originalNetworkID		[OUT]現在のoriginalNetworkID
 // transportStreamID		[OUT]現在のtransportStreamID
-DWORD CDecodeUtil::GetTSID(
+BOOL CDecodeUtil::GetTSID(
 	WORD* originalNetworkID,
 	WORD* transportStreamID
 	)
@@ -818,7 +809,7 @@ DWORD CDecodeUtil::GetTSID(
 	if( sdtActualInfo != NULL ){
 		*originalNetworkID = sdtActualInfo->original_network_id;
 		*transportStreamID = sdtActualInfo->transport_stream_id;
-		return NO_ERR;
+		return TRUE;
 	}else if( this->sitInfo != NULL && this->patInfo != NULL ){
 		//TSID
 		*transportStreamID = this->patInfo->transport_stream_id;
@@ -827,20 +818,18 @@ DWORD CDecodeUtil::GetTSID(
 		for( size_t i=0; i<this->sitInfo->descriptorList.size(); i++ ){
 			if( this->sitInfo->descriptorList[i]->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::network_identification_descriptor ){
 				*originalNetworkID = (WORD)this->sitInfo->descriptorList[i]->GetNumber(AribDescriptor::network_id);
-				return NO_ERR;
+				return TRUE;
 			}
 		}
 	}
-	return ERR_FALSE;
+	return FALSE;
 }
 
 //自ストリームのサービス一覧を取得する
-//戻り値：
-// エラーコード
 //引数：
 // serviceListSize			[OUT]serviceListの個数
 // serviceList				[OUT]サービス情報のリスト（DLL内で自動的にdeleteする。次に取得を行うまで有効）
-DWORD CDecodeUtil::GetServiceListActual(
+BOOL CDecodeUtil::GetServiceListActual(
 	DWORD* serviceListSize,
 	SERVICE_INFO** serviceList
 	)
@@ -848,20 +837,12 @@ DWORD CDecodeUtil::GetServiceListActual(
 	SAFE_DELETE_ARRAY(this->serviceList);
 	this->serviceListSize = 0;
 
-	if( serviceListSize == NULL || serviceList == NULL ){
-		return ERR_INVALID_ARG;
-	}
-
 	if( this->nitActualInfo == NULL || this->sdtActualInfo == NULL ){
-		if( GetServiceListSIT(serviceListSize, serviceList) != NO_ERR){
-			return ERR_FALSE;
-		}else{
-			return NO_ERR;
-		}
+		return GetServiceListSIT(serviceListSize, serviceList);
 	}else{
 		if( this->nitActualInfo->last_section_number+1 != this->nitActualInfo->nitSection.size() ||
 			this->sdtActualInfo->last_section_number+1 != this->sdtActualInfo->sdtSection.size() ){
-			return ERR_FALSE;
+			return FALSE;
 		}
 	}
 
@@ -985,22 +966,20 @@ DWORD CDecodeUtil::GetServiceListActual(
 	*serviceList = this->serviceList;
 
 
-	return NO_ERR;
+	return TRUE;
 }
 
 //自ストリームのサービス一覧をSITから取得する
-//戻り値：
-// エラーコード
 //引数：
 // serviceListSize			[OUT]serviceListの個数
 // serviceList				[OUT]サービス情報のリスト（DLL内で自動的にdeleteする。次に取得を行うまで有効）
-DWORD CDecodeUtil::GetServiceListSIT(
+BOOL CDecodeUtil::GetServiceListSIT(
 	DWORD* serviceListSize,
 	SERVICE_INFO** serviceList
 	)
 {
 	if( this->sitInfo == NULL || this->patInfo == NULL ){
-		return ERR_FALSE;
+		return FALSE;
 	}
 
 	SAFE_DELETE_ARRAY(this->serviceList);
@@ -1082,24 +1061,22 @@ DWORD CDecodeUtil::GetServiceListSIT(
 	*serviceListSize = this->serviceListSize;
 	*serviceList = this->serviceList;
 
-	return NO_ERR;
+	return TRUE;
 }
 
 //ストリーム内の現在の時間情報を取得する
-//戻り値：
-// エラーコード
 //引数：
 // time				[OUT]ストリーム内の現在の時間
-DWORD CDecodeUtil::GetNowTime(
+BOOL CDecodeUtil::GetNowTime(
 	SYSTEMTIME* time
 	)
 {
 	if( this->totInfo != NULL ){
 		*time = this->totInfo->jst_time;
-		return NO_ERR;
+		return TRUE;
 	}else if( this->tdtInfo != NULL ){
 		*time = this->tdtInfo->jst_time;
-		return NO_ERR;
+		return TRUE;
 	}else{
 		if( this->sitInfo != NULL ){
 			for( size_t i=0; i<this->sitInfo->descriptorList.size(); i++ ){
@@ -1116,13 +1093,13 @@ DWORD CDecodeUtil::GetNowTime(
 							time->wMinute = (WORD)_BCDtoDWORD(&b, 1, 2);
 							b = timeBytes[4];
 							time->wSecond = (WORD)_BCDtoDWORD(&b, 1, 2);
-							return NO_ERR;
+							return TRUE;
 						}
 					}
 				}
 			}
 		}
-		return ERR_FALSE;
+		return FALSE;
 	}
 }
 

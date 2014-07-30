@@ -4,7 +4,6 @@
 #include "../../Common/EpgTimerUtil.h"
 #include "../../Common/StringUtil.h"
 #include "../../Common/TimeUtil.h"
-#include "../../Common/ErrDef.h"
 #include "../../Common/BlockLock.h"
 #include "ARIB8CharDecode.h"
 
@@ -1315,14 +1314,12 @@ BOOL CEpgDBUtil::AddSDT(CSDTTable* sdt)
 }
 
 //指定サービスの全EPG情報を取得する
-//戻り値：
-// エラーコード
 // originalNetworkID		[IN]取得対象のoriginalNetworkID
 // transportStreamID		[IN]取得対象のtransportStreamID
 // serviceID				[IN]取得対象のServiceID
 // epgInfoListSize			[OUT]epgInfoListの個数
 // epgInfoList				[OUT]EPG情報のリスト（DLL内で自動的にdeleteする。次に取得を行うまで有効）
-DWORD CEpgDBUtil::GetEpgInfoList(
+BOOL CEpgDBUtil::GetEpgInfoList(
 	WORD originalNetworkID,
 	WORD transportStreamID,
 	WORD serviceID,
@@ -1330,9 +1327,6 @@ DWORD CEpgDBUtil::GetEpgInfoList(
 	EPG_EVENT_INFO** epgInfoList
 	)
 {
-	if( epgInfoListSize == NULL || epgInfoList == NULL ){
-		return ERR_INVALID_ARG;
-	}
 	CBlockLock lock(&this->dbLock);
 
 	SAFE_DELETE_ARRAY(this->epgInfoList);
@@ -1343,12 +1337,12 @@ DWORD CEpgDBUtil::GetEpgInfoList(
 	map<ULONGLONG, SERVICE_EVENT_INFO*>::iterator itr;
 	itr = serviceEventMap.find(key);
 	if( itr == serviceEventMap.end() ){
-		return ERR_NOT_FIND;
+		return FALSE;
 	}
 
 	this->epgInfoListSize = (DWORD)itr->second->eventMap.size();
 	if( this->epgInfoListSize == 0 ){
-		return ERR_NOT_FIND;
+		return FALSE;
 	}
 	this->epgInfoList = new EPG_EVENT_INFO[this->epgInfoListSize];
 
@@ -1362,7 +1356,7 @@ DWORD CEpgDBUtil::GetEpgInfoList(
 	*epgInfoListSize = this->epgInfoListSize;
 	*epgInfoList = this->epgInfoList;
 
-	return NO_ERR;
+	return TRUE;
 }
 
 void CEpgDBUtil::CopyEpgInfo(EPG_EVENT_INFO* destInfo, EVENT_INFO* srcInfo)
@@ -1506,12 +1500,10 @@ void CEpgDBUtil::CopyEpgInfo(EPG_EVENT_INFO* destInfo, EVENT_INFO* srcInfo)
 
 //蓄積されたEPG情報のあるサービス一覧を取得する
 //SERVICE_EXT_INFOの情報はない場合がある
-//戻り値：
-// エラーコード
 //引数：
 // serviceListSize			[OUT]serviceListの個数
 // serviceList				[OUT]サービス情報のリスト（DLL内で自動的にdeleteする。次に取得を行うまで有効）
-DWORD CEpgDBUtil::GetServiceListEpgDB(
+void CEpgDBUtil::GetServiceListEpgDB(
 	DWORD* serviceListSize,
 	SERVICE_INFO** serviceList
 	)
@@ -1520,10 +1512,6 @@ DWORD CEpgDBUtil::GetServiceListEpgDB(
 
 	SAFE_DELETE_ARRAY(this->serviceDBList);
 	this->serviceDBListSize = 0;
-
-	if( serviceListSize == NULL || serviceList == NULL ){
-		return ERR_INVALID_ARG;
-	}
 
 	this->serviceDBListSize = (DWORD)this->serviceEventMap.size();
 	this->serviceDBList = new SERVICE_INFO[this->serviceDBListSize];
@@ -1574,13 +1562,9 @@ DWORD CEpgDBUtil::GetServiceListEpgDB(
 
 	*serviceListSize = this->serviceDBListSize;
 	*serviceList = this->serviceDBList;
-
-	return NO_ERR;
 }
 
 //指定サービスの現在or次のEPG情報を取得する
-//戻り値：
-// エラーコード
 //引数：
 // originalNetworkID		[IN]取得対象のoriginalNetworkID
 // transportStreamID		[IN]取得対象のtransportStreamID
@@ -1588,7 +1572,7 @@ DWORD CEpgDBUtil::GetServiceListEpgDB(
 // nextFlag					[IN]TRUE（次の番組）、FALSE（現在の番組）
 // nowTime					[IN]現在の時間
 // epgInfo					[OUT]EPG情報（DLL内で自動的にdeleteする。次に取得を行うまで有効）
-DWORD CEpgDBUtil::GetEpgInfo(
+BOOL CEpgDBUtil::GetEpgInfo(
 	WORD originalNetworkID,
 	WORD transportStreamID,
 	WORD serviceID,
@@ -1597,9 +1581,6 @@ DWORD CEpgDBUtil::GetEpgInfo(
 	EPG_EVENT_INFO** epgInfo
 	)
 {
-	if( epgInfo == NULL ){
-		return ERR_INVALID_ARG;
-	}
 	CBlockLock lock(&this->dbLock);
 
 	SAFE_DELETE(this->epgInfo);
@@ -1609,7 +1590,7 @@ DWORD CEpgDBUtil::GetEpgInfo(
 	map<ULONGLONG, SERVICE_EVENT_INFO*>::iterator itr;
 	itr = serviceEventMap.find(key);
 	if( itr == serviceEventMap.end() ){
-		return ERR_NOT_FIND;
+		return FALSE;
 	}
 
 	__int64 nowTime64 = ConvertI64Time(nowTime);
@@ -1690,16 +1671,14 @@ DWORD CEpgDBUtil::GetEpgInfo(
 	*/
 Err_End:
 	if( this->epgInfo == NULL ){
-		return ERR_NOT_FIND;
+		return FALSE;
 	}
 	*epgInfo = this->epgInfo;
 
-	return NO_ERR;
+	return TRUE;
 }
 
 //指定イベントのEPG情報を取得する
-//戻り値：
-// エラーコード
 //引数：
 // originalNetworkID		[IN]取得対象のoriginalNetworkID
 // transportStreamID		[IN]取得対象のtransportStreamID
@@ -1707,7 +1686,7 @@ Err_End:
 // EventID					[IN]取得対象のEventID
 // pfOnlyFlag				[IN]p/fからのみ検索するかどうか
 // epgInfo					[OUT]EPG情報（DLL内で自動的にdeleteする。次に取得を行うまで有効）
-DWORD CEpgDBUtil::SearchEpgInfo(
+BOOL CEpgDBUtil::SearchEpgInfo(
 	WORD originalNetworkID,
 	WORD transportStreamID,
 	WORD serviceID,
@@ -1716,9 +1695,6 @@ DWORD CEpgDBUtil::SearchEpgInfo(
 	EPG_EVENT_INFO** epgInfo
 	)
 {
-	if( epgInfo == NULL ){
-		return ERR_INVALID_ARG;
-	}
 	CBlockLock lock(&this->dbLock);
 
 	SAFE_DELETE(this->searchEpgInfo);
@@ -1728,7 +1704,7 @@ DWORD CEpgDBUtil::SearchEpgInfo(
 	map<ULONGLONG, SERVICE_EVENT_INFO*>::iterator itr;
 	itr = serviceEventMap.find(key);
 	if( itr == serviceEventMap.end() ){
-		return ERR_NOT_FIND;
+		return FALSE;
 	}
 
 	if( pfOnlyFlag == 0 ){
@@ -1758,11 +1734,11 @@ DWORD CEpgDBUtil::SearchEpgInfo(
 
 Err_End:
 	if( this->searchEpgInfo == NULL ){
-		return ERR_NOT_FIND;
+		return FALSE;
 	}
 	*epgInfo = this->searchEpgInfo;
 
-	return NO_ERR;
+	return TRUE;
 }
 
 BOOL CEpgDBUtil::AddSDEventMap(CEITTable_SD* eit)
@@ -1933,5 +1909,5 @@ BOOL CEpgDBUtil::AddEIT_SD2(WORD PID, CEITTable_SD2* eit)
 		}
 	}
 
-	return NO_ERR;
+	return TRUE;
 }
