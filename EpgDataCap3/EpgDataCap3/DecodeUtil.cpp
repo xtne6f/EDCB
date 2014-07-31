@@ -11,7 +11,6 @@ CDecodeUtil::CDecodeUtil(void)
 	this->epgDBUtil = NULL;
 
 	this->patInfo = NULL;
-	this->catInfo = NULL;
 	this->nitActualInfo = NULL;
 	this->sdtActualInfo = NULL;
 	this->totInfo = NULL;
@@ -45,7 +44,6 @@ void CDecodeUtil::Clear()
 	this->buffUtilMap.clear();
 
 	SAFE_DELETE(this->patInfo);
-	SAFE_DELETE(this->catInfo);
 
 	map<WORD, CPMTTable*>::iterator itrPmt;
 	for( itrPmt = this->pmtMap.begin(); itrPmt != this->pmtMap.end(); itrPmt++ ){
@@ -55,11 +53,6 @@ void CDecodeUtil::Clear()
 
 	SAFE_DELETE(this->nitActualInfo);
 	SAFE_DELETE(this->sdtActualInfo);
-	map<DWORD, SDT_SECTION_INFO*>::iterator itrSdt;
-	for( itrSdt = this->sdtOtherMap.begin(); itrSdt != this->sdtOtherMap.end(); itrSdt++ ){
-		SAFE_DELETE(itrSdt->second);
-	}
-	this->sdtOtherMap.clear();
 
 	SAFE_DELETE(this->totInfo);
 	SAFE_DELETE(this->tdtInfo);
@@ -94,7 +87,6 @@ void CDecodeUtil::ChangeTSIDClear(WORD noClearPid)
 	ClearBuff(noClearPid);
 
 	SAFE_DELETE(this->patInfo);
-	SAFE_DELETE(this->catInfo);
 
 	map<WORD, CPMTTable*>::iterator itrPmt;
 	for( itrPmt = this->pmtMap.begin(); itrPmt != this->pmtMap.end(); itrPmt++ ){
@@ -104,11 +96,6 @@ void CDecodeUtil::ChangeTSIDClear(WORD noClearPid)
 
 	SAFE_DELETE(this->nitActualInfo);
 	SAFE_DELETE(this->sdtActualInfo);
-	map<DWORD, SDT_SECTION_INFO*>::iterator itrSdt;
-	for( itrSdt = this->sdtOtherMap.begin(); itrSdt != this->sdtOtherMap.end(); itrSdt++ ){
-		SAFE_DELETE(itrSdt->second);
-	}
-	this->sdtOtherMap.clear();
 
 	SAFE_DELETE(this->totInfo);
 	SAFE_DELETE(this->tdtInfo);
@@ -159,10 +146,6 @@ void CDecodeUtil::AddTSData(BYTE* data)
 								if( CheckPAT(tsPacket.PID, tableList[j]->PATTable) == TRUE ){
 									tableList[j]->PATTable = NULL;
 								}
-							}else if( tableList[j]->CATTable != NULL ){
-								if( CheckCAT(tsPacket.PID, tableList[j]->CATTable) == TRUE ){
-									tableList[j]->CATTable = NULL;
-								}
 							}else if( tableList[j]->PMTTable != NULL ){
 								if( CheckPMT(tsPacket.PID, tableList[j]->PMTTable) == TRUE ){
 									tableList[j]->PMTTable = NULL;
@@ -186,14 +169,6 @@ void CDecodeUtil::AddTSData(BYTE* data)
 							}else if( tableList[j]->EITTable != NULL ){
 								if( CheckEIT(tsPacket.PID, tableList[j]->EITTable) == TRUE ){
 									tableList[j]->EITTable = NULL;
-								}
-							}else if( tableList[j]->CDTTable != NULL ){
-								if( CheckCDT(tsPacket.PID, tableList[j]->CDTTable) == TRUE ){
-									tableList[j]->CDTTable = NULL;
-								}
-							}else if( tableList[j]->SDTTTable != NULL ){
-								if( CheckSDTT(tsPacket.PID, tableList[j]->SDTTTable) == TRUE ){
-									tableList[j]->SDTTTable = NULL;
 								}
 							}else if( tableList[j]->BITTable != NULL ){
 								if( CheckBIT(tsPacket.PID, tableList[j]->BITTable) == TRUE ){
@@ -243,28 +218,6 @@ BOOL CDecodeUtil::CheckPAT(WORD PID, CPATTable* pat)
 			//バージョン変わった
 			SAFE_DELETE(this->patInfo);
 			this->patInfo = pat;
-		}else{
-			//変更なし
-			return FALSE;
-		}
-	}
-	return TRUE;
-}
-
-BOOL CDecodeUtil::CheckCAT(WORD PID, CCATTable* cat)
-{
-	if( cat == NULL ){
-		return FALSE;
-	}
-
-	if( this->catInfo == NULL ){
-		//初回
-		this->catInfo = cat;
-	}else{
-		if(this->catInfo->version_number != cat->version_number){
-			//バージョン変わった
-			SAFE_DELETE(this->catInfo);
-			this->catInfo = cat;
 		}else{
 			//変更なし
 			return FALSE;
@@ -526,66 +479,8 @@ BOOL CDecodeUtil::CheckSDT(WORD PID, CSDTTable* sdt)
 
 	}else if( sdt->table_id == 0x46 ){
 		//他ストリーム
-/*		_OutputDebugString(L"find SDT OTHER\r\n");
-		_OutputDebugString(L"ONID 0x%04X, TSID 0x%04X\r\n", sdt->original_network_id, sdt->transport_stream_id);
-		for(size_t i=0; i<sdt->serviceInfoList.size(); i++ ){
-			_OutputDebugString(L"SID 0x%04X\r\n", sdt->serviceInfoList[i]->service_id);
-			for( size_t j=0; j<sdt->serviceInfoList[i]->descriptorList.size(); j++ ){
-				if( sdt->serviceInfoList[i]->descriptorList[j]->service != NULL ){
-					CServiceDesc* service = sdt->serviceInfoList[i]->descriptorList[j]->service;
-					CARIB8CharDecode arib;
-					string service_provider_name = "";
-					string service_name = "";
-					if( service->service_provider_name_length > 0 ){
-						arib.PSISI((const BYTE*)service->char_service_provider_name, service->service_provider_name_length, &service_provider_name);
-					}
-					if( service->service_name_length > 0 ){
-						arib.PSISI((const BYTE*)service->char_service_name, service->service_name_length, &service_name);
-					}
-					wstring service_provider_nameW = L"";
-					wstring service_nameW = L"";
-					AtoW(service_provider_name, service_provider_nameW);
-					AtoW(service_name, service_nameW);
-					_OutputDebugString(L"type 0x%04X %s %s\r\n", service->service_type, service_provider_nameW.c_str(), service_nameW.c_str());
-				}
-				//logo_transmission
-			}
-		}
-*/
-		DWORD key = ((DWORD)sdt->original_network_id)<<16 | sdt->transport_stream_id;
-		map<DWORD, SDT_SECTION_INFO*>::iterator itr;
-		itr = sdtOtherMap.find(key);
-		if( itr == sdtOtherMap.end() ){
-			SDT_SECTION_INFO* info = new SDT_SECTION_INFO;
-			info->original_network_id = sdt->original_network_id;
-			info->transport_stream_id = sdt->transport_stream_id;
-			info->version_number = sdt->version_number;
-			info->last_section_number = sdt->last_section_number;
-			info->sdtSection.insert(pair<BYTE, CSDTTable*>(sdt->section_number, sdt));
-			sdtOtherMap.insert(pair<DWORD, SDT_SECTION_INFO*>(key, info));
-		}else{
-			if( itr->second->version_number != sdt->version_number ){
-				SAFE_DELETE(itr->second);
-				sdtOtherMap.erase(itr);
-
-				SDT_SECTION_INFO* info = new SDT_SECTION_INFO;
-				info->original_network_id = sdt->original_network_id;
-				info->transport_stream_id = sdt->transport_stream_id;
-				info->version_number = sdt->version_number;
-				info->last_section_number = sdt->last_section_number;
-				info->sdtSection.insert(pair<BYTE, CSDTTable*>(sdt->section_number, sdt));
-				sdtOtherMap.insert(pair<DWORD, SDT_SECTION_INFO*>(key, info));
-			}else{
-				//変化なし
-				map<BYTE, CSDTTable*>::iterator itrTable;
-				itrTable = itr->second->sdtSection.find(sdt->section_number);
-				if( itrTable == itr->second->sdtSection.end() ){
-					itr->second->sdtSection.insert(pair<BYTE, CSDTTable*>(sdt->section_number, sdt));
-					return TRUE;
-				}
-				return FALSE;
-			}
-		}
+		//特に扱う必要性なし
+		return FALSE;
 	}else{
 		return FALSE;
 	}
@@ -679,38 +574,6 @@ BOOL CDecodeUtil::CheckEIT_SD2(WORD PID, CEITTable_SD2* eit)
 	if( epgDBUtil != NULL ){
 		epgDBUtil->AddEIT_SD2(PID, eit);
 	}
-	return FALSE;
-}
-
-BOOL CDecodeUtil::CheckCDT(WORD PID, CCDTTable* cdt)
-{
-	if( cdt == NULL ){
-		return FALSE;
-	}
-
-	return FALSE;
-}
-
-BOOL CDecodeUtil::CheckSDTT(WORD PID, CSDTTTable* sdtt)
-{
-	if( sdtt == NULL ){
-		return FALSE;
-	}
-	/*
-	for( size_t i=0; i<sdtt->contentInfoList.size(); i++ ){
-		for( size_t j=0; j<sdtt->contentInfoList[i]->descriptorList.size(); j++ ){
-			if( sdtt->contentInfoList[i]->descriptorList[j]->downloadContent != NULL ){
-				if( sdtt->contentInfoList[i]->descriptorList[j]->downloadContent->text_char != NULL ){
-					CARIB8CharDecode arib;
-					string dec;
-					arib.PSISI(sdtt->contentInfoList[i]->descriptorList[j]->downloadContent->text_char, sdtt->contentInfoList[i]->descriptorList[j]->downloadContent->text_length, &dec);
-					dec+="\r\n";
-					OutputDebugStringA(dec.c_str());
-				}
-			}
-		}
-	}
-	*/
 	return FALSE;
 }
 

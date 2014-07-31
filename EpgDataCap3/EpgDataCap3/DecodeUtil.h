@@ -84,11 +84,9 @@ protected:
 	map<WORD, CTSBuffUtil*> buffUtilMap;
 
 	CPATTable* patInfo;
-	CCATTable* catInfo;
 	map<WORD, CPMTTable*> pmtMap;
 	NIT_SECTION_INFO* nitActualInfo;
 	SDT_SECTION_INFO* sdtActualInfo;
-	map<DWORD, SDT_SECTION_INFO*> sdtOtherMap;
 	CTOTTable* totInfo;
 	CTDTTable* tdtInfo;
 	CBITTable* bitInfo;
@@ -106,15 +104,12 @@ protected:
 	void ChangeTSIDClear(WORD noClearPid);
 
 	BOOL CheckPAT(WORD PID, CPATTable* pat);
-	BOOL CheckCAT(WORD PID, CCATTable* pat);
 	BOOL CheckPMT(WORD PID, CPMTTable* pmt);
 	BOOL CheckNIT(WORD PID, CNITTable* nit);
 	BOOL CheckSDT(WORD PID, CSDTTable* sdt);
 	BOOL CheckTOT(WORD PID, CTOTTable* tot);
 	BOOL CheckTDT(WORD PID, CTDTTable* tdt);
 	BOOL CheckEIT(WORD PID, CEITTable* eit);
-	BOOL CheckCDT(WORD PID, CCDTTable* cdt);
-	BOOL CheckSDTT(WORD PID, CSDTTTable* sdtt);
 	BOOL CheckBIT(WORD PID, CBITTable* bit);
 	BOOL CheckSIT(WORD PID, CSITTable* sit);
 	BOOL CheckEIT_SD(WORD PID, CEITTable_SD* eit);
