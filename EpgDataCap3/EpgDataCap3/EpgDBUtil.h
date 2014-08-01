@@ -214,14 +214,12 @@ public:
 	// transportStreamID		[IN]取得対象のtransportStreamID
 	// serviceID				[IN]取得対象のServiceID
 	// nextFlag					[IN]TRUE（次の番組）、FALSE（現在の番組）
-	// nowTime					[IN]現在の時間
 	// epgInfo					[OUT]EPG情報（DLL内で自動的にdeleteする。次に取得を行うまで有効）
 	BOOL GetEpgInfo(
 		WORD originalNetworkID,
 		WORD transportStreamID,
 		WORD serviceID,
 		BOOL nextFlag,
-		SYSTEMTIME nowTime,
 		EPG_EVENT_INFO** epgInfo
 		);
 

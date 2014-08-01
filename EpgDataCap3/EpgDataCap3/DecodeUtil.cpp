@@ -2,7 +2,6 @@
 #include "DecodeUtil.h"
 
 #include "../../Common/StringUtil.h"
-#include "../../Common/TimeUtil.h"
 #include "ARIB8CharDecode.h"
 #include "../../Common/EpgTimerUtil.h"
 
@@ -13,15 +12,14 @@ CDecodeUtil::CDecodeUtil(void)
 	this->patInfo = NULL;
 	this->nitActualInfo = NULL;
 	this->sdtActualInfo = NULL;
-	this->totInfo = NULL;
-	this->tdtInfo = NULL;
 	this->bitInfo = NULL;
 	this->sitInfo = NULL;
+	this->totTime.dwHighDateTime = 0;
+	this->tdtTime.dwHighDateTime = 0;
+	this->sitTime.dwHighDateTime = 0;
 
 	this->serviceListSize = 0;
 	this->serviceList = NULL;
-
-	this->delaySec = 0;
 }
 
 CDecodeUtil::~CDecodeUtil(void)
@@ -54,17 +52,17 @@ void CDecodeUtil::Clear()
 	SAFE_DELETE(this->nitActualInfo);
 	SAFE_DELETE(this->sdtActualInfo);
 
-	SAFE_DELETE(this->totInfo);
-	SAFE_DELETE(this->tdtInfo);
 	SAFE_DELETE(this->bitInfo);
 	SAFE_DELETE(this->sitInfo);
+
+	this->totTime.dwHighDateTime = 0;
+	this->tdtTime.dwHighDateTime = 0;
+	this->sitTime.dwHighDateTime = 0;
 
 	if( this->epgDBUtil != NULL ){
 		this->epgDBUtil->SetStreamChangeEvent();
 		this->epgDBUtil->ClearSectionStatus();
 	}
-
-	this->delaySec = 0;
 }
 
 void CDecodeUtil::ClearBuff(WORD noClearPid)
@@ -97,17 +95,17 @@ void CDecodeUtil::ChangeTSIDClear(WORD noClearPid)
 	SAFE_DELETE(this->nitActualInfo);
 	SAFE_DELETE(this->sdtActualInfo);
 
-	SAFE_DELETE(this->totInfo);
-	SAFE_DELETE(this->tdtInfo);
 	SAFE_DELETE(this->bitInfo);
 	SAFE_DELETE(this->sitInfo);
+
+	this->totTime.dwHighDateTime = 0;
+	this->tdtTime.dwHighDateTime = 0;
+	this->sitTime.dwHighDateTime = 0;
 
 	if( this->epgDBUtil != NULL ){
 		this->epgDBUtil->SetStreamChangeEvent();
 		this->epgDBUtil->ClearSectionStatus();
 	}
-
-	this->delaySec = 0;
 }
 
 void CDecodeUtil::AddTSData(BYTE* data)
@@ -494,13 +492,10 @@ BOOL CDecodeUtil::CheckTOT(WORD PID, CTOTTable* tot)
 		return FALSE;
 	}
 
-	SAFE_DELETE(this->totInfo);
-	this->totInfo = tot;
-
-	__int64 nowTime = GetNowI64Time();
-	__int64 streamTime = ConvertI64Time( tot->jst_time );
-
-	this->delaySec = (int)((streamTime - nowTime)/I64_1SEC);
+	if( SystemTimeToFileTime(&tot->jst_time, &this->totTime) == FALSE ){
+		this->totTime.dwHighDateTime = 0;
+	}
+	this->totTimeTick = GetTickCount();
 
 /*	_OutputDebugString(L"%d/%02d/%02d %02d:%02d:%02d\r\n",
 		tot->jst_time.wYear, 
@@ -512,7 +507,7 @@ BOOL CDecodeUtil::CheckTOT(WORD PID, CTOTTable* tot)
 		);
 		*/
 
-	return TRUE;
+	return FALSE;
 }
 
 BOOL CDecodeUtil::CheckTDT(WORD PID, CTDTTable* tdt)
@@ -521,13 +516,10 @@ BOOL CDecodeUtil::CheckTDT(WORD PID, CTDTTable* tdt)
 		return FALSE;
 	}
 
-	SAFE_DELETE(this->tdtInfo);
-	this->tdtInfo = tdt;
-
-	__int64 nowTime = GetNowI64Time();
-	__int64 streamTime = ConvertI64Time( tdt->jst_time );
-
-	this->delaySec = (int)((streamTime - nowTime)/I64_1SEC);
+	if( SystemTimeToFileTime(&tdt->jst_time, &this->tdtTime) == FALSE ){
+		this->tdtTime.dwHighDateTime = 0;
+	}
+	this->tdtTimeTick = GetTickCount();
 	/*
 	_OutputDebugString(L"%d/%02d/%02d %02d:%02d:%02d\r\n",
 		tdt->jst_time.wYear, 
@@ -538,7 +530,7 @@ BOOL CDecodeUtil::CheckTDT(WORD PID, CTDTTable* tdt)
 		tdt->jst_time.wSecond 
 		);*/
 		
-	return TRUE;
+	return FALSE;
 }
 
 BOOL CDecodeUtil::CheckEIT(WORD PID, CEITTable* eit)
@@ -611,7 +603,7 @@ BOOL CDecodeUtil::CheckSIT(WORD PID, CSITTable* sit)
 	}
 
 	//時間計算
-	if( this->totInfo == NULL && this->tdtInfo == NULL ){
+	if( this->totTime.dwHighDateTime == 0 && this->tdtTime.dwHighDateTime == 0 ){
 		for( size_t i=0; i<sit->descriptorList.size(); i++ ){
 			if( sit->descriptorList[i]->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::partialTS_time_descriptor ){
 				if( sit->descriptorList[i]->GetNumber(AribDescriptor::jst_time_flag) == 1 ){
@@ -628,10 +620,10 @@ BOOL CDecodeUtil::CheckSIT(WORD PID, CSITTable* sit)
 						b = timeBytes[4];
 						time.wSecond = (WORD)_BCDtoDWORD(&b, 1, 2);
 
-						__int64 nowTime = GetNowI64Time();
-						__int64 streamTime = ConvertI64Time(time);
-
-						this->delaySec = (int)((streamTime - nowTime)/I64_1SEC);
+						if( SystemTimeToFileTime(&time, &this->sitTime) == FALSE ){
+							this->sitTime.dwHighDateTime = 0;
+						}
+						this->sitTimeTick = GetTickCount();
 					}
 				}
 			}
@@ -930,47 +922,28 @@ BOOL CDecodeUtil::GetServiceListSIT(
 //ストリーム内の現在の時間情報を取得する
 //引数：
 // time				[OUT]ストリーム内の現在の時間
+// tick				[OUT]timeを取得した時点のチックカウント
 BOOL CDecodeUtil::GetNowTime(
-	SYSTEMTIME* time
+	FILETIME* time,
+	DWORD* tick
 	)
 {
-	if( this->totInfo != NULL ){
-		*time = this->totInfo->jst_time;
-		return TRUE;
-	}else if( this->tdtInfo != NULL ){
-		*time = this->tdtInfo->jst_time;
-		return TRUE;
-	}else{
-		if( this->sitInfo != NULL ){
-			for( size_t i=0; i<this->sitInfo->descriptorList.size(); i++ ){
-				if( this->sitInfo->descriptorList[i]->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::partialTS_time_descriptor ){
-					if( this->sitInfo->descriptorList[i]->GetNumber(AribDescriptor::jst_time_flag) == 1 ){
-						DWORD timeBytesSize;
-						const BYTE* timeBytes = this->sitInfo->descriptorList[i]->GetBinary(AribDescriptor::jst_time, &timeBytesSize);
-						if( timeBytes != NULL && timeBytesSize >= 5 ){
-							DWORD mjd = timeBytes[0] << 8 | timeBytes[1];
-							_MJDtoSYSTEMTIME(mjd, time);
-							BYTE b = timeBytes[2];
-							time->wHour = (WORD)_BCDtoDWORD(&b, 1, 2);
-							b = timeBytes[3];
-							time->wMinute = (WORD)_BCDtoDWORD(&b, 1, 2);
-							b = timeBytes[4];
-							time->wSecond = (WORD)_BCDtoDWORD(&b, 1, 2);
-							return TRUE;
-						}
-					}
-				}
-			}
-		}
-		return FALSE;
+	DWORD tick_;
+	if( tick == NULL ){
+		tick = &tick_;
 	}
-}
-
-//PC時計を元としたストリーム時間との差を取得する
-//戻り値：
-// 差の秒数
-int CDecodeUtil::GetTimeDelay(
-	)
-{
-	return this->delaySec;
+	if( this->totTime.dwHighDateTime != 0 ){
+		*time = this->totTime;
+		*tick = this->totTimeTick;
+		return TRUE;
+	}else if( this->tdtTime.dwHighDateTime != 0 ){
+		*time = this->tdtTime;
+		*tick = this->tdtTimeTick;
+		return TRUE;
+	}else if( this->sitTime.dwHighDateTime != 0 ){
+		*time = this->sitTime;
+		*tick = this->sitTimeTick;
+		return TRUE;
+	}
+	return FALSE;
 }

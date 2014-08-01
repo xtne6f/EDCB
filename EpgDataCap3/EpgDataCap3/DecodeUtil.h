@@ -38,14 +38,10 @@ public:
 	//ストリーム内の現在の時間情報を取得する
 	//引数：
 	// time				[OUT]ストリーム内の現在の時間
+	// tick				[OUT]timeを取得した時点のチックカウント
 	BOOL GetNowTime(
-		SYSTEMTIME* time
-		);
-
-	//PC時計を元としたストリーム時間との差を取得する
-	//戻り値：
-	// 差の秒数
-	int GetTimeDelay(
+		FILETIME* time,
+		DWORD* tick = NULL
 		);
 
 protected:
@@ -87,16 +83,18 @@ protected:
 	map<WORD, CPMTTable*> pmtMap;
 	NIT_SECTION_INFO* nitActualInfo;
 	SDT_SECTION_INFO* sdtActualInfo;
-	CTOTTable* totInfo;
-	CTDTTable* tdtInfo;
 	CBITTable* bitInfo;
 	CSITTable* sitInfo;
+	FILETIME totTime;
+	FILETIME tdtTime;
+	FILETIME sitTime;
+	DWORD totTimeTick;
+	DWORD tdtTimeTick;
+	DWORD sitTimeTick;
 
 
 	DWORD serviceListSize;
 	SERVICE_INFO* serviceList;
-
-	int delaySec;
 
 protected:
 	void Clear();

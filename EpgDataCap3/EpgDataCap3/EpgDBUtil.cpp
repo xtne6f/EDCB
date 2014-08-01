@@ -1570,14 +1570,12 @@ void CEpgDBUtil::GetServiceListEpgDB(
 // transportStreamID		[IN]取得対象のtransportStreamID
 // serviceID				[IN]取得対象のServiceID
 // nextFlag					[IN]TRUE（次の番組）、FALSE（現在の番組）
-// nowTime					[IN]現在の時間
 // epgInfo					[OUT]EPG情報（DLL内で自動的にdeleteする。次に取得を行うまで有効）
 BOOL CEpgDBUtil::GetEpgInfo(
 	WORD originalNetworkID,
 	WORD transportStreamID,
 	WORD serviceID,
 	BOOL nextFlag,
-	SYSTEMTIME nowTime,
 	EPG_EVENT_INFO** epgInfo
 	)
 {
@@ -1593,89 +1591,19 @@ BOOL CEpgDBUtil::GetEpgInfo(
 		return FALSE;
 	}
 
-	__int64 nowTime64 = ConvertI64Time(nowTime);
-
-	//まずp/fの確認
 	if( itr->second->nowEvent != NULL && nextFlag == FALSE ){
-		if( itr->second->nowEvent->StartTimeFlag == TRUE && itr->second->nowEvent->DurationFlag == TRUE){
-			__int64 startTime = ConvertI64Time(itr->second->nowEvent->start_time);
-			__int64 endTime = GetSumTime(itr->second->nowEvent->start_time, itr->second->nowEvent->durationSec);
-			if( startTime <= nowTime64 && nowTime64 < endTime ){
-				//時間内にあるので正しいはず
-				this->epgInfo = new EPG_EVENT_INFO;
-				CopyEpgInfo(this->epgInfo, itr->second->nowEvent);
-				goto Err_End;
-			}
-		}else{
-			//どっちか未定なので信じる
-			this->epgInfo = new EPG_EVENT_INFO;
-			CopyEpgInfo(this->epgInfo, itr->second->nowEvent);
-			goto Err_End;
-		}
+		this->epgInfo = new EPG_EVENT_INFO;
+		CopyEpgInfo(this->epgInfo, itr->second->nowEvent);
+		*epgInfo = this->epgInfo;
+		return TRUE;
 	}else if( itr->second->nextEvent != NULL && nextFlag == TRUE ){
-		if( itr->second->nextEvent->StartTimeFlag == TRUE && itr->second->nextEvent->DurationFlag == TRUE){
-			__int64 startTime = ConvertI64Time(itr->second->nextEvent->start_time);
-			//__int64 endTime = GetSumTime(itr->second->nextEvent->start_time, itr->second->nextEvent->durationSec);
-			if( nowTime64 <= startTime ){
-				//開始時間先にあるので正しいはず
-				this->epgInfo = new EPG_EVENT_INFO;
-				CopyEpgInfo(this->epgInfo, itr->second->nextEvent);
-				goto Err_End;
-			}
-		}else{
-			//どっちか未定なので信じる
-			this->epgInfo = new EPG_EVENT_INFO;
-			CopyEpgInfo(this->epgInfo, itr->second->nextEvent);
-			goto Err_End;
-		}
+		this->epgInfo = new EPG_EVENT_INFO;
+		CopyEpgInfo(this->epgInfo, itr->second->nextEvent);
+		*epgInfo = this->epgInfo;
+		return TRUE;
 	}
-	/*
-	//p/fで確認できなかったのでDBの時間的にあうもの探す
-	if( nextFlag == FALSE ){
-		//現在
-		map<WORD, EVENT_INFO*>::iterator itrEvt;
-		for( itrEvt = itr->second->eventMap.begin(); itrEvt != itr->second->eventMap.end(); itrEvt++ ){
-			if( itrEvt->second->StartTimeFlag == TRUE && itrEvt->second->DurationFlag == TRUE ){
-				__int64 startTime = ConvertI64Time(itrEvt->second->start_time);
-				__int64 endTime = GetSumTime(itrEvt->second->start_time, itrEvt->second->durationSec);
-				if( startTime <= nowTime64 && nowTime64 < endTime ){
-					//時間内にあるので正しいはず
-					this->epgInfo = new EPG_EVENT_INFO;
-					CopyEpgInfo(this->epgInfo, itrEvt->second);
-					goto Err_End;
-				}
-			}
-		}
-	}else{
-		//p/fにないので時間的に次になる番組探す
 
-		map<__int64, EVENT_INFO*> timeSort;
-		map<WORD, EVENT_INFO*>::iterator itrEvt;
-		for( itrEvt = itr->second->eventMap.begin(); itrEvt != itr->second->eventMap.end(); itrEvt++ ){
-			if( itrEvt->second->StartTimeFlag == TRUE ){
-				__int64 startTime = ConvertI64Time(itrEvt->second->start_time);
-				//次の見つける必要あるので時間でソート
-				timeSort.insert(pair<__int64, EVENT_INFO*>(startTime, itrEvt->second));
-			}
-		}
-		map<__int64, EVENT_INFO*>::iterator itrSort;
-		for( itrSort = timeSort.begin(); itrSort != timeSort.end(); itrSort++ ){
-			if( nowTime64 < itrSort->first ){
-				//現在より開始時間早いので次になるはず
-				this->epgInfo = new EPG_EVENT_INFO;
-				CopyEpgInfo(this->epgInfo, itrSort->second);
-				goto Err_End;
-			}
-		}
-	}
-	*/
-Err_End:
-	if( this->epgInfo == NULL ){
-		return FALSE;
-	}
-	*epgInfo = this->epgInfo;
-
-	return TRUE;
+	return FALSE;
 }
 
 //指定イベントのEPG情報を取得する
