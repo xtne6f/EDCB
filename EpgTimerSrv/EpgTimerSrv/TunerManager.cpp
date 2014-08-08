@@ -9,35 +9,29 @@ CTunerManager::CTunerManager(void)
 
 CTunerManager::~CTunerManager(void)
 {
-	map<DWORD, TUNER_INFO*>::iterator itr;
-	for( itr = this->tunerMap.begin(); itr != this->tunerMap.end(); itr++ ){
-		SAFE_DELETE(itr->second);
-	}
 }
 
 BOOL CTunerManager::FindBonFileName(wstring src, wstring& dllName)
 {
-	wstring buff = src;
-	size_t pos = buff.rfind(L")");
+	size_t pos = src.rfind(L')');
 	if( pos == string::npos ){
-		dllName = src;
 		return FALSE;
 	}
 
 	int count = 1;
-	for( size_t i=pos-1; i>=0; i-- ){
-		if(buff.compare(i,1,L")") == 0 ){
+	for( int i=(int)pos-1; i>=0; i-- ){
+		if( src[i] == L')' ){
 			count++;
-		}else if(buff.compare(i,1,L"(") == 0){
+		}else if( src[i] == L'(' ){
 			count--;
 		}
 		if( count == 0 ){
-			dllName = buff.substr(0, i);
-			break;
+			dllName = src.substr(0, i);
+			return TRUE;
 		}
 	}
 
-	return TRUE;
+	return FALSE;
 }
 
 //チューナー一覧の読み込みを行う
@@ -45,10 +39,6 @@ BOOL CTunerManager::FindBonFileName(wstring src, wstring& dllName)
 // TRUE（成功）、FALSE（失敗）
 BOOL CTunerManager::ReloadTuner()
 {
-	map<DWORD, TUNER_INFO*>::iterator itr;
-	for( itr = this->tunerMap.begin(); itr != this->tunerMap.end(); itr++ ){
-		SAFE_DELETE(itr->second);
-	}
 	this->tunerMap.clear();
 
 	wstring path = L"";
@@ -70,15 +60,10 @@ BOOL CTunerManager::ReloadTuner()
 	}
 	do{
 		if( (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0 ){
-			//本当に拡張子DLL?
-			if( IsExt(findData.cFileName, L".txt") == TRUE ){
+			wstring bonFileName;
+			if( FindBonFileName(findData.cFileName, bonFileName) != FALSE ){
 				wstring chSetPath = L"";
 				Format(chSetPath, L"%s\\%s", path.c_str(), findData.cFileName);
-
-				wstring bonFileName = L"";
-				wstring buff = findData.cFileName;
-
-				FindBonFileName(buff, bonFileName);
 
 				bonFileName += L".dll";
 
@@ -95,15 +80,17 @@ BOOL CTunerManager::ReloadTuner()
 						count = 0;
 					}
 					for( WORD i=1; i<=count; i++ ){
-						TUNER_INFO* item = new TUNER_INFO;
-						item->bonID = priority;
-						item->tunerID = i;
-						item->epgCapMaxOfThisBon = min(epgCapFlag == FALSE ? 0 : EPGcount, count);
-						item->bonFileName = bonFileName;
-						item->chUtil.ParseText(chSetPath.c_str());
-						item->chSet4FilePath = chSetPath;
-						DWORD key = ((DWORD)item->bonID)<<16 | item->tunerID;
-						this->tunerMap.insert(pair<DWORD, TUNER_INFO*>(key, item));
+						TUNER_INFO item;
+						item.epgCapMaxOfThisBon = min(epgCapFlag == FALSE ? 0 : EPGcount, count);
+						item.bonFileName = bonFileName;
+						item.chSet4FilePath = chSetPath;
+						CParseChText4 chUtil;
+						chUtil.ParseText(chSetPath.c_str());
+						map<DWORD, CH_DATA4>::const_iterator itr;
+						for( itr = chUtil.GetMap().begin(); itr != chUtil.GetMap().end(); itr++ ){
+							item.chList.push_back(itr->second);
+						}
+						this->tunerMap.insert(pair<DWORD, TUNER_INFO>((DWORD)priority<<16 | i, item));
 					}
 				}
 			}
@@ -123,12 +110,12 @@ BOOL CTunerManager::ReloadTuner()
 // idList			[OUT]チューナーのID一覧
 BOOL CTunerManager::GetEnumID(
 	vector<DWORD>* idList
-	)
+	) const
 {
 	if( idList == NULL ){
 		return FALSE;
 	}
-	map<DWORD, TUNER_INFO*>::iterator itr;
+	map<DWORD, TUNER_INFO>::const_iterator itr;
 	for( itr = this->tunerMap.begin(); itr != this->tunerMap.end(); itr++ ){
 		idList->push_back(itr->first);
 	}
@@ -142,15 +129,15 @@ BOOL CTunerManager::GetEnumID(
 // ctrlMap			[OUT]チューナー予約制御の一覧
 BOOL CTunerManager::GetEnumTunerBank(
 	map<DWORD, CTunerBankCtrl*>* ctrlMap
-	)
+	) const
 {
 	if( ctrlMap == NULL ){
 		return FALSE;
 	}
-	map<DWORD, TUNER_INFO*>::iterator itr;
+	map<DWORD, TUNER_INFO>::const_iterator itr;
 	for( itr = this->tunerMap.begin(); itr != this->tunerMap.end(); itr++ ){
 		CTunerBankCtrl* ctrl = new CTunerBankCtrl;
-		ctrl->SetTunerInfo( itr->second->bonID, itr->second->tunerID, itr->second->bonFileName, itr->second->chSet4FilePath);
+		ctrl->SetTunerInfo( itr->first >> 16, itr->first & 0xFFFF, itr->second.bonFileName, itr->second.chSet4FilePath);
 		ctrlMap->insert(pair<DWORD, CTunerBankCtrl*>(itr->first, ctrl));
 	}
 	return TRUE;
@@ -169,20 +156,20 @@ BOOL CTunerManager::GetNotSupportServiceTuner(
 	WORD TSID,
 	WORD SID,
 	vector<DWORD>* idList
-	)
+	) const
 {
 	if( idList == NULL ){
 		return FALSE;
 	}
-	map<DWORD, TUNER_INFO*>::iterator itr;
+	map<DWORD, TUNER_INFO>::const_iterator itr;
 	for( itr = this->tunerMap.begin(); itr != this->tunerMap.end(); itr++ ){
-		map<DWORD, CH_DATA4>::const_iterator itrCh;
-		for( itrCh = itr->second->chUtil.GetMap().begin(); itrCh != itr->second->chUtil.GetMap().end(); itrCh++ ){
-			if( itrCh->second.originalNetworkID == ONID && itrCh->second.transportStreamID == TSID && itrCh->second.serviceID == SID ){
+		vector<CH_DATA4>::const_iterator itrCh;
+		for( itrCh = itr->second.chList.begin(); itrCh != itr->second.chList.end(); itrCh++ ){
+			if( itrCh->originalNetworkID == ONID && itrCh->transportStreamID == TSID && itrCh->serviceID == SID ){
 				break;
 			}
 		}
-		if( itrCh == itr->second->chUtil.GetMap().end() ){
+		if( itrCh == itr->second.chList.end() ){
 			idList->push_back(itr->first);
 		}
 
@@ -195,16 +182,16 @@ BOOL CTunerManager::GetSupportServiceTuner(
 	WORD TSID,
 	WORD SID,
 	vector<DWORD>* idList
-	)
+	) const
 {
 	if( idList == NULL ){
 		return FALSE;
 	}
-	map<DWORD, TUNER_INFO*>::iterator itr;
+	map<DWORD, TUNER_INFO>::const_iterator itr;
 	for( itr = this->tunerMap.begin(); itr != this->tunerMap.end(); itr++ ){
-		map<DWORD, CH_DATA4>::const_iterator itrCh;
-		for( itrCh = itr->second->chUtil.GetMap().begin(); itrCh != itr->second->chUtil.GetMap().end(); itrCh++ ){
-			if( itrCh->second.originalNetworkID == ONID && itrCh->second.transportStreamID == TSID && itrCh->second.serviceID == SID ){
+		vector<CH_DATA4>::const_iterator itrCh;
+		for( itrCh = itr->second.chList.begin(); itrCh != itr->second.chList.end(); itrCh++ ){
+			if( itrCh->originalNetworkID == ONID && itrCh->transportStreamID == TSID && itrCh->serviceID == SID ){
 				idList->push_back(itr->first);
 				break;
 			}
@@ -221,18 +208,18 @@ BOOL CTunerManager::GetCh(
 	WORD SID,
 	DWORD* space,
 	DWORD* ch
-	)
+	) const
 {
-	map<DWORD, TUNER_INFO*>::iterator itr;
+	map<DWORD, TUNER_INFO>::const_iterator itr;
 	for( itr = this->tunerMap.begin(); itr != this->tunerMap.end(); itr++ ){
-		map<DWORD, CH_DATA4>::const_iterator itrCh;
-		for( itrCh = itr->second->chUtil.GetMap().begin(); itrCh != itr->second->chUtil.GetMap().end(); itrCh++ ){
-			if( itrCh->second.originalNetworkID == ONID && itrCh->second.transportStreamID == TSID && itrCh->second.serviceID == SID ){
+		vector<CH_DATA4>::const_iterator itrCh;
+		for( itrCh = itr->second.chList.begin(); itrCh != itr->second.chList.end(); itrCh++ ){
+			if( itrCh->originalNetworkID == ONID && itrCh->transportStreamID == TSID && itrCh->serviceID == SID ){
 				if( space != NULL ){
-					*space = itrCh->second.space;
+					*space = itrCh->space;
 				}
 				if( ch != NULL ){
-					*ch = itrCh->second.ch;
+					*ch = itrCh->ch;
 				}
 				return TRUE;
 			}
@@ -244,15 +231,15 @@ BOOL CTunerManager::GetCh(
 //ドライバ毎のチューナー一覧とEPG取得に使用できるチューナー数のペアを取得する
 BOOL CTunerManager::GetEnumEpgCapTuner(
 	vector<pair<vector<DWORD>, WORD>>* idList
-	)
+	) const
 {
 	if( idList == NULL ){
 		return FALSE;
 	}
-	map<DWORD, TUNER_INFO*>::iterator itr;
+	map<DWORD, TUNER_INFO>::const_iterator itr;
 	for( itr = this->tunerMap.begin(); itr != this->tunerMap.end(); itr++ ){
 		if( idList->empty() || idList->back().first.back() >> 16 != itr->first >> 16 ){
-			idList->push_back(pair<vector<DWORD>, WORD>(vector<DWORD>(), itr->second->epgCapMaxOfThisBon));
+			idList->push_back(pair<vector<DWORD>, WORD>(vector<DWORD>(), itr->second.epgCapMaxOfThisBon));
 		}
 		idList->back().first.push_back(itr->first);
 	}
@@ -264,17 +251,17 @@ BOOL CTunerManager::IsSupportService(
 	WORD ONID,
 	WORD TSID,
 	WORD SID
-	)
+	) const
 {
-	map<DWORD, TUNER_INFO*>::iterator itr;
+	map<DWORD, TUNER_INFO>::const_iterator itr;
 	itr = this->tunerMap.find(tunerID);
 	if( itr == this->tunerMap.end() ){
 		return FALSE;
 	}
 
-	map<DWORD, CH_DATA4>::const_iterator itrCh;
-	for( itrCh = itr->second->chUtil.GetMap().begin(); itrCh != itr->second->chUtil.GetMap().end(); itrCh++ ){
-		if( itrCh->second.originalNetworkID == ONID && itrCh->second.transportStreamID == TSID && itrCh->second.serviceID == SID ){
+	vector<CH_DATA4>::const_iterator itrCh;
+	for( itrCh = itr->second.chList.begin(); itrCh != itr->second.chList.end(); itrCh++ ){
+		if( itrCh->originalNetworkID == ONID && itrCh->transportStreamID == TSID && itrCh->serviceID == SID ){
 			return TRUE;
 		}
 	}
@@ -284,14 +271,14 @@ BOOL CTunerManager::IsSupportService(
 BOOL CTunerManager::GetBonFileName(
 	DWORD tunerID,
 	wstring& bonFileName
-	)
+	) const
 {
-	map<DWORD, TUNER_INFO*>::iterator itr;
+	map<DWORD, TUNER_INFO>::const_iterator itr;
 	itr = this->tunerMap.find(tunerID);
 	if( itr == this->tunerMap.end() ){
 		return FALSE;
 	}
-	bonFileName = itr->second->bonFileName;
+	bonFileName = itr->second.bonFileName;
 
 	return TRUE;
 }
