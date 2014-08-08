@@ -398,5 +398,14 @@ protected:
 		);
 
 	void GetSrvCoopEpgList(vector<wstring>* fileList);
+
+	//TSファイルを削除して必要な空き領域を作る
+	static void CreateDiskFreeSpace(
+		const vector<RESERVE_DATA>& chkReserve,
+		const wstring& defRecFolder,
+		const map<wstring, wstring>& protectFile,
+		const vector<wstring>& delFolderList,
+		const vector<wstring>& delExtList
+		);
 };
 

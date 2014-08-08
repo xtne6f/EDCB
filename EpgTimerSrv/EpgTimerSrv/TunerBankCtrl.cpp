@@ -1,6 +1,5 @@
 #include "StdAfx.h"
 #include "TunerBankCtrl.h"
-#include "CheckRecFile.h"
 
 #include <process.h>
 

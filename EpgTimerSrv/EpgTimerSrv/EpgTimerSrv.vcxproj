@@ -214,7 +214,6 @@
     <ClInclude Include="..\..\UPnPCtrl\UpnpStructDef.h" />
     <ClInclude Include="..\..\UPnPCtrl\UpnpUtil.h" />
     <ClInclude Include="BatManager.h" />
-    <ClInclude Include="CheckRecFile.h" />
     <ClInclude Include="DLNADmsContentDB.h" />
     <ClInclude Include="DLNADmsManager.h" />
     <ClInclude Include="DLNAManager.h" />
@@ -284,7 +283,6 @@
     <ClCompile Include="..\..\UPnPCtrl\UpnpStructDef.cpp" />
     <ClCompile Include="..\..\UPnPCtrl\UpnpUtil.cpp" />
     <ClCompile Include="BatManager.cpp" />
-    <ClCompile Include="CheckRecFile.cpp" />
     <ClCompile Include="DLNADmsContentDB.cpp" />
     <ClCompile Include="DLNADmsManager.cpp" />
     <ClCompile Include="DLNAManager.cpp" />
