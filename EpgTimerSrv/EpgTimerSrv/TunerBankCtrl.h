@@ -8,7 +8,6 @@
 #include "../../Common/SendCtrlCmd.h"
 
 #include "ReserveInfo.h"
-#include "TunerCtrl.h"
 #include "EpgTimerSrvDef.h"
 #include "TwitterManager.h"
 #include "NotifyManager.h"
@@ -101,12 +100,25 @@ public:
 		DWORD* ctrlID,
 		DWORD* processID
 		);
+
+	static BOOL OpenTunerExe(
+		LPCWSTR exePath,
+		LPCWSTR bonDriver,
+		DWORD id,
+		BOOL minWake, BOOL noView, BOOL noNW, BOOL nwUdp, BOOL nwTcp,
+		DWORD priority,
+		const map<DWORD, DWORD>& registGUIMap,
+		DWORD* pid
+		);
+
+	static void CloseTunerExe(
+		DWORD pid
+		);
 protected:
 	HANDLE lockEvent;
 
 	CTwitterManager* twitterManager;
 	CNotifyManager* notifyManager;
-	CTunerCtrl tunerCtrl;
 	DWORD tunerID;
 	wstring bonFileName;
 	CParseChText4 chUtil;

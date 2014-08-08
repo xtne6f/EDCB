@@ -244,7 +244,6 @@
     <ClInclude Include="SyoboiCalUtil.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="TunerBankCtrl.h" />
-    <ClInclude Include="TunerCtrl.h" />
     <ClInclude Include="TunerManager.h" />
     <ClInclude Include="TwitterManager.h" />
   </ItemGroup>
@@ -318,7 +317,6 @@
     </ClCompile>
     <ClCompile Include="SyoboiCalUtil.cpp" />
     <ClCompile Include="TunerBankCtrl.cpp" />
-    <ClCompile Include="TunerCtrl.cpp" />
     <ClCompile Include="TunerManager.cpp" />
     <ClCompile Include="TwitterManager.cpp" />
   </ItemGroup>

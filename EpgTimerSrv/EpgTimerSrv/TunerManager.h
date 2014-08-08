@@ -6,7 +6,6 @@
 #include "../../Common/StringUtil.h"
 #include "../../Common/ParseTextInstances.h"
 
-#include "TunerCtrl.h"
 #include "TunerBankCtrl.h"
 
 class CTunerManager

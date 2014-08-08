@@ -4526,9 +4526,7 @@ BOOL CReserveManager::SetNWTVCh(
 	}
 
 	BOOL findPID = FALSE;
-	CTunerCtrl ctrl;
-	vector<DWORD> pidList;
-	ctrl.GetOpenExe(L"EpgDataCap_Bon.exe", &pidList);
+	vector<DWORD> pidList = _FindPidListByExeName(L"EpgDataCap_Bon.exe");
 	for( size_t i=0; i<pidList.size(); i++ ){
 		if( pidList[i] == this->NWTVPID ){
 			findPID = TRUE;
@@ -4568,7 +4566,6 @@ BOOL CReserveManager::SetNWTVCh(
 	}
 	if( this->NWTVPID == 0 ){
 
-		ctrl.SetExePath(this->recExePath.c_str());
 		DWORD PID = 0;
 		BOOL noNW = FALSE;
 		if( this->NWTVUDP == FALSE && this->NWTVTCP == FALSE ){
@@ -4578,7 +4575,7 @@ BOOL CReserveManager::SetNWTVCh(
 		if( this->notifyManager != NULL ){
 			this->notifyManager->GetRegistGUI(&registGUIMap);
 		}
-		if( ctrl.OpenExe(bonDriver, -1, TRUE, TRUE, noNW, registGUIMap, &PID, this->NWTVUDP, this->NWTVTCP, 3) == TRUE ){
+		if( CTunerBankCtrl::OpenTunerExe(this->recExePath.c_str(), bonDriver.c_str(), -1, TRUE, TRUE, noNW, this->NWTVUDP, this->NWTVTCP, 3, registGUIMap, &PID) == TRUE ){
 			this->NWTVPID = PID;
 			ret = TRUE;
 
