@@ -12,7 +12,6 @@
 #include "TwitterManager.h"
 #include "NotifyManager.h"
 #include "EpgDBManager.h"
-#include "RecInfoDBManager.h"
 
 class CTunerBankCtrl
 {
@@ -22,7 +21,6 @@ public:
 
 	void SetTwitterCtrl(CTwitterManager* twitterManager);
 	void SetEpgDBManager(CEpgDBManager* epgDBManager);
-	void SetRecInfoDBManager(CRecInfoDBManager* recInfoManager);
 	void ReloadSetting();
 	void SetNotifyManager(CNotifyManager* manager);
 
@@ -123,7 +121,6 @@ protected:
 	wstring bonFileName;
 	CParseChText4 chUtil;
 	CEpgDBManager* epgDBManager;
-	CRecInfoDBManager* recInfoManager;
 
 	typedef struct _RESERVE_WORK{
 		CReserveInfo* reserveInfo;

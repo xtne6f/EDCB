@@ -274,7 +274,6 @@ void CReserveManager::SetEpgDBManager(CEpgDBManager* epgDBManager)
 	map<DWORD, CTunerBankCtrl*>::iterator itrCtrl;
 	for( itrCtrl = this->tunerBankMap.begin(); itrCtrl != this->tunerBankMap.end(); itrCtrl++ ){
 		itrCtrl->second->SetEpgDBManager(epgDBManager);
-		itrCtrl->second->SetRecInfoDBManager(&this->recInfoManager);
 	}
 
 	UnLock();
@@ -494,6 +493,12 @@ void CReserveManager::ReloadSetting()
 	ZeroMemory(buff, sizeof(WCHAR)*512);
 	GetPrivateProfileString(L"SET", L"RecInfoFolder", L"", buff, 512, iniCommonPath.c_str());
 	recInfoText.SetRecInfoFolder(buff);
+
+	this->recInfo2Text.SetKeepCount(GetPrivateProfileInt(L"SET", L"RecInfo2Max", 1000, iniAppPath.c_str()));
+	this->recInfo2DropChk = GetPrivateProfileInt(L"SET", L"RecInfo2DropChk", 15, iniAppPath.c_str());
+	WCHAR buffRecInfo2RegExp[1024];
+	GetPrivateProfileString(L"SET", L"RecInfo2RegExp", L"", buffRecInfo2RegExp, 1024, iniAppPath.c_str());
+	this->recInfo2RegExp = buffRecInfo2RegExp;
 
 	this->useTweet = GetPrivateProfileInt(L"TWITTER", L"use", 0, iniAppPath.c_str());
 	this->useProxy = GetPrivateProfileInt(L"TWITTER", L"useProxy", 0, iniAppPath.c_str());
@@ -922,20 +927,6 @@ UINT WINAPI CReserveManager::SendNotifyStatusThread(LPVOID param)
 	return 0;
 }
 */
-BOOL CReserveManager::ReloadRecInfoData()
-{
-	if( Lock(L"ReloadRecInfoData") == FALSE ) return FALSE;
-	BOOL ret = TRUE;
-
-	recInfoManager.LoadRecInfo();
-	map<DWORD, CTunerBankCtrl*>::iterator itrCtrl;
-	for( itrCtrl = this->tunerBankMap.begin(); itrCtrl != this->tunerBankMap.end(); itrCtrl++ ){
-		itrCtrl->second->SetRecInfoDBManager(&this->recInfoManager);
-	}
-
-	UnLock();
-	return ret;
-}
 
 BOOL CReserveManager::ReloadReserveData()
 {
@@ -952,6 +943,10 @@ BOOL CReserveManager::ReloadReserveData()
 	recInfoFilePath += L"\\";
 	recInfoFilePath += REC_INFO_TEXT_NAME;
 
+	wstring recInfo2FilePath = L"";
+	GetSettingPath(recInfo2FilePath);
+	recInfo2FilePath += L"\\";
+	recInfo2FilePath += REC_INFO2_TEXT_NAME;
 
 	map<DWORD, CReserveInfo*>::iterator itr;
 	for( itr = this->reserveInfoMap.begin(); itr != this->reserveInfoMap.end(); itr++ ){
@@ -962,6 +957,8 @@ BOOL CReserveManager::ReloadReserveData()
 
 	this->recInfoText.ParseText(recInfoFilePath.c_str());
 	this->chgRecInfo = TRUE;
+
+	this->recInfo2Text.ParseText(recInfo2FilePath.c_str());
 
 	vector<DWORD> deleteList;
 	LONGLONG nowTime = GetNowI64Time();
@@ -2550,6 +2547,17 @@ void CReserveManager::CheckEndReserve()
 			map<DWORD, END_RESERVE_INFO*>::iterator itrEnd;
 			for( itrEnd = reserveMap.begin(); itrEnd != reserveMap.end(); itrEnd++){
 				//˜^‰æÏ‚Ý‚Æ‚µ‚Ä“o˜^
+				if( itrEnd->second->endType == REC_END_STATUS_NORMAL &&
+				    (__int64)itrEnd->second->drop < this->recInfo2DropChk &&
+				    itrEnd->second->epgEventName.empty() == false ){
+					PARSE_REC_INFO2_ITEM item;
+					item.originalNetworkID = itrEnd->second->epgOriginalNetworkID;
+					item.transportStreamID = itrEnd->second->epgTransportStreamID;
+					item.serviceID = itrEnd->second->epgServiceID;
+					item.startTime = itrEnd->second->epgStartTime;
+					item.eventName = itrEnd->second->epgEventName;
+					this->recInfo2Text.Add(item);
+				}
 				RESERVE_DATA data;
 				itrEnd->second->reserveInfo->GetData(&data);
 				REC_FILE_INFO item;
@@ -2650,7 +2658,7 @@ void CReserveManager::CheckEndReserve()
 		//î•ñƒtƒ@ƒCƒ‹‚ÌXV
 		this->reserveText.SaveText();
 		this->recInfoText.SaveText();
-		this->recInfoManager.SaveRecInfo();
+		this->recInfo2Text.SaveText();
 		this->chgRecInfo = TRUE;
 
 		_SendNotifyUpdate(NOTIFY_UPDATE_RESERVE_INFO);
@@ -4924,9 +4932,42 @@ void CReserveManager::GetSrvCoopEpgList(vector<wstring>* fileList)
 BOOL CReserveManager::IsFindRecEventInfo(EPGDB_EVENT_INFO* info, WORD chkDay)
 {
 	if( Lock(L"IsFindRecEventInfo") == FALSE ) return FALSE;
-	BOOL ret = TRUE;
+	BOOL ret = FALSE;
 
-	ret = recInfoManager.IsFindTitleInfo(info, chkDay);
+	CoInitialize(NULL);
+	{
+		IRegExpPtr regExp;
+		regExp.CreateInstance(CLSID_RegExp);
+		if( regExp != NULL && info->shortInfo != NULL ){
+			wstring infoEventName = info->shortInfo->event_name;
+			if( this->recInfo2RegExp.empty() == false ){
+				regExp->PutGlobal(VARIANT_TRUE);
+				regExp->PutPattern(_bstr_t(this->recInfo2RegExp.c_str()));
+				_bstr_t rpl = regExp->Replace(_bstr_t(infoEventName.c_str()), _bstr_t());
+				infoEventName = (LPCWSTR)rpl == NULL ? L"" : (LPCWSTR)rpl;
+			}
+			if( infoEventName.empty() == false && info->StartTimeFlag != 0 ){
+				map<DWORD, PARSE_REC_INFO2_ITEM>::const_iterator itr;
+				for( itr = this->recInfo2Text.GetMap().begin(); itr != this->recInfo2Text.GetMap().end(); itr++ ){
+					if( itr->second.originalNetworkID == info->original_network_id &&
+					    itr->second.transportStreamID == info->transport_stream_id &&
+					    itr->second.serviceID == info->service_id &&
+					    ConvertI64Time(itr->second.startTime) + chkDay*24*60*60*I64_1SEC > ConvertI64Time(info->start_time) ){
+						wstring eventName = itr->second.eventName;
+						if( this->recInfo2RegExp.empty() == false ){
+							_bstr_t rpl = regExp->Replace(_bstr_t(eventName.c_str()), _bstr_t());
+							eventName = (LPCWSTR)rpl == NULL ? L"" : (LPCWSTR)rpl;
+						}
+						if( infoEventName == eventName ){
+							ret = TRUE;
+							break;
+						}
+					}
+				}
+			}
+		}
+	}
+	CoUninitialize();
 
 	UnLock();
 	return ret;

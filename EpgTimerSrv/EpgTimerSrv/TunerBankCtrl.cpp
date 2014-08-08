@@ -37,7 +37,6 @@ CTunerBankCtrl::CTunerBankCtrl(void)
 	this->twitterManager = NULL;
 	this->notifyManager = NULL;
 	this->epgDBManager = NULL;
-	this->recInfoManager = NULL;
 
 	ReloadSetting();
 }
@@ -112,11 +111,6 @@ void CTunerBankCtrl::SetTwitterCtrl(CTwitterManager* twitterManager)
 void CTunerBankCtrl::SetEpgDBManager(CEpgDBManager* epgDBManager)
 {
 	this->epgDBManager = epgDBManager;
-}
-
-void CTunerBankCtrl::SetRecInfoDBManager(CRecInfoDBManager* recInfoManager)
-{
-	this->recInfoManager = recInfoManager;
 }
 
 void CTunerBankCtrl::ReloadSetting()
@@ -1854,10 +1848,6 @@ BOOL CTunerBankCtrl::CloseTuner()
 
 void CTunerBankCtrl::AddEndReserve(RESERVE_WORK* reserve, DWORD endType, SET_CTRL_REC_STOP_RES_PARAM resVal)
 {
-	wstring iniAppPath = L"";
-	GetModuleIniPath(iniAppPath);
-	int dropChk = GetPrivateProfileInt(L"SET", L"RecInfo2DropChk", 15, iniAppPath.c_str());
-
 	END_RESERVE_INFO* item = new END_RESERVE_INFO;
 	item->reserveInfo = reserve->reserveInfo;
 	item->tunerID = this->tunerID;
@@ -1867,10 +1857,12 @@ void CTunerBankCtrl::AddEndReserve(RESERVE_WORK* reserve, DWORD endType, SET_CTR
 	item->drop = resVal.drop;
 	item->scramble = resVal.scramble;
 
-	if( this->recInfoManager != NULL ){
-		if( endType == REC_END_STATUS_NORMAL && item->drop < dropChk && reserve->eventInfo != NULL ){
-			this->recInfoManager->AddInfo(reserve->eventInfo);
-		}
+	if( reserve->eventInfo != NULL && reserve->eventInfo->shortInfo != NULL && reserve->eventInfo->StartTimeFlag != 0 ){
+		item->epgEventName = reserve->eventInfo->shortInfo->event_name;
+		item->epgOriginalNetworkID = reserve->eventInfo->original_network_id;
+		item->epgTransportStreamID = reserve->eventInfo->transport_stream_id;
+		item->epgServiceID = reserve->eventInfo->service_id;
+		item->epgStartTime = reserve->eventInfo->start_time;
 	}
 
 	endList.push_back(item);

@@ -13,7 +13,6 @@
 #include "TunerManager.h"
 #include "BatManager.h"
 #include "NWCoopManager.h"
-#include "RecInfoDBManager.h"
 
 class CReserveManager
 {
@@ -28,11 +27,6 @@ public:
 	void SetEpgDBManager(CEpgDBManager* epgDBManager);
 	void ChangeRegist();
 	void ReloadSetting();
-
-	//録画済み情報の読み込みを行う
-	//戻り値：
-	// TRUE（成功）、FALSE（失敗）
-	BOOL ReloadRecInfoData();
 
 	//予約情報の読み込みを行う
 	//戻り値：
@@ -228,6 +222,9 @@ protected:
 	map<DWORD, CReserveInfo*> reserveInfoMap; //キー　reserveID
 	map<LONGLONG, DWORD> reserveInfoIDMap; //キー　ONID<<48|TSID<<32|SID<<16|EventID
 	CParseRecInfoText recInfoText;
+	CParseRecInfo2Text recInfo2Text;
+	wstring recInfo2RegExp;
+	int recInfo2DropChk;
 
 	CParseChText5 chUtil;
 
@@ -235,7 +232,6 @@ protected:
 	CBatManager batManager;
 	CTwitterManager* twitterManager;
 	CNWCoopManager nwCoopManager;
-	CRecInfoDBManager recInfoManager;
 
 	CEpgDBManager* epgDBManager;
 

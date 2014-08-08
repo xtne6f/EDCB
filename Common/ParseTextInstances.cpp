@@ -447,6 +447,63 @@ void CParseRecInfoText::OnDelRecInfo(const REC_FILE_INFO& item)
 	}
 }
 
+DWORD CParseRecInfo2Text::Add(const PARSE_REC_INFO2_ITEM& item)
+{
+	map<DWORD, PARSE_REC_INFO2_ITEM>::const_iterator itr =
+		this->itemMap.insert(pair<DWORD, PARSE_REC_INFO2_ITEM>(this->itemMap.empty() ? 1 : this->itemMap.rbegin()->first + 1, item)).first;
+	return itr->first;
+}
+
+bool CParseRecInfo2Text::ParseLine(const wstring& parseLine, pair<DWORD, PARSE_REC_INFO2_ITEM>& item)
+{
+	if( parseLine.find(L'\t') == wstring::npos || parseLine[0] == L';' ){
+		return false;
+	}
+	LPCWSTR token[3] = {NULL, NULL, parseLine.c_str()};
+
+	item.second.originalNetworkID = (WORD)_wtoi(NextToken(token));
+	item.second.transportStreamID = (WORD)_wtoi(NextToken(token));
+	item.second.serviceID = (WORD)_wtoi(NextToken(token));
+
+	FILETIME ft;
+	item.second.startTime.wMilliseconds = 0;
+	if( swscanf_s(NextToken(token), L"%hu/%hu/%hu", &item.second.startTime.wYear, &item.second.startTime.wMonth, &item.second.startTime.wDay) != 3 ||
+	    swscanf_s(NextToken(token), L"%hu:%hu:%hu", &item.second.startTime.wHour, &item.second.startTime.wMinute, &item.second.startTime.wSecond) != 3 ||
+	    SystemTimeToFileTime(&item.second.startTime, &ft) == FALSE ||
+	    FileTimeToSystemTime(&ft, &item.second.startTime) == FALSE ){
+		return false;
+	}
+	NextToken(token);
+	item.second.eventName.assign(token[0], token[1]);
+	item.first = this->itemMap.empty() ? 1 : this->itemMap.rbegin()->first + 1;
+	return true;
+}
+
+bool CParseRecInfo2Text::SaveLine(const pair<DWORD, PARSE_REC_INFO2_ITEM>& item, wstring& saveLine) const
+{
+	Format(saveLine, L"%d\n%d\n%d\n%04d/%02d/%02d\n%02d:%02d:%02d\n%s",
+		item.second.originalNetworkID,
+		item.second.transportStreamID,
+		item.second.serviceID,
+		item.second.startTime.wYear, item.second.startTime.wMonth, item.second.startTime.wDay,
+		item.second.startTime.wHour, item.second.startTime.wMinute, item.second.startTime.wSecond,
+		item.second.eventName.c_str()
+		);
+	return FinalizeField(saveLine) == 5;
+}
+
+bool CParseRecInfo2Text::SelectIDToSave(vector<DWORD>& sortList) const
+{
+	map<DWORD, PARSE_REC_INFO2_ITEM>::const_iterator itr = this->itemMap.begin();
+	if( this->itemMap.size() > this->keepCount ){
+		advance(itr, this->itemMap.size() - this->keepCount);
+	}
+	for( ; itr != this->itemMap.end(); itr++ ){
+		sortList.push_back(itr->first);
+	}
+	return true;
+}
+
 DWORD CParseReserveText::AddReserve(const RESERVE_DATA& item)
 {
 	map<DWORD, RESERVE_DATA>::iterator itr = this->itemMap.insert(pair<DWORD, RESERVE_DATA>(this->nextID, item)).first;
