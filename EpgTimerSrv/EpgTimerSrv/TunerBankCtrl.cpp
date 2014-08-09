@@ -2240,7 +2240,7 @@ BOOL CTunerBankCtrl::OpenTunerExe(
 				PROCESS_INFORMATION pi;
 				STARTUPINFO si = {};
 				si.cb = sizeof(si);
-				vector<WCHAR> strBuff(strExecute.begin(), strExecute.end());
+				vector<WCHAR> strBuff(strExecute.c_str(), strExecute.c_str() + strExecute.size() + 1);
 				if( CreateProcess(NULL, &strBuff.front(), NULL, NULL, FALSE, GetPriorityClass(GetCurrentProcess()), NULL, NULL, &si, &pi) != FALSE ){
 					bRet = TRUE;
 					*pid = pi.dwProcessId;
