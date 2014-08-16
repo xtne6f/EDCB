@@ -16,18 +16,20 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
         <CheckBox Content="正規表現モード" Height="16" HorizontalAlignment="Left" Margin="100,12,0,0" Name="checkBox_regExp" VerticalAlignment="Top" />
-        <CheckBox Content="あいまい検索モード" Height="16" HorizontalAlignment="Left" Margin="233,12,0,0" Name="checkBox_aimai" VerticalAlignment="Top" />
-        <CheckBox Content="番組名のみ検索対象にする" Height="16" HorizontalAlignment="Left" Margin="382,12,0,0" Name="checkBox_titleOnly" VerticalAlignment="Top" />
-        <CheckBox Content="検索を無効にする" Height="16" HorizontalAlignment="Left" Margin="570,12,0,0" Name="checkBox_keyDisabled" VerticalAlignment="Top" />
+        <CheckBox Content="あいまい検索モード" Height="16" HorizontalAlignment="Left" Margin="223,12,0,0" Name="checkBox_aimai" VerticalAlignment="Top" />
+        <CheckBox Content="番組名のみ検索対象にする" Height="16" HorizontalAlignment="Left" Margin="362,12,0,0" Name="checkBox_titleOnly" VerticalAlignment="Top" />
+        <CheckBox Content="大小文字区別" Height="16" HorizontalAlignment="Left" Margin="540,12,0,0" Name="checkBox_case" VerticalAlignment="Top" />
+        <CheckBox Content="検索を無効にする" Height="16" HorizontalAlignment="Left" Margin="658,12,0,0" Name="checkBox_keyDisabled" VerticalAlignment="Top" />
         <TabControl Grid.Row="1" Name="tabControl1" TabStripPlacement="Bottom">
             <TabItem Header="詳細1" Name="tabItem1">
                 <Grid>
                     <Label Content="ジャンル絞り込み（項目なしで全ジャンル対象）" Height="28" HorizontalAlignment="Left" Margin="6,6,0,0" Name="label1" VerticalAlignment="Top" />
-                    <ListBox HorizontalAlignment="Left" Margin="6,40,0,65" Name="listBox_content" Width="238" />
+                    <ListBox HorizontalAlignment="Left" Margin="6,40,0,65" Name="listBox_content" Width="238" SelectionMode="Extended" DisplayMemberPath="ListBoxView"/>
                     <CheckBox Content="NOT扱いとする" Height="16" HorizontalAlignment="Left" Margin="6,0,0,40" Name="checkBox_notContent" VerticalAlignment="Bottom" />
                     <ComboBox Height="24" HorizontalAlignment="Left" Margin="6,0,0,6" Name="comboBox_content" VerticalAlignment="Bottom" Width="176" ItemsSource="{Binding}" />
                     <Button Content="追加" Height="23" HorizontalAlignment="Left" Margin="188,0,0,7" Name="button_content_add" VerticalAlignment="Bottom" Width="56" Style="{StaticResource ButtonStyle1}" Click="button_content_add_Click" />
                     <Button Content="削除" Height="23" HorizontalAlignment="Left" Margin="188,0,0,36" Name="button_content_del" Style="{StaticResource ButtonStyle1}" VerticalAlignment="Bottom" Width="56" Click="button_content_del_Click" />
+                    <Button Content="全クリア" Height="23" HorizontalAlignment="Left" Margin="126,0,0,36" Name="button_content_clear" Style="{StaticResource ButtonStyle1}" VerticalAlignment="Bottom" Width="56" Click="button_content_clear_Click" />
                     <Label Content="サービス絞り込み" Height="28" HorizontalAlignment="Left" Margin="286,6,0,0" Name="label2" VerticalAlignment="Top" />
                     <ListView HorizontalAlignment="Left" Margin="286,40,0,7" Name="listView_service" Width="252" SelectionMode="Single" ItemsSource="{Binding}" >
                         <ListView.View>
