@@ -8,12 +8,10 @@
 #include "../../Common/SendCtrlCmd.h"
 
 #include "ReserveInfo.h"
-#include "TunerCtrl.h"
 #include "EpgTimerSrvDef.h"
 #include "TwitterManager.h"
 #include "NotifyManager.h"
 #include "EpgDBManager.h"
-#include "RecInfoDBManager.h"
 
 class CTunerBankCtrl
 {
@@ -23,7 +21,6 @@ public:
 
 	void SetTwitterCtrl(CTwitterManager* twitterManager);
 	void SetEpgDBManager(CEpgDBManager* epgDBManager);
-	void SetRecInfoDBManager(CRecInfoDBManager* recInfoManager);
 	void ReloadSetting();
 	void SetNotifyManager(CNotifyManager* manager);
 
@@ -101,17 +98,29 @@ public:
 		DWORD* ctrlID,
 		DWORD* processID
 		);
+
+	static BOOL OpenTunerExe(
+		LPCWSTR exePath,
+		LPCWSTR bonDriver,
+		DWORD id,
+		BOOL minWake, BOOL noView, BOOL noNW, BOOL nwUdp, BOOL nwTcp,
+		DWORD priority,
+		const map<DWORD, DWORD>& registGUIMap,
+		DWORD* pid
+		);
+
+	static void CloseTunerExe(
+		DWORD pid
+		);
 protected:
 	HANDLE lockEvent;
 
 	CTwitterManager* twitterManager;
 	CNotifyManager* notifyManager;
-	CTunerCtrl tunerCtrl;
 	DWORD tunerID;
 	wstring bonFileName;
 	CParseChText4 chUtil;
 	CEpgDBManager* epgDBManager;
-	CRecInfoDBManager* recInfoManager;
 
 	typedef struct _RESERVE_WORK{
 		CReserveInfo* reserveInfo;

@@ -6,7 +6,6 @@
 #include "../../Common/ReNamePlugInUtil.h"
 #include "../../Common/EpgTimerUtil.h"
 
-#include "CheckRecFile.h"
 #include <tlhelp32.h> 
 #include <shlwapi.h>
 #include <algorithm>
@@ -274,7 +273,6 @@ void CReserveManager::SetEpgDBManager(CEpgDBManager* epgDBManager)
 	map<DWORD, CTunerBankCtrl*>::iterator itrCtrl;
 	for( itrCtrl = this->tunerBankMap.begin(); itrCtrl != this->tunerBankMap.end(); itrCtrl++ ){
 		itrCtrl->second->SetEpgDBManager(epgDBManager);
-		itrCtrl->second->SetRecInfoDBManager(&this->recInfoManager);
 	}
 
 	UnLock();
@@ -494,6 +492,12 @@ void CReserveManager::ReloadSetting()
 	ZeroMemory(buff, sizeof(WCHAR)*512);
 	GetPrivateProfileString(L"SET", L"RecInfoFolder", L"", buff, 512, iniCommonPath.c_str());
 	recInfoText.SetRecInfoFolder(buff);
+
+	this->recInfo2Text.SetKeepCount(GetPrivateProfileInt(L"SET", L"RecInfo2Max", 1000, iniAppPath.c_str()));
+	this->recInfo2DropChk = GetPrivateProfileInt(L"SET", L"RecInfo2DropChk", 15, iniAppPath.c_str());
+	WCHAR buffRecInfo2RegExp[1024];
+	GetPrivateProfileString(L"SET", L"RecInfo2RegExp", L"", buffRecInfo2RegExp, 1024, iniAppPath.c_str());
+	this->recInfo2RegExp = buffRecInfo2RegExp;
 
 	this->useTweet = GetPrivateProfileInt(L"TWITTER", L"use", 0, iniAppPath.c_str());
 	this->useProxy = GetPrivateProfileInt(L"TWITTER", L"useProxy", 0, iniAppPath.c_str());
@@ -922,20 +926,6 @@ UINT WINAPI CReserveManager::SendNotifyStatusThread(LPVOID param)
 	return 0;
 }
 */
-BOOL CReserveManager::ReloadRecInfoData()
-{
-	if( Lock(L"ReloadRecInfoData") == FALSE ) return FALSE;
-	BOOL ret = TRUE;
-
-	recInfoManager.LoadRecInfo();
-	map<DWORD, CTunerBankCtrl*>::iterator itrCtrl;
-	for( itrCtrl = this->tunerBankMap.begin(); itrCtrl != this->tunerBankMap.end(); itrCtrl++ ){
-		itrCtrl->second->SetRecInfoDBManager(&this->recInfoManager);
-	}
-
-	UnLock();
-	return ret;
-}
 
 BOOL CReserveManager::ReloadReserveData()
 {
@@ -952,6 +942,10 @@ BOOL CReserveManager::ReloadReserveData()
 	recInfoFilePath += L"\\";
 	recInfoFilePath += REC_INFO_TEXT_NAME;
 
+	wstring recInfo2FilePath = L"";
+	GetSettingPath(recInfo2FilePath);
+	recInfo2FilePath += L"\\";
+	recInfo2FilePath += REC_INFO2_TEXT_NAME;
 
 	map<DWORD, CReserveInfo*>::iterator itr;
 	for( itr = this->reserveInfoMap.begin(); itr != this->reserveInfoMap.end(); itr++ ){
@@ -962,6 +956,8 @@ BOOL CReserveManager::ReloadReserveData()
 
 	this->recInfoText.ParseText(recInfoFilePath.c_str());
 	this->chgRecInfo = TRUE;
+
+	this->recInfo2Text.ParseText(recInfo2FilePath.c_str());
 
 	vector<DWORD> deleteList;
 	LONGLONG nowTime = GetNowI64Time();
@@ -1646,14 +1642,17 @@ void CReserveManager::_ReloadBankMap()
 	CheckOverTimeReserve();
 
 	if( this->autoDel == TRUE ){
-		CCheckRecFile chkFile;
-		chkFile.SetCheckFolder(&this->delFolderList);
-		chkFile.SetDeleteExt(&this->delExtList);
+		vector<RESERVE_DATA> chkReserveMap;
+		map<DWORD, CReserveInfo*>::iterator itrRes;
+		for( itrRes = this->reserveInfoMap.begin(); itrRes != this->reserveInfoMap.end(); itrRes++ ){
+			chkReserveMap.resize(chkReserveMap.size() + 1);
+			itrRes->second->GetData(&chkReserveMap.back());
+		}
 		wstring defRecPath = L"";
 		GetRecFolderPath(defRecPath);
 		map<wstring, wstring> protectFile;
 		recInfoText.GetProtectFiles(&protectFile);
-		chkFile.CheckFreeSpace(&this->reserveInfoMap, defRecPath, &protectFile);
+		CreateDiskFreeSpace(chkReserveMap, defRecPath, protectFile, this->delFolderList, this->delExtList);
 	}
 
 	switch(this->reloadBankMapAlgo){
@@ -2358,14 +2357,17 @@ UINT WINAPI CReserveManager::BankCheckThread(LPVOID param)
 			countAutoDelChk++;
 			if( countAutoDelChk > 10 ){
 				if( sys->Lock(L"BankCheckThread5") == TRUE){
-					CCheckRecFile chkFile;
-					chkFile.SetCheckFolder(&sys->delFolderList);
-					chkFile.SetDeleteExt(&sys->delExtList);
+					vector<RESERVE_DATA> chkReserveMap;
+					map<DWORD, CReserveInfo*>::iterator itrRes;
+					for( itrRes = sys->reserveInfoMap.begin(); itrRes != sys->reserveInfoMap.end(); itrRes++ ){
+						chkReserveMap.resize(chkReserveMap.size() + 1);
+						itrRes->second->GetData(&chkReserveMap.back());
+					}
 					wstring defRecPath = L"";
 					GetRecFolderPath(defRecPath);
 					map<wstring, wstring> protectFile;
 					sys->recInfoText.GetProtectFiles(&protectFile);
-					chkFile.CheckFreeSpace(&sys->reserveInfoMap, defRecPath, &protectFile);
+					CreateDiskFreeSpace(chkReserveMap, defRecPath, protectFile, sys->delFolderList, sys->delExtList);
 					sys->UnLock();
 					countAutoDelChk = 0;
 				}
@@ -2550,6 +2552,17 @@ void CReserveManager::CheckEndReserve()
 			map<DWORD, END_RESERVE_INFO*>::iterator itrEnd;
 			for( itrEnd = reserveMap.begin(); itrEnd != reserveMap.end(); itrEnd++){
 				//録画済みとして登録
+				if( itrEnd->second->endType == REC_END_STATUS_NORMAL &&
+				    (__int64)itrEnd->second->drop < this->recInfo2DropChk &&
+				    itrEnd->second->epgEventName.empty() == false ){
+					PARSE_REC_INFO2_ITEM item;
+					item.originalNetworkID = itrEnd->second->epgOriginalNetworkID;
+					item.transportStreamID = itrEnd->second->epgTransportStreamID;
+					item.serviceID = itrEnd->second->epgServiceID;
+					item.startTime = itrEnd->second->epgStartTime;
+					item.eventName = itrEnd->second->epgEventName;
+					this->recInfo2Text.Add(item);
+				}
 				RESERVE_DATA data;
 				itrEnd->second->reserveInfo->GetData(&data);
 				REC_FILE_INFO item;
@@ -2650,7 +2663,7 @@ void CReserveManager::CheckEndReserve()
 		//情報ファイルの更新
 		this->reserveText.SaveText();
 		this->recInfoText.SaveText();
-		this->recInfoManager.SaveRecInfo();
+		this->recInfo2Text.SaveText();
 		this->chgRecInfo = TRUE;
 
 		_SendNotifyUpdate(NOTIFY_UPDATE_RESERVE_INFO);
@@ -4526,9 +4539,7 @@ BOOL CReserveManager::SetNWTVCh(
 	}
 
 	BOOL findPID = FALSE;
-	CTunerCtrl ctrl;
-	vector<DWORD> pidList;
-	ctrl.GetOpenExe(L"EpgDataCap_Bon.exe", &pidList);
+	vector<DWORD> pidList = _FindPidListByExeName(L"EpgDataCap_Bon.exe");
 	for( size_t i=0; i<pidList.size(); i++ ){
 		if( pidList[i] == this->NWTVPID ){
 			findPID = TRUE;
@@ -4568,7 +4579,6 @@ BOOL CReserveManager::SetNWTVCh(
 	}
 	if( this->NWTVPID == 0 ){
 
-		ctrl.SetExePath(this->recExePath.c_str());
 		DWORD PID = 0;
 		BOOL noNW = FALSE;
 		if( this->NWTVUDP == FALSE && this->NWTVTCP == FALSE ){
@@ -4578,7 +4588,7 @@ BOOL CReserveManager::SetNWTVCh(
 		if( this->notifyManager != NULL ){
 			this->notifyManager->GetRegistGUI(&registGUIMap);
 		}
-		if( ctrl.OpenExe(bonDriver, -1, TRUE, TRUE, noNW, registGUIMap, &PID, this->NWTVUDP, this->NWTVTCP, 3) == TRUE ){
+		if( CTunerBankCtrl::OpenTunerExe(this->recExePath.c_str(), bonDriver.c_str(), -1, TRUE, TRUE, noNW, this->NWTVUDP, this->NWTVTCP, 3, registGUIMap, &PID) == TRUE ){
 			this->NWTVPID = PID;
 			ret = TRUE;
 
@@ -4927,9 +4937,42 @@ void CReserveManager::GetSrvCoopEpgList(vector<wstring>* fileList)
 BOOL CReserveManager::IsFindRecEventInfo(EPGDB_EVENT_INFO* info, WORD chkDay)
 {
 	if( Lock(L"IsFindRecEventInfo") == FALSE ) return FALSE;
-	BOOL ret = TRUE;
+	BOOL ret = FALSE;
 
-	ret = recInfoManager.IsFindTitleInfo(info, chkDay);
+	CoInitialize(NULL);
+	{
+		IRegExpPtr regExp;
+		regExp.CreateInstance(CLSID_RegExp);
+		if( regExp != NULL && info->shortInfo != NULL ){
+			wstring infoEventName = info->shortInfo->event_name;
+			if( this->recInfo2RegExp.empty() == false ){
+				regExp->PutGlobal(VARIANT_TRUE);
+				regExp->PutPattern(_bstr_t(this->recInfo2RegExp.c_str()));
+				_bstr_t rpl = regExp->Replace(_bstr_t(infoEventName.c_str()), _bstr_t());
+				infoEventName = (LPCWSTR)rpl == NULL ? L"" : (LPCWSTR)rpl;
+			}
+			if( infoEventName.empty() == false && info->StartTimeFlag != 0 ){
+				map<DWORD, PARSE_REC_INFO2_ITEM>::const_iterator itr;
+				for( itr = this->recInfo2Text.GetMap().begin(); itr != this->recInfo2Text.GetMap().end(); itr++ ){
+					if( itr->second.originalNetworkID == info->original_network_id &&
+					    itr->second.transportStreamID == info->transport_stream_id &&
+					    itr->second.serviceID == info->service_id &&
+					    ConvertI64Time(itr->second.startTime) + chkDay*24*60*60*I64_1SEC > ConvertI64Time(info->start_time) ){
+						wstring eventName = itr->second.eventName;
+						if( this->recInfo2RegExp.empty() == false ){
+							_bstr_t rpl = regExp->Replace(_bstr_t(eventName.c_str()), _bstr_t());
+							eventName = (LPCWSTR)rpl == NULL ? L"" : (LPCWSTR)rpl;
+						}
+						if( infoEventName == eventName ){
+							ret = TRUE;
+							break;
+						}
+					}
+				}
+			}
+		}
+	}
+	CoUninitialize();
 
 	UnLock();
 	return ret;
@@ -4970,4 +5013,111 @@ BOOL CReserveManager::IsRecInfoChg()
 
 	UnLock();
 	return ret;
+}
+
+void CReserveManager::CreateDiskFreeSpace(
+	const vector<RESERVE_DATA>& chkReserve,
+	const wstring& defRecFolder,
+	const map<wstring, wstring>& protectFile,
+	const vector<wstring>& delFolderList,
+	const vector<wstring>& delExtList
+	)
+{
+	//ファイル削除可能なフォルダをドライブごとに仕分け
+	map<wstring, pair<ULONGLONG, vector<wstring>>> mountMap;
+	for( size_t i = 0; i < delFolderList.size(); i++ ){
+		wstring mountPath;
+		GetChkDrivePath(delFolderList[i], mountPath);
+		std::transform(mountPath.begin(), mountPath.end(), mountPath.begin(), toupper);
+		map<wstring, pair<ULONGLONG, vector<wstring>>>::iterator itr = mountMap.find(mountPath);
+		if( itr == mountMap.end() ){
+			pair<wstring, pair<ULONGLONG, vector<wstring>>> item;
+			item.first = mountPath;
+			item.second.first = 0;
+			itr = mountMap.insert(item).first;
+		}
+		itr->second.second.push_back(delFolderList[i]);
+	}
+
+	//直近で必要になりそうな空き領域を概算する
+	LONGLONG now = GetNowI64Time();
+	for( size_t i = 0; i < chkReserve.size(); i++ ){
+		if( chkReserve[i].recSetting.recMode != RECMODE_NO &&
+		    chkReserve[i].recSetting.recMode != RECMODE_VIEW &&
+		    now < ConvertI64Time(chkReserve[i].startTime) && ConvertI64Time(chkReserve[i].startTime) < now + 2*60*60*I64_1SEC ){
+			//録画開始2時間前までの予約
+			vector<wstring> recFolderList;
+			if( chkReserve[i].recSetting.recFolderList.empty() ){
+				//デフォルト
+				recFolderList.push_back(defRecFolder);
+			}else{
+				//複数指定あり
+				for( size_t j = 0; j < chkReserve[i].recSetting.recFolderList.size(); j++ ){
+					recFolderList.push_back(chkReserve[i].recSetting.recFolderList[j].recFolder);
+				}
+			}
+			for( size_t j = 0; j < recFolderList.size(); j++ ){
+				wstring mountPath;
+				GetChkDrivePath(recFolderList[j], mountPath);
+				std::transform(mountPath.begin(), mountPath.end(), mountPath.begin(), toupper);
+				map<wstring, pair<ULONGLONG, vector<wstring>>>::iterator itr = mountMap.find(mountPath);
+				if( itr != mountMap.end() ){
+					DWORD bitrate = 0;
+					_GetBitrate(chkReserve[i].originalNetworkID, chkReserve[i].transportStreamID, chkReserve[i].serviceID, &bitrate);
+					itr->second.first += (ULONGLONG)(bitrate / 8 * 1000) * chkReserve[i].durationSecond;
+				}
+			}
+		}
+	}
+
+	//ドライブレベルでのチェック
+	map<wstring, pair<ULONGLONG, vector<wstring>>>::const_iterator itr;
+	for( itr = mountMap.begin(); itr != mountMap.end(); itr++ ){
+		ULARGE_INTEGER freeBytes;
+		if( itr->second.first > 0 && GetDiskFreeSpaceEx(itr->first.c_str(), &freeBytes, NULL, NULL) != FALSE && freeBytes.QuadPart < itr->second.first ){
+			//ドライブにある古いTS順に必要なだけ消す
+			LONGLONG needFreeSize = itr->second.first - freeBytes.QuadPart;
+			multimap<LONGLONG, pair<ULONGLONG, wstring>> tsFileMap;
+			for( size_t i = 0; i < itr->second.second.size(); i++ ){
+				wstring delFolder = itr->second.second[i];
+				ChkFolderPath(delFolder);
+				WIN32_FIND_DATA findData;
+				HANDLE hFind = FindFirstFile((delFolder + L"\\*.ts").c_str(), &findData);
+				if( hFind != INVALID_HANDLE_VALUE ){
+					do{
+						if( (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0 && IsExt(findData.cFileName, L".ts") != FALSE ){
+							pair<LONGLONG, pair<ULONGLONG, wstring>> item;
+							item.first = (LONGLONG)findData.ftCreationTime.dwHighDateTime << 32 | findData.ftCreationTime.dwLowDateTime;
+							item.second.first = (ULONGLONG)findData.nFileSizeHigh << 32 | findData.nFileSizeLow;
+							item.second.second = delFolder + L"\\" + findData.cFileName;
+							tsFileMap.insert(item);
+						}
+					}while( FindNextFile(hFind, &findData) );
+					FindClose(hFind);
+				}
+			}
+			while( needFreeSize > 0 && tsFileMap.empty() == false ){
+				wstring delPath = tsFileMap.begin()->second.second;
+				wstring delPathUpper = delPath;
+				std::transform(delPathUpper.begin(), delPathUpper.end(), delPathUpper.begin(), toupper);
+				map<wstring, wstring>::const_iterator itrP = protectFile.find(delPathUpper);
+				if( itrP != protectFile.end() ){
+					_OutputDebugString(L"★No Delete(Protected) : %s", delPath.c_str());
+				}else{
+					DeleteFile(delPath.c_str());
+					needFreeSize -= tsFileMap.begin()->second.first;
+					_OutputDebugString(L"★Auto Delete2 : %s", delPath.c_str());
+					for( size_t i = 0 ; i < delExtList.size(); i++ ){
+						wstring delFolder;
+						wstring delTitle;
+						GetFileFolder(delPath, delFolder);
+						GetFileTitle(delPath, delTitle);
+						DeleteFile((delFolder + L"\\" + delTitle + delExtList[i]).c_str());
+						_OutputDebugString(L"★Auto Delete2 : %s", (delFolder + L"\\" + delTitle + delExtList[i]).c_str());
+					}
+				}
+				tsFileMap.erase(tsFileMap.begin());
+			}
+		}
+	}
 }

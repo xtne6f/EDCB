@@ -85,6 +85,31 @@ protected:
 	wstring recInfoFolder;
 };
 
+struct PARSE_REC_INFO2_ITEM
+{
+	WORD originalNetworkID;
+	WORD transportStreamID;
+	WORD serviceID;
+	SYSTEMTIME startTime;
+	wstring eventName;
+};
+
+//録画済みイベント情報ファイル「RecInfo2.txt」の読み込みと保存処理を行う
+//キーは読み込み順番号
+class CParseRecInfo2Text : public CParseText<DWORD, PARSE_REC_INFO2_ITEM>
+{
+public:
+	CParseRecInfo2Text() : keepCount(UINT_MAX) {}
+	using CParseText<DWORD, PARSE_REC_INFO2_ITEM>::SaveText;
+	DWORD Add(const PARSE_REC_INFO2_ITEM& item);
+	void SetKeepCount(DWORD keepCount = UINT_MAX) { this->keepCount = keepCount; }
+protected:
+	bool ParseLine(const wstring& parseLine, pair<DWORD, PARSE_REC_INFO2_ITEM>& item);
+	bool SaveLine(const pair<DWORD, PARSE_REC_INFO2_ITEM>& item, wstring& saveLine) const;
+	bool SelectIDToSave(vector<DWORD>& sortList) const;
+	DWORD keepCount;
+};
+
 //予約情報ファイル「Reserve.txt」の読み込みと保存処理を行う
 //キーはreserveID(非0,永続的)
 class CParseReserveText : public CParseText<DWORD, RESERVE_DATA>

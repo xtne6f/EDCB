@@ -15,6 +15,8 @@ unsigned long _Crc32(int n,  BYTE c[]);
 LONGLONG _GetRecSize( DWORD OriginalNetworkID, DWORD TransportStreamID, DWORD ServiceID, BOOL ServiceOnlyFlag, DWORD DurationSecond );
 //指定プロセスIDが起動しているか確認
 BOOL _FindOpenExeProcess(DWORD processID);
+//指定プロセス名をもつプロセスIDのリストを取得する
+vector<DWORD> _FindPidListByExeName(LPCTSTR lpExeName);
 //BCD->DWORD変換
 DWORD _BCDtoDWORD(BYTE* data, BYTE size, BYTE digit);
 //MJD->YYYY/MM/DD変換
