@@ -5085,7 +5085,7 @@ void CReserveManager::CreateDiskFreeSpace(
 				HANDLE hFind = FindFirstFile((delFolder + L"\\*.ts").c_str(), &findData);
 				if( hFind != INVALID_HANDLE_VALUE ){
 					do{
-						if( (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0 ){
+						if( (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0 && IsExt(findData.cFileName, L".ts") != FALSE ){
 							pair<LONGLONG, pair<ULONGLONG, wstring>> item;
 							item.first = (LONGLONG)findData.ftCreationTime.dwHighDateTime << 32 | findData.ftCreationTime.dwLowDateTime;
 							item.second.first = (ULONGLONG)findData.nFileSizeHigh << 32 | findData.nFileSizeLow;
