@@ -189,9 +189,6 @@
     <ClInclude Include="NotifyManager.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="NWCoopManager.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Common\HttpServer.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
@@ -384,9 +381,6 @@
       <Filter>ソース ファイル\Common</Filter>
     </ClCompile>
     <ClCompile Include="NotifyManager.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="NWCoopManager.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Common\HttpServer.cpp">

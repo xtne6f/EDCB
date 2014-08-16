@@ -593,24 +593,6 @@ typedef struct _NOTIFY_SRV_INFO{
 } NOTIFY_SRV_INFO;
 
 
-//連携サーバー情報
-typedef struct _COOP_SERVER_INFO{
-	wstring hostName;	//アドレス
-	WORD srvPort;		//サーバーアプリ待ち受けポート
-	BOOL wolFlag;		//WOLによる起動を行う
-	BYTE mac[6];		//サーバーMACアドレス
-	WORD magicSendPort;	//マジックパケット送信用ポート（0でLAN内ブロードキャスト、0以外でWANへの送信）
-	BYTE suspendMode;	//登録後のサスペンド動作
-	_COOP_SERVER_INFO(void){
-		hostName= L"";
-		srvPort = 0;
-		wolFlag = FALSE;
-		memset(mac, 0, 6);
-		magicSendPort = 0;
-		suspendMode = 0;
-	};
-} COOP_SERVER_INFO;
-
 typedef struct _GENRU_INFO{
 	BYTE nibble1;
 	BYTE nibble2;

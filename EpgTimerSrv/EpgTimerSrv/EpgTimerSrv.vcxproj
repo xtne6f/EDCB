@@ -231,7 +231,6 @@
     <ClInclude Include="HttpRecFileSend.h" />
     <ClInclude Include="HttpRequestReader.h" />
     <ClInclude Include="NotifyManager.h" />
-    <ClInclude Include="NWCoopManager.h" />
     <ClInclude Include="ReserveInfo.h" />
     <ClInclude Include="ReserveManager.h" />
     <ClInclude Include="Resource.h" />
@@ -299,7 +298,6 @@
     <ClCompile Include="HttpRecFileSend.cpp" />
     <ClCompile Include="HttpRequestReader.cpp" />
     <ClCompile Include="NotifyManager.cpp" />
-    <ClCompile Include="NWCoopManager.cpp" />
     <ClCompile Include="ReserveInfo.cpp" />
     <ClCompile Include="ReserveManager.cpp" />
     <ClCompile Include="RestApiManager.cpp" />

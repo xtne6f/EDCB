@@ -12,7 +12,6 @@
 #include "ReserveInfo.h"
 #include "TunerManager.h"
 #include "BatManager.h"
-#include "NWCoopManager.h"
 
 class CReserveManager
 {
@@ -231,7 +230,6 @@ protected:
 	CTunerManager tunerManager;
 	CBatManager batManager;
 	CTwitterManager* twitterManager;
-	CNWCoopManager nwCoopManager;
 
 	CEpgDBManager* epgDBManager;
 
@@ -318,9 +316,6 @@ protected:
 	CSendCtrlCmd sendCtrlNWTV;
 	BOOL NWTVUDP;
 	BOOL NWTVTCP;
-	BOOL useSrvCoop;
-	BOOL useResSrvCoop;
-	BOOL useEpgSrvCoop;
 
 	BOOL ngAddResSrvCoop;
 
@@ -372,7 +367,6 @@ protected:
 	void CheckErrReserve();
 	void CheckBatWork();
 	void CheckTuijyu();
-	void CheckNWSrvResCoop();
 	BOOL CheckEventRelay(EPGDB_EVENT_INFO* info, RESERVE_DATA* data, BOOL errEnd = FALSE);
 
 	BOOL CheckChgEvent(EPGDB_EVENT_INFO* info, RESERVE_DATA* data, BYTE* chgMode = NULL);
@@ -396,8 +390,6 @@ protected:
 		void* param2,
 		void* param3
 		);
-
-	void GetSrvCoopEpgList(vector<wstring>* fileList);
 
 	//TSファイルを削除して必要な空き領域を作る
 	static void CreateDiskFreeSpace(

@@ -125,14 +125,14 @@
                     <GroupBox Header="サーバー間連携" Height="202" Margin="8,248,8,0" Name="groupBox3" VerticalAlignment="Top" Width="758">
                         <Grid>
                             <CheckBox Content="サーバー間連携を有効にする" Height="16" HorizontalAlignment="Left" Margin="6,6,0,0" Name="checkBox_useSrvCoop" VerticalAlignment="Top" />
-                            <CheckBox Content="チューナー不足の予約を連携サーバーに登録する" Height="16" HorizontalAlignment="Left" Margin="33,28,0,0" Name="checkBox_useResSrvCoop" VerticalAlignment="Top" />
-                            <CheckBox Content="EPGデータを連携サーバーから取得する" Height="16" HorizontalAlignment="Left" Margin="33,50,0,0" Name="checkBox_useEpgSrvCoop" VerticalAlignment="Top" />
+                            <CheckBox Content="チューナー不足の予約を連携サーバーに登録する(停止中)" Height="16" HorizontalAlignment="Left" Margin="33,28,0,0" Name="checkBox_useResSrvCoop" VerticalAlignment="Top" IsEnabled="False" />
+                            <CheckBox Content="EPGデータを連携サーバーから取得する(停止中)" Height="16" HorizontalAlignment="Left" Margin="33,50,0,0" Name="checkBox_useEpgSrvCoop" VerticalAlignment="Top" IsEnabled="False" />
                             <CheckBox Content="他サーバーからの予約登録を許可しない" Height="16" HorizontalAlignment="Left" Margin="6,98,0,0" Name="checkBox_ngResCoop" VerticalAlignment="Top" />
                             <CheckBox Content="他サーバーからのEPGデータ取得を許可しない" Height="16" HorizontalAlignment="Left" Margin="6,120,0,0" Name="checkBox_ngEpgCoop" VerticalAlignment="Top" />
-                            <Label Content="連携サーバー" Height="28" HorizontalAlignment="Left" Margin="356,6,0,0" Name="label17" VerticalAlignment="Top" />
-                            <ListBox Height="96" HorizontalAlignment="Left" Margin="380,40,0,0" Name="listBox_coopSrv" VerticalAlignment="Top" Width="187" />
-                            <Button Content="追加" Height="23" HorizontalAlignment="Left" Margin="574,40,0,0" Name="button_add_srvcoop" VerticalAlignment="Top" Width="59" Click="button_add_srvcoop_Click" />
-                            <Button Content="削除" Height="23" HorizontalAlignment="Left" Margin="574,69,0,0" Name="button_del_srvcoop" VerticalAlignment="Top" Width="59" Click="button_del_srvcoop_Click" />
+                            <Label Content="連携サーバー" Height="28" HorizontalAlignment="Left" Margin="356,6,0,0" Name="label17" VerticalAlignment="Top" IsEnabled="False" />
+                            <ListBox Height="96" HorizontalAlignment="Left" Margin="380,40,0,0" Name="listBox_coopSrv" VerticalAlignment="Top" Width="187" IsEnabled="False" />
+                            <Button Content="追加" Height="23" HorizontalAlignment="Left" Margin="574,40,0,0" Name="button_add_srvcoop" VerticalAlignment="Top" Width="59" Click="button_add_srvcoop_Click" IsEnabled="False" />
+                            <Button Content="削除" Height="23" HorizontalAlignment="Left" Margin="574,69,0,0" Name="button_del_srvcoop" VerticalAlignment="Top" Width="59" Click="button_del_srvcoop_Click" IsEnabled="False" />
                             <Label Content="(他サーバーからの接続を許可するにはネットワーク接続を許可しておく必要があります)" Height="28" HorizontalAlignment="Left" Margin="6,143,0,0" Name="label18" VerticalAlignment="Top" />
                         </Grid>
                     </GroupBox>

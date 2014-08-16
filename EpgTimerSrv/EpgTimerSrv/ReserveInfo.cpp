@@ -12,7 +12,6 @@ CReserveInfo::CReserveInfo(void)
 	this->continueRecStart = FALSE;
 	this->pfInfoCheck = FALSE;
 	this->pfInfoAddMode = FALSE;
-	this->coopStatus = 0xFFFF;
 
 	this->openErr = FALSE;
 }
@@ -302,39 +301,6 @@ DWORD CReserveInfo::GetReserveAddStatus()
 
 	UnLock();
 	return ret;
-}
-
-BOOL CReserveInfo::IsNeedCoopAdd()
-{
-	BOOL ret = FALSE;
-	if( Lock() == FALSE ) return FALSE;
-
-	if( this->reserveData.overlapMode != 0 && this->reserveData.recSetting.recMode != 5 && this->reserveData.recSetting.recMode != 4){
-		ret = TRUE;
-	}
-
-	UnLock();
-	return ret;
-}
-
-void CReserveInfo::SetCoopAdd(wstring srv, WORD status)
-{
-	if( Lock() == FALSE ) return ;
-
-	coopAddsrv = srv;
-	coopStatus = status;
-
-	UnLock();
-}
-
-void CReserveInfo::GetCoopAddStatus(wstring& srv, WORD* status)
-{
-	if( Lock() == FALSE ) return ;
-
-	srv = coopAddsrv;
-	*status = coopStatus;
-
-	UnLock();
 }
 
 void CReserveInfo::SetOpenErred()

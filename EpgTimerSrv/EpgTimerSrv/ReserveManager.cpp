@@ -78,10 +78,7 @@ CReserveManager::CReserveManager(void)
 
 	this->reloadBankMapAlgo = 0;
 
-	this->useSrvCoop = FALSE;
 	this->ngAddResSrvCoop = FALSE;
-	this->useResSrvCoop = FALSE;
-	this->useEpgSrvCoop = FALSE;
 	this->errEndBatRun = FALSE;
 
 	this->ngShareFile = FALSE;
@@ -544,44 +541,9 @@ void CReserveManager::ReloadSetting()
 
 	this->reloadBankMapAlgo = GetPrivateProfileInt(L"SET", L"ReloadBankMapAlgo", 0, iniAppPath.c_str());
 
-	this->useSrvCoop = GetPrivateProfileInt(L"SET", L"UseSrvCoop", 0, iniAppPath.c_str());
 	this->ngAddResSrvCoop = GetPrivateProfileInt(L"SET", L"NgAddResSrvCoop", 0, iniAppPath.c_str());
-	this->nwCoopManager.StopChkReserve();
-	this->nwCoopManager.StopChkEpgFile();
-	if( this->useSrvCoop == TRUE ){
-		vector<COOP_SERVER_INFO> srvList;
-
-		count = GetPrivateProfileInt(L"COOP_SRV", L"Num", 0, iniAppPath.c_str());
-		for( int i=0; i<count; i++ ){
-			COOP_SERVER_INFO addItem;
-
-			wstring key;
-			Format(key, L"ADD%d", i);
-			WCHAR buff[256] = L"";
-			GetPrivateProfileString(L"COOP_SRV", key.c_str(), L"", buff, 256, iniAppPath.c_str());
-			addItem.hostName = buff;
-
-			Format(key, L"PORT%d", i);
-			addItem.srvPort = GetPrivateProfileInt(L"COOP_SRV", key.c_str(), 4510, iniAppPath.c_str());
-
-			srvList.push_back(addItem);
-		}
-		if(srvList.size() > 0 ){
-			this->nwCoopManager.SetCoopServer(&srvList);
-		}
-	}else{
+	if( GetPrivateProfileInt(L"SET", L"UseSrvCoop", 0, iniAppPath.c_str()) != TRUE ){
 		this->ngAddResSrvCoop = TRUE;
-	}
-	this->useResSrvCoop = GetPrivateProfileInt(L"SET", L"UseResSrvCoop", 0, iniAppPath.c_str());
-	if( this->useResSrvCoop == TRUE && this->useSrvCoop == TRUE){
-		this->nwCoopManager.StartChkReserve();
-	}
-
-	this->useEpgSrvCoop = GetPrivateProfileInt(L"SET", L"UseEpgSrvCoop", 0, iniAppPath.c_str());
-	if( this->useEpgSrvCoop == TRUE && this->useSrvCoop == TRUE){
-		vector<wstring> fileList;
-		GetSrvCoopEpgList(&fileList);
-		this->nwCoopManager.SetChkEpgFile(&fileList);
 	}
 
 	this->errEndBatRun = GetPrivateProfileInt(L"SET", L"ErrEndBatRun", 0, iniAppPath.c_str());
@@ -1609,10 +1571,6 @@ void CReserveManager::_ReloadBankMap()
 {
 	OutputDebugString(L"Start _ReloadBankMap\r\n");
 
-	if( this->useResSrvCoop == TRUE && this->useSrvCoop == TRUE){
-		this->nwCoopManager.ResetResCheck();
-	}
-
 	DWORD time = GetTickCount();
 	//まずバンクをクリア
 	map<DWORD, BANK_INFO*>::iterator itrBank;
@@ -1691,13 +1649,7 @@ void CReserveManager::_ReloadBankMap()
 		}
 	}
 
-	if( this->useResSrvCoop == TRUE && this->useSrvCoop == TRUE){
-		map<DWORD, BANK_WORK_INFO*>::iterator itrNG;
-		for( itrNG = NGReserveMap.begin(); itrNG != NGReserveMap.end(); itrNG++ ){
-			this->nwCoopManager.AddChkReserve(itrNG->second->reserveInfo);
-		}
-		this->nwCoopManager.StartChkReserve();
-	}
+	//TODO: 余裕が出来たらサーバー間連携を復活させる
 
 	_OutputDebugString(L"End _ReloadBankMap %dmsec\r\n", GetTickCount()-time);
 }
@@ -1931,10 +1883,6 @@ void CReserveManager::_ReloadBankMapAlgo(BOOL do2Pass, BOOL ignoreUseTunerID, BO
 				itrNG = this->NGReserveMap.find(itrSortNG->second->reserveID);
 				if( itrNG != this->NGReserveMap.end() ){
 					this->NGReserveMap.erase(itrNG);
-				}
-				if( this->useResSrvCoop == TRUE && this->useSrvCoop == TRUE){
-					//全部は録画できないもの
-					this->nwCoopManager.AddChkReserve(itrSortNG->second->reserveInfo);
 				}
 			}
 		}
@@ -2379,17 +2327,6 @@ UINT WINAPI CReserveManager::BankCheckThread(LPVOID param)
 			LONGLONG capTime = 0;
 			int basicOnlyFlags = 0;
 			if( sys->GetNextEpgcapTime(&capTime, -1, &basicOnlyFlags) == TRUE ){
-				if( sys->useSrvCoop == TRUE &&sys->useEpgSrvCoop == TRUE){
-					if( (GetNowI64Time()+10*60*I64_1SEC) > capTime ){
-						//10分前になったらサーバー連携EPGチェックをやめる
-						sys->nwCoopManager.StopChkEpgFile();
-					}else{
-						if( sys->_IsEpgCap() == FALSE ){
-							//EPGの取得していなければサーバー連携EPGチェックをする
-							sys->nwCoopManager.StartChkEpgFile();
-						}
-					}
-				}
 				if( (sendPreEpgCap == FALSE) && ((GetNowI64Time()+60*I64_1SEC) > capTime) ){
 					BOOL bUseTuner = FALSE;
 					vector<pair<vector<DWORD>, WORD>> tunerIDList;
@@ -2450,10 +2387,6 @@ UINT WINAPI CReserveManager::BankCheckThread(LPVOID param)
 				}
 			}else{
 				//EPGの取得予定なし
-				if( sys->useSrvCoop == TRUE &&sys->useEpgSrvCoop == TRUE){
-					//サーバー連携EPGチェックをする
-					sys->nwCoopManager.StartChkEpgFile();
-				}
 			}
 			sys->UnLock();
 		}
@@ -2511,24 +2444,6 @@ UINT WINAPI CReserveManager::BankCheckThread(LPVOID param)
 					sendPreEpgCap = FALSE;
 				}
 				sys->UnLock();
-			}
-		}
-
-		//サーバー連携チェック
-		if( sys->useSrvCoop == TRUE){
-			if( sys->useResSrvCoop == TRUE ){
-				if( sys->Lock(L"BankCheckThread10") == TRUE){
-					sys->CheckNWSrvResCoop();
-					sys->UnLock();
-				}
-			}
-			if( sys->useEpgSrvCoop == TRUE ){
-				if( sys->Lock(L"BankCheckThread11") == TRUE){
-					if( sys->nwCoopManager.IsUpdateEpgData() == TRUE){
-						sys->enableEpgReload = 1;
-					}
-					sys->UnLock();
-				}
 			}
 		}
 	}
@@ -4830,108 +4745,6 @@ BOOL CReserveManager::ChkAddReserve(RESERVE_DATA* chkData, WORD* chkStatus)
 
 	UnLock();
 	return ret;
-}
-
-void CReserveManager::CheckNWSrvResCoop()
-{
-	if( this->useResSrvCoop == FALSE || this->useSrvCoop == FALSE){
-		return;
-	}
-	BOOL chgRes = FALSE;
-	map<DWORD, CReserveInfo*>::iterator itrInfo;
-	for( itrInfo = this->reserveInfoMap.begin(); itrInfo != this->reserveInfoMap.end(); itrInfo++){
-		if( itrInfo->second->IsNeedCoopAdd() == TRUE ){
-			RESERVE_DATA data;
-			itrInfo->second->GetData(&data);
-			wstring srv = L"";
-			WORD status = 0xFFFF;
-			itrInfo->second->GetCoopAddStatus(srv, &status);
-			switch(status){
-			case 0:
-				{
-					wstring msg;
-					msg = L" サーバー連携（追加可能なサーバーがありません）";
-					if( data.comment.find(msg) == string::npos ){
-						wstring buff;
-						Separate(data.comment, L" サーバー連携", data.comment, buff);
-						data.comment += msg;
-						_ChgReserveData(&data, FALSE);
-						chgRes = TRUE;
-					}
-				}
-				break;
-			case 1:
-				{
-					wstring msg;
-					Format(msg, L" サーバー連携（%s に予約を追加しました）", srv.c_str());
-					if( data.comment.find(msg) == string::npos ){
-						wstring buff;
-						Separate(data.comment, L" サーバー連携", data.comment, buff);
-						data.comment += msg;
-						_ChgReserveData(&data, FALSE);
-						chgRes = TRUE;
-					}
-				}
-				break;
-			case 3:
-				{
-					wstring msg;
-					Format(msg, L" サーバー連携（%s に同じ予約があります）", srv.c_str());
-					if( data.comment.find(msg) == string::npos ){
-						wstring buff;
-						Separate(data.comment, L" サーバー連携", data.comment, buff);
-						data.comment += msg;
-						_ChgReserveData(&data, FALSE);
-						chgRes = TRUE;
-					}
-				}
-				break;
-			default:
-				break;
-			}
-		}
-	}
-	if( chgRes == TRUE ){
-		this->reserveText.SaveText();
-
-		_ReloadBankMap();
-
-		_SendNotifyUpdate(NOTIFY_UPDATE_RESERVE_INFO);
-	}
-}
-
-void CReserveManager::GetSrvCoopEpgList(vector<wstring>* fileList)
-{
-	if( fileList == NULL ){
-		return;
-	}
-	BOOL addBS = FALSE;
-	BOOL addCS1 = FALSE;
-	BOOL addCS2 = FALSE;
-
-	map<wstring, wstring> chkMap;
-	map<LONGLONG, CH_DATA5>::const_iterator itr;
-	for( itr = chUtil.GetMap().begin(); itr != chUtil.GetMap().end(); itr++ ){
-		if( itr->second.originalNetworkID == 0x0004 && addBS == FALSE ){
-			chkMap.insert( pair<wstring,wstring>(L"0004FFFF_epg.dat", L"0004FFFF_epg.dat") );
-			addBS = TRUE;
-		}
-		if( itr->second.originalNetworkID == 0x0006 && addCS1 == FALSE ){
-			chkMap.insert( pair<wstring,wstring>(L"0006FFFF_epg.dat", L"0006FFFF_epg.dat") );
-			addCS1 = TRUE;
-		}
-		if( itr->second.originalNetworkID == 0x0007 && addCS2 == FALSE ){
-			chkMap.insert( pair<wstring,wstring>(L"0007FFFF_epg.dat", L"0007FFFF_epg.dat") );
-			addCS2 = TRUE;
-		}
-		wstring file = L"";
-		Format(file, L"%04X%04X_epg.dat", itr->second.originalNetworkID, itr->second.transportStreamID);
-		chkMap.insert( pair<wstring,wstring>(file, file) );
-	}
-	map<wstring, wstring>::iterator itrFile;
-	for( itrFile = chkMap.begin(); itrFile != chkMap.end(); itrFile++ ){
-		fileList->push_back(itrFile->second);
-	}
 }
 
 BOOL CReserveManager::IsFindRecEventInfo(EPGDB_EVENT_INFO* info, WORD chkDay)

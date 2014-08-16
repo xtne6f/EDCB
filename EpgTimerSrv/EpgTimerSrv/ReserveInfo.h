@@ -46,10 +46,6 @@ public:
 
 	DWORD GetReserveAddStatus();
 
-	BOOL IsNeedCoopAdd();
-	void SetCoopAdd(wstring srv, WORD status);
-	void GetCoopAddStatus(wstring& srv, WORD* status);
-
 	void SetOpenErred();
 	BOOL IsOpenErred();
 protected:
@@ -67,9 +63,6 @@ protected:
 
 	BOOL pfInfoCheck;
 	BOOL pfInfoAddMode;
-
-	wstring coopAddsrv;
-	WORD coopStatus;
 
 	BOOL openErr;
 protected:
