@@ -4,208 +4,110 @@
 
 #include "../../Common/CtrlCmdDef.h"
 #include "../../Common/SendCtrlCmd.h"
+#include "../../Common/BlockLock.h"
 
 CNotifyManager::CNotifyManager(void)
 {
-	this->lockEvent = CreateEvent(NULL, FALSE, TRUE, NULL);
-	this->lockNotify = CreateEvent(NULL, FALSE, TRUE, NULL);
+	InitializeCriticalSection(&this->managerLock);
 
+	this->notifyEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	this->notifyThread = NULL;
-	this->notifyStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+	this->notifyStopFlag = FALSE;
 }
 
 CNotifyManager::~CNotifyManager(void)
 {
 	if( this->notifyThread != NULL ){
-		::SetEvent(this->notifyStopEvent);
+		this->notifyStopFlag = TRUE;
+		::SetEvent(this->notifyEvent);
 		// スレッド終了待ち
-		if ( ::WaitForSingleObject(this->notifyThread, 15000) == WAIT_TIMEOUT ){
+		if ( ::WaitForSingleObject(this->notifyThread, 20000) == WAIT_TIMEOUT ){
 			::TerminateThread(this->notifyThread, 0xffffffff);
 		}
 		CloseHandle(this->notifyThread);
 		this->notifyThread = NULL;
 	}
-	if( this->notifyStopEvent != NULL ){
-		CloseHandle(this->notifyStopEvent);
-		this->notifyStopEvent = NULL;
+	if( this->notifyEvent != NULL ){
+		CloseHandle(this->notifyEvent);
+		this->notifyEvent = NULL;
 	}
 
-	if( this->lockNotify != NULL ){
-		NotifyUnLock();
-		CloseHandle(this->lockNotify);
-		this->lockNotify = NULL;
-	}
-
-	if( this->lockEvent != NULL ){
-		UnLock();
-		CloseHandle(this->lockEvent);
-		this->lockEvent = NULL;
-	}
-}
-
-BOOL CNotifyManager::Lock(LPCWSTR log, DWORD timeOut)
-{
-	if( this->lockEvent == NULL ){
-		return FALSE;
-	}
-	//if( log != NULL ){
-	//	_OutputDebugString(L"◆%s",log);
-	//}
-	DWORD dwRet = WaitForSingleObject(this->lockEvent, timeOut);
-	if( dwRet == WAIT_ABANDONED || 
-		dwRet == WAIT_FAILED ||
-		dwRet == WAIT_TIMEOUT){
-			OutputDebugString(L"◆CNotifyManager::Lock FALSE");
-			if( log != NULL ){
-				OutputDebugString(log);
-			}
-		return FALSE;
-	}
-	return TRUE;
-}
-
-void CNotifyManager::UnLock(LPCWSTR log)
-{
-	if( this->lockEvent != NULL ){
-		SetEvent(this->lockEvent);
-	}
-	if( log != NULL ){
-		OutputDebugString(log);
-	}
-}
-
-BOOL CNotifyManager::NotifyLock(LPCWSTR log, DWORD timeOut)
-{
-	if( this->lockNotify == NULL ){
-		return FALSE;
-	}
-	if( log != NULL ){
-		OutputDebugString(log);
-	}
-	DWORD dwRet = WaitForSingleObject(this->lockNotify, timeOut);
-	if( dwRet == WAIT_ABANDONED || 
-		dwRet == WAIT_FAILED ||
-		dwRet == WAIT_TIMEOUT){
-			OutputDebugString(L"◆CNotifyManager::NotifyLock FALSE");
-		return FALSE;
-	}
-	return TRUE;
-}
-
-void CNotifyManager::NotifyUnLock(LPCWSTR log)
-{
-	if( this->lockNotify != NULL ){
-		SetEvent(this->lockNotify);
-	}
-	if( log != NULL ){
-		OutputDebugString(log);
-	}
+	DeleteCriticalSection(&this->managerLock);
 }
 
 void CNotifyManager::RegistGUI(DWORD processID)
 {
-	if( Lock(L"RegistGUI") == FALSE ) return;
+	CBlockLock lock(&this->managerLock);
 
-	if( NotifyLock() == TRUE ){
+	{
 		this->registGUIMap.insert(pair<DWORD,DWORD>(processID,processID));
-		NotifyUnLock();
 	}
-
-	UnLock();
 }
 
-void CNotifyManager::RegistTCP(REGIST_TCP_INFO* info)
+void CNotifyManager::RegistTCP(const REGIST_TCP_INFO& info)
 {
-	if( Lock(L"RegistTCP") == FALSE ) return;
+	CBlockLock lock(&this->managerLock);
 
-	if( NotifyLock() == TRUE ){
+	{
 		wstring key = L"";
-		Format(key, L"%s:%d", info->ip.c_str(), info->port);
+		Format(key, L"%s:%d", info.ip.c_str(), info.port);
 
-		this->registTCPMap.insert(pair<wstring,REGIST_TCP_INFO>(key,*info));
-		NotifyUnLock();
+		this->registTCPMap.insert(pair<wstring,REGIST_TCP_INFO>(key,info));
 	}
-
-	UnLock();
 }
 
 void CNotifyManager::UnRegistGUI(DWORD processID)
 {
-	if( Lock(L"UnRegistGUI") == FALSE ) return;
+	CBlockLock lock(&this->managerLock);
 
-	if( NotifyLock() == TRUE ){
+	{
 		map<DWORD,DWORD>::iterator itr;
 		itr = this->registGUIMap.find(processID);
 		if( itr != this->registGUIMap.end() ){
 			this->registGUIMap.erase(itr);
 		}
-		NotifyUnLock();
 	}
-
-	UnLock();
 }
 
-void CNotifyManager::UnRegistTCP(REGIST_TCP_INFO* info)
+void CNotifyManager::UnRegistTCP(const REGIST_TCP_INFO& info)
 {
-	if( Lock(L"UnRegistTCP") == FALSE ) return;
+	CBlockLock lock(&this->managerLock);
 
-	if( NotifyLock() == TRUE ){
+	{
 		wstring key = L"";
-		Format(key, L"%s:%d", info->ip.c_str(), info->port);
+		Format(key, L"%s:%d", info.ip.c_str(), info.port);
 
 		map<wstring,REGIST_TCP_INFO>::iterator itr;
 		itr = this->registTCPMap.find(key);
 		if( itr != this->registTCPMap.end() ){
 			this->registTCPMap.erase(itr);
 		}
-		NotifyUnLock();
 	}
-
-	UnLock();
 }
 
 void CNotifyManager::GetRegistGUI(map<DWORD, DWORD>* registGUI)
 {
-	if( Lock(L"GetRegistGUI") == FALSE ) return;
+	CBlockLock lock(&this->managerLock);
 
-	if( NotifyLock() == TRUE && registGUI != NULL){
+	if( registGUI != NULL){
 		*registGUI = registGUIMap;
-		NotifyUnLock();
 	}
-
-	UnLock();
 }
 
 void CNotifyManager::GetRegistTCP(map<wstring, REGIST_TCP_INFO>* registTCP)
 {
-	if( Lock(L"GetRegistGUI") == FALSE ) return;
+	CBlockLock lock(&this->managerLock);
 
-	if( NotifyLock() == TRUE && registTCP != NULL){
+	if( registTCP != NULL){
 		*registTCP = registTCPMap;
-		NotifyUnLock();
 	}
-
-	UnLock();
-}
-
-void CNotifyManager::AddNotifyLog(NOTIFY_SRV_INFO info)
-{
-	if( Lock(L"AddNotifyStatus") == FALSE ) return;
-
-	if( NotifyLock() == TRUE ){
-		this->notifyList.push_back(info);
-		NotifyUnLock();
-	}
-	_SendNotify();
-
-	UnLock();
 }
 
 void CNotifyManager::AddNotify(DWORD status)
 {
-	if( Lock(L"AddNotify") == FALSE ) return;
+	CBlockLock lock(&this->managerLock);
 
-	if( NotifyLock() == TRUE ){
+	{
 		NOTIFY_SRV_INFO info;
 		GetLocalTime(&info.time);
 		info.notifyID = status;
@@ -219,67 +121,47 @@ void CNotifyManager::AddNotify(DWORD status)
 		//同じものがあるときは追加しない
 		if( find == FALSE ){
 			this->notifyList.push_back(info);
+			_SendNotify();
 		}
-		NotifyUnLock();
 	}
-	_SendNotify();
-
-	UnLock();
 }
 
 void CNotifyManager::AddNotifySrvStatus(DWORD status)
 {
-	if( Lock(L"AddNotifySrvStatus") == FALSE ) return;
+	CBlockLock lock(&this->managerLock);
 
-	if( NotifyLock() == TRUE ){
+	{
 		NOTIFY_SRV_INFO info;
 		info.notifyID = NOTIFY_UPDATE_SRV_STATUS;
 		GetLocalTime(&info.time);
 		info.param1 = status;
 
 		this->notifyList.push_back(info);
-
-		NotifyUnLock();
 	}
 	_SendNotify();
-
-	UnLock();
 }
 
 void CNotifyManager::AddNotifyMsg(DWORD notifyID, wstring msg)
 {
-	if( Lock(L"AddNotifyMsg") == FALSE ) return;
+	CBlockLock lock(&this->managerLock);
 
-	if( NotifyLock() == TRUE ){
+	{
 		NOTIFY_SRV_INFO info;
 		info.notifyID = notifyID;
 		GetLocalTime(&info.time);
 		info.param4 = msg;
 
 		this->notifyList.push_back(info);
-
-		NotifyUnLock();
 	}
 	_SendNotify();
-
-	UnLock();
 }
 
 void CNotifyManager::_SendNotify()
 {
-	if( this->notifyThread != NULL ){
-		if( ::WaitForSingleObject(this->notifyThread, 0) != WAIT_TIMEOUT ){
-			//終わっている
-			CloseHandle(this->notifyThread);
-			this->notifyThread = NULL;
-		}
-	}
 	if( this->notifyThread == NULL ){
-		ResetEvent(this->notifyStopEvent);
-		this->notifyThread = (HANDLE)_beginthreadex(NULL, 0, SendNotifyThread, (LPVOID)this, CREATE_SUSPENDED, NULL);
-		SetThreadPriority( this->notifyThread, THREAD_PRIORITY_NORMAL );
-		ResumeThread(this->notifyThread);
+		this->notifyThread = (HANDLE)_beginthreadex(NULL, 0, SendNotifyThread, this, 0, NULL);
 	}
+	SetEvent(this->notifyEvent);
 }
 
 UINT WINAPI CNotifyManager::SendNotifyThread(LPVOID param)
@@ -287,33 +169,64 @@ UINT WINAPI CNotifyManager::SendNotifyThread(LPVOID param)
 	CNotifyManager* sys = (CNotifyManager*)param;
 	CSendCtrlCmd sendCtrl;
 	map<DWORD,DWORD>::iterator itr;
-	DWORD wait = 0;
+	BOOL wait1Sec = FALSE;
+	BOOL waitNotify = FALSE;
+	DWORD waitNotifyTick;
 	while(1){
 		map<DWORD, DWORD> registGUI;
 		map<wstring, REGIST_TCP_INFO> registTCP;
 		NOTIFY_SRV_INFO notifyInfo;
 
-		if( ::WaitForSingleObject(sys->notifyStopEvent, wait) != WAIT_TIMEOUT ){
+		if( wait1Sec != FALSE ){
+			wait1Sec = FALSE;
+			Sleep(1000);
+		}
+		if( ::WaitForSingleObject(sys->notifyEvent, INFINITE) != WAIT_OBJECT_0 || sys->notifyStopFlag != FALSE ){
 			//キャンセルされた
 			break;
 		}
 		//現在の情報取得
-		if( sys->NotifyLock() == FALSE ) return 0;
-		registGUI = sys->registGUIMap;
-		registTCP = sys->registTCPMap;
-		if( sys->notifyList.size() > 0 ){
-			notifyInfo = sys->notifyList[0];
-			sys->notifyList.erase(sys->notifyList.begin());
-		}else{
-			//リストないので終了
-			sys->NotifyUnLock();
-			return 0;
+		{
+			CBlockLock lock(&sys->managerLock);
+			if( sys->notifyList.empty() ){
+				continue;
+			}
+			registGUI = sys->registGUIMap;
+			registTCP = sys->registTCPMap;
+			if( waitNotify != FALSE && GetTickCount() - waitNotifyTick < 5000 ){
+				vector<NOTIFY_SRV_INFO>::const_iterator itrNotify;
+				for( itrNotify = sys->notifyList.begin(); itrNotify != sys->notifyList.end(); itrNotify++ ){
+					if( itrNotify->notifyID <= 100 ){
+						break;
+					}
+				}
+				if( itrNotify == sys->notifyList.end() ){
+					SetEvent(sys->notifyEvent);
+					wait1Sec = TRUE;
+					continue;
+				}
+				//NotifyID<=100の通知は遅延させず先に送る
+				notifyInfo = *itrNotify;
+				sys->notifyList.erase(itrNotify);
+			}else{
+				waitNotify = FALSE;
+				notifyInfo = sys->notifyList[0];
+				sys->notifyList.erase(sys->notifyList.begin());
+				//NotifyID>100の通知は遅延させる
+				if( notifyInfo.notifyID > 100 ){
+					waitNotify = TRUE;
+					waitNotifyTick = GetTickCount();
+				}
+			}
+			if( sys->notifyList.empty() == false ){
+				//次の通知がある
+				SetEvent(sys->notifyEvent);
+			}
 		}
-		sys->NotifyUnLock();
 
 		vector<DWORD> errID;
 		for( itr = registGUI.begin(); itr != registGUI.end(); itr++){
-			if( ::WaitForSingleObject(sys->notifyStopEvent, 0) != WAIT_TIMEOUT ){
+			if( sys->notifyStopFlag != FALSE ){
 				//キャンセルされた
 				break;
 			}
@@ -325,7 +238,7 @@ UINT WINAPI CNotifyManager::SendNotifyThread(LPVOID param)
 
 				sendCtrl.SetSendMode(FALSE);
 				sendCtrl.SetPipeSetting(waitEvent, pipe);
-				sendCtrl.SetConnectTimeOut(5*1000);
+				sendCtrl.SetConnectTimeOut(10*1000);
 				DWORD err = sendCtrl.SendGUINotifyInfo2(&notifyInfo);
 				if( err == CMD_NON_SUPPORT ){
 					switch(notifyInfo.notifyID){
@@ -356,14 +269,14 @@ UINT WINAPI CNotifyManager::SendNotifyThread(LPVOID param)
 		map<wstring, REGIST_TCP_INFO>::iterator itrTCP;
 		vector<wstring> errIP;
 		for( itrTCP = registTCP.begin(); itrTCP != registTCP.end(); itrTCP++){
-			if( ::WaitForSingleObject(sys->notifyStopEvent, 0) != WAIT_TIMEOUT ){
+			if( sys->notifyStopFlag != FALSE ){
 				//キャンセルされた
 				break;
 			}
 
 			sendCtrl.SetSendMode(TRUE);
 			sendCtrl.SetNWSetting(itrTCP->second.ip, itrTCP->second.port);
-			sendCtrl.SetConnectTimeOut(5*1000);
+			sendCtrl.SetConnectTimeOut(10*1000);
 
 			DWORD err = sendCtrl.SendGUINotifyInfo2(&notifyInfo);
 			if( err == CMD_NON_SUPPORT ){
@@ -390,18 +303,7 @@ UINT WINAPI CNotifyManager::SendNotifyThread(LPVOID param)
 		}
 
 		//送信できなかったもの削除
-		if( sys->NotifyLock() == FALSE ) return 0;
-
-		if( notifyInfo.notifyID <= 100 ){
-			wait = 0;
-		}else{
-			wait = 0;
-			if( sys->notifyList.size() > 0 ){
-				if( sys->notifyList[0].notifyID > 100 ){
-					wait = 5*1000;
-				}
-			}
-		}
+		CBlockLock lock(&sys->managerLock);
 
 		for( size_t i=0; i<errID.size(); i++ ){
 			itr = sys->registGUIMap.find(errID[i]);
@@ -416,7 +318,6 @@ UINT WINAPI CNotifyManager::SendNotifyThread(LPVOID param)
 				sys->registTCPMap.erase(itrTCP);
 			}
 		}
-		sys->NotifyUnLock();
 	}
 
 	return 0;

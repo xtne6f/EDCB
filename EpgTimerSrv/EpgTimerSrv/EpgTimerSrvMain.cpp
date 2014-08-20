@@ -1028,7 +1028,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 			REGIST_TCP_INFO val;
 			if( ReadVALUE( &val, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
 				resParam->param = CMD_SUCCESS;
-				sys->notifyManager.RegistTCP(&val);
+				sys->notifyManager.RegistTCP(val);
 
 				sys->reserveManager.ChangeRegist();
 			}
@@ -1039,7 +1039,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 			REGIST_TCP_INFO val;
 			if( ReadVALUE( &val, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
 				resParam->param = CMD_SUCCESS;
-				sys->notifyManager.UnRegistTCP(&val);
+				sys->notifyManager.UnRegistTCP(val);
 			}
 		}
 		break;
