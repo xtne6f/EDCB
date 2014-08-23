@@ -2554,7 +2554,7 @@ void CReserveManager::CheckEndReserve()
 						batInfo.reserveInfo = data;
 						batInfo.recFileInfo = item;
 
-						this->batManager.AddBatWork(&batInfo);
+						this->batManager.AddBatWork(batInfo);
 					}else{
 						suspendMode = data.recSetting.suspendMode;
 						rebootFlag = data.recSetting.rebootFlag;
@@ -2727,9 +2727,7 @@ void CReserveManager::CheckBatWork()
 
 		}
 
-		if( this->batManager.IsWorking() == FALSE ){
-			this->batManager.StartWork();
-		}
+		this->batManager.StartWork();
 	}else{
 		if( this->batManager.IsWorking() == FALSE ){
 			BYTE suspendMode = 0;
