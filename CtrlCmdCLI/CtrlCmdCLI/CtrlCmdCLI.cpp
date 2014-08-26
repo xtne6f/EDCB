@@ -1084,11 +1084,9 @@ void CtrlCmdUtil::SetPipeSetting(
 	)
 {
 	pin_ptr<const wchar_t> eventNamePin = PtrToStringChars(eventName);
-	std::wstring _eventName(eventNamePin);
 	pin_ptr<const wchar_t> pipeNamePin = PtrToStringChars(pipeName);
-	std::wstring _pipeName(pipeNamePin);
 
-	this->sendCmd->SetPipeSetting(_eventName, _pipeName);
+	this->sendCmd->SetPipeSetting(eventNamePin, pipeNamePin);
 }
 
 /// <summary>

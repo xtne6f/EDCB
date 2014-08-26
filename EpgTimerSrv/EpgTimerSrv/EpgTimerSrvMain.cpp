@@ -451,12 +451,7 @@ BOOL CEpgTimerSrvMain::QuerySleep(BYTE rebootFlag, BYTE suspendMode)
 
 	for( itrReg = registGUI.begin(); itrReg != registGUI.end(); itrReg++){
 		if( _FindOpenExeProcess(itrReg->first) == TRUE ){
-			wstring pipe;
-			wstring waitEvent;
-			Format(pipe, L"%s%d", CMD2_GUI_CTRL_PIPE, itrReg->first);
-			Format(waitEvent, L"%s%d", CMD2_GUI_CTRL_WAIT_CONNECT, itrReg->first);
-
-			sendCtrl.SetPipeSetting(waitEvent, pipe);
+			sendCtrl.SetPipeSetting(CMD2_GUI_CTRL_WAIT_CONNECT, CMD2_GUI_CTRL_PIPE, itrReg->first);
 			sendCtrl.SetConnectTimeOut(5*1000);
 			if( sendCtrl.SendGUIQuerySuspend(rebootFlag, suspendMode) == CMD_SUCCESS ){
 				ret = TRUE;
@@ -479,12 +474,7 @@ BOOL CEpgTimerSrvMain::QueryReboot(BYTE rebootFlag)
 
 	for( itrReg = registGUI.begin(); itrReg != registGUI.end(); itrReg++){
 		if( _FindOpenExeProcess(itrReg->first) == TRUE ){
-			wstring pipe;
-			wstring waitEvent;
-			Format(pipe, L"%s%d", CMD2_GUI_CTRL_PIPE, itrReg->first);
-			Format(waitEvent, L"%s%d", CMD2_GUI_CTRL_WAIT_CONNECT, itrReg->first);
-
-			sendCtrl.SetPipeSetting(waitEvent, pipe);
+			sendCtrl.SetPipeSetting(CMD2_GUI_CTRL_WAIT_CONNECT, CMD2_GUI_CTRL_PIPE, itrReg->first);
 			sendCtrl.SetConnectTimeOut(5*1000);
 			if( sendCtrl.SendGUIQueryReboot(rebootFlag) == CMD_SUCCESS ){
 				ret = TRUE;

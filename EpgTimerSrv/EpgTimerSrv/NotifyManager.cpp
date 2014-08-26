@@ -231,13 +231,8 @@ UINT WINAPI CNotifyManager::SendNotifyThread(LPVOID param)
 				break;
 			}
 			if( _FindOpenExeProcess(itr->first) == TRUE ){
-				wstring pipe;
-				wstring waitEvent;
-				Format(pipe, L"%s%d", CMD2_GUI_CTRL_PIPE, itr->first);
-				Format(waitEvent, L"%s%d", CMD2_GUI_CTRL_WAIT_CONNECT, itr->first);
-
 				sendCtrl.SetSendMode(FALSE);
-				sendCtrl.SetPipeSetting(waitEvent, pipe);
+				sendCtrl.SetPipeSetting(CMD2_GUI_CTRL_WAIT_CONNECT, CMD2_GUI_CTRL_PIPE, itr->first);
 				sendCtrl.SetConnectTimeOut(10*1000);
 				DWORD err = sendCtrl.SendGUINotifyInfo2(&notifyInfo);
 				if( err == CMD_NON_SUPPORT ){

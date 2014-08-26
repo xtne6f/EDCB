@@ -71,13 +71,7 @@ BOOL CFileStreamingUtil::OpenTimeShift(LPCWSTR filePath, DWORD processID,DWORD e
 	}
 	this->timeShiftUtil.StopTimeShift();
 
-	wstring pipeName = L"";
-	wstring waitEventName = L"";
-		
-	Format(pipeName, L"%s%d", CMD2_VIEW_CTRL_PIPE, processID );
-	Format(waitEventName, L"%s%d", CMD2_VIEW_CTRL_WAIT_CONNECT, processID );
-
-	cmd.SetPipeSetting(waitEventName, pipeName);
+	cmd.SetPipeSetting(CMD2_VIEW_CTRL_WAIT_CONNECT, CMD2_VIEW_CTRL_PIPE, processID);
 	cmd.SetConnectTimeOut(3*1000);
 
 	BOOL ret = FALSE;

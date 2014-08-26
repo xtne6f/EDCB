@@ -27,8 +27,17 @@ public:
 	// eventName	[IN]排他制御用Eventの名前
 	// pipeName		[IN]接続パイプの名前
 	void SetPipeSetting(
-		wstring eventName,
-		wstring pipeName
+		LPCWSTR eventName,
+		LPCWSTR pipeName
+		);
+
+	//名前付きパイプモード時の接続先を設定（接尾にプロセスIDを伴うタイプ）
+	//引数：
+	// pid			[IN]プロセスID
+	void SetPipeSetting(
+		LPCWSTR eventName,
+		LPCWSTR pipeName,
+		DWORD pid
 		);
 
 	//TCP/IPモード時の接続先を設定

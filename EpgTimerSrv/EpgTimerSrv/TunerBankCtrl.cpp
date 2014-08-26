@@ -705,11 +705,7 @@ BOOL CTunerBankCtrl::OpenTuner(BOOL viewMode, SET_CH_INFO* initCh)
 		ret = OpenTunerExe(this->recExePath.c_str(), this->bonFileName.c_str(), tunerID, this->recMinWake, noView, noNW, UDP, TCP, this->processPriority, registGUIMap, &this->processID);
 	}
 	if( ret == TRUE ){
-		wstring pipeName = L"";
-		wstring eventName = L"";
-		Format(pipeName, L"%s%d", CMD2_VIEW_CTRL_PIPE, this->processID);
-		Format(eventName, L"%s%d", CMD2_VIEW_CTRL_WAIT_CONNECT, this->processID);
-		this->sendCtrl.SetPipeSetting(eventName, pipeName);
+		this->sendCtrl.SetPipeSetting(CMD2_VIEW_CTRL_WAIT_CONNECT, CMD2_VIEW_CTRL_PIPE, this->processID);
 
 		this->sendCtrl.SendViewSetID(this->tunerID);
 
@@ -726,11 +722,7 @@ BOOL CTunerBankCtrl::OpenTuner(BOOL viewMode, SET_CH_INFO* initCh)
 			GetFileName(this->recExePath, exeName);
 			vector<DWORD> IDList = _FindPidListByExeName(exeName.c_str());
 			for(size_t i=0; i<IDList.size(); i++ ){
-				wstring pipeName = L"";
-				wstring eventName = L"";
-				Format(pipeName, L"%s%d", CMD2_VIEW_CTRL_PIPE, IDList[i]);
-				Format(eventName, L"%s%d", CMD2_VIEW_CTRL_WAIT_CONNECT, IDList[i]);
-				this->sendCtrl.SetPipeSetting(eventName, pipeName);
+				this->sendCtrl.SetPipeSetting(CMD2_VIEW_CTRL_WAIT_CONNECT, CMD2_VIEW_CTRL_PIPE, IDList[i]);
 
 				wstring bonDriver = L"";
 				this->sendCtrl.SendViewGetBonDrivere(&bonDriver);
@@ -769,11 +761,7 @@ BOOL CTunerBankCtrl::OpenTuner(BOOL viewMode, SET_CH_INFO* initCh)
 
 				for(size_t i=0; i<IDList.size(); i++ ){
 					CSendCtrlCmd send;
-					wstring pipeName = L"";
-					wstring eventName = L"";
-					Format(pipeName, L"%s%d", CMD2_TVTEST_CTRL_PIPE, IDList[i]);
-					Format(eventName, L"%s%d", CMD2_TVTEST_CTRL_WAIT_CONNECT, IDList[i]);
-					send.SetPipeSetting(eventName, pipeName);
+					send.SetPipeSetting(CMD2_TVTEST_CTRL_WAIT_CONNECT, CMD2_TVTEST_CTRL_PIPE, IDList[i]);
 					send.SetConnectTimeOut(1000);
 
 					wstring bonDriver = L"";
@@ -787,11 +775,7 @@ BOOL CTunerBankCtrl::OpenTuner(BOOL viewMode, SET_CH_INFO* initCh)
 								ret = OpenTunerExe(this->recExePath.c_str(), this->bonFileName.c_str(), tunerID, this->recMinWake, noView, noNW, UDP, TCP, this->processPriority, registGUIMap, &this->processID);
 							}
 							if( ret == TRUE ){
-								wstring pipeName = L"";
-								wstring eventName = L"";
-								Format(pipeName, L"%s%d", CMD2_VIEW_CTRL_PIPE, this->processID);
-								Format(eventName, L"%s%d", CMD2_VIEW_CTRL_WAIT_CONNECT, this->processID);
-								this->sendCtrl.SetPipeSetting(eventName, pipeName);
+								this->sendCtrl.SetPipeSetting(CMD2_VIEW_CTRL_WAIT_CONNECT, CMD2_VIEW_CTRL_PIPE, this->processID);
 
 								this->sendCtrl.SendViewSetID(this->tunerID);
 
@@ -811,11 +795,7 @@ BOOL CTunerBankCtrl::OpenTuner(BOOL viewMode, SET_CH_INFO* initCh)
 				GetFileName(this->recExePath, exeName);
 				IDList = _FindPidListByExeName(exeName.c_str());
 				for(size_t i=0; i<IDList.size(); i++ ){
-					wstring pipeName = L"";
-					wstring eventName = L"";
-					Format(pipeName, L"%s%d", CMD2_VIEW_CTRL_PIPE, IDList[i]);
-					Format(eventName, L"%s%d", CMD2_VIEW_CTRL_WAIT_CONNECT, IDList[i]);
-					this->sendCtrl.SetPipeSetting(eventName, pipeName);
+					this->sendCtrl.SetPipeSetting(CMD2_VIEW_CTRL_WAIT_CONNECT, CMD2_VIEW_CTRL_PIPE, IDList[i]);
 
 					wstring bonDriver = L"";
 					this->sendCtrl.SendViewGetBonDrivere(&bonDriver);
@@ -852,11 +832,7 @@ BOOL CTunerBankCtrl::OpenTuner(BOOL viewMode, SET_CH_INFO* initCh)
 				GetFileName(this->recExePath, exeName);
 				IDList = _FindPidListByExeName(exeName.c_str());
 				for(size_t i=0; i<IDList.size(); i++ ){
-					wstring pipeName = L"";
-					wstring eventName = L"";
-					Format(pipeName, L"%s%d", CMD2_VIEW_CTRL_PIPE, IDList[i]);
-					Format(eventName, L"%s%d", CMD2_VIEW_CTRL_WAIT_CONNECT, IDList[i]);
-					this->sendCtrl.SetPipeSetting(eventName, pipeName);
+					this->sendCtrl.SetPipeSetting(CMD2_VIEW_CTRL_WAIT_CONNECT, CMD2_VIEW_CTRL_PIPE, IDList[i]);
 
 					wstring bonDriver = L"";
 					this->sendCtrl.SendViewGetBonDrivere(&bonDriver);
@@ -2221,13 +2197,8 @@ BOOL CTunerBankCtrl::OpenTunerExe(
 		if( WaitForSingleObject(openWaitEvent, INFINITE) == WAIT_OBJECT_0 ){
 			map<DWORD, DWORD>::const_iterator itr;
 			for( itr = registGUIMap.begin(); itr != registGUIMap.end(); itr++ ){
-				wstring pipeName;
-				wstring waitEventName;
-				Format(pipeName, L"%s%d", CMD2_GUI_CTRL_PIPE, itr->first);
-				Format(waitEventName, L"%s%d", CMD2_GUI_CTRL_WAIT_CONNECT, itr->first);
-
 				CSendCtrlCmd cmdSend;
-				cmdSend.SetPipeSetting(waitEventName, pipeName);
+				cmdSend.SetPipeSetting(CMD2_GUI_CTRL_WAIT_CONNECT, CMD2_GUI_CTRL_PIPE, itr->first);
 				cmdSend.SetConnectTimeOut(20 * 1000);
 				if( cmdSend.SendGUIExecute(strExecute, pid) == CMD_SUCCESS ){
 					bRet = TRUE;
@@ -2251,13 +2222,8 @@ BOOL CTunerBankCtrl::OpenTunerExe(
 
 			if( bRet != FALSE ){
 				//ID‚ÌƒZƒbƒg
-				wstring pipeName;
-				wstring waitEventName;
-				Format(pipeName, L"%s%d", CMD2_VIEW_CTRL_PIPE, *pid);
-				Format(waitEventName, L"%s%d", CMD2_VIEW_CTRL_WAIT_CONNECT, *pid);
-
 				CSendCtrlCmd cmdSend;
-				cmdSend.SetPipeSetting(waitEventName, pipeName);
+				cmdSend.SetPipeSetting(CMD2_VIEW_CTRL_WAIT_CONNECT, CMD2_VIEW_CTRL_PIPE, *pid);
 				bRet = FALSE;
 				for( int i = 0; i < 6; i++ ){
 					Sleep(1000);
@@ -2304,13 +2270,9 @@ void CTunerBankCtrl::CloseTunerExe(
 	if( _FindOpenExeProcess(pid) == FALSE ){
 		return;
 	}
-	wstring pipeName;
-	wstring waitEventName;
-	Format(pipeName, L"%s%d", CMD2_VIEW_CTRL_PIPE, pid);
-	Format(waitEventName, L"%s%d", CMD2_VIEW_CTRL_WAIT_CONNECT, pid);
 
 	CSendCtrlCmd cmdSend;
-	cmdSend.SetPipeSetting(waitEventName, pipeName);
+	cmdSend.SetPipeSetting(CMD2_VIEW_CTRL_WAIT_CONNECT, CMD2_VIEW_CTRL_PIPE, pid);
 	cmdSend.SendViewAppClose();
 	for( int i = 0; i < 60; i++ ){
 		if( _FindOpenExeProcess(pid) == FALSE ){

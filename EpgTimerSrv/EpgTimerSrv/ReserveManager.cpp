@@ -4505,11 +4505,7 @@ BOOL CReserveManager::SetNWTVCh(
 			this->NWTVPID = PID;
 			ret = TRUE;
 
-			wstring pipeName = L"";
-			wstring eventName = L"";
-			Format(pipeName, L"%s%d", CMD2_VIEW_CTRL_PIPE, this->NWTVPID);
-			Format(eventName, L"%s%d", CMD2_VIEW_CTRL_WAIT_CONNECT, this->NWTVPID);
-			this->sendCtrlNWTV.SetPipeSetting(eventName, pipeName);
+			this->sendCtrlNWTV.SetPipeSetting(CMD2_VIEW_CTRL_WAIT_CONNECT, CMD2_VIEW_CTRL_PIPE, this->NWTVPID);
 			this->sendCtrlNWTV.SendViewSetCh(&initCh);
 		}
 	}

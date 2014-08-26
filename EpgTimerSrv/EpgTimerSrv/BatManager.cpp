@@ -154,13 +154,7 @@ UINT WINAPI CBatManager::BatWorkThread(LPVOID param)
 						sys->notifyManager->GetRegistGUI(&registGUIMap);
 					}
 					for( itr = registGUIMap.begin(); itr != registGUIMap.end(); itr++ ){
-						wstring pipeName = L"";
-						wstring waitEventName = L"";
-
-						Format(pipeName, L"%s%d", CMD2_GUI_CTRL_PIPE, itr->first );
-						Format(waitEventName, L"%s%d", CMD2_GUI_CTRL_WAIT_CONNECT, itr->first );
-
-						sendCtrl.SetPipeSetting(waitEventName, pipeName);
+						sendCtrl.SetPipeSetting(CMD2_GUI_CTRL_WAIT_CONNECT, CMD2_GUI_CTRL_PIPE, itr->first);
 
 						if( sendCtrl.SendGUIExecute(strExecute.c_str(), &PID) == CMD_SUCCESS ){
 							send = TRUE;
