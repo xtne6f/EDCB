@@ -207,9 +207,9 @@ DWORD GetVALUESize( RESERVE_DATA* val )
 	size += GetVALUESize(val->eventID);
 	size += GetVALUESize(val->comment);
 	size += GetVALUESize(val->reserveID);
-	size += GetVALUESize(val->recWaitFlag);
+	size += GetVALUESize((BYTE)0);
 	size += GetVALUESize(val->overlapMode);
-	size += GetVALUESize(val->recFilePath);
+	size += GetVALUESize(wstring());
 	size += GetVALUESize(&val->startTimeEpg);
 	size += GetVALUESize(&val->recSetting);
 	size += GetVALUESize(val->reserveStatus);
@@ -239,9 +239,9 @@ BOOL WriteVALUE( RESERVE_DATA* val, BYTE* buff, DWORD buffSize, DWORD* writeSize
 		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->eventID );
 		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->comment );
 		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->reserveID );
-		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->recWaitFlag );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, (BYTE)0 );
 		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->overlapMode );
-		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->recFilePath );
+		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, wstring() );
 		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->startTimeEpg );
 		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->recSetting );
 		WRITE_VALUE_OR_FAIL( buff, buffSize, pos, size, val->reserveStatus );
@@ -278,9 +278,11 @@ BOOL ReadVALUE( RESERVE_DATA* val, BYTE* buff, DWORD buffSize, DWORD* readSize )
 		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->eventID );
 		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->comment );
 		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->reserveID );
-		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->recWaitFlag );
+		BYTE bPadding;
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &bPadding );
 		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->overlapMode );
-		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->recFilePath );
+		wstring strPadding;
+		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &strPadding );
 		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->startTimeEpg );
 		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->recSetting );
 		READ_VALUE_OR_FAIL( buff, buffSize, pos, size, &val->reserveStatus );
@@ -3411,9 +3413,7 @@ void CopyOldNew(OLD_RESERVE_DATA* src, RESERVE_DATA* dest)
 	dest->eventID = src->usEventID;
 	dest->comment = src->strComment;
 	dest->reserveID = src->dwReserveID;
-	dest->recWaitFlag = 0;
 	dest->overlapMode = 0;
-	dest->recFilePath = L"";
 	dest->startTimeEpg = src->StartTime;
 	dest->recSetting.recMode = (BYTE)src->dwRecMode;
 	dest->recSetting.priority = src->ucPriority;

@@ -135,9 +135,9 @@ DWORD GetVALUESize2(WORD ver, RESERVE_DATA* val )
 	size += GetVALUESize2(ver,val->eventID);
 	size += GetVALUESize2(ver,val->comment);
 	size += GetVALUESize2(ver,val->reserveID);
-	size += GetVALUESize2(ver,val->recWaitFlag);
+	size += GetVALUESize2(ver,(BYTE)0);
 	size += GetVALUESize2(ver,val->overlapMode);
-	size += GetVALUESize2(ver,val->recFilePath);
+	size += GetVALUESize2(ver,wstring());
 	size += GetVALUESize2(ver,&val->startTimeEpg);
 	size += GetVALUESize2(ver,&val->recSetting);
 	size += GetVALUESize2(ver,val->reserveStatus);
@@ -147,7 +147,7 @@ DWORD GetVALUESize2(WORD ver, RESERVE_DATA* val )
 	}
 
 	size += GetVALUESize2(ver,&val->recFileNameList);
-	size += GetVALUESize2(ver,val->param1);
+	size += GetVALUESize2(ver,(DWORD)0);
 
 	if( ver>=5 ){
 		goto CMD_END;
@@ -179,9 +179,9 @@ BOOL WriteVALUE2(WORD ver, RESERVE_DATA* val, BYTE* buff, DWORD buffSize, DWORD*
 		WRITE_VALUE2_OR_FAIL(ver, buff, buffSize, pos, size, val->eventID);
 		WRITE_VALUE2_OR_FAIL(ver, buff, buffSize, pos, size, val->comment);
 		WRITE_VALUE2_OR_FAIL(ver, buff, buffSize, pos, size, val->reserveID);
-		WRITE_VALUE2_OR_FAIL(ver, buff, buffSize, pos, size, val->recWaitFlag);
+		WRITE_VALUE2_OR_FAIL(ver, buff, buffSize, pos, size, (BYTE)0);
 		WRITE_VALUE2_OR_FAIL(ver, buff, buffSize, pos, size, val->overlapMode);
-		WRITE_VALUE2_OR_FAIL(ver, buff, buffSize, pos, size, val->recFilePath);
+		WRITE_VALUE2_OR_FAIL(ver, buff, buffSize, pos, size, wstring());
 		WRITE_VALUE2_OR_FAIL(ver, buff, buffSize, pos, size, &val->startTimeEpg);
 		WRITE_VALUE2_OR_FAIL(ver, buff, buffSize, pos, size, &val->recSetting);
 		WRITE_VALUE2_OR_FAIL(ver, buff, buffSize, pos, size, val->reserveStatus);
@@ -191,7 +191,7 @@ BOOL WriteVALUE2(WORD ver, RESERVE_DATA* val, BYTE* buff, DWORD buffSize, DWORD*
 		}
 
 		WRITE_VALUE2_OR_FAIL(ver, buff, buffSize, pos, size, &val->recFileNameList);
-		WRITE_VALUE2_OR_FAIL(ver, buff, buffSize, pos, size, val->param1);
+		WRITE_VALUE2_OR_FAIL(ver, buff, buffSize, pos, size, (DWORD)0);
 
 		if( ver>=5 ){
 			goto CMD_END;
@@ -230,9 +230,11 @@ BOOL ReadVALUE2(WORD ver, RESERVE_DATA* val, BYTE* buff, DWORD buffSize, DWORD* 
 		READ_VALUE2_OR_FAIL(ver, buff, buffSize, pos, size, &val->eventID);
 		READ_VALUE2_OR_FAIL(ver, buff, buffSize, pos, size, &val->comment);
 		READ_VALUE2_OR_FAIL(ver, buff, buffSize, pos, size, &val->reserveID);
-		READ_VALUE2_OR_FAIL(ver, buff, buffSize, pos, size, &val->recWaitFlag);
+		BYTE bPadding;
+		READ_VALUE2_OR_FAIL(ver, buff, buffSize, pos, size, &bPadding);
 		READ_VALUE2_OR_FAIL(ver, buff, buffSize, pos, size, &val->overlapMode);
-		READ_VALUE2_OR_FAIL(ver, buff, buffSize, pos, size, &val->recFilePath);
+		wstring strPadding;
+		READ_VALUE2_OR_FAIL(ver, buff, buffSize, pos, size, &strPadding);
 		READ_VALUE2_OR_FAIL(ver, buff, buffSize, pos, size, &val->startTimeEpg);
 		READ_VALUE2_OR_FAIL(ver, buff, buffSize, pos, size, &val->recSetting);
 		READ_VALUE2_OR_FAIL(ver, buff, buffSize, pos, size, &val->reserveStatus);
@@ -242,7 +244,8 @@ BOOL ReadVALUE2(WORD ver, RESERVE_DATA* val, BYTE* buff, DWORD buffSize, DWORD* 
 		}
 
 		READ_VALUE2_OR_FAIL(ver, buff, buffSize, pos, size, &val->recFileNameList);
-		READ_VALUE2_OR_FAIL(ver, buff, buffSize, pos, size, &val->param1);
+		DWORD dwPadding;
+		READ_VALUE2_OR_FAIL(ver, buff, buffSize, pos, size, &dwPadding);
 
 		if( ver>=2 ){
 			goto CMD_END;
