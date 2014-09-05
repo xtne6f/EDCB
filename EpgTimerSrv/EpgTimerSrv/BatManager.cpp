@@ -7,7 +7,8 @@
 
 #include <process.h>
 
-CBatManager::CBatManager(void)
+CBatManager::CBatManager(CNotifyManager& notifyManager_)
+	: notifyManager(notifyManager_)
 {
 	InitializeCriticalSection(&this->managerLock);
 
@@ -19,8 +20,6 @@ CBatManager::CBatManager(void)
 
 	this->lastSuspendMode = 0xFF;
 	this->lastRebootFlag = 0xFF;
-
-	this->notifyManager = NULL;
 }
 
 CBatManager::~CBatManager(void)
@@ -40,13 +39,6 @@ CBatManager::~CBatManager(void)
 	}
 
 	DeleteCriticalSection(&this->managerLock);
-}
-
-void CBatManager::SetNotifyManager(CNotifyManager* manager)
-{
-	CBlockLock lock(&this->managerLock);
-
-	this->notifyManager = manager;
 }
 
 void CBatManager::AddBatWork(const BAT_WORK_INFO& info)
@@ -150,9 +142,7 @@ UINT WINAPI CBatManager::BatWorkThread(LPVOID param)
 					DWORD PID = 0;
 					map<DWORD, DWORD>::iterator itr;
 					map<DWORD, DWORD> registGUIMap;
-					if( sys->notifyManager != NULL ){
-						sys->notifyManager->GetRegistGUI(&registGUIMap);
-					}
+					sys->notifyManager.GetRegistGUI(&registGUIMap);
 					for( itr = registGUIMap.begin(); itr != registGUIMap.end(); itr++ ){
 						sendCtrl.SetPipeSetting(CMD2_GUI_CTRL_WAIT_CONNECT, CMD2_GUI_CTRL_PIPE, itr->first);
 

@@ -52,11 +52,11 @@ void CReserveInfo::UnLock(LPCWSTR log)
 	}
 }
 
-void CReserveInfo::SetData(RESERVE_DATA* data)
+void CReserveInfo::SetData(const RESERVE_DATA& data)
 {
 	if( Lock() == FALSE ) return;
 
-	this->reserveData = *data;
+	this->reserveData = data;
 
 	UnLock();
 }

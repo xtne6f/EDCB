@@ -4,7 +4,6 @@
 #include "../../Common/EpgTimerUtil.h"
 #include "../../Common/PathUtil.h"
 #include "../../Common/StringUtil.h"
-#include "../../Common/ParseTextInstances.h"
 #include "../../Common/SendCtrlCmd.h"
 
 #include "ReserveInfo.h"
@@ -16,33 +15,18 @@
 class CTunerBankCtrl
 {
 public:
-	CTunerBankCtrl(void);
+	CTunerBankCtrl(DWORD tunerID_, LPCWSTR bonFileName_, const vector<CH_DATA4>& chList_, CNotifyManager& notifyManager_, CEpgDBManager& epgDBManager_);
 	~CTunerBankCtrl(void);
 
 	void SetTwitterCtrl(CTwitterManager* twitterManager);
-	void SetEpgDBManager(CEpgDBManager* epgDBManager);
 	void ReloadSetting();
-	void SetNotifyManager(CNotifyManager* manager);
-
-	void SetAutoDel(
-		BOOL autoDel,
-		vector<wstring>* delExtList,
-		vector<wstring>* delFolderList
-		);
-
-	void SetTunerInfo(
-		WORD bonID,
-		WORD tunerID,
-		wstring bonFileName,
-		wstring chSet4FilePath
-		);
 
 	void AddReserve(
 		vector<CReserveInfo*>* reserveInfo
 		);
 
 	void ChgReserve(
-		RESERVE_DATA* reserve
+		const RESERVE_DATA& reserve
 		);
 
 	void DeleteReserve(
@@ -61,10 +45,10 @@ public:
 	BOOL IsOpenTuner();
 	BOOL GetCurrentChID(DWORD* currentChID);
 	BOOL IsSuspendOK();
-	BOOL IsEpgCapOK(LONGLONG ngCapMin);
+	BOOL IsEpgCapOK(int ngCapMin);
 	BOOL IsEpgCapWorking();
 	void ClearEpgCapItem();
-	void AddEpgCapItem(SET_CH_INFO info);
+	void AddEpgCapItem(const SET_CH_INFO& info);
 	void StartEpgCap();
 	void StopEpgCap();
 
@@ -113,14 +97,15 @@ public:
 		DWORD pid
 		);
 protected:
-	HANDLE lockEvent;
+	CRITICAL_SECTION bankLock;
+
+	const DWORD tunerID;
+	const wstring bonFileName;
+	const vector<CH_DATA4> chList;
+	CNotifyManager& notifyManager;
+	CEpgDBManager& epgDBManager;
 
 	CTwitterManager* twitterManager;
-	CNotifyManager* notifyManager;
-	DWORD tunerID;
-	wstring bonFileName;
-	CParseChText4 chUtil;
-	CEpgDBManager* epgDBManager;
 
 	typedef struct _RESERVE_WORK{
 		CReserveInfo* reserveInfo;
@@ -192,7 +177,6 @@ protected:
 	BOOL openTuner;
 	DWORD processID;
 	BOOL openErrFlag;
-	BOOL useOpendTuner;
 	DWORD currentChID;
 	CSendCtrlCmd sendCtrl;
 
@@ -200,9 +184,9 @@ protected:
 	HANDLE checkStopEvent;
 
 	//map<DWORD, DWORD> registGUIMap;
-	LONGLONG defStartMargine;
-	LONGLONG defEndMargine;
-	LONGLONG recWakeTime;
+	int defStartMargin;
+	int defEndMargin;
+	int recWakeTime;
 	BOOL recMinWake;
 	BOOL recView;
 	BOOL recNW;
@@ -225,16 +209,7 @@ protected:
 	BOOL epgCapWork;
 	vector<SET_CH_INFO> epgCapItem;
 
-	BOOL autoDel;
-	vector<wstring> delExtList;
-	vector<wstring> delFolderList;
-	DWORD chkSpaceCount;
-
 protected:
-	//PublicAPIîrëºêßå‰óp
-	BOOL Lock(LPCWSTR log = NULL, DWORD timeOut = 60*1000);
-	void UnLock(LPCWSTR log = NULL);
-
 	static UINT WINAPI CheckReserveThread(LPVOID param);
 
 	void GetCheckList(multimap<LONGLONG, RESERVE_WORK*>* sortList);
@@ -257,6 +232,5 @@ protected:
 	BOOL IsFindContinueReserve(RESERVE_WORK* reserve, DWORD* continueSec);
 
 	void SaveProgramInfo(wstring savePath, EPGDB_EVENT_INFO* info, BYTE mode, BOOL addMode = FALSE);
-	//void CopyEpgInfo(EPG_EVENT_INFO* destInfo, EPGDB_EVENT_INFO* srcInfo);
 };
 

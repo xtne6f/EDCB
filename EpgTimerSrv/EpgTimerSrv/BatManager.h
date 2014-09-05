@@ -7,10 +7,8 @@
 class CBatManager
 {
 public:
-	CBatManager(void);
+	CBatManager(CNotifyManager& notifyManager_);
 	~CBatManager(void);
-
-	void SetNotifyManager(CNotifyManager* manager);
 
 	void AddBatWork(const BAT_WORK_INFO& info);
 
@@ -24,7 +22,7 @@ public:
 protected:
 	CRITICAL_SECTION managerLock;
 
-	CNotifyManager* notifyManager;
+	CNotifyManager& notifyManager;
 
 	vector<BAT_WORK_INFO> workList;
 

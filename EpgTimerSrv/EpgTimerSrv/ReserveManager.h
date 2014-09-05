@@ -16,14 +16,8 @@
 class CReserveManager
 {
 public:
-	CReserveManager(void);
+	CReserveManager(CNotifyManager& notifyManager_, CEpgDBManager& epgDBManager_);
 	~CReserveManager(void);
-/*
-	void SetRegistGUI(map<DWORD, DWORD> registGUIMap);
-	void SetRegistTCP(map<wstring, REGIST_TCP_INFO> registTCPMap);
-*/
-	void SetNotifyManager(CNotifyManager* manager);
-	void SetEpgDBManager(CEpgDBManager* epgDBManager);
 	void ChangeRegist();
 	void ReloadSetting();
 
@@ -33,20 +27,16 @@ public:
 	BOOL ReloadReserveData();
 
 	//予約情報を取得する
-	//戻り値：
-	// TRUE（成功）、FALSE（失敗）
 	//引数：
-	// reserveList		[OUT]予約情報一覧（呼び出し元で解放する必要あり）
-	BOOL GetReserveDataAll(
-		vector<RESERVE_DATA*>* reserveList
+	// reserveList		[OUT]予約情報一覧
+	void GetReserveDataAll(
+		vector<RESERVE_DATA>* reserveList
 		);
 
 	//チューナー毎の予約情報を取得する
-	//戻り値：
-	// TRUE（成功）、FALSE（失敗）
 	//引数：
 	// reserveList		[OUT]予約情報一覧
-	BOOL GetTunerReserveAll(
+	void GetTunerReserveAll(
 		vector<TUNER_RESERVE_INFO>* list
 		);
 
@@ -67,7 +57,7 @@ public:
 	//引数：
 	// reserveList		[IN]予約情報
 	BOOL AddReserveData(
-		vector<RESERVE_DATA>* reserveList,
+		const vector<RESERVE_DATA>& reserveList,
 		BOOL tweet = FALSE
 		);
 
@@ -77,47 +67,39 @@ public:
 	//引数：
 	// reserveList		[IN]予約情報
 	BOOL ChgReserveData(
-		vector<RESERVE_DATA>* reserveList,
+		const vector<RESERVE_DATA>& reserveList,
 		BOOL timeChg = FALSE
 		);
 
 	//予約情報を削除する
-	//戻り値：
-	// TRUE（成功）、FALSE（失敗）
 	//引数：
 	// reserveList		[IN]予約IDリスト
-	BOOL DelReserveData(
-		vector<DWORD>* reserveList
+	void DelReserveData(
+		const vector<DWORD>& reserveList
 		);
 
 	//予約の振り分けを行う
 	void ReloadBankMap(BOOL notify);
 	
 	//録画済み情報一覧を取得する
-	//戻り値：
-	// TRUE（成功）、FALSE（失敗）
 	//引数：
 	// infoList			[OUT]録画済み情報一覧
-	BOOL GetRecFileInfoAll(
+	void GetRecFileInfoAll(
 		vector<REC_FILE_INFO>* infoList
 		);
 
 	//録画済み情報を削除する
-	//戻り値：
-	// TRUE（成功）、FALSE（失敗）
 	//引数：
 	// idList			[IN]IDリスト
-	BOOL DelRecFileInfo(
-		vector<DWORD>* idList
+	void DelRecFileInfo(
+		const vector<DWORD>& idList
 		);
 
 	//録画済み情報のプロテクトを変更する
-	//戻り値：
-	// TRUE（成功）、FALSE（失敗）
 	//引数：
-	// idList			[IN]IDリスト
-	BOOL ChgProtectRecFileInfo(
-		vector<REC_FILE_INFO>* infoList
+	// infoList			[IN]録画済み情報一覧（idとprotectFlagのみ参照）
+	void ChgProtectRecFileInfo(
+		const vector<REC_FILE_INFO>& infoList
 		);
 
 
@@ -129,7 +111,7 @@ public:
 	BOOL IsEnableReloadEPG(
 		);
 
-	BOOL IsSuspendOK();
+	BOOL IsSuspendOK(BOOL rebootFlag = FALSE);
 
 	BOOL GetSleepReturnTime(
 		LONGLONG* returnTime
@@ -146,16 +128,7 @@ public:
 		WORD eventID
 		);
 
-	BOOL IsFindReserve(
-		WORD ONID,
-		WORD TSID,
-		WORD SID,
-		LONGLONG startTime,
-		DWORD durationSec
-		);
-
-	void SendNotifyUpdate(DWORD notifyId);
-	void SendNotifyChgReserveAutoAdd(RESERVE_DATA* oldInfo, RESERVE_DATA* newInfo);
+	static void SendNotifyChgReserve(DWORD notifyId, const RESERVE_DATA& oldInfo, const RESERVE_DATA& newInfo, CNotifyManager& notifyManager);
 
 	BOOL GetTVTestChgCh(
 		LONGLONG chID,
@@ -163,7 +136,7 @@ public:
 		);
 
 	BOOL SetNWTVCh(
-		SET_CH_INFO* chInfo
+		const SET_CH_INFO& chInfo
 		);
 
 	BOOL CloseNWTV(
@@ -188,38 +161,26 @@ public:
 		);
 
 	//予約追加可能かチェックする
-	BOOL ChkAddReserve(RESERVE_DATA* chkData, WORD* status);
+	BOOL ChkAddReserve(const RESERVE_DATA& chkData, WORD* status);
 
 	//6日以内の録画結果に同じ番組名あるかチェックする
-	BOOL IsFindRecEventInfo(EPGDB_EVENT_INFO* info, WORD chkDay);
-	void ChgAutoAddNoRec(EPGDB_EVENT_INFO* info);
+	BOOL IsFindRecEventInfo(const EPGDB_EVENT_INFO& info, WORD chkDay);
+	void ChgAutoAddNoRec(const EPGDB_EVENT_INFO& info);
 
 	BOOL IsRecInfoChg();
 protected:
-	HANDLE lockEvent;
+	CRITICAL_SECTION managerLock;
+
+	CNotifyManager& notifyManager;
+	CEpgDBManager& epgDBManager;
 
 	HANDLE bankCheckThread;
 	HANDLE bankCheckStopEvent;
 
 	WORD notifyStatus;
 
-	/*
-	map<DWORD, DWORD> registGUIMap;
-	map<wstring, REGIST_TCP_INFO> registTCPMap;
-	HANDLE lockNotify;
-	HANDLE notifyThread;
-	HANDLE notifyStopEvent;
-	HANDLE notifyStatusThread;
-	HANDLE notifyStatusStopEvent;
-
-	HANDLE notifyEpgReloadThread;
-	HANDLE notifyEpgReloadStopEvent;
-	*/
-	CNotifyManager* notifyManager;
-
 	CParseReserveText reserveText;
 	map<DWORD, CReserveInfo*> reserveInfoMap; //キー　reserveID
-	map<LONGLONG, DWORD> reserveInfoIDMap; //キー　ONID<<48|TSID<<32|SID<<16|EventID
 	CParseRecInfoText recInfoText;
 	CParseRecInfo2Text recInfo2Text;
 	wstring recInfo2RegExp;
@@ -231,14 +192,11 @@ protected:
 	CBatManager batManager;
 	CTwitterManager* twitterManager;
 
-	CEpgDBManager* epgDBManager;
-
 	typedef struct _BANK_WORK_INFO{
 		CReserveInfo* reserveInfo;
 		LONGLONG startTime;//マージン考慮した開始時間
 		LONGLONG endTime;//マージン考慮した終了時間
 		BYTE priority;
-		BOOL recWaitFlag;
 		wstring sortKey;
 		DWORD reserveID;
 		DWORD chID;		//originalNetworkID<<16 | transportStreamID
@@ -273,8 +231,8 @@ protected:
 	BOOL BSOnly;
 	BOOL CS1Only;
 	BOOL CS2Only;
-	LONGLONG ngCapMin;
-	LONGLONG ngCapTunerMin;
+	int ngCapMin;
+	int ngCapTunerMin;
 	typedef struct _EPGTIME_INFO{
 		DWORD time;
 		int wday;
@@ -327,16 +285,8 @@ protected:
 
 	BOOL chgRecInfo;
 protected:
-	//PublicAPI排他制御用
-	BOOL Lock(LPCWSTR log = NULL, DWORD timeOut = 60*1000);
-	void UnLock(LPCWSTR log = NULL);
-/*
-	BOOL NotifyLock(LPCWSTR log = NULL, DWORD timeOut = 60*1000);
-	void NotifyUnLock(LPCWSTR log = NULL);
-	*/
-
-	BOOL _AddReserveData(RESERVE_DATA* reserve, BOOL tweet = FALSE);
-	BOOL _ChgReserveData(RESERVE_DATA* reserve, BOOL chgTime);
+	BOOL _AddReserveData(RESERVE_DATA reserve, BOOL tweet = FALSE);
+	BOOL _ChgReserveData(RESERVE_DATA reserve, BOOL chgTime);
 
 	void _ReloadBankMap();
 	void _ReloadBankMapAlgo(BOOL do2Pass, BOOL ignoreUseTunerID, BOOL backPriority, BOOL noTuner);
@@ -349,17 +299,10 @@ protected:
 	BOOL ChangeNGReserve(BANK_WORK_INFO* inItem);
 	DWORD ChkInsertSameChStatus(BANK_INFO* bank, BANK_WORK_INFO* inItem);
 
-	void _SendNotifyUpdate(DWORD notifyId);
-	void _SendNotifyStatus(WORD status);
-	void _SendNotifyRecEnd(REC_FILE_INFO* item);
-	void _SendNotifyChgReserve(DWORD notifyId, RESERVE_DATA* oldInfo, RESERVE_DATA* newInfo);
-/*	static UINT WINAPI SendNotifyThread(LPVOID param);
-	static UINT WINAPI SendNotifyStatusThread(LPVOID param);
-	void _SendNotifyEpgReload();
-	static UINT WINAPI SendNotifyEpgReloadThread(LPVOID param);
-	*/
-	BOOL _DelReserveData(
-		vector<DWORD>* reserveList
+	void SendNotifyStatus(WORD status);
+	static void SendNotifyRecEnd(const REC_FILE_INFO& item, CNotifyManager& notifyManager);
+	void _DelReserveData(
+		const vector<DWORD>& reserveList
 	);
 
 	static UINT WINAPI BankCheckThread(LPVOID param);
@@ -367,29 +310,18 @@ protected:
 	void CheckErrReserve();
 	void CheckBatWork();
 	void CheckTuijyu();
-	BOOL CheckEventRelay(EPGDB_EVENT_INFO* info, RESERVE_DATA* data, BOOL errEnd = FALSE);
+	BOOL CheckEventRelay(const EPGDB_EVENT_INFO& info, const RESERVE_DATA& data, BOOL errEnd = FALSE);
 
-	BOOL CheckChgEvent(EPGDB_EVENT_INFO* info, RESERVE_DATA* data, BYTE* chgMode = NULL);
-	BOOL CheckChgEventID(EPGDB_EVENT_INFO* info, RESERVE_DATA* data);
+	BOOL CheckChgEvent(const EPGDB_EVENT_INFO& info, RESERVE_DATA* data, BYTE* chgMode = NULL);
+	BOOL CheckChgEventID(const EPGDB_EVENT_INFO& info, RESERVE_DATA* data);
 	BOOL CheckNotFindChgEvent(RESERVE_DATA* data, CTunerBankCtrl* ctrl, vector<DWORD>* deleteList);
-	BOOL ChgDurationChk(EPGDB_EVENT_INFO* info);
+	BOOL ChgDurationChk(const EPGDB_EVENT_INFO& info);
 
 	void EnableSuspendWork(BYTE suspendMode, BYTE rebootFlag, BYTE epgReload);
-	BOOL _IsSuspendOK(BOOL rebootFlag);
 	BOOL IsFindNoSuspendExe();
 	BOOL IsFindShareTSFile();
 
 	BOOL GetNextEpgcapTime(LONGLONG* capTime, LONGLONG chkMargineMin, int* basicOnlyFlags = NULL);
-
-	BOOL _StartEpgCap();
-	BOOL _IsEpgCap();
-
-	void _SendTweet(
-		SEND_TWEET_MODE mode,
-		void* param1,
-		void* param2,
-		void* param3
-		);
 
 	//TSファイルを削除して必要な空き領域を作る
 	static void CreateDiskFreeSpace(

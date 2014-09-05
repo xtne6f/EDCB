@@ -24,7 +24,7 @@ void CRestApiManager::CheckXMLChar(wstring& text)
 	}
 }
 
-DWORD CRestApiManager::AnalyzeCmd(string verb, string url, string param, HTTP_STREAM* sendParam, CEpgDBManager* epgDB, vector<RESERVE_DATA*>* list, CReserveManager* resMng)
+DWORD CRestApiManager::AnalyzeCmd(string verb, string url, string param, HTTP_STREAM* sendParam, CEpgDBManager* epgDB, const vector<RESERVE_DATA>& list, CReserveManager* resMng)
 {
 	DWORD ret = ERR_FALSE;
 	string urlParam = "";
@@ -59,7 +59,7 @@ DWORD CRestApiManager::AnalyzeCmd(string verb, string url, string param, HTTP_ST
 			if( ret == TRUE ){
 				vector<RESERVE_DATA> addList;
 				addList.push_back(addRes);
-				ret = resMng->AddReserveData(&addList);
+				ret = resMng->AddReserveData(addList);
 			}
 			GetReserveAddResponse(ret, sendParam);
 		}
@@ -449,7 +449,7 @@ DWORD CRestApiManager::GetEnumEventInfo(string param, HTTP_STREAM* sendParam, CE
 	return ret;
 }
 
-DWORD CRestApiManager::GetEnumReserveInfo(string param, HTTP_STREAM* sendParam, vector<RESERVE_DATA*>* list)
+DWORD CRestApiManager::GetEnumReserveInfo(string param, HTTP_STREAM* sendParam, const vector<RESERVE_DATA>& list)
 {
 	DWORD ret = NO_ERR;
 
@@ -458,88 +458,88 @@ DWORD CRestApiManager::GetEnumReserveInfo(string param, HTTP_STREAM* sendParam, 
 
 	wstring buff = L"";
 	xml += L"<?xml version=\"1.0\" encoding=\"UTF-8\" ?><entry>";
-	Format(buff, L"<total>%d</total><index>0</index><count>%d</count>", list->size(), list->size());
+	Format(buff, L"<total>%d</total><index>0</index><count>%d</count>", list.size(), list.size());
 	xml += buff;
 	xml += L"<items>";
 	wstring reserveinfo = L"";
-	for( size_t i=0; i<list->size(); i++ ){
+	for( size_t i=0; i<list.size(); i++ ){
 		reserveinfo += L"<reserveinfo>";
-		Format(buff, L"<ID>%d</ID>", (*list)[i]->reserveID);
+		Format(buff, L"<ID>%d</ID>", list[i].reserveID);
 		reserveinfo += buff;
-		Format(buff, L"<title>%s</title>", (*list)[i]->title.c_str());
+		Format(buff, L"<title>%s</title>", list[i].title.c_str());
 		reserveinfo += buff;
-		Format(buff, L"<startDate>%d/%d/%d</startDate>", (*list)[i]->startTime.wYear, (*list)[i]->startTime.wMonth, (*list)[i]->startTime.wDay);
+		Format(buff, L"<startDate>%d/%d/%d</startDate>", list[i].startTime.wYear, list[i].startTime.wMonth, list[i].startTime.wDay);
 		reserveinfo += buff;
-		Format(buff, L"<startTime>%d:%d:%d</startTime>", (*list)[i]->startTime.wHour, (*list)[i]->startTime.wMinute, (*list)[i]->startTime.wSecond);
+		Format(buff, L"<startTime>%d:%d:%d</startTime>", list[i].startTime.wHour, list[i].startTime.wMinute, list[i].startTime.wSecond);
 		reserveinfo += buff;
-		Format(buff, L"<startDayOfWeek>%d</startDayOfWeek>", (*list)[i]->startTime.wDayOfWeek);
+		Format(buff, L"<startDayOfWeek>%d</startDayOfWeek>", list[i].startTime.wDayOfWeek);
 		reserveinfo += buff;
-		Format(buff, L"<duration>%d</duration>", (*list)[i]->durationSecond);
+		Format(buff, L"<duration>%d</duration>", list[i].durationSecond);
 		reserveinfo += buff;
-		Format(buff, L"<service_name>%s</service_name>", (*list)[i]->stationName.c_str());
+		Format(buff, L"<service_name>%s</service_name>", list[i].stationName.c_str());
 		reserveinfo += buff;
-		Format(buff, L"<ONID>%d</ONID>", (*list)[i]->originalNetworkID);
+		Format(buff, L"<ONID>%d</ONID>", list[i].originalNetworkID);
 		reserveinfo += buff;
-		Format(buff, L"<TSID>%d</TSID>", (*list)[i]->transportStreamID);
+		Format(buff, L"<TSID>%d</TSID>", list[i].transportStreamID);
 		reserveinfo += buff;
-		Format(buff, L"<SID>%d</SID>", (*list)[i]->serviceID);
+		Format(buff, L"<SID>%d</SID>", list[i].serviceID);
 		reserveinfo += buff;
-		Format(buff, L"<eventID>%d</eventID>", (*list)[i]->eventID);
+		Format(buff, L"<eventID>%d</eventID>", list[i].eventID);
 		reserveinfo += buff;
-		Format(buff, L"<comment>%s</comment>", (*list)[i]->comment.c_str());
+		Format(buff, L"<comment>%s</comment>", list[i].comment.c_str());
 		reserveinfo += buff;
-		Format(buff, L"<overlapMode>%d</overlapMode>", (*list)[i]->overlapMode);
+		Format(buff, L"<overlapMode>%d</overlapMode>", list[i].overlapMode);
 		reserveinfo += buff;
 
 		reserveinfo += L"<recsetting>";
-		Format(buff, L"<recMode>%d</recMode>", (*list)[i]->recSetting.recMode);
+		Format(buff, L"<recMode>%d</recMode>", list[i].recSetting.recMode);
 		reserveinfo += buff;
-		Format(buff, L"<priority>%d</priority>", (*list)[i]->recSetting.priority);
+		Format(buff, L"<priority>%d</priority>", list[i].recSetting.priority);
 		reserveinfo += buff;
-		Format(buff, L"<tuijyuuFlag>%d</tuijyuuFlag>", (*list)[i]->recSetting.tuijyuuFlag);
+		Format(buff, L"<tuijyuuFlag>%d</tuijyuuFlag>", list[i].recSetting.tuijyuuFlag);
 		reserveinfo += buff;
-		Format(buff, L"<serviceMode>%d</serviceMode>", (*list)[i]->recSetting.serviceMode);
+		Format(buff, L"<serviceMode>%d</serviceMode>", list[i].recSetting.serviceMode);
 		reserveinfo += buff;
-		Format(buff, L"<pittariFlag>%d</pittariFlag>", (*list)[i]->recSetting.pittariFlag);
+		Format(buff, L"<pittariFlag>%d</pittariFlag>", list[i].recSetting.pittariFlag);
 		reserveinfo += buff;
-		Format(buff, L"<batFilePath>%s</batFilePath>", (*list)[i]->recSetting.batFilePath.c_str());
+		Format(buff, L"<batFilePath>%s</batFilePath>", list[i].recSetting.batFilePath.c_str());
 		reserveinfo += buff;
 		reserveinfo += L"<recFolderList>";
-		for( size_t j=0; j<(*list)[i]->recSetting.recFolderList.size(); j++ ){
+		for( size_t j=0; j<list[i].recSetting.recFolderList.size(); j++ ){
 			reserveinfo += L"<recFolderInfo>";
-			Format(buff, L"<recFolder>%s</recFolder>", (*list)[i]->recSetting.recFolderList[j].recFolder.c_str());
+			Format(buff, L"<recFolder>%s</recFolder>", list[i].recSetting.recFolderList[j].recFolder.c_str());
 			reserveinfo += buff;
-			Format(buff, L"<writePlugIn>%s</writePlugIn>", (*list)[i]->recSetting.recFolderList[j].writePlugIn.c_str());
+			Format(buff, L"<writePlugIn>%s</writePlugIn>", list[i].recSetting.recFolderList[j].writePlugIn.c_str());
 			reserveinfo += buff;
-			Format(buff, L"<recNamePlugIn>%s</recNamePlugIn>", (*list)[i]->recSetting.recFolderList[j].recNamePlugIn.c_str());
+			Format(buff, L"<recNamePlugIn>%s</recNamePlugIn>", list[i].recSetting.recFolderList[j].recNamePlugIn.c_str());
 			reserveinfo += buff;
 			reserveinfo += L"</recFolderInfo>";
 		}
 		reserveinfo += L"</recFolderList>";
-		Format(buff, L"<suspendMode>%d</suspendMode>", (*list)[i]->recSetting.suspendMode);
+		Format(buff, L"<suspendMode>%d</suspendMode>", list[i].recSetting.suspendMode);
 		reserveinfo += buff;
-		Format(buff, L"<rebootFlag>%d</rebootFlag>", (*list)[i]->recSetting.rebootFlag);
+		Format(buff, L"<rebootFlag>%d</rebootFlag>", list[i].recSetting.rebootFlag);
 		reserveinfo += buff;
-		Format(buff, L"<useMargineFlag>%d</useMargineFlag>", (*list)[i]->recSetting.useMargineFlag);
+		Format(buff, L"<useMargineFlag>%d</useMargineFlag>", list[i].recSetting.useMargineFlag);
 		reserveinfo += buff;
-		Format(buff, L"<startMargine>%d</startMargine>", (*list)[i]->recSetting.startMargine);
+		Format(buff, L"<startMargine>%d</startMargine>", list[i].recSetting.startMargine);
 		reserveinfo += buff;
-		Format(buff, L"<endMargine>%d</endMargine>", (*list)[i]->recSetting.endMargine);
+		Format(buff, L"<endMargine>%d</endMargine>", list[i].recSetting.endMargine);
 		reserveinfo += buff;
-		Format(buff, L"<continueRecFlag>%d</continueRecFlag>", (*list)[i]->recSetting.continueRecFlag);
+		Format(buff, L"<continueRecFlag>%d</continueRecFlag>", list[i].recSetting.continueRecFlag);
 		reserveinfo += buff;
-		Format(buff, L"<partialRecFlag>%d</partialRecFlag>", (*list)[i]->recSetting.partialRecFlag);
+		Format(buff, L"<partialRecFlag>%d</partialRecFlag>", list[i].recSetting.partialRecFlag);
 		reserveinfo += buff;
-		Format(buff, L"<tunerID>%d</tunerID>", (*list)[i]->recSetting.tunerID);
+		Format(buff, L"<tunerID>%d</tunerID>", list[i].recSetting.tunerID);
 		reserveinfo += buff;
 		reserveinfo += L"<partialRecFolder>";
-		for( size_t j=0; j<(*list)[i]->recSetting.partialRecFolder.size(); j++ ){
+		for( size_t j=0; j<list[i].recSetting.partialRecFolder.size(); j++ ){
 			reserveinfo += L"<recFolderInfo>";
-			Format(buff, L"<recFolder>%s</recFolder>", (*list)[i]->recSetting.partialRecFolder[j].recFolder.c_str());
+			Format(buff, L"<recFolder>%s</recFolder>", list[i].recSetting.partialRecFolder[j].recFolder.c_str());
 			reserveinfo += buff;
-			Format(buff, L"<writePlugIn>%s</writePlugIn>", (*list)[i]->recSetting.partialRecFolder[j].writePlugIn.c_str());
+			Format(buff, L"<writePlugIn>%s</writePlugIn>", list[i].recSetting.partialRecFolder[j].writePlugIn.c_str());
 			reserveinfo += buff;
-			Format(buff, L"<recNamePlugIn>%s</recNamePlugIn>", (*list)[i]->recSetting.partialRecFolder[j].recNamePlugIn.c_str());
+			Format(buff, L"<recNamePlugIn>%s</recNamePlugIn>", list[i].recSetting.partialRecFolder[j].recNamePlugIn.c_str());
 			reserveinfo += buff;
 			reserveinfo += L"</recFolderInfo>";
 		}
@@ -547,8 +547,8 @@ DWORD CRestApiManager::GetEnumReserveInfo(string param, HTTP_STREAM* sendParam, 
 		reserveinfo += L"</recsetting>";
 
 		reserveinfo += L"<recFileNameList>";
-		for( size_t j=0; j<(*list)[i]->recFileNameList.size(); j++ ){
-			Format(buff, L"<name>%s</name>", (*list)[i]->recFileNameList[j].c_str());
+		for( size_t j=0; j<list[i].recFileNameList.size(); j++ ){
+			Format(buff, L"<name>%s</name>", list[i].recFileNameList[j].c_str());
 			reserveinfo += buff;
 		}
 		reserveinfo += L"</recFileNameList>";

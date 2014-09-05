@@ -45,10 +45,11 @@ public:
 	BOOL IsUserWorking();
 
 protected:
+	CNotifyManager notifyManager;
 	CEpgDBManager epgDB;
+	//reserveManager‚ÍnotifyManager‚ÆepgDB‚ÉˆË‘¶‚·‚é‚Ì‚ÅA‡˜‚ğ“ü‚ê‘Ö‚¦‚Ä‚Í‚¢‚¯‚È‚¢
 	CReserveManager reserveManager;
 	CFileStreamingManager streamingManager;
-	CNotifyManager notifyManager;
 
 	CParseEpgAutoAddText epgAutoAdd;
 	CParseManualAutoAddText manualAutoAdd;

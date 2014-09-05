@@ -12,7 +12,7 @@ public:
 	CReserveInfo(void);
 	~CReserveInfo(void);
 
-	void SetData(RESERVE_DATA* data);
+	void SetData(const RESERVE_DATA& data);
 	void GetData(RESERVE_DATA* data);
 
 	void SetNGChTunerID(vector<DWORD>* idList);

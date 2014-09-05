@@ -566,7 +566,7 @@ BOOL CHTMLManager::GetIndexPage(HTTP_STREAM* sendParam)
 	return TRUE;
 }
 
-BOOL CHTMLManager::GetReservePage(vector<RESERVE_DATA*>* list, int pageIndex, HTTP_STREAM* sendParam)
+BOOL CHTMLManager::GetReservePage(vector<RESERVE_DATA>* list, int pageIndex, HTTP_STREAM* sendParam)
 {
 	if( sendParam == NULL ){
 		return FALSE;
@@ -607,8 +607,8 @@ BOOL CHTMLManager::GetReservePage(vector<RESERVE_DATA*>* list, int pageIndex, HT
 			//éûä‘Ç≈ó\ñÒÉ\Å[Ég
 			multimap<__int64, RESERVE_DATA*> sortMap;
 			for( size_t i=0; i<list->size(); i++ ){
-				__int64 stratTime = ConvertI64Time((*list)[i]->startTime);
-				sortMap.insert(pair<__int64, RESERVE_DATA*>(stratTime, (*list)[i]));
+				__int64 stratTime = ConvertI64Time((*list)[i].startTime);
+				sortMap.insert(pair<__int64, RESERVE_DATA*>(stratTime, &(*list)[i]));
 			}
 			//àÍóóÇÃçÏê¨
 			html+="<TABLE BORDER=\"1\">\r\n";
@@ -1128,7 +1128,7 @@ BOOL CHTMLManager::GetRecInfoDelPage(HTTP_STREAM* sendParam, BOOL err)
 	return TRUE;
 }
 
-BOOL CHTMLManager::GetEpgPage(CEpgDBManager* epgDB, vector<RESERVE_DATA*>* reserveList, string url, HTTP_STREAM* sendParam)
+BOOL CHTMLManager::GetEpgPage(CEpgDBManager* epgDB, vector<RESERVE_DATA>* reserveList, string url, HTTP_STREAM* sendParam)
 {
 	if( sendParam == NULL || epgDB == NULL){
 		return FALSE;
@@ -1213,18 +1213,18 @@ BOOL CHTMLManager::GetEpgErrPage(HTTP_STREAM* sendParam)
 	return TRUE;
 }
 
-BOOL CHTMLManager::CreateDefEpgPage(CEpgDBManager* epgDB, vector<RESERVE_DATA*>* reserveList, int tab, int page, int date, string& htmlText)
+BOOL CHTMLManager::CreateDefEpgPage(CEpgDBManager* epgDB, vector<RESERVE_DATA>* reserveList, int tab, int page, int date, string& htmlText)
 {
 	map<LONGLONG, RESERVE_DATA*> reserveMap;
 	for( size_t i=0; i<(*reserveList).size(); i++ ){
-		if( (*reserveList)[i]->eventID != 0xFFFF ){
+		if( (*reserveList)[i].eventID != 0xFFFF ){
 			LONGLONG key = _Create64Key2(
-				(*reserveList)[i]->originalNetworkID, 
-				(*reserveList)[i]->transportStreamID, 
-				(*reserveList)[i]->serviceID, 
-				(*reserveList)[i]->eventID
+				(*reserveList)[i].originalNetworkID, 
+				(*reserveList)[i].transportStreamID, 
+				(*reserveList)[i].serviceID, 
+				(*reserveList)[i].eventID
 				);
-			reserveMap.insert(pair<LONGLONG, RESERVE_DATA*>(key, (*reserveList)[i]));
+			reserveMap.insert(pair<LONGLONG, RESERVE_DATA*>(key, &(*reserveList)[i]));
 		}
 	}
 
@@ -1614,18 +1614,18 @@ BOOL CHTMLManager::CreateDefEpgPage(CEpgDBManager* epgDB, vector<RESERVE_DATA*>*
 	return TRUE;
 }
 
-BOOL CHTMLManager::CreateCustEpgPage(CEpgDBManager* epgDB, vector<RESERVE_DATA*>* reserveList, int tab, int page, int date, string& htmlText)
+BOOL CHTMLManager::CreateCustEpgPage(CEpgDBManager* epgDB, vector<RESERVE_DATA>* reserveList, int tab, int page, int date, string& htmlText)
 {
 	map<LONGLONG, RESERVE_DATA*> reserveMap;
 	for( size_t i=0; i<(*reserveList).size(); i++ ){
-		if( (*reserveList)[i]->eventID != 0xFFFF ){
+		if( (*reserveList)[i].eventID != 0xFFFF ){
 			LONGLONG key = _Create64Key2(
-				(*reserveList)[i]->originalNetworkID, 
-				(*reserveList)[i]->transportStreamID, 
-				(*reserveList)[i]->serviceID, 
-				(*reserveList)[i]->eventID
+				(*reserveList)[i].originalNetworkID, 
+				(*reserveList)[i].transportStreamID, 
+				(*reserveList)[i].serviceID, 
+				(*reserveList)[i].eventID
 				);
-			reserveMap.insert(pair<LONGLONG, RESERVE_DATA*>(key, (*reserveList)[i]));
+			reserveMap.insert(pair<LONGLONG, RESERVE_DATA*>(key, &(*reserveList)[i]));
 		}
 	}
 
@@ -2313,7 +2313,7 @@ BOOL CHTMLManager::CreateCustEpgPage(CEpgDBManager* epgDB, vector<RESERVE_DATA*>
 	return TRUE;
 }
 
-BOOL CHTMLManager::GetEpgInfoPage(CEpgDBManager* epgDB, vector<RESERVE_DATA*>* reserveList, vector<TUNER_RESERVE_INFO>* tunerList, string param, HTTP_STREAM* sendParam)
+BOOL CHTMLManager::GetEpgInfoPage(CEpgDBManager* epgDB, vector<RESERVE_DATA>* reserveList, vector<TUNER_RESERVE_INFO>* tunerList, string param, HTTP_STREAM* sendParam)
 {
 	if( sendParam == NULL || epgDB == NULL){
 		return FALSE;
@@ -2359,12 +2359,12 @@ BOOL CHTMLManager::GetEpgInfoPage(CEpgDBManager* epgDB, vector<RESERVE_DATA*>* r
 
 	RESERVE_DATA* reserveInfo = NULL;
 	for( size_t i=0; i<(*reserveList).size(); i++ ){
-		if( (*reserveList)[i]->originalNetworkID == onid &&
-			(*reserveList)[i]->transportStreamID == tsid && 
-			(*reserveList)[i]->serviceID == sid &&
-			(*reserveList)[i]->eventID == evid
+		if( (*reserveList)[i].originalNetworkID == onid &&
+			(*reserveList)[i].transportStreamID == tsid && 
+			(*reserveList)[i].serviceID == sid &&
+			(*reserveList)[i].eventID == evid
 			){
-				reserveInfo = (*reserveList)[i];
+				reserveInfo = &(*reserveList)[i];
 				break;
 		}
 	}

@@ -19,6 +19,7 @@
 #include <process.h>
 
 CEpgTimerSrvMain::CEpgTimerSrvMain(void)
+	: reserveManager(notifyManager, epgDB)
 {
 	InitializeCriticalSection(&settingLock);
 
@@ -98,9 +99,6 @@ void CEpgTimerSrvMain::StartMain(
 		this->manualAutoAdd.ParseText(manualAutoAddFilePath.c_str());
 	}
 
-	this->reserveManager.SetNotifyManager(&this->notifyManager);
-	this->reserveManager.SetEpgDBManager(&this->epgDB);
-
 	//Pipeサーバースタート
 	CPipeServer pipeServer;
 	pipeServer.StartServer(CMD2_EPG_SRV_EVENT_WAIT_CONNECT, CMD2_EPG_SRV_PIPE, CtrlCmdCallback, this, 0, GetCurrentProcessId());
@@ -174,20 +172,15 @@ void CEpgTimerSrvMain::StartMain(
 
 					//しょぼいカレンダー対応
 					CSyoboiCalUtil syoboi;
-					vector<RESERVE_DATA*> reserveList;
+					vector<RESERVE_DATA> reserveList;
 					reserveManager.GetReserveDataAll(&reserveList);
 					vector<TUNER_RESERVE_INFO> tunerList;
 					reserveManager.GetTunerReserveAll(&tunerList);
 
 					syoboi.SendReserve(&reserveList, &tunerList);
-
-					for( size_t i=0; i<reserveList.size(); i++ ){
-						SAFE_DELETE(reserveList[i]);
-					}
-					reserveList.clear();
 				}
 				reloadEpgChkFlag = FALSE;
-				this->reserveManager.SendNotifyUpdate(NOTIFY_UPDATE_EPGDATA);
+				this->notifyManager.AddNotify(NOTIFY_UPDATE_EPGDATA);
 
 				//リロードタイミングで予約始まったかもしれないのでチェック
 				BOOL streamingChk = TRUE;
@@ -522,108 +515,105 @@ BOOL CEpgTimerSrvMain::CheckTuijyu()
 	BOOL chgTitle = GetPrivateProfileInt(L"SET", L"ResAutoChgTitle", 1, iniAppPath.c_str());
 	BOOL chkTime = GetPrivateProfileInt(L"SET", L"ResAutoChkTime", 1, iniAppPath.c_str());
 
-	vector<RESERVE_DATA*> reserveList;
+	vector<RESERVE_DATA> reserveList;
 	vector<RESERVE_DATA> chgList;
 	this->reserveManager.GetReserveDataAll(&reserveList);
 	for( size_t i=0; i<reserveList.size(); i++ ){
-		if( reserveList[i]->recSetting.recMode == RECMODE_NO ){
+		if( reserveList[i].recSetting.recMode == RECMODE_NO ){
 			continue;
 		}
-		if( reserveList[i]->eventID == 0xFFFF ){
+		if( reserveList[i].eventID == 0xFFFF ){
 			continue;
 		}
-		if( reserveList[i]->recSetting.tuijyuuFlag == 0 ){
+		if( reserveList[i].recSetting.tuijyuuFlag == 0 ){
 			continue;
 		}
-		if( reserveList[i]->reserveStatus != ADD_RESERVE_NORMAL ){
+		if( reserveList[i].reserveStatus != ADD_RESERVE_NORMAL ){
 			continue;
 		}
-		if( ConvertI64Time(reserveList[i]->startTime) < GetNowI64Time() + I64_1SEC*15 ){
+		if( ConvertI64Time(reserveList[i].startTime) < GetNowI64Time() + I64_1SEC*15 ){
 			//録画開始15秒前のものはチェックしない
 			continue;
 		}
 
-		RESERVE_DATA oldData = *(reserveList[i]);
+		RESERVE_DATA oldData = reserveList[i];
 		EPGDB_EVENT_INFO info;
 		if( this->epgDB.SearchEpg(
-			reserveList[i]->originalNetworkID,
-			reserveList[i]->transportStreamID,
-			reserveList[i]->serviceID,
-			reserveList[i]->eventID,
+			reserveList[i].originalNetworkID,
+			reserveList[i].transportStreamID,
+			reserveList[i].serviceID,
+			reserveList[i].eventID,
 			&info
 			) == TRUE){
 
 				BOOL chgRes = FALSE;
 				if( info.StartTimeFlag == 1 ){
-					if( ConvertI64Time(reserveList[i]->startTime) != ConvertI64Time(info.start_time) ){
-						reserveList[i]->startTime = info.start_time;
+					if( ConvertI64Time(reserveList[i].startTime) != ConvertI64Time(info.start_time) ){
+						reserveList[i].startTime = info.start_time;
 						chgRes = TRUE;
 					}
 				}
 				if( info.DurationFlag == 1 ){
-					if( reserveList[i]->durationSecond != info.durationSec ){
-						reserveList[i]->durationSecond = info.durationSec;
+					if( reserveList[i].durationSecond != info.durationSec ){
+						reserveList[i].durationSecond = info.durationSec;
 						chgRes = TRUE;
 					}
 				}
 				if( chgTitle == TRUE ){
 					if( info.shortInfo != NULL ){
-						if( CompareNoCase(reserveList[i]->title, info.shortInfo->event_name) != 0 ){
-							reserveList[i]->title = info.shortInfo->event_name;
+						if( CompareNoCase(reserveList[i].title, info.shortInfo->event_name) != 0 ){
+							reserveList[i].title = info.shortInfo->event_name;
 							chgRes = TRUE;
 						}
 					}
 				}
 				if( chgRes == TRUE ){
-					chgList.push_back(*(reserveList[i]));
-					this->reserveManager.SendTweet(TW_CHG_RESERVE_RELOADEPG, &oldData, reserveList[i], NULL);
-					this->reserveManager.SendNotifyChgReserveAutoAdd(&oldData, reserveList[i]);
+					chgList.push_back(reserveList[i]);
+					this->reserveManager.SendTweet(TW_CHG_RESERVE_RELOADEPG, &oldData, &reserveList[i], NULL);
+					CReserveManager::SendNotifyChgReserve(NOTIFY_UPDATE_CHG_TUIJYU, oldData, reserveList[i], this->notifyManager);
 				}
 		}else{
 			//IDで見つからなかったので時間で検索してみる
 			if( this->epgDB.SearchEpg(
-				reserveList[i]->originalNetworkID,
-				reserveList[i]->transportStreamID,
-				reserveList[i]->serviceID,
-				ConvertI64Time(reserveList[i]->startTime),
-				reserveList[i]->durationSecond,
+				reserveList[i].originalNetworkID,
+				reserveList[i].transportStreamID,
+				reserveList[i].serviceID,
+				ConvertI64Time(reserveList[i].startTime),
+				reserveList[i].durationSecond,
 				&info
 				) == TRUE){
 
-					reserveList[i]->eventID = info.event_id;
+					reserveList[i].eventID = info.event_id;
 
 					if( chkTime == FALSE ){
 						//番組名も同じか確認
 						if( info.shortInfo != NULL ){
-							if( CompareNoCase(reserveList[i]->title, info.shortInfo->event_name) == 0 ){
-								chgList.push_back(*(reserveList[i]));
+							if( CompareNoCase(reserveList[i].title, info.shortInfo->event_name) == 0 ){
+								chgList.push_back(reserveList[i]);
 
-								this->reserveManager.SendTweet(TW_CHG_RESERVE_RELOADEPG, &oldData, reserveList[i], NULL);
+								this->reserveManager.SendTweet(TW_CHG_RESERVE_RELOADEPG, &oldData, &reserveList[i], NULL);
 							}
 						}
 					}else{
 						//時間のみで判断
 						if( chgTitle == TRUE ){
 							if( info.shortInfo != NULL ){
-								if( CompareNoCase(reserveList[i]->title, info.shortInfo->event_name) != 0 ){
-									reserveList[i]->title = info.shortInfo->event_name;
+								if( CompareNoCase(reserveList[i].title, info.shortInfo->event_name) != 0 ){
+									reserveList[i].title = info.shortInfo->event_name;
 								}
 							}
 						}
-						chgList.push_back(*(reserveList[i]));
+						chgList.push_back(reserveList[i]);
 
-						this->reserveManager.SendTweet(TW_CHG_RESERVE_RELOADEPG, &oldData, reserveList[i], NULL);
+						this->reserveManager.SendTweet(TW_CHG_RESERVE_RELOADEPG, &oldData, &reserveList[i], NULL);
 
 					}
 			}
 		}
 	}
 	if( chgList.size() > 0 ){
-		this->reserveManager.ChgReserveData(&chgList, TRUE);
+		this->reserveManager.ChgReserveData(chgList, TRUE);
 		ret = TRUE;
-	}
-	for( size_t i=0; i<reserveList.size(); i++ ){
-		SAFE_DELETE(reserveList[i]);
 	}
 
 	return ret;
@@ -773,7 +763,7 @@ BOOL CEpgTimerSrvMain::AutoAddReserveEPG(int targetSize, EPG_AUTO_ADD_DATA* targ
 
 						addItem->recSetting = itrKey->second.recSetting;
 						if( itrKey->second.searchInfo.chkRecEnd == 1 ){
-							if( this->reserveManager.IsFindRecEventInfo(result, itrKey->second.searchInfo.chkRecDay) == TRUE ){
+							if( this->reserveManager.IsFindRecEventInfo(*result, itrKey->second.searchInfo.chkRecDay) == TRUE ){
 								addItem->recSetting.recMode = RECMODE_NO;
 							}
 						}
@@ -793,8 +783,8 @@ BOOL CEpgTimerSrvMain::AutoAddReserveEPG(int targetSize, EPG_AUTO_ADD_DATA* targ
 						}
 					}
 			}else if( itrKey->second.searchInfo.chkRecEnd == 1 ){
-				if( this->reserveManager.IsFindRecEventInfo(result, itrKey->second.searchInfo.chkRecDay) == TRUE ){
-					this->reserveManager.ChgAutoAddNoRec(result);
+				if( this->reserveManager.IsFindRecEventInfo(*result, itrKey->second.searchInfo.chkRecDay) == TRUE ){
+					this->reserveManager.ChgAutoAddNoRec(*result);
 					chgRecEnd = TRUE;
 				}
 			}
@@ -810,12 +800,12 @@ BOOL CEpgTimerSrvMain::AutoAddReserveEPG(int targetSize, EPG_AUTO_ADD_DATA* targ
 	}
 	addMap.clear();
 	if( setList.size() > 0 ){
-		this->reserveManager.AddReserveData(&setList, TRUE);
+		this->reserveManager.AddReserveData(setList, TRUE);
 		setList.clear();
 	}else if(chgRecEnd == TRUE){
-		this->reserveManager.SendNotifyUpdate(NOTIFY_UPDATE_RESERVE_INFO);
+		this->notifyManager.AddNotify(NOTIFY_UPDATE_RESERVE_INFO);
 	}
-	this->reserveManager.SendNotifyUpdate(NOTIFY_UPDATE_AUTOADD_EPG);
+	this->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_EPG);
 
 
 	return ret;
@@ -826,7 +816,7 @@ BOOL CEpgTimerSrvMain::AutoAddReserveProgram()
 	BOOL ret = TRUE;
 
 	vector<RESERVE_DATA> setList;
-	vector<RESERVE_DATA*> reserveList;
+	vector<RESERVE_DATA> reserveList;
 
 	SYSTEMTIME nowTime;
 	GetLocalTime(&nowTime);
@@ -857,17 +847,17 @@ BOOL CEpgTimerSrvMain::AutoAddReserveProgram()
 					BOOL find = FALSE;
 					for( size_t j=0; j<reserveList.size(); j++ ){
 						//同一時間の予約がすでにあるかチェック
-						if( reserveList[j]->eventID != 0xFFFF ){
+						if( reserveList[j].eventID != 0xFFFF ){
 							continue;
 						}
-						if( reserveList[j]->originalNetworkID != itr->second.originalNetworkID ||
-							reserveList[j]->transportStreamID != itr->second.transportStreamID ||
-							reserveList[j]->serviceID != itr->second.serviceID 
+						if( reserveList[j].originalNetworkID != itr->second.originalNetworkID ||
+							reserveList[j].transportStreamID != itr->second.transportStreamID ||
+							reserveList[j].serviceID != itr->second.serviceID 
 							){
 							continue;
 						}
-						if( ConvertI64Time(reserveList[j]->startTime) == startTime &&
-							reserveList[j]->durationSecond == itr->second.durationSecond
+						if( ConvertI64Time(reserveList[j].startTime) == startTime &&
+							reserveList[j].durationSecond == itr->second.durationSecond
 							){
 							find = TRUE;
 							break;
@@ -902,12 +892,8 @@ BOOL CEpgTimerSrvMain::AutoAddReserveProgram()
 	} //CBlockLock
 
 	if( setList.size() > 0 ){
-		this->reserveManager.AddReserveData(&setList);
+		this->reserveManager.AddReserveData(setList);
 	}
-	for( size_t i=0; i<reserveList.size(); i++ ){
-		SAFE_DELETE(reserveList[i]);
-	}
-	reserveList.clear();
 
 	return ret;
 }
@@ -1038,8 +1024,9 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 		{
 			OutputDebugString(L"CMD2_EPG_SRV_ENUM_RESERVE");
 			{
-				vector<RESERVE_DATA*> list;
-				if(sys->reserveManager.GetReserveDataAll(&list) == TRUE ){
+				vector<RESERVE_DATA> list;
+				sys->reserveManager.GetReserveDataAll(&list);
+				{
 					resParam->param = CMD_SUCCESS;
 					resParam->dataSize = GetVALUESize(&list);
 					resParam->data = new BYTE[resParam->dataSize];
@@ -1048,10 +1035,6 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 						resParam->dataSize = 0;
 						resParam->param = CMD_ERR;
 					}
-					for( size_t i=0; i<list.size(); i++ ){
-						SAFE_DELETE(list[i]);
-					}
-					list.clear();
 				}
 			}
 		}
@@ -1082,7 +1065,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 			{
 				vector<RESERVE_DATA> list;
 				if( ReadVALUE( &list, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
-					if(sys->reserveManager.AddReserveData(&list) == TRUE ){
+					if(sys->reserveManager.AddReserveData(list) == TRUE ){
 						resParam->param = CMD_SUCCESS;
 					}
 				}
@@ -1094,9 +1077,8 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 			{
 				vector<DWORD> list;
 				if( ReadVALUE( &list, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
-					if(sys->reserveManager.DelReserveData(&list) == TRUE ){
-						resParam->param = CMD_SUCCESS;
-					}
+					sys->reserveManager.DelReserveData(list);
+					resParam->param = CMD_SUCCESS;
 				}
 			}
 		}
@@ -1106,7 +1088,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 			{
 				vector<RESERVE_DATA> list;
 				if( ReadVALUE( &list, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
-					if(sys->reserveManager.ChgReserveData(&list) == TRUE ){
+					if(sys->reserveManager.ChgReserveData(list) == TRUE ){
 						resParam->param = CMD_SUCCESS;
 					}
 				}
@@ -1118,7 +1100,8 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 			OutputDebugString(L"CMD2_EPG_SRV_ENUM_RECINFO");
 			{
 				vector<REC_FILE_INFO> list;
-				if(sys->reserveManager.GetRecFileInfoAll(&list) == TRUE ){
+				sys->reserveManager.GetRecFileInfoAll(&list);
+				{
 					resParam->param = CMD_SUCCESS;
 					resParam->dataSize = GetVALUESize(&list);
 					resParam->data = new BYTE[resParam->dataSize];
@@ -1136,9 +1119,8 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 			{
 				vector<DWORD> list;
 				if( ReadVALUE( &list, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
-					if(sys->reserveManager.DelRecFileInfo(&list) == TRUE ){
-						resParam->param = CMD_SUCCESS;
-					}
+					sys->reserveManager.DelRecFileInfo(list);
+					resParam->param = CMD_SUCCESS;
 				}
 			}
 		}
@@ -1333,7 +1315,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 					sys->AutoAddReserveEPG((int)val.size(), val.data());
 				}
 
-				sys->reserveManager.SendNotifyUpdate(NOTIFY_UPDATE_AUTOADD_EPG);
+				sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_EPG);
 
 			}
 
@@ -1355,7 +1337,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 					resParam->param = CMD_SUCCESS;
 				}
 
-				sys->reserveManager.SendNotifyUpdate(NOTIFY_UPDATE_AUTOADD_EPG);
+				sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_EPG);
 			}
 
 		}
@@ -1378,7 +1360,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 					sys->AutoAddReserveEPG((int)val.size(), val.data());
 				}
 
-				sys->reserveManager.SendNotifyUpdate(NOTIFY_UPDATE_AUTOADD_EPG);
+				sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_EPG);
 			}
 
 		}
@@ -1425,7 +1407,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 					sys->AutoAddReserveProgram();
 				}
 
-				sys->reserveManager.SendNotifyUpdate(NOTIFY_UPDATE_AUTOADD_MANUAL);
+				sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_MANUAL);
 
 			}
 
@@ -1447,7 +1429,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 					resParam->param = CMD_SUCCESS;
 				}
 
-				sys->reserveManager.SendNotifyUpdate(NOTIFY_UPDATE_AUTOADD_MANUAL);
+				sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_MANUAL);
 			}
 
 		}
@@ -1470,7 +1452,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 					sys->AutoAddReserveProgram();
 				}
 
-				sys->reserveManager.SendNotifyUpdate(NOTIFY_UPDATE_AUTOADD_MANUAL);
+				sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_MANUAL);
 			}
 
 		}
@@ -1480,7 +1462,8 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 			OutputDebugString(L"CMD2_EPG_SRV_ENUM_TUNER_RESERVE");
 			vector<TUNER_RESERVE_INFO> list;
 			{
-				if(sys->reserveManager.GetTunerReserveAll(&list) == TRUE ){
+				sys->reserveManager.GetTunerReserveAll(&list);
+				{
 					resParam->param = CMD_SUCCESS;
 					resParam->dataSize = GetVALUESize(&list);
 					resParam->data = new BYTE[resParam->dataSize];
@@ -1604,7 +1587,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 			OutputDebugString(L"CMD2_EPG_SRV_NWTV_SET_CH");
 			SET_CH_INFO val;
 			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
-				if( sys->reserveManager.SetNWTVCh(&val) == TRUE ){
+				if( sys->reserveManager.SetNWTVCh(val) == TRUE ){
 					resParam->param = CMD_SUCCESS;
 				}
 			}
@@ -1757,8 +1740,9 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 		{
 			OutputDebugString(L"CMD2_EPG_SRV_ENUM_RESERVE2");
 			{
-				vector<RESERVE_DATA*> list;
-				if(sys->reserveManager.GetReserveDataAll(&list) == TRUE ){
+				vector<RESERVE_DATA> list;
+				sys->reserveManager.GetReserveDataAll(&list);
+				{
 					WORD ver = (WORD)CMD_VER;
 
 					if( ReadVALUE2(ver, &ver, cmdParam->data, cmdParam->dataSize, NULL) == TRUE ){
@@ -1776,10 +1760,6 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 							resParam->dataSize = 0;
 							resParam->param = CMD_ERR;
 						}
-						for( size_t i=0; i<list.size(); i++ ){
-							SAFE_DELETE(list[i]);
-						}
-						list.clear();
 					}
 				}
 			}
@@ -1827,7 +1807,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 
 					vector<RESERVE_DATA> list;
 					if( ReadVALUE2(ver, &list, cmdParam->data+readSize, cmdParam->dataSize-readSize, NULL ) == TRUE ){
-						if(sys->reserveManager.AddReserveData(&list) == TRUE ){
+						if(sys->reserveManager.AddReserveData(list) == TRUE ){
 							DWORD writeSize = 0;
 							resParam->param = CMD_SUCCESS;
 							resParam->dataSize = GetVALUESize2(ver, ver);
@@ -1852,7 +1832,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 				if( ReadVALUE2(ver, &ver, cmdParam->data, cmdParam->dataSize, &readSize) == TRUE ){
 					vector<RESERVE_DATA> list;
 					if( ReadVALUE2(ver, &list, cmdParam->data+readSize, cmdParam->dataSize-readSize, NULL ) == TRUE ){
-						if(sys->reserveManager.ChgReserveData(&list) == TRUE ){
+						if(sys->reserveManager.ChgReserveData(list) == TRUE ){
 							DWORD writeSize = 0;
 							resParam->param = CMD_SUCCESS;
 							resParam->dataSize = GetVALUESize2(ver, ver);
@@ -1878,7 +1858,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 					RESERVE_DATA reserveInfo;
 					if( ReadVALUE2(ver, &reserveInfo, cmdParam->data+readSize, cmdParam->dataSize-readSize, NULL ) == TRUE ){
 						WORD chkStatus = 0;
-						if(sys->reserveManager.ChkAddReserve(&reserveInfo, &chkStatus) == TRUE ){
+						if(sys->reserveManager.ChkAddReserve(reserveInfo, &chkStatus) == TRUE ){
 							DWORD writeSize = 0;
 							resParam->param = CMD_SUCCESS;
 							resParam->dataSize = GetVALUESize2(ver, chkStatus)+GetVALUESize2(ver, ver);
@@ -2051,7 +2031,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 					}
 				}
 
-				sys->reserveManager.SendNotifyUpdate(NOTIFY_UPDATE_AUTOADD_EPG);
+				sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_EPG);
 			}
 		}
 		break;
@@ -2089,7 +2069,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 					}
 				}
 
-				sys->reserveManager.SendNotifyUpdate(NOTIFY_UPDATE_AUTOADD_EPG);
+				sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_EPG);
 			}
 		}
 		break;
@@ -2161,7 +2141,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 					}
 				}
 
-				sys->reserveManager.SendNotifyUpdate(NOTIFY_UPDATE_AUTOADD_MANUAL);
+				sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_MANUAL);
 			}
 		}
 		break;
@@ -2199,7 +2179,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 					}
 				}
 
-				sys->reserveManager.SendNotifyUpdate(NOTIFY_UPDATE_AUTOADD_MANUAL);
+				sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_MANUAL);
 			}
 		}
 		break;
@@ -2210,7 +2190,8 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 				vector<REC_FILE_INFO> list;
 				WORD ver = (WORD)CMD_VER;
 				if( ReadVALUE2(ver, &ver, cmdParam->data, cmdParam->dataSize, NULL) == TRUE ){
-					if(sys->reserveManager.GetRecFileInfoAll(&list) == TRUE ){
+					sys->reserveManager.GetRecFileInfoAll(&list);
+					{
 						DWORD writeSize = 0;
 						resParam->param = CMD_SUCCESS;
 						resParam->dataSize = GetVALUESize2(ver, &list)+GetVALUESize2(ver, ver);
@@ -2240,7 +2221,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 
 					vector<REC_FILE_INFO> list;
 					if( ReadVALUE2(ver, &list, cmdParam->data+readSize, cmdParam->dataSize-readSize, NULL ) == TRUE ){
-						sys->reserveManager.ChgProtectRecFileInfo(&list);
+						sys->reserveManager.ChgProtectRecFileInfo(list);
 
 						resParam->param = CMD_SUCCESS;
 
@@ -2288,7 +2269,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 
 					vector<RESERVE_DATA> list;
 					list.push_back(item);
-					if(sys->reserveManager.AddReserveData(&list) == TRUE ){
+					if(sys->reserveManager.AddReserveData(list) == TRUE ){
 						resParam->param = OLD_CMD_SUCCESS;
 					}
 				}
@@ -2303,9 +2284,8 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 				if( CopyReserveData(&oldItem, cmdParam) == TRUE){
 					vector<DWORD> list;
 					list.push_back(oldItem.dwReserveID);
-					if(sys->reserveManager.DelReserveData(&list) == TRUE ){
-						resParam->param = OLD_CMD_SUCCESS;
-					}
+					sys->reserveManager.DelReserveData(list);
+					resParam->param = OLD_CMD_SUCCESS;
 				}
 			}
 		}
@@ -2321,7 +2301,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 
 					vector<RESERVE_DATA> list;
 					list.push_back(item);
-					if(sys->reserveManager.ChgReserveData(&list) == TRUE ){
+					if(sys->reserveManager.ChgReserveData(list) == TRUE ){
 						resParam->param = OLD_CMD_SUCCESS;
 					}
 				}
@@ -2345,7 +2325,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 					}
 					resParam->param = OLD_CMD_SUCCESS;
 					sys->AutoAddReserveEPG(1, &item);
-					sys->reserveManager.SendNotifyUpdate(NOTIFY_UPDATE_AUTOADD_EPG);
+					sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_EPG);
 				}
 			}
 		}
@@ -2362,7 +2342,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 						sys->epgAutoAdd.SaveText();
 					}
 					resParam->param = OLD_CMD_SUCCESS;
-					sys->reserveManager.SendNotifyUpdate(NOTIFY_UPDATE_AUTOADD_EPG);
+					sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_EPG);
 				}
 			}
 		}
@@ -2383,7 +2363,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 					}
 					resParam->param = OLD_CMD_SUCCESS;
 					sys->AutoAddReserveEPG(1, &item);
-					sys->reserveManager.SendNotifyUpdate(NOTIFY_UPDATE_AUTOADD_EPG);
+					sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_EPG);
 				}
 			}
 		}
@@ -2480,16 +2460,11 @@ int CALLBACK CEpgTimerSrvMain::HttpCallback(void* param, HTTP_STREAM* recvParam,
 			if( recvParam->dataSize > 0 ){
 				param.append((char*)recvParam->data, 0, recvParam->dataSize);
 			}
-			vector<RESERVE_DATA*> list;
+			vector<RESERVE_DATA> list;
 			sys->reserveManager.GetReserveDataAll(&list);
 
 			CRestApiManager restApi;
-			restApi.AnalyzeCmd(verb, url, param, sendParam, &sys->epgDB, &list, &sys->reserveManager);
-
-			for( size_t i=0; i<list.size(); i++ ){
-				SAFE_DELETE(list[i]);
-			}
-			list.clear();
+			restApi.AnalyzeCmd(verb, url, param, sendParam, &sys->epgDB, list, &sys->reserveManager);
 		}else
 		if( CompareNoCase(verb, "GET") == 0 ){
 			if( url.compare("/") == 0 || url.compare("/index.html") == 0 ){
@@ -2499,14 +2474,9 @@ int CALLBACK CEpgTimerSrvMain::HttpCallback(void* param, HTTP_STREAM* recvParam,
 				string page = "";
 				Separate(url, "page=", url, page);
 				int pageIndex = atoi(page.c_str());
-				vector<RESERVE_DATA*> list;
-				if(sys->reserveManager.GetReserveDataAll(&list) == TRUE ){
-					htmlManager.GetReservePage(&list, pageIndex, sendParam);
-					for( size_t i=0; i<list.size(); i++ ){
-						SAFE_DELETE(list[i]);
-					}
-					list.clear();
-				}
+				vector<RESERVE_DATA> list;
+				sys->reserveManager.GetReserveDataAll(&list);
+				htmlManager.GetReservePage(&list, pageIndex, sendParam);
 			}
 			else if(url.find("/reserveinfo.html") == 0 ){
 				string id = "";
@@ -2539,16 +2509,16 @@ int CALLBACK CEpgTimerSrvMain::HttpCallback(void* param, HTTP_STREAM* recvParam,
 				Separate(url, "page=", url, page);
 				int pageIndex = atoi(page.c_str());
 				vector<REC_FILE_INFO> list;
-				if(sys->reserveManager.GetRecFileInfoAll(&list) == TRUE ){
-					htmlManager.GetRecInfoPage(&list, pageIndex, sendParam);
-				}
+				sys->reserveManager.GetRecFileInfoAll(&list);
+				htmlManager.GetRecInfoPage(&list, pageIndex, sendParam);
 			}
 			else if(url.find("/recinfodesc.html") == 0 ){
 				string id = "";
 				Separate(url, "id=", url, id);
 				int infoID = atoi(id.c_str());
 				vector<REC_FILE_INFO> list;
-				if(sys->reserveManager.GetRecFileInfoAll(&list) == TRUE ){
+				sys->reserveManager.GetRecFileInfoAll(&list);
+				{
 					for( size_t i=0; i<list.size(); i++ ){
 						if( list[i].id == infoID ){
 							htmlManager.GetRecInfoDescPage(&list[i], sendParam);
@@ -2558,16 +2528,12 @@ int CALLBACK CEpgTimerSrvMain::HttpCallback(void* param, HTTP_STREAM* recvParam,
 				}
 			}
 			else if(url.find("/epg.html") == 0 ){
-				vector<RESERVE_DATA*> reserveList;
+				vector<RESERVE_DATA> reserveList;
 				sys->reserveManager.GetReserveDataAll(&reserveList);
 				htmlManager.GetEpgPage(&sys->epgDB, &reserveList, url, sendParam);
-				for( size_t i=0; i<reserveList.size(); i++ ){
-					SAFE_DELETE(reserveList[i]);
-				}
-				reserveList.clear();
 			}
 			else if(url.find("/epginfo.html") == 0 ){
-				vector<RESERVE_DATA*> reserveList;
+				vector<RESERVE_DATA> reserveList;
 				sys->reserveManager.GetReserveDataAll(&reserveList);
 				vector<TUNER_RESERVE_INFO> tunerList;
 				sys->reserveManager.GetTunerReserveAll(&tunerList);
@@ -2575,10 +2541,6 @@ int CALLBACK CEpgTimerSrvMain::HttpCallback(void* param, HTTP_STREAM* recvParam,
 				string param = "";
 				Separate(url, "?", url, param);
 				htmlManager.GetEpgInfoPage(&sys->epgDB, &reserveList, &tunerList, param, sendParam);
-				for( size_t i=0; i<reserveList.size(); i++ ){
-					SAFE_DELETE(reserveList[i]);
-				}
-				reserveList.clear();
 			}else if(url.find("/addprogres.html") == 0 ){
 				vector<TUNER_RESERVE_INFO> tunerList;
 				sys->reserveManager.GetTunerReserveAll(&tunerList);
@@ -2665,7 +2627,7 @@ int CALLBACK CEpgTimerSrvMain::HttpCallback(void* param, HTTP_STREAM* recvParam,
 					if(htmlManager.GetReserveParam(&reserveData, recvParam) == TRUE ){
 						vector<RESERVE_DATA> chgList;
 						chgList.push_back(reserveData);
-						sys->reserveManager.ChgReserveData(&chgList);
+						sys->reserveManager.ChgReserveData(chgList);
 						htmlManager.GetReserveChgPage(sendParam);
 					}else{
 						htmlManager.GetReserveChgPage(sendParam, TRUE);
@@ -2679,7 +2641,7 @@ int CALLBACK CEpgTimerSrvMain::HttpCallback(void* param, HTTP_STREAM* recvParam,
 				int reserveID = atoi(id.c_str());
 				vector<DWORD> delList;
 				delList.push_back(reserveID);
-				sys->reserveManager.DelReserveData(&delList);
+				sys->reserveManager.DelReserveData(delList);
 				htmlManager.GetReserveDelPage(sendParam);
 			}
 			else if(url.find("/recinfodel.html") == 0 ){
@@ -2689,21 +2651,17 @@ int CALLBACK CEpgTimerSrvMain::HttpCallback(void* param, HTTP_STREAM* recvParam,
 				int reserveID = atoi(id.c_str());
 				vector<DWORD> delList;
 				delList.push_back(reserveID);
-				sys->reserveManager.DelRecFileInfo(&delList);
+				sys->reserveManager.DelRecFileInfo(delList);
 				htmlManager.GetRecInfoDelPage(sendParam);
 			}
 			else if(url.find("/epginfo.html") == 0 ){
-				vector<RESERVE_DATA*> reserveList;
+				vector<RESERVE_DATA> reserveList;
 				sys->reserveManager.GetReserveDataAll(&reserveList);
 				vector<TUNER_RESERVE_INFO> tunerList;
 				sys->reserveManager.GetTunerReserveAll(&tunerList);
 				string param = "";
 				param.append((char*)recvParam->data, 0, recvParam->dataSize);
 				htmlManager.GetEpgInfoPage(&sys->epgDB, &reserveList, &tunerList, param, sendParam);
-				for( size_t i=0; i<reserveList.size(); i++ ){
-					SAFE_DELETE(reserveList[i]);
-				}
-				reserveList.clear();
 			}
 			else if(url.find("/reserveadd.html") == 0 ){
 				RESERVE_DATA reserveData;
@@ -2712,7 +2670,7 @@ int CALLBACK CEpgTimerSrvMain::HttpCallback(void* param, HTTP_STREAM* recvParam,
 				if( htmlManager.GetAddReserveData(&sys->epgDB, &reserveData, param) == TRUE ){
 					vector<RESERVE_DATA> chgList;
 					chgList.push_back(reserveData);
-					if( sys->reserveManager.AddReserveData(&chgList) == TRUE ){
+					if( sys->reserveManager.AddReserveData(chgList) == TRUE ){
 						htmlManager.GetReserveAddPage(sendParam);
 					}else{
 						htmlManager.GetReserveAddPage(sendParam, TRUE);
@@ -2736,7 +2694,7 @@ int CALLBACK CEpgTimerSrvMain::HttpCallback(void* param, HTTP_STREAM* recvParam,
 				if( htmlManager.GetAddReservePgData(&sys->epgDB, &reserveData, param) == TRUE ){
 					vector<RESERVE_DATA> chgList;
 					chgList.push_back(reserveData);
-					if( sys->reserveManager.AddReserveData(&chgList) == TRUE ){
+					if( sys->reserveManager.AddReserveData(chgList) == TRUE ){
 						htmlManager.GetReserveAddPage(sendParam);
 					}else{
 						htmlManager.GetReserveAddPage(sendParam, TRUE);
@@ -2828,7 +2786,7 @@ int CALLBACK CEpgTimerSrvMain::HttpCallback(void* param, HTTP_STREAM* recvParam,
 
 				htmlManager.GetDelAutoEpgPage(sendParam);
 
-				sys->reserveManager.SendNotifyUpdate(NOTIFY_UPDATE_AUTOADD_EPG);
+				sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_EPG);
 			}
 		}
 	}
@@ -2906,7 +2864,8 @@ void CEpgTimerSrvMain::AddRecFileDMS()
 		return;
 	}
 	vector<REC_FILE_INFO> list;
-	if(this->reserveManager.GetRecFileInfoAll(&list) == TRUE ){
+	this->reserveManager.GetRecFileInfoAll(&list);
+	{
 		for( size_t i= 0; i<list.size(); i++ ){
 			if( list[i].recFilePath.size() > 0 ){
 				dlnaManager->AddDMSRecFile(list[i].recFilePath);

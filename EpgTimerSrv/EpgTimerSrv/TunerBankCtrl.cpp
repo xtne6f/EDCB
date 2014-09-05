@@ -4,10 +4,16 @@
 #include <process.h>
 
 #include "../../Common/ReNamePlugInUtil.h"
+#include "../../Common/BlockLock.h"
 
-CTunerBankCtrl::CTunerBankCtrl(void)
+CTunerBankCtrl::CTunerBankCtrl(DWORD tunerID_, LPCWSTR bonFileName_, const vector<CH_DATA4>& chList_, CNotifyManager& notifyManager_, CEpgDBManager& epgDBManager_)
+	: tunerID(tunerID_)
+	, bonFileName(bonFileName_)
+	, chList(chList_)
+	, notifyManager(notifyManager_)
+	, epgDBManager(epgDBManager_)
 {
-	this->lockEvent = CreateEvent(NULL, FALSE, TRUE, NULL);
+	InitializeCriticalSection(&this->bankLock);
 
 	this->checkThread = NULL;
 	this->checkStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
@@ -15,10 +21,6 @@ CTunerBankCtrl::CTunerBankCtrl(void)
 	this->openTuner = FALSE;
 	this->processID = 0;
 	this->openErrFlag = FALSE;
-	this->useOpendTuner = FALSE;
-	this->recMinWake = TRUE;
-	this->recView = TRUE;
-	this->recNW = FALSE;
 
 	this->currentChID = 0xFFFFFFFF;
 
@@ -26,16 +28,9 @@ CTunerBankCtrl::CTunerBankCtrl(void)
 
 	this->epgCapWork = FALSE;
 
-	this->enableCaption = 1;
-	this->enableData = 0;
-
 	this->delayTime = 0;
-	this->keepDisk = 1;
 
-	this->chkSpaceCount = 0;
 	this->twitterManager = NULL;
-	this->notifyManager = NULL;
-	this->epgDBManager = NULL;
 
 	ReloadSetting();
 }
@@ -63,53 +58,13 @@ CTunerBankCtrl::~CTunerBankCtrl(void)
 	}
 	this->reserveWork.clear();
 
-	if( this->lockEvent != NULL ){
-		UnLock();
-		CloseHandle(this->lockEvent);
-		this->lockEvent = NULL;
-	}
+	DeleteCriticalSection(&this->bankLock);
 }
 
-
-BOOL CTunerBankCtrl::Lock(LPCWSTR log, DWORD timeOut)
-{
-	if( this->lockEvent == NULL ){
-		return FALSE;
-	}
-	//if( log != NULL ){
-	//	_OutputDebugString(L"◆%s",log);
-	//}
-	DWORD dwRet = WaitForSingleObject(this->lockEvent, timeOut);
-	if( dwRet == WAIT_ABANDONED || 
-		dwRet == WAIT_FAILED ||
-		dwRet == WAIT_TIMEOUT){
-			OutputDebugString(L"◆CTunerBankCtrl::Lock FALSE");
-			if( log != NULL ){
-				OutputDebugString(log);
-			}
-		return FALSE;
-	}
-	return TRUE;
-}
-
-void CTunerBankCtrl::UnLock(LPCWSTR log)
-{
-	if( this->lockEvent != NULL ){
-		SetEvent(this->lockEvent);
-	}
-	if( log != NULL ){
-		OutputDebugString(log);
-	}
-}
 
 void CTunerBankCtrl::SetTwitterCtrl(CTwitterManager* twitterManager)
 {
 	this->twitterManager = twitterManager;
-}
-
-void CTunerBankCtrl::SetEpgDBManager(CEpgDBManager* epgDBManager)
-{
-	this->epgDBManager = epgDBManager;
 }
 
 void CTunerBankCtrl::ReloadSetting()
@@ -124,11 +79,9 @@ void CTunerBankCtrl::ReloadSetting()
 	GetModuleFolderPath(viewIniPath);
 	viewIniPath += L"\\EpgDataCap_Bon.ini";
 
-	int sec = GetPrivateProfileInt(L"SET", L"StartMargin", 5, iniPath.c_str());
-	this->defStartMargine = ((LONGLONG)sec) * I64_1SEC;
-	sec = GetPrivateProfileInt(L"SET", L"EndMargin", 2, iniPath.c_str());
-	this->defEndMargine = ((LONGLONG)sec) * I64_1SEC;
-	this->recWakeTime = ((LONGLONG)GetPrivateProfileInt(L"SET", L"RecAppWakeTime", 2, iniPath.c_str())) * 60 * I64_1SEC;
+	this->defStartMargin = GetPrivateProfileInt(L"SET", L"StartMargin", 5, iniPath.c_str());
+	this->defEndMargin = GetPrivateProfileInt(L"SET", L"EndMargin", 2, iniPath.c_str());
+	this->recWakeTime = GetPrivateProfileInt(L"SET", L"RecAppWakeTime", 2, iniPath.c_str()) * 60;
 	this->recMinWake = GetPrivateProfileInt(L"SET", L"RecMinWake", 1, iniPath.c_str());
 	this->recView = GetPrivateProfileInt(L"SET", L"RecView", 1, iniPath.c_str());
 	this->recNW = GetPrivateProfileInt(L"SET", L"RecNW", 0, iniPath.c_str());
@@ -169,59 +122,11 @@ void CTunerBankCtrl::ReloadSetting()
 
 }
 
-void CTunerBankCtrl::SetAutoDel(
-	BOOL autoDel,
-	vector<wstring>* delExtList,
-	vector<wstring>* delFolderList
-	)
-{
-	if( Lock() == FALSE ) return;
-
-	this->autoDel = autoDel;
-	this->delExtList = *delExtList;
-	this->delFolderList = *delFolderList;
-
-	UnLock();
-}
-
-void CTunerBankCtrl::SetNotifyManager(CNotifyManager* manager)
-{
-	if( Lock(L"CTunerBankCtrl::SetNotifyManager") == FALSE ) return;
-	this->notifyManager = manager;
-
-	UnLock();
-}
-/*
-void CTunerBankCtrl::SetRegistGUI(map<DWORD, DWORD> registGUIMap)
-{
-	if( Lock() == FALSE ) return;
-
-	this->registGUIMap = registGUIMap;
-
-	UnLock();
-}
-*/
-void CTunerBankCtrl::SetTunerInfo(
-	WORD bonID,
-	WORD tunerID,
-	wstring bonFileName,
-	wstring chSet4FilePath
-	)
-{
-	if( Lock() == FALSE ) return;
-
-	this->tunerID = ((DWORD)bonID)<<16 | tunerID;
-	this->bonFileName = bonFileName;
-	this->chUtil.ParseText(chSet4FilePath.c_str());
-
-	UnLock();
-}
-
 void CTunerBankCtrl::AddReserve(
 	vector<CReserveInfo*>* reserveInfo
 	)
 {
-	if( Lock() == FALSE ) return;
+	CBlockLock lock(&this->bankLock);
 
 	if( this->checkThread != NULL ){
 		if( ::WaitForSingleObject(this->checkThread, 0) == WAIT_OBJECT_0 ){
@@ -252,29 +157,27 @@ void CTunerBankCtrl::AddReserve(
 		SetThreadPriority( this->checkThread, THREAD_PRIORITY_NORMAL );
 		ResumeThread(this->checkThread);
 	}
-
-	UnLock();
 }
 
 void CTunerBankCtrl::ChgReserve(
-	RESERVE_DATA* reserve
+	const RESERVE_DATA& reserve
 	)
 {
-	if( Lock() == FALSE ) return;
+	CBlockLock lock(&this->bankLock);
 
 	map<DWORD, RESERVE_WORK*>::iterator itr;
-	itr = this->createCtrlList.find(reserve->reserveID);
+	itr = this->createCtrlList.find(reserve.reserveID);
 	if( itr != this->createCtrlList.end() ){
 		//起動中
 		itr->second->reserveInfo->SetData(reserve);
 
-		LONGLONG stratTime = ConvertI64Time(reserve->startTime);
-		LONGLONG endTime = stratTime + reserve->durationSecond * I64_1SEC;
+		LONGLONG stratTime = ConvertI64Time(reserve.startTime);
+		LONGLONG endTime = stratTime + reserve.durationSecond * I64_1SEC;
 		LONGLONG startMargin;
-		if( reserve->recSetting.useMargineFlag == TRUE ){
-			startMargin = ((LONGLONG)reserve->recSetting.startMargine) * I64_1SEC;
+		if( reserve.recSetting.useMargineFlag == TRUE ){
+			startMargin = ((LONGLONG)reserve.recSetting.startMargine) * I64_1SEC;
 		}else{
-			startMargin = this->defStartMargine;
+			startMargin = this->defStartMargin * I64_1SEC;
 		}
 		//開始マージンは元の予約終了時刻を超えて負であってはならない
 		stratTime -= max(startMargin, stratTime - endTime);
@@ -299,24 +202,22 @@ void CTunerBankCtrl::ChgReserve(
 			this->createCtrlList.erase(itr);
 		}
 	}else{
-		itr = this->reserveWork.find(reserve->reserveID);
+		itr = this->reserveWork.find(reserve.reserveID);
 		if( itr != this->reserveWork.end() ){
 			itr->second->reserveInfo->SetData(reserve);
 		}
 	}
-	itr = this->openErrReserveList.find(reserve->reserveID);
+	itr = this->openErrReserveList.find(reserve.reserveID);
 	if( itr != this->openErrReserveList.end() ){
 		this->openErrReserveList.erase(itr);
 	}
-
-	UnLock();
 }
 
 void CTunerBankCtrl::DeleteReserve(
 	DWORD reserveID
 	)
 {
-	if( Lock() == FALSE ) return;
+	CBlockLock lock(&this->bankLock);
 
 	map<DWORD, RESERVE_WORK*>::iterator itr;
 
@@ -347,13 +248,11 @@ void CTunerBankCtrl::DeleteReserve(
 	if( itr != this->openErrReserveList.end() ){
 		this->openErrReserveList.erase(itr);
 	}
-
-	UnLock();
 }
 
 void CTunerBankCtrl::ClearNoCtrl()
 {
-	if( Lock() == FALSE ) return;
+	CBlockLock lock(&this->bankLock);
 
 	map<DWORD, RESERVE_WORK*>::iterator itr;
 	itr = this->reserveWork.begin();
@@ -366,47 +265,37 @@ void CTunerBankCtrl::ClearNoCtrl()
 			itr++;
 		}
 	}
-
-	UnLock();
 }
 
 BOOL CTunerBankCtrl::IsOpenErr()
 {
-	if( Lock() == FALSE ) return FALSE;
+	CBlockLock lock(&this->bankLock);
 
-	BOOL ret = this->openErrFlag;
-
-	UnLock();
-	return ret;
+	return this->openErrFlag;
 }
 
 void CTunerBankCtrl::GetOpenErrReserve(vector<CReserveInfo*>* reserveInfo)
 {
-	if( Lock() == FALSE ) return ;
+	CBlockLock lock(&this->bankLock);
 
 	map<DWORD, RESERVE_WORK*>::iterator itr;
 	for(itr = this->openErrReserveList.begin(); itr != this->openErrReserveList.end(); itr++ ){
 		reserveInfo->push_back(itr->second->reserveInfo);
 	}
-
-	UnLock();
 }
 
 void CTunerBankCtrl::ResetOpenErr()
 {
-	if( Lock() == FALSE ) return ;
+	CBlockLock lock(&this->bankLock);
 
 	this->openErrReserveList.clear();
 	this->openErrFlag = FALSE;
-	
-	UnLock();
 }
 
 UINT WINAPI CTunerBankCtrl::CheckReserveThread(LPVOID param)
 {
 	CTunerBankCtrl* sys = (CTunerBankCtrl*)param;
 	DWORD wait = 1000;
-	LONGLONG delay = 0;
 
 	BOOL startEpgCap = FALSE;
 
@@ -417,7 +306,8 @@ UINT WINAPI CTunerBankCtrl::CheckReserveThread(LPVOID param)
 		}
 
 		if( sys->openErrFlag == FALSE ){
-			if( sys->Lock() == TRUE ){
+			{
+				CBlockLock lock(&sys->bankLock);
 				multimap<LONGLONG, RESERVE_WORK*> sortList;
 				sys->GetCheckList(&sortList);
 
@@ -426,10 +316,6 @@ UINT WINAPI CTunerBankCtrl::CheckReserveThread(LPVOID param)
 				BOOL needOpenTuner = sys->IsNeedOpenTuner(&sortList, &viewMode, &initCh);
 				//起動チェック
 				if( needOpenTuner == TRUE ){
-					//EPG取得状態確認
-					if( startEpgCap == TRUE ){
-						//行っているのでキャンセル
-					}
 					//起動必要
 					if( sys->openTuner == FALSE ){
 						//まだ起動されてないので起動
@@ -443,13 +329,10 @@ UINT WINAPI CTunerBankCtrl::CheckReserveThread(LPVOID param)
 								sys->openErrReserveList.insert(pair<DWORD, RESERVE_WORK*>(itrErr->second->reserveID, itrErr->second));
 							}
 							sys->openErrFlag = TRUE;
-							sys->UnLock();
 							continue;
 						}else{
 							sys->currentChID = ((DWORD)initCh.ONID) << 16 | initCh.TSID;
-							if( sys->notifyManager != NULL ){
-								sys->notifyManager->AddNotifyMsg(NOTIFY_UPDATE_PRE_REC_START, sys->bonFileName);
-							}
+							sys->notifyManager.AddNotifyMsg(NOTIFY_UPDATE_PRE_REC_START, sys->bonFileName);
 						}
 					}
 				}else{
@@ -468,18 +351,16 @@ UINT WINAPI CTunerBankCtrl::CheckReserveThread(LPVOID param)
 						//EXE消されたかも
 						wait = 1000;
 						sys->ErrStop();
-						sys->UnLock();
 						continue;
 					}
-					delay = ((LONGLONG)delaySec)*I64_1SEC;
-					sys->delayTime = delay;
+					sys->delayTime = delaySec * I64_1SEC;
 
 					//制御コントロールまだ作成されていないものを作成
-					sys->CreateCtrl(&sortList, delay);
+					sys->CreateCtrl(&sortList, sys->delayTime);
 
 					BOOL needShortCheck = FALSE;
 					//録画時間のチェック
-					sys->CheckRec(delay, &needShortCheck, wait);
+					sys->CheckRec(sys->delayTime, &needShortCheck, wait);
 
 					if( needShortCheck == TRUE ){
 						wait = 100;
@@ -487,7 +368,6 @@ UINT WINAPI CTunerBankCtrl::CheckReserveThread(LPVOID param)
 						wait = 500;
 					}
 				}
-				sys->UnLock();
 			}
 
 			if( sys->epgCapWork == TRUE ){
@@ -497,7 +377,8 @@ UINT WINAPI CTunerBankCtrl::CheckReserveThread(LPVOID param)
 						sys->epgCapWork = FALSE;
 					}else{
 						//チューナー起動
-						if( sys->Lock() == TRUE ){
+						{
+							CBlockLock lock(&sys->bankLock);
 							if( sys->OpenTuner(FALSE, NULL) == FALSE ){
 								sys->epgCapWork = FALSE;
 							}else{
@@ -510,7 +391,6 @@ UINT WINAPI CTunerBankCtrl::CheckReserveThread(LPVOID param)
 									startEpgCap = TRUE;
 								}
 							}
-							sys->UnLock();
 						}
 					}
 				}else{
@@ -521,10 +401,10 @@ UINT WINAPI CTunerBankCtrl::CheckReserveThread(LPVOID param)
 						OutputDebugString(L"epg end");
 							//取得終わった
 							if( sys->openTuner == TRUE ){
-								if( sys->Lock() == TRUE ){
+								{
+									CBlockLock lock(&sys->bankLock);
 									sys->sendCtrl.SendViewEpgCapStop();
 									sys->CloseTuner();
-									sys->UnLock();
 								}
 							}
 							startEpgCap = FALSE;
@@ -533,17 +413,16 @@ UINT WINAPI CTunerBankCtrl::CheckReserveThread(LPVOID param)
 							//PC時計との誤差取得
 							int delaySec = 0;
 							if( sys->sendCtrl.SendViewGetDelay(&delaySec) == CMD_SUCCESS ){
-								delay = ((LONGLONG)delaySec)*I64_1SEC;
-								sys->delayTime = delay;
+								sys->delayTime = delaySec * I64_1SEC;
 							}
 						}
 					}else{
 						//エラー？
 						OutputDebugString(L"epg err");
 						if( sys->openTuner == TRUE ){
-							if( sys->Lock() == TRUE ){
+							{
+								CBlockLock lock(&sys->bankLock);
 								sys->CloseTuner();
-								sys->UnLock();
 							}
 						}
 						startEpgCap = FALSE;
@@ -555,10 +434,10 @@ UINT WINAPI CTunerBankCtrl::CheckReserveThread(LPVOID param)
 					OutputDebugString(L"epg cancel");
 					//キャンセル？
 					if( sys->openTuner == TRUE ){
-						if( sys->Lock() == TRUE ){
+						{
+							CBlockLock lock(&sys->bankLock);
 							sys->sendCtrl.SendViewEpgCapStop();
 							sys->CloseTuner();
-							sys->UnLock();
 						}
 					}
 					startEpgCap = FALSE;
@@ -586,8 +465,8 @@ void CTunerBankCtrl::GetCheckList(multimap<LONGLONG, RESERVE_WORK*>* sortList)
 			itr->second->startMargine = ((LONGLONG)data.recSetting.startMargine) * I64_1SEC;
 			itr->second->endMargine = ((LONGLONG)data.recSetting.endMargine) * I64_1SEC;
 		}else{
-			itr->second->startMargine = this->defStartMargine;
-			itr->second->endMargine = this->defEndMargine;
+			itr->second->startMargine = this->defStartMargin * I64_1SEC;
+			itr->second->endMargine = this->defEndMargin * I64_1SEC;
 		}
 
 		itr->second->chID = ((DWORD)data.originalNetworkID)<<16 | data.transportStreamID;
@@ -643,7 +522,7 @@ BOOL CTunerBankCtrl::IsNeedOpenTuner(multimap<LONGLONG, RESERVE_WORK*>* sortList
 	BOOL ret = FALSE;
 	multimap<LONGLONG, RESERVE_WORK*>::iterator itr;
 	itr = sortList->begin();
-	if( itr->second->stratTime - this->recWakeTime - max(itr->second->startMargine, itr->second->stratTime - itr->second->endTime) < nowTime ){
+	if( itr->second->stratTime - this->recWakeTime * I64_1SEC - max(itr->second->startMargine, itr->second->stratTime - itr->second->endTime) < nowTime ){
 		ret =  TRUE;
 		BYTE recMode=0;
 		itr->second->reserveInfo->GetRecMode(&recMode);
@@ -653,26 +532,6 @@ BOOL CTunerBankCtrl::IsNeedOpenTuner(multimap<LONGLONG, RESERVE_WORK*>* sortList
 		itr->second->reserveInfo->GetService(&(initCh->ONID), &(initCh->TSID), &(initCh->SID) );
 		initCh->useSID = TRUE;
 		initCh->useBonCh = FALSE;
-
-		wstring searchKey;
-		WIN32_FIND_DATA findData;
-		HANDLE find;
-
-		RESERVE_DATA data;
-		itr->second->reserveInfo->GetData(&data);
-
-		if( data.recSetting.recFolderList.size() == 0 ){
-			searchKey = this->recFolderPath;
-		}else{
-			searchKey = data.recSetting.recFolderList[0].recFolder;
-		}
-		searchKey += L"\\*.*";
-
-		//指定フォルダのファイル一覧取得
-		find = FindFirstFile( searchKey.c_str(), &findData);
-		if ( find != INVALID_HANDLE_VALUE ) {
-			FindClose(find);
-		}
 	}
 
 	return ret;
@@ -693,11 +552,9 @@ BOOL CTunerBankCtrl::OpenTuner(BOOL viewMode, SET_CH_INFO* initCh)
 		UDP = TRUE;
 		TCP = TRUE;
 	}
-	this->useOpendTuner = FALSE;
+	BOOL reusedTuner = FALSE;
 	map<DWORD, DWORD> registGUIMap;
-	if( this->notifyManager != NULL ){
-		this->notifyManager->GetRegistGUI(&registGUIMap);
-	}
+	this->notifyManager.GetRegistGUI(&registGUIMap);
 
 	BOOL ret = OpenTunerExe(this->recExePath.c_str(), this->bonFileName.c_str(), tunerID, this->recMinWake, noView, noNW, UDP, TCP, this->processPriority, registGUIMap, &this->processID);
 	if( ret == FALSE ){
@@ -741,7 +598,7 @@ BOOL CTunerBankCtrl::OpenTuner(BOOL viewMode, SET_CH_INFO* initCh)
 										this->sendCtrl.SendViewSetCh(initCh);
 									}
 									this->processID = IDList[i];
-									this->useOpendTuner = TRUE;
+									reusedTuner = TRUE;
 									ret = TRUE;
 								
 									break;
@@ -751,13 +608,11 @@ BOOL CTunerBankCtrl::OpenTuner(BOOL viewMode, SET_CH_INFO* initCh)
 					}
 				}
 			}
-			if( this->useOpendTuner == FALSE ){
+			if( reusedTuner == FALSE ){
 				//TVTestで使ってるものあるかチェック
 				IDList = _FindPidListByExeName(L"tvtest.exe");
 				map<DWORD, DWORD> registGUIMap;
-				if( this->notifyManager != NULL ){
-					this->notifyManager->GetRegistGUI(&registGUIMap);
-				}
+				this->notifyManager.GetRegistGUI(&registGUIMap);
 
 				for(size_t i=0; i<IDList.size(); i++ ){
 					CSendCtrlCmd send;
@@ -790,7 +645,7 @@ BOOL CTunerBankCtrl::OpenTuner(BOOL viewMode, SET_CH_INFO* initCh)
 				}
 			}
 			//EPG取得中のもの奪う
-			if( this->useOpendTuner == FALSE ){
+			if( reusedTuner == FALSE ){
 				wstring exeName;
 				GetFileName(this->recExePath, exeName);
 				IDList = _FindPidListByExeName(exeName.c_str());
@@ -815,7 +670,7 @@ BOOL CTunerBankCtrl::OpenTuner(BOOL viewMode, SET_CH_INFO* initCh)
 											this->sendCtrl.SendViewSetCh(initCh);
 										}
 										this->processID = IDList[i];
-										this->useOpendTuner = TRUE;
+										reusedTuner = TRUE;
 										ret = TRUE;
 								
 										break;
@@ -827,7 +682,7 @@ BOOL CTunerBankCtrl::OpenTuner(BOOL viewMode, SET_CH_INFO* initCh)
 				}
 			}
 			//録画中のもの奪う
-			if( this->useOpendTuner == FALSE ){
+			if( reusedTuner == FALSE ){
 				wstring exeName;
 				GetFileName(this->recExePath, exeName);
 				IDList = _FindPidListByExeName(exeName.c_str());
@@ -852,7 +707,7 @@ BOOL CTunerBankCtrl::OpenTuner(BOOL viewMode, SET_CH_INFO* initCh)
 											this->sendCtrl.SendViewSetCh(initCh);
 										}
 										this->processID = IDList[i];
-										this->useOpendTuner = TRUE;
+										reusedTuner = TRUE;
 										ret = TRUE;
 								
 										break;
@@ -876,15 +731,15 @@ BOOL CTunerBankCtrl::OpenTuner(BOOL viewMode, SET_CH_INFO* initCh)
 
 BOOL CTunerBankCtrl::FindPartialService(WORD ONID, WORD TSID, WORD SID, WORD* partialSID, wstring* serviceName)
 {
-	map<DWORD, CH_DATA4>::const_iterator itr;
-	for( itr = this->chUtil.GetMap().begin(); itr != this->chUtil.GetMap().end(); itr++ ){
-		if( itr->second.originalNetworkID == ONID && itr->second.transportStreamID == TSID && itr->second.partialFlag == TRUE ){
-			if( itr->second.serviceID != SID ){
+	vector<CH_DATA4>::const_iterator itr;
+	for( itr = this->chList.begin(); itr != this->chList.end(); itr++ ){
+		if( itr->originalNetworkID == ONID && itr->transportStreamID == TSID && itr->partialFlag == TRUE ){
+			if( itr->serviceID != SID ){
 				if( partialSID != NULL ){
-					*partialSID = itr->second.serviceID;
+					*partialSID = itr->serviceID;
 				}
 				if( serviceName != NULL ){
-					*serviceName = itr->second.serviceName;
+					*serviceName = itr->serviceName;
 				}
 				return TRUE;
 			}
@@ -939,7 +794,7 @@ void CTunerBankCtrl::CreateCtrl(multimap<LONGLONG, RESERVE_WORK*>* sortList, LON
 					}
 				}
 
-				if( this->notifyManager != NULL && createFlag == TRUE ){
+				if( createFlag == TRUE ){
 					RESERVE_DATA data;
 					itr->second->reserveInfo->GetData(&data);
 					wstring msg;
@@ -953,7 +808,7 @@ void CTunerBankCtrl::CreateCtrl(multimap<LONGLONG, RESERVE_WORK*>* sortList, LON
 						data.startTime.wMilliseconds,
 						data.title.c_str()
 						);
-					this->notifyManager->AddNotifyMsg(NOTIFY_UPDATE_PRE_REC_START, msg);
+					this->notifyManager.AddNotifyMsg(NOTIFY_UPDATE_PRE_REC_START, msg);
 				}
 			}
 		}
@@ -1195,8 +1050,8 @@ void CTunerBankCtrl::CheckRec(LONGLONG delay, BOOL* needShortCheck, DWORD wait)
 			startMargine = ((LONGLONG)data.recSetting.startMargine)*I64_1SEC;
 			endMargine = ((LONGLONG)data.recSetting.endMargine)*I64_1SEC;
 		}else{
-			startMargine = this->defStartMargine;
-			endMargine = this->defEndMargine;
+			startMargine = this->defStartMargin * I64_1SEC;
+			endMargine = this->defEndMargin * I64_1SEC;
 		}
 
 		startMargine = max(startMargine, chkStartTime - chkEndTime);
@@ -1346,31 +1201,6 @@ void CTunerBankCtrl::CheckRec(LONGLONG delay, BOOL* needShortCheck, DWORD wait)
 						}
 					}
 				}
-				/*if( this->autoDel == TRUE ){
-					if( this->chkSpaceCount > 30000 ){
-						CCheckRecFile chkFile;
-						CParseRecInfoText recInfoText;
-
-						wstring recInfoFilePath = L"";
-						GetSettingPath(recInfoFilePath);
-						recInfoFilePath += L"\\";
-						recInfoFilePath += REC_INFO_TEXT_NAME;
-						recInfoText.ParseRecInfoText(recInfoFilePath.c_str());
-
-						chkFile.SetCheckFolder(&this->delFolderList);
-						chkFile.SetDeleteExt(&this->delExtList);
-						for(size_t i=0; i<itr->second->ctrlID.size(); i++ ){
-							wstring recFilePath = L"";
-							if( this->sendCtrl.SendViewGetRecFilePath(itr->second->ctrlID[i], &recFilePath) == CMD_SUCCESS ){
-								wstring folderPath = L"";
-								GetFileFolder(recFilePath, folderPath);
-								map<wstring, wstring> protectFile;
-								recInfoText.GetProtectFiles(&protectFile);
-								chkFile.CheckFreeSpaceLive(&data, folderPath, &protectFile);
-							}
-						}
-					}
-				}*/
 			}
 		}else if( chkEndTime-5*I64_1SEC < nowTime && nowTime <chkEndTime ){
 			//終了5秒前になったらチェック間隔を短くする
@@ -1451,13 +1281,6 @@ void CTunerBankCtrl::CheckRec(LONGLONG delay, BOOL* needShortCheck, DWORD wait)
 		}
 	}
 
-	if( this->autoDel == TRUE ){
-		if( this->chkSpaceCount > 30000 ){
-			this->chkSpaceCount = 0;
-		}else{
-			this->chkSpaceCount+=wait;
-		}
-	}
 	//終了リストに移行
 	for( size_t i=0; i<endList.size(); i++ ){
 		itr = this->createCtrlList.find(endList[i]);
@@ -1471,12 +1294,12 @@ void CTunerBankCtrl::SaveProgramInfo(wstring savePath, EPGDB_EVENT_INFO* info, B
 {
 	wstring outText = L"";
 	wstring serviceName = L"";
-	map<DWORD, CH_DATA4>::const_iterator itr;
-	for( itr = chUtil.GetMap().begin(); itr != chUtil.GetMap().end(); itr++ ){
-		if( itr->second.originalNetworkID == info->original_network_id &&
-		    itr->second.transportStreamID == info->transport_stream_id &&
-		    itr->second.serviceID == info->service_id ){
-			serviceName = itr->second.serviceName;
+	vector<CH_DATA4>::const_iterator itr;
+	for( itr = this->chList.begin(); itr != this->chList.end(); itr++ ){
+		if( itr->originalNetworkID == info->original_network_id &&
+		    itr->transportStreamID == info->transport_stream_id &&
+		    itr->serviceID == info->service_id ){
+			serviceName = itr->serviceName;
 			break;
 		}
 	}
@@ -1546,8 +1369,8 @@ BOOL CTunerBankCtrl::RecStart(LONGLONG nowTime, RESERVE_WORK* reserve, BOOL send
 
 				EPG_EVENT_INFO* epgInfo = NULL;
 				EPGDB_EVENT_INFO epgDBInfo;
-				if( this->epgDBManager != NULL && info.EventID != 0xFFFF ){
-					if( this->epgDBManager->SearchEpg(info.ONID, info.TSID, info.SID, info.EventID, &epgDBInfo) == TRUE ){
+				if( info.EventID != 0xFFFF ){
+					if( this->epgDBManager.SearchEpg(info.ONID, info.TSID, info.SID, info.EventID, &epgDBInfo) == TRUE ){
 						epgInfo = new EPG_EVENT_INFO;
 						CopyEpgInfo(epgInfo, &epgDBInfo);
 					}
@@ -1637,8 +1460,8 @@ BOOL CTunerBankCtrl::RecStart(LONGLONG nowTime, RESERVE_WORK* reserve, BOOL send
 
 							EPG_EVENT_INFO* epgInfo = NULL;
 							EPGDB_EVENT_INFO epgDBInfo;
-							if( this->epgDBManager != NULL && info.EventID != 0xFFFF ){
-								if( this->epgDBManager->SearchEpg(info.ONID, info.TSID, info.SID, info.EventID, &epgDBInfo) == TRUE ){
+							if( info.EventID != 0xFFFF ){
+								if( this->epgDBManager.SearchEpg(info.ONID, info.TSID, info.SID, info.EventID, &epgDBInfo) == TRUE ){
 									epgInfo = new EPG_EVENT_INFO;
 									CopyEpgInfo(epgInfo, &epgDBInfo);
 								}
@@ -1698,8 +1521,8 @@ BOOL CTunerBankCtrl::RecStart(LONGLONG nowTime, RESERVE_WORK* reserve, BOOL send
 
 							EPG_EVENT_INFO* epgInfo = NULL;
 							EPGDB_EVENT_INFO epgDBInfo;
-							if( this->epgDBManager != NULL && info.EventID != 0xFFFF ){
-								if( this->epgDBManager->SearchEpg(info.ONID, info.TSID, info.SID, info.EventID, &epgDBInfo) == TRUE ){
+							if( info.EventID != 0xFFFF ){
+								if( this->epgDBManager.SearchEpg(info.ONID, info.TSID, info.SID, info.EventID, &epgDBInfo) == TRUE ){
 									epgInfo = new EPG_EVENT_INFO;
 									CopyEpgInfo(epgInfo, &epgDBInfo);
 								}
@@ -1759,7 +1582,7 @@ BOOL CTunerBankCtrl::RecStart(LONGLONG nowTime, RESERVE_WORK* reserve, BOOL send
 		this->twitterManager->SendTweet(TW_REC_START, &data, NULL, NULL);
 	}
 
-	if( this->notifyManager != NULL && sendNoyify == TRUE){
+	if( sendNoyify == TRUE){
 		wstring msg;
 		Format(msg, L"%s %04d/%02d/%02d %02d:%02d:%02d\r\n%s", 
 			data.stationName.c_str(),
@@ -1771,7 +1594,7 @@ BOOL CTunerBankCtrl::RecStart(LONGLONG nowTime, RESERVE_WORK* reserve, BOOL send
 			data.startTime.wSecond,
 			data.title.c_str()
 			);
-		this->notifyManager->AddNotifyMsg(NOTIFY_UPDATE_REC_START, msg);
+		this->notifyManager.AddNotifyMsg(NOTIFY_UPDATE_REC_START, msg);
 	}
 	return ret;
 }
@@ -1845,20 +1668,18 @@ void CTunerBankCtrl::AddEndReserve(RESERVE_WORK* reserve, DWORD endType, SET_CTR
 
 void CTunerBankCtrl::GetEndReserve(map<DWORD, END_RESERVE_INFO*>* reserveMap)
 {
-	if( Lock() == FALSE ) return;
+	CBlockLock lock(&this->bankLock);
 
 	for( size_t i=0; i<this->endList.size(); i++ ){
 
 		reserveMap->insert(pair<DWORD, END_RESERVE_INFO*>(this->endList[i]->reserveID, this->endList[i]));
 	}
 	this->endList.clear();
-
-	UnLock();
 }
 
 BOOL CTunerBankCtrl::IsRecWork()
 {
-	if( Lock() == FALSE ) return FALSE;
+	CBlockLock lock(&this->bankLock);
 
 	BOOL ret = FALSE;
 	map<DWORD, RESERVE_WORK*>::iterator itr;
@@ -1869,25 +1690,19 @@ BOOL CTunerBankCtrl::IsRecWork()
 		}
 	}
 
-	UnLock();
-
 	return ret;
 }
 
 BOOL CTunerBankCtrl::IsOpenTuner()
 {
-	if( Lock() == FALSE ) return FALSE;
+	CBlockLock lock(&this->bankLock);
 
-	BOOL ret = this->openTuner;
-
-	UnLock();
-
-	return ret;
+	return this->openTuner;
 }
 
 BOOL CTunerBankCtrl::GetCurrentChID(DWORD* currentChID)
 {
-	if( Lock() == FALSE ) return FALSE;
+	CBlockLock lock(&this->bankLock);
 
 	DWORD ret = FALSE;
 	if( this->openTuner == TRUE && this->epgCapWork == FALSE ){
@@ -1897,14 +1712,12 @@ BOOL CTunerBankCtrl::GetCurrentChID(DWORD* currentChID)
 		}
 	}
 
-	UnLock();
-
 	return ret;
 }
 
 BOOL CTunerBankCtrl::IsSuspendOK()
 {
-	if( Lock() == FALSE ) return FALSE;
+	CBlockLock lock(&this->bankLock);
 
 	BOOL ret = FALSE;
 
@@ -1920,25 +1733,22 @@ BOOL CTunerBankCtrl::IsSuspendOK()
 			CloseTuner();
 		}
 	}
-	UnLock();
 
 	return ret;
 }
 
-BOOL CTunerBankCtrl::IsEpgCapOK(LONGLONG ngCapMin)
+BOOL CTunerBankCtrl::IsEpgCapOK(int ngCapMin)
 {
-	if( Lock() == FALSE ) return FALSE;
+	CBlockLock lock(&this->bankLock);
 
 	BOOL ret = TRUE;
 	if( this->openTuner == TRUE ){
-		UnLock();
 		return FALSE;
 	}
 
 	multimap<LONGLONG, RESERVE_WORK*> sortList;
 	this->GetCheckList(&sortList);
 	if( sortList.size() == 0 ){
-		UnLock();
 		return TRUE;
 	}
 
@@ -1950,45 +1760,35 @@ BOOL CTunerBankCtrl::IsEpgCapOK(LONGLONG ngCapMin)
 		ret = FALSE;
 	}
 
-	UnLock();
-
 	return ret;
 }
 
 BOOL CTunerBankCtrl::IsEpgCapWorking()
 {
-	if( Lock() == FALSE ) return FALSE;
+	CBlockLock lock(&this->bankLock);
 
-	BOOL ret = this->epgCapWork;
-
-	UnLock();
-	return ret;
+	return this->epgCapWork;
 }
 
 void CTunerBankCtrl::ClearEpgCapItem()
 {
-	if( Lock() == FALSE ) return;
+	CBlockLock lock(&this->bankLock);
 
 	this->epgCapItem.clear();
-
-	UnLock();
 }
 
-void CTunerBankCtrl::AddEpgCapItem(SET_CH_INFO info)
+void CTunerBankCtrl::AddEpgCapItem(const SET_CH_INFO& info)
 {
-	if( Lock() == FALSE ) return;
+	CBlockLock lock(&this->bankLock);
 
 	this->epgCapItem.push_back(info);
-
-	UnLock();
 }
 
 void CTunerBankCtrl::StartEpgCap()
 {
-	if( Lock() == FALSE ) return;
+	CBlockLock lock(&this->bankLock);
 
 	if( epgCapItem.size() == 0 ){
-		UnLock();
 		return ;
 	}
 
@@ -2000,17 +1800,13 @@ void CTunerBankCtrl::StartEpgCap()
 	}
 
 	this->epgCapWork = TRUE;
-
-	UnLock();
 }
 
 void CTunerBankCtrl::StopEpgCap()
 {
-	if( Lock() == FALSE ) return;
+	CBlockLock lock(&this->bankLock);
 
 	this->epgCapWork = FALSE;
-
-	UnLock();
 }
 
 //起動中のチューナーからEPGデータの検索
@@ -2023,7 +1819,7 @@ BOOL CTunerBankCtrl::SearchEpgInfo(
 	EPGDB_EVENT_INFO* resVal
 	)
 {
-	if( Lock() == FALSE ) return FALSE;
+	CBlockLock lock(&this->bankLock);
 
 	BOOL ret = FALSE;
 	if( this->openTuner == TRUE && this->epgCapWork == FALSE ){
@@ -2031,8 +1827,6 @@ BOOL CTunerBankCtrl::SearchEpgInfo(
 			ret = TRUE;
 		}
 	}
-
-	UnLock();
 
 	return ret;
 }
@@ -2047,7 +1841,7 @@ DWORD CTunerBankCtrl::GetEventPF(
 	EPGDB_EVENT_INFO* resVal
 	)
 {
-	if( Lock() == FALSE ) return FALSE;
+	CBlockLock lock(&this->bankLock);
 
 	BOOL ret = FALSE;
 	if( this->openTuner == TRUE && this->epgCapWork == FALSE ){
@@ -2056,28 +1850,24 @@ DWORD CTunerBankCtrl::GetEventPF(
 		}
 	}
 
-	UnLock();
-
 	return ret;
 }
 
 LONGLONG CTunerBankCtrl::DelayTime()
 {
-	if( Lock() == FALSE ) return 0;
+	CBlockLock lock(&this->bankLock);
 
 	LONGLONG ret = 0;
 	if( this->openTuner == TRUE ){
 		ret = this->delayTime;
 	}
 
-	UnLock();
-
 	return ret;
 }
 
 BOOL CTunerBankCtrl::ReRec(DWORD reserveID, BOOL deleteFile)
 {
-	if( Lock() == FALSE ) return FALSE;
+	CBlockLock lock(&this->bankLock);
 
 	LONGLONG nowTime = GetNowI64Time();
 	nowTime += this->delayTime;
@@ -2112,8 +1902,6 @@ BOOL CTunerBankCtrl::ReRec(DWORD reserveID, BOOL deleteFile)
 		}
 	}
 
-	UnLock();
-
 	return ret;
 }
 
@@ -2124,7 +1912,7 @@ BOOL CTunerBankCtrl::GetRecFilePath(
 	DWORD* processID
 	)
 {
-	if( Lock() == FALSE ) return FALSE;
+	CBlockLock lock(&this->bankLock);
 	BOOL ret = FALSE;
 
 	map<DWORD, RESERVE_WORK*>::iterator itr;
@@ -2138,7 +1926,6 @@ BOOL CTunerBankCtrl::GetRecFilePath(
 			ret = TRUE;
 		}
 	}
-	UnLock();
 
 	return ret;
 }
@@ -2288,143 +2075,3 @@ void CTunerBankCtrl::CloseTunerExe(
 		Sleep(500);
 	}
 }
-/*
-void CTunerBankCtrl::CopyEpgInfo(EPG_EVENT_INFO* destInfo, EPGDB_EVENT_INFO* srcInfo)
-{
-	destInfo->event_id = srcInfo->event_id;
-	destInfo->StartTimeFlag = srcInfo->StartTimeFlag;
-	destInfo->start_time = srcInfo->start_time;
-	destInfo->DurationFlag = srcInfo->DurationFlag;
-	destInfo->durationSec = srcInfo->durationSec;
-	destInfo->freeCAFlag = srcInfo->freeCAFlag;
-
-	if( srcInfo->shortInfo != NULL ){
-		EPG_SHORT_EVENT_INFO* item = new EPG_SHORT_EVENT_INFO;
-		destInfo->shortInfo = item;
-
-		item->event_nameLength = (WORD)srcInfo->shortInfo->event_name.size();
-		item->event_name = new WCHAR[item->event_nameLength+1];
-		ZeroMemory(item->event_name, sizeof(WCHAR)*(item->event_nameLength+1));
-		if( item->event_nameLength > 0 ){
-			wcscpy_s(item->event_name, item->event_nameLength+1, srcInfo->shortInfo->event_name.c_str());
-		}
-
-		item->text_charLength = (WORD)srcInfo->shortInfo->text_char.size();
-		item->text_char = new WCHAR[item->text_charLength+1];
-		ZeroMemory(item->text_char, sizeof(WCHAR)*(item->text_charLength+1));
-		if( item->text_charLength > 0 ){
-			wcscpy_s(item->text_char, item->text_charLength+1, srcInfo->shortInfo->text_char.c_str());
-		}
-	}
-
-	if( srcInfo->extInfo != NULL ){
-		EPG_EXTENDED_EVENT_INFO* item = new EPG_EXTENDED_EVENT_INFO;
-		destInfo->extInfo = item;
-
-		item->text_charLength = (WORD)srcInfo->extInfo->text_char.size();
-		item->text_char = new WCHAR[item->text_charLength+1];
-		ZeroMemory(item->text_char, sizeof(WCHAR)*(item->text_charLength+1));
-		if( item->text_charLength > 0 ){
-			wcscpy_s(item->text_char, item->text_charLength+1, srcInfo->extInfo->text_char.c_str());
-		}
-	}
-
-	if( srcInfo->contentInfo != NULL ){
-		EPG_CONTEN_INFO* item = new EPG_CONTEN_INFO;
-		destInfo->contentInfo = item;
-
-		item->listSize = (WORD)srcInfo->contentInfo->nibbleList.size();
-		if( item->listSize > 0 ){
-			item->nibbleList = new EPG_CONTENT[item->listSize];
-			for( WORD i=0; i<item->listSize; i++ ){
-				item->nibbleList[i].content_nibble_level_1 = srcInfo->contentInfo->nibbleList[i].content_nibble_level_1;
-				item->nibbleList[i].content_nibble_level_2 = srcInfo->contentInfo->nibbleList[i].content_nibble_level_2;
-				item->nibbleList[i].user_nibble_1 = srcInfo->contentInfo->nibbleList[i].user_nibble_1;
-				item->nibbleList[i].user_nibble_2 = srcInfo->contentInfo->nibbleList[i].user_nibble_2;
-			}
-		}
-	}
-
-	if( srcInfo->componentInfo != NULL ){
-		EPG_COMPONENT_INFO* item = new EPG_COMPONENT_INFO;
-		destInfo->componentInfo = item;
-
-		item->stream_content = srcInfo->componentInfo->stream_content;
-		item->component_type = srcInfo->componentInfo->component_type;
-		item->component_tag = srcInfo->componentInfo->component_tag;
-
-		item->text_charLength = (WORD)srcInfo->componentInfo->text_char.size();
-		item->text_char = new WCHAR[item->text_charLength+1];
-		ZeroMemory(item->text_char, sizeof(WCHAR)*(item->text_charLength+1));
-		if( item->text_charLength > 0 ){
-			wcscpy_s(item->text_char, item->text_charLength+1, srcInfo->componentInfo->text_char.c_str());
-		}
-	}
-
-	if( srcInfo->audioInfo != NULL ){
-		EPG_AUDIO_COMPONENT_INFO* item = new EPG_AUDIO_COMPONENT_INFO;
-		destInfo->audioInfo = item;
-		item->listSize = (WORD)srcInfo->audioInfo->componentList.size();
-		if( item->listSize > 0 ){
-			item->audioList = new EPG_AUDIO_COMPONENT_INFO_DATA[item->listSize];
-			for( WORD i=0; i<item->listSize; i++ ){
-				item->audioList[i].stream_content = srcInfo->audioInfo->componentList[i].stream_content;
-				item->audioList[i].component_type = srcInfo->audioInfo->componentList[i].component_type;
-				item->audioList[i].component_tag = srcInfo->audioInfo->componentList[i].component_tag;
-				item->audioList[i].stream_type = srcInfo->audioInfo->componentList[i].stream_type;
-				item->audioList[i].simulcast_group_tag = srcInfo->audioInfo->componentList[i].simulcast_group_tag;
-				item->audioList[i].ES_multi_lingual_flag = srcInfo->audioInfo->componentList[i].ES_multi_lingual_flag;
-				item->audioList[i].main_component_flag = srcInfo->audioInfo->componentList[i].main_component_flag;
-				item->audioList[i].quality_indicator = srcInfo->audioInfo->componentList[i].quality_indicator;
-				item->audioList[i].sampling_rate = srcInfo->audioInfo->componentList[i].sampling_rate;
-
-				item->audioList[i].text_charLength = (WORD)srcInfo->audioInfo->componentList[i].text_char.size();
-				item->audioList[i].text_char = new WCHAR[item->audioList[i].text_charLength+1];
-				ZeroMemory(item->audioList[i].text_char, sizeof(WCHAR)*(item->audioList[i].text_charLength+1));
-				if( item->audioList[i].text_charLength > 0 ){
-					wcscpy_s(item->audioList[i].text_char, item->audioList[i].text_charLength+1, srcInfo->audioInfo->componentList[i].text_char.c_str());
-				}
-			}
-		}
-	}
-
-	if( srcInfo->eventGroupInfo != NULL ){
-		EPG_EVENTGROUP_INFO* item = new EPG_EVENTGROUP_INFO;
-		destInfo->eventGroupInfo = item;
-
-		item->group_type = srcInfo->eventGroupInfo->group_type;
-		item->event_count = (BYTE)srcInfo->eventGroupInfo->eventDataList.size();
-
-		if( item->event_count > 0 ){
-			item->eventDataList = new EPG_EVENT_DATA[item->event_count];
-			for( BYTE i=0; i<item->event_count; i++ ){
-				item->eventDataList[i].original_network_id = srcInfo->eventGroupInfo->eventDataList[i].original_network_id;
-				item->eventDataList[i].transport_stream_id = srcInfo->eventGroupInfo->eventDataList[i].transport_stream_id;
-				item->eventDataList[i].service_id = srcInfo->eventGroupInfo->eventDataList[i].service_id;
-				item->eventDataList[i].event_id = srcInfo->eventGroupInfo->eventDataList[i].event_id;
-			}
-		}
-	}
-
-	if( srcInfo->eventRelayInfo != NULL ){
-		EPG_EVENTGROUP_INFO* item = new EPG_EVENTGROUP_INFO;
-		destInfo->eventRelayInfo = item;
-
-		item->group_type = srcInfo->eventRelayInfo->group_type;
-		//他チャンネルのときevent_countは０になっている
-		//item->event_count = srcInfo->eventGroupInfo->event_count;
-		item->event_count = (BYTE)srcInfo->eventRelayInfo->eventDataList.size();
-
-		if( item->event_count > 0 ){
-			item->eventDataList = new EPG_EVENT_DATA[item->event_count];
-			for( BYTE i=0; i<item->event_count; i++ ){
-				item->eventDataList[i].original_network_id = srcInfo->eventRelayInfo->eventDataList[i].original_network_id;
-				item->eventDataList[i].transport_stream_id = srcInfo->eventRelayInfo->eventDataList[i].transport_stream_id;
-				item->eventDataList[i].service_id = srcInfo->eventRelayInfo->eventDataList[i].service_id;
-				item->eventDataList[i].event_id = srcInfo->eventRelayInfo->eventDataList[i].event_id;
-			}
-		}
-	}
-
-}
-*/
