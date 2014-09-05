@@ -10,6 +10,7 @@
 
 class CNotifyManager;
 class CEpgDBManager;
+class CReserveInfoManager;
 
 class CTunerManager
 {
@@ -38,10 +39,12 @@ public:
 	// ctrlMap			[OUT]チューナー予約制御の一覧
 	// notifyManager	[IN]CTunerBankCtrlに渡す引数
 	// epgDBManager		[IN]CTunerBankCtrlに渡す引数
+	// reserveInfoManager	[IN]CTunerBankCtrlに渡す引数
 	BOOL GetEnumTunerBank(
 		map<DWORD, CTunerBankCtrl*>* ctrlMap,
 		CNotifyManager& notifyManager,
-		CEpgDBManager& epgDBManager
+		CEpgDBManager& epgDBManager,
+		CReserveInfoManager& reserveInfoManager
 		) const;
 
 	//指定サービスをサポートしていないチューナー一覧を取得する

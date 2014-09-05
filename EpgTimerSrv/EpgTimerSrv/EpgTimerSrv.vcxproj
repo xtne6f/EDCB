@@ -232,6 +232,7 @@
     <ClInclude Include="HttpRequestReader.h" />
     <ClInclude Include="NotifyManager.h" />
     <ClInclude Include="ReserveInfo.h" />
+    <ClInclude Include="ReserveInfoManager.h" />
     <ClInclude Include="ReserveManager.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="RestApiManager.h" />

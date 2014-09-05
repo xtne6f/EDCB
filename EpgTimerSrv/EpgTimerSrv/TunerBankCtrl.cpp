@@ -6,12 +6,13 @@
 #include "../../Common/ReNamePlugInUtil.h"
 #include "../../Common/BlockLock.h"
 
-CTunerBankCtrl::CTunerBankCtrl(DWORD tunerID_, LPCWSTR bonFileName_, const vector<CH_DATA4>& chList_, CNotifyManager& notifyManager_, CEpgDBManager& epgDBManager_)
+CTunerBankCtrl::CTunerBankCtrl(DWORD tunerID_, LPCWSTR bonFileName_, const vector<CH_DATA4>& chList_, CNotifyManager& notifyManager_, CEpgDBManager& epgDBManager_, CReserveInfoManager& reserveInfoManager_)
 	: tunerID(tunerID_)
 	, bonFileName(bonFileName_)
 	, chList(chList_)
 	, notifyManager(notifyManager_)
 	, epgDBManager(epgDBManager_)
+	, reserveInfoManager(reserveInfoManager_)
 {
 	InitializeCriticalSection(&this->bankLock);
 
@@ -197,7 +198,7 @@ void CTunerBankCtrl::ChgReserve(
 			}
 			itr->second->ctrlID.clear();
 
-			itr->second->reserveInfo->SetRecWaitMode(FALSE, 0);
+			this->reserveInfoManager.SetRecWaitMode(reserve.reserveID, FALSE, 0);
 
 			this->createCtrlList.erase(itr);
 		}
@@ -325,7 +326,7 @@ UINT WINAPI CTunerBankCtrl::CheckReserveThread(LPVOID param)
 							multimap<LONGLONG, RESERVE_WORK*>::iterator itrErr;
 							itrErr = sortList.begin();
 							if( itrErr != sortList.end() ){
-								itrErr->second->reserveInfo->AddNGTunerID(sys->tunerID);
+								sys->reserveInfoManager.AddNGTunerID(itrErr->second->reserveID, sys->tunerID);
 								sys->openErrReserveList.insert(pair<DWORD, RESERVE_WORK*>(itrErr->second->reserveID, itrErr->second));
 							}
 							sys->openErrFlag = TRUE;
@@ -852,14 +853,14 @@ void CTunerBankCtrl::CreateCtrl(RESERVE_WORK* info)
 	}
 	if( createFull == FALSE ){
 		info->mainCtrlID = newCtrlID;
-		info->reserveInfo->SetRecWaitMode(TRUE, this->tunerID);
+		this->reserveInfoManager.SetRecWaitMode(info->reserveID, TRUE, this->tunerID);
 		this->createCtrlList.insert(pair<DWORD, RESERVE_WORK*>(info->reserveID,info));
 	}else{
 		//通常
 		if( sendCtrl.SendViewCreateCtrl(&newCtrlID) == CMD_SUCCESS){
 			info->ctrlID.push_back(newCtrlID);
 			info->mainCtrlID = newCtrlID;
-			info->reserveInfo->SetRecWaitMode(TRUE, this->tunerID);
+			this->reserveInfoManager.SetRecWaitMode(info->reserveID, TRUE, this->tunerID);
 			//コントロールに対して設定
 			SET_CTRL_MODE param;
 			param.ctrlID = newCtrlID;
@@ -898,7 +899,7 @@ BOOL CTunerBankCtrl::ContinueRec(RESERVE_WORK* info)
 			){
 				continue;
 		}
-		if( itr->second->reserveInfo->IsChkPfInfo() == FALSE && data.recSetting.tuijyuuFlag == 1 ){
+		if( this->reserveInfoManager.IsChkPfInfo(data.reserveID) == FALSE && data.recSetting.tuijyuuFlag == 1 ){
 			continue;
 		}
 		if( itr->second->ONID == info->ONID &&
@@ -912,9 +913,9 @@ BOOL CTunerBankCtrl::ContinueRec(RESERVE_WORK* info)
 					//連続録画なので、同一制御IDで録画開始されたことにする
 					info->ctrlID = itr->second->ctrlID;
 					info->mainCtrlID = itr->second->mainCtrlID;
-					info->reserveInfo->SetRecWaitMode(TRUE, this->tunerID);
-					info->reserveInfo->SetPfInfoAddMode(TRUE);
-					itr->second->reserveInfo->SetContinueRecFlag(TRUE);
+					this->reserveInfoManager.SetRecWaitMode(info->reserveID, TRUE, this->tunerID);
+					info->pfInfoAddFlag = TRUE;
+					itr->second->continueRecStartFlag = TRUE;
 
 					info->recStartFlag = TRUE;
 
@@ -1168,10 +1169,10 @@ void CTunerBankCtrl::CheckRec(LONGLONG delay, BOOL* needShortCheck, DWORD wait)
 												GetFileName(recFilePath, tsFileName);
 												wstring pgFile = L"";
 												Format(pgFile, L"%s\\%s.program.txt", infoFolder.c_str(), tsFileName.c_str());
-												SaveProgramInfo(pgFile, &resVal, 0, itr->second->reserveInfo->IsPfInfoAddMode());
+												SaveProgramInfo(pgFile, &resVal, 0, itr->second->pfInfoAddFlag);
 											}else{
 												recFilePath += L".program.txt";
-												SaveProgramInfo(recFilePath, &resVal, 0, itr->second->reserveInfo->IsPfInfoAddMode());
+												SaveProgramInfo(recFilePath, &resVal, 0, itr->second->pfInfoAddFlag);
 											}
 										}
 									}
@@ -1207,7 +1208,7 @@ void CTunerBankCtrl::CheckRec(LONGLONG delay, BOOL* needShortCheck, DWORD wait)
 			*needShortCheck = TRUE;
 		}else if( chkEndTime < nowTime){
 			//終了時間過ぎている
-			if( itr->second->reserveInfo->IsContinueRec() == FALSE ){
+			if( itr->second->continueRecStartFlag == FALSE ){
 				if( data.recSetting.recMode == RECMODE_VIEW ){
 					for(size_t i=0; i<itr->second->ctrlID.size(); i++ ){
 						this->sendCtrl.SendViewDeleteCtrl(itr->second->ctrlID[i]);
@@ -1241,7 +1242,7 @@ void CTunerBankCtrl::CheckRec(LONGLONG delay, BOOL* needShortCheck, DWORD wait)
 								endType = REC_END_STATUS_END_SUBREC;
 							}
 							if( data.recSetting.tuijyuuFlag == 1 && data.eventID != 0xFFFF ){
-								if( itr->second->reserveInfo->IsChkPfInfo() == FALSE ){
+								if( this->reserveInfoManager.IsChkPfInfo(itr->second->reserveID) == FALSE ){
 									endType = REC_END_STATUS_NOT_FIND_PF;
 								}
 							}
@@ -1269,7 +1270,7 @@ void CTunerBankCtrl::CheckRec(LONGLONG delay, BOOL* needShortCheck, DWORD wait)
 						endType = REC_END_STATUS_END_SUBREC;
 					}
 					if( data.recSetting.tuijyuuFlag == 1 && data.eventID != 0xFFFF ){
-						if( itr->second->reserveInfo->IsChkPfInfo() == FALSE ){
+						if( this->reserveInfoManager.IsChkPfInfo(itr->second->reserveID) == FALSE ){
 							endType = REC_END_STATUS_NOT_FIND_PF;
 						}
 					}
@@ -1311,10 +1312,12 @@ void CTunerBankCtrl::SaveProgramInfo(wstring savePath, EPGDB_EVENT_INFO* info, B
 	HANDLE file = INVALID_HANDLE_VALUE;
 	if(addMode == TRUE ){
 		file = _CreateDirectoryAndFile( savePath.c_str(), GENERIC_WRITE|GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL );
-		SetFilePointer(file, 0, NULL, FILE_END);
-		string buff2 = "\r\n-----------------------\r\n";
-		DWORD dwWrite;
-		WriteFile(file, buff2.c_str(), (DWORD)buff2.size(), &dwWrite, NULL);
+		if( file != INVALID_HANDLE_VALUE ){
+			SetFilePointer(file, 0, NULL, FILE_END);
+			string buff2 = "\r\n-----------------------\r\n";
+			DWORD dwWrite;
+			WriteFile(file, buff2.c_str(), (DWORD)buff2.size(), &dwWrite, NULL);
+		}
 	}else{
 		file = _CreateDirectoryAndFile( savePath.c_str(), GENERIC_WRITE|GENERIC_READ, FILE_SHARE_READ, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL );
 	}
@@ -1654,6 +1657,7 @@ void CTunerBankCtrl::AddEndReserve(RESERVE_WORK* reserve, DWORD endType, SET_CTR
 	item->recFilePath = resVal.recFilePath;
 	item->drop = resVal.drop;
 	item->scramble = resVal.scramble;
+	item->continueRecStartFlag = reserve->continueRecStartFlag;
 
 	if( reserve->eventInfo != NULL && reserve->eventInfo->shortInfo != NULL && reserve->eventInfo->StartTimeFlag != 0 ){
 		item->epgEventName = reserve->eventInfo->shortInfo->event_name;

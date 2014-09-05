@@ -129,10 +129,12 @@ BOOL CTunerManager::GetEnumID(
 // ctrlMap			[OUT]ƒ`ƒ…[ƒi[—\–ñ§Œä‚Ìˆê——
 // notifyManager	[IN]CTunerBankCtrl‚É“n‚·ˆø”
 // epgDBManager		[IN]CTunerBankCtrl‚É“n‚·ˆø”
+// reserveInfoManager	[IN]CTunerBankCtrl‚É“n‚·ˆø”
 BOOL CTunerManager::GetEnumTunerBank(
 	map<DWORD, CTunerBankCtrl*>* ctrlMap,
 	CNotifyManager& notifyManager,
-	CEpgDBManager& epgDBManager
+	CEpgDBManager& epgDBManager,
+	CReserveInfoManager& reserveInfoManager
 	) const
 {
 	if( ctrlMap == NULL ){
@@ -140,7 +142,7 @@ BOOL CTunerManager::GetEnumTunerBank(
 	}
 	map<DWORD, TUNER_INFO>::const_iterator itr;
 	for( itr = this->tunerMap.begin(); itr != this->tunerMap.end(); itr++ ){
-		CTunerBankCtrl* ctrl = new CTunerBankCtrl(itr->first, itr->second.bonFileName.c_str(), itr->second.chList, notifyManager, epgDBManager);
+		CTunerBankCtrl* ctrl = new CTunerBankCtrl(itr->first, itr->second.bonFileName.c_str(), itr->second.chList, notifyManager, epgDBManager, reserveInfoManager);
 		ctrlMap->insert(pair<DWORD, CTunerBankCtrl*>(itr->first, ctrl));
 	}
 	return TRUE;

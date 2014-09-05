@@ -173,6 +173,7 @@ protected:
 
 	CNotifyManager& notifyManager;
 	CEpgDBManager& epgDBManager;
+	CReserveInfoManager reserveInfoManager;
 
 	HANDLE bankCheckThread;
 	HANDLE bankCheckStopEvent;

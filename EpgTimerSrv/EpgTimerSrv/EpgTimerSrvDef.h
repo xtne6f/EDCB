@@ -11,6 +11,7 @@ typedef struct _END_RESERVE_INFO{
 	wstring recFilePath;
 	ULONGLONG drop;
 	ULONGLONG scramble;
+	BOOL continueRecStartFlag;
 	wstring epgEventName;
 	WORD epgOriginalNetworkID;
 	WORD epgTransportStreamID;

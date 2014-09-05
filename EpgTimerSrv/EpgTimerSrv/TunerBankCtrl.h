@@ -11,11 +11,12 @@
 #include "TwitterManager.h"
 #include "NotifyManager.h"
 #include "EpgDBManager.h"
+#include "ReserveInfoManager.h"
 
 class CTunerBankCtrl
 {
 public:
-	CTunerBankCtrl(DWORD tunerID_, LPCWSTR bonFileName_, const vector<CH_DATA4>& chList_, CNotifyManager& notifyManager_, CEpgDBManager& epgDBManager_);
+	CTunerBankCtrl(DWORD tunerID_, LPCWSTR bonFileName_, const vector<CH_DATA4>& chList_, CNotifyManager& notifyManager_, CEpgDBManager& epgDBManager_, CReserveInfoManager& reserveInfoManager_);
 	~CTunerBankCtrl(void);
 
 	void SetTwitterCtrl(CTwitterManager* twitterManager);
@@ -104,6 +105,7 @@ protected:
 	const vector<CH_DATA4> chList;
 	CNotifyManager& notifyManager;
 	CEpgDBManager& epgDBManager;
+	CReserveInfoManager& reserveInfoManager;
 
 	CTwitterManager* twitterManager;
 
@@ -137,6 +139,12 @@ protected:
 
 		BYTE notStartHeadFlag;
 		EPGDB_EVENT_INFO* eventInfo;
+
+		//.program.txtを追記モードにする
+		BOOL pfInfoAddFlag;
+		//連続録画の前方の予約になった
+		BOOL continueRecStartFlag;
+
 		//=オペレーターの処理
 		_RESERVE_WORK(void){
 			reserveInfo = NULL;
@@ -164,6 +172,9 @@ protected:
 
 			notStartHeadFlag = FALSE;
 			eventInfo = NULL;
+
+			pfInfoAddFlag = FALSE;
+			continueRecStartFlag = FALSE;
 		};
 		~_RESERVE_WORK(void){
 			SAFE_DELETE(eventInfo);
