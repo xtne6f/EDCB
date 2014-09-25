@@ -430,7 +430,7 @@ void CWinHTTPUtil::StatusHeadersAvailable()
 	}else{
 		this->responseHTTPHeader = L"";
 	}
-	SAFE_DELETE_ARRAY(rawHeader)
+	SAFE_DELETE_ARRAY(rawHeader);
 
 	//ContentLength‚ðŽæ“¾‚µ‚Ä‚Ý‚é
 	DWORD fileLength = 0;

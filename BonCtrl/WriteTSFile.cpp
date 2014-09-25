@@ -36,7 +36,7 @@ CWriteTSFile::~CWriteTSFile(void)
 
 	DeleteCriticalSection(&this->outThreadLock);
 	for( size_t i=0; i<this->TSBuff.size(); i++ ){
-		SAFE_DELETE(this->TSBuff[i])
+		SAFE_DELETE(this->TSBuff[i]);
 	}
 	this->TSBuff.clear();
 
