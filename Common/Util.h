@@ -20,7 +20,12 @@
 #include <vector>
 #include <algorithm>
 #endif
-using namespace std;
+using std::string;
+using std::wstring;
+using std::pair;
+using std::map;
+using std::multimap;
+using std::vector;
 
 #include <TCHAR.h>
 #include <windows.h>
