@@ -6,7 +6,7 @@
 #include "EpgTimerSrv.h"
 #include "EpgTimerSrvDef.h"
 #include "EpgTimerSrvMain.h"
-#include "ServiceUtil.h"
+#include "../../Common/ServiceUtil.h"
 
 #include "../../Common/CommonDef.h"
 #include "../../Common/Util.h"

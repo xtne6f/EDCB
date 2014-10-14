@@ -57,8 +57,8 @@
     <ClInclude Include="EpgTimerSrv.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="ServiceUtil.h">
-      <Filter>ヘッダー ファイル</Filter>
+    <ClInclude Include="..\..\Common\ServiceUtil.h">
+      <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
     <ClInclude Include="EpgTimerSrvDef.h">
       <Filter>ヘッダー ファイル</Filter>
@@ -290,8 +290,8 @@
     <ClCompile Include="EpgTimerSrv.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="ServiceUtil.cpp">
-      <Filter>ソース ファイル</Filter>
+    <ClCompile Include="..\..\Common\ServiceUtil.cpp">
+      <Filter>ソース ファイル\Common</Filter>
     </ClCompile>
     <ClCompile Include="EpgTimerSrvMain.cpp">
       <Filter>ソース ファイル</Filter>
