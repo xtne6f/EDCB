@@ -6,7 +6,7 @@
 #define WRITE_VALUE_OR_FAIL(buff,buffSize,pos,size,val)		{ if( WriteVALUE(val,(buff)+pos,(buffSize)-pos,&size) == FALSE ) return FALSE; pos+=size; }
 #define READ_VALUE_OR_FAIL(buff,buffSize,pos,size,val)		{ if( ReadVALUE(val,(buff)+pos,(buffSize)-pos,&size) == FALSE ) return FALSE; pos+=size; }
 
-DWORD GetVALUESize( vector<unsigned short>* val)
+DWORD GetVALUESize( const vector<unsigned short>* val)
 {
 	DWORD size = sizeof(DWORD)*2;
 	if( val == NULL ){
@@ -18,7 +18,7 @@ DWORD GetVALUESize( vector<unsigned short>* val)
 	return size;
 }
 
-DWORD GetVALUESize( vector<unsigned long>* val)
+DWORD GetVALUESize( const vector<unsigned long>* val)
 {
 	DWORD size = sizeof(DWORD)*2;
 	if( val == NULL ){
@@ -30,7 +30,7 @@ DWORD GetVALUESize( vector<unsigned long>* val)
 	return size;
 }
 
-DWORD GetVALUESize( vector<__int64>* val)
+DWORD GetVALUESize( const vector<__int64>* val)
 {
 	DWORD size = sizeof(DWORD)*2;
 	if( val == NULL ){
@@ -66,7 +66,7 @@ BOOL WriteVALUE( const wstring& val, BYTE* buff, DWORD buffSize, DWORD* writeSiz
 	return TRUE;
 }
 
-BOOL ReadVALUE( wstring* val, BYTE* buff, DWORD buffSize, DWORD* readSize )
+BOOL ReadVALUE( wstring* val, const BYTE* buff, DWORD buffSize, DWORD* readSize )
 {
 	if( val == NULL || buff == NULL ){
 		return FALSE;
@@ -90,7 +90,7 @@ BOOL ReadVALUE( wstring* val, BYTE* buff, DWORD buffSize, DWORD* readSize )
 	return TRUE;
 }
 
-DWORD GetVALUESize( REC_SETTING_DATA* val )
+DWORD GetVALUESize( const REC_SETTING_DATA* val )
 {
 	DWORD size = sizeof(DWORD);
 	if( val == NULL ){
@@ -116,7 +116,7 @@ DWORD GetVALUESize( REC_SETTING_DATA* val )
 	return size;
 }
 
-BOOL WriteVALUE( REC_SETTING_DATA* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
+BOOL WriteVALUE( const REC_SETTING_DATA* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
 {
 	DWORD valSize = GetVALUESize( val );
 	if( buff == NULL || valSize > buffSize ){
@@ -151,7 +151,7 @@ BOOL WriteVALUE( REC_SETTING_DATA* val, BYTE* buff, DWORD buffSize, DWORD* write
 	return TRUE;
 }
 
-BOOL ReadVALUE( REC_SETTING_DATA* val, BYTE* buff, DWORD buffSize, DWORD* readSize )
+BOOL ReadVALUE( REC_SETTING_DATA* val, const BYTE* buff, DWORD buffSize, DWORD* readSize )
 {
 	if( val == NULL || buff == NULL || buffSize < sizeof(DWORD) ){
 		return FALSE;
@@ -190,7 +190,7 @@ BOOL ReadVALUE( REC_SETTING_DATA* val, BYTE* buff, DWORD buffSize, DWORD* readSi
 	return TRUE;
 }
 
-DWORD GetVALUESize( RESERVE_DATA* val )
+DWORD GetVALUESize( const RESERVE_DATA* val )
 {
 	DWORD size = sizeof(DWORD);
 	if( val == NULL ){
@@ -217,7 +217,7 @@ DWORD GetVALUESize( RESERVE_DATA* val )
 	return size;
 }
 
-BOOL WriteVALUE( RESERVE_DATA* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
+BOOL WriteVALUE( const RESERVE_DATA* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
 {
 	DWORD valSize = GetVALUESize( val );
 	if( buff == NULL || valSize > buffSize ){
@@ -253,7 +253,7 @@ BOOL WriteVALUE( RESERVE_DATA* val, BYTE* buff, DWORD buffSize, DWORD* writeSize
 	return TRUE;
 }
 
-BOOL ReadVALUE( RESERVE_DATA* val, BYTE* buff, DWORD buffSize, DWORD* readSize )
+BOOL ReadVALUE( RESERVE_DATA* val, const BYTE* buff, DWORD buffSize, DWORD* readSize )
 {
 	if( val == NULL || buff == NULL || buffSize < sizeof(DWORD) ){
 		return FALSE;
@@ -293,7 +293,7 @@ BOOL ReadVALUE( RESERVE_DATA* val, BYTE* buff, DWORD buffSize, DWORD* readSize )
 	return TRUE;
 }
 
-DWORD GetVALUESize( EPGDB_SERVICE_INFO* val )
+DWORD GetVALUESize( const EPGDB_SERVICE_INFO* val )
 {
 	DWORD size = sizeof(DWORD);
 	if( val == NULL ){
@@ -314,7 +314,7 @@ DWORD GetVALUESize( EPGDB_SERVICE_INFO* val )
 	return size;
 }
 
-BOOL WriteVALUE( EPGDB_SERVICE_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
+BOOL WriteVALUE( const EPGDB_SERVICE_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
 {
 	DWORD valSize = GetVALUESize( val );
 	if( buff == NULL || valSize > buffSize ){
@@ -344,7 +344,7 @@ BOOL WriteVALUE( EPGDB_SERVICE_INFO* val, BYTE* buff, DWORD buffSize, DWORD* wri
 	return TRUE;
 }
 
-BOOL ReadVALUE( EPGDB_SERVICE_INFO* val, BYTE* buff, DWORD buffSize, DWORD* readSize )
+BOOL ReadVALUE( EPGDB_SERVICE_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize )
 {
 	if( val == NULL || buff == NULL || buffSize < sizeof(DWORD) ){
 		return FALSE;
@@ -378,7 +378,7 @@ BOOL ReadVALUE( EPGDB_SERVICE_INFO* val, BYTE* buff, DWORD buffSize, DWORD* read
 	return TRUE;
 }
 
-DWORD GetVALUESize( EPGDB_SHORT_EVENT_INFO* val )
+DWORD GetVALUESize( const EPGDB_SHORT_EVENT_INFO* val )
 {
 	DWORD size = sizeof(DWORD);
 	if( val == NULL ){
@@ -391,7 +391,7 @@ DWORD GetVALUESize( EPGDB_SHORT_EVENT_INFO* val )
 	return size;
 }
 
-BOOL WriteVALUE( EPGDB_SHORT_EVENT_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
+BOOL WriteVALUE( const EPGDB_SHORT_EVENT_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
 {
 	DWORD valSize = GetVALUESize( val );
 	if( buff == NULL || valSize > buffSize ){
@@ -413,7 +413,7 @@ BOOL WriteVALUE( EPGDB_SHORT_EVENT_INFO* val, BYTE* buff, DWORD buffSize, DWORD*
 	return TRUE;
 }
 
-BOOL ReadVALUE( EPGDB_SHORT_EVENT_INFO* val, BYTE* buff, DWORD buffSize, DWORD* readSize )
+BOOL ReadVALUE( EPGDB_SHORT_EVENT_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize )
 {
 	if( val == NULL || buff == NULL || buffSize < sizeof(DWORD) ){
 		return FALSE;
@@ -439,7 +439,7 @@ BOOL ReadVALUE( EPGDB_SHORT_EVENT_INFO* val, BYTE* buff, DWORD buffSize, DWORD* 
 	return TRUE;
 }
 
-DWORD GetVALUESize( EPGDB_EXTENDED_EVENT_INFO* val )
+DWORD GetVALUESize( const EPGDB_EXTENDED_EVENT_INFO* val )
 {
 	DWORD size = sizeof(DWORD);
 	if( val == NULL ){
@@ -451,7 +451,7 @@ DWORD GetVALUESize( EPGDB_EXTENDED_EVENT_INFO* val )
 	return size;
 }
 
-BOOL WriteVALUE( EPGDB_EXTENDED_EVENT_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
+BOOL WriteVALUE( const EPGDB_EXTENDED_EVENT_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
 {
 	DWORD valSize = GetVALUESize( val );
 	if( buff == NULL || valSize > buffSize ){
@@ -472,7 +472,7 @@ BOOL WriteVALUE( EPGDB_EXTENDED_EVENT_INFO* val, BYTE* buff, DWORD buffSize, DWO
 	return TRUE;
 }
 
-BOOL ReadVALUE( EPGDB_EXTENDED_EVENT_INFO* val, BYTE* buff, DWORD buffSize, DWORD* readSize )
+BOOL ReadVALUE( EPGDB_EXTENDED_EVENT_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize )
 {
 	if( val == NULL || buff == NULL || buffSize < sizeof(DWORD) ){
 		return FALSE;
@@ -497,7 +497,7 @@ BOOL ReadVALUE( EPGDB_EXTENDED_EVENT_INFO* val, BYTE* buff, DWORD buffSize, DWOR
 	return TRUE;
 }
 
-DWORD GetVALUESize( EPGDB_CONTENT_DATA* val )
+DWORD GetVALUESize( const EPGDB_CONTENT_DATA* val )
 {
 	DWORD size = sizeof(DWORD);
 	if( val == NULL ){
@@ -512,7 +512,7 @@ DWORD GetVALUESize( EPGDB_CONTENT_DATA* val )
 	return size;
 }
 
-BOOL WriteVALUE( EPGDB_CONTENT_DATA* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
+BOOL WriteVALUE( const EPGDB_CONTENT_DATA* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
 {
 	DWORD valSize = GetVALUESize( val );
 	if( buff == NULL || valSize > buffSize ){
@@ -536,7 +536,7 @@ BOOL WriteVALUE( EPGDB_CONTENT_DATA* val, BYTE* buff, DWORD buffSize, DWORD* wri
 	return TRUE;
 }
 
-BOOL ReadVALUE( EPGDB_CONTENT_DATA* val, BYTE* buff, DWORD buffSize, DWORD* readSize )
+BOOL ReadVALUE( EPGDB_CONTENT_DATA* val, const BYTE* buff, DWORD buffSize, DWORD* readSize )
 {
 	if( val == NULL || buff == NULL || buffSize < sizeof(DWORD) ){
 		return FALSE;
@@ -564,7 +564,7 @@ BOOL ReadVALUE( EPGDB_CONTENT_DATA* val, BYTE* buff, DWORD buffSize, DWORD* read
 	return TRUE;
 }
 
-DWORD GetVALUESize( EPGDB_CONTEN_INFO* val )
+DWORD GetVALUESize( const EPGDB_CONTEN_INFO* val )
 {
 	DWORD size = sizeof(DWORD);
 	if( val == NULL ){
@@ -576,7 +576,7 @@ DWORD GetVALUESize( EPGDB_CONTEN_INFO* val )
 	return size;
 }
 
-BOOL WriteVALUE( EPGDB_CONTEN_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
+BOOL WriteVALUE( const EPGDB_CONTEN_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
 {
 	DWORD valSize = GetVALUESize( val );
 	if( buff == NULL || valSize > buffSize ){
@@ -597,7 +597,7 @@ BOOL WriteVALUE( EPGDB_CONTEN_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writ
 	return TRUE;
 }
 
-BOOL ReadVALUE( EPGDB_CONTEN_INFO* val, BYTE* buff, DWORD buffSize, DWORD* readSize )
+BOOL ReadVALUE( EPGDB_CONTEN_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize )
 {
 	if( val == NULL || buff == NULL || buffSize < sizeof(DWORD) ){
 		return FALSE;
@@ -622,7 +622,7 @@ BOOL ReadVALUE( EPGDB_CONTEN_INFO* val, BYTE* buff, DWORD buffSize, DWORD* readS
 	return TRUE;
 }
 
-DWORD GetVALUESize( EPGDB_COMPONENT_INFO* val )
+DWORD GetVALUESize( const EPGDB_COMPONENT_INFO* val )
 {
 	DWORD size = sizeof(DWORD);
 	if( val == NULL ){
@@ -637,7 +637,7 @@ DWORD GetVALUESize( EPGDB_COMPONENT_INFO* val )
 	return size;
 }
 
-BOOL WriteVALUE( EPGDB_COMPONENT_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
+BOOL WriteVALUE( const EPGDB_COMPONENT_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
 {
 	DWORD valSize = GetVALUESize( val );
 	if( buff == NULL || valSize > buffSize ){
@@ -661,7 +661,7 @@ BOOL WriteVALUE( EPGDB_COMPONENT_INFO* val, BYTE* buff, DWORD buffSize, DWORD* w
 	return TRUE;
 }
 
-BOOL ReadVALUE( EPGDB_COMPONENT_INFO* val, BYTE* buff, DWORD buffSize, DWORD* readSize )
+BOOL ReadVALUE( EPGDB_COMPONENT_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize )
 {
 	if( val == NULL || buff == NULL || buffSize < sizeof(DWORD) ){
 		return FALSE;
@@ -689,7 +689,7 @@ BOOL ReadVALUE( EPGDB_COMPONENT_INFO* val, BYTE* buff, DWORD buffSize, DWORD* re
 	return TRUE;
 }
 
-DWORD GetVALUESize( EPGDB_AUDIO_COMPONENT_INFO_DATA* val )
+DWORD GetVALUESize( const EPGDB_AUDIO_COMPONENT_INFO_DATA* val )
 {
 	DWORD size = sizeof(DWORD);
 	if( val == NULL ){
@@ -710,7 +710,7 @@ DWORD GetVALUESize( EPGDB_AUDIO_COMPONENT_INFO_DATA* val )
 	return size;
 }
 
-BOOL WriteVALUE( EPGDB_AUDIO_COMPONENT_INFO_DATA* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
+BOOL WriteVALUE( const EPGDB_AUDIO_COMPONENT_INFO_DATA* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
 {
 	DWORD valSize = GetVALUESize( val );
 	if( buff == NULL || valSize > buffSize ){
@@ -740,7 +740,7 @@ BOOL WriteVALUE( EPGDB_AUDIO_COMPONENT_INFO_DATA* val, BYTE* buff, DWORD buffSiz
 	return TRUE;
 }
 
-BOOL ReadVALUE( EPGDB_AUDIO_COMPONENT_INFO_DATA* val, BYTE* buff, DWORD buffSize, DWORD* readSize )
+BOOL ReadVALUE( EPGDB_AUDIO_COMPONENT_INFO_DATA* val, const BYTE* buff, DWORD buffSize, DWORD* readSize )
 {
 	if( val == NULL || buff == NULL || buffSize < sizeof(DWORD) ){
 		return FALSE;
@@ -774,7 +774,7 @@ BOOL ReadVALUE( EPGDB_AUDIO_COMPONENT_INFO_DATA* val, BYTE* buff, DWORD buffSize
 	return TRUE;
 }
 
-DWORD GetVALUESize( EPGDB_AUDIO_COMPONENT_INFO* val )
+DWORD GetVALUESize( const EPGDB_AUDIO_COMPONENT_INFO* val )
 {
 	DWORD size = sizeof(DWORD);
 	if( val == NULL ){
@@ -786,7 +786,7 @@ DWORD GetVALUESize( EPGDB_AUDIO_COMPONENT_INFO* val )
 	return size;
 }
 
-BOOL WriteVALUE( EPGDB_AUDIO_COMPONENT_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
+BOOL WriteVALUE( const EPGDB_AUDIO_COMPONENT_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
 {
 	DWORD valSize = GetVALUESize( val );
 	if( buff == NULL || valSize > buffSize ){
@@ -807,7 +807,7 @@ BOOL WriteVALUE( EPGDB_AUDIO_COMPONENT_INFO* val, BYTE* buff, DWORD buffSize, DW
 	return TRUE;
 }
 
-BOOL ReadVALUE( EPGDB_AUDIO_COMPONENT_INFO* val, BYTE* buff, DWORD buffSize, DWORD* readSize )
+BOOL ReadVALUE( EPGDB_AUDIO_COMPONENT_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize )
 {
 	if( val == NULL || buff == NULL || buffSize < sizeof(DWORD) ){
 		return FALSE;
@@ -832,7 +832,7 @@ BOOL ReadVALUE( EPGDB_AUDIO_COMPONENT_INFO* val, BYTE* buff, DWORD buffSize, DWO
 	return TRUE;
 }
 
-DWORD GetVALUESize( EPGDB_EVENT_DATA* val )
+DWORD GetVALUESize( const EPGDB_EVENT_DATA* val )
 {
 	DWORD size = sizeof(DWORD);
 	if( val == NULL ){
@@ -847,7 +847,7 @@ DWORD GetVALUESize( EPGDB_EVENT_DATA* val )
 	return size;
 }
 
-BOOL WriteVALUE( EPGDB_EVENT_DATA* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
+BOOL WriteVALUE( const EPGDB_EVENT_DATA* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
 {
 	DWORD valSize = GetVALUESize( val );
 	if( buff == NULL || valSize > buffSize ){
@@ -871,7 +871,7 @@ BOOL WriteVALUE( EPGDB_EVENT_DATA* val, BYTE* buff, DWORD buffSize, DWORD* write
 	return TRUE;
 }
 
-BOOL ReadVALUE( EPGDB_EVENT_DATA* val, BYTE* buff, DWORD buffSize, DWORD* readSize )
+BOOL ReadVALUE( EPGDB_EVENT_DATA* val, const BYTE* buff, DWORD buffSize, DWORD* readSize )
 {
 	if( val == NULL || buff == NULL || buffSize < sizeof(DWORD) ){
 		return FALSE;
@@ -899,7 +899,7 @@ BOOL ReadVALUE( EPGDB_EVENT_DATA* val, BYTE* buff, DWORD buffSize, DWORD* readSi
 	return TRUE;
 }
 
-DWORD GetVALUESize( EPGDB_EVENTGROUP_INFO* val )
+DWORD GetVALUESize( const EPGDB_EVENTGROUP_INFO* val )
 {
 	DWORD size = sizeof(DWORD);
 	if( val == NULL ){
@@ -912,7 +912,7 @@ DWORD GetVALUESize( EPGDB_EVENTGROUP_INFO* val )
 	return size;
 }
 
-BOOL WriteVALUE( EPGDB_EVENTGROUP_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
+BOOL WriteVALUE( const EPGDB_EVENTGROUP_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
 {
 	DWORD valSize = GetVALUESize( val );
 	if( buff == NULL || valSize > buffSize ){
@@ -934,7 +934,7 @@ BOOL WriteVALUE( EPGDB_EVENTGROUP_INFO* val, BYTE* buff, DWORD buffSize, DWORD* 
 	return TRUE;
 }
 
-BOOL ReadVALUE( EPGDB_EVENTGROUP_INFO* val, BYTE* buff, DWORD buffSize, DWORD* readSize )
+BOOL ReadVALUE( EPGDB_EVENTGROUP_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize )
 {
 	if( val == NULL || buff == NULL || buffSize < sizeof(DWORD) ){
 		return FALSE;
@@ -960,7 +960,7 @@ BOOL ReadVALUE( EPGDB_EVENTGROUP_INFO* val, BYTE* buff, DWORD buffSize, DWORD* r
 	return TRUE;
 }
 
-DWORD GetVALUESize( EPGDB_EVENT_INFO* val )
+DWORD GetVALUESize( const EPGDB_EVENT_INFO* val )
 {
 	DWORD size = sizeof(DWORD);
 	if( val == NULL ){
@@ -989,7 +989,7 @@ DWORD GetVALUESize( EPGDB_EVENT_INFO* val )
 	return size;
 }
 
-BOOL WriteVALUE( EPGDB_EVENT_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
+BOOL WriteVALUE( const EPGDB_EVENT_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
 {
 	DWORD valSize = GetVALUESize( val );
 	if( buff == NULL || valSize > buffSize ){
@@ -1026,7 +1026,7 @@ BOOL WriteVALUE( EPGDB_EVENT_INFO* val, BYTE* buff, DWORD buffSize, DWORD* write
 	return TRUE;
 }
 
-BOOL ReadVALUE( EPGDB_EVENT_INFO* val, BYTE* buff, DWORD buffSize, DWORD* readSize )
+BOOL ReadVALUE( EPGDB_EVENT_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize )
 {
 	if( val == NULL || buff == NULL || buffSize < sizeof(DWORD) ){
 		return FALSE;
@@ -1169,7 +1169,7 @@ BOOL ReadVALUE( EPGDB_EVENT_INFO* val, BYTE* buff, DWORD buffSize, DWORD* readSi
 	return TRUE;
 }
 
-DWORD GetVALUESize( EPGDB_SEARCH_DATE_INFO* val )
+DWORD GetVALUESize( const EPGDB_SEARCH_DATE_INFO* val )
 {
 	DWORD size = sizeof(DWORD);
 	if( val == NULL ){
@@ -1186,7 +1186,7 @@ DWORD GetVALUESize( EPGDB_SEARCH_DATE_INFO* val )
 	return size;
 }
 
-BOOL WriteVALUE( EPGDB_SEARCH_DATE_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
+BOOL WriteVALUE( const EPGDB_SEARCH_DATE_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
 {
 	DWORD valSize = GetVALUESize( val );
 	if( buff == NULL || valSize > buffSize ){
@@ -1212,7 +1212,7 @@ BOOL WriteVALUE( EPGDB_SEARCH_DATE_INFO* val, BYTE* buff, DWORD buffSize, DWORD*
 	return TRUE;
 }
 
-BOOL ReadVALUE( EPGDB_SEARCH_DATE_INFO* val, BYTE* buff, DWORD buffSize, DWORD* readSize )
+BOOL ReadVALUE( EPGDB_SEARCH_DATE_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize )
 {
 	if( val == NULL || buff == NULL || buffSize < sizeof(DWORD) ){
 		return FALSE;
@@ -1242,7 +1242,7 @@ BOOL ReadVALUE( EPGDB_SEARCH_DATE_INFO* val, BYTE* buff, DWORD buffSize, DWORD* 
 	return TRUE;
 }
 
-DWORD GetVALUESize( EPGDB_SEARCH_KEY_INFO* val )
+DWORD GetVALUESize( const EPGDB_SEARCH_KEY_INFO* val )
 {
 	DWORD size = sizeof(DWORD);
 	if( val == NULL ){
@@ -1266,7 +1266,7 @@ DWORD GetVALUESize( EPGDB_SEARCH_KEY_INFO* val )
 	return size;
 }
 
-BOOL WriteVALUE( EPGDB_SEARCH_KEY_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
+BOOL WriteVALUE( const EPGDB_SEARCH_KEY_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
 {
 	DWORD valSize = GetVALUESize( val );
 	if( buff == NULL || valSize > buffSize ){
@@ -1299,7 +1299,7 @@ BOOL WriteVALUE( EPGDB_SEARCH_KEY_INFO* val, BYTE* buff, DWORD buffSize, DWORD* 
 	return TRUE;
 }
 
-BOOL ReadVALUE( EPGDB_SEARCH_KEY_INFO* val, BYTE* buff, DWORD buffSize, DWORD* readSize )
+BOOL ReadVALUE( EPGDB_SEARCH_KEY_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize )
 {
 	if( val == NULL || buff == NULL || buffSize < sizeof(DWORD) ){
 		return FALSE;
@@ -1336,7 +1336,7 @@ BOOL ReadVALUE( EPGDB_SEARCH_KEY_INFO* val, BYTE* buff, DWORD buffSize, DWORD* r
 	return TRUE;
 }
 
-DWORD GetVALUESize( SET_CH_INFO* val )
+DWORD GetVALUESize( const SET_CH_INFO* val )
 {
 	DWORD size = sizeof(DWORD);
 	if( val == NULL ){
@@ -1354,7 +1354,7 @@ DWORD GetVALUESize( SET_CH_INFO* val )
 	return size;
 }
 
-BOOL WriteVALUE( SET_CH_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
+BOOL WriteVALUE( const SET_CH_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
 {
 	DWORD valSize = GetVALUESize( val );
 	if( buff == NULL || valSize > buffSize ){
@@ -1381,7 +1381,7 @@ BOOL WriteVALUE( SET_CH_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize 
 	return TRUE;
 }
 
-BOOL ReadVALUE( SET_CH_INFO* val, BYTE* buff, DWORD buffSize, DWORD* readSize )
+BOOL ReadVALUE( SET_CH_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize )
 {
 	if( val == NULL || buff == NULL || buffSize < sizeof(DWORD) ){
 		return FALSE;
@@ -1412,7 +1412,7 @@ BOOL ReadVALUE( SET_CH_INFO* val, BYTE* buff, DWORD buffSize, DWORD* readSize )
 	return TRUE;
 }
 
-DWORD GetVALUESize( SET_CTRL_MODE* val )
+DWORD GetVALUESize( const SET_CTRL_MODE* val )
 {
 	DWORD size = sizeof(DWORD);
 	if( val == NULL ){
@@ -1428,7 +1428,7 @@ DWORD GetVALUESize( SET_CTRL_MODE* val )
 	return size;
 }
 
-BOOL WriteVALUE( SET_CTRL_MODE* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
+BOOL WriteVALUE( const SET_CTRL_MODE* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
 {
 	DWORD valSize = GetVALUESize( val );
 	if( buff == NULL || valSize > buffSize ){
@@ -1454,7 +1454,7 @@ BOOL WriteVALUE( SET_CTRL_MODE* val, BYTE* buff, DWORD buffSize, DWORD* writeSiz
 	return TRUE;
 }
 
-BOOL ReadVALUE( SET_CTRL_MODE* val, BYTE* buff, DWORD buffSize, DWORD* readSize )
+BOOL ReadVALUE( SET_CTRL_MODE* val, const BYTE* buff, DWORD buffSize, DWORD* readSize )
 {
 	if( val == NULL || buff == NULL || buffSize < sizeof(DWORD) ){
 		return FALSE;
@@ -1484,7 +1484,7 @@ BOOL ReadVALUE( SET_CTRL_MODE* val, BYTE* buff, DWORD buffSize, DWORD* readSize 
 	return TRUE;
 }
 
-DWORD GetVALUESize( REC_FILE_SET_INFO* val )
+DWORD GetVALUESize( const REC_FILE_SET_INFO* val )
 {
 	DWORD size = sizeof(DWORD);
 	if( val == NULL ){
@@ -1499,7 +1499,7 @@ DWORD GetVALUESize( REC_FILE_SET_INFO* val )
 	return size;
 }
 
-BOOL WriteVALUE( REC_FILE_SET_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
+BOOL WriteVALUE( const REC_FILE_SET_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
 {
 	DWORD valSize = GetVALUESize( val );
 	if( buff == NULL || valSize > buffSize ){
@@ -1523,7 +1523,7 @@ BOOL WriteVALUE( REC_FILE_SET_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writ
 	return TRUE;
 }
 
-BOOL ReadVALUE( REC_FILE_SET_INFO* val, BYTE* buff, DWORD buffSize, DWORD* readSize )
+BOOL ReadVALUE( REC_FILE_SET_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize )
 {
 	if( val == NULL || buff == NULL || buffSize < sizeof(DWORD) ){
 		return FALSE;
@@ -1551,7 +1551,7 @@ BOOL ReadVALUE( REC_FILE_SET_INFO* val, BYTE* buff, DWORD buffSize, DWORD* readS
 	return TRUE;
 }
 
-DWORD GetVALUESize( SET_CTRL_REC_PARAM* val )
+DWORD GetVALUESize( const SET_CTRL_REC_PARAM* val )
 {
 	DWORD size = sizeof(DWORD);
 	if( val == NULL ){
@@ -1572,7 +1572,7 @@ DWORD GetVALUESize( SET_CTRL_REC_PARAM* val )
 	return size;
 }
 
-BOOL WriteVALUE( SET_CTRL_REC_PARAM* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
+BOOL WriteVALUE( const SET_CTRL_REC_PARAM* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
 {
 	DWORD valSize = GetVALUESize( val );
 	if( buff == NULL || valSize > buffSize ){
@@ -1603,7 +1603,7 @@ BOOL WriteVALUE( SET_CTRL_REC_PARAM* val, BYTE* buff, DWORD buffSize, DWORD* wri
 	return TRUE;
 }
 
-BOOL ReadVALUE( SET_CTRL_REC_PARAM* val, BYTE* buff, DWORD buffSize, DWORD* readSize )
+BOOL ReadVALUE( SET_CTRL_REC_PARAM* val, const BYTE* buff, DWORD buffSize, DWORD* readSize )
 {
 	if( val == NULL || buff == NULL || buffSize < sizeof(DWORD) ){
 		return FALSE;
@@ -1638,7 +1638,7 @@ BOOL ReadVALUE( SET_CTRL_REC_PARAM* val, BYTE* buff, DWORD buffSize, DWORD* read
 	return TRUE;
 }
 
-DWORD GetVALUESize( SET_CTRL_REC_STOP_PARAM* val )
+DWORD GetVALUESize( const SET_CTRL_REC_STOP_PARAM* val )
 {
 	DWORD size = sizeof(DWORD);
 	if( val == NULL ){
@@ -1651,7 +1651,7 @@ DWORD GetVALUESize( SET_CTRL_REC_STOP_PARAM* val )
 	return size;
 }
 
-BOOL WriteVALUE( SET_CTRL_REC_STOP_PARAM* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
+BOOL WriteVALUE( const SET_CTRL_REC_STOP_PARAM* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
 {
 	DWORD valSize = GetVALUESize( val );
 	if( buff == NULL || valSize > buffSize ){
@@ -1673,7 +1673,7 @@ BOOL WriteVALUE( SET_CTRL_REC_STOP_PARAM* val, BYTE* buff, DWORD buffSize, DWORD
 	return TRUE;
 }
 
-BOOL ReadVALUE( SET_CTRL_REC_STOP_PARAM* val, BYTE* buff, DWORD buffSize, DWORD* readSize )
+BOOL ReadVALUE( SET_CTRL_REC_STOP_PARAM* val, const BYTE* buff, DWORD buffSize, DWORD* readSize )
 {
 	if( val == NULL || buff == NULL || buffSize < sizeof(DWORD) ){
 		return FALSE;
@@ -1699,7 +1699,7 @@ BOOL ReadVALUE( SET_CTRL_REC_STOP_PARAM* val, BYTE* buff, DWORD buffSize, DWORD*
 	return TRUE;
 }
 
-DWORD GetVALUESize( SET_CTRL_REC_STOP_RES_PARAM* val )
+DWORD GetVALUESize( const SET_CTRL_REC_STOP_RES_PARAM* val )
 {
 	DWORD size = sizeof(DWORD);
 	if( val == NULL ){
@@ -1714,7 +1714,7 @@ DWORD GetVALUESize( SET_CTRL_REC_STOP_RES_PARAM* val )
 	return size;
 }
 
-BOOL WriteVALUE( SET_CTRL_REC_STOP_RES_PARAM* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
+BOOL WriteVALUE( const SET_CTRL_REC_STOP_RES_PARAM* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
 {
 	DWORD valSize = GetVALUESize( val );
 	if( buff == NULL || valSize > buffSize ){
@@ -1738,7 +1738,7 @@ BOOL WriteVALUE( SET_CTRL_REC_STOP_RES_PARAM* val, BYTE* buff, DWORD buffSize, D
 	return TRUE;
 }
 
-BOOL ReadVALUE( SET_CTRL_REC_STOP_RES_PARAM* val, BYTE* buff, DWORD buffSize, DWORD* readSize )
+BOOL ReadVALUE( SET_CTRL_REC_STOP_RES_PARAM* val, const BYTE* buff, DWORD buffSize, DWORD* readSize )
 {
 	if( val == NULL || buff == NULL || buffSize < sizeof(DWORD) ){
 		return FALSE;
@@ -1766,7 +1766,7 @@ BOOL ReadVALUE( SET_CTRL_REC_STOP_RES_PARAM* val, BYTE* buff, DWORD buffSize, DW
 	return TRUE;
 }
 
-DWORD GetVALUESize( REC_FILE_INFO* val )
+DWORD GetVALUESize( const REC_FILE_INFO* val )
 {
 	DWORD size = sizeof(DWORD);
 	if( val == NULL ){
@@ -1794,7 +1794,7 @@ DWORD GetVALUESize( REC_FILE_INFO* val )
 	return size;
 }
 
-BOOL WriteVALUE( REC_FILE_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
+BOOL WriteVALUE( const REC_FILE_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
 {
 	DWORD valSize = GetVALUESize( val );
 	if( buff == NULL || valSize > buffSize ){
@@ -1831,7 +1831,7 @@ BOOL WriteVALUE( REC_FILE_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSiz
 	return TRUE;
 }
 
-BOOL ReadVALUE( REC_FILE_INFO* val, BYTE* buff, DWORD buffSize, DWORD* readSize )
+BOOL ReadVALUE( REC_FILE_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize )
 {
 	if( val == NULL || buff == NULL || buffSize < sizeof(DWORD) ){
 		return FALSE;
@@ -1872,7 +1872,7 @@ BOOL ReadVALUE( REC_FILE_INFO* val, BYTE* buff, DWORD buffSize, DWORD* readSize 
 	return TRUE;
 }
 
-DWORD GetVALUESize( EPG_AUTO_ADD_DATA* val )
+DWORD GetVALUESize( const EPG_AUTO_ADD_DATA* val )
 {
 	DWORD size = sizeof(DWORD);
 	if( val == NULL ){
@@ -1886,7 +1886,7 @@ DWORD GetVALUESize( EPG_AUTO_ADD_DATA* val )
 	return size;
 }
 
-BOOL WriteVALUE( EPG_AUTO_ADD_DATA* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
+BOOL WriteVALUE( const EPG_AUTO_ADD_DATA* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
 {
 	DWORD valSize = GetVALUESize( val );
 	if( buff == NULL || valSize > buffSize ){
@@ -1909,7 +1909,7 @@ BOOL WriteVALUE( EPG_AUTO_ADD_DATA* val, BYTE* buff, DWORD buffSize, DWORD* writ
 	return TRUE;
 }
 
-BOOL ReadVALUE( EPG_AUTO_ADD_DATA* val, BYTE* buff, DWORD buffSize, DWORD* readSize )
+BOOL ReadVALUE( EPG_AUTO_ADD_DATA* val, const BYTE* buff, DWORD buffSize, DWORD* readSize )
 {
 	if( val == NULL || buff == NULL || buffSize < sizeof(DWORD) ){
 		return FALSE;
@@ -1936,7 +1936,7 @@ BOOL ReadVALUE( EPG_AUTO_ADD_DATA* val, BYTE* buff, DWORD buffSize, DWORD* readS
 	return TRUE;
 }
 
-DWORD GetVALUESize( SEARCH_EPG_INFO_PARAM* val )
+DWORD GetVALUESize( const SEARCH_EPG_INFO_PARAM* val )
 {
 	DWORD size = sizeof(DWORD);
 	if( val == NULL ){
@@ -1952,7 +1952,7 @@ DWORD GetVALUESize( SEARCH_EPG_INFO_PARAM* val )
 	return size;
 }
 
-BOOL WriteVALUE( SEARCH_EPG_INFO_PARAM* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
+BOOL WriteVALUE( const SEARCH_EPG_INFO_PARAM* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
 {
 	DWORD valSize = GetVALUESize( val );
 	if( buff == NULL || valSize > buffSize ){
@@ -1977,7 +1977,7 @@ BOOL WriteVALUE( SEARCH_EPG_INFO_PARAM* val, BYTE* buff, DWORD buffSize, DWORD* 
 	return TRUE;
 }
 
-BOOL ReadVALUE( SEARCH_EPG_INFO_PARAM* val, BYTE* buff, DWORD buffSize, DWORD* readSize )
+BOOL ReadVALUE( SEARCH_EPG_INFO_PARAM* val, const BYTE* buff, DWORD buffSize, DWORD* readSize )
 {
 	if( val == NULL || buff == NULL || buffSize < sizeof(DWORD) ){
 		return FALSE;
@@ -2006,7 +2006,7 @@ BOOL ReadVALUE( SEARCH_EPG_INFO_PARAM* val, BYTE* buff, DWORD buffSize, DWORD* r
 	return TRUE;
 }
 
-DWORD GetVALUESize( GET_EPG_PF_INFO_PARAM* val )
+DWORD GetVALUESize( const GET_EPG_PF_INFO_PARAM* val )
 {
 	DWORD size = sizeof(DWORD);
 	if( val == NULL ){
@@ -2021,7 +2021,7 @@ DWORD GetVALUESize( GET_EPG_PF_INFO_PARAM* val )
 	return size;
 }
 
-BOOL WriteVALUE( GET_EPG_PF_INFO_PARAM* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
+BOOL WriteVALUE( const GET_EPG_PF_INFO_PARAM* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
 {
 	DWORD valSize = GetVALUESize( val );
 	if( buff == NULL || valSize > buffSize ){
@@ -2045,7 +2045,7 @@ BOOL WriteVALUE( GET_EPG_PF_INFO_PARAM* val, BYTE* buff, DWORD buffSize, DWORD* 
 	return TRUE;
 }
 
-BOOL ReadVALUE( GET_EPG_PF_INFO_PARAM* val, BYTE* buff, DWORD buffSize, DWORD* readSize )
+BOOL ReadVALUE( GET_EPG_PF_INFO_PARAM* val, const BYTE* buff, DWORD buffSize, DWORD* readSize )
 {
 	if( val == NULL || buff == NULL || buffSize < sizeof(DWORD) ){
 		return FALSE;
@@ -2073,7 +2073,7 @@ BOOL ReadVALUE( GET_EPG_PF_INFO_PARAM* val, BYTE* buff, DWORD buffSize, DWORD* r
 	return TRUE;
 }
 
-DWORD GetVALUESize( MANUAL_AUTO_ADD_DATA* val )
+DWORD GetVALUESize( const MANUAL_AUTO_ADD_DATA* val )
 {
 	DWORD size = sizeof(DWORD);
 	if( val == NULL ){
@@ -2094,7 +2094,7 @@ DWORD GetVALUESize( MANUAL_AUTO_ADD_DATA* val )
 	return size;
 }
 
-BOOL WriteVALUE( MANUAL_AUTO_ADD_DATA* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
+BOOL WriteVALUE( const MANUAL_AUTO_ADD_DATA* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
 {
 	DWORD valSize = GetVALUESize( val );
 	if( buff == NULL || valSize > buffSize ){
@@ -2124,7 +2124,7 @@ BOOL WriteVALUE( MANUAL_AUTO_ADD_DATA* val, BYTE* buff, DWORD buffSize, DWORD* w
 	return TRUE;
 }
 
-BOOL ReadVALUE( MANUAL_AUTO_ADD_DATA* val, BYTE* buff, DWORD buffSize, DWORD* readSize )
+BOOL ReadVALUE( MANUAL_AUTO_ADD_DATA* val, const BYTE* buff, DWORD buffSize, DWORD* readSize )
 {
 	if( val == NULL || buff == NULL || buffSize < sizeof(DWORD) ){
 		return FALSE;
@@ -2158,7 +2158,7 @@ BOOL ReadVALUE( MANUAL_AUTO_ADD_DATA* val, BYTE* buff, DWORD buffSize, DWORD* re
 	return TRUE;
 }
 
-DWORD GetVALUESize( TUNER_RESERVE_INFO* val )
+DWORD GetVALUESize( const TUNER_RESERVE_INFO* val )
 {
 	DWORD size = sizeof(DWORD);
 	if( val == NULL ){
@@ -2172,7 +2172,7 @@ DWORD GetVALUESize( TUNER_RESERVE_INFO* val )
 	return size;
 }
 
-BOOL WriteVALUE( TUNER_RESERVE_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
+BOOL WriteVALUE( const TUNER_RESERVE_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
 {
 	DWORD valSize = GetVALUESize( val );
 	if( buff == NULL || valSize > buffSize ){
@@ -2196,7 +2196,7 @@ BOOL WriteVALUE( TUNER_RESERVE_INFO* val, BYTE* buff, DWORD buffSize, DWORD* wri
 	return TRUE;
 }
 
-BOOL ReadVALUE( TUNER_RESERVE_INFO* val, BYTE* buff, DWORD buffSize, DWORD* readSize )
+BOOL ReadVALUE( TUNER_RESERVE_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize )
 {
 	if( val == NULL || buff == NULL || buffSize < sizeof(DWORD) ){
 		return FALSE;
@@ -2224,7 +2224,7 @@ BOOL ReadVALUE( TUNER_RESERVE_INFO* val, BYTE* buff, DWORD buffSize, DWORD* read
 	return TRUE;
 }
 
-DWORD GetVALUESize( REGIST_TCP_INFO* val )
+DWORD GetVALUESize( const REGIST_TCP_INFO* val )
 {
 	DWORD size = sizeof(DWORD);
 	if( val == NULL ){
@@ -2237,7 +2237,7 @@ DWORD GetVALUESize( REGIST_TCP_INFO* val )
 	return size;
 }
 
-BOOL WriteVALUE( REGIST_TCP_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
+BOOL WriteVALUE( const REGIST_TCP_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
 {
 	DWORD valSize = GetVALUESize( val );
 	if( buff == NULL || valSize > buffSize ){
@@ -2259,7 +2259,7 @@ BOOL WriteVALUE( REGIST_TCP_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeS
 	return TRUE;
 }
 
-BOOL ReadVALUE( REGIST_TCP_INFO* val, BYTE* buff, DWORD buffSize, DWORD* readSize )
+BOOL ReadVALUE( REGIST_TCP_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize )
 {
 	if( val == NULL || buff == NULL || buffSize < sizeof(DWORD) ){
 		return FALSE;
@@ -2285,7 +2285,7 @@ BOOL ReadVALUE( REGIST_TCP_INFO* val, BYTE* buff, DWORD buffSize, DWORD* readSiz
 	return TRUE;
 }
 
-DWORD GetVALUESize( EPGDB_SERVICE_EVENT_INFO* val )
+DWORD GetVALUESize( const EPGDB_SERVICE_EVENT_INFO* val )
 {
 	DWORD size = sizeof(DWORD);
 	if( val == NULL ){
@@ -2298,7 +2298,7 @@ DWORD GetVALUESize( EPGDB_SERVICE_EVENT_INFO* val )
 	return size;
 }
 
-BOOL WriteVALUE( EPGDB_SERVICE_EVENT_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
+BOOL WriteVALUE( const EPGDB_SERVICE_EVENT_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
 {
 	DWORD valSize = GetVALUESize( val );
 	if( buff == NULL || valSize > buffSize ){
@@ -2320,7 +2320,7 @@ BOOL WriteVALUE( EPGDB_SERVICE_EVENT_INFO* val, BYTE* buff, DWORD buffSize, DWOR
 	return TRUE;
 }
 
-BOOL ReadVALUE( EPGDB_SERVICE_EVENT_INFO* val, BYTE* buff, DWORD buffSize, DWORD* readSize )
+BOOL ReadVALUE( EPGDB_SERVICE_EVENT_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize )
 {
 	if( val == NULL || buff == NULL || buffSize < sizeof(DWORD) ){
 		return FALSE;
@@ -2346,7 +2346,7 @@ BOOL ReadVALUE( EPGDB_SERVICE_EVENT_INFO* val, BYTE* buff, DWORD buffSize, DWORD
 	return TRUE;
 }
 
-DWORD GetVALUESize( TVTEST_CH_CHG_INFO* val )
+DWORD GetVALUESize( const TVTEST_CH_CHG_INFO* val )
 {
 	DWORD size = sizeof(DWORD);
 	if( val == NULL ){
@@ -2359,7 +2359,7 @@ DWORD GetVALUESize( TVTEST_CH_CHG_INFO* val )
 	return size;
 }
 
-BOOL WriteVALUE( TVTEST_CH_CHG_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
+BOOL WriteVALUE( const TVTEST_CH_CHG_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
 {
 	DWORD valSize = GetVALUESize( val );
 	if( buff == NULL || valSize > buffSize ){
@@ -2381,7 +2381,7 @@ BOOL WriteVALUE( TVTEST_CH_CHG_INFO* val, BYTE* buff, DWORD buffSize, DWORD* wri
 	return TRUE;
 }
 
-BOOL ReadVALUE( TVTEST_CH_CHG_INFO* val, BYTE* buff, DWORD buffSize, DWORD* readSize )
+BOOL ReadVALUE( TVTEST_CH_CHG_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize )
 {
 	if( val == NULL || buff == NULL || buffSize < sizeof(DWORD) ){
 		return FALSE;
@@ -2407,7 +2407,7 @@ BOOL ReadVALUE( TVTEST_CH_CHG_INFO* val, BYTE* buff, DWORD buffSize, DWORD* read
 	return TRUE;
 }
 
-DWORD GetVALUESize( NWPLAY_PLAY_INFO* val )
+DWORD GetVALUESize( const NWPLAY_PLAY_INFO* val )
 {
 	DWORD size = sizeof(DWORD);
 	if( val == NULL ){
@@ -2424,7 +2424,7 @@ DWORD GetVALUESize( NWPLAY_PLAY_INFO* val )
 	return size;
 }
 
-BOOL WriteVALUE( NWPLAY_PLAY_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
+BOOL WriteVALUE( const NWPLAY_PLAY_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
 {
 	DWORD valSize = GetVALUESize( val );
 	if( buff == NULL || valSize > buffSize ){
@@ -2450,7 +2450,7 @@ BOOL WriteVALUE( NWPLAY_PLAY_INFO* val, BYTE* buff, DWORD buffSize, DWORD* write
 	return TRUE;
 }
 
-BOOL ReadVALUE( NWPLAY_PLAY_INFO* val, BYTE* buff, DWORD buffSize, DWORD* readSize )
+BOOL ReadVALUE( NWPLAY_PLAY_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize )
 {
 	if( val == NULL || buff == NULL || buffSize < sizeof(DWORD) ){
 		return FALSE;
@@ -2480,7 +2480,7 @@ BOOL ReadVALUE( NWPLAY_PLAY_INFO* val, BYTE* buff, DWORD buffSize, DWORD* readSi
 	return TRUE;
 }
 
-DWORD GetVALUESize( NWPLAY_POS_CMD* val )
+DWORD GetVALUESize( const NWPLAY_POS_CMD* val )
 {
 	DWORD size = sizeof(DWORD);
 	if( val == NULL ){
@@ -2494,7 +2494,7 @@ DWORD GetVALUESize( NWPLAY_POS_CMD* val )
 	return size;
 }
 
-BOOL WriteVALUE( NWPLAY_POS_CMD* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
+BOOL WriteVALUE( const NWPLAY_POS_CMD* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
 {
 	DWORD valSize = GetVALUESize( val );
 	if( buff == NULL || valSize > buffSize ){
@@ -2517,7 +2517,7 @@ BOOL WriteVALUE( NWPLAY_POS_CMD* val, BYTE* buff, DWORD buffSize, DWORD* writeSi
 	return TRUE;
 }
 
-BOOL ReadVALUE( NWPLAY_POS_CMD* val, BYTE* buff, DWORD buffSize, DWORD* readSize )
+BOOL ReadVALUE( NWPLAY_POS_CMD* val, const BYTE* buff, DWORD buffSize, DWORD* readSize )
 {
 	if( val == NULL || buff == NULL || buffSize < sizeof(DWORD) ){
 		return FALSE;
@@ -2544,7 +2544,7 @@ BOOL ReadVALUE( NWPLAY_POS_CMD* val, BYTE* buff, DWORD buffSize, DWORD* readSize
 	return TRUE;
 }
 
-DWORD GetVALUESize( TVTEST_STREAMING_INFO* val )
+DWORD GetVALUESize( const TVTEST_STREAMING_INFO* val )
 {
 	DWORD size = sizeof(DWORD);
 	if( val == NULL ){
@@ -2563,7 +2563,7 @@ DWORD GetVALUESize( TVTEST_STREAMING_INFO* val )
 	return size;
 }
 
-BOOL WriteVALUE( TVTEST_STREAMING_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
+BOOL WriteVALUE( const TVTEST_STREAMING_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
 {
 	DWORD valSize = GetVALUESize( val );
 	if( buff == NULL || valSize > buffSize ){
@@ -2591,7 +2591,7 @@ BOOL WriteVALUE( TVTEST_STREAMING_INFO* val, BYTE* buff, DWORD buffSize, DWORD* 
 	return TRUE;
 }
 
-BOOL ReadVALUE( TVTEST_STREAMING_INFO* val, BYTE* buff, DWORD buffSize, DWORD* readSize )
+BOOL ReadVALUE( TVTEST_STREAMING_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize )
 {
 	if( val == NULL || buff == NULL || buffSize < sizeof(DWORD) ){
 		return FALSE;
@@ -2623,7 +2623,7 @@ BOOL ReadVALUE( TVTEST_STREAMING_INFO* val, BYTE* buff, DWORD buffSize, DWORD* r
 	return TRUE;
 }
 
-DWORD GetVALUESize( NWPLAY_TIMESHIFT_INFO* val )
+DWORD GetVALUESize( const NWPLAY_TIMESHIFT_INFO* val )
 {
 	DWORD size = sizeof(DWORD);
 	if( val == NULL ){
@@ -2636,7 +2636,7 @@ DWORD GetVALUESize( NWPLAY_TIMESHIFT_INFO* val )
 	return size;
 }
 
-BOOL WriteVALUE( NWPLAY_TIMESHIFT_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
+BOOL WriteVALUE( const NWPLAY_TIMESHIFT_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
 {
 	DWORD valSize = GetVALUESize( val );
 	if( buff == NULL || valSize > buffSize ){
@@ -2658,7 +2658,7 @@ BOOL WriteVALUE( NWPLAY_TIMESHIFT_INFO* val, BYTE* buff, DWORD buffSize, DWORD* 
 	return TRUE;
 }
 
-BOOL ReadVALUE( NWPLAY_TIMESHIFT_INFO* val, BYTE* buff, DWORD buffSize, DWORD* readSize )
+BOOL ReadVALUE( NWPLAY_TIMESHIFT_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize )
 {
 	if( val == NULL || buff == NULL || buffSize < sizeof(DWORD) ){
 		return FALSE;

@@ -136,7 +136,7 @@ public:
 	// エラーコード
 	//引数：
 	// val				[IN]追加する予約一覧
-	DWORD SendAddReserve(vector<RESERVE_DATA>* val){
+	DWORD SendAddReserve(const vector<RESERVE_DATA>* val){
 		return SendCmdData(CMD2_EPG_SRV_ADD_RESERVE, val);
 	}
 
@@ -145,7 +145,7 @@ public:
 	// エラーコード
 	//引数：
 	// val				[IN]削除する予約ID一覧
-	DWORD SendDelReserve(vector<DWORD>* val){
+	DWORD SendDelReserve(const vector<DWORD>* val){
 		return SendCmdData(CMD2_EPG_SRV_DEL_RESERVE, val);
 	}
 
@@ -154,7 +154,7 @@ public:
 	// エラーコード
 	//引数：
 	// val				[IN]変更する予約一覧
-	DWORD SendChgReserve(vector<RESERVE_DATA>* val){
+	DWORD SendChgReserve(const vector<RESERVE_DATA>* val){
 		return SendCmdData(CMD2_EPG_SRV_CHG_RESERVE, val);
 	}
 
@@ -162,7 +162,7 @@ public:
 	//戻り値：
 	// エラーコード
 	//引数：
-	// val				[IN]予約一覧
+	// val				[OUT]予約一覧
 	DWORD SendEnumTunerReserve(vector<TUNER_RESERVE_INFO>* val){
 		return ReceiveCmdData(CMD2_EPG_SRV_ENUM_TUNER_RESERVE, val);
 	}
@@ -183,7 +183,7 @@ public:
 	// エラーコード
 	//引数：
 	// val				[IN]削除するID一覧
-	DWORD SendDelRecInfo(vector<DWORD>* val){
+	DWORD SendDelRecInfo(const vector<DWORD>* val){
 		return SendCmdData(CMD2_EPG_SRV_DEL_RECINFO, val);
 	}
 
@@ -231,7 +231,7 @@ public:
 	// key				[IN]検索キー（複数指定時はまとめて検索結果が返る）
 	// val				[OUT]番組情報一覧
 	DWORD SendSearchPg(
-		vector<EPGDB_SEARCH_KEY_INFO>* key,
+		const vector<EPGDB_SEARCH_KEY_INFO>* key,
 		vector<EPGDB_EVENT_INFO*>* val
 		){
 		return SendAndReceiveCmdData(CMD2_EPG_SRV_SEARCH_PG, key, val);
@@ -265,7 +265,7 @@ public:
 	//引数：
 	// val			[IN]条件一覧
 	DWORD SendAddEpgAutoAdd(
-		vector<EPG_AUTO_ADD_DATA>* val
+		const vector<EPG_AUTO_ADD_DATA>* val
 		){
 		return SendCmdData(CMD2_EPG_SRV_ADD_AUTO_ADD, val);
 	}
@@ -276,7 +276,7 @@ public:
 	//引数：
 	// val			[IN]条件一覧
 	DWORD SendDelEpgAutoAdd(
-		vector<DWORD>* val
+		const vector<DWORD>* val
 		){
 		return SendCmdData(CMD2_EPG_SRV_DEL_AUTO_ADD, val);
 	}
@@ -287,7 +287,7 @@ public:
 	//引数：
 	// val			[IN]条件一覧
 	DWORD SendChgEpgAutoAdd(
-		vector<EPG_AUTO_ADD_DATA>* val
+		const vector<EPG_AUTO_ADD_DATA>* val
 		){
 		return SendCmdData(CMD2_EPG_SRV_CHG_AUTO_ADD, val);
 	}
@@ -309,7 +309,7 @@ public:
 	//引数：
 	// val			[IN]条件一覧
 	DWORD SendAddManualAdd(
-		vector<MANUAL_AUTO_ADD_DATA>* val
+		const vector<MANUAL_AUTO_ADD_DATA>* val
 		){
 		return SendCmdData(CMD2_EPG_SRV_ADD_MANU_ADD, val);
 	}
@@ -320,7 +320,7 @@ public:
 	//引数：
 	// val			[IN]条件一覧
 	DWORD SendDelManualAdd(
-		vector<DWORD>* val
+		const vector<DWORD>* val
 		){
 		return SendCmdData(CMD2_EPG_SRV_DEL_MANU_ADD, val);
 	}
@@ -331,7 +331,7 @@ public:
 	//引数：
 	// val			[IN]条件一覧
 	DWORD SendChgManualAdd(
-		vector<MANUAL_AUTO_ADD_DATA>* val
+		const vector<MANUAL_AUTO_ADD_DATA>* val
 		){
 		return SendCmdData(CMD2_EPG_SRV_CHG_MANU_ADD, val);
 	}
@@ -398,9 +398,9 @@ public:
 	//戻り値：
 	// エラーコード
 	//引数：
-	// chInfo				[OUT]チャンネル情報
+	// chInfo				[IN]チャンネル情報
 	DWORD SendNwTVSetCh(
-		SET_CH_INFO* val
+		const SET_CH_INFO* val
 		){
 		return SendCmdData(CMD2_EPG_SRV_NWTV_SET_CH, val);
 	}
@@ -408,8 +408,6 @@ public:
 	//ネットワークモードで起動中のEpgDataCap_Bonを終了
 	//戻り値：
 	// エラーコード
-	//引数：
-	// chInfo				[OUT]チャンネル情報
 	DWORD SendNwTVClose(
 		){
 		return SendCmdWithoutData(CMD2_EPG_SRV_NWTV_CLOSE);
@@ -419,7 +417,7 @@ public:
 	//戻り値：
 	// エラーコード
 	//引数：
-	// val				[OUT]モード（1:UDP 2:TCP 3:UDP+TCP）
+	// val				[IN]モード（1:UDP 2:TCP 3:UDP+TCP）
 	DWORD SendNwTVMode(
 		DWORD val
 		){
@@ -489,7 +487,7 @@ public:
 	//引数：
 	// val				[IN]サイズ情報
 	DWORD SendNwPlaySetPos(
-		NWPLAY_POS_CMD* val
+		const NWPLAY_POS_CMD* val
 		){
 		return SendCmdData(CMD2_EPG_SRV_NWPLAY_SET_POS, val);
 	}
@@ -498,7 +496,7 @@ public:
 	//戻り値：
 	// エラーコード
 	//引数：
-	// val				[IN]サイズ情報
+	// val				[IN/OUT]サイズ情報
 	DWORD SendNwPlaySetIP(
 		NWPLAY_PLAY_INFO* val
 		){
@@ -545,7 +543,7 @@ public:
 	// エラーコード
 	//引数：
 	// val				[IN]追加する予約一覧
-	DWORD SendAddReserve2(vector<RESERVE_DATA>* val){
+	DWORD SendAddReserve2(const vector<RESERVE_DATA>* val){
 		return SendCmdData2(CMD2_EPG_SRV_ADD_RESERVE2, val);
 	}
 
@@ -554,7 +552,7 @@ public:
 	// エラーコード
 	//引数：
 	// val				[IN]変更する予約一覧
-	DWORD SendChgReserve2(vector<RESERVE_DATA>* val){
+	DWORD SendChgReserve2(const vector<RESERVE_DATA>* val){
 		return SendCmdData2(CMD2_EPG_SRV_CHG_RESERVE2, val);
 	}
 
@@ -564,7 +562,7 @@ public:
 	//引数：
 	// val				[IN]予約情報
 	// resVal			[OUT]追加可能かのステータス
-	DWORD SendAddChkReserve2(RESERVE_DATA* val, WORD* resVal){
+	DWORD SendAddChkReserve2(const RESERVE_DATA* val, WORD* resVal){
 		return SendAndReceiveCmdData2(CMD2_EPG_SRV_ADDCHK_RESERVE2, val, resVal);
 	}
 
@@ -609,7 +607,7 @@ public:
 	//引数：
 	// val			[IN]条件一覧
 	DWORD SendAddEpgAutoAdd2(
-		vector<EPG_AUTO_ADD_DATA>* val
+		const vector<EPG_AUTO_ADD_DATA>* val
 		){
 		return SendCmdData2(CMD2_EPG_SRV_ADD_AUTO_ADD2, val);
 	}
@@ -620,7 +618,7 @@ public:
 	//引数：
 	// val			[IN]条件一覧
 	DWORD SendChgEpgAutoAdd2(
-		vector<EPG_AUTO_ADD_DATA>* val
+		const vector<EPG_AUTO_ADD_DATA>* val
 		){
 		return SendCmdData2(CMD2_EPG_SRV_CHG_AUTO_ADD2, val);
 	}
@@ -642,7 +640,7 @@ public:
 	//引数：
 	// val			[IN]条件一覧
 	DWORD SendAddManualAdd2(
-		vector<MANUAL_AUTO_ADD_DATA>* val
+		const vector<MANUAL_AUTO_ADD_DATA>* val
 		){
 		return SendCmdData2(CMD2_EPG_SRV_ADD_MANU_ADD2, val);
 	}
@@ -653,7 +651,7 @@ public:
 	//引数：
 	// val			[IN]条件一覧
 	DWORD SendChgManualAdd2(
-		vector<MANUAL_AUTO_ADD_DATA>* val
+		const vector<MANUAL_AUTO_ADD_DATA>* val
 		){
 		return SendCmdData2(CMD2_EPG_SRV_CHG_MANU_ADD2, val);
 	}
@@ -669,13 +667,13 @@ public:
 		return ReceiveCmdData2(CMD2_EPG_SRV_ENUM_RECINFO2, val);
 	}
 
-	//録画済み情報一覧取得
+	//録画済み情報のプロテクト変更
 	//戻り値：
 	// エラーコード
 	//引数：
-	// val			[OUT]録画済み情報一覧
+	// val			[IN]録画済み情報一覧
 	DWORD SendChgProtectRecInfo2(
-		vector<REC_FILE_INFO>* val
+		const vector<REC_FILE_INFO>* val
 		){
 		return SendCmdData2(CMD2_EPG_SRV_CHG_PROTECT_RECINFO2, val);
 	}
@@ -711,7 +709,7 @@ public:
 	// エラーコード
 	//引数：
 	// val				[IN]通知情報
-	DWORD SendGUINotifyInfo2(NOTIFY_SRV_INFO* val){
+	DWORD SendGUINotifyInfo2(const NOTIFY_SRV_INFO* val){
 		return SendCmdData2(CMD2_TIMER_GUI_SRV_STATUS_NOTIFY2, val);
 	}
 
@@ -787,9 +785,9 @@ public:
 	//戻り値：
 	// エラーコード
 	//引数：
-	// chInfo				[OUT]チャンネル情報
+	// chInfo				[IN]チャンネル情報
 	DWORD SendViewSetCh(
-		SET_CH_INFO* chInfo
+		const SET_CH_INFO* chInfo
 		){
 		return SendCmdData(CMD2_VIEW_APP_SET_CH, chInfo);
 	}
@@ -816,7 +814,7 @@ public:
 		return ReceiveCmdData(CMD2_VIEW_APP_GET_STATUS, status);
 	}
 
-	//現在の状態を取得
+	//アプリケーションの終了
 	//戻り値：
 	// エラーコード
 	DWORD SendViewAppClose(
@@ -883,7 +881,7 @@ public:
 	//引数：
 	// val					[IN]設定値
 	DWORD SendViewSetCtrlMode(
-		SET_CTRL_MODE val
+		const SET_CTRL_MODE& val
 		){
 		return SendCmdData(CMD2_VIEW_APP_SET_CTRLMODE, &val);
 	}
@@ -894,19 +892,19 @@ public:
 	//引数：
 	// val					[IN]設定値
 	DWORD SendViewStartRec(
-		SET_CTRL_REC_PARAM val
+		const SET_CTRL_REC_PARAM& val
 		){
 		return SendCmdData(CMD2_VIEW_APP_REC_START_CTRL, &val);
 	}
 
-	//録画処理開始
+	//録画処理停止
 	//戻り値：
 	// エラーコード
 	//引数：
 	// val					[IN]設定値
 	// resVal				[OUT]ドロップ数
 	DWORD SendViewStopRec(
-		SET_CTRL_REC_STOP_PARAM val,
+		const SET_CTRL_REC_STOP_PARAM& val,
 		SET_CTRL_REC_STOP_RES_PARAM* resVal
 		){
 		return SendAndReceiveCmdData(CMD2_VIEW_APP_REC_STOP_CTRL, &val, resVal);
@@ -924,7 +922,7 @@ public:
 		return SendAndReceiveCmdData(CMD2_VIEW_APP_REC_FILE_PATH, ctrlID, resVal);
 	}
 
-	//録画処理開始
+	//即時録画を停止
 	//戻り値：
 	// エラーコード
 	DWORD SendViewStopRecAll(
@@ -950,7 +948,7 @@ public:
 	//引数：
 	// val					[IN]取得チャンネルリスト
 	DWORD SendViewEpgCapStart(
-		vector<SET_CH_INFO>* val
+		const vector<SET_CH_INFO>* val
 		){
 		return SendCmdData(CMD2_VIEW_APP_EPGCAP_START, val);
 	}
@@ -969,7 +967,7 @@ public:
 	// val					[IN]取得番組
 	// resVal				[OUT]番組情報
 	DWORD SendViewSearchEvent(
-		SEARCH_EPG_INFO_PARAM* val,
+		const SEARCH_EPG_INFO_PARAM* val,
 		EPGDB_EVENT_INFO* resVal
 		){
 		return SendAndReceiveCmdData(CMD2_VIEW_APP_SEARCH_EVENT, val, resVal);
@@ -981,7 +979,7 @@ public:
 	// val					[IN]取得番組
 	// resVal				[OUT]番組情報
 	DWORD SendViewGetEventPF(
-		GET_EPG_PF_INFO_PARAM* val,
+		const GET_EPG_PF_INFO_PARAM* val,
 		EPGDB_EVENT_INFO* resVal
 		){
 		return SendAndReceiveCmdData(CMD2_VIEW_APP_GET_EVENT_PF, val, resVal);
@@ -1000,7 +998,7 @@ public:
 	//戻り値：
 	// エラーコード
 	DWORD SendViewSetStreamingInfo(
-		TVTEST_STREAMING_INFO* val
+		const TVTEST_STREAMING_INFO* val
 		){
 		return SendCmdData(CMD2_VIEW_APP_TT_SET_CTRL, val);
 	}

@@ -6,7 +6,7 @@
 #define WRITE_VALUE2_OR_FAIL(ver,buff,buffSize,pos,size,val)	{ if( WriteVALUE2((ver),val,(buff)+pos,(buffSize)-pos,&size) == FALSE ) return FALSE; pos+=size; }
 #define READ_VALUE2_OR_FAIL(ver,buff,buffSize,pos,size,val)		{ if( ReadVALUE2((ver),val,(buff)+pos,(buffSize)-pos,&size) == FALSE ) return FALSE; pos+=size; }
 
-DWORD GetVALUESize2(WORD ver, REC_SETTING_DATA* val )
+DWORD GetVALUESize2(WORD ver, const REC_SETTING_DATA* val )
 {
 	DWORD size = sizeof(DWORD);
 	if( val == NULL ){
@@ -37,7 +37,7 @@ CMD_END:
 	return size;
 }
 
-BOOL WriteVALUE2(WORD ver, REC_SETTING_DATA* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
+BOOL WriteVALUE2(WORD ver, const REC_SETTING_DATA* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
 {
 	DWORD valSize = GetVALUESize2(ver, val );
 	if( buff == NULL || valSize > buffSize ){
@@ -77,7 +77,7 @@ CMD_END:
 	return TRUE;
 }
 
-BOOL ReadVALUE2(WORD ver, REC_SETTING_DATA* val, BYTE* buff, DWORD buffSize, DWORD* readSize )
+BOOL ReadVALUE2(WORD ver, REC_SETTING_DATA* val, const BYTE* buff, DWORD buffSize, DWORD* readSize )
 {
 	if( val == NULL || buff == NULL || buffSize < sizeof(DWORD) ){
 		return FALSE;
@@ -118,7 +118,7 @@ CMD_END:
 	return TRUE;
 }
 
-DWORD GetVALUESize2(WORD ver, RESERVE_DATA* val )
+DWORD GetVALUESize2(WORD ver, const RESERVE_DATA* val )
 {
 	DWORD size = sizeof(DWORD);
 	if( val == NULL ){
@@ -157,7 +157,7 @@ CMD_END:
 	return size;
 }
 
-BOOL WriteVALUE2(WORD ver, RESERVE_DATA* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
+BOOL WriteVALUE2(WORD ver, const RESERVE_DATA* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
 {
 	DWORD valSize = GetVALUESize2(ver, val );
 	if( buff == NULL || valSize > buffSize ){
@@ -205,7 +205,7 @@ CMD_END:
 	return TRUE;
 }
 
-BOOL ReadVALUE2(WORD ver, RESERVE_DATA* val, BYTE* buff, DWORD buffSize, DWORD* readSize )
+BOOL ReadVALUE2(WORD ver, RESERVE_DATA* val, const BYTE* buff, DWORD buffSize, DWORD* readSize )
 {
 	if( val == NULL || buff == NULL || buffSize < sizeof(DWORD) ){
 		return FALSE;
@@ -257,7 +257,7 @@ CMD_END:
 	return TRUE;
 }
 
-DWORD GetVALUESize2(WORD ver, NOTIFY_SRV_INFO* val )
+DWORD GetVALUESize2(WORD ver, const NOTIFY_SRV_INFO* val )
 {
 	DWORD size = sizeof(DWORD);
 	if( val == NULL ){
@@ -280,7 +280,7 @@ CMD_END:
 	return size;
 }
 
-BOOL WriteVALUE2(WORD ver, NOTIFY_SRV_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
+BOOL WriteVALUE2(WORD ver, const NOTIFY_SRV_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
 {
 	DWORD valSize = GetVALUESize2(ver, val );
 	if( buff == NULL || valSize > buffSize ){
@@ -313,7 +313,7 @@ CMD_END:
 	return TRUE;
 }
 
-BOOL ReadVALUE2(WORD ver, NOTIFY_SRV_INFO* val, BYTE* buff, DWORD buffSize, DWORD* readSize )
+BOOL ReadVALUE2(WORD ver, NOTIFY_SRV_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize )
 {
 	if( val == NULL || buff == NULL || buffSize < sizeof(DWORD) ){
 		return FALSE;
@@ -350,7 +350,7 @@ CMD_END:
 	return TRUE;
 }
 
-DWORD GetVALUESize2(WORD ver, EPGDB_SEARCH_KEY_INFO* val )
+DWORD GetVALUESize2(WORD ver, const EPGDB_SEARCH_KEY_INFO* val )
 {
 	DWORD size = sizeof(DWORD);
 	if( val == NULL ){
@@ -382,7 +382,7 @@ CMD_END:
 	return size;
 }
 
-BOOL WriteVALUE2(WORD ver, EPGDB_SEARCH_KEY_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
+BOOL WriteVALUE2(WORD ver, const EPGDB_SEARCH_KEY_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
 {
 	DWORD valSize = GetVALUESize2(ver, val );
 	if( buff == NULL || valSize > buffSize ){
@@ -424,7 +424,7 @@ CMD_END:
 	return TRUE;
 }
 
-BOOL ReadVALUE2(WORD ver, EPGDB_SEARCH_KEY_INFO* val, BYTE* buff, DWORD buffSize, DWORD* readSize )
+BOOL ReadVALUE2(WORD ver, EPGDB_SEARCH_KEY_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize )
 {
 	if( val == NULL || buff == NULL || buffSize < sizeof(DWORD) ){
 		return FALSE;
@@ -471,7 +471,7 @@ CMD_END:
 	return TRUE;
 }
 
-DWORD GetVALUESize2(WORD ver, EPG_AUTO_ADD_DATA* val )
+DWORD GetVALUESize2(WORD ver, const EPG_AUTO_ADD_DATA* val )
 {
 	DWORD size = sizeof(DWORD);
 	if( val == NULL ){
@@ -496,7 +496,7 @@ CMD_END:
 	return size;
 }
 
-BOOL WriteVALUE2(WORD ver, EPG_AUTO_ADD_DATA* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
+BOOL WriteVALUE2(WORD ver, const EPG_AUTO_ADD_DATA* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
 {
 	DWORD valSize = GetVALUESize2(ver, val );
 	if( buff == NULL || valSize > buffSize ){
@@ -530,7 +530,7 @@ CMD_END:
 	return TRUE;
 }
 
-BOOL ReadVALUE2(WORD ver, EPG_AUTO_ADD_DATA* val, BYTE* buff, DWORD buffSize, DWORD* readSize )
+BOOL ReadVALUE2(WORD ver, EPG_AUTO_ADD_DATA* val, const BYTE* buff, DWORD buffSize, DWORD* readSize )
 {
 	if( val == NULL || buff == NULL || buffSize < sizeof(DWORD) ){
 		return FALSE;
@@ -568,7 +568,7 @@ CMD_END:
 	return TRUE;
 }
 
-DWORD GetVALUESize2(WORD ver, MANUAL_AUTO_ADD_DATA* val )
+DWORD GetVALUESize2(WORD ver, const MANUAL_AUTO_ADD_DATA* val )
 {
 	DWORD size = sizeof(DWORD);
 	if( val == NULL ){
@@ -589,7 +589,7 @@ DWORD GetVALUESize2(WORD ver, MANUAL_AUTO_ADD_DATA* val )
 	return size;
 }
 
-BOOL WriteVALUE2(WORD ver, MANUAL_AUTO_ADD_DATA* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
+BOOL WriteVALUE2(WORD ver, const MANUAL_AUTO_ADD_DATA* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
 {
 	DWORD valSize = GetVALUESize2(ver, val );
 	if( buff == NULL || valSize > buffSize ){
@@ -624,7 +624,7 @@ CMD_END:
 	return TRUE;
 }
 
-BOOL ReadVALUE2(WORD ver, MANUAL_AUTO_ADD_DATA* val, BYTE* buff, DWORD buffSize, DWORD* readSize )
+BOOL ReadVALUE2(WORD ver, MANUAL_AUTO_ADD_DATA* val, const BYTE* buff, DWORD buffSize, DWORD* readSize )
 {
 	if( val == NULL || buff == NULL || buffSize < sizeof(DWORD) ){
 		return FALSE;
@@ -663,7 +663,7 @@ CMD_END:
 	return TRUE;
 }
 
-DWORD GetVALUESize2(WORD ver, REC_FILE_INFO* val )
+DWORD GetVALUESize2(WORD ver, const REC_FILE_INFO* val )
 {
 	DWORD size = sizeof(DWORD);
 	if( val == NULL ){
@@ -699,7 +699,7 @@ CMD_END:
 	return size;
 }
 
-BOOL WriteVALUE2(WORD ver, REC_FILE_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
+BOOL WriteVALUE2(WORD ver, const REC_FILE_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
 {
 	DWORD valSize = GetVALUESize2(ver, val );
 	if( buff == NULL || valSize > buffSize ){
@@ -747,7 +747,7 @@ CMD_END:
 	return TRUE;
 }
 
-BOOL ReadVALUE2(WORD ver, REC_FILE_INFO* val, BYTE* buff, DWORD buffSize, DWORD* readSize )
+BOOL ReadVALUE2(WORD ver, REC_FILE_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize )
 {
 	if( val == NULL || buff == NULL || buffSize < sizeof(DWORD) ){
 		return FALSE;
