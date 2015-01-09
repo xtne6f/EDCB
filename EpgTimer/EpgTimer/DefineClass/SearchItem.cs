@@ -115,6 +115,10 @@ namespace EpgTimer
                 if (IsReserved == true)
                 {
                     view = "予";
+                    if(ReserveInfo.RecSetting.RecMode == 5) //無効の場合
+                    {
+                        view="無";
+                    }
                 }
                 return view;
             }
