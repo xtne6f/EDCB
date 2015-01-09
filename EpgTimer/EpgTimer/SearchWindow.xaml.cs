@@ -777,10 +777,10 @@ namespace EpgTimer
             }
             if (delList.Count == 0) { return; }
 
-            string text1 = "削除しますか？" + "　[削除アイテム数: " + delList.Count + "]" + "\n\n";
+            string text1 = "削除しますか?　[削除アイテム数: " + delList.Count + "]" + "\r\n\r\n";
             foreach (ReserveData item in delList)
             {
-                text1 += " ・ " + item.Title + "\n";
+                text1 += " ・ " + item.Title + "\r\n";
             }
             string caption1 = "登録項目削除の確認";
             if (MessageBox.Show(text1, caption1, MessageBoxButton.OKCancel, MessageBoxImage.Exclamation, MessageBoxResult.OK) == MessageBoxResult.OK)

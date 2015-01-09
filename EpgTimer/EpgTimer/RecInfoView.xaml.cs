@@ -411,7 +411,7 @@ namespace EpgTimer
         {
             if (listView_recinfo.SelectedItems.Count == 0) { return; }
             //
-            string text1 = "削除しますか？" + "　[削除アイテム数: " + listView_recinfo.SelectedItems.Count + "]" + "\n\n";
+            string text1 = "削除しますか?　[削除アイテム数: " + listView_recinfo.SelectedItems.Count + "]" + "\r\n\r\n";
             string caption1 = "項目削除の確認";
             if (MessageBox.Show(text1, caption1, MessageBoxButton.OKCancel, MessageBoxImage.Exclamation, MessageBoxResult.OK) == MessageBoxResult.OK)
             {

@@ -772,10 +772,10 @@ namespace EpgTimer
         {
             if (listView_reserve.SelectedItems.Count == 0) { return; }
             //
-            string text1 = "削除しますか？" + "　[削除アイテム数: " + listView_reserve.SelectedItems.Count + "]" + "\n\n";
+            string text1 = "削除しますか?　[削除アイテム数: " + listView_reserve.SelectedItems.Count + "]" + "\r\n\r\n";
             foreach (ReserveItem info in listView_reserve.SelectedItems)
             {
-                text1 += " ・ " + info.ReserveInfo.Title + "\n";
+                text1 += " ・ " + info.ReserveInfo.Title + "\r\n";
             }
             string caption1 = "登録項目削除の確認";
             if (MessageBox.Show(text1, caption1, MessageBoxButton.OKCancel, MessageBoxImage.Exclamation, MessageBoxResult.OK) == MessageBoxResult.OK)
