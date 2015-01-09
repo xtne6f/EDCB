@@ -264,8 +264,13 @@ namespace EpgTimer
         {
             if (listView_key.SelectedItems.Count == 0) { return; }
 
-            string text1 = "予約項目ごと削除してよろしいですか?\r\n"
-                            + "(無効の「自動予約登録項目」による予約も削除されます。)";
+            string text1 = "予約項目ごと削除してよろしいですか?　[削除アイテム数: " + listView_key.SelectedItems.Count + "]\r\n"
+                            + "(無効の「自動予約登録項目」による予約も削除されます。)\r\n\r\n";
+            foreach (EpgAutoDataItem info in listView_key.SelectedItems)
+            {
+                text1 += " ・ " + info.AndKey + "\r\n";
+            }
+
             string caption1 = "[予約ごと削除]の確認";
             if (MessageBox.Show(text1, caption1, MessageBoxButton.OKCancel, 
                 MessageBoxImage.Exclamation, MessageBoxResult.OK) != MessageBoxResult.OK)
@@ -461,10 +466,10 @@ namespace EpgTimer
         {
             if (listView_key.SelectedItems.Count == 0) { return; }
             //
-            string text1 = "削除しますか？" + "　[削除アイテム数: " + listView_key.SelectedItems.Count + "]" + "\n\n";
+            string text1 = "削除しますか?　[削除アイテム数: " + listView_key.SelectedItems.Count + "]" + "\r\n\r\n";
             foreach (EpgAutoDataItem info in listView_key.SelectedItems)
             {
-                text1 += "「" + info.AndKey + "」" + "\n";
+                text1 += " ・ " + info.AndKey + "\r\n";
             }
             string caption1 = "登録項目削除の確認";
             if (MessageBox.Show(text1, caption1, MessageBoxButton.OKCancel, MessageBoxImage.Exclamation, MessageBoxResult.OK) == MessageBoxResult.OK)
