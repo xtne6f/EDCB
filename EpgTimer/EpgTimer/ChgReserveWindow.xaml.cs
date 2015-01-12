@@ -494,5 +494,11 @@ namespace EpgTimer
             }
         }
 
+        private void Window_Closed(object sender, EventArgs e)
+        {
+            MainWindow mainWindow = Application.Current.MainWindow as MainWindow;
+            mainWindow.ListFoucsOnVisibleChanged();
+        }
+
     }
 }

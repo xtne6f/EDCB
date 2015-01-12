@@ -437,6 +437,13 @@ namespace EpgTimer
         {
             try
             {
+                //更新前の選択情報の保存。
+                //なお、EPG更新の場合はReloadEpgData()でも追加で保存・復元コードを実施する必要があるが、
+                //大きく番組表が変化するEPG更新前後で選択情報を保存する意味もないのでほっておくことにする。
+                EpgEventInfo oldItem = null;
+                //List<EpgEventInfo> oldItems = new List<EpgEventInfo>();
+                StoreListViewSelected(ref oldItem);//, ref oldItems);
+
                 ICollectionView dataView = CollectionViewSource.GetDefaultView(listView_event.DataContext);
                 if (dataView != null)
                 {
@@ -566,6 +573,9 @@ namespace EpgTimer
                     Sort(header, _lastDirection);
                     _lastHeaderClicked = header;
                 }
+
+                //選択情報の復元
+                RestoreListViewSelected(oldItem);//, oldItems);                
             }
             catch (Exception ex)
             {
@@ -1483,6 +1493,53 @@ namespace EpgTimer
 
         }
 
+        private void StoreListViewSelected(ref EpgEventInfo oldItem)//, ref List<EpgEventInfo> oldItems)
+        {
+            if (listView_event.SelectedItem != null)
+            {
+                oldItem = (listView_event.SelectedItem as SearchItem).EventInfo;
+//                foreach (SearchItem item in listView_event.SelectedItems)
+//                {
+//                    oldItems.Add(item.EventInfo);
+//                }
+            }
+        }
+
+        private void RestoreListViewSelected(EpgEventInfo oldItem)//, List<EpgEventInfo> oldItems)
+        {
+            if (oldItem != null)
+            {
+                //このUnselectAll()は無いと正しく復元出来ない状況があり得る
+                listView_event.UnselectAll();
+
+                foreach (SearchItem item in listView_event.Items)
+                {
+                    if (item.EventInfo.original_network_id == oldItem.original_network_id &&
+                        item.EventInfo.transport_stream_id == oldItem.transport_stream_id &&
+                        item.EventInfo.service_id == oldItem.service_id &&
+                        item.EventInfo.event_id == oldItem.event_id)
+                    {
+                        listView_event.SelectedItem = item;
+                    }
+                }
+
+//                foreach (EpgEventInfo oldItem1 in oldItems)
+//                {
+//                    foreach (SearchItem item in listView_event.Items)
+//                    {
+//                        if (item.EventInfo.original_network_id == oldItem1.original_network_id &&
+//                            item.EventInfo.transport_stream_id == oldItem1.transport_stream_id &&
+//                            item.EventInfo.service_id == oldItem1.service_id &&
+//                            item.EventInfo.event_id == oldItem1.event_id)
+//                        {
+//                            listView_event.SelectedItems.Add(item);
+//                            break;
+//                        }
+//                    }
+//                }
+            }
+        }
+        
         private void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
             if (this.IsVisible == false) { return; }

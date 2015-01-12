@@ -1293,6 +1293,11 @@ namespace EpgTimer
             {
                 (this.Owner as SearchWindow).SearchPg();
             }
+            else
+            {
+                MainWindow mainWindow = Application.Current.MainWindow as MainWindow;
+                mainWindow.ListFoucsOnVisibleChanged();
+            }
         }
         
         private void Window_Activated(object sender, EventArgs e)

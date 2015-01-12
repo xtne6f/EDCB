@@ -1774,5 +1774,25 @@ namespace EpgTimer
             }
         }
 
+        public void ListFoucsOnVisibleChanged()
+        {
+            if (this.reserveView.listView_reserve.IsVisible == true)
+            {
+                this.reserveView.listView_reserve.Focus();
+            }
+            else if (this.recInfoView.listView_recinfo.IsVisible == true)
+            {
+                this.recInfoView.listView_recinfo.Focus();
+            }
+            else if (this.autoAddView.epgAutoAddView.listView_key.IsVisible == true)
+            {
+                this.autoAddView.epgAutoAddView.listView_key.Focus();
+            }
+            else if (this.autoAddView.manualAutoAddView.listView_key.IsVisible == true)
+            {
+                this.autoAddView.manualAutoAddView.listView_key.Focus();
+            }
+        }
+
     }
 }
