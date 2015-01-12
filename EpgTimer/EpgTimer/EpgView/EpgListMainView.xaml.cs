@@ -808,7 +808,7 @@ namespace EpgTimer
             }
         }
 
-        void listView_event_KeyDown(object sender, KeyEventArgs e)
+        void listView_event_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             if (Keyboard.Modifiers == ModifierKeys.Control)
             {
@@ -816,6 +816,12 @@ namespace EpgTimer
                 {
                     case Key.P:
                         this.cm_timeShiftPlay_Click(this.listView_event.SelectedItem, new RoutedEventArgs(Button.ClickEvent));
+                        break;
+                    case Key.D:
+                        this.deleteItem();
+                        break;
+                    case Key.S:
+                        this.cm_reverse_Click(this, new RoutedEventArgs(Button.ClickEvent));
                         break;
                 }
             }
@@ -835,9 +841,40 @@ namespace EpgTimer
                             {
                                 AddReserve(item.EventInfo);
                             }
+                            e.Handled = true;
                         }
                         break;
+                    case Key.Delete:
+                        this.deleteItem();
+                        e.Handled = true;
+                        break;
                 }
+            }
+        }
+
+        void deleteItem()
+        {
+            if (listView_event.SelectedItem == null) { return; }
+            //
+            List<ReserveData> delList = new List<ReserveData>();
+            foreach (SearchItem item in listView_event.SelectedItems)
+            {
+                if (item.IsReserved == true)
+                {
+                    delList.Add(item.ReserveInfo);
+                }
+            }
+            if (delList.Count == 0) { return; }
+
+            string text1 = "削除しますか?　[削除アイテム数: " + delList.Count + "]" + "\r\n\r\n";
+            foreach (ReserveData item in delList)
+            {
+                text1 += " ・ " + item.Title + "\r\n";
+            }
+            string caption1 = "登録項目削除の確認";
+            if (MessageBox.Show(text1, caption1, MessageBoxButton.OKCancel, MessageBoxImage.Exclamation, MessageBoxResult.OK) == MessageBoxResult.OK)
+            {
+                this.cm_del_Click(this.listView_event.SelectedItem, new RoutedEventArgs(Button.ClickEvent));
             }
         }
 

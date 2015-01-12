@@ -740,7 +740,7 @@ namespace EpgTimer
             }
         }
 
-        void listView_reserve_KeyDown(object sender, KeyEventArgs e)
+        void listView_reserve_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             if (Keyboard.Modifiers == ModifierKeys.Control)
             {
@@ -748,6 +748,12 @@ namespace EpgTimer
                 {
                     case Key.P:
                         this.timeShiftPlay_Click(this.listView_reserve.SelectedItem, new RoutedEventArgs(Button.ClickEvent));
+                        break;
+                    case Key.D:
+                        this.deleteItem();
+                        break;
+                    case Key.S:
+                        this.button_on_off_Click(this, new RoutedEventArgs(Button.ClickEvent));
                         break;
                 }
             }
@@ -757,12 +763,15 @@ namespace EpgTimer
                 {
                     case Key.F3:
                         this.MenuItem_Click_ProgramTable(this, new RoutedEventArgs(Button.ClickEvent));
+                        e.Handled = true;
                         break;
                     case Key.Enter:
                         this.ChangeReserve();
+                        e.Handled = true;
                         break;
                     case Key.Delete:
                         this.deleteItem();
+                        e.Handled = true;
                         break;
                 }
             }

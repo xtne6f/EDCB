@@ -25,7 +25,7 @@
                 <RichTextBox Name="richTextBox_eventInfo" IsReadOnly="True" />
             </ScrollViewer>
             <GridSplitter Grid.RowSpan="1" Height="5" Name="gridSplitter2" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" />
-            <ListView Grid.Row="1" Name="listView_event" SelectionMode="Single" ItemsSource="{Binding}" SelectionChanged="listView_event_SelectionChanged" ContextMenuOpening="listView_event_ContextMenuOpening" GridViewColumnHeader.Click="GridViewColumnHeader_Click" KeyDown="listView_event_KeyDown">
+            <ListView Grid.Row="1" Name="listView_event" SelectionMode="Single" ItemsSource="{Binding}" SelectionChanged="listView_event_SelectionChanged" ContextMenuOpening="listView_event_ContextMenuOpening" GridViewColumnHeader.Click="GridViewColumnHeader_Click" PreviewKeyDown="listView_event_PreviewKeyDown">
                 <ListView.Resources>
                     <Style TargetType="ListViewItem">
                         <Setter Property="Background" Value="{Binding BackColor}" />
@@ -68,7 +68,7 @@
                 </ListView.View>
                 <ListView.ContextMenu>
                     <ContextMenu x:Name="listView_event_contextMenu">
-                        <MenuItem x:Name="cm_Reverse" Header="簡易予約/予約←→無効" Click="cm_reverse_Click" />
+                        <MenuItem x:Name="cm_Reverse" Header="簡易予約/予約←→無効" Click="cm_reverse_Click" InputGestureText="Ctrl+S" />
                         <!-- <MenuItem x:Name="cm_new" Header="簡易予約" Click="cm_new_Click" /> -->
                         <MenuItem x:Name="cm_add" Header="予約追加">
                             <MenuItem Header="ダイアログ表示" Click="cm_add_Click" InputGestureText="Enter"/>
@@ -93,9 +93,9 @@
                                 <MenuItem Header="5 (_5)" Name="priority_5" Click="cm_chg_priority_Click" />
                             </MenuItem>
                         </MenuItem>
-                        <MenuItem x:Name="cm_del" Header="削除" Click="cm_del_Click" />
+                        <MenuItem x:Name="cm_del" Header="削除" Click="cm_del_Click" InputGestureText="Ctrl+D, Delete" />
                         <MenuItem x:Name="cm_autoadd" Header="自動予約登録" Click="cm_autoadd_Click" />
-                        <MenuItem x:Name="cm_timeshift" Header="追っかけ再生" Click="cm_timeShiftPlay_Click" InputGestureText="Ctrl + P" />
+                        <MenuItem x:Name="cm_timeshift" Header="追っかけ再生" Click="cm_timeShiftPlay_Click" InputGestureText="Ctrl+P" />
                         <Separator/>
                         <MenuItem x:Name="cm_view" Header="表示モード">
                             <MenuItem Header="表示設定" Click="cm_viewSet_Click" />

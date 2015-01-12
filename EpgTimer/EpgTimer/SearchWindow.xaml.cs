@@ -294,6 +294,11 @@ namespace EpgTimer
 
         private void button_add_reserve_Click(object sender, RoutedEventArgs e)
         {
+            MenuItem_Click_ChangeOnOff(sender, e);
+        }
+
+        private void add_reserve(object sender, RoutedEventArgs e)
+        {
             try
             {
                 if (listView_result.SelectedItem != null)
@@ -698,47 +703,68 @@ namespace EpgTimer
             }
         }
 
-        protected override void OnKeyDown(KeyEventArgs e)
+        protected override void OnPreviewKeyDown(KeyEventArgs e)
         {
             if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control) && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
             {
                 switch (e.Key)
                 {
-                    case Key.F:
-                        new BlackoutWindow(this).showWindow(this.button_search.Content.ToString());
-                        this.button_search.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-                        break;
-                    case Key.S:
-                        new BlackoutWindow(this).showWindow(this.button_add_reserve.Content.ToString());
-                        this.button_add_reserve.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-                        break;
                     case Key.A:
-                        new BlackoutWindow(this).showWindow(this.button_add_epgAutoAdd.Content.ToString());
-                        this.button_add_epgAutoAdd.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-                        this.Close();
+                        if (MessageBox.Show("自動予約登録を追加します。\r\nよろしいですか？", "追加の確認", MessageBoxButton.OKCancel) == MessageBoxResult.OK)
+                        {
+                            this.button_add_epgAutoAdd.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                        }
+                        e.Handled = true;
                         break;
                     case Key.C:
-                        new BlackoutWindow(this).showWindow(this.button_chg_epgAutoAdd.Content.ToString());
-                        this.button_chg_epgAutoAdd.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-                        this.Close();
+                        if (MessageBox.Show("自動予約登録を変更します。\r\nよろしいですか？", "変更の確認", MessageBoxButton.OKCancel) == MessageBoxResult.OK)
+                        {
+                            this.button_chg_epgAutoAdd.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                        }
+                        e.Handled = true;
+                        break;
+                    case Key.X:
+                        if (MessageBox.Show("この自動予約登録を削除します。\r\nよろしいですか？", "削除の確認", MessageBoxButton.OKCancel) == MessageBoxResult.OK)
+                        {
+                            this.button_del_epgAutoAdd.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                        }
+                        e.Handled = true;
                         break;
                 }
             }
-            else if (Keyboard.Modifiers == ModifierKeys.None)
+            else if (Keyboard.Modifiers == ModifierKeys.Control)
             {
                 switch (e.Key)
                 {
-                    case Key.F3:
-                        this.MenuItem_Click_ProgramTable(this, new RoutedEventArgs(Button.ClickEvent));
+                    case Key.F:
+                        this.button_search.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                        e.Handled = true;
                         break;
-                    case Key.Escape:
-                        this.Close();
+                    case Key.Left:
+                        this.button_up_epgAutoAdd.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                        e.Handled = true;
                         break;
-                    case Key.Delete:
-                        this.deleteItem();
+                    case Key.Right:
+                        this.button_down_epgAutoAdd.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                        e.Handled = true;
                         break;
                 }
             }
+            base.OnPreviewKeyDown(e);
+        }
+
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            if (Keyboard.Modifiers == ModifierKeys.None)
+            {
+                switch (e.Key)
+                {
+                    case Key.Escape:
+                        this.Close();
+                        break;
+                }
+            }
+            base.OnKeyDown(e);
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -755,11 +781,49 @@ namespace EpgTimer
 
         void listView_result_KeyDown(object sender, KeyEventArgs e)
         {
-            switch (e.Key)
+            //xtne6f@work-plusと互換維持のためのダミー
+        }
+
+        void listView_result_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control) && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
             {
-                case Key.Enter:
-                    this.MenuItem_Click_ShowDialog(listView_result.SelectedItem, new RoutedEventArgs());
-                    break;
+                switch (e.Key)
+                {
+                    case Key.D:
+                        this.button_delall_reserve.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                        break;
+                }
+            }
+            else if (Keyboard.Modifiers == ModifierKeys.Control)
+            {
+                switch (e.Key)
+                {
+                    case Key.D:
+                        this.deleteItem();
+                        break;
+                    case Key.S:
+                        this.MenuItem_Click_ChangeOnOff(this, new RoutedEventArgs(Button.ClickEvent));
+                        break;
+                }
+            }
+            else if (Keyboard.Modifiers == ModifierKeys.None)
+            {
+                switch (e.Key)
+                {
+                    case Key.F3:
+                        this.MenuItem_Click_ProgramTable(this, new RoutedEventArgs(Button.ClickEvent));
+                        e.Handled = true;
+                        break;
+                    case Key.Enter:
+                        this.MenuItem_Click_ShowDialog(this, new RoutedEventArgs(Button.ClickEvent));
+                        e.Handled = true;
+                        break;
+                    case Key.Delete:
+                        this.deleteItem();
+                        e.Handled = true;
+                        break;
+                }
             }
         }
 
@@ -888,7 +952,7 @@ namespace EpgTimer
 
                 if (IsExistNewReserve == true)
                 {
-                    button_add_reserve_Click(sender, e);
+                    add_reserve(sender, e);
                 }
                 else
                 {
@@ -1159,7 +1223,7 @@ namespace EpgTimer
                                 MenuItem menuItem = new MenuItem();
                                 menuItem.Header = info.DisplayName;
                                 menuItem.DataContext = info.ID;
-                                menuItem.Click += new RoutedEventHandler(button_add_reserve_Click);
+                                menuItem.Click += new RoutedEventHandler(add_reserve);
 
                                 subItem.Items.Add(menuItem);
                             }

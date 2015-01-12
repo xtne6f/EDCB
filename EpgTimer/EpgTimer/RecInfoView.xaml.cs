@@ -382,7 +382,7 @@ namespace EpgTimer
             }
         }
 
-        void listView_recinfo_KeyDown(object sender, KeyEventArgs e)
+        void listView_recinfo_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             if (Keyboard.Modifiers == ModifierKeys.Control)
             {
@@ -390,6 +390,9 @@ namespace EpgTimer
                 {
                     case Key.P:
                         this.button_play_Click(this.listView_recinfo.SelectedItem, new RoutedEventArgs(Button.ClickEvent));
+                        break;
+                    case Key.D:
+                        this.deleteItem();
                         break;
                 }
             }
@@ -399,9 +402,11 @@ namespace EpgTimer
                 {
                     case Key.Enter:
                         this.button_recInfo_Click(this.listView_recinfo.SelectedItem, new RoutedEventArgs(Button.ClickEvent));
+                        e.Handled = true;
                         break;
                     case Key.Delete:
                         this.deleteItem();
+                        e.Handled = true;
                         break;
                 }
             }

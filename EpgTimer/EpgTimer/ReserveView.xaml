@@ -22,7 +22,7 @@
             <MenuItem Header="ぴったり（？）" Name="Pittari" IsCheckable="True" Click="headerSelect_Click" />
         </ContextMenu>
         <ContextMenu x:Key="itemMenu" x:Name="cmdMenu" Loaded="cmdMenu_Loaded">
-            <MenuItem Header="予約←→無効" Click="button_on_off_Click" />
+            <MenuItem Header="予約←→無効" Click="button_on_off_Click" InputGestureText="Ctrl+S" />
             <MenuItem Header="変更">
                 <MenuItem Header="ダイアログ表示" Click="button_change_Click" InputGestureText="Enter" />
                 <Separator/>
@@ -41,10 +41,10 @@
                     <MenuItem Header="5 (_5)" Name="priority_5" Click="priority_Click" />
                 </MenuItem>
             </MenuItem>
-            <MenuItem Header="削除" Click="button_del_Click" InputGestureText="Delete" />
+            <MenuItem Header="削除" Click="button_del_Click" InputGestureText="Ctrl+D, Delete" />
             <MenuItem Header="番組表へジャンプ" Click="MenuItem_Click_ProgramTable"  InputGestureText="F3" />
             <MenuItem Header="自動予約登録" Click="autoadd_Click" />
-            <MenuItem Header="追っかけ再生" Click="timeShiftPlay_Click" InputGestureText="Ctrl + P" />
+            <MenuItem Header="追っかけ再生" Click="timeShiftPlay_Click" InputGestureText="Ctrl+P" />
         </ContextMenu>
     </UserControl.Resources>
     <Grid>
@@ -52,7 +52,7 @@
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="130" />
         </Grid.ColumnDefinitions>
-        <ListView Name="listView_reserve" Margin="10" SelectionMode="Extended" ItemsSource="{Binding}" GridViewColumnHeader.Click="GridViewColumnHeader_Click" ContextMenu="{DynamicResource itemHeader}" ContextMenuOpening="ContextMenu_Header_ContextMenuOpening">
+        <ListView Name="listView_reserve" Margin="10" SelectionMode="Extended" ItemsSource="{Binding}" GridViewColumnHeader.Click="GridViewColumnHeader_Click" ContextMenu="{DynamicResource itemHeader}" ContextMenuOpening="ContextMenu_Header_ContextMenuOpening" PreviewKeyDown="listView_reserve_PreviewKeyDown">
             <ListView.Resources>
                 <Style TargetType="ListViewItem">
                     <Setter Property="ToolTipService.ShowDuration" Value="20000" />
@@ -62,7 +62,6 @@
                     <Setter Property="BorderBrush" Value="{Binding BorderBrush}" />
                     <Setter Property="ContextMenu" Value="{DynamicResource itemMenu}" />
                     <EventSetter Event="MouseDoubleClick" Handler="listView_reserve_MouseDoubleClick"/>
-                    <EventSetter Event="KeyDown" Handler="listView_reserve_KeyDown" />
                 </Style>
             </ListView.Resources>
             <ListView.View>
@@ -124,41 +123,13 @@
                     </GridViewColumn>
                 </GridView>
             </ListView.View>
-            <!--
-            <ListView.ContextMenu>
-                <ContextMenu>
-                    <MenuItem Header="削除" Click="button_del_Click" />
-                    <MenuItem Header="変更">
-                        <MenuItem Header="ダイアログ表示" Click="button_change_Click" />
-                        <Separator/>
-                        <MenuItem Header="録画モード">
-                            <MenuItem Header="全サービス" Name="recmode_all" Click="recmode_Click" />
-                            <MenuItem Header="指定サービス" Name="recmode_only" Click="recmode_Click" />
-                            <MenuItem Header="全サービス（デコード処理なし）" Name="recmode_all_nodec" Click="recmode_Click" />
-                            <MenuItem Header="指定サービス（デコード処理なし）" Name="recmode_only_nodec" Click="recmode_Click" />
-                            <MenuItem Header="視聴" Name="recmode_view" Click="recmode_Click" />
-                            <MenuItem Header="無効" Name="recmode_no" Click="button_no_Click" />
-                        </MenuItem>
-                        <MenuItem Header="優先度">
-                            <MenuItem Header="1" Name="priority_1" Click="priority_Click" />
-                            <MenuItem Header="2" Name="priority_2" Click="priority_Click" />
-                            <MenuItem Header="3" Name="priority_3" Click="priority_Click" />
-                            <MenuItem Header="4" Name="priority_4" Click="priority_Click" />
-                            <MenuItem Header="5" Name="priority_5" Click="priority_Click" />
-                        </MenuItem>
-                    </MenuItem>
-                    <MenuItem Header="自動予約登録" Click="autoadd_Click" />
-                    <MenuItem Header="追っかけ再生" Click="timeShiftPlay_Click" />
-                </ContextMenu>
-            </ListView.ContextMenu>
-            -->
         </ListView>
         <StackPanel Grid.Column="1" Name="stackPanel_button">
-            <Button Content="予約←→無効" Height="23" Name="button_on_off" Margin="0,10,0,10" Click="button_on_off_Click" Style="{StaticResource ButtonStyle1}" />
+            <Button Content="予約←→無効" Height="23" Name="button_on_off" Margin="0,10,0,10" Click="button_on_off_Click" Style="{StaticResource ButtonStyle1}" ToolTip="Ctrl+S" />
             <Button Content="変更" Height="23" Name="button_change" Margin="0,10,0,10" Click="button_change_Click" Style="{StaticResource ButtonStyle1}" ToolTip="Enter" />
-            <Button Content="削除" Height="23" Name="button_del" Margin="0,10,0,10" Click="button_del_Click" Style="{StaticResource ButtonStyle1}" ToolTip="Delete" />
+            <Button Content="削除" Height="23" Name="button_del" Margin="0,10,0,10" Click="button_del_Click" Style="{StaticResource ButtonStyle1}" ToolTip="Ctrl+D, Delete" />
             <Button Content="プログラム予約追加" Height="23" Name="button_add_manual" Margin="0,10,0,10" Click="button_add_manual_Click" Style="{StaticResource ButtonStyle1}" />
-            <Button Content="追っかけ再生" Height="23" Name="button_timeShiftPlay" Margin="0,10,0,10" Click="timeShiftPlay_Click" Style="{StaticResource ButtonStyle1}" ToolTip="Ctrl + P" />
+            <Button Content="追っかけ再生" Height="23" Name="button_timeShiftPlay" Margin="0,10,0,10" Click="timeShiftPlay_Click" Style="{StaticResource ButtonStyle1}" ToolTip="Ctrl+P" />
         </StackPanel>
     </Grid>
 </UserControl>

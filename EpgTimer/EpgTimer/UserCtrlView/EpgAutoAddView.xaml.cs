@@ -640,9 +640,18 @@ namespace EpgTimer
             }
         }
 
-        protected override void OnPreviewKeyDown(KeyEventArgs e)
+        void listView_key_PreviewKeyDown(object sender, KeyEventArgs e)
         {
-            if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
+            if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control) && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
+            {
+                switch (e.Key)
+                {
+                    case Key.D:
+                        this.button_del2_Click(this, new RoutedEventArgs(Button.ClickEvent));
+                        break;
+                }
+            }
+            else if (Keyboard.Modifiers == ModifierKeys.Control)
             {
                 switch (e.Key)
                 {
@@ -660,22 +669,25 @@ namespace EpgTimer
                         new BlackoutWindow(Window.GetWindow(this)).showWindow(this.button_reloadItem.Content.ToString());
                         this.reloadItemOrder();
                         break;
+                    case Key.D:
+                        this.deleteItem();
+                        break;
                 }
             }
-            else
+            else if (Keyboard.Modifiers == ModifierKeys.None)
             {
                 switch (e.Key)
                 {
                     case Key.Enter:
                         this.showDialog();
+                        e.Handled = true;
                         break;
                     case Key.Delete:
                         this.deleteItem();
+                        e.Handled = true;
                         break;
                 }
             }
-            //
-            base.OnPreviewKeyDown(e);
         }
 
         private void button_up_Click2(object sender, RoutedEventArgs e)
