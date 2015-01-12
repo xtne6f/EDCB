@@ -48,5 +48,20 @@ namespace EpgTimer
             KeyWord = KeyWord.Replace("　", "");
             KeyWord = KeyWord.Replace("\r\n", " ");
         }
+
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            if (Keyboard.Modifiers == ModifierKeys.None)
+            {
+                switch (e.Key)
+                {
+                    case Key.Escape:
+                        this.Close();
+                        break;
+                }
+            }
+            base.OnKeyDown(e);
+        }
+
     }
 }

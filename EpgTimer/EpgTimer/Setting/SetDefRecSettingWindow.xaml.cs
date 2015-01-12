@@ -37,5 +37,20 @@ namespace EpgTimer.Setting
         {
             DialogResult = true;
         }
+
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            if (Keyboard.Modifiers == ModifierKeys.None)
+            {
+                switch (e.Key)
+                {
+                    case Key.Escape:
+                        this.Close();
+                        break;
+                }
+            }
+            base.OnKeyDown(e);
+        }
+
     }
 }

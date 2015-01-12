@@ -185,6 +185,20 @@ namespace EpgTimer
             DialogResult = false;
         }
 
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            if (Keyboard.Modifiers == ModifierKeys.None)
+            {
+                switch (e.Key)
+                {
+                    case Key.Escape:
+                        this.button_cancel.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                        break;
+                }
+            }
+            base.OnKeyDown(e);
+        }
+
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             if (defKey != null)

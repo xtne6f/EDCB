@@ -119,5 +119,20 @@ namespace EpgTimer
             checkBox_ng_shareFile.IsChecked = ngShareFile;
 
         }
+
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            if (Keyboard.Modifiers == ModifierKeys.None)
+            {
+                switch (e.Key)
+                {
+                    case Key.Escape:
+                        this.Close();
+                        break;
+                }
+            }
+            base.OnKeyDown(e);
+        }
+
     }
 }

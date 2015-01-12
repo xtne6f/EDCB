@@ -218,7 +218,7 @@ namespace EpgTimer
                         break;
                 }
             }
-            else
+            else if (Keyboard.Modifiers == ModifierKeys.None)
             {
                 switch (e.Key)
                 {

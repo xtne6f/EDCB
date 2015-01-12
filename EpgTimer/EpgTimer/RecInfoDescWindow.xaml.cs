@@ -66,12 +66,16 @@ namespace EpgTimer
 
         protected override void OnKeyDown(KeyEventArgs e)
         {
-            switch (e.Key)
+            if (Keyboard.Modifiers == ModifierKeys.None)
             {
-                case Key.Escape:
-                    this.Close();
-                    break;
+                switch (e.Key)
+                {
+                    case Key.Escape:
+                        this.Close();
+                        break;
+                }
             }
+            base.OnKeyDown(e);
         }
 
         private void Window_Closed(object sender, EventArgs e)

@@ -483,12 +483,12 @@ namespace EpgTimer
                         break;
                 }
             }
-            else
+            else if (Keyboard.Modifiers == ModifierKeys.None)
             {
                 switch (e.Key)
                 {
                     case Key.Escape:
-                        this.Close();
+                        this.button_cancel.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                         break;
                 }
             }

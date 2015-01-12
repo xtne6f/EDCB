@@ -127,5 +127,20 @@ namespace EpgTimer
                 listBox_chk_folder.Items.Add(textBox_chk_folder.Text);
             }
         }
+
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            if (Keyboard.Modifiers == ModifierKeys.None)
+            {
+                switch (e.Key)
+                {
+                    case Key.Escape:
+                        this.Close();
+                        break;
+                }
+            }
+            base.OnKeyDown(e);
+        }
+
     }
 }
