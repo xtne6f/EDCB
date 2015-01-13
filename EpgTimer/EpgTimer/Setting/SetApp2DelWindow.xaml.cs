@@ -67,8 +67,10 @@ namespace EpgTimer
             }
         }
 
-        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        private void button_OK_Click(object sender, RoutedEventArgs e)
         {
+            DialogResult = true;
+
             extList.Clear();
             foreach (string info in listBox_ext.Items)
             {
@@ -128,6 +130,11 @@ namespace EpgTimer
             }
         }
 
+        private void button_cancel_Click(object sender, RoutedEventArgs e)
+        {
+            DialogResult = false;
+        }
+
         protected override void OnKeyDown(KeyEventArgs e)
         {
             if (Keyboard.Modifiers == ModifierKeys.None)
@@ -135,7 +142,7 @@ namespace EpgTimer
                 switch (e.Key)
                 {
                     case Key.Escape:
-                        this.Close();
+                        this.button_cancel.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                         break;
                 }
             }

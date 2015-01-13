@@ -916,14 +916,16 @@ namespace EpgTimer.Setting
             dlg.ngFileStreaming = this.ngFileStreaming;
             dlg.ngShareFile = this.ngShareFile;
             dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-            dlg.ShowDialog();
 
-            this.ngProcessList = dlg.processList;
-            this.ngMin = dlg.ngMin;
-            this.ngUsePC = dlg.ngUsePC;
-            this.ngUsePCMin = dlg.ngUsePCMin;
-            this.ngFileStreaming = dlg.ngFileStreaming;
-            this.ngShareFile = dlg.ngShareFile;
+            if (dlg.ShowDialog() == true)
+            {
+                this.ngProcessList = dlg.processList;
+                this.ngMin = dlg.ngMin;
+                this.ngUsePC = dlg.ngUsePC;
+                this.ngUsePCMin = dlg.ngUsePCMin;
+                this.ngFileStreaming = dlg.ngFileStreaming;
+                this.ngShareFile = dlg.ngShareFile;
+            }
         }
 
         private void button_autoDel_Click(object sender, RoutedEventArgs e)
@@ -932,10 +934,12 @@ namespace EpgTimer.Setting
             dlg.extList = this.extList;
             dlg.delChkFolderList = this.delChkFolderList;
             dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-            dlg.ShowDialog();
 
-            this.extList = dlg.extList;
-            this.delChkFolderList = dlg.delChkFolderList;
+            if (dlg.ShowDialog() == true)
+            {
+                this.extList = dlg.extList;
+                this.delChkFolderList = dlg.delChkFolderList;
+            }
         }
 
         private void button_recname_Click(object sender, RoutedEventArgs e)
