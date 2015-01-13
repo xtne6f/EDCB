@@ -99,5 +99,10 @@ namespace EpgTimer
             base.OnKeyDown(e);
         }
 
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            button_connect.Focus();
+        }
+
     }
 }
