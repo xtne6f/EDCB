@@ -705,6 +705,25 @@ namespace EpgTimer
 
         protected override void OnPreviewKeyDown(KeyEventArgs e)
         {
+            if (Keyboard.Modifiers == ModifierKeys.Control)
+            {
+                switch (e.Key)
+                {
+                    case Key.Up:
+                        this.button_up_epgAutoAdd.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                        e.Handled = true;
+                        break;
+                    case Key.Down:
+                        this.button_down_epgAutoAdd.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                        e.Handled = true;
+                        break;
+                }
+            }
+            base.OnPreviewKeyDown(e);
+        }
+
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
             if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control) && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
             {
                 switch (e.Key)
@@ -738,24 +757,10 @@ namespace EpgTimer
                 {
                     case Key.F:
                         this.button_search.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-                        e.Handled = true;
-                        break;
-                    case Key.Left:
-                        this.button_up_epgAutoAdd.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-                        e.Handled = true;
-                        break;
-                    case Key.Right:
-                        this.button_down_epgAutoAdd.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-                        e.Handled = true;
                         break;
                 }
             }
-            base.OnPreviewKeyDown(e);
-        }
-
-        protected override void OnKeyDown(KeyEventArgs e)
-        {
-            if (Keyboard.Modifiers == ModifierKeys.None)
+            else if (Keyboard.Modifiers == ModifierKeys.None)
             {
                 switch (e.Key)
                 {
