@@ -551,7 +551,7 @@ namespace EpgTimer
 
         void saveItemOrder()
         {
-            if (!this.ItemOrderNotSaved) { return; }
+            if (this.ItemOrderNotSaved == false) { return; }
             //
             List<uint> dataIdList1 = new List<uint>();
             foreach (EpgAutoDataItem item1 in this.resultList)
@@ -580,6 +580,8 @@ namespace EpgTimer
 
         void reloadItemOrder()
         {
+            if (this.ItemOrderNotSaved==false) { return; }
+            //
             this.ReloadInfoData();
             this.ItemOrderNotSaved = false;
             this.gridViewSorter.resetSortParams();
@@ -662,12 +664,22 @@ namespace EpgTimer
                         this.moveItem(itemMoveDirections.down);
                         break;
                     case Key.S:
-                        new BlackoutWindow(Window.GetWindow(this)).showWindow(this.button_saveItemOrder.Content.ToString());
-                        this.saveItemOrder();
+                        if (this.ItemOrderNotSaved==true)
+                        {
+                            if (MessageBox.Show("並びの変更を保存します。\r\nよろしいですか？", "保存の確認", MessageBoxButton.OKCancel) == MessageBoxResult.OK)
+                            {
+                                this.saveItemOrder();
+                            }
+                        }
                         break;
                     case Key.R:
-                        new BlackoutWindow(Window.GetWindow(this)).showWindow(this.button_reloadItem.Content.ToString());
-                        this.reloadItemOrder();
+                        if (this.ItemOrderNotSaved == true)
+                        {
+                            if (MessageBox.Show("元の並びに復元します。\r\nよろしいですか？", "復元の確認", MessageBoxButton.OKCancel) == MessageBoxResult.OK)
+                            {
+                                this.reloadItemOrder();
+                            }
+                        }
                         break;
                     case Key.D:
                         this.deleteItem();

@@ -131,9 +131,9 @@
                 <Button Content="予約ごと削除" Height="23" Name="button_del2" Margin="0,5,0,5" Click="button_del2_Click" Style="{StaticResource ButtonStyle1}" ToolTip="Ctrl+Shift+D" />
                 <Button Content="↑" Height="23" Name="button_up" Margin="0,20,0,5" Click="button_up_Click2" Style="{StaticResource ButtonStyle1}" ToolTip="Ctrl+↑" />
                 <Button Content="↓" Height="23" Name="button_down" Margin="0,5,0,10" Click="button_down_Click2" Style="{StaticResource ButtonStyle1}" ToolTip="Ctrl+↓" />
-                <Button Content="並びを保存" Height="23" Name="button_saveItemOrder" Click="button_saveItemOrder_Click"  Style="{StaticResource ButtonStyle1}" ToolTip="Ctrl+S" IsEnabled="False" />
+                <Button Content="並びを保存" Height="23" Name="button_saveItemOrder" Click="button_saveItemOrder_Click"  Style="{StaticResource ButtonStyle1}" ToolTip="Ctrl+S" IsEnabled="False" ToolTipService.ShowOnDisabled="True"/>
                 <TextBlock Height="55" Name="textBox_ItemOrderStatus" Text="" TextWrapping="Wrap" />
-                <Button Content="並びを元に戻す" Height="23" Name="button_reloadItem" Click="button_reloadItem_Click"  Style="{StaticResource ButtonStyle1}" ToolTip="Ctrl+R" IsEnabled="False" />
+                <Button Content="並びを元に戻す" Height="23" Name="button_reloadItem" Click="button_reloadItem_Click"  Style="{StaticResource ButtonStyle1}" ToolTip="Ctrl+R" IsEnabled="False" ToolTipService.ShowOnDisabled="True"/>
             </StackPanel>
         </Grid>
         <Popup Name="myPopup" Placement="Mouse" AllowsTransparency="True" MouseLeave="myPopup_MouseLeave">

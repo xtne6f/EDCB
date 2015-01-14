@@ -483,6 +483,8 @@ namespace EpgTimer
 
         private void Move_epgAutoAdd(int direction)
         {
+            if (this.autoAddID == 0) return;
+
             MainWindow mainWindow = Application.Current.MainWindow as MainWindow;
             ListView epglist = mainWindow.autoAddView.epgAutoAddView.listView_key;
 
@@ -516,6 +518,7 @@ namespace EpgTimer
 
         private void button_chg_epgAutoAdd_Click(object sender, RoutedEventArgs e)
         {
+            if (this.autoAddID == 0) return;
             if (CheckExistAutoAddItem() == false) return;
 
             try
@@ -553,6 +556,7 @@ namespace EpgTimer
 
         private void button_del_epgAutoAdd_Click(object sender, RoutedEventArgs e)
         {
+            if (this.autoAddID == 0) return;
             if (CheckExistAutoAddItem() == false) return;
 
             try
@@ -710,11 +714,18 @@ namespace EpgTimer
                 switch (e.Key)
                 {
                     case Key.Up:
-                        this.button_up_epgAutoAdd.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                        //this.autoAddIDが有効なIDを持っていてもボタン不可の場合がある
+                        if (this.button_up_epgAutoAdd.IsVisible == true && this.button_up_epgAutoAdd.IsEnabled == true)
+                        {
+                            this.button_up_epgAutoAdd.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                        }
                         e.Handled = true;
                         break;
                     case Key.Down:
-                        this.button_down_epgAutoAdd.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                        if (this.button_down_epgAutoAdd.IsVisible == true && this.button_down_epgAutoAdd.IsEnabled == true)
+                        {
+                            this.button_down_epgAutoAdd.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                        }
                         e.Handled = true;
                         break;
                 }
@@ -736,16 +747,22 @@ namespace EpgTimer
                         e.Handled = true;
                         break;
                     case Key.C:
-                        if (MessageBox.Show("自動予約登録を変更します。\r\nよろしいですか？", "変更の確認", MessageBoxButton.OKCancel) == MessageBoxResult.OK)
+                        if (this.button_chg_epgAutoAdd.IsVisible == true && this.button_chg_epgAutoAdd.IsEnabled == true)
                         {
-                            this.button_chg_epgAutoAdd.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                            if (MessageBox.Show("自動予約登録を変更します。\r\nよろしいですか？", "変更の確認", MessageBoxButton.OKCancel) == MessageBoxResult.OK)
+                            {
+                                this.button_chg_epgAutoAdd.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                            }
                         }
                         e.Handled = true;
                         break;
                     case Key.X:
-                        if (MessageBox.Show("この自動予約登録を削除します。\r\nよろしいですか？", "削除の確認", MessageBoxButton.OKCancel) == MessageBoxResult.OK)
+                        if (this.button_del_epgAutoAdd.IsVisible == true && this.button_del_epgAutoAdd.IsEnabled == true)
                         {
-                            this.button_del_epgAutoAdd.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                            if (MessageBox.Show("この自動予約登録を削除します。\r\nよろしいですか？", "削除の確認", MessageBoxButton.OKCancel) == MessageBoxResult.OK)
+                            {
+                                this.button_del_epgAutoAdd.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                            }
                         }
                         e.Handled = true;
                         break;
