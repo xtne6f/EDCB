@@ -272,6 +272,7 @@ namespace EpgTimer
                         item.EventInfo.event_id == oldItem.event_id)
                     {
                         listView_result.SelectedItem = item;
+                        listView_result.ScrollIntoView(item);
                     }
                 }
 

@@ -208,6 +208,7 @@ namespace EpgTimer
                     if (item.EpgAutoAddInfo.dataID == oldItem)
                     {
                         listView_key.SelectedItem = item;
+                        listView_key.ScrollIntoView(item);
                     }
                 }
 

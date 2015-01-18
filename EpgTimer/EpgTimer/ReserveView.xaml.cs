@@ -303,6 +303,7 @@ namespace EpgTimer
                     if (item.ReserveInfo.ReserveID == oldItem)
                     {
                         listView_reserve.SelectedItem = item;
+                        listView_reserve.ScrollIntoView(item);
                     }
                 }
 

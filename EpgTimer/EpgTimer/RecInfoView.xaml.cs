@@ -339,6 +339,7 @@ namespace EpgTimer
                     if (item.RecInfo.ID == oldItem)
                     {
                         listView_recinfo.SelectedItem = item;
+                        listView_recinfo.ScrollIntoView(item);
                     }
                 }
 
