@@ -125,6 +125,32 @@ namespace EpgTimer
             }
         }
 
+        public void ChgProtectRecInfo()
+        {
+            try
+            {
+                if (listView_recinfo.SelectedItems.Count > 0)
+                {
+                    List<RecFileInfo> list = new List<RecFileInfo>();
+                    foreach (RecInfoItem info in listView_recinfo.SelectedItems)
+                    {
+                        info.RecInfo.ProtectFlag = !info.RecInfo.ProtectFlag;
+                        list.Add(info.RecInfo);
+                    }
+                    cmd.SendChgProtectRecInfo(list);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+            }
+        }
+
+        private void button_protect_Click(object sender, RoutedEventArgs e)
+        {
+            ChgProtectRecInfo();
+        }
+
         private void button_del_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -391,6 +417,9 @@ namespace EpgTimer
                 {
                     case Key.P:
                         this.button_play_Click(this.listView_recinfo.SelectedItem, new RoutedEventArgs(Button.ClickEvent));
+                        break;
+                    case Key.S:
+                        this.ChgProtectRecInfo();
                         break;
                     case Key.D:
                         this.deleteItem();

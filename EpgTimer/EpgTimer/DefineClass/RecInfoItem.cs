@@ -50,6 +50,27 @@ namespace EpgTimer
                 return chk;
             }
         }
+        public bool IsProtect_InfoView
+        {
+            set
+            {
+                MainWindow mainWindow = Application.Current.MainWindow as MainWindow;
+                foreach (RecInfoItem info in mainWindow.recInfoView.listView_recinfo.SelectedItems)
+                {
+                    if (info.RecInfo.ID == this.RecInfo.ID)
+                    {
+                        mainWindow.recInfoView.ChgProtectRecInfo();
+                        return;
+                    }
+                }
+
+                IsProtect = value;
+            }
+            get
+            {
+                return IsProtect;
+            }
+        }
         public String EventName
         {
             get
