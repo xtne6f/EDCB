@@ -624,8 +624,7 @@ namespace EpgTimer
                     {
                         if (item is MenuItem && ((((MenuItem)item).Name == "cmdopenFolder")))
                         {
-                            ((MenuItem)item).IsEnabled = false;
-                            ((MenuItem)item).Header += ((MenuItem)item).Header.ToString().EndsWith("(EpgTimerNWで無効)") ? "" : "(EpgTimerNWで無効)";
+                            ((MenuItem)item).Visibility = System.Windows.Visibility.Collapsed;
                             break;
                         }
                     }
