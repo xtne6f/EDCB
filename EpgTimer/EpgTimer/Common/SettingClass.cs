@@ -219,6 +219,9 @@ namespace EpgTimer
         private byte recEndWarColorR;
         private byte recEndWarColorG;
         private byte recEndWarColorB;
+        private String statResForeColor;            //ステータスの予約色
+        private String statRecForeColor;            //ステータスの録画色
+        private String statOnAirForeColor;          //ステータスの放送色
         private byte epgTipsBackColorR;
         private byte epgTipsBackColorG;
         private byte epgTipsBackColorB;
@@ -838,6 +841,21 @@ namespace EpgTimer
             get { return recEndWarColorB; }
             set { recEndWarColorB = value; }
         }
+        public String StatResForeColor
+        {
+            get { return statResForeColor; }
+            set { statResForeColor = value; }
+        }
+        public String StatRecForeColor
+        {
+            get { return statRecForeColor; }
+            set { statRecForeColor = value; }
+        }
+        public String StatOnAirForeColor
+        {
+            get { return statOnAirForeColor; }
+            set { statOnAirForeColor = value; }
+        }
         public byte EpgTipsBackColorR
         {
             get { return epgTipsBackColorR; }
@@ -1060,6 +1078,9 @@ namespace EpgTimer
             recEndWarColorR = 0xFF;
             recEndWarColorG = 0xFF;
             recEndWarColorB = 0;
+            statResForeColor = "RoyalBlue";
+            statRecForeColor = "OrangeRed";
+            statOnAirForeColor = "LimeGreen";
             epgTipsBackColorR = 0xD3;
             epgTipsBackColorG = 0xD3;
             epgTipsBackColorB = 0xD3;

@@ -194,6 +194,109 @@ namespace EpgTimer
                 return view;
             }
         }
+        private Boolean IsOnRec
+        {
+            get
+            {
+                Boolean retv = false;
+
+                Int32 duration = (Int32)ReserveInfo.DurationSecond;
+                DateTime startTime = ReserveInfo.StartTime;
+
+                //TODO: ここでデフォルトマージンを確認するがEpgTimerNWでは無意味。根本的にはSendCtrlCmdの拡張が必要
+                int defStartMargin = IniFileHandler.GetPrivateProfileInt("SET", "StartMargin", 0, SettingPath.TimerSrvIniPath);
+                int defEndMargin = IniFileHandler.GetPrivateProfileInt("SET", "EndMargin", 0, SettingPath.TimerSrvIniPath);
+
+                if (ReserveInfo.RecSetting.UseMargineFlag == 1)
+                {
+                    startTime = ReserveInfo.StartTime.AddSeconds(ReserveInfo.RecSetting.StartMargine * -1);
+                    duration += ReserveInfo.RecSetting.StartMargine;
+                    duration += ReserveInfo.RecSetting.EndMargine;
+                }
+                else
+                {
+                    startTime = ReserveInfo.StartTime.AddSeconds(defStartMargin * -1);
+                    duration += defStartMargin;
+                    duration += defEndMargin;
+                }
+
+                if (startTime <= System.DateTime.Now)
+                {
+                    if (startTime + TimeSpan.FromSeconds(duration) >= System.DateTime.Now)
+                    {
+                        retv = true;
+                    }
+                }
+
+                return retv;
+            }
+        }
+        private Boolean IsOnAir
+        {
+            get
+            {
+                Boolean retv = false;
+
+                if (ReserveInfo.StartTime <= System.DateTime.Now)
+                {
+                    if (ReserveInfo.StartTime + TimeSpan.FromSeconds(ReserveInfo.DurationSecond) >= System.DateTime.Now)
+                    {
+                        retv = true;
+                    }
+                }
+
+                return retv;
+            }
+        }
+        public String Status
+        {
+            get
+            {
+                String[] wiewString = { "", "無", "予+", "無+", "録*", "無*" };
+                int index = 0;
+
+                if (IsOnAir == true)
+                {
+                    index = 2;
+                }
+
+                if (IsOnRec == true)//マージンがあるので、IsOnAir==trueとは限らない
+                {
+                    index = 4;
+                }
+
+                if (ReserveInfo.RecSetting.RecMode == 5) //無効の判定
+                {
+                    index += 1;
+                }
+
+                return wiewString[index];
+            }
+        }
+        public SolidColorBrush StatusColor
+        {
+            get
+            {
+                SolidColorBrush color = null;
+
+                if (IsOnAir == true)
+                {
+                    color = CommonManager.Instance.StatOnAirForeColor;
+                }
+
+                if (IsOnRec == true)
+                {
+                    color = CommonManager.Instance.StatRecForeColor;
+                }
+
+                if (color == null)
+                {
+                    color = CommonManager.Instance.StatResForeColor;
+                }
+
+                return color;
+            }
+        }
         public List<String> RecFileName
         {
             get

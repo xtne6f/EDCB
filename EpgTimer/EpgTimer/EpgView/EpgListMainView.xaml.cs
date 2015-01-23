@@ -1286,11 +1286,20 @@ namespace EpgTimer
             {
                 if (headerClicked.Role != GridViewColumnHeaderRole.Padding)
                 {
-                    string header = "Reserved";
+                    string header = "";
                     if (headerClicked.Column.DisplayMemberBinding != null)
                     {
                         header = ((Binding)headerClicked.Column.DisplayMemberBinding).Path.Path;
                     }
+                    else if (headerClicked.Tag as string != null)
+                    {
+                        header = headerClicked.Tag as string;
+                    }
+                    if (header == null || header == "")
+                    {
+                        return;
+                    }
+
                     if (String.Compare(header, _lastHeaderClicked) != 0)
                     {
                         direction = ListSortDirection.Ascending;

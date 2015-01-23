@@ -78,10 +78,13 @@
             </ListView.Resources>
             <ListView.View>
                 <GridView x:Name="gridView_result">
-                    <GridViewColumn Header="" Width="30">
+                    <GridViewColumn Width="35">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="状態" Tag="Status" HorizontalContentAlignment="Left" />
+                        </GridViewColumn.Header>
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding Path=Reserved}" Foreground="Tomato" FontWeight="Bold" />
+                                <TextBlock Text="{Binding Path=Status}" Foreground="{Binding Path=StatusColor}"/>
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>

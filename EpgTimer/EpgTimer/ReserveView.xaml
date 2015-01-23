@@ -10,6 +10,7 @@
             <Setter Property="InputMethod.PreferredImeState" Value="Off" />
         </Style>
         <ContextMenu x:Key="itemHeader" x:Name="HeaderSelect" x:Shared="True" >
+            <MenuItem Header="状態" Name="Status" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="日時" Name="StartTime" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="ネットワーク" Name="NetworkName" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="サービス名" Name="ServiceName" IsCheckable="True" Click="headerSelect_Click" />
@@ -67,6 +68,16 @@
             </ListView.Resources>
             <ListView.View>
                 <GridView x:Name="gridView_reserve">
+                    <GridViewColumn Width="35">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="状態" Tag="Status" HorizontalContentAlignment="Left" />
+                        </GridViewColumn.Header>
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Path=Status}" Foreground="{Binding Path=StatusColor}"/>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=StartTime}">
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="日時" Tag="StartTime" HorizontalContentAlignment="Left" />

@@ -93,6 +93,121 @@ namespace EpgTimer
                 return view;
             }
         }
+        private Boolean IsOnRec
+        {
+            get
+            {
+                Boolean retv = false;
+
+                if (IsReserved == false) return retv;
+
+                Int32 duration = (Int32)ReserveInfo.DurationSecond;
+                DateTime startTime = ReserveInfo.StartTime;
+
+                //TODO: ここでデフォルトマージンを確認するがEpgTimerNWでは無意味。根本的にはSendCtrlCmdの拡張が必要
+                int defStartMargin = IniFileHandler.GetPrivateProfileInt("SET", "StartMargin", 0, SettingPath.TimerSrvIniPath);
+                int defEndMargin = IniFileHandler.GetPrivateProfileInt("SET", "EndMargin", 0, SettingPath.TimerSrvIniPath);
+
+                if (ReserveInfo.RecSetting.UseMargineFlag == 1)
+                {
+                    startTime = ReserveInfo.StartTime.AddSeconds(ReserveInfo.RecSetting.StartMargine * -1);
+                    duration += ReserveInfo.RecSetting.StartMargine;
+                    duration += ReserveInfo.RecSetting.EndMargine;
+                }
+                else
+                {
+                    startTime = ReserveInfo.StartTime.AddSeconds(defStartMargin * -1);
+                    duration += defStartMargin;
+                    duration += defEndMargin;
+                }
+
+                if (startTime <= System.DateTime.Now)
+                {
+                    if (startTime + TimeSpan.FromSeconds(duration) >= System.DateTime.Now)
+                    {
+                        retv = true;
+                    }
+                }
+
+                return retv;
+            }
+        }
+        private Boolean IsOnAir
+        {
+            get
+            {
+                Boolean retv = false;
+
+                if (EventInfo.start_time <= System.DateTime.Now)
+                {
+                    if (EventInfo.start_time + TimeSpan.FromSeconds(EventInfo.durationSec) >= System.DateTime.Now)
+                    {
+                        retv = true;
+                    }
+                }
+
+                return retv;
+            }
+        }
+        public String Status
+        {
+            get
+            {
+                String[] wiewString = { "", "予", "無", "放", "予+", "無+", "録*", "無*" };
+                int index = 0;
+
+                if (IsOnAir == true)
+                {
+                    index = 3;
+                }
+
+                if (IsReserved == true)
+                {
+                    if (IsOnRec == true)//マージンがあるので、IsOnAir==trueとは限らない
+                    {
+                        index = 5;
+                    }
+
+                    if (ReserveInfo.RecSetting.RecMode == 5) //無効の判定
+                    {
+                        index += 2;
+                    }
+                    else
+                    {
+                        index += 1;
+                    }
+                }
+
+                return wiewString[index];
+            }
+        }
+        public SolidColorBrush StatusColor
+        {
+            get
+            {
+                SolidColorBrush color = null;
+
+                if (IsOnAir == true)
+                {
+                    color = CommonManager.Instance.StatOnAirForeColor;
+                }
+
+                if (IsReserved == true)
+                {
+                    if (IsOnRec == true)
+                    {
+                        color = CommonManager.Instance.StatRecForeColor;
+                    }
+                }
+
+                if (color == null)
+                {
+                    color = CommonManager.Instance.StatResForeColor;
+                }
+
+                return color;
+            }
+        }
         public bool IsReserved
         {
             get
@@ -105,22 +220,6 @@ namespace EpgTimer
                 {
                     return true;
                 }
-            }
-        }
-        public String Reserved
-        {
-            get
-            {
-                String view = "";
-                if (IsReserved == true)
-                {
-                    view = "予";
-                    if(ReserveInfo.RecSetting.RecMode == 5) //無効の場合
-                    {
-                        view="無";
-                    }
-                }
-                return view;
             }
         }
         public SolidColorBrush ForeColor

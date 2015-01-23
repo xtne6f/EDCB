@@ -38,6 +38,14 @@ namespace EpgTimer {
                 if (columnHeader1.Column.DisplayMemberBinding != null) {
                     header = ((Binding)columnHeader1.Column.DisplayMemberBinding).Path.Path;
                 }
+                else if (columnHeader1.Tag as string != null)
+                {
+                    header = columnHeader1.Tag as string;
+                }
+                if (header == null || header == "")
+                {
+                    continue;
+                }
                 sortGroupDict1 = this.createSortedItemGroupDict(itemList0, prevHeader1, sortGroupDict1);
                 foreach (KeyValuePair<int, int> kvp1 in sortGroupDict1) {
                     itemList0.Sort(

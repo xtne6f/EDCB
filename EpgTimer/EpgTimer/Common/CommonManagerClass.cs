@@ -1322,6 +1322,45 @@ namespace EpgTimer
                 return recEndWarBackColor;
             }
         }
+        private SolidColorBrush statResForeColor = null;
+        public SolidColorBrush StatResForeColor
+        {
+            get
+            {
+                if (statResForeColor == null)
+                {
+                    statResForeColor = new SolidColorBrush((Color)(ColorConverter.ConvertFromString(Settings.Instance.StatResForeColor)));
+                    statResForeColor.Freeze();
+                }
+                return statResForeColor;
+            }
+        }
+        private SolidColorBrush statRecForeColor = null;
+        public SolidColorBrush StatRecForeColor
+        {
+            get
+            {
+                if (statRecForeColor == null)
+                {
+                    statRecForeColor = new SolidColorBrush((Color)(ColorConverter.ConvertFromString(Settings.Instance.StatRecForeColor)));
+                    statRecForeColor.Freeze();
+                }
+                return statRecForeColor;
+            }
+        }
+        private SolidColorBrush statOnAirForeColor = null;
+        public SolidColorBrush StatOnAirForeColor
+        {
+            get
+            {
+                if (statOnAirForeColor == null)
+                {
+                    statOnAirForeColor = new SolidColorBrush((Color)(ColorConverter.ConvertFromString(Settings.Instance.StatOnAirForeColor)));
+                    statOnAirForeColor.Freeze();
+                }
+                return statOnAirForeColor;
+            }
+        }
 
         private SolidColorBrush epgTipsBackColor = null;
         public SolidColorBrush EpgTipsBackColor
