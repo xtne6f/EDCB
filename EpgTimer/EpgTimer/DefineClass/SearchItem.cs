@@ -391,7 +391,14 @@ namespace EpgTimer
             {
                 if (this.EventInfo == null) { return null; }
                 //
-                return this.EventInfo.ShortInfo.text_char.Replace("\r\n", " ");
+                if (Settings.Instance.FixSearchResult)
+                {
+                    return "省略";
+                }
+                else
+                {
+                    return this.EventInfo.ShortInfo.text_char.Replace("\r\n", " ");
+                }
             }
         }
 
