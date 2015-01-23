@@ -1245,7 +1245,37 @@ namespace EpgTimer
                 return resNoBackColor;
             }
         }
+        private SolidColorBrush listDefForeColor = null;
+        public SolidColorBrush ListDefForeColor
+        {
+            get
+            {
+                if (listDefForeColor == null)
+                {
+                    listDefForeColor = new SolidColorBrush((Color)(ColorConverter.ConvertFromString(Settings.Instance.ListDefFontColor)));
+                    listDefForeColor.Freeze();
+                }
+                return listDefForeColor;
+            }
+        }
+        private List<SolidColorBrush> eventItemForeColor = null;
+        public SolidColorBrush EventItemForeColor(byte RecMode = 6)
+        {
+            if (eventItemForeColor == null)
+            {
+                eventItemForeColor = new List<SolidColorBrush>();
+                foreach (string strColor1 in Settings.Instance.RecModeFontColorList)
+                {
+                    eventItemForeColor.Add(new SolidColorBrush((Color)(ColorConverter.ConvertFromString(strColor1))));
+                }
+                foreach (SolidColorBrush color1 in eventItemForeColor)
+                {
+                    color1.Freeze();
+                }
+            }
 
+            return RecMode < eventItemForeColor.Count ? eventItemForeColor[RecMode] : ListDefForeColor;
+        }
         private SolidColorBrush recEndDefBackColor = null;
         public SolidColorBrush RecEndDefBackColor
         {

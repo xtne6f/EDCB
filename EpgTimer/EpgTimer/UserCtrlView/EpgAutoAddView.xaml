@@ -41,6 +41,7 @@
                         <Setter Property="ToolTipService.ShowDuration" Value="20000" />
                         <Setter Property="ToolTip" Value="{Binding ToolTipView}"/>
                         <Setter Property="ContextMenu" Value="{DynamicResource itemMenu}" />
+                        <Setter Property="Foreground"  Value="{Binding ForeColor}" />
                         <Setter Property="Background" Value="{Binding BackColor}" />
                         <Setter Property="BorderThickness" Value="5,0,0,1" />
                         <Setter Property="BorderBrush" Value="{Binding BorderBrush}" />

@@ -189,6 +189,13 @@ namespace EpgTimer
                 return view;
             }
         }
+        public SolidColorBrush ForeColor
+        {
+            get
+            {
+                return CommonManager.Instance.ListDefForeColor;
+            }
+        }
         public SolidColorBrush BackColor
         {
             get

@@ -196,6 +196,8 @@ namespace EpgTimer
         private bool ngAutoEpgLoadNW;
         private Int32 tvTestOpenWait;
         private Int32 tvTestChgBonWait;
+        private String listDefFontColor;            //リストのデフォルト文字色
+        private List<String> recModeFontColorList;  //録画モードごとの文字色
         private byte resDefColorR;
         private byte resDefColorG;
         private byte resDefColorB;
@@ -721,6 +723,16 @@ namespace EpgTimer
             get { return tvTestChgBonWait; }
             set { tvTestChgBonWait = value; }
         }
+        public String ListDefFontColor
+        {
+            get { return listDefFontColor; }
+            set { listDefFontColor = value; }
+        }
+        public List<String> RecModeFontColorList
+        {
+            get { return recModeFontColorList; }
+            set { recModeFontColorList = value; }
+        }
         public byte ResDefColorR
         {
             get { return resDefColorR; }
@@ -1025,6 +1037,8 @@ namespace EpgTimer
             ngAutoEpgLoadNW = false;
             tvTestOpenWait = 2000;
             tvTestChgBonWait = 2000;
+            listDefFontColor = "#FF042271";
+            recModeFontColorList = new List<String>();
             resDefColorR = 0xFF;
             resDefColorG = 0xFF;
             resDefColorB = 0xFF;
@@ -1083,6 +1097,18 @@ namespace EpgTimer
                 return _instance;
             }
             set { _instance = value; }
+        }
+
+        //予約アイテムのデフォルトの文字色
+        private static void DefaultRecModeFontColorList()
+        {
+            Instance.recModeFontColorList.Clear();
+            Instance.recModeFontColorList.Add("#FF042271"); //0 全サービス
+            Instance.recModeFontColorList.Add("#FF042271"); //1 指定サービス
+            Instance.recModeFontColorList.Add("#FF042271"); //2 全サービス(デコード処理なし)
+            Instance.recModeFontColorList.Add("#FF042271"); //3 指定サービス(デコード処理なし)
+            Instance.recModeFontColorList.Add("#FF042271"); //4 視聴
+            Instance.recModeFontColorList.Add("#FF042271"); //5 無効
         }
 
         //番組表のデフォルトの背景色
@@ -1163,6 +1189,10 @@ namespace EpgTimer
             }
             finally
             {
+                if (Instance.recModeFontColorList.Count != 6)
+                {
+                    DefaultRecModeFontColorList();
+                }
                 if (Instance.contentColorList.Count == 0)
                 {
                     DefaultcontentColorList();
@@ -1304,6 +1334,10 @@ namespace EpgTimer
             }
             finally
             {
+                if (Instance.recModeFontColorList.Count != 6)
+                {
+                    DefaultRecModeFontColorList();
+                }
                 if (Instance.contentColorList.Count == 0)
                 {
                     DefaultcontentColorList();

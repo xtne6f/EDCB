@@ -387,6 +387,22 @@ namespace EpgTimer
             }
         }
 
+        public SolidColorBrush ForeColor
+        {
+            get
+            {
+                SolidColorBrush color = CommonManager.Instance.ListDefForeColor;
+                if (EpgAutoAddInfo != null)
+                {
+                    if (EpgAutoAddInfo.searchInfo.andKey.StartsWith("^!{999}"))
+                    {
+                        color = CommonManager.Instance.EventItemForeColor(5);
+                    }
+                }
+                return color;
+            }
+        }
+        
         public SolidColorBrush BackColor
         {
             get

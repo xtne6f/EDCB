@@ -28,6 +28,7 @@
             <ListView Grid.Row="1" Name="listView_event" SelectionMode="Single" ItemsSource="{Binding}" SelectionChanged="listView_event_SelectionChanged" ContextMenuOpening="listView_event_ContextMenuOpening" GridViewColumnHeader.Click="GridViewColumnHeader_Click" PreviewKeyDown="listView_event_PreviewKeyDown">
                 <ListView.Resources>
                     <Style TargetType="ListViewItem">
+                        <Setter Property="Foreground"  Value="{Binding ForeColor}" />
                         <Setter Property="Background" Value="{Binding BackColor}" />
                         <EventSetter Event="MouseDoubleClick" Handler="listView_event_MouseDoubleClick"/>
                     </Style>

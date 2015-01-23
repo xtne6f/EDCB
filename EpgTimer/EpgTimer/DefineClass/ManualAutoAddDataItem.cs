@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Windows.Media;
 
 using CtrlCmdCLI;
 using CtrlCmdCLI.Def;
@@ -158,6 +159,14 @@ namespace EpgTimer
                     view = ManualAutoAddInfo.recSetting.Priority.ToString();
                 }
                 return view;
+            }
+        }
+
+        public SolidColorBrush ForeColor
+        {
+            get
+            {
+                return CommonManager.Instance.ListDefForeColor;
             }
         }
     }

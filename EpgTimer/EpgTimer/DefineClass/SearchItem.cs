@@ -123,6 +123,18 @@ namespace EpgTimer
                 return view;
             }
         }
+        public SolidColorBrush ForeColor
+        {
+            get
+            {
+                SolidColorBrush color = CommonManager.Instance.ListDefForeColor;
+                if (ReserveInfo != null)
+                {
+                    color = CommonManager.Instance.EventItemForeColor(ReserveInfo.RecSetting.RecMode);
+                }
+                return color;
+            }
+        }
         public SolidColorBrush BackColor
         {
             get

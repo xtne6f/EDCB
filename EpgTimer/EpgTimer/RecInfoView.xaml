@@ -65,6 +65,7 @@
                 <Style TargetType="ListViewItem">
                     <Setter Property="ToolTipService.ShowDuration" Value="20000" />
                     <Setter Property="ToolTip" Value="{Binding ToolTipView}"/>
+                    <Setter Property="Foreground"  Value="{Binding ForeColor}" />
                     <Setter Property="Background" Value="{Binding BackColor}" />
                     <Setter Property="ContextMenu" Value="{DynamicResource itemMenu}" />
                     <EventSetter Event="MouseDoubleClick" Handler="listView_recinfo_MouseDoubleClick"/>

@@ -29,6 +29,7 @@
                     <Style TargetType="ListViewItem">
                         <Setter Property="ToolTipService.ShowDuration" Value="20000" />
                         <Setter Property="ToolTip" Value="{Binding ToolTipView}"/>
+                        <Setter Property="Foreground"  Value="{Binding ForeColor}" />
                         <EventSetter Event="MouseDoubleClick" Handler="listView_key_MouseDoubleClick"/>
                     </Style>
                 </ListView.Resources>
