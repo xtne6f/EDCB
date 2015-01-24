@@ -271,46 +271,46 @@ namespace EpgTimer
             if (ContentKindDictionary2 == null)
             {
                 ContentKindDictionary2 = new Dictionary<UInt16, ContentKindInfo>();
-                ContentKindDictionary2.Add(0x00FF, new ContentKindInfo("スポーツ", "", 0x00, 0xFF));
-                ContentKindDictionary2.Add(0x0000, new ContentKindInfo("スポーツ", "テニス", 0x00, 0x00));
-                ContentKindDictionary2.Add(0x0001, new ContentKindInfo("スポーツ", "バスケットボール", 0x00, 0x01));
-                ContentKindDictionary2.Add(0x0002, new ContentKindInfo("スポーツ", "ラグビー", 0x00, 0x02));
-                ContentKindDictionary2.Add(0x0003, new ContentKindInfo("スポーツ", "アメリカンフットボール", 0x00, 0x03));
-                ContentKindDictionary2.Add(0x0004, new ContentKindInfo("スポーツ", "ボクシング", 0x00, 0x04));
-                ContentKindDictionary2.Add(0x0005, new ContentKindInfo("スポーツ", "プロレス", 0x00, 0x05));
-                ContentKindDictionary2.Add(0x000F, new ContentKindInfo("スポーツ", "その他", 0x00, 0x0F));
+                ContentKindDictionary2.Add(0x00FF, new ContentKindInfo("スポーツ(CS)", "", 0x00, 0xFF));
+                ContentKindDictionary2.Add(0x0000, new ContentKindInfo("スポーツ(CS)", "テニス", 0x00, 0x00));
+                ContentKindDictionary2.Add(0x0001, new ContentKindInfo("スポーツ(CS)", "バスケットボール", 0x00, 0x01));
+                ContentKindDictionary2.Add(0x0002, new ContentKindInfo("スポーツ(CS)", "ラグビー", 0x00, 0x02));
+                ContentKindDictionary2.Add(0x0003, new ContentKindInfo("スポーツ(CS)", "アメリカンフットボール", 0x00, 0x03));
+                ContentKindDictionary2.Add(0x0004, new ContentKindInfo("スポーツ(CS)", "ボクシング", 0x00, 0x04));
+                ContentKindDictionary2.Add(0x0005, new ContentKindInfo("スポーツ(CS)", "プロレス", 0x00, 0x05));
+                ContentKindDictionary2.Add(0x000F, new ContentKindInfo("スポーツ(CS)", "その他", 0x00, 0x0F));
 
-                ContentKindDictionary2.Add(0x01FF, new ContentKindInfo("洋画", "", 0x01, 0xFF));
-                ContentKindDictionary2.Add(0x0100, new ContentKindInfo("洋画", "アクション", 0x01, 0x00));
-                ContentKindDictionary2.Add(0x0101, new ContentKindInfo("洋画", "SF／ファンタジー", 0x01, 0x01));
-                ContentKindDictionary2.Add(0x0102, new ContentKindInfo("洋画", "コメディー", 0x01, 0x02));
-                ContentKindDictionary2.Add(0x0103, new ContentKindInfo("洋画", "サスペンス／ミステリー", 0x01, 0x03));
-                ContentKindDictionary2.Add(0x0104, new ContentKindInfo("洋画", "恋愛／ロマンス", 0x01, 0x04));
-                ContentKindDictionary2.Add(0x0105, new ContentKindInfo("洋画", "ホラー／スリラー", 0x01, 0x05));
-                ContentKindDictionary2.Add(0x0106, new ContentKindInfo("洋画", "ウエスタン", 0x01, 0x06));
-                ContentKindDictionary2.Add(0x0107, new ContentKindInfo("洋画", "ドラマ／社会派ドラマ", 0x01, 0x07));
-                ContentKindDictionary2.Add(0x0108, new ContentKindInfo("洋画", "アニメーション", 0x01, 0x08));
-                ContentKindDictionary2.Add(0x0109, new ContentKindInfo("洋画", "ドキュメンタリー", 0x01, 0x09));
-                ContentKindDictionary2.Add(0x010A, new ContentKindInfo("洋画", "アドベンチャー／冒険", 0x01, 0x0A));
-                ContentKindDictionary2.Add(0x010B, new ContentKindInfo("洋画", "ミュージカル／音楽映画", 0x01, 0x0A));
-                ContentKindDictionary2.Add(0x010C, new ContentKindInfo("洋画", "ホームドラマ", 0x01, 0x0A));
-                ContentKindDictionary2.Add(0x010F, new ContentKindInfo("洋画", "その他", 0x01, 0x0F));
+                ContentKindDictionary2.Add(0x01FF, new ContentKindInfo("洋画(CS)", "", 0x01, 0xFF));
+                ContentKindDictionary2.Add(0x0100, new ContentKindInfo("洋画(CS)", "アクション", 0x01, 0x00));
+                ContentKindDictionary2.Add(0x0101, new ContentKindInfo("洋画(CS)", "SF／ファンタジー", 0x01, 0x01));
+                ContentKindDictionary2.Add(0x0102, new ContentKindInfo("洋画(CS)", "コメディー", 0x01, 0x02));
+                ContentKindDictionary2.Add(0x0103, new ContentKindInfo("洋画(CS)", "サスペンス／ミステリー", 0x01, 0x03));
+                ContentKindDictionary2.Add(0x0104, new ContentKindInfo("洋画(CS)", "恋愛／ロマンス", 0x01, 0x04));
+                ContentKindDictionary2.Add(0x0105, new ContentKindInfo("洋画(CS)", "ホラー／スリラー", 0x01, 0x05));
+                ContentKindDictionary2.Add(0x0106, new ContentKindInfo("洋画(CS)", "ウエスタン", 0x01, 0x06));
+                ContentKindDictionary2.Add(0x0107, new ContentKindInfo("洋画(CS)", "ドラマ／社会派ドラマ", 0x01, 0x07));
+                ContentKindDictionary2.Add(0x0108, new ContentKindInfo("洋画(CS)", "アニメーション", 0x01, 0x08));
+                ContentKindDictionary2.Add(0x0109, new ContentKindInfo("洋画(CS)", "ドキュメンタリー", 0x01, 0x09));
+                ContentKindDictionary2.Add(0x010A, new ContentKindInfo("洋画(CS)", "アドベンチャー／冒険", 0x01, 0x0A));
+                ContentKindDictionary2.Add(0x010B, new ContentKindInfo("洋画(CS)", "ミュージカル／音楽映画", 0x01, 0x0B));
+                ContentKindDictionary2.Add(0x010C, new ContentKindInfo("洋画(CS)", "ホームドラマ", 0x01, 0x0C));
+                ContentKindDictionary2.Add(0x010F, new ContentKindInfo("洋画(CS)", "その他", 0x01, 0x0F));
 
-                ContentKindDictionary2.Add(0x02FF, new ContentKindInfo("邦画", "", 0x02, 0xFF));
-                ContentKindDictionary2.Add(0x0200, new ContentKindInfo("邦画", "アクション", 0x02, 0x00));
-                ContentKindDictionary2.Add(0x0201, new ContentKindInfo("邦画", "SF／ファンタジー", 0x02, 0x01));
-                ContentKindDictionary2.Add(0x0202, new ContentKindInfo("邦画", "コメディー", 0x02, 0x02));
-                ContentKindDictionary2.Add(0x0203, new ContentKindInfo("邦画", "サスペンス／ミステリー", 0x02, 0x03));
-                ContentKindDictionary2.Add(0x0204, new ContentKindInfo("邦画", "恋愛／ロマンス", 0x02, 0x04));
-                ContentKindDictionary2.Add(0x0205, new ContentKindInfo("邦画", "ホラー／スリラー", 0x02, 0x05));
-                ContentKindDictionary2.Add(0x0206, new ContentKindInfo("邦画", "ウエスタン", 0x02, 0x06));
-                ContentKindDictionary2.Add(0x0207, new ContentKindInfo("邦画", "ドラマ／社会派ドラマ", 0x02, 0x07));
-                ContentKindDictionary2.Add(0x0208, new ContentKindInfo("邦画", "アニメーション", 0x02, 0x08));
-                ContentKindDictionary2.Add(0x0209, new ContentKindInfo("邦画", "ドキュメンタリー", 0x02, 0x09));
-                ContentKindDictionary2.Add(0x020A, new ContentKindInfo("邦画", "アドベンチャー／冒険", 0x02, 0x0A));
-                ContentKindDictionary2.Add(0x020B, new ContentKindInfo("邦画", "ミュージカル／音楽映画", 0x02, 0x0A));
-                ContentKindDictionary2.Add(0x020C, new ContentKindInfo("邦画", "ホームドラマ", 0x02, 0x0A));
-                ContentKindDictionary2.Add(0x020F, new ContentKindInfo("邦画", "その他", 0x02, 0x0F));
+                ContentKindDictionary2.Add(0x02FF, new ContentKindInfo("邦画(CS)", "", 0x02, 0xFF));
+                ContentKindDictionary2.Add(0x0200, new ContentKindInfo("邦画(CS)", "アクション", 0x02, 0x00));
+                ContentKindDictionary2.Add(0x0201, new ContentKindInfo("邦画(CS)", "SF／ファンタジー", 0x02, 0x01));
+                ContentKindDictionary2.Add(0x0202, new ContentKindInfo("邦画(CS)", "お笑い／コメディー", 0x02, 0x02));
+                ContentKindDictionary2.Add(0x0203, new ContentKindInfo("邦画(CS)", "サスペンス／ミステリー", 0x02, 0x03));
+                ContentKindDictionary2.Add(0x0204, new ContentKindInfo("邦画(CS)", "恋愛／ロマンス", 0x02, 0x04));
+                ContentKindDictionary2.Add(0x0205, new ContentKindInfo("邦画(CS)", "ホラー／スリラー", 0x02, 0x05));
+                ContentKindDictionary2.Add(0x0206, new ContentKindInfo("邦画(CS)", "青春／学園／アイドル", 0x02, 0x06));
+                ContentKindDictionary2.Add(0x0207, new ContentKindInfo("邦画(CS)", "任侠／時代劇", 0x02, 0x07));
+                ContentKindDictionary2.Add(0x0208, new ContentKindInfo("邦画(CS)", "アニメーション", 0x02, 0x08));
+                ContentKindDictionary2.Add(0x0209, new ContentKindInfo("邦画(CS)", "ドキュメンタリー", 0x02, 0x09));
+                ContentKindDictionary2.Add(0x020A, new ContentKindInfo("邦画(CS)", "アドベンチャー／冒険", 0x02, 0x0A));
+                ContentKindDictionary2.Add(0x020B, new ContentKindInfo("邦画(CS)", "ミュージカル／音楽映画", 0x02, 0x0B));
+                ContentKindDictionary2.Add(0x020C, new ContentKindInfo("邦画(CS)", "ホームドラマ", 0x02, 0x0C));
+                ContentKindDictionary2.Add(0x020F, new ContentKindInfo("邦画(CS)", "その他", 0x02, 0x0F));
             }
             if (ComponentKindDictionary == null)
             {
