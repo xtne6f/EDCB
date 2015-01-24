@@ -712,6 +712,15 @@ bool CParseReserveText::SaveFooterLine(wstring& saveLine) const
 
 bool CParseReserveText::SelectIDToSave(vector<DWORD>& sortList) const
 {
+	if( this->saveNextID == 0 ){
+		//NextIDƒRƒƒ“ƒg‚ª–³‚©‚Á‚½‚Æ‚«‚Í]—ˆ‚Ç‚¨‚è—\–ñ“ú‡‚Å•Û‘¶‚·‚é
+		vector<pair<LONGLONG, const RESERVE_DATA*>> sortItemList = GetReserveList();
+		vector<pair<LONGLONG, const RESERVE_DATA*>>::const_iterator itr;
+		for( itr = sortItemList.begin(); itr != sortItemList.end(); itr++ ){
+			sortList.push_back(itr->second->reserveID);
+		}
+		return true;
+	}
 	if( this->itemMap.empty() == false && this->itemMap.rbegin()->first >= this->itemMap.begin()->first + 50000000 ){
 		//ID„‰ñ’†
 		map<DWORD, RESERVE_DATA>::const_iterator itr;

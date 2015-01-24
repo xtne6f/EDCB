@@ -4,6 +4,7 @@
 #include "../../Common/TimeUtil.h"
 #include "../../Common/PathUtil.h"
 #include <functional>
+using std::unique_ptr;
 
 
 #define HTML_TOP "<HTML LANG=\"ja\">\r\n<HEAD>\r\n<META HTTP-EQUIV=\"Content-Type\" CONTENT=\"text/html;charset=Shift_JIS\">\r\n<TITLE>EpgTimer</TITLE>\r\n</HEAD>\r\n<BODY>\r\n"

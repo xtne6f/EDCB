@@ -36,13 +36,13 @@ public:
 
 	BOOL CancelLoadData();
 
-	BOOL SearchEpg(vector<EPGDB_SEARCH_KEY_INFO>* key, vector<unique_ptr<SEARCH_RESULT_EVENT_DATA>>* result);
+	BOOL SearchEpg(vector<EPGDB_SEARCH_KEY_INFO>* key, vector<std::unique_ptr<SEARCH_RESULT_EVENT_DATA>>* result);
 
 	BOOL SearchEpg(vector<EPGDB_SEARCH_KEY_INFO>* key, void (*enumProc)(vector<SEARCH_RESULT_EVENT>*, void*), void* param);
 
 	BOOL GetServiceList(vector<EPGDB_SERVICE_INFO>* list);
 
-	BOOL EnumEventInfo(LONGLONG serviceKey, vector<unique_ptr<EPGDB_EVENT_INFO>>* result);
+	BOOL EnumEventInfo(LONGLONG serviceKey, vector<std::unique_ptr<EPGDB_EVENT_INFO>>* result);
 
 	BOOL EnumEventInfo(LONGLONG serviceKey, void (*enumProc)(vector<EPGDB_EVENT_INFO*>*, void*), void* param);
 

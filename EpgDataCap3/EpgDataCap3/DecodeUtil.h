@@ -38,14 +38,10 @@ public:
 	//ストリーム内の現在の時間情報を取得する
 	//引数：
 	// time				[OUT]ストリーム内の現在の時間
+	// tick				[OUT]timeを取得した時点のチックカウント
 	BOOL GetNowTime(
-		SYSTEMTIME* time
-		);
-
-	//PC時計を元としたストリーム時間との差を取得する
-	//戻り値：
-	// 差の秒数
-	int GetTimeDelay(
+		FILETIME* time,
+		DWORD* tick = NULL
 		);
 
 protected:
@@ -84,21 +80,21 @@ protected:
 	map<WORD, CTSBuffUtil*> buffUtilMap;
 
 	CPATTable* patInfo;
-	CCATTable* catInfo;
 	map<WORD, CPMTTable*> pmtMap;
 	NIT_SECTION_INFO* nitActualInfo;
 	SDT_SECTION_INFO* sdtActualInfo;
-	map<DWORD, SDT_SECTION_INFO*> sdtOtherMap;
-	CTOTTable* totInfo;
-	CTDTTable* tdtInfo;
 	CBITTable* bitInfo;
 	CSITTable* sitInfo;
+	FILETIME totTime;
+	FILETIME tdtTime;
+	FILETIME sitTime;
+	DWORD totTimeTick;
+	DWORD tdtTimeTick;
+	DWORD sitTimeTick;
 
 
 	DWORD serviceListSize;
 	SERVICE_INFO* serviceList;
-
-	int delaySec;
 
 protected:
 	void Clear();
@@ -106,15 +102,12 @@ protected:
 	void ChangeTSIDClear(WORD noClearPid);
 
 	BOOL CheckPAT(WORD PID, CPATTable* pat);
-	BOOL CheckCAT(WORD PID, CCATTable* pat);
 	BOOL CheckPMT(WORD PID, CPMTTable* pmt);
 	BOOL CheckNIT(WORD PID, CNITTable* nit);
 	BOOL CheckSDT(WORD PID, CSDTTable* sdt);
 	BOOL CheckTOT(WORD PID, CTOTTable* tot);
 	BOOL CheckTDT(WORD PID, CTDTTable* tdt);
 	BOOL CheckEIT(WORD PID, CEITTable* eit);
-	BOOL CheckCDT(WORD PID, CCDTTable* cdt);
-	BOOL CheckSDTT(WORD PID, CSDTTTable* sdtt);
 	BOOL CheckBIT(WORD PID, CBITTable* bit);
 	BOOL CheckSIT(WORD PID, CSITTable* sit);
 	BOOL CheckEIT_SD(WORD PID, CEITTable_SD* eit);

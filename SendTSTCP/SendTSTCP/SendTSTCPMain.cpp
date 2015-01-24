@@ -57,7 +57,7 @@ CSendTSTCPMain::~CSendTSTCPMain(void)
 	m_SendList.clear();
 
 	for( int i=0; i<(int)m_TSBuff.size(); i++ ){
-		SAFE_DELETE(m_TSBuff[i])
+		SAFE_DELETE(m_TSBuff[i]);
 	}
 	m_TSBuff.clear();
 
@@ -237,7 +237,7 @@ DWORD CSendTSTCPMain::ClearSendBuff(
 {
 	if( Lock() == FALSE ) return FALSE;
 	for( int i=0; i<(int)m_TSBuff.size(); i++ ){
-		SAFE_DELETE(m_TSBuff[i])
+		SAFE_DELETE(m_TSBuff[i]);
 	}
 	m_TSBuff.clear();
 	UnLock();

@@ -54,7 +54,7 @@ CSendUDP::~CSendUDP(void)
 	}
 
 	for( int i=0; i<(int)m_TSBuff.size(); i++ ){
-		SAFE_DELETE(m_TSBuff[i])
+		SAFE_DELETE(m_TSBuff[i]);
 	}
 	m_TSBuff.clear();
 
@@ -136,7 +136,7 @@ BOOL CSendUDP::CloseUpload()
 
 	if( WaitForSingleObject( m_hCriticalEvent, 500 ) == WAIT_OBJECT_0 ){
 		for( int i=0; i<(int)m_TSBuff.size(); i++ ){
-			SAFE_DELETE(m_TSBuff[i])
+			SAFE_DELETE(m_TSBuff[i]);
 		}
 		m_TSBuff.clear();
 	}

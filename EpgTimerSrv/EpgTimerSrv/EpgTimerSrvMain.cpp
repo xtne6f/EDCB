@@ -674,7 +674,7 @@ BOOL CEpgTimerSrvMain::AutoAddReserveEPG(int targetSize, EPG_AUTO_ADD_DATA* targ
 
 		this->epgAutoAdd.SetAddCount(itrKey->first, 0);
 
-		vector<unique_ptr<CEpgDBManager::SEARCH_RESULT_EVENT_DATA>> resultList;
+		vector<std::unique_ptr<CEpgDBManager::SEARCH_RESULT_EVENT_DATA>> resultList;
 		vector<EPGDB_SEARCH_KEY_INFO> key(1, itrKey->second.searchInfo);
 		this->epgDB.SearchEpg(&key, &resultList);
 		for( size_t i=0; i<resultList.size(); i++ ){
@@ -2381,7 +2381,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 						CopyOldNew(&oldItem, &item);
 
 						vector<EPGDB_SEARCH_KEY_INFO> key;
-						vector<unique_ptr<CEpgDBManager::SEARCH_RESULT_EVENT_DATA>> val;
+						vector<std::unique_ptr<CEpgDBManager::SEARCH_RESULT_EVENT_DATA>> val;
 						key.push_back(item);
 						if( sys->epgDB.SearchEpg(&key, &val) == TRUE ){
 							CBlockLock lock(&sys->settingLock);

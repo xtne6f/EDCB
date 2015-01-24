@@ -20,14 +20,19 @@
 #include <vector>
 #include <algorithm>
 #endif
-using namespace std;
+using std::string;
+using std::wstring;
+using std::pair;
+using std::map;
+using std::multimap;
+using std::vector;
 
 #include <TCHAR.h>
 #include <windows.h>
 
 
-#define SAFE_DELETE(p)       { if(p) { delete (p);     (p)=NULL; } }
-#define SAFE_DELETE_ARRAY(p) { if(p) { delete[] (p);   (p)=NULL; } }
+template<class T> inline void SAFE_DELETE(T*& p) { delete p; p = NULL; }
+template<class T> inline void SAFE_DELETE_ARRAY(T*& p) { delete[] p; p = NULL; }
 
 //セキュリティをNULLにして各種作成
 HANDLE _CreateEvent(BOOL bManualReset, BOOL bInitialState, LPCTSTR lpName );

@@ -4,6 +4,7 @@
 
 #include "../../Common/TimeUtil.h"
 #include "../../Common/BlockLock.h"
+using std::unique_ptr;
 
 CEpgDBManager::CEpgDBManager(void)
 {

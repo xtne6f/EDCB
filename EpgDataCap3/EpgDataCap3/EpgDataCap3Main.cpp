@@ -1,6 +1,7 @@
 #include "StdAfx.h"
 #include "EpgDataCap3Main.h"
 
+#include "../../Common/TimeUtil.h"
 #include "../../Common/BlockLock.h"
 
 CEpgDataCap3Main::CEpgDataCap3Main(void)
@@ -103,11 +104,33 @@ BOOL CEpgDataCap3Main::GetEpgInfo(
 	)
 {
 	CBlockLock lock(&this->utilLock);
-	SYSTEMTIME nowTime;
-	if( this->decodeUtilClass.GetNowTime(&nowTime) == FALSE ){
-		GetLocalTime(&nowTime);
+	if( this->epgDBUtilClass.GetEpgInfo(originalNetworkID, transportStreamID, serviceID, nextFlag, epgInfo) == FALSE ){
+		return FALSE;
 	}
-	return this->epgDBUtilClass.GetEpgInfo(originalNetworkID, transportStreamID, serviceID, nextFlag, nowTime, epgInfo);
+
+	//TODO: こういう選別をライブラリ側で行うのは微妙に思うが、互換のため残しておく
+	__int64 nowTime;
+	FILETIME time;
+	if( this->decodeUtilClass.GetNowTime(&time) == FALSE ){
+		nowTime = GetNowI64Time();
+	}else{
+		nowTime = (__int64)time.dwHighDateTime << 32 | time.dwLowDateTime;
+	}
+	if( nextFlag == FALSE && (*epgInfo)->StartTimeFlag != FALSE && (*epgInfo)->DurationFlag != FALSE ){
+		if( nowTime < ConvertI64Time((*epgInfo)->start_time) || GetSumTime((*epgInfo)->start_time, (*epgInfo)->durationSec) < nowTime ){
+			//時間内にないので失敗
+			epgInfo = NULL;
+			return FALSE;
+		}
+	}else if( nextFlag == TRUE && (*epgInfo)->StartTimeFlag != FALSE ){
+		if( nowTime > ConvertI64Time((*epgInfo)->start_time) ){
+			//開始時間を過ぎているので失敗
+			epgInfo = NULL;
+			return FALSE;
+		}
+	}
+
+	return TRUE;
 }
 
 //指定イベントのEPG情報を取得する
@@ -159,6 +182,11 @@ int CEpgDataCap3Main::GetTimeDelay(
 	)
 {
 	CBlockLock lock(&this->utilLock);
-	int delay = this->decodeUtilClass.GetTimeDelay();
-	return delay;
+	FILETIME time;
+	DWORD tick;
+	if( this->decodeUtilClass.GetNowTime(&time, &tick) == FALSE ){
+		return 0;
+	}
+	__int64 delay = ((__int64)time.dwHighDateTime << 32 | time.dwLowDateTime) + (GetTickCount() - tick) * (I64_1SEC / 1000) - GetNowI64Time();
+	return (int)(delay / I64_1SEC);
 }

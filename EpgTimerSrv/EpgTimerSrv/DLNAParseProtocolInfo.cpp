@@ -41,7 +41,7 @@ BOOL CDLNAParseProtocolInfo::ParseText(LPCWSTR filePath)
 	string strRead = pszBuff;
 
 	CloseHandle(hFile);
-	SAFE_DELETE_ARRAY(pszBuff)
+	SAFE_DELETE_ARRAY(pszBuff);
 
 	string parseLine="";
 	size_t iIndex = 0;

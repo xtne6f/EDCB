@@ -547,7 +547,7 @@ DWORD CBonCtrl::_CloseBonDriver()
 	{
 		CBlockLock lock(&this->buffLock);
 		for( size_t i=0; i<this->TSBuff.size(); i++ ){
-			SAFE_DELETE(this->TSBuff[i])
+			SAFE_DELETE(this->TSBuff[i]);
 		}
 		this->TSBuff.clear();
 		this->totalTSBuffSize = 0;

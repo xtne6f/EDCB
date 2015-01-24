@@ -1033,7 +1033,7 @@ DWORD CRestApiManager::GetSearchEvent(string param, HTTP_STREAM* sendParam, CEpg
 
 	vector<EPGDB_SEARCH_KEY_INFO> keyList;
 	keyList.push_back(searchKey);
-	vector<unique_ptr<CEpgDBManager::SEARCH_RESULT_EVENT_DATA>> resultList;
+	vector<std::unique_ptr<CEpgDBManager::SEARCH_RESULT_EVENT_DATA>> resultList;
 	wstring xml = L"";
 	string utf8 = "";
 	epgDB->SearchEpg(&keyList, &resultList);

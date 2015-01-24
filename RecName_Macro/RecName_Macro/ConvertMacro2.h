@@ -3,7 +3,7 @@
 #include "RecName_PlugIn.h"
 
 #include <string>
-using namespace std;
+using std::wstring;
 
 class CConvertMacro2
 {
