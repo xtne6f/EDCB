@@ -11,6 +11,11 @@ typedef struct _END_RESERVE_INFO{
 	wstring recFilePath;
 	ULONGLONG drop;
 	ULONGLONG scramble;
+	wstring epgEventName;
+	WORD epgOriginalNetworkID;
+	WORD epgTransportStreamID;
+	WORD epgServiceID;
+	SYSTEMTIME epgStartTime;
 }END_RESERVE_INFO;
 
 typedef struct _BAT_WORK_INFO{

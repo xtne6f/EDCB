@@ -183,6 +183,28 @@ BOOL _FindOpenExeProcess(DWORD processID)
 	return bFind;
 }
 
+vector<DWORD> _FindPidListByExeName(LPCTSTR lpExeName)
+{
+	HANDLE hSnapshot;
+	PROCESSENTRY32 procent;
+
+	vector<DWORD> ret;
+	/* Toolhelpスナップショットを作成する */
+	hSnapshot = CreateToolhelp32Snapshot( TH32CS_SNAPPROCESS,0 );
+	if ( hSnapshot != (HANDLE)-1 ) {
+		procent.dwSize = sizeof(PROCESSENTRY32);
+		if ( Process32First( hSnapshot,&procent ) != FALSE ){
+			do {
+				if( lstrcmpi(procent.szExeFile, lpExeName) == 0 ){
+					ret.push_back(procent.th32ProcessID);
+				}
+			} while ( Process32Next( hSnapshot,&procent ) != FALSE );
+		}
+		CloseHandle( hSnapshot );
+	}
+	return ret;
+}
+
 DWORD _BCDtoDWORD(BYTE* data, BYTE size, BYTE digit)
 {
 	if( data == NULL || (size<<1) < digit ){

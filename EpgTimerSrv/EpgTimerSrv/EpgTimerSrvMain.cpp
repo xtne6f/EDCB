@@ -82,7 +82,6 @@ void CEpgTimerSrvMain::StartMain(
 	ReloadSetting();
 
 	this->reserveManager.ReloadReserveData();
-	this->reserveManager.ReloadRecInfoData();
 	wstring epgAutoAddFilePath;
 	GetSettingPath(epgAutoAddFilePath);
 	epgAutoAddFilePath += L"\\";

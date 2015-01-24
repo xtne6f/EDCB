@@ -1,6 +1,5 @@
 #include "StdAfx.h"
 #include "TunerBankCtrl.h"
-#include "CheckRecFile.h"
 
 #include <process.h>
 
@@ -37,7 +36,6 @@ CTunerBankCtrl::CTunerBankCtrl(void)
 	this->twitterManager = NULL;
 	this->notifyManager = NULL;
 	this->epgDBManager = NULL;
-	this->recInfoManager = NULL;
 
 	ReloadSetting();
 }
@@ -114,11 +112,6 @@ void CTunerBankCtrl::SetEpgDBManager(CEpgDBManager* epgDBManager)
 	this->epgDBManager = epgDBManager;
 }
 
-void CTunerBankCtrl::SetRecInfoDBManager(CRecInfoDBManager* recInfoManager)
-{
-	this->recInfoManager = recInfoManager;
-}
-
 void CTunerBankCtrl::ReloadSetting()
 {
 	wstring iniPath = L"";
@@ -167,8 +160,6 @@ void CTunerBankCtrl::ReloadSetting()
 		GetModuleFolderPath(this->recExePath);
 		this->recExePath += L"\\EpgDataCap_Bon.exe";
 	}
-
-	this->tunerCtrl.SetExePath(this->recExePath.c_str());
 
 	this->enableCaption = GetPrivateProfileInt(L"SET", L"Caption", 1, viewIniPath.c_str());
 	this->enableData = GetPrivateProfileInt(L"SET", L"Data", 0, viewIniPath.c_str());
@@ -708,10 +699,10 @@ BOOL CTunerBankCtrl::OpenTuner(BOOL viewMode, SET_CH_INFO* initCh)
 		this->notifyManager->GetRegistGUI(&registGUIMap);
 	}
 
-	BOOL ret = tunerCtrl.OpenExe(this->bonFileName, tunerID, this->recMinWake, noView, noNW, registGUIMap, &this->processID, UDP, TCP, this->processPriority);
+	BOOL ret = OpenTunerExe(this->recExePath.c_str(), this->bonFileName.c_str(), tunerID, this->recMinWake, noView, noNW, UDP, TCP, this->processPriority, registGUIMap, &this->processID);
 	if( ret == FALSE ){
 		Sleep(500);
-		ret = tunerCtrl.OpenExe(this->bonFileName, tunerID, this->recMinWake, noView, noNW, registGUIMap, &this->processID, UDP, TCP, this->processPriority);
+		ret = OpenTunerExe(this->recExePath.c_str(), this->bonFileName.c_str(), tunerID, this->recMinWake, noView, noNW, UDP, TCP, this->processPriority, registGUIMap, &this->processID);
 	}
 	if( ret == TRUE ){
 		wstring pipeName = L"";
@@ -731,8 +722,9 @@ BOOL CTunerBankCtrl::OpenTuner(BOOL viewMode, SET_CH_INFO* initCh)
 		//EPG取得では奪わない
 		if( initCh != NULL ){
 			//起動中で使えるもの探す
-			vector<DWORD> IDList;
-			tunerCtrl.GetOpenExe(&IDList);
+			wstring exeName;
+			GetFileName(this->recExePath, exeName);
+			vector<DWORD> IDList = _FindPidListByExeName(exeName.c_str());
 			for(size_t i=0; i<IDList.size(); i++ ){
 				wstring pipeName = L"";
 				wstring eventName = L"";
@@ -769,8 +761,7 @@ BOOL CTunerBankCtrl::OpenTuner(BOOL viewMode, SET_CH_INFO* initCh)
 			}
 			if( this->useOpendTuner == FALSE ){
 				//TVTestで使ってるものあるかチェック
-				IDList.clear();
-				tunerCtrl.GetOpenExe(L"tvtest.exe", &IDList);
+				IDList = _FindPidListByExeName(L"tvtest.exe");
 				map<DWORD, DWORD> registGUIMap;
 				if( this->notifyManager != NULL ){
 					this->notifyManager->GetRegistGUI(&registGUIMap);
@@ -790,10 +781,10 @@ BOOL CTunerBankCtrl::OpenTuner(BOOL viewMode, SET_CH_INFO* initCh)
 						if( bonDriver.size() > 0 && CompareNoCase(bonDriver, this->bonFileName) == 0 ){
 							send.SendViewAppClose();
 							Sleep(5000);
-							ret = tunerCtrl.OpenExe(this->bonFileName, tunerID, this->recMinWake, noView, noNW, registGUIMap, &this->processID, UDP, TCP, this->processPriority);
+							ret = OpenTunerExe(this->recExePath.c_str(), this->bonFileName.c_str(), tunerID, this->recMinWake, noView, noNW, UDP, TCP, this->processPriority, registGUIMap, &this->processID);
 							if( ret == FALSE ){
 								Sleep(500);
-								ret = tunerCtrl.OpenExe(this->bonFileName, tunerID, this->recMinWake, noView, noNW, registGUIMap, &this->processID, UDP, TCP, this->processPriority);
+								ret = OpenTunerExe(this->recExePath.c_str(), this->bonFileName.c_str(), tunerID, this->recMinWake, noView, noNW, UDP, TCP, this->processPriority, registGUIMap, &this->processID);
 							}
 							if( ret == TRUE ){
 								wstring pipeName = L"";
@@ -816,8 +807,9 @@ BOOL CTunerBankCtrl::OpenTuner(BOOL viewMode, SET_CH_INFO* initCh)
 			}
 			//EPG取得中のもの奪う
 			if( this->useOpendTuner == FALSE ){
-				IDList.clear();
-				tunerCtrl.GetOpenExe(&IDList);
+				wstring exeName;
+				GetFileName(this->recExePath, exeName);
+				IDList = _FindPidListByExeName(exeName.c_str());
 				for(size_t i=0; i<IDList.size(); i++ ){
 					wstring pipeName = L"";
 					wstring eventName = L"";
@@ -856,8 +848,9 @@ BOOL CTunerBankCtrl::OpenTuner(BOOL viewMode, SET_CH_INFO* initCh)
 			}
 			//録画中のもの奪う
 			if( this->useOpendTuner == FALSE ){
-				IDList.clear();
-				tunerCtrl.GetOpenExe(&IDList);
+				wstring exeName;
+				GetFileName(this->recExePath, exeName);
+				IDList = _FindPidListByExeName(exeName.c_str());
 				for(size_t i=0; i<IDList.size(); i++ ){
 					wstring pipeName = L"";
 					wstring eventName = L"";
@@ -1844,7 +1837,7 @@ BOOL CTunerBankCtrl::IsFindContinueReserve(RESERVE_WORK* reserve, DWORD* continu
 
 BOOL CTunerBankCtrl::CloseTuner()
 {
-	this->tunerCtrl.CloseExe(this->processID);
+	CloseTunerExe(this->processID);
 	this->processID = 0;
 	this->openTuner = FALSE;
 	this->delayTime = 0;
@@ -1854,10 +1847,6 @@ BOOL CTunerBankCtrl::CloseTuner()
 
 void CTunerBankCtrl::AddEndReserve(RESERVE_WORK* reserve, DWORD endType, SET_CTRL_REC_STOP_RES_PARAM resVal)
 {
-	wstring iniAppPath = L"";
-	GetModuleIniPath(iniAppPath);
-	int dropChk = GetPrivateProfileInt(L"SET", L"RecInfo2DropChk", 15, iniAppPath.c_str());
-
 	END_RESERVE_INFO* item = new END_RESERVE_INFO;
 	item->reserveInfo = reserve->reserveInfo;
 	item->tunerID = this->tunerID;
@@ -1867,10 +1856,12 @@ void CTunerBankCtrl::AddEndReserve(RESERVE_WORK* reserve, DWORD endType, SET_CTR
 	item->drop = resVal.drop;
 	item->scramble = resVal.scramble;
 
-	if( this->recInfoManager != NULL ){
-		if( endType == REC_END_STATUS_NORMAL && item->drop < dropChk && reserve->eventInfo != NULL ){
-			this->recInfoManager->AddInfo(reserve->eventInfo);
-		}
+	if( reserve->eventInfo != NULL && reserve->eventInfo->shortInfo != NULL && reserve->eventInfo->StartTimeFlag != 0 ){
+		item->epgEventName = reserve->eventInfo->shortInfo->event_name;
+		item->epgOriginalNetworkID = reserve->eventInfo->original_network_id;
+		item->epgTransportStreamID = reserve->eventInfo->transport_stream_id;
+		item->epgServiceID = reserve->eventInfo->service_id;
+		item->epgStartTime = reserve->eventInfo->start_time;
 	}
 
 	endList.push_back(item);
@@ -2174,6 +2165,166 @@ BOOL CTunerBankCtrl::GetRecFilePath(
 	UnLock();
 
 	return ret;
+}
+
+BOOL CTunerBankCtrl::OpenTunerExe(
+	LPCWSTR exePath,
+	LPCWSTR bonDriver,
+	DWORD id,
+	BOOL minWake, BOOL noView, BOOL noNW, BOOL nwUdp, BOOL nwTcp,
+	DWORD priority,
+	const map<DWORD, DWORD>& registGUIMap,
+	DWORD* pid
+	)
+{
+	wstring strExecute;
+	strExecute += L"\"";
+	strExecute += exePath;
+	strExecute += L"\" ";
+
+	wstring strIni;
+	GetModuleFolderPath(strIni);
+	strIni += L"\\ViewApp.ini";
+
+	WCHAR buff[512];
+	GetPrivateProfileString(L"APP_CMD_OPT", L"Bon", L"-d", buff, 512, strIni.c_str());
+	strExecute += buff;
+	strExecute += L" ";
+	strExecute += bonDriver;
+
+	if( minWake != FALSE ){
+		GetPrivateProfileString(L"APP_CMD_OPT", L"Min", L"-min", buff, 512, strIni.c_str());
+		strExecute += L" ";
+		strExecute += buff;
+	}
+	if( noView != FALSE ){
+		GetPrivateProfileString(L"APP_CMD_OPT", L"ViewOff", L"-noview", buff, 512, strIni.c_str());
+		strExecute += L" ";
+		strExecute += buff;
+	}
+	if( noNW != FALSE ){
+		GetPrivateProfileString(L"APP_CMD_OPT", L"NetworkOff", L"-nonw", buff, 512, strIni.c_str());
+		strExecute += L" ";
+		strExecute += buff;
+	}else{
+		if( nwUdp != FALSE ){
+			strExecute += L" -nwudp";
+		}
+		if( nwTcp != FALSE ){
+			strExecute += L" -nwtcp";
+		}
+	}
+
+	BOOL bRet = FALSE;
+	HANDLE openWaitEvent = _CreateEvent(FALSE, TRUE, _T("Global\\EpgTimerSrv_OpenTuner_Event"));
+	if( openWaitEvent != NULL ){
+		if( WaitForSingleObject(openWaitEvent, INFINITE) == WAIT_OBJECT_0 ){
+			map<DWORD, DWORD>::const_iterator itr;
+			for( itr = registGUIMap.begin(); itr != registGUIMap.end(); itr++ ){
+				wstring pipeName;
+				wstring waitEventName;
+				Format(pipeName, L"%s%d", CMD2_GUI_CTRL_PIPE, itr->first);
+				Format(waitEventName, L"%s%d", CMD2_GUI_CTRL_WAIT_CONNECT, itr->first);
+
+				CSendCtrlCmd cmdSend;
+				cmdSend.SetPipeSetting(waitEventName, pipeName);
+				cmdSend.SetConnectTimeOut(20 * 1000);
+				if( cmdSend.SendGUIExecute(strExecute, pid) == CMD_SUCCESS ){
+					bRet = TRUE;
+					break;
+				}
+			}
+			if( bRet == FALSE ){
+				OutputDebugString(L"gui exec err");
+				//GUI経由で起動できなかった
+				PROCESS_INFORMATION pi;
+				STARTUPINFO si = {};
+				si.cb = sizeof(si);
+				vector<WCHAR> strBuff(strExecute.c_str(), strExecute.c_str() + strExecute.size() + 1);
+				if( CreateProcess(NULL, &strBuff.front(), NULL, NULL, FALSE, GetPriorityClass(GetCurrentProcess()), NULL, NULL, &si, &pi) != FALSE ){
+					bRet = TRUE;
+					*pid = pi.dwProcessId;
+					CloseHandle(pi.hThread);
+					CloseHandle(pi.hProcess);
+				}
+			}
+
+			if( bRet != FALSE ){
+				//IDのセット
+				wstring pipeName;
+				wstring waitEventName;
+				Format(pipeName, L"%s%d", CMD2_VIEW_CTRL_PIPE, *pid);
+				Format(waitEventName, L"%s%d", CMD2_VIEW_CTRL_WAIT_CONNECT, *pid);
+
+				CSendCtrlCmd cmdSend;
+				cmdSend.SetPipeSetting(waitEventName, pipeName);
+				bRet = FALSE;
+				for( int i = 0; i < 6; i++ ){
+					Sleep(1000);
+					if( cmdSend.SendViewSetID(id) == CMD_SUCCESS ){
+						bRet = TRUE;
+						break;
+					}
+				}
+				if( bRet == FALSE ){
+					CloseTunerExe(*pid);
+				}else{
+					//起動ステータスを確認
+					DWORD status = 0;
+					if( cmdSend.SendViewGetStatus(&status) == CMD_SUCCESS ){
+						if( status == VIEW_APP_ST_ERR_BON ){
+							CloseTunerExe(*pid);
+							bRet = FALSE;
+						}else if( 0 <= priority && priority <= 5 ){
+							HANDLE hProcess = OpenProcess(PROCESS_SET_INFORMATION, FALSE, *pid);
+							if( hProcess != NULL ){
+								SetPriorityClass(hProcess,
+									priority == 0 ? REALTIME_PRIORITY_CLASS :
+									priority == 1 ? HIGH_PRIORITY_CLASS :
+									priority == 2 ? ABOVE_NORMAL_PRIORITY_CLASS :
+									priority == 3 ? NORMAL_PRIORITY_CLASS :
+									priority == 4 ? BELOW_NORMAL_PRIORITY_CLASS : IDLE_PRIORITY_CLASS);
+								CloseHandle(hProcess);
+							}
+						}
+					}
+				}
+			}
+			SetEvent(openWaitEvent);
+		}
+		CloseHandle(openWaitEvent);
+	}
+	return bRet;
+}
+
+void CTunerBankCtrl::CloseTunerExe(
+	DWORD pid
+	)
+{
+	if( _FindOpenExeProcess(pid) == FALSE ){
+		return;
+	}
+	wstring pipeName;
+	wstring waitEventName;
+	Format(pipeName, L"%s%d", CMD2_VIEW_CTRL_PIPE, pid);
+	Format(waitEventName, L"%s%d", CMD2_VIEW_CTRL_WAIT_CONNECT, pid);
+
+	CSendCtrlCmd cmdSend;
+	cmdSend.SetPipeSetting(waitEventName, pipeName);
+	cmdSend.SendViewAppClose();
+	for( int i = 0; i < 60; i++ ){
+		if( _FindOpenExeProcess(pid) == FALSE ){
+			return;
+		}
+		Sleep(500);
+	}
+	//ぶち殺す
+	HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, pid);
+	if( hProcess != NULL ){
+		TerminateProcess(hProcess, 0xFFFFFFFF);
+		CloseHandle(hProcess);
+		Sleep(500);
+	}
 }
 /*
 void CTunerBankCtrl::CopyEpgInfo(EPG_EVENT_INFO* destInfo, EPGDB_EVENT_INFO* srcInfo)

@@ -12,6 +12,7 @@
 
 #define RESERVE_TEXT_NAME L"Reserve.txt"
 #define REC_INFO_TEXT_NAME L"RecInfo.txt"
+#define REC_INFO2_TEXT_NAME L"RecInfo2.txt"
 #define EPG_AUTO_ADD_TEXT_NAME L"EpgAutoAdd.txt"
 #define MANUAL_AUTO_ADD_TEXT_NAME L"ManualAutoAdd.txt"
 

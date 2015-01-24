@@ -215,7 +215,6 @@
     <ClInclude Include="..\..\UPnPCtrl\UpnpStructDef.h" />
     <ClInclude Include="..\..\UPnPCtrl\UpnpUtil.h" />
     <ClInclude Include="BatManager.h" />
-    <ClInclude Include="CheckRecFile.h" />
     <ClInclude Include="DLNADmsContentDB.h" />
     <ClInclude Include="DLNADmsManager.h" />
     <ClInclude Include="DLNAManager.h" />
@@ -234,7 +233,6 @@
     <ClInclude Include="HttpRequestReader.h" />
     <ClInclude Include="NotifyManager.h" />
     <ClInclude Include="NWCoopManager.h" />
-    <ClInclude Include="RecInfoDBManager.h" />
     <ClInclude Include="ReserveInfo.h" />
     <ClInclude Include="ReserveManager.h" />
     <ClInclude Include="Resource.h" />
@@ -244,7 +242,6 @@
     <ClInclude Include="SyoboiCalUtil.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="TunerBankCtrl.h" />
-    <ClInclude Include="TunerCtrl.h" />
     <ClInclude Include="TunerManager.h" />
     <ClInclude Include="TwitterManager.h" />
   </ItemGroup>
@@ -287,7 +284,6 @@
     <ClCompile Include="..\..\UPnPCtrl\UpnpStructDef.cpp" />
     <ClCompile Include="..\..\UPnPCtrl\UpnpUtil.cpp" />
     <ClCompile Include="BatManager.cpp" />
-    <ClCompile Include="CheckRecFile.cpp" />
     <ClCompile Include="DLNADmsContentDB.cpp" />
     <ClCompile Include="DLNADmsManager.cpp" />
     <ClCompile Include="DLNAManager.cpp" />
@@ -305,7 +301,6 @@
     <ClCompile Include="HttpRequestReader.cpp" />
     <ClCompile Include="NotifyManager.cpp" />
     <ClCompile Include="NWCoopManager.cpp" />
-    <ClCompile Include="RecInfoDBManager.cpp" />
     <ClCompile Include="ReserveInfo.cpp" />
     <ClCompile Include="ReserveManager.cpp" />
     <ClCompile Include="RestApiManager.cpp" />
@@ -318,7 +313,6 @@
     </ClCompile>
     <ClCompile Include="SyoboiCalUtil.cpp" />
     <ClCompile Include="TunerBankCtrl.cpp" />
-    <ClCompile Include="TunerCtrl.cpp" />
     <ClCompile Include="TunerManager.cpp" />
     <ClCompile Include="TwitterManager.cpp" />
   </ItemGroup>

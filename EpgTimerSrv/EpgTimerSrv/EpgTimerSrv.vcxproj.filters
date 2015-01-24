@@ -105,9 +105,6 @@
     <ClInclude Include="TunerManager.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="TunerCtrl.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Common\CtrlCmdUtil.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
@@ -136,9 +133,6 @@
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
     <ClInclude Include="BatManager.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="CheckRecFile.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Common\TCPServer.h">
@@ -196,9 +190,6 @@
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="NWCoopManager.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="RecInfoDBManager.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Common\HttpServer.h">
@@ -326,9 +317,6 @@
     <ClCompile Include="TunerManager.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="TunerCtrl.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\Common\CtrlCmdUtil.cpp">
       <Filter>ソース ファイル\Common</Filter>
     </ClCompile>
@@ -348,9 +336,6 @@
       <Filter>ソース ファイル\Common</Filter>
     </ClCompile>
     <ClCompile Include="BatManager.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="CheckRecFile.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Common\TCPServer.cpp">
@@ -402,9 +387,6 @@
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="NWCoopManager.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="RecInfoDBManager.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Common\HttpServer.cpp">
