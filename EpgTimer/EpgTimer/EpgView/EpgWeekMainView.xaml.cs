@@ -1803,6 +1803,7 @@ namespace EpgTimer
 
                 epgProgramView.SetProgramList(
                     programList,
+                    timeList,
                     dayList.Count * Settings.Instance.ServiceWidth,
                     timeList.Count * 60 * Settings.Instance.MinHeight);
 

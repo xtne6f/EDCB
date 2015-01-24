@@ -39,11 +39,13 @@ namespace EpgTimer.EpgView
                     TextBlock item = new TextBlock();
 
                     double height = Settings.Instance.MinHeight;
-                    item.Height = (60 * height) - 4;
+                    item.Height = (60 * height) - 1;
 
                     if (weekMode == true)
                     {
-                        item.Text = time.Hour.ToString();
+                        if (height >= 1) item.Inlines.Add(new LineBreak());
+                        if (height >= 1.5) item.Inlines.Add(new LineBreak());
+                        PutTime(item.Inlines, time);
                     }
                     else
                     {
@@ -51,50 +53,49 @@ namespace EpgTimer.EpgView
                         {
                             if (height < 1)
                             {
-                                item.Text = time.ToString("M/d\r\nH");
+                                PutDate(item.Inlines, time);
+                                PutTime(item.Inlines, time);
+
                             }
                             else if (height < 1.5)
                             {
-                                item.Text = time.ToString("M/d\r\n(ddd)\r\nH");
+                                PutDate(item.Inlines, time);
+                                PutWeekDay(item.Inlines, time);
+                                PutTime(item.Inlines, time);
                             }
                             else
                             {
-                                item.Text = time.ToString("M/d\r\n(ddd)\r\n\r\nH");
+                                PutDate(item.Inlines, time);
+                                PutWeekDay(item.Inlines, time);
+                                item.Inlines.Add(new LineBreak());
+                                PutTime(item.Inlines, time);
                             }
                         }
                         else
                         {
                             if (height < 1)
                             {
-                                item.Text = time.Hour.ToString();
+                                PutTime(item.Inlines, time);
                             }
                             else if (height < 1.5)
                             {
-                                item.Text = time.ToString("\r\nH");
+                                item.Inlines.Add(new LineBreak());
+                                PutTime(item.Inlines, time);
                             }
                             else
                             {
-                                item.Text = time.ToString("\r\n\r\n\r\nH");
+                                item.Inlines.Add(new LineBreak());
+                                item.Inlines.Add(new LineBreak());
+                                item.Inlines.Add(new LineBreak());
+                                PutTime(item.Inlines, time);
                             }
-                        }
-
-                        if (time.DayOfWeek == DayOfWeek.Saturday)
-                        {
-                            item.Foreground = Brushes.Blue;
-                        }
-                        else if (time.DayOfWeek == DayOfWeek.Sunday)
-                        {
-                            item.Foreground = Brushes.Red;
-                        }
-                        else
-                        {
-                            item.Foreground = Brushes.Black;
                         }
                     }
 
-                    item.Margin = new Thickness(2, 2, 2, 2);
-                    item.Background = Brushes.AliceBlue;
+                    item.Margin = new Thickness(1, 1, 1, 0);
+                    item.Background = CommonManager.Instance.CustTimeColorList[time.Hour / 6];
                     item.TextAlignment = TextAlignment.Center;
+                    item.Foreground = Brushes.White;
                     item.FontSize = 12;
                     stackPanel_time.Children.Add(item);
                 }
@@ -104,6 +105,42 @@ namespace EpgTimer.EpgView
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
 
+        }
+
+        private static void PutDate(InlineCollection inline, DateTime time)
+        {
+            Run text = new Run(time.ToString("M/d"));
+            inline.Add(text);
+            inline.Add(new LineBreak());
+        }
+
+        private static void PutWeekDay(InlineCollection inline, DateTime time)
+        {
+            SolidColorBrush color = Brushes.White;
+            if (time.DayOfWeek == DayOfWeek.Saturday)
+            {
+                color = Brushes.Blue;
+            }
+            else if (time.DayOfWeek == DayOfWeek.Sunday)
+            {
+                color = Brushes.Red;
+            }
+
+            Run weekday = new Run(time.ToString("ddd"));
+            weekday.Foreground = color;
+            weekday.FontWeight = FontWeights.Bold;
+            inline.Add(new Run("("));
+            inline.Add(weekday);
+            inline.Add(new Run(")"));
+            inline.Add(new LineBreak());
+        }
+
+        private static void PutTime(InlineCollection inline, DateTime time)
+        {
+            Run text = new Run(time.ToString("%H"));
+            text.FontSize = 13;
+            text.FontWeight = FontWeights.Bold;
+            inline.Add(text);
         }
 
         private void scrollViewer_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
