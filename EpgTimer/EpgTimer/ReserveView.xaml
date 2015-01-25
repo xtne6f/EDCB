@@ -19,8 +19,11 @@
             <MenuItem Header="優先度" Name="Priority" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="追従" Name="Tuijyu" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="予約状況" Name="Comment" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="録画フォルダ" Name="RecFolder" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="予定ファイル名" Name="RecFileName" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="ぴったり（？）" Name="Pittari" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="開始タイミング" Name="MarginStart" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="終了タイミング" Name="MarginEnd" IsCheckable="True" Click="headerSelect_Click" />
         </ContextMenu>
         <ContextMenu x:Key="itemMenu" x:Name="cmdMenu" Loaded="cmdMenu_Loaded">
             <MenuItem Header="予約←→無効" Click="button_on_off_Click" InputGestureText="Ctrl+S" />
@@ -60,6 +63,7 @@
         <ListView Name="listView_reserve" Margin="10" SelectionMode="Extended" ItemsSource="{Binding}" GridViewColumnHeader.Click="GridViewColumnHeader_Click" ContextMenu="{DynamicResource itemHeader}" ContextMenuOpening="ContextMenu_Header_ContextMenuOpening" PreviewKeyDown="listView_reserve_PreviewKeyDown">
             <ListView.Resources>
                 <Style TargetType="ListViewItem">
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
                     <Setter Property="ToolTipService.ShowDuration" Value="20000" />
                     <Setter Property="ToolTip" Value="{Binding ToolTipView}"/>
                     <Setter Property="Foreground"  Value="{Binding ForeColor}" />
@@ -124,11 +128,21 @@
                     </GridViewColumn>
                     <GridViewColumn>
                         <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="録画フォルダ" Tag="RecFolder" HorizontalContentAlignment="Left" />
+                        </GridViewColumn.Header>
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <ComboBox ItemsSource="{Binding Path=RecFolder}" SelectedIndex="0" Padding="6,0,5,0"></ComboBox>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn>
+                        <GridViewColumn.Header>
                             <GridViewColumnHeader Content="予定ファイル名" Tag="RecFileName" HorizontalContentAlignment="Left" />
                         </GridViewColumn.Header>
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <ComboBox ItemsSource="{Binding Path=RecFileName}" SelectedIndex="0"></ComboBox>
+                                <ComboBox ItemsSource="{Binding Path=RecFileName}" SelectedIndex="0" Padding="6,0,5,0"></ComboBox>
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
@@ -136,6 +150,26 @@
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="ぴったり（？）" Tag="Pittari" HorizontalContentAlignment="Left" />
                         </GridViewColumn.Header>
+                    </GridViewColumn>
+                    <GridViewColumn>
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="開始" Tag="MarginStart" HorizontalContentAlignment="Left" ToolTip="?=EpgtimerNWでデフォルトの場合不明のため"/>
+                        </GridViewColumn.Header>
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Path=MarginStart}" HorizontalAlignment="Right" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn>
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="終了" Tag="MarginEnd" HorizontalContentAlignment="Left" ToolTip="?=EpgtimerNWでデフォルトの場合不明のため" />
+                        </GridViewColumn.Header>
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Path=MarginEnd}" HorizontalAlignment="Right" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
                     </GridViewColumn>
                 </GridView>
             </ListView.View>

@@ -594,6 +594,10 @@ namespace EpgTimer
             //
             if (headerClicked1 != null)
             {
+                if (headerClicked1.Tag.ToString() == "RecFolder")
+                {
+                    return;
+                }
                 if (headerClicked1.Role != GridViewColumnHeaderRole.Padding)
                 {
                     // ソートの実行

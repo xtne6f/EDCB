@@ -365,6 +365,10 @@ namespace EpgTimer
                     {
                         return;
                     }
+                    else if (String.Compare(header, "RecFolder") == 0)
+                    {
+                        return;
+                    }
 
                     if (String.Compare(header, _lastHeaderClicked) != 0)
                     {

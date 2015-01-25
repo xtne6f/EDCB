@@ -367,6 +367,101 @@ namespace EpgTimer
             }
         }
 
+        public String MarginStart
+        {
+            get
+            {
+                String view = "";
+                if (EpgAutoAddInfo != null)
+                {
+                    int marginTime;
+                    if (EpgAutoAddInfo.recSetting.UseMargineFlag == 1)
+                    {
+                        marginTime = EpgAutoAddInfo.recSetting.StartMargine;
+                    }
+                    else
+                    {
+                        //TODO: ここでデフォルトマージンを確認するがEpgTimerNWでは無意味。根本的にはSendCtrlCmdの拡張が必要
+                        marginTime = IniFileHandler.GetPrivateProfileInt("SET", "StartMargin", 0, SettingPath.TimerSrvIniPath);
+                    }
+                    view = CustomTimeFormat(marginTime * -1);
+                }
+                return view;
+            }
+        }
+
+        public String MarginEnd
+        {
+            get
+            {
+                String view = "";
+                if (EpgAutoAddInfo != null)
+                {
+                    int marginTime;
+                    if (EpgAutoAddInfo.recSetting.UseMargineFlag == 1)
+                    {
+                        marginTime = EpgAutoAddInfo.recSetting.EndMargine;
+                    }
+                    else
+                    {
+                        //TODO: ここでデフォルトマージンを確認するがEpgTimerNWでは無意味。根本的にはSendCtrlCmdの拡張が必要
+                        marginTime = IniFileHandler.GetPrivateProfileInt("SET", "EndMargin", 0, SettingPath.TimerSrvIniPath);
+                    }
+                    view = CustomTimeFormat(marginTime);
+                }
+                return view;
+            }
+        }
+
+        private String CustomTimeFormat(Int32 span)
+        {
+            string hours;
+            string minutes;
+            string seconds = (span % 60).ToString("00;00");
+            if (Math.Abs(span) < 3600)
+            {
+                hours = "";
+                minutes = (span / 60).ToString("0;0") + ":";
+            }
+            else
+            {
+                hours = (span / 3600).ToString("0;0") + ":";
+                minutes = ((span % 3600) / 60).ToString("00;00") + ":";
+            }
+            return span.ToString("+;-") + hours + minutes + seconds + CustomTimeMark();
+        }
+
+        private String CustomTimeMark()
+        {
+            //EpgtimerNWの場合、デフォルト値不明のため。不明でなくなったら要らない
+            String mark = "";
+            if (CommonManager.Instance.NWMode == true)
+            {
+                mark = (EpgAutoAddInfo.recSetting.UseMargineFlag == 1 ? " " : "?");
+            }
+            return mark;
+        }
+
+        public List<String> RecFolder
+        {
+            get
+            {
+                List<String> list = new List<string>();
+                if (EpgAutoAddInfo != null)
+                {
+                    foreach (RecFileSetInfo recinfo1 in EpgAutoAddInfo.recSetting.RecFolderList)
+                    {
+                        list.Add(recinfo1.RecFolder);
+                    }
+                    foreach (RecFileSetInfo recinfo1 in EpgAutoAddInfo.recSetting.PartialRecFolder)
+                    {
+                        list.Add("(ワンセグ) " + recinfo1.RecFolder);
+                    }
+                }
+                return list;
+            }
+        }
+
         public String KeyEnabled
         {
             get

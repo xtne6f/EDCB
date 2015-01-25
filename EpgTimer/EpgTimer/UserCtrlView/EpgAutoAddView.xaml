@@ -18,6 +18,9 @@
             <MenuItem Header="追従" Name="Tuijyu" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="登録対象数" Name="AddCount" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="ぴったり（？）" Name="Pittari" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="開始タイミング" Name="MarginStart" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="終了タイミング" Name="MarginEnd" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="録画フォルダ" Name="RecFolder" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="ジャンル" Name="JyanruKey" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="ネットワーク" Name="NetworkKey" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="サービス名" Name="ServiceKey" IsCheckable="True" Click="headerSelect_Click" />
@@ -38,6 +41,7 @@
             <ListView Name="listView_key" Margin="10" SelectionMode="Extended" ItemsSource="{Binding}" ContextMenu="{DynamicResource itemHeader}" ContextMenuOpening="ContextMenu_Header_ContextMenuOpening" AllowDrop="False" GridViewColumnHeader.Click="GridViewColumnHeader_Click" AlternationCount="2" MouseUp="listView_key_MouseUp" PreviewKeyDown="listView_key_PreviewKeyDown">
                 <ListView.Resources>
                     <Style TargetType="ListViewItem">
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
                         <Setter Property="ToolTipService.ShowDuration" Value="20000" />
                         <Setter Property="ToolTip" Value="{Binding ToolTipView}"/>
                         <Setter Property="ContextMenu" Value="{DynamicResource itemMenu}" />
@@ -102,6 +106,26 @@
                                 <GridViewColumnHeader Content="ぴったり（？）" Tag="Pittari" HorizontalContentAlignment="Left" ToolTip="Ctrl + クリック（マルチ・ソート）"/>
                             </GridViewColumn.Header>
                         </GridViewColumn>
+                        <GridViewColumn>
+                            <GridViewColumn.Header>
+                                <GridViewColumnHeader Content="開始" Tag="MarginStart" HorizontalContentAlignment="Left" ToolTip="?=EpgtimerNWでデフォルトの場合不明のため"/>
+                            </GridViewColumn.Header>
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Path=MarginStart}" HorizontalAlignment="Right" />
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
+                        <GridViewColumn>
+                            <GridViewColumn.Header>
+                                <GridViewColumnHeader Content="終了" Tag="MarginEnd" HorizontalContentAlignment="Left" ToolTip="?=EpgtimerNWでデフォルトの場合不明のため" />
+                            </GridViewColumn.Header>
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Path=MarginEnd}" HorizontalAlignment="Right" />
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
                         <GridViewColumn DisplayMemberBinding="{Binding Path=JyanruKey}">
                             <GridViewColumn.Header>
                                 <GridViewColumnHeader Content="ジャンル" Tag="JyanruKey" HorizontalContentAlignment="Left" ToolTip="Ctrl + クリック（マルチ・ソート）"/>
@@ -121,6 +145,16 @@
                             <GridViewColumn.Header>
                                 <GridViewColumnHeader Content="有効" Tag="KeyEnabled" HorizontalContentAlignment="Left" ToolTip="Ctrl + クリック（マルチ・ソート）"/>
                             </GridViewColumn.Header>
+                        </GridViewColumn>
+                        <GridViewColumn>
+                            <GridViewColumn.Header>
+                                <GridViewColumnHeader Content="録画フォルダ" Tag="RecFolder" HorizontalContentAlignment="Left" />
+                            </GridViewColumn.Header>
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <ComboBox ItemsSource="{Binding Path=RecFolder}" SelectedIndex="0" Padding="6,0,5,0"></ComboBox>
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
                         </GridViewColumn>
                     </GridView>
                 </ListView.View>
