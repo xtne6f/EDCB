@@ -370,11 +370,6 @@ namespace EpgTimer
                 menuItemReverse.Header = "簡易予約/予約←→無効";
                 menuItemReverse.Click += new RoutedEventHandler(cm_reverse_Click);
 
-                //MenuItem menuItemNew = new MenuItem();
-                //menuItemNew.Header = "簡易予約";
-                //menuItemNew.Click += new RoutedEventHandler(cm_new_Click);
-
-                Separator separate = new Separator();
                 MenuItem menuItemAdd = new MenuItem();
                 menuItemAdd.Header = "予約追加";
 
@@ -383,7 +378,7 @@ namespace EpgTimer
                 menuItemAddDlg.Click += new RoutedEventHandler(cm_add_Click);
 
                 menuItemAdd.Items.Add(menuItemAddDlg);
-                menuItemAdd.Items.Add(separate);
+                menuItemAdd.Items.Add(new Separator());
 
                 MenuItem menuItemPreset = new MenuItem();
                 menuItemPreset.Header = "プリセット";
@@ -400,7 +395,6 @@ namespace EpgTimer
 
                 menuItemAdd.Items.Add(menuItemPreset);
 
-                Separator separate2 = new Separator();
                 MenuItem menuItemChg = new MenuItem();
                 menuItemChg.Header = "変更";
                 MenuItem menuItemChgDlg = new MenuItem();
@@ -408,7 +402,7 @@ namespace EpgTimer
                 menuItemChgDlg.Click += new RoutedEventHandler(cm_chg_Click);   
 
                 menuItemChg.Items.Add(menuItemChgDlg);
-                menuItemChg.Items.Add(separate2);
+                menuItemChg.Items.Add(new Separator());
 
                 MenuItem menuItemChgRecMode0 = new MenuItem();
                 menuItemChgRecMode0.Header = "全サービス (_0)";
@@ -482,13 +476,26 @@ namespace EpgTimer
 
                 MenuItem menuItemAutoAdd = new MenuItem();
                 menuItemAutoAdd.Header = "自動予約登録";
+                menuItemAutoAdd.ToolTip = CommonManager.Instance.MUtil.EpgKeyword_TrimMode();
                 menuItemAutoAdd.Click += new RoutedEventHandler(cm_autoadd_Click);
                 MenuItem menuItemTimeshift = new MenuItem();
                 menuItemTimeshift.Header = "追っかけ再生";
                 menuItemTimeshift.Click += new RoutedEventHandler(cm_timeShiftPlay_Click);
 
+                MenuItem menuItemCopy = new MenuItem();
+                menuItemCopy.Header = "番組名をコピー";
+                menuItemCopy.ToolTip = CommonManager.Instance.MUtil.CopyTitle_TrimMode();
+                menuItemCopy.Click += new RoutedEventHandler(cm_CopyTitle_Click);
+                MenuItem menuItemContent = new MenuItem();
+                menuItemContent.Header = "番組情報をコピー";
+                menuItemContent.ToolTip = CommonManager.Instance.MUtil.CopyContent_Mode();
+                menuItemContent.Click += new RoutedEventHandler(cm_CopyContent_Click);
+                MenuItem menuItemSearch = new MenuItem();
+                menuItemSearch.Header = "番組名をネットで検索";
+                menuItemSearch.ToolTip = CommonManager.Instance.MUtil.SearchText_TrimMode();
+                menuItemSearch.Click += new RoutedEventHandler(cm_SearchTitle_Click);
+
                 //表示モード
-                Separator separate3 = new Separator();
                 MenuItem menuItemView = new MenuItem();
                 menuItemView.Header = "表示モード";
 
@@ -498,8 +505,8 @@ namespace EpgTimer
 
                 MenuItem menuItemChgViewMode1 = new MenuItem();
                 menuItemChgViewMode1.Header = "標準モード (_1)";
-                menuItemChgViewMode1.DataContext = 0;
-                menuItemChgViewMode1.Click += new RoutedEventHandler(cm_chg_viewMode_Click);
+                //menuItemChgViewMode1.DataContext = 0;
+                //menuItemChgViewMode1.Click += new RoutedEventHandler(cm_chg_viewMode_Click);
                 MenuItem menuItemChgViewMode2 = new MenuItem();
                 menuItemChgViewMode2.Header = "1週間モード (_2)";
                 menuItemChgViewMode2.DataContext = 1;
@@ -508,34 +515,31 @@ namespace EpgTimer
                 menuItemChgViewMode3.Header = "リスト表示モード (_3)";
                 menuItemChgViewMode3.DataContext = 2;
                 menuItemChgViewMode3.Click += new RoutedEventHandler(cm_chg_viewMode_Click);
+                
+                menuItemChgViewMode1.IsChecked = true;
 
-                if (setViewInfo.ViewMode == 1)
-                {
-                    menuItemChgViewMode2.IsChecked = true;
-                }
-                else if (setViewInfo.ViewMode == 2)
-                {
-                    menuItemChgViewMode3.IsChecked = true;
-                }
-                else
-                {
-                    menuItemChgViewMode1.IsChecked = true;
-                }
-                //menuItemView.Items.Add(menuItemChgViewMode1);
+                menuItemView.Items.Add(menuItemChgViewMode1);
                 menuItemView.Items.Add(menuItemChgViewMode2);
                 menuItemView.Items.Add(menuItemChgViewMode3);
-                menuItemView.Items.Add(separate3);
-                menuItemView.Items.Add(menuItemViewSetDlg);                
+                menuItemView.Items.Add(new Separator());
+                menuItemView.Items.Add(menuItemViewSetDlg);    
+            
                 if (noItem == true)
                 {
                     menuItemReverse.Header = "簡易予約";
                     menuItemReverse.IsEnabled = false;
-                    //menuItemNew.IsEnabled = false;
                     menuItemAdd.IsEnabled = false;
                     menuItemChg.IsEnabled = false;
                     menuItemDel.IsEnabled = false;
                     menuItemAutoAdd.IsEnabled = false;
+                    ToolTipService.SetShowOnDisabled(menuItemAutoAdd, true);
                     menuItemTimeshift.IsEnabled = false;
+                    menuItemCopy.IsEnabled = false;
+                    ToolTipService.SetShowOnDisabled(menuItemCopy, true);
+                    menuItemContent.IsEnabled = false;
+                    ToolTipService.SetShowOnDisabled(menuItemContent, true);
+                    menuItemSearch.IsEnabled = false;
+                    ToolTipService.SetShowOnDisabled(menuItemSearch, true);
                     menuItemView.IsEnabled = true;
                 }
                 else
@@ -544,7 +548,6 @@ namespace EpgTimer
                     {
                         menuItemReverse.Header = "予約←→無効";
                         menuItemReverse.IsEnabled = true;
-                        //menuItemNew.IsEnabled = false;
                         menuItemAdd.IsEnabled = false;
                         menuItemChg.IsEnabled = true;
                         ((MenuItem)menuItemChg.Items[menuItemChg.Items.IndexOf(menuItemChgRecMode0) + Math.Min((int)reserve.RecSetting.RecMode, 5)]).IsChecked = true;
@@ -553,29 +556,47 @@ namespace EpgTimer
                         menuItemDel.IsEnabled = true;
                         menuItemAutoAdd.IsEnabled = true;
                         menuItemTimeshift.IsEnabled = true;
-                        menuItemView.IsEnabled = true;
                     }
                     else
                     {
                         menuItemReverse.Header = "簡易予約";
                         menuItemReverse.IsEnabled = true;
-                        //menuItemNew.IsEnabled = true;
                         menuItemAdd.IsEnabled = true;
                         menuItemChg.IsEnabled = false;
                         menuItemDel.IsEnabled = false;
                         menuItemAutoAdd.IsEnabled = true;
                         menuItemTimeshift.IsEnabled = false;
-                        menuItemView.IsEnabled = true;
                     }
+                    menuItemCopy.IsEnabled = true;
+                    menuItemContent.IsEnabled = true;
+                    menuItemSearch.IsEnabled = true;
+                    menuItemView.IsEnabled = true;
                 }
 
                 menu.Items.Add(menuItemReverse);
-                //menu.Items.Add(menuItemNew);
                 menu.Items.Add(menuItemAdd);
                 menu.Items.Add(menuItemChg);
                 menu.Items.Add(menuItemDel);
                 menu.Items.Add(menuItemAutoAdd);
                 menu.Items.Add(menuItemTimeshift);
+
+                if (Settings.Instance.CmAppendMenu == true)
+                {
+                    menu.Items.Add(new Separator());
+                    if (Settings.Instance.CmCopyTitle == true)
+                    {
+                        menu.Items.Add(menuItemCopy);
+                    }
+                    if (Settings.Instance.CmCopyContent == true)
+                    {
+                        menu.Items.Add(menuItemContent);
+                    }
+                    if (Settings.Instance.CmSearchTitle == true)
+                    {
+                        menu.Items.Add(menuItemSearch);
+                    }
+                }
+
                 menu.Items.Add(new Separator());
                 menu.Items.Add(menuItemView);
                 menu.IsOpen = true;
@@ -863,7 +884,7 @@ namespace EpgTimer
 
                 if (program.ShortInfo != null)
                 {
-                    key.andKey = program.ShortInfo.event_name;
+                    key.andKey = CommonManager.Instance.MUtil.TrimEpgKeyword(program.ShortInfo.event_name);
                 }
                 Int64 sidKey = ((Int64)program.original_network_id) << 32 | ((Int64)program.transport_stream_id) << 16 | ((Int64)program.service_id);
                 key.serviceList.Add(sidKey);
@@ -1042,6 +1063,48 @@ namespace EpgTimer
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+            }
+        }
+
+        /// <summary>
+        /// 右クリックメニュー 番組名をコピーイベント呼び出し
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void cm_CopyTitle_Click(object sender, RoutedEventArgs e)
+        {
+            EpgEventInfo eventInfo = new EpgEventInfo();
+            if (GetProgramItem(clickPos, ref eventInfo) == true)
+            {
+                CommonManager.Instance.MUtil.CopyTitle2Clipboard(eventInfo.ShortInfo.event_name);
+            }
+        }
+
+        /// <summary>
+        /// 右クリックメニュー 番組情報をコピーイベント呼び出し
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void cm_CopyContent_Click(object sender, RoutedEventArgs e)
+        {
+            EpgEventInfo eventInfo = new EpgEventInfo();
+            if (GetProgramItem(clickPos, ref eventInfo) == true)
+            {
+                CommonManager.Instance.MUtil.CopyContent2Clipboard(eventInfo);
+            }
+        }
+
+        /// <summary>
+        /// 右クリックメニュー 番組名で検索イベント呼び出し
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void cm_SearchTitle_Click(object sender, RoutedEventArgs e)
+        {
+            EpgEventInfo eventInfo = new EpgEventInfo();
+            if (GetProgramItem(clickPos, ref eventInfo) == true)
+            {
+                CommonManager.Instance.MUtil.SearchText(eventInfo.ShortInfo.event_name);
             }
         }
 

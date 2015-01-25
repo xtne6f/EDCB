@@ -32,7 +32,6 @@ namespace EpgTimer
 
         private bool updateReserveData = true;
 
-
         public TunerReserveMainView()
         {
             InitializeComponent();
@@ -278,27 +277,71 @@ namespace EpgTimer
                 MenuItem menuItemDel = new MenuItem();
                 menuItemDel.Header = "削除";
                 menuItemDel.Click += new RoutedEventHandler(cm_del_Click);
-
+                MenuItem menuItemPTable = new MenuItem();
+                menuItemPTable.Header = "番組表へジャンプ";
+                menuItemPTable.Click += new RoutedEventHandler(cm_programtable_Click);
                 MenuItem menuItemAutoAdd = new MenuItem();
                 menuItemAutoAdd.Header = "自動予約登録";
+                menuItemAutoAdd.ToolTip = CommonManager.Instance.MUtil.EpgKeyword_TrimMode();
                 menuItemAutoAdd.Click += new RoutedEventHandler(cm_autoadd_Click);
                 MenuItem menuItemTimeshift = new MenuItem();
                 menuItemTimeshift.Header = "追っかけ再生";
                 menuItemTimeshift.Click += new RoutedEventHandler(cm_timeShiftPlay_Click);
 
+                MenuItem menuItemCopy = new MenuItem();
+                menuItemCopy.Header = "番組名をコピー";
+                menuItemCopy.ToolTip = CommonManager.Instance.MUtil.CopyTitle_TrimMode();
+                menuItemCopy.Click += new RoutedEventHandler(cm_CopyTitle_Click);
+                MenuItem menuItemContent = new MenuItem();
+                menuItemContent.Header = "番組情報をコピー";
+                menuItemContent.ToolTip = CommonManager.Instance.MUtil.CopyContent_Mode();
+                menuItemContent.Click += new RoutedEventHandler(cm_CopyContent_Click);
+                MenuItem menuItemSearch = new MenuItem();
+                menuItemSearch.Header = "番組名をネットで検索";
+                menuItemSearch.ToolTip = CommonManager.Instance.MUtil.SearchText_TrimMode();
+                menuItemSearch.Click += new RoutedEventHandler(cm_SearchTitle_Click);
 
                 menuItemChg.IsEnabled = true;
                 ((MenuItem)menuItemChg.Items[menuItemChg.Items.IndexOf(menuItemChgRecMode0) + Math.Min((int)reserve.RecSetting.RecMode, 5)]).IsChecked = true;
                 ((MenuItem)menuItemChgRecPri.Items[Math.Min((int)(reserve.RecSetting.Priority - 1), 4)]).IsChecked = true;
                 menuItemChgRecPri.Header = string.Format((string)menuItemChgRecPri.Tag, reserve.RecSetting.Priority);
+                
+                //フォーカスに問題があり、一度クリックしないと正しく動かない‥。
+                //仮対策コード
+                menuItemPTable.IsEnabled = IsViewOnceClicked;
+                if (menuItemPTable.IsEnabled == false)
+                {
+                    menuItemPTable.ToolTip = "一度画面を左クリックすると使用可能";
+                    ToolTipService.SetShowOnDisabled(menuItemPTable, true);
+                }
+
                 menuItemDel.IsEnabled = true;
                 menuItemAutoAdd.IsEnabled = true;
                 menuItemTimeshift.IsEnabled = true;
 
                 menu.Items.Add(menuItemChg);
                 menu.Items.Add(menuItemDel);
+                menu.Items.Add(menuItemPTable);
                 menu.Items.Add(menuItemAutoAdd);
                 menu.Items.Add(menuItemTimeshift);
+
+                if (Settings.Instance.CmAppendMenu == true)
+                {
+                    menu.Items.Add(new Separator());
+                    if (Settings.Instance.CmCopyTitle == true)
+                    {
+                        menu.Items.Add(menuItemCopy);
+                    }
+                    if (Settings.Instance.CmCopyContent == true)
+                    {
+                        menu.Items.Add(menuItemContent);
+                    }
+                    if (Settings.Instance.CmSearchTitle == true)
+                    {
+                        menu.Items.Add(menuItemSearch);
+                    }
+                }
+
                 menu.IsOpen = true;
             }
             catch (Exception ex)
@@ -454,6 +497,42 @@ namespace EpgTimer
         }
 
         /// <summary>
+        /// 右クリックメニュー 番組表へジャンプイベント呼び出し
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void cm_programtable_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender.GetType() != typeof(MenuItem))
+            {
+                return;
+            }
+
+            ReserveData reserve = new ReserveData();
+            if (GetReserveItem(clickPos, ref reserve) == false)
+            {
+                return;
+            }
+
+            BlackoutWindow.selectedReserveItem = new ReserveItem(reserve);
+            MainWindow mainWindow = Application.Current.MainWindow as MainWindow;
+            mainWindow.moveTo_tabItem_epg();
+        }
+
+        //フォーカスがうまくいかない仮対策
+        private bool IsViewOnceClicked = false;
+
+        private void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            this.IsViewOnceClicked = false;
+        }
+
+        private void tunerReserveView_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            this.IsViewOnceClicked = true;
+        }
+
+        /// <summary>
         /// 右クリックメニュー 自動予約登録イベント呼び出し
         /// </summary>
         /// <param name="sender"></param>
@@ -481,7 +560,7 @@ namespace EpgTimer
 
                 if (reserve.Title != null)
                 {
-                    key.andKey = reserve.Title;
+                    key.andKey = CommonManager.Instance.MUtil.TrimEpgKeyword(reserve.Title);
                 }
                 Int64 sidKey = ((Int64)reserve.OriginalNetworkID) << 32 | ((Int64)reserve.TransportStreamID) << 16 | ((Int64)reserve.ServiceID);
                 key.serviceList.Add(sidKey);
@@ -520,6 +599,66 @@ namespace EpgTimer
             {
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
+        }
+
+        /// <summary>
+        /// 右クリックメニュー 番組名をコピーイベント呼び出し
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void cm_CopyTitle_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender.GetType() != typeof(MenuItem))
+            {
+                return;
+            }
+
+            ReserveData reserve = new ReserveData();
+            if (GetReserveItem(clickPos, ref reserve) == false)
+            {
+                return;
+            }
+            CommonManager.Instance.MUtil.CopyTitle2Clipboard(reserve.Title);
+        }
+
+        /// <summary>
+        /// 右クリックメニュー 番組情報をコピーイベント呼び出し
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void cm_CopyContent_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender.GetType() != typeof(MenuItem))
+            {
+                return;
+            }
+
+            ReserveData reserve = new ReserveData();
+            if (GetReserveItem(clickPos, ref reserve) == false)
+            {
+                return;
+            }
+            CommonManager.Instance.MUtil.CopyContent2Clipboard(reserve);
+        }
+
+        /// <summary>
+        /// 右クリックメニュー 番組名で検索イベント呼び出し
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void cm_SearchTitle_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender.GetType() != typeof(MenuItem))
+            {
+                return;
+            }
+
+            ReserveData reserve = new ReserveData();
+            if (GetReserveItem(clickPos, ref reserve) == false)
+            {
+                return;
+            }
+            CommonManager.Instance.MUtil.SearchText(reserve.Title);
         }
 
         /// <summary>

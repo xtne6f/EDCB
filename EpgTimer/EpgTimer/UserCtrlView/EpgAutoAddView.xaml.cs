@@ -658,30 +658,6 @@ namespace EpgTimer
             {
                 switch (e.Key)
                 {
-                    case Key.Up:
-                        this.moveItem(itemMoveDirections.up);
-                        break;
-                    case Key.Down:
-                        this.moveItem(itemMoveDirections.down);
-                        break;
-                    case Key.S:
-                        if (this.ItemOrderNotSaved==true)
-                        {
-                            if (MessageBox.Show("並びの変更を保存します。\r\nよろしいですか？", "保存の確認", MessageBoxButton.OKCancel) == MessageBoxResult.OK)
-                            {
-                                this.saveItemOrder();
-                            }
-                        }
-                        break;
-                    case Key.R:
-                        if (this.ItemOrderNotSaved == true)
-                        {
-                            if (MessageBox.Show("元の並びに復元します。\r\nよろしいですか？", "復元の確認", MessageBoxButton.OKCancel) == MessageBoxResult.OK)
-                            {
-                                this.reloadItemOrder();
-                            }
-                        }
-                        break;
                     case Key.D:
                         this.deleteItem();
                         break;
@@ -701,6 +677,54 @@ namespace EpgTimer
                         break;
                 }
             }
+        }
+
+        protected override void OnPreviewKeyDown(KeyEventArgs e)
+        {
+            if (Keyboard.Modifiers == ModifierKeys.Control)
+            {
+                switch (e.Key)
+                {
+                    case Key.Up:
+                        this.moveItem(itemMoveDirections.up);
+                        e.Handled = true;
+                        break;
+                    case Key.Down:
+                        this.moveItem(itemMoveDirections.down);
+                        e.Handled = true;
+                        break;
+                }
+            }
+            base.OnPreviewKeyDown(e);
+        }
+
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            if (Keyboard.Modifiers == ModifierKeys.Control)
+            {
+                switch (e.Key)
+                {
+                    case Key.S:
+                        if (this.ItemOrderNotSaved == true)
+                        {
+                            if (MessageBox.Show("並びの変更を保存します。\r\nよろしいですか？", "保存の確認", MessageBoxButton.OKCancel) == MessageBoxResult.OK)
+                            {
+                                this.saveItemOrder();
+                            }
+                        }
+                        break;
+                    case Key.R:
+                        if (this.ItemOrderNotSaved == true)
+                        {
+                            if (MessageBox.Show("元の並びに復元します。\r\nよろしいですか？", "復元の確認", MessageBoxButton.OKCancel) == MessageBoxResult.OK)
+                            {
+                                this.reloadItemOrder();
+                            }
+                        }
+                        break;
+                }
+            }
+            base.OnKeyDown(e);
         }
 
         private void button_up_Click2(object sender, RoutedEventArgs e)

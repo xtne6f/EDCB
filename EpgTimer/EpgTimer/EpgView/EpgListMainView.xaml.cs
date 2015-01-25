@@ -755,18 +755,8 @@ namespace EpgTimer
             {
                 try
                 {
-                    if (setViewInfo.ViewMode == 1)
-                    {
-                        cm_chg_viewMode2.IsChecked = true;
-                    }
-                    else if (setViewInfo.ViewMode == 2)
-                    {
-                        cm_chg_viewMode3.IsChecked = true;
-                    }
-                    else
-                    {
-                        cm_chg_viewMode1.IsChecked = true;
-                    }
+                    cm_chg_viewMode3.IsChecked = true;
+
                     if (listView_event.SelectedItem != null)
                     {
                         SearchItem item = listView_event.SelectedItem as SearchItem;
@@ -807,8 +797,34 @@ namespace EpgTimer
 
                                 cm_add_preset.Items.Add(menuItem);
                             }
-
                         }
+
+                        cm_autoadd.ToolTip = CommonManager.Instance.MUtil.EpgKeyword_TrimMode();
+                        cm_CopyTitle.ToolTip = CommonManager.Instance.MUtil.CopyTitle_TrimMode();
+                        cm_CopyContent.ToolTip = CommonManager.Instance.MUtil.CopyContent_Mode();
+                        cm_SearchTitle.ToolTip = CommonManager.Instance.MUtil.SearchText_TrimMode();
+
+                        cm_CmAppend.Visibility = System.Windows.Visibility.Collapsed;
+                        cm_CopyTitle.Visibility = System.Windows.Visibility.Collapsed;
+                        cm_CopyContent.Visibility = System.Windows.Visibility.Collapsed;
+                        cm_SearchTitle.Visibility = System.Windows.Visibility.Collapsed;
+                        if (Settings.Instance.CmAppendMenu == true)
+                        {
+                            cm_CmAppend.Visibility = System.Windows.Visibility.Visible;
+                            if (Settings.Instance.CmCopyTitle == true)
+                            {
+                                cm_CopyTitle.Visibility = System.Windows.Visibility.Visible;
+                            }
+                            if (Settings.Instance.CmCopyContent == true)
+                            {
+                                cm_CopyContent.Visibility = System.Windows.Visibility.Visible;
+                            }
+                            if (Settings.Instance.CmSearchTitle == true)
+                            {
+                                cm_SearchTitle.Visibility = System.Windows.Visibility.Visible;
+                            }
+                        }
+
                     }
                 }
                 catch (Exception ex)
@@ -832,6 +848,9 @@ namespace EpgTimer
                         break;
                     case Key.S:
                         this.cm_reverse_Click(this, new RoutedEventArgs(Button.ClickEvent));
+                        break;
+                    case Key.C:
+                        this.CopyTitle2Clipboard();
                         break;
                 }
             }
@@ -1191,7 +1210,7 @@ namespace EpgTimer
 
                     if (item.EventInfo.ShortInfo != null)
                     {
-                        key.andKey = item.EventInfo.ShortInfo.event_name;
+                        key.andKey = CommonManager.Instance.MUtil.TrimEpgKeyword(item.EventInfo.ShortInfo.event_name);
                     }
                     Int64 sidKey = ((Int64)item.EventInfo.original_network_id) << 32 | ((Int64)item.EventInfo.transport_stream_id) << 16 | ((Int64)item.EventInfo.service_id);
                     key.serviceList.Add(sidKey);
@@ -1274,6 +1293,42 @@ namespace EpgTimer
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+            }
+        }
+
+        private void MenuItem_Click_CopyTitle(object sender, RoutedEventArgs e)
+        {
+            CopyTitle2Clipboard();
+        }
+
+        private void CopyTitle2Clipboard()
+        {
+            if (listView_event.SelectedItem != null)
+            {
+                SearchItem item = listView_event.SelectedItem as SearchItem;
+                CommonManager.Instance.MUtil.CopyTitle2Clipboard(item.EventName);
+            }
+        }
+
+        private void MenuItem_Click_CopyContent(object sender, RoutedEventArgs e)
+        {
+            if (listView_event.SelectedItem != null)
+            {
+                SearchItem item = listView_event.SelectedItems[listView_event.SelectedItems.Count - 1] as SearchItem;
+                listView_event.UnselectAll();
+                listView_event.SelectedItem = item;
+                CommonManager.Instance.MUtil.CopyContent2Clipboard(item.EventInfo);
+            }
+        }
+
+        private void MenuItem_Click_SearchTitle(object sender, RoutedEventArgs e)
+        {
+            if (listView_event.SelectedItem != null)
+            {
+                SearchItem item = listView_event.SelectedItems[listView_event.SelectedItems.Count - 1] as SearchItem;
+                listView_event.UnselectAll();
+                listView_event.SelectedItem = item;
+                CommonManager.Instance.MUtil.SearchText(item.EventName);
             }
         }
 

@@ -30,6 +30,16 @@ namespace EpgTimer.Setting
         public bool ngFileStreaming = false;
         public bool ngShareFile = false;
 
+        private bool cmEpgKeyword_Trim = false;
+        private bool cmAppendMenu = false;
+        private bool cmCopyTitle = false;
+        private bool cmCopyTitle_Trim = false;
+        private bool cmCopyContent = false;
+        private bool cmCopyContentBasic = false;
+        private bool cmSearchTitle = false;
+        private bool cmSearchTitle_Trim = false;
+        private String cmSearchURI = "";
+
         private List<String> extList = new List<string>();
         private List<String> delChkFolderList = new List<string>();
         private EpgSearchKeyInfo defSearchKey = new EpgSearchKeyInfo();
@@ -186,6 +196,16 @@ namespace EpgTimer.Setting
                 {
                     ngShareFile = true;
                 }
+
+                this.cmEpgKeyword_Trim = Settings.Instance.CmEpgKeyword_Trim;
+                this.cmAppendMenu = Settings.Instance.CmAppendMenu;
+                this.cmCopyTitle = Settings.Instance.CmCopyTitle;
+                this.cmCopyTitle_Trim = Settings.Instance.CmCopyTitle_Trim;
+                this.cmCopyContent = Settings.Instance.CmCopyContent;
+                this.cmCopyContentBasic = Settings.Instance.CmCopyContentBasic;
+                this.cmSearchTitle = Settings.Instance.CmSearchTitle;
+                this.cmSearchTitle_Trim = Settings.Instance.CmSearchTitle_Trim;
+                this.cmSearchURI = Settings.Instance.CmSearchURI;
 
                 comboBox_process.Items.Add("リアルタイム");
                 comboBox_process.Items.Add("高");
@@ -581,6 +601,16 @@ namespace EpgTimer.Setting
             }
 
             IniFileHandler.WritePrivateProfileString("SET", "ProcessPriority", comboBox_process.SelectedIndex.ToString(), SettingPath.TimerSrvIniPath);
+
+            Settings.Instance.CmEpgKeyword_Trim = this.cmEpgKeyword_Trim;
+            Settings.Instance.CmAppendMenu = this.cmAppendMenu;
+            Settings.Instance.CmCopyTitle = this.cmCopyTitle;
+            Settings.Instance.CmCopyTitle_Trim = this.cmCopyTitle_Trim;
+            Settings.Instance.CmCopyContent = this.cmCopyContent;
+            Settings.Instance.CmCopyContentBasic = this.cmCopyContentBasic;
+            Settings.Instance.CmSearchTitle = this.cmSearchTitle;
+            Settings.Instance.CmSearchTitle_Trim = this.cmSearchTitle_Trim;
+            Settings.Instance.CmSearchURI = this.cmSearchURI;
 
             if (checkBox_back_priority.IsChecked == true)
             {
@@ -1134,6 +1164,34 @@ namespace EpgTimer.Setting
             if (dlg.ShowDialog() == true)
             {
                 dlg.GetSetting(ref defSearchKey);
+            }
+        }
+
+        private void button_set_cm_Click(object sender, RoutedEventArgs e)
+        {
+            SetContextMenuWindow dlg = new SetContextMenuWindow();
+            dlg.cmEpgKeyword_Trim = this.cmEpgKeyword_Trim;
+            dlg.cmAppendMenu = this.cmAppendMenu;
+            dlg.cmCopyTitle = this.cmCopyTitle;
+            dlg.cmCopyTitle_Trim = this.cmCopyTitle_Trim;
+            dlg.cmCopyContent = this.cmCopyContent;
+            dlg.cmCopyContentBasic = this.cmCopyContentBasic;
+            dlg.cmSearchTitle = this.cmSearchTitle;
+            dlg.cmSearchTitle_Trim = this.cmSearchTitle_Trim;
+            dlg.cmSearchURI = this.cmSearchURI;
+            dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
+            
+            if (dlg.ShowDialog() == true)
+            {
+                this.cmEpgKeyword_Trim = dlg.cmEpgKeyword_Trim;
+                this.cmAppendMenu = dlg.cmAppendMenu;
+                this.cmCopyTitle = dlg.cmCopyTitle;
+                this.cmCopyTitle_Trim = dlg.cmCopyTitle_Trim;
+                this.cmCopyContent = dlg.cmCopyContent;
+                this.cmCopyContentBasic = dlg.cmCopyContentBasic;
+                this.cmSearchTitle = dlg.cmSearchTitle;
+                this.cmSearchTitle_Trim = dlg.cmSearchTitle_Trim;
+                this.cmSearchURI = dlg.cmSearchURI;
             }
         }
 

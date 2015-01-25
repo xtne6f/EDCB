@@ -611,7 +611,7 @@ namespace EpgTimer
                 listView_reserve.UnselectAll();
                 listView_reserve.SelectedItem = item;
 
-                key.andKey = item.ReserveInfo.Title;
+                key.andKey = CommonManager.Instance.MUtil.TrimEpgKeyword(item.ReserveInfo.Title);
                 Int64 sidKey = ((Int64)item.ReserveInfo.OriginalNetworkID) << 32 | ((Int64)item.ReserveInfo.TransportStreamID) << 16 | ((Int64)item.ReserveInfo.ServiceID);
                 key.serviceList.Add(sidKey);
 
@@ -756,6 +756,9 @@ namespace EpgTimer
                     case Key.S:
                         this.button_on_off_Click(this, new RoutedEventArgs(Button.ClickEvent));
                         break;
+                    case Key.C:
+                        this.CopyTitle2Clipboard();
+                        break;
                 }
             }
             else if (Keyboard.Modifiers == ModifierKeys.None)
@@ -874,54 +877,145 @@ namespace EpgTimer
             }
         }
 
+        private void MenuItem_Click_CopyTitle(object sender, RoutedEventArgs e)
+        {
+            CopyTitle2Clipboard();
+        }
+
+        private void CopyTitle2Clipboard()
+        {
+            if (listView_reserve.SelectedItem != null)
+            {
+                ReserveItem item = listView_reserve.SelectedItems[listView_reserve.SelectedItems.Count - 1] as ReserveItem;
+                listView_reserve.UnselectAll();
+                listView_reserve.SelectedItem = item;
+                CommonManager.Instance.MUtil.CopyTitle2Clipboard(item.EventName);
+            }
+        }
+
+        private void MenuItem_Click_CopyContent(object sender, RoutedEventArgs e)
+        {
+            if (listView_reserve.SelectedItem != null)
+            {
+                ReserveItem item = listView_reserve.SelectedItems[listView_reserve.SelectedItems.Count - 1] as ReserveItem;
+                listView_reserve.UnselectAll();
+                listView_reserve.SelectedItem = item;
+                CommonManager.Instance.MUtil.CopyContent2Clipboard(item.EventInfo);
+            }
+        }
+    
+        private void MenuItem_Click_SearchTitle(object sender, RoutedEventArgs e)
+        {
+            if (listView_reserve.SelectedItem != null)
+            {
+                ReserveItem item = listView_reserve.SelectedItems[listView_reserve.SelectedItems.Count - 1] as ReserveItem;
+                listView_reserve.UnselectAll();
+                listView_reserve.SelectedItem = item;
+                CommonManager.Instance.MUtil.SearchText(item.EventName);
+            }
+        }
+
         private void cmdMenu_Loaded(object sender, RoutedEventArgs e)
         {
-            //選択されているすべての予約が同じ設定の場合だけチェックを表示する
-            byte recMode = 0xFF;
-            byte priority = 0xFF;
-            foreach (ReserveItem item in listView_reserve.SelectedItems)
+            if (listView_reserve.SelectedItem != null)
             {
-                if (recMode == 0xFF)
+                //選択されているすべての予約が同じ設定の場合だけチェックを表示する
+                byte recMode = 0xFF;
+                byte priority = 0xFF;
+                foreach (ReserveItem item in listView_reserve.SelectedItems)
                 {
-                    recMode = item.ReserveInfo.RecSetting.RecMode;
-                }
-                else if (recMode != item.ReserveInfo.RecSetting.RecMode)
-                {
-                    recMode = 0xFE;
-                }
-                if (priority == 0xFF)
-                {
-                    priority = item.ReserveInfo.RecSetting.Priority;
-                }
-                else if (priority != item.ReserveInfo.RecSetting.Priority)
-                {
-                    priority = 0xFE;
-                }
-            }
-            foreach (object item in ((ContextMenu)sender).Items)
-            {
-                if (item is MenuItem && ((string)((MenuItem)item).Header).StartsWith("変更"))
-                {
-                    for (int i = 0; i < ((MenuItem)item).Items.Count; i++)
+                    if (recMode == 0xFF)
                     {
-                        MenuItem subItem = ((MenuItem)item).Items[i] as MenuItem;
-                        if (subItem != null && subItem.Name == "recmode_all")
+                        recMode = item.ReserveInfo.RecSetting.RecMode;
+                    }
+                    else if (recMode != item.ReserveInfo.RecSetting.RecMode)
+                    {
+                        recMode = 0xFE;
+                    }
+                    if (priority == 0xFF)
+                    {
+                        priority = item.ReserveInfo.RecSetting.Priority;
+                    }
+                    else if (priority != item.ReserveInfo.RecSetting.Priority)
+                    {
+                        priority = 0xFE;
+                    }
+                }
+                foreach (object item in ((ContextMenu)sender).Items)
+                {
+                    if (item is MenuItem && ((string)((MenuItem)item).Header).StartsWith("変更"))
+                    {
+                        for (int i = 0; i < ((MenuItem)item).Items.Count; i++)
                         {
-                            for (int j = 0; j <= 5; j++)
+                            MenuItem subItem = ((MenuItem)item).Items[i] as MenuItem;
+                            if (subItem != null && subItem.Name == "recmode_all")
                             {
-                                ((MenuItem)((MenuItem)item).Items[i + j]).IsChecked = (j == recMode);
+                                for (int j = 0; j <= 5; j++)
+                                {
+                                    ((MenuItem)((MenuItem)item).Items[i + j]).IsChecked = (j == recMode);
+                                }
                             }
-                        }
-                        if (subItem != null && subItem.Name == "cm_pri")
-                        {
-                            for (int j = 0; j < subItem.Items.Count; j++)
+                            if (subItem != null && subItem.Name == "cm_pri")
                             {
-                                ((MenuItem)subItem.Items[j]).IsChecked = (j + 1 == priority);
+                                for (int j = 0; j < subItem.Items.Count; j++)
+                                {
+                                    ((MenuItem)subItem.Items[j]).IsChecked = (j + 1 == priority);
+                                }
+                                subItem.Header = string.Format((string)subItem.Tag, priority < 0xFE ? "" + priority : "*");
                             }
-                            subItem.Header = string.Format((string)subItem.Tag, priority < 0xFE ? "" + priority : "*");
                         }
                     }
-                    break;
+                    else if (item is MenuItem && (((MenuItem)item).Name == "cm_AutoAdd"))
+                    {
+                        ((MenuItem)item).ToolTip = CommonManager.Instance.MUtil.EpgKeyword_TrimMode();
+                    }
+                    else if (item is Separator && ((Separator)item).Name == "cm_CmAppend")
+                    {
+                        if (Settings.Instance.CmAppendMenu != true)
+                        {
+                            ((Separator)item).Visibility = System.Windows.Visibility.Collapsed;
+                        }
+                        else
+                        {
+                            ((Separator)item).Visibility = System.Windows.Visibility.Visible;
+                        }
+                    }
+                    else if (item is MenuItem && (((MenuItem)item).Name == "cm_CopyTitle"))
+                    {
+                        if (Settings.Instance.CmAppendMenu != true || Settings.Instance.CmCopyTitle != true)
+                        {
+                            ((MenuItem)item).Visibility = System.Windows.Visibility.Collapsed;
+                        }
+                        else
+                        {
+                            ((MenuItem)item).Visibility = System.Windows.Visibility.Visible;
+                            ((MenuItem)item).ToolTip = CommonManager.Instance.MUtil.CopyTitle_TrimMode();
+                        }
+                    }
+                    else if (item is MenuItem && (((MenuItem)item).Name == "cm_CopyContent"))
+                    {
+                        if (Settings.Instance.CmAppendMenu != true || Settings.Instance.CmCopyContent != true)
+                        {
+                            ((MenuItem)item).Visibility = System.Windows.Visibility.Collapsed;
+                        }
+                        else
+                        {
+                            ((MenuItem)item).Visibility = System.Windows.Visibility.Visible;
+                            ((MenuItem)item).ToolTip = CommonManager.Instance.MUtil.CopyContent_Mode();
+                        }
+                    }
+                    else if (item is MenuItem && (((MenuItem)item).Name == "cm_SearchTitle"))
+                    {
+                        if (Settings.Instance.CmAppendMenu != true || Settings.Instance.CmSearchTitle != true)
+                        {
+                            ((MenuItem)item).Visibility = System.Windows.Visibility.Collapsed;
+                        }
+                        else
+                        {
+                            ((MenuItem)item).Visibility = System.Windows.Visibility.Visible;
+                            ((MenuItem)item).ToolTip = CommonManager.Instance.MUtil.SearchText_TrimMode();
+                        }
+                    }
                 }
             }
         }

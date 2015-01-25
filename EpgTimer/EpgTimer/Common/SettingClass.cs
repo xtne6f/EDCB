@@ -187,6 +187,15 @@ namespace EpgTimer
         private string filePlayExe;
         private string filePlayCmd;
         private List<IEPGStationInfo> iEpgStationList;
+        private bool cmEpgKeyword_Trim;
+        private bool cmAppendMenu;
+        private bool cmCopyTitle;
+        private bool cmCopyTitle_Trim;
+        private bool cmCopyContent;
+        private bool cmCopyContentBasic;
+        private bool cmSearchTitle;
+        private bool cmSearchTitle_Trim;
+        private string cmSearchURI;
         private string nwServerIP;
         private UInt32 nwServerPort;
         private UInt32 nwWaitPort;
@@ -681,6 +690,51 @@ namespace EpgTimer
             get { return iEpgStationList; }
             set { iEpgStationList = value; }
         }
+        public bool CmEpgKeyword_Trim
+        {
+            get { return cmEpgKeyword_Trim; }
+            set { cmEpgKeyword_Trim = value; }
+        }
+        public bool CmAppendMenu
+        {
+            get { return cmAppendMenu; }
+            set { cmAppendMenu = value; }
+        }
+        public bool CmCopyTitle
+        {
+            get { return cmCopyTitle; }
+            set { cmCopyTitle = value; }
+        }
+        public bool CmCopyTitle_Trim
+        {
+            get { return cmCopyTitle_Trim; }
+            set { cmCopyTitle_Trim = value; }
+        }
+        public bool CmCopyContent
+        {
+            get { return cmCopyContent; }
+            set { cmCopyContent = value; }
+        }
+        public bool CmCopyContentBasic
+        {
+            get { return cmCopyContentBasic; }
+            set { cmCopyContentBasic = value; }
+        }
+        public bool CmSearchTitle
+        {
+            get { return cmSearchTitle; }
+            set { cmSearchTitle = value; }
+        }
+        public bool CmSearchTitle_Trim
+        {
+            get { return cmSearchTitle_Trim; }
+            set { cmSearchTitle_Trim = value; }
+        }
+        public string CmSearchURI
+        {
+            get { return cmSearchURI; }
+            set { cmSearchURI = value; }
+        }
         public string NWServerIP
         {
             get { return nwServerIP; }
@@ -1046,6 +1100,15 @@ namespace EpgTimer
             filePlayExe = "";
             filePlayCmd = "\"$FilePath$\"";
             iEpgStationList = new List<IEPGStationInfo>();
+            CmEpgKeyword_Trim = true;
+            cmAppendMenu = false;
+            cmCopyTitle = false;
+            cmCopyTitle_Trim = false;
+            cmCopyContent = true;
+            cmCopyContentBasic = false;
+            cmSearchTitle = true;
+            cmSearchTitle_Trim = true;
+            cmSearchURI = "https://www.google.co.jp/search?hl=ja&q=";
             nwServerIP = "";
             nwServerPort = 4510;
             nwWaitPort = 4520;

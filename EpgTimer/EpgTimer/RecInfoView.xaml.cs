@@ -424,6 +424,9 @@ namespace EpgTimer
                     case Key.D:
                         this.deleteItem();
                         break;
+                    case Key.C:
+                        this.CopyTitle2Clipboard();
+                        break;
                 }
             }
             else if (Keyboard.Modifiers == ModifierKeys.None)
@@ -519,7 +522,7 @@ namespace EpgTimer
                 listView_recinfo.UnselectAll();
                 listView_recinfo.SelectedItem = item;
 
-                key.andKey = item.RecInfo.Title;
+                key.andKey = CommonManager.Instance.MUtil.TrimEpgKeyword(item.RecInfo.Title);
                 Int64 sidKey = ((Int64)item.RecInfo.OriginalNetworkID) << 32 | ((Int64)item.RecInfo.TransportStreamID) << 16 | ((Int64)item.RecInfo.ServiceID);
                 key.serviceList.Add(sidKey);
 
@@ -643,18 +646,106 @@ namespace EpgTimer
             }
         }
 
+        private void MenuItem_Click_CopyTitle(object sender, RoutedEventArgs e)
+        {
+            CopyTitle2Clipboard();
+        }
+
+        private void CopyTitle2Clipboard()
+        {
+            if (listView_recinfo.SelectedItem != null)
+            {
+                RecInfoItem item = listView_recinfo.SelectedItems[listView_recinfo.SelectedItems.Count - 1] as RecInfoItem;
+                listView_recinfo.UnselectAll();
+                listView_recinfo.SelectedItem = item;
+                CommonManager.Instance.MUtil.CopyTitle2Clipboard(item.EventName);
+            }
+        }
+
+        private void MenuItem_Click_CopyContent(object sender, RoutedEventArgs e)
+        {
+            if (listView_recinfo.SelectedItem != null)
+            {
+                RecInfoItem item = listView_recinfo.SelectedItems[listView_recinfo.SelectedItems.Count - 1] as RecInfoItem;
+                listView_recinfo.UnselectAll();
+                listView_recinfo.SelectedItem = item;
+                CommonManager.Instance.MUtil.CopyContent2Clipboard(item);
+            }
+        }
+
+        private void MenuItem_Click_SearchTitle(object sender, RoutedEventArgs e)
+        {
+            if (listView_recinfo.SelectedItem != null)
+            {
+                RecInfoItem item = listView_recinfo.SelectedItems[listView_recinfo.SelectedItems.Count - 1] as RecInfoItem;
+                listView_recinfo.UnselectAll();
+                listView_recinfo.SelectedItem = item;
+                CommonManager.Instance.MUtil.SearchText(item.EventName);
+            }
+        }
+
         private void cmdMenu_Loaded(object sender, RoutedEventArgs e)
         {
-            if(CommonManager.Instance.NWMode == true)
+            if (listView_recinfo.SelectedItem != null)
             {
-                if (listView_recinfo.SelectedItem != null)
+                foreach (object item in ((ContextMenu)sender).Items)
                 {
-                    foreach (object item in ((ContextMenu)sender).Items)
+                    if (item is MenuItem && ((((MenuItem)item).Name == "cmdopenFolder")))
                     {
-                        if (item is MenuItem && ((((MenuItem)item).Name == "cmdopenFolder")))
+                        if (CommonManager.Instance.NWMode == true)
                         {
                             ((MenuItem)item).Visibility = System.Windows.Visibility.Collapsed;
-                            break;
+                        }
+                    }
+                    else if (item is MenuItem && (((MenuItem)item).Name == "cm_AutoAdd"))
+                    {
+                        ((MenuItem)item).ToolTip = CommonManager.Instance.MUtil.EpgKeyword_TrimMode();
+                    }
+                    else if (item is Separator && ((Separator)item).Name == "cm_CmAppend")
+                    {
+                        if (Settings.Instance.CmAppendMenu != true)
+                        {
+                            ((Separator)item).Visibility = System.Windows.Visibility.Collapsed;
+                        }
+                        else
+                        {
+                            ((Separator)item).Visibility = System.Windows.Visibility.Visible;
+                        }
+                    }
+                    else if (item is MenuItem && (((MenuItem)item).Name == "cm_CopyTitle"))
+                    {
+                        if (Settings.Instance.CmAppendMenu != true || Settings.Instance.CmCopyTitle != true)
+                        {
+                            ((MenuItem)item).Visibility = System.Windows.Visibility.Collapsed;
+                        }
+                        else
+                        {
+                            ((MenuItem)item).Visibility = System.Windows.Visibility.Visible;
+                            ((MenuItem)item).ToolTip = CommonManager.Instance.MUtil.CopyTitle_TrimMode();
+                        }
+                    }
+                    else if (item is MenuItem && (((MenuItem)item).Name == "cm_CopyContent"))
+                    {
+                        if (Settings.Instance.CmAppendMenu != true || Settings.Instance.CmCopyContent != true)
+                        {
+                            ((MenuItem)item).Visibility = System.Windows.Visibility.Collapsed;
+                        }
+                        else
+                        {
+                            ((MenuItem)item).Visibility = System.Windows.Visibility.Visible;
+                            ((MenuItem)item).ToolTip = CommonManager.Instance.MUtil.CopyContent_Mode();
+                        }
+                    }
+                    else if (item is MenuItem && (((MenuItem)item).Name == "cm_SearchTitle"))
+                    {
+                        if (Settings.Instance.CmAppendMenu != true || Settings.Instance.CmSearchTitle != true)
+                        {
+                            ((MenuItem)item).Visibility = System.Windows.Visibility.Collapsed;
+                        }
+                        else
+                        {
+                            ((MenuItem)item).Visibility = System.Windows.Visibility.Visible;
+                            ((MenuItem)item).ToolTip = CommonManager.Instance.MUtil.SearchText_TrimMode();
                         }
                     }
                 }

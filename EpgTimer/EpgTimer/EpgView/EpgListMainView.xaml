@@ -70,7 +70,6 @@
                 <ListView.ContextMenu>
                     <ContextMenu x:Name="listView_event_contextMenu">
                         <MenuItem x:Name="cm_Reverse" Header="簡易予約/予約←→無効" Click="cm_reverse_Click" InputGestureText="Ctrl+S" />
-                        <!-- <MenuItem x:Name="cm_new" Header="簡易予約" Click="cm_new_Click" /> -->
                         <MenuItem x:Name="cm_add" Header="予約追加">
                             <MenuItem Header="ダイアログ表示" Click="cm_add_Click" InputGestureText="Enter"/>
                             <Separator/>
@@ -97,13 +96,17 @@
                         <MenuItem x:Name="cm_del" Header="削除" Click="cm_del_Click" InputGestureText="Ctrl+D, Delete" />
                         <MenuItem x:Name="cm_autoadd" Header="自動予約登録" Click="cm_autoadd_Click" />
                         <MenuItem x:Name="cm_timeshift" Header="追っかけ再生" Click="cm_timeShiftPlay_Click" InputGestureText="Ctrl+P" />
+                        <Separator Name="cm_CmAppend" />
+                        <MenuItem x:Name="cm_CopyTitle" Header="番組名をコピー" Click="MenuItem_Click_CopyTitle" InputGestureText="Ctrl+C" />
+                        <MenuItem x:Name="cm_CopyContent" Header="番組情報をコピー" Click="MenuItem_Click_CopyContent" />
+                        <MenuItem x:Name="cm_SearchTitle" Header="番組名をネットで検索" Click="MenuItem_Click_SearchTitle" />
                         <Separator/>
                         <MenuItem x:Name="cm_view" Header="表示モード">
-                            <MenuItem Header="表示設定" Click="cm_viewSet_Click" />
-                            <Separator/>
                             <MenuItem x:Name="cm_chg_viewMode1" Header="標準モード (_1)" Click="cm_chg_viewMode_Click"  />
                             <MenuItem x:Name="cm_chg_viewMode2" Header="1週間モード (_2)" Click="cm_chg_viewMode_Click" />
-                            <MenuItem x:Name="cm_chg_viewMode3" Header="リスト表示モード (_3)" Click="cm_chg_viewMode_Click" />
+                            <MenuItem x:Name="cm_chg_viewMode3" Header="リスト表示モード (_3)" />
+                            <Separator/>
+                            <MenuItem Header="表示設定" Click="cm_viewSet_Click" />
                         </MenuItem>
                     </ContextMenu>
                 </ListView.ContextMenu>

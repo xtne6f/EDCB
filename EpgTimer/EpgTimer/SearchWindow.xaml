@@ -63,8 +63,12 @@
                     </MenuItem>
                     <MenuItem Name="cmdDlt" Header="削除" Click="MenuItem_Click_DeleteItem" InputGestureText="Ctrl+D, Delete" />
                     <MenuItem Name="cmdProgramTable" Header="番組表へジャンプ" Click="MenuItem_Click_ProgramTable"  InputGestureText="F3" />
-                    <MenuItem Header="番組名で再検索" Click="MenuItem_Click_Research" />
-                    <MenuItem Name="cmdResearch2" Header="番組名で再検索(サブウィンドウ)" Click="MenuItem_Click_Research2" />
+                    <MenuItem Name="cmdResearch" Header="番組名で再検索" Click="MenuItem_Click_Research" />
+                    <MenuItem Name="cmdResearch2" Header="番組名で再検索(サブウィンドウ)" Click="MenuItem_Click_Research2" ToolTipService.ShowOnDisabled="True" />
+                    <Separator Name="cm_CmAppend" />
+                    <MenuItem Name="cm_CopyTitle" Header="番組名をコピー" Click="MenuItem_Click_CopyTitle" InputGestureText="Ctrl+C" />
+                    <MenuItem Name="cm_CopyContent" Header="番組情報をコピー" Click="MenuItem_Click_CopyContent" />
+                    <MenuItem Name="cm_SearchTitle" Header="番組名をネットで検索" Click="MenuItem_Click_SearchTitle" />
                 </ContextMenu>
                 <Style TargetType="ListViewItem">
                     <Setter Property="ToolTipService.ShowDuration" Value="20000" />

@@ -122,6 +122,7 @@
                     <CheckBox Content="休止／スタンバイ移行時にEpgTimerNWを終了する" Height="16" HorizontalAlignment="Left" Margin="351,181,0,0" Name="checkBox_suspendClose" VerticalAlignment="Top" IsEnabled="False" />
                     <CheckBox Content="EPGデータを自動的に読み込まない" Height="16" HorizontalAlignment="Left" Margin="351,203,0,0" Name="checkBox_ngAutoEpgLoad" VerticalAlignment="Top" IsEnabled="False" />
                     <CheckBox Content="録画済み一覧のダブルクリックで再生を行う" Height="16" HorizontalAlignment="Left" Margin="6,203,0,0" Name="checkBox_playDClick" VerticalAlignment="Top" />
+                    <Button Content="右クリックメニューの設定" Height="23" HorizontalAlignment="Left" Margin="351,225,0,0" Name="button_set_cm" Click="button_set_cm_Click" Style="{StaticResource ButtonStyle1}" VerticalAlignment="Top" Width="171" />
                     <GroupBox Header="サーバー間連携" Height="202" Margin="8,248,8,0" Name="groupBox3" VerticalAlignment="Top" Width="758">
                         <Grid>
                             <CheckBox Content="サーバー間連携を有効にする" Height="16" HorizontalAlignment="Left" Margin="6,6,0,0" Name="checkBox_useSrvCoop" VerticalAlignment="Top" />

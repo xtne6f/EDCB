@@ -824,6 +824,9 @@ namespace EpgTimer
                     case Key.S:
                         this.MenuItem_Click_ChangeOnOff(this, new RoutedEventArgs(Button.ClickEvent));
                         break;
+                    case Key.C:
+                        this.CopyTitle2Clipboard();
+                        break;
                 }
             }
             else if (Keyboard.Modifiers == ModifierKeys.None)
@@ -1145,7 +1148,7 @@ namespace EpgTimer
             {
                 SearchItem item = listView_result.SelectedItems[listView_result.SelectedItems.Count - 1] as SearchItem;
                 EpgSearchKeyInfo defKey = new EpgSearchKeyInfo();
-                defKey.andKey = item.EventName;
+                defKey.andKey = CommonManager.Instance.MUtil.TrimEpgKeyword(item.EventName);
                 defKey.serviceList.Clear();
 
                 foreach (ServiceItem info in searchKeyView.searchKeyDescView.listView_service.Items)
@@ -1178,7 +1181,7 @@ namespace EpgTimer
                 dlg.SetViewMode((ushort)(Title == "検索" ? 3 : 1));
 
                 EpgSearchKeyInfo key = new EpgSearchKeyInfo();
-                key.andKey = item.EventName;
+                key.andKey = CommonManager.Instance.MUtil.TrimEpgKeyword(item.EventName);
 
                 Int64 sidKey = ((Int64)item.EventInfo.original_network_id) << 32 | ((Int64)item.EventInfo.transport_stream_id) << 16 | ((Int64)item.EventInfo.service_id);
                 key.serviceList.Add(sidKey);
@@ -1199,6 +1202,44 @@ namespace EpgTimer
             }
         }
 
+        private void MenuItem_Click_CopyTitle(object sender, RoutedEventArgs e)
+        {
+            CopyTitle2Clipboard();
+        }
+
+        private void CopyTitle2Clipboard()
+        {
+            if (listView_result.SelectedItem != null)
+            {
+                SearchItem item = listView_result.SelectedItems[listView_result.SelectedItems.Count - 1] as SearchItem;
+                listView_result.UnselectAll();
+                listView_result.SelectedItem = item;
+                CommonManager.Instance.MUtil.CopyTitle2Clipboard(item.EventName);
+            }
+        }
+
+        private void MenuItem_Click_CopyContent(object sender, RoutedEventArgs e)
+        {
+            if (listView_result.SelectedItem != null)
+            {
+                SearchItem item = listView_result.SelectedItems[listView_result.SelectedItems.Count - 1] as SearchItem;
+                listView_result.UnselectAll();
+                listView_result.SelectedItem = item;
+                CommonManager.Instance.MUtil.CopyContent2Clipboard(item.EventInfo);
+            }
+        }
+
+        private void MenuItem_Click_SearchTitle(object sender, RoutedEventArgs e)
+        {
+            if (listView_result.SelectedItem != null)
+            {
+                SearchItem item = listView_result.SelectedItems[listView_result.SelectedItems.Count - 1] as SearchItem;
+                listView_result.UnselectAll();
+                listView_result.SelectedItem = item;
+                CommonManager.Instance.MUtil.SearchText(item.EventName);
+            }
+        }
+
         private void cmdMenu_Loaded(object sender, RoutedEventArgs e)
         {
             if (listView_result.SelectedItem != null)
@@ -1214,7 +1255,8 @@ namespace EpgTimer
                             ((MenuItem)item).Header += ((MenuItem)item).Header.ToString().EndsWith("(無効)") ? "" : "(無効)";
                         }
                     }
-                    else if (item is MenuItem && (((MenuItem)item).Name == "cmdDlt"))
+
+                    if (item is MenuItem && (((MenuItem)item).Name == "cmdDlt"))
                     {
                         bool isReserved = false;
                         foreach (SearchItem selItem in listView_result.SelectedItems)
@@ -1300,6 +1342,57 @@ namespace EpgTimer
                         else
                         {
                             ((MenuItem)item).IsEnabled = false;
+                        }
+                    }
+                    else if (item is MenuItem && ((((MenuItem)item).Name == "cmdResearch") || (((MenuItem)item).Name == "cmdResearch2")))
+                    {
+                        ((MenuItem)item).ToolTip = CommonManager.Instance.MUtil.EpgKeyword_TrimMode();
+                    }
+                    else if (item is Separator && ((Separator)item).Name == "cm_CmAppend")
+                    {
+                        if (Settings.Instance.CmAppendMenu != true)
+                        {
+                            ((Separator)item).Visibility = System.Windows.Visibility.Collapsed;
+                        }
+                        else
+                        {
+                            ((Separator)item).Visibility = System.Windows.Visibility.Visible;
+                        }
+                    }
+                    else if (item is MenuItem && (((MenuItem)item).Name == "cm_CopyTitle"))
+                    {
+                        if (Settings.Instance.CmAppendMenu != true || Settings.Instance.CmCopyTitle != true)
+                        {
+                            ((MenuItem)item).Visibility = System.Windows.Visibility.Collapsed;
+                        }
+                        else
+                        {
+                            ((MenuItem)item).Visibility = System.Windows.Visibility.Visible;
+                            ((MenuItem)item).ToolTip = CommonManager.Instance.MUtil.CopyTitle_TrimMode();
+                        }
+                    }
+                    else if (item is MenuItem && (((MenuItem)item).Name == "cm_CopyContent"))
+                    {
+                        if (Settings.Instance.CmAppendMenu != true || Settings.Instance.CmCopyContent != true)
+                        {
+                            ((MenuItem)item).Visibility = System.Windows.Visibility.Collapsed;
+                        }
+                        else
+                        {
+                            ((MenuItem)item).Visibility = System.Windows.Visibility.Visible;
+                            ((MenuItem)item).ToolTip = CommonManager.Instance.MUtil.CopyContent_Mode();
+                        }
+                    }
+                    else if (item is MenuItem && (((MenuItem)item).Name == "cm_SearchTitle"))
+                    {
+                        if (Settings.Instance.CmAppendMenu != true || Settings.Instance.CmSearchTitle != true)
+                        {
+                            ((MenuItem)item).Visibility = System.Windows.Visibility.Collapsed;
+                        }
+                        else
+                        {
+                            ((MenuItem)item).Visibility = System.Windows.Visibility.Visible;
+                            ((MenuItem)item).ToolTip = CommonManager.Instance.MUtil.SearchText_TrimMode();
                         }
                     }
                 }

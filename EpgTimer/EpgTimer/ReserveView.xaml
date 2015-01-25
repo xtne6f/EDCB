@@ -44,8 +44,12 @@
             </MenuItem>
             <MenuItem Header="削除" Click="button_del_Click" InputGestureText="Ctrl+D, Delete" />
             <MenuItem Header="番組表へジャンプ" Click="MenuItem_Click_ProgramTable"  InputGestureText="F3" />
-            <MenuItem Header="自動予約登録" Click="autoadd_Click" />
+            <MenuItem Name="cm_AutoAdd" Header="自動予約登録" Click="autoadd_Click" />
             <MenuItem Header="追っかけ再生" Click="timeShiftPlay_Click" InputGestureText="Ctrl+P" />
+            <Separator Name="cm_CmAppend" />
+            <MenuItem Name="cm_CopyTitle" Header="番組名をコピー" Click="MenuItem_Click_CopyTitle" InputGestureText="Ctrl+C" />
+            <MenuItem Name="cm_CopyContent" Header="番組情報をコピー" Click="MenuItem_Click_CopyContent" />
+            <MenuItem Name="cm_SearchTitle" Header="番組名をネットで検索" Click="MenuItem_Click_SearchTitle" />
         </ContextMenu>
     </UserControl.Resources>
     <Grid>

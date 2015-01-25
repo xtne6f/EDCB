@@ -49,9 +49,13 @@
             <MenuItem Header="録画情報" Click="button_recInfo_Click" InputGestureText="Enter" />
             <MenuItem Header="削除" Click="button_del_Click" InputGestureText="Ctrl+D, Delete" />
             <MenuItem Header="プロテクト←→解除" Click="button_protect_Click" InputGestureText="Ctrl+S" />
-            <MenuItem Header="自動予約登録" Click="autoadd_Click" />
+            <MenuItem Name="cm_AutoAdd" Header="自動予約登録" Click="autoadd_Click" />
             <MenuItem Header="再生" Click="button_play_Click" InputGestureText="Ctrl+P" />
             <MenuItem Name="cmdopenFolder" Header="録画フォルダを開く" Click="openFolder_Click" />
+            <Separator Name="cm_CmAppend" />
+            <MenuItem Name="cm_CopyTitle" Header="番組名をコピー" Click="MenuItem_Click_CopyTitle" InputGestureText="Ctrl+C" />
+            <MenuItem Name="cm_CopyContent" Header="番組情報をコピー" Click="MenuItem_Click_CopyContent" />
+            <MenuItem Name="cm_SearchTitle" Header="番組名をネットで検索" Click="MenuItem_Click_SearchTitle" />
         </ContextMenu>
 
     </UserControl.Resources>

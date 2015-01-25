@@ -111,12 +111,16 @@
     <Compile Include="Common\CmdStreamUtil.cs" />
     <Compile Include="Common\EAAFileClass.cs" />
     <Compile Include="Common\IEPGFileClass.cs" />
+    <Compile Include="Common\MenuUtil.cs" />
     <Compile Include="Common\NWConnectClass.cs" />
     <Compile Include="Common\ServiceCtrlClass.cs" />
     <Compile Include="NotifyLogWindow.xaml.cs">
       <DependentUpon>NotifyLogWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="DefineClass\NotifySrvInfoItem.cs" />
+    <Compile Include="Setting\SetContextMenuWindow.xaml.cs">
+      <DependentUpon>SetContextMenuWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="UserCtrlView\EpgAutoAddView.xaml.cs">
       <DependentUpon>EpgAutoAddView.xaml</DependentUpon>
     </Compile>
@@ -276,6 +280,10 @@
     <Page Include="NotifyLogWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Setting\SetContextMenuWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="UserCtrlView\EpgAutoAddView.xaml">
       <SubType>Designer</SubType>
