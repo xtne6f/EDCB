@@ -1,15 +1,11 @@
 ﻿using System;
-//using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
-//using System.Text;
+using System.Text;
 using System.Text.RegularExpressions;
-//using System.Diagnostics;
+using System.Diagnostics;
 using System.Windows;
-//using System.Windows.Documents;
 using System.Windows.Input;
-//using System.Windows.Media;
-//using System.Windows.Media.Imaging;
-//using System.Windows.Shapes;
 
 using CtrlCmdCLI;
 using CtrlCmdCLI.Def;
@@ -88,8 +84,6 @@ namespace EpgTimer
                 }
                 else
                 {
-                    //FlowDocument document = GetFormatedProgramInfo(eventInfo);
-                    //text = (new TextRange(document.ContentStart, document.ContentEnd)).Text;
                     text = CommonManager.Instance.ConvertProgramText(eventInfo, EventInfoTextMode.All);
                 }
 
@@ -161,7 +155,15 @@ namespace EpgTimer
             string txtURI = Settings.Instance.CmSearchURI;
             txtURI += UrlEncode(txtKey1, System.Text.Encoding.UTF8);
 
-            System.Diagnostics.Process.Start(txtURI);
+            try
+            {
+                System.Diagnostics.Process.Start(txtURI);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                MessageBox.Show("'検索のURI'の設定を確認してください。");
+            }
         }
 
         public string SearchText_TrimMode()
@@ -237,68 +239,7 @@ namespace EpgTimer
                     rt.Append("%" + i.ToString("X2"));
             return rt.ToString();
         }
-
-        //各所で使われているがまだ置き換えてない
-        /*
-        public FlowDocument GetFormatedProgramInfo(EpgEventInfo eventInfo, MouseButtonEventHandler target = null)
-        {
-            CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
-            FlowDocument flowDoc = new FlowDocument();
-
-            if (eventInfo != null)
-            {
-                String text = CommonManager.Instance.ConvertProgramText(eventInfo, EventInfoTextMode.All);
-
-                Regex regex = new Regex("((http://|https://|ｈｔｔｐ：／／|ｈｔｔｐｓ：／／).*\r\n)");
-                if (regex.IsMatch(text) == true)
-                {
-                    try
-                    {
-                        //Regexのsplitでやるとhttp://だけのも取れたりするので、１つずつ行う
-                        Paragraph para = new Paragraph();
-
-                        do
-                        {
-                            Match matchVal = regex.Match(text);
-                            int index = text.IndexOf(matchVal.Value);
-
-                            para.Inlines.Add(text.Substring(0, index));
-                            text = text.Remove(0, index);
-
-                            Hyperlink h = new Hyperlink(new Run(matchVal.Value.Replace("\r\n", "")));
-                            if (target != null)
-                            {
-                                h.MouseLeftButtonDown += new MouseButtonEventHandler(target);
-                            }
-                            h.Foreground = Brushes.Blue;
-                            h.Cursor = Cursors.Hand;
-                            String url = CommonManager.ReplaceUrl(matchVal.Value.Replace("\r\n", ""));
-                            h.NavigateUri = new Uri(url);
-                            para.Inlines.Add(h);
-                            para.Inlines.Add("\r\n");
-
-                            text = text.Remove(0, matchVal.Value.Length);
-                        } while (regex.IsMatch(text) == true);
-                        para.Inlines.Add(text);
-
-                        flowDoc.Blocks.Add(para);
-                    }
-                    catch
-                    {
-                        text = CommonManager.Instance.ConvertProgramText(eventInfo, EventInfoTextMode.All);
-                        flowDoc.Blocks.Add(new Paragraph(new Run(text)));
-                    }
-                }
-                else
-                {
-                    flowDoc.Blocks.Add(new Paragraph(new Run(text)));
-                }
-            }
-
-            return flowDoc;
-        }
-        */
-
+        
         public EpgEventInfo GetEpgEventInfo(ReserveData info)
         {
             CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
