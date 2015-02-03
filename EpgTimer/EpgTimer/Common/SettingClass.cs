@@ -1100,7 +1100,7 @@ namespace EpgTimer
             filePlayExe = "";
             filePlayCmd = "\"$FilePath$\"";
             iEpgStationList = new List<IEPGStationInfo>();
-            CmEpgKeyword_Trim = true;
+            cmEpgKeyword_Trim = true;
             cmAppendMenu = false;
             cmCopyTitle = false;
             cmCopyTitle_Trim = false;

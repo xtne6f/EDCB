@@ -15,11 +15,11 @@
             <RowDefinition Height="32" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <CheckBox Content="正規表現モード" Height="16" HorizontalAlignment="Left" Margin="100,12,0,0" Name="checkBox_regExp" VerticalAlignment="Top" />
-        <CheckBox Content="あいまい検索モード" Height="16" HorizontalAlignment="Left" Margin="223,12,0,0" Name="checkBox_aimai" VerticalAlignment="Top" />
-        <CheckBox Content="番組名のみ検索対象にする" Height="16" HorizontalAlignment="Left" Margin="362,12,0,0" Name="checkBox_titleOnly" VerticalAlignment="Top" />
-        <CheckBox Content="大小文字区別" Height="16" HorizontalAlignment="Left" Margin="540,12,0,0" Name="checkBox_case" VerticalAlignment="Top" />
-        <CheckBox Content="自動登録を無効にする" Height="16" HorizontalAlignment="Left" Margin="658,12,0,0" Name="checkBox_keyDisabled" VerticalAlignment="Top" />
+        <CheckBox Content="正規表現モード" Height="16" Margin="0,12,605,0" Name="checkBox_regExp" VerticalAlignment="Top" HorizontalAlignment="Right" Width="95" />
+        <CheckBox Content="あいまい検索モード" Height="16" Margin="0,12,473,0" Name="checkBox_aimai" VerticalAlignment="Top" HorizontalAlignment="Right" Width="110" />
+        <CheckBox Content="番組名のみ検索対象にする" Height="16" Margin="0,12,298,0" Name="checkBox_titleOnly" VerticalAlignment="Top" HorizontalAlignment="Right" Width="153" />
+        <CheckBox Content="大小文字区別" Height="16" Margin="0,12,184,0" Name="checkBox_case" VerticalAlignment="Top" HorizontalAlignment="Right" Width="92" />
+        <CheckBox Content="自動登録を無効にする" Height="16" Margin="0,12,32,0" Name="checkBox_keyDisabled" VerticalAlignment="Top" HorizontalAlignment="Right" Width="130" />
         <TabControl Grid.Row="1" Name="tabControl1" TabStripPlacement="Bottom">
             <TabItem Header="詳細1" Name="tabItem1">
                 <Grid>
