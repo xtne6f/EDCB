@@ -1148,16 +1148,12 @@ namespace EpgTimer
             {
                 SearchItem item = listView_result.SelectedItems[listView_result.SelectedItems.Count - 1] as SearchItem;
                 EpgSearchKeyInfo defKey = new EpgSearchKeyInfo();
+                searchKeyView.GetSearchKey(ref defKey);
                 defKey.andKey = CommonManager.Instance.MUtil.TrimEpgKeyword(item.EventName);
+                defKey.regExpFlag = 0;
                 defKey.serviceList.Clear();
-
-                foreach (ServiceItem info in searchKeyView.searchKeyDescView.listView_service.Items)
-                {
-                    if (info.ServiceName.Equals(item.ServiceName))
-                    {
-                        defKey.serviceList.Add((long)info.ID);
-                    }
-                }
+                Int64 sidKey = ((Int64)item.EventInfo.original_network_id) << 32 | ((Int64)item.EventInfo.transport_stream_id) << 16 | ((Int64)item.EventInfo.service_id);
+                defKey.serviceList.Add(sidKey);
                 searchKeyView.SetSearchKey(defKey);
 
                 button_search_Click(sender, e);
@@ -1174,28 +1170,24 @@ namespace EpgTimer
                 listView_result.UnselectAll();
                 listView_result.SelectedItem = item;
 
-                SearchWindow dlg = new SearchWindow();
+                EpgSearchKeyInfo defKey = new EpgSearchKeyInfo();
+                searchKeyView.GetSearchKey(ref defKey);
+                defKey.andKey = CommonManager.Instance.MUtil.TrimEpgKeyword(item.EventName);
+                defKey.regExpFlag = 0;
+                defKey.serviceList.Clear();
+                Int64 sidKey = ((Int64)item.EventInfo.original_network_id) << 32 | ((Int64)item.EventInfo.transport_stream_id) << 16 | ((Int64)item.EventInfo.service_id);
+                defKey.serviceList.Add(sidKey);
 
+                RecSettingData setInfo = new RecSettingData();
+                recSettingView.GetRecSetting(ref setInfo);
+
+                SearchWindow dlg = new SearchWindow();
                 //SearchWindowからの呼び出しを記録する。表示制御などでも使う。
                 dlg.Owner = this;
                 dlg.SetViewMode((ushort)(Title == "検索" ? 3 : 1));
-
-                EpgSearchKeyInfo key = new EpgSearchKeyInfo();
-                key.andKey = CommonManager.Instance.MUtil.TrimEpgKeyword(item.EventName);
-
-                Int64 sidKey = ((Int64)item.EventInfo.original_network_id) << 32 | ((Int64)item.EventInfo.transport_stream_id) << 16 | ((Int64)item.EventInfo.service_id);
-                key.serviceList.Add(sidKey);
-
-                dlg.SetSearchDefKey(key);
-
-                //録画条件を現在のウィンドウから引っ張れるが、他との整合からしてもデフォルトでよさそう
-                //if (CommonManager.Instance.DB.EpgAutoAddList.ContainsKey(this.autoAddID) == true)
-                //{
-                //    dlg.SetRecInfoDef(CommonManager.Instance.DB.EpgAutoAddList[this.autoAddID].recSetting);
-                //}
-
                 dlg.Title += "(サブウィンドウ)";
-
+                dlg.SetSearchDefKey(defKey);
+                dlg.SetRecInfoDef(setInfo);
                 //dlg.Left += 50;//なぜか動かせない‥
                 //dlg.Top += 50;
                 dlg.ShowDialog();
