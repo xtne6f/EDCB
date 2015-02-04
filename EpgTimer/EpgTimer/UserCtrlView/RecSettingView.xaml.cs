@@ -209,14 +209,28 @@ namespace EpgTimer
 
         public void SetDefSetting(RecSettingData set)
         {
-            RecPresetItem preCust = new RecPresetItem();
-            preCust.DisplayName = "登録時";
-            preCust.ID = 0xFFFFFFFF;
-            int index = comboBox_preSet.Items.Add(preCust);
+            RecPresetItem preCust = null;
+
+            foreach (RecPresetItem item in comboBox_preSet.Items)
+            {
+                if (item.ID == 0xFFFFFFFF)
+                {
+                    preCust = item;
+                    break;
+                }
+            }
+
+            if (preCust == null)
+            {
+                preCust = new RecPresetItem();
+                preCust.DisplayName = "登録時";
+                preCust.ID = 0xFFFFFFFF;
+                comboBox_preSet.Items.Add(preCust);
+            }
+            comboBox_preSet.SelectedItem = preCust;
 
             setDefSetting = set;
             recSetting = set;
-            comboBox_preSet.SelectedIndex = index;
 
             UpdateView();
         }
