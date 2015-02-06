@@ -131,6 +131,7 @@ namespace EpgTimer
         private UInt32 serviceCustColor;
         private bool reserveRectBackground;
         private bool epgTitleIndent;
+        private bool epgPopup;
         private bool epgGradation;
         private bool epgGradationHeader;
         private double resColumnWidth0;
@@ -398,6 +399,11 @@ namespace EpgTimer
         {
             get { return epgTitleIndent; }
             set { epgTitleIndent = value; }
+        }
+        public bool EpgPopup
+        {
+            get { return epgPopup; }
+            set { epgPopup = value; }
         }
         public bool EpgGradation
         {
@@ -993,6 +999,7 @@ namespace EpgTimer
             serviceCustColor = 0xFFFFFFFF;
             reserveRectBackground = false;
             epgTitleIndent = true;
+            epgPopup = true;
             epgGradation = true;
             epgGradationHeader = true;
             resColumnHead = "";

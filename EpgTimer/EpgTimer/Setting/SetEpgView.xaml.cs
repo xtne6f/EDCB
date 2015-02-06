@@ -177,6 +177,7 @@ namespace EpgTimer.Setting
                 textBox_dragScroll.Text = Settings.Instance.DragScroll.ToString();
                 textBox_minimumHeight.Text = Settings.Instance.MinimumHeight.ToString();
                 checkBox_title_indent.IsChecked = Settings.Instance.EpgTitleIndent;
+                checkBox_epg_popup.IsChecked = Settings.Instance.EpgPopup;
                 checkBox_gradation.IsChecked = Settings.Instance.EpgGradation;
                 checkBox_gradationHeader.IsChecked = Settings.Instance.EpgGradationHeader;
 
@@ -298,6 +299,7 @@ namespace EpgTimer.Setting
                 {
                     Settings.Instance.EpgTitleIndent = false;
                 }
+                Settings.Instance.EpgPopup = (checkBox_epg_popup.IsChecked == true);
                 if (checkBox_gradation.IsChecked == true)
                 {
                     Settings.Instance.EpgGradation = true;

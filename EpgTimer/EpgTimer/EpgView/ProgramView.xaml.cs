@@ -50,6 +50,8 @@ namespace EpgTimer.EpgView
 
         protected void PopupItem()
         {
+            if (Settings.Instance.EpgPopup == false) return;
+
             ProgramViewItem info = null;
 
             if (programTimeList != null)
