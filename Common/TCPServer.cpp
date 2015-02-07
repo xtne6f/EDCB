@@ -181,6 +181,12 @@ UINT WINAPI CTCPServer::ServerThread(LPVOID pParam)
 					stCmd.param = head[0];
 					stCmd.dataSize = head[1];
 
+					// 明らかに不正なパケットを除外
+					// 本来はparamもチェックすべきなんだろうけど量が多すぎて断念
+					if (stCmd.dataSize > 1024){
+						break;
+					}
+
 					if( stCmd.dataSize > 0 ){
 						stCmd.data = new BYTE[stCmd.dataSize];
 
