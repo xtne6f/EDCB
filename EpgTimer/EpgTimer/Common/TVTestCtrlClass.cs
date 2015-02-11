@@ -72,12 +72,18 @@ namespace EpgTimer
                         if (cmd.SendNwTVSetCh(chInfo) == 1)
                         {
                             String val = "";
-                            if (cmdTvTest.SendViewGetBonDrivere(ref val) == 1)
+                            for (int i = 0; i < 10; i++)
                             {
+                                if (cmdTvTest.SendViewGetBonDrivere(ref val) != 1)
+                                {
+                                    System.Threading.Thread.Sleep(1000);
+                                    continue;
+                                }
                                 if (String.Compare(val, nwBonDriver, true) != 0)
                                 {
                                     cmdTvTest.SendViewSetBonDrivere(nwBonDriver);
                                 }
+                                break;
                             }
                         }
                     }
@@ -92,8 +98,13 @@ namespace EpgTimer
                     if (err == 1)
                     {
                         String val = "";
-                        if (cmdTvTest.SendViewGetBonDrivere(ref val) == 1)
+                        for (int i = 0; i < 10; i++)
                         {
+                            if (cmdTvTest.SendViewGetBonDrivere(ref val) != 1)
+                            {
+                                System.Threading.Thread.Sleep(1000);
+                                continue;
+                            }
                             if (String.Compare(val, chInfo.bonDriver, true) != 0)
                             {
                                 if (cmdTvTest.SendViewSetBonDrivere(chInfo.bonDriver) == 1)
@@ -106,6 +117,7 @@ namespace EpgTimer
                             {
                                 cmdTvTest.SendViewSetCh(chInfo.chInfo);
                             }
+                            break;
                         }
                     }
                     else if (err == 205)
@@ -226,10 +238,9 @@ namespace EpgTimer
                 {
                     sendInfo.tcpSend = 1;
                 }
-                if (cmdTvTest.SendViewSetStreamingInfo(sendInfo) != 1)
+                for (int i = 0; i < 10 && cmdTvTest.SendViewSetStreamingInfo(sendInfo) != 1; i++)
                 {
-                    System.Threading.Thread.Sleep(5 * 1000);
-                    cmdTvTest.SendViewSetStreamingInfo(sendInfo);
+                    System.Threading.Thread.Sleep(1000);
                 }
 
                 WakeupWindow(processID);
@@ -306,10 +317,9 @@ namespace EpgTimer
                 {
                     sendInfo.tcpSend = 1;
                 }
-                if (cmdTvTest.SendViewSetStreamingInfo(sendInfo) != 1)
+                for (int i = 0; i < 10 && cmdTvTest.SendViewSetStreamingInfo(sendInfo) != 1; i++)
                 {
-                    System.Threading.Thread.Sleep(5 * 1000);
-                    cmdTvTest.SendViewSetStreamingInfo(sendInfo);
+                    System.Threading.Thread.Sleep(1000);
                 }
 
                 WakeupWindow(processID);

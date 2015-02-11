@@ -984,6 +984,17 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 		{
 			DWORD processID = 0;
 			if( ReadVALUE( &processID, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
+				//CPipeServerの仕様的にこの時点で相手と通信できるとは限らない。接続待ちイベントが作成されるまで少し待つ
+				wstring eventName;
+				Format(eventName, L"%s%d", CMD2_GUI_CTRL_WAIT_CONNECT, processID);
+				for( int i = 0; i < 100; i++ ){
+					HANDLE waitEvent = OpenEvent(SYNCHRONIZE, FALSE, eventName.c_str());
+					if( waitEvent != NULL ){
+						CloseHandle(waitEvent);
+						break;
+					}
+					Sleep(100);
+				}
 				resParam->param = CMD_SUCCESS;
 				sys->notifyManager.RegistGUI(processID);
 				sys->reserveManager.ChangeRegist();

@@ -139,15 +139,19 @@ DWORD CSendCtrlCmd::SendPipe(LPCWSTR pipeName, LPCWSTR eventName, DWORD timeOut,
 	}
 
 	//接続待ち
-	HANDLE waitEvent = _CreateEvent(FALSE, FALSE, eventName);
+	//CreateEvent()してはいけない。イベントを作成するのはサーバの仕事のはず
+	//CreateEvent()してしまうとサーバが終了した後は常にタイムアウトまで待たされることになる
+	HANDLE waitEvent = OpenEvent(SYNCHRONIZE, FALSE, eventName);
 	if( waitEvent == NULL ){
-		return CMD_ERR;
+		return CMD_ERR_CONNECT;
 	}
-	if(WaitForSingleObject(waitEvent, timeOut) != WAIT_OBJECT_0){
-		CloseHandle(waitEvent);
-		return CMD_ERR_TIMEOUT;
-	}
+	DWORD dwRet = WaitForSingleObject(waitEvent, timeOut);
 	CloseHandle(waitEvent);
+	if( dwRet == WAIT_TIMEOUT ){
+		return CMD_ERR_TIMEOUT;
+	}else if( dwRet != WAIT_OBJECT_0 ){
+		return CMD_ERR_CONNECT;
+	}
 
 	//接続
 	HANDLE pipe = _CreateFile( pipeName, GENERIC_READ|GENERIC_WRITE, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);

@@ -348,7 +348,7 @@ UINT WINAPI CTunerBankCtrl::CheckReserveThread(LPVOID param)
 				if( sys->openTuner == TRUE && startEpgCap == FALSE ){
 					//PC時計との誤差取得
 					int delaySec = 0;
-					if( sys->sendCtrl.SendViewGetDelay(&delaySec) == CMD_ERR_TIMEOUT ){
+					if( sys->sendCtrl.SendViewGetDelay(&delaySec) == CMD_ERR_CONNECT ){
 						//EXE消されたかも
 						wait = 1000;
 						sys->ErrStop();
@@ -2015,14 +2015,16 @@ BOOL CTunerBankCtrl::OpenTunerExe(
 				//IDのセット
 				CSendCtrlCmd cmdSend;
 				cmdSend.SetPipeSetting(CMD2_VIEW_CTRL_WAIT_CONNECT, CMD2_VIEW_CTRL_PIPE, *pid);
+				ctrlCmd.SetConnectTimeOut(0);
 				bRet = FALSE;
-				for( int i = 0; i < 6; i++ ){
-					Sleep(1000);
+				for( int i = 0; i < 300; i++ ){
+					Sleep(100);
 					if( cmdSend.SendViewSetID(id) == CMD_SUCCESS ){
 						bRet = TRUE;
 						break;
 					}
 				}
+				ctrlCmd.SetConnectTimeOut(CONNECT_TIMEOUT);
 				if( bRet == FALSE ){
 					CloseTunerExe(*pid);
 				}else{

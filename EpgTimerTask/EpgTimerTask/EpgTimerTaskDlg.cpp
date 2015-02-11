@@ -81,8 +81,12 @@ BOOL CEpgTimerTaskDlg::OnInitDialog()
 	CSendCtrlCmd cmd;
 	BOOL bError = FALSE;
 	if( m_bStartSrv == FALSE ){
-		if( cmd.SendRegistGUI(GetCurrentProcessId()) != CMD_SUCCESS ){
-			bError = TRUE;
+		for( int timeout = 0; cmd.SendRegistGUI(GetCurrentProcessId()) != CMD_SUCCESS; timeout += 100 ){
+			Sleep(100);
+			if( timeout > CONNECT_TIMEOUT ){
+				bError = TRUE;
+				break;
+			}
 		}
 	}else{
 		//EpgTimer/MainWindow.xaml.cs/MainWindow()‚Æ‹ßŽ—‚Èˆ—
@@ -104,10 +108,14 @@ BOOL CEpgTimerTaskDlg::OnInitDialog()
 						CloseHandle(pi.hProcess);
 					}
 				}
-				if( cmd.SendRegistGUI(GetCurrentProcessId()) != CMD_SUCCESS ){
-					ReleaseMutex(m_hBonLiteMutex);
-					CloseHandle(m_hBonLiteMutex);
-					m_hBonLiteMutex = NULL;
+				for( int timeout = 0; cmd.SendRegistGUI(GetCurrentProcessId()) != CMD_SUCCESS; timeout += 100 ){
+					Sleep(100);
+					if( timeout > CONNECT_TIMEOUT ){
+						ReleaseMutex(m_hBonLiteMutex);
+						CloseHandle(m_hBonLiteMutex);
+						m_hBonLiteMutex = NULL;
+						break;
+					}
 				}
 			}
 		}
