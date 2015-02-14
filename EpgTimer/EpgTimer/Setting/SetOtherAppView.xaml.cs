@@ -301,14 +301,10 @@ namespace EpgTimer.Setting
 
         private void button_exe_Click(object sender, RoutedEventArgs e)
         {
-            Microsoft.Win32.OpenFileDialog dlg = new Microsoft.Win32.OpenFileDialog();
-            dlg.DefaultExt = ".exe";
-            dlg.Filter = "exe Files (.exe)|*.exe;|all Files(*.*)|*.*";
-
-            Nullable<bool> result = dlg.ShowDialog();
-            if (result == true)
+            string path = CommonManager.Instance.MUtil.GetFileNameByDialog(textBox_exe.Text, "", ".exe");
+            if (path != null)
             {
-                textBox_exe.Text = dlg.FileName;
+                textBox_exe.Text = path;
             }
         }
 
@@ -338,14 +334,10 @@ namespace EpgTimer.Setting
 
         private void button_playExe_Click(object sender, RoutedEventArgs e)
         {
-            Microsoft.Win32.OpenFileDialog dlg = new Microsoft.Win32.OpenFileDialog();
-            dlg.DefaultExt = ".exe";
-            dlg.Filter = "exe Files (.exe)|*.exe;|all Files(*.*)|*.*";
-
-            Nullable<bool> result = dlg.ShowDialog();
-            if (result == true)
+            string path = CommonManager.Instance.MUtil.GetFileNameByDialog(textBox_playExe.Text, "", ".exe");
+            if (path != null)
             {
-                textBox_playExe.Text = dlg.FileName;
+                textBox_playExe.Text = path;
             }
         }
 
