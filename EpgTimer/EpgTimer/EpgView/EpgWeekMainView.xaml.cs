@@ -373,6 +373,10 @@ namespace EpgTimer
             }
         }
 
+        private void button_erea_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            epgProgramView_RightClick(sender, new Point(-1, -1));
+        }
         /// <summary>
         /// 右ボタンクリック
         /// </summary>
