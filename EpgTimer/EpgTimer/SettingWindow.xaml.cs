@@ -44,18 +44,26 @@ namespace EpgTimer
 
         private void button_OK_Click(object sender, RoutedEventArgs e)
         {
-            if (setAppView.ServiceStop == true)
+            try
             {
-                ServiceStop = true;
-            }
-            setBasicView.SaveSetting();
-            setAppView.SaveSetting();
-            setEpgView.SaveSetting();
-            setOtherAppView.SaveSetting();
+                if (setAppView.ServiceStop == true)
+                {
+                    ServiceStop = true;
+                }
+                setBasicView.SaveSetting();
+                setAppView.SaveSetting();
+                setEpgView.SaveSetting();
+                setOtherAppView.SaveSetting();
 
-            Settings.SaveToXmlFile();
-            ChSet5.SaveFile();
-            CommonManager.Instance.ReloadCustContentColorList();
+                Settings.SaveToXmlFile();
+                ChSet5.SaveFile();
+                CommonManager.Instance.ReloadCustContentColorList();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                MessageBox.Show("不正な入力値によるエラーのため、一部設定のみ更新されました。");
+            }
 
             this.DialogResult = true;
         }
