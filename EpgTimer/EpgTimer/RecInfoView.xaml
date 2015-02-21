@@ -37,6 +37,7 @@
         <ContextMenu x:Key="itemHeader" x:Name="HeaderSelect" x:Shared="True" >
             <MenuItem Header="プロテクト" Name="IsProtect" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="日時" Name="StartTime" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="時間（長さ）" Name="ProgramDuration" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="ネットワーク" Name="NetworkName" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="サービス名" Name="ServiceName" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="番組名" Name="EventName" IsCheckable="True" Click="headerSelect_Click" />
@@ -92,6 +93,11 @@
                     <GridViewColumn DisplayMemberBinding="{Binding Path=StartTime}">
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="日時" Tag="StartTime" HorizontalContentAlignment="Left"/>
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=ProgramDuration}">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="時間（長さ）" Tag="ProgramDuration" HorizontalContentAlignment="Left" />
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=NetworkName}">

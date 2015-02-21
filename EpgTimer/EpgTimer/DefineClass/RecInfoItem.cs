@@ -95,6 +95,18 @@ namespace EpgTimer
                 return view;
             }
         }
+        public TimeSpan ProgramDuration
+        {
+            get
+            {
+                TimeSpan view = new TimeSpan();
+                if (RecInfo != null)
+                {
+                    view = TimeSpan.FromSeconds(RecInfo.DurationSecond);
+                }
+                return view;
+            }
+        }
         public String StartTime
         {
             get

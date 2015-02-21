@@ -12,9 +12,12 @@
         <ContextMenu x:Key="itemHeader" x:Name="HeaderSelect" x:Shared="True" >
             <MenuItem Header="状態" Name="Status" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="日時" Name="StartTime" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="時間（長さ）" Name="ProgramDuration" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="ネットワーク" Name="NetworkName" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="サービス名" Name="ServiceName" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="番組名" Name="EventName" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="番組内容" Name="ProgramContent" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="ジャンル" Name="JyanruKey" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="録画モード" Name="RecMode" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="優先度" Name="Priority" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="追従" Name="Tuijyu" IsCheckable="True" Click="headerSelect_Click" />
@@ -91,6 +94,11 @@
                             <GridViewColumnHeader Content="日時" Tag="StartTime" HorizontalContentAlignment="Left" />
                         </GridViewColumn.Header>
                     </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=ProgramDuration}">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="時間（長さ）" Tag="ProgramDuration" HorizontalContentAlignment="Left" />
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=NetworkName}" >
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="ネットワーク" Tag="NetworkName" HorizontalContentAlignment="Left" />
@@ -104,6 +112,16 @@
                     <GridViewColumn DisplayMemberBinding="{Binding Path=EventName}">
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="番組名" Tag="EventName" HorizontalContentAlignment="Left" />
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=ProgramContent}">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="番組内容" Tag="ProgramContent" HorizontalContentAlignment="Left" />
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=JyanruKey}">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="ジャンル" Tag="JyanruKey" HorizontalContentAlignment="Left" />
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=RecMode}">

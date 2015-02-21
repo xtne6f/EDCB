@@ -66,6 +66,42 @@ namespace EpgTimer
                 return view;
             }
         }
+        public String JyanruKey
+        {
+            get
+            {
+                String view = "";
+                if (this.EventInfo != null)
+                {
+                    view = CommonManager.Instance.ConvertJyanruText(this.EventInfo);
+                }
+                return view;
+            }
+        }
+        public TimeSpan ProgramDuration
+        {
+            get
+            {
+                TimeSpan view = new TimeSpan();
+                if (ReserveInfo != null)
+                {
+                    view = TimeSpan.FromSeconds(ReserveInfo.DurationSecond);
+                }
+                return view;
+            }
+        }
+        public String ProgramContent
+        {
+            get
+            {
+                String view = "";
+                if (EventInfo != null)
+                {
+                    view = EventInfo.ShortInfo.text_char.Replace("\r\n", " ");
+                }
+                return view;
+            }
+        }
         public String StartTime
         {
             get
