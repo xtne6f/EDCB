@@ -67,7 +67,7 @@ namespace EpgTimer
 
         public void CopyContent2Clipboard(EpgEventInfo eventInfo, bool NotToggle = false)
         {
-            String text="";
+            string text = "";
 
             if (eventInfo != null)
             {
@@ -95,7 +95,7 @@ namespace EpgTimer
 
         public void CopyContent2Clipboard(ReserveData resInfo, bool NotToggle = false)
         {
-            CopyContent2Clipboard(GetEpgEventInfo(resInfo), NotToggle);
+            CopyContent2Clipboard(CommonManager.Instance.GetEpgEventInfoFromReserveData(resInfo, true), NotToggle);
         }
 
         public void CopyContent2Clipboard(RecInfoItem recInfo, bool NotToggle = false)
@@ -113,9 +113,9 @@ namespace EpgTimer
                 if (setting == true)
                 {
                     string[] stArrayData = recInfo.RecInfo.ProgramInfo.Replace("\r\n", "\n").Split('\n');
-                    Int32 endI = Math.Min(stArrayData.Length, 3);
+                    int endI = Math.Min(stArrayData.Length, 3);
 
-                    for (Int32 i = 0; i < endI; i++)
+                    for (int i = 0; i < endI; i++)
                     {
                         text += stArrayData[i] + "\r\n";
                     }
@@ -243,47 +243,6 @@ namespace EpgTimer
             return rt.ToString();
         }
         
-        public EpgEventInfo GetEpgEventInfo(ReserveData info)
-        {
-            CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
-            EpgEventInfo eventInfo = null;
-
-            if (info != null)
-            {
-                try
-                {
-                    if (info.EventID != 0xFFFF)
-                    {
-                        UInt64 key = CommonManager.Create64Key(info.OriginalNetworkID, info.TransportStreamID, info.ServiceID);
-                        if (CommonManager.Instance.DB.ServiceEventList.ContainsKey(key) == true)
-                        {
-                            foreach (EpgEventInfo eventChkInfo in CommonManager.Instance.DB.ServiceEventList[key].eventList)
-                            {
-                                if (eventChkInfo.event_id == info.EventID)
-                                {
-                                    eventInfo = eventChkInfo;
-                                    break;
-                                }
-                            }
-                        }
-                        if (eventInfo == null)
-                        {
-                            UInt64 pgId = CommonManager.Create64PgKey(info.OriginalNetworkID, info.TransportStreamID, info.ServiceID, info.EventID);
-                            eventInfo = new EpgEventInfo();
-                            cmd.SendGetPgInfo(pgId, ref eventInfo);
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                }
-
-            }
-
-            return eventInfo;
-        }
-
         public string GetFolderNameByDialog(string InitialPath = "", string Title = "")
         {
             try
@@ -356,5 +315,134 @@ namespace EpgTimer
             return path;
         }
 
+        public string MarginStartText(RecSettingData recSetting)
+        {
+            string view = "";
+            if (recSetting != null)
+            {
+                int marginTime;
+                if (recSetting.UseMargineFlag == 1)
+                {
+                    marginTime = recSetting.StartMargine;
+                }
+                else
+                {
+                    //TODO: ここでデフォルトマージンを確認するがEpgTimerNWでは無意味。根本的にはSendCtrlCmdの拡張が必要
+                    marginTime = IniFileHandler.GetPrivateProfileInt("SET", "StartMargin", 0, SettingPath.TimerSrvIniPath);
+                }
+                view = CustomTimeFormat(marginTime * -1, recSetting.UseMargineFlag);
+            }
+            return view;
+        }
+
+        public string MarginEndText(RecSettingData recSetting)
+        {
+            string view = "";
+            if (recSetting != null)
+            {
+                int marginTime;
+                if (recSetting.UseMargineFlag == 1)
+                {
+                    marginTime = recSetting.EndMargine;
+                }
+                else
+                {
+                    //TODO: ここでデフォルトマージンを確認するがEpgTimerNWでは無意味。根本的にはSendCtrlCmdの拡張が必要
+                    marginTime = IniFileHandler.GetPrivateProfileInt("SET", "EndMargin", 0, SettingPath.TimerSrvIniPath);
+                }
+                view = CustomTimeFormat(marginTime, recSetting.UseMargineFlag);
+            }
+            return view;
+        }
+
+        private string CustomTimeFormat(int span, byte useMarginFlag)
+        {
+            string hours;
+            string minutes;
+            string seconds = (span % 60).ToString("00;00");
+            if (Math.Abs(span) < 3600)
+            {
+                hours = "";
+                minutes = (span / 60).ToString("0;0") + ":";
+            }
+            else
+            {
+                hours = (span / 3600).ToString("0;0") + ":";
+                minutes = ((span % 3600) / 60).ToString("00;00") + ":";
+            }
+            return span.ToString("+;-") + hours + minutes + seconds + CustomTimeMark(useMarginFlag);
+        }
+
+        private string CustomTimeMark(byte useMarginFlag)
+        {
+            //EpgtimerNWの場合、デフォルト値不明のため。不明でなくなったら要らない
+            string mark = "";
+            if (CommonManager.Instance.NWMode == true)
+            {
+                mark = (useMarginFlag == 1 ? " " : "?");
+            }
+            return mark;
+        }
+    }
+
+    public static class MenuUtilEx
+    {
+        public static bool IsOnRec(this ReserveData reserveInfo)
+        {
+            bool retv = false;
+            if (reserveInfo != null)
+            {
+                int duration = (int)reserveInfo.DurationSecond;
+                DateTime startTime = reserveInfo.StartTime;
+
+                if (reserveInfo.RecSetting.UseMargineFlag == 1)
+                {
+                    startTime = reserveInfo.StartTime.AddSeconds(reserveInfo.RecSetting.StartMargine * -1);
+                    duration += reserveInfo.RecSetting.StartMargine;
+                    duration += reserveInfo.RecSetting.EndMargine;
+                }
+                else
+                {
+                    //TODO: ここでデフォルトマージンを確認するがEpgTimerNWでは無意味。根本的にはSendCtrlCmdの拡張が必要
+                    int defStartMargin = IniFileHandler.GetPrivateProfileInt("SET", "StartMargin", 0, SettingPath.TimerSrvIniPath);
+                    int defEndMargin = IniFileHandler.GetPrivateProfileInt("SET", "EndMargin", 0, SettingPath.TimerSrvIniPath);
+
+                    startTime = reserveInfo.StartTime.AddSeconds(defStartMargin * -1);
+                    duration += defStartMargin;
+                    duration += defEndMargin;
+                }
+
+                retv = IsOnTime(startTime, duration);
+            }
+            return retv;
+        }
+
+        public static bool IsOnAir(this ReserveData reserveInfo)
+        {
+            bool retv = false;
+            if (reserveInfo != null)
+            {
+                retv = IsOnTime(reserveInfo.StartTime, (int)reserveInfo.DurationSecond);
+            }
+            return retv;
+        }
+        public static bool IsOnAir(this EpgEventInfo eventInfo)
+        {
+            bool retv = false;
+            if (eventInfo != null)
+            {
+                retv = IsOnTime(eventInfo.start_time, (int)eventInfo.durationSec);
+            }
+            return retv;
+        }
+        private static bool IsOnTime(DateTime startTime, int duration)
+        {
+            bool retv = false;
+            if (startTime <= System.DateTime.Now)
+            {
+                retv = (startTime + TimeSpan.FromSeconds(duration) >= System.DateTime.Now);
+            }
+            return retv;
+        }
     }
 }

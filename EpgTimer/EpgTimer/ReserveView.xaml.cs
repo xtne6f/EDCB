@@ -904,7 +904,7 @@ namespace EpgTimer
                 ReserveItem item = listView_reserve.SelectedItems[listView_reserve.SelectedItems.Count - 1] as ReserveItem;
                 listView_reserve.UnselectAll();
                 listView_reserve.SelectedItem = item;
-                CommonManager.Instance.MUtil.CopyContent2Clipboard(item.EventInfo);
+                CommonManager.Instance.MUtil.CopyContent2Clipboard(item.ReserveInfo);
             }
         }
     

@@ -113,29 +113,7 @@ namespace EpgTimer
                 String view = "";
                 if (EpgAutoAddInfo != null)
                 {
-                    switch (EpgAutoAddInfo.recSetting.RecMode)
-                    {
-                        case 0:
-                            view = "全サービス";
-                            break;
-                        case 1:
-                            view = "指定サービス";
-                            break;
-                        case 2:
-                            view = "全サービス（デコード処理なし）";
-                            break;
-                        case 3:
-                            view = "指定サービス（デコード処理なし）";
-                            break;
-                        case 4:
-                            view = "視聴";
-                            break;
-                        case 5:
-                            view = "無効";
-                            break;
-                        default:
-                            break;
-                    }
+                    view = CommonManager.Instance.ConvertRecModeText(EpgAutoAddInfo.recSetting.RecMode);
                 }
                 return view;
             }
@@ -189,51 +167,9 @@ namespace EpgTimer
             get
             {
                 String view = "";
-                if (this.EpgAutoAddInfo != null)
+                if (EpgAutoAddInfo != null && EpgAutoAddInfo.searchInfo != null)
                 {
-                    Dictionary<int, List<int>> nibbleDict1 = new Dictionary<int, List<int>>();  // 小ジャンルを大ジャンルでまとめる
-                    foreach (EpgContentData ecd1 in this.EpgAutoAddInfo.searchInfo.contentList)
-                    {
-                        if (nibbleDict1.ContainsKey(ecd1.content_nibble_level_1))
-                        {
-                            nibbleDict1[ecd1.content_nibble_level_1].Add(ecd1.content_nibble_level_2);
-                        }
-                        else
-                        {
-                            nibbleDict1.Add(ecd1.content_nibble_level_1, new List<int>() { ecd1.content_nibble_level_2 });
-                        }
-                    }
-                    foreach (KeyValuePair<int, List<int>> kvp1 in nibbleDict1)
-                    {
-                        int nibble1 = kvp1.Key;
-                        UInt16 contentKey1 = (UInt16)(nibble1 << 8 | 0xFF);
-                        //
-                        string smallCategory1 = "";
-                        foreach (int nibble2 in kvp1.Value)
-                        {
-                            UInt16 contentKey2 = (UInt16)(nibble1 << 8 | nibble2);
-                            if (nibble2 != 0xFF)
-                            {
-                                if (smallCategory1 != "") { smallCategory1 += ", "; }
-                                if (CommonManager.Instance.ContentKindDictionary.ContainsKey(contentKey2))
-                                {
-                                    smallCategory1 += CommonManager.Instance.ContentKindDictionary[contentKey2].ToString().Trim();
-                                }
-                            }
-                        }
-                        //
-                        if (view != "") { view += ", "; }
-                        if (CommonManager.Instance.ContentKindDictionary.ContainsKey(contentKey1))
-                        {
-                            view += "[" + CommonManager.Instance.ContentKindDictionary[contentKey1].ToString().Trim();
-                            if (smallCategory1 != "") { view += " - " + smallCategory1; }
-                            view += "]";
-                        }
-                    }
-                }
-                else
-                {
-                    view = "なし";
+                    view = CommonManager.Instance.ConvertJyanruText(EpgAutoAddInfo.searchInfo);
                 }
                 return view;
             }
@@ -374,17 +310,7 @@ namespace EpgTimer
                 String view = "";
                 if (EpgAutoAddInfo != null)
                 {
-                    int marginTime;
-                    if (EpgAutoAddInfo.recSetting.UseMargineFlag == 1)
-                    {
-                        marginTime = EpgAutoAddInfo.recSetting.StartMargine;
-                    }
-                    else
-                    {
-                        //TODO: ここでデフォルトマージンを確認するがEpgTimerNWでは無意味。根本的にはSendCtrlCmdの拡張が必要
-                        marginTime = IniFileHandler.GetPrivateProfileInt("SET", "StartMargin", 0, SettingPath.TimerSrvIniPath);
-                    }
-                    view = CustomTimeFormat(marginTime * -1);
+                    view = CommonManager.Instance.MUtil.MarginStartText(EpgAutoAddInfo.recSetting);
                 }
                 return view;
             }
@@ -397,49 +323,10 @@ namespace EpgTimer
                 String view = "";
                 if (EpgAutoAddInfo != null)
                 {
-                    int marginTime;
-                    if (EpgAutoAddInfo.recSetting.UseMargineFlag == 1)
-                    {
-                        marginTime = EpgAutoAddInfo.recSetting.EndMargine;
-                    }
-                    else
-                    {
-                        //TODO: ここでデフォルトマージンを確認するがEpgTimerNWでは無意味。根本的にはSendCtrlCmdの拡張が必要
-                        marginTime = IniFileHandler.GetPrivateProfileInt("SET", "EndMargin", 0, SettingPath.TimerSrvIniPath);
-                    }
-                    view = CustomTimeFormat(marginTime);
+                    view = CommonManager.Instance.MUtil.MarginEndText(EpgAutoAddInfo.recSetting);
                 }
                 return view;
             }
-        }
-
-        private String CustomTimeFormat(Int32 span)
-        {
-            string hours;
-            string minutes;
-            string seconds = (span % 60).ToString("00;00");
-            if (Math.Abs(span) < 3600)
-            {
-                hours = "";
-                minutes = (span / 60).ToString("0;0") + ":";
-            }
-            else
-            {
-                hours = (span / 3600).ToString("0;0") + ":";
-                minutes = ((span % 3600) / 60).ToString("00;00") + ":";
-            }
-            return span.ToString("+;-") + hours + minutes + seconds + CustomTimeMark();
-        }
-
-        private String CustomTimeMark()
-        {
-            //EpgtimerNWの場合、デフォルト値不明のため。不明でなくなったら要らない
-            String mark = "";
-            if (CommonManager.Instance.NWMode == true)
-            {
-                mark = (EpgAutoAddInfo.recSetting.UseMargineFlag == 1 ? " " : "?");
-            }
-            return mark;
         }
 
         public List<String> RecFolder

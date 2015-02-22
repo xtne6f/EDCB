@@ -56,27 +56,7 @@ namespace EpgTimer
                 String view = "";
                 if (eventInfo != null)
                 {
-                    if (0x7880 <= eventInfo.original_network_id && eventInfo.original_network_id <= 0x7FE8)
-                    {
-                        view = "地デジ";
-                    }
-                    else if (eventInfo.original_network_id == 0x0004)
-                    {
-                        view = "BS";
-                    }
-                    else if (eventInfo.original_network_id == 0x0006)
-                    {
-                        view = "CS1";
-                    }
-                    else if (eventInfo.original_network_id == 0x0007)
-                    {
-                        view = "CS2";
-                    }
-                    else
-                    {
-                        view = "その他";
-                    }
-
+                    view = CommonManager.Instance.ConvertNetworkNameText(eventInfo.original_network_id);
                 }
                 return view;
             }
@@ -93,95 +73,34 @@ namespace EpgTimer
                 return view;
             }
         }
-        private Boolean IsOnRec
-        {
-            get
-            {
-                Boolean retv = false;
-
-                if (ReserveInfo != null)
-                {
-                    Int32 duration = (Int32)ReserveInfo.DurationSecond;
-                    DateTime startTime = ReserveInfo.StartTime;
-
-                    if (ReserveInfo.RecSetting.UseMargineFlag == 1)
-                    {
-                        startTime = ReserveInfo.StartTime.AddSeconds(ReserveInfo.RecSetting.StartMargine * -1);
-                        duration += ReserveInfo.RecSetting.StartMargine;
-                        duration += ReserveInfo.RecSetting.EndMargine;
-                    }
-                    else
-                    {
-                        //TODO: ここでデフォルトマージンを確認するがEpgTimerNWでは無意味。根本的にはSendCtrlCmdの拡張が必要
-                        int defStartMargin = IniFileHandler.GetPrivateProfileInt("SET", "StartMargin", 0, SettingPath.TimerSrvIniPath);
-                        int defEndMargin = IniFileHandler.GetPrivateProfileInt("SET", "EndMargin", 0, SettingPath.TimerSrvIniPath);
-
-                        startTime = ReserveInfo.StartTime.AddSeconds(defStartMargin * -1);
-                        duration += defStartMargin;
-                        duration += defEndMargin;
-                    }
-
-                    if (startTime <= System.DateTime.Now)
-                    {
-                        if (startTime + TimeSpan.FromSeconds(duration) >= System.DateTime.Now)
-                        {
-                            retv = true;
-                        }
-                    }
-                }
-
-                return retv;
-            }
-        }
-        private Boolean IsOnAir
-        {
-            get
-            {
-                Boolean retv = false;
-
-                if (eventInfo != null)
-                {
-                    if (EventInfo.start_time <= System.DateTime.Now)
-                    {
-                        if (EventInfo.start_time + TimeSpan.FromSeconds(EventInfo.durationSec) >= System.DateTime.Now)
-                        {
-                            retv = true;
-                        }
-                    }
-                }
-
-                return retv;
-            }
-        }
         public String Status
         {
             get
             {
                 String[] wiewString = { "", "予", "無", "放", "予+", "無+", "録*", "無*" };
                 int index = 0;
-
-                if (IsOnAir == true)
+                if (eventInfo != null)
                 {
-                    index = 3;
+                    if (eventInfo.IsOnAir() == true)
+                    {
+                        index = 3;
+                    }
+                    if (IsReserved == true)
+                    {
+                        if (ReserveInfo.IsOnRec() == true)//マージンがあるので、IsOnAir==trueとは限らない
+                        {
+                            index = 5;
+                        }
+                        if (ReserveInfo.RecSetting.RecMode == 5) //無効の判定
+                        {
+                            index += 2;
+                        }
+                        else
+                        {
+                            index += 1;
+                        }
+                    }
                 }
-
-                if (IsReserved == true)
-                {
-                    if (IsOnRec == true)//マージンがあるので、IsOnAir==trueとは限らない
-                    {
-                        index = 5;
-                    }
-
-                    if (ReserveInfo.RecSetting.RecMode == 5) //無効の判定
-                    {
-                        index += 2;
-                    }
-                    else
-                    {
-                        index += 1;
-                    }
-                }
-
                 return wiewString[index];
             }
         }
@@ -189,26 +108,21 @@ namespace EpgTimer
         {
             get
             {
-                SolidColorBrush color = null;
-
-                if (IsOnAir == true)
+                SolidColorBrush color = CommonManager.Instance.StatResForeColor;
+                if (eventInfo != null)
                 {
-                    color = CommonManager.Instance.StatOnAirForeColor;
-                }
-
-                if (IsReserved == true)
-                {
-                    if (IsOnRec == true)
+                    if (EventInfo.IsOnAir() == true)
                     {
-                        color = CommonManager.Instance.StatRecForeColor;
+                        color = CommonManager.Instance.StatOnAirForeColor;
+                    }
+                    if (IsReserved == true)
+                    {
+                        if (ReserveInfo.IsOnRec() == true)
+                        {
+                            color = CommonManager.Instance.StatRecForeColor;
+                        }
                     }
                 }
-
-                if (color == null)
-                {
-                    color = CommonManager.Instance.StatResForeColor;
-                }
-
                 return color;
             }
         }
@@ -291,32 +205,8 @@ namespace EpgTimer
             get
             {
                 if (this.ReserveInfo == null) { return null; }
-                // ReserveItemクラスからコピペ
-                String view = "";
-                switch (ReserveInfo.RecSetting.RecMode)
-                {
-                    case 0:
-                        view = "全サービス";
-                        break;
-                    case 1:
-                        view = "指定サービス";
-                        break;
-                    case 2:
-                        view = "全サービス（デコード処理なし）";
-                        break;
-                    case 3:
-                        view = "指定サービス（デコード処理なし）";
-                        break;
-                    case 4:
-                        view = "視聴";
-                        break;
-                    case 5:
-                        view = "無効";
-                        break;
-                    default:
-                        break;
-                }
-                return view;
+                //
+                return CommonManager.Instance.ConvertRecModeText(ReserveInfo.RecSetting.RecMode);
             }
         }
 
@@ -326,50 +216,7 @@ namespace EpgTimer
             {
                 if (this.EventInfo == null) { return null; }
                 //
-                String view = "";
-                if (eventInfo != null && eventInfo.ContentInfo != null)
-                {
-                    Dictionary<int, List<int>> nibbleDict1 = new Dictionary<int, List<int>>();  // 小ジャンルを大ジャンルでまとめる
-                    foreach (EpgContentData ecd1 in eventInfo.ContentInfo.nibbleList)
-                    {
-                        if (nibbleDict1.ContainsKey(ecd1.content_nibble_level_1))
-                        {
-                            nibbleDict1[ecd1.content_nibble_level_1].Add(ecd1.content_nibble_level_2);
-                        }
-                        else
-                        {
-                            nibbleDict1.Add(ecd1.content_nibble_level_1, new List<int>() { ecd1.content_nibble_level_2 });
-                        }
-                    }
-                    foreach (KeyValuePair<int, List<int>> kvp1 in nibbleDict1)
-                    {
-                        int nibble1 = kvp1.Key;
-                        UInt16 contentKey1 = (UInt16)(nibble1 << 8 | 0xFF);
-                        //
-                        string smallCategory1 = "";
-                        foreach (int nibble2 in kvp1.Value)
-                        {
-                            UInt16 contentKey2 = (UInt16)(nibble1 << 8 | nibble2);
-                            if (nibble2 != 0xFF)
-                            {
-                                if (smallCategory1 != "") { smallCategory1 += ", "; }
-                                if (CommonManager.Instance.ContentKindDictionary.ContainsKey(contentKey2))
-                                {
-                                    smallCategory1 += CommonManager.Instance.ContentKindDictionary[contentKey2].ToString().Trim();
-                                }
-                            }
-                        }
-                        //
-                        if (view != "") { view += ", "; }
-                        if (CommonManager.Instance.ContentKindDictionary.ContainsKey(contentKey1))
-                        {
-                            view += "[" + CommonManager.Instance.ContentKindDictionary[contentKey1].ToString().Trim();
-                            if (smallCategory1 != "") { view += " - " + smallCategory1; }
-                            view += "]";
-                        }
-                    }
-                }
-                return view;
+                return CommonManager.Instance.ConvertJyanruText(EventInfo);
             }
         }
 

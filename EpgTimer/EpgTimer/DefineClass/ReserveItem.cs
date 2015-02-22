@@ -19,6 +19,8 @@ namespace EpgTimer
 {
     public class ReserveItem
     {
+        private EpgEventInfo eventInfo = null;
+
         public ReserveItem(ReserveData item)
         {
             this.ReserveInfo = item;
@@ -59,27 +61,7 @@ namespace EpgTimer
                 String view = "";
                 if (ReserveInfo != null)
                 {
-                    if (0x7880 <= ReserveInfo.OriginalNetworkID && ReserveInfo.OriginalNetworkID <= 0x7FE8)
-                    {
-                        view = "地デジ";
-                    }
-                    else if (ReserveInfo.OriginalNetworkID == 0x0004)
-                    {
-                        view = "BS";
-                    }
-                    else if (ReserveInfo.OriginalNetworkID == 0x0006)
-                    {
-                        view = "CS1";
-                    }
-                    else if (ReserveInfo.OriginalNetworkID == 0x0007)
-                    {
-                        view = "CS2";
-                    }
-                    else
-                    {
-                        view = "その他";
-                    }
-
+                    view = CommonManager.Instance.ConvertNetworkNameText(ReserveInfo.OriginalNetworkID);
                 }
                 return view;
             }
@@ -105,17 +87,7 @@ namespace EpgTimer
                 String view = "";
                 if (ReserveInfo != null)
                 {
-                    int marginTime;
-                    if (ReserveInfo.RecSetting.UseMargineFlag == 1)
-                    {
-                        marginTime = ReserveInfo.RecSetting.StartMargine;
-                    }
-                    else
-                    {
-                        //TODO: ここでデフォルトマージンを確認するがEpgTimerNWでは無意味。根本的にはSendCtrlCmdの拡張が必要
-                        marginTime = IniFileHandler.GetPrivateProfileInt("SET", "StartMargin", 0, SettingPath.TimerSrvIniPath);
-                    }
-                    view = CustomTimeFormat(marginTime * -1);
+                    view = CommonManager.Instance.MUtil.MarginStartText(ReserveInfo.RecSetting);
                 }
                 return view;
             }
@@ -127,47 +99,10 @@ namespace EpgTimer
                 String view = "";
                 if (ReserveInfo != null)
                 {
-                    int marginTime;
-                    if (ReserveInfo.RecSetting.UseMargineFlag == 1)
-                    {
-                        marginTime = ReserveInfo.RecSetting.EndMargine;
-                    }
-                    else
-                    {
-                        //TODO: ここでデフォルトマージンを確認するがEpgTimerNWでは無意味。根本的にはSendCtrlCmdの拡張が必要
-                        marginTime = IniFileHandler.GetPrivateProfileInt("SET", "EndMargin", 0, SettingPath.TimerSrvIniPath);
-                    }
-                    view = CustomTimeFormat(marginTime);
+                    view = CommonManager.Instance.MUtil.MarginEndText(ReserveInfo.RecSetting);
                 }
                 return view;
             }
-        }
-        private String CustomTimeFormat(Int32 span)
-        {
-            string hours;
-            string minutes;
-            string seconds = (span % 60).ToString("00;00");
-            if (Math.Abs(span) < 3600)
-            {
-                hours = "";
-                minutes = (span / 60).ToString("0;0") + ":";
-            }
-            else
-            {
-                hours = (span / 3600).ToString("0;0") + ":";
-                minutes = ((span % 3600) / 60).ToString("00;00") + ":";
-            }
-            return span.ToString("+;-") + hours + minutes + seconds + CustomTimeMark();
-        }
-        private String CustomTimeMark()
-        {
-            //EpgtimerNWの場合、デフォルト値不明のため。不明でなくなったら要らない
-            String mark = "";
-            if (CommonManager.Instance.NWMode == true)
-            {
-                mark = (ReserveInfo.RecSetting.UseMargineFlag == 1 ? " " : "?");
-            }
-            return mark;
         }
         public String RecMode
         {
@@ -176,29 +111,7 @@ namespace EpgTimer
                 String view = "";
                 if (ReserveInfo != null)
                 {
-                    switch (ReserveInfo.RecSetting.RecMode)
-                    {
-                        case 0:
-                            view = "全サービス";
-                            break;
-                        case 1:
-                            view = "指定サービス";
-                            break;
-                        case 2:
-                            view = "全サービス（デコード処理なし）";
-                            break;
-                        case 3:
-                            view = "指定サービス（デコード処理なし）";
-                            break;
-                        case 4:
-                            view = "視聴";
-                            break;
-                        case 5:
-                            view = "無効";
-                            break;
-                        default:
-                            break;
-                    }
+                    view = CommonManager.Instance.ConvertRecModeText(ReserveInfo.RecSetting.RecMode);
                 }
                 return view;
             }
@@ -265,88 +178,27 @@ namespace EpgTimer
                 return view;
             }
         }
-        private Boolean IsOnRec
-        {
-            get
-            {
-                Boolean retv = false;
-
-                if (ReserveInfo != null)
-                {
-                    Int32 duration = (Int32)ReserveInfo.DurationSecond;
-                    DateTime startTime = ReserveInfo.StartTime;
-
-                    if (ReserveInfo.RecSetting.UseMargineFlag == 1)
-                    {
-                        startTime = ReserveInfo.StartTime.AddSeconds(ReserveInfo.RecSetting.StartMargine * -1);
-                        duration += ReserveInfo.RecSetting.StartMargine;
-                        duration += ReserveInfo.RecSetting.EndMargine;
-                    }
-                    else
-                    {
-                        //TODO: ここでデフォルトマージンを確認するがEpgTimerNWでは無意味。根本的にはSendCtrlCmdの拡張が必要
-                        int defStartMargin = IniFileHandler.GetPrivateProfileInt("SET", "StartMargin", 0, SettingPath.TimerSrvIniPath);
-                        int defEndMargin = IniFileHandler.GetPrivateProfileInt("SET", "EndMargin", 0, SettingPath.TimerSrvIniPath);
-
-                        startTime = ReserveInfo.StartTime.AddSeconds(defStartMargin * -1);
-                        duration += defStartMargin;
-                        duration += defEndMargin;
-                    }
-
-                    if (startTime <= System.DateTime.Now)
-                    {
-                        if (startTime + TimeSpan.FromSeconds(duration) >= System.DateTime.Now)
-                        {
-                            retv = true;
-                        }
-                    }
-                }
-
-                return retv;
-            }
-        }
-        private Boolean IsOnAir
-        {
-            get
-            {
-                Boolean retv = false;
-
-                if (ReserveInfo != null)
-                {
-                    if (ReserveInfo.StartTime <= System.DateTime.Now)
-                    {
-                        if (ReserveInfo.StartTime + TimeSpan.FromSeconds(ReserveInfo.DurationSecond) >= System.DateTime.Now)
-                        {
-                            retv = true;
-                        }
-                    }
-                }
-
-                return retv;
-            }
-        }
         public String Status
         {
             get
             {
                 String[] wiewString = { "", "無", "予+", "無+", "録*", "無*" };
                 int index = 0;
-
-                if (IsOnAir == true)
+                if (ReserveInfo != null)
                 {
-                    index = 2;
+                    if (ReserveInfo.IsOnAir() == true)
+                    {
+                        index = 2;
+                    }
+                    if (ReserveInfo.IsOnRec() == true)//マージンがあるので、IsOnAir==trueとは限らない
+                    {
+                        index = 4;
+                    }
+                    if (ReserveInfo.RecSetting.RecMode == 5) //無効の判定
+                    {
+                        index += 1;
+                    }
                 }
-
-                if (IsOnRec == true)//マージンがあるので、IsOnAir==trueとは限らない
-                {
-                    index = 4;
-                }
-
-                if (ReserveInfo.RecSetting.RecMode == 5) //無効の判定
-                {
-                    index += 1;
-                }
-
                 return wiewString[index];
             }
         }
@@ -354,23 +206,18 @@ namespace EpgTimer
         {
             get
             {
-                SolidColorBrush color = null;
-
-                if (IsOnAir == true)
+                SolidColorBrush color = CommonManager.Instance.StatResForeColor;
+                if (ReserveInfo != null)
                 {
-                    color = CommonManager.Instance.StatOnAirForeColor;
+                    if (ReserveInfo.IsOnAir() == true)
+                    {
+                        color = CommonManager.Instance.StatOnAirForeColor;
+                    }
+                    if (ReserveInfo.IsOnRec() == true)
+                    {
+                        color = CommonManager.Instance.StatRecForeColor;
+                    }
                 }
-
-                if (IsOnRec == true)
-                {
-                    color = CommonManager.Instance.StatRecForeColor;
-                }
-
-                if (color == null)
-                {
-                    color = CommonManager.Instance.StatResForeColor;
-                }
-
                 return color;
             }
         }
@@ -452,117 +299,7 @@ namespace EpgTimer
                 if (ReserveInfo != null)
                 {
                     view = CommonManager.Instance.ConvertReserveText(ReserveInfo);
-                    /*                    view = ReserveInfo.StartTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss ～ ");
-                                        DateTime endTime = ReserveInfo.StartTime + TimeSpan.FromSeconds(ReserveInfo.DurationSecond);
-                                        view += endTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss") + "\r\n";
-
-                                        view += ServiceName;
-                                        if (0x7880 <= ReserveInfo.OriginalNetworkID && ReserveInfo.OriginalNetworkID <= 0x7FE8)
-                                        {
-                                            view += " (地デジ)";
-                                        }
-                                        else if (ReserveInfo.OriginalNetworkID == 0x0004)
-                                        {
-                                            view += " (BS)";
-                                        }
-                                        else if (ReserveInfo.OriginalNetworkID == 0x0006)
-                                        {
-                                            view += " (CS1)";
-                                        }
-                                        else if (ReserveInfo.OriginalNetworkID == 0x0007)
-                                        {
-                                            view += " (CS2)";
-                                        }
-                                        else
-                                        {
-                                            view += " (その他)";
-                                        }
-                                        view += "\r\n";
-
-                                        view += EventName + "\r\n\r\n";
-                                        view += "録画モード : " + RecMode + "\r\n";
-                                        view += "優先度 : " + Priority + "\r\n";
-                                        view += "追従 : " + Tuijyu + "\r\n";
-                                        view += "ぴったり（？） : " + Pittari + "\r\n";
-                                        if ((ReserveInfo.RecSetting.ServiceMode & 0x01) == 0)
-                                        {
-                                            view += "指定サービス対象データ : デフォルト\r\n";
-                                        }
-                                        else
-                                        {
-                                            view += "指定サービス対象データ : ";
-                                            if ((ReserveInfo.RecSetting.ServiceMode & 0x10) > 0)
-                                            {
-                                                view += "字幕含む ";
-                                            }
-                                            if ((ReserveInfo.RecSetting.ServiceMode & 0x20) > 0)
-                                            {
-                                                view += "データカルーセル含む";
-                                            }
-                                            view += "\r\n";
-                                        }
-
-                                        view += "録画実行bat : " + ReserveInfo.RecSetting.BatFilePath + "\r\n";
-
-                                        if (ReserveInfo.RecSetting.RecFolderList.Count == 0)
-                                        {
-                                            view += "録画フォルダ : デフォルト\r\n";
-                                        }
-                                        else
-                                        {
-                                            view += "録画フォルダ : \r\n";
-                                            foreach (RecFileSetInfo info in ReserveInfo.RecSetting.RecFolderList)
-                                            {
-                                                view += info.RecFolder + " (WritePlugIn:" + info.WritePlugIn + ")\r\n";
-                                            }
-                                        }
-
-                                        if (ReserveInfo.RecSetting.UseMargineFlag == 0)
-                                        {
-                                            view += "録画マージン : デフォルト\r\n";
-                                        }
-                                        else
-                                        {
-                                            view += "録画マージン : 開始 " + ReserveInfo.RecSetting.StartMargine.ToString() +
-                                                " 終了 " + ReserveInfo.RecSetting.EndMargine.ToString() + "\r\n";
-                                        }
-
-                                        if (ReserveInfo.RecSetting.SuspendMode == 0)
-                                        {
-                                            view += "録画後動作 : デフォルト\r\n";
-                                        }
-                                        else
-                                        {
-                                            view += "録画後動作 : ";
-                                            switch (ReserveInfo.RecSetting.SuspendMode)
-                                            {
-                                                case 1:
-                                                    view += "スタンバイ";
-                                                    break;
-                                                case 2:
-                                                    view += "休止";
-                                                    break;
-                                                case 3:
-                                                    view += "シャットダウン";
-                                                    break;
-                                                case 4:
-                                                    view += "何もしない";
-                                                    break;
-                                            }
-                                            if (ReserveInfo.RecSetting.RebootFlag == 1)
-                                            {
-                                                view += " 復帰後再起動する";
-                                            }
-                                            view += "\r\n";
-                                        }
-                                        view += "予約状況 : " + ReserveInfo.Comment;
-                                        view += "\r\n\r\n";
-                                        view += "OriginalNetworkID : " + ReserveInfo.OriginalNetworkID.ToString() + " (0x" + ReserveInfo.OriginalNetworkID.ToString("X4") + ")\r\n";
-                                        view += "TransportStreamID : " + ReserveInfo.TransportStreamID.ToString() + " (0x" + ReserveInfo.TransportStreamID.ToString("X4") + ")\r\n";
-                                        view += "ServiceID : " + ReserveInfo.ServiceID.ToString() + " (0x" + ReserveInfo.ServiceID.ToString("X4") + ")\r\n";
-                                        view += "EventID : " + ReserveInfo.EventID.ToString() + " (0x" + ReserveInfo.EventID.ToString("X4") + ")\r\n";*/
                 }
-
 
                 TextBlock block = new TextBlock();
                 block.Text = view;
@@ -576,20 +313,14 @@ namespace EpgTimer
         {
             get
             {
-                EpgEventInfo eventInfo1 = null;
-                UInt64 key1 = CommonManager.Create64Key(ReserveInfo.OriginalNetworkID, ReserveInfo.TransportStreamID, ReserveInfo.ServiceID);
-                if (CommonManager.Instance.DB.ServiceEventList.ContainsKey(key1) == true)
+                if (eventInfo == null)
                 {
-                    foreach (EpgEventInfo eventChkInfo1 in CommonManager.Instance.DB.ServiceEventList[key1].eventList)
+                    if (ReserveInfo != null)
                     {
-                        if (eventChkInfo1.event_id == ReserveInfo.EventID)
-                        {
-                            eventInfo1 = eventChkInfo1;
-                            break;
-                        }
+                        eventInfo = CommonManager.Instance.GetEpgEventInfoFromReserveData(ReserveInfo, false);
                     }
                 }
-                return eventInfo1;
+                return eventInfo;
             }
         }
 

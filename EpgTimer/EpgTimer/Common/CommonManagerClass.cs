@@ -601,6 +601,47 @@ namespace EpgTimer
             return retText;
         }
 
+        public EpgEventInfo GetEpgEventInfoFromReserveData(ReserveData info, bool getSrv=false)
+        {
+            CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
+            EpgEventInfo eventInfo = null;
+
+            if (info != null)
+            {
+                try
+                {
+                    if (info.EventID != 0xFFFF)
+                    {
+                        UInt64 key = CommonManager.Create64Key(info.OriginalNetworkID, info.TransportStreamID, info.ServiceID);
+                        if (CommonManager.Instance.DB.ServiceEventList.ContainsKey(key) == true)
+                        {
+                            foreach (EpgEventInfo eventChkInfo in CommonManager.Instance.DB.ServiceEventList[key].eventList)
+                            {
+                                if (eventChkInfo.event_id == info.EventID)
+                                {
+                                    eventInfo = eventChkInfo;
+                                    break;
+                                }
+                            }
+                        }
+                        if (eventInfo == null && getSrv == true)
+                        {
+                            UInt64 pgId = CommonManager.Create64PgKey(info.OriginalNetworkID, info.TransportStreamID, info.ServiceID, info.EventID);
+                            eventInfo = new EpgEventInfo();
+                            cmd.SendGetPgInfo(pgId, ref eventInfo);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                }
+
+            }
+
+            return eventInfo;
+        }
+
         public String ConvertReserveText(ReserveData reserveInfo)
         {
             String view = "";
@@ -1009,6 +1050,131 @@ namespace EpgTimer
             if (textMode == EventInfoTextMode.All || textMode == EventInfoTextMode.ExtOnly)
             {
                 retText += extInfo;
+            }
+            return retText;
+        }
+
+        public String ConvertNetworkNameText(ushort originalNetworkID)
+        {
+            String retText = "";
+            if (0x7880 <= originalNetworkID && originalNetworkID <= 0x7FE8)
+            {
+                retText = "地デジ";
+            }
+            else if (originalNetworkID == 0x0004)
+            {
+                retText = "BS";
+            }
+            else if (originalNetworkID == 0x0006)
+            {
+                retText = "CS1";
+            }
+            else if (originalNetworkID == 0x0007)
+            {
+                retText = "CS2";
+            }
+            else
+            {
+                retText = "その他";
+            }
+            return retText;
+        }
+
+        public String ConvertJyanruText(EpgEventInfo eventInfo)
+        {
+            if (eventInfo == null || eventInfo.ContentInfo == null)
+            {
+                return "";
+            }
+            else
+            {
+                return ConvertJyanruText(eventInfo.ContentInfo.nibbleList);
+            }
+        }
+        public String ConvertJyanruText(EpgSearchKeyInfo searchKeyInfo)
+        {
+            if (searchKeyInfo == null)
+            {
+                return "";
+            }
+            else
+            {
+                return ConvertJyanruText(searchKeyInfo.contentList);
+            }
+        }
+        public String ConvertJyanruText(List<EpgContentData> nibbleList)
+        {
+            String retText = "";
+            if (nibbleList != null)
+            {
+                Dictionary<int, List<int>> nibbleDict1 = new Dictionary<int, List<int>>();  // 小ジャンルを大ジャンルでまとめる
+                foreach (EpgContentData ecd1 in nibbleList)
+                {
+                    if (nibbleDict1.ContainsKey(ecd1.content_nibble_level_1))
+                    {
+                        nibbleDict1[ecd1.content_nibble_level_1].Add(ecd1.content_nibble_level_2);
+                    }
+                    else
+                    {
+                        nibbleDict1.Add(ecd1.content_nibble_level_1, new List<int>() { ecd1.content_nibble_level_2 });
+                    }
+                }
+                foreach (KeyValuePair<int, List<int>> kvp1 in nibbleDict1)
+                {
+                    int nibble1 = kvp1.Key;
+                    UInt16 contentKey1 = (UInt16)(nibble1 << 8 | 0xFF);
+                    //
+                    string smallCategory1 = "";
+                    foreach (int nibble2 in kvp1.Value)
+                    {
+                        UInt16 contentKey2 = (UInt16)(nibble1 << 8 | nibble2);
+                        if (nibble2 != 0xFF)
+                        {
+                            if (smallCategory1 != "") { smallCategory1 += ", "; }
+                            if (CommonManager.Instance.ContentKindDictionary.ContainsKey(contentKey2))
+                            {
+                                smallCategory1 += CommonManager.Instance.ContentKindDictionary[contentKey2].ToString().Trim();
+                            }
+                        }
+                    }
+                    //
+                    if (retText != "") { retText += ", "; }
+                    if (CommonManager.Instance.ContentKindDictionary.ContainsKey(contentKey1))
+                    {
+                        retText += "[" + CommonManager.Instance.ContentKindDictionary[contentKey1].ToString().Trim();
+                        if (smallCategory1 != "") { retText += " - " + smallCategory1; }
+                        retText += "]";
+                    }
+                }
+            }
+            return retText;
+        }
+
+        public String ConvertRecModeText(byte recMode)
+        {
+            String retText = "";
+            switch (recMode)
+            {
+                case 0:
+                    retText = "全サービス";
+                    break;
+                case 1:
+                    retText = "指定サービス";
+                    break;
+                case 2:
+                    retText = "全サービス（デコード処理なし）";
+                    break;
+                case 3:
+                    retText = "指定サービス（デコード処理なし）";
+                    break;
+                case 4:
+                    retText = "視聴";
+                    break;
+                case 5:
+                    retText = "無効";
+                    break;
+                default:
+                    break;
             }
             return retText;
         }
