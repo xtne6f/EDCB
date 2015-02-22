@@ -368,6 +368,19 @@ namespace EpgTimer.Setting
                 Settings.GetDefSearchSetting(ref defSearchKey);
 
                 checkBox_showAsTab.IsChecked = Settings.Instance.ViewButtonShowAsTab;
+                checkBox_suspendChk.IsChecked = (Settings.Instance.SuspendChk == 1);
+                textBox_suspendChkTime.Text = Settings.Instance.SuspendChkTime.ToString();
+                TextBlock tb = new TextBlock();
+                if (CommonManager.Instance.NWMode == true)
+                {
+                    tb.Text = "EpgTimerNW側の設定です。";
+                }
+                else
+                {
+                    tb.Text = "録画終了時にスタンバイ、休止する場合は必ず表示されます。(表示時間は同じ)";
+                }
+                tb.TextWrapping = TextWrapping.WrapWithOverflow;
+                labelTimer2.Content = tb;
 
                 buttonItem.Add(new ViewMenuItem("（空白）", false));
                 buttonItem.Add(new ViewMenuItem("設定", false));
@@ -908,6 +921,13 @@ namespace EpgTimer.Setting
             Settings.Instance.SearchKeyChkRecDay = defSearchKey.chkRecDay;
 
             Settings.Instance.ViewButtonShowAsTab = checkBox_showAsTab.IsChecked == true;
+            Settings.Instance.SuspendChk = (uint)(checkBox_suspendChk.IsChecked == true ? 1 : 0);
+            try
+            {
+                Settings.Instance.SuspendChkTime = Convert.ToUInt16(textBox_suspendChkTime.Text.ToString());
+            }
+            catch { }
+
             Settings.Instance.ViewButtonList.Clear();
             foreach (ViewMenuItem info in listBox_viewBtn.Items)
             {

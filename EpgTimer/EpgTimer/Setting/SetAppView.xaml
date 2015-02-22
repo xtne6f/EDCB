@@ -85,6 +85,11 @@
                             <Label Content="項目" Height="28" HorizontalAlignment="Left" Margin="281,6,0,0" Name="label32" VerticalAlignment="Top" />
                             <ListBox Height="124" HorizontalAlignment="Left" Margin="281,40,0,0" Name="listBox_itemBtn" VerticalAlignment="Top" Width="172" />
                             <CheckBox Content="タブの位置に表示" Height="16" HorizontalAlignment="Left" Margin="469,40,0,0" Name="checkBox_showAsTab" VerticalAlignment="Top" />
+                            <CheckBox Content="スタンバイ、休止ボタンでもカウントダウンを表示" Height="16" HorizontalAlignment="Left" Margin="469,62,0,0" Name="checkBox_suspendChk" VerticalAlignment="Top" Width="263"/>
+                            <TextBox Height="24" Margin="499,80,0,0" Name="textBox_suspendChkTime" VerticalAlignment="Top" HorizontalAlignment="Left" Width="42" />
+                            <Label Content="秒間" Height="28" HorizontalAlignment="Left" Margin="547,80,0,0" Name="labelTimer" VerticalAlignment="Top" />
+                            <Label Content="※" Height="23" HorizontalAlignment="Left" Margin="485,106,0,0" Name="labelTimerStar" VerticalAlignment="Top" Width="21" />
+                            <Label Content="{}" Height="45" HorizontalAlignment="Left" Margin="499,106,0,0" Name="labelTimer2" VerticalAlignment="Top" Width="213" />
                         </Grid>
                     </GroupBox>
                     <GroupBox Header="タスクアイコン 右クリック表示項目" Height="197" Margin="12,217,12,0" Name="groupBox32" VerticalAlignment="Top">

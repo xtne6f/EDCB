@@ -241,6 +241,7 @@ namespace EpgTimer
         private byte epgInfoOpenMode;
         private UInt32 execBat;
         private UInt32 suspendChk;
+        private UInt32 suspendChkTime;
         private List<ListColumnInfo> reserveListColumn;
         private List<ListColumnInfo> recInfoListColumn;
         private List<ListColumnInfo> autoAddEpgColumn;
@@ -960,6 +961,11 @@ namespace EpgTimer
             get { return suspendChk; }
             set { suspendChk = value; }
         }
+        public UInt32 SuspendChkTime
+        {
+            get { return suspendChkTime; }
+            set { suspendChkTime = value; }
+        }
         public List<ListColumnInfo> ReserveListColumn
         {
             get { return reserveListColumn; }
@@ -1154,6 +1160,7 @@ namespace EpgTimer
             epgInfoOpenMode = 0;
             execBat = 0;
             suspendChk = 0;
+            suspendChkTime = 20;
             reserveListColumn = new List<ListColumnInfo>();
             recInfoListColumn = new List<ListColumnInfo>();
             autoAddEpgColumn = new List<ListColumnInfo>();

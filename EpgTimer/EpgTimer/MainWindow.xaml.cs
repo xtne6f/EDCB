@@ -984,17 +984,17 @@ namespace EpgTimer
             }
             else
             {
+                if (Settings.Instance.SuspendChk == 1)
+                {
+                    SuspendCheckWindow dlg = new SuspendCheckWindow();
+                    dlg.SetMode(0, 2);
+                    if (dlg.ShowDialog() == true)
+                    {
+                        return;
+                    }
+                }
                 if (CommonManager.Instance.NWMode == false)
                 {
-                    if (Settings.Instance.SuspendChk == 1)
-                    {
-                        SuspendCheckWindow dlg = new SuspendCheckWindow();
-                        dlg.SetMode(0, 2);
-                        if (dlg.ShowDialog() == true)
-                        {
-                            return;
-                        }
-                    }
                     if (IniFileHandler.GetPrivateProfileInt("SET", "Reboot", 0, SettingPath.TimerSrvIniPath) == 1)
                     {
                         cmd.SendSuspend(0x0102);
@@ -1046,17 +1046,17 @@ namespace EpgTimer
             }
             else
             {
+                if (Settings.Instance.SuspendChk == 1)
+                {
+                    SuspendCheckWindow dlg = new SuspendCheckWindow();
+                    dlg.SetMode(0, 1);
+                    if (dlg.ShowDialog() == true)
+                    {
+                        return;
+                    }
+                }
                 if (CommonManager.Instance.NWMode == false)
                 {
-                    if (Settings.Instance.SuspendChk == 1)
-                    {
-                        SuspendCheckWindow dlg = new SuspendCheckWindow();
-                        dlg.SetMode(0, 1);
-                        if (dlg.ShowDialog() == true)
-                        {
-                            return;
-                        }
-                    }
                     if (IniFileHandler.GetPrivateProfileInt("SET", "Reboot", 0, SettingPath.TimerSrvIniPath) == 1)
                     {
                         cmd.SendSuspend(0x0101);
