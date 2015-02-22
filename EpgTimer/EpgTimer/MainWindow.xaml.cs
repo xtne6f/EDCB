@@ -1316,19 +1316,6 @@ namespace EpgTimer
                         Thread thread = new Thread(ts);
                         thread.Start(param);
                         /////////////////////////////////////////////////////////////////////////////////////
-
-                        /*Byte reboot = (Byte)((param & 0xFF00) >> 8);
-                        Byte suspendMode = (Byte)(param & 0x00FF);
-
-                        Dispatcher.BeginInvoke(new Action(() =>
-                        {
-                            SuspendCheckWindow dlg = new SuspendCheckWindow();
-                            dlg.SetMode(0, suspendMode);
-                            if (dlg.ShowDialog() != true)
-                            {
-                                cmd.SendSuspend(param);
-                            }
-                        }));*/
                     }
                     break;
                 case CtrlCmd.CMD_TIMER_GUI_QUERY_REBOOT:
@@ -1446,19 +1433,12 @@ namespace EpgTimer
                 dwNow += 0x100000000;
             }
 
-            StringBuilder sb = new StringBuilder(1024);
-            IniFileHandler.GetPrivateProfileString("SET", "RecCloseCheck", "False", sb, (uint)sb.Capacity, SettingPath.TimerSrvIniPath);
-            bool BoolTryParse = false, BoolCheck = false; ;
-            if (bool.TryParse(sb.ToString(), out BoolCheck))//紅
-                BoolTryParse = BoolCheck;
-
-            if (BoolTryParse)
+            if (IniFileHandler.GetPrivateProfileInt("NO_SUSPEND", "NoUsePC", 0, SettingPath.TimerSrvIniPath) == 1)
             {
-                UInt32 RecCloseTime = UInt32.Parse(IniFileHandler.GetPrivateProfileInt("SET", "RecCloseTime", 0, SettingPath.TimerSrvIniPath).ToString()); //紅
+                UInt32 ngUsePCTime = UInt32.Parse(IniFileHandler.GetPrivateProfileInt("NO_SUSPEND", "NoUsePCTime", 0, SettingPath.TimerSrvIniPath).ToString()); //紅
+                UInt32 threshold = ngUsePCTime * 60 * 1000;
 
-                UInt32 threshold = RecCloseTime * 60 * 1000;
-
-                if (RecCloseTime != 0 && dwNow - info.dwTime >= threshold)
+                if (ngUsePCTime != 0 && dwNow - info.dwTime >= threshold)
                 {
                     SleepDialog(obj);
                 }
@@ -1469,13 +1449,7 @@ namespace EpgTimer
         void SleepDialog(object obj)
         {
             UInt16 param = (UInt16)obj;
-            Byte reboot = (Byte)((param & 0xFF00) >> 8);
             Byte suspendMode = (Byte)(param & 0x00FF);
-
-            Int32 sleepmin = (Int32)IniFileHandler.GetPrivateProfileInt("SET", "RecMarginTime", 0, SettingPath.TimerSrvIniPath);
-
-            sleepmin = sleepmin * 60000;
-            Thread.Sleep(sleepmin);
 
             Dispatcher.BeginInvoke(new Action(() =>
             {
