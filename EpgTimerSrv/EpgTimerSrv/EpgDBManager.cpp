@@ -27,13 +27,11 @@ CEpgDBManager::~CEpgDBManager(void)
 void CEpgDBManager::ClearEpgData()
 {
 	CBlockLock lock(&this->epgMapLock);
-	try{
+	{
 		map<LONGLONG, EPGDB_SERVICE_DATA*>::iterator itr;
 		for( itr = this->epgMap.begin(); itr != this->epgMap.end(); itr++ ){
 			SAFE_DELETE(itr->second);
 		}
-	}catch(...){
-		_OutputDebugString(L"šCEpgDBManager::ClearEpgData() Exception");
 	}
 	this->epgMap.clear();
 }
@@ -771,11 +769,11 @@ BOOL CEpgDBManager::IsFindKeyword(BOOL regExpFlag, IRegExpPtr& regExp, BOOL titl
 
 	if( regExpFlag == TRUE ){
 		//³‹K•\Œ»ƒ‚[ƒh
-		if( regExp == NULL ){
-			regExp.CreateInstance(CLSID_RegExp);
-		}
-		if( regExp != NULL && word.size() > 0 && keyList->size() > 0 ){
-			try{
+		try{
+			if( regExp == NULL ){
+				regExp.CreateInstance(CLSID_RegExp);
+			}
+			if( regExp != NULL && word.size() > 0 && keyList->size() > 0 ){
 				_bstr_t target( word.c_str() );
 				_bstr_t pattern( (*keyList)[0].c_str() );
 
@@ -790,12 +788,13 @@ BOOL CEpgDBManager::IsFindKeyword(BOOL regExpFlag, IRegExpPtr& regExp, BOOL titl
 						IMatch2Ptr pMatch( pMatchCol->Item[0] );
 						_bstr_t value( pMatch->Value );
 
-						*findKey = value;
+						*findKey = !value ? L"" : value;
 					}
 					return TRUE;
 				}
-			}catch(...){
 			}
+		}catch( _com_error& ){
+			//_OutputDebugString(L"%s\r\n", e.ErrorMessage());
 		}
 		return FALSE;
 	}else{
