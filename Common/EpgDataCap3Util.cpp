@@ -25,6 +25,7 @@ BOOL CEpgDataCap3Util::LoadDll(void)
 	pfnAddTSPacketEP3 = NULL;
 	pfnGetTSIDEP3 = NULL;
 	pfnGetEpgInfoListEP3 = NULL;
+	pfnEnumEpgInfoListEP3 = NULL;
 	pfnClearSectionStatusEP3 = NULL;
 	pfnGetSectionStatusEP3 = NULL;
 	pfnGetServiceListActualEP3 = NULL;
@@ -73,6 +74,8 @@ BOOL CEpgDataCap3Util::LoadDll(void)
 		ret = FALSE;
 		goto ERR_END;
 	}
+	pfnEnumEpgInfoListEP3 = ( EnumEpgInfoListEP3 ) ::GetProcAddress( module , "EnumEpgInfoListEP");
+
 	pfnClearSectionStatusEP3 = ( ClearSectionStatusEP3 ) ::GetProcAddress( module , "ClearSectionStatusEP");
 	if( !pfnClearSectionStatusEP3 ){
 		OutputDebugString(L"ClearSectionStatusEPの GetProcAddress に失敗\r\n");
@@ -141,6 +144,7 @@ BOOL CEpgDataCap3Util::UnLoadDll(void)
 	pfnAddTSPacketEP3 = NULL;
 	pfnGetTSIDEP3 = NULL;
 	pfnGetEpgInfoListEP3 = NULL;
+	pfnEnumEpgInfoListEP3 = NULL;
 	pfnClearSectionStatusEP3 = NULL;
 	pfnGetSectionStatusEP3 = NULL;
 	pfnGetServiceListActualEP3 = NULL;
@@ -276,6 +280,33 @@ DWORD CEpgDataCap3Util::GetEpgInfoList(
 		return ERR_NOT_INIT;
 	}
 	return pfnGetEpgInfoListEP3(id, originalNetworkID, transportStreamID, serviceID, epgInfoListSize, epgInfoList);
+}
+
+//指定サービスの全EPG情報を列挙する
+//引数：
+// enumEpgInfoListProc		[IN]EPG情報のリストを取得するコールバック関数
+// param					[IN]コールバック引数
+DWORD CEpgDataCap3Util::EnumEpgInfoList(
+	WORD originalNetworkID,
+	WORD transportStreamID,
+	WORD serviceID,
+	BOOL (CALLBACK *enumEpgInfoListProc)(DWORD epgInfoListSize, EPG_EVENT_INFO* epgInfoList, LPVOID param),
+	LPVOID param
+	)
+{
+	if( module == NULL || id == 0 ){
+		return ERR_NOT_INIT;
+	}
+	if( pfnEnumEpgInfoListEP3 == NULL ){
+		DWORD epgInfoListSize;
+		EPG_EVENT_INFO* epgInfoList;
+		DWORD ret = pfnGetEpgInfoListEP3(id, originalNetworkID, transportStreamID, serviceID, &epgInfoListSize, &epgInfoList);
+		if( ret == NO_ERR && enumEpgInfoListProc(epgInfoListSize, NULL, param) != FALSE ){
+			enumEpgInfoListProc(epgInfoListSize, epgInfoList, param);
+		}
+		return ret;
+	}
+	return pfnEnumEpgInfoListEP3(id, originalNetworkID, transportStreamID, serviceID, enumEpgInfoListProc, param);
 }
 
 //EPGデータの蓄積状態をリセットする

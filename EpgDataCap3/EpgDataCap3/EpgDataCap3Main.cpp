@@ -88,6 +88,19 @@ BOOL CEpgDataCap3Main::GetEpgInfoList(
 	return this->epgDBUtilClass.GetEpgInfoList(originalNetworkID, transportStreamID, serviceID, epgInfoListSize, epgInfoList);
 }
 
+//指定サービスの全EPG情報を列挙する
+BOOL CEpgDataCap3Main::EnumEpgInfoList(
+	WORD originalNetworkID,
+	WORD transportStreamID,
+	WORD serviceID,
+	BOOL (CALLBACK *enumEpgInfoListProc)(DWORD, EPG_EVENT_INFO*, LPVOID),
+	LPVOID param
+	)
+{
+	CBlockLock lock(&this->utilLock);
+	return this->epgDBUtilClass.EnumEpgInfoList(originalNetworkID, transportStreamID, serviceID, enumEpgInfoListProc, param);
+}
+
 //指定サービスの現在or次のEPG情報を取得する
 //引数：
 // originalNetworkID		[IN]取得対象のoriginalNetworkID

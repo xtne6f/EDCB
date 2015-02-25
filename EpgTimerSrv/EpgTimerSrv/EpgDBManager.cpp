@@ -184,15 +184,7 @@ UINT WINAPI CEpgDBManager::LoadThread(LPVOID param)
 		}
 		sys->epgMap.insert(pair<LONGLONG, EPGDB_SERVICE_DATA*>(key, item));
 
-		DWORD epgInfoListSize = 0;
-		EPG_EVENT_INFO* epgInfoList = NULL;
-		if( epgUtil.GetEpgInfoList(item->serviceInfo.ONID, item->serviceInfo.TSID, item->serviceInfo.SID, &epgInfoListSize, &epgInfoList) == TRUE ){
-			for( DWORD j=0; j<epgInfoListSize; j++ ){
-				EPGDB_EVENT_INFO* itemEvent = new EPGDB_EVENT_INFO;
-				sys->ConvertEpgInfo(item->serviceInfo.ONID, item->serviceInfo.TSID, item->serviceInfo.SID, epgInfoList+j, itemEvent);
-				item->eventMap.insert(pair<WORD, EPGDB_EVENT_INFO*>(itemEvent->event_id, itemEvent));
-			}
-		}
+		epgUtil.EnumEpgInfoList(item->serviceInfo.ONID, item->serviceInfo.TSID, item->serviceInfo.SID, EnumEpgInfoListProc, item);
 	}
 
 	} //CBlockLock
@@ -288,6 +280,31 @@ BOOL CEpgDBManager::ConvertEpgInfo(WORD ONID, WORD TSID, WORD SID, EPG_EVENT_INF
 			item.event_id = src->eventRelayInfo->eventDataList[i].event_id;
 			dest->eventRelayInfo->eventDataList.push_back(item);
 		}
+	}
+	return TRUE;
+}
+
+BOOL CALLBACK CEpgDBManager::EnumEpgInfoListProc(DWORD epgInfoListSize, EPG_EVENT_INFO* epgInfoList, LPVOID param)
+{
+	EPGDB_SERVICE_DATA* item = (EPGDB_SERVICE_DATA*)param;
+
+	try{
+		if( epgInfoList == NULL ){
+			item->eventList.reserve(epgInfoListSize);
+			item->eventArray = new EPGDB_EVENT_INFO[epgInfoListSize];
+		}else{
+			for( DWORD i=0; i<epgInfoListSize; i++ ){
+				size_t j = item->eventList.size();
+				ConvertEpgInfo(item->serviceInfo.ONID, item->serviceInfo.TSID, item->serviceInfo.SID, &epgInfoList[i], &item->eventArray[j]);
+				item->eventList.push_back(&item->eventArray[j]);
+				//実装上は既ソートだが仕様ではないので挿入ソートしておく
+				for( ; j>0 && item->eventList[j] < item->eventList[j-1]; j-- ){
+					std::swap(item->eventList[j], item->eventList[j-1]);
+				}
+			}
+		}
+	}catch( std::bad_alloc& ){
+		return FALSE;
 	}
 	return TRUE;
 }
@@ -514,8 +531,10 @@ void CEpgDBManager::SearchEvent(EPGDB_SEARCH_KEY_INFO* key, map<ULONGLONG, SEARC
 		itrService = this->epgMap.find(key->serviceList[i]);
 		if( itrService != this->epgMap.end() ){
 			//サービス発見
-			map<WORD, EPGDB_EVENT_INFO*>::iterator itrEvent;
-			for( itrEvent = itrService->second->eventMap.begin(); itrEvent != itrService->second->eventMap.end(); itrEvent++ ){
+			vector<EPGDB_EVENT_INFO*>::iterator itrEvent_;
+			for( itrEvent_ = itrService->second->eventList.begin(); itrEvent_ != itrService->second->eventList.end(); itrEvent_++ ){
+				pair<WORD, EPGDB_EVENT_INFO*> autoEvent(std::make_pair((*itrEvent_)->event_id, *itrEvent_));
+				pair<WORD, EPGDB_EVENT_INFO*>* itrEvent = &autoEvent;
 				wstring matchKey = L"";
 				if( key->freeCAFlag == 1 ){
 					//無料放送のみ
@@ -935,17 +954,11 @@ BOOL CEpgDBManager::EnumEventInfo(LONGLONG serviceKey, void (*enumProc)(vector<E
 	BOOL ret = TRUE;
 	map<LONGLONG, EPGDB_SERVICE_DATA*>::iterator itr;
 	itr = this->epgMap.find(serviceKey);
-	if( itr != this->epgMap.end() ){
-		map<WORD, EPGDB_EVENT_INFO*>::iterator itrInfo;
-		for( itrInfo = itr->second->eventMap.begin(); itrInfo != itr->second->eventMap.end(); itrInfo++ ){
-			result.push_back(itrInfo->second);
-		}
-	}
-	if( result.size() == 0 ){
+	if( itr == this->epgMap.end() || itr->second->eventList.empty() ){
 		ret = FALSE;
 	}else{
 		//ここはロック状態なのでコールバック先で排他制御すべきでない
-		enumProc(&result, param);
+		enumProc(&itr->second->eventList, param);
 	}
 
 	return ret;
@@ -961,10 +974,7 @@ BOOL CEpgDBManager::EnumEventAll(void (*enumProc)(vector<EPGDB_SERVICE_EVENT_INF
 	for( itr = this->epgMap.begin(); itr != this->epgMap.end(); itr++ ){
 		result.resize(result.size() + 1);
 		result.back().serviceInfo = itr->second->serviceInfo;
-		map<WORD, EPGDB_EVENT_INFO*>::iterator itrInfo;
-		for( itrInfo = itr->second->eventMap.begin(); itrInfo != itr->second->eventMap.end(); itrInfo++ ){
-			result.back().eventList.push_back(itrInfo->second);
-		}
+		result.back().eventList = itr->second->eventList;
 	}
 	if( result.size() == 0 ){
 		ret = FALSE;
@@ -992,10 +1002,12 @@ BOOL CEpgDBManager::SearchEpg(
 	map<LONGLONG, EPGDB_SERVICE_DATA*>::iterator itr;
 	itr = this->epgMap.find(key);
 	if( itr != this->epgMap.end() ){
-		map<WORD, EPGDB_EVENT_INFO*>::iterator itrInfo;
-		itrInfo = itr->second->eventMap.find(EventID);
-		if( itrInfo != itr->second->eventMap.end() ){
-			result->DeepCopy(*itrInfo->second);
+		EPGDB_EVENT_INFO infoKey;
+		infoKey.event_id = EventID;
+		vector<EPGDB_EVENT_INFO*>::iterator itrInfo;
+		itrInfo = std::lower_bound(itr->second->eventList.begin(), itr->second->eventList.end(), &infoKey, EPGDB_SERVICE_DATA::CompareEventInfo);
+		if( itrInfo != itr->second->eventList.end() && (*itrInfo)->event_id == EventID ){
+			result->DeepCopy(**itrInfo);
 			ret = TRUE;
 		}
 	}
@@ -1020,13 +1032,13 @@ BOOL CEpgDBManager::SearchEpg(
 	map<LONGLONG, EPGDB_SERVICE_DATA*>::iterator itr;
 	itr = this->epgMap.find(key);
 	if( itr != this->epgMap.end() ){
-		map<WORD, EPGDB_EVENT_INFO*>::iterator itrInfo;
-		for( itrInfo = itr->second->eventMap.begin(); itrInfo != itr->second->eventMap.end(); itrInfo++ ){
-			if( itrInfo->second->StartTimeFlag == 1 && itrInfo->second->DurationFlag == 1 ){
-				if( startTime == ConvertI64Time(itrInfo->second->start_time) &&
-					durationSec == itrInfo->second->durationSec
+		vector<EPGDB_EVENT_INFO*>::iterator itrInfo;
+		for( itrInfo = itr->second->eventList.begin(); itrInfo != itr->second->eventList.end(); itrInfo++ ){
+			if( (*itrInfo)->StartTimeFlag == 1 && (*itrInfo)->DurationFlag == 1 ){
+				if( startTime == ConvertI64Time((*itrInfo)->start_time) &&
+					durationSec == (*itrInfo)->durationSec
 					){
-						result->DeepCopy(*itrInfo->second);
+						result->DeepCopy(**itrInfo);
 						ret = TRUE;
 						break;
 				}
