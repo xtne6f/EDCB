@@ -5,10 +5,6 @@
 #include "StringUtil.h"
 #include "TimeUtil.h"
 
-#include <process.h>
-#include <tlhelp32.h> 
-#include <shlwapi.h>
-
 LONGLONG _Create64Key( WORD OriginalNetworkID, WORD TransportStreamID, WORD ServiceID )
 {
 	LONGLONG Key = 
@@ -160,51 +156,6 @@ LONGLONG _GetRecSize( DWORD OriginalNetworkID, DWORD TransportStreamID, DWORD Se
 	return RecSize;
 }
 
-BOOL _FindOpenExeProcess(DWORD processID)
-{
-	HANDLE hSnapshot;
-	PROCESSENTRY32 procent;
-
-	BOOL bFind = FALSE;
-	/* Toolhelpスナップショットを作成する */
-	hSnapshot = CreateToolhelp32Snapshot( TH32CS_SNAPPROCESS,0 );
-	if ( hSnapshot != (HANDLE)-1 ) {
-		procent.dwSize = sizeof(PROCESSENTRY32);
-		if ( Process32First( hSnapshot,&procent ) != FALSE ){
-			do {
-				if( procent.th32ProcessID == processID ){
-					bFind = TRUE;
-					break;
-				}
-			} while ( Process32Next( hSnapshot,&procent ) != FALSE );
-		}
-		CloseHandle( hSnapshot );
-	}
-	return bFind;
-}
-
-vector<DWORD> _FindPidListByExeName(LPCTSTR lpExeName)
-{
-	HANDLE hSnapshot;
-	PROCESSENTRY32 procent;
-
-	vector<DWORD> ret;
-	/* Toolhelpスナップショットを作成する */
-	hSnapshot = CreateToolhelp32Snapshot( TH32CS_SNAPPROCESS,0 );
-	if ( hSnapshot != (HANDLE)-1 ) {
-		procent.dwSize = sizeof(PROCESSENTRY32);
-		if ( Process32First( hSnapshot,&procent ) != FALSE ){
-			do {
-				if( lstrcmpi(procent.szExeFile, lpExeName) == 0 ){
-					ret.push_back(procent.th32ProcessID);
-				}
-			} while ( Process32Next( hSnapshot,&procent ) != FALSE );
-		}
-		CloseHandle( hSnapshot );
-	}
-	return ret;
-}
-
 DWORD _BCDtoDWORD(BYTE* data, BYTE size, BYTE digit)
 {
 	if( data == NULL || (size<<1) < digit ){
@@ -310,7 +261,7 @@ BOOL _GetBitrate(WORD ONID, WORD TSID, WORD SID, DWORD* bitrate)
 }
 
 //EPG情報をTextに変換
-void _ConvertEpgInfoText(EPGDB_EVENT_INFO* info, wstring& text)
+void _ConvertEpgInfoText(const EPGDB_EVENT_INFO* info, wstring& text)
 {
 	text = L"";
 	if( info == NULL ){
@@ -711,7 +662,7 @@ void CreateComponentKindMap()
 }
 
 //EPG情報をTextに変換
-void _ConvertEpgInfoText2(EPGDB_EVENT_INFO* info, wstring& text, wstring serviceName)
+void _ConvertEpgInfoText2(const EPGDB_EVENT_INFO* info, wstring& text, wstring serviceName)
 {
 	if( contentKindMap.size() == 0 ){
 		CreateContentKindMap();

@@ -200,7 +200,6 @@
     <ClInclude Include="DLNAParsePublicFolder.h" />
     <ClInclude Include="EpgDBManager.h" />
     <ClInclude Include="EpgTimerSrv.h" />
-    <ClInclude Include="EpgTimerSrvDef.h" />
     <ClInclude Include="EpgTimerSrvMain.h" />
     <ClInclude Include="FileStreamingManager.h" />
     <ClInclude Include="FileStreamingUtil.h" />
@@ -210,8 +209,6 @@
     <ClInclude Include="HttpRecFileSend.h" />
     <ClInclude Include="HttpRequestReader.h" />
     <ClInclude Include="NotifyManager.h" />
-    <ClInclude Include="ReserveInfo.h" />
-    <ClInclude Include="ReserveInfoManager.h" />
     <ClInclude Include="ReserveManager.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="RestApiManager.h" />
@@ -278,7 +275,6 @@
     <ClCompile Include="HttpRecFileSend.cpp" />
     <ClCompile Include="HttpRequestReader.cpp" />
     <ClCompile Include="NotifyManager.cpp" />
-    <ClCompile Include="ReserveInfo.cpp" />
     <ClCompile Include="ReserveManager.cpp" />
     <ClCompile Include="RestApiManager.cpp" />
     <ClCompile Include="SOAPUtil.cpp" />

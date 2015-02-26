@@ -60,9 +60,6 @@
     <ClInclude Include="..\..\Common\ServiceUtil.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
-    <ClInclude Include="EpgTimerSrvDef.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Common\CommonDef.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
@@ -94,9 +91,6 @@
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
     <ClInclude Include="ReserveManager.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="ReserveInfo.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Common\TimeUtil.h">
@@ -270,9 +264,6 @@
     <ClInclude Include="DLNAParsePublicFolder.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="ReserveInfoManager.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -306,9 +297,6 @@
       <Filter>ソース ファイル\Common</Filter>
     </ClCompile>
     <ClCompile Include="ReserveManager.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="ReserveInfo.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Common\TimeUtil.cpp">

@@ -1,8 +1,10 @@
 #include "StdAfx.h"
 #include "BatManager.h"
 
+#include "../../Common/SendCtrlCmd.h"
 #include "../../Common/StringUtil.h"
 #include "../../Common/PathUtil.h"
+#include "../../Common/TimeUtil.h"
 #include "../../Common/BlockLock.h"
 
 #include <process.h>
@@ -48,14 +50,14 @@ void CBatManager::AddBatWork(const BAT_WORK_INFO& info)
 	this->workList.push_back(info);
 }
 
-DWORD CBatManager::GetWorkCount()
+DWORD CBatManager::GetWorkCount() const
 {
 	CBlockLock lock(&this->managerLock);
 
 	return (DWORD)this->workList.size();
 }
 
-BOOL CBatManager::IsWorking()
+BOOL CBatManager::IsWorking() const
 {
 	CBlockLock lock(&this->managerLock);
 
@@ -73,7 +75,7 @@ void CBatManager::StartWork()
 		this->batWorkThread = NULL;
 	}
 	this->pauseFlag = FALSE;
-	if( this->batWorkThread == NULL ){
+	if( this->batWorkThread == NULL && this->workList.empty() == false ){
 		ResetEvent(this->batWorkStopEvent);
 		this->batWorkExitingFlag = FALSE;
 		this->batWorkThread = (HANDLE)_beginthreadex(NULL, 0, BatWorkThread, this, 0, NULL);
@@ -88,12 +90,12 @@ void CBatManager::PauseWork()
 }
 
 
-BOOL CBatManager::GetLastWorkSuspend(BYTE* suspendMode, BYTE* rebootFlag)
+BOOL CBatManager::PopLastWorkSuspend(BYTE* suspendMode, BYTE* rebootFlag)
 {
 	CBlockLock lock(&this->managerLock);
 
 	BOOL ret = FALSE;
-	if( this->lastSuspendMode != 0xFF && this->lastRebootFlag != 0xFF ){
+	if( IsWorking() == FALSE && this->lastSuspendMode != 0xFF ){
 		ret = TRUE;
 		*suspendMode = this->lastSuspendMode;
 		*rebootFlag = this->lastRebootFlag;
@@ -108,13 +110,8 @@ BOOL CBatManager::GetLastWorkSuspend(BYTE* suspendMode, BYTE* rebootFlag)
 UINT WINAPI CBatManager::BatWorkThread(LPVOID param)
 {
 	CBatManager* sys = (CBatManager*)param;
-	CSendCtrlCmd sendCtrl;
 
 	while(1){
-		if( ::WaitForSingleObject(sys->batWorkStopEvent, 1000) != WAIT_TIMEOUT ){
-			//キャンセルされた
-			break;
-		}
 		{
 			BAT_WORK_INFO work;
 			{
@@ -125,63 +122,60 @@ UINT WINAPI CBatManager::BatWorkThread(LPVOID param)
 					break;
 				}else{
 					work = sys->workList[0];
-					sys->lastSuspendMode = work.reserveInfo.recSetting.suspendMode;
-					sys->lastRebootFlag = work.reserveInfo.recSetting.rebootFlag;
+					sys->lastSuspendMode = work.suspendMode;
+					sys->lastRebootFlag = work.rebootFlag;
 				}
 			}
 
-			if( work.reserveInfo.recSetting.batFilePath.size() > 0 ){
+			if( work.batFilePath.size() > 0 ){
 				wstring batFilePath = L"";
 				GetModuleFolderPath(batFilePath);
 				batFilePath += L"\\EpgTimer_Bon_RecEnd.bat";
-				if( CreateBatFile(work, work.reserveInfo.recSetting.batFilePath.c_str(), batFilePath.c_str()) != FALSE ){
+				if( CreateBatFile(work, work.batFilePath.c_str(), batFilePath.c_str()) != FALSE ){
 					wstring strExecute;
 					Format(strExecute, L"\"%s\"", batFilePath.c_str());
 
-					BOOL send = FALSE;
-					DWORD PID = 0;
-					map<DWORD, DWORD>::iterator itr;
-					map<DWORD, DWORD> registGUIMap;
-					sys->notifyManager.GetRegistGUI(&registGUIMap);
-					for( itr = registGUIMap.begin(); itr != registGUIMap.end(); itr++ ){
-						sendCtrl.SetPipeSetting(CMD2_GUI_CTRL_WAIT_CONNECT, CMD2_GUI_CTRL_PIPE, itr->first);
-
-						if( sendCtrl.SendGUIExecute(strExecute.c_str(), &PID) == CMD_SUCCESS ){
-							send = TRUE;
+					bool executed = false;
+					HANDLE hProcess = NULL;
+					if( GetShellWindow() == NULL ){
+						OutputDebugString(L"GetShellWindow() failed\r\n");
+						//表示できない可能性が高いのでGUI経由で起動してみる
+						CSendCtrlCmd ctrlCmd;
+						map<DWORD, DWORD> registGUIMap;
+						sys->notifyManager.GetRegistGUI(&registGUIMap);
+						for( map<DWORD, DWORD>::iterator itr = registGUIMap.begin(); itr != registGUIMap.end(); itr++ ){
+							ctrlCmd.SetPipeSetting(CMD2_GUI_CTRL_WAIT_CONNECT, CMD2_GUI_CTRL_PIPE, itr->first);
+							DWORD pid;
+							if( ctrlCmd.SendGUIExecute(strExecute.c_str(), &pid) == CMD_SUCCESS ){
+								//ハンドル開く前に終了するかもしれない
+								executed = true;
+								hProcess = OpenProcess(SYNCHRONIZE, FALSE, pid);
+								break;
+							}
+						}
+					}
+					if( executed == false ){
+						PROCESS_INFORMATION pi;
+						STARTUPINFO si = {};
+						si.cb = sizeof(si);
+						vector<WCHAR> strBuff(strExecute.c_str(), strExecute.c_str() + strExecute.size() + 1);
+						if( CreateProcess(NULL, &strBuff.front(), NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi) != FALSE ){
+							CloseHandle(pi.hThread);
+							hProcess = pi.hProcess;
+						}
+					}
+					if( hProcess ){
+						//終了監視
+						HANDLE hEvents[2] = { sys->batWorkStopEvent, hProcess };
+						DWORD dwRet = WaitForMultipleObjects(2, hEvents, FALSE, INFINITE);
+						CloseHandle(hProcess);
+						if( dwRet == WAIT_OBJECT_0 ){
+							//中止
 							break;
 						}
 					}
-					if( send == FALSE ){
-						//GUI経由で起動できなかった
-						PROCESS_INFORMATION pi;
-						STARTUPINFO si;
-						ZeroMemory(&si,sizeof(si));
-						si.cb=sizeof(si);
-
-						vector<WCHAR> strBuff(strExecute.c_str(), strExecute.c_str() + strExecute.size() + 1);
-						send = CreateProcess( NULL, &strBuff.front(), NULL, NULL, FALSE, GetPriorityClass(GetCurrentProcess()), NULL, NULL, &si, &pi );
-						if( send != FALSE ){
-							CloseHandle(pi.hThread);
-							CloseHandle(pi.hProcess);
-
-							PID = pi.dwProcessId;
-						}
-					}
-					if( send != FALSE ){
-						//終了監視
-						while(1){
-							if( WaitForSingleObject( sys->batWorkStopEvent, 2000 ) != WAIT_TIMEOUT ){
-								//中止
-								break;
-							}
-							if( _FindOpenExeProcess(PID) == FALSE ){
-								//終わった
-								break;
-							}
-						}
-					}
 				}else{
-					_OutputDebugString(L"BATファイル作成エラー：%s", work.reserveInfo.recSetting.batFilePath.c_str());
+					_OutputDebugString(L"BATファイル作成エラー：%s\r\n", work.batFilePath.c_str());
 				}
 			}
 
@@ -375,9 +369,7 @@ BOOL CBatManager::ExpandMacro(const string& var, const BAT_WORK_INFO& info, stri
 		}
 		WtoA(strTemp, ret);
 	}else if( var == "AddKey" ){
-		if( info.reserveInfo.comment.compare(0, 8, L"EPG自動予約(") == 0 && info.reserveInfo.comment.size() >= 9 ){
-			WtoA(info.reserveInfo.comment.substr(8, info.reserveInfo.comment.size() - 9), ret);
-		}
+		WtoA(info.addKey, ret);
 	}else{
 		return FALSE;
 	}

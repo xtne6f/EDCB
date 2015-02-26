@@ -1,5 +1,8 @@
 #include "StdAfx.h"
 #include "RestApiManager.h"
+#include "../../Common/EpgTimerUtil.h"
+#include "../../Common/PathUtil.h"
+#include "../../Common/TimeUtil.h"
 
 
 CRestApiManager::CRestApiManager(void)

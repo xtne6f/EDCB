@@ -1,5 +1,6 @@
 #include "StdAfx.h"
 #include "HTMLManager.h"
+#include "../../Common/EpgTimerUtil.h"
 #include "../../Common/StringUtil.h"
 #include "../../Common/TimeUtil.h"
 #include "../../Common/PathUtil.h"

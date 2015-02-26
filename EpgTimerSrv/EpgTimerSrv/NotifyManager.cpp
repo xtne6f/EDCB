@@ -5,6 +5,8 @@
 #include "../../Common/CtrlCmdDef.h"
 #include "../../Common/SendCtrlCmd.h"
 #include "../../Common/BlockLock.h"
+#include "../../Common/EpgTimerUtil.h"
+#include "../../Common/StringUtil.h"
 
 CNotifyManager::CNotifyManager(void)
 {
@@ -13,6 +15,7 @@ CNotifyManager::CNotifyManager(void)
 	this->notifyEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	this->notifyThread = NULL;
 	this->notifyStopFlag = FALSE;
+	this->srvStatus = 0;
 }
 
 CNotifyManager::~CNotifyManager(void)
@@ -41,6 +44,10 @@ void CNotifyManager::RegistGUI(DWORD processID)
 
 	{
 		this->registGUIMap.insert(pair<DWORD,DWORD>(processID,processID));
+		DWORD status = this->srvStatus;
+		//必ず通知するため
+		this->srvStatus = 0xFFFFFFFF;
+		SetNotifySrvStatus(status);
 	}
 }
 
@@ -53,6 +60,10 @@ void CNotifyManager::RegistTCP(const REGIST_TCP_INFO& info)
 		Format(key, L"%s:%d", info.ip.c_str(), info.port);
 
 		this->registTCPMap.insert(pair<wstring,REGIST_TCP_INFO>(key,info));
+		DWORD status = this->srvStatus;
+		//必ず通知するため
+		this->srvStatus = 0xFFFFFFFF;
+		SetNotifySrvStatus(status);
 	}
 }
 
@@ -85,7 +96,7 @@ void CNotifyManager::UnRegistTCP(const REGIST_TCP_INFO& info)
 	}
 }
 
-void CNotifyManager::GetRegistGUI(map<DWORD, DWORD>* registGUI)
+void CNotifyManager::GetRegistGUI(map<DWORD, DWORD>* registGUI) const
 {
 	CBlockLock lock(&this->managerLock);
 
@@ -94,7 +105,7 @@ void CNotifyManager::GetRegistGUI(map<DWORD, DWORD>* registGUI)
 	}
 }
 
-void CNotifyManager::GetRegistTCP(map<wstring, REGIST_TCP_INFO>* registTCP)
+void CNotifyManager::GetRegistTCP(map<wstring, REGIST_TCP_INFO>* registTCP) const
 {
 	CBlockLock lock(&this->managerLock);
 
@@ -126,19 +137,19 @@ void CNotifyManager::AddNotify(DWORD status)
 	}
 }
 
-void CNotifyManager::AddNotifySrvStatus(DWORD status)
+void CNotifyManager::SetNotifySrvStatus(DWORD status)
 {
 	CBlockLock lock(&this->managerLock);
 
-	{
+	if( status != this->srvStatus ){
 		NOTIFY_SRV_INFO info;
 		info.notifyID = NOTIFY_UPDATE_SRV_STATUS;
 		GetLocalTime(&info.time);
-		info.param1 = status;
+		info.param1 = this->srvStatus = status;
 
 		this->notifyList.push_back(info);
+		_SendNotify();
 	}
-	_SendNotify();
 }
 
 void CNotifyManager::AddNotifyMsg(DWORD notifyID, wstring msg)
@@ -230,7 +241,7 @@ UINT WINAPI CNotifyManager::SendNotifyThread(LPVOID param)
 				//キャンセルされた
 				break;
 			}
-			if( _FindOpenExeProcess(itr->first) == TRUE ){
+			{
 				sendCtrl.SetSendMode(FALSE);
 				sendCtrl.SetPipeSetting(CMD2_GUI_CTRL_WAIT_CONNECT, CMD2_GUI_CTRL_PIPE, itr->first);
 				sendCtrl.SetConnectTimeOut(10*1000);
@@ -256,8 +267,6 @@ UINT WINAPI CNotifyManager::SendNotifyThread(LPVOID param)
 				if( err != CMD_SUCCESS && err != CMD_NON_SUPPORT){
 					errID.push_back(itr->first);
 				}
-			}else{
-				errID.push_back(itr->first);
 			}
 		}
 

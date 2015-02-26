@@ -4,6 +4,10 @@
 
 #include "../../Common/TimeUtil.h"
 #include "../../Common/BlockLock.h"
+#include "../../Common/StringUtil.h"
+#include "../../Common/PathUtil.h"
+#include "../../Common/EpgTimerUtil.h"
+#include "../../Common/EpgDataCap3Util.h"
 using std::unique_ptr;
 
 CEpgDBManager::CEpgDBManager(void)

@@ -15,7 +15,7 @@ typedef struct _REC_FILE_SET_INFO{
 typedef struct _REC_SETTING_DATA{
 	BYTE recMode;				//録画モード
 	BYTE priority;				//優先度
-	BYTE tuijyuuFlag;			//追従モード
+	BYTE tuijyuuFlag;			//イベントリレー追従するかどうか
 	DWORD serviceMode;			//処理対象データモード
 	BYTE pittariFlag;			//ぴったり？録画
 	wstring batFilePath;		//録画後BATファイルパス
@@ -141,7 +141,7 @@ typedef struct _REC_FILE_INFO{
 		scrambles = 0;
 		recStatus = 0;
 		startTimeEpg = o.startTimeEpg;
-		comment = o.comment;
+		comment = L"";
 		programInfo = L"";
 		errInfo = L"";
 		protectFlag = 0;

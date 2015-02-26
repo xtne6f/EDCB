@@ -521,6 +521,16 @@ bool CParseReserveText::ChgReserve(const RESERVE_DATA& item)
 	return false;
 }
 
+bool CParseReserveText::SetOverlapMode(DWORD id, BYTE overlapMode)
+{
+	map<DWORD, RESERVE_DATA>::iterator itr = this->itemMap.find(id);
+	if( itr != this->itemMap.end() ){
+		itr->second.overlapMode = overlapMode;
+		return true;
+	}
+	return false;
+}
+
 bool CParseReserveText::DelReserve(DWORD id)
 {
 	return this->itemMap.erase(id) != 0;

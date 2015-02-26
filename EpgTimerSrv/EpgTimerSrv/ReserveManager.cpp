@@ -1,1484 +1,786 @@
 #include "StdAfx.h"
 #include "ReserveManager.h"
 #include <process.h>
-#include "../../Common/CtrlCmdDef.h"
-#include "../../Common/SendCtrlCmd.h"
+#include "../../Common/PathUtil.h"
 #include "../../Common/ReNamePlugInUtil.h"
 #include "../../Common/EpgTimerUtil.h"
+#include "../../Common/TimeUtil.h"
 #include "../../Common/BlockLock.h"
-
-#include <tlhelp32.h> 
-#include <shlwapi.h>
-#include <algorithm>
-#include <locale>
-
-#include <LM.h>
-#pragma comment (lib, "netapi32.lib")
 
 CReserveManager::CReserveManager(CNotifyManager& notifyManager_, CEpgDBManager& epgDBManager_)
 	: notifyManager(notifyManager_)
 	, epgDBManager(epgDBManager_)
 	, batManager(notifyManager_)
+	, waitCount(0)
+	, epgCapRequested(false)
+	, epgCapWork(false)
+	, reserveModified(false)
+	, watchdogStopEvent(NULL)
+	, watchdogThread(NULL)
 {
 	InitializeCriticalSection(&this->managerLock);
-
-	this->bankCheckThread = NULL;
-	this->bankCheckStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-
-	this->notifyStatus = 0;
-
-	this->tunerManager.ReloadTuner();
-	vector<DWORD> idList;
-	this->tunerManager.GetEnumID( &idList );
-	for( size_t i=0; i<idList.size(); i++){
-		BANK_INFO* item = new BANK_INFO;
-		item->tunerID = idList[i];
-		this->bankMap.insert(pair<DWORD, BANK_INFO*>(item->tunerID, item));
-	}
-
-	this->tunerManager.GetEnumTunerBank(&this->tunerBankMap, notifyManager, epgDBManager, reserveInfoManager);
-
-	this->backPriorityFlag = FALSE;
-	this->sameChPriorityFlag = FALSE;
-
-	this->defStartMargine = 5;
-	this->defEndMargine = 2;
-
-	this->enableSetSuspendMode = 0xFF;
-	this->enableSetRebootFlag = 0xFF;
-
-	this->epgCapCheckFlag = FALSE;
-
-	this->autoDel = FALSE;
-
-	this->eventRelay = FALSE;
-
-	this->duraChgMarginMin = 0;
-	this->notFindTuijyuHour = 6;
-	this->noEpgTuijyuMin = 30;
-
-	this->autoDelRecInfo = FALSE;
-	this->autoDelRecInfoNum = 100;
-	this->timeSync = FALSE;
-	this->setTimeSync = FALSE;
-
-	this->NWTVPID = 0;
-	this->NWTVUDP = FALSE;
-	this->NWTVTCP = FALSE;
-
-	this->twitterManager = NULL;
-	this->useTweet = FALSE;
-	this->useProxy = FALSE;
-
-	this->reloadBankMapAlgo = 0;
-
-	this->ngAddResSrvCoop = FALSE;
-	this->errEndBatRun = FALSE;
-
-	this->ngShareFile = FALSE;
-
-	this->chgRecInfo = FALSE;
-
-	ReloadSetting();
 }
-
 
 CReserveManager::~CReserveManager(void)
 {
-	if( this->bankCheckThread != NULL ){
-		::SetEvent(this->bankCheckStopEvent);
-		// スレッド終了待ち
-		if ( ::WaitForSingleObject(this->bankCheckThread, 15000) == WAIT_TIMEOUT ){
-			::TerminateThread(this->bankCheckThread, 0xffffffff);
-		}
-		CloseHandle(this->bankCheckThread);
-		this->bankCheckThread = NULL;
-	}
-	if( this->bankCheckStopEvent != NULL ){
-		CloseHandle(this->bankCheckStopEvent);
-		this->bankCheckStopEvent = NULL;
-	}
-
-	map<DWORD, CTunerBankCtrl*>::iterator itrCtrl;
-	for( itrCtrl = this->tunerBankMap.begin(); itrCtrl != this->tunerBankMap.end(); itrCtrl++ ){
-		SAFE_DELETE(itrCtrl->second);
-	}
-
-	map<DWORD, BANK_INFO*>::iterator itrBank;
-	for( itrBank = this->bankMap.begin(); itrBank != this->bankMap.end(); itrBank++){
-		map<DWORD, BANK_WORK_INFO*>::iterator itrWork;
-		for( itrWork = itrBank->second->reserveList.begin(); itrWork != itrBank->second->reserveList.end(); itrWork++ ){
-			SAFE_DELETE(itrWork->second);
-		}
-		SAFE_DELETE(itrBank->second);
-	}
-
-	map<DWORD, BANK_WORK_INFO*>::iterator itrNG;
-	for( itrNG = this->NGReserveMap.begin(); itrNG != this->NGReserveMap.end(); itrNG++){
-		SAFE_DELETE(itrNG->second);
-	}
-
-	map<DWORD, CReserveInfo*>::iterator itr;
-	for( itr = this->reserveInfoMap.begin(); itr != this->reserveInfoMap.end(); itr++ ){
-		SAFE_DELETE(itr->second);
-	}
-
-	SAFE_DELETE(this->twitterManager);
-
 	DeleteCriticalSection(&this->managerLock);
 }
 
-void CReserveManager::ChangeRegist()
+void CReserveManager::Initialize()
 {
-	CBlockLock lock(&this->managerLock);
+	this->tunerManager.ReloadTuner();
+	this->tunerManager.GetEnumTunerBank(&this->tunerBankMap, this->notifyManager, this->epgDBManager);
+	this->waitTick = GetTickCount();
+	this->lastCheckEpgCap = GetNowI64Time();
 
-	this->notifyManager.AddNotifySrvStatus(this->notifyStatus);
+	wstring settingPath;
+	GetSettingPath(settingPath);
+	this->reserveText.ParseText((settingPath + L"\\" + RESERVE_TEXT_NAME).c_str());
+	this->recInfoText.ParseText((settingPath + L"\\" + REC_INFO_TEXT_NAME).c_str());
+	this->recInfo2Text.ParseText((settingPath + L"\\" + REC_INFO2_TEXT_NAME).c_str());
+
+	ReloadSetting();
+
+	this->watchdogStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+	if( this->watchdogStopEvent ){
+		this->watchdogThread = (HANDLE)_beginthreadex(NULL, 0, WatchdogThread, this, 0, NULL);
+	}
+}
+
+void CReserveManager::Finalize()
+{
+	if( this->watchdogThread ){
+		SetEvent(this->watchdogStopEvent);
+		if( WaitForSingleObject(this->watchdogThread, 15000) == WAIT_TIMEOUT ){
+			TerminateThread(this->watchdogThread, 0xffffffff);
+		}
+		CloseHandle(this->watchdogThread);
+		this->watchdogThread = NULL;
+	}
+	if( this->watchdogStopEvent ){
+		CloseHandle(this->watchdogStopEvent);
+		this->watchdogStopEvent = NULL;
+	}
+	for( map<DWORD, CTunerBankCtrl*>::iterator itr = this->tunerBankMap.begin(); itr != this->tunerBankMap.end(); itr++ ){
+		SAFE_DELETE(itr->second);
+	}
 }
 
 void CReserveManager::ReloadSetting()
 {
 	CBlockLock lock(&this->managerLock);
 
-	wstring iniAppPath = L"";
-	GetModuleIniPath(iniAppPath);
+	wstring iniPath;
+	GetModuleIniPath(iniPath);
+	wstring commonIniPath;
+	GetCommonIniPath(commonIniPath);
+	wstring viewIniPath;
+	GetModuleFolderPath(viewIniPath);
+	viewIniPath += L"\\EpgDataCap_Bon.ini";
+	wstring settingPath;
+	GetSettingPath(settingPath);
+	WCHAR buff[1024];
 
-	wstring iniCommonPath = L"";
-	GetCommonIniPath(iniCommonPath);
+	this->chUtil.ParseText((settingPath + L"\\ChSet5.txt").c_str());
 
-	this->BSOnly = GetPrivateProfileInt(L"SET", L"BSBasicOnly", 1, iniCommonPath.c_str());
-	this->CS1Only = GetPrivateProfileInt(L"SET", L"CS1BasicOnly", 1, iniCommonPath.c_str());
-	this->CS2Only = GetPrivateProfileInt(L"SET", L"CS2BasicOnly", 1, iniCommonPath.c_str());
-
-	this->ngCapMin = GetPrivateProfileInt(L"SET", L"NGEpgCapTime", 20, iniAppPath.c_str());
-	this->ngCapTunerMin = GetPrivateProfileInt(L"SET", L"NGEpgCapTunerTime", 20, iniAppPath.c_str());
-
+	this->ngCapTimeSec = GetPrivateProfileInt(L"SET", L"NGEpgCapTime", 20, iniPath.c_str()) * 60;
+	this->ngCapTunerTimeSec = GetPrivateProfileInt(L"SET", L"NGEpgCapTunerTime", 20, iniPath.c_str()) * 60;
+	this->epgCapTimeSync = GetPrivateProfileInt(L"SET", L"TimeSync", 0, iniPath.c_str()) != 0;
 	this->epgCapTimeList.clear();
-	int count = GetPrivateProfileInt(L"EPG_CAP", L"Count", 0, iniAppPath.c_str());
-	for( int i=0; i<count; i++ ){
-		wstring selectKey;
-		Format(selectKey, L"%dSelect", i);
-		if( GetPrivateProfileInt(L"EPG_CAP", selectKey.c_str(), 0, iniAppPath.c_str()) == 1 ){
-			wstring timeKey;
-			Format(timeKey, L"%d", i);
-			WCHAR buff[256] = L"";
-			GetPrivateProfileString(L"EPG_CAP", timeKey.c_str(), L"", buff, 256, iniAppPath.c_str());
-			wstring time = buff;
-			if( time.size() > 0 ){
-				wstring left = L"";
-				wstring right = L"";
-				Separate(time, L":", left, right);
-
-				DWORD second = _wtoi(left.c_str()) * 60 * 60 + _wtoi(right.c_str()) * 60;
-				EPGTIME_INFO ei;
-				ei.time = second;
-				//曜日指定接尾辞(w1=Mon,...,w7=Sun)
-				ei.wday = 0;
-				if( Separate(right, L"w", left, right) != FALSE ){
-					ei.wday = _wtoi(right.c_str());
-				}
+	int count = GetPrivateProfileInt(L"EPG_CAP", L"Count", 0, iniPath.c_str());
+	for( int i = 0; i < count; i++ ){
+		WCHAR key[64];
+		wsprintf(key, L"%dSelect", i);
+		if( GetPrivateProfileInt(L"EPG_CAP", key, 0, iniPath.c_str()) != 0 ){
+			wsprintf(key, L"%d", i);
+			GetPrivateProfileString(L"EPG_CAP", key, L"", buff, 256, iniPath.c_str());
+			//曜日指定接尾辞(w1=Mon,...,w7=Sun)
+			unsigned int hour, minute, wday = 0;
+			if( swscanf_s(buff, L"%u:%uw%u", &hour, &minute, &wday) >= 2 ){
 				//取得種別(bit0(LSB)=BS,bit1=CS1,bit2=CS2)。負値のときは共通設定に従う
-				wstring flagsKey;
-				Format(flagsKey, L"%dBasicOnlyFlags", i);
-				ei.basicOnlyFlags = GetPrivateProfileInt(L"EPG_CAP", flagsKey.c_str(), -1, iniAppPath.c_str());
-				this->epgCapTimeList.push_back(ei);
-			}
-		}
-	}
-
-	this->wakeTime = GetPrivateProfileInt(L"SET", L"WakeTime", 5, iniAppPath.c_str());
-
-	this->defSuspendMode = GetPrivateProfileInt(L"SET", L"RecEndMode", 0, iniAppPath.c_str());
-	this->defRebootFlag = GetPrivateProfileInt(L"SET", L"Reboot", 0, iniAppPath.c_str());
-
-	this->batMargin = GetPrivateProfileInt(L"SET", L"BatMargin", 10, iniAppPath.c_str());
-	
-	this->noStandbyExeList.clear();
-	count = GetPrivateProfileInt(L"NO_SUSPEND", L"Count", 0, iniAppPath.c_str());
-	if( count == 0 ){
-		this->noStandbyExeList.push_back(L"EpgDataCap_Bon.exe");
-	}else{
-		for( int i=0; i<count; i++ ){
-			wstring key;
-			Format(key, L"%d", i);
-			WCHAR buff[256] = L"";
-			GetPrivateProfileString(L"NO_SUSPEND", key.c_str(), L"", buff, 256, iniAppPath.c_str());
-			wstring exe = buff;
-			if( exe.size() > 0 ){
-				std::transform(exe.begin(), exe.end(), exe.begin(), tolower);
-				this->noStandbyExeList.push_back(exe);
-			}
-		}
-	}
-
-	this->noStandbyTime = GetPrivateProfileInt(L"NO_SUSPEND", L"NoStandbyTime", 10, iniAppPath.c_str());
-	this->ngShareFile = (BOOL)GetPrivateProfileInt(L"NO_SUSPEND", L"NoShareFile", 0, iniAppPath.c_str());
-	this->autoDel = (BOOL)GetPrivateProfileInt(L"SET", L"AutoDel", 0, iniAppPath.c_str());
-
-	this->delExtList.clear();
-	count = GetPrivateProfileInt(L"DEL_EXT", L"Count", 0, iniAppPath.c_str());
-	for( int i=0; i<count; i++ ){
-		wstring key;
-		Format(key, L"%d", i);
-		WCHAR buff[512] = L"";
-		GetPrivateProfileString(L"DEL_EXT", key.c_str(), L"", buff, 512, iniAppPath.c_str());
-		wstring ext = buff;
-		this->delExtList.push_back(ext);
-	}
-	this->delFolderList.clear();
-	count = GetPrivateProfileInt(L"DEL_CHK", L"Count", 0, iniAppPath.c_str());
-	for( int i=0; i<count; i++ ){
-		wstring key;
-		Format(key, L"%d", i);
-		WCHAR buff[512] = L"";
-		GetPrivateProfileString(L"DEL_CHK", key.c_str(), L"", buff, 512, iniAppPath.c_str());
-		wstring folder = buff;
-		this->delFolderList.push_back(folder);
-	}
-
-	this->backPriorityFlag = (BOOL)GetPrivateProfileInt(L"SET", L"BackPriority", 1, iniAppPath.c_str());
-	this->sameChPriorityFlag = (BOOL)GetPrivateProfileInt(L"SET", L"SameChPriority", 0, iniAppPath.c_str());
-
-	this->eventRelay = (BOOL)GetPrivateProfileInt(L"SET", L"EventRelay", 0, iniAppPath.c_str());
-
-	wstring ch5Path = L"";
-	GetSettingPath(ch5Path);
-	ch5Path += L"\\ChSet5.txt";
-
-	chUtil.ParseText(ch5Path.c_str());
-
-	this->tvtestUseBon.clear();
-	count = GetPrivateProfileInt(L"TVTEST", L"Num", 0, iniAppPath.c_str());
-	for( int i=0; i<count; i++ ){
-		wstring key;
-		Format(key, L"%d", i);
-		WCHAR buff[256] = L"";
-		GetPrivateProfileString(L"TVTEST", key.c_str(), L"", buff, 256, iniAppPath.c_str());
-		wstring bon = buff;
-		if( bon.size() > 0 ){
-			this->tvtestUseBon.push_back(bon);
-		}
-	}
-
-	this->defStartMargine = GetPrivateProfileInt(L"SET", L"StartMargin", 5, iniAppPath.c_str());
-	this->defEndMargine = GetPrivateProfileInt(L"SET", L"EndMargin", 2, iniAppPath.c_str());
-	this->notFindTuijyuHour = GetPrivateProfileInt(L"SET", L"TuijyuHour", 6, iniAppPath.c_str());
-	this->duraChgMarginMin = GetPrivateProfileInt(L"SET", L"DuraChgMarginMin", 0, iniAppPath.c_str());
-	this->noEpgTuijyuMin = GetPrivateProfileInt(L"SET", L"NoEpgTuijyuMin", 30, iniAppPath.c_str());
-
-	map<DWORD, CTunerBankCtrl*>::iterator itrCtrl;
-	for( itrCtrl = this->tunerBankMap.begin(); itrCtrl != this->tunerBankMap.end(); itrCtrl++ ){
-		itrCtrl->second->ReloadSetting();
-	}
-
-	WCHAR buff[512] = L"";
-	GetPrivateProfileString( L"SET", L"RecExePath", L"", buff, 512, iniCommonPath.c_str() );
-	this->recExePath = buff;
-	if( this->recExePath.size() == 0 ){
-		GetModuleFolderPath(this->recExePath);
-		this->recExePath += L"\\EpgDataCap_Bon.exe";
-	}
-
-	this->autoDelRecInfo = GetPrivateProfileInt(L"SET", L"AutoDelRecInfo", 0, iniAppPath.c_str());
-	this->autoDelRecInfoNum = GetPrivateProfileInt(L"SET", L"AutoDelRecInfoNum", 100, iniAppPath.c_str());
-
-	this->timeSync = GetPrivateProfileInt(L"SET", L"TimeSync", 0, iniAppPath.c_str());
-
-	recInfoText.SetKeepCount(this->autoDelRecInfo == FALSE ? UINT_MAX : this->autoDelRecInfoNum);
-	recInfoText.SetRecInfoDelFile(GetPrivateProfileInt(L"SET", L"RecInfoDelFile", 0, iniCommonPath.c_str()) != 0);
-	ZeroMemory(buff, sizeof(WCHAR)*512);
-	GetPrivateProfileString(L"SET", L"RecInfoFolder", L"", buff, 512, iniCommonPath.c_str());
-	recInfoText.SetRecInfoFolder(buff);
-
-	this->recInfo2Text.SetKeepCount(GetPrivateProfileInt(L"SET", L"RecInfo2Max", 1000, iniAppPath.c_str()));
-	this->recInfo2DropChk = GetPrivateProfileInt(L"SET", L"RecInfo2DropChk", 15, iniAppPath.c_str());
-	WCHAR buffRecInfo2RegExp[1024];
-	GetPrivateProfileString(L"SET", L"RecInfo2RegExp", L"", buffRecInfo2RegExp, 1024, iniAppPath.c_str());
-	this->recInfo2RegExp = buffRecInfo2RegExp;
-
-	this->useTweet = GetPrivateProfileInt(L"TWITTER", L"use", 0, iniAppPath.c_str());
-	this->useProxy = GetPrivateProfileInt(L"TWITTER", L"useProxy", 0, iniAppPath.c_str());
-	ZeroMemory(buff, sizeof(WCHAR)*512);
-	GetPrivateProfileStringW(L"TWITTER", L"ProxyServer", L"", buff, 512, iniAppPath.c_str());
-	this->proxySrv = buff;
-	ZeroMemory(buff, sizeof(WCHAR)*512);
-	GetPrivateProfileStringW(L"TWITTER", L"ProxyID", L"", buff, 512, iniAppPath.c_str());
-	this->proxyID = buff;
-	ZeroMemory(buff, sizeof(WCHAR)*512);
-	GetPrivateProfileStringW(L"TWITTER", L"ProxyPWD", L"", buff, 512, iniAppPath.c_str());
-	this->proxyPWD = buff;
-
-	USE_PROXY_INFO proxyInfo;
-	if( this->useProxy == TRUE ){
-		if( this->proxySrv.size() > 0 ){
-			proxyInfo.serverName = new WCHAR[this->proxySrv.size()+1];
-			wcscpy_s(proxyInfo.serverName, this->proxySrv.size()+1, this->proxySrv.c_str());
-		}
-		if( this->proxyID.size() > 0 ){
-			proxyInfo.userName = new WCHAR[this->proxyID.size()+1];
-			wcscpy_s(proxyInfo.userName, this->proxyID.size()+1, this->proxyID.c_str());
-		}
-		if( this->proxyPWD.size() > 0 ){
-			proxyInfo.serverName = new WCHAR[this->proxyPWD.size()+1];
-			wcscpy_s(proxyInfo.password, this->proxyPWD.size()+1, this->proxyPWD.c_str());
-		}
-	}
-	if( this->useTweet == TRUE ){
-		if( this->twitterManager == NULL ){
-			this->twitterManager = new CTwitterManager;
-		}
-		this->twitterManager->SetProxy(this->useProxy, &proxyInfo);
-	}
-
-	map<DWORD, CTunerBankCtrl*>::iterator itr;
-	for(itr = this->tunerBankMap.begin(); itr != this->tunerBankMap.end(); itr++ ){
-		if(this->useTweet == 1 ){
-			itr->second->SetTwitterCtrl(this->twitterManager);
-		}else{
-			itr->second->SetTwitterCtrl(NULL);
-		}
-	}
-
-	this->reloadBankMapAlgo = GetPrivateProfileInt(L"SET", L"ReloadBankMapAlgo", 0, iniAppPath.c_str());
-
-	this->ngAddResSrvCoop = GetPrivateProfileInt(L"SET", L"NgAddResSrvCoop", 0, iniAppPath.c_str());
-	if( GetPrivateProfileInt(L"SET", L"UseSrvCoop", 0, iniAppPath.c_str()) != TRUE ){
-		this->ngAddResSrvCoop = TRUE;
-	}
-
-	this->errEndBatRun = GetPrivateProfileInt(L"SET", L"ErrEndBatRun", 0, iniAppPath.c_str());
-
-	this->recEndTweetErr = GetPrivateProfileInt(L"SET", L"RecEndTweetErr", 0, iniAppPath.c_str());
-	this->recEndTweetDrop = GetPrivateProfileInt(L"SET", L"RecEndTweetDrop", 0, iniAppPath.c_str());
-
-	this->useRecNamePlugIn = GetPrivateProfileInt(L"SET", L"RecNamePlugIn", 0, iniAppPath.c_str());
-	GetPrivateProfileString(L"SET", L"RecNamePlugInFile", L"RecName_Macro.dll", buff, 512, iniAppPath.c_str());
-
-	GetModuleFolderPath(this->recNamePlugInFilePath);
-	this->recNamePlugInFilePath += L"\\RecName\\";
-	this->recNamePlugInFilePath += buff;
-
-	IsFindShareTSFile();
-}
-
-void CReserveManager::SendNotifyStatus(WORD status)
-{
-	CBlockLock lock(&this->managerLock);
-	this->notifyStatus = status;
-	this->notifyManager.AddNotifySrvStatus(this->notifyStatus);
-}
-
-void CReserveManager::SendNotifyRecEnd(const REC_FILE_INFO& item, CNotifyManager& notifyManager)
-{
-	{
-		SYSTEMTIME endTime;
-		GetSumTime(item.startTime, item.durationSecond, &endTime);
-		wstring msg;
-		Format(msg, L"%s %04d/%02d/%02d %02d:%02d～%02d:%02d\r\n%s\r\n%s",
-			item.serviceName.c_str(),
-			item.startTime.wYear,
-			item.startTime.wMonth,
-			item.startTime.wDay,
-			item.startTime.wHour,
-			item.startTime.wMinute,
-			endTime.wHour,
-			endTime.wMinute,
-			item.title.c_str(),
-			item.comment.c_str()
-			);
-		notifyManager.AddNotifyMsg(NOTIFY_UPDATE_REC_END, msg);
-	}
-}
-
-void CReserveManager::SendNotifyChgReserve(DWORD notifyId, const RESERVE_DATA& oldInfo, const RESERVE_DATA& newInfo, CNotifyManager& notifyManager)
-{
-	{
-		SYSTEMTIME endTimeOld;
-		GetSumTime(oldInfo.startTime, oldInfo.durationSecond, &endTimeOld);
-		SYSTEMTIME endTimeNew;
-		GetSumTime(newInfo.startTime, newInfo.durationSecond, &endTimeNew);
-		wstring msg;
-		Format(msg, L"%s %04d/%02d/%02d %02d:%02d～%02d:%02d\r\n%s\r\nEventID:0x%04X\r\n↓\r\n%s %04d/%02d/%02d %02d:%02d～%02d:%02d\r\n%s\r\nEventID:0x%04X\r\n",
-			oldInfo.stationName.c_str(),
-			oldInfo.startTime.wYear,
-			oldInfo.startTime.wMonth,
-			oldInfo.startTime.wDay,
-			oldInfo.startTime.wHour,
-			oldInfo.startTime.wMinute,
-			endTimeOld.wHour,
-			endTimeOld.wMinute,
-			oldInfo.title.c_str(),
-			oldInfo.eventID,
-			newInfo.stationName.c_str(),
-			newInfo.startTime.wYear,
-			newInfo.startTime.wMonth,
-			newInfo.startTime.wDay,
-			newInfo.startTime.wHour,
-			newInfo.startTime.wMinute,
-			endTimeNew.wHour,
-			endTimeNew.wMinute,
-			newInfo.title.c_str(),
-			newInfo.eventID
-			);
-		notifyManager.AddNotifyMsg(notifyId, msg);
-	}
-}
-
-BOOL CReserveManager::ReloadReserveData()
-{
-	CBlockLock lock(&this->managerLock);
-	BOOL ret = TRUE;
-
-	wstring reserveFilePath = L"";
-	GetSettingPath(reserveFilePath);
-	reserveFilePath += L"\\";
-	reserveFilePath += RESERVE_TEXT_NAME;
-
-	wstring recInfoFilePath = L"";
-	GetSettingPath(recInfoFilePath);
-	recInfoFilePath += L"\\";
-	recInfoFilePath += REC_INFO_TEXT_NAME;
-
-	wstring recInfo2FilePath = L"";
-	GetSettingPath(recInfo2FilePath);
-	recInfo2FilePath += L"\\";
-	recInfo2FilePath += REC_INFO2_TEXT_NAME;
-
-	map<DWORD, CReserveInfo*>::iterator itr;
-	for( itr = this->reserveInfoMap.begin(); itr != this->reserveInfoMap.end(); itr++ ){
-		SAFE_DELETE(itr->second);
-	}
-	this->reserveInfoMap.clear();
-
-	this->recInfoText.ParseText(recInfoFilePath.c_str());
-	this->chgRecInfo = TRUE;
-
-	this->recInfo2Text.ParseText(recInfo2FilePath.c_str());
-
-	vector<DWORD> deleteList;
-	LONGLONG nowTime = GetNowI64Time();
-
-	ret = this->reserveText.ParseText(reserveFilePath.c_str());
-	if( ret == TRUE ){
-		map<DWORD, RESERVE_DATA>::const_iterator itrData;
-		for( itrData = this->reserveText.GetMap().begin(); itrData != this->reserveText.GetMap().end(); itrData++){
-			LONGLONG chkEndTime;
-			CalcEntireReserveTime(NULL, &chkEndTime, itrData->second);
-			chkEndTime -= 60*I64_1SEC;
-
-			if( nowTime < chkEndTime ){
-				CReserveInfo* item = new CReserveInfo;
-				item->SetData(itrData->second);
-
-				this->reserveInfoManager.ClearNGTunerID(itrData->first);
-				if( itrData->second.recSetting.tunerID != 0 ){
-					//チューナー固定
-					vector<DWORD> idList;
-					if( this->tunerManager.GetEnumID( &idList ) == TRUE ){
-						for( size_t i=0; i<idList.size(); i++ ){
-							if( idList[i] != itrData->second.recSetting.tunerID ){
-								this->reserveInfoManager.AddNGTunerID(itrData->first, idList[i]);
-							}
-						}
+				wsprintf(key, L"%dBasicOnlyFlags", i);
+				int basicOnlyFlags = GetPrivateProfileInt(L"EPG_CAP", key, -1, iniPath.c_str());
+				basicOnlyFlags = basicOnlyFlags < 0 ? 0xFF : basicOnlyFlags & 7;
+				if( wday == 0 ){
+					//曜日指定なし
+					for( int j = 0; j < 7; j++ ){
+						this->epgCapTimeList.push_back(MAKELONG(((j * 24 + hour) * 60 + minute) % 10080, basicOnlyFlags));
 					}
-				}
-				
-				this->reserveInfoMap.insert(pair<DWORD, CReserveInfo*>(itrData->second.reserveID, item));
-			}else{
-				//時間過ぎているので失敗
-				deleteList.push_back(itrData->second.reserveID);
-				REC_FILE_INFO item;
-				item = itrData->second;
-				if( itrData->second.recSetting.recMode != RECMODE_NO ){
-					item.recStatus = REC_END_STATUS_START_ERR;
-					item.comment = L"録画時間に起動していなかった可能性があります";
-					this->recInfoText.AddRecInfo(item);
-				}
-			}
-		}
-	}
-
-	if( deleteList.size() > 0 ){
-		for( size_t i=0; i<deleteList.size(); i++ ){
-			this->reserveText.DelReserve(deleteList[i]);
-		}
-		this->reserveText.SaveText();
-		this->recInfoText.SaveText();
-		this->chgRecInfo = TRUE;
-	}
-
-	if( this->bankCheckThread != NULL ){
-		if( ::WaitForSingleObject(this->bankCheckThread, 0) == WAIT_OBJECT_0 ){
-			CloseHandle(this->bankCheckThread);
-			this->bankCheckThread = NULL;
-		}
-	}
-	if( this->bankCheckThread == NULL ){
-		ResetEvent(this->bankCheckStopEvent);
-		this->bankCheckThread = (HANDLE)_beginthreadex(NULL, 0, BankCheckThread, (LPVOID)this, CREATE_SUSPENDED, NULL);
-		SetThreadPriority( this->bankCheckThread, THREAD_PRIORITY_NORMAL );
-		ResumeThread(this->bankCheckThread);
-	}
-
-	return ret;
-}
-
-//予約情報を取得する
-//引数：
-// reserveList		[OUT]予約情報一覧
-void CReserveManager::GetReserveDataAll(
-	vector<RESERVE_DATA>* reserveList
-	)
-{
-	CBlockLock lock(&this->managerLock);
-
-	map<DWORD, TUNER_RESERVE_INFO> tunerResMap;
-	map<DWORD, BANK_INFO*>::iterator itrBank;
-	for( itrBank = this->bankMap.begin(); itrBank != this->bankMap.end(); itrBank++ ){
-		TUNER_RESERVE_INFO item;
-		item.tunerID = itrBank->second->tunerID;
-		this->tunerManager.GetBonFileName(item.tunerID, item.tunerName);
-
-		map<DWORD, BANK_WORK_INFO*>::iterator itrInfo;
-		for( itrInfo = itrBank->second->reserveList.begin(); itrInfo != itrBank->second->reserveList.end(); itrInfo++){
-			tunerResMap.insert(pair<DWORD, TUNER_RESERVE_INFO>(itrInfo->second->reserveID, item));
-		}
-	}
-
-	TUNER_RESERVE_INFO itemNg;
-	itemNg.tunerID = 0xFFFFFFFF;
-	itemNg.tunerName = L"チューナー不足";
-	map<DWORD, BANK_WORK_INFO*>::iterator itrNg;
-	for( itrNg = this->NGReserveMap.begin(); itrNg != this->NGReserveMap.end(); itrNg++ ){
-		tunerResMap.insert(pair<DWORD, TUNER_RESERVE_INFO>(itrNg->second->reserveID, itemNg));
-	}
-
-	reserveList->reserve(reserveList->size() + this->reserveInfoMap.size());
-
-	map<DWORD, CReserveInfo*>::iterator itr;
-	for( itr = this->reserveInfoMap.begin(); itr != this->reserveInfoMap.end(); itr++ ){
-		RESERVE_DATA item;
-		itr->second->GetData(&item);
-
-		map<DWORD, TUNER_RESERVE_INFO>::iterator itrTune;
-		itrTune = tunerResMap.find(item.reserveID);
-		if( itrTune != tunerResMap.end() ){
-			wstring defName = L"";
-
-			PLUGIN_RESERVE_INFO info;
-
-			info.startTime = item.startTime;
-			info.durationSec = item.durationSecond;
-			wcscpy_s(info.eventName, 512, item.title.c_str());
-			info.ONID = item.originalNetworkID;
-			info.TSID = item.transportStreamID;
-			info.SID = item.serviceID;
-			info.EventID = item.eventID;
-			wcscpy_s(info.serviceName, 256, item.stationName.c_str());
-			wcscpy_s(info.bonDriverName, 256, itrTune->second.tunerName.c_str());
-			info.bonDriverID = (itrTune->second.tunerID & 0xFFFF0000)>>16;
-			info.tunerID = itrTune->second.tunerID & 0x0000FFFF;
-
-			EPG_EVENT_INFO* epgInfo = NULL;
-			EPGDB_EVENT_INFO epgDBInfo;
-			if( info.EventID != 0xFFFF ){
-				if( this->epgDBManager.SearchEpg(info.ONID, info.TSID, info.SID, info.EventID, &epgDBInfo) == TRUE ){
-					epgInfo = new EPG_EVENT_INFO;
-					CopyEpgInfo(epgInfo, &epgDBInfo);
-				}
-			}
-
-			if( this->useRecNamePlugIn == TRUE ){
-				CReNamePlugInUtil plugIn;
-				if( plugIn.Initialize(this->recNamePlugInFilePath.c_str()) == TRUE ){
-					WCHAR name[512] = L"";
-					DWORD size = 512;
-
-					if( epgInfo != NULL ){
-						if( plugIn.ConvertRecName2(&info, epgInfo, name, &size) == TRUE ){
-							defName = name;
-						}
-					}else{
-						if( plugIn.ConvertRecName(&info, name, &size) == TRUE ){
-							defName = name;
-						}
-					}
-				}
-			}
-			if( defName.size() ==0 ){
-				Format(defName, L"%04d%02d%02d%02d%02d%02X%02X%02d-%s.ts",
-					item.startTime.wYear,
-					item.startTime.wMonth,
-					item.startTime.wDay,
-					item.startTime.wHour,
-					item.startTime.wMinute,
-					((itrTune->second.tunerID & 0xFFFF0000)>>16),
-					(itrTune->second.tunerID & 0x0000FFFF),
-					0,
-					item.title.c_str()
-					);
-			}
-			if( item.recSetting.recFolderList.size() == 0 ){
-				item.recFileNameList.push_back(defName);
-			}else{
-				for( size_t i=0; i<item.recSetting.recFolderList.size(); i++ ){
-					if( item.recSetting.recFolderList[i].recNamePlugIn.size() > 0){
-						CReNamePlugInUtil plugIn;
-						wstring plugInPath = L"";
-						GetModuleFolderPath(plugInPath);
-						plugInPath += L"\\RecName\\";
-						plugInPath += item.recSetting.recFolderList[i].recNamePlugIn;
-						if( plugIn.Initialize(plugInPath.c_str()) == TRUE ){
-							WCHAR name[512] = L"";
-							DWORD size = 512;
-
-							if( epgInfo != NULL ){
-								if( plugIn.ConvertRecName2(&info, epgInfo, name, &size) == TRUE ){
-									item.recFileNameList.push_back(name);
-								}
-							}else{
-								if( plugIn.ConvertRecName(&info, name, &size) == TRUE ){
-									item.recFileNameList.push_back(name);
-								}
-							}
-						}
-					}else{
-						item.recFileNameList.push_back(defName);
-					}
-				}
-			}
-			SAFE_DELETE(epgInfo);
-		}
-		reserveList->push_back(item);
-	}
-}
-
-//チューナー毎の予約情報を取得する
-//引数：
-// reserveList		[OUT]予約情報一覧
-void CReserveManager::GetTunerReserveAll(
-	vector<TUNER_RESERVE_INFO>* list
-	)
-{
-	CBlockLock lock(&this->managerLock);
-
-	map<DWORD, BANK_INFO*>::iterator itr;
-	for( itr = this->bankMap.begin(); itr != this->bankMap.end(); itr++ ){
-		TUNER_RESERVE_INFO item;
-		item.tunerID = itr->second->tunerID;
-		this->tunerManager.GetBonFileName(item.tunerID, item.tunerName);
-
-		map<DWORD, BANK_WORK_INFO*>::iterator itrInfo;
-		for( itrInfo = itr->second->reserveList.begin(); itrInfo != itr->second->reserveList.end(); itrInfo++){
-			item.reserveList.push_back(itrInfo->second->reserveID);
-		}
-		list->push_back(item);
-	}
-
-	TUNER_RESERVE_INFO item;
-	item.tunerID = 0xFFFFFFFF;
-	item.tunerName = L"チューナー不足";
-	map<DWORD, BANK_WORK_INFO*>::iterator itrNg;
-	for( itrNg = this->NGReserveMap.begin(); itrNg != this->NGReserveMap.end(); itrNg++ ){
-		item.reserveList.push_back(itrNg->second->reserveID);
-	}
-	list->push_back(item);
-}
-
-//予約情報を取得する
-//戻り値：
-// TRUE（成功）、FALSE（失敗）
-//引数：
-// id				[IN]予約ID
-// reserveData		[OUT]予約情報
-BOOL CReserveManager::GetReserveData(
-	DWORD id,
-	RESERVE_DATA* reserveData
-	)
-{
-	CBlockLock lock(&this->managerLock);
-	BOOL ret = TRUE;
-
-
-	map<DWORD, CReserveInfo*>::iterator itr;
-	itr = this->reserveInfoMap.find(id);
-	if( itr == this->reserveInfoMap.end() ){
-		ret = FALSE;
-	}else{
-		itr->second->GetData(reserveData);
-	}
-
-	return ret;
-}
-
-//予約情報を追加する
-//戻り値：
-// TRUE（成功）、FALSE（失敗）
-//引数：
-// reserveList		[IN]予約情報
-BOOL CReserveManager::AddReserveData(
-	const vector<RESERVE_DATA>& reserveList,
-	BOOL tweet
-	)
-{
-	CBlockLock lock(&this->managerLock);
-
-	//予約追加
-	BOOL add = FALSE;
-	for( size_t i=0; i<reserveList.size(); i++ ){
-		if( _AddReserveData(reserveList[i], tweet) == TRUE ){
-			add = TRUE;
-		}
-	}
-	if( add == FALSE ){
-		//追加成功したものがない
-		return FALSE;
-	}
-
-	this->reserveText.SaveText();
-
-	_ReloadBankMap();
-
-
-	this->notifyManager.AddNotify(NOTIFY_UPDATE_RESERVE_INFO);
-
-	return TRUE;
-}
-
-BOOL CReserveManager::_AddReserveData(RESERVE_DATA reserve, BOOL tweet)
-{
-	DWORD reserveID = 0;
-	if( reserve.eventID == 0xFFFF ){
-		reserve.recSetting.pittariFlag = 0;
-		reserve.recSetting.tuijyuuFlag = 0;
-	}
-	SYSTEMTIME now, endTime;
-	GetLocalTime(&now);
-	GetI64Time(reserve.startTime, reserve.durationSecond, NULL, NULL, &endTime);
-	if( IsBigTime(now, endTime) != FALSE ){
-		//すでに終了している
-		return FALSE;
-	}
-	reserveID = this->reserveText.AddReserve(reserve);
-
-	map<DWORD, RESERVE_DATA>::const_iterator itrData;
-	itrData = this->reserveText.GetMap().find(reserveID);
-	if( itrData != this->reserveText.GetMap().end() ){
-		if( this->reserveInfoMap.find(itrData->second.reserveID) == this->reserveInfoMap.end() ){
-			CReserveInfo* item = new CReserveInfo;
-			item->SetData(itrData->second);
-
-			this->reserveInfoManager.ClearNGTunerID(itrData->first);
-			if( itrData->second.recSetting.tunerID != 0 ){
-				//チューナー固定
-				vector<DWORD> idList;
-				if( this->tunerManager.GetEnumID( &idList ) == TRUE ){
-					for( size_t i=0; i<idList.size(); i++ ){
-						if( idList[i] != itrData->second.recSetting.tunerID ){
-							this->reserveInfoManager.AddNGTunerID(itrData->first, idList[i]);
-						}
-					}
-				}
-			}
-
-			this->reserveInfoMap.insert(pair<DWORD, CReserveInfo*>(itrData->second.reserveID, item));
-
-			if( tweet == TRUE && itrData->second.recSetting.recMode != RECMODE_NO){
-				RESERVE_DATA resTweet = itrData->second;
-				SendTweet(TW_ADD_RESERVE, &resTweet, NULL, NULL);
-			}
-		}
-	}
-
-	return TRUE;
-}
-
-//予約情報を変更する
-//戻り値：
-// TRUE（成功）、FALSE（失敗）
-//引数：
-// reserveList		[IN]予約情報
-BOOL CReserveManager::ChgReserveData(
-	const vector<RESERVE_DATA>& reserveList,
-	BOOL timeChg
-	)
-{
-	CBlockLock lock(&this->managerLock);
-
-	//予約変更
-	BOOL chg = FALSE;
-	for( size_t i=0; i<reserveList.size(); i++ ){
-		if( _ChgReserveData(reserveList[i], timeChg) == TRUE ){
-			chg = TRUE;
-		}
-	}
-	if( chg == FALSE ){
-		//変更成功したものがない
-		return FALSE;
-	}
-
-	this->reserveText.SaveText();
-
-	_ReloadBankMap();
-
-	this->notifyManager.AddNotify(NOTIFY_UPDATE_RESERVE_INFO);
-
-	return TRUE;
-}
-
-BOOL CReserveManager::_ChgReserveData(RESERVE_DATA reserve, BOOL chgTime)
-{
-	if( reserve.eventID == 0xFFFF ){
-		reserve.recSetting.pittariFlag = 0;
-		reserve.recSetting.tuijyuuFlag = 0;
-	}
-
-	map<DWORD, CReserveInfo*>::iterator itrInfo;
-	itrInfo = this->reserveInfoMap.find(reserve.reserveID);
-	if( itrInfo == this->reserveInfoMap.end() ){
-		return FALSE;
-	}
-	RESERVE_DATA setData;
-	itrInfo->second->GetData(&setData);
-
-	BOOL recWaitFlag = FALSE;
-	DWORD tunerID = 0;
-	this->reserveInfoManager.GetRecWaitMode(reserve.reserveID, &recWaitFlag, &tunerID );
-
-	BOOL chgCtrl = FALSE;
-	if( recWaitFlag == TRUE ){
-		//すでに録画中
-		setData.recSetting.tuijyuuFlag = reserve.recSetting.tuijyuuFlag;
-		setData.recSetting.batFilePath = reserve.recSetting.batFilePath;
-		setData.recSetting.suspendMode = reserve.recSetting.suspendMode;
-		setData.recSetting.rebootFlag = reserve.recSetting.rebootFlag;
-		setData.recSetting.useMargineFlag = reserve.recSetting.useMargineFlag;
-		setData.recSetting.endMargine = reserve.recSetting.endMargine;
-		if( chgTime == TRUE ){
-			//追従による時間変更
-			setData.startTime = reserve.startTime;
-			setData.durationSecond = reserve.durationSecond;
-			setData.reserveStatus = reserve.reserveStatus;
-			setData.eventID = reserve.eventID;
-
-			//コントロール経由で変更
-			map<DWORD, CTunerBankCtrl*>::iterator itrCtrl;
-			itrCtrl = this->tunerBankMap.find(tunerID);
-			if( itrCtrl != this->tunerBankMap.end() ){
-				itrCtrl->second->ChgReserve(setData);
-			}
-
-			chgCtrl = TRUE;
-		}else{
-			if( reserve.eventID == 0xFFFF ){
-				setData.durationSecond = reserve.durationSecond;
-			}
-		}
-		
-	}else{
-		if( setData.eventID == 0xFFFF ){
-			//プログラム予約の場合チャンネルが変わっている可能性あるためチェック
-			if( setData.originalNetworkID != reserve.originalNetworkID ||
-				setData.transportStreamID != reserve.transportStreamID ||
-				setData.serviceID != reserve.serviceID ){
-					//チャンネル変わってる
-					this->reserveInfoManager.ClearNGTunerID(reserve.reserveID);
-					if( reserve.recSetting.tunerID != 0 ){
-						//チューナー固定
-						vector<DWORD> idList;
-						if( this->tunerManager.GetEnumID( &idList ) == TRUE ){
-							for( size_t i=0; i<idList.size(); i++ ){
-								if( idList[i] != reserve.recSetting.tunerID ){
-									this->reserveInfoManager.AddNGTunerID(reserve.reserveID, idList[i]);
-								}
-							}
-						}
-					}
-			}
-		}
-		if( setData.recSetting.tunerID != reserve.recSetting.tunerID ){
-			//使用チューナーリセット
-			this->reserveInfoManager.ClearNGTunerID(reserve.reserveID);
-			if( reserve.recSetting.tunerID != 0 ){
-				//チューナー固定
-				vector<DWORD> idList;
-				if( this->tunerManager.GetEnumID( &idList ) == TRUE ){
-					for( size_t i=0; i<idList.size(); i++ ){
-						if( idList[i] != reserve.recSetting.tunerID ){
-							this->reserveInfoManager.AddNGTunerID(reserve.reserveID, idList[i]);
-						}
-					}
-				}
-			}
-		}
-		setData = reserve;
-	}
-
-	this->reserveText.ChgReserve(setData);
-	if( chgCtrl == FALSE ){
-		itrInfo->second->SetData(setData);
-	}
-
-
-	return TRUE;
-}
-
-//予約情報を削除する
-//引数：
-// reserveList		[IN]予約IDリスト
-void CReserveManager::DelReserveData(
-	const vector<DWORD>& reserveList
-	)
-{
-	CBlockLock lock(&this->managerLock);
-
-	//予約削除
-	_DelReserveData(reserveList);
-
-	this->reserveText.SaveText();
-
-	_ReloadBankMap();
-
-
-	this->notifyManager.AddNotify(NOTIFY_UPDATE_RESERVE_INFO);
-}
-
-void CReserveManager::_DelReserveData(
-	const vector<DWORD>& reserveList
-)
-{
-	for( size_t i=0; i<reserveList.size(); i++ ){
-		map<DWORD, BANK_INFO*>::iterator itrBank;
-		map<DWORD, BANK_WORK_INFO*>::iterator itrWork;
-		for( itrBank = this->bankMap.begin(); itrBank != this->bankMap.end(); itrBank++ ){
-			itrWork = itrBank->second->reserveList.find(reserveList[i]);
-			if( itrWork != itrBank->second->reserveList.end() ){
-
-				map<DWORD, CTunerBankCtrl*>::iterator itrCtrl;
-				itrCtrl = this->tunerBankMap.find(itrBank->second->tunerID);
-				if( itrCtrl != this->tunerBankMap.end() ){
-					itrCtrl->second->DeleteReserve(reserveList[i]);
-				}
-				SAFE_DELETE(itrWork->second);
-				itrBank->second->reserveList.erase(itrWork);
-			}
-		}
-
-		itrWork = this->NGReserveMap.find(reserveList[i]);
-		if( itrWork != this->NGReserveMap.end() ){
-			SAFE_DELETE(itrWork->second);
-			this->NGReserveMap.erase(itrWork);
-		}
-
-		this->reserveText.DelReserve(reserveList[i]);
-
-		map<DWORD, CReserveInfo*>::iterator itr;
-		itr = this->reserveInfoMap.find(reserveList[i]);
-		if( itr != this->reserveInfoMap.end() ){
-			SAFE_DELETE(itr->second);
-			this->reserveInfoMap.erase(itr);
-		}
-	}
-}
-
-void CReserveManager::ReloadBankMap(BOOL notify)
-{
-	CBlockLock lock(&this->managerLock);
-
-	_ReloadBankMap();
-	if( notify == TRUE ){
-		this->notifyManager.AddNotify(NOTIFY_UPDATE_RESERVE_INFO);
-		this->notifyManager.AddNotify(NOTIFY_UPDATE_REC_INFO);
-	}
-}
-
-void CReserveManager::_ReloadBankMap()
-{
-	OutputDebugString(L"Start _ReloadBankMap\r\n");
-
-	DWORD time = GetTickCount();
-	//まずバンクをクリア
-	map<DWORD, BANK_INFO*>::iterator itrBank;
-	for( itrBank = this->bankMap.begin(); itrBank != this->bankMap.end(); itrBank++){
-		map<DWORD, BANK_WORK_INFO*>::iterator itrWork;
-		for( itrWork = itrBank->second->reserveList.begin(); itrWork != itrBank->second->reserveList.end(); itrWork++ ){
-			SAFE_DELETE(itrWork->second);
-		}
-		itrBank->second->reserveList.clear();
-	}
-	map<DWORD, BANK_WORK_INFO*>::iterator itrNG;
-	for( itrNG = this->NGReserveMap.begin(); itrNG != this->NGReserveMap.end(); itrNG++){
-		SAFE_DELETE(itrNG->second);
-	}
-	this->NGReserveMap.clear();
-
-	//待機状態に入っているもの以外クリア
-	map<DWORD, CTunerBankCtrl*>::iterator itrCtrl;
-	for( itrCtrl = this->tunerBankMap.begin(); itrCtrl != this->tunerBankMap.end(); itrCtrl++){
-		itrCtrl->second->ClearNoCtrl();
-	}
-
-	//録画時間過ぎているものないかチェック
-	CheckOverTimeReserve();
-
-	if( this->autoDel == TRUE ){
-		vector<RESERVE_DATA> chkReserveMap;
-		map<DWORD, CReserveInfo*>::iterator itrRes;
-		for( itrRes = this->reserveInfoMap.begin(); itrRes != this->reserveInfoMap.end(); itrRes++ ){
-			chkReserveMap.resize(chkReserveMap.size() + 1);
-			itrRes->second->GetData(&chkReserveMap.back());
-		}
-		wstring defRecPath = L"";
-		GetRecFolderPath(defRecPath);
-		map<wstring, wstring> protectFile;
-		recInfoText.GetProtectFiles(&protectFile);
-		CreateDiskFreeSpace(chkReserveMap, defRecPath, protectFile, this->delFolderList, this->delExtList);
-	}
-
-	switch(this->reloadBankMapAlgo){
-	case 0:
-		_ReloadBankMapAlgo(FALSE, FALSE, this->backPriorityFlag, FALSE);
-		break;
-	case 1:
-		_ReloadBankMapAlgo(TRUE, FALSE, this->backPriorityFlag, FALSE);
-		break;
-	case 2:
-		_ReloadBankMapAlgo(TRUE, TRUE, this->backPriorityFlag, TRUE);
-		break;
-	case 3:
-		_ReloadBankMapAlgo(TRUE, TRUE, FALSE, TRUE);
-		break;
-	default:
-		_ReloadBankMapAlgo(FALSE, FALSE, this->backPriorityFlag, FALSE);
-		break;
-	}
-
-
-	Sleep(0);
-
-	//予約情報を追加
-	for( itrBank = this->bankMap.begin(); itrBank != this->bankMap.end(); itrBank++){
-		itrCtrl = this->tunerBankMap.find(itrBank->second->tunerID);
-		if( itrCtrl != this->tunerBankMap.end() ){
-			vector<CReserveInfo*> reserveInfo;
-			map<DWORD, BANK_WORK_INFO*>::iterator itrItem;
-			for( itrItem = itrBank->second->reserveList.begin(); itrItem != itrBank->second->reserveList.end(); itrItem++ ){
-				reserveInfo.push_back(itrItem->second->reserveInfo);
-			}
-			if( reserveInfo.size() > 0 ){
-				itrCtrl->second->AddReserve(&reserveInfo);
-			}
-		}
-	}
-
-	//TODO: 余裕が出来たらサーバー間連携を復活させる
-
-	_OutputDebugString(L"End _ReloadBankMap %dmsec\r\n", GetTickCount()-time);
-}
-
-static BOOL IsNGTunerID(DWORD tunerID, DWORD reserveID, WORD onid, WORD tsid, WORD sid, CTunerManager& tunerManager, CReserveInfoManager& reserveInfoManager)
-{
-	return tunerManager.IsSupportService(tunerID, onid, tsid, sid) == FALSE ||
-	       reserveInfoManager.IsNGTunerID(reserveID, tunerID) != FALSE ? TRUE : FALSE;
-}
-
-void CReserveManager::_ReloadBankMapAlgo(BOOL do2Pass, BOOL ignoreUseTunerID, BOOL backPriority, BOOL noTuner)
-{
-	map<DWORD, BANK_INFO*>::iterator itrBank;
-	map<DWORD, BANK_WORK_INFO*>::iterator itrNG;
-
-	//録画待機中のものをバンクに登録＆優先度と時間でソート
-	map<DWORD, CReserveInfo*>::iterator itrInfo;
-	multimap<wstring, BANK_WORK_INFO*> sortReserveMap;
-	for( itrInfo = this->reserveInfoMap.begin(); itrInfo != this->reserveInfoMap.end(); itrInfo++ ){
-		itrInfo->second->SetOverlapMode(0);
-		BYTE recMode = 0;
-		itrInfo->second->GetRecMode(&recMode);
-		if( recMode == RECMODE_NO ){
-			continue;
-		}
-		BOOL recWaitFlag = FALSE;
-		DWORD tunerID = 0;
-		this->reserveInfoManager.GetRecWaitMode(itrInfo->first, &recWaitFlag, &tunerID);
-		if( recWaitFlag == TRUE ){
-			//録画処理中なのでバンクに登録
-			itrBank = this->bankMap.find(tunerID);
-			if( itrBank != this->bankMap.end() ){
-				BANK_WORK_INFO* item = new BANK_WORK_INFO;
-				CreateWorkData(itrInfo->second, item, backPriority, 0, 0, noTuner);
-				itrBank->second->reserveList.insert(pair<DWORD, BANK_WORK_INFO*>(item->reserveID,item));
-			}
-		}else{
-			//まだ録画処理されていないのでソートに追加
-			BANK_WORK_INFO* item = new BANK_WORK_INFO;
-			CreateWorkData(itrInfo->second, item, backPriority, 0, 0, noTuner);
-			sortReserveMap.insert(pair<wstring, BANK_WORK_INFO*>(item->sortKey, item));
-		}
-	}
-
-	Sleep(0);
-
-	//予約の割り振り
-	multimap<wstring, BANK_WORK_INFO*> tempNGMap1Pass;
-	multimap<wstring, BANK_WORK_INFO*> tempMap2Pass;
-	multimap<wstring, BANK_WORK_INFO*> tempNGMap2Pass;
-	multimap<wstring, BANK_WORK_INFO*>::iterator itrSort;
-	for( itrSort = do2Pass ? sortReserveMap.begin() : sortReserveMap.end(); itrSort !=  sortReserveMap.end(); itrSort++ ){
-		BOOL insert = FALSE;
-		if( ignoreUseTunerID || itrSort->second->useTunerID == 0 ){
-			//チューナー優先度より同一物理チャンネルで連続となるチューナーの使用を優先する
-			if( this->sameChPriorityFlag == TRUE ){
-				for( itrBank = this->bankMap.begin(); itrBank != this->bankMap.end(); itrBank++){
-					DWORD status = 0;
-					if( IsNGTunerID(itrBank->first, itrSort->second->reserveID, itrSort->second->ONID, itrSort->second->TSID, itrSort->second->SID, this->tunerManager, this->reserveInfoManager) == FALSE ){
-						status = ChkInsertSameChStatus(itrBank->second, itrSort->second);
-					}
-					if( status == 1 ){
-						//問題なく追加可能
-						itrBank->second->reserveList.insert(pair<DWORD, BANK_WORK_INFO*>(itrSort->second->reserveID,itrSort->second));
-						insert = TRUE;
-						break;
-					}
-				}
-			}
-			if( insert == FALSE ){
-				for( itrBank = this->bankMap.begin(); itrBank != this->bankMap.end(); itrBank++){
-					DWORD status = 0;
-					if( IsNGTunerID(itrBank->first, itrSort->second->reserveID, itrSort->second->ONID, itrSort->second->TSID, itrSort->second->SID, this->tunerManager, this->reserveInfoManager) == FALSE ){
-						status = ChkInsertStatus(itrBank->second, itrSort->second);
-					}
-					if( status == 1 ){
-						//問題なく追加可能
-						itrBank->second->reserveList.insert(pair<DWORD, BANK_WORK_INFO*>(itrSort->second->reserveID,itrSort->second));
-						insert = TRUE;
-						break;
-					}
-				}
-			}
-		}else{
-			//チューナー固定
-			if( this->tunerManager.IsSupportService(itrSort->second->useTunerID, itrSort->second->ONID, itrSort->second->TSID, itrSort->second->SID) == TRUE ){
-				if( this->reserveInfoManager.IsNGTunerID(itrSort->second->reserveID, itrSort->second->useTunerID) == FALSE ){
-					map<DWORD, BANK_INFO*>::iterator itrManual;
-					itrManual = this->bankMap.find(itrSort->second->useTunerID);
-					if( itrManual != this->bankMap.end() ){
-						itrManual->second->reserveList.insert(pair<DWORD, BANK_WORK_INFO*>(itrSort->second->reserveID,itrSort->second));
-						insert = TRUE;
-					}
-				}
-			}
-		}
-		if( insert == FALSE ){
-			//追加できなかった
-			tempNGMap1Pass.insert(pair<wstring, BANK_WORK_INFO*>(itrSort->first, itrSort->second));
-		}
-	}
-
-	//2Pass
-	multimap<wstring, BANK_WORK_INFO*>& targetMap = do2Pass ? tempNGMap1Pass : sortReserveMap;
-	for( itrSort = targetMap.begin(); itrSort !=  targetMap.end(); itrSort++ ){
-		BOOL insert = FALSE;
-		if( ignoreUseTunerID || itrSort->second->useTunerID == 0 ){
-			//チューナー優先度より同一物理チャンネルで連続となるチューナーの使用を優先する
-			if( this->sameChPriorityFlag == TRUE ){
-				for( itrBank = this->bankMap.begin(); itrBank != this->bankMap.end(); itrBank++){
-					DWORD status = 0;
-					if( IsNGTunerID(itrBank->first, itrSort->second->reserveID, itrSort->second->ONID, itrSort->second->TSID, itrSort->second->SID, this->tunerManager, this->reserveInfoManager) == FALSE ){
-						status = ChkInsertSameChStatus(itrBank->second, itrSort->second);
-					}
-					if( status == 1 ){
-						//問題なく追加可能
-						itrBank->second->reserveList.insert(pair<DWORD, BANK_WORK_INFO*>(itrSort->second->reserveID,itrSort->second));
-						insert = TRUE;
-						break;
-					}
-				}
-			}
-			if( insert == FALSE ){
-				for( itrBank = this->bankMap.begin(); itrBank != this->bankMap.end(); itrBank++){
-					DWORD status = 0;
-					if( IsNGTunerID(itrBank->first, itrSort->second->reserveID, itrSort->second->ONID, itrSort->second->TSID, itrSort->second->SID, this->tunerManager, this->reserveInfoManager) == FALSE ){
-						status = ChkInsertStatus(itrBank->second, itrSort->second);
-					}
-					if( status == 1 ){
-						//問題なく追加可能
-						itrBank->second->reserveList.insert(pair<DWORD, BANK_WORK_INFO*>(itrSort->second->reserveID,itrSort->second));
-						insert = TRUE;
-						break;
-					}else if( status == 2 ){
-						//追加可能だが終了時間と開始時間の重なった予約あり
-						//仮追加
-						itrBank->second->reserveList.insert(pair<DWORD, BANK_WORK_INFO*>(itrSort->second->reserveID,itrSort->second));
-						itrSort->second->preTunerID = itrBank->first;
-						tempMap2Pass.insert(pair<wstring, BANK_WORK_INFO*>(itrSort->first, itrSort->second));
-						insert = TRUE;
-						break;
-					}
-				}
-			}
-		}else{
-			//チューナー固定
-			if( this->tunerManager.IsSupportService(itrSort->second->useTunerID, itrSort->second->ONID, itrSort->second->TSID, itrSort->second->SID) == TRUE ){
-				if( do2Pass || this->reserveInfoManager.IsNGTunerID(itrSort->second->reserveID, itrSort->second->useTunerID) == FALSE ){
-					map<DWORD, BANK_INFO*>::iterator itrManual;
-					itrManual = this->bankMap.find(itrSort->second->useTunerID);
-					if( itrManual != this->bankMap.end() ){
-						itrManual->second->reserveList.insert(pair<DWORD, BANK_WORK_INFO*>(itrSort->second->reserveID,itrSort->second));
-						insert = TRUE;
-					}
-				}
-			}
-		}
-		if( insert == FALSE ){
-			//追加できなかった
-			itrSort->second->reserveInfo->SetOverlapMode(2);
-			this->NGReserveMap.insert(pair<DWORD, BANK_WORK_INFO*>(itrSort->second->reserveID, itrSort->second));
-
-			tempNGMap2Pass.insert(pair<wstring, BANK_WORK_INFO*>(itrSort->first, itrSort->second));
-		}
-	}
-
-	Sleep(0);
-
-	//開始終了重なっている予約で、他のチューナーに回せるやつあるかチェック
-	for( itrSort = tempMap2Pass.begin(); itrSort !=  tempMap2Pass.end(); itrSort++ ){
-		BOOL insert = FALSE;
-		for( itrBank = this->bankMap.begin(); itrBank != this->bankMap.end(); itrBank++){
-			if( itrBank->second->tunerID == itrSort->second->preTunerID ){
-				if( IsNGTunerID(itrBank->first, itrSort->second->reserveID, itrSort->second->ONID, itrSort->second->TSID, itrSort->second->SID, this->tunerManager, this->reserveInfoManager) == FALSE &&
-				    ReChkInsertStatus(itrBank->second, itrSort->second) == 1 ){
-					//前の予約移動した？このままでもOK
-					break;
 				}else{
-					continue;
-				}
-			}
-			DWORD status = 0;
-			if( IsNGTunerID(itrBank->first, itrSort->second->reserveID, itrSort->second->ONID, itrSort->second->TSID, itrSort->second->SID, this->tunerManager, this->reserveInfoManager) == FALSE ){
-				status = ChkInsertStatus(itrBank->second, itrSort->second);
-			}
-			if( status == 1 ){
-				//問題なく追加可能
-				itrBank->second->reserveList.insert(pair<DWORD, BANK_WORK_INFO*>(itrSort->second->reserveID,itrSort->second));
-				insert = TRUE;
-				break;
-			}
-		}
-		if( insert == TRUE ){
-			//仮追加を削除
-			itrBank = this->bankMap.find(itrSort->second->preTunerID);
-			if( itrBank != this->bankMap.end() ){
-				map<DWORD, BANK_WORK_INFO*>::iterator itrDel;
-				itrDel = itrBank->second->reserveList.find(itrSort->second->reserveID);
-				if( itrDel != itrBank->second->reserveList.end() ){
-					itrBank->second->reserveList.erase(itrDel);
+					this->epgCapTimeList.push_back(MAKELONG(((wday * 24 + hour) * 60 + minute) % 10080, basicOnlyFlags));
 				}
 			}
 		}
 	}
 
-	Sleep(0);
+	this->defStartMargin = GetPrivateProfileInt(L"SET", L"StartMargin", 5, iniPath.c_str());
+	this->defEndMargin = GetPrivateProfileInt(L"SET", L"EndMargin", 2, iniPath.c_str());
+	this->backPriority = GetPrivateProfileInt(L"SET", L"BackPriority", 1, iniPath.c_str()) != 0;
 
-	multimap<wstring, BANK_WORK_INFO*>::iterator itrSortNG;
-	//NGでチューナー入れ替えで録画できるものあるかチェック
-	itrSortNG = tempNGMap2Pass.begin();
-	while(itrSortNG != tempNGMap2Pass.end() ){
-		if( itrSortNG->second->useTunerID != 0 ){
-			//チューナー固定でNGになっているのは無視
-			itrSortNG++;
-			continue;
-		}
-		if( ChangeNGReserve(itrSortNG->second) == TRUE ){
-			//登録できたのでNGから削除
-			itrSortNG->second->reserveInfo->SetOverlapMode(0);
-			itrNG = this->NGReserveMap.find(itrSortNG->second->reserveID);
-			if( itrNG != this->NGReserveMap.end() ){
-				this->NGReserveMap.erase(itrNG);
-			}
-			tempNGMap2Pass.erase(itrSortNG++);
-		}else{
-			itrSortNG++;
-		}
+	this->recInfoText.SetKeepCount(
+		GetPrivateProfileInt(L"SET", L"AutoDelRecInfo", 0, iniPath.c_str()) == 0 ? UINT_MAX :
+		GetPrivateProfileInt(L"SET", L"AutoDelRecInfoNum", 100, iniPath.c_str()));
+	this->recInfoText.SetRecInfoDelFile(GetPrivateProfileInt(L"SET", L"RecInfoDelFile", 0, commonIniPath.c_str()) != 0);
+	GetPrivateProfileString(L"SET", L"RecInfoFolder", L"", buff, 512, commonIniPath.c_str());
+	this->recInfoText.SetRecInfoFolder(buff);
+
+	this->recInfo2Text.SetKeepCount(GetPrivateProfileInt(L"SET", L"RecInfo2Max", 1000, iniPath.c_str()));
+	this->recInfo2DropChk = GetPrivateProfileInt(L"SET", L"RecInfo2DropChk", 15, iniPath.c_str());
+	GetPrivateProfileString(L"SET", L"RecInfo2RegExp", L"", buff, 1024, iniPath.c_str());
+	this->recInfo2RegExp = buff;
+
+	this->defEnableCaption = GetPrivateProfileInt(L"SET", L"Caption", 1, viewIniPath.c_str()) != 0;
+	this->defEnableData = GetPrivateProfileInt(L"SET", L"Data", 0, viewIniPath.c_str()) != 0;
+
+	this->recNamePlugInFileName.clear();
+	if( GetPrivateProfileInt(L"SET", L"RecNamePlugIn", 0, iniPath.c_str()) != 0 ){
+		GetPrivateProfileString(L"SET", L"RecNamePlugInFile", L"RecName_Macro.dll", buff, 512, iniPath.c_str());
+		this->recNamePlugInFileName = buff;
 	}
+	this->recNameNoChkYen = GetPrivateProfileInt(L"SET", L"NoChkYen", 0, iniPath.c_str()) != 0;
 
-	//NGで少しでも録画できるかチェック
-	for( itrSortNG = tempNGMap2Pass.begin(); itrSortNG != tempNGMap2Pass.end(); itrSortNG++){
-		if( itrSortNG->second->useTunerID != 0 ){
-			//チューナー固定でNGになっているのは無視
-			continue;
-		}
-		DWORD maxDuration = 0;
-		DWORD maxID = 0xFFFFFFFF;
-		for( itrBank = this->bankMap.begin(); itrBank != this->bankMap.end(); itrBank++){
-			DWORD duration = 0;
-			if( IsNGTunerID(itrBank->first, itrSortNG->second->reserveID, itrSortNG->second->ONID, itrSortNG->second->TSID, itrSortNG->second->SID, this->tunerManager, this->reserveInfoManager) == FALSE ){
-				duration = ChkInsertNGStatus(itrBank->second, itrSortNG->second);
-			}
-			if( maxDuration < duration && duration > 0){
-				maxDuration = duration;
-				maxID = itrBank->second->tunerID;
-			}
-		}
-		if( maxDuration > 0 && maxID != 0xFFFFFFFF ){
-			//少しでも録画できる場所あった
-			itrBank = this->bankMap.find(maxID);
-			if( itrBank != this->bankMap.end() ){
-				itrSortNG->second->reserveInfo->SetOverlapMode(1);
-				itrBank->second->reserveList.insert(pair<DWORD, BANK_WORK_INFO*>(itrSortNG->second->reserveID,itrSortNG->second));
-
-				//登録できたのでNGから削除
-				itrNG = this->NGReserveMap.find(itrSortNG->second->reserveID);
-				if( itrNG != this->NGReserveMap.end() ){
-					this->NGReserveMap.erase(itrNG);
-				}
-			}
-		}
+	for( map<DWORD, CTunerBankCtrl*>::const_iterator itr = this->tunerBankMap.begin(); itr != this->tunerBankMap.end(); itr++ ){
+		itr->second->ReloadSetting();
 	}
+	ReloadBankMap();
 }
 
-BOOL CReserveManager::ChangeNGReserve(BANK_WORK_INFO* inItem)
+vector<RESERVE_DATA> CReserveManager::GetReserveDataAll(bool getRecFileName) const
 {
-	BOOL ret = FALSE;
+	CBlockLock lock(&this->managerLock);
 
-	if( inItem == NULL ){
-		return FALSE;
+	vector<RESERVE_DATA> list;
+	list.reserve(this->reserveText.GetMap().size());
+	for( map<DWORD, RESERVE_DATA>::const_iterator itr = this->reserveText.GetMap().begin(); itr != this->reserveText.GetMap().end(); itr++ ){
+		list.resize(list.size() + 1);
+		GetReserveData(itr->first, &list.back(), getRecFileName);
 	}
+	return list;
+}
 
-	map<DWORD, BANK_INFO*>::iterator itrBank;
-	for( itrBank = this->bankMap.begin(); itrBank != this->bankMap.end(); itrBank++ ){
-		if( IsNGTunerID(itrBank->first, inItem->reserveID, inItem->ONID, inItem->TSID, inItem->SID, this->tunerManager, this->reserveInfoManager) == FALSE ){
-			//NGじゃないバンクあり
+vector<TUNER_RESERVE_INFO> CReserveManager::GetTunerReserveAll() const
+{
+	CBlockLock lock(&this->managerLock);
 
-			//時間のかぶる予約一覧取得
-			vector<BANK_WORK_INFO*> chkReserve;
-			map<DWORD, BANK_WORK_INFO*>::iterator itrWork;
-			for( itrWork = itrBank->second->reserveList.begin(); itrWork != itrBank->second->reserveList.end(); itrWork++ ){
-				if( itrWork->second->chID == inItem->chID ){
-					//同一チャンネルなのでかぶりではない
-					continue;
-				}
+	vector<TUNER_RESERVE_INFO> list;
+	list.reserve(this->tunerBankMap.size() + 1);
+	for( map<DWORD, CTunerBankCtrl*>::const_iterator itr = this->tunerBankMap.begin(); itr != this->tunerBankMap.end(); itr++ ){
+		list.resize(list.size() + 1);
+		list.back().tunerID = itr->first;
+		this->tunerManager.GetBonFileName(itr->first, list.back().tunerName);
+		list.back().reserveList = itr->second->GetReserveIDList();
+	}
+	list.resize(list.size() + 1);
+	list.back().tunerID = 0xFFFFFFFF;
+	list.back().tunerName = L"チューナー不足";
+	vector<DWORD> &ngList = list.back().reserveList = GetNoTunerReserveAll();
+	for( size_t i = 0; i < ngList.size(); i++ ){
+		//無効予約は「チューナ不足」ではない
+		if( this->reserveText.GetMap().find(ngList[i])->second.recSetting.recMode == RECMODE_NO ){
+			ngList.erase(ngList.begin() + i);
+		}
+	}
+	return list;
+}
 
-				//時間かぶっている予約かチェック
-				if( itrWork->second->startTime <= inItem->startTime && 
-					inItem->startTime < itrWork->second->endTime){
-					//開始時間が含まれている
-						chkReserve.push_back(itrWork->second);
-				}else
-				if( itrWork->second->startTime < inItem->endTime &&
-					inItem->endTime <= itrWork->second->endTime ){
-					//終了時間が含まれている
-						chkReserve.push_back(itrWork->second);
-				}else
-				if( inItem->startTime <= itrWork->second->startTime &&
-					itrWork->second->startTime < inItem->endTime ){
-					//開始から終了の間に含んでしまう
-						chkReserve.push_back(itrWork->second);
-				}else
-				if( inItem->startTime < itrWork->second->endTime &&
-					itrWork->second->endTime <= inItem->endTime ){
-					//開始から終了の間に含んでしまう
-						chkReserve.push_back(itrWork->second);
+vector<DWORD> CReserveManager::GetNoTunerReserveAll() const
+{
+	CBlockLock lock(&this->managerLock);
+
+	vector<DWORD> list;
+	list.reserve(this->reserveText.GetMap().size());
+	for( map<DWORD, RESERVE_DATA>::const_iterator itr = this->reserveText.GetMap().begin(); itr != this->reserveText.GetMap().end(); itr++ ){
+		list.push_back(itr->first);
+	}
+	//全予約からバンクに存在する予約を引く
+	for( map<DWORD, CTunerBankCtrl*>::const_iterator itr = this->tunerBankMap.begin(); itr != this->tunerBankMap.end(); itr++ ){
+		vector<DWORD> diffList = itr->second->GetReserveIDList();
+		size_t k = 0;
+		for( size_t i = 0, j = 0; i < list.size(); ){
+			if( j >= diffList.size() || list[i] < diffList[j] ){
+				list[k++] = list[i++];
+			}else if( diffList[j] < list[i] ){
+				j++;
+			}else{
+				i++;
+			}
+		}
+		list.resize(k);
+	}
+	return list;
+}
+
+bool CReserveManager::GetReserveData(DWORD id, RESERVE_DATA* reserveData, bool getRecFileName) const
+{
+	CBlockLock lock(&this->managerLock);
+
+	map<DWORD, RESERVE_DATA>::const_iterator itr = this->reserveText.GetMap().find(id);
+	if( itr != this->reserveText.GetMap().end() ){
+		*reserveData = itr->second;
+		reserveData->recFileNameList.clear();
+		if( getRecFileName ){
+			const vector<REC_FILE_SET_INFO>& folderList = reserveData->recSetting.recFolderList;
+			vector<wstring>& nameList = reserveData->recFileNameList;
+			if( folderList.empty() ){
+				nameList.push_back(this->recNamePlugInFileName);
+			}else{
+				for( size_t i = 0; i < folderList.size(); i++ ){
+					nameList.push_back(folderList[i].recNamePlugIn.empty() ? this->recNamePlugInFileName : folderList[i].recNamePlugIn);
 				}
 			}
-
-			//かぶった予約が別バンクで行えるかチェック
-			BOOL moveOK = TRUE;
-			vector<BANK_WORK_INFO*> tempIn;
-			for( size_t i=0; i<chkReserve.size(); i++ ){
-				BOOL inFlag = FALSE;
-
-				//録画中の予約とかぶるとこのバンクは無理
-				BOOL recWaitFlag = FALSE;
-				DWORD tunerID = 0;
-				this->reserveInfoManager.GetRecWaitMode(chkReserve[i]->reserveID, &recWaitFlag, &tunerID);
-				if( recWaitFlag == TRUE ){
-					moveOK = FALSE;
-					break;
-				}
-
-				map<DWORD, BANK_INFO*>::iterator itrBank2;
-				//まず問題なく入る場所を探す
-				for( itrBank2 = this->bankMap.begin(); itrBank2 != this->bankMap.end(); itrBank2++ ){
-					if( itrBank2->first == itrBank->first ){
-						continue;
-					}
-					if( IsNGTunerID(itrBank2->first, chkReserve[i]->reserveID, chkReserve[i]->ONID, chkReserve[i]->TSID, chkReserve[i]->SID, this->tunerManager, this->reserveInfoManager) == FALSE &&
-					    ReChkInsertStatus(itrBank2->second, chkReserve[i]) == 1 ){
-						inFlag = TRUE;
-						//行えるのでバンク移動
-						chkReserve[i]->preTunerID = itrBank->second->tunerID;
-
-						itrBank2->second->reserveList.insert(pair<DWORD, BANK_WORK_INFO*>(chkReserve[i]->reserveID, chkReserve[i]));
-
-						tempIn.push_back(chkReserve[i]);
-						break;
-					}
-				}
-				if(inFlag == FALSE ){
-					//開始時間とか重なるものを探す
-					for( itrBank2 = this->bankMap.begin(); itrBank2 != this->bankMap.end(); itrBank2++ ){
-						if( itrBank2->first == itrBank->first ){
-							continue;
+			//recNamePlugInを展開して実ファイル名をセット
+			for( size_t i = 0; i < nameList.size(); i++ ){
+				if( nameList[i].empty() == false ){
+					CReNamePlugInUtil plugIn;
+					wstring plugInPath;
+					GetModuleFolderPath(plugInPath);
+					plugInPath += L"\\RecName\\" + nameList[i];
+					nameList[i].clear();
+					if( plugIn.Initialize(plugInPath.c_str()) != FALSE ){
+						PLUGIN_RESERVE_INFO info;
+						info.startTime = reserveData->startTime;
+						info.durationSec = reserveData->durationSecond;
+						wcscpy_s(info.eventName, reserveData->title.c_str());
+						info.ONID = reserveData->originalNetworkID;
+						info.TSID = reserveData->transportStreamID;
+						info.SID = reserveData->serviceID;
+						info.EventID = reserveData->eventID;
+						wcscpy_s(info.serviceName, reserveData->stationName.c_str());
+						//TODO: チューナに関する情報をセット
+						wcscpy_s(info.bonDriverName, L"チューナー不明");
+						info.bonDriverID = 0xFFFF;
+						info.tunerID = 0xFFFF;
+						EPG_EVENT_INFO* epgInfo = NULL;
+						if( info.EventID != 0xFFFF ){
+							EPGDB_EVENT_INFO epgDBInfo;
+							if( this->epgDBManager.SearchEpg(info.ONID, info.TSID, info.SID, info.EventID, &epgDBInfo) != FALSE ){
+								epgInfo = new EPG_EVENT_INFO;
+								CopyEpgInfo(epgInfo, &epgDBInfo);
+							}
 						}
-						if( IsNGTunerID(itrBank2->first, chkReserve[i]->reserveID, chkReserve[i]->ONID, chkReserve[i]->TSID, chkReserve[i]->SID, this->tunerManager, this->reserveInfoManager) == FALSE &&
-						    ReChkInsertStatus(itrBank2->second, chkReserve[i]) != 0 ){
-							inFlag = TRUE;
-							//行えるのでバンク移動
-							chkReserve[i]->preTunerID = itrBank->second->tunerID;
+						WCHAR name[512];
+						DWORD size = 512;
+						//ConvertRecName()は呼ばない(epgInfo==NULLの場合と等価なので)
+						if( plugIn.ConvertRecName2(&info, epgInfo, name, &size) != FALSE ){
+							nameList[i] = name;
+							CheckFileName(nameList[i], this->recNameNoChkYen);
+						}
+						delete epgInfo;
+					}
+				}
+				//実ファイル名は空にしない
+				if( nameList[i].empty() ){
+					SYSTEMTIME st = reserveData->startTime;
+					Format(nameList[i], L"%04d%02d%02d%02d%02dFFFFFFFF0-%s.ts",
+					       st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, reserveData->title.c_str());
+					CheckFileName(nameList[i]);
+				}
+			}
+		}
+		return true;
+	}
+	return false;
+}
 
-							itrBank2->second->reserveList.insert(pair<DWORD, BANK_WORK_INFO*>(chkReserve[i]->reserveID, chkReserve[i]));
+bool CReserveManager::AddReserveData(const vector<RESERVE_DATA>& reserveList, bool setComment)
+{
+	CBlockLock lock(&this->managerLock);
 
-							tempIn.push_back(chkReserve[i]);
+	bool modified = false;
+	__int64 minStartTime = LLONG_MAX;
+	__int64 now = GetNowI64Time();
+	for( size_t i = 0; i < reserveList.size(); i++ ){
+		RESERVE_DATA r = reserveList[i];
+		//すでに終了していないか
+		if( now < ConvertI64Time(r.startTime) + r.durationSecond * I64_1SEC ){
+			if( setComment == false ){
+				r.comment.clear();
+			}
+			r.overlapMode = RESERVE_EXECUTE;
+			r.reserveStatus = 0;
+			r.recFileNameList.clear();
+			r.reserveID = this->reserveText.AddReserve(r);
+			this->reserveTextCache.clear();
+			this->reserveModified = true;
+			modified = true;
+			if( r.recSetting.recMode != RECMODE_NO ){
+				__int64 startTime;
+				CalcEntireReserveTime(&startTime, NULL, r);
+				minStartTime = min(startTime, minStartTime);
+			}
+		}
+	}
+	if( modified ){
+		this->reserveText.SaveText();
+		ReloadBankMap(minStartTime);
+		this->notifyManager.AddNotify(NOTIFY_UPDATE_RESERVE_INFO);
+		return true;
+	}
+	return false;
+}
+
+bool CReserveManager::ChgReserveData(const vector<RESERVE_DATA>& reserveList, bool setReserveStatus)
+{
+	CBlockLock lock(&this->managerLock);
+
+	bool modified = false;
+	__int64 minStartTime = LLONG_MAX;
+	for( size_t i = 0; i < reserveList.size(); i++ ){
+		RESERVE_DATA r = reserveList[i];
+		map<DWORD, RESERVE_DATA>::const_iterator itr = this->reserveText.GetMap().find(r.reserveID);
+		if( itr != this->reserveText.GetMap().end() ){
+			//変更できないフィールドを上書き
+			r.comment = itr->second.comment;
+			r.startTimeEpg = itr->second.startTimeEpg;
+			if( setReserveStatus == false ){
+				r.reserveStatus = itr->second.reserveStatus;
+			}
+			r.recFileNameList.clear();
+
+			if( r.recSetting.recMode == RECMODE_NO ){
+				if( itr->second.recSetting.recMode != RECMODE_NO ){
+					//バンクから削除
+					for( map<DWORD, CTunerBankCtrl*>::const_iterator jtr = this->tunerBankMap.begin(); jtr != this->tunerBankMap.end(); jtr++ ){
+						if( jtr->second->DelReserve(r.reserveID) ){
 							break;
 						}
 					}
-				}
-				if(inFlag == FALSE ){
-					moveOK = FALSE;
-					break;
-				}
-			}
-			if(moveOK == FALSE ){
-				//移動できなかったので復帰
-				for( size_t i=0; i<tempIn.size(); i++ ){
-					map<DWORD, BANK_INFO*>::iterator itrBank2;
-					itrBank2 = this->bankMap.find(tempIn[i]->preTunerID);
-					if( itrBank2 != this->bankMap.end() ){
-						map<DWORD, BANK_WORK_INFO*>::iterator itrRes;
-						itrRes = itrBank2->second->reserveList.find(tempIn[i]->reserveID);
-						if( itrRes != itrBank2->second->reserveList.end() ){
-							itrBank2->second->reserveList.erase(itrRes);
-						}
-					}
+					r.overlapMode = RESERVE_EXECUTE;
+					__int64 startTime;
+					CalcEntireReserveTime(&startTime, NULL, itr->second);
+					minStartTime = min(startTime, minStartTime);
 				}
 			}else{
-				//このバンクから移動したものを削除
-				for( size_t i=0; i<tempIn.size(); i++ ){
-					map<DWORD, BANK_WORK_INFO*>::iterator itrRes;
-					itrRes = itrBank->second->reserveList.find(tempIn[i]->reserveID);
-					if( itrRes != itrBank->second->reserveList.end() ){
-						itrBank->second->reserveList.erase(itrRes);
+				//バンクに渡す予約情報を作成
+				CTunerBankCtrl::TUNER_RESERVE tr;
+				tr.reserveID = r.reserveID;
+				tr.title = r.title;
+				tr.stationName = r.stationName;
+				tr.onid = r.originalNetworkID;
+				tr.tsid = r.transportStreamID;
+				tr.sid = r.serviceID;
+				tr.eid = r.eventID;
+				tr.recMode = r.recSetting.recMode;
+				tr.priority = r.recSetting.priority;
+				bool enableCaption = tr.enableCaption =
+					r.recSetting.serviceMode & RECSERVICEMODE_SET ? (r.recSetting.serviceMode & RECSERVICEMODE_CAP) != 0 : this->defEnableCaption;
+				bool enableData = tr.enableData =
+					r.recSetting.serviceMode & RECSERVICEMODE_SET ? (r.recSetting.serviceMode & RECSERVICEMODE_DATA) != 0 : this->defEnableData;
+				tr.pittari = r.recSetting.pittariFlag != 0;
+				tr.partialRecMode = r.recSetting.partialRecFlag;
+				__int64 startTime, endTime;
+				CalcEntireReserveTime(&startTime, &endTime, r);
+				tr.startTime = ConvertI64Time(r.startTime);
+				tr.durationSecond = r.durationSecond;
+				__int64 startMargin = tr.startMargin = tr.startTime - startTime;
+				__int64 endMargin = tr.endMargin = endTime - (tr.startTime + tr.durationSecond * I64_1SEC);
+				tr.recFolder = r.recSetting.recFolderList;
+				tr.partialRecFolder = r.recSetting.partialRecFolder;
+
+				bool bankDeleted = false;
+				for( map<DWORD, CTunerBankCtrl*>::const_iterator jtr = this->tunerBankMap.begin(); jtr != this->tunerBankMap.end(); jtr++ ){
+					if( jtr->second->ChgCtrlReserve(&tr) ){
+						//この予約はこのバンクに待機状態で存在する
+						if( tr.onid != r.originalNetworkID ||
+						    tr.tsid != r.transportStreamID ||
+						    tr.sid != r.serviceID ||
+						    tr.eid != r.eventID ||
+						    tr.startTime != ConvertI64Time(r.startTime) ||
+						    tr.durationSecond != r.durationSecond ||
+						    tr.startMargin != startMargin ||
+						    tr.endMargin != endMargin ){
+							//必ず変更すべきフィールドを変更できなかったので待機状態を解除する
+							jtr->second->DelReserve(r.reserveID);
+							bankDeleted = true;
+						}else{
+							//必ずしも変更する必要のないフィールドは妥協する
+							r.title = tr.title;
+							r.stationName = tr.stationName;
+							r.recSetting.recMode = tr.recMode;
+							r.recSetting.priority = tr.priority;
+							if( tr.enableCaption != enableCaption || tr.enableData != enableData ){
+								r.recSetting.serviceMode = 0;
+								r.recSetting.serviceMode |= tr.enableCaption ? RECSERVICEMODE_SET | RECSERVICEMODE_CAP : 0;
+								r.recSetting.serviceMode |= tr.enableData ? RECSERVICEMODE_SET | RECSERVICEMODE_DATA : 0;
+							}
+							r.recSetting.pittariFlag = tr.pittari;
+							r.recSetting.partialRecFlag = tr.partialRecMode;
+							r.recSetting.recFolderList = tr.recFolder;
+							r.recSetting.partialRecFolder = tr.partialRecFolder;
+							r.recSetting.tunerID = itr->second.recSetting.tunerID;
+						}
+						break;
 					}
 				}
-				//このバンクにNG追加
-				itrBank->second->reserveList.insert(pair<DWORD, BANK_WORK_INFO*>(inItem->reserveID, inItem));
 
-				ret = TRUE;
+				//これらのフィールドに変化がなければバンク配置を再構築する必要はない
+				if( bankDeleted ||
+				    r.originalNetworkID != itr->second.originalNetworkID ||
+				    r.transportStreamID != itr->second.transportStreamID ||
+				    r.serviceID != itr->second.serviceID ||
+				    r.eventID != itr->second.eventID ||
+				    ConvertI64Time(r.startTime) != ConvertI64Time(itr->second.startTime) ||
+				    r.durationSecond != itr->second.durationSecond ||
+				    r.recSetting.recMode != itr->second.recSetting.recMode ||
+				    r.recSetting.priority != itr->second.recSetting.priority ||
+				    r.recSetting.startMargine != itr->second.recSetting.startMargine ||
+				    r.recSetting.endMargine != itr->second.recSetting.endMargine ||
+				    r.recSetting.tunerID != itr->second.recSetting.tunerID ){
+					__int64 startTime, startTimeNext;
+					CalcEntireReserveTime(&startTime, NULL, itr->second);
+					CalcEntireReserveTime(&startTimeNext, NULL, r);
+					minStartTime = min(min(startTime, startTimeNext), minStartTime);
+				}
+			}
+			this->reserveText.ChgReserve(r);
+			this->reserveTextCache.clear();
+			this->reserveModified = true;
+			modified = true;
+		}
+	}
+	if( modified ){
+		this->reserveText.SaveText();
+		ReloadBankMap(minStartTime);
+		this->notifyManager.AddNotify(NOTIFY_UPDATE_RESERVE_INFO);
+		return true;
+	}
+	return false;
+}
+
+void CReserveManager::DelReserveData(const vector<DWORD>& idList)
+{
+	CBlockLock lock(&this->managerLock);
+
+	bool modified = false;
+	__int64 minStartTime = LLONG_MAX;
+	for( size_t i = 0; i < idList.size(); i++ ){
+		map<DWORD, RESERVE_DATA>::const_iterator itr = this->reserveText.GetMap().find(idList[i]);
+		if( itr != this->reserveText.GetMap().end() ){
+			if( itr->second.recSetting.recMode != RECMODE_NO ){
+				//バンクから削除
+				for( map<DWORD, CTunerBankCtrl*>::const_iterator jtr = this->tunerBankMap.begin(); jtr != this->tunerBankMap.end(); jtr++ ){
+					if( jtr->second->DelReserve(idList[i]) ){
+						break;
+					}
+				}
+				__int64 startTime;
+				CalcEntireReserveTime(&startTime, NULL, itr->second);
+				minStartTime = min(startTime, minStartTime);
+			}
+			this->reserveText.DelReserve(idList[i]);
+			this->reserveTextCache.clear();
+			this->reserveModified = true;
+			modified = true;
+		}
+	}
+	if( modified ){
+		this->reserveText.SaveText();
+		ReloadBankMap(minStartTime);
+		this->notifyManager.AddNotify(NOTIFY_UPDATE_RESERVE_INFO);
+	}
+}
+
+vector<REC_FILE_INFO> CReserveManager::GetRecFileInfoAll() const
+{
+	CBlockLock lock(&this->managerLock);
+
+	vector<REC_FILE_INFO> infoList;
+	infoList.reserve(this->recInfoText.GetMap().size());
+	for( map<DWORD, REC_FILE_INFO>::const_iterator itr = this->recInfoText.GetMap().begin(); itr != this->recInfoText.GetMap().end(); itr++ ){
+		infoList.push_back(itr->second);
+	}
+	return infoList;
+}
+
+void CReserveManager::DelRecFileInfo(const vector<DWORD>& idList)
+{
+	CBlockLock lock(&this->managerLock);
+
+	for( size_t i = 0; i < idList.size(); i++ ){
+		this->recInfoText.DelRecInfo(idList[i]);
+	}
+	this->recInfoText.SaveText();
+	this->notifyManager.AddNotify(NOTIFY_UPDATE_REC_INFO);
+}
+
+void CReserveManager::ChgProtectRecFileInfo(const vector<REC_FILE_INFO>& infoList)
+{
+	CBlockLock lock(&this->managerLock);
+
+	for( size_t i = 0; i < infoList.size(); i++ ){
+		this->recInfoText.ChgProtectRecInfo(infoList[i].id, infoList[i].protectFlag);
+	}
+	this->recInfoText.SaveText();
+	this->notifyManager.AddNotify(NOTIFY_UPDATE_REC_INFO);
+}
+
+void CReserveManager::ReloadBankMap(__int64 reloadTime)
+{
+	CBlockLock lock(&this->managerLock);
+
+	if( reloadTime == LLONG_MAX ){
+		return;
+	}
+	OutputDebugString(L"Start ReloadBankMap\r\n");
+	DWORD tick = GetTickCount();
+
+	__int64 boundaryReloadTime = 0;
+
+	//reloadTimeより前の予約を開始時間逆順にソート
+	multimap<__int64, const RESERVE_DATA*> sortTimeMap;
+	sortTimeMap.insert(std::make_pair(-reloadTime, (RESERVE_DATA*)NULL));
+	for( map<DWORD, RESERVE_DATA>::const_iterator itr = this->reserveText.GetMap().begin(); itr != this->reserveText.GetMap().end(); itr++ ){
+		if( itr->second.recSetting.recMode != RECMODE_NO ){
+			__int64 startTime;
+			CalcEntireReserveTime(&startTime, NULL, itr->second);
+			if( startTime < reloadTime ){
+				sortTimeMap.insert(std::make_pair(-startTime, &itr->second));
+			}
+		}
+	}
+	//READY_MARGIN秒以上の無予約時間帯を探す。無予約時間帯より後ろだけを再割り当てすればOK
+	for( multimap<__int64, const RESERVE_DATA*>::const_iterator itrRes, itrTime = sortTimeMap.begin(); itrTime != sortTimeMap.end(); itrTime++ ){
+		for( (itrRes = itrTime)++; itrRes != sortTimeMap.end(); itrRes++ ){
+			__int64 endTime;
+			CalcEntireReserveTime(NULL, &endTime, *itrRes->second);
+			if( endTime + CTunerBankCtrl::READY_MARGIN * I64_1SEC > -itrTime->first ){
 				break;
+			}
+		}
+		if( itrRes == sortTimeMap.end() ){
+			boundaryReloadTime = -itrTime->first;
+			break;
+		}
+	}
+
+	//開始済み予約リスト
+	vector<pair<DWORD, vector<DWORD>>> startedResList;
+	for( map<DWORD, CTunerBankCtrl*>::const_iterator itr = this->tunerBankMap.begin(); itr != this->tunerBankMap.end(); itr++ ){
+		//待機状態に入っているもの以外クリア
+		itr->second->ClearNoCtrl(boundaryReloadTime);
+		startedResList.push_back(std::make_pair(itr->first, itr->second->GetReserveIDList()));
+	}
+
+	//boundaryReloadTimeより後の予約を開始時間逆順にソート
+	sortTimeMap.clear();
+	for( map<DWORD, RESERVE_DATA>::const_iterator itr = this->reserveText.GetMap().begin(); itr != this->reserveText.GetMap().end(); itr++ ){
+		if( itr->second.recSetting.recMode != RECMODE_NO ){
+			__int64 startTime;
+			CalcEntireReserveTime(&startTime, NULL, itr->second);
+			if( startTime >= boundaryReloadTime ){
+				this->reserveText.SetOverlapMode(itr->first, RESERVE_NO_EXECUTE);
+				sortTimeMap.insert(std::make_pair(-startTime, &itr->second));
+			}
+		}
+	}
+	//予約を無予約時間帯ごとに組分けしてバンク配置する(組ごとに独立して処理できるので速度や配置安定性が増す)
+	for( multimap<__int64, const RESERVE_DATA*>::const_iterator itrRes, itrTime = sortTimeMap.begin(); itrTime != sortTimeMap.end(); ){
+		for( (itrRes = itrTime)++; itrRes != sortTimeMap.end(); itrRes++ ){
+			__int64 endTime;
+			CalcEntireReserveTime(NULL, &endTime, *itrRes->second);
+			if( endTime + CTunerBankCtrl::READY_MARGIN * I64_1SEC > -itrTime->first ){
+				break;
+			}
+		}
+		itrTime++;
+		if( itrRes == sortTimeMap.end() ){
+			//バンク未決の予約マップ
+			multimap<__int64, const RESERVE_DATA*> sortResMap;
+			for( itrRes = sortTimeMap.begin(); itrRes != itrTime; itrRes++ ){
+				//キーは実効優先度(予約優先度<<60|開始順)
+				__int64 startOrder = -itrRes->first / I64_1SEC << 16 | itrRes->second->reserveID & 0xFFFF;
+				__int64 priority = (this->backPriority ? itrRes->second->recSetting.priority : ~itrRes->second->recSetting.priority) & 7;
+				sortResMap.insert(std::make_pair((this->backPriority ? -1 : 1) * (priority << 60 | startOrder), itrRes->second));
+			}
+			itrTime = sortTimeMap.erase(sortTimeMap.begin(), itrTime);
+
+			//バンク決定した予約マップ
+			map<DWORD, vector<CHK_RESERVE_DATA>> bankResMap;
+			for( size_t i = 0; i < startedResList.size(); i++ ){
+				bankResMap.insert(std::make_pair(startedResList[i].first, vector<CHK_RESERVE_DATA>()));
+				//開始済み予約はそのままバンク決定
+				for( multimap<__int64, const RESERVE_DATA*>::const_iterator itr = sortResMap.begin(); itr != sortResMap.end(); ){
+					if( std::find(startedResList[i].second.begin(), startedResList[i].second.end(), itr->second->reserveID) != startedResList[i].second.end() ){
+						CHK_RESERVE_DATA item;
+						CalcEntireReserveTime(&item.cutStartTime, &item.cutEndTime, *itr->second);
+						item.cutStartTime -= CTunerBankCtrl::READY_MARGIN * I64_1SEC;
+						item.startOrder = abs(itr->first) & 0x0FFFFFFFFFFFFFFFLL;
+						item.effectivePriority = itr->first;
+						item.started = true;
+						item.r = itr->second;
+						//開始済み予約はすべてバンク内で同一チャンネルなのでChkInsertStatus()は不要
+						bankResMap[startedResList[i].first].push_back(item);
+						sortResMap.erase(itr++);
+					}else{
+						itr++;
+					}
+				}
+			}
+
+			for( multimap<__int64, const RESERVE_DATA*>::const_iterator itr = sortResMap.begin(); itr != sortResMap.end(); ){
+				CHK_RESERVE_DATA item;
+				CalcEntireReserveTime(&item.cutStartTime, &item.cutEndTime, *itr->second);
+				item.cutStartTime -= CTunerBankCtrl::READY_MARGIN * I64_1SEC;
+				item.startOrder = abs(itr->first) & 0x0FFFFFFFFFFFFFFFLL;
+				item.effectivePriority = itr->first;
+				item.started = false;
+				item.r = itr->second;
+				if( itr->second->recSetting.tunerID != 0 ){
+					//チューナID固定
+					map<DWORD, vector<CHK_RESERVE_DATA>>::iterator itrBank = bankResMap.find(itr->second->recSetting.tunerID); 
+					if( itrBank != bankResMap.end() &&
+					    this->tunerManager.IsSupportService(itrBank->first, itr->second->originalNetworkID, itr->second->transportStreamID, itr->second->serviceID) ){
+						CHK_RESERVE_DATA testItem = item;
+						ChkInsertStatus(itrBank->second, testItem, false);
+						if( testItem.cutEndTime - testItem.cutStartTime > CTunerBankCtrl::READY_MARGIN * I64_1SEC ){
+							//録画時間がある
+							ChkInsertStatus(itrBank->second, item, true);
+							itrBank->second.push_back(item);
+							sortResMap.erase(itr++);
+							continue;
+						}
+					}
+				}else{
+					//もっとも良いと思われるバンクに割り当てる
+					map<DWORD, vector<CHK_RESERVE_DATA>>::iterator itrMin = bankResMap.end();
+					__int64 costMin = LLONG_MAX;
+					__int64 durationMin = 0;
+					for( map<DWORD, vector<CHK_RESERVE_DATA>>::iterator jtr = bankResMap.begin(); jtr != bankResMap.end(); jtr++ ){
+						if( this->tunerManager.IsSupportService(jtr->first, itr->second->originalNetworkID, itr->second->transportStreamID, itr->second->serviceID) ){
+							CHK_RESERVE_DATA testItem = item;
+							__int64 cost = ChkInsertStatus(jtr->second, testItem, false);
+							if( cost < costMin ){
+								itrMin = jtr;
+								costMin = cost;
+								durationMin = testItem.cutEndTime - testItem.cutStartTime;
+							}
+						}
+					}
+					if( itrMin != bankResMap.end() && durationMin > CTunerBankCtrl::READY_MARGIN * I64_1SEC ){
+						//録画時間がある
+						ChkInsertStatus(itrMin->second, item, true);
+						itrMin->second.push_back(item);
+						sortResMap.erase(itr++);
+						continue;
+					}
+				}
+				itr++;
+			}
+
+			//実際にバンクに追加する
+			for( map<DWORD, vector<CHK_RESERVE_DATA>>::const_iterator itr = bankResMap.begin(); itr != bankResMap.end(); itr++ ){
+				for( size_t i = 0; i < itr->second.size(); i++ ){
+					const RESERVE_DATA& r = *itr->second[i].r;
+					__int64 startTime, endTime;
+					CalcEntireReserveTime(&startTime, &endTime, r);
+					//かぶり状態を記録する(参考程度の情報)
+					this->reserveText.SetOverlapMode(r.reserveID,
+						itr->second[i].cutStartTime == startTime - CTunerBankCtrl::READY_MARGIN * I64_1SEC &&
+						itr->second[i].cutEndTime == endTime ? RESERVE_EXECUTE : RESERVE_PILED_UP);
+					//バンクに渡す予約情報を作成
+					CTunerBankCtrl::TUNER_RESERVE tr;
+					tr.reserveID = r.reserveID;
+					tr.title = r.title;
+					tr.stationName = r.stationName;
+					tr.onid = r.originalNetworkID;
+					tr.tsid = r.transportStreamID;
+					tr.sid = r.serviceID;
+					tr.eid = r.eventID;
+					tr.recMode = r.recSetting.recMode;
+					tr.priority = r.recSetting.priority;
+					tr.enableCaption = r.recSetting.serviceMode & RECSERVICEMODE_SET ? (r.recSetting.serviceMode & RECSERVICEMODE_CAP) != 0 : this->defEnableCaption;
+					tr.enableData = r.recSetting.serviceMode & RECSERVICEMODE_SET ? (r.recSetting.serviceMode & RECSERVICEMODE_DATA) != 0 : this->defEnableData;
+					tr.pittari = r.recSetting.pittariFlag != 0;
+					tr.partialRecMode = r.recSetting.partialRecFlag;
+					tr.startTime = ConvertI64Time(r.startTime);
+					tr.durationSecond = r.durationSecond;
+					tr.startMargin = tr.startTime - startTime;
+					tr.endMargin = endTime - (tr.startTime + tr.durationSecond * I64_1SEC);
+					tr.recFolder = r.recSetting.recFolderList;
+					tr.partialRecFolder = r.recSetting.partialRecFolder;
+					this->tunerBankMap.find(itr->first)->second->AddReserve(tr);
+				}
 			}
 		}
 	}
 
-	return ret;
+	_OutputDebugString(L"End ReloadBankMap %dmsec\r\n", GetTickCount() - tick);
 }
 
-//マージンを考慮した予約時刻を計算する(常にendTime>=startTime)
-void CReserveManager::CalcEntireReserveTime(LONGLONG* startTime, LONGLONG* endTime, const RESERVE_DATA& data)
+__int64 CReserveManager::ChkInsertStatus(vector<CHK_RESERVE_DATA>& bank, CHK_RESERVE_DATA& inItem, bool modifyBank) const
 {
-	LONGLONG startTime_ = ConvertI64Time(data.startTime);
-	LONGLONG endTime_ = startTime_ + data.durationSecond * I64_1SEC;
-	LONGLONG startMargin = this->defStartMargine * I64_1SEC;
-	LONGLONG endMargin = this->defEndMargine * I64_1SEC;
-	if( data.recSetting.useMargineFlag == TRUE ){
+	//CBlockLock lock(&this->managerLock);
+
+	bool overlapped = false;
+	__int64 otherCosts[5] = {};
+
+	for( size_t i = 0; i < bank.size(); i++ ){
+		if( bank[i].r->originalNetworkID == inItem.r->originalNetworkID && bank[i].r->transportStreamID == inItem.r->transportStreamID ){
+			//同一チャンネル
+			if( inItem.cutStartTime < bank[i].cutStartTime && bank[i].cutStartTime < inItem.cutEndTime ||
+			    inItem.cutStartTime < bank[i].cutEndTime && bank[i].cutEndTime < inItem.cutEndTime ||
+			    inItem.cutStartTime > bank[i].cutStartTime && bank[i].cutEndTime > inItem.cutEndTime ){
+				//重なりがある
+				overlapped = true;
+			}
+		}else{
+			if( bank[i].effectivePriority < inItem.effectivePriority ){
+				//相手が高優先度なので自分の予約時間を削る
+				if( bank[i].startOrder > inItem.startOrder ){
+					//相手が遅れて開始するので自分の後方を削る
+					__int64 cutEndTime = max(min(inItem.cutEndTime, bank[i].cutStartTime), inItem.cutStartTime);
+					otherCosts[min(max(inItem.r->recSetting.priority, 1), 5) - 1] += inItem.cutEndTime - cutEndTime;
+					inItem.cutEndTime = cutEndTime;
+				}else{
+					//前方を削る
+					__int64 cutStartTime = min(max(inItem.cutStartTime, bank[i].cutEndTime), inItem.cutEndTime);
+					otherCosts[min(max(inItem.r->recSetting.priority, 1), 5) - 1] += cutStartTime - inItem.cutStartTime;
+					inItem.cutStartTime = cutStartTime;
+				}
+			}else{
+				//相手の予約時間を削る
+				if( inItem.startOrder > bank[i].startOrder ){
+					//相手の後方を削る
+					__int64 cutEndTime = max(min(bank[i].cutEndTime, inItem.cutStartTime), bank[i].cutStartTime);
+					otherCosts[min(max(bank[i].r->recSetting.priority, 1), 5) - 1] += bank[i].cutEndTime - cutEndTime;
+					if( modifyBank ){
+						bank[i].cutEndTime = cutEndTime;
+					}
+				}else{
+					//前方を削る
+					_int64 cutStartTime = bank[i].started ? bank[i].cutEndTime : min(max(bank[i].cutStartTime, inItem.cutEndTime), bank[i].cutEndTime);
+					otherCosts[min(max(bank[i].r->recSetting.priority, 1), 5) - 1] += cutStartTime - bank[i].cutStartTime;
+					if( modifyBank ){
+						bank[i].cutStartTime = cutStartTime;
+					}
+				}
+			}
+		}
+	}
+
+	//優先度ごとに重みをつけてコストを算出
+	__int64 cost = 0;
+	__int64 weight = 1;
+	for( int i = 0; i < 5; i++ ){
+		cost += min((otherCosts[i] + 10 * I64_1SEC - 1) / (10 * I64_1SEC), 5400 - 1) * weight;
+		weight *= 5400;
+	}
+	if( cost == 0 && overlapped ){
+		//TODO: とりあえず一律に-10秒とするが、重なり度合をコストに反映してもいいかも
+		cost = -1;
+	}
+	return cost;
+}
+
+void CReserveManager::CalcEntireReserveTime(__int64* startTime, __int64* endTime, const RESERVE_DATA& data) const
+{
+	//CBlockLock lock(&this->managerLock);
+
+	__int64 startTime_ = ConvertI64Time(data.startTime);
+	__int64 endTime_ = startTime_ + data.durationSecond * I64_1SEC;
+	__int64 startMargin = this->defStartMargin * I64_1SEC;
+	__int64 endMargin = this->defEndMargin * I64_1SEC;
+	if( data.recSetting.useMargineFlag != 0 ){
 		startMargin = data.recSetting.startMargine * I64_1SEC;
 		endMargin = data.recSetting.endMargine * I64_1SEC;
 	}
@@ -1494,2482 +796,741 @@ void CReserveManager::CalcEntireReserveTime(LONGLONG* startTime, LONGLONG* endTi
 	}
 }
 
-void CReserveManager::CheckOverTimeReserve()
-{
-	LONGLONG nowTime = GetNowI64Time();
-
-	vector<DWORD> deleteList;
-	map<DWORD, CReserveInfo*>::iterator itrInfo;
-	for( itrInfo = this->reserveInfoMap.begin(); itrInfo != this->reserveInfoMap.end(); itrInfo++ ){
-		BOOL recWaitFlag = FALSE;
-		DWORD tunerID = 0;
-		this->reserveInfoManager.GetRecWaitMode(itrInfo->first, &recWaitFlag, &tunerID);
-		if( recWaitFlag == FALSE ){
-			//録画状態ではない
-			RESERVE_DATA data;
-			itrInfo->second->GetData(&data);
-
-			LONGLONG endTime;
-			CalcEntireReserveTime(NULL, &endTime, data);
-
-			if( endTime < nowTime ){
-				//終了時間過ぎてしまっている
-				deleteList.push_back(itrInfo->first);
-				if( data.recSetting.recMode != RECMODE_NO ){
-					//無効ものは結果に残さない
-					REC_FILE_INFO item;
-					item = data;
-					if( this->reserveInfoManager.IsOpenErred(itrInfo->first) == FALSE ){
-						if( data.overlapMode == 0 ){
-							item.recStatus = REC_END_STATUS_START_ERR;
-							item.comment = L"録画時間に起動していなかった可能性があります";
-						}else{
-							item.recStatus = REC_END_STATUS_NO_TUNER;
-							item.comment = L"チューナー不足のため失敗しました";
-						}
-					}else{
-						item.recStatus = REC_END_STATUS_OPEN_ERR;
-						item.comment = L"チューナーのオープンに失敗しました";
-					}
-					this->recInfoText.AddRecInfo(item);
-				}
-			}
-		}
-	}
-	if( deleteList.size() > 0 ){
-		_DelReserveData(deleteList);
-		this->reserveText.SaveText();
-		this->recInfoText.SaveText();
-		this->chgRecInfo = TRUE;
-	}
-}
-
-void CReserveManager::CreateWorkData(CReserveInfo* reserveInfo, BANK_WORK_INFO* workInfo, BOOL backPriority, DWORD reserveCount, DWORD reserveNum, BOOL noTuner)
-{
-	workInfo->reserveInfo = reserveInfo;
-
-	RESERVE_DATA data;
-	reserveInfo->GetData(&data);
-
-	CalcEntireReserveTime(&workInfo->startTime, &workInfo->endTime, data);
-
-	workInfo->priority = data.recSetting.priority;
-
-	workInfo->reserveID = data.reserveID;
-
-	workInfo->chID = ((DWORD)data.originalNetworkID)<<16 | data.transportStreamID;
-
-	workInfo->useTunerID = data.recSetting.tunerID;
-
-	workInfo->ONID = data.originalNetworkID;
-	workInfo->TSID = data.transportStreamID;
-	workInfo->SID = data.serviceID;
-
-	BYTE tunerManual = 1;
-	if( noTuner == FALSE ){
-		if( workInfo->useTunerID != 0 ){
-			tunerManual = 0;
-		}
-	}
-
-	if( backPriority == TRUE ){
-		//後の番組優先
-		Format(workInfo->sortKey, L"%01d%02x%016I64x%08x", tunerManual, 255-workInfo->priority, workInfo->startTime*(-1), UINT_MAX-reserveCount);
-	}else{
-		//前の番組優先
-		Format(workInfo->sortKey, L"%01d%02x%016I64x%08x", tunerManual, 255-workInfo->priority, workInfo->startTime, reserveCount);
-	}
-}
-
-DWORD CReserveManager::ChkInsertStatus(BANK_INFO* bank, BANK_WORK_INFO* inItem, BOOL reCheck, BOOL mustOverlap)
-{
-	if( bank == NULL || inItem == NULL ){
-		return 0;
-	}
-	DWORD status = mustOverlap ? 0 : 1;
-	map<DWORD, BANK_WORK_INFO*>::iterator itrBank;
-	for( itrBank = bank->reserveList.begin(); itrBank != bank->reserveList.end(); itrBank++ ){
-		if( !reCheck || itrBank->second->reserveID != inItem->reserveID ){
-			if( itrBank->second->chID == inItem->chID ){
-				//同一チャンネル
-				if( mustOverlap ){
-					if(( itrBank->second->startTime <= inItem->startTime && inItem->startTime <= itrBank->second->endTime ) ||
-						( itrBank->second->startTime <= inItem->endTime && inItem->endTime <= itrBank->second->endTime ) ||
-						( inItem->startTime <= itrBank->second->startTime && itrBank->second->startTime <= inItem->endTime ) ||
-						( inItem->startTime <= itrBank->second->endTime && itrBank->second->endTime <= inItem->endTime ) 
-						){
-							//開始時間か終了時間が重なっている
-							status = 1;
-					}
-				}
-				continue;
-			}
-
-			//別チャンネルで開始時間と終了時間が重なっていないかチェック
-			if( itrBank->second->startTime == inItem->endTime || itrBank->second->endTime == inItem->startTime ){
-				//連続予約の可能性あり
-				status = 2;
-				if( mustOverlap ){
-					break;
-				}
-			}else if(( itrBank->second->startTime <= inItem->startTime && inItem->startTime <= itrBank->second->endTime ) ||
-				( itrBank->second->startTime <= inItem->endTime && inItem->endTime <= itrBank->second->endTime ) ||
-				( inItem->startTime <= itrBank->second->startTime && itrBank->second->startTime <= inItem->endTime ) ||
-				( inItem->startTime <= itrBank->second->endTime && itrBank->second->endTime <= inItem->endTime ) 
-				){
-					//開始時間か終了時間が重なっている
-					status = 0;
-					break;
-			}
-		}
-	}
-
-	return status;
-}
-
-DWORD CReserveManager::ReChkInsertStatus(BANK_INFO* bank, BANK_WORK_INFO* inItem)
-{
-	return ChkInsertStatus(bank, inItem, TRUE, FALSE);
-}
-
-DWORD CReserveManager::ChkInsertSameChStatus(BANK_INFO* bank, BANK_WORK_INFO* inItem)
-{
-	return ChkInsertStatus(bank, inItem, FALSE, TRUE);
-}
-
-DWORD CReserveManager::ChkInsertNGStatus(BANK_INFO* bank, BANK_WORK_INFO* inItem)
-{
-	if( bank == NULL || inItem == NULL ){
-		return 0;
-	}
-
-	LONGLONG chkStartTime = inItem->startTime;
-	LONGLONG chkEndTime = inItem->endTime;
-	map<DWORD, BANK_WORK_INFO*>::iterator itrBank;
-	for( itrBank = bank->reserveList.begin(); itrBank != bank->reserveList.end(); itrBank++ ){
-		if( itrBank->second->startTime == inItem->startTime && itrBank->second->endTime == inItem->endTime ){
-			//時間完全に一緒ならこれによってNGになったはず
-			return 0;
-		}
-		if( itrBank->second->startTime <= chkStartTime && chkStartTime <= itrBank->second->endTime && chkEndTime <= itrBank->second->endTime ){
-			//開始時間が含まれ、終了時間まで含まれている
-			if( itrBank->second->priority >= inItem->priority ){
-				//優先度も高いのでNG
-				return 0;
-			}
-		}else
-		if( itrBank->second->startTime <= chkStartTime && chkStartTime <= itrBank->second->endTime && chkEndTime > itrBank->second->endTime ){
-			//開始時間が含まれ、終了時間まで含まれない
-			if( itrBank->second->priority >= inItem->priority ){
-				//優先度も高いので開始時間削る
-				chkStartTime = itrBank->second->endTime;
-			}
-		}else
-		if( itrBank->second->startTime <= chkEndTime && chkEndTime <= itrBank->second->endTime && chkStartTime < itrBank->second->startTime ){
-			//終了時間が含まれ、開始時間まで含まれない
-			if( itrBank->second->priority >= inItem->priority ){
-				//優先度も高いので終了時間削る
-				chkEndTime = itrBank->second->startTime;
-			}
-		}else
-		if( chkStartTime <= itrBank->second->startTime && itrBank->second->startTime <= chkEndTime && itrBank->second->endTime <= chkEndTime ){
-			//開始から終了の間に含んでしまう
-			if( itrBank->second->priority >= inItem->priority ){
-				//優先度も高いので終了時間削る
-				chkEndTime = itrBank->second->startTime;
-			}
-		}
-		if( chkEndTime < chkStartTime ){
-			//終了時間の方が早いとかおかしい
-			return 0;
-		}
-	}
-
-	DWORD duration = (DWORD)((chkEndTime - chkStartTime)/I64_1SEC);
-
-	return duration;
-}
-
-UINT WINAPI CReserveManager::BankCheckThread(LPVOID param)
-{
-	CReserveManager* sys = (CReserveManager*)param;
-	CSendCtrlCmd sendCtrl;
-	DWORD wait = 1000;
-	DWORD countTuijyuChk = 11;
-	DWORD countAutoDelChk = 11;
-	BOOL sendPreEpgCap = FALSE;
-
-	//EPG取得開始時の設定の一時保存
-	BOOL Tmp_BSOnly;
-	BOOL Tmp_CS1Only;
-	BOOL Tmp_CS2Only;
-	BOOL Tmp_EnOnlyFlags = FALSE;
-
-	while(1){
-		if( ::WaitForSingleObject(sys->bankCheckStopEvent, wait) != WAIT_TIMEOUT ){
-			//キャンセルされた
-			break;
-		}
-
-		//終了している予約の確認
-		{
-			CBlockLock lock(&sys->managerLock);
-			sys->CheckEndReserve();
-		}
-
-		//エラーの発生しているチューナーの確認
-		{
-			CBlockLock lock(&sys->managerLock);
-			sys->CheckErrReserve();
-		}
-
-		//追従の確認
-		countTuijyuChk++;
-		if( countTuijyuChk > 10 ){
-			{
-				CBlockLock lock(&sys->managerLock);
-				sys->CheckTuijyu();
-			}
-			countTuijyuChk = 0;
-		}
-
-		//バッチ処理の確認
-		{
-			CBlockLock lock(&sys->managerLock);
-			sys->CheckBatWork();
-		}
-
-		//自動削除の確認
-		if( sys->autoDel == TRUE ){
-			countAutoDelChk++;
-			if( countAutoDelChk > 10 ){
-				{
-					CBlockLock lock(&sys->managerLock);
-					vector<RESERVE_DATA> chkReserveMap;
-					map<DWORD, CReserveInfo*>::iterator itrRes;
-					for( itrRes = sys->reserveInfoMap.begin(); itrRes != sys->reserveInfoMap.end(); itrRes++ ){
-						chkReserveMap.resize(chkReserveMap.size() + 1);
-						itrRes->second->GetData(&chkReserveMap.back());
-					}
-					wstring defRecPath = L"";
-					GetRecFolderPath(defRecPath);
-					map<wstring, wstring> protectFile;
-					sys->recInfoText.GetProtectFiles(&protectFile);
-					CreateDiskFreeSpace(chkReserveMap, defRecPath, protectFile, sys->delFolderList, sys->delExtList);
-					countAutoDelChk = 0;
-				}
-			}
-		}
-
-		//EPG取得時間の確認
-		{
-			CBlockLock lock(&sys->managerLock);
-			LONGLONG capTime = 0;
-			int basicOnlyFlags = 0;
-			if( sys->GetNextEpgcapTime(&capTime, -1, &basicOnlyFlags) == TRUE ){
-				if( (sendPreEpgCap == FALSE) && ((GetNowI64Time()+60*I64_1SEC) > capTime) ){
-					BOOL bUseTuner = FALSE;
-					vector<pair<vector<DWORD>, WORD>> tunerIDList;
-					sys->tunerManager.GetEnumEpgCapTuner(&tunerIDList);
-					map<DWORD, CTunerBankCtrl*>::iterator itrCtrl;
-					for( size_t i=0; i<tunerIDList.size(); i++ ){
-						WORD epgCapMax = tunerIDList[i].second;
-						WORD ngCapCount = 0;
-						for( size_t j=0; j<tunerIDList[i].first.size() && epgCapMax > 0; j++ ){
-							itrCtrl = sys->tunerBankMap.find(tunerIDList[i].first[j]);
-							if( itrCtrl != sys->tunerBankMap.end() && itrCtrl->second->IsEpgCapWorking() == FALSE ){
-								itrCtrl->second->ClearEpgCapItem();
-								if( sys->ngCapMin != 0 ){
-									if( itrCtrl->second->IsEpgCapOK(sys->ngCapMin) == FALSE ){
-										//実行しちゃいけない
-										ngCapCount++;
-										continue;
-									}
-								}
-								if( itrCtrl->second->IsEpgCapOK(sys->ngCapTunerMin) == TRUE ){
-									//使えるチューナー
-									bUseTuner = TRUE;
-									epgCapMax--;
-								}
-							}
-						}
-						if( tunerIDList[i].second > tunerIDList[i].first.size() - ngCapCount ){
-							bUseTuner = FALSE;
-							break;
-						}
-					}
-
-					if( bUseTuner == TRUE ){
-						sys->notifyManager.AddNotifyMsg(NOTIFY_UPDATE_PRE_EPGCAP_START, L"取得開始１分前");
-					}
-					sendPreEpgCap = TRUE;
-				}
-				if( GetNowI64Time() > capTime && sys->IsEpgCap() == FALSE){
-					//開始時間過ぎたので開始
-					if( basicOnlyFlags >= 0 ){
-						//一時的に設定を変更してEPG取得チューナ側の挙動を変える
-						wstring iniCommonPath = L"";
-						GetCommonIniPath(iniCommonPath);
-						if( Tmp_EnOnlyFlags == FALSE ){
-							Tmp_BSOnly = sys->BSOnly;
-							Tmp_CS1Only = sys->CS1Only;
-							Tmp_CS2Only = sys->CS2Only;
-							Tmp_EnOnlyFlags = TRUE;
-						}
-						sys->BSOnly = (basicOnlyFlags & 1) != 0 ? TRUE : FALSE;
-						sys->CS1Only = (basicOnlyFlags & 2) != 0 ? TRUE : FALSE;
-						sys->CS2Only = (basicOnlyFlags & 4) != 0 ? TRUE : FALSE;
-						WritePrivateProfileString(L"SET", L"BSBasicOnly", sys->BSOnly ? L"1" : L"0", iniCommonPath.c_str());
-						WritePrivateProfileString(L"SET", L"CS1BasicOnly", sys->CS1Only ? L"1" : L"0", iniCommonPath.c_str());
-						WritePrivateProfileString(L"SET", L"CS2BasicOnly", sys->CS2Only ? L"1" : L"0", iniCommonPath.c_str());
-					}
-					sys->StartEpgCap();
-				}
-			}else{
-				//EPGの取得予定なし
-			}
-		}
-
-		//録画状態の通知
-		if( sys->notifyStatus == 0 ){
-			{
-				CBlockLock lock(&sys->managerLock);
-				map<DWORD, CTunerBankCtrl*>::iterator itrCtrl;
-				for( itrCtrl = sys->tunerBankMap.begin(); itrCtrl != sys->tunerBankMap.end(); itrCtrl++ ){
-					if( itrCtrl->second->IsRecWork() == TRUE ){
-						sys->SendNotifyStatus(1);
-						break;
-					}
-				}
-			}
-		}else if( sys->notifyStatus == 1 ){
-			{
-				CBlockLock lock(&sys->managerLock);
-				map<DWORD, CTunerBankCtrl*>::iterator itrCtrl;
-				BOOL noRec = TRUE;
-				for( itrCtrl = sys->tunerBankMap.begin(); itrCtrl != sys->tunerBankMap.end(); itrCtrl++ ){
-					if( itrCtrl->second->IsRecWork() == TRUE ){
-						noRec = FALSE;
-						break;
-					}
-				}
-				if( noRec == TRUE ){
-					sys->SendNotifyStatus(0);
-				}
-			}
-		}
-
-		//EPG取得状態のチェック
-		if( sys->epgCapCheckFlag == TRUE ){
-			{
-				CBlockLock lock(&sys->managerLock);
-				if( sys->IsEpgCap() == FALSE ){
-					//取得完了
-					if( Tmp_EnOnlyFlags != FALSE ){
-						//EPG取得開始時の設定を書き戻し
-						wstring iniCommonPath = L"";
-						GetCommonIniPath(iniCommonPath);
-						sys->BSOnly = Tmp_BSOnly;
-						sys->CS1Only = Tmp_CS1Only;
-						sys->CS2Only = Tmp_CS2Only;
-						Tmp_EnOnlyFlags = FALSE;
-						WritePrivateProfileString(L"SET", L"BSBasicOnly", sys->BSOnly ? L"1" : L"0", iniCommonPath.c_str());
-						WritePrivateProfileString(L"SET", L"CS1BasicOnly", sys->CS1Only ? L"1" : L"0", iniCommonPath.c_str());
-						WritePrivateProfileString(L"SET", L"CS2BasicOnly", sys->CS2Only ? L"1" : L"0", iniCommonPath.c_str());
-					}
-					sys->SendNotifyStatus(0);
-					sys->notifyManager.AddNotify(NOTIFY_UPDATE_EPGCAP_END);
-					sys->epgCapCheckFlag = FALSE;
-					sys->EnableSuspendWork(0, 0, 1);
-					sendPreEpgCap = FALSE;
-				}
-			}
-		}
-	}
-	return 0;
-}
-
-void CReserveManager::CheckEndReserve()
-{
-	BOOL needSave = FALSE;
-	BYTE suspendMode = 0xFF;
-	BYTE rebootFlag = 0xFF;
-	map<DWORD, CTunerBankCtrl*>::iterator itrCtrl;
-	for( itrCtrl = this->tunerBankMap.begin(); itrCtrl != this->tunerBankMap.end(); itrCtrl++ ){
-		map<DWORD, END_RESERVE_INFO*> reserveMap;
-		itrCtrl->second->GetEndReserve(&reserveMap);
-
-		if( reserveMap.size() > 0 ){
-			needSave = TRUE;
-			vector<DWORD> deleteList;
-
-			map<DWORD, END_RESERVE_INFO*>::iterator itrEnd;
-			for( itrEnd = reserveMap.begin(); itrEnd != reserveMap.end(); itrEnd++){
-				//録画済みとして登録
-				if( itrEnd->second->endType == REC_END_STATUS_NORMAL &&
-				    (__int64)itrEnd->second->drop < this->recInfo2DropChk &&
-				    itrEnd->second->epgEventName.empty() == false ){
-					PARSE_REC_INFO2_ITEM item;
-					item.originalNetworkID = itrEnd->second->epgOriginalNetworkID;
-					item.transportStreamID = itrEnd->second->epgTransportStreamID;
-					item.serviceID = itrEnd->second->epgServiceID;
-					item.startTime = itrEnd->second->epgStartTime;
-					item.eventName = itrEnd->second->epgEventName;
-					this->recInfo2Text.Add(item);
-				}
-				RESERVE_DATA data;
-				itrEnd->second->reserveInfo->GetData(&data);
-				REC_FILE_INFO item;
-				item = data;
-				if( item.startTime.wYear == 0 ||item.startTime.wMonth == 0 || item.startTime.wDay == 0 ){
-					deleteList.push_back(itrEnd->second->reserveID);
-					SAFE_DELETE(itrEnd->second);
-					continue;
-				}
-				item.recFilePath = itrEnd->second->recFilePath;
-				item.drops = itrEnd->second->drop;
-				item.scrambles = itrEnd->second->scramble;
-				if( itrEnd->second->endType == REC_END_STATUS_NORMAL ){
-					if( ConvertI64Time(data.startTime) != ConvertI64Time(data.startTimeEpg) ){
-						item.recStatus = REC_END_STATUS_CHG_TIME;
-						item.comment = L"開始時間が変更されました";
-					}else{
-						item.recStatus = REC_END_STATUS_NORMAL;
-						if( data.recSetting.recMode == RECMODE_VIEW ){
-							item.comment = L"終了";
-						}else{
-							item.comment = L"録画終了";
-						}
-					}
-				}else if( itrEnd->second->endType == REC_END_STATUS_NOT_FIND_PF ){
-					item.recStatus = REC_END_STATUS_NOT_FIND_PF;
-					item.comment = L"録画中に番組情報を確認できませんでした";
-				}else if( itrEnd->second->endType == REC_END_STATUS_NEXT_START_END ){
-					item.recStatus = REC_END_STATUS_NEXT_START_END;
-					item.comment = L"次の予約開始のためにキャンセルされました";
-				}else if( itrEnd->second->endType == REC_END_STATUS_END_SUBREC ){
-					item.recStatus = REC_END_STATUS_END_SUBREC;
-					item.comment = L"録画終了（空き容量不足で別フォルダへの保存が発生）";
-				}else if( itrEnd->second->endType == REC_END_STATUS_ERR_RECSTART ){
-					item.recStatus = REC_END_STATUS_ERR_RECSTART;
-					item.comment = L"録画開始処理に失敗しました（空き容量不足の可能性あり）";
-				}else if( itrEnd->second->endType == REC_END_STATUS_NOT_START_HEAD ){
-					item.recStatus = REC_END_STATUS_NOT_START_HEAD;
-					item.comment = L"一部のみ録画が実行された可能性があります";
-				}else if( itrEnd->second->endType == REC_END_STATUS_ERR_CH_CHG ){
-					item.recStatus = REC_END_STATUS_ERR_CH_CHG;
-					item.comment = L"指定チャンネルのデータがBonDriverから出力されなかった可能性があります";
-				}else if( itrEnd->second->endType == REC_END_STATUS_ERR_END2 ){
-					item.recStatus = itrEnd->second->endType;
-					item.comment = L"ファイル保存で致命的なエラーが発生した可能性があります";
-				}else{
-					item.recStatus = itrEnd->second->endType;
-					item.comment = L"録画中にキャンセルされた可能性があります";
-				}
-				this->recInfoText.AddRecInfo(item);
-				BOOL tweet = TRUE;
-				if( recEndTweetErr == TRUE ){
-					if(item.recStatus == REC_END_STATUS_NORMAL ){
-						tweet = FALSE;
-						if( item.drops > recEndTweetDrop ){
-							tweet = TRUE;
-						}
-					}
-				}else{
-					if( item.drops < recEndTweetDrop ){
-						tweet = FALSE;
-					}
-				}
-				if( tweet == TRUE ){
-					SendTweet(TW_REC_END, &item, NULL, NULL);
-				}
-				SendNotifyRecEnd(item, this->notifyManager);
-
-				//バッチ処理追加
-				if(itrEnd->second->endType == REC_END_STATUS_NORMAL || itrEnd->second->endType == REC_END_STATUS_NEXT_START_END || this->errEndBatRun == TRUE){
-					if( data.recSetting.batFilePath.size() > 0 && itrEnd->second->continueRecStartFlag == FALSE && data.recSetting.recMode != RECMODE_VIEW ){
-						BAT_WORK_INFO batInfo;
-						batInfo.tunerID = itrEnd->second->tunerID;
-						batInfo.reserveInfo = data;
-						batInfo.recFileInfo = item;
-
-						this->batManager.AddBatWork(batInfo);
-					}else{
-						suspendMode = data.recSetting.suspendMode;
-						rebootFlag = data.recSetting.rebootFlag;
-						OutputDebugString(L"★Suspend　add");
-					}
-				}else{
-					suspendMode = data.recSetting.suspendMode;
-					rebootFlag = data.recSetting.rebootFlag;
-						OutputDebugString(L"★Suspend　add2");
-				}
-
-				deleteList.push_back(itrEnd->second->reserveID);
-				SAFE_DELETE(itrEnd->second);
-			}
-			//予約一覧から削除
-			_DelReserveData(deleteList);
-		}
-	}
-
-	if( needSave == TRUE ){
-		//情報ファイルの更新
-		this->reserveText.SaveText();
-		this->recInfoText.SaveText();
-		this->recInfo2Text.SaveText();
-		this->chgRecInfo = TRUE;
-
-		this->notifyManager.AddNotify(NOTIFY_UPDATE_RESERVE_INFO);
-		this->notifyManager.AddNotify(NOTIFY_UPDATE_REC_INFO);
-	}
-	if( suspendMode != 0xFF && rebootFlag != 0xFF ){
-		EnableSuspendWork(suspendMode, rebootFlag, 0);
-	}
-}
-
-void CReserveManager::CheckErrReserve()
-{
-	BOOL needNotify = FALSE;
-
-	map<DWORD, CTunerBankCtrl*>::iterator itrCtrl;
-	for( itrCtrl = this->tunerBankMap.begin(); itrCtrl != this->tunerBankMap.end(); itrCtrl++ ){
-		if( itrCtrl->second->IsOpenErr() == TRUE ){
-			vector<CReserveInfo*> reserveInfo;
-			itrCtrl->second->GetOpenErrReserve(&reserveInfo);
-
-			for( size_t i=0 ;i<reserveInfo.size(); i++ ){
-				//バンクから削除
-				RESERVE_DATA data;
-				reserveInfo[i]->GetData(&data);
-
-				this->reserveInfoManager.AddNGTunerID(data.reserveID, itrCtrl->first);
-				this->reserveInfoManager.SetRecWaitMode(data.reserveID, FALSE, 0);
-				this->reserveInfoManager.SetOpenErred(data.reserveID);
-
-				itrCtrl->second->DeleteReserve(data.reserveID);
-			}
-			
-			itrCtrl->second->ResetOpenErr();
-			needNotify = TRUE;
-		}
-	}
-	if( needNotify == TRUE ){
-		_ReloadBankMap();
-
-		BYTE suspendMode = 0xFF;
-		BYTE rebootFlag = 0xFF;
-		map<DWORD, BANK_WORK_INFO*>::iterator itrNG;
-		for( itrNG = NGReserveMap.begin(); itrNG != NGReserveMap.end(); itrNG++ ){
-			if( this->reserveInfoManager.IsOpenErred(itrNG->first) == TRUE ){
-				RESERVE_DATA data;
-				itrNG->second->reserveInfo->GetData(&data);
-				data.comment = L"チューナーのオープンに失敗しました";
-
-				this->reserveText.ChgReserve(data);
-				itrNG->second->reserveInfo->SetData(data);
-
-				suspendMode = data.recSetting.suspendMode;
-				rebootFlag = data.recSetting.rebootFlag;
-			}
-		}
-
-		this->notifyManager.AddNotify(NOTIFY_UPDATE_RESERVE_INFO);
-		this->notifyManager.AddNotify(NOTIFY_UPDATE_REC_INFO);
-
-		if( suspendMode != 0xFF && rebootFlag != 0xFF ){
-			EnableSuspendWork(suspendMode, rebootFlag, 0);
-		}
-	}
-}
-
-void CReserveManager::CheckBatWork()
-{
-	if( this->batManager.GetWorkCount() > 0 ){
-		if( this->batMargin != 0 ){
-			map<DWORD, CTunerBankCtrl*>::iterator itrCtrl;
-			for( itrCtrl = this->tunerBankMap.begin(); itrCtrl != this->tunerBankMap.end(); itrCtrl++ ){
-				if( itrCtrl->second->IsOpenTuner() == TRUE ){
-					//起動中なので予約処理中
-					this->batManager.PauseWork();
-					return ;
-				}
-			}
-
-			LONGLONG chkTime = GetNowI64Time() + this->batMargin*60*I64_1SEC;
-			vector<pair<LONGLONG, const RESERVE_DATA*> > resList = this->reserveText.GetReserveList(TRUE, this->defStartMargine);
-			vector<pair<LONGLONG, const RESERVE_DATA*> >::iterator itr;
-			for( itr = resList.begin(); itr != resList.end(); itr++ ){
-				if( itr->second->recSetting.recMode != RECMODE_VIEW && itr->second->recSetting.recMode != RECMODE_NO ){
-					LONGLONG startTime;
-					LONGLONG endTime;
-					CalcEntireReserveTime(&startTime, &endTime, *itr->second);
-
-					if( startTime <= chkTime && chkTime < endTime ){
-						//次の予約時間にかぶる
-						this->batManager.PauseWork();
-						return;
-					}
-					break;
-				}
-			}
-
-		}
-
-		this->batManager.StartWork();
-	}else{
-		if( this->batManager.IsWorking() == FALSE ){
-			BYTE suspendMode = 0;
-			BYTE rebootFlag = 0;
-			if( this->batManager.GetLastWorkSuspend(&suspendMode, &rebootFlag) == TRUE ){
-				//バッチ処理終わったのでサスペンド処理に挑戦
-				EnableSuspendWork(suspendMode, rebootFlag, 0);
-			}
-		}
-	}
-}
-
 void CReserveManager::CheckTuijyu()
 {
-	//録画処理中のチューナー一覧
-	map<DWORD, CTunerBankCtrl*> chkTuner;
-	map<DWORD, CTunerBankCtrl*>::iterator itrCtrl;
-	for( itrCtrl = this->tunerBankMap.begin(); itrCtrl != this->tunerBankMap.end(); itrCtrl++ ){
-		DWORD chID = 0;
-		if( itrCtrl->second->GetCurrentChID(&chID) == TRUE ){
-			chkTuner.insert(pair<DWORD, CTunerBankCtrl*>(chID, itrCtrl->second));
-		}
-	}
+	CBlockLock lock(&this->managerLock);
 
-	//予約の状態を確認する
-	vector<DWORD> deleteList;
-
-	BOOL chgReserve = FALSE;
-	map<DWORD, CReserveInfo*>::iterator itrRes;
-	BOOL chk6h = FALSE;
-	if( this->reserveInfoMap.size() > 50 ){
-		chk6h = TRUE;
-	}
-	for( itrRes = this->reserveInfoMap.begin(); itrRes != this->reserveInfoMap.end(); itrRes++ ){
-		Sleep(0);
-		RESERVE_DATA data;
-		itrRes->second->GetData(&data);
-
-		if( data.recSetting.recMode == RECMODE_NO ){
+	vector<RESERVE_DATA> chgList;
+	for( map<DWORD, RESERVE_DATA>::const_iterator itr = this->reserveText.GetMap().begin(); itr != this->reserveText.GetMap().end(); itr++ ){
+		if( itr->second.eventID == 0xFFFF || itr->second.reserveStatus != ADD_RESERVE_NORMAL ){
+			//プログラム予約、および最新EPG(チューナからの情報)で変更済みの予約は対象外
 			continue;
 		}
-		if( data.eventID == 0xFFFF ){
-			continue;
-		}
-		if( data.recSetting.tuijyuuFlag == 0 ){
-			continue;
-		}
-		if( chk6h == TRUE ){
-			if( ConvertI64Time(data.startTime) > GetNowI64Time() + 3*60*60*I64_1SEC ){
-				continue;
+		//原作と異なりrecMode==RECMODE_NOも扱う。またtuijyuuFlagは意味が変化しているので注意
+		EPGDB_EVENT_INFO info;
+		if( this->epgDBManager.SearchEpg(itr->second.originalNetworkID, itr->second.transportStreamID, itr->second.serviceID, itr->second.eventID, &info) ){
+			//マージの都合でEIT[p/f]由来の未定時刻のイベントが混じるかもしれないがここでは無視する
+			if( info.StartTimeFlag != 0 && info.DurationFlag != 0 ){
+				__int64 startDiff = ConvertI64Time(info.start_time) - ConvertI64Time(itr->second.startTime);
+				if( startDiff < -12 * 3600 * I64_1SEC || 12 * 3600 * I64_1SEC < startDiff ){
+					//EventIDの再使用に備えるため12時間以上の移動は対象外
+					continue;
+				}
+				RESERVE_DATA r = itr->second;
+				bool chgRes = false;
+				if( info.shortInfo != NULL && r.title != info.shortInfo->event_name ){
+					r.title = info.shortInfo->event_name;
+					chgRes = true;
+				}
+				if( ConvertI64Time(r.startTime) != ConvertI64Time(info.start_time) ){
+					r.startTime = info.start_time;
+					chgRes = true;
+				}
+				if( r.durationSecond != info.durationSec ){
+					r.durationSecond = info.durationSec;
+					chgRes = true;
+				}
+				if( chgRes ){
+					chgList.push_back(r);
+				}
 			}
 		}
-	
-		DWORD chkChID = ((DWORD)data.originalNetworkID)<<16 | data.transportStreamID;
+	}
+	if( chgList.empty() == false ){
+		ChgReserveData(chgList);
+	}
+}
 
-		itrCtrl = chkTuner.find(chkChID);
-		if( itrCtrl != chkTuner.end() ){
-			BOOL chgRes = FALSE;
-			BOOL recWaitFlag = FALSE;
-			DWORD tunerID = 0;
-			this->reserveInfoManager.GetRecWaitMode(data.reserveID, &recWaitFlag, &tunerID);
-			if( recWaitFlag == 0 ){
-				//通常チェック
-				SEARCH_EPG_INFO_PARAM val;
-				val.ONID = data.originalNetworkID;
-				val.TSID = data.transportStreamID;
-				val.SID = data.serviceID;
-				val.eventID = data.eventID;
-				val.pfOnlyFlag = 0;
-				EPGDB_EVENT_INFO resVal;
-				if( itrCtrl->second->SearchEpgInfo(
-					&val,
-					&resVal
-					) == TRUE ){
-						chgRes = CheckChgEvent(resVal, &data);
-						if( chgRes == TRUE ){
-							//開始時間6時間以内ならEPG再読み込みで変更されないようにする
-							if( GetNowI64Time() + 6*60*60*I64_1SEC > ConvertI64Time(data.startTime) ){
-								if( data.reserveStatus == ADD_RESERVE_NORMAL ){
-									data.reserveStatus = ADD_RESERVE_CHG_PF2;
-								}
-							}
+void CReserveManager::CheckTuijyuTuner()
+{
+	vector<DWORD> chgIDList;
+	//tunerBankMapそのものは排他制御の対象外
+	for( map<DWORD, CTunerBankCtrl*>::const_iterator itrBank = this->tunerBankMap.begin(); itrBank != this->tunerBankMap.end(); itrBank++ ){
+		CBlockLock lock(&this->managerLock);
+
+		WORD onid, tsid;
+		if( itrBank->second->GetCurrentChID(&onid, &tsid) == false ){
+			//このチューナは起動していない
+			continue;
+		}
+		vector<RESERVE_DATA> chgList;
+		ReCacheReserveText();
+
+		vector<pair<LONGLONG, DWORD>>::const_iterator itrCache = std::lower_bound(
+			this->reserveTextCache.begin(), this->reserveTextCache.end(), pair<LONGLONG, DWORD>(_Create64Key2(onid, tsid, 0, 0), 0));
+		for( ; itrCache != this->reserveTextCache.end() && itrCache->first <= _Create64Key2(onid, tsid, 0xFFFF, 0xFFFF); ){
+			//起動中のチャンネルに一致する予約をEIT[p/f]と照合する
+			WORD sid = itrCache->first >> 16 & 0xFFFF;
+			EPGDB_EVENT_INFO resPfVal[2];
+			int nowSuccess = itrBank->second->GetEventPF(sid, false, &resPfVal[0]);
+			int nextSuccess = itrBank->second->GetEventPF(sid, true, &resPfVal[1]);
+			for( ; itrCache != this->reserveTextCache.end() && itrCache->first <= _Create64Key2(onid, tsid, sid, 0xFFFF); itrCache++ ){
+				if( std::find(chgIDList.begin(), chgIDList.end(), itrCache->second) != chgIDList.end() ){
+					//この予約はすでに変更済み
+					continue;
+				}
+				map<DWORD, RESERVE_DATA>::const_iterator itrRes = this->reserveText.GetMap().find(itrCache->second);
+				if( itrRes->second.eventID == 0xFFFF ||
+				    itrRes->second.recSetting.recMode == RECMODE_NO ||
+				    ConvertI64Time(itrRes->second.startTime) > GetNowI64Time() + 6 * 3600 * I64_1SEC ){
+					//プログラム予約、無効予約、および6時間以上先の予約は対象外
+					continue;
+				}
+				bool pfFound = false;
+				for( int i = (nowSuccess == 0 ? 0 : 1); i < (nextSuccess == 0 ? 2 : 1); i++ ){
+					const EPGDB_EVENT_INFO& info = resPfVal[i];
+					if( info.event_id == itrRes->second.eventID && (info.StartTimeFlag != 0 || info.DurationFlag != 0) ){
+						RESERVE_DATA r = itrRes->second;
+						bool chgRes = false;
+						if( info.shortInfo != NULL && r.title != info.shortInfo->event_name ){
+							r.title = info.shortInfo->event_name;
+							r.reserveStatus = ADD_RESERVE_CHG_PF;
+							chgRes = true;
 						}
-				}else{
-					OutputDebugString( L"番組情報みつからず ");
-				}
-				if( chgRes == TRUE ){
-					_ChgReserveData( data, TRUE );
-					chgReserve = TRUE;
-				}
-			}else{
-				//録画中
-				GET_EPG_PF_INFO_PARAM valPF;
-				valPF.ONID = data.originalNetworkID;
-				valPF.TSID = data.transportStreamID;
-				valPF.SID = data.serviceID;
-				valPF.pfNextFlag = 0;
-
-				EPGDB_EVENT_INFO resNowVal;
-				EPGDB_EVENT_INFO resNextVal;
-				BOOL nowSuccess = itrCtrl->second->GetEventPF( &valPF, &resNowVal );
-				valPF.pfNextFlag = 1;
-				BOOL nextSuccess = itrCtrl->second->GetEventPF( &valPF, &resNextVal );
-
-				BOOL findPF = FALSE;
-				BOOL endRec = FALSE;
-				if( nowSuccess == TRUE ){
-					if( resNowVal.event_id == data.eventID ){
-						findPF = TRUE;
-						this->reserveInfoManager.SetChkPfInfo(data.reserveID);
-						if( resNowVal.StartTimeFlag == 1 && resNowVal.DurationFlag == 1 ){
-							//通常チェック
-							BYTE chgMode = 0;
-							chgRes = CheckChgEvent(resNowVal, &data, &chgMode);
-							if( chgRes == TRUE && (chgMode&0x02) == 0x02 ){
-								//総時間変更された
-								data.durationSecond += (DWORD)this->duraChgMarginMin*60;
-								//同一サービスで録画中になっているやつの開始時間変更してやる
-								ChgDurationChk(resNowVal);
+						if( info.StartTimeFlag != 0 ){
+							if( ConvertI64Time(r.startTime) != ConvertI64Time(info.start_time) ){
+								r.startTime = info.start_time;
+								r.reserveStatus = ADD_RESERVE_CHG_PF;
+								chgRes = true;
+							}
+							if( info.DurationFlag == 0 ){
+								//継続時間未定。現在(present)かつ終了まで5分を切る予約は5分伸ばす
+								if( i == 0 && ConvertI64Time(r.startTime) + r.durationSecond * I64_1SEC < GetNowI64Time() + 300 * I64_1SEC ){
+									r.durationSecond += 300;
+									r.reserveStatus = ADD_RESERVE_UNKNOWN_END;
+									chgRes = true;
+									OutputDebugString(L"●p/f 継続時間未定の現在イベントの予約を変更します\r\n");
+								}
+							}else if( r.reserveStatus == ADD_RESERVE_UNKNOWN_END || r.durationSecond != info.durationSec ){
+								r.durationSecond = info.durationSec;
+								r.reserveStatus = ADD_RESERVE_CHG_PF;
+								chgRes = true;
 							}
 						}else{
-							//時間未定
-							if( resNowVal.StartTimeFlag == 1 ){
-								data.startTime = resNowVal.start_time;
+							//開始時刻未定。次(following)かつ開始まで5分を切る予約は5分移動
+							if( i == 1 && ConvertI64Time(r.startTime) < GetNowI64Time() + 300 * I64_1SEC ){
+								ConvertSystemTime(ConvertI64Time(r.startTime) + 300 * I64_1SEC, &r.startTime);
+								r.reserveStatus = ADD_RESERVE_CHG_PF;
+								chgRes = true;
+								OutputDebugString(L"●p/f 開始時刻未定の次イベントの予約を変更します\r\n");
 							}
-							LONGLONG dureSec = GetNowI64Time() - ConvertI64Time(data.startTime) + 10*60*I64_1SEC;
-							if( (DWORD)(dureSec/I64_1SEC) > data.durationSecond ){
-								data.durationSecond = (DWORD)(dureSec/I64_1SEC);
-								data.reserveStatus = ADD_RESERVE_UNKNOWN_END;
-								chgRes = TRUE;
+							if( r.reserveStatus == ADD_RESERVE_UNKNOWN_END || r.durationSecond != info.durationSec ){
+								r.durationSecond = info.durationSec;
+								r.reserveStatus = ADD_RESERVE_CHG_PF;
+								chgRes = true;
 							}
-							_OutputDebugString(L"●p/f 時間未定現在情報に存在 %d/%d/%d %d:%d:%d %dsec %s %s\r\n",
-								data.startTime.wYear,
-								data.startTime.wMonth,
-								data.startTime.wDay,
-								data.startTime.wHour,
-								data.startTime.wMinute,
-								data.startTime.wSecond,
-								data.durationSecond,
-								data.title.c_str(),
-								data.stationName.c_str()
-								);
 						}
+						if( chgRes ){
+							chgIDList.push_back(r.reserveID);
+							chgList.push_back(r);
+						}
+						pfFound = true;
+						break;
 					}
 				}
-				if( nextSuccess == TRUE ){
-					if( resNextVal.event_id == data.eventID ){
-						findPF = TRUE;
-						if( resNextVal.StartTimeFlag == 1 && resNextVal.DurationFlag == 1 ){
-							//通常チェック
-							chgRes = CheckChgEvent(resNextVal, &data);
-						}else{
-							//総時間未定
-							if( resNextVal.StartTimeFlag == 1 && resNowVal.StartTimeFlag == 1 ){
-								if( resNowVal.DurationFlag == 1 ){
-									if( ConvertI64Time(resNextVal.start_time) < GetSumTime(resNowVal.start_time, resNowVal.durationSec) ){
-										//次の方が開始時間が現在の間にあるとかおかしい
-										endRec = TRUE;
-										_OutputDebugString(L"●p/f 不正状態（現在終了＞次開始 %d/%d/%d %d:%d:%d %dsec %s %s\r\n",
-											data.startTime.wYear,
-											data.startTime.wMonth,
-											data.startTime.wDay,
-											data.startTime.wHour,
-											data.startTime.wMinute,
-											data.startTime.wSecond,
-											data.durationSecond,
-											data.title.c_str(),
-											data.stationName.c_str()
-											);
-										if( this->eventRelay == TRUE ){
-											if( CheckEventRelay(resNextVal, data, TRUE) == TRUE ){
-												chgReserve = TRUE;
-											}
-										}
-									}
-								}else{
-									if( ConvertI64Time(resNextVal.start_time) < ConvertI64Time(resNowVal.start_time) ){
-										//次の方が開始時間早いとかおかしい
-										endRec = TRUE;
-										_OutputDebugString(L"●p/f 不正状態（現在開始＞次開始 %d/%d/%d %d:%d:%d %dsec %s %s\r\n",
-											data.startTime.wYear,
-											data.startTime.wMonth,
-											data.startTime.wDay,
-											data.startTime.wHour,
-											data.startTime.wMinute,
-											data.startTime.wSecond,
-											data.durationSecond,
-											data.title.c_str(),
-											data.stationName.c_str()
-											);
-										if( this->eventRelay == TRUE ){
-											if( CheckEventRelay(resNextVal, data, TRUE) == TRUE ){
-												chgReserve = TRUE;
-											}
-										}
-									}
-								}
-							}
-							if( endRec == FALSE ){
-								if( resNextVal.StartTimeFlag == 1 ){
-									data.startTime = resNextVal.start_time;
-								}
-								LONGLONG dureSec = GetNowI64Time() - ConvertI64Time(data.startTime) + 10*60*I64_1SEC;
-								if( (DWORD)(dureSec/I64_1SEC) > data.durationSecond ){
-									data.durationSecond = (DWORD)(dureSec/I64_1SEC);
-									data.reserveStatus = ADD_RESERVE_UNKNOWN_END;
-									chgRes = TRUE;
-								}
-								_OutputDebugString(L"●p/f 次情報に存在 %d/%d/%d %d:%d:%d %dsec %s %s\r\n",
-									data.startTime.wYear,
-									data.startTime.wMonth,
-									data.startTime.wDay,
-									data.startTime.wHour,
-									data.startTime.wMinute,
-									data.startTime.wSecond,
-									data.durationSecond,
-									data.title.c_str(),
-									data.stationName.c_str()
-									);
-							}
+				//EIT[p/f]が正しく取得できる状況でEIT[p/f]にないものは通常チェック
+				EPGDB_EVENT_INFO info;
+				if( nowSuccess != 2 && nextSuccess != 2 && pfFound == false && itrBank->second->SearchEpgInfo(sid, itrRes->second.eventID, &info) ){
+					if( info.StartTimeFlag != 0 && info.DurationFlag != 0 ){
+						__int64 startDiff = ConvertI64Time(info.start_time) - ConvertI64Time(itrRes->second.startTime);
+						if( startDiff < -12 * 3600 * I64_1SEC || 12 * 3600 * I64_1SEC < startDiff ){
+							//EventIDの再使用に備えるため12時間以上の移動は対象外
+							continue;
 						}
-					}
-				}
-				if( findPF == FALSE && this->reserveInfoManager.IsChkPfInfo(data.reserveID) == FALSE ){
-					//現在or次ではない
-					BOOL chkNormal = TRUE;
-					if( nowSuccess == TRUE){
-						if(resNowVal.StartTimeFlag != 1 || resNowVal.DurationFlag != 1){
-							//時間未定なので6時間追従モードへ
-							chkNormal = FALSE;
+						RESERVE_DATA r = itrRes->second;
+						bool chgRes = false;
+						if( info.shortInfo != NULL && r.title != info.shortInfo->event_name ){
+							r.title = info.shortInfo->event_name;
+							chgRes = true;
 						}
-					}
-					if( nextSuccess == TRUE){
-						if( resNextVal.StartTimeFlag != 1 || resNextVal.DurationFlag != 1 ){
-							//時間未定なので6時間追従モードへ
-							chkNormal = FALSE;
+						if( ConvertI64Time(r.startTime) != ConvertI64Time(info.start_time) ){
+							r.startTime = info.start_time;
+							chgRes = true;
 						}
-					}
-					if( chkNormal == FALSE ){
-						//時間未定なので6時間追従モードへ
-						if( CheckNotFindChgEvent(&data, itrCtrl->second, &deleteList) == TRUE ){
-							chgReserve = TRUE;
+						if( r.durationSecond != info.durationSec ){
+							r.durationSecond = info.durationSec;
+							chgRes = true;
 						}
-					}else{
-						//イベントID直前変更対応
-						BOOL chkChgID = FALSE;
-						if( nowSuccess == TRUE ){
-							if( CheckChgEventID(resNowVal, &data) == TRUE ){
-								chgRes = TRUE;
-								chkChgID = TRUE;
-							}
-						}
-						if(chkChgID == FALSE){
-							//p/f正常なので通常検索
-							SEARCH_EPG_INFO_PARAM val;
-							val.ONID = data.originalNetworkID;
-							val.TSID = data.transportStreamID;
-							val.SID = data.serviceID;
-							val.eventID = data.eventID;
-							val.pfOnlyFlag = 0;
-							EPGDB_EVENT_INFO resVal;
-							if( itrCtrl->second->SearchEpgInfo(
-								&val,
-								&resVal
-								) == TRUE ){
-									if( data.reserveStatus == ADD_RESERVE_NO_FIND ){
-										if( resVal.StartTimeFlag == 1 ){
-											if( ConvertI64Time(resVal.start_time) > ConvertI64Time(data.startTime) ){
-												//開始時間後なので更新されたEPGのはず
-												chgRes = CheckChgEvent(resVal, &data);
-											}else{
-												//古いEPGなので何もしない
-											}
-										}
-									}else{
-										chgRes = CheckChgEvent(resVal, &data);
-									}
-							}else{
-								_OutputDebugString(L"●番組情報みつからず %d/%d/%d %d:%d:%d %dsec %s %s\r\n",
-									data.startTime.wYear,
-									data.startTime.wMonth,
-									data.startTime.wDay,
-									data.startTime.wHour,
-									data.startTime.wMinute,
-									data.startTime.wSecond,
-									data.durationSecond,
-									data.title.c_str(),
-									data.stationName.c_str()
-									);
-								if( nowSuccess == FALSE && nextSuccess == FALSE ){
-									if( data.reserveStatus == ADD_RESERVE_NORMAL ){
-										LONGLONG delay = itrCtrl->second->DelayTime();
-										LONGLONG nowTime = GetNowI64Time() + delay;
-										LONGLONG endTime = GetSumTime(data.startTime, data.durationSecond);
-										LONGLONG endTimeE;
-										CalcEntireReserveTime(NULL, &endTimeE, data);
-										if( endTime > endTimeE ){
-											endTime = endTimeE;
-										}
-										if( nowTime + 2*60*I64_1SEC > endTime ){
-											//終了2分前だけどEPGなし
-											data.reserveStatus = ADD_RESERVE_NO_EPG;
-											data.durationSecond += this->noEpgTuijyuMin * 60;
-											chgRes = TRUE;
-										}
-									}
-								}
-							}
-						}
-					}
-				}
-				if( endRec == TRUE ){
-					//誤差も加味
-					LONGLONG delay = itrCtrl->second->DelayTime();
-					chgRes = TRUE;
-					LONGLONG dureSec = GetNowI64Time()+delay - ConvertI64Time(data.startTime);
-					data.durationSecond = (DWORD)(dureSec/I64_1SEC);
-					//録画時間過ぎている状態作るために終了マージンを-1分にしてやる
-					data.recSetting.useMargineFlag = 1;
-					data.recSetting.startMargine = 0;
-					data.recSetting.endMargine = -60;
-					_OutputDebugString(L"●情報確認できず終了 %d/%d/%d %d:%d:%d %dsec %s %s\r\n",
-						data.startTime.wYear,
-						data.startTime.wMonth,
-						data.startTime.wDay,
-						data.startTime.wHour,
-						data.startTime.wMinute,
-						data.startTime.wSecond,
-						data.durationSecond,
-						data.title.c_str(),
-						data.stationName.c_str()
-						);
-				}
-				if( chgRes == TRUE ){
-					if( data.reserveStatus == ADD_RESERVE_NORMAL || data.reserveStatus == ADD_RESERVE_CHG_PF2 ){
-						data.reserveStatus = ADD_RESERVE_CHG_PF;
-					}
-					_ChgReserveData( data, TRUE );
-					chgReserve = TRUE;
-				}
-
-				if( this->eventRelay == TRUE ){
-					//イベントリレーのチェック
-					if( nowSuccess == TRUE){
-						if( CheckEventRelay(resNowVal, data) == TRUE ){
-							chgReserve = TRUE;
+						if( chgRes ){
+							//EPG再読み込みで変更されないようにする
+							r.reserveStatus = ADD_RESERVE_CHG_PF2;
+							chgIDList.push_back(r.reserveID);
+							chgList.push_back(r);
 						}
 					}
 				}
 			}
 		}
+		if( chgList.empty() == false ){
+			ChgReserveData(chgList);
+		}
 	}
+}
 
-	if( deleteList.size() > 0 ){
-		//予約一覧から削除
-		_DelReserveData(deleteList);
-		chgReserve = TRUE;
+void CReserveManager::CheckOverTimeReserve()
+{
+	CBlockLock lock(&this->managerLock);
+
+	bool modified = false;
+	__int64 now = GetNowI64Time();
+	vector<DWORD> noList = GetNoTunerReserveAll();
+	for( size_t i = 0; i < noList.size(); i++ ){
+		map<DWORD, RESERVE_DATA>::const_iterator itr = this->reserveText.GetMap().find(noList[i]);
+		__int64 endTime;
+		CalcEntireReserveTime(NULL, &endTime, itr->second);
+		if( endTime < now ){
+			//終了時間過ぎてしまっている
+			if( itr->second.recSetting.recMode != RECMODE_NO ){
+				//無効のものは結果に残さない
+				REC_FILE_INFO item;
+				item = itr->second;
+				item.recStatus = REC_END_STATUS_NO_TUNER;
+				item.comment = L"チューナー不足のため失敗しました";
+				this->recInfoText.AddRecInfo(item);
+			}
+			this->reserveText.DelReserve(itr->first);
+			this->reserveTextCache.clear();
+			this->reserveModified = true;
+			modified = true;
+		}
 	}
-	if( chgReserve == TRUE ){
+	if( modified ){
 		this->reserveText.SaveText();
-
-		_ReloadBankMap();
-
+		this->recInfoText.SaveText();
 		this->notifyManager.AddNotify(NOTIFY_UPDATE_RESERVE_INFO);
 		this->notifyManager.AddNotify(NOTIFY_UPDATE_REC_INFO);
 	}
 }
 
-BOOL CReserveManager::CheckChgEvent(const EPGDB_EVENT_INFO& info, RESERVE_DATA* data, BYTE* chgMode)
+DWORD CReserveManager::Wait(HANDLE hEvent, DWORD timeout, DWORD* extra)
 {
-	BOOL chgRes = FALSE;
-
-	RESERVE_DATA oldData = *data;
-
-	wstring log = L"";
-	wstring timeLog1 = L"";
-	wstring timeLog2 = L"";
-
-	SYSTEMTIME oldEndTime;
-	GetSumTime(data->startTime, data->durationSecond, &oldEndTime);
-	Format(timeLog1, L"%d/%d/%d %d:%d:%d～%d:%d:%d",
-		data->startTime.wYear,
-		data->startTime.wMonth,
-		data->startTime.wDay,
-		data->startTime.wHour,
-		data->startTime.wMinute,
-		data->startTime.wSecond,
-		oldEndTime.wHour,
-		oldEndTime.wMinute,
-		oldEndTime.wSecond);
-
-	SYSTEMTIME endTime;
-	if( info.StartTimeFlag == 1 && info.DurationFlag == 1){
-		GetSumTime(info.start_time, info.durationSec, &endTime);
-		Format(timeLog2, L"%d/%d/%d %d:%d:%d～%d:%d:%d",
-			info.start_time.wYear,
-			info.start_time.wMonth,
-			info.start_time.wDay,
-			info.start_time.wHour,
-			info.start_time.wMinute,
-			info.start_time.wSecond,
-			endTime.wHour,
-			endTime.wMinute,
-			endTime.wSecond);
-	}else if( info.StartTimeFlag == 1 && info.DurationFlag == 0){
-		Format(timeLog2, L"%d/%d/%d %d:%d:%d～未定",
-			info.start_time.wYear,
-			info.start_time.wMonth,
-			info.start_time.wDay,
-			info.start_time.wHour,
-			info.start_time.wMinute,
-			info.start_time.wSecond);
-	}else{
-		timeLog2 = L"時間未定";
-	}
-
-	if( info.StartTimeFlag == 1 && info.DurationFlag == 1){
-		if(GetNowI64Time() > GetSumTime(info.start_time, info.durationSec)){
-			//終了時間を過ぎているので追従はしない
-			return FALSE;
+	for(;;){
+		DWORD tick = GetTickCount();
+		DWORD diff = this->waitTick - tick;
+		if( (diff & 0x80000000) != 0 ){
+			diff = 0;
 		}
-	}
-	if( info.StartTimeFlag == 1 ){
-		if( ConvertI64Time(data->startTime) != ConvertI64Time(info.start_time) ){
-			//開始時間変わっている
-			chgRes = TRUE;
-			data->startTime = info.start_time;
-
-			log += L"●追従：開始変更 ";
-			if( chgMode != NULL ){
-				*chgMode |= 0x01;
-			}
+		if( diff >= timeout ){
+			return WaitForSingleObject(hEvent, timeout);
 		}
-	}
-	if( info.DurationFlag == 1 ){
-		if( data->reserveStatus == ADD_RESERVE_CHG_PF ){
-			//一度変わってるのでマージン追加されてるはず
-			if( data->durationSecond - ((DWORD)this->duraChgMarginMin*60) != info.durationSec ){
-				//総時間が変更されている
-				chgRes = TRUE;
-				data->durationSecond = info.durationSec;
-				log += L"●追従：総時間変更 ";
-				if( chgMode != NULL ){
-					*chgMode |= 0x02;
-				}
-			}
-		}else{
-			if( data->durationSecond != info.durationSec ){
-				//総時間が変更されている
-				chgRes = TRUE;
-				data->durationSecond = info.durationSec;
-				log += L"●追従：総時間変更 ";
-				if( chgMode != NULL ){
-					*chgMode |= 0x02;
-				}
-			}
+		DWORD dwRet = WaitForSingleObject(hEvent, diff);
+		if( dwRet != WAIT_TIMEOUT ){
+			return dwRet;
 		}
-	}
+		//1秒ごとにチェックする
+		this->waitTick = tick + 1000;
+		this->waitCount++;
+		if( timeout != INFINITE ){
+			timeout -= diff;
+		}
 
-	if( chgRes == TRUE ){
-		log += data->stationName;
-		log += L" ";
-		log += timeLog1;
-		log += L" → ";
-		log += timeLog2;
-		log += L" ";
-		log += data->title;
-		log += L"\r\n";
-		SendTweet(TW_CHG_RESERVE_CHK_REC, &oldData, data, const_cast<EPGDB_EVENT_INFO*>(&info));
-		SendNotifyChgReserve(NOTIFY_UPDATE_REC_TUIJYU, oldData, *data, this->notifyManager);
-	}else{
-		log += data->stationName;
-		log += L" ";
-		log += timeLog2;
-		log += L" ";
-		log += data->title;
-		log += L"\r\n";
-	}
+		bool isRec = false;
+		bool isEpgCap = false;
+		int shutdownMode = -1;
+		//tunerBankMapそのものは排他制御の対象外
+		for( map<DWORD, CTunerBankCtrl*>::const_iterator itrBank = this->tunerBankMap.begin(); itrBank != this->tunerBankMap.end(); itrBank++ ){
+			CBlockLock lock(&this->managerLock);
 
-	OutputDebugString(log.c_str());
-	return chgRes;
-}
-
-BOOL CReserveManager::CheckChgEventID(const EPGDB_EVENT_INFO& info, RESERVE_DATA* data)
-{
-	if( data == NULL ){
-		return FALSE;
-	}
-	if( data->reserveStatus == ADD_RESERVE_RELAY ){
-		//イベントリレーで追加された物はチェックしない
-		return FALSE;
-	}
-	BOOL chgEventID = FALSE;
-	if( info.shortInfo != NULL && (info.event_id != data->eventID)){
-		//似たタイトルになっているかチェック
-		wstring title1 = data->title;
-		wstring title2 = info.shortInfo->event_name;
-		if( title1.size() > 0 && title2.size() > 0){
-			//記号を除去
-			while( (title1.find(L"[") != string::npos) && (title1.find(L"]") != string::npos) ){
-				wstring strSep1=L"";
-				wstring strSep2=L"";
-				Separate(title1, L"[", strSep1, title1);
-				Separate(title1, L"]", strSep2, title1);
-				strSep1 += title1;
-				title1 = strSep1;
-			}
-			while( (title2.find(L"[") != string::npos) && (title2.find(L"]") != string::npos) ){
-				wstring strSep1=L"";
-				wstring strSep2=L"";
-				Separate(title2, L"[", strSep1, title2);
-				Separate(title2, L"]", strSep2, title2);
-				strSep1 += title2;
-				title2 = strSep1;
-			}
-			//空白除去
-			Replace(title1, L" ", L"");
-			Replace(title2, L" ", L"");
-			//比較用に文字調整
-			this->epgDBManager.ConvertSearchText(title1);
-			this->epgDBManager.ConvertSearchText(title2);
-
-			//あいまい検索
-			DWORD hitCount = 0;
-			DWORD missCount = 0;
-			wstring key= L"";
-			for( size_t j=0; j<title1.size(); j++ ){
-				key += title1.at(j);
-				if( title2.find(key) == string::npos ){
-					missCount+=1;
-					key = title1.at(j);
-					if( title2.find(key) == string::npos ){
-						missCount+=1;
-						key = L"";
+			// チューナの予約状態遷移を行い、予約終了をチェックする
+			vector<CTunerBankCtrl::CHECK_RESULT> retList = itrBank->second->Check();
+			CTunerBankCtrl::TR_STATE state = itrBank->second->GetState();
+			isRec = isRec || state == CTunerBankCtrl::TR_REC;
+			isEpgCap = isEpgCap || state == CTunerBankCtrl::TR_EPGCAP;
+			bool modified = false;
+			for( vector<CTunerBankCtrl::CHECK_RESULT>::const_iterator itrRet = retList.begin(); itrRet != retList.end(); itrRet++ ){
+				map<DWORD, RESERVE_DATA>::const_iterator itrRes = this->reserveText.GetMap().find(itrRet->reserveID);
+				if( itrRes != this->reserveText.GetMap().end() ){
+					if( itrRet->type == CTunerBankCtrl::CHECK_END && itrRet->recFilePath.empty() == false &&
+					    itrRet->drops < this->recInfo2DropChk && itrRet->epgEventName.empty() == false ){
+						//録画済みとして登録
+						PARSE_REC_INFO2_ITEM item;
+						item.originalNetworkID = itrRes->second.originalNetworkID;
+						item.transportStreamID = itrRes->second.transportStreamID;
+						item.serviceID = itrRes->second.serviceID;
+						item.startTime = itrRet->epgStartTime;
+						item.eventName = itrRet->epgEventName;
+						this->recInfo2Text.Add(item);
 					}
-				}else{
-					hitCount+=(DWORD)key.size();
-				}
-			}
-			DWORD samePer1 = 0;
-			if( hitCount+missCount > 0 ){
-				samePer1 = (hitCount*100) / (hitCount+missCount);
-			}
 
-			hitCount = 0;
-			missCount = 0;
-			key= L"";
-			for( size_t j=0; j<title2.size(); j++ ){
-				key += title2.at(j);
-				if( title1.find(key) == string::npos ){
-					missCount+=1;
-					key = title2.at(j);
-					if( title1.find(key) == string::npos ){
-						missCount+=1;
-						key = L"";
+					REC_FILE_INFO item;
+					item = itrRes->second;
+					if( itrRet->type <= CTunerBankCtrl::CHECK_END_NOT_START_HEAD ){
+						item.recFilePath = itrRet->recFilePath;
+						item.drops = itrRet->drops;
+						item.scrambles = itrRet->scrambles;
 					}
-				}else{
-					hitCount+=(DWORD)key.size();
-				}
-			}
-			DWORD samePer2 = 0;
-			if( hitCount+missCount > 0 ){
-				samePer2 = (hitCount*100) / (hitCount+missCount);
-			}
-
-			if( samePer1 > 80 || samePer2 > 80 ){
-				//80%以上の一致で一緒とする
-				chgEventID = TRUE;
-			}
-			/*
-			if( data->title.find(nowTitle) != string::npos){
-				chgEventID = TRUE;
-			}else if( nowTitle.find(data->title) != string::npos ){
-				chgEventID = TRUE;
-			}*/
-		}
-	}
-	if( chgEventID == FALSE ){
-		return FALSE;
-	}
-
-
-	BOOL chgRes = TRUE;
-
-	RESERVE_DATA oldData = *data;
-
-	wstring log = L"";
-	wstring timeLog1 = L"";
-	wstring timeLog2 = L"";
-
-	SYSTEMTIME oldEndTime;
-	GetSumTime(data->startTime, data->durationSecond, &oldEndTime);
-	Format(timeLog1, L"%d/%d/%d %d:%d:%d～%d:%d:%d",
-		data->startTime.wYear,
-		data->startTime.wMonth,
-		data->startTime.wDay,
-		data->startTime.wHour,
-		data->startTime.wMinute,
-		data->startTime.wSecond,
-		oldEndTime.wHour,
-		oldEndTime.wMinute,
-		oldEndTime.wSecond);
-
-	SYSTEMTIME endTime;
-	if( info.StartTimeFlag == 1 && info.DurationFlag == 1){
-		GetSumTime(info.start_time, info.durationSec, &endTime);
-		Format(timeLog2, L"%d/%d/%d %d:%d:%d～%d:%d:%d",
-			info.start_time.wYear,
-			info.start_time.wMonth,
-			info.start_time.wDay,
-			info.start_time.wHour,
-			info.start_time.wMinute,
-			info.start_time.wSecond,
-			endTime.wHour,
-			endTime.wMinute,
-			endTime.wSecond);
-	}else if( info.StartTimeFlag == 1 && info.DurationFlag == 0){
-		Format(timeLog2, L"%d/%d/%d %d:%d:%d～未定",
-			info.start_time.wYear,
-			info.start_time.wMonth,
-			info.start_time.wDay,
-			info.start_time.wHour,
-			info.start_time.wMinute,
-			info.start_time.wSecond);
-	}else{
-		timeLog2 = L"時間未定";
-	}
-
-	if( info.StartTimeFlag == 1 && info.DurationFlag == 1){
-		if(GetNowI64Time() > GetSumTime(info.start_time, info.durationSec)){
-			//終了時間を過ぎているので追従はしない
-			return FALSE;
-		}
-	}
-	if( info.StartTimeFlag == 1 ){
-		if( ConvertI64Time(data->startTime) != ConvertI64Time(info.start_time) ){
-			//開始時間変わっている
-			chgRes = TRUE;
-			data->startTime = info.start_time;
-
-			Format(log ,L"●追従 EventID変更 0x%04X -> 0x%04X：開始変更 ", oldData.eventID, info.event_id);
-		}
-	}
-	if( info.DurationFlag == 1 ){
-		if( data->reserveStatus == ADD_RESERVE_CHG_PF ){
-			//一度変わってるのでマージン追加されてるはず
-			if( data->durationSecond - ((DWORD)this->duraChgMarginMin*60) != info.durationSec ){
-				//総時間が変更されている
-				chgRes = TRUE;
-				data->durationSecond = info.durationSec;
-				Format(log ,L"●追従 EventID変更 0x%04X -> 0x%04X：総時間変更 ", oldData.eventID, info.event_id);
-			}
-		}else{
-			if( data->durationSecond != info.durationSec ){
-				//総時間が変更されている
-				chgRes = TRUE;
-				data->durationSecond = info.durationSec;
-				Format(log ,L"●追従 EventID変更 0x%04X -> 0x%04X：総時間変更 ", oldData.eventID, info.event_id);
-			}
-		}
-	}
-	data->eventID = info.event_id;
-
-	if( chgRes == TRUE ){
-		log += data->stationName;
-		log += L" ";
-		log += timeLog1;
-		log += L" → ";
-		log += timeLog2;
-		log += L" ";
-		log += data->title;
-		log += L"\r\n";
-		SendTweet(TW_CHG_RESERVE_CHK_REC, &oldData, data, const_cast<EPGDB_EVENT_INFO*>(&info));
-		SendNotifyChgReserve(NOTIFY_UPDATE_REC_TUIJYU, oldData, *data, this->notifyManager);
-	}else{
-		log += data->stationName;
-		log += L" ";
-		log += timeLog2;
-		log += L" ";
-		log += data->title;
-		log += L"\r\n";
-	}
-
-	OutputDebugString(log.c_str());
-	return chgRes;
-}
-
-BOOL CReserveManager::CheckNotFindChgEvent(RESERVE_DATA* data, CTunerBankCtrl* ctrl, vector<DWORD>* deleteList)
-{
-	BOOL chgRes = FALSE;
-	wstring log = L"";
-
-	LONGLONG delay = ctrl->DelayTime();
-	LONGLONG nowTime = GetNowI64Time()+delay;
-
-	if( data->reserveStatus == ADD_RESERVE_RELAY ){
-		//イベントリレーは追従の必要なし
-	}else if(data->reserveStatus == ADD_RESERVE_NORMAL || data->reserveStatus == ADD_RESERVE_CHG_PF){
-		//6時間追従用予約へ移行
-		LONGLONG delay = ctrl->DelayTime();
-		LONGLONG nowTime = GetNowI64Time()+delay;
-		//if( nowTime + 60*I64_1SEC > chkEndTime ){
-			//終了1分前で番組情報みつからず
-			OutputDebugString(L"●6時間追従用予約へ移行");
-
-			//開始時間を延ばす
-			LONGLONG chgStart = nowTime - 30*I64_1SEC;
-			LONGLONG chgStartE;
-			ConvertSystemTime( chgStart, &data->startTime);
-			CalcEntireReserveTime(&chgStartE, NULL, *data);
-			if( chgStart < chgStartE ){
-				chgStart -= chgStartE - chgStart;
-			}
-			ConvertSystemTime( chgStart, &data->startTime);
-			data->reserveStatus = ADD_RESERVE_NO_FIND;
-			_ChgReserveData( *data, TRUE );
-			chgRes = TRUE;
-
-			ctrl->ReRec(data->reserveID, FALSE);
-		//}
-	}else if(data->reserveStatus == ADD_RESERVE_NO_FIND){
-		if( ConvertI64Time(data->startTimeEpg) + ((LONGLONG)this->notFindTuijyuHour)*60*60*I64_1SEC < nowTime ){
-			OutputDebugString(L"●指定時間番組情報みつからず");
-			REC_FILE_INFO item;
-			item = *data;
-			item.recFilePath = L"";
-			item.drops = 0;
-			item.scrambles = 0;
-			item.recStatus = REC_END_STATUS_NOT_FIND_6H;
-			item.comment = L"指定時間番組情報が見つかりませんでした";
-			this->recInfoText.AddRecInfo(item);
-			SendTweet(TW_REC_END, &item, NULL, NULL);
-			SendNotifyRecEnd(item, this->notifyManager);
-
-			deleteList->push_back(data->reserveID);
-
-		}else{
-			//開始時間を延ばす
-			LONGLONG chgStart = nowTime - 30*I64_1SEC;
-			LONGLONG chgStartE;
-			ConvertSystemTime( chgStart, &data->startTime);
-			CalcEntireReserveTime(&chgStartE, NULL, *data);
-			if( chgStart < chgStartE ){
-				chgStart -= chgStartE - chgStart;
-			}
-			ConvertSystemTime( chgStart, &data->startTime);
-			_ChgReserveData( *data, TRUE );
-
-			ctrl->ReRec(data->reserveID, TRUE);
-		}
-		chgRes = TRUE;
-	}
-
-	return chgRes;
-}
-
-BOOL CReserveManager::CheckEventRelay(const EPGDB_EVENT_INFO& info, const RESERVE_DATA& data, BOOL errEnd)
-{
-	BOOL add = FALSE;
-	if( info.original_network_id != data.originalNetworkID ||
-		info.transport_stream_id != data.transportStreamID ||
-		info.service_id != data.serviceID ||
-		info.event_id != data.eventID ){
-			//イベントIDの確認
-			return add;
-	}
-	if( info.eventRelayInfo != NULL ){
-		if( errEnd == TRUE ){
-			OutputDebugString(L"イベントリレーチェック　総時間異常終了");
-		}else{
-			if( info.StartTimeFlag == 0 || info.DurationFlag == 0 ){
-				OutputDebugString(L"イベントリレーチェック　開始 or 総時間未定");
-				return add;
-			}
-		}
-		//イベントリレーあり
-		wstring title;
-		if( info.shortInfo != NULL ){
-			title = info.shortInfo->event_name;
-		}
-		_OutputDebugString(L"EventRelayCheck");
-		_OutputDebugString(L"OriginalEvent : ONID 0x%08x TSID 0x%08x SID 0x%08x EventID 0x%08x %s", 
-			info.original_network_id,
-			info.transport_stream_id,
-			info.service_id,
-			info.event_id,
-			title.c_str()
-			);
-		for( size_t i=0; i<info.eventRelayInfo->eventDataList.size(); i++ ){
-			LONGLONG chKey = _Create64Key(
-				info.eventRelayInfo->eventDataList[i].original_network_id,
-				info.eventRelayInfo->eventDataList[i].transport_stream_id,
-				info.eventRelayInfo->eventDataList[i].service_id);
-
-			_OutputDebugString(L"RelayEvent : ONID 0x%08x TSID 0x%08x SID 0x%08x EventID 0x%08x", 
-				info.eventRelayInfo->eventDataList[i].original_network_id,
-				info.eventRelayInfo->eventDataList[i].transport_stream_id,
-				info.eventRelayInfo->eventDataList[i].service_id,
-				info.eventRelayInfo->eventDataList[i].event_id
-				);
-			map<LONGLONG, CH_DATA5>::const_iterator itrCh;
-			itrCh = this->chUtil.GetMap().find(chKey);
-			if( itrCh != this->chUtil.GetMap().end() ){
-				//使用できるチャンネル発見
-				_OutputDebugString(L"Service find : %s", 
-					itrCh->second.serviceName.c_str()
-					);
-
-				//同一イベント予約済みかチェック
-				BOOL find = FALSE;
-				vector<pair<LONGLONG, const RESERVE_DATA*> > resList = this->reserveText.GetReserveList();
-				vector<pair<LONGLONG, const RESERVE_DATA*> >::iterator itrRes;
-				for( itrRes = resList.begin(); itrRes != resList.end(); itrRes++ ){
-					if( itrRes->second->originalNetworkID == info.eventRelayInfo->eventDataList[i].original_network_id &&
-						itrRes->second->transportStreamID == info.eventRelayInfo->eventDataList[i].transport_stream_id &&
-						itrRes->second->serviceID == info.eventRelayInfo->eventDataList[i].service_id &&
-						itrRes->second->eventID == info.eventRelayInfo->eventDataList[i].event_id ){
-							//予約済み
-							find = TRUE;
-							//追加済みなら異常終了のために開始時間変更する必要なし
-							if( errEnd == FALSE ){
-								//時間変更必要かチェック
-								SYSTEMTIME chkStart;
-								GetSumTime(info.start_time, info.durationSec, &chkStart);
-								if( ConvertI64Time(itrRes->second->startTime) != ConvertI64Time(chkStart) ){
-									RESERVE_DATA chgData = *(itrRes->second);
-									//開始時間変わっている
-									add = TRUE;
-									chgData.startTime = chkStart;
-									chgData.startTimeEpg = chgData.startTime;
-									_ChgReserveData( chgData, TRUE );
-									OutputDebugString(L"★イベントリレー開始変更");
-								}
-							}
-							break;
-					}
-				}
-				if( errEnd == FALSE ){
-					map<DWORD, REC_FILE_INFO>::const_iterator itrRecInfo;
-					for( itrRecInfo = this->recInfoText.GetMap().begin(); itrRecInfo != this->recInfoText.GetMap().end(); itrRecInfo++ ){
-						if( itrRecInfo->second.originalNetworkID == info.eventRelayInfo->eventDataList[i].original_network_id &&
-							itrRecInfo->second.transportStreamID == info.eventRelayInfo->eventDataList[i].transport_stream_id &&
-							itrRecInfo->second.serviceID == info.eventRelayInfo->eventDataList[i].service_id &&
-							itrRecInfo->second.eventID == info.eventRelayInfo->eventDataList[i].event_id 
-							){
-								if( ConvertI64Time(itrRecInfo->second.startTime) == GetSumTime(info.start_time, info.durationSec)){
-									//エラーで録画終了になった？
-									find = TRUE;
-									break;
-								}
+					switch( itrRet->type ){
+					case CTunerBankCtrl::CHECK_END:
+						if( ConvertI64Time(item.startTime) != ConvertI64Time(item.startTimeEpg) ){
+							item.recStatus = REC_END_STATUS_CHG_TIME;
+							item.comment = L"開始時間が変更されました";
+						}else{
+							item.recStatus = REC_END_STATUS_NORMAL;
+							item.comment = item.recFilePath.empty() ? L"終了" : L"録画終了";
 						}
+						break;
+					case CTunerBankCtrl::CHECK_END_NOT_FIND_PF:
+						item.recStatus = REC_END_STATUS_NOT_FIND_PF;
+						item.comment = L"録画中に番組情報を確認できませんでした";
+						break;
+					case CTunerBankCtrl::CHECK_END_NEXT_START_END:
+						item.recStatus = REC_END_STATUS_NEXT_START_END;
+						item.comment = L"次の予約開始のためにキャンセルされました";
+						break;
+					case CTunerBankCtrl::CHECK_END_END_SUBREC:
+						item.recStatus = REC_END_STATUS_END_SUBREC;
+						item.comment = L"録画終了（空き容量不足で別フォルダへの保存が発生）";
+						break;
+					case CTunerBankCtrl::CHECK_END_NOT_START_HEAD:
+						item.recStatus = REC_END_STATUS_NOT_START_HEAD;
+						item.comment = L"一部のみ録画が実行された可能性があります";
+						break;
+					case CTunerBankCtrl::CHECK_ERR_RECEND:
+						item.recStatus = REC_END_STATUS_ERR_END2;
+						item.comment = L"ファイル保存で致命的なエラーが発生した可能性があります";
+						break;
+					case CTunerBankCtrl::CHECK_ERR_REC:
+						item.recStatus = REC_END_STATUS_ERR_END;
+						item.comment = L"録画中にキャンセルされた可能性があります";
+						break;
+					case CTunerBankCtrl::CHECK_ERR_RECSTART:
+					case CTunerBankCtrl::CHECK_ERR_CTRL:
+						item.recStatus = REC_END_STATUS_ERR_RECSTART;
+						item.comment = L"録画開始処理に失敗しました（空き容量不足の可能性あり）";
+						break;
+					case CTunerBankCtrl::CHECK_ERR_OPEN:
+						item.recStatus = REC_END_STATUS_OPEN_ERR;
+						item.comment = L"チューナーのオープンに失敗しました";
+						break;
+					case CTunerBankCtrl::CHECK_ERR_PASS:
+						item.recStatus = REC_END_STATUS_START_ERR;
+						item.comment = L"録画時間に起動していなかった可能性があります";
+						break;
 					}
-				}
-				if( find == FALSE ){
-					RESERVE_DATA addItem;
-					if( data.title.find(L"(イベントリレー)") == string::npos ){
-						addItem.title = L"(イベントリレー)";
-					}
-					addItem.title += data.title;
-					if( errEnd == TRUE ){
-						GetLocalTime(&addItem.startTime);
-					}else{
-						GetSumTime(info.start_time, info.durationSec, &addItem.startTime);
-					}
-					addItem.startTimeEpg = addItem.startTime;
-					addItem.durationSecond = 10*60;
-					addItem.stationName = itrCh->second.serviceName;
-					addItem.originalNetworkID = info.eventRelayInfo->eventDataList[i].original_network_id;
-					addItem.transportStreamID = info.eventRelayInfo->eventDataList[i].transport_stream_id;
-					addItem.serviceID = info.eventRelayInfo->eventDataList[i].service_id;
-					addItem.eventID = info.eventRelayInfo->eventDataList[i].event_id;
+					this->recInfoText.AddRecInfo(item);
 
-					addItem.recSetting = data.recSetting;
-					addItem.reserveStatus = ADD_RESERVE_RELAY;
-					addItem.recSetting.tunerID = 0;
-					_AddReserveData(addItem);
-					add = TRUE;
-					OutputDebugString(L"★イベントリレー追加");
-				}
-				break;
-			}else{
-					OutputDebugString(L"Service Not find");
-			}
-		}
-	}
-	return add;
-}
-
-BOOL CReserveManager::ChgDurationChk(const EPGDB_EVENT_INFO& info)
-{
-	if( info.StartTimeFlag == 0 || info.DurationFlag == 0 ){
-		return FALSE;
-	}
-	BOOL ret = FALSE;
-	map<DWORD, CReserveInfo*>::iterator itrRes;
-	for( itrRes = this->reserveInfoMap.begin(); itrRes != this->reserveInfoMap.end(); itrRes++ ){
-		RESERVE_DATA data;
-		itrRes->second->GetData(&data);
-
-		if( data.recSetting.recMode == RECMODE_NO ){
-			continue;
-		}
-		if( data.eventID == 0xFFFF ){
-			continue;
-		}
-		if( data.recSetting.tuijyuuFlag == 0 ){
-			continue;
-		}
-		BOOL recWaitFlag = FALSE;
-		DWORD tunerID = 0;
-		this->reserveInfoManager.GetRecWaitMode(data.reserveID, &recWaitFlag, &tunerID);
-		if( recWaitFlag == 0 ){
-			continue;
-		}
-		//p/f確認できてるのに変更はおかしい
-		if(this->reserveInfoManager.IsChkPfInfo(data.reserveID) == TRUE){
-			continue;
-		}
-		//未定で終わりかけのやつ除外
-		if( data.reserveStatus == ADD_RESERVE_UNKNOWN_END ){
-			continue;
-		}
-
-		if( data.originalNetworkID == info.original_network_id &&
-			data.transportStreamID == info.transport_stream_id &&
-			data.serviceID == info.service_id &&
-			data.eventID != info.event_id ){
-				if( ConvertI64Time(data.startTime) != GetSumTime(info.start_time, info.durationSec) ){
-					//開始時間が違うので変更してやる
-					GetSumTime(info.start_time, info.durationSec, &data.startTime);
-					if( data.reserveStatus == ADD_RESERVE_NORMAL ){
-						data.reserveStatus = ADD_RESERVE_CHG_PF2;
-					}
-
-					_ChgReserveData( data, TRUE );
-					ret = TRUE;
-				}
-		}
-	}
-	return ret;
-}
-
-void CReserveManager::EnableSuspendWork(BYTE suspendMode, BYTE rebootFlag, BYTE epgReload)
-{
-	BYTE setSuspendMode = suspendMode;
-	BYTE setRebootFlag = rebootFlag;
-
-	if( suspendMode == 0 ){
-		setSuspendMode = this->defSuspendMode;
-		setRebootFlag = this->defRebootFlag;
-	}
-
-	if( IsSuspendOK(setRebootFlag) == TRUE ){
-		this->enableSetSuspendMode = setSuspendMode;
-		this->enableSetRebootFlag = setRebootFlag;
-	}else{
-		this->enableSetSuspendMode = 0xFF;
-		this->enableSetRebootFlag = 0xFF;
-		this->enableEpgReload = epgReload;
-	}
-}
-
-BOOL CReserveManager::IsEnableSuspend(
-	BYTE* suspendMode,
-	BYTE* rebootFlag
-	)
-{
-	CBlockLock lock(&this->managerLock);
-	BOOL ret = TRUE;
-
-	if( this->enableSetSuspendMode == 0xFF && this->enableSetRebootFlag == 0xFF ){
-		ret = FALSE;
-	}else{
-		if( this->useTweet != TRUE || this->twitterManager->GetTweetQue() == 0){
-			*suspendMode = this->enableSetSuspendMode;
-			*rebootFlag = this->enableSetRebootFlag;
-
-			this->enableSetSuspendMode = 0xFF;
-			this->enableSetRebootFlag = 0xFF;
-		}else{
-			ret = FALSE;
-		}
-	}
-
-	return ret;
-}
-
-BOOL CReserveManager::IsEnableReloadEPG(
-	)
-{
-	CBlockLock lock(&this->managerLock);
-	BOOL ret = FALSE;
-	if( this->enableEpgReload == 1 ){
-		ret = TRUE;
-		this->enableEpgReload = 0;
-	}
-	return ret;
-}
-
-BOOL CReserveManager::IsSuspendOK(BOOL rebootFlag)
-{
-	CBlockLock lock(&this->managerLock);
-
-	BOOL ret = TRUE;
-
-	map<DWORD, CTunerBankCtrl*>::iterator itrCtrl;
-	for( itrCtrl = this->tunerBankMap.begin(); itrCtrl != this->tunerBankMap.end(); itrCtrl++ ){
-		if( itrCtrl->second->IsSuspendOK() == FALSE ){
-			//起動中なので予約処理中
-			OutputDebugString(L"_IsSuspendOK tunerUse");
-			return FALSE;
-		}
-	}
-
-	LONGLONG wakeMargin = this->wakeTime;
-	if( rebootFlag == TRUE ){
-		wakeMargin += 5;
-	}
-	LONGLONG chkNoStandbyTime = GetNowI64Time() + ((LONGLONG)this->noStandbyTime)*60*I64_1SEC;
-
-	LONGLONG chkWakeTime = GetNowI64Time() + wakeMargin*60*I64_1SEC;
-	//ソートされてないので全部回す必要あり
-	map<DWORD, CReserveInfo*>::iterator itr;
-	for( itr = this->reserveInfoMap.begin(); itr != this->reserveInfoMap.end(); itr++ ){
-		RESERVE_DATA data;
-		itr->second->GetData(&data);
-		if( data.overlapMode == 0 ){
-			if( data.recSetting.recMode != RECMODE_NO ){
-				LONGLONG startTime;
-				LONGLONG endTime;
-				CalcEntireReserveTime(&startTime, &endTime, data);
-				//短い予約のチェック漏れを防ぐ
-				if( endTime < startTime + wakeMargin*60*I64_1SEC ){
-					endTime = startTime + wakeMargin*60*I64_1SEC;
-				}
-
-				if( startTime <= chkWakeTime && chkWakeTime < endTime ){
-					OutputDebugString(L"_IsSuspendOK chkWakeTime");
-					//次の予約時間にかぶる
-					return FALSE;
-				}
-				if( startTime <= chkNoStandbyTime ){
-					OutputDebugString(L"_IsSuspendOK chkNoStandbyTime");
-					//次の予約時間にかぶる
-					return FALSE;
-				}
-
-			}
-		}
-	}
-
-	LONGLONG epgcapTime = 0;
-	if( GetNextEpgcapTime(&epgcapTime, 0) == TRUE ){
-		if( epgcapTime < chkWakeTime ){
-			//EPG取得
-			OutputDebugString(L"_IsSuspendOK EpgCapTime");
-			return FALSE;
-		}
-	}
-
-	if( this->batManager.IsWorking() == TRUE ){
-		//バッチ処理中
-		OutputDebugString(L"_IsSuspendOK IsBatWorking");
-		return FALSE;
-	}
-
-	if( IsFindNoSuspendExe() == TRUE ){
-		//Exe起動中
-		OutputDebugString(L"IsFindNoSuspendExe");
-		return FALSE;
-	}
-
-	if( IsFindShareTSFile() == TRUE ){
-		//TSファイルアクセス中
-		OutputDebugString(L"IsFindShareTSFile");
-		return FALSE;
-	}
-
-	return ret;
-}
-
-BOOL CReserveManager::IsFindNoSuspendExe()
-{
-	OSVERSIONINFO VerInfo;
-	VerInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-	GetVersionEx( &VerInfo );
-
-	BOOL b2000 = FALSE;
-	if( VerInfo.dwMajorVersion == 5 && VerInfo.dwMinorVersion == 0 ){
-		b2000 = TRUE;
-	}else{
-		b2000 = FALSE;
-	}
-
-	HANDLE hSnapshot;
-	PROCESSENTRY32 procent;
-
-	BOOL bFind = FALSE;
-	/* Toolhelpスナップショットを作成する */
-	hSnapshot = CreateToolhelp32Snapshot( TH32CS_SNAPPROCESS,0 );
-	if ( hSnapshot != (HANDLE)-1 ) {
-		procent.dwSize = sizeof(PROCESSENTRY32);
-		if ( Process32First( hSnapshot,&procent ) != FALSE )            {
-			do {
-				/* procent.szExeFileにプロセス名 */
-				wstring strExe = procent.szExeFile;
-				std::transform(strExe.begin(), strExe.end(), strExe.begin(), tolower);
-				for( size_t i=0; i<this->noStandbyExeList.size(); i++ ){
-					if( b2000 == TRUE ){
-						if( strExe.find( this->noStandbyExeList[i].substr(0, 15).c_str()) == 0 ){
-							_OutputDebugString(L"起動exe:%s", strExe.c_str());
-							bFind = TRUE;
-							break;
+					//バッチ処理追加
+					if( (itrRet->type == CTunerBankCtrl::CHECK_END || itrRet->type == CTunerBankCtrl::CHECK_END_NEXT_START_END) && item.recFilePath.empty() == false ){
+						BAT_WORK_INFO batInfo;
+						batInfo.batFilePath = itrRes->second.recSetting.batFilePath;
+						batInfo.suspendMode = itrRes->second.recSetting.suspendMode;
+						batInfo.rebootFlag = itrRes->second.recSetting.rebootFlag;
+						if( itrRes->second.comment.compare(0, 8, L"EPG自動予約(") == 0 && itrRes->second.comment.size() >= 9 ){
+							batInfo.addKey.assign(itrRes->second.comment, 8, itrRes->second.comment.size() - 9);
 						}
-					}else{
-						if( strExe.find( this->noStandbyExeList[i].c_str()) == 0 ){
-							_OutputDebugString(L"起動exe:%s", strExe.c_str());
-							bFind = TRUE;
-							break;
-						}
+						batInfo.recFileInfo = item;
+						this->batManager.AddBatWork(batInfo);
+						this->batManager.StartWork();
+					}else if( itrRet->type != CTunerBankCtrl::CHECK_ERR_PASS ){
+						shutdownMode = MAKEWORD(itrRes->second.recSetting.suspendMode, itrRes->second.recSetting.rebootFlag);
 					}
-				}
-				if( bFind == TRUE ){
-					break;
-				}
-			} while ( Process32Next( hSnapshot,&procent ) != FALSE );
-		}
-		CloseHandle( hSnapshot );
-	}
-	return bFind;
-}
 
-BOOL CReserveManager::IsFindShareTSFile()
-{
-	BOOL ret = FALSE;
-	if( this->ngShareFile == TRUE ){
-		LPBYTE bufptr = NULL;
-		DWORD entriesread = 0;
-		DWORD totalentries = 0;
-		NetFileEnum(NULL, NULL, NULL, 3, &bufptr, MAX_PREFERRED_LENGTH, &entriesread, &totalentries, NULL);
-		if( entriesread > 0 ){
-			_OutputDebugString(L"共有フォルダアクセス");
-			for(DWORD i=0; i<entriesread; i++){
-				FILE_INFO_3* info = (FILE_INFO_3*)(bufptr+(sizeof(FILE_INFO_3)*i));
+					this->reserveText.DelReserve(itrRes->first);
+					this->reserveTextCache.clear();
+					this->reserveModified = true;
+					modified = true;
 
-				wstring filePath = info->fi3_pathname;
-				OutputDebugString(filePath.c_str());
-				if( IsExt(filePath, L".ts") == TRUE ){
-					ret = TRUE;
+					//予約終了を通知
+					SYSTEMTIME st = item.startTime;
+					SYSTEMTIME stEnd;
+					ConvertSystemTime(ConvertI64Time(st) + item.durationSecond * I64_1SEC, &stEnd);
+					wstring msg;
+					Format(msg, L"%s %04d/%02d/%02d %02d:%02d～%02d:%02d\r\n%s\r\n%s",
+					       item.serviceName.c_str(), st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute,
+					       stEnd.wHour, stEnd.wMinute, item.title.c_str(), item.comment.c_str());
+					this->notifyManager.AddNotifyMsg(NOTIFY_UPDATE_REC_END, msg);
 				}
 			}
-		}
-		NetApiBufferFree(bufptr);
-	}
-	return ret;
-}
-
-BOOL CReserveManager::GetSleepReturnTime(
-	LONGLONG* returnTime
-	)
-{
-	CBlockLock lock(&this->managerLock);
-	if( returnTime == NULL ){
-		return FALSE;
-	}
-	//最も近い予約開始時刻を得る
-	LONGLONG nextRec = 0;
-	map<DWORD, RESERVE_DATA>::const_iterator itr;
-	for( itr = this->reserveText.GetMap().begin(); itr != this->reserveText.GetMap().end(); itr++ ){
-		if( itr->second.recSetting.recMode != RECMODE_NO ){
-			LONGLONG startTime = ConvertI64Time(itr->second.startTime);
-			LONGLONG endTime = startTime + itr->second.durationSecond * I64_1SEC;
-			LONGLONG startMargin = this->defStartMargine * I64_1SEC;
-			if( itr->second.recSetting.useMargineFlag == TRUE ){
-				startMargin = itr->second.recSetting.startMargine * I64_1SEC;
-			}
-			//開始マージンは元の予約終了時刻を超えて負であってはならない
-			startTime -= max(startMargin, startTime - endTime);
-			if( nextRec == 0 || nextRec > startTime ){
-				nextRec = startTime;
+			if( modified ){
+				CBlockLock lock(&this->managerLock);
+				this->reserveText.SaveText();
+				this->recInfoText.SaveText();
+				this->recInfo2Text.SaveText();
+				this->notifyManager.AddNotify(NOTIFY_UPDATE_RESERVE_INFO);
+				this->notifyManager.AddNotify(NOTIFY_UPDATE_REC_INFO);
 			}
 		}
-	}
-
-	LONGLONG epgcapTime = 0;
-	GetNextEpgcapTime(&epgcapTime, 0);
-
-	if( nextRec == 0 && epgcapTime == 0 ){
-		return FALSE;
-	}else if( nextRec == 0 && epgcapTime != 0 ){
-		*returnTime = epgcapTime;
-	}else if( nextRec != 0 && epgcapTime == 0 ){
-		*returnTime = nextRec;
-	}else{
-		if(nextRec < epgcapTime){
-			*returnTime = nextRec;
-		}else{
-			*returnTime = epgcapTime;
+		if( this->waitCount % 30 == 0 ){
+			CheckOverTimeReserve();
 		}
-	}
-	return TRUE;
-}
-
-BOOL CReserveManager::GetNextEpgcapTime(LONGLONG* capTime, LONGLONG chkMargineMin, int* basicOnlyFlags)
-{
-	if( capTime == NULL ){
-		return FALSE;
-	}
-
-	wstring iniPath = L"";
-	GetModuleIniPath(iniPath);
-
-	SYSTEMTIME srcTime;
-	GetLocalTime(&srcTime);
-	srcTime.wHour = 0;
-	srcTime.wMinute = 0;
-	srcTime.wSecond = 0;
-	srcTime.wHour = 0;
-	srcTime.wMilliseconds = 0;
-
-	map<LONGLONG,EPGTIME_INFO*> timeList;
-
-	vector<EPGTIME_INFO>::iterator itr;
-	for( itr = this->epgCapTimeList.begin(); itr != this->epgCapTimeList.end(); itr++ ){
-		if( itr->wday <= 0 || itr->wday % 7 == srcTime.wDayOfWeek ){
-			//曜日未指定、または曜日指定が今日と一致
-			LONGLONG chkTime = GetSumTime(srcTime, itr->time);
-			timeList.insert(pair<LONGLONG,EPGTIME_INFO*>(chkTime, &(*itr)));
+		if( this->waitCount % 3 == 0 ){
+			CheckTuijyuTuner();
 		}
-		if( itr->wday <= 0 || itr->wday % 7 == (srcTime.wDayOfWeek + 1) % 7 ){
-			//曜日未指定、または曜日指定が次の日と一致
-			LONGLONG chkTime = GetSumTime(srcTime, itr->time + 24*60*60);
-			timeList.insert(pair<LONGLONG,EPGTIME_INFO*>(chkTime, &(*itr)));
-		}
-	}
+		this->notifyManager.SetNotifySrvStatus(isRec ? 1 : isEpgCap ? 2 : 0);
 
-	//そのまま判定したら直前で次の日になってしまうのでマージン分現在の時刻を調整
-	LONGLONG nowTime = GetNowI64Time() + (chkMargineMin*60*I64_1SEC);
-	map<LONGLONG,EPGTIME_INFO*>::iterator itr2 = timeList.upper_bound(nowTime);
-	if( itr2 == timeList.end() ){
-		return FALSE;
-	}
-	*capTime = itr2->first;
-	if( basicOnlyFlags != NULL ){
-		*basicOnlyFlags = itr2->second->basicOnlyFlags;
-	}
-
-	return TRUE;
-}
-
-//録画済み情報一覧を取得する
-//引数：
-// infoList			[OUT]録画済み情報一覧
-void CReserveManager::GetRecFileInfoAll(
-	vector<REC_FILE_INFO>* infoList
-	)
-{
-	CBlockLock lock(&this->managerLock);
-
-	map<DWORD, REC_FILE_INFO>::const_iterator itr;
-	for( itr = this->recInfoText.GetMap().begin(); itr != this->recInfoText.GetMap().end(); itr++ ){
-		infoList->push_back(itr->second);
-	}
-}
-
-//録画済み情報を削除する
-//引数：
-// idList			[IN]IDリスト
-void CReserveManager::DelRecFileInfo(
-	const vector<DWORD>& idList
-	)
-{
-	CBlockLock lock(&this->managerLock);
-
-	for( size_t i=0 ;i<idList.size(); i++){
-		this->recInfoText.DelRecInfo(idList[i]);
-	}
-
-	this->recInfoText.SaveText();
-	this->chgRecInfo = TRUE;
-
-	this->notifyManager.AddNotify(NOTIFY_UPDATE_REC_INFO);
-}
-
-//録画済み情報のプロテクトを変更する
-//引数：
-// infoList			[IN]録画済み情報一覧（idとprotectFlagのみ参照）
-void CReserveManager::ChgProtectRecFileInfo(
-	const vector<REC_FILE_INFO>& infoList
-	)
-{
-	CBlockLock lock(&this->managerLock);
-
-	for( size_t i=0 ;i<infoList.size(); i++){
-		this->recInfoText.ChgProtectRecInfo(infoList[i].id, infoList[i].protectFlag);
-	}
-
-	this->recInfoText.SaveText();
-	this->chgRecInfo = TRUE;
-
-	this->notifyManager.AddNotify(NOTIFY_UPDATE_REC_INFO);
-}
-
-BOOL CReserveManager::StartEpgCap()
-{
-	CBlockLock lock(&this->managerLock);
-
-	BOOL ret = TRUE;
-
-	wstring chSet5Path = L"";
-	GetSettingPath(chSet5Path);
-	chSet5Path += L"\\ChSet5.txt";
-
-	CParseChText5 chSet5;
-	chSet5.ParseText(chSet5Path.c_str());
-
-	//まず取得対象となるサービスの一覧を抽出
-	map<DWORD, CH_DATA5> serviceList;
-	map<LONGLONG, CH_DATA5>::const_iterator itrCh;
-	for( itrCh = chSet5.GetMap().begin(); itrCh != chSet5.GetMap().end(); itrCh++ ){
-		if( itrCh->second.epgCapFlag == TRUE ){
-			DWORD key = ((DWORD)itrCh->second.originalNetworkID)<<16 | itrCh->second.transportStreamID;
-			map<DWORD, CH_DATA5>::iterator itrIn;
-			itrIn = serviceList.find(key);
-			if( itrIn == serviceList.end() ){
-				serviceList.insert(pair<DWORD, CH_DATA5>(key, itrCh->second));
+		BYTE suspendMode;
+		BYTE rebootFlag;
+		if( CheckEpgCap(isEpgCap) ){
+			//EPG取得が完了した
+			this->notifyManager.AddNotify(NOTIFY_UPDATE_EPGCAP_END);
+			*extra = MAKELONG(0, WAIT_EXTRA_EPGCAP_END);
+			break;
+		}else if( this->batManager.PopLastWorkSuspend(&suspendMode, &rebootFlag) ){
+			//バッチ処理が完了した
+			*extra = MAKELONG(MAKEWORD(suspendMode, rebootFlag), WAIT_EXTRA_NEED_SHUTDOWN);
+			break;
+		}else if( shutdownMode >= 0 && this->batManager.IsWorking() == false ){
+			*extra = MAKELONG(shutdownMode, WAIT_EXTRA_NEED_SHUTDOWN);
+			break;
+		}else if( this->reserveModified ){
+			CBlockLock lock(&this->managerLock);
+			if( this->reserveModified ){
+				*extra = MAKELONG(0, WAIT_EXTRA_RESERVE_MODIFIED);
+				this->reserveModified = false;
 			}
+			break;
 		}
 	}
+	return WAIT_OBJECT_0 + 1;
+}
 
-	//利用可能なチューナーの抽出
+vector<DWORD> CReserveManager::GetEpgCapTunerIDList(__int64 now) const
+{
+	CBlockLock lock(&this->managerLock);
+
+	//利用可能なチューナの抽出
 	vector<pair<vector<DWORD>, WORD>> tunerIDList;
 	this->tunerManager.GetEnumEpgCapTuner(&tunerIDList);
-
-	map<DWORD, CTunerBankCtrl*> epgCapCtrl;
-	map<DWORD, CTunerBankCtrl*>::iterator itrCtrl;
-	for( size_t i=0; i<tunerIDList.size(); i++ ){
+	vector<DWORD> epgCapIDList;
+	for( size_t i = 0; i < tunerIDList.size(); i++ ){
 		WORD epgCapMax = tunerIDList[i].second;
 		WORD ngCapCount = 0;
-		for( size_t j=0; j<tunerIDList[i].first.size() && epgCapMax > 0; j++ ){
-			itrCtrl = this->tunerBankMap.find(tunerIDList[i].first[j]);
-			if( itrCtrl != this->tunerBankMap.end() && itrCtrl->second->IsEpgCapWorking() == FALSE ){
-				itrCtrl->second->ClearEpgCapItem();
-				if( ngCapMin != 0 ){
-					if( itrCtrl->second->IsEpgCapOK(this->ngCapMin) == FALSE ){
-						//実行しちゃいけない
-						ngCapCount++;
-						continue;
-					}
-				}
-				if( itrCtrl->second->IsEpgCapOK(this->ngCapTunerMin) == TRUE ){
-					//使えるチューナー
-					epgCapCtrl.insert(pair<DWORD, CTunerBankCtrl*>(itrCtrl->first, itrCtrl->second));
-					epgCapMax--;
-				}
+		for( size_t j = 0; j < tunerIDList[i].first.size() && epgCapMax > 0; j++ ){
+			map<DWORD, CTunerBankCtrl*>::const_iterator itr = this->tunerBankMap.find(tunerIDList[i].first[j]);
+			CTunerBankCtrl::TR_STATE state = itr->second->GetState();
+			__int64 minTime = itr->second->GetNearestReserveTime();
+			if( this->ngCapTimeSec != 0 && (state != CTunerBankCtrl::TR_IDLE || minTime < now + this->ngCapTimeSec * I64_1SEC) ){
+				//実行しちゃいけない
+				ngCapCount++;
+			}else if( state == CTunerBankCtrl::TR_IDLE && minTime > now + this->ngCapTunerTimeSec * I64_1SEC ){
+				//使えるチューナ
+				epgCapIDList.push_back(itr->first);
+				epgCapMax--;
 			}
 		}
 		if( tunerIDList[i].second > tunerIDList[i].first.size() - ngCapCount ){
-			return FALSE;
-		}
-	}
-	if( epgCapCtrl.size() == 0 ){
-		//実行できるものない
-		return FALSE;
-	}
-
-	BOOL inBS = FALSE;
-	BOOL inCS1 = FALSE;
-	BOOL inCS2 = FALSE;
-	//各チューナーに振り分け
-	itrCtrl = epgCapCtrl.begin();
-	map<DWORD, CH_DATA5>::iterator itrAdd;
-	for( itrAdd = serviceList.begin(); itrAdd != serviceList.end(); itrAdd++ ){
-		if( itrAdd->second.originalNetworkID == 4 && this->BSOnly == TRUE ){
-			if( inBS == TRUE ){
-				continue;
-			}
-		}
-		if( itrAdd->second.originalNetworkID == 6 && this->CS1Only == TRUE ){
-			if( inCS1 == TRUE ){
-				continue;
-			}
-		}
-		if( itrAdd->second.originalNetworkID == 7 && this->CS2Only == TRUE ){
-			if( inCS2 == TRUE ){
-				continue;
-			}
-		}
-		DWORD startID = itrCtrl->first;
-		BOOL add = FALSE;
-		do{
-			if( this->tunerManager.IsSupportService(
-				itrCtrl->first,
-				itrAdd->second.originalNetworkID,
-				itrAdd->second.transportStreamID,
-				itrAdd->second.serviceID
-				) == TRUE ){
-					SET_CH_INFO addItem;
-					addItem.ONID = itrAdd->second.originalNetworkID;
-					addItem.TSID = itrAdd->second.transportStreamID;
-					addItem.SID = itrAdd->second.serviceID;
-					addItem.useSID = TRUE;
-					addItem.useBonCh = FALSE;
-					itrCtrl->second->AddEpgCapItem(addItem);
-
-					add = TRUE;
-
-					if(itrAdd->second.originalNetworkID == 4){
-						inBS = TRUE;
-					}
-					if(itrAdd->second.originalNetworkID == 6){
-						inCS1 = TRUE;
-					}
-					if(itrAdd->second.originalNetworkID == 7){
-						inCS2 = TRUE;
-					}
-			}
-
-			itrCtrl++;
-			if( itrCtrl == epgCapCtrl.end() ){
-				itrCtrl = epgCapCtrl.begin();
-			}
-		}while(startID != itrCtrl->first && add == FALSE);
-	}
-
-	for( itrCtrl = epgCapCtrl.begin(); itrCtrl != epgCapCtrl.end(); itrCtrl++ ){
-		itrCtrl->second->StartEpgCap();
-	}
-	this->epgCapCheckFlag = TRUE;
-
-	SendNotifyStatus(2);
-	this->notifyManager.AddNotify(NOTIFY_UPDATE_EPGCAP_START);
-	this->setTimeSync = FALSE;
-
-	return ret;
-}
-
-void CReserveManager::StopEpgCap()
-{
-	CBlockLock lock(&this->managerLock);
-
-	map<DWORD, CTunerBankCtrl*>::iterator itr;
-	for( itr = this->tunerBankMap.begin(); itr != this->tunerBankMap.end(); itr++ ){
-		itr->second->StopEpgCap();
-	}
-}
-
-BOOL CReserveManager::IsEpgCap()
-{
-	CBlockLock lock(&this->managerLock);
-
-	BOOL ret = FALSE;
-	map<DWORD, CTunerBankCtrl*>::iterator itr;
-	for( itr = this->tunerBankMap.begin(); itr != this->tunerBankMap.end(); itr++ ){
-		if(itr->second->IsEpgCapWorking() == TRUE){
-			ret = TRUE;
-			if( this->timeSync == TRUE && this->setTimeSync == FALSE){
-				LONGLONG delay = itr->second->DelayTime();
-				if( abs(delay) > 10*I64_1SEC ){
-					LONGLONG local = GetNowI64Time();
-					local += delay;
-					SYSTEMTIME setTime;
-					ConvertSystemTime(local, &setTime);
-					if( SetLocalTime(&setTime) == FALSE ){
-						_OutputDebugString(L"★SetLocalTime err %I64d", delay/I64_1SEC);
-					}else{
-						_OutputDebugString(L"★SetLocalTime %I64d",delay/I64_1SEC);
-						this->setTimeSync = TRUE;
-					}
-				}
-			}
+			epgCapIDList.clear();
 			break;
 		}
 	}
-		 
-	return ret;
+	return epgCapIDList;
 }
 
-BOOL CReserveManager::IsFindReserve(
-	WORD ONID,
-	WORD TSID,
-	WORD SID,
-	WORD eventID
-	)
+bool CReserveManager::RequestStartEpgCap()
 {
 	CBlockLock lock(&this->managerLock);
 
-	map<DWORD, RESERVE_DATA>::const_iterator itr;
-	for( itr = this->reserveText.GetMap().begin(); itr != this->reserveText.GetMap().end(); itr++ ){
-		if( itr->second.eventID == eventID &&
-		    itr->second.originalNetworkID == ONID &&
-		    itr->second.transportStreamID == TSID &&
-		    itr->second.serviceID == SID ){
-			return TRUE;
-		}
+	if( this->epgCapRequested || this->epgCapWork || GetEpgCapTunerIDList(GetNowI64Time()).empty() ){
+		return false;
 	}
-	return FALSE;
+	this->epgCapRequested = true;
+	return true;
 }
 
-BOOL CReserveManager::GetTVTestChgCh(
-	LONGLONG chID,
-	TVTEST_CH_CHG_INFO* chInfo
-	)
+bool CReserveManager::CheckEpgCap(bool isEpgCap)
 {
 	CBlockLock lock(&this->managerLock);
 
-	BOOL ret = FALSE;
-	
-	WORD ONID = (WORD)((chID&0x0000FFFF00000000)>>32);
-	WORD TSID = (WORD)((chID&0x00000000FFFF0000)>>16);
-	WORD SID = (WORD)((chID&0x000000000000FFFF));
-
-	vector<DWORD> idList;
-	this->tunerManager.GetSupportServiceTuner(ONID, TSID, SID, &idList);
-
-	for( int i=(int)idList.size() -1; i>=0; i-- ){
-		wstring bonDriver = L"";
-		this->tunerManager.GetBonFileName(idList[i], bonDriver);
-		BOOL find = FALSE;
-		for( size_t j=0; j<this->tvtestUseBon.size(); j++ ){
-			if( CompareNoCase(this->tvtestUseBon[j], bonDriver) == 0 ){
-				find = TRUE;
-				break;
-			}
-		}
-		if( find == TRUE ){
-			map<DWORD, CTunerBankCtrl*>::iterator itr;
-			itr = this->tunerBankMap.find(idList[i]);
-			if( itr != this->tunerBankMap.end() ){
-				if( itr->second->IsOpenTuner() == FALSE ){
-					chInfo->bonDriver = bonDriver;
-					chInfo->chInfo.useSID = TRUE;
-					chInfo->chInfo.ONID = ONID;
-					chInfo->chInfo.TSID = TSID;
-					chInfo->chInfo.SID = SID;
-					chInfo->chInfo.useBonCh = TRUE;
-					this->tunerManager.GetCh(idList[i], ONID, TSID, SID, &chInfo->chInfo.space, &chInfo->chInfo.ch);
-					ret = TRUE;
-					break;
-				}
-			}
-		}
-	}
-
-	return ret;
-}
-
-BOOL CReserveManager::SetNWTVCh(
-	const SET_CH_INFO& chInfo
-	)
-{
-	CBlockLock lock(&this->managerLock);
-
-	BOOL ret = FALSE;
-
-	BOOL findCh = FALSE;
-	SET_CH_INFO initCh;
-	wstring bonDriver = L"";
-
-	vector<DWORD> idList;
-	this->tunerManager.GetSupportServiceTuner(chInfo.ONID, chInfo.TSID, chInfo.SID, &idList);
-
-	for( int i=(int)idList.size() -1; i>=0; i-- ){
-		this->tunerManager.GetBonFileName(idList[i], bonDriver);
-		BOOL find = FALSE;
-		for( size_t j=0; j<this->tvtestUseBon.size(); j++ ){
-			if( CompareNoCase(this->tvtestUseBon[j], bonDriver) == 0 ){
-				find = TRUE;
-				break;
-			}
-		}
-		if( find == TRUE ){
-			map<DWORD, CTunerBankCtrl*>::iterator itr;
-			itr = this->tunerBankMap.find(idList[i]);
-			if( itr != this->tunerBankMap.end() ){
-				if( itr->second->IsOpenTuner() == FALSE ){
-					initCh.useSID = TRUE;
-					initCh.ONID = chInfo.ONID;
-					initCh.TSID = chInfo.TSID;
-					initCh.SID = chInfo.SID;
-
-					initCh.useBonCh = TRUE;
-					this->tunerManager.GetCh(idList[i], chInfo.ONID, chInfo.TSID, chInfo.SID, &initCh.space, &initCh.ch);
-					findCh = TRUE;
-					break;
-				}
-			}
-		}
-	}
-
-	if( findCh == FALSE ){
-		return FALSE;
-	}
-
-	BOOL findPID = FALSE;
-	vector<DWORD> pidList = _FindPidListByExeName(L"EpgDataCap_Bon.exe");
-	for( size_t i=0; i<pidList.size(); i++ ){
-		if( pidList[i] == this->NWTVPID ){
-			findPID = TRUE;
-		}
-	}
-	if( findPID == FALSE ){
-		this->NWTVPID = 0;
-	}
-
-	if( this->NWTVPID != 0 ){
-		int id = -1;
-		this->sendCtrlNWTV.SendViewGetID(&id);
-		if( this->sendCtrlNWTV.SendViewGetID(&id) == CMD_SUCCESS ){
-			if( id == -1 ){
-				DWORD status = 0;
-				if(this->sendCtrlNWTV.SendViewGetStatus(&status) == CMD_SUCCESS ){
-					if( status == VIEW_APP_ST_NORMAL ){
-						this->sendCtrlNWTV.SendViewSetBonDrivere(bonDriver);
-						this->sendCtrlNWTV.SendViewSetCh(&initCh);
-						ret = TRUE;
+	bool doneEpgCap = false;
+	__int64 now = GetNowI64Time();
+	if( this->epgCapWork == false ){
+		//毎分0秒を跨ぐタイミングでEPG取得のチェックを行う
+		if( this->epgCapRequested || now / (60 * I64_1SEC) > this->lastCheckEpgCap / (60 * I64_1SEC) ){
+			int basicOnlyFlags = -1;
+			__int64 capTime = this->epgCapRequested ? now : GetNextEpgCapTime(now, &basicOnlyFlags);
+			if( capTime <= now + 60 * I64_1SEC ){
+				vector<DWORD> epgCapIDList = GetEpgCapTunerIDList(now);
+				if( epgCapIDList.empty() == false ){
+					if( capTime > now ){
+						//取得開始1分前
+						//この通知はあくまで参考。開始しないのに通知する可能性も、その逆もありえる
+						this->notifyManager.AddNotifyMsg(NOTIFY_UPDATE_PRE_EPGCAP_START, L"取得開始１分前");
 					}else{
-						//録画とかしてそう
-						this->NWTVPID = 0;
+						//取得開始
+						wstring iniCommonPath;
+						GetCommonIniPath(iniCommonPath);
+						int lastFlags = (GetPrivateProfileInt(L"SET", L"BSBasicOnly", 1, iniCommonPath.c_str()) != 0 ? 1 : 0) |
+						                (GetPrivateProfileInt(L"SET", L"CS1BasicOnly", 1, iniCommonPath.c_str()) != 0 ? 2 : 0) |
+						                (GetPrivateProfileInt(L"SET", L"CS2BasicOnly", 1, iniCommonPath.c_str()) != 0 ? 4 : 0);
+						if( basicOnlyFlags >= 0 ){
+							//一時的に設定を変更してEPG取得チューナ側の挙動を変える
+							//TODO: パイプコマンドを拡張すべき
+							this->epgCapBasicOnlyFlags = lastFlags;
+							WritePrivateProfileString(L"SET", L"BSBasicOnly", basicOnlyFlags & 1 ? L"1" : L"0", iniCommonPath.c_str());
+							WritePrivateProfileString(L"SET", L"CS1BasicOnly", basicOnlyFlags & 2 ? L"1" : L"0", iniCommonPath.c_str());
+							WritePrivateProfileString(L"SET", L"CS2BasicOnly", basicOnlyFlags & 4 ? L"1" : L"0", iniCommonPath.c_str());
+						}else{
+							this->epgCapBasicOnlyFlags = -1;
+							basicOnlyFlags = lastFlags;
+						}
+						//各チューナに振り分け
+						LONGLONG lastKey = -1;
+						bool inBS = false;
+						bool inCS1 = false;
+						bool inCS2 = false;
+						size_t listIndex = 0;
+						vector<vector<SET_CH_INFO>> epgCapChList(epgCapIDList.size());
+						for( map<LONGLONG, CH_DATA5>::const_iterator itr = this->chUtil.GetMap().begin(); itr != this->chUtil.GetMap().end(); itr++ ){
+							if( itr->second.epgCapFlag == FALSE ||
+							    lastKey >= 0 && lastKey == itr->first >> 16 ||
+							    itr->second.originalNetworkID == 4 && (basicOnlyFlags & 1) && inBS ||
+							    itr->second.originalNetworkID == 6 && (basicOnlyFlags & 2) && inCS1 ||
+							    itr->second.originalNetworkID == 7 && (basicOnlyFlags & 4) && inCS2 ){
+								continue;
+							}
+							lastKey = itr->first >> 16;
+							SET_CH_INFO addCh;
+							addCh.ONID = itr->second.originalNetworkID;
+							addCh.TSID = itr->second.transportStreamID;
+							addCh.SID = itr->second.serviceID;
+							addCh.useSID = TRUE;
+							addCh.useBonCh = FALSE;
+							for( size_t i = 0; i < epgCapIDList.size(); i++ ){
+								if( this->tunerManager.IsSupportService(epgCapIDList[listIndex], addCh.ONID, addCh.TSID, addCh.SID) ){
+									epgCapChList[listIndex].push_back(addCh);
+									inBS = inBS || addCh.ONID == 4;
+									inCS1 = inCS1 || addCh.ONID == 6;
+									inCS2 = inCS2 || addCh.ONID == 7;
+									listIndex = (listIndex + 1) % epgCapIDList.size();
+									break;
+								}
+								listIndex = (listIndex + 1) % epgCapIDList.size();
+							}
+						}
+						for( size_t i = 0; i < epgCapIDList.size(); i++ ){
+							this->tunerBankMap[epgCapIDList[i]]->StartEpgCap(epgCapChList[i]);
+						}
+						this->epgCapWork = true;
+						this->epgCapSetTimeSync = false;
+						this->notifyManager.AddNotify(NOTIFY_UPDATE_EPGCAP_START);
 					}
-				}else{
-					//終了された？
-					this->NWTVPID = 0;
 				}
-			}else{
-				//録画用に奪われた？
-				this->NWTVPID = 0;
-			}
-		}else{
-			//終了された？
-			this->NWTVPID = 0;
-		}
-	}
-	if( this->NWTVPID == 0 ){
-
-		DWORD PID = 0;
-		BOOL noNW = FALSE;
-		if( this->NWTVUDP == FALSE && this->NWTVTCP == FALSE ){
-			noNW = TRUE;
-		}
-		map<DWORD, DWORD> registGUIMap;
-		this->notifyManager.GetRegistGUI(&registGUIMap);
-		if( CTunerBankCtrl::OpenTunerExe(this->recExePath.c_str(), bonDriver.c_str(), -1, TRUE, TRUE, noNW, this->NWTVUDP, this->NWTVTCP, 3, registGUIMap, &PID) == TRUE ){
-			this->NWTVPID = PID;
-			ret = TRUE;
-
-			this->sendCtrlNWTV.SetPipeSetting(CMD2_VIEW_CTRL_WAIT_CONNECT, CMD2_VIEW_CTRL_PIPE, this->NWTVPID);
-			this->sendCtrlNWTV.SendViewSetCh(&initCh);
-		}
-	}
-	if( ret == FALSE ){
-		this->NWTVPID = 0;
-	}
-
-	return ret;
-}
-
-BOOL CReserveManager::CloseNWTV(
-	)
-{
-	CBlockLock lock(&this->managerLock);
-
-	BOOL ret = FALSE;
-
-	if( this->NWTVPID != 0 ){
-		int id = -1;
-		if( this->sendCtrlNWTV.SendViewGetID(&id) == CMD_SUCCESS ){
-			if( id == -1 ){
-				this->sendCtrlNWTV.SendViewAppClose();
-				ret = TRUE;
 			}
 		}
-	}
-	this->NWTVPID = 0;
-
-	return ret;
-}
-
-void CReserveManager::SetNWTVMode(
-	DWORD mode
-	)
-{
-	CBlockLock lock(&this->managerLock);
-
-	if( mode == 1 ){
-		this->NWTVUDP = TRUE;
-		this->NWTVTCP = FALSE;
-	}else if( mode == 2 ){
-		this->NWTVUDP = FALSE;
-		this->NWTVTCP = TRUE;
-	}else if( mode == 3 ){
-		this->NWTVUDP = TRUE;
-		this->NWTVTCP = TRUE;
 	}else{
-		this->NWTVUDP = FALSE;
-		this->NWTVTCP = FALSE;
+		//EPG取得中
+		if( this->epgCapTimeSync && this->epgCapSetTimeSync == false ){
+			//時計合わせ(要SE_SYSTEMTIME_NAME特権)
+			for( map<DWORD, CTunerBankCtrl*>::const_iterator itr = this->tunerBankMap.begin(); itr != this->tunerBankMap.end(); itr++ ){
+				if( itr->second->GetState() == CTunerBankCtrl::TR_EPGCAP ){
+					__int64 delay = itr->second->DelayTime();
+					if( delay < -10 * I64_1SEC || 10 * I64_1SEC < delay ){
+						SYSTEMTIME setTime;
+						ConvertSystemTime(now + delay, &setTime);
+						_OutputDebugString(L"★SetLocalTime %s%d\r\n", SetLocalTime(&setTime) ? L"" : L"err ", (int)(delay / I64_1SEC));
+						this->epgCapSetTimeSync = true;
+					}
+				}
+			}
+		}
+		if( isEpgCap == false ){
+			//EPG取得中のチューナが無くなったので取得完了
+			if( this->epgCapBasicOnlyFlags >= 0 ){
+				//EPG取得開始時の設定を書き戻し
+				wstring iniCommonPath;
+				GetCommonIniPath(iniCommonPath);
+				WritePrivateProfileString(L"SET", L"BSBasicOnly", this->epgCapBasicOnlyFlags & 1 ? L"1" : L"0", iniCommonPath.c_str());
+				WritePrivateProfileString(L"SET", L"CS1BasicOnly", this->epgCapBasicOnlyFlags & 2 ? L"1" : L"0", iniCommonPath.c_str());
+				WritePrivateProfileString(L"SET", L"CS2BasicOnly", this->epgCapBasicOnlyFlags & 4 ? L"1" : L"0", iniCommonPath.c_str());
+			}
+			this->epgCapWork = false;
+			doneEpgCap = true;
+		}
 	}
+	this->epgCapRequested = false;
+	this->lastCheckEpgCap = now;
+	return doneEpgCap;
 }
 
-void CReserveManager::SendTweet(
-		SEND_TWEET_MODE mode,
-		void* param1,
-		void* param2,
-		void* param3
-	)
+bool CReserveManager::IsActive() const
 {
 	CBlockLock lock(&this->managerLock);
 
-	if( this->useTweet == TRUE ){
-		//param1～param3はconst_cast可能(TODO: CTwitterManager::SendTweet()をなんとかしたほうがいい)
-		this->twitterManager->SendTweet(mode, param1, param2, param3);
+	if( this->epgCapRequested || this->epgCapWork || this->batManager.IsWorking() ){
+		return true;
 	}
+	for( map<DWORD, CTunerBankCtrl*>::const_iterator itr = this->tunerBankMap.begin(); itr != this->tunerBankMap.end(); itr++ ){
+		if( itr->second->GetState() != CTunerBankCtrl::TR_IDLE ){
+			return true;
+		}
+	}
+	return false;
 }
 
-BOOL CReserveManager::GetRecFilePath(
-	DWORD reserveID,
-	wstring& filePath,
-	DWORD* ctrlID,
-	DWORD* processID
-	)
+__int64 CReserveManager::GetSleepReturnTime(__int64 baseTime) const
 {
 	CBlockLock lock(&this->managerLock);
 
-	BOOL ret = FALSE;
+	//最も近い予約開始時刻を得る
+	__int64 nextRec = LLONG_MAX;
+	for( map<DWORD, RESERVE_DATA>::const_iterator itr = this->reserveText.GetMap().begin(); itr != this->reserveText.GetMap().end(); itr++ ){
+		if( itr->second.recSetting.recMode != RECMODE_NO ){
+			__int64 startTime;
+			CalcEntireReserveTime(&startTime, NULL, itr->second);
+			if( startTime >= baseTime ){
+				nextRec = min(nextRec, startTime);
+			}
+		}
+	}
+	__int64 capTime = GetNextEpgCapTime(baseTime + 60 * I64_1SEC);
+	return min(nextRec, capTime);
+}
 
-	map<DWORD, CTunerBankCtrl*>::iterator itrBank;
-	for( itrBank = this->tunerBankMap.begin(); itrBank != this->tunerBankMap.end(); itrBank++ ){
-		if( itrBank->second->GetRecFilePath(reserveID, filePath, ctrlID, processID) == TRUE ){
-			ret = TRUE;
+__int64 CReserveManager::GetNextEpgCapTime(__int64 now, int* basicOnlyFlags) const
+{
+	CBlockLock lock(&this->managerLock);
+
+	SYSTEMTIME st;
+	ConvertSystemTime(now, &st);
+	//現在時刻に対する日曜日からのオフセット(分)。秒以下の切り捨てに注意
+	int baseTime = st.wDayOfWeek * 1440 + (int)(now / (60 * I64_1SEC) % 1440);
+	//baseTimeとの差が最小のEPG取得時刻を探す
+	int minDiff = INT_MAX;
+	WORD minVal = 0;
+	for( size_t i = 0; i < this->epgCapTimeList.size(); i++ ){
+		int diff = (LOWORD(this->epgCapTimeList[i]) + 7 * 1440 - baseTime) % (7 * 1440);
+		if( minDiff > diff ){
+			minDiff = diff;
+			minVal = HIWORD(this->epgCapTimeList[i]);
+		}
+	}
+	if( minDiff == INT_MAX ){
+		return LLONG_MAX;
+	}
+	if( basicOnlyFlags ){
+		*basicOnlyFlags = minVal == 0xFF ? -1 : minVal;
+	}
+	return (now / (60 * I64_1SEC) + minDiff) * (60 * I64_1SEC);
+}
+
+void CReserveManager::ReCacheReserveText() const
+{
+	CBlockLock lock(&this->managerLock);
+
+	if( this->reserveTextCache.empty() ){
+		this->reserveTextCache.reserve(this->reserveText.GetMap().size());
+		for( map<DWORD, RESERVE_DATA>::const_iterator itr = this->reserveText.GetMap().begin(); itr != this->reserveText.GetMap().end(); itr++ ){
+			this->reserveTextCache.push_back(std::make_pair(_Create64Key2(
+				itr->second.originalNetworkID, itr->second.transportStreamID, itr->second.serviceID, itr->second.eventID), itr->first));
+		}
+	}
+	std::sort(this->reserveTextCache.begin(), this->reserveTextCache.end());
+}
+
+bool CReserveManager::IsFindReserve(WORD onid, WORD tsid, WORD sid, WORD eid) const
+{
+	CBlockLock lock(&this->managerLock);
+
+	ReCacheReserveText();
+
+	vector<pair<LONGLONG, DWORD>>::const_iterator itr = std::lower_bound(
+		this->reserveTextCache.begin(), this->reserveTextCache.end(), pair<LONGLONG, DWORD>(_Create64Key2(onid, tsid, sid, eid), 0));
+	return itr != this->reserveTextCache.end() && itr->first == _Create64Key2(onid, tsid, sid, eid);
+}
+
+bool CReserveManager::IsFindProgramReserve(WORD onid, WORD tsid, WORD sid, __int64 startTime, DWORD durationSec) const
+{
+	CBlockLock lock(&this->managerLock);
+
+	ReCacheReserveText();
+
+	vector<pair<LONGLONG, DWORD>>::const_iterator itr = std::lower_bound(
+		this->reserveTextCache.begin(), this->reserveTextCache.end(), pair<LONGLONG, DWORD>(_Create64Key2(onid, tsid, sid, 0xFFFF), 0));
+	for( ; itr != this->reserveTextCache.end() && itr->first == _Create64Key2(onid, tsid, sid, 0xFFFF); itr++ ){
+		map<DWORD, RESERVE_DATA>::const_iterator itrRes = this->reserveText.GetMap().find(itr->second);
+		if( itrRes->second.durationSecond == durationSec && ConvertI64Time(itrRes->second.startTime) == startTime ){
+			return true;
+		}
+	}
+	return false;
+}
+
+vector<DWORD> CReserveManager::GetSupportServiceTuner(WORD onid, WORD tsid, WORD sid) const
+{
+	//tunerManagerは排他制御の対象外
+	vector<DWORD> idList;
+	this->tunerManager.GetSupportServiceTuner(onid, tsid, sid, &idList);
+	return idList;
+}
+
+bool CReserveManager::GetTunerCh(DWORD tunerID, WORD onid, WORD tsid, WORD sid, DWORD* space, DWORD* ch) const
+{
+	return this->tunerManager.GetCh(tunerID, onid, tsid, sid, space, ch) != FALSE;
+}
+
+wstring CReserveManager::GetTunerBonFileName(DWORD tunerID) const
+{
+	wstring bonFileName;
+	this->tunerManager.GetBonFileName(tunerID, bonFileName);
+	return bonFileName;
+}
+
+bool CReserveManager::IsOpenTuner(DWORD tunerID) const
+{
+	CBlockLock lock(&this->managerLock);
+
+	map<DWORD, CTunerBankCtrl*>::const_iterator itr = this->tunerBankMap.find(tunerID);
+	return itr != this->tunerBankMap.end() && itr->second->GetState() != CTunerBankCtrl::TR_IDLE;
+}
+
+bool CReserveManager::SetNWTVCh(bool nwUdp, bool nwTcp, const SET_CH_INFO& chInfo, const vector<DWORD>& tunerIDList)
+{
+	CBlockLock lock(&this->managerLock);
+
+	for( map<DWORD, CTunerBankCtrl*>::const_iterator itr = this->tunerBankMap.begin(); itr != this->tunerBankMap.end(); itr++ ){
+		if( itr->second->GetState() == CTunerBankCtrl::TR_NWTV ){
+			//すでに起動しているので使えたら使う
+			if( this->tunerManager.IsSupportService(itr->first, chInfo.ONID, chInfo.TSID, chInfo.SID) ){
+				itr->second->SetNWTVCh(nwUdp, nwTcp, chInfo);
+				return true;
+			}
+			itr->second->CloseNWTV();
 			break;
 		}
 	}
-	return ret;
+	for( size_t i = 0; i < tunerIDList.size(); i++ ){
+		if( this->tunerManager.IsSupportService(tunerIDList[i], chInfo.ONID, chInfo.TSID, chInfo.SID) ){
+			map<DWORD, CTunerBankCtrl*>::const_iterator itr = this->tunerBankMap.find(tunerIDList[i]);
+			if( itr != this->tunerBankMap.end() && itr->second->SetNWTVCh(nwUdp, nwTcp, chInfo) ){
+				return true;
+			}
+		}
+	}
+	return false;
 }
 
-BOOL CReserveManager::ChkAddReserve(const RESERVE_DATA& chkData, WORD* chkStatus)
+bool CReserveManager::CloseNWTV()
 {
 	CBlockLock lock(&this->managerLock);
 
-	if( chkStatus == NULL ){
-		return FALSE;
-	}
-	if( ngAddResSrvCoop == TRUE ){
-		return FALSE;
-	}
-	BOOL ret = TRUE;
-
-	//同じ物あるかチェック
-	map<DWORD, CReserveInfo*>::iterator itrRes;
-	for( itrRes = this->reserveInfoMap.begin(); itrRes != this->reserveInfoMap.end(); itrRes++ ){
-		RESERVE_DATA data;
-		itrRes->second->GetData(&data);
-		if( data.originalNetworkID == chkData.originalNetworkID &&
-			data.transportStreamID == chkData.transportStreamID &&
-			data.serviceID == chkData.serviceID ){
-			if( chkData.eventID == 0xFFFF ){
-				__int64 chk1 = ConvertI64Time(data.startTime);
-				__int64 chk2 = ConvertI64Time(chkData.startTime);
-				if( chk1 == chk2 && data.durationSecond == chkData.durationSecond ){
-					if( data.recSetting.recMode == 5 ){
-						//無効のものあるので不可
-						*chkStatus = 0;
-					}else{
-						//同じ物あり
-						if(data.overlapMode == 0 ){
-							*chkStatus = 3;
-						}else{
-							*chkStatus = 0;
-						}
-					}
-					return TRUE;
-				}
-			}else{
-				if( chkData.eventID == data.eventID ){
-					if( data.recSetting.recMode == 5 ){
-						//無効のものあるので不可
-						*chkStatus = 0;
-					}else{
-						//同じ物あり
-						if(data.overlapMode == 0 ){
-							*chkStatus = 3;
-						}else{
-							*chkStatus = 0;
-						}
-					}
-					return TRUE;
-				}
-			}
+	for( map<DWORD, CTunerBankCtrl*>::const_iterator itr = this->tunerBankMap.begin(); itr != this->tunerBankMap.end(); itr++ ){
+		if( itr->second->GetState() == CTunerBankCtrl::TR_NWTV ){
+			itr->second->CloseNWTV();
+			return true;
 		}
 	}
-
-
-	CReserveInfo chkItem;
-	chkItem.SetData(chkData);
-
-	BANK_WORK_INFO item;
-	if( this->reloadBankMapAlgo == 3 ){
-		CreateWorkData(&chkItem, &item, FALSE, 0, 0);
-	}else{
-		CreateWorkData(&chkItem, &item, this->backPriorityFlag, 0, 0);
-	}
-
-
-	BOOL insert = FALSE;
-	map<DWORD, BANK_INFO*>::iterator itrBank;
-	//チューナー優先度より同一物理チャンネルで連続となるチューナーの使用を優先する
-	if( this->sameChPriorityFlag == TRUE ){
-		for( itrBank = this->bankMap.begin(); itrBank != this->bankMap.end(); itrBank++){
-			DWORD status = 0;
-			if( (chkData.recSetting.tunerID == 0 || chkData.recSetting.tunerID == itrBank->first) &&
-			    this->tunerManager.IsSupportService(itrBank->first, chkData.originalNetworkID, chkData.transportStreamID, chkData.serviceID) != FALSE ){
-				status = ChkInsertSameChStatus(itrBank->second, &item);
-			}
-			if( status == 1 ){
-				//問題なく追加可能
-				insert = TRUE;
-				*chkStatus = 1;
-				break;
-			}
-		}
-	}
-	if( insert == FALSE ){
-		for( itrBank = this->bankMap.begin(); itrBank != this->bankMap.end(); itrBank++){
-			DWORD status = 0;
-			if( (chkData.recSetting.tunerID == 0 || chkData.recSetting.tunerID == itrBank->first) &&
-			    this->tunerManager.IsSupportService(itrBank->first, chkData.originalNetworkID, chkData.transportStreamID, chkData.serviceID) != FALSE ){
-				status = ChkInsertStatus(itrBank->second, &item);
-			}
-			if( status == 1 ){
-				//問題なく追加可能
-				insert = TRUE;
-				*chkStatus = 1;
-				break;
-			}else if( status == 2 ){
-				//追加可能だが終了時間と開始時間の重なった予約あり
-				//仮追加
-				*chkStatus = 2;
-				insert = TRUE;
-				break;
-			}
-		}
-	}
-
-	return ret;
+	return false;
 }
 
-BOOL CReserveManager::IsFindRecEventInfo(const EPGDB_EVENT_INFO& info, WORD chkDay)
+bool CReserveManager::GetRecFilePath(DWORD reserveID, wstring& filePath, DWORD* ctrlID, DWORD* processID) const
 {
 	CBlockLock lock(&this->managerLock);
-	BOOL ret = FALSE;
+
+	for( map<DWORD, CTunerBankCtrl*>::const_iterator itr = this->tunerBankMap.begin(); itr != this->tunerBankMap.end(); itr++ ){
+		if( itr->second->GetRecFilePath(reserveID, filePath, ctrlID, processID) ){
+			return true;
+		}
+	}
+	return false;
+}
+
+bool CReserveManager::IsFindRecEventInfo(const EPGDB_EVENT_INFO& info, WORD chkDay) const
+{
+	CBlockLock lock(&this->managerLock);
+	bool ret = false;
 
 	CoInitialize(NULL);
-	{
+	try{
 		IRegExpPtr regExp;
 		regExp.CreateInstance(CLSID_RegExp);
 		if( regExp != NULL && info.shortInfo != NULL ){
@@ -3993,157 +1554,47 @@ BOOL CReserveManager::IsFindRecEventInfo(const EPGDB_EVENT_INFO& info, WORD chkD
 							eventName = (LPCWSTR)rpl == NULL ? L"" : (LPCWSTR)rpl;
 						}
 						if( infoEventName == eventName ){
-							ret = TRUE;
+							ret = true;
 							break;
 						}
 					}
 				}
 			}
 		}
+	}catch( _com_error& e ){
+		_OutputDebugString(L"%s\r\n", e.ErrorMessage());
 	}
 	CoUninitialize();
 
 	return ret;
 }
 
-void CReserveManager::ChgAutoAddNoRec(const EPGDB_EVENT_INFO& info)
+bool CReserveManager::ChgAutoAddNoRec(WORD onid, WORD tsid, WORD sid, WORD eid)
 {
 	CBlockLock lock(&this->managerLock);
 
-	map<DWORD, CReserveInfo*>::iterator itr;
-	for( itr = this->reserveInfoMap.begin(); itr != this->reserveInfoMap.end(); itr++ ){
-		RESERVE_DATA item;
-		itr->second->GetData(&item);
-		if( item.originalNetworkID == info.original_network_id &&
-			item.transportStreamID == info.transport_stream_id &&
-			item.serviceID == info.service_id &&
-			item.eventID == info.event_id
-			){
-				if( item.comment.find(L"EPG自動予約") != string::npos ){
-					item.recSetting.recMode = RECMODE_NO;
-					_ChgReserveData(item, FALSE);
-				}
+	vector<RESERVE_DATA> chgList;
+	ReCacheReserveText();
+
+	vector<pair<LONGLONG, DWORD>>::const_iterator itr = std::lower_bound(
+		this->reserveTextCache.begin(), this->reserveTextCache.end(), pair<LONGLONG, DWORD>(_Create64Key2(onid, tsid, sid, eid), 0));
+	for( ; itr != this->reserveTextCache.end() && itr->first == _Create64Key2(onid, tsid, sid, eid); itr++ ){
+		map<DWORD, RESERVE_DATA>::const_iterator itrRes = this->reserveText.GetMap().find(itr->second);
+		if( itrRes->second.recSetting.recMode != RECMODE_NO && itrRes->second.comment.compare(0, 7, L"EPG自動予約") == 0 ){
+			chgList.push_back(itrRes->second);
+			chgList.back().recSetting.recMode = RECMODE_NO;
 		}
 	}
-
-	return ;
+	return chgList.empty() == false && ChgReserveData(chgList);
 }
 
-BOOL CReserveManager::IsRecInfoChg()
+UINT WINAPI CReserveManager::WatchdogThread(LPVOID param)
 {
-	CBlockLock lock(&this->managerLock);
-	BOOL ret = TRUE;
-
-	ret = this->chgRecInfo;
-
-	this->chgRecInfo = FALSE;
-
-	return ret;
-}
-
-void CReserveManager::CreateDiskFreeSpace(
-	const vector<RESERVE_DATA>& chkReserve,
-	const wstring& defRecFolder,
-	const map<wstring, wstring>& protectFile,
-	const vector<wstring>& delFolderList,
-	const vector<wstring>& delExtList
-	)
-{
-	//ファイル削除可能なフォルダをドライブごとに仕分け
-	map<wstring, pair<ULONGLONG, vector<wstring>>> mountMap;
-	for( size_t i = 0; i < delFolderList.size(); i++ ){
-		wstring mountPath;
-		GetChkDrivePath(delFolderList[i], mountPath);
-		std::transform(mountPath.begin(), mountPath.end(), mountPath.begin(), toupper);
-		map<wstring, pair<ULONGLONG, vector<wstring>>>::iterator itr = mountMap.find(mountPath);
-		if( itr == mountMap.end() ){
-			pair<wstring, pair<ULONGLONG, vector<wstring>>> item;
-			item.first = mountPath;
-			item.second.first = 0;
-			itr = mountMap.insert(item).first;
-		}
-		itr->second.second.push_back(delFolderList[i]);
-	}
-
-	//直近で必要になりそうな空き領域を概算する
-	LONGLONG now = GetNowI64Time();
-	for( size_t i = 0; i < chkReserve.size(); i++ ){
-		if( chkReserve[i].recSetting.recMode != RECMODE_NO &&
-		    chkReserve[i].recSetting.recMode != RECMODE_VIEW &&
-		    now < ConvertI64Time(chkReserve[i].startTime) && ConvertI64Time(chkReserve[i].startTime) < now + 2*60*60*I64_1SEC ){
-			//録画開始2時間前までの予約
-			vector<wstring> recFolderList;
-			if( chkReserve[i].recSetting.recFolderList.empty() ){
-				//デフォルト
-				recFolderList.push_back(defRecFolder);
-			}else{
-				//複数指定あり
-				for( size_t j = 0; j < chkReserve[i].recSetting.recFolderList.size(); j++ ){
-					recFolderList.push_back(chkReserve[i].recSetting.recFolderList[j].recFolder);
-				}
-			}
-			for( size_t j = 0; j < recFolderList.size(); j++ ){
-				wstring mountPath;
-				GetChkDrivePath(recFolderList[j], mountPath);
-				std::transform(mountPath.begin(), mountPath.end(), mountPath.begin(), toupper);
-				map<wstring, pair<ULONGLONG, vector<wstring>>>::iterator itr = mountMap.find(mountPath);
-				if( itr != mountMap.end() ){
-					DWORD bitrate = 0;
-					_GetBitrate(chkReserve[i].originalNetworkID, chkReserve[i].transportStreamID, chkReserve[i].serviceID, &bitrate);
-					itr->second.first += (ULONGLONG)(bitrate / 8 * 1000) * chkReserve[i].durationSecond;
-				}
-			}
+	CReserveManager* sys = (CReserveManager*)param;
+	while( WaitForSingleObject(sys->watchdogStopEvent, 2000) == WAIT_TIMEOUT ){
+		for( map<DWORD, CTunerBankCtrl*>::const_iterator itr = sys->tunerBankMap.begin(); itr != sys->tunerBankMap.end(); itr++ ){
+			itr->second->Watch();
 		}
 	}
-
-	//ドライブレベルでのチェック
-	map<wstring, pair<ULONGLONG, vector<wstring>>>::const_iterator itr;
-	for( itr = mountMap.begin(); itr != mountMap.end(); itr++ ){
-		ULARGE_INTEGER freeBytes;
-		if( itr->second.first > 0 && GetDiskFreeSpaceEx(itr->first.c_str(), &freeBytes, NULL, NULL) != FALSE && freeBytes.QuadPart < itr->second.first ){
-			//ドライブにある古いTS順に必要なだけ消す
-			LONGLONG needFreeSize = itr->second.first - freeBytes.QuadPart;
-			multimap<LONGLONG, pair<ULONGLONG, wstring>> tsFileMap;
-			for( size_t i = 0; i < itr->second.second.size(); i++ ){
-				wstring delFolder = itr->second.second[i];
-				ChkFolderPath(delFolder);
-				WIN32_FIND_DATA findData;
-				HANDLE hFind = FindFirstFile((delFolder + L"\\*.ts").c_str(), &findData);
-				if( hFind != INVALID_HANDLE_VALUE ){
-					do{
-						if( (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0 && IsExt(findData.cFileName, L".ts") != FALSE ){
-							pair<LONGLONG, pair<ULONGLONG, wstring>> item;
-							item.first = (LONGLONG)findData.ftCreationTime.dwHighDateTime << 32 | findData.ftCreationTime.dwLowDateTime;
-							item.second.first = (ULONGLONG)findData.nFileSizeHigh << 32 | findData.nFileSizeLow;
-							item.second.second = delFolder + L"\\" + findData.cFileName;
-							tsFileMap.insert(item);
-						}
-					}while( FindNextFile(hFind, &findData) );
-					FindClose(hFind);
-				}
-			}
-			while( needFreeSize > 0 && tsFileMap.empty() == false ){
-				wstring delPath = tsFileMap.begin()->second.second;
-				wstring delPathUpper = delPath;
-				std::transform(delPathUpper.begin(), delPathUpper.end(), delPathUpper.begin(), toupper);
-				map<wstring, wstring>::const_iterator itrP = protectFile.find(delPathUpper);
-				if( itrP != protectFile.end() ){
-					_OutputDebugString(L"★No Delete(Protected) : %s", delPath.c_str());
-				}else{
-					DeleteFile(delPath.c_str());
-					needFreeSize -= tsFileMap.begin()->second.first;
-					_OutputDebugString(L"★Auto Delete2 : %s", delPath.c_str());
-					for( size_t i = 0 ; i < delExtList.size(); i++ ){
-						wstring delFolder;
-						wstring delTitle;
-						GetFileFolder(delPath, delFolder);
-						GetFileTitle(delPath, delTitle);
-						DeleteFile((delFolder + L"\\" + delTitle + delExtList[i]).c_str());
-						_OutputDebugString(L"★Auto Delete2 : %s", (delFolder + L"\\" + delTitle + delExtList[i]).c_str());
-					}
-				}
-				tsFileMap.erase(tsFileMap.begin());
-			}
-		}
-	}
+	return 0;
 }

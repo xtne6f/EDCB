@@ -1,8 +1,14 @@
 #pragma once
-#include "EpgTimerSrvDef.h"
 #include "../../Common/StructDef.h"
-#include "../../Common/SendCtrlCmd.h"
 #include "NotifyManager.h"
+
+typedef struct _BAT_WORK_INFO{
+	wstring batFilePath;
+	BYTE suspendMode;
+	BYTE rebootFlag;
+	wstring addKey;
+	REC_FILE_INFO recFileInfo;
+}BAT_WORK_INFO;
 
 class CBatManager
 {
@@ -12,15 +18,15 @@ public:
 
 	void AddBatWork(const BAT_WORK_INFO& info);
 
-	DWORD GetWorkCount();
-	BOOL IsWorking();
+	DWORD GetWorkCount() const;
+	BOOL IsWorking() const;
 
 	void StartWork();
 	void PauseWork();
 
-	BOOL GetLastWorkSuspend(BYTE* suspendMode, BYTE* rebootFlag);
+	BOOL PopLastWorkSuspend(BYTE* suspendMode, BYTE* rebootFlag);
 protected:
-	CRITICAL_SECTION managerLock;
+	mutable CRITICAL_SECTION managerLock;
 
 	CNotifyManager& notifyManager;
 
