@@ -149,6 +149,8 @@ private:
 	DWORD tunerPid;
 	WORD tunerONID;
 	WORD tunerTSID;
+	bool tunerChLocked;
+	bool tunerResetLock;
 	DWORD tunerChChgTick;
 	//EPG取得中かネットワークモードか否か
 	TR_STATE specialState;

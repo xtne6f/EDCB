@@ -140,6 +140,10 @@ bool CTunerBankCtrl::DelReserve(DWORD reserveID)
 					ctrlCmd.SendViewDeleteCtrl(itr->second.ctrlID[i]);
 				}
 			}
+			if( itr->second.state == TR_REC ){
+				//録画終了に伴ってGUIキープが解除されたかもしれない
+				this->tunerResetLock = true;
+			}
 		}
 		this->reserveMap.erase(itr);
 		return true;
@@ -192,9 +196,12 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check()
 
 	CWatchBlock watchBlock(&this->watchContext);
 	CSendCtrlCmd ctrlCmd;
+	if( this->hTunerProcess ){
+		//チューナ起動時にはこれを再度呼ぶこと
+		ctrlCmd.SetPipeSetting(CMD2_VIEW_CTRL_WAIT_CONNECT, CMD2_VIEW_CTRL_PIPE, this->tunerPid);
+	}
 
 	if( this->specialState == TR_EPGCAP ){
-		ctrlCmd.SetPipeSetting(CMD2_VIEW_CTRL_WAIT_CONNECT, CMD2_VIEW_CTRL_PIPE, this->tunerPid);
 		DWORD status;
 		if( ctrlCmd.SendViewGetStatus(&status) == CMD_SUCCESS ){
 			if( status != VIEW_APP_ST_GET_EPG ){
@@ -212,7 +219,6 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check()
 	}else if( this->specialState == TR_NWTV ){
 		//ネットワークモードではGUIキープできないのでBonDriverが変更されるかもしれない
 		//BonDriverが変更されたチューナはこのバンクの管理下に置けないので、ネットワークモードを解除する
-		ctrlCmd.SetPipeSetting(CMD2_VIEW_CTRL_WAIT_CONNECT, CMD2_VIEW_CTRL_PIPE, this->tunerPid);
 		wstring bonDriver;
 		if( ctrlCmd.SendViewGetBonDrivere(&bonDriver) == CMD_SUCCESS && CompareNoCase(bonDriver, this->bonFileName) != 0 ){
 			if( ctrlCmd.SendViewSetID(-1) == CMD_SUCCESS ){
@@ -228,13 +234,37 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check()
 			this->notifyManager.AddNotifyMsg(NOTIFY_UPDATE_REC_END,
 				L"BonDriverが変更されたためNetworkモードを解除しました\r\n変更したBonDriverに録画の予定がないか注意してください");
 		}
+	}else if( this->hTunerProcess && this->tunerChLocked == false ){
+		//GUIキープされていないのでBonDriverが変更されるかもしれない
+		wstring bonDriver;
+		if( ctrlCmd.SendViewGetBonDrivere(&bonDriver) == CMD_SUCCESS && CompareNoCase(bonDriver, this->bonFileName) != 0 ){
+			if( ctrlCmd.SendViewSetID(-1) == CMD_SUCCESS ){
+				CBlockLock lock(&this->watchContext.lock);
+				CloseHandle(this->hTunerProcess);
+				this->hTunerProcess = NULL;
+			}else{
+				//ID剥奪に失敗したので消えてもらうしかない
+				CloseTuner();
+			}
+			//TR_IDLEでない全予約を葬る
+			for( map<DWORD, TUNER_RESERVE>::const_iterator itr = this->reserveMap.begin(); itr != this->reserveMap.end(); ){
+				if( itr->second.state != TR_IDLE ){
+					CHECK_RESULT ret;
+					ret.type = CHECK_ERR_REC;
+					ret.reserveID = itr->first;
+					retList.push_back(ret);
+					this->reserveMap.erase(itr++);
+				}else{
+					itr++;
+				}
+			}
+		}
 	}
 
 	this->delayTime = 0;
 	this->epgCapDelayTime = 0;
 	if( this->hTunerProcess && this->specialState != TR_NWTV ){
 		//PC時計との誤差取得
-		ctrlCmd.SetPipeSetting(CMD2_VIEW_CTRL_WAIT_CONNECT, CMD2_VIEW_CTRL_PIPE, this->tunerPid);
 		int delaySec;
 		if( ctrlCmd.SendViewGetDelay(&delaySec) == CMD_SUCCESS ){
 			//誤った値を掴んでおかしなことにならないよう、EPG取得中の値は状態遷移の参考にしない
@@ -248,6 +278,8 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check()
 	__int64 now = GetNowI64Time() + this->delayTime;
 
 	//終了時間を過ぎた予約を回収し、TR_IDLE->TR_READY以外の遷移をする
+	vector<pair<__int64, DWORD>> idleList;
+	bool ngResetLock = false;
 	for( map<DWORD, TUNER_RESERVE>::iterator itrRes = this->reserveMap.begin(); itrRes != this->reserveMap.end(); ){
 		TUNER_RESERVE& r = itrRes->second;
 		CHECK_RESULT ret;
@@ -257,10 +289,14 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check()
 			if( r.startTime + r.endMargin + r.durationSecond * I64_1SEC < now ){
 				ret.type = CHECK_ERR_PASS;
 			}
+			//開始順が秒精度なので、前後関係を確実にするため開始時間は必ず秒精度で扱う
+			else if( (r.startTime - r.startMargin - this->recWakeTime) / I64_1SEC < now / I64_1SEC ){
+				//録画開始recWakeTime前～
+				idleList.push_back(std::make_pair(r.startOrder, r.reserveID));
+			}
 			break;
 		case TR_READY:
 			if( r.startTime + r.endMargin + r.durationSecond * I64_1SEC < now ){
-				ctrlCmd.SetPipeSetting(CMD2_VIEW_CTRL_WAIT_CONNECT, CMD2_VIEW_CTRL_PIPE, this->tunerPid);
 				for( int i = 0; i < 2; i++ ){
 					if( r.ctrlID[i] != 0 ){
 						ctrlCmd.SendViewDeleteCtrl(r.ctrlID[i]);
@@ -276,6 +312,23 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check()
 					r.notStartHead = r.startTime - r.startMargin + 60 * I64_1SEC < now;
 					r.savedPgInfo = false;
 					r.state = TR_REC;
+					if( r.recMode == RECMODE_VIEW ){
+						//視聴予約でない予約が1つでもあれば「視聴モード」にしない
+						map<DWORD, TUNER_RESERVE>::const_iterator itr;
+						for( itr = this->reserveMap.begin(); itr != this->reserveMap.end(); itr++ ){
+							if( itr->second.state != TR_IDLE && itr->second.recMode != RECMODE_VIEW ){
+								break;
+							}
+						}
+						if( itr == this->reserveMap.end() ){
+							//「視聴モード」にするとGUIキープが解除されてしまうためチャンネルを把握することはできない
+							ctrlCmd.SendViewSetStandbyRec(2);
+							this->tunerChLocked = false;
+							if( this->recView ){
+								ctrlCmd.SendViewExecViewApp();
+							}
+						}
+					}
 				}else{
 					//開始できなかった
 					ret.type = CHECK_ERR_RECSTART;
@@ -285,11 +338,11 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check()
 		case TR_REC:
 			{
 				//ステータス確認
-				ctrlCmd.SetPipeSetting(CMD2_VIEW_CTRL_WAIT_CONNECT, CMD2_VIEW_CTRL_PIPE, this->tunerPid);
 				DWORD status;
 				if( r.recMode != RECMODE_VIEW && ctrlCmd.SendViewGetStatus(&status) == CMD_SUCCESS && status != VIEW_APP_ST_REC ){
 					//キャンセルされた？
 					ret.type = CHECK_ERR_REC;
+					this->tunerResetLock = true;
 				}else if( r.startTime + r.endMargin + r.durationSecond * I64_1SEC < now ){
 					ret.type = CHECK_ERR_REC;
 					ret.drops = 0;
@@ -325,6 +378,8 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check()
 							isMainCtrl = false;
 						}
 					}
+					//録画終了に伴ってGUIキープが解除されたかもしれない
+					this->tunerResetLock = true;
 				}else{
 					//番組情報確認
 					if( r.savedPgInfo == false && r.recMode != RECMODE_VIEW ){
@@ -353,6 +408,8 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check()
 							}
 						}
 					}
+					//まだ録画中の予約があるのでGUIキープを再設定してはいけない
+					ngResetLock = true;
 				}
 			}
 			break;
@@ -367,16 +424,6 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check()
 	}
 
 	//TR_IDLE->TR_READYの遷移を待つ予約を開始順に並べる
-	vector<pair<__int64, DWORD>> idleList;
-	for( map<DWORD, TUNER_RESERVE>::const_iterator itr = this->reserveMap.begin(); itr != this->reserveMap.end(); itr++ ){
-		if( itr->second.state == TR_IDLE ){
-			//開始順が秒精度なので、前後関係を確実にするため開始時間は必ず秒精度で扱う
-			if( (itr->second.startTime - itr->second.startMargin - this->recWakeTime) / I64_1SEC < now / I64_1SEC ){
-				//録画開始recWakeTime前～
-				idleList.push_back(std::make_pair(itr->second.startOrder, itr->second.reserveID));
-			}
-		}
-	}
 	std::sort(idleList.begin(), idleList.end());
 
 	//TR_IDLE->TR_READYの遷移をする
@@ -398,8 +445,11 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check()
 			    CloseOtherTuner() && OpenTuner(this->recMinWake, nwUdpTcp, nwUdpTcp, true, &initCh) ){
 				this->tunerONID = r.onid;
 				this->tunerTSID = r.tsid;
+				this->tunerChLocked = true;
+				this->tunerResetLock = false;
 				this->tunerChChgTick = GetTickCount();
 				this->notifyManager.AddNotifyMsg(NOTIFY_UPDATE_PRE_REC_START, this->bonFileName);
+				ctrlCmd.SetPipeSetting(CMD2_VIEW_CTRL_WAIT_CONNECT, CMD2_VIEW_CTRL_PIPE, this->tunerPid);
 			}else{
 				//起動できなかった
 				ret.type = CHECK_ERR_OPEN;
@@ -418,31 +468,16 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check()
 				break;
 			}else if( this->specialState == TR_NWTV ){
 				//ネットワークモードを解除
-				ctrlCmd.SetPipeSetting(CMD2_VIEW_CTRL_WAIT_CONNECT, CMD2_VIEW_CTRL_PIPE, this->tunerPid);
 				wstring bonDriver;
 				DWORD status;
 				if( ctrlCmd.SendViewGetBonDrivere(&bonDriver) == CMD_SUCCESS && CompareNoCase(bonDriver, this->bonFileName) == 0 &&
 				    ctrlCmd.SendViewGetStatus(&status) == CMD_SUCCESS && (status == VIEW_APP_ST_NORMAL || status == VIEW_APP_ST_ERR_CH_CHG) ){
-					//チャンネル変更
-					SET_CH_INFO chgCh;
-					chgCh.ONID = r.onid;
-					chgCh.TSID = r.tsid;
-					chgCh.SID = r.sid;
-					chgCh.useSID = TRUE;
-					chgCh.useBonCh = FALSE;
-					//「予約録画待機中」
-					ctrlCmd.SendViewSetStandbyRec(1);
-					if( ctrlCmd.SendViewSetCh(&chgCh) == CMD_SUCCESS ){
-						//プロセスを引き継ぐ
-						this->tunerONID = r.onid;
-						this->tunerTSID = r.tsid;
-						this->tunerChChgTick = GetTickCount();
-						this->specialState = TR_IDLE;
-					}else{
-						//ネットワークモード終了(遷移中断)
-						CloseNWTV();
-						break;
-					}
+					//プロセスを引き継ぐ
+					this->tunerONID = r.onid;
+					this->tunerTSID = r.tsid;
+					this->tunerChLocked = false;
+					this->tunerResetLock = false;
+					this->specialState = TR_IDLE;
 				}else{
 					//ネットワークモード終了(遷移中断)
 					CloseNWTV();
@@ -459,7 +494,6 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check()
 				}
 				if( itr == this->reserveMap.end() ){
 					//TR_IDLEでない全予約は自分よりも弱いので葬る
-					ctrlCmd.SetPipeSetting(CMD2_VIEW_CTRL_WAIT_CONNECT, CMD2_VIEW_CTRL_PIPE, this->tunerPid);
 					for( itr = this->reserveMap.begin(); itr != this->reserveMap.end(); ){
 						if( itr->second.state != TR_IDLE ){
 							CHECK_RESULT retOther;
@@ -500,6 +534,14 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check()
 							itr++;
 						}
 					}
+					this->tunerONID = r.onid;
+					this->tunerTSID = r.tsid;
+					this->tunerChLocked = false;
+					this->tunerResetLock = false;
+				}
+			}
+			if( this->tunerONID == r.onid && this->tunerTSID == r.tsid ){
+				if( this->tunerChLocked == false ){
 					//チャンネル変更
 					SET_CH_INFO chgCh;
 					chgCh.ONID = r.onid;
@@ -510,19 +552,19 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check()
 					//「予約録画待機中」
 					ctrlCmd.SendViewSetStandbyRec(1);
 					if( ctrlCmd.SendViewSetCh(&chgCh) == CMD_SUCCESS ){
-						this->tunerONID = r.onid;
-						this->tunerTSID = r.tsid;
+						this->tunerChLocked = true;
+						this->tunerResetLock = false;
 						this->tunerChChgTick = GetTickCount();
 					}
 				}
-			}
-			if( this->tunerONID == r.onid && this->tunerTSID == r.tsid ){
-				//同一チャンネルなので録画制御を作成できる
-				if( CreateCtrl(&r.ctrlID[0], &r.ctrlID[1], r) ){
-					r.state = TR_READY;
-				}else{
-					//作成できなかった
-					ret.type = CHECK_ERR_CTRL;
+				if( this->tunerChLocked ){
+					//同一チャンネルなので録画制御を作成できる
+					if( CreateCtrl(&r.ctrlID[0], &r.ctrlID[1], r) ){
+						r.state = TR_READY;
+					}else{
+						//作成できなかった
+						ret.type = CHECK_ERR_CTRL;
+					}
 				}
 			}
 		}
@@ -536,6 +578,13 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check()
 	if( IsNeedOpenTuner() == false ){
 		//チューナが必要なくなった
 		CloseTuner();
+	}
+	if( this->hTunerProcess && this->specialState == TR_IDLE && this->tunerResetLock ){
+		if( ngResetLock == false ){
+			//「予約録画待機中」
+			ctrlCmd.SendViewSetStandbyRec(1);
+		}
+		this->tunerResetLock = false;
 	}
 	return retList;
 }
@@ -684,16 +733,11 @@ bool CTunerBankCtrl::RecStart(const TUNER_RESERVE& reserve, __int64 now) const
 	if( this->hTunerProcess == NULL ){
 		return false;
 	}
-	CSendCtrlCmd ctrlCmd;
-	ctrlCmd.SetPipeSetting(CMD2_VIEW_CTRL_WAIT_CONNECT, CMD2_VIEW_CTRL_PIPE, this->tunerPid);
 	if( reserve.recMode == RECMODE_VIEW ){
-		//「視聴モード」
-		ctrlCmd.SendViewSetStandbyRec(2);
-		if( this->recView ){
-			ctrlCmd.SendViewExecViewApp();
-		}
 		return true;
 	}
+	CSendCtrlCmd ctrlCmd;
+	ctrlCmd.SetPipeSetting(CMD2_VIEW_CTRL_WAIT_CONNECT, CMD2_VIEW_CTRL_PIPE, this->tunerPid);
 	bool isMainCtrl = true;
 	for( int i = 0; i < 2; i++ ){
 		if( reserve.ctrlID[i] != 0 ){
@@ -888,7 +932,8 @@ bool CTunerBankCtrl::SearchEpgInfo(WORD sid, WORD eid, EPGDB_EVENT_INFO* resVal)
 int CTunerBankCtrl::GetEventPF(WORD sid, bool pfNextFlag, EPGDB_EVENT_INFO* resVal) const
 {
 	//チャンネル変更を要求してから最初のEIT[p/f]が届く妥当な時間だけ待つ
-	if( this->hTunerProcess && this->specialState == TR_IDLE && GetTickCount() - this->tunerChChgTick > 8000 ){
+	//TODO: 視聴予約中(=GUIキープされていないとき)にチャンネル変更されると最新の情報でなくなる可能性がある。現仕様では解決策なし
+	if( this->hTunerProcess && this->specialState == TR_IDLE && (this->tunerChLocked == false || GetTickCount() - this->tunerChChgTick > 8000) ){
 		CWatchBlock watchBlock(&this->watchContext);
 		CSendCtrlCmd ctrlCmd;
 		ctrlCmd.SetPipeSetting(CMD2_VIEW_CTRL_WAIT_CONNECT, CMD2_VIEW_CTRL_PIPE, this->tunerPid);
@@ -899,7 +944,7 @@ int CTunerBankCtrl::GetEventPF(WORD sid, bool pfNextFlag, EPGDB_EVENT_INFO* resV
 		val.pfNextFlag = pfNextFlag;
 		DWORD ret = ctrlCmd.SendViewGetEventPF(&val, resVal);
 		//最初のTOTが届くまでは、あるのに消える可能性がある
-		return ret == CMD_SUCCESS ? 0 : ret == CMD_ERR && GetTickCount() - this->tunerChChgTick > 15000 ? 1 : 2;
+		return ret == CMD_SUCCESS ? 0 : ret == CMD_ERR && (this->tunerChLocked == false || GetTickCount() - this->tunerChChgTick > 15000) ? 1 : 2;
 	}
 	return 2;
 }
