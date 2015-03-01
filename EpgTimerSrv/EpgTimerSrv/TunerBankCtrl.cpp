@@ -86,7 +86,10 @@ bool CTunerBankCtrl::ChgCtrlReserve(TUNER_RESERVE* reserve)
 		reserve->onid = save.onid;
 		reserve->tsid = save.tsid;
 		reserve->sid = save.sid;
-		reserve->eid = save.eid;
+		//プログラム予約への変更のみ認める
+		if( reserve->eid != 0xFFFF ){
+			reserve->eid = save.eid;
+		}
 		reserve->recMode = save.recMode;
 		reserve->priority = save.priority;
 		reserve->enableCaption = save.enableCaption;

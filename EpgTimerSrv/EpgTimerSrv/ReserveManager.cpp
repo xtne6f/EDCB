@@ -418,7 +418,6 @@ bool CReserveManager::ChgReserveData(const vector<RESERVE_DATA>& reserveList, bo
 				    r.originalNetworkID != itr->second.originalNetworkID ||
 				    r.transportStreamID != itr->second.transportStreamID ||
 				    r.serviceID != itr->second.serviceID ||
-				    r.eventID != itr->second.eventID ||
 				    ConvertI64Time(r.startTime) != ConvertI64Time(itr->second.startTime) ||
 				    r.durationSecond != itr->second.durationSecond ||
 				    r.recSetting.recMode != itr->second.recSetting.recMode ||
