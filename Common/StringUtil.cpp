@@ -220,80 +220,14 @@ void ChkFolderPath(wstring& strPath)
 	}
 }
 
-void ChkFileName(string& strPath)
-{
-	if( strPath.empty() == true ){
-		return ;
-	}
-	Replace(strPath, "\\","Åè");
-	Replace(strPath, "/","Å^");
-	Replace(strPath, ":","ÅF");
-	Replace(strPath, "*","Åñ");
-	Replace(strPath, "?","ÅH");
-	Replace(strPath, "\"","Åh");
-	Replace(strPath, "<","ÅÉ");
-	Replace(strPath, ">","ÅÑ");
-	Replace(strPath, "|","Åb");
-}
-
-void ChkFileName(wstring& strPath)
-{
-	if( strPath.empty() == true ){
-		return ;
-	}
-	Replace(strPath, L"\\",L"Åè");
-	Replace(strPath, L"/",L"Å^");
-	Replace(strPath, L":",L"ÅF");
-	Replace(strPath, L"*",L"Åñ");
-	Replace(strPath, L"?",L"ÅH");
-	Replace(strPath, L"\"",L"Åh");
-	Replace(strPath, L"<",L"ÅÉ");
-	Replace(strPath, L">",L"ÅÑ");
-	Replace(strPath, L"|",L"Åb");
-}
-
 int CompareNoCase(const string& str1, const string& str2)
 {
-	DWORD dwSize1 = (DWORD)str1.length()+1;
-	DWORD dwSize2 = (DWORD)str2.length()+1;
-
-	char* szBuff1 = new char[dwSize1];
-	char* szBuff2 = new char[dwSize2];
-
-	strcpy_s(szBuff1, dwSize1, str1.c_str());
-	strcpy_s(szBuff2, dwSize2, str2.c_str());
-
-	_strlwr_s(szBuff1, dwSize1);
-	_strlwr_s(szBuff2, dwSize2);
-
-	int iRet = string(szBuff1).compare(szBuff2);
-
-	delete[] szBuff1;
-	delete[] szBuff2;
-
-	return iRet;
+	return _stricmp(str1.c_str(), str2.c_str());
 }
 
 int CompareNoCase(const wstring& str1, const wstring& str2)
 {
-	DWORD dwSize1 = (DWORD)str1.length()+1;
-	DWORD dwSize2 = (DWORD)str2.length()+1;
-
-	WCHAR* szBuff1 = new WCHAR[dwSize1];
-	WCHAR* szBuff2 = new WCHAR[dwSize2];
-
-	wcscpy_s(szBuff1, dwSize1, str1.c_str());
-	wcscpy_s(szBuff2, dwSize2, str2.c_str());
-
-	_wcslwr_s(szBuff1, dwSize1);
-	_wcslwr_s(szBuff2, dwSize2);
-
-	int iRet = wstring(szBuff1).compare(szBuff2);
-
-	delete[] szBuff1;
-	delete[] szBuff2;
-
-	return iRet;
+	return _wcsicmp(str1.c_str(), str2.c_str());
 }
 
 BOOL UrlDecode(LPCSTR src, DWORD srcSize, string& dest)
@@ -305,7 +239,7 @@ BOOL UrlDecode(LPCSTR src, DWORD srcSize, string& dest)
 	string sjis;
 	for( DWORD i=0; i<srcSize; i++ ){
 		if( src[i] == '%' ){
-			if( i+2 > srcSize ){
+			if( i+2 >= srcSize ){
 				break;
 			}
 			char tmp[3]="";
@@ -333,85 +267,18 @@ BOOL UrlDecode(LPCSTR src, DWORD srcSize, string& dest)
 	return TRUE;
 }
 
-BOOL UrlDecode(LPCWSTR src, DWORD srcSize, wstring& dest)
-{
-	if( src == NULL ){
-		return FALSE;
-	}
-
-	string sjis;
-	for( DWORD i=0; i<srcSize; i++ ){
-		if( src[i] == '%' ){
-			if( i+2 > srcSize ){
-				break;
-			}
-			WCHAR tmp[3]=L"";
-			tmp[0] = (char)src[i+1];
-			tmp[1] = (char)src[i+2];
-
-			WCHAR *endstr;
-			char tmp2[2]="";
-			tmp2[0] = (char)wcstol(tmp, &endstr, 16);
-			sjis += tmp2;
-
-			i+=2;
-		}else if( src[i] == '+' ){
-			sjis += " ";
-		}else if( src[i] == '\0' ){
-			break;
-		}else{
-			char tmp[2]="";
-			tmp[0] = (char)src[i];
-			sjis += tmp;
-		}
-	}
-
-	int iLen = MultiByteToWideChar( 932, 0, sjis.c_str(), -1, NULL, 0 );
-	WCHAR* pwszBuff = new WCHAR[iLen+1];
-	ZeroMemory(pwszBuff, sizeof(WCHAR)*(iLen+1));
-	MultiByteToWideChar( 932, 0, sjis.c_str(), -1, pwszBuff, iLen );
-
-	dest = pwszBuff;
-	
-	delete[] pwszBuff;
-
-	return TRUE;
-}
-
 void Trim(string& strBuff)
 {
-	while(1){
-		int iPos = (int)strBuff.find(" ");
-		if( iPos != 0 ){
-			break;
-		}
-		strBuff.erase(0, 1);
-	}
-	while(1){
-		int iPos = (int)strBuff.rfind(" ");
-		if( iPos != strBuff.size()-1 || iPos < 0){
-			break;
-		}
-		strBuff.erase(iPos, 1);
-	}
+	string::size_type pos = strBuff.find_last_not_of(' ');
+	strBuff.erase(pos == string::npos ? 0 : pos + 1);
+	strBuff.erase(0, strBuff.find_first_not_of(' '));
 }
 
 void Trim(wstring& strBuff)
 {
-	while(1){
-		int iPos = (int)strBuff.find(L" ");
-		if( iPos != 0 ){
-			break;
-		}
-		strBuff.erase(0, 1);
-	}
-	while(1){
-		int iPos = (int)strBuff.rfind(L" ");
-		if( iPos != strBuff.size()-1 || iPos < 0){
-			break;
-		}
-		strBuff.erase(iPos, 1);
-	}
+	wstring::size_type pos = strBuff.find_last_not_of(L' ');
+	strBuff.erase(pos == wstring::npos ? 0 : pos + 1);
+	strBuff.erase(0, strBuff.find_first_not_of(L' '));
 }
 
 string Tolower(const string& src)
