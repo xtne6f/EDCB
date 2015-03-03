@@ -118,39 +118,6 @@ BOOL _CreateDirectory( LPCTSTR lpPathName )
 	return bRet;
 }
 
-HANDLE _CreateFile( LPCTSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile )
-{
-	SECURITY_DESCRIPTOR sd;
-	SECURITY_ATTRIBUTES sa;
-	 
-	memset(&sd,0,sizeof(sd));
-	InitializeSecurityDescriptor(&sd,SECURITY_DESCRIPTOR_REVISION);
-	SetSecurityDescriptorDacl(&sd, TRUE, NULL, FALSE);
-	memset(&sa,0,sizeof(sa));
-	sa.nLength=sizeof(sa);
-	sa.lpSecurityDescriptor=&sd;
-/*
-	PACL                pDacl;
-	EXPLICIT_ACCESS     explicitAccess[3];
-	SECURITY_ATTRIBUTES sa;
-	SECURITY_DESCRIPTOR sd;
-
-	InitializeSecurityDescriptor(&sd, SECURITY_DESCRIPTOR_REVISION);
-
-	BuildExplicitAccessWithName(&explicitAccess[0], TEXT("SYSTEM"), FILE_ALL_ACCESS, GRANT_ACCESS, 0);
-	BuildExplicitAccessWithName(&explicitAccess[1], TEXT("Administrators"), FILE_ALL_ACCESS, GRANT_ACCESS, 0);
-	BuildExplicitAccessWithName(&explicitAccess[2], TEXT("Everyone"), FILE_ALL_ACCESS, GRANT_ACCESS, 0);
-	SetEntriesInAcl(3, explicitAccess, NULL, &pDacl);
-
-	SetSecurityDescriptorDacl(&sd, TRUE, pDacl, FALSE);
-
-	sa.nLength              = sizeof(SECURITY_ATTRIBUTES);
-	sa.lpSecurityDescriptor = &sd;
-	sa.bInheritHandle       = FALSE;
-*/
-	return ::CreateFile( lpFileName, dwDesiredAccess, dwShareMode, &sa, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile );
-}
-
 HANDLE _CreateDirectoryAndFile( LPCTSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, LPSECURITY_ATTRIBUTES lpsa, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile )
 {
 	HANDLE hFile =  ::CreateFile( lpFileName, dwDesiredAccess, dwShareMode, lpsa, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile );
