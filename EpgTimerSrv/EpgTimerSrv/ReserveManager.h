@@ -124,7 +124,7 @@ private:
 
 	map<DWORD, CTunerBankCtrl*> tunerBankMap;
 	//reserveTextをONID<<48|TSID<<32|SID<<16|EID,予約IDでソートした検索用キャッシュ
-	mutable vector<pair<LONGLONG, DWORD>> reserveTextCache;
+	mutable vector<pair<ULONGLONG, DWORD>> reserveTextCache;
 
 	DWORD ngCapTimeSec;
 	DWORD ngCapTunerTimeSec;

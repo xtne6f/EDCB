@@ -855,15 +855,15 @@ void CReserveManager::CheckTuijyuTuner()
 		vector<RESERVE_DATA> chgList;
 		ReCacheReserveText();
 
-		vector<pair<LONGLONG, DWORD>>::const_iterator itrCache = std::lower_bound(
-			this->reserveTextCache.begin(), this->reserveTextCache.end(), pair<LONGLONG, DWORD>(_Create64Key2(onid, tsid, 0, 0), 0));
-		for( ; itrCache != this->reserveTextCache.end() && itrCache->first <= _Create64Key2(onid, tsid, 0xFFFF, 0xFFFF); ){
+		vector<pair<ULONGLONG, DWORD>>::const_iterator itrCache = std::lower_bound(
+			this->reserveTextCache.begin(), this->reserveTextCache.end(), pair<ULONGLONG, DWORD>(_Create64Key2(onid, tsid, 0, 0), 0));
+		for( ; itrCache != this->reserveTextCache.end() && itrCache->first <= (ULONGLONG)_Create64Key2(onid, tsid, 0xFFFF, 0xFFFF); ){
 			//ãNìÆíÜÇÃÉ`ÉÉÉìÉlÉãÇ…àÍívÇ∑ÇÈó\ñÒÇEIT[p/f]Ç∆è∆çáÇ∑ÇÈ
 			WORD sid = itrCache->first >> 16 & 0xFFFF;
 			EPGDB_EVENT_INFO resPfVal[2];
 			int nowSuccess = itrBank->second->GetEventPF(sid, false, &resPfVal[0]);
 			int nextSuccess = itrBank->second->GetEventPF(sid, true, &resPfVal[1]);
-			for( ; itrCache != this->reserveTextCache.end() && itrCache->first <= _Create64Key2(onid, tsid, sid, 0xFFFF); itrCache++ ){
+			for( ; itrCache != this->reserveTextCache.end() && itrCache->first <= (ULONGLONG)_Create64Key2(onid, tsid, sid, 0xFFFF); itrCache++ ){
 				if( std::find(chgIDList.begin(), chgIDList.end(), itrCache->second) != chgIDList.end() ){
 					//Ç±ÇÃó\ñÒÇÕÇ∑Ç≈Ç…ïœçXçœÇ›
 					continue;
@@ -1422,9 +1422,9 @@ bool CReserveManager::IsFindReserve(WORD onid, WORD tsid, WORD sid, WORD eid) co
 
 	ReCacheReserveText();
 
-	vector<pair<LONGLONG, DWORD>>::const_iterator itr = std::lower_bound(
-		this->reserveTextCache.begin(), this->reserveTextCache.end(), pair<LONGLONG, DWORD>(_Create64Key2(onid, tsid, sid, eid), 0));
-	return itr != this->reserveTextCache.end() && itr->first == _Create64Key2(onid, tsid, sid, eid);
+	vector<pair<ULONGLONG, DWORD>>::const_iterator itr = std::lower_bound(
+		this->reserveTextCache.begin(), this->reserveTextCache.end(), pair<ULONGLONG, DWORD>(_Create64Key2(onid, tsid, sid, eid), 0));
+	return itr != this->reserveTextCache.end() && itr->first == (ULONGLONG)_Create64Key2(onid, tsid, sid, eid);
 }
 
 bool CReserveManager::IsFindProgramReserve(WORD onid, WORD tsid, WORD sid, __int64 startTime, DWORD durationSec) const
@@ -1433,9 +1433,9 @@ bool CReserveManager::IsFindProgramReserve(WORD onid, WORD tsid, WORD sid, __int
 
 	ReCacheReserveText();
 
-	vector<pair<LONGLONG, DWORD>>::const_iterator itr = std::lower_bound(
-		this->reserveTextCache.begin(), this->reserveTextCache.end(), pair<LONGLONG, DWORD>(_Create64Key2(onid, tsid, sid, 0xFFFF), 0));
-	for( ; itr != this->reserveTextCache.end() && itr->first == _Create64Key2(onid, tsid, sid, 0xFFFF); itr++ ){
+	vector<pair<ULONGLONG, DWORD>>::const_iterator itr = std::lower_bound(
+		this->reserveTextCache.begin(), this->reserveTextCache.end(), pair<ULONGLONG, DWORD>(_Create64Key2(onid, tsid, sid, 0xFFFF), 0));
+	for( ; itr != this->reserveTextCache.end() && itr->first == (ULONGLONG)_Create64Key2(onid, tsid, sid, 0xFFFF); itr++ ){
 		map<DWORD, RESERVE_DATA>::const_iterator itrRes = this->reserveText.GetMap().find(itr->second);
 		if( itrRes->second.durationSecond == durationSec && ConvertI64Time(itrRes->second.startTime) == startTime ){
 			return true;
@@ -1575,9 +1575,9 @@ bool CReserveManager::ChgAutoAddNoRec(WORD onid, WORD tsid, WORD sid, WORD eid)
 	vector<RESERVE_DATA> chgList;
 	ReCacheReserveText();
 
-	vector<pair<LONGLONG, DWORD>>::const_iterator itr = std::lower_bound(
-		this->reserveTextCache.begin(), this->reserveTextCache.end(), pair<LONGLONG, DWORD>(_Create64Key2(onid, tsid, sid, eid), 0));
-	for( ; itr != this->reserveTextCache.end() && itr->first == _Create64Key2(onid, tsid, sid, eid); itr++ ){
+	vector<pair<ULONGLONG, DWORD>>::const_iterator itr = std::lower_bound(
+		this->reserveTextCache.begin(), this->reserveTextCache.end(), pair<ULONGLONG, DWORD>(_Create64Key2(onid, tsid, sid, eid), 0));
+	for( ; itr != this->reserveTextCache.end() && itr->first == (ULONGLONG)_Create64Key2(onid, tsid, sid, eid); itr++ ){
 		map<DWORD, RESERVE_DATA>::const_iterator itrRes = this->reserveText.GetMap().find(itr->second);
 		if( itrRes->second.recSetting.recMode != RECMODE_NO && itrRes->second.comment.compare(0, 7, L"EPGé©ìÆó\ñÒ") == 0 ){
 			chgList.push_back(itrRes->second);
