@@ -474,12 +474,33 @@ namespace EpgTimer
                 switch (e.Key)
                 {
                     case Key.C:
-                        new BlackoutWindow(this).showWindow(this.button_chg_reserve.Content.ToString());
-                        this.button_chg_reserve.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                        string captionText = button_chg_reserve.Content.ToString();
+                        string msgText = button_chg_reserve.Content.ToString();
+                        switch (captionText)
+                        {
+                            case "変更":
+                                msgText = "この予約を変更します。";
+                                break;
+                            case "予約":
+                                msgText = "予約を追加します。";
+                                break;
+                            case "再予約":
+                                msgText = "この内容で再予約します。";
+                                break;
+                        }
+                        if (MessageBox.Show(msgText + "\r\nよろしいですか？", captionText + "の確認", MessageBoxButton.OKCancel) == MessageBoxResult.OK)
+                        {
+                            this.button_chg_reserve.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                        }
                         break;
                     case Key.D:
-                        new BlackoutWindow(this).showWindow(this.button_del_reserve.Content.ToString());
-                        this.button_del_reserve.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                        if (this.button_del_reserve.Visibility == System.Windows.Visibility.Visible && this.button_del_reserve.IsEnabled == true)
+                        {
+                            if (MessageBox.Show("この予約を削除します。\r\nよろしいですか？", "削除の確認", MessageBoxButton.OKCancel) == MessageBoxResult.OK)
+                            {
+                                this.button_del_reserve.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                            }
+                        }
                         break;
                 }
             }

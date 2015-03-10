@@ -214,7 +214,10 @@ namespace EpgTimer
                 switch (e.Key)
                 {
                     case Key.A:
-                        this.button_add_reserve.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                        if (MessageBox.Show("予約を追加します。\r\nよろしいですか？", "追加の確認", MessageBoxButton.OKCancel) == MessageBoxResult.OK)
+                        {
+                            this.button_add_reserve.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                        }
                         break;
                 }
             }
