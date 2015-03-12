@@ -31,6 +31,12 @@
     <Filter Include="ヘッダー ファイル\UPnPCtrl">
       <UniqueIdentifier>{5b968ac7-23f3-49ff-af07-8514fa958e20}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\civetweb">
+      <UniqueIdentifier>{9c22de38-0a12-4f99-ac9a-9e83b4b0065f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル\civetweb">
+      <UniqueIdentifier>{d06eb7fc-fc46-4201-a8f9-c57d6c944769}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="ReadMe.txt" />
@@ -42,6 +48,12 @@
     </None>
     <None Include="RegExp.tlb">
       <Filter>ソース ファイル</Filter>
+    </None>
+    <None Include="mod_lua.inl">
+      <Filter>ヘッダー ファイル\civetweb</Filter>
+    </None>
+    <None Include="md5.inl">
+      <Filter>ヘッダー ファイル\civetweb</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -246,6 +258,24 @@
     <ClInclude Include="DLNAParsePublicFolder.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="civetweb.h">
+      <Filter>ヘッダー ファイル\civetweb</Filter>
+    </ClInclude>
+    <ClInclude Include="lua.h">
+      <Filter>ヘッダー ファイル\civetweb</Filter>
+    </ClInclude>
+    <ClInclude Include="lauxlib.h">
+      <Filter>ヘッダー ファイル\civetweb</Filter>
+    </ClInclude>
+    <ClInclude Include="luaconf.h">
+      <Filter>ヘッダー ファイル\civetweb</Filter>
+    </ClInclude>
+    <ClInclude Include="lualib.h">
+      <Filter>ヘッダー ファイル\civetweb</Filter>
+    </ClInclude>
+    <ClInclude Include="lua.hpp">
+      <Filter>ヘッダー ファイル\civetweb</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -415,6 +445,9 @@
     </ClCompile>
     <ClCompile Include="DLNAParsePublicFolder.cpp">
       <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="civetweb.c">
+      <Filter>ソース ファイル\civetweb</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
