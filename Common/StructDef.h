@@ -590,20 +590,6 @@ typedef struct _NOTIFY_SRV_INFO{
 } NOTIFY_SRV_INFO;
 
 
-typedef struct _GENRU_INFO{
-	BYTE nibble1;
-	BYTE nibble2;
-	WORD key;
-	wstring name;
-	_GENRU_INFO(void){
-		nibble1= 0xFF;
-		nibble2 = 0xFF;
-		key = 0xFFFF;
-		name = L"";
-	};
-} GENRU_INFO;
-
-
 ////////////////////////////////////////////////////////////////////////////////////////////
 //旧バージョンコマンド送信用
 typedef struct _OLD_RESERVE_DATA{

@@ -5,7 +5,6 @@
 #pragma comment (lib, "Crypt32.lib")
 
 #include "../../Common/PathUtil.h"
-#include "../../Common/ProxyUtil.h"
 #include "../../Common/StringUtil.h"
 #include "../../Common/TimeUtil.h"
 #include "../../Common/ParseTextInstances.h"

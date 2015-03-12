@@ -31,7 +31,6 @@ void _ConvertEpgInfoText2(const EPGDB_EVENT_INFO* info, wstring& text, wstring s
 void GetChkDrivePath(wstring directoryPath, wstring& mountPath);
 
 void GetGenreName(BYTE nibble1, BYTE nibble2, wstring& name);
-void GetGenreList(vector<GENRU_INFO>* list);
 
 void CopyEpgInfo(EPG_EVENT_INFO* destInfo, EPGDB_EVENT_INFO* srcInfo);
 

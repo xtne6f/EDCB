@@ -302,16 +302,6 @@ void _ConvertEpgInfoText(const EPGDB_EVENT_INFO* info, wstring& text)
 
 static map<WORD, wstring> contentKindMap;
 static map<WORD, wstring> componentKindMap;
-static vector<GENRU_INFO> genruList;
-
-GENRU_INFO CreateGenruInfo(WORD key, wstring name){
-	GENRU_INFO info;
-	info.key = key;
-	info.name = name;
-	info.nibble1 = key>>8;
-	info.nibble2 = (BYTE)(key&0x00FF);
-	return info;
-}
 
 void CreateContentKindMap()
 {
@@ -446,137 +436,6 @@ void CreateContentKindMap()
 
     contentKindMap.insert(pair<WORD,wstring>(0x0FFF, L"その他"));
     contentKindMap.insert(pair<WORD,wstring>(0xFFFF, L"なし"));
-
-
-	genruList.clear();
-    genruList.push_back(CreateGenruInfo(0x00FF, L"ニュース／報道"));
-    genruList.push_back(CreateGenruInfo(0x0000, L"定時・総合"));
-    genruList.push_back(CreateGenruInfo(0x0001, L"天気"));
-    genruList.push_back(CreateGenruInfo(0x0002, L"特集・ドキュメント"));
-    genruList.push_back(CreateGenruInfo(0x0003, L"政治・国会"));
-    genruList.push_back(CreateGenruInfo(0x0004, L"経済・市況"));
-    genruList.push_back(CreateGenruInfo(0x0005, L"海外・国際"));
-    genruList.push_back(CreateGenruInfo(0x0006, L"解説"));
-    genruList.push_back(CreateGenruInfo(0x0007, L"討論・会談"));
-    genruList.push_back(CreateGenruInfo(0x0008, L"報道特番"));
-    genruList.push_back(CreateGenruInfo(0x0009, L"ローカル・地域"));
-    genruList.push_back(CreateGenruInfo(0x000A, L"交通"));
-    genruList.push_back(CreateGenruInfo(0x000F, L"その他"));
-
-    genruList.push_back(CreateGenruInfo(0x01FF, L"スポーツ"));
-    genruList.push_back(CreateGenruInfo(0x0100, L"スポーツニュース"));
-    genruList.push_back(CreateGenruInfo(0x0101, L"野球"));
-    genruList.push_back(CreateGenruInfo(0x0102, L"サッカー"));
-    genruList.push_back(CreateGenruInfo(0x0103, L"ゴルフ"));
-    genruList.push_back(CreateGenruInfo(0x0104, L"その他の球技"));
-    genruList.push_back(CreateGenruInfo(0x0105, L"相撲・格闘技"));
-    genruList.push_back(CreateGenruInfo(0x0106, L"オリンピック・国際大会"));
-    genruList.push_back(CreateGenruInfo(0x0107, L"マラソン・陸上・水泳"));
-    genruList.push_back(CreateGenruInfo(0x0108, L"モータースポーツ"));
-    genruList.push_back(CreateGenruInfo(0x0109, L"マリン・ウィンタースポーツ"));
-    genruList.push_back(CreateGenruInfo(0x010A, L"競馬・公営競技"));
-    genruList.push_back(CreateGenruInfo(0x010F, L"その他"));
-
-    genruList.push_back(CreateGenruInfo(0x02FF, L"情報／ワイドショー"));
-    genruList.push_back(CreateGenruInfo(0x0200, L"芸能・ワイドショー"));
-    genruList.push_back(CreateGenruInfo(0x0201, L"ファッション"));
-    genruList.push_back(CreateGenruInfo(0x0202, L"暮らし・住まい"));
-    genruList.push_back(CreateGenruInfo(0x0203, L"健康・医療"));
-    genruList.push_back(CreateGenruInfo(0x0204, L"ショッピング・通販"));
-    genruList.push_back(CreateGenruInfo(0x0205, L"グルメ・料理"));
-    genruList.push_back(CreateGenruInfo(0x0206, L"イベント"));
-    genruList.push_back(CreateGenruInfo(0x0207, L"番組紹介・お知らせ"));
-    genruList.push_back(CreateGenruInfo(0x020F, L"その他"));
-
-    genruList.push_back(CreateGenruInfo(0x03FF, L"ドラマ"));
-    genruList.push_back(CreateGenruInfo(0x0300, L"国内ドラマ"));
-    genruList.push_back(CreateGenruInfo(0x0301, L"海外ドラマ"));
-    genruList.push_back(CreateGenruInfo(0x0302, L"時代劇"));
-    genruList.push_back(CreateGenruInfo(0x030F, L"その他"));
-
-    genruList.push_back(CreateGenruInfo(0x04FF, L"音楽"));
-    genruList.push_back(CreateGenruInfo(0x0400, L"国内ロック・ポップス"));
-    genruList.push_back(CreateGenruInfo(0x0401, L"海外ロック・ポップス"));
-    genruList.push_back(CreateGenruInfo(0x0402, L"クラシック・オペラ"));
-    genruList.push_back(CreateGenruInfo(0x0403, L"ジャズ・フュージョン"));
-    genruList.push_back(CreateGenruInfo(0x0404, L"歌謡曲・演歌"));
-    genruList.push_back(CreateGenruInfo(0x0405, L"ライブ・コンサート"));
-    genruList.push_back(CreateGenruInfo(0x0406, L"ランキング・リクエスト"));
-    genruList.push_back(CreateGenruInfo(0x0407, L"カラオケ・のど自慢"));
-    genruList.push_back(CreateGenruInfo(0x0408, L"民謡・邦楽"));
-    genruList.push_back(CreateGenruInfo(0x0409, L"童謡・キッズ"));
-    genruList.push_back(CreateGenruInfo(0x040A, L"民族音楽・ワールドミュージック"));
-    genruList.push_back(CreateGenruInfo(0x040F, L"その他"));
-
-    genruList.push_back(CreateGenruInfo(0x05FF, L"バラエティ"));
-    genruList.push_back(CreateGenruInfo(0x0500, L"クイズ"));
-    genruList.push_back(CreateGenruInfo(0x0501, L"ゲーム"));
-    genruList.push_back(CreateGenruInfo(0x0502, L"トークバラエティ"));
-    genruList.push_back(CreateGenruInfo(0x0503, L"お笑い・コメディ"));
-    genruList.push_back(CreateGenruInfo(0x0504, L"音楽バラエティ"));
-    genruList.push_back(CreateGenruInfo(0x0505, L"旅バラエティ"));
-    genruList.push_back(CreateGenruInfo(0x0506, L"料理バラエティ"));
-    genruList.push_back(CreateGenruInfo(0x050F, L"その他"));
-
-    genruList.push_back(CreateGenruInfo(0x06FF, L"映画"));
-    genruList.push_back(CreateGenruInfo(0x0600, L"洋画"));
-    genruList.push_back(CreateGenruInfo(0x0601, L"邦画"));
-    genruList.push_back(CreateGenruInfo(0x0602, L"アニメ"));
-    genruList.push_back(CreateGenruInfo(0x060F, L"その他"));
-
-    genruList.push_back(CreateGenruInfo(0x07FF, L"アニメ／特撮"));
-    genruList.push_back(CreateGenruInfo(0x0700, L"国内アニメ"));
-    genruList.push_back(CreateGenruInfo(0x0701, L"海外アニメ"));
-    genruList.push_back(CreateGenruInfo(0x0702, L"特撮"));
-    genruList.push_back(CreateGenruInfo(0x070F, L"その他"));
-
-    genruList.push_back(CreateGenruInfo(0x08FF, L"ドキュメンタリー／教養"));
-    genruList.push_back(CreateGenruInfo(0x0800, L"社会・時事"));
-    genruList.push_back(CreateGenruInfo(0x0801, L"歴史・紀行"));
-    genruList.push_back(CreateGenruInfo(0x0802, L"自然・動物・環境"));
-    genruList.push_back(CreateGenruInfo(0x0803, L"宇宙・科学・医学"));
-    genruList.push_back(CreateGenruInfo(0x0804, L"カルチャー・伝統文化"));
-    genruList.push_back(CreateGenruInfo(0x0805, L"文学・文芸"));
-    genruList.push_back(CreateGenruInfo(0x0806, L"スポーツ"));
-    genruList.push_back(CreateGenruInfo(0x0807, L"ドキュメンタリー全般"));
-    genruList.push_back(CreateGenruInfo(0x0808, L"インタビュー・討論"));
-    genruList.push_back(CreateGenruInfo(0x080F, L"その他"));
-
-    genruList.push_back(CreateGenruInfo(0x09FF, L"劇場／公演"));
-    genruList.push_back(CreateGenruInfo(0x0900, L"現代劇・新劇"));
-    genruList.push_back(CreateGenruInfo(0x0901, L"ミュージカル"));
-    genruList.push_back(CreateGenruInfo(0x0902, L"ダンス・バレエ"));
-    genruList.push_back(CreateGenruInfo(0x0903, L"落語・演芸"));
-    genruList.push_back(CreateGenruInfo(0x0904, L"歌舞伎・古典"));
-    genruList.push_back(CreateGenruInfo(0x090F, L"その他"));
-
-    genruList.push_back(CreateGenruInfo(0x0AFF, L"趣味／教育"));
-    genruList.push_back(CreateGenruInfo(0x0A00, L"旅・釣り・アウトドア"));
-    genruList.push_back(CreateGenruInfo(0x0A01, L"園芸・ペット・手芸"));
-    genruList.push_back(CreateGenruInfo(0x0A02, L"音楽・美術・工芸"));
-    genruList.push_back(CreateGenruInfo(0x0A03, L"囲碁・将棋"));
-    genruList.push_back(CreateGenruInfo(0x0A04, L"麻雀・パチンコ"));
-    genruList.push_back(CreateGenruInfo(0x0A05, L"車・オートバイ"));
-    genruList.push_back(CreateGenruInfo(0x0A06, L"コンピュータ・ＴＶゲーム"));
-    genruList.push_back(CreateGenruInfo(0x0A07, L"会話・語学"));
-    genruList.push_back(CreateGenruInfo(0x0A08, L"幼児・小学生"));
-    genruList.push_back(CreateGenruInfo(0x0A09, L"中学生・高校生"));
-    genruList.push_back(CreateGenruInfo(0x0A0A, L"大学生・受験"));
-    genruList.push_back(CreateGenruInfo(0x0A0B, L"生涯教育・資格"));
-    genruList.push_back(CreateGenruInfo(0x0A0C, L"教育問題"));
-    genruList.push_back(CreateGenruInfo(0x0A0F, L"その他"));
-
-    genruList.push_back(CreateGenruInfo(0x0BFF, L"福祉"));
-    genruList.push_back(CreateGenruInfo(0x0B00, L"高齢者"));
-    genruList.push_back(CreateGenruInfo(0x0B01, L"障害者"));
-    genruList.push_back(CreateGenruInfo(0x0B02, L"社会福祉"));
-    genruList.push_back(CreateGenruInfo(0x0B03, L"ボランティア"));
-    genruList.push_back(CreateGenruInfo(0x0B04, L"手話"));
-    genruList.push_back(CreateGenruInfo(0x0B05, L"文字（字幕）"));
-    genruList.push_back(CreateGenruInfo(0x0B06, L"音声解説"));
-    genruList.push_back(CreateGenruInfo(0x0B0F, L"その他"));
-
-    genruList.push_back(CreateGenruInfo(0x0FFF, L"その他"));
 
 }
 void CreateComponentKindMap()
@@ -962,12 +821,4 @@ void CopyEpgInfo(EPG_EVENT_INFO* destInfo, EPGDB_EVENT_INFO* srcInfo)
 		}
 	}
 
-}
-
-void GetGenreList(vector<GENRU_INFO>* list)
-{
-	if( genruList.size() == 0 ){
-		CreateContentKindMap();
-	}
-	*list = genruList;
 }

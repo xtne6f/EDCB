@@ -183,18 +183,6 @@
     <ClInclude Include="NotifyManager.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Common\HttpServer.h">
-      <Filter>ヘッダー ファイル\Common</Filter>
-    </ClInclude>
-    <ClInclude Include="HTMLManager.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="RestApiManager.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Common\ProxyUtil.h">
-      <Filter>ヘッダー ファイル\Common</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Common\WinHTTPUtil.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
@@ -203,12 +191,6 @@
     </ClInclude>
     <ClInclude Include="..\..\Common\TCPServerUtil.h">
       <Filter>ヘッダー ファイル\Common</Filter>
-    </ClInclude>
-    <ClInclude Include="HttpPublicFileSend.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="HttpRecFileSend.h">
-      <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="HttpFileSend.h">
       <Filter>ヘッダー ファイル</Filter>
@@ -374,18 +356,6 @@
     <ClCompile Include="NotifyManager.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Common\HttpServer.cpp">
-      <Filter>ソース ファイル\Common</Filter>
-    </ClCompile>
-    <ClCompile Include="HTMLManager.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="RestApiManager.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Common\ProxyUtil.cpp">
-      <Filter>ソース ファイル\Common</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\Common\WinHTTPUtil.cpp">
       <Filter>ソース ファイル\Common</Filter>
     </ClCompile>
@@ -394,12 +364,6 @@
     </ClCompile>
     <ClCompile Include="..\..\Common\TCPServerUtil.cpp">
       <Filter>ソース ファイル\Common</Filter>
-    </ClCompile>
-    <ClCompile Include="HttpPublicFileSend.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="HttpRecFileSend.cpp">
-      <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="HttpFileSend.cpp">
       <Filter>ソース ファイル</Filter>
