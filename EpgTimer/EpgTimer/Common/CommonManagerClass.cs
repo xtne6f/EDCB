@@ -1209,6 +1209,89 @@ namespace EpgTimer
             }
         }
 
+        public string GetFolderNameByDialog(string InitialPath = "", string Description = "")
+        {
+            try
+            {
+                if (Settings.Instance.OpenFolderWithFileDialog == true)
+                {
+                    System.Windows.Forms.OpenFileDialog dlg = new System.Windows.Forms.OpenFileDialog();
+                    dlg.Title = Description;
+                    dlg.CheckFileExists = false;
+                    dlg.FileName = "(任意ファイル名)";
+                    dlg.InitialDirectory = GetDirectoryName2(InitialPath);
+                    if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                    {
+                        return GetDirectoryName2(dlg.FileName);
+                    }
+                }
+                else
+                {
+                    System.Windows.Forms.FolderBrowserDialog dlg = new System.Windows.Forms.FolderBrowserDialog();
+                    dlg.Description = Description;
+                    dlg.SelectedPath = GetDirectoryName2(InitialPath);
+                    if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                    {
+                        return dlg.SelectedPath;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+            }
+
+            return null;
+        }
+
+        public string GetFileNameByDialog(string InitialPath = "", string Title = "", string DefaultExt = "")
+        {
+            try
+            {
+                System.Windows.Forms.OpenFileDialog dlg = new System.Windows.Forms.OpenFileDialog();
+                dlg.Title = Title;
+                dlg.FileName = System.IO.Path.GetFileName(InitialPath);
+                dlg.InitialDirectory = GetDirectoryName2(InitialPath);
+                switch (DefaultExt)
+                {
+                    case ".exe":
+                        dlg.DefaultExt = ".exe";
+                        dlg.Filter = "exe Files (.exe)|*.exe;|all Files(*.*)|*.*";
+                        break;
+                    case ".bat":
+                        dlg.DefaultExt = ".bat";
+                        dlg.Filter = "bat Files (.bat)|*.bat;|all Files(*.*)|*.*";
+                        break;
+                    default:
+                        dlg.Filter = "all Files(*.*)|*.*";
+                        break;
+                }
+
+                if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                {
+                    return dlg.FileName;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+            }
+
+            return null;
+        }
+
+        private string GetDirectoryName2(string folder_path)
+        {
+            string path = folder_path.Trim();
+            while (path != "")
+            {
+                if (System.IO.Directory.Exists(path)) break;
+                path = System.IO.Path.GetDirectoryName(path);
+                path = (path != null ? path : "");
+            }
+            return path;
+        }
+
         public void ReloadCustContentColorList()
         {
             try

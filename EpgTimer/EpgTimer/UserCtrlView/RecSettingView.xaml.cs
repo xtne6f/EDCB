@@ -630,14 +630,10 @@ namespace EpgTimer
 
         private void button_bat_Click(object sender, RoutedEventArgs e)
         {
-            Microsoft.Win32.OpenFileDialog dlg = new Microsoft.Win32.OpenFileDialog();
-            dlg.DefaultExt = ".bat";
-            dlg.Filter = "bat Files (.bat)|*.bat;|all Files(*.*)|*.*";
-
-            Nullable<bool> result = dlg.ShowDialog();
-            if (result == true)
+            string path = CommonManager.Instance.GetFileNameByDialog(textBox_bat.Text, "", ".bat");
+            if (path != null)
             {
-                textBox_bat.Text = dlg.FileName;
+                textBox_bat.Text = path;
             }
         }
 

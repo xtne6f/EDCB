@@ -19,7 +19,8 @@
                 </Style>
             </TextBox.Resources>
         </TextBox>
-        <Button Content="追加" Height="23" HorizontalAlignment="Left" Margin="290,181,0,0" Name="button_process_add" VerticalAlignment="Top" Width="52" Click="button_process_add_Click" />
+        <Button Content="追加" Height="23" HorizontalAlignment="Left" Margin="357,184,0,0" Name="button_process_add" VerticalAlignment="Top" Width="52" Click="button_process_add_Click" />
+        <Button Content="開く" Height="23" HorizontalAlignment="Left" Margin="297,184,0,0" Name="button_process_open" VerticalAlignment="Top" Width="54" Click="button_process_open_Click" />
         <Label Content="次の予約が" Height="28" HorizontalAlignment="Left" Margin="12,215,0,0" Name="label3" VerticalAlignment="Top" />
         <TextBox Height="24" HorizontalAlignment="Left" Margin="97,217,0,0" Name="textBox_ng_min" VerticalAlignment="Top" Width="51">
             <TextBox.Resources>
