@@ -124,10 +124,11 @@ namespace EpgTimer
 
         private void button_folder_Click(object sender, RoutedEventArgs e)
         {
-            string path = CommonManager.Instance.MUtil.GetFolderNameByDialog(textBox_recFolder.Text, "録画フォルダ選択");
-            if (path != null)
+            System.Windows.Forms.FolderBrowserDialog dlg = new System.Windows.Forms.FolderBrowserDialog();
+            dlg.Description = "フォルダ選択";
+            if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
-                textBox_recFolder.Text = path;
+                textBox_recFolder.Text = dlg.SelectedPath;
             }
         }
 

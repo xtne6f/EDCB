@@ -54,15 +54,6 @@ namespace EpgTimer
             }
         }
 
-        private void button_process_open_Click(object sender, RoutedEventArgs e)
-        {
-            string path = CommonManager.Instance.MUtil.GetFileNameByDialog(textBox_process.Text, "", ".exe");
-            if (path != null)
-            {
-                textBox_process.Text = System.IO.Path.GetFileName(path);
-            }
-        }
-
         private void button_process_add_Click(object sender, RoutedEventArgs e)
         {
             if (String.IsNullOrEmpty(textBox_process.Text) == false)

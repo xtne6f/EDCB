@@ -389,19 +389,38 @@ namespace EpgTimer.Setting
 
         private void button_setPath_Click(object sender, RoutedEventArgs e)
         {
-            string path = CommonManager.Instance.MUtil.GetFolderNameByDialog(textBox_setPath.Text, "設定関係保存フォルダ");
-            if (path != null)
+            try
             {
-                textBox_setPath.Text = path;
+                System.Windows.Forms.FolderBrowserDialog dlg = new System.Windows.Forms.FolderBrowserDialog();
+                dlg.Description = "設定関係保存フォルダ";
+                if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                {
+                    textBox_setPath.Text = dlg.SelectedPath;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
 
         private void button_exe_Click(object sender, RoutedEventArgs e)
         {
-            string path = CommonManager.Instance.MUtil.GetFileNameByDialog(textBox_exe.Text, "", ".exe");
-            if (path != null)
+            try
             {
-                textBox_exe.Text = path;
+                Microsoft.Win32.OpenFileDialog dlg = new Microsoft.Win32.OpenFileDialog();
+                dlg.DefaultExt = ".exe";
+                dlg.Filter = "exe Files (.exe)|*.exe;|all Files(*.*)|*.*";
+
+                Nullable<bool> result = dlg.ShowDialog();
+                if (result == true)
+                {
+                    textBox_exe.Text = dlg.FileName;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
 
@@ -466,10 +485,18 @@ namespace EpgTimer.Setting
 
         private void button_rec_open_Click(object sender, RoutedEventArgs e)
         {
-            string path = CommonManager.Instance.MUtil.GetFolderNameByDialog(textBox_recFolder.Text, "録画フォルダ");
-            if (path != null)
+            try
             {
-                textBox_recFolder.Text = path;
+                System.Windows.Forms.FolderBrowserDialog dlg = new System.Windows.Forms.FolderBrowserDialog();
+                dlg.Description = "録画フォルダ";
+                if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                {
+                    textBox_recFolder.Text = dlg.SelectedPath;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
 

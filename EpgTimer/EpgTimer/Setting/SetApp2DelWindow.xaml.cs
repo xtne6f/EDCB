@@ -106,10 +106,11 @@ namespace EpgTimer
 
         private void button_chk_open_Click(object sender, RoutedEventArgs e)
         {
-            string path = CommonManager.Instance.MUtil.GetFolderNameByDialog(textBox_chk_folder.Text, "自動削除対象フォルダ");
-            if (path != null)
+            System.Windows.Forms.FolderBrowserDialog dlg = new System.Windows.Forms.FolderBrowserDialog();
+            dlg.Description = "自動削除対象フォルダ";
+            if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
-                textBox_chk_folder.Text = path;
+                textBox_chk_folder.Text = dlg.SelectedPath;
             }
         }
 
