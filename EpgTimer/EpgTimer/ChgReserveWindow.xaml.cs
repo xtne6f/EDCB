@@ -119,105 +119,16 @@ namespace EpgTimer
         /// <param name="info">[IN] 初期値の予約情報</param>
         public void SetReserveInfo(ReserveData info)
         {
-            try
-            {
-                reserveInfo = info;
-                recSettingView.SetDefSetting(info.RecSetting);
+            reserveInfo = info;
+            recSettingView.SetDefSetting(info.RecSetting);
 
-                if (info.EventID != 0xFFFF)
+            if (info.EventID != 0xFFFF)
+            {
+                EpgEventInfo eventInfo = CommonManager.Instance.GetEpgEventInfoFromReserveData(reserveInfo, true);
+                if (eventInfo != null)
                 {
-                    UInt64 key = CommonManager.Create64Key(info.OriginalNetworkID, info.TransportStreamID, info.ServiceID);
-                    EpgEventInfo eventInfo = null;
-                    if (CommonManager.Instance.DB.ServiceEventList.ContainsKey(key) == true)
-                    {
-                        foreach (EpgEventInfo eventChkInfo in CommonManager.Instance.DB.ServiceEventList[key].eventList)
-                        {
-                            if (eventChkInfo.event_id == info.EventID)
-                            {
-                                eventInfo = eventChkInfo;
-                                break;
-                            }
-                        }
-                    }
-                    if(eventInfo == null )
-                    {
-                        UInt64 pgId = CommonManager.Create64PgKey(info.OriginalNetworkID, info.TransportStreamID, info.ServiceID, info.EventID);
-                        eventInfo = new EpgEventInfo();
-                        cmd.SendGetPgInfo(pgId, ref eventInfo);
-                    }
-                    if (eventInfo != null)
-                    {
-                        String text = CommonManager.Instance.ConvertProgramText(eventInfo, EventInfoTextMode.All);
-
-                        Regex regex = new Regex("((http://|https://|ｈｔｔｐ：／／|ｈｔｔｐｓ：／／).*\r\n)");
-                        if (regex.IsMatch(text) == true)
-                        {
-                            try
-                            {
-                                //Regexのsplitでやるとhttp://だけのも取れたりするので、１つずつ行う
-                                FlowDocument flowDoc = new FlowDocument();
-                                Paragraph para = new Paragraph();
-
-                                do
-                                {
-                                    Match matchVal = regex.Match(text);
-                                    int index = text.IndexOf(matchVal.Value);
-
-                                    para.Inlines.Add(text.Substring(0, index));
-                                    text = text.Remove(0, index);
-
-                                    Hyperlink h = new Hyperlink(new Run(matchVal.Value.Replace("\r\n", "")));
-                                    h.MouseLeftButtonDown += new MouseButtonEventHandler(h_MouseLeftButtonDown);
-                                    h.Foreground = Brushes.Blue;
-                                    h.Cursor = Cursors.Hand;
-                                    String url = CommonManager.ReplaceUrl(matchVal.Value.Replace("\r\n", ""));
-                                    h.NavigateUri = new Uri(url);
-                                    para.Inlines.Add(h);
-                                    para.Inlines.Add("\r\n");
-
-                                    text = text.Remove(0, matchVal.Value.Length);
-                                } while (regex.IsMatch(text) == true);
-                                para.Inlines.Add(text);
-
-                                flowDoc.Blocks.Add(para);
-                                richTextBox_descInfo.Document = flowDoc;
-                            }
-                            catch
-                            {
-                                text = CommonManager.Instance.ConvertProgramText(eventInfo, EventInfoTextMode.All);
-                                FlowDocument flowDoc = new FlowDocument();
-                                flowDoc.Blocks.Add(new Paragraph(new Run(text)));
-                                richTextBox_descInfo.Document = flowDoc;
-                            }
-                        }
-                        else
-                        {
-                            FlowDocument flowDoc = new FlowDocument();
-                            flowDoc.Blocks.Add(new Paragraph(new Run(text)));
-                            richTextBox_descInfo.Document = flowDoc;
-                        }
-                    }
+                    richTextBox_descInfo.Document = CommonManager.Instance.ConvertDisplayText(eventInfo);
                 }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
-
-        void h_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-        {
-            try
-            {
-                if (sender.GetType() == typeof(Hyperlink))
-                {
-                    Hyperlink h = sender as Hyperlink;
-                    System.Diagnostics.Process.Start(h.NavigateUri.ToString());
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
 

@@ -191,10 +191,7 @@ namespace EpgTimer
                     {
                         foreach (ReserveData info2 in CommonManager.Instance.DB.ReserveList.Values)
                         {
-                            if (info.original_network_id == info2.OriginalNetworkID &&
-                                info.transport_stream_id == info2.TransportStreamID &&
-                                info.service_id == info2.ServiceID &&
-                                info.event_id == info2.EventID)
+                            if (CommonManager.EqualsPg(info, info2) == true)
                             {
                                 item.ReserveInfo = info2;
                                 break;
@@ -262,10 +259,7 @@ namespace EpgTimer
 
                 foreach (SearchItem item in listView_result.Items)
                 {
-                    if (item.EventInfo.original_network_id == oldItem.original_network_id &&
-                        item.EventInfo.transport_stream_id == oldItem.transport_stream_id &&
-                        item.EventInfo.service_id == oldItem.service_id &&
-                        item.EventInfo.event_id == oldItem.event_id)
+                    if (CommonManager.EqualsPg(item.EventInfo, oldItem) == true)
                     {
                         listView_result.SelectedItem = item;
                         listView_result.ScrollIntoView(item);
@@ -276,10 +270,7 @@ namespace EpgTimer
                 {
                     foreach (SearchItem item in listView_result.Items)
                     {
-                        if (item.EventInfo.original_network_id == oldItem1.original_network_id &&
-                            item.EventInfo.transport_stream_id == oldItem1.transport_stream_id &&
-                            item.EventInfo.service_id == oldItem1.service_id &&
-                            item.EventInfo.event_id == oldItem1.event_id)
+                        if (CommonManager.EqualsPg(item.EventInfo, oldItem1) == true)
                         {
                             listView_result.SelectedItems.Add(item);
                             break;
@@ -324,32 +315,7 @@ namespace EpgTimer
                         if (item.IsReserved == false && eventInfo.StartTimeFlag != 0)
                         {
                             ReserveData reserveInfo = new ReserveData();
-                            if (eventInfo.ShortInfo != null)
-                            {
-                                reserveInfo.Title = eventInfo.ShortInfo.event_name;
-                            }
-
-                            reserveInfo.StartTime = eventInfo.start_time;
-                            reserveInfo.StartTimeEpg = eventInfo.start_time;
-
-                            if (eventInfo.DurationFlag == 0)
-                            {
-                                reserveInfo.DurationSecond = 10 * 60;
-                            }
-                            else
-                            {
-                                reserveInfo.DurationSecond = eventInfo.durationSec;
-                            }
-
-                            UInt64 key = CommonManager.Create64Key(eventInfo.original_network_id, eventInfo.transport_stream_id, eventInfo.service_id);
-                            if (ChSet5.Instance.ChList.ContainsKey(key) == true)
-                            {
-                                reserveInfo.StationName = ChSet5.Instance.ChList[key].ServiceName;
-                            }
-                            reserveInfo.OriginalNetworkID = eventInfo.original_network_id;
-                            reserveInfo.TransportStreamID = eventInfo.transport_stream_id;
-                            reserveInfo.ServiceID = eventInfo.service_id;
-                            reserveInfo.EventID = eventInfo.event_id;
+                            CommonManager.ConvertEpgToReserveData(eventInfo, ref reserveInfo);
 
                             reserveInfo.RecSetting = setInfo;
 

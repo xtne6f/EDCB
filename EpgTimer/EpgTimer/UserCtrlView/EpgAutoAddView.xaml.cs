@@ -316,10 +316,7 @@ namespace EpgTimer
                     {
                         foreach (ReserveData info2 in CommonManager.Instance.DB.ReserveList.Values)
                         {
-                            if (info.original_network_id == info2.OriginalNetworkID &&
-                                info.transport_stream_id == info2.TransportStreamID &&
-                                info.service_id == info2.ServiceID &&
-                                info.event_id == info2.EventID)
+                            if (CommonManager.EqualsPg(info, info2) == true)
                             {
                                 //重複したEpgEventInfoは送られてこないので、登録時の重複チェックは不要
                                 dellist.Add(info2.ReserveID);

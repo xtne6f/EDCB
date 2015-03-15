@@ -544,10 +544,7 @@ namespace EpgTimer
                                 //予約チェック
                                 foreach (ReserveData resInfo in CommonManager.Instance.DB.ReserveList.Values)
                                 {
-                                    if (resInfo.OriginalNetworkID == eventInfo.original_network_id &&
-                                        resInfo.TransportStreamID == eventInfo.transport_stream_id &&
-                                        resInfo.ServiceID == eventInfo.service_id &&
-                                        resInfo.EventID == eventInfo.event_id)
+                                    if (CommonManager.EqualsPg(resInfo, eventInfo) == true)
                                     {
                                         item.ReserveInfo = resInfo;
                                         break;
@@ -622,74 +619,8 @@ namespace EpgTimer
             if (listView_event.SelectedItem != null)
             {
                 SearchItem item = listView_event.SelectedItem as SearchItem;
-
                 EpgEventInfo eventInfo = item.EventInfo;
-
-                String text = CommonManager.Instance.ConvertProgramText(eventInfo, EventInfoTextMode.All);
-
-                Regex regex = new Regex("((http://|https://|ｈｔｔｐ：／／|ｈｔｔｐｓ：／／).*\r\n)");
-                if (regex.IsMatch(text) == true)
-                {
-                    try
-                    {
-                        //Regexのsplitでやるとhttp://だけのも取れたりするので、１つずつ行う
-                        FlowDocument flowDoc = new FlowDocument();
-                        Paragraph para = new Paragraph();
-
-                        do
-                        {
-                            Match matchVal = regex.Match(text);
-                            int index = text.IndexOf(matchVal.Value);
-
-                            para.Inlines.Add(text.Substring(0, index));
-                            text = text.Remove(0, index);
-
-                            Hyperlink h = new Hyperlink(new Run(matchVal.Value.Replace("\r\n", "")));
-                            h.MouseLeftButtonDown += new MouseButtonEventHandler(h_MouseLeftButtonDown);
-                            h.Foreground = Brushes.Blue;
-                            h.Cursor = Cursors.Hand;
-                            String url = CommonManager.ReplaceUrl(matchVal.Value.Replace("\r\n", ""));
-                            h.NavigateUri = new Uri(url);
-                            para.Inlines.Add(h);
-                            para.Inlines.Add("\r\n");
-
-                            text = text.Remove(0, matchVal.Value.Length);
-                        } while (regex.IsMatch(text) == true);
-                        para.Inlines.Add(text);
-
-                        flowDoc.Blocks.Add(para);
-                        richTextBox_eventInfo.Document = flowDoc;
-                    }
-                    catch
-                    {
-                        text = CommonManager.Instance.ConvertProgramText(eventInfo, EventInfoTextMode.All);
-                        FlowDocument flowDoc = new FlowDocument();
-                        flowDoc.Blocks.Add(new Paragraph(new Run(text)));
-                        richTextBox_eventInfo.Document = flowDoc;
-                    }
-                }
-                else
-                {
-                    FlowDocument flowDoc = new FlowDocument();
-                    flowDoc.Blocks.Add(new Paragraph(new Run(text)));
-                    richTextBox_eventInfo.Document = flowDoc;
-                }
-            }
-        }
-
-        void h_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-        {
-            try
-            {
-                if (sender.GetType() == typeof(Hyperlink))
-                {
-                    Hyperlink h = sender as Hyperlink;
-                    System.Diagnostics.Process.Start(h.NavigateUri.ToString());
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                richTextBox_eventInfo.Document = CommonManager.Instance.ConvertDisplayText(eventInfo);
             }
         }
 
@@ -934,32 +865,7 @@ namespace EpgTimer
                 }
 
                 ReserveData reserveInfo = new ReserveData();
-                if (eventInfo.ShortInfo != null)
-                {
-                    reserveInfo.Title = eventInfo.ShortInfo.event_name;
-                }
-
-                reserveInfo.StartTime = eventInfo.start_time;
-                reserveInfo.StartTimeEpg = eventInfo.start_time;
-
-                if (eventInfo.DurationFlag == 0)
-                {
-                    reserveInfo.DurationSecond = 10 * 60;
-                }
-                else
-                {
-                    reserveInfo.DurationSecond = eventInfo.durationSec;
-                }
-
-                UInt64 key = CommonManager.Create64Key(eventInfo.original_network_id, eventInfo.transport_stream_id, eventInfo.service_id);
-                if (ChSet5.Instance.ChList.ContainsKey(key) == true)
-                {
-                    reserveInfo.StationName = ChSet5.Instance.ChList[key].ServiceName;
-                }
-                reserveInfo.OriginalNetworkID = eventInfo.original_network_id;
-                reserveInfo.TransportStreamID = eventInfo.transport_stream_id;
-                reserveInfo.ServiceID = eventInfo.service_id;
-                reserveInfo.EventID = eventInfo.event_id;
+                CommonManager.ConvertEpgToReserveData(eventInfo, ref reserveInfo);
 
                 RecSettingData setInfo = new RecSettingData();
                 Settings.GetDefRecSetting(presetID, ref setInfo);
@@ -1434,32 +1340,7 @@ namespace EpgTimer
                         }
 
                         ReserveData reserveInfo = new ReserveData();
-                        if (eventInfo.ShortInfo != null)
-                        {
-                            reserveInfo.Title = eventInfo.ShortInfo.event_name;
-                        }
-
-                        reserveInfo.StartTime = eventInfo.start_time;
-                        reserveInfo.StartTimeEpg = eventInfo.start_time;
-
-                        if (eventInfo.DurationFlag == 0)
-                        {
-                            reserveInfo.DurationSecond = 10 * 60;
-                        }
-                        else
-                        {
-                            reserveInfo.DurationSecond = eventInfo.durationSec;
-                        }
-
-                        UInt64 key = CommonManager.Create64Key(eventInfo.original_network_id, eventInfo.transport_stream_id, eventInfo.service_id);
-                        if (ChSet5.Instance.ChList.ContainsKey(key) == true)
-                        {
-                            reserveInfo.StationName = ChSet5.Instance.ChList[key].ServiceName;
-                        }
-                        reserveInfo.OriginalNetworkID = eventInfo.original_network_id;
-                        reserveInfo.TransportStreamID = eventInfo.transport_stream_id;
-                        reserveInfo.ServiceID = eventInfo.service_id;
-                        reserveInfo.EventID = eventInfo.event_id;
+                        CommonManager.ConvertEpgToReserveData(eventInfo, ref reserveInfo);
 
                         RecSettingData setInfo = new RecSettingData();
                         Settings.GetDefRecSetting(0, ref setInfo);  //  デフォルトをとって来てくれる？
@@ -1580,10 +1461,7 @@ namespace EpgTimer
 
                 foreach (SearchItem item in listView_event.Items)
                 {
-                    if (item.EventInfo.original_network_id == oldItem.original_network_id &&
-                        item.EventInfo.transport_stream_id == oldItem.transport_stream_id &&
-                        item.EventInfo.service_id == oldItem.service_id &&
-                        item.EventInfo.event_id == oldItem.event_id)
+                    if (CommonManager.EqualsPg(item.EventInfo, oldItem) == true)
                     {
                         listView_event.SelectedItem = item;
                         listView_event.ScrollIntoView(item);
@@ -1594,10 +1472,7 @@ namespace EpgTimer
 //                {
 //                    foreach (SearchItem item in listView_event.Items)
 //                    {
-//                        if (item.EventInfo.original_network_id == oldItem1.original_network_id &&
-//                            item.EventInfo.transport_stream_id == oldItem1.transport_stream_id &&
-//                            item.EventInfo.service_id == oldItem1.service_id &&
-//                            item.EventInfo.event_id == oldItem1.event_id)
+//                        if (CommonManager.EqualsPg(item.EventInfo, oldItem1) == true)
 //                        {
 //                            listView_event.SelectedItems.Add(item);
 //                            break;
@@ -1627,10 +1502,7 @@ namespace EpgTimer
             {
                 foreach (SearchItem item in listView_event.Items)
                 {
-                    if (selectedItem.event_id == item.EventInfo.event_id &&
-                        selectedItem.original_network_id == item.EventInfo.original_network_id &&
-                        selectedItem.service_id == item.EventInfo.service_id &&
-                        selectedItem.transport_stream_id == item.EventInfo.transport_stream_id)
+                    if (CommonManager.EqualsPg(selectedItem, item.EventInfo) == true)
                     {
                         listView_event.SelectedItem = item;
                         listView_event.ScrollIntoView(item);

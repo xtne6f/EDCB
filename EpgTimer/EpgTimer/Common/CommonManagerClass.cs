@@ -2,7 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Windows;
+using System.Windows.Documents;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Collections;
 using System.IO;
@@ -479,6 +482,63 @@ namespace EpgTimer
         {
             UInt32 key = ((UInt32)a) << 24 | ((UInt32)r) << 16 | ((UInt32)g) << 8 | (UInt32)b;
             return key;
+        }
+
+        public static bool EqualsPg(ReserveData i1, ReserveData i2, bool IdMode = true, bool TimeMode = false)
+        {
+            if (i1 == null && i2 == null) return true;
+            if (i1 == null || i2 == null) return false;
+            return (IdMode == false || i1.EventID == i2.EventID)
+                    && (TimeMode == false || i1.StartTime == i2.StartTime && i1.DurationSecond == i2.DurationSecond)
+                    && i1.OriginalNetworkID == i2.OriginalNetworkID
+                    && i1.TransportStreamID == i2.TransportStreamID
+                    && i1.ServiceID == i2.ServiceID;
+        }
+
+        //以降の三つは数の多いEpgEventInfo相手に実行されるので、Convert使わずバラしちゃった方がいいのかも
+        public static bool EqualsPg(EpgEventInfo i1, EpgEventInfo i2, bool IdMode = true, bool TimeMode = false)
+        {
+            return EqualsPg(ConvertEpgToReserveData(i1), ConvertEpgToReserveData(i2), IdMode, TimeMode);
+        }
+
+        public static bool EqualsPg(EpgEventInfo i1, ReserveData i2, bool IdMode = true, bool TimeMode = false)
+        {
+            return EqualsPg(ConvertEpgToReserveData(i1), i2, IdMode, TimeMode);
+        }
+
+        public static bool EqualsPg(ReserveData i1, EpgEventInfo i2, bool IdMode = true, bool TimeMode = false)
+        {
+            return EqualsPg(i1, ConvertEpgToReserveData(i2), IdMode, TimeMode);
+        }
+
+        public static ReserveData ConvertEpgToReserveData(EpgEventInfo epgInfo)
+        {
+            if (epgInfo == null) return null;
+            ReserveData resInfo = new ReserveData();
+            ConvertEpgToReserveData(epgInfo, ref resInfo);
+            return resInfo;
+        }
+
+        public static bool ConvertEpgToReserveData(EpgEventInfo epgInfo, ref ReserveData resInfo)
+        {
+            if (epgInfo == null || resInfo == null) return false;
+
+            resInfo.Title = (epgInfo.ShortInfo != null ? epgInfo.ShortInfo.event_name : "");
+            resInfo.StartTime = epgInfo.start_time;
+            resInfo.StartTimeEpg = epgInfo.start_time;
+            resInfo.DurationSecond = (epgInfo.DurationFlag == 0 ? 10 * 60 : epgInfo.durationSec);
+
+            UInt64 key = CommonManager.Create64Key(epgInfo.original_network_id, epgInfo.transport_stream_id, epgInfo.service_id);
+            if (ChSet5.Instance.ChList.ContainsKey(key) == true)
+            {
+                resInfo.StationName = ChSet5.Instance.ChList[key].ServiceName;
+            }
+            resInfo.OriginalNetworkID = epgInfo.original_network_id;
+            resInfo.TransportStreamID = epgInfo.transport_stream_id;
+            resInfo.ServiceID = epgInfo.service_id;
+            resInfo.EventID = epgInfo.event_id;
+
+            return true;
         }
 
         public static EpgServiceInfo ConvertChSet5To(ChSet5Item item)
@@ -1177,6 +1237,73 @@ namespace EpgTimer
                     break;
             }
             return retText;
+        }
+
+        public FlowDocument ConvertDisplayText(EpgEventInfo eventInfo)
+        {
+            String epgText = CommonManager.Instance.ConvertProgramText(eventInfo, EventInfoTextMode.All);
+            if (epgText == "") epgText = "番組情報がありません。\r\n" + "またはEPGデータが読み込まれていません。";
+            String text = epgText;
+            FlowDocument flowDoc = new FlowDocument();
+            Regex regex = new Regex("((http://|https://|ｈｔｔｐ：／／|ｈｔｔｐｓ：／／).*\r\n)");
+
+            if (regex.IsMatch(text) == true)
+            {
+                try
+                {
+                    //Regexのsplitでやるとhttp://だけのも取れたりするので、１つずつ行う
+                    Paragraph para = new Paragraph();
+
+                    do
+                    {
+                        Match matchVal = regex.Match(text);
+                        int index = text.IndexOf(matchVal.Value);
+
+                        para.Inlines.Add(text.Substring(0, index));
+                        text = text.Remove(0, index);
+
+                        Hyperlink h = new Hyperlink(new Run(matchVal.Value.Replace("\r\n", "")));
+                        h.MouseLeftButtonDown += new MouseButtonEventHandler(h_MouseLeftButtonDown);
+                        h.Foreground = Brushes.Blue;
+                        h.Cursor = Cursors.Hand;
+                        String url = CommonManager.ReplaceUrl(matchVal.Value.Replace("\r\n", ""));
+                        h.NavigateUri = new Uri(url);
+                        para.Inlines.Add(h);
+                        para.Inlines.Add("\r\n");
+
+                        text = text.Remove(0, matchVal.Value.Length);
+                    } while (regex.IsMatch(text) == true);
+                    para.Inlines.Add(text);
+
+                    flowDoc.Blocks.Add(para);
+                }
+                catch
+                {
+                    flowDoc = new FlowDocument(new Paragraph(new Run(epgText)));
+                }
+            }
+            else
+            {
+                flowDoc.Blocks.Add(new Paragraph(new Run(epgText)));
+            }
+
+            return flowDoc;
+        }
+
+        void h_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            try
+            {
+                if (sender.GetType() == typeof(Hyperlink))
+                {
+                    Hyperlink h = sender as Hyperlink;
+                    System.Diagnostics.Process.Start(h.NavigateUri.ToString());
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+            }
         }
 
         public void FilePlay(String filePath)

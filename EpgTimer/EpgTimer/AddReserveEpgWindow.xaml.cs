@@ -53,80 +53,9 @@ namespace EpgTimer
 
         public void SetEventInfo(EpgEventInfo eventData)
         {
-            try
-            {
-                eventInfo = eventData;
-                textBox_info.Text = CommonManager.Instance.ConvertProgramText(eventData, EventInfoTextMode.BasicOnly);
-                String text = CommonManager.Instance.ConvertProgramText(eventData, EventInfoTextMode.ExtOnly);
-
-                Regex regex = new Regex("((http://|https://|ｈｔｔｐ：／／|ｈｔｔｐｓ：／／).*\r\n)");
-                if (regex.IsMatch(text) == true)
-                {
-                    try
-                    {
-                        //Regexのsplitでやるとhttp://だけのも取れたりするので、１つずつ行う
-                        FlowDocument flowDoc = new FlowDocument();
-                        Paragraph para = new Paragraph();
-
-                        do
-                        {
-                            Match matchVal = regex.Match(text);
-                            int index = text.IndexOf(matchVal.Value);
-
-                            para.Inlines.Add(text.Substring(0, index));
-                            text = text.Remove(0, index);
-
-                            Hyperlink h = new Hyperlink(new Run(matchVal.Value.Replace("\r\n", "")));
-                            h.MouseLeftButtonDown += new MouseButtonEventHandler(h_MouseLeftButtonDown);
-                            h.Foreground = Brushes.Blue;
-                            h.Cursor = Cursors.Hand;
-                            String url = CommonManager.ReplaceUrl(matchVal.Value.Replace("\r\n", ""));
-                            h.NavigateUri = new Uri(url);
-                            para.Inlines.Add(h);
-                            para.Inlines.Add("\r\n");
-
-                            text = text.Remove(0, matchVal.Value.Length);
-                        } while (regex.IsMatch(text) == true);
-                        para.Inlines.Add(text);
-
-                        flowDoc.Blocks.Add(para);
-                        richTextBox_descInfo.Document = flowDoc;
-                    }
-                    catch
-                    {
-                        text = CommonManager.Instance.ConvertProgramText(eventInfo, EventInfoTextMode.All);
-                        FlowDocument flowDoc = new FlowDocument();
-                        flowDoc.Blocks.Add(new Paragraph(new Run(text)));
-                        richTextBox_descInfo.Document = flowDoc;
-                    }
-                }
-                else
-                {
-                    FlowDocument flowDoc = new FlowDocument();
-                    flowDoc.Blocks.Add(new Paragraph(new Run(text)));
-                    richTextBox_descInfo.Document = flowDoc;
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
-
-        void h_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-        {
-            try
-            {
-                if (sender.GetType() == typeof(Hyperlink))
-                {
-                    Hyperlink h = sender as Hyperlink;
-                    System.Diagnostics.Process.Start(h.NavigateUri.ToString());
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            eventInfo = eventData;
+            textBox_info.Text = CommonManager.Instance.ConvertProgramText(eventData, EventInfoTextMode.BasicOnly);
+            richTextBox_descInfo.Document = CommonManager.Instance.ConvertDisplayText(eventInfo);
         }
 
         private void button_add_reserve_Click(object sender, RoutedEventArgs e)
@@ -136,39 +65,11 @@ namespace EpgTimer
                 if (eventInfo.StartTimeFlag == 0)
                 {
                     MessageBox.Show("開始時間未定のため予約できません");
-                    if (this.Visibility == System.Windows.Visibility.Visible)
-                    {
-                        DialogResult = false;
-                    }
+                    return;
                 }
 
                 ReserveData reserveInfo = new ReserveData();
-                if (eventInfo.ShortInfo != null)
-                {
-                    reserveInfo.Title = eventInfo.ShortInfo.event_name;
-                }
-
-                reserveInfo.StartTime = eventInfo.start_time;
-                reserveInfo.StartTimeEpg = eventInfo.start_time;
-
-                if (eventInfo.DurationFlag == 0)
-                {
-                    reserveInfo.DurationSecond = 10 * 60;
-                }
-                else
-                {
-                    reserveInfo.DurationSecond = eventInfo.durationSec;
-                }
-
-                UInt64 key = CommonManager.Create64Key(eventInfo.original_network_id, eventInfo.transport_stream_id, eventInfo.service_id);
-                if (ChSet5.Instance.ChList.ContainsKey(key) == true)
-                {
-                    reserveInfo.StationName = ChSet5.Instance.ChList[key].ServiceName;
-                }
-                reserveInfo.OriginalNetworkID = eventInfo.original_network_id;
-                reserveInfo.TransportStreamID = eventInfo.transport_stream_id;
-                reserveInfo.ServiceID = eventInfo.service_id;
-                reserveInfo.EventID = eventInfo.event_id;
+                CommonManager.ConvertEpgToReserveData(eventInfo, ref reserveInfo);
 
                 RecSettingData setInfo = new RecSettingData();
                 recSettingView.GetRecSetting(ref setInfo);
@@ -194,10 +95,8 @@ namespace EpgTimer
             {
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
-            if (this.Visibility == System.Windows.Visibility.Visible)
-            {
-                DialogResult = true;
-            }
+
+            DialogResult = true;
         }
 
         private void button_cancel_Click(object sender, RoutedEventArgs e)

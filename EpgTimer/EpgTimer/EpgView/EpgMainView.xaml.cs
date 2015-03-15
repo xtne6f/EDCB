@@ -639,32 +639,7 @@ namespace EpgTimer
                 }
 
                 ReserveData reserveInfo = new ReserveData();
-                if (eventInfo.ShortInfo != null)
-                {
-                    reserveInfo.Title = eventInfo.ShortInfo.event_name;
-                }
-
-                reserveInfo.StartTime = eventInfo.start_time;
-                reserveInfo.StartTimeEpg = eventInfo.start_time;
-
-                if (eventInfo.DurationFlag == 0)
-                {
-                    reserveInfo.DurationSecond = 10 * 60;
-                }
-                else
-                {
-                    reserveInfo.DurationSecond = eventInfo.durationSec;
-                }
-
-                UInt64 key = CommonManager.Create64Key(eventInfo.original_network_id, eventInfo.transport_stream_id, eventInfo.service_id);
-                if (ChSet5.Instance.ChList.ContainsKey(key) == true)
-                {
-                    reserveInfo.StationName = ChSet5.Instance.ChList[key].ServiceName;
-                }
-                reserveInfo.OriginalNetworkID = eventInfo.original_network_id;
-                reserveInfo.TransportStreamID = eventInfo.transport_stream_id;
-                reserveInfo.ServiceID = eventInfo.service_id;
-                reserveInfo.EventID = eventInfo.event_id;
+                CommonManager.ConvertEpgToReserveData(eventInfo, ref reserveInfo);
 
                 RecSettingData setInfo = new RecSettingData();
                 Settings.GetDefRecSetting(presetID, ref setInfo);
@@ -924,32 +899,7 @@ namespace EpgTimer
                 }
 
                 ReserveData reserveInfo = new ReserveData();
-                if (eventInfo.ShortInfo != null)
-                {
-                    reserveInfo.Title = eventInfo.ShortInfo.event_name;
-                }
-
-                reserveInfo.StartTime = eventInfo.start_time;
-                reserveInfo.StartTimeEpg = eventInfo.start_time;
-
-                if (eventInfo.DurationFlag == 0)
-                {
-                    reserveInfo.DurationSecond = 10 * 60;
-                }
-                else
-                {
-                    reserveInfo.DurationSecond = eventInfo.durationSec;
-                }
-
-                UInt64 key = CommonManager.Create64Key(eventInfo.original_network_id, eventInfo.transport_stream_id, eventInfo.service_id);
-                if (ChSet5.Instance.ChList.ContainsKey(key) == true)
-                {
-                    reserveInfo.StationName = ChSet5.Instance.ChList[key].ServiceName;
-                }
-                reserveInfo.OriginalNetworkID = eventInfo.original_network_id;
-                reserveInfo.TransportStreamID = eventInfo.transport_stream_id;
-                reserveInfo.ServiceID = eventInfo.service_id;
-                reserveInfo.EventID = eventInfo.event_id;
+                CommonManager.ConvertEpgToReserveData(eventInfo, ref reserveInfo);
 
                 RecSettingData setInfo = new RecSettingData();
                 Settings.GetDefRecSetting(0, ref setInfo);  //  デフォルトをとって来てくれる？
@@ -1586,10 +1536,7 @@ namespace EpgTimer
                                         //予約情報から番組情報を特定し、枠表示位置を再設定する
                                         foreach (ProgramViewItem pgInfo in timeList[chkTime])
                                         {
-                                            if (viewItem.ReserveInfo.OriginalNetworkID == pgInfo.EventInfo.original_network_id &&
-                                                viewItem.ReserveInfo.TransportStreamID == pgInfo.EventInfo.transport_stream_id &&
-                                                viewItem.ReserveInfo.ServiceID == pgInfo.EventInfo.service_id &&
-                                                viewItem.ReserveInfo.EventID == pgInfo.EventInfo.event_id &&
+                                            if (CommonManager.EqualsPg(viewItem.ReserveInfo, pgInfo.EventInfo) == true &&
                                                 info.DurationSecond != 0)
                                             {
                                                 viewItem.TopPos = pgInfo.TopPos + pgInfo.Height * (startTime - info.StartTime).TotalSeconds / info.DurationSecond;
@@ -2246,10 +2193,7 @@ namespace EpgTimer
             {
                 foreach (ProgramViewItem programViewItem1 in this.programList)
                 {
-                    if (programViewItem1.EventInfo.event_id == BlackoutWindow.selectedSearchItem.EventInfo.event_id &&
-                        programViewItem1.EventInfo.original_network_id == BlackoutWindow.selectedSearchItem.EventInfo.original_network_id &&
-                        programViewItem1.EventInfo.service_id == BlackoutWindow.selectedSearchItem.EventInfo.service_id &&
-                        programViewItem1.EventInfo.transport_stream_id == BlackoutWindow.selectedSearchItem.EventInfo.transport_stream_id)
+                    if (CommonManager.EqualsPg(programViewItem1.EventInfo, BlackoutWindow.selectedSearchItem.EventInfo) == true)
                     {
                         this.epgProgramView.scrollViewer.ScrollToHorizontalOffset(programViewItem1.LeftPos - 100);
                         this.epgProgramView.scrollViewer.ScrollToVerticalOffset(programViewItem1.TopPos - 100);
