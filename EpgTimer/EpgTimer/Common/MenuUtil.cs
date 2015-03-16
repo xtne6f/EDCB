@@ -6,6 +6,8 @@ using System.Text.RegularExpressions;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Controls;
+using System.Collections;
 
 using CtrlCmdCLI;
 using CtrlCmdCLI.Def;
@@ -14,6 +16,13 @@ namespace EpgTimer
 {
     class MenuUtil
     {
+        private CtrlCmdUtil cmd = null;
+
+        public MenuUtil(CtrlCmdUtil ctrlCmd)
+        {
+            cmd = ctrlCmd;
+        }
+
         public string TrimEpgKeyword(string txtKey, bool NotToggle = false)//NotToggleはショートカット用
         {
             string txtKey1 = txtKey;
@@ -311,6 +320,147 @@ namespace EpgTimer
             }
             return mark;
         }
+
+        public static List<T> GetList<T>(T item)
+        {
+            var list = new List<T>();
+            list.Add(item);
+            return list;
+        }
+
+        public bool ReserveAdd(EpgEventInfo item, RecSettingView recSettingView = null, object sender = null)
+        {
+            return ReserveAdd(GetList(item), recSettingView, sender);
+        }
+        public bool ReserveAdd(List<EpgEventInfo> itemlist, RecSettingView recSettingView = null, object sender = null)
+        {
+            try
+            {
+                if (itemlist.Count == 1)
+                {
+                    if (IsEnableReserveAdd(itemlist[0]) == false) return false;
+                }
+
+                //Memo:未使用時は即破棄、使用時もEpgTimerSrv側に送信後破棄されるので、forループの外にいられる。
+                var setInfo = new RecSettingData();
+                if (recSettingView != null)
+                {
+                    //ダイアログからの予約、SearchWindowの簡易予約
+                    recSettingView.GetRecSetting(ref setInfo);
+                }
+                else
+                {
+                    uint presetID = 0;  //EPG画面の簡易予約
+                    if (sender != null)
+                    {
+                        //コンテキストメニューからのプリセット予約
+                        presetID = ReadDataContext(sender, uint.MinValue, uint.MaxValue - 1);
+                        if (presetID == 0xFF) return false;
+
+                    }
+                    Settings.GetDefRecSetting(presetID, ref setInfo);
+                }
+
+                var list = new List<ReserveData>();
+
+                foreach (EpgEventInfo item in itemlist)
+                {
+                    if (item.StartTimeFlag != 0)
+                    {
+                        var resInfo = new ReserveData();
+                        CommonManager.ConvertEpgToReserveData(item, ref resInfo);
+                        resInfo.RecSetting = setInfo;
+                        list.Add(resInfo);
+                    }
+                }
+
+                return ReserveAdd(list);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                return false;
+            }
+        }
+        public bool IsEnableReserveAdd(EpgEventInfo item)
+        {
+            if (item == null) return false;
+
+            bool retv = (item.StartTimeFlag != 0);
+            if (retv == false)
+            {
+                MessageBox.Show("開始時間未定のため予約できません");
+            }
+            return retv;
+        }
+        public bool ReserveAdd(ReserveData item)
+        {
+            return ReserveAdd(GetList(item));
+        }
+        public bool ReserveAdd(List<ReserveData> list)
+        {
+            return ReserveCmdSend(list, cmd.SendAddReserve, "予約追加");
+        }
+
+        private uint ReadDataContext(object sender, uint min, uint max)
+        {
+            try
+            {
+                if (sender == null || sender.GetType() != typeof(MenuItem))
+                {
+                    return 0xFF;
+                }
+                return Math.Max(Math.Min((uint)((sender as MenuItem).DataContext), max), min);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                return 0xFF;
+            }
+        }
+        public bool ReserveChange(ReserveData item)
+        {
+            return ReserveChange(GetList(item));
+        }
+        public bool ReserveChange(List<ReserveData> list)
+        {
+            return ReserveCmdSend(list, cmd.SendChgReserve, "予約変更");
+        }
+
+        public bool ReserveDelete(ReserveData item)
+        {
+            return ReserveDelete(GetList(item));
+        }
+        public bool ReserveDelete(List<ReserveData> itemlist)
+        {
+            try
+            {
+                List<uint> list = itemlist.Select(item => item.ReserveID).ToList();
+                return ReserveCmdSend(list, cmd.SendDelReserve, "予約削除");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                return false;
+            }
+        }
+
+        private bool ReserveCmdSend<T>(List<T> list, Func<List<T>, uint> cmdSend, string description="")
+        {
+            try
+            {
+                if (list.Count == 0) return false;
+                ErrCode err = (ErrCode)cmdSend(list);
+                CommonManager.CmdErrMsgTypical(err, description);
+                return (err == ErrCode.CMD_SUCCESS ? true : false);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                return false;
+            }
+        }
+
     }
 
     public static class MenuUtilEx

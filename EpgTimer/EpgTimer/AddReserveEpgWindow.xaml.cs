@@ -4,14 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
-
-using System.Text.RegularExpressions;
 
 using CtrlCmdCLI;
 using CtrlCmdCLI.Def;
@@ -60,42 +53,8 @@ namespace EpgTimer
 
         private void button_add_reserve_Click(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                if (eventInfo.StartTimeFlag == 0)
-                {
-                    MessageBox.Show("開始時間未定のため予約できません");
-                    return;
-                }
-
-                ReserveData reserveInfo = new ReserveData();
-                CommonManager.ConvertEpgToReserveData(eventInfo, ref reserveInfo);
-
-                RecSettingData setInfo = new RecSettingData();
-                recSettingView.GetRecSetting(ref setInfo);
-                reserveInfo.RecSetting = setInfo;
-
-                List<ReserveData> list = new List<ReserveData>();
-                list.Add(reserveInfo);
-                ErrCode err = (ErrCode)cmd.SendAddReserve(list);
-                if (err == ErrCode.CMD_ERR_CONNECT)
-                {
-                    MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-                }
-                if (err == ErrCode.CMD_ERR_TIMEOUT)
-                {
-                    MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-                }
-                if (err != ErrCode.CMD_SUCCESS)
-                {
-                    MessageBox.Show("予約登録でエラーが発生しました。終了時間がすでに過ぎている可能性があります。");
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-
+            if (CommonManager.Instance.MUtil.IsEnableReserveAdd(eventInfo) == false) return;
+            CommonManager.Instance.MUtil.ReserveAdd(eventInfo, recSettingView);
             DialogResult = true;
         }
 

@@ -12,14 +12,15 @@
             <RowDefinition Height="*" />
             <RowDefinition Height="40" />
         </Grid.RowDefinitions>
-        <TabControl Grid.Row="0" Name="tabControl" TabStripPlacement="Bottom" >
+        <TabControl Grid.Row="0" Name="tabControl" TabStripPlacement="Bottom" SelectionChanged="tabControl_SelectionChanged">
             <TabItem Header="予約" Name="tabItem_reserve">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="90" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
-                    <CheckBox Content="プログラム予約化（一度プログラム予約化したものは元に戻せません。番組を特定できなくなるため追従もできません。）" Height="16" HorizontalAlignment="Left" Margin="12,12,0,0" Name="checkBox_program" VerticalAlignment="Top" Click="checkBox_program_Click" />
+                    <RadioButton Content="EPG予約" Height="16" HorizontalAlignment="Left" Margin="12,12,0,0" Name="radioButton_Epg" VerticalAlignment="Top" ToolTip="EPG予約に戻す場合、指定日時と放映時間が重複する番組で、開始日時の最も近いものが選択されます。" Click="radioButton_Epg_Click" />
+                    <RadioButton Content="プログラム予約（プログラム予約では「追従機能」「ぴったり録画機能」は使用できません。）" Height="16" HorizontalAlignment="Left" Margin="97,12,0,0" Name="radioButton_Program" VerticalAlignment="Top" Click="radioButton_Program_Click" />
                     <Label Content="番組名" Height="28" HorizontalAlignment="Left" Margin="12,34,0,0" Name="label1" VerticalAlignment="Top" />
                     <TextBox Height="24" Margin="80,36,0,0" Name="textBox_title" VerticalAlignment="Top" HorizontalAlignment="Left" Width="270" />
                     <Label Content="サービス" HorizontalAlignment="Left" Margin="364,34,0,0" Name="label2" Height="28" VerticalAlignment="Top" />

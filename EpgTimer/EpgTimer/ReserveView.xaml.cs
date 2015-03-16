@@ -674,7 +674,7 @@ namespace EpgTimer
             listView_reserve.UnselectAll();
             ChgReserveWindow dlg = new ChgReserveWindow();
             dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-            dlg.AddReserveMode(true);
+            dlg.SetAddReserveMode();
             dlg.ShowDialog();
         }
 

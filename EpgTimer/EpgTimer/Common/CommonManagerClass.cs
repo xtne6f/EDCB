@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Documents;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Collections;
@@ -145,7 +146,7 @@ namespace EpgTimer
             }
             if (MUtil == null)
             {
-                MUtil = new MenuUtil();
+                MUtil = new MenuUtil(CtrlCmd);
             }
             if (ContentKindDictionary == null)
             {
@@ -659,6 +660,62 @@ namespace EpgTimer
             retText = retText.Replace("９", "9");
 
             return retText;
+        }
+
+        public static void CmdErrMsgTypical(ErrCode err, string Title = "通信")
+        {
+            if (err == ErrCode.CMD_ERR_CONNECT)
+            {
+                MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
+            }
+            if (err == ErrCode.CMD_ERR_BUSY)
+            {
+            }
+            if (err == ErrCode.CMD_ERR_TIMEOUT)
+            {
+                MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
+            }
+            if (err != ErrCode.CMD_SUCCESS)
+            {
+                MessageBox.Show(Title + "でエラーが発生しました。");
+            }
+        }
+
+        public static bool CmdErrMsgTypical2(ContentControl Owner, ErrCode err, string Title = "通信")
+        {
+            if (err == ErrCode.CMD_ERR_CONNECT)
+            {
+                Owner.Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
+                }), null);
+                return false;
+            }
+            if (err == ErrCode.CMD_ERR_BUSY)
+            {
+                /*Owner.Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    MessageBox.Show("データの読み込みを行える状態ではありません。\r\n（EPGデータ読み込み中。など）");
+                }), null);*/
+                return false;
+            }
+            if (err == ErrCode.CMD_ERR_TIMEOUT)
+            {
+                Owner.Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
+                }), null);
+                return false;
+            }
+            if (err != ErrCode.CMD_SUCCESS)
+            {
+                Owner.Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    MessageBox.Show(Title + "でエラーが発生しました。");
+                }), null);
+                return false;
+            }
+            return true;
         }
 
         public EpgEventInfo GetEpgEventInfoFromReserveData(ReserveData info, bool getSrv=false)

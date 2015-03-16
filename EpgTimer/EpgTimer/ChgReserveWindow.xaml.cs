@@ -4,14 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
-
-using System.Text.RegularExpressions;
 
 using CtrlCmdCLI;
 using CtrlCmdCLI.Def;
@@ -26,6 +19,14 @@ namespace EpgTimer
         private ReserveData reserveInfo = null;
         private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
         private bool manualAddMode = false;
+        private byte openMode = 0;
+
+        private bool resModeProgram = true;
+
+        private ReserveData resInfoDisplay = null;
+        private EpgEventInfo eventInfoDisplay = null;
+        private EpgEventInfo eventInfoNew = null;
+        private EpgEventInfo eventInfoSelected = null;
 
         public ChgReserveWindow()
         {
@@ -59,58 +60,12 @@ namespace EpgTimer
 
         public void SetOpenMode(byte mode)
         {
-            tabControl.SelectedIndex = mode;
+            openMode = mode;
         }
 
-        public void AddReserveMode(bool addMode)
+        public void SetAddReserveMode()
         {
-            if (addMode == true)
-            {
-                checkBox_program.IsChecked = true;
-                checkBox_program.IsEnabled = false;
-                recSettingView.SetViewMode(false);
-
-                if (comboBox_service.Items.Count > 0)
-                {
-                    comboBox_service.SelectedIndex = 0;
-                }
-
-                this.Title = "プログラム予約追加";
-                checkBox_program.Visibility = System.Windows.Visibility.Hidden;
-
-                DateTime startTime = DateTime.Now.AddMinutes(1);
-                datePicker_start.SelectedDate = startTime;
-                comboBox_sh.SelectedIndex = startTime.Hour;
-                comboBox_sm.SelectedIndex = startTime.Minute;
-                comboBox_ss.SelectedIndex = 0;
-
-                DateTime endTime = startTime.AddMinutes(30);
-                datePicker_end.SelectedDate = endTime;
-                comboBox_eh.SelectedIndex = endTime.Hour;
-                comboBox_em.SelectedIndex = endTime.Minute;
-                comboBox_es.SelectedIndex = 0;
-
-                button_chg_reserve.Content = "予約";
-
-                button_del_reserve.Visibility = System.Windows.Visibility.Hidden;
-
-                manualAddMode = true;
-                reserveInfo = new ReserveData();
-            }
-            else
-            {
-                checkBox_program.IsChecked = false;
-
-                this.Title = "予約変更";
-                checkBox_program.Visibility = System.Windows.Visibility.Visible;
-
-                button_chg_reserve.Content = "変更";
-
-                button_del_reserve.Visibility = System.Windows.Visibility.Visible;
-
-                manualAddMode = false;
-
-            }
+            manualAddMode = true;
         }
 
         /// <summary>
@@ -121,82 +76,240 @@ namespace EpgTimer
         {
             reserveInfo = info;
             recSettingView.SetDefSetting(info.RecSetting);
+        }
 
-            if (info.EventID != 0xFFFF)
+        private void SetResModeProgram(bool mode)
+        {
+            resModeProgram = mode;
+
+            radioButton_Epg.IsChecked = !resModeProgram;
+            radioButton_Program.IsChecked = resModeProgram;
+
+            textBox_title.IsEnabled = resModeProgram;
+            comboBox_service.IsEnabled = resModeProgram;
+            datePicker_start.IsEnabled = resModeProgram;
+            comboBox_sh.IsEnabled = resModeProgram;
+            comboBox_sm.IsEnabled = resModeProgram;
+            comboBox_ss.IsEnabled = resModeProgram;
+            datePicker_end.IsEnabled = resModeProgram;
+            comboBox_eh.IsEnabled = resModeProgram;
+            comboBox_em.IsEnabled = resModeProgram;
+            comboBox_es.IsEnabled = resModeProgram;
+            recSettingView.SetViewMode(!resModeProgram);
+        }
+
+        //問題は起きないはずだが、ロード時に何度もSelectionChangedが呼び出されるので一応制御を入れておく
+        //SelectedIndexChanged使えないい？
+        int TabSelectedIndex = -1;
+
+        private void tabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (tabControl.SelectedIndex == TabSelectedIndex) return;
+            TabSelectedIndex = tabControl.SelectedIndex;
+
+            if (tabItem_program.IsSelected)
             {
-                EpgEventInfo eventInfo = CommonManager.Instance.GetEpgEventInfoFromReserveData(reserveInfo, true);
-                if (eventInfo != null)
+                if (resModeProgram == true)
                 {
-                    richTextBox_descInfo.Document = CommonManager.Instance.ConvertDisplayText(eventInfo);
+                    var resInfo = new ReserveData();
+                    GetReserveTimeInfo(ref resInfo);
+
+                    //描画回数の削減を気にしないなら、この条件文は無くてもいい
+                    if (CommonManager.EqualsPg(resInfoDisplay, resInfo, false, true) == false)
+                    {
+                        //EPGを自動で読み込んでない時でも、元がEPG予約ならその番組情報は表示させられるようにする
+                        if (reserveInfo.EventID != 0xFFFF && CommonManager.EqualsPg(reserveInfo, resInfo, false, true) == true)
+                        {
+                            SetProgramContent(CommonManager.Instance.GetEpgEventInfoFromReserveData(reserveInfo, true));
+                        }
+                        else
+                        {
+                            SetProgramContent(SearchEventLikeThat(resInfo));
+                        }
+
+                        resInfoDisplay = resInfo;
+                    }
+                }
+                else
+                {
+                    //EPG予約を変更していない場合引っかかる。
+                    //最も表示される可能性が高いので、何度も探しにいかせないようにする。
+                    if (eventInfoSelected == null)
+                    {
+                        eventInfoSelected = CommonManager.Instance.GetEpgEventInfoFromReserveData(reserveInfo, true);
+                    }
+                    SetProgramContent(eventInfoSelected);
+                    resInfoDisplay = null;
                 }
             }
+        }
+
+        private void SetProgramContent(EpgEventInfo info)
+        {
+            //放映時刻情報に対してEPGデータ無い場合もあるので、resInfoDisplayとは別にeventInfoDisplayを管理する
+            if (CommonManager.EqualsPg(eventInfoDisplay, info) == false)
+            {
+                richTextBox_descInfo.Document = CommonManager.Instance.ConvertDisplayText(info);
+            }
+            eventInfoDisplay = info;
+        }
+
+        private void ResetProgramContent()
+        {
+            richTextBox_descInfo.Document = CommonManager.Instance.ConvertDisplayText(null);
+            eventInfoDisplay = null;
+        }
+
+        private EpgEventInfo SearchEventLikeThat(ReserveData resInfo)
+        {
+            double dist = double.MaxValue, dist1;
+            EpgEventInfo eventPossible = null;
+
+            UInt64 key = CommonManager.Create64Key(resInfo.OriginalNetworkID, resInfo.TransportStreamID, resInfo.ServiceID);
+            if (CommonManager.Instance.DB.ServiceEventList.ContainsKey(key) == true)
+            {
+                foreach (EpgEventInfo eventChkInfo in CommonManager.Instance.DB.ServiceEventList[key].eventList)
+                {
+                    dist1 = Math.Abs((resInfo.StartTime - eventChkInfo.start_time).TotalSeconds);
+                    double overlapLength = CulcOverlapLength(resInfo.StartTime, resInfo.DurationSecond,
+                                                            eventChkInfo.start_time, eventChkInfo.durationSec);
+
+                    //開始時間が最も近いものを選ぶ。同じ差なら時間が前のものを選ぶ
+                    if (overlapLength >= 0 && (dist > dist1 ||
+                        dist == dist1 && (eventPossible == null || resInfo.StartTime > eventChkInfo.start_time)))
+                     {
+                        dist = dist1;
+                        eventPossible = eventChkInfo;
+                        if (dist == 0) break;
+                    }
+                }
+            }
+
+            return eventPossible;
+        }
+
+        private double CulcOverlapLength(DateTime s1, uint d1, DateTime s2, uint d2)
+        {
+            //重複してない場合は負数が返る。
+            TimeSpan ts1 = s1 + TimeSpan.FromSeconds(d1) - s2;
+            TimeSpan ts2 = s2 + TimeSpan.FromSeconds(d2) - s1;
+            return Math.Min(Math.Min(ts1.TotalSeconds, ts2.TotalSeconds), Math.Min(d1, d2));
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            if (manualAddMode == false)
+            if (manualAddMode == true || reserveInfo == null)
             {
-                if (reserveInfo != null)
+                manualAddMode = true;
+                SetResModeProgram(true);
+
+                if (comboBox_service.Items.Count > 0)
                 {
-                    UpdateView();
+                    comboBox_service.SelectedIndex = 0;
                 }
-                else
-                {
-                    MessageBox.Show("予約が選択されていません");
-                }
+
+                this.Title = "予約登録";
+                button_chg_reserve.Content = "予約";
+                button_del_reserve.Visibility = System.Windows.Visibility.Hidden;
+                SetReserveTime(DateTime.Now.AddMinutes(1), DateTime.Now.AddMinutes(31));
+                reserveInfo = new ReserveData();
             }
+            else
+            {
+                SetResModeProgram(reserveInfo.EventID == 0xFFFF);
+                SetReserveTimeInfo(reserveInfo);
+            }
+
+            ResetProgramContent();                  //番組詳細を初期表示
+            tabControl.SelectedIndex = openMode;
         }
 
-        private void UpdateView()
+        private void SetReserveTime(DateTime startTime, DateTime endTime)
         {
+            datePicker_start.SelectedDate = startTime;
+            comboBox_sh.SelectedIndex = startTime.Hour;
+            comboBox_sm.SelectedIndex = startTime.Minute;
+            comboBox_ss.SelectedIndex = 0;
+
+            datePicker_end.SelectedDate = endTime;
+            comboBox_eh.SelectedIndex = endTime.Hour;
+            comboBox_em.SelectedIndex = endTime.Minute;
+            comboBox_es.SelectedIndex = 0;
+        }
+
+        private int GetReserveTimeInfo(ref ReserveData resInfo)
+        {
+            if (resInfo == null) return -1;
+
             try
             {
-                if (reserveInfo.EventID == 0xFFFF)
+                resInfo.Title = textBox_title.Text;
+                ChSet5Item ch = comboBox_service.SelectedItem as ChSet5Item;
+
+                resInfo.StationName = ch.ServiceName;
+                resInfo.OriginalNetworkID = ch.ONID;
+                resInfo.TransportStreamID = ch.TSID;
+                resInfo.ServiceID = ch.SID;
+                //resInfo.EventID = 0xFFFF;　条件付の情報なのでここでは書き換えないことにする
+
+                resInfo.StartTime = new DateTime(datePicker_start.SelectedDate.Value.Year,
+                    datePicker_start.SelectedDate.Value.Month,
+                    datePicker_start.SelectedDate.Value.Day,
+                    comboBox_sh.SelectedIndex,
+                    comboBox_sm.SelectedIndex,
+                    comboBox_ss.SelectedIndex,
+                    0,
+                    DateTimeKind.Utc
+                    );
+
+                DateTime endTime = new DateTime(datePicker_end.SelectedDate.Value.Year,
+                    datePicker_end.SelectedDate.Value.Month,
+                    datePicker_end.SelectedDate.Value.Day,
+                    comboBox_eh.SelectedIndex,
+                    comboBox_em.SelectedIndex,
+                    comboBox_es.SelectedIndex,
+                    0,
+                    DateTimeKind.Utc
+                    );
+                if (resInfo.StartTime > endTime)
                 {
-                    checkBox_program.IsChecked = true;
-                    checkBox_program.IsEnabled = false;
-                    recSettingView.SetViewMode(false);
+                    resInfo.DurationSecond = 0;
+                    return -2;
                 }
                 else
                 {
-                    checkBox_program.IsChecked = false;
-                    checkBox_program.IsEnabled = true;
-                    textBox_title.IsEnabled = false;
-                    comboBox_service.IsEnabled = false;
-                    datePicker_start.IsEnabled = false;
-                    comboBox_sh.IsEnabled = false;
-                    comboBox_sm.IsEnabled = false;
-                    comboBox_ss.IsEnabled = false;
-                    datePicker_end.IsEnabled = false;
-                    comboBox_eh.IsEnabled = false;
-                    comboBox_em.IsEnabled = false;
-                    comboBox_es.IsEnabled = false;
-                    recSettingView.SetViewMode(true);
+                    TimeSpan duration = endTime - resInfo.StartTime;
+                    resInfo.DurationSecond = (uint)duration.TotalSeconds;
+                    return 0;
                 }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+            }
+            return -1;
+        }
 
-                textBox_title.Text = reserveInfo.Title;
+        private void SetReserveTimeInfo(ReserveData resInfo)
+        {
+            if (resInfo == null) return;
+
+            try
+            {
+                textBox_title.Text = resInfo.Title;
 
                 foreach (ChSet5Item ch in comboBox_service.Items)
                 {
-                    if (ch.ONID == reserveInfo.OriginalNetworkID &&
-                        ch.TSID == reserveInfo.TransportStreamID &&
-                        ch.SID == reserveInfo.ServiceID)
+                    if (ch.ONID == resInfo.OriginalNetworkID &&
+                        ch.TSID == resInfo.TransportStreamID &&
+                        ch.SID == resInfo.ServiceID)
                     {
                         comboBox_service.SelectedItem = ch;
                         break;
                     }
                 }
 
-                DateTime startTime = reserveInfo.StartTime;
-                DateTime endTime = startTime.AddSeconds(reserveInfo.DurationSecond);
-                datePicker_start.SelectedDate = startTime;
-                datePicker_end.SelectedDate = endTime;
-                comboBox_sh.SelectedIndex = startTime.Hour;
-                comboBox_sm.SelectedIndex = startTime.Minute;
-                comboBox_ss.SelectedIndex = startTime.Second;
-                comboBox_eh.SelectedIndex = endTime.Hour;
-                comboBox_em.SelectedIndex = endTime.Minute;
-                comboBox_es.SelectedIndex = endTime.Second;
+                SetReserveTime(resInfo.StartTime,resInfo.StartTime.AddSeconds(resInfo.DurationSecond));
             }
             catch (Exception ex)
             {
@@ -225,116 +338,68 @@ namespace EpgTimer
         {
             if (manualAddMode == false && CheckExistReserveItem() == false) return;
 
-            if (checkBox_program.IsChecked == true)
+            try
             {
-                reserveInfo.Title = textBox_title.Text;
-                ChSet5Item ch = comboBox_service.SelectedItem as ChSet5Item;
-
-                reserveInfo.StationName = ch.ServiceName;
-                reserveInfo.OriginalNetworkID = ch.ONID;
-                reserveInfo.TransportStreamID = ch.TSID;
-                reserveInfo.ServiceID = ch.SID;
-                reserveInfo.EventID = 0xFFFF;
-
-                reserveInfo.StartTime = new DateTime(datePicker_start.SelectedDate.Value.Year,
-                    datePicker_start.SelectedDate.Value.Month,
-                    datePicker_start.SelectedDate.Value.Day,
-                    comboBox_sh.SelectedIndex,
-                    comboBox_sm.SelectedIndex,
-                    comboBox_ss.SelectedIndex,
-                    0,
-                    DateTimeKind.Utc
-                    );
-
-                DateTime endTime = new DateTime(datePicker_end.SelectedDate.Value.Year,
-                    datePicker_end.SelectedDate.Value.Month,
-                    datePicker_end.SelectedDate.Value.Day,
-                    comboBox_eh.SelectedIndex,
-                    comboBox_em.SelectedIndex,
-                    comboBox_es.SelectedIndex,
-                    0,
-                    DateTimeKind.Utc
-                    );
-                if (reserveInfo.StartTime > endTime)
-                {
-                    MessageBox.Show("終了日時が開始日時より前です");
-                    return;
-                }
-                TimeSpan duration = endTime - reserveInfo.StartTime;
-                reserveInfo.DurationSecond = (uint)duration.TotalSeconds;
-
-                RecSettingData setInfo = new RecSettingData();
+                var setInfo = new RecSettingData();
                 recSettingView.GetRecSetting(ref setInfo);
-                setInfo.TuijyuuFlag = 0;
-                setInfo.PittariFlag = 0;
+
+                //ダイアログを閉じないときはreserveInfoを変更しないよう注意する
+                if (resModeProgram == true)
+                {
+                    var resInfo = new ReserveData();
+                    if (GetReserveTimeInfo(ref resInfo) == -2)
+                    {
+                        MessageBox.Show("終了日時が開始日時より前です");
+                        return;
+                    }
+
+                    GetReserveTimeInfo(ref reserveInfo);
+                    if (reserveInfo.EventID != 0xFFFF)
+                    {
+                        reserveInfo.EventID = 0xFFFF;
+                        reserveInfo.Comment = "";
+                    }
+                    reserveInfo.StartTimeEpg = reserveInfo.StartTime;
+
+                    setInfo.TuijyuuFlag = 0;
+                    setInfo.PittariFlag = 0;
+                }
+                else
+                {
+                    //EPG予約に変える場合、またはEPG予約で別の番組に変わる場合
+                    if (eventInfoNew != null)
+                    {
+                        //基本的にAddReserveEpgWindowと同じ処理内容
+                        if (CommonManager.Instance.MUtil.IsEnableReserveAdd(eventInfoNew) == false) return;
+                        CommonManager.ConvertEpgToReserveData(eventInfoNew, ref reserveInfo);
+                        reserveInfo.Comment = "";
+                    }
+                }
+
                 reserveInfo.RecSetting = setInfo;
+
+                if (manualAddMode == false)
+                {
+                    CommonManager.Instance.MUtil.ReserveChange(reserveInfo);
+                }
+                else
+                {
+                    CommonManager.Instance.MUtil.ReserveAdd(reserveInfo);
+                }
             }
-            else
+            catch (Exception ex)
             {
-                RecSettingData setInfo = new RecSettingData();
-                recSettingView.GetRecSetting(ref setInfo);
-                reserveInfo.RecSetting = setInfo;
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
-            List<ReserveData> list = new List<ReserveData>();
-            list.Add(reserveInfo);
-            if (manualAddMode == false)
-            {
-                ErrCode err = (ErrCode)cmd.SendChgReserve(list);
-                if (err == ErrCode.CMD_ERR_CONNECT)
-                {
-                    MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-                }
-                if (err == ErrCode.CMD_ERR_TIMEOUT)
-                {
-                    MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-                }
-                if (err != ErrCode.CMD_SUCCESS)
-                {
-                    MessageBox.Show("予約変更でエラーが発生しました。");
-                }
-            }
-            else
-            {
-                reserveInfo.StartTimeEpg = reserveInfo.StartTime;
-                ErrCode err = (ErrCode)cmd.SendAddReserve(list);
-                if (err == ErrCode.CMD_ERR_CONNECT)
-                {
-                    MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-                }
-                if (err == ErrCode.CMD_ERR_TIMEOUT)
-                {
-                    MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-                }
-                if (err != ErrCode.CMD_SUCCESS)
-                {
-                    MessageBox.Show("予約追加でエラーが発生しました。");
-                }
-            }
-            if (this.Visibility == System.Windows.Visibility.Visible)
-            {
-                DialogResult = true;
-            }
+
+            DialogResult = true;
         }
 
         private void button_del_reserve_Click(object sender, RoutedEventArgs e)
         {
             if (CheckExistReserveItem() == false) return;
 
-            List<UInt32> list = new List<UInt32>();
-            list.Add(reserveInfo.ReserveID);
-            ErrCode err = (ErrCode)cmd.SendDelReserve(list);
-            if (err == ErrCode.CMD_ERR_CONNECT)
-            {
-                MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-            }
-            if (err == ErrCode.CMD_ERR_TIMEOUT)
-            {
-                MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-            }
-            if (err != ErrCode.CMD_SUCCESS)
-            {
-                MessageBox.Show("予約削除でエラーが発生しました。");
-            }
+            CommonManager.Instance.MUtil.ReserveDelete(reserveInfo);
 
             DialogResult = true;
         }
@@ -344,36 +409,59 @@ namespace EpgTimer
             DialogResult = false;
         }
 
-        private void checkBox_program_Click(object sender, RoutedEventArgs e)
+        //一応大丈夫だが、クリックのたびに実行されないようにしておく。
+        private void radioButton_Epg_Click(object sender, RoutedEventArgs e)
         {
-            if (checkBox_program.IsChecked == true)
+            if (resModeProgram == true && radioButton_Epg.IsChecked == true)
             {
-                textBox_title.IsEnabled = true;
-                comboBox_service.IsEnabled = true;
-                datePicker_start.IsEnabled = true;
-                comboBox_sh.IsEnabled = true;
-                comboBox_sm.IsEnabled = true;
-                comboBox_ss.IsEnabled = true;
-                datePicker_end.IsEnabled = true;
-                comboBox_eh.IsEnabled = true;
-                comboBox_em.IsEnabled = true;
-                comboBox_es.IsEnabled = true;
-                recSettingView.SetViewMode(false);
+                SetResModeProgram(false);
+                ReserveModeChanged();
+            }
+        }
+
+        private void radioButton_Program_Click(object sender, RoutedEventArgs e)
+        {
+            if (resModeProgram == false && radioButton_Program.IsChecked == true)
+            {
+                SetResModeProgram(true);
+                ReserveModeChanged();
+            }
+        }
+
+        private void ReserveModeChanged()
+        {
+            if (resModeProgram == true)
+            {
+                eventInfoNew = null;
             }
             else
             {
-                textBox_title.IsEnabled = false;
-                comboBox_service.IsEnabled = false;
-                datePicker_start.IsEnabled = false;
-                comboBox_sh.IsEnabled = false;
-                comboBox_sm.IsEnabled = false;
-                comboBox_ss.IsEnabled = false;
-                datePicker_end.IsEnabled = false;
-                comboBox_eh.IsEnabled = false;
-                comboBox_em.IsEnabled = false;
-                comboBox_es.IsEnabled = false;
-                recSettingView.SetViewMode(true);
+                var resInfo = new ReserveData();
+                GetReserveTimeInfo(ref resInfo);
+
+                if (reserveInfo.EventID != 0xFFFF && CommonManager.EqualsPg(reserveInfo, resInfo, false, true) == true)
+                {
+                    //EPG予約で、元の状態に戻る場合
+                    textBox_title.Text = reserveInfo.Title;
+                    eventInfoNew = null;
+                }
+                else
+                {
+                    eventInfoNew = SearchEventLikeThat(resInfo);
+                    if (eventInfoNew == null)
+                    {
+                        MessageBox.Show("変更可能な番組がありません。\r\n" +
+                                        "EPGの期間外か、EPGデータが読み込まれていません。");
+                        SetResModeProgram(true);
+                    }
+                    else
+                    {
+                        SetReserveTimeInfo(CommonManager.ConvertEpgToReserveData(eventInfoNew));
+                    }
+                }
             }
+
+            eventInfoSelected = eventInfoNew;
         }
 
         protected override void OnKeyDown(KeyEventArgs e)
@@ -431,6 +519,5 @@ namespace EpgTimer
             MainWindow mainWindow = Application.Current.MainWindow as MainWindow;
             mainWindow.ListFoucsOnVisibleChanged();
         }
-
     }
 }
