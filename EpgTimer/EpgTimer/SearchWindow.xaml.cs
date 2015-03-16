@@ -764,11 +764,6 @@ namespace EpgTimer
             }
         }
 
-        void listView_result_KeyDown(object sender, KeyEventArgs e)
-        {
-            //xtne6f@work-plusと互換維持のためのダミー
-        }
-
         void listView_result_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control) && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
