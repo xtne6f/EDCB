@@ -73,6 +73,8 @@ public:
 	bool IsFindRecEventInfo(const EPGDB_EVENT_INFO& info, WORD chkDay) const;
 	//自動予約によって作成された指定イベントの予約を無効にする
 	bool ChgAutoAddNoRec(WORD onid, WORD tsid, WORD sid, WORD eid);
+	//チャンネル情報を取得する
+	vector<CH_DATA5> GetChDataList() const;
 private:
 	struct CHK_RESERVE_DATA {
 		__int64 cutStartTime;

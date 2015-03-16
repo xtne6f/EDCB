@@ -214,6 +214,7 @@
     <ClInclude Include="FileStreamingUtil.h" />
     <ClInclude Include="HttpFileSend.h" />
     <ClInclude Include="HttpRequestReader.h" />
+    <ClInclude Include="HttpServer.h" />
     <ClInclude Include="lauxlib.h" />
     <ClInclude Include="lua.h" />
     <ClInclude Include="lua.hpp" />
@@ -289,6 +290,7 @@
     <ClCompile Include="FileStreamingUtil.cpp" />
     <ClCompile Include="HttpFileSend.cpp" />
     <ClCompile Include="HttpRequestReader.cpp" />
+    <ClCompile Include="HttpServer.cpp" />
     <ClCompile Include="NotifyManager.cpp" />
     <ClCompile Include="ReserveManager.cpp" />
     <ClCompile Include="SOAPUtil.cpp" />

@@ -1587,6 +1587,18 @@ bool CReserveManager::ChgAutoAddNoRec(WORD onid, WORD tsid, WORD sid, WORD eid)
 	return chgList.empty() == false && ChgReserveData(chgList);
 }
 
+vector<CH_DATA5> CReserveManager::GetChDataList() const
+{
+	CBlockLock lock(&this->managerLock);
+
+	vector<CH_DATA5> list;
+	list.reserve(this->chUtil.GetMap().size());
+	for( map<LONGLONG, CH_DATA5>::const_iterator itr = this->chUtil.GetMap().begin(); itr != this->chUtil.GetMap().end(); itr++ ){
+		list.push_back(itr->second);
+	}
+	return list;
+}
+
 UINT WINAPI CReserveManager::WatchdogThread(LPVOID param)
 {
 	CReserveManager* sys = (CReserveManager*)param;

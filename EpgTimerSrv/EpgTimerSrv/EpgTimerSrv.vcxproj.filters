@@ -276,6 +276,9 @@
     <ClInclude Include="lua.hpp">
       <Filter>ヘッダー ファイル\civetweb</Filter>
     </ClInclude>
+    <ClInclude Include="HttpServer.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -448,6 +451,9 @@
     </ClCompile>
     <ClCompile Include="civetweb.c">
       <Filter>ソース ファイル\civetweb</Filter>
+    </ClCompile>
+    <ClCompile Include="HttpServer.cpp">
+      <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

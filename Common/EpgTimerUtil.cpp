@@ -672,6 +672,14 @@ void GetGenreName(BYTE nibble1, BYTE nibble2, wstring& name)
 	}
 }
 
+void GetComponentTypeName(BYTE content, BYTE type, wstring& name)
+{
+	LPCWSTR retStr = SearchKindInfoArray(content << 8 | type, componentKindSortedArray, _countof(componentKindSortedArray));
+	if( retStr != NULL ){
+		name = retStr;
+	}
+}
+
 void CopyEpgInfo(EPG_EVENT_INFO* destInfo, EPGDB_EVENT_INFO* srcInfo)
 {
 	destInfo->event_id = srcInfo->event_id;

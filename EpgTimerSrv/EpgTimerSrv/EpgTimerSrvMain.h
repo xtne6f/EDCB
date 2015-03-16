@@ -6,6 +6,8 @@
 #include "NotifyManager.h"
 #include "../../Common/ParseTextInstances.h"
 
+struct lua_State;
+
 //各種サーバと自動予約の管理をおこなう
 //必ずオブジェクト生成→Main()→…→破棄の順番で利用しなければならない
 class CEpgTimerSrvMain
@@ -22,6 +24,8 @@ public:
 	bool IsSuspendOK(); //const;
 private:
 	void ReloadSetting();
+	//プリセット録画設定を読み込む(旧CRestApiManagerから移動)
+	pair<wstring, REC_SETTING_DATA> LoadRecSetData(WORD preset) const;
 	//現在の予約状態に応じた復帰タイマをセットする
 	bool SetResumeTimer(HANDLE* resumeTimer, __int64* resumeTime, DWORD marginSec);
 	//システムをシャットダウンする
@@ -38,6 +42,49 @@ private:
 	bool AutoAddReserveProgram(const MANUAL_AUTO_ADD_DATA& data);
 	//外部制御コマンド関係
 	static int CALLBACK CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STREAM* resParam);
+	static int InitLuaCallback(lua_State* L);
+	//Lua-edcb空間のコールバック
+	class CLuaWorkspace
+	{
+	public:
+		CLuaWorkspace(lua_State* L_);
+		const char* WtoUTF8(const wstring& strIn);
+		lua_State* const L;
+		CEpgTimerSrvMain* const sys;
+		int htmlEscape;
+	private:
+		vector<char> strOut;
+	};
+	static int LuaGetGenreName(lua_State* L);
+	static int LuaGetComponentTypeName(lua_State* L);
+	static int LuaGetChDataList(lua_State* L);
+	static int LuaGetServiceList(lua_State* L);
+	static void LuaEnumEventInfoCallback(vector<EPGDB_EVENT_INFO*>* pval, void* param);
+	static void LuaEnumEventAllCallback(vector<EPGDB_SERVICE_EVENT_INFO>* pval, void* param);
+	static int LuaEnumEventInfo(lua_State* L);
+	static void LuaSearchEpgCallback(vector<CEpgDBManager::SEARCH_RESULT_EVENT>* pval, void* param);
+	static int LuaSearchEpg(lua_State* L);
+	static int LuaAddReserveData(lua_State* L);
+	static int LuaChgReserveData(lua_State* L);
+	static int LuaDelReserveData(lua_State* L);
+	static int LuaGetReserveData(lua_State* L);
+	static int LuaGetRecFileInfo(lua_State* L);
+	static int LuaDelRecFileInfo(lua_State* L);
+	static int LuaGetTunerReserveAll(lua_State* L);
+	static int LuaEnumRecPresetInfo(lua_State* L);
+	static int LuaEnumAutoAdd(lua_State* L);
+	static int LuaEnumManuAdd(lua_State* L);
+	static int LuaDelAutoAdd(lua_State* L);
+	static int LuaDelManuAdd(lua_State* L);
+	static int LuaAddOrChgAutoAdd(lua_State* L);
+	static int LuaAddOrChgManuAdd(lua_State* L);
+	static void PushEpgEventInfo(CLuaWorkspace& ws, const EPGDB_EVENT_INFO& e);
+	static void PushReserveData(CLuaWorkspace& ws, const RESERVE_DATA& r);
+	static void PushRecSettingData(CLuaWorkspace& ws, const REC_SETTING_DATA& rs);
+	static void PushEpgSearchKeyInfo(CLuaWorkspace& ws, const EPGDB_SEARCH_KEY_INFO& k);
+	static bool FetchReserveData(CLuaWorkspace& ws, RESERVE_DATA& r);
+	static void FetchRecSettingData(CLuaWorkspace& ws, REC_SETTING_DATA& rs);
+	static void FetchEpgSearchKeyInfo(CLuaWorkspace& ws, EPGDB_SEARCH_KEY_INFO& k);
 
 	CNotifyManager notifyManager;
 	CEpgDBManager epgDB;
@@ -58,6 +105,9 @@ private:
 	bool serviceFlag;
 	DWORD wakeMarginSec;
 	unsigned short tcpPort;
+	unsigned short httpPort;
+	wstring httpPublicFolder;
+	bool httpSaveLog;
 	int autoAddHour;
 	bool chkGroupEvent;
 	//LOBYTEにモード(1=スタンバイ,2=休止,3=電源断,4=なにもしない)、HIBYTEに再起動フラグ
