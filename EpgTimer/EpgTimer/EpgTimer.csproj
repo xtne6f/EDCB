@@ -102,6 +102,7 @@
       <DependentUpon>ConnectWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="DefineClass\CoopServerInfo.cs" />
+    <Compile Include="DefineClass\ProgramItemCommon.cs" />
     <Compile Include="DefineClass\ListColumnInfo.cs" />
     <Compile Include="SetCoopSrvWindow.xaml.cs">
       <DependentUpon>SetCoopSrvWindow.xaml</DependentUpon>

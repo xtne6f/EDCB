@@ -197,11 +197,6 @@ namespace EpgTimer
                                 break;
                             }
                         }
-                        UInt64 serviceKey = CommonManager.Create64Key(info.original_network_id, info.transport_stream_id, info.service_id);
-                        if (ChSet5.Instance.ChList.ContainsKey(serviceKey) == true)
-                        {
-                            item.ServiceName = ChSet5.Instance.ChList[serviceKey].ServiceName;
-                        }
 
                         resultList.Add(item);
                     }

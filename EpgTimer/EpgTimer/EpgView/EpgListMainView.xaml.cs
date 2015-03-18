@@ -539,7 +539,6 @@ namespace EpgTimer
 
                                 SearchItem item = new SearchItem();
                                 item.EventInfo = eventInfo;
-                                item.ServiceName = info.ServiceInfo.service_name;
 
                                 //予約チェック
                                 foreach (ReserveData resInfo in CommonManager.Instance.DB.ReserveList.Values)

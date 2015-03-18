@@ -3,9 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using System.Windows.Controls;
 using System.Windows;
 
@@ -14,31 +11,20 @@ using CtrlCmdCLI.Def;
 
 namespace EpgTimer
 {
-    public class SearchItem
+    public class SearchItem : ProgramItemCommon
     {
-        private EpgEventInfo eventInfo = null;
-        private ReserveData reserveData = null;
+        //EventInfo、ReserveInfo、JyanruKey、ForeColor、BackColor、BorderBrushはベースクラス
 
-        public EpgEventInfo EventInfo
-        {
-            get { return eventInfo; }
-            set { eventInfo = value; }
-        }
-        public ReserveData ReserveInfo
-        {
-            get { return reserveData; }
-            set { reserveData = value; }
-        }
         public String EventName
         {
             get
             {
                 String view = "";
-                if (eventInfo != null)
+                if (EventInfo != null)
                 {
-                    if (eventInfo.ShortInfo != null)
+                    if (EventInfo.ShortInfo != null)
                     {
-                        view = eventInfo.ShortInfo.event_name;
+                        view = EventInfo.ShortInfo.event_name;
                     }
                 }
                 return view;
@@ -46,17 +32,28 @@ namespace EpgTimer
         }
         public String ServiceName
         {
-            get;
-            set;
+            get
+            {
+                String view = "";
+                if (EventInfo != null)
+                {
+                    UInt64 serviceKey = CommonManager.Create64Key(EventInfo.original_network_id, EventInfo.transport_stream_id, EventInfo.service_id);
+                    if (ChSet5.Instance.ChList.ContainsKey(serviceKey) == true)
+                    {
+                        view = ChSet5.Instance.ChList[serviceKey].ServiceName;
+                    }
+                }
+                return view;
+            }
         }
         public String NetworkName
         {
             get
             {
                 String view = "";
-                if (eventInfo != null)
+                if (EventInfo != null)
                 {
-                    view = CommonManager.Instance.ConvertNetworkNameText(eventInfo.original_network_id);
+                    view = CommonManager.Instance.ConvertNetworkNameText(EventInfo.original_network_id);
                 }
                 return view;
             }
@@ -66,9 +63,9 @@ namespace EpgTimer
             get
             {
                 String view = "未定";
-                if (eventInfo != null)
+                if (EventInfo != null)
                 {
-                    view = eventInfo.start_time.ToString("yyyy/MM/dd(ddd) HH:mm:ss");
+                    view = EventInfo.start_time.ToString("yyyy/MM/dd(ddd) HH:mm:ss");
                 }
                 return view;
             }
@@ -79,9 +76,9 @@ namespace EpgTimer
             {
                 String[] wiewString = { "", "予", "無", "放", "予+", "無+", "録*", "無*" };
                 int index = 0;
-                if (eventInfo != null)
+                if (EventInfo != null)
                 {
-                    if (eventInfo.IsOnAir() == true)
+                    if (EventInfo.IsOnAir() == true)
                     {
                         index = 3;
                     }
@@ -109,7 +106,7 @@ namespace EpgTimer
             get
             {
                 SolidColorBrush color = CommonManager.Instance.StatResForeColor;
-                if (eventInfo != null)
+                if (EventInfo != null)
                 {
                     if (EventInfo.IsOnAir() == true)
                     {
@@ -130,49 +127,7 @@ namespace EpgTimer
         {
             get
             {
-                if (reserveData == null)
-                {
-                    return false;
-                }
-                else
-                {
-                    return true;
-                }
-            }
-        }
-        public SolidColorBrush ForeColor
-        {
-            get
-            {
-                SolidColorBrush color = CommonManager.Instance.ListDefForeColor;
-                if (ReserveInfo != null)
-                {
-                    color = CommonManager.Instance.EventItemForeColor(ReserveInfo.RecSetting.RecMode);
-                }
-                return color;
-            }
-        }
-        public SolidColorBrush BackColor
-        {
-            get
-            {
-                SolidColorBrush color = Brushes.White;
-                if (ReserveInfo != null)
-                {
-                    if (ReserveInfo.RecSetting.RecMode == 5)
-                    {
-                        color = Brushes.DarkGray;
-                    }
-                    else if (ReserveInfo.OverlapMode == 2)
-                    {
-                        color = Brushes.Red;
-                    }
-                    else if (ReserveInfo.OverlapMode == 1)
-                    {
-                        color = Brushes.Yellow;
-                    }
-                }
-                return color;
+                return (ReserveInfo != null);
             }
         }
         public TextBlock ToolTipView
@@ -184,9 +139,9 @@ namespace EpgTimer
                     return null;
                 }
                 String view = "";
-                if (eventInfo != null)
+                if (EventInfo != null)
                 {
-                    view = CommonManager.Instance.ConvertProgramText(eventInfo, EventInfoTextMode.All);
+                    view = CommonManager.Instance.ConvertProgramText(EventInfo, EventInfoTextMode.All);
                 }
 
                 TextBlock block = new TextBlock();
@@ -198,38 +153,15 @@ namespace EpgTimer
         }
 
         /// <summary>
-        /// 
-        /// </summary>
-        public String RecMode
-        {
-            get
-            {
-                if (this.ReserveInfo == null) { return null; }
-                //
-                return CommonManager.Instance.ConvertRecModeText(ReserveInfo.RecSetting.RecMode);
-            }
-        }
-
-        public String JyanruKey
-        {
-            get
-            {
-                if (this.EventInfo == null) { return null; }
-                //
-                return CommonManager.Instance.ConvertJyanruText(EventInfo);
-            }
-        }
-
-        /// <summary>
         /// 番組放送時間（長さ）
         /// </summary>
         public TimeSpan ProgramDuration
         {
             get
             {
-                if (this.EventInfo == null) { return new TimeSpan(); }
+                if (EventInfo == null) { return new TimeSpan(); }
                 //
-                return TimeSpan.FromSeconds(this.EventInfo.durationSec);
+                return TimeSpan.FromSeconds(EventInfo.durationSec);
             }
         }
 
@@ -240,7 +172,7 @@ namespace EpgTimer
         {
             get
             {
-                if (this.EventInfo == null) { return null; }
+                if (EventInfo == null) { return null; }
                 //
                 if (Settings.Instance.FixSearchResult)
                 {
@@ -248,61 +180,48 @@ namespace EpgTimer
                 }
                 else
                 {
-                    return this.EventInfo.ShortInfo.text_char.Replace("\r\n", " ");
+                    return EventInfo.ShortInfo.text_char.Replace("\r\n", " ");
                 }
             }
         }
+    }
 
-        /// <summary>
-        /// 番組詳細
-        /// </summary>
-        public string ProgramDetail
+    public static class SearchItemEx
+    {
+        public static List<EpgEventInfo> EventInfoList(this ICollection<SearchItem> itemlist)
         {
-            get
+            try
             {
-                if (this.EventInfo == null) { return null; }
-                //
-                return CommonManager.Instance.ConvertProgramText(this.EventInfo, EventInfoTextMode.All);
+                return itemlist.Select(item => item.EventInfo).ToList();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                return new List<EpgEventInfo>();
             }
         }
-        public Brush BorderBrush
+        public static List<EpgEventInfo> NoReserveInfoList(this ICollection<SearchItem> itemlist)
         {
-            get
+            try
             {
-                Brush color1 = Brushes.White;
-                if (this.EventInfo != null)
-                {
-                    if (this.EventInfo.ContentInfo != null)
-                    {
-                        if (this.EventInfo.ContentInfo.nibbleList.Count > 0)
-                        {
-                            try
-                            {
-                                foreach (EpgContentData info1 in this.EventInfo.ContentInfo.nibbleList)
-                                {
-                                    if (info1.content_nibble_level_1 <= 0x0B || info1.content_nibble_level_1 == 0x0F && Settings.Instance.ContentColorList.Count > info1.content_nibble_level_1)
-                                    {
-                                        color1 = CommonManager.Instance.CustContentColorList[info1.content_nibble_level_1];
-                                        break;
-                                    }
-                                }
-                            }
-                            catch
-                            {
-                            }
-                        }
-                        else
-                        {
-                            color1 = CommonManager.Instance.CustContentColorList[0x10];
-                        }
-                    }
-                    else
-                    {
-                        color1 = CommonManager.Instance.CustContentColorList[0x10];
-                    }
-                }
-
-                return color1;
+                return itemlist.Where(item => item.IsReserved == false).Select(item => item.EventInfo).ToList();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                return new List<EpgEventInfo>();
+            }
+        }
+        public static List<ReserveData> ReserveInfoList(this ICollection<SearchItem> itemlist)
+        {
+            try
+            {
+                return itemlist.Where(item => item.IsReserved == true).Select(item => item.ReserveInfo).ToList();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                return new List<ReserveData>();
             }
         }
     }
