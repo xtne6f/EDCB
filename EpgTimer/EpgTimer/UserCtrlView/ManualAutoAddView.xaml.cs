@@ -179,13 +179,18 @@ namespace EpgTimer
         {
             if (listView_key.SelectedItem != null)
             {
-                ManualAutoAddDataItem info = listView_key.SelectedItem as ManualAutoAddDataItem;
+                ManualAutoAddDataItem info = SelectSingleItem();
                 AddManualAutoAddWindow dlg = new AddManualAutoAddWindow();
                 dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
                 dlg.SetChangeMode(true);
                 dlg.SetDefaultSetting(info.ManualAutoAddInfo);
                 dlg.ShowDialog();
             }
+        }
+
+        private ManualAutoAddDataItem SelectSingleItem()
+        {
+            return CommonManager.Instance.MUtil.SelectSingleItem<ManualAutoAddDataItem>(listView_key);
         }
 
         private void listView_key_MouseDoubleClick(object sender, MouseButtonEventArgs e)
