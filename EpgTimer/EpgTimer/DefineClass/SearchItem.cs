@@ -134,21 +134,15 @@ namespace EpgTimer
         {
             get
             {
-                if (Settings.Instance.NoToolTip == true)
-                {
-                    return null;
-                }
+                if (Settings.Instance.NoToolTip == true) return null;
+
                 String view = "";
                 if (EventInfo != null)
                 {
                     view = CommonManager.Instance.ConvertProgramText(EventInfo, EventInfoTextMode.All);
                 }
 
-                TextBlock block = new TextBlock();
-                block.Text = view;
-                block.MaxWidth = 400;
-                block.TextWrapping = TextWrapping.Wrap;
-                return block;
+                return CommonManager.Instance.MUtil.GetTooltipBlockStandard(view);
             }
         }
 

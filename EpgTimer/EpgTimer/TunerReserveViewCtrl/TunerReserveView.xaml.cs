@@ -176,10 +176,8 @@ namespace EpgTimer.TunerReserveViewCtrl
                                     Border border = new Border();
                                     border.Background = Brushes.DarkGray;
 
-                                    TextBlock block = new TextBlock();
-                                    block.Text = view;
-                                    block.MaxWidth = 400;
-                                    block.TextWrapping = TextWrapping.Wrap;
+                                    TextBlock block = CommonManager.Instance.MUtil.GetTooltipBlockStandard(view);
+
                                     block.Margin = new Thickness(2);
 
                                     block.Background = Brushes.LightGray;

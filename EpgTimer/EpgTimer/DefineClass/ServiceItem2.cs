@@ -45,23 +45,7 @@ namespace EpgTimer
         {
             get
             {
-                if (Settings.Instance.NoToolTip == true)
-                {
-                    return null;
-                }
-                String viewTip = "";
-
-                if (ServiceInfo != null)
-                {
-                    viewTip =
-                        "service_name : " + ServiceInfo.ServiceName + "\r\n" +
-                        "service_type : " + ServiceInfo.ServiceType.ToString() + "(0x" + ServiceInfo.ServiceType.ToString("X2") + ")" + "\r\n" +
-                        "original_network_id : " + ServiceInfo.ONID.ToString() + "(0x" + ServiceInfo.ONID.ToString("X4") + ")" + "\r\n" +
-                        "transport_stream_id : " + ServiceInfo.TSID.ToString() + "(0x" + ServiceInfo.TSID.ToString("X4") + ")" + "\r\n" +
-                        "service_id : " + ServiceInfo.SID.ToString() + "(0x" + ServiceInfo.SID.ToString("X4") + ")" + "\r\n" +
-                        "partial_reception : " + ServiceInfo.PartialFlag.ToString();
-                }
-                return viewTip;
+                return CommonManager.Instance.ConvertServiceItemText(ServiceInfo);
             }
         }
     }

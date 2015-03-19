@@ -211,10 +211,15 @@ namespace EpgTimer
         {
             get
             {
-                if (Settings.Instance.NoToolTip == true)
-                {
-                    return null;
-                }
+                if (Settings.Instance.NoToolTip == true) return null;
+                //
+                return CommonManager.Instance.MUtil.GetTooltipBlockStandard(RecInfoText);
+            }
+        }
+        public string RecInfoText
+        {
+            get
+            {
                 String view = "";
                 if (RecInfo != null)
                 {
@@ -258,13 +263,7 @@ namespace EpgTimer
                     view += "Drops : " + RecInfo.Drops.ToString() + "\r\n";
                     view += "Scrambles : " + RecInfo.Scrambles.ToString() + "\r\n";
                 }
-
-
-                TextBlock block = new TextBlock();
-                block.Text = view;
-                block.MaxWidth = 400;
-                block.TextWrapping = TextWrapping.Wrap;
-                return block;
+                return view;
             }
         }
     }

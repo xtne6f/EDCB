@@ -320,6 +320,15 @@ namespace EpgTimer
             }
             return mark;
         }
+        
+        public TextBlock GetTooltipBlockStandard(string text)
+        {
+            TextBlock block = new TextBlock();
+            block.Text = text;
+            block.MaxWidth = 400;
+            block.TextWrapping = TextWrapping.Wrap;
+            return block;
+        }
 
         public static List<T> GetList<T>(T item)
         {
