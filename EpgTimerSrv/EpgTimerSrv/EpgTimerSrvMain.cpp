@@ -1,6 +1,8 @@
 #include "StdAfx.h"
 #include "EpgTimerSrvMain.h"
 #include "HttpServer.h"
+#include "../../UPnPCtrl/UpnpUtil.h"
+#include "../../UPnPCtrl/UpnpSsdpUtil.h"
 #include "../../Common/PipeServer.h"
 #include "../../Common/TCPServer.h"
 #include "../../Common/SendCtrlCmd.h"
@@ -8,6 +10,8 @@
 #include "../../Common/TimeUtil.h"
 #include "../../Common/BlockLock.h"
 #include <tlhelp32.h>
+
+static const char UPNP_URN_DMS_1[] = "urn:schemas-upnp-org:device:MediaServer:1";
 
 CEpgTimerSrvMain::CEpgTimerSrvMain()
 	: reserveManager(notifyManager, epgDB)
@@ -54,6 +58,8 @@ bool CEpgTimerSrvMain::Main(bool serviceFlag_)
 	}
 	CTCPServer tcpServer;
 	CHttpServer httpServer;
+	//UPnPのUDP(Port1900)部分を担当するサーバ
+	UPNP_SERVER_HANDLE upnpCtrl = NULL;
 
 	this->epgDB.ReloadEpgData();
 	bool reloadEpgChkPending = true;
@@ -85,6 +91,7 @@ bool CEpgTimerSrvMain::Main(bool serviceFlag_)
 			wstring httpPublicFolder_;
 			wstring httpAcl;
 			bool httpSaveLog_ = false;
+			bool enableSsdpServer_;
 			{
 				CBlockLock lock(&this->settingLock);
 				tcpPort_ = this->tcpPort;
@@ -92,16 +99,48 @@ bool CEpgTimerSrvMain::Main(bool serviceFlag_)
 				httpPublicFolder_ = this->httpPublicFolder;
 				httpAcl = this->httpAccessControlList;
 				httpSaveLog_ = this->httpSaveLog;
+				enableSsdpServer_ = this->enableSsdpServer;
 			}
 			if( tcpPort_ == 0 ){
 				tcpServer.StopServer();
 			}else{
 				tcpServer.StartServer(tcpPort_, CtrlCmdCallback, this, 0, GetCurrentProcessId());
 			}
+			if( upnpCtrl ){
+				UPNP_SERVER_RemoveNotifyInfo(upnpCtrl, this->ssdpNotifyUuid.c_str());
+				UPNP_SERVER_Stop(upnpCtrl);
+				UPNP_SERVER_CloseHandle(&upnpCtrl);
+			}
 			if( httpPort_ == 0 ){
 				httpServer.StopServer();
 			}else{
-				httpServer.StartServer(httpPort_, httpPublicFolder_.c_str(), InitLuaCallback, this, httpSaveLog_, httpAcl.c_str());
+				if( httpServer.StartServer(httpPort_, httpPublicFolder_.c_str(), InitLuaCallback, this, httpSaveLog_, httpAcl.c_str()) ){
+					if( enableSsdpServer_ ){
+						//"ddd.xml"の先頭から2KB以内に"<UDN>uuid:{UUID}</UDN>"が必要
+						char dddBuf[2048] = {};
+						HANDLE hFile = CreateFile((httpPublicFolder_ + L"\\dlna\\dms\\ddd.xml").c_str(),
+						                          GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+						if( hFile != INVALID_HANDLE_VALUE ){
+							DWORD dwRead;
+							ReadFile(hFile, dddBuf, sizeof(dddBuf) - 1, &dwRead, NULL);
+							CloseHandle(hFile);
+						}
+						string dddStr = dddBuf;
+						size_t udnFrom = dddStr.find("<UDN>uuid:");
+						if( udnFrom != string::npos && dddStr.size() > udnFrom + 10 + 36 && dddStr.compare(udnFrom + 10 + 36, 6, "</UDN>") == 0 ){
+							this->ssdpNotifyUuid.assign(dddStr, udnFrom + 10, 36);
+							this->ssdpNotifyPort = httpPort_;
+							upnpCtrl = UPNP_SERVER_CreateHandle(NULL, NULL, UpnpMSearchReqCallback, this);
+							UPNP_SERVER_Start(upnpCtrl);
+							LPCSTR urnList[] = { UPNP_URN_DMS_1, UPNP_URN_CDS_1, UPNP_URN_CMS_1, UPNP_URN_AVT_1, NULL };
+							for( int i = 0; urnList[i]; i++ ){
+								UPNP_SERVER_AddNotifyInfo(upnpCtrl, this->ssdpNotifyUuid.c_str(), urnList[i], this->ssdpNotifyPort, "/dlna/dms/ddd.xml");
+							}
+						}else{
+							OutputDebugString(L"Invalid ddd.xml\r\n");
+						}
+					}
+				}
 			}
 		}
 
@@ -205,6 +244,10 @@ bool CEpgTimerSrvMain::Main(bool serviceFlag_)
 	if( resumeTimer != NULL ){
 		CloseHandle(resumeTimer);
 	}
+	if( upnpCtrl ){
+		UPNP_SERVER_Stop(upnpCtrl);
+		UPNP_SERVER_CloseHandle(&upnpCtrl);
+	}
 	httpServer.StopServer();
 	tcpServer.StopServer();
 	pipeServer.StopServer();
@@ -260,11 +303,17 @@ void CEpgTimerSrvMain::ReloadSetting()
 			GetModuleFolderPath(this->httpPublicFolder);
 			this->httpPublicFolder += L"\\HttpPublic";
 		}
+		ChkFolderPath(this->httpPublicFolder);
+		if( this->dmsPublicFileList.empty() || CompareNoCase(this->httpPublicFolder, this->dmsPublicFileList[0].second) != 0 ){
+			//公開フォルダの場所が変わったのでクリア
+			this->dmsPublicFileList.clear();
+		}
 		GetPrivateProfileString(L"SET", L"HttpAccessControlList", L"+0.0.0.0/0", buff, 512, iniPath.c_str());
 		this->httpAccessControlList = buff;
 		this->httpPort = (unsigned short)GetPrivateProfileInt(L"SET", L"HttpPort", 5510, iniPath.c_str());
 		this->httpSaveLog = enableHttpSrv == 2;
 	}
+	this->enableSsdpServer = GetPrivateProfileInt(L"SET", L"EnableDMS", 0, iniPath.c_str()) != 0;
 
 	this->requestResetServer = true;
 	SetEvent(this->requestEvent);
@@ -1680,6 +1729,53 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 	return 0;
 }
 
+int CEpgTimerSrvMain::UpnpMSearchReqCallback(UPNP_MSEARCH_REQUEST_INFO* requestParam, void* param, SORT_LIST_HANDLE resDeviceList)
+{
+	if( requestParam == NULL || lstrcmpiA(requestParam->man, "\"ssdp:discover\"") != 0 ){
+		return -1;
+	}
+	//ここではUDPで投げられたデバイス検索の要求に対する応答を作成する
+	const string& uuid = ((CEpgTimerSrvMain*)param)->ssdpNotifyUuid;
+	unsigned short port = ((CEpgTimerSrvMain*)param)->ssdpNotifyPort;
+	char ua[128] = "";
+	UPNP_UTIL_GetUserAgent(ua, _countof(ua));
+	string st = requestParam->st;
+	if( CompareNoCase(st, "upnp:rootdevice") == 0 || CompareNoCase(st, "ssdp:all") == 0 ){
+		UPNP_MSEARCH_RES_DEV_INFO* resDevInfo = UPNP_MSEARCH_RES_DEV_INFO_New();
+		resDevInfo->max_age = 1800;
+		resDevInfo->port = port;
+		resDevInfo->uri = _strdup("/dlna/dms/ddd.xml");
+		resDevInfo->uuid = _strdup(uuid.c_str());
+		resDevInfo->usn = _strdup(("uuid:" + uuid + "::urn:rootdevice").c_str());
+		resDevInfo->server = _strdup(ua);
+		SORT_LIST_AddItem(resDeviceList, resDevInfo->uuid, resDevInfo);
+	}
+	if( st.compare(0, 5, "uuid:") == 0 && st.find(uuid) != string::npos ){
+		UPNP_MSEARCH_RES_DEV_INFO* resDevInfo = UPNP_MSEARCH_RES_DEV_INFO_New();
+		resDevInfo->max_age = 1800;
+		resDevInfo->port = port;
+		resDevInfo->uri = _strdup("/dlna/dms/ddd.xml");
+		resDevInfo->uuid = _strdup(uuid.c_str());
+		resDevInfo->usn = _strdup(("uuid:" + uuid).c_str());
+		resDevInfo->server = _strdup(ua);
+		SORT_LIST_AddItem(resDeviceList, resDevInfo->uuid, resDevInfo);
+	}
+	if( CompareNoCase(st, UPNP_URN_DMS_1) == 0 ||
+	    CompareNoCase(st, UPNP_URN_CDS_1) == 0 ||
+	    CompareNoCase(st, UPNP_URN_CMS_1) == 0 ||
+	    CompareNoCase(st, UPNP_URN_AVT_1) == 0 ){
+		UPNP_MSEARCH_RES_DEV_INFO* resDevInfo = UPNP_MSEARCH_RES_DEV_INFO_New();
+		resDevInfo->max_age = 1800;
+		resDevInfo->port = port;
+		resDevInfo->uri = _strdup("/dlna/dms/ddd.xml");
+		resDevInfo->uuid = _strdup(uuid.c_str());
+		resDevInfo->usn = _strdup(("uuid:" + uuid + "::" + st).c_str());
+		resDevInfo->server = _strdup(ua);
+		SORT_LIST_AddItem(resDeviceList, resDevInfo->uuid, resDevInfo);	
+	}
+	return -1;
+}
+
 int CEpgTimerSrvMain::InitLuaCallback(lua_State* L)
 {
 	CEpgTimerSrvMain* sys = (CEpgTimerSrvMain*)lua_touserdata(L, -1);
@@ -1704,6 +1800,7 @@ int CEpgTimerSrvMain::InitLuaCallback(lua_State* L)
 	LuaHelp::reg_function(L, "DelManuAdd", LuaDelManuAdd, sys);
 	LuaHelp::reg_function(L, "AddOrChgAutoAdd", LuaAddOrChgAutoAdd, sys);
 	LuaHelp::reg_function(L, "AddOrChgManuAdd", LuaAddOrChgManuAdd, sys);
+	LuaHelp::reg_function(L, "ListDmsPublicFile", LuaListDmsPublicFile, sys);
 	LuaHelp::reg_int(L, "htmlEscape", 0);
 	lua_setglobal(L, "edcb");
 	return 0;
@@ -2278,6 +2375,53 @@ int CEpgTimerSrvMain::LuaAddOrChgManuAdd(lua_State* L)
 		}
 	}
 	lua_pushboolean(L, false);
+	return 1;
+}
+
+int CEpgTimerSrvMain::LuaListDmsPublicFile(lua_State* L)
+{
+	CLuaWorkspace ws(L);
+	CBlockLock lock(&ws.sys->settingLock);
+	WIN32_FIND_DATA findData;
+	HANDLE hFind = FindFirstFile((ws.sys->httpPublicFolder + L"\\dlna\\dms\\PublicFile\\*").c_str(), &findData);
+	vector<pair<int, WIN32_FIND_DATA>> newList;
+	if( hFind == INVALID_HANDLE_VALUE ){
+		ws.sys->dmsPublicFileList.clear();
+	}else{
+		if( ws.sys->dmsPublicFileList.empty() ){
+			//要素0には公開フォルダの場所と次のIDを格納する
+			ws.sys->dmsPublicFileList.push_back(std::make_pair(0, ws.sys->httpPublicFolder));
+		}
+		do{
+			//TODO: 再帰的にリストしほうがいいがとりあえず…
+			if( (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0 ){
+				bool exist = false;
+				for( size_t i = 1; i < ws.sys->dmsPublicFileList.size(); i++ ){ 
+					if( lstrcmpi(ws.sys->dmsPublicFileList[i].second.c_str(), findData.cFileName) == 0 ){
+						newList.push_back(std::make_pair(ws.sys->dmsPublicFileList[i].first, findData));
+						exist = true;
+						break;
+					}
+				}
+				if( exist == false ){
+					newList.push_back(std::make_pair(ws.sys->dmsPublicFileList[0].first++, findData));
+				}
+			}
+		}while( FindNextFile(hFind, &findData) );
+		ws.sys->dmsPublicFileList.resize(1);
+	}
+	lua_newtable(L);
+	for( size_t i = 0; i < newList.size(); i++ ){
+		//IDとファイル名の対応を記録しておく
+		ws.sys->dmsPublicFileList.push_back(std::make_pair(newList[i].first, wstring(newList[i].second.cFileName)));
+		lua_newtable(L);
+		LuaHelp::reg_int(L, "id", newList[i].first);
+		LuaHelp::reg_string(L, "name", ws.WtoUTF8(newList[i].second.cFileName));
+		lua_pushstring(L, "size");
+		lua_pushnumber(L, (lua_Number)((__int64)newList[i].second.nFileSizeHigh << 32 | newList[i].second.nFileSizeLow));
+		lua_rawset(L, -3);
+		lua_rawseti(L, -2, (int)i + 1);
+	}
 	return 1;
 }
 

@@ -7,6 +7,7 @@
 #include "../../Common/ParseTextInstances.h"
 
 struct lua_State;
+struct _UPNP_MSEARCH_REQUEST_INFO;
 
 //各種サーバと自動予約の管理をおこなう
 //必ずオブジェクト生成→Main()→…→破棄の順番で利用しなければならない
@@ -42,6 +43,7 @@ private:
 	bool AutoAddReserveProgram(const MANUAL_AUTO_ADD_DATA& data);
 	//外部制御コマンド関係
 	static int CALLBACK CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STREAM* resParam);
+	static int UpnpMSearchReqCallback(_UPNP_MSEARCH_REQUEST_INFO* requestParam, void* param, void* resDeviceList);
 	static int InitLuaCallback(lua_State* L);
 	//Lua-edcb空間のコールバック
 	class CLuaWorkspace
@@ -78,6 +80,7 @@ private:
 	static int LuaDelManuAdd(lua_State* L);
 	static int LuaAddOrChgAutoAdd(lua_State* L);
 	static int LuaAddOrChgManuAdd(lua_State* L);
+	static int LuaListDmsPublicFile(lua_State* L);
 	static void PushEpgEventInfo(CLuaWorkspace& ws, const EPGDB_EVENT_INFO& e);
 	static void PushReserveData(CLuaWorkspace& ws, const RESERVE_DATA& r);
 	static void PushRecSettingData(CLuaWorkspace& ws, const REC_SETTING_DATA& rs);
@@ -109,6 +112,10 @@ private:
 	wstring httpPublicFolder;
 	wstring httpAccessControlList;
 	bool httpSaveLog;
+	bool enableSsdpServer;
+	string ssdpNotifyUuid;
+	unsigned short ssdpNotifyPort;
+	vector<pair<int, wstring>> dmsPublicFileList;
 	int autoAddHour;
 	bool chkGroupEvent;
 	//LOBYTEにモード(1=スタンバイ,2=休止,3=電源断,4=なにもしない)、HIBYTEに再起動フラグ

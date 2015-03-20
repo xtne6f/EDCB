@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<root xmlns="urn:schemas-upnp-org:device-1-0">
+	<specVersion>
+		<major>1</major>
+		<minor>1</minor>
+	</specVersion>
+	<device>
+		<UDN>uuid:6440d68b-52b0-4311-aedf-2f7fccbc2f25</UDN>
+		<friendlyName>EpgTimerSrv MediaServer</friendlyName>
+		<deviceType>urn:schemas-upnp-org:device:MediaServer:1</deviceType>
+		<manufacturer>test</manufacturer>
+		<manufacturerURL></manufacturerURL>
+		<modelName>test</modelName>
+		<modelNumber>test</modelNumber>
+		<modelURL></modelURL>
+		<serialNumber></serialNumber>
+		<dlna:X_DLNADOC xmlns:dlna="urn:schemas-dlna-org:device-1-0">DMS-1.50</dlna:X_DLNADOC>
+		<serviceList>
+			<service>
+				<serviceType>urn:schemas-upnp-org:service:ConnectionManager:1</serviceType>
+				<serviceId>urn:upnp-org:serviceId:ConnectionManager</serviceId>
+				<controlURL>/dlna/dms/cms/soap.lua</controlURL>
+				<eventSubURL>/dlna/dms/cms/event.lua</eventSubURL>
+				<SCPDURL>/dlna/dms/cms/sdd.xml</SCPDURL>
+			</service>
+			<service>
+				<serviceType>urn:schemas-upnp-org:service:ContentDirectory:1</serviceType>
+				<serviceId>urn:upnp-org:serviceId:ContentDirectory</serviceId>
+				<controlURL>/dlna/dms/cds/soap.lua</controlURL>
+				<eventSubURL>/dlna/dms/cds/event.lua</eventSubURL>
+				<SCPDURL>/dlna/dms/cds/sdd.xml</SCPDURL>
+			</service>
+		</serviceList>
+	</device>
+</root>
