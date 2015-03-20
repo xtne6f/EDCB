@@ -89,7 +89,8 @@ bool CHttpServer::StartServer(unsigned short port, LPCWSTR rootPath_, int (*init
 		}
 	}
 	const char* options[] = {
-		"enable_keep_alive", "yes",
+		//mg_stop()‚Ì‘Ò‚¿‚ª’·‚­‚È‚è‚·‚¬‚é‚Ì‚Å(Žc”O‚¾‚ª)ƒIƒt
+		//"enable_keep_alive", "yes",
 		"access_control_list", aclU.c_str(),
 		"extra_mime_types", extraMime.c_str(),
 		"listening_ports", strPort.c_str(),
