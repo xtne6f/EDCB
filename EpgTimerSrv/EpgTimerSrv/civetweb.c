@@ -4238,6 +4238,9 @@ static int is_valid_http_method(const char *method)
            !strcmp(method, "PUT") || !strcmp(method, "DELETE") ||
            !strcmp(method, "OPTIONS") || !strcmp(method, "PROPFIND")
            || !strcmp(method, "MKCOL")
+#ifndef DENY_METHOD_SUBSCRIBE
+           || !strcmp(method, "SUBSCRIBE") || !strcmp(method, "UNSUBSCRIBE")
+#endif
            ;
 }
 
