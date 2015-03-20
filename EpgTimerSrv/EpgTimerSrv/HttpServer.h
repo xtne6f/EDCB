@@ -11,7 +11,7 @@ class CHttpServer
 public:
 	CHttpServer();
 	~CHttpServer();
-	bool StartServer(unsigned short port, LPCWSTR rootPath_, int (*initProc)(lua_State*), void* initParam, bool saveLog = false);
+	bool StartServer(unsigned short port, LPCWSTR rootPath_, int (*initProc)(lua_State*), void* initParam, bool saveLog = false, LPCWSTR acl = NULL);
 	void StopServer();
 private:
 	struct REDIRECT_ITEM {

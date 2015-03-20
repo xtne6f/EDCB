@@ -83,12 +83,14 @@ bool CEpgTimerSrvMain::Main(bool serviceFlag_)
 			unsigned short tcpPort_;
 			unsigned short httpPort_;
 			wstring httpPublicFolder_;
+			wstring httpAcl;
 			bool httpSaveLog_ = false;
 			{
 				CBlockLock lock(&this->settingLock);
 				tcpPort_ = this->tcpPort;
 				httpPort_ = this->httpPort;
 				httpPublicFolder_ = this->httpPublicFolder;
+				httpAcl = this->httpAccessControlList;
 				httpSaveLog_ = this->httpSaveLog;
 			}
 			if( tcpPort_ == 0 ){
@@ -99,7 +101,7 @@ bool CEpgTimerSrvMain::Main(bool serviceFlag_)
 			if( httpPort_ == 0 ){
 				httpServer.StopServer();
 			}else{
-				httpServer.StartServer(httpPort_, httpPublicFolder_.c_str(), InitLuaCallback, this, httpSaveLog_);
+				httpServer.StartServer(httpPort_, httpPublicFolder_.c_str(), InitLuaCallback, this, httpSaveLog_, httpAcl.c_str());
 			}
 		}
 
@@ -258,6 +260,8 @@ void CEpgTimerSrvMain::ReloadSetting()
 			GetModuleFolderPath(this->httpPublicFolder);
 			this->httpPublicFolder += L"\\HttpPublic";
 		}
+		GetPrivateProfileString(L"SET", L"HttpAccessControlList", L"+0.0.0.0/0", buff, 512, iniPath.c_str());
+		this->httpAccessControlList = buff;
 		this->httpPort = (unsigned short)GetPrivateProfileInt(L"SET", L"HttpPort", 5510, iniPath.c_str());
 		this->httpSaveLog = enableHttpSrv == 2;
 	}

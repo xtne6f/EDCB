@@ -32,7 +32,7 @@ CHttpServer::~CHttpServer()
 	StopServer();
 }
 
-bool CHttpServer::StartServer(unsigned short port, LPCWSTR rootPath_, int (*initProc)(lua_State*), void* initParam, bool saveLog)
+bool CHttpServer::StartServer(unsigned short port, LPCWSTR rootPath_, int (*initProc)(lua_State*), void* initParam, bool saveLog, LPCWSTR acl)
 {
 	StopServer();
 
@@ -61,6 +61,10 @@ bool CHttpServer::StartServer(unsigned short port, LPCWSTR rootPath_, int (*init
 	string errorLogPath = accessLogPath + "\\HttpError.log";
 	accessLogPath += "\\HttpAccess.log";
 
+	//Access Control List
+	string aclU;
+	WtoUTF8(acl ? acl : L"", aclU);
+
 	//’Ç‰Á‚ÌMIMEƒ^ƒCƒv
 	CParseContentTypeText contentType;
 	contentType.ParseText((modulePath + L"\\ContentTypeText.txt").c_str());
@@ -86,6 +90,7 @@ bool CHttpServer::StartServer(unsigned short port, LPCWSTR rootPath_, int (*init
 	}
 	const char* options[] = {
 		"enable_keep_alive", "yes",
+		"access_control_list", aclU.c_str(),
 		"extra_mime_types", extraMime.c_str(),
 		"listening_ports", strPort.c_str(),
 		"document_root", this->rootPath.c_str(),

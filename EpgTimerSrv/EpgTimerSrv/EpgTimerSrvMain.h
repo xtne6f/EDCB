@@ -107,6 +107,7 @@ private:
 	unsigned short tcpPort;
 	unsigned short httpPort;
 	wstring httpPublicFolder;
+	wstring httpAccessControlList;
 	bool httpSaveLog;
 	int autoAddHour;
 	bool chkGroupEvent;
