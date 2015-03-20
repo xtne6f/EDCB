@@ -2,8 +2,8 @@
 key={
   network=0+(mg.get_var(mg.request_info.query_string,'network') or 0),
   days29=0+(mg.get_var(mg.request_info.query_string,'days') or 0),
-  andKey=mg.url_decode(mg.get_var(mg.request_info.query_string,'andkey') or '', true),
-  notKey=mg.url_decode(mg.get_var(mg.request_info.query_string,'notkey') or '', true),
+  andKey=mg.get_var(mg.request_info.query_string,'andkey') or '',
+  notKey=mg.get_var(mg.request_info.query_string,'notkey') or '',
   contentList={}
 }
 for w in string.gmatch(mg.get_var(mg.request_info.query_string,'genru') or '','[^-]+') do

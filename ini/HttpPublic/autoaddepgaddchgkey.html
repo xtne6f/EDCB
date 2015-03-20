@@ -92,8 +92,8 @@ if post and (aa.dataID==0 or lastRecSetting) then
 
     aa.searchInfo={}
     si=aa.searchInfo
-    si.andKey=mg.url_decode(mg.get_var(post, 'andKey') or '', true)
-    si.notKey=mg.url_decode(mg.get_var(post, 'notKey') or '', true)
+    si.andKey=mg.get_var(post, 'andKey') or ''
+    si.notKey=mg.get_var(post, 'notKey') or ''
     si.regExpFlag=0+(mg.get_var(post, 'regExpFlag') or 0)~=0
     si.titleOnlyFlag=0+(mg.get_var(post, 'titleOnlyFlag') or 0)~=0
     si.aimaiFlag=0+(mg.get_var(post, 'aimaiFlag') or 0)~=0
