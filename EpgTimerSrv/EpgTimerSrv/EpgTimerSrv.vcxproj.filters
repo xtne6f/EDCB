@@ -204,12 +204,6 @@
     <ClInclude Include="..\..\Common\TCPServerUtil.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
-    <ClInclude Include="HttpFileSend.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="DLNAManager.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\UPnPCtrl\CharUtil.h">
       <Filter>ヘッダー ファイル\UPnPCtrl</Filter>
     </ClInclude>
@@ -236,27 +230,6 @@
     </ClInclude>
     <ClInclude Include="..\..\UPnPCtrl\UpnpUtil.h">
       <Filter>ヘッダー ファイル\UPnPCtrl</Filter>
-    </ClInclude>
-    <ClInclude Include="DLNADmsManager.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="SOAPUtil.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="HttpRequestReader.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="DLNAParseProtocolInfo.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="DLNADmsContentDB.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Common\LockUtil.h">
-      <Filter>ヘッダー ファイル\Common</Filter>
-    </ClInclude>
-    <ClInclude Include="DLNAParsePublicFolder.h">
-      <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="civetweb.h">
       <Filter>ヘッダー ファイル\civetweb</Filter>
@@ -398,12 +371,6 @@
     <ClCompile Include="..\..\Common\TCPServerUtil.cpp">
       <Filter>ソース ファイル\Common</Filter>
     </ClCompile>
-    <ClCompile Include="HttpFileSend.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="DLNAManager.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\UPnPCtrl\CharUtil.cpp">
       <Filter>ソース ファイル\UPnPCtrl</Filter>
     </ClCompile>
@@ -427,27 +394,6 @@
     </ClCompile>
     <ClCompile Include="..\..\UPnPCtrl\UpnpUtil.cpp">
       <Filter>ソース ファイル\UPnPCtrl</Filter>
-    </ClCompile>
-    <ClCompile Include="DLNADmsManager.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="SOAPUtil.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="HttpRequestReader.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="DLNAParseProtocolInfo.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="DLNADmsContentDB.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Common\LockUtil.cpp">
-      <Filter>ソース ファイル\Common</Filter>
-    </ClCompile>
-    <ClCompile Include="DLNAParsePublicFolder.cpp">
-      <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="civetweb.c">
       <Filter>ソース ファイル\civetweb</Filter>

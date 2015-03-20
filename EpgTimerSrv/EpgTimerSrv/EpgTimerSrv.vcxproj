@@ -169,7 +169,6 @@
     <ClInclude Include="..\..\Common\EpgDataCap3Util.h" />
     <ClInclude Include="..\..\Common\EpgTimerUtil.h" />
     <ClInclude Include="..\..\Common\ErrDef.h" />
-    <ClInclude Include="..\..\Common\LockUtil.h" />
     <ClInclude Include="..\..\Common\NWStructDef.h" />
     <ClInclude Include="..\..\Common\ParseText.h" />
     <ClInclude Include="..\..\Common\ParseTextInstances.h" />
@@ -202,18 +201,11 @@
     <ClInclude Include="..\..\UPnPCtrl\UpnpUtil.h" />
     <ClInclude Include="BatManager.h" />
     <ClInclude Include="civetweb.h" />
-    <ClInclude Include="DLNADmsContentDB.h" />
-    <ClInclude Include="DLNADmsManager.h" />
-    <ClInclude Include="DLNAManager.h" />
-    <ClInclude Include="DLNAParseProtocolInfo.h" />
-    <ClInclude Include="DLNAParsePublicFolder.h" />
     <ClInclude Include="EpgDBManager.h" />
     <ClInclude Include="EpgTimerSrv.h" />
     <ClInclude Include="EpgTimerSrvMain.h" />
     <ClInclude Include="FileStreamingManager.h" />
     <ClInclude Include="FileStreamingUtil.h" />
-    <ClInclude Include="HttpFileSend.h" />
-    <ClInclude Include="HttpRequestReader.h" />
     <ClInclude Include="HttpServer.h" />
     <ClInclude Include="lauxlib.h" />
     <ClInclude Include="lua.h" />
@@ -223,7 +215,6 @@
     <ClInclude Include="NotifyManager.h" />
     <ClInclude Include="ReserveManager.h" />
     <ClInclude Include="Resource.h" />
-    <ClInclude Include="SOAPUtil.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="SyoboiCalUtil.h" />
     <ClInclude Include="targetver.h" />
@@ -241,7 +232,6 @@
     <ClCompile Include="..\..\Common\CtrlCmdUtil2.cpp" />
     <ClCompile Include="..\..\Common\EpgDataCap3Util.cpp" />
     <ClCompile Include="..\..\Common\EpgTimerUtil.cpp" />
-    <ClCompile Include="..\..\Common\LockUtil.cpp" />
     <ClCompile Include="..\..\Common\ParseTextInstances.cpp" />
     <ClCompile Include="..\..\Common\PathUtil.cpp" />
     <ClCompile Include="..\..\Common\PipeServer.cpp" />
@@ -278,22 +268,14 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.</AdditionalIncludeDirectories>
     </ClCompile>
-    <ClCompile Include="DLNADmsContentDB.cpp" />
-    <ClCompile Include="DLNADmsManager.cpp" />
-    <ClCompile Include="DLNAManager.cpp" />
-    <ClCompile Include="DLNAParseProtocolInfo.cpp" />
-    <ClCompile Include="DLNAParsePublicFolder.cpp" />
     <ClCompile Include="EpgDBManager.cpp" />
     <ClCompile Include="EpgTimerSrv.cpp" />
     <ClCompile Include="EpgTimerSrvMain.cpp" />
     <ClCompile Include="FileStreamingManager.cpp" />
     <ClCompile Include="FileStreamingUtil.cpp" />
-    <ClCompile Include="HttpFileSend.cpp" />
-    <ClCompile Include="HttpRequestReader.cpp" />
     <ClCompile Include="HttpServer.cpp" />
     <ClCompile Include="NotifyManager.cpp" />
     <ClCompile Include="ReserveManager.cpp" />
-    <ClCompile Include="SOAPUtil.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
