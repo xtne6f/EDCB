@@ -21,7 +21,6 @@ namespace EpgTimer
     /// </summary>
     public partial class AddManualAutoAddWindow : Window
     {
-        private bool changeModeFlag = false;
         private ManualAutoAddData defKey = null;
         private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
 
@@ -43,6 +42,7 @@ namespace EpgTimer
                 else
                 {
                     button_add.Style = null;
+                    button_chg.Style = null;
                     button_cancel.Style = null;
                 }
 
@@ -63,6 +63,7 @@ namespace EpgTimer
                 comboBox_service.SelectedIndex = 0;
 
                 recSettingView.SetViewMode(false);
+                SetChangeMode(false);
             }
             catch (Exception ex)
             {
@@ -72,16 +73,7 @@ namespace EpgTimer
 
         public void SetChangeMode(bool chgFlag)
         {
-            if (chgFlag == true)
-            {
-                this.changeModeFlag = true;
-                button_add.Content = "変更";
-            }
-            else
-            {
-                this.changeModeFlag = false;
-                button_add.Content = "追加";
-            }
+            button_chg.Visibility = (chgFlag == true ? System.Windows.Visibility.Visible : System.Windows.Visibility.Hidden);
         }
 
         public void SetDefaultSetting(ManualAutoAddData item)
@@ -107,7 +99,17 @@ namespace EpgTimer
 
         private void button_add_Click(object sender, RoutedEventArgs e)
         {
-            if (changeModeFlag == true && CheckExistAutoAddItem() == false) return;
+            button_add_chg(false);
+        }
+
+        private void button_chg_Click(object sender, RoutedEventArgs e)
+        {
+            button_add_chg(true);
+        }
+        
+        private void button_add_chg(bool chgFlag)
+        {
+            if (chgFlag == true && CheckExistAutoAddItem() == false) return;
 
             if (defKey == null)
             {
@@ -169,7 +171,7 @@ namespace EpgTimer
             List<ManualAutoAddData> val = new List<ManualAutoAddData>();
             val.Add(defKey);
 
-            if (changeModeFlag == true)
+            if (chgFlag == true)
             {
                 cmd.SendChgManualAdd(val);
             }
