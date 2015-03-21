@@ -308,7 +308,7 @@ BOOL CSyoboiCalUtil::SendReserve(vector<RESERVE_DATA>* reserveList, vector<TUNER
 
 	CWinHTTPUtil http;
 	DWORD result = NO_ERR;
-	result = http.OpenSession(L"EpgTimerSrv", FALSE, useProxy, this->proxyInfo);
+	result = http.OpenSession(L"EpgTimerSrv", FALSE, useProxy, this->proxyInfo, 15000, 15000, 15000, 15000);
 	if( result != NO_ERR ){
 		return FALSE;
 	}

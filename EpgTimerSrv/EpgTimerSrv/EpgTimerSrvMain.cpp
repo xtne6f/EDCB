@@ -1,6 +1,7 @@
 #include "StdAfx.h"
 #include "EpgTimerSrvMain.h"
 #include "HttpServer.h"
+#include "SyoboiCalUtil.h"
 #include "../../UPnPCtrl/UpnpUtil.h"
 #include "../../UPnPCtrl/UpnpSsdpUtil.h"
 #include "../../Common/PipeServer.h"
@@ -167,6 +168,13 @@ bool CEpgTimerSrvMain::Main(bool serviceFlag_)
 			reloadEpgChkPending = false;
 			this->notifyManager.AddNotify(NOTIFY_UPDATE_EPGDATA);
 
+			if( this->useSyoboi ){
+				//しょぼいカレンダー対応
+				CSyoboiCalUtil syoboi;
+				vector<RESERVE_DATA> reserveList = this->reserveManager.GetReserveDataAll();
+				vector<TUNER_RESERVE_INFO> tunerList = this->reserveManager.GetTunerReserveAll();
+				syoboi.SendReserve(&reserveList, &tunerList);
+			}
 			if( shutdownModePending && IsSuspendOK() && IsUserWorking() == false ){
 				if( 1 <= LOBYTE(shutdownModePending) && LOBYTE(shutdownModePending) <= 3 ){
 					//シャットダウン問い合わせ
@@ -333,6 +341,7 @@ void CEpgTimerSrvMain::ReloadSetting()
 		}
 	}
 	this->ngFileStreaming = GetPrivateProfileInt(L"NO_SUSPEND", L"NoFileStreaming", 0, iniPath.c_str()) != 0;
+	this->useSyoboi = GetPrivateProfileInt(L"SYOBOI", L"use", 0, iniPath.c_str()) != 0;
 
 	this->noSuspendExeList.clear();
 	int count = GetPrivateProfileInt(L"NO_SUSPEND", L"Count", 0, iniPath.c_str());

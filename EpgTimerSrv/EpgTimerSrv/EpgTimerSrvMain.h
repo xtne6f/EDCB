@@ -118,6 +118,7 @@ private:
 	vector<pair<int, wstring>> dmsPublicFileList;
 	int autoAddHour;
 	bool chkGroupEvent;
+	bool useSyoboi;
 	//LOBYTEにモード(1=スタンバイ,2=休止,3=電源断,4=なにもしない)、HIBYTEに再起動フラグ
 	WORD defShutdownMode;
 	DWORD ngUsePCTime;
