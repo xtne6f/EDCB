@@ -187,7 +187,6 @@
     <ClInclude Include="..\..\Common\TimeUtil.h" />
     <ClInclude Include="..\..\Common\TSBuffUtil.h" />
     <ClInclude Include="..\..\Common\TSPacketUtil.h" />
-    <ClInclude Include="..\..\Common\twitterUtil.h" />
     <ClInclude Include="..\..\Common\Util.h" />
     <ClInclude Include="..\..\Common\WinHTTPUtil.h" />
     <ClInclude Include="..\..\UPnPCtrl\CharUtil.h" />
@@ -220,7 +219,6 @@
     <ClInclude Include="targetver.h" />
     <ClInclude Include="TunerBankCtrl.h" />
     <ClInclude Include="TunerManager.h" />
-    <ClInclude Include="TwitterManager.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\BonCtrl\CreatePATPacket.cpp" />
@@ -246,7 +244,6 @@
     <ClCompile Include="..\..\Common\TimeUtil.cpp" />
     <ClCompile Include="..\..\Common\TSBuffUtil.cpp" />
     <ClCompile Include="..\..\Common\TSPacketUtil.cpp" />
-    <ClCompile Include="..\..\Common\twitterUtil.cpp" />
     <ClCompile Include="..\..\Common\Util.cpp" />
     <ClCompile Include="..\..\Common\WinHTTPUtil.cpp" />
     <ClCompile Include="..\..\UPnPCtrl\CharUtil.cpp" />
@@ -285,7 +282,6 @@
     <ClCompile Include="SyoboiCalUtil.cpp" />
     <ClCompile Include="TunerBankCtrl.cpp" />
     <ClCompile Include="TunerManager.cpp" />
-    <ClCompile Include="TwitterManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="EpgTimerSrv.rc" />

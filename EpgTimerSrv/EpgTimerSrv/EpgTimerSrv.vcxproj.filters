@@ -144,14 +144,8 @@
     <ClInclude Include="..\..\Common\TCPServer.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Common\twitterUtil.h">
-      <Filter>ヘッダー ファイル\Common</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Common\NWStructDef.h">
       <Filter>ヘッダー ファイル\Common</Filter>
-    </ClInclude>
-    <ClInclude Include="TwitterManager.h">
-      <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="FileStreamingUtil.h">
       <Filter>ヘッダー ファイル</Filter>
@@ -316,12 +310,6 @@
     </ClCompile>
     <ClCompile Include="..\..\Common\TCPServer.cpp">
       <Filter>ソース ファイル\Common</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Common\twitterUtil.cpp">
-      <Filter>ソース ファイル\Common</Filter>
-    </ClCompile>
-    <ClCompile Include="TwitterManager.cpp">
-      <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="FileStreamingUtil.cpp">
       <Filter>ソース ファイル</Filter>
