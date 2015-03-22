@@ -1478,9 +1478,7 @@ namespace EpgTimer
                                 servicePos++;
                             }
                             EpgServiceInfo srvInfo = serviceList[mergePos];
-                            if (srvInfo.ONID == info.OriginalNetworkID &&
-                                srvInfo.TSID == info.TransportStreamID &&
-                                srvInfo.SID == info.ServiceID)
+                            if (srvInfo.Create64Key() == info.Create64Key())
                             {
                                 ReserveViewItem viewItem = new ReserveViewItem(info);
                                 viewItem.LeftPos = Settings.Instance.ServiceWidth * (servicePos + (double)((mergeNum + i - mergePos - 1) / 2) / mergeNum);
@@ -1598,7 +1596,7 @@ namespace EpgTimer
                     if (CommonManager.Instance.DB.ServiceEventList.ContainsKey(id) == true)
                     {
                         EpgServiceInfo serviceInfo = CommonManager.Instance.DB.ServiceEventList[id].serviceInfo;
-                        if (serviceList.Exists(i => i.ONID == serviceInfo.ONID && i.TSID == serviceInfo.TSID && i.SID == serviceInfo.SID) == false)
+                        if (serviceList.Exists(i => i.Create64Key() == serviceInfo.Create64Key()) == false)
                         {
                             serviceList.Add(serviceInfo);
                         }
@@ -1694,9 +1692,7 @@ namespace EpgTimer
                             bool spanFlag = false;
                             foreach (EpgEventData data in eventInfo.EventGroupInfo.eventDataList)
                             {
-                                if (serviceInfo.ONID == data.original_network_id &&
-                                    serviceInfo.TSID == data.transport_stream_id &&
-                                    serviceInfo.SID == data.service_id)
+                                if (serviceInfo.Create64Key() == data.Create64Key())
                                 {
                                     spanFlag = true;
                                     break;
@@ -1718,9 +1714,7 @@ namespace EpgTimer
                                     bool findNext = false;
                                     foreach (EpgEventData data in eventInfo.EventGroupInfo.eventDataList)
                                     {
-                                        if (nextInfo.ONID == data.original_network_id &&
-                                            nextInfo.TSID == data.transport_stream_id &&
-                                            nextInfo.SID == data.service_id)
+                                        if (nextInfo.Create64Key() == data.Create64Key())
                                         {
                                             widthSpan++;
                                             findNext = true;
@@ -1912,7 +1906,7 @@ namespace EpgTimer
                     if (serviceEventList.ContainsKey(id) == true)
                     {
                         EpgServiceInfo serviceInfo = serviceEventList[id].serviceInfo;
-                        if (serviceList.Exists(i => i.ONID == serviceInfo.ONID && i.TSID == serviceInfo.TSID && i.SID == serviceInfo.SID) == false)
+                        if (serviceList.Exists(i => i.Create64Key() == serviceInfo.Create64Key()) == false)
                         {
                             serviceList.Add(serviceInfo);
                         }
@@ -2008,9 +2002,7 @@ namespace EpgTimer
                             bool spanFlag = false;
                             foreach (EpgEventData data in eventInfo.EventGroupInfo.eventDataList)
                             {
-                                if (serviceInfo.ONID == data.original_network_id &&
-                                    serviceInfo.TSID == data.transport_stream_id &&
-                                    serviceInfo.SID == data.service_id)
+                                if (serviceInfo.Create64Key() == data.Create64Key())
                                 {
                                     spanFlag = true;
                                     break;
@@ -2032,9 +2024,7 @@ namespace EpgTimer
                                     bool findNext = false;
                                     foreach (EpgEventData data in eventInfo.EventGroupInfo.eventDataList)
                                     {
-                                        if (nextInfo.ONID == data.original_network_id &&
-                                            nextInfo.TSID == data.transport_stream_id &&
-                                            nextInfo.SID == data.service_id)
+                                        if (nextInfo.Create64Key() == data.Create64Key())
                                         {
                                             widthSpan++;
                                             findNext = true;

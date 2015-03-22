@@ -255,9 +255,7 @@ namespace EpgTimer
 
                 textBox_title.Text = defKey.title;
 
-                UInt64 key = ((UInt64)defKey.originalNetworkID) << 32 |
-                    ((UInt64)defKey.transportStreamID) << 16 |
-                    ((UInt64)defKey.serviceID);
+                UInt64 key = defKey.Create64Key();
 
                 if (ChSet5.Instance.ChList.ContainsKey(key) == true)
                 {

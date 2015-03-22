@@ -343,7 +343,7 @@ namespace EpgTimer.Setting
 
                 foreach (ServiceItem2 info in serviceList)
                 {
-                    UInt64 key = ((UInt64)info.ServiceInfo.ONID) << 32 | ((UInt64)info.ServiceInfo.TSID) << 16 | ((UInt64)info.ServiceInfo.SID);
+                    UInt64 key = info.ServiceInfo.Key;
                     try
                     {
                         if (info.IsSelected == true)

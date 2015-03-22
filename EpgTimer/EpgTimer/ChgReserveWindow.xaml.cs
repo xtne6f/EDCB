@@ -300,9 +300,7 @@ namespace EpgTimer
 
                 foreach (ChSet5Item ch in comboBox_service.Items)
                 {
-                    if (ch.ONID == resInfo.OriginalNetworkID &&
-                        ch.TSID == resInfo.TransportStreamID &&
-                        ch.SID == resInfo.ServiceID)
+                    if (ch.Key == resInfo.Create64Key())
                     {
                         comboBox_service.SelectedItem = ch;
                         break;

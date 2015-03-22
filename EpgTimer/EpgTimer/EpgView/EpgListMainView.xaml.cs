@@ -521,9 +521,7 @@ namespace EpgTimer
                                     bool spanFlag = false;
                                     foreach (EpgEventData data in eventInfo.EventGroupInfo.eventDataList)
                                     {
-                                        if (info.ServiceInfo.ONID == data.original_network_id &&
-                                            info.ServiceInfo.TSID == data.transport_stream_id &&
-                                            info.ServiceInfo.SID == data.service_id)
+                                        if (info.ServiceInfo.Create64Key() == data.Create64Key())
                                         {
                                             spanFlag = true;
                                             break;
