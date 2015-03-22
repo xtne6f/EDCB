@@ -21,11 +21,6 @@ namespace EpgTimer
         private List<RecInfoItem> resultList = new List<RecInfoItem>();
         private Dictionary<String, GridViewColumn> columnList = new Dictionary<String, GridViewColumn>();
 
-        private string _lastHeaderClicked = null;
-        private ListSortDirection _lastDirection = ListSortDirection.Ascending;
-        private string _lastHeaderClicked2 = null;
-        private ListSortDirection _lastDirection2 = ListSortDirection.Ascending;
-
         private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
         private MenuUtil mutil = CommonManager.Instance.MUtil;
 
@@ -131,69 +126,20 @@ namespace EpgTimer
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
-
-        private void Sort(string sortBy, ListSortDirection direction)
-        {
-            try
-            {
-                ICollectionView dataView = CollectionViewSource.GetDefaultView(listView_recinfo.DataContext);
-
-                dataView.SortDescriptions.Clear();
-
-                SortDescription sd = new SortDescription(sortBy, direction);
-                dataView.SortDescriptions.Add(sd);
-                if (_lastHeaderClicked2 != null)
-                {
-                    if (String.Compare(sortBy, _lastHeaderClicked2) != 0)
-                    {
-                        SortDescription sd2 = new SortDescription(_lastHeaderClicked2, _lastDirection2);
-                        dataView.SortDescriptions.Add(sd2);
-                    }
-                }
-                dataView.Refresh();
-
-                Settings.Instance.RecInfoColumnHead = sortBy;
-                Settings.Instance.RecInfoSortDirection = direction;
-
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
+        
+        GridViewSorter<RecInfoItem> gridViewSorter = new GridViewSorter<RecInfoItem>();
 
         private void GridViewColumnHeader_Click(object sender, RoutedEventArgs e)
         {
             GridViewColumnHeader headerClicked = e.OriginalSource as GridViewColumnHeader;
-            ListSortDirection direction;
-
             if (headerClicked != null)
             {
                 if (headerClicked.Role != GridViewColumnHeaderRole.Padding)
                 {
-                    string header = headerClicked.Tag as string;
-                    if (String.Compare(header, _lastHeaderClicked) != 0)
-                    {
-                        direction = ListSortDirection.Ascending;
-                        _lastHeaderClicked2 = _lastHeaderClicked;
-                        _lastDirection2 = _lastDirection;
-                    }
-                    else
-                    {
-                        if (_lastDirection == ListSortDirection.Ascending)
-                        {
-                            direction = ListSortDirection.Descending;
-                        }
-                        else
-                        {
-                            direction = ListSortDirection.Ascending;
-                        }
-                    }
-
-                    Sort(header, direction);
-
-                    _lastHeaderClicked = header;
-                    _lastDirection = direction;
+                    this.gridViewSorter.SortByMultiHeader(this.resultList, headerClicked);
+                    listView_recinfo.Items.Refresh();
+                    Settings.Instance.RecInfoColumnHead=this.gridViewSorter.LastHeader;
+                    Settings.Instance.RecInfoSortDirection = this.gridViewSorter.LastDirection;
                 }
             }
         }
@@ -205,12 +151,6 @@ namespace EpgTimer
                 //更新前の選択情報の保存
                 var oldItems = new ListViewSelectedKeeper<RecInfoItem>(listView_recinfo, true);
 
-                ICollectionView dataView = CollectionViewSource.GetDefaultView(listView_recinfo.DataContext);
-                if (dataView != null)
-                {
-                    dataView.SortDescriptions.Clear();
-                    dataView.Refresh();
-                }
                 listView_recinfo.DataContext = null;
                 resultList.Clear();
 
@@ -234,37 +174,18 @@ namespace EpgTimer
                 }
 
                 listView_recinfo.DataContext = resultList;
-                if (_lastHeaderClicked != null)
+
+                if (this.gridViewSorter.IsExistSortParams)
                 {
-                    //GridViewColumnHeader columnHeader = _lastHeaderClicked.Header as GridViewColumnHeader;
-                    //string header = columnHeader.Tag as string;
-                    Sort(_lastHeaderClicked, _lastDirection);
+                    this.gridViewSorter.SortByMultiHeader(this.resultList);
                 }
                 else
                 {
-                    bool sort = false;
-                    foreach (GridViewColumn info in gridView_recinfo.Columns)
-                    {
-                        GridViewColumnHeader columnHeader = info.Header as GridViewColumnHeader;
-                        string header = columnHeader.Tag as string;
-                        if (String.Compare(header, Settings.Instance.RecInfoColumnHead, true) == 0)
-                        {
-                            Sort(header, Settings.Instance.RecInfoSortDirection);
-                            _lastHeaderClicked = header;
-                            _lastDirection = Settings.Instance.RecInfoSortDirection;
-                            sort = true;
-                            break;
-                        }
-                    }
-                    if (gridView_recinfo.Columns.Count > 0 && sort == false)
-                    {
-                        GridViewColumnHeader columnHeader = gridView_recinfo.Columns[1].Header as GridViewColumnHeader;
-                        string header = columnHeader.Tag as string;
-
-                        Sort(header, _lastDirection);
-                        _lastHeaderClicked = header;
-                    }
+                    this.gridViewSorter.ResetSortParams();
+                    this.gridViewSorter.SortByMultiHeaderWithKey(this.resultList, gridView_recinfo.Columns,
+                        Settings.Instance.RecInfoColumnHead, true, Settings.Instance.RecInfoSortDirection);
                 }
+                listView_recinfo.Items.Refresh();
 
                 //選択情報の復元
                 oldItems.RestoreListViewSelected();

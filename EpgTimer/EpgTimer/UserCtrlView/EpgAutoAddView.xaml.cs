@@ -293,7 +293,6 @@ namespace EpgTimer
             }
         }
 
-
         private void ContextMenu_Header_ContextMenuOpening(object sender, ContextMenuEventArgs e)
         {
             try
@@ -354,7 +353,7 @@ namespace EpgTimer
         ******************************************************/
 
         bool _ItemOrderNotSaved = false;
-        GridViewSorter<EpgAutoDataItem> gridViewSorter = new GridViewSorter<EpgAutoDataItem>();
+        GridViewSorter<EpgAutoDataItem> gridViewSorter = new GridViewSorter<EpgAutoDataItem>("RecFolder");
 
         bool ItemOrderNotSaved
         {
@@ -444,27 +443,24 @@ namespace EpgTimer
             //
             this.ReloadInfoData();
             this.ItemOrderNotSaved = false;
-            this.gridViewSorter.resetSortParams();
+            this.gridViewSorter.ResetSortParams();
         }
 
         private void GridViewColumnHeader_Click(object sender, RoutedEventArgs e)
         {
             GridViewColumnHeader headerClicked1 = e.OriginalSource as GridViewColumnHeader;
-            //
             if (headerClicked1 != null)
             {
-                if (headerClicked1.Tag.ToString() == "RecFolder")
-                {
-                    return;
-                }
                 if (headerClicked1.Role != GridViewColumnHeaderRole.Padding)
                 {
-                    // ソートの実行
-                    this.gridViewSorter.SortByMultiHeader(this.resultList, headerClicked1);
-                    // UI更新
-                    this.listView_key.Items.Refresh();
-                    //
-                    this.ItemOrderNotSaved = true;
+                    // 無効列の場合は無視。ItemOrderNotSavedが無ければ、この条件節無くても動作に支障はない。
+                    if (this.gridViewSorter.IsExceptionHeader(headerClicked1) == false)
+                    {
+                        // ソートの実行、リフレッシュ後、保存を促す表示をする。
+                        this.gridViewSorter.SortByMultiHeader(this.resultList, headerClicked1);
+                        this.listView_key.Items.Refresh();
+                        this.ItemOrderNotSaved = true;
+                    }
                 }
             }
         }
@@ -542,7 +538,7 @@ namespace EpgTimer
 
                 listView_key.Items.Refresh();
                 this.ItemOrderNotSaved = true;
-                this.gridViewSorter.resetSortParams();
+                this.gridViewSorter.ResetSortParams();
             }
             catch { }
         }
@@ -589,7 +585,7 @@ namespace EpgTimer
 
                 listView_key.Items.Refresh();
                 this.ItemOrderNotSaved = true;
-                this.gridViewSorter.resetSortParams();
+                this.gridViewSorter.ResetSortParams();
             }
             catch { }
         }

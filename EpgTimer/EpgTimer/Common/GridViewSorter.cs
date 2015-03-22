@@ -16,8 +16,21 @@ namespace EpgTimer {
 
         Dictionary<GridViewColumnHeader, ListSortDirection> _multiHeaderSortDict = new Dictionary<GridViewColumnHeader, ListSortDirection>();
         Brush defaultHeaderBorderBrush;
+        List<string> exceptionHeaders = null;
 
-        public void resetSortParams() {
+        /// <summary>
+        /// 必要なら引数に無効扱いのキーを指定する。動かせない列などあれば。
+        /// </summary>
+        public GridViewSorter()
+        { exceptionHeaders = new List<string>(); }
+        public GridViewSorter(string exception)
+        { exceptionHeaders = new string[] { exception }.ToList(); }
+        public GridViewSorter(string[] exception)
+        { exceptionHeaders = exception.ToList(); }
+        public GridViewSorter(List<string> exception)
+        { exceptionHeaders = exception.ToList(); }
+
+        public void ResetSortParams() {
             if (this._multiHeaderSortDict.Count > 0) {
                 foreach (GridViewColumnHeader header1 in this._multiHeaderSortDict.Keys) {
                     header1.FontWeight = FontWeights.Normal;
@@ -27,25 +40,20 @@ namespace EpgTimer {
             }
         }
 
-        public void SortByMultiHeader(List<T> itemList0) {
+        /// <summary>
+        /// 以前のソート状態で再ソートする。
+        /// </summary>
+        public void SortByMultiHeader(List<T> itemList0)
+        {
             string prevHeader1 = "";
             // key:first index, value: last index
             Dictionary<int, int> sortGroupDict1 = new Dictionary<int, int>();
             for (int i1 = 0; i1 < this._multiHeaderSortDict.Count; i1++) {
                 GridViewColumnHeader columnHeader1 = this._multiHeaderSortDict.ElementAt(i1).Key;
                 ListSortDirection sortDirection1 = this._multiHeaderSortDict.ElementAt(i1).Value;
-                string header = "";
-                if (columnHeader1.Column.DisplayMemberBinding != null) {
-                    header = ((Binding)columnHeader1.Column.DisplayMemberBinding).Path.Path;
-                }
-                else if (columnHeader1.Tag as string != null)
-                {
-                    header = columnHeader1.Tag as string;
-                }
-                if (header == null || header == "")
-                {
-                    continue;
-                }
+                string header = getHeaderString(columnHeader1);
+                if (header == "") continue;
+
                 sortGroupDict1 = this.createSortedItemGroupDict(itemList0, prevHeader1, sortGroupDict1);
                 foreach (KeyValuePair<int, int> kvp1 in sortGroupDict1) {
                     itemList0.Sort(
@@ -57,26 +65,29 @@ namespace EpgTimer {
             }
         }
 
-        public void SortByMultiHeader(List<T> itemList0, GridViewColumnHeader headerClicked0) {
-            if (string.IsNullOrEmpty(headerClicked0.Content.ToString())) { return; }
+        private void _sortByMultiHeader(List<T> itemList0, GridViewColumnHeader headerClicked0, bool directionSet = false, ListSortDirection direction = ListSortDirection.Ascending)
+        {
+            // 除外対象 空の場合、除外対象の場合
+            if (headerClicked0 == null || string.IsNullOrEmpty(headerClicked0.Content.ToString())) { return; }
+            if (getHeaderString(headerClicked0) == "" || IsExceptionHeader(headerClicked0)) { return; }
+
             //
             // ソート関連のパラメータをセット
             //
             if (this._multiHeaderSortDict.ContainsKey(headerClicked0)) {
-                ListSortDirection lastListSortDirection1 = this._multiHeaderSortDict[headerClicked0];
-                if (lastListSortDirection1 == ListSortDirection.Ascending) {
-                    this._multiHeaderSortDict[headerClicked0] = ListSortDirection.Descending;
-                } else {
-                    this._multiHeaderSortDict[headerClicked0] = ListSortDirection.Ascending;
-                }
+                ListSortDirection Direction1 = this._multiHeaderSortDict[headerClicked0];
+                Direction1 = Direction1 == ListSortDirection.Ascending ? 
+                                        ListSortDirection.Descending : ListSortDirection.Ascending;
+                Direction1 = directionSet == false ? Direction1 : direction;
+                this._multiHeaderSortDict[headerClicked0] = Direction1;
             } else {
                 if (!Keyboard.Modifiers.HasFlag(ModifierKeys.Control)) {
-                    this.resetSortParams();
+                    this.ResetSortParams();
                 }
                 this.defaultHeaderBorderBrush = headerClicked0.BorderBrush;
                 headerClicked0.FontWeight = FontWeights.Bold;
                 headerClicked0.BorderBrush = SystemColors.HighlightBrush;
-                this._multiHeaderSortDict.Add(headerClicked0, ListSortDirection.Ascending);
+                this._multiHeaderSortDict.Add(headerClicked0, directionSet == false ? ListSortDirection.Ascending : direction);
             }
             //
             // ソートの実行
@@ -84,6 +95,77 @@ namespace EpgTimer {
             this.SortByMultiHeader(itemList0);
         }
 
+        /// <summary>
+        /// ヘッダーを指定してソートする。Ctrlクリックでソートヘッダを追加、Shiftクリックでヘッダ選択を解除できる。
+        /// </summary>
+        //SortByMultiHeaderWithKey()があるため、ラッパを挟む
+        public void SortByMultiHeader(List<T> itemList0, GridViewColumnHeader headerClicked0)
+        {
+            if (Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
+            {
+                this.ResetSortParams();
+                return;
+            }
+            _sortByMultiHeader(itemList0, headerClicked0);
+        }
+
+        /// <summary>
+        /// キーを指定してソートする。主に初期化用。キーがColumsに存在していなければ何もしない。
+        /// </summary>
+        public void SortByMultiHeaderWithKey(List<T> itemList0, GridViewColumnCollection Columns, string Key, bool directionSet = false, ListSortDirection direction = ListSortDirection.Ascending)
+        {
+            List<GridViewColumnHeader> headers = Columns.Select(item => (GridViewColumnHeader)item.Header).ToList();
+            _sortByMultiHeader(itemList0, headers.Find(item => getHeaderString(item) == Key), directionSet, direction);
+        }
+
+        private string getHeaderString(GridViewColumnHeader columnHeader1)
+        {
+            string header = "";
+            if (columnHeader1 != null)
+            {
+                if (columnHeader1.Column != null && columnHeader1.Column.DisplayMemberBinding != null)
+                {
+                    header = ((Binding)columnHeader1.Column.DisplayMemberBinding).Path.Path;
+                }
+                else if (columnHeader1.Tag as string != null)
+                {
+                    header = columnHeader1.Tag as string;
+                }
+            }
+            return header != null ? header : "";
+        }
+
+        /// <summary>
+        /// ヘッダが無効扱いのキーを持っていたらtrueを返す。
+        /// </summary>
+        public bool IsExceptionHeader(GridViewColumnHeader headerClicked0)
+        {
+            return (exceptionHeaders.FindIndex(str => str.CompareTo(getHeaderString(headerClicked0)) == 0) != -1);
+        }
+
+        /// <summary>
+        /// 最後にソートしたヘッダを返す。マルチソートの場合、最後に追加されたヘッダを返す。
+        /// </summary>
+        public string LastHeader
+        {
+            get
+            {
+                if (IsExistSortParams == false) return "";
+                return getHeaderString(this._multiHeaderSortDict.ElementAt(_multiHeaderSortDict.Count-1).Key);
+            }
+        }
+        /// <summary>
+        /// 最後にソートしたソート方向を返す。マルチソートの場合、最後に追加されたヘッダのソート方向を返す。
+        /// </summary>
+        public ListSortDirection LastDirection
+        {
+            get
+            {
+                if (IsExistSortParams == false) return ListSortDirection.Ascending;
+                return this._multiHeaderSortDict.ElementAt(_multiHeaderSortDict.Count - 1).Value;
+            }
+        }
+        
         Dictionary<int, int> createSortedItemGroupDict(List<T> itemList0, string prevHeader0, Dictionary<int, int> prevSortGroupDict0) {
             Dictionary<int, int> sortGroupDict1 = new Dictionary<int, int>();
             if (prevHeader0 == "") {    // 最初
@@ -111,7 +193,7 @@ namespace EpgTimer {
             return sortGroupDict1;
         }
 
-        public bool isExistSortParams {
+        public bool IsExistSortParams {
             get { return (this._multiHeaderSortDict.Count > 0); }
         }
 

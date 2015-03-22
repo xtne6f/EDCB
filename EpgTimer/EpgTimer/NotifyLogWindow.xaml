@@ -14,17 +14,17 @@
                 <GridView x:Name="gridView_log">
                     <GridViewColumn DisplayMemberBinding="{Binding Path=Time}">
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="日時" HorizontalContentAlignment="Left"/>
+                            <GridViewColumnHeader Content="日時" Tag="Time" HorizontalContentAlignment="Left"/>
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=Title}">
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="種別" HorizontalContentAlignment="Left"/>
+                            <GridViewColumnHeader Content="種別" Tag="Title" HorizontalContentAlignment="Left"/>
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=LogText}">
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="内容" HorizontalContentAlignment="Left"/>
+                            <GridViewColumnHeader Content="内容" Tag="LogText" HorizontalContentAlignment="Left"/>
                         </GridViewColumn.Header>
                     </GridViewColumn>
                 </GridView>

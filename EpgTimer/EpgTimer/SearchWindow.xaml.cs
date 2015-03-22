@@ -22,11 +22,6 @@ namespace EpgTimer
         private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
         private MenuUtil mutil = CommonManager.Instance.MUtil;
 
-        //string _lastHeaderClicked = null;
-        //ListSortDirection _lastDirection = ListSortDirection.Ascending;
-        //string _lastHeaderClicked2 = null;
-        //ListSortDirection _lastDirection2 = ListSortDirection.Ascending;
-
         private UInt32 autoAddID = 0;
 
         public SearchWindow()
@@ -162,16 +157,8 @@ namespace EpgTimer
                 //更新前の選択情報の保存
                 var oldItems = new ListViewSelectedKeeper<SearchItem>(listView_result, true);
 
-                ICollectionView dataView = CollectionViewSource.GetDefaultView(listView_result.DataContext);
-                if (dataView != null)
-                {
-                    dataView.SortDescriptions.Clear();
-                    dataView.Refresh();
-                }
                 listView_result.DataContext = null;
-
                 resultList.Clear();
-
 
                 EpgSearchKeyInfo key = new EpgSearchKeyInfo();
                 searchKeyView.GetSearchKey(ref key);
@@ -203,24 +190,17 @@ namespace EpgTimer
                 }
 
                 listView_result.DataContext = resultList;
-                //if (_lastHeaderClicked != null) {
-                //    Sort(_lastHeaderClicked, _lastDirection);
-                //} else {
-                //    string header = ((Binding)gridView_result.Columns[1].DisplayMemberBinding).Path.Path;
-                //    Sort(header, _lastDirection);
-                //    _lastHeaderClicked = header;
-                //}
-                if (this.gridViewSorter.isExistSortParams)
+
+                if (this.gridViewSorter.IsExistSortParams)
                 {
                     this.gridViewSorter.SortByMultiHeader(this.resultList);
                 }
                 else
                 {
-                    this.gridViewSorter.resetSortParams();
-                    this.gridViewSorter.SortByMultiHeader(
-                        this.resultList,
-                        gridView_result.Columns[1].Header as GridViewColumnHeader);
+                    this.gridViewSorter.ResetSortParams();
+                    this.gridViewSorter.SortByMultiHeaderWithKey(this.resultList, gridView_result.Columns, "StartTime");
                 }
+                listView_result.Items.Refresh();
 
                 searchKeyView.SaveSearchLog();
 
@@ -422,63 +402,15 @@ namespace EpgTimer
         private void GridViewColumnHeader_Click(object sender, RoutedEventArgs e)
         {
             GridViewColumnHeader headerClicked = e.OriginalSource as GridViewColumnHeader;
-            //ListSortDirection direction;
-
             if (headerClicked != null)
             {
                 if (headerClicked.Role != GridViewColumnHeaderRole.Padding)
                 {
-
                     this.gridViewSorter.SortByMultiHeader(this.resultList, headerClicked);
                     listView_result.Items.Refresh();
-
-                    //string header = "Reserved";
-                    //if (headerClicked.Column.DisplayMemberBinding != null) {
-                    //    header = ((Binding)headerClicked.Column.DisplayMemberBinding).Path.Path;
-                    //}
-                    //if (String.Compare(header, _lastHeaderClicked) != 0) {
-                    //    direction = ListSortDirection.Ascending;
-                    //    _lastHeaderClicked2 = _lastHeaderClicked;
-                    //    _lastDirection2 = _lastDirection;
-                    //} else {
-                    //    if (_lastDirection == ListSortDirection.Ascending) {
-                    //        direction = ListSortDirection.Descending;
-                    //    } else {
-                    //        direction = ListSortDirection.Ascending;
-                    //    }
-                    //}
-
-                    //Sort(header, direction);
-
-                    //_lastHeaderClicked = header;
-                    //_lastDirection = direction;
                 }
             }
         }
-
-        //private void Sort(string sortBy, ListSortDirection direction) {
-        //    try {
-        //        ICollectionView dataView = CollectionViewSource.GetDefaultView(listView_result.DataContext);
-
-        //        dataView.SortDescriptions.Clear();
-
-        //        SortDescription sd = new SortDescription(sortBy, direction);
-        //        dataView.SortDescriptions.Add(sd);
-        //        if (_lastHeaderClicked2 != null) {
-        //            if (String.Compare(sortBy, _lastHeaderClicked2) != 0) {
-        //                SortDescription sd2 = new SortDescription(_lastHeaderClicked2, _lastDirection2);
-        //                dataView.SortDescriptions.Add(sd2);
-        //            }
-        //        }
-        //        dataView.Refresh();
-
-        //        //Settings.Instance.ResColumnHead = sortBy;
-        //        //Settings.Instance.ResSortDirection = direction;
-
-        //    } catch (Exception ex) {
-        //        MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-        //    }
-        //}
 
         private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
         {

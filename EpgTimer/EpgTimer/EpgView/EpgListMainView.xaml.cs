@@ -27,11 +27,6 @@ namespace EpgTimer
         private List<SearchItem> programList = new List<SearchItem>();
         private List<ServiceItem> serviceList = new List<ServiceItem>();
 
-        string _lastHeaderClicked = null;
-        ListSortDirection _lastDirection = ListSortDirection.Ascending;
-        string _lastHeaderClicked2 = null;
-        ListSortDirection _lastDirection2 = ListSortDirection.Ascending;
-        
         private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
         private MenuUtil mutil = CommonManager.Instance.MUtil;
 
@@ -344,15 +339,8 @@ namespace EpgTimer
                 //大きく番組表が変化するEPG更新前後で選択情報を保存する意味もないのでほっておくことにする。
                 var oldItems = new ListViewSelectedKeeper<SearchItem>(listView_event, true);
 
-                ICollectionView dataView = CollectionViewSource.GetDefaultView(listView_event.DataContext);
-                if (dataView != null)
-                {
-                    dataView.SortDescriptions.Clear();
-                    dataView.Refresh();
-                }
-                listView_event.DataContext = null;
-
                 //listView_event.ItemsSource = null;
+                listView_event.DataContext = null;
                 programList.Clear();
 
                 Dictionary<UInt64, EpgServiceEventInfo> eventList = null;
@@ -461,17 +449,16 @@ namespace EpgTimer
                 //listView_event.DataContext = programList;
                 listView_event.ItemsSource = programList;
 
-                if (_lastHeaderClicked != null)
+                if (this.gridViewSorter.IsExistSortParams)
                 {
-                    //string header = ((Binding)_lastHeaderClicked.DisplayMemberBinding).Path.Path;
-                    Sort(_lastHeaderClicked, _lastDirection);
+                    this.gridViewSorter.SortByMultiHeader(this.programList);
                 }
                 else
                 {
-                    string header = ((Binding)gridView_event.Columns[1].DisplayMemberBinding).Path.Path;
-                    Sort(header, _lastDirection);
-                    _lastHeaderClicked = header;
+                    this.gridViewSorter.ResetSortParams();
+                    this.gridViewSorter.SortByMultiHeaderWithKey(this.programList, gridView_event.Columns, "StartTime");
                 }
+                listView_event.Items.Refresh();
 
                 //選択情報の復元
                 oldItems.RestoreListViewSelected();
@@ -780,85 +767,21 @@ namespace EpgTimer
             }
         }
 
+        GridViewSorter<SearchItem> gridViewSorter = new GridViewSorter<SearchItem>();
+
         private void GridViewColumnHeader_Click(object sender, RoutedEventArgs e)
         {
             GridViewColumnHeader headerClicked = e.OriginalSource as GridViewColumnHeader;
-            ListSortDirection direction;
-
             if (headerClicked != null)
             {
                 if (headerClicked.Role != GridViewColumnHeaderRole.Padding)
                 {
-                    string header = "";
-                    if (headerClicked.Column.DisplayMemberBinding != null)
-                    {
-                        header = ((Binding)headerClicked.Column.DisplayMemberBinding).Path.Path;
-                    }
-                    else if (headerClicked.Tag as string != null)
-                    {
-                        header = headerClicked.Tag as string;
-                    }
-                    if (header == null || header == "")
-                    {
-                        return;
-                    }
-
-                    if (String.Compare(header, _lastHeaderClicked) != 0)
-                    {
-                        direction = ListSortDirection.Ascending;
-                        _lastHeaderClicked2 = _lastHeaderClicked;
-                        _lastDirection2 = _lastDirection;
-                    }
-                    else
-                    {
-                        if (_lastDirection == ListSortDirection.Ascending)
-                        {
-                            direction = ListSortDirection.Descending;
-                        }
-                        else
-                        {
-                            direction = ListSortDirection.Ascending;
-                        }
-                    }
-
-                    Sort(header, direction);
-
-                    _lastHeaderClicked = header;
-                    _lastDirection = direction;
+                    this.gridViewSorter.SortByMultiHeader(this.programList, headerClicked);
+                    listView_event.Items.Refresh();
                 }
             }
         }
-
-        private void Sort(string sortBy, ListSortDirection direction)
-        {
-            try
-            {
-                ICollectionView dataView = CollectionViewSource.GetDefaultView(listView_event.ItemsSource);
-
-                dataView.SortDescriptions.Clear();
-
-                SortDescription sd = new SortDescription(sortBy, direction);
-                dataView.SortDescriptions.Add(sd);
-                if (_lastHeaderClicked2 != null)
-                {
-                    if (String.Compare(sortBy, _lastHeaderClicked2) != 0)
-                    {
-                        SortDescription sd2 = new SortDescription(_lastHeaderClicked2, _lastDirection2);
-                        dataView.SortDescriptions.Add(sd2);
-                    }
-                }
-                dataView.Refresh();
-
-                //Settings.Instance.ResColumnHead = sortBy;
-                //Settings.Instance.ResSortDirection = direction;
-
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
-
+        
         /// <summary>
         /// 右クリックメニュー 予約←→無効クリックイベント呼び出し
         /// </summary>

@@ -22,11 +22,6 @@ namespace EpgTimer
     /// </summary>
     public partial class NotifyLogWindow : Window
     {
-        string _lastHeaderClicked = null;
-        ListSortDirection _lastDirection = ListSortDirection.Ascending;
-        string _lastHeaderClicked2 = null;
-        ListSortDirection _lastDirection2 = ListSortDirection.Ascending;
-
         List<NotifySrvInfoItem> logList = new List<NotifySrvInfoItem>();
         public NotifyLogWindow()
         {
@@ -45,13 +40,6 @@ namespace EpgTimer
 
         private void ReloadList()
         {
-            ICollectionView dataView = CollectionViewSource.GetDefaultView(listView_log.DataContext);
-            if (dataView != null)
-            {
-                dataView.SortDescriptions.Clear();
-                dataView.Refresh();
-            }
-
             listView_log.DataContext = null;
             logList.Clear();
             foreach (NotifySrvInfo info in CommonManager.Instance.NotifyLogList)
@@ -62,87 +50,35 @@ namespace EpgTimer
             }
             listView_log.DataContext = logList;
 
-            if (_lastHeaderClicked != null)
+            if (this.gridViewSorter.IsExistSortParams)
             {
-                Sort(_lastHeaderClicked, _lastDirection);
+                this.gridViewSorter.SortByMultiHeader(this.logList);
             }
             else
             {
-                string header = ((Binding)gridView_log.Columns[0].DisplayMemberBinding).Path.Path;
-                Sort(header, _lastDirection);
-                _lastHeaderClicked = header;
+                this.gridViewSorter.ResetSortParams();
+                this.gridViewSorter.SortByMultiHeaderWithKey(this.logList, gridView_log.Columns, "Time", true, ListSortDirection.Descending);
             }
+            listView_log.Items.Refresh();
         }
 
-        private void Sort(string sortBy, ListSortDirection direction)
-        {
-            try
-            {
-                ICollectionView dataView = CollectionViewSource.GetDefaultView(listView_log.DataContext);
-
-                dataView.SortDescriptions.Clear();
-
-                SortDescription sd = new SortDescription(sortBy, direction);
-                dataView.SortDescriptions.Add(sd);
-                if (_lastHeaderClicked2 != null)
-                {
-                    if (String.Compare(sortBy, _lastHeaderClicked2) != 0)
-                    {
-                        SortDescription sd2 = new SortDescription(_lastHeaderClicked2, _lastDirection2);
-                        dataView.SortDescriptions.Add(sd2);
-                    }
-                }
-                dataView.Refresh();
-
-                Settings.Instance.ResColumnHead = sortBy;
-                Settings.Instance.ResSortDirection = direction;
-
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
+        GridViewSorter<NotifySrvInfoItem> gridViewSorter = new GridViewSorter<NotifySrvInfoItem>();
 
         private void GridViewColumnHeader_Click(object sender, RoutedEventArgs e)
         {
             GridViewColumnHeader headerClicked = e.OriginalSource as GridViewColumnHeader;
-            ListSortDirection direction;
-
             if (headerClicked != null)
             {
                 if (headerClicked.Role != GridViewColumnHeaderRole.Padding)
                 {
-                    string header = ((Binding)headerClicked.Column.DisplayMemberBinding).Path.Path;
-                    if (String.Compare(header, _lastHeaderClicked) != 0)
-                    {
-                        direction = ListSortDirection.Ascending;
-                        _lastHeaderClicked2 = _lastHeaderClicked;
-                        _lastDirection2 = _lastDirection;
-                    }
-                    else
-                    {
-                        if (_lastDirection == ListSortDirection.Ascending)
-                        {
-                            direction = ListSortDirection.Descending;
-                        }
-                        else
-                        {
-                            direction = ListSortDirection.Ascending;
-                        }
-                    }
-
-                    Sort(header, direction);
-
-                    _lastHeaderClicked = header;
-                    _lastDirection = direction;
+                    this.gridViewSorter.SortByMultiHeader(this.logList, headerClicked);
+                    listView_log.Items.Refresh();
                 }
             }
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-
             ReloadList();
         }
 
