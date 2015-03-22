@@ -505,9 +505,7 @@ namespace EpgTimer
             if (i1 == null || i2 == null) return false;
             return (IdMode == false || i1.EventID == i2.EventID)
                     && (TimeMode == false || i1.StartTime == i2.StartTime && i1.DurationSecond == i2.DurationSecond)
-                    && i1.OriginalNetworkID == i2.OriginalNetworkID
-                    && i1.TransportStreamID == i2.TransportStreamID
-                    && i1.ServiceID == i2.ServiceID;
+                    && i1.Create64Key() == i2.Create64Key();
         }
 
         //以降の三つは数の多いEpgEventInfo相手に実行されるので、Convert使わずバラしちゃった方がいいのかも
@@ -538,12 +536,12 @@ namespace EpgTimer
         {
             if (epgInfo == null || resInfo == null) return false;
 
-            resInfo.Title = (epgInfo.ShortInfo != null ? epgInfo.ShortInfo.event_name : "");
+            resInfo.Title = epgInfo.Title();
             resInfo.StartTime = epgInfo.start_time;
             resInfo.StartTimeEpg = epgInfo.start_time;
             resInfo.DurationSecond = (epgInfo.DurationFlag == 0 ? 10 * 60 : epgInfo.durationSec);
 
-            UInt64 key = CommonManager.Create64Key(epgInfo.original_network_id, epgInfo.transport_stream_id, epgInfo.service_id);
+            UInt64 key = epgInfo.Create64Key();
             if (ChSet5.Instance.ChList.ContainsKey(key) == true)
             {
                 resInfo.StationName = ChSet5.Instance.ChList[key].ServiceName;
@@ -676,60 +674,41 @@ namespace EpgTimer
             return retText;
         }
 
-        public static void CmdErrMsgTypical(ErrCode err, string Title = "通信")
+        /// <summary>
+        /// 良くある通信エラー(CMD_ERR_CONNECT,CMD_ERR_TIMEOUT)をMessageBoxで表示する。
+        /// Owner(this)を指定するとDispatcher.BeginInvokeで実行する。
+        /// </summary>
+        public static bool CmdErrMsgTypical(ErrCode err, string caption = "通信エラー", ContentControl Owner = null)
         {
-            if (err == ErrCode.CMD_ERR_CONNECT)
-            {
-                MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-            }
-            if (err == ErrCode.CMD_ERR_BUSY)
-            {
-            }
-            if (err == ErrCode.CMD_ERR_TIMEOUT)
-            {
-                MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-            }
-            if (err != ErrCode.CMD_SUCCESS)
-            {
-                MessageBox.Show(Title + "でエラーが発生しました。");
-            }
-        }
+            if (err == ErrCode.CMD_SUCCESS) return true;
 
-        public static bool CmdErrMsgTypical2(ContentControl Owner, ErrCode err, string Title = "通信")
-        {
-            if (err == ErrCode.CMD_ERR_CONNECT)
+            string msg;
+            switch (err)
             {
-                Owner.Dispatcher.BeginInvoke(new Action(() =>
-                {
-                    MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-                }), null);
-                return false;
+                case ErrCode.CMD_ERR_CONNECT:
+                    msg="サーバー または EpgTimerSrv に接続できませんでした。";
+                    break;
+                //case ErrCode.CMD_ERR_BUSY:  //もう表示しないことにしているようだ。
+                //    msg = "データの読み込みを行える状態ではありません。\r\n（EPGデータ読み込み中。など）";
+                //    break;
+                case ErrCode.CMD_ERR_TIMEOUT:
+                    msg = "EpgTimerSrvとの接続にタイムアウトしました。";
+                    break;
+                default:
+                    msg = "通信エラーが発生しました。";
+                    break;
             }
-            if (err == ErrCode.CMD_ERR_BUSY)
+
+            if (Owner != null)
             {
-                /*Owner.Dispatcher.BeginInvoke(new Action(() =>
-                {
-                    MessageBox.Show("データの読み込みを行える状態ではありません。\r\n（EPGデータ読み込み中。など）");
-                }), null);*/
-                return false;
+                Owner.Dispatcher.BeginInvoke(new Action(() => MessageBox.Show(msg, caption)), null);
             }
-            if (err == ErrCode.CMD_ERR_TIMEOUT)
+            else
             {
-                Owner.Dispatcher.BeginInvoke(new Action(() =>
-                {
-                    MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-                }), null);
-                return false;
+                MessageBox.Show(msg, caption);
             }
-            if (err != ErrCode.CMD_SUCCESS)
-            {
-                Owner.Dispatcher.BeginInvoke(new Action(() =>
-                {
-                    MessageBox.Show(Title + "でエラーが発生しました。");
-                }), null);
-                return false;
-            }
-            return true;
+
+            return false;
         }
 
         public EpgEventInfo GetEpgEventInfoFromReserveData(ReserveData info, bool getSrv=false)
@@ -743,7 +722,7 @@ namespace EpgTimer
                 {
                     if (info.EventID != 0xFFFF)
                     {
-                        UInt64 key = CommonManager.Create64Key(info.OriginalNetworkID, info.TransportStreamID, info.ServiceID);
+                        UInt64 key = info.Create64Key();
                         if (CommonManager.Instance.DB.ServiceEventList.ContainsKey(key) == true)
                         {
                             foreach (EpgEventInfo eventChkInfo in CommonManager.Instance.DB.ServiceEventList[key].eventList)
@@ -757,7 +736,7 @@ namespace EpgTimer
                         }
                         if (eventInfo == null && getSrv == true)
                         {
-                            UInt64 pgId = CommonManager.Create64PgKey(info.OriginalNetworkID, info.TransportStreamID, info.ServiceID, info.EventID);
+                            UInt64 pgId = info.Create64PgKey();
                             eventInfo = new EpgEventInfo();
                             cmd.SendGetPgInfo(pgId, ref eventInfo);
                         }

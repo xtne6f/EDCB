@@ -18,6 +18,7 @@ namespace EpgTimer
     {
         private EpgEventInfo eventInfo = null;
         private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
+        private MenuUtil mutil = CommonManager.Instance.MUtil;
 
         public AddReserveEpgWindow()
         {
@@ -53,8 +54,8 @@ namespace EpgTimer
 
         private void button_add_reserve_Click(object sender, RoutedEventArgs e)
         {
-            if (CommonManager.Instance.MUtil.IsEnableReserveAdd(eventInfo) == false) return;
-            CommonManager.Instance.MUtil.ReserveAdd(eventInfo, recSettingView);
+            if (mutil.IsEnableReserveAdd(eventInfo) == false) return;
+            mutil.ReserveAdd(eventInfo, recSettingView);
             DialogResult = true;
         }
 

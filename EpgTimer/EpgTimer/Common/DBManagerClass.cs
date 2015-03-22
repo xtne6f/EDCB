@@ -171,10 +171,7 @@ namespace EpgTimer
                             {
                                 foreach (EpgServiceEventInfo info in list)
                                 {
-                                    UInt64 id = CommonManager.Create64Key(
-                                        info.serviceInfo.ONID,
-                                        info.serviceInfo.TSID,
-                                        info.serviceInfo.SID);
+                                    UInt64 id = info.serviceInfo.Create64Key();
                                     serviceEventList.Add(id, info);
                                 }
                                 updateEpgData = false;
@@ -204,10 +201,7 @@ namespace EpgTimer
                             {
                                 foreach (EpgServiceEventInfo info in list)
                                 {
-                                    UInt64 id = CommonManager.Create64Key(
-                                        info.serviceInfo.ONID,
-                                        info.serviceInfo.TSID,
-                                        info.serviceInfo.SID);
+                                    UInt64 id = info.serviceInfo.Create64Key();
                                     serviceEventList.Add(id, info);
                                 }
                                 updateEpgData = false;

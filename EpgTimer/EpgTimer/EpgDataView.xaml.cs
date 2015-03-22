@@ -4,13 +4,6 @@ using System.Linq;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 using CtrlCmdCLI;
 using CtrlCmdCLI.Def;
@@ -138,38 +131,11 @@ namespace EpgTimer
                         }
                     }
                     ErrCode err = CommonManager.Instance.DB.ReloadEpgData();
-                    if (err == ErrCode.CMD_ERR_CONNECT)
+                    if (CommonManager.CmdErrMsgTypical(err, "EPGデータの取得", this) == false)
                     {
-                        this.Dispatcher.BeginInvoke(new Action(() =>
-                        {
-                            MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-                        }), null);
                         return false;
                     }
-                    if (err == ErrCode.CMD_ERR_BUSY)
-                    {
-                        this.Dispatcher.BeginInvoke(new Action(() =>
-                        {
-                            MessageBox.Show("EPGデータの読み込みを行える状態ではありません。\r\n（EPGデータ読み込み中。など）");
-                        }), null);
-                        return false;
-                    }
-                    if (err == ErrCode.CMD_ERR_TIMEOUT)
-                    {
-                        this.Dispatcher.BeginInvoke(new Action(() =>
-                        {
-                            MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-                        }), null);
-                        return false;
-                    }
-                    if (err != ErrCode.CMD_SUCCESS)
-                    {
-                        this.Dispatcher.BeginInvoke(new Action(() =>
-                        {
-                            MessageBox.Show("EPGデータの取得でエラーが発生しました。EPGデータが読み込まれていない可能性があります。");
-                        }), null);
-                        return false;
-                    }
+
                     CommonManager.Instance.DB.ReloadReserveInfo();
 
                     bool findTere = false;
@@ -198,28 +164,25 @@ namespace EpgTimer
                     //デフォルト表示
                     foreach (EpgServiceEventInfo info in CommonManager.Instance.DB.ServiceEventList.Values)
                     {
+                        UInt64 id = info.serviceInfo.Create64Key();
                         if (info.serviceInfo.ONID == 0x0004)
                         {
                             findBS = true;
-                            UInt64 id = CommonManager.Create64Key(info.serviceInfo.ONID, info.serviceInfo.TSID, info.serviceInfo.SID);
                             setInfoBS.ViewServiceList.Add(id);
                         }
                         else if (info.serviceInfo.ONID == 0x0006 || info.serviceInfo.ONID == 0x0007)
                         {
                             findCS = true;
-                            UInt64 id = CommonManager.Create64Key(info.serviceInfo.ONID, info.serviceInfo.TSID, info.serviceInfo.SID);
                             setInfoCS.ViewServiceList.Add(id);
                         }
                         else if (0x7880 <= info.serviceInfo.ONID && info.serviceInfo.ONID <= 0x7FE8)
                         {
                             findTere = true;
-                            UInt64 id = CommonManager.Create64Key(info.serviceInfo.ONID, info.serviceInfo.TSID, info.serviceInfo.SID);
                             setInfoTere.ViewServiceList.Add(id);
                         }
                         else
                         {
                             findOther = true;
-                            UInt64 id = CommonManager.Create64Key(info.serviceInfo.ONID, info.serviceInfo.TSID, info.serviceInfo.SID);
                             setInfoOther.ViewServiceList.Add(id);
                         }
                     }
@@ -421,12 +384,12 @@ namespace EpgTimer
             if (BlackoutWindow.selectedReserveItem != null)
             {
                 ReserveData reserveData1 = BlackoutWindow.selectedReserveItem.ReserveInfo;
-                serviceKey_Target1 = CommonManager.Create64Key(reserveData1.OriginalNetworkID, reserveData1.TransportStreamID, reserveData1.ServiceID);
+                serviceKey_Target1 = reserveData1.Create64Key();
             }
             else if (BlackoutWindow.selectedSearchItem != null)
             {
                 EpgEventInfo eventInfo1 = BlackoutWindow.selectedSearchItem.EventInfo;
-                serviceKey_Target1 = CommonManager.Create64Key(eventInfo1.original_network_id, eventInfo1.transport_stream_id, eventInfo1.service_id);
+                serviceKey_Target1 = eventInfo1.Create64Key();
             }
             foreach (TabItem tabItem1 in this.tabControl.Items)
             {

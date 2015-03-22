@@ -19,6 +19,8 @@ namespace EpgTimer
 {
     public class EpgAutoDataItem
     {
+        private MenuUtil mutil = CommonManager.Instance.MUtil;
+
         public EpgAutoDataItem(EpgAutoAddData item)
         {
             this.EpgAutoAddInfo = item;
@@ -310,7 +312,7 @@ namespace EpgTimer
                 String view = "";
                 if (EpgAutoAddInfo != null)
                 {
-                    view = CommonManager.Instance.MUtil.MarginStartText(EpgAutoAddInfo.recSetting);
+                    view = mutil.MarginStartText(EpgAutoAddInfo.recSetting);
                 }
                 return view;
             }
@@ -323,7 +325,7 @@ namespace EpgTimer
                 String view = "";
                 if (EpgAutoAddInfo != null)
                 {
-                    view = CommonManager.Instance.MUtil.MarginEndText(EpgAutoAddInfo.recSetting);
+                    view = mutil.MarginEndText(EpgAutoAddInfo.recSetting);
                 }
                 return view;
             }
@@ -407,7 +409,7 @@ namespace EpgTimer
             {
                 if (Settings.Instance.NoToolTip == true) return null;
                 //
-                return CommonManager.Instance.MUtil.GetTooltipBlockStandard(SearchInfoText);
+                return mutil.GetTooltipBlockStandard(SearchInfoText);
             }
         }
 

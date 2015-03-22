@@ -18,7 +18,8 @@ namespace EpgTimer
     {
         private ReserveData reserveInfo = null;
         private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
-        private bool manualAddMode = false;
+        private MenuUtil mutil = CommonManager.Instance.MUtil;
+        private bool addMode = false;
         private byte openMode = 0;
 
         private bool resModeProgram = true;
@@ -65,7 +66,7 @@ namespace EpgTimer
 
         public void SetAddReserveMode()
         {
-            manualAddMode = true;
+            addMode = true;
         }
 
         /// <summary>
@@ -165,7 +166,7 @@ namespace EpgTimer
             double dist = double.MaxValue, dist1;
             EpgEventInfo eventPossible = null;
 
-            UInt64 key = CommonManager.Create64Key(resInfo.OriginalNetworkID, resInfo.TransportStreamID, resInfo.ServiceID);
+            UInt64 key = resInfo.Create64Key();
             if (CommonManager.Instance.DB.ServiceEventList.ContainsKey(key) == true)
             {
                 foreach (EpgEventInfo eventChkInfo in CommonManager.Instance.DB.ServiceEventList[key].eventList)
@@ -198,9 +199,9 @@ namespace EpgTimer
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            if (manualAddMode == true || reserveInfo == null)
+            if (addMode == true || reserveInfo == null)
             {
-                manualAddMode = true;
+                addMode = true;
                 SetResModeProgram(true);
 
                 if (comboBox_service.Items.Count > 0)
@@ -325,7 +326,7 @@ namespace EpgTimer
                     "(別のEpgtimerによる操作など)");
 
                 //予約復旧を提示。これだけで大丈夫だったりする。
-                manualAddMode = true;
+                addMode = true;
                 button_chg_reserve.Content = "再予約";
                 this.button_del_reserve.IsEnabled = false;
             }
@@ -334,7 +335,7 @@ namespace EpgTimer
 
         private void button_chg_reserve_Click(object sender, RoutedEventArgs e)
         {
-            if (manualAddMode == false && CheckExistReserveItem() == false) return;
+            if (addMode == false && CheckExistReserveItem() == false) return;
 
             try
             {
@@ -368,7 +369,7 @@ namespace EpgTimer
                     if (eventInfoNew != null)
                     {
                         //基本的にAddReserveEpgWindowと同じ処理内容
-                        if (CommonManager.Instance.MUtil.IsEnableReserveAdd(eventInfoNew) == false) return;
+                        if (mutil.IsEnableReserveAdd(eventInfoNew) == false) return;
                         CommonManager.ConvertEpgToReserveData(eventInfoNew, ref reserveInfo);
                         reserveInfo.Comment = "";
                     }
@@ -376,13 +377,13 @@ namespace EpgTimer
 
                 reserveInfo.RecSetting = setInfo;
 
-                if (manualAddMode == false)
+                if (addMode == false)
                 {
-                    CommonManager.Instance.MUtil.ReserveChange(reserveInfo);
+                    mutil.ReserveChange(reserveInfo);
                 }
                 else
                 {
-                    CommonManager.Instance.MUtil.ReserveAdd(reserveInfo);
+                    mutil.ReserveAdd(reserveInfo);
                 }
             }
             catch (Exception ex)
@@ -397,7 +398,7 @@ namespace EpgTimer
         {
             if (CheckExistReserveItem() == false) return;
 
-            CommonManager.Instance.MUtil.ReserveDelete(reserveInfo);
+            mutil.ReserveDelete(reserveInfo);
 
             DialogResult = true;
         }

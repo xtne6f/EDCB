@@ -330,13 +330,72 @@ namespace EpgTimer
             return block;
         }
 
-        public static List<T> GetList<T>(T item)
+        public List<T> GetList<T>(T item)
         {
             var list = new List<T>();
             list.Add(item);
             return list;
         }
 
+        //SelectedItemsをリストにするためのジェネリック。処理的には効率悪いけど、メニューなのでOKということにする。
+        public List<T> GetList<T>(ICollection itemlist)
+        {
+            try
+            {
+                var list = new List<T>();
+                foreach (T item in itemlist)
+                {
+                    list.Add(item);
+                }
+                return list;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                return new List<T>();
+            }
+        }
+        public void SendAutoAdd(SearchItem item, ContentControl Owner)
+        {
+            SendAutoAdd(item.EventInfo, Owner);
+        }
+        public void SendAutoAdd(EpgEventInfo item, ContentControl Owner)
+        {
+            SendAutoAdd(item.Title(), item.Create64Key(), Owner);
+        }
+        public void SendAutoAdd(RecFileInfo item, ContentControl Owner)
+        {
+            SendAutoAdd(item.Title, item.Create64Key(), Owner);
+        }
+        public void SendAutoAdd(ReserveData item, ContentControl Owner)
+        {
+            SendAutoAdd(item.Title, item.Create64Key(), Owner);
+        }
+        public void SendAutoAdd(string Title, UInt64 sidKey, ContentControl Owner)
+        {
+            try
+            {
+                var dlg = new SearchWindow();
+                dlg.Owner = (Window)PresentationSource.FromVisual(Owner).RootVisual;
+                dlg.SetViewMode(1);
+
+                var key = new EpgSearchKeyInfo();
+                key.andKey = TrimEpgKeyword(Title);
+                key.serviceList.Add((Int64)sidKey);
+
+                dlg.SetSearchDefKey(key);
+                dlg.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+            }
+        }
+
+        public bool ReserveAdd(List<SearchItem> itemlist, RecSettingView recSettingView = null, object sender = null)
+        {
+            return ReserveAdd(itemlist.EventInfoList(), recSettingView, sender);
+        }
         public bool ReserveAdd(EpgEventInfo item, RecSettingView recSettingView = null, object sender = null)
         {
             return ReserveAdd(GetList(item), recSettingView, sender);
@@ -411,6 +470,109 @@ namespace EpgTimer
             return ReserveCmdSend(list, cmd.SendAddReserve, "予約追加");
         }
 
+        public bool ReserveChangeOnOff(List<SearchItem> itemlist, RecSettingView recSettingView = null)
+        {
+            bool retv = ReserveAdd(itemlist.EventInfoList(), recSettingView, null);
+            retv = ReserveChangeOnOff(itemlist.ReserveInfoList(), recSettingView) || retv;//順番重要
+            return retv;
+        }
+        public bool ReserveChangeOnOff(ReserveData item, RecSettingView recSettingView = null)
+        {
+            return ReserveChangeOnOff(GetList(item), recSettingView);
+        }
+        public bool ReserveChangeOnOff(List<ReserveData> itemlist, RecSettingView recSettingView = null)
+        {
+            try
+            {
+                var setInfo = new RecSettingData();
+                if (recSettingView != null)
+                {
+                    //現在の設定を読み込み、SearchWindowの場合だけ
+                    recSettingView.GetRecSetting(ref setInfo);
+                }
+                else
+                {
+                    //それ以外
+                    Settings.GetDefRecSetting(0, ref setInfo);
+                }
+
+                foreach (ReserveData item in itemlist)
+                {
+                    if (item.RecSetting.RecMode == 5)
+                    {
+                        // 無効 => 予約
+                        item.RecSetting.RecMode = setInfo.RecMode;
+                    }
+                    else
+                    {
+                        //予約 => 無効
+                        item.RecSetting.RecMode = 5;
+                    }
+                }
+                return ReserveChange(itemlist);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                return false;
+            }
+        }
+
+        public bool ReserveChangeRecmode(List<SearchItem> itemlist, object sender)
+        {
+            return ReserveChangeRecmode(itemlist.ReserveInfoList(), sender);
+        }
+        public bool ReserveChangeRecmode(ReserveData item, object sender)
+        {
+            return ReserveChangeRecmode(GetList(item), sender);
+        }
+        public bool ReserveChangeRecmode(List<ReserveData> itemlist, object sender)
+        {
+            try
+            {
+                byte recMode = (byte)ReadDataContext(sender, 0, 5);
+                if (recMode == 0xFF) return false;
+
+                foreach (ReserveData item in itemlist)
+                {
+                    item.RecSetting.RecMode = recMode;
+                }
+                return ReserveChange(itemlist);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                return false;
+            }
+        }
+
+        public bool ReserveChangePriority(List<SearchItem> itemlist, object sender)
+        {
+            return ReserveChangePriority(itemlist.ReserveInfoList(), sender);
+        }
+        public bool ReserveChangePriority(ReserveData item, object sender)
+        {
+            return ReserveChangePriority(GetList(item), sender);
+        }
+        public bool ReserveChangePriority(List<ReserveData> itemlist, object sender)
+        {
+            try
+            {
+                byte priority = (byte)ReadDataContext(sender, 1, 5);
+                if (priority == 0xFF) return false;
+
+                foreach (ReserveData item in itemlist)
+                {
+                    item.RecSetting.Priority = priority;
+                }
+                return ReserveChange(itemlist);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                return false;
+            }
+        }
         private uint ReadDataContext(object sender, uint min, uint max)
         {
             try
@@ -436,6 +598,10 @@ namespace EpgTimer
             return ReserveCmdSend(list, cmd.SendChgReserve, "予約変更");
         }
 
+        public bool ReserveDelete(List<SearchItem> itemlist)
+        {
+            return ReserveDelete(itemlist.ReserveInfoList());
+        }
         public bool ReserveDelete(ReserveData item)
         {
             return ReserveDelete(GetList(item));
@@ -454,20 +620,133 @@ namespace EpgTimer
             }
         }
 
-        private bool ReserveCmdSend<T>(List<T> list, Func<List<T>, uint> cmdSend, string description="")
+        public bool EpgAutoAddAdd(EpgAutoAddData item)
+        {
+            return EpgAutoAddAdd(GetList(item));
+        }
+        public bool EpgAutoAddAdd(List<EpgAutoAddData> itemlist)
+        {
+            return ReserveCmdSend(itemlist, cmd.SendAddEpgAutoAdd, "EPG自動予約の追加");
+        }
+
+        public bool EpgAutoAddChange(EpgAutoAddData item)
+        {
+            return EpgAutoAddChange(GetList(item));
+        }
+        public bool EpgAutoAddChange(List<EpgAutoAddData> itemlist)
+        {
+            return ReserveCmdSend(itemlist, cmd.SendChgEpgAutoAdd, "EPG自動予約の変更");
+        }
+
+        public bool EpgAutoAddDelete(List<EpgAutoDataItem> itemlist)
         {
             try
             {
-                if (list.Count == 0) return false;
-                ErrCode err = (ErrCode)cmdSend(list);
-                CommonManager.CmdErrMsgTypical(err, description);
-                return (err == ErrCode.CMD_SUCCESS ? true : false);
+                List<uint> list = itemlist.Select(item => item.EpgAutoAddInfo.dataID).ToList();
+                return EpgAutoAddDelete(list);
             }
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
                 return false;
             }
+        }
+        public bool EpgAutoAddDelete(uint item)
+        {
+            return EpgAutoAddDelete(GetList(item));
+        }
+        public bool EpgAutoAddDelete(List<uint> itemlist)
+        {
+            return ReserveCmdSend(itemlist, cmd.SendDelEpgAutoAdd, "EPG自動予約の削除");
+        }
+
+        private bool ReserveCmdSend<T>(List<T> list, Func<List<T>, uint> cmdSend, string description="")
+        {
+            try
+            {
+                if (list.Count == 0) return false;
+                ErrCode err = (ErrCode)cmdSend(list);
+                return CommonManager.CmdErrMsgTypical(err, description);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                return false;
+            }
+        }
+
+        public bool? OpenSearchItemWithWindow(SearchItem item, ContentControl Owner, byte openMode = 0)
+        {
+            if (item == null) return null;
+
+            if (item.IsReserved == true)
+            {
+                return OpenChangeReserveWindow(item.ReserveInfo, Owner, openMode);
+            }
+            else
+            {
+                return OpenEpgReserveWindow(item.EventInfo, Owner, openMode);
+            }
+        }
+
+        public bool? OpenManualReserveWindow(ContentControl Owner)
+        {
+            try
+            {
+                ChgReserveWindow dlg = new ChgReserveWindow();
+                dlg.Owner = (Window)PresentationSource.FromVisual(Owner).RootVisual;
+                dlg.SetAddReserveMode();
+                return dlg.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                return null;
+            }
+        }
+
+        public bool? OpenEpgReserveWindow(EpgEventInfo epgInfo, ContentControl Owner, byte openMode = 0)
+        {
+            try
+            {
+                AddReserveEpgWindow dlg = new AddReserveEpgWindow();
+                dlg.Owner = (Window)PresentationSource.FromVisual(Owner).RootVisual;
+                dlg.SetEventInfo(epgInfo);
+                dlg.SetOpenMode(openMode);
+                return dlg.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                return null;
+            }
+        }
+
+        public bool? OpenChangeReserveWindow(ReserveData resInfo, ContentControl Owner, byte openMode = 0)
+        {
+            try
+            {
+                ChgReserveWindow dlg = new ChgReserveWindow();
+                dlg.Owner = (Window)PresentationSource.FromVisual(Owner).RootVisual;
+                dlg.SetReserveInfo(resInfo);
+                dlg.SetOpenMode(openMode);
+                return dlg.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                return null;
+            }
+        }
+
+        //複数選択から単一要素を処理する際にどれを選ぶかの手続き。
+        //今は最後に選択したものとしている。
+        public T SelectSingleItem<T>(ListView list)
+        {
+            object item = list.SelectedItems[list.SelectedItems.Count - 1];
+            list.UnselectAll();
+            list.SelectedItem = item;
+            return (T)item;
         }
 
     }

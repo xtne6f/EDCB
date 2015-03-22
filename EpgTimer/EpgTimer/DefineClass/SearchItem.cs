@@ -15,6 +15,8 @@ namespace EpgTimer
     {
         //EventInfo、ReserveInfo、JyanruKey、ForeColor、BackColor、BorderBrushはベースクラス
 
+        private MenuUtil mutil = CommonManager.Instance.MUtil;
+
         public String EventName
         {
             get
@@ -22,10 +24,7 @@ namespace EpgTimer
                 String view = "";
                 if (EventInfo != null)
                 {
-                    if (EventInfo.ShortInfo != null)
-                    {
-                        view = EventInfo.ShortInfo.event_name;
-                    }
+                    view = EventInfo.Title();
                 }
                 return view;
             }
@@ -37,7 +36,7 @@ namespace EpgTimer
                 String view = "";
                 if (EventInfo != null)
                 {
-                    UInt64 serviceKey = CommonManager.Create64Key(EventInfo.original_network_id, EventInfo.transport_stream_id, EventInfo.service_id);
+                    UInt64 serviceKey = EventInfo.Create64Key();
                     if (ChSet5.Instance.ChList.ContainsKey(serviceKey) == true)
                     {
                         view = ChSet5.Instance.ChList[serviceKey].ServiceName;
@@ -142,7 +141,7 @@ namespace EpgTimer
                     view = CommonManager.Instance.ConvertProgramText(EventInfo, EventInfoTextMode.All);
                 }
 
-                return CommonManager.Instance.MUtil.GetTooltipBlockStandard(view);
+                return mutil.GetTooltipBlockStandard(view);
             }
         }
 

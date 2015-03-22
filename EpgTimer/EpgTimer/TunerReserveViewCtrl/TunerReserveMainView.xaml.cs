@@ -4,15 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using System.Collections;
-using System.Windows.Threading;
 
 using CtrlCmdCLI;
 using CtrlCmdCLI.Def;
@@ -29,6 +21,7 @@ namespace EpgTimer
         private List<ReserveViewItem> reserveList = new List<ReserveViewItem>();
         private Point clickPos;
         private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
+        private MenuUtil mutil = CommonManager.Instance.MUtil;
 
         private bool updateReserveData = true;
 
@@ -137,15 +130,13 @@ namespace EpgTimer
         {
             try
             {
+                foreach (ReserveViewItem resInfo in reserveList)
                 {
-                    foreach (ReserveViewItem resInfo in reserveList)
+                    if (resInfo.LeftPos <= cursorPos.X && cursorPos.X < resInfo.LeftPos + resInfo.Width &&
+                        resInfo.TopPos <= cursorPos.Y && cursorPos.Y < resInfo.TopPos + resInfo.Height)
                     {
-                        if (resInfo.LeftPos <= cursorPos.X && cursorPos.X < resInfo.LeftPos + resInfo.Width &&
-                            resInfo.TopPos <= cursorPos.Y && cursorPos.Y < resInfo.TopPos + resInfo.Height)
-                        {
-                            reserve = resInfo.ReserveInfo;
-                            return true;
-                        }
+                        reserve = resInfo.ReserveInfo;
+                        return true;
                     }
                 }
             }
@@ -163,21 +154,12 @@ namespace EpgTimer
         /// <param name="cursorPos"></param>
         void tunerReserveView_LeftDoubleClick(object sender, Point cursorPos)
         {
-            try
-            {
-                //まず予約情報あるかチェック
-                ReserveData reserve = new ReserveData();
-                if (GetReserveItem(cursorPos, ref reserve) == true)
-                {
-                    //予約変更ダイアログ表示
-                    ChangeReserve(reserve);
-                    return;
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            //まず予約情報あるかチェック
+            ReserveData reserve = new ReserveData();
+            if (GetReserveItem(cursorPos, ref reserve) == false) return;
+
+            //予約変更ダイアログ表示
+            ChangeReserve(reserve);
         }
 
         /// <summary>
@@ -192,10 +174,7 @@ namespace EpgTimer
                 //右クリック表示メニューの作成
                 clickPos = cursorPos;
                 ReserveData reserve = new ReserveData();
-                if (GetReserveItem(cursorPos, ref reserve) == false)
-                {
-                    return;
-                }
+                if (GetReserveItem(cursorPos, ref reserve) == false) return;
                 ContextMenu menu = new ContextMenu();
 
                 Separator separate2 = new Separator();
@@ -210,27 +189,27 @@ namespace EpgTimer
 
                 MenuItem menuItemChgRecMode0 = new MenuItem();
                 menuItemChgRecMode0.Header = "全サービス (_0)";
-                menuItemChgRecMode0.DataContext = 0;
+                menuItemChgRecMode0.DataContext = (uint)0;
                 menuItemChgRecMode0.Click += new RoutedEventHandler(cm_chg_recmode_Click);
                 MenuItem menuItemChgRecMode1 = new MenuItem();
                 menuItemChgRecMode1.Header = "指定サービス (_1)";
-                menuItemChgRecMode1.DataContext = 1;
+                menuItemChgRecMode1.DataContext = (uint)1;
                 menuItemChgRecMode1.Click += new RoutedEventHandler(cm_chg_recmode_Click);
                 MenuItem menuItemChgRecMode2 = new MenuItem();
                 menuItemChgRecMode2.Header = "全サービス（デコード処理なし） (_2)";
-                menuItemChgRecMode2.DataContext = 2;
+                menuItemChgRecMode2.DataContext = (uint)2;
                 menuItemChgRecMode2.Click += new RoutedEventHandler(cm_chg_recmode_Click);
                 MenuItem menuItemChgRecMode3 = new MenuItem();
                 menuItemChgRecMode3.Header = "指定サービス（デコード処理なし） (_3)";
-                menuItemChgRecMode3.DataContext = 3;
+                menuItemChgRecMode3.DataContext = (uint)3;
                 menuItemChgRecMode3.Click += new RoutedEventHandler(cm_chg_recmode_Click);
                 MenuItem menuItemChgRecMode4 = new MenuItem();
                 menuItemChgRecMode4.Header = "視聴 (_4)";
-                menuItemChgRecMode4.DataContext = 4;
+                menuItemChgRecMode4.DataContext = (uint)4;
                 menuItemChgRecMode4.Click += new RoutedEventHandler(cm_chg_recmode_Click);
                 MenuItem menuItemChgRecMode5 = new MenuItem();
                 menuItemChgRecMode5.Header = "無効 (_5)";
-                menuItemChgRecMode5.DataContext = 5;
+                menuItemChgRecMode5.DataContext = (uint)5;
                 menuItemChgRecMode5.Click += new RoutedEventHandler(cm_chg_recmode_Click);
 
                 menuItemChg.Items.Add(menuItemChgRecMode0);
@@ -247,23 +226,23 @@ namespace EpgTimer
 
                 MenuItem menuItemChgRecPri1 = new MenuItem();
                 menuItemChgRecPri1.Header = "1 (_1)";
-                menuItemChgRecPri1.DataContext = 1;
+                menuItemChgRecPri1.DataContext = (uint)1;
                 menuItemChgRecPri1.Click += new RoutedEventHandler(cm_chg_priority_Click);
                 MenuItem menuItemChgRecPri2 = new MenuItem();
                 menuItemChgRecPri2.Header = "2 (_2)";
-                menuItemChgRecPri2.DataContext = 2;
+                menuItemChgRecPri2.DataContext = (uint)2;
                 menuItemChgRecPri2.Click += new RoutedEventHandler(cm_chg_priority_Click);
                 MenuItem menuItemChgRecPri3 = new MenuItem();
                 menuItemChgRecPri3.Header = "3 (_3)";
-                menuItemChgRecPri3.DataContext = 3;
+                menuItemChgRecPri3.DataContext = (uint)3;
                 menuItemChgRecPri3.Click += new RoutedEventHandler(cm_chg_priority_Click);
                 MenuItem menuItemChgRecPri4 = new MenuItem();
                 menuItemChgRecPri4.Header = "4 (_4)";
-                menuItemChgRecPri4.DataContext = 4;
+                menuItemChgRecPri4.DataContext = (uint)4;
                 menuItemChgRecPri4.Click += new RoutedEventHandler(cm_chg_priority_Click);
                 MenuItem menuItemChgRecPri5 = new MenuItem();
                 menuItemChgRecPri5.Header = "5 (_5)";
-                menuItemChgRecPri5.DataContext = 5;
+                menuItemChgRecPri5.DataContext = (uint)5;
                 menuItemChgRecPri5.Click += new RoutedEventHandler(cm_chg_priority_Click);
 
                 menuItemChgRecPri.Items.Add(menuItemChgRecPri1);
@@ -282,7 +261,7 @@ namespace EpgTimer
                 menuItemPTable.Click += new RoutedEventHandler(cm_programtable_Click);
                 MenuItem menuItemAutoAdd = new MenuItem();
                 menuItemAutoAdd.Header = "自動予約登録";
-                menuItemAutoAdd.ToolTip = CommonManager.Instance.MUtil.EpgKeyword_TrimMode();
+                menuItemAutoAdd.ToolTip = mutil.EpgKeyword_TrimMode();
                 menuItemAutoAdd.Click += new RoutedEventHandler(cm_autoadd_Click);
                 MenuItem menuItemTimeshift = new MenuItem();
                 menuItemTimeshift.Header = "追っかけ再生";
@@ -290,15 +269,15 @@ namespace EpgTimer
 
                 MenuItem menuItemCopy = new MenuItem();
                 menuItemCopy.Header = "番組名をコピー";
-                menuItemCopy.ToolTip = CommonManager.Instance.MUtil.CopyTitle_TrimMode();
+                menuItemCopy.ToolTip = mutil.CopyTitle_TrimMode();
                 menuItemCopy.Click += new RoutedEventHandler(cm_CopyTitle_Click);
                 MenuItem menuItemContent = new MenuItem();
                 menuItemContent.Header = "番組情報をコピー";
-                menuItemContent.ToolTip = CommonManager.Instance.MUtil.CopyContent_Mode();
+                menuItemContent.ToolTip = mutil.CopyContent_Mode();
                 menuItemContent.Click += new RoutedEventHandler(cm_CopyContent_Click);
                 MenuItem menuItemSearch = new MenuItem();
                 menuItemSearch.Header = "番組名をネットで検索";
-                menuItemSearch.ToolTip = CommonManager.Instance.MUtil.SearchText_TrimMode();
+                menuItemSearch.ToolTip = mutil.SearchText_TrimMode();
                 menuItemSearch.Click += new RoutedEventHandler(cm_SearchTitle_Click);
 
                 menuItemChg.IsEnabled = true;
@@ -357,19 +336,9 @@ namespace EpgTimer
         /// <param name="e"></param>
         private void cm_chg_Click(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                ReserveData reserve = new ReserveData();
-                if (GetReserveItem(clickPos, ref reserve) == false)
-                {
-                    return;
-                }
-                ChangeReserve(reserve);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            ReserveData reserve = new ReserveData();
+            if (GetReserveItem(clickPos, ref reserve) == false) return;
+            ChangeReserve(reserve);
         }
 
         /// <summary>
@@ -379,33 +348,9 @@ namespace EpgTimer
         /// <param name="e"></param>
         private void cm_del_Click(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                ReserveData reserve = new ReserveData();
-                if (GetReserveItem(clickPos, ref reserve) == false)
-                {
-                    return;
-                }
-                List<UInt32> list = new List<UInt32>();
-                list.Add(reserve.ReserveID);
-                ErrCode err = (ErrCode)cmd.SendDelReserve(list);
-                if (err == ErrCode.CMD_ERR_CONNECT)
-                {
-                    MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-                }
-                if (err == ErrCode.CMD_ERR_TIMEOUT)
-                {
-                    MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-                }
-                if (err != ErrCode.CMD_SUCCESS)
-                {
-                    MessageBox.Show("予約削除でエラーが発生しました。");
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            ReserveData reserve = new ReserveData();
+            if (GetReserveItem(clickPos, ref reserve) == false) return;
+            mutil.ReserveDelete(reserve);
         }
 
         /// <summary>
@@ -415,41 +360,9 @@ namespace EpgTimer
         /// <param name="e"></param>
         private void cm_chg_recmode_Click(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                if (sender.GetType() != typeof(MenuItem))
-                {
-                    return;
-                }
-
-                ReserveData reserve = new ReserveData();
-                if (GetReserveItem(clickPos, ref reserve) == false)
-                {
-                    return;
-                }
-                MenuItem item = sender as MenuItem;
-                Int32 val = (Int32)item.DataContext;
-                reserve.RecSetting.RecMode = (byte)val;
-                List<ReserveData> list = new List<ReserveData>();
-                list.Add(reserve);
-                ErrCode err = (ErrCode)cmd.SendChgReserve(list);
-                if (err == ErrCode.CMD_ERR_CONNECT)
-                {
-                    MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-                }
-                if (err == ErrCode.CMD_ERR_TIMEOUT)
-                {
-                    MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-                }
-                if (err != ErrCode.CMD_SUCCESS)
-                {
-                    MessageBox.Show("予約変更でエラーが発生しました。");
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            ReserveData reserve = new ReserveData();
+            if (GetReserveItem(clickPos, ref reserve) == false) return;
+            mutil.ReserveChangeRecmode(reserve, sender);
         }
 
         /// <summary>
@@ -459,41 +372,9 @@ namespace EpgTimer
         /// <param name="e"></param>
         private void cm_chg_priority_Click(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                if (sender.GetType() != typeof(MenuItem))
-                {
-                    return;
-                }
-
-                ReserveData reserve = new ReserveData();
-                if (GetReserveItem(clickPos, ref reserve) == false)
-                {
-                    return;
-                }
-                MenuItem item = sender as MenuItem;
-                Int32 val = (Int32)item.DataContext;
-                reserve.RecSetting.Priority = (byte)val;
-                List<ReserveData> list = new List<ReserveData>();
-                list.Add(reserve);
-                ErrCode err = (ErrCode)cmd.SendChgReserve(list);
-                if (err == ErrCode.CMD_ERR_CONNECT)
-                {
-                    MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-                }
-                if (err == ErrCode.CMD_ERR_TIMEOUT)
-                {
-                    MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-                }
-                if (err != ErrCode.CMD_SUCCESS)
-                {
-                    MessageBox.Show("予約変更でエラーが発生しました。");
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            ReserveData reserve = new ReserveData();
+            if (GetReserveItem(clickPos, ref reserve) == false) return;
+            mutil.ReserveChangePriority(reserve, sender);
         }
 
         /// <summary>
@@ -503,16 +384,8 @@ namespace EpgTimer
         /// <param name="e"></param>
         private void cm_programtable_Click(object sender, RoutedEventArgs e)
         {
-            if (sender.GetType() != typeof(MenuItem))
-            {
-                return;
-            }
-
             ReserveData reserve = new ReserveData();
-            if (GetReserveItem(clickPos, ref reserve) == false)
-            {
-                return;
-            }
+            if (GetReserveItem(clickPos, ref reserve) == false) return;
 
             BlackoutWindow.selectedReserveItem = new ReserveItem(reserve);
             MainWindow mainWindow = Application.Current.MainWindow as MainWindow;
@@ -539,39 +412,9 @@ namespace EpgTimer
         /// <param name="e"></param>
         private void cm_autoadd_Click(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                if (sender.GetType() != typeof(MenuItem))
-                {
-                    return;
-                }
-
-                ReserveData reserve = new ReserveData();
-                if (GetReserveItem(clickPos, ref reserve) == false)
-                {
-                    return;
-                }
-
-                SearchWindow dlg = new SearchWindow();
-                dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-                dlg.SetViewMode(1);
-
-                EpgSearchKeyInfo key = new EpgSearchKeyInfo();
-
-                if (reserve.Title != null)
-                {
-                    key.andKey = CommonManager.Instance.MUtil.TrimEpgKeyword(reserve.Title);
-                }
-                Int64 sidKey = ((Int64)reserve.OriginalNetworkID) << 32 | ((Int64)reserve.TransportStreamID) << 16 | ((Int64)reserve.ServiceID);
-                key.serviceList.Add(sidKey);
-
-                dlg.SetSearchDefKey(key);
-                dlg.ShowDialog();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            ReserveData reserve = new ReserveData();
+            if (GetReserveItem(clickPos, ref reserve) == false) return;
+            mutil.SendAutoAdd(reserve, this);
         }
 
         /// <summary>
@@ -581,24 +424,9 @@ namespace EpgTimer
         /// <param name="e"></param>
         private void cm_timeShiftPlay_Click(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                if (sender.GetType() != typeof(MenuItem))
-                {
-                    return;
-                }
-
-                ReserveData reserve = new ReserveData();
-                if (GetReserveItem(clickPos, ref reserve) == false)
-                {
-                    return;
-                }
-                CommonManager.Instance.TVTestCtrl.StartTimeShift(reserve.ReserveID);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            ReserveData reserve = new ReserveData();
+            if (GetReserveItem(clickPos, ref reserve) == false) return;
+            CommonManager.Instance.TVTestCtrl.StartTimeShift(reserve.ReserveID);
         }
 
         /// <summary>
@@ -608,17 +436,9 @@ namespace EpgTimer
         /// <param name="e"></param>
         private void cm_CopyTitle_Click(object sender, RoutedEventArgs e)
         {
-            if (sender.GetType() != typeof(MenuItem))
-            {
-                return;
-            }
-
             ReserveData reserve = new ReserveData();
-            if (GetReserveItem(clickPos, ref reserve) == false)
-            {
-                return;
-            }
-            CommonManager.Instance.MUtil.CopyTitle2Clipboard(reserve.Title);
+            if (GetReserveItem(clickPos, ref reserve) == false) return;
+            mutil.CopyTitle2Clipboard(reserve.Title);
         }
 
         /// <summary>
@@ -628,17 +448,9 @@ namespace EpgTimer
         /// <param name="e"></param>
         private void cm_CopyContent_Click(object sender, RoutedEventArgs e)
         {
-            if (sender.GetType() != typeof(MenuItem))
-            {
-                return;
-            }
-
             ReserveData reserve = new ReserveData();
-            if (GetReserveItem(clickPos, ref reserve) == false)
-            {
-                return;
-            }
-            CommonManager.Instance.MUtil.CopyContent2Clipboard(reserve);
+            if (GetReserveItem(clickPos, ref reserve) == false) return;
+            mutil.CopyContent2Clipboard(reserve);
         }
 
         /// <summary>
@@ -648,17 +460,9 @@ namespace EpgTimer
         /// <param name="e"></param>
         private void cm_SearchTitle_Click(object sender, RoutedEventArgs e)
         {
-            if (sender.GetType() != typeof(MenuItem))
-            {
-                return;
-            }
-
             ReserveData reserve = new ReserveData();
-            if (GetReserveItem(clickPos, ref reserve) == false)
-            {
-                return;
-            }
-            CommonManager.Instance.MUtil.SearchText(reserve.Title);
+            if (GetReserveItem(clickPos, ref reserve) == false) return;
+            mutil.SearchText(reserve.Title);
         }
 
         /// <summary>
@@ -668,19 +472,7 @@ namespace EpgTimer
         /// <param name="e"></param>
         private void ChangeReserve(ReserveData reserveInfo)
         {
-            try
-            {
-                ChgReserveWindow dlg = new ChgReserveWindow();
-                dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-                dlg.SetReserveInfo(reserveInfo);
-                if (dlg.ShowDialog() == true)
-                {
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            mutil.OpenChangeReserveWindow(reserveInfo, this);
         }
 
         private void UserControl_Loaded(object sender, RoutedEventArgs e)
@@ -709,19 +501,8 @@ namespace EpgTimer
                     }
                 } 
                 ErrCode err = CommonManager.Instance.DB.ReloadReserveInfo();
-                if (err == ErrCode.CMD_ERR_CONNECT)
+                if (CommonManager.CmdErrMsgTypical(err, "予約情報の取得", this) == false)
                 {
-                    MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-                    return false;
-                }
-                if (err == ErrCode.CMD_ERR_TIMEOUT)
-                {
-                    MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-                    return false;
-                }
-                if (err != ErrCode.CMD_SUCCESS)
-                {
-                    MessageBox.Show("予約情報の取得でエラーが発生しました。");
                     return false;
                 }
 

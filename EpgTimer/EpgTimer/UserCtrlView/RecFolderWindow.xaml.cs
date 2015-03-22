@@ -4,12 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 using System.IO;
 using System.Windows.Interop;
 
@@ -44,18 +39,7 @@ namespace EpgTimer
             String recNamePlugInFile = "";
 
             ErrCode err = CommonManager.Instance.DB.ReloadPlugInFile();
-            if (err == ErrCode.CMD_ERR_CONNECT)
-            {
-                MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-            }
-            if (err == ErrCode.CMD_ERR_TIMEOUT)
-            {
-                MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-            }
-            if (err != ErrCode.CMD_SUCCESS)
-            {
-                MessageBox.Show("PlugIn一覧の取得でエラーが発生しました。");
-            }
+            CommonManager.CmdErrMsgTypical(err, "PlugIn一覧の取得");
 
             int select = 0;
             foreach (string info in CommonManager.Instance.DB.WritePlugInList.Values)

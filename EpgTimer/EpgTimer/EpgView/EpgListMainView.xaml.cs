@@ -5,20 +5,11 @@ using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using System.ComponentModel;
-using System.Collections.ObjectModel;
-using System.Collections;
-using System.Text.RegularExpressions;
 
 using CtrlCmdCLI;
 using CtrlCmdCLI.Def;
-
 
 namespace EpgTimer
 {
@@ -42,7 +33,7 @@ namespace EpgTimer
         ListSortDirection _lastDirection2 = ListSortDirection.Ascending;
         
         private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
-
+        private MenuUtil mutil = CommonManager.Instance.MUtil;
 
         private Dictionary<UInt64, EpgServiceEventInfo> serviceEventList = new Dictionary<UInt64, EpgServiceEventInfo>();
 
@@ -201,49 +192,9 @@ namespace EpgTimer
                             }
                         }
                         ErrCode err = CommonManager.Instance.DB.ReloadEpgData();
-                        if (err == ErrCode.CMD_ERR_CONNECT)
+                        if (CommonManager.CmdErrMsgTypical(err, "EPGデータの取得", this) == false)
                         {
-                            if (this.IsVisible == true)
-                            {
-                                this.Dispatcher.BeginInvoke(new Action(() =>
-                                {
-                                    MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-                                }), null);
-                            }
                             return false;
-                        }
-                        if (err == ErrCode.CMD_ERR_BUSY)
-                        {
-                            /*if (this.IsVisible == true)
-                            {
-                                this.Dispatcher.BeginInvoke(new Action(() =>
-                                {
-                                    MessageBox.Show("EPGデータの読み込みを行える状態ではありません。\r\n（EPGデータ読み込み中。など）");
-                                }), null);
-                            }*/
-                            return false;
-                        }
-                        if (err == ErrCode.CMD_ERR_TIMEOUT)
-                        {
-                            if (this.IsVisible == true)
-                            {
-                                this.Dispatcher.BeginInvoke(new Action(() =>
-                                {
-                                    MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-                                }), null);
-                            }
-                            return false;
-                        }
-                        if (err != ErrCode.CMD_SUCCESS)
-                        {
-                            if (this.IsVisible == true)
-                            {
-                                this.Dispatcher.BeginInvoke(new Action(() =>
-                                {
-                                    MessageBox.Show("EPGデータの取得でエラーが発生しました。EPGデータが読み込まれていない可能性があります。");
-                                }), null);
-                            }
-                            return false; 
                         }
 
                         ReloadProgramViewItem();
@@ -269,19 +220,8 @@ namespace EpgTimer
                     }
                 }
                 ErrCode err = CommonManager.Instance.DB.ReloadReserveInfo();
-                if (err == ErrCode.CMD_ERR_CONNECT)
+                if (CommonManager.CmdErrMsgTypical(err, "予約情報の取得") == false)
                 {
-                    MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-                    return false;
-                }
-                if (err == ErrCode.CMD_ERR_TIMEOUT)
-                {
-                    MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-                    return false;
-                }
-                if (err != ErrCode.CMD_SUCCESS)
-                {
-                    MessageBox.Show("予約情報の取得でエラーが発生しました。");
                     return false;
                 }
 
@@ -440,9 +380,7 @@ namespace EpgTimer
                 //更新前の選択情報の保存。
                 //なお、EPG更新の場合はReloadEpgData()でも追加で保存・復元コードを実施する必要があるが、
                 //大きく番組表が変化するEPG更新前後で選択情報を保存する意味もないのでほっておくことにする。
-                EpgEventInfo oldItem = null;
-                //List<EpgEventInfo> oldItems = new List<EpgEventInfo>();
-                StoreListViewSelected(ref oldItem);//, ref oldItems);
+                var oldItems = new ListViewSelectedKeeper<SearchItem>(listView_event, true);
 
                 ICollectionView dataView = CollectionViewSource.GetDefaultView(listView_event.DataContext);
                 if (dataView != null)
@@ -569,7 +507,7 @@ namespace EpgTimer
                 }
 
                 //選択情報の復元
-                RestoreListViewSelected(oldItem);//, oldItems);                
+                oldItems.RestoreListViewSelected();
             }
             catch (Exception ex)
             {
@@ -621,62 +559,14 @@ namespace EpgTimer
             }
         }
 
+        private SearchItem SelectSingleItem()
+        {
+            return mutil.SelectSingleItem<SearchItem>(listView_event);
+        }
+
         private void listView_event_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            try
-            {
-                if (listView_event.SelectedItem != null)
-                {
-                    SearchItem item = listView_event.SelectedItem as SearchItem;
-                    if (item.IsReserved == true)
-                    {
-                        ChangeReserve(item.ReserveInfo);
-                    }
-                    else
-                    {
-                        AddReserve(item.EventInfo);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
-
-        private void ChangeReserve(ReserveData reserveInfo)
-        {
-            try{
-                ChgReserveWindow dlg = new ChgReserveWindow();
-                dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-                dlg.SetOpenMode(Settings.Instance.EpgInfoOpenMode);
-                dlg.SetReserveInfo(reserveInfo);
-                if (dlg.ShowDialog() == true)
-                {
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
-
-        private void AddReserve(EpgEventInfo eventInfo)
-        {
-            try
-            {
-                AddReserveEpgWindow dlg = new AddReserveEpgWindow();
-                dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-                dlg.SetOpenMode(Settings.Instance.EpgInfoOpenMode);
-                dlg.SetEventInfo(eventInfo);
-                if (dlg.ShowDialog() == true)
-                {
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            this.cm_show_dialog_click(listView_event.SelectedItem, new RoutedEventArgs());
         }
 
         private void listView_event_ContextMenuOpening(object sender, ContextMenuEventArgs e)
@@ -697,10 +587,12 @@ namespace EpgTimer
                             cm_chg.IsEnabled = true;
                             for (int i = 0; i <= 5; i++)
                             {
+                                ((MenuItem)cm_chg.Items[cm_chg.Items.IndexOf(recmode_all) + i]).DataContext = (uint)i;
                                 ((MenuItem)cm_chg.Items[cm_chg.Items.IndexOf(recmode_all) + i]).IsChecked = (i == item.ReserveInfo.RecSetting.RecMode);
                             }
                             for (int i = 0; i < cm_pri.Items.Count; i++)
                             {
+                                ((MenuItem)cm_pri.Items[i]).DataContext = (uint)(i + 1);
                                 ((MenuItem)cm_pri.Items[i]).IsChecked = (i + 1 == item.ReserveInfo.RecSetting.Priority);
                             }
                             cm_pri.Header = string.Format((string)cm_pri.Tag, item.ReserveInfo.RecSetting.Priority);
@@ -729,10 +621,10 @@ namespace EpgTimer
                             }
                         }
 
-                        cm_autoadd.ToolTip = CommonManager.Instance.MUtil.EpgKeyword_TrimMode();
-                        cm_CopyTitle.ToolTip = CommonManager.Instance.MUtil.CopyTitle_TrimMode();
-                        cm_CopyContent.ToolTip = CommonManager.Instance.MUtil.CopyContent_Mode();
-                        cm_SearchTitle.ToolTip = CommonManager.Instance.MUtil.SearchText_TrimMode();
+                        cm_autoadd.ToolTip = mutil.EpgKeyword_TrimMode();
+                        cm_CopyTitle.ToolTip = mutil.CopyTitle_TrimMode();
+                        cm_CopyContent.ToolTip = mutil.CopyContent_Mode();
+                        cm_SearchTitle.ToolTip = mutil.SearchText_TrimMode();
 
                         cm_CmAppend.Visibility = System.Windows.Visibility.Collapsed;
                         cm_CopyTitle.Visibility = System.Windows.Visibility.Collapsed;
@@ -789,19 +681,8 @@ namespace EpgTimer
                 switch (e.Key)
                 {
                     case Key.Enter:
-                        if (listView_event.SelectedItem != null)
-                        {
-                            SearchItem item = listView_event.SelectedItem as SearchItem;
-                            if (item.IsReserved == true)
-                            {
-                                ChangeReserve(item.ReserveInfo);
-                            }
-                            else
-                            {
-                                AddReserve(item.EventInfo);
-                            }
-                            e.Handled = true;
-                        }
+                        this.cm_show_dialog_click(this, new RoutedEventArgs(Button.ClickEvent));
+                        e.Handled = true;
                         break;
                     case Key.Delete:
                         this.deleteItem();
@@ -815,7 +696,7 @@ namespace EpgTimer
         {
             if (listView_event.SelectedItem == null) { return; }
             //
-            List<ReserveData> delList = new List<ReserveData>();
+            var delList = new List<ReserveData>();
             foreach (SearchItem item in listView_event.SelectedItems)
             {
                 if (item.IsReserved == true)
@@ -839,294 +720,42 @@ namespace EpgTimer
 
         void cm_add_preset_Click(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                if (sender.GetType() != typeof(MenuItem))
-                {
-                    return;
-                }
-                MenuItem meun = sender as MenuItem;
-                UInt32 presetID = (UInt32)meun.DataContext;
-
-                if (listView_event.SelectedItem == null)
-                {
-                    return;
-                }
-
-                SearchItem item = listView_event.SelectedItem as SearchItem;
-                EpgEventInfo eventInfo = item.EventInfo;
-                if (eventInfo.StartTimeFlag == 0)
-                {
-                    MessageBox.Show("開始時間未定のため予約できません");
-                    return;
-                }
-
-                ReserveData reserveInfo = new ReserveData();
-                CommonManager.ConvertEpgToReserveData(eventInfo, ref reserveInfo);
-
-                RecSettingData setInfo = new RecSettingData();
-                Settings.GetDefRecSetting(presetID, ref setInfo);
-                reserveInfo.RecSetting = setInfo;
-
-                List<ReserveData> list = new List<ReserveData>();
-                list.Add(reserveInfo);
-                ErrCode err = (ErrCode)cmd.SendAddReserve(list);
-                if (err == ErrCode.CMD_ERR_CONNECT)
-                {
-                    MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-                }
-                if (err == ErrCode.CMD_ERR_TIMEOUT)
-                {
-                    MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-                }
-                if (err != ErrCode.CMD_SUCCESS)
-                {
-                    MessageBox.Show("予約登録でエラーが発生しました。終了時間がすでに過ぎている可能性があります。");
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            mutil.ReserveAdd(GetSelectedItemsList(), null, sender);
         }
 
         private void cm_del_Click(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                List<UInt32> list = new List<UInt32>();
-                foreach(SearchItem item in listView_event.SelectedItems)
-                {
-                    if (item.IsReserved == true)
-                    {
-                        list.Add(item.ReserveInfo.ReserveID);
-                    }
-                }
-                if (list.Count > 0)
-                {
-                    ErrCode err = (ErrCode)cmd.SendDelReserve(list);
-                    if (err == ErrCode.CMD_ERR_CONNECT)
-                    {
-                        MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-                    }
-                    if (err == ErrCode.CMD_ERR_TIMEOUT)
-                    {
-                        MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-                    }
-                    if (err != ErrCode.CMD_SUCCESS)
-                    {
-                        MessageBox.Show("予約削除でエラーが発生しました。");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            mutil.ReserveDelete(GetSelectedItemsList());
         }
 
-        private void cm_change_Click(object sender, RoutedEventArgs e)
+        private List<SearchItem> GetSelectedItemsList()
         {
-            try
-            {
-                if (listView_event.SelectedItem != null)
-                {
-                    SearchItem item = listView_event.SelectedItem as SearchItem;
-                    if (item.IsReserved == true)
-                    {
-                        ChangeReserve(item.ReserveInfo);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            return mutil.GetList<SearchItem>(listView_event.SelectedItems);
         }
 
-        private void cm_add_Click(object sender, RoutedEventArgs e)
+        private void cm_show_dialog_click(object sender, RoutedEventArgs e)
         {
-            try
+            if (listView_event.SelectedItem != null)
             {
-                if (listView_event.SelectedItem != null)
-                {
-                    SearchItem item = listView_event.SelectedItem as SearchItem;
-                    if (item.IsReserved == false)
-                    {
-                        AddReserve(item.EventInfo);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                mutil.OpenSearchItemWithWindow(SelectSingleItem(), this, Settings.Instance.EpgInfoOpenMode);
             }
         }
 
         private void cm_chg_recmode_Click(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                List<ReserveData> list = new List<ReserveData>();
-                foreach (SearchItem item in listView_event.SelectedItems)
-                {
-                    if (item.IsReserved == true)
-                    {
-                        ReserveData reserveInfo = item.ReserveInfo;
-
-                        byte recMode = 0;
-                        if (sender == recmode_all)
-                        {
-                            recMode = 0;
-                        }
-                        else if (sender == recmode_only)
-                        {
-                            recMode = 1;
-                        }
-                        else if (sender == recmode_all_nodec)
-                        {
-                            recMode = 2;
-                        }
-                        else if (sender == recmode_only_nodec)
-                        {
-                            recMode = 3;
-                        }
-                        else if (sender == recmode_view)
-                        {
-                            recMode = 4;
-                        }
-                        else if (sender == recmode_no)
-                        {
-                            recMode = 5;
-                        }
-                        else
-                        {
-                            return;
-                        }
-                        reserveInfo.RecSetting.RecMode = recMode;
-                        
-                        list.Add(reserveInfo);
-                    }
-                }
-                if (list.Count > 0)
-                {
-                    ErrCode err = (ErrCode)cmd.SendChgReserve(list);
-                    if (err == ErrCode.CMD_ERR_CONNECT)
-                    {
-                        MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-                    }
-                    if (err == ErrCode.CMD_ERR_TIMEOUT)
-                    {
-                        MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-                    }
-                    if (err != ErrCode.CMD_SUCCESS)
-                    {
-                        MessageBox.Show("予約変更でエラーが発生しました。");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            mutil.ReserveChangeRecmode(GetSelectedItemsList(), sender);
         }
 
         private void cm_chg_priority_Click(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                List<ReserveData> list = new List<ReserveData>();
-                foreach (SearchItem item in listView_event.SelectedItems)
-                {
-                    if (item.IsReserved == true)
-                    {
-                        ReserveData reserveInfo = item.ReserveInfo;
-
-                        byte priority = 1;
-                        if (sender == priority_1)
-                        {
-                            priority = 1;
-                        }
-                        else if (sender == priority_2)
-                        {
-                            priority = 2;
-                        }
-                        else if (sender == priority_3)
-                        {
-                            priority = 3;
-                        }
-                        else if (sender == priority_4)
-                        {
-                            priority = 4;
-                        }
-                        else if (sender == priority_5)
-                        {
-                            priority = 5;
-                        }
-                        else
-                        {
-                            return;
-                        }
-                        reserveInfo.RecSetting.Priority = priority;
-
-                        list.Add(reserveInfo);
-                    }
-                }
-                if (list.Count > 0)
-                {
-                    ErrCode err = (ErrCode)cmd.SendChgReserve(list);
-                    if (err == ErrCode.CMD_ERR_CONNECT)
-                    {
-                        MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-                    }
-                    if (err == ErrCode.CMD_ERR_TIMEOUT)
-                    {
-                        MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-                    }
-                    if (err != ErrCode.CMD_SUCCESS)
-                    {
-                        MessageBox.Show("予約変更でエラーが発生しました。");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            mutil.ReserveChangePriority(GetSelectedItemsList(), sender);
         }
 
         private void cm_autoadd_Click(object sender, RoutedEventArgs e)
         {
-            try
+            if (listView_event.SelectedItem != null)
             {
-                if (sender.GetType() != typeof(MenuItem))
-                {
-                    return;
-                }
-                if (listView_event.SelectedItem != null)
-                {
-                    SearchItem item = listView_event.SelectedItem as SearchItem;
-
-                    SearchWindow dlg = new SearchWindow();
-                    dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-                    dlg.SetViewMode(1);
-
-                    EpgSearchKeyInfo key = new EpgSearchKeyInfo();
-
-                    if (item.EventInfo.ShortInfo != null)
-                    {
-                        key.andKey = CommonManager.Instance.MUtil.TrimEpgKeyword(item.EventInfo.ShortInfo.event_name);
-                    }
-                    Int64 sidKey = ((Int64)item.EventInfo.original_network_id) << 32 | ((Int64)item.EventInfo.transport_stream_id) << 16 | ((Int64)item.EventInfo.service_id);
-                    key.serviceList.Add(sidKey);
-
-                    dlg.SetSearchDefKey(key);
-                    dlg.ShowDialog();                
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                mutil.SendAutoAdd(SelectSingleItem(), this);
             }
         }
 
@@ -1136,7 +765,7 @@ namespace EpgTimer
             {
                 if (listView_event.SelectedItem != null)
                 {
-                    SearchItem item = listView_event.SelectedItem as SearchItem;
+                    SearchItem item = SelectSingleItem();
                     if (item.IsReserved == true)
                     {
                         CommonManager.Instance.TVTestCtrl.StartTimeShift(item.ReserveInfo.ReserveID);
@@ -1178,7 +807,7 @@ namespace EpgTimer
                 if (ViewSettingClick != null)
                 {
                     MenuItem item = sender as MenuItem;
-                    CustomEpgTabInfo setInfo = new CustomEpgTabInfo();
+                    var setInfo = new CustomEpgTabInfo();
                     setViewInfo.CopyTo(ref setInfo);
                     if (sender == cm_chg_viewMode2)
                     {
@@ -1210,8 +839,8 @@ namespace EpgTimer
         {
             if (listView_event.SelectedItem != null)
             {
-                SearchItem item = listView_event.SelectedItem as SearchItem;
-                CommonManager.Instance.MUtil.CopyTitle2Clipboard(item.EventName);
+                SearchItem item = SelectSingleItem();
+                mutil.CopyTitle2Clipboard(item.EventName);
             }
         }
 
@@ -1219,10 +848,8 @@ namespace EpgTimer
         {
             if (listView_event.SelectedItem != null)
             {
-                SearchItem item = listView_event.SelectedItems[listView_event.SelectedItems.Count - 1] as SearchItem;
-                listView_event.UnselectAll();
-                listView_event.SelectedItem = item;
-                CommonManager.Instance.MUtil.CopyContent2Clipboard(item.EventInfo);
+                SearchItem item = SelectSingleItem();
+                mutil.CopyContent2Clipboard(item.EventInfo);
             }
         }
 
@@ -1230,10 +857,8 @@ namespace EpgTimer
         {
             if (listView_event.SelectedItem != null)
             {
-                SearchItem item = listView_event.SelectedItems[listView_event.SelectedItems.Count - 1] as SearchItem;
-                listView_event.UnselectAll();
-                listView_event.SelectedItem = item;
-                CommonManager.Instance.MUtil.SearchText(item.EventName);
+                SearchItem item = SelectSingleItem();
+                mutil.SearchText(item.EventName);
             }
         }
 
@@ -1317,168 +942,15 @@ namespace EpgTimer
         }
 
         /// <summary>
-        /// 右クリックメニュー 簡易予約イベント呼び出し
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void cm_new_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                foreach (SearchItem item in listView_event.SelectedItems){
-                    if (item.IsReserved == false)
-                    {
-                        EpgEventInfo eventInfo = item.EventInfo;
-
-                        if (eventInfo.StartTimeFlag == 0)
-                        {
-                            MessageBox.Show("開始時間未定のため予約できません");
-                            return;
-                        }
-
-                        ReserveData reserveInfo = new ReserveData();
-                        CommonManager.ConvertEpgToReserveData(eventInfo, ref reserveInfo);
-
-                        RecSettingData setInfo = new RecSettingData();
-                        Settings.GetDefRecSetting(0, ref setInfo);  //  デフォルトをとって来てくれる？
-                        reserveInfo.RecSetting = setInfo;
-
-                        List<ReserveData> list = new List<ReserveData>();
-                        list.Add(reserveInfo);
-                        ErrCode err = (ErrCode)cmd.SendAddReserve(list);
-                        if (err == ErrCode.CMD_ERR_CONNECT)
-                        {
-                            MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-                        }
-                        if (err == ErrCode.CMD_ERR_TIMEOUT)
-                        {
-                            MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-                        }
-                        if (err != ErrCode.CMD_SUCCESS)
-                        {
-                            MessageBox.Show("簡易予約でエラーが発生しました。終了時間がすでに過ぎている可能性があります。");
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
-
-        /// <summary>
         /// 右クリックメニュー 予約←→無効クリックイベント呼び出し
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
         private void cm_reverse_Click(object sender, RoutedEventArgs e)
         {
-
-            if (listView_event.SelectedItem == null) return;
-
-            List<ReserveData> list = new List<ReserveData>();
-            bool IsExistNewReserve = false;
-
-            foreach (SearchItem item in listView_event.SelectedItems)
-            {
-                if (item.IsReserved == true)
-                {
-                    if (item.ReserveInfo.RecSetting.RecMode == 5)
-                    {
-                        // 無効 => 予約
-                        RecSettingData defSet = new RecSettingData();
-                        Settings.GetDefRecSetting(0, ref defSet);
-                        item.ReserveInfo.RecSetting.RecMode = defSet.RecMode;
-                    }
-                    else
-                    {
-                        //予約 => 無効
-                        item.ReserveInfo.RecSetting.RecMode = 5;
-                    }
-
-                    list.Add(item.ReserveInfo);
-                }
-                else
-                {
-                    IsExistNewReserve = true;
-                }
-            }
-
-            if (list.Count > 0)
-            {
-                try
-                {
-                    ErrCode err = (ErrCode)cmd.SendChgReserve(list);
-
-                    if (err == ErrCode.CMD_ERR_CONNECT)
-                    {
-                        MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-                    }
-                    if (err == ErrCode.CMD_ERR_TIMEOUT)
-                    {
-                        MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-                    }
-                    if (err != ErrCode.CMD_SUCCESS)
-                    {
-                        MessageBox.Show("予約←→無効でエラーが発生しました。");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                }
-            }
-
-            if (IsExistNewReserve == true)
-            {
-                cm_new_Click(sender, e);
-            }
-
+            mutil.ReserveChangeOnOff(GetSelectedItemsList(), null);
         }
 
-        private void StoreListViewSelected(ref EpgEventInfo oldItem)//, ref List<EpgEventInfo> oldItems)
-        {
-            if (listView_event.SelectedItem != null)
-            {
-                oldItem = (listView_event.SelectedItem as SearchItem).EventInfo;
-//                foreach (SearchItem item in listView_event.SelectedItems)
-//                {
-//                    oldItems.Add(item.EventInfo);
-//                }
-            }
-        }
-
-        private void RestoreListViewSelected(EpgEventInfo oldItem)//, List<EpgEventInfo> oldItems)
-        {
-            if (oldItem != null)
-            {
-                //このUnselectAll()は無いと正しく復元出来ない状況があり得る
-                listView_event.UnselectAll();
-
-                foreach (SearchItem item in listView_event.Items)
-                {
-                    if (CommonManager.EqualsPg(item.EventInfo, oldItem) == true)
-                    {
-                        listView_event.SelectedItem = item;
-                        listView_event.ScrollIntoView(item);
-                    }
-                }
-
-//                foreach (EpgEventInfo oldItem1 in oldItems)
-//                {
-//                    foreach (SearchItem item in listView_event.Items)
-//                    {
-//                        if (CommonManager.EqualsPg(item.EventInfo, oldItem1) == true)
-//                        {
-//                            listView_event.SelectedItems.Add(item);
-//                            break;
-//                        }
-//                    }
-//                }
-            }
-        }
-        
         private void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
             if (this.IsVisible == false) { return; }

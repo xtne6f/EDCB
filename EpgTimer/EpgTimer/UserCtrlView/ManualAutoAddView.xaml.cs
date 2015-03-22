@@ -4,13 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 using CtrlCmdCLI;
 using CtrlCmdCLI.Def;
@@ -23,6 +17,7 @@ namespace EpgTimer
     public partial class ManualAutoAddView : UserControl
     {
         private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
+        private MenuUtil mutil = CommonManager.Instance.MUtil;
         private List<ManualAutoAddDataItem> resultList = new List<ManualAutoAddDataItem>();
         private bool ReloadInfo = true;
 
@@ -110,29 +105,16 @@ namespace EpgTimer
                 listView_key.DataContext = null;
                 resultList.Clear();
 
+                if (CommonManager.Instance.NWMode == true)
+                {
+                    if (CommonManager.Instance.NW.IsConnected == false)
+                    {
+                        return false;
+                    }
+                }
                 ErrCode err = CommonManager.Instance.DB.ReloadManualAutoAddInfo();
-                if (err == ErrCode.CMD_ERR_CONNECT)
+                if (CommonManager.CmdErrMsgTypical(err, "情報の取得", this) == false)
                 {
-                    this.Dispatcher.BeginInvoke(new Action(() =>
-                    {
-                        MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-                    }), null);
-                    return false;
-                }
-                if (err == ErrCode.CMD_ERR_TIMEOUT)
-                {
-                    this.Dispatcher.BeginInvoke(new Action(() =>
-                    {
-                        MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-                    }), null);
-                    return false;
-                }
-                if (err != ErrCode.CMD_SUCCESS)
-                {
-                    this.Dispatcher.BeginInvoke(new Action(() =>
-                    {
-                        MessageBox.Show("情報の取得でエラーが発生しました。");
-                    }), null);
                     return false;
                 }
 
@@ -190,20 +172,12 @@ namespace EpgTimer
 
         private ManualAutoAddDataItem SelectSingleItem()
         {
-            return CommonManager.Instance.MUtil.SelectSingleItem<ManualAutoAddDataItem>(listView_key);
+            return mutil.SelectSingleItem<ManualAutoAddDataItem>(listView_key);
         }
 
         private void listView_key_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            if (listView_key.SelectedItem != null)
-            {
-                ManualAutoAddDataItem info = listView_key.SelectedItem as ManualAutoAddDataItem;
-                AddManualAutoAddWindow dlg = new AddManualAutoAddWindow();
-                dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-                dlg.SetChangeMode(true);
-                dlg.SetDefaultSetting(info.ManualAutoAddInfo);
-                dlg.ShowDialog();
-            }
+            this.button_change.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         }
 
         private void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)

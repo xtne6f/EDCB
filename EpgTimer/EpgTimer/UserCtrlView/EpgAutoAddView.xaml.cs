@@ -4,13 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 using CtrlCmdCLI;
 using CtrlCmdCLI.Def;
@@ -23,6 +17,7 @@ namespace EpgTimer
     public partial class EpgAutoAddView : UserControl
     {
         private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
+        private MenuUtil mutil = CommonManager.Instance.MUtil;
         private List<EpgAutoDataItem> resultList = new List<EpgAutoDataItem>();
         private bool ReloadInfo = true;
 
@@ -129,36 +124,21 @@ namespace EpgTimer
             try
             {
                 //更新前の選択情報の保存
-                uint oldItem = 0;
-                List<uint> oldItems = new List<uint>();
-                StoreListViewSelected(ref oldItem, ref oldItems);
+                var oldItems = new ListViewSelectedKeeper<EpgAutoDataItem>(listView_key, true);
 
                 listView_key.DataContext = null;
                 resultList.Clear();
 
+                if (CommonManager.Instance.NWMode == true)
+                {
+                    if (CommonManager.Instance.NW.IsConnected == false)
+                    {
+                        return false;
+                    }
+                }
                 ErrCode err = CommonManager.Instance.DB.ReloadEpgAutoAddInfo();
-                if (err == ErrCode.CMD_ERR_CONNECT)
+                if (CommonManager.CmdErrMsgTypical(err, "情報の取得", this) == false)
                 {
-                    this.Dispatcher.BeginInvoke(new Action(() =>
-                    {
-                        MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-                    }), null);
-                    return false;
-                }
-                if (err == ErrCode.CMD_ERR_TIMEOUT)
-                {
-                    this.Dispatcher.BeginInvoke(new Action(() =>
-                    {
-                        MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-                    }), null);
-                    return false;
-                }
-                if (err != ErrCode.CMD_SUCCESS)
-                {
-                    this.Dispatcher.BeginInvoke(new Action(() =>
-                    {
-                        MessageBox.Show("情報の取得でエラーが発生しました。");
-                    }), null);
                     return false;
                 }
 
@@ -171,7 +151,7 @@ namespace EpgTimer
                 listView_key.DataContext = resultList;
 
                 //選択情報の復元
-                RestoreListViewSelected(oldItem, oldItems);
+                oldItems.RestoreListViewSelected();
             }
             catch (Exception ex)
             {
@@ -184,48 +164,6 @@ namespace EpgTimer
             return true;
         }
 
-        private void StoreListViewSelected(ref uint oldItem, ref List<uint> oldItems)
-        {
-            if (listView_key.SelectedItem != null)
-            {
-                oldItem = (listView_key.SelectedItem as EpgAutoDataItem).EpgAutoAddInfo.dataID;
-                foreach (EpgAutoDataItem item in listView_key.SelectedItems)
-                {
-                    oldItems.Add(item.EpgAutoAddInfo.dataID);
-                }
-            }
-        }
-
-        private void RestoreListViewSelected(uint oldItem, List<uint> oldItems)
-        {
-            if (oldItem != 0)
-            {
-                //このUnselectAll()は無いと正しく復元出来ない状況があり得る
-                listView_key.UnselectAll();
-
-                foreach (EpgAutoDataItem item in listView_key.Items)
-                {
-                    if (item.EpgAutoAddInfo.dataID == oldItem)
-                    {
-                        listView_key.SelectedItem = item;
-                        listView_key.ScrollIntoView(item);
-                    }
-                }
-
-                foreach (uint oldItem1 in oldItems)
-                {
-                    foreach (EpgAutoDataItem item in listView_key.Items)
-                    {
-                        if (item.EpgAutoAddInfo.dataID == oldItem1)
-                        {
-                            listView_key.SelectedItems.Add(item);
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-        
         private void button_add_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -243,22 +181,12 @@ namespace EpgTimer
 
         private void button_del_Click(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                if (listView_key.SelectedItems.Count > 0)
-                {
-                    List<UInt32> dataIDList = new List<uint>();
-                    foreach (EpgAutoDataItem info in listView_key.SelectedItems)
-                    {
-                        dataIDList.Add(info.EpgAutoAddInfo.dataID);
-                    }
-                    cmd.SendDelEpgAutoAdd(dataIDList);
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            mutil.EpgAutoAddDelete(GetSelectedItemsList());
+        }
+
+        private List<EpgAutoDataItem> GetSelectedItemsList()
+        {
+            return mutil.GetList<EpgAutoDataItem>(listView_key.SelectedItems);
         }
 
         private void button_del2_Click(object sender, RoutedEventArgs e)
@@ -283,7 +211,7 @@ namespace EpgTimer
             //先に自動予約登録項目を削除する。
 
             //自動予約登録項目のリストを保持
-            List<EpgAutoDataItem> autoaddlist = new List<EpgAutoDataItem>();
+            var autoaddlist = new List<EpgAutoDataItem>();
             foreach (EpgAutoDataItem item in listView_key.SelectedItems)
             {
                 autoaddlist.Add(item);
@@ -296,8 +224,8 @@ namespace EpgTimer
                 //配下の予約の削除
 
                 //検索リストの取得
-                List<EpgSearchKeyInfo> keyList = new List<EpgSearchKeyInfo>();
-                List<EpgEventInfo> list = new List<EpgEventInfo>();
+                var keyList = new List<EpgSearchKeyInfo>();
+                var list = new List<EpgEventInfo>();
 
                 foreach (EpgAutoDataItem item in autoaddlist)
                 {
@@ -308,7 +236,7 @@ namespace EpgTimer
 
                 cmd.SendSearchPg(keyList, ref list);
 
-                List<UInt32> dellist = new List<UInt32>();
+                var dellist = new List<ReserveData>();
 
                 foreach (EpgEventInfo info in list)
                 {
@@ -319,16 +247,15 @@ namespace EpgTimer
                             if (CommonManager.EqualsPg(info, info2) == true)
                             {
                                 //重複したEpgEventInfoは送られてこないので、登録時の重複チェックは不要
-                                dellist.Add(info2.ReserveID);
+                                dellist.Add(info2);
                                 break;
                             }
                         }
                     }
                 }
 
-                if (dellist.Count > 0)
+                if (mutil.ReserveDelete(dellist) == true)
                 {
-                    cmd.SendDelReserve(dellist);
                     CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.ReserveInfo);
                     CommonManager.Instance.DB.ReloadReserveInfo();
                 }
@@ -390,8 +317,6 @@ namespace EpgTimer
                         }
                     }
                 }
-
-
             }
             catch (Exception ex)
             {
@@ -406,7 +331,6 @@ namespace EpgTimer
                 MenuItem menuItem = sender as MenuItem;
                 if (menuItem.IsChecked == true)
                 {
-
                     Settings.Instance.AutoAddEpgColumn.Add(new ListColumnInfo(menuItem.Name, Double.NaN));
                     gridView_key.Columns.Add(columnList[menuItem.Name]);
                 }
@@ -476,15 +400,19 @@ namespace EpgTimer
             }
         }
 
+        private EpgAutoDataItem SelectSingleItem()
+        {
+            return mutil.SelectSingleItem<EpgAutoDataItem>(listView_key);
+        }
+
         void showDialog()
         {
             if (listView_key.SelectedItem == null) { return; }
             //
             try
             {
-                EpgAutoDataItem info = listView_key.SelectedItems[listView_key.SelectedItems.Count - 1] as EpgAutoDataItem;
-                listView_key.UnselectAll();
-                listView_key.SelectedItem = info;
+                EpgAutoDataItem info = SelectSingleItem();
+
                 SearchWindow dlg = new SearchWindow();
                 dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
                 dlg.SetViewMode(2);
@@ -521,17 +449,10 @@ namespace EpgTimer
         {
             if (listView_key.SelectedItem == null) { return; }
 
-            //更新前の選択情報の保存
-            uint oldItem = 0;
-            List<uint> oldItems = new List<uint>();
-            StoreListViewSelected(ref oldItem, ref oldItems);
-
-            //選択状態の維持しながらSelectedItemを切り替える
-            EpgAutoDataItem item1 = listView_key.SelectedItems[listView_key.SelectedItems.Count - 1] as EpgAutoDataItem;
-            oldItem = (uint)(item1.EpgAutoAddInfo.dataID);
-
-            //選択情報の復元
-            RestoreListViewSelected(oldItem, oldItems);
+            //ListViewSelectedKeeperを使って選択状態の維持しながらSelectedItemを切り替える
+            var oldItems = new ListViewSelectedKeeper<EpgAutoDataItem>(listView_key, true);
+            oldItems.oldItem = listView_key.SelectedItems[listView_key.SelectedItems.Count - 1] as EpgAutoDataItem;
+            oldItems.RestoreListViewSelected();
 
             EpgAutoDataItem item_Src1 = listView_key.SelectedItem as EpgAutoDataItem;
             int index_Src1 = resultList.IndexOf(item_Src1);
@@ -566,11 +487,7 @@ namespace EpgTimer
                 addList1.Add(item1.EpgAutoAddInfo);
 
             }
-            if (cmd.SendChgEpgAutoAdd(addList1) != 1)
-            {
-                MessageBox.Show("変更に失敗しました");
-            }
-            else
+            if (mutil.EpgAutoAddChange(addList1) == true)
             {
                 this.ItemOrderNotSaved = false;
             }

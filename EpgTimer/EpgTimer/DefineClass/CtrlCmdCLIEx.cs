@@ -10,6 +10,21 @@ namespace EpgTimer
 {
     static class CtrlCmdCLIEx
     {
+
+        public static UInt64 Create64Key(this EpgServiceInfo obj)
+        {
+            return CommonManager.Create64Key(obj.ONID, obj.TSID, obj.SID);
+        }
+
+        public static UInt64 Create64Key(this RecFileInfo obj)
+        {
+            return CommonManager.Create64Key(obj.OriginalNetworkID, obj.TransportStreamID, obj.ServiceID);
+        }
+        public static UInt64 Create64PgKey(this RecFileInfo obj)
+        {
+            return CommonManager.Create64PgKey(obj.OriginalNetworkID, obj.TransportStreamID, obj.ServiceID, obj.EventID);
+        }
+
         public static UInt64 Create64Key(this ManualAutoAddData obj)
         {
             return CommonManager.Create64Key(obj.originalNetworkID, obj.transportStreamID, obj.serviceID);
@@ -23,6 +38,11 @@ namespace EpgTimer
         {
             return CommonManager.Create64PgKey(obj.original_network_id, obj.transport_stream_id, obj.service_id, obj.event_id);
         }
+        public static string Title(this EpgEventInfo info)
+        {
+            return (info.ShortInfo == null ? "" : info.ShortInfo.event_name);
+        }
+
 
         public static UInt64 Create64Key(this EpgEventData obj)
         {

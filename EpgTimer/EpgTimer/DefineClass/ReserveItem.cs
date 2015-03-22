@@ -15,6 +15,8 @@ namespace EpgTimer
     {
         //ReserveInfo、JyanruKey、ForeColor、BackColor、BorderBrushはベースクラス
 
+        private MenuUtil mutil = CommonManager.Instance.MUtil;
+
         public ReserveItem(ReserveData item)
         {
             base.ReserveInfo = item;
@@ -119,7 +121,7 @@ namespace EpgTimer
                 String view = "";
                 if (ReserveInfo != null)
                 {
-                    view = CommonManager.Instance.MUtil.MarginStartText(ReserveInfo.RecSetting);
+                    view = mutil.MarginStartText(ReserveInfo.RecSetting);
                 }
                 return view;
             }
@@ -131,7 +133,7 @@ namespace EpgTimer
                 String view = "";
                 if (ReserveInfo != null)
                 {
-                    view = CommonManager.Instance.MUtil.MarginEndText(ReserveInfo.RecSetting);
+                    view = mutil.MarginEndText(ReserveInfo.RecSetting);
                 }
                 return view;
             }
@@ -296,7 +298,7 @@ namespace EpgTimer
                     view = CommonManager.Instance.ConvertReserveText(ReserveInfo);
                 }
 
-                return CommonManager.Instance.MUtil.GetTooltipBlockStandard(view);
+                return mutil.GetTooltipBlockStandard(view);
             }
         }
 

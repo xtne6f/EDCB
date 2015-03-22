@@ -46,19 +46,19 @@
                     <MenuItem Name="cmdChg" Header="変更">
                         <MenuItem Header="ダイアログ表示" Click="MenuItem_Click_ShowDialog"  InputGestureText="Enter" />
                         <Separator/>
-                        <MenuItem Header="全サービス (_0)" Tag="0" Click="MenuItem_Click_RecMode" />
-                        <MenuItem Header="指定サービス (_1)" Tag="1" Click="MenuItem_Click_RecMode" />
-                        <MenuItem Header="全サービス（デコード処理なし） (_2)" Tag="2" Click="MenuItem_Click_RecMode" />
-                        <MenuItem Header="指定サービス（デコード処理なし） (_3)" Tag="3" Click="MenuItem_Click_RecMode" />
-                        <MenuItem Header="視聴 (_4)" Tag="4" Click="MenuItem_Click_RecMode" />
-                        <MenuItem Header="無効 (_5)" Tag="5" Click="MenuItem_Click_RecMode" />
+                        <MenuItem Header="全サービス (_0)" Click="MenuItem_Click_RecMode" />
+                        <MenuItem Header="指定サービス (_1)" Click="MenuItem_Click_RecMode" />
+                        <MenuItem Header="全サービス（デコード処理なし） (_2)" Click="MenuItem_Click_RecMode" />
+                        <MenuItem Header="指定サービス（デコード処理なし） (_3)" Click="MenuItem_Click_RecMode" />
+                        <MenuItem Header="視聴 (_4)" Click="MenuItem_Click_RecMode" />
+                        <MenuItem Header="無効 (_5)" Click="MenuItem_Click_RecMode" />
                         <Separator/>
                         <MenuItem Name="cmdPri" Tag="優先度 {0}">
-                            <MenuItem Header="1 (_1)" Tag="1" Click="MenuItem_Click_Priority" />
-                            <MenuItem Header="2 (_2)" Tag="2" Click="MenuItem_Click_Priority" />
-                            <MenuItem Header="3 (_3)" Tag="3" Click="MenuItem_Click_Priority" />
-                            <MenuItem Header="4 (_4)" Tag="4" Click="MenuItem_Click_Priority" />
-                            <MenuItem Header="5 (_5)" Tag="5" Click="MenuItem_Click_Priority" />
+                            <MenuItem Header="1 (_1)" Click="MenuItem_Click_Priority" />
+                            <MenuItem Header="2 (_2)" Click="MenuItem_Click_Priority" />
+                            <MenuItem Header="3 (_3)" Click="MenuItem_Click_Priority" />
+                            <MenuItem Header="4 (_4)" Click="MenuItem_Click_Priority" />
+                            <MenuItem Header="5 (_5)" Click="MenuItem_Click_Priority" />
                         </MenuItem>
                     </MenuItem>
                     <MenuItem Name="cmdDlt" Header="削除" Click="MenuItem_Click_DeleteItem" InputGestureText="Ctrl+D, Delete" />

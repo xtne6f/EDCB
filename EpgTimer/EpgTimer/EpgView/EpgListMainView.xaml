@@ -25,7 +25,7 @@
                 <RichTextBox Name="richTextBox_eventInfo" IsReadOnly="True" />
             </ScrollViewer>
             <GridSplitter Grid.RowSpan="1" Height="5" Name="gridSplitter2" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" />
-            <ListView Grid.Row="1" Name="listView_event" SelectionMode="Single" ItemsSource="{Binding}" SelectionChanged="listView_event_SelectionChanged" ContextMenuOpening="listView_event_ContextMenuOpening" GridViewColumnHeader.Click="GridViewColumnHeader_Click" PreviewKeyDown="listView_event_PreviewKeyDown">
+            <ListView Grid.Row="1" Name="listView_event" SelectionMode="Extended" ItemsSource="{Binding}" SelectionChanged="listView_event_SelectionChanged" ContextMenuOpening="listView_event_ContextMenuOpening" GridViewColumnHeader.Click="GridViewColumnHeader_Click" PreviewKeyDown="listView_event_PreviewKeyDown">
                 <ListView.Resources>
                     <Style TargetType="ListViewItem">
                         <Setter Property="Foreground"  Value="{Binding ForeColor}" />
@@ -73,12 +73,12 @@
                     <ContextMenu x:Name="listView_event_contextMenu">
                         <MenuItem x:Name="cm_Reverse" Header="簡易予約/予約←→無効" Click="cm_reverse_Click" InputGestureText="Ctrl+S" />
                         <MenuItem x:Name="cm_add" Header="予約追加">
-                            <MenuItem Header="ダイアログ表示" Click="cm_add_Click" InputGestureText="Enter"/>
+                            <MenuItem Header="ダイアログ表示" Click="cm_show_dialog_click" InputGestureText="Enter"/>
                             <Separator/>
                             <MenuItem x:Name="cm_add_preset" Header="プリセット" />
                         </MenuItem>
                         <MenuItem x:Name="cm_chg" Header="変更">
-                            <MenuItem Header="ダイアログ表示" Click="cm_change_Click" InputGestureText="Enter" />
+                            <MenuItem Header="ダイアログ表示" Click="cm_show_dialog_click" InputGestureText="Enter" />
                             <Separator/>
                             <MenuItem Header="全サービス (_0)" Name="recmode_all" Click="cm_chg_recmode_Click" />
                             <MenuItem Header="指定サービス (_1)" Name="recmode_only" Click="cm_chg_recmode_Click" />

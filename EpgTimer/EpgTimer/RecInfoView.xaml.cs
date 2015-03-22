@@ -5,15 +5,8 @@ using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using System.ComponentModel;
-using System.Collections.ObjectModel;
-using System.Collections;
 
 using CtrlCmdCLI;
 using CtrlCmdCLI.Def;
@@ -34,6 +27,7 @@ namespace EpgTimer
         private ListSortDirection _lastDirection2 = ListSortDirection.Ascending;
 
         private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
+        private MenuUtil mutil = CommonManager.Instance.MUtil;
 
         private bool ReloadInfo = true;
 
@@ -61,35 +55,6 @@ namespace EpgTimer
                     columnList[info.Tag].Width = info.Width;
                     gridView_recinfo.Columns.Add(columnList[info.Tag]);
                 }
-                /*
-                if (Settings.Instance.RecInfoColumnWidth0 != 0)
-                {
-                    gridView_recinfo.Columns[1].Width = Settings.Instance.RecInfoColumnWidth0;
-                }
-                if (Settings.Instance.RecInfoColumnWidth1 != 0)
-                {
-                    gridView_recinfo.Columns[2].Width = Settings.Instance.RecInfoColumnWidth1;
-                }
-                if (Settings.Instance.RecInfoColumnWidth2 != 0)
-                {
-                    gridView_recinfo.Columns[3].Width = Settings.Instance.RecInfoColumnWidth2;
-                }
-                if (Settings.Instance.RecInfoColumnWidth3 != 0)
-                {
-                    gridView_recinfo.Columns[4].Width = Settings.Instance.RecInfoColumnWidth3;
-                }
-                if (Settings.Instance.RecInfoColumnWidth4 != 0)
-                {
-                    gridView_recinfo.Columns[5].Width = Settings.Instance.RecInfoColumnWidth4;
-                }
-                if (Settings.Instance.RecInfoColumnWidth5 != 0)
-                {
-                    gridView_recinfo.Columns[6].Width = Settings.Instance.RecInfoColumnWidth5;
-                }
-                if (Settings.Instance.RecInfoColumnWidth6 != 0)
-                {
-                    gridView_recinfo.Columns[7].Width = Settings.Instance.RecInfoColumnWidth6;
-                }*/
             }
             catch (Exception ex)
             {
@@ -101,15 +66,6 @@ namespace EpgTimer
         {
             try
             {
-                /*
-                Settings.Instance.RecInfoColumnWidth0 = gridView_recinfo.Columns[1].Width;
-                Settings.Instance.RecInfoColumnWidth1 = gridView_recinfo.Columns[2].Width;
-                Settings.Instance.RecInfoColumnWidth2 = gridView_recinfo.Columns[3].Width;
-                Settings.Instance.RecInfoColumnWidth3 = gridView_recinfo.Columns[4].Width;
-                Settings.Instance.RecInfoColumnWidth4 = gridView_recinfo.Columns[5].Width;
-                Settings.Instance.RecInfoColumnWidth5 = gridView_recinfo.Columns[6].Width;
-                Settings.Instance.RecInfoColumnWidth6 = gridView_recinfo.Columns[7].Width;
-                */
                 Settings.Instance.RecInfoListColumn.Clear();
                 foreach (GridViewColumn info in gridView_recinfo.Columns)
                 {
@@ -249,9 +205,7 @@ namespace EpgTimer
             try
             {
                 //更新前の選択情報の保存
-                uint oldItem = 0;
-                List<uint> oldItems = new List<uint>();
-                StoreListViewSelected(ref oldItem, ref oldItems);
+                var oldItems = new ListViewSelectedKeeper<RecInfoItem>(listView_recinfo, true);
 
                 ICollectionView dataView = CollectionViewSource.GetDefaultView(listView_recinfo.DataContext);
                 if (dataView != null)
@@ -262,29 +216,16 @@ namespace EpgTimer
                 listView_recinfo.DataContext = null;
                 resultList.Clear();
 
+                if (CommonManager.Instance.NWMode == true)
+                {
+                    if (CommonManager.Instance.NW.IsConnected == false)
+                    {
+                        return false;
+                    }
+                }
                 ErrCode err = CommonManager.Instance.DB.ReloadrecFileInfo();
-                if (err == ErrCode.CMD_ERR_CONNECT)
+                if (CommonManager.CmdErrMsgTypical(err, "録画情報の取得", this) == false)
                 {
-                    this.Dispatcher.BeginInvoke(new Action(() =>
-                    {
-                        MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-                    }), null);
-                    return false;
-                }
-                if (err == ErrCode.CMD_ERR_TIMEOUT)
-                {
-                    this.Dispatcher.BeginInvoke(new Action(() =>
-                    {
-                        MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-                    }), null);
-                    return false;
-                }
-                if (err != ErrCode.CMD_SUCCESS)
-                {
-                    this.Dispatcher.BeginInvoke(new Action(() =>
-                    {
-                        MessageBox.Show("情報の取得でエラーが発生しました。");
-                    }), null);
                     return false;
                 }
 
@@ -328,7 +269,7 @@ namespace EpgTimer
                 }
 
                 //選択情報の復元
-                RestoreListViewSelected(oldItem, oldItems);
+                oldItems.RestoreListViewSelected();
             }
             catch (Exception ex)
             {
@@ -339,48 +280,6 @@ namespace EpgTimer
                 return false;
             } 
             return true;
-        }
-
-        private void StoreListViewSelected(ref uint oldItem, ref List<uint> oldItems)
-        {
-            if (listView_recinfo.SelectedItem != null)
-            {
-                oldItem = (listView_recinfo.SelectedItem as RecInfoItem).RecInfo.ID;
-                foreach (RecInfoItem item in listView_recinfo.SelectedItems)
-                {
-                    oldItems.Add(item.RecInfo.ID);
-                }
-            }
-        }
-
-        private void RestoreListViewSelected(uint oldItem, List<uint> oldItems)
-        {
-            if (oldItem != 0)
-            {
-                //このUnselectAll()は無いと正しく復元出来ない状況があり得る
-                listView_recinfo.UnselectAll();
-
-                foreach (RecInfoItem item in listView_recinfo.Items)
-                {
-                    if (item.RecInfo.ID == oldItem)
-                    {
-                        listView_recinfo.SelectedItem = item;
-                        listView_recinfo.ScrollIntoView(item);
-                    }
-                }
-
-                foreach (uint oldItem1 in oldItems)
-                {
-                    foreach (RecInfoItem item in listView_recinfo.Items)
-                    {
-                        if (item.RecInfo.ID == oldItem1)
-                        {
-                            listView_recinfo.SelectedItems.Add(item);
-                            break;
-                        }
-                    }
-                }
-            }
         }
 
         /// <summary>
@@ -487,13 +386,16 @@ namespace EpgTimer
             }
         }
 
+        private RecInfoItem SelectSingleItem()
+        {
+            return mutil.SelectSingleItem<RecInfoItem>(listView_recinfo);
+        }
+
         private void button_play_Click(object sender, RoutedEventArgs e)
         {
             if (listView_recinfo.SelectedItem != null)
             {
-                RecInfoItem info = listView_recinfo.SelectedItems[listView_recinfo.SelectedItems.Count-1] as RecInfoItem;
-                listView_recinfo.UnselectAll();
-                listView_recinfo.SelectedItem = info;
+                RecInfoItem info = SelectSingleItem();
                 if (info.RecInfo.RecFilePath.Length > 0)
                 {
                     try
@@ -512,22 +414,8 @@ namespace EpgTimer
         {
             if (listView_recinfo.SelectedItem != null)
             {
-                SearchWindow dlg = new SearchWindow();
-                dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-                dlg.SetViewMode(1);
-
-                EpgSearchKeyInfo key = new EpgSearchKeyInfo();
-
-                RecInfoItem item = listView_recinfo.SelectedItems[listView_recinfo.SelectedItems.Count - 1] as RecInfoItem;
-                listView_recinfo.UnselectAll();
-                listView_recinfo.SelectedItem = item;
-
-                key.andKey = CommonManager.Instance.MUtil.TrimEpgKeyword(item.RecInfo.Title);
-                Int64 sidKey = ((Int64)item.RecInfo.OriginalNetworkID) << 32 | ((Int64)item.RecInfo.TransportStreamID) << 16 | ((Int64)item.RecInfo.ServiceID);
-                key.serviceList.Add(sidKey);
-
-                dlg.SetSearchDefKey(key);
-                dlg.ShowDialog();
+                RecInfoItem info = SelectSingleItem();
+                mutil.SendAutoAdd(info.RecInfo, this);
             }
         }
 
@@ -546,9 +434,7 @@ namespace EpgTimer
         {
             if (listView_recinfo.SelectedItem != null)
             {
-                RecInfoItem info = listView_recinfo.SelectedItems[listView_recinfo.SelectedItems.Count - 1] as RecInfoItem;
-                listView_recinfo.UnselectAll();
-                listView_recinfo.SelectedItem = info;
+                RecInfoItem info = SelectSingleItem();
                 RecInfoDescWindow dlg = new RecInfoDescWindow();
                 dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
                 dlg.SetRecInfo(info.RecInfo);
@@ -560,9 +446,7 @@ namespace EpgTimer
         {
             if (listView_recinfo.SelectedItem != null)
             {
-                RecInfoItem info = listView_recinfo.SelectedItems[listView_recinfo.SelectedItems.Count - 1] as RecInfoItem;
-                listView_recinfo.UnselectAll();
-                listView_recinfo.SelectedItem = info;
+                RecInfoItem info = SelectSingleItem();
 
                 if (CommonManager.Instance.NWMode == false)//一応残す
                 {
@@ -655,10 +539,8 @@ namespace EpgTimer
         {
             if (listView_recinfo.SelectedItem != null)
             {
-                RecInfoItem item = listView_recinfo.SelectedItems[listView_recinfo.SelectedItems.Count - 1] as RecInfoItem;
-                listView_recinfo.UnselectAll();
-                listView_recinfo.SelectedItem = item;
-                CommonManager.Instance.MUtil.CopyTitle2Clipboard(item.EventName);
+                RecInfoItem info = SelectSingleItem();
+                mutil.CopyTitle2Clipboard(info.EventName);
             }
         }
 
@@ -666,10 +548,8 @@ namespace EpgTimer
         {
             if (listView_recinfo.SelectedItem != null)
             {
-                RecInfoItem item = listView_recinfo.SelectedItems[listView_recinfo.SelectedItems.Count - 1] as RecInfoItem;
-                listView_recinfo.UnselectAll();
-                listView_recinfo.SelectedItem = item;
-                CommonManager.Instance.MUtil.CopyContent2Clipboard(item);
+                RecInfoItem info = SelectSingleItem();
+                mutil.CopyContent2Clipboard(info);
             }
         }
 
@@ -677,10 +557,8 @@ namespace EpgTimer
         {
             if (listView_recinfo.SelectedItem != null)
             {
-                RecInfoItem item = listView_recinfo.SelectedItems[listView_recinfo.SelectedItems.Count - 1] as RecInfoItem;
-                listView_recinfo.UnselectAll();
-                listView_recinfo.SelectedItem = item;
-                CommonManager.Instance.MUtil.SearchText(item.EventName);
+                RecInfoItem info = SelectSingleItem();
+                mutil.SearchText(info.EventName);
             }
         }
 
@@ -699,7 +577,7 @@ namespace EpgTimer
                     }
                     else if (item is MenuItem && (((MenuItem)item).Name == "cm_AutoAdd"))
                     {
-                        ((MenuItem)item).ToolTip = CommonManager.Instance.MUtil.EpgKeyword_TrimMode();
+                        ((MenuItem)item).ToolTip = mutil.EpgKeyword_TrimMode();
                     }
                     else if (item is Separator && ((Separator)item).Name == "cm_CmAppend")
                     {
@@ -721,7 +599,7 @@ namespace EpgTimer
                         else
                         {
                             ((MenuItem)item).Visibility = System.Windows.Visibility.Visible;
-                            ((MenuItem)item).ToolTip = CommonManager.Instance.MUtil.CopyTitle_TrimMode();
+                            ((MenuItem)item).ToolTip = mutil.CopyTitle_TrimMode();
                         }
                     }
                     else if (item is MenuItem && (((MenuItem)item).Name == "cm_CopyContent"))
@@ -733,7 +611,7 @@ namespace EpgTimer
                         else
                         {
                             ((MenuItem)item).Visibility = System.Windows.Visibility.Visible;
-                            ((MenuItem)item).ToolTip = CommonManager.Instance.MUtil.CopyContent_Mode();
+                            ((MenuItem)item).ToolTip = mutil.CopyContent_Mode();
                         }
                     }
                     else if (item is MenuItem && (((MenuItem)item).Name == "cm_SearchTitle"))
@@ -745,7 +623,7 @@ namespace EpgTimer
                         else
                         {
                             ((MenuItem)item).Visibility = System.Windows.Visibility.Visible;
-                            ((MenuItem)item).ToolTip = CommonManager.Instance.MUtil.SearchText_TrimMode();
+                            ((MenuItem)item).ToolTip = mutil.SearchText_TrimMode();
                         }
                     }
                 }

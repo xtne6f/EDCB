@@ -18,6 +18,9 @@ namespace EpgTimer
 {
     public class RecInfoItem
     {
+        private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
+        private MenuUtil mutil = CommonManager.Instance.MUtil;
+        
         public RecInfoItem(RecFileInfo item)
         {
             this.RecInfo = item;
@@ -36,7 +39,6 @@ namespace EpgTimer
                     RecInfo.ProtectFlag = value;
                     List<RecFileInfo> list = new List<RecFileInfo>();
                     list.Add(RecInfo);
-                    CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
                     cmd.SendChgProtectRecInfo(list);
                 }
             }
@@ -213,7 +215,7 @@ namespace EpgTimer
             {
                 if (Settings.Instance.NoToolTip == true) return null;
                 //
-                return CommonManager.Instance.MUtil.GetTooltipBlockStandard(RecInfoText);
+                return mutil.GetTooltipBlockStandard(RecInfoText);
             }
         }
         public string RecInfoText

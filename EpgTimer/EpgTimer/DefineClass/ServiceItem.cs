@@ -41,7 +41,7 @@ namespace EpgTimer
         }
         public UInt64 ID
         {
-            get { return CommonManager.Create64Key(ServiceInfo.ONID, ServiceInfo.TSID, ServiceInfo.SID); }
+            get { return ServiceInfo.Create64Key(); }
         }
         public String ServiceName
         {
