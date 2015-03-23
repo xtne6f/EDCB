@@ -354,8 +354,6 @@ namespace EpgTimer
         ******************************************************/
 
         bool _ItemOrderNotSaved = false;
-        enum itemMoveDirections { up, down };
-        EpgAutoDataItem dragItem = null;
         GridViewSorter<EpgAutoDataItem> gridViewSorter = new GridViewSorter<EpgAutoDataItem>();
 
         bool ItemOrderNotSaved
@@ -415,47 +413,6 @@ namespace EpgTimer
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
-
-        void moveItem(EpgAutoDataItem item_Src1, EpgAutoDataItem item_Dst1)
-        {
-            int index_Src1 = resultList.IndexOf(item_Src1);
-            int index_Dst1 = resultList.IndexOf(item_Dst1);
-
-            resultList.Remove(item_Src1);
-            resultList.Insert(index_Dst1, item_Src1);
-            listView_key.SelectedItem = item_Src1;
-
-            listView_key.Items.Refresh();
-            this.ItemOrderNotSaved = true;
-            this.gridViewSorter.resetSortParams();
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="up0">true: up, false: down</param>
-        void moveItem(itemMoveDirections moveDirection0)
-        {
-            if (listView_key.SelectedItem == null) { return; }
-
-            //ListViewSelectedKeeperを使って選択状態の維持しながらSelectedItemを切り替える
-            var oldItems = new ListViewSelectedKeeper<EpgAutoDataItem>(listView_key, true);
-            oldItems.oldItem = listView_key.SelectedItems[listView_key.SelectedItems.Count - 1] as EpgAutoDataItem;
-            oldItems.RestoreListViewSelected();
-
-            EpgAutoDataItem item_Src1 = listView_key.SelectedItem as EpgAutoDataItem;
-            int index_Src1 = resultList.IndexOf(item_Src1);
-            int index_Dst1 = index_Src1 - 1;
-            if (moveDirection0 == itemMoveDirections.down)
-            {
-                index_Dst1 = index_Src1 + 1;
-            }
-            if (0 <= index_Dst1 && index_Dst1 < resultList.Count)
-            {
-                EpgAutoDataItem item_Dst1 = resultList[index_Dst1];
-                this.moveItem(item_Src1, item_Dst1);
             }
         }
 
@@ -522,12 +479,26 @@ namespace EpgTimer
             this.reloadItemOrder();
         }
 
+        //移動関連
+        enum itemMoveDirections { up, down };
+        EpgAutoDataItem dragItem = null;
+        List<EpgAutoDataItem> dragItems = null;
+
         private void listViewItem_PreviewMouseDown(object sender, MouseButtonEventArgs e)
         {
             if (e.LeftButton == MouseButtonState.Pressed)
             {
-                ListViewItem item1 = sender as ListViewItem;
-                this.dragItem = item1.Content as EpgAutoDataItem;
+                ListViewItem item1 = (ListViewItem)sender;
+                this.dragItem = (EpgAutoDataItem)item1.Content;
+                if (listView_key.SelectedItems.Contains(this.dragItem))
+                {
+                    this.dragItems = listView_key.SelectedItems.Cast<EpgAutoDataItem>().ToList();
+                    this.dragItems.Sort((i1, i2) => resultList.IndexOf(i1) - resultList.IndexOf(i2));
+                }
+                else
+                {
+                    this.dragItems = mutil.GetList(this.dragItem);
+                }
             }
         }
 
@@ -539,14 +510,88 @@ namespace EpgTimer
                 if (Mouse.LeftButton == MouseButtonState.Released)
                 {
                     this.dragItem = null;
+                    this.dragItems = null;
                 }
                 else
                 {
-                    ListViewItem item1 = sender as ListViewItem;
-                    EpgAutoDataItem eadi1 = item1.Content as EpgAutoDataItem;
-                    this.moveItem(this.dragItem, eadi1);
+                    ListViewItem item1 = (ListViewItem)sender;
+                    EpgAutoDataItem dropTo = (EpgAutoDataItem)item1.Content;
+                    this.moveItem(dropTo);
                 }
             }
+        }
+
+        void moveItem(EpgAutoDataItem dropTo)
+        {
+            try
+            {
+                int idx_dropItems = resultList.IndexOf(this.dragItem);
+                int idx_dropTo = resultList.IndexOf(dropTo);
+
+                //一番上と一番下を選択できるように調整
+                idx_dropTo += (idx_dropTo > idx_dropItems ? 1 : 0);
+
+                //挿入位置で分割→バラのも含め選択アイテムを除去→分割前部+選択アイテム+分割後部で連結
+                var work1 = resultList.Take(idx_dropTo).Where(item => !dragItems.Contains(item)).ToList();
+                var work2 = resultList.Skip(idx_dropTo).Where(item => !dragItems.Contains(item)).ToList();
+
+                resultList.Clear();
+                resultList.AddRange(work1.Concat(dragItems).Concat(work2));
+                listView_key.SelectedItem = dragItem;//これがないと移動中余分な選択があるように見える
+                dragItems.ForEach(item=>listView_key.SelectedItems.Add(item));
+
+                listView_key.Items.Refresh();
+                this.ItemOrderNotSaved = true;
+                this.gridViewSorter.resetSortParams();
+            }
+            catch { }
+        }
+
+        /// <summary>
+        /// ボタンから上下させる場合
+        /// </summary>
+        /// <param name="up0">true: up, false: down</param>
+        void moveItem(itemMoveDirections moveDirection0)
+        {
+            try
+            {
+                if (listView_key.SelectedItem == null) { return; }
+
+                //選択状態+順序のペアを作る
+                var srcList = new List<EpgAutoDataItem>(resultList);
+                var list = srcList.Select((item, index) => new KeyValuePair<int, bool>(index, listView_key.SelectedItems.Contains(item))).ToList();
+
+                //逆方向の時はリストひっくり返す
+                if (moveDirection0 == itemMoveDirections.down) list.Reverse();
+
+                //移動対象でないアイテムが上下ループを超えないよう細工
+                //超えているように見えるときでも良く見ると超えていない
+                list.Insert(0, new KeyValuePair<int, bool>(-1, false));
+                int end = list[1].Value == true ? 2 : list.Count;
+                for (int i = 1; i < end; i++)
+                {
+                    //選択状態のものだけ移動
+                    if (list[i].Value == true)
+                    {
+                        var tmp = list[i - 1];
+                        list.RemoveAt(i - 1);
+                        list.Insert(i, tmp);
+                    }
+                }
+                //ループしたものを下へ持って行く。ループしてなければダミーがコピーされるだけ
+                list.Add(list[0]);
+
+                //リンク張り替えながらダミー以外(Key!=-1)をコピー
+                resultList.Clear();
+                resultList.AddRange(list.Skip(1).Where(item => item.Key != -1).Select(item => srcList[item.Key]));
+
+                if (moveDirection0 == itemMoveDirections.down) resultList.Reverse();
+
+                listView_key.Items.Refresh();
+                this.ItemOrderNotSaved = true;
+                this.gridViewSorter.resetSortParams();
+            }
+            catch { }
         }
 
         void listView_key_PreviewKeyDown(object sender, KeyEventArgs e)
