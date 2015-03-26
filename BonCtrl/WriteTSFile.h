@@ -65,9 +65,6 @@ public:
 		);
 
 protected:
-	//PublicAPIîrëºêßå‰óp
-	BOOL Lock(LPCWSTR log = NULL, DWORD timeOut = 30*1000);
-	void UnLock(LPCWSTR log = NULL);
 	/*
 	HANDLE OpenFile(
 		wstring recFolderPath,
@@ -105,10 +102,9 @@ protected:
 	BOOL GetNextFileName(wstring recFolder, wstring fileName, wstring& recPath);
 
 protected:
-	HANDLE lockEvent;
-
-	HANDLE buffLockEvent;
+	CRITICAL_SECTION outThreadLock;
 	vector<TS_DATA*> TSBuff;
+	DWORD totalTSBuffSize;
 
 	HANDLE outThread;
 	HANDLE outStopEvent;

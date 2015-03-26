@@ -19,7 +19,7 @@ BOOL DLNAParsePublicFolder::ParseText(LPCWSTR filePath)
 
 	this->folderList.clear();
 
-	HANDLE hFile = _CreateFile2( filePath, GENERIC_READ, FILE_SHARE_READ|FILE_SHARE_WRITE, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
+	HANDLE hFile = CreateFile( filePath, GENERIC_READ, FILE_SHARE_READ|FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
 	if( hFile == INVALID_HANDLE_VALUE ){
 		return FALSE;
 	}
@@ -40,7 +40,7 @@ BOOL DLNAParsePublicFolder::ParseText(LPCWSTR filePath)
 	string strRead = pszBuff;
 
 	CloseHandle(hFile);
-	SAFE_DELETE_ARRAY(pszBuff)
+	SAFE_DELETE_ARRAY(pszBuff);
 
 	string parseLine="";
 	size_t iIndex = 0;

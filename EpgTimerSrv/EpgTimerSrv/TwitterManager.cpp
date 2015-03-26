@@ -7,7 +7,7 @@
 CTwitterManager::CTwitterManager(void)
 {
 	this->twitterUtil.Initialize();
-	this->lockEvent = _CreateEvent(FALSE, TRUE, NULL);
+	this->lockEvent = CreateEvent(NULL, FALSE, TRUE, NULL);
 }
 
 

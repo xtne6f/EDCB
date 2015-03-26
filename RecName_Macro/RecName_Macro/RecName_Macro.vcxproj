@@ -143,14 +143,12 @@
   <ItemGroup>
     <None Include="ReadMe.txt" />
     <None Include="RecName_PlugIn.def" />
-    <None Include="RegExp.tlb" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\Common\EpgTimerUtil.h" />
     <ClInclude Include="..\..\Common\PathUtil.h" />
     <ClInclude Include="..\..\Common\StringUtil.h" />
     <ClInclude Include="..\..\Common\TimeUtil.h" />
-    <ClInclude Include="ConvertMacro.h" />
     <ClInclude Include="ConvertMacro2.h" />
     <ClInclude Include="RecName_PlugIn.h" />
     <ClInclude Include="resource.h" />
@@ -163,7 +161,6 @@
     <ClCompile Include="..\..\Common\PathUtil.cpp" />
     <ClCompile Include="..\..\Common\StringUtil.cpp" />
     <ClCompile Include="..\..\Common\TimeUtil.cpp" />
-    <ClCompile Include="ConvertMacro.cpp" />
     <ClCompile Include="ConvertMacro2.cpp" />
     <ClCompile Include="dllmain.cpp">
       <CompileAsManaged Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</CompileAsManaged>

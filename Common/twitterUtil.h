@@ -203,7 +203,6 @@ public:
 
 protected:
 	HMODULE module;
-	HANDLE lockEvent;
 	DWORD id;
 
 	InitializeTW				pfnInitializeTW;
@@ -218,9 +217,6 @@ protected:
 	GetTweetQueTW				pfnGetTweetQueTW;
 
 protected:
-	//PublicAPIîrëºêßå‰óp
-	BOOL Lock(LPCWSTR log = NULL, DWORD timeOut = 20*1000);
-	void UnLock(LPCWSTR log = NULL);
 
 };
 

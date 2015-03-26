@@ -66,7 +66,7 @@ CPushVideoPin::CPushVideoPin(HRESULT *phr, CSource *pFilter)
 
 	m_mt = amTypeVideo;
 
-	this->buffLockEvent = _CreateEvent(FALSE, TRUE, NULL);
+	this->buffLockEvent = CreateEvent(NULL, FALSE, TRUE, NULL);
 }
 
 CPushVideoPin::~CPushVideoPin() {
@@ -254,7 +254,7 @@ CPushAudioPin::CPushAudioPin(HRESULT *phr, CSource *pFilter)
 
 	m_mt = amTypeAudio;
 
-	this->buffLockEvent = _CreateEvent(FALSE, TRUE, NULL);
+	this->buffLockEvent = CreateEvent(NULL, FALSE, TRUE, NULL);
 }
 
 CPushAudioPin::~CPushAudioPin() {
@@ -430,6 +430,8 @@ void CPushAudioPin::ClearData()
 
 CTSSrcFilter::CTSSrcFilter(IUnknown *pUnk, HRESULT *phr)
 	:CSource(NAME("TSSrc"), pUnk, CLSID_TSSrc)
+	,videoBuff(TRUE)
+	,audioBuff(TRUE)
 {
 	m_pVideoPin = new CPushVideoPin(phr, this);
 	m_pAudioPin = new CPushAudioPin(phr, this);

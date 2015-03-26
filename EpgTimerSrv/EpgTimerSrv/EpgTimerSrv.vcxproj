@@ -184,15 +184,8 @@
     <ClInclude Include="..\..\Common\HttpServer.h" />
     <ClInclude Include="..\..\Common\LockUtil.h" />
     <ClInclude Include="..\..\Common\NWStructDef.h" />
-    <ClInclude Include="..\..\Common\ParseChText4.h" />
-    <ClInclude Include="..\..\Common\ParseChText5.h" />
-    <ClInclude Include="..\..\Common\ParseContentTypeText.h" />
-    <ClInclude Include="..\..\Common\ParseEpgAutoAddText.h" />
-    <ClInclude Include="..\..\Common\ParseManualAutoAddText.h" />
-    <ClInclude Include="..\..\Common\ParseRecInfoText.h" />
-    <ClInclude Include="..\..\Common\ParseReserveText.h" />
-    <ClInclude Include="..\..\Common\ParseSearchChgText.h" />
-    <ClInclude Include="..\..\Common\ParseServiceChgText.h" />
+    <ClInclude Include="..\..\Common\ParseText.h" />
+    <ClInclude Include="..\..\Common\ParseTextInstances.h" />
     <ClInclude Include="..\..\Common\PathUtil.h" />
     <ClInclude Include="..\..\Common\PipeServer.h" />
     <ClInclude Include="..\..\Common\ProxyUtil.h" />
@@ -200,6 +193,7 @@
     <ClInclude Include="..\..\Common\SendCtrlCmd.h" />
     <ClInclude Include="..\..\Common\SendTSTCP.h" />
     <ClInclude Include="..\..\Common\SendTSTCPDllUtil.h" />
+    <ClInclude Include="..\..\Common\ServiceUtil.h" />
     <ClInclude Include="..\..\Common\StringUtil.h" />
     <ClInclude Include="..\..\Common\StructDef.h" />
     <ClInclude Include="..\..\Common\TCPServer.h" />
@@ -221,7 +215,6 @@
     <ClInclude Include="..\..\UPnPCtrl\UpnpStructDef.h" />
     <ClInclude Include="..\..\UPnPCtrl\UpnpUtil.h" />
     <ClInclude Include="BatManager.h" />
-    <ClInclude Include="CheckRecFile.h" />
     <ClInclude Include="DLNADmsContentDB.h" />
     <ClInclude Include="DLNADmsManager.h" />
     <ClInclude Include="DLNAManager.h" />
@@ -240,19 +233,15 @@
     <ClInclude Include="HttpRequestReader.h" />
     <ClInclude Include="NotifyManager.h" />
     <ClInclude Include="NWCoopManager.h" />
-    <ClInclude Include="RecInfoDBManager.h" />
     <ClInclude Include="ReserveInfo.h" />
     <ClInclude Include="ReserveManager.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="RestApiManager.h" />
-    <ClInclude Include="ServiceUtil.h" />
-    <ClInclude Include="SleepUtil.h" />
     <ClInclude Include="SOAPUtil.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="SyoboiCalUtil.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="TunerBankCtrl.h" />
-    <ClInclude Include="TunerCtrl.h" />
     <ClInclude Include="TunerManager.h" />
     <ClInclude Include="TwitterManager.h" />
   </ItemGroup>
@@ -268,21 +257,14 @@
     <ClCompile Include="..\..\Common\EpgTimerUtil.cpp" />
     <ClCompile Include="..\..\Common\HttpServer.cpp" />
     <ClCompile Include="..\..\Common\LockUtil.cpp" />
-    <ClCompile Include="..\..\Common\ParseChText4.cpp" />
-    <ClCompile Include="..\..\Common\ParseChText5.cpp" />
-    <ClCompile Include="..\..\Common\ParseContentTypeText.cpp" />
-    <ClCompile Include="..\..\Common\ParseEpgAutoAddText.cpp" />
-    <ClCompile Include="..\..\Common\ParseManualAutoAddText.cpp" />
-    <ClCompile Include="..\..\Common\ParseRecInfoText.cpp" />
-    <ClCompile Include="..\..\Common\ParseReserveText.cpp" />
-    <ClCompile Include="..\..\Common\ParseSearchChgText.cpp" />
-    <ClCompile Include="..\..\Common\ParseServiceChgText.cpp" />
+    <ClCompile Include="..\..\Common\ParseTextInstances.cpp" />
     <ClCompile Include="..\..\Common\PathUtil.cpp" />
     <ClCompile Include="..\..\Common\PipeServer.cpp" />
     <ClCompile Include="..\..\Common\ProxyUtil.cpp" />
     <ClCompile Include="..\..\Common\ReNamePlugInUtil.cpp" />
     <ClCompile Include="..\..\Common\SendCtrlCmd.cpp" />
     <ClCompile Include="..\..\Common\SendTSTCPDllUtil.cpp" />
+    <ClCompile Include="..\..\Common\ServiceUtil.cpp" />
     <ClCompile Include="..\..\Common\StringUtil.cpp" />
     <ClCompile Include="..\..\Common\TCPServer.cpp" />
     <ClCompile Include="..\..\Common\TCPServerUtil.cpp" />
@@ -302,7 +284,6 @@
     <ClCompile Include="..\..\UPnPCtrl\UpnpStructDef.cpp" />
     <ClCompile Include="..\..\UPnPCtrl\UpnpUtil.cpp" />
     <ClCompile Include="BatManager.cpp" />
-    <ClCompile Include="CheckRecFile.cpp" />
     <ClCompile Include="DLNADmsContentDB.cpp" />
     <ClCompile Include="DLNADmsManager.cpp" />
     <ClCompile Include="DLNAManager.cpp" />
@@ -320,12 +301,9 @@
     <ClCompile Include="HttpRequestReader.cpp" />
     <ClCompile Include="NotifyManager.cpp" />
     <ClCompile Include="NWCoopManager.cpp" />
-    <ClCompile Include="RecInfoDBManager.cpp" />
     <ClCompile Include="ReserveInfo.cpp" />
     <ClCompile Include="ReserveManager.cpp" />
     <ClCompile Include="RestApiManager.cpp" />
-    <ClCompile Include="ServiceUtil.cpp" />
-    <ClCompile Include="SleepUtil.cpp" />
     <ClCompile Include="SOAPUtil.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
@@ -335,7 +313,6 @@
     </ClCompile>
     <ClCompile Include="SyoboiCalUtil.cpp" />
     <ClCompile Include="TunerBankCtrl.cpp" />
-    <ClCompile Include="TunerCtrl.cpp" />
     <ClCompile Include="TunerManager.cpp" />
     <ClCompile Include="TwitterManager.cpp" />
   </ItemGroup>

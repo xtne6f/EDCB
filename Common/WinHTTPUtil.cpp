@@ -14,9 +14,9 @@ CWinHTTPUtil::CWinHTTPUtil(void)
 	this->lastPort = 0;
 
     this->upThread = NULL;
-    this->upStopEvent = _CreateEvent(FALSE, FALSE, NULL);
-	this->writeCompEvent = _CreateEvent(FALSE, FALSE, NULL);
-	this->responseCompEvent = _CreateEvent(FALSE, FALSE, NULL);
+    this->upStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+	this->writeCompEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+	this->responseCompEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 }
 
 
@@ -430,7 +430,7 @@ void CWinHTTPUtil::StatusHeadersAvailable()
 	}else{
 		this->responseHTTPHeader = L"";
 	}
-	SAFE_DELETE_ARRAY(rawHeader)
+	SAFE_DELETE_ARRAY(rawHeader);
 
 	//ContentLength‚ðŽæ“¾‚µ‚Ä‚Ý‚é
 	DWORD fileLength = 0;

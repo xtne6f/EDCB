@@ -57,26 +57,26 @@ BOOL CWriteMain::_StartSave(
 	wstring recFilePath = fileName;
 	if( overWriteFlag == TRUE ){
 		_OutputDebugString(L"š_StartSave CreateFile:%s", recFilePath.c_str());
-		this->file = _CreateFile2( recFilePath.c_str(), GENERIC_WRITE, FILE_SHARE_READ, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL );
+		this->file = _CreateDirectoryAndFile( recFilePath.c_str(), GENERIC_WRITE, FILE_SHARE_READ, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL );
 		if( this->file == INVALID_HANDLE_VALUE ){
 			err = GetLastError();
 			GetLastErrMsg(err, errMsg);
 			_OutputDebugString(L"š_StartSave Err:0x%08X %s", err, errMsg.c_str());
 			if( GetNextFileName(fileName, recFilePath) == TRUE ){
 				_OutputDebugString(L"š_StartSave CreateFile:%s", recFilePath.c_str());
-				this->file = _CreateFile2( recFilePath.c_str(), GENERIC_WRITE, FILE_SHARE_READ, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL );
+				this->file = _CreateDirectoryAndFile( recFilePath.c_str(), GENERIC_WRITE, FILE_SHARE_READ, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL );
 			}
 		}
 	}else{
 		_OutputDebugString(L"š_StartSave CreateFile:%s", recFilePath.c_str());
-		this->file = _CreateFile2( recFilePath.c_str(), GENERIC_WRITE, FILE_SHARE_READ, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL );
+		this->file = _CreateDirectoryAndFile( recFilePath.c_str(), GENERIC_WRITE, FILE_SHARE_READ, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL );
 		if( this->file == INVALID_HANDLE_VALUE ){
 			err = GetLastError();
 			GetLastErrMsg(err, errMsg);
 			_OutputDebugString(L"š_StartSave Err:0x%08X %s", err, errMsg.c_str());
 			if( GetNextFileName(fileName, recFilePath) == TRUE ){
 				_OutputDebugString(L"š_StartSave CreateFile:%s", recFilePath.c_str());
-				this->file = _CreateFile2( recFilePath.c_str(), GENERIC_WRITE, FILE_SHARE_READ, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL );
+				this->file = _CreateDirectoryAndFile( recFilePath.c_str(), GENERIC_WRITE, FILE_SHARE_READ, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL );
 			}
 		}
 	}
@@ -94,8 +94,7 @@ BOOL CWriteMain::_StartSave(
 		stPos.QuadPart = createSize;
 		SetFilePointerEx( this->file, stPos, NULL, FILE_BEGIN );
 		SetEndOfFile( this->file );
-		CloseHandle( this->file );
-		this->file = _CreateFile2( recFilePath.c_str(), GENERIC_WRITE, FILE_SHARE_READ, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
+		FlushFileBuffers( this->file );
 		SetFilePointer( this->file, 0, NULL, FILE_BEGIN );
 	}
 

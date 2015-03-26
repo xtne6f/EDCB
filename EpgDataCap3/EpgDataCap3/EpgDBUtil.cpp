@@ -4,12 +4,12 @@
 #include "../../Common/EpgTimerUtil.h"
 #include "../../Common/StringUtil.h"
 #include "../../Common/TimeUtil.h"
-#include "../../Common/ErrDef.h"
+#include "../../Common/BlockLock.h"
 #include "ARIB8CharDecode.h"
 
 CEpgDBUtil::CEpgDBUtil(void)
 {
-	this->lockEvent = _CreateEvent(FALSE, TRUE, NULL);
+	InitializeCriticalSection(&this->dbLock);
 
 	this->sectionNowFlag = 0;
 
@@ -46,40 +46,10 @@ CEpgDBUtil::~CEpgDBUtil(void)
 	SAFE_DELETE_ARRAY(this->epgSearchList);
 	this->epgSearchListSize = 0;
 
-	if( this->lockEvent != NULL ){
-		UnLock();
-		CloseHandle(this->lockEvent);
-		this->lockEvent = NULL;
-	}
+	DeleteCriticalSection(&this->dbLock);
 
 	SAFE_DELETE_ARRAY(this->serviceDBList);
 	this->serviceDBListSize = 0;
-}
-
-BOOL CEpgDBUtil::Lock(LPCWSTR log, DWORD timeOut)
-{
-	if( this->lockEvent == NULL ){
-		return FALSE;
-	}
-	if( log != NULL ){
-		OutputDebugString(log);
-	}
-	DWORD dwRet = WaitForSingleObject(this->lockEvent, timeOut);
-	if( dwRet == WAIT_ABANDONED || 
-		dwRet == WAIT_FAILED){
-		return FALSE;
-	}
-	return TRUE;
-}
-
-void CEpgDBUtil::UnLock(LPCWSTR log)
-{
-	if( this->lockEvent != NULL ){
-		SetEvent(this->lockEvent);
-	}
-	if( log != NULL ){
-		OutputDebugString(log);
-	}
 }
 
 void CEpgDBUtil::Clear()
@@ -98,14 +68,13 @@ void CEpgDBUtil::Clear()
 
 void CEpgDBUtil::SetStreamChangeEvent()
 {
-	if( Lock() == FALSE ) return ;
+	CBlockLock lock(&this->dbLock);
 	//ストリーム変わったのでp/fをリセット
 	map<ULONGLONG, SERVICE_EVENT_INFO*>::iterator itr;
 	for( itr = this->serviceEventMap.begin(); itr != this->serviceEventMap.end(); itr++ ){
 		itr->second->nowEvent = NULL;
 		itr->second->nextEvent = NULL;
 	}
-	UnLock();
 }
 
 BOOL CEpgDBUtil::AddEIT(WORD PID, CEITTable* eit)
@@ -113,7 +82,7 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, CEITTable* eit)
 	if( eit == NULL ){
 		return FALSE;
 	}
-	if( Lock() == FALSE ) return FALSE;
+	CBlockLock lock(&this->dbLock);
 
 	ULONGLONG key = _Create64Key(eit->original_network_id, eit->transport_stream_id, eit->service_id);
 
@@ -129,7 +98,6 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, CEITTable* eit)
 		serviceInfo = itr->second;
 	}
 
-	if( !eit->failure ){
 	//イベントごとに更新必要が判定
 	for( size_t i=0; i<eit->eventInfoList.size(); i++ ){
 		CEITTable::EVENT_INFO_DATA* eitEventInfo = eit->eventInfoList[i];
@@ -199,34 +167,32 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, CEITTable* eit)
 		BOOL checkExtFlag = FALSE;
 		BOOL checkAudioFlag = FALSE;
 		for( size_t j=0; j<eitEventInfo->descriptorList.size(); j++ ){
-			if( eitEventInfo->descriptorList[j]->shortEvent != NULL ){
-				AddShortEvent( eit, eventInfo, eitEventInfo->descriptorList[j]->shortEvent );
-			}else if( eitEventInfo->descriptorList[j]->extendedEvent != NULL && checkExtFlag == FALSE){
-				AddExtEvent(eit, eventInfo, &eitEventInfo->descriptorList );
+			DWORD tag = eitEventInfo->descriptorList[j]->GetNumber(AribDescriptor::descriptor_tag);
+			if( tag == AribDescriptor::short_event_descriptor ){
+				AddShortEvent( eit->table_id, eit->version_number, eventInfo, eitEventInfo->descriptorList[j], FALSE );
+			}else if( tag == AribDescriptor::extended_event_descriptor && checkExtFlag == FALSE){
+				AddExtEvent(eit->table_id, eit->version_number, eventInfo, &eitEventInfo->descriptorList, FALSE );
 				checkExtFlag = TRUE;
-			}else if( eitEventInfo->descriptorList[j]->content != NULL ){
-				AddContent( eit, eventInfo, eitEventInfo->descriptorList[j]->content );
-			}else if( eitEventInfo->descriptorList[j]->component != NULL ){
-				AddComponent( eit, eventInfo, eitEventInfo->descriptorList[j]->component );
-			}else if( eitEventInfo->descriptorList[j]->audioComponent != NULL && checkAudioFlag == FALSE ){
-				AddAudioComponent( eit, eventInfo, &eitEventInfo->descriptorList );
+			}else if( tag == AribDescriptor::content_descriptor ){
+				AddContent( eit->table_id, eit->version_number, eventInfo, eitEventInfo->descriptorList[j], FALSE );
+			}else if( tag == AribDescriptor::component_descriptor ){
+				AddComponent( eit->table_id, eit->version_number, eventInfo, eitEventInfo->descriptorList[j], FALSE );
+			}else if( tag == AribDescriptor::audio_component_descriptor && checkAudioFlag == FALSE ){
+				AddAudioComponent( eit->table_id, eit->version_number, eventInfo, &eitEventInfo->descriptorList, FALSE );
 				checkAudioFlag = TRUE;
-			}else if( eitEventInfo->descriptorList[j]->eventGroup != NULL ){
-				if( eitEventInfo->descriptorList[j]->eventGroup->group_type == 0x01 ){
-					AddEventGroup( eit, eventInfo, eitEventInfo->descriptorList[j]->eventGroup );
-				}else if( eitEventInfo->descriptorList[j]->eventGroup->group_type == 0x02 ||
-					eitEventInfo->descriptorList[j]->eventGroup->group_type == 0x04){
-					AddEventRelay( eit, eventInfo, eitEventInfo->descriptorList[j]->eventGroup );
+			}else if( tag == AribDescriptor::event_group_descriptor ){
+				if( eitEventInfo->descriptorList[j]->GetNumber(AribDescriptor::group_type) == 0x01 ){
+					AddEventGroup( eit, eventInfo, eitEventInfo->descriptorList[j] );
+				}else if( eitEventInfo->descriptorList[j]->GetNumber(AribDescriptor::group_type) == 0x02 ||
+					eitEventInfo->descriptorList[j]->GetNumber(AribDescriptor::group_type) == 0x04){
+					AddEventRelay( eit, eventInfo, eitEventInfo->descriptorList[j] );
 				}
 			}
 		}
 	}
-	}
 
 	if( eit->original_network_id == 0x0003 ){
-		UnLock();
-
-		return !eit->failure;
+		return TRUE;
 	}
 	
 	//セクションステータス
@@ -261,10 +227,7 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, CEITTable* eit)
 		}else{
 			itrFlag->second.sectionFlag |= 1<<sectionNo;
 		}
-		if (eit->failure){
-			UnLock();
-			return FALSE;
-		}
+
 	}else{
 		//H-EIT
 		sectionInfo->HEITFlag = TRUE;
@@ -312,10 +275,6 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, CEITTable* eit)
 				}
 			}
 		}
-		if (eit->failure){
-			UnLock();
-			return FALSE;
-		}
 		if( eit->table_id == 0x4E && eit->section_number == 0){
 			//現在の番組のはずなので、そこまでのセクションはすでに放送済み
 			if(eit->eventInfoList.size() > 0){
@@ -345,7 +304,6 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, CEITTable* eit)
 			}
 		}
 	}
-	UnLock();
 
 	return TRUE;
 }
@@ -355,11 +313,10 @@ BOOL CEpgDBUtil::AddEIT_SD(WORD PID, CEITTable_SD* eit)
 	if( eit == NULL ){
 		return FALSE;
 	}
-	if( Lock() == FALSE ) return FALSE;
+	CBlockLock lock(&this->dbLock);
 
 	if( eit->original_network_id == 0x0003 && eit->table_id != 0x4E && eit->table_id != 0x4F){
 		BOOL ret = AddSDEventMap(eit);
-		UnLock();
 		return ret;
 	}
 
@@ -430,17 +387,18 @@ BOOL CEpgDBUtil::AddEIT_SD(WORD PID, CEITTable_SD* eit)
 		BOOL checkExtFlag = FALSE;
 		BOOL checkAudioFlag = FALSE;
 		for( size_t j=0; j<eitEventInfo->descriptorList.size(); j++ ){
-			if( eitEventInfo->descriptorList[j]->shortEvent != NULL ){
-				AddShortEvent_SD( eit, eventInfo, eitEventInfo->descriptorList[j]->shortEvent );
-			}else if( eitEventInfo->descriptorList[j]->extendedEvent != NULL && checkExtFlag == FALSE){
-				AddExtEvent_SD(eit, eventInfo, &eitEventInfo->descriptorList );
+			DWORD tag = eitEventInfo->descriptorList[j]->GetNumber(AribDescriptor::descriptor_tag);
+			if( tag == AribDescriptor::short_event_descriptor ){
+				AddShortEvent( eit->table_id, eit->version_number, eventInfo, eitEventInfo->descriptorList[j], TRUE );
+			}else if( tag == AribDescriptor::extended_event_descriptor && checkExtFlag == FALSE){
+				AddExtEvent(eit->table_id, eit->version_number, eventInfo, &eitEventInfo->descriptorList, TRUE );
 				checkExtFlag = TRUE;
-			}else if( eitEventInfo->descriptorList[j]->content != NULL ){
-				AddContent_SD( eit, eventInfo, eitEventInfo->descriptorList[j]->content );
-			}else if( eitEventInfo->descriptorList[j]->component != NULL ){
-				AddComponent_SD( eit, eventInfo, eitEventInfo->descriptorList[j]->component );
-			}else if( eitEventInfo->descriptorList[j]->audioComponent != NULL && checkAudioFlag == FALSE ){
-				AddAudioComponent_SD( eit, eventInfo, &eitEventInfo->descriptorList );
+			}else if( tag == AribDescriptor::content_descriptor ){
+				AddContent( eit->table_id, eit->version_number, eventInfo, eitEventInfo->descriptorList[j], TRUE );
+			}else if( tag == AribDescriptor::component_descriptor ){
+				AddComponent( eit->table_id, eit->version_number, eventInfo, eitEventInfo->descriptorList[j], TRUE );
+			}else if( tag == AribDescriptor::audio_component_descriptor && checkAudioFlag == FALSE ){
+				AddAudioComponent( eit->table_id, eit->version_number, eventInfo, &eitEventInfo->descriptorList, TRUE );
 				checkAudioFlag = TRUE;
 			//}else if( eitEventInfo->descriptorList[j]->eventGroup != NULL ){
 			//	if( eitEventInfo->descriptorList[j]->eventGroup->group_type == 0x01 ){
@@ -562,30 +520,33 @@ BOOL CEpgDBUtil::AddEIT_SD(WORD PID, CEITTable_SD* eit)
 	//		}
 	//	}
 	//}
-	UnLock();
 
 	return TRUE;
 }
 
-BOOL CEpgDBUtil::AddShortEvent(CEITTable* eit, EVENT_INFO* eventInfo, CShortEventDesc* shortEvent)
+BOOL CEpgDBUtil::AddShortEvent(BYTE table_id, BYTE version_number, EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* shortEvent, BOOL skySDFlag)
 {
 	BOOL updateFlag = FALSE;
 	if( eventInfo->shortInfo == NULL ){
 		eventInfo->shortInfo = new SHORT_EVENT_INFO;
 		updateFlag = TRUE;
 	}else{
-		updateFlag = CheckUpdate(eit, eventInfo->shortInfo->tableID, eventInfo->shortInfo->version);
+		updateFlag = CheckUpdate(table_id, version_number, eventInfo->shortInfo->tableID, eventInfo->shortInfo->version, skySDFlag);
 	}
 	if( updateFlag == TRUE ){
 		//更新必要
-		eventInfo->shortInfo->tableID = eit->table_id;
-		eventInfo->shortInfo->version = eit->version_number;
+		eventInfo->shortInfo->tableID = table_id;
+		eventInfo->shortInfo->version = version_number;
 
 		CARIB8CharDecode arib;
 		string event_name = "";
 		string text_char = "";
-		arib.PSISI((const BYTE*)shortEvent->event_name_char, shortEvent->event_name_length, &event_name);
-		arib.PSISI((const BYTE*)shortEvent->text_char, shortEvent->text_length, &text_char);
+		const char* src;
+		DWORD srcSize;
+		src = shortEvent->GetStringOrEmpty(AribDescriptor::event_name_char, &srcSize);
+		arib.PSISI((const BYTE*)src, srcSize, &event_name);
+		src = shortEvent->GetStringOrEmpty(AribDescriptor::text_char, &srcSize);
+		arib.PSISI((const BYTE*)src, srcSize, &text_char);
 
 		AtoW(event_name, eventInfo->shortInfo->event_name);
 		AtoW(text_char, eventInfo->shortInfo->text_char);
@@ -594,34 +555,7 @@ BOOL CEpgDBUtil::AddShortEvent(CEITTable* eit, EVENT_INFO* eventInfo, CShortEven
 	return updateFlag;
 }
 
-BOOL CEpgDBUtil::AddShortEvent_SD(CEITTable_SD* eit, EVENT_INFO* eventInfo, CShortEventDesc* shortEvent)
-{
-	BOOL updateFlag = FALSE;
-	if( eventInfo->shortInfo == NULL ){
-		eventInfo->shortInfo = new SHORT_EVENT_INFO;
-		updateFlag = TRUE;
-	}else{
-		updateFlag = CheckUpdate_SD(eit, eventInfo->shortInfo->tableID, eventInfo->shortInfo->version);
-	}
-	if( updateFlag == TRUE ){
-		//更新必要
-		eventInfo->shortInfo->tableID = eit->table_id;
-		eventInfo->shortInfo->version = eit->version_number;
-
-		CARIB8CharDecode arib;
-		string event_name = "";
-		string text_char = "";
-		arib.PSISI((const BYTE*)shortEvent->event_name_char, shortEvent->event_name_length, &event_name);
-		arib.PSISI((const BYTE*)shortEvent->text_char, shortEvent->text_length, &text_char);
-
-		AtoW(event_name, eventInfo->shortInfo->event_name);
-		AtoW(text_char, eventInfo->shortInfo->text_char);
-	}
-
-	return updateFlag;
-}
-
-BOOL CEpgDBUtil::AddExtEvent(CEITTable* eit, EVENT_INFO* eventInfo, vector<DESCRIPTOR_DATA*>* descriptorList)
+BOOL CEpgDBUtil::AddExtEvent(BYTE table_id, BYTE version_number, EVENT_INFO* eventInfo, vector<AribDescriptor::CDescriptor*>* descriptorList, BOOL skySDFlag)
 {
 	BOOL updateFlag = FALSE;
 	if( eventInfo->extInfo == NULL ){
@@ -629,13 +563,13 @@ BOOL CEpgDBUtil::AddExtEvent(CEITTable* eit, EVENT_INFO* eventInfo, vector<DESCR
 
 		updateFlag = TRUE;
 	}else{
-		updateFlag = CheckUpdate(eit, eventInfo->extInfo->tableID, eventInfo->extInfo->version);
+		updateFlag = CheckUpdate(table_id, version_number, eventInfo->extInfo->tableID, eventInfo->extInfo->version, skySDFlag);
 	}
 
 	if( updateFlag == TRUE ){
 		//更新必要
-		eventInfo->extInfo->tableID = eit->table_id;
-		eventInfo->extInfo->version = eit->version_number;
+		eventInfo->extInfo->tableID = table_id;
+		eventInfo->extInfo->version = version_number;
 
 		CARIB8CharDecode arib;
 		string extendText = "";
@@ -645,46 +579,52 @@ BOOL CEpgDBUtil::AddExtEvent(CEITTable* eit, EVENT_INFO* eventInfo, vector<DESCR
 //		string textBuff = "";
 
 		for( size_t i=0; i<descriptorList->size(); i++ ){
-			if( (*descriptorList)[i]->extendedEvent != NULL ){
-				CExtendedEventDesc* extEvent = (*descriptorList)[i]->extendedEvent;
-				for( size_t j=0; j<extEvent->itemList.size(); j++ ){
-					CExtendedEventDesc::ITEM_DATA* item = extEvent->itemList[j];
-					if( item->item_description_length > 0 ){
-						//if( textBuff.size() > 0 ){
-						//	string buff = "";
-						//	arib.PSISI((const BYTE*)textBuff.c_str(), textBuff.length(), &buff);
-						//	buff += "\r\n";
-						//	extendText += buff;
-						//	textBuff = "";
-						//}
-						if( itemBuff.size() > 0 ){
-							string buff = "";
-							arib.PSISI((const BYTE*)itemBuff.c_str(), (DWORD)itemBuff.length(), &buff);
-							buff += "\r\n";
-							extendText += buff;
-							itemBuff = "";
-						}
+			if( (*descriptorList)[i]->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::extended_event_descriptor ){
+				AribDescriptor::CDescriptor* extEvent = (*descriptorList)[i];
+				if( extEvent->EnterLoop() ){
+					for( DWORD j=0; extEvent->SetLoopIndex(j); j++ ){
+						const char* src;
+						DWORD srcSize;
+						src = extEvent->GetStringOrEmpty(AribDescriptor::item_description_char, &srcSize);
+						if( srcSize > 0 ){
+							//if( textBuff.size() > 0 ){
+							//	string buff = "";
+							//	arib.PSISI((const BYTE*)textBuff.c_str(), textBuff.length(), &buff);
+							//	buff += "\r\n";
+							//	extendText += buff;
+							//	textBuff = "";
+							//}
+							if( itemBuff.size() > 0 ){
+								string buff = "";
+								arib.PSISI((const BYTE*)itemBuff.c_str(), (DWORD)itemBuff.length(), &buff);
+								buff += "\r\n";
+								extendText += buff;
+								itemBuff = "";
+							}
 
-						itemDescBuff += item->item_description_char;
-					}
-					if( item->item_length > 0 ){
-						//if( textBuff.size() > 0 ){
-						//	string buff = "";
-						//	arib.PSISI((const BYTE*)textBuff.c_str(), textBuff.length(), &buff);
-						//	buff += "\r\n";
-						//	extendText += buff;
-						//	textBuff = "";
-						//}
-						if( itemDescBuff.size() > 0 ){
-							string buff = "";
-							arib.PSISI((const BYTE*)itemDescBuff.c_str(), (DWORD)itemDescBuff.length(), &buff);
-							buff += "\r\n";
-							extendText += buff;
-							itemDescBuff = "";
+							itemDescBuff += src;
 						}
+						src = extEvent->GetStringOrEmpty(AribDescriptor::item_char, &srcSize);
+						if( srcSize > 0 ){
+							//if( textBuff.size() > 0 ){
+							//	string buff = "";
+							//	arib.PSISI((const BYTE*)textBuff.c_str(), textBuff.length(), &buff);
+							//	buff += "\r\n";
+							//	extendText += buff;
+							//	textBuff = "";
+							//}
+							if( itemDescBuff.size() > 0 ){
+								string buff = "";
+								arib.PSISI((const BYTE*)itemDescBuff.c_str(), (DWORD)itemDescBuff.length(), &buff);
+								buff += "\r\n";
+								extendText += buff;
+								itemDescBuff = "";
+							}
 
-						itemBuff += item->item_char;
+							itemBuff += src;
+						}
 					}
+					extEvent->LeaveLoop();
 				}
 				//if( extEvent->text_length > 0 ){
 				//	if( itemDescBuff.size() > 0 ){
@@ -735,182 +675,61 @@ BOOL CEpgDBUtil::AddExtEvent(CEITTable* eit, EVENT_INFO* eventInfo, vector<DESCR
 	return updateFlag;
 }
 
-BOOL CEpgDBUtil::AddExtEvent_SD(CEITTable_SD* eit, EVENT_INFO* eventInfo, vector<DESCRIPTOR_DATA*>* descriptorList)
+BOOL CEpgDBUtil::AddContent(BYTE table_id, BYTE version_number, EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* content, BOOL skySDFlag)
 {
 	BOOL updateFlag = FALSE;
-	if( eventInfo->extInfo == NULL ){
-		eventInfo->extInfo = new EXTENDED_EVENT_INFO;
-
+	if( eventInfo->contentInfo == NULL ){
+		eventInfo->contentInfo = new CONTEN_INFO;
 		updateFlag = TRUE;
 	}else{
-		updateFlag = CheckUpdate_SD(eit, eventInfo->extInfo->tableID, eventInfo->extInfo->version);
+		updateFlag = CheckUpdate(table_id, version_number, eventInfo->contentInfo->tableID, eventInfo->contentInfo->version, skySDFlag);
 	}
-
 	if( updateFlag == TRUE ){
 		//更新必要
-		eventInfo->extInfo->tableID = eit->table_id;
-		eventInfo->extInfo->version = eit->version_number;
+		eventInfo->contentInfo->tableID = table_id;
+		eventInfo->contentInfo->version = version_number;
 
-		CARIB8CharDecode arib;
-		string extendText = "";
-		string itemDescBuff = "";
-		string itemBuff = "";
-		//text_lengthは0で運用される
-//		string textBuff = "";
-
-		for( size_t i=0; i<descriptorList->size(); i++ ){
-			if( (*descriptorList)[i]->extendedEvent != NULL ){
-				CExtendedEventDesc* extEvent = (*descriptorList)[i]->extendedEvent;
-				for( size_t j=0; j<extEvent->itemList.size(); j++ ){
-					CExtendedEventDesc::ITEM_DATA* item = extEvent->itemList[j];
-					if( item->item_description_length > 0 ){
-						//if( textBuff.size() > 0 ){
-						//	string buff = "";
-						//	arib.PSISI((const BYTE*)textBuff.c_str(), textBuff.length(), &buff);
-						//	buff += "\r\n";
-						//	extendText += buff;
-						//	textBuff = "";
-						//}
-						if( itemBuff.size() > 0 ){
-							string buff = "";
-							arib.PSISI((const BYTE*)itemBuff.c_str(), (DWORD)itemBuff.length(), &buff);
-							buff += "\r\n";
-							extendText += buff;
-							itemBuff = "";
-						}
-
-						itemDescBuff += item->item_description_char;
-					}
-					if( item->item_length > 0 ){
-						//if( textBuff.size() > 0 ){
-						//	string buff = "";
-						//	arib.PSISI((const BYTE*)textBuff.c_str(), textBuff.length(), &buff);
-						//	buff += "\r\n";
-						//	extendText += buff;
-						//	textBuff = "";
-						//}
-						if( itemDescBuff.size() > 0 ){
-							string buff = "";
-							arib.PSISI((const BYTE*)itemDescBuff.c_str(), (DWORD)itemDescBuff.length(), &buff);
-							buff += "\r\n";
-							extendText += buff;
-							itemDescBuff = "";
-						}
-
-						itemBuff += item->item_char;
-					}
-				}
-				//if( extEvent->text_length > 0 ){
-				//	if( itemDescBuff.size() > 0 ){
-				//		string buff = "";
-				//		arib.PSISI((const BYTE*)itemDescBuff.c_str(), itemDescBuff.length(), &buff);
-				//		buff += "\r\n";
-				//		extendText += buff;
-				//		itemDescBuff = "";
-				//	}
-				//	if( itemBuff.size() > 0 ){
-				//		string buff = "";
-				//		arib.PSISI((const BYTE*)itemBuff.c_str(), itemBuff.length(), &buff);
-				//		buff += "\r\n";
-				//		extendText += buff;
-				//		itemBuff = "";
-				//	}
-
-				//	textBuff += extEvent->text_char;
-				//}
+		eventInfo->contentInfo->nibbleList.clear();
+		if( content->EnterLoop() ){
+			for( DWORD i=0; content->SetLoopIndex(i); i++ ){
+				NIBBLE_DATA nibble;
+				nibble.content_nibble_level_1 = (BYTE)content->GetNumber(AribDescriptor::content_nibble_level_1);
+				nibble.content_nibble_level_2 = (BYTE)content->GetNumber(AribDescriptor::content_nibble_level_2);
+				nibble.user_nibble_1 = (BYTE)content->GetNumber(AribDescriptor::user_nibble_1);
+				nibble.user_nibble_2 = (BYTE)content->GetNumber(AribDescriptor::user_nibble_2);
+				eventInfo->contentInfo->nibbleList.push_back(nibble);
 			}
+			content->LeaveLoop();
 		}
-
-		if( itemDescBuff.size() > 0 ){
-			string buff = "";
-			arib.PSISI((const BYTE*)itemDescBuff.c_str(), (DWORD)itemDescBuff.length(), &buff);
-			buff += "\r\n";
-			extendText += buff;
-			itemDescBuff = "";
-		}
-		if( itemBuff.size() > 0 ){
-			string buff = "";
-			arib.PSISI((const BYTE*)itemBuff.c_str(), (DWORD)itemBuff.length(), &buff);
-			buff += "\r\n";
-			extendText += buff;
-			itemBuff = "";
-		}
-		//if( textBuff.size() > 0 ){
-		//	string buff = "";
-		//	arib.PSISI((const BYTE*)textBuff.c_str(), textBuff.length(), &buff);
-		//	buff += "\r\n";
-		//	extendText += buff;
-		//	textBuff = "";
-		//}
-
-		AtoW(extendText, eventInfo->extInfo->text_char);
 	}
 
 	return updateFlag;
 }
 
-BOOL CEpgDBUtil::AddContent(CEITTable* eit, EVENT_INFO* eventInfo, CContentDesc* content)
-{
-	BOOL updateFlag = FALSE;
-	if( eventInfo->contentInfo == NULL ){
-		eventInfo->contentInfo = new CONTEN_INFO;
-		updateFlag = TRUE;
-	}else{
-		updateFlag = CheckUpdate(eit, eventInfo->contentInfo->tableID, eventInfo->contentInfo->version);
-	}
-	if( updateFlag == TRUE ){
-		//更新必要
-		eventInfo->contentInfo->tableID = eit->table_id;
-		eventInfo->contentInfo->version = eit->version_number;
-
-		eventInfo->contentInfo->nibbleList = content->nibbleList;
-	}
-
-	return updateFlag;
-}
-
-BOOL CEpgDBUtil::AddContent_SD(CEITTable_SD* eit, EVENT_INFO* eventInfo, CContentDesc* content)
-{
-	BOOL updateFlag = FALSE;
-	if( eventInfo->contentInfo == NULL ){
-		eventInfo->contentInfo = new CONTEN_INFO;
-		updateFlag = TRUE;
-	}else{
-		updateFlag = CheckUpdate_SD(eit, eventInfo->contentInfo->tableID, eventInfo->contentInfo->version);
-	}
-	if( updateFlag == TRUE ){
-		//更新必要
-		eventInfo->contentInfo->tableID = eit->table_id;
-		eventInfo->contentInfo->version = eit->version_number;
-
-		eventInfo->contentInfo->nibbleList = content->nibbleList;
-	}
-
-	return updateFlag;
-}
-
-BOOL CEpgDBUtil::AddComponent(CEITTable* eit, EVENT_INFO* eventInfo, CComponentDesc* component)
+BOOL CEpgDBUtil::AddComponent(BYTE table_id, BYTE version_number, EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* component, BOOL skySDFlag)
 {
 	BOOL updateFlag = FALSE;
 	if( eventInfo->componentInfo == NULL ){
 		eventInfo->componentInfo = new COMPONENT_INFO;
 		updateFlag = TRUE;
 	}else{
-		updateFlag = CheckUpdate(eit, eventInfo->componentInfo->tableID, eventInfo->componentInfo->version);
+		updateFlag = CheckUpdate(table_id, version_number, eventInfo->componentInfo->tableID, eventInfo->componentInfo->version, skySDFlag);
 	}
 	if( updateFlag == TRUE ){
 		//更新必要
-		eventInfo->componentInfo->tableID = eit->table_id;
-		eventInfo->componentInfo->version = eit->version_number;
+		eventInfo->componentInfo->tableID = table_id;
+		eventInfo->componentInfo->version = version_number;
 
-		eventInfo->componentInfo->stream_content = component->stream_content;
-		eventInfo->componentInfo->component_type = component->component_type;
-		eventInfo->componentInfo->component_tag = component->component_tag;
+		eventInfo->componentInfo->stream_content = (BYTE)component->GetNumber(AribDescriptor::stream_content);
+		eventInfo->componentInfo->component_type = (BYTE)component->GetNumber(AribDescriptor::component_type);
+		eventInfo->componentInfo->component_tag = (BYTE)component->GetNumber(AribDescriptor::component_tag);
 
 		CARIB8CharDecode arib;
 		string text_char = "";
-		if( component->text_charLength > 0 ){
-			arib.PSISI((const BYTE*)component->text_char, component->text_charLength, &text_char);
+		DWORD srcSize;
+		const char* src = component->GetStringOrEmpty(AribDescriptor::text_char, &srcSize);
+		if( srcSize > 0 ){
+			arib.PSISI((const BYTE*)src, srcSize, &text_char);
 
 			AtoW(text_char, eventInfo->componentInfo->text_char);
 		}
@@ -920,73 +739,44 @@ BOOL CEpgDBUtil::AddComponent(CEITTable* eit, EVENT_INFO* eventInfo, CComponentD
 	return updateFlag;
 }
 
-BOOL CEpgDBUtil::AddComponent_SD(CEITTable_SD* eit, EVENT_INFO* eventInfo, CComponentDesc* component)
-{
-	BOOL updateFlag = FALSE;
-	if( eventInfo->componentInfo == NULL ){
-		eventInfo->componentInfo = new COMPONENT_INFO;
-		updateFlag = TRUE;
-	}else{
-		updateFlag = CheckUpdate_SD(eit, eventInfo->componentInfo->tableID, eventInfo->componentInfo->version);
-	}
-	if( updateFlag == TRUE ){
-		//更新必要
-		eventInfo->componentInfo->tableID = eit->table_id;
-		eventInfo->componentInfo->version = eit->version_number;
-
-		eventInfo->componentInfo->stream_content = component->stream_content;
-		eventInfo->componentInfo->component_type = component->component_type;
-		eventInfo->componentInfo->component_tag = component->component_tag;
-
-		CARIB8CharDecode arib;
-		string text_char = "";
-		if( component->text_charLength > 0 ){
-			arib.PSISI((const BYTE*)component->text_char, component->text_charLength, &text_char);
-
-			AtoW(text_char, eventInfo->componentInfo->text_char);
-		}
-
-	}
-
-	return updateFlag;
-}
-
-BOOL CEpgDBUtil::AddAudioComponent(CEITTable* eit, EVENT_INFO* eventInfo, vector<DESCRIPTOR_DATA*>* descriptorList)
+BOOL CEpgDBUtil::AddAudioComponent(BYTE table_id, BYTE version_number, EVENT_INFO* eventInfo, vector<AribDescriptor::CDescriptor*>* descriptorList, BOOL skySDFlag)
 {
 	BOOL updateFlag = FALSE;
 	if( eventInfo->audioInfo == NULL ){
 		eventInfo->audioInfo = new AUDIO_COMPONENT_INFO;
 		updateFlag = TRUE;
 	}else{
-		updateFlag = CheckUpdate(eit, eventInfo->audioInfo->tableID, eventInfo->audioInfo->version);
+		updateFlag = CheckUpdate(table_id, version_number, eventInfo->audioInfo->tableID, eventInfo->audioInfo->version, skySDFlag);
 	}
 	if( updateFlag == TRUE ){
 		//更新必要
-		eventInfo->audioInfo->tableID = eit->table_id;
-		eventInfo->audioInfo->version = eit->version_number;
+		eventInfo->audioInfo->tableID = table_id;
+		eventInfo->audioInfo->version = version_number;
 		eventInfo->audioInfo->componentList.clear();
 
 		for( size_t i=0; i<descriptorList->size(); i++ ){
-			if( (*descriptorList)[i]->audioComponent != NULL ){
-				CAudioComponentDesc* audioComponent = (*descriptorList)[i]->audioComponent;
+			if( (*descriptorList)[i]->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::audio_component_descriptor ){
+				AribDescriptor::CDescriptor* audioComponent = (*descriptorList)[i];
 				AUDIO_COMPONENT_INFO_DATA item;
 
-				item.stream_content = audioComponent->stream_content;
-				item.component_type = audioComponent->component_type;
-				item.component_tag = audioComponent->component_tag;
+				item.stream_content = (BYTE)audioComponent->GetNumber(AribDescriptor::stream_content);
+				item.component_type = (BYTE)audioComponent->GetNumber(AribDescriptor::component_type);
+				item.component_tag = (BYTE)audioComponent->GetNumber(AribDescriptor::component_tag);
 
-				item.stream_type = audioComponent->stream_type;
-				item.simulcast_group_tag = audioComponent->simulcast_group_tag;
-				item.ES_multi_lingual_flag = audioComponent->ES_multi_lingual_flag;
-				item.main_component_flag = audioComponent->main_component_flag;
-				item.quality_indicator = audioComponent->quality_indicator;
-				item.sampling_rate = audioComponent->sampling_rate;
+				item.stream_type = (BYTE)audioComponent->GetNumber(AribDescriptor::stream_type);
+				item.simulcast_group_tag = (BYTE)audioComponent->GetNumber(AribDescriptor::simulcast_group_tag);
+				item.ES_multi_lingual_flag = (BYTE)audioComponent->GetNumber(AribDescriptor::ES_multi_lingual_flag);
+				item.main_component_flag = (BYTE)audioComponent->GetNumber(AribDescriptor::main_component_flag);
+				item.quality_indicator = (BYTE)audioComponent->GetNumber(AribDescriptor::quality_indicator);
+				item.sampling_rate = (BYTE)audioComponent->GetNumber(AribDescriptor::sampling_rate);
 
 
 				CARIB8CharDecode arib;
 				string text_char = "";
-				if( audioComponent->text_charLength > 0 ){
-					arib.PSISI((const BYTE*)audioComponent->text_char, audioComponent->text_charLength, &text_char);
+				DWORD srcSize;
+				const char* src = audioComponent->GetStringOrEmpty(AribDescriptor::text_char, &srcSize);
+				if( srcSize > 0 ){
+					arib.PSISI((const BYTE*)src, srcSize, &text_char);
 
 					AtoW(text_char, item.text_char);
 				}
@@ -1000,63 +790,14 @@ BOOL CEpgDBUtil::AddAudioComponent(CEITTable* eit, EVENT_INFO* eventInfo, vector
 	return updateFlag;
 }
 
-BOOL CEpgDBUtil::AddAudioComponent_SD(CEITTable_SD* eit, EVENT_INFO* eventInfo, vector<DESCRIPTOR_DATA*>* descriptorList)
-{
-	BOOL updateFlag = FALSE;
-	if( eventInfo->audioInfo == NULL ){
-		eventInfo->audioInfo = new AUDIO_COMPONENT_INFO;
-		updateFlag = TRUE;
-	}else{
-		updateFlag = CheckUpdate_SD(eit, eventInfo->audioInfo->tableID, eventInfo->audioInfo->version);
-	}
-	if( updateFlag == TRUE ){
-		//更新必要
-		eventInfo->audioInfo->tableID = eit->table_id;
-		eventInfo->audioInfo->version = eit->version_number;
-		eventInfo->audioInfo->componentList.clear();
-
-		for( size_t i=0; i<descriptorList->size(); i++ ){
-			if( (*descriptorList)[i]->audioComponent != NULL ){
-				CAudioComponentDesc* audioComponent = (*descriptorList)[i]->audioComponent;
-				AUDIO_COMPONENT_INFO_DATA item;
-
-				item.stream_content = audioComponent->stream_content;
-				item.component_type = audioComponent->component_type;
-				item.component_tag = audioComponent->component_tag;
-
-				item.stream_type = audioComponent->stream_type;
-				item.simulcast_group_tag = audioComponent->simulcast_group_tag;
-				item.ES_multi_lingual_flag = audioComponent->ES_multi_lingual_flag;
-				item.main_component_flag = audioComponent->main_component_flag;
-				item.quality_indicator = audioComponent->quality_indicator;
-				item.sampling_rate = audioComponent->sampling_rate;
-
-
-				CARIB8CharDecode arib;
-				string text_char = "";
-				if( audioComponent->text_charLength > 0 ){
-					arib.PSISI((const BYTE*)audioComponent->text_char, audioComponent->text_charLength, &text_char);
-
-					AtoW(text_char, item.text_char);
-				}
-
-				eventInfo->audioInfo->componentList.push_back(item);
-
-			}
-		}
-	}
-
-	return updateFlag;
-}
-
-BOOL CEpgDBUtil::AddEventGroup(CEITTable* eit, EVENT_INFO* eventInfo, CEventGroupDesc* eventGroup)
+BOOL CEpgDBUtil::AddEventGroup(CEITTable* eit, EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* eventGroup)
 {
 	BOOL updateFlag = FALSE;
 	if( eventInfo->eventGroupInfo == NULL ){
 		eventInfo->eventGroupInfo = new EVENTGROUP_INFO;
 		updateFlag = TRUE;
 	}else{
-		updateFlag = CheckUpdate(eit, eventInfo->eventGroupInfo->tableID, eventInfo->eventGroupInfo->version);
+		updateFlag = CheckUpdate(eit->table_id, eit->version_number, eventInfo->eventGroupInfo->tableID, eventInfo->eventGroupInfo->version, FALSE);
 	}
 	if( updateFlag == TRUE ){
 		//更新必要
@@ -1064,30 +805,33 @@ BOOL CEpgDBUtil::AddEventGroup(CEITTable* eit, EVENT_INFO* eventInfo, CEventGrou
 		eventInfo->eventGroupInfo->version = eit->version_number;
 		eventInfo->eventGroupInfo->eventData2List.clear();
 
-		eventInfo->eventGroupInfo->group_type = eventGroup->group_type;
-		eventInfo->eventGroupInfo->event_count = eventGroup->event_count;
-		for( size_t i=0; i<eventGroup->eventDataList.size(); i++ ){
-			CEventGroupDesc::EVENT_DATA2 item;
-			item.event_id = eventGroup->eventDataList[i].event_id;
-			item.service_id = eventGroup->eventDataList[i].service_id;
-			item.original_network_id = eit->original_network_id;
-			item.transport_stream_id = eit->transport_stream_id;
+		eventInfo->eventGroupInfo->group_type = (BYTE)eventGroup->GetNumber(AribDescriptor::group_type);
+		eventInfo->eventGroupInfo->event_count = (BYTE)eventGroup->GetNumber(AribDescriptor::event_count);
+		if( eventGroup->EnterLoop() ){
+			for( DWORD i=0; eventGroup->SetLoopIndex(i); i++ ){
+				EVENT_DATA2 item;
+				item.event_id = (WORD)eventGroup->GetNumber(AribDescriptor::event_id);
+				item.service_id = (WORD)eventGroup->GetNumber(AribDescriptor::service_id);
+				item.original_network_id = eit->original_network_id;
+				item.transport_stream_id = eit->transport_stream_id;
 
-			eventInfo->eventGroupInfo->eventData2List.push_back(item);
+				eventInfo->eventGroupInfo->eventData2List.push_back(item);
+			}
+			eventGroup->LeaveLoop();
 		}
 	}
 
 	return updateFlag;
 }
 
-BOOL CEpgDBUtil::AddEventRelay(CEITTable* eit, EVENT_INFO* eventInfo, CEventGroupDesc* eventGroup)
+BOOL CEpgDBUtil::AddEventRelay(CEITTable* eit, EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* eventGroup)
 {
 	BOOL updateFlag = FALSE;
 	if( eventInfo->eventRelayInfo == NULL ){
 		eventInfo->eventRelayInfo = new EVENTGROUP_INFO;
 		updateFlag = TRUE;
 	}else{
-		updateFlag = CheckUpdate(eit, eventInfo->eventRelayInfo->tableID, eventInfo->eventRelayInfo->version);
+		updateFlag = CheckUpdate(eit->table_id, eit->version_number, eventInfo->eventRelayInfo->tableID, eventInfo->eventRelayInfo->version, FALSE);
 	}
 	if( updateFlag == TRUE ){
 		//更新必要
@@ -1095,20 +839,34 @@ BOOL CEpgDBUtil::AddEventRelay(CEITTable* eit, EVENT_INFO* eventInfo, CEventGrou
 		eventInfo->eventRelayInfo->version = eit->version_number;
 		eventInfo->eventRelayInfo->eventData2List.clear();
 
-		eventInfo->eventRelayInfo->group_type = eventGroup->group_type;
-		eventInfo->eventRelayInfo->event_count = eventGroup->event_count;
-		if( eventGroup->group_type == 0x02 ){
-			for( size_t i=0; i<eventGroup->eventDataList.size(); i++ ){
-				CEventGroupDesc::EVENT_DATA2 item;
-				item.event_id = eventGroup->eventDataList[i].event_id;
-				item.service_id = eventGroup->eventDataList[i].service_id;
-				item.original_network_id = eit->original_network_id;
-				item.transport_stream_id = eit->transport_stream_id;
+		eventInfo->eventRelayInfo->group_type = (BYTE)eventGroup->GetNumber(AribDescriptor::group_type);
+		eventInfo->eventRelayInfo->event_count = (BYTE)eventGroup->GetNumber(AribDescriptor::event_count);
+		if( eventInfo->eventRelayInfo->group_type == 0x02 ){
+			if( eventGroup->EnterLoop() ){
+				for( DWORD i=0; eventGroup->SetLoopIndex(i); i++ ){
+					EVENT_DATA2 item;
+					item.event_id = (WORD)eventGroup->GetNumber(AribDescriptor::event_id);
+					item.service_id = (WORD)eventGroup->GetNumber(AribDescriptor::service_id);
+					item.original_network_id = eit->original_network_id;
+					item.transport_stream_id = eit->transport_stream_id;
 
-				eventInfo->eventRelayInfo->eventData2List.push_back(item);
+					eventInfo->eventRelayInfo->eventData2List.push_back(item);
+				}
+				eventGroup->LeaveLoop();
 			}
 		}else{
-			eventInfo->eventRelayInfo->eventData2List = eventGroup->eventData2List;
+			if( eventGroup->EnterLoop(1) ){
+				for( DWORD i=0; eventGroup->SetLoopIndex(i); i++ ){
+					EVENT_DATA2 item;
+					item.event_id = (WORD)eventGroup->GetNumber(AribDescriptor::event_id);
+					item.service_id = (WORD)eventGroup->GetNumber(AribDescriptor::service_id);
+					item.original_network_id = (WORD)eventGroup->GetNumber(AribDescriptor::original_network_id);
+					item.transport_stream_id = (WORD)eventGroup->GetNumber(AribDescriptor::transport_stream_id);
+
+					eventInfo->eventRelayInfo->eventData2List.push_back(item);
+				}
+				eventGroup->LeaveLoop();
+			}
 		}
 
 	}
@@ -1116,12 +874,15 @@ BOOL CEpgDBUtil::AddEventRelay(CEITTable* eit, EVENT_INFO* eventInfo, CEventGrou
 	return updateFlag;
 }
 
-BOOL CEpgDBUtil::CheckUpdate(CEITTable* eit, BYTE tableID, BYTE version)
+BOOL CEpgDBUtil::CheckUpdate(BYTE eit_table_id, BYTE eit_version_number, BYTE tableID, BYTE version, BOOL skySDFlag)
 {
+	if( skySDFlag != FALSE ){
+		return CheckUpdate_SD(eit_table_id, eit_version_number, tableID, version);
+	}
 	BOOL changeFlag = FALSE;
-	if( eit->table_id == 0x4E ){
+	if( eit_table_id == 0x4E ){
 		if( tableID == 0x4E ){
-			if( version != eit->version_number ){
+			if( version != eit_version_number ){
 				//バージョン変わったので更新
 				changeFlag = TRUE;
 			}else{
@@ -1131,9 +892,9 @@ BOOL CEpgDBUtil::CheckUpdate(CEITTable* eit, BYTE tableID, BYTE version)
 			//[p/f]が最新のはずなので更新
 			changeFlag = TRUE;
 		}
-	}else if( eit->table_id == 0x4F ){
+	}else if( eit_table_id == 0x4F ){
 		if( tableID == 0x4F ){
-			if( version != eit->version_number ){
+			if( version != eit_version_number ){
 				//バージョン変わったので更新
 				changeFlag = TRUE;
 			}else{
@@ -1145,10 +906,10 @@ BOOL CEpgDBUtil::CheckUpdate(CEITTable* eit, BYTE tableID, BYTE version)
 		}else{
 			//自ストリーム情報なので更新しない
 		}
-	}else if( 0x50 <= eit->table_id && eit->table_id <= 0x5F ){
+	}else if( 0x50 <= eit_table_id && eit_table_id <= 0x5F ){
 		if( 0x50 <= tableID && tableID <= 0x5F ){
-			if( tableID == eit->table_id ){
-				if( version != eit->version_number ){
+			if( tableID == eit_table_id ){
+				if( version != eit_version_number ){
 					//バージョン変わったので更新
 					changeFlag = TRUE;
 				}else{
@@ -1165,10 +926,10 @@ BOOL CEpgDBUtil::CheckUpdate(CEITTable* eit, BYTE tableID, BYTE version)
 		}else{
 			//[p/f]が最新のはずなので更新しない
 		}
-	}else if( 0x60 <= eit->table_id && eit->table_id <= 0x6F ){
+	}else if( 0x60 <= eit_table_id && eit_table_id <= 0x6F ){
 		if( 0x60 <= tableID && tableID <= 0x6F ){
-			if( tableID == eit->table_id ){
-				if( version != eit->version_number ){
+			if( tableID == eit_table_id ){
+				if( version != eit_version_number ){
 					//バージョン変わったので更新
 					changeFlag = TRUE;
 				}else{
@@ -1185,13 +946,13 @@ BOOL CEpgDBUtil::CheckUpdate(CEITTable* eit, BYTE tableID, BYTE version)
 	return changeFlag;
 }
 
-BOOL CEpgDBUtil::CheckUpdate_SD(CEITTable_SD* eit, BYTE tableID, BYTE version)
+BOOL CEpgDBUtil::CheckUpdate_SD(BYTE eit_table_id, BYTE eit_version_number, BYTE tableID, BYTE version)
 {
 	BOOL changeFlag = FALSE;
-	if( 0xA0 <= eit->table_id && eit->table_id <= 0xAF ){
+	if( 0xA0 <= eit_table_id && eit_table_id <= 0xAF ){
 		if( 0xA0 <= tableID && tableID <= 0xAF ){
-			if( tableID == eit->table_id ){
-				if( version != eit->version_number ){
+			if( tableID == eit_table_id ){
+				if( version != eit_version_number ){
 					//バージョン変わったので更新
 					changeFlag = TRUE;
 				}else{
@@ -1210,7 +971,7 @@ BOOL CEpgDBUtil::CheckUpdate_SD(CEITTable_SD* eit, BYTE tableID, BYTE version)
 
 void CEpgDBUtil::ClearSectionStatus()
 {
-	if( Lock() == FALSE ) return ;
+	CBlockLock lock(&this->dbLock);
 
 	map<ULONGLONG, SECTION_STATUS_INFO*>::iterator itr;
 	for( itr = this->sectionMap.begin(); itr != this->sectionMap.end(); itr++ ){
@@ -1218,8 +979,6 @@ void CEpgDBUtil::ClearSectionStatus()
 	}
 	this->sectionMap.clear();
 	this->sectionNowFlag = 0;
-
-	UnLock();
 }
 
 BOOL CEpgDBUtil::CheckSectionAll(map<WORD, SECTION_FLAG_INFO>* sectionMap, BOOL leitFlag)
@@ -1253,11 +1012,10 @@ BOOL CEpgDBUtil::CheckSectionAll(map<WORD, SECTION_FLAG_INFO>* sectionMap, BOOL 
 
 EPG_SECTION_STATUS CEpgDBUtil::GetSectionStatus(BOOL l_eitFlag)
 {
-	if( Lock() == FALSE ) return EpgNoData;
+	CBlockLock lock(&this->dbLock);
 
 	EPG_SECTION_STATUS status = EpgNoData;
 	if( this->sectionMap.size() == 0 ){
-		UnLock();
 		return status;
 	}
 
@@ -1331,7 +1089,6 @@ EPG_SECTION_STATUS CEpgDBUtil::GetSectionStatus(BOOL l_eitFlag)
 			status = EpgNeedData;
 		}
 	}
-	UnLock();
 	return status;
 }
 
@@ -1340,17 +1097,19 @@ BOOL CEpgDBUtil::AddServiceList(CNITTable* nit)
 	if( nit == NULL ){
 		return FALSE;
 	}
-	if( Lock() == FALSE ) return FALSE;
+	CBlockLock lock(&this->dbLock);
 
 	wstring network_nameW = L"";
 
 	for( size_t i=0; i<nit->descriptorList.size(); i++ ){
-		if( nit->descriptorList[i]->networkName != NULL ){
-			CNetworkNameDesc* networkName = nit->descriptorList[i]->networkName;
-			if( networkName->char_nameLength > 0 ){
+		if( nit->descriptorList[i]->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::network_name_descriptor ){
+			AribDescriptor::CDescriptor* networkName = nit->descriptorList[i];
+			DWORD srcSize;
+			const char* src = networkName->GetStringOrEmpty(AribDescriptor::d_char, &srcSize);
+			if( srcSize > 0 ){
 				CARIB8CharDecode arib;
 				string network_name = "";
-				arib.PSISI((const BYTE*)networkName->char_name, networkName->char_nameLength, &network_name);
+				arib.PSISI((const BYTE*)src, srcSize, &network_name);
 				AtoW(network_name, network_nameW);
 			}
 		}
@@ -1367,57 +1126,62 @@ BOOL CEpgDBUtil::AddServiceList(CNITTable* nit)
 		}
 
 		for( size_t j=0; j<tsInfo->descriptorList.size(); j++ ){
-			DESCRIPTOR_DATA* desc = tsInfo->descriptorList[j];
-			if( desc->serviceList != NULL ){
-				for( size_t k=0; k<desc->serviceList->serviceList.size(); k++ ){
-					CServiceListDesc::SERVICE_LIST_DATA serviceData = desc->serviceList->serviceList[k];
-					ULONGLONG key = _Create64Key(tsInfo->original_network_id, tsInfo->transport_stream_id, serviceData.service_id);
-					map<ULONGLONG, BYTE>::iterator itrService;
-					itrService = this->serviceList.find(key);
-					if( itrService == this->serviceList.end() ){
-						this->serviceList.insert(pair<ULONGLONG, BYTE>(key, serviceData.service_type));
+			AribDescriptor::CDescriptor* desc = tsInfo->descriptorList[j];
+			if( desc->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::service_list_descriptor ){
+				if( desc->EnterLoop() ){
+					for( DWORD k=0; desc->SetLoopIndex(k); k++ ){
+						ULONGLONG key = _Create64Key(tsInfo->original_network_id, tsInfo->transport_stream_id, (WORD)desc->GetNumber(AribDescriptor::service_id));
+						map<ULONGLONG, BYTE>::iterator itrService;
+						itrService = this->serviceList.find(key);
+						if( itrService == this->serviceList.end() ){
+							this->serviceList.insert(pair<ULONGLONG, BYTE>(key, (BYTE)desc->GetNumber(AribDescriptor::service_type)));
+						}
 					}
+					desc->LeaveLoop();
 				}
 			}
-			if( desc->TSInfo != NULL && itrFind != this->serviceInfoList.end()){
+			if( desc->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::ts_information_descriptor && itrFind != this->serviceInfoList.end()){
 				//ts_nameとremote_control_key_id
-				if( desc->TSInfo->length_of_ts_name > 0 ){
+				DWORD srcSize;
+				const char* src = desc->GetStringOrEmpty(AribDescriptor::ts_name_char, &srcSize);
+				if( srcSize > 0 ){
 					CARIB8CharDecode arib;
 					string ts_name = "";
-					arib.PSISI((const BYTE*)desc->TSInfo->ts_name_char, desc->TSInfo->length_of_ts_name, &ts_name);
+					arib.PSISI((const BYTE*)src, srcSize, &ts_name);
 					AtoW(ts_name, itrFind->second->ts_name);
 				}
-				itrFind->second->remote_control_key_id = desc->TSInfo->remote_control_key_id;
+				itrFind->second->remote_control_key_id = (BYTE)desc->GetNumber(AribDescriptor::remote_control_key_id);
 			}
-			if( desc->partialReception != NULL && itrFind != this->serviceInfoList.end()){
+			if( desc->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::partial_reception_descriptor && itrFind != this->serviceInfoList.end()){
 				//部分受信フラグ
-				map<WORD,DB_SERVICE_INFO*>::iterator itrService;
-				for( size_t k=0; k<desc->partialReception->service_idList.size(); k++ ){
-					itrService = itrFind->second->serviceList.find(desc->partialReception->service_idList[k]);
-					if( itrService != itrFind->second->serviceList.end() ){
-						itrService->second->partialReceptionFlag = 1;
+				if( desc->EnterLoop() ){
+					map<WORD,DB_SERVICE_INFO*>::iterator itrService;
+					for( DWORD k=0; desc->SetLoopIndex(k); k++ ){
+						itrService = itrFind->second->serviceList.find((WORD)desc->GetNumber(AribDescriptor::service_id));
+						if( itrService != itrFind->second->serviceList.end() ){
+							itrService->second->partialReceptionFlag = 1;
+						}
 					}
+					desc->LeaveLoop();
 				}
 			}
 		}
 	}
 
-	UnLock();
 	return TRUE;
 }
 
 BOOL CEpgDBUtil::AddServiceList(WORD TSID, CSITTable* sit)
 {
-	if( Lock() == FALSE ) return FALSE;
+	CBlockLock lock(&this->dbLock);
 
 	WORD ONID = 0xFFFF;
 	for( size_t i=0; i<sit->descriptorList.size(); i++ ){
-		if( sit->descriptorList[i]->networkIdentification != NULL ){
-			ONID = sit->descriptorList[i]->networkIdentification->network_id;
+		if( sit->descriptorList[i]->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::network_identification_descriptor ){
+			ONID = (WORD)sit->descriptorList[i]->GetNumber(AribDescriptor::network_id);
 		}
 	}
 	if(ONID == 0xFFFF){
-		UnLock();
 		return FALSE;
 	}
 
@@ -1436,21 +1200,25 @@ BOOL CEpgDBUtil::AddServiceList(WORD TSID, CSITTable* sit)
 			item->service_id = sit->serviceLoopList[i]->service_id;
 
 			for( size_t j=0; j<sit->serviceLoopList[i]->descriptorList.size(); j++ ){
-				if( sit->serviceLoopList[i]->descriptorList[j]->service != NULL ){
-					CServiceDesc* service = sit->serviceLoopList[i]->descriptorList[j]->service;
+				if( sit->serviceLoopList[i]->descriptorList[j]->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::service_descriptor ){
+					AribDescriptor::CDescriptor* service = sit->serviceLoopList[i]->descriptorList[j];
 					CARIB8CharDecode arib;
 					string service_provider_name = "";
 					string service_name = "";
-					if( service->service_provider_name_length > 0 ){
-						arib.PSISI((const BYTE*)service->char_service_provider_name, service->service_provider_name_length, &service_provider_name);
+					const char* src;
+					DWORD srcSize;
+					src = service->GetStringOrEmpty(AribDescriptor::service_provider_name, &srcSize);
+					if( srcSize > 0 ){
+						arib.PSISI((const BYTE*)src, srcSize, &service_provider_name);
 					}
-					if( service->service_name_length > 0 ){
-						arib.PSISI((const BYTE*)service->char_service_name, service->service_name_length, &service_name);
+					src = service->GetStringOrEmpty(AribDescriptor::service_name, &srcSize);
+					if( srcSize > 0 ){
+						arib.PSISI((const BYTE*)src, srcSize, &service_name);
 					}
 					AtoW(service_provider_name, item->service_provider_name);
 					AtoW(service_name, item->service_name);
 
-					item->service_type = service->service_type;
+					item->service_type = (BYTE)service->GetNumber(AribDescriptor::service_type);
 				}
 			}
 			info->serviceList.insert(pair<WORD,DB_SERVICE_INFO*>(item->service_id, item));
@@ -1459,13 +1227,12 @@ BOOL CEpgDBUtil::AddServiceList(WORD TSID, CSITTable* sit)
 	}
 
 
-	UnLock();
 	return TRUE;
 }
 
 BOOL CEpgDBUtil::AddSDT(CSDTTable* sdt)
 {
-	if( Lock() == FALSE ) return FALSE;
+	CBlockLock lock(&this->dbLock);
 
 	DWORD key = ((DWORD)sdt->original_network_id)<<16 | sdt->transport_stream_id;
 	map<DWORD, DB_TS_INFO*>::iterator itrTS;
@@ -1482,21 +1249,25 @@ BOOL CEpgDBUtil::AddSDT(CSDTTable* sdt)
 			item->service_id = sdt->serviceInfoList[i]->service_id;
 
 			for( size_t j=0; j<sdt->serviceInfoList[i]->descriptorList.size(); j++ ){
-				if( sdt->serviceInfoList[i]->descriptorList[j]->service != NULL ){
-					CServiceDesc* service = sdt->serviceInfoList[i]->descriptorList[j]->service;
+				if( sdt->serviceInfoList[i]->descriptorList[j]->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::service_descriptor ){
+					AribDescriptor::CDescriptor* service = sdt->serviceInfoList[i]->descriptorList[j];
 					CARIB8CharDecode arib;
 					string service_provider_name = "";
 					string service_name = "";
-					if( service->service_provider_name_length > 0 ){
-						arib.PSISI((const BYTE*)service->char_service_provider_name, service->service_provider_name_length, &service_provider_name);
+					const char* src;
+					DWORD srcSize;
+					src = service->GetStringOrEmpty(AribDescriptor::service_provider_name, &srcSize);
+					if( srcSize > 0 ){
+						arib.PSISI((const BYTE*)src, srcSize, &service_provider_name);
 					}
-					if( service->service_name_length > 0 ){
-						arib.PSISI((const BYTE*)service->char_service_name, service->service_name_length, &service_name);
+					src = service->GetStringOrEmpty(AribDescriptor::service_name, &srcSize);
+					if( srcSize > 0 ){
+						arib.PSISI((const BYTE*)src, srcSize, &service_name);
 					}
 					AtoW(service_provider_name, item->service_provider_name);
 					AtoW(service_name, item->service_name);
 
-					item->service_type = service->service_type;
+					item->service_type = (BYTE)service->GetNumber(AribDescriptor::service_type);
 				}
 			}
 			info->serviceList.insert(pair<WORD,DB_SERVICE_INFO*>(item->service_id, item));
@@ -1513,21 +1284,25 @@ BOOL CEpgDBUtil::AddSDT(CSDTTable* sdt)
 				item->service_id = sdt->serviceInfoList[i]->service_id;
 
 				for( size_t j=0; j<sdt->serviceInfoList[i]->descriptorList.size(); j++ ){
-					if( sdt->serviceInfoList[i]->descriptorList[j]->service != NULL ){
-						CServiceDesc* service = sdt->serviceInfoList[i]->descriptorList[j]->service;
+					if( sdt->serviceInfoList[i]->descriptorList[j]->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::service_descriptor ){
+						AribDescriptor::CDescriptor* service = sdt->serviceInfoList[i]->descriptorList[j];
 						CARIB8CharDecode arib;
 						string service_provider_name = "";
 						string service_name = "";
-						if( service->service_provider_name_length > 0 ){
-							arib.PSISI((const BYTE*)service->char_service_provider_name, service->service_provider_name_length, &service_provider_name);
+						const char* src;
+						DWORD srcSize;
+						src = service->GetStringOrEmpty(AribDescriptor::service_provider_name, &srcSize);
+						if( srcSize > 0 ){
+							arib.PSISI((const BYTE*)src, srcSize, &service_provider_name);
 						}
-						if( service->service_name_length > 0 ){
-							arib.PSISI((const BYTE*)service->char_service_name, service->service_name_length, &service_name);
+						src = service->GetStringOrEmpty(AribDescriptor::service_name, &srcSize);
+						if( srcSize > 0 ){
+							arib.PSISI((const BYTE*)src, srcSize, &service_name);
 						}
 						AtoW(service_provider_name, item->service_provider_name);
 						AtoW(service_name, item->service_name);
 
-						item->service_type = service->service_type;
+						item->service_type = (BYTE)service->GetNumber(AribDescriptor::service_type);
 					}
 				}
 				itrTS->second->serviceList.insert(pair<WORD,DB_SERVICE_INFO*>(item->service_id, item));
@@ -1535,19 +1310,16 @@ BOOL CEpgDBUtil::AddSDT(CSDTTable* sdt)
 		}
 	}
 
-	UnLock();
 	return TRUE;
 }
 
 //指定サービスの全EPG情報を取得する
-//戻り値：
-// エラーコード
 // originalNetworkID		[IN]取得対象のoriginalNetworkID
 // transportStreamID		[IN]取得対象のtransportStreamID
 // serviceID				[IN]取得対象のServiceID
 // epgInfoListSize			[OUT]epgInfoListの個数
 // epgInfoList				[OUT]EPG情報のリスト（DLL内で自動的にdeleteする。次に取得を行うまで有効）
-DWORD CEpgDBUtil::GetEpgInfoList(
+BOOL CEpgDBUtil::GetEpgInfoList(
 	WORD originalNetworkID,
 	WORD transportStreamID,
 	WORD serviceID,
@@ -1555,10 +1327,7 @@ DWORD CEpgDBUtil::GetEpgInfoList(
 	EPG_EVENT_INFO** epgInfoList
 	)
 {
-	if( epgInfoListSize == NULL || epgInfoList == NULL ){
-		return ERR_INVALID_ARG;
-	}
-	if( Lock() == FALSE ) return ERR_FALSE;
+	CBlockLock lock(&this->dbLock);
 
 	SAFE_DELETE_ARRAY(this->epgInfoList);
 	this->epgInfoListSize = 0;
@@ -1568,14 +1337,12 @@ DWORD CEpgDBUtil::GetEpgInfoList(
 	map<ULONGLONG, SERVICE_EVENT_INFO*>::iterator itr;
 	itr = serviceEventMap.find(key);
 	if( itr == serviceEventMap.end() ){
-		UnLock();
-		return ERR_NOT_FIND;
+		return FALSE;
 	}
 
 	this->epgInfoListSize = (DWORD)itr->second->eventMap.size();
 	if( this->epgInfoListSize == 0 ){
-		UnLock();
-		return ERR_NOT_FIND;
+		return FALSE;
 	}
 	this->epgInfoList = new EPG_EVENT_INFO[this->epgInfoListSize];
 
@@ -1589,8 +1356,7 @@ DWORD CEpgDBUtil::GetEpgInfoList(
 	*epgInfoListSize = this->epgInfoListSize;
 	*epgInfoList = this->epgInfoList;
 
-	UnLock();
-	return NO_ERR;
+	return TRUE;
 }
 
 void CEpgDBUtil::CopyEpgInfo(EPG_EVENT_INFO* destInfo, EVENT_INFO* srcInfo)
@@ -1734,22 +1500,18 @@ void CEpgDBUtil::CopyEpgInfo(EPG_EVENT_INFO* destInfo, EVENT_INFO* srcInfo)
 
 //蓄積されたEPG情報のあるサービス一覧を取得する
 //SERVICE_EXT_INFOの情報はない場合がある
-//戻り値：
-// エラーコード
 //引数：
 // serviceListSize			[OUT]serviceListの個数
 // serviceList				[OUT]サービス情報のリスト（DLL内で自動的にdeleteする。次に取得を行うまで有効）
-DWORD CEpgDBUtil::GetServiceListEpgDB(
+void CEpgDBUtil::GetServiceListEpgDB(
 	DWORD* serviceListSize,
 	SERVICE_INFO** serviceList
 	)
 {
+	CBlockLock lock(&this->dbLock);
+
 	SAFE_DELETE_ARRAY(this->serviceDBList);
 	this->serviceDBListSize = 0;
-
-	if( serviceListSize == NULL || serviceList == NULL ){
-		return ERR_INVALID_ARG;
-	}
 
 	this->serviceDBListSize = (DWORD)this->serviceEventMap.size();
 	this->serviceDBList = new SERVICE_INFO[this->serviceDBListSize];
@@ -1800,33 +1562,24 @@ DWORD CEpgDBUtil::GetServiceListEpgDB(
 
 	*serviceListSize = this->serviceDBListSize;
 	*serviceList = this->serviceDBList;
-
-	return NO_ERR;
 }
 
 //指定サービスの現在or次のEPG情報を取得する
-//戻り値：
-// エラーコード
 //引数：
 // originalNetworkID		[IN]取得対象のoriginalNetworkID
 // transportStreamID		[IN]取得対象のtransportStreamID
 // serviceID				[IN]取得対象のServiceID
 // nextFlag					[IN]TRUE（次の番組）、FALSE（現在の番組）
-// nowTime					[IN]現在の時間
 // epgInfo					[OUT]EPG情報（DLL内で自動的にdeleteする。次に取得を行うまで有効）
-DWORD CEpgDBUtil::GetEpgInfo(
+BOOL CEpgDBUtil::GetEpgInfo(
 	WORD originalNetworkID,
 	WORD transportStreamID,
 	WORD serviceID,
 	BOOL nextFlag,
-	SYSTEMTIME nowTime,
 	EPG_EVENT_INFO** epgInfo
 	)
 {
-	if( epgInfo == NULL ){
-		return ERR_INVALID_ARG;
-	}
-	if( Lock() == FALSE ) return ERR_FALSE;
+	CBlockLock lock(&this->dbLock);
 
 	SAFE_DELETE(this->epgInfo);
 
@@ -1835,100 +1588,25 @@ DWORD CEpgDBUtil::GetEpgInfo(
 	map<ULONGLONG, SERVICE_EVENT_INFO*>::iterator itr;
 	itr = serviceEventMap.find(key);
 	if( itr == serviceEventMap.end() ){
-		UnLock();
-		return ERR_NOT_FIND;
+		return FALSE;
 	}
 
-	__int64 nowTime64 = ConvertI64Time(nowTime);
-
-	//まずp/fの確認
 	if( itr->second->nowEvent != NULL && nextFlag == FALSE ){
-		if( itr->second->nowEvent->StartTimeFlag == TRUE && itr->second->nowEvent->DurationFlag == TRUE){
-			__int64 startTime = ConvertI64Time(itr->second->nowEvent->start_time);
-			__int64 endTime = GetSumTime(itr->second->nowEvent->start_time, itr->second->nowEvent->durationSec);
-			if( startTime <= nowTime64 && nowTime64 < endTime ){
-				//時間内にあるので正しいはず
-				this->epgInfo = new EPG_EVENT_INFO;
-				CopyEpgInfo(this->epgInfo, itr->second->nowEvent);
-				goto Err_End;
-			}
-		}else{
-			//どっちか未定なので信じる
-			this->epgInfo = new EPG_EVENT_INFO;
-			CopyEpgInfo(this->epgInfo, itr->second->nowEvent);
-			goto Err_End;
-		}
+		this->epgInfo = new EPG_EVENT_INFO;
+		CopyEpgInfo(this->epgInfo, itr->second->nowEvent);
+		*epgInfo = this->epgInfo;
+		return TRUE;
 	}else if( itr->second->nextEvent != NULL && nextFlag == TRUE ){
-		if( itr->second->nextEvent->StartTimeFlag == TRUE && itr->second->nextEvent->DurationFlag == TRUE){
-			__int64 startTime = ConvertI64Time(itr->second->nextEvent->start_time);
-			//__int64 endTime = GetSumTime(itr->second->nextEvent->start_time, itr->second->nextEvent->durationSec);
-			if( nowTime64 <= startTime ){
-				//開始時間先にあるので正しいはず
-				this->epgInfo = new EPG_EVENT_INFO;
-				CopyEpgInfo(this->epgInfo, itr->second->nextEvent);
-				goto Err_End;
-			}
-		}else{
-			//どっちか未定なので信じる
-			this->epgInfo = new EPG_EVENT_INFO;
-			CopyEpgInfo(this->epgInfo, itr->second->nextEvent);
-			goto Err_End;
-		}
+		this->epgInfo = new EPG_EVENT_INFO;
+		CopyEpgInfo(this->epgInfo, itr->second->nextEvent);
+		*epgInfo = this->epgInfo;
+		return TRUE;
 	}
-	/*
-	//p/fで確認できなかったのでDBの時間的にあうもの探す
-	if( nextFlag == FALSE ){
-		//現在
-		map<WORD, EVENT_INFO*>::iterator itrEvt;
-		for( itrEvt = itr->second->eventMap.begin(); itrEvt != itr->second->eventMap.end(); itrEvt++ ){
-			if( itrEvt->second->StartTimeFlag == TRUE && itrEvt->second->DurationFlag == TRUE ){
-				__int64 startTime = ConvertI64Time(itrEvt->second->start_time);
-				__int64 endTime = GetSumTime(itrEvt->second->start_time, itrEvt->second->durationSec);
-				if( startTime <= nowTime64 && nowTime64 < endTime ){
-					//時間内にあるので正しいはず
-					this->epgInfo = new EPG_EVENT_INFO;
-					CopyEpgInfo(this->epgInfo, itrEvt->second);
-					goto Err_End;
-				}
-			}
-		}
-	}else{
-		//p/fにないので時間的に次になる番組探す
 
-		map<__int64, EVENT_INFO*> timeSort;
-		map<WORD, EVENT_INFO*>::iterator itrEvt;
-		for( itrEvt = itr->second->eventMap.begin(); itrEvt != itr->second->eventMap.end(); itrEvt++ ){
-			if( itrEvt->second->StartTimeFlag == TRUE ){
-				__int64 startTime = ConvertI64Time(itrEvt->second->start_time);
-				//次の見つける必要あるので時間でソート
-				timeSort.insert(pair<__int64, EVENT_INFO*>(startTime, itrEvt->second));
-			}
-		}
-		map<__int64, EVENT_INFO*>::iterator itrSort;
-		for( itrSort = timeSort.begin(); itrSort != timeSort.end(); itrSort++ ){
-			if( nowTime64 < itrSort->first ){
-				//現在より開始時間早いので次になるはず
-				this->epgInfo = new EPG_EVENT_INFO;
-				CopyEpgInfo(this->epgInfo, itrSort->second);
-				goto Err_End;
-			}
-		}
-	}
-	*/
-Err_End:
-	if( this->epgInfo == NULL ){
-		UnLock();
-		return ERR_NOT_FIND;
-	}
-	*epgInfo = this->epgInfo;
-
-	UnLock();
-	return NO_ERR;
+	return FALSE;
 }
 
 //指定イベントのEPG情報を取得する
-//戻り値：
-// エラーコード
 //引数：
 // originalNetworkID		[IN]取得対象のoriginalNetworkID
 // transportStreamID		[IN]取得対象のtransportStreamID
@@ -1936,7 +1614,7 @@ Err_End:
 // EventID					[IN]取得対象のEventID
 // pfOnlyFlag				[IN]p/fからのみ検索するかどうか
 // epgInfo					[OUT]EPG情報（DLL内で自動的にdeleteする。次に取得を行うまで有効）
-DWORD CEpgDBUtil::SearchEpgInfo(
+BOOL CEpgDBUtil::SearchEpgInfo(
 	WORD originalNetworkID,
 	WORD transportStreamID,
 	WORD serviceID,
@@ -1945,10 +1623,7 @@ DWORD CEpgDBUtil::SearchEpgInfo(
 	EPG_EVENT_INFO** epgInfo
 	)
 {
-	if( epgInfo == NULL ){
-		return ERR_INVALID_ARG;
-	}
-	if( Lock() == FALSE ) return ERR_FALSE;
+	CBlockLock lock(&this->dbLock);
 
 	SAFE_DELETE(this->searchEpgInfo);
 
@@ -1957,8 +1632,7 @@ DWORD CEpgDBUtil::SearchEpgInfo(
 	map<ULONGLONG, SERVICE_EVENT_INFO*>::iterator itr;
 	itr = serviceEventMap.find(key);
 	if( itr == serviceEventMap.end() ){
-		UnLock();
-		return ERR_NOT_FIND;
+		return FALSE;
 	}
 
 	if( pfOnlyFlag == 0 ){
@@ -1988,13 +1662,11 @@ DWORD CEpgDBUtil::SearchEpgInfo(
 
 Err_End:
 	if( this->searchEpgInfo == NULL ){
-		UnLock();
-		return ERR_NOT_FIND;
+		return FALSE;
 	}
 	*epgInfo = this->searchEpgInfo;
 
-	UnLock();
-	return NO_ERR;
+	return TRUE;
 }
 
 BOOL CEpgDBUtil::AddSDEventMap(CEITTable_SD* eit)
@@ -2062,17 +1734,18 @@ BOOL CEpgDBUtil::AddSDEventMap(CEITTable_SD* eit)
 		BOOL checkExtFlag = FALSE;
 		BOOL checkAudioFlag = FALSE;
 		for( size_t j=0; j<eitEventInfo->descriptorList.size(); j++ ){
-			if( eitEventInfo->descriptorList[j]->shortEvent != NULL ){
-				AddShortEvent_SD( eit, eventInfo, eitEventInfo->descriptorList[j]->shortEvent );
-			}else if( eitEventInfo->descriptorList[j]->extendedEvent != NULL && checkExtFlag == FALSE){
-				AddExtEvent_SD(eit, eventInfo, &eitEventInfo->descriptorList );
+			DWORD tag = eitEventInfo->descriptorList[j]->GetNumber(AribDescriptor::descriptor_tag);
+			if( tag == AribDescriptor::short_event_descriptor ){
+				AddShortEvent( eit->table_id, eit->version_number, eventInfo, eitEventInfo->descriptorList[j], TRUE );
+			}else if( tag == AribDescriptor::extended_event_descriptor && checkExtFlag == FALSE){
+				AddExtEvent(eit->table_id, eit->version_number, eventInfo, &eitEventInfo->descriptorList, TRUE );
 				checkExtFlag = TRUE;
-			}else if( eitEventInfo->descriptorList[j]->content != NULL ){
-				AddContent_SD( eit, eventInfo, eitEventInfo->descriptorList[j]->content );
-			}else if( eitEventInfo->descriptorList[j]->component != NULL ){
-				AddComponent_SD( eit, eventInfo, eitEventInfo->descriptorList[j]->component );
-			}else if( eitEventInfo->descriptorList[j]->audioComponent != NULL && checkAudioFlag == FALSE ){
-				AddAudioComponent_SD( eit, eventInfo, &eitEventInfo->descriptorList );
+			}else if( tag == AribDescriptor::content_descriptor ){
+				AddContent( eit->table_id, eit->version_number, eventInfo, eitEventInfo->descriptorList[j], TRUE );
+			}else if( tag == AribDescriptor::component_descriptor ){
+				AddComponent( eit->table_id, eit->version_number, eventInfo, eitEventInfo->descriptorList[j], TRUE );
+			}else if( tag == AribDescriptor::audio_component_descriptor && checkAudioFlag == FALSE ){
+				AddAudioComponent( eit->table_id, eit->version_number, eventInfo, &eitEventInfo->descriptorList, TRUE );
 				checkAudioFlag = TRUE;
 			}
 		}
@@ -2086,7 +1759,7 @@ BOOL CEpgDBUtil::AddEIT_SD2(WORD PID, CEITTable_SD2* eit)
 	if( eit == NULL ){
 		return FALSE;
 	}
-	if( Lock() == FALSE ) return FALSE;
+	CBlockLock lock(&this->dbLock);
 
 	ULONGLONG key = _Create64Key(eit->original_network_id, 0, eit->service_id2);
 
@@ -2164,6 +1837,5 @@ BOOL CEpgDBUtil::AddEIT_SD2(WORD PID, CEITTable_SD2* eit)
 		}
 	}
 
-	UnLock();
-	return NO_ERR;
+	return TRUE;
 }

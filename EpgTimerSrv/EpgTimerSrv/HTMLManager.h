@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../../Common/StructDef.h"
-#include "../../Common/ParseChText5.h"
+#include "../../Common/ParseTextInstances.h"
 #include "EpgDBManager.h"
 
 class CHTMLManager

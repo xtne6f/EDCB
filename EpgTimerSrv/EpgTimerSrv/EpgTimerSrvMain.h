@@ -2,12 +2,10 @@
 
 #include "EpgDBManager.h"
 #include "ReserveManager.h"
-#include "SleepUtil.h"
 #include "FileStreamingManager.h"
 #include "NotifyManager.h"
 
-#include "../../Common/ParseEpgAutoAddText.h"
-#include "../../Common/ParseManualAutoAddText.h"
+#include "../../Common/ParseTextInstances.h"
 #include "../../Common/PipeServer.h"
 #include "../../Common/TCPServer.h"
 #include "../../Common/HttpServer.h"
@@ -47,38 +45,26 @@ public:
 	BOOL IsUserWorking();
 
 protected:
-	HANDLE lockEvent;
-
 	CEpgDBManager epgDB;
 	CReserveManager reserveManager;
-	CSleepUtil sleepUtil;
 	CFileStreamingManager streamingManager;
 	CNotifyManager notifyManager;
 
 	CParseEpgAutoAddText epgAutoAdd;
 	CParseManualAutoAddText manualAutoAdd;
 
-	CPipeServer* pipeServer;
-	CTCPServer* tcpServer;
-	CHttpServer* httpServer;
-	CTCPServerUtil* tcpSrvUtil;
-
 	CDLNAManager* dlnaManager;
 
 	HANDLE stopEvent;
-
-	BOOL reloadEpgChkFlag;
+	HANDLE sleepEvent;
+	HANDLE resetServerEvent;
+	HANDLE reloadEpgChkEvent;
 
 	//map<DWORD,DWORD> registGUI; //PID,PID
 	//map<wstring,REGIST_TCP_INFO> registTCP; //IP:Port
 
-	BYTE suspendMode;
-	BYTE rebootFlag;
-	HANDLE sleepThread;
 	BYTE suspendModeWork;
 	BYTE rebootFlagWork;
-
-	BOOL suspending;
 
 	int wakeMargin;
 	BOOL enableTCPSrv;
@@ -101,22 +87,22 @@ protected:
 	BOOL awayMode;
 
 	vector<OLD_EVENT_INFO_DATA3> oldSearchList;
-protected:
-	//コマンド関係排他制御用
-	BOOL Lock(LPCWSTR log = NULL, DWORD timeOut = 60*1000);
-	void UnLock(LPCWSTR log = NULL);
 
+	//このオブジェクトが持つ設定変数を保護するロック
+	//独自にアトミック性を確保するオブジェクトは対象外
+	CRITICAL_SECTION settingLock;
+protected:
 	BOOL CheckTuijyu();
 
 	BOOL AutoAddReserveEPG(int targetSize = -1, EPG_AUTO_ADD_DATA* target = NULL);
 	BOOL AutoAddReserveProgram();
 
-	void StartSleep(BYTE rebootFlag, BYTE suspendMode);
-	void StartReboot();
-	static UINT WINAPI SleepThread(void* param);
+	static void SetShutdown(BYTE shutdownMode);
 	BOOL QuerySleep(BYTE rebootFlag, BYTE suspendMode);
 	BOOL QueryReboot(BYTE rebootFlag);
 
+	BOOL SetResumeTimer(HANDLE* resumeTimer, LONGLONG* resumeTime, BOOL rebootFlag);
+	void ResetServer(CTCPServer& tcpServer, CHttpServer& httpServer, CTCPServerUtil& tcpSrvUtil);
 	void ReloadSetting();
 
 	void AddRecFileDMS();

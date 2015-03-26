@@ -153,7 +153,7 @@ int CDLNAManager::AddFileItem(wstring parentObjectID, wstring filePath, wstring&
 	itemInfo.mimeType = itrInfo->second.mimeType;
 	itemInfo.protocolInfo = itrInfo->second.info;
 
-	HANDLE hFile = _CreateFile2( filePath.c_str(), GENERIC_READ, FILE_SHARE_READ, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
+	HANDLE hFile = CreateFile( filePath.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
 	if( hFile == INVALID_HANDLE_VALUE ){
 		return 0;
 	}

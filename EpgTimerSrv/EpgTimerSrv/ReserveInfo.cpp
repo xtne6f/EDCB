@@ -4,7 +4,7 @@
 
 CReserveInfo::CReserveInfo(void)
 {
-	this->lockEvent = _CreateEvent(FALSE, TRUE, NULL);
+	this->lockEvent = CreateEvent(NULL, FALSE, TRUE, NULL);
 
 	this->recWaitFlag = FALSE;
 	this->recWaitTunerID = 0;

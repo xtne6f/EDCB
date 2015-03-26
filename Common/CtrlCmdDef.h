@@ -30,7 +30,7 @@
 #define CMD_VER 5 //予定ファイル名追加
 
 //コマンド
-#define CMD2_EPG_SRV_ADDLOAD_RESERVE		1 //Program.txtの追加読み込み
+#define CMD2_EPG_SRV_ADDLOAD_RESERVE		1 //Program.txtの追加読み込み（廃止）
 #define CMD2_EPG_SRV_RELOAD_EPG				2 //EPG再読み込み
 #define CMD2_EPG_SRV_RELOAD_SETTING			3 //設定の再読み込み
 #define CMD2_EPG_SRV_CLOSE					4 //アプリケーションの終了（CreateProcessで普通に起動した場合に使用）

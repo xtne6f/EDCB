@@ -6,7 +6,6 @@
 #include "../../Common/ReNamePlugInUtil.h"
 #include "../../Common/EpgTimerUtil.h"
 
-#include "CheckRecFile.h"
 #include <tlhelp32.h> 
 #include <shlwapi.h>
 #include <algorithm>
@@ -17,11 +16,11 @@
 
 CReserveManager::CReserveManager(void)
 {
-	this->lockEvent = _CreateEvent(FALSE, TRUE, NULL);
+	this->lockEvent = CreateEvent(NULL, FALSE, TRUE, NULL);
 //	this->lockNotify = _CreateEvent(FALSE, TRUE, NULL);
 
 	this->bankCheckThread = NULL;
-	this->bankCheckStopEvent = _CreateEvent(FALSE, FALSE, NULL);
+	this->bankCheckStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 
 	this->notifyStatus = 0;
 /*
@@ -73,6 +72,7 @@ CReserveManager::CReserveManager(void)
 	this->NWTVUDP = FALSE;
 	this->NWTVTCP = FALSE;
 
+	this->twitterManager = NULL;
 	this->useTweet = FALSE;
 	this->useProxy = FALSE;
 
@@ -83,12 +83,6 @@ CReserveManager::CReserveManager(void)
 	this->useResSrvCoop = FALSE;
 	this->useEpgSrvCoop = FALSE;
 	this->errEndBatRun = FALSE;
-
-	wstring textPath;
-	GetModuleFolderPath(textPath);
-	textPath += L"\\ConvertText.txt";
-
-	this->chgText.ParseReserveText(textPath.c_str() );
 
 	this->ngShareFile = FALSE;
 	this->epgDBManager = NULL;
@@ -180,6 +174,8 @@ CReserveManager::~CReserveManager(void)
 	for( itr = this->reserveInfoMap.begin(); itr != this->reserveInfoMap.end(); itr++ ){
 		SAFE_DELETE(itr->second);
 	}
+
+	SAFE_DELETE(this->twitterManager);
 	/*
 	if( this->lockNotify != NULL ){
 		NotifyUnLock();
@@ -277,7 +273,6 @@ void CReserveManager::SetEpgDBManager(CEpgDBManager* epgDBManager)
 	map<DWORD, CTunerBankCtrl*>::iterator itrCtrl;
 	for( itrCtrl = this->tunerBankMap.begin(); itrCtrl != this->tunerBankMap.end(); itrCtrl++ ){
 		itrCtrl->second->SetEpgDBManager(epgDBManager);
-		itrCtrl->second->SetRecInfoDBManager(&this->recInfoManager);
 	}
 
 	UnLock();
@@ -492,7 +487,17 @@ void CReserveManager::ReloadSetting()
 
 	this->timeSync = GetPrivateProfileInt(L"SET", L"TimeSync", 0, iniAppPath.c_str());
 
-	recInfoText.SetAutoDel(this->autoDelRecInfoNum, this->autoDelRecInfo);
+	recInfoText.SetKeepCount(this->autoDelRecInfo == FALSE ? UINT_MAX : this->autoDelRecInfoNum);
+	recInfoText.SetRecInfoDelFile(GetPrivateProfileInt(L"SET", L"RecInfoDelFile", 0, iniCommonPath.c_str()) != 0);
+	ZeroMemory(buff, sizeof(WCHAR)*512);
+	GetPrivateProfileString(L"SET", L"RecInfoFolder", L"", buff, 512, iniCommonPath.c_str());
+	recInfoText.SetRecInfoFolder(buff);
+
+	this->recInfo2Text.SetKeepCount(GetPrivateProfileInt(L"SET", L"RecInfo2Max", 1000, iniAppPath.c_str()));
+	this->recInfo2DropChk = GetPrivateProfileInt(L"SET", L"RecInfo2DropChk", 15, iniAppPath.c_str());
+	WCHAR buffRecInfo2RegExp[1024];
+	GetPrivateProfileString(L"SET", L"RecInfo2RegExp", L"", buffRecInfo2RegExp, 1024, iniAppPath.c_str());
+	this->recInfo2RegExp = buffRecInfo2RegExp;
 
 	this->useTweet = GetPrivateProfileInt(L"TWITTER", L"use", 0, iniAppPath.c_str());
 	this->useProxy = GetPrivateProfileInt(L"TWITTER", L"useProxy", 0, iniAppPath.c_str());
@@ -521,12 +526,17 @@ void CReserveManager::ReloadSetting()
 			wcscpy_s(proxyInfo.password, this->proxyPWD.size()+1, this->proxyPWD.c_str());
 		}
 	}
-	this->twitterManager.SetProxy(this->useProxy, &proxyInfo);
+	if( this->useTweet == TRUE ){
+		if( this->twitterManager == NULL ){
+			this->twitterManager = new CTwitterManager;
+		}
+		this->twitterManager->SetProxy(this->useProxy, &proxyInfo);
+	}
 
 	map<DWORD, CTunerBankCtrl*>::iterator itr;
 	for(itr = this->tunerBankMap.begin(); itr != this->tunerBankMap.end(); itr++ ){
 		if(this->useTweet == 1 ){
-			itr->second->SetTwitterCtrl(&this->twitterManager);
+			itr->second->SetTwitterCtrl(this->twitterManager);
 		}else{
 			itr->second->SetTwitterCtrl(NULL);
 		}
@@ -916,20 +926,6 @@ UINT WINAPI CReserveManager::SendNotifyStatusThread(LPVOID param)
 	return 0;
 }
 */
-BOOL CReserveManager::ReloadRecInfoData()
-{
-	if( Lock(L"ReloadRecInfoData") == FALSE ) return FALSE;
-	BOOL ret = TRUE;
-
-	recInfoManager.LoadRecInfo();
-	map<DWORD, CTunerBankCtrl*>::iterator itrCtrl;
-	for( itrCtrl = this->tunerBankMap.begin(); itrCtrl != this->tunerBankMap.end(); itrCtrl++ ){
-		itrCtrl->second->SetRecInfoDBManager(&this->recInfoManager);
-	}
-
-	UnLock();
-	return ret;
-}
 
 BOOL CReserveManager::ReloadReserveData()
 {
@@ -946,6 +942,10 @@ BOOL CReserveManager::ReloadReserveData()
 	recInfoFilePath += L"\\";
 	recInfoFilePath += REC_INFO_TEXT_NAME;
 
+	wstring recInfo2FilePath = L"";
+	GetSettingPath(recInfo2FilePath);
+	recInfo2FilePath += L"\\";
+	recInfo2FilePath += REC_INFO2_TEXT_NAME;
 
 	map<DWORD, CReserveInfo*>::iterator itr;
 	for( itr = this->reserveInfoMap.begin(); itr != this->reserveInfoMap.end(); itr++ ){
@@ -954,32 +954,33 @@ BOOL CReserveManager::ReloadReserveData()
 	this->reserveInfoMap.clear();
 	this->reserveInfoIDMap.clear();
 
-	this->recInfoText.ParseRecInfoText(recInfoFilePath.c_str());
+	this->recInfoText.ParseText(recInfoFilePath.c_str());
 	this->chgRecInfo = TRUE;
+
+	this->recInfo2Text.ParseText(recInfo2FilePath.c_str());
 
 	vector<DWORD> deleteList;
 	LONGLONG nowTime = GetNowI64Time();
 
-	ret = this->reserveText.ParseReserveText(reserveFilePath.c_str());
+	ret = this->reserveText.ParseText(reserveFilePath.c_str());
 	if( ret == TRUE ){
-		vector<pair<DWORD, const RESERVE_DATA*> > resList = this->reserveText.GetReserveIDList();
-		vector<pair<DWORD, const RESERVE_DATA*> >::iterator itrData;
-		for( itrData = resList.begin(); itrData != resList.end(); itrData++){
+		map<DWORD, RESERVE_DATA>::const_iterator itrData;
+		for( itrData = this->reserveText.GetMap().begin(); itrData != this->reserveText.GetMap().end(); itrData++){
 			LONGLONG chkEndTime;
-			CalcEntireReserveTime(NULL, &chkEndTime, *itrData->second);
+			CalcEntireReserveTime(NULL, &chkEndTime, itrData->second);
 			chkEndTime -= 60*I64_1SEC;
 
 			if( nowTime < chkEndTime ){
 				CReserveInfo* item = new CReserveInfo;
-				item->SetData(const_cast<RESERVE_DATA*>(itrData->second));
+				item->SetData(const_cast<RESERVE_DATA*>(&itrData->second));
 
 				//サービスサポートしてないチューナー検索
-				if( itrData->second->recSetting.tunerID == 0 ){
+				if( itrData->second.recSetting.tunerID == 0 ){
 					vector<DWORD> idList;
 					if( this->tunerManager.GetNotSupportServiceTuner(
-						itrData->second->originalNetworkID,
-						itrData->second->transportStreamID,
-						itrData->second->serviceID,
+						itrData->second.originalNetworkID,
+						itrData->second.transportStreamID,
+						itrData->second.serviceID,
 						&idList ) == TRUE ){
 							item->SetNGChTunerID(&idList);
 					}
@@ -988,30 +989,30 @@ BOOL CReserveManager::ReloadReserveData()
 					vector<DWORD> idList;
 					if( this->tunerManager.GetEnumID( &idList ) == TRUE ){
 						for( size_t i=0; i<idList.size(); i++ ){
-							if( idList[i] != itrData->second->recSetting.tunerID ){
+							if( idList[i] != itrData->second.recSetting.tunerID ){
 								item->AddNGTunerID(idList[i]);
 							}
 						}
 					}
 				}
 				
-				this->reserveInfoMap.insert(pair<DWORD, CReserveInfo*>(itrData->second->reserveID, item));
+				this->reserveInfoMap.insert(pair<DWORD, CReserveInfo*>(itrData->second.reserveID, item));
 				LONGLONG keyID = _Create64Key2(
-					itrData->second->originalNetworkID,
-					itrData->second->transportStreamID,
-					itrData->second->serviceID,
-					itrData->second->eventID);
-				this->reserveInfoIDMap.insert(pair<LONGLONG, DWORD>(keyID, itrData->second->reserveID));
+					itrData->second.originalNetworkID,
+					itrData->second.transportStreamID,
+					itrData->second.serviceID,
+					itrData->second.eventID);
+				this->reserveInfoIDMap.insert(pair<LONGLONG, DWORD>(keyID, itrData->second.reserveID));
 
 			}else{
 				//時間過ぎているので失敗
-				deleteList.push_back(itrData->second->reserveID);
+				deleteList.push_back(itrData->second.reserveID);
 				REC_FILE_INFO item;
-				item = *itrData->second;
-				if( itrData->second->recSetting.recMode != RECMODE_NO ){
+				item = itrData->second;
+				if( itrData->second.recSetting.recMode != RECMODE_NO ){
 					item.recStatus = REC_END_STATUS_START_ERR;
 					item.comment = L"録画時間に起動していなかった可能性があります";
-					this->recInfoText.AddRecInfo(&item);
+					this->recInfoText.AddRecInfo(item);
 				}
 			}
 		}
@@ -1021,8 +1022,8 @@ BOOL CReserveManager::ReloadReserveData()
 		for( size_t i=0; i<deleteList.size(); i++ ){
 			this->reserveText.DelReserve(deleteList[i]);
 		}
-		this->reserveText.SaveReserveText();
-		this->recInfoText.SaveRecInfoText();
+		this->reserveText.SaveText();
+		this->recInfoText.SaveText();
 		this->chgRecInfo = TRUE;
 	}
 
@@ -1038,66 +1039,6 @@ BOOL CReserveManager::ReloadReserveData()
 		SetThreadPriority( this->bankCheckThread, THREAD_PRIORITY_NORMAL );
 		ResumeThread(this->bankCheckThread);
 	}
-
-	UnLock();
-	return ret;
-}
-
-BOOL CReserveManager::AddLoadReserveData()
-{
-	if( Lock(L"AddLoadReserveData") == FALSE ) return FALSE;
-	BOOL ret = TRUE;
-
-	wstring filePath = L"";
-	GetSettingPath(filePath);
-	filePath += L"\\";
-	filePath += RESERVE_TEXT_NAME;
-
-	ret = this->reserveText.AddParseReserveText(filePath.c_str());
-	if( ret == TRUE ){
-		vector<pair<DWORD, const RESERVE_DATA*> > resList = this->reserveText.GetReserveIDList();
-		vector<pair<DWORD, const RESERVE_DATA*> >::iterator itrData;
-		for( itrData = resList.begin(); itrData != resList.end(); itrData++){
-			map<DWORD, CReserveInfo*>::iterator itrInfo;
-			itrInfo = this->reserveInfoMap.find(itrData->second->reserveID);
-			if( itrInfo == this->reserveInfoMap.end() ){
-				CReserveInfo* item = new CReserveInfo;
-				item->SetData(const_cast<RESERVE_DATA*>(itrData->second));
-
-				//サービスサポートしてないチューナー検索
-				if( itrData->second->recSetting.tunerID == 0){
-					vector<DWORD> idList;
-					if( this->tunerManager.GetNotSupportServiceTuner(
-						itrData->second->originalNetworkID,
-						itrData->second->transportStreamID,
-						itrData->second->serviceID,
-						&idList ) == TRUE ){
-							item->SetNGChTunerID(&idList);
-					}
-				}else{
-					//チューナー固定
-					vector<DWORD> idList;
-					if( this->tunerManager.GetEnumID( &idList ) == TRUE ){
-						for( size_t i=0; i<idList.size(); i++ ){
-							if( idList[i] != itrData->second->recSetting.tunerID ){
-								item->AddNGTunerID(idList[i]);
-							}
-						}
-					}
-				}
-
-				this->reserveInfoMap.insert(pair<DWORD, CReserveInfo*>(itrData->second->reserveID, item));
-				LONGLONG keyID = _Create64Key2(
-					itrData->second->originalNetworkID,
-					itrData->second->transportStreamID,
-					itrData->second->serviceID,
-					itrData->second->eventID);
-				this->reserveInfoIDMap.insert(pair<LONGLONG, DWORD>(keyID, itrData->second->reserveID));
-			}
-		}
-	}
-
-	_SendNotifyUpdate(NOTIFY_UPDATE_RESERVE_INFO);
 
 	UnLock();
 	return ret;
@@ -1162,11 +1103,11 @@ BOOL CReserveManager::GetReserveDataAll(
 			info.tunerID = itrTune->second.tunerID & 0x0000FFFF;
 
 			EPG_EVENT_INFO* epgInfo = NULL;
-			EPGDB_EVENT_INFO* epgDBInfo;
+			EPGDB_EVENT_INFO epgDBInfo;
 			if( this->epgDBManager != NULL && info.EventID != 0xFFFF ){
 				if( this->epgDBManager->SearchEpg(info.ONID, info.TSID, info.SID, info.EventID, &epgDBInfo) == TRUE ){
 					epgInfo = new EPG_EVENT_INFO;
-					CopyEpgInfo(epgInfo, epgDBInfo);
+					CopyEpgInfo(epgInfo, &epgDBInfo);
 				}
 			}
 
@@ -1329,12 +1270,7 @@ BOOL CReserveManager::AddReserveData(
 		return FALSE;
 	}
 
-	wstring filePath = L"";
-	GetSettingPath(filePath);
-	filePath += L"\\";
-	filePath += RESERVE_TEXT_NAME;
-
-	this->reserveText.SaveReserveText(filePath.c_str());
+	this->reserveText.SaveText();
 
 	_ReloadBankMap();
 
@@ -1354,25 +1290,29 @@ BOOL CReserveManager::_AddReserveData(RESERVE_DATA* reserve, BOOL tweet)
 		reserve->recSetting.pittariFlag = 0;
 		reserve->recSetting.tuijyuuFlag = 0;
 	}
-	if( this->reserveText.AddReserve(reserve, &reserveID) == FALSE ){
+	SYSTEMTIME now, endTime;
+	GetLocalTime(&now);
+	GetI64Time(reserve->startTime, reserve->durationSecond, NULL, NULL, &endTime);
+	if( IsBigTime(now, endTime) != FALSE ){
+		//すでに終了している
 		return FALSE;
 	}
-	vector<pair<DWORD, const RESERVE_DATA*> > resList = this->reserveText.GetReserveIDList();
-	vector<pair<DWORD, const RESERVE_DATA*> >::iterator itrData;
-	//既ソートなので2分探索(pair::secondが第2キーであることに注意)
-	itrData = lower_bound(resList.begin(), resList.end(), pair<DWORD, const RESERVE_DATA*>(reserveID, nullptr));
-	if( itrData != resList.end() && itrData->second->reserveID == reserveID ){
-		if( this->reserveInfoMap.find(itrData->second->reserveID) == this->reserveInfoMap.end() ){
-			CReserveInfo* item = new CReserveInfo;
-			item->SetData(const_cast<RESERVE_DATA*>(itrData->second));
+	reserveID = this->reserveText.AddReserve(*reserve);
 
-			if( itrData->second->recSetting.tunerID == 0 ){
+	map<DWORD, RESERVE_DATA>::const_iterator itrData;
+	itrData = this->reserveText.GetMap().find(reserveID);
+	if( itrData != this->reserveText.GetMap().end() ){
+		if( this->reserveInfoMap.find(itrData->second.reserveID) == this->reserveInfoMap.end() ){
+			CReserveInfo* item = new CReserveInfo;
+			item->SetData(const_cast<RESERVE_DATA*>(&itrData->second));
+
+			if( itrData->second.recSetting.tunerID == 0 ){
 				//サービスサポートしてないチューナー検索
 				vector<DWORD> idList;
 				if( this->tunerManager.GetNotSupportServiceTuner(
-					itrData->second->originalNetworkID,
-					itrData->second->transportStreamID,
-					itrData->second->serviceID,
+					itrData->second.originalNetworkID,
+					itrData->second.transportStreamID,
+					itrData->second.serviceID,
 					&idList ) == TRUE ){
 						item->SetNGChTunerID(&idList);
 				}
@@ -1381,23 +1321,23 @@ BOOL CReserveManager::_AddReserveData(RESERVE_DATA* reserve, BOOL tweet)
 				vector<DWORD> idList;
 				if( this->tunerManager.GetEnumID( &idList ) == TRUE ){
 					for( size_t i=0; i<idList.size(); i++ ){
-						if( idList[i] != itrData->second->recSetting.tunerID ){
+						if( idList[i] != itrData->second.recSetting.tunerID ){
 							item->AddNGTunerID(idList[i]);
 						}
 					}
 				}
 			}
 
-			this->reserveInfoMap.insert(pair<DWORD, CReserveInfo*>(itrData->second->reserveID, item));
+			this->reserveInfoMap.insert(pair<DWORD, CReserveInfo*>(itrData->second.reserveID, item));
 			LONGLONG keyID = _Create64Key2(
-				itrData->second->originalNetworkID,
-				itrData->second->transportStreamID,
-				itrData->second->serviceID,
-				itrData->second->eventID);
-			this->reserveInfoIDMap.insert(pair<LONGLONG, DWORD>(keyID, itrData->second->reserveID));
+				itrData->second.originalNetworkID,
+				itrData->second.transportStreamID,
+				itrData->second.serviceID,
+				itrData->second.eventID);
+			this->reserveInfoIDMap.insert(pair<LONGLONG, DWORD>(keyID, itrData->second.reserveID));
 
-			if( tweet == TRUE && itrData->second->recSetting.recMode != RECMODE_NO){
-				RESERVE_DATA resTweet = *itrData->second;
+			if( tweet == TRUE && itrData->second.recSetting.recMode != RECMODE_NO){
+				RESERVE_DATA resTweet = itrData->second;
 				_SendTweet(TW_ADD_RESERVE, &resTweet, NULL, NULL);
 			}
 		}
@@ -1432,12 +1372,7 @@ BOOL CReserveManager::ChgReserveData(
 		return FALSE;
 	}
 
-	wstring filePath = L"";
-	GetSettingPath(filePath);
-	filePath += L"\\";
-	filePath += RESERVE_TEXT_NAME;
-
-	this->reserveText.SaveReserveText(filePath.c_str());
+	this->reserveText.SaveText();
 
 	_ReloadBankMap();
 
@@ -1558,22 +1493,21 @@ BOOL CReserveManager::_ChgReserveData(RESERVE_DATA* reserve, BOOL chgTime)
 		setData = *reserve;
 	}
 
-	this->reserveText.ChgReserve(&setData);
+	this->reserveText.ChgReserve(setData);
 	if( chgCtrl == FALSE ){
 		itrInfo->second->SetData(&setData);
 	}
 
 	//EventID変わってる可能性あるのでリスト再構築
 	this->reserveInfoIDMap.clear();
-	vector<pair<DWORD, const RESERVE_DATA*> > resList = this->reserveText.GetReserveIDList();
-	vector<pair<DWORD, const RESERVE_DATA*> >::iterator itrData;
-	for( itrData = resList.begin(); itrData != resList.end(); itrData++){
+	map<DWORD, RESERVE_DATA>::const_iterator itrData;
+	for( itrData = this->reserveText.GetMap().begin(); itrData != this->reserveText.GetMap().end(); itrData++){
 		LONGLONG keyID = _Create64Key2(
-			itrData->second->originalNetworkID,
-			itrData->second->transportStreamID,
-			itrData->second->serviceID,
-			itrData->second->eventID);
-		this->reserveInfoIDMap.insert(pair<LONGLONG, DWORD>(keyID, itrData->second->reserveID));
+			itrData->second.originalNetworkID,
+			itrData->second.transportStreamID,
+			itrData->second.serviceID,
+			itrData->second.eventID);
+		this->reserveInfoIDMap.insert(pair<LONGLONG, DWORD>(keyID, itrData->second.reserveID));
 	}
 
 
@@ -1595,12 +1529,7 @@ BOOL CReserveManager::DelReserveData(
 	//予約削除
 	_DelReserveData(reserveList);
 
-	wstring filePath = L"";
-	GetSettingPath(filePath);
-	filePath += L"\\";
-	filePath += RESERVE_TEXT_NAME;
-
-	this->reserveText.SaveReserveText(filePath.c_str());
+	this->reserveText.SaveText();
 
 	_ReloadBankMap();
 
@@ -1659,7 +1588,6 @@ BOOL CReserveManager::_DelReserveData(
 			this->reserveInfoMap.erase(itr);
 		}
 	}
-	this->reserveText.SwapMap();
 	map<DWORD, CReserveInfo*>(this->reserveInfoMap).swap(this->reserveInfoMap);
 	return TRUE;
 }
@@ -1714,14 +1642,17 @@ void CReserveManager::_ReloadBankMap()
 	CheckOverTimeReserve();
 
 	if( this->autoDel == TRUE ){
-		CCheckRecFile chkFile;
-		chkFile.SetCheckFolder(&this->delFolderList);
-		chkFile.SetDeleteExt(&this->delExtList);
+		vector<RESERVE_DATA> chkReserveMap;
+		map<DWORD, CReserveInfo*>::iterator itrRes;
+		for( itrRes = this->reserveInfoMap.begin(); itrRes != this->reserveInfoMap.end(); itrRes++ ){
+			chkReserveMap.resize(chkReserveMap.size() + 1);
+			itrRes->second->GetData(&chkReserveMap.back());
+		}
 		wstring defRecPath = L"";
 		GetRecFolderPath(defRecPath);
 		map<wstring, wstring> protectFile;
 		recInfoText.GetProtectFiles(&protectFile);
-		chkFile.CheckFreeSpace(&this->reserveInfoMap, defRecPath, &protectFile);
+		CreateDiskFreeSpace(chkReserveMap, defRecPath, protectFile, this->delFolderList, this->delExtList);
 	}
 
 	switch(this->reloadBankMapAlgo){
@@ -2204,15 +2135,15 @@ void CReserveManager::CheckOverTimeReserve()
 						item.recStatus = REC_END_STATUS_OPEN_ERR;
 						item.comment = L"チューナーのオープンに失敗しました";
 					}
-					this->recInfoText.AddRecInfo(&item);
+					this->recInfoText.AddRecInfo(item);
 				}
 			}
 		}
 	}
 	if( deleteList.size() > 0 ){
 		_DelReserveData(&deleteList);
-		this->reserveText.SaveReserveText();
-		this->recInfoText.SaveRecInfoText();
+		this->reserveText.SaveText();
+		this->recInfoText.SaveText();
 		this->chgRecInfo = TRUE;
 	}
 }
@@ -2426,14 +2357,17 @@ UINT WINAPI CReserveManager::BankCheckThread(LPVOID param)
 			countAutoDelChk++;
 			if( countAutoDelChk > 10 ){
 				if( sys->Lock(L"BankCheckThread5") == TRUE){
-					CCheckRecFile chkFile;
-					chkFile.SetCheckFolder(&sys->delFolderList);
-					chkFile.SetDeleteExt(&sys->delExtList);
+					vector<RESERVE_DATA> chkReserveMap;
+					map<DWORD, CReserveInfo*>::iterator itrRes;
+					for( itrRes = sys->reserveInfoMap.begin(); itrRes != sys->reserveInfoMap.end(); itrRes++ ){
+						chkReserveMap.resize(chkReserveMap.size() + 1);
+						itrRes->second->GetData(&chkReserveMap.back());
+					}
 					wstring defRecPath = L"";
 					GetRecFolderPath(defRecPath);
 					map<wstring, wstring> protectFile;
 					sys->recInfoText.GetProtectFiles(&protectFile);
-					chkFile.CheckFreeSpace(&sys->reserveInfoMap, defRecPath, &protectFile);
+					CreateDiskFreeSpace(chkReserveMap, defRecPath, protectFile, sys->delFolderList, sys->delExtList);
 					sys->UnLock();
 					countAutoDelChk = 0;
 				}
@@ -2458,26 +2392,33 @@ UINT WINAPI CReserveManager::BankCheckThread(LPVOID param)
 				}
 				if( (sendPreEpgCap == FALSE) && ((GetNowI64Time()+60*I64_1SEC) > capTime) ){
 					BOOL bUseTuner = FALSE;
-					vector<DWORD> tunerIDList;
+					vector<pair<vector<DWORD>, WORD>> tunerIDList;
 					sys->tunerManager.GetEnumEpgCapTuner(&tunerIDList);
 					map<DWORD, CTunerBankCtrl*>::iterator itrCtrl;
 					for( size_t i=0; i<tunerIDList.size(); i++ ){
-						itrCtrl = sys->tunerBankMap.find(tunerIDList[i]);
-						if( itrCtrl != sys->tunerBankMap.end() ){
-							if( itrCtrl->second->IsEpgCapWorking() == FALSE ){
+						WORD epgCapMax = tunerIDList[i].second;
+						WORD ngCapCount = 0;
+						for( size_t j=0; j<tunerIDList[i].first.size() && epgCapMax > 0; j++ ){
+							itrCtrl = sys->tunerBankMap.find(tunerIDList[i].first[j]);
+							if( itrCtrl != sys->tunerBankMap.end() && itrCtrl->second->IsEpgCapWorking() == FALSE ){
 								itrCtrl->second->ClearEpgCapItem();
 								if( sys->ngCapMin != 0 ){
 									if( itrCtrl->second->IsEpgCapOK(sys->ngCapMin) == FALSE ){
 										//実行しちゃいけない
-										bUseTuner = FALSE;
-										break;
+										ngCapCount++;
+										continue;
 									}
 								}
 								if( itrCtrl->second->IsEpgCapOK(sys->ngCapTunerMin) == TRUE ){
 									//使えるチューナー
 									bUseTuner = TRUE;
+									epgCapMax--;
 								}
 							}
+						}
+						if( tunerIDList[i].second > tunerIDList[i].first.size() - ngCapCount ){
+							bUseTuner = FALSE;
+							break;
 						}
 					}
 
@@ -2611,6 +2552,17 @@ void CReserveManager::CheckEndReserve()
 			map<DWORD, END_RESERVE_INFO*>::iterator itrEnd;
 			for( itrEnd = reserveMap.begin(); itrEnd != reserveMap.end(); itrEnd++){
 				//録画済みとして登録
+				if( itrEnd->second->endType == REC_END_STATUS_NORMAL &&
+				    (__int64)itrEnd->second->drop < this->recInfo2DropChk &&
+				    itrEnd->second->epgEventName.empty() == false ){
+					PARSE_REC_INFO2_ITEM item;
+					item.originalNetworkID = itrEnd->second->epgOriginalNetworkID;
+					item.transportStreamID = itrEnd->second->epgTransportStreamID;
+					item.serviceID = itrEnd->second->epgServiceID;
+					item.startTime = itrEnd->second->epgStartTime;
+					item.eventName = itrEnd->second->epgEventName;
+					this->recInfo2Text.Add(item);
+				}
 				RESERVE_DATA data;
 				itrEnd->second->reserveInfo->GetData(&data);
 				REC_FILE_INFO item;
@@ -2660,7 +2612,7 @@ void CReserveManager::CheckEndReserve()
 					item.recStatus = itrEnd->second->endType;
 					item.comment = L"録画中にキャンセルされた可能性があります";
 				}
-				this->recInfoText.AddRecInfo(&item);
+				this->recInfoText.AddRecInfo(item);
 				BOOL tweet = TRUE;
 				if( recEndTweetErr == TRUE ){
 					if(item.recStatus == REC_END_STATUS_NORMAL ){
@@ -2709,20 +2661,9 @@ void CReserveManager::CheckEndReserve()
 
 	if( needSave == TRUE ){
 		//情報ファイルの更新
-		wstring filePath = L"";
-		GetSettingPath(filePath);
-		filePath += L"\\";
-		filePath += RESERVE_TEXT_NAME;
-
-		this->reserveText.SaveReserveText(filePath.c_str());
-
-		wstring recFilePath = L"";
-		GetSettingPath(recFilePath);
-		recFilePath += L"\\";
-		recFilePath += REC_INFO_TEXT_NAME;
-
-		this->recInfoText.SaveRecInfoText(recFilePath.c_str());
-		this->recInfoManager.SaveRecInfo();
+		this->reserveText.SaveText();
+		this->recInfoText.SaveText();
+		this->recInfo2Text.SaveText();
 		this->chgRecInfo = TRUE;
 
 		_SendNotifyUpdate(NOTIFY_UPDATE_RESERVE_INFO);
@@ -2821,7 +2762,7 @@ void CReserveManager::CheckErrReserve()
 				itrNG->second->reserveInfo->GetData(&data);
 				data.comment = L"チューナーのオープンに失敗しました";
 
-				this->reserveText.ChgReserve(&data);
+				this->reserveText.ChgReserve(data);
 				itrNG->second->reserveInfo->SetData(&data);
 
 				suspendMode = data.recSetting.suspendMode;
@@ -3235,12 +3176,7 @@ void CReserveManager::CheckTuijyu()
 		chgReserve = TRUE;
 	}
 	if( chgReserve == TRUE ){
-		wstring filePath = L"";
-		GetSettingPath(filePath);
-		filePath += L"\\";
-		filePath += RESERVE_TEXT_NAME;
-
-		this->reserveText.SaveReserveText(filePath.c_str());
+		this->reserveText.SaveText();
 
 		_ReloadBankMap();
 
@@ -3400,8 +3336,8 @@ BOOL CReserveManager::CheckChgEventID(EPGDB_EVENT_INFO* info, RESERVE_DATA* data
 			Replace(title1, L" ", L"");
 			Replace(title2, L" ", L"");
 			//比較用に文字調整
-			this->chgText.ChgText(title1);
-			this->chgText.ChgText(title2);
+			this->epgDBManager->ConvertSearchText(title1);
+			this->epgDBManager->ConvertSearchText(title2);
 
 			//あいまい検索
 			DWORD hitCount = 0;
@@ -3611,7 +3547,7 @@ BOOL CReserveManager::CheckNotFindChgEvent(RESERVE_DATA* data, CTunerBankCtrl* c
 			item.scrambles = 0;
 			item.recStatus = REC_END_STATUS_NOT_FIND_6H;
 			item.comment = L"指定時間番組情報が見つかりませんでした";
-			this->recInfoText.AddRecInfo(&item);
+			this->recInfoText.AddRecInfo(item);
 			_SendTweet(TW_REC_END, &item, NULL, NULL);
 			_SendNotifyRecEnd(&item);
 
@@ -3684,9 +3620,9 @@ BOOL CReserveManager::CheckEventRelay(EPGDB_EVENT_INFO* info, RESERVE_DATA* data
 				info->eventRelayInfo->eventDataList[i].service_id,
 				info->eventRelayInfo->eventDataList[i].event_id
 				);
-			map<LONGLONG, CH_DATA5>::iterator itrCh;
-			itrCh = this->chUtil.chList.find(chKey);
-			if( itrCh != this->chUtil.chList.end() ){
+			map<LONGLONG, CH_DATA5>::const_iterator itrCh;
+			itrCh = this->chUtil.GetMap().find(chKey);
+			if( itrCh != this->chUtil.GetMap().end() ){
 				//使用できるチャンネル発見
 				_OutputDebugString(L"Service find : %s", 
 					itrCh->second.serviceName.c_str()
@@ -3722,14 +3658,14 @@ BOOL CReserveManager::CheckEventRelay(EPGDB_EVENT_INFO* info, RESERVE_DATA* data
 					}
 				}
 				if( errEnd == FALSE ){
-					multimap<wstring, REC_FILE_INFO*>::iterator itrRecInfo;
-					for( itrRecInfo = this->recInfoText.recInfoMap.begin(); itrRecInfo != this->recInfoText.recInfoMap.end(); itrRecInfo++ ){
-						if( itrRecInfo->second->originalNetworkID == info->eventRelayInfo->eventDataList[i].original_network_id &&
-							itrRecInfo->second->transportStreamID == info->eventRelayInfo->eventDataList[i].transport_stream_id &&
-							itrRecInfo->second->serviceID == info->eventRelayInfo->eventDataList[i].service_id &&
-							itrRecInfo->second->eventID == info->eventRelayInfo->eventDataList[i].event_id 
+					map<DWORD, REC_FILE_INFO>::const_iterator itrRecInfo;
+					for( itrRecInfo = this->recInfoText.GetMap().begin(); itrRecInfo != this->recInfoText.GetMap().end(); itrRecInfo++ ){
+						if( itrRecInfo->second.originalNetworkID == info->eventRelayInfo->eventDataList[i].original_network_id &&
+							itrRecInfo->second.transportStreamID == info->eventRelayInfo->eventDataList[i].transport_stream_id &&
+							itrRecInfo->second.serviceID == info->eventRelayInfo->eventDataList[i].service_id &&
+							itrRecInfo->second.eventID == info->eventRelayInfo->eventDataList[i].event_id 
 							){
-								if( ConvertI64Time(itrRecInfo->second->startTime) == GetSumTime(info->start_time, info->durationSec)){
+								if( ConvertI64Time(itrRecInfo->second.startTime) == GetSumTime(info->start_time, info->durationSec)){
 									//エラーで録画終了になった？
 									find = TRUE;
 									break;
@@ -3860,7 +3796,7 @@ BOOL CReserveManager::IsEnableSuspend(
 	if( this->enableSetSuspendMode == 0xFF && this->enableSetRebootFlag == 0xFF ){
 		ret = FALSE;
 	}else{
-		if( this->twitterManager.GetTweetQue() == 0){
+		if( this->useTweet != TRUE || this->twitterManager->GetTweetQue() == 0){
 			*suspendMode = this->enableSetSuspendMode;
 			*rebootFlag = this->enableSetRebootFlag;
 
@@ -4068,7 +4004,7 @@ BOOL CReserveManager::IsFindShareTSFile()
 				FILE_INFO_3* info = (FILE_INFO_3*)(bufptr+(sizeof(FILE_INFO_3)*i));
 
 				wstring filePath = info->fi3_pathname;
-				_OutputDebugString(filePath.c_str());
+				OutputDebugString(filePath.c_str());
 				if( IsExt(filePath, L".ts") == TRUE ){
 					ret = TRUE;
 				}
@@ -4083,22 +4019,32 @@ BOOL CReserveManager::GetSleepReturnTime(
 	LONGLONG* returnTime
 	)
 {
-	if( returnTime == NULL ){
+	if( returnTime == NULL || Lock(L"GetSleepReturnTime") == FALSE ){
 		return FALSE;
 	}
+	//最も近い予約開始時刻を得る
 	LONGLONG nextRec = 0;
-	vector<pair<LONGLONG, const RESERVE_DATA*> > resList = this->reserveText.GetReserveList(TRUE, this->defStartMargine);
-	vector<pair<LONGLONG, const RESERVE_DATA*> >::iterator itr;
-	for( itr = resList.begin(); itr != resList.end(); itr++ ){
-		if( itr->second->recSetting.recMode != RECMODE_NO ){
-			CalcEntireReserveTime(&nextRec, NULL, *itr->second);
-			break;
+	map<DWORD, RESERVE_DATA>::const_iterator itr;
+	for( itr = this->reserveText.GetMap().begin(); itr != this->reserveText.GetMap().end(); itr++ ){
+		if( itr->second.recSetting.recMode != RECMODE_NO ){
+			LONGLONG startTime = ConvertI64Time(itr->second.startTime);
+			LONGLONG endTime = startTime + itr->second.durationSecond * I64_1SEC;
+			LONGLONG startMargin = this->defStartMargine * I64_1SEC;
+			if( itr->second.recSetting.useMargineFlag == TRUE ){
+				startMargin = itr->second.recSetting.startMargine * I64_1SEC;
+			}
+			//開始マージンは元の予約終了時刻を超えて負であってはならない
+			startTime -= max(startMargin, startTime - endTime);
+			if( nextRec == 0 || nextRec > startTime ){
+				nextRec = startTime;
+			}
 		}
 	}
 
 	LONGLONG epgcapTime = 0;
 	GetNextEpgcapTime(&epgcapTime, 0);
 
+	UnLock();
 
 	if( nextRec == 0 && epgcapTime == 0 ){
 		return FALSE;
@@ -4175,11 +4121,9 @@ BOOL CReserveManager::GetRecFileInfoAll(
 	if( Lock(L"GetRecFileInfoAll") == FALSE ) return FALSE;
 	BOOL ret = TRUE;
 
-	multimap<wstring, REC_FILE_INFO*>::iterator itr;
-	for( itr = this->recInfoText.recInfoMap.begin(); itr != this->recInfoText.recInfoMap.end(); itr++ ){
-		REC_FILE_INFO item;
-		item = *(itr->second);
-		infoList->push_back(item);
+	map<DWORD, REC_FILE_INFO>::const_iterator itr;
+	for( itr = this->recInfoText.GetMap().begin(); itr != this->recInfoText.GetMap().end(); itr++ ){
+		infoList->push_back(itr->second);
 	}
 
 	UnLock();
@@ -4202,12 +4146,7 @@ BOOL CReserveManager::DelRecFileInfo(
 		this->recInfoText.DelRecInfo((*idList)[i]);
 	}
 
-	wstring filePath = L"";
-	GetSettingPath(filePath);
-	filePath += L"\\";
-	filePath += REC_INFO_TEXT_NAME;
-
-	this->recInfoText.SaveRecInfoText(filePath.c_str());
+	this->recInfoText.SaveText();
 	this->chgRecInfo = TRUE;
 
 	_SendNotifyUpdate(NOTIFY_UPDATE_REC_INFO);
@@ -4232,12 +4171,7 @@ BOOL CReserveManager::ChgProtectRecFileInfo(
 		this->recInfoText.ChgProtectRecInfo((*infoList)[i].id, (*infoList)[i].protectFlag);
 	}
 
-	wstring filePath = L"";
-	GetSettingPath(filePath);
-	filePath += L"\\";
-	filePath += REC_INFO_TEXT_NAME;
-
-	this->recInfoText.SaveRecInfoText(filePath.c_str());
+	this->recInfoText.SaveText();
 	this->chgRecInfo = TRUE;
 
 	_SendNotifyUpdate(NOTIFY_UPDATE_REC_INFO);
@@ -4269,8 +4203,8 @@ BOOL CReserveManager::_StartEpgCap()
 
 	//まず取得対象となるサービスの一覧を抽出
 	map<DWORD, CH_DATA5> serviceList;
-	map<LONGLONG, CH_DATA5>::iterator itrCh;
-	for( itrCh = chSet5.chList.begin(); itrCh != chSet5.chList.end(); itrCh++ ){
+	map<LONGLONG, CH_DATA5>::const_iterator itrCh;
+	for( itrCh = chSet5.GetMap().begin(); itrCh != chSet5.GetMap().end(); itrCh++ ){
 		if( itrCh->second.epgCapFlag == TRUE ){
 			DWORD key = ((DWORD)itrCh->second.originalNetworkID)<<16 | itrCh->second.transportStreamID;
 			map<DWORD, CH_DATA5>::iterator itrIn;
@@ -4282,27 +4216,34 @@ BOOL CReserveManager::_StartEpgCap()
 	}
 
 	//利用可能なチューナーの抽出
-	vector<DWORD> tunerIDList;
+	vector<pair<vector<DWORD>, WORD>> tunerIDList;
 	this->tunerManager.GetEnumEpgCapTuner(&tunerIDList);
 
 	map<DWORD, CTunerBankCtrl*> epgCapCtrl;
 	map<DWORD, CTunerBankCtrl*>::iterator itrCtrl;
 	for( size_t i=0; i<tunerIDList.size(); i++ ){
-		itrCtrl = this->tunerBankMap.find(tunerIDList[i]);
-		if( itrCtrl != this->tunerBankMap.end() ){
-			if( itrCtrl->second->IsEpgCapWorking() == FALSE ){
+		WORD epgCapMax = tunerIDList[i].second;
+		WORD ngCapCount = 0;
+		for( size_t j=0; j<tunerIDList[i].first.size() && epgCapMax > 0; j++ ){
+			itrCtrl = this->tunerBankMap.find(tunerIDList[i].first[j]);
+			if( itrCtrl != this->tunerBankMap.end() && itrCtrl->second->IsEpgCapWorking() == FALSE ){
 				itrCtrl->second->ClearEpgCapItem();
 				if( ngCapMin != 0 ){
 					if( itrCtrl->second->IsEpgCapOK(this->ngCapMin) == FALSE ){
 						//実行しちゃいけない
-						return FALSE;
+						ngCapCount++;
+						continue;
 					}
 				}
 				if( itrCtrl->second->IsEpgCapOK(this->ngCapTunerMin) == TRUE ){
 					//使えるチューナー
 					epgCapCtrl.insert(pair<DWORD, CTunerBankCtrl*>(itrCtrl->first, itrCtrl->second));
+					epgCapMax--;
 				}
 			}
+		}
+		if( tunerIDList[i].second > tunerIDList[i].first.size() - ngCapCount ){
+			return FALSE;
 		}
 	}
 	if( epgCapCtrl.size() == 0 ){
@@ -4598,9 +4539,7 @@ BOOL CReserveManager::SetNWTVCh(
 	}
 
 	BOOL findPID = FALSE;
-	CTunerCtrl ctrl;
-	vector<DWORD> pidList;
-	ctrl.GetOpenExe(L"EpgDataCap_Bon.exe", &pidList);
+	vector<DWORD> pidList = _FindPidListByExeName(L"EpgDataCap_Bon.exe");
 	for( size_t i=0; i<pidList.size(); i++ ){
 		if( pidList[i] == this->NWTVPID ){
 			findPID = TRUE;
@@ -4640,7 +4579,6 @@ BOOL CReserveManager::SetNWTVCh(
 	}
 	if( this->NWTVPID == 0 ){
 
-		ctrl.SetExePath(this->recExePath.c_str());
 		DWORD PID = 0;
 		BOOL noNW = FALSE;
 		if( this->NWTVUDP == FALSE && this->NWTVTCP == FALSE ){
@@ -4650,7 +4588,7 @@ BOOL CReserveManager::SetNWTVCh(
 		if( this->notifyManager != NULL ){
 			this->notifyManager->GetRegistGUI(&registGUIMap);
 		}
-		if( ctrl.OpenExe(bonDriver, -1, TRUE, TRUE, noNW, registGUIMap, &PID, this->NWTVUDP, this->NWTVTCP, 3) == TRUE ){
+		if( CTunerBankCtrl::OpenTunerExe(this->recExePath.c_str(), bonDriver.c_str(), -1, TRUE, TRUE, noNW, this->NWTVUDP, this->NWTVTCP, 3, registGUIMap, &PID) == TRUE ){
 			this->NWTVPID = PID;
 			ret = TRUE;
 
@@ -4738,7 +4676,7 @@ void CReserveManager::_SendTweet(
 	)
 {
 	if( this->useTweet == TRUE ){
-		this->twitterManager.SendTweet(mode, param1, param2, param3);
+		this->twitterManager->SendTweet(mode, param1, param2, param3);
 	}
 }
 
@@ -4954,12 +4892,7 @@ void CReserveManager::CheckNWSrvResCoop()
 		}
 	}
 	if( chgRes == TRUE ){
-		wstring filePath = L"";
-		GetSettingPath(filePath);
-		filePath += L"\\";
-		filePath += RESERVE_TEXT_NAME;
-
-		this->reserveText.SaveReserveText(filePath.c_str());
+		this->reserveText.SaveText();
 
 		_ReloadBankMap();
 
@@ -4977,8 +4910,8 @@ void CReserveManager::GetSrvCoopEpgList(vector<wstring>* fileList)
 	BOOL addCS2 = FALSE;
 
 	map<wstring, wstring> chkMap;
-	map<LONGLONG, CH_DATA5>::iterator itr;
-	for( itr = chUtil.chList.begin(); itr != chUtil.chList.end(); itr++ ){
+	map<LONGLONG, CH_DATA5>::const_iterator itr;
+	for( itr = chUtil.GetMap().begin(); itr != chUtil.GetMap().end(); itr++ ){
 		if( itr->second.originalNetworkID == 0x0004 && addBS == FALSE ){
 			chkMap.insert( pair<wstring,wstring>(L"0004FFFF_epg.dat", L"0004FFFF_epg.dat") );
 			addBS = TRUE;
@@ -5004,9 +4937,42 @@ void CReserveManager::GetSrvCoopEpgList(vector<wstring>* fileList)
 BOOL CReserveManager::IsFindRecEventInfo(EPGDB_EVENT_INFO* info, WORD chkDay)
 {
 	if( Lock(L"IsFindRecEventInfo") == FALSE ) return FALSE;
-	BOOL ret = TRUE;
+	BOOL ret = FALSE;
 
-	ret = recInfoManager.IsFindTitleInfo(info, chkDay);
+	CoInitialize(NULL);
+	{
+		IRegExpPtr regExp;
+		regExp.CreateInstance(CLSID_RegExp);
+		if( regExp != NULL && info->shortInfo != NULL ){
+			wstring infoEventName = info->shortInfo->event_name;
+			if( this->recInfo2RegExp.empty() == false ){
+				regExp->PutGlobal(VARIANT_TRUE);
+				regExp->PutPattern(_bstr_t(this->recInfo2RegExp.c_str()));
+				_bstr_t rpl = regExp->Replace(_bstr_t(infoEventName.c_str()), _bstr_t());
+				infoEventName = (LPCWSTR)rpl == NULL ? L"" : (LPCWSTR)rpl;
+			}
+			if( infoEventName.empty() == false && info->StartTimeFlag != 0 ){
+				map<DWORD, PARSE_REC_INFO2_ITEM>::const_iterator itr;
+				for( itr = this->recInfo2Text.GetMap().begin(); itr != this->recInfo2Text.GetMap().end(); itr++ ){
+					if( itr->second.originalNetworkID == info->original_network_id &&
+					    itr->second.transportStreamID == info->transport_stream_id &&
+					    itr->second.serviceID == info->service_id &&
+					    ConvertI64Time(itr->second.startTime) + chkDay*24*60*60*I64_1SEC > ConvertI64Time(info->start_time) ){
+						wstring eventName = itr->second.eventName;
+						if( this->recInfo2RegExp.empty() == false ){
+							_bstr_t rpl = regExp->Replace(_bstr_t(eventName.c_str()), _bstr_t());
+							eventName = (LPCWSTR)rpl == NULL ? L"" : (LPCWSTR)rpl;
+						}
+						if( infoEventName == eventName ){
+							ret = TRUE;
+							break;
+						}
+					}
+				}
+			}
+		}
+	}
+	CoUninitialize();
 
 	UnLock();
 	return ret;
@@ -5047,4 +5013,111 @@ BOOL CReserveManager::IsRecInfoChg()
 
 	UnLock();
 	return ret;
+}
+
+void CReserveManager::CreateDiskFreeSpace(
+	const vector<RESERVE_DATA>& chkReserve,
+	const wstring& defRecFolder,
+	const map<wstring, wstring>& protectFile,
+	const vector<wstring>& delFolderList,
+	const vector<wstring>& delExtList
+	)
+{
+	//ファイル削除可能なフォルダをドライブごとに仕分け
+	map<wstring, pair<ULONGLONG, vector<wstring>>> mountMap;
+	for( size_t i = 0; i < delFolderList.size(); i++ ){
+		wstring mountPath;
+		GetChkDrivePath(delFolderList[i], mountPath);
+		std::transform(mountPath.begin(), mountPath.end(), mountPath.begin(), toupper);
+		map<wstring, pair<ULONGLONG, vector<wstring>>>::iterator itr = mountMap.find(mountPath);
+		if( itr == mountMap.end() ){
+			pair<wstring, pair<ULONGLONG, vector<wstring>>> item;
+			item.first = mountPath;
+			item.second.first = 0;
+			itr = mountMap.insert(item).first;
+		}
+		itr->second.second.push_back(delFolderList[i]);
+	}
+
+	//直近で必要になりそうな空き領域を概算する
+	LONGLONG now = GetNowI64Time();
+	for( size_t i = 0; i < chkReserve.size(); i++ ){
+		if( chkReserve[i].recSetting.recMode != RECMODE_NO &&
+		    chkReserve[i].recSetting.recMode != RECMODE_VIEW &&
+		    now < ConvertI64Time(chkReserve[i].startTime) && ConvertI64Time(chkReserve[i].startTime) < now + 2*60*60*I64_1SEC ){
+			//録画開始2時間前までの予約
+			vector<wstring> recFolderList;
+			if( chkReserve[i].recSetting.recFolderList.empty() ){
+				//デフォルト
+				recFolderList.push_back(defRecFolder);
+			}else{
+				//複数指定あり
+				for( size_t j = 0; j < chkReserve[i].recSetting.recFolderList.size(); j++ ){
+					recFolderList.push_back(chkReserve[i].recSetting.recFolderList[j].recFolder);
+				}
+			}
+			for( size_t j = 0; j < recFolderList.size(); j++ ){
+				wstring mountPath;
+				GetChkDrivePath(recFolderList[j], mountPath);
+				std::transform(mountPath.begin(), mountPath.end(), mountPath.begin(), toupper);
+				map<wstring, pair<ULONGLONG, vector<wstring>>>::iterator itr = mountMap.find(mountPath);
+				if( itr != mountMap.end() ){
+					DWORD bitrate = 0;
+					_GetBitrate(chkReserve[i].originalNetworkID, chkReserve[i].transportStreamID, chkReserve[i].serviceID, &bitrate);
+					itr->second.first += (ULONGLONG)(bitrate / 8 * 1000) * chkReserve[i].durationSecond;
+				}
+			}
+		}
+	}
+
+	//ドライブレベルでのチェック
+	map<wstring, pair<ULONGLONG, vector<wstring>>>::const_iterator itr;
+	for( itr = mountMap.begin(); itr != mountMap.end(); itr++ ){
+		ULARGE_INTEGER freeBytes;
+		if( itr->second.first > 0 && GetDiskFreeSpaceEx(itr->first.c_str(), &freeBytes, NULL, NULL) != FALSE && freeBytes.QuadPart < itr->second.first ){
+			//ドライブにある古いTS順に必要なだけ消す
+			LONGLONG needFreeSize = itr->second.first - freeBytes.QuadPart;
+			multimap<LONGLONG, pair<ULONGLONG, wstring>> tsFileMap;
+			for( size_t i = 0; i < itr->second.second.size(); i++ ){
+				wstring delFolder = itr->second.second[i];
+				ChkFolderPath(delFolder);
+				WIN32_FIND_DATA findData;
+				HANDLE hFind = FindFirstFile((delFolder + L"\\*.ts").c_str(), &findData);
+				if( hFind != INVALID_HANDLE_VALUE ){
+					do{
+						if( (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0 && IsExt(findData.cFileName, L".ts") != FALSE ){
+							pair<LONGLONG, pair<ULONGLONG, wstring>> item;
+							item.first = (LONGLONG)findData.ftCreationTime.dwHighDateTime << 32 | findData.ftCreationTime.dwLowDateTime;
+							item.second.first = (ULONGLONG)findData.nFileSizeHigh << 32 | findData.nFileSizeLow;
+							item.second.second = delFolder + L"\\" + findData.cFileName;
+							tsFileMap.insert(item);
+						}
+					}while( FindNextFile(hFind, &findData) );
+					FindClose(hFind);
+				}
+			}
+			while( needFreeSize > 0 && tsFileMap.empty() == false ){
+				wstring delPath = tsFileMap.begin()->second.second;
+				wstring delPathUpper = delPath;
+				std::transform(delPathUpper.begin(), delPathUpper.end(), delPathUpper.begin(), toupper);
+				map<wstring, wstring>::const_iterator itrP = protectFile.find(delPathUpper);
+				if( itrP != protectFile.end() ){
+					_OutputDebugString(L"★No Delete(Protected) : %s", delPath.c_str());
+				}else{
+					DeleteFile(delPath.c_str());
+					needFreeSize -= tsFileMap.begin()->second.first;
+					_OutputDebugString(L"★Auto Delete2 : %s", delPath.c_str());
+					for( size_t i = 0 ; i < delExtList.size(); i++ ){
+						wstring delFolder;
+						wstring delTitle;
+						GetFileFolder(delPath, delFolder);
+						GetFileTitle(delPath, delTitle);
+						DeleteFile((delFolder + L"\\" + delTitle + delExtList[i]).c_str());
+						_OutputDebugString(L"★Auto Delete2 : %s", (delFolder + L"\\" + delTitle + delExtList[i]).c_str());
+					}
+				}
+				tsFileMap.erase(tsFileMap.begin());
+			}
+		}
+	}
 }

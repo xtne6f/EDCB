@@ -8,7 +8,7 @@ CFileStreamingUtil::CFileStreamingUtil(void)
 	this->udpIP = 0;
 
     this->sizeChkThread = NULL;
-    this->sizeChkStopEvent = _CreateEvent(FALSE, FALSE, NULL);
+    this->sizeChkStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 }
 
 

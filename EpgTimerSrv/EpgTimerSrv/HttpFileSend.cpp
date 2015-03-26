@@ -3,7 +3,7 @@
 
 #include "../../Common/StringUtil.h"
 #include "../../Common/PathUtil.h"
-#include "../../Common/ParseContentTypeText.h"
+#include "../../Common/ParseTextInstances.h"
 #include "../../Common/ErrDef.h"
 
 typedef struct _RANGE_ITEM{
@@ -237,7 +237,7 @@ int CHttpFileSend::SendFile(wstring filePath, __int64 offset, __int64 endPos, SO
 {
 	int ret = NO_ERR;
 
-	HANDLE hFile = _CreateFile2( filePath.c_str(), GENERIC_READ, FILE_SHARE_READ, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
+	HANDLE hFile = CreateFile( filePath.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
 	if( hFile == INVALID_HANDLE_VALUE ){
 		return ERR_FALSE;
 	}
@@ -395,7 +395,7 @@ void CHttpFileSend::GetContentType(wstring filePath, string& contentType)
 
 __int64 CHttpFileSend::GetContentLength(wstring filePath)
 {
-	HANDLE hFile = _CreateFile2( filePath.c_str(), GENERIC_READ, FILE_SHARE_READ, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
+	HANDLE hFile = CreateFile( filePath.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
 	if( hFile == INVALID_HANDLE_VALUE ){
 		return 0;
 	}

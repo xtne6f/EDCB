@@ -25,12 +25,6 @@
     <Filter Include="ヘッダー ファイル\Table">
       <UniqueIdentifier>{611f2980-978b-461e-a71c-5e6d6c36b833}</UniqueIdentifier>
     </Filter>
-    <Filter Include="ソース ファイル\Descriptor">
-      <UniqueIdentifier>{b803db17-5935-4a81-95ff-9fd560820a74}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="ヘッダー ファイル\Descriptor">
-      <UniqueIdentifier>{021d7ca6-9957-40df-bdca-9d83192cff2a}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="ReadMe.txt" />
@@ -50,171 +44,6 @@
     </ClInclude>
     <ClInclude Include="EpgDataCap3Main.h">
       <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="Descriptor\ServiceDesc.h">
-      <Filter>ヘッダー ファイル\Descriptor</Filter>
-    </ClInclude>
-    <ClInclude Include="Descriptor\ServiceGroupDesc.h">
-      <Filter>ヘッダー ファイル\Descriptor</Filter>
-    </ClInclude>
-    <ClInclude Include="Descriptor\ServiceListDesc.h">
-      <Filter>ヘッダー ファイル\Descriptor</Filter>
-    </ClInclude>
-    <ClInclude Include="Descriptor\ShortEventDesc.h">
-      <Filter>ヘッダー ファイル\Descriptor</Filter>
-    </ClInclude>
-    <ClInclude Include="Descriptor\SIParameterDesc.h">
-      <Filter>ヘッダー ファイル\Descriptor</Filter>
-    </ClInclude>
-    <ClInclude Include="Descriptor\SIPrime_tsDesc.h">
-      <Filter>ヘッダー ファイル\Descriptor</Filter>
-    </ClInclude>
-    <ClInclude Include="Descriptor\StreamIdentifierDesc.h">
-      <Filter>ヘッダー ファイル\Descriptor</Filter>
-    </ClInclude>
-    <ClInclude Include="Descriptor\StuffingDesc.h">
-      <Filter>ヘッダー ファイル\Descriptor</Filter>
-    </ClInclude>
-    <ClInclude Include="Descriptor\SystemManagementDesc.h">
-      <Filter>ヘッダー ファイル\Descriptor</Filter>
-    </ClInclude>
-    <ClInclude Include="Descriptor\TargetRegionDesc.h">
-      <Filter>ヘッダー ファイル\Descriptor</Filter>
-    </ClInclude>
-    <ClInclude Include="Descriptor\TerrestrialDeliverySysDesc.h">
-      <Filter>ヘッダー ファイル\Descriptor</Filter>
-    </ClInclude>
-    <ClInclude Include="Descriptor\TimeShiftedEventDesc.h">
-      <Filter>ヘッダー ファイル\Descriptor</Filter>
-    </ClInclude>
-    <ClInclude Include="Descriptor\TimeShiftedServiceDesc.h">
-      <Filter>ヘッダー ファイル\Descriptor</Filter>
-    </ClInclude>
-    <ClInclude Include="Descriptor\TSInfoDesc.h">
-      <Filter>ヘッダー ファイル\Descriptor</Filter>
-    </ClInclude>
-    <ClInclude Include="Descriptor\UnkownDesc.h">
-      <Filter>ヘッダー ファイル\Descriptor</Filter>
-    </ClInclude>
-    <ClInclude Include="Descriptor\VideoDecodeCtrlDesc.h">
-      <Filter>ヘッダー ファイル\Descriptor</Filter>
-    </ClInclude>
-    <ClInclude Include="Descriptor\AudioComponentDesc.h">
-      <Filter>ヘッダー ファイル\Descriptor</Filter>
-    </ClInclude>
-    <ClInclude Include="Descriptor\AVCTimingHRDDesc.h">
-      <Filter>ヘッダー ファイル\Descriptor</Filter>
-    </ClInclude>
-    <ClInclude Include="Descriptor\AVCVideoDesc.h">
-      <Filter>ヘッダー ファイル\Descriptor</Filter>
-    </ClInclude>
-    <ClInclude Include="Descriptor\BoardInfoDesc.h">
-      <Filter>ヘッダー ファイル\Descriptor</Filter>
-    </ClInclude>
-    <ClInclude Include="Descriptor\BouquetNameDesc.h">
-      <Filter>ヘッダー ファイル\Descriptor</Filter>
-    </ClInclude>
-    <ClInclude Include="Descriptor\BroadcasterNameDesc.h">
-      <Filter>ヘッダー ファイル\Descriptor</Filter>
-    </ClInclude>
-    <ClInclude Include="Descriptor\CAIdentifierDesc.h">
-      <Filter>ヘッダー ファイル\Descriptor</Filter>
-    </ClInclude>
-    <ClInclude Include="Descriptor\ComponentDesc.h">
-      <Filter>ヘッダー ファイル\Descriptor</Filter>
-    </ClInclude>
-    <ClInclude Include="Descriptor\ComponentGroupDesc.h">
-      <Filter>ヘッダー ファイル\Descriptor</Filter>
-    </ClInclude>
-    <ClInclude Include="Descriptor\ConnectedTransmissionDesc.h">
-      <Filter>ヘッダー ファイル\Descriptor</Filter>
-    </ClInclude>
-    <ClInclude Include="Descriptor\ContentAvailabilityDesc.h">
-      <Filter>ヘッダー ファイル\Descriptor</Filter>
-    </ClInclude>
-    <ClInclude Include="Descriptor\ContentDesc.h">
-      <Filter>ヘッダー ファイル\Descriptor</Filter>
-    </ClInclude>
-    <ClInclude Include="Descriptor\CountryAvailabilityDesc.h">
-      <Filter>ヘッダー ファイル\Descriptor</Filter>
-    </ClInclude>
-    <ClInclude Include="Descriptor\DataComponentDesc.h">
-      <Filter>ヘッダー ファイル\Descriptor</Filter>
-    </ClInclude>
-    <ClInclude Include="Descriptor\DataContentDesc.h">
-      <Filter>ヘッダー ファイル\Descriptor</Filter>
-    </ClInclude>
-    <ClInclude Include="Descriptor\Descriptor.h">
-      <Filter>ヘッダー ファイル\Descriptor</Filter>
-    </ClInclude>
-    <ClInclude Include="Descriptor\DescriptorDef.h">
-      <Filter>ヘッダー ファイル\Descriptor</Filter>
-    </ClInclude>
-    <ClInclude Include="Descriptor\DigitalCopyCtrlDesc.h">
-      <Filter>ヘッダー ファイル\Descriptor</Filter>
-    </ClInclude>
-    <ClInclude Include="Descriptor\DownloadContentDesc.h">
-      <Filter>ヘッダー ファイル\Descriptor</Filter>
-    </ClInclude>
-    <ClInclude Include="Descriptor\EmergencyInfoDesc.h">
-      <Filter>ヘッダー ファイル\Descriptor</Filter>
-    </ClInclude>
-    <ClInclude Include="Descriptor\EventGroupDesc.h">
-      <Filter>ヘッダー ファイル\Descriptor</Filter>
-    </ClInclude>
-    <ClInclude Include="Descriptor\ExtendedBroadcasterDesc.h">
-      <Filter>ヘッダー ファイル\Descriptor</Filter>
-    </ClInclude>
-    <ClInclude Include="Descriptor\ExtendedEventDesc.h">
-      <Filter>ヘッダー ファイル\Descriptor</Filter>
-    </ClInclude>
-    <ClInclude Include="Descriptor\HierarchicalTransmissionDesc.h">
-      <Filter>ヘッダー ファイル\Descriptor</Filter>
-    </ClInclude>
-    <ClInclude Include="Descriptor\HyperlinkDesc.h">
-      <Filter>ヘッダー ファイル\Descriptor</Filter>
-    </ClInclude>
-    <ClInclude Include="Descriptor\LDTLinkageDesc.h">
-      <Filter>ヘッダー ファイル\Descriptor</Filter>
-    </ClInclude>
-    <ClInclude Include="Descriptor\LinkageDesc.h">
-      <Filter>ヘッダー ファイル\Descriptor</Filter>
-    </ClInclude>
-    <ClInclude Include="Descriptor\LocalTimeOffsetDesc.h">
-      <Filter>ヘッダー ファイル\Descriptor</Filter>
-    </ClInclude>
-    <ClInclude Include="Descriptor\LogoTransmissionDesc.h">
-      <Filter>ヘッダー ファイル\Descriptor</Filter>
-    </ClInclude>
-    <ClInclude Include="Descriptor\MosaicDesc.h">
-      <Filter>ヘッダー ファイル\Descriptor</Filter>
-    </ClInclude>
-    <ClInclude Include="Descriptor\NetworkIdentification.h">
-      <Filter>ヘッダー ファイル\Descriptor</Filter>
-    </ClInclude>
-    <ClInclude Include="Descriptor\NetworkNameDesc.h">
-      <Filter>ヘッダー ファイル\Descriptor</Filter>
-    </ClInclude>
-    <ClInclude Include="Descriptor\NVODReferenceDesc.h">
-      <Filter>ヘッダー ファイル\Descriptor</Filter>
-    </ClInclude>
-    <ClInclude Include="Descriptor\ParentalRatingDesc.h">
-      <Filter>ヘッダー ファイル\Descriptor</Filter>
-    </ClInclude>
-    <ClInclude Include="Descriptor\PartialReceptionDesc.h">
-      <Filter>ヘッダー ファイル\Descriptor</Filter>
-    </ClInclude>
-    <ClInclude Include="Descriptor\PartialTransportStreamDesc.h">
-      <Filter>ヘッダー ファイル\Descriptor</Filter>
-    </ClInclude>
-    <ClInclude Include="Descriptor\PartialTSTimeDesc.h">
-      <Filter>ヘッダー ファイル\Descriptor</Filter>
-    </ClInclude>
-    <ClInclude Include="Descriptor\SatelliteDeliverySysDesc.h">
-      <Filter>ヘッダー ファイル\Descriptor</Filter>
-    </ClInclude>
-    <ClInclude Include="Descriptor\SeriesDesc.h">
-      <Filter>ヘッダー ファイル\Descriptor</Filter>
     </ClInclude>
     <ClInclude Include="Table\BATTable.h">
       <Filter>ヘッダー ファイル\Table</Filter>
@@ -288,9 +117,6 @@
     <ClInclude Include="..\..\Common\TimeUtil.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
-    <ClInclude Include="Descriptor\CADesc.h">
-      <Filter>ヘッダー ファイル\Descriptor</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Common\EpgDataCap3Def.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
@@ -309,6 +135,12 @@
     <ClInclude Include="Table\EITTable_SD2.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="Table\PSITable.h">
+      <Filter>ヘッダー ファイル\Table</Filter>
+    </ClInclude>
+    <ClInclude Include="AribDescriptor.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -322,168 +154,6 @@
     </ClCompile>
     <ClCompile Include="EpgDataCap3Main.cpp">
       <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="Descriptor\SIPrime_tsDesc.cpp">
-      <Filter>ソース ファイル\Descriptor</Filter>
-    </ClCompile>
-    <ClCompile Include="Descriptor\StreamIdentifierDesc.cpp">
-      <Filter>ソース ファイル\Descriptor</Filter>
-    </ClCompile>
-    <ClCompile Include="Descriptor\StuffingDesc.cpp">
-      <Filter>ソース ファイル\Descriptor</Filter>
-    </ClCompile>
-    <ClCompile Include="Descriptor\SystemManagementDesc.cpp">
-      <Filter>ソース ファイル\Descriptor</Filter>
-    </ClCompile>
-    <ClCompile Include="Descriptor\TargetRegionDesc.cpp">
-      <Filter>ソース ファイル\Descriptor</Filter>
-    </ClCompile>
-    <ClCompile Include="Descriptor\TerrestrialDeliverySysDesc.cpp">
-      <Filter>ソース ファイル\Descriptor</Filter>
-    </ClCompile>
-    <ClCompile Include="Descriptor\TimeShiftedEventDesc.cpp">
-      <Filter>ソース ファイル\Descriptor</Filter>
-    </ClCompile>
-    <ClCompile Include="Descriptor\TimeShiftedServiceDesc.cpp">
-      <Filter>ソース ファイル\Descriptor</Filter>
-    </ClCompile>
-    <ClCompile Include="Descriptor\TSInfoDesc.cpp">
-      <Filter>ソース ファイル\Descriptor</Filter>
-    </ClCompile>
-    <ClCompile Include="Descriptor\UnkownDesc.cpp">
-      <Filter>ソース ファイル\Descriptor</Filter>
-    </ClCompile>
-    <ClCompile Include="Descriptor\VideoDecodeCtrlDesc.cpp">
-      <Filter>ソース ファイル\Descriptor</Filter>
-    </ClCompile>
-    <ClCompile Include="Descriptor\AudioComponentDesc.cpp">
-      <Filter>ソース ファイル\Descriptor</Filter>
-    </ClCompile>
-    <ClCompile Include="Descriptor\AVCTimingHRDDesc.cpp">
-      <Filter>ソース ファイル\Descriptor</Filter>
-    </ClCompile>
-    <ClCompile Include="Descriptor\AVCVideoDesc.cpp">
-      <Filter>ソース ファイル\Descriptor</Filter>
-    </ClCompile>
-    <ClCompile Include="Descriptor\BoardInfoDesc.cpp">
-      <Filter>ソース ファイル\Descriptor</Filter>
-    </ClCompile>
-    <ClCompile Include="Descriptor\BouquetNameDesc.cpp">
-      <Filter>ソース ファイル\Descriptor</Filter>
-    </ClCompile>
-    <ClCompile Include="Descriptor\BroadcasterNameDesc.cpp">
-      <Filter>ソース ファイル\Descriptor</Filter>
-    </ClCompile>
-    <ClCompile Include="Descriptor\CAIdentifierDesc.cpp">
-      <Filter>ソース ファイル\Descriptor</Filter>
-    </ClCompile>
-    <ClCompile Include="Descriptor\ComponentDesc.cpp">
-      <Filter>ソース ファイル\Descriptor</Filter>
-    </ClCompile>
-    <ClCompile Include="Descriptor\ComponentGroupDesc.cpp">
-      <Filter>ソース ファイル\Descriptor</Filter>
-    </ClCompile>
-    <ClCompile Include="Descriptor\ConnectedTransmissionDesc.cpp">
-      <Filter>ソース ファイル\Descriptor</Filter>
-    </ClCompile>
-    <ClCompile Include="Descriptor\ContentAvailabilityDesc.cpp">
-      <Filter>ソース ファイル\Descriptor</Filter>
-    </ClCompile>
-    <ClCompile Include="Descriptor\ContentDesc.cpp">
-      <Filter>ソース ファイル\Descriptor</Filter>
-    </ClCompile>
-    <ClCompile Include="Descriptor\CountryAvailabilityDesc.cpp">
-      <Filter>ソース ファイル\Descriptor</Filter>
-    </ClCompile>
-    <ClCompile Include="Descriptor\DataComponentDesc.cpp">
-      <Filter>ソース ファイル\Descriptor</Filter>
-    </ClCompile>
-    <ClCompile Include="Descriptor\DataContentDesc.cpp">
-      <Filter>ソース ファイル\Descriptor</Filter>
-    </ClCompile>
-    <ClCompile Include="Descriptor\Descriptor.cpp">
-      <Filter>ソース ファイル\Descriptor</Filter>
-    </ClCompile>
-    <ClCompile Include="Descriptor\DigitalCopyCtrlDesc.cpp">
-      <Filter>ソース ファイル\Descriptor</Filter>
-    </ClCompile>
-    <ClCompile Include="Descriptor\DownloadContentDesc.cpp">
-      <Filter>ソース ファイル\Descriptor</Filter>
-    </ClCompile>
-    <ClCompile Include="Descriptor\EmergencyInfoDesc.cpp">
-      <Filter>ソース ファイル\Descriptor</Filter>
-    </ClCompile>
-    <ClCompile Include="Descriptor\EventGroupDesc.cpp">
-      <Filter>ソース ファイル\Descriptor</Filter>
-    </ClCompile>
-    <ClCompile Include="Descriptor\ExtendedBroadcasterDesc.cpp">
-      <Filter>ソース ファイル\Descriptor</Filter>
-    </ClCompile>
-    <ClCompile Include="Descriptor\ExtendedEventDesc.cpp">
-      <Filter>ソース ファイル\Descriptor</Filter>
-    </ClCompile>
-    <ClCompile Include="Descriptor\HierarchicalTransmissionDesc.cpp">
-      <Filter>ソース ファイル\Descriptor</Filter>
-    </ClCompile>
-    <ClCompile Include="Descriptor\HyperlinkDesc.cpp">
-      <Filter>ソース ファイル\Descriptor</Filter>
-    </ClCompile>
-    <ClCompile Include="Descriptor\LDTLinkageDesc.cpp">
-      <Filter>ソース ファイル\Descriptor</Filter>
-    </ClCompile>
-    <ClCompile Include="Descriptor\LinkageDesc.cpp">
-      <Filter>ソース ファイル\Descriptor</Filter>
-    </ClCompile>
-    <ClCompile Include="Descriptor\LocalTimeOffsetDesc.cpp">
-      <Filter>ソース ファイル\Descriptor</Filter>
-    </ClCompile>
-    <ClCompile Include="Descriptor\LogoTransmissionDesc.cpp">
-      <Filter>ソース ファイル\Descriptor</Filter>
-    </ClCompile>
-    <ClCompile Include="Descriptor\MosaicDesc.cpp">
-      <Filter>ソース ファイル\Descriptor</Filter>
-    </ClCompile>
-    <ClCompile Include="Descriptor\NetworkIdentification.cpp">
-      <Filter>ソース ファイル\Descriptor</Filter>
-    </ClCompile>
-    <ClCompile Include="Descriptor\NetworkNameDesc.cpp">
-      <Filter>ソース ファイル\Descriptor</Filter>
-    </ClCompile>
-    <ClCompile Include="Descriptor\NVODReferenceDesc.cpp">
-      <Filter>ソース ファイル\Descriptor</Filter>
-    </ClCompile>
-    <ClCompile Include="Descriptor\ParentalRatingDesc.cpp">
-      <Filter>ソース ファイル\Descriptor</Filter>
-    </ClCompile>
-    <ClCompile Include="Descriptor\PartialReceptionDesc.cpp">
-      <Filter>ソース ファイル\Descriptor</Filter>
-    </ClCompile>
-    <ClCompile Include="Descriptor\PartialTransportStreamDesc.cpp">
-      <Filter>ソース ファイル\Descriptor</Filter>
-    </ClCompile>
-    <ClCompile Include="Descriptor\PartialTSTimeDesc.cpp">
-      <Filter>ソース ファイル\Descriptor</Filter>
-    </ClCompile>
-    <ClCompile Include="Descriptor\SatelliteDeliverySysDesc.cpp">
-      <Filter>ソース ファイル\Descriptor</Filter>
-    </ClCompile>
-    <ClCompile Include="Descriptor\SeriesDesc.cpp">
-      <Filter>ソース ファイル\Descriptor</Filter>
-    </ClCompile>
-    <ClCompile Include="Descriptor\ServiceDesc.cpp">
-      <Filter>ソース ファイル\Descriptor</Filter>
-    </ClCompile>
-    <ClCompile Include="Descriptor\ServiceGroupDesc.cpp">
-      <Filter>ソース ファイル\Descriptor</Filter>
-    </ClCompile>
-    <ClCompile Include="Descriptor\ServiceListDesc.cpp">
-      <Filter>ソース ファイル\Descriptor</Filter>
-    </ClCompile>
-    <ClCompile Include="Descriptor\ShortEventDesc.cpp">
-      <Filter>ソース ファイル\Descriptor</Filter>
-    </ClCompile>
-    <ClCompile Include="Descriptor\SIParameterDesc.cpp">
-      <Filter>ソース ファイル\Descriptor</Filter>
     </ClCompile>
     <ClCompile Include="Table\BATTable.cpp">
       <Filter>ソース ファイル\Table</Filter>
@@ -551,9 +221,6 @@
     <ClCompile Include="..\..\Common\TimeUtil.cpp">
       <Filter>ソース ファイル\Common</Filter>
     </ClCompile>
-    <ClCompile Include="Descriptor\CADesc.cpp">
-      <Filter>ソース ファイル\Descriptor</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\Common\PathUtil.cpp">
       <Filter>ソース ファイル\Common</Filter>
     </ClCompile>
@@ -564,6 +231,12 @@
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Table\EITTable_SD2.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Table\PSITable.cpp">
+      <Filter>ソース ファイル\Table</Filter>
+    </ClCompile>
+    <ClCompile Include="AribDescriptor.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>

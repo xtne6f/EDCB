@@ -7,7 +7,7 @@
 //戻り値：
 // エラーコード
 //引数：
-// asyncMode		[IN]TRUE:非同期モード、FALSE:同期モード
+// asyncFlag		[IN]予約（必ずFALSEを渡すこと）
 // id				[OUT]識別ID
 __declspec(dllexport)
 DWORD WINAPI InitializeEP(
@@ -31,7 +31,7 @@ DWORD WINAPI UnInitializeEP(
 //引数：
 // id		[IN]識別ID
 // data		[IN]TSパケット１つ
-// size		[IN]dataのサイズ（188、192あたりになるはず）
+// size		[IN]dataのサイズ（188でなければならない）
 __declspec(dllexport)
 DWORD WINAPI AddTSPacketEP(
 	DWORD id,

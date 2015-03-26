@@ -9,44 +9,11 @@ CTwitterUtil::CTwitterUtil(void)
 	module = NULL;
 
 	this->id = 0;
-	this->lockEvent = _CreateEvent(FALSE, TRUE, NULL );
 }
 
 CTwitterUtil::~CTwitterUtil(void)
 {
 	UnInitialize();
-
-	if( this->lockEvent != NULL ){
-		UnLock();
-		CloseHandle(this->lockEvent);
-		this->lockEvent = NULL;
-	}
-}
-
-BOOL CTwitterUtil::Lock(LPCWSTR log, DWORD timeOut)
-{
-	if( this->lockEvent == NULL ){
-		return FALSE;
-	}
-	if( log != NULL ){
-		OutputDebugString(log);
-	}
-	DWORD dwRet = WaitForSingleObject(this->lockEvent, timeOut);
-	if( dwRet == WAIT_ABANDONED || 
-		dwRet == WAIT_FAILED){
-		return FALSE;
-	}
-	return TRUE;
-}
-
-void CTwitterUtil::UnLock(LPCWSTR log)
-{
-	if( this->lockEvent != NULL ){
-		SetEvent(this->lockEvent);
-	}
-	if( log != NULL ){
-		OutputDebugString(log);
-	}
 }
 
 //DLLÇÃèâä˙âª
@@ -57,7 +24,6 @@ DWORD CTwitterUtil::Initialize()
 	if( module != NULL ){
 		return FALSE;
 	}
-	if( Lock() == FALSE ) return FALSE;
 
 	pfnInitializeTW = NULL;
 	pfnUnInitializeTW = NULL;
@@ -76,7 +42,6 @@ DWORD CTwitterUtil::Initialize()
 	module = ::LoadLibrary(L"twitter.dll");
 
 	if( module == NULL ){
-		UnLock();
 		return FALSE;
 	}
 
@@ -154,7 +119,6 @@ ERR_END:
 		::FreeLibrary( module );
 		module=NULL;
 	}
-	UnLock();
 	return ret;
 }
 

@@ -25,8 +25,6 @@ BOOL GetDayOfWeekString( SYSTEMTIME Time, wstring& strWeek );
 BOOL GetDayOfWeekString2( SYSTEMTIME Time, wstring& strWeek );
 BOOL GetDayOfWeekString2( SYSTEMTIME Time, string& strWeek );
 
-__int64 GetTimeCount();
-
 __int64 GetNowI64Time();
 
 __int64 ConvertI64Time( SYSTEMTIME Time );

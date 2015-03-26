@@ -4,9 +4,8 @@
 #include "../../Common/EpgTimerUtil.h"
 #include "../../Common/PathUtil.h"
 #include "../../Common/StringUtil.h"
-#include "../../Common/ParseChText4.h"
+#include "../../Common/ParseTextInstances.h"
 
-#include "TunerCtrl.h"
 #include "TunerBankCtrl.h"
 
 class CTunerManager
@@ -27,7 +26,7 @@ public:
 	// idList			[OUT]チューナーのID一覧
 	BOOL GetEnumID(
 		vector<DWORD>* idList
-		);
+		) const;
 
 	//チューナー予約制御を取得する
 	//戻り値：
@@ -36,7 +35,7 @@ public:
 	// ctrlMap			[OUT]チューナー予約制御の一覧
 	BOOL GetEnumTunerBank(
 		map<DWORD, CTunerBankCtrl*>* ctrlMap
-		);
+		) const;
 
 	//指定サービスをサポートしていないチューナー一覧を取得する
 	//戻り値：
@@ -51,14 +50,14 @@ public:
 		WORD TSID,
 		WORD SID,
 		vector<DWORD>* idList
-		);
+		) const;
 
 	BOOL GetSupportServiceTuner(
 		WORD ONID,
 		WORD TSID,
 		WORD SID,
 		vector<DWORD>* idList
-		);
+		) const;
 
 	BOOL GetCh(
 		DWORD tunerID,
@@ -67,36 +66,35 @@ public:
 		WORD SID,
 		DWORD* space,
 		DWORD* ch
-		);
+		) const;
 
+	//ドライバ毎のチューナー一覧とEPG取得に使用できるチューナー数のペアを取得する
 	BOOL GetEnumEpgCapTuner(
-		vector<DWORD>* idList
-		);
+		vector<pair<vector<DWORD>, WORD>>* idList
+		) const;
 
 	BOOL IsSupportService(
 		DWORD tunerID,
 		WORD ONID,
 		WORD TSID,
 		WORD SID
-		);
+		) const;
 
 	BOOL GetBonFileName(
 		DWORD tunerID,
 		wstring& bonFileName
-		);
+		) const;
 
 protected:
 	typedef struct _TUNER_INFO{
-		WORD bonID;
-		WORD tunerID;
 		wstring bonFileName;
-		BOOL epgCapFlag;
-		CParseChText4 chUtil;
+		WORD epgCapMaxOfThisBon;
+		vector<CH_DATA4> chList;
 		wstring chSet4FilePath;
 	}TUNER_INFO;
 
-	map<DWORD, TUNER_INFO*> tunerMap; //キー bonID<<16 | tunerID
+	map<DWORD, TUNER_INFO> tunerMap; //キー bonID<<16 | tunerID
 protected:
-	BOOL FindBonFileName(wstring src, wstring& dllName);
+	static BOOL FindBonFileName(wstring src, wstring& dllName);
 };
 

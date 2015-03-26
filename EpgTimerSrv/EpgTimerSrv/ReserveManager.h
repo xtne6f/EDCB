@@ -4,10 +4,7 @@
 #include "../../Common/EpgTimerUtil.h"
 #include "../../Common/PathUtil.h"
 #include "../../Common/StringUtil.h"
-#include "../../Common/ParseReserveText.h"
-#include "../../Common/ParseRecInfoText.h"
-#include "../../Common/ParseChText5.h"
-#include "../../Common/ParseSearchChgText.h"
+#include "../../Common/ParseTextInstances.h"
 
 #include "TwitterManager.h"
 
@@ -16,7 +13,6 @@
 #include "TunerManager.h"
 #include "BatManager.h"
 #include "NWCoopManager.h"
-#include "RecInfoDBManager.h"
 
 class CReserveManager
 {
@@ -32,20 +28,10 @@ public:
 	void ChangeRegist();
 	void ReloadSetting();
 
-	//録画済み情報の読み込みを行う
-	//戻り値：
-	// TRUE（成功）、FALSE（失敗）
-	BOOL ReloadRecInfoData();
-
 	//予約情報の読み込みを行う
 	//戻り値：
 	// TRUE（成功）、FALSE（失敗）
 	BOOL ReloadReserveData();
-
-	//予約情報を追加で読み込む
-	//戻り値：
-	// TRUE（成功）、FALSE（失敗）
-	BOOL AddLoadReserveData();
 
 	//予約情報を取得する
 	//戻り値：
@@ -236,15 +222,16 @@ protected:
 	map<DWORD, CReserveInfo*> reserveInfoMap; //キー　reserveID
 	map<LONGLONG, DWORD> reserveInfoIDMap; //キー　ONID<<48|TSID<<32|SID<<16|EventID
 	CParseRecInfoText recInfoText;
+	CParseRecInfo2Text recInfo2Text;
+	wstring recInfo2RegExp;
+	int recInfo2DropChk;
 
 	CParseChText5 chUtil;
-	CParseSearchChgText chgText;
 
 	CTunerManager tunerManager;
 	CBatManager batManager;
-	CTwitterManager twitterManager;
+	CTwitterManager* twitterManager;
 	CNWCoopManager nwCoopManager;
-	CRecInfoDBManager recInfoManager;
 
 	CEpgDBManager* epgDBManager;
 
@@ -411,5 +398,14 @@ protected:
 		);
 
 	void GetSrvCoopEpgList(vector<wstring>* fileList);
+
+	//TSファイルを削除して必要な空き領域を作る
+	static void CreateDiskFreeSpace(
+		const vector<RESERVE_DATA>& chkReserve,
+		const wstring& defRecFolder,
+		const map<wstring, wstring>& protectFile,
+		const vector<wstring>& delFolderList,
+		const vector<wstring>& delExtList
+		);
 };
 

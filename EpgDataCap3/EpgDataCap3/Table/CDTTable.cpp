@@ -1,9 +1,6 @@
 #include "StdAfx.h"
 #include "CDTTable.h"
 
-#include "../../../Common/EpgTimerUtil.h"
-#include "../Descriptor/Descriptor.h"
-
 CCDTTable::CCDTTable(void)
 {
 	data_module_byteSize = 0;
@@ -26,26 +23,10 @@ void CCDTTable::Clear()
 
 BOOL CCDTTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 {
-	if( data == NULL ){
+	if( InitDecode(data, dataSize, decodeReadSize, TRUE) == FALSE ){
 		return FALSE;
 	}
 	Clear();
-
-	//////////////////////////////////////////////////////
-	//サイズのチェック
-	//最低限table_idとsection_length+CRCのサイズは必須
-	if( dataSize < 7 ){
-		return FALSE;
-	}
-	//->サイズのチェック
-
-	DWORD readSize = 0;
-	//////////////////////////////////////////////////////
-	//解析処理
-	table_id = data[0];
-	section_syntax_indicator = (data[1]&0x80)>>7;
-	section_length = ((WORD)data[1]&0x0F)<<8 | data[2];
-	readSize+=3;
 
 	if( section_syntax_indicator != 1 ){
 		//固定値がおかしい
@@ -57,22 +38,8 @@ BOOL CCDTTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 		_OutputDebugString( L"++CCDTTable:: table_id err 0xC8 != 0x%02X", table_id );
 		return FALSE;
 	}
-	if( readSize+section_length > dataSize && section_length > 3){
-		//サイズ異常
-		_OutputDebugString( L"++CCDTTable:: size err %d > %d", readSize+section_length, dataSize );
-		return FALSE;
-	}
-	//CRCチェック
-	crc32 = ((DWORD)data[3+section_length-4])<<24 |
-		((DWORD)data[3+section_length-3])<<16 |
-		((DWORD)data[3+section_length-2])<<8 |
-		data[3+section_length-1];
-	if( crc32 != _Crc32(3+section_length-4, data) ){
-		_OutputDebugString( L"++CCDTTable:: CRC err" );
-		return FALSE;
-	}
 
-	if( section_length > 10 ){
+	if( section_length - 4 > 9 ){
 		download_data_id = ((WORD)data[readSize])<<8 | data[readSize+1];
 		version_number = (data[readSize+2]&0x3E)>>1;
 		current_next_indicator = data[readSize+2]&0x01;
@@ -83,9 +50,8 @@ BOOL CCDTTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 		descriptors_loop_length = ((WORD)data[readSize+8]&0x0F)<<8 | data[readSize+9];
 		readSize += 10;
 
-		if( descriptors_loop_length > 0 ){
-			CDescriptor descriptor;
-			if( descriptor.Decode( data+readSize, descriptors_loop_length, &descriptorList, NULL ) == FALSE ){
+		if( readSize+descriptors_loop_length <= (DWORD)section_length+3-4 && descriptors_loop_length > 0 ){
+			if( AribDescriptor::CreateDescriptors( data+readSize, descriptors_loop_length, &descriptorList, NULL ) == FALSE ){
 				_OutputDebugString( L"++CCDTTable:: descriptor err" );
 				return FALSE;
 			}
@@ -99,11 +65,6 @@ BOOL CCDTTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 		}
 	}else{
 		return FALSE;
-	}
-	//->解析処理
-
-	if( decodeReadSize != NULL ){
-		*decodeReadSize = 3+section_length;
 	}
 
 	return TRUE;

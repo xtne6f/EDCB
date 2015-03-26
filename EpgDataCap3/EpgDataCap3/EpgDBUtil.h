@@ -4,6 +4,20 @@
 #include "./Table/TableUtil.h"
 #include "../../Common/EpgDataCap3Def.h"
 
+typedef struct _NIBBLE_DATA{
+	BYTE content_nibble_level_1;
+	BYTE content_nibble_level_2;
+	BYTE user_nibble_1;
+	BYTE user_nibble_2;
+}NIBBLE_DATA;
+
+typedef struct _EVENT_DATA2{
+	WORD original_network_id;
+	WORD transport_stream_id;
+	WORD service_id;
+	WORD event_id;
+}EVENT_DATA2;
+
 typedef struct _SHORT_EVENT_INFO{
 	BYTE tableID;		//データ追加時のtable_id （優先度 0x4E > 0x50-0x5F > 0x4F > 0x60-0x6F)
 	BYTE version;		//データ追加時のバージョン
@@ -20,7 +34,7 @@ typedef struct _EXTENDED_EVENT_INFO{
 typedef struct _CONTENT_INFO{
 	BYTE tableID;		//データ追加時のtable_id （優先度 0x4E > 0x50-0x5F > 0x4F > 0x60-0x6F)
 	BYTE version;		//データ追加時のバージョン
-	vector<CContentDesc::NIBBLE_DATA> nibbleList;
+	vector<NIBBLE_DATA> nibbleList;
 } CONTEN_INFO;
 
 typedef struct _COMPONENT_INFO{
@@ -56,7 +70,7 @@ typedef struct _EVENTGROUP_INFO{
 	BYTE version;		//データ追加時のバージョン
 	BYTE group_type;
 	BYTE event_count;
-	vector<CEventGroupDesc::EVENT_DATA2> eventData2List;
+	vector<EVENT_DATA2> eventData2List;
 } EVENTGROUP_INFO;
 
 typedef struct _EVENT_INFO{
@@ -170,15 +184,13 @@ public:
 	EPG_SECTION_STATUS GetSectionStatus(BOOL l_eitFlag);
 
 	//指定サービスの全EPG情報を取得する
-	//戻り値：
-	// エラーコード
 	//引数：
 	// originalNetworkID		[IN]取得対象のoriginalNetworkID
 	// transportStreamID		[IN]取得対象のtransportStreamID
 	// serviceID				[IN]取得対象のServiceID
 	// epgInfoListSize			[OUT]epgInfoListの個数
 	// epgInfoList				[OUT]EPG情報のリスト（DLL内で自動的にdeleteする。次に取得を行うまで有効）
-	DWORD GetEpgInfoList(
+	BOOL GetEpgInfoList(
 		WORD originalNetworkID,
 		WORD transportStreamID,
 		WORD serviceID,
@@ -188,38 +200,30 @@ public:
 
 	//蓄積されたEPG情報のあるサービス一覧を取得する
 	//SERVICE_EXT_INFOの情報はない場合がある
-	//戻り値：
-	// エラーコード
 	//引数：
 	// serviceListSize			[OUT]serviceListの個数
 	// serviceList				[OUT]サービス情報のリスト（DLL内で自動的にdeleteする。次に取得を行うまで有効）
-	DWORD GetServiceListEpgDB(
+	void GetServiceListEpgDB(
 		DWORD* serviceListSize,
 		SERVICE_INFO** serviceList
 		);
 
 	//指定サービスの現在or次のEPG情報を取得する
-	//戻り値：
-	// エラーコード
 	//引数：
 	// originalNetworkID		[IN]取得対象のoriginalNetworkID
 	// transportStreamID		[IN]取得対象のtransportStreamID
 	// serviceID				[IN]取得対象のServiceID
 	// nextFlag					[IN]TRUE（次の番組）、FALSE（現在の番組）
-	// nowTime					[IN]現在の時間
 	// epgInfo					[OUT]EPG情報（DLL内で自動的にdeleteする。次に取得を行うまで有効）
-	DWORD GetEpgInfo(
+	BOOL GetEpgInfo(
 		WORD originalNetworkID,
 		WORD transportStreamID,
 		WORD serviceID,
 		BOOL nextFlag,
-		SYSTEMTIME nowTime,
 		EPG_EVENT_INFO** epgInfo
 		);
 
 	//指定イベントのEPG情報を取得する
-	//戻り値：
-	// エラーコード
 	//引数：
 	// originalNetworkID		[IN]取得対象のoriginalNetworkID
 	// transportStreamID		[IN]取得対象のtransportStreamID
@@ -227,7 +231,7 @@ public:
 	// EventID					[IN]取得対象のEventID
 	// pfOnlyFlag				[IN]p/fからのみ検索するかどうか
 	// epgInfo					[OUT]EPG情報（DLL内で自動的にdeleteする。次に取得を行うまで有効）
-	DWORD SearchEpgInfo(
+	BOOL SearchEpgInfo(
 		WORD originalNetworkID,
 		WORD transportStreamID,
 		WORD serviceID,
@@ -237,7 +241,7 @@ public:
 		);
 
 protected:
-	HANDLE lockEvent;
+	CRITICAL_SECTION dbLock;
 
 	map<ULONGLONG, SERVICE_EVENT_INFO*> serviceEventMap;
 	map<ULONGLONG, SECTION_STATUS_INFO*> sectionMap;
@@ -300,27 +304,18 @@ protected:
 	DWORD serviceDBListSize;
 	SERVICE_INFO* serviceDBList;
 protected:
-	//PublicAPI排他制御用
-	BOOL Lock(LPCWSTR log = NULL, DWORD timeOut = 60*1000);
-	void UnLock(LPCWSTR log = NULL);
-
 	void Clear();
 	
-	BOOL AddShortEvent(CEITTable* eit, EVENT_INFO* eventInfo, CShortEventDesc* shortEvent);
-	BOOL AddExtEvent(CEITTable* eit, EVENT_INFO* eventInfo, vector<DESCRIPTOR_DATA*>* descriptorList);
-	BOOL AddContent(CEITTable* eit, EVENT_INFO* eventInfo, CContentDesc* content);
-	BOOL AddComponent(CEITTable* eit, EVENT_INFO* eventInfo, CComponentDesc* component);
-	BOOL AddAudioComponent(CEITTable* eit, EVENT_INFO* eventInfo, vector<DESCRIPTOR_DATA*>* descriptorList);
-	BOOL AddEventGroup(CEITTable* eit, EVENT_INFO* eventInfo, CEventGroupDesc* eventGroup);
-	BOOL AddEventRelay(CEITTable* eit, EVENT_INFO* eventInfo, CEventGroupDesc* eventGroup);
-	BOOL CheckUpdate(CEITTable* eit, BYTE tableID, BYTE version);
+	static BOOL AddShortEvent(BYTE table_id, BYTE version_number, EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* shortEvent, BOOL skySDFlag);
+	static BOOL AddExtEvent(BYTE table_id, BYTE version_number, EVENT_INFO* eventInfo, vector<AribDescriptor::CDescriptor*>* descriptorList, BOOL skySDFlag);
+	static BOOL AddContent(BYTE table_id, BYTE version_number, EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* content, BOOL skySDFlag);
+	static BOOL AddComponent(BYTE table_id, BYTE version_number, EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* component, BOOL skySDFlag);
+	static BOOL AddAudioComponent(BYTE table_id, BYTE version_number, EVENT_INFO* eventInfo, vector<AribDescriptor::CDescriptor*>* descriptorList, BOOL skySDFlag);
+	static BOOL AddEventGroup(CEITTable* eit, EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* eventGroup);
+	static BOOL AddEventRelay(CEITTable* eit, EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* eventGroup);
+	static BOOL CheckUpdate(BYTE eit_table_id, BYTE eit_version_number, BYTE tableID, BYTE version, BOOL skySDFlag);
 
-	BOOL AddShortEvent_SD(CEITTable_SD* eit, EVENT_INFO* eventInfo, CShortEventDesc* shortEvent);
-	BOOL AddExtEvent_SD(CEITTable_SD* eit, EVENT_INFO* eventInfo, vector<DESCRIPTOR_DATA*>* descriptorList);
-	BOOL AddContent_SD(CEITTable_SD* eit, EVENT_INFO* eventInfo, CContentDesc* content);
-	BOOL AddComponent_SD(CEITTable_SD* eit, EVENT_INFO* eventInfo, CComponentDesc* component);
-	BOOL AddAudioComponent_SD(CEITTable_SD* eit, EVENT_INFO* eventInfo, vector<DESCRIPTOR_DATA*>* descriptorList);
-	BOOL CheckUpdate_SD(CEITTable_SD* eit, BYTE tableID, BYTE version);
+	static BOOL CheckUpdate_SD(BYTE eit_table_id, BYTE eit_version_number, BYTE tableID, BYTE version);
 
 	BOOL AddSDEventMap(CEITTable_SD* eit);
 

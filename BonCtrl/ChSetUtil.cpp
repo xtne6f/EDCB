@@ -45,7 +45,8 @@ BOOL CChSetUtil::SaveChSet(
 	}
 
 	BOOL ret = TRUE;
-	if( this->chText4.SaveChText(chSet4FilePath.c_str()) == FALSE ){
+	this->chText4.SetFilePath(chSet4FilePath.c_str());
+	if( this->chText4.SaveText() == false ){
 		ret = FALSE;
 	}
 
@@ -53,12 +54,12 @@ BOOL CChSetUtil::SaveChSet(
 	CParseChText5 chText5;
 	chText5.ParseText(chSet5FilePath.c_str());
 	//現在保持している情報を追加
-	map<LONGLONG, CH_DATA5>::iterator itr;
-	for( itr = this->chText5.chList.begin(); itr != this->chText5.chList.end(); itr++ ){
+	map<LONGLONG, CH_DATA5>::const_iterator itr;
+	for( itr = this->chText5.GetMap().begin(); itr != this->chText5.GetMap().end(); itr++ ){
 		chText5.AddCh(itr->second);
 	}
 	//保存
-	if( chText5.SaveChText(chSet5FilePath.c_str()) == FALSE ){
+	if( chText5.SaveText() == false ){
 		ret = FALSE;
 	}
 	//最新版を再読み込み
@@ -73,8 +74,8 @@ BOOL CChSetUtil::SaveChSet(
 //チャンネルスキャン用にクリアする
 BOOL CChSetUtil::Clear()
 {
-	this->chText4.chList.clear();
-	this->chText5.chList.clear();
+	this->chText4.ParseText(L"");
+	this->chText5.ParseText(L"");
 	return TRUE;
 }
 
@@ -111,7 +112,19 @@ BOOL CChSetUtil::AddServiceInfo(
 		item4.remoconID = serviceInfo->extInfo->remote_control_key_id;
 	}
 
-	this->chText4.AddCh(item4);
+	map<DWORD, CH_DATA4>::const_iterator itr;
+	for( itr = this->chText4.GetMap().begin(); itr != this->chText4.GetMap().end(); itr++ ){
+		if( itr->second.originalNetworkID == item4.originalNetworkID &&
+		    itr->second.transportStreamID == item4.transportStreamID &&
+		    itr->second.serviceID == item4.serviceID &&
+		    itr->second.space == item4.space &&
+		    itr->second.ch == item4.ch ){
+			break;
+		}
+	}
+	if( itr == this->chText4.GetMap().end() ){
+		this->chText4.AddCh(item4);
+	}
 
 	CH_DATA5 item5;
 
@@ -147,11 +160,11 @@ BOOL CChSetUtil::GetEnumService(
 	vector<CH_DATA4>* serviceList
 	)
 {
-	if( this->chText4.chList.size() == 0 ){
+	if( this->chText4.GetMap().size() == 0 ){
 		return FALSE;
 	}
-	multimap<LONGLONG, CH_DATA4>::iterator itr;
-	for( itr = this->chText4.chList.begin(); itr != this->chText4.chList.end(); itr++ ){
+	map<DWORD, CH_DATA4>::const_iterator itr;
+	for( itr = this->chText4.GetMap().begin(); itr != this->chText4.GetMap().end(); itr++ ){
 		serviceList->push_back(itr->second);
 	}
 	return TRUE;
@@ -165,8 +178,8 @@ BOOL CChSetUtil::GetCh(
 	DWORD& ch
 	)
 {
-	multimap<LONGLONG, CH_DATA4>::iterator itr;
-	for( itr = this->chText4.chList.begin(); itr != this->chText4.chList.end(); itr++ ){
+	map<DWORD, CH_DATA4>::const_iterator itr;
+	for( itr = this->chText4.GetMap().begin(); itr != this->chText4.GetMap().end(); itr++ ){
 		if( itr->second.originalNetworkID == ONID && itr->second.transportStreamID == TSID ){
 			space = itr->second.space;
 			ch = itr->second.ch;
@@ -186,13 +199,13 @@ void CChSetUtil::GetEpgCapService(
 	)
 {
 	map<ULONGLONG, ULONGLONG> addMap;
-	multimap<LONGLONG, CH_DATA4>::iterator itrCh4;
-	for( itrCh4 = this->chText4.chList.begin(); itrCh4 != this->chText4.chList.end(); itrCh4++ ){
+	map<DWORD, CH_DATA4>::const_iterator itrCh4;
+	for( itrCh4 = this->chText4.GetMap().begin(); itrCh4 != this->chText4.GetMap().end(); itrCh4++ ){
 		LONGLONG key = _Create64Key(itrCh4->second.originalNetworkID, itrCh4->second.transportStreamID, itrCh4->second.serviceID);
-		map<LONGLONG, CH_DATA5>::iterator itrCh5;
-		itrCh5 = this->chText5.chList.find(key);
+		map<LONGLONG, CH_DATA5>::const_iterator itrCh5;
+		itrCh5 = this->chText5.GetMap().find(key);
 
-		if( itrCh5 != this->chText5.chList.end() ){
+		if( itrCh5 != this->chText5.GetMap().end() ){
 			ULONGLONG addKey = ((ULONGLONG)itrCh4->second.space) << 32 | itrCh4->second.ch;
 			map<ULONGLONG, ULONGLONG>::iterator itrAdd;
 			itrAdd = addMap.find(addKey);
@@ -216,8 +229,8 @@ BOOL CChSetUtil::IsEpgCapService(
 	WORD TSID
 	)
 {
-	map<LONGLONG, CH_DATA5>::iterator itrCh5;
-	for( itrCh5 = this->chText5.chList.begin(); itrCh5 != this->chText5.chList.end(); itrCh5++ ){
+	map<LONGLONG, CH_DATA5>::const_iterator itrCh5;
+	for( itrCh5 = this->chText5.GetMap().begin(); itrCh5 != this->chText5.GetMap().end(); itrCh5++ ){
 		if( itrCh5->second.originalNetworkID == ONID &&
 			itrCh5->second.transportStreamID == TSID &&
 			itrCh5->second.epgCapFlag == TRUE
@@ -235,9 +248,9 @@ BOOL CChSetUtil::IsPartial(
 	)
 {
 	LONGLONG key = _Create64Key(ONID, TSID, SID);
-	map<LONGLONG, CH_DATA5>::iterator itr;
-	itr = this->chText5.chList.find(key);
-	if( itr != this->chText5.chList.end() ){
+	map<LONGLONG, CH_DATA5>::const_iterator itr;
+	itr = this->chText5.GetMap().find(key);
+	if( itr != this->chText5.GetMap().end() ){
 		if( itr->second.partialFlag == 1 ){
 			return TRUE;
 		}

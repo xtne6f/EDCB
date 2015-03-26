@@ -7,9 +7,9 @@
 CSendUDP::CSendUDP(void)
 {
     m_hSendThread = NULL;
-    m_hSendStopEvent = _CreateEvent(FALSE, FALSE, NULL);
+    m_hSendStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 
-	m_hCriticalEvent = _CreateEvent(FALSE, TRUE, NULL);
+	m_hCriticalEvent = CreateEvent(NULL, FALSE, TRUE, NULL);
 
 	WSAData wsaData;
 	WSAStartup(MAKEWORD(2,0), &wsaData);
@@ -54,7 +54,7 @@ CSendUDP::~CSendUDP(void)
 	}
 
 	for( int i=0; i<(int)m_TSBuff.size(); i++ ){
-		SAFE_DELETE(m_TSBuff[i])
+		SAFE_DELETE(m_TSBuff[i]);
 	}
 	m_TSBuff.clear();
 
@@ -136,7 +136,7 @@ BOOL CSendUDP::CloseUpload()
 
 	if( WaitForSingleObject( m_hCriticalEvent, 500 ) == WAIT_OBJECT_0 ){
 		for( int i=0; i<(int)m_TSBuff.size(); i++ ){
-			SAFE_DELETE(m_TSBuff[i])
+			SAFE_DELETE(m_TSBuff[i]);
 		}
 		m_TSBuff.clear();
 	}

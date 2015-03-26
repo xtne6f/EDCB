@@ -4,11 +4,11 @@
 
 CTimeShiftUtil::CTimeShiftUtil(void)
 {
-	this->lockEvent = _CreateEvent(FALSE, TRUE, NULL);
-	this->lockBuffEvent = _CreateEvent(FALSE, TRUE, NULL);
+	this->lockEvent = CreateEvent(NULL, FALSE, TRUE, NULL);
+	this->lockBuffEvent = CreateEvent(NULL, FALSE, TRUE, NULL);
 
     this->readThread = NULL;
-    this->readStopEvent = _CreateEvent(FALSE, FALSE, NULL);
+    this->readStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 
 	this->packetInit = NULL;
 	this->sendUdp = NULL;
@@ -191,7 +191,7 @@ BOOL CTimeShiftUtil::OpenTimeShift(
 	if( this->packetInit == NULL ){
 		this->packetInit = new CPacketInit;
 	}
-	HANDLE file = _CreateFile2( filePath, GENERIC_READ, FILE_SHARE_READ|FILE_SHARE_WRITE, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
+	HANDLE file = CreateFile( filePath, GENERIC_READ, FILE_SHARE_READ|FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
 	if( file == INVALID_HANDLE_VALUE ){
 		UnLock();
 		return FALSE;
@@ -335,7 +335,7 @@ UINT WINAPI CTimeShiftUtil::ReadThread(LPVOID param)
 	CTimeShiftUtil* sys = (CTimeShiftUtil*)param;
 	BYTE buff[188*256];
 
-	HANDLE file = _CreateFile2( sys->filePath.c_str(), GENERIC_READ, FILE_SHARE_READ|FILE_SHARE_WRITE, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
+	HANDLE file = CreateFile( sys->filePath.c_str(), GENERIC_READ, FILE_SHARE_READ|FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
 	if( file == INVALID_HANDLE_VALUE ){
 		return FALSE;
 	}
@@ -375,7 +375,7 @@ UINT WINAPI CTimeShiftUtil::ReadThread(LPVOID param)
 		if( totalReadSize + buffSize > sys->totalFileSize && sys->fileMode == FALSE){
 			//ファイルサイズ変わっていってるはずなので開き直す
 			CloseHandle(file);
-			file = _CreateFile2( sys->filePath.c_str(), GENERIC_READ, FILE_SHARE_READ|FILE_SHARE_WRITE, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
+			file = CreateFile( sys->filePath.c_str(), GENERIC_READ, FILE_SHARE_READ|FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
 			if( file == INVALID_HANDLE_VALUE ){
 				return FALSE;
 			}
@@ -566,7 +566,7 @@ void CTimeShiftUtil::SetAvailableSize(__int64 fileSize)
 	this->availableFileSize = fileSize;
 
 	if( fileSize == -1 ){
-		HANDLE file = _CreateFile2( this->filePath.c_str(), GENERIC_READ, FILE_SHARE_READ|FILE_SHARE_WRITE, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
+		HANDLE file = CreateFile( this->filePath.c_str(), GENERIC_READ, FILE_SHARE_READ|FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
 		if( file != INVALID_HANDLE_VALUE ){
 			DWORD lenH = 0;
 			DWORD lenL = GetFileSize(file, &lenH);

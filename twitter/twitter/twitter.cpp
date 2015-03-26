@@ -5,43 +5,9 @@
 #include "twitter.h"
 #include "../../Common/Util.h"
 #include "TwitterMain.h"
+#include "../../Common/InstanceManager.h"
 
-map<DWORD, CTwitterMain*> g_List;
-DWORD g_nextID = 1;
-
-DWORD GetNextID()
-{
-	DWORD nextID = 0xFFFFFFFF;
-
-	map<DWORD, CTwitterMain*>::iterator itr;
-	itr = g_List.find(g_nextID);
-	if( itr == g_List.end() ){
-		nextID = g_nextID;
-		g_nextID++;
-		if( g_nextID == 0 || g_nextID == 0xFFFFFFFF){
-			g_nextID = 1;
-		}
-	}else{
-		for( DWORD i=1; i<0xFFFFFFFF; i++ ){
-			itr = g_List.find(g_nextID);
-			if( itr == g_List.end() ){
-				nextID = g_nextID;
-				g_nextID++;
-				if( g_nextID == 0 || g_nextID == 0xFFFFFFFF){
-					g_nextID = 1;
-				}
-				break;
-			}else{
-				g_nextID++;
-			}
-			if( g_nextID == 0 || g_nextID == 0xFFFFFFFF){
-				g_nextID = 1;
-			}
-		}
-	}
-
-	return nextID;
-}
+CInstanceManager<CTwitterMain> g_instMng;
 
 //DLLの初期化
 //戻り値：
@@ -56,11 +22,16 @@ DWORD WINAPI InitializeTW(
 		return ERR_INVALID_ARG;
 	}
 
-	CTwitterMain* main = new CTwitterMain;
-	DWORD err = main->Initialize();
-	if( err == NO_ERR ){
-		*id = GetNextID();
-		g_List.insert(pair<DWORD, CTwitterMain*>(*id, main));
+	DWORD err = ERR_FALSE;
+
+	try{
+		std::shared_ptr<CTwitterMain> ptr = std::make_shared<CTwitterMain>();
+		err = ptr->Initialize();
+		if( err == NO_ERR ){
+			*id = g_instMng.push(ptr);
+		}
+	}catch( std::bad_alloc& ){
+		err = ERR_FALSE;
 	}
 	return err;
 }
@@ -74,17 +45,13 @@ DWORD WINAPI UnInitializeTW(
 	DWORD id
 	)
 {
-	map<DWORD, CTwitterMain*>::iterator itr;
-	itr = g_List.find(id);
-	if( itr == g_List.end() ){
-		return ERR_NOT_INIT;
+	DWORD err = ERR_NOT_INIT;
+	{
+		std::shared_ptr<CTwitterMain> ptr = g_instMng.pop(id);
+		if( ptr != NULL ){
+			err = ptr->UnInitialize();
+		}
 	}
-
-	DWORD err = itr->second->UnInitialize();
-
-	SAFE_DELETE(itr->second);
-
-	g_List.erase(itr);
 
 	return err;
 }
@@ -100,13 +67,12 @@ BOOL WINAPI GetIEProxyConfigTW(
 	CURRENT_USER_IE_PROXY_CONFIG** proxyConfig
 	)
 {
-	map<DWORD, CTwitterMain*>::iterator itr;
-	itr = g_List.find(id);
-	if( itr == g_List.end() ){
+	std::shared_ptr<CTwitterMain> ptr = g_instMng.find(id);
+	if( ptr == NULL ){
 		return FALSE;
 	}
 
-	return itr->second->GetIEProxyConfig(proxyConfig);
+	return ptr->GetIEProxyConfig(proxyConfig);
 }
 
 //自動的に検出でProxyのアドレスを取得する
@@ -119,13 +85,12 @@ BOOL WINAPI GetProxyAutoDetectTW(
 	PROXY_CONFIG** proxyConfig
 	)
 {
-	map<DWORD, CTwitterMain*>::iterator itr;
-	itr = g_List.find(id);
-	if( itr == g_List.end() ){
+	std::shared_ptr<CTwitterMain> ptr = g_instMng.find(id);
+	if( ptr == NULL ){
 		return FALSE;
 	}
 
-	return itr->second->GetProxyAutoDetect(proxyConfig);
+	return ptr->GetProxyAutoDetect(proxyConfig);
 }
 
 //自動構成スクリプトでProxyのアドレスを取得する
@@ -140,13 +105,12 @@ BOOL WINAPI GetProxyAutoScriptTW(
 	PROXY_CONFIG** proxyConfig
 	)
 {
-	map<DWORD, CTwitterMain*>::iterator itr;
-	itr = g_List.find(id);
-	if( itr == g_List.end() ){
+	std::shared_ptr<CTwitterMain> ptr = g_instMng.find(id);
+	if( ptr == NULL ){
 		return FALSE;
 	}
 
-	return itr->second->GetProxyAutoScript(scriptURL, proxyConfig);
+	return ptr->GetProxyAutoScript(scriptURL, proxyConfig);
 }
 
 //Proxy使用を設定
@@ -161,13 +125,12 @@ void WINAPI SetProxyTW(
 	USE_PROXY_INFO* proxyInfo
 	)
 {
-	map<DWORD, CTwitterMain*>::iterator itr;
-	itr = g_List.find(id);
-	if( itr == g_List.end() ){
+	std::shared_ptr<CTwitterMain> ptr = g_instMng.find(id);
+	if( ptr == NULL ){
 		return ;
 	}
 
-	itr->second->SetProxy(useProxy, proxyInfo);
+	ptr->SetProxy(useProxy, proxyInfo);
 }
 
 //認証用ログインURLを取得する
@@ -180,13 +143,12 @@ DWORD WINAPI GetAuthorizationUrlTW(
 	WCHAR** url
 	)
 {
-	map<DWORD, CTwitterMain*>::iterator itr;
-	itr = g_List.find(id);
-	if( itr == g_List.end() ){
+	std::shared_ptr<CTwitterMain> ptr = g_instMng.find(id);
+	if( ptr == NULL ){
 		return FALSE;
 	}
 
-	return itr->second->GetAuthorizationUrl(url);
+	return ptr->GetAuthorizationUrl(url);
 }
 
 //認証結果の暗証番号を設定する
@@ -200,13 +162,12 @@ DWORD WINAPI SetAuthorizationPWDTW(
 	LPCWSTR password
 	)
 {
-	map<DWORD, CTwitterMain*>::iterator itr;
-	itr = g_List.find(id);
-	if( itr == g_List.end() ){
+	std::shared_ptr<CTwitterMain> ptr = g_instMng.find(id);
+	if( ptr == NULL ){
 		return FALSE;
 	}
 
-	return itr->second->SetAuthorizationPWD(password);
+	return ptr->SetAuthorizationPWD(password);
 }
 
 //ツイートする
@@ -221,13 +182,12 @@ DWORD WINAPI SendTweetTW(
 	LPCWSTR text
 	)
 {
-	map<DWORD, CTwitterMain*>::iterator itr;
-	itr = g_List.find(id);
-	if( itr == g_List.end() ){
+	std::shared_ptr<CTwitterMain> ptr = g_instMng.find(id);
+	if( ptr == NULL ){
 		return FALSE;
 	}
 
-	return itr->second->SendTweet(asyncMode, text);
+	return ptr->SendTweet(asyncMode, text);
 }
 
 //非同期ツイートの残りを取得する
@@ -238,13 +198,12 @@ DWORD WINAPI GetTweetQueTW(
 	DWORD id
 	)
 {
-	map<DWORD, CTwitterMain*>::iterator itr;
-	itr = g_List.find(id);
-	if( itr == g_List.end() ){
+	std::shared_ptr<CTwitterMain> ptr = g_instMng.find(id);
+	if( ptr == NULL ){
 		return FALSE;
 	}
 
-	return itr->second->GetTweetQue();
+	return ptr->GetTweetQue();
 }
 
 //ストリーミングを開始する
@@ -261,13 +220,12 @@ DWORD WINAPI StartTweetStreamingTW(
 	DWORD* streamingID
 	)
 {
-	map<DWORD, CTwitterMain*>::iterator itr;
-	itr = g_List.find(id);
-	if( itr == g_List.end() ){
+	std::shared_ptr<CTwitterMain> ptr = g_instMng.find(id);
+	if( ptr == NULL ){
 		return FALSE;
 	}
 
-	return itr->second->StartTweetStreaming(track, callbackFunc, callbackFuncParam, streamingID);
+	return ptr->StartTweetStreaming(track, callbackFunc, callbackFuncParam, streamingID);
 }
 
 //ストリーミングを停止する
@@ -280,11 +238,10 @@ DWORD WINAPI StopTweetStreamingTW(
 	DWORD streamingID
 	)
 {
-	map<DWORD, CTwitterMain*>::iterator itr;
-	itr = g_List.find(id);
-	if( itr == g_List.end() ){
+	std::shared_ptr<CTwitterMain> ptr = g_instMng.find(id);
+	if( ptr == NULL ){
 		return FALSE;
 	}
 
-	return itr->second->StopTweetStreaming(streamingID);
+	return ptr->StopTweetStreaming(streamingID);
 }

@@ -119,7 +119,7 @@ DWORD CCreatePMTPacket::DecodePMT(BYTE* data, DWORD dataSize)
 		_OutputDebugString(L"CCreatePMTPacket::table_id Err");
 		return ERR_FALSE;
 	}
-	if( readSize+section_length > dataSize && section_length > 3){
+	if( readSize+section_length > dataSize || section_length < 4){
 		//サイズ異常
 		_OutputDebugString(L"CCreatePMTPacket::section_length Err");
 		return ERR_FALSE;
@@ -134,7 +134,7 @@ DWORD CCreatePMTPacket::DecodePMT(BYTE* data, DWORD dataSize)
 		return ERR_FALSE;
 	}
 
-	if( section_length < 8 ){
+	if( section_length - 4 < 9 ){
 		_OutputDebugString(L"CCreatePMTPacket::section_length %d Err2", section_length);
 		return ERR_FALSE;
 	}
@@ -147,6 +147,11 @@ DWORD CCreatePMTPacket::DecodePMT(BYTE* data, DWORD dataSize)
 	PCR_PID = ((WORD)data[readSize+5]&0x1F)<<8 | data[readSize+6];
 	program_info_length = ((WORD)data[readSize+7]&0x0F)<<8 | data[readSize+8];
 	readSize += 9;
+
+	if( readSize + program_info_length > (DWORD)section_length+3-4 ){
+		_OutputDebugString(L"CCreatePMTPacket::program_info_length %d Err", program_info_length);
+		return ERR_FALSE;
+	}
 
 	if( this->lastPcrPID == PCR_PID && this->lastPgNumber == program_number && this->lastVersion == version_number ){
 		//バージョン同じなのでこれ以上必要なし
@@ -173,15 +178,17 @@ DWORD CCreatePMTPacket::DecodePMT(BYTE* data, DWORD dataSize)
 
 	//EMMあるかだけチェック
 	WORD infoRead = 0;
-	while(infoRead < program_info_length){
+	while(infoRead+1 < program_info_length){
 		BYTE descriptor_tag = data[readSize];
 		BYTE descriptor_length = data[readSize+1];
 		readSize+=2;
 
-		if( descriptor_tag == 0x09 && descriptor_length >= 4){
+		if( descriptor_tag == 0x09 && descriptor_length >= 4 && infoRead+2+3 < program_info_length){
 			//CA
 			WORD CA_PID = ((WORD)data[readSize+2]&0x1F)<<8 | (WORD)data[readSize+3];
-			this->emmPIDMap.insert(pair<WORD,WORD>(CA_PID, 0));
+			if (CA_PID != 0x1fff) {
+				this->emmPIDMap.insert(pair<WORD,WORD>(CA_PID, 0));
+			}
 		}
 		readSize += descriptor_length;
 
@@ -189,40 +196,39 @@ DWORD CCreatePMTPacket::DecodePMT(BYTE* data, DWORD dataSize)
 	}
 
 	//descriptor2
-	while( readSize < (DWORD)section_length+3-4 ){
+	while( readSize+4 < (DWORD)section_length+3-4 ){
+		WORD ES_info_length = ((WORD)data[readSize+3]&0x0F)<<8 | data[readSize+4];
+		if( readSize+ES_info_length+5 > (DWORD)section_length+3-4 ){
+			break;
+		}
 		SECOND_DESC_BUFF* item = new SECOND_DESC_BUFF;
 		item->stream_type = data[readSize];
 		item->elementary_PID = ((WORD)data[readSize+1]&0x1F)<<8 | data[readSize+2];
-		item->ES_info_length = ((WORD)data[readSize+3]&0x0F)<<8 | data[readSize+4];
+		item->ES_info_length = ES_info_length;
 		item->descBuffSize = item->ES_info_length + 5;
 		if( item->descBuffSize > 0 ){
 			item->descBuff = new BYTE[item->descBuffSize];
-			memcpy(item->descBuff, data+readSize, 5);
+			memcpy(item->descBuff, data+readSize, item->descBuffSize);
 		}
-		readSize += 5;
+		readSize += item->descBuffSize;
 
 		//descriptor
-		infoRead = 0;
-		while(infoRead < item->ES_info_length){
-			BYTE descriptor_tag = data[readSize];
-			BYTE descriptor_length = data[readSize+1];
+		infoRead = 5;
+		while(infoRead+1 < item->descBuffSize){
+			BYTE descriptor_tag = item->descBuff[infoRead];
+			BYTE descriptor_length = item->descBuff[infoRead+1];
 
-			if( descriptor_tag == 0x09 && descriptor_length >= 4){
+			if( descriptor_tag == 0x09 && descriptor_length >= 4 && infoRead+5 < item->descBuffSize){
 				//CA
-				WORD CA_PID = ((WORD)data[2+readSize+2]&0x1F)<<8 | (WORD)data[2+readSize+3];
-				this->emmPIDMap.insert(pair<WORD,WORD>(CA_PID, 0));
-
-				memcpy(item->descBuff+5+infoRead, data+readSize, 2+descriptor_length);
-			}else if( descriptor_tag == 0xC0 ){
+				WORD CA_PID = ((WORD)item->descBuff[2+infoRead+2]&0x1F)<<8 | (WORD)item->descBuff[2+infoRead+3];
+				if (CA_PID != 0x1fff) {
+					this->emmPIDMap.insert(pair<WORD,WORD>(CA_PID, 0));
+				}
+			}else if( descriptor_tag == 0xC0 && descriptor_length >= 3 && infoRead+4 < item->descBuffSize ){
 				//階層伝送記述子
-				item->quality = data[2+readSize]&0x01;
-				item->qualityPID = ((WORD)data[2+readSize+1]&0x1F)<<8 | data[2+readSize+2];
-
-				memcpy(item->descBuff+5+infoRead, data+readSize, 2+descriptor_length);
-			}else{
-				memcpy(item->descBuff+5+infoRead, data+readSize, 2+descriptor_length);
+				item->quality = item->descBuff[2+infoRead]&0x01;
+				item->qualityPID = ((WORD)item->descBuff[2+infoRead+1]&0x1F)<<8 | item->descBuff[2+infoRead+2];
 			}
-			readSize += 2+descriptor_length;
 			infoRead += 2+descriptor_length;
 		}
 

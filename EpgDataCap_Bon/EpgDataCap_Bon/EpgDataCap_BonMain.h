@@ -21,9 +21,9 @@ public:
 	//戻り値：
 	// エラーコード
 	//引数：
-	// bonList			[OUT]検索できたBonDriver一覧（mapのキー 内部インデックス値、mapの値 BonDriverファイル名）
+	// bonList			[OUT]検索できたBonDriver一覧
 	DWORD EnumBonDriver(
-		map<int, wstring>* bonList
+		vector<wstring>* bonList
 		);
 
 	//BonDriverをロードしてチャンネル情報などを取得（ファイル名で指定）
@@ -99,11 +99,6 @@ public:
 		WORD* ONID,
 		WORD* TSID,
 		WORD* SID
-		);
-
-	BOOL GetCh(
-		DWORD* space,
-		DWORD* ch
 		);
 
 	//チャンネル変更中かどうか
@@ -245,8 +240,6 @@ public:
 	void StartServer();
 	void StopServer();
 
-	void StartTimeShift();
-
 	BOOL GetViewStatusInfo(
 		float* signal,
 		DWORD* space,
@@ -256,6 +249,8 @@ public:
 		vector<NW_SEND_INFO>* sendUdpList,
 		vector<NW_SEND_INFO>* sendTcpList
 		);
+
+	void CtrlCmdCallbackInvoked();
 
 protected:
 	HWND msgWnd;
@@ -284,10 +279,6 @@ protected:
 	BOOL needCaption;
 	BOOL needData;
 
-	BOOL BSBasic;
-	BOOL CS1Basic;
-	BOOL CS2Basic;
-
 	int openWait;
 
 	wstring viewPath;
@@ -302,6 +293,9 @@ protected:
 	wstring currentBonDriver;
 	int outCtrlID;
 	map<DWORD, DWORD> ctrlMap;
+
+	CMD_STREAM* cmdCapture;
+	CMD_STREAM* resCapture;
 
 protected:
 	//外部制御コマンド関係

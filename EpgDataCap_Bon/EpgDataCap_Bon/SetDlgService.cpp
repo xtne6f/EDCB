@@ -155,16 +155,16 @@ void CSetDlgService::ReloadList()
 	map<wstring, CH_SET_INFO*>::iterator itr;
 	itr = chList.find(key);
 	if( itr != chList.end()){
-		multimap<LONGLONG, CH_DATA4>::iterator itrCh;
-		for( itrCh = itr->second->chSet.chList.begin(); itrCh != itr->second->chSet.chList.end(); itrCh++ ){
+		vector<CH_DATA4*> chDataList = itr->second->chSet.GetChDataList();
+		for( vector<CH_DATA4*>::iterator itrCh = chDataList.begin(); itrCh != chDataList.end(); itrCh++ ){
 			LVITEM lvi;
 			lvi.mask = LVIF_TEXT | LVIF_PARAM;
 			lvi.iItem = ListView_GetItemCount(hItem);
 			lvi.iSubItem = 0;
-			lvi.pszText = (LPWSTR)itrCh->second.serviceName.c_str();
-			lvi.lParam = (LPARAM)&itrCh->second;
+			lvi.pszText = (LPWSTR)(*itrCh)->serviceName.c_str();
+			lvi.lParam = (LPARAM)(*itrCh);
 			int index = ListView_InsertItem(hItem, &lvi);
-			ListView_SetCheckState(hItem, index, itrCh->second.useViewFlag);
+			ListView_SetCheckState(hItem, index, (*itrCh)->useViewFlag);
 		}
 	}
 	SetDlgItemText(m_hWnd, IDC_EDIT_CH, L"");
@@ -215,7 +215,7 @@ void CSetDlgService::SaveIni()
 
 	map<wstring, CH_SET_INFO*>::iterator itr;
 	for( itr = chList.begin(); itr != chList.end(); itr++ ){
-		itr->second->chSet.SaveChText();
+		itr->second->chSet.SaveText();
 	}
 }
 

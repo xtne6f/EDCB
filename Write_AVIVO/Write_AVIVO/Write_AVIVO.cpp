@@ -6,50 +6,15 @@
 #include "Write_PlugIn.h"
 #include "WriteMain.h"
 #include "SettingDlg.h"
+#include "../../Common/InstanceManager.h"
 
 #include <tchar.h>
-#include <map>
 using namespace std;
 
-extern map<DWORD, CWriteMain*> g_List;
+CInstanceManager<CWriteMain> g_instMng;
 extern HINSTANCE g_Instance;
-DWORD g_nextID = 1;
 
 #define PLUGIN_NAME L"ATI AVIVO Encode PlugIn"
-
-DWORD GetNextID()
-{
-	DWORD nextID = 0xFFFFFFFF;
-
-	map<DWORD, CWriteMain*>::iterator itr;
-	itr = g_List.find(g_nextID);
-	if( itr == g_List.end() ){
-		nextID = g_nextID;
-		g_nextID++;
-		if( g_nextID == 0 || g_nextID == 0xFFFFFFFF){
-			g_nextID = 1;
-		}
-	}else{
-		for( DWORD i=1; i<0xFFFFFFFF; i++ ){
-			itr = g_List.find(g_nextID);
-			if( itr == g_List.end() ){
-				nextID = g_nextID;
-				g_nextID++;
-				if( g_nextID == 0 || g_nextID == 0xFFFFFFFF){
-					g_nextID = 1;
-				}
-				break;
-			}else{
-				g_nextID++;
-			}
-			if( g_nextID == 0 || g_nextID == 0xFFFFFFFF){
-				g_nextID = 1;
-			}
-		}
-	}
-
-	return nextID;
-}
 
 
 //PlugInの名前を取得する
@@ -111,9 +76,12 @@ BOOL WINAPI CreateCtrl(
 		return FALSE;
 	}
 
-	CWriteMain* main = new CWriteMain;
-	*id = GetNextID();
-	g_List.insert(pair<DWORD, CWriteMain*>(*id, main));
+	try{
+		std::shared_ptr<CWriteMain> ptr = std::make_shared<CWriteMain>();
+		*id = g_instMng.push(ptr);
+	}catch( std::bad_alloc& ){
+		return FALSE;
+	}
 
 	return TRUE;
 }
@@ -127,15 +95,9 @@ BOOL WINAPI DeleteCtrl(
 	DWORD id
 	)
 {
-	map<DWORD, CWriteMain*>::iterator itr;
-	itr = g_List.find(id);
-	if( itr == g_List.end() ){
+	if( g_instMng.pop(id) == NULL ){
 		return FALSE;
 	}
-
-	delete itr->second;
-
-	g_List.erase(itr);
 
 	return TRUE;
 }
@@ -155,13 +117,12 @@ BOOL WINAPI StartSave(
 	ULONGLONG createSize
 	)
 {
-	map<DWORD, CWriteMain*>::iterator itr;
-	itr = g_List.find(id);
-	if( itr == g_List.end() ){
+	std::shared_ptr<CWriteMain> ptr = g_instMng.find(id);
+	if( ptr == NULL ){
 		return FALSE;
 	}
 
-	return itr->second->_StartSave(fileName, overWriteFlag, createSize, g_Instance);
+	return ptr->_StartSave(fileName, overWriteFlag, createSize, g_Instance);
 }
 
 //ファイル保存を終了する
@@ -173,13 +134,12 @@ BOOL WINAPI StopSave(
 	DWORD id
 	)
 {
-	map<DWORD, CWriteMain*>::iterator itr;
-	itr = g_List.find(id);
-	if( itr == g_List.end() ){
+	std::shared_ptr<CWriteMain> ptr = g_instMng.find(id);
+	if( ptr == NULL ){
 		return FALSE;
 	}
 
-	return itr->second->_StopSave();
+	return ptr->_StopSave();
 }
 
 //実際に保存しているファイルパスを取得する（再生やバッチ処理に利用される）
@@ -197,13 +157,12 @@ BOOL WINAPI GetSaveFilePath(
 	DWORD* filePathSize
 	)
 {
-	map<DWORD, CWriteMain*>::iterator itr;
-	itr = g_List.find(id);
-	if( itr == g_List.end() ){
+	std::shared_ptr<CWriteMain> ptr = g_instMng.find(id);
+	if( ptr == NULL ){
 		return FALSE;
 	}
 
-	return itr->second->_GetSaveFilePath(filePath, filePathSize);
+	return ptr->_GetSaveFilePath(filePath, filePathSize);
 }
 
 //保存用TSデータを送る
@@ -223,13 +182,12 @@ BOOL WINAPI AddTSBuff(
 	DWORD* writeSize
 	)
 {
-	map<DWORD, CWriteMain*>::iterator itr;
-	itr = g_List.find(id);
-	if( itr == g_List.end() ){
+	std::shared_ptr<CWriteMain> ptr = g_instMng.find(id);
+	if( ptr == NULL ){
 		return FALSE;
 	}
 
-	return itr->second->_AddTSBuff(data, size, writeSize);
+	return ptr->_AddTSBuff(data, size, writeSize);
 }
 
 

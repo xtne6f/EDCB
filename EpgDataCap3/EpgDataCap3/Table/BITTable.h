@@ -36,15 +36,16 @@ broadcaster_information _section(){
 */
 
 #include "../../../Common/Util.h"
-#include "../Descriptor/DescriptorDef.h"
+#include "../AribDescriptor.h"
+#include "PSITable.h"
 
-class CBITTable
+class CBITTable : public CPSITable
 {
 public:
 	typedef struct _BROADCASTER_DATA{
 		BYTE broadcaster_id;
 		WORD broadcaster_descriptors_length;
-		vector<DESCRIPTOR_DATA*> descriptorList;
+		vector<AribDescriptor::CDescriptor*> descriptorList;
 		~_BROADCASTER_DATA(void){
 			for( size_t i=0; i<descriptorList.size(); i++ ){
 				SAFE_DELETE(descriptorList[i]);
@@ -52,9 +53,6 @@ public:
 			descriptorList.clear();
 		};
 	}BROADCASTER_DATA;
-	BYTE table_id;
-	BYTE section_syntax_indicator;
-	WORD section_length;
 	WORD original_network_id;
 	BYTE version_number;
 	BYTE current_next_indicator;
@@ -62,9 +60,8 @@ public:
 	BYTE last_section_number;
 	BYTE broadcast_view_propriety;
 	WORD first_descriptors_length;
-	vector<DESCRIPTOR_DATA*> descriptorList;
+	vector<AribDescriptor::CDescriptor*> descriptorList;
 	vector<BROADCASTER_DATA*> broadcasterDataList;
-	DWORD crc32;
 
 public:
 	CBITTable(void);

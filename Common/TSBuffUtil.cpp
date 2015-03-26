@@ -1,7 +1,7 @@
 #include "StdAfx.h"
 #include "TSBuffUtil.h"
 
-CTSBuffUtil::CTSBuffUtil(void)
+CTSBuffUtil::CTSBuffUtil(BOOL supportPES)
 {
 	this->lastPID = 0xFFFF;
 	this->lastCounter = 0xFF;
@@ -11,6 +11,7 @@ CTSBuffUtil::CTSBuffUtil(void)
 
 	this->duplicateFlag = FALSE;
 
+	this->supportPES = supportPES;
 	this->PESMode = FALSE;
 }
 
@@ -127,9 +128,17 @@ DWORD CTSBuffUtil::Add188TS(CTSPacketUtil* tsPacket)
 		}
 		if(tsPacket->data_byte[0] == 0x00 && tsPacket->data_byte[1] == 0x00 && tsPacket->data_byte[2] == 0x01){
 			//PES
+			if( this->supportPES == FALSE ){
+				Clear();
+				return ERR_NOT_SUPPORT;
+			}
 			this->PESMode = TRUE;
 		}else if( tsPacket->adaptation_field_length > 0 && tsPacket->random_access_indicator == 1 ){
 			//PES
+			if( this->supportPES == FALSE ){
+				Clear();
+				return ERR_NOT_SUPPORT;
+			}
 			this->PESMode = TRUE;
 		}else if( tsPacket->adaptation_field_length > 0 && tsPacket->PCR_flag == 1 ){
 			//PCR
@@ -192,9 +201,6 @@ BOOL CTSBuffUtil::GetSectionBuff(BYTE** sectionData, DWORD* dataSize)
 
 DWORD CTSBuffUtil::AddSectionBuff(CTSPacketUtil* tsPacket)
 {
-	if( tsPacket == NULL ){
-		return FALSE;
-	}
 	if( tsPacket->data_byteSize == 0 || tsPacket->data_byte == NULL ){
 		return ERR_ADD_NEXT;
 	}
@@ -308,10 +314,6 @@ DWORD CTSBuffUtil::AddSectionBuff(CTSPacketUtil* tsPacket)
 
 DWORD CTSBuffUtil::AddPESBuff(CTSPacketUtil* tsPacket)
 {
-	if( tsPacket == NULL ){
-		SAFE_DELETE(creatingBuff);
-		return FALSE;
-	}
 	if( tsPacket->data_byteSize == 0 || tsPacket->data_byte == NULL ){
 		return ERR_ADD_NEXT;
 	}
@@ -319,9 +321,8 @@ DWORD CTSBuffUtil::AddPESBuff(CTSPacketUtil* tsPacket)
 		return ERR_ADD_NEXT;
 	}
 
-	BYTE readSize = 0;
 	if( tsPacket->payload_unit_start_indicator == 1 ){
-		if(tsPacket->data_byte[0] != 0x00 || tsPacket->data_byte[1] != 0x00 || tsPacket->data_byte[2] != 0x01){
+		if(tsPacket->data_byteSize < 6 || tsPacket->data_byte[0] != 0x00 || tsPacket->data_byte[1] != 0x00 || tsPacket->data_byte[2] != 0x01){
 			SAFE_DELETE(creatingBuff);
 			return FALSE;
 		}
@@ -344,8 +345,14 @@ DWORD CTSBuffUtil::AddPESBuff(CTSPacketUtil* tsPacket)
 		}else{
 			buff->dataSize = PES_packet_length + 6;
 			buff->data = new BYTE[buff->dataSize];
-			memcpy(buff->data, tsPacket->data_byte, tsPacket->data_byteSize);
-			buff->copySize = tsPacket->data_byteSize;
+
+			if( buff->dataSize < tsPacket->data_byteSize ){
+				buff->copySize = buff->dataSize;
+			}else{
+				buff->copySize = tsPacket->data_byteSize;
+			}
+
+			memcpy(buff->data, tsPacket->data_byte, buff->copySize);
 			if( buff->dataSize != buff->copySize ){
 				creatingBuff = buff;
 				return ERR_ADD_NEXT;

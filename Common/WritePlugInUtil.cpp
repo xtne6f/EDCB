@@ -9,44 +9,11 @@ CWritePlugInUtil::CWritePlugInUtil(void)
 	module = NULL;
 
 	this->id = 0;
-	this->lockEvent = _CreateEvent(FALSE, TRUE, NULL );
 }
 
 CWritePlugInUtil::~CWritePlugInUtil(void)
 {
 	UnInitialize();
-
-	if( this->lockEvent != NULL ){
-		UnLock();
-		CloseHandle(this->lockEvent);
-		this->lockEvent = NULL;
-	}
-}
-
-BOOL CWritePlugInUtil::Lock(LPCWSTR log, DWORD timeOut)
-{
-	if( this->lockEvent == NULL ){
-		return FALSE;
-	}
-	if( log != NULL ){
-		OutputDebugString(log);
-	}
-	DWORD dwRet = WaitForSingleObject(this->lockEvent, timeOut);
-	if( dwRet == WAIT_ABANDONED || 
-		dwRet == WAIT_FAILED){
-		return FALSE;
-	}
-	return TRUE;
-}
-
-void CWritePlugInUtil::UnLock(LPCWSTR log)
-{
-	if( this->lockEvent != NULL ){
-		SetEvent(this->lockEvent);
-	}
-	if( log != NULL ){
-		OutputDebugString(log);
-	}
 }
 
 //DLL‚Ì‰Šú‰»
@@ -61,7 +28,6 @@ BOOL CWritePlugInUtil::Initialize(
 	if( module != NULL ){
 		return FALSE;
 	}
-	if( Lock() == FALSE ) return FALSE;
 
 	pfnGetPlugInNameWP = NULL;
 	pfnSettingWP = NULL;
@@ -79,7 +45,6 @@ BOOL CWritePlugInUtil::Initialize(
 
 	if( module == NULL ){
 		OutputDebugString(L"dl‚Ìƒ[ƒh‚ÉŽ¸”s‚µ‚Ü‚µ‚½\r\n");
-		UnLock();
 		return FALSE;
 	}
 
@@ -143,7 +108,6 @@ ERR_END:
 		::FreeLibrary( module );
 		module=NULL;
 	}
-	UnLock();
 	return ret;
 }
 
@@ -220,11 +184,8 @@ BOOL CWritePlugInUtil::StartSave(
 	if( module == NULL ){
 		return ERR_NOT_INIT;
 	}
-	if( Lock() == FALSE ) return FALSE;
 
 	BOOL ret = pfnStartSaveWP(this->id, fileName, overWriteFlag, createSize);
-
-	UnLock();
 
 	return ret;
 }
@@ -238,11 +199,8 @@ BOOL CWritePlugInUtil::StopSave(
 	if( module == NULL ){
 		return ERR_NOT_INIT;
 	}
-	if( Lock() == FALSE ) return FALSE;
 
 	BOOL ret = pfnStopSaveWP(this->id);
-
-	UnLock();
 
 	return ret;
 }
@@ -263,11 +221,8 @@ BOOL CWritePlugInUtil::GetSaveFilePath(
 	if( module == NULL ){
 		return ERR_NOT_INIT;
 	}
-	if( Lock() == FALSE ) return FALSE;
 
 	BOOL ret = pfnGetSaveFilePathWP(this->id, filePath, filePathSize);
-
-	UnLock();
 
 	return ret;
 }
@@ -290,11 +245,8 @@ BOOL CWritePlugInUtil::AddTSBuff(
 	if( module == NULL ){
 		return ERR_NOT_INIT;
 	}
-	if( Lock() == FALSE ) return FALSE;
 
 	BOOL ret = pfnAddTSBuffWP(this->id, data, size, writeSize);
-
-	UnLock();
 
 	return ret;
 }

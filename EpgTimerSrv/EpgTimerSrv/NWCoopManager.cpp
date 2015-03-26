@@ -8,14 +8,14 @@
 
 CNWCoopManager::CNWCoopManager(void)
 {
-	this->lockEvent = _CreateEvent(FALSE, TRUE, NULL);
-	this->lockQueue = _CreateEvent(FALSE, TRUE, NULL);
+	this->lockEvent = CreateEvent(NULL, FALSE, TRUE, NULL);
+	this->lockQueue = CreateEvent(NULL, FALSE, TRUE, NULL);
 
 	this->chkThread = NULL;
-	this->chkStopEvent = _CreateEvent(FALSE, FALSE, NULL);
+	this->chkStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 
 	this->chkEpgThread = NULL;
-	this->chkEpgStopEvent = _CreateEvent(FALSE, FALSE, NULL);
+	this->chkEpgStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 
 	this->updateEpgData = FALSE;
 
@@ -598,7 +598,7 @@ UINT WINAPI CNWCoopManager::ChkEpgThread(LPVOID param)
 			wstring filePath = folderPath;
 			filePath += chkingList[i];
 
-			HANDLE file = _CreateFile(filePath.c_str(), GENERIC_READ, FILE_SHARE_READ|FILE_SHARE_WRITE, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
+			HANDLE file = CreateFile(filePath.c_str(), GENERIC_READ, FILE_SHARE_READ|FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
 			if( file != INVALID_HANDLE_VALUE){
 				FILETIME CreationTime;
 				FILETIME LastAccessTime;
@@ -652,7 +652,7 @@ UINT WINAPI CNWCoopManager::ChkEpgThread(LPVOID param)
 				DWORD dataSize = 0;
 				DWORD err = sendCtrl.SendGetEpgFile2(chkingList[i], &data, &dataSize);
 				if( err == CMD_SUCCESS ){
-					file = _CreateFile2(filePath.c_str(), GENERIC_WRITE, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL );
+					file = _CreateDirectoryAndFile(filePath.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL );
 					if( file != INVALID_HANDLE_VALUE){
 						DWORD writeSize = 0;
 						WriteFile(file, data, dataSize, &writeSize, NULL);

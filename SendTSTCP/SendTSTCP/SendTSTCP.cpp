@@ -6,9 +6,9 @@
 #include "../../Common/Util.h"
 #include "../../Common/ErrDef.h"
 #include "SendTSTCPMain.h"
+#include "../../Common/InstanceManager.h"
 
-vector<CSendTSTCPMain*> g_List;
-int g_iCount = 0;
+CInstanceManager<CSendTSTCPMain> g_instMng;
 
 
 //DLLの初期化
@@ -16,15 +16,15 @@ int g_iCount = 0;
 int WINAPI InitializeDLL(
 	)
 {
-	g_iCount++;
-	int iID = 0;
-	iID = (int)g_List.size();
-	CSendTSTCPMain* pCtrl = new CSendTSTCPMain;
-	if(pCtrl->Initialize() == FALSE){
-		SAFE_DELETE(pCtrl);
-		return -1;
+	int iID = -1;
+
+	try{
+		std::shared_ptr<CSendTSTCPMain> ptr = std::make_shared<CSendTSTCPMain>();
+		if( ptr->Initialize() != FALSE ){
+			iID = (int)g_instMng.push(ptr);
+		}
+	}catch( std::bad_alloc& ){
 	}
-	g_List.push_back(pCtrl);
 
 	return iID;
 }
@@ -36,23 +36,15 @@ DWORD WINAPI UnInitializeDLL(
 	int iID //[IN] InitializeDLLの戻り値
 	)
 {
-	if( g_List[iID] == NULL ){
-		return ERR_NOT_INIT;
-	}
-	g_List[iID]->UnInitialize();
-	SAFE_DELETE(g_List[iID]);
-
-	g_iCount--;
-	if( g_iCount < 0 ){
-		g_iCount = 0;
-	}
-	if( g_iCount == 0 ){
-		for( int i=0; i<(int)g_List.size(); i++ ){
-			SAFE_DELETE(g_List[i]);
+	DWORD err = ERR_NOT_INIT;
+	{
+		std::shared_ptr<CSendTSTCPMain> ptr = g_instMng.pop(iID);
+		if( ptr != NULL ){
+			ptr->UnInitialize();
+			err = NO_ERR;
 		}
-		g_List.clear();
 	}
-	return NO_ERR;
+	return err;
 }
 
 
@@ -64,11 +56,12 @@ DWORD WINAPI AddSendAddrDLL(
 	DWORD dwPort
 	)
 {
-	if( g_List[iID] == NULL ){
+	std::shared_ptr<CSendTSTCPMain> ptr = g_instMng.find(iID);
+	if( ptr == NULL ){
 		return ERR_NOT_INIT;
 	}
 	DWORD dwRet = NO_ERR;
-	dwRet = g_List[iID]->AddSendAddr(lpcwszIP, dwPort);
+	dwRet = ptr->AddSendAddr(lpcwszIP, dwPort);
 	return dwRet;
 }
 
@@ -78,11 +71,12 @@ DWORD WINAPI ClearSendAddrDLL(
 	int iID //[IN] InitializeDLLの戻り値
 	)
 {
-	if( g_List[iID] == NULL ){
+	std::shared_ptr<CSendTSTCPMain> ptr = g_instMng.find(iID);
+	if( ptr == NULL ){
 		return ERR_NOT_INIT;
 	}
 	DWORD dwRet = NO_ERR;
-	dwRet = g_List[iID]->ClearSendAddr();
+	dwRet = ptr->ClearSendAddr();
 	return dwRet;
 }
 
@@ -92,11 +86,12 @@ DWORD WINAPI StartSendDLL(
 	int iID //[IN] InitializeDLLの戻り値
 	)
 {
-	if( g_List[iID] == NULL ){
+	std::shared_ptr<CSendTSTCPMain> ptr = g_instMng.find(iID);
+	if( ptr == NULL ){
 		return ERR_NOT_INIT;
 	}
 	DWORD dwRet = NO_ERR;
-	dwRet = g_List[iID]->StartSend();
+	dwRet = ptr->StartSend();
 	return dwRet;
 }
 
@@ -106,11 +101,12 @@ DWORD WINAPI StopSendDLL(
 	int iID //[IN] InitializeDLLの戻り値
 	)
 {
-	if( g_List[iID] == NULL ){
+	std::shared_ptr<CSendTSTCPMain> ptr = g_instMng.find(iID);
+	if( ptr == NULL ){
 		return ERR_NOT_INIT;
 	}
 	DWORD dwRet = NO_ERR;
-	dwRet = g_List[iID]->StopSend();
+	dwRet = ptr->StopSend();
 	return dwRet;
 }
 
@@ -122,11 +118,12 @@ DWORD WINAPI AddSendDataDLL(
 	DWORD dwSize
 	)
 {
-	if( g_List[iID] == NULL ){
+	std::shared_ptr<CSendTSTCPMain> ptr = g_instMng.find(iID);
+	if( ptr == NULL ){
 		return ERR_NOT_INIT;
 	}
 	DWORD dwRet = NO_ERR;
-	dwRet = g_List[iID]->AddSendData(pbData, dwSize);
+	dwRet = ptr->AddSendData(pbData, dwSize);
 	return dwRet;
 }
 
@@ -136,10 +133,11 @@ DWORD WINAPI ClearSendBuffDLL(
 	int iID //[IN] InitializeDLLの戻り値
 	)
 {
-	if( g_List[iID] == NULL ){
+	std::shared_ptr<CSendTSTCPMain> ptr = g_instMng.find(iID);
+	if( ptr == NULL ){
 		return ERR_NOT_INIT;
 	}
 	DWORD dwRet = NO_ERR;
-	dwRet = g_List[iID]->ClearSendBuff();
+	dwRet = ptr->ClearSendBuff();
 	return dwRet;
 }
