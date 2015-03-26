@@ -102,15 +102,22 @@
                     <CheckBox Content="日" Height="16" HorizontalAlignment="Left" Margin="402,157,0,0" Name="checkBox_sun" VerticalAlignment="Top" />
                     <Button Content="追加" Height="23" HorizontalAlignment="Left" Margin="192,209,0,0" Name="button_weekAdd" Style="{StaticResource ButtonStyle1}" VerticalAlignment="Top" Width="56" Click="button_weekAdd_Click" />
                     <Label Content="スクランブル放送" Height="28" HorizontalAlignment="Left" Margin="444,6,0,0" Name="label8" VerticalAlignment="Top" />
-                    <RadioButton Content="無料、有料番組を対象とする" Height="16" HorizontalAlignment="Left" Margin="472,40,0,0" Name="radioButton_free_1" VerticalAlignment="Top" />
-                    <RadioButton Content="無料番組のみ対象とする" Height="16" HorizontalAlignment="Left" Margin="472,62,0,0" Name="radioButton_free_2" VerticalAlignment="Top" />
-                    <RadioButton Content="有料番組のみ対象とする" Height="16" HorizontalAlignment="Left" Margin="472,84,0,0" Name="radioButton_free_3" VerticalAlignment="Top" />
-                    <GroupBox Header="EPG 自動予約登録専用" Height="89" HorizontalAlignment="Left" Margin="444,114,0,0" Name="groupBox1" VerticalAlignment="Top" Width="290">
-                        <Grid>
-                            <CheckBox Content="同一番組名の録画結果があれば無効で登録する" Height="16" HorizontalAlignment="Left" Margin="6,6,0,0" Name="checkBox_chkRecEnd" VerticalAlignment="Top" />
-                            <Label Content="確認対象期間" Height="28" HorizontalAlignment="Left" Margin="22,24,0,0" Name="label9" VerticalAlignment="Top" />
-                            <TextBox Height="24" HorizontalAlignment="Left" Margin="110,26,0,0" Name="textBox_chkRecDay" VerticalAlignment="Top" Width="40" />
-                            <Label Content="日前まで" Height="28" HorizontalAlignment="Left" Margin="156,24,0,0" Name="label10" VerticalAlignment="Top" />
+                    <RadioButton Content="無料、有料番組を対象とする" Height="16" HorizontalAlignment="Left" Margin="472,30,0,0" Name="radioButton_free_1" VerticalAlignment="Top" />
+                    <RadioButton Content="無料番組のみ対象とする" Height="16" HorizontalAlignment="Left" Margin="472,48,0,0" Name="radioButton_free_2" VerticalAlignment="Top" />
+                    <RadioButton Content="有料番組のみ対象とする" Height="16" HorizontalAlignment="Left" Margin="472,66,0,0" Name="radioButton_free_3" VerticalAlignment="Top" />
+                    <Label Content="番組長で絞り込み（それぞれ0で絞り込み無し）" Height="28" HorizontalAlignment="Left" Margin="444,88,0,0" Name="label13" VerticalAlignment="Top" />
+                    <TextBox Height="24" HorizontalAlignment="Left" Margin="468,112,0,0" Name="textBox_chkDurationMin" VerticalAlignment="Top" Width="48"/>
+                    <Label Content="分以上" Height="28" Margin="514,112,0,0" Name="label12" VerticalAlignment="Top" HorizontalAlignment="Left" Width="46" />
+                    <TextBox Height="24" HorizontalAlignment="Left" Margin="583,112,0,0" Name="textBox_chkDurationMax" VerticalAlignment="Top" Width="48"/>
+                    <Label Content="分以下" Height="28" Margin="629,112,0,0" Name="label14" VerticalAlignment="Top" HorizontalAlignment="Left" Width="46" />
+                    <GroupBox Header="EPG 自動予約登録専用" HorizontalAlignment="Left" Margin="448,146,0,0" Name="groupBox1" Width="290" Height="96" VerticalAlignment="Top">
+                        <Grid Height="77">
+                            <CheckBox Content="同一番組名の録画結果があれば無効で登録する" Height="16" HorizontalAlignment="Left" Margin="6,8,0,0" Name="checkBox_chkRecEnd" VerticalAlignment="Top" />
+                            <Label Content="録画済み確認対象期間" Height="28" HorizontalAlignment="Left" Margin="18,26,0,0" Name="label9" VerticalAlignment="Top" />
+                            <TextBox Height="24" HorizontalAlignment="Left" Margin="153,26,0,0" Name="textBox_chkRecDay" VerticalAlignment="Top" Width="40" />
+                            <Label Content="日前まで" Height="28" HorizontalAlignment="Left" Margin="200,26,0,0" Name="label10" VerticalAlignment="Top" />
+                            <RadioButton Content="同一サービスのみ無効" Height="16" HorizontalAlignment="Left" Margin="18,54,0,0" Name="radioButton_chkRecNoService1" VerticalAlignment="Top" Width="126" />
+                            <RadioButton Content="全てのサービスで無効" Height="16" Margin="150,54,0,0" Name="radioButton_chkRecNoService2" VerticalAlignment="Top" HorizontalAlignment="Left" Width="124" />
                         </Grid>
                     </GroupBox>
                 </Grid>

@@ -1318,19 +1318,6 @@ namespace EpgTimer
                         Thread thread = new Thread(ts);
                         thread.Start(param);
                         /////////////////////////////////////////////////////////////////////////////////////
-
-                        /*Byte reboot = (Byte)((param & 0xFF00) >> 8);
-                        Byte suspendMode = (Byte)(param & 0x00FF);
-
-                        Dispatcher.BeginInvoke(new Action(() =>
-                        {
-                            SuspendCheckWindow dlg = new SuspendCheckWindow();
-                            dlg.SetMode(0, suspendMode);
-                            if (dlg.ShowDialog() != true)
-                            {
-                                cmd.SendSuspend(param);
-                            }
-                        }));*/
                     }
                     break;
                 case CtrlCmd.CMD_TIMER_GUI_QUERY_REBOOT:
@@ -1448,19 +1435,12 @@ namespace EpgTimer
                 dwNow += 0x100000000;
             }
 
-            StringBuilder sb = new StringBuilder(1024);
-            IniFileHandler.GetPrivateProfileString("SET", "RecCloseCheck", "False", sb, (uint)sb.Capacity, SettingPath.TimerSrvIniPath);
-            bool BoolTryParse = false, BoolCheck = false; ;
-            if (bool.TryParse(sb.ToString(), out BoolCheck))//紅
-                BoolTryParse = BoolCheck;
-
-            if (BoolTryParse)
+            if (IniFileHandler.GetPrivateProfileInt("NO_SUSPEND", "NoUsePC", 0, SettingPath.TimerSrvIniPath) == 1)
             {
-                UInt32 RecCloseTime = UInt32.Parse(IniFileHandler.GetPrivateProfileInt("SET", "RecCloseTime", 0, SettingPath.TimerSrvIniPath).ToString()); //紅
+                UInt32 ngUsePCTime = UInt32.Parse(IniFileHandler.GetPrivateProfileInt("NO_SUSPEND", "NoUsePCTime", 0, SettingPath.TimerSrvIniPath).ToString()); //紅
+                UInt32 threshold = ngUsePCTime * 60 * 1000;
 
-                UInt32 threshold = RecCloseTime * 60 * 1000;
-
-                if (RecCloseTime != 0 && dwNow - info.dwTime >= threshold)
+                if (ngUsePCTime != 0 && dwNow - info.dwTime >= threshold)
                 {
                     SleepDialog(obj);
                 }
@@ -1471,13 +1451,7 @@ namespace EpgTimer
         void SleepDialog(object obj)
         {
             UInt16 param = (UInt16)obj;
-            Byte reboot = (Byte)((param & 0xFF00) >> 8);
             Byte suspendMode = (Byte)(param & 0x00FF);
-
-            Int32 sleepmin = (Int32)IniFileHandler.GetPrivateProfileInt("SET", "RecMarginTime", 0, SettingPath.TimerSrvIniPath);
-
-            sleepmin = sleepmin * 60000;
-            Thread.Sleep(sleepmin);
 
             Dispatcher.BeginInvoke(new Action(() =>
             {
@@ -1519,6 +1493,7 @@ namespace EpgTimer
                             CommonManager.Instance.DB.ReloadReserveInfo();
                         }
                         reserveView.UpdateReserveData();
+                        autoAddView.UpdateAutoAddInfo();
                         epgView.UpdateReserveData();
                         tunerReserveView.UpdateReserveData();
                     }
@@ -1704,6 +1679,75 @@ namespace EpgTimer
             {
                 taskTray.Text = "次の予約なし";
             }
+        }
+
+        void RefreshReserveInfo()
+        {
+            try
+            {
+                new BlackoutWindow(this).showWindow("情報の強制更新");
+                DBManager DB = CommonManager.Instance.DB;
+
+                //誤って変更しないよう、一度Srv側のリストを読み直す
+                DB.SetUpdateNotify((UInt32)UpdateNotifyItem.AutoAddEpgInfo);
+                if (DB.ReloadEpgAutoAddInfo() == ErrCode.CMD_SUCCESS)
+                {
+                    if (DB.EpgAutoAddList.Count != 0)
+                    {
+                        cmd.SendChgEpgAutoAdd(DB.EpgAutoAddList.Values.ToList());
+                    }
+                }
+
+                //EPG自動登録とは独立
+                DB.SetUpdateNotify((UInt32)UpdateNotifyItem.AutoAddManualInfo);
+                if (DB.ReloadManualAutoAddInfo() == ErrCode.CMD_SUCCESS)
+                {
+                    if (DB.ManualAutoAddList.Count != 0)
+                    {
+                        cmd.SendChgManualAdd(DB.ManualAutoAddList.Values.ToList());
+                    }
+                }
+
+                //上の二つが空リストでなくても、予約情報の更新がされない場合もある
+                DB.SetUpdateNotify((UInt32)UpdateNotifyItem.ReserveInfo);
+                if (DB.ReloadReserveInfo() == ErrCode.CMD_SUCCESS)
+                {
+                    if (DB.ReserveList.Count != 0)
+                    {
+                        //予約一覧は一つでも更新をかければ、再構築される。
+                        List<ReserveData> list = new List<ReserveData>();
+                        list.Add(DB.ReserveList.Values.ToList()[0]);
+                        cmd.SendChgReserve(list);
+                    }
+                    else
+                    {
+                        //更新しない場合でも、再描画だけはかけておく
+                        reserveView.UpdateReserveData();
+                        tunerReserveView.UpdateReserveData();
+                        autoAddView.UpdateAutoAddInfo();
+                        epgView.UpdateReserveData();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+            }
+
+        }
+
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            if (Keyboard.Modifiers == ModifierKeys.None)
+            {
+                switch (e.Key)
+                {
+                    case Key.F5:
+                        RefreshReserveInfo();
+                        break;
+                }
+            }
+            base.OnKeyDown(e);
         }
 
         public void moveTo_tabItem_epg()

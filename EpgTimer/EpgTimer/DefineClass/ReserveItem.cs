@@ -208,6 +208,10 @@ namespace EpgTimer
                 if (ReserveInfo != null)
                 {
                     view = ReserveInfo.Comment.ToString();
+                    if (view == "")
+                    {
+                        view = "個別予約(" + (ReserveInfo.EventID == 0xFFFF ? "プログラム" : "EPG") + ")";
+                    }
                 }
                 return view;
             }

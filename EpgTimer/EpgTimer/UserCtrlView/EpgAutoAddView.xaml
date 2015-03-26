@@ -17,6 +17,10 @@
             <MenuItem Header="優先度" Name="Priority" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="追従" Name="Tuijyu" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="登録対象数" Name="AddCount" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="検索対象数" Name="SearchCount" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="予約数" Name="ReserveCount" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="有効予約数" Name="OnCount" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="無効予約数" Name="OffCount" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="ぴったり（？）" Name="Pittari" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="開始タイミング" Name="MarginStart" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="終了タイミング" Name="MarginEnd" IsCheckable="True" Click="headerSelect_Click" />
@@ -99,6 +103,26 @@
                         <GridViewColumn DisplayMemberBinding="{Binding Path=AddCount}">
                             <GridViewColumn.Header>
                                 <GridViewColumnHeader Content="登録対象数" Tag="AddCount" HorizontalContentAlignment="Left" ToolTip="Ctrl + クリック（マルチ・ソート）"/>
+                            </GridViewColumn.Header>
+                        </GridViewColumn>
+                        <GridViewColumn DisplayMemberBinding="{Binding Path=SearchCount}">
+                            <GridViewColumn.Header>
+                                <GridViewColumnHeader Content="検索数" Tag="SearchCount" HorizontalContentAlignment="Left" ToolTip="Ctrl + クリック（マルチ・ソート）"/>
+                            </GridViewColumn.Header>
+                        </GridViewColumn>
+                        <GridViewColumn DisplayMemberBinding="{Binding Path=ReserveCount}">
+                            <GridViewColumn.Header>
+                                <GridViewColumnHeader Content="予約数" Tag="ReserveCount" HorizontalContentAlignment="Left" ToolTip="Ctrl + クリック（マルチ・ソート）"/>
+                            </GridViewColumn.Header>
+                        </GridViewColumn>
+                        <GridViewColumn DisplayMemberBinding="{Binding Path=OnCount}">
+                            <GridViewColumn.Header>
+                                <GridViewColumnHeader Content="有効予約数" Tag="OnCount" HorizontalContentAlignment="Left" ToolTip="Ctrl + クリック（マルチ・ソート）"/>
+                            </GridViewColumn.Header>
+                        </GridViewColumn>
+                        <GridViewColumn DisplayMemberBinding="{Binding Path=OffCount}">
+                            <GridViewColumn.Header>
+                                <GridViewColumnHeader Content="無効予約数" Tag="OffCount" HorizontalContentAlignment="Left" ToolTip="Ctrl + クリック（マルチ・ソート）"/>
                             </GridViewColumn.Header>
                         </GridViewColumn>
                         <GridViewColumn DisplayMemberBinding="{Binding Path=Pittari}">

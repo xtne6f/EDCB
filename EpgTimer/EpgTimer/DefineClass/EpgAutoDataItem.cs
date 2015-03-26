@@ -164,6 +164,64 @@ namespace EpgTimer
             }
         }
 
+        //詳細ウィンドウを開いたときの項目数と同じもの。
+        //無効時でも有効時のAddCountと同じ数字が入る。
+        public String SearchCount 
+        {
+            get
+            {
+                String view = "0";
+                if (EpgAutoAddInfo != null)
+                {
+                    view = EpgAutoAddInfo.SearchCount().ToString();
+                }
+                return view;
+            }
+        }
+
+        //"SearchCount"のうち、予約アイテム数
+        //検索の無効・有効によってAddCountやSearchCountと異なる値になる。
+        public String ReserveCount 
+        {
+            get
+            {
+                String view = "0";
+                if (EpgAutoAddInfo != null)
+                {
+                    view = EpgAutoAddInfo.ReserveCount().ToString();
+                }
+                return view;
+            }
+        }
+
+        //"ReserveCount"のうち、有効な予約アイテム数
+        public String OnCount
+        {
+            get
+            {
+                String view = "0";
+                if (EpgAutoAddInfo != null)
+                {
+                    view = EpgAutoAddInfo.OnCount().ToString();
+                }
+                return view;
+            }
+        }
+
+        //"ReserveCount"のうち、無効な予約アイテム数
+        public String OffCount
+        {
+            get
+            {
+                String view = "0";
+                if (EpgAutoAddInfo != null)
+                {
+                    view = EpgAutoAddInfo.OffCount().ToString();
+                }
+                return view;
+            }
+        }
+
         public String JyanruKey
         {
             get

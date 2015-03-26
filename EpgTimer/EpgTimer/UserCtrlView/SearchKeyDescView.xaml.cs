@@ -197,15 +197,12 @@ namespace EpgTimer
                     key.freeCAFlag = 0;
                 }
 
-                if (checkBox_chkRecEnd.IsChecked == true)
-                {
-                    key.chkRecEnd = 1;
-                }
-                else
-                {
-                    key.chkRecEnd = 0;
-                }
+                key.chkRecEnd = (byte)(checkBox_chkRecEnd.IsChecked == true ? 1 : 0);
                 key.chkRecDay = Convert.ToUInt16(textBox_chkRecDay.Text.ToString());
+                key.chkRecNoService = (byte)(radioButton_chkRecNoService2.IsChecked == true ? 1 : 0);
+
+                key.chkDurationMin = Convert.ToUInt16(textBox_chkDurationMin.Text.ToString());
+                key.chkDurationMax = Convert.ToUInt16(textBox_chkDurationMax.Text.ToString());
             }
             catch (Exception ex)
             {
@@ -329,15 +326,13 @@ namespace EpgTimer
                     radioButton_free_1.IsChecked = true;
                 }
 
-                if (defKey.chkRecEnd == 1)
-                {
-                    checkBox_chkRecEnd.IsChecked = true;
-                }
-                else
-                {
-                    checkBox_chkRecEnd.IsChecked = false;
-                }
+                checkBox_chkRecEnd.IsChecked = (defKey.chkRecEnd == 1);
                 textBox_chkRecDay.Text = defKey.chkRecDay.ToString();
+                radioButton_chkRecNoService1.IsChecked = (defKey.chkRecNoService == 0);
+                radioButton_chkRecNoService2.IsChecked = (defKey.chkRecNoService != 0);
+
+                textBox_chkDurationMin.Text = defKey.chkDurationMin.ToString();
+                textBox_chkDurationMax.Text = defKey.chkDurationMax.ToString();   
             }
             catch (Exception ex)
             {

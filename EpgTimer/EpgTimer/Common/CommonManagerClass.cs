@@ -334,6 +334,19 @@ namespace EpgTimer
                 ContentKindDictionary2.Add(0x020B, new ContentKindInfo("邦画(CS)", "ミュージカル／音楽映画", 0x02, 0x0B));
                 ContentKindDictionary2.Add(0x020C, new ContentKindInfo("邦画(CS)", "ホームドラマ", 0x02, 0x0C));
                 ContentKindDictionary2.Add(0x020F, new ContentKindInfo("邦画(CS)", "その他", 0x02, 0x0F));
+
+                if (ContentKindDictionary != null)
+                {
+                    //表示順調整する。ContentKindDictionary2のコード上に持って行ってもいいけど‥。
+                    ContentKindDictionary.Remove(0x0FFF);
+                    ContentKindDictionary.Remove(0xFFFF);
+                    foreach (ContentKindInfo info in ContentKindDictionary2.Values)
+                    {
+                        ContentKindDictionary.Add((UInt16)(info.ID | 0x7000), new ContentKindInfo(info.ContentName, info.SubName, (Byte)(info.Nibble1 | 0x70), info.Nibble2));
+                    }
+                    ContentKindDictionary.Add(0x0FFF, new ContentKindInfo("その他", "", 0x0F, 0xFF));
+                    ContentKindDictionary.Add(0xFFFF, new ContentKindInfo("なし", "", 0xFF, 0xFF));
+                }
             }
             if (ComponentKindDictionary == null)
             {

@@ -20,6 +20,7 @@ namespace EpgTimer
         private bool updatePlugInFile = true;
         private bool noAutoReloadEpg = false;
         private bool oneTimeReloadEpg = false;
+        private bool updateAutoAddAppendReserveInfo = true;
 
         Dictionary<UInt64, EpgServiceEventInfo> serviceEventList = new Dictionary<UInt64, EpgServiceEventInfo>();
         Dictionary<UInt32, ReserveData> reserveList = new Dictionary<UInt32, ReserveData>();
@@ -29,6 +30,7 @@ namespace EpgTimer
         Dictionary<Int32, String> recNamePlugInList = new Dictionary<Int32, String>();
         Dictionary<UInt32, ManualAutoAddData> manualAutoAddList = new Dictionary<UInt32, ManualAutoAddData>();
         Dictionary<UInt32, EpgAutoAddData> epgAutoAddList = new Dictionary<UInt32, EpgAutoAddData>();
+        Dictionary<UInt32, EpgAutoAddDataAppend> epgAutoAddAppendList = null;
 
         public Dictionary<UInt64, EpgServiceEventInfo> ServiceEventList
         {
@@ -61,6 +63,70 @@ namespace EpgTimer
         public Dictionary<UInt32, EpgAutoAddData> EpgAutoAddList
         {
             get { return epgAutoAddList; }
+        }
+        public Dictionary<UInt32, EpgAutoAddDataAppend> EpgAutoAddAppendList
+        {
+            get { return epgAutoAddAppendList; }
+        }
+        public EpgAutoAddDataAppend GetEpgAutoAddDataAppend(EpgAutoAddData master)
+        {
+            if (master == null) return null;
+
+            //データ更新は必要になったときにまとめて行う
+            //未使用か、EpgAutoAddData更新により古いデータ廃棄済みでデータが無い場合
+            if (epgAutoAddAppendList == null)
+            {
+                epgAutoAddAppendList = new Dictionary<uint, EpgAutoAddDataAppend>();
+                List<EpgSearchKeyInfo> keyList = new List<EpgSearchKeyInfo>();
+
+                foreach (EpgAutoAddData item in EpgAutoAddList.Values)
+                {
+                    //「検索無効」の対応のため、andKeyをコピーする。
+                    EpgSearchKeyInfo key = item.searchInfo.Clone();
+                    key.andKey = key.andKey.Substring(key.andKey.StartsWith("^!{999}") ? 7 : 0);
+                    keyList.Add(key);
+                }
+
+                try
+                {
+                    List<List<EpgEventInfo>> list_list = new List<List<EpgEventInfo>>();
+                    CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
+                    cmd.SendSearchPgByKey(keyList, ref list_list);
+
+                    //通常あり得ないが、コマンド成功にもかかわらず何か問題があった場合は飛ばす
+                    if (EpgAutoAddList.Count == list_list.Count)
+                    {
+                        int i = 0;
+                        foreach (EpgAutoAddData item in EpgAutoAddList.Values)
+                        {
+                            epgAutoAddAppendList.Add(item.dataID, new EpgAutoAddDataAppend(item, list_list[i++]));
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                }
+            }
+
+            //予約情報との突き合わせが古い場合
+            if (updateAutoAddAppendReserveInfo == true)
+            {
+                foreach (EpgAutoAddDataAppend item in epgAutoAddAppendList.Values)
+                {
+                    item.updateCounts = true;
+                }
+                updateAutoAddAppendReserveInfo = false;
+            }
+
+            //SendSearchPgByKeyに失敗した場合などは引っかかる。
+            EpgAutoAddDataAppend retv;
+            if (epgAutoAddAppendList.TryGetValue(master.dataID, out retv) == false)
+            {
+                retv = new EpgAutoAddDataAppend(master);
+                epgAutoAddAppendList.Add(master.dataID, retv);
+            }
+            return retv;
         }
 
         public DBManager(CtrlCmdUtil ctrlCmd)
@@ -95,6 +161,8 @@ namespace EpgTimer
             manualAutoAddList = new Dictionary<uint, ManualAutoAddData>();
             epgAutoAddList = null;
             epgAutoAddList = new Dictionary<uint, EpgAutoAddData>();
+
+            epgAutoAddAppendList = null;
         }
 
         /// <summary>
@@ -259,6 +327,7 @@ namespace EpgTimer
                                     tunerReserveList.Add(info.tunerID, info);
                                 }
                                 updateReserveInfo = false;
+                                updateAutoAddAppendReserveInfo = true;
                             }
                         }
                         list.Clear();
@@ -402,6 +471,7 @@ namespace EpgTimer
                                 epgAutoAddList.Add(info.dataID, info);
                             }
                             updateAutoAddEpgInfo = false;
+                            epgAutoAddAppendList = null;
                         }
                         list.Clear();
                         list = null;

@@ -434,6 +434,11 @@ namespace EpgTimer
                                             {
                                                 UInt16 ID1 = (UInt16)(((UInt16)contentInfo.content_nibble_level_1) << 8 | 0xFF);
                                                 UInt16 ID2 = (UInt16)(((UInt16)contentInfo.content_nibble_level_1) << 8 | contentInfo.content_nibble_level_2);
+                                                if (ID2 == 0x0e01)
+                                                {
+                                                    ID1 = (UInt16)(((UInt16)contentInfo.user_nibble_1) << 8 | 0x70FF);
+                                                    ID2 = (UInt16)(((UInt16)contentInfo.user_nibble_1) << 8 | 0x7000 | contentInfo.user_nibble_2);
+                                                }
                                                 if (this.viewCustContentKindList.ContainsKey(ID1) == true)
                                                 {
                                                     find = true;
