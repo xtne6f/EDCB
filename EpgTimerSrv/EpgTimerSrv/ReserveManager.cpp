@@ -282,7 +282,7 @@ bool CReserveManager::GetReserveData(DWORD id, RESERVE_DATA* reserveData, bool g
 	return false;
 }
 
-bool CReserveManager::AddReserveData(const vector<RESERVE_DATA>& reserveList, bool setComment)
+bool CReserveManager::AddReserveData(const vector<RESERVE_DATA>& reserveList, bool setComment, bool setReserveStatus)
 {
 	CBlockLock lock(&this->managerLock);
 
@@ -297,7 +297,9 @@ bool CReserveManager::AddReserveData(const vector<RESERVE_DATA>& reserveList, bo
 				r.comment.clear();
 			}
 			r.overlapMode = RESERVE_EXECUTE;
-			r.reserveStatus = 0;
+			if( setReserveStatus == false ){
+				r.reserveStatus = ADD_RESERVE_NORMAL;
+			}
 			r.recFileNameList.clear();
 			r.reserveID = this->reserveText.AddReserve(r);
 			this->reserveTextCache.clear();
@@ -866,6 +868,7 @@ void CReserveManager::CheckTuijyuTuner()
 			continue;
 		}
 		vector<RESERVE_DATA> chgList;
+		vector<RESERVE_DATA> relayAddList;
 		ReCacheReserveText();
 
 		vector<pair<ULONGLONG, DWORD>>::const_iterator itrCache = std::lower_bound(
@@ -936,6 +939,44 @@ void CReserveManager::CheckTuijyuTuner()
 							chgIDList.push_back(r.reserveID);
 							chgList.push_back(r);
 						}
+						//現在(present)についてはイベントリレーもチェック
+						if( i == 0 && r.recSetting.tuijyuuFlag && info.StartTimeFlag && info.DurationFlag && info.eventRelayInfo ){
+							//イベントリレーあり
+							vector<EPGDB_EVENT_DATA>::const_iterator itrR = info.eventRelayInfo->eventDataList.begin();
+							for( ; itrR != info.eventRelayInfo->eventDataList.end(); itrR++ ){
+								if( IsFindReserve(itrR->original_network_id, itrR->transport_stream_id, itrR->service_id, itrR->event_id) ){
+									//リレー済み
+									break;
+								}
+							}
+							if( itrR == info.eventRelayInfo->eventDataList.end() ){
+								OutputDebugString(L"EventRelayCheck\r\n");
+								for( itrR = info.eventRelayInfo->eventDataList.begin(); itrR != info.eventRelayInfo->eventDataList.end(); itrR++ ){
+									map<LONGLONG, CH_DATA5>::const_iterator itrCh = this->chUtil.GetMap().find(
+										_Create64Key(itrR->original_network_id, itrR->transport_stream_id, itrR->service_id));
+									if( itrCh != this->chUtil.GetMap().end() && relayAddList.empty() ){
+										//リレーできるチャンネル発見
+										RESERVE_DATA rr;
+										rr.title = L"(イベントリレー)" + r.title;
+										//リレー元の終了時間をリレー先の開始時間とする
+										ConvertSystemTime(ConvertI64Time(info.start_time) + info.durationSec * I64_1SEC, &rr.startTime);
+										rr.startTimeEpg = rr.startTime;
+										rr.durationSecond = 600;
+										rr.stationName = itrCh->second.serviceName;
+										rr.originalNetworkID = itrR->original_network_id;
+										rr.transportStreamID = itrR->transport_stream_id;
+										rr.serviceID = itrR->service_id;
+										rr.eventID = itrR->event_id;
+										//録画設定はリレー元の予約を継承
+										rr.recSetting = r.recSetting;
+										rr.reserveStatus = ADD_RESERVE_RELAY;
+										relayAddList.push_back(rr);
+										OutputDebugString(L"★イベントリレー追加\r\n");
+										break;
+									}
+								}
+							}
+						}
 						pfFound = true;
 						break;
 					}
@@ -974,7 +1015,10 @@ void CReserveManager::CheckTuijyuTuner()
 			}
 		}
 		if( chgList.empty() == false ){
-			ChgReserveData(chgList);
+			ChgReserveData(chgList, true);
+		}
+		if( relayAddList.empty() == false ){
+			AddReserveData(relayAddList, false, true);
 		}
 	}
 }
