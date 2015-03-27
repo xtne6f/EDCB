@@ -452,9 +452,12 @@ void CEpgDBManager::SearchEvent(EPGDB_SEARCH_KEY_INFO* key, map<ULONGLONG, SEARC
 	}else{
 		if( andKey.size() > 0 ){
 			andKeyList.push_back(andKey);
+			//旧い処理では対象を全角空白のまま比較していたため正規表現も全角のケースが多い。特別に置き換える
+			Replace(andKeyList.back(), L"　", L" ");
 		}
 		if( key->notKey.size() > 0 ){
 			notKeyList.push_back(key->notKey);
+			Replace(notKeyList.back(), L"　", L" ");
 		}
 	}
 
