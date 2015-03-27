@@ -378,7 +378,8 @@ bool CReserveManager::ChgReserveData(const vector<RESERVE_DATA>& reserveList, bo
 				tr.partialRecFolder = r.recSetting.partialRecFolder;
 
 				bool bankDeleted = false;
-				for( map<DWORD, CTunerBankCtrl*>::const_iterator jtr = this->tunerBankMap.begin(); jtr != this->tunerBankMap.end(); jtr++ ){
+				map<DWORD, CTunerBankCtrl*>::const_iterator jtr;
+				for( jtr = this->tunerBankMap.begin(); jtr != this->tunerBankMap.end(); jtr++ ){
 					if( jtr->second->ChgCtrlReserve(&tr) ){
 						//この予約はこのバンクに待機状態で存在する
 						if( tr.onid != r.originalNetworkID ||
@@ -410,6 +411,15 @@ bool CReserveManager::ChgReserveData(const vector<RESERVE_DATA>& reserveList, bo
 							r.recSetting.tunerID = itr->second.recSetting.tunerID;
 						}
 						break;
+					}
+				}
+				if( jtr == this->tunerBankMap.end() ){
+					//この予約は待機状態ではないので単純に削除と追加で更新できる
+					for( jtr = this->tunerBankMap.begin(); jtr != this->tunerBankMap.end(); jtr++ ){
+						if( jtr->second->DelReserve(tr.reserveID) ){
+							jtr->second->AddReserve(tr);
+							break;
+						}
 					}
 				}
 
