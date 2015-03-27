@@ -114,6 +114,7 @@ bool CTunerBankCtrl::ChgCtrlReserve(TUNER_RESERVE* reserve)
 		r.ctrlID[0] = save.ctrlID[0];
 		r.ctrlID[1] = save.ctrlID[1];
 		r.notStartHead = save.notStartHead;
+		r.appendPgInfo = save.appendPgInfo;
 		r.savedPgInfo = save.savedPgInfo;
 		r.epgStartTime = save.epgStartTime;
 		r.epgEventName = save.epgEventName;
@@ -313,6 +314,7 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check()
 				if( RecStart(r, now) ){
 					//“r’†‚©‚çŠJn‚³‚ê‚½‚©
 					r.notStartHead = r.startTime - r.startMargin + 60 * I64_1SEC < now;
+					r.appendPgInfo = false;
 					r.savedPgInfo = false;
 					r.state = TR_REC;
 					if( r.recMode == RECMODE_VIEW ){
@@ -348,6 +350,7 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check()
 					this->tunerResetLock = true;
 				}else if( r.startTime + r.endMargin + r.durationSecond * I64_1SEC < now ){
 					ret.type = CHECK_ERR_REC;
+					ret.continueRec = false;
 					ret.drops = 0;
 					ret.scrambles = 0;
 					bool isMainCtrl = true;
@@ -407,7 +410,7 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check()
 								for( int i = 0; i < 2; i++ ){
 									wstring recPath;
 									if( r.ctrlID[i] != 0 && ctrlCmd.SendViewGetRecFilePath(r.ctrlID[i], &recPath) == CMD_SUCCESS ){
-										SaveProgramInfo(recPath.c_str(), resVal, false);
+										SaveProgramInfo(recPath.c_str(), resVal, r.appendPgInfo);
 									}
 								}
 							}
@@ -431,7 +434,7 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check()
 	//TR_IDLE->TR_READY‚Ì‘JˆÚ‚ğ‘Ò‚Â—\–ñ‚ğŠJn‡‚É•À‚×‚é
 	std::sort(idleList.begin(), idleList.end());
 
-	//TR_IDLE->TR_READY‚Ì‘JˆÚ‚ğ‚·‚é
+	//TR_IDLE->TR_READY(TR_REC)‚Ì‘JˆÚ‚ğ‚·‚é
 	for( vector<pair<__int64, DWORD>>::const_iterator itrIdle = idleList.begin(); itrIdle != idleList.end(); itrIdle++ ){
 		map<DWORD, TUNER_RESERVE>::iterator itrRes = this->reserveMap.find(itrIdle->second);
 		TUNER_RESERVE& r = itrRes->second;
@@ -504,6 +507,7 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check()
 							CHECK_RESULT retOther;
 							retOther.type = CHECK_ERR_REC;
 							retOther.reserveID = itr->first;
+							retOther.continueRec = false;
 							retOther.drops = 0;
 							retOther.scrambles = 0;
 							bool isMainCtrl = true;
@@ -564,11 +568,54 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check()
 				}
 				if( this->tunerChLocked ){
 					//“¯ˆêƒ`ƒƒƒ“ƒlƒ‹‚È‚Ì‚Å˜^‰æ§Œä‚ğì¬‚Å‚«‚é
-					if( CreateCtrl(&r.ctrlID[0], &r.ctrlID[1], r) ){
-						r.state = TR_READY;
-					}else{
-						//ì¬‚Å‚«‚È‚©‚Á‚½
-						ret.type = CHECK_ERR_CTRL;
+					bool continueRec = false;
+					for( map<DWORD, TUNER_RESERVE>::const_iterator itr = this->reserveMap.begin(); itr != this->reserveMap.end(); itr++ ){
+						if( itr->second.continueRecFlag &&
+						    itr->second.state == TR_REC &&
+						    itr->second.sid == r.sid &&
+						    itr->second.recMode != RECMODE_VIEW &&
+						    itr->second.recMode == r.recMode &&
+						    itr->second.enableCaption == r.enableCaption &&
+						    itr->second.enableData == r.enableData &&
+						    itr->second.partialRecMode == r.partialRecMode ){
+							//˜A‘±˜^‰æ‚È‚Ì‚ÅA“¯ˆê§ŒäID‚Å˜^‰æŠJn‚³‚ê‚½‚±‚Æ‚É‚·‚éBTR_REC‚Ü‚Å‘JˆÚ‚·‚é‚Ì‚Å’ˆÓ
+							r.state = TR_REC;
+							r.ctrlID[0] = itr->second.ctrlID[0];
+							r.ctrlID[1] = itr->second.ctrlID[1];
+							r.notStartHead = r.startTime - r.startMargin + 60 * I64_1SEC < now;
+							r.appendPgInfo = itr->second.appendPgInfo || itr->second.savedPgInfo;
+							r.savedPgInfo = false;
+							//ˆøŒp‚¬Œ³‚ğ‘’‚é
+							CHECK_RESULT retOther;
+							retOther.type = CHECK_ERR_REC;
+							retOther.reserveID = itr->first;
+							retOther.continueRec = true;
+							retOther.drops = 0;
+							retOther.scrambles = 0;
+							for( int i = 0; i < 2; i++ ){
+								if( itr->second.ctrlID[i] != 0 ){
+									if( ctrlCmd.SendViewGetRecFilePath(itr->second.ctrlID[i], &retOther.recFilePath) == CMD_SUCCESS ){
+										retOther.type = itr->second.notStartHead ? CHECK_END_NOT_START_HEAD :
+										                itr->second.savedPgInfo == false ? CHECK_END_NOT_FIND_PF : CHECK_END;
+										retOther.epgStartTime = itr->second.epgStartTime;
+										retOther.epgEventName = itr->second.epgEventName;
+									}
+									break;
+								}
+							}
+							retList.push_back(retOther);
+							this->reserveMap.erase(itr);
+							continueRec = true;
+							break;
+						}
+					}
+					if( continueRec == false ){
+						if( CreateCtrl(&r.ctrlID[0], &r.ctrlID[1], r) ){
+							r.state = TR_READY;
+						}else{
+							//ì¬‚Å‚«‚È‚©‚Á‚½
+							ret.type = CHECK_ERR_CTRL;
+						}
 					}
 				}
 			}

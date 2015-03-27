@@ -38,6 +38,8 @@ public:
 		DWORD reserveID;
 		//以下はtype<=CHECK_END_NOT_START_HEADのとき有効
 		wstring recFilePath;
+		bool continueRec;
+		//continueRec(連続録画開始による終了)のときdropsとscramblesは常に0
 		__int64 drops;
 		__int64 scrambles;
 		//以下はtype==CHECK_ENDのとき有効
@@ -60,6 +62,7 @@ public:
 		bool enableData;
 		bool pittari;
 		BYTE partialRecMode;
+		bool continueRecFlag;
 		//マージンはデフォルト値適用済みとすること
 		__int64 startMargin;
 		__int64 endMargin;
@@ -73,6 +76,7 @@ public:
 		DWORD ctrlID[2]; //要素1は部分受信録画制御
 		//以下はstate==TR_RECのとき有効
 		bool notStartHead;
+		bool appendPgInfo;
 		bool savedPgInfo;
 		SYSTEMTIME epgStartTime;
 		wstring epgEventName;

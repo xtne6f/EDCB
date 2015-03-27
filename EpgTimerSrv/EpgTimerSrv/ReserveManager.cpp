@@ -368,6 +368,7 @@ bool CReserveManager::ChgReserveData(const vector<RESERVE_DATA>& reserveList, bo
 					r.recSetting.serviceMode & RECSERVICEMODE_SET ? (r.recSetting.serviceMode & RECSERVICEMODE_DATA) != 0 : this->defEnableData;
 				tr.pittari = r.recSetting.pittariFlag != 0;
 				tr.partialRecMode = r.recSetting.partialRecFlag;
+				tr.continueRecFlag = r.recSetting.continueRecFlag != 0;
 				__int64 startTime, endTime;
 				CalcEntireReserveTime(&startTime, &endTime, r);
 				tr.startTime = ConvertI64Time(r.startTime);
@@ -406,6 +407,7 @@ bool CReserveManager::ChgReserveData(const vector<RESERVE_DATA>& reserveList, bo
 							}
 							r.recSetting.pittariFlag = tr.pittari;
 							r.recSetting.partialRecFlag = tr.partialRecMode;
+							r.recSetting.continueRecFlag = tr.continueRecFlag;
 							r.recSetting.recFolderList = tr.recFolder;
 							r.recSetting.partialRecFolder = tr.partialRecFolder;
 							r.recSetting.tunerID = itr->second.recSetting.tunerID;
@@ -701,6 +703,7 @@ void CReserveManager::ReloadBankMap(__int64 reloadTime)
 					tr.enableData = r.recSetting.serviceMode & RECSERVICEMODE_SET ? (r.recSetting.serviceMode & RECSERVICEMODE_DATA) != 0 : this->defEnableData;
 					tr.pittari = r.recSetting.pittariFlag != 0;
 					tr.partialRecMode = r.recSetting.partialRecFlag;
+					tr.continueRecFlag = r.recSetting.continueRecFlag != 0;
 					tr.startTime = ConvertI64Time(r.startTime);
 					tr.durationSecond = r.durationSecond;
 					tr.startMargin = tr.startTime - startTime;
@@ -1119,7 +1122,8 @@ DWORD CReserveManager::Wait(HANDLE hEvent, DWORD timeout, DWORD* extra)
 					this->recInfoText.AddRecInfo(item);
 
 					//ƒoƒbƒ`ˆ—’Ç‰Á
-					if( (itrRet->type == CTunerBankCtrl::CHECK_END || itrRet->type == CTunerBankCtrl::CHECK_END_NEXT_START_END) && item.recFilePath.empty() == false ){
+					if( (itrRet->type == CTunerBankCtrl::CHECK_END || itrRet->type == CTunerBankCtrl::CHECK_END_NEXT_START_END) && item.recFilePath.empty() == false &&
+					    itrRes->second.recSetting.batFilePath.empty() == false && itrRet->continueRec == false ){
 						BAT_WORK_INFO batInfo;
 						batInfo.batFilePath = itrRes->second.recSetting.batFilePath;
 						batInfo.suspendMode = itrRes->second.recSetting.suspendMode;
