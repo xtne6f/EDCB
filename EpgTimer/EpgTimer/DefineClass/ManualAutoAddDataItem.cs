@@ -16,11 +16,7 @@ namespace EpgTimer
             this.ManualAutoAddInfo = item;
         }
 
-        public ManualAutoAddData ManualAutoAddInfo
-        {
-            get;
-            set;
-        }
+        public ManualAutoAddData ManualAutoAddInfo { get; set; }
 
         public String DayOfWeek
         {
@@ -29,33 +25,13 @@ namespace EpgTimer
                 String view = "";
                 if (ManualAutoAddInfo != null)
                 {
-                    if ((ManualAutoAddInfo.dayOfWeekFlag & 0x01) != 0)
+                    String[] wiewString = { "日", "月", "火", "水", "木", "金", "土" };
+                    for (int i = 0; i < 7; i++)
                     {
-                        view += "日";
-                    }
-                    if ((ManualAutoAddInfo.dayOfWeekFlag & 0x02) != 0)
-                    {
-                        view += "月";
-                    }
-                    if ((ManualAutoAddInfo.dayOfWeekFlag & 0x04) != 0)
-                    {
-                        view += "火";
-                    }
-                    if ((ManualAutoAddInfo.dayOfWeekFlag & 0x08) != 0)
-                    {
-                        view += "水";
-                    }
-                    if ((ManualAutoAddInfo.dayOfWeekFlag & 0x10) != 0)
-                    {
-                        view += "木";
-                    }
-                    if ((ManualAutoAddInfo.dayOfWeekFlag & 0x20) != 0)
-                    {
-                        view += "金";
-                    }
-                    if ((ManualAutoAddInfo.dayOfWeekFlag & 0x40) != 0)
-                    {
-                        view += "土";
+                        if ((ManualAutoAddInfo.dayOfWeekFlag & 0x01<<i) != 0)
+                        {
+                            view += wiewString[i];
+                        }
                     }
                 }
                 return view;
@@ -66,38 +42,28 @@ namespace EpgTimer
         {
             get
             {
-                String view = "";
-                if (ManualAutoAddInfo != null)
-                {
-                    UInt32 hh = ManualAutoAddInfo.startTime / (60 * 60);
-                    UInt32 mm = (ManualAutoAddInfo.startTime % (60 * 60)) / 60;
-                    UInt32 ss = ManualAutoAddInfo.startTime % 60;
-                    view = hh.ToString() + ":" + mm.ToString() + ":" + ss.ToString();
-
-                    UInt32 endTime = ManualAutoAddInfo.startTime + ManualAutoAddInfo.durationSecond;
-                    if (endTime > 24 * 60 * 60)
-                    {
-                        endTime -= 24 * 60 * 60;
-                    }
-                    hh = endTime / (60 * 60);
-                    mm = (endTime % (60 * 60)) / 60;
-                    ss = endTime % 60;
-                    view += " ～ " + hh.ToString() + ":" + mm.ToString() + ":" + ss.ToString();
-                }
-                return view;
+                if (ManualAutoAddInfo == null) return "";
+                //
+                uint endTime = ManualAutoAddInfo.startTime + ManualAutoAddInfo.durationSecond;
+                return timeSting(ManualAutoAddInfo.startTime) + " ～ " + timeSting(endTime % (24 * 60 * 60));
             }
+        }
+
+        private String timeSting(uint time_sconds)
+        {
+            uint hh = time_sconds / (60 * 60);
+            uint mm = (time_sconds % (60 * 60)) / 60;
+            uint ss = time_sconds % 60;
+            return hh.ToString("00") + ":" + mm.ToString("00") + ":" + ss.ToString("00");
         }
 
         public String Title
         {
             get
             {
-                String view = "";
-                if (ManualAutoAddInfo != null)
-                {
-                    view = ManualAutoAddInfo.title;
-                }
-                return view;
+                if (ManualAutoAddInfo == null) return "";
+                //
+                return ManualAutoAddInfo.title;
             }
         }
 
@@ -105,12 +71,9 @@ namespace EpgTimer
         {
             get
             {
-                String view = "";
-                if (ManualAutoAddInfo != null)
-                {
-                    view = ManualAutoAddInfo.stationName;
-                }
-                return view;
+                if (ManualAutoAddInfo == null) return "";
+                //
+                return ManualAutoAddInfo.stationName;
             }
         }
 
@@ -118,34 +81,9 @@ namespace EpgTimer
         {
             get
             {
-                String view = "";
-                if (ManualAutoAddInfo != null)
-                {
-                    switch (ManualAutoAddInfo.recSetting.RecMode)
-                    {
-                        case 0:
-                            view = "全サービス";
-                            break;
-                        case 1:
-                            view = "指定サービス";
-                            break;
-                        case 2:
-                            view = "全サービス（デコード処理なし）";
-                            break;
-                        case 3:
-                            view = "指定サービス（デコード処理なし）";
-                            break;
-                        case 4:
-                            view = "視聴";
-                            break;
-                        case 5:
-                            view = "無効";
-                            break;
-                        default:
-                            break;
-                    }
-                }
-                return view;
+                if (ManualAutoAddInfo == null) return "";
+                //
+                return CommonManager.Instance.ConvertRecModeText(ManualAutoAddInfo.recSetting.RecMode);
             }
         }
 
@@ -153,12 +91,19 @@ namespace EpgTimer
         {
             get
             {
-                String view = "";
-                if (ManualAutoAddInfo != null)
-                {
-                    view = ManualAutoAddInfo.recSetting.Priority.ToString();
-                }
-                return view;
+                if (ManualAutoAddInfo == null) return "";
+                //
+                return ManualAutoAddInfo.recSetting.Priority.ToString();
+            }
+        }
+
+        public String ReserveCount
+        {
+            get
+            {
+                if (ManualAutoAddInfo == null) return "";
+                //
+                return ManualAutoAddInfo.GetReserveList().Count.ToString();
             }
         }
 

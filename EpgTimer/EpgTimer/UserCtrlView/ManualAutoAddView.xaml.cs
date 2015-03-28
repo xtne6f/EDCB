@@ -32,6 +32,7 @@ namespace EpgTimer
                 {
                     button_add.Style = null;
                     button_del.Style = null;
+                    button_del2.Style = null;
                     button_change.Style = null;
                 }
 
@@ -146,15 +147,54 @@ namespace EpgTimer
 
         private void button_del_Click(object sender, RoutedEventArgs e)
         {
-            if (listView_key.SelectedItems.Count > 0)
+            if (listView_key.SelectedItems.Count == 0) return;
+
+            var dataIDList = GetSelectedItemsList().Select(info => info.ManualAutoAddInfo.dataID).ToList();
+            cmd.SendDelManualAdd(dataIDList);
+        }
+
+        private void button_del2_Click(object sender, RoutedEventArgs e)
+        {
+            if (listView_key.SelectedItems.Count == 0) return;
+
+            string text1 = "予約項目ごと削除してよろしいですか?　[削除アイテム数: " + listView_key.SelectedItems.Count + "]\r\n"
+                            + "(サービス、時間の一致した予約が削除されます)\r\n\r\n";
+            GetSelectedItemsList().ForEach(info => text1 += " ・ " + info.Title + "\r\n");
+
+            string caption1 = "[予約ごと削除]の確認";
+            if (MessageBox.Show(text1, caption1, MessageBoxButton.OKCancel,
+                MessageBoxImage.Exclamation, MessageBoxResult.OK) != MessageBoxResult.OK)
             {
-                List<UInt32> dataIDList = new List<uint>();
-                foreach (ManualAutoAddDataItem info in listView_key.SelectedItems)
-                {
-                    dataIDList.Add(info.ManualAutoAddInfo.dataID);
-                }
-                cmd.SendDelManualAdd(dataIDList);
+                return;
             }
+
+            //EpgTimerSrvでの自動予約登録の実行タイミングに左右されず確実に予約を削除するため、
+            //先に自動予約登録項目を削除する。
+
+            //自動予約登録項目のリストを保持
+            List<ManualAutoAddDataItem> autoaddlist = GetSelectedItemsList();
+
+            button_del_Click(sender, e);
+
+            try
+            {
+                //配下の予約の削除
+                var dellist = new List<ReserveData>();
+                autoaddlist.ForEach(info => dellist.AddRange(info.ManualAutoAddInfo.GetReserveList()));
+                dellist = dellist.Distinct().ToList();
+
+                mutil.ReserveDelete(dellist);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+            }
+
+        }
+
+        private List<ManualAutoAddDataItem> GetSelectedItemsList()
+        {
+            return listView_key.SelectedItems.Cast<ManualAutoAddDataItem>().ToList();
         }
 
         private void button_change_Click(object sender, RoutedEventArgs e)

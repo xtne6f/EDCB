@@ -107,5 +107,18 @@ namespace EpgTimer
             return (startTime + TimeSpan.FromSeconds(duration) >= System.DateTime.Now);
         }
 
+        public static List<ReserveData> GetReserveList(this ManualAutoAddData mdata)
+        {
+            return CommonManager.Instance.DB.ReserveList.Values.Where(info =>
+            {
+                //イベントID無し、サービス、開始時刻、長さ一致の予約を拾う。EpgTimerSrv側と同じ内容の判定。
+                return info != null && info.EventID == 0xFFFF
+                    && mdata.Create64Key() == info.Create64Key()
+                    && mdata.startTime == info.StartTime.Hour * 3600 + info.StartTime.Minute * 60 + info.StartTime.Second
+                    && mdata.durationSecond == info.DurationSecond
+                    && (mdata.dayOfWeekFlag & (byte)(0x01 << (int)info.StartTime.DayOfWeek)) != 0
+                    ;
+            }).ToList();
+        }
     }
 }

@@ -16,6 +16,7 @@
             <MenuItem Header="サービス名" Name="StationName" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="録画モード" Name="RecMode" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="優先度" Name="Priority" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="予約数" Name="ReserveCount" IsCheckable="True" Click="headerSelect_Click" />
         </ContextMenu>
     </UserControl.Resources>
     <Grid>
@@ -65,13 +66,19 @@
                                 <GridViewColumnHeader Content="優先度" Tag="Priority" HorizontalContentAlignment="Left"/>
                             </GridViewColumn.Header>
                         </GridViewColumn>
+                        <GridViewColumn DisplayMemberBinding="{Binding Path=ReserveCount}">
+                            <GridViewColumn.Header>
+                                <GridViewColumnHeader Content="予約数" Tag="ReserveCount" HorizontalContentAlignment="Left"/>
+                            </GridViewColumn.Header>
+                        </GridViewColumn>
                     </GridView>
                 </ListView.View>
             </ListView>
             <StackPanel Grid.Column="1" Name="stackPanel_button">
                 <Button Content="追加" Height="23" Name="button_add" Margin="0,10,0,10" Click="button_add_Click" Style="{StaticResource ButtonStyle1}" />
-                <Button Content="削除" Height="23" Name="button_del" Margin="0,10,0,10" Click="button_del_Click" Style="{StaticResource ButtonStyle1}" />
                 <Button Content="変更" Height="23" Name="button_change" Margin="0,10,0,10" Click="button_change_Click" Style="{StaticResource ButtonStyle1}" />
+                <Button Content="削除" Height="23" Name="button_del" Margin="0,10,0,10" Click="button_del_Click" Style="{StaticResource ButtonStyle1}" />
+                <Button Content="予約ごと削除" Height="23" Name="button_del2" Margin="0,10,0,10" Click="button_del2_Click" Style="{StaticResource ButtonStyle1}" />
             </StackPanel>
         </Grid>
     </Grid>

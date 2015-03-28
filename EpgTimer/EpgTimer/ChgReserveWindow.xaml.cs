@@ -352,8 +352,11 @@ namespace EpgTimer
                         return;
                     }
 
+                    //reserveInfo取得前に保存する。サービスや時間が変わったら、個別予約扱いにする。タイトルのみ変更は見ない。
+                    bool chgManualMode = !CommonManager.EqualsPg(resInfo, reserveInfo, false, true);
+
                     GetReserveTimeInfo(ref reserveInfo);
-                    if (reserveInfo.EventID != 0xFFFF)
+                    if (reserveInfo.EventID != 0xFFFF || chgManualMode == true)
                     {
                         reserveInfo.EventID = 0xFFFF;
                         reserveInfo.Comment = "";
