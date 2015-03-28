@@ -230,12 +230,12 @@ namespace EpgTimer
             datePicker_start.SelectedDate = startTime;
             comboBox_sh.SelectedIndex = startTime.Hour;
             comboBox_sm.SelectedIndex = startTime.Minute;
-            comboBox_ss.SelectedIndex = 0;
+            comboBox_ss.SelectedIndex = startTime.Second;
 
             datePicker_end.SelectedDate = endTime;
             comboBox_eh.SelectedIndex = endTime.Hour;
             comboBox_em.SelectedIndex = endTime.Minute;
-            comboBox_es.SelectedIndex = 0;
+            comboBox_es.SelectedIndex = endTime.Second;
         }
 
         private int GetReserveTimeInfo(ref ReserveData resInfo)
