@@ -396,14 +396,8 @@ namespace EpgTimer
                 List<String> list = new List<string>();
                 if (EpgAutoAddInfo != null)
                 {
-                    foreach (RecFileSetInfo recinfo1 in EpgAutoAddInfo.recSetting.RecFolderList)
-                    {
-                        list.Add(recinfo1.RecFolder);
-                    }
-                    foreach (RecFileSetInfo recinfo1 in EpgAutoAddInfo.recSetting.PartialRecFolder)
-                    {
-                        list.Add("(ワンセグ) " + recinfo1.RecFolder);
-                    }
+                    EpgAutoAddInfo.recSetting.RecFolderList.ForEach(info => list.Add(info.RecFolder));
+                    EpgAutoAddInfo.recSetting.PartialRecFolder.ForEach(info => list.Add("(ワンセグ) " + info.RecFolder));
                 }
                 return list;
             }

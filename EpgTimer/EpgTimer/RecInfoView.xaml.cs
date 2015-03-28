@@ -121,10 +121,8 @@ namespace EpgTimer
                         }
                     }
                     List<UInt32> IDList = new List<uint>();
-                    foreach (RecInfoItem info in listView_recinfo.SelectedItems)
-                    {
-                        IDList.Add(info.RecInfo.ID);
-                    }
+                    listView_recinfo.SelectedItems.Cast<RecInfoItem>().ToList().ForEach(
+                        info => IDList.Add(info.RecInfo.ID));
                     cmd.SendDelRecInfo(IDList);
                 }
             }
@@ -362,7 +360,7 @@ namespace EpgTimer
             {
                 if (Settings.Instance.PlayDClick == false)
                 {
-                    RecInfoItem info = listView_recinfo.SelectedItem as RecInfoItem;
+                    RecInfoItem info = (RecInfoItem)listView_recinfo.SelectedItem;
                     RecInfoDescWindow dlg = new RecInfoDescWindow();
                     dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
                     dlg.SetRecInfo(info.RecInfo);
@@ -370,18 +368,7 @@ namespace EpgTimer
                 }
                 else
                 {
-                    RecInfoItem info = listView_recinfo.SelectedItem as RecInfoItem;
-                    if (info.RecInfo.RecFilePath.Length > 0)
-                    {
-                        try
-                        {
-                            CommonManager.Instance.FilePlay(info.RecInfo.RecFilePath);
-                        }
-                        catch (Exception ex)
-                        {
-                            MessageBox.Show(ex.Message);
-                        }
-                    }
+                    button_play_Click(sender, e);
                 }
             }
         }
@@ -398,14 +385,7 @@ namespace EpgTimer
                 RecInfoItem info = SelectSingleItem();
                 if (info.RecInfo.RecFilePath.Length > 0)
                 {
-                    try
-                    {
-                        CommonManager.Instance.FilePlay(info.RecInfo.RecFilePath);
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show(ex.Message);
-                    }
+                    CommonManager.Instance.FilePlay(info.RecInfo.RecFilePath);
                 }
             }
         }
@@ -472,7 +452,6 @@ namespace EpgTimer
                 }
             }
         }
-
 
         private void ContextMenu_Header_ContextMenuOpening(object sender, ContextMenuEventArgs e)
         {
@@ -566,66 +545,24 @@ namespace EpgTimer
         {
             if (listView_recinfo.SelectedItem != null)
             {
-                foreach (object item in ((ContextMenu)sender).Items)
+                try
                 {
-                    if (item is MenuItem && ((((MenuItem)item).Name == "cmdopenFolder")))
+                    foreach (object item in ((ContextMenu)sender).Items)
                     {
-                        if (CommonManager.Instance.NWMode == true)
+                        if (item is MenuItem && ((((MenuItem)item).Name == "cmdopenFolder")))
                         {
-                            ((MenuItem)item).Visibility = System.Windows.Visibility.Collapsed;
+                            if (CommonManager.Instance.NWMode == true)
+                            {
+                                ((MenuItem)item).Visibility = System.Windows.Visibility.Collapsed;
+                            }
                         }
+                        else if (mutil.AppendMenuVisibleControl(item)) { }
+                        else { }
                     }
-                    else if (item is MenuItem && (((MenuItem)item).Name == "cm_AutoAdd"))
-                    {
-                        ((MenuItem)item).ToolTip = mutil.EpgKeyword_TrimMode();
-                    }
-                    else if (item is Separator && ((Separator)item).Name == "cm_CmAppend")
-                    {
-                        if (Settings.Instance.CmAppendMenu != true)
-                        {
-                            ((Separator)item).Visibility = System.Windows.Visibility.Collapsed;
-                        }
-                        else
-                        {
-                            ((Separator)item).Visibility = System.Windows.Visibility.Visible;
-                        }
-                    }
-                    else if (item is MenuItem && (((MenuItem)item).Name == "cm_CopyTitle"))
-                    {
-                        if (Settings.Instance.CmAppendMenu != true || Settings.Instance.CmCopyTitle != true)
-                        {
-                            ((MenuItem)item).Visibility = System.Windows.Visibility.Collapsed;
-                        }
-                        else
-                        {
-                            ((MenuItem)item).Visibility = System.Windows.Visibility.Visible;
-                            ((MenuItem)item).ToolTip = mutil.CopyTitle_TrimMode();
-                        }
-                    }
-                    else if (item is MenuItem && (((MenuItem)item).Name == "cm_CopyContent"))
-                    {
-                        if (Settings.Instance.CmAppendMenu != true || Settings.Instance.CmCopyContent != true)
-                        {
-                            ((MenuItem)item).Visibility = System.Windows.Visibility.Collapsed;
-                        }
-                        else
-                        {
-                            ((MenuItem)item).Visibility = System.Windows.Visibility.Visible;
-                            ((MenuItem)item).ToolTip = mutil.CopyContent_Mode();
-                        }
-                    }
-                    else if (item is MenuItem && (((MenuItem)item).Name == "cm_SearchTitle"))
-                    {
-                        if (Settings.Instance.CmAppendMenu != true || Settings.Instance.CmSearchTitle != true)
-                        {
-                            ((MenuItem)item).Visibility = System.Windows.Visibility.Collapsed;
-                        }
-                        else
-                        {
-                            ((MenuItem)item).Visibility = System.Windows.Visibility.Visible;
-                            ((MenuItem)item).ToolTip = mutil.SearchText_TrimMode();
-                        }
-                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
                 }
             }
         }

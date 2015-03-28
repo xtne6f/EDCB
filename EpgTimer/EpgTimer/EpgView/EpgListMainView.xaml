@@ -74,12 +74,12 @@
                         <MenuItem x:Name="cm_Reverse" Header="簡易予約/予約←→無効" Click="cm_reverse_Click" InputGestureText="Ctrl+S" />
                         <MenuItem x:Name="cm_add" Header="予約追加">
                             <MenuItem Header="ダイアログ表示" Click="cm_show_dialog_click" InputGestureText="Enter"/>
-                            <Separator/>
-                            <MenuItem x:Name="cm_add_preset" Header="プリセット" />
+                            <Separator x:Name="bar_preset" />
+                            <!-- ここにコードでプリセット展開 -->
                         </MenuItem>
                         <MenuItem x:Name="cm_chg" Header="変更">
                             <MenuItem Header="ダイアログ表示" Click="cm_show_dialog_click" InputGestureText="Enter" />
-                            <Separator/>
+                            <Separator Name="bar_recmode" />
                             <MenuItem Header="全サービス (_0)" Name="recmode_all" Click="cm_chg_recmode_Click" />
                             <MenuItem Header="指定サービス (_1)" Name="recmode_only" Click="cm_chg_recmode_Click" />
                             <MenuItem Header="全サービス（デコード処理なし） (_2)" Name="recmode_all_nodec" Click="cm_chg_recmode_Click" />
@@ -96,7 +96,7 @@
                             </MenuItem>
                         </MenuItem>
                         <MenuItem x:Name="cm_del" Header="削除" Click="cm_del_Click" InputGestureText="Ctrl+D, Delete" />
-                        <MenuItem x:Name="cm_autoadd" Header="自動予約登録" Click="cm_autoadd_Click" />
+                        <MenuItem x:Name="cm_autoadd" Tag="EpgKeyword"  Header="自動予約登録" Click="cm_autoadd_Click" />
                         <MenuItem x:Name="cm_timeshift" Header="追っかけ再生" Click="cm_timeShiftPlay_Click" InputGestureText="Ctrl+P" />
                         <Separator Name="cm_CmAppend" />
                         <MenuItem x:Name="cm_CopyTitle" Header="番組名をコピー" Click="MenuItem_Click_CopyTitle" InputGestureText="Ctrl+C" />
@@ -104,11 +104,11 @@
                         <MenuItem x:Name="cm_SearchTitle" Header="番組名をネットで検索" Click="MenuItem_Click_SearchTitle" />
                         <Separator/>
                         <MenuItem x:Name="cm_view" Header="表示モード">
+                            <MenuItem Header="表示設定" Click="cm_viewSet_Click" />
+                            <Separator/>
                             <MenuItem x:Name="cm_chg_viewMode1" Header="標準モード (_1)" Click="cm_chg_viewMode_Click"  />
                             <MenuItem x:Name="cm_chg_viewMode2" Header="1週間モード (_2)" Click="cm_chg_viewMode_Click" />
                             <MenuItem x:Name="cm_chg_viewMode3" Header="リスト表示モード (_3)" />
-                            <Separator/>
-                            <MenuItem Header="表示設定" Click="cm_viewSet_Click" />
                         </MenuItem>
                     </ContextMenu>
                 </ListView.ContextMenu>

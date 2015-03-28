@@ -14,7 +14,7 @@ using CtrlCmdCLI.Def;
 
 namespace EpgTimer
 {
-    class MenuUtil
+    public class MenuUtil
     {
         private CtrlCmdUtil cmd = null;
 
@@ -332,29 +332,271 @@ namespace EpgTimer
 
         public List<T> GetList<T>(T item)
         {
-            var list = new List<T>();
-            list.Add(item);
-            return list;
+            return new T[]{item}.ToList();
         }
 
-        //SelectedItemsをリストにするためのジェネリック。処理的には効率悪いけど、メニューなのでOKということにする。
-        public List<T> GetList<T>(ICollection itemlist)
+        //取りあえずある程度集約。仮。各画面のコンテキストメニュー共通化したい。
+
+        /// <summary>
+        /// プリセットメニューの展開、リスト系でもパネル系でも使用
+        /// </summary>
+        public void ExpandPresetItems(MenuItem menu, Action<object, RoutedEventArgs> eventHandler)
         {
-            try
+            int bar_pos = SearchMenuPosByName(menu, "bar_preset");
+            while (menu.Items.Count - 1 >= bar_pos + 1)
             {
-                var list = new List<T>();
-                foreach (T item in itemlist)
-                {
-                    list.Add(item);
-                }
-                return list;
+                menu.Items.RemoveAt(menu.Items.Count - 1);
             }
-            catch (Exception ex)
+
+            int i = 0;
+            foreach (RecPresetItem info in Settings.Instance.RecPresetList)
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                return new List<T>();
+                var menuItem = new MenuItem();
+                menuItem.Header = string.Format("プリセット - {0} (_{1})", info.DisplayName, i++);
+                menuItem.DataContext = info.ID;
+                menuItem.Click += new RoutedEventHandler(eventHandler);
+
+                menu.Items.Add(menuItem);
             }
         }
+
+        /// <summary>
+        /// パネル系の右クリックメニュー　予約追加
+        /// </summary>
+        public MenuItem GenerateAddMenu(Action<object, RoutedEventArgs>[] eventHandler)
+        {
+            var menuItemAdd = new MenuItem();
+            menuItemAdd.Header = "予約追加";
+
+            var menuItemAddDlg = new MenuItem();
+            menuItemAddDlg.Header = "ダイアログ表示";
+            menuItemAddDlg.Click += new RoutedEventHandler(eventHandler[0]);
+
+            menuItemAdd.Items.Add(menuItemAddDlg);
+
+            //プリセットメニュー作成
+            var menuItemPresetBar = new Separator();
+            menuItemPresetBar.Name = "bar_preset";
+            menuItemAdd.Items.Add(menuItemPresetBar);
+            ExpandPresetItems(menuItemAdd, eventHandler[1]);
+
+            return menuItemAdd;
+        }
+
+        /// <summary>
+        /// パネル系の右クリックメニュー　予約変更
+        /// </summary>
+        public MenuItem GenerateChgMenu(Action<object, RoutedEventArgs>[] eventHandler)
+        {
+            var menuItemChg = new MenuItem();
+            menuItemChg.Header = "変更";
+
+            var menuItemChgDlg = new MenuItem();
+            menuItemChgDlg.Header = "ダイアログ表示";
+            menuItemChgDlg.Click += new RoutedEventHandler(eventHandler[0]);
+            menuItemChg.Items.Add(menuItemChgDlg);
+
+            //録画モードメニュー作成
+            var menuItemRecmodeBar = new Separator();
+            menuItemRecmodeBar.Name = "bar_recmode";
+            menuItemChg.Items.Add(menuItemRecmodeBar);
+            GenerateRecModeItems(menuItemChg, eventHandler[1]);
+
+            //優先度モードメニュー作成
+            menuItemChg.Items.Add(new Separator());
+            menuItemChg.Items.Add(GeneratePriorityItems(eventHandler[2]));
+
+            return menuItemChg;
+        }
+
+        public void GenerateRecModeItems(MenuItem menu, Action<object, RoutedEventArgs> eventHandler)
+        {
+            string[] HeaderStr = {   "全サービス",
+                                     "指定サービス",
+                                     "全サービス（デコード処理なし）",
+                                     "指定サービス（デコード処理なし）",
+                                     "視聴",
+                                     "無効"};
+
+            for (int i = 0; i <= 5; i++)
+            {
+                var menuItem = new MenuItem();
+                menuItem.Header = string.Format("{0} (_{1})", HeaderStr[i], i);
+                menuItem.DataContext = (uint)i;//今は無くても大丈夫
+                menuItem.Click += new RoutedEventHandler(eventHandler);
+
+                menu.Items.Add(menuItem);
+            }
+        }
+
+        public MenuItem GeneratePriorityItems(Action<object, RoutedEventArgs> eventHandler)
+        {
+            var menuPri = new MenuItem();
+            menuPri.Name = "cm_pri";
+
+            for (int i = 1; i <= 5; i++)
+            {
+                var menuItem = new MenuItem();
+                menuItem.Header = string.Format("{0} (_{0})", i);
+                menuItem.DataContext = (uint)i;//今は無くても大丈夫
+                menuItem.Click += new RoutedEventHandler(eventHandler);
+
+                menuPri.Items.Add(menuItem);
+            }
+
+            return menuPri;
+        }
+
+        private int SearchMenuPosByName(MenuItem menu, string name)
+        {
+            for (int i = 0; i < menu.Items.Count; i++)
+            {
+                if ((menu.Items[i] as Control).Name == name)
+                {
+                    return i;
+                }
+            }
+            return -1;
+        }
+        
+        public void CheckChgItems(MenuItem menu, List<SearchItem> list)
+        {
+            CheckChgItems(menu, list.ReserveInfoList());
+        }
+        public void CheckChgItems(MenuItem menu, List<ReserveData> list)
+        {
+            if (list.Count == 0) return;
+
+            //選択されているすべての予約が同じ設定の場合だけチェックを表示する
+            byte recMode = list.All(info => info.RecSetting.RecMode == list[0].RecSetting.RecMode) ? list[0].RecSetting.RecMode : (byte)0xFF; ;
+            byte priority = list.All(info => info.RecSetting.Priority == list[0].RecSetting.Priority) ? list[0].RecSetting.Priority : (byte)0xFF; ;
+
+            int bar_pos = SearchMenuPosByName(menu, "bar_recmode");
+            if (bar_pos < 0) return;
+
+            for (int i = 0; i <= 5; i++)
+            {
+                ((MenuItem)menu.Items[i + bar_pos + 1]).DataContext = (uint)i;
+                ((MenuItem)menu.Items[i + bar_pos + 1]).IsChecked = (i == recMode);
+            }
+
+            int pri_pos = SearchMenuPosByName(menu, "cm_pri");
+            if (pri_pos < 0) return;
+
+            MenuItem priMenu = menu.Items[pri_pos] as MenuItem;
+            priMenu.Header = string.Format("優先度 {0}", priority < 0xFF ? "" + priority : "*");
+            for (int i = 1; i <= priMenu.Items.Count; i++)
+            {
+                ((MenuItem)priMenu.Items[i - 1]).DataContext = (uint)i;
+                ((MenuItem)priMenu.Items[i - 1]).IsChecked = (i == priority);
+            }
+        }
+
+        /// <summary>
+        /// パネル系番組表の右クリックメニュー　表示関係
+        /// </summary>
+        public MenuItem GenerateViewMenu(int mode, Action<object, RoutedEventArgs>[] eventHandler)
+        {
+            var menuItemView = new MenuItem();
+            menuItemView.Header = "表示モード";
+
+            var menuItemViewSetDlg = new MenuItem();
+            menuItemViewSetDlg.Header = "表示設定";
+            menuItemViewSetDlg.Click += new RoutedEventHandler(eventHandler[0]);
+            menuItemView.Items.Add(menuItemViewSetDlg);
+
+            menuItemView.Items.Add(new Separator());
+
+            string[] HeaderStr = { "標準モード", "1週間モード", "リスト表示モード" };
+            for (int i = 0; i < 3; i++)
+            {
+                var menuItemChgViewMode = new MenuItem();
+                menuItemChgViewMode.Header = string.Format("{0} (_{1})", HeaderStr[i], i + 1);
+                if (i != mode)
+                {
+                    menuItemChgViewMode.DataContext = i;
+                    menuItemChgViewMode.Click += new RoutedEventHandler(eventHandler[1]);
+                }
+                else
+                {
+                    menuItemChgViewMode.IsChecked = true;
+                }
+                menuItemView.Items.Add(menuItemChgViewMode);
+            }
+
+            return menuItemView;
+        }
+
+        /// <summary>
+        /// パネル系の右クリックメニュー　追加メニュー挿入
+        /// </summary>
+        public void InsertAppendMenu(ContextMenu menu, Action<object, RoutedEventArgs>[] eventHandler, bool enabled = true)
+        {
+            if (Settings.Instance.CmAppendMenu == false) return;
+
+            var menuItemCopy = new MenuItem();
+            menuItemCopy.Header = "番組名をコピー";
+            menuItemCopy.ToolTip = CopyTitle_TrimMode();
+            ToolTipService.SetShowOnDisabled(menuItemCopy, true);
+            menuItemCopy.Click += new RoutedEventHandler(eventHandler[0]);
+            menuItemCopy.IsEnabled = enabled;
+
+            var menuItemContent = new MenuItem();
+            menuItemContent.Header = "番組情報をコピー";
+            menuItemContent.ToolTip = CopyContent_Mode();
+            ToolTipService.SetShowOnDisabled(menuItemContent, true);
+            menuItemContent.Click += new RoutedEventHandler(eventHandler[1]);
+            menuItemContent.IsEnabled = enabled;
+
+            var menuItemSearch = new MenuItem();
+            menuItemSearch.Header = "番組名をネットで検索";
+            ToolTipService.SetShowOnDisabled(menuItemSearch, true);
+            menuItemSearch.ToolTip = SearchText_TrimMode();
+            menuItemSearch.Click += new RoutedEventHandler(eventHandler[2]);
+            menuItemSearch.IsEnabled = enabled;
+
+            menu.Items.Add(new Separator());
+            if (Settings.Instance.CmCopyTitle == true) menu.Items.Add(menuItemCopy);
+            if (Settings.Instance.CmCopyContent == true) menu.Items.Add(menuItemContent);
+            if (Settings.Instance.CmSearchTitle == true) menu.Items.Add(menuItemSearch);
+        }
+
+        /// <summary>
+        /// リスト系の右クリックメニュー　追加メニュー表示制御
+        /// </summary>
+        public bool AppendMenuVisibleControl(object item)
+        {
+            if (((string)(((Control)item).Tag)) == "EpgKeyword")
+            {
+                ((Control)item).ToolTip = EpgKeyword_TrimMode();
+                return true;
+            }
+
+            return AppendMenuVisibleSet(item, "cm_CmAppend", Settings.Instance.CmAppendMenu, null) ||
+                    AppendMenuVisibleSet(item, "cm_CopyTitle", Settings.Instance.CmCopyTitle, CopyTitle_TrimMode()) ||
+                    AppendMenuVisibleSet(item, "cm_CopyContent", Settings.Instance.CmCopyContent, CopyContent_Mode()) ||
+                    AppendMenuVisibleSet(item, "cm_SearchTitle", Settings.Instance.CmSearchTitle, SearchText_TrimMode());
+        }
+
+        private bool AppendMenuVisibleSet(object item1, string name, bool flg, string tooltip = null)
+        {
+            var item = (Control)item1;
+            bool retv = (item.Name == name);
+            if (retv)
+            {
+                if (Settings.Instance.CmAppendMenu == true && flg == true)
+                {
+                    item.Visibility = System.Windows.Visibility.Visible;
+                    item.ToolTip = tooltip;
+                }
+                else
+                {
+                    item.Visibility = System.Windows.Visibility.Collapsed;
+                }
+            }
+            return retv;
+        }
+
         public void SendAutoAdd(SearchItem item, ContentControl Owner)
         {
             SendAutoAdd(item.EventInfo, Owner);
@@ -394,7 +636,7 @@ namespace EpgTimer
 
         public bool ReserveAdd(List<SearchItem> itemlist, RecSettingView recSettingView = null, object sender = null)
         {
-            return ReserveAdd(itemlist.EventInfoList(), recSettingView, sender);
+            return ReserveAdd(itemlist.NoReserveInfoList(), recSettingView, sender);
         }
         public bool ReserveAdd(EpgEventInfo item, RecSettingView recSettingView = null, object sender = null)
         {
@@ -472,7 +714,7 @@ namespace EpgTimer
 
         public bool ReserveChangeOnOff(List<SearchItem> itemlist, RecSettingView recSettingView = null)
         {
-            bool retv = ReserveAdd(itemlist.EventInfoList(), recSettingView, null);
+            bool retv = ReserveAdd(itemlist.NoReserveInfoList(), recSettingView, null);
             retv = ReserveChangeOnOff(itemlist.ReserveInfoList(), recSettingView) || retv;//順番重要
             return retv;
         }
@@ -496,19 +738,9 @@ namespace EpgTimer
                     Settings.GetDefRecSetting(0, ref setInfo);
                 }
 
-                foreach (ReserveData item in itemlist)
-                {
-                    if (item.RecSetting.RecMode == 5)
-                    {
-                        // 無効 => 予約
-                        item.RecSetting.RecMode = setInfo.RecMode;
-                    }
-                    else
-                    {
-                        //予約 => 無効
-                        item.RecSetting.RecMode = 5;
-                    }
-                }
+                itemlist.ForEach(item =>
+                    item.RecSetting.RecMode = (item.RecSetting.RecMode == 5 ? setInfo.RecMode : (byte)5));
+
                 return ReserveChange(itemlist);
             }
             catch (Exception ex)
@@ -533,10 +765,8 @@ namespace EpgTimer
                 byte recMode = (byte)ReadDataContext(sender, 0, 5);
                 if (recMode == 0xFF) return false;
 
-                foreach (ReserveData item in itemlist)
-                {
-                    item.RecSetting.RecMode = recMode;
-                }
+                itemlist.ForEach(item => item.RecSetting.RecMode = recMode);
+
                 return ReserveChange(itemlist);
             }
             catch (Exception ex)
@@ -561,10 +791,8 @@ namespace EpgTimer
                 byte priority = (byte)ReadDataContext(sender, 1, 5);
                 if (priority == 0xFF) return false;
 
-                foreach (ReserveData item in itemlist)
-                {
-                    item.RecSetting.Priority = priority;
-                }
+                itemlist.ForEach(item => item.RecSetting.Priority = priority);
+
                 return ReserveChange(itemlist);
             }
             catch (Exception ex)

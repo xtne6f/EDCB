@@ -9,7 +9,7 @@ using CtrlCmdCLI.Def;
 
 namespace EpgTimer
 {
-    public static class EpgAutoAddDataAppendWrapper
+    public static class EpgAutoAddDataEx
     {
         public static uint SearchCount(this EpgAutoAddData master)
         {
@@ -91,10 +91,7 @@ namespace EpgTimer
                     //予約情報との突き合わせ
                     foreach (ReserveData info2 in CommonManager.Instance.DB.ReserveList.Values)
                     {
-                        if (info.original_network_id == info2.OriginalNetworkID &&
-                            info.transport_stream_id == info2.TransportStreamID &&
-                            info.service_id == info2.ServiceID &&
-                            info.event_id == info2.EventID)
+                        if (CommonManager.EqualsPg(info, info2) == true)
                         {
                             if (info2.RecSetting.RecMode == 5)
                             {

@@ -308,23 +308,23 @@ namespace EpgTimer
 
         private void recmode_Click(object sender, RoutedEventArgs e)
         {
-            mutil.ReserveChangeRecmode(GetSelectdReserveDataList(), sender);
+            mutil.ReserveChangeRecmode(GetSelectedReserveDataList(), sender);
         }
 
         private void button_on_off_Click(object sender, RoutedEventArgs e)
         {
-            mutil.ReserveChangeOnOff(GetSelectdReserveDataList());
+            mutil.ReserveChangeOnOff(GetSelectedReserveDataList());
         }
 
         private void priority_Click(object sender, RoutedEventArgs e)
         {
-            mutil.ReserveChangePriority(GetSelectdReserveDataList(), sender);
+            mutil.ReserveChangePriority(GetSelectedReserveDataList(), sender);
         }
 
         //冗長な処理にはなるが、リスト化した方が扱いやすいので
-        private List<ReserveData> GetSelectdReserveDataList()
+        private List<ReserveData> GetSelectedReserveDataList()
         {
-            return mutil.GetList<ReserveItem>(listView_reserve.SelectedItems).ReserveInfoList();
+            return listView_reserve.SelectedItems.Cast<ReserveItem>().ToList().ReserveInfoList();
         }
 
         private void autoadd_Click(object sender, RoutedEventArgs e)
@@ -347,7 +347,7 @@ namespace EpgTimer
 
         private void button_del_Click(object sender, RoutedEventArgs e)
         {
-            mutil.ReserveDelete(GetSelectdReserveDataList());
+            mutil.ReserveDelete(GetSelectedReserveDataList());
         }
 
         private void button_add_manual_Click(object sender, RoutedEventArgs e)
@@ -468,10 +468,8 @@ namespace EpgTimer
             if (listView_reserve.SelectedItems.Count == 0) { return; }
             //
             string text1 = "削除しますか?　[削除アイテム数: " + listView_reserve.SelectedItems.Count + "]" + "\r\n\r\n";
-            foreach (ReserveItem info in listView_reserve.SelectedItems)
-            {
-                text1 += " ・ " + info.ReserveInfo.Title + "\r\n";
-            }
+            GetSelectedReserveDataList().ForEach(info => text1 += " ・ " + info.Title + "\r\n");
+
             string caption1 = "登録項目削除の確認";
             if (MessageBox.Show(text1, caption1, MessageBoxButton.OKCancel, MessageBoxImage.Exclamation, MessageBoxResult.OK) == MessageBoxResult.OK)
             {
@@ -525,105 +523,23 @@ namespace EpgTimer
         {
             if (listView_reserve.SelectedItem != null)
             {
-                //選択されているすべての予約が同じ設定の場合だけチェックを表示する
-                byte recMode = 0xFF;
-                byte priority = 0xFF;
-                foreach (ReserveItem item in listView_reserve.SelectedItems)
+                try
                 {
-                    if (recMode == 0xFF)
+                    List<ReserveData> list = GetSelectedReserveDataList();
+
+                    foreach (object item in ((ContextMenu)sender).Items)
                     {
-                        recMode = item.ReserveInfo.RecSetting.RecMode;
-                    }
-                    else if (recMode != item.ReserveInfo.RecSetting.RecMode)
-                    {
-                        recMode = 0xFE;
-                    }
-                    if (priority == 0xFF)
-                    {
-                        priority = item.ReserveInfo.RecSetting.Priority;
-                    }
-                    else if (priority != item.ReserveInfo.RecSetting.Priority)
-                    {
-                        priority = 0xFE;
+                        if (item is MenuItem && ((string)((MenuItem)item).Header).StartsWith("変更"))
+                        {
+                            mutil.CheckChgItems((MenuItem)item, list);//現在の状態(録画モード、優先度)にチェックを入れる
+                        }
+                        else if (mutil.AppendMenuVisibleControl(item)) { }
+                        else { }
                     }
                 }
-                foreach (object item in ((ContextMenu)sender).Items)
+                catch (Exception ex)
                 {
-                    if (item is MenuItem && ((string)((MenuItem)item).Header).StartsWith("変更"))
-                    {
-                        for (int i = 0; i < ((MenuItem)item).Items.Count; i++)
-                        {
-                            MenuItem subItem = ((MenuItem)item).Items[i] as MenuItem;
-                            if (subItem != null && subItem.Name == "recmode_all")
-                            {
-                                for (int j = 0; j <= 5; j++)
-                                {
-                                    ((MenuItem)((MenuItem)item).Items[i + j]).DataContext = (uint)j;
-                                    ((MenuItem)((MenuItem)item).Items[i + j]).IsChecked = (j == recMode);
-                                }
-                            }
-                            if (subItem != null && subItem.Name == "cm_pri")
-                            {
-                                for (int j = 0; j < subItem.Items.Count; j++)
-                                {
-                                    ((MenuItem)subItem.Items[j]).DataContext = (uint)(j + 1);
-                                    ((MenuItem)subItem.Items[j]).IsChecked = (j + 1 == priority);
-                                }
-                                subItem.Header = string.Format((string)subItem.Tag, priority < 0xFE ? "" + priority : "*");
-                            }
-                        }
-                    }
-                    else if (item is MenuItem && (((MenuItem)item).Name == "cm_AutoAdd"))
-                    {
-                        ((MenuItem)item).ToolTip = mutil.EpgKeyword_TrimMode();
-                    }
-                    else if (item is Separator && ((Separator)item).Name == "cm_CmAppend")
-                    {
-                        if (Settings.Instance.CmAppendMenu != true)
-                        {
-                            ((Separator)item).Visibility = System.Windows.Visibility.Collapsed;
-                        }
-                        else
-                        {
-                            ((Separator)item).Visibility = System.Windows.Visibility.Visible;
-                        }
-                    }
-                    else if (item is MenuItem && (((MenuItem)item).Name == "cm_CopyTitle"))
-                    {
-                        if (Settings.Instance.CmAppendMenu != true || Settings.Instance.CmCopyTitle != true)
-                        {
-                            ((MenuItem)item).Visibility = System.Windows.Visibility.Collapsed;
-                        }
-                        else
-                        {
-                            ((MenuItem)item).Visibility = System.Windows.Visibility.Visible;
-                            ((MenuItem)item).ToolTip = mutil.CopyTitle_TrimMode();
-                        }
-                    }
-                    else if (item is MenuItem && (((MenuItem)item).Name == "cm_CopyContent"))
-                    {
-                        if (Settings.Instance.CmAppendMenu != true || Settings.Instance.CmCopyContent != true)
-                        {
-                            ((MenuItem)item).Visibility = System.Windows.Visibility.Collapsed;
-                        }
-                        else
-                        {
-                            ((MenuItem)item).Visibility = System.Windows.Visibility.Visible;
-                            ((MenuItem)item).ToolTip = mutil.CopyContent_Mode();
-                        }
-                    }
-                    else if (item is MenuItem && (((MenuItem)item).Name == "cm_SearchTitle"))
-                    {
-                        if (Settings.Instance.CmAppendMenu != true || Settings.Instance.CmSearchTitle != true)
-                        {
-                            ((MenuItem)item).Visibility = System.Windows.Visibility.Collapsed;
-                        }
-                        else
-                        {
-                            ((MenuItem)item).Visibility = System.Windows.Visibility.Visible;
-                            ((MenuItem)item).ToolTip = mutil.SearchText_TrimMode();
-                        }
-                    }
+                    MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
                 }
             }
         }

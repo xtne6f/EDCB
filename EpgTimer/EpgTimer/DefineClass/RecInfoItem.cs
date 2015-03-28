@@ -56,7 +56,7 @@ namespace EpgTimer
         {
             set
             {
-                MainWindow mainWindow = Application.Current.MainWindow as MainWindow;
+                MainWindow mainWindow = (MainWindow)Application.Current.MainWindow;
                 foreach (RecInfoItem info in mainWindow.recInfoView.listView_recinfo.SelectedItems)
                 {
                     if (info.RecInfo.ID == this.RecInfo.ID)

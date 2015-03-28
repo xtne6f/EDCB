@@ -10,7 +10,6 @@ namespace EpgTimer
 {
     static class CtrlCmdCLIEx
     {
-
         public static UInt64 Create64Key(this EpgServiceInfo obj)
         {
             return CommonManager.Create64Key(obj.ONID, obj.TSID, obj.SID);
@@ -42,8 +41,7 @@ namespace EpgTimer
         {
             return (info.ShortInfo == null ? "" : info.ShortInfo.event_name);
         }
-
-
+        
         public static UInt64 Create64Key(this EpgEventData obj)
         {
             return CommonManager.Create64Key(obj.original_network_id, obj.transport_stream_id, obj.service_id);
@@ -62,63 +60,51 @@ namespace EpgTimer
             return CommonManager.Create64PgKey(obj.OriginalNetworkID, obj.TransportStreamID, obj.ServiceID, obj.EventID);
         }
 
-
         public static bool IsOnRec(this ReserveData reserveInfo)
         {
-            bool retv = false;
-            if (reserveInfo != null)
+            if (reserveInfo == null) return false;
+            //
+            int duration = (int)reserveInfo.DurationSecond;
+            DateTime startTime = reserveInfo.StartTime;
+
+            if (reserveInfo.RecSetting.UseMargineFlag == 1)
             {
-                int duration = (int)reserveInfo.DurationSecond;
-                DateTime startTime = reserveInfo.StartTime;
-
-                if (reserveInfo.RecSetting.UseMargineFlag == 1)
-                {
-                    startTime = reserveInfo.StartTime.AddSeconds(reserveInfo.RecSetting.StartMargine * -1);
-                    duration += reserveInfo.RecSetting.StartMargine;
-                    duration += reserveInfo.RecSetting.EndMargine;
-                }
-                else
-                {
-                    //TODO: ここでデフォルトマージンを確認するがEpgTimerNWでは無意味。根本的にはSendCtrlCmdの拡張が必要
-                    int defStartMargin = IniFileHandler.GetPrivateProfileInt("SET", "StartMargin", 0, SettingPath.TimerSrvIniPath);
-                    int defEndMargin = IniFileHandler.GetPrivateProfileInt("SET", "EndMargin", 0, SettingPath.TimerSrvIniPath);
-
-                    startTime = reserveInfo.StartTime.AddSeconds(defStartMargin * -1);
-                    duration += defStartMargin;
-                    duration += defEndMargin;
-                }
-
-                retv = IsOnTime(startTime, duration);
+                startTime = reserveInfo.StartTime.AddSeconds(reserveInfo.RecSetting.StartMargine * -1);
+                duration += reserveInfo.RecSetting.StartMargine;
+                duration += reserveInfo.RecSetting.EndMargine;
             }
-            return retv;
+            else
+            {
+                //TODO: ここでデフォルトマージンを確認するがEpgTimerNWでは無意味。根本的にはSendCtrlCmdの拡張が必要
+                int defStartMargin = IniFileHandler.GetPrivateProfileInt("SET", "StartMargin", 0, SettingPath.TimerSrvIniPath);
+                int defEndMargin = IniFileHandler.GetPrivateProfileInt("SET", "EndMargin", 0, SettingPath.TimerSrvIniPath);
+
+                startTime = reserveInfo.StartTime.AddSeconds(defStartMargin * -1);
+                duration += defStartMargin;
+                duration += defEndMargin;
+            }
+
+            return isOnTime(startTime, duration);
         }
 
         public static bool IsOnAir(this ReserveData reserveInfo)
         {
-            bool retv = false;
-            if (reserveInfo != null)
-            {
-                retv = IsOnTime(reserveInfo.StartTime, (int)reserveInfo.DurationSecond);
-            }
-            return retv;
+            if (reserveInfo == null) return false;
+            //
+            return isOnTime(reserveInfo.StartTime, (int)reserveInfo.DurationSecond);
         }
         public static bool IsOnAir(this EpgEventInfo eventInfo)
         {
-            bool retv = false;
-            if (eventInfo != null)
-            {
-                retv = IsOnTime(eventInfo.start_time, (int)eventInfo.durationSec);
-            }
-            return retv;
+            if (eventInfo == null) return false;
+            //
+            return isOnTime(eventInfo.start_time, (int)eventInfo.durationSec);
         }
-        private static bool IsOnTime(DateTime startTime, int duration)
+
+        private static bool isOnTime(DateTime startTime, int duration)
         {
-            bool retv = false;
-            if (startTime <= System.DateTime.Now)
-            {
-                retv = (startTime + TimeSpan.FromSeconds(duration) >= System.DateTime.Now);
-            }
-            return retv;
+            if (startTime > System.DateTime.Now) return false;
+            //
+            return (startTime + TimeSpan.FromSeconds(duration) >= System.DateTime.Now);
         }
 
     }

@@ -186,7 +186,7 @@ namespace EpgTimer
 
         private List<EpgAutoDataItem> GetSelectedItemsList()
         {
-            return mutil.GetList<EpgAutoDataItem>(listView_key.SelectedItems);
+            return listView_key.SelectedItems.Cast<EpgAutoDataItem>().ToList();
         }
 
         private void button_del2_Click(object sender, RoutedEventArgs e)
@@ -195,10 +195,7 @@ namespace EpgTimer
 
             string text1 = "予約項目ごと削除してよろしいですか?　[削除アイテム数: " + listView_key.SelectedItems.Count + "]\r\n"
                             + "(無効の「自動予約登録項目」による予約も削除されます。)\r\n\r\n";
-            foreach (EpgAutoDataItem info in listView_key.SelectedItems)
-            {
-                text1 += " ・ " + info.AndKey + "\r\n";
-            }
+            GetSelectedItemsList().ForEach(info => text1 += " ・ " + info.AndKey + "\r\n");
 
             string caption1 = "[予約ごと削除]の確認";
             if (MessageBox.Show(text1, caption1, MessageBoxButton.OKCancel, 
@@ -211,11 +208,7 @@ namespace EpgTimer
             //先に自動予約登録項目を削除する。
 
             //自動予約登録項目のリストを保持
-            var autoaddlist = new List<EpgAutoDataItem>();
-            foreach (EpgAutoDataItem item in listView_key.SelectedItems)
-            {
-                autoaddlist.Add(item);
-            }
+            List<EpgAutoDataItem> autoaddlist = GetSelectedItemsList();
 
             button_del_Click(sender, e);
 
@@ -389,10 +382,8 @@ namespace EpgTimer
             if (listView_key.SelectedItems.Count == 0) { return; }
             //
             string text1 = "削除しますか?　[削除アイテム数: " + listView_key.SelectedItems.Count + "]" + "\r\n\r\n";
-            foreach (EpgAutoDataItem info in listView_key.SelectedItems)
-            {
-                text1 += " ・ " + info.AndKey + "\r\n";
-            }
+            GetSelectedItemsList().ForEach(info => text1 += " ・ " + info.AndKey + "\r\n");
+
             string caption1 = "登録項目削除の確認";
             if (MessageBox.Show(text1, caption1, MessageBoxButton.OKCancel, MessageBoxImage.Exclamation, MessageBoxResult.OK) == MessageBoxResult.OK)
             {
@@ -473,10 +464,7 @@ namespace EpgTimer
             if (this.ItemOrderNotSaved == false) { return; }
             //
             List<uint> dataIdList1 = new List<uint>();
-            foreach (EpgAutoDataItem item1 in this.resultList)
-            {
-                dataIdList1.Add(item1.EpgAutoAddInfo.dataID);
-            }
+            resultList.ForEach(item1 => dataIdList1.Add(item1.EpgAutoAddInfo.dataID));
             dataIdList1.Sort();
             //
             List<EpgAutoAddData> addList1 = new List<EpgAutoAddData>();

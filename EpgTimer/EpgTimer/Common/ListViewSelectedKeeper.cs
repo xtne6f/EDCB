@@ -49,11 +49,7 @@ namespace EpgTimer
             if (listView != null && listView.SelectedItem != null)
             {
                 oldItem = (T)listView.SelectedItem;
-                oldItems = new List<T>();
-                foreach (T item in listView.SelectedItems)
-                {
-                    oldItems.Add(item);
-                }
+                oldItems = listView.SelectedItems.Cast<T>().ToList();
             }
         }
 

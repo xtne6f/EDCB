@@ -125,7 +125,7 @@ namespace EpgTimer
 
         private void SetMode_UpDownButtons()
         {
-            MainWindow mainWindow = Application.Current.MainWindow as MainWindow;
+            MainWindow mainWindow = (MainWindow)Application.Current.MainWindow;
             button_up_epgAutoAdd.IsEnabled = mainWindow.autoAddView.epgAutoAddView.IsVisible;
             button_down_epgAutoAdd.IsEnabled = mainWindow.autoAddView.epgAutoAddView.IsVisible;
         }
@@ -235,7 +235,7 @@ namespace EpgTimer
 
         private List<SearchItem> GetSelectedItemsList()
         {
-            return mutil.GetList<SearchItem>(listView_result.SelectedItems);
+            return listView_result.SelectedItems.Cast<SearchItem>().ToList();
         }
 
         private void button_add_reserve_Click(object sender, RoutedEventArgs e)
@@ -263,9 +263,8 @@ namespace EpgTimer
                 //更新前の選択情報の保存
                 var oldItems = new ListViewSelectedKeeper<SearchItem>(listView_result, true);
 
-                listView_result.SelectAll();
-                MenuItem_Click_DeleteItem(listView_result.SelectedItem, new RoutedEventArgs());
-                listView_result.UnselectAll();//未選択から実行された場合は後ろのRestoreが動かないので先に解除する。
+                mutil.ReserveDelete(resultList);
+                RefreshAndSearch();
 
                 oldItems.RestoreListViewSelected();
             }
@@ -285,16 +284,14 @@ namespace EpgTimer
                 addItem.searchInfo = searchKey;
                 addItem.recSetting = recSetKey;
 
-                var addList = new List<EpgAutoAddData>();
-                addList.Add(addItem);
-
+                //一覧画面非表示の状態から実施する場合のためのコード
                 if (CommonManager.Instance.DB.EpgAutoAddList.Count == 0)
                 {
                     CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.AutoAddEpgInfo);
                     CommonManager.Instance.DB.ReloadEpgAutoAddInfo();
                 }
 
-                if (mutil.EpgAutoAddAdd(addList) == true)
+                if (mutil.EpgAutoAddAdd(addItem) == true)
                 {
                     List<uint> oldlist = CommonManager.Instance.DB.EpgAutoAddList.Keys.ToList();
 
@@ -314,7 +311,7 @@ namespace EpgTimer
                         this.SetSearchDefKey(newinfo.searchInfo);
                         this.SetRecInfoDef(newinfo.recSetting);
 
-                        MainWindow mainWindow = Application.Current.MainWindow as MainWindow;
+                        MainWindow mainWindow = (MainWindow)Application.Current.MainWindow;
                         mainWindow.autoAddView.epgAutoAddView.UpdateInfo();
                         UpdateEpgAutoAddViewSelection();
                     }
@@ -343,7 +340,7 @@ namespace EpgTimer
         {
             if (this.autoAddID == 0) return;
 
-            MainWindow mainWindow = Application.Current.MainWindow as MainWindow;
+            MainWindow mainWindow = (MainWindow)Application.Current.MainWindow;
             ListView epglist = mainWindow.autoAddView.epgAutoAddView.listView_key;
 
             //念のため
@@ -649,23 +646,12 @@ namespace EpgTimer
 
         void deleteItem()
         {
-            if (listView_result.SelectedItem == null) { return; }
-            //
-            List<ReserveData> delList = new List<ReserveData>();
-            foreach (SearchItem item in listView_result.SelectedItems)
-            {
-                if (item.IsReserved == true)
-                {
-                    delList.Add(item.ReserveInfo);
-                }
-            }
+            var delList = GetSelectedItemsList().ReserveInfoList();
             if (delList.Count == 0) { return; }
 
             string text1 = "削除しますか?　[削除アイテム数: " + delList.Count + "]" + "\r\n\r\n";
-            foreach (ReserveData item in delList)
-            {
-                text1 += " ・ " + item.Title + "\r\n";
-            }
+            delList.ForEach(item => text1 += " ・ " + item.Title + "\r\n");
+
             string caption1 = "登録項目削除の確認";
             if (MessageBox.Show(text1, caption1, MessageBoxButton.OKCancel, MessageBoxImage.Exclamation, MessageBoxResult.OK) == MessageBoxResult.OK)
             {
@@ -854,159 +840,51 @@ namespace EpgTimer
         {
             if (listView_result.SelectedItem != null)
             {
-                foreach (object item in ((ContextMenu)sender).Items)
+                try
                 {
-                    //孫ウィンドウは禁止。番組表表示とも相性悪いのでキャンセル。
-                    if (item is MenuItem && ((((MenuItem)item).Name == "cmdResearch2") || (((MenuItem)item).Name == "cmdProgramTable")))
-                    {
-                        if (this.Owner as SearchWindow != null)
-                        {
-                            ((MenuItem)item).IsEnabled = false;
-                            ((MenuItem)item).Header += ((MenuItem)item).Header.ToString().EndsWith("(無効)") ? "" : "(無効)";
-                        }
-                    }
+                    List<SearchItem> list = GetSelectedItemsList();
+                    bool hasReserved = list.HasReserved();
+                    bool hasNoReserved = list.HasNoReserved();
 
-                    if (item is MenuItem && (((MenuItem)item).Name == "cmdDlt"))
+                    foreach (object item in ((ContextMenu)sender).Items)
                     {
-                        bool isReserved = false;
-                        foreach (SearchItem selItem in listView_result.SelectedItems)
+                        //孫ウィンドウは禁止。番組表表示とも相性悪いのでキャンセル。
+                        if (item is MenuItem && ((((MenuItem)item).Name == "cmdResearch2") || (((MenuItem)item).Name == "cmdProgramTable")))
                         {
-                            isReserved |= selItem.IsReserved;
-                        }
-                        ((MenuItem)item).IsEnabled = isReserved;
-                    }
-                    else if (item is MenuItem && (((MenuItem)item).Name == "cmdAdd"))
-                    {
-                        bool isReserved = true;
-                        foreach (SearchItem selItem in listView_result.SelectedItems)
-                        {
-                            isReserved &= selItem.IsReserved;
-                        }
-                        ((MenuItem)item).IsEnabled = !isReserved;
-
-                        if (((MenuItem)item).IsEnabled == true)
-                        {
-                            MenuItem subItem = ((MenuItem)item).Items[2] as MenuItem;
-                            subItem.Items.Clear();
-
-                            foreach (RecPresetItem info in Settings.Instance.RecPresetList)
+                            if (this.Owner as SearchWindow != null)
                             {
-                                MenuItem menuItem = new MenuItem();
-                                menuItem.Header = info.DisplayName;
-                                menuItem.DataContext = info.ID;
-                                menuItem.Click += new RoutedEventHandler(MenuItem_Click_AddReservePreset);
-
-                                subItem.Items.Add(menuItem);
-                            }
-                        }
-                    }
-                    else if (item is MenuItem && ((MenuItem)item).Name == "cmdChg")
-                    {
-                        //選択されているすべての予約が同じ設定の場合だけチェックを表示する
-                        byte recMode = 0xFF;
-                        byte priority = 0xFF;
-                        foreach (SearchItem selItem in listView_result.SelectedItems)
-                        {
-                            if (selItem.IsReserved == true)
-                            {
-                                if (recMode == 0xFF)
-                                {
-                                    recMode = selItem.ReserveInfo.RecSetting.RecMode;
-                                }
-                                else if (recMode != selItem.ReserveInfo.RecSetting.RecMode)
-                                {
-                                    recMode = 0xFE;
-                                }
-                                if (priority == 0xFF)
-                                {
-                                    priority = selItem.ReserveInfo.RecSetting.Priority;
-                                }
-                                else if (priority != selItem.ReserveInfo.RecSetting.Priority)
-                                {
-                                    priority = 0xFE;
-                                }
+                                ((MenuItem)item).IsEnabled = false;
+                                ((MenuItem)item).Header += ((MenuItem)item).Header.ToString().EndsWith("(無効)") ? "" : "(無効)";
                             }
                         }
 
-                        if (recMode != 0xFF)
+                        if (item is MenuItem && (((MenuItem)item).Name == "cmdDlt"))
                         {
-                            ((MenuItem)item).IsEnabled = true;
-                            for (int i = 0; i <= 5; i++)
+                            ((MenuItem)item).IsEnabled = hasReserved;
+                        }
+                        else if (item is MenuItem && (((MenuItem)item).Name == "cmdAdd"))
+                        {
+                            ((MenuItem)item).IsEnabled = hasNoReserved;
+                            if (hasNoReserved)
                             {
-                                ((MenuItem)((MenuItem)item).Items[i + 2]).DataContext = (uint)i;
-                                ((MenuItem)((MenuItem)item).Items[i + 2]).IsChecked = (i == recMode);
-                            }
-                            for (int i = 6 + 2; i < ((MenuItem)item).Items.Count; i++)
-                            {
-                                MenuItem subItem = ((MenuItem)item).Items[i] as MenuItem;
-                                if (subItem != null && subItem.Name == "cmdPri")
-                                {
-                                    for (int j = 0; j < subItem.Items.Count; j++)
-                                    {
-                                        ((MenuItem)subItem.Items[j]).DataContext = (uint)(j + 1);
-                                        ((MenuItem)subItem.Items[j]).IsChecked = (j + 1 == priority);
-                                    }
-                                    subItem.Header = string.Format((string)subItem.Tag, priority < 0xFE ? "" + priority : "*");
-                                    break;
-                                }
+                                mutil.ExpandPresetItems((MenuItem)item, MenuItem_Click_AddReservePreset);
                             }
                         }
-                        else
+                        else if (item is MenuItem && ((MenuItem)item).Name == "cmdChg")
                         {
-                            ((MenuItem)item).IsEnabled = false;
+                            ((MenuItem)item).IsEnabled = hasReserved;
+                            if (hasReserved)
+                            {
+                                mutil.CheckChgItems((MenuItem)item, list);//現在の状態(録画モード、優先度)にチェックを入れる
+                            }
                         }
+                        else if (mutil.AppendMenuVisibleControl(item)) { }
+                        else { }
                     }
-                    else if (item is MenuItem && ((((MenuItem)item).Name == "cmdResearch") || (((MenuItem)item).Name == "cmdResearch2")))
-                    {
-                        ((MenuItem)item).ToolTip = mutil.EpgKeyword_TrimMode();
-                    }
-                    else if (item is Separator && ((Separator)item).Name == "cm_CmAppend")
-                    {
-                        if (Settings.Instance.CmAppendMenu != true)
-                        {
-                            ((Separator)item).Visibility = System.Windows.Visibility.Collapsed;
-                        }
-                        else
-                        {
-                            ((Separator)item).Visibility = System.Windows.Visibility.Visible;
-                        }
-                    }
-                    else if (item is MenuItem && (((MenuItem)item).Name == "cm_CopyTitle"))
-                    {
-                        if (Settings.Instance.CmAppendMenu != true || Settings.Instance.CmCopyTitle != true)
-                        {
-                            ((MenuItem)item).Visibility = System.Windows.Visibility.Collapsed;
-                        }
-                        else
-                        {
-                            ((MenuItem)item).Visibility = System.Windows.Visibility.Visible;
-                            ((MenuItem)item).ToolTip = mutil.CopyTitle_TrimMode();
-                        }
-                    }
-                    else if (item is MenuItem && (((MenuItem)item).Name == "cm_CopyContent"))
-                    {
-                        if (Settings.Instance.CmAppendMenu != true || Settings.Instance.CmCopyContent != true)
-                        {
-                            ((MenuItem)item).Visibility = System.Windows.Visibility.Collapsed;
-                        }
-                        else
-                        {
-                            ((MenuItem)item).Visibility = System.Windows.Visibility.Visible;
-                            ((MenuItem)item).ToolTip = mutil.CopyContent_Mode();
-                        }
-                    }
-                    else if (item is MenuItem && (((MenuItem)item).Name == "cm_SearchTitle"))
-                    {
-                        if (Settings.Instance.CmAppendMenu != true || Settings.Instance.CmSearchTitle != true)
-                        {
-                            ((MenuItem)item).Visibility = System.Windows.Visibility.Collapsed;
-                        }
-                        else
-                        {
-                            ((MenuItem)item).Visibility = System.Windows.Visibility.Visible;
-                            ((MenuItem)item).ToolTip = mutil.SearchText_TrimMode();
-                        }
-                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
                 }
             }
         }
@@ -1019,7 +897,7 @@ namespace EpgTimer
             }
             else
             {
-                MainWindow mainWindow = Application.Current.MainWindow as MainWindow;
+                MainWindow mainWindow = (MainWindow)Application.Current.MainWindow;
                 mainWindow.ListFoucsOnVisibleChanged();
             }
         }
@@ -1032,7 +910,7 @@ namespace EpgTimer
 
         private void UpdateEpgAutoAddViewSelection()
         {
-            MainWindow mainWindow = Application.Current.MainWindow as MainWindow;
+            MainWindow mainWindow = (MainWindow)Application.Current.MainWindow;
             mainWindow.autoAddView.epgAutoAddView.UpdateListViewSelection(this.autoAddID);
         }
     }

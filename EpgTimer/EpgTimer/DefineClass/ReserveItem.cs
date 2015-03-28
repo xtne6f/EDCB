@@ -204,14 +204,12 @@ namespace EpgTimer
         {
             get
             {
-                String view = "";
-                if (ReserveInfo != null)
+                if (ReserveInfo == null) return "";
+                //
+                String view = ReserveInfo.Comment.ToString();
+                if (view == "")
                 {
-                    view = ReserveInfo.Comment.ToString();
-                    if (view == "")
-                    {
-                        view = "個別予約(" + (ReserveInfo.EventID == 0xFFFF ? "プログラム" : "EPG") + ")";
-                    }
+                    view = "個別予約(" + (ReserveInfo.EventID == 0xFFFF ? "プログラム" : "EPG") + ")";
                 }
                 return view;
             }
@@ -312,15 +310,7 @@ namespace EpgTimer
     {
         public static List<ReserveData> ReserveInfoList(this ICollection<ReserveItem> itemlist)
         {
-            try
-            {
-                return itemlist.Select(item => item.ReserveInfo).ToList();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                return new List<ReserveData>();
-            }
+            return itemlist.Where(item => item != null).Select(item => item.ReserveInfo).ToList();
         }
     }
 }

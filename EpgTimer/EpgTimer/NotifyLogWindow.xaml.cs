@@ -162,10 +162,7 @@ namespace EpgTimer
             if (result == true)
             {
                 StreamWriter file = new StreamWriter(dlg.FileName, false, System.Text.Encoding.GetEncoding("shift_jis") );
-                foreach (NotifySrvInfoItem info in logList)
-                {
-                    file.Write(info.FileLogText);
-                }
+                logList.ForEach(info => file.Write(info.FileLogText));
                 file.Close();
             }
         }

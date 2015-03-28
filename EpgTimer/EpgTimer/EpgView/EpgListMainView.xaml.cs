@@ -584,24 +584,17 @@ namespace EpgTimer
 
                     if (listView_event.SelectedItem != null)
                     {
-                        SearchItem item = listView_event.SelectedItem as SearchItem;
-                        if (item.IsReserved == true)
+                        List<SearchItem> list = GetSelectedItemsList();
+                        bool hasReserved = list.HasReserved();
+                        bool hasNoReserved = list.HasNoReserved();
+
+                        if (hasReserved == true)
                         {
                             cm_Reverse.Header = "予約←→無効";
                             cm_del.IsEnabled = true;
                             cm_chg.IsEnabled = true;
-                            for (int i = 0; i <= 5; i++)
-                            {
-                                ((MenuItem)cm_chg.Items[cm_chg.Items.IndexOf(recmode_all) + i]).DataContext = (uint)i;
-                                ((MenuItem)cm_chg.Items[cm_chg.Items.IndexOf(recmode_all) + i]).IsChecked = (i == item.ReserveInfo.RecSetting.RecMode);
-                            }
-                            for (int i = 0; i < cm_pri.Items.Count; i++)
-                            {
-                                ((MenuItem)cm_pri.Items[i]).DataContext = (uint)(i + 1);
-                                ((MenuItem)cm_pri.Items[i]).IsChecked = (i + 1 == item.ReserveInfo.RecSetting.Priority);
-                            }
-                            cm_pri.Header = string.Format((string)cm_pri.Tag, item.ReserveInfo.RecSetting.Priority);
-                            cm_add.IsEnabled = false;
+                            mutil.CheckChgItems(cm_chg, list);//現在の状態(録画モード、優先度)にチェックを入れる
+                            cm_add.IsEnabled = hasNoReserved;
                             cm_autoadd.IsEnabled = true;
                             cm_timeshift.IsEnabled = true;
                         }
@@ -613,45 +606,14 @@ namespace EpgTimer
                             cm_add.IsEnabled = true;
                             cm_autoadd.IsEnabled = true;
                             cm_timeshift.IsEnabled = false;
-                            cm_add_preset.Items.Clear();
-
-                            foreach (RecPresetItem info in Settings.Instance.RecPresetList)
-                            {
-                                MenuItem menuItem = new MenuItem();
-                                menuItem.Header = info.DisplayName;
-                                menuItem.DataContext = info.ID;
-                                menuItem.Click += new RoutedEventHandler(cm_add_preset_Click);
-
-                                cm_add_preset.Items.Add(menuItem);
-                            }
+                            mutil.ExpandPresetItems(cm_add, cm_add_preset_Click);
                         }
 
-                        cm_autoadd.ToolTip = mutil.EpgKeyword_TrimMode();
-                        cm_CopyTitle.ToolTip = mutil.CopyTitle_TrimMode();
-                        cm_CopyContent.ToolTip = mutil.CopyContent_Mode();
-                        cm_SearchTitle.ToolTip = mutil.SearchText_TrimMode();
-
-                        cm_CmAppend.Visibility = System.Windows.Visibility.Collapsed;
-                        cm_CopyTitle.Visibility = System.Windows.Visibility.Collapsed;
-                        cm_CopyContent.Visibility = System.Windows.Visibility.Collapsed;
-                        cm_SearchTitle.Visibility = System.Windows.Visibility.Collapsed;
-                        if (Settings.Instance.CmAppendMenu == true)
+                        //個別に設定できるが、リスト系の設定メソッドを使い回す。
+                        foreach (object item in listView_event_contextMenu.Items)
                         {
-                            cm_CmAppend.Visibility = System.Windows.Visibility.Visible;
-                            if (Settings.Instance.CmCopyTitle == true)
-                            {
-                                cm_CopyTitle.Visibility = System.Windows.Visibility.Visible;
-                            }
-                            if (Settings.Instance.CmCopyContent == true)
-                            {
-                                cm_CopyContent.Visibility = System.Windows.Visibility.Visible;
-                            }
-                            if (Settings.Instance.CmSearchTitle == true)
-                            {
-                                cm_SearchTitle.Visibility = System.Windows.Visibility.Visible;
-                            }
+                            mutil.AppendMenuVisibleControl(item);
                         }
-
                     }
                 }
                 catch (Exception ex)
@@ -699,23 +661,12 @@ namespace EpgTimer
 
         void deleteItem()
         {
-            if (listView_event.SelectedItem == null) { return; }
-            //
-            var delList = new List<ReserveData>();
-            foreach (SearchItem item in listView_event.SelectedItems)
-            {
-                if (item.IsReserved == true)
-                {
-                    delList.Add(item.ReserveInfo);
-                }
-            }
+            var delList = GetSelectedItemsList().ReserveInfoList();
             if (delList.Count == 0) { return; }
 
             string text1 = "削除しますか?　[削除アイテム数: " + delList.Count + "]" + "\r\n\r\n";
-            foreach (ReserveData item in delList)
-            {
-                text1 += " ・ " + item.Title + "\r\n";
-            }
+            delList.ForEach(item => text1 += " ・ " + item.Title + "\r\n");
+
             string caption1 = "登録項目削除の確認";
             if (MessageBox.Show(text1, caption1, MessageBoxButton.OKCancel, MessageBoxImage.Exclamation, MessageBoxResult.OK) == MessageBoxResult.OK)
             {
@@ -735,7 +686,7 @@ namespace EpgTimer
 
         private List<SearchItem> GetSelectedItemsList()
         {
-            return mutil.GetList<SearchItem>(listView_event.SelectedItems);
+            return listView_event.SelectedItems.Cast<SearchItem>().ToList();
         }
 
         private void cm_show_dialog_click(object sender, RoutedEventArgs e)

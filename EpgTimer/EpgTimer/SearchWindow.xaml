@@ -40,12 +40,12 @@
                     <MenuItem Name="cmdOnOff" Header="予約←→無効" Click="MenuItem_Click_ChangeOnOff" InputGestureText="Ctrl+S" />
                     <MenuItem Name="cmdAdd" Header="予約追加">
                         <MenuItem Header="ダイアログ表示" Click="MenuItem_Click_ShowDialog"  InputGestureText="Enter" />
-                        <Separator/>
-                        <MenuItem Name="cmdPreset" Header="プリセット" />
+                        <Separator Name="bar_preset" />
+                        <!-- ここにコードでプリセット展開 -->
                     </MenuItem>
                     <MenuItem Name="cmdChg" Header="変更">
                         <MenuItem Header="ダイアログ表示" Click="MenuItem_Click_ShowDialog"  InputGestureText="Enter" />
-                        <Separator/>
+                        <Separator Name="bar_recmode" />
                         <MenuItem Header="全サービス (_0)" Click="MenuItem_Click_RecMode" />
                         <MenuItem Header="指定サービス (_1)" Click="MenuItem_Click_RecMode" />
                         <MenuItem Header="全サービス（デコード処理なし） (_2)" Click="MenuItem_Click_RecMode" />
@@ -53,7 +53,7 @@
                         <MenuItem Header="視聴 (_4)" Click="MenuItem_Click_RecMode" />
                         <MenuItem Header="無効 (_5)" Click="MenuItem_Click_RecMode" />
                         <Separator/>
-                        <MenuItem Name="cmdPri" Tag="優先度 {0}">
+                        <MenuItem Name="cm_pri" Tag="優先度 {0}">
                             <MenuItem Header="1 (_1)" Click="MenuItem_Click_Priority" />
                             <MenuItem Header="2 (_2)" Click="MenuItem_Click_Priority" />
                             <MenuItem Header="3 (_3)" Click="MenuItem_Click_Priority" />
@@ -63,8 +63,8 @@
                     </MenuItem>
                     <MenuItem Name="cmdDlt" Header="削除" Click="MenuItem_Click_DeleteItem" InputGestureText="Ctrl+D, Delete" />
                     <MenuItem Name="cmdProgramTable" Header="番組表へジャンプ" Click="MenuItem_Click_ProgramTable"  InputGestureText="F3" />
-                    <MenuItem Name="cmdResearch" Header="番組名で再検索" Click="MenuItem_Click_Research" />
-                    <MenuItem Name="cmdResearch2" Header="番組名で再検索(サブウィンドウ)" Click="MenuItem_Click_Research2" ToolTipService.ShowOnDisabled="True" />
+                    <MenuItem Name="cmdResearch" Header="番組名で再検索" Tag="EpgKeyword" Click="MenuItem_Click_Research" />
+                    <MenuItem Name="cmdResearch2" Header="番組名で再検索(サブウィンドウ)" Tag="EpgKeyword" Click="MenuItem_Click_Research2" ToolTipService.ShowOnDisabled="True" />
                     <Separator Name="cm_CmAppend" />
                     <MenuItem Name="cm_CopyTitle" Header="番組名をコピー" Click="MenuItem_Click_CopyTitle" InputGestureText="Ctrl+C" />
                     <MenuItem Name="cm_CopyContent" Header="番組情報をコピー" Click="MenuItem_Click_CopyContent" />

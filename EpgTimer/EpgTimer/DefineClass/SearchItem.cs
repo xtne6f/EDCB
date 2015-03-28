@@ -183,39 +183,24 @@ namespace EpgTimer
     {
         public static List<EpgEventInfo> EventInfoList(this ICollection<SearchItem> itemlist)
         {
-            try
-            {
-                return itemlist.Select(item => item.EventInfo).ToList();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                return new List<EpgEventInfo>();
-            }
+            return itemlist.Where(item => item != null).Select(item => item.EventInfo).ToList();
         }
         public static List<EpgEventInfo> NoReserveInfoList(this ICollection<SearchItem> itemlist)
         {
-            try
-            {
-                return itemlist.Where(item => item.IsReserved == false).Select(item => item.EventInfo).ToList();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                return new List<EpgEventInfo>();
-            }
+            return itemlist.Where(item => item == null ? false : item.IsReserved == false).Select(item => item.EventInfo).ToList();
         }
         public static List<ReserveData> ReserveInfoList(this ICollection<SearchItem> itemlist)
         {
-            try
-            {
-                return itemlist.Where(item => item.IsReserved == true).Select(item => item.ReserveInfo).ToList();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                return new List<ReserveData>();
-            }
+            return itemlist.Where(item => item == null ? false : item.IsReserved == true).Select(item => item.ReserveInfo).ToList();
         }
+        public static bool HasReserved(this List<SearchItem> list)
+        {
+            return list.Any(info => info == null ? false : info.IsReserved);
+        }
+        public static bool HasNoReserved(this List<SearchItem> list)
+        {
+            return list.Any(info => info == null ? false : !info.IsReserved);
+        }
+
     }
 }

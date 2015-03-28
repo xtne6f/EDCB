@@ -177,81 +177,10 @@ namespace EpgTimer
                 if (GetReserveItem(cursorPos, ref reserve) == false) return;
                 ContextMenu menu = new ContextMenu();
 
-                Separator separate2 = new Separator();
-                MenuItem menuItemChg = new MenuItem();
-                menuItemChg.Header = "変更";
-                MenuItem menuItemChgDlg = new MenuItem();
-                menuItemChgDlg.Header = "ダイアログ表示";
-                menuItemChgDlg.Click += new RoutedEventHandler(cm_chg_Click);
-
-                menuItemChg.Items.Add(menuItemChgDlg);
-                menuItemChg.Items.Add(separate2);
-
-                MenuItem menuItemChgRecMode0 = new MenuItem();
-                menuItemChgRecMode0.Header = "全サービス (_0)";
-                menuItemChgRecMode0.DataContext = (uint)0;
-                menuItemChgRecMode0.Click += new RoutedEventHandler(cm_chg_recmode_Click);
-                MenuItem menuItemChgRecMode1 = new MenuItem();
-                menuItemChgRecMode1.Header = "指定サービス (_1)";
-                menuItemChgRecMode1.DataContext = (uint)1;
-                menuItemChgRecMode1.Click += new RoutedEventHandler(cm_chg_recmode_Click);
-                MenuItem menuItemChgRecMode2 = new MenuItem();
-                menuItemChgRecMode2.Header = "全サービス（デコード処理なし） (_2)";
-                menuItemChgRecMode2.DataContext = (uint)2;
-                menuItemChgRecMode2.Click += new RoutedEventHandler(cm_chg_recmode_Click);
-                MenuItem menuItemChgRecMode3 = new MenuItem();
-                menuItemChgRecMode3.Header = "指定サービス（デコード処理なし） (_3)";
-                menuItemChgRecMode3.DataContext = (uint)3;
-                menuItemChgRecMode3.Click += new RoutedEventHandler(cm_chg_recmode_Click);
-                MenuItem menuItemChgRecMode4 = new MenuItem();
-                menuItemChgRecMode4.Header = "視聴 (_4)";
-                menuItemChgRecMode4.DataContext = (uint)4;
-                menuItemChgRecMode4.Click += new RoutedEventHandler(cm_chg_recmode_Click);
-                MenuItem menuItemChgRecMode5 = new MenuItem();
-                menuItemChgRecMode5.Header = "無効 (_5)";
-                menuItemChgRecMode5.DataContext = (uint)5;
-                menuItemChgRecMode5.Click += new RoutedEventHandler(cm_chg_recmode_Click);
-
-                menuItemChg.Items.Add(menuItemChgRecMode0);
-                menuItemChg.Items.Add(menuItemChgRecMode1);
-                menuItemChg.Items.Add(menuItemChgRecMode2);
-                menuItemChg.Items.Add(menuItemChgRecMode3);
-                menuItemChg.Items.Add(menuItemChgRecMode4);
-                menuItemChg.Items.Add(menuItemChgRecMode5);
-
-                menuItemChg.Items.Add(new Separator());
-
-                MenuItem menuItemChgRecPri = new MenuItem();
-                menuItemChgRecPri.Tag = "優先度 {0}";
-
-                MenuItem menuItemChgRecPri1 = new MenuItem();
-                menuItemChgRecPri1.Header = "1 (_1)";
-                menuItemChgRecPri1.DataContext = (uint)1;
-                menuItemChgRecPri1.Click += new RoutedEventHandler(cm_chg_priority_Click);
-                MenuItem menuItemChgRecPri2 = new MenuItem();
-                menuItemChgRecPri2.Header = "2 (_2)";
-                menuItemChgRecPri2.DataContext = (uint)2;
-                menuItemChgRecPri2.Click += new RoutedEventHandler(cm_chg_priority_Click);
-                MenuItem menuItemChgRecPri3 = new MenuItem();
-                menuItemChgRecPri3.Header = "3 (_3)";
-                menuItemChgRecPri3.DataContext = (uint)3;
-                menuItemChgRecPri3.Click += new RoutedEventHandler(cm_chg_priority_Click);
-                MenuItem menuItemChgRecPri4 = new MenuItem();
-                menuItemChgRecPri4.Header = "4 (_4)";
-                menuItemChgRecPri4.DataContext = (uint)4;
-                menuItemChgRecPri4.Click += new RoutedEventHandler(cm_chg_priority_Click);
-                MenuItem menuItemChgRecPri5 = new MenuItem();
-                menuItemChgRecPri5.Header = "5 (_5)";
-                menuItemChgRecPri5.DataContext = (uint)5;
-                menuItemChgRecPri5.Click += new RoutedEventHandler(cm_chg_priority_Click);
-
-                menuItemChgRecPri.Items.Add(menuItemChgRecPri1);
-                menuItemChgRecPri.Items.Add(menuItemChgRecPri2);
-                menuItemChgRecPri.Items.Add(menuItemChgRecPri3);
-                menuItemChgRecPri.Items.Add(menuItemChgRecPri4);
-                menuItemChgRecPri.Items.Add(menuItemChgRecPri5);
-
-                menuItemChg.Items.Add(menuItemChgRecPri);
+                //予約変更メニュー作成
+                MenuItem menuItemChg = mutil.GenerateChgMenu(new Action<object,
+                    RoutedEventArgs>[] { cm_chg_Click, cm_chg_recmode_Click, cm_chg_priority_Click });
+                mutil.CheckChgItems(menuItemChg, mutil.GetList(reserve));//現在の状態(録画モード、優先度)にチェックを入れる
 
                 MenuItem menuItemDel = new MenuItem();
                 menuItemDel.Header = "削除";
@@ -267,24 +196,6 @@ namespace EpgTimer
                 menuItemTimeshift.Header = "追っかけ再生";
                 menuItemTimeshift.Click += new RoutedEventHandler(cm_timeShiftPlay_Click);
 
-                MenuItem menuItemCopy = new MenuItem();
-                menuItemCopy.Header = "番組名をコピー";
-                menuItemCopy.ToolTip = mutil.CopyTitle_TrimMode();
-                menuItemCopy.Click += new RoutedEventHandler(cm_CopyTitle_Click);
-                MenuItem menuItemContent = new MenuItem();
-                menuItemContent.Header = "番組情報をコピー";
-                menuItemContent.ToolTip = mutil.CopyContent_Mode();
-                menuItemContent.Click += new RoutedEventHandler(cm_CopyContent_Click);
-                MenuItem menuItemSearch = new MenuItem();
-                menuItemSearch.Header = "番組名をネットで検索";
-                menuItemSearch.ToolTip = mutil.SearchText_TrimMode();
-                menuItemSearch.Click += new RoutedEventHandler(cm_SearchTitle_Click);
-
-                menuItemChg.IsEnabled = true;
-                ((MenuItem)menuItemChg.Items[menuItemChg.Items.IndexOf(menuItemChgRecMode0) + Math.Min((int)reserve.RecSetting.RecMode, 5)]).IsChecked = true;
-                ((MenuItem)menuItemChgRecPri.Items[Math.Min((int)(reserve.RecSetting.Priority - 1), 4)]).IsChecked = true;
-                menuItemChgRecPri.Header = string.Format((string)menuItemChgRecPri.Tag, reserve.RecSetting.Priority);
-                
                 //フォーカスに問題があり、一度クリックしないと正しく動かない‥。
                 //仮対策コード
                 menuItemPTable.IsEnabled = IsViewOnceClicked;
@@ -294,32 +205,15 @@ namespace EpgTimer
                     ToolTipService.SetShowOnDisabled(menuItemPTable, true);
                 }
 
-                menuItemDel.IsEnabled = true;
-                menuItemAutoAdd.IsEnabled = true;
-                menuItemTimeshift.IsEnabled = true;
-
                 menu.Items.Add(menuItemChg);
                 menu.Items.Add(menuItemDel);
                 menu.Items.Add(menuItemPTable);
                 menu.Items.Add(menuItemAutoAdd);
                 menu.Items.Add(menuItemTimeshift);
 
-                if (Settings.Instance.CmAppendMenu == true)
-                {
-                    menu.Items.Add(new Separator());
-                    if (Settings.Instance.CmCopyTitle == true)
-                    {
-                        menu.Items.Add(menuItemCopy);
-                    }
-                    if (Settings.Instance.CmCopyContent == true)
-                    {
-                        menu.Items.Add(menuItemContent);
-                    }
-                    if (Settings.Instance.CmSearchTitle == true)
-                    {
-                        menu.Items.Add(menuItemSearch);
-                    }
-                }
+                //追加メニューの挿入
+                mutil.InsertAppendMenu(menu, new Action<object,
+                    RoutedEventArgs>[] { cm_CopyTitle_Click, cm_CopyContent_Click, cm_SearchTitle_Click });
 
                 menu.IsOpen = true;
             }
@@ -388,7 +282,7 @@ namespace EpgTimer
             if (GetReserveItem(clickPos, ref reserve) == false) return;
 
             BlackoutWindow.selectedReserveItem = new ReserveItem(reserve);
-            MainWindow mainWindow = Application.Current.MainWindow as MainWindow;
+            MainWindow mainWindow = (MainWindow)Application.Current.MainWindow;
             mainWindow.moveTo_tabItem_epg();
         }
 

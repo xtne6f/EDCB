@@ -52,14 +52,7 @@ namespace EpgTimer
             {
                 if (recInfo.RecFilePath.Length > 0)
                 {
-                    try
-                    {
-                        CommonManager.Instance.FilePlay(recInfo.RecFilePath);
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show(ex.Message);
-                    }
+                    CommonManager.Instance.FilePlay(recInfo.RecFilePath);
                 }
             }
         }        
@@ -80,7 +73,7 @@ namespace EpgTimer
 
         private void Window_Closed(object sender, EventArgs e)
         {
-            MainWindow mainWindow = Application.Current.MainWindow as MainWindow;
+            MainWindow mainWindow = (MainWindow)Application.Current.MainWindow;
             mainWindow.ListFoucsOnVisibleChanged();
         }
     }

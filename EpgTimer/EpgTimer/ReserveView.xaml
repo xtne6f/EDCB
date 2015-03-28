@@ -32,7 +32,7 @@
             <MenuItem Header="予約←→無効" Click="button_on_off_Click" InputGestureText="Ctrl+S" />
             <MenuItem Header="変更">
                 <MenuItem Header="ダイアログ表示" Click="button_change_Click" InputGestureText="Enter" />
-                <Separator/>
+                <Separator Name="bar_recmode" />
                 <MenuItem Header="全サービス (_0)" Name="recmode_all" Click="recmode_Click" />
                 <MenuItem Header="指定サービス (_1)" Name="recmode_only" Click="recmode_Click" />
                 <MenuItem Header="全サービス（デコード処理なし） (_2)" Name="recmode_all_nodec" Click="recmode_Click" />
@@ -50,7 +50,7 @@
             </MenuItem>
             <MenuItem Header="削除" Click="button_del_Click" InputGestureText="Ctrl+D, Delete" />
             <MenuItem Header="番組表へジャンプ" Click="MenuItem_Click_ProgramTable"  InputGestureText="F3" />
-            <MenuItem Name="cm_AutoAdd" Header="自動予約登録" Click="autoadd_Click" />
+            <MenuItem Name="cm_AutoAdd" Tag="EpgKeyword" Header="自動予約登録" Click="autoadd_Click" />
             <MenuItem Header="追っかけ再生" Click="timeShiftPlay_Click" InputGestureText="Ctrl+P" />
             <Separator Name="cm_CmAppend" />
             <MenuItem Name="cm_CopyTitle" Header="番組名をコピー" Click="MenuItem_Click_CopyTitle" InputGestureText="Ctrl+C" />
