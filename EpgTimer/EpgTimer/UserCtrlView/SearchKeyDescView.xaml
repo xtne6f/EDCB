@@ -75,9 +75,10 @@
             <TabItem Header="詳細2" Name="tabItem2">
                 <Grid>
                     <Label Content="時間絞り込み（項目なしで全期間対象）" Height="28" HorizontalAlignment="Left" Margin="6,6,0,0" Name="label3" VerticalAlignment="Top" />
-                    <ListBox HorizontalAlignment="Left" Margin="6,40,0,39" Name="listBox_date" Width="164" />
-                    <CheckBox Content="NOT扱いとする" Height="16" HorizontalAlignment="Left" Margin="6,0,0,14" Name="checkBox_notDate" VerticalAlignment="Bottom" />
-                    <Button Content="削除" Height="23" HorizontalAlignment="Left" Margin="114,0,0,10" Name="button_date_del" Style="{StaticResource ButtonStyle1}" VerticalAlignment="Bottom" Width="56" Click="button_date_del_Click" />
+                    <ListBox HorizontalAlignment="Left" Margin="6,40,0,65" Name="listBox_date" Width="164" SelectionMode="Extended" />
+                    <CheckBox Content="NOT扱いとする" Height="16" HorizontalAlignment="Left" Margin="6,0,0,40" Name="checkBox_notDate" VerticalAlignment="Bottom" />
+                    <Button Content="削除" Height="23" HorizontalAlignment="Left" Margin="114,0,0,7" Name="button_date_del" Style="{StaticResource ButtonStyle1}" VerticalAlignment="Bottom" Width="56" Click="button_date_del_Click" />
+                    <Button Content="全クリア" Height="23" HorizontalAlignment="Left" Margin="47,0,0,7" Name="button_date_clear" Style="{StaticResource ButtonStyle1}" VerticalAlignment="Bottom" Width="56" Click="button_date_clear_Click" />
                     <Label Content="期間" Height="28" HorizontalAlignment="Left" Margin="176,40,0,0" Name="label4" VerticalAlignment="Top" />
                     <ComboBox Height="24" HorizontalAlignment="Left" Margin="192,74,0,0" Name="comboBox_time_sw" VerticalAlignment="Top" Width="40" ItemsSource="{Binding}" />
                     <ComboBox Height="24" HorizontalAlignment="Left" Margin="242,74,0,0" Name="comboBox_time_sh" VerticalAlignment="Top" Width="40" ItemsSource="{Binding}" />
