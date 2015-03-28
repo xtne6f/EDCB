@@ -22,6 +22,7 @@ namespace EpgTimer
         private Point clickPos;
         private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
         private MenuUtil mutil = CommonManager.Instance.MUtil;
+        private ViewUtil vutil = CommonManager.Instance.VUtil;
 
         private bool updateReserveData = true;
 
@@ -59,20 +60,8 @@ namespace EpgTimer
         /// <param name="e"></param>
         void tunerReserveView_ScrollChanged(object sender, ScrollChangedEventArgs e)
         {
-            try
-            {
-                if (sender.GetType() == typeof(TunerReserveView))
-                {
-                    //時間軸の表示もスクロール
-                    tunerReserveTimeView.scrollViewer.ScrollToVerticalOffset(tunerReserveView.scrollViewer.VerticalOffset);
-                    //サービス名表示もスクロール
-                    tunerReserveNameView.scrollViewer.ScrollToHorizontalOffset(tunerReserveView.scrollViewer.HorizontalOffset);
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            vutil.view_ScrollChanged<TunerReserveView>(sender, e,
+                tunerReserveView.scrollViewer, tunerReserveTimeView.scrollViewer, tunerReserveNameView.scrollViewer);
         }
 
         /// <summary>
@@ -82,42 +71,7 @@ namespace EpgTimer
         /// <param name="e"></param>
         void tunerReserveView_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
         {
-            try
-            {
-                e.Handled = true;
-                if (sender.GetType() == typeof(TunerReserveView))
-                {
-                    TunerReserveView view = sender as TunerReserveView;
-                    if (Settings.Instance.MouseScrollAuto == true)
-                    {
-                        view.scrollViewer.ScrollToVerticalOffset(view.scrollViewer.VerticalOffset - e.Delta);
-                    }
-                    else
-                    {
-                        if (e.Delta < 0)
-                        {
-                            //下方向
-                            view.scrollViewer.ScrollToVerticalOffset(view.scrollViewer.VerticalOffset + Settings.Instance.ScrollSize);
-                        }
-                        else
-                        {
-                            //上方向
-                            if (view.scrollViewer.VerticalOffset < Settings.Instance.ScrollSize)
-                            {
-                                view.scrollViewer.ScrollToVerticalOffset(0);
-                            }
-                            else
-                            {
-                                view.scrollViewer.ScrollToVerticalOffset(view.scrollViewer.VerticalOffset - Settings.Instance.ScrollSize);
-                            }
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            vutil.view_PreviewMouseWheel<TunerReserveView>(sender, e,tunerReserveView.scrollViewer);
         }
 
         /// <summary>
@@ -128,23 +82,7 @@ namespace EpgTimer
         /// <returns>falseで存在しない</returns>
         private bool GetReserveItem(Point cursorPos, ref ReserveData reserve)
         {
-            try
-            {
-                foreach (ReserveViewItem resInfo in reserveList)
-                {
-                    if (resInfo.LeftPos <= cursorPos.X && cursorPos.X < resInfo.LeftPos + resInfo.Width &&
-                        resInfo.TopPos <= cursorPos.Y && cursorPos.Y < resInfo.TopPos + resInfo.Height)
-                    {
-                        reserve = resInfo.ReserveInfo;
-                        return true;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-            return false;
+            return vutil.GetReserveItem(cursorPos, ref reserve, reserveList);
         }
 
         /// <summary>
