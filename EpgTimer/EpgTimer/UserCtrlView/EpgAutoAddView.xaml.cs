@@ -248,12 +248,7 @@ namespace EpgTimer
                     }
                 }
 
-                if (mutil.ReserveDelete(dellist) == true)
-                {
-                    CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.ReserveInfo);
-                    CommonManager.Instance.DB.ReloadReserveInfo();
-                }
-                
+                mutil.ReserveDelete(dellist);
             }
             catch (Exception ex)
             {
