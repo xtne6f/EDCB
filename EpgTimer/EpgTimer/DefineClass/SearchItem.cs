@@ -11,25 +11,32 @@ using CtrlCmdCLI.Def;
 
 namespace EpgTimer
 {
-    public class SearchItem : ProgramItemCommon
+    public class SearchItem
     {
-        //EventInfo、ReserveInfo、JyanruKey、ForeColor、BackColor、BorderBrushはベースクラス
+        protected MenuUtil mutil = CommonManager.Instance.MUtil;
+        protected ViewUtil vutil = CommonManager.Instance.VUtil;
 
-        private MenuUtil mutil = CommonManager.Instance.MUtil;
+        public virtual EpgEventInfo EventInfo { get; set; }
+        public ReserveData ReserveInfo { get; set; }
 
-        public String EventName
+        public bool IsReserved
         {
             get
             {
-                String view = "";
-                if (EventInfo != null)
-                {
-                    view = EventInfo.Title();
-                }
-                return view;
+                return (ReserveInfo != null);
             }
         }
-        public String ServiceName
+
+        public virtual String EventName
+        {
+            get
+            {
+                if (EventInfo == null) return "";
+                //
+                return EventInfo.Title();
+            }
+        }
+        public virtual String ServiceName
         {
             get
             {
@@ -45,31 +52,81 @@ namespace EpgTimer
                 return view;
             }
         }
-        public String NetworkName
+        public virtual String NetworkName
         {
             get
             {
+                if (EventInfo == null) return "";
+                //
+                return CommonManager.Instance.ConvertNetworkNameText(EventInfo.original_network_id);
+            }
+        }
+        public virtual String StartTime
+        {
+            get
+            {
+                if (EventInfo == null) return "";
+                if (EventInfo.StartTimeFlag == 0) return "未定";
+                //
+                return EventInfo.start_time.ToString("yyyy/MM/dd(ddd) HH:mm:ss");
+            }
+        }
+        /// <summary>
+        /// 番組放送時間（長さ）
+        /// </summary>
+        public virtual TimeSpan ProgramDuration
+        {
+            get
+            {
+                if (EventInfo == null) { return new TimeSpan(); }
+                //
+                return TimeSpan.FromSeconds(EventInfo.durationSec);
+            }
+        }
+        /// <summary>
+        /// 番組内容
+        /// </summary>
+        public virtual String ProgramContent
+        {
+            get
+            {
+                if (EventInfo == null) return "";
+                //
+                if (Settings.Instance.FixSearchResult)
+                {
+                    return "省略";
+                }
+                else
+                {
+                    return EventInfo.ShortInfo.text_char.Replace("\r\n", " ");
+                }
+            }
+        }
+        public String JyanruKey
+        {
+            get
+            {
+                if (EventInfo == null) return "";
+                //
+                return CommonManager.Instance.ConvertJyanruText(EventInfo);
+            }
+        }
+        public virtual TextBlock ToolTipView
+        {
+            get
+            {
+                if (Settings.Instance.NoToolTip == true) return null;
+
                 String view = "";
                 if (EventInfo != null)
                 {
-                    view = CommonManager.Instance.ConvertNetworkNameText(EventInfo.original_network_id);
+                    view = CommonManager.Instance.ConvertProgramText(EventInfo, EventInfoTextMode.All);
                 }
-                return view;
+
+                return mutil.GetTooltipBlockStandard(view);
             }
         }
-        public String StartTime
-        {
-            get
-            {
-                String view = "未定";
-                if (EventInfo != null)
-                {
-                    view = EventInfo.start_time.ToString("yyyy/MM/dd(ddd) HH:mm:ss");
-                }
-                return view;
-            }
-        }
-        public String Status
+        public virtual String Status
         {
             get
             {
@@ -100,7 +157,7 @@ namespace EpgTimer
                 return wiewString[index];
             }
         }
-        public SolidColorBrush StatusColor
+        public virtual SolidColorBrush StatusColor
         {
             get
             {
@@ -122,59 +179,43 @@ namespace EpgTimer
                 return color;
             }
         }
-        public bool IsReserved
+        public SolidColorBrush ForeColor
         {
             get
             {
-                return (ReserveInfo != null);
-            }
-        }
-        public TextBlock ToolTipView
-        {
-            get
-            {
-                if (Settings.Instance.NoToolTip == true) return null;
-
-                String view = "";
-                if (EventInfo != null)
-                {
-                    view = CommonManager.Instance.ConvertProgramText(EventInfo, EventInfoTextMode.All);
-                }
-
-                return mutil.GetTooltipBlockStandard(view);
-            }
-        }
-
-        /// <summary>
-        /// 番組放送時間（長さ）
-        /// </summary>
-        public TimeSpan ProgramDuration
-        {
-            get
-            {
-                if (EventInfo == null) { return new TimeSpan(); }
+                if (ReserveInfo == null) return CommonManager.Instance.ListDefForeColor;
                 //
-                return TimeSpan.FromSeconds(EventInfo.durationSec);
+                return CommonManager.Instance.EventItemForeColor(ReserveInfo.RecSetting.RecMode);
             }
         }
-
-        /// <summary>
-        /// 番組内容
-        /// </summary>
-        public String ProgramContent
+        public SolidColorBrush BackColor
         {
             get
             {
-                if (EventInfo == null) { return null; }
-                //
-                if (Settings.Instance.FixSearchResult)
+                SolidColorBrush color = CommonManager.Instance.ResDefBackColor;
+                if (ReserveInfo != null)
                 {
-                    return "省略";
+                    if (ReserveInfo.RecSetting.RecMode == 5)
+                    {
+                        color = CommonManager.Instance.ResNoBackColor;
+                    }
+                    else if (ReserveInfo.OverlapMode == 2)
+                    {
+                        color = CommonManager.Instance.ResErrBackColor;
+                    }
+                    else if (ReserveInfo.OverlapMode == 1)
+                    {
+                        color = CommonManager.Instance.ResWarBackColor;
+                    }
                 }
-                else
-                {
-                    return EventInfo.ShortInfo.text_char.Replace("\r\n", " ");
-                }
+                return color;
+            }
+        }
+        public Brush BorderBrush
+        {
+            get
+            {
+                return vutil.EventDataBorderBrush(EventInfo);
             }
         }
     }

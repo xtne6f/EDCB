@@ -93,6 +93,11 @@ namespace EpgTimer
             get;
             set;
         }
+        public ViewUtil VUtil
+        {
+            get;
+            set;
+        }
         public NWConnect NW
         {
             get;
@@ -157,6 +162,10 @@ namespace EpgTimer
             if (MUtil == null)
             {
                 MUtil = new MenuUtil(CtrlCmd);
+            }
+            if (VUtil == null)
+            {
+                VUtil = new ViewUtil();
             }
             if (ContentKindDictionary == null)
             {

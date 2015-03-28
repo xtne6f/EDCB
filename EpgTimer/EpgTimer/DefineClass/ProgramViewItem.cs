@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Windows;
 using System.Windows.Media;
 
 using CtrlCmdCLI;
@@ -9,52 +10,51 @@ using CtrlCmdCLI.Def;
 
 namespace EpgTimer
 {
-    public class ProgramViewItem : EventItemBaseClass
+    public class ViewPanelItem<T>
     {
-        public ProgramViewItem()
+        protected T data = default(T);
+
+        public ViewPanelItem()
         {
             TitleDrawErr = false;
         }
-        public ProgramViewItem(EpgEventInfo info)
+        public ViewPanelItem(T info)
         {
-            base.EventInfo = info;
+            data = info;
             TitleDrawErr = false;
         }
-        public double Width
+        public T _Data
         {
-            get;
-            set;
+            get { return data; }
+            set { data = value; }
         }
+        public double Width { get; set; }
+        public double Height { get; set; }
+        public double LeftPos { get; set; }
+        public double TopPos { get; set; }
+        public bool TitleDrawErr { get; set; }
 
-        public double Height
+        public bool IsPicked(Point cursorPos)
         {
-            get;
-            set;
+            return LeftPos <= cursorPos.X && cursorPos.X < LeftPos + Width &&
+                    TopPos <= cursorPos.Y && cursorPos.Y < TopPos + Height;
         }
-
-        public double LeftPos
+    }
+    
+    public class ProgramViewItem : ViewPanelItem<EpgEventInfo>
+    {
+        public ProgramViewItem(EpgEventInfo info) : base(info) { }
+        public EpgEventInfo EventInfo
         {
-            get;
-            set;
-        }
-
-        public double TopPos
-        {
-            get;
-            set;
-        }
-
-        public bool TitleDrawErr
-        {
-            get;
-            set;
+            get { return _Data; }
+            set { _Data = value; }
         }
 
         public Brush ContentColor
         {
             get
             {
-                return base.BorderBrush;
+                return CommonManager.Instance.VUtil.EventDataBorderBrush(EventInfo);
             }
         }
     }

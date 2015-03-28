@@ -11,11 +11,9 @@ using CtrlCmdCLI.Def;
 
 namespace EpgTimer
 {
-    public class ReserveItem : ProgramItemCommon
+    public class ReserveItem : SearchItem
     {
-        //ReserveInfo、JyanruKey、ForeColor、BackColor、BorderBrushはベースクラス
-
-        private MenuUtil mutil = CommonManager.Instance.MUtil;
+        //EventInfo、ReserveInfo、JyanruKey、ForeColor、BackColor、BorderBrush -> SearchItem.cs
 
         public ReserveItem(ReserveData item)
         {
@@ -40,126 +38,96 @@ namespace EpgTimer
             set { eventInfo = value; }
         }
 
-        public String EventName
+        public override String EventName
         {
             get
             {
-                String view = "";
-                if (ReserveInfo != null)
-                {
-                    view = ReserveInfo.Title;
-                }
-                return view;
+                if (ReserveInfo == null) return "";
+                //
+                return ReserveInfo.Title;
             }
         }
-        public String ServiceName
+        public override String ServiceName
         {
             get
             {
-                String view = "";
-                if (ReserveInfo != null)
-                {
-                    view = ReserveInfo.StationName;
-                }
-                return view;
+                if (ReserveInfo == null) return "";
+                //
+                return ReserveInfo.StationName;
             }
         }
-        public String NetworkName
+        public override String NetworkName
         {
             get
             {
-                String view = "";
-                if (ReserveInfo != null)
-                {
-                    view = CommonManager.Instance.ConvertNetworkNameText(ReserveInfo.OriginalNetworkID);
-                }
-                return view;
+                if (ReserveInfo == null) return "";
+                //
+                return CommonManager.Instance.ConvertNetworkNameText(ReserveInfo.OriginalNetworkID);
             }
         }
-        public TimeSpan ProgramDuration
+        public override String StartTime
         {
             get
             {
-                TimeSpan view = new TimeSpan();
-                if (ReserveInfo != null)
-                {
-                    view = TimeSpan.FromSeconds(ReserveInfo.DurationSecond);
-                }
-                return view;
+                if (ReserveInfo == null) return "";
+                //
+                DateTime endTime = ReserveInfo.StartTime + TimeSpan.FromSeconds(ReserveInfo.DurationSecond);
+                return ReserveInfo.StartTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss ～ ") + endTime.ToString("HH:mm:ss");
             }
         }
-        public String ProgramContent
+        public override TimeSpan ProgramDuration
         {
             get
             {
-                String view = "";
-                if (EventInfo != null)
-                {
-                    view = EventInfo.ShortInfo.text_char.Replace("\r\n", " ");
-                }
-                return view;
-            }
-        }
-        public String StartTime
-        {
-            get
-            {
-                String view = "";
-                if (ReserveInfo != null)
-                {
-                    view = ReserveInfo.StartTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss ～ ");
-                    DateTime endTime = ReserveInfo.StartTime + TimeSpan.FromSeconds(ReserveInfo.DurationSecond);
-                    view += endTime.ToString("HH:mm:ss");
-                }
-                return view;
+                if (ReserveInfo == null) { return new TimeSpan(); }
+                //
+                return TimeSpan.FromSeconds(ReserveInfo.DurationSecond);
             }
         }
         public String MarginStart
         {
             get
             {
-                String view = "";
-                if (ReserveInfo != null)
-                {
-                    view = mutil.MarginStartText(ReserveInfo.RecSetting);
-                }
-                return view;
+                if (ReserveInfo == null) return "";
+                //
+                return mutil.MarginStartText(ReserveInfo.RecSetting);
             }
         }
         public String MarginEnd
         {
             get
             {
-                String view = "";
-                if (ReserveInfo != null)
-                {
-                    view = mutil.MarginEndText(ReserveInfo.RecSetting);
-                }
-                return view;
+                if (ReserveInfo == null) return "";
+                //
+                return mutil.MarginEndText(ReserveInfo.RecSetting);
             }
         }
+        public override String ProgramContent
+        {
+            get
+            {
+                if (EventInfo == null) return "";
+                //
+                return EventInfo.ShortInfo.text_char.Replace("\r\n", " ");
+            }
+        }
+        //public String JyanruKey -> SearchItem.cs
         public String RecMode
         {
             get
             {
-                String view = "";
-                if (ReserveInfo != null)
-                {
-                    view = CommonManager.Instance.ConvertRecModeText(ReserveInfo.RecSetting.RecMode);
-                }
-                return view;
+                if (ReserveInfo == null) return "";
+                //
+                return CommonManager.Instance.ConvertRecModeText(ReserveInfo.RecSetting.RecMode);
             }
         }
         public String Priority
         {
             get
             {
-                String view = "";
-                if (ReserveInfo != null)
-                {
-                    view = ReserveInfo.RecSetting.Priority.ToString();
-                }
-                return view;
+                if (ReserveInfo == null) return "";
+                //
+                return ReserveInfo.RecSetting.Priority.ToString();
             }
         }
         public String Tuijyu
@@ -214,7 +182,44 @@ namespace EpgTimer
                 return view;
             }
         }
-        public String Status
+        public List<String> RecFolder
+        {
+            get
+            {
+                List<String> list = new List<string>();
+                if (ReserveInfo != null)
+                {
+                    ReserveInfo.RecSetting.RecFolderList.ForEach(info => list.Add(info.RecFolder));
+                    ReserveInfo.RecSetting.PartialRecFolder.ForEach(info => list.Add("(ワンセグ) " + info.RecFolder));
+                }
+                return list;
+            }
+        }
+        public List<String> RecFileName
+        {
+            get
+            {
+                if (ReserveInfo == null) return new List<string>();
+                //
+                return ReserveInfo.RecFileNameList;
+            }
+        }
+        public override TextBlock ToolTipView
+        {
+            get
+            {
+                if (Settings.Instance.NoToolTip == true) return null;
+
+                String view = "";
+                if (ReserveInfo != null)
+                {
+                    view = CommonManager.Instance.ConvertReserveText(ReserveInfo);
+                }
+
+                return mutil.GetTooltipBlockStandard(view);
+            }
+        }
+        public override String Status
         {
             get
             {
@@ -238,10 +243,12 @@ namespace EpgTimer
                 return wiewString[index];
             }
         }
-        public SolidColorBrush StatusColor
+        public override SolidColorBrush StatusColor
         {
             get
             {
+                List<ReserveData> test = new List<ReserveData>();
+
                 SolidColorBrush color = CommonManager.Instance.StatResForeColor;
                 if (ReserveInfo != null)
                 {
@@ -255,52 +262,6 @@ namespace EpgTimer
                     }
                 }
                 return color;
-            }
-        }
-        public List<String> RecFolder
-        {
-            get
-            {
-                List<String> list = new List<string>();
-                if (ReserveInfo != null)
-                {
-                    foreach (RecFileSetInfo recinfo1 in ReserveInfo.RecSetting.RecFolderList)
-                    {
-                        list.Add(recinfo1.RecFolder);
-                    }
-                    foreach (RecFileSetInfo recinfo1 in ReserveInfo.RecSetting.PartialRecFolder)
-                    {
-                        list.Add("(ワンセグ) " + recinfo1.RecFolder);
-                    }
-                }
-                return list;
-            }
-        }
-        public List<String> RecFileName
-        {
-            get
-            {
-                List<String> list = new List<string>();
-                if (ReserveInfo != null)
-                {
-                    list = ReserveInfo.RecFileNameList;
-                }
-                return list;
-            }
-        }
-        public TextBlock ToolTipView
-        {
-            get
-            {
-                if (Settings.Instance.NoToolTip == true) return null;
-
-                String view = "";
-                if (ReserveInfo != null)
-                {
-                    view = CommonManager.Instance.ConvertReserveText(ReserveInfo);
-                }
-
-                return mutil.GetTooltipBlockStandard(view);
             }
         }
 
