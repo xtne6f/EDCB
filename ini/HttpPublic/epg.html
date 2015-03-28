@@ -37,11 +37,13 @@ for i,v in ipairs(edcb.GetServiceList() or {}) do
     table.insert(st, v)
     st[#st].et={}
     for j,w in ipairs(edcb.EnumEventInfo({{onid=v.onid, tsid=v.tsid, sid=v.sid}}) or {}) do
-      startTime=os.time(w.startTime)
-      minTime=minTime and startTime>minTime and minTime or startTime
-      maxTime=maxTime and startTime<maxTime and maxTime or startTime
-      if baseTime+date*24*3600<=startTime and startTime<baseTime+((date+1)*24+1)*3600 then
-        table.insert(st[#st].et, w)
+      if w.startTime then
+        startTime=os.time(w.startTime)
+        minTime=minTime and startTime>minTime and minTime or startTime
+        maxTime=maxTime and startTime<maxTime and maxTime or startTime
+        if baseTime+date*24*3600<=startTime and startTime<baseTime+((date+1)*24+1)*3600 then
+          table.insert(st[#st].et, w)
+        end
       end
     end
     table.sort(st[#st].et, function(a,b) return os.time(a.startTime)<os.time(b.startTime) end)
@@ -93,7 +95,9 @@ for i,v in ipairs(st) do
   for j,w in ipairs(v.et) do
     startTime=os.time(w.startTime)
     startPx=math.min(math.floor((startTime-baseTime-date*24*3600)/60)*ONE_MIN_PX, ONE_MIN_PX*60*25)
-    endPx=math.min(math.floor((startTime+w.durationSecond-baseTime-date*24*3600)/60)*ONE_MIN_PX, ONE_MIN_PX*60*25)
+    endPx=math.min(math.floor(((
+      w.durationSecond and startTime+w.durationSecond or (j<#v.et and os.time(v.et[j+1].startTime) or startTime) --終了時間未定
+      )-baseTime-date*24*3600)/60)*ONE_MIN_PX, ONE_MIN_PX*60*25)
     if startPx-lastPx>0 then
       table.insert(ctt, '<div style="width:150px;height:'..(startPx-lastPx)..'px"></div>\n')
       lastPx=startPx
