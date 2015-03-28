@@ -59,7 +59,7 @@ protected:
 class CParseRecInfoText : public CParseText<DWORD, REC_FILE_INFO>
 {
 public:
-	CParseRecInfoText() : keepCount(UINT_MAX) {}
+	CParseRecInfoText() : keepCount(UINT_MAX), recInfoDelFile(false) {}
 	using CParseText<DWORD, REC_FILE_INFO>::SaveText;
 	//˜^‰æÏ‚İî•ñ‚ğ’Ç‰Á‚·‚é
 	DWORD AddRecInfo(const REC_FILE_INFO& item);
