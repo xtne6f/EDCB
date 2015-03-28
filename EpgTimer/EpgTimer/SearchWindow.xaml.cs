@@ -43,8 +43,12 @@ namespace EpgTimer
                 {
                     button_search.Style = null;
                     button_add_reserve.Style = null;
+                    button_delall_reserve.Style = null;
                     button_add_epgAutoAdd.Style = null;
                     button_chg_epgAutoAdd.Style = null;
+                    button_del_epgAutoAdd.Style = null;
+                    button_up_epgAutoAdd.Style = null;
+                    button_down_epgAutoAdd.Style = null;
                 }
 
                 //ウインドウ位置の復元

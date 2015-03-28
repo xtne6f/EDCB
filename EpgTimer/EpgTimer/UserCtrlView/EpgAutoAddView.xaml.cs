@@ -32,6 +32,7 @@ namespace EpgTimer
                 {
                     button_add.Style = null;
                     button_del.Style = null;
+                    button_del2.Style = null;
                     button_change.Style = null;
                     button_up.Style = null;
                     button_down.Style = null;

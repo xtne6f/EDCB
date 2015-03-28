@@ -92,6 +92,7 @@ namespace EpgTimer.Setting
                     button_taskAdd.Style = null;
                     button_searchDef.Style = null;
                     button_recDef.Style = null;
+                    button_set_cm.Style = null;
                     button_add_srvcoop.Style = null;
                     button_del_srvcoop.Style = null;
                     button_exe1.Style = null;

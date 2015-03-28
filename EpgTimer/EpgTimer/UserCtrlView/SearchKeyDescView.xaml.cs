@@ -38,6 +38,7 @@ namespace EpgTimer
                 {
                     button_content_add.Style = null;
                     button_content_del.Style = null;
+                    button_content_clear.Style = null;
                     button_all_on.Style = null;
                     button_video_on.Style = null;
                     button_bs_on.Style = null;
@@ -52,6 +53,7 @@ namespace EpgTimer
                     button_1seg_on2.Style = null;
                     button_other_on2.Style = null;
                     button_date_del.Style = null;
+                    button_date_clear.Style = null;
                     button_timeAdd.Style = null;
                     button_weekAdd.Style = null;
                 }
