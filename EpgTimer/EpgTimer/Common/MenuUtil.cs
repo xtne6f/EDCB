@@ -726,20 +726,30 @@ namespace EpgTimer
         {
             try
             {
+                //無効から戻す録画モードの選択
                 var setInfo = new RecSettingData();
+
+                //現在の設定を読み込む。SearchWindowの場合だけ。
                 if (recSettingView != null)
                 {
-                    //現在の設定を読み込み、SearchWindowの場合だけ
                     recSettingView.GetRecSetting(ref setInfo);
+                    
+                    //現在の設定が無効で登録の場合は、デフォルトの設定を読み込みに行く
+                    if (setInfo.RecMode == 5)
+                    {
+                        recSettingView = null;
+                    }
                 }
-                else
+                //デフォルト設定を読み込む
+                if (recSettingView == null)
                 {
-                    //それ以外
                     Settings.GetDefRecSetting(0, ref setInfo);
                 }
+                //デフォルトも無効で登録なら、指定サービスにする
+                byte recMode = setInfo.RecMode != 5 ? setInfo.RecMode : (byte)1;
 
                 itemlist.ForEach(item =>
-                    item.RecSetting.RecMode = (item.RecSetting.RecMode == 5 ? setInfo.RecMode : (byte)5));
+                    item.RecSetting.RecMode = (item.RecSetting.RecMode == 5 ? recMode : (byte)5));
 
                 return ReserveChange(itemlist);
             }
