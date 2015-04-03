@@ -24,8 +24,8 @@
     </UserControl.Resources>    
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="40" />
-            <RowDefinition Height="40" />
+            <RowDefinition Height="20" />
+            <RowDefinition Height="20" />
         </Grid.RowDefinitions>
         <StackPanel Grid.Row="0" Name="stackPanel_day" Orientation="Horizontal" />
         <StackPanel Grid.Row="1" Name="stackPanel_time" Orientation="Horizontal" />            
