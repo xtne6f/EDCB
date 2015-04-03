@@ -1,0 +1,91 @@
+75 名前：名無しさん＠編集中[sage] 投稿日：2013/02/01(金) 10:19:48.93 ID:GqRK2BBa [1/4]
+EPGTimerの検索機能って、現時刻以降を対象って出来ないの？
+
+90 名前：名無しさん＠編集中[sage] 投稿日：2013/02/01(金) 19:18:15.46 ID:GqRK2BBa [3/4]
+「「自動予約登録」の並び替えを改良してみた（その４）」を入れると検索結果の行間が一定しないな・・・
+とりあえず>>75は自力で修正。終了時刻が現時刻以降のみを表示するようにした。
+
+132 名前：名無しさん＠編集中[sage] 投稿日：2013/02/02(土) 11:42:17.40 ID:kFMbiE1U [1/2]
+>>90
+ソースの変更箇所を教えてもらえませんか。
+
+133 名前：名無しさん＠編集中[sage] 投稿日：2013/02/02(土) 12:13:45.87 ID:eP/24CqV [1/2]
+>>132
+SearchWindow.xaml.cs(line 193
+
++ if (item.EventInfo.start_time.AddSeconds(item.EventInfo.durationSec) > DateTime.Now)
++ {
+resultList.Add(item);
++ }
+
+
+193 自分：名無しさん＠編集中[sage] 投稿日：2013/02/04(月) 00:03:21.63 ID:28y0Y3Uk
+>>133がうまく機能しないんだけど入れる場所が違うんでしょうか？
+
+UInt64 serviceKey = CommonManager.Create64Key(info.original_network_id, info.transport_stream_id, info.service_id);
+if (ChSet5.Instance.ChList.ContainsKey(serviceKey) == true)
+{
+if (item.EventInfo.start_time.AddSeconds(item.EventInfo.durationSec) > DateTime.Now)
+{
+resultList.Add(item);
+}
+item.ServiceName = ChSet5.Instance.ChList[serviceKey].ServiceName;
+}
+resultList.Add(item);
+}
+
+
+196 返信：132[sage] 投稿日：2013/02/04(月) 00:56:25.02 ID:vOVbFzj+ [2/3]
+>193
+ちょっと変更してみた。
+こっちの方がいいんじゃないかな。
+
+--- EpgTimer\EpgTimer\SearchWindow.xaml.cs
++++ EpgTimer\EpgTimer\SearchWindow.xaml.cs
+@@ -175,24 +175,27 @@
+                 {
+                     SearchItem item = new SearchItem();
+                     item.EventInfo = info;
+-                    foreach (ReserveData info2 in CommonManager.Instance.DB.ReserveList.Values)
++                    if (item.EventInfo.start_time.AddSeconds(item.EventInfo.durationSec) > DateTime.Now)
+                     {
+-                        if (info.original_network_id == info2.OriginalNetworkID &&
+-                            info.transport_stream_id == info2.TransportStreamID &&
+-                            info.service_id == info2.ServiceID &&
+-                            info.event_id == info2.EventID)
++                        foreach (ReserveData info2 in CommonManager.Instance.DB.ReserveList.Values)
+                         {
+-                            item.ReserveInfo = info2;
+-                            break;
+
++                            if (info.original_network_id == info2.OriginalNetworkID &&
++                                info.transport_stream_id == info2.TransportStreamID &&
++                                info.service_id == info2.ServiceID &&
++                                info.event_id == info2.EventID)
++                            {
++                                item.ReserveInfo = info2;
++                                break;
++                            }
+                         }
+-                    }
+
+-                    UInt64 serviceKey = CommonManager.Create64Key(info.original_network_id, info.transport_stream_id, info.service_id);
+-                    if (ChSet5.Instance.ChList.ContainsKey(serviceKey) == true)
+-                    {
+-                        item.ServiceName = ChSet5.Instance.ChList[serviceKey].ServiceName;
++                        UInt64 serviceKey = CommonManager.Create64Key(info.original_network_id, info.transport_stream_id, info.service_id);
++                        if (ChSet5.Instance.ChList.ContainsKey(serviceKey) == true)
++                        {
++                            item.ServiceName = ChSet5.Instance.ChList[serviceKey].ServiceName;
++                        }
++                        resultList.Add(item);
+                     }
+-                    resultList.Add(item);
+                 }
+
+                 listView_result.DataContext = resultList;
+
+
+
+
+

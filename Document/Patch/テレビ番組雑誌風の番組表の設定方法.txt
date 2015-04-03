@@ -1,0 +1,77 @@
+テレビ番組雑誌風の番組表の設定について
+
+実行中のEDCBを一旦終了して、
+EDCBフォルダ内にある設定ファイルEpgTimer.exe.xmlをメモ帳で開いて
+<MinHeight>から</EpgToolTipViewWait>までをコピペして下記のように書換えてください。
+※作業をするまえにバックアップをとってから行ってください。
+
+
+
+
+  <MinHeight>3</MinHeight>
+  <ServiceWidth>135</ServiceWidth>
+  <ScrollSize>240</ScrollSize>
+  <FontName>ＭＳ 明朝</FontName>
+  <FontSize>11</FontSize>
+  <FontNameTitle>ＭＳ Ｐゴシック</FontNameTitle>
+  <FontSizeTitle>12</FontSizeTitle>
+  <FontBoldTitle>false</FontBoldTitle>
+  <NoToolTip>true</NoToolTip>
+  <NoBallonTips>true</NoBallonTips>
+  <PlayDClick>false</PlayDClick>
+  <DragScroll>1.5</DragScroll>
+  <ContentColorList>
+    <string>WhiteSmoke</string>
+    <string>カスタム</string>
+    <string>WhiteSmoke</string>
+    <string>カスタム</string>
+    <string>カスタム</string>
+    <string>カスタム</string>
+    <string>カスタム</string>
+    <string>カスタム</string>
+    <string>カスタム</string>
+    <string>WhiteSmoke</string>
+    <string>WhiteSmoke</string>
+    <string>WhiteSmoke</string>
+    <string>White</string>
+    <string>White</string>
+    <string>White</string>
+    <string>WhiteSmoke</string>
+    <string>WhiteSmoke</string>
+  </ContentColorList>
+  <ContentCustColorList>
+    <unsignedInt>4294967295</unsignedInt>
+    <unsignedInt>4292335615</unsignedInt>
+    <unsignedInt>4294967295</unsignedInt>
+    <unsignedInt>4294967240</unsignedInt>
+    <unsignedInt>4291361480</unsignedInt>
+    <unsignedInt>4293717228</unsignedInt>
+    <unsignedInt>4294957015</unsignedInt>
+    <unsignedInt>4290703615</unsignedInt>
+    <unsignedInt>4293980380</unsignedInt>
+    <unsignedInt>4294967295</unsignedInt>
+    <unsignedInt>4293980380</unsignedInt>
+    <unsignedInt>4294967295</unsignedInt>
+    <unsignedInt>4294967295</unsignedInt>
+    <unsignedInt>4294967295</unsignedInt>
+    <unsignedInt>4294967295</unsignedInt>
+    <unsignedInt>4294967295</unsignedInt>
+    <unsignedInt>4294967295</unsignedInt>
+    <unsignedInt>4294967295</unsignedInt>
+    <unsignedInt>4294967295</unsignedInt>
+    <unsignedInt>4294967295</unsignedInt>
+    <unsignedInt>4294967295</unsignedInt>
+  </ContentCustColorList>
+  <ReserveRectColorNormal>Blue</ReserveRectColorNormal>
+  <ReserveRectColorNo>Gray</ReserveRectColorNo>
+  <ReserveRectColorNoTuner>Red</ReserveRectColorNoTuner>
+  <ReserveRectColorWarning>Yellow</ReserveRectColorWarning>
+  <ReserveRectBackground>false</ReserveRectBackground>
+  <TitleColor1>Black</TitleColor1>
+  <TitleColor2>DimGray</TitleColor2>
+  <TitleCustColor1>4294967295</TitleCustColor1>
+  <TitleCustColor2>4284111450</TitleCustColor2>
+  <EpgToolTip>true</EpgToolTip>
+  <EpgTitleIndent>true</EpgTitleIndent>
+  <EpgToolTipNoViewOnly>true</EpgToolTipNoViewOnly>
+  <EpgToolTipViewWait>500</EpgToolTipViewWait>

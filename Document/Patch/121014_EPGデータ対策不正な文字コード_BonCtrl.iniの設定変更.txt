@@ -1,0 +1,6 @@
+362 名前：名無しさん＠編集中[sage] 投稿日：2012/10/14(日) 06:13:30.30 ID:tTv5rkPY [1/2]
+MX番組表取れた
+
+BonCtrl.iniのEpgCapTimeOut=3にしてEpgCapSaveTimeOut=1すればMX番組表も
+正常に取れた
+ただし、タイムアウト待ちなのでEPG取得には時間がいつも寄りかかる

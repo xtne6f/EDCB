@@ -1,0 +1,56 @@
+diff --git a/Common/ParseChText4.cpp b/Common/ParseChText4.cpp
+index c602f69..6d15c00 100644
+--- a/Common/ParseChText4.cpp
++++ b/Common/ParseChText4.cpp
+@@ -212,8 +212,14 @@ BOOL CParseChText4::SaveChText(LPCWSTR filePath)
+ 		return FALSE;
+ 	}
+ 
++	multimap<LONGLONG, CH_DATA4> sortList;
+ 	multimap<LONGLONG, CH_DATA4>::iterator itr;
+ 	for( itr = this->chList.begin(); itr != this->chList.end(); itr++ ){
++		LONGLONG Key = ((LONGLONG)itr->second.space)<<32 | ((LONGLONG)itr->second.ch)<<16 | (LONGLONG)itr->second.serviceID;
++		sortList.insert(pair<LONGLONG, CH_DATA4>(Key, itr->second));
++	}
++
++	for( itr = sortList.begin(); itr != sortList.end(); itr++ ){
+ 		string chName="";
+ 		WtoA(itr->second.chName, chName);
+ 		string serviceName="";
+diff --git a/Common/ParseChText5.cpp b/Common/ParseChText5.cpp
+index 07b84b2..b038dc2 100644
+--- a/Common/ParseChText5.cpp
++++ b/Common/ParseChText5.cpp
+@@ -167,8 +167,30 @@ BOOL CParseChText5::SaveChText(LPCWSTR filePath)
+ 		return FALSE;
+ 	}
+ 
+-	map<LONGLONG, CH_DATA5>::iterator itr;
+-	for( itr = this->chList.begin(); itr != this->chList.end(); itr++ ){
++	multimap<LONGLONG, CH_DATA5> sortList;
++	map<LONGLONG, CH_DATA5>::iterator itrCh;
++	for( itrCh = this->chList.begin(); itrCh != this->chList.end(); itrCh++ ){
++		int network;
++		if( 0x7880 <= itrCh->second.originalNetworkID && itrCh->second.originalNetworkID <= 0x7FE8 ){
++			if( itrCh->second.partialFlag == 0 ){
++				network = 0; //地デジ
++			}else{
++				network = 1; //ワンセグ
++			}
++		}else if( itrCh->second.originalNetworkID == 0x04 ){
++			network = 2; //BS
++		}else if( itrCh->second.originalNetworkID == 0x06 || itrCh->second.originalNetworkID == 0x07 ){
++			network = 3; //CS
++		}else{
++			network = 4; //その他
++		}
++
++		LONGLONG Key = ((LONGLONG)network)<<16 | (LONGLONG)itrCh->second.serviceID;
++		sortList.insert(pair<LONGLONG, CH_DATA5>(Key, itrCh->second));
++	}
++
++	multimap<LONGLONG, CH_DATA5>::iterator itr;
++	for( itr = sortList.begin(); itr != sortList.end(); itr++ ){
+ 		string serviceName="";
+ 		WtoA(itr->second.serviceName, serviceName);
+ 		string networkName="";

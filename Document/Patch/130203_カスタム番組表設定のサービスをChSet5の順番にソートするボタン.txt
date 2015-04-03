@@ -1,0 +1,23 @@
+191 名前：名無しさん＠編集中[sage] 投稿日：2013/02/03(日) 23:56:04.86 ID:DZ3SQHpv
+カスタム番組表設定のサービス並び替えが面倒だったので、ChSet5の順番にソートするボタン作ってみた
+UserCtrlView/EpgDataViewSetting.xaml.cs内の関数はこんなの。参考までに
+
+       private void button_service_sort_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                SortedList<int, ChSet5Item> sortList = new SortedList<int, ChSet5Item>();
+                var keyArray = ChSet5.Instance.ChList.Keys.ToArray();
+                foreach (ChSet5Item info in listBox_serviceView.Items)
+                {
+                    int index = Array.IndexOf(keyArray, info.Key);
+                    sortList.Add(index, info);
+                }
+
+                listBox_serviceView.Items.Clear();
+                foreach (ChSet5Item info in sortList.Values)
+                {
+                    listBox_serviceView.Items.Add(info);
+                }
+            }
+            catch以下略

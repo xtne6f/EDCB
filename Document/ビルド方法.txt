@@ -1,0 +1,26 @@
+[ビルド環境]
+
+Visual Studio 2010 Professional（Expressは不可）
+http://www.microsoft.com/japan/visualstudio/try
+
+Visual Studio 2010 Service Pack 1
+http://www.microsoft.com/ja-jp/download/details.aspx?id=23691
+
+Windows SDK 7.1
+http://www.microsoft.com/en-us/download/details.aspx?id=8279
+
+Windows SDK 7.1 用 Microsoft Visual C++ 2010 Service Pack 1 コンパイラ更新プログラム
+http://www.microsoft.com/ja-jp/download/details.aspx?id=4422
+
+
+[事前準備] 
+（Write_AVIVOをビルドするのに必要）
+
+1.C:\Program Files\Microsoft SDKs\Windows\v7.1\Samples\multimedia\directshow\baseclasses\baseclasses.slnを開く（Win7x64、Win8x64の場合/環境によってパスが違うかも）
+『アクセス許可を引き上げてアプリケーションを再起動しますか？』と聞かれたら『異なる資格情報でこのアプリケーションを再起動』を選択
+『次のプログラムにこのコンピューターへの変更を許可しますか?』と聞かれたら『はい』を選択
+
+2.ツールバーにある緑色の横向き三角ボタンの右側にあるプルダウンメニューが『Release』に変更
+ソリューションエクスプローラー上の『BaseClasses』を右クリックして『ビルド』
+C:\Program Files\Microsoft SDKs\Windows\v7.1\Samples\multimedia\directshow\baseclasses\Release\strmbase.lib
+が作成されているのを確認

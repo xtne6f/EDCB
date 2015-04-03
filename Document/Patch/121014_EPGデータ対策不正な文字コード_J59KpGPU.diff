@@ -1,0 +1,88 @@
+--- EpgDataCap3/EpgDBUtil.cpp.orig	2011-09-24 21:07:08.000000000 +0900
++++ EpgDataCap3/EpgDBUtil.cpp	2012-10-15 14:14:10.000000000 +0900
+@@ -129,6 +129,7 @@
+ 		serviceInfo = itr->second;
+ 	}
+ 
++	if( !eit->failure ){
+ 	//イベントごとに更新必要が判定
+ 	for( size_t i=0; i<eit->eventInfoList.size(); i++ ){
+ 		CEITTable::EVENT_INFO_DATA* eitEventInfo = eit->eventInfoList[i];
+@@ -220,11 +221,12 @@
+ 			}
+ 		}
+ 	}
++	}
+ 
+ 	if( eit->original_network_id == 0x0003 ){
+ 		UnLock();
+ 
+-		return TRUE;
++		return !eit->failure;
+ 	}
+ 	
+ 	//セクションステータス
+@@ -259,7 +261,10 @@
+ 		}else{
+ 			itrFlag->second.sectionFlag |= 1<<sectionNo;
+ 		}
+-
++		if (eit->failure){
++			UnLock();
++			return FALSE;
++		}
+ 	}else{
+ 		//H-EIT
+ 		sectionInfo->HEITFlag = TRUE;
+@@ -307,6 +312,10 @@
+ 				}
+ 			}
+ 		}
++		if (eit->failure){
++			UnLock();
++			return FALSE;
++		}
+ 		if( eit->table_id == 0x4E && eit->section_number == 0){
+ 			//現在の番組のはずなので、そこまでのセクションはすでに放送済み
+ 			if(eit->eventInfoList.size() > 0){
+--- EpgDataCap3/Table/EITTable.cpp.orig	2011-10-30 23:01:24.000000000 +0900
++++ EpgDataCap3/Table/EITTable.cpp	2012-10-15 13:29:59.000000000 +0900
+@@ -6,6 +6,7 @@
+ 
+ CEITTable::CEITTable(void)
+ {
++	this->failure = FALSE;
+ }
+ 
+ CEITTable::~CEITTable(void)
+@@ -117,7 +118,8 @@
+ 					CDescriptor descriptor;
+ 					if( descriptor.Decode( data+readSize, item->descriptors_loop_length, &(item->descriptorList), NULL ) == FALSE ){
+ 						_OutputDebugString( L"++CEITTable:: descriptor2 err" );
+-						return FALSE;
++						this->failure = TRUE;
++						return TRUE;
+ 					}
+ 				}
+ 			}
+--- EpgDataCap3/Table/EITTable.h.orig	2011-09-21 22:35:46.000000000 +0900
++++ EpgDataCap3/Table/EITTable.h	2012-10-15 05:56:20.000000000 +0900
+@@ -162,6 +162,8 @@
+ 	vector<EVENT_INFO_DATA*> eventInfoList;
+ 	DWORD crc32;
+ 
++	BOOL failure;
++
+ public:
+ 	CEITTable(void);
+ 	~CEITTable(void);
+--- EpgDataCap3/Table/TableUtil.cpp.orig	2011-09-24 17:40:54.000000000 +0900
++++ EpgDataCap3/Table/TableUtil.cpp	2012-10-15 13:54:23.000000000 +0900
+@@ -91,6 +91,7 @@
+ 				return FALSE;
+ 			}else{
+ 				tableList->push_back(item);
++				if( item->EITTable->failure ) return TRUE;
+ 			}
+ 		}else if( data[decodeSize] == 0x70 ){
+ 			item->TDTTable = new CTDTTable;

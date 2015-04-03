@@ -1,0 +1,9 @@
+57 名前：名無しさん＠編集中[sage] 投稿日：2012/11/03(土) 16:45:05.30 ID:Kyf/urVD
+Win8での滲み対策
+EpgTimer/MainWindow.xaml
+<Window x:Class="EpgTimer.MainWindow"
+TextOptions.TextFormattingMode="Display"　　←追加
+xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+（ｒｙ
+
+でWin7と同じ見た目にできたっぽい

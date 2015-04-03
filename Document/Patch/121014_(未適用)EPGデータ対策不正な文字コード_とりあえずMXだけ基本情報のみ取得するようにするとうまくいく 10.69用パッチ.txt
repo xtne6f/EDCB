@@ -1,0 +1,18 @@
+--- BonCtrl/BonCtrl.cpp.orig	2012-10-14 15:10:30.000000000 +0900
++++ BonCtrl/BonCtrl.cpp	2012-10-14 15:11:53.000000000 +0900
+@@ -1539,6 +1539,15 @@
+ 							if( status == EpgBasicAll || status == EpgHEITAll ){
+ 								chkNext = TRUE;
+ 							}
++						}else if( sys->epgCapChList[chkCount].ONID == 32391 ){
++							// Workaround: get only basic info for Tokyo MX
++							if( status == EpgBasicAll ){
++								chkNext = TRUE;
++							}else if( leitFlag == FALSE && status == EpgHEITAll ){
++								chkNext = TRUE;
++							}else if( leitFlag == TRUE && status == EpgLEITAll ){
++								chkNext = TRUE;
++							}
+ 						}else{
+ 							if( leitFlag == FALSE && status == EpgHEITAll ){
+ 								chkNext = TRUE;

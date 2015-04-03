@@ -1,0 +1,103 @@
+
+■書換えているのは次の５つです
+\src\EpgTimer\EpgTimer\MainWindow.xaml
+\src\EpgTimer\EpgTimer\MainWindow.xaml.cs
+\src\EpgTimer\EpgTimer\EpgView\EpgMainView.xaml
+\src\EpgTimer\EpgTimer\EpgView\DateView.xaml
+\src\EpgTimer\EpgTimer\EpgView\EpgViewPanel.cs
+
+
+※前回の修正をしていない方も今回の修正のみで対応できるように
+重複する箇所があります。
+
+【元】がオリジナルになります。
+【換】に手動で書換えてください。
+
+
+■書換える内容
+
+\src\EpgTimer\EpgTimer\MainWindow.xaml
+
+14行目・最上段のレイアウト縦幅
+【元】<RowDefinition Height="50" />
+【換】<RowDefinition Height="30" />
+
+
+
+\src\EpgTimer\EpgTimer\MainWindow.xaml.cs
+
+187,198,209,220,231,242,253,264,275,286,297行目・ボタンの幅
+※各行すべて
+【元】= new Thickness(2, 2, 2, 15);
+【換】= new Thickness(2, 2, 2, 5);
+
+
+
+\src\EpgTimer\EpgTimer\EpgView\EpgMainView.xaml
+
+16行目・日時の縦幅
+【元】<RowDefinition Height="80" />
+【換】<RowDefinition Height="40" />
+
+26行目・現在、放送局名の縦幅を調整（※環境により欠けるので変えない方がいい）
+【元】<RowDefinition Height="40" />
+【換】<RowDefinition Height="30" />
+
+
+
+\src\EpgTimer\EpgTimer\EpgView\DateView.xaml
+
+27.28行目・ボタンの縦幅
+【元】<RowDefinition Height="40" />
+【換】<RowDefinition Height="20" />
+
+
+
+\src\EpgTimer\EpgTimer\EpgView\EpgViewPanel.cs
+
+・番組表に詳細を表示しない
+194～204行目削除（行の先頭に“//”を入れて無効にしてください）
+・次の行は無理な場合に“…”を表示しない
+240～242行目削除（行の先頭に“//”を入れて無効にしてください）
+
+
+326行目・番組表の枠線の色と太さ
+【元】dc.DrawRectangle(Brushes.LightGray, null, new Rect(info.LeftPos, info.TopPos, info.Width, info.Height));
+【換】dc.DrawRectangle(Brushes.DarkGray, null, new Rect(info.LeftPos, info.TopPos, info.Width, info.Height));
+329行目
+【元】dc.DrawRectangle(info.ContentColor, null, new Rect(info.LeftPos + 1, info.TopPos + 1, info.Width - 2, info.Height - 2));
+【換】dc.DrawRectangle(info.ContentColor, null, new Rect(info.LeftPos + 0, info.TopPos + 1, info.Width - 1, info.Height - 1));
+
+
+165行目・番組タイトル、詳細の全体の余白
+【元】double widthOffset = sizeNormal * 2;
+【換】double widthOffset = sizeNormal * 1.5;
+
+
+172行目・番組タイトルの余白
+【元】if (RenderText(info.EventInfo.ShortInfo.event_name, ref textDrawList, glyphTypefaceTitle, sizeTitle, info.Width - 6 - widthOffset, info.Height - 6 - totalHeight, info.LeftPos + widthOffset, info.TopPos + totalHeight, ref useHeight, CommonManager.Instance.CustTitle1Color, m) == false)
+【換】if (RenderText(info.EventInfo.ShortInfo.event_name, ref textDrawList, glyphTypefaceTitle, sizeTitle, info.Width - 6 - widthOffset, info.Height - 1 - totalHeight, info.LeftPos + widthOffset, info.TopPos + totalHeight, ref useHeight, CommonManager.Instance.CustTitle1Color, m) == false)
+
+
+//186行目・説明の余白
+※注意）前回変更した箇所ですが【元】に戻してください。
+【元】if (RenderText(info.EventInfo.ShortInfo.text_char, ref textDrawList, glyphTypefaceNormal, sizeNormal, info.Width - 6 - widthOffset, info.Height - 6 - totalHeight, info.LeftPos + widthOffset, info.TopPos + totalHeight, ref useHeight, CommonManager.Instance.CustTitle2Color, m) == false)
+
+
+//177行目・番組タイトルと詳細の間隔
+※注意）前回変更した箇所ですが【元】に戻してください。
+【元】totalHeight += Math.Floor(useHeight + (sizeNormal / 2));
+
+
+146行目・番組タイトルの上の余白
+【元】double totalHeight = 0;
+【換】double totalHeight = -2;
+
+
+139行目・番組タイトルの表示枠の高さ、表示時間の上の余白、フォント、大きさ
+【元】if (info.Height < 4 + sizeTitle + 2)
+【換】if (info.Height < sizeTitle + 3)
+
+159行目
+【元】if (RenderText(min, ref textDrawList, glyphTypefaceNormal, sizeNormal, info.Width - 4, info.Height - 4, info.LeftPos, info.TopPos, ref useHeight, CommonManager.Instance.CustTitle1Color, m) == false)
+【換】if (RenderText(min, ref textDrawList, glyphTypefaceTitle, sizeTitle - 0.5, info.Width - 4, info.Height + 10, info.LeftPos, info.TopPos - 1, ref useHeight, CommonManager.Instance.CustTitle1Color, m) == false)
