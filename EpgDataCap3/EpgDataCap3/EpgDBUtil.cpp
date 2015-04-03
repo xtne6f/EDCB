@@ -129,6 +129,7 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, CEITTable* eit)
 		serviceInfo = itr->second;
 	}
 
+	if( !eit->failure ){
 	//イベントごとに更新必要が判定
 	for( size_t i=0; i<eit->eventInfoList.size(); i++ ){
 		CEITTable::EVENT_INFO_DATA* eitEventInfo = eit->eventInfoList[i];
@@ -220,11 +221,12 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, CEITTable* eit)
 			}
 		}
 	}
+	}
 
 	if( eit->original_network_id == 0x0003 ){
 		UnLock();
 
-		return TRUE;
+		return !eit->failure;
 	}
 	
 	//セクションステータス
@@ -259,7 +261,10 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, CEITTable* eit)
 		}else{
 			itrFlag->second.sectionFlag |= 1<<sectionNo;
 		}
-
+		if (eit->failure){
+			UnLock();
+			return FALSE;
+		}
 	}else{
 		//H-EIT
 		sectionInfo->HEITFlag = TRUE;
@@ -306,6 +311,10 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, CEITTable* eit)
 					itrFlag->second.sectionFlag |= (DWORD)1<<sectionNo;
 				}
 			}
+		}
+		if (eit->failure){
+			UnLock();
+			return FALSE;
 		}
 		if( eit->table_id == 0x4E && eit->section_number == 0){
 			//現在の番組のはずなので、そこまでのセクションはすでに放送済み

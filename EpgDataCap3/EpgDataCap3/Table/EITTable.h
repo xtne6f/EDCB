@@ -162,6 +162,8 @@ public:
 	vector<EVENT_INFO_DATA*> eventInfoList;
 	DWORD crc32;
 
+	BOOL failure;
+
 public:
 	CEITTable(void);
 	~CEITTable(void);

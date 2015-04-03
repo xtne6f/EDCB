@@ -91,6 +91,7 @@ BOOL CTableUtil::Decode( BYTE* data, DWORD dataSize, vector<TABLE_DATA*>* tableL
 				return FALSE;
 			}else{
 				tableList->push_back(item);
+				if( item->EITTable->failure ) return TRUE;
 			}
 		}else if( data[decodeSize] == 0x70 ){
 			item->TDTTable = new CTDTTable;

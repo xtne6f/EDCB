@@ -6,6 +6,7 @@
 
 CEITTable::CEITTable(void)
 {
+	this->failure = FALSE;
 }
 
 CEITTable::~CEITTable(void)
@@ -117,7 +118,8 @@ BOOL CEITTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 					CDescriptor descriptor;
 					if( descriptor.Decode( data+readSize, item->descriptors_loop_length, &(item->descriptorList), NULL ) == FALSE ){
 						_OutputDebugString( L"++CEITTable:: descriptor2 err" );
-						return FALSE;
+						this->failure = TRUE;
+						return TRUE;
 					}
 				}
 			}
