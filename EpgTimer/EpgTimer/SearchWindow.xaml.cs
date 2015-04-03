@@ -175,24 +175,27 @@ namespace EpgTimer
                 {
                     SearchItem item = new SearchItem();
                     item.EventInfo = info;
-                    foreach (ReserveData info2 in CommonManager.Instance.DB.ReserveList.Values)
-                    {
-                        if (info.original_network_id == info2.OriginalNetworkID &&
-                            info.transport_stream_id == info2.TransportStreamID &&
-                            info.service_id == info2.ServiceID &&
-                            info.event_id == info2.EventID)
-                        {
-                            item.ReserveInfo = info2;
-                            break;
-                        }
-                    }
 
-                    UInt64 serviceKey = CommonManager.Create64Key(info.original_network_id, info.transport_stream_id, info.service_id);
-                    if (ChSet5.Instance.ChList.ContainsKey(serviceKey) == true)
+                    if (item.EventInfo.start_time.AddSeconds(item.EventInfo.durationSec) > DateTime.Now)
                     {
-                        item.ServiceName = ChSet5.Instance.ChList[serviceKey].ServiceName;
+                        foreach (ReserveData info2 in CommonManager.Instance.DB.ReserveList.Values)
+                        {
+                            if (info.original_network_id == info2.OriginalNetworkID &&
+                                info.transport_stream_id == info2.TransportStreamID &&
+                                info.service_id == info2.ServiceID &&
+                                info.event_id == info2.EventID)
+                            {
+                                item.ReserveInfo = info2;
+                                break;
+                            }
+                        }
+                        UInt64 serviceKey = CommonManager.Create64Key(info.original_network_id, info.transport_stream_id, info.service_id);
+                        if (ChSet5.Instance.ChList.ContainsKey(serviceKey) == true)
+                        {
+                            item.ServiceName = ChSet5.Instance.ChList[serviceKey].ServiceName;
+                        }
+                        resultList.Add(item);
                     }
-                    resultList.Add(item);
                 }
 
                 listView_result.DataContext = resultList;
