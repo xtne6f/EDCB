@@ -105,7 +105,7 @@ namespace EpgTimer
                     FlowDocument flowDoc = new FlowDocument();
                     flowDoc.Blocks.Add(new Paragraph(new Run(text)));
                     richTextBox_descInfo.Document = flowDoc;
-                }                
+                }
             }
             catch (Exception ex)
             {
@@ -161,7 +161,8 @@ namespace EpgTimer
                 }
 
                 UInt64 key = CommonManager.Create64Key(eventInfo.original_network_id, eventInfo.transport_stream_id, eventInfo.service_id);
-                if( ChSet5.Instance.ChList.ContainsKey(key) == true ){
+                if (ChSet5.Instance.ChList.ContainsKey(key) == true)
+                {
                     reserveInfo.StationName = ChSet5.Instance.ChList[key].ServiceName;
                 }
                 reserveInfo.OriginalNetworkID = eventInfo.original_network_id;

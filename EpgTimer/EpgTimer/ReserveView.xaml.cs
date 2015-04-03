@@ -181,7 +181,7 @@ namespace EpgTimer
                     this.Dispatcher.BeginInvoke(new Action(() =>
                     {
                         MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-                    }), null); 
+                    }), null);
                     return false;
                 }
                 if (err == ErrCode.CMD_ERR_TIMEOUT)
@@ -319,7 +319,7 @@ namespace EpgTimer
                         return;
                     }
 
-                    if (String.Compare( header, _lastHeaderClicked) != 0 )
+                    if (String.Compare(header, _lastHeaderClicked) != 0)
                     {
                         direction = ListSortDirection.Ascending;
                         _lastHeaderClicked2 = _lastHeaderClicked;
@@ -368,7 +368,7 @@ namespace EpgTimer
                 }
             }
         }
-        
+
         private void recmode_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -434,7 +434,7 @@ namespace EpgTimer
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
-        
+
         private void button_no_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -470,7 +470,7 @@ namespace EpgTimer
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
-        
+
         private void priority_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -532,7 +532,7 @@ namespace EpgTimer
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
-        
+
         private void autoadd_Click(object sender, RoutedEventArgs e)
         {
             if (listView_reserve.SelectedItem != null)

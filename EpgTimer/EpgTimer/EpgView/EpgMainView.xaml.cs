@@ -151,7 +151,7 @@ namespace EpgTimer
                         posY = Math.Ceiling(time.TopPos + ((nowTime - chkNowTime).TotalMinutes * Settings.Instance.MinHeight));
                         break;
                     }
-                    else if(chkNowTime <time.Time)
+                    else if (chkNowTime < time.Time)
                     {
                         //時間省かれてる
                         posY = Math.Ceiling(time.TopPos);
@@ -310,7 +310,7 @@ namespace EpgTimer
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            } 
+            }
             return false;
         }
 
@@ -742,7 +742,7 @@ namespace EpgTimer
         {
             try
             {
-                if( sender.GetType() != typeof(MenuItem))
+                if (sender.GetType() != typeof(MenuItem))
                 {
                     return;
                 }
@@ -1077,7 +1077,7 @@ namespace EpgTimer
                         TimePosInfo info = timeList.GetByIndex(i) as TimePosInfo;
                         if (time <= info.Time)
                         {
-                            double pos = ((i-1) * 60 * Settings.Instance.MinHeight)-100;
+                            double pos = ((i - 1) * 60 * Settings.Instance.MinHeight) - 100;
                             if (pos < 0)
                             {
                                 pos = 0;
@@ -1183,11 +1183,11 @@ namespace EpgTimer
                                     MessageBox.Show("EPGデータの取得でエラーが発生しました。EPGデータが読み込まれていない可能性があります。");
                                 }), null);
                             }
-                            return false; 
+                            return false;
                         }
-                        
+
                         ReloadProgramViewItem();
-                        
+
                     }
                     MoveNowTime();
                 }
@@ -1312,7 +1312,7 @@ namespace EpgTimer
                                 {
                                     if (info.RecSetting.StartMargine < 0)
                                     {
-                                        startTime = info.StartTime.AddSeconds(info.RecSetting.StartMargine*-1);
+                                        startTime = info.StartTime.AddSeconds(info.RecSetting.StartMargine * -1);
                                         duration += info.RecSetting.StartMargine;
                                     }
                                     if (info.RecSetting.EndMargine < 0)
@@ -1402,7 +1402,7 @@ namespace EpgTimer
                 DateTime currentEnd = new DateTime();
                 //必要サービスの抽出
                 serviceList.Clear();
- 
+
                 foreach (UInt64 id in viewCustServiceList)
                 {
                     if (CommonManager.Instance.DB.ServiceEventList.ContainsKey(id) == true)
@@ -1571,7 +1571,7 @@ namespace EpgTimer
                             item.EventInfo.start_time.Hour,
                             0,
                             0);
-                        if( timeList.ContainsKey(chkStartTime) == true )
+                        if (timeList.ContainsKey(chkStartTime) == true)
                         {
                             int index = timeList.IndexOfKey(chkStartTime);
                             item.TopPos = (index * 60 + (item.EventInfo.start_time - chkStartTime).TotalMinutes) * Settings.Instance.MinHeight;
@@ -1627,7 +1627,7 @@ namespace EpgTimer
                 cmd.SendSearchPg(keyList, ref list);
 
                 //サービス毎のリストに変換
-                Dictionary<UInt64, EpgServiceEventInfo> serviceEventList = new Dictionary<UInt64,EpgServiceEventInfo>();
+                Dictionary<UInt64, EpgServiceEventInfo> serviceEventList = new Dictionary<UInt64, EpgServiceEventInfo>();
                 foreach (EpgEventInfo eventInfo in list)
                 {
                     UInt64 id = CommonManager.Create64Key(eventInfo.original_network_id, eventInfo.transport_stream_id, eventInfo.service_id);

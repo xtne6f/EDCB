@@ -56,7 +56,7 @@ namespace EpgTimer
                     );
                 this.Resources = rd;
             }
-            
+
             mutex = new System.Threading.Mutex(false, "Global\\EpgTimer_Bon2");
             if (!mutex.WaitOne(0, false))
             {
@@ -160,7 +160,7 @@ namespace EpgTimer
                         }));
                     }
                 }
-                
+
                 //ウインドウ位置の復元
                 if (Settings.Instance.MainWndTop != 0)
                 {
@@ -303,7 +303,7 @@ namespace EpgTimer
                 }
                 buttonList.Add("情報通知ログ", logViewButton);
 
-                
+
                 ResetButtonView();
 
                 pipeServer = new PipeServer();
@@ -1020,7 +1020,7 @@ namespace EpgTimer
                                     {
                                         startInfo.WindowStyle = System.Diagnostics.ProcessWindowStyle.Minimized;
                                     }
-                                    else if(Settings.Instance.ExecBat == 1)
+                                    else if (Settings.Instance.ExecBat == 1)
                                     {
                                         startInfo.WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden;
                                     }

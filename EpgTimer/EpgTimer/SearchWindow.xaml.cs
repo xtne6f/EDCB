@@ -75,7 +75,7 @@ namespace EpgTimer
                 if (Settings.Instance.SearchWndHeight != 0)
                 {
                     this.Height = Settings.Instance.SearchWndHeight;
-                }                
+                }
 
                 EpgSearchKeyInfo defKey = new EpgSearchKeyInfo();
                 Settings.GetDefSearchSetting(ref defKey);
@@ -142,7 +142,7 @@ namespace EpgTimer
                 SearchPg();
             }
         }
-        
+
         private void button_search_Click(object sender, RoutedEventArgs e)
         {
             SearchPg();
@@ -719,7 +719,6 @@ namespace EpgTimer
                 }
             }
         }
-
 
     }
 }

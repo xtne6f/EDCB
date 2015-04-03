@@ -21,7 +21,7 @@
             <MenuItem Header="ジャンル" Name="JyanruKey" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="ネットワーク" Name="NetworkKey" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="サービス名" Name="ServiceKey" IsCheckable="True" Click="headerSelect_Click" />
-        </ContextMenu>        
+        </ContextMenu>
         <ContextMenu x:Key="itemMenu" x:Name="cmdMenu" >
             <MenuItem Header="削除 (_D)" Click="button_del_Click" InputGestureText="Delete" />
             <MenuItem Header="変更 (_C)" Click="button_change_Click"  InputGestureText="Enter "/>

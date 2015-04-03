@@ -304,7 +304,7 @@ namespace EpgTimer
                     MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
                 }), null);
 
-            } 
+            }
             return true;
         }
 
@@ -382,10 +382,11 @@ namespace EpgTimer
             }
             catch (Exception ex)
             {
-                this.Dispatcher.BeginInvoke(new Action(() => {
+                this.Dispatcher.BeginInvoke(new Action(() =>
+                {
                     MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
                 }), null);
-            } 
+            }
             return ret;
         }
 
@@ -408,7 +409,7 @@ namespace EpgTimer
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            } 
+            }
         }
 
         /// <summary>

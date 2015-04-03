@@ -1160,7 +1160,7 @@ namespace EpgTimer
                                     MessageBox.Show("EPGデータの取得でエラーが発生しました。EPGデータが読み込まれていない可能性があります。");
                                 }), null);
                             }
-                            return false; 
+                            return false;
                         }
 
                         ReloadProgramViewItem();
@@ -1265,7 +1265,7 @@ namespace EpgTimer
                         {
                             if (info.RecSetting.StartMargine < 0)
                             {
-                                startTime = startTime.AddSeconds(info.RecSetting.StartMargine*-1);
+                                startTime = startTime.AddSeconds(info.RecSetting.StartMargine * -1);
                                 duration += info.RecSetting.StartMargine;
                             }
                             if (info.RecSetting.EndMargine < 0)
