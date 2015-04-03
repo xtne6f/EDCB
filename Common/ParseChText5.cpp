@@ -167,8 +167,30 @@ BOOL CParseChText5::SaveChText(LPCWSTR filePath)
 		return FALSE;
 	}
 
-	map<LONGLONG, CH_DATA5>::iterator itr;
-	for( itr = this->chList.begin(); itr != this->chList.end(); itr++ ){
+	multimap<LONGLONG, CH_DATA5> sortList;
+	map<LONGLONG, CH_DATA5>::iterator itrCh;
+	for( itrCh = this->chList.begin(); itrCh != this->chList.end(); itrCh++ ){
+		int network;
+		if( 0x7880 <= itrCh->second.originalNetworkID && itrCh->second.originalNetworkID <= 0x7FE8 ){
+			if( itrCh->second.partialFlag == 0 ){
+				network = 0; //地デジ
+			}else{
+				network = 1; //ワンセグ
+			}
+		}else if( itrCh->second.originalNetworkID == 0x04 ){
+			network = 2; //BS
+		}else if( itrCh->second.originalNetworkID == 0x06 || itrCh->second.originalNetworkID == 0x07 ){
+			network = 3; //CS
+		}else{
+			network = 4; //その他
+		}
+
+		LONGLONG Key = ((LONGLONG)network)<<16 | (LONGLONG)itrCh->second.serviceID;
+		sortList.insert(pair<LONGLONG, CH_DATA5>(Key, itrCh->second));
+	}
+
+	multimap<LONGLONG, CH_DATA5>::iterator itr;
+	for( itr = sortList.begin(); itr != sortList.end(); itr++ ){
 		string serviceName="";
 		WtoA(itr->second.serviceName, serviceName);
 		string networkName="";

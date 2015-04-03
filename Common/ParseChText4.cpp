@@ -212,8 +212,14 @@ BOOL CParseChText4::SaveChText(LPCWSTR filePath)
 		return FALSE;
 	}
 
+	multimap<LONGLONG, CH_DATA4> sortList;
 	multimap<LONGLONG, CH_DATA4>::iterator itr;
 	for( itr = this->chList.begin(); itr != this->chList.end(); itr++ ){
+		LONGLONG Key = ((LONGLONG)itr->second.space)<<32 | ((LONGLONG)itr->second.ch)<<16 | (LONGLONG)itr->second.serviceID;
+		sortList.insert(pair<LONGLONG, CH_DATA4>(Key, itr->second));
+	}
+
+	for( itr = sortList.begin(); itr != sortList.end(); itr++ ){
 		string chName="";
 		WtoA(itr->second.chName, chName);
 		string serviceName="";
