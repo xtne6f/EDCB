@@ -13,7 +13,7 @@ public:
 	CDLNAManager(void);
 	~CDLNAManager(void);
 
-	int StartSSDPServer();
+	int StartSSDPServer(DWORD);
 	int StopSSDPServer();
 
 	int LoadPublicFolder();
@@ -31,6 +31,7 @@ protected:
 
 	CDLNADmsManager dms;
 	BOOL startDMS;
+    DWORD httpPort;
 	wstring recFolderObjectID;
 	wstring publicFolderObjectID;
 

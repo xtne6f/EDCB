@@ -303,6 +303,12 @@
     <ClInclude Include="Table\SITTable.h">
       <Filter>ヘッダー ファイル\Table</Filter>
     </ClInclude>
+    <ClInclude Include="Table\EITTable_SD.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Table\EITTable_SD2.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -553,6 +559,12 @@
     </ClCompile>
     <ClCompile Include="Table\SITTable.cpp">
       <Filter>ソース ファイル\Table</Filter>
+    </ClCompile>
+    <ClCompile Include="Table\EITTable_SD.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Table\EITTable_SD2.cpp">
+      <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

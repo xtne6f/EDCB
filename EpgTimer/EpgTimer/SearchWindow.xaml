@@ -77,16 +77,6 @@
                             <GridViewColumnHeader Content="録画モード" HorizontalContentAlignment="Left" />
                         </GridViewColumn.Header>
                     </GridViewColumn>
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=JyanruKey}">
-                        <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="ジャンル" HorizontalContentAlignment="Left" />
-                        </GridViewColumn.Header>
-                    </GridViewColumn>
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=ProgramContent}">
-                        <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="番組内容" HorizontalContentAlignment="Left" />
-                        </GridViewColumn.Header>
-                    </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=NetworkName}">
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="ネットワーク" HorizontalContentAlignment="Left"/>
@@ -95,6 +85,11 @@
                     <GridViewColumn DisplayMemberBinding="{Binding Path=ServiceName}">
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="サービス名" HorizontalContentAlignment="Left"/>
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=JyanruKey}">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="ジャンル" HorizontalContentAlignment="Left" />
                         </GridViewColumn.Header>
                     </GridViewColumn>
                 </GridView>

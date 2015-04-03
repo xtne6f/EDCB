@@ -104,6 +104,9 @@
     <ClCompile Include="StreamCtrlDlg.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\Common\CtrlCmdUtil2.cpp">
+      <Filter>ソース ファイル\Common</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="EpgTimerPlugIn.rc">

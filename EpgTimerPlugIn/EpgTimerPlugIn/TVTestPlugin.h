@@ -1,5 +1,5 @@
 /*
-	TVTest プラグインヘッダ ver.0.0.10
+	TVTest プラグインヘッダ ver.0.0.13
 
 	このファイルは再配布・改変など自由に行って構いません。
 	ただし、改変した場合はオリジナルと違う旨を記載して頂けると、混乱がなくてい
@@ -52,7 +52,7 @@
 	class CMyPlugin : public TVTest::CTVTestPlugin
 	{
 	public:
-		virtual bool GetPluginInfo(TVTest::PluginInfo *pInfo) {
+		bool GetPluginInfo(TVTest::PluginInfo *pInfo) {
 			// プラグインの情報を返す
 			pInfo->Type           = TVTest::PLUGIN_TYPE_NORMAL;
 			pInfo->Flags          = 0;
@@ -61,12 +61,12 @@
 			pInfo->pszDescription = L"何もしないプラグイン";
 			return true;	// false を返すとプラグインのロードが失敗になる
 		}
-		virtual bool Initialize() {
+		bool Initialize() {
 			// ここで初期化を行う
 			// 何もしないのであればオーバーライドしなくても良い
 			return true;	// false を返すとプラグインのロードが失敗になる
 		}
-		virtual bool Finalize() {
+		bool Finalize() {
 			// ここでクリーンアップを行う
 			// 何もしないのであればオーバーライドしなくても良い
 			return true;
@@ -83,6 +83,41 @@
 
 /*
 	更新履歴
+
+	ver.0.0.13 (TVTest ver.0.7.16 or later)
+	・以下のメッセージを追加した
+	  ・MESSAGE_ENABLEPROGRAMGUIDEEVENT
+	  ・MESSAGE_REGISTERPROGRAMGUIDECOMMAND
+	・以下のイベントを追加した
+	  ・EVENT_STARTUPDONE
+	  ・EVENT_PROGRAMGUIDE_INITIALIZE
+	  ・EVENT_PROGRAMGUIDE_FINALIZE
+	  ・EVENT_PROGRAMGUIDE_COMMAND
+	  ・EVENT_PROGRAMGUIDE_INITIALIZEMENU
+	  ・EVENT_PROGRAMGUIDE_MENUSELECTED
+	  ・EVENT_PROGRAMGUIDE_PROGRAM_DRAWBACKGROUND
+	  ・EVENT_PROGRAMGUIDE_PROGRAM_INITIALIZEMENU
+	  ・EVENT_PROGRAMGUIDE_PROGRAM_MENUSELECTED
+
+	ver.0.0.12 (TVTest ver.0.7.14 or later)
+	・以下のメッセージを追加した
+	  ・MESSAGE_GETEPGEVENTINFO
+	  ・MESSAGE_FREEEPGEVENTINFO
+	  ・MESSAGE_GETEPGEVENTLIST
+	  ・MESSAGE_FREEEPGEVENTLIST
+	  ・MESSAGE_ENUMDRIVER
+	  ・MESSAGE_GETDRIVERTUNINGSPACELIST
+	  ・MESSAGE_FREEDRIVERTUNINGSPACELIST
+	・ChannelInfo 構造体に Flags メンバを追加した
+
+	ver.0.0.11 (TVTest ver.0.7.6 or later)
+	・以下のメッセージを追加した
+	  ・MESSAGE_SETWINDOWMESSAGECALLBACK
+	  ・MESSAGE_REGISTERCONTROLLER
+	  ・MESSAGE_ONCOTROLLERBUTTONDOWN
+	  ・MESSAGE_GETCONTROLLERSETTINGS
+	・EVENT_CONTROLLERFOCUS を追加した
+	・プラグインのフラグに PLUGIN_FLAG_NOUNLOAD を追加した
 
 	ver.0.0.10 (TVTest ver.0.7.0 or later)
 	・以下のメッセージを追加した
@@ -168,7 +203,7 @@ namespace TVTest {
 #define TVTEST_PLUGIN_VERSION_(major,minor,rev) \
 	(((major)<<24) | ((minor)<<12) | (rev))
 #ifndef TVTEST_PLUGIN_VERSION
-#define TVTEST_PLUGIN_VERSION TVTEST_PLUGIN_VERSION_(0,0,10)
+#define TVTEST_PLUGIN_VERSION TVTEST_PLUGIN_VERSION_(0,0,13)
 #endif
 
 // エクスポート関数定義用
@@ -190,6 +225,9 @@ enum {
 												// 特別な理由が無い限り使わない
 #if TVTEST_PLUGIN_VERSION>=TVTEST_PLUGIN_VERSION_(0,0,10)
 	,PLUGIN_FLAG_DISABLEONSTART	=0x00000004UL	// 起動時は必ず無効
+#endif
+#if TVTEST_PLUGIN_VERSION>=TVTEST_PLUGIN_VERSION_(0,0,11)
+	,PLUGIN_FLAG_NOUNLOAD		=0x00000008UL	// 終了時以外アンロード不可
 #endif
 };
 
@@ -221,90 +259,109 @@ typedef BOOL (WINAPI *FinalizeFunc)();
 
 // メッセージ
 enum {
-	MESSAGE_GETVERSION,				// プログラムのバージョンを取得
-	MESSAGE_QUERYMESSAGE,			// メッセージに対応しているか問い合わせる
-	MESSAGE_MEMORYALLOC,			// メモリ確保
-	MESSAGE_SETEVENTCALLBACK,		// イベントハンドル用コールバックの設定
-	MESSAGE_GETCURRENTCHANNELINFO,	// 現在のチャンネルの情報を取得
-	MESSAGE_SETCHANNEL,				// チャンネルを設定
-	MESSAGE_GETSERVICE,				// サービスを取得
-	MESSAGE_SETSERVICE,				// サービスを設定
-	MESSAGE_GETTUNINGSPACENAME,		// チューニング空間名を取得
-	MESSAGE_GETCHANNELINFO,			// チャンネルの情報を取得
-	MESSAGE_GETSERVICEINFO,			// サービスの情報を取得
-	MESSAGE_GETDRIVERNAME,			// BonDriverのファイル名を取得
-	MESSAGE_SETDRIVERNAME,			// BonDriverを設定
-	MESSAGE_STARTRECORD,			// 録画の開始
-	MESSAGE_STOPRECORD,				// 録画の停止
-	MESSAGE_PAUSERECORD,			// 録画の一時停止/再開
-	MESSAGE_GETRECORD,				// 録画設定の取得
-	MESSAGE_MODIFYRECORD,			// 録画設定の変更
-	MESSAGE_GETZOOM,				// 表示倍率の取得
-	MESSAGE_SETZOOM,				// 表示倍率の設定
-	MESSAGE_GETPANSCAN,				// パンスキャンの設定を取得
-	MESSAGE_SETPANSCAN,				// パンスキャンを設定
-	MESSAGE_GETSTATUS,				// ステータスを取得
-	MESSAGE_GETRECORDSTATUS,		// 録画ステータスを取得
-	MESSAGE_GETVIDEOINFO,			// 映像の情報を取得
-	MESSAGE_GETVOLUME,				// 音量を取得
-	MESSAGE_SETVOLUME,				// 音量を設定
-	MESSAGE_GETSTEREOMODE,			// ステレオモードを取得
-	MESSAGE_SETSTEREOMODE,			// ステレオモードを設定
-	MESSAGE_GETFULLSCREEN,			// 全画面表示の状態を取得
-	MESSAGE_SETFULLSCREEN,			// 全画面表示の状態を設定
-	MESSAGE_GETPREVIEW,				// 再生が有効か取得
-	MESSAGE_SETPREVIEW,				// 再生の有効状態を設定
-	MESSAGE_GETSTANDBY,				// 待機状態であるか取得
-	MESSAGE_SETSTANDBY,				// 待機状態を設定
-	MESSAGE_GETALWAYSONTOP,			// 常に最前面表示であるか取得
-	MESSAGE_SETALWAYSONTOP,			// 常に最前面表示を設定
-	MESSAGE_CAPTUREIMAGE,			// 画像をキャプチャする
-	MESSAGE_SAVEIMAGE,				// 画像を保存する
-	MESSAGE_RESET,					// リセットを行う
-	MESSAGE_CLOSE,					// ウィンドウを閉じる
-	MESSAGE_SETSTREAMCALLBACK,		// ストリームコールバックを設定
-	MESSAGE_ENABLEPLUGIN,			// プラグインの有効状態を設定
-	MESSAGE_GETCOLOR,				// 色の設定を取得
-	MESSAGE_DECODEARIBSTRING,		// ARIB文字列のデコード
-	MESSAGE_GETCURRENTPROGRAMINFO,	// 現在の番組の情報を取得
+	MESSAGE_GETVERSION,					// プログラムのバージョンを取得
+	MESSAGE_QUERYMESSAGE,				// メッセージに対応しているか問い合わせる
+	MESSAGE_MEMORYALLOC,				// メモリ確保
+	MESSAGE_SETEVENTCALLBACK,			// イベントハンドル用コールバックの設定
+	MESSAGE_GETCURRENTCHANNELINFO,		// 現在のチャンネルの情報を取得
+	MESSAGE_SETCHANNEL,					// チャンネルを設定
+	MESSAGE_GETSERVICE,					// サービスを取得
+	MESSAGE_SETSERVICE,					// サービスを設定
+	MESSAGE_GETTUNINGSPACENAME,			// チューニング空間名を取得
+	MESSAGE_GETCHANNELINFO,				// チャンネルの情報を取得
+	MESSAGE_GETSERVICEINFO,				// サービスの情報を取得
+	MESSAGE_GETDRIVERNAME,				// BonDriverのファイル名を取得
+	MESSAGE_SETDRIVERNAME,				// BonDriverを設定
+	MESSAGE_STARTRECORD,				// 録画の開始
+	MESSAGE_STOPRECORD,					// 録画の停止
+	MESSAGE_PAUSERECORD,				// 録画の一時停止/再開
+	MESSAGE_GETRECORD,					// 録画設定の取得
+	MESSAGE_MODIFYRECORD,				// 録画設定の変更
+	MESSAGE_GETZOOM,					// 表示倍率の取得
+	MESSAGE_SETZOOM,					// 表示倍率の設定
+	MESSAGE_GETPANSCAN,					// パンスキャンの設定を取得
+	MESSAGE_SETPANSCAN,					// パンスキャンを設定
+	MESSAGE_GETSTATUS,					// ステータスを取得
+	MESSAGE_GETRECORDSTATUS,			// 録画ステータスを取得
+	MESSAGE_GETVIDEOINFO,				// 映像の情報を取得
+	MESSAGE_GETVOLUME,					// 音量を取得
+	MESSAGE_SETVOLUME,					// 音量を設定
+	MESSAGE_GETSTEREOMODE,				// ステレオモードを取得
+	MESSAGE_SETSTEREOMODE,				// ステレオモードを設定
+	MESSAGE_GETFULLSCREEN,				// 全画面表示の状態を取得
+	MESSAGE_SETFULLSCREEN,				// 全画面表示の状態を設定
+	MESSAGE_GETPREVIEW,					// 再生が有効か取得
+	MESSAGE_SETPREVIEW,					// 再生の有効状態を設定
+	MESSAGE_GETSTANDBY,					// 待機状態であるか取得
+	MESSAGE_SETSTANDBY,					// 待機状態を設定
+	MESSAGE_GETALWAYSONTOP,				// 常に最前面表示であるか取得
+	MESSAGE_SETALWAYSONTOP,				// 常に最前面表示を設定
+	MESSAGE_CAPTUREIMAGE,				// 画像をキャプチャする
+	MESSAGE_SAVEIMAGE,					// 画像を保存する
+	MESSAGE_RESET,						// リセットを行う
+	MESSAGE_CLOSE,						// ウィンドウを閉じる
+	MESSAGE_SETSTREAMCALLBACK,			// ストリームコールバックを設定
+	MESSAGE_ENABLEPLUGIN,				// プラグインの有効状態を設定
+	MESSAGE_GETCOLOR,					// 色の設定を取得
+	MESSAGE_DECODEARIBSTRING,			// ARIB文字列のデコード
+	MESSAGE_GETCURRENTPROGRAMINFO,		// 現在の番組の情報を取得
 #if TVTEST_PLUGIN_VERSION>=TVTEST_PLUGIN_VERSION_(0,0,1)
-	MESSAGE_QUERYEVENT,				// イベントに対応しているか取得
-	MESSAGE_GETTUNINGSPACE,			// 現在のチューニング空間を取得
-	MESSAGE_GETTUNINGSPACEINFO,		// チューニング空間の情報を取得
-	MESSAGE_SETNEXTCHANNEL,			// チャンネルを次に設定する
+	MESSAGE_QUERYEVENT,					// イベントに対応しているか取得
+	MESSAGE_GETTUNINGSPACE,				// 現在のチューニング空間を取得
+	MESSAGE_GETTUNINGSPACEINFO,			// チューニング空間の情報を取得
+	MESSAGE_SETNEXTCHANNEL,				// チャンネルを次に設定する
 #endif
 #if TVTEST_PLUGIN_VERSION>=TVTEST_PLUGIN_VERSION_(0,0,2)
-	MESSAGE_GETAUDIOSTREAM,			// 音声ストリームを取得
-	MESSAGE_SETAUDIOSTREAM,			// 音声ストリームを設定
+	MESSAGE_GETAUDIOSTREAM,				// 音声ストリームを取得
+	MESSAGE_SETAUDIOSTREAM,				// 音声ストリームを設定
 #endif
 #if TVTEST_PLUGIN_VERSION>=TVTEST_PLUGIN_VERSION_(0,0,3)
-	MESSAGE_ISPLUGINENABLED,		// プラグインの有効状態を取得
-	MESSAGE_REGISTERCOMMAND,		// コマンドの登録
-	MESSAGE_ADDLOG,					// ログを記録
+	MESSAGE_ISPLUGINENABLED,			// プラグインの有効状態を取得
+	MESSAGE_REGISTERCOMMAND,			// コマンドの登録
+	MESSAGE_ADDLOG,						// ログを記録
 #endif
 #if TVTEST_PLUGIN_VERSION>=TVTEST_PLUGIN_VERSION_(0,0,5)
-	MESSAGE_RESETSTATUS,			// ステータスを初期化
+	MESSAGE_RESETSTATUS,				// ステータスを初期化
 #endif
 #if TVTEST_PLUGIN_VERSION>=TVTEST_PLUGIN_VERSION_(0,0,6)
-	MESSAGE_SETAUDIOCALLBACK,		// 音声のコールバック関数を設定
+	MESSAGE_SETAUDIOCALLBACK,			// 音声のコールバック関数を設定
 #endif
 #if TVTEST_PLUGIN_VERSION>=TVTEST_PLUGIN_VERSION_(0,0,7)
-	MESSAGE_DOCOMMAND,				// コマンドの実行
+	MESSAGE_DOCOMMAND,					// コマンドの実行
 #endif
 #if TVTEST_PLUGIN_VERSION>=TVTEST_PLUGIN_VERSION_(0,0,8)
-	MESSAGE_GETBCASINFO,			// B-CAS カードの情報を取得
-	MESSAGE_SENDBCASCOMMAND,		// B-CAS カードにコマンドを送信
-	MESSAGE_GETHOSTINFO,			// ホストプログラムの情報を取得
+	MESSAGE_GETBCASINFO,				// B-CAS カードの情報を取得
+	MESSAGE_SENDBCASCOMMAND,			// B-CAS カードにコマンドを送信
+	MESSAGE_GETHOSTINFO,				// ホストプログラムの情報を取得
 #endif
 #if TVTEST_PLUGIN_VERSION>=TVTEST_PLUGIN_VERSION_(0,0,9)
-	MESSAGE_GETSETTING,				// 設定の取得
-	MESSAGE_GETDRIVERFULLPATHNAME,	// BonDriverのフルパスを取得
+	MESSAGE_GETSETTING,					// 設定の取得
+	MESSAGE_GETDRIVERFULLPATHNAME,		// BonDriverのフルパスを取得
 #endif
 #if TVTEST_PLUGIN_VERSION>=TVTEST_PLUGIN_VERSION_(0,0,10)
-	MESSAGE_GETLOGO,				// ロゴの取得
-	MESSAGE_GETAVAILABLELOGOTYPE,	// 利用可能なロゴの取得
-	MESSAGE_RELAYRECORD,			// 録画ファイルの切り替え
-	MESSAGE_SILENTMODE,				// サイレントモードの取得/設定
+	MESSAGE_GETLOGO,					// ロゴの取得
+	MESSAGE_GETAVAILABLELOGOTYPE,		// 利用可能なロゴの取得
+	MESSAGE_RELAYRECORD,				// 録画ファイルの切り替え
+	MESSAGE_SILENTMODE,					// サイレントモードの取得/設定
+#endif
+#if TVTEST_PLUGIN_VERSION>=TVTEST_PLUGIN_VERSION_(0,0,11)
+	MESSAGE_SETWINDOWMESSAGECALLBACK,	// ウィンドウメッセージコールバックの設定
+	MESSAGE_REGISTERCONTROLLER,			// コントローラの登録
+	MESSAGE_ONCONTROLLERBUTTONDOWN,		// コントローラのボタンが押されたのを通知
+	MESSAGE_GETCONTROLLERSETTINGS,		// コントローラの設定を取得
+#endif
+#if TVTEST_PLUGIN_VERSION>=TVTEST_PLUGIN_VERSION_(0,0,12)
+	MESSAGE_GETEPGEVENTINFO,			// 番組情報を取得
+	MESSAGE_FREEEPGEVENTINFO,			// 番組情報を解放
+	MESSAGE_GETEPGEVENTLIST,			// 番組のリストを取得
+	MESSAGE_FREEEPGEVENTLIST,			// 番組のリストを解放
+	MESSAGE_ENUMDRIVER,					// BonDriverの列挙
+	MESSAGE_GETDRIVERTUNINGSPACELIST,	// BonDriverのチューニング空間のリストの取得
+	MESSAGE_FREEDRIVERTUNINGSPACELIST,	// BonDriverのチューニング空間のリストの解放
+#endif
+#if TVTEST_PLUGIN_VERSION>=TVTEST_PLUGIN_VERSION_(0,0,13)
+	MESSAGE_ENABLEPROGRAMGUIDEEVENT,	// 番組表のイベントの有効/無効を設定する
+	MESSAGE_REGISTERPROGRAMGUIDECOMMAND,	// 番組表のコマンドを登録
 #endif
 	MESSAGE_TRAILER
 };
@@ -346,6 +403,21 @@ enum {
 	EVENT_CLOSE,				// TVTestのウィンドウが閉じられる
 	EVENT_STARTRECORD,			// 録画が開始される
 	EVENT_RELAYRECORD,			// 録画ファイルが切り替えられた
+#endif
+#if TVTEST_PLUGIN_VERSION>=TVTEST_PLUGIN_VERSION_(0,0,11)
+	EVENT_CONTROLLERFOCUS,		// コントローラの対象を設定
+#endif
+#if TVTEST_PLUGIN_VERSION>=TVTEST_PLUGIN_VERSION_(0,0,13)
+	EVENT_STARTUPDONE,			// 起動時の処理が終わった
+	// 番組表関係のイベントは、MESSAGE_ENABLEPROGRAMGUIDEEVENT を呼んで有効にしないと通知されません
+	EVENT_PROGRAMGUIDE_INITIALIZE,				// 番組表の初期化
+	EVENT_PROGRAMGUIDE_FINALIZE,				// 番組表の終了
+	EVENT_PROGRAMGUIDE_COMMAND,					// 番組表のコマンド実行
+	EVENT_PROGRAMGUIDE_INITIALIZEMENU,			// 番組表のメニューの設定
+	EVENT_PROGRAMGUIDE_MENUSELECTED,			// 番組表のメニューが選択された
+	EVENT_PROGRAMGUIDE_PROGRAM_DRAWBACKGROUND,	// 番組表の番組の背景を描画
+	EVENT_PROGRAMGUIDE_PROGRAM_INITIALIZEMENU,	// 番組表の番組のメニューの設定
+	EVENT_PROGRAMGUIDE_PROGRAM_MENUSELECTED,	// 番組表の番組のメニューが選択された
 #endif
 	EVENT_TRAILER
 };
@@ -391,6 +463,8 @@ inline void MsgMemoryFree(PluginParam *pParam,void *pData) {
 
 // イベントハンドル用コールバックの設定
 // pClientData はコールバックの呼び出し時に渡されます。
+// 一つのプラグインで設定できるコールバック関数は一つだけです。
+// Callback に NULL を渡すと設定が解除されます。
 inline bool MsgSetEventCallback(PluginParam *pParam,EventCallbackFunc Callback,void *pClientData=NULL) {
 	return (*pParam->Callback)(pParam,MESSAGE_SETEVENTCALLBACK,(LPARAM)Callback,(LPARAM)pClientData)!=0;
 }
@@ -407,18 +481,34 @@ struct ChannelInfo {
 	WCHAR szTransportStreamName[32];	// トランスポートストリーム名
 	WCHAR szChannelName[64];			// チャンネル名
 #if TVTEST_PLUGIN_VERSION>=TVTEST_PLUGIN_VERSION_(0,0,1)
-	int PhysicalChannel;				// 物理チャンネル番号(場合によっては信用できない)
+	int PhysicalChannel;				// 物理チャンネル番号(あまり信用できない)
 										// 不明の場合は0
 	WORD ServiceIndex;					// サービスのインデックス
+										// (現在は意味を無くしているので使わない)
 	WORD ServiceID;						// サービスID
 	// サービスはチャンネルファイルで設定されているものが取得される
 	// サービスはユーザーが切り替えられるので、実際に視聴中のサービスがこれであるとは限らない
 	// 実際に視聴中のサービスは MESSAGE_GETSERVICE で取得できる
 #endif
+#if TVTEST_PLUGIN_VERSION>=TVTEST_PLUGIN_VERSION_(0,0,12)
+	DWORD Flags;						// 各種フラグ(CHANNEL_FLAG_*)
+#endif
 };
 
+#if TVTEST_PLUGIN_VERSION>=TVTEST_PLUGIN_VERSION_(0,0,12)
+// チャンネルの情報のフラグ
+enum {
+	CHANNEL_FLAG_DISABLED	=0x00000001UL	// 無効にされている
+};
+#endif
+
 #if TVTEST_PLUGIN_VERSION>=TVTEST_PLUGIN_VERSION_(0,0,1)
-enum { CHANNELINFO_SIZE_V1=TVTEST_OFFSETOF(ChannelInfo,PhysicalChannel) };
+enum {
+	CHANNELINFO_SIZE_V1=TVTEST_OFFSETOF(ChannelInfo,PhysicalChannel)
+#if TVTEST_PLUGIN_VERSION>=TVTEST_PLUGIN_VERSION_(0,0,12)
+	, CHANNELINFO_SIZE_V2=TVTEST_OFFSETOF(ChannelInfo,Flags)
+#endif
+};
 #endif
 
 // 現在のチャンネルの情報を取得する
@@ -453,7 +543,8 @@ inline bool MsgSetService(PluginParam *pParam,int Service,bool fByID=false) {
 
 // チューニング空間名を取得する
 // チューニング空間名の長さが返ります。Indexが範囲外の場合は0が返ります。
-// pszNameをNULLで呼べば長さだけを取得できます。
+// pszName を NULL で呼べば長さだけを取得できます。
+// MaxLength には pszName の先に格納できる最大の要素数(終端の空文字を含む)を指定します。
 inline int MsgGetTuningSpaceName(PluginParam *pParam,int Index,LPWSTR pszName,int MaxLength) {
 	return (int)(*pParam->Callback)(pParam,MESSAGE_GETTUNINGSPACENAME,(LPARAM)pszName,MAKELPARAM(Index,min(MaxLength,0xFFFF)));
 }
@@ -487,14 +578,15 @@ enum { SERVICEINFO_SIZE_V1=TVTEST_OFFSETOF(ServiceInfo,AudioComponentType) };
 #endif
 
 // サービスの情報を取得する
-// 事前にServiceInfoのSizeメンバを設定しておきます。
+// 現在のチャンネルのサービスの情報を取得します。
+// 事前に ServiceInfo の Size メンバを設定しておきます。
 inline bool MsgGetServiceInfo(PluginParam *pParam,int Index,ServiceInfo *pInfo) {
 	return (*pParam->Callback)(pParam,MESSAGE_GETSERVICEINFO,Index,(LPARAM)pInfo)!=0;
 }
 
 // BonDriverのファイル名を取得する
 // 戻り値はファイル名の長さ(終端のNullを除く)が返ります。
-// pszNameをNULLで呼べば長さだけを取得できます。
+// pszName を NULL で呼べば長さだけを取得できます。
 // 取得されるのは、ディレクトリを含まないファイル名のみか、相対パスの場合もあります。
 // フルパスを取得したい場合は MsgGetDriverFullPathName を使用してください。
 inline int MsgGetDriverName(PluginParam *pParam,LPWSTR pszName,int MaxLength) {
@@ -502,7 +594,7 @@ inline int MsgGetDriverName(PluginParam *pParam,LPWSTR pszName,int MaxLength) {
 }
 
 // BonDriverを設定する
-// ファイル名のみか相対パスを指定すると、ドライバ検索フォルダの設定が使用されます。
+// ファイル名のみか相対パスを指定すると、BonDriver 検索フォルダの設定が使用されます。
 inline bool MsgSetDriverName(PluginParam *pParam,LPCWSTR pszName) {
 	return (*pParam->Callback)(pParam,MESSAGE_SETDRIVERNAME,(LPARAM)pszName,0)!=0;
 }
@@ -582,7 +674,7 @@ inline bool MsgGetRecord(PluginParam *pParam,RecordInfo *pInfo) {
 }
 
 // 録画設定を変更する
-// 既に録画中である場合は、ファイル名と開始時間の指定は無視される
+// 既に録画中である場合は、ファイル名と開始時間の指定は無視されます。
 inline bool MsgModifyRecord(PluginParam *pParam,const RecordInfo *pInfo) {
 	return (*pParam->Callback)(pParam,MESSAGE_MODIFYRECORD,(LPARAM)pInfo,0)!=0;
 }
@@ -593,7 +685,7 @@ inline int MsgGetZoom(PluginParam *pParam) {
 }
 
 // 表示倍率を設定する
-// %単位だけではなく、Num=1/Denom=3などとして割り切れない倍率を設定することもできる
+// %単位だけではなく、Num=1/Denom=3などとして割り切れない倍率を設定することもできます。
 inline bool MsgSetZoom(PluginParam *pParam,int Num,int Denom=100) {
 	return (*pParam->Callback)(pParam,MESSAGE_SETZOOM,Num,Denom)!=0;
 }
@@ -832,6 +924,8 @@ inline bool MsgClose(PluginParam *pParam,DWORD Flags=0) {
 }
 
 // ストリームコールバック関数
+// pData は 188 バイトの TS パケットが渡されます。
+// FALSE を返すとパケットが破棄されます。
 typedef BOOL (CALLBACK *StreamCallbackFunc)(BYTE *pData,void *pClientData);
 
 // ストリームコールバックフラグ
@@ -848,6 +942,8 @@ struct StreamCallbackInfo {
 };
 
 // ストリームコールバックを設定する
+// ストリームコールバックを登録すると、TS データを受け取ることができます。
+// コールバック関数は一つのプラグインで複数設定できます。
 // ストリームコールバック関数で処理が遅延すると全体が遅延するので、
 // 時間が掛かる処理は別スレッドで行うなどしてください。
 inline bool MsgSetStreamCallback(PluginParam *pParam,DWORD Flags,
@@ -906,22 +1002,23 @@ struct ProgramInfo {
 	int MaxEventText;		// イベントテキストの最大長
 	LPWSTR pszEventExtText;	// 追加イベントテキスト
 	int MaxEventExtText;	// 追加イベントテキストの最大長
-	SYSTEMTIME StartTime;	// 開始時間(ローカル時間)
+	SYSTEMTIME StartTime;	// 開始日時(JST)
 	DWORD Duration;			// 長さ(秒単位)
 };
 
 // 現在の番組の情報を取得する
 // 事前に Size メンバに構造体のサイズを設定します。
 // また、pszEventName / pszEventText / pszEventExtText メンバに取得先のバッファへのポインタを、
-// MaxEventName / MaxEventText / MaxEventExtText メンバにバッファの長さ(文字数)を設定します。
+// MaxEventName / MaxEventText / MaxEventExtText メンバにバッファの長さ(要素数)を設定します。
 // 必要のない情報は、ポインタを NULL にすると取得されません。
+// MsgGetEpgEventInfo で、より詳しい番組情報を取得することもできます。
 inline bool MsgGetCurrentProgramInfo(PluginParam *pParam,ProgramInfo *pInfo,bool fNext=false) {
 	return (*pParam->Callback)(pParam,MESSAGE_GETCURRENTPROGRAMINFO,(LPARAM)pInfo,fNext)!=0;
 }
 
 #if TVTEST_PLUGIN_VERSION>=TVTEST_PLUGIN_VERSION_(0,0,1)
 
-// 指定されたイベントに対応しているか取得する
+// 指定されたイベントの通知に対応しているか取得する
 inline bool MsgQueryEvent(PluginParam *pParam,UINT Event) {
 	return (*pParam->Callback)(pParam,MESSAGE_QUERYEVENT,Event,0)!=0;
 }
@@ -950,7 +1047,7 @@ struct TuningSpaceInfo {
 // チューニング空間の情報を取得する
 // 事前に TuningSpaceInfo の Size メンバを設定しておきます。
 inline bool MsgGetTuningSpaceInfo(PluginParam *pParam,int Index,TuningSpaceInfo *pInfo) {
-	return (*pParam->Callback)(pParam,MESSAGE_GETTUNINGSPACENAME,Index,(LPARAM)pInfo)!=0;
+	return (*pParam->Callback)(pParam,MESSAGE_GETTUNINGSPACEINFO,Index,(LPARAM)pInfo)!=0;
 }
 
 // チャンネルを次に設定する
@@ -1039,7 +1136,7 @@ inline bool MsgResetStatus(PluginParam *pParam)
 #if TVTEST_PLUGIN_VERSION>=TVTEST_PLUGIN_VERSION_(0,0,6)
 
 // 音声サンプルのコールバック関数
-// 48kHz / 16ビット固定
+// 渡されるサンプルは 48kHz / 16ビット固定です。
 // pData の先には Samples * Channels 分のデータが入っています。
 // 今のところ、5.1chをダウンミックスする設定になっている場合
 // ダウンミックスされたデータが渡されますが、そのうち仕様を変えるかも知れません。
@@ -1047,7 +1144,9 @@ inline bool MsgResetStatus(PluginParam *pParam)
 typedef LRESULT (CALLBACK *AudioCallbackFunc)(short *pData,DWORD Samples,int Channels,void *pClientData);
 
 // 音声のサンプルを取得するコールバック関数を設定する
+// 一つのプラグインで設定できるコールバック関数は一つだけです。
 // pClinetData はコールバック関数に渡されます。
+// pCallback に NULL を指定すると、設定が解除されます。
 inline bool MsgSetAudioCallback(PluginParam *pParam,AudioCallbackFunc pCallback,void *pClientData=NULL)
 {
 	return (*pParam->Callback)(pParam,MESSAGE_SETAUDIOCALLBACK,(LPARAM)pCallback,(LPARAM)pClientData)!=0;
@@ -1286,26 +1385,27 @@ inline bool MsgRelayRecord(PluginParam *pParam,LPCWSTR pszFileName)
 	return (*pParam->Callback)(pParam,MESSAGE_RELAYRECORD,(LPARAM)pszFileName,0)!=0;
 }
 
+// サイレントモードのパラメータ
+enum {
+	SILENTMODE_GET,	// 取得
+	SILENTMODE_SET	// 設定
+};
+
 // サイレントモードの取得
 // サイレントモードであるか取得します。
 // サイレントモードではエラー時などにダイアログが出なくなります。
 // コマンドラインで /silent を指定するか、MsgSetSilentMode で設定すればサイレントモードになります。
 inline bool MsgGetSilentMode(PluginParam *pParam)
 {
-	return (*pParam->Callback)(pParam,MESSAGE_SILENTMODE,0,0)!=0;
+	return (*pParam->Callback)(pParam,MESSAGE_SILENTMODE,SILENTMODE_GET,0)!=0;
 }
 
 // サイレントモードの設定
 // サイレントモードの有効/無効を設定します。
 inline bool MsgSetSilentMode(PluginParam *pParam,bool fSilent)
 {
-	return (*pParam->Callback)(pParam,MESSAGE_SILENTMODE,1,(LPARAM)fSilent)!=0;
+	return (*pParam->Callback)(pParam,MESSAGE_SILENTMODE,SILENTMODE_SET,(LPARAM)fSilent)!=0;
 }
-
-#endif	// TVTEST_PLUGIN_VERSION>=TVTEST_PLUGIN_VERSION_(0,0,10)
-
-
-#if TVTEST_PLUGIN_VERSION>=TVTEST_PLUGIN_VERSION_(0,0,10)
 
 // 録画のクライアント
 enum {
@@ -1341,11 +1441,424 @@ struct StartRecordInfo {
 
 #endif	// TVTEST_PLUGIN_VERSION>=TVTEST_PLUGIN_VERSION_(0,0,10)
 
+#if TVTEST_PLUGIN_VERSION>=TVTEST_PLUGIN_VERSION_(0,0,11)
+
+/*
+メッセージコールバック関数を登録すると、TVTest のメインウィンドウにメッセージが
+送られた時に呼び出されます。
+コールバック関数では、TVTest にメッセージの処理をさせない時は TRUE を返します。
+その際、pResult に書き込んだ値が返されます。
+*/
+
+// ウィンドウメッセージコールバック関数
+typedef BOOL (CALLBACK *WindowMessageCallbackFunc)(HWND hwnd,UINT uMsg,WPARAM wParam,LPARAM lParam,LRESULT *pResult,void *pUserData);
+
+// ウィンドウメッセージコールバックの設定
+// pClientData はコールバックの呼び出し時に渡されます。
+// 一つのプラグインで設定できるコールバック関数は一つだけです。
+// Callback に NULL を渡すと設定が解除されます。
+inline bool MsgSetWindowMessageCallback(PluginParam *pParam,WindowMessageCallbackFunc Callback,void *pClientData=NULL) {
+	return (*pParam->Callback)(pParam,MESSAGE_SETWINDOWMESSAGECALLBACK,(LPARAM)Callback,(LPARAM)pClientData)!=0;
+}
+
+/*
+コントローラの登録を行うと、設定ダイアログのリモコンのページで割り当てが設定できるようになります。
+コントローラの画像を用意すると、設定の右側に表示されます。
+ボタンが押された時に MsgOnControllerButtonDown を呼び出して通知すると、
+割り当ての設定に従って機能が実行されます。
+*/
+
+// コントローラのボタンの情報
+struct ControllerButtonInfo {
+	LPCWSTR pszName;				// ボタンの名称("音声切替" など)
+	LPCWSTR pszDefaultCommand;		// デフォルトのコマンド(MsgDoCommand と同じもの)
+									// 指定しない場合はNULL
+	struct {
+		WORD Left,Top,Width,Height;	// 画像のボタンの位置(画像が無い場合は無視される)
+	} ButtonRect;
+	struct {
+		WORD Left,Top;				// 画像の選択ボタンの位置(画像が無い場合は無視される)
+	} SelButtonPos;
+	DWORD Reserved;					// 予約領域(0にしてください)
+};
+
+// コントローラの情報
+struct ControllerInfo {
+	DWORD Size;									// 構造体のサイズ
+	DWORD Flags;								// 各種フラグ(CONTROLLER_FLAG_???)
+	LPCWSTR pszName;							// コントローラ識別名
+	LPCWSTR pszText;							// コントローラの名称("HDUSリモコン" など)
+	int NumButtons;								// ボタンの数
+	const ControllerButtonInfo *pButtonList;	// ボタンのリスト
+	LPCWSTR pszIniFileName;						// 設定ファイル名(NULL にすると TVTest の Ini ファイル)
+	LPCWSTR pszSectionName;						// 設定のセクション名
+	UINT ControllerImageID;						// コントローラの画像の識別子(無い場合は0)
+	UINT SelButtonsImageID;						// 選択ボタン画像の識別子(無い場合は0)
+	typedef BOOL (CALLBACK *TranslateMessageCallback)(HWND hwnd,MSG *pMessage,void *pClientData);
+	TranslateMessageCallback pTranslateMessage;	// メッセージの変換コールバック(必要無ければ NULL)
+	void *pClientData;							// コールバックに渡すパラメータ
+};
+
+// コントローラのフラグ
+enum {
+	CONTROLLER_FLAG_ACTIVEONLY	=0x00000001UL	// アクティブ時のみ使用できる
+};
+
+// コントローラを登録する
+inline bool MsgRegisterController(PluginParam *pParam,const ControllerInfo *pInfo)
+{
+	return (*pParam->Callback)(pParam,MESSAGE_REGISTERCONTROLLER,(LPARAM)pInfo,0)!=0;
+}
+
+// コントローラのボタンが押されたことを通知する
+inline bool MsgOnControllerButtonDown(PluginParam *pParam,LPCWSTR pszName,int Button)
+{
+	return (*pParam->Callback)(pParam,MESSAGE_ONCONTROLLERBUTTONDOWN,(LPARAM)pszName,Button)!=0;
+}
+
+// コントローラの設定
+struct ControllerSettings {
+	DWORD Mask;		// 取得する項目(CONTROLLER_SETTINGS_MASK_*)
+	DWORD Flags;	// 各種フラグ(CONTROLLER_SETTINGS_FLAG_*)
+};
+
+// コントローラの設定マスク
+enum {
+	CONTROLLER_SETTINGS_MASK_FLAGS		=0x00000001UL	// Flags が有効
+};
+
+// コントローラの設定フラグ
+enum {
+	CONTROLLER_SETTINGS_FLAG_ACTIVEONLY	=0x00000001UL	// アクティブ時のみ
+};
+
+// コントローラの設定を取得する
+inline bool MsgGetControllerSettings(PluginParam *pParam,LPCWSTR pszName,ControllerSettings *pSettings)
+{
+	return (*pParam->Callback)(pParam,MESSAGE_GETCONTROLLERSETTINGS,(LPARAM)pszName,(LPARAM)pSettings)!=0;
+}
+
+// コントローラがアクティブ時のみに設定されているか取得する
+inline bool MsgIsControllerActiveOnly(PluginParam *pParam,LPCWSTR pszName)
+{
+	ControllerSettings Settings;
+	Settings.Mask=CONTROLLER_SETTINGS_MASK_FLAGS;
+	if (!MsgGetControllerSettings(pParam,pszName,&Settings))
+		return false;
+	return (Settings.Flags&CONTROLLER_SETTINGS_FLAG_ACTIVEONLY)!=0;
+}
+
+#endif	// TVTEST_PLUGIN_VERSION>=TVTEST_PLUGIN_VERSION_(0,0,11)
+
+#if TVTEST_PLUGIN_VERSION>=TVTEST_PLUGIN_VERSION_(0,0,12)
+
+// イベントの取得方法
+enum {
+	EPG_EVENT_QUERY_EVENTID,	// イベントID
+	EPG_EVENT_QUERY_TIME		// 日時
+};
+
+// イベントの取得のための情報
+struct EpgEventQueryInfo {
+	WORD NetworkID;			// ネットワークID
+	WORD TransportStreamID;	// ストリームID
+	WORD ServiceID;			// サービスID
+	BYTE Type;				// 取得方法(EPG_EVENT_QUERY_*)
+	BYTE Flags;				// フラグ(現在は常に0)
+	union {
+		WORD EventID;		// イベントID
+		FILETIME Time;		// 日時(UTC)
+	};
+};
+
+// 映像の情報
+struct EpgEventVideoInfo {
+	BYTE StreamContent;	// stream_content
+	BYTE ComponentType;	// component_type
+						// (0x01 = 480i[4:3] / 0x03 = 480i[16:9] / 0xB1 = 1080i[4:3] / 0xB3 = 1080i[16:9])
+	BYTE ComponentTag;	// component_tag
+	BYTE Reserved;		// 予約
+	DWORD LanguageCode;	// 言語コード
+	LPCWSTR pszText;	// テキスト(無い場合はNULL)
+};
+
+// 音声の情報
+struct EpgEventAudioInfo {
+	BYTE Flags;				// フラグ(EPG_EVENT_AUDIO_FLAG_*)
+	BYTE StreamContent;		// stream_content
+	BYTE ComponentType;		// component_type (1 = Mono / 2 = Dual Mono / 3 = Stereo / 9 = 5.1ch)
+	BYTE ComponentTag;		// component_tag
+	BYTE SimulcastGroupTag;	// simulcast_group_tag
+	BYTE QualityIndicator;	// quality_indicator
+	BYTE SamplingRate;		// サンプリング周波数の種類
+	BYTE Reserved;			// 予約
+	DWORD LanguageCode;		// 言語コード(主音声)
+	DWORD LanguageCode2;	// 言語コード(副音声)
+	LPCWSTR pszText;		// テキスト(無い場合はNULL)
+};
+
+// 音声のフラグ
+enum {
+	EPG_EVENT_AUDIO_FLAG_MULTILINGUAL	=0x01,	// 二ヶ国語
+	EPG_EVENT_AUDIO_FLAG_MAINCOMPONENT	=0x02	// 主音声
+};
+
+// ジャンルの情報
+// (意味は STD-B10 第2部 付録H 等参照)
+struct EpgEventContentInfo {
+	BYTE ContentNibbleLevel1;	// 大分類
+	BYTE ContentNibbleLevel2;	// 中分類
+	BYTE UserNibble1;
+	BYTE UserNibble2;
+};
+
+// イベントグループのイベントの情報
+struct EpgGroupEventInfo {
+	WORD NetworkID;			// ネットワークID
+	WORD TransportStreamID;	// ストリームID
+	WORD ServiceID;			// サービスID
+	WORD EventID;			// イベントID
+};
+
+// イベントグループの情報
+struct EpgEventGroupInfo {
+	BYTE GroupType;					// 種類
+	BYTE EventListLength;			// イベントのリストの要素数
+	BYTE Reserved[6];				// 予約
+	EpgGroupEventInfo *EventList;	// イベントのリスト
+};
+
+// イベントの情報
+struct EpgEventInfo {
+	WORD EventID;						// イベントID
+	BYTE RunningStatus;					// running_status
+	BYTE FreeCaMode;					// free_CA_mode
+	DWORD Reserved;						// 予約
+	SYSTEMTIME StartTime;				// 開始日時(ローカル時刻)
+	DWORD Duration;						// 長さ(秒単位)
+	BYTE VideoListLength;				// 映像の情報の数
+	BYTE AudioListLength;				// 音声の情報の数
+	BYTE ContentListLength;				// ジャンルの情報の数
+	BYTE EventGroupListLength;			// イベントグループの情報の数
+	LPCWSTR pszEventName;				// イベント名(無い場合はNULL)
+	LPCWSTR pszEventText;				// テキスト(無い場合はNULL)
+	LPCWSTR pszEventExtendedText;		// 拡張テキスト(無い場合はNULL)
+	EpgEventVideoInfo **VideoList;		// 映像の情報のリスト(無い場合はNULL)
+	EpgEventAudioInfo **AudioList;		// 音声の情報のリスト(無い場合はNULL)
+	EpgEventContentInfo *ContentList;	// ジャンルの情報(無い場合はNULL)
+	EpgEventGroupInfo **EventGroupList;	// イベントグループ情報(無い場合はNULL)
+};
+
+// イベントのリスト
+struct EpgEventList {
+	WORD NetworkID;				// ネットワークID
+	WORD TransportStreamID;		// ストリームID
+	WORD ServiceID;				// サービスID
+	WORD NumEvents;				// イベントの数
+	EpgEventInfo **EventList;	// リスト
+};
+
+// イベントの情報の取得
+// EpgEventQueryInfo で、取得したいイベントを指定します。
+// 取得した情報が不要になった場合、MsgFreeEventInfo で解放します。
+// 情報が取得できなかった場合は NULL が返ります。
+/*
+	// 現在のチャンネルの現在の番組を取得する例
+	ChannelInfo ChInfo;
+	ChInfo.Size = sizeof(ChInfo);
+	if (MsgGetCurrentChannelInfo(pParam, &ChInfo)) {
+		EpgEventQueryInfo QueryInfo;
+		QueryInfo.NetworkID         = ChInfo.NetworkID;
+		QueryInfo.TransportStreamID = ChInfo.TransportStreamID;
+		QueryInfo.ServiceID         = ChInfo.ServiceID;
+		QueryInfo.Type              = EPG_EVENT_QUERY_TIME;
+		QueryInfo.Flags             = 0;
+		GetSystemTimeAsFileTime(&QueryInfo.Time);
+		EpgEventInfo *pEvent = MsgGetEpgEventInfo(pParam, &QueryInfo);
+		if (pEvent != NULL) {
+			...
+			MsgFreeEpgEventInfo(pParam, pEvent);
+		}
+	}
+*/
+inline EpgEventInfo *MsgGetEpgEventInfo(PluginParam *pParam,const EpgEventQueryInfo *pInfo)
+{
+	return (EpgEventInfo*)(*pParam->Callback)(pParam,MESSAGE_GETEPGEVENTINFO,(LPARAM)pInfo,0);
+}
+
+// イベントの情報の解放
+// MsgGetEpgEventInfo で取得した情報のメモリを解放します。
+inline void MsgFreeEpgEventInfo(PluginParam *pParam,EpgEventInfo *pEventInfo)
+{
+	(*pParam->Callback)(pParam,MESSAGE_FREEEPGEVENTINFO,(LPARAM)pEventInfo,0);
+}
+
+// イベントのリストの取得
+// EpgEventList の NetworkID / TransportStreamID / ServiceID を設定して呼び出します。
+// 取得された番組は開始日時順にソートされています。
+// リストが不要になった場合、MsgFreeEpgEventList で解放します。
+/*
+	// 現在のチャンネルの番組表を取得する例
+	ChannelInfo ChInfo;
+	ChInfo.Size = sizeof(ChInfo);
+	if (MsgGetCurrentChannelInfo(pParam, &ChInfo)) {
+		EpgEventList EventList;
+		EventList.NetworkID         = ChInfo.NetworkID;
+		EventList.TransportStreamID = ChInfo.TransportStreamID;
+		EventList.ServiceID         = ChInfo.ServiceID;
+		if (MsgGetEpgEventList(pParam, &EventList)) {
+			...
+			MsgFreeEpgEventList(pParam, &EventList);
+		}
+	}
+*/
+inline bool MsgGetEpgEventList(PluginParam *pParam,EpgEventList *pList)
+{
+	return (*pParam->Callback)(pParam,MESSAGE_GETEPGEVENTLIST,(LPARAM)pList,0)!=0;
+}
+
+// イベントのリストの解放
+// MsgGetEpgEventList で取得したリストのメモリを解放します。
+inline void MsgFreeEpgEventList(PluginParam *pParam,EpgEventList *pList)
+{
+	(*pParam->Callback)(pParam,MESSAGE_FREEEPGEVENTLIST,(LPARAM)pList,0);
+}
+
+// BonDriver を列挙する
+// BonDriver のフォルダとして設定されているフォルダ内の BonDriver を列挙します。
+// 戻り値としてファイル名の長さが返ります。Index が範囲外の場合は0が返ります。
+inline int MsgEnumDriver(PluginParam *pParam,int Index,LPWSTR pszFileName,int MaxLength)
+{
+	return (int)(*pParam->Callback)(pParam,MESSAGE_ENUMDRIVER,(LPARAM)pszFileName,MAKELPARAM(Index,min(MaxLength,0xFFFF)));
+}
+
+// チューニング空間の情報
+struct DriverTuningSpaceInfo {
+	DWORD Flags;				// フラグ(現在は常に0)
+	DWORD NumChannels;			// チャンネル数
+	TuningSpaceInfo *pInfo;		// チューニング空間の情報
+	ChannelInfo **ChannelList;	// チャンネルのリスト
+};
+
+// チューニング空間のリスト
+struct DriverTuningSpaceList {
+	DWORD Flags;						// フラグ(現在は常に0)
+	DWORD NumSpaces;					// チューニング空間の数
+	DriverTuningSpaceInfo **SpaceList;	// チューニング空間のリスト
+};
+
+// BonDriver のチャンネルのリストを取得する
+// DriverTuningSpaceList の Flags を設定して呼び出します。
+// リストが不要になった場合、MsgFreeDriverTuningSpaceList で解放します。
+inline bool MsgGetDriverTuningSpaceList(PluginParam *pParam,LPCWSTR pszDriverName,DriverTuningSpaceList *pList)
+{
+	return (*pParam->Callback)(pParam,MESSAGE_GETDRIVERTUNINGSPACELIST,(LPARAM)pszDriverName,(LPARAM)pList)!=0;
+}
+
+// BonDriver のチャンネルのリストを解放する
+inline void MsgFreeDriverTuningSpaceList(PluginParam *pParam,DriverTuningSpaceList *pList)
+{
+	(*pParam->Callback)(pParam,MESSAGE_FREEDRIVERTUNINGSPACELIST,(LPARAM)pList,0);
+}
+
+#endif	// TVTEST_PLUGIN_VERSION>=TVTEST_PLUGIN_VERSION_(0,0,12)
+
+#if TVTEST_PLUGIN_VERSION>=TVTEST_PLUGIN_VERSION_(0,0,13)
+
+// 番組表の番組の情報
+struct ProgramGuideProgramInfo {
+	WORD NetworkID;			// ネットワークID
+	WORD TransportStreamID;	// ストリームID
+	WORD ServiceID;			// サービスID
+	WORD EventID;			// イベントID
+	SYSTEMTIME StartTime;	// 開始日時
+	DWORD Duration;			// 長さ(秒単位)
+};
+
+// 番組表の番組の背景描画の情報
+struct ProgramGuideProgramDrawBackgroundInfo {
+	HDC hdc;					// 描画先DCハンドル
+	RECT ItemRect;				// 項目全体の位置
+	RECT TitleRect;				// タイトルの位置
+	RECT ContentRect;			// 番組内容の位置
+	COLORREF BackgroundColor;	// 背景色
+};
+
+// 番組表のメニューの情報
+struct ProgramGuideInitializeMenuInfo {
+	HMENU hmenu;		// メニューのハンドル
+	UINT Command;		// 項目のID
+	UINT Reserved;		// 予約
+};
+
+// 番組表の番組のメニューの情報
+struct ProgramGuideProgramInitializeMenuInfo {
+	HMENU hmenu;		// メニューのハンドル
+	UINT Command;		// 項目のID
+	UINT Reserved;		// 予約
+	POINT CursorPos;	// カーソル位置
+	RECT ItemRect;		// 番組の位置
+};
+
+// 番組表のイベントのフラグ
+enum {
+	PROGRAMGUIDE_EVENT_GENERAL	=0x0001,	// 全体のイベント(EVENT_PROGRAMGUIDE_*)
+	PROGRAMGUIDE_EVENT_PROGRAM	=0x0002		// 各番組のイベント(EVENT_PROGRAMGUIDE_PROGRAM_*)
+};
+
+// 番組表のイベントの有効/無効を設定する
+// 番組表のイベント(EVENT_PROGRAMGUIDE_*)の通知が必要な場合、通知を有効に設定します。
+// EventFlags で指定されたイベント(PROGRAMGUIDE_EVENT_*)の通知が有効になります。
+inline bool MsgEnableProgramGuideEvent(PluginParam *pParam,UINT EventFlags)
+{
+	return (*pParam->Callback)(pParam,MESSAGE_ENABLEPROGRAMGUIDEEVENT,EventFlags,0)!=0;
+}
+
+// 番組表のコマンドの情報
+struct ProgramGuideCommandInfo {
+	WORD Type;			// 種類(PROGRAMGUiDE_COMMAND_TYPE_*)
+	WORD Flags;			// 各種フラグ(現在は常に0)
+	UINT ID;			// 識別子
+	LPCWSTR pszText;	// コマンドの文字列
+	LPCWSTR pszName;	// コマンドの名前
+};
+
+// 番組表のコマンドの種類
+enum {
+	PROGRAMGUIDE_COMMAND_TYPE_PROGRAM	=1	// 各番組
+};
+
+// 番組表のコマンド実行時の情報
+struct ProgramGuideCommandParam {
+	UINT ID;							// 識別子
+	UINT Action;						// 操作の種類(PROGRAMGUIDE_COMMAND_ACTION_*)
+	ProgramGuideProgramInfo Program;	// 番組の情報
+	POINT CursorPos;					// カーソル位置
+	RECT ItemRect;						// 項目の位置
+};
+
+// 番組表のコマンド実行の操作の種類
+enum {
+	PROGRAMGUIDE_COMMAND_ACTION_MOUSE,	// マウスなど
+	PROGRAMGUIDE_COMMAND_ACTION_KEY		// キーボード
+};
+
+// 番組表のコマンドを登録する
+// コマンドを登録すると、番組表のダブルクリックなどに機能を割り当てることができるようになります。
+// コマンドが実行されると EVENT_PROGRAMGUIDE_COMMAND イベントが送られます。
+inline bool MsgRegisterProgramGuideCommand(PluginParam *pParam,
+										   const ProgramGuideCommandInfo *pCommandList,int NumCommands=1)
+{
+	return (*pParam->Callback)(pParam,MESSAGE_REGISTERPROGRAMGUIDECOMMAND,(LPARAM)pCommandList,NumCommands)!=0;
+}
+
+#endif	// TVTEST_PLUGIN_VERSION>=TVTEST_PLUGIN_VERSION_(0,0,13)
+
 
 /*
 	TVTest アプリケーションクラス
 
-	TVTest の各種機能を呼び出すためのクラス。
+	TVTest の各種機能を呼び出すためのクラスです。
 	ただのラッパーなので使わなくてもいいです。
 	TVTInitialize 関数が呼ばれた時に、引数の PluginParam 構造体へのポインタを
 	コンストラクタに渡してインスタンスを生成します。
@@ -1645,6 +2158,55 @@ public:
 		return MsgSetSilentMode(m_pParam,fSilent);
 	}
 #endif
+#if TVTEST_PLUGIN_VERSION>=TVTEST_PLUGIN_VERSION_(0,0,11)
+	bool SetWindowMessageCallback(WindowMessageCallbackFunc Callback,void *pClientData=NULL) {
+		return MsgSetWindowMessageCallback(m_pParam,Callback,pClientData);
+	}
+	bool RegisterController(ControllerInfo *pInfo) {
+		pInfo->Size=sizeof(ControllerInfo);
+		return MsgRegisterController(m_pParam,pInfo);
+	}
+	bool OnControllerButtonDown(LPCWSTR pszName,int Button) {
+		return MsgOnControllerButtonDown(m_pParam,pszName,Button);
+	}
+	bool GetControllerSettings(LPCWSTR pszName,ControllerSettings *pSettings) {
+		return MsgGetControllerSettings(m_pParam,pszName,pSettings);
+	}
+	bool IsControllerActiveOnly(LPCWSTR pszName) {
+		return MsgIsControllerActiveOnly(m_pParam,pszName);
+	}
+#endif
+#if TVTEST_PLUGIN_VERSION>=TVTEST_PLUGIN_VERSION_(0,0,12)
+	EpgEventInfo *GetEpgEventInfo(const EpgEventQueryInfo *pInfo) {
+		return MsgGetEpgEventInfo(m_pParam,pInfo);
+	}
+	void FreeEpgEventInfo(EpgEventInfo *pEventInfo) {
+		MsgFreeEpgEventInfo(m_pParam,pEventInfo);
+	}
+	bool GetEpgEventList(EpgEventList *pList) {
+		return MsgGetEpgEventList(m_pParam,pList);
+	}
+	void FreeEpgEventList(EpgEventList *pList) {
+		MsgFreeEpgEventList(m_pParam,pList);
+	}
+	int EnumDriver(int Index,LPWSTR pszFileName,int MaxLength) {
+		return MsgEnumDriver(m_pParam,Index,pszFileName,MaxLength);
+	}
+	bool GetDriverTuningSpaceList(LPCWSTR pszDriverName,DriverTuningSpaceList *pList) {
+		return MsgGetDriverTuningSpaceList(m_pParam,pszDriverName,pList);
+	}
+	void FreeDriverTuningSpaceList(DriverTuningSpaceList *pList) {
+		MsgFreeDriverTuningSpaceList(m_pParam,pList);
+	}
+#endif
+#if TVTEST_PLUGIN_VERSION>=TVTEST_PLUGIN_VERSION_(0,0,13)
+	bool EnableProgramGuideEvent(UINT EventFlags) {
+		return MsgEnableProgramGuideEvent(m_pParam,EventFlags);
+	}
+	bool RegisterProgramGuideCommand(const ProgramGuideCommandInfo *pCommandList,int NumCommands=1) {
+		return MsgRegisterProgramGuideCommand(m_pParam,pCommandList,NumCommands);
+	}
+#endif
 };
 
 /*
@@ -1701,7 +2263,7 @@ public:
 	// この関数がイベントコールバック関数として登録されているものとします
 	LRESULT CALLBACK EventCallback(UINT Event,LPARAM lParam1,LPARAM lParam2,void *pClientData)
 	{
-		Handler.HandleEvent(Event,lParam1,lParam2,pClientData);
+		return Handler.HandleEvent(Event,lParam1,lParam2,pClientData);
 	}
 */
 class CTVTestEventHandler
@@ -1768,9 +2330,42 @@ protected:
 	// 録画ファイルの切り替えが行われた
 	virtual bool OnRelayRecord(LPCWSTR pszFileName) { return false; }
 #endif
+#if TVTEST_PLUGIN_VERSION>=TVTEST_PLUGIN_VERSION_(0,0,11)
+	// コントローラの対象の設定
+	virtual bool OnControllerFocus(HWND hwnd) { return false; }
+#endif
+#if TVTEST_PLUGIN_VERSION>=TVTEST_PLUGIN_VERSION_(0,0,13)
+	// 起動処理が終了した
+	virtual void OnStartupDone() {}
+	// 番組表の初期化
+	virtual bool OnProgramGuideInitialize(HWND hwnd) { return true; }
+	// 番組表の終了
+	virtual bool OnProgramGuideFinalize(HWND hwnd) { return true; }
+	// 番組表のコマンドの実行
+	virtual bool OnProgramGuideCommand(
+		UINT Command,const ProgramGuideCommandParam *pParam) { return false; }
+	// 番組表のメニューの初期化
+	virtual int OnProgramGuideInitializeMenu(
+		const ProgramGuideInitializeMenuInfo *pInfo) { return 0; }
+	// 番組表のメニューが選択された
+	virtual bool OnProgramGuideMenuSelected(UINT Command) { return false; }
+	// 番組表の番組の背景描画
+	virtual bool OnProgramGuideProgramDrawBackground(
+		const ProgramGuideProgramInfo *pProgramInfo,
+		const ProgramGuideProgramDrawBackgroundInfo *pInfo) { return false; }
+	// 番組表の番組のメニュー初期化
+	virtual int OnProgramGuideProgramInitializeMenu(
+		const ProgramGuideProgramInfo *pProgramInfo,
+		const ProgramGuideProgramInitializeMenuInfo *pInfo) { return 0; }
+	// 番組表の番組のメニューが選択された
+	virtual bool OnProgramGuideProgramMenuSelected(
+		const ProgramGuideProgramInfo *pProgramInfo,UINT Command) { return false; }
+#endif
+
 public:
 	virtual ~CTVTestEventHandler() {}
-	LRESULT HandleEvent(UINT Event,LPARAM lParam1,LPARAM lParam2,void *pClientData) {
+	LRESULT HandleEvent(UINT Event,LPARAM lParam1,LPARAM lParam2,void *pClientData)
+	{
 		m_pClientData=pClientData;
 		switch (Event) {
 		case EVENT_PLUGINENABLE:		return OnPluginEnable(lParam1!=0);
@@ -1804,6 +2399,34 @@ public:
 		case EVENT_CLOSE:				return OnClose();
 		case EVENT_STARTRECORD:			return OnStartRecord((StartRecordInfo*)lParam1);
 		case EVENT_RELAYRECORD:			return OnRelayRecord((LPCWSTR)lParam1);
+#endif
+#if TVTEST_PLUGIN_VERSION>=TVTEST_PLUGIN_VERSION_(0,0,11)
+		case EVENT_CONTROLLERFOCUS:		return OnControllerFocus((HWND)lParam1);
+#endif
+#if TVTEST_PLUGIN_VERSION>=TVTEST_PLUGIN_VERSION_(0,0,13)
+		case EVENT_STARTUPDONE:			OnStartupDone(); return 0;
+		case EVENT_PROGRAMGUIDE_INITIALIZE:	return OnProgramGuideInitialize((HWND)lParam1);
+		case EVENT_PROGRAMGUIDE_FINALIZE:	return OnProgramGuideFinalize((HWND)lParam1);
+		case EVENT_PROGRAMGUIDE_COMMAND:
+			return OnProgramGuideCommand(
+				(UINT)lParam1,
+				(const ProgramGuideCommandParam*)lParam2);
+		case EVENT_PROGRAMGUIDE_INITIALIZEMENU:
+			return OnProgramGuideInitializeMenu(
+				(const ProgramGuideInitializeMenuInfo*)lParam1);
+		case EVENT_PROGRAMGUIDE_MENUSELECTED:
+			return OnProgramGuideMenuSelected((UINT)lParam1);
+		case EVENT_PROGRAMGUIDE_PROGRAM_DRAWBACKGROUND:
+			return OnProgramGuideProgramDrawBackground(
+				(const ProgramGuideProgramInfo*)lParam1,
+				(const ProgramGuideProgramDrawBackgroundInfo*)lParam2);
+		case EVENT_PROGRAMGUIDE_PROGRAM_INITIALIZEMENU:
+			return OnProgramGuideProgramInitializeMenu(
+				(const ProgramGuideProgramInfo*)lParam1,
+				(const ProgramGuideProgramInitializeMenuInfo*)lParam2);
+		case EVENT_PROGRAMGUIDE_PROGRAM_MENUSELECTED:
+			return OnProgramGuideProgramMenuSelected(
+				(const ProgramGuideProgramInfo*)lParam1,(UINT)lParam2);
 #endif
 		}
 		return 0;

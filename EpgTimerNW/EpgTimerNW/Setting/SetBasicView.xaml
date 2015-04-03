@@ -18,22 +18,22 @@
                     <TextBox Height="24" HorizontalAlignment="Left" Margin="157,14,0,0" Name="textBox_setPath" VerticalAlignment="Top" Width="372" />
                     <Button Content="開く" Height="23" HorizontalAlignment="Left" Margin="535,14,0,0" Name="button_setPath" VerticalAlignment="Top" Width="44" Click="button_setPath_Click" Style="{StaticResource ButtonStyle1}" />
                     <Label Content="録画用アプリのexe" Height="28" HorizontalAlignment="Left" Margin="12,46,0,0" Name="label2" VerticalAlignment="Top" />
-                    <TextBox Height="24" HorizontalAlignment="Left" Margin="157,48,0,0" Name="textBox_exe" VerticalAlignment="Top" Width="372" ToolTip="{Binding ElementName=textBox_exe, Path=Text}" />
-                    <Button Content="開く" Height="23" HorizontalAlignment="Left" Margin="535,48,0,0" Name="button_exe" VerticalAlignment="Top" Width="44" Click="button_exe_Click" Style="{StaticResource ButtonStyle1}" />
+                    <TextBox Height="24" HorizontalAlignment="Left" Margin="157,48,0,0" Name="textBox_exe" VerticalAlignment="Top" Width="372" ToolTip="{Binding ElementName=textBox_exe, Path=Text}" IsEnabled="False" />
+                    <Button Content="開く" Height="23" HorizontalAlignment="Left" Margin="535,48,0,0" Name="button_exe" VerticalAlignment="Top" Width="44" Click="button_exe_Click" Style="{StaticResource ButtonStyle1}" IsEnabled="False" />
                     <Label Content="録画保存フォルダ　（空き容量が少ない場合、上から順に録画対象のフォルダとします）" Height="28" HorizontalAlignment="Left" Margin="12,80,0,0" Name="label3" VerticalAlignment="Top" />
-                    <ListBox Height="100" HorizontalAlignment="Left" Margin="45,114,0,0" Name="listBox_recFolder" VerticalAlignment="Top" Width="484" />
-                    <Button Content="↑" Height="23" HorizontalAlignment="Left" Margin="535,114,0,0" Name="button_rec_up" VerticalAlignment="Top" Width="44" Click="button_rec_up_Click" Style="{StaticResource ButtonStyle1}" />
-                    <Button Content="↓" Height="23" HorizontalAlignment="Left" Margin="535,143,0,0" Name="button_rec_down" VerticalAlignment="Top" Width="44" Click="button_rec_down_Click" Style="{StaticResource ButtonStyle1}" />
-                    <Button Content="削除" Height="23" HorizontalAlignment="Left" Margin="535,191,0,0" Name="button_rec_del" VerticalAlignment="Top" Width="44" Click="button_rec_del_Click" Style="{StaticResource ButtonStyle1}" />
-                    <TextBox Height="24" HorizontalAlignment="Left" Margin="45,221,0,0" Name="textBox_recFolder" VerticalAlignment="Top" Width="427" />
-                    <Button Content="開く" Height="23" Margin="485,221,0,0" Name="button_rec_open" VerticalAlignment="Top" HorizontalAlignment="Left" Width="44" Click="button_rec_open_Click" Style="{StaticResource ButtonStyle1}" />
-                    <Button Content="追加" Height="23" Margin="535,221,0,0" Name="button_rec_add" VerticalAlignment="Top" Click="button_rec_add_Click" Style="{StaticResource ButtonStyle1}" HorizontalAlignment="Left" Width="44" />
+                    <ListBox Height="100" HorizontalAlignment="Left" Margin="45,114,0,0" Name="listBox_recFolder" VerticalAlignment="Top" Width="484" IsEnabled="False" />
+                    <Button Content="↑" Height="23" HorizontalAlignment="Left" Margin="535,114,0,0" Name="button_rec_up" VerticalAlignment="Top" Width="44" Click="button_rec_up_Click" Style="{StaticResource ButtonStyle1}" IsEnabled="False" />
+                    <Button Content="↓" Height="23" HorizontalAlignment="Left" Margin="535,143,0,0" Name="button_rec_down" VerticalAlignment="Top" Width="44" Click="button_rec_down_Click" Style="{StaticResource ButtonStyle1}" IsEnabled="False" />
+                    <Button Content="削除" Height="23" HorizontalAlignment="Left" Margin="535,191,0,0" Name="button_rec_del" VerticalAlignment="Top" Width="44" Click="button_rec_del_Click" Style="{StaticResource ButtonStyle1}" IsEnabled="False" />
+                    <TextBox Height="24" HorizontalAlignment="Left" Margin="45,221,0,0" Name="textBox_recFolder" VerticalAlignment="Top" Width="427" IsEnabled="False" />
+                    <Button Content="開く" Height="23" Margin="485,221,0,0" Name="button_rec_open" VerticalAlignment="Top" HorizontalAlignment="Left" Width="44" Click="button_rec_open_Click" Style="{StaticResource ButtonStyle1}" IsEnabled="False" />
+                    <Button Content="追加" Height="23" Margin="535,221,0,0" Name="button_rec_add" VerticalAlignment="Top" Click="button_rec_add_Click" Style="{StaticResource ButtonStyle1}" HorizontalAlignment="Left" Width="44" IsEnabled="False" />
                     <Label Content="※ 録画中やEPG取得中に設定を変更すると正常動作しなくなる可能性があります。" Height="28" HorizontalAlignment="Left" Margin="12,278,0,0" Name="label4" VerticalAlignment="Top" Foreground="Red" />
                     <Button Content="スタートアップにショートカットを作成する" Height="23" HorizontalAlignment="Left" Margin="12,333,0,0" Name="button_shortCut" VerticalAlignment="Top" Width="265" Click="button_shortCut_Click" Style="{StaticResource ButtonStyle1}" />
                     <Label Content="※ 削除時は手動で行ってください" Height="28" HorizontalAlignment="Left" Margin="12,360,0,0" Name="label5" VerticalAlignment="Top" />
                 </Grid>
             </TabItem>
-            <TabItem Header="チューナー" Name="tabItem2">
+            <TabItem Header="チューナー" Name="tabItem2" IsEnabled="False">
                 <Grid>
                     <Label Content="BonDriver (EpgDataCap_Bonでチャンネルスキャンを完了したものが表示されます)" Height="28" HorizontalAlignment="Left" Margin="12,12,0,0" Name="label11" VerticalAlignment="Top" />
                     <ListBox Height="166" HorizontalAlignment="Left" Margin="40,46,0,0" Name="listBox_bon" VerticalAlignment="Top" Width="264" SelectionChanged="listBox_bon_SelectionChanged" />
@@ -47,7 +47,7 @@
                     <Label Content="※ Windowsサービスとして動作させている場合は、Windowsサービスを一度停止してください。" Foreground="Red" Height="28" HorizontalAlignment="Left" Margin="12,311,0,0" Name="label15" VerticalAlignment="Top" />
                 </Grid>
             </TabItem>
-            <TabItem Header="EPG取得" Name="tabItem3">
+            <TabItem Header="EPG取得" Name="tabItem3" IsEnabled="False">
                 <Grid>
                     <Label Content="EPG取得対象サービス" Height="28" HorizontalAlignment="Left" Margin="12,12,0,0" Name="label21" VerticalAlignment="Top" />
                     <ListView Height="183" HorizontalAlignment="Left" Margin="32,46,0,0" Name="listView_service" VerticalAlignment="Top" Width="196" ItemsSource="{Binding}" >
