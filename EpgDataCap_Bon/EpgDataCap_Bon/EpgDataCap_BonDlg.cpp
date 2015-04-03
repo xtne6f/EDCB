@@ -1120,7 +1120,7 @@ DWORD CEpgDataCap_BonDlg::SelectBonDriver(LPCWSTR fileName, BOOL ini)
 	this->main.CloseBonDriver();
 	DWORD err = this->main.OpenBonDriver(fileName);
 	if( err != NO_ERR ){
-		this->log.Format(L"BonDeiverのオープンができませんでした\r\n%s\r\n", fileName);
+		this->log.Format(L"BonDriverのオープンができませんでした\r\n%s\r\n", fileName);
 		SetDlgItemText(IDC_EDIT_LOG, this->log);
 		BtnUpdate(GUI_OPEN_FAIL);
 	}else{
