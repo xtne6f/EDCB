@@ -632,10 +632,9 @@ BOOL CParseEpgAutoAddText::AddData(EPG_AUTO_ADD_DATA* item)
 		return FALSE;
 	}
 
+	item->dataID = GetNextID();
 	EPG_AUTO_ADD_DATA* setItem = new EPG_AUTO_ADD_DATA;
 	*setItem = *item;
-
-	setItem->dataID = GetNextID();
 
 	this->dataIDMap.insert( pair<DWORD, EPG_AUTO_ADD_DATA*>(setItem->dataID, setItem) );
 

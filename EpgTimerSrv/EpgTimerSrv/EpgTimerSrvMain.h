@@ -109,6 +109,8 @@ protected:
 	BOOL CheckTuijyu();
 
 	BOOL AutoAddReserveEPG();
+	BOOL AutoAddReserveEPG(vector<EPG_AUTO_ADD_DATA>* val);
+	BOOL AutoAddReserveEPG(EPG_AUTO_ADD_DATA* item);
 	BOOL AutoAddReserveProgram();
 
 	void StartSleep(BYTE rebootFlag, BYTE suspendMode);
