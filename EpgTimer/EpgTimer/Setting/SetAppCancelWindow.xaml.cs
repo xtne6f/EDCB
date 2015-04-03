@@ -20,6 +20,8 @@ namespace EpgTimer
     {
         public List<String> processList = new List<string>();
         public String ngMin = "30";
+        public bool ngUsePC = false;
+        public String ngUsePCMin = "3";
         public bool ngFileStreaming = false;
         public bool ngShareFile = false;
 
@@ -76,6 +78,15 @@ namespace EpgTimer
                 processList.Add(info);
             }
             ngMin = textBox_ng_min.Text;
+            if (checkBox_ng_usePC.IsChecked == true)
+            {
+                ngUsePC = true;
+            }
+            else
+            {
+                ngUsePC = false;
+            }
+            ngUsePCMin = textBox_ng_usePC_min.Text;
             if (checkBox_ng_fileStreaming.IsChecked == true)
             {
                 ngFileStreaming = true;
@@ -102,6 +113,8 @@ namespace EpgTimer
             }
 
             textBox_ng_min.Text = ngMin;
+            checkBox_ng_usePC.IsChecked = ngUsePC;
+            textBox_ng_usePC_min.Text = ngUsePCMin;
             checkBox_ng_fileStreaming.IsChecked = ngFileStreaming;
             checkBox_ng_shareFile.IsChecked = ngShareFile;
 

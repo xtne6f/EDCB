@@ -41,6 +41,11 @@ public:
 	// TRUE（構わない）、FALSE（移行しては駄目）
 	BOOL ChkSuspend();
 
+	//ユーザーがPCを使用中かどうか
+	//戻り値：
+	// TRUE（使用中）、FALSE（使用していない）
+	BOOL IsUserWorking();
+
 protected:
 	HANDLE lockEvent;
 
@@ -82,6 +87,8 @@ protected:
 	int autoAddHour;
 	BOOL chkGroupEvent;
 	BYTE rebootDef;
+	BOOL ngUsePC;
+	DWORD ngUsePCTime;
 	BOOL ngFileStreaming;
 	BOOL ngEpgFileSrvCoop;
 	BOOL enableHttpSrv;

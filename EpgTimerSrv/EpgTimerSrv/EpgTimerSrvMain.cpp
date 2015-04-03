@@ -208,7 +208,14 @@ void CEpgTimerSrvMain::StartMain(
 					}
 				}
 
-				if( this->reserveManager.IsSuspendOK() == TRUE && streamingChk == TRUE){
+				BOOL userWorkingChk = TRUE;
+				if (this->ngUsePC == TRUE) {
+					if (IsUserWorking() == TRUE) {
+						userWorkingChk = FALSE;
+					}
+				}
+
+				if( this->reserveManager.IsSuspendOK() == TRUE && userWorkingChk == TRUE && streamingChk == TRUE){
 					if( this->suspendMode != 0xFF && this->rebootFlag != 0xFF ){
 						//問い合わせ
 						if( this->suspendMode != 0 && this->suspendMode != 4 ){
@@ -335,6 +342,8 @@ void CEpgTimerSrvMain::ReloadSetting()
 	this->autoAddHour = GetPrivateProfileInt(L"SET", L"AutoAddHour", 0, iniPath.c_str());
 	this->chkGroupEvent = GetPrivateProfileInt(L"SET", L"ChkGroupEvent", 1, iniPath.c_str());
 	this->rebootDef = (BYTE)GetPrivateProfileInt(L"SET", L"Reboot", 0, iniPath.c_str());
+	this->ngUsePC = GetPrivateProfileInt(L"NO_SUSPEND", L"NoUsePC", 0, iniPath.c_str());
+	this->ngUsePCTime = GetPrivateProfileInt(L"NO_SUSPEND", L"NoUsePCTime", 3, iniPath.c_str());
 	this->ngFileStreaming = (BYTE)GetPrivateProfileInt(L"NO_SUSPEND", L"NoFileStreaming", 0, iniPath.c_str());
 	if( GetPrivateProfileInt(L"SET", L"UseSrvCoop", 0, iniPath.c_str()) == 1 ){
 		this->ngEpgFileSrvCoop = GetPrivateProfileInt(L"SET", L"NgEpgFileSrvCoop", 0, iniPath.c_str());
@@ -688,6 +697,28 @@ BOOL CEpgTimerSrvMain::CheckTuijyu()
 	return ret;
 }
 
+BOOL CEpgTimerSrvMain::IsUserWorking()
+{
+	if (this->ngUsePCTime == 0) {
+		return TRUE;	// 閾値が0のときは常に使用中扱い
+	}
+
+	// 最終入力時刻取得
+	LASTINPUTINFO lii;
+	lii.cbSize = sizeof(LASTINPUTINFO);
+	GetLastInputInfo(&lii);
+
+	// 現在時刻取得
+	ULONGLONG dwNow = GetTickCount();
+
+	// GetTickCount()は49.7日周期でリセットされるので桁上りさせる
+	if (lii.dwTime > dwNow) {
+		dwNow += 0x100000000;
+	}
+
+	DWORD threshold = this->ngUsePCTime * 60 * 1000;
+	return (dwNow - lii.dwTime < threshold);
+}
 
 BOOL CEpgTimerSrvMain::AutoAddReserveEPG()
 {

@@ -25,6 +25,8 @@ namespace EpgTimer.Setting
     {
         private List<String> ngProcessList = new List<String>();
         private String ngMin = "10";
+        public bool ngUsePC = false;
+        public String ngUsePCMin = "3";
         public bool ngFileStreaming = false;
         public bool ngShareFile = false;
 
@@ -150,6 +152,13 @@ namespace EpgTimer.Setting
                 buff.Clear();
                 IniFileHandler.GetPrivateProfileString("NO_SUSPEND", "NoStandbyTime", "10", buff, 512, SettingPath.TimerSrvIniPath);
                 ngMin = buff.ToString();
+                if (IniFileHandler.GetPrivateProfileInt("NO_SUSPEND", "NoUsePC", 0, SettingPath.TimerSrvIniPath) == 1)
+                {
+                    ngUsePC = true;
+                }
+                buff.Clear();
+                IniFileHandler.GetPrivateProfileString("NO_SUSPEND", "NoUsePCTime", "3", buff, 512, SettingPath.TimerSrvIniPath);
+                ngUsePCMin = buff.ToString();
                 if (IniFileHandler.GetPrivateProfileInt("NO_SUSPEND", "NoFileStreaming", 0, SettingPath.TimerSrvIniPath) == 1)
                 {
                     ngFileStreaming = true;
@@ -512,6 +521,15 @@ namespace EpgTimer.Setting
             }
 
             IniFileHandler.WritePrivateProfileString("NO_SUSPEND", "NoStandbyTime", ngMin, SettingPath.TimerSrvIniPath);
+            if (ngUsePC == true)
+            {
+                IniFileHandler.WritePrivateProfileString("NO_SUSPEND", "NoUsePC", "1", SettingPath.TimerSrvIniPath);
+            }
+            else
+            {
+                IniFileHandler.WritePrivateProfileString("NO_SUSPEND", "NoUsePC", "0", SettingPath.TimerSrvIniPath);
+            }
+            IniFileHandler.WritePrivateProfileString("NO_SUSPEND", "NoUsePCTime", ngUsePCMin, SettingPath.TimerSrvIniPath);
             if (ngFileStreaming == true)
             {
                 IniFileHandler.WritePrivateProfileString("NO_SUSPEND", "NoFileStreaming", "1", SettingPath.TimerSrvIniPath);
@@ -819,6 +837,8 @@ namespace EpgTimer.Setting
             SetAppCancelWindow dlg = new SetAppCancelWindow();
             dlg.processList = this.ngProcessList;
             dlg.ngMin = this.ngMin;
+            dlg.ngUsePC = this.ngUsePC;
+            dlg.ngUsePCMin = this.ngUsePCMin;
             dlg.ngFileStreaming = this.ngFileStreaming;
             dlg.ngShareFile = this.ngShareFile;
             dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
@@ -826,6 +846,8 @@ namespace EpgTimer.Setting
 
             this.ngProcessList = dlg.processList;
             this.ngMin = dlg.ngMin;
+            this.ngUsePC = dlg.ngUsePC;
+            this.ngUsePCMin = dlg.ngUsePCMin;
             this.ngFileStreaming = dlg.ngFileStreaming;
             this.ngShareFile = dlg.ngShareFile;
         }
