@@ -162,19 +162,19 @@ namespace EpgTimer
                 }
 
                 //ウインドウ位置の復元
-                if (Settings.Instance.MainWndTop != 0)
+                if (Settings.Instance.MainWndTop != -100)
                 {
                     this.Top = Settings.Instance.MainWndTop;
                 }
-                if (Settings.Instance.MainWndLeft != 0)
+                if (Settings.Instance.MainWndLeft != -100)
                 {
                     this.Left = Settings.Instance.MainWndLeft;
                 }
-                if (Settings.Instance.MainWndWidth != 0)
+                if (Settings.Instance.MainWndWidth != -100)
                 {
                     this.Width = Settings.Instance.MainWndWidth;
                 }
-                if (Settings.Instance.MainWndHeight != 0)
+                if (Settings.Instance.MainWndHeight != -100)
                 {
                     this.Height = Settings.Instance.MainWndHeight;
                 }

@@ -968,10 +968,10 @@ namespace EpgTimer
             resColumnHead = "";
             resSortDirection = ListSortDirection.Ascending;
             lastWindowState = System.Windows.WindowState.Normal;
-            mainWndLeft = 0;
-            mainWndTop = 0;
-            mainWndWidth = 0;
-            mainWndHeight = 0;
+            mainWndLeft = -100;
+            mainWndTop = -100;
+            mainWndWidth = -100;
+            mainWndHeight = -100;
             closeMin = false;
             wakeMin = false;
             viewButtonList = new List<string>();
