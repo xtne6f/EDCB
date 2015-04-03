@@ -615,6 +615,22 @@ namespace EpgTimer
                     }
                 }
             }
+            //
+            foreach (KeyValuePair<string, Button> kvp1 in this.buttonList)
+            {
+                switch (kvp1.Key)
+                {
+                    case "設定":
+                        kvp1.Value.ToolTip = "Ctrl + C";
+                        break;
+                    case "検索":
+                        kvp1.Value.ToolTip = "Ctrl + F";
+                        break;
+                    case "終了":
+                        kvp1.Value.ToolTip = "Alt + F4";
+                        break;
+                }
+            }
         }
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
@@ -806,6 +822,16 @@ namespace EpgTimer
 
         void searchButton_Click(object sender, RoutedEventArgs e)
         {
+            // Hide()したSearchWindowを復帰
+            foreach (Window win1 in this.OwnedWindows)
+            {
+                if (win1.GetType() == typeof(SearchWindow))
+                {
+                    win1.Show();
+                    return;
+                }
+            }
+            //
             SearchCmd();
         }
 
@@ -1366,5 +1392,66 @@ namespace EpgTimer
                 taskTray.Text = "次の予約なし";
             }
         }
+
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
+            {
+                switch (e.Key)
+                {
+                    case Key.C:
+                        this.buttonList["設定"].RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                        break;
+                    case Key.F:
+                        this.buttonList["検索"].RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                        break;
+                    case Key.D1:
+                        new BlackoutWindow(this).showWindow(this.tabItem_reserve_Title.Text);
+                        this.tabItem_reserve.IsSelected = true;
+                        break;
+                    case Key.D2:
+                        new BlackoutWindow(this).showWindow(this.tabItem_tunerReserve_Title.Text);
+                        this.tabItem_tunerReserve.IsSelected = true;
+                        break;
+                    case Key.D3:
+                        new BlackoutWindow(this).showWindow(this.tabItem_recinfo_Title.Text);
+                        this.tabItem_recinfo.IsSelected = true;
+                        break;
+                    case Key.D4:
+                        new BlackoutWindow(this).showWindow(this.tabItem_epgAutoAdd_Title.Text);
+                        this.tabItem_epgAutoAdd.IsSelected = true;
+                        break;
+                    case Key.D5:
+                        this.moveTo_tabItem_epg();
+                        break;
+                }
+                //
+                base.OnKeyDown(e);
+            }
+        }
+
+        public void moveTo_tabItem_epg()
+        {
+            new BlackoutWindow(this).showWindow(this.tabItem_epg_Title.Text);
+            this.tabItem_epg.IsSelected = true;
+        }
+
+        public Button getSearchButton(bool isShowButton0)
+        {
+            Button button1 = buttonList["検索"];
+            if (Settings.Instance.ViewButtonList.Contains("検索") == false)
+            {
+                if (isShowButton0)
+                {
+                    stackPanel_button.Children.Add(button1);
+                }
+                else
+                {
+                    stackPanel_button.Children.Remove(button1);
+                }
+            }
+            return button1;
+        }
+
     }
 }

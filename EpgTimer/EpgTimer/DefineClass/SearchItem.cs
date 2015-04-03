@@ -164,5 +164,133 @@ namespace EpgTimer
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        public String RecMode
+        {
+            get
+            {
+                if (this.ReserveInfo == null) { return null; }
+                // ReserveItemクラスからコピペ
+                String view = "";
+                switch (ReserveInfo.RecSetting.RecMode)
+                {
+                    case 0:
+                        view = "全サービス";
+                        break;
+                    case 1:
+                        view = "指定サービス";
+                        break;
+                    case 2:
+                        view = "全サービス（デコード処理なし）";
+                        break;
+                    case 3:
+                        view = "指定サービス（デコード処理なし）";
+                        break;
+                    case 4:
+                        view = "視聴";
+                        break;
+                    case 5:
+                        view = "無効";
+                        break;
+                    default:
+                        break;
+                }
+                return view;
+            }
+        }
+
+        public String JyanruKey
+        {
+            get
+            {
+                if (this.EventInfo == null) { return null; }
+                //
+                String view = "";
+                if (eventInfo != null && eventInfo.ContentInfo != null)
+                {
+                    Dictionary<int, List<int>> nibbleDict1 = new Dictionary<int, List<int>>();  // 小ジャンルを大ジャンルでまとめる
+                    foreach (EpgContentData ecd1 in eventInfo.ContentInfo.nibbleList)
+                    {
+                        if (nibbleDict1.ContainsKey(ecd1.content_nibble_level_1))
+                        {
+                            nibbleDict1[ecd1.content_nibble_level_1].Add(ecd1.content_nibble_level_2);
+                        }
+                        else
+                        {
+                            nibbleDict1.Add(ecd1.content_nibble_level_1, new List<int>() { ecd1.content_nibble_level_2 });
+                        }
+                    }
+                    foreach (KeyValuePair<int, List<int>> kvp1 in nibbleDict1)
+                    {
+                        int nibble1 = kvp1.Key;
+                        UInt16 contentKey1 = (UInt16)(nibble1 << 8 | 0xFF);
+                        //
+                        string smallCategory1 = "";
+                        foreach (int nibble2 in kvp1.Value)
+                        {
+                            UInt16 contentKey2 = (UInt16)(nibble1 << 8 | nibble2);
+                            if (nibble2 != 0xFF)
+                            {
+                                if (smallCategory1 != "") { smallCategory1 += ", "; }
+                                if (CommonManager.Instance.ContentKindDictionary.ContainsKey(contentKey2))
+                                {
+                                    smallCategory1 += CommonManager.Instance.ContentKindDictionary[contentKey2].ToString().Trim();
+                                }
+                            }
+                        }
+                        //
+                        if (view != "") { view += ", "; }
+                        if (CommonManager.Instance.ContentKindDictionary.ContainsKey(contentKey1))
+                        {
+                            view += "[" + CommonManager.Instance.ContentKindDictionary[contentKey1].ToString().Trim();
+                            if (smallCategory1 != "") { view += " - " + smallCategory1; }
+                            view += "]";
+                        }
+                    }
+                }
+                return view;
+            }
+        }
+
+        /// <summary>
+        /// 番組放送時間（長さ）
+        /// </summary>
+        public TimeSpan ProgramDuration
+        {
+            get
+            {
+                if (this.EventInfo == null) { return new TimeSpan(); }
+                //
+                return TimeSpan.FromSeconds(this.EventInfo.durationSec);
+            }
+        }
+
+        /// <summary>
+        /// 番組内容
+        /// </summary>
+        public String ProgramContent
+        {
+            get
+            {
+                if (this.EventInfo == null) { return null; }
+                //
+                return this.EventInfo.ShortInfo.text_char;
+            }
+        }
+
+        /// <summary>
+        /// 番組詳細
+        /// </summary>
+        public string ProgramDetail
+        {
+            get
+            {
+                if (this.EventInfo == null) { return null; }
+                //
+                return CommonManager.Instance.ConvertProgramText(this.EventInfo, EventInfoTextMode.All);
+            }
+        }
     }
 }

@@ -136,7 +136,10 @@ namespace EpgTimer
                 if (eventInfo.StartTimeFlag == 0)
                 {
                     MessageBox.Show("開始時間未定のため予約できません");
-                    DialogResult = false;
+                    if (this.Visibility == System.Windows.Visibility.Visible)
+                    {
+                        DialogResult = false;
+                    }
                 }
 
                 ReserveData reserveInfo = new ReserveData();
@@ -190,12 +193,39 @@ namespace EpgTimer
             {
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
-            DialogResult = true;
+            if (this.Visibility == System.Windows.Visibility.Visible)
+            {
+                DialogResult = true;
+            }
         }
 
         private void button_cancel_Click(object sender, RoutedEventArgs e)
         {
             DialogResult = false;
+        }
+
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            base.OnKeyDown(e);
+            //
+            if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control) && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
+            {
+                switch (e.Key)
+                {
+                    case Key.A:
+                        this.button_add_reserve.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                        break;
+                }
+            }
+            else
+            {
+                switch (e.Key)
+                {
+                    case Key.Escape:
+                        this.button_cancel.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                        break;
+                }
+            }
         }
     }
 }

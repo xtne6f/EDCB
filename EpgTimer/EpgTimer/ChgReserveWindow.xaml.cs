@@ -378,7 +378,10 @@ namespace EpgTimer
                     MessageBox.Show("予約追加でエラーが発生しました。");
                 }
             }
-            DialogResult = true;
+            if (this.Visibility == System.Windows.Visibility.Visible)
+            {
+                DialogResult = true;
+            }
         }
 
         private void button_del_reserve_Click(object sender, RoutedEventArgs e)
@@ -436,6 +439,35 @@ namespace EpgTimer
                 comboBox_em.IsEnabled = false;
                 comboBox_es.IsEnabled = false;
                 recSettingView.SetViewMode(true);
+            }
+        }
+
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            base.OnKeyDown(e);
+            //
+            if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control) && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
+            {
+                switch (e.Key)
+                {
+                    case Key.C:
+                        new BlackoutWindow(this).showWindow(this.button_chg_reserve.Content.ToString());
+                        this.button_chg_reserve.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                        break;
+                    case Key.D:
+                        new BlackoutWindow(this).showWindow(this.button_del_reserve.Content.ToString());
+                        this.button_del_reserve.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                        break;
+                }
+            }
+            else
+            {
+                switch (e.Key)
+                {
+                    case Key.Escape:
+                        this.Close();
+                        break;
+                }
             }
         }
 

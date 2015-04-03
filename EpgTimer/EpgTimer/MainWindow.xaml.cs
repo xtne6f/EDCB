@@ -1392,5 +1392,29 @@ namespace EpgTimer
                 taskTray.Text = "次の予約なし";
             }
         }
+
+        public void moveTo_tabItem_epg()
+        {
+            new BlackoutWindow(this).showWindow(this.tabItem_epg.Header.ToString());
+            this.tabItem_epg.IsSelected = true;
+        }
+
+        public Button getSearchButton(bool isShowButton0)
+        {
+            Button button1 = buttonList["検索"];
+            if (Settings.Instance.ViewButtonList.Contains("検索") == false)
+            {
+                if (isShowButton0)
+                {
+                    stackPanel_button.Children.Add(button1);
+                }
+                else
+                {
+                    stackPanel_button.Children.Remove(button1);
+                }
+            }
+            return button1;
+        }
+
     }
 }

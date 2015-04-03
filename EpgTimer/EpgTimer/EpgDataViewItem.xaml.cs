@@ -212,5 +212,10 @@ namespace EpgTimer
                 ViewSettingClick(this, param);
             }
         }
+
+        public CustomEpgTabInfo ViewInfo 
+        { 
+            get { return this.viewInfo; }
+        }
     }
 }

@@ -27,12 +27,14 @@ namespace EpgTimer
         private List<SearchItem> resultList = new List<SearchItem>();
         private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
 
-        string _lastHeaderClicked = null;
-        ListSortDirection _lastDirection = ListSortDirection.Ascending;
-        string _lastHeaderClicked2 = null;
-        ListSortDirection _lastDirection2 = ListSortDirection.Ascending;
+        //string _lastHeaderClicked = null;
+        //ListSortDirection _lastDirection = ListSortDirection.Ascending;
+        //string _lastHeaderClicked2 = null;
+        //ListSortDirection _lastDirection2 = ListSortDirection.Ascending;
 
         private UInt32 autoAddID = 0;
+
+        PopupWindow _popupWindow;
 
         public SearchWindow()
         {
@@ -194,15 +196,23 @@ namespace EpgTimer
                 }
 
                 listView_result.DataContext = resultList;
-                if (_lastHeaderClicked != null)
+                //if (_lastHeaderClicked != null) {
+                //    Sort(_lastHeaderClicked, _lastDirection);
+                //} else {
+                //    string header = ((Binding)gridView_result.Columns[1].DisplayMemberBinding).Path.Path;
+                //    Sort(header, _lastDirection);
+                //    _lastHeaderClicked = header;
+                //}
+                if (this.gridViewSorter.isExistSortParams)
                 {
-                    Sort(_lastHeaderClicked, _lastDirection);
+                    this.gridViewSorter.SortByMultiHeader(this.resultList);
                 }
                 else
                 {
-                    string header = ((Binding)gridView_result.Columns[1].DisplayMemberBinding).Path.Path;
-                    Sort(header, _lastDirection);
-                    _lastHeaderClicked = header;
+                    this.gridViewSorter.resetSortParams();
+                    this.gridViewSorter.SortByMultiHeader(
+                        this.resultList,
+                        gridView_result.Columns[1].Header as GridViewColumnHeader);
                 }
 
                 searchKeyView.SaveSearchLog();
@@ -419,75 +429,69 @@ namespace EpgTimer
             }
         }
 
+
+        GridViewSorter<SearchItem> gridViewSorter = new GridViewSorter<SearchItem>();
+
         private void GridViewColumnHeader_Click(object sender, RoutedEventArgs e)
         {
             GridViewColumnHeader headerClicked = e.OriginalSource as GridViewColumnHeader;
-            ListSortDirection direction;
+            //ListSortDirection direction;
 
             if (headerClicked != null)
             {
                 if (headerClicked.Role != GridViewColumnHeaderRole.Padding)
                 {
-                    string header = "Reserved";
-                    if (headerClicked.Column.DisplayMemberBinding != null)
-                    {
-                        header = ((Binding)headerClicked.Column.DisplayMemberBinding).Path.Path;
-                    }
-                    if (String.Compare(header, _lastHeaderClicked) != 0)
-                    {
-                        direction = ListSortDirection.Ascending;
-                        _lastHeaderClicked2 = _lastHeaderClicked;
-                        _lastDirection2 = _lastDirection;
-                    }
-                    else
-                    {
-                        if (_lastDirection == ListSortDirection.Ascending)
-                        {
-                            direction = ListSortDirection.Descending;
-                        }
-                        else
-                        {
-                            direction = ListSortDirection.Ascending;
-                        }
-                    }
 
-                    Sort(header, direction);
+                    this.gridViewSorter.SortByMultiHeader(this.resultList, headerClicked);
+                    listView_result.Items.Refresh();
 
-                    _lastHeaderClicked = header;
-                    _lastDirection = direction;
+                    //string header = "Reserved";
+                    //if (headerClicked.Column.DisplayMemberBinding != null) {
+                    //    header = ((Binding)headerClicked.Column.DisplayMemberBinding).Path.Path;
+                    //}
+                    //if (String.Compare(header, _lastHeaderClicked) != 0) {
+                    //    direction = ListSortDirection.Ascending;
+                    //    _lastHeaderClicked2 = _lastHeaderClicked;
+                    //    _lastDirection2 = _lastDirection;
+                    //} else {
+                    //    if (_lastDirection == ListSortDirection.Ascending) {
+                    //        direction = ListSortDirection.Descending;
+                    //    } else {
+                    //        direction = ListSortDirection.Ascending;
+                    //    }
+                    //}
+
+                    //Sort(header, direction);
+
+                    //_lastHeaderClicked = header;
+                    //_lastDirection = direction;
                 }
             }
         }
 
-        private void Sort(string sortBy, ListSortDirection direction)
-        {
-            try
-            {
-                ICollectionView dataView = CollectionViewSource.GetDefaultView(listView_result.DataContext);
+        //private void Sort(string sortBy, ListSortDirection direction) {
+        //    try {
+        //        ICollectionView dataView = CollectionViewSource.GetDefaultView(listView_result.DataContext);
 
-                dataView.SortDescriptions.Clear();
+        //        dataView.SortDescriptions.Clear();
 
-                SortDescription sd = new SortDescription(sortBy, direction);
-                dataView.SortDescriptions.Add(sd);
-                if (_lastHeaderClicked2 != null)
-                {
-                    if (String.Compare(sortBy, _lastHeaderClicked2) != 0)
-                    {
-                        SortDescription sd2 = new SortDescription(_lastHeaderClicked2, _lastDirection2);
-                        dataView.SortDescriptions.Add(sd2);
-                    }
-                }
-                dataView.Refresh();
+        //        SortDescription sd = new SortDescription(sortBy, direction);
+        //        dataView.SortDescriptions.Add(sd);
+        //        if (_lastHeaderClicked2 != null) {
+        //            if (String.Compare(sortBy, _lastHeaderClicked2) != 0) {
+        //                SortDescription sd2 = new SortDescription(_lastHeaderClicked2, _lastDirection2);
+        //                dataView.SortDescriptions.Add(sd2);
+        //            }
+        //        }
+        //        dataView.Refresh();
 
-                //Settings.Instance.ResColumnHead = sortBy;
-                //Settings.Instance.ResSortDirection = direction;
+        //        //Settings.Instance.ResColumnHead = sortBy;
+        //        //Settings.Instance.ResSortDirection = direction;
 
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
+        //    } catch (Exception ex) {
+        //        MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+        //    }
+        //}
 
         private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
         {
@@ -509,6 +513,209 @@ namespace EpgTimer
                 {
                     Settings.Instance.SearchWndTop = this.Top;
                     Settings.Instance.SearchWndLeft = this.Left;
+                }
+            }
+        }
+
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control) && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
+            {
+                switch (e.Key)
+                {
+                    case Key.F:
+                        new BlackoutWindow(this).showWindow(this.button_search.Content.ToString());
+                        this.button_search.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                        break;
+                    case Key.S:
+                        new BlackoutWindow(this).showWindow(this.button_add_reserve.Content.ToString());
+                        this.button_add_reserve.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                        break;
+                    case Key.A:
+                        new BlackoutWindow(this).showWindow(this.button_add_epgAutoAdd.Content.ToString());
+                        this.button_add_epgAutoAdd.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                        this.Close();
+                        break;
+                    case Key.C:
+                        new BlackoutWindow(this).showWindow(this.button_chg_epgAutoAdd.Content.ToString());
+                        this.button_chg_epgAutoAdd.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                        this.Close();
+                        break;
+                }
+            }
+            else
+            {
+                switch (e.Key)
+                {
+                    case Key.F2:
+                        this.MenuItem_Click_Google(this, new RoutedEventArgs(Button.ClickEvent));
+                        break;
+                    case Key.F3:
+                        this.MenuItem_Click_ProgramTable(this, new RoutedEventArgs(Button.ClickEvent));
+                        break;
+                    case Key.Escape:
+                        if (this._popupWindow.IsVisible)
+                        {
+                            this._popupWindow.Hide();
+                        }
+                        else
+                        {
+                            this.Close();
+                        }
+                        break;
+                }
+            }
+        }
+
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(this.searchKeyView.ComboBox_andKey.Text))
+            {
+                this.searchKeyView.ComboBox_andKey.Focus();
+            }
+            else
+            {
+                this.SearchPg();
+            }
+            this._popupWindow = new PopupWindow(this);
+        }
+
+        void listView_result_KeyDown(object sender, KeyEventArgs e)
+        {
+            switch (e.Key)
+            {
+                case Key.F2:
+                    this.MenuItem_Click_Google(this, new RoutedEventArgs(Button.ClickEvent));
+                    break;
+                case Key.Enter:
+                    this.MenuItem_Click_ShowDialog(listView_result.SelectedItem, new RoutedEventArgs());
+                    break;
+                case Key.Back:
+                    this.MenuItem_Click_ChangeRecMode(listView_result.SelectedItem, new RoutedEventArgs());
+                    break;
+            }
+        }
+
+        private void MenuItem_Click_ShowDialog(object sender, RoutedEventArgs e)
+        {
+            if (listView_result.SelectedItem != null)
+            {
+                SearchItem item = listView_result.SelectedItem as SearchItem;
+                if (item.IsReserved == true)
+                {
+                    ChangeReserve(item.ReserveInfo);
+                }
+                else
+                {
+                    AddReserve(item.EventInfo);
+                }
+            }
+        }
+
+        private void MenuItem_Click_ChangeRecMode(object sender, RoutedEventArgs e)
+        {
+            new BlackoutWindow(this).showWindow("予約←→無効");
+            if (listView_result.SelectedItem != null)
+            {
+                SearchItem item = listView_result.SelectedItem as SearchItem;
+                if (item.IsReserved == true)
+                {
+                    ChgReserveWindow dlg = new ChgReserveWindow();
+                    dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
+
+                    if (item.ReserveInfo.RecSetting.RecMode == 5)
+                    {
+                        // 無効 => 予約
+                        RecSettingData defSet = new RecSettingData();
+                        Settings.GetDefRecSetting(0, ref defSet);
+                        item.ReserveInfo.RecSetting.RecMode = defSet.RecMode;
+                    }
+                    else
+                    {
+                        //予約 => 無効
+                        item.ReserveInfo.RecSetting.RecMode = 5;
+                    }
+
+                    dlg.SetReserveInfo(item.ReserveInfo);
+                    dlg.button_chg_reserve.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                }
+                else
+                {
+                    AddReserveEpgWindow dlg = new AddReserveEpgWindow();
+                    dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
+                    dlg.SetEventInfo(item.EventInfo);
+                    dlg.button_add_reserve.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                }
+                //
+                CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.ReserveInfo);
+                CommonManager.Instance.DB.ReloadReserveInfo();
+                SearchPg();
+                //
+                listView_result.SelectedItem = null;
+            }
+        }
+
+        private void MenuItem_Click_ProgramDetail(object sender, RoutedEventArgs e)
+        {
+            SearchItem item1 = this.listView_result.SelectedItem as SearchItem;
+            if (item1 != null)
+            {
+                this._popupWindow.show(item1.ProgramDetail);
+            }
+        }
+
+        private void MenuItem_Click_Google(object sender, RoutedEventArgs e)
+        {
+            SearchItem item1 = this.listView_result.SelectedItem as SearchItem;
+            if (item1 != null)
+            {
+                this._popupWindow.google(item1.EventName);
+            }
+        }
+
+        private void MenuItem_Click_ProgramTable(object sender, RoutedEventArgs e)
+        {
+            SearchItem item1 = this.listView_result.SelectedItem as SearchItem;
+            if (item1 != null)
+            {
+                BlackoutWindow.selectedSearchItem = item1;
+                MainWindow mainWindow1 = this.Owner as MainWindow;
+                if (mainWindow1 != null)
+                {
+                    base.Hide();
+                    BlackoutWindow.blinkSearchButton_Start(
+                        this,
+                        mainWindow1.getSearchButton(true));
+                    mainWindow1.moveTo_tabItem_epg();
+                    mainWindow1.Hide(); // EpgDataView.UserControl_IsVisibleChangedイベントを発生させる
+                    mainWindow1.Show();
+                }
+            }
+        }
+
+        private void Window_IsVisibleChanged_1(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            MainWindow mainWindow1 = this.Owner as MainWindow;
+            if (this.IsVisible)
+            {
+                BlackoutWindow.blinkSearchButton_Stop(
+                    this,
+                    mainWindow1.getSearchButton(false));
+            }
+        }
+
+        private void MenuItem_ProgramTable_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            MenuItem item1 = (MenuItem)sender;
+            if (item1.IsVisible)
+            {
+                if (BlackoutWindow.unvisibleSearchWindow != null)
+                {
+                    item1.IsEnabled = false;
+                }
+                else
+                {
+                    item1.IsEnabled = true;
                 }
             }
         }

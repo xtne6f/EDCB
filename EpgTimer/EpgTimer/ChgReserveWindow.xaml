@@ -46,8 +46,8 @@
                 </Grid>
             </TabItem>
         </TabControl>
-        <Button Grid.Row="1" Content="変更" Height="23" HorizontalAlignment="Left" Name="button_chg_reserve" VerticalAlignment="Top" Width="91" Click="button_chg_reserve_Click" Margin="30,8,0,0" Style="{StaticResource ButtonStyle1}" />
-        <Button Content="削除" Grid.Row="1" Height="23" HorizontalAlignment="Left" Margin="160,8,0,0" Name="button_del_reserve" VerticalAlignment="Top" Width="91" Click="button_del_reserve_Click" Style="{StaticResource ButtonStyle1}" />
-        <Button Content="キャンセル" Grid.Row="1" Height="23" HorizontalAlignment="Left" Margin="290,8,0,0" Name="button_cancel" VerticalAlignment="Top" Width="91" Click="button_cancel_Click" Style="{StaticResource ButtonStyle1}" />
+        <Button Grid.Row="1" Content="変更" Height="23" HorizontalAlignment="Left" Name="button_chg_reserve" VerticalAlignment="Top" Width="91" Click="button_chg_reserve_Click" Margin="30,8,0,0" Style="{StaticResource ButtonStyle1}" ToolTip="Ctrl + Shift + C" />
+        <Button Content="削除" Grid.Row="1" Height="23" HorizontalAlignment="Left" Margin="160,8,0,0" Name="button_del_reserve" VerticalAlignment="Top" Width="91" Click="button_del_reserve_Click" Style="{StaticResource ButtonStyle1}" ToolTip="Ctrl + Shift + D" />
+        <Button Content="キャンセル" Grid.Row="1" Height="23" HorizontalAlignment="Left" Margin="290,8,0,0" Name="button_cancel" VerticalAlignment="Top" Width="91" Click="button_cancel_Click" Style="{StaticResource ButtonStyle1}" ToolTip="Escape" />
     </Grid>
 </Window>

@@ -134,8 +134,11 @@ namespace EpgTimer
                     nowLine = new Line();
                     Canvas.SetZIndex(nowLine, 20);
                     nowLine.Stroke = new SolidColorBrush(Colors.Red);
-                    nowLine.StrokeThickness = Settings.Instance.MinHeight * 2;
-                    nowLine.Opacity = 0.5;
+                    //nowLine.StrokeThickness = Settings.Instance.MinHeight * 2;
+                    //nowLine.Opacity = 0.5;
+                    nowLine.StrokeThickness = 3;
+                    nowLine.Opacity = 0.7;
+                    nowLine.Effect = new System.Windows.Media.Effects.DropShadowEffect() { BlurRadius = 10 };
                     epgProgramView.canvas.Children.Add(nowLine);
                 }
 
@@ -370,17 +373,17 @@ namespace EpgTimer
 
                 Separator separate = new Separator();
                 MenuItem menuItemAdd = new MenuItem();
-                menuItemAdd.Header = "予約追加";
+                menuItemAdd.Header = "予約追加 (_C)";
 
                 MenuItem menuItemAddDlg = new MenuItem();
-                menuItemAddDlg.Header = "ダイアログ表示";
+                menuItemAddDlg.Header = "ダイアログ表示 (_X)";
                 menuItemAddDlg.Click += new RoutedEventHandler(cm_add_Click);
 
                 menuItemAdd.Items.Add(menuItemAddDlg);
                 menuItemAdd.Items.Add(separate);
 
                 MenuItem menuItemPreset = new MenuItem();
-                menuItemPreset.Header = "プリセット";
+                menuItemPreset.Header = "プリセット (_Z)";
 
                 foreach (RecPresetItem info in Settings.Instance.RecPresetList)
                 {
@@ -396,39 +399,39 @@ namespace EpgTimer
 
                 Separator separate2 = new Separator();
                 MenuItem menuItemChg = new MenuItem();
-                menuItemChg.Header = "予約変更";
+                menuItemChg.Header = "予約変更 (_C)";
                 MenuItem menuItemChgDlg = new MenuItem();
-                menuItemChgDlg.Header = "ダイアログ表示";
+                menuItemChgDlg.Header = "ダイアログ表示 (_X)";
                 menuItemChgDlg.Click += new RoutedEventHandler(cm_chg_Click);
 
                 menuItemChg.Items.Add(menuItemChgDlg);
                 menuItemChg.Items.Add(separate2);
 
                 MenuItem menuItemChgRecMode = new MenuItem();
-                menuItemChgRecMode.Header = "録画モード";
+                menuItemChgRecMode.Header = "録画モード (_R)";
 
                 MenuItem menuItemChgRecMode0 = new MenuItem();
-                menuItemChgRecMode0.Header = "全サービス";
+                menuItemChgRecMode0.Header = "全サービス (_0)";
                 menuItemChgRecMode0.DataContext = 0;
                 menuItemChgRecMode0.Click += new RoutedEventHandler(cm_chg_recmode_Click);
                 MenuItem menuItemChgRecMode1 = new MenuItem();
-                menuItemChgRecMode1.Header = "指定サービス";
+                menuItemChgRecMode1.Header = "指定サービス (_1)";
                 menuItemChgRecMode1.DataContext = 1;
                 menuItemChgRecMode1.Click += new RoutedEventHandler(cm_chg_recmode_Click);
                 MenuItem menuItemChgRecMode2 = new MenuItem();
-                menuItemChgRecMode2.Header = "全サービス（デコード処理なし）";
+                menuItemChgRecMode2.Header = "全サービス（デコード処理なし） (_2)";
                 menuItemChgRecMode2.DataContext = 2;
                 menuItemChgRecMode2.Click += new RoutedEventHandler(cm_chg_recmode_Click);
                 MenuItem menuItemChgRecMode3 = new MenuItem();
-                menuItemChgRecMode3.Header = "指定サービス（デコード処理なし）";
+                menuItemChgRecMode3.Header = "指定サービス（デコード処理なし） (_3)";
                 menuItemChgRecMode3.DataContext = 3;
                 menuItemChgRecMode3.Click += new RoutedEventHandler(cm_chg_recmode_Click);
                 MenuItem menuItemChgRecMode4 = new MenuItem();
-                menuItemChgRecMode4.Header = "視聴";
+                menuItemChgRecMode4.Header = "視聴 (_4)";
                 menuItemChgRecMode4.DataContext = 4;
                 menuItemChgRecMode4.Click += new RoutedEventHandler(cm_chg_recmode_Click);
                 MenuItem menuItemChgRecMode5 = new MenuItem();
-                menuItemChgRecMode5.Header = "無効";
+                menuItemChgRecMode5.Header = "無効 (_5)";
                 menuItemChgRecMode5.DataContext = 5;
                 menuItemChgRecMode5.Click += new RoutedEventHandler(cm_chg_recmode_Click);
 
@@ -442,26 +445,26 @@ namespace EpgTimer
                 menuItemChg.Items.Add(menuItemChgRecMode);
 
                 MenuItem menuItemChgRecPri = new MenuItem();
-                menuItemChgRecPri.Header = "優先度";
+                menuItemChgRecPri.Header = "優先度 (_E)";
 
                 MenuItem menuItemChgRecPri1 = new MenuItem();
-                menuItemChgRecPri1.Header = "1";
+                menuItemChgRecPri1.Header = "1 (_1)";
                 menuItemChgRecPri1.DataContext = 1;
                 menuItemChgRecPri1.Click += new RoutedEventHandler(cm_chg_priority_Click);
                 MenuItem menuItemChgRecPri2 = new MenuItem();
-                menuItemChgRecPri2.Header = "2";
+                menuItemChgRecPri2.Header = "2 (_2)";
                 menuItemChgRecPri2.DataContext = 2;
                 menuItemChgRecPri2.Click += new RoutedEventHandler(cm_chg_priority_Click);
                 MenuItem menuItemChgRecPri3 = new MenuItem();
-                menuItemChgRecPri3.Header = "3";
+                menuItemChgRecPri3.Header = "3 (_3)";
                 menuItemChgRecPri3.DataContext = 3;
                 menuItemChgRecPri3.Click += new RoutedEventHandler(cm_chg_priority_Click);
                 MenuItem menuItemChgRecPri4 = new MenuItem();
-                menuItemChgRecPri4.Header = "4";
+                menuItemChgRecPri4.Header = "4 (_4)";
                 menuItemChgRecPri4.DataContext = 4;
                 menuItemChgRecPri4.Click += new RoutedEventHandler(cm_chg_priority_Click);
                 MenuItem menuItemChgRecPri5 = new MenuItem();
-                menuItemChgRecPri5.Header = "5";
+                menuItemChgRecPri5.Header = "5 (_5)";
                 menuItemChgRecPri5.DataContext = 5;
                 menuItemChgRecPri5.Click += new RoutedEventHandler(cm_chg_priority_Click);
 
@@ -474,35 +477,35 @@ namespace EpgTimer
                 menuItemChg.Items.Add(menuItemChgRecPri);
 
                 MenuItem menuItemDel = new MenuItem();
-                menuItemDel.Header = "予約削除";
+                menuItemDel.Header = "予約削除 (_D)";
                 menuItemDel.Click += new RoutedEventHandler(cm_del_Click);
 
                 MenuItem menuItemAutoAdd = new MenuItem();
-                menuItemAutoAdd.Header = "自動予約登録";
+                menuItemAutoAdd.Header = "自動予約登録 (_A)";
                 menuItemAutoAdd.Click += new RoutedEventHandler(cm_autoadd_Click);
                 MenuItem menuItemTimeshift = new MenuItem();
-                menuItemTimeshift.Header = "追っかけ再生";
+                menuItemTimeshift.Header = "追っかけ再生 (_P)";
                 menuItemTimeshift.Click += new RoutedEventHandler(cm_timeShiftPlay_Click);
 
                 //表示モード
                 Separator separate3 = new Separator();
                 MenuItem menuItemView = new MenuItem();
-                menuItemView.Header = "表示モード";
+                menuItemView.Header = "表示モード (_W)";
 
                 MenuItem menuItemViewSetDlg = new MenuItem();
-                menuItemViewSetDlg.Header = "表示設定";
+                menuItemViewSetDlg.Header = "表示設定 (_0)";
                 menuItemViewSetDlg.Click += new RoutedEventHandler(cm_viewSet_Click);
 
                 MenuItem menuItemChgViewMode1 = new MenuItem();
-                menuItemChgViewMode1.Header = "標準モード";
+                menuItemChgViewMode1.Header = "標準モード (_1)";
                 menuItemChgViewMode1.DataContext = 0;
                 menuItemChgViewMode1.Click += new RoutedEventHandler(cm_chg_viewMode_Click);
                 MenuItem menuItemChgViewMode2 = new MenuItem();
-                menuItemChgViewMode2.Header = "1週間モード";
+                menuItemChgViewMode2.Header = "1週間モード (_2)";
                 menuItemChgViewMode2.DataContext = 1;
                 menuItemChgViewMode2.Click += new RoutedEventHandler(cm_chg_viewMode_Click);
                 MenuItem menuItemChgViewMode3 = new MenuItem();
-                menuItemChgViewMode3.Header = "リスト表示モード";
+                menuItemChgViewMode3.Header = "リスト表示モード (_3)";
                 menuItemChgViewMode3.DataContext = 2;
                 menuItemChgViewMode3.Click += new RoutedEventHandler(cm_chg_viewMode_Click);
 
@@ -1889,6 +1892,38 @@ namespace EpgTimer
                         }
                     }
                 }
+            }
+        }
+
+        private void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            if (this.IsVisible == false) { return; }
+            //
+            if (BlackoutWindow.selectedReserveItem != null)
+            {
+                foreach (ReserveViewItem reserveViewItem1 in this.reserveList)
+                {
+                    if (reserveViewItem1.ReserveInfo.ReserveID == BlackoutWindow.selectedReserveItem.ReserveInfo.ReserveID)
+                    {
+                        this.epgProgramView.scrollViewer.ScrollToHorizontalOffset(reserveViewItem1.LeftPos - 100);
+                        this.epgProgramView.scrollViewer.ScrollToVerticalOffset(reserveViewItem1.TopPos - 100);
+                        break;
+                    }
+                }
+                BlackoutWindow.selectedReserveItem = null;
+            }
+            else if (BlackoutWindow.selectedSearchItem != null)
+            {
+                foreach (ProgramViewItem programViewItem1 in this.programList)
+                {
+                    if (programViewItem1.EventInfo.event_id == BlackoutWindow.selectedSearchItem.EventInfo.event_id)
+                    {
+                        this.epgProgramView.scrollViewer.ScrollToHorizontalOffset(programViewItem1.LeftPos - 100);
+                        this.epgProgramView.scrollViewer.ScrollToVerticalOffset(programViewItem1.TopPos - 100);
+                        break;
+                    }
+                }
+                BlackoutWindow.selectedSearchItem = null;
             }
         }
 

@@ -19,27 +19,62 @@
 
 
         <TabControl Name="tabControl_main" Grid.Row="1">
-            <TabItem Header="予約一覧" Name="tabItem_reserve">
+            <!--<TabItem Header="予約一覧" Name="tabItem_reserve">-->
+            <TabItem Name="tabItem_reserve">
+                <TabItem.Header>
+                    <Grid>
+                        <Grid.ToolTip>Ctrl + 1</Grid.ToolTip>
+                        <TextBlock Name="tabItem_reserve_Title" Text="予約一覧" />
+                    </Grid>
+                </TabItem.Header>
                 <Grid>
                     <local:ReserveView x:Name="reserveView" />
                 </Grid>
             </TabItem>
-            <TabItem Header="使用予定チューナー" Name="tabItem_tunerReserve">
+            <!--<TabItem Header="使用予定チューナー" Name="tabItem_tunerReserve">-->
+            <TabItem Name="tabItem_tunerReserve">
+                <TabItem.Header>
+                    <Grid>
+                        <Grid.ToolTip>Ctrl + 2</Grid.ToolTip>
+                        <TextBlock Name="tabItem_tunerReserve_Title" Text="使用予定チューナー" />
+                    </Grid>
+                </TabItem.Header>
                 <Grid>
                     <local:TunerReserveMainView x:Name="tunerReserveView" />
                 </Grid>
             </TabItem>
-            <TabItem Header="録画済み一覧" Name="tabItem_recinfo">
+            <!--<TabItem Header="録画済み一覧" Name="tabItem_recinfo">-->
+            <TabItem Name="tabItem_recinfo">
+                <TabItem.Header>
+                    <Grid>
+                        <Grid.ToolTip>Ctrl + 3</Grid.ToolTip>
+                        <TextBlock Name="tabItem_recinfo_Title" Text="録画済み一覧" />
+                    </Grid>
+                </TabItem.Header>
                 <Grid>
                     <local:RecInfoView x:Name="recInfoView" />
                 </Grid>
             </TabItem>
-            <TabItem Header="自動予約登録" Name="tabItem_epgAutoAdd">
+            <!--<TabItem Header="自動予約登録" Name="tabItem_epgAutoAdd">-->
+            <TabItem Name="tabItem_epgAutoAdd">
+                <TabItem.Header>
+                    <Grid>
+                        <Grid.ToolTip>Ctrl + 4</Grid.ToolTip>
+                        <TextBlock Name="tabItem_epgAutoAdd_Title" Text="自動予約登録" />
+                    </Grid>
+                </TabItem.Header>
                 <Grid>
                     <local:AutoAddView x:Name="autoAddView" />
                 </Grid>
             </TabItem>
-            <TabItem Header="番組表" Name="tabItem_epg">
+            <!--<TabItem Header="番組表" Name="tabItem_epg">-->
+            <TabItem Name="tabItem_epg">
+                <TabItem.Header>
+                    <Grid>
+                        <Grid.ToolTip>Ctrl + 5</Grid.ToolTip>
+                        <TextBlock Name="tabItem_epg_Title" Text="番組表" />
+                    </Grid>
+                </TabItem.Header>
                 <Grid>
                     <local:EpgDataView x:Name="epgView" />
                 </Grid>

@@ -36,6 +36,9 @@ namespace EpgTimer
 
         private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
 
+        MainWindow _mainWindow;
+        PopupWindow _popupWindow;
+
         public ReserveView()
         {
             InitializeComponent();
@@ -142,6 +145,8 @@ namespace EpgTimer
                     RedrawReserve = false;
                 }
             }
+            this._mainWindow = (MainWindow)Window.GetWindow(this);
+            this._popupWindow = new PopupWindow(Window.GetWindow(this));
         }
 
         /// <summary>
@@ -262,6 +267,10 @@ namespace EpgTimer
                 }), null);
                 return false;
             }
+
+            // 枠線表示用
+            CommonManager.Instance.DB.ReloadEpgData();
+
             return true;
         }
 
@@ -660,6 +669,244 @@ namespace EpgTimer
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+            }
+        }
+
+        void listView_reserve_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control) && Keyboard.Modifiers.HasFlag(ModifierKeys.Alt))
+            {
+                switch (e.SystemKey)
+                {
+                    case Key.D1: this.setPriority(1); break;
+                    case Key.D2: this.setPriority(2); break;
+                    case Key.D3: this.setPriority(3); break;
+                    case Key.D4: this.setPriority(4); break;
+                    case Key.D5: this.setPriority(5); break;
+                }
+            }
+            else if (Keyboard.Modifiers.HasFlag(ModifierKeys.Alt))
+            {
+                switch (e.SystemKey)
+                {
+                    case Key.D0: this.setRecMode(0); break;
+                    case Key.D1: this.setRecMode(1); break;
+                    case Key.D2: this.setRecMode(2); break;
+                    case Key.D3: this.setRecMode(3); break;
+                    case Key.D4: this.setRecMode(4); break;
+                    case Key.D5: this.setRecMode(5); break;
+                }
+            }
+            else if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
+            {
+                switch (e.Key)
+                {
+                    case Key.A:
+                        this.autoadd_Click(this.listView_reserve.SelectedItem, new RoutedEventArgs(Button.ClickEvent));
+                        break;
+                    case Key.P:
+                        this.timeShiftPlay_Click(this.listView_reserve.SelectedItem, new RoutedEventArgs(Button.ClickEvent));
+                        break;
+                }
+            }
+            else
+            {
+                switch (e.Key)
+                {
+                    case Key.F2:
+                        this.MenuItem_Click_Google(this, new RoutedEventArgs(Button.ClickEvent));
+                        break;
+                    case Key.F3:
+                        this.MenuItem_Click_ProgramTable(this, new RoutedEventArgs(Button.ClickEvent));
+                        break;
+                    case Key.Back:
+                        new BlackoutWindow(Window.GetWindow(this)).showWindow("予約←→無効");
+                        this.MenuItem_Click_ChangeRecMode(this.listView_reserve.SelectedItem, new RoutedEventArgs(Button.ClickEvent));
+                        break;
+                    case Key.Enter:
+                        this.button_change_Click(this.listView_reserve.SelectedItem, new RoutedEventArgs(Button.ClickEvent));
+                        break;
+                    case Key.Delete:
+                        this.deleteItem();
+                        break;
+                }
+            }
+        }
+
+        void deleteItem()
+        {
+            if (listView_reserve.SelectedItems.Count == 0) { return; }
+            //
+            try
+            {
+                string text1 = "削除しますか？" + "　[削除アイテム数: " + listView_reserve.SelectedItems.Count + "]" + "\n\n";
+                List<UInt32> dataIDList = new List<uint>();
+                foreach (ReserveItem info in listView_reserve.SelectedItems)
+                {
+                    text1 += " ・ " + info.ReserveInfo.Title + "\n";
+                }
+                string caption1 = "登録項目削除の確認";
+                if (MessageBox.Show(text1, caption1, MessageBoxButton.OKCancel, MessageBoxImage.Exclamation, MessageBoxResult.OK) == MessageBoxResult.OK)
+                {
+                    this.button_del_Click(this.listView_reserve.SelectedItem, new RoutedEventArgs(Button.ClickEvent));
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+            }
+        }
+
+        void setPriority(int priority0)
+        {
+            try
+            {
+                List<ReserveData> list = new List<ReserveData>();
+                foreach (ReserveItem item in listView_reserve.SelectedItems)
+                {
+                    ReserveData reserveInfo = item.ReserveInfo;
+                    reserveInfo.RecSetting.Priority = BitConverter.GetBytes(priority0)[0]; ;
+                    list.Add(reserveInfo);
+                }
+                if (list.Count > 0)
+                {
+                    ErrCode err = (ErrCode)cmd.SendChgReserve(list);
+                    if (err == ErrCode.CMD_ERR_CONNECT)
+                    {
+                        MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
+                    }
+                    if (err == ErrCode.CMD_ERR_TIMEOUT)
+                    {
+                        MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
+                    }
+                    if (err != ErrCode.CMD_SUCCESS)
+                    {
+                        MessageBox.Show("チューナー一覧の取得でエラーが発生しました。");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+            }
+        }
+
+        void setRecMode(int redMode0)
+        {
+            try
+            {
+                List<ReserveData> list = new List<ReserveData>();
+                foreach (ReserveItem item in listView_reserve.SelectedItems)
+                {
+                    ReserveData reserveInfo = item.ReserveInfo;
+                    reserveInfo.RecSetting.RecMode = BitConverter.GetBytes(redMode0)[0];
+                    list.Add(reserveInfo);
+                }
+                if (list.Count > 0)
+                {
+                    ErrCode err = (ErrCode)cmd.SendChgReserve(list);
+                    if (err == ErrCode.CMD_ERR_CONNECT)
+                    {
+                        MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
+                    }
+                    if (err == ErrCode.CMD_ERR_TIMEOUT)
+                    {
+                        MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
+                    }
+                    if (err != ErrCode.CMD_SUCCESS)
+                    {
+                        MessageBox.Show("チューナー一覧の取得でエラーが発生しました。");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+            }
+        }
+
+        private void MenuItem_Click_ChangeRecMode(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                List<ReserveData> list = new List<ReserveData>();
+                foreach (ReserveItem item in listView_reserve.SelectedItems)
+                {
+                    ReserveData reserveInfo = item.ReserveInfo;
+
+                    if (item.ReserveInfo.RecSetting.RecMode == 5)
+                    {
+                        // 無効 => 予約
+                        RecSettingData defSet = new RecSettingData();
+                        Settings.GetDefRecSetting(0, ref defSet);
+                        item.ReserveInfo.RecSetting.RecMode = defSet.RecMode;
+                    }
+                    else
+                    {
+                        //予約 => 無効
+                        item.ReserveInfo.RecSetting.RecMode = 5;
+                    }
+
+                    list.Add(reserveInfo);
+                }
+                if (list.Count > 0)
+                {
+                    ErrCode err = (ErrCode)cmd.SendChgReserve(list);
+                    if (err == ErrCode.CMD_ERR_CONNECT)
+                    {
+                        MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
+                    }
+                    if (err == ErrCode.CMD_ERR_TIMEOUT)
+                    {
+                        MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
+                    }
+                    if (err != ErrCode.CMD_SUCCESS)
+                    {
+                        MessageBox.Show("チューナー一覧の取得でエラーが発生しました。");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+            }
+        }
+
+        private void MenuItem_Click_ReserveDetail(object sender, RoutedEventArgs e)
+        {
+            ReserveItem item1 = this.listView_reserve.SelectedItem as ReserveItem;
+            if (item1 != null)
+            {
+                this._popupWindow.show(
+                    CommonManager.Instance.ConvertReserveText(item1.ReserveInfo));
+            }
+        }
+
+        private void MenuItem_Click_PogramDetail(object sender, RoutedEventArgs e)
+        {
+            ReserveItem item1 = this.listView_reserve.SelectedItem as ReserveItem;
+            if (item1 != null)
+            {
+                this._popupWindow.show(item1.ProgramDetail);
+            }
+        }
+
+        private void MenuItem_Click_Google(object sender, RoutedEventArgs e)
+        {
+            ReserveItem item1 = this.listView_reserve.SelectedItem as ReserveItem;
+            if (item1 != null)
+            {
+                this._popupWindow.google(item1.EventName);
+            }
+        }
+
+        private void MenuItem_Click_ProgramTable(object sender, RoutedEventArgs e)
+        {
+            ReserveItem item1 = this.listView_reserve.SelectedItem as ReserveItem;
+            if (item1 != null)
+            {
+                BlackoutWindow.selectedReserveItem = item1;
+                this._mainWindow.moveTo_tabItem_epg();
             }
         }
 

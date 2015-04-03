@@ -84,51 +84,6 @@ namespace EpgTimer
                 return view;
             }
         }
-        public String JyanruKey
-        {
-            get
-            {
-                String view = "";
-                if (EpgAutoAddInfo != null)
-                {
-                    if (EpgAutoAddInfo.searchInfo.contentList.Count == 1)
-                    {
-                        int nibble1 = EpgAutoAddInfo.searchInfo.contentList[0].content_nibble_level_1;
-                        int nibble2 = EpgAutoAddInfo.searchInfo.contentList[0].content_nibble_level_2;
-
-                        UInt16 contentKey1 = (UInt16)(nibble1 << 8 | 0xFF);
-                        UInt16 contentKey2 = (UInt16)(nibble1 << 8 | nibble2);
-                        if (nibble2 != 0xFF)
-                        {
-                            if (CommonManager.Instance.ContentKindDictionary.ContainsKey(contentKey1) == true)
-                            {
-                                view += CommonManager.Instance.ContentKindDictionary[contentKey1];
-                            }
-                            if (CommonManager.Instance.ContentKindDictionary.ContainsKey(contentKey2) == true)
-                            {
-                                view += " - " + CommonManager.Instance.ContentKindDictionary[contentKey2];
-                            }
-                        }
-                        else
-                        {
-                            if (CommonManager.Instance.ContentKindDictionary.ContainsKey(contentKey1) == true)
-                            {
-                                view += CommonManager.Instance.ContentKindDictionary[contentKey1];
-                            }
-                        }
-                    }
-                    else if (EpgAutoAddInfo.searchInfo.contentList.Count > 1)
-                    {
-                        view = "複数指定";
-                    }
-                }
-                else
-                {
-                    view = "なし";
-                }
-                return view;
-            }
-        }
         public String DateKey
         {
             get
@@ -143,32 +98,6 @@ namespace EpgTimer
                             " ～ " + CommonManager.Instance.DayOfWeekDictionary[info.endDayOfWeek] + " " + info.endHour.ToString("00") + ":" + info.endMin.ToString("00");
                     }
                     else if (EpgAutoAddInfo.searchInfo.dateList.Count > 1)
-                    {
-                        view = "複数指定";
-                    }
-                }
-                return view;
-            }
-        }
-        public String ServiceKey
-        {
-            get
-            {
-                String view = "なし";
-                if (EpgAutoAddInfo != null)
-                {
-                    if (EpgAutoAddInfo.searchInfo.serviceList.Count == 1)
-                    {
-                        try
-                        {
-                            view = ChSet5.Instance.ChList[(ulong)EpgAutoAddInfo.searchInfo.serviceList[0]].ServiceName;
-                        }
-                        catch
-                        {
-                            view = "検索エラー";
-                        }
-                    }
-                    else if (EpgAutoAddInfo.searchInfo.serviceList.Count > 1)
                     {
                         view = "複数指定";
                     }
@@ -253,6 +182,190 @@ namespace EpgTimer
                 return view;
             }
         }
+
+        public String JyanruKey
+        {
+            get
+            {
+                String view = "";
+                if (this.EpgAutoAddInfo != null)
+                {
+                    Dictionary<int, List<int>> nibbleDict1 = new Dictionary<int, List<int>>();  // 小ジャンルを大ジャンルでまとめる
+                    foreach (EpgContentData ecd1 in this.EpgAutoAddInfo.searchInfo.contentList)
+                    {
+                        if (nibbleDict1.ContainsKey(ecd1.content_nibble_level_1))
+                        {
+                            nibbleDict1[ecd1.content_nibble_level_1].Add(ecd1.content_nibble_level_2);
+                        }
+                        else
+                        {
+                            nibbleDict1.Add(ecd1.content_nibble_level_1, new List<int>() { ecd1.content_nibble_level_2 });
+                        }
+                    }
+                    foreach (KeyValuePair<int, List<int>> kvp1 in nibbleDict1)
+                    {
+                        int nibble1 = kvp1.Key;
+                        UInt16 contentKey1 = (UInt16)(nibble1 << 8 | 0xFF);
+                        //
+                        string smallCategory1 = "";
+                        foreach (int nibble2 in kvp1.Value)
+                        {
+                            UInt16 contentKey2 = (UInt16)(nibble1 << 8 | nibble2);
+                            if (nibble2 != 0xFF)
+                            {
+                                if (smallCategory1 != "") { smallCategory1 += ", "; }
+                                if (CommonManager.Instance.ContentKindDictionary.ContainsKey(contentKey2))
+                                {
+                                    smallCategory1 += CommonManager.Instance.ContentKindDictionary[contentKey2].ToString().Trim();
+                                }
+                            }
+                        }
+                        //
+                        if (view != "") { view += ", "; }
+                        if (CommonManager.Instance.ContentKindDictionary.ContainsKey(contentKey1))
+                        {
+                            view += "[" + CommonManager.Instance.ContentKindDictionary[contentKey1].ToString().Trim();
+                            if (smallCategory1 != "") { view += " - " + smallCategory1; }
+                            view += "]";
+                        }
+                    }
+                }
+                else
+                {
+                    view = "なし";
+                }
+                return view;
+            }
+        }
+
+        /// <summary>
+        /// NHK総合１・東京、NHKBS1
+        /// </summary>
+        public String ServiceKey
+        {
+            get
+            {
+                String view = "";
+                if (EpgAutoAddInfo != null)
+                {
+                    foreach (ulong service1 in EpgAutoAddInfo.searchInfo.serviceList)
+                    {
+                        try
+                        {
+                            if (view != "") { view += ", "; }
+                            view += ChSet5.Instance.ChList[service1].ServiceName;
+                        }
+                        catch
+                        {
+                            view += "(x_x)";
+                        }
+                    }
+                    //if (EpgAutoAddInfo.searchInfo.serviceList.Count == 1)
+                    //{
+                    //    try
+                    //    {
+                    //        view = ChSet5.Instance.ChList[(ulong)EpgAutoAddInfo.searchInfo.serviceList[0]].ServiceName;
+                    //    }
+                    //    catch
+                    //    {
+                    //        view = "検索エラー";
+                    //    }
+                    //}
+                    //else if (EpgAutoAddInfo.searchInfo.serviceList.Count > 1)
+                    //{
+                    //    view = "複数指定";
+                    //}
+                }
+                if (view == "")
+                {
+                    view = "なし";
+                }
+                return view;
+            }
+        }
+
+        /// <summary>
+        /// 地デジ、BS、CS
+        /// </summary>
+        public String NetworkKey
+        {
+            get
+            {
+                String view1 = "";
+                if (this.EpgAutoAddInfo != null)
+                {
+                    List<string> networkKeyList1 = new List<string>();
+                    foreach (ulong service1 in this.EpgAutoAddInfo.searchInfo.serviceList)
+                    {
+                        string network1 = "";
+                        try
+                        {
+                            ChSet5Item chSet5Item1 = ChSet5.Instance.ChList[service1];
+                            // SearchKeyDescViewよりコピペ
+                            if ((0x7880 <= chSet5Item1.ONID && chSet5Item1.ONID <= 0x7FE8) &&
+                                (chSet5Item1.ServiceType == 0x01 || chSet5Item1.ServiceType == 0xA5))
+                            {
+                                network1 = "地デジ";
+                            }
+                            else if (chSet5Item1.ONID == 0x04 &&
+                              (chSet5Item1.ServiceType == 0x01 || chSet5Item1.ServiceType == 0xA5))
+                            {
+                                network1 = "BS";
+                            }
+                            else if ((chSet5Item1.ONID == 0x06 || chSet5Item1.ONID == 0x07) &&
+                              (chSet5Item1.ServiceType == 0x01 || chSet5Item1.ServiceType == 0xA5))
+                            {
+                                network1 = "CS";
+                            }
+                            else
+                            {
+                                network1 = "(?_?)";
+                            }
+                            //network1 = ChSet5.Instance.ChList[service1].NetworkName;
+                        }
+                        catch
+                        {
+                            network1 = "(x_x)";
+                        }
+                        if (!networkKeyList1.Contains(network1))
+                        {
+                            networkKeyList1.Add(network1);
+                        }
+                    }
+                    foreach (string network1 in networkKeyList1)
+                    {
+                        if (view1 != "") { view1 += ", "; }
+                        view1 += network1;
+                    }
+                }
+                if (view1 == "")
+                {
+                    view1 = "なし";
+                }
+                return view1;
+            }
+        }
+
+        public String Pittari
+        {
+            get
+            {
+                String view = "";
+                if (EpgAutoAddInfo != null)
+                {
+                    if (EpgAutoAddInfo.recSetting.PittariFlag == 0)
+                    {
+                        view = "しない";
+                    }
+                    else if (EpgAutoAddInfo.recSetting.PittariFlag == 1)
+                    {
+                        view = "する";
+                    }
+                }
+                return view;
+            }
+        }
+
         public TextBlock ToolTipView
         {
             get
@@ -365,5 +478,139 @@ namespace EpgTimer
                 return block;
             }
         }
+
+        /// <summary>
+        /// ToolTipViewからコピペ
+        /// </summary>
+        public String SearchInfoText
+        {
+            get
+            {
+                String view = "";
+                if (EpgAutoAddInfo != null)
+                {
+                    if (EpgAutoAddInfo.searchInfo != null)
+                    {
+                        view += "検索条件\r\n";
+                        view += "Andキーワード：" + AndKey + "\r\n";
+                        view += "Notキーワード：" + NotKey + "\r\n";
+                        view += "正規表現モード：" + RegExp + "\r\n";
+                        view += "番組名のみ検索対象：" + TitleOnly + "\r\n";
+                        view += "ジャンル絞り込み：" + JyanruKey + "\r\n";
+                        view += "時間絞り込み：" + DateKey + "\r\n";
+                        view += "検索対象サービス：" + ServiceKey + "\r\n";
+
+                        view += "\r\n";
+                    }
+                    if (EpgAutoAddInfo.recSetting != null)
+                    {
+                        view += "録画設定\r\n";
+                        view += "録画モード：" + RecMode + "\r\n";
+                        view += "優先度：" + Priority + "\r\n";
+                        view += "追従：" + Tuijyu + "\r\n";
+
+                        if ((EpgAutoAddInfo.recSetting.ServiceMode & 0x01) == 0)
+                        {
+                            view += "指定サービス対象データ : デフォルト\r\n";
+                        }
+                        else
+                        {
+                            view += "指定サービス対象データ : ";
+                            if ((EpgAutoAddInfo.recSetting.ServiceMode & 0x10) > 0)
+                            {
+                                view += "字幕含む ";
+                            }
+                            if ((EpgAutoAddInfo.recSetting.ServiceMode & 0x20) > 0)
+                            {
+                                view += "データカルーセル含む";
+                            }
+                            view += "\r\n";
+                        }
+
+                        view += "録画実行bat : " + EpgAutoAddInfo.recSetting.BatFilePath + "\r\n";
+
+                        if (EpgAutoAddInfo.recSetting.RecFolderList.Count == 0)
+                        {
+                            view += "録画フォルダ : デフォルト\r\n";
+                        }
+                        else
+                        {
+                            view += "録画フォルダ : \r\n";
+                            foreach (RecFileSetInfo info in EpgAutoAddInfo.recSetting.RecFolderList)
+                            {
+                                view += info.RecFolder + " (WritePlugIn:" + info.WritePlugIn + ")\r\n";
+                            }
+                        }
+
+                        if (EpgAutoAddInfo.recSetting.UseMargineFlag == 0)
+                        {
+                            view += "録画マージン : デフォルト\r\n";
+                        }
+                        else
+                        {
+                            view += "録画マージン : 開始 " + EpgAutoAddInfo.recSetting.StartMargine.ToString() +
+                                " 終了 " + EpgAutoAddInfo.recSetting.EndMargine.ToString() + "\r\n";
+                        }
+
+                        if (EpgAutoAddInfo.recSetting.SuspendMode == 0)
+                        {
+                            view += "録画後動作 : デフォルト\r\n";
+                        }
+                        else
+                        {
+                            view += "録画後動作 : ";
+                            switch (EpgAutoAddInfo.recSetting.SuspendMode)
+                            {
+                                case 1:
+                                    view += "スタンバイ";
+                                    break;
+                                case 2:
+                                    view += "休止";
+                                    break;
+                                case 3:
+                                    view += "シャットダウン";
+                                    break;
+                                case 4:
+                                    view += "何もしない";
+                                    break;
+                            }
+                            if (EpgAutoAddInfo.recSetting.RebootFlag == 1)
+                            {
+                                view += " 復帰後再起動する";
+                            }
+                            view += "\r\n";
+                        }
+                    }
+                }
+
+                return view;
+            }
+        }
+
+        public SolidColorBrush BorderBrush
+        {
+            get
+            {
+                SolidColorBrush color1 = Brushes.Gainsboro;
+                if (this.EpgAutoAddInfo.searchInfo.contentList.Count > 0)
+                {
+                    byte content_nibble_level_1 = this.EpgAutoAddInfo.searchInfo.contentList[0].content_nibble_level_1;
+                    if (content_nibble_level_1 <= 0x0B || content_nibble_level_1 == 0x0F && Settings.Instance.ContentColorList.Count > content_nibble_level_1)
+                    {
+                        try
+                        {
+                            color1 = CommonManager.Instance.CustContentColorList[content_nibble_level_1];
+                        }
+                        catch
+                        {
+                            ;
+                        }
+                    }
+                }
+
+                return color1;
+            }
+        }
+
     }
 }

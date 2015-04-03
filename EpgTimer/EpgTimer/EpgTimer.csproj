@@ -93,8 +93,15 @@
     <Compile Include="AutoAddView.xaml.cs">
       <DependentUpon>AutoAddView.xaml</DependentUpon>
     </Compile>
+    <Compile Include="BlackoutWindow.xaml.cs">
+      <DependentUpon>BlackoutWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Common\GridViewSorter.cs" />
     <Compile Include="DefineClass\CoopServerInfo.cs" />
     <Compile Include="DefineClass\ListColumnInfo.cs" />
+    <Compile Include="PopupWindow.xaml.cs">
+      <DependentUpon>PopupWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="SetCoopSrvWindow.xaml.cs">
       <DependentUpon>SetCoopSrvWindow.xaml</DependentUpon>
     </Compile>
@@ -250,6 +257,14 @@
     <Page Include="AutoAddView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="BlackoutWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="PopupWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="SetCoopSrvWindow.xaml">
       <SubType>Designer</SubType>

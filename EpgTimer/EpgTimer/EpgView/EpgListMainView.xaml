@@ -68,40 +68,40 @@
                 </ListView.View>
                 <ListView.ContextMenu>
                     <ContextMenu x:Name="listView_event_contextMenu">
-                        <MenuItem x:Name="cm_add" Header="予約追加">
-                            <MenuItem Header="ダイアログ表示" Click="cm_add_Click" />
+                        <MenuItem x:Name="cm_add" Header="予約追加 (_C)">
+                            <MenuItem Header="ダイアログ表示 (_X)" Click="cm_add_Click" />
                             <Separator/>
-                            <MenuItem x:Name="cm_add_preset" Header="プリセット" />
+                            <MenuItem x:Name="cm_add_preset" Header="プリセット (_Z)" />
                         </MenuItem>
-                        <MenuItem x:Name="cm_chg" Header="予約変更">
-                            <MenuItem Header="ダイアログ表示" Click="cm_change_Click" />
+                        <MenuItem x:Name="cm_chg" Header="予約変更 (_C)">
+                            <MenuItem Header="ダイアログ表示 (_X)" Click="cm_change_Click" />
                             <Separator/>
-                            <MenuItem Header="録画モード">
-                                <MenuItem Header="全サービス" Name="recmode_all" Click="cm_chg_recmode_Click" />
-                                <MenuItem Header="指定サービス" Name="recmode_only" Click="cm_chg_recmode_Click" />
-                                <MenuItem Header="全サービス（デコード処理なし）" Name="recmode_all_nodec" Click="cm_chg_recmode_Click" />
-                                <MenuItem Header="指定サービス（デコード処理なし）" Name="recmode_only_nodec" Click="cm_chg_recmode_Click" />
-                                <MenuItem Header="視聴" Name="recmode_view" Click="cm_chg_recmode_Click" />
-                                <MenuItem Header="無効" Name="recmode_no" Click="cm_chg_recmode_Click" />
+                            <MenuItem Header="録画モード (_R)">
+                                <MenuItem Header="全サービス (_0)" Name="recmode_all" Click="cm_chg_recmode_Click" />
+                                <MenuItem Header="指定サービス (_1)" Name="recmode_only" Click="cm_chg_recmode_Click" />
+                                <MenuItem Header="全サービス（デコード処理なし） (_2)" Name="recmode_all_nodec" Click="cm_chg_recmode_Click" />
+                                <MenuItem Header="指定サービス（デコード処理なし） (_3)" Name="recmode_only_nodec" Click="cm_chg_recmode_Click" />
+                                <MenuItem Header="視聴 (_4)" Name="recmode_view" Click="cm_chg_recmode_Click" />
+                                <MenuItem Header="無効 (_5)" Name="recmode_no" Click="cm_chg_recmode_Click" />
                             </MenuItem>
-                            <MenuItem Header="優先度">
-                                <MenuItem Header="1" Name="priority_1" Click="cm_chg_priority_Click" />
-                                <MenuItem Header="2" Name="priority_2" Click="cm_chg_priority_Click" />
-                                <MenuItem Header="3" Name="priority_3" Click="cm_chg_priority_Click" />
-                                <MenuItem Header="4" Name="priority_4" Click="cm_chg_priority_Click" />
-                                <MenuItem Header="5" Name="priority_5" Click="cm_chg_priority_Click" />
+                            <MenuItem Header="優先度 (_E)">
+                                <MenuItem Header="1 (_1)" Name="priority_1" Click="cm_chg_priority_Click" />
+                                <MenuItem Header="2 (_2)" Name="priority_2" Click="cm_chg_priority_Click" />
+                                <MenuItem Header="3 (_3)" Name="priority_3" Click="cm_chg_priority_Click" />
+                                <MenuItem Header="4 (_4)" Name="priority_4" Click="cm_chg_priority_Click" />
+                                <MenuItem Header="5 (_5)" Name="priority_5" Click="cm_chg_priority_Click" />
                             </MenuItem>
                         </MenuItem>
-                        <MenuItem x:Name="cm_del" Header="予約削除" Click="cm_del_Click" />
-                        <MenuItem x:Name="cm_autoadd" Header="自動予約登録" Click="cm_autoadd_Click" />
-                        <MenuItem x:Name="cm_timeshift" Header="追っかけ再生" Click="cm_timeShiftPlay_Click" />
+                        <MenuItem x:Name="cm_del" Header="予約削除 (_D)" Click="cm_del_Click" />
+                        <MenuItem x:Name="cm_autoadd" Header="自動予約登録 (_A)" Click="cm_autoadd_Click" />
+                        <MenuItem x:Name="cm_timeshift" Header="追っかけ再生 (_P)" Click="cm_timeShiftPlay_Click" />
                         <Separator/>
-                        <MenuItem x:Name="cm_view" Header="表示モード">
+                        <MenuItem x:Name="cm_view" Header="表示モード (_W)">
                             <MenuItem Header="表示設定" Click="cm_viewSet_Click" />
                             <Separator/>
-                            <MenuItem x:Name="cm_chg_viewMode1" Header="標準モード" Click="cm_chg_viewMode_Click"  />
-                            <MenuItem x:Name="cm_chg_viewMode2" Header="1週間モード" Click="cm_chg_viewMode_Click" />
-                            <MenuItem x:Name="cm_chg_viewMode3" Header="リスト表示モード" Click="cm_chg_viewMode_Click" />
+                            <MenuItem x:Name="cm_chg_viewMode1" Header="標準モード (_1)" Click="cm_chg_viewMode_Click"  />
+                            <MenuItem x:Name="cm_chg_viewMode2" Header="1週間モード (_2)" Click="cm_chg_viewMode_Click" />
+                            <MenuItem x:Name="cm_chg_viewMode3" Header="リスト表示モード (_3)" Click="cm_chg_viewMode_Click" />
                         </MenuItem>
                     </ContextMenu>
                 </ListView.ContextMenu>
