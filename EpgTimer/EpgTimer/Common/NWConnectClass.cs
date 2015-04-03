@@ -93,7 +93,22 @@ namespace EpgTimer
             StartTCPServer(waitPort);
 
             cmd.SetSendMode(true);
-            cmd.SetNWSetting(srvIP, srvPort);
+
+            String wIPAddress = srvIP;
+            IPAddress[] IpAddress = Dns.GetHostAddresses(srvIP);
+
+            foreach (IPAddress wIP in IpAddress)
+            {
+                if (!wIP.IsIPv6LinkLocal)
+                {
+                    wIPAddress = wIP.ToString();
+                    break;
+                }
+            }
+
+            cmd.SetNWSetting(wIPAddress, srvPort);
+
+            //cmd.SetNWSetting(srvIP, srvPort);
             if (cmd.SendRegistTCP(waitPort) != 1)
             {
                 return false;
