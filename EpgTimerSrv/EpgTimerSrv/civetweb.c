@@ -25,6 +25,9 @@
 #define _CRT_SECURE_NO_WARNINGS /* Disable deprecation warning in VS2005 */
 #endif
 #else
+#if defined(__GNUC__) && !defined(_GNU_SOURCE)
+# define _GNU_SOURCE          /* for setgroups() */
+#endif
 #ifdef __linux__
 #define _XOPEN_SOURCE 600     /* For flockfile() on Linux */
 #endif
@@ -284,6 +287,7 @@ typedef unsigned short int in_port_t;
 
 #include <pwd.h>
 #include <unistd.h>
+#include <grp.h>
 #include <dirent.h>
 #if !defined(NO_SSL_DL) && !defined(NO_SSL)
 #include <dlfcn.h>
@@ -1638,11 +1642,14 @@ static void send_http_error(struct mg_connection *conn, int status, const char *
         }
         DEBUG_TRACE("[%s]", buf);
 
-        mg_printf(conn, "HTTP/1.1 %d %s\r\n"
-                        "Content-Length: %d\r\n"
+        mg_printf(conn, "HTTP/1.1 %d %s\r\n", status, status_text);
+        if (len>0) {
+            mg_printf(conn, "Content-Type: text/plain\r\n");
+        }
+        mg_printf(conn, "Content-Length: %d\r\n"
                         "Date: %s\r\n"
                         "Connection: %s\r\n\r\n",
-                        status, status_text, len, date,
+                        len, date,
                         suggest_connection_header(conn));
         conn->num_bytes_sent += mg_printf(conn, "%s", buf);
     }
@@ -1818,13 +1825,19 @@ static void change_slashes_to_backslashes(char *path)
     int i;
 
     for (i = 0; path[i] != '\0'; i++) {
-        if (path[i] == '/')
+
+        if (path[i] == '/') {
             path[i] = '\\';
-        /* i > 0 check is to preserve UNC paths, like \\server\file.txt */
-        if (path[i] == '\\' && i > 0)
-            while (path[i + 1] == '\\' || path[i + 1] == '/')
+        }
+
+        /* remove double backslash (check i > 0 to preserve UNC paths, like \\server\file.txt) */
+        if ((path[i] == '\\') && (i > 0)) {
+
+            while (path[i + 1] == '\\' || path[i + 1] == '/') {
                 (void) memmove(path + i + 1,
                                path + i + 2, strlen(path + i + 1));
+            }
+        }
     }
 }
 
@@ -3711,6 +3724,10 @@ static SOCKET conn2(struct mg_context *ctx  /* may be null */, const char *host,
     struct hostent *he;
     SOCKET sock = INVALID_SOCKET;
 
+    if (ebuf_len>0) {
+        *ebuf = 0;
+    }
+
     if (host == NULL) {
         snprintf(ebuf, ebuf_len, "%s", "NULL host");
     } else if (use_ssl && SSLv23_client_method == NULL) {
@@ -3753,7 +3770,7 @@ int mg_url_encode(const char *src, char *dst, size_t dst_len)
             pos[2] = hex[(* (const unsigned char *) src) & 0xf];
             pos += 2;
         } else {
-            return -1;
+            break;
         }
     }
 
@@ -4191,7 +4208,7 @@ static void handle_static_file_request(struct mg_connection *conn, const char *p
     mg_fclose(filep);
 }
 
-void mg_send_file2(struct mg_connection *conn, const char *path, int timeout)
+void mg_send_file(struct mg_connection *conn, const char *path)
 {
     struct file file = STRUCT_FILE_INITIALIZER;
     if (mg_stat(conn, path, &file)) {
@@ -4209,11 +4226,6 @@ void mg_send_file2(struct mg_connection *conn, const char *path, int timeout)
         send_http_error(conn, 404, "%s",
             "Error: File not found");
     }
-}
-
-void mg_send_file(struct mg_connection *conn, const char *path)
-{
-    mg_send_file2(conn, path, TIMEOUT_INFINITE);
 }
 
 /* Parse HTTP headers from the given buffer, advance buffer to the point
@@ -4291,18 +4303,22 @@ static int read_request(FILE *fp, struct mg_connection *conn,
 {
     int request_len, n = 0;
     time_t last_action_time = 0;
-    double request_timout = 0.0;
+    double request_timout;
 
     if (conn->ctx->config[REQUEST_TIMEOUT]) {
         /* value of request_timout is in seconds, config in milliseconds */
         request_timout = atof(conn->ctx->config[REQUEST_TIMEOUT]) / 1000.0;
+    } else {
+        request_timout = -1.0;
     }
 
     request_len = get_request_len(buf, *nread);
-    while (conn->ctx->stop_flag == 0 &&
-           *nread < bufsiz && request_len == 0 &&
-           difftime(last_action_time, conn->birth_time) <= request_timout &&
-           (n = pull(fp, conn, buf + *nread, bufsiz - *nread)) > 0) {
+    while ((conn->ctx->stop_flag == 0) &&
+           (*nread < bufsiz) &&
+           (request_len == 0) &&
+           ((difftime(last_action_time, conn->birth_time) <= request_timout) || (request_timout < 0)) &&
+           ((n = pull(fp, conn, buf + *nread, bufsiz - *nread)) > 0)
+          ) {
         *nread += n;
         assert(*nread <= bufsiz);
         request_len = get_request_len(buf, *nread);
@@ -4498,7 +4514,7 @@ static void prepare_cgi_environment(struct mg_connection *conn,
                                     const char *prog,
                                     struct cgi_env_block *blk)
 {
-    const char *s, *slash;
+    const char *s;
     struct vec var_vec;
     char *p, src_addr[IP_ADDR_STR_LEN];
     int  i;
@@ -4526,15 +4542,17 @@ static void prepare_cgi_environment(struct mg_connection *conn,
     addenv(blk, "REQUEST_URI=%s", conn->request_info.uri);
 
     /* SCRIPT_NAME */
-    assert(conn->request_info.uri[0] == '/');
-    slash = strrchr(conn->request_info.uri, '/');
-    if ((s = strrchr(prog, '/')) == NULL)
-        s = prog;
-    addenv(blk, "SCRIPT_NAME=%.*s%s", (int) (slash - conn->request_info.uri),
-           conn->request_info.uri, s);
+    addenv(blk, "SCRIPT_NAME=%.*s",
+           (int)strlen(conn->request_info.uri) - ((conn->path_info == NULL) ? 0 : (int)strlen(conn->path_info)),
+           conn->request_info.uri);
 
     addenv(blk, "SCRIPT_FILENAME=%s", prog);
-    addenv(blk, "PATH_TRANSLATED=%s", prog);
+    if (conn->path_info == NULL) {
+        addenv(blk, "PATH_TRANSLATED=%s", conn->ctx->config[DOCUMENT_ROOT]);
+    } else {
+        addenv(blk, "PATH_TRANSLATED=%s%s", conn->ctx->config[DOCUMENT_ROOT], conn->path_info);
+    }
+
     addenv(blk, "HTTPS=%s", conn->ssl == NULL ? "off" : "on");
 
     if ((s = mg_get_header(conn, "Content-Type")) != NULL)
@@ -5868,7 +5886,8 @@ static uint32_t get_remote_ip(const struct mg_connection *conn)
     return ntohl(* (uint32_t *) &conn->client.rsa.sin.sin_addr);
 }
 
-int mg_upload2(struct mg_connection *conn, const char *destination_dir, int timeout)
+
+int mg_upload(struct mg_connection *conn, const char *destination_dir)
 {
     /* TODO: set a timeout */
     const char *content_type_header, *boundary_start, *sc;
@@ -6022,10 +6041,6 @@ int mg_upload2(struct mg_connection *conn, const char *destination_dir, int time
     return num_uploaded_files;
 }
 
-int mg_upload(struct mg_connection *conn, const char *destination_dir)
-{
-    return mg_upload2(conn, destination_dir, TIMEOUT_INFINITE);
-}
 
 static int get_first_ssl_listener_index(const struct mg_context *ctx)
 {
@@ -6920,6 +6935,40 @@ static void reset_per_request_attributes(struct mg_connection *conn)
     conn->data_len = 0;
 }
 
+
+static int set_sock_timeout(SOCKET sock, int milliseconds)
+{
+    int r1, r2;
+#ifdef _WIN32
+    DWORD t = milliseconds;
+#else
+#if defined(TCP_USER_TIMEOUT)
+    unsigned int uto = (unsigned int)milliseconds;
+#endif
+    struct timeval t;
+    t.tv_sec = milliseconds / 1000;
+    t.tv_usec = (milliseconds * 1000) % 1000000;
+
+    /* TCP_USER_TIMEOUT/RFC5482 (http://tools.ietf.org/html/rfc5482):
+       max. time waiting for the acknowledged of TCP data before the connection
+       will be forcefully closed and ETIMEDOUT is returned to the application.
+       If this option is not set, the default timeout of 20-30 minutes is used.
+    */
+    /* #define TCP_USER_TIMEOUT (18) */
+
+#if defined(TCP_USER_TIMEOUT)
+    setsockopt(sock, 6, TCP_USER_TIMEOUT, (const void *)&uto, sizeof(uto));
+#endif
+
+#endif
+
+    r1 = setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (SOCK_OPT_TYPE) &t, sizeof(t));
+    r2 = setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, (SOCK_OPT_TYPE) &t, sizeof(t));
+
+    return r1 || r2;
+}
+
+
 static void close_socket_gracefully(struct mg_connection *conn)
 {
 #if defined(_WIN32)
@@ -7076,31 +7125,17 @@ static int is_valid_uri(const char *uri)
     return uri[0] == '/' || (uri[0] == '*' && uri[1] == '\0');
 }
 
-static int getreq(struct mg_connection *conn, char *ebuf, size_t ebuf_len, int timeout, int *err)
+static int getreq(struct mg_connection *conn, char *ebuf, size_t ebuf_len, int *err)
 {
     const char *cl;
-    struct pollfd pfd;
 
     if (ebuf_len > 0) {
       ebuf[0] = '\0';
     }
     *err = 0;
-    reset_per_request_attributes(conn);
-    if (timeout >= 0) {
-        pfd.fd = conn->client.sock;
-        switch (poll(&pfd, 1, timeout)) {
-        case 0:
-            snprintf(ebuf, ebuf_len, "%s", "Timed out");
-            *err = 408;
-            return 0;
-        case -1:
-            snprintf(ebuf, ebuf_len, "%s", "Interrupted");
-            *err = 500;
-            return 0;
-        }
-    }
 
-    ebuf[0] = '\0';
+    reset_per_request_attributes(conn);
+
     conn->request_len = read_request(NULL, conn, conn->buf, conn->buf_size,
                                      &conn->data_len);
     assert(conn->request_len < 0 || conn->data_len >= conn->request_len);
@@ -7150,10 +7185,26 @@ static int getreq(struct mg_connection *conn, char *ebuf, size_t ebuf_len, int t
 int mg_get_response(struct mg_connection *conn, char *ebuf, size_t ebuf_len, int timeout)
 {
     /* Implementation of API function for HTTP clients */
+    int err, ret;
+    struct mg_context *octx = conn->ctx;
+    struct mg_context rctx = *(conn->ctx);
+    char txt[32];
+
+    if (timeout >= 0) {
+        snprintf(txt, sizeof(txt), "%i", timeout);
+        rctx.config[REQUEST_TIMEOUT] = txt;
+        set_sock_timeout(conn->client.sock, timeout);
+    } else {
+        rctx.config[REQUEST_TIMEOUT] = NULL;
+    }
+
+    conn->ctx = &rctx;
+    ret = getreq(conn, ebuf, ebuf_len, &err);
+    conn->ctx = octx;
+
     /* TODO: Define proper return values - maybe return length?
              For the first test use <0 for error and >0 for OK */
-    int err;
-    return (getreq(conn, ebuf, ebuf_len, timeout, &err) == 0) ? -1 : +1;
+    return (ret == 0) ? -1 : +1;
 }
 
 struct mg_connection *mg_download(const char *host, int port, int use_ssl,
@@ -7176,7 +7227,7 @@ struct mg_connection *mg_download(const char *host, int port, int use_ssl,
         if (i <= 0) {
             snprintf(ebuf, ebuf_len, "%s", "Error sending request");
         } else {
-            getreq(conn, ebuf, ebuf_len, TIMEOUT_INFINITE, &reqerr);
+            getreq(conn, ebuf, ebuf_len, &reqerr);
         }
     }
 
@@ -7303,7 +7354,7 @@ static void process_new_connection(struct mg_connection *conn)
        to crule42. */
     conn->data_len = 0;
     do {
-        if (!getreq(conn, ebuf, sizeof(ebuf), TIMEOUT_INFINITE, &reqerr)) {
+        if (!getreq(conn, ebuf, sizeof(ebuf), &reqerr)) {
             assert(ebuf[0] != '\0');
             /* The request sent by the client could not be understood by the server,
                or it was incomplete or a timeout. Send an error message and close
@@ -7500,18 +7551,6 @@ static void produce_socket(struct mg_context *ctx, const struct socket *sp)
     (void) pthread_mutex_unlock(&ctx->thread_mutex);
 }
 
-static int set_sock_timeout(SOCKET sock, int milliseconds)
-{
-#ifdef _WIN32
-    DWORD t = milliseconds;
-#else
-    struct timeval t;
-    t.tv_sec = milliseconds / 1000;
-    t.tv_usec = (milliseconds * 1000) % 1000000;
-#endif
-    return setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (SOCK_OPT_TYPE) &t, sizeof(t)) ||
-           setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, (SOCK_OPT_TYPE) &t, sizeof(t));
-}
 
 static void accept_new_connection(const struct socket *listener,
                                   struct mg_context *ctx)
@@ -7520,6 +7559,7 @@ static void accept_new_connection(const struct socket *listener,
     char src_addr[IP_ADDR_STR_LEN];
     socklen_t len = sizeof(so.rsa);
     int on = 1;
+    int timeout;
 
     if ((so.sock = accept(listener->sock, &so.rsa.sa, &len)) == INVALID_SOCKET) {
     } else if (!check_acl(ctx, ntohl(* (uint32_t *) &so.rsa.sin.sin_addr))) {
@@ -7537,6 +7577,7 @@ static void accept_new_connection(const struct socket *listener,
             mg_cry(fc(ctx), "%s: getsockname() failed: %s",
                    __func__, strerror(ERRNO));
         }
+
         /* Set TCP keep-alive. This is needed because if HTTP-level keep-alive
            is enabled, and client resets the connection, server won't get
            TCP FIN or RST and will keep the connection open forever. With TCP
@@ -7548,7 +7589,17 @@ static void accept_new_connection(const struct socket *listener,
                    "%s: setsockopt(SOL_SOCKET SO_KEEPALIVE) failed: %s",
                    __func__, strerror(ERRNO));
         }
-        set_sock_timeout(so.sock, atoi(ctx->config[REQUEST_TIMEOUT]));
+
+        if (ctx->config[REQUEST_TIMEOUT]) {
+            timeout = atoi(ctx->config[REQUEST_TIMEOUT]);
+        } else {
+            timeout = -1;
+        }
+
+        if (timeout>0) {
+            set_sock_timeout(so.sock, atoi(ctx->config[REQUEST_TIMEOUT]));
+        }
+
         produce_socket(ctx, &so);
     }
 }
