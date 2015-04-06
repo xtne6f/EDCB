@@ -18,13 +18,13 @@ namespace EpgTimer
     /// </summary>
     public partial class RecInfoView : UserControl
     {
-        private List<RecInfoItem> resultList = new List<RecInfoItem>();
-        private Dictionary<String, GridViewColumn> columnList = new Dictionary<String, GridViewColumn>();
-
         private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
         private MenuUtil mutil = CommonManager.Instance.MUtil;
-
+        private List<RecInfoItem> resultList = new List<RecInfoItem>();
         private bool ReloadInfo = true;
+
+        private GridViewSelector gridViewSelector = null;
+        private Action<object, RoutedEventArgs> headerSelect_Click = null;
 
         public RecInfoView()
         {
@@ -38,18 +38,8 @@ namespace EpgTimer
                     button_play.Style = null;
                 }
 
-                foreach (GridViewColumn info in gridView_recinfo.Columns)
-                {
-                    GridViewColumnHeader header = info.Header as GridViewColumnHeader;
-                    columnList.Add((string)header.Tag, info);
-                }
-                gridView_recinfo.Columns.Clear();
-
-                foreach (ListColumnInfo info in Settings.Instance.RecInfoListColumn)
-                {
-                    columnList[info.Tag].Width = info.Width;
-                    gridView_recinfo.Columns.Add(columnList[info.Tag]);
-                }
+                gridViewSelector = new GridViewSelector(gridView_recinfo, Settings.Instance.RecInfoListColumn);
+                headerSelect_Click = gridViewSelector.HeaderSelectClick;
             }
             catch (Exception ex)
             {
@@ -57,23 +47,14 @@ namespace EpgTimer
             }
         }
 
+        private void ContextMenu_Header_ContextMenuOpening(object sender, ContextMenuEventArgs e)
+        {
+            gridViewSelector.ContextMenuOpening(listView_recinfo.ContextMenu);
+        }
+
         public void SaveSize()
         {
-            try
-            {
-                Settings.Instance.RecInfoListColumn.Clear();
-                foreach (GridViewColumn info in gridView_recinfo.Columns)
-                {
-                    GridViewColumnHeader header = info.Header as GridViewColumnHeader;
-
-                    Settings.Instance.RecInfoListColumn.Add(new ListColumnInfo((String)header.Tag, info.Width));
-                }
-
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            gridViewSelector.SaveSize();
         }
 
         public void ChgProtectRecInfo()
@@ -362,62 +343,6 @@ namespace EpgTimer
                         }
                     }
                 }
-            }
-        }
-
-        private void ContextMenu_Header_ContextMenuOpening(object sender, ContextMenuEventArgs e)
-        {
-            try
-            {
-                foreach (MenuItem item in listView_recinfo.ContextMenu.Items)
-                {
-                    item.IsChecked = false;
-                    foreach (ListColumnInfo info in Settings.Instance.RecInfoListColumn)
-                    {
-                        if (info.Tag.CompareTo(item.Name) == 0)
-                        {
-                            item.IsChecked = true;
-                            break;
-                        }
-                    }
-                }
-
-
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
-
-        private void headerSelect_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                MenuItem menuItem = sender as MenuItem;
-                if (menuItem.IsChecked == true)
-                {
-
-                    Settings.Instance.RecInfoListColumn.Add(new ListColumnInfo(menuItem.Name, Double.NaN));
-                    gridView_recinfo.Columns.Add(columnList[menuItem.Name]);
-                }
-                else
-                {
-                    foreach (ListColumnInfo info in Settings.Instance.RecInfoListColumn)
-                    {
-                        if (info.Tag.CompareTo(menuItem.Name) == 0)
-                        {
-                            Settings.Instance.RecInfoListColumn.Remove(info);
-                            gridView_recinfo.Columns.Remove(columnList[menuItem.Name]);
-                            break;
-                        }
-                    }
-                }
-
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
 

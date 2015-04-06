@@ -18,13 +18,14 @@ namespace EpgTimer
     /// </summary>
     public partial class ReserveView : UserControl
     {
-        private bool RedrawReserve = true;
-        private List<ReserveItem> reserveList = new List<ReserveItem>();
-        private Dictionary<String, GridViewColumn> columnList = new Dictionary<String, GridViewColumn>();
-
         private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
         private MenuUtil mutil = CommonManager.Instance.MUtil;
         private ViewUtil vutil = CommonManager.Instance.VUtil;
+        private List<ReserveItem> reserveList = new List<ReserveItem>();
+        private bool RedrawReserve = true;
+        
+        private GridViewSelector gridViewSelector = null;
+        private Action<object, RoutedEventArgs> headerSelect_Click = null;
 
         MainWindow _mainWindow;
 
@@ -42,19 +43,8 @@ namespace EpgTimer
                     button_add_manual.Style = null;
                     button_timeShiftPlay.Style = null;
                 }
-
-                foreach (GridViewColumn info in gridView_reserve.Columns)
-                {
-                    GridViewColumnHeader header = info.Header as GridViewColumnHeader;
-                    columnList.Add((string)header.Tag, info);
-                }
-                gridView_reserve.Columns.Clear();
-
-                foreach (ListColumnInfo info in Settings.Instance.ReserveListColumn)
-                {
-                    columnList[info.Tag].Width = info.Width;
-                    gridView_reserve.Columns.Add(columnList[info.Tag]);
-                }
+                gridViewSelector = new GridViewSelector(gridView_reserve, Settings.Instance.ReserveListColumn);
+                headerSelect_Click = gridViewSelector.HeaderSelectClick;
             }
             catch (Exception ex)
             {
@@ -62,23 +52,14 @@ namespace EpgTimer
             }
         }
 
+        private void ContextMenu_Header_ContextMenuOpening(object sender, ContextMenuEventArgs e)
+        {
+            gridViewSelector.ContextMenuOpening(listView_reserve.ContextMenu);
+        }
 
         public void SaveSize()
         {
-            try
-            {
-                Settings.Instance.ReserveListColumn.Clear();
-                foreach (GridViewColumn info in gridView_reserve.Columns)
-                {
-                    GridViewColumnHeader header = info.Header as GridViewColumnHeader;
-
-                    Settings.Instance.ReserveListColumn.Add(new ListColumnInfo((String)header.Tag, info.Width));
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            gridViewSelector.SaveSize();
         }
 
         private void UserControl_Loaded(object sender, RoutedEventArgs e)
@@ -256,62 +237,6 @@ namespace EpgTimer
                 {
                     RedrawReserve = false;
                 }
-            }
-        }
-
-        private void ContextMenu_Header_ContextMenuOpening(object sender, ContextMenuEventArgs e)
-        {
-            try
-            {
-                foreach (MenuItem item in listView_reserve.ContextMenu.Items)
-                {
-                    item.IsChecked = false;
-                    foreach (ListColumnInfo info in Settings.Instance.ReserveListColumn)
-                    {
-                        if (info.Tag.CompareTo(item.Name) == 0)
-                        {
-                            item.IsChecked = true;
-                            break;
-                        }
-                    }
-                }
-
-
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
-
-        private void headerSelect_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                MenuItem menuItem = sender as MenuItem;
-                if (menuItem.IsChecked == true)
-                {
-
-                    Settings.Instance.ReserveListColumn.Add(new ListColumnInfo(menuItem.Name, Double.NaN));
-                    gridView_reserve.Columns.Add(columnList[menuItem.Name]);
-                }
-                else
-                {
-                    foreach (ListColumnInfo info in Settings.Instance.ReserveListColumn)
-                    {
-                        if (info.Tag.CompareTo(menuItem.Name) == 0)
-                        {
-                            Settings.Instance.ReserveListColumn.Remove(info);
-                            gridView_reserve.Columns.Remove(columnList[menuItem.Name]);
-                            break;
-                        }
-                    }
-                }
-
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
 

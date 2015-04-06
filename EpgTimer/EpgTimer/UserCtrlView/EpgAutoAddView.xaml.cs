@@ -21,7 +21,8 @@ namespace EpgTimer
         private List<EpgAutoDataItem> resultList = new List<EpgAutoDataItem>();
         private bool ReloadInfo = true;
 
-        private Dictionary<String, GridViewColumn> columnList = new Dictionary<String, GridViewColumn>();
+        private GridViewSelector gridViewSelector = null;
+        private Action<object, RoutedEventArgs> headerSelect_Click = null;
 
         public EpgAutoAddView()
         {
@@ -38,18 +39,8 @@ namespace EpgTimer
                     button_down.Style = null;
                 }
 
-                foreach (GridViewColumn info in gridView_key.Columns)
-                {
-                    GridViewColumnHeader header = info.Header as GridViewColumnHeader;
-                    columnList.Add((string)header.Tag, info);
-                }
-                gridView_key.Columns.Clear();
-
-                foreach (ListColumnInfo info in Settings.Instance.AutoAddEpgColumn)
-                {
-                    columnList[info.Tag].Width = info.Width;
-                    gridView_key.Columns.Add(columnList[info.Tag]);
-                }
+                gridViewSelector = new GridViewSelector(gridView_key, Settings.Instance.AutoAddEpgColumn);
+                headerSelect_Click = gridViewSelector.HeaderSelectClick;
             }
             catch (Exception ex)
             {
@@ -57,23 +48,14 @@ namespace EpgTimer
             }
         }
 
+        private void ContextMenu_Header_ContextMenuOpening(object sender, ContextMenuEventArgs e)
+        {
+            gridViewSelector.ContextMenuOpening(listView_key.ContextMenu);
+        }
+
         public void SaveSize()
         {
-            try
-            {
-                Settings.Instance.AutoAddEpgColumn.Clear();
-                foreach (GridViewColumn info in gridView_key.Columns)
-                {
-                    GridViewColumnHeader header = info.Header as GridViewColumnHeader;
-
-                    Settings.Instance.AutoAddEpgColumn.Add(new ListColumnInfo((String)header.Tag, info.Width));
-                }
-
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            gridViewSelector.SaveSize();
         }
 
         /// <summary>
@@ -282,59 +264,6 @@ namespace EpgTimer
                 {
                     ReloadInfo = false;
                 }
-            }
-        }
-
-        private void ContextMenu_Header_ContextMenuOpening(object sender, ContextMenuEventArgs e)
-        {
-            try
-            {
-                foreach (MenuItem item in listView_key.ContextMenu.Items)
-                {
-                    item.IsChecked = false;
-                    foreach (ListColumnInfo info in Settings.Instance.AutoAddEpgColumn)
-                    {
-                        if (info.Tag.CompareTo(item.Name) == 0)
-                        {
-                            item.IsChecked = true;
-                            break;
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
-
-        private void headerSelect_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                MenuItem menuItem = sender as MenuItem;
-                if (menuItem.IsChecked == true)
-                {
-                    Settings.Instance.AutoAddEpgColumn.Add(new ListColumnInfo(menuItem.Name, Double.NaN));
-                    gridView_key.Columns.Add(columnList[menuItem.Name]);
-                }
-                else
-                {
-                    foreach (ListColumnInfo info in Settings.Instance.AutoAddEpgColumn)
-                    {
-                        if (info.Tag.CompareTo(menuItem.Name) == 0)
-                        {
-                            Settings.Instance.AutoAddEpgColumn.Remove(info);
-                            gridView_key.Columns.Remove(columnList[menuItem.Name]);
-                            break;
-                        }
-                    }
-                }
-
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
 
