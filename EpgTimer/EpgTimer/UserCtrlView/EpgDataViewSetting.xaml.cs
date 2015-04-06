@@ -4,13 +4,6 @@ using System.Linq;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 using CtrlCmdCLI;
 using CtrlCmdCLI.Def;
@@ -38,6 +31,8 @@ namespace EpgTimer
                     button_service_delAll.Style = null;
                     button_service_up.Style = null;
                     button_service_down.Style = null;
+                    button_service_top.Style = null;
+                    button_service_bottom.Style = null;
                     button_service_addVideo.Style = null;
                     button_jyanru_addAll.Style = null;
                     button_jyanru_add.Style = null;
@@ -47,7 +42,6 @@ namespace EpgTimer
 
                 comboBox_timeH_week.ItemsSource = CommonManager.Instance.HourDictionary.Values;
                 comboBox_timeH_week.SelectedIndex = 4;
-
 
                 foreach (ChSet5Item info in ChSet5.Instance.ChList.Values)
                 {
@@ -67,6 +61,7 @@ namespace EpgTimer
                     {
                         listBox_serviceOther.Items.Add(info);
                     }
+                    listBox_serviceAll.Items.Add(info);
                 }
                 listBox_jyanru.DataContext = CommonManager.Instance.ContentKindList;
 
@@ -90,51 +85,27 @@ namespace EpgTimer
             setInfo.SearchKey.CopyTo(searchKey);
 
             textBox_tabName.Text = setInfo.TabName;
-            if (setInfo.ViewMode == 1)
+            radioButton_rate.IsChecked = false;
+            radioButton_week.IsChecked = false;
+            radioButton_list.IsChecked = false;
+            switch (setInfo.ViewMode)
             {
-                radioButton_rate.IsChecked = false;
-                radioButton_week.IsChecked = true;
-                radioButton_list.IsChecked = false;
-            }
-            else if (setInfo.ViewMode == 2)
-            {
-                radioButton_rate.IsChecked = false;
-                radioButton_week.IsChecked = false;
-                radioButton_list.IsChecked = true;
-            }
-            else
-            {
-                radioButton_rate.IsChecked = true;
-                radioButton_week.IsChecked = false;
-                radioButton_list.IsChecked = false;
+                case 1:
+                    radioButton_week.IsChecked = true;
+                    break;
+                case 2:
+                    radioButton_list.IsChecked = true;
+                    break;
+                default:
+                    radioButton_rate.IsChecked = true;
+                    break;
             }
 
-            if (setInfo.NeedTimeOnlyBasic == true)
-            {
-                checkBox_noTimeView_rate.IsChecked = true;
-            }
-            else
-            {
-                checkBox_noTimeView_rate.IsChecked = false;
-            }
-            if (setInfo.NeedTimeOnlyWeek == true)
-            {
-                checkBox_noTimeView_week.IsChecked = true;
-            }
-            else
-            {
-                checkBox_noTimeView_week.IsChecked = false;
-            }
+            checkBox_noTimeView_rate.IsChecked = setInfo.NeedTimeOnlyBasic;
+            checkBox_noTimeView_week.IsChecked = setInfo.NeedTimeOnlyWeek;
             comboBox_timeH_week.SelectedIndex = setInfo.StartTimeWeek;
-
-            if (setInfo.SearchMode == true)
-            {
-                checkBox_searchMode.IsChecked = true;
-            }
-            else
-            {
-                checkBox_searchMode.IsChecked = false;
-            }
+            checkBox_searchMode.IsChecked = setInfo.SearchMode;
+            checkBox_filterEnded.IsChecked = (setInfo.FilterEnded == true);
 
             foreach (UInt64 id in setInfo.ViewServiceList)
             {
@@ -150,15 +121,6 @@ namespace EpgTimer
                     listBox_jyanruView.Items.Add(CommonManager.Instance.ContentKindDictionary[id]);
                 }
             }
-
-            if (setInfo.FilterEnded == true)
-            {
-                checkBox_filterEnded.IsChecked = true;
-            }
-            else
-            {
-                checkBox_filterEnded.IsChecked = false;
-            }
         }
 
         /// <summary>
@@ -168,11 +130,8 @@ namespace EpgTimer
         public void GetSetting(ref CustomEpgTabInfo info)
         {
             info.TabName = textBox_tabName.Text;
-            if (radioButton_rate.IsChecked == true)
-            {
-                info.ViewMode = 0;
-            }
-            else if (radioButton_week.IsChecked == true)
+            info.ViewMode = 0;
+            if (radioButton_week.IsChecked == true)
             {
                 info.ViewMode = 1;
             }
@@ -180,45 +139,12 @@ namespace EpgTimer
             {
                 info.ViewMode = 2;
             }
-            else
-            {
-                info.ViewMode = 0;
-            }
-            if (checkBox_noTimeView_rate.IsChecked == true)
-            {
-                info.NeedTimeOnlyBasic = true;
-            }
-            else
-            {
-                info.NeedTimeOnlyBasic = false;
-            }
-            if (checkBox_noTimeView_week.IsChecked == true)
-            {
-                info.NeedTimeOnlyWeek = true;
-            } 
-            else
-            {
-                info.NeedTimeOnlyWeek = false;
-            }
+
+            info.NeedTimeOnlyBasic = (checkBox_noTimeView_rate.IsChecked == true);
+            info.NeedTimeOnlyWeek = (checkBox_noTimeView_week.IsChecked == true);
             info.StartTimeWeek = comboBox_timeH_week.SelectedIndex;
-
-            if (checkBox_searchMode.IsChecked == true)
-            {
-                info.SearchMode = true;
-            }
-            else
-            {
-                info.SearchMode = false;
-            }
-
-            if (checkBox_filterEnded.IsChecked == true)
-            {
-                info.FilterEnded = true;
-            }
-            else
-            {
-                info.FilterEnded = false;
-            }
+            info.SearchMode = (checkBox_searchMode.IsChecked == true);
+            info.FilterEnded = (checkBox_filterEnded.IsChecked == true);
 
             searchKey.CopyTo(info.SearchKey);
  
@@ -235,199 +161,42 @@ namespace EpgTimer
             }
         }
 
-        /// <summary>
-        /// サービス全追加
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void button_service_addAll_Click(object sender, RoutedEventArgs e)
+        private ListBox SelectedServiceListBox()
         {
-            try
-            {
-                if (tabItem_bs.IsSelected == true)
-                {
-                    foreach (ChSet5Item info in listBox_serviceBS.Items)
-                    {
-                        bool find = false;
-                        foreach (ChSet5Item info2 in listBox_serviceView.Items)
-                        {
-                            if (info2.Key == info.Key)
-                            {
-                                find = true;
-                                break;
-                            }
-                        }
-                        if (find == false)
-                        {
-                            listBox_serviceView.Items.Add(info);
-                        }
-                    }
-                }
-                else if (tabItem_cs.IsSelected == true)
-                {
-                    foreach (ChSet5Item info in listBox_serviceCS.Items)
-                    {
-                        bool find = false;
-                        foreach (ChSet5Item info2 in listBox_serviceView.Items)
-                        {
-                            if (info2.Key == info.Key)
-                            {
-                                find = true;
-                                break;
-                            }
-                        }
-                        if (find == false)
-                        {
-                            listBox_serviceView.Items.Add(info);
-                        }
-                    }
-                }
-                else if (tabItem_tere.IsSelected == true)
-                {
-                    foreach (ChSet5Item info in listBox_serviceTere.Items)
-                    {
-                        bool find = false;
-                        foreach (ChSet5Item info2 in listBox_serviceView.Items)
-                        {
-                            if (info2.Key == info.Key)
-                            {
-                                find = true;
-                                break;
-                            }
-                        }
-                        if (find == false)
-                        {
-                            listBox_serviceView.Items.Add(info);
-                        }
-                    }
-                }
-                else if (tabItem_other.IsSelected == true)
-                {
-                    foreach (ChSet5Item info in listBox_serviceOther.Items)
-                    {
-                        bool find = false;
-                        foreach (ChSet5Item info2 in listBox_serviceView.Items)
-                        {
-                            if (info2.Key == info.Key)
-                            {
-                                find = true;
-                                break;
-                            }
-                        }
-                        if (find == false)
-                        {
-                            listBox_serviceView.Items.Add(info);
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            if (tabItem_bs.IsSelected == true) return listBox_serviceBS;
+            if (tabItem_cs.IsSelected == true) return listBox_serviceCS;
+            if (tabItem_tere.IsSelected == true) return listBox_serviceTere;
+            if (tabItem_other.IsSelected == true) return listBox_serviceOther;
+            if (tabItem_all.IsSelected == true) return listBox_serviceAll;
+            return null;
         }
 
-        /// <summary>
-        /// 映像のみ全追加
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
+        /// <summary>サービス全追加</summary>
+        private void button_service_addAll_Click(object sender, RoutedEventArgs e)
+        {
+            ListBox listBox = SelectedServiceListBox();
+            if (listBox == null) return;
+
+            listBox.UnselectAll();
+            listBox.SelectAll();
+            addItems(listBox, listBox_serviceView);
+        }
+
+        /// <summary>映像のみ全追加</summary>
         private void button_service_addVideo_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                if (tabItem_bs.IsSelected == true)
+                ListBox listBox = SelectedServiceListBox();
+                if (listBox == null) return;
+
+                listBox.UnselectAll();
+                foreach (ChSet5Item info in listBox.Items)
                 {
-                    foreach (ChSet5Item info in listBox_serviceBS.Items)
-                    {
-                        if (info.ServiceType != 0x01 && info.ServiceType != 0xA5)
-                        {
-                            continue;
-                        }
-                        bool find = false;
-                        foreach (ChSet5Item info2 in listBox_serviceView.Items)
-                        {
-                            if (info2.Key == info.Key)
-                            {
-                                find = true;
-                                break;
-                            }
-                        }
-                        if (find == false)
-                        {
-                            listBox_serviceView.Items.Add(info);
-                        }
-                    }
+                    if (info.ServiceType != 0x01 && info.ServiceType != 0xA5) continue;
+                    listBox.SelectedItems.Add(info);//重い。
                 }
-                else if (tabItem_cs.IsSelected == true)
-                {
-                    foreach (ChSet5Item info in listBox_serviceCS.Items)
-                    {
-                        if (info.ServiceType != 0x01 && info.ServiceType != 0xA5)
-                        {
-                            continue;
-                        }
-                        bool find = false;
-                        foreach (ChSet5Item info2 in listBox_serviceView.Items)
-                        {
-                            if (info2.Key == info.Key)
-                            {
-                                find = true;
-                                break;
-                            }
-                        }
-                        if (find == false)
-                        {
-                            listBox_serviceView.Items.Add(info);
-                        }
-                    }
-                }
-                else if (tabItem_tere.IsSelected == true)
-                {
-                    foreach (ChSet5Item info in listBox_serviceTere.Items)
-                    {
-                        if (info.ServiceType != 0x01 && info.ServiceType != 0xA5)
-                        {
-                            continue;
-                        }
-                        bool find = false;
-                        foreach (ChSet5Item info2 in listBox_serviceView.Items)
-                        {
-                            if (info2.Key == info.Key)
-                            {
-                                find = true;
-                                break;
-                            }
-                        }
-                        if (find == false)
-                        {
-                            listBox_serviceView.Items.Add(info);
-                        }
-                    }
-                }
-                else if (tabItem_other.IsSelected == true)
-                {
-                    foreach (ChSet5Item info in listBox_serviceOther.Items)
-                    {
-                        if (info.ServiceType != 0x01 && info.ServiceType != 0xA5)
-                        {
-                            continue;
-                        }
-                        bool find = false;
-                        foreach (ChSet5Item info2 in listBox_serviceView.Items)
-                        {
-                            if (info2.Key == info.Key)
-                            {
-                                find = true;
-                                break;
-                            }
-                        }
-                        if (find == false)
-                        {
-                            listBox_serviceView.Items.Add(info);
-                        }
-                    }
-                }
+                addItems(listBox, listBox_serviceView);
             }
             catch (Exception ex)
             {
@@ -435,141 +204,42 @@ namespace EpgTimer
             }
         }
 
-        /// <summary>
-        /// サービス１つ追加
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
+        /// <summary>選択サービス追加</summary>
         private void button_service_add_Click(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                if (tabItem_bs.IsSelected == true)
-                {
-                    if (listBox_serviceBS.SelectedItem == null)
-                    {
-                        MessageBox.Show("アイテムが選択されていません");
-                        return;
-                    }
-                    ChSet5Item info = listBox_serviceBS.SelectedItem as ChSet5Item;
-                    bool find = false;
-                    foreach (ChSet5Item info2 in listBox_serviceView.Items)
-                    {
-                        if (info2.Key == info.Key)
-                        {
-                            find = true;
-                            break;
-                        }
-                    }
-                    if (find == false)
-                    {
-                        listBox_serviceView.Items.Add(info);
-                    }
-                }
-                else if (tabItem_cs.IsSelected == true)
-                {
-                    if (listBox_serviceCS.SelectedItem == null)
-                    {
-                        MessageBox.Show("アイテムが選択されていません");
-                        return;
-                    }
-                    ChSet5Item info = listBox_serviceCS.SelectedItem as ChSet5Item;
-                    bool find = false;
-                    foreach (ChSet5Item info2 in listBox_serviceView.Items)
-                    {
-                        if (info2.Key == info.Key)
-                        {
-                            find = true;
-                            break;
-                        }
-                    }
-                    if (find == false)
-                    {
-                        listBox_serviceView.Items.Add(info);
-                    }
-                }
-                else if (tabItem_tere.IsSelected == true)
-                {
-                    if (listBox_serviceTere.SelectedItem == null)
-                    {
-                        MessageBox.Show("アイテムが選択されていません");
-                        return;
-                    }
-                    ChSet5Item info = listBox_serviceTere.SelectedItem as ChSet5Item;
-                    bool find = false;
-                    foreach (ChSet5Item info2 in listBox_serviceView.Items)
-                    {
-                        if (info2.Key == info.Key)
-                        {
-                            find = true;
-                            break;
-                        }
-                    }
-                    if (find == false)
-                    {
-                        listBox_serviceView.Items.Add(info);
-                    }
-                }
-                else if (tabItem_other.IsSelected == true)
-                {
-                    if (listBox_serviceOther.SelectedItem == null)
-                    {
-                        MessageBox.Show("アイテムが選択されていません");
-                        return;
-                    }
-                    ChSet5Item info = listBox_serviceOther.SelectedItem as ChSet5Item;
-                    bool find = false;
-                    foreach (ChSet5Item info2 in listBox_serviceView.Items)
-                    {
-                        if (info2.Key == info.Key)
-                        {
-                            find = true;
-                            break;
-                        }
-                    }
-                    if (find == false)
-                    {
-                        listBox_serviceView.Items.Add(info);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            addItems(SelectedServiceListBox(), listBox_serviceView);
         }
 
-        /// <summary>
-        /// サービス１つ削除
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
+        /// <summary>選択サービス削除</summary>
         private void button_service_del_Click(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                listBox_serviceView.Items.RemoveAt(listBox_serviceView.SelectedIndex);
-                if (listBox_serviceView.Items.Count > 0)
-                {
-                    listBox_serviceView.SelectedIndex = 0;
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            deleteItems(listBox_serviceView);
         }
 
-        /// <summary>
-        /// サービス全削除
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
+        /// <summary>サービス全削除</summary>
         private void button_service_delAll_Click(object sender, RoutedEventArgs e)
         {
+            listBox_serviceView.Items.Clear();
+        }
+
+        private void addItems(ListBox src, ListBox target)
+        {
             try
             {
-                listBox_serviceView.Items.Clear();
+                if (src == null || target == null) return;
+
+                foreach (object info in src.SelectedItems)
+                {
+                    if (target.Items.Contains(info) == false)
+                    {
+                        target.Items.Add(info);
+                    }
+                }
+                if (target.Items.Count != 0)
+                {
+                    target.SelectedIndex = target.Items.Count - 1;
+                    target.ScrollIntoView(target.SelectedItems);
+                }
             }
             catch (Exception ex)
             {
@@ -577,53 +247,70 @@ namespace EpgTimer
             }
         }
 
-        /// <summary>
-        /// 1つ上に移動
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
+        private void deleteItems(ListBox target)
+        {
+            try
+            {
+                if (target == null) return;
+
+                var delItems = target.SelectedItems.Cast<object>().ToList();
+                int newSelectedIndex = 0;
+                foreach (object info in delItems)
+                {
+                    newSelectedIndex = target.Items.IndexOf(info);
+                    target.Items.RemoveAt(newSelectedIndex);
+                }
+
+                if (target.Items.Count != 0)
+                {
+                    newSelectedIndex = (newSelectedIndex == target.Items.Count ? newSelectedIndex - 1 : newSelectedIndex);
+                    target.SelectedIndex = newSelectedIndex;
+                    target.ScrollIntoView(target.SelectedItems);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+            }
+        }
+
+        /// <summary>1つ上に移動</summary>
         private void button_service_up_Click(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                if (listBox_serviceView.SelectedItem != null)
-                {
-                    if (listBox_serviceView.SelectedIndex >= 1)
-                    {
-                        object temp = listBox_serviceView.SelectedItem;
-                        int index = listBox_serviceView.SelectedIndex;
-                        listBox_serviceView.Items.RemoveAt(listBox_serviceView.SelectedIndex);
-                        listBox_serviceView.Items.Insert(index - 1, temp);
-                        listBox_serviceView.SelectedIndex = index - 1;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            move_item(listBox_serviceView, -1);
         }
 
-        /// <summary>
-        /// 1つ下に移動
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
+        /// <summary>1つ下に移動</summary>
         private void button_service_down_Click(object sender, RoutedEventArgs e)
         {
+            move_item(listBox_serviceView, 1);
+        }
+
+        /// <summary>一番上に移動</summary>
+        private void button_service_top_Click(object sender, RoutedEventArgs e)
+        {
+            move_item(listBox_serviceView, -1 * listBox_serviceView.SelectedIndex);
+        }
+
+        /// <summary>一番下に移動</summary>
+        private void button_service_bottom_Click(object sender, RoutedEventArgs e)
+        {
+            move_item(listBox_serviceView, listBox_serviceView.Items.Count - 1 - listBox_serviceView.SelectedIndex);
+        }
+
+        /// <summary>アイテムを移動</summary>
+        private void move_item(ListBox target, int direction)
+        {
             try
             {
-                if (listBox_serviceView.SelectedItem != null)
-                {
-                    if (listBox_serviceView.SelectedIndex < listBox_serviceView.Items.Count - 1)
-                    {
-                        object temp = listBox_serviceView.SelectedItem;
-                        int index = listBox_serviceView.SelectedIndex;
-                        listBox_serviceView.Items.RemoveAt(listBox_serviceView.SelectedIndex);
-                        listBox_serviceView.Items.Insert(index + 1, temp);
-                        listBox_serviceView.SelectedIndex = index + 1;
-                    }
-                }
+                if (target == null || target.SelectedItem == null) return;
+
+                object temp = target.SelectedItem;
+                int newIndex = ((target.SelectedIndex + direction) % target.Items.Count + target.Items.Count) % target.Items.Count;
+                target.Items.RemoveAt(target.SelectedIndex);
+                target.Items.Insert(newIndex, temp);
+                target.SelectedIndex = newIndex;
+                target.ScrollIntoView(target.SelectedItem);
             }
             catch (Exception ex)
             {
@@ -631,204 +318,61 @@ namespace EpgTimer
             }
         }
 
-        /// <summary>
-        /// ジャンル全追加
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
+        /// <summary>ジャンル全追加</summary>
         private void button_jyanru_addAll_Click(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                foreach (ContentKindInfo info in listBox_jyanru.Items)
-                {
-                    bool find = false;
-                    foreach (ContentKindInfo info2 in listBox_jyanruView.Items)
-                    {
-                        if (info2.ID == info.ID)
-                        {
-                            find = true;
-                            break;
-                        }
-                    }
-                    if (find == false)
-                    {
-                        listBox_jyanruView.Items.Add(info);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            listBox_jyanru.UnselectAll();
+            listBox_jyanru.SelectAll();
+            addItems(listBox_jyanru, listBox_jyanruView);
         }
 
-        /// <summary>
-        /// ジャンル１つ追加
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
+        /// <summary>選択ジャンル追加</summary>
         private void button_jyanru_add_Click(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                if (listBox_jyanru.SelectedItem != null)
-                {
-                    ContentKindInfo info = listBox_jyanru.SelectedItem as ContentKindInfo;
-                    bool find = false;
-                    foreach (ContentKindInfo info2 in listBox_jyanruView.Items)
-                    {
-                        if (info2.ID == info.ID)
-                        {
-                            find = true;
-                            break;
-                        }
-                    }
-                    if (find == false)
-                    {
-                        listBox_jyanruView.Items.Add(info);
-                    }
-                }
-                else
-                {
-                    MessageBox.Show("アイテムが選択されていません");
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            addItems(listBox_jyanru, listBox_jyanruView);
         }
 
-        /// <summary>
-        /// ジャンル１つ削除
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
+        /// <summary>選択ジャンル削除</summary>
         private void button_jyanru_del_Click(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                if (listBox_jyanruView.SelectedItem != null)
-                {
-                    listBox_jyanruView.Items.RemoveAt(listBox_jyanruView.SelectedIndex);
-                    if (listBox_jyanruView.Items.Count > 0)
-                    {
-                        listBox_jyanruView.SelectedIndex = 0;
-                    }
-                }
-                else
-                {
-                    MessageBox.Show("アイテムが選択されていません");
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            deleteItems(listBox_jyanruView);
         }
 
-        /// <summary>
-        /// ジャンル全削除
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
+        /// <summary>ジャンル全削除</summary>
         private void button_jyanru_delAll_Click(object sender, RoutedEventArgs e)
         {
+            listBox_jyanruView.Items.Clear();
+        }
+
+        private void listBox_serviceView_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            Display_ServiceView(listBox_serviceView, textBox_serviceView1);
+        }
+
+        private void listBox_service_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            ListBox listBox = SelectedServiceListBox();
+            if (listBox == null) return;
+
+            Display_ServiceView(listBox, textBox_serviceView2);
+        }
+
+        private void Display_ServiceView(ListBox srclistBox, TextBox targetBox)
+        {
             try
             {
-                listBox_jyanruView.Items.Clear();
+                targetBox.Text = "";
+                if (srclistBox.SelectedItem == null) return;
+
+                ChSet5Item info = srclistBox.SelectedItems[srclistBox.SelectedItems.Count - 1] as ChSet5Item;
+                targetBox.Text = info.NetworkName + "\r\n";
+                targetBox.Text += "OriginalNetworkID : " + info.ONID.ToString() + " (0x" + info.ONID.ToString("X4") + ")\r\n";
+                targetBox.Text += "TransportStreamID : " + info.TSID.ToString() + " (0x" + info.TSID.ToString("X4") + ")\r\n";
+                targetBox.Text += "ServiceID : " + info.SID.ToString() + " (0x" + info.SID.ToString("X4") + ")\r\n";
             }
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
-        
-        private void listBox_serviceView_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            textBox_serviceView1.Text = "";
-            if (listBox_serviceView.SelectedItem == null)
-            {
-                return;
-            }
-            ChSet5Item info = listBox_serviceView.SelectedItem as ChSet5Item;
-
-            textBox_serviceView1.Text = info.NetworkName + "\r\n";
-            textBox_serviceView1.Text += "OriginalNetworkID : " + info.ONID.ToString() + " (0x" + info.ONID.ToString("X4") + ")\r\n";
-            textBox_serviceView1.Text += "TransportStreamID : " + info.TSID.ToString() + " (0x" + info.TSID.ToString("X4") + ")\r\n";
-            textBox_serviceView1.Text += "ServiceID : " + info.SID.ToString() + " (0x" + info.SID.ToString("X4") + ")\r\n";
-        }
-
-        private void listBox_serviceBS_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            textBox_serviceView2.Text = "";
-            if (tabItem_bs.IsSelected == true)
-            {
-                if (listBox_serviceBS.SelectedItem == null)
-                {
-                    return;
-                }
-                ChSet5Item info = listBox_serviceBS.SelectedItem as ChSet5Item;
-
-                textBox_serviceView2.Text = info.NetworkName + "\r\n";
-                textBox_serviceView2.Text += "OriginalNetworkID : " + info.ONID.ToString() + " (0x" + info.ONID.ToString("X4") + ")\r\n";
-                textBox_serviceView2.Text += "TransportStreamID : " + info.TSID.ToString() + " (0x" + info.TSID.ToString("X4") + ")\r\n";
-                textBox_serviceView2.Text += "ServiceID : " + info.SID.ToString() + " (0x" + info.SID.ToString("X4") + ")\r\n";
-            }
-        }
-
-        private void listBox_serviceCS_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            textBox_serviceView2.Text = "";
-            if (tabItem_cs.IsSelected == true)
-            {
-                if (listBox_serviceCS.SelectedItem == null)
-                {
-                    return;
-                }
-                ChSet5Item info = listBox_serviceCS.SelectedItem as ChSet5Item;
-
-                textBox_serviceView2.Text = info.NetworkName + "\r\n";
-                textBox_serviceView2.Text += "OriginalNetworkID : " + info.ONID.ToString() + " (0x" + info.ONID.ToString("X4") + ")\r\n";
-                textBox_serviceView2.Text += "TransportStreamID : " + info.TSID.ToString() + " (0x" + info.TSID.ToString("X4") + ")\r\n";
-                textBox_serviceView2.Text += "ServiceID : " + info.SID.ToString() + " (0x" + info.SID.ToString("X4") + ")\r\n";
-            }
-        }
-
-        private void listBox_serviceTere_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            textBox_serviceView2.Text = "";
-            if (tabItem_tere.IsSelected == true)
-            {
-                if (listBox_serviceTere.SelectedItem == null)
-                {
-                    return;
-                }
-                ChSet5Item info = listBox_serviceTere.SelectedItem as ChSet5Item;
-
-                textBox_serviceView2.Text = info.NetworkName + "\r\n";
-                textBox_serviceView2.Text += "OriginalNetworkID : " + info.ONID.ToString() + " (0x" + info.ONID.ToString("X4") + ")\r\n";
-                textBox_serviceView2.Text += "TransportStreamID : " + info.TSID.ToString() + " (0x" + info.TSID.ToString("X4") + ")\r\n";
-                textBox_serviceView2.Text += "ServiceID : " + info.SID.ToString() + " (0x" + info.SID.ToString("X4") + ")\r\n";
-            }
-        }
-
-        private void listBox_serviceOther_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            textBox_serviceView2.Text = "";
-            if (tabItem_other.IsSelected == true)
-            {
-                if (listBox_serviceOther.SelectedItem == null)
-                {
-                    return;
-                }
-                ChSet5Item info = listBox_serviceOther.SelectedItem as ChSet5Item;
-
-                textBox_serviceView2.Text = info.NetworkName + "\r\n";
-                textBox_serviceView2.Text += "OriginalNetworkID : " + info.ONID.ToString() + " (0x" + info.ONID.ToString("X4") + ")\r\n";
-                textBox_serviceView2.Text += "TransportStreamID : " + info.TSID.ToString() + " (0x" + info.TSID.ToString("X4") + ")\r\n";
-                textBox_serviceView2.Text += "ServiceID : " + info.SID.ToString() + " (0x" + info.SID.ToString("X4") + ")\r\n";
             }
         }
 
