@@ -93,7 +93,6 @@ namespace EpgTimer
                     if (listKeys.TryGetValue(getKey(oldItem), out setItem))
                     {
                         listView.SelectedItem = setItem;
-                        listView.ScrollIntoView(setItem);
                     }
 
                     foreach (T oldItem1 in oldItems)
@@ -104,6 +103,9 @@ namespace EpgTimer
                             listView.SelectedItems.Add(setItem);
                         }
                     }
+
+                    //画面更新が入るので最後に実行する
+                    listView.ScrollIntoView(listView.SelectedItem);
                 }
             }
             catch (Exception ex)
