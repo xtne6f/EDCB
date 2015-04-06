@@ -38,6 +38,11 @@ namespace EpgTimer
             get;
             set;
         }
+        public List<ContentKindInfo> ContentKindList
+        {
+            get;
+            set;
+        }
         public Dictionary<UInt16, ContentKindInfo> ContentKindDictionary2
         {
             get;
@@ -346,15 +351,18 @@ namespace EpgTimer
 
                 if (ContentKindDictionary != null)
                 {
-                    //表示順調整する。ContentKindDictionary2のコード上に持って行ってもいいけど‥。
-                    ContentKindDictionary.Remove(0x0FFF);
-                    ContentKindDictionary.Remove(0xFFFF);
+                    //CSもまとめて検索出来るようにする仮対応。
                     foreach (ContentKindInfo info in ContentKindDictionary2.Values)
                     {
                         ContentKindDictionary.Add((UInt16)(info.ID | 0x7000), new ContentKindInfo(info.ContentName, info.SubName, (Byte)(info.Nibble1 | 0x70), info.Nibble2));
                     }
-                    ContentKindDictionary.Add(0x0FFF, new ContentKindInfo("その他", "", 0x0F, 0xFF));
-                    ContentKindDictionary.Add(0xFFFF, new ContentKindInfo("なし", "", 0xFF, 0xFF));
+
+                    //表示順が追加順にならないことの対策。OrderedDictionary使えるならその方が簡単かとは思うが
+                    if (ContentKindList == null)
+                    {
+                        ContentKindList = new List<ContentKindInfo>(ContentKindDictionary.Values);
+                        ContentKindList.Sort((i1, i2) => (int)i1.SortKey - (int)i2.SortKey);
+                    }
                 }
             }
             if (ComponentKindDictionary == null)

@@ -68,10 +68,7 @@ namespace EpgTimer
                         listBox_serviceOther.Items.Add(info);
                     }
                 }
-                foreach (ContentKindInfo info in CommonManager.Instance.ContentKindDictionary.Values)
-                {
-                    listBox_jyanru.Items.Add(info);
-                }
+                listBox_jyanru.DataContext = CommonManager.Instance.ContentKindList;
 
                 radioButton_rate.IsChecked = true;
                 radioButton_week.IsChecked = false;

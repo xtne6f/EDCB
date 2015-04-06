@@ -68,7 +68,7 @@ namespace EpgTimer
                 }
                 listView_service.ItemsSource = serviceList;
 
-                comboBox_content.DataContext = CommonManager.Instance.ContentKindDictionary.Values;
+                comboBox_content.DataContext = CommonManager.Instance.ContentKindList;
                 comboBox_content.SelectedIndex = 0;
 
                 comboBox_time_sw.DataContext = CommonManager.Instance.DayOfWeekDictionary.Values;
