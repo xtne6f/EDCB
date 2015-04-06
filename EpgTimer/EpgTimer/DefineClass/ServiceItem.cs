@@ -2,43 +2,15 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.ComponentModel;
 
 using CtrlCmdCLI;
 using CtrlCmdCLI.Def;
 
 namespace EpgTimer
 {
-    public class ServiceItem : INotifyPropertyChanged
+    public class ServiceItem : SelectableItem
     {
-        public event PropertyChangedEventHandler PropertyChanged;
-        private bool selected = false;
-
-        private void NotifyPropertyChanged(String info)
-        {
-            if (PropertyChanged != null)
-            {
-                PropertyChanged(this, new PropertyChangedEventArgs(info));
-            }
-        }
-
-        public EpgServiceInfo ServiceInfo
-        {
-            get;
-            set;
-        }
-        public bool IsSelected
-        {
-            get
-            {
-                return this.selected;
-            }
-            set
-            {
-                this.selected = value;
-                NotifyPropertyChanged("IsSelected");
-            }
-        }
+        public EpgServiceInfo ServiceInfo { get; set; }
         public UInt64 ID
         {
             get { return ServiceInfo.Create64Key(); }

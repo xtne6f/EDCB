@@ -143,7 +143,7 @@
     <Compile Include="RecInfoView.xaml.cs">
       <DependentUpon>RecInfoView.xaml</DependentUpon>
     </Compile>
-    <Compile Include="DefineClass\ServiceItem2.cs" />
+    <Compile Include="DefineClass\SelectableItem.cs" />
     <Compile Include="DefineClass\ServiceViewItem.cs" />
     <Compile Include="Setting\SetApp2DelWindow.xaml.cs">
       <DependentUpon>SetApp2DelWindow.xaml</DependentUpon>

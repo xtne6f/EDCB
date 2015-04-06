@@ -365,10 +365,12 @@ namespace EpgTimer
                 if (srclistBox.SelectedItem == null) return;
 
                 ChSet5Item info = srclistBox.SelectedItems[srclistBox.SelectedItems.Count - 1] as ChSet5Item;
-                targetBox.Text = info.NetworkName + "\r\n";
-                targetBox.Text += "OriginalNetworkID : " + info.ONID.ToString() + " (0x" + info.ONID.ToString("X4") + ")\r\n";
-                targetBox.Text += "TransportStreamID : " + info.TSID.ToString() + " (0x" + info.TSID.ToString("X4") + ")\r\n";
-                targetBox.Text += "ServiceID : " + info.SID.ToString() + " (0x" + info.SID.ToString("X4") + ")\r\n";
+                targetBox.Text = 
+                    info.ServiceName + "\r\n" +
+                    info.NetworkName + "\r\n" +
+                    "OriginalNetworkID : " + info.ONID.ToString() + " (0x" + info.ONID.ToString("X4") + ")\r\n" +
+                    "TransportStreamID : " + info.TSID.ToString() + " (0x" + info.TSID.ToString("X4") + ")\r\n" +
+                    "ServiceID : " + info.SID.ToString() + " (0x" + info.SID.ToString("X4") + ")\r\n";
             }
             catch (Exception ex)
             {

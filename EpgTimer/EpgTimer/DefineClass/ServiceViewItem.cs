@@ -5,40 +5,34 @@ using System.Text;
 
 namespace EpgTimer
 {
-    public class ServiceViewItem
+    public class ServiceViewItem : SelectableItem
     {
         public ServiceViewItem(ChSet5Item info)
         {
             ServiceInfo = info;
         }
-        public ChSet5Item ServiceInfo
-        {
-            get;
-            set;
-        }
+        public ChSet5Item ServiceInfo { get; set; }
         public UInt64 Key
-        {
-            get
-            {
-                return ServiceInfo.Key;
-            }
+        { 
+            get { return ServiceInfo.Key; }
         }
-        public override string ToString()
-        {
-            if (ServiceInfo != null)
-            {
-                return ServiceInfo.ServiceName;
-            }
-            else
-            {
-                return "";
-            }
+        public String ServiceName
+        { 
+            get { return ServiceInfo.ServiceName; }
         }
         public String ToolTipView
         {
             get
             {
-                return CommonManager.Instance.ConvertServiceItemText(ServiceInfo);
+                if (Settings.Instance.NoToolTip == true) return null;
+
+                return 
+                    "service_name : " + ServiceInfo.ServiceName + "\r\n" +
+                    "service_type : " + ServiceInfo.ServiceType.ToString() + "(0x" + ServiceInfo.ServiceType.ToString("X2") + ")" + "\r\n" +
+                    "original_network_id : " + ServiceInfo.ONID.ToString() + "(0x" + ServiceInfo.ONID.ToString("X4") + ")" + "\r\n" +
+                    "transport_stream_id : " + ServiceInfo.TSID.ToString() + "(0x" + ServiceInfo.TSID.ToString("X4") + ")" + "\r\n" +
+                    "service_id : " + ServiceInfo.SID.ToString() + "(0x" + ServiceInfo.SID.ToString("X4") + ")" + "\r\n" +
+                    "partial_reception : " + ServiceInfo.PartialFlag.ToString();
             }
         }
     }

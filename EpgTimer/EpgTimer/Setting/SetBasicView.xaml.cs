@@ -24,7 +24,7 @@ namespace EpgTimer.Setting
     public partial class SetBasicView : UserControl
     {
         private ObservableCollection<EpgCaptime> timeList;
-        private List<ServiceItem2> serviceList;
+        private List<ServiceViewItem> serviceList;
 
         public SetBasicView()
         {
@@ -150,13 +150,12 @@ namespace EpgTimer.Setting
                 comboBox_MM.DataContext = CommonManager.Instance.MinDictionary.Values;
                 comboBox_MM.SelectedIndex = 0;
 
-                serviceList = new List<ServiceItem2>();
+                serviceList = new List<ServiceViewItem>();
                 try
                 {
                     foreach (ChSet5Item info in ChSet5.Instance.ChList.Values)
                     {
-                        ServiceItem2 item = new ServiceItem2();
-                        item.ServiceInfo = info;
+                        ServiceViewItem item = new ServiceViewItem(info);
                         if (info.EpgCapFlag == 1)
                         {
                             item.IsSelected = true;
@@ -341,7 +340,7 @@ namespace EpgTimer.Setting
                     IniFileHandler.WritePrivateProfileString("SET", "CS2BasicOnly", "0", SettingPath.CommonIniPath);
                 }
 
-                foreach (ServiceItem2 info in serviceList)
+                foreach (ServiceViewItem info in serviceList)
                 {
                     UInt64 key = info.ServiceInfo.Key;
                     try
@@ -605,7 +604,7 @@ namespace EpgTimer.Setting
         {
             try
             {
-                foreach (ServiceItem2 info in this.serviceList)
+                foreach (ServiceViewItem info in this.serviceList)
                 {
                     info.IsSelected = true;
                 }
@@ -620,7 +619,7 @@ namespace EpgTimer.Setting
         {
             try
             {
-                foreach (ServiceItem2 info in this.serviceList)
+                foreach (ServiceViewItem info in this.serviceList)
                 {
                     if (info.ServiceInfo.ServiceType == 0x01 || info.ServiceInfo.ServiceType == 0xA5)
                     {
@@ -642,7 +641,7 @@ namespace EpgTimer.Setting
         {
             try
             {
-                foreach (ServiceItem2 info in this.serviceList)
+                foreach (ServiceViewItem info in this.serviceList)
                 {
                     info.IsSelected = false;
                 }
