@@ -165,7 +165,7 @@ namespace EpgTimer
             }
             if (VUtil == null)
             {
-                VUtil = new ViewUtil();
+                VUtil = new ViewUtil(CtrlCmd, MUtil);
             }
             if (ContentKindDictionary == null)
             {
@@ -1386,36 +1386,6 @@ namespace EpgTimer
                 {
                     Hyperlink h = sender as Hyperlink;
                     System.Diagnostics.Process.Start(h.NavigateUri.ToString());
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
-
-        public void FilePlay(String filePath)
-        {
-            try
-            {
-                if (NWMode == false)
-                {
-                    System.Diagnostics.Process process;
-                    if (Settings.Instance.FilePlayExe.Length == 0)
-                    {
-                        process = System.Diagnostics.Process.Start(filePath);
-                    }
-                    else
-                    {
-                        String cmdLine = Settings.Instance.FilePlayCmd;
-                        cmdLine = cmdLine.Replace("$FilePath$", filePath);
-                        process = System.Diagnostics.Process.Start(Settings.Instance.FilePlayExe, cmdLine);
-
-                    }
-                }
-                else
-                {
-                    TVTestCtrl.StartStreamingPlay(filePath, NW.ConnectedIP, NW.ConnectedPort);
                 }
             }
             catch (Exception ex)

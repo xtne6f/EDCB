@@ -219,7 +219,7 @@ namespace EpgTimer
             ReserveData reserve = new ReserveData();
             if (GetReserveItem(clickPos, ref reserve) == false) return;
 
-            BlackoutWindow.selectedReserveItem = new ReserveItem(reserve);
+            BlackoutWindow.SelectedReserveItem = new ReserveItem(reserve);
             MainWindow mainWindow = (MainWindow)Application.Current.MainWindow;
             mainWindow.moveTo_tabItem_epg();
         }
@@ -323,27 +323,9 @@ namespace EpgTimer
 
         private bool ReloadReserveData()
         {
-            try
-            {
-                if (CommonManager.Instance.NWMode == true)
-                {
-                    if (CommonManager.Instance.NW.IsConnected == false)
-                    {
-                        return false;
-                    }
-                } 
-                ErrCode err = CommonManager.Instance.DB.ReloadReserveInfo();
-                if (CommonManager.CmdErrMsgTypical(err, "予約情報の取得", this) == false)
-                {
-                    return false;
-                }
+            if (vutil.ReloadReserveData(this) == false) return false;
 
-                ReloadReserveViewItem();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            ReloadReserveViewItem();
             return true;
         }
 

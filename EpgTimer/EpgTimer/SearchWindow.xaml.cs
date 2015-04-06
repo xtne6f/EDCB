@@ -167,33 +167,18 @@ namespace EpgTimer
                 EpgSearchKeyInfo key = new EpgSearchKeyInfo();
                 searchKeyView.GetSearchKey(ref key);
                 key.andKey = key.andKey.Substring(key.andKey.StartsWith("^!{999}") ? 7 : 0);
-                List<EpgSearchKeyInfo> keyList = new List<EpgSearchKeyInfo>();
-
-                keyList.Add(key);
                 List<EpgEventInfo> list = new List<EpgEventInfo>();
 
-                cmd.SendSearchPg(keyList, ref list);
+                cmd.SendSearchPg(mutil.GetList(key), ref list);
+
                 foreach (EpgEventInfo info in list)
                 {
-                    SearchItem item = new SearchItem();
-                    item.EventInfo = info;
-
-                    if (item.EventInfo.start_time.AddSeconds(item.EventInfo.durationSec) > DateTime.Now)
+                    if (info.start_time.AddSeconds(info.durationSec) > DateTime.Now)
                     {
-                        foreach (ReserveData info2 in CommonManager.Instance.DB.ReserveList.Values)
-                        {
-                            if (CommonManager.EqualsPg(info, info2) == true)
-                            {
-                                item.ReserveInfo = info2;
-                                break;
-                            }
-                        }
-
-                        resultList.Add(item);
+                        resultList.Add(new SearchItem(info));
                     }
                 }
-
-                listView_result.DataContext = resultList;
+                mutil.SetSearchItemReserved(resultList);
 
                 if (this.gridViewSorter.IsExistSortParams)
                 {
@@ -204,7 +189,7 @@ namespace EpgTimer
                     this.gridViewSorter.ResetSortParams();
                     this.gridViewSorter.SortByMultiHeaderWithKey(this.resultList, gridView_result.Columns, "StartTime");
                 }
-                listView_result.Items.Refresh();
+                listView_result.DataContext = resultList;
 
                 searchKeyView.SaveSearchLog();
 
@@ -640,7 +625,7 @@ namespace EpgTimer
             if (listView_result.SelectedItem != null)
             {
                 SearchItem item = SelectSingleItem();
-                BlackoutWindow.selectedSearchItem = item;
+                BlackoutWindow.SelectedSearchItem = item;
                 MainWindow mainWindow1 = this.Owner as MainWindow;
                 if (mainWindow1 != null)
                 {

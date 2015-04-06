@@ -82,30 +82,21 @@ namespace EpgTimer
 
             if (master == null || searchItemList == null) return;
 
+            var slist = new List<SearchItem>();
             foreach (EpgEventInfo info in searchItemList)
             {
                 if (info.start_time.AddSeconds(info.durationSec) > DateTime.Now)
                 {
-                    searchCount++;
-
-                    //予約情報との突き合わせ
-                    foreach (ReserveData info2 in CommonManager.Instance.DB.ReserveList.Values)
-                    {
-                        if (CommonManager.EqualsPg(info, info2) == true)
-                        {
-                            if (info2.RecSetting.RecMode == 5)
-                            {
-                                offCount++;
-                            }
-                            else
-                            {
-                                onCount++;
-                            }
-                            break;
-                        }
-                    }
+                    slist.Add(new SearchItem(info));
                 }
             }
+            CommonManager.Instance.MUtil.SetSearchItemReserved(slist);
+
+            var rlist = slist.ReserveInfoList();
+
+            searchCount = (uint)slist.Count;
+            onCount = (uint)rlist.Count(info => info.RecSetting.RecMode != 5);
+            offCount = (uint)rlist.Count - onCount;
         }
 
     }

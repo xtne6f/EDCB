@@ -24,6 +24,7 @@ namespace EpgTimer
 
         private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
         private MenuUtil mutil = CommonManager.Instance.MUtil;
+        private ViewUtil vutil = CommonManager.Instance.VUtil;
 
         MainWindow _mainWindow;
 
@@ -111,30 +112,18 @@ namespace EpgTimer
         {
             try
             {
-                if (CommonManager.Instance.NWMode == true)
-                {
-                    if (CommonManager.Instance.NW.IsConnected == false)
-                    {
-                        return false;
-                    }
-                }
-                ErrCode err = CommonManager.Instance.DB.ReloadReserveInfo();
-                if (CommonManager.CmdErrMsgTypical(err, "予約情報の取得", this) == false)
-                {
-                    return false;
-                }
-
                 //更新前の選択情報の保存
                 var oldItems = new ListViewSelectedKeeper<ReserveItem>(listView_reserve, true);
+
+                listView_reserve.DataContext = null;
                 reserveList.Clear();
+
+                if (vutil.ReloadReserveData(this) == false) return false;
 
                 foreach (ReserveData info in CommonManager.Instance.DB.ReserveList.Values)
                 {
-                    ReserveItem item = new ReserveItem(info);
-                    reserveList.Add(item);
+                    reserveList.Add(new ReserveItem(info));
                 }
-
-                listView_reserve.DataContext = reserveList;
 
                 if (this.gridViewSorter.IsExistSortParams)
                 {
@@ -146,7 +135,7 @@ namespace EpgTimer
                     this.gridViewSorter.SortByMultiHeaderWithKey(this.reserveList, gridView_reserve.Columns,
                         Settings.Instance.ResColumnHead, true, Settings.Instance.ResSortDirection);
                 }
-                this.listView_reserve.Items.Refresh();
+                listView_reserve.DataContext = reserveList;
 
                 //選択情報の復元
                 oldItems.RestoreListViewSelected();
@@ -385,7 +374,7 @@ namespace EpgTimer
             if (listView_reserve.SelectedItem != null)
             {
                 ReserveItem item = SelectSingleItem();
-                BlackoutWindow.selectedReserveItem = item;
+                BlackoutWindow.SelectedReserveItem = item;
                 this._mainWindow.moveTo_tabItem_epg();
             }
         }

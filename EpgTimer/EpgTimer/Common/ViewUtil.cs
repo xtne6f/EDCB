@@ -15,6 +15,15 @@ namespace EpgTimer
 {
     public class ViewUtil
     {
+        private CtrlCmdUtil cmd = null;
+        private MenuUtil mutil = null;
+
+        public ViewUtil(CtrlCmdUtil ctrlCmd, MenuUtil MUtil)
+        {
+            cmd = ctrlCmd;
+            mutil = MUtil;
+        }
+
         public Brush EventDataBorderBrush(EpgEventInfo EventInfo)
         {
             Brush color1 = Brushes.White;
@@ -145,6 +154,111 @@ namespace EpgTimer
             {
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
+            return false;
+        }
+
+        public bool ReloadReserveData(ContentControl Owner = null)
+        {
+            if (EpgTimerConnectCheck() == false) return false;
+
+            ErrCode err = CommonManager.Instance.DB.ReloadReserveInfo();
+            if (CommonManager.CmdErrMsgTypical(err, "予約情報の取得", Owner) == false) return false;
+
+            return true;
+        }
+
+        public bool ReloadEpgData(ContentControl Owner = null)
+        {
+            if (EpgTimerConnectCheck() == false) return false;
+
+            ErrCode err = CommonManager.Instance.DB.ReloadEpgData();
+            if (CommonManager.CmdErrMsgTypical(err, "EPGデータの取得", Owner) == false) return false;
+
+            return true;
+        }
+
+        //仮
+        public Dictionary<UInt64, EpgServiceEventInfo> ReloadEpgDataForEpgView(CustomEpgTabInfo setViewInfo, ContentControl Owner = null)
+        {
+            if (EpgTimerConnectCheck() == false) return null;
+
+            if (setViewInfo.SearchMode == false)
+            {
+                ErrCode err = CommonManager.Instance.DB.ReloadEpgData();
+                if (CommonManager.CmdErrMsgTypical(err, "EPGデータの取得", Owner) == false) return null;
+
+                return CommonManager.Instance.DB.ServiceEventList;
+            }
+            else
+            {
+                //番組情報の検索
+                List<EpgSearchKeyInfo> keyList = mutil.GetList(setViewInfo.SearchKey);
+                var list = new List<EpgEventInfo>();
+
+                ErrCode err = (ErrCode)cmd.SendSearchPg(keyList, ref list);
+                if (CommonManager.CmdErrMsgTypical(err, "EPGデータの取得", Owner) == false) return null;
+
+                //サービス毎のリストに変換
+                var serviceEventList = new Dictionary<UInt64, EpgServiceEventInfo>();
+                foreach (EpgEventInfo eventInfo in list)
+                {
+                    UInt64 id = eventInfo.Create64Key();
+                    EpgServiceEventInfo serviceInfo;
+                    if (serviceEventList.TryGetValue(id, out serviceInfo) == false)
+                    {
+                        if (ChSet5.Instance.ChList.ContainsKey(id) == false)
+                        {
+                            //サービス情報ないので無効
+                            continue;
+                        }
+                        serviceInfo = new EpgServiceEventInfo();
+                        serviceInfo.serviceInfo = CommonManager.ConvertChSet5To(ChSet5.Instance.ChList[id]);
+
+                        serviceEventList.Add(id, serviceInfo);
+                    }
+                    serviceInfo.eventList.Add(eventInfo);
+                }
+                return serviceEventList;
+            }
+        }
+
+        public bool EpgTimerConnectCheck()
+        {
+            return CommonManager.Instance.NWMode == false || CommonManager.Instance.NW.IsConnected == true;
+        }
+
+        //ジャンル絞り込み
+        public bool ContainsContent(EpgEventInfo info, Dictionary<UInt16, UInt16> ContentKindList)
+        {
+            //絞り込み無し
+            if (ContentKindList.Count == 0) return true;
+
+            //ジャンルデータなしは該当無し扱い
+            if (info.ContentInfo == null || info.ContentInfo.nibbleList.Count == 0) return false;
+
+            foreach (EpgContentData contentInfo in info.ContentInfo.nibbleList)
+            {
+                UInt16 ID1 = (UInt16)(((UInt16)contentInfo.content_nibble_level_1) << 8 | 0xFF);
+                UInt16 ID2 = (UInt16)(((UInt16)contentInfo.content_nibble_level_1) << 8 | contentInfo.content_nibble_level_2);
+                
+                //CS検索の仮対応
+                if (ID2 == 0x0e01)
+                {
+                    ID1 = (UInt16)(((UInt16)contentInfo.user_nibble_1) << 8 | 0x70FF);
+                    ID2 = (UInt16)(((UInt16)contentInfo.user_nibble_1) << 8 | 0x7000 | contentInfo.user_nibble_2);
+                }
+
+                if (ContentKindList.ContainsKey(ID1) == true)
+                {
+                    return true;
+                }
+                else if (ContentKindList.ContainsKey(ID2) == true)
+                {
+                    return true;
+                }
+            }
+
+            //見つからない
             return false;
         }
 

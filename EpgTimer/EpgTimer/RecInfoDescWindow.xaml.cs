@@ -35,8 +35,6 @@ namespace EpgTimer
                     );
                 this.Resources = rd;
             }
-
-
         }
 
         public void SetRecInfo(RecFileInfo info)
@@ -50,10 +48,7 @@ namespace EpgTimer
         {
             if (recInfo != null)
             {
-                if (recInfo.RecFilePath.Length > 0)
-                {
-                    CommonManager.Instance.FilePlay(recInfo.RecFilePath);
-                }
+                CommonManager.Instance.MUtil.FilePlay(recInfo.RecFilePath);
             }
         }        
 

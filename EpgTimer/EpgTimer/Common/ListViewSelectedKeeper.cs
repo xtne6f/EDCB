@@ -12,9 +12,14 @@ namespace EpgTimer
 {
     public class ListViewSelectedKeeper<T> where T : class
     {
+        //リスト番組表で全選択状態でチャンネル選択更新してしまったりしたときなどでも大丈夫なように、
+        //一応選択数の上限を設定しておく。
+        public uint MaxRestoreNum = 100;
+        
         protected ListView listView = null;
         public T oldItem = null;
         public List<T> oldItems = null;
+        public bool allSelected = false;
 
         public ListViewSelectedKeeper(ListView list, bool DoStoringNow = false)
         {
@@ -22,25 +27,23 @@ namespace EpgTimer
             if (DoStoringNow) StoreListViewSelected();
         }
 
-        private Func<T, T, bool> SetFunc()
+        private Func<T, ulong> SetFunc()
         {
             //コンストラクタでやった方がいいのかもだけど、ReserveItemがwhere:newの条件外なので少し面倒
             switch (oldItem.GetType().Name)
             {
                 case "ReserveItem":
-                    return (i1, i2) =>
-                        (i1 as ReserveItem).ReserveInfo.ReserveID == (i2 as ReserveItem).ReserveInfo.ReserveID;
+                    return info => (info as ReserveItem).ReserveInfo.ReserveID;
                 case "RecInfoItem":
-                    return (i1, i2) =>
-                        (i1 as RecInfoItem).RecInfo.ID == (i2 as RecInfoItem).RecInfo.ID;
+                    return info => (info as RecInfoItem).RecInfo.ID;
                 case "EpgAutoDataItem":
-                    return (i1, i2) =>
-                        (i1 as EpgAutoDataItem).EpgAutoAddInfo.dataID == (i2 as EpgAutoDataItem).EpgAutoAddInfo.dataID;
+                    return info => (info as EpgAutoDataItem).EpgAutoAddInfo.dataID;
+                case "ManualAutoAddDataItem":
+                    return info => (info as ManualAutoAddDataItem).ManualAutoAddInfo.dataID;
                 case "SearchItem":
-                    return (i1, i2) =>
-                        CommonManager.EqualsPg((i1 as SearchItem).EventInfo, (i2 as SearchItem).EventInfo);
+                    return info => (info as SearchItem).EventInfo.Create64PgKey();
                 default:
-                    return (i1, i2) => i1 == i2;
+                    return info => (ulong)info.GetHashCode();
             }
         }
 
@@ -50,6 +53,7 @@ namespace EpgTimer
             {
                 oldItem = (T)listView.SelectedItem;
                 oldItems = listView.SelectedItems.Cast<T>().ToList();
+                allSelected = (oldItems.Count == listView.Items.Count);
             }
         }
 
@@ -59,29 +63,45 @@ namespace EpgTimer
             {
                 if (listView != null && oldItem != null && oldItems != null)
                 {
-                    Func<T, T, bool> compareFunc = SetFunc();
+                    if (this.allSelected == true)
+                    {
+                        listView.SelectAll();
+                        return;
+                    }
 
                     //このUnselectAll()は無いと正しく復元出来ない状況があり得る
                     listView.UnselectAll();
 
-                    foreach (T item in listView.Items)
+                    //上限越えの場合は、選択を解除して終了。
+                    if (oldItems.Count >= this.MaxRestoreNum) return;
+
+                    //選択数が少ないときは逆に遅くなる気もするが、Dictionaryにしておく
+                    var listKeys = new Dictionary<ulong, T>();
+                    Func<T, ulong> getKey = SetFunc();
+
+                    foreach (T listItem1 in listView.Items)
                     {
-                        if (compareFunc(item, oldItem) == true)
+                        //重複するキーは基本的に無いという前提
+                        try
                         {
-                            listView.SelectedItem = item;
-                            listView.ScrollIntoView(item);
+                            listKeys.Add(getKey(listItem1), listItem1);
                         }
+                        catch { }
+                    }
+
+                    T setItem;
+                    if (listKeys.TryGetValue(getKey(oldItem), out setItem))
+                    {
+                        listView.SelectedItem = setItem;
+                        listView.ScrollIntoView(setItem);
                     }
 
                     foreach (T oldItem1 in oldItems)
                     {
-                        foreach (T item in listView.Items)
+                        if (listKeys.TryGetValue(getKey(oldItem1), out setItem))
                         {
-                            if (compareFunc(item, oldItem1) == true)
-                            {
-                                listView.SelectedItems.Add(item);
-                                break;
-                            }
+                            //数が多いとき、このAddが致命的に遅い
+                            listView.SelectedItems.Add(setItem);
                         }
                     }
                 }

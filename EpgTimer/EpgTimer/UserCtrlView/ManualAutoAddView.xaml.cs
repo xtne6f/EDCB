@@ -103,6 +103,9 @@ namespace EpgTimer
         {
             try
             {
+                //更新前の選択情報の保存
+                var oldItems = new ListViewSelectedKeeper<ManualAutoAddDataItem>(listView_key, true);
+
                 listView_key.DataContext = null;
                 resultList.Clear();
 
@@ -114,10 +117,7 @@ namespace EpgTimer
                     }
                 }
                 ErrCode err = CommonManager.Instance.DB.ReloadManualAutoAddInfo();
-                if (CommonManager.CmdErrMsgTypical(err, "情報の取得", this) == false)
-                {
-                    return false;
-                }
+                if (CommonManager.CmdErrMsgTypical(err, "情報の取得", this) == false) return false;
 
                 foreach (ManualAutoAddData info in CommonManager.Instance.DB.ManualAutoAddList.Values)
                 {
@@ -126,6 +126,9 @@ namespace EpgTimer
                 }
 
                 listView_key.DataContext = resultList;
+
+                //選択情報の復元
+                oldItems.RestoreListViewSelected();
             }
             catch (Exception ex)
             {

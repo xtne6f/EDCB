@@ -138,17 +138,13 @@ namespace EpgTimer
                     }
                 }
                 ErrCode err = CommonManager.Instance.DB.ReloadEpgAutoAddInfo();
-                if (CommonManager.CmdErrMsgTypical(err, "情報の取得", this) == false)
-                {
-                    return false;
-                }
+                if (CommonManager.CmdErrMsgTypical(err, "情報の取得", this) == false) return false;
 
                 foreach (EpgAutoAddData info in CommonManager.Instance.DB.EpgAutoAddList.Values)
                 {
                     EpgAutoDataItem item = new EpgAutoDataItem(info);
                     resultList.Add(item);
                 }
-
                 listView_key.DataContext = resultList;
 
                 //選択情報の復元

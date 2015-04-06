@@ -73,12 +73,12 @@
                     <ContextMenu x:Name="listView_event_contextMenu">
                         <MenuItem x:Name="cm_Reverse" Header="簡易予約/予約←→無効" Click="cm_reverse_Click" InputGestureText="Ctrl+S" />
                         <MenuItem x:Name="cm_add" Header="予約追加">
-                            <MenuItem Header="ダイアログ表示" Click="cm_show_dialog_click" InputGestureText="Enter"/>
+                            <MenuItem Header="ダイアログ表示" Click="cm_show_dialog_Click" InputGestureText="Enter"/>
                             <Separator x:Name="bar_preset" />
                             <!-- ここにコードでプリセット展開 -->
                         </MenuItem>
                         <MenuItem x:Name="cm_chg" Header="変更">
-                            <MenuItem Header="ダイアログ表示" Click="cm_show_dialog_click" InputGestureText="Enter" />
+                            <MenuItem Header="ダイアログ表示" Click="cm_show_dialog_Click" InputGestureText="Enter" />
                             <Separator Name="bar_recmode" />
                             <MenuItem Header="全サービス (_0)" Name="recmode_all" Click="cm_chg_recmode_Click" />
                             <MenuItem Header="指定サービス (_1)" Name="recmode_only" Click="cm_chg_recmode_Click" />
@@ -99,9 +99,9 @@
                         <MenuItem x:Name="cm_autoadd" Tag="EpgKeyword"  Header="自動予約登録" Click="cm_autoadd_Click" />
                         <MenuItem x:Name="cm_timeshift" Header="追っかけ再生" Click="cm_timeShiftPlay_Click" InputGestureText="Ctrl+P" />
                         <Separator Name="cm_CmAppend" />
-                        <MenuItem x:Name="cm_CopyTitle" Header="番組名をコピー" Click="MenuItem_Click_CopyTitle" InputGestureText="Ctrl+C" />
-                        <MenuItem x:Name="cm_CopyContent" Header="番組情報をコピー" Click="MenuItem_Click_CopyContent" />
-                        <MenuItem x:Name="cm_SearchTitle" Header="番組名をネットで検索" Click="MenuItem_Click_SearchTitle" />
+                        <MenuItem x:Name="cm_CopyTitle" Header="番組名をコピー" Click="cm_CopyTitle_Click" InputGestureText="Ctrl+C" />
+                        <MenuItem x:Name="cm_CopyContent" Header="番組情報をコピー" Click="cm_CopyContent_Click" />
+                        <MenuItem x:Name="cm_SearchTitle" Header="番組名をネットで検索" Click="cm_SearchTitle_Click" />
                         <Separator/>
                         <MenuItem x:Name="cm_view" Header="表示モード">
                             <MenuItem Header="表示設定" Click="cm_viewSet_Click" />
@@ -123,7 +123,7 @@
                         </GridViewColumn.Header>
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <CheckBox IsChecked="{Binding Path=IsSelected}" Checked="CheckBox_Checked" Unchecked="CheckBox_Unchecked" />
+                                <CheckBox IsChecked="{Binding Path=IsSelected}" Checked="CheckBox_Changed" Unchecked="CheckBox_Changed" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>

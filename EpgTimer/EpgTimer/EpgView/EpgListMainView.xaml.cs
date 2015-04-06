@@ -16,7 +16,7 @@ namespace EpgTimer
     /// <summary>
     /// EpgListMainView.xaml の相互作用ロジック
     /// </summary>
-    public partial class EpgListMainView : UserControl
+    public partial class EpgListMainView : UserControl, IEpgDataViewItem
     {
         public event ViewSettingClickHandler ViewSettingClick = null;
 
@@ -29,13 +29,15 @@ namespace EpgTimer
 
         private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
         private MenuUtil mutil = CommonManager.Instance.MUtil;
+        private ViewUtil vutil = CommonManager.Instance.VUtil;
 
         private Dictionary<UInt64, EpgServiceEventInfo> searchEventList = new Dictionary<UInt64, EpgServiceEventInfo>();
 
         private bool updateEpgData = true;
         private bool updateReserveData = true;
 
-        private Dictionary<UInt64, UInt64> lastChkSID = null;
+        private Dictionary<UInt64, UInt64> lastChkSID = new Dictionary<UInt64, UInt64>();
+        private bool listBox_service_initialized = true;
 
         public EpgListMainView()
         {
@@ -44,7 +46,20 @@ namespace EpgTimer
 
         public bool ClearInfo()
         {
-            if (lastChkSID != null && listBox_service.ItemsSource != null)
+            BackUpChkSID();
+            listBox_service.ItemsSource = null;
+            serviceList.Clear();
+            listView_event.ItemsSource = null;
+            programList.Clear();
+            searchEventList.Clear();
+            richTextBox_eventInfo.Document.Blocks.Clear();
+
+            return true;
+        }
+
+        private void BackUpChkSID()
+        {
+            if (listBox_service_initialized == false && listBox_service.ItemsSource != null)
             {
                 lastChkSID.Clear();
                 foreach (ServiceItem info in serviceList)
@@ -55,14 +70,6 @@ namespace EpgTimer
                     }
                 }
             }
-            listBox_service.ItemsSource = null;
-            serviceList.Clear();
-            listView_event.ItemsSource = null;
-            programList.Clear();
-            searchEventList.Clear();
-            richTextBox_eventInfo.Document.Blocks.Clear();
-
-            return true;
         }
 
         public void SetViewMode(CustomEpgTabInfo setInfo)
@@ -82,7 +89,7 @@ namespace EpgTimer
             if (ReloadEpgData() == true)
             {
                 updateEpgData = false;
-                if (ReloadReserveData() == true)
+                if (ReloadReserveData() == true)//ここはUpdateReserveData()ではダメ
                 {
                     updateReserveData = false;
                 }
@@ -98,10 +105,7 @@ namespace EpgTimer
                     if (ReloadEpgData() == true)
                     {
                         updateEpgData = false;
-                        if (ReloadReserveData() == true)
-                        {
-                            updateReserveData = false;
-                        }
+                        UpdateReserveData();
                     }
                 }
                 if (updateReserveData == true)
@@ -126,10 +130,7 @@ namespace EpgTimer
                 if (ReloadEpgData() == true)
                 {
                     updateEpgData = false;
-                    if (ReloadReserveData() == true)
-                    {
-                        updateReserveData = false;
-                    }
+                    UpdateReserveData();
                 }
             }
         }
@@ -155,25 +156,8 @@ namespace EpgTimer
             {
                 if (setViewInfo != null)
                 {
-                    if (lastChkSID != null && listBox_service.ItemsSource != null)
-                    {
-                        lastChkSID.Clear();
-                        foreach (ServiceItem info in serviceList)
-                        {
-                            if (info.IsSelected == true)
-                            {
-                                lastChkSID.Add(info.ID, info.ID);
-                            }
-                        }
-                    }
-                    listBox_service.ItemsSource = null;
-                    serviceList.Clear();
-                    listView_event.ItemsSource = null;
-                    programList.Clear();
-                    searchEventList.Clear();
-
                     updateEpgData = false;
-                    return ReloadProgramViewItem(true);
+                    return ReloadProgramViewItem();
                 }
             }
             catch (Exception ex)
@@ -185,112 +169,28 @@ namespace EpgTimer
 
         private bool ReloadReserveData()
         {
-            try
-            {
-                if (CommonManager.Instance.NWMode == true)
-                {
-                    if (CommonManager.Instance.NW.IsConnected == false)
-                    {
-                        return false;
-                    }
-                }
-                ErrCode err = CommonManager.Instance.DB.ReloadReserveInfo();
-                if (CommonManager.CmdErrMsgTypical(err, "予約情報の取得") == false)
-                {
-                    return false;
-                }
-
-                return ReloadProgramViewItem(false);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            if (vutil.ReloadReserveData() == false) return false;
+            
+            //予約チェック
+            mutil.SetSearchItemReserved(programList);
+            listView_event.Items.Refresh();
+            
             return true;
         }
 
-        private bool ReloadProgramViewItem(bool ReloadEpg = false)
+        private bool ReloadProgramViewItem()
         {
             try
             {
-                if (CommonManager.Instance.NWMode == true)
+                Dictionary<UInt64, EpgServiceEventInfo> serviceEventList = vutil.ReloadEpgDataForEpgView(setViewInfo);
+                if (serviceEventList == null) return false;
+
+                if (setViewInfo.SearchMode == true)
                 {
-                    if (ReloadEpg == true || setViewInfo.SearchMode == true)
-                    {
-                        if (CommonManager.Instance.NW.IsConnected == false)
-                        {
-                            return false;
-                        }
-                    }
+                    searchEventList = serviceEventList;
                 }
 
-                Dictionary<UInt64, EpgServiceEventInfo> serviceEventList = null;
-
-                if (setViewInfo.SearchMode == false)
-                {
-                    if (ReloadEpg == true)
-                    {
-                        ErrCode err = CommonManager.Instance.DB.ReloadEpgData();
-                        if (CommonManager.CmdErrMsgTypical(err, "EPGデータの取得", this) == false)
-                        {
-                            return false;
-                        }
-                    }
-                    //DB.ServiceEventListは更新で新しくなるので上へは持って行けない
-                    serviceEventList = CommonManager.Instance.DB.ServiceEventList;
-                }
-                else
-                {
-                    serviceEventList = searchEventList;
-
-                    //番組情報の検索
-                    var keyList = new List<EpgSearchKeyInfo>();
-                    keyList.Add(setViewInfo.SearchKey);
-                    var list = new List<EpgEventInfo>();
-
-                    ErrCode err = (ErrCode)cmd.SendSearchPg(keyList, ref list);
-                    if (CommonManager.CmdErrMsgTypical(err, "EPGデータの取得", this) == false)
-                    {
-                        return false;
-                    }
-
-                    //サービス毎のリストに変換
-                    serviceEventList.Clear();
-                    foreach (EpgEventInfo eventInfo in list)
-                    {
-                        UInt64 id = eventInfo.Create64Key();
-                        EpgServiceEventInfo serviceInfo = null;
-                        if (serviceEventList.ContainsKey(id) == false)
-                        {
-                            if (ChSet5.Instance.ChList.ContainsKey(id) == false)
-                            {
-                                //サービス情報ないので無効
-                                continue;
-                            }
-                            serviceInfo = new EpgServiceEventInfo();
-                            serviceInfo.serviceInfo = CommonManager.ConvertChSet5To(ChSet5.Instance.ChList[id]);
-
-                            serviceEventList.Add(id, serviceInfo);
-                        }
-                        else
-                        {
-                            serviceInfo = serviceEventList[id];
-                        }
-                        serviceInfo.eventList.Add(eventInfo);
-                    }
-                }
-
-                if (lastChkSID != null && listBox_service.ItemsSource != null)
-                {
-                    lastChkSID.Clear();
-                    foreach (ServiceItem info in serviceList)
-                    {
-                        if (info.IsSelected == true)
-                        {
-                            lastChkSID.Add(info.ID, info.ID);
-                        }
-                    }
-                }
+                BackUpChkSID();
 
                 listBox_service.ItemsSource = null;
                 serviceList.Clear();
@@ -301,23 +201,13 @@ namespace EpgTimer
                     {
                         ServiceItem item = new ServiceItem();
                         item.ServiceInfo = serviceEventList[id].serviceInfo;
-                        item.IsSelected = true;
-                        if (lastChkSID != null)
-                        {
-                            if (lastChkSID.ContainsKey(id) == false)
-                            {
-                                item.IsSelected = false;
-                            }
-                        }
+                        item.IsSelected = listBox_service_initialized || lastChkSID.ContainsKey(id);
                         serviceList.Add(item);
                     }
                 }
-                if (lastChkSID == null)
-                {
-                    lastChkSID = new Dictionary<ulong, ulong>();
-                }
 
                 listBox_service.ItemsSource = serviceList;
+                listBox_service_initialized = false;
 
                 UpdateEventList();
 
@@ -339,18 +229,17 @@ namespace EpgTimer
                 //大きく番組表が変化するEPG更新前後で選択情報を保存する意味もないのでほっておくことにする。
                 var oldItems = new ListViewSelectedKeeper<SearchItem>(listView_event, true);
 
-                //listView_event.ItemsSource = null;
                 listView_event.DataContext = null;
                 programList.Clear();
 
-                Dictionary<UInt64, EpgServiceEventInfo> eventList = null;
+                Dictionary<UInt64, EpgServiceEventInfo> serviceEventList = null;
                 if (setViewInfo.SearchMode == true)
                 {
-                    eventList = searchEventList;
+                    serviceEventList = searchEventList;
                 }
                 else
                 {
-                    eventList = CommonManager.Instance.DB.ServiceEventList;
+                    serviceEventList = CommonManager.Instance.DB.ServiceEventList;
                 }
 
                 DateTime now = DateTime.Now;
@@ -358,9 +247,9 @@ namespace EpgTimer
                 {
                     if (info.IsSelected == true)
                     {
-                        if (eventList.ContainsKey(info.ID) == true)
+                        if (serviceEventList.ContainsKey(info.ID) == true)
                         {
-                            foreach (EpgEventInfo eventInfo in eventList[info.ID].eventList)
+                            foreach (EpgEventInfo eventInfo in serviceEventList[info.ID].eventList)
                             {
                                 if (eventInfo.StartTimeFlag == 0)
                                 {
@@ -373,40 +262,9 @@ namespace EpgTimer
                                         continue;
                                 }
                                 //ジャンル絞り込み
-                                if (this.viewCustContentKindList.Count > 0)
+                                if (vutil.ContainsContent(eventInfo, this.viewCustContentKindList) == false)
                                 {
-                                    bool find = false;
-                                    if (eventInfo.ContentInfo != null)
-                                    {
-                                        if (eventInfo.ContentInfo.nibbleList.Count > 0)
-                                        {
-                                            foreach (EpgContentData contentInfo in eventInfo.ContentInfo.nibbleList)
-                                            {
-                                                UInt16 ID1 = (UInt16)(((UInt16)contentInfo.content_nibble_level_1) << 8 | 0xFF);
-                                                UInt16 ID2 = (UInt16)(((UInt16)contentInfo.content_nibble_level_1) << 8 | contentInfo.content_nibble_level_2);
-                                                if (ID2 == 0x0e01)
-                                                {
-                                                    ID1 = (UInt16)(((UInt16)contentInfo.user_nibble_1) << 8 | 0x70FF);
-                                                    ID2 = (UInt16)(((UInt16)contentInfo.user_nibble_1) << 8 | 0x7000 | contentInfo.user_nibble_2);
-                                                }
-                                                if (this.viewCustContentKindList.ContainsKey(ID1) == true)
-                                                {
-                                                    find = true;
-                                                    break;
-                                                }
-                                                else if (this.viewCustContentKindList.ContainsKey(ID2) == true)
-                                                {
-                                                    find = true;
-                                                    break;
-                                                }
-                                            }
-                                        }
-                                    }
-                                    if (find == false)
-                                    {
-                                        //ジャンル見つからないので除外
-                                        continue;
-                                    }
+                                    continue;
                                 }
                                 //イベントグループのチェック
                                 if (eventInfo.EventGroupInfo != null)
@@ -428,25 +286,14 @@ namespace EpgTimer
                                     }
                                 }
 
-                                SearchItem item = new SearchItem();
-                                item.EventInfo = eventInfo;
-
-                                //予約チェック
-                                foreach (ReserveData resInfo in CommonManager.Instance.DB.ReserveList.Values)
-                                {
-                                    if (CommonManager.EqualsPg(resInfo, eventInfo) == true)
-                                    {
-                                        item.ReserveInfo = resInfo;
-                                        break;
-                                    }
-                                }
-
-                                programList.Add(item);
+                                programList.Add(new SearchItem(eventInfo));
                             }
                         }
                     }
                 }
-                //listView_event.DataContext = programList;
+                //予約チェック
+                mutil.SetSearchItemReserved(programList);
+
                 listView_event.ItemsSource = programList;
 
                 if (this.gridViewSorter.IsExistSortParams)
@@ -469,12 +316,7 @@ namespace EpgTimer
             }
         }
 
-        private void CheckBox_Checked(object sender, RoutedEventArgs e)
-        {
-            UpdateEventList();
-        }
-
-        private void CheckBox_Unchecked(object sender, RoutedEventArgs e)
+        private void CheckBox_Changed(object sender, RoutedEventArgs e)
         {
             UpdateEventList();
         }
@@ -482,10 +324,7 @@ namespace EpgTimer
         private void button_chkAll_Click(object sender, RoutedEventArgs e)
         {
             listBox_service.ItemsSource = null;
-            foreach (ServiceItem info in serviceList)
-            {
-                info.IsSelected = true;
-            }
+            serviceList.ForEach(info => info.IsSelected = true);
             listBox_service.ItemsSource = serviceList;
             UpdateEventList();
         }
@@ -493,10 +332,7 @@ namespace EpgTimer
         private void button_clearAll_Click(object sender, RoutedEventArgs e)
         {
             listBox_service.ItemsSource = null;
-            foreach (ServiceItem info in serviceList)
-            {
-                info.IsSelected = false;
-            }
+            serviceList.ForEach(info => info.IsSelected = false);
             listBox_service.ItemsSource = serviceList;
             UpdateEventList();
         }
@@ -520,7 +356,7 @@ namespace EpgTimer
 
         private void listView_event_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            this.cm_show_dialog_click(listView_event.SelectedItem, new RoutedEventArgs());
+            this.cm_show_dialog_Click(listView_event.SelectedItem, new RoutedEventArgs());
         }
 
         private void listView_event_ContextMenuOpening(object sender, ContextMenuEventArgs e)
@@ -531,7 +367,23 @@ namespace EpgTimer
                 {
                     cm_chg_viewMode3.IsChecked = true;
 
-                    if (listView_event.SelectedItem != null)
+                    bool noItem = listView_event.SelectedItems.Count == 0;
+
+                    cm_CopyTitle.IsEnabled = !noItem;
+                    cm_CopyContent.IsEnabled = !noItem;
+                    cm_SearchTitle.IsEnabled = !noItem;
+
+                    if (noItem == true)
+                    {
+                        cm_Reverse.Header = "簡易予約";
+                        cm_Reverse.IsEnabled = false;
+                        cm_del.IsEnabled = false;
+                        cm_chg.IsEnabled = false;
+                        cm_add.IsEnabled = false;
+                        cm_autoadd.IsEnabled = false;
+                        cm_timeshift.IsEnabled = false;
+                    }
+                    else
                     {
                         List<SearchItem> list = GetSelectedItemsList();
                         bool hasReserved = list.HasReserved();
@@ -540,6 +392,7 @@ namespace EpgTimer
                         if (hasReserved == true)
                         {
                             cm_Reverse.Header = "予約←→無効";
+                            cm_Reverse.IsEnabled = true;
                             cm_del.IsEnabled = true;
                             cm_chg.IsEnabled = true;
                             mutil.CheckChgItems(cm_chg, list);//現在の状態(録画モード、優先度)にチェックを入れる
@@ -550,6 +403,7 @@ namespace EpgTimer
                         else
                         {
                             cm_Reverse.Header = "簡易予約";
+                            cm_Reverse.IsEnabled = true;
                             cm_del.IsEnabled = false;
                             cm_chg.IsEnabled = false;
                             cm_add.IsEnabled = true;
@@ -557,12 +411,12 @@ namespace EpgTimer
                             cm_timeshift.IsEnabled = false;
                             mutil.ExpandPresetItems(cm_add, cm_add_preset_Click);
                         }
+                    }
 
-                        //個別に設定できるが、リスト系の設定メソッドを使い回す。
-                        foreach (object item in listView_event_contextMenu.Items)
-                        {
-                            mutil.AppendMenuVisibleControl(item);
-                        }
+                    //個別に設定できるが、リスト系の設定メソッドを使い回す。
+                    foreach (object item in listView_event_contextMenu.Items)
+                    {
+                        mutil.AppendMenuVisibleControl(item);
                     }
                 }
                 catch (Exception ex)
@@ -597,7 +451,7 @@ namespace EpgTimer
                 switch (e.Key)
                 {
                     case Key.Enter:
-                        this.cm_show_dialog_click(this, new RoutedEventArgs(Button.ClickEvent));
+                        this.cm_show_dialog_Click(this, new RoutedEventArgs(Button.ClickEvent));
                         e.Handled = true;
                         break;
                     case Key.Delete:
@@ -638,7 +492,7 @@ namespace EpgTimer
             return listView_event.SelectedItems.Cast<SearchItem>().ToList();
         }
 
-        private void cm_show_dialog_click(object sender, RoutedEventArgs e)
+        private void cm_show_dialog_Click(object sender, RoutedEventArgs e)
         {
             if (listView_event.SelectedItem != null)
             {
@@ -735,7 +589,7 @@ namespace EpgTimer
             }
         }
 
-        private void MenuItem_Click_CopyTitle(object sender, RoutedEventArgs e)
+        private void cm_CopyTitle_Click(object sender, RoutedEventArgs e)
         {
             CopyTitle2Clipboard();
         }
@@ -749,7 +603,7 @@ namespace EpgTimer
             }
         }
 
-        private void MenuItem_Click_CopyContent(object sender, RoutedEventArgs e)
+        private void cm_CopyContent_Click(object sender, RoutedEventArgs e)
         {
             if (listView_event.SelectedItem != null)
             {
@@ -758,7 +612,7 @@ namespace EpgTimer
             }
         }
 
-        private void MenuItem_Click_SearchTitle(object sender, RoutedEventArgs e)
+        private void cm_SearchTitle_Click(object sender, RoutedEventArgs e)
         {
             if (listView_event.SelectedItem != null)
             {
@@ -794,18 +648,19 @@ namespace EpgTimer
 
         private void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
-            if (this.IsVisible == false) { return; }
+            if (this.IsVisible == false) return;
+            if (BlackoutWindow.Create64Key() == 0) return;
 
             EpgEventInfo selectedItem = null;
-            if (BlackoutWindow.selectedReserveItem != null)
+            if (BlackoutWindow.SelectedReserveItem != null)
             {
-                selectedItem = BlackoutWindow.selectedReserveItem.EventInfo;
-                BlackoutWindow.selectedReserveItem = null;
+                selectedItem = BlackoutWindow.SelectedReserveItem.EventInfo;
+                BlackoutWindow.SelectedReserveItem = null;
             }
-            else if (BlackoutWindow.selectedSearchItem != null)
+            else if (BlackoutWindow.SelectedSearchItem != null)
             {
-                selectedItem = BlackoutWindow.selectedSearchItem.EventInfo;
-                BlackoutWindow.selectedSearchItem = null;
+                selectedItem = BlackoutWindow.SelectedSearchItem.EventInfo;
+                BlackoutWindow.SelectedSearchItem = null;
             }
 
             if (selectedItem != null)

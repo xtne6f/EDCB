@@ -19,6 +19,12 @@ namespace EpgTimer
         public virtual EpgEventInfo EventInfo { get; set; }
         public ReserveData ReserveInfo { get; set; }
 
+        public SearchItem() { }
+        public SearchItem(EpgEventInfo item)
+        {
+            EventInfo = item;
+        }
+
         public bool IsReserved
         {
             get

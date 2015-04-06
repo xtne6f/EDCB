@@ -48,7 +48,6 @@ namespace EpgTimer
                 item.NotifyInfo = info;
                 logList.Add(item);
             }
-            listView_log.DataContext = logList;
 
             if (this.gridViewSorter.IsExistSortParams)
             {
@@ -59,7 +58,7 @@ namespace EpgTimer
                 this.gridViewSorter.ResetSortParams();
                 this.gridViewSorter.SortByMultiHeaderWithKey(this.logList, gridView_log.Columns, "Time", true, ListSortDirection.Descending);
             }
-            listView_log.Items.Refresh();
+            listView_log.DataContext = logList;
         }
 
         GridViewSorter<NotifySrvInfoItem> gridViewSorter = new GridViewSorter<NotifySrvInfoItem>();

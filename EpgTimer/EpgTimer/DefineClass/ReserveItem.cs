@@ -15,6 +15,7 @@ namespace EpgTimer
     {
         //EventInfo、ReserveInfo、JyanruKey、ForeColor、BackColor、BorderBrush -> SearchItem.cs
 
+        public ReserveItem() { }
         public ReserveItem(ReserveData item)
         {
             base.ReserveInfo = item;

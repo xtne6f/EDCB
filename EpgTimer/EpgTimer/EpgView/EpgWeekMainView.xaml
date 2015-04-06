@@ -30,6 +30,6 @@
             <local:WeekDayView Grid.Column="1" x:Name="weekDayView" Margin="0,0,18,0" MouseRightButtonUp="button_erea_MouseRightButtonUp" />
             <local:ProgramView Grid.Column="1" Grid.Row="1" x:Name="epgProgramView" />
         </Grid>
-    <Button Content="標準モード" Height="23" HorizontalAlignment="Left" Margin="273,12,0,0" Name="button1" VerticalAlignment="Top" Width="66" Click="button1_Click" />
+        <Button Content="標準モード" Height="23" HorizontalAlignment="Left" Margin="273,12,0,0" Name="button_go_Main" VerticalAlignment="Top" Width="66" Click="button_go_Main_Click" />
     </Grid>
 </UserControl>

@@ -335,6 +335,22 @@ namespace EpgTimer
             return new T[]{item}.ToList();
         }
 
+        /// <summary>
+        /// 変換エラーの場合、デフォルト値を返し、テキストボックスの内容をデフォルト値に置き換える。
+        /// </summary>
+        public T MyToNumerical<T>(TextBox box, Func<string, T> converter, T defValue = default(T))
+        {
+            try
+            {
+                return converter(box.Text.ToString());
+            }
+            catch
+            {
+                box.Text = defValue.ToString();
+                return defValue;
+            }
+        }
+        
         //取りあえずある程度集約。仮。各画面のコンテキストメニュー共通化したい。
 
         /// <summary>
@@ -977,10 +993,68 @@ namespace EpgTimer
             }
         }
 
+        public void SetSearchItemReserved(List<SearchItem> list)
+        {
+            var listKeys = new Dictionary<ulong, SearchItem>();
+
+            foreach (SearchItem listItem1 in list)
+            {
+                //重複するキーは基本的に無いという前提
+                try
+                {
+                    listKeys.Add(listItem1.EventInfo.Create64PgKey(), listItem1);
+                    listItem1.ReserveInfo = null;
+                }
+                catch { }
+            }
+
+            SearchItem setItem;
+            foreach (ReserveData data in CommonManager.Instance.DB.ReserveList.Values)
+            {
+                if (listKeys.TryGetValue(data.Create64PgKey(), out setItem))
+                {
+                    setItem.ReserveInfo = data;
+                }
+            }
+        }
+
+        public void FilePlay(String filePath)
+        {
+            try
+            {
+                if (filePath.Length == 0) return;
+
+                CommonManager cmg = CommonManager.Instance;
+                if (cmg.NWMode == false)
+                {
+                    System.Diagnostics.Process process;
+                    if (Settings.Instance.FilePlayExe.Length == 0)
+                    {
+                        process = System.Diagnostics.Process.Start(filePath);
+                    }
+                    else
+                    {
+                        String cmdLine = Settings.Instance.FilePlayCmd;
+                        cmdLine = cmdLine.Replace("$FilePath$", filePath);
+                        process = System.Diagnostics.Process.Start(Settings.Instance.FilePlayExe, cmdLine);
+                    }
+                }
+                else
+                {
+                    cmg.TVTestCtrl.StartStreamingPlay(filePath, cmg.NW.ConnectedIP, cmg.NW.ConnectedPort);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+            }
+        }
+
         //複数選択から単一要素を処理する際にどれを選ぶかの手続き。
         //今は最後に選択したものとしている。
-        public T SelectSingleItem<T>(ListView list)
+        public T SelectSingleItem<T>(ListBox list)
         {
+            if (list.SelectedItems.Count <= 1) return (T)list.SelectedItem;//SingleMode用
             object item = list.SelectedItems[list.SelectedItems.Count - 1];
             list.UnselectAll();
             list.SelectedItem = item;

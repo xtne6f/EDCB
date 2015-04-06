@@ -19,7 +19,7 @@ namespace EpgTimer
     /// <summary>
     /// EpgWeekMainView.xaml の相互作用ロジック
     /// </summary>
-    public partial class EpgWeekMainView : UserControl
+    public partial class EpgWeekMainView : UserControl, IEpgDataViewItem
     {
         public event ViewSettingClickHandler ViewSettingClick = null;
 
@@ -282,15 +282,23 @@ namespace EpgTimer
                 ReserveData reserve = new ReserveData();
                 EpgEventInfo program = new EpgEventInfo();
                 bool noItem = false;
-                bool addMode = false;
+                bool hasReserved = false;
+                bool hasNoReserved = false;
+
                 if (GetReserveItem(cursorPos, ref reserve) == false)
                 {
                     if (GetProgramItem(cursorPos, ref program) == false)
                     {
                         noItem = true;
                     }
-                    addMode = true;
+                    hasNoReserved = true;
                 }
+                else
+                {
+                    hasReserved = true;
+                }
+
+                //右クリック表示メニューの作成
                 ContextMenu menu = new ContextMenu();
 
                 MenuItem menuItemReverse = new MenuItem();
@@ -335,11 +343,11 @@ namespace EpgTimer
                 }
                 else
                 {
-                    if (addMode == false)
+                    if (hasReserved == true)
                     {
                         menuItemReverse.Header = "予約←→無効";
                         menuItemReverse.IsEnabled = true;
-                        menuItemAdd.IsEnabled = false;
+                        menuItemAdd.IsEnabled = hasNoReserved;
                         menuItemChg.IsEnabled = true;
                         mutil.CheckChgItems(menuItemChg, mutil.GetList(reserve));//現在の状態(録画モード、優先度)にチェックを入れる
                         menuItemDel.IsEnabled = true;
@@ -560,11 +568,11 @@ namespace EpgTimer
                     {
                         SearchItem searchitem = new SearchItem();
                         searchitem.EventInfo = program;
-                        BlackoutWindow.selectedSearchItem = searchitem;
+                        BlackoutWindow.SelectedSearchItem = searchitem;
                     }
                     else
                     {
-                        BlackoutWindow.selectedSearchItem = null;
+                        BlackoutWindow.SelectedSearchItem = null;
                     }
 
                     ViewSettingClick(this, setInfo);
@@ -620,7 +628,7 @@ namespace EpgTimer
             if (ReloadEpgData() == true)
             {
                 updateEpgData = false;
-                if (ReloadReserveData() == true)
+                if (ReloadReserveData() == true)//ここはUpdateReserveData()ではダメ
                 {
                     updateReserveData = false;
                 }
@@ -639,10 +647,7 @@ namespace EpgTimer
                 if (ReloadEpgData() == true)
                 {
                     updateEpgData = false;
-                    if (ReloadReserveData() == true)
-                    {
-                        updateReserveData = false;
-                    }
+                    UpdateReserveData();
                 }
             }
         }
@@ -672,10 +677,7 @@ namespace EpgTimer
                     if (ReloadEpgData() == true)
                     {
                         updateEpgData = false;
-                        if (ReloadReserveData() == true)
-                        {
-                            updateReserveData = false;
-                        }
+                        UpdateReserveData();
                     }
                 }
                 if (updateReserveData == true)
@@ -711,27 +713,9 @@ namespace EpgTimer
 
         private bool ReloadReserveData()
         {
-            try
-            {
-                if (CommonManager.Instance.NWMode == true)
-                {
-                    if (CommonManager.Instance.NW.IsConnected == false)
-                    {
-                        return false;
-                    }
-                }
-                ErrCode err = CommonManager.Instance.DB.ReloadReserveInfo();
-                if (CommonManager.CmdErrMsgTypical(err, "予約情報の取得") == false)
-                {
-                    return false;
-                }
+            if (vutil.ReloadReserveData() == false) return false;
 
-                ReloadReserveViewItem();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            ReloadReserveViewItem();
             return true;
         }
 
@@ -884,73 +868,18 @@ namespace EpgTimer
         {
             try
             {
-                if (CommonManager.Instance.NWMode == true)
+                Dictionary<UInt64, EpgServiceEventInfo> serviceEventList = vutil.ReloadEpgDataForEpgView(setViewInfo);
+                if (serviceEventList == null) return false;
+
+                if (setViewInfo.SearchMode == true)
                 {
-                    if (CommonManager.Instance.NW.IsConnected == false)
-                    {
-                        return false;
-                    }
-                }
-
-                Dictionary<UInt64, EpgServiceEventInfo> serviceEventList = null;
-
-                if (setViewInfo.SearchMode == false)
-                {
-                    ErrCode err = CommonManager.Instance.DB.ReloadEpgData();
-                    if (CommonManager.CmdErrMsgTypical(err, "EPGデータの取得", this) == false)
-                    {
-                        return false;
-                    }
-                    //DB.ServiceEventListは更新で新しくなるので上へは持って行けない
-                    serviceEventList = CommonManager.Instance.DB.ServiceEventList;
-                }
-                else
-                {
-                    serviceEventList = searchEventList;
-
-                    //番組情報の検索
-                    var keyList = new List<EpgSearchKeyInfo>();
-                    keyList.Add(setViewInfo.SearchKey);
-                    var list = new List<EpgEventInfo>();
-
-                    ErrCode err = (ErrCode)cmd.SendSearchPg(keyList, ref list);
-                    if (CommonManager.CmdErrMsgTypical(err, "EPGデータの取得", this) == false)
-                    {
-                        return false;
-                    }
-
-                    //サービス毎のリストに変換
-                    serviceEventList.Clear();
-                    foreach (EpgEventInfo eventInfo in list)
-                    {
-                        UInt64 id = eventInfo.Create64Key();
-                        EpgServiceEventInfo serviceInfo = null;
-                        if (serviceEventList.ContainsKey(id) == false)
-                        {
-                            if (ChSet5.Instance.ChList.ContainsKey(id) == false)
-                            {
-                                //サービス情報ないので無効
-                                continue;
-                            }
-                            serviceInfo = new EpgServiceEventInfo();
-                            serviceInfo.serviceInfo = CommonManager.ConvertChSet5To(ChSet5.Instance.ChList[id]);
-
-                            serviceEventList.Add(id, serviceInfo);
-                        }
-                        else
-                        {
-                            serviceInfo = serviceEventList[id];
-                        }
-                        serviceInfo.eventList.Add(eventInfo);
-                    }
+                    searchEventList = serviceEventList;
                 }
 
                 epgProgramView.ClearInfo();
                 timeList.Clear();
                 dayList.Clear();
-
                 programList.Clear();
-
                 nowViewTimer.Stop();
 
                 //必要サービスの抽出
@@ -966,15 +895,16 @@ namespace EpgTimer
 
                 foreach (UInt64 id in viewCustServiceList)
                 {
-                    if (serviceEventList.ContainsKey(id) == false)
+                    EpgServiceEventInfo serviceInfo;
+                    if (serviceEventList.TryGetValue(id, out serviceInfo) == false)
                     {
                         //サービス情報ないので無効
                         continue;
                     }
 
                     ComboBoxItem item = new ComboBoxItem();
-                    item.Content = serviceEventList[id].serviceInfo.service_name;
-                    item.DataContext = serviceEventList[id].serviceInfo;
+                    item.Content = serviceInfo.serviceInfo.service_name;
+                    item.DataContext = serviceInfo.serviceInfo;
                     int index = comboBox_service.Items.Add(item);
                     if (selectID == id || selectID == 0)
                     {
@@ -1043,42 +973,10 @@ namespace EpgTimer
                         continue;
                     }
                     //ジャンル絞り込み
-                    if (this.viewCustContentKindList.Count > 0)
+                    if (vutil.ContainsContent(eventInfo, this.viewCustContentKindList) == false)
                     {
-                        bool find = false;
-                        if (eventInfo.ContentInfo != null)
-                        {
-                            if (eventInfo.ContentInfo.nibbleList.Count > 0)
-                            {
-                                foreach (EpgContentData contentInfo in eventInfo.ContentInfo.nibbleList)
-                                {
-                                    UInt16 ID1 = (UInt16)(((UInt16)contentInfo.content_nibble_level_1) << 8 | 0xFF);
-                                    UInt16 ID2 = (UInt16)(((UInt16)contentInfo.content_nibble_level_1) << 8 | contentInfo.content_nibble_level_2);
-                                    if (ID2 == 0x0e01)
-                                    {
-                                        ID1 = (UInt16)(((UInt16)contentInfo.user_nibble_1) << 8 | 0x70FF);
-                                        ID2 = (UInt16)(((UInt16)contentInfo.user_nibble_1) << 8 | 0x7000 | contentInfo.user_nibble_2);
-                                    }
-                                    if (this.viewCustContentKindList.ContainsKey(ID1) == true)
-                                    {
-                                        find = true;
-                                        break;
-                                    }
-                                    else if (this.viewCustContentKindList.ContainsKey(ID2) == true)
-                                    {
-                                        find = true;
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                        if (find == false)
-                        {
-                            //ジャンル見つからないので除外
-                            continue;
-                        }
+                        continue;
                     }
-
                     ProgramViewItem viewItem = new ProgramViewItem(eventInfo);
                     viewItem.Height = (eventInfo.durationSec * Settings.Instance.MinHeight) / 60;
                     viewItem.Width = Settings.Instance.ServiceWidth;
@@ -1245,19 +1143,12 @@ namespace EpgTimer
 
         private void UserControl_IsVisibleChanged_1(object sender, DependencyPropertyChangedEventArgs e)
         {
-            if (this.IsVisible == false) { return; }
+            if (this.IsVisible == false) return;
+            if (BlackoutWindow.Create64Key() == 0) return;
+
             // サービス選択
-            UInt64 serviceKey_Target1 = 0;
-            if (BlackoutWindow.selectedReserveItem != null)
-            {
-                ReserveData reserveData1 = BlackoutWindow.selectedReserveItem.ReserveInfo;
-                serviceKey_Target1 = reserveData1.Create64Key();
-            }
-            else if (BlackoutWindow.selectedSearchItem != null)
-            {
-                EpgEventInfo eventInfo1 = BlackoutWindow.selectedSearchItem.EventInfo;
-                serviceKey_Target1 = eventInfo1.Create64Key();
-            }
+            UInt64 serviceKey_Target1 = BlackoutWindow.Create64Key();
+
             foreach (ComboBoxItem item in this.comboBox_service.Items)
             {
                 EpgServiceInfo serviceInfo = item.DataContext as EpgServiceInfo;
@@ -1269,34 +1160,35 @@ namespace EpgTimer
                 }
             }
             // スクロール
-            if (BlackoutWindow.selectedReserveItem != null)
+            if (BlackoutWindow.SelectedReserveItem != null)
             {
                 foreach (ReserveViewItem reserveViewItem1 in this.reserveList)
                 {
-                    if (reserveViewItem1.ReserveInfo.ReserveID == BlackoutWindow.selectedReserveItem.ReserveInfo.ReserveID)
+                    if (reserveViewItem1.ReserveInfo.ReserveID == BlackoutWindow.SelectedReserveItem.ReserveInfo.ReserveID)
                     {
                         this.epgProgramView.scrollViewer.ScrollToHorizontalOffset(reserveViewItem1.LeftPos - 100);
                         this.epgProgramView.scrollViewer.ScrollToVerticalOffset(reserveViewItem1.TopPos - 100);
                         break;
                     }
                 }
-                BlackoutWindow.selectedReserveItem = null;
+                BlackoutWindow.SelectedReserveItem = null;
             }
-            else if (BlackoutWindow.selectedSearchItem != null)
+            else if (BlackoutWindow.SelectedSearchItem != null)
             {
                 foreach (ProgramViewItem programViewItem1 in this.programList)
                 {
-                    if (CommonManager.EqualsPg(programViewItem1.EventInfo, BlackoutWindow.selectedSearchItem.EventInfo) == true)
+                    if (CommonManager.EqualsPg(programViewItem1.EventInfo, BlackoutWindow.SelectedSearchItem.EventInfo) == true)
                     {
                         this.epgProgramView.scrollViewer.ScrollToHorizontalOffset(programViewItem1.LeftPos - 100);
                         this.epgProgramView.scrollViewer.ScrollToVerticalOffset(programViewItem1.TopPos - 100);
                         break;
                     }
                 }
-                BlackoutWindow.selectedSearchItem = null;
+                BlackoutWindow.SelectedSearchItem = null;
             }
         }
-        private void button1_Click(object sender, RoutedEventArgs e)
+
+        private void button_go_Main_Click(object sender, RoutedEventArgs e)
         {
             CustomEpgTabInfo setInfo = new CustomEpgTabInfo();
             setViewInfo.CopyTo(ref setInfo);

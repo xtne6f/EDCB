@@ -162,18 +162,12 @@ namespace EpgTimer
                     }
                 }
                 ErrCode err = CommonManager.Instance.DB.ReloadrecFileInfo();
-                if (CommonManager.CmdErrMsgTypical(err, "録画情報の取得", this) == false)
-                {
-                    return false;
-                }
+                if (CommonManager.CmdErrMsgTypical(err, "録画情報の取得", this) == false) return false;
 
                 foreach (RecFileInfo info in CommonManager.Instance.DB.RecFileInfo.Values)
                 {
-                    RecInfoItem item = new RecInfoItem(info);
-                    resultList.Add(item);
+                    resultList.Add(new RecInfoItem(info));
                 }
-
-                listView_recinfo.DataContext = resultList;
 
                 if (this.gridViewSorter.IsExistSortParams)
                 {
@@ -185,7 +179,7 @@ namespace EpgTimer
                     this.gridViewSorter.SortByMultiHeaderWithKey(this.resultList, gridView_recinfo.Columns,
                         Settings.Instance.RecInfoColumnHead, true, Settings.Instance.RecInfoSortDirection);
                 }
-                listView_recinfo.Items.Refresh();
+                listView_recinfo.DataContext = resultList;
 
                 //選択情報の復元
                 oldItems.RestoreListViewSelected();
@@ -304,10 +298,7 @@ namespace EpgTimer
             if (listView_recinfo.SelectedItem != null)
             {
                 RecInfoItem info = SelectSingleItem();
-                if (info.RecInfo.RecFilePath.Length > 0)
-                {
-                    CommonManager.Instance.FilePlay(info.RecInfo.RecFilePath);
-                }
+                mutil.FilePlay(info.RecInfo.RecFilePath);
             }
         }
 
