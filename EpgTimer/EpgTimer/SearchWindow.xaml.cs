@@ -239,10 +239,26 @@ namespace EpgTimer
             }
         }
 
+        private bool CheckCautionMany()
+        {
+            if (Settings.Instance.CautionManyChange == true && searchKeyView.searchKeyDescView.checkBox_keyDisabled.IsChecked != true)
+            {
+                SearchPg();
+
+                if (mutil.CautionManyMessage(resultList.EventInfoList().Count) == false)
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
         private void button_add_epgAutoAdd_Click(object sender, RoutedEventArgs e)
         {
             try
             {
+                if (CheckCautionMany() == false) return;
+
                 var addItem = new EpgAutoAddData();
                 var searchKey = new EpgSearchKeyInfo();
                 searchKeyView.GetSearchKey(ref searchKey);
@@ -344,6 +360,7 @@ namespace EpgTimer
         {
             if (this.autoAddID == 0) return;
             if (CheckExistAutoAddItem() == false) return;
+            if (CheckCautionMany() == false) return;
 
             try
             {

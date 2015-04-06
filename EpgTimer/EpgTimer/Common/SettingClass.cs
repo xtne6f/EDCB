@@ -263,6 +263,8 @@ namespace EpgTimer
         private bool mouseScrollAuto;
         private int noStyle;
         private bool fixSearchResult;
+        private bool cautionManyChange;
+        private int cautionManyNum;
 
         public bool UseCustomEpgView
         {
@@ -1079,7 +1081,16 @@ namespace EpgTimer
             get { return fixSearchResult; }
             set { fixSearchResult = value; }
         }
-        
+        public bool CautionManyChange
+        {
+            get { return cautionManyChange; }
+            set { cautionManyChange = value; }
+        }
+        public int CautionManyNum
+        {
+            get { return cautionManyNum; }
+            set { cautionManyNum = value; }
+        }       
         
         public Settings()
         {
@@ -1230,6 +1241,8 @@ namespace EpgTimer
             mouseScrollAuto = false;
             noStyle = 0;
             fixSearchResult = false;
+            cautionManyChange = true;
+            cautionManyNum = 10;
         }
 
         [NonSerialized()]

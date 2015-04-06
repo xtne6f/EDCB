@@ -658,7 +658,7 @@ namespace EpgTimer
         {
             return ReserveAdd(GetList(item), recSettingView, sender);
         }
-        public bool ReserveAdd(List<EpgEventInfo> itemlist, RecSettingView recSettingView = null, object sender = null)
+        public bool ReserveAdd(List<EpgEventInfo> itemlist, RecSettingView recSettingView = null, object sender = null, bool cautionMany = true)
         {
             try
             {
@@ -700,7 +700,7 @@ namespace EpgTimer
                     }
                 }
 
-                return ReserveAdd(list);
+                return ReserveAdd(list, cautionMany);
             }
             catch (Exception ex)
             {
@@ -723,22 +723,25 @@ namespace EpgTimer
         {
             return ReserveAdd(GetList(item));
         }
-        public bool ReserveAdd(List<ReserveData> list)
+        public bool ReserveAdd(List<ReserveData> list, bool cautionMany = true)
         {
-            return ReserveCmdSend(list, cmd.SendAddReserve, "予約追加");
+            return ReserveCmdSend(list, cmd.SendAddReserve, "予約追加", cautionMany);
         }
 
         public bool ReserveChangeOnOff(List<SearchItem> itemlist, RecSettingView recSettingView = null)
         {
-            bool retv = ReserveAdd(itemlist.NoReserveInfoList(), recSettingView, null);
-            retv = ReserveChangeOnOff(itemlist.ReserveInfoList(), recSettingView) || retv;//順番重要
+            //取りあえずここにも入れておく。これのせいで苦しいが、また後で考える。
+            if (CautionManyMessage(itemlist.Count, "簡易予約/有効←→無効") == false) return false;
+
+            bool retv = ReserveAdd(itemlist.NoReserveInfoList(), recSettingView, null, false);
+            retv = ReserveChangeOnOff(itemlist.ReserveInfoList(), recSettingView, false) || retv;//順番重要
             return retv;
         }
         public bool ReserveChangeOnOff(ReserveData item, RecSettingView recSettingView = null)
         {
             return ReserveChangeOnOff(GetList(item), recSettingView);
         }
-        public bool ReserveChangeOnOff(List<ReserveData> itemlist, RecSettingView recSettingView = null)
+        public bool ReserveChangeOnOff(List<ReserveData> itemlist, RecSettingView recSettingView = null, bool cautionMany = true)
         {
             try
             {
@@ -767,7 +770,7 @@ namespace EpgTimer
                 itemlist.ForEach(item =>
                     item.RecSetting.RecMode = (item.RecSetting.RecMode == 5 ? recMode : (byte)5));
 
-                return ReserveChange(itemlist);
+                return ReserveChange(itemlist, cautionMany);
             }
             catch (Exception ex)
             {
@@ -847,9 +850,9 @@ namespace EpgTimer
         {
             return ReserveChange(GetList(item));
         }
-        public bool ReserveChange(List<ReserveData> list)
+        public bool ReserveChange(List<ReserveData> list, bool cautionMany = true)
         {
-            return ReserveCmdSend(list, cmd.SendChgReserve, "予約変更");
+            return ReserveCmdSend(list, cmd.SendChgReserve, "予約変更", cautionMany);
         }
 
         public bool ReserveDelete(List<SearchItem> itemlist)
@@ -887,9 +890,9 @@ namespace EpgTimer
         {
             return EpgAutoAddChange(GetList(item));
         }
-        public bool EpgAutoAddChange(List<EpgAutoAddData> itemlist)
+        public bool EpgAutoAddChange(List<EpgAutoAddData> itemlist, bool cautionMany = true)
         {
-            return ReserveCmdSend(itemlist, cmd.SendChgEpgAutoAdd, "EPG自動予約の変更");
+            return ReserveCmdSend(itemlist, cmd.SendChgEpgAutoAdd, "EPG自動予約の変更", cautionMany);
         }
 
         public bool EpgAutoAddDelete(List<EpgAutoDataItem> itemlist)
@@ -914,11 +917,14 @@ namespace EpgTimer
             return ReserveCmdSend(itemlist, cmd.SendDelEpgAutoAdd, "EPG自動予約の削除");
         }
 
-        private bool ReserveCmdSend<T>(List<T> list, Func<List<T>, uint> cmdSend, string description="")
+        private bool ReserveCmdSend<T>(List<T> list, Func<List<T>, uint> cmdSend, string description = "", bool cautionMany = true)
         {
             try
             {
                 if (list.Count == 0) return false;
+
+                if (cautionMany == true && CautionManyMessage(list.Count, description) == false) return false;
+
                 ErrCode err = (ErrCode)cmdSend(list);
                 return CommonManager.CmdErrMsgTypical(err, description);
             }
@@ -927,6 +933,20 @@ namespace EpgTimer
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
                 return false;
             }
+        }
+
+        public bool CautionManyMessage(int Count, string description = "")
+        {
+            if (Settings.Instance.CautionManyChange == true && Count >= Settings.Instance.CautionManyNum)
+            {
+                if (MessageBox.Show("多数の項目を処理しようとしています。\r\nよろしいですか？\r\n"
+                    + "　項目数: " + Count + "\r\n"
+                    , description, MessageBoxButton.OKCancel) == MessageBoxResult.Cancel)
+                {
+                    return false;
+                }
+            }
+            return true;
         }
 
         public bool? OpenSearchItemWithWindow(SearchItem item, ContentControl Owner, byte openMode = 0)

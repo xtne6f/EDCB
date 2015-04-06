@@ -423,7 +423,7 @@ namespace EpgTimer
                 addList1.Add(item1.EpgAutoAddInfo);
 
             }
-            if (mutil.EpgAutoAddChange(addList1) == true)
+            if (mutil.EpgAutoAddChange(addList1, false) == true)
             {
                 this.ItemOrderNotSaved = false;
             }
