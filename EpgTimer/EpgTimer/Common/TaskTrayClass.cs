@@ -58,6 +58,28 @@ namespace EpgTimer
                 targetWindow.Closing += new System.ComponentModel.CancelEventHandler(target_Closing);
             }
             notifyIcon.ContextMenuStrip = new ContextMenuStrip();
+
+            // 指定タイムアウトでバルーンチップを強制的に閉じる
+            var balloonTimer = new System.Windows.Threading.DispatcherTimer();
+            balloonTimer.Tick += (sender, e) =>
+            {
+                if (notifyIcon.Visible)
+                {
+                    notifyIcon.Visible = false;
+                    notifyIcon.Visible = true;
+                }
+                balloonTimer.Stop();
+            };
+            notifyIcon.BalloonTipShown += (sender, e) =>
+            {
+                if (Settings.Instance.ForceHideBalloonTipSec > 0)
+                {
+                    balloonTimer.Interval = TimeSpan.FromSeconds(Math.Max(Settings.Instance.ForceHideBalloonTipSec, 1));
+                    balloonTimer.Start();
+                }
+            };
+            notifyIcon.BalloonTipClicked += (sender, e) => balloonTimer.Stop();
+            notifyIcon.BalloonTipClosed += (sender, e) => balloonTimer.Stop();
         }
 
         public void SetContextMenu(List<Object> list)

@@ -113,6 +113,7 @@ namespace EpgTimer
         private bool fontBoldTitle;
         private bool noToolTip;
         private bool noBallonTips;
+        private int forceHideBalloonTipSec;
         private bool playDClick;
         private double dragScroll;
         private List<string> contentColorList;
@@ -305,6 +306,11 @@ namespace EpgTimer
         {
             get { return noBallonTips; }
             set { noBallonTips = value; }
+        }
+        public int ForceHideBalloonTipSec
+        {
+            get { return forceHideBalloonTipSec; }
+            set { forceHideBalloonTipSec = value; }
         }
         public bool PlayDClick
         {
