@@ -301,6 +301,7 @@ namespace EpgTimer.Setting
                     checkBox_noToolTips.IsChecked = Settings.Instance.NoToolTip;
                     checkBox_noBallonTips.IsChecked = Settings.Instance.NoBallonTips;
                     checkBox_playDClick.IsChecked = Settings.Instance.PlayDClick;
+                    checkBox_showTray.IsChecked = Settings.Instance.ShowTray;
                     checkBox_minHide.IsChecked = Settings.Instance.MinHide;
                     checkBox_cautionManyChange.IsChecked = Settings.Instance.CautionManyChange;
                     textBox_cautionManyChange.Text = Settings.Instance.CautionManyNum.ToString(); 
@@ -627,6 +628,7 @@ namespace EpgTimer.Setting
 
             Settings.Instance.CloseMin = (bool)checkBox_closeMin.IsChecked;
             Settings.Instance.WakeMin = (bool)checkBox_minWake.IsChecked;
+            Settings.Instance.ShowTray = (bool)checkBox_showTray.IsChecked;
             Settings.Instance.MinHide = (bool)checkBox_minHide.IsChecked;
 
             IniFileHandler.WritePrivateProfileString("DEL_EXT", "Count", extList.Count.ToString(), SettingPath.TimerSrvIniPath);

@@ -260,6 +260,7 @@ namespace EpgTimer
         private double searchWndWidth;
         private double searchWndHeight;
         private short autoSaveNotifyLog;
+        private bool showTray;
         private bool minHide;
         private bool mouseScrollAuto;
         private int noStyle;
@@ -1066,6 +1067,11 @@ namespace EpgTimer
             get { return autoSaveNotifyLog; }
             set { autoSaveNotifyLog = value; }
         }
+        public bool ShowTray
+        {
+            get { return showTray; }
+            set { showTray = value; }
+        }
         public bool MinHide
         {
             get { return minHide; }
@@ -1237,6 +1243,7 @@ namespace EpgTimer
             searchWndWidth = 0;
             searchWndHeight = 0;
             autoSaveNotifyLog = 0;
+            showTray = true;
             minHide = true;
             mouseScrollAuto = false;
             noStyle = 0;
