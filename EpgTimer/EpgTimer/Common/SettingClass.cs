@@ -240,7 +240,6 @@ namespace EpgTimer
         private bool minHide;
         private bool mouseScrollAuto;
         private int noStyle;
-        private bool fixSearchResult;
 
         public bool UseCustomEpgView
         {
@@ -942,11 +941,6 @@ namespace EpgTimer
             get { return noStyle; }
             set { noStyle = value; }
         }
-        public bool FixSearchResult
-        {
-            get { return fixSearchResult; }
-            set { fixSearchResult = value; }
-        }
         
         
         public Settings()
@@ -1074,7 +1068,6 @@ namespace EpgTimer
             minHide = true;
             mouseScrollAuto = false;
             noStyle = 0;
-            fixSearchResult = false;
         }
 
         [NonSerialized()]

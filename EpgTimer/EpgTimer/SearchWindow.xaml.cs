@@ -193,11 +193,6 @@ namespace EpgTimer
                         {
                             item.ServiceName = ChSet5.Instance.ChList[serviceKey].ServiceName;
                         }
-                        if (Settings.Instance.FixSearchResult)
-                        {
-                            item.EventInfo.ShortInfo.text_char = "省略";
-                        }
-
                         resultList.Add(item);
                     }
                 }
