@@ -105,6 +105,8 @@
     </Compile>
     <Compile Include="DefineClass\CoopServerInfo.cs" />
     <Compile Include="DefineClass\ListColumnInfo.cs" />
+    <Compile Include="EpgView\EpgMainViewBase.cs" />
+    <Compile Include="EpgView\EpgViewBase.cs" />
     <Compile Include="SetCoopSrvWindow.xaml.cs">
       <DependentUpon>SetCoopSrvWindow.xaml</DependentUpon>
     </Compile>

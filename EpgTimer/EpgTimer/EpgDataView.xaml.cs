@@ -24,19 +24,9 @@ namespace EpgTimer
 
         private void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
-            try
+            if (RedrawEpg == true && this.IsVisible == true)
             {
-                if (RedrawEpg == true && this.IsVisible == true)
-                {
-                    if (ReDrawEpgData() == true)
-                    {
-                        RedrawEpg = false;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                RedrawEpg = !ReDrawEpgData();
             }
         }
 
@@ -45,23 +35,10 @@ namespace EpgTimer
         /// </summary>
         public void UpdateEpgData()
         {
-            try
+            RedrawEpg = true;
+            if (this.IsVisible == true || CommonManager.Instance.NWMode == false)
             {
-                if (this.IsVisible == true || CommonManager.Instance.NWMode == false)
-                {
-                    if (ReDrawEpgData() == true)
-                    {
-                        RedrawEpg = false;
-                    }
-                }
-                else
-                {
-                    RedrawEpg = true;
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                RedrawEpg = !ReDrawEpgData();
             }
         }
 
@@ -123,13 +100,8 @@ namespace EpgTimer
             {
                 if (Settings.Instance.UseCustomEpgView == false)
                 {
-                    if (CommonManager.Instance.NWMode == true)
-                    {
-                        if (CommonManager.Instance.NW.IsConnected == false)
-                        {
-                            return false;
-                        }
-                    }
+                    if (CommonManager.Instance.VUtil.EpgTimerNWNotConnect() == true) return false;
+
                     ErrCode err = CommonManager.Instance.DB.ReloadEpgData();
                     if (CommonManager.CmdErrMsgTypical(err, "EPGデータの取得", this) == false)
                     {
@@ -304,14 +276,11 @@ namespace EpgTimer
             {
                 if (RedrawEpg == true && this.IsVisible == true)
                 {
-                    if (ReDrawEpgData() == true)
-                    {
-                        RedrawEpg = false;
-                    }
+                    RedrawEpg = !ReDrawEpgData();
                 }
                 if (this.IsVisible)
                 {
-                    this.searchJumpTargetProgram();
+                    this.searchJumpTargetProgram();//EPG更新後に探す
                 }
             }
             catch (Exception ex)

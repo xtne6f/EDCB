@@ -18,6 +18,12 @@ namespace EpgTimer {
         public static ReserveItem SelectedReserveItem = null;
         public static SearchItem SelectedSearchItem = null;
 
+        public static void Clear()
+        {
+            SelectedReserveItem = null;
+            SelectedSearchItem = null;
+        }
+
         public static ulong Create64Key()
         {
             if (SelectedReserveItem != null) return SelectedReserveItem.ReserveInfo.Create64Key();

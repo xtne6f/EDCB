@@ -47,8 +47,8 @@ namespace EpgTimer
             tunerReserveView.ClearInfo();
             tunerReserveTimeView.ClearInfo();
             tunerReserveNameView.ClearInfo();
-            tunerList.Clear();
-            reserveList.Clear();
+            tunerList = new List<TunerNameViewItem>();
+            reserveList = new List<ReserveViewItem>();
 
             return true;
         }
@@ -82,7 +82,7 @@ namespace EpgTimer
         /// <returns>falseで存在しない</returns>
         private bool GetReserveItem(Point cursorPos, ref ReserveData reserve)
         {
-            return vutil.GetReserveItem(cursorPos, ref reserve, reserveList);
+            return vutil.GetHitItem(cursorPos, ref reserve, reserveList);
         }
 
         /// <summary>
@@ -349,14 +349,19 @@ namespace EpgTimer
         /// </summary>
         private void ReloadReserveViewItem()
         {
-            tunerReserveView.ClearInfo();
-            tunerReserveTimeView.ClearInfo();
-            tunerReserveNameView.ClearInfo();
-            List<DateTime> timeList = new List<DateTime>();
-            tunerList.Clear();
-            reserveList.Clear();
             try
             {
+                tunerReserveView.ClearInfo();
+                tunerReserveTimeView.ClearInfo();
+                tunerReserveNameView.ClearInfo();
+                List<DateTime> timeList = new List<DateTime>();
+                tunerList.Clear();
+                reserveList.Clear();
+
+                //TODO: ここでデフォルトマージンを確認するがEpgTimerNWでは無意味。根本的にはSendCtrlCmdの拡張が必要
+                int defStartMargin = IniFileHandler.GetPrivateProfileInt("SET", "StartMargin", 0, SettingPath.TimerSrvIniPath);
+                int defEndMargin = IniFileHandler.GetPrivateProfileInt("SET", "EndMargin", 0, SettingPath.TimerSrvIniPath);
+
                 double leftPos = 0;
                 for (int i = 0; i < CommonManager.Instance.DB.TunerReserveList.Count; i++)
                 {
@@ -376,54 +381,29 @@ namespace EpgTimer
                         ReserveData reserveInfo = CommonManager.Instance.DB.ReserveList[reserveID];
                         ReserveViewItem viewItem = new ReserveViewItem(CommonManager.Instance.DB.ReserveList[reserveID]);
 
+                        //マージンを適用
                         Int32 duration = (Int32)reserveInfo.DurationSecond;
                         DateTime startTime = reserveInfo.StartTime;
-                        if (reserveInfo.RecSetting.UseMargineFlag == 1)
-                        {
-                            if (reserveInfo.RecSetting.StartMargine < 0)
-                            {
-                                startTime = reserveInfo.StartTime.AddSeconds(reserveInfo.RecSetting.StartMargine*-1);
-                                duration += reserveInfo.RecSetting.StartMargine;
-                            }
-                            if (reserveInfo.RecSetting.EndMargine < 0)
-                            {
-                                duration += reserveInfo.RecSetting.EndMargine;
-                            }
-                        }
-                        DateTime EndTime;
-                        EndTime = startTime.AddSeconds(duration);
-                        //if ((duration / 60) < Settings.Instance.MinHeight)
-                        //{
-                        //    duration = (int)Settings.Instance.MinHeight;
-                        //}
+                        vutil.ApplyMarginForPanelView(reserveInfo,
+                            ref duration, ref startTime, defStartMargin, defEndMargin, true);
 
-                        viewItem.Height = Math.Floor((duration / 60) * Settings.Instance.MinHeight);
-                        if (viewItem.Height == 0)
-                        {
-                            viewItem.Height = Settings.Instance.MinHeight;
-                        }
+                        DateTime EndTime = startTime.AddSeconds(duration);
+
+                        viewItem.Height = Math.Max((duration * Settings.Instance.MinHeight) / 60, Settings.Instance.MinHeight);
                         viewItem.Width = 150;
                         viewItem.LeftPos = leftPos;
 
                         foreach (ReserveViewItem addItem in tunerAddList)
                         {
                             ReserveData addInfo = addItem.ReserveInfo;
+
+                            //マージンを適用
                             Int32 durationAdd = (Int32)addInfo.DurationSecond;
                             DateTime startTimeAdd = addInfo.StartTime;
-                            if (addInfo.RecSetting.UseMargineFlag == 1)
-                            {
-                                if (addInfo.RecSetting.StartMargine < 0)
-                                {
-                                    startTimeAdd = addInfo.StartTime.AddSeconds(addInfo.RecSetting.StartMargine*-1);
-                                    durationAdd += addInfo.RecSetting.StartMargine;
-                                }
-                                if (addInfo.RecSetting.EndMargine < 0)
-                                {
-                                    durationAdd += addInfo.RecSetting.EndMargine;
-                                }
-                            }
-                            DateTime endTimeAdd;
-                            endTimeAdd = startTimeAdd.AddSeconds(durationAdd);
+                            vutil.ApplyMarginForPanelView(addInfo,
+                                ref durationAdd, ref startTimeAdd, defStartMargin, defEndMargin, true);
+                            
+                            DateTime endTimeAdd = startTimeAdd.AddSeconds(durationAdd);
 
                             if ((startTimeAdd <= startTime && startTime < endTimeAdd) ||
                                 (startTimeAdd < EndTime && EndTime <= endTimeAdd) || 

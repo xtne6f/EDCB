@@ -61,14 +61,10 @@ namespace EpgTimer
         /// </summary>
         public void UpdateInfo()
         {
+            ReloadInfo = true;
             if (this.IsVisible == true)
             {
-                ReloadInfoData();
-                ReloadInfo = false;
-            }
-            else
-            {
-                ReloadInfo = true;
+                ReloadInfo = !ReloadInfoData();
             }
         }
         
@@ -76,8 +72,15 @@ namespace EpgTimer
         {
             if (ReloadInfo == true && this.IsVisible == true)
             {
-                ReloadInfoData();
-                ReloadInfo = false;
+                ReloadInfo = !ReloadInfoData();
+            }
+        }
+
+        private void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            if (ReloadInfo == true && this.IsVisible == true)
+            {
+                ReloadInfo = !ReloadInfoData();
             }
         }
 
@@ -91,20 +94,14 @@ namespace EpgTimer
                 listView_key.DataContext = null;
                 resultList.Clear();
 
-                if (CommonManager.Instance.NWMode == true)
-                {
-                    if (CommonManager.Instance.NW.IsConnected == false)
-                    {
-                        return false;
-                    }
-                }
+                if (CommonManager.Instance.VUtil.EpgTimerNWNotConnect() == true) return false;
+
                 ErrCode err = CommonManager.Instance.DB.ReloadManualAutoAddInfo();
                 if (CommonManager.CmdErrMsgTypical(err, "情報の取得", this) == false) return false;
 
                 foreach (ManualAutoAddData info in CommonManager.Instance.DB.ManualAutoAddList.Values)
                 {
-                    ManualAutoAddDataItem item = new ManualAutoAddDataItem(info);
-                    resultList.Add(item);
+                    resultList.Add(new ManualAutoAddDataItem(info));
                 }
 
                 listView_key.DataContext = resultList;
@@ -128,6 +125,19 @@ namespace EpgTimer
             AddManualAutoAddWindow dlg = new AddManualAutoAddWindow();
             dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
             dlg.ShowDialog();
+        }
+
+        private void button_change_Click(object sender, RoutedEventArgs e)
+        {
+            if (listView_key.SelectedItem != null)
+            {
+                ManualAutoAddDataItem info = SelectSingleItem();
+                AddManualAutoAddWindow dlg = new AddManualAutoAddWindow();
+                dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
+                dlg.SetChangeMode(true);
+                dlg.SetDefaultSetting(info.ManualAutoAddInfo);
+                dlg.ShowDialog();
+            }
         }
 
         private void button_del_Click(object sender, RoutedEventArgs e)
@@ -182,19 +192,6 @@ namespace EpgTimer
             return listView_key.SelectedItems.Cast<ManualAutoAddDataItem>().ToList();
         }
 
-        private void button_change_Click(object sender, RoutedEventArgs e)
-        {
-            if (listView_key.SelectedItem != null)
-            {
-                ManualAutoAddDataItem info = SelectSingleItem();
-                AddManualAutoAddWindow dlg = new AddManualAutoAddWindow();
-                dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-                dlg.SetChangeMode(true);
-                dlg.SetDefaultSetting(info.ManualAutoAddInfo);
-                dlg.ShowDialog();
-            }
-        }
-
         private ManualAutoAddDataItem SelectSingleItem()
         {
             return mutil.SelectSingleItem<ManualAutoAddDataItem>(listView_key);
@@ -203,17 +200,6 @@ namespace EpgTimer
         private void listView_key_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             this.button_change.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-        }
-
-        private void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
-        {
-            if (ReloadInfo == true && this.IsVisible == true)
-            {
-                if (ReloadInfoData() == true)
-                {
-                    ReloadInfo = false;
-                }
-            }
         }
 
     }

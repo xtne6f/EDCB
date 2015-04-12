@@ -4,54 +4,39 @@ using System.Linq;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
 using System.Windows.Input;
-using System.ComponentModel;
 
 using CtrlCmdCLI;
 using CtrlCmdCLI.Def;
+using EpgTimer.EpgView;
 
 namespace EpgTimer
 {
     /// <summary>
     /// EpgListMainView.xaml の相互作用ロジック
     /// </summary>
-    public partial class EpgListMainView : UserControl, IEpgDataViewItem
+    public partial class EpgListMainView : EpgViewBase
     {
-        public event ViewSettingClickHandler ViewSettingClick = null;
-
-        private CustomEpgTabInfo setViewInfo = null;
-
-        private List<UInt64> viewCustServiceList = null;
-        private Dictionary<UInt16, UInt16> viewCustContentKindList = new Dictionary<UInt16, UInt16>();
         private List<SearchItem> programList = new List<SearchItem>();
         private List<ServiceItem> serviceList = new List<ServiceItem>();
 
-        private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
-        private MenuUtil mutil = CommonManager.Instance.MUtil;
-        private ViewUtil vutil = CommonManager.Instance.VUtil;
-
-        private Dictionary<UInt64, EpgServiceEventInfo> searchEventList = new Dictionary<UInt64, EpgServiceEventInfo>();
-
-        private bool updateEpgData = true;
-        private bool updateReserveData = true;
-
         private Dictionary<UInt64, UInt64> lastChkSID = new Dictionary<UInt64, UInt64>();
-        private bool listBox_service_initialized = true;
+        private bool listBox_service_need_initialized = true;
 
         public EpgListMainView()
         {
             InitializeComponent();
         }
 
-        public bool ClearInfo()
+        public override bool ClearInfo()
         {
+            base.ClearInfo();
+
             BackUpChkSID();
             listBox_service.ItemsSource = null;
-            serviceList.Clear();
+            serviceList = new List<ServiceItem>();
             listView_event.ItemsSource = null;
-            programList.Clear();
-            searchEventList.Clear();
+            programList = new List<SearchItem>();
             richTextBox_eventInfo.Document.Blocks.Clear();
 
             return true;
@@ -59,7 +44,7 @@ namespace EpgTimer
 
         private void BackUpChkSID()
         {
-            if (listBox_service_initialized == false && listBox_service.ItemsSource != null)
+            if (listBox_service_need_initialized == false && listBox_service.ItemsSource != null)
             {
                 lastChkSID.Clear();
                 foreach (ServiceItem info in serviceList)
@@ -72,123 +57,44 @@ namespace EpgTimer
             }
         }
 
-        public void SetViewMode(CustomEpgTabInfo setInfo)
+        protected override bool ReloadViewData()
         {
-            ClearInfo();
-            setViewInfo = setInfo;
-            this.viewCustServiceList = setInfo.ViewServiceList;
-            this.viewCustContentKindList.Clear();
-            if (setInfo.ViewContentKindList != null)
-            {
-                foreach (UInt16 val in setInfo.ViewContentKindList)
-                {
-                    this.viewCustContentKindList.Add(val, val);
-                }
-            }
-
-            if (ReloadEpgData() == true)
-            {
-                updateEpgData = false;
-                if (ReloadReserveData() == true)//ここはUpdateReserveData()ではダメ
-                {
-                    updateReserveData = false;
-                }
-            }
+            //ReloadReserveViewItem()の実質的な重複実行を阻止。
+            //ReloadEpgData()より先に実行させておく必要がある。※パネル系Viewでは後に実行させる必要がある。
+            ClearInfo(); 
+            updateReserveData = !base.ReloadReserveData();
+            return ReloadEpgData();
         }
 
-        private void UserControl_Loaded(object sender, RoutedEventArgs e)
+        protected override bool ReloadEpgData()
         {
-            if (this.IsVisible == true)
-            {
-                if (updateEpgData == true)
-                {
-                    if (ReloadEpgData() == true)
-                    {
-                        updateEpgData = false;
-                        UpdateReserveData();
-                    }
-                }
-                if (updateReserveData == true)
-                {
-                    if (ReloadReserveData() == true)
-                    {
-                        updateReserveData = false;
-                    }
-                }
-            }
-        }
+            if (base.ReloadEpgData() == false) return false;
 
-        /// <summary>
-        /// EPGデータ更新通知
-        /// </summary>
-        public void UpdateEpgData()
-        {
-            updateEpgData = true;
-            if (this.IsVisible == true || CommonManager.Instance.NWMode == false)
-            {
-                ClearInfo();
-                if (ReloadEpgData() == true)
-                {
-                    updateEpgData = false;
-                    UpdateReserveData();
-                }
-            }
-        }
-
-        /// <summary>
-        /// 予約情報更新通知
-        /// </summary>
-        public void UpdateReserveData()
-        {
-            updateReserveData = true;
-            if (this.IsVisible == true)
-            {
-                if (ReloadReserveData() == true)
-                {
-                    updateReserveData = false;
-                }
-            }
-        }
-
-        private bool ReloadEpgData()
-        {
-            try
-            {
-                if (setViewInfo != null)
-                {
-                    updateEpgData = false;
-                    return ReloadProgramViewItem();
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            ReloadProgramViewItem();
             return true;
         }
 
-        private bool ReloadReserveData()
+        protected override bool ReloadReserveData()
         {
-            if (vutil.ReloadReserveData() == false) return false;
-            
+            if (base.ReloadReserveData() == false) return false;
+
+            ReloadReserveViewItem();
+            return true;
+        }
+
+        private void ReloadReserveViewItem()
+        {
             //予約チェック
             mutil.SetSearchItemReserved(programList);
             listView_event.Items.Refresh();
-            
-            return true;
         }
 
         private bool ReloadProgramViewItem()
         {
             try
             {
-                Dictionary<UInt64, EpgServiceEventInfo> serviceEventList = vutil.ReloadEpgDataForEpgView(setViewInfo);
-                if (serviceEventList == null) return false;
-
-                if (setViewInfo.SearchMode == true)
-                {
-                    searchEventList = serviceEventList;
-                }
+                Dictionary<UInt64, EpgServiceEventInfo> serviceEventList =
+                    setViewInfo.SearchMode == true ? searchEventList : CommonManager.Instance.DB.ServiceEventList;
 
                 BackUpChkSID();
 
@@ -201,13 +107,13 @@ namespace EpgTimer
                     {
                         ServiceItem item = new ServiceItem();
                         item.ServiceInfo = serviceEventList[id].serviceInfo;
-                        item.IsSelected = listBox_service_initialized || lastChkSID.ContainsKey(id);
+                        item.IsSelected = listBox_service_need_initialized || lastChkSID.ContainsKey(id);
                         serviceList.Add(item);
                     }
                 }
 
                 listBox_service.ItemsSource = serviceList;
-                listBox_service_initialized = false;
+                listBox_service_need_initialized = false;
 
                 UpdateEventList();
 
@@ -229,18 +135,11 @@ namespace EpgTimer
                 //大きく番組表が変化するEPG更新前後で選択情報を保存する意味もないのでほっておくことにする。
                 var oldItems = new ListViewSelectedKeeper<SearchItem>(listView_event, true);
 
-                listView_event.DataContext = null;
+                listView_event.ItemsSource = null;
                 programList.Clear();
 
-                Dictionary<UInt64, EpgServiceEventInfo> serviceEventList = null;
-                if (setViewInfo.SearchMode == true)
-                {
-                    serviceEventList = searchEventList;
-                }
-                else
-                {
-                    serviceEventList = CommonManager.Instance.DB.ServiceEventList;
-                }
+                Dictionary<UInt64, EpgServiceEventInfo> serviceEventList =
+                    setViewInfo.SearchMode == true ? base.searchEventList : CommonManager.Instance.DB.ServiceEventList;
 
                 DateTime now = DateTime.Now;
                 foreach (ServiceItem info in serviceList)
@@ -294,8 +193,6 @@ namespace EpgTimer
                 //予約チェック
                 mutil.SetSearchItemReserved(programList);
 
-                listView_event.ItemsSource = programList;
-
                 if (this.gridViewSorter.IsExistSortParams)
                 {
                     this.gridViewSorter.SortByMultiHeader(this.programList);
@@ -305,7 +202,7 @@ namespace EpgTimer
                     this.gridViewSorter.ResetSortParams();
                     this.gridViewSorter.SortByMultiHeaderWithKey(this.programList, gridView_event.Columns, "StartTime");
                 }
-                listView_event.Items.Refresh();
+                listView_event.ItemsSource = programList;
 
                 //選択情報の復元
                 oldItems.RestoreListViewSelected();
@@ -544,10 +441,7 @@ namespace EpgTimer
         /// <param name="e"></param>
         private void cm_viewSet_Click(object sender, RoutedEventArgs e)
         {
-            if (ViewSettingClick != null)
-            {
-                ViewSettingClick(this, null);
-            }
+            base.ViewSetting(this, null);
         }
 
         /// <summary>
@@ -559,29 +453,41 @@ namespace EpgTimer
         {
             try
             {
-                if (sender.GetType() != typeof(MenuItem))
+                if (sender.GetType() != typeof(MenuItem)) return;
+                if (base.EnableViewSetting() == false) return;
+
+                var item = sender as MenuItem;
+                var setInfo = new CustomEpgTabInfo();
+                setViewInfo.CopyTo(ref setInfo);
+                //setInfo.ViewMode = (int)item.DataContext;
+                if (sender == cm_chg_viewMode2)
                 {
-                    return;
+                    setInfo.ViewMode = 1;
                 }
-                if (ViewSettingClick != null)
+                else if (sender == cm_chg_viewMode3)
                 {
-                    MenuItem item = sender as MenuItem;
-                    var setInfo = new CustomEpgTabInfo();
-                    setViewInfo.CopyTo(ref setInfo);
-                    if (sender == cm_chg_viewMode2)
+                    setInfo.ViewMode = 2;
+                }
+                else
+                {
+                    setInfo.ViewMode = 0;
+                }
+
+                BlackoutWindow.Clear();
+                SearchItem select = SelectSingleItem();
+                if (select != null)
+                {
+                    if (select.IsReserved == true)
                     {
-                        setInfo.ViewMode = 1;
-                    }
-                    else if (sender == cm_chg_viewMode3)
-                    {
-                        setInfo.ViewMode = 2;
+                        BlackoutWindow.SelectedReserveItem = new ReserveItem(select.ReserveInfo);
                     }
                     else
                     {
-                        setInfo.ViewMode = 0;
+                        BlackoutWindow.SelectedSearchItem = select;
                     }
-                    ViewSettingClick(this, setInfo);
                 }
+
+                base.ViewSetting(this, setInfo);
             }
             catch (Exception ex)
             {
@@ -646,42 +552,30 @@ namespace EpgTimer
             mutil.ReserveChangeOnOff(GetSelectedItemsList(), null);
         }
 
-        private void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+        protected override void MoveToReserveItem(ReserveItem target)
         {
-            if (this.IsVisible == false) return;
-            if (BlackoutWindow.Create64Key() == 0) return;
-
-            EpgEventInfo selectedItem = null;
-            if (BlackoutWindow.SelectedReserveItem != null)
-            {
-                selectedItem = BlackoutWindow.SelectedReserveItem.EventInfo;
-                BlackoutWindow.SelectedReserveItem = null;
-            }
-            else if (BlackoutWindow.SelectedSearchItem != null)
-            {
-                selectedItem = BlackoutWindow.SelectedSearchItem.EventInfo;
-                BlackoutWindow.SelectedSearchItem = null;
-            }
-
-            if (selectedItem != null)
-            {
-                foreach (SearchItem item in listView_event.Items)
-                {
-                    if (CommonManager.EqualsPg(selectedItem, item.EventInfo) == true)
-                    {
-                        listView_event.SelectedItem = item;
-                        listView_event.ScrollIntoView(item);
-                        //画面更新されないので無意味
-                        //listView_event.ScrollIntoView(listView_event.Items[0]);
-                        //listView_event.ScrollIntoView(listView_event.Items[listView_event.Items.Count-1]);
-                        //int scrollpos = ((listView_event.SelectedIndex - 5) >=0 ? scrollpos : 0);
-                        //listView_event.ScrollIntoView(listView_event.Items[scrollpos]);
-                        break;
-                    }
-                }
-            }
-
+            uint ID = target.ReserveInfo.ReserveID;
+            SearchItem target_item = this.programList.Find(item => item.ReserveInfo != null && item.ReserveInfo.ReserveID == ID);
+            ScrollToFindItem(target_item);
         }
 
+        protected override void MoveToProgramItem(SearchItem target)
+        {
+            ulong PgKey = target.EventInfo.Create64PgKey();
+            SearchItem target_item = this.programList.Find(item => item.EventInfo.Create64PgKey() == PgKey);
+            ScrollToFindItem(target_item);
+        }
+
+        private void ScrollToFindItem(SearchItem target_item)
+        {
+            listView_event.SelectedItem = target_item;
+            listView_event.ScrollIntoView(target_item);
+            
+            //いまいちな感じ
+            //listView_event.ScrollIntoView(listView_event.Items[0]);
+            //listView_event.ScrollIntoView(listView_event.Items[listView_event.Items.Count-1]);
+            //int scrollpos = ((listView_event.SelectedIndex - 5) >= 0 ? listView_event.SelectedIndex - 5 : 0);
+            //listView_event.ScrollIntoView(listView_event.Items[scrollpos]);
+        }
     }
 }

@@ -119,26 +119,6 @@ namespace EpgTimer
             }
         }
 
-        public bool GetProgramItem(Point cursorPos, ref EpgEventInfo data, SortedList<DateTime, List<ProgramViewItem>> timeList)
-        {
-            try
-            {
-                int timeIndex = (int)(cursorPos.Y / (60 * Settings.Instance.MinHeight));
-                if (0 <= timeIndex && timeIndex < timeList.Count)
-                {
-                    return GetHitItem<EpgEventInfo, ProgramViewItem>(cursorPos, ref data, timeList.Values[timeIndex]);
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-            return false;
-        }
-        public bool GetReserveItem(Point cursorPos, ref ReserveData data, List<ReserveViewItem> list)
-        {
-            return GetHitItem<ReserveData, ReserveViewItem>(cursorPos, ref data, list);
-        }
         public bool GetHitItem<T, S>(Point cursorPos, ref T data, List<S> list) where S : ViewPanelItem<T>
         {
             try
@@ -159,72 +139,17 @@ namespace EpgTimer
 
         public bool ReloadReserveData(ContentControl Owner = null)
         {
-            if (EpgTimerConnectCheck() == false) return false;
+            if (EpgTimerNWNotConnect() == true) return false;
 
             ErrCode err = CommonManager.Instance.DB.ReloadReserveInfo();
             if (CommonManager.CmdErrMsgTypical(err, "予約情報の取得", Owner) == false) return false;
 
             return true;
         }
-
-        public bool ReloadEpgData(ContentControl Owner = null)
+        
+        public bool EpgTimerNWNotConnect()
         {
-            if (EpgTimerConnectCheck() == false) return false;
-
-            ErrCode err = CommonManager.Instance.DB.ReloadEpgData();
-            if (CommonManager.CmdErrMsgTypical(err, "EPGデータの取得", Owner) == false) return false;
-
-            return true;
-        }
-
-        //仮
-        public Dictionary<UInt64, EpgServiceEventInfo> ReloadEpgDataForEpgView(CustomEpgTabInfo setViewInfo, ContentControl Owner = null)
-        {
-            if (EpgTimerConnectCheck() == false) return null;
-
-            if (setViewInfo.SearchMode == false)
-            {
-                ErrCode err = CommonManager.Instance.DB.ReloadEpgData();
-                if (CommonManager.CmdErrMsgTypical(err, "EPGデータの取得", Owner) == false) return null;
-
-                return CommonManager.Instance.DB.ServiceEventList;
-            }
-            else
-            {
-                //番組情報の検索
-                List<EpgSearchKeyInfo> keyList = mutil.GetList(setViewInfo.SearchKey);
-                var list = new List<EpgEventInfo>();
-
-                ErrCode err = (ErrCode)cmd.SendSearchPg(keyList, ref list);
-                if (CommonManager.CmdErrMsgTypical(err, "EPGデータの取得", Owner) == false) return null;
-
-                //サービス毎のリストに変換
-                var serviceEventList = new Dictionary<UInt64, EpgServiceEventInfo>();
-                foreach (EpgEventInfo eventInfo in list)
-                {
-                    UInt64 id = eventInfo.Create64Key();
-                    EpgServiceEventInfo serviceInfo;
-                    if (serviceEventList.TryGetValue(id, out serviceInfo) == false)
-                    {
-                        if (ChSet5.Instance.ChList.ContainsKey(id) == false)
-                        {
-                            //サービス情報ないので無効
-                            continue;
-                        }
-                        serviceInfo = new EpgServiceEventInfo();
-                        serviceInfo.serviceInfo = CommonManager.ConvertChSet5To(ChSet5.Instance.ChList[id]);
-
-                        serviceEventList.Add(id, serviceInfo);
-                    }
-                    serviceInfo.eventList.Add(eventInfo);
-                }
-                return serviceEventList;
-            }
-        }
-
-        public bool EpgTimerConnectCheck()
-        {
-            return CommonManager.Instance.NWMode == false || CommonManager.Instance.NW.IsConnected == true;
+            return CommonManager.Instance.NWMode == true && CommonManager.Instance.NW.IsConnected == false;
         }
 
         //ジャンル絞り込み
@@ -262,5 +187,53 @@ namespace EpgTimer
             return false;
         }
 
+        //パネルアイテムにマージンを適用。チューナ予約画面に適用出来ない？
+        public void ApplyMarginForPanelView(ReserveData resInfo,
+            ref int duration, ref DateTime startTime, int defStartMargin = 0, int defEndMargin = 0, bool already_set = false)
+        {
+            if (already_set == false)
+            {
+                duration = (Int32)resInfo.DurationSecond;
+                startTime = resInfo.StartTime;
+            }
+            int StartMargine = (resInfo.RecSetting.UseMargineFlag == 1 ? resInfo.RecSetting.StartMargine : defStartMargin);
+            int EndMargine = (resInfo.RecSetting.UseMargineFlag == 1 ? resInfo.RecSetting.EndMargine : defEndMargin);
+
+            if (StartMargine < 0)
+            {
+                startTime = startTime.AddSeconds(StartMargine * -1);
+                duration += StartMargine;
+            }
+            if (EndMargine < 0)
+            {
+                duration += EndMargine;
+            }
+        }
+
+        //最低表示行数を適用
+        public void ModifierMinimumHeight<T, S>(List<S> list) where S : ViewPanelItem<T>
+        {
+            if (Settings.Instance.MinimumHeight <= 0) return;
+
+            list.Sort((x, y) => Math.Sign(x.LeftPos - y.LeftPos) * 2 + Math.Sign(x.TopPos - y.TopPos));
+            double minimum = (Settings.Instance.FontSizeTitle + 2) * Settings.Instance.MinimumHeight;
+            double lastLeft = double.MinValue;
+            double lastBottom = 0;
+            foreach (S item in list)
+            {
+                if (lastLeft != item.LeftPos)
+                {
+                    lastLeft = item.LeftPos;
+                    lastBottom = double.MinValue;
+                }
+                item.Height = Math.Max(item.Height, minimum);
+                if (item.TopPos < lastBottom)
+                {
+                    item.Height = Math.Max(item.TopPos + item.Height - lastBottom, minimum);
+                    item.TopPos = lastBottom;
+                }
+                lastBottom = item.TopPos + item.Height;
+            }
+        }
     }
 }

@@ -1,15 +1,16 @@
-﻿<UserControl x:Class="EpgTimer.EpgWeekMainView"
+﻿<local:EpgMainViewBase x:Class="EpgTimer.EpgWeekMainView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d" 
-             d:DesignHeight="300" d:DesignWidth="300" xmlns:local="clr-namespace:EpgTimer.EpgView" Loaded="UserControl_Loaded" IsVisibleChanged="UserControl_IsVisibleChanged_1">
-    <UserControl.Resources>
+             xmlns:local="clr-namespace:EpgTimer.EpgView"
+             d:DesignHeight="300" d:DesignWidth="300" Loaded="UserControl_Loaded" IsVisibleChanged="UserControl_IsVisibleChanged">
+    <local:EpgMainViewBase.Resources>
         <Style TargetType="{x:Type TextBox}">
             <Setter Property="InputMethod.PreferredImeState" Value="Off" />
         </Style>
-    </UserControl.Resources>
+    </local:EpgMainViewBase.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="45" />
@@ -32,4 +33,4 @@
         </Grid>
         <Button Content="標準モード" Height="23" HorizontalAlignment="Left" Margin="273,12,0,0" Name="button_go_Main" VerticalAlignment="Top" Width="66" Click="button_go_Main_Click" />
     </Grid>
-</UserControl>
+</local:EpgMainViewBase>

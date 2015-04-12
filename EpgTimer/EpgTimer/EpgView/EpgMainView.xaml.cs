@@ -4,10 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
-using System.Windows.Threading;
 
 using CtrlCmdCLI;
 using CtrlCmdCLI.Def;
@@ -18,98 +16,57 @@ namespace EpgTimer
     /// <summary>
     /// EpgMainView.xaml の相互作用ロジック
     /// </summary>
-    public partial class EpgMainView : UserControl, IEpgDataViewItem
+    public partial class EpgMainView : EpgMainViewBase
     {
-        public event ViewSettingClickHandler ViewSettingClick = null;
-
-        private CustomEpgTabInfo setViewInfo = null;
-
-        private List<UInt64> viewCustServiceList = null;
-        private Dictionary<UInt16, UInt16> viewCustContentKindList = new Dictionary<UInt16, UInt16>();
-        private bool viewCustNeedTimeOnly = false;
         private List<EpgServiceInfo> serviceList = new List<EpgServiceInfo>();
-        private SortedList<DateTime, List<ProgramViewItem>> timeList = new SortedList<DateTime, List<ProgramViewItem>>();
-        private List<ProgramViewItem> programList = new List<ProgramViewItem>();
-        private List<ReserveViewItem> reserveList = new List<ReserveViewItem>();
-        private Point clickPos;
-        private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
-        private MenuUtil mutil = CommonManager.Instance.MUtil;
-        private ViewUtil vutil = CommonManager.Instance.VUtil;
-        private DispatcherTimer nowViewTimer;
-        private Line nowLine = null;
-
-        private bool updateEpgData = true;
-        private bool updateReserveData = true;
 
         public EpgMainView()
         {
             InitializeComponent();
+            SetControls(epgProgramView, timeView, serviceView.scrollViewer, button_now);
 
-            if (Settings.Instance.NoStyle == 1)
-            {
-                button_now.Style = null;
-
-            }
-
-            epgProgramView.PreviewMouseWheel += new MouseWheelEventHandler(epgProgramView_PreviewMouseWheel);
-            epgProgramView.ScrollChanged += new ScrollChangedEventHandler(epgProgramView_ScrollChanged);
-            epgProgramView.LeftDoubleClick += new ProgramView.ProgramViewClickHandler(epgProgramView_LeftDoubleClick);
-            epgProgramView.RightClick += new ProgramView.ProgramViewClickHandler(epgProgramView_RightClick);
             dateView.TimeButtonClick += new RoutedEventHandler(epgDateView_TimeButtonClick);
-
-            nowViewTimer = new DispatcherTimer(DispatcherPriority.Normal);
-            nowViewTimer.Tick += new EventHandler(WaitReDrawNowLine);
-
         }
 
-
-        /// <summary>
-        /// 保持情報のクリア
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        public bool ClearInfo()
+        public override bool ClearInfo()
         {
-            nowViewTimer.Stop();
-            if (nowLine != null)
-            {
-                epgProgramView.canvas.Children.Remove(nowLine);
-            }
-            nowLine = null;
+            base.ClearInfo();
 
-            epgProgramView.ClearInfo();
-            timeView.ClearInfo();
             serviceView.ClearInfo();
-            dateView.ClearInfo();
-            timeList.Clear();
-            serviceList.Clear();
-            programList.Clear();
-            reserveList.Clear();
-
-            serviceList = null;
             serviceList = new List<EpgServiceInfo>();
-            programList = null;
-            programList = new List<ProgramViewItem>();
-            reserveList = null;
-            reserveList = new List<ReserveViewItem>();
+            dateView.ClearInfo();
 
             return true;
         }
 
-        /// <summary>
-        /// 現在ライン表示用タイマーイベント呼び出し
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void WaitReDrawNowLine(object sender, EventArgs e)
+        public override void SetViewMode(CustomEpgTabInfo setInfo)
         {
+            this.viewCustNeedTimeOnly = setInfo.NeedTimeOnlyBasic;
+            base.SetViewMode(setInfo);
+        }
+
+        protected override bool ReloadEpgData()
+        {
+            if (base.ReloadEpgData() == false) return false;
+
+            ReloadProgramViewItem();
             ReDrawNowLine();
+            base.MoveNowTime();
+            return true;
+        }
+
+        protected override bool ReloadReserveData()
+        {
+            if (base.ReloadReserveData() == false) return false;
+
+            ReloadReserveViewItem();
+            return true;
         }
 
         /// <summary>
         /// 現在ライン表示
         /// </summary>
-        private void ReDrawNowLine()
+        protected override void ReDrawNowLine()
         {
             try
             {
@@ -179,403 +136,6 @@ namespace EpgTimer
         }
 
         /// <summary>
-        /// 表示スクロールイベント呼び出し
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        void epgProgramView_ScrollChanged(object sender, ScrollChangedEventArgs e)
-        {
-            vutil.view_ScrollChanged<ProgramView>(sender, e, 
-                epgProgramView.scrollViewer, timeView.scrollViewer, serviceView.scrollViewer);
-        }
-
-        /// <summary>
-        /// マウスホイールイベント呼び出し
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        void epgProgramView_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
-        {
-            vutil.view_PreviewMouseWheel<ProgramView>(sender, e, epgProgramView.scrollViewer);
-        }
-
-        /// <summary>
-        /// マウス位置から予約情報を取得する
-        /// </summary>
-        /// <param name="cursorPos">[IN]マウス位置</param>
-        /// <param name="reserve">[OUT]予約情報</param>
-        /// <returns>falseで存在しない</returns>
-        private bool GetReserveItem(Point cursorPos, ref ReserveData reserve)
-        {
-            return vutil.GetReserveItem(cursorPos, ref reserve, reserveList);
-        }
-
-        /// <summary>
-        /// マウス位置から番組情報を取得する
-        /// </summary>
-        /// <param name="cursorPos">[IN]マウス位置</param>
-        /// <param name="program">[OUT]番組情報</param>
-        /// <returns>falseで存在しない</returns>
-        private bool GetProgramItem(Point cursorPos, ref EpgEventInfo program)
-        {
-            return vutil.GetProgramItem(cursorPos, ref program, timeList);
-        }
-
-        /// <summary>
-        /// 左ボタンダブルクリックイベント呼び出し
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="cursorPos"></param>
-        void epgProgramView_LeftDoubleClick(object sender, Point cursorPos)
-        {
-            ShowReserveDialog(cursorPos);
-        }
-
-        private void button_erea_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
-        {
-            epgProgramView_RightClick(sender, new Point(-1,-1));
-        }
-        /// <summary>
-        /// 右ボタンクリック
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="cursorPos"></param>
-        void epgProgramView_RightClick(object sender, Point cursorPos)
-        {
-            try
-            {
-                //右クリック表示メニューの作成
-                clickPos = cursorPos;
-                ReserveData reserve = new ReserveData();
-                EpgEventInfo program = new EpgEventInfo();
-                bool noItem = false;
-                bool hasReserved = false;
-                bool hasNoReserved = false;
-
-                if (GetReserveItem(cursorPos, ref reserve) == false)
-                {
-                    if (GetProgramItem(cursorPos, ref program) == false)
-                    {
-                        noItem = true;
-                    }
-                    hasNoReserved = true;
-                }
-                else
-                {
-                    hasReserved = true;
-                }
-
-                //右クリック表示メニューの作成
-                ContextMenu menu = new ContextMenu();
-
-                MenuItem menuItemReverse = new MenuItem();
-                menuItemReverse.Header = "簡易予約/予約←→無効";
-                menuItemReverse.Click += new RoutedEventHandler(cm_reverse_Click);
-
-                //予約追加メニュー作成
-                MenuItem menuItemAdd = mutil.GenerateAddMenu(new Action<object,
-                    RoutedEventArgs>[] { cm_show_dialog_Click, cm_add_preset_Click });
-
-                //予約変更メニュー作成
-                MenuItem menuItemChg = mutil.GenerateChgMenu(new Action<object, 
-                    RoutedEventArgs>[] { cm_show_dialog_Click, cm_chg_recmode_Click, cm_chg_priority_Click });
-
-                MenuItem menuItemDel = new MenuItem();
-                menuItemDel.Header = "削除";
-                menuItemDel.Click += new RoutedEventHandler(cm_del_Click);
-
-                MenuItem menuItemAutoAdd = new MenuItem();
-                menuItemAutoAdd.Header = "自動予約登録";
-                menuItemAutoAdd.ToolTip = mutil.EpgKeyword_TrimMode();
-                ToolTipService.SetShowOnDisabled(menuItemAutoAdd, true);
-                menuItemAutoAdd.Click += new RoutedEventHandler(cm_autoadd_Click);
-                MenuItem menuItemTimeshift = new MenuItem();
-                menuItemTimeshift.Header = "追っかけ再生";
-                menuItemTimeshift.Click += new RoutedEventHandler(cm_timeShiftPlay_Click);
-
-                //表示メニュー作成
-                MenuItem menuItemView = mutil.GenerateViewMenu(0, new Action<object,
-                    RoutedEventArgs>[] { cm_viewSet_Click, cm_chg_viewMode_Click});
-
-                if (noItem == true)
-                {
-                    menuItemReverse.Header = "簡易予約";
-                    menuItemReverse.IsEnabled = false;
-                    menuItemAdd.IsEnabled = false;
-                    menuItemChg.IsEnabled = false;
-                    menuItemDel.IsEnabled = false;
-                    menuItemAutoAdd.IsEnabled = false;
-                    menuItemTimeshift.IsEnabled = false;
-                    menuItemView.IsEnabled = true;
-                }
-                else
-                {
-                    if (hasReserved == true)
-                    {
-                        menuItemReverse.Header = "予約←→無効";
-                        menuItemReverse.IsEnabled = true;
-                        menuItemAdd.IsEnabled = hasNoReserved;
-                        menuItemChg.IsEnabled = true;
-                        mutil.CheckChgItems(menuItemChg, mutil.GetList(reserve));//現在の状態(録画モード、優先度)にチェックを入れる
-                        menuItemDel.IsEnabled = true;
-                        menuItemAutoAdd.IsEnabled = true;
-                        menuItemTimeshift.IsEnabled = true;
-                    }
-                    else
-                    {
-                        menuItemReverse.Header = "簡易予約";
-                        menuItemReverse.IsEnabled = true;
-                        menuItemAdd.IsEnabled = true;
-                        menuItemChg.IsEnabled = false;
-                        menuItemDel.IsEnabled = false;
-                        menuItemAutoAdd.IsEnabled = true;
-                        menuItemTimeshift.IsEnabled = false;
-                    }
-                    menuItemView.IsEnabled = true;
-                }
-
-                menu.Items.Add(menuItemReverse);
-                menu.Items.Add(menuItemAdd);
-                menu.Items.Add(menuItemChg);
-                menu.Items.Add(menuItemDel);
-                menu.Items.Add(menuItemAutoAdd);
-                menu.Items.Add(menuItemTimeshift);
-
-                //追加メニューの挿入
-                mutil.InsertAppendMenu(menu, new Action<object,
-                    RoutedEventArgs>[] { cm_CopyTitle_Click, cm_CopyContent_Click, cm_SearchTitle_Click }, !noItem);
-
-                menu.Items.Add(new Separator());
-                menu.Items.Add(menuItemView);
-                menu.IsOpen = true;
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
-
-        /// <summary>
-        /// 右クリックメニュー プリセットクリックイベント呼び出し
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        void cm_add_preset_Click(object sender, RoutedEventArgs e)
-        {
-            EpgEventInfo eventInfo = new EpgEventInfo();
-            if (GetProgramItem(clickPos, ref eventInfo) == false) return;
-            mutil.ReserveAdd(eventInfo, null, sender);
-        }
-
-        /// <summary>
-        /// 右クリックメニュー ダイアログ表示クリックイベント呼び出し
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void cm_show_dialog_Click(object sender, RoutedEventArgs e)
-        {
-            ShowReserveDialog(clickPos);
-        }
-
-        /// <summary>
-        /// 右クリックメニュー 予約削除クリックイベント呼び出し
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void cm_del_Click(object sender, RoutedEventArgs e)
-        {
-            ReserveData reserve = new ReserveData();
-            if (GetReserveItem(clickPos, ref reserve) == false) return;
-            mutil.ReserveDelete(reserve);
-        }
-
-        /// <summary>
-        /// 右クリックメニュー 予約モード変更イベント呼び出し
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void cm_chg_recmode_Click(object sender, RoutedEventArgs e)
-        {
-            ReserveData reserve = new ReserveData();
-            if (GetReserveItem(clickPos, ref reserve) == false) return;
-            mutil.ReserveChangeRecmode(reserve, sender);
-        }
-
-        /// <summary>
-        /// 右クリックメニュー 優先度変更イベント呼び出し
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void cm_chg_priority_Click(object sender, RoutedEventArgs e)
-        {
-            ReserveData reserve = new ReserveData();
-            if (GetReserveItem(clickPos, ref reserve) == false) return;
-            mutil.ReserveChangePriority(reserve, sender);
-        }
-
-        /// <summary>
-        /// 右クリックメニュー 自動予約登録イベント呼び出し
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void cm_autoadd_Click(object sender, RoutedEventArgs e)
-        {
-            EpgEventInfo program = new EpgEventInfo();
-            if (GetProgramItem(clickPos, ref program) == false) return;
-            mutil.SendAutoAdd(program, this);
-        }
-
-        /// <summary>
-        /// 右クリックメニュー 追っかけ再生イベント呼び出し
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void cm_timeShiftPlay_Click(object sender, RoutedEventArgs e)
-        {
-            ReserveData reserve = new ReserveData();
-            if (GetReserveItem(clickPos, ref reserve) == false) return;
-            CommonManager.Instance.TVTestCtrl.StartTimeShift(reserve.ReserveID);
-        }
-
-        /// <summary>
-        /// 右クリックメニュー 表示設定イベント呼び出し
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void cm_viewSet_Click(object sender, RoutedEventArgs e)
-        {
-            if (ViewSettingClick != null)
-            {
-                ViewSettingClick(this, null);
-            }
-        }
-
-        /// <summary>
-        /// 右クリックメニュー 簡易予約/予約←→無効クリックイベント呼び出し
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void cm_reverse_Click(object sender, RoutedEventArgs e)
-        {
-            //まず予約情報あるかチェック
-            ReserveData reserve = new ReserveData();
-            if (GetReserveItem(clickPos, ref reserve) == true)
-            {
-                //予約←→無効
-                mutil.ReserveChangeOnOff(reserve);
-                return;
-            }
-            //番組情報あるかチェック
-            EpgEventInfo program = new EpgEventInfo();
-            if (GetProgramItem(clickPos, ref program) == true)
-            {
-                //簡易予約
-                mutil.ReserveAdd(program);
-                return;
-            }
-        }
-
-        /// <summary>
-        /// 右クリックメニュー 番組名をコピーイベント呼び出し
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void cm_CopyTitle_Click(object sender, RoutedEventArgs e)
-        {
-            EpgEventInfo program = new EpgEventInfo();
-            if (GetProgramItem(clickPos, ref program) == false) return;
-            mutil.CopyTitle2Clipboard(program.Title());
-        }
-
-        /// <summary>
-        /// 右クリックメニュー 番組情報をコピーイベント呼び出し
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void cm_CopyContent_Click(object sender, RoutedEventArgs e)
-        {
-            EpgEventInfo program = new EpgEventInfo();
-            if (GetProgramItem(clickPos, ref program) == false) return;
-            mutil.CopyContent2Clipboard(program);
-        }
-
-        /// <summary>
-        /// 右クリックメニュー 番組名で検索イベント呼び出し
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void cm_SearchTitle_Click(object sender, RoutedEventArgs e)
-        {
-            EpgEventInfo program = new EpgEventInfo();
-            if (GetProgramItem(clickPos, ref program) == false) return;
-            mutil.SearchText(program.Title());
-        }
-
-        /// <summary>
-        /// 右クリックメニュー 表示モードイベント呼び出し
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void cm_chg_viewMode_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                if (sender.GetType() != typeof(MenuItem))
-                {
-                    return;
-                }
-                if (ViewSettingClick != null)
-                {
-                    MenuItem item = sender as MenuItem;
-                    CustomEpgTabInfo setInfo = new CustomEpgTabInfo();
-                    setViewInfo.CopyTo(ref setInfo);
-                    setInfo.ViewMode = (int)item.DataContext;
-                    EpgEventInfo program = new EpgEventInfo();
-                    if (GetProgramItem(clickPos, ref program) == true)
-                    {
-                        SearchItem searchitem = new SearchItem();
-                        searchitem.EventInfo = program;
-                        BlackoutWindow.SelectedSearchItem = searchitem;
-                    }
-                    else
-                    {
-                        BlackoutWindow.SelectedSearchItem = null;
-                    }
-                    ViewSettingClick(this, setInfo);
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
-
-        /// <summary>
-        /// ダイアログ表示
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void ShowReserveDialog(Point pos)
-        {
-            //まず予約情報あるかチェック
-            ReserveData reserve = new ReserveData();
-            if (GetReserveItem(pos, ref reserve) == true)
-            {
-                //予約変更ダイアログ表示
-                mutil.OpenChangeReserveWindow(reserve, this, Settings.Instance.EpgInfoOpenMode);
-                return;
-            }
-            //番組情報あるかチェック
-            EpgEventInfo program = new EpgEventInfo();
-            if (GetProgramItem(pos, ref program) == true)
-            {
-                //予約追加ダイアログ表示
-                mutil.OpenEpgReserveWindow(program, this, Settings.Instance.EpgInfoOpenMode);
-                return;
-            }
-        }
-
-        /// <summary>
         /// 表示位置変更
         /// </summary>
         /// <param name="sender"></param>
@@ -609,181 +169,15 @@ namespace EpgTimer
             }
         }
 
-        public void SetViewMode(CustomEpgTabInfo setInfo)
-        {
-            setViewInfo = setInfo;
-
-            this.viewCustServiceList = setInfo.ViewServiceList;
-            this.viewCustContentKindList.Clear();
-            if (setInfo.ViewContentKindList != null)
-            {
-                foreach (UInt16 val in setInfo.ViewContentKindList)
-                {
-                    this.viewCustContentKindList.Add(val, val);
-                }
-            }
-            this.viewCustNeedTimeOnly = setInfo.NeedTimeOnlyBasic;
-
-            ClearInfo();
-            if (ReloadEpgData() == true)
-            {
-                updateEpgData = false;
-                if (ReloadReserveData() == true)//ここはUpdateReserveData()ではダメ
-                {
-                    updateReserveData = false;
-                }
-            }
-        }
-
-        /// <summary>
-        /// 現在ボタンクリックイベント呼び出し
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void button_now_Click(object sender, RoutedEventArgs e)
-        {
-            MoveNowTime();
-        }
-
-        /// <summary>
-        /// 表示位置を現在の時刻にスクロールする
-        /// </summary>
-        public void MoveNowTime()
-        {
-            try
-            {
-                if (timeList.Count <= 0)
-                {
-                    return;
-                }
-                DateTime startTime = timeList.Keys[0];
-
-                DateTime time = DateTime.Now;
-                if (time < startTime)
-                {
-                    epgProgramView.scrollViewer.ScrollToVerticalOffset(0);
-                }
-                else
-                {
-                    for (int i = 0; i < timeList.Count; i++)
-                    {
-                        if (time <= timeList.Keys[i])
-                        {
-                            double pos = ((i - 1) * 60 * Settings.Instance.MinHeight) - 100;
-                            if (pos < 0)
-                            {
-                                pos = 0;
-                            }
-                            epgProgramView.scrollViewer.ScrollToVerticalOffset(Math.Ceiling(pos));
-                            break;
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
-
-        private void UserControl_Loaded(object sender, RoutedEventArgs e)
-        {
-            if (this.IsVisible == true)
-            {
-                if (updateEpgData == true)
-                {
-                    ClearInfo();
-                    if (ReloadEpgData() == true)
-                    {
-                        updateEpgData = false;
-                        UpdateReserveData();
-                    }
-                }
-                if (updateReserveData == true)
-                {
-                    if (ReloadReserveData() == true)
-                    {
-                        updateReserveData = false;
-                    }
-                }
-            }
-        }
-
-        private bool ReloadEpgData()
-        {
-            try
-            {
-                if (setViewInfo != null)
-                {
-                    updateEpgData = false;
-                    if (ReloadProgramViewItem() == false)
-                    {
-                        return false;
-                    }
-                    MoveNowTime();
-                }
-            }
-            catch (Exception ex)
-            {
-                this.Dispatcher.BeginInvoke(new Action(() =>
-                {
-                    MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                }), null);
-                return false;
-            }
-            return true;
-        }
-
-        private bool ReloadReserveData()
-        {
-            if (vutil.ReloadReserveData() == false) return false;
-
-            ReloadReserveViewItem();
-            return true;
-        }
-
-        /// <summary>
-        /// EPGデータ更新通知
-        /// </summary>
-        public void UpdateEpgData()
-        {
-            updateEpgData = true;
-            if (this.IsVisible == true || CommonManager.Instance.NWMode == false)
-            {
-                ClearInfo();
-                if (ReloadEpgData() == true)
-                {
-                    updateEpgData = false;
-                    UpdateReserveData();
-                }
-            }
-        }
-
-        /// <summary>
-        /// 予約情報更新通知
-        /// </summary>
-        public void UpdateReserveData()
-        {
-            updateReserveData = true;
-            if (this.IsVisible == true)
-            {
-                if (ReloadReserveData() == true)
-                {
-                    updateReserveData = false;
-                }
-            }
-        }
-
         /// <summary>
         /// 予約情報の再描画
         /// </summary>
         private void ReloadReserveViewItem()
         {
-            reserveList.Clear();
-            reserveList = null;
-            reserveList = new List<ReserveViewItem>();
             try
             {
+                reserveList.Clear();
+
                 //TODO: ここでデフォルトマージンを確認するがEpgTimerNWでは無意味。根本的にはSendCtrlCmdの拡張が必要
                 int defStartMargin = IniFileHandler.GetPrivateProfileInt("SET", "StartMargin", 0, SettingPath.TimerSrvIniPath);
                 int defEndMargin = IniFileHandler.GetPrivateProfileInt("SET", "EndMargin", 0, SettingPath.TimerSrvIniPath);
@@ -815,48 +209,15 @@ namespace EpgTimer
                             EpgServiceInfo srvInfo = serviceList[mergePos];
                             if (srvInfo.Create64Key() == info.Create64Key())
                             {
-                                ReserveViewItem viewItem = new ReserveViewItem(info);
-                                viewItem.LeftPos = Settings.Instance.ServiceWidth * (servicePos + (double)((mergeNum + i - mergePos - 1) / 2) / mergeNum);
-
+                                //マージンを適用
                                 Int32 duration = (Int32)info.DurationSecond;
                                 DateTime startTime = info.StartTime;
-                                if (info.RecSetting.UseMargineFlag == 1)
-                                {
-                                    if (info.RecSetting.StartMargine < 0)
-                                    {
-                                        startTime = info.StartTime.AddSeconds(info.RecSetting.StartMargine * -1);
-                                        duration += info.RecSetting.StartMargine;
-                                    }
-                                    if (info.RecSetting.EndMargine < 0)
-                                    {
-                                        duration += info.RecSetting.EndMargine;
-                                    }
-                                }
-                                else
-                                {
-                                    if (defStartMargin < 0)
-                                    {
-                                        startTime = info.StartTime.AddSeconds(defStartMargin * -1);
-                                        duration += defStartMargin;
-                                    }
-                                    if (defEndMargin < 0)
-                                    {
-                                        duration += defEndMargin;
-                                    }
-                                }
-                                //if ((duration/60) < Settings.Instance.MinHeight)
-                                //{
-                                //    duration = (int)Settings.Instance.MinHeight;
-                                //}
+                                vutil.ApplyMarginForPanelView(info,
+                                    ref duration, ref startTime, defStartMargin, defEndMargin, true);
 
-                                //TimePosInfo topTime = timeList.GetByIndex(0) as TimePosInfo;
-                                //viewItem.TopPos = Math.Floor((startTime - topTime.Time).TotalMinutes * Settings.Instance.MinHeight);
-
-                                viewItem.Height = Math.Floor((duration / 60) * Settings.Instance.MinHeight);
-                                if (viewItem.Height < Settings.Instance.MinHeight)
-                                {
-                                    viewItem.Height = Settings.Instance.MinHeight;
-                                }
+                                ReserveViewItem viewItem = new ReserveViewItem(info);
+                                viewItem.LeftPos = Settings.Instance.ServiceWidth * (servicePos + (double)((mergeNum + i - mergePos - 1) / 2) / mergeNum);
+                                viewItem.Height = Math.Max((duration * Settings.Instance.MinHeight) / 60, Settings.Instance.MinHeight);
                                 viewItem.Width = Settings.Instance.ServiceWidth / mergeNum;
 
                                 reserveList.Add(viewItem);
@@ -869,7 +230,7 @@ namespace EpgTimer
                                         //予約情報から番組情報を特定し、枠表示位置を再設定する
                                         foreach (ProgramViewItem pgInfo in timeList[chkTime])
                                         {
-                                            if (CommonManager.EqualsPg(viewItem.ReserveInfo, pgInfo.EventInfo) == true &&
+                                            if (viewItem.ReserveInfo.Create64PgKey() == pgInfo.EventInfo.Create64PgKey() &&
                                                 info.DurationSecond != 0)
                                             {
                                                 viewItem.TopPos = pgInfo.TopPos + pgInfo.Height * (startTime - info.StartTime).TotalSeconds / info.DurationSecond;
@@ -912,13 +273,14 @@ namespace EpgTimer
         /// <summary>
         /// 番組情報の再描画処理
         /// </summary>
-        private bool ReloadProgramViewItem()
+        private void ReloadProgramViewItem()
         {
             try
             {
-                Dictionary<UInt64, EpgServiceEventInfo> serviceEventList = vutil.ReloadEpgDataForEpgView(setViewInfo);
-                if (serviceEventList == null) return false;
+                Dictionary<UInt64, EpgServiceEventInfo> serviceEventList =
+                    setViewInfo.SearchMode == true ? searchEventList : CommonManager.Instance.DB.ServiceEventList;
 
+                //直前にthis.ClearInfo()が走ってるので無くても同じ
                 epgProgramView.ClearInfo();
                 timeList.Clear();
                 programList.Clear();
@@ -1037,6 +399,7 @@ namespace EpgTimer
                         }
 
                         ProgramViewItem viewItem = new ProgramViewItem(eventInfo);
+                        //後で最低行数修正入前提で、高さが0になっても取りあえず気にしない
                         viewItem.Height = (eventInfo.durationSec * Settings.Instance.MinHeight) / 60;
                         viewItem.Width = Settings.Instance.ServiceWidth * widthSpan / mergeNum;
                         viewItem.LeftPos = Settings.Instance.ServiceWidth * (servicePos + (double)((mergeNum+i-mergePos-1)/2) / mergeNum);
@@ -1104,29 +467,8 @@ namespace EpgTimer
                     }
                 }
 
-                if (Settings.Instance.MinimumHeight > 0)
-                {
-                    //最低表示行数を適用
-                    programList.Sort((x, y) => Math.Sign(x.LeftPos - y.LeftPos) * 2 + Math.Sign(x.TopPos - y.TopPos));
-                    double minimum = (Settings.Instance.FontSizeTitle + 2) * Settings.Instance.MinimumHeight;
-                    double lastLeft = double.MinValue;
-                    double lastBottom = 0;
-                    foreach (ProgramViewItem item in programList)
-                    {
-                        if (lastLeft != item.LeftPos)
-                        {
-                            lastLeft = item.LeftPos;
-                            lastBottom = double.MinValue;
-                        }
-                        item.Height = Math.Max(item.Height, minimum);
-                        if (item.TopPos < lastBottom)
-                        {
-                            item.Height = Math.Max(item.TopPos + item.Height - lastBottom, minimum);
-                            item.TopPos = lastBottom;
-                        }
-                        lastBottom = item.TopPos + item.Height;
-                    }
-                }
+                //最低表示行数を適用
+                vutil.ModifierMinimumHeight<EpgEventInfo, ProgramViewItem>(programList);
 
                 //必要時間リストと時間と番組の関連づけ
                 foreach (ProgramViewItem item in programList)
@@ -1152,49 +494,12 @@ namespace EpgTimer
                 timeView.SetTime(dateTimeList, viewCustNeedTimeOnly, false);
                 dateView.SetTime(dateTimeList);
                 serviceView.SetService(primeServiceList);
-
-                ReDrawNowLine();
-
-                return true;
             }
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                return false;
             }
         }
 
-        private void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
-        {
-            if (this.IsVisible == false) return;
-            if (BlackoutWindow.Create64Key() == 0) return;
-
-            if (BlackoutWindow.SelectedReserveItem != null)
-            {
-                foreach (ReserveViewItem reserveViewItem1 in this.reserveList)
-                {
-                    if (reserveViewItem1.ReserveInfo.ReserveID == BlackoutWindow.SelectedReserveItem.ReserveInfo.ReserveID)
-                    {
-                        this.epgProgramView.scrollViewer.ScrollToHorizontalOffset(reserveViewItem1.LeftPos - 100);
-                        this.epgProgramView.scrollViewer.ScrollToVerticalOffset(reserveViewItem1.TopPos - 100);
-                        break;
-                    }
-                }
-                BlackoutWindow.SelectedReserveItem = null;
-            }
-            else if (BlackoutWindow.SelectedSearchItem != null)
-            {
-                foreach (ProgramViewItem programViewItem1 in this.programList)
-                {
-                    if (CommonManager.EqualsPg(programViewItem1.EventInfo, BlackoutWindow.SelectedSearchItem.EventInfo) == true)
-                    {
-                        this.epgProgramView.scrollViewer.ScrollToHorizontalOffset(programViewItem1.LeftPos - 100);
-                        this.epgProgramView.scrollViewer.ScrollToVerticalOffset(programViewItem1.TopPos - 100);
-                        break;
-                    }
-                }
-                BlackoutWindow.SelectedSearchItem = null;
-            }
-        }
     }
 }

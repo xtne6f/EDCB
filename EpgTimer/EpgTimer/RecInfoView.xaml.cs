@@ -135,13 +135,8 @@ namespace EpgTimer
                 listView_recinfo.DataContext = null;
                 resultList.Clear();
 
-                if (CommonManager.Instance.NWMode == true)
-                {
-                    if (CommonManager.Instance.NW.IsConnected == false)
-                    {
-                        return false;
-                    }
-                }
+                if (CommonManager.Instance.VUtil.EpgTimerNWNotConnect() == true) return false;
+
                 ErrCode err = CommonManager.Instance.DB.ReloadrecFileInfo();
                 if (CommonManager.CmdErrMsgTypical(err, "録画情報の取得", this) == false) return false;
 
@@ -184,10 +179,7 @@ namespace EpgTimer
             ReloadInfo = true;
             if (this.IsVisible == true)
             {
-                if (ReloadInfoData() == true)
-                {
-                    ReloadInfo = false;
-                }
+                ReloadInfo = !ReloadInfoData();
             }
         }
 
@@ -195,10 +187,15 @@ namespace EpgTimer
         {
             if (ReloadInfo == true && this.IsVisible == true)
             {
-                if (ReloadInfoData() == true)
-                {
-                    ReloadInfo = false;
-                }
+                ReloadInfo = !ReloadInfoData();
+            }
+        }
+
+        private void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            if (ReloadInfo == true && this.IsVisible == true)
+            {
+                ReloadInfo = !ReloadInfoData();
             }
         }
 
@@ -289,17 +286,6 @@ namespace EpgTimer
             {
                 RecInfoItem info = SelectSingleItem();
                 mutil.SendAutoAdd(info.RecInfo, this);
-            }
-        }
-
-        private void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
-        {
-            if (ReloadInfo == true && this.IsVisible == true)
-            {
-                if (ReloadInfoData() == true)
-                {
-                    ReloadInfo = false;
-                }
             }
         }
 

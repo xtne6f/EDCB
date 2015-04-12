@@ -66,12 +66,17 @@ namespace EpgTimer
         {
             if (RedrawReserve == true && this.IsVisible == true)
             {
-                if (ReDrawReserveData() == true)
-                {
-                    RedrawReserve = false;
-                }
+                RedrawReserve = !ReDrawReserveData();
             }
             this._mainWindow = (MainWindow)Window.GetWindow(this);
+        }
+
+        private void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            if (RedrawReserve == true && this.IsVisible == true)
+            {
+                RedrawReserve = !ReDrawReserveData();
+            }
         }
 
         /// <summary>
@@ -82,10 +87,7 @@ namespace EpgTimer
             RedrawReserve = true;
             if (this.IsVisible == true)
             {
-                if (ReDrawReserveData() == true)
-                {
-                    RedrawReserve = false;
-                }
+                RedrawReserve = !ReDrawReserveData();
             }
         }
 
@@ -227,17 +229,6 @@ namespace EpgTimer
         {
             listView_reserve.UnselectAll();
             mutil.OpenManualReserveWindow(this);
-        }
-
-        private void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
-        {
-            if (RedrawReserve == true && this.IsVisible == true)
-            {
-                if (ReDrawReserveData() == true)
-                {
-                    RedrawReserve = false;
-                }
-            }
         }
 
         void listView_reserve_PreviewKeyDown(object sender, KeyEventArgs e)
