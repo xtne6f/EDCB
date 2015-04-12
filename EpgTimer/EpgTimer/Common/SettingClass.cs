@@ -1259,68 +1259,23 @@ namespace EpgTimer
             set { _instance = value; }
         }
 
-        //予約アイテムのデフォルトの文字色
-        private static void DefaultRecModeFontColorList()
-        {
-            Instance.recModeFontColorList.Clear();
-            Instance.recModeFontColorList.Add("#FF042271"); //0 全サービス
-            Instance.recModeFontColorList.Add("#FF042271"); //1 指定サービス
-            Instance.recModeFontColorList.Add("#FF042271"); //2 全サービス(デコード処理なし)
-            Instance.recModeFontColorList.Add("#FF042271"); //3 指定サービス(デコード処理なし)
-            Instance.recModeFontColorList.Add("#FF042271"); //4 視聴
-            Instance.recModeFontColorList.Add("#FF042271"); //5 無効
-        }
-
-        //番組表のデフォルトの背景色
-        private static void DefaultcontentColorList()
-        {
-            Instance.contentColorList.Add("LightYellow");
-            Instance.contentColorList.Add("Lavender");
-            Instance.contentColorList.Add("LavenderBlush");
-            Instance.contentColorList.Add("MistyRose");
-            Instance.contentColorList.Add("Honeydew");
-            Instance.contentColorList.Add("LightCyan");
-            Instance.contentColorList.Add("PapayaWhip");
-            Instance.contentColorList.Add("Pink");
-            Instance.contentColorList.Add("LightYellow");
-            Instance.contentColorList.Add("PapayaWhip");
-            Instance.contentColorList.Add("AliceBlue");
-            Instance.contentColorList.Add("AliceBlue");
-            Instance.contentColorList.Add("White");
-            Instance.contentColorList.Add("White");
-            Instance.contentColorList.Add("White");
-            Instance.contentColorList.Add("WhiteSmoke");
-            Instance.contentColorList.Add("White");
-        }
-
-        //番組表の時間軸のデフォルトの背景色
-        private static void DefaulttimeColorList()
-        {
-            Instance.timeColorList.Add("MediumPurple");
-            Instance.timeColorList.Add("LightSeaGreen");
-            Instance.timeColorList.Add("LightSalmon");
-            Instance.timeColorList.Add("CornflowerBlue");
-        }
-
         /// <summary>
-        /// EpgTimer用設定ファイルロード関数
+        /// 設定ファイルロード関数
         /// </summary>
-        public static void LoadFromXmlFile()
+        public static void LoadFromXmlFile(bool nwMode = false)
         {
-            string path = GetSettingPath();
+            _LoadFromXmlFile(GetSettingPath(), nwMode);
+        }
+        private static void _LoadFromXmlFile(string path, bool nwMode)
+        {
             try
             {
-                FileStream fs = new FileStream(path,
-                    FileMode.Open,
-                    FileAccess.Read);
-                System.Xml.Serialization.XmlSerializer xs =
-                    new System.Xml.Serialization.XmlSerializer(
-                        typeof(Settings));
-                //読み込んで逆シリアル化する
-                object obj = xs.Deserialize(fs);
-                fs.Close();
-                Instance = (Settings)obj;
-
+                using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read))
+                {
+                    //読み込んで逆シリアル化する
+                    var xs = new System.Xml.Serialization.XmlSerializer(typeof(Settings));
+                    Instance = (Settings)(xs.Deserialize(fs));
+                }
             }
             catch (Exception ex)
             {
@@ -1331,58 +1286,73 @@ namespace EpgTimer
                     {
                         if (MessageBox.Show("設定ファイルが異常な可能性があります。\r\nバックアップファイルから読み込みますか？", "", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
                         {
-                            try
-                            {
-                                FileStream fs = new FileStream(backPath,
-                                    FileMode.Open,
-                                    FileAccess.Read, FileShare.None);
-                                System.Xml.Serialization.XmlSerializer xs =
-                                    new System.Xml.Serialization.XmlSerializer(
-                                        typeof(Settings));
-                                //読み込んで逆シリアル化する
-                                object obj = xs.Deserialize(fs);
-                                fs.Close();
-                                Instance = (Settings)obj;
-                            }
-                            catch (Exception ex2)
-                            {
-                                MessageBox.Show(ex2.Message + "\r\n" + ex2.StackTrace);
-                            }
+                            _LoadFromXmlFile(backPath, nwMode);
+                            return;
                         }
                     }
-                    else
-                    {
-                        MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                    }
+                    MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
                 }
             }
-            finally
+
+            try
             {
                 if (Instance.recModeFontColorList.Count != 6)
                 {
-                    DefaultRecModeFontColorList();
+                    //予約アイテムのデフォルトの文字色
+                    Instance.recModeFontColorList.Clear();
+                    Instance.recModeFontColorList.Add("#FF042271"); //0 全サービス
+                    Instance.recModeFontColorList.Add("#FF042271"); //1 指定サービス
+                    Instance.recModeFontColorList.Add("#FF042271"); //2 全サービス(デコード処理なし)
+                    Instance.recModeFontColorList.Add("#FF042271"); //3 指定サービス(デコード処理なし)
+                    Instance.recModeFontColorList.Add("#FF042271"); //4 視聴
+                    Instance.recModeFontColorList.Add("#FF042271"); //5 無効
                 }
-                if (Instance.contentColorList.Count == 0)
-                {
-                    DefaultcontentColorList();
-                }
-                else if (Instance.contentColorList.Count == 0x10)
+                if (Instance.contentColorList.Count == 0x10)//多分旧バージョンの互換用コード
                 {
                     Instance.contentColorList.Add("White");
                 }
-                if (Instance.ContentCustColorList.Count == 0)
+                else if (Instance.contentColorList.Count != 0x11)
                 {
+                    //番組表のデフォルトの背景色
+                    Instance.contentColorList.Clear();
+                    Instance.contentColorList.Add("LightYellow");
+                    Instance.contentColorList.Add("Lavender");
+                    Instance.contentColorList.Add("LavenderBlush");
+                    Instance.contentColorList.Add("MistyRose");
+                    Instance.contentColorList.Add("Honeydew");
+                    Instance.contentColorList.Add("LightCyan");
+                    Instance.contentColorList.Add("PapayaWhip");
+                    Instance.contentColorList.Add("Pink");
+                    Instance.contentColorList.Add("LightYellow");
+                    Instance.contentColorList.Add("PapayaWhip");
+                    Instance.contentColorList.Add("AliceBlue");
+                    Instance.contentColorList.Add("AliceBlue");
+                    Instance.contentColorList.Add("White");
+                    Instance.contentColorList.Add("White");
+                    Instance.contentColorList.Add("White");
+                    Instance.contentColorList.Add("WhiteSmoke");
+                    Instance.contentColorList.Add("White");
+                }
+                if (Instance.ContentCustColorList.Count != 0x11 + 4)
+                {
+                    Instance.ContentCustColorList.Clear();
                     for (int i = 0; i < 0x11+4; i++)
                     {
                         Instance.ContentCustColorList.Add(0xFFFFFFFF);
                     }
                 }
-                if (Instance.timeColorList.Count == 0)
+                if (Instance.timeColorList.Count != 4)
                 {
-                    DefaulttimeColorList();
+                    //番組表の時間軸のデフォルトの背景色
+                    Instance.timeColorList.Clear();
+                    Instance.timeColorList.Add("MediumPurple");
+                    Instance.timeColorList.Add("LightSeaGreen");
+                    Instance.timeColorList.Add("LightSalmon");
+                    Instance.timeColorList.Add("CornflowerBlue");
                 }
-                if (Instance.TimeCustColorList.Count == 0)
+                if (Instance.TimeCustColorList.Count != 4)
                 {
+                    Instance.TimeCustColorList.Clear();
                     for (int i = 0; i < 4; i++)
                     {
                         Instance.TimeCustColorList.Add(0xFFFFFFFF);
@@ -1390,27 +1360,55 @@ namespace EpgTimer
                 }
                 if (Instance.viewButtonList.Count == 0)
                 {
-                    Instance.viewButtonList.Add("設定");
-                    Instance.viewButtonList.Add("（空白）");
-                    Instance.viewButtonList.Add("検索");
-                    Instance.viewButtonList.Add("（空白）");
-                    Instance.viewButtonList.Add("スタンバイ");
-                    Instance.viewButtonList.Add("休止");
-                    Instance.viewButtonList.Add("（空白）");
-                    Instance.viewButtonList.Add("EPG取得");
-                    Instance.viewButtonList.Add("（空白）");
-                    Instance.viewButtonList.Add("EPG再読み込み");
-                    Instance.viewButtonList.Add("（空白）");
-                    Instance.viewButtonList.Add("終了");
+                    if (nwMode == false)
+                    {
+                        Instance.viewButtonList.Add("設定");
+                        Instance.viewButtonList.Add("（空白）");
+                        Instance.viewButtonList.Add("検索");
+                        Instance.viewButtonList.Add("（空白）");
+                        Instance.viewButtonList.Add("スタンバイ");
+                        Instance.viewButtonList.Add("休止");
+                        Instance.viewButtonList.Add("（空白）");
+                        Instance.viewButtonList.Add("EPG取得");
+                        Instance.viewButtonList.Add("（空白）");
+                        Instance.viewButtonList.Add("EPG再読み込み");
+                        Instance.viewButtonList.Add("（空白）");
+                        Instance.viewButtonList.Add("終了");
+                    }
+                    else
+                    {
+                        Instance.viewButtonList.Add("設定");
+                        Instance.viewButtonList.Add("（空白）");
+                        Instance.viewButtonList.Add("再接続");
+                        Instance.viewButtonList.Add("（空白）");
+                        Instance.viewButtonList.Add("検索");
+                        Instance.viewButtonList.Add("（空白）");
+                        Instance.viewButtonList.Add("EPG取得");
+                        Instance.viewButtonList.Add("（空白）");
+                        Instance.viewButtonList.Add("EPG再読み込み");
+                        Instance.viewButtonList.Add("（空白）");
+                        Instance.viewButtonList.Add("終了");
+                    }
                 }
                 if (Instance.taskMenuList.Count == 0)
                 {
-                    Instance.taskMenuList.Add("設定");
-                    Instance.taskMenuList.Add("（セパレータ）");
-                    Instance.taskMenuList.Add("スタンバイ");
-                    Instance.taskMenuList.Add("休止");
-                    Instance.taskMenuList.Add("（セパレータ）");
-                    Instance.taskMenuList.Add("終了");
+                    if (nwMode == false)
+                    {
+                        Instance.taskMenuList.Add("設定");
+                        Instance.taskMenuList.Add("（セパレータ）");
+                        Instance.taskMenuList.Add("スタンバイ");
+                        Instance.taskMenuList.Add("休止");
+                        Instance.taskMenuList.Add("（セパレータ）");
+                        Instance.taskMenuList.Add("終了");
+                    }
+                    else
+                    {
+                        Instance.taskMenuList.Add("設定");
+                        Instance.taskMenuList.Add("（セパレータ）");
+                        Instance.taskMenuList.Add("再接続");
+                        Instance.taskMenuList.Add("（セパレータ）");
+                        Instance.taskMenuList.Add("終了");
+                    }
                 }
                 if (Instance.reserveListColumn.Count == 0)
                 {
@@ -1455,162 +1453,12 @@ namespace EpgTimer
                     Instance.autoAddManualColumn.Add(new ListColumnInfo("Priority", double.NaN));
                 }
             }
-        }
- 
-        /// <summary>
-        /// EpgTimerNW用の設定ファイルロード関数
-        /// </summary>
-        public static void LoadFromXmlFileNW()
-        {
-            string path = GetSettingPath();
-
-            try
-            {
-                FileStream fs = new FileStream(path,
-                    FileMode.Open,
-                    FileAccess.Read, FileShare.None);
-                System.Xml.Serialization.XmlSerializer xs =
-                    new System.Xml.Serialization.XmlSerializer(
-                        typeof(Settings));
-                //読み込んで逆シリアル化する
-                object obj = xs.Deserialize(fs);
-                fs.Close();
-                Instance = (Settings)obj;
-
-            }
             catch (Exception ex)
             {
-                if (ex.GetBaseException().GetType() != typeof(System.IO.FileNotFoundException))
-                {
-                    string backPath = path + ".back";
-                    if (System.IO.File.Exists(backPath) == true)
-                    {
-                        if (MessageBox.Show("設定ファイルが異常な可能性があります。\r\nバックアップファイルから読み込みますか？", "", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
-                        {
-                            try
-                            {
-                                FileStream fs = new FileStream(backPath,
-                                    FileMode.Open,
-                                    FileAccess.Read, FileShare.None);
-                                System.Xml.Serialization.XmlSerializer xs =
-                                    new System.Xml.Serialization.XmlSerializer(
-                                        typeof(Settings));
-                                //読み込んで逆シリアル化する
-                                object obj = xs.Deserialize(fs);
-                                fs.Close();
-                                Instance = (Settings)obj;
-                            }
-                            catch (Exception ex2)
-                            {
-                                MessageBox.Show(ex2.Message + "\r\n" + ex2.StackTrace);
-                            }
-                        }
-                    }
-                    else
-                    {
-                        MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                    }
-                }
-            }
-            finally
-            {
-                if (Instance.recModeFontColorList.Count != 6)
-                {
-                    DefaultRecModeFontColorList();
-                }
-                if (Instance.contentColorList.Count == 0)
-                {
-                    DefaultcontentColorList();
-                }
-                else if (Instance.contentColorList.Count == 0x10)
-                {
-                    Instance.contentColorList.Add("White");
-                }
-                if (Instance.ContentCustColorList.Count == 0)
-                {
-                    for (int i = 0; i < 0x11+4; i++)
-                    {
-                        Instance.ContentCustColorList.Add(0xFFFFFFFF);
-                    }
-                }
-                if (Instance.timeColorList.Count == 0)
-                {
-                    DefaulttimeColorList();
-                }
-                if (Instance.TimeCustColorList.Count == 0)
-                {
-                    for (int i = 0; i < 4; i++)
-                    {
-                        Instance.TimeCustColorList.Add(0xFFFFFFFF);
-                    }
-                }
-                if (Instance.viewButtonList.Count == 0)
-                {
-                    Instance.viewButtonList.Add("設定");
-                    Instance.viewButtonList.Add("（空白）");
-                    Instance.viewButtonList.Add("再接続");
-                    Instance.viewButtonList.Add("（空白）");
-                    Instance.viewButtonList.Add("検索");
-                    Instance.viewButtonList.Add("（空白）");
-                    Instance.viewButtonList.Add("EPG取得");
-                    Instance.viewButtonList.Add("（空白）");
-                    Instance.viewButtonList.Add("EPG再読み込み");
-                    Instance.viewButtonList.Add("（空白）");
-                    Instance.viewButtonList.Add("終了");
-                }
-                if (Instance.taskMenuList.Count == 0)
-                {
-                    Instance.taskMenuList.Add("設定");
-                    Instance.taskMenuList.Add("（セパレータ）");
-                    Instance.taskMenuList.Add("再接続");
-                    Instance.taskMenuList.Add("（セパレータ）");
-                    Instance.taskMenuList.Add("終了");
-                }
-                if (Instance.reserveListColumn.Count == 0)
-                {
-                    Instance.reserveListColumn.Add(new ListColumnInfo("StartTime", double.NaN));
-                    Instance.reserveListColumn.Add(new ListColumnInfo("NetworkName", double.NaN));
-                    Instance.reserveListColumn.Add(new ListColumnInfo("ServiceName", double.NaN));
-                    Instance.reserveListColumn.Add(new ListColumnInfo("EventName", double.NaN));
-                    Instance.reserveListColumn.Add(new ListColumnInfo("RecMode", double.NaN));
-                    Instance.reserveListColumn.Add(new ListColumnInfo("Priority", double.NaN));
-                    Instance.reserveListColumn.Add(new ListColumnInfo("Tuijyu", double.NaN));
-                    Instance.reserveListColumn.Add(new ListColumnInfo("Comment", double.NaN));
-                }
-                if (Instance.recInfoListColumn.Count == 0)
-                {
-                    Instance.recInfoListColumn.Add(new ListColumnInfo("IsProtect", double.NaN));
-                    Instance.recInfoListColumn.Add(new ListColumnInfo("StartTime", double.NaN));
-                    Instance.recInfoListColumn.Add(new ListColumnInfo("NetworkName", double.NaN));
-                    Instance.recInfoListColumn.Add(new ListColumnInfo("ServiceName", double.NaN));
-                    Instance.recInfoListColumn.Add(new ListColumnInfo("EventName", double.NaN));
-                    Instance.recInfoListColumn.Add(new ListColumnInfo("Drops", double.NaN));
-                    Instance.recInfoListColumn.Add(new ListColumnInfo("Scrambles", double.NaN));
-                    Instance.recInfoListColumn.Add(new ListColumnInfo("Result", double.NaN));
-                    Instance.recInfoListColumn.Add(new ListColumnInfo("RecFilePath", double.NaN));
-                }
-                if (Instance.autoAddEpgColumn.Count == 0)
-                {
-                    Instance.autoAddEpgColumn.Add(new ListColumnInfo("AndKey", double.NaN));
-                    Instance.autoAddEpgColumn.Add(new ListColumnInfo("NotKey", double.NaN));
-                    Instance.autoAddEpgColumn.Add(new ListColumnInfo("RegExp", double.NaN));
-                    Instance.autoAddEpgColumn.Add(new ListColumnInfo("RecMode", double.NaN));
-                    Instance.autoAddEpgColumn.Add(new ListColumnInfo("Priority", double.NaN));
-                    Instance.autoAddEpgColumn.Add(new ListColumnInfo("Tuijyu", double.NaN));
-                }
-                if (Instance.autoAddManualColumn.Count == 0)
-                {
-                    Instance.autoAddManualColumn.Add(new ListColumnInfo("DayOfWeek", double.NaN));
-                    Instance.autoAddManualColumn.Add(new ListColumnInfo("Time", double.NaN));
-                    Instance.autoAddManualColumn.Add(new ListColumnInfo("Title", double.NaN));
-                    Instance.autoAddManualColumn.Add(new ListColumnInfo("StationName", double.NaN));
-                    Instance.autoAddManualColumn.Add(new ListColumnInfo("RecMode", double.NaN));
-                    Instance.autoAddManualColumn.Add(new ListColumnInfo("Priority", double.NaN));
-                }
-                //Instance.nwTvMode = true;
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
-
+ 
         public static void SaveToXmlFile()
         {
             try

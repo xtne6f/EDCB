@@ -48,19 +48,15 @@ namespace EpgTimer
         {
             string appName = System.IO.Path.GetFileNameWithoutExtension(System.Reflection.Assembly.GetEntryAssembly().Location);
             CommonManager.Instance.NWMode = appName == "EpgTimerNW";
-            //CommonManager.Instance.NWMode = true;
 
+            Settings.LoadFromXmlFile(CommonManager.Instance.NWMode);
             if (CommonManager.Instance.NWMode == true)
             {
-                Settings.LoadFromXmlFileNW();
                 CommonManager.Instance.DB.SetNoAutoReloadEPG(Settings.Instance.NgAutoEpgLoadNW);
                 cmd.SetSendMode(true);
                 cmd.SetNWSetting("", Settings.Instance.NWServerPort);
             }
-            else
-            {
-                Settings.LoadFromXmlFile();
-            }
+
             ChSet5.LoadFile();
             CommonManager.Instance.ReloadCustContentColorList();
 

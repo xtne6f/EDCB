@@ -110,11 +110,6 @@ namespace EpgTimer.Setting
                 comboBox_colorTitle1.DataContext = colorList.Values;
                 comboBox_colorTitle2.DataContext = colorList.Values;
 
-                if (Settings.Instance.ContentColorList.Count == 0)
-                {
-                    Settings.LoadFromXmlFile();
-                }
-
                 comboBox0.SelectedItem = colorList[Settings.Instance.ContentColorList[0x00]];
                 comboBox1.SelectedItem = colorList[Settings.Instance.ContentColorList[0x01]];
                 comboBox2.SelectedItem = colorList[Settings.Instance.ContentColorList[0x02]];
