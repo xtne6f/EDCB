@@ -12,9 +12,9 @@ class CReserveManager
 {
 public:
 	enum {
-		WAIT_EXTRA_EPGCAP_END = 1,		//EPG取得が完了した
-		WAIT_EXTRA_NEED_SHUTDOWN,		//システムシャットダウンを試みる必要がある
-		WAIT_EXTRA_RESERVE_MODIFIED,	//予約になんらかの変化があった
+		CHECK_EPGCAP_END = 1,	//EPG取得が完了した
+		CHECK_NEED_SHUTDOWN,	//システムシャットダウンを試みる必要がある
+		CHECK_RESERVE_MODIFIED,	//予約になんらかの変化があった
 	};
 	CReserveManager(CNotifyManager& notifyManager_, CEpgDBManager& epgDBManager_);
 	~CReserveManager();
@@ -42,11 +42,10 @@ public:
 	void ChgProtectRecFileInfo(const vector<REC_FILE_INFO>& infoList);
 	//EIT[schedule]をもとに追従処理する
 	void CheckTuijyu();
-	//予約管理のために待機する
-	//スレッドセーフではない
-	//extra: 追加の戻り値(HIWORDにWAIT_EXTRA_*)
-	//戻り値: WaitForSingleObject(hEvent)と同じ。ただしextraを渡すために待機を解除するときWAIT_OBJECT_0+1
-	DWORD Wait(HANDLE hEvent, DWORD timeout, DWORD* extra);
+	//予約管理する
+	//概ね1秒ごとに呼ぶ
+	//戻り値: 0またはHIWORDにCHECK_*
+	DWORD Check();
 	//EPG取得開始を要求する
 	bool RequestStartEpgCap();
 	//チューナ起動やEPG取得やバッチ処理が行われているか
@@ -143,8 +142,7 @@ private:
 	wstring recNamePlugInFileName;
 	bool recNameNoChkYen;
 
-	DWORD waitTick;
-	DWORD waitCount;
+	DWORD checkCount;
 	__int64 lastCheckEpgCap;
 	bool epgCapRequested;
 	bool epgCapWork;

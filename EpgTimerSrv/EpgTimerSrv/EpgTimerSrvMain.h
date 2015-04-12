@@ -24,6 +24,10 @@ public:
 	//休止／スタンバイに移行して構わない状況かどうか
 	bool IsSuspendOK(); //const;
 private:
+	//メインウィンドウ
+	static LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	//シャットダウン問い合わせダイアログ
+	static INT_PTR CALLBACK QueryShutdownDlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	void ReloadSetting();
 	//プリセット録画設定を読み込む(旧CRestApiManagerから移動)
 	pair<wstring, REC_SETTING_DATA> LoadRecSetData(WORD preset) const;
@@ -99,13 +103,10 @@ private:
 	CParseManualAutoAddText manualAutoAdd;
 
 	mutable CRITICAL_SECTION settingLock;
-	HANDLE requestEvent;
-	bool requestStop;
-	bool requestResetServer;
-	bool requestReloadEpgChk;
-	WORD requestShutdownMode;
+	HWND hwndMain;
 
 	bool serviceFlag;
+	bool saveNotifyLog;
 	DWORD wakeMarginSec;
 	unsigned short tcpPort;
 	unsigned short httpPort;

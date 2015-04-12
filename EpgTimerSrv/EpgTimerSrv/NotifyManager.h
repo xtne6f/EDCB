@@ -14,6 +14,8 @@ public:
 	void RegistTCP(const REGIST_TCP_INFO& info);
 	void UnRegistGUI(DWORD processID);
 	void UnRegistTCP(const REGIST_TCP_INFO& info);
+	void SetNotifyWindow(HWND hwnd, UINT msgID);
+	vector<NOTIFY_SRV_INFO> RemoveSentList();
 
 	void GetRegistGUI(map<DWORD, DWORD>* registGUI) const;
 	void GetRegistTCP(map<wstring, REGIST_TCP_INFO>* registTCP) const;
@@ -32,8 +34,11 @@ protected:
 
 	map<DWORD, DWORD> registGUIMap;
 	map<wstring, REGIST_TCP_INFO> registTCPMap;
+	HWND hwndNotify;
+	UINT msgIDNotify;
 
 	vector<NOTIFY_SRV_INFO> notifyList;
+	vector<NOTIFY_SRV_INFO> notifySentList;
 protected:
 	void _SendNotify();
 	static UINT WINAPI SendNotifyThread(LPVOID param);

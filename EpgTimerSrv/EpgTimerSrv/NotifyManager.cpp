@@ -16,6 +16,7 @@ CNotifyManager::CNotifyManager(void)
 	this->notifyThread = NULL;
 	this->notifyStopFlag = FALSE;
 	this->srvStatus = 0;
+	this->hwndNotify = NULL;
 }
 
 CNotifyManager::~CNotifyManager(void)
@@ -44,10 +45,7 @@ void CNotifyManager::RegistGUI(DWORD processID)
 
 	{
 		this->registGUIMap.insert(pair<DWORD,DWORD>(processID,processID));
-		DWORD status = this->srvStatus;
-		//必ず通知するため
-		this->srvStatus = 0xFFFFFFFF;
-		SetNotifySrvStatus(status);
+		SetNotifySrvStatus(0xFFFFFFFF);
 	}
 }
 
@@ -60,10 +58,7 @@ void CNotifyManager::RegistTCP(const REGIST_TCP_INFO& info)
 		Format(key, L"%s:%d", info.ip.c_str(), info.port);
 
 		this->registTCPMap.insert(pair<wstring,REGIST_TCP_INFO>(key,info));
-		DWORD status = this->srvStatus;
-		//必ず通知するため
-		this->srvStatus = 0xFFFFFFFF;
-		SetNotifySrvStatus(status);
+		SetNotifySrvStatus(0xFFFFFFFF);
 	}
 }
 
@@ -94,6 +89,24 @@ void CNotifyManager::UnRegistTCP(const REGIST_TCP_INFO& info)
 			this->registTCPMap.erase(itr);
 		}
 	}
+}
+
+void CNotifyManager::SetNotifyWindow(HWND hwnd, UINT msgID)
+{
+	CBlockLock lock(&this->managerLock);
+
+	this->hwndNotify = hwnd;
+	this->msgIDNotify = msgID;
+	SetNotifySrvStatus(0xFFFFFFFF);
+}
+
+vector<NOTIFY_SRV_INFO> CNotifyManager::RemoveSentList()
+{
+	CBlockLock lock(&this->managerLock);
+
+	vector<NOTIFY_SRV_INFO> list = this->notifySentList;
+	this->notifySentList.clear();
+	return list;
 }
 
 void CNotifyManager::GetRegistGUI(map<DWORD, DWORD>* registGUI) const
@@ -145,7 +158,7 @@ void CNotifyManager::SetNotifySrvStatus(DWORD status)
 		NOTIFY_SRV_INFO info;
 		info.notifyID = NOTIFY_UPDATE_SRV_STATUS;
 		GetLocalTime(&info.time);
-		info.param1 = this->srvStatus = status;
+		info.param1 = this->srvStatus = (status == 0xFFFFFFFF ? this->srvStatus : status);
 
 		this->notifyList.push_back(info);
 		_SendNotify();
@@ -232,6 +245,14 @@ UINT WINAPI CNotifyManager::SendNotifyThread(LPVOID param)
 			if( sys->notifyList.empty() == false ){
 				//次の通知がある
 				SetEvent(sys->notifyEvent);
+			}
+			//送信済みリストに追加してウィンドウメッセージで知らせる
+			sys->notifySentList.push_back(notifyInfo);
+			if( sys->notifySentList.size() > 100 ){
+				sys->notifySentList.erase(sys->notifySentList.begin());
+			}
+			if( sys->hwndNotify != NULL ){
+				PostMessage(sys->hwndNotify, sys->msgIDNotify, 0, 0);
 			}
 		}
 

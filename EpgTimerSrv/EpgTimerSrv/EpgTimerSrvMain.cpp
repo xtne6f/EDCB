@@ -10,26 +10,64 @@
 #include "../../Common/PathUtil.h"
 #include "../../Common/TimeUtil.h"
 #include "../../Common/BlockLock.h"
+#include "resource.h"
+#include <shellapi.h>
 #include <tlhelp32.h>
 
 static const char UPNP_URN_DMS_1[] = "urn:schemas-upnp-org:device:MediaServer:1";
 
+enum {
+	WM_RESET_SERVER = WM_APP,
+	WM_RELOAD_EPG_CHK,
+	WM_REQUEST_SHUTDOWN,
+	WM_QUERY_SHUTDOWN,
+	WM_RECEIVE_NOTIFY,
+	WM_TRAY_PUSHICON,
+	WM_SHOW_TRAY,
+};
+
+struct MAIN_WINDOW_CONTEXT {
+	CEpgTimerSrvMain* const sys;
+	const DWORD awayMode;
+	const UINT msgTaskbarCreated;
+	CPipeServer pipeServer;
+	CTCPServer tcpServer;
+	CHttpServer httpServer;
+	UPNP_SERVER_HANDLE upnpCtrl;
+	HANDLE resumeTimer;
+	__int64 resumeTime;
+	WORD shutdownModePending;
+	HWND hDlgQueryShutdown;
+	WORD queryShutdownMode;
+	bool taskFlag;
+	bool showBalloonTip;
+	DWORD notifySrvStatus;
+	__int64 notifyActiveTime;
+	MAIN_WINDOW_CONTEXT(CEpgTimerSrvMain* sys_, DWORD awayMode_)
+		: sys(sys_)
+		, awayMode(awayMode_)
+		, msgTaskbarCreated(RegisterWindowMessage(L"TaskbarCreated"))
+		, upnpCtrl(NULL)
+		, resumeTimer(NULL)
+		, shutdownModePending(0)
+		, hDlgQueryShutdown(NULL)
+		, taskFlag(false)
+		, showBalloonTip(false)
+		, notifySrvStatus(0)
+		, notifyActiveTime(LLONG_MAX) {}
+};
+
 CEpgTimerSrvMain::CEpgTimerSrvMain()
 	: reserveManager(notifyManager, epgDB)
-	, requestStop(false)
-	, requestResetServer(false)
-	, requestReloadEpgChk(false)
-	, requestShutdownMode(0)
+	, hwndMain(NULL)
 	, nwtvUdp(false)
 	, nwtvTcp(false)
 {
 	InitializeCriticalSection(&this->settingLock);
-	this->requestEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 }
 
 CEpgTimerSrvMain::~CEpgTimerSrvMain()
 {
-	CloseHandle(this->requestEvent);
 	DeleteCriticalSection(&this->settingLock);
 }
 
@@ -47,45 +85,87 @@ bool CEpgTimerSrvMain::Main(bool serviceFlag_)
 	this->epgAutoAdd.ParseText((settingPath + L"\\" + EPG_AUTO_ADD_TEXT_NAME).c_str());
 	this->manualAutoAdd.ParseText((settingPath + L"\\" + MANUAL_AUTO_ADD_TEXT_NAME).c_str());
 
-	this->reserveManager.Initialize();
-	ReloadSetting();
-
-	//Pipeサーバースタート
-	this->requestResetServer = true;
-	CPipeServer pipeServer;
-	if( pipeServer.StartServer(CMD2_EPG_SRV_EVENT_WAIT_CONNECT, CMD2_EPG_SRV_PIPE, CtrlCmdCallback, this, 0, GetCurrentProcessId()) ==  FALSE ){
-		this->reserveManager.Finalize();
+	//非表示のメインウィンドウを作成
+	WNDCLASSEX wc = {};
+	wc.cbSize = sizeof(WNDCLASSEX);
+	wc.lpfnWndProc = MainWndProc;
+	wc.hInstance = GetModuleHandle(NULL);
+	wc.lpszClassName = SERVICE_NAME;
+	wc.hIcon = (HICON)LoadImage(NULL, IDI_INFORMATION, IMAGE_ICON, 0, 0, LR_SHARED);
+	if( RegisterClassEx(&wc) == 0 ){
 		return false;
 	}
-	CTCPServer tcpServer;
-	CHttpServer httpServer;
-	//UPnPのUDP(Port1900)部分を担当するサーバ
-	UPNP_SERVER_HANDLE upnpCtrl = NULL;
+	MAIN_WINDOW_CONTEXT ctx(this, awayMode);
+	if( CreateWindowEx(0, SERVICE_NAME, SERVICE_NAME, 0, 0, 0, 0, 0, NULL, NULL, GetModuleHandle(NULL), &ctx) == NULL ){
+		return false;
+	}
+	this->notifyManager.SetNotifyWindow(this->hwndMain, WM_RECEIVE_NOTIFY);
 
-	this->epgDB.ReloadEpgData();
-	bool reloadEpgChkPending = true;
-	WORD shutdownModePending = 0;
-	DWORD shutdownTick = 0;
-
-	HANDLE resumeTimer = NULL;
-	__int64 resumeTime = 0;
-
-	while( this->requestStop == false ){
-		DWORD marginSec;
-		bool resetServer;
-		WORD shutdownMode;
-		{
-			CBlockLock lock(&this->settingLock);
-			marginSec = this->wakeMarginSec;
-			resetServer = this->requestResetServer;
-			reloadEpgChkPending = reloadEpgChkPending || this->requestReloadEpgChk;
-			shutdownMode = this->requestShutdownMode;
-			this->requestResetServer = false;
-			this->requestReloadEpgChk = false;
-			this->requestShutdownMode = 0;
+	//メッセージループ
+	MSG msg;
+	while( GetMessage(&msg, NULL, 0, 0) > 0 ){
+		if( ctx.hDlgQueryShutdown == NULL || IsDialogMessage(ctx.hDlgQueryShutdown, &msg) == FALSE ){
+			TranslateMessage(&msg);
+			DispatchMessage(&msg);
 		}
+	}
+	return true;
+}
 
-		if( resetServer ){
+LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	enum {
+		TIMER_RELOAD_EPG_CHK_PENDING = 1,
+		TIMER_SHUTDOWN_PENDING_TIMEOUT,
+		TIMER_RETRY_ADD_TRAY,
+		TIMER_SET_RESUME,
+		TIMER_CHECK,
+	};
+
+	MAIN_WINDOW_CONTEXT* ctx = (MAIN_WINDOW_CONTEXT*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
+	if( uMsg != WM_CREATE && ctx == NULL ){
+		return DefWindowProc(hwnd, uMsg, wParam, lParam);
+	}
+
+	switch( uMsg ){
+	case WM_CREATE:
+		ctx = (MAIN_WINDOW_CONTEXT*)((LPCREATESTRUCT)lParam)->lpCreateParams;
+		SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)ctx);
+		ctx->sys->hwndMain = hwnd;
+		ctx->sys->reserveManager.Initialize();
+		ctx->sys->ReloadSetting();
+		ctx->pipeServer.StartServer(CMD2_EPG_SRV_EVENT_WAIT_CONNECT, CMD2_EPG_SRV_PIPE, CtrlCmdCallback, ctx->sys, 0, GetCurrentProcessId());
+		ctx->sys->epgDB.ReloadEpgData();
+		SendMessage(hwnd, WM_RELOAD_EPG_CHK, 0, 0);
+		SendMessage(hwnd, WM_TIMER, TIMER_SET_RESUME, 0);
+		SetTimer(hwnd, TIMER_SET_RESUME, 30000, NULL);
+		SetTimer(hwnd, TIMER_CHECK, 1000, NULL);
+		return 0;
+	case WM_DESTROY:
+		if( ctx->resumeTimer ){
+			CloseHandle(ctx->resumeTimer);
+		}
+		if( ctx->upnpCtrl ){
+			UPNP_SERVER_Stop(ctx->upnpCtrl);
+			UPNP_SERVER_CloseHandle(&ctx->upnpCtrl);
+		}
+		ctx->httpServer.StopServer();
+		ctx->tcpServer.StopServer();
+		ctx->pipeServer.StopServer();
+		ctx->sys->reserveManager.Finalize();
+		//タスクトレイから削除
+		SendMessage(hwnd, WM_SHOW_TRAY, FALSE, FALSE);
+		ctx->sys->hwndMain = NULL;
+		SetWindowLongPtr(hwnd, GWLP_USERDATA, 0);
+		PostQuitMessage(0);
+		return 0;
+	case WM_ENDSESSION:
+		if( wParam ){
+			DestroyWindow(hwnd);
+		}
+		return 0;
+	case WM_RESET_SERVER:
+		{
 			//サーバリセット処理
 			unsigned short tcpPort_;
 			unsigned short httpPort_;
@@ -94,28 +174,28 @@ bool CEpgTimerSrvMain::Main(bool serviceFlag_)
 			bool httpSaveLog_ = false;
 			bool enableSsdpServer_;
 			{
-				CBlockLock lock(&this->settingLock);
-				tcpPort_ = this->tcpPort;
-				httpPort_ = this->httpPort;
-				httpPublicFolder_ = this->httpPublicFolder;
-				httpAcl = this->httpAccessControlList;
-				httpSaveLog_ = this->httpSaveLog;
-				enableSsdpServer_ = this->enableSsdpServer;
+				CBlockLock lock(&ctx->sys->settingLock);
+				tcpPort_ = ctx->sys->tcpPort;
+				httpPort_ = ctx->sys->httpPort;
+				httpPublicFolder_ = ctx->sys->httpPublicFolder;
+				httpAcl = ctx->sys->httpAccessControlList;
+				httpSaveLog_ = ctx->sys->httpSaveLog;
+				enableSsdpServer_ = ctx->sys->enableSsdpServer;
 			}
 			if( tcpPort_ == 0 ){
-				tcpServer.StopServer();
+				ctx->tcpServer.StopServer();
 			}else{
-				tcpServer.StartServer(tcpPort_, CtrlCmdCallback, this, 0, GetCurrentProcessId());
+				ctx->tcpServer.StartServer(tcpPort_, CtrlCmdCallback, ctx->sys, 0, GetCurrentProcessId());
 			}
-			if( upnpCtrl ){
-				UPNP_SERVER_RemoveNotifyInfo(upnpCtrl, this->ssdpNotifyUuid.c_str());
-				UPNP_SERVER_Stop(upnpCtrl);
-				UPNP_SERVER_CloseHandle(&upnpCtrl);
+			if( ctx->upnpCtrl ){
+				UPNP_SERVER_RemoveNotifyInfo(ctx->upnpCtrl, ctx->sys->ssdpNotifyUuid.c_str());
+				UPNP_SERVER_Stop(ctx->upnpCtrl);
+				UPNP_SERVER_CloseHandle(&ctx->upnpCtrl);
 			}
 			if( httpPort_ == 0 ){
-				httpServer.StopServer();
+				ctx->httpServer.StopServer();
 			}else{
-				if( httpServer.StartServer(httpPort_, httpPublicFolder_.c_str(), InitLuaCallback, this, httpSaveLog_, httpAcl.c_str()) ){
+				if( ctx->httpServer.StartServer(httpPort_, httpPublicFolder_.c_str(), InitLuaCallback, ctx->sys, httpSaveLog_, httpAcl.c_str()) ){
 					if( enableSsdpServer_ ){
 						//"ddd.xml"の先頭から2KB以内に"<UDN>uuid:{UUID}</UDN>"が必要
 						char dddBuf[2048] = {};
@@ -129,13 +209,14 @@ bool CEpgTimerSrvMain::Main(bool serviceFlag_)
 						string dddStr = dddBuf;
 						size_t udnFrom = dddStr.find("<UDN>uuid:");
 						if( udnFrom != string::npos && dddStr.size() > udnFrom + 10 + 36 && dddStr.compare(udnFrom + 10 + 36, 6, "</UDN>") == 0 ){
-							this->ssdpNotifyUuid.assign(dddStr, udnFrom + 10, 36);
-							this->ssdpNotifyPort = httpPort_;
-							upnpCtrl = UPNP_SERVER_CreateHandle(NULL, NULL, UpnpMSearchReqCallback, this);
-							UPNP_SERVER_Start(upnpCtrl);
+							ctx->sys->ssdpNotifyUuid.assign(dddStr, udnFrom + 10, 36);
+							ctx->sys->ssdpNotifyPort = httpPort_;
+							//UPnPのUDP(Port1900)部分を担当するサーバ
+							ctx->upnpCtrl = UPNP_SERVER_CreateHandle(NULL, NULL, UpnpMSearchReqCallback, ctx->sys);
+							UPNP_SERVER_Start(ctx->upnpCtrl);
 							LPCSTR urnList[] = { UPNP_URN_DMS_1, UPNP_URN_CDS_1, UPNP_URN_CMS_1, UPNP_URN_AVT_1, NULL };
 							for( int i = 0; urnList[i]; i++ ){
-								UPNP_SERVER_AddNotifyInfo(upnpCtrl, this->ssdpNotifyUuid.c_str(), urnList[i], this->ssdpNotifyPort, "/dlna/dms/ddd.xml");
+								UPNP_SERVER_AddNotifyInfo(ctx->upnpCtrl, ctx->sys->ssdpNotifyUuid.c_str(), urnList[i], ctx->sys->ssdpNotifyPort, "/dlna/dms/ddd.xml");
 							}
 						}else{
 							OutputDebugString(L"Invalid ddd.xml\r\n");
@@ -144,129 +225,362 @@ bool CEpgTimerSrvMain::Main(bool serviceFlag_)
 				}
 			}
 		}
-
-		if( shutdownModePending != 0 ){
-			//30秒以内にシャットダウン問い合わせできなければキャンセル
-			if( shutdownMode != 0 || GetTickCount() - shutdownTick > 30000 ){
-				shutdownModePending = 0;
-			}else if( IsSuspendOK() && IsUserWorking() == false && reloadEpgChkPending == false && this->epgDB.ReloadEpgData() != FALSE ){
-				reloadEpgChkPending = true;
-			}
-		}
-		if( reloadEpgChkPending && this->epgDB.IsLoadingData() == FALSE ){
-			//リロード終わったので自動予約登録処理を行う
-			this->reserveManager.CheckTuijyu();
-			{
-				CBlockLock lock(&this->settingLock);
-				for( map<DWORD, EPG_AUTO_ADD_DATA>::const_iterator itr = this->epgAutoAdd.GetMap().begin(); itr != this->epgAutoAdd.GetMap().end(); itr++ ){
-					AutoAddReserveEPG(itr->second);
-				}
-				for( map<DWORD, MANUAL_AUTO_ADD_DATA>::const_iterator itr = this->manualAutoAdd.GetMap().begin(); itr != this->manualAutoAdd.GetMap().end(); itr++ ){
-					AutoAddReserveProgram(itr->second);
-				}
-			}
-			reloadEpgChkPending = false;
-			this->notifyManager.AddNotify(NOTIFY_UPDATE_EPGDATA);
-
-			if( this->useSyoboi ){
-				//しょぼいカレンダー対応
-				CSyoboiCalUtil syoboi;
-				vector<RESERVE_DATA> reserveList = this->reserveManager.GetReserveDataAll();
-				vector<TUNER_RESERVE_INFO> tunerList = this->reserveManager.GetTunerReserveAll();
-				syoboi.SendReserve(&reserveList, &tunerList);
-			}
-			if( shutdownModePending && IsSuspendOK() && IsUserWorking() == false ){
-				if( 1 <= LOBYTE(shutdownModePending) && LOBYTE(shutdownModePending) <= 3 ){
-					//シャットダウン問い合わせ
-					if( QueryShutdown(HIBYTE(shutdownModePending), LOBYTE(shutdownModePending)) == false ){
-						shutdownMode = shutdownModePending;
-					}
-				}
-				shutdownModePending = 0;
-			}
-		}
-		if( shutdownMode != 0 ){
-			//シャットダウン処理
-			if( shutdownMode == 0x01FF ){
-				SetShutdown(4);
-			}else if( IsSuspendOK() ){
-				if( LOBYTE(shutdownMode) == 1 || LOBYTE(shutdownMode) == 2 ){
-					//ストリーミングを終了する
-					this->streamingManager.CloseAllFile();
-					//スリープ抑止解除
-					SetThreadExecutionState(ES_CONTINUOUS);
-					//rebootFlag時は(指定+5分前)に復帰
-					if( SetResumeTimer(&resumeTimer, &resumeTime, marginSec + (HIBYTE(shutdownMode) != 0 ? 300 : 0)) ){
-						SetShutdown(LOBYTE(shutdownMode));
-						if( HIBYTE(shutdownMode) != 0 ){
-							//再起動問い合わせ
-							if( QueryShutdown(1, 0) == false ){
-								SetShutdown(4);
-							}
+		break;
+	case WM_RELOAD_EPG_CHK:
+		//EPGリロード完了のチェックを開始
+		SetTimer(hwnd, TIMER_RELOAD_EPG_CHK_PENDING, 200, NULL);
+		break;
+	case WM_REQUEST_SHUTDOWN:
+		//シャットダウン処理
+		if( wParam == 0x01FF ){
+			SetShutdown(4);
+		}else if( ctx->sys->IsSuspendOK() ){
+			if( LOBYTE(wParam) == 1 || LOBYTE(wParam) == 2 ){
+				//ストリーミングを終了する
+				ctx->sys->streamingManager.CloseAllFile();
+				//スリープ抑止解除
+				SetThreadExecutionState(ES_CONTINUOUS);
+				//rebootFlag時は(指定+5分前)に復帰
+				if( ctx->sys->SetResumeTimer(&ctx->resumeTimer, &ctx->resumeTime, ctx->sys->wakeMarginSec + (HIBYTE(wParam) != 0 ? 300 : 0)) ){
+					SetShutdown(LOBYTE(wParam));
+					if( HIBYTE(wParam) != 0 ){
+						//再起動問い合わせ
+						if( SendMessage(hwnd, WM_QUERY_SHUTDOWN, 0x0100, 0) == FALSE ){
+							SetShutdown(4);
 						}
 					}
-				}else if( LOBYTE(shutdownMode) == 3 ){
-					SetShutdown(3);
 				}
+			}else if( LOBYTE(wParam) == 3 ){
+				SetShutdown(3);
 			}
 		}
-
-		//復帰タイマ更新(powercfg /waketimersでデバッグ可能)
-		SetResumeTimer(&resumeTimer, &resumeTime, marginSec);
-		//スリープ抑止
-		EXECUTION_STATE esFlags = shutdownModePending == 0 && IsSuspendOK() ? ES_CONTINUOUS : ES_CONTINUOUS | ES_SYSTEM_REQUIRED | awayMode;
-		if( SetThreadExecutionState(esFlags) != esFlags ){
-			_OutputDebugString(L"SetThreadExecutionState(0x%08x)\r\n", (DWORD)esFlags);
+		break;
+	case WM_QUERY_SHUTDOWN:
+		if( GetShellWindow() ){
+			//シェルがあるので直接尋ねる
+			if( ctx->hDlgQueryShutdown == NULL ){
+				INITCOMMONCONTROLSEX icce;
+				icce.dwSize = sizeof(icce);
+				icce.dwICC = ICC_PROGRESS_CLASS;
+				InitCommonControlsEx(&icce);
+				ctx->queryShutdownMode = (WORD)wParam;
+				CreateDialogParam(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_EPGTIMERSRV_DIALOG), hwnd, QueryShutdownDlgProc, (LPARAM)ctx);
+			}
+		}else if( ctx->sys->QueryShutdown(HIBYTE(wParam), LOBYTE(wParam)) == false ){
+			//GUI経由で問い合わせ開始できなかった
+			return FALSE;
 		}
-
-		DWORD extra;
-		//復帰タイマ更新とスリープ抑止のため、予約変化時か30秒で待機を解除する
-		if( this->reserveManager.Wait(this->requestEvent, reloadEpgChkPending || shutdownModePending ? 200 : 30000, &extra) == WAIT_OBJECT_0 + 1 ){
-			switch( HIWORD(extra) ){
-			case CReserveManager::WAIT_EXTRA_EPGCAP_END:
-				if( this->epgDB.ReloadEpgData() != FALSE ){
-					//EPGリロード完了後にデフォルトのシャットダウン動作を試みる
-					CBlockLock lock(&this->settingLock);
-					reloadEpgChkPending = true;
-					shutdownModePending = this->defShutdownMode;
-					shutdownTick = GetTickCount();
-				}
-				break;
-			case CReserveManager::WAIT_EXTRA_NEED_SHUTDOWN:
-				{
-					//要求されたシャットダウン動作を試みる
-					CBlockLock lock(&this->settingLock);
-					shutdownModePending = LOWORD(extra);
-					if( LOBYTE(shutdownModePending) == 0 ){
-						shutdownModePending = this->defShutdownMode;
+		return TRUE;
+	case WM_RECEIVE_NOTIFY:
+		//通知を受け取る
+		{
+			vector<NOTIFY_SRV_INFO> list(1);
+			if( wParam ){
+				//更新だけ
+				list.back().notifyID = NOTIFY_UPDATE_SRV_STATUS;
+				list.back().param1 = ctx->notifySrvStatus;
+			}else{
+				list = ctx->sys->notifyManager.RemoveSentList();
+			}
+			for( vector<NOTIFY_SRV_INFO>::const_iterator itr = list.begin(); itr != list.end(); itr++ ){
+				if( itr->notifyID == NOTIFY_UPDATE_SRV_STATUS ){
+					ctx->notifySrvStatus = itr->param1;
+					if( ctx->taskFlag ){
+						NOTIFYICONDATA nid = {};
+						nid.cbSize = NOTIFYICONDATA_V2_SIZE;
+						nid.hWnd = hwnd;
+						nid.uID = 1;
+						nid.hIcon = (HICON)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(
+							ctx->notifySrvStatus == 1 ? IDI_ICON_RED :
+							ctx->notifySrvStatus == 2 ? IDI_ICON_GREEN : IDI_ICON_BLUE), IMAGE_ICON, 16, 16, LR_SHARED);
+						if( ctx->notifyActiveTime != LLONG_MAX ){
+							SYSTEMTIME st;
+							ConvertSystemTime(ctx->notifyActiveTime + 30 * I64_1SEC, &st);
+							swprintf_s(nid.szTip, L"次の予約・取得：%d/%d(%c) %d:%02d",
+								st.wMonth, st.wDay, wstring(L"日月火水木金土").at(st.wDayOfWeek % 7), st.wHour, st.wMinute);
+						}
+						nid.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP;
+						nid.uCallbackMessage = WM_TRAY_PUSHICON;
+						if( Shell_NotifyIcon(NIM_MODIFY, &nid) == FALSE && Shell_NotifyIcon(NIM_ADD, &nid) == FALSE ){
+							SetTimer(hwnd, TIMER_RETRY_ADD_TRAY, 5000, NULL);
+						}
 					}
-					shutdownTick = GetTickCount();
+				}else{
+					NOTIFYICONDATA nid = {};
+					wcscpy_s(nid.szInfoTitle,
+						itr->notifyID == NOTIFY_UPDATE_PRE_REC_START ? L"予約録画開始準備" :
+						itr->notifyID == NOTIFY_UPDATE_REC_START ? L"録画開始" :
+						itr->notifyID == NOTIFY_UPDATE_REC_END ? L"録画終了" :
+						itr->notifyID == NOTIFY_UPDATE_REC_TUIJYU ? L"追従発生" :
+						itr->notifyID == NOTIFY_UPDATE_CHG_TUIJYU ? L"番組変更" :
+						itr->notifyID == NOTIFY_UPDATE_PRE_EPGCAP_START ? L"EPG取得" :
+						itr->notifyID == NOTIFY_UPDATE_EPGCAP_START ? L"EPG取得" :
+						itr->notifyID == NOTIFY_UPDATE_EPGCAP_END ? L"EPG取得" : L"");
+					if( nid.szInfoTitle[0] ){
+						wstring info = itr->notifyID == NOTIFY_UPDATE_EPGCAP_START ? wstring(L"開始") :
+						               itr->notifyID == NOTIFY_UPDATE_EPGCAP_END ? wstring(L"終了") : itr->param4;
+						if( ctx->sys->saveNotifyLog ){
+							//通知情報ログ保存
+							wstring logPath;
+							GetModuleFolderPath(logPath);
+							logPath += L"\\EpgTimerSrvNotifyLog.txt";
+							HANDLE hFile = CreateFile(logPath.c_str(), FILE_APPEND_DATA, FILE_SHARE_READ, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+							if( hFile != INVALID_HANDLE_VALUE ){
+								SYSTEMTIME st = itr->time;
+								wstring log;
+								Format(log, L"%d/%02d/%02d %02d:%02d:%02d.%03d [%s] %s",
+									st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, st.wMilliseconds, nid.szInfoTitle, info.c_str());
+								Replace(log, L"\r\n", L"  ");
+								string logA;
+								WtoA(log + L"\r\n", logA);
+								SetFilePointer(hFile, 0, NULL, FILE_END);
+								DWORD dwWritten;
+								WriteFile(hFile, logA.c_str(), (DWORD)logA.size(), &dwWritten, NULL);
+								CloseHandle(hFile);
+							}
+						}
+						if( ctx->showBalloonTip ){
+							//バルーンチップ表示
+							nid.cbSize = NOTIFYICONDATA_V2_SIZE;
+							nid.hWnd = hwnd;
+							nid.uID = 1;
+							nid.uFlags = NIF_INFO;
+							nid.dwInfoFlags = NIIF_INFO;
+							nid.uTimeout = 10000; //効果はない
+							if( info.size() > 63 ){
+								info.resize(62);
+								info += L'…';
+							}
+							Shell_NotifyIcon(NIM_MODIFY, &nid);
+							wcscpy_s(nid.szInfo, info.c_str());
+							Shell_NotifyIcon(NIM_MODIFY, &nid);
+						}
+					}
 				}
-				break;
-			case CReserveManager::WAIT_EXTRA_RESERVE_MODIFIED:
-				break;
 			}
 		}
-	}
+		break;
+	case WM_TRAY_PUSHICON:
+		//タスクトレイ関係
+		switch( LOWORD(lParam) ){
+		case WM_LBUTTONUP:
+			{
+				//EpgTimer.exeがあれば起動
+				wstring moduleFolder;
+				GetModuleFolderPath(moduleFolder);
+				PROCESS_INFORMATION pi;
+				STARTUPINFO si = {};
+				si.cb = sizeof(si);
+				if( CreateProcess((moduleFolder + L"\\EpgTimer.exe").c_str(), NULL, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi) != FALSE ){
+					CloseHandle(pi.hThread);
+					CloseHandle(pi.hProcess);
+				}
+			}
+			break;
+		case WM_RBUTTONUP:
+			{
+				HMENU hMenu = LoadMenu(GetModuleHandle(NULL), MAKEINTRESOURCE(IDR_MENU_TRAY));
+				if( hMenu ){
+					POINT point;
+					GetCursorPos(&point);
+					SetForegroundWindow(hwnd);
+					TrackPopupMenu(GetSubMenu(hMenu, 0), 0, point.x, point.y, 0, hwnd, NULL);
+					DestroyMenu(hMenu);
+				}
+			}
+			break;
+		}
+		break;
+	case WM_SHOW_TRAY:
+		//タスクトレイに表示/非表示する
+		if( ctx->taskFlag && wParam == FALSE ){
+			NOTIFYICONDATA nid = {};
+			nid.cbSize = NOTIFYICONDATA_V2_SIZE;
+			nid.hWnd = hwnd;
+			nid.uID = 1;
+			Shell_NotifyIcon(NIM_DELETE, &nid);
+		}
+		ctx->taskFlag = wParam != FALSE;
+		ctx->showBalloonTip = ctx->taskFlag && lParam;
+		if( ctx->taskFlag ){
+			SetTimer(hwnd, TIMER_RETRY_ADD_TRAY, 0, NULL);
+		}
+		return TRUE;
+	case WM_TIMER:
+		switch( wParam ){
+		case TIMER_RELOAD_EPG_CHK_PENDING:
+			if( ctx->sys->epgDB.IsLoadingData() == FALSE ){
+				//リロード終わったので自動予約登録処理を行う
+				ctx->sys->reserveManager.CheckTuijyu();
+				{
+					CBlockLock lock(&ctx->sys->settingLock);
+					for( map<DWORD, EPG_AUTO_ADD_DATA>::const_iterator itr = ctx->sys->epgAutoAdd.GetMap().begin(); itr != ctx->sys->epgAutoAdd.GetMap().end(); itr++ ){
+						ctx->sys->AutoAddReserveEPG(itr->second);
+					}
+					for( map<DWORD, MANUAL_AUTO_ADD_DATA>::const_iterator itr = ctx->sys->manualAutoAdd.GetMap().begin(); itr != ctx->sys->manualAutoAdd.GetMap().end(); itr++ ){
+						ctx->sys->AutoAddReserveProgram(itr->second);
+					}
+				}
+				KillTimer(hwnd, TIMER_RELOAD_EPG_CHK_PENDING);
+				ctx->sys->notifyManager.AddNotify(NOTIFY_UPDATE_EPGDATA);
 
-	if( resumeTimer != NULL ){
-		CloseHandle(resumeTimer);
+				if( ctx->sys->useSyoboi ){
+					//しょぼいカレンダー対応
+					CSyoboiCalUtil syoboi;
+					vector<RESERVE_DATA> reserveList = ctx->sys->reserveManager.GetReserveDataAll();
+					vector<TUNER_RESERVE_INFO> tunerList = ctx->sys->reserveManager.GetTunerReserveAll();
+					syoboi.SendReserve(&reserveList, &tunerList);
+				}
+				if( ctx->shutdownModePending && ctx->sys->IsSuspendOK() && ctx->sys->IsUserWorking() == false ){
+					if( 1 <= LOBYTE(ctx->shutdownModePending) && LOBYTE(ctx->shutdownModePending) <= 3 ){
+						//シャットダウン問い合わせ
+						if( SendMessage(hwnd, WM_QUERY_SHUTDOWN, ctx->shutdownModePending, 0) == FALSE ){
+							SendMessage(hwnd, WM_REQUEST_SHUTDOWN, ctx->shutdownModePending, 0);
+						}
+					}
+				}
+				ctx->shutdownModePending = 0;
+			}
+			break;
+		case TIMER_SHUTDOWN_PENDING_TIMEOUT:
+			KillTimer(hwnd, TIMER_SHUTDOWN_PENDING_TIMEOUT);
+			ctx->shutdownModePending = 0;
+			break;
+		case TIMER_RETRY_ADD_TRAY:
+			KillTimer(hwnd, TIMER_RETRY_ADD_TRAY);
+			SendMessage(hwnd, WM_RECEIVE_NOTIFY, TRUE, 0);
+			break;
+		case TIMER_SET_RESUME:
+			{
+				//復帰タイマ更新(powercfg /waketimersでデバッグ可能)
+				ctx->sys->SetResumeTimer(&ctx->resumeTimer, &ctx->resumeTime, ctx->sys->wakeMarginSec);
+				//スリープ抑止
+				EXECUTION_STATE esFlags = ctx->shutdownModePending == 0 && ctx->sys->IsSuspendOK() ? ES_CONTINUOUS : ES_CONTINUOUS | ES_SYSTEM_REQUIRED | ctx->awayMode;
+				if( SetThreadExecutionState(esFlags) != esFlags ){
+					_OutputDebugString(L"SetThreadExecutionState(0x%08x)\r\n", (DWORD)esFlags);
+				}
+				//チップヘルプの更新が必要かチェック
+				__int64 activeTime = ctx->sys->reserveManager.GetSleepReturnTime(GetNowI64Time());
+				if( activeTime != ctx->notifyActiveTime ){
+					ctx->notifyActiveTime = activeTime;
+					SetTimer(hwnd, TIMER_RETRY_ADD_TRAY, 0, NULL);
+				}
+			}
+			break;
+		case TIMER_CHECK:
+			{
+				DWORD ret = ctx->sys->reserveManager.Check();
+				switch( HIWORD(ret) ){
+				case CReserveManager::CHECK_EPGCAP_END:
+					if( ctx->sys->epgDB.ReloadEpgData() != FALSE ){
+						//EPGリロード完了後にデフォルトのシャットダウン動作を試みる
+						SendMessage(hwnd, WM_RELOAD_EPG_CHK, 0, 0);
+						ctx->shutdownModePending = ctx->sys->defShutdownMode;
+						//30秒以内にシャットダウン問い合わせできなければキャンセル
+						SetTimer(hwnd, TIMER_SHUTDOWN_PENDING_TIMEOUT, 30000, NULL);
+					}
+					SendMessage(hwnd, WM_TIMER, TIMER_SET_RESUME, 0);
+					break;
+				case CReserveManager::CHECK_NEED_SHUTDOWN:
+					if( ctx->sys->epgDB.ReloadEpgData() != FALSE ){
+						//EPGリロード完了後に要求されたシャットダウン動作を試みる
+						SendMessage(hwnd, WM_RELOAD_EPG_CHK, 0, 0);
+						ctx->shutdownModePending = LOWORD(ret);
+						if( LOBYTE(ctx->shutdownModePending) == 0 ){
+							ctx->shutdownModePending = ctx->sys->defShutdownMode;
+						}
+						SetTimer(hwnd, TIMER_SHUTDOWN_PENDING_TIMEOUT, 30000, NULL);
+					}
+					SendMessage(hwnd, WM_TIMER, TIMER_SET_RESUME, 0);
+					break;
+				case CReserveManager::CHECK_RESERVE_MODIFIED:
+					SendMessage(hwnd, WM_TIMER, TIMER_SET_RESUME, 0);
+					break;
+				}
+			}
+			break;
+		}
+		break;
+	case WM_COMMAND:
+		switch( LOWORD(wParam) ){
+		case IDC_BUTTON_S3:
+		case IDC_BUTTON_S4:
+			if( ctx->sys->IsSuspendOK() ){
+				PostMessage(hwnd, WM_REQUEST_SHUTDOWN, MAKEWORD(LOWORD(wParam) == IDC_BUTTON_S3 ? 1 : 2, HIBYTE(ctx->sys->defShutdownMode)), 0);
+			}else{
+				MessageBox(hwnd, L"移行できる状態ではありません。\r\n（もうすぐ予約が始まる。または抑制条件のexeが起動している。など）", NULL, MB_ICONERROR);
+			}
+			break;
+		case IDC_BUTTON_END:
+			if( MessageBox(hwnd, SERVICE_NAME L" を終了します。", L"確認", MB_OKCANCEL | MB_ICONINFORMATION) == IDOK ){
+				SendMessage(hwnd, WM_CLOSE, 0, 0);
+			}
+			break;
+		}
+		break;
+	default:
+		if( uMsg == ctx->msgTaskbarCreated ){
+			//シェルの再起動時
+			SetTimer(hwnd, TIMER_RETRY_ADD_TRAY, 0, NULL);
+		}
+		break;
 	}
-	if( upnpCtrl ){
-		UPNP_SERVER_Stop(upnpCtrl);
-		UPNP_SERVER_CloseHandle(&upnpCtrl);
+	return DefWindowProc(hwnd, uMsg, wParam, lParam);
+}
+
+INT_PTR CALLBACK CEpgTimerSrvMain::QueryShutdownDlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	MAIN_WINDOW_CONTEXT* ctx = (MAIN_WINDOW_CONTEXT*)GetWindowLongPtr(hDlg, GWLP_USERDATA);
+
+	switch( uMsg ){
+	case WM_INITDIALOG:
+		ctx = (MAIN_WINDOW_CONTEXT*)lParam;
+		SetWindowLongPtr(hDlg, GWLP_USERDATA, (LONG_PTR)ctx);
+		ctx->hDlgQueryShutdown = hDlg;
+		SetDlgItemText(hDlg, IDC_STATIC_SHUTDOWN,
+			LOBYTE(ctx->queryShutdownMode) == 1 ? L"スタンバイに移行します。" :
+			LOBYTE(ctx->queryShutdownMode) == 2 ? L"休止に移行します。" :
+			LOBYTE(ctx->queryShutdownMode) == 3 ? L"シャットダウンします。" : L"再起動します。");
+		SetTimer(hDlg, 1, 1000, NULL);
+		SendDlgItemMessage(hDlg, IDC_PROGRESS_SHUTDOWN, PBM_SETRANGE, 0, MAKELONG(0, LOBYTE(ctx->queryShutdownMode) == 0 ? 30 : 15));
+		SendDlgItemMessage(hDlg, IDC_PROGRESS_SHUTDOWN, PBM_SETPOS, LOBYTE(ctx->queryShutdownMode) == 0 ? 30 : 15, 0);
+		return TRUE;
+	case WM_DESTROY:
+		ctx->hDlgQueryShutdown = NULL;
+		break;
+	case WM_TIMER:
+		if( SendDlgItemMessage(hDlg, IDC_PROGRESS_SHUTDOWN, PBM_SETPOS,
+		    SendDlgItemMessage(hDlg, IDC_PROGRESS_SHUTDOWN, PBM_GETPOS, 0, 0) - 1, 0) <= 1 ){
+			SendMessage(hDlg, WM_COMMAND, MAKEWPARAM(IDOK, BN_CLICKED), (LPARAM)hDlg);
+		}
+		break;
+	case WM_COMMAND:
+		switch( LOWORD(wParam) ){
+		case IDOK:
+			if( LOBYTE(ctx->queryShutdownMode) == 0 ){
+				//再起動
+				PostMessage(ctx->sys->hwndMain, WM_REQUEST_SHUTDOWN, 0x01FF, 0);
+			}else if( ctx->sys->IsSuspendOK() ){
+				//スタンバイ休止または電源断
+				PostMessage(ctx->sys->hwndMain, WM_REQUEST_SHUTDOWN, HIBYTE(ctx->queryShutdownMode) == 0xFF ?
+					MAKEWORD(LOBYTE(ctx->queryShutdownMode), HIBYTE(ctx->sys->defShutdownMode)) : ctx->queryShutdownMode, 0);
+			}
+			//FALL THROUGH!
+		case IDCANCEL:
+			DestroyWindow(hDlg);
+			break;
+		}
+		break;
 	}
-	httpServer.StopServer();
-	tcpServer.StopServer();
-	pipeServer.StopServer();
-	this->reserveManager.Finalize();
-	return true;
+	return FALSE;
 }
 
 void CEpgTimerSrvMain::StopMain()
 {
-	this->requestStop = true;
-	SetEvent(this->requestEvent);
+	volatile HWND hwndMain_ = this->hwndMain;
+	if( hwndMain_ ){
+		SendNotifyMessage(hwndMain_, WM_CLOSE, 0, 0);
+	}
 }
 
 bool CEpgTimerSrvMain::IsSuspendOK()
@@ -323,9 +637,19 @@ void CEpgTimerSrvMain::ReloadSetting()
 	}
 	this->enableSsdpServer = GetPrivateProfileInt(L"SET", L"EnableDMS", 0, iniPath.c_str()) != 0;
 
-	this->requestResetServer = true;
-	SetEvent(this->requestEvent);
+	PostMessage(this->hwndMain, WM_RESET_SERVER, 0, 0);
 
+	if( this->serviceFlag == false ){
+		int residentMode = GetPrivateProfileInt(L"SET", L"ResidentMode", 0, iniPath.c_str());
+		if( residentMode >= 1 ){
+			//常駐する(CMD2_EPG_SRV_CLOSEを無視)
+			this->serviceFlag = true;
+			//タスクトレイに表示するかどうか
+			PostMessage(this->hwndMain, WM_SHOW_TRAY, residentMode >= 2,
+				GetPrivateProfileInt(L"SET", L"NoBalloonTip", 0, iniPath.c_str()) == 0);
+		}
+	}
+	this->saveNotifyLog = GetPrivateProfileInt(L"SET", L"SaveNotifyLog", 0, iniPath.c_str()) != 0;
 	this->wakeMarginSec = GetPrivateProfileInt(L"SET", L"WakeTime", 5, iniPath.c_str()) * 60;
 	this->autoAddHour = GetPrivateProfileInt(L"SET", L"AutoAddDays", 8, iniPath.c_str()) * 24 +
 	                    GetPrivateProfileInt(L"SET", L"AutoAddHour", 0, iniPath.c_str());
@@ -723,9 +1047,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 		if( sys->epgDB.IsLoadingData() != FALSE ){
 			resParam->param = CMD_ERR_BUSY;
 		}else if( sys->epgDB.ReloadEpgData() != FALSE ){
-			CBlockLock lock(&sys->settingLock);
-			sys->requestReloadEpgChk = true;
-			SetEvent(sys->requestEvent);
+			PostMessage(sys->hwndMain, WM_RELOAD_EPG_CHK, 0, 0);
 			resParam->param = CMD_SUCCESS;
 		}
 		break;
@@ -909,21 +1231,17 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 		{
 			WORD val;
 			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) && sys->IsSuspendOK() ){
-				CBlockLock lock(&sys->settingLock);
 				if( HIBYTE(val) == 0xFF ){
 					val = MAKEWORD(LOBYTE(val), HIBYTE(sys->defShutdownMode));
 				}
-				sys->requestShutdownMode = val;
-				SetEvent(sys->requestEvent);
+				PostMessage(sys->hwndMain, WM_REQUEST_SHUTDOWN, val, 0);
 				resParam->param = CMD_SUCCESS;
 			}
 		}
 		break;
 	case CMD2_EPG_SRV_REBOOT:
 		{
-			CBlockLock lock(&sys->settingLock);
-			sys->requestShutdownMode = 0x01FF;
-			SetEvent(sys->requestEvent);
+			PostMessage(sys->hwndMain, WM_REQUEST_SHUTDOWN, 0x01FF, 0);
 			resParam->param = CMD_SUCCESS;
 		}
 		break;

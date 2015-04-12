@@ -11,7 +11,7 @@ CReserveManager::CReserveManager(CNotifyManager& notifyManager_, CEpgDBManager& 
 	: notifyManager(notifyManager_)
 	, epgDBManager(epgDBManager_)
 	, batManager(notifyManager_)
-	, waitCount(0)
+	, checkCount(0)
 	, epgCapRequested(false)
 	, epgCapWork(false)
 	, reserveModified(false)
@@ -30,7 +30,6 @@ void CReserveManager::Initialize()
 {
 	this->tunerManager.ReloadTuner();
 	this->tunerManager.GetEnumTunerBank(&this->tunerBankMap, this->notifyManager, this->epgDBManager);
-	this->waitTick = GetTickCount();
 	this->lastCheckEpgCap = GetNowI64Time();
 
 	wstring settingPath;
@@ -1058,27 +1057,10 @@ void CReserveManager::CheckOverTimeReserve()
 	}
 }
 
-DWORD CReserveManager::Wait(HANDLE hEvent, DWORD timeout, DWORD* extra)
+DWORD CReserveManager::Check()
 {
-	for(;;){
-		DWORD tick = GetTickCount();
-		DWORD diff = this->waitTick - tick;
-		if( (diff & 0x80000000) != 0 ){
-			diff = 0;
-		}
-		if( diff >= timeout ){
-			return WaitForSingleObject(hEvent, timeout);
-		}
-		DWORD dwRet = WaitForSingleObject(hEvent, diff);
-		if( dwRet != WAIT_TIMEOUT ){
-			return dwRet;
-		}
-		//1秒ごとにチェックする
-		this->waitTick = tick + 1000;
-		this->waitCount++;
-		if( timeout != INFINITE ){
-			timeout -= diff;
-		}
+	{
+		this->checkCount++;
 
 		bool isRec = false;
 		bool isEpgCap = false;
@@ -1207,10 +1189,10 @@ DWORD CReserveManager::Wait(HANDLE hEvent, DWORD timeout, DWORD* extra)
 				this->notifyManager.AddNotify(NOTIFY_UPDATE_REC_INFO);
 			}
 		}
-		if( this->waitCount % 30 == 0 ){
+		if( this->checkCount % 30 == 0 ){
 			CheckOverTimeReserve();
 		}
-		if( this->waitCount % 3 == 0 ){
+		if( this->checkCount % 3 == 0 ){
 			CheckTuijyuTuner();
 		}
 		this->notifyManager.SetNotifySrvStatus(isRec ? 1 : isEpgCap ? 2 : 0);
@@ -1220,25 +1202,21 @@ DWORD CReserveManager::Wait(HANDLE hEvent, DWORD timeout, DWORD* extra)
 		if( CheckEpgCap(isEpgCap) ){
 			//EPG取得が完了した
 			this->notifyManager.AddNotify(NOTIFY_UPDATE_EPGCAP_END);
-			*extra = MAKELONG(0, WAIT_EXTRA_EPGCAP_END);
-			break;
+			return MAKELONG(0, CHECK_EPGCAP_END);
 		}else if( this->batManager.PopLastWorkSuspend(&suspendMode, &rebootFlag) ){
 			//バッチ処理が完了した
-			*extra = MAKELONG(MAKEWORD(suspendMode, rebootFlag), WAIT_EXTRA_NEED_SHUTDOWN);
-			break;
+			return MAKELONG(MAKEWORD(suspendMode, rebootFlag), CHECK_NEED_SHUTDOWN);
 		}else if( shutdownMode >= 0 && this->batManager.IsWorking() == false ){
-			*extra = MAKELONG(shutdownMode, WAIT_EXTRA_NEED_SHUTDOWN);
-			break;
+			return MAKELONG(shutdownMode, CHECK_NEED_SHUTDOWN);
 		}else if( this->reserveModified ){
 			CBlockLock lock(&this->managerLock);
 			if( this->reserveModified ){
-				*extra = MAKELONG(0, WAIT_EXTRA_RESERVE_MODIFIED);
 				this->reserveModified = false;
+				return MAKELONG(0, CHECK_RESERVE_MODIFIED);
 			}
-			break;
 		}
 	}
-	return WAIT_OBJECT_0 + 1;
+	return 0;
 }
 
 vector<DWORD> CReserveManager::GetEpgCapTunerIDList(__int64 now) const
