@@ -168,7 +168,7 @@ namespace EpgTimer
             {
                 if (Settings.Instance.WakeMin == true)
                 {
-                    if (Settings.Instance.MinHide == true)
+                    if (Settings.Instance.ShowTray && Settings.Instance.MinHide)
                     {
                         this.Visibility = System.Windows.Visibility.Hidden;
                     }
@@ -349,7 +349,7 @@ namespace EpgTimer
                 //タスクトレイの表示
                 taskTray = new TaskTrayClass(this);
                 taskTray.Icon = Properties.Resources.TaskIconBlue;
-                taskTray.Visible = true;
+                taskTray.Visible = Settings.Instance.ShowTray;
                 taskTray.ContextMenuClick += new EventHandler(taskTray_ContextMenuClick);
 
                 CommonManager.Instance.DB.ReloadReserveInfo();
@@ -733,7 +733,7 @@ namespace EpgTimer
         {
             if (this.WindowState == WindowState.Minimized)
             {
-                if (Settings.Instance.MinHide == true)
+                if (Settings.Instance.ShowTray && Settings.Instance.MinHide)
                 {
                     this.Visibility = System.Windows.Visibility.Hidden;
                 }
@@ -744,6 +744,7 @@ namespace EpgTimer
                 taskTray.LastViewState = this.WindowState;
                 Settings.Instance.LastWindowState = this.WindowState;
             }
+            taskTray.Visible = Settings.Instance.ShowTray;
         }
 
         private void Window_PreviewDragEnter(object sender, DragEventArgs e)
