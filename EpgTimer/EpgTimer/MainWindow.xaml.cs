@@ -666,15 +666,7 @@ namespace EpgTimer
                     {
                         if (serviceMode == false && initExe == true)
                         {
-                            try
-                            {
-                                //EpgTimerTaskがMutex付きで動作しているときはEpgTimerSrvの終了をEpgTimerTaskに任せる
-                                Mutex.OpenExisting("Global\\EpgTimer_Bon2_Lite", System.Security.AccessControl.MutexRights.Synchronize);
-                            }
-                            catch (WaitHandleCannotBeOpenedException)
-                            {
-                                cmd.SendClose();
-                            }
+                            cmd.SendClose();
                         }
                         mutex.ReleaseMutex();
                         mutex.Close();

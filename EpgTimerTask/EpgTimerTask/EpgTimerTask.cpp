@@ -41,21 +41,7 @@ BOOL CEpgTimerTaskApp::InitInstance()
 	InitCtrls.dwICC = ICC_WIN95_CLASSES;
 	InitCommonControlsEx(&InitCtrls);
 
-	// コマンドオプションを解析
-	BOOL bStartSrv = FALSE;
-	int argc;
-	LPWSTR *argv = CommandLineToArgvW(GetCommandLine(), &argc);
-	if (argv != NULL) {
-		for (int i = 1; i < argc; i++) {
-			if (!lstrcmpi(argv[i], L"/startsrv")) {
-				bStartSrv = TRUE;
-				break;
-			}
-		}
-		LocalFree(argv);
-	}
-
-	CEpgTimerTaskDlg dlg(bStartSrv);
+	CEpgTimerTaskDlg dlg;
 	INT_PTR nResponse = dlg.DoModal();
 	if (nResponse == IDOK)
 	{
