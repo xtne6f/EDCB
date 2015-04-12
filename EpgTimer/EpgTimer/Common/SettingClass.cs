@@ -263,7 +263,6 @@ namespace EpgTimer
         private bool minHide;
         private bool mouseScrollAuto;
         private int noStyle;
-        private bool fixSearchResult;
         private bool cautionManyChange;
         private int cautionManyNum;
 
@@ -1082,11 +1081,6 @@ namespace EpgTimer
             get { return noStyle; }
             set { noStyle = value; }
         }
-        public bool FixSearchResult
-        {
-            get { return fixSearchResult; }
-            set { fixSearchResult = value; }
-        }
         public bool CautionManyChange
         {
             get { return cautionManyChange; }
@@ -1246,7 +1240,6 @@ namespace EpgTimer
             minHide = true;
             mouseScrollAuto = false;
             noStyle = 0;
-            fixSearchResult = false;
             cautionManyChange = true;
             cautionManyNum = 10;
         }

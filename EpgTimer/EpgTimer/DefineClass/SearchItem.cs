@@ -98,14 +98,7 @@ namespace EpgTimer
             {
                 if (EventInfo == null) return "";
                 //
-                if (Settings.Instance.FixSearchResult)
-                {
-                    return "省略";
-                }
-                else
-                {
-                    return EventInfo.ShortInfo.text_char.Replace("\r\n", " ");
-                }
+                return EventInfo.ShortInfo.text_char.Replace("\r\n", " ");
             }
         }
         public String JyanruKey

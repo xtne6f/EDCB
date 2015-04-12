@@ -301,7 +301,6 @@ namespace EpgTimer.Setting
                     checkBox_noToolTips.IsChecked = Settings.Instance.NoToolTip;
                     checkBox_noBallonTips.IsChecked = Settings.Instance.NoBallonTips;
                     checkBox_playDClick.IsChecked = Settings.Instance.PlayDClick;
-                    checkBox_fixSearchResult.IsChecked = Settings.Instance.FixSearchResult;
                     checkBox_minHide.IsChecked = Settings.Instance.MinHide;
                     checkBox_cautionManyChange.IsChecked = Settings.Instance.CautionManyChange;
                     textBox_cautionManyChange.Text = Settings.Instance.CautionManyNum.ToString(); 
@@ -650,7 +649,6 @@ namespace EpgTimer.Setting
             Settings.Instance.NoToolTip = (checkBox_noToolTips.IsChecked == true);
             Settings.Instance.NoBallonTips = (checkBox_noBallonTips.IsChecked == true);
             Settings.Instance.PlayDClick = (checkBox_playDClick.IsChecked == true);
-            Settings.Instance.FixSearchResult = (checkBox_fixSearchResult.IsChecked == true);
             Settings.Instance.CautionManyChange = (checkBox_cautionManyChange.IsChecked != false);
             try
             {

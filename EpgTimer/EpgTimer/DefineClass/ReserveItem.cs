@@ -103,15 +103,7 @@ namespace EpgTimer
                 return mutil.MarginEndText(ReserveInfo.RecSetting);
             }
         }
-        public override String ProgramContent
-        {
-            get
-            {
-                if (EventInfo == null) return "";
-                //
-                return EventInfo.ShortInfo.text_char.Replace("\r\n", " ");
-            }
-        }
+        //public String ProgramContent -> SearchItem.cs
         //public String JyanruKey -> SearchItem.cs
         public String RecMode
         {
