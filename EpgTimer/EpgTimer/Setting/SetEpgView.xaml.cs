@@ -53,11 +53,6 @@ namespace EpgTimer.Setting
                 comboBox_colorTitle1.DataContext = colorList;
                 comboBox_colorTitle2.DataContext = colorList;
 
-                if (Settings.Instance.ContentColorList.Count == 0)
-                {
-                    Settings.LoadFromXmlFile();
-                }
-
                 comboBox0.SelectedIndex = Math.Max(0, colorList.IndexOfKey(Settings.Instance.ContentColorList[0x00]));
                 comboBox1.SelectedIndex = Math.Max(0, colorList.IndexOfKey(Settings.Instance.ContentColorList[0x01]));
                 comboBox2.SelectedIndex = Math.Max(0, colorList.IndexOfKey(Settings.Instance.ContentColorList[0x02]));

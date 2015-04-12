@@ -41,18 +41,16 @@ namespace EpgTimer
         {
             string appName = System.IO.Path.GetFileNameWithoutExtension(System.Reflection.Assembly.GetEntryAssembly().Location);
             CommonManager.Instance.NWMode = appName.StartsWith("EpgTimerNW", StringComparison.OrdinalIgnoreCase);
-            //CommonManager.Instance.NWMode = true;
 
+            Settings.LoadFromXmlFile(CommonManager.Instance.NWMode);
             if (CommonManager.Instance.NWMode == true)
             {
-                Settings.LoadFromXmlFileNW();
                 CommonManager.Instance.DB.SetNoAutoReloadEPG(Settings.Instance.NgAutoEpgLoadNW);
                 cmd.SetSendMode(true);
                 cmd.SetNWSetting("", Settings.Instance.NWServerPort);
             }
             else
             {
-                Settings.LoadFromXmlFile();
                 try
                 {
                     using (var sr = new System.IO.StreamReader(SettingPath.SettingFolderPath + "\\ChSet5.txt", Encoding.Default))
