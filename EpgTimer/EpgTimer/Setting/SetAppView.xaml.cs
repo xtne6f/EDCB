@@ -366,8 +366,6 @@ namespace EpgTimer.Setting
                 }
                 textBox_tcpPort.Text = IniFileHandler.GetPrivateProfileInt("SET", "TCPPort", 4510, SettingPath.TimerSrvIniPath).ToString();
 
-                textBox_baloonclose.Text = IniFileHandler.GetPrivateProfileInt("SET", "Baloon", 0, SettingPath.TimerSrvIniPath).ToString();
-
                 Settings.GetDefSearchSetting(ref defSearchKey);
 
                 checkBox_showAsTab.IsChecked = Settings.Instance.ViewButtonShowAsTab;
@@ -648,7 +646,6 @@ namespace EpgTimer.Setting
             IniFileHandler.WritePrivateProfileString("SET", "EnableTCPSrv", setValue, SettingPath.TimerSrvIniPath);
 
             IniFileHandler.WritePrivateProfileString("SET", "TCPPort", textBox_tcpPort.Text, SettingPath.TimerSrvIniPath);
-            IniFileHandler.WritePrivateProfileString("SET", "Baloon", textBox_baloonclose.Text, SettingPath.TimerSrvIniPath);
 
             Settings.Instance.NoToolTip = (checkBox_noToolTips.IsChecked == true);
             Settings.Instance.NoBallonTips = (checkBox_noBallonTips.IsChecked == true);
