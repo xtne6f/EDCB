@@ -41,6 +41,8 @@ private:
 	bool QueryShutdown(BYTE rebootFlag, BYTE suspendMode);
 	//ユーザーがPCを使用中かどうか
 	bool IsUserWorking() const;
+	//共有フォルダのTSファイルにアクセスがあるかどうか
+	bool IsFindShareTSFile() const;
 	//抑制条件のプロセスが起動しているかどうか
 	bool IsFindNoSuspendExe() const;
 	bool AutoAddReserveEPG(const EPG_AUTO_ADD_DATA& data);
@@ -124,6 +126,7 @@ private:
 	WORD defShutdownMode;
 	DWORD ngUsePCTime;
 	bool ngFileStreaming;
+	bool ngShareFile;
 	vector<wstring> noSuspendExeList;
 	vector<wstring> tvtestUseBon;
 	bool nwtvUdp;

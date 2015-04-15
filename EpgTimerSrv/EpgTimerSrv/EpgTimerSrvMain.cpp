@@ -13,6 +13,8 @@
 #include "resource.h"
 #include <shellapi.h>
 #include <tlhelp32.h>
+#include <LM.h>
+#pragma comment (lib, "netapi32.lib")
 
 static const char UPNP_URN_DMS_1[] = "urn:schemas-upnp-org:device:MediaServer:1";
 
@@ -589,7 +591,7 @@ bool CEpgTimerSrvMain::IsSuspendOK()
 	bool ngFileStreaming_;
 	{
 		CBlockLock lock(&this->settingLock);
-		if( IsFindNoSuspendExe() ){
+		if( IsFindNoSuspendExe() || IsFindShareTSFile() ){
 			return false;
 		}
 		//rebootFlag時の復帰マージンを基準に3分余裕を加えたもの
@@ -665,6 +667,7 @@ void CEpgTimerSrvMain::ReloadSetting()
 		}
 	}
 	this->ngFileStreaming = GetPrivateProfileInt(L"NO_SUSPEND", L"NoFileStreaming", 0, iniPath.c_str()) != 0;
+	this->ngShareFile = GetPrivateProfileInt(L"NO_SUSPEND", L"NoShareFile", 0, iniPath.c_str()) != 0;
 	this->useSyoboi = GetPrivateProfileInt(L"SYOBOI", L"use", 0, iniPath.c_str()) != 0;
 
 	this->noSuspendExeList.clear();
@@ -832,6 +835,25 @@ bool CEpgTimerSrvMain::IsUserWorking() const
 	LASTINPUTINFO lii;
 	lii.cbSize = sizeof(LASTINPUTINFO);
 	return this->ngUsePCTime == MAXDWORD || this->ngUsePCTime && GetLastInputInfo(&lii) && GetTickCount() - lii.dwTime < this->ngUsePCTime;
+}
+
+bool CEpgTimerSrvMain::IsFindShareTSFile() const
+{
+	bool found = false;
+	FILE_INFO_3* fileInfo;
+	DWORD entriesread;
+	DWORD totalentries;
+	if( this->ngShareFile && NetFileEnum(NULL, NULL, NULL, 3, (LPBYTE*)&fileInfo, MAX_PREFERRED_LENGTH, &entriesread, &totalentries, NULL) == NERR_Success ){
+		for( DWORD i = 0; i < entriesread; i++ ){
+			if( IsExt(fileInfo[i].fi3_pathname, L".ts") != FALSE ){
+				OutputDebugString(L"共有フォルダTSアクセス\r\n");
+				found = true;
+				break;
+			}
+		}
+		NetApiBufferFree(fileInfo);
+	}
+	return found;
 }
 
 bool CEpgTimerSrvMain::IsFindNoSuspendExe() const
