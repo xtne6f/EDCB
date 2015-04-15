@@ -1082,25 +1082,23 @@ bool CTunerBankCtrl::OpenTuner(bool minWake, bool nwUdp, bool nwTcp, bool standb
 		GetModuleFolderPath(strExecute);
 		strExecute += L"\\EpgDataCap_Bon.exe";
 	}
-	strExecute = L"\"" + strExecute + L"\" ";
 
 	GetPrivateProfileString(L"APP_CMD_OPT", L"Bon", L"-d", buff, 512, strIni.c_str());
-	strExecute += buff;
-	strExecute += L" " + this->bonFileName;
+	wstring strParam = wstring(L" ") + buff + L" " + this->bonFileName;
 
 	if( minWake ){
 		GetPrivateProfileString(L"APP_CMD_OPT", L"Min", L"-min", buff, 512, strIni.c_str());
-		strExecute += L" ";
-		strExecute += buff;
+		strParam += L" ";
+		strParam += buff;
 	}
 	//引数"-noview"は扱わない(いまのところ何の効果もないため)
 	if( nwUdp == false && nwTcp == false ){
 		GetPrivateProfileString(L"APP_CMD_OPT", L"NetworkOff", L"-nonw", buff, 512, strIni.c_str());
-		strExecute += L" ";
-		strExecute += buff;
+		strParam += L" ";
+		strParam += buff;
 	}else{
-		strExecute += nwUdp ? L" -nwudp" : L"";
-		strExecute += nwTcp ? L" -nwtcp" : L"";
+		strParam += nwUdp ? L" -nwudp" : L"";
+		strParam += nwTcp ? L" -nwtcp" : L"";
 	}
 
 	//原作と異なりイベントオブジェクト"Global\\EpgTimerSrv_OpenTuner_Event"による排他制御はしない
@@ -1113,7 +1111,7 @@ bool CTunerBankCtrl::OpenTuner(bool minWake, bool nwUdp, bool nwTcp, bool standb
 		this->notifyManager.GetRegistGUI(&registGUIMap);
 		for( map<DWORD, DWORD>::iterator itr = registGUIMap.begin(); itr != registGUIMap.end(); itr++ ){
 			ctrlCmd.SetPipeSetting(CMD2_GUI_CTRL_WAIT_CONNECT, CMD2_GUI_CTRL_PIPE, itr->first);
-			if( ctrlCmd.SendGUIExecute(strExecute.c_str(), &this->tunerPid) == CMD_SUCCESS ){
+			if( ctrlCmd.SendGUIExecute(L'"' + strExecute + L'"' + strParam, &this->tunerPid) == CMD_SUCCESS ){
 				//ハンドル開く前に終了するかもしれない
 				this->hTunerProcess = OpenProcess(SYNCHRONIZE | PROCESS_TERMINATE | PROCESS_SET_INFORMATION, FALSE, this->tunerPid);
 				if( this->hTunerProcess ){
@@ -1127,8 +1125,8 @@ bool CTunerBankCtrl::OpenTuner(bool minWake, bool nwUdp, bool nwTcp, bool standb
 		PROCESS_INFORMATION pi;
 		STARTUPINFO si = {};
 		si.cb = sizeof(si);
-		vector<WCHAR> strBuff(strExecute.c_str(), strExecute.c_str() + strExecute.size() + 1);
-		if( CreateProcess(NULL, &strBuff.front(), NULL, NULL, FALSE, this->processPriority, NULL, NULL, &si, &pi) != FALSE ){
+		vector<WCHAR> strBuff(strParam.c_str(), strParam.c_str() + strParam.size() + 1);
+		if( CreateProcess(strExecute.c_str(), &strBuff.front(), NULL, NULL, FALSE, this->processPriority, NULL, NULL, &si, &pi) != FALSE ){
 			CloseHandle(pi.hThread);
 			this->hTunerProcess = pi.hProcess;
 			this->tunerPid = pi.dwProcessId;

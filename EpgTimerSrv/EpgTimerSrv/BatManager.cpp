@@ -132,9 +132,6 @@ UINT WINAPI CBatManager::BatWorkThread(LPVOID param)
 				GetModuleFolderPath(batFilePath);
 				batFilePath += L"\\EpgTimer_Bon_RecEnd.bat";
 				if( CreateBatFile(work, work.batFilePath.c_str(), batFilePath.c_str()) != FALSE ){
-					wstring strExecute;
-					Format(strExecute, L"\"%s\"", batFilePath.c_str());
-
 					bool executed = false;
 					HANDLE hProcess = NULL;
 					if( GetShellWindow() == NULL ){
@@ -146,10 +143,13 @@ UINT WINAPI CBatManager::BatWorkThread(LPVOID param)
 						for( map<DWORD, DWORD>::iterator itr = registGUIMap.begin(); itr != registGUIMap.end(); itr++ ){
 							ctrlCmd.SetPipeSetting(CMD2_GUI_CTRL_WAIT_CONNECT, CMD2_GUI_CTRL_PIPE, itr->first);
 							DWORD pid;
-							if( ctrlCmd.SendGUIExecute(strExecute.c_str(), &pid) == CMD_SUCCESS ){
+							if( ctrlCmd.SendGUIExecute(L'"' + batFilePath + L'"', &pid) == CMD_SUCCESS ){
 								//ハンドル開く前に終了するかもしれない
 								executed = true;
-								hProcess = OpenProcess(SYNCHRONIZE, FALSE, pid);
+								hProcess = OpenProcess(SYNCHRONIZE | PROCESS_SET_INFORMATION, FALSE, pid);
+								if( hProcess ){
+									SetPriorityClass(hProcess, BELOW_NORMAL_PRIORITY_CLASS);
+								}
 								break;
 							}
 						}
@@ -158,8 +158,14 @@ UINT WINAPI CBatManager::BatWorkThread(LPVOID param)
 						PROCESS_INFORMATION pi;
 						STARTUPINFO si = {};
 						si.cb = sizeof(si);
-						vector<WCHAR> strBuff(strExecute.c_str(), strExecute.c_str() + strExecute.size() + 1);
-						if( CreateProcess(NULL, &strBuff.front(), NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi) != FALSE ){
+						si.dwFlags = STARTF_USESHOWWINDOW;
+						si.wShowWindow = SW_SHOWMINNOACTIVE;
+						wstring strParam = L" /c \"\"" + batFilePath + L"\" \"";
+						vector<WCHAR> strBuff(strParam.c_str(), strParam.c_str() + strParam.size() + 1);
+						WCHAR cmdExePath[MAX_PATH];
+						DWORD dwRet = GetEnvironmentVariable(L"ComSpec", cmdExePath, MAX_PATH);
+						if( dwRet && dwRet < MAX_PATH &&
+						    CreateProcess(cmdExePath, &strBuff.front(), NULL, NULL, FALSE, BELOW_NORMAL_PRIORITY_CLASS, NULL, NULL, &si, &pi) != FALSE ){
 							CloseHandle(pi.hThread);
 							hProcess = pi.hProcess;
 						}
