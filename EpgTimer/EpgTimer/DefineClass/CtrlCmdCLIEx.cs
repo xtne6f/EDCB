@@ -10,6 +10,57 @@ namespace EpgTimer
 {
     static class CtrlCmdCLIEx
     {
+        //シリアライズとかもろもろは使えないので地道にコピーする。
+        //ジェネリックは手続きの統一用で、各メソッドは別途定義する。
+        public static List<EpgSearchKeyInfo> Clone(this List<EpgSearchKeyInfo> src) { return CopyObj.Clone(src, CopyData); }
+        public static EpgSearchKeyInfo Clone(this EpgSearchKeyInfo src) { return CopyObj.Clone(src, CopyData); }
+        public static void CopyTo(this EpgSearchKeyInfo src, EpgSearchKeyInfo dest) { CopyObj.CopyTo(src, dest, CopyData); }
+        private static void CopyData(EpgSearchKeyInfo src, EpgSearchKeyInfo dest)
+        {
+            dest.aimaiFlag = src.aimaiFlag;
+            dest.andKey = src.andKey;
+            dest.audioList = src.audioList.ToList();
+            dest.contentList = src.contentList.Clone(); //EpgContentData
+            dest.dateList = src.dateList.Clone();       //EpgSearchDateInfo
+            dest.freeCAFlag = src.freeCAFlag;
+            dest.notContetFlag = src.notContetFlag;
+            dest.notDateFlag = src.notDateFlag;
+            dest.notKey = src.notKey;
+            dest.regExpFlag = src.regExpFlag;
+            dest.serviceList = src.serviceList.ToList();
+            dest.titleOnlyFlag = src.titleOnlyFlag;
+            dest.videoList = src.videoList.ToList();
+            dest.chkRecEnd = src.chkRecEnd;
+            dest.chkRecDay = src.chkRecDay;
+            dest.chkRecNoService = src.chkRecNoService;
+            dest.chkDurationMin = src.chkDurationMin;
+            dest.chkDurationMax = src.chkDurationMax;
+        }
+
+        public static List<EpgContentData> Clone(this List<EpgContentData> src) { return CopyObj.Clone(src, CopyData); }
+        public static EpgContentData Clone(this EpgContentData src) { return CopyObj.Clone(src, CopyData); }
+        public static void CopyTo(this EpgContentData src, EpgContentData dest) { CopyObj.CopyTo(src, dest, CopyData); }
+        private static void CopyData(EpgContentData src, EpgContentData dest)
+        {
+            dest.content_nibble_level_1 = src.content_nibble_level_1;
+            dest.content_nibble_level_2 = src.content_nibble_level_2;
+            dest.user_nibble_1 = src.user_nibble_1;
+            dest.user_nibble_2 = src.user_nibble_2;
+        }
+
+        public static List<EpgSearchDateInfo> Clone(this List<EpgSearchDateInfo> src) { return CopyObj.Clone(src, CopyData); }
+        public static EpgSearchDateInfo Clone(this EpgSearchDateInfo src) { return CopyObj.Clone(src, CopyData); }
+        public static void CopyTo(this EpgSearchDateInfo src, EpgSearchDateInfo dest) { CopyObj.CopyTo(src, dest, CopyData); }
+        private static void CopyData(EpgSearchDateInfo src, EpgSearchDateInfo dest)
+        {
+            dest.endDayOfWeek = src.endDayOfWeek;
+            dest.endHour = src.endHour;
+            dest.endMin = src.endMin;
+            dest.startDayOfWeek = src.startDayOfWeek;
+            dest.startHour = src.startHour;
+            dest.startMin = src.startMin;
+        }
+        
         public static UInt64 Create64Key(this EpgServiceInfo obj)
         {
             return CommonManager.Create64Key(obj.ONID, obj.TSID, obj.SID);
