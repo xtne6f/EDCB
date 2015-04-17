@@ -211,6 +211,7 @@ namespace EpgTimer
 
                 this.Title = "予約登録";
                 button_chg_reserve.Content = "予約";
+                button_chg_reserve.ToolTip = "Ctrl+Shift+A";
                 button_del_reserve.Visibility = System.Windows.Visibility.Hidden;
                 SetReserveTime(DateTime.Now.AddMinutes(1), DateTime.Now.AddMinutes(31));
                 reserveInfo = new ReserveData();
@@ -328,6 +329,7 @@ namespace EpgTimer
                 //予約復旧を提示。これだけで大丈夫だったりする。
                 addMode = true;
                 button_chg_reserve.Content = "再予約";
+                button_chg_reserve.ToolTip = "Ctrl+Shift+A";
                 this.button_del_reserve.IsEnabled = false;
             }
             return retval;
@@ -472,16 +474,14 @@ namespace EpgTimer
             //
             if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control) && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
             {
+                string captionText = button_chg_reserve.Content.ToString();
+                string msgText = button_chg_reserve.Content.ToString();
+
                 switch (e.Key)
                 {
-                    case Key.C:
-                        string captionText = button_chg_reserve.Content.ToString();
-                        string msgText = button_chg_reserve.Content.ToString();
+                    case Key.A:
                         switch (captionText)
                         {
-                            case "変更":
-                                msgText = "この予約を変更します。";
-                                break;
                             case "予約":
                                 msgText = "予約を追加します。";
                                 break;
@@ -494,7 +494,13 @@ namespace EpgTimer
                             this.button_chg_reserve.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                         }
                         break;
-                    case Key.D:
+                    case Key.C:
+                        if (MessageBox.Show("この予約を変更します。\r\nよろしいですか？", "変更の確認", MessageBoxButton.OKCancel) == MessageBoxResult.OK)
+                        {
+                            this.button_chg_reserve.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                        }
+                        break;
+                    case Key.X:
                         if (this.button_del_reserve.Visibility == System.Windows.Visibility.Visible && this.button_del_reserve.IsEnabled == true)
                         {
                             if (MessageBox.Show("この予約を削除します。\r\nよろしいですか？", "削除の確認", MessageBoxButton.OKCancel) == MessageBoxResult.OK)
