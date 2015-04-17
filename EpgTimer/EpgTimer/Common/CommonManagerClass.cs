@@ -789,30 +789,7 @@ namespace EpgTimer
             DateTime endTime = reserveInfo.StartTime + TimeSpan.FromSeconds(reserveInfo.DurationSecond);
             view += endTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss") + "\r\n";
 
-            String recMode = "";
-            switch (reserveInfo.RecSetting.RecMode)
-            {
-                case 0:
-                    recMode = "全サービス";
-                    break;
-                case 1:
-                    recMode = "指定サービス";
-                    break;
-                case 2:
-                    recMode = "全サービス（デコード処理なし）";
-                    break;
-                case 3:
-                    recMode = "指定サービス（デコード処理なし）";
-                    break;
-                case 4:
-                    recMode = "視聴";
-                    break;
-                case 5:
-                    recMode = "無効";
-                    break;
-                default:
-                    break;
-            } 
+            String recMode = ConvertRecModeText(reserveInfo.RecSetting.RecMode);
             String tuijyu = "";
             if (reserveInfo.RecSetting.TuijyuuFlag == 0)
             {
@@ -1308,6 +1285,26 @@ namespace EpgTimer
                     break;
                 case 5:
                     retText = "無効";
+                    break;
+                default:
+                    break;
+            }
+            return retText;
+        }
+
+        public String ConvertViewModeText(byte viewMode)
+        {
+            String retText = "";
+            switch (viewMode)
+            {
+                case 1:
+                    retText = "標準モード";
+                    break;
+                case 2:
+                    retText = "1週間モード";
+                    break;
+                case 3:
+                    retText = "リスト表示モード";
                     break;
                 default:
                     break;
