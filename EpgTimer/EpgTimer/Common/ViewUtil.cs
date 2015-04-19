@@ -137,7 +137,7 @@ namespace EpgTimer
             return false;
         }
 
-        public bool ReloadReserveData(ContentControl Owner = null)
+        public bool ReloadReserveData(Control Owner = null)
         {
             if (EpgTimerNWNotConnect() == true) return false;
 

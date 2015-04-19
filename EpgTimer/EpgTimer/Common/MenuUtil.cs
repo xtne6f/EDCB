@@ -613,23 +613,23 @@ namespace EpgTimer
             return retv;
         }
 
-        public void SendAutoAdd(SearchItem item, ContentControl Owner)
+        public void SendAutoAdd(SearchItem item, Control Owner)
         {
             SendAutoAdd(item.EventInfo, Owner);
         }
-        public void SendAutoAdd(EpgEventInfo item, ContentControl Owner)
+        public void SendAutoAdd(EpgEventInfo item, Control Owner)
         {
             SendAutoAdd(item.Title(), item.Create64Key(), Owner);
         }
-        public void SendAutoAdd(RecFileInfo item, ContentControl Owner)
+        public void SendAutoAdd(RecFileInfo item, Control Owner)
         {
             SendAutoAdd(item.Title, item.Create64Key(), Owner);
         }
-        public void SendAutoAdd(ReserveData item, ContentControl Owner)
+        public void SendAutoAdd(ReserveData item, Control Owner)
         {
             SendAutoAdd(item.Title, item.Create64Key(), Owner);
         }
-        public void SendAutoAdd(string Title, UInt64 sidKey, ContentControl Owner)
+        public void SendAutoAdd(string Title, UInt64 sidKey, Control Owner)
         {
             try
             {
@@ -949,7 +949,7 @@ namespace EpgTimer
             return true;
         }
 
-        public bool? OpenSearchItemWithWindow(SearchItem item, ContentControl Owner, byte openMode = 0)
+        public bool? OpenSearchItemWithWindow(SearchItem item, Control Owner, byte openMode = 0)
         {
             if (item == null) return null;
 
@@ -963,7 +963,7 @@ namespace EpgTimer
             }
         }
 
-        public bool? OpenManualReserveWindow(ContentControl Owner)
+        public bool? OpenManualReserveWindow(Control Owner)
         {
             try
             {
@@ -979,7 +979,7 @@ namespace EpgTimer
             }
         }
 
-        public bool? OpenEpgReserveWindow(EpgEventInfo epgInfo, ContentControl Owner, byte openMode = 0)
+        public bool? OpenEpgReserveWindow(EpgEventInfo epgInfo, Control Owner, byte openMode = 0)
         {
             try
             {
@@ -996,7 +996,7 @@ namespace EpgTimer
             }
         }
 
-        public bool? OpenChangeReserveWindow(ReserveData resInfo, ContentControl Owner, byte openMode = 0)
+        public bool? OpenChangeReserveWindow(ReserveData resInfo, Control Owner, byte openMode = 0)
         {
             try
             {
