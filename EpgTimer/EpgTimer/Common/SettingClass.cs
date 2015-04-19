@@ -113,6 +113,7 @@ namespace EpgTimer
         private bool fontBoldTitle;
         private bool noToolTip;
         private bool noBallonTips;
+        private int forceHideBalloonTipSec;
         private bool playDClick;
         private double dragScroll;
         private List<string> contentColorList;
@@ -236,10 +237,10 @@ namespace EpgTimer
         private double searchWndWidth;
         private double searchWndHeight;
         private short autoSaveNotifyLog;
+        private bool showTray;
         private bool minHide;
         private bool mouseScrollAuto;
         private int noStyle;
-        private bool fixSearchResult;
 
         public bool UseCustomEpgView
         {
@@ -305,6 +306,11 @@ namespace EpgTimer
         {
             get { return noBallonTips; }
             set { noBallonTips = value; }
+        }
+        public int ForceHideBalloonTipSec
+        {
+            get { return forceHideBalloonTipSec; }
+            set { forceHideBalloonTipSec = value; }
         }
         public bool PlayDClick
         {
@@ -921,6 +927,11 @@ namespace EpgTimer
             get { return autoSaveNotifyLog; }
             set { autoSaveNotifyLog = value; }
         }
+        public bool ShowTray
+        {
+            get { return showTray; }
+            set { showTray = value; }
+        }
         public bool MinHide
         {
             get { return minHide; }
@@ -935,11 +946,6 @@ namespace EpgTimer
         {
             get { return noStyle; }
             set { noStyle = value; }
-        }
-        public bool FixSearchResult
-        {
-            get { return fixSearchResult; }
-            set { fixSearchResult = value; }
         }
         
         
@@ -1065,10 +1071,10 @@ namespace EpgTimer
             searchWndWidth = 0;
             searchWndHeight = 0;
             autoSaveNotifyLog = 0;
+            showTray = true;
             minHide = true;
             mouseScrollAuto = false;
             noStyle = 0;
-            fixSearchResult = false;
         }
 
         [NonSerialized()]
