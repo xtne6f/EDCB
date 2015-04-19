@@ -1,13 +1,20 @@
 [ビルド環境]
 
-Visual Studio 2010 Professional（Expressは不可）
-http://www.microsoft.com/japan/visualstudio/try
+（以下を順番に入れる）
+
+Visual C++ 2010 Express
+http://go.microsoft.com/fwlink/?LinkId=190491
+
+Visual C# 2010 Express
+http://go.microsoft.com/fwlink/?LinkId=190492
 
 Visual Studio 2010 Service Pack 1
 http://www.microsoft.com/ja-jp/download/details.aspx?id=23691
 
 Windows SDK 7.1
 http://www.microsoft.com/en-us/download/details.aspx?id=8279
+# Visual C++ Compilers のチェックを外してインストールする。でないと失敗する
+# Visual C++ x86/x64 2010 Redistributable を事前にアンインストールしておく必要があるかもしれない
 
 Windows SDK 7.1 用 Microsoft Visual C++ 2010 Service Pack 1 コンパイラ更新プログラム
 http://www.microsoft.com/ja-jp/download/details.aspx?id=4422
@@ -29,15 +36,10 @@ C:\Program Files\Microsoft SDKs\Windows\v7.1\Samples\multimedia\directshow\basec
 
 [ビルド]
 
-必須なものは以下の通り。
-・CtrlCmdCLI
-・EpgDataCap_Bon
-・EpgDataCap3
-・EpgTimer
-・Write_Default
+1.（Expressでビルドする場合のみ）"Document\afxres_h_copy.bat"を実行
 
-ただし、EpgTimerNW をビルドすると CtrlCmdCLI と EpgTimer も同時にビルドされる。
+2."Document\EDCB_VCALL.sln"を開き、ツールバーを[Release][Win32]にしてビルド→ソリューションのビルド
 
+3."EpgTimer\EpgTimer.sln"を 右クリック→プログラムから開く→C# 2010 Express で開き、ツール(T)→設定→上級者設定にチェック、[Release][x86]にしてビルド
 
-[注意]
-ビルドオプションに /arch:SSE2 を指定しているため、SSE2非搭載環境で利用する場合は変更する必要あり。
+4.（EpgTimerNWが必要な場合のみ）生成された"EpgTimer.exe"を"EpgTimerNW.exe"というファイル名でコピー
