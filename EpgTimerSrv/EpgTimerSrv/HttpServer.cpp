@@ -64,6 +64,7 @@ bool CHttpServer::StartServer(unsigned short port, LPCWSTR rootPath_, int (*init
 	//Access Control List
 	string aclU;
 	WtoUTF8(acl ? acl : L"", aclU);
+	aclU = "-0.0.0.0/0," + aclU;
 
 	//í«â¡ÇÃMIMEÉ^ÉCÉv
 	CParseContentTypeText contentType;

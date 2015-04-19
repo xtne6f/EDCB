@@ -632,7 +632,7 @@ void CEpgTimerSrvMain::ReloadSetting()
 			//公開フォルダの場所が変わったのでクリア
 			this->dmsPublicFileList.clear();
 		}
-		GetPrivateProfileString(L"SET", L"HttpAccessControlList", L"+0.0.0.0/0", buff, 512, iniPath.c_str());
+		GetPrivateProfileString(L"SET", L"HttpAccessControlList", L"+127.0.0.1", buff, 512, iniPath.c_str());
 		this->httpAccessControlList = buff;
 		this->httpPort = (unsigned short)GetPrivateProfileInt(L"SET", L"HttpPort", 5510, iniPath.c_str());
 		this->httpSaveLog = enableHttpSrv == 2;
