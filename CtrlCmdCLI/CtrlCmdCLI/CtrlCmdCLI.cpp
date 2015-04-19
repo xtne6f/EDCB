@@ -654,7 +654,9 @@ void CtrlCmdUtil::CopyData(EPGDB_EVENT_INFO* src, Def::EpgEventInfo^% dest)
 	dest->service_id = src->service_id;
 	dest->event_id = src->event_id;
 	dest->StartTimeFlag = src->StartTimeFlag;
-	dest->start_time = ConvertTime( &src->start_time );
+	if( src->StartTimeFlag ){
+		dest->start_time = ConvertTime( &src->start_time );
+	}
 //	CopyData(&src->start_time, dest->start_time);
 	dest->DurationFlag = src->DurationFlag;
 	dest->durationSec = src->durationSec;

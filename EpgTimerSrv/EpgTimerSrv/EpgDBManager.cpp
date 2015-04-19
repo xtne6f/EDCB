@@ -248,6 +248,7 @@ BOOL CEpgDBManager::ConvertEpgInfo(WORD ONID, WORD TSID, WORD SID, EPG_EVENT_INF
 			item.stream_content = src->audioInfo->audioList[i].stream_content;
 			item.component_type = src->audioInfo->audioList[i].component_type;
 			item.component_tag = src->audioInfo->audioList[i].component_tag;
+			item.stream_type = src->audioInfo->audioList[i].stream_type;
 			item.simulcast_group_tag = src->audioInfo->audioList[i].simulcast_group_tag;
 			item.ES_multi_lingual_flag = src->audioInfo->audioList[i].ES_multi_lingual_flag;
 			item.main_component_flag = src->audioInfo->audioList[i].main_component_flag;
