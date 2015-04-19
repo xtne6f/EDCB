@@ -159,7 +159,7 @@ namespace EpgTimer
             try
             {
                 //更新前の選択情報の保存
-                var oldItems = new ListViewSelectedKeeper<SearchItem>(listView_result, true);
+                var oldItems = new ListViewSelectedKeeper(listView_result, true);
 
                 listView_result.DataContext = null;
                 resultList.Clear();
@@ -230,7 +230,7 @@ namespace EpgTimer
             if (MessageBox.Show(text1, caption1, MessageBoxButton.OKCancel, MessageBoxImage.Exclamation, MessageBoxResult.OK) == MessageBoxResult.OK)
             {
                 //更新前の選択情報の保存
-                var oldItems = new ListViewSelectedKeeper<SearchItem>(listView_result, true);
+                var oldItems = new ListViewSelectedKeeper(listView_result, true);
 
                 mutil.ReserveDelete(resultList);
                 RefreshAndSearch();

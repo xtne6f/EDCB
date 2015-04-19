@@ -96,7 +96,7 @@ namespace EpgTimer
             try
             {
                 //更新前の選択情報の保存
-                var oldItems = new ListViewSelectedKeeper<ReserveItem>(listView_reserve, true);
+                var oldItems = new ListViewSelectedKeeper(listView_reserve, true);
 
                 listView_reserve.DataContext = null;
                 reserveList.Clear();

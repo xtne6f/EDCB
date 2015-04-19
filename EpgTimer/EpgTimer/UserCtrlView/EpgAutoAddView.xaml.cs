@@ -110,7 +110,7 @@ namespace EpgTimer
             try
             {
                 //更新前の選択情報の保存
-                var oldItems = new ListViewSelectedKeeper<EpgAutoDataItem>(listView_key, true);
+                var oldItems = new ListViewSelectedKeeper(listView_key, true);
 
                 listView_key.DataContext = null;
                 resultList.Clear();

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Collections;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -10,26 +11,27 @@ using CtrlCmdCLI.Def;
 
 namespace EpgTimer
 {
-    public class ListViewSelectedKeeper<T> where T : class
+    public class ListViewSelectedKeeper
     {
         //リスト番組表で全選択状態でチャンネル選択更新してしまったりしたときなどでも大丈夫なように、
         //一応選択数の上限を設定しておく。
         public uint MaxRestoreNum = 100;
         
-        protected ListView listView = null;
-        public T oldItem = null;
-        public List<T> oldItems = null;
+        protected ListBox listBox = null;
+        public object oldItem = null;
+        public IList oldItems = null;
         public bool allSelected = false;
+        protected Func<object, ulong> getKey = null;
 
-        public ListViewSelectedKeeper(ListView list, bool DoStoringNow = false)
+        public ListViewSelectedKeeper(ListBox list, bool DoStoringNow = false, Func<object, ulong> _key = null)
         {
-            listView = list;
+            listBox = list;
             if (DoStoringNow) StoreListViewSelected();
+            getKey = _key;
         }
 
-        private Func<T, ulong> SetFunc()
+        private Func<object, ulong> SetFunc()
         {
-            //コンストラクタでやった方がいいのかもだけど、ReserveItemがwhere:newの条件外なので少し面倒
             switch (oldItem.GetType().Name)
             {
                 case "ReserveItem":
@@ -49,11 +51,11 @@ namespace EpgTimer
 
         public void StoreListViewSelected()
         {
-            if (listView != null && listView.SelectedItem != null)
+            if (listBox != null && listBox.SelectedItem != null)
             {
-                oldItem = (T)listView.SelectedItem;
-                oldItems = listView.SelectedItems.Cast<T>().ToList();
-                allSelected = (oldItems.Count == listView.Items.Count);
+                oldItem = listBox.SelectedItem;
+                oldItems = listBox.SelectedItems.Cast<object>().ToList();
+                allSelected = (oldItems.Count == listBox.Items.Count);
             }
         }
 
@@ -61,25 +63,29 @@ namespace EpgTimer
         {
             try
             {
-                if (listView != null && oldItem != null && oldItems != null)
+                if (listBox != null && oldItem != null && oldItems != null)
                 {
                     if (this.allSelected == true)
                     {
-                        listView.SelectAll();
+                        listBox.SelectAll();
                         return;
                     }
 
                     //このUnselectAll()は無いと正しく復元出来ない状況があり得る
-                    listView.UnselectAll();
+                    listBox.UnselectAll();
 
                     //上限越えの場合は、選択を解除して終了。
                     if (oldItems.Count >= this.MaxRestoreNum) return;
 
                     //選択数が少ないときは逆に遅くなる気もするが、Dictionaryにしておく
-                    var listKeys = new Dictionary<ulong, T>();
-                    Func<T, ulong> getKey = SetFunc();
+                    var listKeys = new Dictionary<ulong, object>();
 
-                    foreach (T listItem1 in listView.Items)
+                    if (getKey == null)
+                    {
+                        getKey = SetFunc();
+                    }
+
+                    foreach (object listItem1 in listBox.Items)
                     {
                         //重複するキーは基本的に無いという前提
                         try
@@ -89,23 +95,23 @@ namespace EpgTimer
                         catch { }
                     }
 
-                    T setItem;
+                    object setItem;
                     if (listKeys.TryGetValue(getKey(oldItem), out setItem))
                     {
-                        listView.SelectedItem = setItem;
+                        listBox.SelectedItem = setItem;
                     }
 
-                    foreach (T oldItem1 in oldItems)
+                    foreach (object oldItem1 in oldItems)
                     {
                         if (listKeys.TryGetValue(getKey(oldItem1), out setItem))
                         {
                             //数が多いとき、このAddが致命的に遅い
-                            listView.SelectedItems.Add(setItem);
+                            listBox.SelectedItems.Add(setItem);
                         }
                     }
 
-                    //画面更新が入るので最後に実行する
-                    listView.ScrollIntoView(listView.SelectedItem);
+                    //画面更新が入るので最後に実行する。SelectedItem==nullのときScrollIntoViewは何もしない。
+                    listBox.ScrollIntoView(listBox.SelectedItem);
                 }
             }
             catch (Exception ex)

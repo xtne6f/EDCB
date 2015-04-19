@@ -130,7 +130,7 @@ namespace EpgTimer
             try
             {
                 //更新前の選択情報の保存
-                var oldItems = new ListViewSelectedKeeper<RecInfoItem>(listView_recinfo, true);
+                var oldItems = new ListViewSelectedKeeper(listView_recinfo, true);
 
                 listView_recinfo.DataContext = null;
                 resultList.Clear();

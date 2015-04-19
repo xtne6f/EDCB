@@ -133,7 +133,7 @@ namespace EpgTimer
                 //更新前の選択情報の保存。
                 //なお、EPG更新の場合はReloadEpgData()でも追加で保存・復元コードを実施する必要があるが、
                 //大きく番組表が変化するEPG更新前後で選択情報を保存する意味もないのでほっておくことにする。
-                var oldItems = new ListViewSelectedKeeper<SearchItem>(listView_event, true);
+                var oldItems = new ListViewSelectedKeeper(listView_event, true);
 
                 listView_event.ItemsSource = null;
                 programList.Clear();
