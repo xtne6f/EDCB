@@ -594,8 +594,8 @@ bool CEpgTimerSrvMain::IsSuspendOK()
 		if( IsFindNoSuspendExe() || IsFindShareTSFile() ){
 			return false;
 		}
-		//rebootFlag時の復帰マージンを基準に3分余裕を加えたもの
-		marginSec = this->wakeMarginSec + 300 + 180;
+		//rebootFlag時の復帰マージンを基準に3分余裕を加えたものと抑制条件のどちらか大きいほう
+		marginSec = max(this->wakeMarginSec + 300 + 180, this->noStandbySec);
 		ngFileStreaming_ = this->ngFileStreaming;
 	}
 	__int64 now = GetNowI64Time();
@@ -668,6 +668,7 @@ void CEpgTimerSrvMain::ReloadSetting()
 	}
 	this->ngFileStreaming = GetPrivateProfileInt(L"NO_SUSPEND", L"NoFileStreaming", 0, iniPath.c_str()) != 0;
 	this->ngShareFile = GetPrivateProfileInt(L"NO_SUSPEND", L"NoShareFile", 0, iniPath.c_str()) != 0;
+	this->noStandbySec = GetPrivateProfileInt(L"NO_SUSPEND", L"NoStandbyTime", 10, iniPath.c_str()) * 60;
 	this->useSyoboi = GetPrivateProfileInt(L"SYOBOI", L"use", 0, iniPath.c_str()) != 0;
 
 	this->noSuspendExeList.clear();

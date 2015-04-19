@@ -127,6 +127,7 @@ private:
 	DWORD ngUsePCTime;
 	bool ngFileStreaming;
 	bool ngShareFile;
+	DWORD noStandbySec;
 	vector<wstring> noSuspendExeList;
 	vector<wstring> tvtestUseBon;
 	bool nwtvUdp;
