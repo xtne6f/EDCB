@@ -25,7 +25,7 @@ namespace EpgTimer
         private bool RedrawReserve = true;
         
         private GridViewSelector gridViewSelector = null;
-        private Action<object, RoutedEventArgs> headerSelect_Click = null;
+        private RoutedEventHandler headerSelect_Click = null;
 
         MainWindow _mainWindow;
 

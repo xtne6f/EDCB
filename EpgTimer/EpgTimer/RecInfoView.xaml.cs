@@ -24,7 +24,7 @@ namespace EpgTimer
         private bool ReloadInfo = true;
 
         private GridViewSelector gridViewSelector = null;
-        private Action<object, RoutedEventArgs> headerSelect_Click = null;
+        private RoutedEventHandler headerSelect_Click = null;
 
         public RecInfoView()
         {
