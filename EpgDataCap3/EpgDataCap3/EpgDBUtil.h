@@ -4,19 +4,9 @@
 #include "./Table/TableUtil.h"
 #include "../../Common/EpgDataCap3Def.h"
 
-typedef struct _NIBBLE_DATA{
-	BYTE content_nibble_level_1;
-	BYTE content_nibble_level_2;
-	BYTE user_nibble_1;
-	BYTE user_nibble_2;
-}NIBBLE_DATA;
+typedef EPG_CONTENT NIBBLE_DATA;
 
-typedef struct _EVENT_DATA2{
-	WORD original_network_id;
-	WORD transport_stream_id;
-	WORD service_id;
-	WORD event_id;
-}EVENT_DATA2;
+typedef EPG_EVENT_DATA EVENT_DATA2;
 
 typedef struct _SHORT_EVENT_INFO{
 	BYTE tableID;		//データ追加時のtable_id （優先度 0x4E > 0x50-0x5F > 0x4F > 0x60-0x6F)
@@ -198,6 +188,15 @@ public:
 		EPG_EVENT_INFO** epgInfoList
 		);
 
+	//指定サービスの全EPG情報を列挙する
+	BOOL EnumEpgInfoList(
+		WORD originalNetworkID,
+		WORD transportStreamID,
+		WORD serviceID,
+		BOOL (CALLBACK *enumEpgInfoListProc)(DWORD, EPG_EVENT_INFO*, LPVOID),
+		LPVOID param
+		);
+
 	//蓄積されたEPG情報のあるサービス一覧を取得する
 	//SERVICE_EXT_INFOの情報はない場合がある
 	//引数：
@@ -322,4 +321,5 @@ protected:
 	BOOL CheckSectionAll(map<WORD, SECTION_FLAG_INFO>* sectionMap, BOOL leitFlag = FALSE);
 
 	void CopyEpgInfo(EPG_EVENT_INFO* destInfo, EVENT_INFO* srcInfo);
+	void RefCopyEpgInfo(EPG_EVENT_INFO* destInfo, vector<BYTE>* destAudioListSpace, EVENT_INFO* srcInfo);
 };

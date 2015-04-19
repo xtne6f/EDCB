@@ -96,6 +96,19 @@ typedef DWORD (WINAPI *GetEpgInfoListEP3)(
 	EPG_EVENT_INFO** epgInfoList
 	);
 
+//指定サービスの全EPG情報を列挙する
+//引数：
+// enumEpgInfoListEP3Proc	[IN]EPG情報のリストを取得するコールバック関数
+// param					[IN]コールバック引数
+typedef DWORD (WINAPI *EnumEpgInfoListEP3)(
+	DWORD id,
+	WORD originalNetworkID,
+	WORD transportStreamID,
+	WORD serviceID,
+	BOOL (CALLBACK *enumEpgInfoListEP3Proc)(DWORD epgInfoListSize, EPG_EVENT_INFO* epgInfoList, LPVOID param),
+	LPVOID param
+	);
+
 //EPGデータの蓄積状態をリセットする
 //引数：
 // id						[IN]識別ID
@@ -243,6 +256,18 @@ public:
 		EPG_EVENT_INFO** epgInfoList
 		);
 
+	//指定サービスの全EPG情報を列挙する
+	//引数：
+	// enumEpgInfoListProc		[IN]EPG情報のリストを取得するコールバック関数
+	// param					[IN]コールバック引数
+	DWORD EnumEpgInfoList(
+		WORD originalNetworkID,
+		WORD transportStreamID,
+		WORD serviceID,
+		BOOL (CALLBACK *enumEpgInfoListProc)(DWORD epgInfoListSize, EPG_EVENT_INFO* epgInfoList, LPVOID param),
+		LPVOID param
+		);
+
 	//EPGデータの蓄積状態をリセットする
 	void ClearSectionStatus();
 
@@ -306,6 +331,7 @@ protected:
 	AddTSPacketEP3			pfnAddTSPacketEP3;
 	GetTSIDEP3				pfnGetTSIDEP3;
 	GetEpgInfoListEP3		pfnGetEpgInfoListEP3;
+	EnumEpgInfoListEP3		pfnEnumEpgInfoListEP3;
 	ClearSectionStatusEP3	pfnClearSectionStatusEP3;
 	GetSectionStatusEP3		pfnGetSectionStatusEP3;
 	GetServiceListActualEP3	pfnGetServiceListActualEP3;

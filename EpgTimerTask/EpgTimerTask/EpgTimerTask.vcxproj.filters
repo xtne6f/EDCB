@@ -69,9 +69,6 @@
     <ClInclude Include="..\..\Common\CtrlCmdUtil2.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Common\EpgTimerUtil.h">
-      <Filter>ヘッダー ファイル\Common</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Common\ErrDef.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
@@ -120,9 +117,6 @@
       <Filter>ソース ファイル\Common</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Common\CtrlCmdUtil2.cpp">
-      <Filter>ソース ファイル\Common</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Common\EpgTimerUtil.cpp">
       <Filter>ソース ファイル\Common</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Common\PathUtil.cpp">

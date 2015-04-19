@@ -102,6 +102,24 @@ DWORD WINAPI GetEpgInfoListEP(
 	EPG_EVENT_INFO** epgInfoList
 	);
 
+//指定サービスの全EPG情報を列挙する
+//仕様はGetEpgInfoListEP()を継承、戻り値がNO_ERRのときコールバックが発生する
+//初回コールバックでepgInfoListSizeに全EPG情報の個数、epgInfoListにNULLが入る
+//次回からはepgInfoListSizeに列挙ごとのEPG情報の個数が入る
+//FALSEを返すと列挙を中止できる
+//引数：
+// enumEpgInfoListEPProc	[IN]EPG情報のリストを取得するコールバック関数
+// param					[IN]コールバック引数
+__declspec(dllexport)
+DWORD WINAPI EnumEpgInfoListEP(
+	DWORD id,
+	WORD originalNetworkID,
+	WORD transportStreamID,
+	WORD serviceID,
+	BOOL (CALLBACK *enumEpgInfoListEPProc)(DWORD epgInfoListSize, EPG_EVENT_INFO* epgInfoList, LPVOID param),
+	LPVOID param
+	);
+
 //指定サービスの現在or次のEPG情報を取得する
 //戻り値：
 // エラーコード

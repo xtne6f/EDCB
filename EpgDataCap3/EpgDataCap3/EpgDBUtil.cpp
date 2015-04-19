@@ -1359,6 +1359,68 @@ BOOL CEpgDBUtil::GetEpgInfoList(
 	return TRUE;
 }
 
+//アドレスxをTのアラインメントで切り上げて返す
+template<class T> static inline T* AlignCeil(void* x)
+{
+	return (T*)(((size_t)x + (__alignof(T) - 1)) & ~(__alignof(T) - 1));
+}
+
+//指定サービスの全EPG情報を列挙する
+BOOL CEpgDBUtil::EnumEpgInfoList(
+	WORD originalNetworkID,
+	WORD transportStreamID,
+	WORD serviceID,
+	BOOL (CALLBACK *enumEpgInfoListProc)(DWORD, EPG_EVENT_INFO*, LPVOID),
+	LPVOID param
+	)
+{
+	CBlockLock lock(&this->dbLock);
+
+	map<ULONGLONG, SERVICE_EVENT_INFO*>::iterator itr =
+		this->serviceEventMap.find(_Create64Key(originalNetworkID, transportStreamID, serviceID));
+	if( itr == this->serviceEventMap.end() || itr->second->eventMap.empty() ){
+		return FALSE;
+	}
+	if( enumEpgInfoListProc((DWORD)itr->second->eventMap.size(), NULL, param) == FALSE ){
+		return TRUE;
+	}
+
+	BYTE info[__alignof(EPG_EVENT_INFO) + sizeof(EPG_EVENT_INFO) * 8];
+	BYTE shortInfo[__alignof(EPG_SHORT_EVENT_INFO) + sizeof(EPG_SHORT_EVENT_INFO) * 8];
+	BYTE extInfo[__alignof(EPG_EXTENDED_EVENT_INFO) + sizeof(EPG_EXTENDED_EVENT_INFO) * 8];
+	BYTE contentInfo[__alignof(EPG_CONTEN_INFO) + sizeof(EPG_CONTEN_INFO) * 8];
+	BYTE componentInfo[__alignof(EPG_COMPONENT_INFO) + sizeof(EPG_COMPONENT_INFO) * 8];
+	BYTE audioInfo[__alignof(EPG_AUDIO_COMPONENT_INFO) + sizeof(EPG_AUDIO_COMPONENT_INFO) * 8];
+	BYTE eventGroupInfo[__alignof(EPG_EVENTGROUP_INFO) + sizeof(EPG_EVENTGROUP_INFO) * 8];
+	BYTE eventRelayInfo[__alignof(EPG_EVENTGROUP_INFO) + sizeof(EPG_EVENTGROUP_INFO) * 8];
+	vector<BYTE> audioListSpace[8];
+
+	map<WORD, EVENT_INFO*>::iterator itrEvt;
+	DWORD count = 0;
+	for( itrEvt = itr->second->eventMap.begin(); itrEvt != itr->second->eventMap.end(); itrEvt++ ){
+		//デストラクタを呼ばないよう領域だけ割り当て(POD構造体だけなので無問題)、マスターを直接参照して構築する
+		EPG_EVENT_INFO* item = AlignCeil<EPG_EVENT_INFO>(info) + count;
+		item->shortInfo = AlignCeil<EPG_SHORT_EVENT_INFO>(shortInfo) + count;
+		item->extInfo = AlignCeil<EPG_EXTENDED_EVENT_INFO>(extInfo) + count;
+		item->contentInfo = AlignCeil<EPG_CONTEN_INFO>(contentInfo) + count;
+		item->componentInfo = AlignCeil<EPG_COMPONENT_INFO>(componentInfo) + count;
+		item->audioInfo = AlignCeil<EPG_AUDIO_COMPONENT_INFO>(audioInfo) + count;
+		item->eventGroupInfo = AlignCeil<EPG_EVENTGROUP_INFO>(eventGroupInfo) + count;
+		item->eventRelayInfo = AlignCeil<EPG_EVENTGROUP_INFO>(eventRelayInfo) + count;
+		RefCopyEpgInfo(item, audioListSpace + count, itrEvt->second);
+		if( ++count >= 8 ){
+			if( enumEpgInfoListProc(count, AlignCeil<EPG_EVENT_INFO>(info), param) == FALSE ){
+				return TRUE;
+			}
+			count = 0;
+		}
+	}
+	if( count > 0 ){
+		enumEpgInfoListProc(count, AlignCeil<EPG_EVENT_INFO>(info), param);
+	}
+	return TRUE;
+}
+
 void CEpgDBUtil::CopyEpgInfo(EPG_EVENT_INFO* destInfo, EVENT_INFO* srcInfo)
 {
 	destInfo->event_id = srcInfo->event_id;
@@ -1496,6 +1558,71 @@ void CEpgDBUtil::CopyEpgInfo(EPG_EVENT_INFO* destInfo, EVENT_INFO* srcInfo)
 		}
 	}
 
+}
+
+void CEpgDBUtil::RefCopyEpgInfo(EPG_EVENT_INFO* destInfo, vector<BYTE>* destAudioListSpace, EVENT_INFO* srcInfo)
+{
+	destInfo->event_id = srcInfo->event_id;
+	destInfo->StartTimeFlag = srcInfo->StartTimeFlag;
+	destInfo->start_time = srcInfo->start_time;
+	destInfo->DurationFlag = srcInfo->DurationFlag;
+	destInfo->durationSec = srcInfo->durationSec;
+	destInfo->freeCAFlag = srcInfo->freeCAFlag;
+
+	if( EPG_SHORT_EVENT_INFO* item = destInfo->shortInfo = srcInfo->shortInfo ? destInfo->shortInfo : NULL ){
+		item->event_nameLength = (WORD)srcInfo->shortInfo->event_name.size();
+		item->event_name = const_cast<WCHAR*>(srcInfo->shortInfo->event_name.c_str());
+		item->text_charLength = (WORD)srcInfo->shortInfo->text_char.size();
+		item->text_char = const_cast<WCHAR*>(srcInfo->shortInfo->text_char.c_str());
+	}
+	if( EPG_EXTENDED_EVENT_INFO* item = destInfo->extInfo = srcInfo->extInfo ? destInfo->extInfo : NULL ){
+		item->text_charLength = (WORD)srcInfo->extInfo->text_char.size();
+		item->text_char = const_cast<WCHAR*>(srcInfo->extInfo->text_char.c_str());
+	}
+	if( EPG_CONTEN_INFO* item = destInfo->contentInfo = srcInfo->contentInfo ? destInfo->contentInfo : NULL ){
+		item->listSize = (WORD)srcInfo->contentInfo->nibbleList.size();
+		item->nibbleList = destInfo->contentInfo->listSize ? &srcInfo->contentInfo->nibbleList.front() : NULL;
+	}
+	if( EPG_COMPONENT_INFO* item = destInfo->componentInfo = srcInfo->componentInfo ? destInfo->componentInfo : NULL ){
+		item->stream_content = srcInfo->componentInfo->stream_content;
+		item->component_type = srcInfo->componentInfo->component_type;
+		item->component_tag = srcInfo->componentInfo->component_tag;
+		item->text_charLength = (WORD)srcInfo->componentInfo->text_char.size();
+		item->text_char = const_cast<WCHAR*>(srcInfo->componentInfo->text_char.c_str());
+	}
+	if( EPG_AUDIO_COMPONENT_INFO* item = destInfo->audioInfo = srcInfo->audioInfo ? destInfo->audioInfo : NULL ){
+		item->listSize = (WORD)srcInfo->audioInfo->componentList.size();
+		if( item->listSize > 0 ){
+			destAudioListSpace->resize(__alignof(EPG_AUDIO_COMPONENT_INFO_DATA) + sizeof(EPG_AUDIO_COMPONENT_INFO_DATA) * item->listSize);
+			item->audioList = AlignCeil<EPG_AUDIO_COMPONENT_INFO_DATA>(&destAudioListSpace->front());
+			for( WORD i=0; i<item->listSize; i++ ){
+				AUDIO_COMPONENT_INFO_DATA* dataItem = &srcInfo->audioInfo->componentList[i];
+				item->audioList[i].stream_content = dataItem->stream_content;
+				item->audioList[i].component_type = dataItem->component_type;
+				item->audioList[i].component_tag = dataItem->component_tag;
+				item->audioList[i].stream_type = dataItem->stream_type;
+				item->audioList[i].simulcast_group_tag = dataItem->simulcast_group_tag;
+				item->audioList[i].ES_multi_lingual_flag = dataItem->ES_multi_lingual_flag;
+				item->audioList[i].main_component_flag = dataItem->main_component_flag;
+				item->audioList[i].quality_indicator = dataItem->quality_indicator;
+				item->audioList[i].sampling_rate = dataItem->sampling_rate;
+				item->audioList[i].text_charLength = (WORD)dataItem->text_char.size();
+				item->audioList[i].text_char = const_cast<WCHAR*>(dataItem->text_char.c_str());
+			}
+		}else{
+			item->audioList = NULL;
+		}
+	}
+	if( EPG_EVENTGROUP_INFO* item = destInfo->eventGroupInfo = srcInfo->eventGroupInfo ? destInfo->eventGroupInfo : NULL ){
+		item->group_type = srcInfo->eventGroupInfo->group_type;
+		item->event_count = srcInfo->eventGroupInfo->event_count;
+		item->eventDataList = item->event_count ? &srcInfo->eventGroupInfo->eventData2List.front() : NULL;
+	}
+	if( EPG_EVENTGROUP_INFO* item = destInfo->eventRelayInfo = srcInfo->eventRelayInfo ? destInfo->eventRelayInfo : NULL ){
+		item->group_type = srcInfo->eventRelayInfo->group_type;
+		item->event_count = (BYTE)srcInfo->eventRelayInfo->eventData2List.size();
+		item->eventDataList = item->event_count ? &srcInfo->eventRelayInfo->eventData2List.front() : NULL;
+	}
 }
 
 //蓄積されたEPG情報のあるサービス一覧を取得する
