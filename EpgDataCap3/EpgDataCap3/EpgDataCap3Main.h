@@ -59,6 +59,15 @@ public:
 		EPG_EVENT_INFO** epgInfoList
 		);
 
+	//指定サービスの全EPG情報を列挙する
+	BOOL EnumEpgInfoList(
+		WORD originalNetworkID,
+		WORD transportStreamID,
+		WORD serviceID,
+		BOOL (CALLBACK *enumEpgInfoListProc)(DWORD, EPG_EVENT_INFO*, LPVOID),
+		LPVOID param
+		);
+
 	//指定サービスの現在or次のEPG情報を取得する
 	//引数：
 	// originalNetworkID		[IN]取得対象のoriginalNetworkID

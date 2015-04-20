@@ -233,6 +233,7 @@ void CEpgDataCap_BonDlg::OnDestroy()
 	DeleteTaskBar(GetSafeHwnd(), TRAYICON_ID);
 
 	WINDOWPLACEMENT Pos;
+	Pos.length = sizeof(WINDOWPLACEMENT);
 	GetWindowPlacement(m_hWnd, &Pos);
 
 	WritePrivateProfileInt(L"SET_WINDOW", L"top", Pos.rcNormalPosition.top, this->moduleIniPath.c_str());

@@ -81,7 +81,7 @@ namespace EpgTimer.Setting
                 int num = IniFileHandler.GetPrivateProfileInt("SET", "RecFolderNum", 0, SettingPath.CommonIniPath);
                 if (num == 0)
                 {
-                    listBox_recFolder.Items.Add(SettingPath.DefSettingFolderPath);
+                    listBox_recFolder.Items.Add(SettingPath.SettingFolderPath);
                 }
                 else
                 {
@@ -289,10 +289,14 @@ namespace EpgTimer.Setting
             {
                 System.IO.Directory.CreateDirectory(textBox_setPath.Text);
 
-                IniFileHandler.WritePrivateProfileString("SET", "DataSavePath", textBox_setPath.Text, SettingPath.CommonIniPath);
-                IniFileHandler.WritePrivateProfileString("SET", "RecExePath", textBox_exe.Text, SettingPath.CommonIniPath);
-                IniFileHandler.WritePrivateProfileString("SET", "RecFolderNum", listBox_recFolder.Items.Count.ToString(), SettingPath.CommonIniPath);
-                for (int i = 0; i < listBox_recFolder.Items.Count; i++)
+                IniFileHandler.WritePrivateProfileString("SET", "DataSavePath",
+                    string.Compare(textBox_setPath.Text.TrimEnd('\\'), SettingPath.DefSettingFolderPath, true) == 0 ? null : textBox_setPath.Text, SettingPath.CommonIniPath);
+                IniFileHandler.WritePrivateProfileString("SET", "RecExePath",
+                    string.Compare(textBox_exe.Text, SettingPath.ModulePath.TrimEnd('\\') + "\\EpgDataCap_Bon.exe", true) == 0 ? null : textBox_exe.Text, SettingPath.CommonIniPath);
+                int recFolderCount = listBox_recFolder.Items.Count == 1 &&
+                    string.Compare(((string)listBox_recFolder.Items[0]).TrimEnd('\\'), textBox_setPath.Text.TrimEnd('\\'), true) == 0 ? 0 : listBox_recFolder.Items.Count;
+                IniFileHandler.WritePrivateProfileString("SET", "RecFolderNum", recFolderCount.ToString(), SettingPath.CommonIniPath);
+                for (int i = 0; i < recFolderCount; i++)
                 {
                     string key = "RecFolderPath" + i.ToString();
                     string val = listBox_recFolder.Items[i] as string;

@@ -597,7 +597,7 @@ BOOL CEpgDataCap_BonMain::StartRec(
 		now.wSecond,
 		serviceName.c_str()
 		);
-	ChkFileName(fileName);
+	CheckFileName(fileName);
 
 	vector<REC_FILE_SET_INFO> saveFolder;
 	REC_FILE_SET_INFO forderItem;

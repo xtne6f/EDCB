@@ -79,13 +79,17 @@ protected:
 
 	typedef struct _EPGDB_SERVICE_DATA{
 		EPGDB_SERVICE_INFO serviceInfo;
-		map<WORD, EPGDB_EVENT_INFO*> eventMap;
+		vector<EPGDB_EVENT_INFO*> eventList;
+		EPGDB_EVENT_INFO* eventArray;
+		_EPGDB_SERVICE_DATA(void){
+			eventArray = NULL;
+		}
 		~_EPGDB_SERVICE_DATA(void){
-			map<WORD, EPGDB_EVENT_INFO*>::iterator itr;
-			for( itr = eventMap.begin(); itr != eventMap.end(); itr++ ){
-				SAFE_DELETE(itr->second);
-			}
+			delete[] eventArray;
 		};
+		static bool CompareEventInfo(const EPGDB_EVENT_INFO* l, const EPGDB_EVENT_INFO* r){
+			return l->event_id < r->event_id;
+		}
 	}EPGDB_SERVICE_DATA;
 
 	typedef struct _TIME_SEARCH{
@@ -96,7 +100,8 @@ protected:
 
 	map<LONGLONG, EPGDB_SERVICE_DATA*> epgMap;
 protected:
-	BOOL ConvertEpgInfo(WORD ONID, WORD TSID, WORD SID, EPG_EVENT_INFO* src, EPGDB_EVENT_INFO* dest);
+	static BOOL ConvertEpgInfo(WORD ONID, WORD TSID, WORD SID, EPG_EVENT_INFO* src, EPGDB_EVENT_INFO* dest);
+	static BOOL CALLBACK EnumEpgInfoListProc(DWORD epgInfoListSize, EPG_EVENT_INFO* epgInfoList, LPVOID param);
 	void ClearEpgData();
 	static UINT WINAPI LoadThread(LPVOID param);
 

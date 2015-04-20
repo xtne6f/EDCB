@@ -280,7 +280,7 @@ namespace EpgTimer.Setting
                     checkBox_noToolTips.IsChecked = Settings.Instance.NoToolTip;
                     checkBox_noBallonTips.IsChecked = Settings.Instance.NoBallonTips;
                     checkBox_playDClick.IsChecked = Settings.Instance.PlayDClick;
-                    checkBox_fixSearchResult.IsChecked = Settings.Instance.FixSearchResult;
+                    checkBox_showTray.IsChecked = Settings.Instance.ShowTray;
                     checkBox_minHide.IsChecked = Settings.Instance.MinHide;
 
                     checkBox_wakeReconnect.IsChecked = Settings.Instance.WakeReconnectNW;
@@ -342,8 +342,6 @@ namespace EpgTimer.Setting
                     checkBox_tcpServer.IsChecked = true;
                 }
                 textBox_tcpPort.Text = IniFileHandler.GetPrivateProfileInt("SET", "TCPPort", 4510, SettingPath.TimerSrvIniPath).ToString();
-
-                textBox_baloonclose.Text = IniFileHandler.GetPrivateProfileInt("SET", "Baloon", 0, SettingPath.TimerSrvIniPath).ToString();
 
                 Settings.GetDefSearchSetting(ref defSearchKey);
 
@@ -717,6 +715,7 @@ namespace EpgTimer.Setting
 
             Settings.Instance.CloseMin = (bool)checkBox_closeMin.IsChecked;
             Settings.Instance.WakeMin = (bool)checkBox_minWake.IsChecked;
+            Settings.Instance.ShowTray = (bool)checkBox_showTray.IsChecked;
             Settings.Instance.MinHide = (bool)checkBox_minHide.IsChecked;
 
 
@@ -742,8 +741,6 @@ namespace EpgTimer.Setting
             }
             IniFileHandler.WritePrivateProfileString("SET", "TCPPort", textBox_tcpPort.Text, SettingPath.TimerSrvIniPath);
 
-            IniFileHandler.WritePrivateProfileString("SET", "Baloon", textBox_baloonclose.Text, SettingPath.TimerSrvIniPath);
-
             if (checkBox_noToolTips.IsChecked == true)
             {
                 Settings.Instance.NoToolTip = true;
@@ -768,14 +765,6 @@ namespace EpgTimer.Setting
             else
             {
                 Settings.Instance.PlayDClick = false;
-            }
-            if (checkBox_fixSearchResult.IsChecked == true)
-            {
-                Settings.Instance.FixSearchResult = true;
-            }
-            else
-            {
-                Settings.Instance.FixSearchResult = false;
             }
 
             if (checkBox_wakeReconnect.IsChecked == true)
