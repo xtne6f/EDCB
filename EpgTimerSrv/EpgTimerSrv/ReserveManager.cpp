@@ -301,7 +301,6 @@ bool CReserveManager::AddReserveData(const vector<RESERVE_DATA>& reserveList, bo
 			}
 			r.recFileNameList.clear();
 			r.reserveID = this->reserveText.AddReserve(r);
-			this->reserveTextCache.clear();
 			this->reserveModified = true;
 			modified = true;
 			if( r.recSetting.recMode != RECMODE_NO ){
@@ -445,7 +444,6 @@ bool CReserveManager::ChgReserveData(const vector<RESERVE_DATA>& reserveList, bo
 				}
 			}
 			this->reserveText.ChgReserve(r);
-			this->reserveTextCache.clear();
 			this->reserveModified = true;
 			modified = true;
 		}
@@ -480,7 +478,6 @@ void CReserveManager::DelReserveData(const vector<DWORD>& idList)
 				minStartTime = min(startTime, minStartTime);
 			}
 			this->reserveText.DelReserve(idList[i]);
-			this->reserveTextCache.clear();
 			this->reserveModified = true;
 			modified = true;
 		}
@@ -868,17 +865,17 @@ void CReserveManager::CheckTuijyuTuner()
 		}
 		vector<RESERVE_DATA> chgList;
 		vector<RESERVE_DATA> relayAddList;
-		ReCacheReserveText();
+		const vector<pair<ULONGLONG, DWORD>>& cacheList = this->reserveText.GetSortByEventList();
 
 		vector<pair<ULONGLONG, DWORD>>::const_iterator itrCache = std::lower_bound(
-			this->reserveTextCache.begin(), this->reserveTextCache.end(), pair<ULONGLONG, DWORD>(_Create64Key2(onid, tsid, 0, 0), 0));
-		for( ; itrCache != this->reserveTextCache.end() && itrCache->first <= (ULONGLONG)_Create64Key2(onid, tsid, 0xFFFF, 0xFFFF); ){
+			cacheList.begin(), cacheList.end(), pair<ULONGLONG, DWORD>(_Create64Key2(onid, tsid, 0, 0), 0));
+		for( ; itrCache != cacheList.end() && itrCache->first <= (ULONGLONG)_Create64Key2(onid, tsid, 0xFFFF, 0xFFFF); ){
 			//‹N“®’†‚Ìƒ`ƒƒƒ“ƒlƒ‹‚Éˆê’v‚·‚é—\–ñ‚ðEIT[p/f]‚ÆÆ‡‚·‚é
 			WORD sid = itrCache->first >> 16 & 0xFFFF;
 			EPGDB_EVENT_INFO resPfVal[2];
 			int nowSuccess = itrBank->second->GetEventPF(sid, false, &resPfVal[0]);
 			int nextSuccess = itrBank->second->GetEventPF(sid, true, &resPfVal[1]);
-			for( ; itrCache != this->reserveTextCache.end() && itrCache->first <= (ULONGLONG)_Create64Key2(onid, tsid, sid, 0xFFFF); itrCache++ ){
+			for( ; itrCache != cacheList.end() && itrCache->first <= (ULONGLONG)_Create64Key2(onid, tsid, sid, 0xFFFF); itrCache++ ){
 				if( std::find(chgIDList.begin(), chgIDList.end(), itrCache->second) != chgIDList.end() ){
 					//‚±‚Ì—\–ñ‚Í‚·‚Å‚É•ÏXÏ‚Ý
 					continue;
@@ -1044,7 +1041,6 @@ void CReserveManager::CheckOverTimeReserve()
 				this->recInfoText.AddRecInfo(item);
 			}
 			this->reserveText.DelReserve(itr->first);
-			this->reserveTextCache.clear();
 			this->reserveModified = true;
 			modified = true;
 		}
@@ -1165,7 +1161,6 @@ DWORD CReserveManager::Check()
 					}
 
 					this->reserveText.DelReserve(itrRes->first);
-					this->reserveTextCache.clear();
 					this->reserveModified = true;
 					modified = true;
 
@@ -1438,40 +1433,26 @@ __int64 CReserveManager::GetNextEpgCapTime(__int64 now, int* basicOnlyFlags) con
 	return (now / (60 * I64_1SEC) + minDiff) * (60 * I64_1SEC);
 }
 
-void CReserveManager::ReCacheReserveText() const
-{
-	CBlockLock lock(&this->managerLock);
-
-	if( this->reserveTextCache.empty() ){
-		this->reserveTextCache.reserve(this->reserveText.GetMap().size());
-		for( map<DWORD, RESERVE_DATA>::const_iterator itr = this->reserveText.GetMap().begin(); itr != this->reserveText.GetMap().end(); itr++ ){
-			this->reserveTextCache.push_back(std::make_pair(_Create64Key2(
-				itr->second.originalNetworkID, itr->second.transportStreamID, itr->second.serviceID, itr->second.eventID), itr->first));
-		}
-	}
-	std::sort(this->reserveTextCache.begin(), this->reserveTextCache.end());
-}
-
 bool CReserveManager::IsFindReserve(WORD onid, WORD tsid, WORD sid, WORD eid) const
 {
 	CBlockLock lock(&this->managerLock);
 
-	ReCacheReserveText();
+	const vector<pair<ULONGLONG, DWORD>>& sortList = this->reserveText.GetSortByEventList();
 
 	vector<pair<ULONGLONG, DWORD>>::const_iterator itr = std::lower_bound(
-		this->reserveTextCache.begin(), this->reserveTextCache.end(), pair<ULONGLONG, DWORD>(_Create64Key2(onid, tsid, sid, eid), 0));
-	return itr != this->reserveTextCache.end() && itr->first == (ULONGLONG)_Create64Key2(onid, tsid, sid, eid);
+		sortList.begin(), sortList.end(), pair<ULONGLONG, DWORD>(_Create64Key2(onid, tsid, sid, eid), 0));
+	return itr != sortList.end() && itr->first == (ULONGLONG)_Create64Key2(onid, tsid, sid, eid);
 }
 
 bool CReserveManager::IsFindProgramReserve(WORD onid, WORD tsid, WORD sid, __int64 startTime, DWORD durationSec) const
 {
 	CBlockLock lock(&this->managerLock);
 
-	ReCacheReserveText();
+	const vector<pair<ULONGLONG, DWORD>>& sortList = this->reserveText.GetSortByEventList();
 
 	vector<pair<ULONGLONG, DWORD>>::const_iterator itr = std::lower_bound(
-		this->reserveTextCache.begin(), this->reserveTextCache.end(), pair<ULONGLONG, DWORD>(_Create64Key2(onid, tsid, sid, 0xFFFF), 0));
-	for( ; itr != this->reserveTextCache.end() && itr->first == (ULONGLONG)_Create64Key2(onid, tsid, sid, 0xFFFF); itr++ ){
+		sortList.begin(), sortList.end(), pair<ULONGLONG, DWORD>(_Create64Key2(onid, tsid, sid, 0xFFFF), 0));
+	for( ; itr != sortList.end() && itr->first == (ULONGLONG)_Create64Key2(onid, tsid, sid, 0xFFFF); itr++ ){
 		map<DWORD, RESERVE_DATA>::const_iterator itrRes = this->reserveText.GetMap().find(itr->second);
 		if( itrRes->second.durationSecond == durationSec && ConvertI64Time(itrRes->second.startTime) == startTime ){
 			return true;
@@ -1609,11 +1590,11 @@ bool CReserveManager::ChgAutoAddNoRec(WORD onid, WORD tsid, WORD sid, WORD eid)
 	CBlockLock lock(&this->managerLock);
 
 	vector<RESERVE_DATA> chgList;
-	ReCacheReserveText();
+	const vector<pair<ULONGLONG, DWORD>>& sortList = this->reserveText.GetSortByEventList();
 
 	vector<pair<ULONGLONG, DWORD>>::const_iterator itr = std::lower_bound(
-		this->reserveTextCache.begin(), this->reserveTextCache.end(), pair<ULONGLONG, DWORD>(_Create64Key2(onid, tsid, sid, eid), 0));
-	for( ; itr != this->reserveTextCache.end() && itr->first == (ULONGLONG)_Create64Key2(onid, tsid, sid, eid); itr++ ){
+		sortList.begin(), sortList.end(), pair<ULONGLONG, DWORD>(_Create64Key2(onid, tsid, sid, eid), 0));
+	for( ; itr != sortList.end() && itr->first == (ULONGLONG)_Create64Key2(onid, tsid, sid, eid); itr++ ){
 		map<DWORD, RESERVE_DATA>::const_iterator itrRes = this->reserveText.GetMap().find(itr->second);
 		if( itrRes->second.recSetting.recMode != RECMODE_NO && itrRes->second.comment.compare(0, 7, L"EPGŽ©“®—\–ñ") == 0 ){
 			chgList.push_back(itrRes->second);

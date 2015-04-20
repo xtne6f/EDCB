@@ -105,8 +105,6 @@ private:
 	bool CheckEpgCap(bool isEpgCap);
 	//次のEPG取得時刻を取得する
 	__int64 GetNextEpgCapTime(__int64 now, int* basicOnlyFlags = NULL) const;
-	//必要ならreserveTextCacheListを再構築する
-	void ReCacheReserveText() const;
 	//バンクを監視して必要ならチューナを強制終了するスレッド
 	static UINT WINAPI WatchdogThread(LPVOID param);
 
@@ -124,8 +122,6 @@ private:
 	CBatManager batManager;
 
 	map<DWORD, CTunerBankCtrl*> tunerBankMap;
-	//reserveTextをONID<<48|TSID<<32|SID<<16|EID,予約IDでソートした検索用キャッシュ
-	mutable vector<pair<ULONGLONG, DWORD>> reserveTextCache;
 
 	DWORD ngCapTimeSec;
 	DWORD ngCapTunerTimeSec;
