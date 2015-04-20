@@ -62,7 +62,7 @@ namespace EpgTimer.Setting
                 checkBox_wakeReconnect.IsEnabled = true;
                 checkBox_suspendClose.IsEnabled = true;
                 checkBox_ngAutoEpgLoad.IsEnabled = true;
-                groupBox3.IsEnabled = false;
+                checkBox_srvResident.IsEnabled = false;
             }
 
             try
@@ -82,8 +82,6 @@ namespace EpgTimer.Setting
                     button_taskAdd.Style = null;
                     button_searchDef.Style = null;
                     button_recDef.Style = null;
-                    button_add_srvcoop.Style = null;
-                    button_del_srvcoop.Style = null;
                     button_exe1.Style = null;
                     button_exe2.Style = null;
                     button_add.Style = null;
@@ -123,7 +121,6 @@ namespace EpgTimer.Setting
                     checkBox_reboot.IsChecked = false;
                 }
                 textBox_pcWakeTime.Text = IniFileHandler.GetPrivateProfileInt("SET", "WakeTime", 5, SettingPath.TimerSrvIniPath).ToString();
-                textBox_batWait.Text = IniFileHandler.GetPrivateProfileInt("SET", "BatMargin", 10, SettingPath.TimerSrvIniPath).ToString();
 
                 textBox_megine_start.Text = IniFileHandler.GetPrivateProfileInt("SET", "StartMargin", 5, SettingPath.TimerSrvIniPath).ToString();
                 textBox_margine_end.Text = IniFileHandler.GetPrivateProfileInt("SET", "EndMargin", 2, SettingPath.TimerSrvIniPath).ToString();
@@ -200,22 +197,6 @@ namespace EpgTimer.Setting
                 {
                     checkBox_back_priority.IsChecked = true;
                 }
-                if (IniFileHandler.GetPrivateProfileInt("SET", "SameChPriority", 0, SettingPath.TimerSrvIniPath) == 1)
-                {
-                    checkBox_sameChPriority.IsChecked = true;
-                }
-                if (IniFileHandler.GetPrivateProfileInt("SET", "EventRelay", 0, SettingPath.TimerSrvIniPath) == 1)
-                {
-                    checkBox_enable_relay.IsChecked = true;
-                }
-                if (IniFileHandler.GetPrivateProfileInt("SET", "ResAutoChgTitle", 1, SettingPath.TimerSrvIniPath) == 1)
-                {
-                    checkBox_chgTitle.IsChecked = true;
-                }
-                if (IniFileHandler.GetPrivateProfileInt("SET", "ResAutoChkTime", 0, SettingPath.TimerSrvIniPath) == 1)
-                {
-                    checkBox_chk_TimeOnly.IsChecked = true;
-                }
                 if (IniFileHandler.GetPrivateProfileInt("SET", "AutoDel", 0, SettingPath.TimerSrvIniPath) == 1)
                 {
                     checkBox_autoDel.IsChecked = true;
@@ -239,40 +220,6 @@ namespace EpgTimer.Setting
                 IniFileHandler.GetPrivateProfileString("SET", "RecNamePlugInFile", "RecName_Macro.dll", buff, 512, SettingPath.TimerSrvIniPath);
                 String plugInFile = buff.ToString();
 
-                if (IniFileHandler.GetPrivateProfileInt("SET", "UseSrvCoop", 0, SettingPath.TimerSrvIniPath) == 1)
-                {
-                    checkBox_useSrvCoop.IsChecked = true;
-                }
-                if (IniFileHandler.GetPrivateProfileInt("SET", "UseResSrvCoop", 0, SettingPath.TimerSrvIniPath) == 1)
-                {
-                    checkBox_useResSrvCoop.IsChecked = true;
-                }
-                if (IniFileHandler.GetPrivateProfileInt("SET", "UseEpgSrvCoop", 0, SettingPath.TimerSrvIniPath) == 1)
-                {
-                    checkBox_useEpgSrvCoop.IsChecked = true;
-                }
-                if (IniFileHandler.GetPrivateProfileInt("SET", "NgAddResSrvCoop", 0, SettingPath.TimerSrvIniPath) == 1)
-                {
-                    checkBox_ngResCoop.IsChecked = true;
-                }
-                if (IniFileHandler.GetPrivateProfileInt("SET", "NgEpgFileSrvCoop", 0, SettingPath.TimerSrvIniPath) == 1)
-                {
-                    checkBox_ngEpgCoop.IsChecked = true;
-                }
-
-                int count = IniFileHandler.GetPrivateProfileInt("COOP_SRV", "Num", 0, SettingPath.TimerSrvIniPath);
-                for (int i = 0; i < count; i++)
-                {
-                    CoopServerInfo addItem = new CoopServerInfo();
-                    buff.Clear();
-                    IniFileHandler.GetPrivateProfileString("COOP_SRV", "ADD" + i.ToString(), "", buff, 512, SettingPath.TimerSrvIniPath);
-                    addItem.ServerAddress = buff.ToString();
-
-                    addItem.ServerPort = (UInt32)IniFileHandler.GetPrivateProfileInt("COOP_SRV", "PORT" + i.ToString(), 4510, SettingPath.TimerSrvIniPath);
-
-                    listBox_coopSrv.Items.Add(addItem);
-                }
-
                 try
                 {
                     checkBox_closeMin.IsChecked = Settings.Instance.CloseMin;
@@ -291,6 +238,15 @@ namespace EpgTimer.Setting
                 {
                 }
 
+                if (checkBox_srvResident.IsEnabled)
+                {
+                    int residentMode = IniFileHandler.GetPrivateProfileInt("SET", "ResidentMode", 0, SettingPath.TimerSrvIniPath);
+                    checkBox_srvResident.IsChecked = residentMode >= 1;
+                    checkBox_srvShowTray.IsChecked = residentMode >= 2;
+                    checkBox_srvNoBalloonTip.IsChecked = IniFileHandler.GetPrivateProfileInt("SET", "NoBalloonTip", 0, SettingPath.TimerSrvIniPath) != 0;
+                }
+
+                int count;
                 count = IniFileHandler.GetPrivateProfileInt("DEL_EXT", "Count", 0, SettingPath.TimerSrvIniPath);
                 if (count == 0)
                 {
@@ -486,7 +442,6 @@ namespace EpgTimer.Setting
             }
 
             IniFileHandler.WritePrivateProfileString("SET", "WakeTime", textBox_pcWakeTime.Text, SettingPath.TimerSrvIniPath);
-            IniFileHandler.WritePrivateProfileString("SET", "BatMargin", textBox_batWait.Text, SettingPath.TimerSrvIniPath);
             IniFileHandler.WritePrivateProfileString("SET", "StartMargin", textBox_megine_start.Text, SettingPath.TimerSrvIniPath);
             IniFileHandler.WritePrivateProfileString("SET", "EndMargin", textBox_margine_end.Text, SettingPath.TimerSrvIniPath);
             IniFileHandler.WritePrivateProfileString("SET", "RecAppWakeTime", textBox_appWakeTime.Text, SettingPath.TimerSrvIniPath);
@@ -588,38 +543,6 @@ namespace EpgTimer.Setting
             {
                 IniFileHandler.WritePrivateProfileString("SET", "BackPriority", "0", SettingPath.TimerSrvIniPath);
             }
-            if (checkBox_sameChPriority.IsChecked == true)
-            {
-                IniFileHandler.WritePrivateProfileString("SET", "SameChPriority", "1", SettingPath.TimerSrvIniPath);
-            }
-            else
-            {
-                IniFileHandler.WritePrivateProfileString("SET", "SameChPriority", "0", SettingPath.TimerSrvIniPath);
-            }
-            if (checkBox_enable_relay.IsChecked == true)
-            {
-                IniFileHandler.WritePrivateProfileString("SET", "EventRelay", "1", SettingPath.TimerSrvIniPath);
-            }
-            else
-            {
-                IniFileHandler.WritePrivateProfileString("SET", "EventRelay", "0", SettingPath.TimerSrvIniPath);
-            }
-            if (checkBox_chgTitle.IsChecked == true)
-            {
-                IniFileHandler.WritePrivateProfileString("SET", "ResAutoChgTitle", "1", SettingPath.TimerSrvIniPath);
-            }
-            else
-            {
-                IniFileHandler.WritePrivateProfileString("SET", "ResAutoChgTitle", "0", SettingPath.TimerSrvIniPath);
-            }
-            if (checkBox_chk_TimeOnly.IsChecked == true)
-            {
-                IniFileHandler.WritePrivateProfileString("SET", "ResAutoChkTime", "1", SettingPath.TimerSrvIniPath);
-            }
-            else
-            {
-                IniFileHandler.WritePrivateProfileString("SET", "ResAutoChkTime", "0", SettingPath.TimerSrvIniPath);
-            }
             if (checkBox_autoDel.IsChecked == true)
             {
                 IniFileHandler.WritePrivateProfileString("SET", "AutoDel", "1", SettingPath.TimerSrvIniPath);
@@ -664,60 +587,15 @@ namespace EpgTimer.Setting
                 IniFileHandler.WritePrivateProfileString("SET", "TimeSync", "0", SettingPath.TimerSrvIniPath);
             }
 
-            if (checkBox_useSrvCoop.IsChecked == true)
-            {
-                IniFileHandler.WritePrivateProfileString("SET", "UseSrvCoop", "1", SettingPath.TimerSrvIniPath);
-            }
-            else
-            {
-                IniFileHandler.WritePrivateProfileString("SET", "UseSrvCoop", "0", SettingPath.TimerSrvIniPath);
-            }
-            if (checkBox_useResSrvCoop.IsChecked == true)
-            {
-                IniFileHandler.WritePrivateProfileString("SET", "UseResSrvCoop", "1", SettingPath.TimerSrvIniPath);
-            }
-            else
-            {
-                IniFileHandler.WritePrivateProfileString("SET", "UseResSrvCoop", "0", SettingPath.TimerSrvIniPath);
-            }
-            if (checkBox_useEpgSrvCoop.IsChecked == true)
-            {
-                IniFileHandler.WritePrivateProfileString("SET", "UseEpgSrvCoop", "1", SettingPath.TimerSrvIniPath);
-            }
-            else
-            {
-                IniFileHandler.WritePrivateProfileString("SET", "UseEpgSrvCoop", "0", SettingPath.TimerSrvIniPath);
-            }
-            if (checkBox_ngResCoop.IsChecked == true)
-            {
-                IniFileHandler.WritePrivateProfileString("SET", "NgAddResSrvCoop", "1", SettingPath.TimerSrvIniPath);
-            }
-            else
-            {
-                IniFileHandler.WritePrivateProfileString("SET", "NgAddResSrvCoop", "0", SettingPath.TimerSrvIniPath);
-            }
-            if (checkBox_ngEpgCoop.IsChecked == true)
-            {
-                IniFileHandler.WritePrivateProfileString("SET", "NgEpgFileSrvCoop", "1", SettingPath.TimerSrvIniPath);
-            }
-            else
-            {
-                IniFileHandler.WritePrivateProfileString("SET", "NgEpgFileSrvCoop", "0", SettingPath.TimerSrvIniPath);
-            }
-            IniFileHandler.WritePrivateProfileString("COOP_SRV", "Num", listBox_coopSrv.Items.Count.ToString(), SettingPath.TimerSrvIniPath);
-            for (int i = 0; i < listBox_coopSrv.Items.Count; i++)
-            {
-                CoopServerInfo info = listBox_coopSrv.Items[i] as CoopServerInfo;
-                IniFileHandler.WritePrivateProfileString("COOP_SRV", "ADD" + i.ToString(), info.ServerAddress, SettingPath.TimerSrvIniPath);
-                IniFileHandler.WritePrivateProfileString("COOP_SRV", "PORT" + i.ToString(), info.ServerPort.ToString(), SettingPath.TimerSrvIniPath);
-            }
-
 
             Settings.Instance.CloseMin = (bool)checkBox_closeMin.IsChecked;
             Settings.Instance.WakeMin = (bool)checkBox_minWake.IsChecked;
             Settings.Instance.ShowTray = (bool)checkBox_showTray.IsChecked;
             Settings.Instance.MinHide = (bool)checkBox_minHide.IsChecked;
 
+            IniFileHandler.WritePrivateProfileString("SET", "ResidentMode",
+                checkBox_srvResident.IsChecked == false ? "0" : checkBox_srvShowTray.IsChecked == false ? "1" : "2", SettingPath.TimerSrvIniPath);
+            IniFileHandler.WritePrivateProfileString("SET", "NoBalloonTip", checkBox_srvNoBalloonTip.IsChecked == false ? "0" : "1", SettingPath.TimerSrvIniPath);
 
             IniFileHandler.WritePrivateProfileString("DEL_EXT", "Count", extList.Count.ToString(), SettingPath.TimerSrvIniPath);
             for (int i = 0; i < extList.Count; i++)
@@ -1259,52 +1137,6 @@ namespace EpgTimer.Setting
                 ServiceStop = true;
             }
             UpdateServiceBtn();
-        }
-
-        private void button_add_srvcoop_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                SetCoopSrvWindow dlg = new SetCoopSrvWindow();
-                dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-                if (dlg.ShowDialog() == true)
-                {
-                    String ip = "";
-                    UInt32 port = 4510;
-                    dlg.GetSetting(ref ip, ref port);
-
-                    bool find = false;
-                    foreach (CoopServerInfo info in listBox_coopSrv.Items)
-                    {
-                        if (String.Compare(info.ServerAddress, ip) == 0)
-                        {
-                            MessageBox.Show("すでに登録されているアドレスです");
-                            return;
-                        }
-                    }
-
-                    if (find == false)
-                    {
-                        CoopServerInfo item = new CoopServerInfo();
-                        item.ServerAddress = ip;
-                        item.ServerPort = port;
-
-                        listBox_coopSrv.Items.Add(item);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
-
-        private void button_del_srvcoop_Click(object sender, RoutedEventArgs e)
-        {
-            if (listBox_coopSrv.SelectedItem != null)
-            {
-                listBox_coopSrv.Items.RemoveAt(listBox_coopSrv.SelectedIndex);
-            }
         }
     }
 }
