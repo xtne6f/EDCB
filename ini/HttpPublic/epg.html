@@ -1,6 +1,23 @@
 ONE_MIN_PX=2
 TIME_COLUMN=3
-BACK_COLOR={}
+BACK_COLOR={
+  'LightYellow',
+  'Lavender',
+  'LavenderBlush',
+  'MistyRose',
+  'Honeydew',
+  'LightCyan',
+  'PapayaWhip',
+  'Pink',
+  'LightYellow',
+  'PapayaWhip',
+  'AliceBlue',
+  'AliceBlue',
+  'White',
+  'White',
+  'White',
+  'WhiteSmoke'
+}
 ct=[=[
 <!doctype html><html lang="ja">
 <head>
@@ -103,9 +120,9 @@ for i,v in ipairs(st) do
       lastPx=startPx
     end
     if endPx-lastPx>2 then
-      backColor=w.contentInfoList and #w.contentInfoList>0 and BACK_COLOR[math.floor(w.contentInfoList[1].content_nibble/256)%16+1] or nil
+      backColor=w.contentInfoList and #w.contentInfoList>0 and BACK_COLOR[math.floor(w.contentInfoList[1].content_nibble/256)%16+1]
       table.insert(ctt, '<div style="width:148px;border:1px inset'..(w.shortInfo and '' or ' #FFF')..';height:'..(endPx-lastPx-2)..'px;overflow:auto'
-        ..(backColor and ';background-color='..backColor or '')..'">'
+        ..(backColor and ';background-color:'..backColor or '')..'">'
         ..(rt[string.format('%04X%04X%04X%04X', w.onid, w.tsid, w.sid, w.eid)] and '<span style="color:#F80;font-weight:bold">予</span>' or '')
         ..os.date(' %M ', startTime)..'<a href=\"epginfo.html?onid='..w.onid..'&tsid='..w.tsid..'&sid='..w.sid..'&eid='..w.eid..'">'
         ..(w.shortInfo and w.shortInfo.event_name or ' ')..'</a></div>\n')
