@@ -2,8 +2,6 @@
 
 #include "../../Common/Util.h"
 #include "../../Common/ErrDef.h"
-#include "../../Common/EpgTimerUtil.h"
-#include "../../Common/StringUtil.h"
 #include "../../Common/CommonDef.h"
 
 class CNotifyManager
@@ -13,37 +11,35 @@ public:
 	~CNotifyManager(void);
 
 	void RegistGUI(DWORD processID);
-	void RegistTCP(REGIST_TCP_INFO* info);
+	void RegistTCP(const REGIST_TCP_INFO& info);
 	void UnRegistGUI(DWORD processID);
-	void UnRegistTCP(REGIST_TCP_INFO* info);
+	void UnRegistTCP(const REGIST_TCP_INFO& info);
+	void SetNotifyWindow(HWND hwnd, UINT msgID);
+	vector<NOTIFY_SRV_INFO> RemoveSentList();
 
-	void GetRegistGUI(map<DWORD, DWORD>* registGUI);
-	void GetRegistTCP(map<wstring, REGIST_TCP_INFO>* registTCP);
+	void GetRegistGUI(map<DWORD, DWORD>* registGUI) const;
+	void GetRegistTCP(map<wstring, REGIST_TCP_INFO>* registTCP) const;
 
-	void AddNotifyLog(NOTIFY_SRV_INFO info);
 	void AddNotify(DWORD notifyID);
-	void AddNotifySrvStatus(DWORD status);
+	void SetNotifySrvStatus(DWORD status);
 	void AddNotifyMsg(DWORD notifyID, wstring msg);
 
 protected:
-	HANDLE lockEvent;
+	mutable CRITICAL_SECTION managerLock;
 
-	HANDLE lockNotify;
+	HANDLE notifyEvent;
 	HANDLE notifyThread;
-	HANDLE notifyStopEvent;
+	BOOL notifyStopFlag;
+	DWORD srvStatus;
 
 	map<DWORD, DWORD> registGUIMap;
 	map<wstring, REGIST_TCP_INFO> registTCPMap;
+	HWND hwndNotify;
+	UINT msgIDNotify;
 
 	vector<NOTIFY_SRV_INFO> notifyList;
+	vector<NOTIFY_SRV_INFO> notifySentList;
 protected:
-	//ÉRÉ}ÉìÉhä÷åWîrëºêßå‰óp
-	BOOL Lock(LPCWSTR log = NULL, DWORD timeOut = 60*1000);
-	void UnLock(LPCWSTR log = NULL);
-
-	BOOL NotifyLock(LPCWSTR log = NULL, DWORD timeOut = 60*1000);
-	void NotifyUnLock(LPCWSTR log = NULL);
-
 	void _SendNotify();
 	static UINT WINAPI SendNotifyThread(LPVOID param);
 };

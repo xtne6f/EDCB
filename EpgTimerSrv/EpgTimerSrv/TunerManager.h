@@ -1,12 +1,12 @@
 #pragma once
 
 #include "../../Common/Util.h"
-#include "../../Common/EpgTimerUtil.h"
-#include "../../Common/PathUtil.h"
-#include "../../Common/StringUtil.h"
 #include "../../Common/ParseTextInstances.h"
 
 #include "TunerBankCtrl.h"
+
+class CNotifyManager;
+class CEpgDBManager;
 
 class CTunerManager
 {
@@ -33,8 +33,12 @@ public:
 	// TRUE（成功）、FALSE（失敗）
 	//引数：
 	// ctrlMap			[OUT]チューナー予約制御の一覧
+	// notifyManager	[IN]CTunerBankCtrlに渡す引数
+	// epgDBManager		[IN]CTunerBankCtrlに渡す引数
 	BOOL GetEnumTunerBank(
-		map<DWORD, CTunerBankCtrl*>* ctrlMap
+		map<DWORD, CTunerBankCtrl*>* ctrlMap,
+		CNotifyManager& notifyManager,
+		CEpgDBManager& epgDBManager
 		) const;
 
 	//指定サービスをサポートしていないチューナー一覧を取得する

@@ -52,20 +52,4 @@ BOOL _GetDiskFreeSpaceEx(
 void _OutputDebugString(const TCHAR *pOutputString, ...);
 void GetLastErrMsg(DWORD err, wstring& msg);
 
-
-namespace nocase {
-template<class T> struct less : public std::less<T> {};
-template<> struct less<std::string> : public std::binary_function<std::string,std::string,bool> {
-	bool operator()( const std::string&	lhs, const std::string&	rhs ) const {
-		return	( &lhs[0] == &rhs[0] ) ? false : ( _stricmp( &lhs[0], &rhs[0] ) < 0 );
-	}
-};
-template<> struct less<std::wstring> : public std::binary_function<std::wstring,std::wstring,bool> {
-	bool operator()( const std::wstring&	lhs, const std::wstring&	rhs ) const {
-		return	( &lhs[0] == &rhs[0] ) ? false : ( _wcsicmp( &lhs[0], &rhs[0] ) < 0 );
-	}
-};
-template<class _key_type, class _value_type, class _less_type = less<_key_type>, class _allocator_type = std::allocator<std::pair<const _key_type, _value_type> > > struct map : public std::map<_key_type,_value_type,_less_type,_allocator_type> {};
-}
-
 #endif

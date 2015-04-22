@@ -508,6 +508,7 @@ DWORD CParseReserveText::AddReserve(const RESERVE_DATA& item)
 {
 	map<DWORD, RESERVE_DATA>::iterator itr = this->itemMap.insert(pair<DWORD, RESERVE_DATA>(this->nextID, item)).first;
 	this->nextID = this->nextID % 100000000 + 1;
+	this->sortByEventCache.clear();
 	return itr->second.reserveID = itr->first;
 }
 
@@ -516,6 +517,17 @@ bool CParseReserveText::ChgReserve(const RESERVE_DATA& item)
 	map<DWORD, RESERVE_DATA>::iterator itr = this->itemMap.find(item.reserveID);
 	if( itr != this->itemMap.end() ){
 		itr->second = item;
+		this->sortByEventCache.clear();
+		return true;
+	}
+	return false;
+}
+
+bool CParseReserveText::SetOverlapMode(DWORD id, BYTE overlapMode)
+{
+	map<DWORD, RESERVE_DATA>::iterator itr = this->itemMap.find(id);
+	if( itr != this->itemMap.end() ){
+		itr->second.overlapMode = overlapMode;
 		return true;
 	}
 	return false;
@@ -523,7 +535,11 @@ bool CParseReserveText::ChgReserve(const RESERVE_DATA& item)
 
 bool CParseReserveText::DelReserve(DWORD id)
 {
-	return this->itemMap.erase(id) != 0;
+	if( this->itemMap.erase(id) != 0 ){
+		this->sortByEventCache.clear();
+		return true;
+	}
+	return false;
 }
 
 bool CParseReserveText::ParseLine(const wstring& parseLine, pair<DWORD, RESERVE_DATA>& item)
@@ -590,8 +606,8 @@ bool CParseReserveText::ParseLine(const wstring& parseLine, pair<DWORD, RESERVE_
 		item.second.recSetting.suspendMode = 4;
 	}
 	item.second.recSetting.rebootFlag = _wtoi(NextToken(token)) != 0;
+	//”pŽ~(‹ŒrecFilePath)
 	NextToken(token);
-	item.second.recFilePath.assign(token[0], token[1]);
 	item.second.recSetting.useMargineFlag = _wtoi(NextToken(token)) != 0;
 	item.second.recSetting.startMargine = _wtoi(NextToken(token));
 	item.second.recSetting.endMargine = _wtoi(NextToken(token));
@@ -637,9 +653,9 @@ bool CParseReserveText::ParseLine(const wstring& parseLine, pair<DWORD, RESERVE_
 			item.second.recSetting.partialRecFolder.push_back(folderItem);
 		}
 	}
-	item.second.recWaitFlag = FALSE;
 	item.second.overlapMode = 0;
 	this->nextID = this->nextID > item.first + 50000000 ? item.first + 1 : (max(item.first + 1, this->nextID) - 1) % 100000000 + 1;
+	this->sortByEventCache.clear();
 	return true;
 }
 
@@ -683,7 +699,7 @@ bool CParseReserveText::SaveLine(const pair<DWORD, RESERVE_DATA>& item, wstring&
 			item.second.recSetting.recFolderList[0].recNamePlugIn).c_str(),
 		item.second.recSetting.suspendMode,
 		item.second.recSetting.rebootFlag,
-		item.second.recFilePath.c_str(),
+		L"",
 		item.second.recSetting.useMargineFlag,
 		item.second.recSetting.startMargine,
 		item.second.recSetting.endMargine,
@@ -758,6 +774,21 @@ vector<pair<LONGLONG, const RESERVE_DATA*>> CParseReserveText::GetReserveList(BO
 	}
 	sort(retList.begin(), retList.end());
 	return retList;
+}
+
+const vector<pair<ULONGLONG, DWORD>>& CParseReserveText::GetSortByEventList() const
+{
+	if( this->sortByEventCache.empty() || this->itemMap.empty() ){
+		this->sortByEventCache.clear();
+		this->sortByEventCache.reserve(this->itemMap.size());
+		for( map<DWORD, RESERVE_DATA>::const_iterator itr = this->itemMap.begin(); itr != this->itemMap.end(); itr++ ){
+			this->sortByEventCache.push_back(std::make_pair(
+				(ULONGLONG)itr->second.originalNetworkID << 48 | (ULONGLONG)itr->second.transportStreamID << 32 |
+				(DWORD)itr->second.serviceID << 16 | itr->second.eventID, itr->first));
+		}
+		std::sort(this->sortByEventCache.begin(), this->sortByEventCache.end());
+	}
+	return this->sortByEventCache;
 }
 
 DWORD CParseEpgAutoAddText::AddData(const EPG_AUTO_ADD_DATA& item)

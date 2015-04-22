@@ -21,7 +21,11 @@ public:
 		LPCWSTR agent,				//[IN] Agentの設定
 		BOOL async,					//[IN] 非同期モードで動くかどうか（TRUE：非同期）
 		BOOL useProxy,				//[IN] Proxy使うかどうか（TRUE:Proxy使う）
-		USE_PROXY_INFO* proxyInfo	//[IN] Proxy使う場合の設定情報
+		USE_PROXY_INFO* proxyInfo,	//[IN] Proxy使う場合の設定情報
+		int resolveTimeout = 60000,	//[IN] 名前解決/接続/送信/受信タイムアウト
+		int connectTimeout = 120000,
+		int sendTimeout = 120000,
+		int receiveTimeout = 120000
 		);
 
 	//セッションを閉じる

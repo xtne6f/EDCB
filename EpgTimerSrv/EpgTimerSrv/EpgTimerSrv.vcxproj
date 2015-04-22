@@ -17,14 +17,6 @@
       <Configuration>Release</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="test|Win32">
-      <Configuration>test</Configuration>
-      <Platform>Win32</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="test|x64">
-      <Configuration>test</Configuration>
-      <Platform>x64</Platform>
-    </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{A515AC7D-4B3D-4DDC-BB9D-586AEBC016E4}</ProjectGuid>
@@ -93,12 +85,13 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ExceptionHandling>Async</ExceptionHandling>
+      <PreprocessorDefinitions>LUA_BUILD_AS_DLL;USE_LUA;NO_SSL;NO_CGI;WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>lua52.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <DelayLoadDLLs>lua52.dll</DelayLoadDLLs>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -106,12 +99,13 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ExceptionHandling>Async</ExceptionHandling>
+      <PreprocessorDefinitions>LUA_BUILD_AS_DLL;USE_LUA;NO_SSL;NO_CGI;WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>lua52-x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <DelayLoadDLLs>lua52.dll</DelayLoadDLLs>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -121,9 +115,8 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>LUA_BUILD_AS_DLL;USE_LUA;NO_SSL;NO_CGI;WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AssemblerOutput>All</AssemblerOutput>
-      <ExceptionHandling>Async</ExceptionHandling>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -131,6 +124,8 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateMapFile>true</GenerateMapFile>
+      <AdditionalDependencies>lua52.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <DelayLoadDLLs>lua52.dll</DelayLoadDLLs>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -140,8 +135,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ExceptionHandling>Async</ExceptionHandling>
+      <PreprocessorDefinitions>LUA_BUILD_AS_DLL;USE_LUA;NO_SSL;NO_CGI;WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -149,20 +143,14 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateMapFile>true</GenerateMapFile>
+      <AdditionalDependencies>lua52-x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <DelayLoadDLLs>lua52.dll</DelayLoadDLLs>
     </Link>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='test|x64'">
-    <ClCompile>
-      <ExceptionHandling>Async</ExceptionHandling>
-    </ClCompile>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='test|Win32'">
-    <ClCompile>
-      <ExceptionHandling>Async</ExceptionHandling>
-    </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
     <None Include="EpgTimerSrv.ico" />
+    <None Include="md5.inl" />
+    <None Include="mod_lua.inl" />
     <None Include="ReadMe.txt" />
     <None Include="RegExp.tlb" />
     <None Include="small.ico" />
@@ -181,14 +169,11 @@
     <ClInclude Include="..\..\Common\EpgDataCap3Util.h" />
     <ClInclude Include="..\..\Common\EpgTimerUtil.h" />
     <ClInclude Include="..\..\Common\ErrDef.h" />
-    <ClInclude Include="..\..\Common\HttpServer.h" />
-    <ClInclude Include="..\..\Common\LockUtil.h" />
     <ClInclude Include="..\..\Common\NWStructDef.h" />
     <ClInclude Include="..\..\Common\ParseText.h" />
     <ClInclude Include="..\..\Common\ParseTextInstances.h" />
     <ClInclude Include="..\..\Common\PathUtil.h" />
     <ClInclude Include="..\..\Common\PipeServer.h" />
-    <ClInclude Include="..\..\Common\ProxyUtil.h" />
     <ClInclude Include="..\..\Common\ReNamePlugInUtil.h" />
     <ClInclude Include="..\..\Common\SendCtrlCmd.h" />
     <ClInclude Include="..\..\Common\SendTSTCP.h" />
@@ -202,7 +187,6 @@
     <ClInclude Include="..\..\Common\TimeUtil.h" />
     <ClInclude Include="..\..\Common\TSBuffUtil.h" />
     <ClInclude Include="..\..\Common\TSPacketUtil.h" />
-    <ClInclude Include="..\..\Common\twitterUtil.h" />
     <ClInclude Include="..\..\Common\Util.h" />
     <ClInclude Include="..\..\Common\WinHTTPUtil.h" />
     <ClInclude Include="..\..\UPnPCtrl\CharUtil.h" />
@@ -215,35 +199,26 @@
     <ClInclude Include="..\..\UPnPCtrl\UpnpStructDef.h" />
     <ClInclude Include="..\..\UPnPCtrl\UpnpUtil.h" />
     <ClInclude Include="BatManager.h" />
-    <ClInclude Include="DLNADmsContentDB.h" />
-    <ClInclude Include="DLNADmsManager.h" />
-    <ClInclude Include="DLNAManager.h" />
-    <ClInclude Include="DLNAParseProtocolInfo.h" />
-    <ClInclude Include="DLNAParsePublicFolder.h" />
+    <ClInclude Include="civetweb.h" />
     <ClInclude Include="EpgDBManager.h" />
     <ClInclude Include="EpgTimerSrv.h" />
-    <ClInclude Include="EpgTimerSrvDef.h" />
     <ClInclude Include="EpgTimerSrvMain.h" />
     <ClInclude Include="FileStreamingManager.h" />
     <ClInclude Include="FileStreamingUtil.h" />
-    <ClInclude Include="HTMLManager.h" />
-    <ClInclude Include="HttpFileSend.h" />
-    <ClInclude Include="HttpPublicFileSend.h" />
-    <ClInclude Include="HttpRecFileSend.h" />
-    <ClInclude Include="HttpRequestReader.h" />
+    <ClInclude Include="HttpServer.h" />
+    <ClInclude Include="lauxlib.h" />
+    <ClInclude Include="lua.h" />
+    <ClInclude Include="lua.hpp" />
+    <ClInclude Include="luaconf.h" />
+    <ClInclude Include="lualib.h" />
     <ClInclude Include="NotifyManager.h" />
-    <ClInclude Include="NWCoopManager.h" />
-    <ClInclude Include="ReserveInfo.h" />
     <ClInclude Include="ReserveManager.h" />
     <ClInclude Include="Resource.h" />
-    <ClInclude Include="RestApiManager.h" />
-    <ClInclude Include="SOAPUtil.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="SyoboiCalUtil.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="TunerBankCtrl.h" />
     <ClInclude Include="TunerManager.h" />
-    <ClInclude Include="TwitterManager.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\BonCtrl\CreatePATPacket.cpp" />
@@ -255,12 +230,9 @@
     <ClCompile Include="..\..\Common\CtrlCmdUtil2.cpp" />
     <ClCompile Include="..\..\Common\EpgDataCap3Util.cpp" />
     <ClCompile Include="..\..\Common\EpgTimerUtil.cpp" />
-    <ClCompile Include="..\..\Common\HttpServer.cpp" />
-    <ClCompile Include="..\..\Common\LockUtil.cpp" />
     <ClCompile Include="..\..\Common\ParseTextInstances.cpp" />
     <ClCompile Include="..\..\Common\PathUtil.cpp" />
     <ClCompile Include="..\..\Common\PipeServer.cpp" />
-    <ClCompile Include="..\..\Common\ProxyUtil.cpp" />
     <ClCompile Include="..\..\Common\ReNamePlugInUtil.cpp" />
     <ClCompile Include="..\..\Common\SendCtrlCmd.cpp" />
     <ClCompile Include="..\..\Common\SendTSTCPDllUtil.cpp" />
@@ -272,7 +244,6 @@
     <ClCompile Include="..\..\Common\TimeUtil.cpp" />
     <ClCompile Include="..\..\Common\TSBuffUtil.cpp" />
     <ClCompile Include="..\..\Common\TSPacketUtil.cpp" />
-    <ClCompile Include="..\..\Common\twitterUtil.cpp" />
     <ClCompile Include="..\..\Common\Util.cpp" />
     <ClCompile Include="..\..\Common\WinHTTPUtil.cpp" />
     <ClCompile Include="..\..\UPnPCtrl\CharUtil.cpp" />
@@ -284,27 +255,24 @@
     <ClCompile Include="..\..\UPnPCtrl\UpnpStructDef.cpp" />
     <ClCompile Include="..\..\UPnPCtrl\UpnpUtil.cpp" />
     <ClCompile Include="BatManager.cpp" />
-    <ClCompile Include="DLNADmsContentDB.cpp" />
-    <ClCompile Include="DLNADmsManager.cpp" />
-    <ClCompile Include="DLNAManager.cpp" />
-    <ClCompile Include="DLNAParseProtocolInfo.cpp" />
-    <ClCompile Include="DLNAParsePublicFolder.cpp" />
+    <ClCompile Include="civetweb.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.</AdditionalIncludeDirectories>
+    </ClCompile>
     <ClCompile Include="EpgDBManager.cpp" />
     <ClCompile Include="EpgTimerSrv.cpp" />
     <ClCompile Include="EpgTimerSrvMain.cpp" />
     <ClCompile Include="FileStreamingManager.cpp" />
     <ClCompile Include="FileStreamingUtil.cpp" />
-    <ClCompile Include="HTMLManager.cpp" />
-    <ClCompile Include="HttpFileSend.cpp" />
-    <ClCompile Include="HttpPublicFileSend.cpp" />
-    <ClCompile Include="HttpRecFileSend.cpp" />
-    <ClCompile Include="HttpRequestReader.cpp" />
+    <ClCompile Include="HttpServer.cpp" />
     <ClCompile Include="NotifyManager.cpp" />
-    <ClCompile Include="NWCoopManager.cpp" />
-    <ClCompile Include="ReserveInfo.cpp" />
     <ClCompile Include="ReserveManager.cpp" />
-    <ClCompile Include="RestApiManager.cpp" />
-    <ClCompile Include="SOAPUtil.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
@@ -314,7 +282,6 @@
     <ClCompile Include="SyoboiCalUtil.cpp" />
     <ClCompile Include="TunerBankCtrl.cpp" />
     <ClCompile Include="TunerManager.cpp" />
-    <ClCompile Include="TwitterManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="EpgTimerSrv.rc" />

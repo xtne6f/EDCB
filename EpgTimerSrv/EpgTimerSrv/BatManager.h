@@ -1,49 +1,48 @@
 #pragma once
-#include "EpgTimerSrvDef.h"
 #include "../../Common/StructDef.h"
-#include "../../Common/SendCtrlCmd.h"
 #include "NotifyManager.h"
+
+typedef struct _BAT_WORK_INFO{
+	wstring batFilePath;
+	BYTE suspendMode;
+	BYTE rebootFlag;
+	wstring addKey;
+	REC_FILE_INFO recFileInfo;
+}BAT_WORK_INFO;
 
 class CBatManager
 {
 public:
-	CBatManager(void);
+	CBatManager(CNotifyManager& notifyManager_);
 	~CBatManager(void);
 
-	void ReloadSetting();
-	void SetNotifyManager(CNotifyManager* manager);
-	//void SetRegistGUI(map<DWORD, DWORD> registGUIMap);
+	void AddBatWork(const BAT_WORK_INFO& info);
 
-	void AddBatWork(BAT_WORK_INFO* info);
-
-	DWORD GetWorkCount();
-	BOOL IsWorking();
+	DWORD GetWorkCount() const;
+	BOOL IsWorking() const;
 
 	void StartWork();
 	void PauseWork();
 
-	BOOL GetLastWorkSuspend(BYTE* suspendMode, BYTE* rebootFlag);
+	BOOL PopLastWorkSuspend(BYTE* suspendMode, BYTE* rebootFlag);
 protected:
-	HANDLE lockEvent;
+	mutable CRITICAL_SECTION managerLock;
 
-	CNotifyManager* notifyManager;
-//	map<DWORD, DWORD> registGUIMap;
+	CNotifyManager& notifyManager;
 
 	vector<BAT_WORK_INFO> workList;
 
-	BOOL workFlag;
+	BOOL pauseFlag;
+	BOOL batWorkExitingFlag;
 	HANDLE batWorkThread;
 	HANDLE batWorkStopEvent;
 
 	BYTE lastSuspendMode;
 	BYTE lastRebootFlag;
 protected:
-	//PublicAPIîrëºêßå‰óp
-	BOOL Lock(LPCWSTR log = NULL, DWORD timeOut = 60*1000);
-	void UnLock(LPCWSTR log = NULL);
-
 	static UINT WINAPI BatWorkThread(LPVOID param);
 
-	BOOL CreateBatFile(BAT_WORK_INFO* info, wstring batSrcFilePath, wstring& batFilePath );
+	static BOOL CreateBatFile(const BAT_WORK_INFO& info, LPCWSTR batSrcFilePath, LPCWSTR batFilePath );
+	static BOOL ExpandMacro(const string& var, const BAT_WORK_INFO& info, string& strWrite);
 };
 

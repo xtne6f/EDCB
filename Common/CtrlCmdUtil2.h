@@ -306,4 +306,23 @@ BOOL CCUTIL2_ReadAndNewVectorVALUE2_( WORD ver, vector<T*>* val, const BYTE* buf
 	return TRUE;
 }
 
+template<class T>
+BYTE* NewWriteVALUE2WithVersion( WORD ver, const T& val, DWORD& writeSize )
+{
+	DWORD buffSize = GetVALUESize(ver) + GetVALUESize2(ver, val);
+	BYTE* buff = new BYTE[buffSize];
+	WriteVALUE(ver, buff, buffSize, NULL);
+	try{
+		if( WriteVALUE2(ver, val, buff + GetVALUESize(ver), buffSize - GetVALUESize(ver), NULL) != FALSE ){
+			writeSize = buffSize;
+			return buff;
+		}
+	}catch( ... ){
+		delete[] buff;
+		throw;
+	}
+	delete[] buff;
+	return NULL;
+}
+
 #endif

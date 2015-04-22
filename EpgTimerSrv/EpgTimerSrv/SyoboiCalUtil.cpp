@@ -5,7 +5,6 @@
 #pragma comment (lib, "Crypt32.lib")
 
 #include "../../Common/PathUtil.h"
-#include "../../Common/ProxyUtil.h"
 #include "../../Common/StringUtil.h"
 #include "../../Common/TimeUtil.h"
 #include "../../Common/ParseTextInstances.h"
@@ -144,7 +143,7 @@ BOOL CSyoboiCalUtil::Base64Enc(LPCSTR src, DWORD srcSize, LPWSTR dest, DWORD* de
 	return TRUE;
 }
 
-BOOL CSyoboiCalUtil::SendReserve(vector<RESERVE_DATA*>* reserveList, vector<TUNER_RESERVE_INFO>* tunerList)
+BOOL CSyoboiCalUtil::SendReserve(vector<RESERVE_DATA>* reserveList, vector<TUNER_RESERVE_INFO>* tunerList)
 {
 	if( reserveList == NULL || tunerList == NULL ){
 		return FALSE;
@@ -254,7 +253,7 @@ BOOL CSyoboiCalUtil::SendReserve(vector<RESERVE_DATA*>* reserveList, vector<TUNE
 		if( dataCount>=200 ){
 			break;
 		}
-		RESERVE_DATA* info = (*reserveList)[i];
+		RESERVE_DATA* info = &(*reserveList)[i];
 		if( info->recSetting.recMode == RECMODE_NO || info->recSetting.recMode == RECMODE_VIEW ){
 			continue;
 		}
@@ -309,7 +308,7 @@ BOOL CSyoboiCalUtil::SendReserve(vector<RESERVE_DATA*>* reserveList, vector<TUNE
 
 	CWinHTTPUtil http;
 	DWORD result = NO_ERR;
-	result = http.OpenSession(L"EpgTimerSrv", FALSE, useProxy, this->proxyInfo);
+	result = http.OpenSession(L"EpgTimerSrv", FALSE, useProxy, this->proxyInfo, 15000, 15000, 15000, 15000);
 	if( result != NO_ERR ){
 		return FALSE;
 	}

@@ -1,5 +1,7 @@
 #include "StdAfx.h"
 #include "TunerManager.h"
+#include "../../Common/PathUtil.h"
+#include "../../Common/StringUtil.h"
 
 
 CTunerManager::CTunerManager(void)
@@ -127,8 +129,12 @@ BOOL CTunerManager::GetEnumID(
 // TRUE（成功）、FALSE（失敗）
 //引数：
 // ctrlMap			[OUT]チューナー予約制御の一覧
+// notifyManager	[IN]CTunerBankCtrlに渡す引数
+// epgDBManager		[IN]CTunerBankCtrlに渡す引数
 BOOL CTunerManager::GetEnumTunerBank(
-	map<DWORD, CTunerBankCtrl*>* ctrlMap
+	map<DWORD, CTunerBankCtrl*>* ctrlMap,
+	CNotifyManager& notifyManager,
+	CEpgDBManager& epgDBManager
 	) const
 {
 	if( ctrlMap == NULL ){
@@ -136,8 +142,7 @@ BOOL CTunerManager::GetEnumTunerBank(
 	}
 	map<DWORD, TUNER_INFO>::const_iterator itr;
 	for( itr = this->tunerMap.begin(); itr != this->tunerMap.end(); itr++ ){
-		CTunerBankCtrl* ctrl = new CTunerBankCtrl;
-		ctrl->SetTunerInfo( itr->first >> 16, itr->first & 0xFFFF, itr->second.bonFileName, itr->second.chSet4FilePath);
+		CTunerBankCtrl* ctrl = new CTunerBankCtrl(itr->first, itr->second.bonFileName.c_str(), itr->second.chList, notifyManager, epgDBManager);
 		ctrlMap->insert(pair<DWORD, CTunerBankCtrl*>(itr->first, ctrl));
 	}
 	return TRUE;

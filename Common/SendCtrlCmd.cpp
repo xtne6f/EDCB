@@ -81,13 +81,28 @@ void CSendCtrlCmd::SetSendMode(
 // eventName	[IN]排他制御用Eventの名前
 // pipeName		[IN]接続パイプの名前
 void CSendCtrlCmd::SetPipeSetting(
-	wstring eventName,
-	wstring pipeName
+	LPCWSTR eventName,
+	LPCWSTR pipeName
 	)
 {
 	if( Lock() == FALSE ) return ;
 	this->eventName = eventName;
 	this->pipeName = pipeName;
+	UnLock();
+}
+
+//名前付きパイプモード時の接続先を設定（接尾にプロセスIDを伴うタイプ）
+//引数：
+// pid			[IN]プロセスID
+void CSendCtrlCmd::SetPipeSetting(
+	LPCWSTR eventName,
+	LPCWSTR pipeName,
+	DWORD pid
+	)
+{
+	if( Lock() == FALSE ) return ;
+	Format(this->eventName, L"%s%d", eventName, pid);
+	Format(this->pipeName, L"%s%d", pipeName, pid);
 	UnLock();
 }
 
@@ -124,15 +139,19 @@ DWORD CSendCtrlCmd::SendPipe(LPCWSTR pipeName, LPCWSTR eventName, DWORD timeOut,
 	}
 
 	//接続待ち
-	HANDLE waitEvent = _CreateEvent(FALSE, FALSE, eventName);
+	//CreateEvent()してはいけない。イベントを作成するのはサーバの仕事のはず
+	//CreateEvent()してしまうとサーバが終了した後は常にタイムアウトまで待たされることになる
+	HANDLE waitEvent = OpenEvent(SYNCHRONIZE, FALSE, eventName);
 	if( waitEvent == NULL ){
-		return CMD_ERR;
+		return CMD_ERR_CONNECT;
 	}
-	if(WaitForSingleObject(waitEvent, timeOut) != WAIT_OBJECT_0){
-		CloseHandle(waitEvent);
-		return CMD_ERR_TIMEOUT;
-	}
+	DWORD dwRet = WaitForSingleObject(waitEvent, timeOut);
 	CloseHandle(waitEvent);
+	if( dwRet == WAIT_TIMEOUT ){
+		return CMD_ERR_TIMEOUT;
+	}else if( dwRet != WAIT_OBJECT_0 ){
+		return CMD_ERR_CONNECT;
+	}
 
 	//接続
 	HANDLE pipe = CreateFile( pipeName, GENERIC_READ|GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);

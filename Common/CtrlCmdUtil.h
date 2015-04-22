@@ -454,4 +454,22 @@ BOOL CCUTIL_ReadAndNewVectorVALUE_( vector<T*>* val, const BYTE* buff, DWORD buf
 	return TRUE;
 }
 
+template<class T>
+BYTE* NewWriteVALUE( const T& val, DWORD& writeSize )
+{
+	DWORD buffSize = GetVALUESize(val);
+	BYTE* buff = new BYTE[buffSize];
+	try{
+		if( WriteVALUE(val, buff, buffSize, NULL) != FALSE ){
+			writeSize = buffSize;
+			return buff;
+		}
+	}catch( ... ){
+		delete[] buff;
+		throw;
+	}
+	delete[] buff;
+	return NULL;
+}
+
 #endif

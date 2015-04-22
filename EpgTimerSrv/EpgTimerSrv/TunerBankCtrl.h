@@ -1,262 +1,191 @@
 #pragma once
 
-#include "../../Common/Util.h"
-#include "../../Common/EpgTimerUtil.h"
-#include "../../Common/PathUtil.h"
-#include "../../Common/StringUtil.h"
-#include "../../Common/ParseTextInstances.h"
-#include "../../Common/SendCtrlCmd.h"
-
-#include "ReserveInfo.h"
-#include "EpgTimerSrvDef.h"
-#include "TwitterManager.h"
 #include "NotifyManager.h"
 #include "EpgDBManager.h"
 
+//1つのチューナ(EpgDataCap_Bon.exe)を管理する
+//必ずオブジェクト生成→ReloadSetting()→…→破棄の順番で利用しなければならない
+//スレッドセーフではない
 class CTunerBankCtrl
 {
 public:
-	CTunerBankCtrl(void);
-	~CTunerBankCtrl(void);
+	//録画開始前に録画制御を作成するタイミング(秒)
+	static const int READY_MARGIN = 20;
 
-	void SetTwitterCtrl(CTwitterManager* twitterManager);
-	void SetEpgDBManager(CEpgDBManager* epgDBManager);
-	void ReloadSetting();
-	void SetNotifyManager(CNotifyManager* manager);
-
-	void SetAutoDel(
-		BOOL autoDel,
-		vector<wstring>* delExtList,
-		vector<wstring>* delFolderList
-		);
-
-	void SetTunerInfo(
-		WORD bonID,
-		WORD tunerID,
-		wstring bonFileName,
-		wstring chSet4FilePath
-		);
-
-	void AddReserve(
-		vector<CReserveInfo*>* reserveInfo
-		);
-
-	void ChgReserve(
-		RESERVE_DATA* reserve
-		);
-
-	void DeleteReserve(
-		DWORD reserveID
-		);
-
-	void ClearNoCtrl();
-
-	void GetEndReserve(map<DWORD, END_RESERVE_INFO*>* reserveMap); //キー　reserveID
-
-	BOOL IsOpenErr();
-	void GetOpenErrReserve(vector<CReserveInfo*>* reserveInfo);
-	void ResetOpenErr();
-
-	BOOL IsRecWork();
-	BOOL IsOpenTuner();
-	BOOL GetCurrentChID(DWORD* currentChID);
-	BOOL IsSuspendOK();
-	BOOL IsEpgCapOK(LONGLONG ngCapMin);
-	BOOL IsEpgCapWorking();
-	void ClearEpgCapItem();
-	void AddEpgCapItem(SET_CH_INFO info);
-	void StartEpgCap();
-	void StopEpgCap();
-
-	//起動中のチューナーからEPGデータの検索
-	//戻り値：
-	// エラーコード
-	// val					[IN]取得番組
-	// resVal				[OUT]番組情報
-	BOOL SearchEpgInfo(
-		SEARCH_EPG_INFO_PARAM* val,
-		EPGDB_EVENT_INFO* resVal
-		);
-
-	//起動中のチューナーから現在or次の番組情報を取得する
-	//戻り値：
-	// エラーコード
-	// val					[IN]取得番組
-	// resVal				[OUT]番組情報
-	DWORD GetEventPF(
-		GET_EPG_PF_INFO_PARAM* val,
-		EPGDB_EVENT_INFO* resVal
-		);
-
-	LONGLONG DelayTime();
-
-	BOOL ReRec(DWORD reserveID, BOOL deleteFile);
-
-	BOOL GetRecFilePath(
-		DWORD reserveID,
-		wstring& filePath,
-		DWORD* ctrlID,
-		DWORD* processID
-		);
-
-	static BOOL OpenTunerExe(
-		LPCWSTR exePath,
-		LPCWSTR bonDriver,
-		DWORD id,
-		BOOL minWake, BOOL noView, BOOL noNW, BOOL nwUdp, BOOL nwTcp,
-		DWORD priority,
-		const map<DWORD, DWORD>& registGUIMap,
-		DWORD* pid
-		);
-
-	static void CloseTunerExe(
-		DWORD pid
-		);
-protected:
-	HANDLE lockEvent;
-
-	CTwitterManager* twitterManager;
-	CNotifyManager* notifyManager;
-	DWORD tunerID;
-	wstring bonFileName;
-	CParseChText4 chUtil;
-	CEpgDBManager* epgDBManager;
-
-	typedef struct _RESERVE_WORK{
-		CReserveInfo* reserveInfo;
+	enum TR_STATE {
+		TR_IDLE,
+		TR_OPEN,	//チューナ起動済み(GetState()のみ使用)
+		TR_READY,	//録画制御作成済み
+		TR_REC,		//録画中
+		TR_EPGCAP,	//EPG取得中(GetState()とspecialStateで使用)
+		TR_NWTV,	//ネットワークモードで起動中(GetState()とspecialStateで使用)
+	};
+	enum {
+		CHECK_END = 1,				//正常終了
+		CHECK_END_NOT_FIND_PF,		//p/fに番組情報確認できなかった
+		CHECK_END_NEXT_START_END,	//次の予約開始のため終了
+		CHECK_END_END_SUBREC,		//サブフォルダへの録画が発生した
+		CHECK_END_NOT_START_HEAD,	//一部のみ録画された
+		CHECK_ERR_RECEND,			//録画終了処理に失敗した
+		CHECK_ERR_REC,				//予期せず録画が中断した
+		CHECK_ERR_RECSTART,			//録画開始に失敗した
+		CHECK_ERR_CTRL,				//録画制御の作成に失敗した
+		CHECK_ERR_OPEN,				//チューナのオープンができなかった
+		CHECK_ERR_PASS,				//終了時間が過ぎていた
+	};
+	struct CHECK_RESULT {
+		DWORD type;
 		DWORD reserveID;
-		DWORD mainCtrlID;
-		DWORD partialCtrlID;
-		vector<DWORD> ctrlID;
-		BOOL recStartFlag;
-
-		LONGLONG stratTime;
-		LONGLONG endTime;
-		LONGLONG startMargine;
-		LONGLONG endMargine;
-		DWORD chID;
+		//以下はtype<=CHECK_END_NOT_START_HEADのとき有効
+		wstring recFilePath;
+		bool continueRec;
+		//continueRec(連続録画開始による終了)のときdropsとscramblesは常に0
+		__int64 drops;
+		__int64 scrambles;
+		//以下はtype==CHECK_ENDのとき有効
+		SYSTEMTIME epgStartTime;
+		wstring epgEventName;
+	};
+	struct TUNER_RESERVE {
+		DWORD reserveID;
+		wstring title;
+		__int64 startTime;
+		DWORD durationSecond;
+		wstring stationName;
+		WORD onid;
+		WORD tsid;
+		WORD sid;
+		WORD eid;
+		BYTE recMode; //RECMODE_ALL～RECMODE_VIEW
 		BYTE priority;
+		bool enableCaption;
+		bool enableData;
+		bool pittari;
+		BYTE partialRecMode;
+		bool continueRecFlag;
+		//マージンはデフォルト値適用済みとすること
+		__int64 startMargin;
+		__int64 endMargin;
+		vector<REC_FILE_SET_INFO> recFolder;
+		vector<REC_FILE_SET_INFO> partialRecFolder;
+		//以下は内部パラメータ
+		__int64 startOrder; //開始順(予約の前後関係を決める)
+		__int64 effectivePriority; //実効優先度(予約の優先度を決める。小さいほうが高優先度)
+		TR_STATE state;
+		//以下はstate!=TR_IDLEのとき有効
+		DWORD ctrlID[2]; //要素1は部分受信録画制御
+		//以下はstate==TR_RECのとき有効
+		bool notStartHead;
+		bool appendPgInfo;
+		bool savedPgInfo;
+		SYSTEMTIME epgStartTime;
+		wstring epgEventName;
+	};
 
-		BYTE enableScramble;
-		BYTE enableCaption;
-		BYTE enableData;
+	CTunerBankCtrl(DWORD tunerID_, LPCWSTR bonFileName_, const vector<CH_DATA4>& chList_, CNotifyManager& notifyManager_, CEpgDBManager& epgDBManager_);
+	~CTunerBankCtrl();
+	void ReloadSetting();
 
-		BOOL savedPgInfo;
+	//予約を追加する
+	bool AddReserve(const TUNER_RESERVE& reserve);
+	//待機状態に入っている予約を変更する
+	//変更できないフィールドは適宜修正される
+	//開始時間の後方移動は注意が必要。後方移動の結果待機状態を明らかに抜けてしまう場合はstartTimeとstartMarginが修正される
+	bool ChgCtrlReserve(TUNER_RESERVE* reserve);
+	//予約を削除する
+	bool DelReserve(DWORD reserveID);
+	//開始時間がstartTime以上の待機状態に入っていないすべての予約をクリアする
+	void ClearNoCtrl(__int64 startTime = 0);
+	//予約ID一覧を取得する(ソート済み)
+	vector<DWORD> GetReserveIDList() const;
+	//チューナの状態遷移をおこない、終了した予約を取得する
+	//概ね1秒ごとに呼ぶ
+	vector<CHECK_RESULT> Check();
+	//チューナ全体としての状態を取得する
+	TR_STATE GetState() const;
+	//予約開始の最小時刻を取得する
+	__int64 GetNearestReserveTime() const;
+	//EPG取得を開始する
+	bool StartEpgCap(const vector<SET_CH_INFO>& setChList);
+	//起動中のチューナのチャンネルを取得する
+	bool GetCurrentChID(WORD* onid, WORD* tsid) const;
+	//起動中のチューナからEPGデータの検索
+	bool SearchEpgInfo(WORD sid, WORD eid, EPGDB_EVENT_INFO* resVal) const;
+	//起動中のチューナから現在or次の番組情報を取得する
+	//戻り値: 0=成功,1=失敗(番組情報はない),2=失敗(取得できない)
+	int GetEventPF(WORD sid, bool pfNextFlag, EPGDB_EVENT_INFO* resVal) const;
+	//放送波時刻に対するシステム時刻の遅延時間を取得する
+	__int64 DelayTime() const;
+	//ネットワークモードでチューナを起動しチャンネル設定する
+	bool SetNWTVCh(bool nwUdp, bool nwTcp, const SET_CH_INFO& chInfo);
+	//ネットワークモードのチューナを閉じる
+	void CloseNWTV();
+	//予約が録画中であればその録画ファイル名などを取得する
+	bool GetRecFilePath(DWORD reserveID, wstring& filePath, DWORD* ctrlID, DWORD* processID) const;
+	//バンクを監視して必要ならチューナを強制終了する
+	//概ね2秒ごとにワーカスレッドから呼ぶ
+	void Watch();
+private:
+	//チューナを閉じてはいけない状態かどうか
+	bool IsNeedOpenTuner() const;
+	//部分受信サービスを探す
+	bool FindPartialService(WORD onid, WORD tsid, WORD sid, WORD* partialSID, wstring* serviceName) const;
+	//チューナに録画制御を作成する
+	bool CreateCtrl(DWORD* ctrlID, DWORD* partialCtrlID, const TUNER_RESERVE& reserve) const;
+	//録画ファイルに対応する番組情報ファイルを保存する
+	void SaveProgramInfo(LPCWSTR recPath, const EPGDB_EVENT_INFO& info, bool append) const;
+	//チューナに録画を開始させる
+	bool RecStart(const TUNER_RESERVE& reserve, __int64 now) const;
+	//チューナを起動する
+	bool OpenTuner(bool minWake, bool nwUdp, bool nwTcp, bool standbyRec, const SET_CH_INFO* initCh);
+	//チューナを閉じる
+	void CloseTuner();
+	//このバンクのBonDriverを使用しているプロセスを1つだけ閉じる
+	bool CloseOtherTuner();
 
-		BYTE partialRecFlag;
-		BYTE continueRecFlag;
+	const DWORD tunerID;
+	const wstring bonFileName;
+	const vector<CH_DATA4> chList;
+	CNotifyManager& notifyManager;
+	CEpgDBManager& epgDBManager;
+	map<DWORD, TUNER_RESERVE> reserveMap;
+	HANDLE hTunerProcess;
+	DWORD tunerPid;
+	WORD tunerONID;
+	WORD tunerTSID;
+	bool tunerChLocked;
+	bool tunerResetLock;
+	DWORD tunerChChgTick;
+	//EPG取得中かネットワークモードか否か
+	TR_STATE specialState;
+	//放送波時刻に対するシステム時刻の遅延時間
+	__int64 delayTime;
+	__int64 epgCapDelayTime;
 
-		WORD ONID;
-		WORD TSID;
-		WORD SID;
-
-		BYTE notStartHeadFlag;
-		EPGDB_EVENT_INFO* eventInfo;
-		//=オペレーターの処理
-		_RESERVE_WORK(void){
-			reserveInfo = NULL;
-			reserveID = 0;
-			mainCtrlID = 0;
-			partialCtrlID = 0;
-			recStartFlag = FALSE;
-			stratTime = 0;
-			endTime = 0;
-			startMargine = 0;
-			endMargine = 0;
-			chID = 0;
-			priority = 0;
-			enableScramble = 2;
-			enableCaption = 2;
-			enableData = 2;
-
-			savedPgInfo = FALSE;
-
-			partialRecFlag = 0;
-			continueRecFlag = 0;
-			ONID = 0xFFFF;
-			TSID = 0xFFFF;
-			SID = 0xFFFF;
-
-			notStartHeadFlag = FALSE;
-			eventInfo = NULL;
-		};
-		~_RESERVE_WORK(void){
-			SAFE_DELETE(eventInfo);
-		};
-	}RESERVE_WORK;
-	map<DWORD, RESERVE_WORK*> reserveWork; //キーreserveID
-	map<DWORD, RESERVE_WORK*> createCtrlList; //キーreserveID
-	map<DWORD, RESERVE_WORK*> openErrReserveList; //キーreserveID
-	vector<END_RESERVE_INFO*> endList;
-
-	BOOL openTuner;
-	DWORD processID;
-	BOOL openErrFlag;
-	BOOL useOpendTuner;
-	DWORD currentChID;
-	CSendCtrlCmd sendCtrl;
-
-	HANDLE checkThread;
-	HANDLE checkStopEvent;
-
-	//map<DWORD, DWORD> registGUIMap;
-	LONGLONG defStartMargine;
-	LONGLONG defEndMargine;
-	LONGLONG recWakeTime;
-	BOOL recMinWake;
-	BOOL recView;
-	BOOL recNW;
-	BOOL backPriority;
-	BOOL saveProgramInfo;
-	BOOL saveErrLog;
-	BOOL recOverWrite;
-	BOOL useRecNamePlugIn;
-	wstring recNamePlugInFilePath;
-	wstring recFolderPath;
-	wstring recWritePlugIn;
-	wstring recExePath;
-	BYTE enableCaption;
-	BYTE enableData;
+	__int64 recWakeTime;
+	bool recMinWake;
+	bool recView;
+	bool recNW;
+	bool backPriority;
+	bool saveProgramInfo;
+	bool saveErrLog;
+	bool recOverWrite;
 	DWORD processPriority;
-	BOOL keepDisk;
+	bool keepDisk;
+	bool recNameNoChkYen;
+	wstring recNamePlugInFileName;
 
-	LONGLONG delayTime;
+	mutable struct WATCH_CONTEXT {
+		CRITICAL_SECTION lock;
+		DWORD count;
+		DWORD tick;
+	} watchContext;
 
-	BOOL epgCapWork;
-	vector<SET_CH_INFO> epgCapItem;
-
-	BOOL autoDel;
-	vector<wstring> delExtList;
-	vector<wstring> delFolderList;
-	DWORD chkSpaceCount;
-
-protected:
-	//PublicAPI排他制御用
-	BOOL Lock(LPCWSTR log = NULL, DWORD timeOut = 60*1000);
-	void UnLock(LPCWSTR log = NULL);
-
-	static UINT WINAPI CheckReserveThread(LPVOID param);
-
-	void GetCheckList(multimap<LONGLONG, RESERVE_WORK*>* sortList);
-	BOOL IsNeedOpenTuner(multimap<LONGLONG, RESERVE_WORK*>* sortList, BOOL* viewMode, SET_CH_INFO* initCh);
-
-	BOOL OpenTuner(BOOL viewMode, SET_CH_INFO* initCh);
-	void CreateCtrl(multimap<LONGLONG, RESERVE_WORK*>* sortList, LONGLONG delay);
-	void CreateCtrl(RESERVE_WORK* info);
-	BOOL CheckOtherChCreate(LONGLONG nowTime, RESERVE_WORK* reserve);
-	void StopAllRec();
-	void ErrStop();
-	void AddEndReserve(RESERVE_WORK* reserve, DWORD endType, SET_CTRL_REC_STOP_RES_PARAM resVal);
-	void CheckRec(LONGLONG delay, BOOL* needShortCheck, DWORD wait);
-	BOOL RecStart(LONGLONG nowTime, RESERVE_WORK* reserve, BOOL sendNoyify);
-	BOOL CloseTuner();
-
-	BOOL ContinueRec(RESERVE_WORK* info);
-	BOOL FindPartialService(WORD ONID, WORD TSID, WORD SID, WORD* partialSID, wstring* serviceName);
-
-	BOOL IsFindContinueReserve(RESERVE_WORK* reserve, DWORD* continueSec);
-
-	void SaveProgramInfo(wstring savePath, EPGDB_EVENT_INFO* info, BYTE mode, BOOL addMode = FALSE);
-	//void CopyEpgInfo(EPG_EVENT_INFO* destInfo, EPGDB_EVENT_INFO* srcInfo);
+	class CWatchBlock {
+	public:
+		CWatchBlock(WATCH_CONTEXT* context_);
+		~CWatchBlock();
+	private:
+		WATCH_CONTEXT* context;
+	};
 };
-

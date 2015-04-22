@@ -1,2468 +1,1293 @@
 #include "StdAfx.h"
 #include "TunerBankCtrl.h"
-
-#include <process.h>
-
+#include "../../Common/EpgTimerUtil.h"
+#include "../../Common/SendCtrlCmd.h"
+#include "../../Common/PathUtil.h"
 #include "../../Common/ReNamePlugInUtil.h"
+#include "../../Common/BlockLock.h"
+#include "../../Common/TimeUtil.h"
+#include <tlhelp32.h>
 
-CTunerBankCtrl::CTunerBankCtrl(void)
+CTunerBankCtrl::CTunerBankCtrl(DWORD tunerID_, LPCWSTR bonFileName_, const vector<CH_DATA4>& chList_, CNotifyManager& notifyManager_, CEpgDBManager& epgDBManager_)
+	: tunerID(tunerID_)
+	, bonFileName(bonFileName_)
+	, chList(chList_)
+	, notifyManager(notifyManager_)
+	, epgDBManager(epgDBManager_)
+	, hTunerProcess(NULL)
+	, specialState(TR_IDLE)
+	, delayTime(0)
+	, epgCapDelayTime(0)
 {
-	this->lockEvent = CreateEvent(NULL, FALSE, TRUE, NULL);
-
-	this->checkThread = NULL;
-	this->checkStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-
-	this->openTuner = FALSE;
-	this->processID = 0;
-	this->openErrFlag = FALSE;
-	this->useOpendTuner = FALSE;
-	this->recMinWake = TRUE;
-	this->recView = TRUE;
-	this->recNW = FALSE;
-
-	this->currentChID = 0xFFFFFFFF;
-
-	this->sendCtrl.SetConnectTimeOut(5*1000);
-
-	this->epgCapWork = FALSE;
-
-	this->enableCaption = 1;
-	this->enableData = 0;
-
-	this->delayTime = 0;
-	this->keepDisk = 1;
-
-	this->chkSpaceCount = 0;
-	this->twitterManager = NULL;
-	this->notifyManager = NULL;
-	this->epgDBManager = NULL;
-
-	ReloadSetting();
+	InitializeCriticalSection(&this->watchContext.lock);
+	this->watchContext.count = 0;
 }
 
-
-CTunerBankCtrl::~CTunerBankCtrl(void)
+CTunerBankCtrl::~CTunerBankCtrl()
 {
-	if( this->checkThread != NULL ){
-		::SetEvent(this->checkStopEvent);
-		// スレッド終了待ち
-		if ( ::WaitForSingleObject(this->checkThread, 15000) == WAIT_TIMEOUT ){
-			::TerminateThread(this->checkThread, 0xffffffff);
-		}
-		CloseHandle(this->checkThread);
-		this->checkThread = NULL;
+	if( this->hTunerProcess ){
+		CloseHandle(this->hTunerProcess);
 	}
-	if( this->checkStopEvent != NULL ){
-		CloseHandle(this->checkStopEvent);
-		this->checkStopEvent = NULL;
-	}
-
-	map<DWORD, RESERVE_WORK*>::iterator itr;
-	for( itr = this->reserveWork.begin(); itr != this->reserveWork.end(); itr++ ){
-		SAFE_DELETE(itr->second);
-	}
-	this->reserveWork.clear();
-
-	if( this->lockEvent != NULL ){
-		UnLock();
-		CloseHandle(this->lockEvent);
-		this->lockEvent = NULL;
-	}
-}
-
-
-BOOL CTunerBankCtrl::Lock(LPCWSTR log, DWORD timeOut)
-{
-	if( this->lockEvent == NULL ){
-		return FALSE;
-	}
-	//if( log != NULL ){
-	//	_OutputDebugString(L"◆%s",log);
-	//}
-	DWORD dwRet = WaitForSingleObject(this->lockEvent, timeOut);
-	if( dwRet == WAIT_ABANDONED || 
-		dwRet == WAIT_FAILED ||
-		dwRet == WAIT_TIMEOUT){
-			OutputDebugString(L"◆CTunerBankCtrl::Lock FALSE");
-			if( log != NULL ){
-				OutputDebugString(log);
-			}
-		return FALSE;
-	}
-	return TRUE;
-}
-
-void CTunerBankCtrl::UnLock(LPCWSTR log)
-{
-	if( this->lockEvent != NULL ){
-		SetEvent(this->lockEvent);
-	}
-	if( log != NULL ){
-		OutputDebugString(log);
-	}
-}
-
-void CTunerBankCtrl::SetTwitterCtrl(CTwitterManager* twitterManager)
-{
-	this->twitterManager = twitterManager;
-}
-
-void CTunerBankCtrl::SetEpgDBManager(CEpgDBManager* epgDBManager)
-{
-	this->epgDBManager = epgDBManager;
+	DeleteCriticalSection(&this->watchContext.lock);
 }
 
 void CTunerBankCtrl::ReloadSetting()
 {
-	wstring iniPath = L"";
+	//モジュールini以外のパラメータは必要なときにその場で取得する
+	wstring iniPath;
 	GetModuleIniPath(iniPath);
-
-	wstring commonIniPath = L"";
-	GetCommonIniPath(commonIniPath);
-
-	wstring viewIniPath = L"";
-	GetModuleFolderPath(viewIniPath);
-	viewIniPath += L"\\EpgDataCap_Bon.ini";
-
-	int sec = GetPrivateProfileInt(L"SET", L"StartMargin", 5, iniPath.c_str());
-	this->defStartMargine = ((LONGLONG)sec) * I64_1SEC;
-	sec = GetPrivateProfileInt(L"SET", L"EndMargin", 2, iniPath.c_str());
-	this->defEndMargine = ((LONGLONG)sec) * I64_1SEC;
-	this->recWakeTime = ((LONGLONG)GetPrivateProfileInt(L"SET", L"RecAppWakeTime", 2, iniPath.c_str())) * 60 * I64_1SEC;
-	this->recMinWake = GetPrivateProfileInt(L"SET", L"RecMinWake", 1, iniPath.c_str());
-	this->recView = GetPrivateProfileInt(L"SET", L"RecView", 1, iniPath.c_str());
-	this->recNW = GetPrivateProfileInt(L"SET", L"RecNW", 0, iniPath.c_str());
-	this->backPriority = GetPrivateProfileInt(L"SET", L"BackPriority", 1, iniPath.c_str());
-	this->saveProgramInfo = GetPrivateProfileInt(L"SET", L"PgInfoLog", 0, iniPath.c_str());
-	this->saveErrLog = GetPrivateProfileInt(L"SET", L"DropLog", 0, iniPath.c_str());
-
-	this->recOverWrite = GetPrivateProfileInt(L"SET", L"RecOverWrite", 0, iniPath.c_str());
-	this->useRecNamePlugIn = GetPrivateProfileInt(L"SET", L"RecNamePlugIn", 0, iniPath.c_str());
-
-	WCHAR buff[512] = L"";
-	GetPrivateProfileString(L"SET", L"RecNamePlugInFile", L"RecName_Macro.dll", buff, 512, iniPath.c_str());
-
-	GetModuleFolderPath(this->recNamePlugInFilePath);
-	this->recNamePlugInFilePath += L"\\RecName\\";
-	this->recNamePlugInFilePath += buff;
-
-	GetPrivateProfileString( L"SET", L"RecFolderPath0", L"", buff, 512, commonIniPath.c_str() );
-	this->recFolderPath = buff;
-	if( this->recFolderPath.size() == 0 ){
-		GetDefSettingPath(this->recFolderPath);
+	this->recWakeTime = (__int64)GetPrivateProfileInt(L"SET", L"RecAppWakeTime", 2, iniPath.c_str()) * 60 * I64_1SEC;
+	this->recWakeTime = max(this->recWakeTime, READY_MARGIN * I64_1SEC);
+	this->recMinWake = GetPrivateProfileInt(L"SET", L"RecMinWake", 1, iniPath.c_str()) != 0;
+	this->recView = GetPrivateProfileInt(L"SET", L"RecView", 1, iniPath.c_str()) != 0;
+	this->recNW = GetPrivateProfileInt(L"SET", L"RecNW", 0, iniPath.c_str()) != 0;
+	this->backPriority = GetPrivateProfileInt(L"SET", L"BackPriority", 1, iniPath.c_str()) != 0;
+	this->saveProgramInfo = GetPrivateProfileInt(L"SET", L"PgInfoLog", 0, iniPath.c_str()) != 0;
+	this->saveErrLog = GetPrivateProfileInt(L"SET", L"DropLog", 0, iniPath.c_str()) != 0;
+	this->recOverWrite = GetPrivateProfileInt(L"SET", L"RecOverWrite", 0, iniPath.c_str()) != 0;
+	int pr = GetPrivateProfileInt(L"SET", L"ProcessPriority", 3, iniPath.c_str());
+	this->processPriority =
+		pr == 0 ? REALTIME_PRIORITY_CLASS :
+		pr == 1 ? HIGH_PRIORITY_CLASS :
+		pr == 2 ? ABOVE_NORMAL_PRIORITY_CLASS :
+		pr == 3 ? NORMAL_PRIORITY_CLASS :
+		pr == 4 ? BELOW_NORMAL_PRIORITY_CLASS : IDLE_PRIORITY_CLASS;
+	this->keepDisk = GetPrivateProfileInt(L"SET", L"KeepDisk", 1, iniPath.c_str()) != 0;
+	this->recNameNoChkYen = GetPrivateProfileInt(L"SET", L"NoChkYen", 0, iniPath.c_str()) != 0;
+	this->recNamePlugInFileName.clear();
+	if( GetPrivateProfileInt(L"SET", L"RecNamePlugIn", 0, iniPath.c_str()) != 0 ){
+		WCHAR buff[512];
+		GetPrivateProfileString(L"SET", L"RecNamePlugInFile", L"RecName_Macro.dll", buff, 512, iniPath.c_str());
+		this->recNamePlugInFileName = buff;
 	}
-	GetPrivateProfileString( L"SET", L"RecWritePlugIn0", L"", buff, 512, commonIniPath.c_str() );
-	this->recWritePlugIn = buff;
+}
 
-	GetPrivateProfileString( L"SET", L"RecExePath", L"", buff, 512, commonIniPath.c_str() );
-	this->recExePath = buff;
-	if( this->recExePath.size() == 0 ){
-		GetModuleFolderPath(this->recExePath);
-		this->recExePath += L"\\EpgDataCap_Bon.exe";
+bool CTunerBankCtrl::AddReserve(const TUNER_RESERVE& reserve)
+{
+	if( reserve.reserveID == 0 ||
+	    this->reserveMap.count(reserve.reserveID) != 0 ||
+	    reserve.recMode > RECMODE_VIEW ){
+		return false;
 	}
-
-	this->enableCaption = GetPrivateProfileInt(L"SET", L"Caption", 1, viewIniPath.c_str());
-	this->enableData = GetPrivateProfileInt(L"SET", L"Data", 0, viewIniPath.c_str());
-
-	this->processPriority = (DWORD)GetPrivateProfileInt(L"SET", L"ProcessPriority", 3, iniPath.c_str());
-	this->keepDisk = (BOOL)GetPrivateProfileInt(L"SET", L"KeepDisk", 1, iniPath.c_str());
-
+	TUNER_RESERVE& r = this->reserveMap.insert(std::make_pair(reserve.reserveID, reserve)).first->second;
+	r.startOrder = (r.startTime - r.startMargin) / I64_1SEC << 16 | r.reserveID & 0xFFFF;
+	r.effectivePriority = (this->backPriority ? -1 : 1) * ((__int64)((this->backPriority ? r.priority : ~r.priority) & 7) << 60 | r.startOrder);
+	r.state = TR_IDLE;
+	return true;
 }
 
-void CTunerBankCtrl::SetAutoDel(
-	BOOL autoDel,
-	vector<wstring>* delExtList,
-	vector<wstring>* delFolderList
-	)
+bool CTunerBankCtrl::ChgCtrlReserve(TUNER_RESERVE* reserve)
 {
-	if( Lock() == FALSE ) return;
-
-	this->autoDel = autoDel;
-	this->delExtList = *delExtList;
-	this->delFolderList = *delFolderList;
-
-	UnLock();
-}
-
-void CTunerBankCtrl::SetNotifyManager(CNotifyManager* manager)
-{
-	if( Lock(L"CTunerBankCtrl::SetNotifyManager") == FALSE ) return;
-	this->notifyManager = manager;
-
-	UnLock();
-}
-/*
-void CTunerBankCtrl::SetRegistGUI(map<DWORD, DWORD> registGUIMap)
-{
-	if( Lock() == FALSE ) return;
-
-	this->registGUIMap = registGUIMap;
-
-	UnLock();
-}
-*/
-void CTunerBankCtrl::SetTunerInfo(
-	WORD bonID,
-	WORD tunerID,
-	wstring bonFileName,
-	wstring chSet4FilePath
-	)
-{
-	if( Lock() == FALSE ) return;
-
-	this->tunerID = ((DWORD)bonID)<<16 | tunerID;
-	this->bonFileName = bonFileName;
-	this->chUtil.ParseText(chSet4FilePath.c_str());
-
-	UnLock();
-}
-
-void CTunerBankCtrl::AddReserve(
-	vector<CReserveInfo*>* reserveInfo
-	)
-{
-	if( Lock() == FALSE ) return;
-
-	if( this->checkThread != NULL ){
-		if( ::WaitForSingleObject(this->checkThread, 0) == WAIT_OBJECT_0 ){
-			CloseHandle(this->checkThread);
-			this->checkThread = NULL;
+	map<DWORD, TUNER_RESERVE>::iterator itr = this->reserveMap.find(reserve->reserveID);
+	if( itr != this->reserveMap.end() && itr->second.state != TR_IDLE ){
+		//内部パラメータを退避
+		TUNER_RESERVE save = itr->second;
+		//変更できないフィールドを上書き
+		reserve->onid = save.onid;
+		reserve->tsid = save.tsid;
+		reserve->sid = save.sid;
+		//プログラム予約への変更のみ認める
+		if( reserve->eid != 0xFFFF ){
+			reserve->eid = save.eid;
 		}
-	}
-	
-	for( size_t i=0; i<reserveInfo->size(); i++ ){
-		RESERVE_DATA data;
-		(*reserveInfo)[i]->GetData(&data);
-		map<DWORD, RESERVE_WORK*>::iterator itr;
-		itr = this->reserveWork.find(data.reserveID);
-		if( itr == this->reserveWork.end() ){
-			RESERVE_WORK* item = new RESERVE_WORK;
-			item->reserveInfo = (*reserveInfo)[i];
-			item->reserveID = data.reserveID;
-			//item->ctrlID = 0;
-			item->recStartFlag = FALSE;
-
-			this->reserveWork.insert(pair<DWORD, RESERVE_WORK*>(item->reserveID, item));
-		}
-	}
-
-	if( this->checkThread == NULL ){
-		ResetEvent(this->checkStopEvent);
-		this->checkThread = (HANDLE)_beginthreadex(NULL, 0, CheckReserveThread, (LPVOID)this, CREATE_SUSPENDED, NULL);
-		SetThreadPriority( this->checkThread, THREAD_PRIORITY_NORMAL );
-		ResumeThread(this->checkThread);
-	}
-
-	UnLock();
-}
-
-void CTunerBankCtrl::ChgReserve(
-	RESERVE_DATA* reserve
-	)
-{
-	if( Lock() == FALSE ) return;
-
-	map<DWORD, RESERVE_WORK*>::iterator itr;
-	itr = this->createCtrlList.find(reserve->reserveID);
-	if( itr != this->createCtrlList.end() ){
-		//起動中
-		itr->second->reserveInfo->SetData(reserve);
-
-		LONGLONG stratTime = ConvertI64Time(reserve->startTime);
-		LONGLONG endTime = stratTime + reserve->durationSecond * I64_1SEC;
-		LONGLONG startMargin;
-		if( reserve->recSetting.useMargineFlag == TRUE ){
-			startMargin = ((LONGLONG)reserve->recSetting.startMargine) * I64_1SEC;
-		}else{
-			startMargin = this->defStartMargine;
-		}
-		//開始マージンは元の予約終了時刻を超えて負であってはならない
-		stratTime -= max(startMargin, stratTime - endTime);
-
-		if( GetNowI64Time() < stratTime ){
-			//開始時間遅くなったのでコントロール削除の必要あり
-			for( size_t i=0; i<itr->second->ctrlID.size(); i++ ){
-				if( itr->second->recStartFlag == TRUE ){
-					SET_CTRL_REC_STOP_PARAM param;
-					param.ctrlID = itr->second->ctrlID[i];
-					param.saveErrLog = this->saveErrLog;
-					SET_CTRL_REC_STOP_RES_PARAM resVal;
-					this->sendCtrl.SendViewStopRec(param, &resVal);
-				}
-				itr->second->recStartFlag = FALSE;
-				this->sendCtrl.SendViewDeleteCtrl(itr->second->ctrlID[i]);
+		reserve->recMode = save.recMode;
+		reserve->priority = save.priority;
+		reserve->enableCaption = save.enableCaption;
+		reserve->enableData = save.enableData;
+		reserve->pittari = save.pittari;
+		reserve->partialRecMode = save.partialRecMode;
+		reserve->recFolder = save.recFolder;
+		reserve->partialRecFolder = save.partialRecFolder;
+		//後方移動は注意。なお前方移動はどれだけ大きくても次のCheck()で予約終了するだけなので問題ない
+		if( reserve->startTime - reserve->startMargin > save.startTime - save.startMargin ){
+			__int64 now = GetNowI64Time() + this->delayTime;
+			if( reserve->startTime - reserve->startMargin - 60 * I64_1SEC > now ){
+				reserve->startTime = save.startTime;
+				reserve->startMargin = save.startMargin;
 			}
-			itr->second->ctrlID.clear();
-
-			itr->second->reserveInfo->SetRecWaitMode(FALSE, 0);
-
-			this->createCtrlList.erase(itr);
 		}
-	}else{
-		itr = this->reserveWork.find(reserve->reserveID);
-		if( itr != this->reserveWork.end() ){
-			itr->second->reserveInfo->SetData(reserve);
-		}
+		TUNER_RESERVE& r = itr->second = *reserve;
+		//内部パラメータを復元
+		r.startOrder = (r.startTime - r.startMargin) / I64_1SEC << 16 | r.reserveID & 0xFFFF;
+		r.effectivePriority = (this->backPriority ? -1 : 1) * ((__int64)((this->backPriority ? r.priority : ~r.priority) & 7) << 60 | r.startOrder);
+		r.state = save.state;
+		r.ctrlID[0] = save.ctrlID[0];
+		r.ctrlID[1] = save.ctrlID[1];
+		r.notStartHead = save.notStartHead;
+		r.appendPgInfo = save.appendPgInfo;
+		r.savedPgInfo = save.savedPgInfo;
+		r.epgStartTime = save.epgStartTime;
+		r.epgEventName = save.epgEventName;
+		return true;
 	}
-	itr = this->openErrReserveList.find(reserve->reserveID);
-	if( itr != this->openErrReserveList.end() ){
-		this->openErrReserveList.erase(itr);
-	}
-
-	UnLock();
+	return false;
 }
 
-void CTunerBankCtrl::DeleteReserve(
-	DWORD reserveID
-	)
+bool CTunerBankCtrl::DelReserve(DWORD reserveID)
 {
-	if( Lock() == FALSE ) return;
-
-	map<DWORD, RESERVE_WORK*>::iterator itr;
-
-	//処理中なら停止
-	itr = this->createCtrlList.find(reserveID);
-	if( itr != this->createCtrlList.end() ){
-		for( size_t i=0; i<itr->second->ctrlID.size(); i++ ){
-			SET_CTRL_REC_STOP_PARAM param;
-			param.ctrlID = itr->second->ctrlID[i];
-			param.saveErrLog = this->saveErrLog;
-			SET_CTRL_REC_STOP_RES_PARAM resVal;
-
-			this->sendCtrl.SendViewStopRec(param, &resVal);
-
-			this->sendCtrl.SendViewDeleteCtrl(itr->second->ctrlID[i]);
+	map<DWORD, TUNER_RESERVE>::iterator itr = this->reserveMap.find(reserveID);
+	if( itr != this->reserveMap.end() ){
+		if( itr->second.state != TR_IDLE ){
+			//hTunerProcessは必ず!NULL
+			CWatchBlock watchBlock(&this->watchContext);
+			CSendCtrlCmd ctrlCmd;
+			ctrlCmd.SetPipeSetting(CMD2_VIEW_CTRL_WAIT_CONNECT, CMD2_VIEW_CTRL_PIPE, this->tunerPid);
+			for( int i = 0; i < 2; i++ ){
+				if( itr->second.ctrlID[i] != 0 ){
+					if( itr->second.state == TR_REC && itr->second.recMode != RECMODE_VIEW ){
+						SET_CTRL_REC_STOP_PARAM param;
+						param.ctrlID = itr->second.ctrlID[i];
+						param.saveErrLog = this->saveErrLog;
+						SET_CTRL_REC_STOP_RES_PARAM resVal;
+						ctrlCmd.SendViewStopRec(param, &resVal);
+					}
+					ctrlCmd.SendViewDeleteCtrl(itr->second.ctrlID[i]);
+				}
+			}
+			if( itr->second.state == TR_REC ){
+				//録画終了に伴ってGUIキープが解除されたかもしれない
+				this->tunerResetLock = true;
+			}
 		}
-
-		this->createCtrlList.erase(itr);
+		this->reserveMap.erase(itr);
+		return true;
 	}
-
-	itr = this->reserveWork.find(reserveID);
-	if( itr != this->reserveWork.end() ){
-		SAFE_DELETE(itr->second);
-		this->reserveWork.erase(itr);
-	}
-
-	itr = this->openErrReserveList.find(reserveID);
-	if( itr != this->openErrReserveList.end() ){
-		this->openErrReserveList.erase(itr);
-	}
-
-	UnLock();
+	return false;
 }
 
-void CTunerBankCtrl::ClearNoCtrl()
+void CTunerBankCtrl::ClearNoCtrl(__int64 startTime)
 {
-	if( Lock() == FALSE ) return;
-
-	map<DWORD, RESERVE_WORK*>::iterator itr;
-	itr = this->reserveWork.begin();
-	while(itr != this->reserveWork.end() )
-	{
-		if( itr->second->ctrlID.size() == 0 ){
-			SAFE_DELETE(itr->second);
-			this->reserveWork.erase(itr++);
+	for( map<DWORD, TUNER_RESERVE>::iterator itr = this->reserveMap.begin(); itr != this->reserveMap.end(); ){
+		if( itr->second.state == TR_IDLE && itr->second.startTime - itr->second.startMargin >= startTime ){
+			this->reserveMap.erase(itr++);
 		}else{
 			itr++;
 		}
 	}
-
-	UnLock();
 }
 
-BOOL CTunerBankCtrl::IsOpenErr()
+vector<DWORD> CTunerBankCtrl::GetReserveIDList() const
 {
-	if( Lock() == FALSE ) return FALSE;
-
-	BOOL ret = this->openErrFlag;
-
-	UnLock();
-	return ret;
+	vector<DWORD> list;
+	list.reserve(this->reserveMap.size());
+	for( map<DWORD, TUNER_RESERVE>::const_iterator itr = this->reserveMap.begin(); itr != this->reserveMap.end(); itr++ ){
+		list.push_back(itr->first);
+	}
+	return list;
 }
 
-void CTunerBankCtrl::GetOpenErrReserve(vector<CReserveInfo*>* reserveInfo)
+vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check()
 {
-	if( Lock() == FALSE ) return ;
+	vector<CHECK_RESULT> retList;
 
-	map<DWORD, RESERVE_WORK*>::iterator itr;
-	for(itr = this->openErrReserveList.begin(); itr != this->openErrReserveList.end(); itr++ ){
-		reserveInfo->push_back(itr->second->reserveInfo);
+	if( this->hTunerProcess && WaitForSingleObject(this->hTunerProcess, 0) != WAIT_TIMEOUT ){
+		//チューナが予期せず閉じられた
+		CloseTuner();
+		this->specialState = TR_IDLE;
+		//TR_IDLEでない全予約を葬る
+		for( map<DWORD, TUNER_RESERVE>::const_iterator itr = this->reserveMap.begin(); itr != this->reserveMap.end(); ){
+			if( itr->second.state != TR_IDLE ){
+				CHECK_RESULT ret;
+				ret.type = CHECK_ERR_REC;
+				ret.reserveID = itr->first;
+				retList.push_back(ret);
+				this->reserveMap.erase(itr++);
+			}else{
+				itr++;
+			}
+		}
 	}
 
-	UnLock();
-}
+	CWatchBlock watchBlock(&this->watchContext);
+	CSendCtrlCmd ctrlCmd;
+	if( this->hTunerProcess ){
+		//チューナ起動時にはこれを再度呼ぶこと
+		ctrlCmd.SetPipeSetting(CMD2_VIEW_CTRL_WAIT_CONNECT, CMD2_VIEW_CTRL_PIPE, this->tunerPid);
+	}
 
-void CTunerBankCtrl::ResetOpenErr()
-{
-	if( Lock() == FALSE ) return ;
+	if( this->specialState == TR_EPGCAP ){
+		DWORD status;
+		if( ctrlCmd.SendViewGetStatus(&status) == CMD_SUCCESS ){
+			if( status != VIEW_APP_ST_GET_EPG ){
+				//取得終わった
+				OutputDebugString(L"epg end\r\n");
+				CloseTuner();
+				this->specialState = TR_IDLE;
+			}
+		}else{
+			//エラー
+			OutputDebugString(L"epg err\r\n");
+			CloseTuner();
+			this->specialState = TR_IDLE;
+		}
+	}else if( this->specialState == TR_NWTV ){
+		//ネットワークモードではGUIキープできないのでBonDriverが変更されるかもしれない
+		//BonDriverが変更されたチューナはこのバンクの管理下に置けないので、ネットワークモードを解除する
+		wstring bonDriver;
+		if( ctrlCmd.SendViewGetBonDrivere(&bonDriver) == CMD_SUCCESS && CompareNoCase(bonDriver, this->bonFileName) != 0 ){
+			if( ctrlCmd.SendViewSetID(-1) == CMD_SUCCESS ){
+				CBlockLock lock(&this->watchContext.lock);
+				CloseHandle(this->hTunerProcess);
+				this->hTunerProcess = NULL;
+				this->specialState = TR_IDLE;
+			}else{
+				//ID剥奪に失敗したので消えてもらうしかない
+				CloseNWTV();
+			}
+			//TODO: 汎用のログ用メッセージが存在しないので、やむを得ずNOTIFY_UPDATE_REC_ENDで警告する
+			this->notifyManager.AddNotifyMsg(NOTIFY_UPDATE_REC_END,
+				L"BonDriverが変更されたためNetworkモードを解除しました\r\n変更したBonDriverに録画の予定がないか注意してください");
+		}
+	}else if( this->hTunerProcess && this->tunerChLocked == false ){
+		//GUIキープされていないのでBonDriverが変更されるかもしれない
+		wstring bonDriver;
+		if( ctrlCmd.SendViewGetBonDrivere(&bonDriver) == CMD_SUCCESS && CompareNoCase(bonDriver, this->bonFileName) != 0 ){
+			if( ctrlCmd.SendViewSetID(-1) == CMD_SUCCESS ){
+				CBlockLock lock(&this->watchContext.lock);
+				CloseHandle(this->hTunerProcess);
+				this->hTunerProcess = NULL;
+			}else{
+				//ID剥奪に失敗したので消えてもらうしかない
+				CloseTuner();
+			}
+			//TR_IDLEでない全予約を葬る
+			for( map<DWORD, TUNER_RESERVE>::const_iterator itr = this->reserveMap.begin(); itr != this->reserveMap.end(); ){
+				if( itr->second.state != TR_IDLE ){
+					CHECK_RESULT ret;
+					ret.type = CHECK_ERR_REC;
+					ret.reserveID = itr->first;
+					retList.push_back(ret);
+					this->reserveMap.erase(itr++);
+				}else{
+					itr++;
+				}
+			}
+		}
+	}
 
-	this->openErrReserveList.clear();
-	this->openErrFlag = FALSE;
-	
-	UnLock();
-}
+	this->delayTime = 0;
+	this->epgCapDelayTime = 0;
+	if( this->hTunerProcess && this->specialState != TR_NWTV ){
+		//PC時計との誤差取得
+		int delaySec;
+		if( ctrlCmd.SendViewGetDelay(&delaySec) == CMD_SUCCESS ){
+			//誤った値を掴んでおかしなことにならないよう、EPG取得中の値は状態遷移の参考にしない
+			if( this->specialState == TR_EPGCAP ){
+				this->epgCapDelayTime = delaySec * I64_1SEC;
+			}else{
+				this->delayTime = delaySec * I64_1SEC;
+			}
+		}
+	}
+	__int64 now = GetNowI64Time() + this->delayTime;
 
-UINT WINAPI CTunerBankCtrl::CheckReserveThread(LPVOID param)
-{
-	CTunerBankCtrl* sys = (CTunerBankCtrl*)param;
-	DWORD wait = 1000;
-	LONGLONG delay = 0;
-
-	BOOL startEpgCap = FALSE;
-
-	while(1){
-		if( ::WaitForSingleObject(sys->checkStopEvent, wait) != WAIT_TIMEOUT ){
-			//キャンセルされた
+	//終了時間を過ぎた予約を回収し、TR_IDLE->TR_READY以外の遷移をする
+	vector<pair<__int64, DWORD>> idleList;
+	bool ngResetLock = false;
+	for( map<DWORD, TUNER_RESERVE>::iterator itrRes = this->reserveMap.begin(); itrRes != this->reserveMap.end(); ){
+		TUNER_RESERVE& r = itrRes->second;
+		CHECK_RESULT ret;
+		ret.type = 0;
+		switch( r.state ){
+		case TR_IDLE:
+			if( r.startTime + r.endMargin + r.durationSecond * I64_1SEC < now ){
+				ret.type = CHECK_ERR_PASS;
+			}
+			//開始順が秒精度なので、前後関係を確実にするため開始時間は必ず秒精度で扱う
+			else if( (r.startTime - r.startMargin - this->recWakeTime) / I64_1SEC < now / I64_1SEC ){
+				//録画開始recWakeTime前～
+				idleList.push_back(std::make_pair(r.startOrder, r.reserveID));
+			}
 			break;
-		}
-
-		if( sys->openErrFlag == FALSE ){
-			if( sys->Lock() == TRUE ){
-				multimap<LONGLONG, RESERVE_WORK*> sortList;
-				sys->GetCheckList(&sortList);
-
-				BOOL viewMode = FALSE;
-				SET_CH_INFO initCh;
-				BOOL needOpenTuner = sys->IsNeedOpenTuner(&sortList, &viewMode, &initCh);
-				//起動チェック
-				if( needOpenTuner == TRUE ){
-					//EPG取得状態確認
-					if( startEpgCap == TRUE ){
-						//行っているのでキャンセル
-					}
-					//起動必要
-					if( sys->openTuner == FALSE ){
-						//まだ起動されてないので起動
-						if( sys->OpenTuner(viewMode, &initCh) == FALSE ){
-							//起動できなかった
-							wait = 1000;
-							multimap<LONGLONG, RESERVE_WORK*>::iterator itrErr;
-							itrErr = sortList.begin();
-							if( itrErr != sortList.end() ){
-								itrErr->second->reserveInfo->AddNGTunerID(sys->tunerID);
-								sys->openErrReserveList.insert(pair<DWORD, RESERVE_WORK*>(itrErr->second->reserveID, itrErr->second));
-							}
-							sys->openErrFlag = TRUE;
-							sys->UnLock();
-							continue;
-						}else{
-							sys->currentChID = ((DWORD)initCh.ONID) << 16 | initCh.TSID;
-							if( sys->notifyManager != NULL ){
-								sys->notifyManager->AddNotifyMsg(NOTIFY_UPDATE_PRE_REC_START, sys->bonFileName);
-							}
-						}
-					}
-				}else{
-					if( startEpgCap ==FALSE ){
-						if( sys->openTuner == TRUE ){
-							sys->CloseTuner();
-						}
-						wait = 1000;
+		case TR_READY:
+			if( r.startTime + r.endMargin + r.durationSecond * I64_1SEC < now ){
+				for( int i = 0; i < 2; i++ ){
+					if( r.ctrlID[i] != 0 ){
+						ctrlCmd.SendViewDeleteCtrl(r.ctrlID[i]);
 					}
 				}
-
-				if( sys->openTuner == TRUE && startEpgCap == FALSE ){
-					//PC時計との誤差取得
-					int delaySec = 0;
-					if( sys->sendCtrl.SendViewGetDelay(&delaySec) == CMD_ERR_TIMEOUT ){
-						//EXE消されたかも
-						wait = 1000;
-						sys->ErrStop();
-						sys->UnLock();
-						continue;
-					}
-					delay = ((LONGLONG)delaySec)*I64_1SEC;
-					sys->delayTime = delay;
-
-					//制御コントロールまだ作成されていないものを作成
-					sys->CreateCtrl(&sortList, delay);
-
-					BOOL needShortCheck = FALSE;
-					//録画時間のチェック
-					sys->CheckRec(delay, &needShortCheck, wait);
-
-					if( needShortCheck == TRUE ){
-						wait = 100;
-					}else{
-						wait = 500;
-					}
-				}
-				sys->UnLock();
+				ret.type = CHECK_ERR_PASS;
 			}
-
-			if( sys->epgCapWork == TRUE ){
-				if( startEpgCap == FALSE ){
-					if( sys->openTuner == TRUE ){
-						//予約用にすでに起動中なので終了
-						sys->epgCapWork = FALSE;
-					}else{
-						//チューナー起動
-						if( sys->Lock() == TRUE ){
-							if( sys->OpenTuner(FALSE, NULL) == FALSE ){
-								sys->epgCapWork = FALSE;
-							}else{
-								//EPG取得開始
-								Sleep(1000);
-								if(sys->sendCtrl.SendViewEpgCapStart(&sys->epgCapItem) != CMD_SUCCESS){
-									sys->CloseTuner();
-									sys->epgCapWork = FALSE;
-								}else{
-									startEpgCap = TRUE;
-								}
-							}
-							sys->UnLock();
-						}
-					}
-				}else{
-					//ステータス確認
-					DWORD status = 0;
-					if( sys->sendCtrl.SendViewGetStatus(&status) == CMD_SUCCESS ){
-						if( status != VIEW_APP_ST_GET_EPG ){
-						OutputDebugString(L"epg end");
-							//取得終わった
-							if( sys->openTuner == TRUE ){
-								if( sys->Lock() == TRUE ){
-									sys->sendCtrl.SendViewEpgCapStop();
-									sys->CloseTuner();
-									sys->UnLock();
-								}
-							}
-							startEpgCap = FALSE;
-							sys->epgCapWork = FALSE;
-						}else{
-							//PC時計との誤差取得
-							int delaySec = 0;
-							if( sys->sendCtrl.SendViewGetDelay(&delaySec) == CMD_SUCCESS ){
-								delay = ((LONGLONG)delaySec)*I64_1SEC;
-								sys->delayTime = delay;
-							}
-						}
-					}else{
-						//エラー？
-						OutputDebugString(L"epg err");
-						if( sys->openTuner == TRUE ){
-							if( sys->Lock() == TRUE ){
-								sys->CloseTuner();
-								sys->UnLock();
-							}
-						}
-						startEpgCap = FALSE;
-						sys->epgCapWork = FALSE;
-					}
-				}
-			}else{
-				if( startEpgCap == TRUE ){
-					OutputDebugString(L"epg cancel");
-					//キャンセル？
-					if( sys->openTuner == TRUE ){
-						if( sys->Lock() == TRUE ){
-							sys->sendCtrl.SendViewEpgCapStop();
-							sys->CloseTuner();
-							sys->UnLock();
-						}
-					}
-					startEpgCap = FALSE;
-				}
-			}
-		}
-	}
-	return 0;
-}
-
-void CTunerBankCtrl::GetCheckList(multimap<LONGLONG, RESERVE_WORK*>* sortList)
-{
-	map<DWORD, RESERVE_WORK*>::iterator itr;
-	for( itr = this->reserveWork.begin(); itr != this->reserveWork.end(); itr++ ){
-		RESERVE_DATA data;
-		itr->second->reserveInfo->GetData(&data);
-		if( data.recSetting.recMode == RECMODE_NO ){
-			continue;
-		}
-
-		itr->second->stratTime = ConvertI64Time(data.startTime);
-		itr->second->endTime = GetSumTime(data.startTime, data.durationSecond);
-
-		if( data.recSetting.useMargineFlag == TRUE ){
-			itr->second->startMargine = ((LONGLONG)data.recSetting.startMargine) * I64_1SEC;
-			itr->second->endMargine = ((LONGLONG)data.recSetting.endMargine) * I64_1SEC;
-		}else{
-			itr->second->startMargine = this->defStartMargine;
-			itr->second->endMargine = this->defEndMargine;
-		}
-
-		itr->second->chID = ((DWORD)data.originalNetworkID)<<16 | data.transportStreamID;
-		itr->second->priority = data.recSetting.priority;
-
-
-		if( data.recSetting.recMode == 2 || data.recSetting.recMode == 3 ){
-			itr->second->enableScramble = 0;
-		}else{
-			itr->second->enableScramble = 1;
-		}
-
-		if( data.recSetting.serviceMode & RECSERVICEMODE_SET ){
-			if( data.recSetting.serviceMode & RECSERVICEMODE_CAP ){
-				itr->second->enableCaption = 1;
-			}else{
-				itr->second->enableCaption = 0;
-			}
-			if( data.recSetting.serviceMode & RECSERVICEMODE_DATA ){
-				itr->second->enableData = 1;
-			}else{
-				itr->second->enableData = 0;
-			}
-		}else{
-			itr->second->enableCaption = this->enableCaption;
-			itr->second->enableData = this->enableData;
-		}
-
-		itr->second->partialRecFlag = data.recSetting.partialRecFlag;
-		itr->second->continueRecFlag = data.recSetting.continueRecFlag;
-
-		itr->second->ONID = data.originalNetworkID;
-		itr->second->TSID = data.transportStreamID;
-		itr->second->SID = data.serviceID;
-
-		LONGLONG sortKey = itr->second->stratTime - max(itr->second->startMargine, itr->second->stratTime - itr->second->endTime);
-
-		sortList->insert(pair<LONGLONG, RESERVE_WORK*>(sortKey, itr->second));
-	}
-}
-
-BOOL CTunerBankCtrl::IsNeedOpenTuner(multimap<LONGLONG, RESERVE_WORK*>* sortList, BOOL* viewMode, SET_CH_INFO* initCh)
-{
-	if( sortList == NULL ){
-		return FALSE;
-	}
-	if( sortList->size() == 0 ){
-		return FALSE;
-	}
-
-	LONGLONG nowTime = GetNowI64Time();
-
-	BOOL ret = FALSE;
-	multimap<LONGLONG, RESERVE_WORK*>::iterator itr;
-	itr = sortList->begin();
-	if( itr->second->stratTime - this->recWakeTime - max(itr->second->startMargine, itr->second->stratTime - itr->second->endTime) < nowTime ){
-		ret =  TRUE;
-		BYTE recMode=0;
-		itr->second->reserveInfo->GetRecMode(&recMode);
-		if( recMode == RECMODE_VIEW ){
-			*viewMode = TRUE;
-		}
-		itr->second->reserveInfo->GetService(&(initCh->ONID), &(initCh->TSID), &(initCh->SID) );
-		initCh->useSID = TRUE;
-		initCh->useBonCh = FALSE;
-
-		wstring searchKey;
-		WIN32_FIND_DATA findData;
-		HANDLE find;
-
-		RESERVE_DATA data;
-		itr->second->reserveInfo->GetData(&data);
-
-		if( data.recSetting.recFolderList.size() == 0 ){
-			searchKey = this->recFolderPath;
-		}else{
-			searchKey = data.recSetting.recFolderList[0].recFolder;
-		}
-		searchKey += L"\\*.*";
-
-		//指定フォルダのファイル一覧取得
-		find = FindFirstFile( searchKey.c_str(), &findData);
-		if ( find != INVALID_HANDLE_VALUE ) {
-			FindClose(find);
-		}
-	}
-
-	return ret;
-}
-
-
-BOOL CTunerBankCtrl::OpenTuner(BOOL viewMode, SET_CH_INFO* initCh)
-{
-	BOOL noView = TRUE;
-	BOOL noNW = TRUE;
-	BOOL UDP = FALSE;
-	BOOL TCP = FALSE;
-	if( this->recView == TRUE && viewMode == TRUE ){
-		noView = FALSE;
-	}
-	if( this->recNW == TRUE || viewMode == TRUE ){
-		noNW = FALSE;
-		UDP = TRUE;
-		TCP = TRUE;
-	}
-	this->useOpendTuner = FALSE;
-	map<DWORD, DWORD> registGUIMap;
-	if( this->notifyManager != NULL ){
-		this->notifyManager->GetRegistGUI(&registGUIMap);
-	}
-
-	BOOL ret = OpenTunerExe(this->recExePath.c_str(), this->bonFileName.c_str(), tunerID, this->recMinWake, noView, noNW, UDP, TCP, this->processPriority, registGUIMap, &this->processID);
-	if( ret == FALSE ){
-		Sleep(500);
-		ret = OpenTunerExe(this->recExePath.c_str(), this->bonFileName.c_str(), tunerID, this->recMinWake, noView, noNW, UDP, TCP, this->processPriority, registGUIMap, &this->processID);
-	}
-	if( ret == TRUE ){
-		wstring pipeName = L"";
-		wstring eventName = L"";
-		Format(pipeName, L"%s%d", CMD2_VIEW_CTRL_PIPE, this->processID);
-		Format(eventName, L"%s%d", CMD2_VIEW_CTRL_WAIT_CONNECT, this->processID);
-		this->sendCtrl.SetPipeSetting(eventName, pipeName);
-
-		this->sendCtrl.SendViewSetID(this->tunerID);
-
-		this->sendCtrl.SendViewSetStandbyRec(1);
-		if( initCh != NULL ){
-			this->sendCtrl.SendViewSetCh(initCh);
-		}
-	}else{
-		//CHがNULLならEPG取得用
-		//EPG取得では奪わない
-		if( initCh != NULL ){
-			//起動中で使えるもの探す
-			wstring exeName;
-			GetFileName(this->recExePath, exeName);
-			vector<DWORD> IDList = _FindPidListByExeName(exeName.c_str());
-			for(size_t i=0; i<IDList.size(); i++ ){
-				wstring pipeName = L"";
-				wstring eventName = L"";
-				Format(pipeName, L"%s%d", CMD2_VIEW_CTRL_PIPE, IDList[i]);
-				Format(eventName, L"%s%d", CMD2_VIEW_CTRL_WAIT_CONNECT, IDList[i]);
-				this->sendCtrl.SetPipeSetting(eventName, pipeName);
-
-				wstring bonDriver = L"";
-				this->sendCtrl.SendViewGetBonDrivere(&bonDriver);
-				if( bonDriver.size() > 0 && CompareNoCase(bonDriver, this->bonFileName) == 0 ){
-					int id=0;
-					if(this->sendCtrl.SendViewGetID(&id) == CMD_SUCCESS){
-						if( id == -1 ){
-							DWORD status = 0;
-							if(this->sendCtrl.SendViewGetStatus(&status) == CMD_SUCCESS){
-								if( status == VIEW_APP_ST_NORMAL || status == VIEW_APP_ST_ERR_CH_CHG){
-									this->sendCtrl.SendViewSetID(this->tunerID);
-
-									this->sendCtrl.SendViewSetStandbyRec(1);
-
-									if( initCh != NULL ){
-										this->sendCtrl.SendViewSetCh(initCh);
-									}
-									this->processID = IDList[i];
-									this->useOpendTuner = TRUE;
-									ret = TRUE;
-								
-									break;
-								}
-							}
-						}
-					}
-				}
-			}
-			if( this->useOpendTuner == FALSE ){
-				//TVTestで使ってるものあるかチェック
-				IDList = _FindPidListByExeName(L"tvtest.exe");
-				map<DWORD, DWORD> registGUIMap;
-				if( this->notifyManager != NULL ){
-					this->notifyManager->GetRegistGUI(&registGUIMap);
-				}
-
-				for(size_t i=0; i<IDList.size(); i++ ){
-					CSendCtrlCmd send;
-					wstring pipeName = L"";
-					wstring eventName = L"";
-					Format(pipeName, L"%s%d", CMD2_TVTEST_CTRL_PIPE, IDList[i]);
-					Format(eventName, L"%s%d", CMD2_TVTEST_CTRL_WAIT_CONNECT, IDList[i]);
-					send.SetPipeSetting(eventName, pipeName);
-					send.SetConnectTimeOut(1000);
-
-					wstring bonDriver = L"";
-					if( send.SendViewGetBonDrivere(&bonDriver) == CMD_SUCCESS){
-						if( bonDriver.size() > 0 && CompareNoCase(bonDriver, this->bonFileName) == 0 ){
-							send.SendViewAppClose();
-							Sleep(5000);
-							ret = OpenTunerExe(this->recExePath.c_str(), this->bonFileName.c_str(), tunerID, this->recMinWake, noView, noNW, UDP, TCP, this->processPriority, registGUIMap, &this->processID);
-							if( ret == FALSE ){
-								Sleep(500);
-								ret = OpenTunerExe(this->recExePath.c_str(), this->bonFileName.c_str(), tunerID, this->recMinWake, noView, noNW, UDP, TCP, this->processPriority, registGUIMap, &this->processID);
-							}
-							if( ret == TRUE ){
-								wstring pipeName = L"";
-								wstring eventName = L"";
-								Format(pipeName, L"%s%d", CMD2_VIEW_CTRL_PIPE, this->processID);
-								Format(eventName, L"%s%d", CMD2_VIEW_CTRL_WAIT_CONNECT, this->processID);
-								this->sendCtrl.SetPipeSetting(eventName, pipeName);
-
-								this->sendCtrl.SendViewSetID(this->tunerID);
-
-								this->sendCtrl.SendViewSetStandbyRec(1);
-								if( initCh != NULL ){
-									this->sendCtrl.SendViewSetCh(initCh);
-								}
+			//パイプコマンドにはチャンネル変更の完了を調べる仕組みがないので、妥当な時間だけ待つ
+			else if( GetTickCount() - this->tunerChChgTick > 5000 && r.startTime - r.startMargin < now ){
+				//録画開始～
+				if( RecStart(r, now) ){
+					//途中から開始されたか
+					r.notStartHead = r.startTime - r.startMargin + 60 * I64_1SEC < now;
+					r.appendPgInfo = false;
+					r.savedPgInfo = false;
+					r.state = TR_REC;
+					if( r.recMode == RECMODE_VIEW ){
+						//視聴予約でない予約が1つでもあれば「視聴モード」にしない
+						map<DWORD, TUNER_RESERVE>::const_iterator itr;
+						for( itr = this->reserveMap.begin(); itr != this->reserveMap.end(); itr++ ){
+							if( itr->second.state != TR_IDLE && itr->second.recMode != RECMODE_VIEW ){
 								break;
 							}
 						}
-					}
-				}
-			}
-			//EPG取得中のもの奪う
-			if( this->useOpendTuner == FALSE ){
-				wstring exeName;
-				GetFileName(this->recExePath, exeName);
-				IDList = _FindPidListByExeName(exeName.c_str());
-				for(size_t i=0; i<IDList.size(); i++ ){
-					wstring pipeName = L"";
-					wstring eventName = L"";
-					Format(pipeName, L"%s%d", CMD2_VIEW_CTRL_PIPE, IDList[i]);
-					Format(eventName, L"%s%d", CMD2_VIEW_CTRL_WAIT_CONNECT, IDList[i]);
-					this->sendCtrl.SetPipeSetting(eventName, pipeName);
-
-					wstring bonDriver = L"";
-					this->sendCtrl.SendViewGetBonDrivere(&bonDriver);
-					if( bonDriver.size() > 0 && CompareNoCase(bonDriver, this->bonFileName) == 0 ){
-						int id=0;
-						if(this->sendCtrl.SendViewGetID(&id) == CMD_SUCCESS){
-							if( id == -1 ){
-								DWORD status = 0;
-								if(this->sendCtrl.SendViewGetStatus(&status) == CMD_SUCCESS){
-									if( status == VIEW_APP_ST_GET_EPG ){
-										this->sendCtrl.SendViewEpgCapStop();
-										this->sendCtrl.SendViewSetID(this->tunerID);
-
-										this->sendCtrl.SendViewSetStandbyRec(1);
-
-										if( initCh != NULL ){
-											this->sendCtrl.SendViewSetCh(initCh);
-										}
-										this->processID = IDList[i];
-										this->useOpendTuner = TRUE;
-										ret = TRUE;
-								
-										break;
-									}
-								}
+						if( itr == this->reserveMap.end() ){
+							//「視聴モード」にするとGUIキープが解除されてしまうためチャンネルを把握することはできない
+							ctrlCmd.SendViewSetStandbyRec(2);
+							this->tunerChLocked = false;
+							if( this->recView ){
+								ctrlCmd.SendViewExecViewApp();
 							}
 						}
 					}
-				}
-			}
-			//録画中のもの奪う
-			if( this->useOpendTuner == FALSE ){
-				wstring exeName;
-				GetFileName(this->recExePath, exeName);
-				IDList = _FindPidListByExeName(exeName.c_str());
-				for(size_t i=0; i<IDList.size(); i++ ){
-					wstring pipeName = L"";
-					wstring eventName = L"";
-					Format(pipeName, L"%s%d", CMD2_VIEW_CTRL_PIPE, IDList[i]);
-					Format(eventName, L"%s%d", CMD2_VIEW_CTRL_WAIT_CONNECT, IDList[i]);
-					this->sendCtrl.SetPipeSetting(eventName, pipeName);
-
-					wstring bonDriver = L"";
-					this->sendCtrl.SendViewGetBonDrivere(&bonDriver);
-					if( bonDriver.size() > 0 && CompareNoCase(bonDriver, this->bonFileName) == 0 ){
-						int id=0;
-						if(this->sendCtrl.SendViewGetID(&id) == CMD_SUCCESS){
-							if( id == -1 ){
-								DWORD status = 0;
-								if(this->sendCtrl.SendViewGetStatus(&status) == CMD_SUCCESS){
-									if( status == VIEW_APP_ST_REC ){
-										this->sendCtrl.SendViewStopRecAll();
-										this->sendCtrl.SendViewSetID(this->tunerID);
-
-										this->sendCtrl.SendViewSetStandbyRec(1);
-
-										if( initCh != NULL ){
-											this->sendCtrl.SendViewSetCh(initCh);
-										}
-										this->processID = IDList[i];
-										this->useOpendTuner = TRUE;
-										ret = TRUE;
-								
-										break;
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-	if( ret == TRUE ){
-		this->openTuner = TRUE;
-	}else{
-		this->openTuner = FALSE;
-	}
-
-	return ret;
-}
-
-BOOL CTunerBankCtrl::FindPartialService(WORD ONID, WORD TSID, WORD SID, WORD* partialSID, wstring* serviceName)
-{
-	map<DWORD, CH_DATA4>::const_iterator itr;
-	for( itr = this->chUtil.GetMap().begin(); itr != this->chUtil.GetMap().end(); itr++ ){
-		if( itr->second.originalNetworkID == ONID && itr->second.transportStreamID == TSID && itr->second.partialFlag == TRUE ){
-			if( itr->second.serviceID != SID ){
-				if( partialSID != NULL ){
-					*partialSID = itr->second.serviceID;
-				}
-				if( serviceName != NULL ){
-					*serviceName = itr->second.serviceName;
-				}
-				return TRUE;
-			}
-		}
-	}
-	return FALSE;
-}
-
-void CTunerBankCtrl::CreateCtrl(multimap<LONGLONG, RESERVE_WORK*>* sortList, LONGLONG delay)
-{
-	LONGLONG nowTime = GetNowI64Time();
-	nowTime += delay;
-
-	multimap<LONGLONG, RESERVE_WORK*>::iterator itr;
-	for( itr = sortList->begin(); itr != sortList->end(); itr++ ){
-		if( itr->second->ctrlID.size() == 0 ){
-			//録画開始１分前になったらコントロール作成
-			LONGLONG chkStartTime = itr->second->stratTime - (60*I64_1SEC) - max(itr->second->startMargine, itr->second->stratTime - itr->second->endTime);
-
-			if( chkStartTime < nowTime ){
-				BOOL createFlag = FALSE;
-				if( this->currentChID == itr->second->chID ){
-					//録画中のものに同一サービスで連続録画設定のものある？
-					if( ContinueRec(itr->second) == FALSE ){
-						CreateCtrl(itr->second);
-						createFlag = TRUE;
-					}
 				}else{
-					//チャンネル違うので録画時間考慮する必要あり
-					createFlag = CheckOtherChCreate(nowTime, itr->second);
-
-					if( createFlag == TRUE ){
-						//作成タイミングになったので作成
-						StopAllRec();
-
-						SET_CH_INFO chgCh;
-						itr->second->reserveInfo->GetService(&chgCh.ONID, &chgCh.TSID, &chgCh.SID);
-						chgCh.useSID = TRUE;
-						chgCh.useBonCh = FALSE;
-
-						this->sendCtrl.SendViewSetStandbyRec(1);
-
-						if( this->sendCtrl.SendViewSetCh(&chgCh) != CMD_SUCCESS ){
-							//失敗時もう一度リトライ
-							Sleep(200);
-							this->sendCtrl.SendViewSetCh(&chgCh);
-						}
-						this->currentChID = ((DWORD)chgCh.ONID) << 16 | chgCh.TSID;
-
-						//作成
-						CreateCtrl(itr->second);
-					}
-				}
-
-				if( this->notifyManager != NULL && createFlag == TRUE ){
-					RESERVE_DATA data;
-					itr->second->reserveInfo->GetData(&data);
-					wstring msg;
-					Format(msg, L"%s %04d/%02d/%02d %02d:%02d:%02d～ %s", 
-						data.stationName.c_str(),
-						data.startTime.wYear,
-						data.startTime.wMonth,
-						data.startTime.wDay,
-						data.startTime.wHour,
-						data.startTime.wMinute,
-						data.startTime.wMilliseconds,
-						data.title.c_str()
-						);
-					this->notifyManager->AddNotifyMsg(NOTIFY_UPDATE_PRE_REC_START, msg);
+					//開始できなかった
+					ret.type = CHECK_ERR_RECSTART;
 				}
 			}
-		}
-	}
-}
-
-void CTunerBankCtrl::CreateCtrl(RESERVE_WORK* info)
-{
-	//作成
-	DWORD newCtrlID = 0;
-	BOOL createFull = TRUE;
-	BYTE recMode = 0;
-	info->reserveInfo->GetRecMode(&recMode);
-	if( (info->partialRecFlag == 1 || info->partialRecFlag == 2) && recMode != RECMODE_VIEW){
-		//部分受信サービスも
-		WORD partialSID = 0;
-		if( FindPartialService(info->ONID, info->TSID, info->SID, &partialSID, NULL) == TRUE ){
-			//部分受信
-			if( sendCtrl.SendViewCreateCtrl(&newCtrlID) == CMD_SUCCESS){
-				info->ctrlID.push_back(newCtrlID);
-				//コントロールに対して設定
-				SET_CTRL_MODE param;
-				param.ctrlID = newCtrlID;
-				param.SID = partialSID;
-				param.enableScramble = info->enableScramble;
-				param.enableCaption = info->enableCaption;
-				param.enableData = info->enableData;
-
-				if( this->sendCtrl.SendViewSetCtrlMode(param) != CMD_SUCCESS){
-					//失敗時もう一度リトライ
-					Sleep(200);
-					this->sendCtrl.SendViewSetCtrlMode(param);
-				}
-
-				info->partialCtrlID = newCtrlID;
-				if(info->partialRecFlag == 2){
-					createFull = FALSE;
-				}
-			}
-		}
-	}
-	if( createFull == FALSE ){
-		info->mainCtrlID = newCtrlID;
-		info->reserveInfo->SetRecWaitMode(TRUE, this->tunerID);
-		this->createCtrlList.insert(pair<DWORD, RESERVE_WORK*>(info->reserveID,info));
-	}else{
-		//通常
-		if( sendCtrl.SendViewCreateCtrl(&newCtrlID) == CMD_SUCCESS){
-			info->ctrlID.push_back(newCtrlID);
-			info->mainCtrlID = newCtrlID;
-			info->reserveInfo->SetRecWaitMode(TRUE, this->tunerID);
-			//コントロールに対して設定
-			SET_CTRL_MODE param;
-			param.ctrlID = newCtrlID;
-
-			BYTE recMode = 0;
-			info->reserveInfo->GetRecMode(&recMode);
-			if( recMode == RECMODE_ALL || recMode == RECMODE_ALL_NOB25 ){
-				param.SID = 0xFFFF;
-			}else{
-				info->reserveInfo->GetService(NULL,NULL,&param.SID);
-			}
-			param.enableScramble = info->enableScramble;
-			param.enableCaption = info->enableCaption;
-			param.enableData = info->enableData;
-
-			if( this->sendCtrl.SendViewSetCtrlMode(param) != CMD_SUCCESS){
-				//失敗時もう一度リトライ
-				Sleep(200);
-				this->sendCtrl.SendViewSetCtrlMode(param);
-			}
-						
-			this->createCtrlList.insert(pair<DWORD, RESERVE_WORK*>(info->reserveID, info));
-		}
-	}
-}
-
-BOOL CTunerBankCtrl::ContinueRec(RESERVE_WORK* info)
-{
-	BOOL ret = FALSE;
-	map<DWORD, RESERVE_WORK*>::iterator itr;
-	for( itr = this->createCtrlList.begin(); itr != this->createCtrlList.end(); itr++ ){
-		RESERVE_DATA data;
-		itr->second->reserveInfo->GetData(&data);
-		if( data.reserveStatus == ADD_RESERVE_NO_FIND ||
-			data.reserveStatus == ADD_RESERVE_UNKNOWN_END
-			){
-				continue;
-		}
-		if( itr->second->reserveInfo->IsChkPfInfo() == FALSE && data.recSetting.tuijyuuFlag == 1 ){
-			continue;
-		}
-		if( itr->second->ONID == info->ONID &&
-			itr->second->TSID == info->TSID &&
-			itr->second->SID == info->SID &&
-			itr->second->continueRecFlag == 1 ){
-				if( itr->second->stratTime < info->stratTime &&
-					info->stratTime <= itr->second->endTime &&
-					itr->second->endTime < info->endTime
-					){
-					//連続録画なので、同一制御IDで録画開始されたことにする
-					info->ctrlID = itr->second->ctrlID;
-					info->mainCtrlID = itr->second->mainCtrlID;
-					info->reserveInfo->SetRecWaitMode(TRUE, this->tunerID);
-					info->reserveInfo->SetPfInfoAddMode(TRUE);
-					itr->second->reserveInfo->SetContinueRecFlag(TRUE);
-
-					info->recStartFlag = TRUE;
-
-					this->createCtrlList.insert(pair<DWORD, RESERVE_WORK*>(info->reserveID, info));
-
-
-					ret = TRUE;
-					break;
-				}
-		}
-	}
-
-	return ret;
-}
-
-BOOL CTunerBankCtrl::CheckOtherChCreate(LONGLONG nowTime, RESERVE_WORK* reserve)
-{
-	BOOL createFlag = FALSE;
-
-	LONGLONG chkStartTime = reserve->stratTime;
-	chkStartTime -= max(reserve->startMargine, reserve->stratTime - reserve->endTime);
-
-	LONGLONG chgTimeHPriority = 0;
-	LONGLONG chgTimeLPriority = 0;
-
-	if( this->createCtrlList.size() != 0 ){
-		map<DWORD, RESERVE_WORK*>::iterator itr;
-		for( itr = this->createCtrlList.begin(); itr != this->createCtrlList.end(); itr++ ){
-			LONGLONG chkEndTime = itr->second->endTime;
-			chkEndTime += max(itr->second->endMargine, itr->second->stratTime - min(itr->second->startMargine, 0) - itr->second->endTime);
-			if( chkEndTime + 15*I64_1SEC >= chkStartTime ){
-				//このコントロールの終了はreserveの録画開始と重なる
-				if( itr->second->priority < reserve->priority ||
-					(itr->second->priority == reserve->priority && this->backPriority == TRUE )){
-					//後ろ優先なので開始15秒前に停止させる
-					if( chgTimeHPriority > chkStartTime - 15*I64_1SEC || chgTimeHPriority == 0 ){
-						chgTimeHPriority = chkStartTime - 15*I64_1SEC;
-					}
-				}else{
-					//前の録画優先なので終わりまで待つ
-					if( chgTimeLPriority < chkEndTime || chgTimeLPriority == 0 ){
-						chgTimeLPriority = chkEndTime;
-					}
-				}
-			}
-		}
-
-		LONGLONG chgTime = 0;
-		if( chgTimeHPriority == 0 && chgTimeLPriority != 0 ){
-			chgTime = chgTimeLPriority;
-		}else if( chgTimeHPriority != 0 && chgTimeLPriority == 0 ){
-			chgTime = chgTimeHPriority;
-		}else if( chgTimeHPriority != 0 && chgTimeLPriority != 0 ){
-			//自分より高い優先度存在するのでそちら優先
-			chgTime = chgTimeLPriority;
-		}
-
-		if( chgTime != 0 && chgTime <= nowTime ){
-			createFlag = TRUE;
-		}
-	}else{
-		createFlag = TRUE;
-	}
-
-	return createFlag;
-}
-
-void CTunerBankCtrl::StopAllRec()
-{
-	map<DWORD, RESERVE_WORK*>::iterator itr;
-	for( itr = this->createCtrlList.begin(); itr != this->createCtrlList.end(); itr++ ){
-		for( size_t i=0; i<itr->second->ctrlID.size(); i++ ){
-			SET_CTRL_REC_STOP_PARAM param;
-			param.ctrlID = itr->second->ctrlID[i];
-			param.saveErrLog = this->saveErrLog;
-			SET_CTRL_REC_STOP_RES_PARAM resVal;
-
-			this->sendCtrl.SendViewStopRec(param, &resVal);
-
-			this->sendCtrl.SendViewDeleteCtrl(itr->second->ctrlID[i]);
-
-			if( itr->second->ctrlID[i] == itr->second->mainCtrlID ){
-				if( itr->second->endTime > GetNowI64Time() + 60*I64_1SEC ){
-					AddEndReserve(itr->second, REC_END_STATUS_NEXT_START_END, resVal);
-				}else{
-					if( itr->second->notStartHeadFlag == FALSE ){
-						AddEndReserve(itr->second, REC_END_STATUS_NORMAL, resVal);
-					}else{
-						AddEndReserve(itr->second, REC_END_STATUS_NOT_START_HEAD, resVal);
-					}
-				}
-			}
-		}
-//		this->endReserveList.insert(pair<DWORD, RESERVE_WORK*>(itr->first, itr->second));
-	}
-	this->createCtrlList.clear();
-}
-
-void CTunerBankCtrl::ErrStop()
-{
-	map<DWORD, RESERVE_WORK*>::iterator itr;
-	for( itr = this->createCtrlList.begin(); itr != this->createCtrlList.end(); itr++ ){
-		SET_CTRL_REC_STOP_RES_PARAM resVal;
-		resVal.drop = 0;
-		resVal.scramble = 0;
-		AddEndReserve(itr->second, REC_END_STATUS_ERR_END, resVal);
-//		this->endReserveList.insert(pair<DWORD, RESERVE_WORK*>(itr->first, itr->second));
-	}
-	this->createCtrlList.clear();
-	this->processID = 0;
-	this->openTuner = FALSE;
-}
-
-void CTunerBankCtrl::CheckRec(LONGLONG delay, BOOL* needShortCheck, DWORD wait)
-{
-	LONGLONG nowTime = GetNowI64Time();
-	nowTime += delay;
-
-	*needShortCheck = FALSE;
-	vector<DWORD> endList;
-
-	map<DWORD, RESERVE_WORK*>::iterator itr;
-	for( itr = this->createCtrlList.begin(); itr != this->createCtrlList.end(); itr++ ){
-		RESERVE_DATA data;
-		itr->second->reserveInfo->GetData(&data);
-
-		LONGLONG chkStartTime = ConvertI64Time(data.startTime);
-		LONGLONG chkEndTime = chkStartTime + data.durationSecond * I64_1SEC;
-
-		LONGLONG startMargine = 0;
-		LONGLONG endMargine = 0;
-		if( data.recSetting.useMargineFlag == TRUE ){
-			startMargine = ((LONGLONG)data.recSetting.startMargine)*I64_1SEC;
-			endMargine = ((LONGLONG)data.recSetting.endMargine)*I64_1SEC;
-		}else{
-			startMargine = this->defStartMargine;
-			endMargine = this->defEndMargine;
-		}
-
-		startMargine = max(startMargine, chkStartTime - chkEndTime);
-		endMargine = max(endMargine, chkStartTime - min(startMargine, 0) - chkEndTime);
-		chkStartTime -= startMargine + I64_1SEC;
-		chkEndTime += endMargine;
-
-		if( nowTime < chkStartTime ){
-			if( chkStartTime - 5*I64_1SEC < nowTime){
-				//開始5秒前になったらチェック間隔を短くする
-				*needShortCheck = TRUE;
-			}else{
+			break;
+		case TR_REC:
+			{
 				//ステータス確認
-				DWORD status = 0;
-				if( this->sendCtrl.SendViewGetStatus(&status) == CMD_SUCCESS ){
-					if( status == VIEW_APP_ST_ERR_CH_CHG ){
-						//チャンネル切り替え失敗してるようなのでリトライ
-						SET_CH_INFO chgCh;
-						itr->second->reserveInfo->GetService(&chgCh.ONID, &chgCh.TSID, &chgCh.SID);
-						chgCh.useSID = TRUE;
-						chgCh.useBonCh = FALSE;
-
-						this->sendCtrl.SendViewSetCh(&chgCh);
-						this->currentChID = ((DWORD)chgCh.ONID) << 16 | chgCh.TSID;
+				DWORD status;
+				if( r.recMode != RECMODE_VIEW && ctrlCmd.SendViewGetStatus(&status) == CMD_SUCCESS && status != VIEW_APP_ST_REC ){
+					//キャンセルされた？
+					ret.type = CHECK_ERR_REC;
+					this->tunerResetLock = true;
+				}else if( r.startTime + r.endMargin + r.durationSecond * I64_1SEC < now ){
+					ret.type = CHECK_ERR_REC;
+					ret.continueRec = false;
+					ret.drops = 0;
+					ret.scrambles = 0;
+					bool isMainCtrl = true;
+					for( int i = 0; i < 2; i++ ){
+						if( r.ctrlID[i] != 0 ){
+							if( r.recMode == RECMODE_VIEW ){
+								if( isMainCtrl ){
+									ret.type = CHECK_END;
+								}
+							}else{
+								SET_CTRL_REC_STOP_PARAM param;
+								param.ctrlID = r.ctrlID[i];
+								param.saveErrLog = this->saveErrLog;
+								SET_CTRL_REC_STOP_RES_PARAM resVal;
+								if( ctrlCmd.SendViewStopRec(param, &resVal) != CMD_SUCCESS ){
+									if( isMainCtrl ){
+										ret.type = CHECK_ERR_RECEND;
+									}
+								}else if( isMainCtrl ){
+									ret.type = resVal.subRecFlag ? CHECK_END_END_SUBREC :
+									           r.notStartHead ? CHECK_END_NOT_START_HEAD :
+									           r.savedPgInfo == false ? CHECK_END_NOT_FIND_PF : CHECK_END;
+									ret.recFilePath = resVal.recFilePath;
+									ret.drops = resVal.drop;
+									ret.scrambles = resVal.scramble;
+									ret.epgStartTime = r.epgStartTime;
+									ret.epgEventName = r.epgEventName;
+								}
+							}
+							ctrlCmd.SendViewDeleteCtrl(r.ctrlID[i]);
+							isMainCtrl = false;
+						}
 					}
-				}
-			}
-		}else if( chkStartTime <= nowTime && nowTime < chkEndTime-30*I64_1SEC){
-			if( itr->second->recStartFlag == FALSE ){
-				//開始時間過ぎているので録画開始
-				if( RecStart(nowTime, itr->second, TRUE) == TRUE ){
-					itr->second->recStartFlag = TRUE;
-					if( chkStartTime + 60*I64_1SEC < nowTime ){
-						//途中から開始された
-						itr->second->notStartHeadFlag = TRUE;
-					}
+					//録画終了に伴ってGUIキープが解除されたかもしれない
+					this->tunerResetLock = true;
 				}else{
-					//録画に失敗した？
-					SET_CTRL_REC_STOP_RES_PARAM resVal;
-					resVal.drop = 0;
-					resVal.scramble = 0;
-					AddEndReserve(itr->second, REC_END_STATUS_ERR_RECSTART, resVal);
-				}
-			}else{
-				if( itr->second->savedPgInfo == FALSE){
-					GET_EPG_PF_INFO_PARAM val;
-					itr->second->reserveInfo->GetService(&val.ONID, &val.TSID, &val.SID);
-					val.pfNextFlag = 0;
-
-					EPGDB_EVENT_INFO resVal;
-					if( this->sendCtrl.SendViewGetEventPF(&val, &resVal) == CMD_SUCCESS ){
-						if( resVal.StartTimeFlag == 1 && resVal.DurationFlag == 1 ){
-							if( ConvertI64Time(resVal.start_time) <= GetSumTime(data.startTime, 30) &&
-								GetSumTime(data.startTime, 30) < GetSumTime(resVal.start_time, resVal.durationSec)
-								){
-								//開始時間から30秒は過ぎているのでこの番組情報が録画中のもののはず
-								itr->second->savedPgInfo = TRUE;
-								if(data.eventID != 0xFFFF ){
-									itr->second->eventInfo = new  EPGDB_EVENT_INFO;
-
-									itr->second->eventInfo->original_network_id = resVal.original_network_id;
-									itr->second->eventInfo->transport_stream_id = resVal.transport_stream_id;
-									itr->second->eventInfo->service_id = resVal.service_id;
-									itr->second->eventInfo->event_id = resVal.event_id;
-									itr->second->eventInfo->StartTimeFlag = resVal.StartTimeFlag;
-									itr->second->eventInfo->start_time = resVal.start_time;
-									itr->second->eventInfo->DurationFlag = resVal.DurationFlag;
-									itr->second->eventInfo->durationSec = resVal.durationSec;
-									if( resVal.shortInfo != NULL ){
-										itr->second->eventInfo->shortInfo = new EPGDB_SHORT_EVENT_INFO;
-										*itr->second->eventInfo->shortInfo = *resVal.shortInfo;
-									}
-									if( resVal.extInfo != NULL ){
-										itr->second->eventInfo->extInfo = new EPGDB_EXTENDED_EVENT_INFO;
-										*itr->second->eventInfo->extInfo = *resVal.extInfo;
-									}
-									if( resVal.contentInfo != NULL ){
-										itr->second->eventInfo->contentInfo = new EPGDB_CONTEN_INFO;
-										*itr->second->eventInfo->contentInfo = *resVal.contentInfo;
-									}
-									if( resVal.componentInfo != NULL ){
-										itr->second->eventInfo->componentInfo = new EPGDB_COMPONENT_INFO;
-										*itr->second->eventInfo->componentInfo = *resVal.componentInfo;
-									}
-									if( resVal.audioInfo != NULL ){
-										itr->second->eventInfo->audioInfo = new EPGDB_AUDIO_COMPONENT_INFO;
-										*itr->second->eventInfo->audioInfo = *resVal.audioInfo;
-									}
-									if( resVal.eventGroupInfo != NULL ){
-										itr->second->eventInfo->eventGroupInfo = new EPGDB_EVENTGROUP_INFO;
-										*itr->second->eventInfo->eventGroupInfo = *resVal.eventGroupInfo;
-									}
-									if( resVal.eventRelayInfo != NULL ){
-										itr->second->eventInfo->eventRelayInfo = new EPGDB_EVENTGROUP_INFO;
-										*itr->second->eventInfo->eventRelayInfo = *resVal.eventRelayInfo;
-									}
-								}
-								if( this->saveProgramInfo == TRUE ){
-									//録画ファイルのパス取得
-									for(size_t i=0; i<itr->second->ctrlID.size(); i++ ){
-										wstring recFilePath = L"";
-										if( this->sendCtrl.SendViewGetRecFilePath(itr->second->ctrlID[i], &recFilePath) == CMD_SUCCESS ){
-											//番組情報保存
-											wstring iniCommonPath = L"";
-											GetCommonIniPath(iniCommonPath);
-
-											WCHAR buff[512] = L"";
-											GetPrivateProfileString(L"SET", L"RecInfoFolder", L"", buff, 512, iniCommonPath.c_str());
-											wstring infoFolder = buff;
-											ChkFolderPath(infoFolder);
-
-											if( infoFolder.size() > 0 ){
-												wstring tsFileName = L"";
-												GetFileName(recFilePath, tsFileName);
-												wstring pgFile = L"";
-												Format(pgFile, L"%s\\%s.program.txt", infoFolder.c_str(), tsFileName.c_str());
-												SaveProgramInfo(pgFile, &resVal, 0, itr->second->reserveInfo->IsPfInfoAddMode());
-											}else{
-												recFilePath += L".program.txt";
-												SaveProgramInfo(recFilePath, &resVal, 0, itr->second->reserveInfo->IsPfInfoAddMode());
-											}
-										}
+					//番組情報確認
+					if( r.savedPgInfo == false && r.recMode != RECMODE_VIEW ){
+						GET_EPG_PF_INFO_PARAM val;
+						val.ONID = r.onid;
+						val.TSID = r.tsid;
+						val.SID = r.sid;
+						val.pfNextFlag = FALSE;
+						EPGDB_EVENT_INFO resVal;
+						if( ctrlCmd.SendViewGetEventPF(&val, &resVal) == CMD_SUCCESS &&
+						    resVal.StartTimeFlag && resVal.DurationFlag &&
+						    ConvertI64Time(resVal.start_time) <= r.startTime + 30 * I64_1SEC &&
+						    r.startTime + 30 * I64_1SEC < ConvertI64Time(resVal.start_time) + resVal.durationSec * I64_1SEC &&
+						    (r.eid == 0xFFFF || r.eid == resVal.event_id) ){
+							//開始時間から30秒は過ぎているのでこの番組情報が録画中のもののはず
+							r.savedPgInfo = true;
+							r.epgStartTime = resVal.start_time;
+							r.epgEventName = resVal.shortInfo ? resVal.shortInfo->event_name : L"";
+							//ごく稀にAPR(改行)を含むため
+							Replace(r.epgEventName, L"\r\n", L"");
+							if( this->saveProgramInfo ){
+								for( int i = 0; i < 2; i++ ){
+									wstring recPath;
+									if( r.ctrlID[i] != 0 && ctrlCmd.SendViewGetRecFilePath(r.ctrlID[i], &recPath) == CMD_SUCCESS ){
+										SaveProgramInfo(recPath.c_str(), resVal, r.appendPgInfo);
 									}
 								}
 							}
 						}
 					}
-				}
-				//ステータス確認
-				DWORD status = 0;
-				if( this->sendCtrl.SendViewGetStatus(&status) == CMD_SUCCESS ){
-					if( status != VIEW_APP_ST_REC && data.recSetting.recMode != RECMODE_VIEW){
-						//キャンセルされた？
-						SET_CTRL_REC_STOP_RES_PARAM resVal;
-						resVal.drop = 0;
-						resVal.scramble = 0;
-						if( status == VIEW_APP_ST_ERR_CH_CHG ){
-							__int64 chkTime = ConvertI64Time(data.startTime);
-							if( startMargine < 0 ){
-								chkTime -= startMargine;
-							}
-							if( nowTime > chkTime + (60*I64_1SEC) ){
-								AddEndReserve(itr->second, REC_END_STATUS_ERR_CH_CHG, resVal);
-							}
-						}else{
-							AddEndReserve(itr->second, REC_END_STATUS_ERR_END, resVal);
-						}
-					}
-				}
-				/*if( this->autoDel == TRUE ){
-					if( this->chkSpaceCount > 30000 ){
-						CCheckRecFile chkFile;
-						CParseRecInfoText recInfoText;
-
-						wstring recInfoFilePath = L"";
-						GetSettingPath(recInfoFilePath);
-						recInfoFilePath += L"\\";
-						recInfoFilePath += REC_INFO_TEXT_NAME;
-						recInfoText.ParseRecInfoText(recInfoFilePath.c_str());
-
-						chkFile.SetCheckFolder(&this->delFolderList);
-						chkFile.SetDeleteExt(&this->delExtList);
-						for(size_t i=0; i<itr->second->ctrlID.size(); i++ ){
-							wstring recFilePath = L"";
-							if( this->sendCtrl.SendViewGetRecFilePath(itr->second->ctrlID[i], &recFilePath) == CMD_SUCCESS ){
-								wstring folderPath = L"";
-								GetFileFolder(recFilePath, folderPath);
-								map<wstring, wstring> protectFile;
-								recInfoText.GetProtectFiles(&protectFile);
-								chkFile.CheckFreeSpaceLive(&data, folderPath, &protectFile);
-							}
-						}
-					}
-				}*/
-			}
-		}else if( chkEndTime-5*I64_1SEC < nowTime && nowTime <chkEndTime ){
-			//終了5秒前になったらチェック間隔を短くする
-			*needShortCheck = TRUE;
-		}else if( chkEndTime < nowTime){
-			//終了時間過ぎている
-			if( itr->second->reserveInfo->IsContinueRec() == FALSE ){
-				if( data.recSetting.recMode == RECMODE_VIEW ){
-					for(size_t i=0; i<itr->second->ctrlID.size(); i++ ){
-						this->sendCtrl.SendViewDeleteCtrl(itr->second->ctrlID[i]);
-						if( itr->second->ctrlID[i] == itr->second->mainCtrlID ){
-							SET_CTRL_REC_STOP_RES_PARAM resVal;
-							resVal.drop=0;
-							resVal.scramble=0;
-							resVal.subRecFlag=0;
-							resVal.recFilePath = L"";
-							AddEndReserve(itr->second, REC_END_STATUS_NORMAL, resVal);
-						}
-					}
-				}else{
-					for(size_t i=0; i<itr->second->ctrlID.size(); i++ ){
-						SET_CTRL_REC_STOP_PARAM param;
-						param.ctrlID = itr->second->ctrlID[i];
-						param.saveErrLog = this->saveErrLog;
-						SET_CTRL_REC_STOP_RES_PARAM resVal;
-						BOOL errEnd = FALSE;
-						if( this->sendCtrl.SendViewStopRec(param, &resVal) == CMD_ERR ){
-							errEnd = TRUE;
-						}
-
-						this->sendCtrl.SendViewDeleteCtrl(itr->second->ctrlID[i]);
-						if( itr->second->ctrlID[i] == itr->second->mainCtrlID ){
-							DWORD endType = REC_END_STATUS_NORMAL;
-							if( itr->second->notStartHeadFlag == TRUE ){
-								endType = REC_END_STATUS_NOT_START_HEAD;
-							}
-							if( resVal.subRecFlag == 1 ){
-								endType = REC_END_STATUS_END_SUBREC;
-							}
-							if( data.recSetting.tuijyuuFlag == 1 && data.eventID != 0xFFFF ){
-								if( itr->second->reserveInfo->IsChkPfInfo() == FALSE ){
-									endType = REC_END_STATUS_NOT_FIND_PF;
-								}
-							}
-							if( errEnd == TRUE ){
-								endType = REC_END_STATUS_ERR_END2;
-								resVal.drop=0;
-								resVal.scramble=0;
-								resVal.subRecFlag=0;
-								resVal.recFilePath = L"";
-							}
-							AddEndReserve(itr->second, endType, resVal);
-						}
-					}
-				}
-			}else{
-				for(size_t i=0; i<itr->second->ctrlID.size(); i++ ){
-					SET_CTRL_REC_STOP_RES_PARAM resVal;
-					resVal.drop = 0;
-					resVal.scramble = 0;
-					resVal.recFilePath = L"";
-					this->sendCtrl.SendViewGetRecFilePath(itr->second->mainCtrlID, &resVal.recFilePath);
-
-					DWORD endType = REC_END_STATUS_NORMAL;
-					if( resVal.subRecFlag == 1 ){
-						endType = REC_END_STATUS_END_SUBREC;
-					}
-					if( data.recSetting.tuijyuuFlag == 1 && data.eventID != 0xFFFF ){
-						if( itr->second->reserveInfo->IsChkPfInfo() == FALSE ){
-							endType = REC_END_STATUS_NOT_FIND_PF;
-						}
-					}
-					AddEndReserve(itr->second, endType, resVal);
+					//まだ録画中の予約があるのでGUIキープを再設定してはいけない
+					ngResetLock = true;
 				}
 			}
-
-			endList.push_back(itr->first);
-		}
-	}
-
-	if( this->autoDel == TRUE ){
-		if( this->chkSpaceCount > 30000 ){
-			this->chkSpaceCount = 0;
-		}else{
-			this->chkSpaceCount+=wait;
-		}
-	}
-	//終了リストに移行
-	for( size_t i=0; i<endList.size(); i++ ){
-		itr = this->createCtrlList.find(endList[i]);
-		if( itr != this->createCtrlList.end()){
-			this->createCtrlList.erase(itr);
-		}
-	}
-}
-
-void CTunerBankCtrl::SaveProgramInfo(wstring savePath, EPGDB_EVENT_INFO* info, BYTE mode, BOOL addMode)
-{
-	wstring outText = L"";
-	wstring serviceName = L"";
-	map<DWORD, CH_DATA4>::const_iterator itr;
-	for( itr = chUtil.GetMap().begin(); itr != chUtil.GetMap().end(); itr++ ){
-		if( itr->second.originalNetworkID == info->original_network_id &&
-		    itr->second.transportStreamID == info->transport_stream_id &&
-		    itr->second.serviceID == info->service_id ){
-			serviceName = itr->second.serviceName;
 			break;
 		}
-	}
-	_ConvertEpgInfoText2(info, outText, serviceName);
-
-	string buff = "";
-	WtoA(outText, buff);
-
-	HANDLE file = INVALID_HANDLE_VALUE;
-	if(addMode == TRUE ){
-		file = _CreateDirectoryAndFile( savePath.c_str(), GENERIC_WRITE|GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL );
-		SetFilePointer(file, 0, NULL, FILE_END);
-		string buff2 = "\r\n-----------------------\r\n";
-		DWORD dwWrite;
-		WriteFile(file, buff2.c_str(), (DWORD)buff2.size(), &dwWrite, NULL);
-	}else{
-		file = _CreateDirectoryAndFile( savePath.c_str(), GENERIC_WRITE|GENERIC_READ, FILE_SHARE_READ, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL );
-	}
-	if( file != INVALID_HANDLE_VALUE ){
-		DWORD dwWrite;
-		WriteFile(file, buff.c_str(), (DWORD)buff.size(), &dwWrite, NULL);
-		CloseHandle(file);
-	}
-}
-
-BOOL CTunerBankCtrl::RecStart(LONGLONG nowTime, RESERVE_WORK* reserve, BOOL sendNoyify)
-{
-	RESERVE_DATA data;
-	reserve->reserveInfo->GetData(&data);
-	BOOL ret = TRUE;
-
-	wstring iniPath = L"";
-	GetModuleIniPath(iniPath);
-
-	BOOL noChkYen = (BOOL)GetPrivateProfileInt(L"SET", L"NoChkYen", 0, iniPath.c_str());
-
-	if( data.recSetting.recMode == RECMODE_VIEW ){
-		this->sendCtrl.SendViewSetStandbyRec(2);
-		if( this->recView == TRUE ){
-			this->sendCtrl.SendViewExecViewApp();
+		if( ret.type != 0 ){
+			ret.reserveID = itrRes->first;
+			retList.push_back(ret);
+			this->reserveMap.erase(itrRes++);
+		}else{
+			itrRes++;
 		}
-		return TRUE;
 	}
 
-	for( size_t i=0; i<reserve->ctrlID.size(); i++ ){
-		SET_CTRL_REC_PARAM param;
-		param.ctrlID = reserve->ctrlID[i];
-		//デフォルトファイル名
-		if( this->useRecNamePlugIn == TRUE ){
-			CReNamePlugInUtil plugIn;
-			if( plugIn.Initialize(this->recNamePlugInFilePath.c_str()) == TRUE ){
-				WCHAR name[512] = L"";
-				DWORD size = 512;
-				PLUGIN_RESERVE_INFO info;
+	//TR_IDLE->TR_READYの遷移を待つ予約を開始順に並べる
+	std::sort(idleList.begin(), idleList.end());
 
-				info.startTime = data.startTime;
-				info.durationSec = data.durationSecond;
-				wcscpy_s(info.eventName, 512, data.title.c_str());
-				info.ONID = data.originalNetworkID;
-				info.TSID = data.transportStreamID;
-				info.SID = data.serviceID;
-				info.EventID = data.eventID;
-				wcscpy_s(info.serviceName, 256, data.stationName.c_str());
-				wcscpy_s(info.bonDriverName, 256, this->bonFileName.c_str());
-				info.bonDriverID = (this->tunerID & 0xFFFF0000)>>16;
-				info.tunerID = this->tunerID & 0x0000FFFF;
-
-				EPG_EVENT_INFO* epgInfo = NULL;
-				EPGDB_EVENT_INFO epgDBInfo;
-				if( this->epgDBManager != NULL && info.EventID != 0xFFFF ){
-					if( this->epgDBManager->SearchEpg(info.ONID, info.TSID, info.SID, info.EventID, &epgDBInfo) == TRUE ){
-						epgInfo = new EPG_EVENT_INFO;
-						CopyEpgInfo(epgInfo, &epgDBInfo);
-					}
-				}
-				if( epgInfo != NULL ){
-					if( plugIn.ConvertRecName2(&info, epgInfo, name, &size) == TRUE ){
-						param.fileName = name;
-					}
-					SAFE_DELETE(epgInfo);
+	//TR_IDLE->TR_READY(TR_REC)の遷移をする
+	for( vector<pair<__int64, DWORD>>::const_iterator itrIdle = idleList.begin(); itrIdle != idleList.end(); itrIdle++ ){
+		map<DWORD, TUNER_RESERVE>::iterator itrRes = this->reserveMap.find(itrIdle->second);
+		TUNER_RESERVE& r = itrRes->second;
+		CHECK_RESULT ret;
+		ret.type = 0;
+		if( this->hTunerProcess == NULL ){
+			//チューナを起動する
+			SET_CH_INFO initCh;
+			initCh.ONID = r.onid;
+			initCh.TSID = r.tsid;
+			initCh.SID = r.sid;
+			initCh.useSID = TRUE;
+			initCh.useBonCh = FALSE;
+			bool nwUdpTcp = this->recNW || r.recMode == RECMODE_VIEW;
+			if( OpenTuner(this->recMinWake, nwUdpTcp, nwUdpTcp, true, &initCh) ||
+			    CloseOtherTuner() && OpenTuner(this->recMinWake, nwUdpTcp, nwUdpTcp, true, &initCh) ){
+				this->tunerONID = r.onid;
+				this->tunerTSID = r.tsid;
+				this->tunerChLocked = true;
+				this->tunerResetLock = false;
+				this->tunerChChgTick = GetTickCount();
+				this->notifyManager.AddNotifyMsg(NOTIFY_UPDATE_PRE_REC_START, this->bonFileName);
+				ctrlCmd.SetPipeSetting(CMD2_VIEW_CTRL_WAIT_CONNECT, CMD2_VIEW_CTRL_PIPE, this->tunerPid);
+			}else{
+				//起動できなかった
+				ret.type = CHECK_ERR_OPEN;
+			}
+		}
+		if( this->hTunerProcess && (r.startTime - r.startMargin) / I64_1SEC - READY_MARGIN < now / I64_1SEC ){
+			//録画開始READY_MARGIN秒前～
+			//原作では録画制御作成は通常録画時60秒前、割り込み録画時15秒前だが
+			//作成を前倒しする必要は特にないのと、チャンネル変更からEIT[p/f]取得までの時間を確保できるようこの秒数にした
+			if( this->specialState == TR_EPGCAP ){
+				//EPG取得をキャンセル(遷移中断)
+				OutputDebugString(L"epg cancel\r\n");
+				//CSendCtrlCmd::SendViewEpgCapStop()は送らない(即座にチューナ閉じるので意味がないため)
+				CloseTuner();
+				this->specialState = TR_IDLE;
+				break;
+			}else if( this->specialState == TR_NWTV ){
+				//ネットワークモードを解除
+				wstring bonDriver;
+				DWORD status;
+				if( ctrlCmd.SendViewGetBonDrivere(&bonDriver) == CMD_SUCCESS && CompareNoCase(bonDriver, this->bonFileName) == 0 &&
+				    ctrlCmd.SendViewGetStatus(&status) == CMD_SUCCESS && (status == VIEW_APP_ST_NORMAL || status == VIEW_APP_ST_ERR_CH_CHG) ){
+					//プロセスを引き継ぐ
+					this->tunerONID = r.onid;
+					this->tunerTSID = r.tsid;
+					this->tunerChLocked = false;
+					this->tunerResetLock = false;
+					this->specialState = TR_IDLE;
 				}else{
-					if( plugIn.ConvertRecName(&info, name, &size) == TRUE ){
-						param.fileName = name;
-					}
-				}
-			}
-		}
-		if( param.fileName.size() == 0 ){
-			if( reserve->stratTime < nowTime ){
-				SYSTEMTIME now;
-				GetLocalTime(&now);
-				//たぶん開始時間過ぎてる
-				Format(param.fileName, L"%04d%02d%02d%02d%02d%02X%02X%02d-%s.ts",
-					now.wYear,
-					now.wMonth,
-					now.wDay,
-					now.wHour,
-					now.wMinute,
-					((this->tunerID & 0xFFFF0000)>>16),
-					(this->tunerID & 0x0000FFFF),
-					param.ctrlID,
-					data.title.c_str()
-					);
-			}else{
-				Format(param.fileName, L"%04d%02d%02d%02d%02d%02X%02X%02d-%s.ts",
-					data.startTime.wYear,
-					data.startTime.wMonth,
-					data.startTime.wDay,
-					data.startTime.wHour,
-					data.startTime.wMinute,
-					((this->tunerID & 0xFFFF0000)>>16),
-					(this->tunerID & 0x0000FFFF),
-					param.ctrlID,
-					data.title.c_str()
-					);
-			}
-		}
-		//同時出力用ファイル名
-		if( param.ctrlID == reserve->partialCtrlID && reserve->partialCtrlID != 0 ){
-			//部分受信同時録画用
-			if( data.recSetting.partialRecFolder.size() == 0 ){
-				REC_FILE_SET_INFO folderItem;
-				folderItem.recFolder = this->recFolderPath;
-				folderItem.writePlugIn = this->recWritePlugIn;
-
-				param.saveFolder.push_back(folderItem);
-			}else{
-				WORD partialSID = 0;
-				wstring partialName = L"";
-				if( FindPartialService(data.originalNetworkID, data.transportStreamID, data.serviceID, &partialSID, &partialName) == FALSE ){
-					partialSID = data.serviceID;
-					partialName = data.stationName;
-				}
-				for( size_t j=0; j<data.recSetting.partialRecFolder.size(); j++ ){
-					if( data.recSetting.partialRecFolder[j].recNamePlugIn.size() > 0 ){
-						CReNamePlugInUtil plugIn;
-						wstring plugInPath;
-						GetModuleFolderPath(plugInPath);
-						plugInPath += L"\\RecName\\";
-						plugInPath += data.recSetting.partialRecFolder[j].recNamePlugIn;
-
-						if( plugIn.Initialize(plugInPath.c_str()) == TRUE ){
-							WCHAR name[512] = L"";
-							DWORD size = 512;
-							PLUGIN_RESERVE_INFO info;
-
-							info.startTime = data.startTime;
-							info.durationSec = data.durationSecond;
-							wcscpy_s(info.eventName, 512, data.title.c_str());
-							info.ONID = data.originalNetworkID;
-							info.TSID = data.transportStreamID;
-							info.SID = partialSID;
-							info.EventID = 0xFFFF;
-							wcscpy_s(info.serviceName, 256, partialName.c_str());
-							wcscpy_s(info.bonDriverName, 256, this->bonFileName.c_str());
-							info.bonDriverID = (this->tunerID & 0xFFFF0000)>>16;
-							info.tunerID = this->tunerID & 0x0000FFFF;
-
-							EPG_EVENT_INFO* epgInfo = NULL;
-							EPGDB_EVENT_INFO epgDBInfo;
-							if( this->epgDBManager != NULL && info.EventID != 0xFFFF ){
-								if( this->epgDBManager->SearchEpg(info.ONID, info.TSID, info.SID, info.EventID, &epgDBInfo) == TRUE ){
-									epgInfo = new EPG_EVENT_INFO;
-									CopyEpgInfo(epgInfo, &epgDBInfo);
-								}
-							}
-							if( epgInfo != NULL ){
-								if( plugIn.ConvertRecName2(&info, epgInfo, name, &size) == TRUE ){
-									wstring fileName = name;
-									CheckFileName(fileName, noChkYen);
-									data.recSetting.partialRecFolder[j].recFileName = fileName;
-								}
-								SAFE_DELETE(epgInfo);
-							}else{
-								if( plugIn.ConvertRecName(&info, name, &size) == TRUE ){
-									wstring fileName = name;
-									CheckFileName(fileName, noChkYen);
-									data.recSetting.partialRecFolder[j].recFileName = fileName;
-								}
-							}
-						}
-					}
-				}
-				param.saveFolder = data.recSetting.partialRecFolder;
-			}
-		}else{
-			//通常録画
-			if( data.recSetting.recFolderList.size() == 0 ){
-				REC_FILE_SET_INFO folderItem;
-				folderItem.recFolder = this->recFolderPath;
-				folderItem.writePlugIn = this->recWritePlugIn;
-
-				param.saveFolder.push_back(folderItem);
-			}else{
-				for( size_t j=0; j<data.recSetting.recFolderList.size(); j++ ){
-					if( data.recSetting.recFolderList[j].recNamePlugIn.size() > 0 ){
-						CReNamePlugInUtil plugIn;
-						wstring plugInPath;
-						GetModuleFolderPath(plugInPath);
-						plugInPath += L"\\RecName\\";
-						plugInPath += data.recSetting.recFolderList[j].recNamePlugIn;
-
-						if( plugIn.Initialize(plugInPath.c_str()) == TRUE ){
-							WCHAR name[512] = L"";
-							DWORD size = 512;
-							PLUGIN_RESERVE_INFO info;
-
-							info.startTime = data.startTime;
-							info.durationSec = data.durationSecond;
-							wcscpy_s(info.eventName, 512, data.title.c_str());
-							info.ONID = data.originalNetworkID;
-							info.TSID = data.transportStreamID;
-							info.SID = data.serviceID;
-							info.EventID = data.eventID;
-							wcscpy_s(info.serviceName, 256, data.stationName.c_str());
-							wcscpy_s(info.bonDriverName, 256, this->bonFileName.c_str());
-							info.bonDriverID = (this->tunerID & 0xFFFF0000)>>16;
-							info.tunerID = this->tunerID & 0x0000FFFF;
-
-							EPG_EVENT_INFO* epgInfo = NULL;
-							EPGDB_EVENT_INFO epgDBInfo;
-							if( this->epgDBManager != NULL && info.EventID != 0xFFFF ){
-								if( this->epgDBManager->SearchEpg(info.ONID, info.TSID, info.SID, info.EventID, &epgDBInfo) == TRUE ){
-									epgInfo = new EPG_EVENT_INFO;
-									CopyEpgInfo(epgInfo, &epgDBInfo);
-								}
-							}
-							if( epgInfo != NULL ){
-								if( plugIn.ConvertRecName2(&info, epgInfo, name, &size) == TRUE ){
-									wstring fileName = name;
-									CheckFileName(fileName, noChkYen);
-									data.recSetting.recFolderList[j].recFileName = fileName;
-								}
-								SAFE_DELETE(epgInfo);
-							}else{
-								if( plugIn.ConvertRecName(&info, name, &size) == TRUE ){
-									wstring fileName = name;
-									CheckFileName(fileName, noChkYen);
-									data.recSetting.recFolderList[j].recFileName = fileName;
-								}
-							}
-						}
-					}
-				}
-				param.saveFolder = data.recSetting.recFolderList;
-			}
-		}
-		param.overWriteFlag = this->recOverWrite;
-		param.pittariFlag = data.recSetting.pittariFlag;
-		param.pittariONID = data.originalNetworkID;
-		param.pittariTSID = data.transportStreamID;
-		param.pittariSID = data.serviceID;
-		param.pittariEventID = data.eventID;
-
-		CheckFileName(param.fileName, noChkYen);
-
-		DWORD durationSec = data.durationSecond;
-		if( data.recSetting.continueRecFlag == 1 ){
-			DWORD sumSec = 0;
-			IsFindContinueReserve(reserve, &sumSec);
-			durationSec += sumSec;
-		}
-
-		if( this->keepDisk == 1 ){
-			DWORD bitrate = 0;
-			_GetBitrate(data.originalNetworkID, data.transportStreamID, data.serviceID, &bitrate);
-			param.createSize = ((ULONGLONG)(bitrate/8)*1000) * durationSec;
-		}else{
-			param.createSize = 0;
-		}
-
-		if( this->sendCtrl.SendViewStartRec(param) != CMD_SUCCESS){
-			if( reserve->ctrlID[i] == reserve->mainCtrlID ){
-				ret = FALSE;
-			}
-		}
-	}
-
-	if( this->twitterManager != NULL && sendNoyify == TRUE){
-		this->twitterManager->SendTweet(TW_REC_START, &data, NULL, NULL);
-	}
-
-	if( this->notifyManager != NULL && sendNoyify == TRUE){
-		wstring msg;
-		Format(msg, L"%s %04d/%02d/%02d %02d:%02d:%02d\r\n%s", 
-			data.stationName.c_str(),
-			data.startTime.wYear,
-			data.startTime.wMonth,
-			data.startTime.wDay,
-			data.startTime.wHour,
-			data.startTime.wMinute,
-			data.startTime.wSecond,
-			data.title.c_str()
-			);
-		this->notifyManager->AddNotifyMsg(NOTIFY_UPDATE_REC_START, msg);
-	}
-	return ret;
-}
-
-BOOL CTunerBankCtrl::IsFindContinueReserve(RESERVE_WORK* reserve, DWORD* continueSec)
-{
-	if( reserve->continueRecFlag == 0 ){
-		return FALSE;
-	}
-	BOOL ret = FALSE;
-
-	map<DWORD, RESERVE_WORK*>::iterator itr;
-	for( itr = this->reserveWork.begin(); itr != this->reserveWork.end(); itr++ ){
-		if( itr->second->ONID == reserve->ONID &&
-			itr->second->TSID == reserve->TSID &&
-			itr->second->SID == reserve->SID &&
-			itr->second->stratTime != reserve->stratTime
-			){
-				if( reserve->stratTime < itr->second->stratTime &&
-					itr->second->stratTime <= reserve->endTime &&
-					reserve->endTime < itr->second->endTime){
-					//開始時間が現在の予約中にあるので連続
-					RESERVE_DATA data;
-					itr->second->reserveInfo->GetData(&data);
-					*continueSec = data.durationSecond;
-					if( itr->second->continueRecFlag == 1 ){
-						DWORD sumSec = 0;
-						IsFindContinueReserve(itr->second, &sumSec);
-						*continueSec += sumSec;
-					}
-					ret = TRUE;
-					break;
-				}
-		}
-	}
-
-	return ret;
-}
-
-BOOL CTunerBankCtrl::CloseTuner()
-{
-	CloseTunerExe(this->processID);
-	this->processID = 0;
-	this->openTuner = FALSE;
-	this->delayTime = 0;
-
-	return TRUE;
-}
-
-void CTunerBankCtrl::AddEndReserve(RESERVE_WORK* reserve, DWORD endType, SET_CTRL_REC_STOP_RES_PARAM resVal)
-{
-	END_RESERVE_INFO* item = new END_RESERVE_INFO;
-	item->reserveInfo = reserve->reserveInfo;
-	item->tunerID = this->tunerID;
-	item->reserveID = reserve->reserveID;
-	item->endType = endType;
-	item->recFilePath = resVal.recFilePath;
-	item->drop = resVal.drop;
-	item->scramble = resVal.scramble;
-
-	if( reserve->eventInfo != NULL && reserve->eventInfo->shortInfo != NULL && reserve->eventInfo->StartTimeFlag != 0 ){
-		item->epgEventName = reserve->eventInfo->shortInfo->event_name;
-		item->epgOriginalNetworkID = reserve->eventInfo->original_network_id;
-		item->epgTransportStreamID = reserve->eventInfo->transport_stream_id;
-		item->epgServiceID = reserve->eventInfo->service_id;
-		item->epgStartTime = reserve->eventInfo->start_time;
-	}
-
-	endList.push_back(item);
-}
-
-void CTunerBankCtrl::GetEndReserve(map<DWORD, END_RESERVE_INFO*>* reserveMap)
-{
-	if( Lock() == FALSE ) return;
-
-	for( size_t i=0; i<this->endList.size(); i++ ){
-
-		reserveMap->insert(pair<DWORD, END_RESERVE_INFO*>(this->endList[i]->reserveID, this->endList[i]));
-	}
-	this->endList.clear();
-
-	UnLock();
-}
-
-BOOL CTunerBankCtrl::IsRecWork()
-{
-	if( Lock() == FALSE ) return FALSE;
-
-	BOOL ret = FALSE;
-	map<DWORD, RESERVE_WORK*>::iterator itr;
-	for( itr = this->reserveWork.begin(); itr != this->reserveWork.end(); itr++ ){
-		if( itr->second->recStartFlag == TRUE ){
-			ret = TRUE;
-			break;
-		}
-	}
-
-	UnLock();
-
-	return ret;
-}
-
-BOOL CTunerBankCtrl::IsOpenTuner()
-{
-	if( Lock() == FALSE ) return FALSE;
-
-	BOOL ret = this->openTuner;
-
-	UnLock();
-
-	return ret;
-}
-
-BOOL CTunerBankCtrl::GetCurrentChID(DWORD* currentChID)
-{
-	if( Lock() == FALSE ) return FALSE;
-
-	DWORD ret = FALSE;
-	if( this->openTuner == TRUE && this->epgCapWork == FALSE ){
-		ret = TRUE;
-		if( currentChID != NULL ){
-			*currentChID = this->currentChID;
-		}
-	}
-
-	UnLock();
-
-	return ret;
-}
-
-BOOL CTunerBankCtrl::IsSuspendOK()
-{
-	if( Lock() == FALSE ) return FALSE;
-
-	BOOL ret = FALSE;
-
-	multimap<LONGLONG, RESERVE_WORK*> sortList;
-	this->GetCheckList(&sortList);
-
-	BOOL viewMode = FALSE;
-	SET_CH_INFO initCh;
-	BOOL needOpenTuner = IsNeedOpenTuner(&sortList, &viewMode, &initCh);
-	if( needOpenTuner == FALSE && this->epgCapWork == FALSE){
-		ret = TRUE;
-		if( this->openTuner == TRUE ){
-			CloseTuner();
-		}
-	}
-	UnLock();
-
-	return ret;
-}
-
-BOOL CTunerBankCtrl::IsEpgCapOK(LONGLONG ngCapMin)
-{
-	if( Lock() == FALSE ) return FALSE;
-
-	BOOL ret = TRUE;
-	if( this->openTuner == TRUE ){
-		UnLock();
-		return FALSE;
-	}
-
-	multimap<LONGLONG, RESERVE_WORK*> sortList;
-	this->GetCheckList(&sortList);
-	if( sortList.size() == 0 ){
-		UnLock();
-		return TRUE;
-	}
-
-	multimap<LONGLONG, RESERVE_WORK*>::iterator itr;
-	itr = sortList.begin();
-	LONGLONG startTime = itr->second->stratTime - max(itr->second->startMargine, itr->second->stratTime - itr->second->endTime);
-
-	if( startTime < GetNowI64Time() + (ngCapMin*60*I64_1SEC) ){
-		ret = FALSE;
-	}
-
-	UnLock();
-
-	return ret;
-}
-
-BOOL CTunerBankCtrl::IsEpgCapWorking()
-{
-	if( Lock() == FALSE ) return FALSE;
-
-	BOOL ret = this->epgCapWork;
-
-	UnLock();
-	return ret;
-}
-
-void CTunerBankCtrl::ClearEpgCapItem()
-{
-	if( Lock() == FALSE ) return;
-
-	this->epgCapItem.clear();
-
-	UnLock();
-}
-
-void CTunerBankCtrl::AddEpgCapItem(SET_CH_INFO info)
-{
-	if( Lock() == FALSE ) return;
-
-	this->epgCapItem.push_back(info);
-
-	UnLock();
-}
-
-void CTunerBankCtrl::StartEpgCap()
-{
-	if( Lock() == FALSE ) return;
-
-	if( epgCapItem.size() == 0 ){
-		UnLock();
-		return ;
-	}
-
-	if( this->checkThread == NULL ){
-		ResetEvent(this->checkStopEvent);
-		this->checkThread = (HANDLE)_beginthreadex(NULL, 0, CheckReserveThread, (LPVOID)this, CREATE_SUSPENDED, NULL);
-		SetThreadPriority( this->checkThread, THREAD_PRIORITY_NORMAL );
-		ResumeThread(this->checkThread);
-	}
-
-	this->epgCapWork = TRUE;
-
-	UnLock();
-}
-
-void CTunerBankCtrl::StopEpgCap()
-{
-	if( Lock() == FALSE ) return;
-
-	this->epgCapWork = FALSE;
-
-	UnLock();
-}
-
-//起動中のチューナーからEPGデータの検索
-//戻り値：
-// エラーコード
-// val					[IN]取得番組
-// resVal				[OUT]番組情報
-BOOL CTunerBankCtrl::SearchEpgInfo(
-	SEARCH_EPG_INFO_PARAM* val,
-	EPGDB_EVENT_INFO* resVal
-	)
-{
-	if( Lock() == FALSE ) return FALSE;
-
-	BOOL ret = FALSE;
-	if( this->openTuner == TRUE && this->epgCapWork == FALSE ){
-		if( this->sendCtrl.SendViewSearchEvent(val, resVal) == CMD_SUCCESS ){
-			ret = TRUE;
-		}
-	}
-
-	UnLock();
-
-	return ret;
-}
-
-//起動中のチューナーから現在or次の番組情報を取得する
-//戻り値：
-// エラーコード
-// val					[IN]取得番組
-// resVal				[OUT]番組情報
-DWORD CTunerBankCtrl::GetEventPF(
-	GET_EPG_PF_INFO_PARAM* val,
-	EPGDB_EVENT_INFO* resVal
-	)
-{
-	if( Lock() == FALSE ) return FALSE;
-
-	BOOL ret = FALSE;
-	if( this->openTuner == TRUE && this->epgCapWork == FALSE ){
-		if( this->sendCtrl.SendViewGetEventPF(val, resVal) == CMD_SUCCESS ){
-			ret = TRUE;
-		}
-	}
-
-	UnLock();
-
-	return ret;
-}
-
-LONGLONG CTunerBankCtrl::DelayTime()
-{
-	if( Lock() == FALSE ) return 0;
-
-	LONGLONG ret = 0;
-	if( this->openTuner == TRUE ){
-		ret = this->delayTime;
-	}
-
-	UnLock();
-
-	return ret;
-}
-
-BOOL CTunerBankCtrl::ReRec(DWORD reserveID, BOOL deleteFile)
-{
-	if( Lock() == FALSE ) return FALSE;
-
-	LONGLONG nowTime = GetNowI64Time();
-	nowTime += this->delayTime;
-
-	BOOL ret = FALSE;
-	map<DWORD, RESERVE_WORK*>::iterator itr;
-	itr = this->createCtrlList.find(reserveID);
-	if( itr != this->createCtrlList.end() ){
-		for(size_t i=0; i<itr->second->ctrlID.size(); i++ ){
-			SET_CTRL_REC_STOP_PARAM param;
-			param.ctrlID = itr->second->ctrlID[i];
-			param.saveErrLog = FALSE;
-			SET_CTRL_REC_STOP_RES_PARAM resVal;
-			this->sendCtrl.SendViewStopRec(param, &resVal);
-			if( resVal.recFilePath.size() > 0 ){
-				if(deleteFile == TRUE ){
-					DeleteFile( resVal.recFilePath.c_str() );
-
-					wstring errFile = resVal.recFilePath;
-					errFile += L".err";
-					DeleteFile( errFile.c_str() );
-
-					wstring pgFile = resVal.recFilePath;
-					pgFile += L".program.txt";
-					DeleteFile( pgFile.c_str() );
-				}
-			}
-		}
-		//開始時間過ぎているので録画開始
-		if( RecStart(nowTime, itr->second, FALSE) == TRUE ){
-			itr->second->recStartFlag = TRUE;
-		}
-	}
-
-	UnLock();
-
-	return ret;
-}
-
-BOOL CTunerBankCtrl::GetRecFilePath(
-	DWORD reserveID,
-	wstring& filePath,
-	DWORD* ctrlID,
-	DWORD* processID
-	)
-{
-	if( Lock() == FALSE ) return FALSE;
-	BOOL ret = FALSE;
-
-	map<DWORD, RESERVE_WORK*>::iterator itr;
-	itr = this->createCtrlList.find(reserveID);
-	if( itr != this->createCtrlList.end() ){
-		wstring recFilePath = L"";
-		if( this->sendCtrl.SendViewGetRecFilePath(itr->second->mainCtrlID, &recFilePath) == CMD_SUCCESS ){
-			filePath = recFilePath;
-			*ctrlID = itr->second->mainCtrlID;
-			*processID = this->processID;
-			ret = TRUE;
-		}
-	}
-	UnLock();
-
-	return ret;
-}
-
-BOOL CTunerBankCtrl::OpenTunerExe(
-	LPCWSTR exePath,
-	LPCWSTR bonDriver,
-	DWORD id,
-	BOOL minWake, BOOL noView, BOOL noNW, BOOL nwUdp, BOOL nwTcp,
-	DWORD priority,
-	const map<DWORD, DWORD>& registGUIMap,
-	DWORD* pid
-	)
-{
-	wstring strExecute;
-	strExecute += L"\"";
-	strExecute += exePath;
-	strExecute += L"\" ";
-
-	wstring strIni;
-	GetModuleFolderPath(strIni);
-	strIni += L"\\ViewApp.ini";
-
-	WCHAR buff[512];
-	GetPrivateProfileString(L"APP_CMD_OPT", L"Bon", L"-d", buff, 512, strIni.c_str());
-	strExecute += buff;
-	strExecute += L" ";
-	strExecute += bonDriver;
-
-	if( minWake != FALSE ){
-		GetPrivateProfileString(L"APP_CMD_OPT", L"Min", L"-min", buff, 512, strIni.c_str());
-		strExecute += L" ";
-		strExecute += buff;
-	}
-	if( noView != FALSE ){
-		GetPrivateProfileString(L"APP_CMD_OPT", L"ViewOff", L"-noview", buff, 512, strIni.c_str());
-		strExecute += L" ";
-		strExecute += buff;
-	}
-	if( noNW != FALSE ){
-		GetPrivateProfileString(L"APP_CMD_OPT", L"NetworkOff", L"-nonw", buff, 512, strIni.c_str());
-		strExecute += L" ";
-		strExecute += buff;
-	}else{
-		if( nwUdp != FALSE ){
-			strExecute += L" -nwudp";
-		}
-		if( nwTcp != FALSE ){
-			strExecute += L" -nwtcp";
-		}
-	}
-
-	BOOL bRet = FALSE;
-	HANDLE openWaitEvent = _CreateEvent(FALSE, TRUE, _T("Global\\EpgTimerSrv_OpenTuner_Event"));
-	if( openWaitEvent != NULL ){
-		if( WaitForSingleObject(openWaitEvent, INFINITE) == WAIT_OBJECT_0 ){
-			map<DWORD, DWORD>::const_iterator itr;
-			for( itr = registGUIMap.begin(); itr != registGUIMap.end(); itr++ ){
-				wstring pipeName;
-				wstring waitEventName;
-				Format(pipeName, L"%s%d", CMD2_GUI_CTRL_PIPE, itr->first);
-				Format(waitEventName, L"%s%d", CMD2_GUI_CTRL_WAIT_CONNECT, itr->first);
-
-				CSendCtrlCmd cmdSend;
-				cmdSend.SetPipeSetting(waitEventName, pipeName);
-				cmdSend.SetConnectTimeOut(20 * 1000);
-				if( cmdSend.SendGUIExecute(strExecute, pid) == CMD_SUCCESS ){
-					bRet = TRUE;
+					//ネットワークモード終了(遷移中断)
+					CloseNWTV();
 					break;
 				}
 			}
-			if( bRet == FALSE ){
-				OutputDebugString(L"gui exec err");
-				//GUI経由で起動できなかった
-				PROCESS_INFORMATION pi;
-				STARTUPINFO si = {};
-				si.cb = sizeof(si);
-				vector<WCHAR> strBuff(strExecute.c_str(), strExecute.c_str() + strExecute.size() + 1);
-				if( CreateProcess(NULL, &strBuff.front(), NULL, NULL, FALSE, GetPriorityClass(GetCurrentProcess()), NULL, NULL, &si, &pi) != FALSE ){
-					bRet = TRUE;
-					*pid = pi.dwProcessId;
-					CloseHandle(pi.hThread);
-					CloseHandle(pi.hProcess);
-				}
-			}
-
-			if( bRet != FALSE ){
-				//IDのセット
-				wstring pipeName;
-				wstring waitEventName;
-				Format(pipeName, L"%s%d", CMD2_VIEW_CTRL_PIPE, *pid);
-				Format(waitEventName, L"%s%d", CMD2_VIEW_CTRL_WAIT_CONNECT, *pid);
-
-				CSendCtrlCmd cmdSend;
-				cmdSend.SetPipeSetting(waitEventName, pipeName);
-				bRet = FALSE;
-				for( int i = 0; i < 6; i++ ){
-					Sleep(1000);
-					if( cmdSend.SendViewSetID(id) == CMD_SUCCESS ){
-						bRet = TRUE;
+			if( this->tunerONID != r.onid || this->tunerTSID != r.tsid ){
+				//チャンネル違うので、TR_IDLEでない全予約の優先度を比べる
+				map<DWORD, TUNER_RESERVE>::const_iterator itr;
+				for( itr = this->reserveMap.begin(); itr != this->reserveMap.end(); itr++ ){
+					if( itr->second.state != TR_IDLE && itr->second.effectivePriority < r.effectivePriority ){
 						break;
 					}
 				}
-				if( bRet == FALSE ){
-					CloseTunerExe(*pid);
-				}else{
-					//起動ステータスを確認
-					DWORD status = 0;
-					if( cmdSend.SendViewGetStatus(&status) == CMD_SUCCESS ){
-						if( status == VIEW_APP_ST_ERR_BON ){
-							CloseTunerExe(*pid);
-							bRet = FALSE;
-						}else if( 0 <= priority && priority <= 5 ){
-							HANDLE hProcess = OpenProcess(PROCESS_SET_INFORMATION, FALSE, *pid);
-							if( hProcess != NULL ){
-								SetPriorityClass(hProcess,
-									priority == 0 ? REALTIME_PRIORITY_CLASS :
-									priority == 1 ? HIGH_PRIORITY_CLASS :
-									priority == 2 ? ABOVE_NORMAL_PRIORITY_CLASS :
-									priority == 3 ? NORMAL_PRIORITY_CLASS :
-									priority == 4 ? BELOW_NORMAL_PRIORITY_CLASS : IDLE_PRIORITY_CLASS);
-								CloseHandle(hProcess);
+				if( itr == this->reserveMap.end() ){
+					//TR_IDLEでない全予約は自分よりも弱いので葬る
+					for( itr = this->reserveMap.begin(); itr != this->reserveMap.end(); ){
+						if( itr->second.state != TR_IDLE ){
+							CHECK_RESULT retOther;
+							retOther.type = CHECK_ERR_REC;
+							retOther.reserveID = itr->first;
+							retOther.continueRec = false;
+							retOther.drops = 0;
+							retOther.scrambles = 0;
+							bool isMainCtrl = true;
+							for( int i = 0; i < 2; i++ ){
+								if( itr->second.ctrlID[i] != 0 ){
+									if( itr->second.state == TR_REC ){
+										if( isMainCtrl ){
+											retOther.type = CHECK_END_NEXT_START_END;
+										}
+										if( itr->second.recMode != RECMODE_VIEW ){
+											SET_CTRL_REC_STOP_PARAM param;
+											param.ctrlID = itr->second.ctrlID[i];
+											param.saveErrLog = this->saveErrLog;
+											SET_CTRL_REC_STOP_RES_PARAM resVal;
+											if( ctrlCmd.SendViewStopRec(param, &resVal) != CMD_SUCCESS ){
+												if( isMainCtrl ){
+													retOther.type = CHECK_ERR_RECEND;
+												}
+											}else if( isMainCtrl ){
+												retOther.recFilePath = resVal.recFilePath;
+												retOther.drops = resVal.drop;
+												retOther.scrambles = resVal.scramble;
+											}
+										}
+									}
+									ctrlCmd.SendViewDeleteCtrl(itr->second.ctrlID[i]);
+									isMainCtrl = false;
+								}
 							}
+							retList.push_back(retOther);
+							this->reserveMap.erase(itr++);
+						}else{
+							itr++;
+						}
+					}
+					this->tunerONID = r.onid;
+					this->tunerTSID = r.tsid;
+					this->tunerChLocked = false;
+					this->tunerResetLock = false;
+				}
+			}
+			if( this->tunerONID == r.onid && this->tunerTSID == r.tsid ){
+				if( this->tunerChLocked == false ){
+					//チャンネル変更
+					SET_CH_INFO chgCh;
+					chgCh.ONID = r.onid;
+					chgCh.TSID = r.tsid;
+					chgCh.SID = r.sid;
+					chgCh.useSID = TRUE;
+					chgCh.useBonCh = FALSE;
+					//「予約録画待機中」
+					ctrlCmd.SendViewSetStandbyRec(1);
+					if( ctrlCmd.SendViewSetCh(&chgCh) == CMD_SUCCESS ){
+						this->tunerChLocked = true;
+						this->tunerResetLock = false;
+						this->tunerChChgTick = GetTickCount();
+					}
+				}
+				if( this->tunerChLocked ){
+					//同一チャンネルなので録画制御を作成できる
+					bool continueRec = false;
+					for( map<DWORD, TUNER_RESERVE>::const_iterator itr = this->reserveMap.begin(); itr != this->reserveMap.end(); itr++ ){
+						if( itr->second.continueRecFlag &&
+						    itr->second.state == TR_REC &&
+						    itr->second.sid == r.sid &&
+						    itr->second.recMode != RECMODE_VIEW &&
+						    itr->second.recMode == r.recMode &&
+						    itr->second.enableCaption == r.enableCaption &&
+						    itr->second.enableData == r.enableData &&
+						    itr->second.partialRecMode == r.partialRecMode ){
+							//連続録画なので、同一制御IDで録画開始されたことにする。TR_RECまで遷移するので注意
+							r.state = TR_REC;
+							r.ctrlID[0] = itr->second.ctrlID[0];
+							r.ctrlID[1] = itr->second.ctrlID[1];
+							r.notStartHead = r.startTime - r.startMargin + 60 * I64_1SEC < now;
+							r.appendPgInfo = itr->second.appendPgInfo || itr->second.savedPgInfo;
+							r.savedPgInfo = false;
+							//引継ぎ元を葬る
+							CHECK_RESULT retOther;
+							retOther.type = CHECK_ERR_REC;
+							retOther.reserveID = itr->first;
+							retOther.continueRec = true;
+							retOther.drops = 0;
+							retOther.scrambles = 0;
+							for( int i = 0; i < 2; i++ ){
+								if( itr->second.ctrlID[i] != 0 ){
+									if( ctrlCmd.SendViewGetRecFilePath(itr->second.ctrlID[i], &retOther.recFilePath) == CMD_SUCCESS ){
+										retOther.type = itr->second.notStartHead ? CHECK_END_NOT_START_HEAD :
+										                itr->second.savedPgInfo == false ? CHECK_END_NOT_FIND_PF : CHECK_END;
+										retOther.epgStartTime = itr->second.epgStartTime;
+										retOther.epgEventName = itr->second.epgEventName;
+									}
+									break;
+								}
+							}
+							retList.push_back(retOther);
+							this->reserveMap.erase(itr);
+							continueRec = true;
+							break;
+						}
+					}
+					if( continueRec == false ){
+						if( CreateCtrl(&r.ctrlID[0], &r.ctrlID[1], r) ){
+							r.state = TR_READY;
+						}else{
+							//作成できなかった
+							ret.type = CHECK_ERR_CTRL;
 						}
 					}
 				}
 			}
-			SetEvent(openWaitEvent);
 		}
-		CloseHandle(openWaitEvent);
+		if( ret.type != 0 ){
+			ret.reserveID = itrRes->first;
+			retList.push_back(ret);
+			this->reserveMap.erase(itrRes);
+		}
 	}
-	return bRet;
+
+	if( IsNeedOpenTuner() == false ){
+		//チューナが必要なくなった
+		CloseTuner();
+	}
+	if( this->hTunerProcess && this->specialState == TR_IDLE && this->tunerResetLock ){
+		if( ngResetLock == false ){
+			//「予約録画待機中」
+			ctrlCmd.SendViewSetStandbyRec(1);
+		}
+		this->tunerResetLock = false;
+	}
+	return retList;
 }
 
-void CTunerBankCtrl::CloseTunerExe(
-	DWORD pid
-	)
+bool CTunerBankCtrl::IsNeedOpenTuner() const
 {
-	if( _FindOpenExeProcess(pid) == FALSE ){
-		return;
+	if( this->specialState != TR_IDLE ){
+		return true;
 	}
-	wstring pipeName;
-	wstring waitEventName;
-	Format(pipeName, L"%s%d", CMD2_VIEW_CTRL_PIPE, pid);
-	Format(waitEventName, L"%s%d", CMD2_VIEW_CTRL_WAIT_CONNECT, pid);
-
-	CSendCtrlCmd cmdSend;
-	cmdSend.SetPipeSetting(waitEventName, pipeName);
-	cmdSend.SendViewAppClose();
-	for( int i = 0; i < 60; i++ ){
-		if( _FindOpenExeProcess(pid) == FALSE ){
-			return;
+	//戻り値の振動を防ぐためdelayTimeを考慮してはいけない
+	__int64 now = GetNowI64Time();
+	for( map<DWORD, TUNER_RESERVE>::const_iterator itr = this->reserveMap.begin(); itr != this->reserveMap.end(); itr++ ){
+		if( itr->second.state != TR_IDLE || (itr->second.startTime - itr->second.startMargin - this->recWakeTime) / I64_1SEC < now / I64_1SEC ){
+			return true;
 		}
-		Sleep(500);
 	}
-	//ぶち殺す
-	HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, pid);
-	if( hProcess != NULL ){
-		TerminateProcess(hProcess, 0xFFFFFFFF);
-		CloseHandle(hProcess);
-		Sleep(500);
-	}
+	return false;
 }
-/*
-void CTunerBankCtrl::CopyEpgInfo(EPG_EVENT_INFO* destInfo, EPGDB_EVENT_INFO* srcInfo)
+
+bool CTunerBankCtrl::FindPartialService(WORD onid, WORD tsid, WORD sid, WORD* partialSID, wstring* serviceName) const
 {
-	destInfo->event_id = srcInfo->event_id;
-	destInfo->StartTimeFlag = srcInfo->StartTimeFlag;
-	destInfo->start_time = srcInfo->start_time;
-	destInfo->DurationFlag = srcInfo->DurationFlag;
-	destInfo->durationSec = srcInfo->durationSec;
-	destInfo->freeCAFlag = srcInfo->freeCAFlag;
-
-	if( srcInfo->shortInfo != NULL ){
-		EPG_SHORT_EVENT_INFO* item = new EPG_SHORT_EVENT_INFO;
-		destInfo->shortInfo = item;
-
-		item->event_nameLength = (WORD)srcInfo->shortInfo->event_name.size();
-		item->event_name = new WCHAR[item->event_nameLength+1];
-		ZeroMemory(item->event_name, sizeof(WCHAR)*(item->event_nameLength+1));
-		if( item->event_nameLength > 0 ){
-			wcscpy_s(item->event_name, item->event_nameLength+1, srcInfo->shortInfo->event_name.c_str());
-		}
-
-		item->text_charLength = (WORD)srcInfo->shortInfo->text_char.size();
-		item->text_char = new WCHAR[item->text_charLength+1];
-		ZeroMemory(item->text_char, sizeof(WCHAR)*(item->text_charLength+1));
-		if( item->text_charLength > 0 ){
-			wcscpy_s(item->text_char, item->text_charLength+1, srcInfo->shortInfo->text_char.c_str());
-		}
-	}
-
-	if( srcInfo->extInfo != NULL ){
-		EPG_EXTENDED_EVENT_INFO* item = new EPG_EXTENDED_EVENT_INFO;
-		destInfo->extInfo = item;
-
-		item->text_charLength = (WORD)srcInfo->extInfo->text_char.size();
-		item->text_char = new WCHAR[item->text_charLength+1];
-		ZeroMemory(item->text_char, sizeof(WCHAR)*(item->text_charLength+1));
-		if( item->text_charLength > 0 ){
-			wcscpy_s(item->text_char, item->text_charLength+1, srcInfo->extInfo->text_char.c_str());
-		}
-	}
-
-	if( srcInfo->contentInfo != NULL ){
-		EPG_CONTEN_INFO* item = new EPG_CONTEN_INFO;
-		destInfo->contentInfo = item;
-
-		item->listSize = (WORD)srcInfo->contentInfo->nibbleList.size();
-		if( item->listSize > 0 ){
-			item->nibbleList = new EPG_CONTENT[item->listSize];
-			for( WORD i=0; i<item->listSize; i++ ){
-				item->nibbleList[i].content_nibble_level_1 = srcInfo->contentInfo->nibbleList[i].content_nibble_level_1;
-				item->nibbleList[i].content_nibble_level_2 = srcInfo->contentInfo->nibbleList[i].content_nibble_level_2;
-				item->nibbleList[i].user_nibble_1 = srcInfo->contentInfo->nibbleList[i].user_nibble_1;
-				item->nibbleList[i].user_nibble_2 = srcInfo->contentInfo->nibbleList[i].user_nibble_2;
+	vector<CH_DATA4>::const_iterator itr;
+	for( itr = this->chList.begin(); itr != this->chList.end(); itr++ ){
+		if( itr->originalNetworkID == onid && itr->transportStreamID == tsid && itr->partialFlag != FALSE ){
+			if( itr->serviceID != sid ){
+				if( partialSID != NULL ){
+					*partialSID = itr->serviceID;
+				}
+				if( serviceName != NULL ){
+					*serviceName = itr->serviceName;
+				}
+				return true;
 			}
 		}
 	}
+	return false;
+}
 
-	if( srcInfo->componentInfo != NULL ){
-		EPG_COMPONENT_INFO* item = new EPG_COMPONENT_INFO;
-		destInfo->componentInfo = item;
-
-		item->stream_content = srcInfo->componentInfo->stream_content;
-		item->component_type = srcInfo->componentInfo->component_type;
-		item->component_tag = srcInfo->componentInfo->component_tag;
-
-		item->text_charLength = (WORD)srcInfo->componentInfo->text_char.size();
-		item->text_char = new WCHAR[item->text_charLength+1];
-		ZeroMemory(item->text_char, sizeof(WCHAR)*(item->text_charLength+1));
-		if( item->text_charLength > 0 ){
-			wcscpy_s(item->text_char, item->text_charLength+1, srcInfo->componentInfo->text_char.c_str());
+bool CTunerBankCtrl::CreateCtrl(DWORD* ctrlID, DWORD* partialCtrlID, const TUNER_RESERVE& reserve) const
+{
+	if( this->hTunerProcess == NULL ){
+		return false;
+	}
+	BYTE partialRecMode = reserve.recMode == RECMODE_VIEW ? 0 : min(reserve.partialRecMode, 2);
+	WORD partialSID = 0;
+	if( partialRecMode == 1 || partialRecMode == 2 ){
+		if( FindPartialService(reserve.onid, reserve.tsid, reserve.sid, &partialSID, NULL) == false ){
+			partialSID = 0;
+			if( reserve.partialRecMode == 2 ){
+				return false;
+			}
 		}
 	}
+	CSendCtrlCmd ctrlCmd;
+	ctrlCmd.SetPipeSetting(CMD2_VIEW_CTRL_WAIT_CONNECT, CMD2_VIEW_CTRL_PIPE, this->tunerPid);
+	DWORD newID;
+	if( ctrlCmd.SendViewCreateCtrl(&newID) != CMD_SUCCESS ){
+		return false;
+	}
 
-	if( srcInfo->audioInfo != NULL ){
-		EPG_AUDIO_COMPONENT_INFO* item = new EPG_AUDIO_COMPONENT_INFO;
-		destInfo->audioInfo = item;
-		item->listSize = (WORD)srcInfo->audioInfo->componentList.size();
-		if( item->listSize > 0 ){
-			item->audioList = new EPG_AUDIO_COMPONENT_INFO_DATA[item->listSize];
-			for( WORD i=0; i<item->listSize; i++ ){
-				item->audioList[i].stream_content = srcInfo->audioInfo->componentList[i].stream_content;
-				item->audioList[i].component_type = srcInfo->audioInfo->componentList[i].component_type;
-				item->audioList[i].component_tag = srcInfo->audioInfo->componentList[i].component_tag;
-				item->audioList[i].stream_type = srcInfo->audioInfo->componentList[i].stream_type;
-				item->audioList[i].simulcast_group_tag = srcInfo->audioInfo->componentList[i].simulcast_group_tag;
-				item->audioList[i].ES_multi_lingual_flag = srcInfo->audioInfo->componentList[i].ES_multi_lingual_flag;
-				item->audioList[i].main_component_flag = srcInfo->audioInfo->componentList[i].main_component_flag;
-				item->audioList[i].quality_indicator = srcInfo->audioInfo->componentList[i].quality_indicator;
-				item->audioList[i].sampling_rate = srcInfo->audioInfo->componentList[i].sampling_rate;
+	if( partialRecMode == 2 ){
+		//部分受信のみ
+		*ctrlID = 0;
+		*partialCtrlID = newID;
+	}else{
+		*ctrlID = newID;
+		*partialCtrlID = 0;
+		if( partialRecMode == 1 && partialSID != 0 && ctrlCmd.SendViewCreateCtrl(partialCtrlID) != CMD_SUCCESS ){
+			partialCtrlID = 0;
+		}
+	}
+	SET_CTRL_MODE param;
+	if( *ctrlID != 0 ){
+		//通常
+		param.ctrlID = *ctrlID;
+		param.SID = reserve.recMode == RECMODE_ALL || reserve.recMode == RECMODE_ALL_NOB25 ? 0xFFFF : reserve.sid;
+		param.enableScramble = reserve.recMode != RECMODE_ALL_NOB25 && reserve.recMode != RECMODE_SERVICE_NOB25;
+		param.enableCaption = reserve.enableCaption;
+		param.enableData = reserve.enableData;
+		ctrlCmd.SendViewSetCtrlMode(param);
+	}
+	if( *partialCtrlID != 0 ){
+		//部分受信
+		param.ctrlID = *partialCtrlID;
+		param.SID = partialSID;
+		param.enableScramble = reserve.recMode != RECMODE_ALL_NOB25 && reserve.recMode != RECMODE_SERVICE_NOB25;
+		param.enableCaption = reserve.enableCaption;
+		param.enableData = reserve.enableData;
+		ctrlCmd.SendViewSetCtrlMode(param);
+	}
+	SYSTEMTIME st;
+	ConvertSystemTime(reserve.startTime, &st);
+	wstring msg;
+	Format(msg, L"%s %04d/%02d/%02d %02d:%02d:%02d～ %s", reserve.stationName.c_str(),
+	       st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, reserve.title.c_str());
+	this->notifyManager.AddNotifyMsg(NOTIFY_UPDATE_PRE_REC_START, msg);
+	return true;
+}
 
-				item->audioList[i].text_charLength = (WORD)srcInfo->audioInfo->componentList[i].text_char.size();
-				item->audioList[i].text_char = new WCHAR[item->audioList[i].text_charLength+1];
-				ZeroMemory(item->audioList[i].text_char, sizeof(WCHAR)*(item->audioList[i].text_charLength+1));
-				if( item->audioList[i].text_charLength > 0 ){
-					wcscpy_s(item->audioList[i].text_char, item->audioList[i].text_charLength+1, srcInfo->audioInfo->componentList[i].text_char.c_str());
+void CTunerBankCtrl::SaveProgramInfo(LPCWSTR recPath, const EPGDB_EVENT_INFO& info, bool append) const
+{
+	wstring iniCommonPath;
+	GetCommonIniPath(iniCommonPath);
+	WCHAR buff[512];
+	GetPrivateProfileString(L"SET", L"RecInfoFolder", L"", buff, 512, iniCommonPath.c_str());
+	wstring infoFolder = buff;
+	ChkFolderPath(infoFolder);
+
+	wstring savePath;
+	if( infoFolder.empty() ){
+		savePath = recPath;
+	}else{
+		GetFileName(recPath, savePath);
+		savePath = infoFolder + L"\\" + savePath;
+	}
+	savePath += L".program.txt";
+
+	wstring serviceName;
+	for( size_t i = 0; i < this->chList.size(); i++ ){
+		if( this->chList[i].originalNetworkID == info.original_network_id &&
+		    this->chList[i].transportStreamID == info.transport_stream_id &&
+		    this->chList[i].serviceID == info.service_id ){
+			serviceName = this->chList[i].serviceName;
+			break;
+		}
+	}
+	wstring outTextW;
+	_ConvertEpgInfoText2(&info, outTextW, serviceName);
+	string outText;
+	WtoA(outTextW, outText);
+
+	HANDLE hFile = _CreateDirectoryAndFile(savePath.c_str(), GENERIC_WRITE | GENERIC_READ, FILE_SHARE_READ, NULL, append ? OPEN_ALWAYS : CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	if( hFile != INVALID_HANDLE_VALUE ){
+		if( append ){
+			SetFilePointer(hFile, 0, NULL, FILE_END);
+			outText = "\r\n-----------------------\r\n" + outText;
+		}
+		DWORD dwWrite;
+		WriteFile(hFile, outText.c_str(), (DWORD)outText.size(), &dwWrite, NULL);
+		CloseHandle(hFile);
+	}
+}
+
+bool CTunerBankCtrl::RecStart(const TUNER_RESERVE& reserve, __int64 now) const
+{
+	if( this->hTunerProcess == NULL ){
+		return false;
+	}
+	if( reserve.recMode == RECMODE_VIEW ){
+		return true;
+	}
+	CSendCtrlCmd ctrlCmd;
+	ctrlCmd.SetPipeSetting(CMD2_VIEW_CTRL_WAIT_CONNECT, CMD2_VIEW_CTRL_PIPE, this->tunerPid);
+	bool isMainCtrl = true;
+	for( int i = 0; i < 2; i++ ){
+		if( reserve.ctrlID[i] != 0 ){
+			SET_CTRL_REC_PARAM param;
+			param.ctrlID = reserve.ctrlID[i];
+			//saveFolder[].recFileNameが空でない限りこのフィールドが利用されることはない
+			param.fileName = L"padding.ts";
+			//同時出力用ファイル名
+			param.saveFolder = i == 0 ? reserve.recFolder : reserve.partialRecFolder;
+			if( param.saveFolder.empty() ){
+				param.saveFolder.resize(1);
+				wstring commonIniPath;
+				GetCommonIniPath(commonIniPath);
+				WCHAR buff[512];
+				GetPrivateProfileString(L"SET", L"RecFolderPath0", L"", buff, 512, commonIniPath.c_str());
+				param.saveFolder[0].recFolder = buff;
+				if( param.saveFolder[0].recFolder.empty() ){
+					GetDefSettingPath(param.saveFolder[0].recFolder);
+				}
+				GetPrivateProfileString(L"SET", L"RecWritePlugIn0", L"", buff, 512, commonIniPath.c_str());
+				param.saveFolder[0].writePlugIn = buff;
+				param.saveFolder[0].recNamePlugIn = this->recNamePlugInFileName;
+			}else{
+				for( size_t j = 0; j < param.saveFolder.size(); j++ ){
+					if( param.saveFolder[j].recNamePlugIn.empty() ){
+						param.saveFolder[j].recNamePlugIn = this->recNamePlugInFileName;
+					}
+				}
+			}
+			//recNamePlugInを展開して実ファイル名をセット
+			for( size_t j = 0; j < param.saveFolder.size(); j++ ){
+				param.saveFolder[j].recFileName.clear();
+				if( param.saveFolder[j].recNamePlugIn.empty() == false ){
+					WORD sid = reserve.sid;
+					WORD eid = reserve.eid;
+					wstring stationName = reserve.stationName;
+					if( i != 0 ){
+						FindPartialService(reserve.onid, reserve.tsid, reserve.sid, &sid, &stationName);
+						eid = 0xFFFF;
+					}
+					CReNamePlugInUtil plugIn;
+					wstring plugInPath;
+					GetModuleFolderPath(plugInPath);
+					plugInPath += L"\\RecName\\" + param.saveFolder[j].recNamePlugIn;
+					if( plugIn.Initialize(plugInPath.c_str()) != FALSE ){
+						PLUGIN_RESERVE_INFO info;
+						ConvertSystemTime(reserve.startTime, &info.startTime);
+						info.durationSec = reserve.durationSecond;
+						wcscpy_s(info.eventName, reserve.title.c_str());
+						info.ONID = reserve.onid;
+						info.TSID = reserve.tsid;
+						info.SID = sid;
+						info.EventID = eid;
+						wcscpy_s(info.serviceName, stationName.c_str());
+						wcscpy_s(info.bonDriverName, this->bonFileName.c_str());
+						info.bonDriverID = this->tunerID >> 16;
+						info.tunerID = this->tunerID & 0xFFFF;
+						EPG_EVENT_INFO* epgInfo = NULL;
+						if( info.EventID != 0xFFFF ){
+							EPGDB_EVENT_INFO epgDBInfo;
+							if( this->epgDBManager.SearchEpg(info.ONID, info.TSID, info.SID, info.EventID, &epgDBInfo) != FALSE ){
+								epgInfo = new EPG_EVENT_INFO;
+								CopyEpgInfo(epgInfo, &epgDBInfo);
+							}
+						}
+						WCHAR name[512];
+						DWORD size = 512;
+						//ConvertRecName()は呼ばない(epgInfo==NULLの場合と等価なので)
+						if( plugIn.ConvertRecName2(&info, epgInfo, name, &size) != FALSE ){
+							param.saveFolder[j].recFileName = name;
+							CheckFileName(param.saveFolder[j].recFileName, this->recNameNoChkYen);
+						}
+						delete epgInfo;
+					}
+					param.saveFolder[j].recNamePlugIn.clear();
+				}
+				//実ファイル名は空にしない
+				if( param.saveFolder[j].recFileName.empty() ){
+					SYSTEMTIME st;
+					ConvertSystemTime(max(reserve.startTime, now), &st);
+					Format(param.saveFolder[j].recFileName, L"%04d%02d%02d%02d%02d%02X%02X%02d-%s.ts",
+					       st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute,
+					       this->tunerID >> 16, this->tunerID & 0xFFFF, param.ctrlID, reserve.title.c_str());
+					CheckFileName(param.saveFolder[j].recFileName);
+				}
+			}
+			param.overWriteFlag = this->recOverWrite;
+			param.pittariFlag = reserve.eid != 0xFFFF && reserve.pittari;
+			param.pittariONID = reserve.onid;
+			param.pittariTSID = reserve.tsid;
+			param.pittariSID = reserve.sid;
+			param.pittariEventID = reserve.eid;
+			DWORD bitrate = 0;
+			if( this->keepDisk ){
+				_GetBitrate(reserve.onid, reserve.tsid, reserve.sid, &bitrate);
+			}
+			param.createSize = (ULONGLONG)(bitrate / 8) * 1000 * reserve.durationSecond;
+			if( ctrlCmd.SendViewStartRec(param) != CMD_SUCCESS && isMainCtrl ){
+				break;
+			}
+			isMainCtrl = false;
+		}
+	}
+	if( isMainCtrl == false ){
+		SYSTEMTIME st;
+		ConvertSystemTime(reserve.startTime, &st);
+		wstring msg;
+		Format(msg, L"%s %04d/%02d/%02d %02d:%02d:%02d\r\n%s", reserve.stationName.c_str(),
+		       st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, reserve.title.c_str());
+		this->notifyManager.AddNotifyMsg(NOTIFY_UPDATE_REC_START, msg);
+		return true;
+	}
+	return false;
+}
+
+CTunerBankCtrl::TR_STATE CTunerBankCtrl::GetState() const
+{
+	TR_STATE state = TR_IDLE;
+	if( this->hTunerProcess ){
+		state = TR_OPEN;
+		if( this->specialState != TR_IDLE ){
+			state = this->specialState;
+		}else{
+			for( map<DWORD, TUNER_RESERVE>::const_iterator itr = this->reserveMap.begin(); itr != this->reserveMap.end(); itr++ ){
+				if( itr->second.state == TR_REC ){
+					state = TR_REC;
+					break;
+				}else if( itr->second.state == TR_READY ){
+					state = TR_READY;
 				}
 			}
 		}
 	}
-
-	if( srcInfo->eventGroupInfo != NULL ){
-		EPG_EVENTGROUP_INFO* item = new EPG_EVENTGROUP_INFO;
-		destInfo->eventGroupInfo = item;
-
-		item->group_type = srcInfo->eventGroupInfo->group_type;
-		item->event_count = (BYTE)srcInfo->eventGroupInfo->eventDataList.size();
-
-		if( item->event_count > 0 ){
-			item->eventDataList = new EPG_EVENT_DATA[item->event_count];
-			for( BYTE i=0; i<item->event_count; i++ ){
-				item->eventDataList[i].original_network_id = srcInfo->eventGroupInfo->eventDataList[i].original_network_id;
-				item->eventDataList[i].transport_stream_id = srcInfo->eventGroupInfo->eventDataList[i].transport_stream_id;
-				item->eventDataList[i].service_id = srcInfo->eventGroupInfo->eventDataList[i].service_id;
-				item->eventDataList[i].event_id = srcInfo->eventGroupInfo->eventDataList[i].event_id;
-			}
-		}
-	}
-
-	if( srcInfo->eventRelayInfo != NULL ){
-		EPG_EVENTGROUP_INFO* item = new EPG_EVENTGROUP_INFO;
-		destInfo->eventRelayInfo = item;
-
-		item->group_type = srcInfo->eventRelayInfo->group_type;
-		//他チャンネルのときevent_countは０になっている
-		//item->event_count = srcInfo->eventGroupInfo->event_count;
-		item->event_count = (BYTE)srcInfo->eventRelayInfo->eventDataList.size();
-
-		if( item->event_count > 0 ){
-			item->eventDataList = new EPG_EVENT_DATA[item->event_count];
-			for( BYTE i=0; i<item->event_count; i++ ){
-				item->eventDataList[i].original_network_id = srcInfo->eventRelayInfo->eventDataList[i].original_network_id;
-				item->eventDataList[i].transport_stream_id = srcInfo->eventRelayInfo->eventDataList[i].transport_stream_id;
-				item->eventDataList[i].service_id = srcInfo->eventRelayInfo->eventDataList[i].service_id;
-				item->eventDataList[i].event_id = srcInfo->eventRelayInfo->eventDataList[i].event_id;
-			}
-		}
-	}
-
+	return state;
 }
-*/
+
+__int64 CTunerBankCtrl::GetNearestReserveTime() const
+{
+	__int64 minTime = LLONG_MAX;
+	for( map<DWORD, TUNER_RESERVE>::const_iterator itr = this->reserveMap.begin(); itr != this->reserveMap.end(); itr++ ){
+		minTime = min(itr->second.startTime - itr->second.startMargin, minTime);
+	}
+	return minTime;
+}
+
+bool CTunerBankCtrl::StartEpgCap(const vector<SET_CH_INFO>& setChList)
+{
+	if( chList.empty() == false && this->hTunerProcess == NULL ){
+		//EPG取得についてはチューナの再利用はしない
+		if( OpenTuner(this->recMinWake, false, false, true, NULL) ){
+			CWatchBlock watchBlock(&this->watchContext);
+			CSendCtrlCmd ctrlCmd;
+			ctrlCmd.SetPipeSetting(CMD2_VIEW_CTRL_WAIT_CONNECT, CMD2_VIEW_CTRL_PIPE, this->tunerPid);
+			//EPG取得開始
+			if( ctrlCmd.SendViewEpgCapStart(&setChList) == CMD_SUCCESS ){
+				this->specialState = TR_EPGCAP;
+				return true;
+			}
+			CloseTuner();
+		}
+	}
+	return false;
+}
+
+bool CTunerBankCtrl::GetCurrentChID(WORD* onid, WORD* tsid) const
+{
+	if( this->hTunerProcess && this->specialState == TR_IDLE ){
+		*onid = this->tunerONID;
+		*tsid = this->tunerTSID;
+		return true;
+	}
+	return false;
+}
+
+bool CTunerBankCtrl::SearchEpgInfo(WORD sid, WORD eid, EPGDB_EVENT_INFO* resVal) const
+{
+	if( this->hTunerProcess && this->specialState == TR_IDLE ){
+		CWatchBlock watchBlock(&this->watchContext);
+		CSendCtrlCmd ctrlCmd;
+		ctrlCmd.SetPipeSetting(CMD2_VIEW_CTRL_WAIT_CONNECT, CMD2_VIEW_CTRL_PIPE, this->tunerPid);
+		SEARCH_EPG_INFO_PARAM val;
+		val.ONID = this->tunerONID;
+		val.TSID = this->tunerTSID;
+		val.SID = sid;
+		val.eventID = eid;
+		val.pfOnlyFlag = 0;
+		if( ctrlCmd.SendViewSearchEvent(&val, resVal) == CMD_SUCCESS ){
+			if( resVal->shortInfo ){
+				//ごく稀にAPR(改行)を含むため
+				Replace(resVal->shortInfo->event_name, L"\r\n", L"");
+			}
+			return true;
+		}
+	}
+	return false;
+}
+
+int CTunerBankCtrl::GetEventPF(WORD sid, bool pfNextFlag, EPGDB_EVENT_INFO* resVal) const
+{
+	//チャンネル変更を要求してから最初のEIT[p/f]が届く妥当な時間だけ待つ
+	//TODO: 視聴予約中(=GUIキープされていないとき)にチャンネル変更されると最新の情報でなくなる可能性がある。現仕様では解決策なし
+	if( this->hTunerProcess && this->specialState == TR_IDLE && (this->tunerChLocked == false || GetTickCount() - this->tunerChChgTick > 8000) ){
+		CWatchBlock watchBlock(&this->watchContext);
+		CSendCtrlCmd ctrlCmd;
+		ctrlCmd.SetPipeSetting(CMD2_VIEW_CTRL_WAIT_CONNECT, CMD2_VIEW_CTRL_PIPE, this->tunerPid);
+		GET_EPG_PF_INFO_PARAM val;
+		val.ONID = this->tunerONID;
+		val.TSID = this->tunerTSID;
+		val.SID = sid;
+		val.pfNextFlag = pfNextFlag;
+		DWORD ret = ctrlCmd.SendViewGetEventPF(&val, resVal);
+		if( ret == CMD_SUCCESS ){
+			if( resVal->shortInfo ){
+				//ごく稀にAPR(改行)を含むため
+				Replace(resVal->shortInfo->event_name, L"\r\n", L"");
+			}
+			return 0;
+		}else if( ret == CMD_ERR && (this->tunerChLocked == false || GetTickCount() - this->tunerChChgTick > 15000) ){
+			return 1;
+		}
+		//最初のTOTが届くまでは、あるのに消える可能性がある
+	}
+	return 2;
+}
+
+__int64 CTunerBankCtrl::DelayTime() const
+{
+	return this->specialState == TR_EPGCAP ? this->epgCapDelayTime : this->delayTime;
+}
+
+bool CTunerBankCtrl::SetNWTVCh(bool nwUdp, bool nwTcp, const SET_CH_INFO& chInfo)
+{
+	if( this->hTunerProcess == NULL ){
+		if( OpenTuner(true, nwUdp, nwTcp, false, &chInfo) ){
+			this->specialState = TR_NWTV;
+			return true;
+		}
+	}else if( this->specialState == TR_NWTV ){
+		CWatchBlock watchBlock(&this->watchContext);
+		CSendCtrlCmd ctrlCmd;
+		ctrlCmd.SetPipeSetting(CMD2_VIEW_CTRL_WAIT_CONNECT, CMD2_VIEW_CTRL_PIPE, this->tunerPid);
+		ctrlCmd.SendViewSetCh(&chInfo);
+		return true;
+	}
+	return false;
+}
+
+void CTunerBankCtrl::CloseNWTV()
+{
+	if( this->hTunerProcess && this->specialState == TR_NWTV ){
+		CloseTuner();
+		this->specialState = TR_IDLE;
+	}
+}
+
+bool CTunerBankCtrl::GetRecFilePath(DWORD reserveID, wstring& filePath, DWORD* ctrlID, DWORD* processID) const
+{
+	map<DWORD, TUNER_RESERVE>::const_iterator itr = this->reserveMap.find(reserveID);
+	if( itr != this->reserveMap.end() && itr->second.state == TR_REC && itr->second.recMode != RECMODE_VIEW ){
+		CWatchBlock watchBlock(&this->watchContext);
+		CSendCtrlCmd ctrlCmd;
+		ctrlCmd.SetPipeSetting(CMD2_VIEW_CTRL_WAIT_CONNECT, CMD2_VIEW_CTRL_PIPE, this->tunerPid);
+		wstring recFilePath;
+		DWORD mainCtrlID = itr->second.ctrlID[0] ? itr->second.ctrlID[0] : itr->second.ctrlID[1];
+		if( ctrlCmd.SendViewGetRecFilePath(mainCtrlID, &recFilePath) == CMD_SUCCESS ){
+			filePath = recFilePath;
+			*ctrlID = mainCtrlID;
+			*processID = this->tunerPid;
+			return true;
+		}
+	}
+	return false;
+}
+
+bool CTunerBankCtrl::OpenTuner(bool minWake, bool nwUdp, bool nwTcp, bool standbyRec, const SET_CH_INFO* initCh)
+{
+	if( this->hTunerProcess ){
+		return false;
+	}
+	wstring commonIniPath;
+	GetCommonIniPath(commonIniPath);
+	wstring strIni;
+	GetModuleFolderPath(strIni);
+	strIni += L"\\ViewApp.ini";
+	WCHAR buff[512];
+
+	GetPrivateProfileString(L"SET", L"RecExePath", L"", buff, 512, commonIniPath.c_str());
+	wstring strExecute = buff;
+	if( strExecute.empty() ){
+		GetModuleFolderPath(strExecute);
+		strExecute += L"\\EpgDataCap_Bon.exe";
+	}
+
+	GetPrivateProfileString(L"APP_CMD_OPT", L"Bon", L"-d", buff, 512, strIni.c_str());
+	wstring strParam = wstring(L" ") + buff + L" " + this->bonFileName;
+
+	if( minWake ){
+		GetPrivateProfileString(L"APP_CMD_OPT", L"Min", L"-min", buff, 512, strIni.c_str());
+		strParam += L" ";
+		strParam += buff;
+	}
+	//引数"-noview"は扱わない(いまのところ何の効果もないため)
+	if( nwUdp == false && nwTcp == false ){
+		GetPrivateProfileString(L"APP_CMD_OPT", L"NetworkOff", L"-nonw", buff, 512, strIni.c_str());
+		strParam += L" ";
+		strParam += buff;
+	}else{
+		strParam += nwUdp ? L" -nwudp" : L"";
+		strParam += nwTcp ? L" -nwtcp" : L"";
+	}
+
+	//原作と異なりイベントオブジェクト"Global\\EpgTimerSrv_OpenTuner_Event"による排他制御はしない
+	//また、シェルがある限り(≒サービスモードでない限り)GUI経由でなく直接CreateProcess()するので注意
+	if( GetShellWindow() == NULL ){
+		OutputDebugString(L"GetShellWindow() failed\r\n");
+		//表示できない可能性が高いのでGUI経由で起動してみる
+		CSendCtrlCmd ctrlCmd;
+		map<DWORD, DWORD> registGUIMap;
+		this->notifyManager.GetRegistGUI(&registGUIMap);
+		for( map<DWORD, DWORD>::iterator itr = registGUIMap.begin(); itr != registGUIMap.end(); itr++ ){
+			ctrlCmd.SetPipeSetting(CMD2_GUI_CTRL_WAIT_CONNECT, CMD2_GUI_CTRL_PIPE, itr->first);
+			if( ctrlCmd.SendGUIExecute(L'"' + strExecute + L'"' + strParam, &this->tunerPid) == CMD_SUCCESS ){
+				//ハンドル開く前に終了するかもしれない
+				this->hTunerProcess = OpenProcess(SYNCHRONIZE | PROCESS_TERMINATE | PROCESS_SET_INFORMATION, FALSE, this->tunerPid);
+				if( this->hTunerProcess ){
+					SetPriorityClass(this->hTunerProcess, this->processPriority);
+					break;
+				}
+			}
+		}
+	}
+	if( this->hTunerProcess == NULL ){
+		PROCESS_INFORMATION pi;
+		STARTUPINFO si = {};
+		si.cb = sizeof(si);
+		vector<WCHAR> strBuff(strParam.c_str(), strParam.c_str() + strParam.size() + 1);
+		if( CreateProcess(strExecute.c_str(), &strBuff.front(), NULL, NULL, FALSE, this->processPriority, NULL, NULL, &si, &pi) != FALSE ){
+			CloseHandle(pi.hThread);
+			this->hTunerProcess = pi.hProcess;
+			this->tunerPid = pi.dwProcessId;
+		}
+	}
+	if( this->hTunerProcess ){
+		//IDのセット
+		CWatchBlock watchBlock(&this->watchContext);
+		CSendCtrlCmd ctrlCmd;
+		ctrlCmd.SetPipeSetting(CMD2_VIEW_CTRL_WAIT_CONNECT, CMD2_VIEW_CTRL_PIPE, this->tunerPid);
+		ctrlCmd.SetConnectTimeOut(0);
+		//起動完了まで最大30秒ほど待つ
+		for( int i = 0; i < 300; i++ ){
+			Sleep(100);
+			if( WaitForSingleObject(this->hTunerProcess, 0) != WAIT_TIMEOUT ){
+				break;
+			}else if( ctrlCmd.SendViewSetID(this->tunerID) == CMD_SUCCESS ){
+				ctrlCmd.SetConnectTimeOut(CONNECT_TIMEOUT);
+				//起動ステータスを確認
+				DWORD status;
+				if( ctrlCmd.SendViewGetStatus(&status) == CMD_SUCCESS && status == VIEW_APP_ST_ERR_BON ){
+					break;
+				}
+				if( standbyRec ){
+					//「予約録画待機中」
+					ctrlCmd.SendViewSetStandbyRec(1);
+				}
+				if( initCh ){
+					ctrlCmd.SendViewSetCh(initCh);
+				}
+				return true;
+			}
+		}
+		CloseTuner();
+	}
+	return false;
+}
+
+void CTunerBankCtrl::CloseTuner()
+{
+	if( this->hTunerProcess ){
+		if( WaitForSingleObject(this->hTunerProcess, 0) == WAIT_TIMEOUT ){
+			CWatchBlock watchBlock(&this->watchContext);
+			CSendCtrlCmd ctrlCmd;
+			ctrlCmd.SetPipeSetting(CMD2_VIEW_CTRL_WAIT_CONNECT, CMD2_VIEW_CTRL_PIPE, this->tunerPid);
+			if( ctrlCmd.SendViewAppClose() != CMD_SUCCESS || WaitForSingleObject(this->hTunerProcess, 30000) == WAIT_TIMEOUT ){
+				//ぶち殺す
+				TerminateProcess(this->hTunerProcess, 0xFFFFFFFF);
+			}
+		}
+		CBlockLock lock(&this->watchContext.lock);
+		CloseHandle(this->hTunerProcess);
+		this->hTunerProcess = NULL;
+	}
+}
+
+bool CTunerBankCtrl::CloseOtherTuner()
+{
+	if( this->hTunerProcess ){
+		return false;
+	}
+	vector<DWORD> pidList;
+	//Toolhelpスナップショットを作成する
+	HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+	if( hSnapshot != INVALID_HANDLE_VALUE ){
+		PROCESSENTRY32 procent;
+		procent.dwSize = sizeof(PROCESSENTRY32);
+		if( Process32First(hSnapshot, &procent) != FALSE ){
+			do{
+				pidList.push_back(procent.th32ProcessID);
+			}while( Process32Next(hSnapshot, &procent) != FALSE );
+		}
+		CloseHandle(hSnapshot);
+	}
+	bool closed = false;
+
+	//起動中で使えるもの探す
+	for( size_t i = 0; closed == false && i < pidList.size(); i++ ){
+		//原作と異なりイメージ名ではなく接続待機用イベントの有無で判断するので注意
+		wstring eventName;
+		Format(eventName, L"%s%d", CMD2_VIEW_CTRL_WAIT_CONNECT, pidList[i]);
+		HANDLE waitEvent = OpenEvent(SYNCHRONIZE, FALSE, eventName.c_str());
+		if( waitEvent ){
+			CloseHandle(waitEvent);
+			//万一のフリーズに対処するため一時的にこのバンクの管理下に置く
+			this->tunerPid = pidList[i];
+			this->hTunerProcess = OpenProcess(SYNCHRONIZE | PROCESS_TERMINATE, FALSE, this->tunerPid);
+			if( this->hTunerProcess ){
+				CSendCtrlCmd ctrlCmd;
+				ctrlCmd.SetPipeSetting(CMD2_VIEW_CTRL_WAIT_CONNECT, CMD2_VIEW_CTRL_PIPE, this->tunerPid);
+				wstring bonDriver;
+				int id;
+				DWORD status;
+				//録画中のものは奪わないので注意
+				if( ctrlCmd.SendViewGetBonDrivere(&bonDriver) == CMD_SUCCESS && CompareNoCase(bonDriver, this->bonFileName) == 0 &&
+				    ctrlCmd.SendViewGetID(&id) == CMD_SUCCESS && id == -1 &&
+				    ctrlCmd.SendViewGetStatus(&status) == CMD_SUCCESS &&
+				    (status == VIEW_APP_ST_NORMAL || status == VIEW_APP_ST_GET_EPG || status == VIEW_APP_ST_ERR_CH_CHG) ){
+					ctrlCmd.SendViewAppClose();
+					//10秒だけ終了を待つ
+					WaitForSingleObject(this->hTunerProcess, 10000);
+					closed = true;
+				}
+				CBlockLock lock(&this->watchContext.lock);
+				CloseHandle(this->hTunerProcess);
+				this->hTunerProcess = NULL;
+			}
+		}
+	}
+	//TVTestで使ってるものあるかチェック
+	for( size_t i = 0; closed == false && i < pidList.size(); i++ ){
+		wstring eventName;
+		Format(eventName, L"%s%d", CMD2_TVTEST_CTRL_WAIT_CONNECT, pidList[i]);
+		HANDLE waitEvent = OpenEvent(SYNCHRONIZE, FALSE, eventName.c_str());
+		if( waitEvent ){
+			CloseHandle(waitEvent);
+			this->tunerPid = pidList[i];
+			this->hTunerProcess = OpenProcess(SYNCHRONIZE | PROCESS_TERMINATE, FALSE, this->tunerPid);
+			if( this->hTunerProcess ){
+				CSendCtrlCmd ctrlCmd;
+				ctrlCmd.SetPipeSetting(CMD2_TVTEST_CTRL_WAIT_CONNECT, CMD2_TVTEST_CTRL_PIPE, this->tunerPid);
+				wstring bonDriver;
+				if( ctrlCmd.SendViewGetBonDrivere(&bonDriver) == CMD_SUCCESS && CompareNoCase(bonDriver, this->bonFileName) == 0 ){
+					ctrlCmd.SendViewAppClose();
+					WaitForSingleObject(this->hTunerProcess, 10000);
+					closed = true;
+				}
+				CBlockLock lock(&this->watchContext.lock);
+				CloseHandle(this->hTunerProcess);
+				this->hTunerProcess = NULL;
+			}
+		}
+	}
+	return closed;
+}
+
+void CTunerBankCtrl::Watch()
+{
+	//チューナがフリーズするような非常事態ではCSendCtrlCmdのタイムアウトは当てにならない
+	//CWatchBlockで囲われた区間を40秒のタイムアウトで監視して、必要なら強制終了する
+	CBlockLock lock(&this->watchContext.lock);
+	if( this->watchContext.count != 0 && GetTickCount() - this->watchContext.tick > 40000 ){
+		if( this->hTunerProcess ){
+			//少なくともhTunerProcessはまだCloseHandle()されていない
+			TerminateProcess(this->hTunerProcess, 0xFFFFFFFF);
+			_OutputDebugString(L"CTunerBankCtrl::Watch(): Terminated TunerID=0x%08x\r\n", this->tunerID);
+		}
+	}
+}
+
+CTunerBankCtrl::CWatchBlock::CWatchBlock(WATCH_CONTEXT* context_)
+	: context(context_)
+{
+	CBlockLock lock(&this->context->lock);
+	if( ++this->context->count == 1 ){
+		this->context->tick = GetTickCount();
+	}
+}
+
+CTunerBankCtrl::CWatchBlock::~CWatchBlock()
+{
+	CBlockLock lock(&this->context->lock);
+	this->context->count--;
+}
