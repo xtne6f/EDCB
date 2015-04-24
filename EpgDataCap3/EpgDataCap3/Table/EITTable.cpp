@@ -155,59 +155,59 @@ BOOL CEITTable::SDDecode( BYTE* data, DWORD dataSize, vector<AribDescriptor::CDe
 			if( item->Decode(readPos, dataSize - decodeSize, NULL) == false ){
 				delete item;
 			}else{
-				if( item->EnterLoop() ){
-					for( DWORD i = 0; item->SetLoopIndex(i); i++ ){
-						switch( item->GetNumber(AribDescriptor::user_nibble_1) ){
+				AribDescriptor::CDescriptor::CLoopPointer lp;
+				if( item->EnterLoop(lp) ){
+					for( DWORD i = 0; item->SetLoopIndex(lp, i); i++ ){
+						switch( item->GetNumber(AribDescriptor::user_nibble_1, lp) ){
 						case 0x00:
 							//映画？
-							item->SetNumber(AribDescriptor::content_nibble_level_1, 0x06);
-							item->SetNumber(AribDescriptor::content_nibble_level_2, 0x0F);
+							item->SetNumber(AribDescriptor::content_nibble_level_1, 0x06, lp);
+							item->SetNumber(AribDescriptor::content_nibble_level_2, 0x0F, lp);
 							break;
 						case 0x02:
 							//スポーツ？
-							item->SetNumber(AribDescriptor::content_nibble_level_1, 0x01);
-							item->SetNumber(AribDescriptor::content_nibble_level_2, 0x0F);
+							item->SetNumber(AribDescriptor::content_nibble_level_1, 0x01, lp);
+							item->SetNumber(AribDescriptor::content_nibble_level_2, 0x0F, lp);
 							break;
 						case 0x04:
 							//音楽？
-							item->SetNumber(AribDescriptor::content_nibble_level_1, 0x04);
-							item->SetNumber(AribDescriptor::content_nibble_level_2, 0x0F);
+							item->SetNumber(AribDescriptor::content_nibble_level_1, 0x04, lp);
+							item->SetNumber(AribDescriptor::content_nibble_level_2, 0x0F, lp);
 							break;
 						case 0x05:
 							//ドラマ？
-							item->SetNumber(AribDescriptor::content_nibble_level_1, 0x03);
-							item->SetNumber(AribDescriptor::content_nibble_level_2, 0x0F);
+							item->SetNumber(AribDescriptor::content_nibble_level_1, 0x03, lp);
+							item->SetNumber(AribDescriptor::content_nibble_level_2, 0x0F, lp);
 							break;
 						case 0x06:
 							//ニュース？
-							item->SetNumber(AribDescriptor::content_nibble_level_1, 0x00);
-							item->SetNumber(AribDescriptor::content_nibble_level_2, 0x0F);
+							item->SetNumber(AribDescriptor::content_nibble_level_1, 0x00, lp);
+							item->SetNumber(AribDescriptor::content_nibble_level_2, 0x0F, lp);
 							break;
 						case 0x07:
 							//バラエティ？
-							item->SetNumber(AribDescriptor::content_nibble_level_1, 0x05);
-							item->SetNumber(AribDescriptor::content_nibble_level_2, 0x0F);
+							item->SetNumber(AribDescriptor::content_nibble_level_1, 0x05, lp);
+							item->SetNumber(AribDescriptor::content_nibble_level_2, 0x0F, lp);
 							break;
 						case 0x08:
 							//趣味／教育？
-							item->SetNumber(AribDescriptor::content_nibble_level_1, 0x0A);
-							item->SetNumber(AribDescriptor::content_nibble_level_2, 0x0F);
+							item->SetNumber(AribDescriptor::content_nibble_level_1, 0x0A, lp);
+							item->SetNumber(AribDescriptor::content_nibble_level_2, 0x0F, lp);
 							break;
 						case 0x09:
 							//アニメ？
-							item->SetNumber(AribDescriptor::content_nibble_level_1, 0x07);
-							item->SetNumber(AribDescriptor::content_nibble_level_2, 0x0F);
+							item->SetNumber(AribDescriptor::content_nibble_level_1, 0x07, lp);
+							item->SetNumber(AribDescriptor::content_nibble_level_2, 0x0F, lp);
 							break;
 						case 0x0A:
 							//ドキュメンタリー／教養？
-							item->SetNumber(AribDescriptor::content_nibble_level_1, 0x08);
-							item->SetNumber(AribDescriptor::content_nibble_level_2, 0x0F);
+							item->SetNumber(AribDescriptor::content_nibble_level_1, 0x08, lp);
+							item->SetNumber(AribDescriptor::content_nibble_level_2, 0x0F, lp);
 							break;
 						default:
 							break;
 						}
 					}
-					item->LeaveLoop();
 				}
 				descriptorList->push_back(item);
 			}

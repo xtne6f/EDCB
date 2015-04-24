@@ -744,11 +744,11 @@ BOOL CDecodeUtil::GetServiceListActual(
 				}
 				if( itrNit->second->TSInfoList[i]->descriptorList[j]->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::partial_reception_descriptor ){
 					partialServiceList.clear();
-					if( itrNit->second->TSInfoList[i]->descriptorList[j]->EnterLoop() ){
-						for( DWORD k=0; itrNit->second->TSInfoList[i]->descriptorList[j]->SetLoopIndex(k); k++ ){
-							partialServiceList.push_back((WORD)itrNit->second->TSInfoList[i]->descriptorList[j]->GetNumber(AribDescriptor::service_id));
+					AribDescriptor::CDescriptor::CLoopPointer lp;
+					if( itrNit->second->TSInfoList[i]->descriptorList[j]->EnterLoop(lp) ){
+						for( DWORD k=0; itrNit->second->TSInfoList[i]->descriptorList[j]->SetLoopIndex(lp, k); k++ ){
+							partialServiceList.push_back((WORD)itrNit->second->TSInfoList[i]->descriptorList[j]->GetNumber(AribDescriptor::service_id, lp));
 						}
-						itrNit->second->TSInfoList[i]->descriptorList[j]->LeaveLoop();
 					}
 				}
 			}

@@ -581,11 +581,12 @@ BOOL CEpgDBUtil::AddExtEvent(BYTE table_id, BYTE version_number, EVENT_INFO* eve
 		for( size_t i=0; i<descriptorList->size(); i++ ){
 			if( (*descriptorList)[i]->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::extended_event_descriptor ){
 				AribDescriptor::CDescriptor* extEvent = (*descriptorList)[i];
-				if( extEvent->EnterLoop() ){
-					for( DWORD j=0; extEvent->SetLoopIndex(j); j++ ){
+				AribDescriptor::CDescriptor::CLoopPointer lp;
+				if( extEvent->EnterLoop(lp) ){
+					for( DWORD j=0; extEvent->SetLoopIndex(lp, j); j++ ){
 						const char* src;
 						DWORD srcSize;
-						src = extEvent->GetStringOrEmpty(AribDescriptor::item_description_char, &srcSize);
+						src = extEvent->GetStringOrEmpty(AribDescriptor::item_description_char, &srcSize, lp);
 						if( srcSize > 0 ){
 							//if( textBuff.size() > 0 ){
 							//	string buff = "";
@@ -604,7 +605,7 @@ BOOL CEpgDBUtil::AddExtEvent(BYTE table_id, BYTE version_number, EVENT_INFO* eve
 
 							itemDescBuff += src;
 						}
-						src = extEvent->GetStringOrEmpty(AribDescriptor::item_char, &srcSize);
+						src = extEvent->GetStringOrEmpty(AribDescriptor::item_char, &srcSize, lp);
 						if( srcSize > 0 ){
 							//if( textBuff.size() > 0 ){
 							//	string buff = "";
@@ -624,7 +625,6 @@ BOOL CEpgDBUtil::AddExtEvent(BYTE table_id, BYTE version_number, EVENT_INFO* eve
 							itemBuff += src;
 						}
 					}
-					extEvent->LeaveLoop();
 				}
 				//if( extEvent->text_length > 0 ){
 				//	if( itemDescBuff.size() > 0 ){
@@ -690,16 +690,16 @@ BOOL CEpgDBUtil::AddContent(BYTE table_id, BYTE version_number, EVENT_INFO* even
 		eventInfo->contentInfo->version = version_number;
 
 		eventInfo->contentInfo->nibbleList.clear();
-		if( content->EnterLoop() ){
-			for( DWORD i=0; content->SetLoopIndex(i); i++ ){
+		AribDescriptor::CDescriptor::CLoopPointer lp;
+		if( content->EnterLoop(lp) ){
+			for( DWORD i=0; content->SetLoopIndex(lp, i); i++ ){
 				NIBBLE_DATA nibble;
-				nibble.content_nibble_level_1 = (BYTE)content->GetNumber(AribDescriptor::content_nibble_level_1);
-				nibble.content_nibble_level_2 = (BYTE)content->GetNumber(AribDescriptor::content_nibble_level_2);
-				nibble.user_nibble_1 = (BYTE)content->GetNumber(AribDescriptor::user_nibble_1);
-				nibble.user_nibble_2 = (BYTE)content->GetNumber(AribDescriptor::user_nibble_2);
+				nibble.content_nibble_level_1 = (BYTE)content->GetNumber(AribDescriptor::content_nibble_level_1, lp);
+				nibble.content_nibble_level_2 = (BYTE)content->GetNumber(AribDescriptor::content_nibble_level_2, lp);
+				nibble.user_nibble_1 = (BYTE)content->GetNumber(AribDescriptor::user_nibble_1, lp);
+				nibble.user_nibble_2 = (BYTE)content->GetNumber(AribDescriptor::user_nibble_2, lp);
 				eventInfo->contentInfo->nibbleList.push_back(nibble);
 			}
-			content->LeaveLoop();
 		}
 	}
 
@@ -807,17 +807,17 @@ BOOL CEpgDBUtil::AddEventGroup(CEITTable* eit, EVENT_INFO* eventInfo, AribDescri
 
 		eventInfo->eventGroupInfo->group_type = (BYTE)eventGroup->GetNumber(AribDescriptor::group_type);
 		eventInfo->eventGroupInfo->event_count = (BYTE)eventGroup->GetNumber(AribDescriptor::event_count);
-		if( eventGroup->EnterLoop() ){
-			for( DWORD i=0; eventGroup->SetLoopIndex(i); i++ ){
+		AribDescriptor::CDescriptor::CLoopPointer lp;
+		if( eventGroup->EnterLoop(lp) ){
+			for( DWORD i=0; eventGroup->SetLoopIndex(lp, i); i++ ){
 				EVENT_DATA2 item;
-				item.event_id = (WORD)eventGroup->GetNumber(AribDescriptor::event_id);
-				item.service_id = (WORD)eventGroup->GetNumber(AribDescriptor::service_id);
+				item.event_id = (WORD)eventGroup->GetNumber(AribDescriptor::event_id, lp);
+				item.service_id = (WORD)eventGroup->GetNumber(AribDescriptor::service_id, lp);
 				item.original_network_id = eit->original_network_id;
 				item.transport_stream_id = eit->transport_stream_id;
 
 				eventInfo->eventGroupInfo->eventData2List.push_back(item);
 			}
-			eventGroup->LeaveLoop();
 		}
 	}
 
@@ -842,30 +842,30 @@ BOOL CEpgDBUtil::AddEventRelay(CEITTable* eit, EVENT_INFO* eventInfo, AribDescri
 		eventInfo->eventRelayInfo->group_type = (BYTE)eventGroup->GetNumber(AribDescriptor::group_type);
 		eventInfo->eventRelayInfo->event_count = (BYTE)eventGroup->GetNumber(AribDescriptor::event_count);
 		if( eventInfo->eventRelayInfo->group_type == 0x02 ){
-			if( eventGroup->EnterLoop() ){
-				for( DWORD i=0; eventGroup->SetLoopIndex(i); i++ ){
+			AribDescriptor::CDescriptor::CLoopPointer lp;
+			if( eventGroup->EnterLoop(lp) ){
+				for( DWORD i=0; eventGroup->SetLoopIndex(lp, i); i++ ){
 					EVENT_DATA2 item;
-					item.event_id = (WORD)eventGroup->GetNumber(AribDescriptor::event_id);
-					item.service_id = (WORD)eventGroup->GetNumber(AribDescriptor::service_id);
+					item.event_id = (WORD)eventGroup->GetNumber(AribDescriptor::event_id, lp);
+					item.service_id = (WORD)eventGroup->GetNumber(AribDescriptor::service_id, lp);
 					item.original_network_id = eit->original_network_id;
 					item.transport_stream_id = eit->transport_stream_id;
 
 					eventInfo->eventRelayInfo->eventData2List.push_back(item);
 				}
-				eventGroup->LeaveLoop();
 			}
 		}else{
-			if( eventGroup->EnterLoop(1) ){
-				for( DWORD i=0; eventGroup->SetLoopIndex(i); i++ ){
+			AribDescriptor::CDescriptor::CLoopPointer lp;
+			if( eventGroup->EnterLoop(lp, 1) ){
+				for( DWORD i=0; eventGroup->SetLoopIndex(lp, i); i++ ){
 					EVENT_DATA2 item;
-					item.event_id = (WORD)eventGroup->GetNumber(AribDescriptor::event_id);
-					item.service_id = (WORD)eventGroup->GetNumber(AribDescriptor::service_id);
-					item.original_network_id = (WORD)eventGroup->GetNumber(AribDescriptor::original_network_id);
-					item.transport_stream_id = (WORD)eventGroup->GetNumber(AribDescriptor::transport_stream_id);
+					item.event_id = (WORD)eventGroup->GetNumber(AribDescriptor::event_id, lp);
+					item.service_id = (WORD)eventGroup->GetNumber(AribDescriptor::service_id, lp);
+					item.original_network_id = (WORD)eventGroup->GetNumber(AribDescriptor::original_network_id, lp);
+					item.transport_stream_id = (WORD)eventGroup->GetNumber(AribDescriptor::transport_stream_id, lp);
 
 					eventInfo->eventRelayInfo->eventData2List.push_back(item);
 				}
-				eventGroup->LeaveLoop();
 			}
 		}
 
@@ -1128,16 +1128,16 @@ BOOL CEpgDBUtil::AddServiceList(CNITTable* nit)
 		for( size_t j=0; j<tsInfo->descriptorList.size(); j++ ){
 			AribDescriptor::CDescriptor* desc = tsInfo->descriptorList[j];
 			if( desc->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::service_list_descriptor ){
-				if( desc->EnterLoop() ){
-					for( DWORD k=0; desc->SetLoopIndex(k); k++ ){
-						ULONGLONG key = _Create64Key(tsInfo->original_network_id, tsInfo->transport_stream_id, (WORD)desc->GetNumber(AribDescriptor::service_id));
+				AribDescriptor::CDescriptor::CLoopPointer lp;
+				if( desc->EnterLoop(lp) ){
+					for( DWORD k=0; desc->SetLoopIndex(lp, k); k++ ){
+						ULONGLONG key = _Create64Key(tsInfo->original_network_id, tsInfo->transport_stream_id, (WORD)desc->GetNumber(AribDescriptor::service_id, lp));
 						map<ULONGLONG, BYTE>::iterator itrService;
 						itrService = this->serviceList.find(key);
 						if( itrService == this->serviceList.end() ){
-							this->serviceList.insert(pair<ULONGLONG, BYTE>(key, (BYTE)desc->GetNumber(AribDescriptor::service_type)));
+							this->serviceList.insert(pair<ULONGLONG, BYTE>(key, (BYTE)desc->GetNumber(AribDescriptor::service_type, lp)));
 						}
 					}
-					desc->LeaveLoop();
 				}
 			}
 			if( desc->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::ts_information_descriptor && itrFind != this->serviceInfoList.end()){
@@ -1154,15 +1154,15 @@ BOOL CEpgDBUtil::AddServiceList(CNITTable* nit)
 			}
 			if( desc->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::partial_reception_descriptor && itrFind != this->serviceInfoList.end()){
 				//•”•ªŽóMƒtƒ‰ƒO
-				if( desc->EnterLoop() ){
+				AribDescriptor::CDescriptor::CLoopPointer lp;
+				if( desc->EnterLoop(lp) ){
 					map<WORD,DB_SERVICE_INFO*>::iterator itrService;
-					for( DWORD k=0; desc->SetLoopIndex(k); k++ ){
-						itrService = itrFind->second->serviceList.find((WORD)desc->GetNumber(AribDescriptor::service_id));
+					for( DWORD k=0; desc->SetLoopIndex(lp, k); k++ ){
+						itrService = itrFind->second->serviceList.find((WORD)desc->GetNumber(AribDescriptor::service_id, lp));
 						if( itrService != itrFind->second->serviceList.end() ){
 							itrService->second->partialReceptionFlag = 1;
 						}
 					}
-					desc->LeaveLoop();
 				}
 			}
 		}
