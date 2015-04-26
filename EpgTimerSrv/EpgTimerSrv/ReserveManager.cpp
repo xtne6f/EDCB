@@ -35,10 +35,10 @@ void CReserveManager::Initialize()
 	wstring settingPath;
 	GetSettingPath(settingPath);
 	this->reserveText.ParseText((settingPath + L"\\" + RESERVE_TEXT_NAME).c_str());
-	this->recInfoText.ParseText((settingPath + L"\\" + REC_INFO_TEXT_NAME).c_str());
-	this->recInfo2Text.ParseText((settingPath + L"\\" + REC_INFO2_TEXT_NAME).c_str());
 
 	ReloadSetting();
+	this->recInfoText.ParseText((settingPath + L"\\" + REC_INFO_TEXT_NAME).c_str());
+	this->recInfo2Text.ParseText((settingPath + L"\\" + REC_INFO2_TEXT_NAME).c_str());
 
 	this->watchdogStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	if( this->watchdogStopEvent ){
