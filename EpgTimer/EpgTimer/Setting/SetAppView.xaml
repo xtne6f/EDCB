@@ -81,7 +81,7 @@
                             <TextBox Height="24" Margin="499,80,0,0" Name="textBox_suspendChkTime" VerticalAlignment="Top" HorizontalAlignment="Left" Width="42" />
                             <Label Content="秒間" Height="28" HorizontalAlignment="Left" Margin="547,80,0,0" Name="labelTimer" VerticalAlignment="Top" />
                             <Label Content="※" Height="23" HorizontalAlignment="Left" Margin="485,106,0,0" Name="labelTimerStar" VerticalAlignment="Top" Width="21" />
-                            <Label Content="{}" Height="45" HorizontalAlignment="Left" Margin="499,106,0,0" Name="labelTimer2" VerticalAlignment="Top" Width="213" />
+                            <Label Content="{}" Height="58" HorizontalAlignment="Left" Margin="499,106,0,0" Name="labelTimer2" VerticalAlignment="Top" Width="213" />
                         </Grid>
                     </GroupBox>
                     <GroupBox Header="タスクアイコン 右クリック表示項目" Height="197" Margin="12,217,12,0" Name="groupBox32" VerticalAlignment="Top">

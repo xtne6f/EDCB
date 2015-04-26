@@ -334,7 +334,7 @@ namespace EpgTimer.Setting
                 }
                 else
                 {
-                    tb.Text = "録画終了時にスタンバイ、休止する場合は必ず表示されます。(表示時間は同じ)";
+                    tb.Text = "録画終了時にスタンバイ、休止する場合は必ず表示されます(ただし、サービス未使用時はこの設定は使用されず15秒固定)。";
                 }
                 tb.TextWrapping = TextWrapping.WrapWithOverflow;
                 labelTimer2.Content = tb;

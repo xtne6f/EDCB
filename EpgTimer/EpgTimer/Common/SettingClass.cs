@@ -1233,7 +1233,7 @@ namespace EpgTimer
             epgInfoOpenMode = 0;
             execBat = 0;
             suspendChk = 0;
-            suspendChkTime = 20;
+            suspendChkTime = 15;
             reserveListColumn = new List<ListColumnInfo>();
             recInfoListColumn = new List<ListColumnInfo>();
             autoAddEpgColumn = new List<ListColumnInfo>();
