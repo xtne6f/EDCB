@@ -937,7 +937,7 @@ __int64 CTunerBankCtrl::GetNearestReserveTime() const
 
 bool CTunerBankCtrl::StartEpgCap(const vector<SET_CH_INFO>& setChList)
 {
-	if( chList.empty() == false && this->hTunerProcess == NULL ){
+	if( setChList.empty() == false && this->hTunerProcess == NULL ){
 		//EPG取得についてはチューナの再利用はしない
 		if( OpenTuner(this->recMinWake, false, false, true, NULL) ){
 			CWatchBlock watchBlock(&this->watchContext);
