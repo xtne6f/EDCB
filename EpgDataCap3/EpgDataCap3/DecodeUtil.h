@@ -93,7 +93,6 @@ protected:
 	DWORD sitTimeTick;
 
 
-	DWORD serviceListSize;
 	SERVICE_INFO* serviceList;
 
 protected:

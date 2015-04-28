@@ -18,7 +18,6 @@ CDecodeUtil::CDecodeUtil(void)
 	this->tdtTime.dwHighDateTime = 0;
 	this->sitTime.dwHighDateTime = 0;
 
-	this->serviceListSize = 0;
 	this->serviceList = NULL;
 }
 
@@ -690,7 +689,6 @@ BOOL CDecodeUtil::GetServiceListActual(
 	)
 {
 	SAFE_DELETE_ARRAY(this->serviceList);
-	this->serviceListSize = 0;
 
 	if( this->nitActualInfo == NULL || this->sdtActualInfo == NULL ){
 		return GetServiceListSIT(serviceListSize, serviceList);
@@ -700,12 +698,13 @@ BOOL CDecodeUtil::GetServiceListActual(
 			return FALSE;
 		}
 	}
+	*serviceListSize = 0;
 
 	map<BYTE, CSDTTable*>::iterator itrSdt;
 	for(itrSdt = this->sdtActualInfo->sdtSection.begin(); itrSdt != this->sdtActualInfo->sdtSection.end(); itrSdt++){
-		this->serviceListSize += (DWORD)itrSdt->second->serviceInfoList.size();
+		*serviceListSize += (DWORD)itrSdt->second->serviceInfoList.size();
 	}
-	this->serviceList = new SERVICE_INFO[this->serviceListSize];
+	this->serviceList = new SERVICE_INFO[*serviceListSize];
 
 
 	wstring network_nameW = L"";
@@ -817,7 +816,6 @@ BOOL CDecodeUtil::GetServiceListActual(
 		}
 	}
 
-	*serviceListSize = this->serviceListSize;
 	*serviceList = this->serviceList;
 
 
@@ -838,7 +836,6 @@ BOOL CDecodeUtil::GetServiceListSIT(
 	}
 
 	SAFE_DELETE_ARRAY(this->serviceList);
-	this->serviceListSize = 0;
 
 	//ONID
 	WORD ONID = 0xFFFF;
@@ -852,15 +849,15 @@ BOOL CDecodeUtil::GetServiceListSIT(
 	WORD TSID = 0xFFFF;
 	TSID = this->patInfo->transport_stream_id;
 
-	this->serviceListSize = (DWORD)this->sitInfo->serviceLoopList.size();
-	this->serviceList = new SERVICE_INFO[this->serviceListSize];
+	*serviceListSize = (DWORD)this->sitInfo->serviceLoopList.size();
+	this->serviceList = new SERVICE_INFO[*serviceListSize];
 
 	wstring network_nameW = L"";
 	wstring ts_nameW = L"";
 	BYTE remote_control_key_id = 0;
 
 	//サービスリスト
-	for( DWORD i=0; i<this->serviceListSize; i++ ){
+	for( DWORD i=0; i<*serviceListSize; i++ ){
 		this->serviceList[i].original_network_id = ONID;
 		this->serviceList[i].transport_stream_id = TSID;
 		this->serviceList[i].service_id = this->sitInfo->serviceLoopList[i]->service_id;
@@ -913,7 +910,6 @@ BOOL CDecodeUtil::GetServiceListSIT(
 	}
 
 
-	*serviceListSize = this->serviceListSize;
 	*serviceList = this->serviceList;
 
 	return TRUE;

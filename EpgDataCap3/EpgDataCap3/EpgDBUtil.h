@@ -232,17 +232,12 @@ protected:
 
 	DWORD sectionNowFlag;
 
-	DWORD epgInfoListSize;
 	EPG_EVENT_INFO* epgInfoList;
 
 	EPG_EVENT_INFO* epgInfo;
 
 	EPG_EVENT_INFO* searchEpgInfo;
 
-	DWORD epgSearchListSize;
-	EPG_EVENT_INFO* epgSearchList;
-
-	DWORD serviceDBListSize;
 	SERVICE_INFO* serviceDBList;
 protected:
 	void Clear();

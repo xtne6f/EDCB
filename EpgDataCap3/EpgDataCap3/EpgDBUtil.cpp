@@ -14,16 +14,11 @@ CEpgDBUtil::CEpgDBUtil(void)
 	this->sectionNowFlag = 0;
 
 	this->epgInfoList = NULL;
-	this->epgInfoListSize = 0;
 
 	this->epgInfo = NULL;
 	this->searchEpgInfo = NULL;
 
-	this->epgSearchList = NULL;
-	this->epgSearchListSize = 0;
-
 	this->serviceDBList = NULL;
-	this->serviceDBListSize = 0;
 }
 
 CEpgDBUtil::~CEpgDBUtil(void)
@@ -32,19 +27,14 @@ CEpgDBUtil::~CEpgDBUtil(void)
 	ClearSectionStatus();
 
 	SAFE_DELETE_ARRAY(this->epgInfoList);
-	this->epgInfoListSize = 0;
 
 	SAFE_DELETE(this->epgInfo);
 
 	SAFE_DELETE(this->searchEpgInfo);
 
-	SAFE_DELETE_ARRAY(this->epgSearchList);
-	this->epgSearchListSize = 0;
-
 	DeleteCriticalSection(&this->dbLock);
 
 	SAFE_DELETE_ARRAY(this->serviceDBList);
-	this->serviceDBListSize = 0;
 }
 
 void CEpgDBUtil::Clear()
@@ -1350,7 +1340,6 @@ BOOL CEpgDBUtil::GetEpgInfoList(
 	CBlockLock lock(&this->dbLock);
 
 	SAFE_DELETE_ARRAY(this->epgInfoList);
-	this->epgInfoListSize = 0;
 
 	ULONGLONG key = _Create64Key(originalNetworkID, transportStreamID, serviceID);
 
@@ -1360,11 +1349,11 @@ BOOL CEpgDBUtil::GetEpgInfoList(
 		return FALSE;
 	}
 
-	this->epgInfoListSize = (DWORD)itr->second.eventMap.size();
-	if( this->epgInfoListSize == 0 ){
+	if( itr->second.eventMap.size() == 0 ){
 		return FALSE;
 	}
-	this->epgInfoList = new EPG_EVENT_INFO[this->epgInfoListSize];
+	*epgInfoListSize = (DWORD)itr->second.eventMap.size();
+	this->epgInfoList = new EPG_EVENT_INFO[*epgInfoListSize];
 
 	map<WORD, EVENT_INFO*>::iterator itrEvt;
 	DWORD count = 0;
@@ -1373,7 +1362,6 @@ BOOL CEpgDBUtil::GetEpgInfoList(
 		count++;
 	}
 
-	*epgInfoListSize = this->epgInfoListSize;
 	*epgInfoList = this->epgInfoList;
 
 	return TRUE;
@@ -1498,10 +1486,9 @@ void CEpgDBUtil::GetServiceListEpgDB(
 	CBlockLock lock(&this->dbLock);
 
 	SAFE_DELETE_ARRAY(this->serviceDBList);
-	this->serviceDBListSize = 0;
 
-	this->serviceDBListSize = (DWORD)this->serviceEventMap.size();
-	this->serviceDBList = new SERVICE_INFO[this->serviceDBListSize];
+	*serviceListSize = (DWORD)this->serviceEventMap.size();
+	this->serviceDBList = new SERVICE_INFO[*serviceListSize];
 
 	DWORD count = 0;
 	map<ULONGLONG, SERVICE_EVENT_INFO>::iterator itr;
@@ -1547,7 +1534,6 @@ void CEpgDBUtil::GetServiceListEpgDB(
 		count++;
 	}
 
-	*serviceListSize = this->serviceDBListSize;
 	*serviceList = this->serviceDBList;
 }
 
