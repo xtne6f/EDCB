@@ -103,6 +103,8 @@ private:
 	//isEpgCap: EPG取得中のチューナが無ければfalse
 	//戻り値: EPG取得が完了した瞬間にtrue
 	bool CheckEpgCap(bool isEpgCap);
+	//予約開始(視聴を除く)の最小時刻を取得する
+	__int64 GetNearestRecReserveTime() const;
 	//次のEPG取得時刻を取得する
 	__int64 GetNextEpgCapTime(__int64 now, int* basicOnlyFlags = NULL) const;
 	//バンクを監視して必要ならチューナを強制終了するスレッド

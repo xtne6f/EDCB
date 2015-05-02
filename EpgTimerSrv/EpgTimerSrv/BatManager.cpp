@@ -14,7 +14,8 @@ CBatManager::CBatManager(CNotifyManager& notifyManager_)
 {
 	InitializeCriticalSection(&this->managerLock);
 
-	this->pauseFlag = FALSE;
+	this->idleMargin = MAXDWORD;
+	this->nextBatMargin = 0;
 	this->batWorkExitingFlag = FALSE;
 
 	this->batWorkThread = NULL;
@@ -48,6 +49,15 @@ void CBatManager::AddBatWork(const BAT_WORK_INFO& info)
 	CBlockLock lock(&this->managerLock);
 
 	this->workList.push_back(info);
+	StartWork();
+}
+
+void CBatManager::SetIdleMargin(DWORD marginSec)
+{
+	CBlockLock lock(&this->managerLock);
+
+	this->idleMargin = marginSec;
+	StartWork();
 }
 
 DWORD CBatManager::GetWorkCount() const
@@ -74,21 +84,12 @@ void CBatManager::StartWork()
 		CloseHandle(this->batWorkThread);
 		this->batWorkThread = NULL;
 	}
-	this->pauseFlag = FALSE;
-	if( this->batWorkThread == NULL && this->workList.empty() == false ){
+	if( this->batWorkThread == NULL && this->workList.empty() == false && this->idleMargin >= this->nextBatMargin ){
 		ResetEvent(this->batWorkStopEvent);
 		this->batWorkExitingFlag = FALSE;
 		this->batWorkThread = (HANDLE)_beginthreadex(NULL, 0, BatWorkThread, this, 0, NULL);
 	}
 }
-
-void CBatManager::PauseWork()
-{
-	CBlockLock lock(&this->managerLock);
-
-	this->pauseFlag = TRUE;
-}
-
 
 BOOL CBatManager::PopLastWorkSuspend(BYTE* suspendMode, BYTE* rebootFlag)
 {
@@ -116,9 +117,10 @@ UINT WINAPI CBatManager::BatWorkThread(LPVOID param)
 			BAT_WORK_INFO work;
 			{
 				CBlockLock lock(&sys->managerLock);
-				if( sys->pauseFlag != FALSE || sys->workList.empty() ){
+				if( sys->workList.empty() ){
 					//このフラグを立てたあとは二度とロックを確保してはいけない
 					sys->batWorkExitingFlag = TRUE;
+					sys->nextBatMargin = 0;
 					break;
 				}else{
 					work = sys->workList[0];
@@ -131,10 +133,22 @@ UINT WINAPI CBatManager::BatWorkThread(LPVOID param)
 				wstring batFilePath = L"";
 				GetModuleFolderPath(batFilePath);
 				batFilePath += L"\\EpgTimer_Bon_RecEnd.bat";
-				if( CreateBatFile(work, work.batFilePath.c_str(), batFilePath.c_str()) != FALSE ){
+				DWORD exBatMargin;
+				WORD exSW;
+				wstring exDirect;
+				if( CreateBatFile(work, work.batFilePath.c_str(), batFilePath.c_str(), exBatMargin, exSW, exDirect) != FALSE ){
+					{
+						CBlockLock(&sys->managerLock);
+						if( sys->idleMargin < exBatMargin ){
+							//アイドル時間に余裕がないので中止
+							sys->batWorkExitingFlag = TRUE;
+							sys->nextBatMargin = exBatMargin;
+							break;
+						}
+					}
 					bool executed = false;
 					HANDLE hProcess = NULL;
-					if( GetShellWindow() == NULL ){
+					if( exDirect.empty() && GetShellWindow() == NULL ){
 						OutputDebugString(L"GetShellWindow() failed\r\n");
 						//表示できない可能性が高いのでGUI経由で起動してみる
 						CSendCtrlCmd ctrlCmd;
@@ -159,13 +173,21 @@ UINT WINAPI CBatManager::BatWorkThread(LPVOID param)
 						STARTUPINFO si = {};
 						si.cb = sizeof(si);
 						si.dwFlags = STARTF_USESHOWWINDOW;
-						si.wShowWindow = SW_SHOWMINNOACTIVE;
+						si.wShowWindow = exSW;
+						wstring batFolder;
+						if( exDirect.empty() == false ){
+							batFilePath = work.batFilePath;
+							GetFileFolder(batFilePath, batFolder);
+						}
 						wstring strParam = L" /c \"\"" + batFilePath + L"\" \"";
 						vector<WCHAR> strBuff(strParam.c_str(), strParam.c_str() + strParam.size() + 1);
 						WCHAR cmdExePath[MAX_PATH];
 						DWORD dwRet = GetEnvironmentVariable(L"ComSpec", cmdExePath, MAX_PATH);
 						if( dwRet && dwRet < MAX_PATH &&
-						    CreateProcess(cmdExePath, &strBuff.front(), NULL, NULL, FALSE, BELOW_NORMAL_PRIORITY_CLASS, NULL, NULL, &si, &pi) != FALSE ){
+						    CreateProcess(cmdExePath, &strBuff.front(), NULL, NULL, FALSE,
+						                  BELOW_NORMAL_PRIORITY_CLASS | (exDirect.empty() ? 0 : CREATE_UNICODE_ENVIRONMENT),
+						                  exDirect.empty() ? NULL : const_cast<LPWSTR>(exDirect.c_str()),
+						                  exDirect.empty() ? NULL : batFolder.c_str(), &si, &pi) != FALSE ){
 							CloseHandle(pi.hThread);
 							hProcess = pi.hProcess;
 						}
@@ -193,16 +215,11 @@ UINT WINAPI CBatManager::BatWorkThread(LPVOID param)
 	return 0;
 }
 
-BOOL CBatManager::CreateBatFile(const BAT_WORK_INFO& info, LPCWSTR batSrcFilePath, LPCWSTR batFilePath )
+BOOL CBatManager::CreateBatFile(const BAT_WORK_INFO& info, LPCWSTR batSrcFilePath, LPCWSTR batFilePath, DWORD& exBatMargin, WORD& exSW, wstring& exDirect)
 {
 	//バッチの作成
 	HANDLE hRead = CreateFile( batSrcFilePath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
 	if( hRead == INVALID_HANDLE_VALUE ){
-		return FALSE;
-	}
-	HANDLE hWrite = CreateFile( batFilePath, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL );
-	if( hWrite == INVALID_HANDLE_VALUE ){
-		CloseHandle(hRead);
 		return FALSE;
 	}
 
@@ -214,7 +231,6 @@ BOOL CBatManager::CreateBatFile(const BAT_WORK_INFO& info, LPCWSTR batSrcFilePat
 	vector<char> buff(dwL + 1);
 	if( dwL == 0 || ReadFile(hRead, &buff.front(), dwL, &dwRead, NULL) == FALSE || dwRead != dwL ){
 		CloseHandle(hRead);
-		CloseHandle(hWrite);
 		return FALSE;
 	}
 	buff[dwL] = '\0';
@@ -222,6 +238,26 @@ BOOL CBatManager::CreateBatFile(const BAT_WORK_INFO& info, LPCWSTR batSrcFilePat
 
 	string strRead = "";
 	strRead = &buff.front();
+
+	//拡張命令: BatMargin
+	exBatMargin = 0;
+	if( strRead.find("_EDCBX_BATMARGIN_=") != string::npos ){
+		exBatMargin = atoi(strRead.c_str() + strRead.find("_EDCBX_BATMARGIN_=") + 18) * 60;
+	}
+	//拡張命令: ウィンドウ表示状態
+	exSW = strRead.find("_EDCBX_HIDE_") != string::npos ? SW_HIDE :
+	       strRead.find("_EDCBX_NORMAL_") != string::npos ? SW_SHOWNORMAL : SW_SHOWMINNOACTIVE;
+	//拡張命令: 環境渡しによる直接実行
+	exDirect = L"";
+	if( strRead.find("_EDCBX_DIRECT_") != string::npos ){
+		exDirect = CreateEnvironment(info);
+		return TRUE;
+	}
+
+	HANDLE hWrite = CreateFile( batFilePath, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL );
+	if( hWrite == INVALID_HANDLE_VALUE ){
+		return FALSE;
+	}
 
 	string strWrite;
 	for( size_t pos = 0;; ){
@@ -238,10 +274,14 @@ BOOL CBatManager::CreateBatFile(const BAT_WORK_INFO& info, LPCWSTR batSrcFilePat
 			strWrite.append(strRead, pos, string::npos);
 			break;
 		}
-		if( ExpandMacro(strRead.substr(pos + 1, next - pos - 1), info, strWrite) == FALSE ){
+		wstring strValW;
+		if( ExpandMacro(strRead.substr(pos + 1, next - pos - 1), info, strValW) == FALSE ){
 			strWrite += '$';
 			pos++;
 		}else{
+			string strValA;
+			WtoA(strValW, strValA);
+			strWrite += strValA;
 			pos = next + 1;
 		}
 	}
@@ -256,7 +296,7 @@ BOOL CBatManager::CreateBatFile(const BAT_WORK_INFO& info, LPCWSTR batSrcFilePat
 	return TRUE;
 }
 
-BOOL CBatManager::ExpandMacro(const string& var, const BAT_WORK_INFO& info, string& strWrite)
+BOOL CBatManager::ExpandMacro(const string& var, const BAT_WORK_INFO& info, wstring& strWrite)
 {
 	string strSDW28;
 	SYSTEMTIME t28TimeS;
@@ -284,8 +324,8 @@ BOOL CBatManager::ExpandMacro(const string& var, const BAT_WORK_INFO& info, stri
 	}
 
 	string ret;
-	if( var == "FilePath" )		WtoA(info.recFileInfo.recFilePath, ret);
-	else if( var == "Title" )	WtoA(info.recFileInfo.title, ret);
+	if( var == "FilePath" )		strWrite += info.recFileInfo.recFilePath;
+	else if( var == "Title" )	strWrite += info.recFileInfo.title;
 	else if( var == "SDYYYY" )	Format(ret, "%04d", info.recFileInfo.startTime.wYear);
 	else if( var == "SDYY" )	Format(ret, "%02d", info.recFileInfo.startTime.wYear%100);
 	else if( var == "SDMM" )	Format(ret, "%02d", info.recFileInfo.startTime.wMonth);
@@ -320,7 +360,7 @@ BOOL CBatManager::ExpandMacro(const string& var, const BAT_WORK_INFO& info, stri
 	else if( var == "TSID16" )	Format(ret, "%04X", info.recFileInfo.transportStreamID);
 	else if( var == "SID16" )	Format(ret, "%04X", info.recFileInfo.serviceID);
 	else if( var == "EID16" )	Format(ret, "%04X", info.recFileInfo.eventID);
-	else if( var == "ServiceName" )	WtoA(info.recFileInfo.serviceName, ret);
+	else if( var == "ServiceName" )	strWrite += info.recFileInfo.serviceName;
 	else if( var == "SDYYYY28" )	Format(ret, "%04d", t28TimeS.wYear);
 	else if( var == "SDYY28" )	Format(ret, "%02d", t28TimeS.wYear%100);
 	else if( var == "SDMM28" )	Format(ret, "%02d", t28TimeS.wMonth);
@@ -347,20 +387,20 @@ BOOL CBatManager::ExpandMacro(const string& var, const BAT_WORK_INFO& info, stri
 	else if( var == "DUS" )		Format(ret, "%d", info.recFileInfo.durationSecond%60);
 	else if( var == "Drops" )	Format(ret, "%I64d", info.recFileInfo.drops);
 	else if( var == "Scrambles" )	Format(ret, "%I64d", info.recFileInfo.scrambles);
-	else if( var == "Result" )	WtoA(info.recFileInfo.comment, ret);
+	else if( var == "Result" )	strWrite += info.recFileInfo.comment;
 	else if( var == "FolderPath" ){
 		wstring strFolder;
 		GetFileFolder(info.recFileInfo.recFilePath, strFolder);
 		ChkFolderPath(strFolder);
-		WtoA(strFolder, ret);
+		strWrite += strFolder;
 	}else if( var == "FileName" ){
 		wstring strTitle;
 		GetFileTitle(info.recFileInfo.recFilePath, strTitle);
-		WtoA(strTitle, ret);
+		strWrite += strTitle;
 	}else if( var == "TitleF" ){
 		wstring strTemp = info.recFileInfo.title;
 		CheckFileName(strTemp);
-		WtoA(strTemp, ret);
+		strWrite += strTemp;
 	}else if( var == "Title2" || var == "Title2F" ){
 		wstring strTemp = info.recFileInfo.title;
 		while( strTemp.find(L"[") != wstring::npos && strTemp.find(L"]") != wstring::npos ){
@@ -373,15 +413,69 @@ BOOL CBatManager::ExpandMacro(const string& var, const BAT_WORK_INFO& info, stri
 		if( var == "Title2F" ){
 			CheckFileName(strTemp);
 		}
-		WtoA(strTemp, ret);
+		strWrite += strTemp;
 	}else if( var == "AddKey" ){
-		WtoA(info.addKey, ret);
+		strWrite += info.addKey;
 	}else{
 		return FALSE;
 	}
 
-	strWrite += ret;
+	wstring retW;
+	AtoW(ret, retW);
+	strWrite += retW;
 
 	return TRUE;
 }
 
+wstring CBatManager::CreateEnvironment(const BAT_WORK_INFO& info)
+{
+	static const LPCSTR VAR_ARRAY[] = {
+		"FilePath",
+		"Title",
+		"SDYYYY", "SDYY", "SDMM", "SDM", "SDDD", "SDD", "SDW", "STHH", "STH", "STMM", "STM", "STSS", "STS",
+		"EDYYYY", "EDYY", "EDMM", "EDM", "EDDD", "EDD", "EDW", "ETHH", "ETH", "ETMM", "ETM", "ETSS", "ETS",
+		"ONID10", "TSID10", "SID10", "EID10",
+		"ONID16", "TSID16", "SID16", "EID16",
+		"ServiceName",
+		"SDYYYY28", "SDYY28", "SDMM28", "SDM28", "SDDD28", "SDD28", "SDW28", "STHH28", "STH28",
+		"EDYYYY28", "EDYY28", "EDMM28", "EDM28", "EDDD28", "EDD28", "EDW28", "ETHH28", "ETH28",
+		"DUHH", "DUH", "DUMM", "DUM", "DUSS", "DUS",
+		"Drops",
+		"Scrambles",
+		"Result",
+		"FolderPath",
+		"FileName",
+		"TitleF",
+		"Title2",
+		"Title2F",
+		"AddKey",
+		NULL,
+	};
+
+	wstring strEnv;
+	LPWCH env = GetEnvironmentStrings();
+	if( env ){
+		do{
+			wstring str(env + strEnv.size());
+			string strVar;
+			WtoA(str.substr(0, str.find(L'=')), strVar);
+			//競合する変数をエスケープ
+			for( int i = 0; VAR_ARRAY[i]; i++ ){
+				if( _stricmp(VAR_ARRAY[i], strVar.c_str()) == 0 ){
+					str[0] = L'_';
+					break;
+				}
+			}
+			strEnv += str + L'\0';
+		}while( env[strEnv.size()] != L'\0' );
+		FreeEnvironmentStrings(env);
+	}
+	for( int i = 0; VAR_ARRAY[i]; i++ ){
+		wstring strVar;
+		AtoW(VAR_ARRAY[i], strVar);
+		strEnv += strVar + L'=';
+		ExpandMacro(VAR_ARRAY[i], info, strEnv);
+		strEnv += L'\0';
+	}
+	return strEnv;
+}

@@ -17,12 +17,10 @@ public:
 	~CBatManager(void);
 
 	void AddBatWork(const BAT_WORK_INFO& info);
+	void SetIdleMargin(DWORD marginSec);
 
 	DWORD GetWorkCount() const;
 	BOOL IsWorking() const;
-
-	void StartWork();
-	void PauseWork();
 
 	BOOL PopLastWorkSuspend(BYTE* suspendMode, BYTE* rebootFlag);
 protected:
@@ -32,7 +30,8 @@ protected:
 
 	vector<BAT_WORK_INFO> workList;
 
-	BOOL pauseFlag;
+	DWORD idleMargin;
+	DWORD nextBatMargin;
 	BOOL batWorkExitingFlag;
 	HANDLE batWorkThread;
 	HANDLE batWorkStopEvent;
@@ -40,9 +39,11 @@ protected:
 	BYTE lastSuspendMode;
 	BYTE lastRebootFlag;
 protected:
+	void StartWork();
 	static UINT WINAPI BatWorkThread(LPVOID param);
 
-	static BOOL CreateBatFile(const BAT_WORK_INFO& info, LPCWSTR batSrcFilePath, LPCWSTR batFilePath );
-	static BOOL ExpandMacro(const string& var, const BAT_WORK_INFO& info, string& strWrite);
+	static BOOL CreateBatFile(const BAT_WORK_INFO& info, LPCWSTR batSrcFilePath, LPCWSTR batFilePath, DWORD& exBatMargin, WORD& exSW, wstring& exDirect);
+	static BOOL ExpandMacro(const string& var, const BAT_WORK_INFO& info, wstring& strWrite);
+	static wstring CreateEnvironment(const BAT_WORK_INFO& info);
 };
 

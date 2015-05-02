@@ -1155,7 +1155,6 @@ DWORD CReserveManager::Check()
 						}
 						batInfo.recFileInfo = item;
 						this->batManager.AddBatWork(batInfo);
-						this->batManager.StartWork();
 					}else if( itrRet->type != CTunerBankCtrl::CHECK_ERR_PASS ){
 						shutdownMode = MAKEWORD(itrRes->second.recSetting.suspendMode, itrRes->second.recSetting.rebootFlag);
 					}
@@ -1190,6 +1189,8 @@ DWORD CReserveManager::Check()
 		if( this->checkCount % 3 == 0 ){
 			CheckTuijyuTuner();
 		}
+		__int64 idleMargin = GetNearestRecReserveTime() - GetNowI64Time();
+		this->batManager.SetIdleMargin((DWORD)min(max(idleMargin / I64_1SEC, 0), MAXDWORD));
 		this->notifyManager.SetNotifySrvStatus(isRec ? 1 : isEpgCap ? 2 : 0);
 
 		BYTE suspendMode;
@@ -1198,10 +1199,10 @@ DWORD CReserveManager::Check()
 			//EPGŽæ“¾‚ªŠ®—¹‚µ‚½
 			this->notifyManager.AddNotify(NOTIFY_UPDATE_EPGCAP_END);
 			return MAKELONG(0, CHECK_EPGCAP_END);
-		}else if( this->batManager.PopLastWorkSuspend(&suspendMode, &rebootFlag) ){
+		}else if( this->batManager.GetWorkCount() == 0 && this->batManager.PopLastWorkSuspend(&suspendMode, &rebootFlag) ){
 			//ƒoƒbƒ`ˆ—‚ªŠ®—¹‚µ‚½
 			return MAKELONG(MAKEWORD(suspendMode, rebootFlag), CHECK_NEED_SHUTDOWN);
-		}else if( shutdownMode >= 0 && this->batManager.IsWorking() == false ){
+		}else if( shutdownMode >= 0 && this->batManager.GetWorkCount() == 0 && this->batManager.IsWorking() == FALSE ){
 			return MAKELONG(shutdownMode, CHECK_NEED_SHUTDOWN);
 		}else if( this->reserveModified ){
 			CBlockLock lock(&this->managerLock);
@@ -1376,7 +1377,7 @@ bool CReserveManager::IsActive() const
 {
 	CBlockLock lock(&this->managerLock);
 
-	if( this->epgCapRequested || this->epgCapWork || this->batManager.IsWorking() ){
+	if( this->epgCapRequested || this->epgCapWork || this->batManager.GetWorkCount() != 0 || this->batManager.IsWorking() ){
 		return true;
 	}
 	for( map<DWORD, CTunerBankCtrl*>::const_iterator itr = this->tunerBankMap.begin(); itr != this->tunerBankMap.end(); itr++ ){
@@ -1404,6 +1405,22 @@ __int64 CReserveManager::GetSleepReturnTime(__int64 baseTime) const
 	}
 	__int64 capTime = GetNextEpgCapTime(baseTime + 60 * I64_1SEC);
 	return min(nextRec, capTime);
+}
+
+__int64 CReserveManager::GetNearestRecReserveTime() const
+{
+	CBlockLock lock(&this->managerLock);
+
+	__int64 minTime = LLONG_MAX;
+	for( map<DWORD, RESERVE_DATA>::const_iterator itr = this->reserveText.GetMap().begin(); itr != this->reserveText.GetMap().end(); itr++ ){
+		if( itr->second.recSetting.recMode != RECMODE_VIEW &&
+		    itr->second.recSetting.recMode != RECMODE_NO ){
+			__int64 startTime;
+			CalcEntireReserveTime(&startTime, NULL, itr->second);
+			minTime = min(startTime, minTime);
+		}
+	}
+	return minTime;
 }
 
 __int64 CReserveManager::GetNextEpgCapTime(__int64 now, int* basicOnlyFlags) const
