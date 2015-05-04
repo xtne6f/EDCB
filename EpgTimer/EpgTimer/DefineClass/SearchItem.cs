@@ -178,10 +178,18 @@ namespace EpgTimer
                 return color;
             }
         }
+        public int NowJumpingTable { set; get; }
         public SolidColorBrush ForeColor
         {
             get
             {
+                //上半分は、番組表へジャンプ時の強調表示
+                switch(NowJumpingTable)
+                {
+                    case 1: return new SolidColorBrush(Colors.Red);
+                    case 2: return CommonManager.Instance.ListDefForeColor;
+                }
+
                 if (ReserveInfo == null) return CommonManager.Instance.ListDefForeColor;
                 //
                 return CommonManager.Instance.EventItemForeColor(ReserveInfo.RecSetting.RecMode);

@@ -545,24 +545,29 @@ namespace EpgTimer.EpgView
             }
         }
 
-        protected override void MoveToReserveItem(ReserveItem target)
+        protected override void MoveToReserveItem(ReserveItem target, bool JumpingTable)
         {
             uint ID = target.ReserveInfo.ReserveID;
             ReserveViewItem target_item = this.reserveList.Find(item => item.ReserveInfo.ReserveID == ID);
-            ScrollToFindItem(target_item);
+            ScrollToFindItem(target_item, JumpingTable);
         }
 
-        protected override void MoveToProgramItem(SearchItem target)
+        protected override void MoveToProgramItem(SearchItem target, bool JumpingTable)
         {
             ulong PgKey = target.EventInfo.Create64PgKey();
             ProgramViewItem target_item = this.programList.Find(item => item.EventInfo.Create64PgKey() == PgKey);
-            ScrollToFindItem(target_item);
+            ScrollToFindItem(target_item, JumpingTable);
         }
 
-        private void ScrollToFindItem<T>(ViewPanelItem<T> target_item)
+        private void ScrollToFindItem<T>(ViewPanelItem<T> target_item, bool JumpingTable)
         {
             this.epgProgramView.scrollViewer.ScrollToHorizontalOffset(target_item.LeftPos - 100);
             this.epgProgramView.scrollViewer.ScrollToVerticalOffset(target_item.TopPos - 100);
+            if (JumpingTable || Settings.Instance.DisplayNotifyEpgChange)
+            {
+                //「番組表へジャンプ」の場合、またはオプションで指定のある場合に強調表示する。
+                this.epgProgramView.SetFindItem<T>(target_item);
+            }
         }
 
     }

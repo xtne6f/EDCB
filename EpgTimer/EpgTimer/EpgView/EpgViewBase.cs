@@ -168,18 +168,18 @@ namespace EpgTimer.EpgView
 
             if (BlackoutWindow.SelectedReserveItem != null)
             {
-                MoveToReserveItem(BlackoutWindow.SelectedReserveItem);
+                MoveToReserveItem(BlackoutWindow.SelectedReserveItem, BlackoutWindow.NowJumpTable);
             }
             else if (BlackoutWindow.SelectedSearchItem != null)
             {
-                MoveToProgramItem(BlackoutWindow.SelectedSearchItem);
+                MoveToProgramItem(BlackoutWindow.SelectedSearchItem, BlackoutWindow.NowJumpTable);
             }
 
             BlackoutWindow.Clear();
         }
 
-        protected virtual void MoveToReserveItem(ReserveItem target) { }
-        protected virtual void MoveToProgramItem(SearchItem target) { }
+        protected virtual void MoveToReserveItem(ReserveItem target, bool JumpingTable) { }
+        protected virtual void MoveToProgramItem(SearchItem target, bool JumpingTable) { }
 
     }
 }

@@ -266,6 +266,8 @@ namespace EpgTimer
         private int noStyle;
         private bool cautionManyChange;
         private int cautionManyNum;
+        private bool displayNotifyEpgChange;
+        private int displayNotifyJumpTime;
 
         public bool UseCustomEpgView
         {
@@ -1096,7 +1098,17 @@ namespace EpgTimer
         {
             get { return cautionManyNum; }
             set { cautionManyNum = value; }
-        }       
+        }
+        public bool DisplayNotifyEpgChange
+        {
+            get { return displayNotifyEpgChange; }
+            set { displayNotifyEpgChange = value; }
+        }
+        public int DisplayNotifyJumpTime
+        {
+            get { return displayNotifyJumpTime; }
+            set { displayNotifyJumpTime = value; }
+        }
         
         public Settings()
         {
@@ -1249,6 +1261,8 @@ namespace EpgTimer
             noStyle = 0;
             cautionManyChange = true;
             cautionManyNum = 10;
+            displayNotifyEpgChange = false;
+            displayNotifyJumpTime = 3;
         }
 
         [NonSerialized()]

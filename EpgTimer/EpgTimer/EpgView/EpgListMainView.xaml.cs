@@ -30,7 +30,7 @@ namespace EpgTimer
 
         public override bool ClearInfo()
         {
-            base.ClearInfo();
+            base.ClearInfo(); 
 
             BackUpChkSID();
             listBox_service.ItemsSource = null;
@@ -61,7 +61,7 @@ namespace EpgTimer
         {
             //ReloadReserveViewItem()の実質的な重複実行を阻止。
             //ReloadEpgData()より先に実行させておく必要がある。※パネル系Viewでは後に実行させる必要がある。
-            ClearInfo(); 
+            ClearInfo();
             updateReserveData = !base.ReloadReserveData();
             return ReloadEpgData();
         }
@@ -552,30 +552,55 @@ namespace EpgTimer
             mutil.ReserveChangeOnOff(GetSelectedItemsList(), null);
         }
 
-        protected override void MoveToReserveItem(ReserveItem target)
+        protected override void MoveToReserveItem(ReserveItem target, bool JumpingTable)
         {
             uint ID = target.ReserveInfo.ReserveID;
             SearchItem target_item = this.programList.Find(item => item.ReserveInfo != null && item.ReserveInfo.ReserveID == ID);
-            ScrollToFindItem(target_item);
+            ScrollToFindItem(target_item, JumpingTable);
         }
 
-        protected override void MoveToProgramItem(SearchItem target)
+        protected override void MoveToProgramItem(SearchItem target, bool JumpingTable)
         {
             ulong PgKey = target.EventInfo.Create64PgKey();
             SearchItem target_item = this.programList.Find(item => item.EventInfo.Create64PgKey() == PgKey);
-            ScrollToFindItem(target_item);
+            ScrollToFindItem(target_item, JumpingTable);
         }
 
-        private void ScrollToFindItem(SearchItem target_item)
+        private void ScrollToFindItem(SearchItem target_item, bool JumpingTable)
         {
             listView_event.SelectedItem = target_item;
             listView_event.ScrollIntoView(target_item);
-            
+
             //いまいちな感じ
             //listView_event.ScrollIntoView(listView_event.Items[0]);
             //listView_event.ScrollIntoView(listView_event.Items[listView_event.Items.Count-1]);
             //int scrollpos = ((listView_event.SelectedIndex - 5) >= 0 ? listView_event.SelectedIndex - 5 : 0);
             //listView_event.ScrollIntoView(listView_event.Items[scrollpos]);
+
+            //「番組表へジャンプ」の場合、またはオプションで指定のある場合に強調表示する。
+            //パネルビューと比較して、こちらでは最後までゆっくり点滅させる。全表示時間は同じ。
+            //ただ、結局スクロールさせる位置がうまく調整できてないので効果は限定的。
+            if (JumpingTable || Settings.Instance.DisplayNotifyEpgChange)
+            {
+                var notifyTimer = new System.Windows.Threading.DispatcherTimer();
+                notifyTimer.Interval = TimeSpan.FromSeconds(0.2);
+                TimeSpan RemainTime = TimeSpan.FromSeconds(Settings.Instance.DisplayNotifyJumpTime);
+                notifyTimer.Tick += (sender, e) =>
+                {
+                    RemainTime -= notifyTimer.Interval;
+                    if (RemainTime <= TimeSpan.FromSeconds(0))
+                    {
+                        target_item.NowJumpingTable = 0;
+                        notifyTimer.Stop();
+                    }
+                    else
+                    {
+                        target_item.NowJumpingTable = target_item.NowJumpingTable != 1 ? 1 : 2;
+                    }
+                    listView_event.Items.Refresh();
+                };
+                notifyTimer.Start();
+            }
         }
     }
 }

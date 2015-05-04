@@ -270,6 +270,7 @@ namespace EpgTimer.Setting
                 }
 
                 checkBox_scrollAuto.IsChecked = Settings.Instance.MouseScrollAuto;
+                checkBox_displayNotifyChange.IsChecked = Settings.Instance.DisplayNotifyEpgChange;
             }
             catch (Exception ex)
             {
@@ -462,6 +463,8 @@ namespace EpgTimer.Setting
                 {
                     Settings.Instance.MouseScrollAuto = false;
                 }
+
+                Settings.Instance.DisplayNotifyEpgChange = checkBox_displayNotifyChange.IsChecked == true;
             }
             catch (Exception ex)
             {

@@ -18,10 +18,14 @@ namespace EpgTimer {
         public static ReserveItem SelectedReserveItem = null;
         public static SearchItem SelectedSearchItem = null;
 
+        //番組表へジャンプ中
+        public static bool NowJumpTable = false;
+
         public static void Clear()
         {
             SelectedReserveItem = null;
             SelectedSearchItem = null;
+            NowJumpTable = false;
         }
 
         public static ulong Create64Key()

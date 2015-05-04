@@ -71,6 +71,7 @@
                             <CheckBox Content="自動" Height="16" HorizontalAlignment="Left" Margin="226,11,0,0" Name="checkBox_scrollAuto" VerticalAlignment="Top" />
                             <Label Content="最低表示行数" Height="28" HorizontalAlignment="Left" Margin="551,6,0,0" Name="label36" VerticalAlignment="Top" />
                             <TextBox Height="24" HorizontalAlignment="Left" Margin="650,8,0,0" Name="textBox_minimumHeight" VerticalAlignment="Top" Width="55" />
+                            <CheckBox Content="番組表の切り替え時にも強調表示をする" Height="16" HorizontalAlignment="Left" Margin="11,70,0,0" Name="checkBox_displayNotifyChange" VerticalAlignment="Top" />
                         </Grid>
                     </GroupBox>
                 </Grid>
