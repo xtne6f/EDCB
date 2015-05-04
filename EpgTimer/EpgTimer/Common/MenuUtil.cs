@@ -1038,6 +1038,43 @@ namespace EpgTimer
             }
         }
 
+        public EpgEventInfo SearchEventLikeThat(ReserveData resInfo)
+        {
+            if (resInfo == null) return null;
+            double dist = double.MaxValue, dist1;
+            EpgEventInfo eventPossible = null;
+
+            UInt64 key = resInfo.Create64Key();
+            if (CommonManager.Instance.DB.ServiceEventList.ContainsKey(key) == true)
+            {
+                foreach (EpgEventInfo eventChkInfo in CommonManager.Instance.DB.ServiceEventList[key].eventList)
+                {
+                    dist1 = Math.Abs((resInfo.StartTime - eventChkInfo.start_time).TotalSeconds);
+                    double overlapLength = CulcOverlapLength(resInfo.StartTime, resInfo.DurationSecond,
+                                                            eventChkInfo.start_time, eventChkInfo.durationSec);
+
+                    //開始時間が最も近いものを選ぶ。同じ差なら時間が前のものを選ぶ
+                    if (overlapLength >= 0 && (dist > dist1 ||
+                        dist == dist1 && (eventPossible == null || resInfo.StartTime > eventChkInfo.start_time)))
+                    {
+                        dist = dist1;
+                        eventPossible = eventChkInfo;
+                        if (dist == 0) break;
+                    }
+                }
+            }
+
+            return eventPossible;
+        }
+
+        private double CulcOverlapLength(DateTime s1, uint d1, DateTime s2, uint d2)
+        {
+            //重複してない場合は負数が返る。
+            TimeSpan ts1 = s1 + TimeSpan.FromSeconds(d1) - s2;
+            TimeSpan ts2 = s2 + TimeSpan.FromSeconds(d2) - s1;
+            return Math.Min(Math.Min(ts1.TotalSeconds, ts2.TotalSeconds), Math.Min(d1, d2));
+        }
+
         public void FilePlay(String filePath)
         {
             try

@@ -561,6 +561,9 @@ namespace EpgTimer.EpgView
 
         private void ScrollToFindItem<T>(ViewPanelItem<T> target_item, bool JumpingTable)
         {
+            //可能性低いが0では無さそう
+            if (target_item == null) return;
+
             this.epgProgramView.scrollViewer.ScrollToHorizontalOffset(target_item.LeftPos - 100);
             this.epgProgramView.scrollViewer.ScrollToVerticalOffset(target_item.TopPos - 100);
             if (JumpingTable || Settings.Instance.DisplayNotifyEpgChange)
