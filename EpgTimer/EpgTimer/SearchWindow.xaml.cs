@@ -191,7 +191,7 @@ namespace EpgTimer
                 }
                 listView_result.DataContext = resultList;
 
-                searchKeyView.SaveSearchLog();
+                searchKeyView.AddSearchLog();
 
                 //選択情報の復元
                 oldItems.RestoreListViewSelected();
