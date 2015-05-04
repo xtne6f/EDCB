@@ -16,10 +16,11 @@ namespace EpgTimer
     /// </summary>
     public partial class ChgReserveWindow : Window
     {
+        protected enum AddMode { Add, Re_Add, Change}
         private ReserveData reserveInfo = null;
         private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
         private MenuUtil mutil = CommonManager.Instance.MUtil;
-        private bool addMode = false;
+        private AddMode addMode = AddMode.Change;
         private byte openMode = 0;
 
         private bool resModeProgram = true;
@@ -56,7 +57,6 @@ namespace EpgTimer
             comboBox_em.ItemsSource = CommonManager.Instance.MinDictionary.Values;
             comboBox_ss.ItemsSource = CommonManager.Instance.MinDictionary.Values;
             comboBox_es.ItemsSource = CommonManager.Instance.MinDictionary.Values;
-
         }
 
         public void SetOpenMode(byte mode)
@@ -66,7 +66,7 @@ namespace EpgTimer
 
         public void SetAddReserveMode()
         {
-            addMode = true;
+            addMode = AddMode.Add;
         }
 
         /// <summary>
@@ -199,9 +199,9 @@ namespace EpgTimer
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            if (addMode == true || reserveInfo == null)
+            if (addMode == AddMode.Add || reserveInfo == null)
             {
-                addMode = true;
+                addMode = AddMode.Add;
                 SetResModeProgram(true);
 
                 if (comboBox_service.Items.Count > 0)
@@ -327,7 +327,7 @@ namespace EpgTimer
                     "(別のEpgtimerによる操作など)");
 
                 //予約復旧を提示。これだけで大丈夫だったりする。
-                addMode = true;
+                addMode = AddMode.Re_Add;
                 button_chg_reserve.Content = "再予約";
                 button_chg_reserve.ToolTip = "Ctrl+Shift+A";
                 this.button_del_reserve.IsEnabled = false;
@@ -337,7 +337,7 @@ namespace EpgTimer
 
         private void button_chg_reserve_Click(object sender, RoutedEventArgs e)
         {
-            if (addMode == false && CheckExistReserveItem() == false) return;
+            if (addMode == AddMode.Change && CheckExistReserveItem() == false) return;
 
             try
             {
@@ -382,7 +382,7 @@ namespace EpgTimer
 
                 reserveInfo.RecSetting = setInfo;
 
-                if (addMode == false)
+                if (addMode == AddMode.Change)
                 {
                     mutil.ReserveChange(reserveInfo);
                 }
@@ -474,34 +474,27 @@ namespace EpgTimer
             //
             if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control) && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
             {
-                string captionText = button_chg_reserve.Content.ToString();
-                string msgText = button_chg_reserve.Content.ToString();
-
+                bool change_proc = false;
                 switch (e.Key)
                 {
                     case Key.A:
-                        switch (captionText)
+                        if (addMode == AddMode.Add)
                         {
-                            case "予約":
-                                msgText = "予約を追加します。";
-                                break;
-                            case "再予約":
-                                msgText = "この内容で再予約します。";
-                                break;
+                            change_proc = (MessageBox.Show("予約を追加します。\r\nよろしいですか？", "予約の確認", MessageBoxButton.OKCancel) == MessageBoxResult.OK);
                         }
-                        if (MessageBox.Show(msgText + "\r\nよろしいですか？", captionText + "の確認", MessageBoxButton.OKCancel) == MessageBoxResult.OK)
+                        else if(addMode == AddMode.Re_Add)
                         {
-                            this.button_chg_reserve.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                            change_proc = (MessageBox.Show("この内容で再予約します。\r\nよろしいですか？", "再予約の確認", MessageBoxButton.OKCancel) == MessageBoxResult.OK);
                         }
                         break;
                     case Key.C:
-                        if (MessageBox.Show("この予約を変更します。\r\nよろしいですか？", "変更の確認", MessageBoxButton.OKCancel) == MessageBoxResult.OK)
+                        if (addMode == AddMode.Change)
                         {
-                            this.button_chg_reserve.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                            change_proc = (MessageBox.Show("この予約を変更します。\r\nよろしいですか？", "変更の確認", MessageBoxButton.OKCancel) == MessageBoxResult.OK);
                         }
                         break;
                     case Key.X:
-                        if (this.button_del_reserve.Visibility == System.Windows.Visibility.Visible && this.button_del_reserve.IsEnabled == true)
+                        if (addMode == AddMode.Change)
                         {
                             if (MessageBox.Show("この予約を削除します。\r\nよろしいですか？", "削除の確認", MessageBoxButton.OKCancel) == MessageBoxResult.OK)
                             {
@@ -509,6 +502,10 @@ namespace EpgTimer
                             }
                         }
                         break;
+                }
+                if (change_proc == true)
+                {
+                    this.button_chg_reserve.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                 }
             }
             else if (Keyboard.Modifiers == ModifierKeys.None)
