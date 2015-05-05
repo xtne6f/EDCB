@@ -21,10 +21,11 @@
             <MenuItem Header="録画モード" Name="RecMode" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="優先度" Name="Priority" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="追従" Name="Tuijyu" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="ぴったり（？）" Name="Pittari" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="チューナー" Name="Tuner" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="予約状況" Name="Comment" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="録画フォルダ" Name="RecFolder" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="予定ファイル名" Name="RecFileName" IsCheckable="True" Click="headerSelect_Click" />
-            <MenuItem Header="ぴったり（？）" Name="Pittari" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="開始タイミング" Name="MarginStart" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="終了タイミング" Name="MarginEnd" IsCheckable="True" Click="headerSelect_Click" />
         </ContextMenu>
@@ -139,6 +140,16 @@
                             <GridViewColumnHeader Content="追従" Tag="Tuijyu" HorizontalContentAlignment="Left" />
                         </GridViewColumn.Header>
                     </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=Pittari}">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="ぴったり（？）" Tag="Pittari" HorizontalContentAlignment="Left" />
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=Tuner}">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="チューナー" Tag="Tuner" HorizontalContentAlignment="Left" />
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=Comment}">
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="予約状況" Tag="Comment" HorizontalContentAlignment="Left" />
@@ -163,11 +174,6 @@
                                 <ComboBox ItemsSource="{Binding Path=RecFileName}" SelectedIndex="0" Padding="6,0,5,0"></ComboBox>
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
-                    </GridViewColumn>
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=Pittari}">
-                        <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="ぴったり（？）" Tag="Pittari" HorizontalContentAlignment="Left" />
-                        </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn>
                         <GridViewColumn.Header>

@@ -1265,45 +1265,37 @@ namespace EpgTimer
 
         public String ConvertRecModeText(byte recMode)
         {
-            String retText = "";
-            switch (recMode)
-            {
-                case 0:
-                    retText = "全サービス";
-                    break;
-                case 1:
-                    retText = "指定サービス";
-                    break;
-                case 2:
-                    retText = "全サービス（デコード処理なし）";
-                    break;
-                case 3:
-                    retText = "指定サービス（デコード処理なし）";
-                    break;
-                case 4:
-                    retText = "視聴";
-                    break;
-                case 5:
-                    retText = "無効";
-                    break;
-                default:
-                    break;
-            }
-            return retText;
+            RecModeInfo info;
+            return RecModeDictionary.TryGetValue(recMode, out info) == true ? info.DisplayName : "";
         }
 
-        public String ConvertViewModeText(byte viewMode)
+        public String ConvertTunerText(uint tunerID)
+        {
+            TunerReserveInfo info;
+            string retv = "";
+            if (tunerID == 0)
+            {
+                retv = "自動";
+            }
+            else if (DB.TunerReserveList.TryGetValue(tunerID, out info))
+            {
+                retv = new TunerSelectInfo(info.tunerName, tunerID).ToString();
+            }
+            return retv;
+        }
+
+        public String ConvertViewModeText(int viewMode)
         {
             String retText = "";
             switch (viewMode)
             {
-                case 1:
+                case 0:
                     retText = "標準モード";
                     break;
-                case 2:
+                case 1:
                     retText = "1週間モード";
                     break;
-                case 3:
+                case 2:
                     retText = "リスト表示モード";
                     break;
                 default:

@@ -161,6 +161,15 @@ namespace EpgTimer
                 return view;
             }
         }
+        public String Tuner
+        {
+            get
+            {
+                if (ReserveInfo == null) return "";
+                //
+                return CommonManager.Instance.ConvertTunerText(ReserveInfo.RecSetting.TunerID);
+            }
+        }
         public String Comment
         {
             get

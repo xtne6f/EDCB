@@ -363,6 +363,16 @@ namespace EpgTimer
             }
         }
 
+        public String Tuner
+        {
+            get
+            {
+                if (EpgAutoAddInfo == null) return "";
+                //
+                return CommonManager.Instance.ConvertTunerText(EpgAutoAddInfo.recSetting.TunerID);
+            }
+        }
+
         public String MarginStart
         {
             get

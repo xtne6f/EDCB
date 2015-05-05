@@ -13,21 +13,22 @@
             <MenuItem Header="Andキーワード" Name="AndKey" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="Notキーワード" Name="NotKey" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="正規表現" Name="RegExp" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="ジャンル" Name="JyanruKey" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="ネットワーク" Name="NetworkKey" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="サービス名" Name="ServiceKey" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="録画フォルダ" Name="RecFolder" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="録画モード" Name="RecMode" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="優先度" Name="Priority" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="追従" Name="Tuijyu" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="ぴったり（？）" Name="Pittari" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="チューナー" Name="Tuner" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="開始タイミング" Name="MarginStart" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="終了タイミング" Name="MarginEnd" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="登録対象数" Name="AddCount" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="検索対象数" Name="SearchCount" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="予約数" Name="ReserveCount" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="有効予約数" Name="OnCount" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="無効予約数" Name="OffCount" IsCheckable="True" Click="headerSelect_Click" />
-            <MenuItem Header="ぴったり（？）" Name="Pittari" IsCheckable="True" Click="headerSelect_Click" />
-            <MenuItem Header="開始タイミング" Name="MarginStart" IsCheckable="True" Click="headerSelect_Click" />
-            <MenuItem Header="終了タイミング" Name="MarginEnd" IsCheckable="True" Click="headerSelect_Click" />
-            <MenuItem Header="録画フォルダ" Name="RecFolder" IsCheckable="True" Click="headerSelect_Click" />
-            <MenuItem Header="ジャンル" Name="JyanruKey" IsCheckable="True" Click="headerSelect_Click" />
-            <MenuItem Header="ネットワーク" Name="NetworkKey" IsCheckable="True" Click="headerSelect_Click" />
-            <MenuItem Header="サービス名" Name="ServiceKey" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="有効" Name="KeyEnabled" IsCheckable="True" Click="headerSelect_Click" />
         </ContextMenu>
         <ContextMenu x:Key="itemMenu" x:Name="cmdMenu" >
@@ -85,6 +86,31 @@
                                 <GridViewColumnHeader Content="正規表現" Tag="RegExp" HorizontalContentAlignment="Left" ToolTip="Ctrl + クリック（マルチ・ソート）"/>
                             </GridViewColumn.Header>
                         </GridViewColumn>
+                        <GridViewColumn DisplayMemberBinding="{Binding Path=JyanruKey}">
+                            <GridViewColumn.Header>
+                                <GridViewColumnHeader Content="ジャンル" Tag="JyanruKey" HorizontalContentAlignment="Left" ToolTip="Ctrl + クリック（マルチ・ソート）"/>
+                            </GridViewColumn.Header>
+                        </GridViewColumn>
+                        <GridViewColumn DisplayMemberBinding="{Binding Path=NetworkKey}">
+                            <GridViewColumn.Header>
+                                <GridViewColumnHeader Content="ネットワーク" Tag="NetworkKey" HorizontalContentAlignment="Left" ToolTip="Ctrl + クリック（マルチ・ソート）"/>
+                            </GridViewColumn.Header>
+                        </GridViewColumn>
+                        <GridViewColumn DisplayMemberBinding="{Binding Path=ServiceKey}">
+                            <GridViewColumn.Header>
+                                <GridViewColumnHeader Content="サービス名" Tag="ServiceKey" HorizontalContentAlignment="Left" ToolTip="Ctrl + クリック（マルチ・ソート）"/>
+                            </GridViewColumn.Header>
+                        </GridViewColumn>
+                        <GridViewColumn>
+                            <GridViewColumn.Header>
+                                <GridViewColumnHeader Content="録画フォルダ" Tag="RecFolder" HorizontalContentAlignment="Left" />
+                            </GridViewColumn.Header>
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <ComboBox ItemsSource="{Binding Path=RecFolder}" SelectedIndex="0" Padding="6,0,5,0"></ComboBox>
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
                         <GridViewColumn DisplayMemberBinding="{Binding Path=RecMode}">
                             <GridViewColumn.Header>
                                 <GridViewColumnHeader Content="録画モード" Tag="RecMode" HorizontalContentAlignment="Left" ToolTip="Ctrl + クリック（マルチ・ソート）"/>
@@ -99,6 +125,36 @@
                             <GridViewColumn.Header>
                                 <GridViewColumnHeader Content="追従" Tag="Tuijyu" HorizontalContentAlignment="Left" ToolTip="Ctrl + クリック（マルチ・ソート）"/>
                             </GridViewColumn.Header>
+                        </GridViewColumn>
+                        <GridViewColumn DisplayMemberBinding="{Binding Path=Pittari}">
+                            <GridViewColumn.Header>
+                                <GridViewColumnHeader Content="ぴったり（？）" Tag="Pittari" HorizontalContentAlignment="Left" ToolTip="Ctrl + クリック（マルチ・ソート）"/>
+                            </GridViewColumn.Header>
+                        </GridViewColumn>
+                        <GridViewColumn DisplayMemberBinding="{Binding Path=Tuner}">
+                            <GridViewColumn.Header>
+                                <GridViewColumnHeader Content="チューナー" Tag="Tuner" HorizontalContentAlignment="Left" ToolTip="Ctrl + クリック（マルチ・ソート）"/>
+                            </GridViewColumn.Header>
+                        </GridViewColumn>
+                        <GridViewColumn>
+                            <GridViewColumn.Header>
+                                <GridViewColumnHeader Content="開始" Tag="MarginStart" HorizontalContentAlignment="Left" ToolTip="?=EpgtimerNWでデフォルトの場合不明のため"/>
+                            </GridViewColumn.Header>
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Path=MarginStart}" HorizontalAlignment="Right" />
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
+                        <GridViewColumn>
+                            <GridViewColumn.Header>
+                                <GridViewColumnHeader Content="終了" Tag="MarginEnd" HorizontalContentAlignment="Left" ToolTip="?=EpgtimerNWでデフォルトの場合不明のため" />
+                            </GridViewColumn.Header>
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Path=MarginEnd}" HorizontalAlignment="Right" />
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
                         </GridViewColumn>
                         <GridViewColumn DisplayMemberBinding="{Binding Path=AddCount}">
                             <GridViewColumn.Header>
@@ -125,60 +181,10 @@
                                 <GridViewColumnHeader Content="無効予約数" Tag="OffCount" HorizontalContentAlignment="Left" ToolTip="Ctrl + クリック（マルチ・ソート）"/>
                             </GridViewColumn.Header>
                         </GridViewColumn>
-                        <GridViewColumn DisplayMemberBinding="{Binding Path=Pittari}">
-                            <GridViewColumn.Header>
-                                <GridViewColumnHeader Content="ぴったり（？）" Tag="Pittari" HorizontalContentAlignment="Left" ToolTip="Ctrl + クリック（マルチ・ソート）"/>
-                            </GridViewColumn.Header>
-                        </GridViewColumn>
-                        <GridViewColumn>
-                            <GridViewColumn.Header>
-                                <GridViewColumnHeader Content="開始" Tag="MarginStart" HorizontalContentAlignment="Left" ToolTip="?=EpgtimerNWでデフォルトの場合不明のため"/>
-                            </GridViewColumn.Header>
-                            <GridViewColumn.CellTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding Path=MarginStart}" HorizontalAlignment="Right" />
-                                </DataTemplate>
-                            </GridViewColumn.CellTemplate>
-                        </GridViewColumn>
-                        <GridViewColumn>
-                            <GridViewColumn.Header>
-                                <GridViewColumnHeader Content="終了" Tag="MarginEnd" HorizontalContentAlignment="Left" ToolTip="?=EpgtimerNWでデフォルトの場合不明のため" />
-                            </GridViewColumn.Header>
-                            <GridViewColumn.CellTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding Path=MarginEnd}" HorizontalAlignment="Right" />
-                                </DataTemplate>
-                            </GridViewColumn.CellTemplate>
-                        </GridViewColumn>
-                        <GridViewColumn DisplayMemberBinding="{Binding Path=JyanruKey}">
-                            <GridViewColumn.Header>
-                                <GridViewColumnHeader Content="ジャンル" Tag="JyanruKey" HorizontalContentAlignment="Left" ToolTip="Ctrl + クリック（マルチ・ソート）"/>
-                            </GridViewColumn.Header>
-                        </GridViewColumn>
-                        <GridViewColumn DisplayMemberBinding="{Binding Path=NetworkKey}">
-                            <GridViewColumn.Header>
-                                <GridViewColumnHeader Content="ネットワーク" Tag="NetworkKey" HorizontalContentAlignment="Left" ToolTip="Ctrl + クリック（マルチ・ソート）"/>
-                            </GridViewColumn.Header>
-                        </GridViewColumn>
-                        <GridViewColumn DisplayMemberBinding="{Binding Path=ServiceKey}">
-                            <GridViewColumn.Header>
-                                <GridViewColumnHeader Content="サービス名" Tag="ServiceKey" HorizontalContentAlignment="Left" ToolTip="Ctrl + クリック（マルチ・ソート）"/>
-                            </GridViewColumn.Header>
-                        </GridViewColumn>
                         <GridViewColumn DisplayMemberBinding="{Binding Path=KeyEnabled}">
                             <GridViewColumn.Header>
                                 <GridViewColumnHeader Content="有効" Tag="KeyEnabled" HorizontalContentAlignment="Left" ToolTip="Ctrl + クリック（マルチ・ソート）"/>
                             </GridViewColumn.Header>
-                        </GridViewColumn>
-                        <GridViewColumn>
-                            <GridViewColumn.Header>
-                                <GridViewColumnHeader Content="録画フォルダ" Tag="RecFolder" HorizontalContentAlignment="Left" />
-                            </GridViewColumn.Header>
-                            <GridViewColumn.CellTemplate>
-                                <DataTemplate>
-                                    <ComboBox ItemsSource="{Binding Path=RecFolder}" SelectedIndex="0" Padding="6,0,5,0"></ComboBox>
-                                </DataTemplate>
-                            </GridViewColumn.CellTemplate>
                         </GridViewColumn>
                     </GridView>
                 </ListView.View>
