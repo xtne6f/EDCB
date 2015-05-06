@@ -19,7 +19,7 @@ private:
 		const char* data;
 		size_t dataLen;
 	};
-	static void InitLua(mg_connection* conn, void* luaContext);
+	static void InitLua(const mg_connection* conn, void* luaContext);
 	static const char* OpenFile(const mg_connection* conn, const char* path, size_t* dataLen);
 	mg_context* mgContext;
 	std::string rootPath;

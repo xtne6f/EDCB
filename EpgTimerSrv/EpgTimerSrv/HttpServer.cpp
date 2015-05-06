@@ -126,9 +126,9 @@ void CHttpServer::StopServer()
 	}
 }
 
-void CHttpServer::InitLua(mg_connection* conn, void* luaContext)
+void CHttpServer::InitLua(const mg_connection* conn, void* luaContext)
 {
-	const CHttpServer* sys = (CHttpServer*)mg_get_request_info(conn)->user_data;
+	const CHttpServer* sys = (CHttpServer*)mg_get_user_data(mg_get_context(conn));
 	lua_State* L = (lua_State*)luaContext;
 	lua_pushlightuserdata(L, sys->initLuaParam);
 	sys->initLuaProc(L);
@@ -136,7 +136,7 @@ void CHttpServer::InitLua(mg_connection* conn, void* luaContext)
 
 const char* CHttpServer::OpenFile(const mg_connection* conn, const char* path, size_t* dataLen)
 {
-	const CHttpServer* sys = (CHttpServer*)mg_get_user_data(mg_get_context(const_cast<mg_connection*>(conn)));
+	const CHttpServer* sys = (CHttpServer*)mg_get_user_data(mg_get_context(conn));
 	string pathB = path;
 	Replace(pathB, "/", "\\");
 	for( size_t i = 0; i < sys->redirectList.size(); i++ ){
