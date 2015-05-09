@@ -34,10 +34,6 @@ void CDecodeUtil::SetEpgDB(CEpgDBUtil* epgDBUtil)
 
 void CDecodeUtil::Clear()
 {
-	map<WORD, CTSBuffUtil*>::iterator itr;
-	for( itr = this->buffUtilMap.begin(); itr != this->buffUtilMap.end(); itr++ ){
-		SAFE_DELETE(itr->second);
-	}
 	this->buffUtilMap.clear();
 
 	SAFE_DELETE(this->patInfo);
@@ -66,17 +62,8 @@ void CDecodeUtil::Clear()
 
 void CDecodeUtil::ClearBuff(WORD noClearPid)
 {
-	map<WORD, CTSBuffUtil*>::iterator itr;
-
-	itr = this->buffUtilMap.begin();
-	while( itr != this->buffUtilMap.end() ){
-		if( itr->first != noClearPid ){
-			SAFE_DELETE(itr->second);
-			this->buffUtilMap.erase(itr++);
-		}else{
-			itr++;
-		}
-	}
+	this->buffUtilMap.erase(this->buffUtilMap.begin(), this->buffUtilMap.lower_bound(noClearPid));
+	this->buffUtilMap.erase(this->buffUtilMap.upper_bound(noClearPid), this->buffUtilMap.end());
 }
 
 void CDecodeUtil::ChangeTSIDClear(WORD noClearPid)
@@ -117,14 +104,13 @@ void CDecodeUtil::AddTSData(BYTE* data)
 			}
 			CTSBuffUtil* buffUtil = NULL;
 
-			map<WORD, CTSBuffUtil*>::iterator itr;
+			map<WORD, CTSBuffUtil>::iterator itr;
 			itr = this->buffUtilMap.find( tsPacket.PID );
 			if( itr == this->buffUtilMap.end() ){
 				//‚Ü‚¾PID‚ª‚È‚¢‚Ì‚ÅV‹K
-				buffUtil = new CTSBuffUtil;
-				this->buffUtilMap.insert(pair<WORD, CTSBuffUtil*>(tsPacket.PID, buffUtil));
+				buffUtil = &this->buffUtilMap.insert(std::make_pair(tsPacket.PID, CTSBuffUtil())).first->second;
 			}else{
-				buffUtil = itr->second;
+				buffUtil = &itr->second;
 			}
 			if( buffUtil->Add188TS(&tsPacket) == TRUE ){
 				BYTE* section = NULL;

@@ -11,27 +11,15 @@ public:
 	CTSBuffUtil(BOOL supportPES = FALSE);
 	~CTSBuffUtil(void);
 
+	//Add188TS()がTRUEを返せばGetSectionBuff()は1回以上成功する。このとき受け取らなかったバッファは次のAdd188TS()で消える
 	DWORD Add188TS(CTSPacketUtil* tsPacket);
 	BOOL GetSectionBuff(BYTE** sectionData, DWORD* dataSize);
 	BOOL IsPES();
 
 protected:
-	typedef struct _SECTION_BUFF{
-		BOOL unknownSize;
-		DWORD dataSize;
-		BYTE* data;
-		DWORD copySize;
-		_SECTION_BUFF(void){
-			unknownSize = FALSE;
-			dataSize = 0;
-			data = NULL;
-			copySize = 0;
-		};
-		~_SECTION_BUFF(void){
-			SAFE_DELETE_ARRAY(data);
-		};
-	}SECTION_BUFF;
-	vector<SECTION_BUFF*> packetList;
+	DWORD sectionSize;
+	vector<BYTE> sectionBuff;
+	vector<BYTE> carryPacket;
 
 	WORD lastPID;
 	BYTE lastCounter;
@@ -39,9 +27,6 @@ protected:
 
 	BOOL supportPES;
 	BOOL PESMode;
-
-	SECTION_BUFF* creatingBuff;
-	SECTION_BUFF* lastGetBuff;
 protected:
 	void Clear();
 	BOOL CheckCounter(CTSPacketUtil* tsPacket);

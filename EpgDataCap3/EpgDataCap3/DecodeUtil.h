@@ -77,7 +77,7 @@ protected:
 
 	//PID毎のバッファリング
 	//キー PID
-	map<WORD, CTSBuffUtil*> buffUtilMap;
+	map<WORD, CTSBuffUtil> buffUtilMap;
 
 	CPATTable* patInfo;
 	map<WORD, CPMTTable*> pmtMap;

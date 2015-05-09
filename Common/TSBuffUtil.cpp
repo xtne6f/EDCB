@@ -3,11 +3,9 @@
 
 CTSBuffUtil::CTSBuffUtil(BOOL supportPES)
 {
+	this->sectionSize = 0;
 	this->lastPID = 0xFFFF;
 	this->lastCounter = 0xFF;
-
-	this->creatingBuff = NULL;
-	this->lastGetBuff = NULL;
 
 	this->duplicateFlag = FALSE;
 
@@ -17,21 +15,16 @@ CTSBuffUtil::CTSBuffUtil(BOOL supportPES)
 
 CTSBuffUtil::~CTSBuffUtil(void)
 {
-	Clear();
-	SAFE_DELETE(this->lastGetBuff);
 }
 
 void CTSBuffUtil::Clear()
 {
-	for(size_t i=0; i<this->packetList.size(); i++ ){
-		SAFE_DELETE(this->packetList[i]);
-	}
-	this->packetList.clear();
+	this->sectionSize = 0;
+	this->sectionBuff.clear();
+	this->carryPacket.clear();
 
 	this->lastPID = 0xFFFF;
 	this->lastCounter = 0xFF;
-
-	SAFE_DELETE(this->creatingBuff);
 
 	this->PESMode = FALSE;
 }
@@ -110,6 +103,11 @@ DWORD CTSBuffUtil::Add188TS(CTSPacketUtil* tsPacket)
 		return FALSE;
 	}
 
+	//バッファをすべて受け取る
+	BYTE* sectionData;
+	DWORD dataSize;
+	while( GetSectionBuff(&sectionData, &dataSize) != FALSE );
+
 	//カウンターチェック
 	if( CheckCounter(tsPacket) == FALSE ){
 		Clear();
@@ -185,16 +183,31 @@ BOOL CTSBuffUtil::IsPES()
 
 BOOL CTSBuffUtil::GetSectionBuff(BYTE** sectionData, DWORD* dataSize)
 {
-	SAFE_DELETE(lastGetBuff);
-	if( packetList.size() == 0 ){
+	if( sectionSize == 0 && carryPacket.empty() == false ){
+		//繰り越しパケットを処理
+		CTSPacketUtil tsPacket;
+		tsPacket.payload_unit_start_indicator = 1;
+		tsPacket.data_byteSize = (BYTE)carryPacket.size();
+		tsPacket.data_byte = &carryPacket.front();
+		if( PESMode == FALSE ){
+			if( AddSectionBuff(&tsPacket) != 2 ){
+				carryPacket.clear();
+			}
+		}else{
+			AddPESBuff(&tsPacket);
+			carryPacket.clear();
+		}
+	}
+	if( sectionSize == 0 || sectionSize != sectionBuff.size() ){
+		//sectionBuffはGet済みか作成途中
+		carryPacket.clear();
 		return FALSE;
 	}
 
-	lastGetBuff = packetList[0];
-	packetList.erase(packetList.begin());
-
-	*sectionData = lastGetBuff->data;
-	*dataSize = lastGetBuff->dataSize;
+	*sectionData = &sectionBuff.front();
+	*dataSize = sectionSize;
+	//sectionBuffがGet済みであることを示す
+	sectionSize = 0;
 
 	return TRUE;
 }
@@ -204,107 +217,63 @@ DWORD CTSBuffUtil::AddSectionBuff(CTSPacketUtil* tsPacket)
 	if( tsPacket->data_byteSize == 0 || tsPacket->data_byte == NULL ){
 		return ERR_ADD_NEXT;
 	}
-	if( tsPacket->payload_unit_start_indicator != 1 && creatingBuff == NULL ){
+	if( tsPacket->payload_unit_start_indicator != 1 && (sectionSize == 0 || sectionSize == sectionBuff.size()) ){
 		return ERR_ADD_NEXT;
 	}
 
-	BYTE readSize = 0;
 	if( tsPacket->payload_unit_start_indicator == 1 ){
-		BOOL addBuff = FALSE;
 		BYTE pointer_field = tsPacket->data_byte[0];
-		readSize++;
-		if( pointer_field != 0 ){
-			//マルチセクション
-			if( creatingBuff != NULL ){
-				if( creatingBuff->dataSize - creatingBuff->copySize == pointer_field ){
-					memcpy(creatingBuff->data + creatingBuff->copySize, tsPacket->data_byte + readSize, pointer_field);
-					creatingBuff->copySize += pointer_field;
-					packetList.push_back(creatingBuff);
-					creatingBuff = NULL;
-					addBuff = TRUE;
-				}else{
-					//サイズがおかしいのでクリア
-					_OutputDebugString(L"★multi section size err PID 0x%04X\r\n", tsPacket->PID);
-					SAFE_DELETE(creatingBuff);
-				}
-			}
-		}else{
-			if( creatingBuff != NULL ){
-				SAFE_DELETE(creatingBuff);
-				creatingBuff = NULL;
-			}
-		}
-		readSize+=pointer_field;
-
 		if( pointer_field + 1 > tsPacket->data_byteSize ){
 			//サイズが小さすぎる
-			SAFE_DELETE(creatingBuff);
 			_OutputDebugString(L"★psi size err PID 0x%04X\r\n", tsPacket->PID);
-			if( addBuff == TRUE ){
+			sectionSize = 0;
+			return FALSE;
+		}
+		if( sectionSize != 0 && sectionSize != sectionBuff.size() ){
+			if( sectionSize - sectionBuff.size() == pointer_field ){
+				sectionBuff.insert(sectionBuff.end(), tsPacket->data_byte + 1, tsPacket->data_byte + 1 + pointer_field);
+				//残りのペイロードを繰り越す
+				carryPacket.assign(1, 0);
+				carryPacket.insert(carryPacket.end(), tsPacket->data_byte + 1 + pointer_field, tsPacket->data_byte + tsPacket->data_byteSize);
 				return TRUE;
 			}else{
-				return FALSE;
+				//サイズがおかしいのでクリア
+				_OutputDebugString(L"★psi section size err PID 0x%04X\r\n", tsPacket->PID);
+				sectionSize = 0;
 			}
 		}
+		BYTE readSize = pointer_field + 1;
 
 		//マルチセクションチェック
-		while( readSize+3 < tsPacket->data_byteSize ){
-			if( tsPacket->data_byte[readSize] == 0xFF &&
-				tsPacket->data_byte[readSize+1] == 0xFF &&
-				tsPacket->data_byte[readSize+2] == 0xFF){
-				//残りはスタッフィングバイト
-				break;
-			}
-
-			SECTION_BUFF* buff = new SECTION_BUFF;
-			buff->dataSize = (((DWORD)tsPacket->data_byte[readSize+1]&0x0F) << 8 | tsPacket->data_byte[readSize+2]) + 3;
-			buff->data = new BYTE[buff->dataSize];
-
-			if( buff->dataSize <= (DWORD)tsPacket->data_byteSize - readSize ){
-				buff->copySize = buff->dataSize;
-			}else{
-				buff->copySize = tsPacket->data_byteSize - readSize;
-			}
-
-			memcpy( buff->data, tsPacket->data_byte+readSize, buff->copySize );
-			readSize += (BYTE)buff->copySize;
-
-			if( buff->copySize == buff->dataSize ){
-				//このパケットだけで完結
-				packetList.push_back(buff);
-			}else{
-				//次のパケットが必要
-				creatingBuff = buff;
-				break;
-			}
+		if( readSize + 2 >= tsPacket->data_byteSize ||
+		    tsPacket->data_byte[readSize] == 0xFF &&
+		    tsPacket->data_byte[readSize+1] == 0xFF &&
+		    tsPacket->data_byte[readSize+2] == 0xFF ){
+			//残りはスタッフィングバイト
+			return ERR_ADD_NEXT;
 		}
-		if( creatingBuff == NULL ){
-			return TRUE;
+
+		sectionSize = (((DWORD)tsPacket->data_byte[readSize+1]&0x0F) << 8 | tsPacket->data_byte[readSize+2]) + 3;
+		sectionBuff.assign(tsPacket->data_byte + readSize, tsPacket->data_byte + min(tsPacket->data_byteSize, readSize + sectionSize));
+		if( sectionSize == sectionBuff.size() ){
+			//このパケットだけで完結。残りのペイロードを繰り越す
+			if( carryPacket.empty() == false && tsPacket->data_byte == &carryPacket.front() ){
+				carryPacket.erase(carryPacket.begin() + readSize, carryPacket.begin() + readSize + sectionSize);
+				//マルチセクションによる連続繰り越しであることを示す特別な戻り値
+				return 2;
+			}else{
+				carryPacket.assign(1, 0);
+				carryPacket.insert(carryPacket.end(), tsPacket->data_byte + readSize + sectionSize, tsPacket->data_byte + tsPacket->data_byteSize);
+				return TRUE;
+			}
 		}else{
 			//次のパケット必要
-			if( addBuff == TRUE ){
-				return TRUE;
-			}else{
-				return ERR_ADD_NEXT;
-			}
+			return ERR_ADD_NEXT;
 		}
 	}else{
 		//複数パケットにまたがっている
-		DWORD copySize = 0;
-		DWORD needSize = creatingBuff->dataSize - creatingBuff->copySize;
-
-		if( needSize <= tsPacket->data_byteSize ){
-			copySize = needSize;
-		}else{
-			copySize = tsPacket->data_byteSize;
-		}
-
-		memcpy( creatingBuff->data + creatingBuff->copySize, tsPacket->data_byte, copySize );
-
-		creatingBuff->copySize += copySize;
-		if( creatingBuff->dataSize == creatingBuff->copySize ){
-			packetList.push_back(creatingBuff);
-			creatingBuff = NULL;
+		sectionBuff.insert(sectionBuff.end(), tsPacket->data_byte, tsPacket->data_byte + min(tsPacket->data_byteSize, sectionSize - sectionBuff.size()));
+		if( sectionSize == sectionBuff.size() ){
 			return TRUE;
 		}else{
 			return ERR_ADD_NEXT;
@@ -317,83 +286,45 @@ DWORD CTSBuffUtil::AddPESBuff(CTSPacketUtil* tsPacket)
 	if( tsPacket->data_byteSize == 0 || tsPacket->data_byte == NULL ){
 		return ERR_ADD_NEXT;
 	}
-	if( tsPacket->payload_unit_start_indicator != 1 && creatingBuff == NULL ){
+	if( tsPacket->payload_unit_start_indicator != 1 && (sectionSize == 0 || sectionSize == sectionBuff.size()) ){
 		return ERR_ADD_NEXT;
 	}
 
 	if( tsPacket->payload_unit_start_indicator == 1 ){
 		if(tsPacket->data_byteSize < 6 || tsPacket->data_byte[0] != 0x00 || tsPacket->data_byte[1] != 0x00 || tsPacket->data_byte[2] != 0x01){
-			SAFE_DELETE(creatingBuff);
+			sectionSize = 0;
 			return FALSE;
 		}
-		if( creatingBuff != NULL ){
-			packetList.push_back(creatingBuff);
-			creatingBuff = NULL;
+		if( sectionSize != 0 && sectionSize != sectionBuff.size() ){
+			sectionSize = (DWORD)sectionBuff.size();
+			carryPacket.assign(tsPacket->data_byte, tsPacket->data_byte + tsPacket->data_byteSize);
+			return TRUE;
 		}
 
 		WORD PES_packet_length = ((WORD)tsPacket->data_byte[4])<<8 | tsPacket->data_byte[5];
-		SECTION_BUFF* buff = new SECTION_BUFF;
 
 		if( PES_packet_length == 0 ){
-			buff->unknownSize = TRUE;
-			buff->dataSize = 1024*1024;
-			buff->data = new BYTE[buff->dataSize];
-			memcpy(buff->data, tsPacket->data_byte, tsPacket->data_byteSize);
-			buff->copySize = tsPacket->data_byteSize;
-			creatingBuff = buff;
-			return TRUE;
+			//パケットサイズが不明であることを示す
+			sectionSize = MAXDWORD;
+			sectionBuff.assign(tsPacket->data_byte, tsPacket->data_byte + tsPacket->data_byteSize);
+			return ERR_ADD_NEXT;
 		}else{
-			buff->dataSize = PES_packet_length + 6;
-			buff->data = new BYTE[buff->dataSize];
-
-			if( buff->dataSize < tsPacket->data_byteSize ){
-				buff->copySize = buff->dataSize;
-			}else{
-				buff->copySize = tsPacket->data_byteSize;
-			}
-
-			memcpy(buff->data, tsPacket->data_byte, buff->copySize);
-			if( buff->dataSize != buff->copySize ){
-				creatingBuff = buff;
+			sectionSize = PES_packet_length + 6;
+			sectionBuff.assign(tsPacket->data_byte, tsPacket->data_byte + min(tsPacket->data_byteSize, sectionSize));
+			if( sectionSize != sectionBuff.size() ){
 				return ERR_ADD_NEXT;
 			}else{
-				packetList.push_back(buff);
-				creatingBuff = NULL;
 				return TRUE;
 			}
 		}
 	}else{
 		//複数パケットにまたがっている
-		if( creatingBuff->unknownSize == TRUE ){
-			if( tsPacket->data_byteSize + creatingBuff->copySize > creatingBuff->dataSize ){
-				BYTE* newBuff = new BYTE[creatingBuff->dataSize*2];
-				memcpy(newBuff, creatingBuff->data, creatingBuff->copySize);
-				memcpy(newBuff + creatingBuff->copySize, tsPacket->data_byte, tsPacket->data_byteSize);
-				SAFE_DELETE_ARRAY(creatingBuff->data);
-				creatingBuff->data = newBuff;
-				creatingBuff->dataSize = creatingBuff->dataSize*2;
-				creatingBuff->copySize += tsPacket->data_byteSize;
-			}else{
-				memcpy(creatingBuff->data + creatingBuff->copySize, tsPacket->data_byte, tsPacket->data_byteSize);
-				creatingBuff->copySize += tsPacket->data_byteSize;
-			}
+		if( sectionSize == MAXDWORD ){
+			sectionBuff.insert(sectionBuff.end(), tsPacket->data_byte, tsPacket->data_byte + tsPacket->data_byteSize);
 			return ERR_ADD_NEXT;
 		}else{
-			DWORD copySize = 0;
-			DWORD needSize = creatingBuff->dataSize - creatingBuff->copySize;
-
-			if( needSize <= tsPacket->data_byteSize ){
-				copySize = needSize;
-			}else{
-				copySize = tsPacket->data_byteSize;
-			}
-
-			memcpy( creatingBuff->data + creatingBuff->copySize, tsPacket->data_byte, copySize );
-
-			creatingBuff->copySize += copySize;
-			if( creatingBuff->dataSize == creatingBuff->copySize ){
-				packetList.push_back(creatingBuff);
-				creatingBuff = NULL;
+			sectionBuff.insert(sectionBuff.end(), tsPacket->data_byte, tsPacket->data_byte + min(tsPacket->data_byteSize, sectionSize - sectionBuff.size()));
+			if( sectionSize == sectionBuff.size() ){
 				return TRUE;
 			}else{
 				return ERR_ADD_NEXT;
