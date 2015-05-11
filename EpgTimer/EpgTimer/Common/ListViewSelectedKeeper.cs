@@ -55,7 +55,7 @@ namespace EpgTimer
             {
                 oldItem = listBox.SelectedItem;
                 oldItems = listBox.SelectedItems.Cast<object>().ToList();
-                allSelected = (oldItems.Count == listBox.Items.Count);
+                allSelected = (oldItems.Count != 1 && oldItems.Count == listBox.Items.Count);
             }
         }
 
