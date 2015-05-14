@@ -119,63 +119,54 @@ void CDecodeUtil::AddTSData(BYTE* data)
 					if( buffUtil->IsPES() == TRUE ){
 						continue;
 					}
-					CTableUtil tableUtil;
-
-					vector<TABLE_DATA*> tableList;
-					DWORD decodeReadSize = 0;
-					if( tableUtil.Decode(section, sectionSize, &tableList, &decodeReadSize) == TRUE ){
-						for( size_t j=0; j<tableList.size(); j++ ){
-							if( tableList[j]->PATTable != NULL ){
-								if( CheckPAT(tsPacket.PID, tableList[j]->PATTable) == TRUE ){
-									tableList[j]->PATTable = NULL;
-								}
-							}else if( tableList[j]->PMTTable != NULL ){
-								if( CheckPMT(tsPacket.PID, tableList[j]->PMTTable) == TRUE ){
-									tableList[j]->PMTTable = NULL;
-								}
-							}else if( tableList[j]->NITTable != NULL ){
-								if( CheckNIT(tsPacket.PID, tableList[j]->NITTable) == TRUE ){
-									tableList[j]->NITTable = NULL;
-								}
-							}else if( tableList[j]->SDTTable != NULL ){
-								if( CheckSDT(tsPacket.PID, tableList[j]->SDTTable) == TRUE ){
-									tableList[j]->SDTTable = NULL;
-								}
-							}else if( tableList[j]->TOTTable != NULL ){
-								if( CheckTOT(tsPacket.PID, tableList[j]->TOTTable) == TRUE ){
-									tableList[j]->TOTTable = NULL;
-								}
-							}else if( tableList[j]->TDTTable != NULL ){
-								if( CheckTDT(tsPacket.PID, tableList[j]->TDTTable) == TRUE ){
-									tableList[j]->TDTTable = NULL;
-								}
-							}else if( tableList[j]->EITTable != NULL ){
-								if( CheckEIT(tsPacket.PID, tableList[j]->EITTable) == TRUE ){
-									tableList[j]->EITTable = NULL;
-								}
-							}else if( tableList[j]->BITTable != NULL ){
-								if( CheckBIT(tsPacket.PID, tableList[j]->BITTable) == TRUE ){
-									tableList[j]->BITTable = NULL;
-								}
-							}else if( tableList[j]->SITTable != NULL ){
-								if( CheckSIT(tsPacket.PID, tableList[j]->SITTable) == TRUE ){
-									tableList[j]->SITTable = NULL;
-								}
-							}else if( tableList[j]->EITTable_SD != NULL ){
-								if( CheckEIT_SD(tsPacket.PID, tableList[j]->EITTable_SD) == TRUE ){
-									tableList[j]->EITTable_SD = NULL;
-								}
-							}else if( tableList[j]->EITTable_SD2 != NULL ){
-								if( CheckEIT_SD2(tsPacket.PID, tableList[j]->EITTable_SD2) == TRUE ){
-									tableList[j]->EITTable_SD2 = NULL;
-								}
-							}
-							SAFE_DELETE(tableList[j]);
-						}
-					}else{
+					CPSITable* table;
+					BOOL ret;
+					switch( CTableUtil::Decode(section, sectionSize, &table) ){
+					case CTableUtil::TYPE_PAT:
+						ret = CheckPAT(tsPacket.PID, static_cast<CPATTable*>(table));
+						break;
+					case CTableUtil::TYPE_PMT:
+						ret = CheckPMT(tsPacket.PID, static_cast<CPMTTable*>(table));
+						break;
+					case CTableUtil::TYPE_NIT:
+						ret = CheckNIT(tsPacket.PID, static_cast<CNITTable*>(table));
+						break;
+					case CTableUtil::TYPE_SDT:
+						ret = CheckSDT(tsPacket.PID, static_cast<CSDTTable*>(table));
+						break;
+					case CTableUtil::TYPE_TOT:
+						ret = CheckTOT(tsPacket.PID, static_cast<CTOTTable*>(table));
+						break;
+					case CTableUtil::TYPE_TDT:
+						ret = CheckTDT(tsPacket.PID, static_cast<CTDTTable*>(table));
+						break;
+					case CTableUtil::TYPE_EIT:
+						ret = CheckEIT(tsPacket.PID, static_cast<CEITTable*>(table));
+						break;
+					case CTableUtil::TYPE_BIT:
+						ret = CheckBIT(tsPacket.PID, static_cast<CBITTable*>(table));
+						break;
+					case CTableUtil::TYPE_SIT:
+						ret = CheckSIT(tsPacket.PID, static_cast<CSITTable*>(table));
+						break;
+					case CTableUtil::TYPE_EIT_SD:
+						ret = CheckEIT_SD(tsPacket.PID, static_cast<CEITTable_SD*>(table));
+						break;
+					case CTableUtil::TYPE_EIT_SD2:
+						ret = CheckEIT_SD2(tsPacket.PID, static_cast<CEITTable_SD2*>(table));
+						break;
+					case CTableUtil::TYPE_NONE:
 						if( section[0] == 0 ){
 							_OutputDebugString(L"Åöpid 0x%04X\r\n", tsPacket.PID);
 						}
+						ret = TRUE;
+						break;
+					default:
+						ret = FALSE;
+						break;
+					}
+					if( ret == FALSE ){
+						delete table;
 					}
 				}
 			}
