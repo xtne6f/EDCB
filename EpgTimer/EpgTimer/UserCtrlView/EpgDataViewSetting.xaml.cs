@@ -15,7 +15,9 @@ namespace EpgTimer
     /// </summary>
     public partial class EpgDataViewSetting : UserControl
     {
+        private BoxExchangeEditor bx = new BoxExchangeEditor();
         private EpgSearchKeyInfo searchKey = new EpgSearchKeyInfo();
+
         public EpgDataViewSetting()
         {
             InitializeComponent();
@@ -174,12 +176,7 @@ namespace EpgTimer
         /// <summary>サービス全追加</summary>
         private void button_service_addAll_Click(object sender, RoutedEventArgs e)
         {
-            ListBox listBox = SelectedServiceListBox();
-            if (listBox == null) return;
-
-            listBox.UnselectAll();
-            listBox.SelectAll();
-            addItems(listBox, listBox_serviceView);
+            bx.addAllItems(SelectedServiceListBox(), listBox_serviceView);
         }
 
         /// <summary>映像のみ全追加</summary>
@@ -196,7 +193,7 @@ namespace EpgTimer
                     if (info.ServiceType != 0x01 && info.ServiceType != 0xA5) continue;
                     listBox.SelectedItems.Add(info);//重い。
                 }
-                addItems(listBox, listBox_serviceView);
+                bx.addItems(listBox, listBox_serviceView);
             }
             catch (Exception ex)
             {
@@ -207,13 +204,13 @@ namespace EpgTimer
         /// <summary>選択サービス追加</summary>
         private void button_service_add_Click(object sender, RoutedEventArgs e)
         {
-            addItems(SelectedServiceListBox(), listBox_serviceView);
+            bx.addItems(SelectedServiceListBox(), listBox_serviceView);
         }
 
         /// <summary>選択サービス削除</summary>
         private void button_service_del_Click(object sender, RoutedEventArgs e)
         {
-            deleteItems(listBox_serviceView);
+            bx.deleteItems(listBox_serviceView);
         }
 
         /// <summary>サービス全削除</summary>
@@ -222,120 +219,46 @@ namespace EpgTimer
             listBox_serviceView.Items.Clear();
         }
 
-        private void addItems(ListBox src, ListBox target)
-        {
-            try
-            {
-                if (src == null || target == null) return;
-
-                foreach (object info in src.SelectedItems)
-                {
-                    if (target.Items.Contains(info) == false)
-                    {
-                        target.Items.Add(info);
-                    }
-                }
-                if (target.Items.Count != 0)
-                {
-                    target.SelectedIndex = target.Items.Count - 1;
-                    target.ScrollIntoView(target.SelectedItems);
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
-
-        private void deleteItems(ListBox target)
-        {
-            try
-            {
-                if (target == null) return;
-
-                var delItems = target.SelectedItems.Cast<object>().ToList();
-                int newSelectedIndex = 0;
-                foreach (object info in delItems)
-                {
-                    newSelectedIndex = target.Items.IndexOf(info);
-                    target.Items.RemoveAt(newSelectedIndex);
-                }
-
-                if (target.Items.Count != 0)
-                {
-                    newSelectedIndex = (newSelectedIndex == target.Items.Count ? newSelectedIndex - 1 : newSelectedIndex);
-                    target.SelectedIndex = newSelectedIndex;
-                    target.ScrollIntoView(target.SelectedItems);
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
-
         /// <summary>1つ上に移動</summary>
         private void button_service_up_Click(object sender, RoutedEventArgs e)
         {
-            move_item(listBox_serviceView, -1);
+            bx.move_item(listBox_serviceView, -1);
         }
 
         /// <summary>1つ下に移動</summary>
         private void button_service_down_Click(object sender, RoutedEventArgs e)
         {
-            move_item(listBox_serviceView, 1);
+            bx.move_item(listBox_serviceView, 1);
         }
 
         /// <summary>一番上に移動</summary>
         private void button_service_top_Click(object sender, RoutedEventArgs e)
         {
-            move_item(listBox_serviceView, -1 * listBox_serviceView.SelectedIndex);
+            bx.move_item(listBox_serviceView, -1 * listBox_serviceView.SelectedIndex);
         }
 
         /// <summary>一番下に移動</summary>
         private void button_service_bottom_Click(object sender, RoutedEventArgs e)
         {
-            move_item(listBox_serviceView, listBox_serviceView.Items.Count - 1 - listBox_serviceView.SelectedIndex);
+            bx.move_item(listBox_serviceView, listBox_serviceView.Items.Count - 1 - listBox_serviceView.SelectedIndex);
         }
-
-        /// <summary>アイテムを移動</summary>
-        private void move_item(ListBox target, int direction)
-        {
-            try
-            {
-                if (target == null || target.SelectedItem == null) return;
-
-                object temp = target.SelectedItem;
-                int newIndex = ((target.SelectedIndex + direction) % target.Items.Count + target.Items.Count) % target.Items.Count;
-                target.Items.RemoveAt(target.SelectedIndex);
-                target.Items.Insert(newIndex, temp);
-                target.SelectedIndex = newIndex;
-                target.ScrollIntoView(target.SelectedItem);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
-
+        
         /// <summary>ジャンル全追加</summary>
         private void button_jyanru_addAll_Click(object sender, RoutedEventArgs e)
         {
-            listBox_jyanru.UnselectAll();
-            listBox_jyanru.SelectAll();
-            addItems(listBox_jyanru, listBox_jyanruView);
+            bx.addAllItems(listBox_jyanru, listBox_jyanruView);
         }
 
         /// <summary>選択ジャンル追加</summary>
         private void button_jyanru_add_Click(object sender, RoutedEventArgs e)
         {
-            addItems(listBox_jyanru, listBox_jyanruView);
+            bx.addItems(listBox_jyanru, listBox_jyanruView);
         }
 
         /// <summary>選択ジャンル削除</summary>
         private void button_jyanru_del_Click(object sender, RoutedEventArgs e)
         {
-            deleteItems(listBox_jyanruView);
+            bx.deleteItems(listBox_jyanruView);
         }
 
         /// <summary>ジャンル全削除</summary>

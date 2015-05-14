@@ -96,6 +96,7 @@
     <Compile Include="BlackoutWindow.xaml.cs">
       <DependentUpon>BlackoutWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Common\BoxExchangeEditor.cs" />
     <Compile Include="Common\GridViewSelector.cs" />
     <Compile Include="DefineClass\EpgAutoAddDataAppend.cs" />
     <Compile Include="Common\GridViewSorter.cs" />
