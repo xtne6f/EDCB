@@ -9,9 +9,9 @@ namespace EpgTimer
         //static CopyData(src,dest)を用意して、拡張メソッドを追加するため用。
         //ジェネリックのまま拡張メソッドをpublicにするわけにはいかないけど、1行で書けたらいいのに‥。
 
-        //public static List<クラス名> Clone(this List<クラス名> src) { return CopyObjEx.Clone(src, CopyData); }
-        //public static クラス名 Clone(this クラス名 src) { return CopyObjEx.Clone(src, CopyData); }
-        //public static void CopyTo(this クラス名 src, クラス名 dest) { CopyObjEx.CopyTo(src, dest, CopyData); }
+        //public static List<クラス名> Clone(this List<クラス名> src) { return CopyObj.Clone(src, CopyData); }
+        //public static クラス名 Clone(this クラス名 src) { return CopyObj.Clone(src, CopyData); }
+        //public static void CopyTo(this クラス名 src, クラス名 dest) { CopyObj.CopyTo(src, dest, CopyData); }
 
         public static List<T> Clone<T>(List<T> src, Action<T, T> CopyData) where T : class, new()
         {

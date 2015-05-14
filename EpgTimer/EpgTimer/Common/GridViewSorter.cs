@@ -24,7 +24,7 @@ namespace EpgTimer {
         public GridViewSorter()
         { exceptionHeaders = new List<string>(); }
         public GridViewSorter(string exception)
-        { exceptionHeaders = new string[] { exception }.ToList(); }
+        { exceptionHeaders = new List<string> { exception }; }
         public GridViewSorter(string[] exception)
         { exceptionHeaders = exception.ToList(); }
         public GridViewSorter(List<string> exception)

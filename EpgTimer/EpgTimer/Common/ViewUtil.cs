@@ -187,7 +187,7 @@ namespace EpgTimer
             return false;
         }
 
-        //パネルアイテムにマージンを適用。チューナ予約画面に適用出来ない？
+        //パネルアイテムにマージンを適用。
         public void ApplyMarginForPanelView(ReserveData resInfo,
             ref int duration, ref DateTime startTime, int defStartMargin = 0, int defEndMargin = 0, bool already_set = false)
         {
