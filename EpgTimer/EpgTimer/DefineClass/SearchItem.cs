@@ -183,13 +183,14 @@ namespace EpgTimer
         {
             get
             {
-                //上半分は、番組表へジャンプ時の強調表示
+                //番組表へジャンプ時の強調表示
                 switch(NowJumpingTable)
                 {
                     case 1: return new SolidColorBrush(Colors.Red);
                     case 2: return CommonManager.Instance.ListDefForeColor;
                 }
 
+                //通常表示
                 if (ReserveInfo == null) return CommonManager.Instance.ListDefForeColor;
                 //
                 return CommonManager.Instance.EventItemForeColor(ReserveInfo.RecSetting.RecMode);
@@ -199,6 +200,14 @@ namespace EpgTimer
         {
             get
             {
+                //番組表へジャンプ時の強調表示
+                switch (NowJumpingTable)
+                {
+                    case 1: return CommonManager.Instance.ResDefBackColor;
+                    case 2: return new SolidColorBrush(Colors.Red);
+                }
+
+                //通常表示
                 SolidColorBrush color = CommonManager.Instance.ResDefBackColor;
                 if (ReserveInfo != null)
                 {

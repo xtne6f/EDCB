@@ -607,6 +607,8 @@ namespace EpgTimer
                 //ただ、結局スクロールさせる位置がうまく調整できてないので効果は限定的。
                 if (JumpingTable || Settings.Instance.DisplayNotifyEpgChange)
                 {
+                    listView_event.SelectedItem = null;
+
                     var notifyTimer = new System.Windows.Threading.DispatcherTimer();
                     notifyTimer.Interval = TimeSpan.FromSeconds(0.2);
                     TimeSpan RemainTime = TimeSpan.FromSeconds(Settings.Instance.DisplayNotifyJumpTime);
@@ -616,6 +618,7 @@ namespace EpgTimer
                         if (RemainTime <= TimeSpan.FromSeconds(0))
                         {
                             target_item.NowJumpingTable = 0;
+                            listView_event.SelectedItem = target_item;
                             notifyTimer.Stop();
                         }
                         else
