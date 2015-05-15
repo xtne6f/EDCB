@@ -1,63 +1,16 @@
 #include "StdAfx.h"
 #include "SendUDP.h"
-#include <process.h>
 
-#define SEND_BUFF (188)
+static const int SNDBUF_SIZE = 3 * 1024 * 1024;
 
 CSendUDP::CSendUDP(void)
 {
-    m_hSendThread = NULL;
-    m_hSendStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-
-	m_hCriticalEvent = CreateEvent(NULL, FALSE, TRUE, NULL);
-
 	WSAData wsaData;
 	WSAStartup(MAKEWORD(2,0), &wsaData);
-
-	WCHAR strExePath[512] = L"";
-	GetModuleFileName(NULL, strExePath, 512);
-
-	WCHAR szPath[_MAX_PATH];	// パス
-	WCHAR szFile[_MAX_PATH];	// ファイル
-	WCHAR szDrive[_MAX_DRIVE];
-	WCHAR szDir[_MAX_DIR];
-	WCHAR szFname[_MAX_FNAME];
-	WCHAR szExt[_MAX_EXT];
-	_tsplitpath_s( strExePath, szDrive, _MAX_DRIVE, szDir, _MAX_DIR, szFname, _MAX_FNAME, szExt, _MAX_EXT );
-	_tmakepath_s(  szPath, _MAX_PATH, szDrive, szDir, NULL, NULL );
-	_tmakepath_s(  szFile, _MAX_PATH, L"", L"", szFname, szExt );
-
-	Format(m_strIniPath, L"%s%s.ini",szPath,szFname);
-
 }
 
 CSendUDP::~CSendUDP(void)
 {
-	if( m_hSendThread != NULL ){
-		::SetEvent(m_hSendStopEvent);
-		// スレッド終了待ち
-		if ( ::WaitForSingleObject(m_hSendThread, 15000) == WAIT_TIMEOUT ){
-			::TerminateThread(m_hSendThread, 0xffffffff);
-		}
-		CloseHandle(m_hSendThread);
-		m_hSendThread = NULL;
-	}
-	if( m_hSendStopEvent != NULL ){
-		CloseHandle(m_hSendStopEvent);
-		m_hSendStopEvent = NULL;
-	}
-
-	if( m_hCriticalEvent == NULL ){
-		::WaitForSingleObject(m_hCriticalEvent, 300);
-		::CloseHandle(m_hCriticalEvent);
-		m_hCriticalEvent = NULL;
-	}
-
-	for( int i=0; i<(int)m_TSBuff.size(); i++ ){
-		SAFE_DELETE(m_TSBuff[i]);
-	}
-	m_TSBuff.clear();
-
 	CloseUpload();
 
 	WSACleanup();
@@ -70,8 +23,6 @@ BOOL CSendUDP::StartUpload( vector<NW_SEND_INFO>* List )
 		return FALSE;
 	}
 
-	m_uiWait = GetPrivateProfileInt( L"Set", L"SendWait", 4, m_strIniPath.c_str() );
-
 	for( int i=0; i<(int)List->size(); i++ ){
 		SOCKET_DATA Item;
 		Item.sock = socket(AF_INET, SOCK_DGRAM, 0);
@@ -81,7 +32,12 @@ BOOL CSendUDP::StartUpload( vector<NW_SEND_INFO>* List )
 		}
 		//ノンブロッキングモードへ
 		ULONG x = 1;
-		ioctlsocket(Item.sock,FIONBIO, &x);
+		if( ioctlsocket(Item.sock,FIONBIO, &x) == SOCKET_ERROR ||
+		    setsockopt(Item.sock, SOL_SOCKET, SO_SNDBUF, (const char *)&SNDBUF_SIZE, sizeof(SNDBUF_SIZE)) == SOCKET_ERROR ){
+			closesocket(Item.sock);
+			CloseUpload();
+			return FALSE;
+		}
 
 		if( (*List)[i].broadcastFlag == FALSE ){
 			Item.addr.sin_family = AF_INET;
@@ -103,139 +59,35 @@ BOOL CSendUDP::StartUpload( vector<NW_SEND_INFO>* List )
 		}
 		SockList.push_back(Item);
 	}
-	
-	if( m_hSendThread == NULL ){
-		m_uiSendSize = GetPrivateProfileInt( L"Set", L"SendSize", 128, m_strIniPath.c_str() )*188;
-		//解析スレッド起動
-		ResetEvent(m_hSendStopEvent);
-		m_hSendThread = (HANDLE)_beginthreadex(NULL, 0, SendThread, (LPVOID)this, CREATE_SUSPENDED, NULL);
-		SetThreadPriority( m_hSendThread, THREAD_PRIORITY_HIGHEST );
-		ResumeThread(m_hSendThread);
-
-	}
 
 	return TRUE;
 }
 
 BOOL CSendUDP::CloseUpload()
 {
-	if( m_hSendThread != NULL ){
-		::SetEvent(m_hSendStopEvent);
-		// スレッド終了待ち
-		if ( ::WaitForSingleObject(m_hSendThread, 15000) == WAIT_TIMEOUT ){
-			::TerminateThread(m_hSendThread, 0xffffffff);
-		}
-		CloseHandle(m_hSendThread);
-		m_hSendThread = NULL;
-	}
-
 	for( int i=0; i<(int)SockList.size(); i++ ){
 		closesocket(SockList[i].sock);
 	}
 	SockList.clear();
-
-	if( WaitForSingleObject( m_hCriticalEvent, 500 ) == WAIT_OBJECT_0 ){
-		for( int i=0; i<(int)m_TSBuff.size(); i++ ){
-			SAFE_DELETE(m_TSBuff[i]);
-		}
-		m_TSBuff.clear();
-	}
-	if( m_hCriticalEvent != NULL ){
-		SetEvent(m_hCriticalEvent);
-	}
 
 	return TRUE;
 }
 
 void CSendUDP::SendData(BYTE* pbBuff, DWORD dwSize)
 {
-	if( m_hSendThread != NULL ){
-		TS_DATA* pItem = new TS_DATA;
-		pItem->data = new BYTE[dwSize];
-		ZeroMemory( pItem->data, dwSize );
-		memcpy( pItem->data, pbBuff, dwSize );
-		pItem->size = dwSize;
-
-		if( WaitForSingleObject( m_hCriticalEvent, 500 ) == WAIT_OBJECT_0 ){
-			m_TSBuff.push_back(pItem);
-		}else{
-			delete pItem;
+	for( DWORD dwRead=0; dwRead<dwSize; ){
+		//ペイロード分割。BonDriver_UDPの受信サイズ48128以下でなければならない
+		int iSendSize = min(128 * 188, dwSize - dwRead);
+		for( size_t i=0; i<SockList.size(); i++ ){
+			int iRet = sendto(SockList[i].sock, (char*)(pbBuff + dwRead), iSendSize, 0, (struct sockaddr *)&SockList[i].addr, sizeof(SockList[i].addr));
+			if( iRet == SOCKET_ERROR ){
+				if( WSAGetLastError() == WSAEWOULDBLOCK ){
+					//送信処理が追いつかずSNDBUF_SIZEで指定したバッファも尽きてしまった
+					//帯域が足りないときはどう足掻いてもドロップするしかないので、Sleep()によるフロー制御はしない
+					OutputDebugString(L"Dropped\r\n");
+				}
+			}
 		}
-		if( m_hCriticalEvent != NULL ){
-			SetEvent(m_hCriticalEvent);
-		}
+		dwRead += iSendSize;
 	}
-}
-
-UINT WINAPI CSendUDP::SendThread(LPVOID pParam)
-{
-	CSendUDP* pSys = (CSendUDP*)pParam;
-
-	BYTE* pbSendBuff = new BYTE[pSys->m_uiSendSize];
-	DWORD dwSendSize = 0;
-
-	while(1){
-		if( ::WaitForSingleObject(pSys->m_hSendStopEvent, 0) != WAIT_TIMEOUT ){
-			//キャンセルされた
-			break;
-		}
-
-		TS_DATA* pData = NULL;
-
-		if( WaitForSingleObject( pSys->m_hCriticalEvent, 500 ) == WAIT_OBJECT_0 ){
-			if(pSys->m_TSBuff.size()>500){
-				for( int i=(int)pSys->m_TSBuff.size()-500; i>=0; i-- ){
-					SAFE_DELETE(pSys->m_TSBuff[i]);
-					vector<TS_DATA*>::iterator itr;
-					itr = pSys->m_TSBuff.begin();
-					advance(itr,i);
-					pSys->m_TSBuff.erase( itr );
-				}
-			}
-			if( pSys->m_TSBuff.size() != 0 ){
-				pData = pSys->m_TSBuff[0];
-				pSys->m_TSBuff.erase( pSys->m_TSBuff.begin() );
-			}
-		}else{
-			continue ;
-		}
-		if( pSys->m_hCriticalEvent != NULL ){
-			SetEvent(pSys->m_hCriticalEvent);
-		}
-
-		if( pData != NULL && pSys->SockList.size() > 0 ){
-			dwSendSize = 0;
-
-			DWORD dwRead = 0;
-			while(dwRead < pData->size){
-				int iSendSize = 0;
-				if( dwRead+pSys->m_uiSendSize < pData->size ){
-					iSendSize = pSys->m_uiSendSize;
-				}else{
-					iSendSize = pData->size-dwRead;
-				}
-				for( int i=0; i<(int)pSys->SockList.size(); i++ ){
-					if( sendto(pSys->SockList[i].sock, (char*)pData->data+dwRead, iSendSize, 0, (struct sockaddr *)&pSys->SockList[i].addr, sizeof(pSys->SockList[i].addr)) == 0){
-						closesocket(pSys->SockList[i].sock);
-						vector<SOCKET_DATA>::iterator itr;
-						itr = pSys->SockList.begin();
-						advance(itr, i);
-						pSys->SockList.erase(itr);
-						break;
-					}
-				}
-				Sleep(pSys->m_uiWait);
-				dwRead+=iSendSize;
-			}
-		}
-
-		SAFE_DELETE(pData);
-		if( (int)pSys->m_TSBuff.size() == 0 ){
-			Sleep(1);
-		}
-	}
-
-	SAFE_DELETE_ARRAY(pbSendBuff);
-
-	return TRUE;
 }
