@@ -134,15 +134,6 @@ namespace EpgTimer
                 menuItemTimeshift.Header = "追っかけ再生";
                 menuItemTimeshift.Click += new RoutedEventHandler(cm_timeShiftPlay_Click);
 
-                //フォーカスに問題があり、一度クリックしないと正しく動かない‥。
-                //仮対策コード
-                menuItemPTable.IsEnabled = IsViewOnceClicked;
-                if (menuItemPTable.IsEnabled == false)
-                {
-                    menuItemPTable.ToolTip = "一度画面を左クリックすると使用可能";
-                    ToolTipService.SetShowOnDisabled(menuItemPTable, true);
-                }
-
                 menu.Items.Add(menuItemChg);
                 menu.Items.Add(menuItemDel);
                 menu.Items.Add(menuItemPTable);
@@ -222,19 +213,6 @@ namespace EpgTimer
             BlackoutWindow.SelectedReserveItem = new ReserveItem(reserve);
             MainWindow mainWindow = (MainWindow)Application.Current.MainWindow;
             mainWindow.moveTo_tabItem_epg();
-        }
-
-        //フォーカスがうまくいかない仮対策
-        private bool IsViewOnceClicked = false;
-
-        private void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
-        {
-            this.IsViewOnceClicked = false;
-        }
-
-        private void tunerReserveView_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
-        {
-            this.IsViewOnceClicked = true;
         }
 
         /// <summary>

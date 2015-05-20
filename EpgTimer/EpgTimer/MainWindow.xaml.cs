@@ -1734,8 +1734,9 @@ namespace EpgTimer
 
         public void moveTo_tabItem_epg()
         {
-            new BlackoutWindow(this).showWindow(this.tabItem_epg.Header.ToString());
             BlackoutWindow.NowJumpTable = true;
+            new BlackoutWindow(this).showWindow(this.tabItem_epg.Header.ToString());
+            this.Focus();//チューナ画面でのフォーカス対策。とりあえずこれで解決する。
             this.tabItem_epg.IsSelected = true;
         }
 
