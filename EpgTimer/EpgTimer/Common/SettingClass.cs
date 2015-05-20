@@ -135,14 +135,6 @@ namespace EpgTimer
         private bool epgPopup;
         private bool epgGradation;
         private bool epgGradationHeader;
-        private double resColumnWidth0;
-        private double resColumnWidth1;
-        private double resColumnWidth2;
-        private double resColumnWidth3;
-        private double resColumnWidth4;
-        private double resColumnWidth5;
-        private double resColumnWidth6;
-        private double resColumnWidth7;
         private string resColumnHead;
         private ListSortDirection resSortDirection;
         private System.Windows.WindowState lastWindowState;
@@ -178,13 +170,6 @@ namespace EpgTimer
         private UInt16 searchKeyChkDurationMin;
         private UInt16 searchKeyChkDurationMax;
         private List<RecPresetItem> recPresetList;
-        private double recInfoColumnWidth0;
-        private double recInfoColumnWidth1;
-        private double recInfoColumnWidth2;
-        private double recInfoColumnWidth3;
-        private double recInfoColumnWidth4;
-        private double recInfoColumnWidth5;
-        private double recInfoColumnWidth6;
         private string recInfoColumnHead;
         private ListSortDirection recInfoSortDirection;
         private string tvTestExe;
@@ -444,46 +429,6 @@ namespace EpgTimer
             get { return epgGradationHeader; }
             set { epgGradationHeader = value; }
         }
-        public double ResColumnWidth0
-        {
-            get { return resColumnWidth0; }
-            set { resColumnWidth0 = value; }
-        }
-        public double ResColumnWidth1
-        {
-            get { return resColumnWidth1; }
-            set { resColumnWidth1 = value; }
-        }
-        public double ResColumnWidth2
-        {
-            get { return resColumnWidth2; }
-            set { resColumnWidth2 = value; }
-        }
-        public double ResColumnWidth3
-        {
-            get { return resColumnWidth3; }
-            set { resColumnWidth3 = value; }
-        }
-        public double ResColumnWidth4
-        {
-            get { return resColumnWidth4; }
-            set { resColumnWidth4 = value; }
-        }
-        public double ResColumnWidth5
-        {
-            get { return resColumnWidth5; }
-            set { resColumnWidth5 = value; }
-        }
-        public double ResColumnWidth6
-        {
-            get { return resColumnWidth6; }
-            set { resColumnWidth6 = value; }
-        }
-        public double ResColumnWidth7
-        {
-            get { return resColumnWidth7; }
-            set { resColumnWidth7 = value; }
-        }
         public string ResColumnHead
         {
             get { return resColumnHead; }
@@ -658,41 +603,6 @@ namespace EpgTimer
         {
             get { return recPresetList; }
             set { recPresetList = value; }
-        }
-        public double RecInfoColumnWidth0
-        {
-            get { return recInfoColumnWidth0; }
-            set { recInfoColumnWidth0 = value; }
-        }
-        public double RecInfoColumnWidth1
-        {
-            get { return recInfoColumnWidth1; }
-            set { recInfoColumnWidth1 = value; }
-        }
-        public double RecInfoColumnWidth2
-        {
-            get { return recInfoColumnWidth2; }
-            set { recInfoColumnWidth2 = value; }
-        }
-        public double RecInfoColumnWidth3
-        {
-            get { return recInfoColumnWidth3; }
-            set { recInfoColumnWidth3 = value; }
-        }
-        public double RecInfoColumnWidth4
-        {
-            get { return recInfoColumnWidth4; }
-            set { recInfoColumnWidth4 = value; }
-        }
-        public double RecInfoColumnWidth5
-        {
-            get { return recInfoColumnWidth5; }
-            set { recInfoColumnWidth5 = value; }
-        }
-        public double RecInfoColumnWidth6
-        {
-            get { return recInfoColumnWidth6; }
-            set { recInfoColumnWidth6 = value; }
         }
         public string RecInfoColumnHead
         {
