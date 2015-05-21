@@ -11,8 +11,6 @@ public:
 	~CEpgDBUtil(void);
 
 	BOOL AddEIT(WORD PID, CEITTable* eit);
-	BOOL AddEIT_SD(WORD PID, CEITTable_SD* eit);
-	BOOL AddEIT_SD2(WORD PID, CEITTable_SD2* eit);
 
 	BOOL AddServiceList(CNITTable* nit);
 	BOOL AddServiceList(WORD TSID, CSITTable* sit);
@@ -116,9 +114,6 @@ protected:
 	struct EVENTGROUP_INFO : EPG_EVENTGROUP_INFO, SI_TAG{
 	};
 	struct EVENT_INFO{
-		WORD ONID;
-		WORD TSID;
-		WORD SID;
 		WORD event_id;
 		BYTE StartTimeFlag;	//start_time‚Ì’l‚ª—LŒø‚©‚Ç‚¤‚©
 		SYSTEMTIME start_time;
@@ -193,9 +188,6 @@ protected:
 	map<ULONGLONG, SECTION_STATUS_INFO> sectionMap;
 	map<ULONGLONG, BYTE> serviceList;
 
-	map<ULONGLONG, SERVICE_EVENT_INFO> serviceEventMapSD;
-
-
 	typedef struct _DB_SERVICE_INFO{
 		WORD original_network_id;	//original_network_id
 		WORD transport_stream_id;	//transport_stream_id
@@ -242,18 +234,14 @@ protected:
 protected:
 	void Clear();
 	
-	static BOOL AddShortEvent(BYTE table_id, BYTE version_number, EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* shortEvent, BOOL skySDFlag);
-	static BOOL AddExtEvent(BYTE table_id, BYTE version_number, EVENT_INFO* eventInfo, vector<AribDescriptor::CDescriptor*>* descriptorList, BOOL skySDFlag);
-	static BOOL AddContent(BYTE table_id, BYTE version_number, EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* content, BOOL skySDFlag);
-	static BOOL AddComponent(BYTE table_id, BYTE version_number, EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* component, BOOL skySDFlag);
-	static BOOL AddAudioComponent(BYTE table_id, BYTE version_number, EVENT_INFO* eventInfo, vector<AribDescriptor::CDescriptor*>* descriptorList, BOOL skySDFlag);
+	static BOOL AddShortEvent(BYTE table_id, BYTE version_number, EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* shortEvent);
+	static BOOL AddExtEvent(BYTE table_id, BYTE version_number, EVENT_INFO* eventInfo, vector<AribDescriptor::CDescriptor*>* descriptorList);
+	static BOOL AddContent(BYTE table_id, BYTE version_number, EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* content);
+	static BOOL AddComponent(BYTE table_id, BYTE version_number, EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* component);
+	static BOOL AddAudioComponent(BYTE table_id, BYTE version_number, EVENT_INFO* eventInfo, vector<AribDescriptor::CDescriptor*>* descriptorList);
 	static BOOL AddEventGroup(CEITTable* eit, EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* eventGroup);
 	static BOOL AddEventRelay(CEITTable* eit, EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* eventGroup);
-	static BOOL CheckUpdate(BYTE eit_table_id, BYTE eit_version_number, BYTE tableID, BYTE version, BOOL skySDFlag);
-
-	static BOOL CheckUpdate_SD(BYTE eit_table_id, BYTE eit_version_number, BYTE tableID, BYTE version);
-
-	BOOL AddSDEventMap(CEITTable_SD* eit);
+	static BOOL CheckUpdate(BYTE eit_table_id, BYTE eit_version_number, BYTE tableID, BYTE version);
 
 	BOOL CheckSectionAll(map<WORD, SECTION_FLAG_INFO>* sectionMap, BOOL leitFlag = FALSE);
 
