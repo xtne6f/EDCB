@@ -979,9 +979,12 @@ bool CDescriptor::Decode(const BYTE* data, DWORD dataSize, DWORD* decodeReadSize
 	}
 
 	//ローカル参照用スタック
-	std::vector<DESCRIPTOR_PROPERTY> localProperty;
+	DESCRIPTOR_PROPERTY localProperty[128];
+	localProperty->id = D_FIN;
+	localProperty->type = _countof(localProperty);
+	localProperty->n = 1;
 
-	int readSize = DecodeProperty(data, dataSize, &parser, &this->rootProperty, &localProperty);
+	int readSize = DecodeProperty(data, dataSize, &parser, &this->rootProperty, localProperty);
 	if( readSize < 0 ){
 		if( readSize == -3 ){
 			//この条件が満たされるときはパーサにミスがある
@@ -996,7 +999,7 @@ bool CDescriptor::Decode(const BYTE* data, DWORD dataSize, DWORD* decodeReadSize
 	return true;
 }
 
-int CDescriptor::DecodeProperty(const BYTE* data, DWORD dataSize, const short** parser, std::vector<DESCRIPTOR_PROPERTY>* pp, std::vector<DESCRIPTOR_PROPERTY>* ppLocal)
+int CDescriptor::DecodeProperty(const BYTE* data, DWORD dataSize, const short** parser, std::vector<DESCRIPTOR_PROPERTY>* pp, DESCRIPTOR_PROPERTY* ppLocal)
 {
 	DWORD readSize = 0;
 	DWORD bitOffset = 0;
@@ -1010,7 +1013,7 @@ int CDescriptor::DecodeProperty(const BYTE* data, DWORD dataSize, const short** 
 					return -3;
 				}
 				++*parser;
-				DWORD subSize = GetOperand(**parser, *ppLocal) / 8;
+				DWORD subSize = GetOperand(**parser, ppLocal) / 8;
 				++*parser;
 				if( readSize + subSize > dataSize ){
 					return -1;
@@ -1034,7 +1037,7 @@ int CDescriptor::DecodeProperty(const BYTE* data, DWORD dataSize, const short** 
 				}
 				bool bNot = **parser == D_BEGIN_IF_NOT;
 				++*parser;
-				DWORD val = GetOperand(**parser, *ppLocal) / 8;
+				DWORD val = GetOperand(**parser, ppLocal) / 8;
 				++*parser;
 				DWORD exprL = **parser;
 				++*parser;
@@ -1071,7 +1074,7 @@ int CDescriptor::DecodeProperty(const BYTE* data, DWORD dataSize, const short** 
 
 				int loopNum = -1;
 				if( **parser == D_BEGIN_FOR ){
-					loopNum = GetOperand(*(++*parser), *ppLocal) / 8;
+					loopNum = GetOperand(*(++*parser), ppLocal) / 8;
 					dp.pl->reserve(loopNum);
 				}
 				++*parser;
@@ -1079,9 +1082,9 @@ int CDescriptor::DecodeProperty(const BYTE* data, DWORD dataSize, const short** 
 				for( ; loopNum != 0; --loopNum ){
 					dp.pl->resize(dp.pl->size() + 1);
 					const short* parserRollback = *parser;
-					size_t localRollback = ppLocal->size();
+					DWORD localRollback = ppLocal->n;
 					int subReadSize = DecodeProperty(data + readSize, dataSize - readSize, parser, &dp.pl->back(), ppLocal);
-					ppLocal->resize(localRollback);
+					ppLocal->n = localRollback;
 					*parser = parserRollback;
 
 					if( subReadSize < 0 ){
@@ -1121,7 +1124,7 @@ int CDescriptor::DecodeProperty(const BYTE* data, DWORD dataSize, const short** 
 					}
 					DWORD byteSize = dataSize - readSize;
 					if( **parser == D_STRING ){
-						byteSize = GetOperand(*(++*parser), *ppLocal) / 8;
+						byteSize = GetOperand(*(++*parser), ppLocal) / 8;
 					}
 					++*parser;
 					if( readSize + byteSize > dataSize ){
@@ -1150,7 +1153,7 @@ int CDescriptor::DecodeProperty(const BYTE* data, DWORD dataSize, const short** 
 					}
 					DWORD byteSize = dataSize - readSize;
 					if( **parser == D_BINARY ){
-						byteSize = GetOperand(*(++*parser), *ppLocal) / 8;
+						byteSize = GetOperand(*(++*parser), ppLocal) / 8;
 					}
 					++*parser;
 					if( readSize + byteSize > dataSize ){
@@ -1174,7 +1177,7 @@ int CDescriptor::DecodeProperty(const BYTE* data, DWORD dataSize, const short** 
 				{
 					DWORD bitSize = dataSize * 8 - (readSize * 8 + bitOffset);
 					if( **parser == D_LOCAL ){
-						bitSize = GetOperand(*(++*parser), *ppLocal);
+						bitSize = GetOperand(*(++*parser), ppLocal);
 					}
 					++*parser;
 					if( readSize * 8 + bitOffset + bitSize > dataSize * 8 ){
@@ -1182,12 +1185,16 @@ int CDescriptor::DecodeProperty(const BYTE* data, DWORD dataSize, const short** 
 					}
 					dp.type = 0;
 					dp.n = DecodeNumber(data, bitSize, &readSize, &bitOffset);
-					ppLocal->push_back(dp);
+					if( ppLocal->n == ppLocal->type ){
+						//スタックが尽きた。このエラーは回復できない
+						return -3;
+					}
+					ppLocal[ppLocal->n++] = dp;
 				}
 				break;
 			default:
 				{
-					DWORD bitSize = GetOperand(**parser, *ppLocal);
+					DWORD bitSize = GetOperand(**parser, ppLocal);
 					++*parser;
 					if( readSize * 8 + bitOffset + bitSize > dataSize * 8 ){
 						return -1;
@@ -1195,7 +1202,10 @@ int CDescriptor::DecodeProperty(const BYTE* data, DWORD dataSize, const short** 
 					dp.type = 0;
 					dp.n = DecodeNumber(data, bitSize, &readSize, &bitOffset);
 					pp->push_back(dp);
-					ppLocal->push_back(dp);
+					if( ppLocal->n == ppLocal->type ){
+						return -3;
+					}
+					ppLocal[ppLocal->n++] = dp;
 				}
 				break;
 			}
@@ -1210,16 +1220,15 @@ int CDescriptor::DecodeProperty(const BYTE* data, DWORD dataSize, const short** 
 	return readSize;
 }
 
-DWORD CDescriptor::GetOperand(short id, const std::vector<DESCRIPTOR_PROPERTY>& pLocal)
+DWORD CDescriptor::GetOperand(short id, const DESCRIPTOR_PROPERTY* ppLocal)
 {
 	//即値かどうか。即値の単位はビット
 	if( id <= D_IMMEDIATE_MAX ){
 		return id;
 	}
-	std::vector<DESCRIPTOR_PROPERTY>::const_reverse_iterator itr;
-	for( itr = pLocal.rbegin(); itr != pLocal.rend(); ++itr ){
-		if( itr->id == id ){
-			return itr->n * 8;
+	for( ppLocal += ppLocal->n; (--ppLocal)->id != D_FIN; ){
+		if( ppLocal->id == id ){
+			return ppLocal->n * 8;
 		}
 	}
 	//この条件が満たされるときはパーサにミスがある

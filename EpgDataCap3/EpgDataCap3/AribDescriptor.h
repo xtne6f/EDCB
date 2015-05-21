@@ -342,8 +342,8 @@ namespace AribDescriptor
 		CDescriptor(const CDescriptor&);
 		CDescriptor& operator=(const CDescriptor&);
 		static void ClearProperty(std::vector<DESCRIPTOR_PROPERTY>* pp);
-		static int DecodeProperty(const BYTE* data, DWORD dataSize, const short** parser, std::vector<DESCRIPTOR_PROPERTY>* pp, std::vector<DESCRIPTOR_PROPERTY>* ppLocal);
-		static DWORD GetOperand(short id, const std::vector<DESCRIPTOR_PROPERTY>& pLocal);
+		static int DecodeProperty(const BYTE* data, DWORD dataSize, const short** parser, std::vector<DESCRIPTOR_PROPERTY>* pp, DESCRIPTOR_PROPERTY* ppLocal);
+		static DWORD GetOperand(short id, const DESCRIPTOR_PROPERTY* ppLocal);
 		static DWORD DecodeNumber(const BYTE* data, DWORD bitSize, DWORD* readSize, DWORD* bitOffset);
 		const DESCRIPTOR_PROPERTY* FindProperty(short id, CLoopPointer lp) const;
 
