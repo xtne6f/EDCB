@@ -468,7 +468,9 @@ BOOL CDecodeUtil::CheckEIT(WORD PID, CEITTable* eit)
 	}
 	
 	if( epgDBUtil != NULL ){
-		epgDBUtil->AddEIT(PID, eit);
+		FILETIME time = {};
+		GetNowTime(&time);
+		epgDBUtil->AddEIT(PID, eit, (__int64)time.dwHighDateTime << 32 | time.dwLowDateTime);
 	}
 	return FALSE;
 }
