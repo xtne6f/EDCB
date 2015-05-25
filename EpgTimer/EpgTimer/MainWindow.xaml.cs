@@ -870,6 +870,10 @@ namespace EpgTimer
                     {
                         CommonManager.Instance.DB.SetNoAutoReloadEPG(Settings.Instance.NgAutoEpgLoadNW);
                     }
+                    reserveView.UpdateReserveData();
+                    tunerReserveView.UpdateReserveData();
+                    recInfoView.UpdateInfo();
+                    autoAddView.UpdateAutoAddInfo();
                     epgView.UpdateSetting();
                     cmd.SendReloadSetting();
                     ResetButtonView();
