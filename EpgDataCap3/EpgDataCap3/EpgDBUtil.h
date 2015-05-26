@@ -108,41 +108,28 @@ protected:
 		SI_TAG tagBasic;
 		SI_TAG tagExt;
 	};
+	struct SECTION_FLAG_INFO{
+		BYTE version;
+		BYTE flags[32];			//セグメント(0～31)毎の受信済みセクション(0～7)のフラグ
+		BYTE ignoreFlags[32];	//無視する(送出されない)セクションのフラグ
+	};
 	struct SERVICE_EVENT_INFO{
 		map<WORD, EVENT_INFO*> eventMap;
 		EVENT_INFO* nowEvent;
 		EVENT_INFO* nextEvent;
+		BYTE lastTableID;
+		BYTE lastTableIDExt;
+		vector<SECTION_FLAG_INFO> sectionList;	//添え字はテーブル番号(0～7)
+		vector<SECTION_FLAG_INFO> sectionExtList;
 		SERVICE_EVENT_INFO(void){
 			nowEvent = NULL;
 			nextEvent = NULL;
-		}
-	};
-	struct SECTION_FLAG_INFO{
-		DWORD sectionFlag;
-		DWORD maxFlag;
-		SECTION_FLAG_INFO(void){
-			sectionFlag = 0;
-			maxFlag = 0;
-		}
-	};
-	struct SECTION_STATUS_INFO{
-		BYTE HEITFlag;
-		BYTE last_section_numberBasic;
-		BYTE last_table_idBasic;
-		BYTE last_section_numberExt;
-		BYTE last_table_idExt;
-		map<WORD, SECTION_FLAG_INFO> sectionBasicMap;	//キー TableID、フラグ
-		map<WORD, SECTION_FLAG_INFO> sectionExtMap;	//キー TableID、フラグ
-		SECTION_STATUS_INFO(void){
-			HEITFlag = TRUE;
-			last_section_numberBasic = 0;
-			last_table_idBasic = 0;
-			last_section_numberExt = 0;
-			last_table_idExt = 0;
+			lastTableID = 0;
+			lastTableIDExt = 0;
+			sectionList.resize(8);
 		}
 	};
 	map<ULONGLONG, SERVICE_EVENT_INFO> serviceEventMap;
-	map<ULONGLONG, SECTION_STATUS_INFO> sectionMap;
 	map<ULONGLONG, BYTE> serviceList;
 
 	typedef struct _DB_SERVICE_INFO{
@@ -179,8 +166,6 @@ protected:
 	}DB_TS_INFO;
 	map<DWORD, DB_TS_INFO> serviceInfoList;
 
-	DWORD sectionNowFlag;
-
 	EPG_EVENT_INFO* epgInfoList;
 
 	EPG_EVENT_INFO* epgInfo;
@@ -200,7 +185,7 @@ protected:
 	static void AddEventGroup(EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* eventGroup, WORD onid, WORD tsid);
 	static void AddEventRelay(EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* eventGroup, WORD onid, WORD tsid);
 
-	BOOL CheckSectionAll(map<WORD, SECTION_FLAG_INFO>* sectionMap, BOOL leitFlag = FALSE);
+	static BOOL CheckSectionAll(const vector<SECTION_FLAG_INFO>& sectionList);
 
 	void CopyEpgInfo(EPG_EVENT_INFO* destInfo, EVENT_INFO* srcInfo);
 };

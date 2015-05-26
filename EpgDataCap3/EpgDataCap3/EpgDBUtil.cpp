@@ -16,8 +16,6 @@ CEpgDBUtil::CEpgDBUtil(void)
 {
 	InitializeCriticalSection(&this->dbLock);
 
-	this->sectionNowFlag = 0;
-
 	this->epgInfoList = NULL;
 
 	this->epgInfo = NULL;
@@ -245,111 +243,70 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, CEITTable* eit, __int64 streamTime)
 	}
 	
 	//セクションステータス
-	map<ULONGLONG, SECTION_STATUS_INFO>::iterator itrSec;
-	SECTION_STATUS_INFO* sectionInfo = NULL;
-	itrSec = this->sectionMap.find(key);
-	if( itrSec == this->sectionMap.end() ){
-		sectionInfo = &this->sectionMap.insert(std::make_pair(key, SECTION_STATUS_INFO())).first->second;
-	}else{
-		sectionInfo = &itrSec->second;
-	}
-
-	if( PID == 0x0027 ){
+	if( PID != 0x0012 ){
 		//L-EIT
-		sectionInfo->HEITFlag = FALSE;
-		sectionInfo->last_table_idBasic = eit->last_table_id;
-		sectionInfo->last_section_numberBasic = eit->last_section_number;
-
-		DWORD sectionNo = eit->section_number;
-		map<WORD, SECTION_FLAG_INFO>::iterator itrFlag;
-		itrFlag = sectionInfo->sectionBasicMap.find(eit->table_id);
-		if( itrFlag == sectionInfo->sectionBasicMap.end() ){
-			DWORD maxFlag = 0;
-			for( DWORD i=0; i<=eit->last_section_number; i++ ){
-				maxFlag |= 1<<i;
+		if( eit->table_id <= 0x4F ){
+			if( serviceInfo->lastTableID != eit->table_id ||
+			    serviceInfo->sectionList[0].version != eit->version_number + 1 ){
+				serviceInfo->lastTableID = 0;
 			}
-			SECTION_FLAG_INFO item;
-			item.maxFlag = maxFlag;
-			item.sectionFlag = 1<<sectionNo;
-			sectionInfo->sectionBasicMap.insert(pair<WORD, SECTION_FLAG_INFO>(eit->table_id, item));
-		}else{
-			itrFlag->second.sectionFlag |= 1<<sectionNo;
+			if( serviceInfo->lastTableID == 0 ){
+				//リセット
+				memset(&serviceInfo->sectionList.front(), 0, sizeof(SECTION_FLAG_INFO) * 8);
+				for( int i = 1; i < 8; i++ ){
+					//第0テーブル以外のセクションを無視
+					memset(serviceInfo->sectionList[i].ignoreFlags, 0xFF, sizeof(serviceInfo->sectionList[0].ignoreFlags));
+				}
+				serviceInfo->lastTableID = eit->table_id;
+			}
+			//第0セグメント以外のセクションを無視
+			memset(serviceInfo->sectionList[0].ignoreFlags + 1, 0xFF, sizeof(serviceInfo->sectionList[0].ignoreFlags) - 1);
+			//第0セグメントの送られないセクションを無視
+			for( int i = eit->segment_last_section_number % 8 + 1; i < 8; i++ ){
+				serviceInfo->sectionList[0].ignoreFlags[0] |= 1 << i;
+			}
+			serviceInfo->sectionList[0].version = eit->version_number + 1;
+			serviceInfo->sectionList[0].flags[0] |= 1 << (eit->section_number % 8);
 		}
 
 	}else{
 		//H-EIT
-		sectionInfo->HEITFlag = TRUE;
-		if( eit->section_number == eit->segment_last_section_number ){
-			if( 0x50 <= eit->table_id && eit->table_id <= 0x57 ||
-				0x60 <= eit->table_id && eit->table_id <= 0x67){
-				sectionInfo->last_table_idBasic = eit->last_table_id;
-				sectionInfo->last_section_numberBasic = eit->last_section_number;
-
-				DWORD sectionNo = eit->section_number >> 3;
-				map<WORD, SECTION_FLAG_INFO>::iterator itrFlag;
-				itrFlag = sectionInfo->sectionBasicMap.find(eit->table_id);
-				if( itrFlag == sectionInfo->sectionBasicMap.end() ){
-					DWORD maxFlag = 0;
-					for( DWORD i=0; i<=((DWORD)eit->last_section_number)>>3; i++ ){
-						maxFlag |= 1<<i;
-					}
-					SECTION_FLAG_INFO item;
-					item.maxFlag = maxFlag;
-					item.sectionFlag = 1<<sectionNo;
-					sectionInfo->sectionBasicMap.insert(pair<WORD, SECTION_FLAG_INFO>(eit->table_id, item));
-				}else{
-					itrFlag->second.sectionFlag |= (DWORD)1<<sectionNo;
-				}
+		if( eit->table_id > 0x4F ){
+			BYTE& lastTableID = eit->table_id % 16 >= 8 ? serviceInfo->lastTableIDExt : serviceInfo->lastTableID;
+			vector<SECTION_FLAG_INFO>& sectionList = eit->table_id % 16 >= 8 ? serviceInfo->sectionExtList : serviceInfo->sectionList;
+			if( sectionList.empty() ){
+				//拡張情報はないことも多いので遅延割り当て
+				sectionList.resize(8);
 			}
-			if( 0x58 <= eit->table_id && eit->table_id <= 0x5F ||
-				0x68 <= eit->table_id && eit->table_id <= 0x6F){
-				sectionInfo->last_table_idExt = eit->last_table_id;
-				sectionInfo->last_section_numberExt = eit->last_section_number;
-
-				DWORD sectionNo = eit->section_number >> 3;
-				map<WORD, SECTION_FLAG_INFO>::iterator itrFlag;
-				itrFlag = sectionInfo->sectionExtMap.find(eit->table_id);
-				if( itrFlag == sectionInfo->sectionExtMap.end() ){
-					DWORD maxFlag = 0;
-					for( DWORD i=0; i<=((DWORD)eit->last_section_number)>>3; i++ ){
-						maxFlag |= 1<<i;
-					}
-					SECTION_FLAG_INFO item;
-					item.maxFlag = maxFlag;
-					item.sectionFlag = 1<<sectionNo;
-					sectionInfo->sectionExtMap.insert(pair<WORD, SECTION_FLAG_INFO>(eit->table_id, item));
-				}else{
-					itrFlag->second.sectionFlag |= (DWORD)1<<sectionNo;
-				}
+			if( lastTableID != eit->last_table_id ){
+				lastTableID = 0;
+			}else if( sectionList[eit->table_id % 8].version != 0 &&
+			          sectionList[eit->table_id % 8].version != eit->version_number + 1 ){
+				OutputDebugString(L"EIT[schedule] updated\r\n");
+				lastTableID = 0;
 			}
-		}
-		if( eit->table_id == 0x4E && eit->section_number == 0){
-			//現在の番組のはずなので、そこまでのセクションはすでに放送済み
-			if(eit->eventInfoList.size() > 0){
-				if( eit->eventInfoList[0]->StartTimeFlag == TRUE ){
-					WORD sectionNo = 0;
-					if( eit->eventInfoList[0]->DurationFlag == FALSE ){
-						sectionNo = eit->eventInfoList[0]->start_time.wHour / 3;
-					}else{
-						SYSTEMTIME endTime;
-						int DureSec = eit->eventInfoList[0]->durationHH*60*60 + eit->eventInfoList[0]->durationMM*60 + eit->eventInfoList[0]->durationSS;
-						GetSumTime(eit->eventInfoList[0]->start_time, DureSec, &endTime);
-						if( eit->eventInfoList[0]->start_time.wDay != endTime.wDay ){
-							//日付変わってるので今日の分は全部終わってるはず
-							sectionNo = 7;
-						}else{
-							sectionNo = endTime.wHour / 3;
-						}
-					}
-					DWORD flag = 0;
-					for( WORD i=0; i<=sectionNo; i++ ){
-						flag |= 1<<i;
-					}
-					if(	this->sectionNowFlag != flag ){
-						this->sectionNowFlag = flag;
-					}
+			if( lastTableID == 0 ){
+				//リセット
+				memset(&sectionList.front(), 0, sizeof(SECTION_FLAG_INFO) * 8);
+				for( int i = eit->last_table_id % 8 + 1; i < 8; i++ ){
+					//送られないテーブルのセクションを無視
+					memset(sectionList[i].ignoreFlags, 0xFF, sizeof(sectionList[0].ignoreFlags));
 				}
+				lastTableID = eit->last_table_id;
 			}
+			//送られないセグメントのセクションを無視
+			memset(sectionList[eit->table_id % 8].ignoreFlags + eit->last_section_number / 8 + 1, 0xFF,
+				sizeof(sectionList[0].ignoreFlags) - eit->last_section_number / 8 - 1);
+			if( eit->table_id % 8 == 0 && streamTime > 0 ){
+				//放送済みセグメントのセクションを無視
+				memset(sectionList[0].ignoreFlags, 0xFF, streamTime / (3 * 60 * 60 * I64_1SEC) % 8);
+			}
+			//このセグメントの送られないセクションを無視
+			for( int i = eit->segment_last_section_number % 8 + 1; i < 8; i++ ){
+				sectionList[eit->table_id % 8].ignoreFlags[eit->section_number / 8] |= 1 << i;
+			}
+			sectionList[eit->table_id % 8].version = eit->version_number + 1;
+			sectionList[eit->table_id % 8].flags[eit->section_number / 8] |= 1 << (eit->section_number % 8);
 		}
 	}
 
@@ -739,37 +696,24 @@ void CEpgDBUtil::ClearSectionStatus()
 {
 	CBlockLock lock(&this->dbLock);
 
-	this->sectionMap.clear();
-	this->sectionNowFlag = 0;
+	map<ULONGLONG, SERVICE_EVENT_INFO>::iterator itr;
+	for( itr = this->serviceEventMap.begin(); itr != this->serviceEventMap.end(); itr++ ){
+		itr->second.lastTableID = 0;
+		itr->second.lastTableIDExt = 0;
+	}
 }
 
-BOOL CEpgDBUtil::CheckSectionAll(map<WORD, SECTION_FLAG_INFO>* sectionMap, BOOL leitFlag)
+BOOL CEpgDBUtil::CheckSectionAll(const vector<SECTION_FLAG_INFO>& sectionList)
 {
-	if( sectionMap == NULL ){
-		return FALSE;
-	}
-	if( sectionMap->size() == 0 ){
-		return FALSE;
-	}
-
-	BOOL allChk = TRUE;
-	map<WORD, SECTION_FLAG_INFO>::iterator itr;
-	for( itr = sectionMap->begin(); itr != sectionMap->end(); itr++ ){
-//		_OutputDebugString(L"0x%016X, 0x%016X\r\n",itr->second.maxFlag, (itr->second.sectionFlag | this->sectionNowFlag));
-		if( leitFlag == FALSE ){
-			if( itr->second.maxFlag != (itr->second.sectionFlag | this->sectionNowFlag) ){
-				allChk = FALSE;
-				break;
-			}
-		}else{
-			if( itr->second.maxFlag != itr->second.sectionFlag ){
-				allChk = FALSE;
-				break;
+	for( size_t i = 0; i < sectionList.size(); i++ ){
+		for( int j = 0; j < sizeof(sectionList[0].flags); j++ ){
+			if( (sectionList[i].flags[j] | sectionList[i].ignoreFlags[j]) != 0xFF ){
+				return FALSE;
 			}
 		}
 	}
 
-	return allChk;
+	return TRUE;
 }
 
 EPG_SECTION_STATUS CEpgDBUtil::GetSectionStatus(BOOL l_eitFlag)
@@ -777,29 +721,27 @@ EPG_SECTION_STATUS CEpgDBUtil::GetSectionStatus(BOOL l_eitFlag)
 	CBlockLock lock(&this->dbLock);
 
 	EPG_SECTION_STATUS status = EpgNoData;
-	if( this->sectionMap.size() == 0 ){
-		return status;
-	}
+	BOOL hasDataFlag = FALSE;
 
 	BOOL basicFlag = TRUE;
 	BOOL extFlag = TRUE;
 	BOOL leitFlag = TRUE;
 
-	map<ULONGLONG, SECTION_STATUS_INFO>::iterator itr;
-	for( itr = this->sectionMap.begin(); itr != this->sectionMap.end(); itr++ ){
+	map<ULONGLONG, SERVICE_EVENT_INFO>::iterator itr;
+	for( itr = this->serviceEventMap.begin(); itr != this->serviceEventMap.end(); itr++ ){
 		if( l_eitFlag == TRUE ){
 			//L-EITの状況
-			if( itr->second.HEITFlag == FALSE ){
-				if( itr->second.last_section_numberBasic > 0 ){
-					if( CheckSectionAll( &itr->second.sectionBasicMap, TRUE ) == FALSE ){
-						leitFlag = FALSE;
-						break;
-					}
+			if( itr->second.lastTableID != 0 && itr->second.lastTableID <= 0x4F ){
+				hasDataFlag = TRUE;
+				if( CheckSectionAll(itr->second.sectionList) == FALSE ){
+					leitFlag = FALSE;
+					break;
 				}
 			}
 		}else{
 			//H-EITの状況
-			if( itr->second.HEITFlag == TRUE ){
+			if( itr->second.lastTableID > 0x4F ){
+				hasDataFlag = TRUE;
 				//サービスリストあるなら映像サービスのみ対象
 				map<ULONGLONG, BYTE>::iterator itrType;
 				itrType = this->serviceList.find(itr->first);
@@ -808,16 +750,13 @@ EPG_SECTION_STATUS CEpgDBUtil::GetSectionStatus(BOOL l_eitFlag)
 						continue;
 					}
 				}
-//				_OutputDebugString(L"0x%I64X, %x,%x, %x,%x, \r\n",itr->first, itr->second->last_section_numberBasic, itr->second->last_table_idBasic, itr->second->last_section_numberExt, itr->second->last_table_idExt);
 				//Basic
-				if( itr->second.last_section_numberBasic > 0 ){
-					if( CheckSectionAll( &itr->second.sectionBasicMap ) == FALSE ){
-						basicFlag = FALSE;
-					}
+				if( CheckSectionAll(itr->second.sectionList) == FALSE ){
+					basicFlag = FALSE;
 				}
 				//Ext
-				if( itr->second.last_section_numberExt > 0 ){
-					if( CheckSectionAll( &itr->second.sectionExtMap ) == FALSE ){
+				if( itr->second.lastTableIDExt != 0 ){
+					if( CheckSectionAll(itr->second.sectionExtList) == FALSE ){
 						extFlag = FALSE;
 					}
 				}
@@ -828,7 +767,9 @@ EPG_SECTION_STATUS CEpgDBUtil::GetSectionStatus(BOOL l_eitFlag)
 		}
 	}
 
-	if( l_eitFlag == TRUE ){
+	if( hasDataFlag == FALSE ){
+		status = EpgNoData;
+	}else if( l_eitFlag == TRUE ){
 		if( leitFlag == TRUE ){
 //			OutputDebugString(L"EpgLEITAll\r\n");
 			status = EpgLEITAll;
