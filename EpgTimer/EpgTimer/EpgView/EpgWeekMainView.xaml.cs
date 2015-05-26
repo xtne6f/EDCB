@@ -76,7 +76,8 @@ namespace EpgTimer
                 case TimeSelect.HourOnly:
                     return new DateTime(2001, 1, 1 + plus_1day, refTime.Hour, 0, 0);
                 case TimeSelect.DayOnly:
-                    return new DateTime(refTime.Year, refTime.Month, refTime.Day - plus_1day, 0, 0, 0);
+                    refTime = refTime.AddDays(-1 * plus_1day);
+                    return new DateTime(refTime.Year, refTime.Month, refTime.Day, 0, 0, 0);
                 default:
                     return new DateTime(2001, 1, 1 + plus_1day, refTime.Hour, refTime.Minute, refTime.Second);
             }
