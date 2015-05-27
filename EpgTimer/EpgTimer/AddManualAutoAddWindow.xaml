@@ -1,34 +1,34 @@
 ﻿<Window x:Class="EpgTimer.AddManualAutoAddWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="自動予約登録" Height="590" Width="700" xmlns:my="clr-namespace:EpgTimer" WindowStartupLocation="CenterOwner" Loaded="Window_Loaded" Closed="Window_Closed">
+        Title="自動予約登録" Height="630" Width="780" xmlns:my="clr-namespace:EpgTimer" WindowStartupLocation="CenterOwner" Loaded="Window_Loaded" Closed="Window_Closed">
 
     <Grid>
         <Label Content="録画曜日" Height="28" HorizontalAlignment="Left" Margin="12,12,0,0" Name="label1" VerticalAlignment="Top" />
-        <CheckBox Content="日" Height="16" HorizontalAlignment="Left" Margin="99,17,0,0" Name="checkBox_week0" VerticalAlignment="Top" />
-        <CheckBox Content="月" Height="16" HorizontalAlignment="Left" Margin="134,17,0,0" Name="checkBox_week1" VerticalAlignment="Top" />
-        <CheckBox Content="火" Height="16" HorizontalAlignment="Left" Margin="169,17,0,0" Name="checkBox_week2" VerticalAlignment="Top" />
-        <CheckBox Content="水" Height="16" HorizontalAlignment="Left" Margin="204,17,0,0" Name="checkBox_week3" VerticalAlignment="Top" />
-        <CheckBox Content="木" Height="16" HorizontalAlignment="Left" Margin="239,17,0,0" Name="checkBox_week4" VerticalAlignment="Top" />
-        <CheckBox Content="金" Height="16" HorizontalAlignment="Left" Margin="274,17,0,0" Name="checkBox_week5" VerticalAlignment="Top" />
-        <CheckBox Content="土" Height="16" HorizontalAlignment="Left" Margin="309,17,0,0" Name="checkBox_week6" VerticalAlignment="Top" />
+        <CheckBox Content="日" Height="16" HorizontalAlignment="Left" Margin="88,17,0,0" Name="checkBox_week0" VerticalAlignment="Top" />
+        <CheckBox Content="月" Height="16" HorizontalAlignment="Left" Margin="123,17,0,0" Name="checkBox_week1" VerticalAlignment="Top" />
+        <CheckBox Content="火" Height="16" HorizontalAlignment="Left" Margin="158,17,0,0" Name="checkBox_week2" VerticalAlignment="Top" />
+        <CheckBox Content="水" Height="16" HorizontalAlignment="Left" Margin="193,17,0,0" Name="checkBox_week3" VerticalAlignment="Top" />
+        <CheckBox Content="木" Height="16" HorizontalAlignment="Left" Margin="228,17,0,0" Name="checkBox_week4" VerticalAlignment="Top" />
+        <CheckBox Content="金" Height="16" HorizontalAlignment="Left" Margin="263,17,0,0" Name="checkBox_week5" VerticalAlignment="Top" />
+        <CheckBox Content="土" Height="16" HorizontalAlignment="Left" Margin="298,17,0,0" Name="checkBox_week6" VerticalAlignment="Top" />
         <Label Content="録画時間" Height="28" HorizontalAlignment="Left" Margin="12,46,0,0" Name="label2" VerticalAlignment="Top" />
-        <ComboBox Height="24" HorizontalAlignment="Left" Margin="99,46,0,0" Name="comboBox_startHH" VerticalAlignment="Top" Width="46" ItemsSource="{Binding}" />
-        <Label Content="：" Height="28" HorizontalAlignment="Left" Margin="157,46,0,0" Name="label3" VerticalAlignment="Top" />
-        <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding}" Margin="187,46,0,0" Name="comboBox_startMM" VerticalAlignment="Top" Width="46" />
-        <Label Content="：" Height="28" HorizontalAlignment="Left" Margin="244,46,0,0" Name="label4" VerticalAlignment="Top" />
-        <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding}" Margin="274,46,0,0" Name="comboBox_startSS" VerticalAlignment="Top" Width="46" />
-        <Label Content="～" Height="28" HorizontalAlignment="Left" Margin="326,46,0,0" Name="label5" VerticalAlignment="Top" />
-        <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding}" Margin="354,46,0,0" Name="comboBox_endHH" VerticalAlignment="Top" Width="46" />
-        <Label Content="：" Height="28" HorizontalAlignment="Left" Margin="412,46,0,0" Name="label6" VerticalAlignment="Top" />
-        <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding}" Margin="442,46,0,0" Name="comboBox_endMM" VerticalAlignment="Top" Width="46" />
-        <Label Content="：" Height="28" HorizontalAlignment="Left" Margin="499,46,0,0" Name="label7" VerticalAlignment="Top" />
-        <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding}" Margin="529,46,0,0" Name="comboBox_endSS" VerticalAlignment="Top" Width="46" />
+        <ComboBox Height="24" HorizontalAlignment="Left" Margin="88,46,0,0" Name="comboBox_startHH" VerticalAlignment="Top" Width="46" ItemsSource="{Binding}" />
+        <Label Content="：" Height="28" HorizontalAlignment="Left" Margin="146,46,0,0" Name="label3" VerticalAlignment="Top" />
+        <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding}" Margin="176,46,0,0" Name="comboBox_startMM" VerticalAlignment="Top" Width="46" />
+        <Label Content="：" Height="28" HorizontalAlignment="Left" Margin="233,46,0,0" Name="label4" VerticalAlignment="Top" />
+        <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding}" Margin="263,46,0,0" Name="comboBox_startSS" VerticalAlignment="Top" Width="46" />
+        <Label Content="～" Height="28" HorizontalAlignment="Left" Margin="315,46,0,0" Name="label5" VerticalAlignment="Top" />
+        <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding}" Margin="343,46,0,0" Name="comboBox_endHH" VerticalAlignment="Top" Width="46" />
+        <Label Content="：" Height="28" HorizontalAlignment="Left" Margin="401,46,0,0" Name="label6" VerticalAlignment="Top" />
+        <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding}" Margin="431,46,0,0" Name="comboBox_endMM" VerticalAlignment="Top" Width="46" />
+        <Label Content="：" Height="28" HorizontalAlignment="Left" Margin="488,46,0,0" Name="label7" VerticalAlignment="Top" />
+        <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding}" Margin="518,46,0,0" Name="comboBox_endSS" VerticalAlignment="Top" Width="46" />
         <Label Content="番組名" Height="28" HorizontalAlignment="Left" Margin="12,80,0,0" Name="label8" VerticalAlignment="Top" />
-        <TextBox Height="24" Margin="99,82,45,0" Name="textBox_title" VerticalAlignment="Top" />
+        <TextBox Height="24" Margin="88,82,45,0" Name="textBox_title" VerticalAlignment="Top" />
         <Label Content="サービス" Height="28" HorizontalAlignment="Left" Margin="12,114,0,0" Name="label9" VerticalAlignment="Top" />
-        <ComboBox Height="24" HorizontalAlignment="Left" Margin="99,114,0,0" Name="comboBox_service" VerticalAlignment="Top" Width="194" />
-        <my:RecSettingView Margin="0,144,0,0" x:Name="recSettingView" VerticalAlignment="Top" Height="360" />
+        <ComboBox Height="24" HorizontalAlignment="Left" Margin="88,114,0,0" Name="comboBox_service" VerticalAlignment="Top" Width="194" />
+        <my:RecSettingView Margin="0,144,0,0" x:Name="recSettingView" VerticalAlignment="Top" Height="400" />
         <Button Content="削除" Height="23" HorizontalAlignment="Right" Margin="0,0,345,12" Name="button_del" VerticalAlignment="Bottom" Width="75" />
         <Button Content="変更" Height="23" HorizontalAlignment="Right" Margin="0,0,234,12" Name="button_chg" VerticalAlignment="Bottom" Width="75" />
         <Button Content="追加" Height="23" HorizontalAlignment="Right" Margin="0,0,123,12" Name="button_add" VerticalAlignment="Bottom" Width="75" />
