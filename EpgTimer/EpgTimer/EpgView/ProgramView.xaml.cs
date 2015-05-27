@@ -44,9 +44,7 @@ namespace EpgTimer.EpgView
         public ProgramView()
         {
             InitializeComponent();
-
         }
-
 
         protected void PopupItem()
         {

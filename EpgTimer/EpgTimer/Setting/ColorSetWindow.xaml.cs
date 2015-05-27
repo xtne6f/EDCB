@@ -24,22 +24,6 @@ namespace EpgTimer
         {
             InitializeComponent();
 
-            if (Settings.Instance.NoStyle == 0)
-            {
-                ResourceDictionary rd = new ResourceDictionary();
-                rd.MergedDictionaries.Add(
-                    Application.LoadComponent(new Uri("/PresentationFramework.Aero, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35;component/themes/aero.normalcolor.xaml", UriKind.Relative)) as ResourceDictionary
-                    //Application.LoadComponent(new Uri("/PresentationFramework.Classic, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, ProcessorArchitecture=MSIL;component/themes/Classic.xaml", UriKind.Relative)) as ResourceDictionary
-                    );
-                this.Resources = rd;
-            }
-            else
-            {
-                button_OK.Style = null;
-                button_cancel.Style = null;
-
-            }
-
             slider_R.Value = 0xFF;
             slider_G.Value = 0xFF;
             slider_B.Value = 0xFF;

@@ -21,7 +21,7 @@
             <GradientStop Color="#CDCDCD" Offset="1"/>
         </LinearGradientBrush>
         <SolidColorBrush x:Key="ButtonNormalBorder" Color="#FF707070"/>
-        <Style x:Key="ButtonStyle1" TargetType="{x:Type Button}">
+        <Style TargetType="{x:Type Button}">
             <Setter Property="FocusVisualStyle" Value="{StaticResource ButtonFocusVisual}"/>
             <Setter Property="Background" Value="{StaticResource ButtonNormalBackground}"/>
             <Setter Property="BorderBrush" Value="{StaticResource ButtonNormalBorder}"/>

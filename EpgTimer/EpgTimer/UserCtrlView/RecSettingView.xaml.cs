@@ -39,20 +39,6 @@ namespace EpgTimer
 
             try
             {
-                if (Settings.Instance.NoStyle == 1)
-                {
-                    button_add_preset.Style = null;
-                    button_chg_preset.Style = null;
-                    button_del_preset.Style = null;
-                    button_recFolderAdd.Style = null;
-                    button_recFolderChg.Style = null;
-                    button_recFolderDel.Style = null;
-                    button_bat.Style = null;
-                    button_recFolderAdd_1seg.Style = null;
-                    button_recFolderChg_1seg.Style = null;
-                    button_recFolderDel_1seg.Style = null;
-                }
-
                 Settings.GetDefRecSetting(0, ref recSetting);
 
                 comboBox_recMode.DataContext = CommonManager.Instance.RecModeDictionary.Values;

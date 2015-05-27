@@ -42,18 +42,6 @@ namespace EpgTimer.Setting
 
             try
             {
-                if (Settings.Instance.NoStyle == 1)
-                {
-                    button_exe.Style = null;
-                    button_del.Style = null;
-                    button_add.Style = null;
-                    button_playExe.Style = null;
-                    button_getIESet.Style = null;
-                    button_getUrl.Style = null;
-                    button_number.Style = null;
-                    button_test.Style = null;
-                }
-
                 textBox_exe.Text = Settings.Instance.TvTestExe;
                 textBox_cmd.Text = Settings.Instance.TvTestCmd;
                 checkBox_nwTvMode.IsChecked = Settings.Instance.NwTvMode;

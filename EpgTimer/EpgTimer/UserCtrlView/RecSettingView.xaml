@@ -17,9 +17,9 @@
         </Grid.RowDefinitions>
         <Label Content="プリセット" Height="28" HorizontalAlignment="Left" Margin="12,4,0,0" Name="label1" VerticalAlignment="Top" />
         <ComboBox Height="24" HorizontalAlignment="Left" Margin="88,5,0,0" Name="comboBox_preSet" VerticalAlignment="Top" Width="197" SelectionChanged="comboBox_preSet_SelectionChanged" />
-        <Button Content="追加" Height="23" HorizontalAlignment="Left" Margin="305,6,0,0" Name="button_add_preset" Style="{StaticResource ButtonStyle1}" VerticalAlignment="Top" Width="48" Click="button_add_preset_Click" />
-        <Button Content="変更" Height="23" HorizontalAlignment="Left" Margin="359,6,0,0" Name="button_chg_preset" Style="{StaticResource ButtonStyle1}" VerticalAlignment="Top" Width="48" Click="button_chg_preset_Click" />
-        <Button Content="削除" Height="23" HorizontalAlignment="Left" Margin="413,6,0,0" Name="button_del_preset" VerticalAlignment="Top" Width="48" Style="{StaticResource ButtonStyle1}" Click="button_del_preset_Click" />
+        <Button Content="追加" Height="23" HorizontalAlignment="Left" Margin="305,6,0,0" Name="button_add_preset" VerticalAlignment="Top" Width="48" Click="button_add_preset_Click" />
+        <Button Content="変更" Height="23" HorizontalAlignment="Left" Margin="359,6,0,0" Name="button_chg_preset" VerticalAlignment="Top" Width="48" Click="button_chg_preset_Click" />
+        <Button Content="削除" Height="23" HorizontalAlignment="Left" Margin="413,6,0,0" Name="button_del_preset" VerticalAlignment="Top" Width="48" Click="button_del_preset_Click" />
         <TabControl Grid.Row="1" Name="tabControl1" TabStripPlacement="Bottom">
             <TabItem Header="録画設定1" Name="tabItem1">
                 <Grid>
@@ -54,9 +54,9 @@
                             </GridView>
                         </ListView.View>
                     </ListView>
-                    <Button Content="追加" Height="23" HorizontalAlignment="Right" Margin="0,166,32,0" Name="button_recFolderAdd" VerticalAlignment="Top" Width="41" Click="button_recFolderAdd_Click" Style="{StaticResource ButtonStyle1}" />
-                    <Button Content="変更" Height="23" HorizontalAlignment="Right" Margin="0,137,32,0" Name="button_recFolderChg" Click="button_recFolderChg_Click" Style="{StaticResource ButtonStyle1}" VerticalAlignment="Top" Width="41" />
-                    <Button Content="削除" Height="23" HorizontalAlignment="Right" Margin="0,108,32,0" Name="button_recFolderDel" VerticalAlignment="Top" Width="41" Click="button_recFolderDel_Click" Style="{StaticResource ButtonStyle1}" />
+                    <Button Content="追加" Height="23" HorizontalAlignment="Right" Margin="0,166,32,0" Name="button_recFolderAdd" VerticalAlignment="Top" Width="41" Click="button_recFolderAdd_Click" />
+                    <Button Content="変更" Height="23" HorizontalAlignment="Right" Margin="0,137,32,0" Name="button_recFolderChg" Click="button_recFolderChg_Click" VerticalAlignment="Top" Width="41" />
+                    <Button Content="削除" Height="23" HorizontalAlignment="Right" Margin="0,108,32,0" Name="button_recFolderDel" VerticalAlignment="Top" Width="41" Click="button_recFolderDel_Click" />
                     <Label Content="録画後動作" Height="28" HorizontalAlignment="Left" Margin="6,195,0,0" Name="label18" VerticalAlignment="Top" />
                     <CheckBox Content="デフォルト設定を使用" Height="16" HorizontalAlignment="Left" Margin="83,200,0,0" Name="checkBox_suspendDef" VerticalAlignment="Top" IsChecked="True" Click="checkBox_suspendDef_Click" />
                     <RadioButton Content="何もしない" Height="16" HorizontalAlignment="Left" Margin="251,200,0,0" Name="radioButton_non" VerticalAlignment="Top" Click="radioButton_suspend_Click" />
@@ -66,7 +66,7 @@
                     <CheckBox Content="復帰後再起動する" Height="16" HorizontalAlignment="Left" Margin="251,222,0,0" Name="checkBox_reboot" VerticalAlignment="Top" Click="radioButton_suspend_Click" />
                     <Label Content="録画後実行bat" Height="28" HorizontalAlignment="Left" Margin="7,244,0,0" Name="label16" VerticalAlignment="Top" />
                     <TextBox Height="24" Margin="111,246,79,0" Name="textBox_bat" VerticalAlignment="Top" />
-                    <Button Content="開く" Height="23" HorizontalAlignment="Right" Margin="0,246,32,0" Name="button_bat" VerticalAlignment="Top" Width="41" Click="button_bat_Click" Style="{StaticResource ButtonStyle1}" />
+                    <Button Content="開く" Height="23" HorizontalAlignment="Right" Margin="0,246,32,0" Name="button_bat" VerticalAlignment="Top" Width="41" Click="button_bat_Click" />
                 </Grid>
             </TabItem>
             <TabItem Header="録画設定2" Name="tabItem2">
@@ -110,9 +110,9 @@
                                     </GridView>
                                 </ListView.View>
                             </ListView>
-                            <Button Content="追加" Height="23" HorizontalAlignment="Right" Margin="0,100,32,0" Name="button_recFolderAdd_1seg" VerticalAlignment="Top" Width="41" Click="button_recFolderAdd_1seg_Click" Style="{StaticResource ButtonStyle1}" />
-                            <Button Content="変更" Height="23" HorizontalAlignment="Right" Margin="0,71,32,0" Name="button_recFolderChg_1seg" Style="{StaticResource ButtonStyle1}" VerticalAlignment="Top" Width="41" Click="button_recFolderChg_1seg_Click" />
-                            <Button Content="削除" Height="23" HorizontalAlignment="Right" Margin="0,42,32,0" Name="button_recFolderDel_1seg" VerticalAlignment="Top" Width="41" Click="button_recFolderDel_1seg_Click" Style="{StaticResource ButtonStyle1}" />
+                            <Button Content="追加" Height="23" HorizontalAlignment="Right" Margin="0,100,32,0" Name="button_recFolderAdd_1seg" VerticalAlignment="Top" Width="41" Click="button_recFolderAdd_1seg_Click" />
+                            <Button Content="変更" Height="23" HorizontalAlignment="Right" Margin="0,71,32,0" Name="button_recFolderChg_1seg" VerticalAlignment="Top" Width="41" Click="button_recFolderChg_1seg_Click" />
+                            <Button Content="削除" Height="23" HorizontalAlignment="Right" Margin="0,42,32,0" Name="button_recFolderDel_1seg" VerticalAlignment="Top" Width="41" Click="button_recFolderDel_1seg_Click" />
                         </Grid>
                     </GroupBox>
                 </Grid>

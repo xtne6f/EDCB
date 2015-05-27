@@ -69,32 +69,6 @@ namespace EpgTimer.Setting
 
             try
             {
-                if (Settings.Instance.NoStyle == 1)
-                {
-                    button_standbyCtrl.Style = null;
-                    button_autoDel.Style = null;
-                    button_recname.Style = null;
-                    button_btnUp.Style = null;
-                    button_btnDown.Style = null;
-                    button_btnDel.Style = null;
-                    button_btnAdd.Style = null;
-                    button_taskUp.Style = null;
-                    button_taskDown.Style = null;
-                    button_taskDel.Style = null;
-                    button_taskAdd.Style = null;
-                    button_searchDef.Style = null;
-                    button_recDef.Style = null;
-                    button_set_cm.Style = null;
-                    button_exe1.Style = null;
-                    button_exe2.Style = null;
-                    button_add.Style = null;
-                    button_del.Style = null;
-                    button_inst.Style = null;
-                    button_uninst.Style = null;
-                    button_stop.Style = null;
-
-                }
-
                 StringBuilder buff = new StringBuilder(512);
                 buff.Clear();
                 int recEndMode = IniFileHandler.GetPrivateProfileInt("SET", "RecEndMode", 2, SettingPath.TimerSrvIniPath);

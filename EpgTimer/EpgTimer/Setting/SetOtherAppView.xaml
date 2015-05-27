@@ -17,13 +17,13 @@
                     <Label Content="※利用にはTVtestのPlugInに EpgTimerPlugIn.tvtp を追加しておく必要があります。" Height="28" HorizontalAlignment="Left" Margin="12,12,0,0" Name="label1" VerticalAlignment="Top" Foreground="Red" />
                     <Label Content="TVTest.exeパス" Height="28" HorizontalAlignment="Left" Margin="12,46,0,0" Name="label2" VerticalAlignment="Top" />
                     <TextBox Height="24" HorizontalAlignment="Left" Margin="134,48,0,0" Name="textBox_exe" VerticalAlignment="Top" Width="456" />
-                    <Button Content="開く" Height="23" HorizontalAlignment="Left" Margin="596,48,0,0" Name="button_exe" VerticalAlignment="Top" Width="56" Click="button_exe_Click" Style="{StaticResource ButtonStyle1}" />
+                    <Button Content="開く" Height="23" HorizontalAlignment="Left" Margin="596,48,0,0" Name="button_exe" VerticalAlignment="Top" Width="56" Click="button_exe_Click" />
                     <Label Content="コマンドライン引数" Height="28" HorizontalAlignment="Left" Margin="12,80,0,0" Name="label4" VerticalAlignment="Top" />
                     <TextBox Height="24" HorizontalAlignment="Left" Margin="134,80,0,0" Name="textBox_cmd" VerticalAlignment="Top" Width="456" />
                     <Label Content="視聴に使用するBonDriver" Height="28" HorizontalAlignment="Left" Margin="12,144,0,0" Name="label3" VerticalAlignment="Top" />
                     <ListBox Height="64" HorizontalAlignment="Left" Margin="44,178,0,0" Name="listBox_bon" VerticalAlignment="Top" Width="247" />
-                    <Button Content="削除" Height="23" HorizontalAlignment="Left" Margin="297,178,0,0" Name="button_del" VerticalAlignment="Top" Width="56" Click="button_del_Click" Style="{StaticResource ButtonStyle1}" />
-                    <Button Content="追加" Height="23" HorizontalAlignment="Left" Margin="297,248,0,0" Name="button_add" VerticalAlignment="Top" Width="56" Click="button_add_Click" Style="{StaticResource ButtonStyle1}" />
+                    <Button Content="削除" Height="23" HorizontalAlignment="Left" Margin="297,178,0,0" Name="button_del" VerticalAlignment="Top" Width="56" Click="button_del_Click" />
+                    <Button Content="追加" Height="23" HorizontalAlignment="Left" Margin="297,248,0,0" Name="button_add" VerticalAlignment="Top" Width="56" Click="button_add_Click" />
                     <ComboBox Height="24" HorizontalAlignment="Left" Margin="44,248,0,0" Name="comboBox_bon" VerticalAlignment="Top" Width="247" />
                     <CheckBox Content="NetworkTVモード(EpgDataCap__BonからのUDP、TCP送信で行う)" Height="16" HorizontalAlignment="Left" Margin="12,277,0,0" Name="checkBox_nwTvMode" VerticalAlignment="Top" />
                     <CheckBox Content="UDP有効" Height="16" HorizontalAlignment="Left" Margin="44,299,0,0" Name="checkBox_nwUDP" VerticalAlignment="Top" />
@@ -36,7 +36,7 @@
                 <Grid>
                     <Label Content="再生アプリのexeパス" Height="28" HorizontalAlignment="Left" Margin="6,6,0,0" Name="label6" VerticalAlignment="Top" />
                     <TextBox Height="24" HorizontalAlignment="Left" Margin="138,8,0,0" Name="textBox_playExe" VerticalAlignment="Top" Width="456" />
-                    <Button Content="開く" Height="23" HorizontalAlignment="Left" Margin="600,8,0,0" Name="button_playExe" VerticalAlignment="Top" Width="56" Click="button_playExe_Click" Style="{StaticResource ButtonStyle1}" />
+                    <Button Content="開く" Height="23" HorizontalAlignment="Left" Margin="600,8,0,0" Name="button_playExe" VerticalAlignment="Top" Width="56" Click="button_playExe_Click" />
                     <Label Content="コマンドライン引数" Height="28" HorizontalAlignment="Left" Margin="16,38,0,0" Name="label7" VerticalAlignment="Top" />
                     <TextBox Height="24" HorizontalAlignment="Left" Margin="138,38,0,0" Name="textBox_playCmd" VerticalAlignment="Top" Width="456" />
                     <Label Content="($FilePath$マクロでファイルパスを指定できます)" Height="28" HorizontalAlignment="Left" Margin="138,68,0,0" Name="label8" VerticalAlignment="Top" />
@@ -49,7 +49,7 @@
                             <CheckBox Content="Proxyを使用する" Height="16" HorizontalAlignment="Left" Margin="6,6,0,0" Name="checkBox_useProxy" VerticalAlignment="Top" />
                             <TextBox Height="24" HorizontalAlignment="Left" Margin="137,32,0,0" Name="textBox_proxy_addr" VerticalAlignment="Top" Width="195" />
                             <Label Content="アドレス：ポート" Height="28" HorizontalAlignment="Left" Margin="25,30,0,0" Name="label31" VerticalAlignment="Top" />
-                            <Button Content="IEから設定を取得する" Height="23" HorizontalAlignment="Left" Margin="137,3,0,0" Name="button_getIESet" VerticalAlignment="Top" Width="154" Click="button_getIESet_Click" Style="{StaticResource ButtonStyle1}" />
+                            <Button Content="IEから設定を取得する" Height="23" HorizontalAlignment="Left" Margin="137,3,0,0" Name="button_getIESet" VerticalAlignment="Top" Width="154" Click="button_getIESet_Click" />
                             <Label Content="認証Proxy用 ID" Height="28" HorizontalAlignment="Left" Margin="358,-2,0,0" Name="label32" VerticalAlignment="Top" />
                             <TextBox Height="24" HorizontalAlignment="Left" Margin="470,0,0,0" Name="textBox_proxy_id" VerticalAlignment="Top" Width="120" />
                             <Label Content="パスワード" Height="28" HorizontalAlignment="Left" Margin="384,28,0,0" Name="label33" VerticalAlignment="Top" />
@@ -59,15 +59,15 @@
                     <GroupBox Header="Twitter設定" Height="322" Margin="12,108,12,0" Name="groupBox1" VerticalAlignment="Top">
                         <Grid>
                             <CheckBox Content="Twitter機能を有効にする" Height="16" HorizontalAlignment="Left" Margin="6,6,0,0" Name="checkBox_useTwitter" VerticalAlignment="Top" />
-                            <Button Content="認証用URLを取得する" Height="23" HorizontalAlignment="Left" Margin="25,28,0,0" Name="button_getUrl" VerticalAlignment="Top" Width="160" Click="button_getUrl_Click" Style="{StaticResource ButtonStyle1}" />
+                            <Button Content="認証用URLを取得する" Height="23" HorizontalAlignment="Left" Margin="25,28,0,0" Name="button_getUrl" VerticalAlignment="Top" Width="160" Click="button_getUrl_Click" />
                             <Label Content="（表示されたURLにブラウザでアクセスし、暗証番号を取得してください。）" Height="28" HorizontalAlignment="Left" Margin="200,26,0,0" Name="label34" VerticalAlignment="Top" />
                             <TextBox Height="24" Margin="40,57,15,0" Name="textBox_url" VerticalAlignment="Top" IsReadOnly="True" />
                             <Label Content="暗証番号" Height="28" HorizontalAlignment="Left" Margin="25,87,0,0" Name="label35" VerticalAlignment="Top" />
                             <TextBox Height="24" HorizontalAlignment="Left" Margin="89,89,0,0" Name="textBox_number" VerticalAlignment="Top" Width="120" />
-                            <Button Content="適用" Height="23" HorizontalAlignment="Left" Margin="216,89,0,0" Name="button_number" VerticalAlignment="Top" Width="53" Click="button_number_Click" Style="{StaticResource ButtonStyle1}" />
+                            <Button Content="適用" Height="23" HorizontalAlignment="Left" Margin="216,89,0,0" Name="button_number" VerticalAlignment="Top" Width="53" Click="button_number_Click" />
                             <Label Content="動作テスト" Height="28" HorizontalAlignment="Left" Margin="25,116,0,0" Name="label36" VerticalAlignment="Top" />
                             <TextBox Height="24" Margin="101,118,98,0" Name="textBox_test" VerticalAlignment="Top" />
-                            <Button Content="ツイート" Height="23" Margin="0,118,15,0" Name="button_test" VerticalAlignment="Top" HorizontalAlignment="Right" Width="77" Click="button_test_Click" Style="{StaticResource ButtonStyle1}" />
+                            <Button Content="ツイート" Height="23" Margin="0,118,15,0" Name="button_test" VerticalAlignment="Top" HorizontalAlignment="Right" Width="77" Click="button_test_Click" />
                             <Label Content="有効にするツイート内容" Height="28" HorizontalAlignment="Left" Margin="6,150,0,0" Name="label37" VerticalAlignment="Top" />
                             <CheckBox Content="EPG読み込み時の変更検知" Height="16" HorizontalAlignment="Left" Margin="25,176,0,0" Name="checkBox_tweet1" VerticalAlignment="Top" />
                             <TextBox Height="21" Margin="200,173,15,0" Name="textBox_tweet1" VerticalAlignment="Top" />
