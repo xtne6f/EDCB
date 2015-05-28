@@ -30,10 +30,10 @@ namespace EpgTimer
             manualAutoAddView.RefreshMenu();
         }
 
-        public void SaveSize()
+        public void SaveViewData()
         {
-            epgAutoAddView.SaveSize();
-            manualAutoAddView.SaveSize();
+            epgAutoAddView.SaveViewData();
+            manualAutoAddView.SaveViewData();
         }
 
         public void UpdateAutoAddInfo()

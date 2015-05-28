@@ -17,6 +17,7 @@ namespace EpgTimer
     public partial class RecInfoView : UserControl
     {
         private MenuUtil mutil = CommonManager.Instance.MUtil;
+        private ViewUtil vutil = CommonManager.Instance.VUtil;
         private MenuManager mm = CommonManager.Instance.MM;
         private List<RecInfoItem> resultList = new List<RecInfoItem>();
         private bool ReloadInfo = true;
@@ -26,7 +27,7 @@ namespace EpgTimer
 
         private GridViewSelector gridViewSelector = null;
         private RoutedEventHandler headerSelect_Click = null;
-        private GridViewSorter<RecInfoItem> gridViewSorter = new GridViewSorter<RecInfoItem>();
+        private GridViewSorter<RecInfoItem> gridViewSorter = null;
 
         public RecInfoView()
         {
@@ -74,23 +75,18 @@ namespace EpgTimer
             mBinds.ResetInputBindings(this, listView_recinfo);
             mm.CtxmGenerateContextMenu(listView_recinfo.ContextMenu, CtxmCode.RecInfoView, true);
         }
-        public void SaveSize()
+        public void SaveViewData()
         {
-            gridViewSelector.SaveSize();
+            gridViewSelector.SaveSize(Settings.Instance.RecInfoListColumn);
+            if (gridViewSorter != null)
+            {
+                Settings.Instance.RecInfoColumnHead = this.gridViewSorter.LastHeader;
+                Settings.Instance.RecInfoSortDirection = this.gridViewSorter.LastDirection;
+            }
         }
         private void GridViewColumnHeader_Click(object sender, RoutedEventArgs e)
         {
-            GridViewColumnHeader headerClicked = e.OriginalSource as GridViewColumnHeader;
-            if (headerClicked != null)
-            {
-                if (headerClicked.Role != GridViewColumnHeaderRole.Padding)
-                {
-                    this.gridViewSorter.SortByMultiHeader(this.resultList, headerClicked);
-                    listView_recinfo.Items.Refresh();
-                    Settings.Instance.RecInfoColumnHead=this.gridViewSorter.LastHeader;
-                    Settings.Instance.RecInfoSortDirection = this.gridViewSorter.LastDirection;
-                }
-            }
+            vutil.GridViewHeaderClickSort<RecInfoItem>(e, gridViewSorter, resultList, listView_recinfo);
         }
         /// <summary>情報の更新通知</summary>
         public void UpdateInfo()
@@ -126,16 +122,17 @@ namespace EpgTimer
                     resultList.Add(new RecInfoItem(info));
                 }
 
-                if (this.gridViewSorter.IsExistSortParams)
+                if (this.gridViewSorter != null)
                 {
                     this.gridViewSorter.SortByMultiHeader(this.resultList);
                 }
                 else
                 {
-                    this.gridViewSorter.ResetSortParams();
+                    this.gridViewSorter = new GridViewSorter<RecInfoItem>();
                     this.gridViewSorter.SortByMultiHeaderWithKey(this.resultList, gridView_recinfo.Columns,
                         Settings.Instance.RecInfoColumnHead, true, Settings.Instance.RecInfoSortDirection);
                 }
+
                 listView_recinfo.DataContext = resultList;
 
                 //選択情報の復元

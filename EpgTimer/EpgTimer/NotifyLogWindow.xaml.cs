@@ -39,31 +39,25 @@ namespace EpgTimer
                 logList.Add(item);
             }
 
-            if (this.gridViewSorter.IsExistSortParams)
+            if (this.gridViewSorter != null)
             {
                 this.gridViewSorter.SortByMultiHeader(this.logList);
             }
             else
             {
-                this.gridViewSorter.ResetSortParams();
+                this.gridViewSorter = new GridViewSorter<NotifySrvInfoItem>();
                 this.gridViewSorter.SortByMultiHeaderWithKey(this.logList, gridView_log.Columns, "Time", true, ListSortDirection.Descending);
             }
+
             listView_log.DataContext = logList;
         }
 
-        GridViewSorter<NotifySrvInfoItem> gridViewSorter = new GridViewSorter<NotifySrvInfoItem>();
+        GridViewSorter<NotifySrvInfoItem> gridViewSorter = null;
+        private ViewUtil vutil = CommonManager.Instance.VUtil;
 
         private void GridViewColumnHeader_Click(object sender, RoutedEventArgs e)
         {
-            GridViewColumnHeader headerClicked = e.OriginalSource as GridViewColumnHeader;
-            if (headerClicked != null)
-            {
-                if (headerClicked.Role != GridViewColumnHeaderRole.Padding)
-                {
-                    this.gridViewSorter.SortByMultiHeader(this.logList, headerClicked);
-                    listView_log.Items.Refresh();
-                }
-            }
+            vutil.GridViewHeaderClickSort<NotifySrvInfoItem>(e, gridViewSorter, logList, listView_log);
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)

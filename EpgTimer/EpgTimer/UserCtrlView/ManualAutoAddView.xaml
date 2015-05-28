@@ -27,7 +27,7 @@
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="130" />
             </Grid.ColumnDefinitions>
-            <ListView Name="listView_key" Margin="10" SelectionMode="Extended" ItemsSource="{Binding}" ContextMenu="{DynamicResource itemMenu}" >
+            <ListView Name="listView_key" Margin="10" SelectionMode="Extended" ItemsSource="{Binding}" GridViewColumnHeader.Click="GridViewColumnHeader_Click" ContextMenu="{DynamicResource itemMenu}" >
                 <ListView.Resources>
                     <Style TargetType="ListViewItem">
                         <Setter Property="ToolTipService.ShowDuration" Value="20000" />

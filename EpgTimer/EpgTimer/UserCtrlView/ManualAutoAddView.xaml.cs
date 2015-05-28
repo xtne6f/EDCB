@@ -17,6 +17,7 @@ namespace EpgTimer
     public partial class ManualAutoAddView : UserControl
     {
         private MenuUtil mutil = CommonManager.Instance.MUtil;
+        private ViewUtil vutil = CommonManager.Instance.VUtil;
         private MenuManager mm = CommonManager.Instance.MM;
         private List<ManualAutoAddDataItem> resultList = new List<ManualAutoAddDataItem>();
         private bool ReloadInfo = true;
@@ -26,6 +27,7 @@ namespace EpgTimer
 
         private GridViewSelector gridViewSelector = null;
         private RoutedEventHandler headerSelect_Click = null;
+        private GridViewSorter<ManualAutoAddDataItem> gridViewSorter = new GridViewSorter<ManualAutoAddDataItem>("RecFolder");
 
         public ManualAutoAddView()
         {
@@ -74,9 +76,14 @@ namespace EpgTimer
             mm.CtxmGenerateContextMenu(listView_key.ContextMenu, CtxmCode.ManualAutoAddView, true);
         }
 
-        public void SaveSize()
+        public void SaveViewData()
         {
-            gridViewSelector.SaveSize();
+            gridViewSelector.SaveSize(Settings.Instance.AutoAddManualColumn);
+        }
+
+        private void GridViewColumnHeader_Click(object sender, RoutedEventArgs e)
+        {
+            vutil.GridViewHeaderClickSort<ManualAutoAddDataItem>(e, gridViewSorter, resultList, listView_key);
         }
 
         /// <summary>情報の更新通知</summary>
@@ -112,8 +119,9 @@ namespace EpgTimer
                 {
                     resultList.Add(new ManualAutoAddDataItem(info));
                 }
-
                 listView_key.DataContext = resultList;
+
+                this.gridViewSorter.ResetSortParams();
 
                 //選択情報の復元
                 oldItems.RestoreListViewSelected();

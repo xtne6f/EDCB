@@ -250,5 +250,26 @@ namespace EpgTimer
                 lastBottom = item.TopPos + item.Height;
             }
         }
+
+        public bool GridViewHeaderClickSort<T>(RoutedEventArgs e, GridViewSorter<T> sorter, List<T> list, ListBox listBox)
+        {
+            if (sorter == null) return false;
+
+            GridViewColumnHeader headerClicked1 = e.OriginalSource as GridViewColumnHeader;
+            if (headerClicked1 != null)
+            {
+                if (headerClicked1.Role != GridViewColumnHeaderRole.Padding)
+                {
+                    // ソートの実行。無効列の場合ソートはされないが、shiftクリックのマルチソート解除は実行する。
+                    if (sorter.SortByMultiHeader(list, headerClicked1) == true)
+                    {
+                        listBox.Items.Refresh();
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
     }
 }

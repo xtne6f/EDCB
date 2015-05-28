@@ -42,8 +42,9 @@ namespace EpgTimer {
 
         /// <summary>
         /// 以前のソート状態で再ソートする。
+        /// 実際にソートされるとTRUEが返る。
         /// </summary>
-        public void SortByMultiHeader(List<T> itemList0)
+        public bool SortByMultiHeader(List<T> itemList0)
         {
             string prevHeader1 = "";
             // key:first index, value: last index
@@ -63,13 +64,14 @@ namespace EpgTimer {
                 }
                 prevHeader1 = header;
             }
+            return this._multiHeaderSortDict.Count != 0;
         }
 
-        private void _sortByMultiHeader(List<T> itemList0, GridViewColumnHeader headerClicked0, bool directionSet = false, ListSortDirection direction = ListSortDirection.Ascending)
+        private bool _sortByMultiHeader(List<T> itemList0, GridViewColumnHeader headerClicked0, bool directionSet = false, ListSortDirection direction = ListSortDirection.Ascending)
         {
             // 除外対象 空の場合、除外対象の場合
-            if (headerClicked0 == null || string.IsNullOrEmpty(headerClicked0.Content.ToString())) { return; }
-            if (getHeaderString(headerClicked0) == "" || IsExceptionHeader(headerClicked0)) { return; }
+            if (headerClicked0 == null || string.IsNullOrEmpty(headerClicked0.Content.ToString())) { return false; }
+            if (getHeaderString(headerClicked0) == "" || IsExceptionHeader(headerClicked0)) { return false; }
 
             //
             // ソート関連のパラメータをセット
@@ -92,30 +94,31 @@ namespace EpgTimer {
             //
             // ソートの実行
             //
-            this.SortByMultiHeader(itemList0);
+            return this.SortByMultiHeader(itemList0);
         }
 
         /// <summary>
         /// ヘッダーを指定してソートする。Ctrlクリックでソートヘッダを追加、Shiftクリックでヘッダ選択を解除できる。
+        /// 実際にソートされるとTRUEが返る。
         /// </summary>
-        //SortByMultiHeaderWithKey()があるため、ラッパを挟む
-        public void SortByMultiHeader(List<T> itemList0, GridViewColumnHeader headerClicked0)
+        public bool SortByMultiHeader(List<T> itemList0, GridViewColumnHeader headerClicked0)
         {
             if (Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
             {
                 this.ResetSortParams();
-                return;
+                return false;
             }
-            _sortByMultiHeader(itemList0, headerClicked0);
+            return _sortByMultiHeader(itemList0, headerClicked0);
         }
 
         /// <summary>
         /// キーを指定してソートする。主に初期化用。キーがColumsに存在していなければ何もしない。
+        /// 実際にソートされるとTRUEが返る。
         /// </summary>
-        public void SortByMultiHeaderWithKey(List<T> itemList0, GridViewColumnCollection Columns, string Key, bool directionSet = false, ListSortDirection direction = ListSortDirection.Ascending)
+        public bool SortByMultiHeaderWithKey(List<T> itemList0, GridViewColumnCollection Columns, string Key, bool directionSet = false, ListSortDirection direction = ListSortDirection.Ascending)
         {
             List<GridViewColumnHeader> headers = Columns.Select(item => (GridViewColumnHeader)item.Header).ToList();
-            _sortByMultiHeader(itemList0, headers.Find(item => getHeaderString(item) == Key), directionSet, direction);
+            return _sortByMultiHeader(itemList0, headers.Find(item => getHeaderString(item) == Key), directionSet, direction);
         }
 
         private string getHeaderString(GridViewColumnHeader columnHeader1)
@@ -123,22 +126,20 @@ namespace EpgTimer {
             string header = "";
             if (columnHeader1 != null)
             {
-                if (columnHeader1.Column != null && columnHeader1.Column.DisplayMemberBinding != null)
-                {
-                    header = ((Binding)columnHeader1.Column.DisplayMemberBinding).Path.Path;
-                }
-                else if (columnHeader1.Tag as string != null)
+                if (columnHeader1.Tag as string != null)
                 {
                     header = columnHeader1.Tag as string;
+                }
+                else if (columnHeader1.Column != null && columnHeader1.Column.DisplayMemberBinding != null)
+                {
+                    header = ((Binding)columnHeader1.Column.DisplayMemberBinding).Path.Path;
                 }
             }
             return header != null ? header : "";
         }
 
-        /// <summary>
-        /// ヘッダが無効扱いのキーを持っていたらtrueを返す。
-        /// </summary>
-        public bool IsExceptionHeader(GridViewColumnHeader headerClicked0)
+        /// <summary>ヘッダが無効扱いのキーを持っていたらtrueを返す。</summary>
+        private bool IsExceptionHeader(GridViewColumnHeader headerClicked0)
         {
             return (exceptionHeaders.FindIndex(str => str.CompareTo(getHeaderString(headerClicked0)) == 0) != -1);
         }

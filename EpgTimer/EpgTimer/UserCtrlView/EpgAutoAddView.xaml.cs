@@ -17,6 +17,7 @@ namespace EpgTimer
     public partial class EpgAutoAddView : UserControl
     {
         private MenuUtil mutil = CommonManager.Instance.MUtil;
+        private ViewUtil vutil = CommonManager.Instance.VUtil;
         private MenuManager mm = CommonManager.Instance.MM;
         private List<EpgAutoDataItem> resultList = new List<EpgAutoDataItem>();
         private bool ReloadInfo = true;
@@ -85,9 +86,9 @@ namespace EpgTimer
             mm.CtxmGenerateContextMenu(listView_key.ContextMenu, CtxmCode.EpgAutoAddView, true);
         }
 
-        public void SaveSize()
+        public void SaveViewData()
         {
-            gridViewSelector.SaveSize();
+            gridViewSelector.SaveSize(Settings.Instance.AutoAddEpgColumn);
         }
 
         public void UpdateListViewSelection(uint autoAddID)
@@ -144,6 +145,9 @@ namespace EpgTimer
                     resultList.Add(item);
                 }
                 listView_key.DataContext = resultList;
+
+                this.gridViewSorter.ResetSortParams();
+                this.ItemOrderNotSaved = false;
 
                 //選択情報の復元
                 oldItems.RestoreListViewSelected();
@@ -206,21 +210,8 @@ namespace EpgTimer
 
         private void GridViewColumnHeader_Click(object sender, RoutedEventArgs e)
         {
-            GridViewColumnHeader headerClicked1 = e.OriginalSource as GridViewColumnHeader;
-            if (headerClicked1 != null)
-            {
-                if (headerClicked1.Role != GridViewColumnHeaderRole.Padding)
-                {
-                    // 無効列の場合は無視。ItemOrderNotSavedが無ければ、この条件節無くても動作に支障はない。
-                    if (this.gridViewSorter.IsExceptionHeader(headerClicked1) == false)
-                    {
-                        // ソートの実行、リフレッシュ後、保存を促す表示をする。
-                        this.gridViewSorter.SortByMultiHeader(this.resultList, headerClicked1);
-                        this.listView_key.Items.Refresh();
-                        this.ItemOrderNotSaved = true;
-                    }
-                }
-            }
+            this.ItemOrderNotSaved |= 
+                vutil.GridViewHeaderClickSort<EpgAutoDataItem>(e, gridViewSorter, resultList, listView_key);
         }
 
         private void button_saveItemOrder_Click(object sender, ExecutedRoutedEventArgs e)
@@ -258,8 +249,6 @@ namespace EpgTimer
             }
 
             this.ReloadInfoData();
-            this.ItemOrderNotSaved = false;
-            this.gridViewSorter.ResetSortParams();
         }
 
         //移動関連

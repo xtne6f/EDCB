@@ -27,8 +27,7 @@ namespace EpgTimer
 
         private GridViewSelector gridViewSelector = null;
         private RoutedEventHandler headerSelect_Click = null;
-        private GridViewSorter<ReserveItem> gridViewSorter =
-            new GridViewSorter<ReserveItem>(new string[] { "RecFileName", "RecFolder" });
+        private GridViewSorter<ReserveItem> gridViewSorter = null;
 
         public ReserveView()
         {
@@ -116,16 +115,17 @@ namespace EpgTimer
                 // 枠線表示用
                 CommonManager.Instance.DB.ReloadEpgData();
 
-                if (this.gridViewSorter.IsExistSortParams)
+                if (this.gridViewSorter != null)
                 {
                     this.gridViewSorter.SortByMultiHeader(this.reserveList);
                 }
                 else
                 {
-                    this.gridViewSorter.ResetSortParams();
+                    this.gridViewSorter = new GridViewSorter<ReserveItem>(new string[] { "RecFileName", "RecFolder" });
                     this.gridViewSorter.SortByMultiHeaderWithKey(this.reserveList, gridView_reserve.Columns,
                         Settings.Instance.ResColumnHead, true, Settings.Instance.ResSortDirection);
                 }
+
                 listView_reserve.DataContext = reserveList;
 
                 //選択情報の復元
@@ -143,21 +143,16 @@ namespace EpgTimer
         }
         private void GridViewColumnHeader_Click(object sender, RoutedEventArgs e)
         {
-            GridViewColumnHeader headerClicked = e.OriginalSource as GridViewColumnHeader;
-            if (headerClicked != null)
-            {
-                if (headerClicked.Role != GridViewColumnHeaderRole.Padding)
-                {
-                    this.gridViewSorter.SortByMultiHeader(this.reserveList, headerClicked);
-                    listView_reserve.Items.Refresh();
-                    Settings.Instance.ResColumnHead = this.gridViewSorter.LastHeader;
-                    Settings.Instance.ResSortDirection = this.gridViewSorter.LastDirection;
-                }
-            }
+            vutil.GridViewHeaderClickSort<ReserveItem>(e, gridViewSorter, reserveList, listView_reserve);
         }
-        public void SaveSize()
+        public void SaveViewData()
         {
-            gridViewSelector.SaveSize();
+            gridViewSelector.SaveSize(Settings.Instance.ReserveListColumn);
+            if (gridViewSorter != null)
+            {
+                Settings.Instance.ResColumnHead = this.gridViewSorter.LastHeader;
+                Settings.Instance.ResSortDirection = this.gridViewSorter.LastDirection;
+            }
         }
         private ReserveItem SelectSingleItem(bool notSelectionChange = false)
         {

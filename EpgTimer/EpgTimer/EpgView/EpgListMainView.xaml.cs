@@ -23,6 +23,8 @@ namespace EpgTimer
         private Dictionary<UInt64, UInt64> lastChkSID = new Dictionary<UInt64, UInt64>();
         private bool listBox_service_need_initialized = true;
 
+        GridViewSorter<SearchItem> gridViewSorter = null;
+
         public EpgListMainView()
         {
             InitializeComponent();
@@ -218,15 +220,16 @@ namespace EpgTimer
                 //予約チェック
                 mutil.SetSearchItemReserved(programList);
 
-                if (this.gridViewSorter.IsExistSortParams)
+                if (this.gridViewSorter != null)
                 {
                     this.gridViewSorter.SortByMultiHeader(this.programList);
                 }
                 else
                 {
-                    this.gridViewSorter.ResetSortParams();
+                    this.gridViewSorter = new GridViewSorter<SearchItem>();
                     this.gridViewSorter.SortByMultiHeaderWithKey(this.programList, gridView_event.Columns, "StartTime");
                 }
+
                 listView_event.ItemsSource = programList;
 
                 //選択情報の復元
@@ -286,19 +289,9 @@ namespace EpgTimer
             EpgCmds.ShowDialog.Execute(sender, this);
         }
 
-        GridViewSorter<SearchItem> gridViewSorter = new GridViewSorter<SearchItem>();
-
         private void GridViewColumnHeader_Click(object sender, RoutedEventArgs e)
         {
-            GridViewColumnHeader headerClicked = e.OriginalSource as GridViewColumnHeader;
-            if (headerClicked != null)
-            {
-                if (headerClicked.Role != GridViewColumnHeaderRole.Padding)
-                {
-                    this.gridViewSorter.SortByMultiHeader(this.programList, headerClicked);
-                    listView_event.Items.Refresh();
-                }
-            }
+            vutil.GridViewHeaderClickSort<SearchItem>(e, gridViewSorter, programList, listView_event);
         }
 
         protected override void MoveToReserveItem(ReserveItem target, bool JumpingTable)

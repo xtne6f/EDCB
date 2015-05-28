@@ -553,9 +553,9 @@ namespace EpgTimer
                 {
                     if (initExe == true)
                     {
-                        reserveView.SaveSize();
-                        recInfoView.SaveSize();
-                        autoAddView.SaveSize();
+                        reserveView.SaveViewData();
+                        recInfoView.SaveViewData();
+                        autoAddView.SaveViewData();
 
                         cmd.SetConnectTimeOut(3000);
                         cmd.SendUnRegistGUI((uint)System.Diagnostics.Process.GetCurrentProcess().Id);
@@ -575,9 +575,9 @@ namespace EpgTimer
                 }
                 else
                 {
-                    reserveView.SaveSize();
-                    recInfoView.SaveSize();
-                    autoAddView.SaveSize();
+                    reserveView.SaveViewData();
+                    recInfoView.SaveViewData();
+                    autoAddView.SaveViewData();
 
                     if (CommonManager.Instance.NW.IsConnected == true && needUnRegist == true)
                     {

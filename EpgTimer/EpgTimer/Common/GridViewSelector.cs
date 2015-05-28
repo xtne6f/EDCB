@@ -7,21 +7,17 @@ using System.Windows.Controls;
 
 namespace EpgTimer
 {
-    class GridViewSelector
+    public class GridViewSelector
     {
         GridView gridView = null;
-        Dictionary<String, GridViewColumn> columnList = null;   //カラムの一覧を保存しておく
-        List<ListColumnInfo> settingList = null;                //設定情報
+        Dictionary<String, GridViewColumn> columnList = new Dictionary<String, GridViewColumn>();   //カラムの一覧を保存しておく
+        List<ListColumnInfo> settingList = new List<ListColumnInfo>();                              //設定情報
 
-        public GridViewSelector(GridView gv, List<ListColumnInfo> setting)
+        public GridViewSelector(GridView gv, List<ListColumnInfo> setting = null)
         {
             try
             {
                 gridView = gv;
-                columnList = new Dictionary<String, GridViewColumn>();
-                //↓本当はこれじゃダメだけど、今は大丈夫
-                settingList = (setting != null ? setting : new List<ListColumnInfo>());
-
                 foreach (GridViewColumn info in gridView.Columns)
                 {
                     GridViewColumnHeader header = info.Header as GridViewColumnHeader;
@@ -31,6 +27,7 @@ namespace EpgTimer
                 if (setting == null) return;
 
                 //設定情報がある場合は続ける
+                settingList.AddRange(setting);
                 gridView.Columns.Clear();
                 foreach (ListColumnInfo info in settingList)
                 {
@@ -88,15 +85,17 @@ namespace EpgTimer
             }
         }
 
-        public void SaveSize()
+        public void SaveSize(List<ListColumnInfo> setting)
         {
             try
             {
-                settingList.Clear();
+                if (setting == null) return;
+
+                setting.Clear();
                 foreach (GridViewColumn info in gridView.Columns)
                 {
                     GridViewColumnHeader header = info.Header as GridViewColumnHeader;
-                    settingList.Add(new ListColumnInfo((String)header.Tag, info.Width));
+                    setting.Add(new ListColumnInfo((String)header.Tag, info.Width));
                 }
             }
             catch (Exception ex)

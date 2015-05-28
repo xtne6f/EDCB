@@ -21,6 +21,7 @@ namespace EpgTimer
         private List<SearchItem> resultList = new List<SearchItem>();
         private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
         private MenuUtil mutil = CommonManager.Instance.MUtil;
+        private ViewUtil vutil = CommonManager.Instance.VUtil;
         private MenuManager mm = CommonManager.Instance.MM;
 
         private CmdExeReserve mc; //予約系コマンド集
@@ -36,7 +37,7 @@ namespace EpgTimer
         MainWindow mainWindow = null;
         private DateTime? lastSettingTime = null;
 
-        GridViewSorter<SearchItem> gridViewSorter = new GridViewSorter<SearchItem>();
+        GridViewSorter<SearchItem> gridViewSorter = null;
 
         public SearchWindow()
         {
@@ -229,15 +230,16 @@ namespace EpgTimer
                 }
                 mutil.SetSearchItemReserved(resultList);
 
-                if (this.gridViewSorter.IsExistSortParams)
+                if (this.gridViewSorter != null)
                 {
                     this.gridViewSorter.SortByMultiHeader(this.resultList);
                 }
                 else
                 {
-                    this.gridViewSorter.ResetSortParams();
+                    this.gridViewSorter = new GridViewSorter<SearchItem>();
                     this.gridViewSorter.SortByMultiHeaderWithKey(this.resultList, gridView_result.Columns, "StartTime");
                 }
+
                 listView_result.DataContext = resultList;
 
                 searchKeyView.AddSearchLog();
@@ -435,15 +437,7 @@ namespace EpgTimer
 
         private void GridViewColumnHeader_Click(object sender, RoutedEventArgs e)
         {
-            GridViewColumnHeader headerClicked = e.OriginalSource as GridViewColumnHeader;
-            if (headerClicked != null)
-            {
-                if (headerClicked.Role != GridViewColumnHeaderRole.Padding)
-                {
-                    this.gridViewSorter.SortByMultiHeader(this.resultList, headerClicked);
-                    listView_result.Items.Refresh();
-                }
-            }
+            vutil.GridViewHeaderClickSort<SearchItem>(e, gridViewSorter, resultList, listView_result);
         }
 
         private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
