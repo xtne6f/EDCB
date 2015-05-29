@@ -9,23 +9,18 @@ using System.Windows.Input;
 using CtrlCmdCLI;
 using CtrlCmdCLI.Def;
 using EpgTimer.TunerReserveViewCtrl;
+using EpgTimer.UserCtrlView;
 
 namespace EpgTimer
 {
     /// <summary>
     /// TunerReserveMainView.xaml の相互作用ロジック
     /// </summary>
-    public partial class TunerReserveMainView : UserControl
+    public partial class TunerReserveMainView : DataViewBase
     {
         private List<TunerNameViewItem> tunerList = new List<TunerNameViewItem>();
         private List<ReserveViewItem> reserveList = new List<ReserveViewItem>();
         private Point clickPos;
-        private MenuUtil mutil = CommonManager.Instance.MUtil;
-        private ViewUtil vutil = CommonManager.Instance.VUtil;
-        private MenuManager mm = CommonManager.Instance.MM;
-        private MenuBinds mBinds = new MenuBinds();
-
-        private bool ReloadInfo = true;
 
         private CmdExeReserve mc; //予約系コマンド集
         private ContextMenu cmdMenu = new ContextMenu();//tunerReserveView.Contextmenu使うとフォーカスおかしくなる‥。
@@ -110,22 +105,8 @@ namespace EpgTimer
             clickPos = cursorPos;
             mc.SupportContextMenuLoading(cmdMenu, null);
         }
-        
-        /// <summary>情報の更新通知</summary>
-        public void UpdateInfo()
-        {
-            ReloadInfo = true;
-            if (ReloadInfo == true && this.IsVisible == true) ReloadInfo = !ReloadInfoData();
-        }
-        private void UserControl_Loaded(object sender, RoutedEventArgs e)
-        {
-            if (ReloadInfo == true && this.IsVisible == true) ReloadInfo = !ReloadInfoData();
-        }
-        private void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
-        {
-            if (ReloadInfo == true && this.IsVisible == true) ReloadInfo = !ReloadInfoData();
-        }
-        private bool ReloadInfoData()
+
+        protected override bool ReloadInfoData()
         {
             if (vutil.ReloadReserveData(this) == false) return false;
 

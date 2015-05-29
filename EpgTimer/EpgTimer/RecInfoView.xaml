@@ -1,9 +1,10 @@
-﻿<UserControl x:Class="EpgTimer.RecInfoView"
+﻿<local:DataViewBase x:Class="EpgTimer.RecInfoView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d" 
+             xmlns:local="clr-namespace:EpgTimer.UserCtrlView"
              d:DesignHeight="300" d:DesignWidth="300" Loaded="UserControl_Loaded" IsVisibleChanged="UserControl_IsVisibleChanged">
     <UserControl.Resources>
         <Style TargetType="{x:Type TextBox}">
@@ -34,27 +35,13 @@
                 </Setter.Value>
             </Setter>
         </Style>
-        <ContextMenu x:Key="itemHeader" x:Name="HeaderSelect" x:Shared="True" >
-            <MenuItem Header="プロテクト" Name="IsProtect" IsCheckable="True" />
-            <MenuItem Header="日時" Name="StartTime" IsCheckable="True" />
-            <MenuItem Header="時間（長さ）" Name="ProgramDuration" IsCheckable="True" />
-            <MenuItem Header="ネットワーク" Name="NetworkName" IsCheckable="True" />
-            <MenuItem Header="サービス名" Name="ServiceName" IsCheckable="True" />
-            <MenuItem Header="番組名" Name="EventName" IsCheckable="True" />
-            <MenuItem Header="Drop" Name="Drops" IsCheckable="True" />
-            <MenuItem Header="Scramble" Name="Scrambles" IsCheckable="True" />
-            <MenuItem Header="結果" Name="Result" IsCheckable="True" />
-            <MenuItem Header="録画ファイル" Name="RecFilePath" IsCheckable="True" />
-        </ContextMenu>
-        <ContextMenu x:Key="itemMenu"/>
-        <!-- MenuManagerからメニューを展開する -->
     </UserControl.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="100" />
         </Grid.ColumnDefinitions>
-        <ListView Name="listView_recinfo" Margin="10" SelectionMode="Extended" ItemsSource="{Binding}" ContextMenu="{DynamicResource itemMenu}" >
+        <ListView Name="listView_recinfo" Margin="10" SelectionMode="Extended" ContextMenu="{DynamicResource itemMenu}" >
             <ListView.Resources>
                 <Style TargetType="ListViewItem">
                     <Setter Property="ToolTipService.ShowDuration" Value="20000" />
@@ -64,6 +51,20 @@
                     <Setter Property="ContextMenu" Value="{DynamicResource itemMenu}" />
                     <EventSetter Event="MouseDoubleClick" Handler="listView_recinfo_MouseDoubleClick"/>
                 </Style>
+                <ContextMenu x:Key="itemHeader" >
+                    <MenuItem Header="プロテクト" Name="IsProtect" IsCheckable="True" />
+                    <MenuItem Header="日時" Name="StartTime" IsCheckable="True" />
+                    <MenuItem Header="時間（長さ）" Name="ProgramDuration" IsCheckable="True" />
+                    <MenuItem Header="ネットワーク" Name="NetworkName" IsCheckable="True" />
+                    <MenuItem Header="サービス名" Name="ServiceName" IsCheckable="True" />
+                    <MenuItem Header="番組名" Name="EventName" IsCheckable="True" />
+                    <MenuItem Header="Drop" Name="Drops" IsCheckable="True" />
+                    <MenuItem Header="Scramble" Name="Scrambles" IsCheckable="True" />
+                    <MenuItem Header="結果" Name="Result" IsCheckable="True" />
+                    <MenuItem Header="録画ファイル" Name="RecFilePath" IsCheckable="True" />
+                </ContextMenu>
+                <ContextMenu x:Key="itemMenu"/>
+                <!-- MenuManagerからメニューを展開する -->
             </ListView.Resources>
             <ListView.View>
                 <GridView x:Name="gridView_recinfo" ColumnHeaderContextMenu="{DynamicResource itemHeader}">
@@ -133,4 +134,4 @@
             <Button Content="全クリア" Height="23" Name="button_delAll" Margin="0,10,0,10" />
         </StackPanel>
     </Grid>
-</UserControl>
+</local:DataViewBase>

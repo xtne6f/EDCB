@@ -8,23 +8,17 @@ using System.Windows.Input;
 
 using CtrlCmdCLI;
 using CtrlCmdCLI.Def;
+using EpgTimer.UserCtrlView;
 
 namespace EpgTimer
 {
     /// <summary>
     /// RecInfoView.xaml の相互作用ロジック
     /// </summary>
-    public partial class RecInfoView : UserControl
+    public partial class RecInfoView : DataViewBase
     {
-        private MenuUtil mutil = CommonManager.Instance.MUtil;
-        private ViewUtil vutil = CommonManager.Instance.VUtil;
-        private MenuManager mm = CommonManager.Instance.MM;
-        private bool ReloadInfo = true;
-
+        private ListViewController<RecInfoItem> lstCtrl;
         private CmdExeRecinfo mc;
-        private MenuBinds mBinds = new MenuBinds();
-
-        private ListViewController<RecInfoItem> lstCtrl = null;
 
         public RecInfoView()
         {
@@ -78,21 +72,7 @@ namespace EpgTimer
         {
             lstCtrl.SaveViewDataToSettings();
         }
-        /// <summary>情報の更新通知</summary>
-        public void UpdateInfo()
-        {
-            ReloadInfo = true;
-            if (ReloadInfo == true && this.IsVisible == true) ReloadInfo = !ReloadInfoData();
-        }
-        private void UserControl_Loaded(object sender, RoutedEventArgs e)
-        {
-            if (ReloadInfo == true && this.IsVisible == true) ReloadInfo = !ReloadInfoData();
-        }
-        private void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
-        {
-            if (ReloadInfo == true && this.IsVisible == true) ReloadInfo = !ReloadInfoData();
-        }
-        private bool ReloadInfoData()
+        protected override bool ReloadInfoData()
         {
             return lstCtrl.ReloadInfoData(dataList =>
             {

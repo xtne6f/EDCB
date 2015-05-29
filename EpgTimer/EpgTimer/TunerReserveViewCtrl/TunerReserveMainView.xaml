@@ -1,9 +1,10 @@
-﻿<UserControl x:Class="EpgTimer.TunerReserveMainView"
+﻿<local:DataViewBase x:Class="EpgTimer.TunerReserveMainView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d" 
+             xmlns:local="clr-namespace:EpgTimer.UserCtrlView"
              d:DesignHeight="300" d:DesignWidth="300" xmlns:my="clr-namespace:EpgTimer.TunerReserveViewCtrl" Loaded="UserControl_Loaded" IsVisibleChanged="UserControl_IsVisibleChanged">
     <Grid>
         <Grid.ColumnDefinitions>
@@ -18,4 +19,4 @@
         <my:TunerReserveNameView Grid.Column="1" Margin="0,0,18,0" x:Name="tunerReserveNameView" MouseRightButtonUp="sub_erea_MouseRightButtonUp" />
         <my:TunerReserveView Grid.Column="1" Grid.Row="1" x:Name="tunerReserveView" />
     </Grid>
-</UserControl>
+</local:DataViewBase>

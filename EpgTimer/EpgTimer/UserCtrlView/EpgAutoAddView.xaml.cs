@@ -8,23 +8,17 @@ using System.Windows.Input;
 
 using CtrlCmdCLI;
 using CtrlCmdCLI.Def;
+using EpgTimer.UserCtrlView;
 
 namespace EpgTimer
 {
     /// <summary>
     /// EpgAutoAddView.xaml の相互作用ロジック
     /// </summary>
-    public partial class EpgAutoAddView : UserControl
+    public partial class EpgAutoAddView : DataViewBase
     {
-        private MenuUtil mutil = CommonManager.Instance.MUtil;
-        private ViewUtil vutil = CommonManager.Instance.VUtil;
-        private MenuManager mm = CommonManager.Instance.MM;
-        private bool ReloadInfo = true;
-
+        private ListViewController<EpgAutoDataItem> lstCtrl;
         private CmdExeEpgAutoAdd mc;
-        private MenuBinds mBinds = new MenuBinds();
-
-        private ListViewController<EpgAutoDataItem> lstCtrl = null;
 
         public EpgAutoAddView()
         {
@@ -107,21 +101,7 @@ namespace EpgTimer
             }
         }
 
-        /// <summary>情報の更新通知</summary>
-        public void UpdateInfo()
-        {
-            ReloadInfo = true;
-            if (ReloadInfo == true && this.IsVisible == true) ReloadInfo = !ReloadInfoData();
-        }
-        private void UserControl_Loaded(object sender, RoutedEventArgs e)
-        {
-            if (ReloadInfo == true && this.IsVisible == true) ReloadInfo = !ReloadInfoData();
-        }
-        private void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
-        {
-            if (ReloadInfo == true && this.IsVisible == true) ReloadInfo = !ReloadInfoData();
-        }
-        private bool ReloadInfoData()
+        protected override bool ReloadInfoData()
         {
             return lstCtrl.ReloadInfoData(dataList =>
             {

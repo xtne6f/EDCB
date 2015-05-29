@@ -6,11 +6,11 @@
              mc:Ignorable="d" 
              xmlns:local="clr-namespace:EpgTimer.EpgView"
              d:DesignHeight="500" d:DesignWidth="700" Loaded="UserControl_Loaded" IsVisibleChanged="UserControl_IsVisibleChanged">
-    <local:EpgViewBase.Resources>
+    <UserControl.Resources>
         <Style TargetType="{x:Type TextBox}">
             <Setter Property="InputMethod.PreferredImeState" Value="Off" />
         </Style>
-    </local:EpgViewBase.Resources>
+    </UserControl.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="160" />
@@ -26,7 +26,7 @@
                 <RichTextBox Name="richTextBox_eventInfo" IsReadOnly="True" />
             </ScrollViewer>
             <GridSplitter Grid.RowSpan="1" Height="5" Name="gridSplitter2" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" />
-            <ListView Grid.Row="1" Name="listView_event" SelectionMode="Extended" ItemsSource="{Binding}" SelectionChanged="listView_event_SelectionChanged" ContextMenu="{DynamicResource itemMenu}" >
+            <ListView Grid.Row="1" Name="listView_event" SelectionMode="Extended" SelectionChanged="listView_event_SelectionChanged" ContextMenu="{DynamicResource itemMenu}" >
                 <ListView.Resources>
                     <Style TargetType="ListViewItem">
                         <Setter Property="Foreground"  Value="{Binding ForeColor}" />
