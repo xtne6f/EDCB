@@ -26,6 +26,14 @@ namespace EpgTimer
             SetControls(epgProgramView, timeView, serviceView.scrollViewer, button_now);
 
             dateView.TimeButtonClick += new RoutedEventHandler(epgDateView_TimeButtonClick);
+
+            base.InitCommand();
+
+            //コマンド集からコマンドを登録
+            mc.ResetCommandBindings(this, cmdMenu);
+
+            //メニューの作成、ショートカットの登録
+            base.RefreshMenu();
         }
 
         public override bool ClearInfo()

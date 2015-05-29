@@ -380,7 +380,7 @@ namespace EpgTimer
                 String view = "";
                 if (EpgAutoAddInfo != null)
                 {
-                    view = mutil.MarginStartText(EpgAutoAddInfo.recSetting);
+                    view = mutil.MarginText(EpgAutoAddInfo.recSetting, true);
                 }
                 return view;
             }
@@ -393,7 +393,7 @@ namespace EpgTimer
                 String view = "";
                 if (EpgAutoAddInfo != null)
                 {
-                    view = mutil.MarginEndText(EpgAutoAddInfo.recSetting);
+                    view = mutil.MarginText(EpgAutoAddInfo.recSetting, false);
                 }
                 return view;
             }
@@ -605,4 +605,13 @@ namespace EpgTimer
         }
 
     }
+
+    public static class EpgAutoDataItemEx
+    {
+        public static List<EpgAutoAddData> EpgAutoAddInfoList(this ICollection<EpgAutoDataItem> itemlist)
+        {
+            return itemlist.Where(item => item != null).Select(item => item.EpgAutoAddInfo).ToList();
+        }
+    }
+
 }

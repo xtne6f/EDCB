@@ -97,7 +97,12 @@
       <DependentUpon>BlackoutWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="Common\BoxExchangeEditor.cs" />
+    <Compile Include="Menu\MenuSettingData.cs" />
+    <Compile Include="Menu\EpgCmdsDef.cs" />
+    <Compile Include="Menu\CmdExeReserve.cs" />
     <Compile Include="Common\GridViewSelector.cs" />
+    <Compile Include="Menu\MenuManager.cs" />
+    <Compile Include="Menu\CtxmData.cs" />
     <Compile Include="DefineClass\EpgAutoAddDataAppend.cs" />
     <Compile Include="Common\GridViewSorter.cs" />
     <Compile Include="Common\ListViewSelectedKeeper.cs" />
@@ -107,6 +112,12 @@
     <Compile Include="DefineClass\ListColumnInfo.cs" />
     <Compile Include="EpgView\EpgMainViewBase.cs" />
     <Compile Include="EpgView\EpgViewBase.cs" />
+    <Compile Include="Menu\CmdExe.cs" />
+    <Compile Include="Menu\CmdExeRecinfo.cs" />
+    <Compile Include="Menu\CmdExeEpgAutoAdd.cs" />
+    <Compile Include="Menu\CmdExeManualAutoAdd.cs" />
+    <Compile Include="Menu\MenuCmds.cs" />
+    <Compile Include="Menu\MenuBinds.cs" />
     <Compile Include="Setting\ColorSetWindow.xaml.cs">
       <DependentUpon>ColorSetWindow.xaml</DependentUpon>
     </Compile>
@@ -114,7 +125,7 @@
     <Compile Include="Common\CmdStreamUtil.cs" />
     <Compile Include="Common\EAAFileClass.cs" />
     <Compile Include="Common\IEPGFileClass.cs" />
-    <Compile Include="Common\MenuUtil.cs" />
+    <Compile Include="Menu\MenuUtil.cs" />
     <Compile Include="Common\ViewUtil.cs" />
     <Compile Include="Common\NWConnectClass.cs" />
     <Compile Include="Common\ServiceCtrlClass.cs" />
@@ -123,7 +134,7 @@
       <DependentUpon>NotifyLogWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="DefineClass\NotifySrvInfoItem.cs" />
-    <Compile Include="Setting\SetContextMenuWindow.xaml.cs">
+    <Compile Include="Menu\SetContextMenuWindow.xaml.cs">
       <DependentUpon>SetContextMenuWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="UserCtrlView\EpgAutoAddView.xaml.cs">
@@ -282,7 +293,7 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="Setting\SetContextMenuWindow.xaml">
+    <Page Include="Menu\SetContextMenuWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>

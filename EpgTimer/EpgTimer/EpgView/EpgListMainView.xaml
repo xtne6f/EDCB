@@ -26,15 +26,18 @@
                 <RichTextBox Name="richTextBox_eventInfo" IsReadOnly="True" />
             </ScrollViewer>
             <GridSplitter Grid.RowSpan="1" Height="5" Name="gridSplitter2" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" />
-            <ListView Grid.Row="1" Name="listView_event" SelectionMode="Extended" ItemsSource="{Binding}" SelectionChanged="listView_event_SelectionChanged" ContextMenuOpening="listView_event_ContextMenuOpening" GridViewColumnHeader.Click="GridViewColumnHeader_Click" PreviewKeyDown="listView_event_PreviewKeyDown">
+            <ListView Grid.Row="1" Name="listView_event" SelectionMode="Extended" ItemsSource="{Binding}" SelectionChanged="listView_event_SelectionChanged" GridViewColumnHeader.Click="GridViewColumnHeader_Click" ContextMenu="{DynamicResource itemMenu}" >
                 <ListView.Resources>
                     <Style TargetType="ListViewItem">
                         <Setter Property="Foreground"  Value="{Binding ForeColor}" />
                         <Setter Property="Background" Value="{Binding BackColor}" />
+                        <Setter Property="ContextMenu" Value="{DynamicResource itemMenu}" />
                         <EventSetter Event="MouseDoubleClick" Handler="listView_event_MouseDoubleClick"/>
                         <Setter Property="BorderThickness" Value="5,0,0,1" />
                         <Setter Property="BorderBrush" Value="{Binding BorderBrush}" />
                     </Style>
+                    <ContextMenu x:Key="itemMenu"/>
+                    <!-- MenuManagerからメニューを展開する -->
                 </ListView.Resources>
                 <ListView.View>
                     <GridView x:Name="gridView_event">
@@ -70,49 +73,6 @@
                         </GridViewColumn>
                     </GridView>
                 </ListView.View>
-                <ListView.ContextMenu>
-                    <ContextMenu x:Name="listView_event_contextMenu">
-                        <MenuItem x:Name="cm_Reverse" Header="簡易予約/予約←→無効" Click="cm_reverse_Click" InputGestureText="Ctrl+S" />
-                        <MenuItem x:Name="cm_add" Header="予約追加">
-                            <MenuItem Header="ダイアログ表示" Click="cm_show_dialog_Click" InputGestureText="Enter"/>
-                            <Separator x:Name="bar_preset" />
-                            <!-- ここにコードでプリセット展開 -->
-                        </MenuItem>
-                        <MenuItem x:Name="cm_chg" Header="変更">
-                            <MenuItem Header="ダイアログ表示" Click="cm_show_dialog_Click" InputGestureText="Enter" />
-                            <Separator Name="bar_recmode" />
-                            <MenuItem Header="全サービス (_0)" Name="recmode_all" Click="cm_chg_recmode_Click" />
-                            <MenuItem Header="指定サービス (_1)" Name="recmode_only" Click="cm_chg_recmode_Click" />
-                            <MenuItem Header="全サービス（デコード処理なし） (_2)" Name="recmode_all_nodec" Click="cm_chg_recmode_Click" />
-                            <MenuItem Header="指定サービス（デコード処理なし） (_3)" Name="recmode_only_nodec" Click="cm_chg_recmode_Click" />
-                            <MenuItem Header="視聴 (_4)" Name="recmode_view" Click="cm_chg_recmode_Click" />
-                            <MenuItem Header="無効 (_5)" Name="recmode_no" Click="cm_chg_recmode_Click" />
-                            <Separator/>
-                            <MenuItem Name="cm_pri" Tag="優先度 {0}">
-                                <MenuItem Header="1 (_1)" Name="priority_1" Click="cm_chg_priority_Click" />
-                                <MenuItem Header="2 (_2)" Name="priority_2" Click="cm_chg_priority_Click" />
-                                <MenuItem Header="3 (_3)" Name="priority_3" Click="cm_chg_priority_Click" />
-                                <MenuItem Header="4 (_4)" Name="priority_4" Click="cm_chg_priority_Click" />
-                                <MenuItem Header="5 (_5)" Name="priority_5" Click="cm_chg_priority_Click" />
-                            </MenuItem>
-                        </MenuItem>
-                        <MenuItem x:Name="cm_del" Header="削除" Click="cm_del_Click" InputGestureText="Ctrl+D, Delete" />
-                        <MenuItem x:Name="cm_autoadd" Tag="EpgKeyword"  Header="自動予約登録" Click="cm_autoadd_Click" />
-                        <MenuItem x:Name="cm_timeshift" Header="追っかけ再生" Click="cm_timeShiftPlay_Click" InputGestureText="Ctrl+P" />
-                        <Separator Name="cm_CmAppend" />
-                        <MenuItem x:Name="cm_CopyTitle" Header="番組名をコピー" Click="cm_CopyTitle_Click" InputGestureText="Ctrl+C" />
-                        <MenuItem x:Name="cm_CopyContent" Header="番組情報をコピー" Click="cm_CopyContent_Click" />
-                        <MenuItem x:Name="cm_SearchTitle" Header="番組名をネットで検索" Click="cm_SearchTitle_Click" />
-                        <Separator/>
-                        <MenuItem x:Name="cm_view" Header="表示モード">
-                            <MenuItem Header="表示設定" Click="cm_viewSet_Click" />
-                            <Separator/>
-                            <MenuItem x:Name="cm_chg_viewMode1" Header="標準モード (_1)" Click="cm_chg_viewMode_Click"  />
-                            <MenuItem x:Name="cm_chg_viewMode2" Header="1週間モード (_2)" Click="cm_chg_viewMode_Click" />
-                            <MenuItem x:Name="cm_chg_viewMode3" Header="リスト表示モード (_3)" />
-                        </MenuItem>
-                    </ContextMenu>
-                </ListView.ContextMenu>
             </ListView>
         </Grid>
         <ListView Margin="0,0,5,29" Name="listBox_service" ItemsSource="{Binding}">
@@ -136,7 +96,7 @@
                 </GridView>
             </ListView.View>
         </ListView>
-        <Button Content="全チェック" Height="23" HorizontalAlignment="Left" Name="button_chkAll" VerticalAlignment="Bottom" Width="75" Click="button_chkAll_Click" Style="{StaticResource ButtonStyle1}" />
-        <Button Content="全クリア" Height="23" HorizontalAlignment="Left" Margin="80,0,0,0" Name="button_clearAll" VerticalAlignment="Bottom" Width="75" Click="button_clearAll_Click" Style="{StaticResource ButtonStyle1}" />
+        <Button Content="全チェック" Height="23" HorizontalAlignment="Left" Name="button_chkAll" VerticalAlignment="Bottom" Width="75" Click="button_chkAll_Click" />
+        <Button Content="全クリア" Height="23" HorizontalAlignment="Left" Margin="80,0,0,0" Name="button_clearAll" VerticalAlignment="Bottom" Width="75" Click="button_clearAll_Click" />
     </Grid>
 </local:EpgViewBase>

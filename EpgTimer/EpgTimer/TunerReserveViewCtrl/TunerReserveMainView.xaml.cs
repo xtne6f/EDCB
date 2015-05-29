@@ -20,11 +20,15 @@ namespace EpgTimer
         private List<TunerNameViewItem> tunerList = new List<TunerNameViewItem>();
         private List<ReserveViewItem> reserveList = new List<ReserveViewItem>();
         private Point clickPos;
-        private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
         private MenuUtil mutil = CommonManager.Instance.MUtil;
         private ViewUtil vutil = CommonManager.Instance.VUtil;
+        private MenuManager mm = CommonManager.Instance.MM;
+        private MenuBinds mBinds = new MenuBinds();
 
-        private bool updateReserveData = true;
+        private bool ReloadInfo = true;
+
+        private CmdExeReserve mc; //予約系コマンド集
+        private ContextMenu cmdMenu = new ContextMenu();//tunerReserveView.Contextmenu使うとフォーカスおかしくなる‥。
 
         public TunerReserveMainView()
         {
@@ -35,13 +39,26 @@ namespace EpgTimer
             tunerReserveView.LeftDoubleClick += new TunerReserveView.ProgramViewClickHandler(tunerReserveView_LeftDoubleClick);
             tunerReserveView.RightClick += new TunerReserveView.ProgramViewClickHandler(tunerReserveView_RightClick);
 
+            //ビューコードの登録
+            mBinds.View = CtxmCode.TunerReserveView;
+
+            //最初にコマンド集の初期化
+            mc = new CmdExeReserve(this);
+            mc.SetFuncGetDataList(isAll => vutil.GetPanelDataList<ReserveData>(GetReserveItem, clickPos));
+
+            //コマンド集からコマンドを登録
+            mc.ResetCommandBindings(this, cmdMenu);
+
+            //メニューの作成、ショートカットの登録
+            RefreshMenu();
+        }
+        public void RefreshMenu()
+        {
+            mBinds.ResetInputBindings(this);
+            mm.CtxmGenerateContextMenu(cmdMenu, CtxmCode.TunerReserveView, false);
         }
 
-        /// <summary>
-        /// 保持情報のクリア
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
+        /// <summary>保持情報のクリア</summary>
         public bool ClearInfo()
         {
             tunerReserveView.ClearInfo();
@@ -53,30 +70,20 @@ namespace EpgTimer
             return true;
         }
 
-        /// <summary>
-        /// 表示スクロールイベント呼び出し
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
+        /// <summary>表示スクロールイベント呼び出し</summary>
         void tunerReserveView_ScrollChanged(object sender, ScrollChangedEventArgs e)
         {
             vutil.view_ScrollChanged<TunerReserveView>(sender, e,
                 tunerReserveView.scrollViewer, tunerReserveTimeView.scrollViewer, tunerReserveNameView.scrollViewer);
         }
 
-        /// <summary>
-        /// マウスホイールイベント呼び出し
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
+        /// <summary>マウスホイールイベント呼び出し</summary>
         void tunerReserveView_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
         {
-            vutil.view_PreviewMouseWheel<TunerReserveView>(sender, e,tunerReserveView.scrollViewer);
+            vutil.view_PreviewMouseWheel<TunerReserveView>(sender, e, tunerReserveView.scrollViewer);
         }
 
-        /// <summary>
-        /// マウス位置から予約情報を取得する
-        /// </summary>
+        /// <summary>マウス位置から予約情報を取得する</summary>
         /// <param name="cursorPos">[IN]マウス位置</param>
         /// <param name="reserve">[OUT]予約情報</param>
         /// <returns>falseで存在しない</returns>
@@ -85,243 +92,46 @@ namespace EpgTimer
             return vutil.GetHitItem(cursorPos, ref reserve, reserveList);
         }
 
-        /// <summary>
-        /// 左ボタンダブルクリックイベント呼び出し
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="cursorPos"></param>
+        /// <summary>左ボタンダブルクリックイベント呼び出し/summary>
         void tunerReserveView_LeftDoubleClick(object sender, Point cursorPos)
         {
-            //まず予約情報あるかチェック
-            ReserveData reserve = new ReserveData();
-            if (GetReserveItem(cursorPos, ref reserve) == false) return;
-
-            //予約変更ダイアログ表示
-            ChangeReserve(reserve);
+            clickPos = cursorPos;
+            EpgCmds.ShowDialog.Execute(sender, cmdMenu);
         }
 
-        /// <summary>
-        /// 右ボタンクリック
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="cursorPos"></param>
+        /// <summary>右ボタンクリック</summary>
+        protected void sub_erea_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            tunerReserveView_RightClick(sender, new Point(-1, -1));
+        }
         void tunerReserveView_RightClick(object sender, Point cursorPos)
         {
-            try
-            {
-                //右クリック表示メニューの作成
-                clickPos = cursorPos;
-                ReserveData reserve = new ReserveData();
-                if (GetReserveItem(cursorPos, ref reserve) == false) return;
-                ContextMenu menu = new ContextMenu();
-
-                //予約変更メニュー作成
-                MenuItem menuItemChg = mutil.GenerateChgMenu(new Action<object,
-                    RoutedEventArgs>[] { cm_chg_Click, cm_chg_recmode_Click, cm_chg_priority_Click });
-                mutil.CheckChgItems(menuItemChg, mutil.GetList(reserve));//現在の状態(録画モード、優先度)にチェックを入れる
-
-                MenuItem menuItemDel = new MenuItem();
-                menuItemDel.Header = "削除";
-                menuItemDel.Click += new RoutedEventHandler(cm_del_Click);
-                MenuItem menuItemPTable = new MenuItem();
-                menuItemPTable.Header = "番組表へジャンプ";
-                menuItemPTable.Click += new RoutedEventHandler(cm_programtable_Click);
-                MenuItem menuItemAutoAdd = new MenuItem();
-                menuItemAutoAdd.Header = "自動予約登録";
-                menuItemAutoAdd.ToolTip = mutil.EpgKeyword_TrimMode();
-                menuItemAutoAdd.Click += new RoutedEventHandler(cm_autoadd_Click);
-                MenuItem menuItemTimeshift = new MenuItem();
-                menuItemTimeshift.Header = "追っかけ再生";
-                menuItemTimeshift.Click += new RoutedEventHandler(cm_timeShiftPlay_Click);
-
-                menu.Items.Add(menuItemChg);
-                menu.Items.Add(menuItemDel);
-                menu.Items.Add(menuItemPTable);
-                menu.Items.Add(menuItemAutoAdd);
-                menu.Items.Add(menuItemTimeshift);
-
-                //追加メニューの挿入
-                mutil.InsertAppendMenu(menu, new Action<object,
-                    RoutedEventArgs>[] { cm_CopyTitle_Click, cm_CopyContent_Click, cm_SearchTitle_Click });
-
-                menu.IsOpen = true;
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            //右クリック表示メニューの作成
+            clickPos = cursorPos;
+            mc.SupportContextMenuLoading(cmdMenu, null);
         }
-
-        /// <summary>
-        /// 右クリックメニュー 予約変更クリックイベント呼び出し
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void cm_chg_Click(object sender, RoutedEventArgs e)
+        
+        /// <summary>情報の更新通知</summary>
+        public void UpdateInfo()
         {
-            ReserveData reserve = new ReserveData();
-            if (GetReserveItem(clickPos, ref reserve) == false) return;
-            ChangeReserve(reserve);
+            ReloadInfo = true;
+            if (ReloadInfo == true && this.IsVisible == true) ReloadInfo = !ReloadInfoData();
         }
-
-        /// <summary>
-        /// 右クリックメニュー 予約削除クリックイベント呼び出し
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void cm_del_Click(object sender, RoutedEventArgs e)
-        {
-            ReserveData reserve = new ReserveData();
-            if (GetReserveItem(clickPos, ref reserve) == false) return;
-            mutil.ReserveDelete(reserve);
-        }
-
-        /// <summary>
-        /// 右クリックメニュー 予約モード変更イベント呼び出し
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void cm_chg_recmode_Click(object sender, RoutedEventArgs e)
-        {
-            ReserveData reserve = new ReserveData();
-            if (GetReserveItem(clickPos, ref reserve) == false) return;
-            mutil.ReserveChangeRecmode(reserve, sender);
-        }
-
-        /// <summary>
-        /// 右クリックメニュー 優先度変更イベント呼び出し
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void cm_chg_priority_Click(object sender, RoutedEventArgs e)
-        {
-            ReserveData reserve = new ReserveData();
-            if (GetReserveItem(clickPos, ref reserve) == false) return;
-            mutil.ReserveChangePriority(reserve, sender);
-        }
-
-        /// <summary>
-        /// 右クリックメニュー 番組表へジャンプイベント呼び出し
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void cm_programtable_Click(object sender, RoutedEventArgs e)
-        {
-            ReserveData reserve = new ReserveData();
-            if (GetReserveItem(clickPos, ref reserve) == false) return;
-
-            BlackoutWindow.SelectedReserveItem = new ReserveItem(reserve);
-            MainWindow mainWindow = (MainWindow)Application.Current.MainWindow;
-            mainWindow.moveTo_tabItem_epg();
-        }
-
-        /// <summary>
-        /// 右クリックメニュー 自動予約登録イベント呼び出し
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void cm_autoadd_Click(object sender, RoutedEventArgs e)
-        {
-            ReserveData reserve = new ReserveData();
-            if (GetReserveItem(clickPos, ref reserve) == false) return;
-            mutil.SendAutoAdd(reserve, this);
-        }
-
-        /// <summary>
-        /// 右クリックメニュー 追っかけ再生イベント呼び出し
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void cm_timeShiftPlay_Click(object sender, RoutedEventArgs e)
-        {
-            ReserveData reserve = new ReserveData();
-            if (GetReserveItem(clickPos, ref reserve) == false) return;
-            CommonManager.Instance.TVTestCtrl.StartTimeShift(reserve.ReserveID);
-        }
-
-        /// <summary>
-        /// 右クリックメニュー 番組名をコピーイベント呼び出し
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void cm_CopyTitle_Click(object sender, RoutedEventArgs e)
-        {
-            ReserveData reserve = new ReserveData();
-            if (GetReserveItem(clickPos, ref reserve) == false) return;
-            mutil.CopyTitle2Clipboard(reserve.Title);
-        }
-
-        /// <summary>
-        /// 右クリックメニュー 番組情報をコピーイベント呼び出し
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void cm_CopyContent_Click(object sender, RoutedEventArgs e)
-        {
-            ReserveData reserve = new ReserveData();
-            if (GetReserveItem(clickPos, ref reserve) == false) return;
-            mutil.CopyContent2Clipboard(reserve);
-        }
-
-        /// <summary>
-        /// 右クリックメニュー 番組名で検索イベント呼び出し
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void cm_SearchTitle_Click(object sender, RoutedEventArgs e)
-        {
-            ReserveData reserve = new ReserveData();
-            if (GetReserveItem(clickPos, ref reserve) == false) return;
-            mutil.SearchText(reserve.Title);
-        }
-
-        /// <summary>
-        /// 予約変更
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void ChangeReserve(ReserveData reserveInfo)
-        {
-            mutil.OpenChangeReserveWindow(reserveInfo, this);
-        }
-
         private void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
-            if (this.IsVisible == true)
-            {
-                if (updateReserveData == true)
-                {
-                    if (ReloadReserveData() == true)
-                    {
-                        updateReserveData = false;
-                    }
-                }
-            }
+            if (ReloadInfo == true && this.IsVisible == true) ReloadInfo = !ReloadInfoData();
         }
-
-        private bool ReloadReserveData()
+        private void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            if (ReloadInfo == true && this.IsVisible == true) ReloadInfo = !ReloadInfoData();
+        }
+        private bool ReloadInfoData()
         {
             if (vutil.ReloadReserveData(this) == false) return false;
 
             ReloadReserveViewItem();
             return true;
         }
-
-        /// <summary>
-        /// 予約情報更新通知
-        /// </summary>
-        public void UpdateReserveData()
-        {
-            updateReserveData = true;
-            if (this.IsVisible == true)
-            {
-                if (ReloadReserveData() == true)
-                {
-                    updateReserveData = false;
-                }
-            }
-        }
-
         /// <summary>
         /// 予約情報の再描画
         /// </summary>
@@ -457,5 +267,6 @@ namespace EpgTimer
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
+
     }
 }

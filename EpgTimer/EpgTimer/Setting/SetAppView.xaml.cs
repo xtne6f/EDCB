@@ -30,15 +30,7 @@ namespace EpgTimer.Setting
         public bool ngFileStreaming = false;
         public bool ngShareFile = false;
 
-        private bool cmEpgKeyword_Trim = false;
-        private bool cmAppendMenu = false;
-        private bool cmCopyTitle = false;
-        private bool cmCopyTitle_Trim = false;
-        private bool cmCopyContent = false;
-        private bool cmCopyContentBasic = false;
-        private bool cmSearchTitle = false;
-        private bool cmSearchTitle_Trim = false;
-        private String cmSearchURI = "";
+        MenuSettingData ctxmSetInfo;
 
         private List<String> extList = new List<string>();
         private List<String> delChkFolderList = new List<string>();
@@ -195,15 +187,7 @@ namespace EpgTimer.Setting
                     ngShareFile = true;
                 }
 
-                this.cmEpgKeyword_Trim = Settings.Instance.CmEpgKeyword_Trim;
-                this.cmAppendMenu = Settings.Instance.CmAppendMenu;
-                this.cmCopyTitle = Settings.Instance.CmCopyTitle;
-                this.cmCopyTitle_Trim = Settings.Instance.CmCopyTitle_Trim;
-                this.cmCopyContent = Settings.Instance.CmCopyContent;
-                this.cmCopyContentBasic = Settings.Instance.CmCopyContentBasic;
-                this.cmSearchTitle = Settings.Instance.CmSearchTitle;
-                this.cmSearchTitle_Trim = Settings.Instance.CmSearchTitle_Trim;
-                this.cmSearchURI = Settings.Instance.CmSearchURI;
+                this.ctxmSetInfo = Settings.Instance.MenuSet.Clone();
 
                 comboBox_process.Items.Add("リアルタイム");
                 comboBox_process.Items.Add("高");
@@ -327,17 +311,14 @@ namespace EpgTimer.Setting
                 checkBox_showAsTab.IsChecked = Settings.Instance.ViewButtonShowAsTab;
                 checkBox_suspendChk.IsChecked = (Settings.Instance.SuspendChk == 1);
                 textBox_suspendChkTime.Text = Settings.Instance.SuspendChkTime.ToString();
-                TextBlock tb = new TextBlock();
                 if (CommonManager.Instance.NWMode == true)
                 {
-                    tb.Text = "EpgTimerNW側の設定です。";
+                    textblockTimer.Text = "EpgTimerNW側の設定です。";
                 }
                 else
                 {
-                    tb.Text = "録画終了時にスタンバイ、休止する場合は必ず表示されます(ただし、サービス未使用時はこの設定は使用されず15秒固定)。";
+                    textblockTimer.Text = "録画終了時にスタンバイ、休止する場合は必ず表示されます(ただし、サービス未使用時はこの設定は使用されず15秒固定)。";
                 }
-                tb.TextWrapping = TextWrapping.WrapWithOverflow;
-                labelTimer2.Content = tb;
 
                 buttonItem.Add(new ViewMenuItem("（空白）", false));
                 buttonItem.Add(new ViewMenuItem("設定", false));
@@ -516,15 +497,7 @@ namespace EpgTimer.Setting
 
             IniFileHandler.WritePrivateProfileString("SET", "ProcessPriority", comboBox_process.SelectedIndex.ToString(), SettingPath.TimerSrvIniPath);
 
-            Settings.Instance.CmEpgKeyword_Trim = this.cmEpgKeyword_Trim;
-            Settings.Instance.CmAppendMenu = this.cmAppendMenu;
-            Settings.Instance.CmCopyTitle = this.cmCopyTitle;
-            Settings.Instance.CmCopyTitle_Trim = this.cmCopyTitle_Trim;
-            Settings.Instance.CmCopyContent = this.cmCopyContent;
-            Settings.Instance.CmCopyContentBasic = this.cmCopyContentBasic;
-            Settings.Instance.CmSearchTitle = this.cmSearchTitle;
-            Settings.Instance.CmSearchTitle_Trim = this.cmSearchTitle_Trim;
-            Settings.Instance.CmSearchURI = this.cmSearchURI;
+            Settings.Instance.MenuSet = this.ctxmSetInfo.Clone();
 
             setValue = (checkBox_back_priority.IsChecked == true ? "1" : "0");
             IniFileHandler.WritePrivateProfileString("SET", "BackPriority", setValue, SettingPath.TimerSrvIniPath);
@@ -890,28 +863,12 @@ namespace EpgTimer.Setting
         private void button_set_cm_Click(object sender, RoutedEventArgs e)
         {
             SetContextMenuWindow dlg = new SetContextMenuWindow();
-            dlg.cmEpgKeyword_Trim = this.cmEpgKeyword_Trim;
-            dlg.cmAppendMenu = this.cmAppendMenu;
-            dlg.cmCopyTitle = this.cmCopyTitle;
-            dlg.cmCopyTitle_Trim = this.cmCopyTitle_Trim;
-            dlg.cmCopyContent = this.cmCopyContent;
-            dlg.cmCopyContentBasic = this.cmCopyContentBasic;
-            dlg.cmSearchTitle = this.cmSearchTitle;
-            dlg.cmSearchTitle_Trim = this.cmSearchTitle_Trim;
-            dlg.cmSearchURI = this.cmSearchURI;
+            dlg.info = this.ctxmSetInfo.Clone();
             dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
             
             if (dlg.ShowDialog() == true)
             {
-                this.cmEpgKeyword_Trim = dlg.cmEpgKeyword_Trim;
-                this.cmAppendMenu = dlg.cmAppendMenu;
-                this.cmCopyTitle = dlg.cmCopyTitle;
-                this.cmCopyTitle_Trim = dlg.cmCopyTitle_Trim;
-                this.cmCopyContent = dlg.cmCopyContent;
-                this.cmCopyContentBasic = dlg.cmCopyContentBasic;
-                this.cmSearchTitle = dlg.cmSearchTitle;
-                this.cmSearchTitle_Trim = dlg.cmSearchTitle_Trim;
-                this.cmSearchURI = dlg.cmSearchURI;
+                this.ctxmSetInfo = dlg.info.Clone();
             }
         }
 

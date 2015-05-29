@@ -16,58 +16,78 @@ namespace EpgTimer
     /// </summary>
     public partial class EpgAutoAddView : UserControl
     {
-        private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
         private MenuUtil mutil = CommonManager.Instance.MUtil;
+        private MenuManager mm = CommonManager.Instance.MM;
         private List<EpgAutoDataItem> resultList = new List<EpgAutoDataItem>();
         private bool ReloadInfo = true;
 
+        private CmdExeEpgAutoAdd mc;
+        private MenuBinds mBinds = new MenuBinds();
+
         private GridViewSelector gridViewSelector = null;
         private RoutedEventHandler headerSelect_Click = null;
+        private GridViewSorter<EpgAutoDataItem> gridViewSorter = new GridViewSorter<EpgAutoDataItem>("RecFolder");
 
         public EpgAutoAddView()
         {
             InitializeComponent();
             try
             {
-                if (Settings.Instance.NoStyle == 1)
+                //最初にコマンド集の初期化
+                mc = new CmdExeEpgAutoAdd(this);
+                mc.SetFuncGetDataList(isAll => (isAll == true ? resultList : this.GetSelectedItemsList()).EpgAutoAddInfoList());
+                mc.SetFuncSelectSingleData((noChange) =>
                 {
-                    button_add.Style = null;
-                    button_del.Style = null;
-                    button_del2.Style = null;
-                    button_change.Style = null;
-                    button_up.Style = null;
-                    button_down.Style = null;
-                }
+                    var item = this.SelectSingleItem(noChange);
+                    return item == null ? null : item.EpgAutoAddInfo;
+                });
+                mc.SetFuncReleaseSelectedData(() => listView_key.UnselectAll());
 
+                //コマンド集に無いものを追加
+                mc.AddReplaceCommand(EpgCmds.UpItem, button_up_Click);
+                mc.AddReplaceCommand(EpgCmds.DownItem, button_down_Click);
+                mc.AddReplaceCommand(EpgCmds.SaveOrder, button_saveItemOrder_Click, (sender, e) => e.CanExecute = this.ItemOrderNotSaved == true);
+                mc.AddReplaceCommand(EpgCmds.RestoreOrder, button_reloadItem_Click, (sender, e) => e.CanExecute = this.ItemOrderNotSaved == true);
+
+                //コマンドをコマンド集から登録
+                mc.ResetCommandBindings(this, listView_key.ContextMenu);
+
+                //コンテキストメニューを開く時の設定
+                listView_key.ContextMenu.Opened += new RoutedEventHandler(mc.SupportContextMenuLoading);
+
+                //ボタンの設定
+                mBinds.View = CtxmCode.EpgAutoAddView;
+                mBinds.SetCommandToButton(button_add, EpgCmds.ShowAddDialog);
+                mBinds.SetCommandToButton(button_change, EpgCmds.ShowDialog);
+                mBinds.SetCommandToButton(button_del, EpgCmds.Delete);
+                mBinds.SetCommandToButton(button_del2, EpgCmds.Delete2);
+                mBinds.SetCommandToButton(button_up, EpgCmds.UpItem);
+                mBinds.SetCommandToButton(button_down, EpgCmds.DownItem);
+                mBinds.SetCommandToButton(button_saveItemOrder, EpgCmds.SaveOrder);
+                mBinds.SetCommandToButton(button_reloadItem, EpgCmds.RestoreOrder);
+
+                //メニューの作成、ショートカットの登録
+                RefreshMenu();
+
+                //グリッドビュー関連の設定
                 gridViewSelector = new GridViewSelector(gridView_key, Settings.Instance.AutoAddEpgColumn);
-                headerSelect_Click = gridViewSelector.HeaderSelectClick;
+                headerSelect_Click += new RoutedEventHandler(gridViewSelector.HeaderSelectClick);
+                gridView_key.ColumnHeaderContextMenu.Opened += new RoutedEventHandler(gridViewSelector.ContextMenuOpening);
             }
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
-
-        private void ContextMenu_Header_ContextMenuOpening(object sender, ContextMenuEventArgs e)
+        public void RefreshMenu()
         {
-            gridViewSelector.ContextMenuOpening(listView_key.ContextMenu);
+            mBinds.ResetInputBindings(this, listView_key);
+            mm.CtxmGenerateContextMenu(listView_key.ContextMenu, CtxmCode.EpgAutoAddView, true);
         }
 
         public void SaveSize()
         {
             gridViewSelector.SaveSize();
-        }
-
-        /// <summary>
-        /// リストの更新通知
-        /// </summary>
-        public void UpdateInfo()
-        {
-            ReloadInfo = true;
-            if (this.IsVisible == true)
-            {
-                ReloadInfo = !ReloadInfoData();
-            }
         }
 
         public void UpdateListViewSelection(uint autoAddID)
@@ -89,22 +109,20 @@ namespace EpgTimer
             }
         }
 
+        /// <summary>情報の更新通知</summary>
+        public void UpdateInfo()
+        {
+            ReloadInfo = true;
+            if (ReloadInfo == true && this.IsVisible == true) ReloadInfo = !ReloadInfoData();
+        }
         private void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
-            if (ReloadInfo == true && this.IsVisible == true)
-            {
-                ReloadInfo = !ReloadInfoData();
-            }
+            if (ReloadInfo == true && this.IsVisible == true) ReloadInfo = !ReloadInfoData();
         }
-
         private void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
-            if (ReloadInfo == true && this.IsVisible == true)
-            {
-                ReloadInfo = !ReloadInfoData();
-            }
+            if (ReloadInfo == true && this.IsVisible == true) ReloadInfo = !ReloadInfoData();
         }
-
         private bool ReloadInfoData()
         {
             try
@@ -129,6 +147,7 @@ namespace EpgTimer
 
                 //選択情報の復元
                 oldItems.RestoreListViewSelected();
+                return true;
             }
             catch (Exception ex)
             {
@@ -138,27 +157,6 @@ namespace EpgTimer
                 }), null);
                 return false;
             }
-            return true;
-        }
-
-        private void button_add_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                SearchWindow dlg = new SearchWindow();
-                dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-                dlg.SetViewMode(1);
-                dlg.ShowDialog();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
-
-        private void button_del_Click(object sender, RoutedEventArgs e)
-        {
-            mutil.EpgAutoAddDelete(GetSelectedItemsList());
         }
 
         private List<EpgAutoDataItem> GetSelectedItemsList()
@@ -166,75 +164,9 @@ namespace EpgTimer
             return listView_key.SelectedItems.Cast<EpgAutoDataItem>().ToList();
         }
 
-        private void button_del2_Click(object sender, RoutedEventArgs e)
+        private EpgAutoDataItem SelectSingleItem(bool notSelectionChange = false)
         {
-            if (listView_key.SelectedItems.Count == 0) { return; }
-
-            string text1 = "予約項目ごと削除してよろしいですか?　[削除アイテム数: " + listView_key.SelectedItems.Count + "]\r\n"
-                            + "(無効の「自動予約登録項目」による予約も削除されます。)\r\n\r\n";
-            GetSelectedItemsList().ForEach(info => text1 += " ・ " + info.AndKey + "\r\n");
-
-            string caption1 = "[予約ごと削除]の確認";
-            if (MessageBox.Show(text1, caption1, MessageBoxButton.OKCancel, 
-                MessageBoxImage.Exclamation, MessageBoxResult.OK) != MessageBoxResult.OK)
-            {
-                return;
-            }
-
-            //EpgTimerSrvでの自動予約登録の実行タイミングに左右されず確実に予約を削除するため、
-            //先に自動予約登録項目を削除する。
-
-            //自動予約登録項目のリストを保持
-            List<EpgAutoDataItem> autoaddlist = GetSelectedItemsList();
-
-            button_del_Click(sender, e);
-
-            try
-            {
-                //配下の予約の削除
-
-                //検索リストの取得
-                var keyList = new List<EpgSearchKeyInfo>();
-                var list = new List<EpgEventInfo>();
-
-                foreach (EpgAutoDataItem item in autoaddlist)
-                {
-                    EpgSearchKeyInfo key = item.EpgAutoAddInfo.searchInfo;
-                    key.andKey = key.andKey.Substring(key.andKey.StartsWith("^!{999}") ? 7 : 0);//無効解除
-                    keyList.Add(key);
-                }
-
-                cmd.SendSearchPg(keyList, ref list);
-
-                var dellist = new List<ReserveData>();
-
-                foreach (EpgEventInfo info in list)
-                {
-                    if (info.start_time.AddSeconds(info.durationSec) > DateTime.Now)
-                    {
-                        foreach (ReserveData info2 in CommonManager.Instance.DB.ReserveList.Values)
-                        {
-                            if (CommonManager.EqualsPg(info, info2) == true)
-                            {
-                                //重複したEpgEventInfoは送られてこないので、登録時の重複チェックは不要
-                                dellist.Add(info2);
-                                break;
-                            }
-                        }
-                    }
-                }
-
-                mutil.ReserveDelete(dellist);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
-
-        private void button_change_Click(object sender, RoutedEventArgs e)
-        {
-            this.showDialog();
+            return mutil.SelectSingleItem(listView_key, notSelectionChange) as EpgAutoDataItem;
         }
 
         //SearchWindowからのリスト選択状態の変更を優先するために、MouseUpイベントによる
@@ -250,27 +182,17 @@ namespace EpgTimer
             if (doubleClicked == true)
             {
                 doubleClicked = false;
-                this.showDialog();
+                EpgCmds.ShowDialog.Execute(sender, this);
             }
         }
 
-        /*****************************************************
-        *
-        *  追加
-        *
-        ******************************************************/
-
         bool _ItemOrderNotSaved = false;
-        GridViewSorter<EpgAutoDataItem> gridViewSorter = new GridViewSorter<EpgAutoDataItem>("RecFolder");
-
         bool ItemOrderNotSaved
         {
             get { return this._ItemOrderNotSaved; }
             set
             {
                 this._ItemOrderNotSaved = value;
-                this.button_saveItemOrder.IsEnabled = value;
-                this.button_reloadItem.IsEnabled = value;
                 if (value)
                 {
                     this.textBox_ItemOrderStatus.Text = "並びが変更されましたが、保存されていません。";
@@ -280,78 +202,6 @@ namespace EpgTimer
                     this.textBox_ItemOrderStatus.Text = "";
                 }
             }
-        }
-
-        void deleteItem()
-        {
-            if (listView_key.SelectedItems.Count == 0) { return; }
-            //
-            string text1 = "削除しますか?　[削除アイテム数: " + listView_key.SelectedItems.Count + "]" + "\r\n\r\n";
-            GetSelectedItemsList().ForEach(info => text1 += " ・ " + info.AndKey + "\r\n");
-
-            string caption1 = "登録項目削除の確認";
-            if (MessageBox.Show(text1, caption1, MessageBoxButton.OKCancel, MessageBoxImage.Exclamation, MessageBoxResult.OK) == MessageBoxResult.OK)
-            {
-                button_del_Click(listView_key, new RoutedEventArgs());
-            }
-        }
-
-        private EpgAutoDataItem SelectSingleItem()
-        {
-            return mutil.SelectSingleItem<EpgAutoDataItem>(listView_key);
-        }
-
-        void showDialog()
-        {
-            if (listView_key.SelectedItem == null) { return; }
-            //
-            try
-            {
-                EpgAutoDataItem info = SelectSingleItem();
-
-                SearchWindow dlg = new SearchWindow();
-                dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-                dlg.SetViewMode(2);
-                dlg.SetChgAutoAddID(info.EpgAutoAddInfo.dataID);
-                dlg.SetSearchDefKey(info.EpgAutoAddInfo.searchInfo);
-                dlg.SetRecInfoDef(info.EpgAutoAddInfo.recSetting);
-                dlg.ShowDialog();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
-
-        void saveItemOrder()
-        {
-            if (this.ItemOrderNotSaved == false) { return; }
-            //
-            List<uint> dataIdList1 = new List<uint>();
-            resultList.ForEach(item1 => dataIdList1.Add(item1.EpgAutoAddInfo.dataID));
-            dataIdList1.Sort();
-            //
-            List<EpgAutoAddData> addList1 = new List<EpgAutoAddData>();
-            for (int i1 = 0; i1 < this.resultList.Count; i1++)
-            {
-                EpgAutoDataItem item1 = this.resultList[i1];
-                item1.EpgAutoAddInfo.dataID = dataIdList1[i1];
-                addList1.Add(item1.EpgAutoAddInfo);
-
-            }
-            if (mutil.EpgAutoAddChange(addList1, false) == true)
-            {
-                this.ItemOrderNotSaved = false;
-            }
-        }
-
-        void reloadItemOrder()
-        {
-            if (this.ItemOrderNotSaved==false) { return; }
-            //
-            this.ReloadInfoData();
-            this.ItemOrderNotSaved = false;
-            this.gridViewSorter.ResetSortParams();
         }
 
         private void GridViewColumnHeader_Click(object sender, RoutedEventArgs e)
@@ -373,14 +223,43 @@ namespace EpgTimer
             }
         }
 
-        private void button_saveItemOrder_Click(object sender, RoutedEventArgs e)
+        private void button_saveItemOrder_Click(object sender, ExecutedRoutedEventArgs e)
         {
-            this.saveItemOrder();
+            if (CmdExeUtil.IsDisplayKgMessage(e) == true)
+            {
+                if(MessageBox.Show("並びの変更を保存します。\r\nよろしいですか？", "保存の確認", 
+                    MessageBoxButton.OKCancel) != MessageBoxResult.OK) return;
+            }
+
+            List<uint> dataIdList1 = new List<uint>();
+            resultList.ForEach(item1 => dataIdList1.Add(item1.EpgAutoAddInfo.dataID));
+            dataIdList1.Sort();
+            //
+            List<EpgAutoAddData> addList1 = new List<EpgAutoAddData>();
+            for (int i1 = 0; i1 < this.resultList.Count; i1++)
+            {
+                EpgAutoDataItem item1 = this.resultList[i1];
+                item1.EpgAutoAddInfo.dataID = dataIdList1[i1];
+                addList1.Add(item1.EpgAutoAddInfo);
+
+            }
+            if (mutil.EpgAutoAddChange(addList1, false) == true)
+            {
+                this.ItemOrderNotSaved = false;
+            }
         }
 
-        private void button_reloadItem_Click(object sender, RoutedEventArgs e)
+        private void button_reloadItem_Click(object sender, ExecutedRoutedEventArgs e)
         {
-            this.reloadItemOrder();
+            if (CmdExeUtil.IsDisplayKgMessage(e) == true)
+            {
+                if(MessageBox.Show("元の並びに復元します。\r\nよろしいですか？", "復元の確認", 
+                    MessageBoxButton.OKCancel) != MessageBoxResult.OK) return;
+            }
+
+            this.ReloadInfoData();
+            this.ItemOrderNotSaved = false;
+            this.gridViewSorter.ResetSortParams();
         }
 
         //移動関連
@@ -401,7 +280,7 @@ namespace EpgTimer
                 }
                 else
                 {
-                    this.dragItems = mutil.GetList(this.dragItem);
+                    this.dragItems = mutil.ToList(this.dragItem);
                 }
             }
         }
@@ -498,96 +377,12 @@ namespace EpgTimer
             catch { }
         }
 
-        void listView_key_PreviewKeyDown(object sender, KeyEventArgs e)
-        {
-            if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control) && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
-            {
-                switch (e.Key)
-                {
-                    case Key.D:
-                        this.button_del2_Click(this, new RoutedEventArgs(Button.ClickEvent));
-                        break;
-                }
-            }
-            else if (Keyboard.Modifiers == ModifierKeys.Control)
-            {
-                switch (e.Key)
-                {
-                    case Key.D:
-                        this.deleteItem();
-                        break;
-                }
-            }
-            else if (Keyboard.Modifiers == ModifierKeys.None)
-            {
-                switch (e.Key)
-                {
-                    case Key.Enter:
-                        this.showDialog();
-                        e.Handled = true;
-                        break;
-                    case Key.Delete:
-                        this.deleteItem();
-                        e.Handled = true;
-                        break;
-                }
-            }
-        }
-
-        protected override void OnPreviewKeyDown(KeyEventArgs e)
-        {
-            if (Keyboard.Modifiers == ModifierKeys.Control)
-            {
-                switch (e.Key)
-                {
-                    case Key.Up:
-                        this.moveItem(itemMoveDirections.up);
-                        e.Handled = true;
-                        break;
-                    case Key.Down:
-                        this.moveItem(itemMoveDirections.down);
-                        e.Handled = true;
-                        break;
-                }
-            }
-            base.OnPreviewKeyDown(e);
-        }
-
-        protected override void OnKeyDown(KeyEventArgs e)
-        {
-            if (Keyboard.Modifiers == ModifierKeys.Control)
-            {
-                switch (e.Key)
-                {
-                    case Key.S:
-                        if (this.ItemOrderNotSaved == true)
-                        {
-                            if (MessageBox.Show("並びの変更を保存します。\r\nよろしいですか？", "保存の確認", MessageBoxButton.OKCancel) == MessageBoxResult.OK)
-                            {
-                                this.saveItemOrder();
-                            }
-                        }
-                        break;
-                    case Key.R:
-                        if (this.ItemOrderNotSaved == true)
-                        {
-                            if (MessageBox.Show("元の並びに復元します。\r\nよろしいですか？", "復元の確認", MessageBoxButton.OKCancel) == MessageBoxResult.OK)
-                            {
-                                this.reloadItemOrder();
-                            }
-                        }
-                        break;
-                }
-            }
-            base.OnKeyDown(e);
-        }
-
-        private void button_up_Click2(object sender, RoutedEventArgs e)
+        private void button_up_Click(object sender, ExecutedRoutedEventArgs e)
         {
             this.moveItem(itemMoveDirections.up);
         }
 
-        private void button_down_Click2(object sender, RoutedEventArgs e)
+        private void button_down_Click(object sender, ExecutedRoutedEventArgs e)
         {
             this.moveItem(itemMoveDirections.down);
         }

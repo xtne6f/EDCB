@@ -25,6 +25,17 @@ namespace EpgTimer
         {
             InitializeComponent();
             SetControls(epgProgramView, timeView, weekDayView.scrollViewer, button_now);
+
+            base.InitCommand();
+
+            //コマンド集からコマンドを登録
+            mc.ResetCommandBindings(this, cmdMenu);
+
+            //ボタンの設定
+            mBinds.SetCommandToButton(button_go_Main, EpgCmds.ViewChgMode, 0);
+
+            //メニューの作成、ショートカットの登録
+            base.RefreshMenu();
         }
 
         public override bool ClearInfo()
@@ -453,14 +464,9 @@ namespace EpgTimer
             base.UserControl_IsVisibleChanged(sender, e);
         }
 
-        private void button_go_Main_Click(object sender, RoutedEventArgs e)
-        {
-            if (base.EnableViewSetting() == false) return;
-
-            CustomEpgTabInfo setInfo = new CustomEpgTabInfo();
-            setViewInfo.CopyTo(ref setInfo);
-            setInfo.ViewMode = 0;
-            ViewSetting(this, setInfo);
-        }
+        //private void button_go_Main_Click(object sender, RoutedEventArgs e)
+        //{
+        //    EpgCmds.ViewChgMode.Execute(new EpgCmdParam(typeof(MenuItem), CtxmCode.EpgView, 0), cmdMenu);
+        //}
     }
 }

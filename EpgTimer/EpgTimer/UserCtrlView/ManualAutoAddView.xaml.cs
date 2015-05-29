@@ -16,10 +16,13 @@ namespace EpgTimer
     /// </summary>
     public partial class ManualAutoAddView : UserControl
     {
-        private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
         private MenuUtil mutil = CommonManager.Instance.MUtil;
+        private MenuManager mm = CommonManager.Instance.MM;
         private List<ManualAutoAddDataItem> resultList = new List<ManualAutoAddDataItem>();
         private bool ReloadInfo = true;
+
+        private CmdExeManualAutoAdd mc;
+        private MenuBinds mBinds = new MenuBinds();
 
         private GridViewSelector gridViewSelector = null;
         private RoutedEventHandler headerSelect_Click = null;
@@ -29,26 +32,46 @@ namespace EpgTimer
             InitializeComponent();
             try
             {
-                if (Settings.Instance.NoStyle == 1)
+                //最初にコマンド集の初期化
+                mc = new CmdExeManualAutoAdd(this);
+                mc.SetFuncGetDataList(isAll => (isAll == true ? resultList : this.GetSelectedItemsList()).ManualAutoAddInfoList());
+                mc.SetFuncSelectSingleData((noChange) =>
                 {
-                    button_add.Style = null;
-                    button_del.Style = null;
-                    button_del2.Style = null;
-                    button_change.Style = null;
-                }
+                    var item = this.SelectSingleItem(noChange);
+                    return item == null ? null : item.ManualAutoAddInfo;
+                });
+                mc.SetFuncReleaseSelectedData(() => listView_key.UnselectAll());
 
+                //コマンドをコマンド集から登録
+                mc.ResetCommandBindings(this, listView_key.ContextMenu);
+
+                //コンテキストメニューを開く時の設定
+                listView_key.ContextMenu.Opened += new RoutedEventHandler(mc.SupportContextMenuLoading);
+
+                //ボタンの設定
+                mBinds.View = CtxmCode.ManualAutoAddView;
+                mBinds.SetCommandToButton(button_add, EpgCmds.ShowAddDialog);
+                mBinds.SetCommandToButton(button_change, EpgCmds.ShowDialog);
+                mBinds.SetCommandToButton(button_del, EpgCmds.Delete);
+                mBinds.SetCommandToButton(button_del2, EpgCmds.Delete2);
+
+                //メニューの作成、ショートカットの登録
+                RefreshMenu();
+
+                //グリッドビュー関連の設定
                 gridViewSelector = new GridViewSelector(gridView_key, Settings.Instance.AutoAddManualColumn);
-                headerSelect_Click = gridViewSelector.HeaderSelectClick;
+                headerSelect_Click += new RoutedEventHandler(gridViewSelector.HeaderSelectClick);
+                gridView_key.ColumnHeaderContextMenu.Opened += new RoutedEventHandler(gridViewSelector.ContextMenuOpening);
             }
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
-
-        private void ContextMenu_Header_ContextMenuOpening(object sender, ContextMenuEventArgs e)
+        public void RefreshMenu()
         {
-            gridViewSelector.ContextMenuOpening(listView_key.ContextMenu);
+            mBinds.ResetInputBindings(this, listView_key);
+            mm.CtxmGenerateContextMenu(listView_key.ContextMenu, CtxmCode.ManualAutoAddView, true);
         }
 
         public void SaveSize()
@@ -56,34 +79,20 @@ namespace EpgTimer
             gridViewSelector.SaveSize();
         }
 
-        /// <summary>
-        /// リストの更新通知
-        /// </summary>
+        /// <summary>情報の更新通知</summary>
         public void UpdateInfo()
         {
             ReloadInfo = true;
-            if (this.IsVisible == true)
-            {
-                ReloadInfo = !ReloadInfoData();
-            }
+            if (ReloadInfo == true && this.IsVisible == true) ReloadInfo = !ReloadInfoData();
         }
-        
         private void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
-            if (ReloadInfo == true && this.IsVisible == true)
-            {
-                ReloadInfo = !ReloadInfoData();
-            }
+            if (ReloadInfo == true && this.IsVisible == true) ReloadInfo = !ReloadInfoData();
         }
-
         private void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
-            if (ReloadInfo == true && this.IsVisible == true)
-            {
-                ReloadInfo = !ReloadInfoData();
-            }
+            if (ReloadInfo == true && this.IsVisible == true) ReloadInfo = !ReloadInfoData();
         }
-
         private bool ReloadInfoData()
         {
             try
@@ -108,6 +117,7 @@ namespace EpgTimer
 
                 //選択情報の復元
                 oldItems.RestoreListViewSelected();
+                return true;
             }
             catch (Exception ex)
             {
@@ -117,74 +127,6 @@ namespace EpgTimer
                 }), null);
                 return false;
             }
-            return true;
-        }
-
-        private void button_add_Click(object sender, RoutedEventArgs e)
-        {
-            AddManualAutoAddWindow dlg = new AddManualAutoAddWindow();
-            dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-            dlg.ShowDialog();
-        }
-
-        private void button_change_Click(object sender, RoutedEventArgs e)
-        {
-            if (listView_key.SelectedItem != null)
-            {
-                ManualAutoAddDataItem info = SelectSingleItem();
-                AddManualAutoAddWindow dlg = new AddManualAutoAddWindow();
-                dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-                dlg.SetChangeMode(true);
-                dlg.SetDefaultSetting(info.ManualAutoAddInfo);
-                dlg.ShowDialog();
-            }
-        }
-
-        private void button_del_Click(object sender, RoutedEventArgs e)
-        {
-            if (listView_key.SelectedItems.Count == 0) return;
-
-            var dataIDList = GetSelectedItemsList().Select(info => info.ManualAutoAddInfo.dataID).ToList();
-            cmd.SendDelManualAdd(dataIDList);
-        }
-
-        private void button_del2_Click(object sender, RoutedEventArgs e)
-        {
-            if (listView_key.SelectedItems.Count == 0) return;
-
-            string text1 = "予約項目ごと削除してよろしいですか?　[削除アイテム数: " + listView_key.SelectedItems.Count + "]\r\n"
-                            + "(サービス、時間の一致した予約が削除されます)\r\n\r\n";
-            GetSelectedItemsList().ForEach(info => text1 += " ・ " + info.Title + "\r\n");
-
-            string caption1 = "[予約ごと削除]の確認";
-            if (MessageBox.Show(text1, caption1, MessageBoxButton.OKCancel,
-                MessageBoxImage.Exclamation, MessageBoxResult.OK) != MessageBoxResult.OK)
-            {
-                return;
-            }
-
-            //EpgTimerSrvでの自動予約登録の実行タイミングに左右されず確実に予約を削除するため、
-            //先に自動予約登録項目を削除する。
-
-            //自動予約登録項目のリストを保持
-            List<ManualAutoAddDataItem> autoaddlist = GetSelectedItemsList();
-
-            button_del_Click(sender, e);
-
-            try
-            {
-                //配下の予約の削除
-                var dellist = new List<ReserveData>();
-                autoaddlist.ForEach(info => dellist.AddRange(info.ManualAutoAddInfo.GetReserveList()));
-                dellist = dellist.Distinct().ToList();
-
-                mutil.ReserveDelete(dellist);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-
         }
 
         private List<ManualAutoAddDataItem> GetSelectedItemsList()
@@ -192,14 +134,14 @@ namespace EpgTimer
             return listView_key.SelectedItems.Cast<ManualAutoAddDataItem>().ToList();
         }
 
-        private ManualAutoAddDataItem SelectSingleItem()
+        private ManualAutoAddDataItem SelectSingleItem(bool notSelectionChange = false)
         {
-            return mutil.SelectSingleItem<ManualAutoAddDataItem>(listView_key);
+            return mutil.SelectSingleItem(listView_key, notSelectionChange) as ManualAutoAddDataItem;
         }
 
         private void listView_key_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            this.button_change.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            EpgCmds.ShowDialog.Execute(sender, this);
         }
 
     }

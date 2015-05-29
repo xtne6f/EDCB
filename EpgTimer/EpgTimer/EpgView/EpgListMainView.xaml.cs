@@ -26,6 +26,31 @@ namespace EpgTimer
         public EpgListMainView()
         {
             InitializeComponent();
+            InitCommand();
+        }
+        protected override void InitCommand()
+        {
+            base.InitCommand();
+
+            //コマンド集の初期化の続き
+            mc.SetFuncGetSearchList(isAll => (isAll == true ? programList.ToList() : this.GetSelectedItemsList()));
+            mc.SetFuncSelectSingleSearchData(this.SelectSingleItem);
+            mc.SetFuncReleaseSelectedData(() => listView_event.UnselectAll());
+
+            //コマンド集からコマンドを登録
+            mc.ResetCommandBindings(this, listView_event.ContextMenu);
+
+            //コンテキストメニューの設定
+            listView_event.ContextMenu.Tag = (int)2;//setViewInfo.ViewMode;
+            listView_event.ContextMenu.Opened += new RoutedEventHandler(mc.SupportContextMenuLoading);
+
+            //メニューの作成、ショートカットの登録
+            RefreshMenu();
+        }
+        public override void RefreshMenu()
+        {
+            mBinds.ResetInputBindings(this, listView_event);
+            mm.CtxmGenerateContextMenu(listView_event.ContextMenu, CtxmCode.EpgView, true);
         }
 
         public override bool ClearInfo()
@@ -34,9 +59,9 @@ namespace EpgTimer
 
             BackUpChkSID();
             listBox_service.ItemsSource = null;
-            serviceList = new List<ServiceItem>();
+            serviceList.Clear();
             listView_event.ItemsSource = null;
-            programList = new List<SearchItem>();
+            programList.Clear();
             richTextBox_eventInfo.Document.Blocks.Clear();
 
             return true;
@@ -246,285 +271,19 @@ namespace EpgTimer
             }
         }
 
-        private SearchItem SelectSingleItem()
-        {
-            return mutil.SelectSingleItem<SearchItem>(listView_event);
-        }
-
-        private void listView_event_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-        {
-            this.cm_show_dialog_Click(listView_event.SelectedItem, new RoutedEventArgs());
-        }
-
-        private void listView_event_ContextMenuOpening(object sender, ContextMenuEventArgs e)
-        {
-            if (sender.GetType() == typeof(ListView))
-            {
-                try
-                {
-                    cm_chg_viewMode3.IsChecked = true;
-
-                    bool noItem = listView_event.SelectedItems.Count == 0;
-
-                    cm_CopyTitle.IsEnabled = !noItem;
-                    cm_CopyContent.IsEnabled = !noItem;
-                    cm_SearchTitle.IsEnabled = !noItem;
-
-                    if (noItem == true)
-                    {
-                        cm_Reverse.Header = "簡易予約";
-                        cm_Reverse.IsEnabled = false;
-                        cm_del.IsEnabled = false;
-                        cm_chg.IsEnabled = false;
-                        cm_add.IsEnabled = false;
-                        cm_autoadd.IsEnabled = false;
-                        cm_timeshift.IsEnabled = false;
-                    }
-                    else
-                    {
-                        List<SearchItem> list = GetSelectedItemsList();
-                        bool hasReserved = list.HasReserved();
-                        bool hasNoReserved = list.HasNoReserved();
-
-                        if (hasReserved == true)
-                        {
-                            cm_Reverse.Header = "予約←→無効";
-                            cm_Reverse.IsEnabled = true;
-                            cm_del.IsEnabled = true;
-                            cm_chg.IsEnabled = true;
-                            mutil.CheckChgItems(cm_chg, list);//現在の状態(録画モード、優先度)にチェックを入れる
-                            cm_add.IsEnabled = hasNoReserved;
-                            cm_autoadd.IsEnabled = true;
-                            cm_timeshift.IsEnabled = true;
-                        }
-                        else
-                        {
-                            cm_Reverse.Header = "簡易予約";
-                            cm_Reverse.IsEnabled = true;
-                            cm_del.IsEnabled = false;
-                            cm_chg.IsEnabled = false;
-                            cm_add.IsEnabled = true;
-                            cm_autoadd.IsEnabled = true;
-                            cm_timeshift.IsEnabled = false;
-                            mutil.ExpandPresetItems(cm_add, cm_add_preset_Click);
-                        }
-                    }
-
-                    //個別に設定できるが、リスト系の設定メソッドを使い回す。
-                    foreach (object item in listView_event_contextMenu.Items)
-                    {
-                        mutil.AppendMenuVisibleControl(item);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                }
-            }
-        }
-
-        void listView_event_PreviewKeyDown(object sender, KeyEventArgs e)
-        {
-            if (Keyboard.Modifiers == ModifierKeys.Control)
-            {
-                switch (e.Key)
-                {
-                    case Key.P:
-                        this.cm_timeShiftPlay_Click(this.listView_event.SelectedItem, new RoutedEventArgs(Button.ClickEvent));
-                        break;
-                    case Key.D:
-                        this.deleteItem();
-                        break;
-                    case Key.S:
-                        this.cm_reverse_Click(this, new RoutedEventArgs(Button.ClickEvent));
-                        break;
-                    case Key.C:
-                        this.CopyTitle2Clipboard();
-                        break;
-                }
-            }
-            else if (Keyboard.Modifiers == ModifierKeys.None)
-            {
-                switch (e.Key)
-                {
-                    case Key.Enter:
-                        this.cm_show_dialog_Click(this, new RoutedEventArgs(Button.ClickEvent));
-                        e.Handled = true;
-                        break;
-                    case Key.Delete:
-                        this.deleteItem();
-                        e.Handled = true;
-                        break;
-                }
-            }
-        }
-
-        void deleteItem()
-        {
-            var delList = GetSelectedItemsList().ReserveInfoList();
-            if (delList.Count == 0) { return; }
-
-            string text1 = "削除しますか?　[削除アイテム数: " + delList.Count + "]" + "\r\n\r\n";
-            delList.ForEach(item => text1 += " ・ " + item.Title + "\r\n");
-
-            string caption1 = "登録項目削除の確認";
-            if (MessageBox.Show(text1, caption1, MessageBoxButton.OKCancel, MessageBoxImage.Exclamation, MessageBoxResult.OK) == MessageBoxResult.OK)
-            {
-                this.cm_del_Click(this.listView_event.SelectedItem, new RoutedEventArgs(Button.ClickEvent));
-            }
-        }
-
-        void cm_add_preset_Click(object sender, RoutedEventArgs e)
-        {
-            mutil.ReserveAdd(GetSelectedItemsList(), null, sender);
-        }
-
-        private void cm_del_Click(object sender, RoutedEventArgs e)
-        {
-            mutil.ReserveDelete(GetSelectedItemsList());
-        }
-
         private List<SearchItem> GetSelectedItemsList()
         {
             return listView_event.SelectedItems.Cast<SearchItem>().ToList();
         }
 
-        private void cm_show_dialog_Click(object sender, RoutedEventArgs e)
+        private SearchItem SelectSingleItem(bool notSelectionChange = false)
         {
-            if (listView_event.SelectedItem != null)
-            {
-                mutil.OpenSearchItemWithWindow(SelectSingleItem(), this, Settings.Instance.EpgInfoOpenMode);
-            }
+            return mutil.SelectSingleItem(listView_event, notSelectionChange) as SearchItem;
         }
 
-        private void cm_chg_recmode_Click(object sender, RoutedEventArgs e)
+        private void listView_event_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            mutil.ReserveChangeRecmode(GetSelectedItemsList(), sender);
-        }
-
-        private void cm_chg_priority_Click(object sender, RoutedEventArgs e)
-        {
-            mutil.ReserveChangePriority(GetSelectedItemsList(), sender);
-        }
-
-        private void cm_autoadd_Click(object sender, RoutedEventArgs e)
-        {
-            if (listView_event.SelectedItem != null)
-            {
-                mutil.SendAutoAdd(SelectSingleItem(), this);
-            }
-        }
-
-        private void cm_timeShiftPlay_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                if (listView_event.SelectedItem != null)
-                {
-                    SearchItem item = SelectSingleItem();
-                    if (item.IsReserved == true)
-                    {
-                        CommonManager.Instance.TVTestCtrl.StartTimeShift(item.ReserveInfo.ReserveID);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
-
-        /// <summary>
-        /// 右クリックメニュー 表示設定イベント呼び出し
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void cm_viewSet_Click(object sender, RoutedEventArgs e)
-        {
-            base.ViewSetting(this, null);
-        }
-
-        /// <summary>
-        /// 右クリックメニュー 表示モードイベント呼び出し
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void cm_chg_viewMode_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                if (sender.GetType() != typeof(MenuItem)) return;
-                if (base.EnableViewSetting() == false) return;
-
-                var item = sender as MenuItem;
-                var setInfo = new CustomEpgTabInfo();
-                setViewInfo.CopyTo(ref setInfo);
-                //setInfo.ViewMode = (int)item.DataContext;
-                if (sender == cm_chg_viewMode2)
-                {
-                    setInfo.ViewMode = 1;
-                }
-                else if (sender == cm_chg_viewMode3)
-                {
-                    setInfo.ViewMode = 2;
-                }
-                else
-                {
-                    setInfo.ViewMode = 0;
-                }
-
-                BlackoutWindow.Clear();
-                SearchItem select = SelectSingleItem();
-                if (select != null)
-                {
-                    if (select.IsReserved == true)
-                    {
-                        BlackoutWindow.SelectedReserveItem = new ReserveItem(select.ReserveInfo);
-                    }
-                    else
-                    {
-                        BlackoutWindow.SelectedSearchItem = select;
-                    }
-                }
-
-                base.ViewSetting(this, setInfo);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
-
-        private void cm_CopyTitle_Click(object sender, RoutedEventArgs e)
-        {
-            CopyTitle2Clipboard();
-        }
-
-        private void CopyTitle2Clipboard()
-        {
-            if (listView_event.SelectedItem != null)
-            {
-                SearchItem item = SelectSingleItem();
-                mutil.CopyTitle2Clipboard(item.EventName);
-            }
-        }
-
-        private void cm_CopyContent_Click(object sender, RoutedEventArgs e)
-        {
-            if (listView_event.SelectedItem != null)
-            {
-                SearchItem item = SelectSingleItem();
-                mutil.CopyContent2Clipboard(item.EventInfo);
-            }
-        }
-
-        private void cm_SearchTitle_Click(object sender, RoutedEventArgs e)
-        {
-            if (listView_event.SelectedItem != null)
-            {
-                SearchItem item = SelectSingleItem();
-                mutil.SearchText(item.EventName);
-            }
+            EpgCmds.ShowDialog.Execute(sender, this);
         }
 
         GridViewSorter<SearchItem> gridViewSorter = new GridViewSorter<SearchItem>();
@@ -540,16 +299,6 @@ namespace EpgTimer
                     listView_event.Items.Refresh();
                 }
             }
-        }
-        
-        /// <summary>
-        /// 右クリックメニュー 予約←→無効クリックイベント呼び出し
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void cm_reverse_Click(object sender, RoutedEventArgs e)
-        {
-            mutil.ReserveChangeOnOff(GetSelectedItemsList(), null);
         }
 
         protected override void MoveToReserveItem(ReserveItem target, bool JumpingTable)
@@ -635,5 +384,6 @@ namespace EpgTimer
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
+
     }
 }

@@ -181,15 +181,7 @@ namespace EpgTimer
         private string filePlayCmd;
         private bool openFolderWithFileDialog;
         private List<IEPGStationInfo> iEpgStationList;
-        private bool cmEpgKeyword_Trim;
-        private bool cmAppendMenu;
-        private bool cmCopyTitle;
-        private bool cmCopyTitle_Trim;
-        private bool cmCopyContent;
-        private bool cmCopyContentBasic;
-        private bool cmSearchTitle;
-        private bool cmSearchTitle_Trim;
-        private string cmSearchURI;
+        private MenuSettingData menuSet;
         private string nwServerIP;
         private UInt32 nwServerPort;
         private UInt32 nwWaitPort;
@@ -251,6 +243,7 @@ namespace EpgTimer
         private int noStyle;
         private bool cautionManyChange;
         private int cautionManyNum;
+        private int keyDeleteDisplayItemNum;
         private bool displayNotifyEpgChange;
         private int displayNotifyJumpTime;
 
@@ -659,50 +652,10 @@ namespace EpgTimer
             get { return iEpgStationList; }
             set { iEpgStationList = value; }
         }
-        public bool CmEpgKeyword_Trim
+        public MenuSettingData MenuSet
         {
-            get { return cmEpgKeyword_Trim; }
-            set { cmEpgKeyword_Trim = value; }
-        }
-        public bool CmAppendMenu
-        {
-            get { return cmAppendMenu; }
-            set { cmAppendMenu = value; }
-        }
-        public bool CmCopyTitle
-        {
-            get { return cmCopyTitle; }
-            set { cmCopyTitle = value; }
-        }
-        public bool CmCopyTitle_Trim
-        {
-            get { return cmCopyTitle_Trim; }
-            set { cmCopyTitle_Trim = value; }
-        }
-        public bool CmCopyContent
-        {
-            get { return cmCopyContent; }
-            set { cmCopyContent = value; }
-        }
-        public bool CmCopyContentBasic
-        {
-            get { return cmCopyContentBasic; }
-            set { cmCopyContentBasic = value; }
-        }
-        public bool CmSearchTitle
-        {
-            get { return cmSearchTitle; }
-            set { cmSearchTitle = value; }
-        }
-        public bool CmSearchTitle_Trim
-        {
-            get { return cmSearchTitle_Trim; }
-            set { cmSearchTitle_Trim = value; }
-        }
-        public string CmSearchURI
-        {
-            get { return cmSearchURI; }
-            set { cmSearchURI = value; }
+            get { return menuSet; }
+            set { menuSet = value; }
         }
         public string NWServerIP
         {
@@ -1009,6 +962,11 @@ namespace EpgTimer
             get { return cautionManyNum; }
             set { cautionManyNum = value; }
         }
+        public int KeyDeleteDisplayItemNum
+        {
+            get { return keyDeleteDisplayItemNum; }
+            set { keyDeleteDisplayItemNum = value; }
+        }        
         public bool DisplayNotifyEpgChange
         {
             get { return displayNotifyEpgChange; }
@@ -1101,15 +1059,7 @@ namespace EpgTimer
             filePlayCmd = "\"$FilePath$\"";
             openFolderWithFileDialog = false;
             iEpgStationList = new List<IEPGStationInfo>();
-            cmEpgKeyword_Trim = true;
-            cmAppendMenu = false;
-            cmCopyTitle = false;
-            cmCopyTitle_Trim = false;
-            cmCopyContent = true;
-            cmCopyContentBasic = false;
-            cmSearchTitle = true;
-            cmSearchTitle_Trim = true;
-            cmSearchURI = "https://www.google.co.jp/search?hl=ja&q=";
+            menuSet = new MenuSettingData();
             nwServerIP = "";
             nwServerPort = 4510;
             nwWaitPort = 4520;
@@ -1171,6 +1121,7 @@ namespace EpgTimer
             noStyle = 0;
             cautionManyChange = true;
             cautionManyNum = 10;
+            keyDeleteDisplayItemNum = 10;
             displayNotifyEpgChange = false;
             displayNotifyJumpTime = 3;
         }
@@ -1226,6 +1177,9 @@ namespace EpgTimer
 
             try
             {
+                // タイミング合わせにくいので、メニュー系のデータチェックは
+                // MenuManager側のワークデータ作成時に実行する。
+
                 if (Instance.recModeFontColorList.Count != 6)
                 {
                     //予約アイテムのデフォルトの文字色
@@ -1449,6 +1403,7 @@ namespace EpgTimer
             IniFileHandler.GetPrivateProfileString(defName, "BatFilePath", "", buff, 512, SettingPath.TimerSrvIniPath);
             defKey.BatFilePath = buff.ToString();
 
+            defKey.RecFolderList.Clear();
             int count = IniFileHandler.GetPrivateProfileInt(defFolderName, "Count", 0, SettingPath.TimerSrvIniPath);
             for (int i = 0; i < count; i++)
             {
@@ -1466,6 +1421,7 @@ namespace EpgTimer
                 defKey.RecFolderList.Add(folderInfo);
             }
 
+            defKey.PartialRecFolder.Clear();
             count = IniFileHandler.GetPrivateProfileInt(defFolder1SegName, "Count", 0, SettingPath.TimerSrvIniPath);
             for (int i = 0; i < count; i++)
             {

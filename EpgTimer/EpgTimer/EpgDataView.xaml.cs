@@ -30,6 +30,11 @@ namespace EpgTimer
             }
         }
 
+        private List<EpgDataViewItem> Views
+        {
+            get { return tabControl.Items.Cast<TabItem>().Select(item => item.Content).OfType<EpgDataViewItem>().ToList(); }
+        }
+
         /// <summary>
         /// EPGデータの更新通知
         /// </summary>
@@ -49,14 +54,7 @@ namespace EpgTimer
         {
             try
             {
-                foreach (TabItem item in tabControl.Items)
-                {
-                    if (item.Content.GetType() == typeof(EpgDataViewItem))
-                    {
-                        EpgDataViewItem view = item.Content as EpgDataViewItem;
-                        view.UpdateReserveData();
-                    }
-                }
+                this.Views.ForEach(view => view.UpdateReserveData());
             }
             catch (Exception ex)
             {
@@ -71,18 +69,9 @@ namespace EpgTimer
         {
             try
             {
-                //まず表示中のタブのデータをクリア
-                foreach (TabItem item in tabControl.Items)
-                {
-                    if (item.Content.GetType() == typeof(EpgDataViewItem))
-                    {
-                        EpgDataViewItem view = item.Content as EpgDataViewItem;
-                        view.ClearInfo();
-                    }
-                }
-                //タブの削除
+                //一度全部削除して作り直す。
+                this.Views.ForEach(view => view.ClearInfo());
                 tabControl.Items.Clear();
-
                 ReDrawEpgData();
             }
             catch (Exception ex)
@@ -199,7 +188,7 @@ namespace EpgTimer
                 }
                 else
                 {
-                    if (sender.GetType() == typeof(EpgDataViewItem))
+                    if (sender is EpgDataViewItem)
                     {
                         EpgDataViewItem item = sender as EpgDataViewItem;
                         if (param == null)
@@ -242,22 +231,14 @@ namespace EpgTimer
             bool ret = true;
             try
             {
+                //タブが無ければ生成、あれば更新
                 if (tabControl.Items.Count == 0)
                 {
-                    //タブの生成
-                    ret = CreateTabItem();
+                    return CreateTabItem();
                 }
                 else
                 {
-                    //まず表示中のタブのデータをクリア
-                    foreach (TabItem item in tabControl.Items)
-                    {
-                        if (item.Content.GetType() == typeof(EpgDataViewItem))
-                        {
-                            EpgDataViewItem view = item.Content as EpgDataViewItem;
-                            view.UpdateEpgData();
-                        }
-                    }
+                    this.Views.ForEach(view => view.UpdateEpgData());
                 }
             }
             catch (Exception ex)
@@ -268,6 +249,19 @@ namespace EpgTimer
                 }), null);
             }
             return ret;
+        }
+
+        //メニューの更新
+        public void RefreshMenu()
+        {
+            try
+            {
+                this.Views.ForEach(view => view.RefreshMenu());
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+            }
         }
 
         private void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)

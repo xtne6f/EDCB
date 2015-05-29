@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 
 using CtrlCmdCLI;
 using CtrlCmdCLI.Def;
@@ -15,6 +16,7 @@ namespace EpgTimer.EpgView
         protected CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
         protected MenuUtil mutil = CommonManager.Instance.MUtil;
         protected ViewUtil vutil = CommonManager.Instance.VUtil;
+        protected MenuManager mm = CommonManager.Instance.MM;
 
         protected CustomEpgTabInfo setViewInfo = null;
         protected List<UInt64> viewCustServiceList = null;
@@ -25,12 +27,55 @@ namespace EpgTimer.EpgView
 
         protected Dictionary<UInt64, EpgServiceEventInfo> searchEventList = new Dictionary<UInt64, EpgServiceEventInfo>();
 
+        protected CmdExeReserve mc; //予約系コマンド集
+        protected MenuBinds mBinds = new MenuBinds();
+
+        protected virtual void InitCommand()
+        {
+            //ビューコードの登録
+            mBinds.View = CtxmCode.EpgView;
+
+            //コマンド集の初期化
+            mc = new CmdExeReserve(this);
+            mc.EpgInfoOpenMode = Settings.Instance.EpgInfoOpenMode;
+
+            //コマンド集にないものを登録
+            mc.AddReplaceCommand(EpgCmds.ViewChgSet, (sender, e) => ViewSetting(this, null));
+            mc.AddReplaceCommand(EpgCmds.ViewChgMode, cm_chg_viewMode_Click);
+        }
+
         public virtual event ViewSettingClickHandler ViewSettingClick = null;
         protected bool EnableViewSetting() { return ViewSettingClick != null; }
         protected void ViewSetting(object sender, object param)
         {
             if (EnableViewSetting() == false) return;
-            ViewSettingClick(this, param);
+            ViewSettingClick(sender, param);
+        }
+
+        /// <summary>右クリックメニュー 表示モードイベント呼び出し</summary>
+        protected void cm_chg_viewMode_Click(object sender, ExecutedRoutedEventArgs e)
+        {
+            try
+            {
+                var param = e.Parameter as EpgCmdParam;
+                if (param == null) return;
+
+                var setInfo = new CustomEpgTabInfo();
+                setViewInfo.CopyTo(ref setInfo);
+                setInfo.ViewMode = param.ID;
+
+                if (setViewInfo.ViewMode == setInfo.ViewMode) return;
+
+                //BlackWindowに状態を登録。
+                //コマンド集の機能による各ビューの共用メソッド。
+                mc.ViewChangeModeSupport();
+                
+                ViewSetting(this, setInfo);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+            }
         }
 
         public virtual bool ClearInfo()
@@ -38,6 +83,8 @@ namespace EpgTimer.EpgView
             searchEventList = new Dictionary<UInt64, EpgServiceEventInfo>();
             return true; 
         }
+
+        public virtual void RefreshMenu() { }
 
         public virtual void SetViewMode(CustomEpgTabInfo setInfo)
         {
@@ -120,7 +167,7 @@ namespace EpgTimer.EpgView
                 else
                 {
                     //番組情報の検索
-                    List<EpgSearchKeyInfo> keyList = mutil.GetList(setViewInfo.SearchKey);
+                    List<EpgSearchKeyInfo> keyList = mutil.ToList(setViewInfo.SearchKey);
                     var list = new List<EpgEventInfo>();
 
                     ErrCode err = (ErrCode)cmd.SendSearchPg(keyList, ref list);

@@ -98,6 +98,13 @@ namespace EpgTimer
             }
         }
 
+        public void SetChangeMode(int chgMode)
+        {
+            CommonManager.Instance.VUtil.SetSpecificChgAppearance(listBox_content);
+            listBox_content.Focus();
+            if (listBox_content.Items.Count != 0) listBox_content.SelectedIndex = 0;
+        }
+
         public void SetSearchKey(EpgSearchKeyInfo key)
         {
             defKey = key;
@@ -292,8 +299,8 @@ namespace EpgTimer
 
         private void button_content_del_Click(object sender, RoutedEventArgs e)
         {
-            listBox_content.SelectedItems.Cast<Object>().ToList().
-                ForEach(item => listBox_content.Items.Remove(item));
+            var delList = listBox_content.SelectedItems.Cast<Object>().ToList();
+            delList.ForEach(item => listBox_content.Items.Remove(item));
         }
 
         private void button_content_clear_Click(object sender, RoutedEventArgs e)
@@ -303,7 +310,7 @@ namespace EpgTimer
 
         private void button_all_on_Click(object sender, RoutedEventArgs e)
         {
-            listView_service.Items.Cast<ServiceItem>().ToList().ForEach(item=>item.IsSelected = true);
+            foreach (ServiceItem item in listView_service.Items) { item.IsSelected = true; }
         }
 
         private void button_video_on_Click(object sender, RoutedEventArgs e)
@@ -406,7 +413,7 @@ namespace EpgTimer
 
         private void button_all_off_Click(object sender, RoutedEventArgs e)
         {
-            listView_service.Items.Cast<ServiceItem>().ToList().ForEach(item => item.IsSelected = false);
+            foreach (ServiceItem item in listView_service.Items) { item.IsSelected = false; }
         }
 
         private void button_timeAdd_Click(object sender, RoutedEventArgs e)
@@ -599,8 +606,8 @@ namespace EpgTimer
 
         private void button_date_del_Click(object sender, RoutedEventArgs e)
         {
-            listBox_date.SelectedItems.Cast<Object>().ToList().
-                ForEach(item => listBox_date.Items.Remove(item));
+            var delList = listBox_date.SelectedItems.Cast<Object>().ToList();
+            delList.ForEach(item => listBox_date.Items.Remove(item));
         }
 
         private void button_date_clear_Click(object sender, RoutedEventArgs e)

@@ -18,7 +18,6 @@ namespace EpgTimer
 {
     public class RecInfoItem
     {
-        private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
         private MenuUtil mutil = CommonManager.Instance.MUtil;
         
         public RecInfoItem(RecFileInfo item)
@@ -36,10 +35,10 @@ namespace EpgTimer
             {
                 if (RecInfo != null)
                 {
-                    RecInfo.ProtectFlag = value;
-                    List<RecFileInfo> list = new List<RecFileInfo>();
-                    list.Add(RecInfo);
-                    cmd.SendChgProtectRecInfo(list);
+                    if (this.RecInfo.ProtectFlag != value)
+                    {
+                        mutil.RecinfoChgProtect(mutil.ToList(this.RecInfo));
+                    }
                 }
             }
             get
@@ -56,16 +55,9 @@ namespace EpgTimer
         {
             set
             {
+                //1回の通信で実施する。
                 MainWindow mainWindow = (MainWindow)Application.Current.MainWindow;
-                foreach (RecInfoItem info in mainWindow.recInfoView.listView_recinfo.SelectedItems)
-                {
-                    if (info.RecInfo.ID == this.RecInfo.ID)
-                    {
-                        mainWindow.recInfoView.ChgProtectRecInfo();
-                        return;
-                    }
-                }
-
+                if (mainWindow.recInfoView.ChgProtectRecInfoForMark(this) == true) return;
                 IsProtect = value;
             }
             get
@@ -267,6 +259,14 @@ namespace EpgTimer
                 }
                 return view;
             }
+        }
+    }
+
+    public static class RecInfoItemEx
+    {
+        public static List<RecFileInfo> RecInfoList(this ICollection<RecInfoItem> itemlist)
+        {
+            return itemlist.Where(item => item != null).Select(item => item.RecInfo).ToList();
         }
     }
 }

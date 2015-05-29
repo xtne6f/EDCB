@@ -18,6 +18,8 @@
             <MenuItem Header="優先度" Name="Priority" IsCheckable="True" Click="headerSelect_Click" />
             <MenuItem Header="予約数" Name="ReserveCount" IsCheckable="True" Click="headerSelect_Click" />
         </ContextMenu>
+        <ContextMenu x:Key="itemMenu" />
+        <!-- MenuManagerからメニューを展開する -->
     </UserControl.Resources>
     <Grid>
         <Grid>
@@ -25,17 +27,18 @@
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="130" />
             </Grid.ColumnDefinitions>
-            <ListView Name="listView_key" Margin="10" SelectionMode="Extended" ItemsSource="{Binding}" ContextMenu="{DynamicResource itemHeader}" ContextMenuOpening="ContextMenu_Header_ContextMenuOpening">
+            <ListView Name="listView_key" Margin="10" SelectionMode="Extended" ItemsSource="{Binding}" ContextMenu="{DynamicResource itemMenu}" >
                 <ListView.Resources>
                     <Style TargetType="ListViewItem">
                         <Setter Property="ToolTipService.ShowDuration" Value="20000" />
                         <Setter Property="ToolTip" Value="{Binding ToolTipView}"/>
+                        <Setter Property="ContextMenu" Value="{DynamicResource itemMenu}" />
                         <Setter Property="Foreground"  Value="{Binding ForeColor}" />
                         <EventSetter Event="MouseDoubleClick" Handler="listView_key_MouseDoubleClick"/>
                     </Style>
                 </ListView.Resources>
                 <ListView.View>
-                    <GridView x:Name="gridView_key">
+                    <GridView x:Name="gridView_key" ColumnHeaderContextMenu="{DynamicResource itemHeader}">
                         <GridViewColumn DisplayMemberBinding="{Binding Path=DayOfWeek}">
                             <GridViewColumn.Header>
                                 <GridViewColumnHeader Content="曜日" Tag="DayOfWeek" HorizontalContentAlignment="Left"/>
@@ -75,10 +78,10 @@
                 </ListView.View>
             </ListView>
             <StackPanel Grid.Column="1" Name="stackPanel_button">
-                <Button Content="追加" Height="23" Name="button_add" Margin="0,10,0,10" Click="button_add_Click" Style="{StaticResource ButtonStyle1}" />
-                <Button Content="変更" Height="23" Name="button_change" Margin="0,10,0,10" Click="button_change_Click" Style="{StaticResource ButtonStyle1}" />
-                <Button Content="削除" Height="23" Name="button_del" Margin="0,10,0,10" Click="button_del_Click" Style="{StaticResource ButtonStyle1}" />
-                <Button Content="予約ごと削除" Height="23" Name="button_del2" Margin="0,10,0,10" Click="button_del2_Click" Style="{StaticResource ButtonStyle1}" />
+                <Button Content="追加" Height="23" Name="button_add" Margin="0,10,0,10" />
+                <Button Content="変更" Height="23" Name="button_change" Margin="0,10,0,10" />
+                <Button Content="削除" Height="23" Name="button_del" Margin="0,10,0,10" />
+                <Button Content="予約ごと削除" Height="23" Name="button_del2" Margin="0,10,0,10"  />
             </StackPanel>
         </Grid>
     </Grid>

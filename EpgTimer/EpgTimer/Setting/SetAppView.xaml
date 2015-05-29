@@ -80,8 +80,8 @@
                             <CheckBox Content="スタンバイ、休止ボタンでもカウントダウンを表示" Height="16" HorizontalAlignment="Left" Margin="469,62,0,0" Name="checkBox_suspendChk" VerticalAlignment="Top" Width="263"/>
                             <TextBox Height="24" Margin="499,80,0,0" Name="textBox_suspendChkTime" VerticalAlignment="Top" HorizontalAlignment="Left" Width="42" />
                             <Label Content="秒間" Height="28" HorizontalAlignment="Left" Margin="547,80,0,0" Name="labelTimer" VerticalAlignment="Top" />
-                            <Label Content="※" Height="23" HorizontalAlignment="Left" Margin="485,106,0,0" Name="labelTimerStar" VerticalAlignment="Top" Width="21" />
-                            <Label Content="{}" Height="58" HorizontalAlignment="Left" Margin="499,106,0,0" Name="labelTimer2" VerticalAlignment="Top" Width="213" />
+                            <TextBlock Text="※" Height="23" HorizontalAlignment="Left" Margin="485,106,0,0" Name="textblockStar" VerticalAlignment="Top" Width="21" />
+                            <TextBlock Text="{}" Height="58" HorizontalAlignment="Left" Margin="499,106,0,0" Name="textblockTimer" VerticalAlignment="Top" Width="213" TextWrapping="Wrap" />
                         </Grid>
                     </GroupBox>
                     <GroupBox Header="タスクアイコン 右クリック表示項目" Height="197" Margin="12,217,12,0" Name="groupBox32" VerticalAlignment="Top">
@@ -120,13 +120,13 @@
                     <CheckBox Content="休止／スタンバイ移行時にEpgTimerNWを終了する" Height="16" HorizontalAlignment="Left" Margin="351,181,0,0" Name="checkBox_suspendClose" VerticalAlignment="Top" IsEnabled="False" />
                     <CheckBox Content="EPGデータを自動的に読み込まない" Height="16" HorizontalAlignment="Left" Margin="351,203,0,0" Name="checkBox_ngAutoEpgLoad" VerticalAlignment="Top" IsEnabled="False" />
                     <CheckBox Content="録画済み一覧のダブルクリックで再生を行う" Height="16" HorizontalAlignment="Left" Margin="6,203,0,0" Name="checkBox_playDClick" VerticalAlignment="Top" />
-                    <Button Content="右クリックメニューの設定" Height="23" HorizontalAlignment="Left" Margin="6,327,0,0" Name="button_set_cm" Click="button_set_cm_Click" Style="{StaticResource ButtonStyle1}" VerticalAlignment="Top" Width="171" />
-                    <CheckBox Content="多数の予約項目を処理するとき警告する" Height="16" HorizontalAlignment="Left" Margin="6,299,0,0" Name="checkBox_cautionManyChange" VerticalAlignment="Top" />
-                    <Label Content="以上" Height="28" HorizontalAlignment="Right" Margin="0,293,415,0" Name="label_cautionManyChange" VerticalAlignment="Top" />
-                    <TextBox Height="24" HorizontalAlignment="Left" Margin="236,293,0,0" Name="textBox_cautionManyChange" VerticalAlignment="Top" Width="62" />
                     <CheckBox Content="EpgTimerSrvを常駐させる" Height="16" HorizontalAlignment="Left" Margin="6,225,0,0" Name="checkBox_srvResident" VerticalAlignment="Top" />
                     <CheckBox Content="タスクトレイアイコンを表示する" Height="16" HorizontalAlignment="Left" Margin="24,247,0,0" Name="checkBox_srvShowTray" VerticalAlignment="Top" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_srvResident, UpdateSourceTrigger=PropertyChanged}" />
                     <CheckBox Content="バルーンチップでの動作通知を抑制する" Height="16" HorizontalAlignment="Left" Margin="24,269,0,0" Name="checkBox_srvNoBalloonTip" VerticalAlignment="Top" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_srvResident, UpdateSourceTrigger=PropertyChanged}" />
+                    <CheckBox Content="多数の予約項目を処理するとき警告する" Height="16" HorizontalAlignment="Left" Margin="6,299,0,0" Name="checkBox_cautionManyChange" VerticalAlignment="Top" />
+                    <Label Content="以上" Height="28" HorizontalAlignment="Right" Margin="0,293,415,0" Name="label_cautionManyChange" VerticalAlignment="Top" />
+                    <TextBox Height="24" HorizontalAlignment="Left" Margin="236,293,0,0" Name="textBox_cautionManyChange" VerticalAlignment="Top" Width="62" />
+                    <Button Content="右クリックメニューの設定" Height="23" HorizontalAlignment="Left" Margin="6,327,0,0" Name="button_set_cm" Click="button_set_cm_Click" Style="{StaticResource ButtonStyle1}" VerticalAlignment="Top" Width="171" />
                 </Grid>
             </TabItem>
             <TabItem Header="カスタムボタン" Name="tabItem5">

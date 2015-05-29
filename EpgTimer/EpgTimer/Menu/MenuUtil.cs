@@ -3,11 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Diagnostics;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Controls;
-using System.Collections;
 
 using CtrlCmdCLI;
 using CtrlCmdCLI.Def;
@@ -26,7 +24,7 @@ namespace EpgTimer
         public string TrimEpgKeyword(string txtKey, bool NotToggle = false)//NotToggleはショートカット用
         {
             string txtKey1 = txtKey;
-            bool setting = Settings.Instance.CmEpgKeyword_Trim;
+            bool setting = Settings.Instance.MenuSet.Keyword_Trim;
             if (Keyboard.Modifiers == ModifierKeys.Shift && NotToggle == false)
             {
                 setting=!setting;
@@ -42,7 +40,7 @@ namespace EpgTimer
 
         public string EpgKeyword_TrimMode()
         {
-            return TrimModeTooltip(Settings.Instance.CmEpgKeyword_Trim);
+            return TrimModeTooltip(Settings.Instance.MenuSet.Keyword_Trim);
         }
 
         private string TrimModeTooltip(bool mode)
@@ -55,7 +53,7 @@ namespace EpgTimer
         public void CopyTitle2Clipboard(string txtTitle, bool NotToggle = false)
         {
             string txtTitle1 = txtTitle;
-            bool setting = Settings.Instance.CmCopyTitle_Trim;
+            bool setting = Settings.Instance.MenuSet.CopyTitle_Trim;
             if (Keyboard.Modifiers == ModifierKeys.Shift && NotToggle == false)
             {
                 setting = !setting;
@@ -71,7 +69,7 @@ namespace EpgTimer
 
         public string CopyTitle_TrimMode()
         {
-            return TrimModeTooltip(Settings.Instance.CmCopyTitle_Trim);
+            return TrimModeTooltip(Settings.Instance.MenuSet.CopyTitle_Trim);
         }
 
         public void CopyContent2Clipboard(EpgEventInfo eventInfo, bool NotToggle = false)
@@ -80,7 +78,7 @@ namespace EpgTimer
 
             if (eventInfo != null)
             {
-                bool setting = Settings.Instance.CmCopyContentBasic;
+                bool setting = Settings.Instance.MenuSet.CopyContentBasic;
                 if (Keyboard.Modifiers == ModifierKeys.Shift && NotToggle == false)
                 {
                     setting = !setting;
@@ -107,13 +105,13 @@ namespace EpgTimer
             CopyContent2Clipboard(CommonManager.Instance.GetEpgEventInfoFromReserveData(resInfo, true), NotToggle);
         }
 
-        public void CopyContent2Clipboard(RecInfoItem recInfo, bool NotToggle = false)
+        public void CopyContent2Clipboard(RecFileInfo recInfo, bool NotToggle = false)
         {
             string text = "";
 
             if (recInfo != null)
             {
-                bool setting = Settings.Instance.CmCopyContentBasic;
+                bool setting = Settings.Instance.MenuSet.CopyContentBasic;
                 if (Keyboard.Modifiers == ModifierKeys.Shift && NotToggle == false)
                 {
                     setting = !setting;
@@ -121,7 +119,7 @@ namespace EpgTimer
 
                 if (setting == true)
                 {
-                    string[] stArrayData = recInfo.RecInfo.ProgramInfo.Replace("\r\n", "\n").Split('\n');
+                    string[] stArrayData = recInfo.ProgramInfo.Replace("\r\n", "\n").Split('\n');
                     int endI = Math.Min(stArrayData.Length, 3);
 
                     for (int i = 0; i < endI; i++)
@@ -131,7 +129,7 @@ namespace EpgTimer
                 }
                 else
                 {
-                    text = recInfo.RecInfo.ProgramInfo;
+                    text = recInfo.ProgramInfo;
                 }
 
                 text = text.TrimEnd() + "\r\n";
@@ -142,15 +140,15 @@ namespace EpgTimer
 
         public string CopyContent_Mode()
         {
-            string mode = (Settings.Instance.CmCopyContentBasic == true ? "基本情報のみ" : "詳細情報");
-            string mode_toggle = (Settings.Instance.CmCopyContentBasic == false ? "'基本情報のみ'" : "'詳細情報'");
+            string mode = (Settings.Instance.MenuSet.CopyContentBasic == true ? "基本情報のみ" : "詳細情報");
+            string mode_toggle = (Settings.Instance.MenuSet.CopyContentBasic == false ? "'基本情報のみ'" : "'詳細情報'");
             return "取得モード : " + mode + " (Shift+クリックで一時的に" + mode_toggle + ")";
         }
 
         public void SearchText(string txtKey, bool NotToggle = false)
         {
             string txtKey1 = txtKey;
-            bool setting = Settings.Instance.CmSearchTitle_Trim;
+            bool setting = Settings.Instance.MenuSet.SearchTitle_Trim;
             if (Keyboard.Modifiers == ModifierKeys.Shift && NotToggle == false)
             {
                 setting = !setting;
@@ -161,7 +159,7 @@ namespace EpgTimer
                 txtKey1 = TrimKeyword(txtKey1);
             }
 
-            string txtURI = Settings.Instance.CmSearchURI;
+            string txtURI = Settings.Instance.MenuSet.SearchURI;
             txtURI += UrlEncode(txtKey1, System.Text.Encoding.UTF8);
 
             try
@@ -177,7 +175,7 @@ namespace EpgTimer
 
         public string SearchText_TrimMode()
         {
-            return TrimModeTooltip(Settings.Instance.CmSearchTitle_Trim);
+            return TrimModeTooltip(Settings.Instance.MenuSet.SearchTitle_Trim);
         }
 
         public string TrimKeyword(string txtKey)
@@ -251,45 +249,27 @@ namespace EpgTimer
                     rt.Append("%" + i.ToString("X2"));
             return rt.ToString();
         }
-        
-        public string MarginStartText(RecSettingData recSetting)
+
+        public string MarginText(RecSettingData recSetting, bool start)
         {
-            string view = "";
-            if (recSetting != null)
-            {
-                int marginTime;
-                if (recSetting.UseMargineFlag == 1)
-                {
-                    marginTime = recSetting.StartMargine;
-                }
-                else
-                {
-                    //TODO: ここでデフォルトマージンを確認するがEpgTimerNWでは無意味。根本的にはSendCtrlCmdの拡張が必要
-                    marginTime = IniFileHandler.GetPrivateProfileInt("SET", "StartMargin", 0, SettingPath.TimerSrvIniPath);
-                }
-                view = CustomTimeFormat(marginTime * -1, recSetting.UseMargineFlag);
-            }
-            return view;
+            return CustomTimeFormat(GetMargin(recSetting, start) * (start ? -1 : 1), recSetting.UseMargineFlag);
         }
 
-        public string MarginEndText(RecSettingData recSetting)
+        public int GetMargin(RecSettingData recSetting, bool start)
         {
-            string view = "";
-            if (recSetting != null)
+            if (recSetting == null) return 0;
+
+            int marginTime;
+            if (recSetting.UseMargineFlag == 1)
             {
-                int marginTime;
-                if (recSetting.UseMargineFlag == 1)
-                {
-                    marginTime = recSetting.EndMargine;
-                }
-                else
-                {
-                    //TODO: ここでデフォルトマージンを確認するがEpgTimerNWでは無意味。根本的にはSendCtrlCmdの拡張が必要
-                    marginTime = IniFileHandler.GetPrivateProfileInt("SET", "EndMargin", 0, SettingPath.TimerSrvIniPath);
-                }
-                view = CustomTimeFormat(marginTime, recSetting.UseMargineFlag);
+                marginTime = start ? recSetting.StartMargine : recSetting.EndMargine;
             }
-            return view;
+            else
+            {
+                //TODO: ここでデフォルトマージンを確認するがEpgTimerNWでは無意味。根本的にはSendCtrlCmdの拡張が必要
+                marginTime = IniFileHandler.GetPrivateProfileInt("SET", start ? "StartMargin" : "EndMargin", 0, SettingPath.TimerSrvIniPath);
+            }
+            return marginTime;
         }
 
         private string CustomTimeFormat(int span, byte useMarginFlag)
@@ -330,9 +310,9 @@ namespace EpgTimer
             return block;
         }
 
-        public List<T> GetList<T>(T item)
+        public List<T> ToList<T>(T item)
         {
-            return new T[]{item}.ToList();
+            return new List<T> { item };
         }
 
         /// <summary>
@@ -351,314 +331,7 @@ namespace EpgTimer
             }
         }
         
-        //取りあえずある程度集約。仮。各画面のコンテキストメニュー共通化したい。
-
-        /// <summary>
-        /// プリセットメニューの展開、リスト系でもパネル系でも使用
-        /// </summary>
-        public void ExpandPresetItems(MenuItem menu, Action<object, RoutedEventArgs> eventHandler)
-        {
-            int bar_pos = SearchMenuPosByName(menu, "bar_preset");
-            while (menu.Items.Count - 1 >= bar_pos + 1)
-            {
-                menu.Items.RemoveAt(menu.Items.Count - 1);
-            }
-
-            int i = 0;
-            foreach (RecPresetItem info in Settings.Instance.RecPresetList)
-            {
-                var menuItem = new MenuItem();
-                menuItem.Header = string.Format("プリセット - {0} (_{1})", info.DisplayName, i++);
-                menuItem.DataContext = info.ID;
-                menuItem.Click += new RoutedEventHandler(eventHandler);
-
-                menu.Items.Add(menuItem);
-            }
-        }
-
-        /// <summary>
-        /// パネル系の右クリックメニュー　予約追加
-        /// </summary>
-        public MenuItem GenerateAddMenu(Action<object, RoutedEventArgs>[] eventHandler)
-        {
-            var menuItemAdd = new MenuItem();
-            menuItemAdd.Header = "予約追加";
-
-            var menuItemAddDlg = new MenuItem();
-            menuItemAddDlg.Header = "ダイアログ表示";
-            menuItemAddDlg.Click += new RoutedEventHandler(eventHandler[0]);
-
-            menuItemAdd.Items.Add(menuItemAddDlg);
-
-            //プリセットメニュー作成
-            var menuItemPresetBar = new Separator();
-            menuItemPresetBar.Name = "bar_preset";
-            menuItemAdd.Items.Add(menuItemPresetBar);
-            ExpandPresetItems(menuItemAdd, eventHandler[1]);
-
-            return menuItemAdd;
-        }
-
-        /// <summary>
-        /// パネル系の右クリックメニュー　予約変更
-        /// </summary>
-        public MenuItem GenerateChgMenu(Action<object, RoutedEventArgs>[] eventHandler)
-        {
-            var menuItemChg = new MenuItem();
-            menuItemChg.Header = "変更";
-
-            var menuItemChgDlg = new MenuItem();
-            menuItemChgDlg.Header = "ダイアログ表示";
-            menuItemChgDlg.Click += new RoutedEventHandler(eventHandler[0]);
-            menuItemChg.Items.Add(menuItemChgDlg);
-
-            //録画モードメニュー作成
-            var menuItemRecmodeBar = new Separator();
-            menuItemRecmodeBar.Name = "bar_recmode";
-            menuItemChg.Items.Add(menuItemRecmodeBar);
-            GenerateRecModeItems(menuItemChg, eventHandler[1]);
-
-            //優先度モードメニュー作成
-            menuItemChg.Items.Add(new Separator());
-            menuItemChg.Items.Add(GeneratePriorityItems(eventHandler[2]));
-
-            return menuItemChg;
-        }
-
-        public void GenerateRecModeItems(MenuItem menu, Action<object, RoutedEventArgs> eventHandler)
-        {
-            string[] HeaderStr = {   "全サービス",
-                                     "指定サービス",
-                                     "全サービス（デコード処理なし）",
-                                     "指定サービス（デコード処理なし）",
-                                     "視聴",
-                                     "無効"};
-
-            for (int i = 0; i <= 5; i++)
-            {
-                var menuItem = new MenuItem();
-                menuItem.Header = string.Format("{0} (_{1})", HeaderStr[i], i);
-                menuItem.DataContext = (uint)i;//今は無くても大丈夫
-                menuItem.Click += new RoutedEventHandler(eventHandler);
-
-                menu.Items.Add(menuItem);
-            }
-        }
-
-        public MenuItem GeneratePriorityItems(Action<object, RoutedEventArgs> eventHandler)
-        {
-            var menuPri = new MenuItem();
-            menuPri.Name = "cm_pri";
-
-            for (int i = 1; i <= 5; i++)
-            {
-                var menuItem = new MenuItem();
-                menuItem.Header = string.Format("{0} (_{0})", i);
-                menuItem.DataContext = (uint)i;//今は無くても大丈夫
-                menuItem.Click += new RoutedEventHandler(eventHandler);
-
-                menuPri.Items.Add(menuItem);
-            }
-
-            return menuPri;
-        }
-
-        private int SearchMenuPosByName(MenuItem menu, string name)
-        {
-            for (int i = 0; i < menu.Items.Count; i++)
-            {
-                if ((menu.Items[i] as Control).Name == name)
-                {
-                    return i;
-                }
-            }
-            return -1;
-        }
-        
-        public void CheckChgItems(MenuItem menu, List<SearchItem> list)
-        {
-            CheckChgItems(menu, list.ReserveInfoList());
-        }
-        public void CheckChgItems(MenuItem menu, List<ReserveData> list)
-        {
-            if (list.Count == 0) return;
-
-            //選択されているすべての予約が同じ設定の場合だけチェックを表示する
-            byte recMode = list.All(info => info.RecSetting.RecMode == list[0].RecSetting.RecMode) ? list[0].RecSetting.RecMode : (byte)0xFF; ;
-            byte priority = list.All(info => info.RecSetting.Priority == list[0].RecSetting.Priority) ? list[0].RecSetting.Priority : (byte)0xFF; ;
-
-            int bar_pos = SearchMenuPosByName(menu, "bar_recmode");
-            if (bar_pos < 0) return;
-
-            for (int i = 0; i <= 5; i++)
-            {
-                ((MenuItem)menu.Items[i + bar_pos + 1]).DataContext = (uint)i;
-                ((MenuItem)menu.Items[i + bar_pos + 1]).IsChecked = (i == recMode);
-            }
-
-            int pri_pos = SearchMenuPosByName(menu, "cm_pri");
-            if (pri_pos < 0) return;
-
-            MenuItem priMenu = menu.Items[pri_pos] as MenuItem;
-            priMenu.Header = string.Format("優先度 {0}", priority < 0xFF ? "" + priority : "*");
-            for (int i = 1; i <= priMenu.Items.Count; i++)
-            {
-                ((MenuItem)priMenu.Items[i - 1]).DataContext = (uint)i;
-                ((MenuItem)priMenu.Items[i - 1]).IsChecked = (i == priority);
-            }
-        }
-
-        /// <summary>
-        /// パネル系番組表の右クリックメニュー　表示関係
-        /// </summary>
-        public MenuItem GenerateViewMenu(int mode, Action<object, RoutedEventArgs>[] eventHandler)
-        {
-            var menuItemView = new MenuItem();
-            menuItemView.Header = "表示モード";
-
-            var menuItemViewSetDlg = new MenuItem();
-            menuItemViewSetDlg.Header = "表示設定";
-            menuItemViewSetDlg.Click += new RoutedEventHandler(eventHandler[0]);
-            menuItemView.Items.Add(menuItemViewSetDlg);
-
-            menuItemView.Items.Add(new Separator());
-
-            string[] HeaderStr = { "標準モード", "1週間モード", "リスト表示モード" };
-            for (int i = 0; i < 3; i++)
-            {
-                var menuItemChgViewMode = new MenuItem();
-                menuItemChgViewMode.Header = string.Format("{0} (_{1})", HeaderStr[i], i + 1);
-                if (i != mode)
-                {
-                    menuItemChgViewMode.DataContext = i;
-                    menuItemChgViewMode.Click += new RoutedEventHandler(eventHandler[1]);
-                }
-                else
-                {
-                    menuItemChgViewMode.IsChecked = true;
-                }
-                menuItemView.Items.Add(menuItemChgViewMode);
-            }
-
-            return menuItemView;
-        }
-
-        /// <summary>
-        /// パネル系の右クリックメニュー　追加メニュー挿入
-        /// </summary>
-        public void InsertAppendMenu(ContextMenu menu, Action<object, RoutedEventArgs>[] eventHandler, bool enabled = true)
-        {
-            if (Settings.Instance.CmAppendMenu == false) return;
-
-            var menuItemCopy = new MenuItem();
-            menuItemCopy.Header = "番組名をコピー";
-            menuItemCopy.ToolTip = CopyTitle_TrimMode();
-            ToolTipService.SetShowOnDisabled(menuItemCopy, true);
-            menuItemCopy.Click += new RoutedEventHandler(eventHandler[0]);
-            menuItemCopy.IsEnabled = enabled;
-
-            var menuItemContent = new MenuItem();
-            menuItemContent.Header = "番組情報をコピー";
-            menuItemContent.ToolTip = CopyContent_Mode();
-            ToolTipService.SetShowOnDisabled(menuItemContent, true);
-            menuItemContent.Click += new RoutedEventHandler(eventHandler[1]);
-            menuItemContent.IsEnabled = enabled;
-
-            var menuItemSearch = new MenuItem();
-            menuItemSearch.Header = "番組名をネットで検索";
-            ToolTipService.SetShowOnDisabled(menuItemSearch, true);
-            menuItemSearch.ToolTip = SearchText_TrimMode();
-            menuItemSearch.Click += new RoutedEventHandler(eventHandler[2]);
-            menuItemSearch.IsEnabled = enabled;
-
-            menu.Items.Add(new Separator());
-            if (Settings.Instance.CmCopyTitle == true) menu.Items.Add(menuItemCopy);
-            if (Settings.Instance.CmCopyContent == true) menu.Items.Add(menuItemContent);
-            if (Settings.Instance.CmSearchTitle == true) menu.Items.Add(menuItemSearch);
-        }
-
-        /// <summary>
-        /// リスト系の右クリックメニュー　追加メニュー表示制御
-        /// </summary>
-        public bool AppendMenuVisibleControl(object item)
-        {
-            if (((string)(((Control)item).Tag)) == "EpgKeyword")
-            {
-                ((Control)item).ToolTip = EpgKeyword_TrimMode();
-                return true;
-            }
-
-            return AppendMenuVisibleSet(item, "cm_CmAppend", Settings.Instance.CmAppendMenu, null) ||
-                    AppendMenuVisibleSet(item, "cm_CopyTitle", Settings.Instance.CmCopyTitle, CopyTitle_TrimMode()) ||
-                    AppendMenuVisibleSet(item, "cm_CopyContent", Settings.Instance.CmCopyContent, CopyContent_Mode()) ||
-                    AppendMenuVisibleSet(item, "cm_SearchTitle", Settings.Instance.CmSearchTitle, SearchText_TrimMode());
-        }
-
-        private bool AppendMenuVisibleSet(object item1, string name, bool flg, string tooltip = null)
-        {
-            var item = (Control)item1;
-            bool retv = (item.Name == name);
-            if (retv)
-            {
-                if (Settings.Instance.CmAppendMenu == true && flg == true)
-                {
-                    item.Visibility = System.Windows.Visibility.Visible;
-                    item.ToolTip = tooltip;
-                }
-                else
-                {
-                    item.Visibility = System.Windows.Visibility.Collapsed;
-                }
-            }
-            return retv;
-        }
-
-        public void SendAutoAdd(SearchItem item, Control Owner)
-        {
-            SendAutoAdd(item.EventInfo, Owner);
-        }
-        public void SendAutoAdd(EpgEventInfo item, Control Owner)
-        {
-            SendAutoAdd(item.Title(), item.Create64Key(), Owner);
-        }
-        public void SendAutoAdd(RecFileInfo item, Control Owner)
-        {
-            SendAutoAdd(item.Title, item.Create64Key(), Owner);
-        }
-        public void SendAutoAdd(ReserveData item, Control Owner)
-        {
-            SendAutoAdd(item.Title, item.Create64Key(), Owner);
-        }
-        public void SendAutoAdd(string Title, UInt64 sidKey, Control Owner)
-        {
-            try
-            {
-                var dlg = new SearchWindow();
-                dlg.Owner = (Window)PresentationSource.FromVisual(Owner).RootVisual;
-                dlg.SetViewMode(1);
-
-                var key = new EpgSearchKeyInfo();
-                key.andKey = TrimEpgKeyword(Title);
-                key.serviceList.Add((Int64)sidKey);
-
-                dlg.SetSearchDefKey(key);
-                dlg.ShowDialog();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
-
-        public bool ReserveAdd(List<SearchItem> itemlist, RecSettingView recSettingView = null, object sender = null)
-        {
-            return ReserveAdd(itemlist.NoReserveInfoList(), recSettingView, sender);
-        }
-        public bool ReserveAdd(EpgEventInfo item, RecSettingView recSettingView = null, object sender = null)
-        {
-            return ReserveAdd(GetList(item), recSettingView, sender);
-        }
-        public bool ReserveAdd(List<EpgEventInfo> itemlist, RecSettingView recSettingView = null, object sender = null, bool cautionMany = true)
+        public bool ReserveAdd(List<EpgEventInfo> itemlist, RecSettingView recSettingView, uint presetID = 0, bool cautionMany = true)
         {
             try
             {
@@ -667,7 +340,6 @@ namespace EpgTimer
                     if (IsEnableReserveAdd(itemlist[0]) == false) return false;
                 }
 
-                //Memo:未使用時は即破棄、使用時もEpgTimerSrv側に送信後破棄されるので、forループの外にいられる。
                 var setInfo = new RecSettingData();
                 if (recSettingView != null)
                 {
@@ -676,14 +348,7 @@ namespace EpgTimer
                 }
                 else
                 {
-                    uint presetID = 0;  //EPG画面の簡易予約
-                    if (sender != null)
-                    {
-                        //コンテキストメニューからのプリセット予約
-                        presetID = ReadDataContext(sender, uint.MinValue, uint.MaxValue - 1);
-                        if (presetID == 0xFF) return false;
-
-                    }
+                    //簡易予約やプリセット予約
                     Settings.GetDefRecSetting(presetID, ref setInfo);
                 }
 
@@ -719,28 +384,11 @@ namespace EpgTimer
             }
             return retv;
         }
-        public bool ReserveAdd(ReserveData item)
-        {
-            return ReserveAdd(GetList(item));
-        }
         public bool ReserveAdd(List<ReserveData> list, bool cautionMany = true)
         {
             return ReserveCmdSend(list, cmd.SendAddReserve, "予約追加", cautionMany);
         }
 
-        public bool ReserveChangeOnOff(List<SearchItem> itemlist, RecSettingView recSettingView = null)
-        {
-            //取りあえずここにも入れておく。これのせいで苦しいが、また後で考える。
-            if (CautionManyMessage(itemlist.Count, "簡易予約/有効←→無効") == false) return false;
-
-            bool retv = ReserveAdd(itemlist.NoReserveInfoList(), recSettingView, null, false);
-            retv = ReserveChangeOnOff(itemlist.ReserveInfoList(), recSettingView, false) || retv;//順番重要
-            return retv;
-        }
-        public bool ReserveChangeOnOff(ReserveData item, RecSettingView recSettingView = null)
-        {
-            return ReserveChangeOnOff(GetList(item), recSettingView);
-        }
         public bool ReserveChangeOnOff(List<ReserveData> itemlist, RecSettingView recSettingView = null, bool cautionMany = true)
         {
             try
@@ -767,8 +415,8 @@ namespace EpgTimer
                 //デフォルトも無効で登録なら、指定サービスにする
                 byte recMode = setInfo.RecMode != 5 ? setInfo.RecMode : (byte)1;
 
-                itemlist.ForEach(item =>
-                    item.RecSetting.RecMode = (item.RecSetting.RecMode == 5 ? recMode : (byte)5));
+                //個別設定なので、ChangeRecmode()は不可。
+                itemlist.ForEach(item => item.RecSetting.RecMode = (item.RecSetting.RecMode == 5 ? recMode : (byte)5));
 
                 return ReserveChange(itemlist, cautionMany);
             }
@@ -779,24 +427,12 @@ namespace EpgTimer
             }
         }
 
-        public bool ReserveChangeRecmode(List<SearchItem> itemlist, object sender)
-        {
-            return ReserveChangeRecmode(itemlist.ReserveInfoList(), sender);
-        }
-        public bool ReserveChangeRecmode(ReserveData item, object sender)
-        {
-            return ReserveChangeRecmode(GetList(item), sender);
-        }
-        public bool ReserveChangeRecmode(List<ReserveData> itemlist, object sender)
+        public bool ChangeOnPreset(List<RecSettingData> infoList, uint presetID)
         {
             try
             {
-                byte recMode = (byte)ReadDataContext(sender, 0, 5);
-                if (recMode == 0xFF) return false;
-
-                itemlist.ForEach(item => item.RecSetting.RecMode = recMode);
-
-                return ReserveChange(itemlist);
+                infoList.ForEach(info => Settings.GetDefRecSetting(presetID, ref info));
+                return true;
             }
             catch (Exception ex)
             {
@@ -805,24 +441,12 @@ namespace EpgTimer
             }
         }
 
-        public bool ReserveChangePriority(List<SearchItem> itemlist, object sender)
-        {
-            return ReserveChangePriority(itemlist.ReserveInfoList(), sender);
-        }
-        public bool ReserveChangePriority(ReserveData item, object sender)
-        {
-            return ReserveChangePriority(GetList(item), sender);
-        }
-        public bool ReserveChangePriority(List<ReserveData> itemlist, object sender)
+        public bool ChangeRecmode(List<RecSettingData> infoList, byte recMode)
         {
             try
             {
-                byte priority = (byte)ReadDataContext(sender, 1, 5);
-                if (priority == 0xFF) return false;
-
-                itemlist.ForEach(item => item.RecSetting.Priority = priority);
-
-                return ReserveChange(itemlist);
+                infoList.ForEach(info => info.RecMode = recMode);
+                return true;
             }
             catch (Exception ex)
             {
@@ -830,39 +454,191 @@ namespace EpgTimer
                 return false;
             }
         }
-        private uint ReadDataContext(object sender, uint min, uint max)
+
+        public bool ChangePriority(List<RecSettingData> infoList, byte priority)
         {
             try
             {
-                if (sender == null || sender.GetType() != typeof(MenuItem))
+                infoList.ForEach(info => info.Priority = priority);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                return false;
+            }
+        }
+
+        public bool ChangeRelay(List<RecSettingData> infoList, byte relay)
+        {
+            try
+            {
+                infoList.ForEach(info => info.TuijyuuFlag = relay);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                return false;
+            }
+        }
+
+        public bool ChangePittari(List<RecSettingData> infoList, byte pittari)
+        {
+            try
+            {
+                infoList.ForEach(info => info.PittariFlag = pittari);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                return false;
+            }
+        }
+
+        public bool ChangeMargin(List<RecSettingData> infoList, int margin_offset, bool start)
+        {
+            try
+            {
+                if (margin_offset == 0)
                 {
-                    return 0xFF;
+                    infoList.ForEach(info => info.UseMargineFlag = 0);
                 }
-                return Math.Max(Math.Min((uint)((sender as MenuItem).DataContext), max), min);
+                else
+                {
+                    infoList.ForEach(info =>
+                    {
+                        info.UseMargineFlag = 1;
+                        if (start == true)
+                        {
+                            info.StartMargine += margin_offset;
+                        }
+                        else
+                        {
+                            info.EndMargine += margin_offset;
+                        }
+                    });
+                }
+
+                return true;
             }
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                return 0xFF;
+                return false;
             }
         }
-        public bool ReserveChange(ReserveData item)
+
+        public bool ChangeMarginValue(List<RecSettingData> infoList, bool start, Control owner = null)
         {
-            return ReserveChange(GetList(item));
-        }
-        public bool ReserveChange(List<ReserveData> list, bool cautionMany = true)
-        {
-            return ReserveCmdSend(list, cmd.SendChgReserve, "予約変更", cautionMany);
+            try
+            {
+                infoList[0].UseMargineFlag = 1;
+
+                Setting.SetDefRecSettingWindow dlg = new Setting.SetDefRecSettingWindow();
+                dlg.Owner = (Window)PresentationSource.FromVisual(owner).RootVisual;
+                dlg.SetSettingMode(start == true ? "開始マージン設定" : "終了マージン設定", 1);
+                dlg.recSettingView.SetDefSetting(infoList[0]);
+                dlg.recSettingView.SetChangeMode(start == true ? 0 : 1);
+
+                if (dlg.ShowDialog() == false) return false;
+
+                var setData = new RecSettingData();
+                dlg.recSettingView.GetRecSetting(ref setData);
+
+                infoList.ForEach(info =>
+                {
+                    info.UseMargineFlag = 1;
+                    if (start == true)
+                    {
+                        info.StartMargine = setData.StartMargine;
+                    }
+                    else
+                    {
+                        info.EndMargine = setData.EndMargine;
+                    }
+                });
+                return true;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                return false;
+            }
         }
 
-        public bool ReserveDelete(List<SearchItem> itemlist)
+        public bool ChangeTuner(List<RecSettingData> infoList, uint tuner)
         {
-            return ReserveDelete(itemlist.ReserveInfoList());
+            try
+            {
+                infoList.ForEach(info => info.TunerID = tuner);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                return false;
+            }
         }
-        public bool ReserveDelete(ReserveData item)
+
+        public bool ChangeBulkSet(List<RecSettingData> infoList, Control owner = null, bool pgAll = false)
         {
-            return ReserveDelete(GetList(item));
+            try
+            {
+                Setting.SetDefRecSettingWindow dlg = new Setting.SetDefRecSettingWindow();
+                dlg.Owner = (Window)PresentationSource.FromVisual(owner).RootVisual;
+                dlg.SetSettingMode("まとめて変更");
+                dlg.recSettingView.SetDefSetting(infoList[0]);
+                if (pgAll == true)
+                {
+                    dlg.recSettingView.SetViewMode(false);
+                }
+
+                if (dlg.ShowDialog() == false) return false;
+
+                var setData = new RecSettingData();
+                dlg.recSettingView.GetRecSetting(ref setData);
+
+                infoList.ForEach(info => setData.CopyTo(info));
+                return true;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                return false;
+            }
         }
+
+        public bool ChgGenre(List<EpgSearchKeyInfo> infoList, Control owner = null)
+        {
+            try
+            {
+                SetDefSearchSettingWindow dlg = new SetDefSearchSettingWindow();
+                dlg.Owner = (Window)PresentationSource.FromVisual(owner).RootVisual;
+                dlg.SetDefSetting(infoList[0]);
+                dlg.searchKey.searchKeyDescView.SetChangeMode(0);
+
+                if (dlg.ShowDialog() == false) return false;
+
+                var setData = new EpgSearchKeyInfo();
+                dlg.GetSetting(ref setData);
+
+                infoList.ForEach(info => info.contentList = setData.contentList.Clone());
+                return true;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                return false;
+            }
+        }
+
+        public bool ReserveChange(List<ReserveData> itemlist, bool cautionMany = true)
+        {
+            return ReserveCmdSend(itemlist, cmd.SendChgReserve, "予約変更", cautionMany);
+        }
+
         public bool ReserveDelete(List<ReserveData> itemlist)
         {
             try
@@ -877,29 +653,32 @@ namespace EpgTimer
             }
         }
 
-        public bool EpgAutoAddAdd(EpgAutoAddData item)
-        {
-            return EpgAutoAddAdd(GetList(item));
-        }
         public bool EpgAutoAddAdd(List<EpgAutoAddData> itemlist)
         {
             return ReserveCmdSend(itemlist, cmd.SendAddEpgAutoAdd, "EPG自動予約の追加");
         }
-
-        public bool EpgAutoAddChange(EpgAutoAddData item)
+        public bool EpgAutoAddChangeNotKey(List<EpgAutoAddData> itemlist)
         {
-            return EpgAutoAddChange(GetList(item));
+            try
+            {
+                itemlist.ForEach(item => item.searchInfo.notKey = Clipboard.GetText());
+                return ReserveCmdSend(itemlist, cmd.SendChgEpgAutoAdd, "EPG自動予約の変更");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                return false;
+            }
         }
         public bool EpgAutoAddChange(List<EpgAutoAddData> itemlist, bool cautionMany = true)
         {
             return ReserveCmdSend(itemlist, cmd.SendChgEpgAutoAdd, "EPG自動予約の変更", cautionMany);
         }
-
-        public bool EpgAutoAddDelete(List<EpgAutoDataItem> itemlist)
+        public bool EpgAutoAddDelete(List<EpgAutoAddData> itemlist)
         {
             try
             {
-                List<uint> list = itemlist.Select(item => item.EpgAutoAddInfo.dataID).ToList();
+                List<uint> list = itemlist.Select(item => item.dataID).ToList();
                 return EpgAutoAddDelete(list);
             }
             catch (Exception ex)
@@ -908,20 +687,64 @@ namespace EpgTimer
                 return false;
             }
         }
-        public bool EpgAutoAddDelete(uint item)
-        {
-            return EpgAutoAddDelete(GetList(item));
-        }
         public bool EpgAutoAddDelete(List<uint> itemlist)
         {
-            return ReserveCmdSend(itemlist, cmd.SendDelEpgAutoAdd, "EPG自動予約の削除");
+            return ReserveCmdSend(itemlist, cmd.SendDelEpgAutoAdd, "プログラム自動予約の削除");
+        }
+
+        public bool ManualAutoAddAdd(List<ManualAutoAddData> itemlist)
+        {
+            return ReserveCmdSend(itemlist, cmd.SendAddManualAdd, "プログラム自動予約の追加");
+        }
+        public bool ManualAutoAddChange(List<ManualAutoAddData> itemlist)
+        {
+            return ReserveCmdSend(itemlist, cmd.SendChgManualAdd, "プログラム自動予約の変更");
+        }
+        public bool ManualAutoAddDelete(List<ManualAutoAddData> itemlist)
+        {
+            try
+            {
+                List<uint> list = itemlist.Select(item => item.dataID).ToList();
+                return ReserveCmdSend(list, cmd.SendDelManualAdd, "プログラム自動予約の削除");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                return false;
+            }
+        }
+        public bool RecinfoChgProtect(List<RecFileInfo> itemlist)
+        {
+            try
+            {
+                itemlist.ForEach(item => item.ProtectFlag = !item.ProtectFlag);
+                return ReserveCmdSend(itemlist, cmd.SendChgProtectRecInfo, "録画情報の変更");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                return false;
+            }
+        }
+        public bool RecinfoDelete(List<RecFileInfo> itemlist)
+        {
+            try
+            {
+                List<uint> list = itemlist.Select(item => item.ID).ToList();
+                return ReserveCmdSend(list, cmd.SendDelRecInfo, "録画情報の削除");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                return false;
+            }
         }
 
         private bool ReserveCmdSend<T>(List<T> list, Func<List<T>, uint> cmdSend, string description = "", bool cautionMany = true)
         {
             try
             {
-                if (list.Count == 0) return false;
+                if (list.Count == 0) return true;
 
                 if (cautionMany == true && CautionManyMessage(list.Count, description) == false) return false;
 
@@ -934,7 +757,6 @@ namespace EpgTimer
                 return false;
             }
         }
-
         public bool CautionManyMessage(int Count, string description = "")
         {
             if (Settings.Instance.CautionManyChange == true && Count >= Settings.Instance.CautionManyNum)
@@ -949,27 +771,28 @@ namespace EpgTimer
             return true;
         }
 
-        public bool? OpenSearchItemWithWindow(SearchItem item, Control Owner, byte openMode = 0)
+        public bool? OpenSearchItemWithDialog(SearchItem item, Control Owner, byte openMode = 0)
         {
             if (item == null) return null;
 
             if (item.IsReserved == true)
             {
-                return OpenChangeReserveWindow(item.ReserveInfo, Owner, openMode);
+                return OpenChangeReserveDialog(item.ReserveInfo, Owner, openMode);
             }
             else
             {
-                return OpenEpgReserveWindow(item.EventInfo, Owner, openMode);
+                return OpenEpgReserveDialog(item.EventInfo, Owner, openMode);
             }
         }
 
-        public bool? OpenManualReserveWindow(Control Owner)
+        public bool? OpenEpgReserveDialog(EpgEventInfo Data, Control Owner, byte epgInfoOpenMode = 0)
         {
             try
             {
-                ChgReserveWindow dlg = new ChgReserveWindow();
+                var dlg = new AddReserveEpgWindow();
                 dlg.Owner = (Window)PresentationSource.FromVisual(Owner).RootVisual;
-                dlg.SetAddReserveMode();
+                dlg.SetEventInfo(Data);
+                dlg.SetOpenMode(epgInfoOpenMode);
                 return dlg.ShowDialog();
             }
             catch (Exception ex)
@@ -979,14 +802,29 @@ namespace EpgTimer
             }
         }
 
-        public bool? OpenEpgReserveWindow(EpgEventInfo epgInfo, Control Owner, byte openMode = 0)
+        public bool? OpenChangeReserveDialog(ReserveData Data, Control Owner, byte epgInfoOpenMode = 0)
+        {
+            return OpenChgReserveDialog(Data, Owner, epgInfoOpenMode);
+        }
+        public bool? OpenManualReserveDialog(Control Owner)
+        {
+            return OpenChgReserveDialog(null, Owner);
+        }
+        public bool? OpenChgReserveDialog(ReserveData Data, Control Owner, byte epgInfoOpenMode = 0)
         {
             try
             {
-                AddReserveEpgWindow dlg = new AddReserveEpgWindow();
+                var dlg = new ChgReserveWindow();
                 dlg.Owner = (Window)PresentationSource.FromVisual(Owner).RootVisual;
-                dlg.SetEventInfo(epgInfo);
-                dlg.SetOpenMode(openMode);
+                if (Data != null)
+                {
+                    dlg.SetReserveInfo(Data);
+                    dlg.SetOpenMode(epgInfoOpenMode);
+                }
+                else
+                {
+                    dlg.SetAddReserveMode();
+                }
                 return dlg.ShowDialog();
             }
             catch (Exception ex)
@@ -996,14 +834,107 @@ namespace EpgTimer
             }
         }
 
-        public bool? OpenChangeReserveWindow(ReserveData resInfo, Control Owner, byte openMode = 0)
+        public bool? OpenSearchEpgDialog(Control Owner)
+        {
+            return OpenEpgAutoAddDialog(null, Owner, SearchWindow.SearchMode.Find);
+        }
+        public bool? OpenAddEpgAutoAddDialog(Control Owner)
+        {
+            return OpenEpgAutoAddDialog(null, Owner, SearchWindow.SearchMode.NewAdd);
+        }
+        public bool? OpenChangeEpgAutoAddDialog(EpgAutoAddData Data, Control Owner)
+        {
+            return OpenEpgAutoAddDialog(Data, Owner, SearchWindow.SearchMode.Change);
+        }
+        private bool? OpenEpgAutoAddDialog(EpgAutoAddData Data, Control Owner, SearchWindow.SearchMode mode)
         {
             try
             {
-                ChgReserveWindow dlg = new ChgReserveWindow();
+                var dlg = new SearchWindow();
                 dlg.Owner = (Window)PresentationSource.FromVisual(Owner).RootVisual;
-                dlg.SetReserveInfo(resInfo);
-                dlg.SetOpenMode(openMode);
+                dlg.SetViewMode(mode);
+                if (Data != null)
+                {
+                    dlg.SetChgAutoAddID(Data.dataID);
+                    dlg.SetSearchDefKey(Data.searchInfo);
+                    dlg.SetRecInfoDef(Data.recSetting);
+                }
+                return dlg.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                return null;
+            }
+        }
+        public void SendAutoAdd(EpgEventInfo item, Control Owner, bool NotToggle = false)
+        {
+            SendAutoAdd(item.Title(), item.Create64Key(), Owner, NotToggle);
+        }
+        public void SendAutoAdd(RecFileInfo item, Control Owner, bool NotToggle = false)
+        {
+            SendAutoAdd(item.Title, item.Create64Key(), Owner, NotToggle);
+        }
+        public void SendAutoAdd(ReserveData item, Control Owner, bool NotToggle = false)
+        {
+            SendAutoAdd(item.Title, item.Create64Key(), Owner, NotToggle);
+        }
+        public void SendAutoAdd(string Title, UInt64 sidKey, Control Owner, bool NotToggle = false)
+        {
+            try
+            {
+                var dlg = new SearchWindow();
+                dlg.Owner = (Window)PresentationSource.FromVisual(Owner).RootVisual;
+                dlg.SetViewMode(SearchWindow.SearchMode.NewAdd);
+
+                var key = new EpgSearchKeyInfo();
+                key.andKey = TrimEpgKeyword(Title, NotToggle);
+                key.serviceList.Add((Int64)sidKey);
+
+                dlg.SetSearchDefKey(key);
+                dlg.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+            }
+        }
+
+        public bool? OpenAddManualAutoAddDialog(Control Owner)
+        {
+            return OpenManualAutoAddDialog(null, Owner);
+        }
+        public bool? OpenChangeManualAutoAddDialog(ManualAutoAddData Data, Control Owner)
+        {
+            return OpenManualAutoAddDialog(Data, Owner);
+        }
+        public bool? OpenManualAutoAddDialog(ManualAutoAddData Data, Control Owner)
+        {
+            try
+            {
+                var dlg = new AddManualAutoAddWindow();
+                dlg.Owner = (Window)PresentationSource.FromVisual(Owner).RootVisual;
+                if (Data != null)
+                {
+                    dlg.SetChangeMode(true);
+                    dlg.SetDefaultSetting(Data);
+                }
+                return dlg.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                return null;
+            }
+        }
+
+        public bool? OpenRecInfoDialog(RecFileInfo info, Control Owner)
+        {
+            try
+            {
+                var dlg = new RecInfoDescWindow();
+                dlg.Owner = (Window)PresentationSource.FromVisual(Owner).RootVisual;
+                dlg.SetRecInfo(info);
                 return dlg.ShowDialog();
             }
             catch (Exception ex)
@@ -1079,7 +1010,7 @@ namespace EpgTimer
         {
             try
             {
-                if (filePath.Length == 0) return;
+                if (filePath == null || filePath.Length == 0) return;
 
                 CommonManager cmg = CommonManager.Instance;
                 if (cmg.NWMode == false)
@@ -1109,13 +1040,17 @@ namespace EpgTimer
 
         //複数選択から単一要素を処理する際にどれを選ぶかの手続き。
         //今は最後に選択したものとしている。
-        public T SelectSingleItem<T>(ListBox list)
+        public object SelectSingleItem(ListBox list, bool notSelectionChange = false)
         {
-            if (list.SelectedItems.Count <= 1) return (T)list.SelectedItem;//SingleMode用
+            if (list == null) return null;
+            if (list.SelectedItems.Count <= 1) return list.SelectedItem;//SingleMode用
             object item = list.SelectedItems[list.SelectedItems.Count - 1];
-            list.UnselectAll();
-            list.SelectedItem = item;
-            return (T)item;
+            if (notSelectionChange == false)
+            {
+                list.UnselectAll();
+                list.SelectedItem = item;
+            }
+            return item;
         }
 
     }

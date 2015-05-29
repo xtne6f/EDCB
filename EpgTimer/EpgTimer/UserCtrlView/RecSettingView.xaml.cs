@@ -207,6 +207,23 @@ namespace EpgTimer
             }
         }
 
+        public void SetChangeMode(int chgMode)
+        {
+            switch (chgMode)
+            {
+                case 0:
+                    CommonManager.Instance.VUtil.SetSpecificChgAppearance(textBox_margineStart);
+                    textBox_margineStart.Focus();
+                    textBox_margineStart.SelectAll();
+                    break;
+                case 1:
+                    CommonManager.Instance.VUtil.SetSpecificChgAppearance(textBox_margineEnd);
+                    textBox_margineEnd.Focus();
+                    textBox_margineEnd.SelectAll();
+                    break;
+            }
+        }
+
         public void SetDefSetting(RecSettingData set)
         {
             RecPresetItem preCust = null;

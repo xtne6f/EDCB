@@ -27,6 +27,10 @@ namespace EpgTimer
         {
             return CommonManager.Instance.DB.GetEpgAutoAddDataAppend(master).OffCount;
         }
+        public static List<SearchItem> SearchItemList(this EpgAutoAddData master)
+        {
+            return CommonManager.Instance.DB.GetEpgAutoAddDataAppend(master).SearchItemList;
+        }
     }
 
     public class EpgAutoAddDataAppend
@@ -34,11 +38,12 @@ namespace EpgTimer
         public EpgAutoAddDataAppend(EpgAutoAddData master1, List<EpgEventInfo> eventlist = null)
         {
             master = master1;
-            searchItemList = eventlist;
+            epgEventList = eventlist;
         }
 
         private EpgAutoAddData master = null;
-        private List<EpgEventInfo> searchItemList = null;
+        private List<EpgEventInfo> epgEventList = null;
+        private List<SearchItem> searchItemList = null;
         private uint searchCount = 0;
         private uint onCount = 0;
         private uint offCount = 0;
@@ -53,20 +58,36 @@ namespace EpgTimer
         public uint OnCount         { get { RefreshData(); return onCount; } }
         public uint OffCount        { get { RefreshData(); return offCount; } }
 
-        public List<EpgEventInfo> SearchItemList
+        public List<EpgEventInfo> EpgEventList
+        {
+            get
+            {
+                if (epgEventList == null)
+                {
+                    this.EpgEventList = new List<EpgEventInfo>();
+                }
+                return epgEventList;
+            }
+            set
+            {
+                epgEventList = value;
+                updateCounts = true;
+            }
+        }
+
+        public List<SearchItem> SearchItemList
         {
             get
             {
                 if (searchItemList == null)
                 {
-                    this.SearchItemList = new List<EpgEventInfo>();
+                    this.searchItemList = new List<SearchItem>();
                 }
                 return searchItemList;
             }
             set
             {
                 searchItemList = value;
-                updateCounts = true;
             }
         }
 
@@ -80,23 +101,31 @@ namespace EpgTimer
             onCount = 0;
             offCount = 0;
 
-            if (master == null || searchItemList == null) return;
+            if (master == null || epgEventList == null) return;
 
-            var slist = new List<SearchItem>();
-            foreach (EpgEventInfo info in searchItemList)
-            {
-                if (info.start_time.AddSeconds(info.durationSec) > DateTime.Now)
-                {
-                    slist.Add(new SearchItem(info));
-                }
-            }
-            CommonManager.Instance.MUtil.SetSearchItemReserved(slist);
+            searchItemList = GetSearchItem();
+            var rlist = searchItemList.ReserveInfoList();
 
-            var rlist = slist.ReserveInfoList();
-
-            searchCount = (uint)slist.Count;
+            searchCount = (uint)searchItemList.Count;
             onCount = (uint)rlist.Count(info => info.RecSetting.RecMode != 5);
             offCount = (uint)rlist.Count - onCount;
+        }
+
+        private List<SearchItem> GetSearchItem()
+        {
+            var slist = new List<SearchItem>();
+            if (epgEventList != null)
+            {
+                foreach (EpgEventInfo info in epgEventList)
+                {
+                    if (info.start_time.AddSeconds(info.durationSec) > DateTime.Now)
+                    {
+                        slist.Add(new SearchItem(info));
+                    }
+                }
+                CommonManager.Instance.MUtil.SetSearchItemReserved(slist);
+            }
+            return slist;
         }
 
     }

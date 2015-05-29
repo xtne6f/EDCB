@@ -19,6 +19,7 @@ namespace EpgTimer
     {
         event ViewSettingClickHandler ViewSettingClick;
         bool ClearInfo();
+        void RefreshMenu();
         void SetViewMode(CustomEpgTabInfo setInfo);
         void UpdateReserveData();
         void UpdateEpgData();
@@ -124,6 +125,13 @@ namespace EpgTimer
             if (ViewSettingClick == null) return;
 
             ViewSettingClick(this, param);
+        }
+
+        public void RefreshMenu()
+        {
+            if (viewCtrl == null) return;
+
+            viewCtrl.RefreshMenu();
         }
 
         public CustomEpgTabInfo ViewInfo 

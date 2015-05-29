@@ -73,11 +73,11 @@ namespace EpgTimer
             }
         }
 
-        public void ContextMenuOpening(ContextMenu cm)
+        public void ContextMenuOpening(object sender, RoutedEventArgs e)
         {
             try
             {
-                foreach (MenuItem item in cm.Items)
+                foreach (MenuItem item in (sender as ContextMenu).Items)
                 {
                     item.IsChecked = settingList.Exists(setinfo => setinfo.Tag == item.Name);
                 }

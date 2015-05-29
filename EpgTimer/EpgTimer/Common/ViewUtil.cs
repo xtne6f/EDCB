@@ -62,6 +62,13 @@ namespace EpgTimer
             return color1;
         }
 
+        public void SetSpecificChgAppearance(Control obj)
+        {
+            obj.Background = new SolidColorBrush(Colors.LavenderBlush);
+            //obj.BorderBrush = new SolidColorBrush(Colors.Red);
+            obj.BorderThickness = new Thickness(2);
+        }
+
         public void view_ScrollChanged<T>(object sender, ScrollChangedEventArgs e, ScrollViewer main_scroll, ScrollViewer v_scroll, ScrollViewer h_scroll)
         {
             try
@@ -135,6 +142,14 @@ namespace EpgTimer
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
             return false;
+        }
+
+        public delegate bool GetPanelItem<T>(Point clickPois, ref T item) where T : class, new();
+        public List<T> GetPanelDataList<T>(GetPanelItem<T> GetItem, Point clickPos) where T : class, new()
+        {
+            T item = null;
+            GetItem(clickPos, ref item);
+            return item == null ? new List<T>() : new List<T>{item};
         }
 
         public bool ReloadReserveData(Control Owner = null)

@@ -91,7 +91,7 @@ namespace EpgTimer
             {
                 if (ReserveInfo == null) return "";
                 //
-                return mutil.MarginStartText(ReserveInfo.RecSetting);
+                return mutil.MarginText(ReserveInfo.RecSetting,true);
             }
         }
         public String MarginEnd
@@ -100,7 +100,7 @@ namespace EpgTimer
             {
                 if (ReserveInfo == null) return "";
                 //
-                return mutil.MarginEndText(ReserveInfo.RecSetting);
+                return mutil.MarginText(ReserveInfo.RecSetting, false);
             }
         }
         //public String ProgramContent -> SearchItem.cs

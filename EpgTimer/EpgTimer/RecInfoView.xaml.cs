@@ -4,9 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
 using System.Windows.Input;
-using System.ComponentModel;
 
 using CtrlCmdCLI;
 using CtrlCmdCLI.Def;
@@ -18,13 +16,17 @@ namespace EpgTimer
     /// </summary>
     public partial class RecInfoView : UserControl
     {
-        private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
         private MenuUtil mutil = CommonManager.Instance.MUtil;
+        private MenuManager mm = CommonManager.Instance.MM;
         private List<RecInfoItem> resultList = new List<RecInfoItem>();
         private bool ReloadInfo = true;
 
+        private CmdExeRecinfo mc;
+        private MenuBinds mBinds = new MenuBinds();
+
         private GridViewSelector gridViewSelector = null;
         private RoutedEventHandler headerSelect_Click = null;
+        private GridViewSorter<RecInfoItem> gridViewSorter = new GridViewSorter<RecInfoItem>();
 
         public RecInfoView()
         {
@@ -32,84 +34,50 @@ namespace EpgTimer
 
             try
             {
-                if (Settings.Instance.NoStyle == 1)
+                //最初にコマンド集の初期化
+                mc = new CmdExeRecinfo(this);
+                mc.SetFuncGetDataList(isAll => (isAll == true ? resultList : this.GetSelectedItemsList()).RecInfoList());
+                mc.SetFuncSelectSingleData((noChange) =>
                 {
-                    button_del.Style = null;
-                    button_play.Style = null;
-                }
+                    var item = this.SelectSingleItem(noChange);
+                    return item == null ? null : item.RecInfo;
+                });
+                mc.SetFuncReleaseSelectedData(() => listView_recinfo.UnselectAll());
 
+                //コマンド集からコマンドを登録
+                mc.ResetCommandBindings(this, listView_recinfo.ContextMenu);
+
+                //コンテキストメニューを開く時の設定
+                listView_recinfo.ContextMenu.Opened += new RoutedEventHandler(mc.SupportContextMenuLoading);
+
+                //ボタンの設定
+                mBinds.View = CtxmCode.RecInfoView;
+                mBinds.SetCommandToButton(button_del, EpgCmds.Delete);
+                mBinds.SetCommandToButton(button_delAll, EpgCmds.DeleteAll);
+                mBinds.SetCommandToButton(button_play, EpgCmds.Play);
+
+                //メニューの作成、ショートカットの登録
+                RefreshMenu();
+
+                //グリッドビュー関連の設定
                 gridViewSelector = new GridViewSelector(gridView_recinfo, Settings.Instance.RecInfoListColumn);
-                headerSelect_Click = gridViewSelector.HeaderSelectClick;
+                headerSelect_Click += new RoutedEventHandler(gridViewSelector.HeaderSelectClick);
+                gridView_recinfo.ColumnHeaderContextMenu.Opened += new RoutedEventHandler(gridViewSelector.ContextMenuOpening);
             }
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
-
-        private void ContextMenu_Header_ContextMenuOpening(object sender, ContextMenuEventArgs e)
+        public void RefreshMenu()
         {
-            gridViewSelector.ContextMenuOpening(listView_recinfo.ContextMenu);
+            mBinds.ResetInputBindings(this, listView_recinfo);
+            mm.CtxmGenerateContextMenu(listView_recinfo.ContextMenu, CtxmCode.RecInfoView, true);
         }
-
         public void SaveSize()
         {
             gridViewSelector.SaveSize();
         }
-
-        public void ChgProtectRecInfo()
-        {
-            try
-            {
-                if (listView_recinfo.SelectedItems.Count > 0)
-                {
-                    List<RecFileInfo> list = new List<RecFileInfo>();
-                    foreach (RecInfoItem info in listView_recinfo.SelectedItems)
-                    {
-                        info.RecInfo.ProtectFlag = !info.RecInfo.ProtectFlag;
-                        list.Add(info.RecInfo);
-                    }
-                    cmd.SendChgProtectRecInfo(list);
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
-
-        private void button_protect_Click(object sender, RoutedEventArgs e)
-        {
-            ChgProtectRecInfo();
-        }
-
-        private void button_del_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                if (listView_recinfo.SelectedItems.Count > 0)
-                {
-                    if (IniFileHandler.GetPrivateProfileInt("SET", "RecInfoDelFile", 0, SettingPath.CommonIniPath) == 1)
-                    {
-                        if (MessageBox.Show("録画ファイルが存在する場合は一緒に削除されます。\r\nよろしいですか？", "ファイル削除", MessageBoxButton.OKCancel) != MessageBoxResult.OK)
-                        {
-                            return;
-                        }
-                    }
-                    List<UInt32> IDList = new List<uint>();
-                    listView_recinfo.SelectedItems.Cast<RecInfoItem>().ToList().ForEach(
-                        info => IDList.Add(info.RecInfo.ID));
-                    cmd.SendDelRecInfo(IDList);
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
-        
-        GridViewSorter<RecInfoItem> gridViewSorter = new GridViewSorter<RecInfoItem>();
-
         private void GridViewColumnHeader_Click(object sender, RoutedEventArgs e)
         {
             GridViewColumnHeader headerClicked = e.OriginalSource as GridViewColumnHeader;
@@ -124,7 +92,20 @@ namespace EpgTimer
                 }
             }
         }
-
+        /// <summary>情報の更新通知</summary>
+        public void UpdateInfo()
+        {
+            ReloadInfo = true;
+            if (ReloadInfo == true && this.IsVisible == true) ReloadInfo = !ReloadInfoData();
+        }
+        private void UserControl_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (ReloadInfo == true && this.IsVisible == true) ReloadInfo = !ReloadInfoData();
+        }
+        private void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            if (ReloadInfo == true && this.IsVisible == true) ReloadInfo = !ReloadInfoData();
+        }
         public bool ReloadInfoData()
         {
             try
@@ -159,6 +140,7 @@ namespace EpgTimer
 
                 //選択情報の復元
                 oldItems.RestoreListViewSelected();
+                return true;
             }
             catch (Exception ex)
             {
@@ -167,227 +149,36 @@ namespace EpgTimer
                     MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
                 }), null);
                 return false;
-            } 
-            return true;
+            }
         }
-
-        /// <summary>
-        /// リストの更新通知
-        /// </summary>
-        public void UpdateInfo()
+        private RecInfoItem SelectSingleItem(bool notSelectionChange = false)
         {
-            ReloadInfo = true;
-            if (this.IsVisible == true)
-            {
-                ReloadInfo = !ReloadInfoData();
-            }
+            return mutil.SelectSingleItem(listView_recinfo, notSelectionChange) as RecInfoItem;
         }
-
-        private void UserControl_Loaded(object sender, RoutedEventArgs e)
+        private List<RecInfoItem> GetSelectedItemsList()
         {
-            if (ReloadInfo == true && this.IsVisible == true)
-            {
-                ReloadInfo = !ReloadInfoData();
-            }
+            return listView_recinfo.SelectedItems.Cast<RecInfoItem>().ToList();
         }
-
-        private void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
-        {
-            if (ReloadInfo == true && this.IsVisible == true)
-            {
-                ReloadInfo = !ReloadInfoData();
-            }
-        }
-
-        void listView_recinfo_PreviewKeyDown(object sender, KeyEventArgs e)
-        {
-            if (Keyboard.Modifiers == ModifierKeys.Control)
-            {
-                switch (e.Key)
-                {
-                    case Key.P:
-                        this.button_play_Click(this.listView_recinfo.SelectedItem, new RoutedEventArgs(Button.ClickEvent));
-                        break;
-                    case Key.S:
-                        this.ChgProtectRecInfo();
-                        break;
-                    case Key.D:
-                        this.deleteItem();
-                        break;
-                    case Key.C:
-                        this.CopyTitle2Clipboard();
-                        break;
-                }
-            }
-            else if (Keyboard.Modifiers == ModifierKeys.None)
-            {
-                switch (e.Key)
-                {
-                    case Key.Enter:
-                        this.button_recInfo_Click(this.listView_recinfo.SelectedItem, new RoutedEventArgs(Button.ClickEvent));
-                        e.Handled = true;
-                        break;
-                    case Key.Delete:
-                        this.deleteItem();
-                        e.Handled = true;
-                        break;
-                }
-            }
-        }
-
-        void deleteItem()
-        {
-            if (listView_recinfo.SelectedItems.Count == 0) { return; }
-            //
-            string text1 = "削除しますか?　[削除アイテム数: " + listView_recinfo.SelectedItems.Count + "]" + "\r\n\r\n";
-            string caption1 = "項目削除の確認";
-            if (MessageBox.Show(text1, caption1, MessageBoxButton.OKCancel, MessageBoxImage.Exclamation, MessageBoxResult.OK) == MessageBoxResult.OK)
-            {
-                this.button_del_Click(this.listView_recinfo.SelectedItem, new RoutedEventArgs(Button.ClickEvent));
-            }
-        }
-
         private void listView_recinfo_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            if (listView_recinfo.SelectedItem != null)
+            if (Settings.Instance.PlayDClick == true)
             {
-                if (Settings.Instance.PlayDClick == false)
-                {
-                    RecInfoItem info = (RecInfoItem)listView_recinfo.SelectedItem;
-                    RecInfoDescWindow dlg = new RecInfoDescWindow();
-                    dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-                    dlg.SetRecInfo(info.RecInfo);
-                    dlg.ShowDialog();
-                }
-                else
-                {
-                    button_play_Click(sender, e);
-                }
+                EpgCmds.Play.Execute(sender, this);
+            }
+            else
+            {
+                EpgCmds.ShowDialog.Execute(sender, this);
             }
         }
-
-        private RecInfoItem SelectSingleItem()
+        //リストのカギマークからの呼び出し
+        public bool ChgProtectRecInfoForMark(RecInfoItem hitItem)
         {
-            return mutil.SelectSingleItem<RecInfoItem>(listView_recinfo);
-        }
-
-        private void button_play_Click(object sender, RoutedEventArgs e)
-        {
-            if (listView_recinfo.SelectedItem != null)
+            if (listView_recinfo.SelectedItems.Contains(hitItem) == true)
             {
-                RecInfoItem info = SelectSingleItem();
-                mutil.FilePlay(info.RecInfo.RecFilePath);
+                EpgCmds.ProtectChange.Execute(listView_recinfo, this);
+                return true;
             }
-        }
-
-        private void autoadd_Click(object sender, RoutedEventArgs e)
-        {
-            if (listView_recinfo.SelectedItem != null)
-            {
-                RecInfoItem info = SelectSingleItem();
-                mutil.SendAutoAdd(info.RecInfo, this);
-            }
-        }
-
-        private void button_recInfo_Click(object sender, RoutedEventArgs e)
-        {
-            if (listView_recinfo.SelectedItem != null)
-            {
-                RecInfoItem info = SelectSingleItem();
-                RecInfoDescWindow dlg = new RecInfoDescWindow();
-                dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-                dlg.SetRecInfo(info.RecInfo);
-                dlg.ShowDialog();
-            }
-        }
-
-        private void openFolder_Click(object sender, RoutedEventArgs e)
-        {
-            if (listView_recinfo.SelectedItem != null)
-            {
-                RecInfoItem info = SelectSingleItem();
-
-                if (CommonManager.Instance.NWMode == false)//一応残す
-                {
-                    if (info.RecFilePath.Length == 0)
-                    {
-                        MessageBox.Show("録画ファイルが存在しません");
-                    }
-                    else
-                    {
-                        if (System.IO.File.Exists(info.RecFilePath) == true)
-                        {
-                            String cmd = "/select,";
-                            cmd += "\"" + info.RecFilePath + "\"";
-
-                            System.Diagnostics.Process.Start("EXPLORER.EXE", cmd);
-                        }
-                        else
-                        {
-                            String folderPath = System.IO.Path.GetDirectoryName(info.RecFilePath);
-                            System.Diagnostics.Process.Start("EXPLORER.EXE", folderPath);
-                        }
-                    }
-                }
-            }
-        }
-
-        private void MenuItem_Click_CopyTitle(object sender, RoutedEventArgs e)
-        {
-            CopyTitle2Clipboard();
-        }
-
-        private void CopyTitle2Clipboard()
-        {
-            if (listView_recinfo.SelectedItem != null)
-            {
-                RecInfoItem info = SelectSingleItem();
-                mutil.CopyTitle2Clipboard(info.EventName);
-            }
-        }
-
-        private void MenuItem_Click_CopyContent(object sender, RoutedEventArgs e)
-        {
-            if (listView_recinfo.SelectedItem != null)
-            {
-                RecInfoItem info = SelectSingleItem();
-                mutil.CopyContent2Clipboard(info);
-            }
-        }
-
-        private void MenuItem_Click_SearchTitle(object sender, RoutedEventArgs e)
-        {
-            if (listView_recinfo.SelectedItem != null)
-            {
-                RecInfoItem info = SelectSingleItem();
-                mutil.SearchText(info.EventName);
-            }
-        }
-
-        private void cmdMenu_Loaded(object sender, RoutedEventArgs e)
-        {
-            if (listView_recinfo.SelectedItem != null)
-            {
-                try
-                {
-                    foreach (object item in ((ContextMenu)sender).Items)
-                    {
-                        if (item is MenuItem && ((((MenuItem)item).Name == "cmdopenFolder")))
-                        {
-                            if (CommonManager.Instance.NWMode == true)
-                            {
-                                ((MenuItem)item).Visibility = System.Windows.Visibility.Collapsed;
-                            }
-                        }
-                        else if (mutil.AppendMenuVisibleControl(item)) { }
-                        else { }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                }
-            }
+            return false;
         }
     }
 }

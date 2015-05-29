@@ -38,8 +38,6 @@ namespace EpgTimer
                 button_OK.Style = null;
                 button_cancel.Style = null;
             }
-
-
         }
 
         private void button_OK_Click(object sender, RoutedEventArgs e)

@@ -93,6 +93,11 @@ namespace EpgTimer
             get;
             set;
         }
+        public NWConnect NW
+        {
+            get;
+            set;
+        }
         public MenuUtil MUtil
         {
             get;
@@ -103,10 +108,17 @@ namespace EpgTimer
             get;
             set;
         }
-        public NWConnect NW
+        MenuManager _mm;
+        public MenuManager MM
         {
-            get;
-            set;
+            get
+            {
+                //初期化に他のオブジェクトを使うので遅延させる
+                if (_mm == null) _mm = new MenuManager();
+                //
+                return _mm;
+            }
+            set { _mm = value; }
         }
         public List<Brush> CustContentColorList
         {
@@ -1454,6 +1466,32 @@ namespace EpgTimer
             return path;
         }
 
+        public void OpenFolder(string folder_path, string msg = "存在しません")
+        {
+            try
+            {
+                if (folder_path == null || folder_path.Length == 0)
+                {
+                    MessageBox.Show(msg);
+                }
+                else if (System.IO.File.Exists(folder_path) != true)
+                {
+                    String folderPath = GetDirectoryName2(folder_path);
+                    System.Diagnostics.Process.Start("EXPLORER.EXE", folderPath);
+                }
+                else
+                {
+                    String cmd = "/select,";
+                    cmd += "\"" + folder_path + "\"";
+
+                    System.Diagnostics.Process.Start("EXPLORER.EXE", cmd);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+            }
+        }
         public void ReloadCustContentColorList()
         {
             try

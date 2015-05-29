@@ -33,9 +33,22 @@ namespace EpgTimer.Setting
             }
         }
 
+        public void SetSettingMode(string title = "", int tab = 0)
+        {
+            Title = (title == "") ? "録画設定変更" : title;
+            button_cancel.Visibility = Visibility.Visible;
+            button_ok.Content = "OK";
+            recSettingView.tabControl1.SelectedIndex = tab == 0 ? 0 : 1;
+        }
+
         private void button_ok_Click(object sender, RoutedEventArgs e)
         {
             DialogResult = true;
+        }
+
+        private void button_cancel_Click(object sender, RoutedEventArgs e)
+        {
+            DialogResult = false;
         }
 
         protected override void OnKeyDown(KeyEventArgs e)
@@ -45,7 +58,7 @@ namespace EpgTimer.Setting
                 switch (e.Key)
                 {
                     case Key.Escape:
-                        this.Close();
+                        this.button_cancel.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                         break;
                 }
             }

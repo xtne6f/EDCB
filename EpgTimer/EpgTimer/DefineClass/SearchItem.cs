@@ -254,10 +254,10 @@ namespace EpgTimer
         {
             return list.Any(info => info == null ? false : info.IsReserved);
         }
-        public static bool HasNoReserved(this List<SearchItem> list)
-        {
-            return list.Any(info => info == null ? false : !info.IsReserved);
-        }
+        //public static bool HasNoReserved(this List<SearchItem> list)
+        //{
+        //    return list.Any(info => info == null ? false : !info.IsReserved);
+        //}
 
     }
 }

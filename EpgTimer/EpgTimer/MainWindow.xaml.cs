@@ -33,6 +33,8 @@ namespace EpgTimer
         private Dictionary<string, Button> buttonList = new Dictionary<string, Button>();
         private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
 
+        private MenuBinds mBinds = new MenuBinds();
+
         private PipeServer pipeServer = null;
         private string pipeName = "\\\\.\\pipe\\EpgTimerGUI_Ctrl_BonPipe_";
         private string pipeEventName = "Global\\EpgTimerGUI_Ctrl_BonConnect_";
@@ -58,16 +60,16 @@ namespace EpgTimer
             }
 
             ChSet5.LoadFile();
+            CommonManager.Instance.MM.ReloadWorkData();
             CommonManager.Instance.ReloadCustContentColorList();
 
             if (Settings.Instance.NoStyle == 0)
             {
-                ResourceDictionary rd = new ResourceDictionary();
-                rd.MergedDictionaries.Add(
+                //後で整理する
+                App.Current.Resources.MergedDictionaries.Add(
                     Application.LoadComponent(new Uri("/PresentationFramework.Aero, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35;component/themes/aero.normalcolor.xaml", UriKind.Relative)) as ResourceDictionary
                     //Application.LoadComponent(new Uri("/PresentationFramework.Classic, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, ProcessorArchitecture=MSIL;component/themes/Classic.xaml", UriKind.Relative)) as ResourceDictionary
                     );
-                this.Resources = rd;
             }
 
             mutex = new System.Threading.Mutex(false, CommonManager.Instance.NWMode ? "Global\\EpgTimer_BonNW" : "Global\\EpgTimer_Bon2");
@@ -212,13 +214,17 @@ namespace EpgTimer
                 Button searchButton = new Button();
                 searchButton.MinWidth = 75;
                 searchButton.Margin = new Thickness(2, 2, 2, 5);
-                searchButton.Click += new RoutedEventHandler(searchButton_Click);
                 searchButton.Content = "検索";
                 if (Settings.Instance.NoStyle == 0)
                 {
                     searchButton.Style = (Style)App.Current.Resources["ButtonStyle1"];
                 }
                 buttonList.Add("検索", searchButton);
+
+                //検索ボタンは他と共通でショートカット割り振られているので、コマンド側で処理する。
+                this.CommandBindings.Add(new CommandBinding(EpgCmds.Search, searchButton_Click));
+                mBinds.SetCommandToButton(searchButton, EpgCmds.Search);
+                RefreshButton();
 
                 Button closeButton = new Button();
                 closeButton.MinWidth = 75;
@@ -615,9 +621,9 @@ namespace EpgTimer
             CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.AutoAddManualInfo);
             CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.EpgData);
             CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.PlugInFile);
-            reserveView.UpdateReserveData();
+            reserveView.UpdateInfo();
             epgView.UpdateReserveData();
-            tunerReserveView.UpdateReserveData();
+            tunerReserveView.UpdateInfo();
             autoAddView.UpdateAutoAddInfo();
             recInfoView.UpdateInfo();
             epgView.UpdateEpgData();
@@ -803,13 +809,6 @@ namespace EpgTimer
             {
                 switch (e.Key)
                 {
-                    case Key.F:
-                        if (e.IsRepeat == false)
-                        {
-                            this.buttonList["検索"].RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-                        }
-                        e.Handled = true;
-                        break;
                     case Key.D1:
                         if (e.IsRepeat == false)
                         {
@@ -870,14 +869,15 @@ namespace EpgTimer
                     {
                         CommonManager.Instance.DB.SetNoAutoReloadEPG(Settings.Instance.NgAutoEpgLoadNW);
                     }
-                    reserveView.UpdateReserveData();
-                    tunerReserveView.UpdateReserveData();
+                    reserveView.UpdateInfo();
+                    tunerReserveView.UpdateInfo();
                     recInfoView.UpdateInfo();
                     autoAddView.UpdateAutoAddInfo();
                     epgView.UpdateSetting();
                     cmd.SendReloadSetting();
                     ResetButtonView();
                     ResetTaskMenu();
+                    RefreshMenu(false);
                 }
             }
             if (setting.ServiceStop == true)
@@ -891,12 +891,34 @@ namespace EpgTimer
             ChSet5.LoadFile();
         }
 
-        void searchButton_Click(object sender, RoutedEventArgs e)
+        public void RefreshMenu(bool MenuOnly = false)
+        {
+            CommonManager.Instance.MM.ReloadWorkData();
+            reserveView.RefreshMenu();
+            tunerReserveView.RefreshMenu();
+            recInfoView.RefreshMenu();
+            autoAddView.RefreshMenu();
+
+            //epgViewでは設定全体の更新の際に、EPG再描画に合わせてメニューも更新されるため。
+            if (MenuOnly == true)
+            {
+                epgView.RefreshMenu();
+            }
+
+            RefreshButton();
+        }
+        public void RefreshButton()
+        {
+            //検索ボタン用。
+            mBinds.ResetInputBindings(this);
+        }
+
+        void searchButton_Click(object sender, ExecutedRoutedEventArgs e)
         {
             // Hide()したSearchWindowを復帰
             foreach (Window win1 in this.OwnedWindows)
             {
-                if (win1.GetType() == typeof(SearchWindow))
+                if (win1 is SearchWindow)
                 {
                     //他で予約情報が更新されてたりするので情報を再読み込みさせる。その後はモーダルウィンドウに。
                     //ウィンドウ管理を真面目にやればモードレスもありか
@@ -906,19 +928,7 @@ namespace EpgTimer
                 }
             }
             //
-            SearchCmd();
-        }
-
-        void SearchCmd()
-        {
-            SearchWindow search = new SearchWindow();
-            PresentationSource topWindow = PresentationSource.FromVisual(this);
-            if (topWindow != null)
-            {
-                search.Owner = (Window)topWindow.RootVisual;
-            }
-            search.SetViewMode(0);
-            search.ShowDialog();
+            CommonManager.Instance.MUtil.OpenSearchEpgDialog(this);
         }
 
         void closeButton_Click(object sender, RoutedEventArgs e)
@@ -1154,9 +1164,9 @@ namespace EpgTimer
                             CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.RecInfo);
                             CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.AutoAddEpgInfo);
                             CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.AutoAddManualInfo);
-                            reserveView.UpdateReserveData();
+                            reserveView.UpdateInfo();
                             epgView.UpdateReserveData();
-                            tunerReserveView.UpdateReserveData();
+                            tunerReserveView.UpdateInfo();
                             autoAddView.UpdateAutoAddInfo();
                             recInfoView.UpdateInfo();
 
@@ -1182,9 +1192,9 @@ namespace EpgTimer
                                 CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.RecInfo);
                                 CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.AutoAddEpgInfo);
                                 CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.AutoAddManualInfo);
-                                reserveView.UpdateReserveData();
+                                reserveView.UpdateInfo();
                                 epgView.UpdateReserveData();
-                                tunerReserveView.UpdateReserveData();
+                                tunerReserveView.UpdateInfo();
                                 autoAddView.UpdateAutoAddInfo();
                                 recInfoView.UpdateInfo();
 
@@ -1478,10 +1488,10 @@ namespace EpgTimer
                         {
                             CommonManager.Instance.DB.ReloadReserveInfo();
                         }
-                        reserveView.UpdateReserveData();
+                        reserveView.UpdateInfo();
                         autoAddView.UpdateAutoAddInfo();
                         epgView.UpdateReserveData();
-                        tunerReserveView.UpdateReserveData();
+                        tunerReserveView.UpdateInfo();
                     }
                     break;
                 case UpdateNotifyItem.RecInfo:
@@ -1708,8 +1718,8 @@ namespace EpgTimer
                     else
                     {
                         //更新しない場合でも、再描画だけはかけておく
-                        reserveView.UpdateReserveData();
-                        tunerReserveView.UpdateReserveData();
+                        reserveView.UpdateInfo();
+                        tunerReserveView.UpdateInfo();
                         autoAddView.UpdateAutoAddInfo();
                         epgView.UpdateReserveData();
                     }

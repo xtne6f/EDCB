@@ -115,4 +115,12 @@ namespace EpgTimer
             }
         }
     }
+
+    public static class ManualAutoAddDataItemEx
+    {
+        public static List<ManualAutoAddData> ManualAutoAddInfoList(this ICollection<ManualAutoAddDataItem> itemlist)
+        {
+            return itemlist.Where(item => item != null).Select(item => item.ManualAutoAddInfo).ToList();
+        }
+    }
 }

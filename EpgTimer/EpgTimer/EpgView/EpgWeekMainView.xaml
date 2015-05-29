@@ -26,11 +26,11 @@
                 <RowDefinition Height="40" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
-            <Button Content="現在" Grid.Row="0" Grid.Column="0" Name="button_now" Click="button_now_Click" Style="{StaticResource ButtonStyle1}" MouseRightButtonUp="button_erea_MouseRightButtonUp" />
+            <Button Content="現在" Grid.Row="0" Grid.Column="0" Name="button_now" MouseRightButtonUp="button_erea_MouseRightButtonUp" />
             <local:TimeView Grid.Row="1" x:Name="timeView" Margin="0,0,0,18" MouseRightButtonUp="button_erea_MouseRightButtonUp" />
             <local:WeekDayView Grid.Column="1" x:Name="weekDayView" Margin="0,0,18,0" MouseRightButtonUp="button_erea_MouseRightButtonUp" />
             <local:ProgramView Grid.Column="1" Grid.Row="1" x:Name="epgProgramView" />
         </Grid>
-        <Button Content="標準モード" Height="23" HorizontalAlignment="Left" Margin="273,12,0,0" Name="button_go_Main" VerticalAlignment="Top" Width="66" Click="button_go_Main_Click" />
+        <Button Content="標準モード" Height="23" HorizontalAlignment="Left" Margin="273,12,0,0" Name="button_go_Main" VerticalAlignment="Top" Width="66" />
     </Grid>
 </local:EpgMainViewBase>
