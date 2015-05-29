@@ -19,27 +19,30 @@ namespace EpgTimer
         private MenuUtil mutil = CommonManager.Instance.MUtil;
         private ViewUtil vutil = CommonManager.Instance.VUtil;
         private MenuManager mm = CommonManager.Instance.MM;
-        private List<EpgAutoDataItem> resultList = new List<EpgAutoDataItem>();
         private bool ReloadInfo = true;
 
         private CmdExeEpgAutoAdd mc;
         private MenuBinds mBinds = new MenuBinds();
 
-        private GridViewSelector gridViewSelector = null;
-        private RoutedEventHandler headerSelect_Click = null;
-        private GridViewSorter<EpgAutoDataItem> gridViewSorter = new GridViewSorter<EpgAutoDataItem>("RecFolder");
+        private ListViewController<EpgAutoDataItem> lstCtrl = null;
 
         public EpgAutoAddView()
         {
             InitializeComponent();
             try
             {
+                //リストビュー関連の設定
+                lstCtrl = new ListViewController<EpgAutoDataItem>(this);
+                lstCtrl.SetSavePath(mutil.GetMemberName(() => Settings.Instance.AutoAddEpgColumn));
+                lstCtrl.SetViewSetting(listView_key, gridView_key, false, new string[] { "RecFolder" }
+                    , (sender, e) => this.ItemOrderNotSaved |= lstCtrl.GridViewHeaderClickSort(e));
+
                 //最初にコマンド集の初期化
                 mc = new CmdExeEpgAutoAdd(this);
-                mc.SetFuncGetDataList(isAll => (isAll == true ? resultList : this.GetSelectedItemsList()).EpgAutoAddInfoList());
+                mc.SetFuncGetDataList(isAll => (isAll == true ? lstCtrl.dataList : lstCtrl.GetSelectedItemsList()).EpgAutoAddInfoList());
                 mc.SetFuncSelectSingleData((noChange) =>
                 {
-                    var item = this.SelectSingleItem(noChange);
+                    var item = lstCtrl.SelectSingleItem(noChange);
                     return item == null ? null : item.EpgAutoAddInfo;
                 });
                 mc.SetFuncReleaseSelectedData(() => listView_key.UnselectAll());
@@ -69,11 +72,6 @@ namespace EpgTimer
 
                 //メニューの作成、ショートカットの登録
                 RefreshMenu();
-
-                //グリッドビュー関連の設定
-                gridViewSelector = new GridViewSelector(gridView_key, Settings.Instance.AutoAddEpgColumn);
-                headerSelect_Click += new RoutedEventHandler(gridViewSelector.HeaderSelectClick);
-                gridView_key.ColumnHeaderContextMenu.Opened += new RoutedEventHandler(gridViewSelector.ContextMenuOpening);
             }
             catch (Exception ex)
             {
@@ -88,7 +86,7 @@ namespace EpgTimer
 
         public void SaveViewData()
         {
-            gridViewSelector.SaveSize(Settings.Instance.AutoAddEpgColumn);
+            lstCtrl.SaveViewDataToSettings();
         }
 
         public void UpdateListViewSelection(uint autoAddID)
@@ -99,13 +97,12 @@ namespace EpgTimer
 
                 if (autoAddID == 0) return;//無くても結果は同じ
 
-                foreach (EpgAutoDataItem item in listView_key.Items)
+                var target = listView_key.Items.OfType<EpgAutoDataItem>()
+                    .FirstOrDefault(item => item.EpgAutoAddInfo.dataID == autoAddID);
+
+                if (target != null)
                 {
-                    if (item.EpgAutoAddInfo.dataID == autoAddID)
-                    {
-                        listView_key.SelectedItem = item;
-                        break;
-                    }
+                    listView_key.SelectedItem = target;
                 }
             }
         }
@@ -126,51 +123,18 @@ namespace EpgTimer
         }
         private bool ReloadInfoData()
         {
-            try
+            return lstCtrl.ReloadInfoData(dataList =>
             {
-                //更新前の選択情報の保存
-                var oldItems = new ListViewSelectedKeeper(listView_key, true);
-
-                listView_key.DataContext = null;
-                resultList.Clear();
-
-                if (CommonManager.Instance.VUtil.EpgTimerNWNotConnect() == true) return false;
-
                 ErrCode err = CommonManager.Instance.DB.ReloadEpgAutoAddInfo();
                 if (CommonManager.CmdErrMsgTypical(err, "情報の取得", this) == false) return false;
 
                 foreach (EpgAutoAddData info in CommonManager.Instance.DB.EpgAutoAddList.Values)
                 {
-                    EpgAutoDataItem item = new EpgAutoDataItem(info);
-                    resultList.Add(item);
+                    dataList.Add(new EpgAutoDataItem(info));
                 }
-                listView_key.DataContext = resultList;
-
-                this.gridViewSorter.ResetSortParams();
                 this.ItemOrderNotSaved = false;
-
-                //選択情報の復元
-                oldItems.RestoreListViewSelected();
                 return true;
-            }
-            catch (Exception ex)
-            {
-                this.Dispatcher.BeginInvoke(new Action(() =>
-                {
-                    MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                }), null);
-                return false;
-            }
-        }
-
-        private List<EpgAutoDataItem> GetSelectedItemsList()
-        {
-            return listView_key.SelectedItems.Cast<EpgAutoDataItem>().ToList();
-        }
-
-        private EpgAutoDataItem SelectSingleItem(bool notSelectionChange = false)
-        {
-            return mutil.SelectSingleItem(listView_key, notSelectionChange) as EpgAutoDataItem;
+            });
         }
 
         //SearchWindowからのリスト選択状態の変更を優先するために、MouseUpイベントによる
@@ -208,12 +172,6 @@ namespace EpgTimer
             }
         }
 
-        private void GridViewColumnHeader_Click(object sender, RoutedEventArgs e)
-        {
-            this.ItemOrderNotSaved |= 
-                vutil.GridViewHeaderClickSort<EpgAutoDataItem>(e, gridViewSorter, resultList, listView_key);
-        }
-
         private void button_saveItemOrder_Click(object sender, ExecutedRoutedEventArgs e)
         {
             if (CmdExeUtil.IsDisplayKgMessage(e) == true)
@@ -223,13 +181,13 @@ namespace EpgTimer
             }
 
             List<uint> dataIdList1 = new List<uint>();
-            resultList.ForEach(item1 => dataIdList1.Add(item1.EpgAutoAddInfo.dataID));
+            lstCtrl.dataList.ForEach(item1 => dataIdList1.Add(item1.EpgAutoAddInfo.dataID));
             dataIdList1.Sort();
             //
             List<EpgAutoAddData> addList1 = new List<EpgAutoAddData>();
-            for (int i1 = 0; i1 < this.resultList.Count; i1++)
+            for (int i1 = 0; i1 < lstCtrl.dataList.Count; i1++)
             {
-                EpgAutoDataItem item1 = this.resultList[i1];
+                EpgAutoDataItem item1 = lstCtrl.dataList[i1];
                 item1.EpgAutoAddInfo.dataID = dataIdList1[i1];
                 addList1.Add(item1.EpgAutoAddInfo);
 
@@ -265,7 +223,7 @@ namespace EpgTimer
                 if (listView_key.SelectedItems.Contains(this.dragItem))
                 {
                     this.dragItems = listView_key.SelectedItems.Cast<EpgAutoDataItem>().ToList();
-                    this.dragItems.Sort((i1, i2) => resultList.IndexOf(i1) - resultList.IndexOf(i2));
+                    this.dragItems.Sort((i1, i2) => lstCtrl.dataList.IndexOf(i1) - lstCtrl.dataList.IndexOf(i2));
                 }
                 else
                 {
@@ -297,24 +255,24 @@ namespace EpgTimer
         {
             try
             {
-                int idx_dropItems = resultList.IndexOf(this.dragItem);
-                int idx_dropTo = resultList.IndexOf(dropTo);
+                int idx_dropItems = lstCtrl.dataList.IndexOf(this.dragItem);
+                int idx_dropTo = lstCtrl.dataList.IndexOf(dropTo);
 
                 //一番上と一番下を選択できるように調整
                 idx_dropTo += (idx_dropTo > idx_dropItems ? 1 : 0);
 
                 //挿入位置で分割→バラのも含め選択アイテムを除去→分割前部+選択アイテム+分割後部で連結
-                var work1 = resultList.Take(idx_dropTo).Where(item => !dragItems.Contains(item)).ToList();
-                var work2 = resultList.Skip(idx_dropTo).Where(item => !dragItems.Contains(item)).ToList();
+                var work1 = lstCtrl.dataList.Take(idx_dropTo).Where(item => !dragItems.Contains(item)).ToList();
+                var work2 = lstCtrl.dataList.Skip(idx_dropTo).Where(item => !dragItems.Contains(item)).ToList();
 
-                resultList.Clear();
-                resultList.AddRange(work1.Concat(dragItems).Concat(work2));
+                lstCtrl.dataList.Clear();
+                lstCtrl.dataList.AddRange(work1.Concat(dragItems).Concat(work2));
                 listView_key.SelectedItem = dragItem;//これがないと移動中余分な選択があるように見える
                 dragItems.ForEach(item=>listView_key.SelectedItems.Add(item));
 
                 listView_key.Items.Refresh();
                 this.ItemOrderNotSaved = true;
-                this.gridViewSorter.ResetSortParams();
+                lstCtrl.gvSorter.ResetSortParams();
             }
             catch { }
         }
@@ -330,7 +288,7 @@ namespace EpgTimer
                 if (listView_key.SelectedItem == null) { return; }
 
                 //選択状態+順序のペアを作る
-                var srcList = new List<EpgAutoDataItem>(resultList);
+                var srcList = new List<EpgAutoDataItem>(lstCtrl.dataList);
                 var list = srcList.Select((item, index) => new KeyValuePair<int, bool>(index, listView_key.SelectedItems.Contains(item))).ToList();
 
                 //逆方向の時はリストひっくり返す
@@ -354,14 +312,14 @@ namespace EpgTimer
                 list.Add(list[0]);
 
                 //リンク張り替えながらダミー以外(Key!=-1)をコピー
-                resultList.Clear();
-                resultList.AddRange(list.Skip(1).Where(item => item.Key != -1).Select(item => srcList[item.Key]));
+                lstCtrl.dataList.Clear();
+                lstCtrl.dataList.AddRange(list.Skip(1).Where(item => item.Key != -1).Select(item => srcList[item.Key]));
 
-                if (moveDirection0 == itemMoveDirections.down) resultList.Reverse();
+                if (moveDirection0 == itemMoveDirections.down) lstCtrl.dataList.Reverse();
 
                 listView_key.Items.Refresh();
                 this.ItemOrderNotSaved = true;
-                this.gridViewSorter.ResetSortParams();
+                lstCtrl.gvSorter.ResetSortParams();
             }
             catch { }
         }

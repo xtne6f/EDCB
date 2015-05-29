@@ -10,13 +10,13 @@
             <Setter Property="InputMethod.PreferredImeState" Value="Off" />
         </Style>
         <ContextMenu x:Key="itemHeader" x:Name="HeaderSelect" x:Shared="True" >
-            <MenuItem Header="曜日" Name="DayOfWeek" IsCheckable="True" Click="headerSelect_Click" />
-            <MenuItem Header="時間" Name="Time" IsCheckable="True" Click="headerSelect_Click" />
-            <MenuItem Header="番組名" Name="Title" IsCheckable="True" Click="headerSelect_Click" />
-            <MenuItem Header="サービス名" Name="StationName" IsCheckable="True" Click="headerSelect_Click" />
-            <MenuItem Header="録画モード" Name="RecMode" IsCheckable="True" Click="headerSelect_Click" />
-            <MenuItem Header="優先度" Name="Priority" IsCheckable="True" Click="headerSelect_Click" />
-            <MenuItem Header="予約数" Name="ReserveCount" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="曜日" Name="DayOfWeek" IsCheckable="True" />
+            <MenuItem Header="時間" Name="Time" IsCheckable="True" />
+            <MenuItem Header="番組名" Name="Title" IsCheckable="True" />
+            <MenuItem Header="サービス名" Name="StationName" IsCheckable="True" />
+            <MenuItem Header="録画モード" Name="RecMode" IsCheckable="True" />
+            <MenuItem Header="優先度" Name="Priority" IsCheckable="True" />
+            <MenuItem Header="予約数" Name="ReserveCount" IsCheckable="True" />
         </ContextMenu>
         <ContextMenu x:Key="itemMenu" />
         <!-- MenuManagerからメニューを展開する -->
@@ -27,7 +27,7 @@
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="130" />
             </Grid.ColumnDefinitions>
-            <ListView Name="listView_key" Margin="10" SelectionMode="Extended" ItemsSource="{Binding}" GridViewColumnHeader.Click="GridViewColumnHeader_Click" ContextMenu="{DynamicResource itemMenu}" >
+            <ListView Name="listView_key" Margin="10" SelectionMode="Extended" ItemsSource="{Binding}" ContextMenu="{DynamicResource itemMenu}" >
                 <ListView.Resources>
                     <Style TargetType="ListViewItem">
                         <Setter Property="ToolTipService.ShowDuration" Value="20000" />

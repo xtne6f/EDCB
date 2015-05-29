@@ -17,17 +17,21 @@ namespace EpgTimer
     /// </summary>
     public partial class EpgListMainView : EpgViewBase
     {
-        private List<SearchItem> programList = new List<SearchItem>();
+        private ListViewController<SearchItem> lstCtrl;
         private List<ServiceItem> serviceList = new List<ServiceItem>();
 
         private Dictionary<UInt64, UInt64> lastChkSID = new Dictionary<UInt64, UInt64>();
         private bool listBox_service_need_initialized = true;
 
-        GridViewSorter<SearchItem> gridViewSorter = null;
-
         public EpgListMainView()
         {
             InitializeComponent();
+
+            //リストビュー関連の設定
+            lstCtrl = new ListViewController<SearchItem>(this);
+            lstCtrl.SetInitialSortKey("StartTime");
+            lstCtrl.SetViewSetting(listView_event, gridView_event, true);
+
             InitCommand();
         }
         protected override void InitCommand()
@@ -35,8 +39,8 @@ namespace EpgTimer
             base.InitCommand();
 
             //コマンド集の初期化の続き
-            mc.SetFuncGetSearchList(isAll => (isAll == true ? programList.ToList() : this.GetSelectedItemsList()));
-            mc.SetFuncSelectSingleSearchData(this.SelectSingleItem);
+            mc.SetFuncGetSearchList(isAll => (isAll == true ? lstCtrl.dataList.ToList() : lstCtrl.GetSelectedItemsList()));
+            mc.SetFuncSelectSingleSearchData(lstCtrl.SelectSingleItem);
             mc.SetFuncReleaseSelectedData(() => listView_event.UnselectAll());
 
             //コマンド集からコマンドを登録
@@ -63,7 +67,7 @@ namespace EpgTimer
             listBox_service.ItemsSource = null;
             serviceList.Clear();
             listView_event.ItemsSource = null;
-            programList.Clear();
+            lstCtrl.dataList.Clear();
             richTextBox_eventInfo.Document.Blocks.Clear();
 
             return true;
@@ -112,7 +116,7 @@ namespace EpgTimer
         private void ReloadReserveViewItem()
         {
             //予約チェック
-            mutil.SetSearchItemReserved(programList);
+            mutil.SetSearchItemReserved(lstCtrl.dataList);
             listView_event.Items.Refresh();
         }
 
@@ -155,90 +159,70 @@ namespace EpgTimer
 
         private void UpdateEventList()
         {
-            try
+            //更新前の選択情報の保存。
+            //なお、EPG更新の場合はReloadEpgData()でも追加で保存・復元コードを実施する必要があるが、
+            //大きく番組表が変化するEPG更新前後で選択情報を保存する意味もないのでほっておくことにする。
+            lstCtrl.ReloadInfoData(reloadEventList);
+            return;
+        }
+
+        private bool reloadEventList(List<SearchItem> dataList)
+        {
+            Dictionary<UInt64, EpgServiceEventInfo> serviceEventList =
+                setViewInfo.SearchMode == true ? base.searchEventList : CommonManager.Instance.DB.ServiceEventList;
+
+            DateTime now = DateTime.Now;
+            foreach (ServiceItem info in serviceList)
             {
-                //更新前の選択情報の保存。
-                //なお、EPG更新の場合はReloadEpgData()でも追加で保存・復元コードを実施する必要があるが、
-                //大きく番組表が変化するEPG更新前後で選択情報を保存する意味もないのでほっておくことにする。
-                var oldItems = new ListViewSelectedKeeper(listView_event, true);
-
-                listView_event.ItemsSource = null;
-                programList.Clear();
-
-                Dictionary<UInt64, EpgServiceEventInfo> serviceEventList =
-                    setViewInfo.SearchMode == true ? base.searchEventList : CommonManager.Instance.DB.ServiceEventList;
-
-                DateTime now = DateTime.Now;
-                foreach (ServiceItem info in serviceList)
+                if (info.IsSelected == true)
                 {
-                    if (info.IsSelected == true)
+                    if (serviceEventList.ContainsKey(info.ID) == true)
                     {
-                        if (serviceEventList.ContainsKey(info.ID) == true)
+                        foreach (EpgEventInfo eventInfo in serviceEventList[info.ID].eventList)
                         {
-                            foreach (EpgEventInfo eventInfo in serviceEventList[info.ID].eventList)
+                            if (eventInfo.StartTimeFlag == 0)
                             {
-                                if (eventInfo.StartTimeFlag == 0)
-                                {
-                                    //開始未定は除外
-                                    continue;
-                                }
-                                if (setViewInfo.FilterEnded)
-                                {
-                                    if (eventInfo.start_time.AddSeconds(eventInfo.durationSec) < now)
-                                        continue;
-                                }
-                                //ジャンル絞り込み
-                                if (vutil.ContainsContent(eventInfo, this.viewCustContentKindList) == false)
-                                {
-                                    continue;
-                                }
-                                //イベントグループのチェック
-                                if (eventInfo.EventGroupInfo != null)
-                                {
-                                    bool spanFlag = false;
-                                    foreach (EpgEventData data in eventInfo.EventGroupInfo.eventDataList)
-                                    {
-                                        if (info.ServiceInfo.Create64Key() == data.Create64Key())
-                                        {
-                                            spanFlag = true;
-                                            break;
-                                        }
-                                    }
-
-                                    if (spanFlag == false)
-                                    {
-                                        //サービス２やサービス３の結合されるべきもの
-                                        continue;
-                                    }
-                                }
-
-                                programList.Add(new SearchItem(eventInfo));
+                                //開始未定は除外
+                                continue;
                             }
+                            if (setViewInfo.FilterEnded)
+                            {
+                                if (eventInfo.start_time.AddSeconds(eventInfo.durationSec) < now)
+                                    continue;
+                            }
+                            //ジャンル絞り込み
+                            if (vutil.ContainsContent(eventInfo, this.viewCustContentKindList) == false)
+                            {
+                                continue;
+                            }
+                            //イベントグループのチェック
+                            if (eventInfo.EventGroupInfo != null)
+                            {
+                                bool spanFlag = false;
+                                foreach (EpgEventData data in eventInfo.EventGroupInfo.eventDataList)
+                                {
+                                    if (info.ServiceInfo.Create64Key() == data.Create64Key())
+                                    {
+                                        spanFlag = true;
+                                        break;
+                                    }
+                                }
+
+                                if (spanFlag == false)
+                                {
+                                    //サービス２やサービス３の結合されるべきもの
+                                    continue;
+                                }
+                            }
+
+                            lstCtrl.dataList.Add(new SearchItem(eventInfo));
                         }
                     }
                 }
-                //予約チェック
-                mutil.SetSearchItemReserved(programList);
-
-                if (this.gridViewSorter != null)
-                {
-                    this.gridViewSorter.SortByMultiHeader(this.programList);
-                }
-                else
-                {
-                    this.gridViewSorter = new GridViewSorter<SearchItem>();
-                    this.gridViewSorter.SortByMultiHeaderWithKey(this.programList, gridView_event.Columns, "StartTime");
-                }
-
-                listView_event.ItemsSource = programList;
-
-                //選択情報の復元
-                oldItems.RestoreListViewSelected();
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            //予約チェック
+            mutil.SetSearchItemReserved(lstCtrl.dataList);
+            return true;
         }
 
         private void CheckBox_Changed(object sender, RoutedEventArgs e)
@@ -274,30 +258,15 @@ namespace EpgTimer
             }
         }
 
-        private List<SearchItem> GetSelectedItemsList()
-        {
-            return listView_event.SelectedItems.Cast<SearchItem>().ToList();
-        }
-
-        private SearchItem SelectSingleItem(bool notSelectionChange = false)
-        {
-            return mutil.SelectSingleItem(listView_event, notSelectionChange) as SearchItem;
-        }
-
         private void listView_event_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             EpgCmds.ShowDialog.Execute(sender, this);
         }
 
-        private void GridViewColumnHeader_Click(object sender, RoutedEventArgs e)
-        {
-            vutil.GridViewHeaderClickSort<SearchItem>(e, gridViewSorter, programList, listView_event);
-        }
-
         protected override void MoveToReserveItem(ReserveItem target, bool JumpingTable)
         {
             uint ID = target.ReserveInfo.ReserveID;
-            SearchItem target_item = this.programList.Find(item => item.ReserveInfo != null && item.ReserveInfo.ReserveID == ID);
+            SearchItem target_item = lstCtrl.dataList.Find(item => item.ReserveInfo != null && item.ReserveInfo.ReserveID == ID);
             if (target_item != null)
             {
                 ScrollToFindItem(target_item, JumpingTable);
@@ -324,7 +293,7 @@ namespace EpgTimer
         protected override void MoveToProgramItem(SearchItem target, bool JumpingTable)
         {
             ulong PgKey = target.EventInfo.Create64PgKey();
-            SearchItem target_item = this.programList.Find(item => item.EventInfo.Create64PgKey() == PgKey);
+            SearchItem target_item = lstCtrl.dataList.Find(item => item.EventInfo.Create64PgKey() == PgKey);
             ScrollToFindItem(target_item, JumpingTable);
         }
 

@@ -26,7 +26,7 @@
                 <RichTextBox Name="richTextBox_eventInfo" IsReadOnly="True" />
             </ScrollViewer>
             <GridSplitter Grid.RowSpan="1" Height="5" Name="gridSplitter2" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" />
-            <ListView Grid.Row="1" Name="listView_event" SelectionMode="Extended" ItemsSource="{Binding}" SelectionChanged="listView_event_SelectionChanged" GridViewColumnHeader.Click="GridViewColumnHeader_Click" ContextMenu="{DynamicResource itemMenu}" >
+            <ListView Grid.Row="1" Name="listView_event" SelectionMode="Extended" ItemsSource="{Binding}" SelectionChanged="listView_event_SelectionChanged" ContextMenu="{DynamicResource itemMenu}" >
                 <ListView.Resources>
                     <Style TargetType="ListViewItem">
                         <Setter Property="Foreground"  Value="{Binding ForeColor}" />

@@ -19,27 +19,29 @@ namespace EpgTimer
         private MenuUtil mutil = CommonManager.Instance.MUtil;
         private ViewUtil vutil = CommonManager.Instance.VUtil;
         private MenuManager mm = CommonManager.Instance.MM;
-        private List<ManualAutoAddDataItem> resultList = new List<ManualAutoAddDataItem>();
         private bool ReloadInfo = true;
 
         private CmdExeManualAutoAdd mc;
         private MenuBinds mBinds = new MenuBinds();
 
-        private GridViewSelector gridViewSelector = null;
-        private RoutedEventHandler headerSelect_Click = null;
-        private GridViewSorter<ManualAutoAddDataItem> gridViewSorter = new GridViewSorter<ManualAutoAddDataItem>("RecFolder");
+        private ListViewController<ManualAutoAddDataItem> lstCtrl = null;
 
         public ManualAutoAddView()
         {
             InitializeComponent();
             try
             {
+                //リストビュー関連の設定
+                lstCtrl = new ListViewController<ManualAutoAddDataItem>(this);
+                lstCtrl.SetSavePath(mutil.GetMemberName(() => Settings.Instance.AutoAddManualColumn));
+                lstCtrl.SetViewSetting(listView_key, gridView_key, false, new string[] { "RecFolder" });
+
                 //最初にコマンド集の初期化
                 mc = new CmdExeManualAutoAdd(this);
-                mc.SetFuncGetDataList(isAll => (isAll == true ? resultList : this.GetSelectedItemsList()).ManualAutoAddInfoList());
+                mc.SetFuncGetDataList(isAll => (isAll == true ? lstCtrl.dataList : lstCtrl.GetSelectedItemsList()).ManualAutoAddInfoList());
                 mc.SetFuncSelectSingleData((noChange) =>
                 {
-                    var item = this.SelectSingleItem(noChange);
+                    var item = lstCtrl.SelectSingleItem(noChange);
                     return item == null ? null : item.ManualAutoAddInfo;
                 });
                 mc.SetFuncReleaseSelectedData(() => listView_key.UnselectAll());
@@ -59,11 +61,6 @@ namespace EpgTimer
 
                 //メニューの作成、ショートカットの登録
                 RefreshMenu();
-
-                //グリッドビュー関連の設定
-                gridViewSelector = new GridViewSelector(gridView_key, Settings.Instance.AutoAddManualColumn);
-                headerSelect_Click += new RoutedEventHandler(gridViewSelector.HeaderSelectClick);
-                gridView_key.ColumnHeaderContextMenu.Opened += new RoutedEventHandler(gridViewSelector.ContextMenuOpening);
             }
             catch (Exception ex)
             {
@@ -75,15 +72,9 @@ namespace EpgTimer
             mBinds.ResetInputBindings(this, listView_key);
             mm.CtxmGenerateContextMenu(listView_key.ContextMenu, CtxmCode.ManualAutoAddView, true);
         }
-
         public void SaveViewData()
         {
-            gridViewSelector.SaveSize(Settings.Instance.AutoAddManualColumn);
-        }
-
-        private void GridViewColumnHeader_Click(object sender, RoutedEventArgs e)
-        {
-            vutil.GridViewHeaderClickSort<ManualAutoAddDataItem>(e, gridViewSorter, resultList, listView_key);
+            lstCtrl.SaveViewDataToSettings();
         }
 
         /// <summary>情報の更新通知</summary>
@@ -102,51 +93,18 @@ namespace EpgTimer
         }
         private bool ReloadInfoData()
         {
-            try
+            return lstCtrl.ReloadInfoData(dataList =>
             {
-                //更新前の選択情報の保存
-                var oldItems = new ListViewSelectedKeeper(listView_key, true);
-
-                listView_key.DataContext = null;
-                resultList.Clear();
-
-                if (CommonManager.Instance.VUtil.EpgTimerNWNotConnect() == true) return false;
-
                 ErrCode err = CommonManager.Instance.DB.ReloadManualAutoAddInfo();
                 if (CommonManager.CmdErrMsgTypical(err, "情報の取得", this) == false) return false;
 
                 foreach (ManualAutoAddData info in CommonManager.Instance.DB.ManualAutoAddList.Values)
                 {
-                    resultList.Add(new ManualAutoAddDataItem(info));
+                    dataList.Add(new ManualAutoAddDataItem(info));
                 }
-                listView_key.DataContext = resultList;
-
-                this.gridViewSorter.ResetSortParams();
-
-                //選択情報の復元
-                oldItems.RestoreListViewSelected();
                 return true;
-            }
-            catch (Exception ex)
-            {
-                this.Dispatcher.BeginInvoke(new Action(() =>
-                {
-                    MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                }), null);
-                return false;
-            }
+            });
         }
-
-        private List<ManualAutoAddDataItem> GetSelectedItemsList()
-        {
-            return listView_key.SelectedItems.Cast<ManualAutoAddDataItem>().ToList();
-        }
-
-        private ManualAutoAddDataItem SelectSingleItem(bool notSelectionChange = false)
-        {
-            return mutil.SelectSingleItem(listView_key, notSelectionChange) as ManualAutoAddDataItem;
-        }
-
         private void listView_key_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             EpgCmds.ShowDialog.Execute(sender, this);

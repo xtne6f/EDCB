@@ -18,7 +18,6 @@ namespace EpgTimer
     /// </summary>
     public partial class SearchWindow : Window
     {
-        private List<SearchItem> resultList = new List<SearchItem>();
         private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
         private MenuUtil mutil = CommonManager.Instance.MUtil;
         private ViewUtil vutil = CommonManager.Instance.VUtil;
@@ -26,6 +25,8 @@ namespace EpgTimer
 
         private CmdExeReserve mc; //予約系コマンド集
         private MenuBinds mBinds = new MenuBinds();
+
+        private ListViewController<SearchItem> lstCtrl;
 
         public enum SearchMode { Find, NewAdd, Change }
         private SearchMode winMode = SearchMode.Find;
@@ -37,8 +38,6 @@ namespace EpgTimer
         MainWindow mainWindow = null;
         private DateTime? lastSettingTime = null;
 
-        GridViewSorter<SearchItem> gridViewSorter = null;
-
         public SearchWindow()
         {
             InitializeComponent();
@@ -48,10 +47,15 @@ namespace EpgTimer
                 //比較その他でよく使う
                 mainWindow = (MainWindow)Application.Current.MainWindow;
 
+                //リストビュー関連の設定
+                lstCtrl = new ListViewController<SearchItem>(this);
+                lstCtrl.SetInitialSortKey("StartTime");
+                lstCtrl.SetViewSetting(listView_result, gridView_result, true);
+
                 //最初にコマンド集の初期化
                 mc = new CmdExeReserve(this);
-                mc.SetFuncGetSearchList(isAll => (isAll == true ? resultList.ToList() : this.GetSelectedItemsList()));
-                mc.SetFuncSelectSingleSearchData(this.SelectSingleItem);
+                mc.SetFuncGetSearchList(isAll => (isAll == true ? lstCtrl.dataList.ToList() : lstCtrl.GetSelectedItemsList()));
+                mc.SetFuncSelectSingleSearchData(lstCtrl.SelectSingleItem);
                 mc.SetFuncReleaseSelectedData(() => listView_result.UnselectAll());
                 mc.SetFuncPostProc((sender, e, cmdOpt) =>
                 {
@@ -124,7 +128,10 @@ namespace EpgTimer
 
                 searchKeyView.SetSearchKey(defKey);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+            }
         }
         public void RefreshMenu()
         {
@@ -206,14 +213,8 @@ namespace EpgTimer
 
         private void SearchPg()
         {
-            try
+            lstCtrl.ReloadInfoData(dataList =>
             {
-                //更新前の選択情報の保存
-                var oldItems = new ListViewSelectedKeeper(listView_result, true);
-
-                listView_result.DataContext = null;
-                resultList.Clear();
-
                 EpgSearchKeyInfo key = new EpgSearchKeyInfo();
                 searchKeyView.GetSearchKey(ref key);
                 key.andKey = key.andKey.Substring(key.andKey.StartsWith("^!{999}") ? 7 : 0);
@@ -225,42 +226,15 @@ namespace EpgTimer
                 {
                     if (info.start_time.AddSeconds(info.durationSec) > DateTime.Now)
                     {
-                        resultList.Add(new SearchItem(info));
+                        lstCtrl.dataList.Add(new SearchItem(info));
                     }
                 }
-                mutil.SetSearchItemReserved(resultList);
-
-                if (this.gridViewSorter != null)
-                {
-                    this.gridViewSorter.SortByMultiHeader(this.resultList);
-                }
-                else
-                {
-                    this.gridViewSorter = new GridViewSorter<SearchItem>();
-                    this.gridViewSorter.SortByMultiHeaderWithKey(this.resultList, gridView_result.Columns, "StartTime");
-                }
-
-                listView_result.DataContext = resultList;
+                mutil.SetSearchItemReserved(lstCtrl.dataList);
 
                 searchKeyView.AddSearchLog();
-
-                //選択情報の復元
-                oldItems.RestoreListViewSelected();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
-
-        private List<SearchItem> GetSelectedItemsList()
-        {
-            return listView_result.SelectedItems.Cast<SearchItem>().ToList();
-        }
-
-        private SearchItem SelectSingleItem(bool notSelectionChange = false)
-        {
-            return mutil.SelectSingleItem(listView_result, notSelectionChange) as SearchItem;
+                return true;
+            });
+            return;
         }
 
         private bool CheckCautionMany()
@@ -269,7 +243,7 @@ namespace EpgTimer
             {
                 SearchPg();
 
-                if (mutil.CautionManyMessage(resultList.NoReserveInfoList().Count) == false)
+                if (mutil.CautionManyMessage(lstCtrl.dataList.NoReserveInfoList().Count) == false)
                 {
                     return false;
                 }
@@ -435,11 +409,6 @@ namespace EpgTimer
             EpgCmds.ShowDialog.Execute(sender, null);
         }
 
-        private void GridViewColumnHeader_Click(object sender, RoutedEventArgs e)
-        {
-            vutil.GridViewHeaderClickSort<SearchItem>(e, gridViewSorter, resultList, listView_result);
-        }
-
         private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
         {
             if (this.WindowState == WindowState.Normal)
@@ -481,7 +450,7 @@ namespace EpgTimer
         {
             if (listView_result.SelectedItem != null)
             {
-                BlackoutWindow.SelectedSearchItem = SelectSingleItem();
+                BlackoutWindow.SelectedSearchItem = lstCtrl.SelectSingleItem();
                 var mainWindow1 = this.Owner as MainWindow;
                 if (mainWindow1 != null)
                 {
@@ -522,7 +491,7 @@ namespace EpgTimer
             {
                 if (listView_result.SelectedItem != null)
                 {
-                    SearchItem item = SelectSingleItem();
+                    SearchItem item = lstCtrl.SelectSingleItem();
 
                     EpgSearchKeyInfo defKey = new EpgSearchKeyInfo();
                     searchKeyView.GetSearchKey(ref defKey);

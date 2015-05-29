@@ -19,15 +19,12 @@ namespace EpgTimer
         private MenuUtil mutil = CommonManager.Instance.MUtil;
         private ViewUtil vutil = CommonManager.Instance.VUtil;
         private MenuManager mm = CommonManager.Instance.MM;
-        private List<ReserveItem> reserveList = new List<ReserveItem>();
         private bool ReloadInfo = true;
 
         private CmdExeReserve mc; //予約系コマンド集
         private MenuBinds mBinds = new MenuBinds();
 
-        private GridViewSelector gridViewSelector = null;
-        private RoutedEventHandler headerSelect_Click = null;
-        private GridViewSorter<ReserveItem> gridViewSorter = null;
+        private ListViewController<ReserveItem> lstCtrl = null;
 
         public ReserveView()
         {
@@ -35,12 +32,19 @@ namespace EpgTimer
 
             try
             {
+                //リストビュー関連の設定
+                lstCtrl = new ListViewController<ReserveItem>(this);
+                lstCtrl.SetSavePath(mutil.GetMemberName(() => Settings.Instance.ReserveListColumn)
+                    , mutil.GetMemberName(() => Settings.Instance.ResColumnHead)
+                    , mutil.GetMemberName(() => Settings.Instance.ResSortDirection));
+                lstCtrl.SetViewSetting(listView_reserve, gridView_reserve, true, new string[] { "RecFileName", "RecFolder" });
+
                 //最初にコマンド集の初期化
                 mc = new CmdExeReserve(this);
-                mc.SetFuncGetDataList(isAll => (isAll == true ? reserveList : this.GetSelectedItemsList()).ReserveInfoList());
+                mc.SetFuncGetDataList(isAll => (isAll == true ? lstCtrl.dataList : lstCtrl.GetSelectedItemsList()).ReserveInfoList());
                 mc.SetFuncSelectSingleData((noChange) =>
                 {
-                    var item = this.SelectSingleItem(noChange);
+                    var item = lstCtrl.SelectSingleItem(noChange);
                     return item == null ? null : item.ReserveInfo;
                 });
                 mc.SetFuncReleaseSelectedData(() => listView_reserve.UnselectAll());
@@ -64,11 +68,6 @@ namespace EpgTimer
 
                 //コンテキストメニューを開く時の設定
                 listView_reserve.ContextMenu.Opened += new RoutedEventHandler(mc.SupportContextMenuLoading);
-
-                //グリッドビュー関連の設定
-                gridViewSelector = new GridViewSelector(gridView_reserve, Settings.Instance.ReserveListColumn);
-                headerSelect_Click += new RoutedEventHandler(gridViewSelector.HeaderSelectClick);
-                gridView_reserve.ColumnHeaderContextMenu.Opened += new RoutedEventHandler(gridViewSelector.ContextMenuOpening);
             }
             catch (Exception ex)
             {
@@ -97,70 +96,23 @@ namespace EpgTimer
         }
         private bool ReloadInfoData()
         {
-            try
+            return lstCtrl.ReloadInfoData(dataList =>
             {
-                //更新前の選択情報の保存
-                var oldItems = new ListViewSelectedKeeper(listView_reserve, true);
-
-                listView_reserve.DataContext = null;
-                reserveList.Clear();
-
                 if (vutil.ReloadReserveData(this) == false) return false;
 
                 foreach (ReserveData info in CommonManager.Instance.DB.ReserveList.Values)
                 {
-                    reserveList.Add(new ReserveItem(info));
+                    dataList.Add(new ReserveItem(info));
                 }
 
                 // 枠線表示用
                 CommonManager.Instance.DB.ReloadEpgData();
-
-                if (this.gridViewSorter != null)
-                {
-                    this.gridViewSorter.SortByMultiHeader(this.reserveList);
-                }
-                else
-                {
-                    this.gridViewSorter = new GridViewSorter<ReserveItem>(new string[] { "RecFileName", "RecFolder" });
-                    this.gridViewSorter.SortByMultiHeaderWithKey(this.reserveList, gridView_reserve.Columns,
-                        Settings.Instance.ResColumnHead, true, Settings.Instance.ResSortDirection);
-                }
-
-                listView_reserve.DataContext = reserveList;
-
-                //選択情報の復元
-                oldItems.RestoreListViewSelected();
                 return true;
-            }
-            catch (Exception ex)
-            {
-                this.Dispatcher.BeginInvoke(new Action(() =>
-                {
-                    MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                }), null);
-                return false;
-            }
-        }
-        private void GridViewColumnHeader_Click(object sender, RoutedEventArgs e)
-        {
-            vutil.GridViewHeaderClickSort<ReserveItem>(e, gridViewSorter, reserveList, listView_reserve);
+            });
         }
         public void SaveViewData()
         {
-            gridViewSelector.SaveSize(Settings.Instance.ReserveListColumn);
-            if (gridViewSorter != null)
-            {
-                Settings.Instance.ResColumnHead = this.gridViewSorter.LastHeader;
-                Settings.Instance.ResSortDirection = this.gridViewSorter.LastDirection;
-            }
-        }
-        private ReserveItem SelectSingleItem(bool notSelectionChange = false)
-        {
-            return mutil.SelectSingleItem(listView_reserve, notSelectionChange) as ReserveItem;
-        }
-        private List<ReserveItem> GetSelectedItemsList()
-        {
-            return listView_reserve.SelectedItems.Cast<ReserveItem>().ToList();
+            lstCtrl.SaveViewDataToSettings();
         }
         private void listView_reserve_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {

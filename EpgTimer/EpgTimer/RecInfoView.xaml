@@ -35,16 +35,16 @@
             </Setter>
         </Style>
         <ContextMenu x:Key="itemHeader" x:Name="HeaderSelect" x:Shared="True" >
-            <MenuItem Header="プロテクト" Name="IsProtect" IsCheckable="True" Click="headerSelect_Click" />
-            <MenuItem Header="日時" Name="StartTime" IsCheckable="True" Click="headerSelect_Click" />
-            <MenuItem Header="時間（長さ）" Name="ProgramDuration" IsCheckable="True" Click="headerSelect_Click" />
-            <MenuItem Header="ネットワーク" Name="NetworkName" IsCheckable="True" Click="headerSelect_Click" />
-            <MenuItem Header="サービス名" Name="ServiceName" IsCheckable="True" Click="headerSelect_Click" />
-            <MenuItem Header="番組名" Name="EventName" IsCheckable="True" Click="headerSelect_Click" />
-            <MenuItem Header="Drop" Name="Drops" IsCheckable="True" Click="headerSelect_Click" />
-            <MenuItem Header="Scramble" Name="Scrambles" IsCheckable="True" Click="headerSelect_Click" />
-            <MenuItem Header="結果" Name="Result" IsCheckable="True" Click="headerSelect_Click" />
-            <MenuItem Header="録画ファイル" Name="RecFilePath" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="プロテクト" Name="IsProtect" IsCheckable="True" />
+            <MenuItem Header="日時" Name="StartTime" IsCheckable="True" />
+            <MenuItem Header="時間（長さ）" Name="ProgramDuration" IsCheckable="True" />
+            <MenuItem Header="ネットワーク" Name="NetworkName" IsCheckable="True" />
+            <MenuItem Header="サービス名" Name="ServiceName" IsCheckable="True" />
+            <MenuItem Header="番組名" Name="EventName" IsCheckable="True" />
+            <MenuItem Header="Drop" Name="Drops" IsCheckable="True" />
+            <MenuItem Header="Scramble" Name="Scrambles" IsCheckable="True" />
+            <MenuItem Header="結果" Name="Result" IsCheckable="True" />
+            <MenuItem Header="録画ファイル" Name="RecFilePath" IsCheckable="True" />
         </ContextMenu>
         <ContextMenu x:Key="itemMenu"/>
         <!-- MenuManagerからメニューを展開する -->
@@ -54,7 +54,7 @@
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="100" />
         </Grid.ColumnDefinitions>
-        <ListView Name="listView_recinfo" Margin="10" SelectionMode="Extended" ItemsSource="{Binding}" GridViewColumnHeader.Click="GridViewColumnHeader_Click" ContextMenu="{DynamicResource itemMenu}" >
+        <ListView Name="listView_recinfo" Margin="10" SelectionMode="Extended" ItemsSource="{Binding}" ContextMenu="{DynamicResource itemMenu}" >
             <ListView.Resources>
                 <Style TargetType="ListViewItem">
                     <Setter Property="ToolTipService.ShowDuration" Value="20000" />

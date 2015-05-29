@@ -76,7 +76,7 @@ namespace EpgTimer.EpgView
 
             programView.ClearInfo();
             timeView.ClearInfo();
-            timeList = new SortedList<DateTime, List<ProgramViewItem>>();
+            timeList.Clear();
             programList.Clear();
             reserveList.Clear();
 

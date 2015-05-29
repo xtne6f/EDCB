@@ -24,6 +24,15 @@ namespace EpgTimer
                     columnList.Add((string)header.Tag, info);
                 }
 
+                if (gridView.ColumnHeaderContextMenu != null)
+                {
+                    gridView.ColumnHeaderContextMenu.Opened += new RoutedEventHandler(ContextMenuOpening);
+                    foreach (MenuItem menu in gridView.ColumnHeaderContextMenu.Items)
+                    {
+                        menu.Click += new RoutedEventHandler(HeaderSelectClick);
+                    }
+                }
+
                 if (setting == null) return;
 
                 //設定情報がある場合は続ける
@@ -41,7 +50,7 @@ namespace EpgTimer
             }
         }
 
-        public void HeaderSelectClick(object sender, RoutedEventArgs e)
+        private void HeaderSelectClick(object sender, RoutedEventArgs e)
         {
             try
             {
@@ -70,7 +79,7 @@ namespace EpgTimer
             }
         }
 
-        public void ContextMenuOpening(object sender, RoutedEventArgs e)
+        private void ContextMenuOpening(object sender, RoutedEventArgs e)
         {
             try
             {

@@ -1379,6 +1379,20 @@ namespace EpgTimer
             return path;
         }
 
+        public void SetSettings(string propertyName, object value)
+        {
+            if (propertyName == null) return;
+            var info = typeof(Settings).GetProperty(propertyName);
+            if (info != null) info.SetValue(this, value, null);
+        }
+
+        public object GetSettings(string propertyName)
+        {
+            if (propertyName == null) return null;
+            var info = typeof(Settings).GetProperty(propertyName);
+            return (info == null ? null : info.GetValue(this, null));
+        }
+
         public static void GetDefRecSetting(UInt32 presetID, ref CtrlCmdCLI.Def.RecSettingData defKey)
         {
             StringBuilder buff = new StringBuilder(512);

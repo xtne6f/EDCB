@@ -44,6 +44,8 @@ namespace EpgTimer
                     return info => (info as ManualAutoAddDataItem).ManualAutoAddInfo.dataID;
                 case "SearchItem":
                     return info => (info as SearchItem).EventInfo.Create64PgKey();
+                case "NotifySrvInfoItem":
+                    return info => (info as NotifySrvInfoItem).NotifyInfo.notifyID;
                 default:
                     return info => (ulong)info.GetHashCode();
             }

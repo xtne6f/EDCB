@@ -19,15 +19,12 @@ namespace EpgTimer
         private MenuUtil mutil = CommonManager.Instance.MUtil;
         private ViewUtil vutil = CommonManager.Instance.VUtil;
         private MenuManager mm = CommonManager.Instance.MM;
-        private List<RecInfoItem> resultList = new List<RecInfoItem>();
         private bool ReloadInfo = true;
 
         private CmdExeRecinfo mc;
         private MenuBinds mBinds = new MenuBinds();
 
-        private GridViewSelector gridViewSelector = null;
-        private RoutedEventHandler headerSelect_Click = null;
-        private GridViewSorter<RecInfoItem> gridViewSorter = null;
+        private ListViewController<RecInfoItem> lstCtrl = null;
 
         public RecInfoView()
         {
@@ -35,12 +32,19 @@ namespace EpgTimer
 
             try
             {
+                //リストビュー関連の設定
+                lstCtrl = new ListViewController<RecInfoItem>(this);
+                lstCtrl.SetSavePath(mutil.GetMemberName(() => Settings.Instance.RecInfoListColumn)
+                    , mutil.GetMemberName(() => Settings.Instance.RecInfoColumnHead)
+                    , mutil.GetMemberName(() => Settings.Instance.RecInfoSortDirection));
+                lstCtrl.SetViewSetting(listView_recinfo, gridView_recinfo, true);
+
                 //最初にコマンド集の初期化
                 mc = new CmdExeRecinfo(this);
-                mc.SetFuncGetDataList(isAll => (isAll == true ? resultList : this.GetSelectedItemsList()).RecInfoList());
+                mc.SetFuncGetDataList(isAll => (isAll == true ? lstCtrl.dataList : lstCtrl.GetSelectedItemsList()).RecInfoList());
                 mc.SetFuncSelectSingleData((noChange) =>
                 {
-                    var item = this.SelectSingleItem(noChange);
+                    var item = lstCtrl.SelectSingleItem(noChange);
                     return item == null ? null : item.RecInfo;
                 });
                 mc.SetFuncReleaseSelectedData(() => listView_recinfo.UnselectAll());
@@ -59,11 +63,6 @@ namespace EpgTimer
 
                 //メニューの作成、ショートカットの登録
                 RefreshMenu();
-
-                //グリッドビュー関連の設定
-                gridViewSelector = new GridViewSelector(gridView_recinfo, Settings.Instance.RecInfoListColumn);
-                headerSelect_Click += new RoutedEventHandler(gridViewSelector.HeaderSelectClick);
-                gridView_recinfo.ColumnHeaderContextMenu.Opened += new RoutedEventHandler(gridViewSelector.ContextMenuOpening);
             }
             catch (Exception ex)
             {
@@ -77,16 +76,7 @@ namespace EpgTimer
         }
         public void SaveViewData()
         {
-            gridViewSelector.SaveSize(Settings.Instance.RecInfoListColumn);
-            if (gridViewSorter != null)
-            {
-                Settings.Instance.RecInfoColumnHead = this.gridViewSorter.LastHeader;
-                Settings.Instance.RecInfoSortDirection = this.gridViewSorter.LastDirection;
-            }
-        }
-        private void GridViewColumnHeader_Click(object sender, RoutedEventArgs e)
-        {
-            vutil.GridViewHeaderClickSort<RecInfoItem>(e, gridViewSorter, resultList, listView_recinfo);
+            lstCtrl.SaveViewDataToSettings();
         }
         /// <summary>情報の更新通知</summary>
         public void UpdateInfo()
@@ -102,59 +92,19 @@ namespace EpgTimer
         {
             if (ReloadInfo == true && this.IsVisible == true) ReloadInfo = !ReloadInfoData();
         }
-        public bool ReloadInfoData()
+        private bool ReloadInfoData()
         {
-            try
+            return lstCtrl.ReloadInfoData(dataList =>
             {
-                //更新前の選択情報の保存
-                var oldItems = new ListViewSelectedKeeper(listView_recinfo, true);
-
-                listView_recinfo.DataContext = null;
-                resultList.Clear();
-
-                if (CommonManager.Instance.VUtil.EpgTimerNWNotConnect() == true) return false;
-
                 ErrCode err = CommonManager.Instance.DB.ReloadrecFileInfo();
                 if (CommonManager.CmdErrMsgTypical(err, "録画情報の取得", this) == false) return false;
 
                 foreach (RecFileInfo info in CommonManager.Instance.DB.RecFileInfo.Values)
                 {
-                    resultList.Add(new RecInfoItem(info));
+                    dataList.Add(new RecInfoItem(info));
                 }
-
-                if (this.gridViewSorter != null)
-                {
-                    this.gridViewSorter.SortByMultiHeader(this.resultList);
-                }
-                else
-                {
-                    this.gridViewSorter = new GridViewSorter<RecInfoItem>();
-                    this.gridViewSorter.SortByMultiHeaderWithKey(this.resultList, gridView_recinfo.Columns,
-                        Settings.Instance.RecInfoColumnHead, true, Settings.Instance.RecInfoSortDirection);
-                }
-
-                listView_recinfo.DataContext = resultList;
-
-                //選択情報の復元
-                oldItems.RestoreListViewSelected();
                 return true;
-            }
-            catch (Exception ex)
-            {
-                this.Dispatcher.BeginInvoke(new Action(() =>
-                {
-                    MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                }), null);
-                return false;
-            }
-        }
-        private RecInfoItem SelectSingleItem(bool notSelectionChange = false)
-        {
-            return mutil.SelectSingleItem(listView_recinfo, notSelectionChange) as RecInfoItem;
-        }
-        private List<RecInfoItem> GetSelectedItemsList()
-        {
-            return listView_recinfo.SelectedItems.Cast<RecInfoItem>().ToList();
+            });
         }
         private void listView_recinfo_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {

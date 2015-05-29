@@ -22,42 +22,29 @@ namespace EpgTimer
     /// </summary>
     public partial class NotifyLogWindow : Window
     {
-        List<NotifySrvInfoItem> logList = new List<NotifySrvInfoItem>();
+        private ListViewController<NotifySrvInfoItem> lstCtrl;
         public NotifyLogWindow()
         {
             InitializeComponent();
+
+            //リストビュー関連の設定
+            lstCtrl = new ListViewController<NotifySrvInfoItem>(this);
+            lstCtrl.SetInitialSortKey("Time", ListSortDirection.Descending);
+            lstCtrl.SetViewSetting(listView_log, gridView_log, true);
         }
 
-        private void ReloadList()
+        private bool ReloadList()
         {
-            listView_log.DataContext = null;
-            logList.Clear();
-            foreach (NotifySrvInfo info in CommonManager.Instance.NotifyLogList)
+            return lstCtrl.ReloadInfoData(dataList =>
             {
-                NotifySrvInfoItem item = new NotifySrvInfoItem();
-                item.NotifyInfo = info;
-                logList.Add(item);
-            }
-
-            if (this.gridViewSorter != null)
-            {
-                this.gridViewSorter.SortByMultiHeader(this.logList);
-            }
-            else
-            {
-                this.gridViewSorter = new GridViewSorter<NotifySrvInfoItem>();
-                this.gridViewSorter.SortByMultiHeaderWithKey(this.logList, gridView_log.Columns, "Time", true, ListSortDirection.Descending);
-            }
-
-            listView_log.DataContext = logList;
-        }
-
-        GridViewSorter<NotifySrvInfoItem> gridViewSorter = null;
-        private ViewUtil vutil = CommonManager.Instance.VUtil;
-
-        private void GridViewColumnHeader_Click(object sender, RoutedEventArgs e)
-        {
-            vutil.GridViewHeaderClickSort<NotifySrvInfoItem>(e, gridViewSorter, logList, listView_log);
+                foreach (NotifySrvInfo info in CommonManager.Instance.NotifyLogList)
+                {
+                    NotifySrvInfoItem item = new NotifySrvInfoItem();
+                    item.NotifyInfo = info;
+                    dataList.Add(item);
+                }
+                return true;
+            });
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -81,7 +68,7 @@ namespace EpgTimer
             if (result == true)
             {
                 StreamWriter file = new StreamWriter(dlg.FileName, false, System.Text.Encoding.GetEncoding("shift_jis") );
-                logList.ForEach(info => file.Write(info.FileLogText));
+                lstCtrl.dataList.ForEach(info => file.Write(info.FileLogText));
                 file.Close();
             }
         }

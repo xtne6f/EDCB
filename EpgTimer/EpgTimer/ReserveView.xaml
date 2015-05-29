@@ -10,24 +10,24 @@
             <Setter Property="InputMethod.PreferredImeState" Value="Off" />
         </Style>
         <ContextMenu x:Key="itemHeader" x:Name="HeaderSelect" x:Shared="True" >
-            <MenuItem Header="状態" Name="Status" IsCheckable="True" Click="headerSelect_Click" />
-            <MenuItem Header="日時" Name="StartTime" IsCheckable="True" Click="headerSelect_Click" />
-            <MenuItem Header="時間（長さ）" Name="ProgramDuration" IsCheckable="True" Click="headerSelect_Click" />
-            <MenuItem Header="ネットワーク" Name="NetworkName" IsCheckable="True" Click="headerSelect_Click" />
-            <MenuItem Header="サービス名" Name="ServiceName" IsCheckable="True" Click="headerSelect_Click" />
-            <MenuItem Header="番組名" Name="EventName" IsCheckable="True" Click="headerSelect_Click" />
-            <MenuItem Header="番組内容" Name="ProgramContent" IsCheckable="True" Click="headerSelect_Click" />
-            <MenuItem Header="ジャンル" Name="JyanruKey" IsCheckable="True" Click="headerSelect_Click" />
-            <MenuItem Header="録画モード" Name="RecMode" IsCheckable="True" Click="headerSelect_Click" />
-            <MenuItem Header="優先度" Name="Priority" IsCheckable="True" Click="headerSelect_Click" />
-            <MenuItem Header="追従" Name="Tuijyu" IsCheckable="True" Click="headerSelect_Click" />
-            <MenuItem Header="ぴったり（？）" Name="Pittari" IsCheckable="True" Click="headerSelect_Click" />
-            <MenuItem Header="チューナー" Name="Tuner" IsCheckable="True" Click="headerSelect_Click" />
-            <MenuItem Header="予約状況" Name="Comment" IsCheckable="True" Click="headerSelect_Click" />
-            <MenuItem Header="録画フォルダ" Name="RecFolder" IsCheckable="True" Click="headerSelect_Click" />
-            <MenuItem Header="予定ファイル名" Name="RecFileName" IsCheckable="True" Click="headerSelect_Click" />
-            <MenuItem Header="開始タイミング" Name="MarginStart" IsCheckable="True" Click="headerSelect_Click" />
-            <MenuItem Header="終了タイミング" Name="MarginEnd" IsCheckable="True" Click="headerSelect_Click" />
+            <MenuItem Header="状態" Name="Status" IsCheckable="True" />
+            <MenuItem Header="日時" Name="StartTime" IsCheckable="True" />
+            <MenuItem Header="時間（長さ）" Name="ProgramDuration" IsCheckable="True" />
+            <MenuItem Header="ネットワーク" Name="NetworkName" IsCheckable="True" />
+            <MenuItem Header="サービス名" Name="ServiceName" IsCheckable="True" />
+            <MenuItem Header="番組名" Name="EventName" IsCheckable="True" />
+            <MenuItem Header="番組内容" Name="ProgramContent" IsCheckable="True" />
+            <MenuItem Header="ジャンル" Name="JyanruKey" IsCheckable="True" />
+            <MenuItem Header="録画モード" Name="RecMode" IsCheckable="True" />
+            <MenuItem Header="優先度" Name="Priority" IsCheckable="True" />
+            <MenuItem Header="追従" Name="Tuijyu" IsCheckable="True" />
+            <MenuItem Header="ぴったり（？）" Name="Pittari" IsCheckable="True" />
+            <MenuItem Header="チューナー" Name="Tuner" IsCheckable="True" />
+            <MenuItem Header="予約状況" Name="Comment" IsCheckable="True" />
+            <MenuItem Header="録画フォルダ" Name="RecFolder" IsCheckable="True" />
+            <MenuItem Header="予定ファイル名" Name="RecFileName" IsCheckable="True" />
+            <MenuItem Header="開始タイミング" Name="MarginStart" IsCheckable="True" />
+            <MenuItem Header="終了タイミング" Name="MarginEnd" IsCheckable="True" />
         </ContextMenu>
         <ContextMenu x:Key="itemMenu"/>
         <!-- MenuManagerからメニューを展開する -->
@@ -37,7 +37,7 @@
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="130" />
         </Grid.ColumnDefinitions>
-        <ListView Name="listView_reserve" Margin="10" SelectionMode="Extended" ItemsSource="{Binding}" GridViewColumnHeader.Click="GridViewColumnHeader_Click" ContextMenu="{DynamicResource itemMenu}" >
+        <ListView Name="listView_reserve" Margin="10" SelectionMode="Extended" ItemsSource="{Binding}" ContextMenu="{DynamicResource itemMenu}" >
             <ListView.Resources>
                 <Style TargetType="ListViewItem">
                     <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
