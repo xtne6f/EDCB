@@ -222,19 +222,11 @@ namespace EpgTimer
 
                 cmd.SendSearchPg(mutil.ToList(key), ref list);
 
-                foreach (EpgEventInfo info in list)
-                {
-                    if (info.start_time.AddSeconds(info.DurationFlag == 0 ? 0 : info.durationSec) > DateTime.Now)
-                    {
-                        lstCtrl.dataList.Add(new SearchItem(info));
-                    }
-                }
-                mutil.SetSearchItemReserved(lstCtrl.dataList);
+                lstCtrl.dataList.AddFromEventList(list, false, true);
 
                 searchKeyView.AddSearchLog();
                 return true;
             });
-            return;
         }
 
         private bool CheckCautionMany()

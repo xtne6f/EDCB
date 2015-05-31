@@ -103,29 +103,14 @@ namespace EpgTimer
 
             if (master == null || epgEventList == null) return;
 
-            searchItemList = GetSearchItem();
+            searchItemList = new List<SearchItem>();
+            searchItemList.AddFromEventList(epgEventList, false, true);
+
             var rlist = searchItemList.ReserveInfoList();
 
             searchCount = (uint)searchItemList.Count;
             onCount = (uint)rlist.Count(info => info.RecSetting.RecMode != 5);
             offCount = (uint)rlist.Count - onCount;
-        }
-
-        private List<SearchItem> GetSearchItem()
-        {
-            var slist = new List<SearchItem>();
-            if (epgEventList != null)
-            {
-                foreach (EpgEventInfo info in epgEventList)
-                {
-                    if (info.start_time.AddSeconds(info.DurationFlag == 0 ? 0 : info.durationSec) > DateTime.Now)
-                    {
-                        slist.Add(new SearchItem(info));
-                    }
-                }
-                CommonManager.Instance.MUtil.SetSearchItemReserved(slist);
-            }
-            return slist;
         }
 
     }

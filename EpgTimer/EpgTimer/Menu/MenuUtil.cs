@@ -952,7 +952,7 @@ namespace EpgTimer
             }
         }
 
-        public void SetSearchItemReserved(List<SearchItem> list)
+        public void SetSearchItemReserved(ICollection<SearchItem> list)
         {
             var listKeys = new Dictionary<ulong, SearchItem>();
 

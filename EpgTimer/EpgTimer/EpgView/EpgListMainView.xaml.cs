@@ -163,7 +163,6 @@ namespace EpgTimer
             //なお、EPG更新の場合はReloadEpgData()でも追加で保存・復元コードを実施する必要があるが、
             //大きく番組表が変化するEPG更新前後で選択情報を保存する意味もないのでほっておくことにする。
             lstCtrl.ReloadInfoData(reloadEventList);
-            return;
         }
 
         private bool reloadEventList(List<SearchItem> dataList)
@@ -171,7 +170,8 @@ namespace EpgTimer
             Dictionary<UInt64, EpgServiceEventInfo> serviceEventList =
                 setViewInfo.SearchMode == true ? base.searchEventList : CommonManager.Instance.DB.ServiceEventList;
 
-            DateTime now = DateTime.Now;
+            //絞り込んだイベントリストを作成
+            var eventList = new List<EpgEventInfo>();
             foreach (ServiceItem info in serviceList)
             {
                 if (info.IsSelected == true)
@@ -180,16 +180,6 @@ namespace EpgTimer
                     {
                         foreach (EpgEventInfo eventInfo in serviceEventList[info.ID].eventList)
                         {
-                            if (eventInfo.StartTimeFlag == 0)
-                            {
-                                //開始未定は除外
-                                continue;
-                            }
-                            if (setViewInfo.FilterEnded)
-                            {
-                                if (eventInfo.start_time.AddSeconds(eventInfo.DurationFlag == 0 ? 0 : eventInfo.durationSec) < now)
-                                    continue;
-                            }
                             //ジャンル絞り込み
                             if (vutil.ContainsContent(eventInfo, this.viewCustContentKindList) == false)
                             {
@@ -214,14 +204,15 @@ namespace EpgTimer
                                     continue;
                                 }
                             }
-
-                            lstCtrl.dataList.Add(new SearchItem(eventInfo));
+                            eventList.Add(eventInfo);
                         }
                     }
                 }
             }
-            //予約チェック
-            mutil.SetSearchItemReserved(lstCtrl.dataList);
+
+            //SearchItemリストを作成
+            lstCtrl.dataList.AddFromEventList(eventList, true, setViewInfo.FilterEnded);
+
             return true;
         }
 

@@ -250,14 +250,36 @@ namespace EpgTimer
         {
             return itemlist.Where(item => item == null ? false : item.IsReserved == true).Select(item => item.ReserveInfo).ToList();
         }
-        public static bool HasReserved(this List<SearchItem> list)
-        {
-            return list.Any(info => info == null ? false : info.IsReserved);
-        }
+        //public static bool HasReserved(this List<SearchItem> list)
+        //{
+        //    return list.Any(info => info == null ? false : info.IsReserved);
+        //}
         //public static bool HasNoReserved(this List<SearchItem> list)
         //{
         //    return list.Any(info => info == null ? false : !info.IsReserved);
         //}
+        public static void AddFromEventList(this ICollection<SearchItem> itemlist, ICollection<EpgEventInfo> eventList, bool isExceptUnknownStartTime, bool isExceptEnded)
+        {
+            if (itemlist == null) return;
+            //
+            DateTime now = DateTime.Now;
+            foreach (EpgEventInfo info in eventList.OfType<EpgEventInfo>())
+            {
+                //開始未定を除外
+                if (isExceptUnknownStartTime == true)
+                {
+                    if (info.StartTimeFlag == 0) continue;
+                }
+                //時間の過ぎているものを除外
+                if (isExceptEnded == true)
+                {
+                    if (info.start_time.AddSeconds(info.DurationFlag == 0 ? 0 : info.durationSec) < now) continue;
+                }
+
+                itemlist.Add(new SearchItem(info));
+            }
+            CommonManager.Instance.MUtil.SetSearchItemReserved(itemlist);
+        }
 
     }
 }
