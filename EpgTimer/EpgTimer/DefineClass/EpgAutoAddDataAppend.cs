@@ -118,7 +118,7 @@ namespace EpgTimer
             {
                 foreach (EpgEventInfo info in epgEventList)
                 {
-                    if (info.start_time.AddSeconds(info.durationSec) > DateTime.Now)
+                    if (info.start_time.AddSeconds(info.DurationFlag == 0 ? 0 : info.durationSec) > DateTime.Now)
                     {
                         slist.Add(new SearchItem(info));
                     }

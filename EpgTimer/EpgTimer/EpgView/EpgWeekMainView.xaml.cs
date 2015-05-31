@@ -330,7 +330,7 @@ namespace EpgTimer
                     }
                     ProgramViewItem viewItem = new ProgramViewItem(eventInfo);
                     //後で最低行数修正入前提で、高さが0になっても取りあえず気にしない
-                    viewItem.Height = (eventInfo.durationSec * Settings.Instance.MinHeight) / 60;
+                    viewItem.Height = ((eventInfo.DurationFlag == 0 ? 300 : eventInfo.durationSec) * Settings.Instance.MinHeight) / 60;
                     viewItem.Width = Settings.Instance.ServiceWidth;
                     programList.Add(viewItem);
 
@@ -346,18 +346,7 @@ namespace EpgTimer
                     DateTime chkStartTime = GetWeekMainViewTime(eventInfo.start_time, TimeSelect.HourOnly);
                     DateTime startTime = GetWeekMainViewTime(eventInfo.start_time);
 
-                    DateTime EndTime;
-                    if (eventInfo.DurationFlag == 0)
-                    {
-                        //終了未定
-                        EndTime = startTime.AddSeconds(30 * 10);
-                    }
-                    else
-                    {
-                        EndTime = startTime.AddSeconds(eventInfo.durationSec);
-                    }
-
-                    while (chkStartTime <= EndTime)
+                    while (chkStartTime <= startTime.AddSeconds((eventInfo.DurationFlag == 0 ? 300 : eventInfo.durationSec)))
                     {
                         if (timeList.ContainsKey(chkStartTime) == false)
                         {

@@ -84,7 +84,7 @@ namespace EpgTimer
         {
             get
             {
-                if (EventInfo == null) { return new TimeSpan(); }
+                if (this.EventInfo == null || this.EventInfo.DurationFlag == 0) { return new TimeSpan(); }
                 //
                 return TimeSpan.FromSeconds(EventInfo.durationSec);
             }

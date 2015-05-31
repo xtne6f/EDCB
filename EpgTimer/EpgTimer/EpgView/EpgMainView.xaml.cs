@@ -408,26 +408,15 @@ namespace EpgTimer
 
                         ProgramViewItem viewItem = new ProgramViewItem(eventInfo);
                         //後で最低行数修正入前提で、高さが0になっても取りあえず気にしない
-                        viewItem.Height = (eventInfo.durationSec * Settings.Instance.MinHeight) / 60;
+                        viewItem.Height = ((eventInfo.DurationFlag == 0 ? 300 : eventInfo.durationSec) * Settings.Instance.MinHeight) / 60;
                         viewItem.Width = Settings.Instance.ServiceWidth * widthSpan / mergeNum;
                         viewItem.LeftPos = Settings.Instance.ServiceWidth * (servicePos + (double)((mergeNum+i-mergePos-1)/2) / mergeNum);
                         //viewItem.TopPos = (eventInfo.start_time - startTime).TotalMinutes * Settings.Instance.MinHeight;
                         programList.Add(viewItem);
 
-                        //日付チェック
-                        DateTime EndTime;
-                        if (eventInfo.DurationFlag == 0)
-                        {
-                            //終了未定
-                            EndTime = eventInfo.start_time.AddSeconds(30 * 10);
-                        }
-                        else
-                        {
-                            EndTime = eventInfo.start_time.AddSeconds(eventInfo.durationSec);
-                        }
                         //必要時間リストの構築
                         DateTime chkStartTime = new DateTime(eventInfo.start_time.Year, eventInfo.start_time.Month, eventInfo.start_time.Day, eventInfo.start_time.Hour, 0, 0);
-                        while (chkStartTime <= EndTime)
+                        while (chkStartTime <= eventInfo.start_time.AddSeconds((eventInfo.DurationFlag == 0 ? 300 : eventInfo.durationSec)))
                         {
                             if (timeList.ContainsKey(chkStartTime) == false)
                             {
