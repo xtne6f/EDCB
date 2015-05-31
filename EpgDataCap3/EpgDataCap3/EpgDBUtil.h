@@ -4,149 +4,6 @@
 #include "./Table/TableUtil.h"
 #include "../../Common/EpgDataCap3Def.h"
 
-typedef EPG_CONTENT NIBBLE_DATA;
-
-typedef EPG_EVENT_DATA EVENT_DATA2;
-
-typedef struct _SHORT_EVENT_INFO{
-	BYTE tableID;		//データ追加時のtable_id （優先度 0x4E > 0x50-0x5F > 0x4F > 0x60-0x6F)
-	BYTE version;		//データ追加時のバージョン
-	wstring event_name;
-	wstring text_char;
-} SHORT_EVENT_INFO;
-
-typedef struct _EXTENDED_EVENT_INFO{
-	BYTE tableID;		//データ追加時のtable_id （優先度 0x4E > 0x50-0x5F > 0x4F > 0x60-0x6F)
-	BYTE version;		//データ追加時のバージョン
-	wstring text_char;
-} EXTENDED_EVENT_INFO;
-
-typedef struct _CONTENT_INFO{
-	BYTE tableID;		//データ追加時のtable_id （優先度 0x4E > 0x50-0x5F > 0x4F > 0x60-0x6F)
-	BYTE version;		//データ追加時のバージョン
-	vector<NIBBLE_DATA> nibbleList;
-} CONTEN_INFO;
-
-typedef struct _COMPONENT_INFO{
-	BYTE tableID;		//データ追加時のtable_id （優先度 0x4E > 0x50-0x5F > 0x4F > 0x60-0x6F)
-	BYTE version;		//データ追加時のバージョン
-	BYTE stream_content;
-	BYTE component_type;
-	BYTE component_tag;
-	wstring text_char;
-} COMPONENT_INFO;
-
-typedef struct _AUDIO_COMPONENT_INFO_DATA{
-	BYTE stream_content;
-	BYTE component_type;
-	BYTE component_tag;
-	BYTE stream_type;
-	BYTE simulcast_group_tag;
-	BYTE ES_multi_lingual_flag;
-	BYTE main_component_flag;
-	BYTE quality_indicator;
-	BYTE sampling_rate;
-	wstring text_char;
-}AUDIO_COMPONENT_INFO_DATA;
-
-typedef struct _AUDIO_COMPONENT_INFO{
-	BYTE tableID;		//データ追加時のtable_id （優先度 0x4E > 0x50-0x5F > 0x4F > 0x60-0x6F)
-	BYTE version;		//データ追加時のバージョン
-	vector<AUDIO_COMPONENT_INFO_DATA> componentList;
-} AUDIO_COMPONENT_INFO;
-
-typedef struct _EVENTGROUP_INFO{
-	BYTE tableID;		//データ追加時のtable_id （優先度 0x4E > 0x50-0x5F > 0x4F > 0x60-0x6F)
-	BYTE version;		//データ追加時のバージョン
-	BYTE group_type;
-	BYTE event_count;
-	vector<EVENT_DATA2> eventData2List;
-} EVENTGROUP_INFO;
-
-typedef struct _EVENT_INFO{
-	WORD ONID;
-	WORD TSID;
-	WORD SID;
-	WORD event_id;
-	BYTE StartTimeFlag;	//start_timeの値が有効かどうか
-	SYSTEMTIME start_time;
-	BYTE DurationFlag; //durationの値が有効かどうか
-	DWORD durationSec;
-
-	SHORT_EVENT_INFO* shortInfo;
-	EXTENDED_EVENT_INFO* extInfo;
-	CONTEN_INFO* contentInfo;
-	COMPONENT_INFO* componentInfo;
-	AUDIO_COMPONENT_INFO* audioInfo;
-	EVENTGROUP_INFO* eventGroupInfo;
-	EVENTGROUP_INFO* eventRelayInfo;
-
-	BYTE freeCAFlag;
-	BOOL pfFlag;
-	_EVENT_INFO(void){
-		shortInfo = NULL;
-		extInfo = NULL;
-		contentInfo = NULL;
-		componentInfo = NULL;
-		audioInfo = NULL;
-		eventGroupInfo = NULL;
-		eventRelayInfo = NULL;
-		freeCAFlag = 0;
-		pfFlag = FALSE;
-	};
-	~_EVENT_INFO(void){
-		SAFE_DELETE(shortInfo);
-		SAFE_DELETE(extInfo);
-		SAFE_DELETE(contentInfo);
-		SAFE_DELETE(componentInfo);
-		SAFE_DELETE(audioInfo);
-		SAFE_DELETE(eventGroupInfo);
-		SAFE_DELETE(eventRelayInfo);
-	};
-} EVENT_INFO;
-
-typedef struct _SERVICE_EVENT_INFO{
-	map<WORD, EVENT_INFO*> eventMap;
-	EVENT_INFO* nowEvent;	//map側でdeleteされるのでdeleteする必要なし
-	EVENT_INFO* nextEvent;	//map側でdeleteされるのでdeleteする必要なし
-	_SERVICE_EVENT_INFO(void){
-		nowEvent = NULL;
-		nextEvent = NULL;
-	};
-	~_SERVICE_EVENT_INFO(void){
-		map<WORD, EVENT_INFO*>::iterator itr;
-		for( itr = eventMap.begin(); itr != eventMap.end(); itr++ ){
-			SAFE_DELETE(itr->second);
-		}
-	};
-} SERVICE_EVENT_INFO;
-
-typedef struct _SECTION_FLAG_INFO{
-	DWORD sectionFlag;
-	DWORD maxFlag;
-	_SECTION_FLAG_INFO(void){
-		sectionFlag = 0;
-		maxFlag = 0;
-	};
-}SECTION_FLAG_INFO;
-
-typedef struct _SECTION_STATUS_INFO{
-	BYTE HEITFlag;
-	BYTE last_section_numberBasic;
-	BYTE last_table_idBasic;
-	BYTE last_section_numberExt;
-	BYTE last_table_idExt;
-	map<WORD, SECTION_FLAG_INFO> sectionBasicMap;	//キー TableID、フラグ
-	map<WORD, SECTION_FLAG_INFO> sectionExtMap;	//キー TableID、フラグ
-	_SECTION_STATUS_INFO(void){
-		HEITFlag = TRUE;
-		last_section_numberBasic = 0;
-		last_table_idBasic = 0;
-		last_section_numberExt = 0;
-		last_table_idExt = 0;
-	};
-}SECTION_STATUS_INFO;
-
 class CEpgDBUtil
 {
 public:
@@ -242,11 +99,101 @@ public:
 protected:
 	CRITICAL_SECTION dbLock;
 
-	map<ULONGLONG, SERVICE_EVENT_INFO*> serviceEventMap;
-	map<ULONGLONG, SECTION_STATUS_INFO*> sectionMap;
+	struct SI_TAG{
+		BYTE tableID;		//データ追加時のtable_id （優先度 0x4E > 0x50-0x5F > 0x4F > 0x60-0x6F)
+		BYTE version;		//データ追加時のバージョン
+	};
+	struct SHORT_EVENT_INFO : EPG_SHORT_EVENT_INFO, SI_TAG{
+	};
+	struct EXTENDED_EVENT_INFO : EPG_EXTENDED_EVENT_INFO, SI_TAG{
+	};
+	struct CONTEN_INFO : EPG_CONTEN_INFO, SI_TAG{
+	};
+	struct COMPONENT_INFO : EPG_COMPONENT_INFO, SI_TAG{
+	};
+	struct AUDIO_COMPONENT_INFO : EPG_AUDIO_COMPONENT_INFO, SI_TAG{
+	};
+	struct EVENTGROUP_INFO : EPG_EVENTGROUP_INFO, SI_TAG{
+	};
+	struct EVENT_INFO{
+		WORD ONID;
+		WORD TSID;
+		WORD SID;
+		WORD event_id;
+		BYTE StartTimeFlag;	//start_timeの値が有効かどうか
+		SYSTEMTIME start_time;
+		BYTE DurationFlag; //durationの値が有効かどうか
+		DWORD durationSec;
+		BYTE freeCAFlag;
+		BYTE pfFlag;
+		SHORT_EVENT_INFO* shortInfo;
+		EXTENDED_EVENT_INFO* extInfo;
+		CONTEN_INFO* contentInfo;
+		COMPONENT_INFO* componentInfo;
+		AUDIO_COMPONENT_INFO* audioInfo;
+		EVENTGROUP_INFO* eventGroupInfo;
+		EVENTGROUP_INFO* eventRelayInfo;
+		EVENT_INFO(void){
+			pfFlag = FALSE;
+			shortInfo = NULL;
+			extInfo = NULL;
+			contentInfo = NULL;
+			componentInfo = NULL;
+			audioInfo = NULL;
+			eventGroupInfo = NULL;
+			eventRelayInfo = NULL;
+		}
+		~EVENT_INFO(void){
+			SAFE_DELETE(shortInfo);
+			SAFE_DELETE(extInfo);
+			SAFE_DELETE(contentInfo);
+			SAFE_DELETE(componentInfo);
+			SAFE_DELETE(audioInfo);
+			SAFE_DELETE(eventGroupInfo);
+			SAFE_DELETE(eventRelayInfo);
+		}
+	private:
+		EVENT_INFO(const EVENT_INFO&);
+		EVENT_INFO& operator=(const EVENT_INFO&);
+	};
+	struct SERVICE_EVENT_INFO{
+		map<WORD, EVENT_INFO*> eventMap;
+		EVENT_INFO* nowEvent;	//map側でdeleteされるのでdeleteする必要なし
+		EVENT_INFO* nextEvent;	//map側でdeleteされるのでdeleteする必要なし
+		SERVICE_EVENT_INFO(void){
+			nowEvent = NULL;
+			nextEvent = NULL;
+		}
+	};
+	struct SECTION_FLAG_INFO{
+		DWORD sectionFlag;
+		DWORD maxFlag;
+		SECTION_FLAG_INFO(void){
+			sectionFlag = 0;
+			maxFlag = 0;
+		}
+	};
+	struct SECTION_STATUS_INFO{
+		BYTE HEITFlag;
+		BYTE last_section_numberBasic;
+		BYTE last_table_idBasic;
+		BYTE last_section_numberExt;
+		BYTE last_table_idExt;
+		map<WORD, SECTION_FLAG_INFO> sectionBasicMap;	//キー TableID、フラグ
+		map<WORD, SECTION_FLAG_INFO> sectionExtMap;	//キー TableID、フラグ
+		SECTION_STATUS_INFO(void){
+			HEITFlag = TRUE;
+			last_section_numberBasic = 0;
+			last_table_idBasic = 0;
+			last_section_numberExt = 0;
+			last_table_idExt = 0;
+		}
+	};
+	map<ULONGLONG, SERVICE_EVENT_INFO> serviceEventMap;
+	map<ULONGLONG, SECTION_STATUS_INFO> sectionMap;
 	map<ULONGLONG, BYTE> serviceList;
 
-	map<ULONGLONG, SERVICE_EVENT_INFO*> serviceEventMapSD;
+	map<ULONGLONG, SERVICE_EVENT_INFO> serviceEventMapSD;
 
 
 	typedef struct _DB_SERVICE_INFO{
@@ -272,35 +219,25 @@ protected:
 		wstring network_name;
 		wstring ts_name;
 		BYTE remote_control_key_id;
-		map<WORD,DB_SERVICE_INFO*> serviceList;
+		map<WORD,DB_SERVICE_INFO> serviceList;
 		_DB_TS_INFO(void){
 			network_name = L"";
 			ts_name = L"";
 			remote_control_key_id = 0;
 		};
 		~_DB_TS_INFO(void){
-			map<WORD,DB_SERVICE_INFO*>::iterator itr;
-			for( itr=serviceList.begin(); itr != serviceList.end(); itr++ ){
-				SAFE_DELETE(itr->second);
-			}
-			serviceList.clear();
 		};
 	}DB_TS_INFO;
-	map<DWORD, DB_TS_INFO*> serviceInfoList;
+	map<DWORD, DB_TS_INFO> serviceInfoList;
 
 	DWORD sectionNowFlag;
 
-	DWORD epgInfoListSize;
 	EPG_EVENT_INFO* epgInfoList;
 
 	EPG_EVENT_INFO* epgInfo;
 
 	EPG_EVENT_INFO* searchEpgInfo;
 
-	DWORD epgSearchListSize;
-	EPG_EVENT_INFO* epgSearchList;
-
-	DWORD serviceDBListSize;
 	SERVICE_INFO* serviceDBList;
 protected:
 	void Clear();
@@ -321,5 +258,4 @@ protected:
 	BOOL CheckSectionAll(map<WORD, SECTION_FLAG_INFO>* sectionMap, BOOL leitFlag = FALSE);
 
 	void CopyEpgInfo(EPG_EVENT_INFO* destInfo, EVENT_INFO* srcInfo);
-	void RefCopyEpgInfo(EPG_EVENT_INFO* destInfo, vector<BYTE>* destAudioListSpace, EVENT_INFO* srcInfo);
 };

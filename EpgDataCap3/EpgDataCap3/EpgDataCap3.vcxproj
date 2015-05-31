@@ -181,7 +181,6 @@
     <ClInclude Include="Table\SDTTTable.h" />
     <ClInclude Include="Table\SITTable.h" />
     <ClInclude Include="Table\TableUtil.h" />
-    <ClInclude Include="Table\TableUtilDef.h" />
     <ClInclude Include="Table\TDTTable.h" />
     <ClInclude Include="Table\TOTTable.h" />
     <ClInclude Include="targetver.h" />

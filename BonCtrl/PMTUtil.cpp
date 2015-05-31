@@ -13,7 +13,6 @@ CPMTUtil::CPMTUtil(void)
 
 CPMTUtil::~CPMTUtil(void)
 {
-	Clear();
 }
 
 BOOL CPMTUtil::AddPacket(CTSPacketUtil* packet)
@@ -37,11 +36,6 @@ BOOL CPMTUtil::AddPacket(CTSPacketUtil* packet)
 
 void CPMTUtil::Clear()
 {
-	for( size_t i=0 ;i<ESInfoList.size(); i++ ){
-		SAFE_DELETE(ESInfoList[i]);
-	}
-	ESInfoList.clear();
-
 	PIDList.clear();
 }
 
@@ -120,17 +114,16 @@ BOOL CPMTUtil::DecodePMT(BYTE* data, DWORD dataSize)
 		}
 
 		while( readSize+4 < (DWORD)section_length+3-4 ){
-			ES_INFO_DATA* item = new ES_INFO_DATA;
-			item->stream_type = data[readSize];
-			item->elementary_PID = ((WORD)data[readSize+1]&0x1F)<<8 | data[readSize+2];
-			item->ES_info_length = ((WORD)data[readSize+3]&0x0F)<<8 | data[readSize+4];
+			BYTE stream_type = data[readSize];
+			WORD elementary_PID = ((WORD)data[readSize+1]&0x1F)<<8 | data[readSize+2];
+			WORD ES_info_length = ((WORD)data[readSize+3]&0x0F)<<8 | data[readSize+4];
 			readSize += 5;
 
-			PIDList.insert(pair<WORD,WORD>(item->elementary_PID, item->stream_type));
+			PIDList.insert(pair<WORD,WORD>(elementary_PID, stream_type));
 
 			//descriptor
 			infoRead = 0;
-			while(readSize+1 < (DWORD)section_length+3-4 && infoRead < item->ES_info_length){
+			while(readSize+1 < (DWORD)section_length+3-4 && infoRead < ES_info_length){
 				BYTE descriptor_tag = data[readSize];
 				BYTE descriptor_length = data[readSize+1];
 				readSize+=2;
@@ -148,7 +141,6 @@ BOOL CPMTUtil::DecodePMT(BYTE* data, DWORD dataSize)
 			}
 
 //			readSize+=item->ES_info_length;
-			ESInfoList.push_back(item);
 		}
 	}
 

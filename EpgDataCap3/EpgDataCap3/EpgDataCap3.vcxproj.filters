@@ -78,9 +78,6 @@
     <ClInclude Include="Table\TableUtil.h">
       <Filter>ヘッダー ファイル\Table</Filter>
     </ClInclude>
-    <ClInclude Include="Table\TableUtilDef.h">
-      <Filter>ヘッダー ファイル\Table</Filter>
-    </ClInclude>
     <ClInclude Include="Table\TDTTable.h">
       <Filter>ヘッダー ファイル\Table</Filter>
     </ClInclude>

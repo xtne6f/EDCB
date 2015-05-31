@@ -517,8 +517,7 @@ DWORD CTSSrcFilter::AddTS(BYTE* data, DWORD size)
 					videoBuff.Add188TS(&packet);
 					BYTE* buff = NULL;
 					DWORD buffSize = 0;
-					BOOL ret = videoBuff.GetSectionBuff(&buff, &buffSize);
-					if( ret == TRUE ){
+					while( videoBuff.GetSectionBuff(&buff, &buffSize) != FALSE ){
 						CPESHeadInfo info;
 						info.SetData(buff, buffSize);
 						LONGLONG pts = 0;
@@ -553,8 +552,7 @@ DWORD CTSSrcFilter::AddTS(BYTE* data, DWORD size)
 					audioBuff.Add188TS(&packet);
 					BYTE* buff = NULL;
 					DWORD buffSize = 0;
-					BOOL ret = audioBuff.GetSectionBuff(&buff, &buffSize);
-					if( ret == TRUE ){
+					while( audioBuff.GetSectionBuff(&buff, &buffSize) != FALSE ){
 						CPESHeadInfo info;
 						info.SetData(buff, buffSize);
 						LONGLONG pts = 0;
