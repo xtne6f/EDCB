@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -20,15 +21,39 @@ namespace EpgTimer
         private ListViewController<ManualAutoAddDataItem> lstCtrl;
         private CmdExeManualAutoAdd mc;
 
+        //ドラッグ移動ビュー用の設定
+        private MouseButtonEventHandler listViewItem_PreviewMouseLeftButtonDown;
+        private MouseButtonEventHandler listViewItem_PreviewMouseLeftButtonUp;
+        private MouseEventHandler listViewItem_MouseEnter;
+        class lvDragData : ListBoxDragMoverView.LVDMHelper
+        {
+            private ManualAutoAddView View;
+            public lvDragData(ManualAutoAddView view) { View = view; }
+            public override uint GetID(object data) { return (data as ManualAutoAddDataItem).ManualAutoAddInfo.dataID; }
+            public override void SetID(object data, uint ID) { (data as ManualAutoAddDataItem).ManualAutoAddInfo.dataID = ID; }
+            public override bool SaveChange() { return View.mutil.ManualAutoAddChange(View.lstCtrl.dataList.ManualAutoAddInfoList(), false); }
+            public override bool RestoreOrder() { return View.ReloadInfoData(); }
+            public override void ItemMoved() { View.lstCtrl.gvSorter.ResetSortParams(); }
+        }
+
         public ManualAutoAddView()
         {
             InitializeComponent();
+
             try
             {
                 //リストビュー関連の設定
                 lstCtrl = new ListViewController<ManualAutoAddDataItem>(this);
                 lstCtrl.SetSavePath(mutil.GetMemberName(() => Settings.Instance.AutoAddManualColumn));
-                lstCtrl.SetViewSetting(listView_key, gridView_key, false, new string[] { "RecFolder" });
+                lstCtrl.SetViewSetting(listView_key, gridView_key, false, new string[] { "RecFolder" }
+                    , (sender, e) => dragMover.NotSaved |= lstCtrl.GridViewHeaderClickSort(e));
+
+                //ドラッグ移動関係
+                this.dragMover.SetData(this, listView_key, lstCtrl.dataList, new lvDragData(this));
+                listView_key.PreviewMouseLeftButtonUp += new MouseButtonEventHandler(dragMover.listBox_PreviewMouseLeftButtonUp);
+                listViewItem_PreviewMouseLeftButtonDown += new MouseButtonEventHandler(dragMover.listBoxItem_PreviewMouseLeftButtonDown);
+                listViewItem_PreviewMouseLeftButtonUp += new MouseButtonEventHandler(dragMover.listBoxItem_PreviewMouseLeftButtonUp);
+                listViewItem_MouseEnter += new MouseEventHandler(dragMover.listBoxItem_MouseEnter);
 
                 //最初にコマンド集の初期化
                 mc = new CmdExeManualAutoAdd(this);
@@ -56,10 +81,7 @@ namespace EpgTimer
                 //メニューの作成、ショートカットの登録
                 RefreshMenu();
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
         public void RefreshMenu()
         {
@@ -70,7 +92,6 @@ namespace EpgTimer
         {
             lstCtrl.SaveViewDataToSettings();
         }
-
         protected override bool ReloadInfoData()
         {
             return lstCtrl.ReloadInfoData(dataList =>
@@ -82,6 +103,7 @@ namespace EpgTimer
                 {
                     dataList.Add(new ManualAutoAddDataItem(info));
                 }
+                dragMover.NotSaved = false;
                 return true;
             });
         }
@@ -89,6 +111,5 @@ namespace EpgTimer
         {
             EpgCmds.ShowDialog.Execute(sender, this);
         }
-
     }
 }

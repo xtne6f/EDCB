@@ -704,9 +704,9 @@ namespace EpgTimer
         {
             return ReserveCmdSend(itemlist, cmd.SendAddManualAdd, "プログラム自動予約の追加");
         }
-        public bool ManualAutoAddChange(List<ManualAutoAddData> itemlist)
+        public bool ManualAutoAddChange(List<ManualAutoAddData> itemlist, bool cautionMany = true)
         {
-            return ReserveCmdSend(itemlist, cmd.SendChgManualAdd, "プログラム自動予約の変更");
+            return ReserveCmdSend(itemlist, cmd.SendChgManualAdd, "プログラム自動予約の変更", cautionMany);
         }
         public bool ManualAutoAddDelete(List<ManualAutoAddData> itemlist)
         {

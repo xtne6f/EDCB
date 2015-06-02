@@ -5,7 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d" 
              xmlns:local="clr-namespace:EpgTimer.UserCtrlView"
-             d:DesignHeight="300" d:DesignWidth="300" Loaded="UserControl_Loaded" IsVisibleChanged="UserControl_IsVisibleChanged">
+             d:DesignHeight="400" d:DesignWidth="300" Loaded="UserControl_Loaded" IsVisibleChanged="UserControl_IsVisibleChanged">
     <UserControl.Resources>
         <Style TargetType="{x:Type TextBox}">
             <Setter Property="InputMethod.PreferredImeState" Value="Off" />
@@ -20,11 +20,16 @@
             <ListView Name="listView_key" Margin="10" SelectionMode="Extended" ContextMenu="{DynamicResource itemMenu}" >
                 <ListView.Resources>
                     <Style TargetType="ListViewItem">
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
                         <Setter Property="ToolTipService.ShowDuration" Value="20000" />
                         <Setter Property="ToolTip" Value="{Binding ToolTipView}"/>
                         <Setter Property="ContextMenu" Value="{DynamicResource itemMenu}" />
                         <Setter Property="Foreground"  Value="{Binding ForeColor}" />
+                        <Setter Property="BorderThickness" Value="5,0,0,1" />
                         <EventSetter Event="MouseDoubleClick" Handler="listView_key_MouseDoubleClick"/>
+                        <EventSetter Event="PreviewMouseLeftButtonDown" Handler="listViewItem_PreviewMouseLeftButtonDown"/>
+                        <EventSetter Event="PreviewMouseLeftButtonUp" Handler="listViewItem_PreviewMouseLeftButtonUp"/>
+                        <EventSetter Event="MouseEnter" Handler="listViewItem_MouseEnter"/>
                     </Style>
                     <ContextMenu x:Key="itemHeader">
                         <MenuItem Header="曜日" Name="DayOfWeek" IsCheckable="True" />
@@ -79,10 +84,11 @@
                 </ListView.View>
             </ListView>
             <StackPanel Grid.Column="1" Name="stackPanel_button">
-                <Button Content="追加" Height="23" Name="button_add" Margin="0,10,0,10" />
-                <Button Content="変更" Height="23" Name="button_change" Margin="0,10,0,10" />
-                <Button Content="削除" Height="23" Name="button_del" Margin="0,10,0,10" />
-                <Button Content="予約ごと削除" Height="23" Name="button_del2" Margin="0,10,0,10"  />
+                <Button Content="追加" Height="23" Name="button_add" Margin="0,10,0,0" />
+                <Button Content="変更" Height="23" Name="button_change" Margin="0,10,0,0" />
+                <Button Content="削除" Height="23" Name="button_del" Margin="0,10,0,0" />
+                <Button Content="予約ごと削除" Height="23" Name="button_del2" Margin="0,10,0,0" />
+                <local:ListBoxDragMoverView x:Name="dragMover" Margin="0,20,0,0" />
             </StackPanel>
         </Grid>
     </Grid>

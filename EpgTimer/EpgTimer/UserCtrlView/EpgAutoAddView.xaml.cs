@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -20,16 +21,39 @@ namespace EpgTimer
         private ListViewController<EpgAutoDataItem> lstCtrl;
         private CmdExeEpgAutoAdd mc;
 
+        //ドラッグ移動ビュー用の設定
+        private MouseButtonEventHandler listViewItem_PreviewMouseLeftButtonDown;
+        private MouseButtonEventHandler listViewItem_PreviewMouseLeftButtonUp;
+        private MouseEventHandler listViewItem_MouseEnter;
+        class lvDragData : ListBoxDragMoverView.LVDMHelper
+        {
+            private EpgAutoAddView View;
+            public lvDragData(EpgAutoAddView view) { View = view; }
+            public override uint GetID(object data) { return (data as EpgAutoDataItem).EpgAutoAddInfo.dataID; }
+            public override void SetID(object data, uint ID) { (data as EpgAutoDataItem).EpgAutoAddInfo.dataID = ID; }
+            public override bool SaveChange() { return View.mutil.EpgAutoAddChange(View.lstCtrl.dataList.EpgAutoAddInfoList(), false); }
+            public override bool RestoreOrder() { return View.ReloadInfoData(); }
+            public override void ItemMoved() { View.lstCtrl.gvSorter.ResetSortParams(); }
+        }
+
         public EpgAutoAddView()
         {
             InitializeComponent();
+
             try
             {
                 //リストビュー関連の設定
                 lstCtrl = new ListViewController<EpgAutoDataItem>(this);
                 lstCtrl.SetSavePath(mutil.GetMemberName(() => Settings.Instance.AutoAddEpgColumn));
                 lstCtrl.SetViewSetting(listView_key, gridView_key, false, new string[] { "RecFolder" }
-                    , (sender, e) => this.ItemOrderNotSaved |= lstCtrl.GridViewHeaderClickSort(e));
+                    , (sender, e) => dragMover.NotSaved |= lstCtrl.GridViewHeaderClickSort(e));
+
+                //ドラッグ移動関係、イベント追加はdragMoverでやりたいが、あまり綺麗にならないのでこっちに並べる
+                this.dragMover.SetData(this, listView_key, lstCtrl.dataList, new lvDragData(this));
+                listView_key.PreviewMouseLeftButtonUp += new MouseButtonEventHandler(dragMover.listBox_PreviewMouseLeftButtonUp);
+                listViewItem_PreviewMouseLeftButtonDown += new MouseButtonEventHandler(dragMover.listBoxItem_PreviewMouseLeftButtonDown);
+                listViewItem_PreviewMouseLeftButtonUp += new MouseButtonEventHandler(dragMover.listBoxItem_PreviewMouseLeftButtonUp);
+                listViewItem_MouseEnter += new MouseEventHandler(dragMover.listBoxItem_MouseEnter);
 
                 //最初にコマンド集の初期化
                 mc = new CmdExeEpgAutoAdd(this);
@@ -40,12 +64,6 @@ namespace EpgTimer
                     return item == null ? null : item.EpgAutoAddInfo;
                 });
                 mc.SetFuncReleaseSelectedData(() => listView_key.UnselectAll());
-
-                //コマンド集に無いものを追加
-                mc.AddReplaceCommand(EpgCmds.UpItem, button_up_Click);
-                mc.AddReplaceCommand(EpgCmds.DownItem, button_down_Click);
-                mc.AddReplaceCommand(EpgCmds.SaveOrder, button_saveItemOrder_Click, (sender, e) => e.CanExecute = this.ItemOrderNotSaved == true);
-                mc.AddReplaceCommand(EpgCmds.RestoreOrder, button_reloadItem_Click, (sender, e) => e.CanExecute = this.ItemOrderNotSaved == true);
 
                 //コマンドをコマンド集から登録
                 mc.ResetCommandBindings(this, listView_key.ContextMenu);
@@ -59,30 +77,51 @@ namespace EpgTimer
                 mBinds.SetCommandToButton(button_change, EpgCmds.ShowDialog);
                 mBinds.SetCommandToButton(button_del, EpgCmds.Delete);
                 mBinds.SetCommandToButton(button_del2, EpgCmds.Delete2);
-                mBinds.SetCommandToButton(button_up, EpgCmds.UpItem);
-                mBinds.SetCommandToButton(button_down, EpgCmds.DownItem);
-                mBinds.SetCommandToButton(button_saveItemOrder, EpgCmds.SaveOrder);
-                mBinds.SetCommandToButton(button_reloadItem, EpgCmds.RestoreOrder);
 
                 //メニューの作成、ショートカットの登録
                 RefreshMenu();
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
         public void RefreshMenu()
         {
             mBinds.ResetInputBindings(this, listView_key);
             mm.CtxmGenerateContextMenu(listView_key.ContextMenu, CtxmCode.EpgAutoAddView, true);
         }
-
         public void SaveViewData()
         {
             lstCtrl.SaveViewDataToSettings();
         }
+        protected override bool ReloadInfoData()
+        {
+            return lstCtrl.ReloadInfoData(dataList =>
+            {
+                ErrCode err = CommonManager.Instance.DB.ReloadEpgAutoAddInfo();
+                if (CommonManager.CmdErrMsgTypical(err, "情報の取得", this) == false) return false;
 
+                foreach (EpgAutoAddData info in CommonManager.Instance.DB.EpgAutoAddList.Values)
+                {
+                    dataList.Add(new EpgAutoDataItem(info));
+                }
+                dragMover.NotSaved = false;
+                return true;
+            });
+        }
+        //SearchWindowからのリスト選択状態の変更を優先するために、MouseUpイベントによる
+        //listViewによるアイテム選択処理より後でダイアログを出すようにする。
+        private bool doubleClicked = false;
+        private void listView_key_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            doubleClicked = true;
+        }
+        private void listView_key_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            if (doubleClicked == true)
+            {
+                doubleClicked = false;
+                EpgCmds.ShowDialog.Execute(sender, this);
+            }
+        }
         public void UpdateListViewSelection(uint autoAddID)
         {
             if (this.IsVisible == true)
@@ -100,224 +139,5 @@ namespace EpgTimer
                 }
             }
         }
-
-        protected override bool ReloadInfoData()
-        {
-            return lstCtrl.ReloadInfoData(dataList =>
-            {
-                ErrCode err = CommonManager.Instance.DB.ReloadEpgAutoAddInfo();
-                if (CommonManager.CmdErrMsgTypical(err, "情報の取得", this) == false) return false;
-
-                foreach (EpgAutoAddData info in CommonManager.Instance.DB.EpgAutoAddList.Values)
-                {
-                    dataList.Add(new EpgAutoDataItem(info));
-                }
-                this.ItemOrderNotSaved = false;
-                return true;
-            });
-        }
-
-        //SearchWindowからのリスト選択状態の変更を優先するために、MouseUpイベントによる
-        //listViewによるアイテム選択処理より後でダイアログを出すようにする。
-        private bool doubleClicked = false;
-        private void listView_key_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-        {
-            doubleClicked = true;
-        }
-
-        private void listView_key_MouseUp(object sender, MouseButtonEventArgs e)
-        {
-            if (doubleClicked == true)
-            {
-                doubleClicked = false;
-                EpgCmds.ShowDialog.Execute(sender, this);
-            }
-        }
-
-        bool _ItemOrderNotSaved = false;
-        bool ItemOrderNotSaved
-        {
-            get { return this._ItemOrderNotSaved; }
-            set
-            {
-                this._ItemOrderNotSaved = value;
-                if (value)
-                {
-                    this.textBox_ItemOrderStatus.Text = "並びが変更されましたが、保存されていません。";
-                }
-                else
-                {
-                    this.textBox_ItemOrderStatus.Text = "";
-                }
-            }
-        }
-
-        private void button_saveItemOrder_Click(object sender, ExecutedRoutedEventArgs e)
-        {
-            if (CmdExeUtil.IsDisplayKgMessage(e) == true)
-            {
-                if(MessageBox.Show("並びの変更を保存します。\r\nよろしいですか？", "保存の確認", 
-                    MessageBoxButton.OKCancel) != MessageBoxResult.OK) return;
-            }
-
-            List<uint> dataIdList1 = new List<uint>();
-            lstCtrl.dataList.ForEach(item1 => dataIdList1.Add(item1.EpgAutoAddInfo.dataID));
-            dataIdList1.Sort();
-            //
-            List<EpgAutoAddData> addList1 = new List<EpgAutoAddData>();
-            for (int i1 = 0; i1 < lstCtrl.dataList.Count; i1++)
-            {
-                EpgAutoDataItem item1 = lstCtrl.dataList[i1];
-                item1.EpgAutoAddInfo.dataID = dataIdList1[i1];
-                addList1.Add(item1.EpgAutoAddInfo);
-
-            }
-            if (mutil.EpgAutoAddChange(addList1, false) == true)
-            {
-                this.ItemOrderNotSaved = false;
-            }
-        }
-
-        private void button_reloadItem_Click(object sender, ExecutedRoutedEventArgs e)
-        {
-            if (CmdExeUtil.IsDisplayKgMessage(e) == true)
-            {
-                if(MessageBox.Show("元の並びに復元します。\r\nよろしいですか？", "復元の確認", 
-                    MessageBoxButton.OKCancel) != MessageBoxResult.OK) return;
-            }
-
-            this.ReloadInfoData();
-        }
-
-        //移動関連
-        enum itemMoveDirections { up, down };
-        EpgAutoDataItem dragItem = null;
-        List<EpgAutoDataItem> dragItems = null;
-
-        private void listViewItem_PreviewMouseDown(object sender, MouseButtonEventArgs e)
-        {
-            if (e.LeftButton == MouseButtonState.Pressed)
-            {
-                ListViewItem item1 = (ListViewItem)sender;
-                this.dragItem = (EpgAutoDataItem)item1.Content;
-                if (listView_key.SelectedItems.Contains(this.dragItem))
-                {
-                    this.dragItems = listView_key.SelectedItems.Cast<EpgAutoDataItem>().ToList();
-                    this.dragItems.Sort((i1, i2) => lstCtrl.dataList.IndexOf(i1) - lstCtrl.dataList.IndexOf(i2));
-                }
-                else
-                {
-                    this.dragItems = mutil.ToList(this.dragItem);
-                }
-            }
-        }
-
-        private void listViewItem_MouseEnter(object sender, MouseEventArgs e)
-        {
-            if (this.dragItem != null
-                && this.dragItem != sender)
-            {
-                if (Mouse.LeftButton == MouseButtonState.Released)
-                {
-                    this.dragItem = null;
-                    this.dragItems = null;
-                }
-                else
-                {
-                    ListViewItem item1 = (ListViewItem)sender;
-                    EpgAutoDataItem dropTo = (EpgAutoDataItem)item1.Content;
-                    this.moveItem(dropTo);
-                }
-            }
-        }
-
-        void moveItem(EpgAutoDataItem dropTo)
-        {
-            try
-            {
-                int idx_dropItems = lstCtrl.dataList.IndexOf(this.dragItem);
-                int idx_dropTo = lstCtrl.dataList.IndexOf(dropTo);
-
-                //一番上と一番下を選択できるように調整
-                idx_dropTo += (idx_dropTo > idx_dropItems ? 1 : 0);
-
-                //挿入位置で分割→バラのも含め選択アイテムを除去→分割前部+選択アイテム+分割後部で連結
-                var work1 = lstCtrl.dataList.Take(idx_dropTo).Where(item => !dragItems.Contains(item)).ToList();
-                var work2 = lstCtrl.dataList.Skip(idx_dropTo).Where(item => !dragItems.Contains(item)).ToList();
-
-                lstCtrl.dataList.Clear();
-                lstCtrl.dataList.AddRange(work1.Concat(dragItems).Concat(work2));
-                listView_key.SelectedItem = dragItem;//これがないと移動中余分な選択があるように見える
-                dragItems.ForEach(item=>listView_key.SelectedItems.Add(item));
-
-                listView_key.Items.Refresh();
-                this.ItemOrderNotSaved = true;
-                lstCtrl.gvSorter.ResetSortParams();
-            }
-            catch { }
-        }
-
-        /// <summary>
-        /// ボタンから上下させる場合
-        /// </summary>
-        /// <param name="up0">true: up, false: down</param>
-        void moveItem(itemMoveDirections moveDirection0)
-        {
-            try
-            {
-                if (listView_key.SelectedItem == null) { return; }
-
-                //選択状態+順序のペアを作る
-                var srcList = new List<EpgAutoDataItem>(lstCtrl.dataList);
-                var list = srcList.Select((item, index) => new KeyValuePair<int, bool>(index, listView_key.SelectedItems.Contains(item))).ToList();
-
-                //逆方向の時はリストひっくり返す
-                if (moveDirection0 == itemMoveDirections.down) list.Reverse();
-
-                //移動対象でないアイテムが上下ループを超えないよう細工
-                //超えているように見えるときでも良く見ると超えていない
-                list.Insert(0, new KeyValuePair<int, bool>(-1, false));
-                int end = list[1].Value == true ? 2 : list.Count;
-                for (int i = 1; i < end; i++)
-                {
-                    //選択状態のものだけ移動
-                    if (list[i].Value == true)
-                    {
-                        var tmp = list[i - 1];
-                        list.RemoveAt(i - 1);
-                        list.Insert(i, tmp);
-                    }
-                }
-                //ループしたものを下へ持って行く。ループしてなければダミーがコピーされるだけ
-                list.Add(list[0]);
-
-                //リンク張り替えながらダミー以外(Key!=-1)をコピー
-                lstCtrl.dataList.Clear();
-                lstCtrl.dataList.AddRange(list.Skip(1).Where(item => item.Key != -1).Select(item => srcList[item.Key]));
-
-                if (moveDirection0 == itemMoveDirections.down) lstCtrl.dataList.Reverse();
-
-                listView_key.Items.Refresh();
-                this.ItemOrderNotSaved = true;
-                lstCtrl.gvSorter.ResetSortParams();
-            }
-            catch { }
-        }
-
-        private void button_up_Click(object sender, ExecutedRoutedEventArgs e)
-        {
-            this.moveItem(itemMoveDirections.up);
-        }
-
-        private void button_down_Click(object sender, ExecutedRoutedEventArgs e)
-        {
-            this.moveItem(itemMoveDirections.down);
-        }
-
-        private void myPopup_MouseLeave(object sender, MouseEventArgs e)
-        {
-            this.myPopup.IsOpen = false;
-        }
-
     }
 }

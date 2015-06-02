@@ -144,6 +144,9 @@
     <Compile Include="DefineClass\ManualAutoAddDataItem.cs" />
     <Compile Include="DefineClass\EpgAutoDataItem.cs" />
     <Compile Include="DefineClass\EpgCaptime.cs" />
+    <Compile Include="UserCtrlView\ListBoxDragMoverView.xaml.cs">
+      <DependentUpon>ListBoxDragMoverView.xaml</DependentUpon>
+    </Compile>
     <Compile Include="UserCtrlView\ManualAutoAddView.xaml.cs">
       <DependentUpon>ManualAutoAddView.xaml</DependentUpon>
     </Compile>
@@ -299,6 +302,10 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="UserCtrlView\EpgAutoAddView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UserCtrlView\ListBoxDragMoverView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -552,6 +559,9 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Resources\key_no.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\drag.cur" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
