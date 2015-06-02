@@ -176,7 +176,7 @@ vector<DWORD> CTunerBankCtrl::GetReserveIDList() const
 	return list;
 }
 
-vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check()
+vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* startedReserveIDList)
 {
 	vector<CHECK_RESULT> retList;
 
@@ -333,6 +333,9 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check()
 								ctrlCmd.SendViewExecViewApp();
 							}
 						}
+					}
+					if( startedReserveIDList ){
+						startedReserveIDList->push_back(r.reserveID);
 					}
 				}else{
 					//ŠJŽn‚Å‚«‚È‚©‚Á‚½

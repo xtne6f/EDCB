@@ -4,25 +4,24 @@
 #include "../../Common/SendCtrlCmd.h"
 #include "../../Common/StringUtil.h"
 #include "../../Common/PathUtil.h"
-#include "../../Common/TimeUtil.h"
 #include "../../Common/BlockLock.h"
 
 #include <process.h>
 
-CBatManager::CBatManager(CNotifyManager& notifyManager_)
+CBatManager::CBatManager(CNotifyManager& notifyManager_, LPCWSTR tmpBatFileName)
 	: notifyManager(notifyManager_)
 {
 	InitializeCriticalSection(&this->managerLock);
 
+	GetModuleFolderPath(this->tmpBatFilePath);
+	this->tmpBatFilePath += L'\\';
+	this->tmpBatFilePath += tmpBatFileName;
 	this->idleMargin = MAXDWORD;
 	this->nextBatMargin = 0;
 	this->batWorkExitingFlag = FALSE;
 
 	this->batWorkThread = NULL;
 	this->batWorkStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-
-	this->lastSuspendMode = 0xFF;
-	this->lastRebootFlag = 0xFF;
 }
 
 CBatManager::~CBatManager(void)
@@ -91,23 +90,6 @@ void CBatManager::StartWork()
 	}
 }
 
-BOOL CBatManager::PopLastWorkSuspend(BYTE* suspendMode, BYTE* rebootFlag)
-{
-	CBlockLock lock(&this->managerLock);
-
-	BOOL ret = FALSE;
-	if( IsWorking() == FALSE && this->lastSuspendMode != 0xFF ){
-		ret = TRUE;
-		*suspendMode = this->lastSuspendMode;
-		*rebootFlag = this->lastRebootFlag;
-
-		this->lastSuspendMode = 0xFF;
-		this->lastRebootFlag = 0xFF;
-	}
-
-	return ret;
-}
-
 UINT WINAPI CBatManager::BatWorkThread(LPVOID param)
 {
 	CBatManager* sys = (CBatManager*)param;
@@ -124,15 +106,11 @@ UINT WINAPI CBatManager::BatWorkThread(LPVOID param)
 					break;
 				}else{
 					work = sys->workList[0];
-					sys->lastSuspendMode = work.suspendMode;
-					sys->lastRebootFlag = work.rebootFlag;
 				}
 			}
 
 			if( work.batFilePath.size() > 0 ){
-				wstring batFilePath = L"";
-				GetModuleFolderPath(batFilePath);
-				batFilePath += L"\\EpgTimer_Bon_RecEnd.bat";
+				wstring batFilePath = sys->tmpBatFilePath;
 				DWORD exBatMargin;
 				WORD exSW;
 				wstring exDirect;
@@ -298,160 +276,17 @@ BOOL CBatManager::CreateBatFile(const BAT_WORK_INFO& info, LPCWSTR batSrcFilePat
 
 BOOL CBatManager::ExpandMacro(const string& var, const BAT_WORK_INFO& info, wstring& strWrite)
 {
-	string strSDW28;
-	SYSTEMTIME t28TimeS;
-	if( 0 <= info.recFileInfo.startTime.wHour && info.recFileInfo.startTime.wHour < 4 ){
-		GetSumTime(info.recFileInfo.startTime, -24*60*60, &t28TimeS);
-		GetDayOfWeekString2(t28TimeS, strSDW28);
-		t28TimeS.wHour+=24;
-	}else{
-		t28TimeS = info.recFileInfo.startTime;
-		GetDayOfWeekString2(t28TimeS, strSDW28);
-	}
-
-	SYSTEMTIME tEnd;
-	GetI64Time(info.recFileInfo.startTime, info.recFileInfo.durationSecond, NULL, NULL, &tEnd);
-
-	string strEDW28;
-	SYSTEMTIME t28TimeE;
-	if( 0 <= tEnd.wHour && tEnd.wHour < 4 ){
-		GetSumTime(tEnd, -24*60*60, &t28TimeE);
-		GetDayOfWeekString2(t28TimeE, strEDW28);
-		t28TimeE.wHour+=24;
-	}else{
-		t28TimeE = tEnd;
-		GetDayOfWeekString2(t28TimeE, strEDW28);
-	}
-
-	string ret;
-	if( var == "FilePath" )		strWrite += info.recFileInfo.recFilePath;
-	else if( var == "Title" )	strWrite += info.recFileInfo.title;
-	else if( var == "SDYYYY" )	Format(ret, "%04d", info.recFileInfo.startTime.wYear);
-	else if( var == "SDYY" )	Format(ret, "%02d", info.recFileInfo.startTime.wYear%100);
-	else if( var == "SDMM" )	Format(ret, "%02d", info.recFileInfo.startTime.wMonth);
-	else if( var == "SDM" )		Format(ret, "%d", info.recFileInfo.startTime.wMonth);
-	else if( var == "SDDD" )	Format(ret, "%02d", info.recFileInfo.startTime.wDay);
-	else if( var == "SDD" )		Format(ret, "%d", info.recFileInfo.startTime.wDay);
-	else if( var == "SDW" )		GetDayOfWeekString2(info.recFileInfo.startTime, ret);
-	else if( var == "STHH" )	Format(ret, "%02d", info.recFileInfo.startTime.wHour);
-	else if( var == "STH" )		Format(ret, "%d", info.recFileInfo.startTime.wHour);
-	else if( var == "STMM" )	Format(ret, "%02d", info.recFileInfo.startTime.wMinute);
-	else if( var == "STM" )		Format(ret, "%d", info.recFileInfo.startTime.wMinute);
-	else if( var == "STSS" )	Format(ret, "%02d", info.recFileInfo.startTime.wSecond);
-	else if( var == "STS" )		Format(ret, "%d", info.recFileInfo.startTime.wSecond);
-	else if( var == "EDYYYY" )	Format(ret, "%04d", tEnd.wYear);
-	else if( var == "EDYY" )	Format(ret, "%02d", tEnd.wYear%100);
-	else if( var == "EDMM" )	Format(ret, "%02d", tEnd.wMonth);
-	else if( var == "EDM" )		Format(ret, "%d", tEnd.wMonth);
-	else if( var == "EDDD" )	Format(ret, "%02d", tEnd.wDay);
-	else if( var == "EDD" )		Format(ret, "%d", tEnd.wDay);
-	else if( var == "EDW" )		GetDayOfWeekString2(tEnd, ret);
-	else if( var == "ETHH" )	Format(ret, "%02d", tEnd.wHour);
-	else if( var == "ETH" )		Format(ret, "%d", tEnd.wHour);
-	else if( var == "ETMM" )	Format(ret, "%02d", tEnd.wMinute);
-	else if( var == "ETM" )		Format(ret, "%d", tEnd.wMinute);
-	else if( var == "ETSS" )	Format(ret, "%02d", tEnd.wSecond);
-	else if( var == "ETS" )		Format(ret, "%d", tEnd.wSecond);
-	else if( var == "ONID10" )	Format(ret, "%d", info.recFileInfo.originalNetworkID);
-	else if( var == "TSID10" )	Format(ret, "%d", info.recFileInfo.transportStreamID);
-	else if( var == "SID10" )	Format(ret, "%d", info.recFileInfo.serviceID);
-	else if( var == "EID10" )	Format(ret, "%d", info.recFileInfo.eventID);
-	else if( var == "ONID16" )	Format(ret, "%04X", info.recFileInfo.originalNetworkID);
-	else if( var == "TSID16" )	Format(ret, "%04X", info.recFileInfo.transportStreamID);
-	else if( var == "SID16" )	Format(ret, "%04X", info.recFileInfo.serviceID);
-	else if( var == "EID16" )	Format(ret, "%04X", info.recFileInfo.eventID);
-	else if( var == "ServiceName" )	strWrite += info.recFileInfo.serviceName;
-	else if( var == "SDYYYY28" )	Format(ret, "%04d", t28TimeS.wYear);
-	else if( var == "SDYY28" )	Format(ret, "%02d", t28TimeS.wYear%100);
-	else if( var == "SDMM28" )	Format(ret, "%02d", t28TimeS.wMonth);
-	else if( var == "SDM28" )	Format(ret, "%d", t28TimeS.wMonth);
-	else if( var == "SDDD28" )	Format(ret, "%02d", t28TimeS.wDay);
-	else if( var == "SDD28" )	Format(ret, "%d", t28TimeS.wDay);
-	else if( var == "SDW28" )	ret = strSDW28;
-	else if( var == "STHH28" )	Format(ret, "%02d", t28TimeS.wHour);
-	else if( var == "STH28" )	Format(ret, "%d", t28TimeS.wHour);
-	else if( var == "EDYYYY28" )	Format(ret, "%04d", t28TimeE.wYear);
-	else if( var == "EDYY28" )	Format(ret, "%02d", t28TimeE.wYear%100);
-	else if( var == "EDMM28" )	Format(ret, "%02d", t28TimeE.wMonth);
-	else if( var == "EDM28" )	Format(ret, "%d", t28TimeE.wMonth);
-	else if( var == "EDDD28" )	Format(ret, "%02d", t28TimeE.wDay);
-	else if( var == "EDD28" )	Format(ret, "%d", t28TimeE.wDay);
-	else if( var == "EDW28" )	ret = strEDW28;
-	else if( var == "ETHH28" )	Format(ret, "%02d", t28TimeE.wHour);
-	else if( var == "ETH28" )	Format(ret, "%d", t28TimeE.wHour);
-	else if( var == "DUHH" )	Format(ret, "%02d", info.recFileInfo.durationSecond/(60*60));
-	else if( var == "DUH" )		Format(ret, "%d", info.recFileInfo.durationSecond/(60*60));
-	else if( var == "DUMM" )	Format(ret, "%02d", (info.recFileInfo.durationSecond%(60*60))/60);
-	else if( var == "DUM" )		Format(ret, "%d", (info.recFileInfo.durationSecond%(60*60))/60);
-	else if( var == "DUSS" )	Format(ret, "%02d", info.recFileInfo.durationSecond%60);
-	else if( var == "DUS" )		Format(ret, "%d", info.recFileInfo.durationSecond%60);
-	else if( var == "Drops" )	Format(ret, "%I64d", info.recFileInfo.drops);
-	else if( var == "Scrambles" )	Format(ret, "%I64d", info.recFileInfo.scrambles);
-	else if( var == "Result" )	strWrite += info.recFileInfo.comment;
-	else if( var == "FolderPath" ){
-		wstring strFolder;
-		GetFileFolder(info.recFileInfo.recFilePath, strFolder);
-		ChkFolderPath(strFolder);
-		strWrite += strFolder;
-	}else if( var == "FileName" ){
-		wstring strTitle;
-		GetFileTitle(info.recFileInfo.recFilePath, strTitle);
-		strWrite += strTitle;
-	}else if( var == "TitleF" ){
-		wstring strTemp = info.recFileInfo.title;
-		CheckFileName(strTemp);
-		strWrite += strTemp;
-	}else if( var == "Title2" || var == "Title2F" ){
-		wstring strTemp = info.recFileInfo.title;
-		while( strTemp.find(L"[") != wstring::npos && strTemp.find(L"]") != wstring::npos ){
-			wstring strSep1;
-			wstring strSep2;
-			Separate(strTemp, L"[", strTemp, strSep1);
-			Separate(strSep1, L"]", strSep2, strSep1);
-			strTemp += strSep1;
+	for( size_t i = 0; i < info.macroList.size(); i++ ){
+		if( var == info.macroList[i].first ){
+			strWrite += info.macroList[i].second;
+			return TRUE;
 		}
-		if( var == "Title2F" ){
-			CheckFileName(strTemp);
-		}
-		strWrite += strTemp;
-	}else if( var == "AddKey" ){
-		strWrite += info.addKey;
-	}else{
-		return FALSE;
 	}
-
-	wstring retW;
-	AtoW(ret, retW);
-	strWrite += retW;
-
-	return TRUE;
+	return FALSE;
 }
 
 wstring CBatManager::CreateEnvironment(const BAT_WORK_INFO& info)
 {
-	static const LPCSTR VAR_ARRAY[] = {
-		"FilePath",
-		"Title",
-		"SDYYYY", "SDYY", "SDMM", "SDM", "SDDD", "SDD", "SDW", "STHH", "STH", "STMM", "STM", "STSS", "STS",
-		"EDYYYY", "EDYY", "EDMM", "EDM", "EDDD", "EDD", "EDW", "ETHH", "ETH", "ETMM", "ETM", "ETSS", "ETS",
-		"ONID10", "TSID10", "SID10", "EID10",
-		"ONID16", "TSID16", "SID16", "EID16",
-		"ServiceName",
-		"SDYYYY28", "SDYY28", "SDMM28", "SDM28", "SDDD28", "SDD28", "SDW28", "STHH28", "STH28",
-		"EDYYYY28", "EDYY28", "EDMM28", "EDM28", "EDDD28", "EDD28", "EDW28", "ETHH28", "ETH28",
-		"DUHH", "DUH", "DUMM", "DUM", "DUSS", "DUS",
-		"Drops",
-		"Scrambles",
-		"Result",
-		"FolderPath",
-		"FileName",
-		"TitleF",
-		"Title2",
-		"Title2F",
-		"AddKey",
-		NULL,
-	};
-
 	wstring strEnv;
 	LPWCH env = GetEnvironmentStrings();
 	if( env ){
@@ -460,8 +295,8 @@ wstring CBatManager::CreateEnvironment(const BAT_WORK_INFO& info)
 			string strVar;
 			WtoA(str.substr(0, str.find(L'=')), strVar);
 			//競合する変数をエスケープ
-			for( int i = 0; VAR_ARRAY[i]; i++ ){
-				if( _stricmp(VAR_ARRAY[i], strVar.c_str()) == 0 ){
+			for( size_t i = 0; i < info.macroList.size(); i++ ){
+				if( CompareNoCase(info.macroList[i].first, strVar) == 0 && strVar.empty() == false ){
 					str[0] = L'_';
 					break;
 				}
@@ -470,11 +305,10 @@ wstring CBatManager::CreateEnvironment(const BAT_WORK_INFO& info)
 		}while( env[strEnv.size()] != L'\0' );
 		FreeEnvironmentStrings(env);
 	}
-	for( int i = 0; VAR_ARRAY[i]; i++ ){
+	for( size_t i = 0; i < info.macroList.size(); i++ ){
 		wstring strVar;
-		AtoW(VAR_ARRAY[i], strVar);
-		strEnv += strVar + L'=';
-		ExpandMacro(VAR_ARRAY[i], info, strEnv);
+		AtoW(info.macroList[i].first, strVar);
+		strEnv += strVar + L'=' + info.macroList[i].second;
 		strEnv += L'\0';
 	}
 	return strEnv;
