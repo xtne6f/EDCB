@@ -100,7 +100,8 @@ public:
 	vector<DWORD> GetReserveIDList() const;
 	//チューナの状態遷移をおこない、終了した予約を取得する
 	//概ね1秒ごとに呼ぶ
-	vector<CHECK_RESULT> Check();
+	//startedReserveIDList: TR_RECに遷移した予約ID一覧
+	vector<CHECK_RESULT> Check(vector<DWORD>* startedReserveIDList = NULL);
 	//チューナ全体としての状態を取得する
 	TR_STATE GetState() const;
 	//予約開始の最小時刻を取得する

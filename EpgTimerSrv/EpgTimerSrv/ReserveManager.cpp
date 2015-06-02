@@ -10,10 +10,12 @@
 CReserveManager::CReserveManager(CNotifyManager& notifyManager_, CEpgDBManager& epgDBManager_)
 	: notifyManager(notifyManager_)
 	, epgDBManager(epgDBManager_)
-	, batManager(notifyManager_)
+	, batManager(notifyManager_, L"EpgTimer_Bon_RecEnd.bat")
+	, batPostManager(notifyManager_, L"EpgTimer_Bon_Post.bat")
 	, checkCount(0)
 	, epgCapRequested(false)
 	, epgCapWork(false)
+	, shutdownModePending(-1)
 	, reserveModified(false)
 	, watchdogStopEvent(NULL)
 	, watchdogThread(NULL)
@@ -35,10 +37,10 @@ void CReserveManager::Initialize()
 	wstring settingPath;
 	GetSettingPath(settingPath);
 	this->reserveText.ParseText((settingPath + L"\\" + RESERVE_TEXT_NAME).c_str());
-	this->recInfoText.ParseText((settingPath + L"\\" + REC_INFO_TEXT_NAME).c_str());
-	this->recInfo2Text.ParseText((settingPath + L"\\" + REC_INFO2_TEXT_NAME).c_str());
 
 	ReloadSetting();
+	this->recInfoText.ParseText((settingPath + L"\\" + REC_INFO_TEXT_NAME).c_str());
+	this->recInfo2Text.ParseText((settingPath + L"\\" + REC_INFO2_TEXT_NAME).c_str());
 
 	this->watchdogStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	if( this->watchdogStopEvent ){
@@ -288,6 +290,7 @@ bool CReserveManager::AddReserveData(const vector<RESERVE_DATA>& reserveList, bo
 	bool modified = false;
 	__int64 minStartTime = LLONG_MAX;
 	__int64 now = GetNowI64Time();
+	vector<BAT_WORK_INFO> batWorkList;
 	for( size_t i = 0; i < reserveList.size(); i++ ){
 		RESERVE_DATA r = reserveList[i];
 		//すでに終了していないか
@@ -307,6 +310,8 @@ bool CReserveManager::AddReserveData(const vector<RESERVE_DATA>& reserveList, bo
 				__int64 startTime;
 				CalcEntireReserveTime(&startTime, NULL, r);
 				minStartTime = min(startTime, minStartTime);
+				batWorkList.resize(batWorkList.size() + 1);
+				AddReserveDataMacro(batWorkList.back().macroList, r, "");
 			}
 		}
 	}
@@ -314,6 +319,7 @@ bool CReserveManager::AddReserveData(const vector<RESERVE_DATA>& reserveList, bo
 		this->reserveText.SaveText();
 		ReloadBankMap(minStartTime);
 		this->notifyManager.AddNotify(NOTIFY_UPDATE_RESERVE_INFO);
+		AddPostBatWork(batWorkList, L"PostAddReserve.bat");
 		return true;
 	}
 	return false;
@@ -325,6 +331,7 @@ bool CReserveManager::ChgReserveData(const vector<RESERVE_DATA>& reserveList, bo
 
 	bool modified = false;
 	__int64 minStartTime = LLONG_MAX;
+	vector<BAT_WORK_INFO> batWorkList;
 	for( size_t i = 0; i < reserveList.size(); i++ ){
 		RESERVE_DATA r = reserveList[i];
 		map<DWORD, RESERVE_DATA>::const_iterator itr = this->reserveText.GetMap().find(r.reserveID);
@@ -442,6 +449,9 @@ bool CReserveManager::ChgReserveData(const vector<RESERVE_DATA>& reserveList, bo
 					CalcEntireReserveTime(&startTimeNext, NULL, r);
 					minStartTime = min(min(startTime, startTimeNext), minStartTime);
 				}
+				batWorkList.resize(batWorkList.size() + 1);
+				AddReserveDataMacro(batWorkList.back().macroList, itr->second, "OLD");
+				AddReserveDataMacro(batWorkList.back().macroList, r, "");
 			}
 			this->reserveText.ChgReserve(r);
 			this->reserveModified = true;
@@ -452,6 +462,7 @@ bool CReserveManager::ChgReserveData(const vector<RESERVE_DATA>& reserveList, bo
 		this->reserveText.SaveText();
 		ReloadBankMap(minStartTime);
 		this->notifyManager.AddNotify(NOTIFY_UPDATE_RESERVE_INFO);
+		AddPostBatWork(batWorkList, L"PostChgReserve.bat");
 		return true;
 	}
 	return false;
@@ -1060,16 +1071,26 @@ DWORD CReserveManager::Check()
 
 		bool isRec = false;
 		bool isEpgCap = false;
-		int shutdownMode = -1;
 		//tunerBankMapそのものは排他制御の対象外
 		for( map<DWORD, CTunerBankCtrl*>::const_iterator itrBank = this->tunerBankMap.begin(); itrBank != this->tunerBankMap.end(); itrBank++ ){
 			CBlockLock lock(&this->managerLock);
 
 			// チューナの予約状態遷移を行い、予約終了をチェックする
-			vector<CTunerBankCtrl::CHECK_RESULT> retList = itrBank->second->Check();
+			vector<DWORD> startedReserveIDList;
+			vector<CTunerBankCtrl::CHECK_RESULT> retList = itrBank->second->Check(&startedReserveIDList);
 			CTunerBankCtrl::TR_STATE state = itrBank->second->GetState();
 			isRec = isRec || state == CTunerBankCtrl::TR_REC;
 			isEpgCap = isEpgCap || state == CTunerBankCtrl::TR_EPGCAP;
+			vector<BAT_WORK_INFO> batWorkList;
+			for( size_t i = 0; i < startedReserveIDList.size(); i++ ){
+				map<DWORD, RESERVE_DATA>::const_iterator itrRes = this->reserveText.GetMap().find(startedReserveIDList[i]);
+				if( itrRes != this->reserveText.GetMap().end() ){
+					batWorkList.resize(batWorkList.size() + 1);
+					AddReserveDataMacro(batWorkList.back().macroList, itrRes->second, "");
+				}
+			}
+			AddPostBatWork(batWorkList, L"PostRecStart.bat");
+			batWorkList.clear();
 			bool modified = false;
 			for( vector<CTunerBankCtrl::CHECK_RESULT>::const_iterator itrRet = retList.begin(); itrRet != retList.end(); itrRet++ ){
 				map<DWORD, RESERVE_DATA>::const_iterator itrRes = this->reserveText.GetMap().find(itrRet->reserveID);
@@ -1144,20 +1165,20 @@ DWORD CReserveManager::Check()
 					this->recInfoText.AddRecInfo(item);
 
 					//バッチ処理追加
+					BAT_WORK_INFO batInfo;
+					AddRecInfoMacro(batInfo.macroList, item);
+					batInfo.macroList.push_back(pair<string, wstring>("AddKey",
+						itrRes->second.comment.compare(0, 8, L"EPG自動予約(") == 0 && itrRes->second.comment.size() >= 9 ?
+						itrRes->second.comment.substr(8, itrRes->second.comment.size() - 9) : wstring()));
 					if( (itrRet->type == CTunerBankCtrl::CHECK_END || itrRet->type == CTunerBankCtrl::CHECK_END_NEXT_START_END) && item.recFilePath.empty() == false &&
 					    itrRes->second.recSetting.batFilePath.empty() == false && itrRet->continueRec == false ){
-						BAT_WORK_INFO batInfo;
 						batInfo.batFilePath = itrRes->second.recSetting.batFilePath;
-						batInfo.suspendMode = itrRes->second.recSetting.suspendMode;
-						batInfo.rebootFlag = itrRes->second.recSetting.rebootFlag;
-						if( itrRes->second.comment.compare(0, 8, L"EPG自動予約(") == 0 && itrRes->second.comment.size() >= 9 ){
-							batInfo.addKey.assign(itrRes->second.comment, 8, itrRes->second.comment.size() - 9);
-						}
-						batInfo.recFileInfo = item;
 						this->batManager.AddBatWork(batInfo);
-						this->batManager.StartWork();
-					}else if( itrRet->type != CTunerBankCtrl::CHECK_ERR_PASS ){
-						shutdownMode = MAKEWORD(itrRes->second.recSetting.suspendMode, itrRes->second.recSetting.rebootFlag);
+					}
+					if( itrRet->type != CTunerBankCtrl::CHECK_ERR_PASS ){
+						batWorkList.resize(batWorkList.size() + 1);
+						batWorkList.back().macroList = batInfo.macroList;
+						this->shutdownModePending = MAKEWORD(itrRes->second.recSetting.suspendMode, itrRes->second.recSetting.rebootFlag);
 					}
 
 					this->reserveText.DelReserve(itrRes->first);
@@ -1182,6 +1203,7 @@ DWORD CReserveManager::Check()
 				this->recInfo2Text.SaveText();
 				this->notifyManager.AddNotify(NOTIFY_UPDATE_RESERVE_INFO);
 				this->notifyManager.AddNotify(NOTIFY_UPDATE_REC_INFO);
+				AddPostBatWork(batWorkList, L"PostRecEnd.bat");
 			}
 		}
 		if( this->checkCount % 30 == 0 ){
@@ -1190,18 +1212,20 @@ DWORD CReserveManager::Check()
 		if( this->checkCount % 3 == 0 ){
 			CheckTuijyuTuner();
 		}
+		__int64 idleMargin = GetNearestRecReserveTime() - GetNowI64Time();
+		this->batManager.SetIdleMargin((DWORD)min(max(idleMargin / I64_1SEC, 0), MAXDWORD));
 		this->notifyManager.SetNotifySrvStatus(isRec ? 1 : isEpgCap ? 2 : 0);
 
-		BYTE suspendMode;
-		BYTE rebootFlag;
 		if( CheckEpgCap(isEpgCap) ){
 			//EPG取得が完了した
 			this->notifyManager.AddNotify(NOTIFY_UPDATE_EPGCAP_END);
 			return MAKELONG(0, CHECK_EPGCAP_END);
-		}else if( this->batManager.PopLastWorkSuspend(&suspendMode, &rebootFlag) ){
+		}else if( this->shutdownModePending >= 0 &&
+		          this->batManager.GetWorkCount() == 0 && this->batManager.IsWorking() == FALSE &&
+		          this->batPostManager.GetWorkCount() == 0 && this->batPostManager.IsWorking() == FALSE ){
 			//バッチ処理が完了した
-			return MAKELONG(MAKEWORD(suspendMode, rebootFlag), CHECK_NEED_SHUTDOWN);
-		}else if( shutdownMode >= 0 && this->batManager.IsWorking() == false ){
+			int shutdownMode = this->shutdownModePending;
+			this->shutdownModePending = -1;
 			return MAKELONG(shutdownMode, CHECK_NEED_SHUTDOWN);
 		}else if( this->reserveModified ){
 			CBlockLock lock(&this->managerLock);
@@ -1376,7 +1400,9 @@ bool CReserveManager::IsActive() const
 {
 	CBlockLock lock(&this->managerLock);
 
-	if( this->epgCapRequested || this->epgCapWork || this->batManager.IsWorking() ){
+	if( this->epgCapRequested || this->epgCapWork ||
+	    this->batManager.GetWorkCount() != 0 || this->batManager.IsWorking() ||
+	    this->batPostManager.GetWorkCount() != 0 || this->batPostManager.IsWorking() ){
 		return true;
 	}
 	for( map<DWORD, CTunerBankCtrl*>::const_iterator itr = this->tunerBankMap.begin(); itr != this->tunerBankMap.end(); itr++ ){
@@ -1404,6 +1430,22 @@ __int64 CReserveManager::GetSleepReturnTime(__int64 baseTime) const
 	}
 	__int64 capTime = GetNextEpgCapTime(baseTime + 60 * I64_1SEC);
 	return min(nextRec, capTime);
+}
+
+__int64 CReserveManager::GetNearestRecReserveTime() const
+{
+	CBlockLock lock(&this->managerLock);
+
+	__int64 minTime = LLONG_MAX;
+	for( map<DWORD, RESERVE_DATA>::const_iterator itr = this->reserveText.GetMap().begin(); itr != this->reserveText.GetMap().end(); itr++ ){
+		if( itr->second.recSetting.recMode != RECMODE_VIEW &&
+		    itr->second.recSetting.recMode != RECMODE_NO ){
+			__int64 startTime;
+			CalcEntireReserveTime(&startTime, NULL, itr->second);
+			minTime = min(startTime, minTime);
+		}
+	}
+	return minTime;
 }
 
 __int64 CReserveManager::GetNextEpgCapTime(__int64 now, int* basicOnlyFlags) const
@@ -1625,4 +1667,126 @@ UINT WINAPI CReserveManager::WatchdogThread(LPVOID param)
 		}
 	}
 	return 0;
+}
+
+void CReserveManager::AddPostBatWork(vector<BAT_WORK_INFO>& workList, LPCWSTR fileName)
+{
+	if( workList.empty() == false ){
+		GetModuleFolderPath(workList[0].batFilePath);
+		workList[0].batFilePath += L'\\';
+		workList[0].batFilePath += fileName;
+		WIN32_FIND_DATA findData;
+		HANDLE hFind = FindFirstFile(workList[0].batFilePath.c_str(), &findData);
+		if( hFind != INVALID_HANDLE_VALUE ){
+			FindClose(hFind);
+			for( size_t i = 0; i < workList.size(); i++ ){
+				workList[i].batFilePath = workList[0].batFilePath;
+				this->batPostManager.AddBatWork(workList[i]);
+			}
+		}
+	}
+}
+
+void CReserveManager::AddTimeMacro(vector<pair<string, wstring>>& macroList, const SYSTEMTIME& startTime, DWORD durationSecond, LPCSTR suffix)
+{
+	WCHAR v[64];
+	for( string p = "S"; p != ""; p = (p == "S" ? "E" : "") ){
+		SYSTEMTIME t = startTime;
+		if( p == "E" ){
+			ConvertSystemTime(ConvertI64Time(t) + durationSecond * I64_1SEC, &t);
+		}
+		SYSTEMTIME t28 = t;
+		WORD wHour28 = t.wHour;
+		if( t28.wHour < 4 ){
+			ConvertSystemTime(ConvertI64Time(t28) - 24 * 3600 * I64_1SEC, &t28);
+			wHour28 += 24;
+		}
+		swprintf_s(v, L"%04d", t.wYear);	macroList.push_back(pair<string, wstring>(p + "DYYYY" + suffix, v));
+		swprintf_s(v, L"%02d", t.wYear);	macroList.push_back(pair<string, wstring>(p + "DYY" + suffix, v));
+		swprintf_s(v, L"%02d", t.wMonth);	macroList.push_back(pair<string, wstring>(p + "DMM" + suffix, v));
+		swprintf_s(v, L"%d", t.wMonth);		macroList.push_back(pair<string, wstring>(p + "DM" + suffix, v));
+		swprintf_s(v, L"%02d", t.wDay);		macroList.push_back(pair<string, wstring>(p + "DDD" + suffix, v));
+		swprintf_s(v, L"%d", t.wDay);		macroList.push_back(pair<string, wstring>(p + "DD" + suffix, v));
+		macroList.push_back(pair<string, wstring>(p + "DW" + suffix, L"")); GetDayOfWeekString2(t, macroList.back().second);
+		swprintf_s(v, L"%02d", t.wHour);	macroList.push_back(pair<string, wstring>(p + "THH" + suffix, v));
+		swprintf_s(v, L"%d", t.wHour);		macroList.push_back(pair<string, wstring>(p + "TH" + suffix, v));
+		swprintf_s(v, L"%02d", t.wMinute);	macroList.push_back(pair<string, wstring>(p + "TMM" + suffix, v));
+		swprintf_s(v, L"%d", t.wMinute);	macroList.push_back(pair<string, wstring>(p + "TM" + suffix, v));
+		swprintf_s(v, L"%02d", t.wSecond);	macroList.push_back(pair<string, wstring>(p + "TSS" + suffix, v));
+		swprintf_s(v, L"%d", t.wSecond);	macroList.push_back(pair<string, wstring>(p + "TS" + suffix, v));
+		swprintf_s(v, L"%04d", t28.wYear);	macroList.push_back(pair<string, wstring>(p + "DYYYY28" + suffix, v));
+		swprintf_s(v, L"%02d", t28.wYear);	macroList.push_back(pair<string, wstring>(p + "DYY28" + suffix, v));
+		swprintf_s(v, L"%02d", t28.wMonth);	macroList.push_back(pair<string, wstring>(p + "DMM28" + suffix, v));
+		swprintf_s(v, L"%d", t28.wMonth);	macroList.push_back(pair<string, wstring>(p + "DM28" + suffix, v));
+		swprintf_s(v, L"%02d", t28.wDay);	macroList.push_back(pair<string, wstring>(p + "DDD28" + suffix, v));
+		swprintf_s(v, L"%d", t28.wDay);		macroList.push_back(pair<string, wstring>(p + "DD28" + suffix, v));
+		macroList.push_back(pair<string, wstring>(p + "DW28" + suffix, L"")); GetDayOfWeekString2(t28, macroList.back().second);
+		swprintf_s(v, L"%02d", wHour28);	macroList.push_back(pair<string, wstring>(p + "THH28" + suffix, v));
+		swprintf_s(v, L"%d", wHour28);		macroList.push_back(pair<string, wstring>(p + "TH28" + suffix, v));
+	}
+	swprintf_s(v, L"%02d", durationSecond / 3600);		macroList.push_back(pair<string, wstring>(string("DUHH") + suffix, v));
+	swprintf_s(v, L"%d", durationSecond / 3600);		macroList.push_back(pair<string, wstring>(string("DUH") + suffix, v));
+	swprintf_s(v, L"%02d", durationSecond % 3600 / 60);	macroList.push_back(pair<string, wstring>(string("DUMM") + suffix, v));
+	swprintf_s(v, L"%d", durationSecond % 3600 / 60);	macroList.push_back(pair<string, wstring>(string("DUM") + suffix, v));
+	swprintf_s(v, L"%02d", durationSecond % 60);		macroList.push_back(pair<string, wstring>(string("DUSS") + suffix, v));
+	swprintf_s(v, L"%d", durationSecond % 60);			macroList.push_back(pair<string, wstring>(string("DUS") + suffix, v));
+}
+
+void CReserveManager::AddReserveDataMacro(vector<pair<string, wstring>>& macroList, const RESERVE_DATA& data, LPCSTR suffix)
+{
+	WCHAR v[64];
+	AddTimeMacro(macroList, data.startTime, data.durationSecond, suffix);
+	swprintf_s(v, L"%d", data.originalNetworkID);	macroList.push_back(pair<string, wstring>(string("ONID10") + suffix, v));
+	swprintf_s(v, L"%d", data.transportStreamID);	macroList.push_back(pair<string, wstring>(string("TSID10") + suffix, v));
+	swprintf_s(v, L"%d", data.serviceID);			macroList.push_back(pair<string, wstring>(string("SID10") + suffix, v));
+	swprintf_s(v, L"%d", data.eventID);				macroList.push_back(pair<string, wstring>(string("EID10") + suffix, v));
+	swprintf_s(v, L"%04X", data.originalNetworkID);	macroList.push_back(pair<string, wstring>(string("ONID16") + suffix, v));
+	swprintf_s(v, L"%04X", data.transportStreamID);	macroList.push_back(pair<string, wstring>(string("TSID16") + suffix, v));
+	swprintf_s(v, L"%04X", data.serviceID);			macroList.push_back(pair<string, wstring>(string("SID16") + suffix, v));
+	swprintf_s(v, L"%04X", data.eventID);			macroList.push_back(pair<string, wstring>(string("EID16") + suffix, v));
+	swprintf_s(v, L"%d", data.reserveID);			macroList.push_back(pair<string, wstring>(string("ReserveID") + suffix, v));
+	swprintf_s(v, L"%d", data.recSetting.recMode);	macroList.push_back(pair<string, wstring>(string("RecMode") + suffix, v));
+	macroList.push_back(std::make_pair(string("Title") + suffix, data.title));
+	macroList.push_back(std::make_pair(string("ServiceName") + suffix, data.stationName));
+	macroList.push_back(std::make_pair(string("ReserveComment") + suffix, data.comment));
+}
+
+void CReserveManager::AddRecInfoMacro(vector<pair<string, wstring>>& macroList, const REC_FILE_INFO& recInfo)
+{
+	WCHAR v[64];
+	AddTimeMacro(macroList, recInfo.startTime, recInfo.durationSecond, "");
+	swprintf_s(v, L"%d", recInfo.originalNetworkID);	macroList.push_back(pair<string, wstring>("ONID10", v));
+	swprintf_s(v, L"%d", recInfo.transportStreamID);	macroList.push_back(pair<string, wstring>("TSID10", v));
+	swprintf_s(v, L"%d", recInfo.serviceID);			macroList.push_back(pair<string, wstring>("SID10", v));
+	swprintf_s(v, L"%d", recInfo.eventID);				macroList.push_back(pair<string, wstring>("EID10", v));
+	swprintf_s(v, L"%04X", recInfo.originalNetworkID);	macroList.push_back(pair<string, wstring>("ONID16", v));
+	swprintf_s(v, L"%04X", recInfo.transportStreamID);	macroList.push_back(pair<string, wstring>("TSID16", v));
+	swprintf_s(v, L"%04X", recInfo.serviceID);			macroList.push_back(pair<string, wstring>("SID16", v));
+	swprintf_s(v, L"%04X", recInfo.eventID);			macroList.push_back(pair<string, wstring>("EID16", v));
+	swprintf_s(v, L"%I64d", recInfo.drops);				macroList.push_back(pair<string, wstring>("Drops", v));
+	swprintf_s(v, L"%I64d", recInfo.scrambles);			macroList.push_back(pair<string, wstring>("Scrambles", v));
+	macroList.push_back(pair<string, wstring>("Title", recInfo.title));
+	macroList.push_back(pair<string, wstring>("ServiceName", recInfo.serviceName));
+	macroList.push_back(pair<string, wstring>("Result", recInfo.comment));
+	macroList.push_back(pair<string, wstring>("FilePath", recInfo.recFilePath));
+	wstring strVal;
+	GetFileFolder(recInfo.recFilePath, strVal);
+	ChkFolderPath(strVal);
+	macroList.push_back(pair<string, wstring>("FolderPath", strVal));
+	GetFileTitle(recInfo.recFilePath, strVal);
+	macroList.push_back(pair<string, wstring>("FileName", strVal));
+	strVal = recInfo.title;
+	CheckFileName(strVal);
+	macroList.push_back(pair<string, wstring>("TitleF", strVal));
+	strVal = recInfo.title;
+	while( strVal.find(L'[') != wstring::npos && strVal.find(L']') != wstring::npos ){
+		wstring strSep1;
+		wstring strSep2;
+		Separate(strVal, L"[", strVal, strSep1);
+		Separate(strSep1, L"]", strSep2, strSep1);
+		strVal += strSep1;
+	}
+	macroList.push_back(pair<string, wstring>("Title2", strVal));
+	CheckFileName(strVal);
+	macroList.push_back(pair<string, wstring>("Title2F", strVal));
 }

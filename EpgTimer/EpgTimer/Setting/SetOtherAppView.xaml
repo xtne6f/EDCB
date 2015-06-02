@@ -42,47 +42,6 @@
                     <Label Content="($FilePath$マクロでファイルパスを指定できます)" Height="28" HorizontalAlignment="Left" Margin="138,68,0,0" Name="label8" VerticalAlignment="Top" />
                 </Grid>
             </TabItem>
-            <TabItem Header="Twitter連携" Name="tabItem_twitter">
-                <Grid>
-                    <GroupBox Header="Proxy設定" Height="90" Margin="12,12,12,0" Name="groupBox_proxy" VerticalAlignment="Top">
-                        <Grid>
-                            <CheckBox Content="Proxyを使用する" Height="16" HorizontalAlignment="Left" Margin="6,6,0,0" Name="checkBox_useProxy" VerticalAlignment="Top" />
-                            <TextBox Height="24" HorizontalAlignment="Left" Margin="137,32,0,0" Name="textBox_proxy_addr" VerticalAlignment="Top" Width="195" />
-                            <Label Content="アドレス：ポート" Height="28" HorizontalAlignment="Left" Margin="25,30,0,0" Name="label31" VerticalAlignment="Top" />
-                            <Button Content="IEから設定を取得する" Height="23" HorizontalAlignment="Left" Margin="137,3,0,0" Name="button_getIESet" VerticalAlignment="Top" Width="154" Click="button_getIESet_Click" />
-                            <Label Content="認証Proxy用 ID" Height="28" HorizontalAlignment="Left" Margin="358,-2,0,0" Name="label32" VerticalAlignment="Top" />
-                            <TextBox Height="24" HorizontalAlignment="Left" Margin="470,0,0,0" Name="textBox_proxy_id" VerticalAlignment="Top" Width="120" />
-                            <Label Content="パスワード" Height="28" HorizontalAlignment="Left" Margin="384,28,0,0" Name="label33" VerticalAlignment="Top" />
-                            <PasswordBox Height="24" HorizontalAlignment="Left" Margin="470,30,0,0" Name="textBox_proxy_pwd" VerticalAlignment="Top" Width="120" />
-                        </Grid>
-                    </GroupBox>
-                    <GroupBox Header="Twitter設定" Height="322" Margin="12,108,12,0" Name="groupBox1" VerticalAlignment="Top">
-                        <Grid>
-                            <CheckBox Content="Twitter機能を有効にする" Height="16" HorizontalAlignment="Left" Margin="6,6,0,0" Name="checkBox_useTwitter" VerticalAlignment="Top" />
-                            <Button Content="認証用URLを取得する" Height="23" HorizontalAlignment="Left" Margin="25,28,0,0" Name="button_getUrl" VerticalAlignment="Top" Width="160" Click="button_getUrl_Click" />
-                            <Label Content="（表示されたURLにブラウザでアクセスし、暗証番号を取得してください。）" Height="28" HorizontalAlignment="Left" Margin="200,26,0,0" Name="label34" VerticalAlignment="Top" />
-                            <TextBox Height="24" Margin="40,57,15,0" Name="textBox_url" VerticalAlignment="Top" IsReadOnly="True" />
-                            <Label Content="暗証番号" Height="28" HorizontalAlignment="Left" Margin="25,87,0,0" Name="label35" VerticalAlignment="Top" />
-                            <TextBox Height="24" HorizontalAlignment="Left" Margin="89,89,0,0" Name="textBox_number" VerticalAlignment="Top" Width="120" />
-                            <Button Content="適用" Height="23" HorizontalAlignment="Left" Margin="216,89,0,0" Name="button_number" VerticalAlignment="Top" Width="53" Click="button_number_Click" />
-                            <Label Content="動作テスト" Height="28" HorizontalAlignment="Left" Margin="25,116,0,0" Name="label36" VerticalAlignment="Top" />
-                            <TextBox Height="24" Margin="101,118,98,0" Name="textBox_test" VerticalAlignment="Top" />
-                            <Button Content="ツイート" Height="23" Margin="0,118,15,0" Name="button_test" VerticalAlignment="Top" HorizontalAlignment="Right" Width="77" Click="button_test_Click" />
-                            <Label Content="有効にするツイート内容" Height="28" HorizontalAlignment="Left" Margin="6,150,0,0" Name="label37" VerticalAlignment="Top" />
-                            <CheckBox Content="EPG読み込み時の変更検知" Height="16" HorizontalAlignment="Left" Margin="25,176,0,0" Name="checkBox_tweet1" VerticalAlignment="Top" />
-                            <TextBox Height="21" Margin="200,173,15,0" Name="textBox_tweet1" VerticalAlignment="Top" />
-                            <CheckBox Content="録画中の変更検知" Height="16" HorizontalAlignment="Left" Margin="25,198,0,0" Name="checkBox_tweet2" VerticalAlignment="Top" />
-                            <TextBox Height="21" Margin="200,195,15,0" Name="textBox_tweet2" VerticalAlignment="Top" />
-                            <CheckBox Content="EPG自動予約登録の検知" Height="16" HorizontalAlignment="Left" Margin="25,220,0,0" Name="checkBox_tweet3" VerticalAlignment="Top" />
-                            <TextBox Height="21" Margin="200,217,15,0" Name="textBox_tweet3" VerticalAlignment="Top" />
-                            <CheckBox Content="録画開始" Height="16" HorizontalAlignment="Left" Margin="25,242,0,0" Name="checkBox_tweet4" VerticalAlignment="Top" />
-                            <TextBox Height="21" Margin="200,239,15,0" Name="textBox_tweet4" VerticalAlignment="Top" />
-                            <CheckBox Content="録画終了" Height="16" HorizontalAlignment="Left" Margin="25,264,0,0" Name="checkBox_tweet5" VerticalAlignment="Top" />
-                            <TextBox Height="21" Margin="200,261,15,0" Name="textBox_tweet5" VerticalAlignment="Top" />
-                        </Grid>
-                    </GroupBox>
-                </Grid>
-            </TabItem>
         </TabControl>
     </Grid>
 </UserControl>

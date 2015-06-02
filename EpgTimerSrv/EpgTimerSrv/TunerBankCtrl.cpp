@@ -176,7 +176,7 @@ vector<DWORD> CTunerBankCtrl::GetReserveIDList() const
 	return list;
 }
 
-vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check()
+vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* startedReserveIDList)
 {
 	vector<CHECK_RESULT> retList;
 
@@ -333,6 +333,9 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check()
 								ctrlCmd.SendViewExecViewApp();
 							}
 						}
+					}
+					if( startedReserveIDList ){
+						startedReserveIDList->push_back(r.reserveID);
 					}
 				}else{
 					//開始できなかった
@@ -937,7 +940,7 @@ __int64 CTunerBankCtrl::GetNearestReserveTime() const
 
 bool CTunerBankCtrl::StartEpgCap(const vector<SET_CH_INFO>& setChList)
 {
-	if( chList.empty() == false && this->hTunerProcess == NULL ){
+	if( setChList.empty() == false && this->hTunerProcess == NULL ){
 		//EPG取得についてはチューナの再利用はしない
 		if( OpenTuner(this->recMinWake, false, false, true, NULL) ){
 			CWatchBlock watchBlock(&this->watchContext);

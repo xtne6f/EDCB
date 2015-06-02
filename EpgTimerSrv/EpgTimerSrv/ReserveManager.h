@@ -103,10 +103,20 @@ private:
 	//isEpgCap: EPG取得中のチューナが無ければfalse
 	//戻り値: EPG取得が完了した瞬間にtrue
 	bool CheckEpgCap(bool isEpgCap);
+	//予約開始(視聴を除く)の最小時刻を取得する
+	__int64 GetNearestRecReserveTime() const;
 	//次のEPG取得時刻を取得する
 	__int64 GetNextEpgCapTime(__int64 now, int* basicOnlyFlags = NULL) const;
 	//バンクを監視して必要ならチューナを強制終了するスレッド
 	static UINT WINAPI WatchdogThread(LPVOID param);
+	//batPostManagerにバッチを追加する
+	void AddPostBatWork(vector<BAT_WORK_INFO>& workList, LPCWSTR fileName);
+	//バッチに渡す日時マクロを追加する
+	static void AddTimeMacro(vector<pair<string, wstring>>& macroList, const SYSTEMTIME& startTime, DWORD durationSecond, LPCSTR suffix);
+	//バッチに渡す予約情報マクロを追加する
+	static void AddReserveDataMacro(vector<pair<string, wstring>>& macroList, const RESERVE_DATA& data, LPCSTR suffix);
+	//バッチに渡す録画済み情報マクロを追加する
+	static void AddRecInfoMacro(vector<pair<string, wstring>>& macroList, const REC_FILE_INFO& recInfo);
 
 	mutable CRITICAL_SECTION managerLock;
 
@@ -120,6 +130,7 @@ private:
 
 	CTunerManager tunerManager;
 	CBatManager batManager;
+	CBatManager batPostManager;
 
 	map<DWORD, CTunerBankCtrl*> tunerBankMap;
 
@@ -144,6 +155,7 @@ private:
 	bool epgCapWork;
 	bool epgCapSetTimeSync;
 	int epgCapBasicOnlyFlags;
+	int shutdownModePending;
 	bool reserveModified;
 
 	HANDLE watchdogStopEvent;
