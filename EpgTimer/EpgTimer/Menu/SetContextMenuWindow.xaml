@@ -108,7 +108,7 @@
                     <Label Margin="21,64,0,0" Content="※[編集]サブメニューはこの設定にかかわらず、常に個別設定が有効になります。" Name="label1" Height="24" VerticalAlignment="Top" Width="559" HorizontalAlignment="Left" />
                     <CheckBox Margin="6,91,0,0" Content="ショートカット操作に対する確認メッセージを表示しない" Height="16" HorizontalAlignment="Left" Name="checkBox_NoMessageKeyGesture" VerticalAlignment="Top" Width="290" />
                     <Label Margin="21,102,0,0" Content="※削除、自動予約登録画面の並び替え関係、予約ダイアログの確定操作など" Name="label3" Height="24" VerticalAlignment="Top" Width="559" HorizontalAlignment="Left" />
-                    <CheckBox Margin="6,129,0,0" Content="全て削除(予約済み一覧、検索/自動登録ダイアログ)で確認メッセージを表示しない" Height="16" HorizontalAlignment="Left" Name="checkBox_NoMessageDeleteAll" VerticalAlignment="Top" Width="574" />
+                    <CheckBox Margin="6,129,0,0" Content="全て削除(録画済み一覧、検索/自動登録ダイアログ)で確認メッセージを表示しない" Height="16" HorizontalAlignment="Left" Name="checkBox_NoMessageDeleteAll" VerticalAlignment="Top" Width="574" />
                 </Grid>
             </TabItem>
         </TabControl>

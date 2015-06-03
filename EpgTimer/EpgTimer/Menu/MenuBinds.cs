@@ -48,17 +48,20 @@ namespace EpgTimer
             btn.Command = icmd;
             btn.CommandParameter = new EpgCmdParam(typeof(Button), View, id, data);
             btn.ToolTip = "";
-            btn.ToolTipOpening += new ToolTipEventHandler(ButtonTooltip);
+            btn.ToolTipOpening += new ToolTipEventHandler(ICmdTooltip);
             ToolTipService.SetShowOnDisabled(btn, true);
         }
 
-        private void ButtonTooltip(Object sender, ToolTipEventArgs e)
+        public static void ICmdTooltip(Object sender, ToolTipEventArgs e)
         {
-            var btn = sender as Button;
-            CtxmCode code = (btn.CommandParameter as EpgCmdParam).Code;
-            btn.ToolTip = mm.IsGestureEnableOnView(btn.Command, code) == true ? null : GetInputGestureText(btn.Command);
-            btn.ToolTip = btn.ToolTip == null ? "" : btn.ToolTip;
-            if (btn.ToolTip as string == "")
+            if (sender is ICommandSource == false || sender is FrameworkElement == false) return;
+
+            ICommand icmd = (sender as ICommandSource).Command ;
+            CtxmCode code = ((sender as ICommandSource).CommandParameter as EpgCmdParam).Code;
+            var obj = sender as FrameworkElement;
+            obj.ToolTip = mm.IsGestureEnableOnView(icmd, code) == true ? null : GetInputGestureText(icmd);
+            obj.ToolTip = obj.ToolTip == null ? "" : obj.ToolTip;
+            if (obj.ToolTip as string == "")
             {
                 e.Handled = true;
             }

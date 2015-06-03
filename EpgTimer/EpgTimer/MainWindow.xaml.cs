@@ -446,10 +446,29 @@ namespace EpgTimer
                             {
                                 if (e.ChangedButton == MouseButton.Left)
                                 {
-                                    buttonList[((string)((TabItem)sender).Tag).Substring(8)].RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                                    Button btn = buttonList[((string)((TabItem)sender).Tag).Substring(8)];
+                                    if (btn.Command != null)
+                                    {
+                                        btn.Command.Execute(btn.CommandParameter);
+                                    }
+                                    else
+                                    {
+                                        btn.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                                    }
                                     e.Handled = true;
                                 }
                             };
+                            //コマンド割り当ての場合の自動ツールチップ表示、一応ボタンと同様のショートカット変更対応のコード
+                            if (buttonList[info].Command != null)
+                            {
+                                ti.ToolTip = "";
+                                ti.ToolTipOpening += new ToolTipEventHandler((sender, e) =>
+                                {
+                                    var icmd = buttonList[((string)((TabItem)sender).Tag).Substring(8)].Command;
+                                    ti.ToolTip = MenuBinds.GetInputGestureText(icmd);
+                                    ti.ToolTip = ti.ToolTip == null ? "" : ti.ToolTip;
+                                });
+                            }
                             tabControl_main.Items.Add(ti);
                         }
                     }
