@@ -24,6 +24,7 @@ namespace EpgTimer
         public byte EpgInfoOpenMode { get; set; }
         public RecSettingView recSettingView { get; set; }
 
+        protected object headData = null;//メニューオープン時に使用
         protected List<EpgEventInfo> eventList = new List<EpgEventInfo>();
         protected List<EpgEventInfo> eventListEx = new List<EpgEventInfo>();//reserveData(dataList)とかぶらないもの
 
@@ -38,15 +39,17 @@ namespace EpgTimer
             if (_getSearchList != null)//SearchItemリストがある場合
             {
                 List<SearchItem> searchList = _getSearchList(IsAllData);
+                searchList = searchList == null ? new List<SearchItem>() : searchList.OfType<SearchItem>().ToList();//無くても大丈夫なはずだが一応
                 OrderAdjust<SearchItem>(searchList, _selectSingleSearchData);
-                dataList = searchList == null ? new List<ReserveData>() : searchList.ReserveInfoList();
-                eventList = searchList == null ? new List<EpgEventInfo>() : searchList.EventInfoList();
-                eventListEx = searchList == null ? new List<EpgEventInfo>() : searchList.NoReserveInfoList();
+                dataList = searchList.ReserveInfoList();
+                eventList = searchList.EventInfoList();
+                eventListEx = searchList.NoReserveInfoList();
+                headData = searchList.Count == 0 ? null : searchList[0].IsReserved == true ? searchList[0].ReserveInfo as object : searchList[0].EventInfo as object;
             }
             else
             {
                 eventList = _getEpgEventList == null ? null : _getEpgEventList();
-                eventList = eventList == null ? new List<EpgEventInfo>() : eventList.Where(data => data != null).ToList();
+                eventList = eventList == null ? new List<EpgEventInfo>() : eventList.OfType<EpgEventInfo>().ToList();
                 eventListEx = new List<EpgEventInfo>();
                 eventList.ForEach(epg => 
                 {
@@ -55,11 +58,13 @@ namespace EpgTimer
                         eventListEx.Add(epg);
                     }
                 });
+                headData = dataList.Count != 0 ? dataList[0] as object : eventList.Count != 0 ? eventList[0] as object : null;
             }
         }
         protected override void ClearData()
         {
             base.ClearData();
+            headData = null;
             eventList.Clear();
             eventListEx.Clear();
         }
@@ -290,7 +295,7 @@ namespace EpgTimer
             }
             else if (menu.Tag == EpgCmdsEx.OpenFolderMenu)
             {
-                mm.CtxmGenerateOpenFolderItems(menu, dataList.Count == 0 ? null : dataList[0].RecSetting);
+                mm.CtxmGenerateOpenFolderItems(menu, headData as ReserveData == null ? null : dataList[0].RecSetting);
             }
             else if (menu.Tag == EpgCmdsEx.ViewMenu)
             {

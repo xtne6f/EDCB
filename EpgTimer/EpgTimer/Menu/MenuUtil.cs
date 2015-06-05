@@ -1046,21 +1046,6 @@ namespace EpgTimer
             }
         }
 
-        //複数選択から単一要素を処理する際にどれを選ぶかの手続き。
-        //今は最後に選択したものとしている。
-        public object SelectSingleItem(ListBox list, bool notSelectionChange = false)
-        {
-            if (list == null) return null;
-            if (list.SelectedItems.Count <= 1) return list.SelectedItem;//SingleMode用
-            object item = list.SelectedItems[list.SelectedItems.Count - 1];
-            if (notSelectionChange == false)
-            {
-                list.UnselectAll();
-                list.SelectedItem = item;
-            }
-            return item;
-        }
-
     }
 
 }

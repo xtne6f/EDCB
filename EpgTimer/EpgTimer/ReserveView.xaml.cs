@@ -61,6 +61,7 @@ namespace EpgTimer
                 RefreshMenu();
 
                 //コンテキストメニューを開く時の設定
+                lstCtrl.SetCtxmTargetSave(listView_reserve.ContextMenu);//こっちが先
                 listView_reserve.ContextMenu.Opened += new RoutedEventHandler(mc.SupportContextMenuLoading);
             }
             catch (Exception ex)

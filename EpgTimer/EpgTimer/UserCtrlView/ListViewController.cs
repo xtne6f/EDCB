@@ -19,6 +19,8 @@ namespace EpgTimer
         public GridViewSorter<T> gvSorter { get; set; }
         public List<T> dataList { get; set; }
 
+        private ListBoxItem ClickTarget = null;
+
         private string column_SavePath = null;
         private string sort_HeaderSavePath = null;
         private string sort_DirectionSavePath = null;
@@ -185,7 +187,32 @@ namespace EpgTimer
         }
         public T SelectSingleItem(bool notSelectionChange = false)
         {
-            return mutil.SelectSingleItem(listView, notSelectionChange) as T;
+            if (listView == null) return null;
+            if (listView.SelectedItems.Count <= 1) return listView.SelectedItem as T;//SingleMode用
+
+            object item;
+            if (ClickTarget == null)
+            {
+                //保存情報が無ければ、最後に選択したもの。
+                item = listView.SelectedItems[listView.SelectedItems.Count - 1];
+            }
+            else
+            {
+                item = ClickTarget.Content;
+            }
+            if (notSelectionChange == false)
+            {
+                listView.UnselectAll();
+                listView.SelectedItem = item;
+            }
+            return item as T;
+        }
+
+        public void SetCtxmTargetSave(ContextMenu ctxm)
+        {
+            //コンテキストメニューを開いたとき、アイテムがあればそれを保存する。無ければキャスト出来ずNULLになる。
+            ctxm.Opened += (sender, e) => ClickTarget = (sender as ContextMenu).PlacementTarget as ListBoxItem;
+            ctxm.Closed += (sender, e) => ClickTarget = null;
         }
     }
 }

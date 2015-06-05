@@ -47,6 +47,7 @@ namespace EpgTimer
                 mc.ResetCommandBindings(this, listView_recinfo.ContextMenu);
 
                 //コンテキストメニューを開く時の設定
+                lstCtrl.SetCtxmTargetSave(listView_recinfo.ContextMenu);//こっちが先
                 listView_recinfo.ContextMenu.Opened += new RoutedEventHandler(mc.SupportContextMenuLoading);
 
                 //ボタンの設定

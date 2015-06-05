@@ -347,7 +347,7 @@ namespace EpgTimer
                 if (e != null)
                 {
                     //リストビューの場合は、アイテムの無いところではデータ選択してないものと見なす。
-                    if (ctxm.PlacementTarget is ListViewItem == false)
+                    if (ctxm.PlacementTarget is ListBoxItem == false)
                     {
                         ClearData();
                     }
