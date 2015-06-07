@@ -67,6 +67,8 @@ private:
 	static int LuaGetComponentTypeName(lua_State* L);
 	static int LuaGetChDataList(lua_State* L);
 	static int LuaGetServiceList(lua_State* L);
+	static void LuaGetEventMinMaxTimeCallback(vector<EPGDB_EVENT_INFO*>* pval, void* param);
+	static int LuaGetEventMinMaxTime(lua_State* L);
 	static void LuaEnumEventInfoCallback(vector<EPGDB_EVENT_INFO*>* pval, void* param);
 	static void LuaEnumEventAllCallback(vector<EPGDB_SERVICE_EVENT_INFO>* pval, void* param);
 	static int LuaEnumEventInfo(lua_State* L);
@@ -86,6 +88,7 @@ private:
 	static int LuaDelManuAdd(lua_State* L);
 	static int LuaAddOrChgAutoAdd(lua_State* L);
 	static int LuaAddOrChgManuAdd(lua_State* L);
+	static int LuaGetNotifyUpdateCount(lua_State* L);
 	static int LuaListDmsPublicFile(lua_State* L);
 	static void PushEpgEventInfo(CLuaWorkspace& ws, const EPGDB_EVENT_INFO& e);
 	static void PushReserveData(CLuaWorkspace& ws, const RESERVE_DATA& r);
@@ -132,6 +135,7 @@ private:
 	vector<wstring> tvtestUseBon;
 	bool nwtvUdp;
 	bool nwtvTcp;
+	DWORD notifyUpdateCount[6];
 
 	vector<OLD_EVENT_INFO_DATA3> oldSearchList;
 };
