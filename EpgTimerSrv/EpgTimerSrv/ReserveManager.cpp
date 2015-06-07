@@ -1702,7 +1702,7 @@ void CReserveManager::AddTimeMacro(vector<pair<string, wstring>>& macroList, con
 			wHour28 += 24;
 		}
 		swprintf_s(v, L"%04d", t.wYear);	macroList.push_back(pair<string, wstring>(p + "DYYYY" + suffix, v));
-		swprintf_s(v, L"%02d", t.wYear);	macroList.push_back(pair<string, wstring>(p + "DYY" + suffix, v));
+		swprintf_s(v, L"%02d", t.wYear % 100);	macroList.push_back(pair<string, wstring>(p + "DYY" + suffix, v));
 		swprintf_s(v, L"%02d", t.wMonth);	macroList.push_back(pair<string, wstring>(p + "DMM" + suffix, v));
 		swprintf_s(v, L"%d", t.wMonth);		macroList.push_back(pair<string, wstring>(p + "DM" + suffix, v));
 		swprintf_s(v, L"%02d", t.wDay);		macroList.push_back(pair<string, wstring>(p + "DDD" + suffix, v));
@@ -1715,7 +1715,7 @@ void CReserveManager::AddTimeMacro(vector<pair<string, wstring>>& macroList, con
 		swprintf_s(v, L"%02d", t.wSecond);	macroList.push_back(pair<string, wstring>(p + "TSS" + suffix, v));
 		swprintf_s(v, L"%d", t.wSecond);	macroList.push_back(pair<string, wstring>(p + "TS" + suffix, v));
 		swprintf_s(v, L"%04d", t28.wYear);	macroList.push_back(pair<string, wstring>(p + "DYYYY28" + suffix, v));
-		swprintf_s(v, L"%02d", t28.wYear);	macroList.push_back(pair<string, wstring>(p + "DYY28" + suffix, v));
+		swprintf_s(v, L"%02d", t28.wYear % 100);	macroList.push_back(pair<string, wstring>(p + "DYY28" + suffix, v));
 		swprintf_s(v, L"%02d", t28.wMonth);	macroList.push_back(pair<string, wstring>(p + "DMM28" + suffix, v));
 		swprintf_s(v, L"%d", t28.wMonth);	macroList.push_back(pair<string, wstring>(p + "DM28" + suffix, v));
 		swprintf_s(v, L"%02d", t28.wDay);	macroList.push_back(pair<string, wstring>(p + "DDD28" + suffix, v));
