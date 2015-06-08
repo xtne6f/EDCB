@@ -137,6 +137,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		ctx->sys->hwndMain = hwnd;
 		ctx->sys->reserveManager.Initialize();
 		ctx->sys->ReloadSetting();
+		ctx->sys->ReloadNetworkSetting();
 		ctx->pipeServer.StartServer(CMD2_EPG_SRV_EVENT_WAIT_CONNECT, CMD2_EPG_SRV_PIPE, CtrlCmdCallback, ctx->sys, 0, GetCurrentProcessId());
 		ctx->sys->epgDB.ReloadEpgData();
 		SendMessage(hwnd, WM_RELOAD_EPG_CHK, 0, 0);
@@ -609,10 +610,8 @@ bool CEpgTimerSrvMain::IsSuspendOK()
 	       this->reserveManager.GetSleepReturnTime(now) > now + marginSec * I64_1SEC;
 }
 
-void CEpgTimerSrvMain::ReloadSetting()
+void CEpgTimerSrvMain::ReloadNetworkSetting()
 {
-	this->reserveManager.ReloadSetting();
-
 	CBlockLock lock(&this->settingLock);
 
 	wstring iniPath;
@@ -644,7 +643,16 @@ void CEpgTimerSrvMain::ReloadSetting()
 	this->enableSsdpServer = GetPrivateProfileInt(L"SET", L"EnableDMS", 0, iniPath.c_str()) != 0;
 
 	PostMessage(this->hwndMain, WM_RESET_SERVER, 0, 0);
+}
 
+void CEpgTimerSrvMain::ReloadSetting()
+{
+	this->reserveManager.ReloadSetting();
+
+	CBlockLock lock(&this->settingLock);
+
+	wstring iniPath;
+	GetModuleIniPath(iniPath);
 	if( this->serviceFlag == false ){
 		int residentMode = GetPrivateProfileInt(L"SET", L"ResidentMode", 0, iniPath.c_str());
 		if( residentMode >= 1 ){
@@ -1080,6 +1088,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 		break;
 	case CMD2_EPG_SRV_RELOAD_SETTING:
 		sys->ReloadSetting();
+		sys->ReloadNetworkSetting();
 		resParam->param = CMD_SUCCESS;
 		break;
 	case CMD2_EPG_SRV_CLOSE:
@@ -2136,6 +2145,12 @@ int CEpgTimerSrvMain::InitLuaCallback(lua_State* L)
 	lua_newtable(L);
 	LuaHelp::reg_function(L, "GetGenreName", LuaGetGenreName, sys);
 	LuaHelp::reg_function(L, "GetComponentTypeName", LuaGetComponentTypeName, sys);
+	LuaHelp::reg_function(L, "Convert", LuaConvert, sys);
+	LuaHelp::reg_function(L, "GetPrivateProfile", LuaGetPrivateProfile, sys);
+	LuaHelp::reg_function(L, "WritePrivateProfile", LuaWritePrivateProfile, sys);
+	LuaHelp::reg_function(L, "ReloadEpg", LuaReloadEpg, sys);
+	LuaHelp::reg_function(L, "ReloadSetting", LuaReloadSetting, sys);
+	LuaHelp::reg_function(L, "EpgCapNow", LuaEpgCapNow, sys);
 	LuaHelp::reg_function(L, "GetChDataList", LuaGetChDataList, sys);
 	LuaHelp::reg_function(L, "GetServiceList", LuaGetServiceList, sys);
 	LuaHelp::reg_function(L, "GetEventMinMaxTime", LuaGetEventMinMaxTime, sys);
@@ -2219,6 +2234,138 @@ int CEpgTimerSrvMain::LuaGetComponentTypeName(lua_State* L)
 		GetComponentTypeName(lua_tointeger(L, -1) >> 8 & 0xFF, lua_tointeger(L, -1) & 0xFF, name);
 	}
 	lua_pushstring(L, ws.WtoUTF8(name));
+	return 1;
+}
+
+int CEpgTimerSrvMain::LuaConvert(lua_State* L)
+{
+	CLuaWorkspace ws(L);
+	if( lua_gettop(L) == 3 ){
+		LPCSTR to = lua_tostring(L, 1);
+		LPCSTR from = lua_tostring(L, 2);
+		LPCSTR src = lua_tostring(L, 3);
+		if( to && from && src ){
+			wstring wsrc;
+			if( _stricmp(from, "utf-8") == 0 ){
+				UTF8toW(src, wsrc);
+			}else if( _stricmp(from, "cp932") == 0 ){
+				AtoW(src, wsrc);
+			}else{
+				return 0;
+			}
+			if( _stricmp(to, "utf-8") == 0 ){
+				lua_pushstring(L, ws.WtoUTF8(wsrc));
+				return 1;
+			}else if( _stricmp(to, "cp932") == 0 ){
+				UTF8toW(ws.WtoUTF8(wsrc), wsrc);
+				string dest;
+				WtoA(wsrc, dest);
+				lua_pushstring(L, dest.c_str());
+				return 1;
+			}
+		}
+	}
+	return 0;
+}
+
+int CEpgTimerSrvMain::LuaGetPrivateProfile(lua_State* L)
+{
+	CLuaWorkspace ws(L);
+	if( lua_gettop(L) == 4 ){
+		LPCSTR app = lua_tostring(L, 1);
+		LPCSTR key = lua_tostring(L, 2);
+		LPCSTR def = lua_isboolean(L, 3) ? (lua_toboolean(L, 3) ? "1" : "0") : lua_tostring(L, 3);
+		LPCSTR file = lua_tostring(L, 4);
+		if( app && key && def && file ){
+			wstring path;
+			if( _stricmp(key, "ModulePath") == 0 && _stricmp(app, "SET") == 0 && _stricmp(file, "Common.ini") == 0 ){
+				GetModuleFolderPath(path);
+				lua_pushstring(L, ws.WtoUTF8(path));
+			}else{
+				wstring strApp;
+				wstring strKey;
+				wstring strDef;
+				wstring strFile;
+				UTF8toW(app, strApp);
+				UTF8toW(key, strKey);
+				UTF8toW(def, strDef);
+				UTF8toW(file, strFile);
+				if( _wcsicmp(strFile.substr(0, 8).c_str(), L"Setting\\") == 0 ){
+					GetSettingPath(path);
+					strFile = path + strFile.substr(7);
+				}else{
+					GetModuleFolderPath(path);
+					strFile = path + L"\\" + strFile;
+				}
+				WCHAR buff[8192];
+				GetPrivateProfileString(strApp.c_str(), strKey.c_str(), strDef.c_str(), buff, 8192, strFile.c_str());
+				lua_pushstring(L, ws.WtoUTF8(buff));
+			}
+			return 1;
+		}
+	}
+	lua_pushstring(L, "");
+	return 1;
+}
+
+int CEpgTimerSrvMain::LuaWritePrivateProfile(lua_State* L)
+{
+	if( lua_gettop(L) == 4 ){
+		LPCSTR app = lua_tostring(L, 1);
+		LPCSTR key = lua_tostring(L, 2);
+		LPCSTR val = lua_isboolean(L, 3) ? (lua_toboolean(L, 3) ? "1" : "0") : lua_tostring(L, 3);
+		LPCSTR file = lua_tostring(L, 4);
+		if( app && file ){
+			wstring strApp;
+			wstring strKey;
+			wstring strVal;
+			wstring strFile;
+			UTF8toW(app, strApp);
+			UTF8toW(key ? key : "", strKey);
+			UTF8toW(val ? val : "", strVal);
+			UTF8toW(file, strFile);
+			wstring path;
+			if( _wcsicmp(strFile.substr(0, 8).c_str(), L"Setting\\") == 0 ){
+				GetSettingPath(path);
+				strFile = path + strFile.substr(7);
+			}else{
+				GetModuleFolderPath(path);
+				strFile = path + L"\\" + strFile;
+			}
+			lua_pushboolean(L, WritePrivateProfileString(strApp.c_str(), key ? strKey.c_str() : NULL, val ? strVal.c_str() : NULL, strFile.c_str()));
+			return 1;
+		}
+	}
+	lua_pushboolean(L, false);
+	return 1;
+}
+
+int CEpgTimerSrvMain::LuaReloadEpg(lua_State* L)
+{
+	CLuaWorkspace ws(L);
+	if( ws.sys->epgDB.IsLoadingData() == FALSE && ws.sys->epgDB.ReloadEpgData() ){
+		PostMessage(ws.sys->hwndMain, WM_RELOAD_EPG_CHK, 0, 0);
+		lua_pushboolean(L, true);
+		return 1;
+	}
+	lua_pushboolean(L, false);
+	return 1;
+}
+
+int CEpgTimerSrvMain::LuaReloadSetting(lua_State* L)
+{
+	CLuaWorkspace ws(L);
+	ws.sys->ReloadSetting();
+	if( lua_gettop(L) == 1 && lua_toboolean(L, 1) ){
+		ws.sys->ReloadNetworkSetting();
+	}
+	return 0;
+}
+
+int CEpgTimerSrvMain::LuaEpgCapNow(lua_State* L)
+{
+	CLuaWorkspace ws(L);
+	lua_pushboolean(L, ws.sys->epgDB.IsInitialLoadingDataDone() && ws.sys->reserveManager.RequestStartEpgCap());
 	return 1;
 }
 

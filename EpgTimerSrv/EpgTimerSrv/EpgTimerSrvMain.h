@@ -28,6 +28,7 @@ private:
 	static LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	//シャットダウン問い合わせダイアログ
 	static INT_PTR CALLBACK QueryShutdownDlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	void ReloadNetworkSetting();
 	void ReloadSetting();
 	//プリセット録画設定を読み込む(旧CRestApiManagerから移動)
 	pair<wstring, REC_SETTING_DATA> LoadRecSetData(WORD preset) const;
@@ -65,6 +66,12 @@ private:
 	};
 	static int LuaGetGenreName(lua_State* L);
 	static int LuaGetComponentTypeName(lua_State* L);
+	static int LuaConvert(lua_State* L);
+	static int LuaGetPrivateProfile(lua_State* L);
+	static int LuaWritePrivateProfile(lua_State* L);
+	static int LuaReloadEpg(lua_State* L);
+	static int LuaReloadSetting(lua_State* L);
+	static int LuaEpgCapNow(lua_State* L);
 	static int LuaGetChDataList(lua_State* L);
 	static int LuaGetServiceList(lua_State* L);
 	static void LuaGetEventMinMaxTimeCallback(vector<EPGDB_EVENT_INFO*>* pval, void* param);
