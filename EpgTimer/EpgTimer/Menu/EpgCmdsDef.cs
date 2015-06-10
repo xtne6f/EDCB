@@ -54,6 +54,7 @@ namespace EpgTimer
         public static RoutedUICommand DownItem { get; private set; }
         public static RoutedUICommand SaveOrder { get; private set; }
         public static RoutedUICommand RestoreOrder { get; private set; }
+        public static RoutedUICommand DragCancel { get; private set; }
         public static RoutedUICommand Cancel { get; private set; }
 
         static EpgCmds() { EpgCmdsEx.InitCommands(typeof(EpgCmds)); }

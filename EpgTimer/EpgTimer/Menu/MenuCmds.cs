@@ -125,6 +125,7 @@ namespace EpgTimer
             AddCommand(EpgCmds.DownItem, Key.Down, ModifierKeys.Control, spc: GestureTrg.ToList | GestureTrg.ToView, gesNeedMenu: false);
             AddCommand(EpgCmds.SaveOrder, Key.S, ModifierKeys.Control, spc: GestureTrg.ToView, gesNeedMenu: false);
             AddCommand(EpgCmds.RestoreOrder, Key.Z, ModifierKeys.Control, spc: GestureTrg.ToView, gesNeedMenu: false);
+            AddCommand(EpgCmds.DragCancel, Key.Escape, spc: GestureTrg.ToView, gesNeedMenu: false, isSave: false);
             AddCommand(EpgCmds.Cancel, Key.Escape, spc: GestureTrg.ToView, gesNeedMenu: false, isSave: false);
 
             //ダミーコマンドは、キーとして使用しているが、メニュー自体には割り付けされない。

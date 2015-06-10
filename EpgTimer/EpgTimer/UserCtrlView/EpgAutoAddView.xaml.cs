@@ -95,6 +95,8 @@ namespace EpgTimer
         }
         protected override bool ReloadInfoData()
         {
+            EpgCmds.DragCancel.Execute(null, this);
+
             return lstCtrl.ReloadInfoData(dataList =>
             {
                 ErrCode err = CommonManager.Instance.DB.ReloadEpgAutoAddInfo();

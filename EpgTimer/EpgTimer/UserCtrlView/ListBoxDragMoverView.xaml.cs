@@ -64,13 +64,13 @@ namespace EpgTimer.UserCtrlView
                 this.Owner.CommandBindings.Add(new CommandBinding(EpgCmds.DownItem, (sender, e) => MoveItem(1)));
                 this.Owner.CommandBindings.Add(new CommandBinding(EpgCmds.SaveOrder, SaveOrder_handler, (sender, e) => e.CanExecute = NotSaved == true));
                 this.Owner.CommandBindings.Add(new CommandBinding(EpgCmds.RestoreOrder, (sender, e) => hlp.RestoreOrder(), (sender, e) => e.CanExecute = NotSaved == true));
-                this.Owner.CommandBindings.Add(new CommandBinding(EpgCmds.Cancel, (sender, e) => DragRelease()));
+                this.Owner.CommandBindings.Add(new CommandBinding(EpgCmds.DragCancel, (sender, e) => DragRelease()));
 
                 mBinds.SetCommandToButton(button_up, EpgCmds.UpItem);
                 mBinds.SetCommandToButton(button_down, EpgCmds.DownItem);
                 mBinds.SetCommandToButton(button_saveItemOrder, EpgCmds.SaveOrder);
                 mBinds.SetCommandToButton(button_reloadItem, EpgCmds.RestoreOrder);
-                mBinds.AddInputCommand(EpgCmds.Cancel);//アイテムのドラッグキャンセル
+                mBinds.AddInputCommand(EpgCmds.DragCancel);//アイテムのドラッグキャンセル
                 if (mbinds == null)
                 {
                     mBinds.ResetInputBindings(this.Owner, this.listBox);
