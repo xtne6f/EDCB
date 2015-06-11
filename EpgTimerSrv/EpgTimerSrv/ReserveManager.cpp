@@ -232,12 +232,10 @@ bool CReserveManager::GetReserveData(DWORD id, RESERVE_DATA* reserveData, bool g
 			//recNamePlugInを展開して実ファイル名をセット
 			for( size_t i = 0; i < nameList.size(); i++ ){
 				if( nameList[i].empty() == false ){
-					CReNamePlugInUtil plugIn;
 					wstring plugInPath;
 					GetModuleFolderPath(plugInPath);
-					plugInPath += L"\\RecName\\" + nameList[i];
-					nameList[i].clear();
-					if( plugIn.Initialize(plugInPath.c_str()) != FALSE ){
+					plugInPath += L"\\RecName\\";
+					{
 						PLUGIN_RESERVE_INFO info;
 						info.startTime = reserveData->startTime;
 						info.durationSec = reserveData->durationSecond;
@@ -259,12 +257,16 @@ bool CReserveManager::GetReserveData(DWORD id, RESERVE_DATA* reserveData, bool g
 								CopyEpgInfo(epgInfo, &epgDBInfo);
 							}
 						}
+						info.reserveID = reserveData->reserveID;
+						info.epgInfo = epgInfo;
+						info.sizeOfStruct = 0;
 						WCHAR name[512];
 						DWORD size = 512;
-						//ConvertRecName()は呼ばない(epgInfo==NULLの場合と等価なので)
-						if( plugIn.ConvertRecName2(&info, epgInfo, name, &size) != FALSE ){
+						if( CReNamePlugInUtil::ConvertRecName3(&info, nameList[i].c_str(), plugInPath.c_str(), name, &size) ){
 							nameList[i] = name;
 							CheckFileName(nameList[i], this->recNameNoChkYen);
+						}else{
+							nameList[i].clear();
 						}
 						delete epgInfo;
 					}

@@ -833,11 +833,10 @@ bool CTunerBankCtrl::RecStart(const TUNER_RESERVE& reserve, __int64 now) const
 						FindPartialService(reserve.onid, reserve.tsid, reserve.sid, &sid, &stationName);
 						eid = 0xFFFF;
 					}
-					CReNamePlugInUtil plugIn;
 					wstring plugInPath;
 					GetModuleFolderPath(plugInPath);
-					plugInPath += L"\\RecName\\" + param.saveFolder[j].recNamePlugIn;
-					if( plugIn.Initialize(plugInPath.c_str()) != FALSE ){
+					plugInPath += L"\\RecName\\";
+					{
 						PLUGIN_RESERVE_INFO info;
 						ConvertSystemTime(reserve.startTime, &info.startTime);
 						info.durationSec = reserve.durationSecond;
@@ -858,10 +857,12 @@ bool CTunerBankCtrl::RecStart(const TUNER_RESERVE& reserve, __int64 now) const
 								CopyEpgInfo(epgInfo, &epgDBInfo);
 							}
 						}
+						info.reserveID = reserve.reserveID;
+						info.epgInfo = epgInfo;
+						info.sizeOfStruct = 0;
 						WCHAR name[512];
 						DWORD size = 512;
-						//ConvertRecName()‚ÍŒÄ‚Î‚È‚¢(epgInfo==NULL‚Ìê‡‚Æ“™‰¿‚È‚Ì‚Å)
-						if( plugIn.ConvertRecName2(&info, epgInfo, name, &size) != FALSE ){
+						if( CReNamePlugInUtil::ConvertRecName3(&info, param.saveFolder[j].recNamePlugIn.c_str(), plugInPath.c_str(), name, &size) ){
 							param.saveFolder[j].recFileName = name;
 							CheckFileName(param.saveFolder[j].recFileName, this->recNameNoChkYen);
 						}
