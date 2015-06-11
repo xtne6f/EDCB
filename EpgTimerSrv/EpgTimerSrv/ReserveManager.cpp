@@ -1110,21 +1110,17 @@ BOOL CReserveManager::GetReserveDataAll(
 					CopyEpgInfo(epgInfo, &epgDBInfo);
 				}
 			}
+			info.reserveID = item->reserveID;
+			info.epgInfo = epgInfo;
+			info.sizeOfStruct = 0;
 
 			if( this->useRecNamePlugIn == TRUE ){
-				CReNamePlugInUtil plugIn;
-				if( plugIn.Initialize(this->recNamePlugInFilePath.c_str()) == TRUE ){
+				{
 					WCHAR name[512] = L"";
 					DWORD size = 512;
 
-					if( epgInfo != NULL ){
-						if( plugIn.ConvertRecName2(&info, epgInfo, name, &size) == TRUE ){
-							defName = name;
-						}
-					}else{
-						if( plugIn.ConvertRecName(&info, name, &size) == TRUE ){
-							defName = name;
-						}
+					if( CReNamePlugInUtil::ConvertRecName3(&info, L"", this->recNamePlugInFilePath.c_str(), name, &size) ){
+						defName = name;
 					}
 				}
 			}
@@ -1146,23 +1142,15 @@ BOOL CReserveManager::GetReserveDataAll(
 			}else{
 				for( size_t i=0; i<item->recSetting.recFolderList.size(); i++ ){
 					if( item->recSetting.recFolderList[i].recNamePlugIn.size() > 0){
-						CReNamePlugInUtil plugIn;
 						wstring plugInPath = L"";
 						GetModuleFolderPath(plugInPath);
 						plugInPath += L"\\RecName\\";
-						plugInPath += item->recSetting.recFolderList[i].recNamePlugIn;
-						if( plugIn.Initialize(plugInPath.c_str()) == TRUE ){
+						{
 							WCHAR name[512] = L"";
 							DWORD size = 512;
 
-							if( epgInfo != NULL ){
-								if( plugIn.ConvertRecName2(&info, epgInfo, name, &size) == TRUE ){
-									item->recFileNameList.push_back(name);
-								}
-							}else{
-								if( plugIn.ConvertRecName(&info, name, &size) == TRUE ){
-									item->recFileNameList.push_back(name);
-								}
+							if( CReNamePlugInUtil::ConvertRecName3(&info, item->recSetting.recFolderList[i].recNamePlugIn.c_str(), plugInPath.c_str(), name, &size) ){
+								item->recFileNameList.push_back(name);
 							}
 						}
 					}else{
