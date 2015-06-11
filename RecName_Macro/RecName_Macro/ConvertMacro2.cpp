@@ -15,9 +15,9 @@ CConvertMacro2::~CConvertMacro2(void)
 {
 }
 
-static BOOL ExpandMacro(wstring var, PLUGIN_RESERVE_INFO* info, EPG_EVENT_INFO* epgInfo, wstring& convert);
+static BOOL ExpandMacro(wstring var, PLUGIN_RESERVE_INFO* info, wstring& convert);
 
-BOOL CConvertMacro2::Convert(wstring macro, PLUGIN_RESERVE_INFO* info, EPG_EVENT_INFO* epgInfo, wstring& convert)
+BOOL CConvertMacro2::Convert(wstring macro, PLUGIN_RESERVE_INFO* info, wstring& convert)
 {
 	convert = L"";
 
@@ -35,7 +35,7 @@ BOOL CConvertMacro2::Convert(wstring macro, PLUGIN_RESERVE_INFO* info, EPG_EVENT
 			convert.append(macro, pos, wstring::npos);
 			break;
 		}
-		if( ExpandMacro(macro.substr(pos + 1, next - pos - 1), info, epgInfo, convert) == FALSE ){
+		if( ExpandMacro(macro.substr(pos + 1, next - pos - 1), info, convert) == FALSE ){
 			convert += L'$';
 			pos++;
 		}else{
@@ -48,7 +48,7 @@ BOOL CConvertMacro2::Convert(wstring macro, PLUGIN_RESERVE_INFO* info, EPG_EVENT
 	return TRUE;
 }
 
-static BOOL ExpandMacro(wstring var, PLUGIN_RESERVE_INFO* info, EPG_EVENT_INFO* epgInfo, wstring& convert)
+static BOOL ExpandMacro(wstring var, PLUGIN_RESERVE_INFO* info, wstring& convert)
 {
 	//ä÷êîÇêœÇﬁ
 	vector<wstring> funcStack;
@@ -86,6 +86,7 @@ static BOOL ExpandMacro(wstring var, PLUGIN_RESERVE_INFO* info, EPG_EVENT_INFO* 
 		GetDayOfWeekString2(t28TimeE, strEDW28);
 	}
 
+	EPG_EVENT_INFO* epgInfo = info->epgInfo;
 	wstring ret;
 	if( var == L"Title" )	ret = info->eventName;
 	else if( var == L"SDYYYY" )	Format(ret, L"%04d", info->startTime.wYear);
