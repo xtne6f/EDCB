@@ -178,7 +178,7 @@ namespace EpgTimer.UserCtrlView
         //移動関連
         object cursorObj = null;
         object dragItem = null;
-        List<object> dragItems = null;
+        List<object> dragItems = new List<object>();
         DispatcherTimer notifyTimer = new DispatcherTimer();
 
         public void listBoxItem_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -294,7 +294,7 @@ namespace EpgTimer.UserCtrlView
                     this.OnDrag = false;
                     this.cursorObj = null;
                     this.dragItem = null;
-                    this.dragItems = null;
+                    this.dragItems = new List<object>();
                     EraseDropLine();
                     ClearDropLineData();
                 }
@@ -322,8 +322,8 @@ namespace EpgTimer.UserCtrlView
                 {
                     //とりあえずインデックスで管理する。
                     var boxItem = this.listBox.ItemContainerGenerator.ContainerFromIndex(i) as ListBoxItem;
-                    back_Brush.Add(boxItem.BorderBrush);
-                    back_Thickness.Add(boxItem.BorderThickness);
+                    back_Brush.Add(boxItem != null ? boxItem.BorderBrush : null);
+                    back_Thickness.Add(boxItem != null ? boxItem.BorderThickness : new Thickness());
                 }
             }
 
@@ -337,7 +337,8 @@ namespace EpgTimer.UserCtrlView
         }
         private void EraseDropLine()
         {
-            if (back_Brush != null)
+            if (back_Brush != null && 0 <= back_ListItem && back_ListItem < back_Brush.Count &&
+                back_ListItem < this.listBox.Items.Count)
             {
                 var boxItem = this.listBox.ItemContainerGenerator.ContainerFromIndex(back_ListItem) as ListBoxItem;
                 if (boxItem == null) return;
