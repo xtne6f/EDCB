@@ -28,6 +28,7 @@ private:
 	static LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	//シャットダウン問い合わせダイアログ
 	static INT_PTR CALLBACK QueryShutdownDlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	void ReloadNetworkSetting();
 	void ReloadSetting();
 	//プリセット録画設定を読み込む(旧CRestApiManagerから移動)
 	pair<wstring, REC_SETTING_DATA> LoadRecSetData(WORD preset) const;
@@ -65,8 +66,16 @@ private:
 	};
 	static int LuaGetGenreName(lua_State* L);
 	static int LuaGetComponentTypeName(lua_State* L);
+	static int LuaConvert(lua_State* L);
+	static int LuaGetPrivateProfile(lua_State* L);
+	static int LuaWritePrivateProfile(lua_State* L);
+	static int LuaReloadEpg(lua_State* L);
+	static int LuaReloadSetting(lua_State* L);
+	static int LuaEpgCapNow(lua_State* L);
 	static int LuaGetChDataList(lua_State* L);
 	static int LuaGetServiceList(lua_State* L);
+	static void LuaGetEventMinMaxTimeCallback(vector<EPGDB_EVENT_INFO*>* pval, void* param);
+	static int LuaGetEventMinMaxTime(lua_State* L);
 	static void LuaEnumEventInfoCallback(vector<EPGDB_EVENT_INFO*>* pval, void* param);
 	static void LuaEnumEventAllCallback(vector<EPGDB_SERVICE_EVENT_INFO>* pval, void* param);
 	static int LuaEnumEventInfo(lua_State* L);
@@ -86,6 +95,7 @@ private:
 	static int LuaDelManuAdd(lua_State* L);
 	static int LuaAddOrChgAutoAdd(lua_State* L);
 	static int LuaAddOrChgManuAdd(lua_State* L);
+	static int LuaGetNotifyUpdateCount(lua_State* L);
 	static int LuaListDmsPublicFile(lua_State* L);
 	static void PushEpgEventInfo(CLuaWorkspace& ws, const EPGDB_EVENT_INFO& e);
 	static void PushReserveData(CLuaWorkspace& ws, const RESERVE_DATA& r);
@@ -107,7 +117,7 @@ private:
 	mutable CRITICAL_SECTION settingLock;
 	HWND hwndMain;
 
-	bool serviceFlag;
+	bool residentFlag;
 	bool saveNotifyLog;
 	DWORD wakeMarginSec;
 	unsigned short tcpPort;
@@ -132,6 +142,7 @@ private:
 	vector<wstring> tvtestUseBon;
 	bool nwtvUdp;
 	bool nwtvTcp;
+	DWORD notifyUpdateCount[6];
 
 	vector<OLD_EVENT_INFO_DATA3> oldSearchList;
 };

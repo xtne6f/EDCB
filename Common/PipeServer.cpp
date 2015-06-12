@@ -40,7 +40,8 @@ BOOL CPipeServer::StartServer(
 	CMD_CALLBACK_PROC cmdCallback, 
 	void* callbackParam, 
 	int threadPriority,
-	int ctrlCmdEventID
+	int ctrlCmdEventID,
+	BOOL insecureFlag
 )
 {
 	if( cmdCallback == NULL || eventName == NULL || pipeName == NULL ){
@@ -55,6 +56,7 @@ BOOL CPipeServer::StartServer(
 	this->pipeName = pipeName;
 	this->threadPriority = threadPriority;
 	this->ctrlCmdEventID = ctrlCmdEventID;
+	this->insecureFlag = insecureFlag;
 
 	ResetEvent(this->stopEvent);
 	this->workThread = (HANDLE)_beginthreadex(NULL, 0, ServerThread, (LPVOID)this, CREATE_SUSPENDED, NULL);
@@ -92,32 +94,33 @@ UINT WINAPI CPipeServer::ServerThread(LPVOID pParam)
 	if( pSys->ctrlCmdEventID != -1 ){
 		wstring strCmdEvent;
 		Format(strCmdEvent, L"%s%d", CMD2_CTRL_EVENT_WAIT, pSys->ctrlCmdEventID);
-		hEventCmdWait = _CreateEvent(FALSE, TRUE, strCmdEvent.c_str());
+		hEventCmdWait = CreateEvent(NULL, FALSE, TRUE, strCmdEvent.c_str());
 	}
-	hEventConnect = _CreateEvent(FALSE, FALSE, pSys->eventName.c_str());
+	SECURITY_DESCRIPTOR sd = {};
+	SECURITY_ATTRIBUTES sa = {};
+	if( pSys->insecureFlag != FALSE &&
+	    InitializeSecurityDescriptor(&sd, SECURITY_DESCRIPTOR_REVISION) != FALSE &&
+	    SetSecurityDescriptorDacl(&sd, TRUE, NULL, FALSE) != FALSE ){
+		//安全でないセキュリティ記述子(NULL DACL)をセットする
+		sa.nLength = sizeof(sa);
+		sa.lpSecurityDescriptor = &sd;
+	}
+	hEventConnect = CreateEvent(sa.nLength != 0 ? &sa : NULL, FALSE, FALSE, pSys->eventName.c_str());
 	hEventArray[0] = pSys->stopEvent;
 	hEventArray[1] = CreateEvent(NULL, FALSE, FALSE, NULL);
 	
 	if( hPipe == NULL ){
-		while(1){
-			hPipe = _CreateNamedPipe(pSys->pipeName.c_str(), PIPE_ACCESS_DUPLEX | FILE_FLAG_WRITE_THROUGH | FILE_FLAG_OVERLAPPED,
-			PIPE_TYPE_BYTE, 1,
-			CMD2_SEND_BUFF_SIZE, CMD2_RES_BUFF_SIZE, PIPE_TIMEOUT);
-			if( GetLastError() == ERROR_PIPE_BUSY ){
-				Sleep(100);
-			}else{
-				if(hPipe == INVALID_HANDLE_VALUE){
-					hPipe = NULL;
-				}
-				break;
-			}
+		hPipe = CreateNamedPipe(pSys->pipeName.c_str(), PIPE_ACCESS_DUPLEX | FILE_FLAG_WRITE_THROUGH | FILE_FLAG_OVERLAPPED,
+		                        PIPE_TYPE_BYTE, 1, CMD2_SEND_BUFF_SIZE, CMD2_RES_BUFF_SIZE, PIPE_TIMEOUT, sa.nLength != 0 ? &sa : NULL);
+		if( hPipe == INVALID_HANDLE_VALUE ){
+			hPipe = NULL;
 		}
 
 		ZeroMemory(&stOver, sizeof(OVERLAPPED));
 		stOver.hEvent = hEventArray[1];
 	}
 
-	while(1){
+	while( hPipe != NULL ){
 		ConnectNamedPipe(hPipe, &stOver);
 		SetEvent(hEventConnect);
 

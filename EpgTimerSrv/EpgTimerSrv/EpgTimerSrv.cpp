@@ -66,7 +66,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 
 	if( IsInstallService(SERVICE_NAME) == FALSE ){
 		//普通にexeとして起動を行う
-		HANDLE hMutex = _CreateMutex(TRUE, EPG_TIMER_BON_SRV_MUTEX);
+		HANDLE hMutex = CreateMutex(NULL, TRUE, EPG_TIMER_BON_SRV_MUTEX);
 		if( hMutex != NULL ){
 			if( GetLastError() != ERROR_ALREADY_EXISTS ){
 				//メインスレッドに対するCOMの初期化
@@ -83,7 +83,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 		}
 	}else if( IsStopService(SERVICE_NAME) == FALSE ){
 		//サービスとして実行
-		HANDLE hMutex = _CreateMutex(TRUE, EPG_TIMER_BON_SRV_MUTEX);
+		HANDLE hMutex = CreateMutex(NULL, TRUE, EPG_TIMER_BON_SRV_MUTEX);
 		if( hMutex != NULL ){
 			if( GetLastError() != ERROR_ALREADY_EXISTS ){
 				SERVICE_TABLE_ENTRY dispatchTable[] = {
