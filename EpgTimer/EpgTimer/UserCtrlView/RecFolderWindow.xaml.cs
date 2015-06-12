@@ -80,9 +80,10 @@ namespace EpgTimer
             }
             foreach (string text in comboBox_recNamePlugIn.Items)
             {
-                if (String.Compare(text, info.RecNamePlugIn, true) == 0)
+                if (String.Compare(text, info.RecNamePlugIn.Substring(0, (info.RecNamePlugIn + '?').IndexOf('?')), true) == 0)
                 {
                     comboBox_recNamePlugIn.SelectedItem = text;
+                    textBox_recNameOption.Text = info.RecNamePlugIn.IndexOf('?') < 0 ? "" : info.RecNamePlugIn.Substring(info.RecNamePlugIn.IndexOf('?') + 1);
                     break;
                 }
             }
@@ -148,6 +149,10 @@ namespace EpgTimer
             if (String.Compare(defSet.RecNamePlugIn, "なし", true) == 0)
             {
                 defSet.RecNamePlugIn = "";
+            }
+            else if (textBox_recNameOption.Text.Length != 0)
+            {
+                defSet.RecNamePlugIn += '?' + textBox_recNameOption.Text;
             }
             DialogResult = true;
         }
