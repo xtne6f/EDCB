@@ -30,6 +30,7 @@ enum {
 
 struct MAIN_WINDOW_CONTEXT {
 	CEpgTimerSrvMain* const sys;
+	const bool serviceFlag;
 	const DWORD awayMode;
 	const UINT msgTaskbarCreated;
 	CPipeServer pipeServer;
@@ -45,8 +46,9 @@ struct MAIN_WINDOW_CONTEXT {
 	bool showBalloonTip;
 	DWORD notifySrvStatus;
 	__int64 notifyActiveTime;
-	MAIN_WINDOW_CONTEXT(CEpgTimerSrvMain* sys_, DWORD awayMode_)
+	MAIN_WINDOW_CONTEXT(CEpgTimerSrvMain* sys_, bool serviceFlag_, DWORD awayMode_)
 		: sys(sys_)
+		, serviceFlag(serviceFlag_)
 		, awayMode(awayMode_)
 		, msgTaskbarCreated(RegisterWindowMessage(L"TaskbarCreated"))
 		, upnpCtrl(NULL)
@@ -76,7 +78,7 @@ CEpgTimerSrvMain::~CEpgTimerSrvMain()
 
 bool CEpgTimerSrvMain::Main(bool serviceFlag_)
 {
-	this->serviceFlag = serviceFlag_;
+	this->residentFlag = serviceFlag_;
 
 	DWORD awayMode;
 	OSVERSIONINFO osvi;
@@ -98,7 +100,7 @@ bool CEpgTimerSrvMain::Main(bool serviceFlag_)
 	if( RegisterClassEx(&wc) == 0 ){
 		return false;
 	}
-	MAIN_WINDOW_CONTEXT ctx(this, awayMode);
+	MAIN_WINDOW_CONTEXT ctx(this, serviceFlag_, awayMode);
 	if( CreateWindowEx(0, SERVICE_NAME, SERVICE_NAME, 0, 0, 0, 0, 0, NULL, NULL, GetModuleHandle(NULL), &ctx) == NULL ){
 		return false;
 	}
@@ -138,7 +140,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		ctx->sys->reserveManager.Initialize();
 		ctx->sys->ReloadSetting();
 		ctx->sys->ReloadNetworkSetting();
-		ctx->pipeServer.StartServer(CMD2_EPG_SRV_EVENT_WAIT_CONNECT, CMD2_EPG_SRV_PIPE, CtrlCmdCallback, ctx->sys, 0, GetCurrentProcessId());
+		ctx->pipeServer.StartServer(CMD2_EPG_SRV_EVENT_WAIT_CONNECT, CMD2_EPG_SRV_PIPE, CtrlCmdCallback, ctx->sys, 0, GetCurrentProcessId(), ctx->serviceFlag);
 		ctx->sys->epgDB.ReloadEpgData();
 		SendMessage(hwnd, WM_RELOAD_EPG_CHK, 0, 0);
 		SendMessage(hwnd, WM_TIMER, TIMER_SET_RESUME, 0);
@@ -653,11 +655,11 @@ void CEpgTimerSrvMain::ReloadSetting()
 
 	wstring iniPath;
 	GetModuleIniPath(iniPath);
-	if( this->serviceFlag == false ){
+	if( this->residentFlag == false ){
 		int residentMode = GetPrivateProfileInt(L"SET", L"ResidentMode", 0, iniPath.c_str());
 		if( residentMode >= 1 ){
 			//常駐する(CMD2_EPG_SRV_CLOSEを無視)
-			this->serviceFlag = true;
+			this->residentFlag = true;
 			//タスクトレイに表示するかどうか
 			PostMessage(this->hwndMain, WM_SHOW_TRAY, residentMode >= 2,
 				GetPrivateProfileInt(L"SET", L"NoBalloonTip", 0, iniPath.c_str()) == 0);
@@ -1092,8 +1094,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 		resParam->param = CMD_SUCCESS;
 		break;
 	case CMD2_EPG_SRV_CLOSE:
-		//サービスは停止できない
-		if( sys->serviceFlag == false ){
+		if( sys->residentFlag == false ){
 			sys->StopMain();
 			resParam->param = CMD_SUCCESS;
 		}

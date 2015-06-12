@@ -34,12 +34,6 @@ using std::vector;
 template<class T> inline void SAFE_DELETE(T*& p) { delete p; p = NULL; }
 template<class T> inline void SAFE_DELETE_ARRAY(T*& p) { delete[] p; p = NULL; }
 
-//セキュリティをNULLにして各種作成
-HANDLE _CreateEvent(BOOL bManualReset, BOOL bInitialState, LPCTSTR lpName );
-HANDLE _CreateMutex( BOOL bInitialOwner, LPCTSTR lpName );
-HANDLE _CreateFileMapping( HANDLE hFile, DWORD flProtect, DWORD dwMaximumSizeHigh, DWORD dwMaximumSizeLow, LPCTSTR lpName );
-HANDLE _CreateNamedPipe( LPCTSTR lpName, DWORD dwOpenMode, DWORD dwPipeMode, DWORD nMaxInstances, DWORD nOutBufferSize, DWORD nInBufferSize, DWORD nDefaultTimeOut );
-
 HANDLE _CreateDirectoryAndFile( LPCTSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, LPSECURITY_ATTRIBUTES lpsa, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile );
 BOOL _CreateDirectory( LPCTSTR lpPathName );
 //ボリュームのマウントを考慮して実ドライブの空きを取得する

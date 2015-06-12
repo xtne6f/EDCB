@@ -117,7 +117,7 @@ private:
 	mutable CRITICAL_SECTION settingLock;
 	HWND hwndMain;
 
-	bool serviceFlag;
+	bool residentFlag;
 	bool saveNotifyLog;
 	DWORD wakeMarginSec;
 	unsigned short tcpPort;

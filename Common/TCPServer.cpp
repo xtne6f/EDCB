@@ -115,7 +115,7 @@ UINT WINAPI CTCPServer::ServerThread(LPVOID pParam)
 	if( pSys->m_iCtrlCmdEventID != -1 ){
 		wstring strCmdEvent;
 		Format(strCmdEvent, L"%s%d", CMD2_CTRL_EVENT_WAIT, pSys->m_iCtrlCmdEventID);
-		hEventCmdWait = _CreateEvent(FALSE, TRUE, strCmdEvent.c_str());
+		hEventCmdWait = CreateEvent(NULL, FALSE, TRUE, strCmdEvent.c_str());
 	}
 	
 	fd_set ready;
