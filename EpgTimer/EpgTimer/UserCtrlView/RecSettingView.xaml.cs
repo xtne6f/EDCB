@@ -513,7 +513,7 @@ namespace EpgTimer
                 listView_recFolder.Items.Clear();
                 foreach (RecFileSetInfo info in recSetting.RecFolderList)
                 {
-                    listView_recFolder.Items.Add(info);
+                    listView_recFolder.Items.Add(info.Clone());
                 }
 
                 if (recSetting.SuspendMode == 0)
@@ -580,7 +580,7 @@ namespace EpgTimer
                 listView_recFolder_1seg.Items.Clear();
                 foreach (RecFileSetInfo info in recSetting.PartialRecFolder)
                 {
-                    listView_recFolder_1seg.Items.Add(info);
+                    listView_recFolder_1seg.Items.Add(info.Clone());
                 }
 
                 foreach (TunerSelectInfo info in comboBox_tuner.Items)
