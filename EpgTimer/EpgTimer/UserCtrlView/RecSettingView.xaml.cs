@@ -642,7 +642,27 @@ namespace EpgTimer
 
         private void button_recFolderAdd_Click(object sender, RoutedEventArgs e)
         {
-            RecFolderWindow setting = new RecFolderWindow();
+            recFolderAdd(listView_recFolder, recSetting.RecFolderList);
+        }
+
+        private void button_recFolderChg_Click(object sender, RoutedEventArgs e)
+        {
+            recFolderChange(listView_recFolder, recSetting.RecFolderList);
+        }
+
+        private void button_recFolderDel_Click(object sender, RoutedEventArgs e)
+        {
+            recFolderDelete(listView_recFolder);
+        }
+
+        private void listView_recFolder_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            recFolderChange(listView_recFolder, recSetting.RecFolderList);
+        }
+
+        private void recFolderAdd(ListBox listbox, List<RecFileSetInfo> recFolderList)
+        {
+            var setting = new RecFolderWindow();
             PresentationSource topWindow = PresentationSource.FromVisual(this);
             if (topWindow != null)
             {
@@ -650,9 +670,9 @@ namespace EpgTimer
             }
             if (setting.ShowDialog() == true)
             {
-                RecFileSetInfo setInfo = new RecFileSetInfo();
+                var setInfo = new RecFileSetInfo();
                 setting.GetSetting(ref setInfo);
-                foreach (RecFileSetInfo info in recSetting.RecFolderList)
+                foreach (RecFileSetInfo info in recFolderList)
                 {
                     if (String.Compare(setInfo.RecFolder, info.RecFolder, true) == 0 &&
                         String.Compare(setInfo.WritePlugIn, info.WritePlugIn, true) == 0 &&
@@ -662,37 +682,46 @@ namespace EpgTimer
                         return;
                     }
                 }
-                listView_recFolder.Items.Add(setInfo);
+                listbox.Items.Add(setInfo);
             }
-
         }
 
-        private void button_recFolderChg_Click(object sender, RoutedEventArgs e)
+        private void recFolderChange(ListBox listbox, List<RecFileSetInfo> recFolderList)
         {
-            if (listView_recFolder.SelectedItem != null)
+            if (listbox.SelectedItem == null)
             {
-                RecFolderWindow setting = new RecFolderWindow();
+                if (listbox.Items.Count != 0)
+                {
+                    listbox.SelectedIndex = 0;
+                }
+            }
+            if (listbox.SelectedItem != null)
+            {
+                var setting = new RecFolderWindow();
                 PresentationSource topWindow = PresentationSource.FromVisual(this);
                 if (topWindow != null)
                 {
                     setting.Owner = (Window)topWindow.RootVisual;
                 }
-                RecFileSetInfo selectInfo = listView_recFolder.SelectedItem as RecFileSetInfo;
+                var selectInfo = listbox.SelectedItem as RecFileSetInfo;
                 setting.SetDefSetting(selectInfo);
                 if (setting.ShowDialog() == true)
                 {
                     setting.GetSetting(ref selectInfo);
                 }
-                listView_recFolder.Items.Refresh();
+                listbox.Items.Refresh();
             }
-
-        }
-        
-        private void button_recFolderDel_Click(object sender, RoutedEventArgs e)
-        {
-            if (listView_recFolder.SelectedItem != null)
+            else
             {
-                listView_recFolder.Items.RemoveAt(listView_recFolder.SelectedIndex);
+                recFolderAdd(listbox, recFolderList);
+            }
+        }
+
+        private void recFolderDelete(ListBox listbox)
+        {
+            if (listbox.SelectedItem != null)
+            {
+                listbox.Items.RemoveAt(listbox.SelectedIndex);
             }
         }
 
@@ -799,58 +828,23 @@ namespace EpgTimer
 
         private void button_recFolderChg_1seg_Click(object sender, RoutedEventArgs e)
         {
-            if (listView_recFolder_1seg.SelectedItem != null)
-            {
-                RecFolderWindow setting = new RecFolderWindow();
-                PresentationSource topWindow = PresentationSource.FromVisual(this);
-                if (topWindow != null)
-                {
-                    setting.Owner = (Window)topWindow.RootVisual;
-                }
-                RecFileSetInfo selectInfo = listView_recFolder_1seg.SelectedItem as RecFileSetInfo;
-                setting.SetDefSetting(selectInfo);
-                if (setting.ShowDialog() == true)
-                {
-                    setting.GetSetting(ref selectInfo);
-                }
-                listView_recFolder_1seg.Items.Refresh();
-            }
+            recFolderChange(listView_recFolder_1seg, recSetting.PartialRecFolder);
         }
 
         private void button_recFolderAdd_1seg_Click(object sender, RoutedEventArgs e)
         {
-            RecFolderWindow setting = new RecFolderWindow();
-            PresentationSource topWindow = PresentationSource.FromVisual(this);
-            if (topWindow != null)
-            {
-                setting.Owner = (Window)topWindow.RootVisual;
-            }
-            if (setting.ShowDialog() == true)
-            {
-                RecFileSetInfo setInfo = new RecFileSetInfo();
-                setting.GetSetting(ref setInfo);
-                foreach (RecFileSetInfo info in recSetting.PartialRecFolder)
-                {
-                    if (String.Compare(setInfo.RecFolder, info.RecFolder, true) == 0 &&
-                        String.Compare(setInfo.WritePlugIn, info.WritePlugIn, true) == 0 &&
-                        String.Compare(setInfo.RecNamePlugIn, info.RecNamePlugIn, true) == 0)
-                    {
-                        MessageBox.Show("すでに追加されています");
-                        return;
-                    }
-                }
-                listView_recFolder_1seg.Items.Add(setInfo);
-            }
+            recFolderAdd(listView_recFolder_1seg, recSetting.PartialRecFolder);
         }
 
         private void button_recFolderDel_1seg_Click(object sender, RoutedEventArgs e)
         {
-            if (listView_recFolder_1seg.SelectedItem != null)
-            {
-                listView_recFolder_1seg.Items.RemoveAt(listView_recFolder_1seg.SelectedIndex);
-            }
+            recFolderDelete(listView_recFolder_1seg);
         }
 
+        private void listView_recFolder_1seg_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            recFolderChange(listView_recFolder_1seg, recSetting.PartialRecFolder);
+        }
 
     }
 }

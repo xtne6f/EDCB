@@ -34,6 +34,11 @@
                     <Label Content="(低 1～5 高)" Height="28" HorizontalAlignment="Left" Margin="174,40,0,0" Name="label20" VerticalAlignment="Top" />
                     <Label Content="録画フォルダ、使用PlugIn" Height="28" HorizontalAlignment="Left" Margin="7,74,0,0" Name="label2" VerticalAlignment="Top" />
                     <ListView Height="81" Margin="21,108,79,0" Name="listView_recFolder" VerticalAlignment="Top" Width="590" ItemsSource="{Binding}">
+                        <ListView.Resources>
+                            <Style TargetType="ListViewItem">
+                                <EventSetter Event="MouseDoubleClick" Handler="listView_recFolder_MouseDoubleClick"/>
+                            </Style>
+                        </ListView.Resources>
                         <ListView.View>
                             <GridView x:Name="gridView_recFolder">
                                 <GridViewColumn DisplayMemberBinding="{Binding Path=RecFolder}">
@@ -90,6 +95,11 @@
                             <CheckBox Content="別ファイルに同時出力する" Height="16" HorizontalAlignment="Left" Margin="6,6,0,0" Name="checkBox_partial" VerticalAlignment="Top" />
                             <Label Content="録画フォルダ、使用PlugIn" Height="28" HorizontalAlignment="Left" Margin="6,28,0,0" Name="label24" VerticalAlignment="Top" />
                             <ListView Height="69" Margin="25,54,79,0" Name="listView_recFolder_1seg" VerticalAlignment="Top" Width="567" ItemsSource="{Binding}">
+                                <ListView.Resources>
+                                    <Style TargetType="ListViewItem">
+                                        <EventSetter Event="MouseDoubleClick" Handler="listView_recFolder_1seg_MouseDoubleClick"/>
+                                    </Style>
+                                </ListView.Resources>
                                 <ListView.View>
                                     <GridView x:Name="gridView_recFolder_1seg">
                                         <GridViewColumn DisplayMemberBinding="{Binding Path=RecFolder}">

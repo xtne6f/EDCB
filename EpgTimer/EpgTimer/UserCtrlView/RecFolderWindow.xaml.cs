@@ -69,6 +69,7 @@ namespace EpgTimer
 
         public void SetDefSetting(RecFileSetInfo info)
         {
+            button_ok.Content = "変更";
             textBox_recFolder.Text = info.RecFolder;
             foreach (string text in comboBox_writePlugIn.Items)
             {
