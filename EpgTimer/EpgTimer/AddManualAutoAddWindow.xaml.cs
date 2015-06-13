@@ -82,7 +82,7 @@ namespace EpgTimer
 
         public void SetDefaultSetting(ManualAutoAddData item)
         {
-            defKey = item;
+            defKey = item.Clone();
         }
 
         private bool CheckExistAutoAddItem()

@@ -90,7 +90,7 @@ namespace EpgTimer
         /// <param name="info">[IN] 初期値の予約情報</param>
         public void SetReserveInfo(ReserveData info)
         {
-            reserveInfo = info;
+            reserveInfo = info.Clone();
             recSettingView.SetDefSetting(info.RecSetting);
         }
 

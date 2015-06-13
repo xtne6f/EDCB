@@ -232,8 +232,8 @@ namespace EpgTimer
             }
             comboBox_preSet.SelectedItem = preCust;
 
-            setDefSetting = set;
-            recSetting = set;
+            setDefSetting = set.Clone();
+            recSetting = setDefSetting;
 
             UpdateView();
         }

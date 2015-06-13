@@ -83,7 +83,7 @@ namespace EpgTimer
 
         public void SetSearchKey(EpgSearchKeyInfo key)
         {
-            defKey = key;
+            defKey = key.Clone();
             UpdateView();
         }
 
