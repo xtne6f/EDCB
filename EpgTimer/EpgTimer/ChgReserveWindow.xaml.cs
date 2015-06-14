@@ -91,7 +91,7 @@ namespace EpgTimer
         public void SetReserveInfo(ReserveData info)
         {
             reserveInfo = info.Clone();
-            recSettingView.SetDefSetting(info.RecSetting);
+            recSettingView.SetDefSetting(reserveInfo.RecSetting);
         }
 
         private void SetResModeProgram(bool mode)
