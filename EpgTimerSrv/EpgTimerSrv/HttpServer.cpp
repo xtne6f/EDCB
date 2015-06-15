@@ -4,22 +4,8 @@
 #include "../../Common/PathUtil.h"
 #include "../../Common/ParseTextInstances.h"
 #include "civetweb.h"
-#include "resource.h"
 
 #define LUA_DLL_NAME L"lua52.dll"
-
-//以下のパスはリソースにリダイレクト
-static const struct {
-	const char* path;
-	int res;
-} PATH_RES_MAP[] = {
-	{ "\\api\\AddReserveEPG", IDR_LUA_ADD_RESERVE_EPG },
-	{ "\\api\\EnumEventInfo", IDR_LUA_ENUM_EVENT_INFO },
-	{ "\\api\\EnumRecPreset", IDR_LUA_ENUM_REC_PRESET },
-	{ "\\api\\EnumReserveInfo", IDR_LUA_ENUM_RESERVE_INFO },
-	{ "\\api\\EnumService", IDR_LUA_ENUM_SERVICE },
-	{ "\\api\\SearchEvent", IDR_LUA_SEARCH_EVENT },
-};
 
 CHttpServer::CHttpServer()
 	: mgContext(NULL)
@@ -32,7 +18,7 @@ CHttpServer::~CHttpServer()
 	StopServer();
 }
 
-bool CHttpServer::StartServer(unsigned short port, LPCWSTR rootPath_, int (*initProc)(lua_State*), void* initParam, bool saveLog, LPCWSTR acl)
+bool CHttpServer::StartServer(unsigned short port, LPCWSTR rootPath, int (*initProc)(lua_State*), void* initParam, bool saveLog, LPCWSTR acl)
 {
 	StopServer();
 
@@ -44,11 +30,12 @@ bool CHttpServer::StartServer(unsigned short port, LPCWSTR rootPath_, int (*init
 	}
 	string strPort;
 	Format(strPort, "%d", port);
-	WtoUTF8(rootPath_, this->rootPath);
-	ChkFolderPath(this->rootPath);
+	string rootPathU;
+	WtoUTF8(rootPath, rootPathU);
+	ChkFolderPath(rootPathU);
 	//パスにASCII範囲外を含むのは(主にLuaが原因で)難ありなので蹴る
-	for( size_t i = 0; i < this->rootPath.size(); i++ ){
-		if( this->rootPath[i] & 0x80 ){
+	for( size_t i = 0; i < rootPathU.size(); i++ ){
+		if( rootPathU[i] & 0x80 ){
 			OutputDebugString(L"CHttpServer::StartServer(): path has multibyte.\r\n");
 			return false;
 		}
@@ -76,31 +63,16 @@ bool CHttpServer::StartServer(unsigned short port, LPCWSTR rootPath_, int (*init
 	string extraMime;
 	WtoUTF8(extraMimeW, extraMime);
 
-	this->redirectList.clear();
-	for( size_t i = 0; i < _countof(PATH_RES_MAP); i++ ){
-		HRSRC hResInfo = FindResource(NULL, MAKEINTRESOURCE(PATH_RES_MAP[i].res), L"LUA");
-		if( hResInfo ){
-			REDIRECT_ITEM item;
-			item.path = this->rootPath + PATH_RES_MAP[i].path;
-			item.dataLen = SizeofResource(NULL, hResInfo);
-			HGLOBAL hResData = LoadResource(NULL, hResInfo);
-			if( hResData && (item.data = (const char*)LockResource(hResData)) != NULL ){
-				this->redirectList.push_back(item);
-			}
-		}
-	}
 	const char* options[] = {
 		//mg_stop()の待ちが長くなりすぎるので(残念だが)オフ
 		//"enable_keep_alive", "yes",
 		"access_control_list", aclU.c_str(),
 		"extra_mime_types", extraMime.c_str(),
 		"listening_ports", strPort.c_str(),
-		"document_root", this->rootPath.c_str(),
+		"document_root", rootPathU.c_str(),
 		//必要に応じて増やしてもいい
 		"num_threads", "3",
-		"lua_script_pattern", "**.lua$|**.html$",
-		//TODO: open_fileコールバックは今のところ.luaを扱えないため、"*/api/*$"は.lspとみなす
-		"lua_server_page_pattern", "**.lp$|**.lsp$|*/api/*$",
+		"lua_script_pattern", "**.lua$|**.html$|*/api/*$",
 		saveLog ? "access_log_file" : NULL, accessLogPath.c_str(),
 		"error_log_file", errorLogPath.c_str(),
 		NULL,
@@ -109,7 +81,6 @@ bool CHttpServer::StartServer(unsigned short port, LPCWSTR rootPath_, int (*init
 	this->initLuaParam = initParam;
 	mg_callbacks callbacks = {};
 	callbacks.init_lua = &InitLua;
-	callbacks.open_file = &OpenFile;
 	this->mgContext = mg_start(&callbacks, this, options);
 	return this->mgContext != NULL;
 }
@@ -132,20 +103,6 @@ void CHttpServer::InitLua(const mg_connection* conn, void* luaContext)
 	lua_State* L = (lua_State*)luaContext;
 	lua_pushlightuserdata(L, sys->initLuaParam);
 	sys->initLuaProc(L);
-}
-
-const char* CHttpServer::OpenFile(const mg_connection* conn, const char* path, size_t* dataLen)
-{
-	const CHttpServer* sys = (CHttpServer*)mg_get_user_data(mg_get_context(conn));
-	string pathB = path;
-	Replace(pathB, "/", "\\");
-	for( size_t i = 0; i < sys->redirectList.size(); i++ ){
-		if( CompareNoCase(sys->redirectList[i].path, pathB) == 0 ){
-			*dataLen = sys->redirectList[i].dataLen;
-			return sys->redirectList[i].data;
-		}
-	}
-	return NULL;
 }
 
 namespace LuaHelp

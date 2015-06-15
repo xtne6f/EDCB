@@ -1,4 +1,3 @@
-<?
 key={
   onid=mg.get_var(mg.request_info.query_string,'ONID'),
   tsid=mg.get_var(mg.request_info.query_string,'TSID'),
@@ -95,4 +94,3 @@ cl=0
 for i,v in ipairs(ct) do cl=cl+#v end
 mg.write('HTTP/1.1 200 OK\r\nContent-Type: text/xml\r\nContent-Length: '..cl..'\r\nConnection: close\r\n\r\n')
 for i,v in ipairs(ct) do mg.write(v) end
-?>

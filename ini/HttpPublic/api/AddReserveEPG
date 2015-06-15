@@ -1,4 +1,3 @@
-<?
 post=nil
 if mg.request_info.request_method=='POST' then
   post=''
@@ -85,4 +84,3 @@ end
 ct='<?xml version="1.0" encoding="UTF-8" ?'..'><entry>'
   ..(added and '<success>予約の追加に成功しました</success></entry>' or '<err>予約の追加に失敗しました</err></entry>')
 mg.write('HTTP/1.1 200 OK\r\nContent-Type: text/xml\r\nContent-Length: '..#ct..'\r\nConnection: close\r\n\r\n', ct)
-?>
