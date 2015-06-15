@@ -6,15 +6,22 @@ void Format(string& strBuff, const char *format, ...)
 	va_list params;
 
 	va_start(params, format);
-	int iResult;
-	char *buff;
-	int length = _vscprintf(format, params);
-	buff = new char [length + 1];
-	iResult = vsprintf_s(buff, length + 1, format, params);
-	buff[length] = '\0';
-	if (buff != NULL) {
-		strBuff = buff;
-		delete[] buff;
+	try{
+		int length = _vscprintf(format, params);
+		if( length < 0 ){
+			throw std::runtime_error("");
+		}else if( length < 64 ){
+			char szSmall[64];
+			vsprintf_s(szSmall, format, params);
+			strBuff = szSmall;
+		}else{
+			vector<char> buff(length + 1);
+			vsprintf_s(&buff.front(), buff.size(), format, params);
+			strBuff = &buff.front();
+		}
+	}catch(...){
+		va_end(params);
+		throw;
 	}
 
 	va_end(params);
@@ -26,15 +33,22 @@ void Format(wstring& strBuff, const WCHAR *format, ...)
 
 	va_start(params, format);
 
-	int iResult;
-	WCHAR *buff;
-	int length = _vscwprintf(format, params);
-	buff = new WCHAR [length + 1];
-	iResult = vswprintf_s(buff, length + 1, format, params);
-	buff[length] = '\0';
-	if (buff != NULL) {
-		strBuff = buff;
-		delete[] buff;
+	try{
+		int length = _vscwprintf(format, params);
+		if( length < 0 ){
+			throw std::runtime_error("");
+		}else if( length < 64 ){
+			WCHAR szSmall[64];
+			vswprintf_s(szSmall, format, params);
+			strBuff = szSmall;
+		}else{
+			vector<WCHAR> buff(length + 1);
+			vswprintf_s(&buff.front(), buff.size(), format, params);
+			strBuff = &buff.front();
+		}
+	}catch(...){
+		va_end(params);
+		throw;
 	}
 
     va_end(params);
