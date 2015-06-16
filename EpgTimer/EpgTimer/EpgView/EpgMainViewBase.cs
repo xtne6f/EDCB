@@ -36,8 +36,23 @@ namespace EpgTimer.EpgView
             base.InitCommand();
 
             //コマンド集の初期化の続き
-            mc.SetFuncGetDataList(isAll => vutil.GetPanelDataList<ReserveData>(GetReserveItem, clickPos));
-            mc.SetFuncGetEpgEventList(() => vutil.GetPanelDataList<EpgEventInfo>(GetProgramItem, clickPos));
+            mc.SetFuncGetDataList(isAll => isAll == true ? reserveList.GetDataList() : reserveList.GetHitDataList(clickPos));
+            mc.SetFuncGetEpgEventList(() =>
+            {
+                try
+                {
+                    int timeIndex = (int)(clickPos.Y / (60 * Settings.Instance.MinHeight));
+                    if (0 <= timeIndex && timeIndex < timeList.Count)
+                    {
+                        return timeList.Values[timeIndex].GetHitDataList(clickPos);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                }
+                return new List<EpgEventInfo>();
+            });
         }
         public override void RefreshMenu()
         {
@@ -172,36 +187,6 @@ namespace EpgTimer.EpgView
             {
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
-        }
-
-        /// <summary>マウス位置から予約情報を取得する</summary>
-        /// <param name="cursorPos">[IN]マウス位置</param>
-        /// <param name="reserve">[OUT]予約情報</param>
-        /// <returns>falseで存在しない</returns>
-        protected bool GetReserveItem(Point cursorPos, ref ReserveData reserve)
-        {
-            return vutil.GetHitItem(cursorPos, ref reserve, reserveList);
-        }
-
-        /// <summary>マウス位置から番組情報を取得する</summary>
-        /// <param name="cursorPos">[IN]マウス位置</param>
-        /// <param name="program">[OUT]番組情報</param>
-        /// <returns>falseで存在しない</returns>
-        protected bool GetProgramItem(Point cursorPos, ref EpgEventInfo program)
-        {
-            try
-            {
-                int timeIndex = (int)(cursorPos.Y / (60 * Settings.Instance.MinHeight));
-                if (0 <= timeIndex && timeIndex < timeList.Count)
-                {
-                    return vutil.GetHitItem(cursorPos, ref program, timeList.Values[timeIndex]);
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-            return false;
         }
 
         protected override void MoveToReserveItem(ReserveItem target, bool JumpingTable)

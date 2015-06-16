@@ -39,7 +39,7 @@ namespace EpgTimer
 
             //最初にコマンド集の初期化
             mc = new CmdExeReserve(this);
-            mc.SetFuncGetDataList(isAll => vutil.GetPanelDataList<ReserveData>(GetReserveItem, clickPos));
+            mc.SetFuncGetDataList(isAll => isAll == true ? reserveList.GetDataList() : reserveList.GetHitDataList(clickPos));
 
             //コマンド集からコマンドを登録
             mc.ResetCommandBindings(this, cmdMenu);
@@ -76,15 +76,6 @@ namespace EpgTimer
         void tunerReserveView_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
         {
             vutil.view_PreviewMouseWheel<TunerReserveView>(sender, e, tunerReserveView.scrollViewer);
-        }
-
-        /// <summary>マウス位置から予約情報を取得する</summary>
-        /// <param name="cursorPos">[IN]マウス位置</param>
-        /// <param name="reserve">[OUT]予約情報</param>
-        /// <returns>falseで存在しない</returns>
-        private bool GetReserveItem(Point cursorPos, ref ReserveData reserve)
-        {
-            return vutil.GetHitItem(cursorPos, ref reserve, reserveList);
         }
 
         /// <summary>左ボタンダブルクリックイベント呼び出し/summary>
