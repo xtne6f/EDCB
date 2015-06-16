@@ -784,7 +784,6 @@ BOOL CTSOut::CreateServiceCtrl(
 	*id = GetNextID();
 
 	serviceUtil->SetEpgUtil(&this->epgUtil);
-	serviceUtil->SetID(*id);
 	serviceUtil->SetBonDriver(bonFile);
 
 	serviceUtilMap.insert(pair<DWORD, COneServiceUtil*>(*id, serviceUtil));
