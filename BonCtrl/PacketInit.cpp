@@ -4,13 +4,11 @@
 CPacketInit::CPacketInit(void)
 {
 	this->nextStartSize = 0;
-	this->nextStartBuff = new BYTE[256];
 	this->packetSize = 0;
 }
 
 CPacketInit::~CPacketInit(void)
 {
-	SAFE_DELETE_ARRAY(this->nextStartBuff);
 }
 
 void CPacketInit::ClearBuff()

@@ -29,7 +29,7 @@ public:
 	void ClearBuff();
 
 protected:
-	BYTE* nextStartBuff;
+	BYTE nextStartBuff[256];
 	DWORD nextStartSize;
 
 	DWORD packetSize;
