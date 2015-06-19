@@ -345,7 +345,7 @@ UINT WINAPI CWriteTSFile::OutThread(LPVOID param)
 
 		if( data != NULL ){
 			for( size_t i=0; i<sys->fileList.size(); i++ ){
-				try{
+				{
 					if( sys->fileList[i]->writeUtil != NULL ){
 						DWORD write = 0;
 						if( sys->fileList[i]->writeUtil->AddTSBuff( data->data, data->size, &write) == FALSE ){
@@ -383,10 +383,6 @@ UINT WINAPI CWriteTSFile::OutThread(LPVOID param)
 							}
 						}
 					}
-				}catch(...){
-					sys->fileList[i]->writeUtil = NULL;
-					sys->exceptionErr = TRUE;
-					_OutputDebugString(L"ÅöÅöCWriteTSFile::OutThread Exception2");
 				}
 			}
 

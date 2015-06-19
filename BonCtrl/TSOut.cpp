@@ -198,7 +198,7 @@ DWORD CTSOut::AddTSBuff(TS_DATA* data)
 
 	BYTE* decodeData = NULL;
 	DWORD decodeSize = 0;
-	try{
+	{
 		for( DWORD i=0; i<data->size; i+=188 ){
 			CTSPacketUtil packet;
 			if( packet.Set188TS(data->data + i, 188) == TRUE ){
@@ -225,13 +225,7 @@ DWORD CTSOut::AddTSBuff(TS_DATA* data)
 						//PES
 						continue;
 					}
-					try{
-						this->epgUtil.AddTSPacket(data->data + i, 188);
-					}catch(...){
-						_OutputDebugString(L"★★CTSOut::AddTSBuff epgUtil.AddTSPacket");
-						this->epgUtil.UnInitialize();
-						this->epgUtil.Initialize(FALSE);
-					}
+					this->epgUtil.AddTSPacket(data->data + i, 188);
 					WORD onid = 0xFFFF;
 					WORD tsid = 0xFFFF;
 					if( this->epgUtil.GetTSID(&onid, &tsid) == NO_ERR ){
@@ -366,10 +360,6 @@ DWORD CTSOut::AddTSBuff(TS_DATA* data)
 				}
 			}
 		}
-	}catch(...){
-		_OutputDebugString(L"★★CTSOut::AddTSBuff Exception1");
-		UnLock();
-		return ERR_FALSE;
 	}
 	try{
 		if( this->decodeBuff.empty() == false ){
@@ -400,28 +390,18 @@ DWORD CTSOut::AddTSBuff(TS_DATA* data)
 	}
 	
 	//デコード済みのデータを解析させる
-	try{
+	{
 		for( DWORD i=0; i<decodeSize; i+=188 ){
 			this->epgUtil.AddTSPacket(decodeData + i, 188);
 		}
-	}catch(...){
-		_OutputDebugString(L"★★CTSOut::AddTSBuff Exception3");
-		this->epgUtil.UnInitialize();
-		this->epgUtil.Initialize(FALSE);
-		UnLock();
-		return ERR_FALSE;
 	}
 
 	//各サービス処理にデータ渡す
-	try{
+	{
 		map<DWORD, COneServiceUtil*>::iterator itrService;
 		for( itrService = serviceUtilMap.begin(); itrService != serviceUtilMap.end(); itrService++ ){
 			itrService->second->AddTSBuff(decodeData, decodeSize);
 		}
-	}catch(...){
-		_OutputDebugString(L"★★CTSOut::AddTSBuff Exception4");
-		UnLock();
-		return ERR_FALSE;
 	}
 	UnLock();
 	return NO_ERR;

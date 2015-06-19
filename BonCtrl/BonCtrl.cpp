@@ -568,11 +568,11 @@ UINT WINAPI CBonCtrl::RecvThread(LPVOID param)
 		BYTE *data = NULL;
 		DWORD size = 0;
 		DWORD remain = 0;
-		try{
+		{
 			if( sys->bonUtil.GetTsStream(&data,&size,&remain) == TRUE ){
 				if( size != 0 && data != NULL){
 					TS_DATA* item = new TS_DATA;
-					try{
+					{
 						if( sys->packetInit.GetTSData(data, size, &item->data, &item->size) == TRUE ){
 							CBlockLock lock(&sys->buffLock);
 							if( sys->totalTSBuffSize / 48128 > sys->tsBuffMaxCount ){
@@ -587,9 +587,6 @@ UINT WINAPI CBonCtrl::RecvThread(LPVOID param)
 						}else{
 							delete item;
 						}
-					}catch(...){
-						delete item;
-						_OutputDebugString(L"ššRecvThread Exception2");
 					}
 				}else{
 					Sleep(10);
@@ -597,8 +594,6 @@ UINT WINAPI CBonCtrl::RecvThread(LPVOID param)
 			}else{
 				Sleep(10);
 			}
-		}catch(...){
-			_OutputDebugString(L"ššRecvThread Exception1");
 		}
 	}
 	return 0;
@@ -624,15 +619,13 @@ UINT WINAPI CBonCtrl::AnalyzeThread(LPVOID param)
 				sys->TSBuff.erase(sys->TSBuff.begin());
 			}
 		}
-		try{
+		{
 			if( data != NULL ){
 				sys->tsOut.AddTSBuff(data);
 				SAFE_DELETE(data);
 			}else{
 				Sleep(5);
 			}
-		}catch(...){
-			_OutputDebugString(L"ššAnalyzeThread Exception2");
 		}
 	}
 	return 0;
