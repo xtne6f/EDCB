@@ -11,7 +11,7 @@ CBonCtrl::CBonCtrl(void)
 {
 	this->lockEvent = CreateEvent(NULL, FALSE, TRUE, NULL);
 	InitializeCriticalSection(&this->buffLock);
-	this->totalTSBuffSize = 0;
+	this->TSBuffOffset = 0;
 
     this->recvThread = NULL;
     this->recvStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
@@ -544,15 +544,8 @@ DWORD CBonCtrl::_CloseBonDriver()
 
 	DWORD ret = this->bonUtil.CloseBonDriver();
 
-	{
-		CBlockLock lock(&this->buffLock);
-		for( size_t i=0; i<this->TSBuff.size(); i++ ){
-			SAFE_DELETE(this->TSBuff[i]);
-		}
-		this->TSBuff.clear();
-		this->totalTSBuffSize = 0;
-	}
-	this->packetInit.ClearBuff();
+	this->TSBuff.clear();
+	this->TSBuffOffset = 0;
 
 	return ret;
 }
@@ -560,6 +553,7 @@ DWORD CBonCtrl::_CloseBonDriver()
 UINT WINAPI CBonCtrl::RecvThread(LPVOID param)
 {
 	CBonCtrl* sys = (CBonCtrl*)param;
+	CPacketInit packetInit;
 	while(1){
 		if( ::WaitForSingleObject(sys->recvStopEvent, 0) != WAIT_TIMEOUT ){
 			//キャンセルされた
@@ -571,22 +565,16 @@ UINT WINAPI CBonCtrl::RecvThread(LPVOID param)
 		{
 			if( sys->bonUtil.GetTsStream(&data,&size,&remain) == TRUE ){
 				if( size != 0 && data != NULL){
-					TS_DATA* item = new TS_DATA;
-					{
-						if( sys->packetInit.GetTSData(data, size, &item->data, &item->size) == TRUE ){
-							CBlockLock lock(&sys->buffLock);
-							if( sys->totalTSBuffSize / 48128 > sys->tsBuffMaxCount ){
-								while( sys->TSBuff.empty() == false && sys->totalTSBuffSize / 48128 + 1000 > sys->tsBuffMaxCount ){
-									sys->totalTSBuffSize -= sys->TSBuff.back()->size;
-									SAFE_DELETE(sys->TSBuff.back());
-									sys->TSBuff.pop_back();
-								}
-							}
-							sys->TSBuff.push_back(item);
-							sys->totalTSBuffSize += sys->TSBuff.back()->size;
-						}else{
-							delete item;
+					BYTE* outData;
+					DWORD outSize;
+					if( packetInit.GetTSData(data, size, &outData, &outSize) == TRUE ){
+						CBlockLock lock(&sys->buffLock);
+						sys->TSBuff.erase(sys->TSBuff.begin(), sys->TSBuff.begin() + sys->TSBuffOffset);
+						sys->TSBuffOffset = 0;
+						if( sys->TSBuff.size() / 48128 > sys->tsBuffMaxCount ){
+							sys->TSBuff.clear();
 						}
+						sys->TSBuff.insert(sys->TSBuff.end(), outData, outData + outSize);
 					}
 				}else{
 					Sleep(10);
@@ -610,22 +598,21 @@ UINT WINAPI CBonCtrl::AnalyzeThread(LPVOID param)
 		}
 
 		//バッファからデータ取り出し
-		TS_DATA* data = NULL;
+		BYTE data[48128];
+		DWORD dataSize = 0;
 		{
 			CBlockLock lock(&sys->buffLock);
-			if( sys->TSBuff.empty() == false ){
-				data = sys->TSBuff.front();
-				sys->totalTSBuffSize -= data->size;
-				sys->TSBuff.erase(sys->TSBuff.begin());
+			if( sys->TSBuff.size() - sys->TSBuffOffset >= sizeof(data) ){
+				//必ず188の倍数で取り出さなければならない
+				dataSize = sizeof(data);
+				memcpy(data, &sys->TSBuff[sys->TSBuffOffset], dataSize);
+				sys->TSBuffOffset += dataSize;
 			}
 		}
-		{
-			if( data != NULL ){
-				sys->tsOut.AddTSBuff(data);
-				SAFE_DELETE(data);
-			}else{
-				Sleep(5);
-			}
+		if( dataSize != 0 ){
+			sys->tsOut.AddTSBuff(data, dataSize);
+		}else{
+			Sleep(5);
 		}
 	}
 	return 0;

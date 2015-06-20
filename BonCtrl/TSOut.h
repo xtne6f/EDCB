@@ -38,7 +38,7 @@ public:
 		WORD* TSID
 		);
 
-	DWORD AddTSBuff(TS_DATA* data);
+	DWORD AddTSBuff(BYTE* data, DWORD dataSize);
 
 	//EMMˆ—‚Ì“®ìİ’è
 	//–ß‚è’lF

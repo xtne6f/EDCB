@@ -467,15 +467,14 @@ public:
 
 protected:
 	CBonDriverUtil bonUtil;
-	CPacketInit packetInit;
 	CTSOut tsOut;
 	CChSetUtil chUtil;
 
 	HANDLE lockEvent;
 
 	CRITICAL_SECTION buffLock;
-	vector<TS_DATA*> TSBuff;
-	DWORD totalTSBuffSize;
+	vector<BYTE> TSBuff;
+	size_t TSBuffOffset;
 
 	HANDLE recvThread;
 	HANDLE recvStopEvent;
