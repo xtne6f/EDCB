@@ -146,11 +146,7 @@ void CTunerBankCtrl::ReloadSetting()
 	this->recNamePlugInFilePath += L"\\RecName\\";
 	this->recNamePlugInFilePath += buff;
 
-	GetPrivateProfileString( L"SET", L"RecFolderPath0", L"", buff, 512, commonIniPath.c_str() );
-	this->recFolderPath = buff;
-	if( this->recFolderPath.size() == 0 ){
-		GetDefSettingPath(this->recFolderPath);
-	}
+	GetRecFolderPath(this->recFolderPath);
 	GetPrivateProfileString( L"SET", L"RecWritePlugIn0", L"", buff, 512, commonIniPath.c_str() );
 	this->recWritePlugIn = buff;
 
