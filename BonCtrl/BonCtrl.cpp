@@ -1395,7 +1395,7 @@ void CBonCtrl::SetBackGroundEpgCap(
 void CBonCtrl::StartBackgroundEpgCap()
 {
 	StopBackgroundEpgCap();
-	if( this->epgCapBackThread == NULL && this->epgCapThread == NULL ){
+	if( this->epgCapBackThread == NULL && this->epgCapThread == NULL && this->chScanThread == NULL ){
 		if( this->bonUtil.GetOpenBonDriverFileName().empty() == false ){
 			//受信スレッド起動
 			ResetEvent(this->epgCapBackStopEvent);
