@@ -520,7 +520,7 @@ UINT WINAPI CBonCtrl::AnalyzeThread(LPVOID param)
 		if( dataSize != 0 ){
 			sys->tsOut.AddTSBuff(data, dataSize);
 		}else{
-			Sleep(5);
+			Sleep(10);
 		}
 	}
 	return 0;

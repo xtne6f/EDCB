@@ -358,7 +358,7 @@ UINT WINAPI CWriteTSFile::OutThread(LPVOID param)
 				sys->writeTotalSize += dataSize;
 			}
 		}else{
-			Sleep(10);
+			Sleep(100);
 		}
 	}
 	return 0;
