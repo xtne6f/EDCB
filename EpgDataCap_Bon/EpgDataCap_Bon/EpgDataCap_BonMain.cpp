@@ -12,8 +12,6 @@ CEpgDataCap_BonMain::CEpgDataCap_BonMain(void)
 	this->sendUdpFlag = FALSE;
 	this->sendTcpFlag = FALSE;
 
-	this->startMargine = 5;
-	this->endMargine = 5;
 	this->overWriteFlag = FALSE;
 	this->enableScrambleFlag = TRUE;
 	this->enableEMMFlag = FALSE;
@@ -89,9 +87,6 @@ void CEpgDataCap_BonMain::ReloadSetting()
 	this->allService = GetPrivateProfileInt( L"SET", L"AllService", 0, appIniPath.c_str() );
 	this->needCaption = GetPrivateProfileInt( L"SET", L"Caption", 1, appIniPath.c_str() );
 	this->needData = GetPrivateProfileInt( L"SET", L"Data", 0, appIniPath.c_str() );
-
-	this->startMargine = GetPrivateProfileInt( L"SET", L"StartMargine", 5, appIniPath.c_str() );
-	this->endMargine = GetPrivateProfileInt( L"SET", L"EndMargine", 5, appIniPath.c_str() );
 
 	this->overWriteFlag = GetPrivateProfileInt( L"SET", L"OverWrite", 0, appIniPath.c_str() );
 

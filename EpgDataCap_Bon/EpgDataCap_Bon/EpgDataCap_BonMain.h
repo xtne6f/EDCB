@@ -268,8 +268,6 @@ protected:
 	vector<NW_SEND_INFO> udpSendList;
 	vector<NW_SEND_INFO> tcpSendList;
 
-	int startMargine;
-	int endMargine;
 	BOOL overWriteFlag;
 
 	BOOL enableScrambleFlag;
