@@ -474,7 +474,7 @@ namespace EpgTimer
                                 }
                                 if (setViewInfo.FilterEnded)
                                 {
-                                    if (eventInfo.start_time.AddSeconds(eventInfo.durationSec) < now)
+                                    if (eventInfo.start_time.AddSeconds(eventInfo.DurationFlag == 0 ? 0 : eventInfo.durationSec) < now)
                                         continue;
                                 }
                                 //ジャンル絞り込み

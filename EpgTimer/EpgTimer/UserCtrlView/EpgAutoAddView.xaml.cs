@@ -238,7 +238,7 @@ namespace EpgTimer
 
                 foreach (EpgEventInfo info in list)
                 {
-                    if (info.start_time.AddSeconds(info.durationSec) > DateTime.Now)
+                    if (info.start_time.AddSeconds(info.DurationFlag == 0 ? 0 : info.durationSec) > DateTime.Now)
                     {
                         foreach (ReserveData info2 in CommonManager.Instance.DB.ReserveList.Values)
                         {

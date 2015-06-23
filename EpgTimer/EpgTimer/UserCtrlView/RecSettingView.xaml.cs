@@ -496,7 +496,7 @@ namespace EpgTimer
                 listView_recFolder.Items.Clear();
                 foreach (RecFileSetInfo info in recSetting.RecFolderList)
                 {
-                    listView_recFolder.Items.Add(info);
+                    listView_recFolder.Items.Add(GetCopyRecFileSetInfo(info));
                 }
 
                 if (recSetting.SuspendMode == 0)
@@ -563,7 +563,7 @@ namespace EpgTimer
                 listView_recFolder_1seg.Items.Clear();
                 foreach (RecFileSetInfo info in recSetting.PartialRecFolder)
                 {
-                    listView_recFolder_1seg.Items.Add(info);
+                    listView_recFolder_1seg.Items.Add(GetCopyRecFileSetInfo(info));
                 }
 
                 foreach (TunerSelectInfo info in comboBox_tuner.Items)
@@ -579,6 +579,16 @@ namespace EpgTimer
             {
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
+        }
+
+        private RecFileSetInfo GetCopyRecFileSetInfo(RecFileSetInfo info)
+        {
+            var info_copy = new RecFileSetInfo();
+            info_copy.RecFileName = info.RecFileName;
+            info_copy.RecFolder = info.RecFolder;
+            info_copy.RecNamePlugIn = info.RecNamePlugIn;
+            info_copy.WritePlugIn = info.WritePlugIn;
+            return info_copy;
         }
 
         private void checkBox_suspendDef_Click(object sender, RoutedEventArgs e)

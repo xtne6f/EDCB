@@ -1657,7 +1657,7 @@ namespace EpgTimer
                         }
 
                         ProgramViewItem viewItem = new ProgramViewItem(eventInfo);
-                        viewItem.Height = (eventInfo.durationSec * Settings.Instance.MinHeight) / 60;
+                        viewItem.Height = ((eventInfo.DurationFlag == 0 ? 300 : eventInfo.durationSec) * Settings.Instance.MinHeight) / 60;
                         viewItem.Width = Settings.Instance.ServiceWidth * widthSpan / mergeNum;
                         viewItem.LeftPos = Settings.Instance.ServiceWidth * (servicePos + (double)((mergeNum+i-mergePos-1)/2) / mergeNum);
                         //viewItem.TopPos = (eventInfo.start_time - startTime).TotalMinutes * Settings.Instance.MinHeight;
@@ -1970,7 +1970,7 @@ namespace EpgTimer
                         }
 
                         ProgramViewItem viewItem = new ProgramViewItem(eventInfo);
-                        viewItem.Height = (eventInfo.durationSec * Settings.Instance.MinHeight) / 60;
+                        viewItem.Height = ((eventInfo.DurationFlag == 0 ? 300 : eventInfo.durationSec) * Settings.Instance.MinHeight) / 60;
                         viewItem.Width = Settings.Instance.ServiceWidth * widthSpan / mergeNum;
                         viewItem.LeftPos = Settings.Instance.ServiceWidth * (servicePos + (double)((mergeNum+i-mergePos-1)/2) / mergeNum);
                         //viewItem.TopPos = (eventInfo.start_time - startTime).TotalMinutes * Settings.Instance.MinHeight;
