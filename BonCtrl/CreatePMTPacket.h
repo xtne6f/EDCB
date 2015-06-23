@@ -59,7 +59,6 @@ public:
 
 protected:
 	DWORD DecodePMT(BYTE* data, DWORD dataSize);
-	void ClearSecondBuff();
 
 	void CreatePMT();
 	void CreatePacket();
@@ -75,41 +74,24 @@ protected:
 	WORD lastPgNumber;
 	BYTE lastVersion;
 
-	BYTE* firstDescBuff;
-	WORD firstDescBuffSize;
+	vector<BYTE> firstDescBuff;
 
 	typedef struct _SECOND_DESC_BUFF{
 		BYTE stream_type;
 		WORD elementary_PID;
-		WORD ES_info_length;
-		WORD descBuffSize;
-		BYTE* descBuff;
+		vector<BYTE> descBuff;
 		WORD quality;
 		WORD qualityPID;
-		_SECOND_DESC_BUFF(){
-			stream_type = 0;
-			elementary_PID = 0;
-			ES_info_length = 0;
-			descBuffSize = 0;
-			descBuff = NULL;
-			quality = 0;
-			qualityPID = 0;
-		}
-		~_SECOND_DESC_BUFF(){
-			SAFE_DELETE_ARRAY(descBuff);
-		}
 	}SECOND_DESC_BUFF;
-	vector<SECOND_DESC_BUFF*> secondDescBuff;
+	vector<SECOND_DESC_BUFF> secondDescBuff;
 
-	map<WORD,WORD> emmPIDMap;
+	vector<WORD> emmPIDList;
 
-	map<WORD,WORD> needPIDList;
+	vector<WORD> needPIDList;
 
-	BYTE* createPSI;
-	int createPSISize;
+	vector<BYTE> createPSI;
 	
-	BYTE* createPacket;
-	int createPacketSize;
+	vector<BYTE> createPacket;
 
 	BYTE createVer;
 	BYTE createCounter;

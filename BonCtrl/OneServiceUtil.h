@@ -26,18 +26,6 @@ public:
 		CEpgDataCap3Util* epgUtil
 		);
 
-	//識別IDの設定
-	//引数：
-	// id			[IN]識別ID
-	void SetID(
-		DWORD id
-		);
-
-	//識別IDの取得
-	//戻り値：
-	// 識別ID
-	DWORD GetID();
-
 	//処理対象ServiceIDを設定
 	//引数：
 	// SID			[IN]ServiceID。0xFFFFで全サービス対象。
@@ -194,7 +182,6 @@ public:
 		map<WORD, string>* pidName
 		);
 protected:
-	DWORD id;
 	WORD SID;
 
 	CEpgDataCap3Util* epgUtil;

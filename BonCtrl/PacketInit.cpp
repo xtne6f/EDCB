@@ -4,13 +4,11 @@
 CPacketInit::CPacketInit(void)
 {
 	this->nextStartSize = 0;
-	this->nextStartBuff = new BYTE[256];
 	this->packetSize = 0;
 }
 
 CPacketInit::~CPacketInit(void)
 {
-	SAFE_DELETE_ARRAY(this->nextStartBuff);
 }
 
 void CPacketInit::ClearBuff()
@@ -25,7 +23,7 @@ void CPacketInit::ClearBuff()
 //引数：
 // inData			[IN]入力TSデータ
 // inSize			[IN]inDataのサイズ（BYTE単位）
-// outData			[OUT]188バイトに整列したバッファ（呼び出し元でdeleteする必要あり）
+// outData			[OUT]188バイトに整列したバッファ（次回呼び出しまで保持）
 // outSize			[OUT]outDataのサイズ（BYTE単位）
 BOOL CPacketInit::GetTSData(
 	BYTE* inData,
@@ -48,28 +46,29 @@ BOOL CPacketInit::GetTSData(
 			}
 		}
 		if( this->packetSize != 0 ){
-			*outSize = 188 * ((this->nextStartSize + inSize) / this->packetSize);
-			*outData = new BYTE[*outSize];
-			if( *outSize == 0 ){
+			if( this->nextStartSize + inSize < this->packetSize ){
+				this->outBuff.resize(1);
+				*outSize = 0;
 				//繰り越すだけ
 				memcpy( this->nextStartBuff + this->nextStartSize, inData, inSize );
 				this->nextStartSize += inSize;
 			}else{
 				if( this->nextStartSize >= 188 ){
-					memcpy(*outData, this->nextStartBuff, 188);
+					this->outBuff.assign(this->nextStartBuff, this->nextStartBuff + 188);
 				}else{
-					memcpy(*outData, this->nextStartBuff, this->nextStartSize);
-					memcpy(*outData + this->nextStartSize, inData, 188 - this->nextStartSize);
+					this->outBuff.assign(this->nextStartBuff, this->nextStartBuff + this->nextStartSize);
+					this->outBuff.insert(this->outBuff.end(), inData, inData + (188 - this->nextStartSize));
 				}
 				DWORD inPos = this->packetSize - this->nextStartSize;
-				DWORD outPos = 188;
-				for( ; inPos + this->packetSize <= inSize; inPos += this->packetSize, outPos += 188 ){
-					memcpy(*outData + outPos, inData + inPos, 188);
+				for( ; inPos + this->packetSize <= inSize; inPos += this->packetSize ){
+					this->outBuff.insert(this->outBuff.end(), inData + inPos, inData + inPos + 188);
 				}
+				*outSize = (DWORD)this->outBuff.size();
 				//繰り越す
 				memcpy(this->nextStartBuff, inData + inPos, inSize - inPos);
 				this->nextStartSize = inSize - inPos;
 			}
+			*outData = &this->outBuff.front();
 			return TRUE;
 		}
 	}

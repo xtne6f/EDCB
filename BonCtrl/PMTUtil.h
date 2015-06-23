@@ -20,12 +20,6 @@ public:
 
 protected:
 	CTSBuffUtil buffUtil;
-		
-	typedef struct _ES_INFO_DATA{
-		BYTE stream_type;
-		WORD elementary_PID;
-		WORD ES_info_length;
-	} ES_INFO_DATA;
 
 	BYTE table_id;
 	BYTE section_syntax_indicator;
@@ -37,7 +31,6 @@ protected:
 	BYTE last_section_number;
 //	WORD PCR_PID;
 	WORD program_info_length;
-	vector<ES_INFO_DATA*> ESInfoList;
 	DWORD crc32;
 
 protected:

@@ -143,8 +143,8 @@ void GetRecFolderPath(wstring& strPath)
 	WCHAR wPath[512]=L"";
 	GetPrivateProfileString( L"Set", L"RecFolderPath0", L"", wPath, 512, strIni.c_str() );
 	strPath = wPath;
-	if( strPath.empty() == true ){
-		GetDefSettingPath(strPath);
+	if( strPath.empty() || GetPrivateProfileInt(L"SET", L"RecFolderNum", 0, strIni.c_str()) <= 0 ){
+		GetSettingPath(strPath);
 	}
 	ChkFolderPath(strPath);
 }

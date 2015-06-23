@@ -807,11 +807,7 @@ bool CTunerBankCtrl::RecStart(const TUNER_RESERVE& reserve, __int64 now) const
 				wstring commonIniPath;
 				GetCommonIniPath(commonIniPath);
 				WCHAR buff[512];
-				GetPrivateProfileString(L"SET", L"RecFolderPath0", L"", buff, 512, commonIniPath.c_str());
-				param.saveFolder[0].recFolder = buff;
-				if( param.saveFolder[0].recFolder.empty() ){
-					GetDefSettingPath(param.saveFolder[0].recFolder);
-				}
+				GetRecFolderPath(param.saveFolder[0].recFolder);
 				GetPrivateProfileString(L"SET", L"RecWritePlugIn0", L"", buff, 512, commonIniPath.c_str());
 				param.saveFolder[0].writePlugIn = buff;
 				param.saveFolder[0].recNamePlugIn = this->recNamePlugInFileName;

@@ -11,29 +11,12 @@ CCreatePMTPacket::CCreatePMTPacket(void)
 	this->lastPgNumber = 0xFFFF;
 	this->lastVersion = 0xFF;
 
-	this->firstDescBuff = NULL;
-	this->firstDescBuffSize = 0;
-
-	this->createPSI = NULL;
-	this->createPSISize = 0;
-	
-	this->createPacket = NULL;
-	this->createPacketSize = 0;
-
 	this->createVer = 0;
 	this->createCounter = 0;
 }
 
 CCreatePMTPacket::~CCreatePMTPacket(void)
 {
-	SAFE_DELETE_ARRAY(this->firstDescBuff);
-	this->firstDescBuffSize = 0;
-	ClearSecondBuff();
-
-	SAFE_DELETE_ARRAY(this->createPSI);
-	this->createPSISize = 0;
-	SAFE_DELETE_ARRAY(this->createPacket);
-	this->createPacketSize = 0;
 }
 
 //PMT作成時のモード
@@ -163,18 +146,11 @@ DWORD CCreatePMTPacket::DecodePMT(BYTE* data, DWORD dataSize)
 	this->lastVersion = version_number;
 
 	//再解析
-	this->emmPIDMap.clear();
-	SAFE_DELETE_ARRAY(this->firstDescBuff);
-	this->firstDescBuffSize = 0;
-	ClearSecondBuff();
+	this->emmPIDList.clear();
 
 	//descriptor1
 	//バイナリ部分コピー
-	this->firstDescBuffSize = (WORD)readSize + program_info_length;
-	if(this->firstDescBuffSize > 0 ){
-		this->firstDescBuff = new BYTE[this->firstDescBuffSize];
-		memcpy(this->firstDescBuff, data, this->firstDescBuffSize);
-	}
+	this->firstDescBuff.assign(data, data + readSize + program_info_length);
 
 	//EMMあるかだけチェック
 	WORD infoRead = 0;
@@ -187,7 +163,7 @@ DWORD CCreatePMTPacket::DecodePMT(BYTE* data, DWORD dataSize)
 			//CA
 			WORD CA_PID = ((WORD)data[readSize+2]&0x1F)<<8 | (WORD)data[readSize+3];
 			if (CA_PID != 0x1fff) {
-				this->emmPIDMap.insert(pair<WORD,WORD>(CA_PID, 0));
+				this->emmPIDList.push_back(CA_PID);
 			}
 		}
 		readSize += descriptor_length;
@@ -196,44 +172,44 @@ DWORD CCreatePMTPacket::DecodePMT(BYTE* data, DWORD dataSize)
 	}
 
 	//descriptor2
+	size_t descCount = 0;
 	while( readSize+4 < (DWORD)section_length+3-4 ){
 		WORD ES_info_length = ((WORD)data[readSize+3]&0x0F)<<8 | data[readSize+4];
 		if( readSize+ES_info_length+5 > (DWORD)section_length+3-4 ){
 			break;
 		}
-		SECOND_DESC_BUFF* item = new SECOND_DESC_BUFF;
+		if( this->secondDescBuff.size() <= descCount ){
+			this->secondDescBuff.resize(descCount + 1);
+		}
+		SECOND_DESC_BUFF* item = &this->secondDescBuff[descCount++];
 		item->stream_type = data[readSize];
 		item->elementary_PID = ((WORD)data[readSize+1]&0x1F)<<8 | data[readSize+2];
-		item->ES_info_length = ES_info_length;
-		item->descBuffSize = item->ES_info_length + 5;
-		if( item->descBuffSize > 0 ){
-			item->descBuff = new BYTE[item->descBuffSize];
-			memcpy(item->descBuff, data+readSize, item->descBuffSize);
-		}
-		readSize += item->descBuffSize;
+		item->quality = 0;
+		item->qualityPID = 0;
+		item->descBuff.assign(data + readSize, data + readSize + ES_info_length + 5);
+		readSize += ES_info_length + 5;
 
 		//descriptor
 		infoRead = 5;
-		while(infoRead+1 < item->descBuffSize){
+		while(infoRead+1 < (int)item->descBuff.size()){
 			BYTE descriptor_tag = item->descBuff[infoRead];
 			BYTE descriptor_length = item->descBuff[infoRead+1];
 
-			if( descriptor_tag == 0x09 && descriptor_length >= 4 && infoRead+5 < item->descBuffSize){
+			if( descriptor_tag == 0x09 && descriptor_length >= 4 && infoRead+5 < (int)item->descBuff.size()){
 				//CA
 				WORD CA_PID = ((WORD)item->descBuff[2+infoRead+2]&0x1F)<<8 | (WORD)item->descBuff[2+infoRead+3];
 				if (CA_PID != 0x1fff) {
-					this->emmPIDMap.insert(pair<WORD,WORD>(CA_PID, 0));
+					this->emmPIDList.push_back(CA_PID);
 				}
-			}else if( descriptor_tag == 0xC0 && descriptor_length >= 3 && infoRead+4 < item->descBuffSize ){
+			}else if( descriptor_tag == 0xC0 && descriptor_length >= 3 && infoRead+4 < (int)item->descBuff.size() ){
 				//階層伝送記述子
 				item->quality = item->descBuff[2+infoRead]&0x01;
 				item->qualityPID = ((WORD)item->descBuff[2+infoRead+1]&0x1F)<<8 | item->descBuff[2+infoRead+2];
 			}
 			infoRead += 2+descriptor_length;
 		}
-
-		secondDescBuff.push_back(item);
 	}
+	this->secondDescBuff.resize(descCount);
 
 	CreatePMT();
 
@@ -242,11 +218,9 @@ DWORD CCreatePMTPacket::DecodePMT(BYTE* data, DWORD dataSize)
 
 void CCreatePMTPacket::CreatePMT()
 {
-	if( firstDescBuffSize == 0 || this->firstDescBuff == NULL ){
+	if( this->firstDescBuff.empty() ){
 		return;
 	}
-	SAFE_DELETE_ARRAY(this->createPSI);
-	this->createPSISize = 0;
 	this->needPIDList.clear();
 
 	BOOL findVHighQ = FALSE;
@@ -261,195 +235,116 @@ void CCreatePMTPacket::CreatePMT()
 
 	//データ一覧チェック
 	for( size_t i=0; i<secondDescBuff.size(); i++ ){
-		if( secondDescBuff[i]->quality == 1 ){
+		if( secondDescBuff[i].quality == 1 ){
 			//高階層あり
-			if( secondDescBuff[i]->stream_type == 0x02 ){
+			if( secondDescBuff[i].stream_type == 0x02 ){
 				findVHighQ = TRUE;
-			}else if( secondDescBuff[i]->stream_type == 0x0F ){
+			}else if( secondDescBuff[i].stream_type == 0x0F ){
 				findAHighQ = TRUE;
 			}
 		}
-		if( secondDescBuff[i]->stream_type == 0x02 ){
+		if( secondDescBuff[i].stream_type == 0x02 ){
 			findMPEG2V = TRUE;
 		}
-		else if( secondDescBuff[i]->stream_type == 0x0F ){
+		else if( secondDescBuff[i].stream_type == 0x0F ){
 			findAAC = TRUE;
 		}
 	}
 
-	//pointer_field + FirstBuff + CRC
-	this->createPSISize = 1+this->firstDescBuffSize+4;
-	//+ SecondBuff 
-	DWORD secondSize = 0;
+	//pointer_field
+	this->createPSI.assign(1, 0);
+	//最初のDescriptorループまでコピー
+	this->createPSI.insert(this->createPSI.end(), this->firstDescBuff.begin(), this->firstDescBuff.end());
+
 	for( size_t i=0; i<secondDescBuff.size(); i++ ){
-		switch(secondDescBuff[i]->stream_type){
+		BOOL matched = FALSE;
+		switch(secondDescBuff[i].stream_type){
 			case 0x02:
 				//MPEG2 VIDEO
 				if( findVHighQ == TRUE ){
-					if( secondDescBuff[i]->quality == 1 ){
-						secondSize+=secondDescBuff[i]->descBuffSize;
+					if( secondDescBuff[i].quality == 1 ){
+						matched = TRUE;
 					}
 				}else{
-					secondSize+=secondDescBuff[i]->descBuffSize;
+					matched = TRUE;
 				}
 				break;
 			case 0x0F:
 				//MPEG2 AAC
 				if( findAHighQ == TRUE ){
-					if( secondDescBuff[i]->quality == 1 ){
-						secondSize+=secondDescBuff[i]->descBuffSize;
+					if( secondDescBuff[i].quality == 1 ){
+						matched = TRUE;
 					}
 				}else{
-					secondSize+=secondDescBuff[i]->descBuffSize;
+					matched = TRUE;
 				}
 				break;
 			case 0x1B:
 				//MPEG4 VIDEO
 				if( findMPEG2V == FALSE ){
-					secondSize+=secondDescBuff[i]->descBuffSize;
+					matched = TRUE;
 				}
 				break;
 			case 0x04:
 				//MPEG2 AUDIO
 				if( findAAC == FALSE ){
-					secondSize+=secondDescBuff[i]->descBuffSize;
+					matched = TRUE;
 				}
+				break;
+			case 0x24:
+				//HEVC VIDEO
+				matched = TRUE;
 				break;
 			case 0x06:
 				//字幕
 				if( this->needCaption == TRUE ){
-					secondSize+=secondDescBuff[i]->descBuffSize;
+					matched = TRUE;
 				}
 				break;
 			case 0x0D:
 				//データカルーセル
 				if( this->needData == TRUE ){
-					secondSize+=secondDescBuff[i]->descBuffSize;
+					matched = TRUE;
 				}
 				break;
 			default:
 				break;
 		}
+		if( matched != FALSE ){
+			this->createPSI.insert(this->createPSI.end(), this->secondDescBuff[i].descBuff.begin(), this->secondDescBuff[i].descBuff.end());
+			this->needPIDList.push_back(this->secondDescBuff[i].elementary_PID);
+		}
 	}
-	this->createPSISize += secondSize;
-
-	this->createPSI = new BYTE[this->createPSISize];
-	ZeroMemory(this->createPSI, this->createPSISize);
-	//最初のDescriptorループまでコピー
-	memcpy( this->createPSI + 1, this->firstDescBuff, this->firstDescBuffSize );
 
 	//SectionLength
-	this->createPSI[2] = (BYTE)(((this->createPSISize-4)&0x00000F00)>>8);
+	this->createPSI[2] = (this->createPSI.size()+4-4)>>8&0x0F;
 	this->createPSI[2] |= 0xB0; 
-	this->createPSI[3] = (BYTE)((this->createPSISize-4)&0x000000FF);
+	this->createPSI[3] = (this->createPSI.size()+4-4)&0xFF;
 	//バージョン
 	this->createPSI[6] = this->createVer<<1;
 	this->createPSI[6] |= 0xC1;
 
-	DWORD writeSize = this->firstDescBuffSize+1;
-	for( size_t i=0; i<secondDescBuff.size(); i++ ){
-		switch(secondDescBuff[i]->stream_type){
-			case 0x02:
-				//MPEG2 VIDEO
-				if( findVHighQ == TRUE ){
-					if( secondDescBuff[i]->quality == 1 ){
-						memcpy( this->createPSI + writeSize, secondDescBuff[i]->descBuff, secondDescBuff[i]->descBuffSize );
-						writeSize += secondDescBuff[i]->descBuffSize;
-						this->needPIDList.insert(pair<WORD,WORD>(secondDescBuff[i]->elementary_PID, secondDescBuff[i]->stream_type));
-					}
-				}else{
-					memcpy( this->createPSI + writeSize, secondDescBuff[i]->descBuff, secondDescBuff[i]->descBuffSize );
-					writeSize += secondDescBuff[i]->descBuffSize;
-					this->needPIDList.insert(pair<WORD,WORD>(secondDescBuff[i]->elementary_PID, secondDescBuff[i]->stream_type));
-				}
-				break;
-			case 0x0F:
-				//MPEG2 AAC
-				if( findAHighQ == TRUE ){
-					if( secondDescBuff[i]->quality == 1 ){
-						memcpy( this->createPSI + writeSize, secondDescBuff[i]->descBuff, secondDescBuff[i]->descBuffSize );
-						writeSize += secondDescBuff[i]->descBuffSize;
-						this->needPIDList.insert(pair<WORD,WORD>(secondDescBuff[i]->elementary_PID, secondDescBuff[i]->stream_type));
-					}
-				}else{
-					memcpy( this->createPSI + writeSize, secondDescBuff[i]->descBuff, secondDescBuff[i]->descBuffSize );
-					writeSize += secondDescBuff[i]->descBuffSize;
-					this->needPIDList.insert(pair<WORD,WORD>(secondDescBuff[i]->elementary_PID, secondDescBuff[i]->stream_type));
-				}
-				break;
-			case 0x1B:
-				//MPEG4 VIDEO
-				if( findMPEG2V == FALSE ){
-					memcpy( this->createPSI + writeSize, secondDescBuff[i]->descBuff, secondDescBuff[i]->descBuffSize );
-					writeSize += secondDescBuff[i]->descBuffSize;
-					this->needPIDList.insert(pair<WORD,WORD>(secondDescBuff[i]->elementary_PID, secondDescBuff[i]->stream_type));
-				}
-				break;
-			case 0x04:
-				//MPEG2 AUDIO
-				if( findAAC == FALSE ){
-					memcpy( this->createPSI + writeSize, secondDescBuff[i]->descBuff, secondDescBuff[i]->descBuffSize );
-					writeSize += secondDescBuff[i]->descBuffSize;
-					this->needPIDList.insert(pair<WORD,WORD>(secondDescBuff[i]->elementary_PID, secondDescBuff[i]->stream_type));
-				}
-				break;
-			case 0x06:
-				//字幕
-				if( this->needCaption == TRUE ){
-					memcpy( this->createPSI + writeSize, secondDescBuff[i]->descBuff, secondDescBuff[i]->descBuffSize );
-					writeSize += secondDescBuff[i]->descBuffSize;
-					this->needPIDList.insert(pair<WORD,WORD>(secondDescBuff[i]->elementary_PID, secondDescBuff[i]->stream_type));
-				}
-				break;
-			case 0x0D:
-				//データカルーセル
-				if( this->needData == TRUE ){
-					memcpy( this->createPSI + writeSize, secondDescBuff[i]->descBuff, secondDescBuff[i]->descBuffSize );
-					writeSize += secondDescBuff[i]->descBuffSize;
-					this->needPIDList.insert(pair<WORD,WORD>(secondDescBuff[i]->elementary_PID, secondDescBuff[i]->stream_type));
-				}
-				break;
-			default:
-				break;
-		}
-	}
-
-	unsigned long ulCrc = _Crc32(this->createPSISize-5, this->createPSI+1);
-	this->createPSI[this->createPSISize-4] = (BYTE)((ulCrc&0xFF000000)>>24);
-	this->createPSI[this->createPSISize-3] = (BYTE)((ulCrc&0x00FF0000)>>16);
-	this->createPSI[this->createPSISize-2] = (BYTE)((ulCrc&0x0000FF00)>>8);
-	this->createPSI[this->createPSISize-1] = (BYTE)(ulCrc&0x000000FF);
+	unsigned long ulCrc = _Crc32((int)this->createPSI.size()-1, &this->createPSI[1]);
+	this->createPSI.push_back(ulCrc>>24&0xFF);
+	this->createPSI.push_back(ulCrc>>16&0xFF);
+	this->createPSI.push_back(ulCrc>>8&0xFF);
+	this->createPSI.push_back(ulCrc&0xFF);
 
 	CreatePacket();
 }
 
 void CCreatePMTPacket::CreatePacket()
 {
-	this->createPacketSize = 0;
-	SAFE_DELETE_ARRAY(this->createPacket);
+	this->createPacket.clear();
 
 	//TSパケットを作成
-	int packetNum = (this->createPSISize/184) + 1;
-	this->createPacketSize = 188*packetNum;
-
-	this->createPacket = new BYTE[this->createPacketSize];
-	memset(this->createPacket, 0xFF, this->createPacketSize);
-
-	for( int i = 0 ; i<packetNum; i++ ){
-		this->createPacket[188*i] = 0x47;
-		this->createPacket[188*i + 1] = (BYTE)((this->lastPmtPID & 0x1F00 ) >>8);
-		this->createPacket[188*i + 2] = (BYTE)(this->lastPmtPID & 0x00FF);
-		this->createPacket[188*i + 3] = 0x10;
-		if( i==0 ){
-			//payload_unit_start_indicator
-			this->createPacket[188*i + 1] |= 0x40;
-		}
-
-		if( 184*(i+1) <= this->createPSISize ){
-			memcpy(this->createPacket + (188*i) + 4, this->createPSI + (184*i), 184);
-		}else{
-			memcpy(this->createPacket + (188*i) + 4, this->createPSI + (184*i), this->createPSISize-(184*i));
-		}
+	for( size_t i = 0 ; i<this->createPSI.size(); i+=184 ){
+		this->createPacket.push_back(0x47);
+		this->createPacket.push_back((this->lastPmtPID >> 8 & 0x1F) | (i==0 ? 0x40 : 0x00));
+		this->createPacket.push_back(this->lastPmtPID & 0xFF);
+		this->createPacket.push_back(0x10);
+		this->createPacket.insert(this->createPacket.end(), this->createPSI.begin() + i, this->createPSI.begin() + min(i + 184, this->createPSI.size()));
+		this->createPacket.resize(((this->createPacket.size() - 1) / 188 + 1) * 188, 0xFF);
 	}
 }
 
@@ -465,13 +360,10 @@ BOOL CCreatePMTPacket::IsNeedPID(
 	if( this->lastPmtPID == PID || this->lastPcrPID == PID){
 		return TRUE;
 	}else{
-		map<WORD,WORD>::iterator itr;
-		itr = this->needPIDList.find(PID);
-		if( itr != this->needPIDList.end() ){
+		if( std::find(this->needPIDList.begin(), this->needPIDList.end(), PID) != this->needPIDList.end() ){
 			return TRUE;
 		}
-		itr = this->emmPIDMap.find(PID);
-		if( itr != this->emmPIDMap.end() ){
+		if( std::find(this->emmPIDList.begin(), this->emmPIDList.end(), PID) != this->emmPIDList.end() ){
 			return TRUE;
 		}
 	}
@@ -494,9 +386,9 @@ BOOL CCreatePMTPacket::GetPacket(
 	if( incrementFlag == TRUE ){
 		IncrementCounter();
 	}
-	if( this->createPacket != NULL ){
-		*buff = this->createPacket;
-		*size = (DWORD)this->createPacketSize;
+	if( this->createPacket.empty() == false ){
+		*buff = &this->createPacket[0];
+		*size = (DWORD)this->createPacket.size();
 	}else{
 		return FALSE;
 	}
@@ -512,32 +404,17 @@ void CCreatePMTPacket::Clear()
 	this->lastVersion = 0xFF;
 
 	this->needPIDList.clear();
-	this->emmPIDMap.clear();
-	SAFE_DELETE_ARRAY(this->firstDescBuff);
-	this->firstDescBuffSize = 0;
-	ClearSecondBuff();
+	this->emmPIDList.clear();
+	this->firstDescBuff.clear();
+	this->secondDescBuff.clear();
 
-	SAFE_DELETE_ARRAY(this->createPSI);
-	this->createPSISize = 0;
-	SAFE_DELETE_ARRAY(this->createPacket);
-	this->createPacketSize = 0;
-}
-
-void CCreatePMTPacket::ClearSecondBuff()
-{
-	for( int i=0; i<(int)secondDescBuff.size(); i++ ){
-		SAFE_DELETE(secondDescBuff[i]);
-	}
-	secondDescBuff.clear();
+	this->createPSI.clear();
+	this->createPacket.clear();
 }
 
 void CCreatePMTPacket::IncrementCounter()
 {
-	if( this->createPacket == NULL ){
-		return ;
-	}
-
-	for( int i = 0 ; i<this->createPacketSize; i+=188 ){
+	for( size_t i = 0 ; i+3<this->createPacket.size(); i+=188 ){
 		this->createPacket[i+3] = (BYTE)(this->createCounter | 0x10);
 		this->createCounter++;
 		if( this->createCounter >= 16 ){

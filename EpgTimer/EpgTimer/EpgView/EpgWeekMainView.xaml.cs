@@ -1666,7 +1666,7 @@ namespace EpgTimer
                     }
 
                     ProgramViewItem viewItem = new ProgramViewItem(eventInfo);
-                    viewItem.Height = (eventInfo.durationSec * Settings.Instance.MinHeight) / 60;
+                    viewItem.Height = ((eventInfo.DurationFlag == 0 ? 300 : eventInfo.durationSec) * Settings.Instance.MinHeight) / 60;
                     viewItem.Width = Settings.Instance.ServiceWidth;
                     programList.Add(viewItem);
 

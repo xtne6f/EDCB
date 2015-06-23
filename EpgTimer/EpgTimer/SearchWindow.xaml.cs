@@ -175,7 +175,7 @@ namespace EpgTimer
                     SearchItem item = new SearchItem();
                     item.EventInfo = info;
 
-                    if (item.EventInfo.start_time.AddSeconds(item.EventInfo.durationSec) > DateTime.Now)
+                    if (item.EventInfo.start_time.AddSeconds(item.EventInfo.DurationFlag == 0 ? 0 : item.EventInfo.durationSec) > DateTime.Now)
                     {
                         foreach (ReserveData info2 in CommonManager.Instance.DB.ReserveList.Values)
                         {

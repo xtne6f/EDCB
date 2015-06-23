@@ -18,7 +18,6 @@ CDecodeUtil::CDecodeUtil(void)
 	this->tdtTime.dwHighDateTime = 0;
 	this->sitTime.dwHighDateTime = 0;
 
-	this->serviceListSize = 0;
 	this->serviceList = NULL;
 }
 
@@ -35,19 +34,9 @@ void CDecodeUtil::SetEpgDB(CEpgDBUtil* epgDBUtil)
 
 void CDecodeUtil::Clear()
 {
-	map<WORD, CTSBuffUtil*>::iterator itr;
-	for( itr = this->buffUtilMap.begin(); itr != this->buffUtilMap.end(); itr++ ){
-		SAFE_DELETE(itr->second);
-	}
 	this->buffUtilMap.clear();
 
 	SAFE_DELETE(this->patInfo);
-
-	map<WORD, CPMTTable*>::iterator itrPmt;
-	for( itrPmt = this->pmtMap.begin(); itrPmt != this->pmtMap.end(); itrPmt++ ){
-		SAFE_DELETE(itrPmt->second);
-	}
-	this->pmtMap.clear();
 
 	SAFE_DELETE(this->nitActualInfo);
 	SAFE_DELETE(this->sdtActualInfo);
@@ -67,17 +56,8 @@ void CDecodeUtil::Clear()
 
 void CDecodeUtil::ClearBuff(WORD noClearPid)
 {
-	map<WORD, CTSBuffUtil*>::iterator itr;
-
-	itr = this->buffUtilMap.begin();
-	while( itr != this->buffUtilMap.end() ){
-		if( itr->first != noClearPid ){
-			SAFE_DELETE(itr->second);
-			this->buffUtilMap.erase(itr++);
-		}else{
-			itr++;
-		}
-	}
+	this->buffUtilMap.erase(this->buffUtilMap.begin(), this->buffUtilMap.lower_bound(noClearPid));
+	this->buffUtilMap.erase(this->buffUtilMap.upper_bound(noClearPid), this->buffUtilMap.end());
 }
 
 void CDecodeUtil::ChangeTSIDClear(WORD noClearPid)
@@ -85,12 +65,6 @@ void CDecodeUtil::ChangeTSIDClear(WORD noClearPid)
 	ClearBuff(noClearPid);
 
 	SAFE_DELETE(this->patInfo);
-
-	map<WORD, CPMTTable*>::iterator itrPmt;
-	for( itrPmt = this->pmtMap.begin(); itrPmt != this->pmtMap.end(); itrPmt++ ){
-		SAFE_DELETE(itrPmt->second);
-	}
-	this->pmtMap.clear();
 
 	SAFE_DELETE(this->nitActualInfo);
 	SAFE_DELETE(this->sdtActualInfo);
@@ -118,14 +92,13 @@ void CDecodeUtil::AddTSData(BYTE* data)
 			}
 			CTSBuffUtil* buffUtil = NULL;
 
-			map<WORD, CTSBuffUtil*>::iterator itr;
+			map<WORD, CTSBuffUtil>::iterator itr;
 			itr = this->buffUtilMap.find( tsPacket.PID );
 			if( itr == this->buffUtilMap.end() ){
 				//まだPIDがないので新規
-				buffUtil = new CTSBuffUtil;
-				this->buffUtilMap.insert(pair<WORD, CTSBuffUtil*>(tsPacket.PID, buffUtil));
+				buffUtil = &this->buffUtilMap.insert(std::make_pair(tsPacket.PID, CTSBuffUtil())).first->second;
 			}else{
-				buffUtil = itr->second;
+				buffUtil = &itr->second;
 			}
 			if( buffUtil->Add188TS(&tsPacket) == TRUE ){
 				BYTE* section = NULL;
@@ -134,63 +107,45 @@ void CDecodeUtil::AddTSData(BYTE* data)
 					if( buffUtil->IsPES() == TRUE ){
 						continue;
 					}
-					CTableUtil tableUtil;
-
-					vector<TABLE_DATA*> tableList;
-					DWORD decodeReadSize = 0;
-					if( tableUtil.Decode(section, sectionSize, &tableList, &decodeReadSize) == TRUE ){
-						for( size_t j=0; j<tableList.size(); j++ ){
-							if( tableList[j]->PATTable != NULL ){
-								if( CheckPAT(tsPacket.PID, tableList[j]->PATTable) == TRUE ){
-									tableList[j]->PATTable = NULL;
-								}
-							}else if( tableList[j]->PMTTable != NULL ){
-								if( CheckPMT(tsPacket.PID, tableList[j]->PMTTable) == TRUE ){
-									tableList[j]->PMTTable = NULL;
-								}
-							}else if( tableList[j]->NITTable != NULL ){
-								if( CheckNIT(tsPacket.PID, tableList[j]->NITTable) == TRUE ){
-									tableList[j]->NITTable = NULL;
-								}
-							}else if( tableList[j]->SDTTable != NULL ){
-								if( CheckSDT(tsPacket.PID, tableList[j]->SDTTable) == TRUE ){
-									tableList[j]->SDTTable = NULL;
-								}
-							}else if( tableList[j]->TOTTable != NULL ){
-								if( CheckTOT(tsPacket.PID, tableList[j]->TOTTable) == TRUE ){
-									tableList[j]->TOTTable = NULL;
-								}
-							}else if( tableList[j]->TDTTable != NULL ){
-								if( CheckTDT(tsPacket.PID, tableList[j]->TDTTable) == TRUE ){
-									tableList[j]->TDTTable = NULL;
-								}
-							}else if( tableList[j]->EITTable != NULL ){
-								if( CheckEIT(tsPacket.PID, tableList[j]->EITTable) == TRUE ){
-									tableList[j]->EITTable = NULL;
-								}
-							}else if( tableList[j]->BITTable != NULL ){
-								if( CheckBIT(tsPacket.PID, tableList[j]->BITTable) == TRUE ){
-									tableList[j]->BITTable = NULL;
-								}
-							}else if( tableList[j]->SITTable != NULL ){
-								if( CheckSIT(tsPacket.PID, tableList[j]->SITTable) == TRUE ){
-									tableList[j]->SITTable = NULL;
-								}
-							}else if( tableList[j]->EITTable_SD != NULL ){
-								if( CheckEIT_SD(tsPacket.PID, tableList[j]->EITTable_SD) == TRUE ){
-									tableList[j]->EITTable_SD = NULL;
-								}
-							}else if( tableList[j]->EITTable_SD2 != NULL ){
-								if( CheckEIT_SD2(tsPacket.PID, tableList[j]->EITTable_SD2) == TRUE ){
-									tableList[j]->EITTable_SD2 = NULL;
-								}
-							}
-							SAFE_DELETE(tableList[j]);
-						}
-					}else{
+					CPSITable* table;
+					BOOL ret;
+					switch( CTableUtil::Decode(section, sectionSize, &table) ){
+					case CTableUtil::TYPE_PAT:
+						ret = CheckPAT(tsPacket.PID, static_cast<CPATTable*>(table));
+						break;
+					case CTableUtil::TYPE_NIT:
+						ret = CheckNIT(tsPacket.PID, static_cast<CNITTable*>(table));
+						break;
+					case CTableUtil::TYPE_SDT:
+						ret = CheckSDT(tsPacket.PID, static_cast<CSDTTable*>(table));
+						break;
+					case CTableUtil::TYPE_TOT:
+						ret = CheckTOT(tsPacket.PID, static_cast<CTOTTable*>(table));
+						break;
+					case CTableUtil::TYPE_TDT:
+						ret = CheckTDT(tsPacket.PID, static_cast<CTDTTable*>(table));
+						break;
+					case CTableUtil::TYPE_EIT:
+						ret = CheckEIT(tsPacket.PID, static_cast<CEITTable*>(table));
+						break;
+					case CTableUtil::TYPE_BIT:
+						ret = CheckBIT(tsPacket.PID, static_cast<CBITTable*>(table));
+						break;
+					case CTableUtil::TYPE_SIT:
+						ret = CheckSIT(tsPacket.PID, static_cast<CSITTable*>(table));
+						break;
+					case CTableUtil::TYPE_NONE:
 						if( section[0] == 0 ){
 							_OutputDebugString(L"★pid 0x%04X\r\n", tsPacket.PID);
 						}
+						ret = TRUE;
+						break;
+					default:
+						ret = FALSE;
+						break;
+					}
+					if( ret == FALSE ){
+						delete table;
 					}
 				}
 			}
@@ -221,33 +176,6 @@ BOOL CDecodeUtil::CheckPAT(WORD PID, CPATTable* pat)
 			return FALSE;
 		}
 	}
-	return TRUE;
-}
-
-BOOL CDecodeUtil::CheckPMT(WORD PID, CPMTTable* pmt)
-{
-	if( pmt == NULL ){
-		return FALSE;
-	}
-
-	map<WORD, CPMTTable*>::iterator itrPmt;
-	itrPmt = this->pmtMap.find(PID);
-	if( itrPmt == this->pmtMap.end() ){
-		//初回
-		this->pmtMap.insert(pair<WORD, CPMTTable*>(PID, pmt));
-	}else{
-		if( itrPmt->second->version_number != pmt->version_number ){
-			//バージョン変わった
-			SAFE_DELETE(itrPmt->second);
-			this->pmtMap.erase(itrPmt);
-			
-			this->pmtMap.insert(pair<WORD, CPMTTable*>(PID, pmt));
-		}else{
-			//変更なし
-			return FALSE;
-		}
-	}
-
 	return TRUE;
 }
 
@@ -540,31 +468,9 @@ BOOL CDecodeUtil::CheckEIT(WORD PID, CEITTable* eit)
 	}
 	
 	if( epgDBUtil != NULL ){
-		epgDBUtil->AddEIT(PID, eit);
-	}
-	return FALSE;
-}
-
-BOOL CDecodeUtil::CheckEIT_SD(WORD PID, CEITTable_SD* eit)
-{
-	if( eit == NULL ){
-		return FALSE;
-	}
-	
-	if( epgDBUtil != NULL ){
-		epgDBUtil->AddEIT_SD(PID, eit);
-	}
-	return FALSE;
-}
-
-BOOL CDecodeUtil::CheckEIT_SD2(WORD PID, CEITTable_SD2* eit)
-{
-	if( eit == NULL ){
-		return FALSE;
-	}
-	
-	if( epgDBUtil != NULL ){
-		epgDBUtil->AddEIT_SD2(PID, eit);
+		FILETIME time = {};
+		GetNowTime(&time);
+		epgDBUtil->AddEIT(PID, eit, (__int64)time.dwHighDateTime << 32 | time.dwLowDateTime);
 	}
 	return FALSE;
 }
@@ -690,7 +596,6 @@ BOOL CDecodeUtil::GetServiceListActual(
 	)
 {
 	SAFE_DELETE_ARRAY(this->serviceList);
-	this->serviceListSize = 0;
 
 	if( this->nitActualInfo == NULL || this->sdtActualInfo == NULL ){
 		return GetServiceListSIT(serviceListSize, serviceList);
@@ -700,12 +605,13 @@ BOOL CDecodeUtil::GetServiceListActual(
 			return FALSE;
 		}
 	}
+	*serviceListSize = 0;
 
 	map<BYTE, CSDTTable*>::iterator itrSdt;
 	for(itrSdt = this->sdtActualInfo->sdtSection.begin(); itrSdt != this->sdtActualInfo->sdtSection.end(); itrSdt++){
-		this->serviceListSize += (DWORD)itrSdt->second->serviceInfoList.size();
+		*serviceListSize += (DWORD)itrSdt->second->serviceInfoList.size();
 	}
-	this->serviceList = new SERVICE_INFO[this->serviceListSize];
+	this->serviceList = new SERVICE_INFO[*serviceListSize];
 
 
 	wstring network_nameW = L"";
@@ -744,11 +650,11 @@ BOOL CDecodeUtil::GetServiceListActual(
 				}
 				if( itrNit->second->TSInfoList[i]->descriptorList[j]->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::partial_reception_descriptor ){
 					partialServiceList.clear();
-					if( itrNit->second->TSInfoList[i]->descriptorList[j]->EnterLoop() ){
-						for( DWORD k=0; itrNit->second->TSInfoList[i]->descriptorList[j]->SetLoopIndex(k); k++ ){
-							partialServiceList.push_back((WORD)itrNit->second->TSInfoList[i]->descriptorList[j]->GetNumber(AribDescriptor::service_id));
+					AribDescriptor::CDescriptor::CLoopPointer lp;
+					if( itrNit->second->TSInfoList[i]->descriptorList[j]->EnterLoop(lp) ){
+						for( DWORD k=0; itrNit->second->TSInfoList[i]->descriptorList[j]->SetLoopIndex(lp, k); k++ ){
+							partialServiceList.push_back((WORD)itrNit->second->TSInfoList[i]->descriptorList[j]->GetNumber(AribDescriptor::service_id, lp));
 						}
-						itrNit->second->TSInfoList[i]->descriptorList[j]->LeaveLoop();
 					}
 				}
 			}
@@ -817,7 +723,6 @@ BOOL CDecodeUtil::GetServiceListActual(
 		}
 	}
 
-	*serviceListSize = this->serviceListSize;
 	*serviceList = this->serviceList;
 
 
@@ -838,7 +743,6 @@ BOOL CDecodeUtil::GetServiceListSIT(
 	}
 
 	SAFE_DELETE_ARRAY(this->serviceList);
-	this->serviceListSize = 0;
 
 	//ONID
 	WORD ONID = 0xFFFF;
@@ -852,15 +756,15 @@ BOOL CDecodeUtil::GetServiceListSIT(
 	WORD TSID = 0xFFFF;
 	TSID = this->patInfo->transport_stream_id;
 
-	this->serviceListSize = (DWORD)this->sitInfo->serviceLoopList.size();
-	this->serviceList = new SERVICE_INFO[this->serviceListSize];
+	*serviceListSize = (DWORD)this->sitInfo->serviceLoopList.size();
+	this->serviceList = new SERVICE_INFO[*serviceListSize];
 
 	wstring network_nameW = L"";
 	wstring ts_nameW = L"";
 	BYTE remote_control_key_id = 0;
 
 	//サービスリスト
-	for( DWORD i=0; i<this->serviceListSize; i++ ){
+	for( DWORD i=0; i<*serviceListSize; i++ ){
 		this->serviceList[i].original_network_id = ONID;
 		this->serviceList[i].transport_stream_id = TSID;
 		this->serviceList[i].service_id = this->sitInfo->serviceLoopList[i]->service_id;
@@ -913,7 +817,6 @@ BOOL CDecodeUtil::GetServiceListSIT(
 	}
 
 
-	*serviceListSize = this->serviceListSize;
 	*serviceList = this->serviceList;
 
 	return TRUE;

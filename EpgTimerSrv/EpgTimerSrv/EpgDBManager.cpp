@@ -95,13 +95,14 @@ UINT WINAPI CEpgDBManager::LoadThread(LPVOID param)
 	}
 	do{
 		if( (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0 ){
-			//本当に拡張子DLL?
-			if( IsExt(findData.cFileName, L".dat" ) == TRUE ){
+			LONGLONG fileTime = (LONGLONG)findData.ftLastWriteTime.dwHighDateTime << 32 | findData.ftLastWriteTime.dwLowDateTime;
+			if( fileTime != 0 ){
 				//見つかったファイルを一覧に追加
-				wstring epgFilePath = L"";
-				Format(epgFilePath, L"%s\\%s", epgDataPath.c_str(), findData.cFileName);
-
-				epgFileList.push_back(epgFilePath);
+				//名前順。ただしTSID==0xFFFFの場合は同じチャンネルの連続によりストリームがクリアされない可能性があるので後ろにまとめる
+				WCHAR prefix = fileTime + 7*24*60*60*I64_1SEC < GetNowI64Time() ? L'0' :
+				               Tolower(findData.cFileName).find(L"ffff_epg.dat") == wstring::npos ? L'1' : L'2';
+				wstring item = prefix + epgDataPath + L'\\' + findData.cFileName;
+				epgFileList.insert(std::lower_bound(epgFileList.begin(), epgFileList.end(), item), item);
 			}
 		}
 	}while(FindNextFile(find, &findData));
@@ -109,41 +110,116 @@ UINT WINAPI CEpgDBManager::LoadThread(LPVOID param)
 	FindClose(find);
 
 	//EPGファイルの解析
-	for( size_t i=0; i<epgFileList.size(); i++ ){
-		HANDLE file = CreateFile( epgFileList[i].c_str(), GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
-		if( file != INVALID_HANDLE_VALUE ){
-			FILETIME CreationTime;
-			FILETIME LastAccessTime;
-			FILETIME LastWriteTime;
-			GetFileTime(file, &CreationTime, &LastAccessTime, &LastWriteTime);
-
-			LONGLONG fileTime = ((LONGLONG)LastWriteTime.dwHighDateTime)<<32 | (LONGLONG)LastWriteTime.dwLowDateTime;
-			if( fileTime + 7*24*60*60*I64_1SEC < GetNowI64Time() ){
-				//1週間以上前のファイルなので削除
-				CloseHandle(file);
-				DeleteFile( epgFileList[i].c_str() );
-				_OutputDebugString(L"★delete %s", epgFileList[i].c_str());
+	for( vector<wstring>::iterator itr = epgFileList.begin(); itr != epgFileList.end(); itr++ ){
+		if( sys->loadStop ){
+			//キャンセルされた
+			epgUtil.UnInitialize();
+			return 0;
+		}
+		//一時ファイルの状態を調べる。取得側のCreateFile(tmp)→CloseHandle(tmp)→CopyFile(tmp,master)→DeleteFile(tmp)の流れをある程度仮定
+		wstring path = itr->c_str() + 1;
+		HANDLE tmpFile = CreateFile((path + L".tmp").c_str(), GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_DELETE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+		DWORD tmpError = GetLastError();
+		if( tmpFile != INVALID_HANDLE_VALUE ){
+			tmpError = NO_ERROR;
+			FILETIME ft;
+			if( GetFileTime(tmpFile, NULL, NULL, &ft) == FALSE || ((LONGLONG)ft.dwHighDateTime << 32 | ft.dwLowDateTime) + 300*I64_1SEC < GetNowI64Time() ){
+				//おそらく後始末されていない一時ファイルなので無視
+				tmpError = ERROR_FILE_NOT_FOUND;
+			}
+			CloseHandle(tmpFile);
+		}
+		if( (*itr)[0] == L'0' ){
+			if( tmpError != NO_ERROR && tmpError != ERROR_SHARING_VIOLATION ){
+				//1週間以上前かつ一時ファイルがないので削除
+				DeleteFile(path.c_str());
+				_OutputDebugString(L"★delete %s\r\n", path.c_str());
+			}
+		}else{
+			BYTE readBuff[188*256];
+			BOOL swapped = FALSE;
+			HANDLE file = INVALID_HANDLE_VALUE;
+			if( tmpError == NO_ERROR ){
+				//一時ファイルがあって書き込み中でない→コピー直前かもしれないので3秒待つ
+				Sleep(3000);
+			}else if( tmpError == ERROR_SHARING_VIOLATION ){
+				//一時ファイルがあって書き込み中→もうすぐ上書きされるかもしれないのでできるだけ退避させる
+				HANDLE masterFile = CreateFile(path.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+				if( masterFile != INVALID_HANDLE_VALUE ){
+					file = CreateFile((path + L".swp").c_str(), GENERIC_READ | GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+					if( file != INVALID_HANDLE_VALUE ){
+						swapped = TRUE;
+						DWORD read;
+						while( ReadFile(masterFile, readBuff, sizeof(readBuff), &read, NULL) && read != 0 ){
+							DWORD written;
+							WriteFile(file, readBuff, read, &written, NULL);
+						}
+						SetFilePointer(file, 0, 0, FILE_BEGIN);
+						tmpFile = CreateFile((path + L".tmp").c_str(), GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_DELETE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+						if( tmpFile != INVALID_HANDLE_VALUE || GetLastError() != ERROR_SHARING_VIOLATION ){
+							//退避中に書き込みが終わった
+							if( tmpFile != INVALID_HANDLE_VALUE ){
+								CloseHandle(tmpFile);
+							}
+							CloseHandle(file);
+							file = INVALID_HANDLE_VALUE;
+						}
+					}
+					CloseHandle(masterFile);
+				}
+				if( file == INVALID_HANDLE_VALUE ){
+					Sleep(3000);
+				}
+			}
+			if( file == INVALID_HANDLE_VALUE ){
+				file = CreateFile(path.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+			}
+			if( file == INVALID_HANDLE_VALUE ){
+				_OutputDebugString(L"Error %s\r\n", path.c_str());
 			}else{
-
-				DWORD fileSize = GetFileSize( file, NULL );
-				BYTE readBuff[188*1024];
-				DWORD readSize = 0;
-				while( readSize < fileSize ){
-					if( sys->loadStop != FALSE ){
-						//キャンセルされた
-						CloseHandle(file);
-						epgUtil.UnInitialize();
-						return 0;
+				//PATを送る(ストリームを確実にリセットするため)
+				DWORD seekPos = 0;
+				DWORD read;
+				for( DWORD i=0; ReadFile(file, readBuff, 188, &read, NULL) && read == 188; i+=188 ){
+					//PID
+					if( ((readBuff[1] & 0x1F) << 8 | readBuff[2]) == 0 ){
+						//payload_unit_start_indicator
+						if( (readBuff[1] & 0x40) != 0 ){
+							if( seekPos != 0 ){
+								break;
+							}
+						}else if( seekPos == 0 ){
+							continue;
+						}
+						seekPos = i + 188;
+						epgUtil.AddTSPacket(readBuff, 188);
 					}
-					DWORD read=0;
-					ReadFile( file, &readBuff, 188*1024, &read, NULL );
+				}
+				SetFilePointer(file, seekPos, 0, FILE_BEGIN);
+				//TOTを先頭に持ってきて送る(ストリームの時刻を確定させるため)
+				BOOL ignoreTOT = FALSE;
+				while( ReadFile(file, readBuff, 188, &read, NULL) && read == 188 ){
+					if( ((readBuff[1] & 0x1F) << 8 | readBuff[2]) == 0x14 ){
+						ignoreTOT = TRUE;
+						epgUtil.AddTSPacket(readBuff, 188);
+						break;
+					}
+				}
+				SetFilePointer(file, seekPos, 0, FILE_BEGIN);
+				while( ReadFile(file, readBuff, sizeof(readBuff), &read, NULL) && read != 0 ){
 					for( DWORD i=0; i<read; i+=188 ){
-						epgUtil.AddTSPacket(readBuff+i, 188);
+						if( ignoreTOT && ((readBuff[i+1] & 0x1F) << 8 | readBuff[i+2]) == 0x14 ){
+							ignoreTOT = FALSE;
+						}else{
+							epgUtil.AddTSPacket(readBuff+i, 188);
+						}
 					}
-					readSize+=read;
 					Sleep(0);
 				}
 				CloseHandle(file);
+			}
+			if( swapped ){
+				DeleteFile((path + L".swp").c_str());
 			}
 		}
 		Sleep(0);

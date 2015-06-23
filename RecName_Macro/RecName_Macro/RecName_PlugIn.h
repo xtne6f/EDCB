@@ -16,6 +16,9 @@ typedef struct _PLUGIN_RESERVE_INFO{
 	WCHAR bonDriverName[256];	//使用BonDriverファイル名
 	DWORD bonDriverID;			//EpgTimerSrv内部でのBonDriver識別ID
 	DWORD tunerID;				//EpgTimerSrv内部でのチューナー識別ID
+	DWORD reserveID;			//予約ID（ConvertRecName3で必須）
+	EPG_EVENT_INFO* epgInfo;	//番組情報（存在しないときNULL）（ConvertRecName3で必須）
+	DWORD sizeOfStruct;			//未使用（0または構造体サイズで初期化）（ConvertRecName3で必須）
 }PLUGIN_RESERVE_INFO;
 
 //PlugInの名前を取得する
@@ -70,6 +73,24 @@ __declspec(dllexport)
 BOOL WINAPI ConvertRecName2(
 	PLUGIN_RESERVE_INFO* info,
 	EPG_EVENT_INFO* epgInfo,
+	WCHAR* recName,
+	DWORD* recNamesize
+	);
+
+//入力された予約情報と変換パターンを元に、録画時のファイル名を作成する（拡張子含む）
+//recNameがNULL時は必要なサイズをrecNamesizeで返す
+//通常recNamesize=256で呼び出し
+//戻り値
+// TRUE（成功）、FALSE（失敗）
+//引数：
+// info						[IN]予約情報
+// pattern					[IN]変換パターン（デフォルトのときNULL）
+// recName					[OUT]名称
+// recNamesize				[IN/OUT]nameのサイズ(WCHAR単位)
+__declspec(dllexport)
+BOOL WINAPI ConvertRecName3(
+	PLUGIN_RESERVE_INFO* info,
+	const WCHAR* pattern,
 	WCHAR* recName,
 	DWORD* recNamesize
 	);

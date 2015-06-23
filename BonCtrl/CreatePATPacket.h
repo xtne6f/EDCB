@@ -52,9 +52,7 @@ protected:
 	WORD TSID;
 	map<WORD, PROGRAM_PID_INFO> PIDMap; //ÉLÅ[PMTÇÃPID
 
-	BYTE* packet;
-	int packetSize;
+	vector<BYTE> packet;
 
-	BYTE* PSI;
-	int PSISize;
+	vector<BYTE> PSI;
 };

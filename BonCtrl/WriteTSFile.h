@@ -6,8 +6,6 @@
 #include "../Common/StringUtil.h"
 #include "../Common//WritePlugInUtil.h"
 
-#include "BonCtrlDef.h"
-
 class CWriteTSFile
 {
 public:
@@ -103,11 +101,11 @@ protected:
 
 protected:
 	CRITICAL_SECTION outThreadLock;
-	vector<TS_DATA*> TSBuff;
-	DWORD totalTSBuffSize;
+	vector<BYTE> TSBuff;
+	size_t TSBuffOffset;
 
 	HANDLE outThread;
-	HANDLE outStopEvent;
+	BOOL outStopFlag;
 
 	typedef struct _SAVE_INFO{
 		CWritePlugInUtil* writeUtil;
@@ -132,17 +130,12 @@ protected:
 	}SAVE_INFO;
 	vector<SAVE_INFO*> fileList;
 
-	wstring saveFileName;
-	BOOL overWriteFlag;
-	vector<REC_FILE_SET_INFO> saveFolder;
 	vector<wstring> saveFolderSub;
 
 	BOOL subRecFlag;
 	__int64 writeTotalSize;
 	wstring mainSaveFilePath;
 
-	BOOL exceptionErr;
 	int maxBuffCount;
-	BOOL buffOverErr;
 };
 

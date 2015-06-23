@@ -5,18 +5,10 @@ CCreatePATPacket::CCreatePATPacket(void)
 {
 	this->version = 0;
 	this->counter = 0;
-
-	this->packetSize = 0;
-	this->packet = NULL;
-
-	this->PSISize = 0;
-	this->PSI = NULL;
 }
 
 CCreatePATPacket::~CCreatePATPacket(void)
 {
-	SAFE_DELETE_ARRAY(this->packet);
-	SAFE_DELETE_ARRAY(this->PSI);
 }
 
 //作成PATのパラメータを設定
@@ -74,9 +66,9 @@ BOOL CCreatePATPacket::GetPacket(
 	if( incrementFlag == TRUE ){
 		IncrementCounter();
 	}
-	if( this->packet != NULL ){
-		*pbBuff = this->packet;
-		*pdwSize = (DWORD)this->packetSize;
+	if( this->packet.empty() == false ){
+		*pbBuff = &this->packet[0];
+		*pdwSize = (DWORD)this->packet.size();
 	}else{
 		return FALSE;
 	}
@@ -86,28 +78,21 @@ BOOL CCreatePATPacket::GetPacket(
 //作成PATのバッファをクリア
 void CCreatePATPacket::Clear()
 {
-	this->packetSize = 0;
-	SAFE_DELETE_ARRAY(this->packet);
-	this->PSISize = 0;
-	SAFE_DELETE_ARRAY(this->PSI);
+	this->packet.clear();
+	this->PSI.clear();
 }
 
 void CCreatePATPacket::CreatePAT()
 {
-	this->PSISize = 0;
-	SAFE_DELETE_ARRAY(this->PSI);
-
 	//まずPSI作成
 	//pointer_field + last_section_numberまで+PID+CRCのサイズ
-	this->PSISize = 1 + 8 + (int)this->PIDMap.size()*4 + 4;
-	this->PSI = new BYTE[this->PSISize];
-	memset( this->PSI, 0xFF, this->PSISize );
+	this->PSI.resize(1 + 8 + this->PIDMap.size()*4 + 4);
 
 	this->PSI[0] = 0;
 	this->PSI[1] = 0;
-	this->PSI[2] = (BYTE)(((this->PSISize-4)&0x00000F00)>>8);
+	this->PSI[2] = (this->PSI.size()-4)>>8&0x0F;
 	this->PSI[2] |= 0xB0; 
-	this->PSI[3] = (BYTE)((this->PSISize-4)&0x000000FF);
+	this->PSI[3] = (this->PSI.size()-4)&0xFF;
 	this->PSI[4] = (BYTE)((this->TSID&0xFF00)>>8);
 	this->PSI[5] = (BYTE)(this->TSID&0x00FF);
 	this->PSI[6] = this->version<<1;
@@ -125,50 +110,33 @@ void CCreatePATPacket::CreatePAT()
 		dwCreateSize+=4;
 	}
 
-	unsigned long ulCrc = _Crc32(8+dwCreateSize,this->PSI+1);
-	this->PSI[this->PSISize-4] = (BYTE)((ulCrc&0xFF000000)>>24);
-	this->PSI[this->PSISize-3] = (BYTE)((ulCrc&0x00FF0000)>>16);
-	this->PSI[this->PSISize-2] = (BYTE)((ulCrc&0x0000FF00)>>8);
-	this->PSI[this->PSISize-1] = (BYTE)(ulCrc&0x000000FF);
+	unsigned long ulCrc = _Crc32(8+dwCreateSize,&this->PSI[1]);
+	this->PSI[this->PSI.size()-4] = (BYTE)((ulCrc&0xFF000000)>>24);
+	this->PSI[this->PSI.size()-3] = (BYTE)((ulCrc&0x00FF0000)>>16);
+	this->PSI[this->PSI.size()-2] = (BYTE)((ulCrc&0x0000FF00)>>8);
+	this->PSI[this->PSI.size()-1] = (BYTE)(ulCrc&0x000000FF);
 
 	CreatePacket();
 }
 
 void CCreatePATPacket::CreatePacket()
 {
-	this->packetSize = 0;
-	SAFE_DELETE_ARRAY(this->packet);
+	this->packet.clear();
 
 	//TSパケットを作成
-	int iPacketNum = (this->PSISize/184) + 1;
-	this->packetSize = 188*iPacketNum;
-
-	this->packet = new BYTE[this->packetSize];
-	memset(this->packet, 0xFF, this->packetSize);
-
-	for( int i = 0 ; i<iPacketNum; i++ ){
-		DWORD dwHead = 0x10000047;
-		if( i==0 ){
-			//payload_unit_start_indicator
-			dwHead |= 0x00006000;
-		}
-
-		memcpy(this->packet + 188*i, &dwHead, 4 );
-		if( 184*(i+1) <= this->PSISize ){
-			memcpy(this->packet + (188*i) + 4, this->PSI + (184*i), 184);
-		}else{
-			memcpy(this->packet + (188*i) + 4, this->PSI + (184*i), this->PSISize-(184*i));
-		}
+	for( size_t i = 0 ; i<this->PSI.size(); i+=184 ){
+		this->packet.push_back(0x47);
+		this->packet.push_back(i==0 ? 0x60 : 0x00);
+		this->packet.push_back(0x00);
+		this->packet.push_back(0x10);
+		this->packet.insert(this->packet.end(), this->PSI.begin() + i, this->PSI.begin() + min(i + 184, this->PSI.size()));
+		this->packet.resize(((this->packet.size() - 1) / 188 + 1) * 188, 0xFF);
 	}
 }
 
 void CCreatePATPacket::IncrementCounter()
 {
-	if( this->packet == NULL ){
-		return ;
-	}
-
-	for( int i = 0 ; i<this->packetSize; i+=188 ){
+	for( size_t i = 0 ; i+3<this->packet.size(); i+=188 ){
 		this->packet[i+3] = (BYTE)(this->counter | 0x10);
 		this->counter++;
 		if( this->counter >= 16 ){

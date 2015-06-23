@@ -27,6 +27,23 @@ typedef struct _EPG_SHORT_EVENT_INFO{
 		SAFE_DELETE_ARRAY(event_name);
 		SAFE_DELETE_ARRAY(text_char);
 	};
+	void DeepCopy(const _EPG_SHORT_EVENT_INFO& o){
+		event_nameLength = o.event_nameLength;
+		SAFE_DELETE_ARRAY(event_name);
+		if( o.event_name ){
+			event_name = new WCHAR[event_nameLength + 1];
+			memcpy(event_name, o.event_name, sizeof(WCHAR) * (event_nameLength + 1));
+		}
+		text_charLength = o.text_charLength;
+		SAFE_DELETE_ARRAY(text_char);
+		if( o.text_char ){
+			text_char = new WCHAR[text_charLength + 1];
+			memcpy(text_char, o.text_char, sizeof(WCHAR) * (text_charLength + 1));
+		}
+	};
+private:
+	_EPG_SHORT_EVENT_INFO(const _EPG_SHORT_EVENT_INFO&);
+	_EPG_SHORT_EVENT_INFO& operator=(const _EPG_SHORT_EVENT_INFO&);
 } EPG_SHORT_EVENT_INFO;
 
 //EPG拡張情報
@@ -39,6 +56,17 @@ typedef struct _EPG_EXTENDED_EVENT_INFO{
 	~_EPG_EXTENDED_EVENT_INFO(void){
 		SAFE_DELETE_ARRAY(text_char);
 	};
+	void DeepCopy(const _EPG_EXTENDED_EVENT_INFO& o){
+		text_charLength = o.text_charLength;
+		SAFE_DELETE_ARRAY(text_char);
+		if( o.text_char ){
+			text_char = new WCHAR[text_charLength + 1];
+			memcpy(text_char, o.text_char, sizeof(WCHAR) * (text_charLength + 1));
+		}
+	};
+private:
+	_EPG_EXTENDED_EVENT_INFO(const _EPG_EXTENDED_EVENT_INFO&);
+	_EPG_EXTENDED_EVENT_INFO& operator=(const _EPG_EXTENDED_EVENT_INFO&);
 } EPG_EXTENDED_EVENT_INFO;
 
 //EPGジャンルデータ
@@ -60,6 +88,17 @@ typedef struct _EPG_CONTENT_INFO{
 	~_EPG_CONTENT_INFO(void){
 		SAFE_DELETE_ARRAY(nibbleList);
 	};
+	void DeepCopy(const _EPG_CONTENT_INFO& o){
+		listSize = o.listSize;
+		SAFE_DELETE_ARRAY(nibbleList);
+		if( o.nibbleList ){
+			nibbleList = new EPG_CONTENT[listSize];
+			memcpy(nibbleList, o.nibbleList, sizeof(EPG_CONTENT) * listSize);
+		}
+	};
+private:
+	_EPG_CONTENT_INFO(const _EPG_CONTENT_INFO&);
+	_EPG_CONTENT_INFO& operator=(const _EPG_CONTENT_INFO&);
 } EPG_CONTEN_INFO;
 
 //EPG映像情報
@@ -75,6 +114,20 @@ typedef struct _EPG_COMPONENT_INFO{
 	~_EPG_COMPONENT_INFO(void){
 		SAFE_DELETE_ARRAY(text_char);
 	};
+	void DeepCopy(const _EPG_COMPONENT_INFO& o){
+		stream_content = o.stream_content;
+		component_type = o.component_type;
+		component_tag = o.component_tag;
+		text_charLength = o.text_charLength;
+		SAFE_DELETE_ARRAY(text_char);
+		if( o.text_char ){
+			text_char = new WCHAR[text_charLength + 1];
+			memcpy(text_char, o.text_char, sizeof(WCHAR) * (text_charLength + 1));
+		}
+	};
+private:
+	_EPG_COMPONENT_INFO(const _EPG_COMPONENT_INFO&);
+	_EPG_COMPONENT_INFO& operator=(const _EPG_COMPONENT_INFO&);
 } EPG_COMPONENT_INFO;
 
 //EPG音声情報
@@ -96,6 +149,26 @@ typedef struct _EPG_AUDIO_COMPONENT_INFO_DATA{
 	~_EPG_AUDIO_COMPONENT_INFO_DATA(void){
 		SAFE_DELETE_ARRAY(text_char);
 	};
+	void DeepCopy(const _EPG_AUDIO_COMPONENT_INFO_DATA& o){
+		stream_content = o.stream_content;
+		component_type = o.component_type;
+		component_tag = o.component_tag;
+		stream_type = o.stream_type;
+		simulcast_group_tag = o.simulcast_group_tag;
+		ES_multi_lingual_flag = o.ES_multi_lingual_flag;
+		main_component_flag = o.main_component_flag;
+		quality_indicator = o.quality_indicator;
+		sampling_rate = o.sampling_rate;
+		text_charLength = o.text_charLength;
+		SAFE_DELETE_ARRAY(text_char);
+		if( o.text_char ){
+			text_char = new WCHAR[text_charLength + 1];
+			memcpy(text_char, o.text_char, sizeof(WCHAR) * (text_charLength + 1));
+		}
+	};
+private:
+	_EPG_AUDIO_COMPONENT_INFO_DATA(const _EPG_AUDIO_COMPONENT_INFO_DATA&);
+	_EPG_AUDIO_COMPONENT_INFO_DATA& operator=(const _EPG_AUDIO_COMPONENT_INFO_DATA&);
 } EPG_AUDIO_COMPONENT_INFO_DATA;
 
 //EPG音声情報
@@ -109,6 +182,19 @@ typedef struct _EPG_AUDIO_COMPONENT_INFO{
 	~_EPG_AUDIO_COMPONENT_INFO(void){
 		SAFE_DELETE_ARRAY(audioList);
 	};
+	void DeepCopy(const _EPG_AUDIO_COMPONENT_INFO& o){
+		listSize = o.listSize;
+		SAFE_DELETE_ARRAY(audioList);
+		if( o.audioList ){
+			audioList = new EPG_AUDIO_COMPONENT_INFO_DATA[listSize];
+			for( WORD i = 0; i < listSize; i++ ){
+				audioList[i].DeepCopy(o.audioList[i]);
+			}
+		}
+	};
+private:
+	_EPG_AUDIO_COMPONENT_INFO(const _EPG_AUDIO_COMPONENT_INFO&);
+	_EPG_AUDIO_COMPONENT_INFO& operator=(const _EPG_AUDIO_COMPONENT_INFO&);
 } EPG_AUDIO_COMPONENT_INFO;
 
 //EPGイベントデータ
@@ -130,6 +216,18 @@ typedef struct _EPG_EVENTGROUP_INFO{
 	~_EPG_EVENTGROUP_INFO(void){
 		SAFE_DELETE_ARRAY(eventDataList);
 	};
+	void DeepCopy(const _EPG_EVENTGROUP_INFO& o){
+		group_type = o.group_type;
+		event_count = o.event_count;
+		SAFE_DELETE_ARRAY(eventDataList);
+		if( o.eventDataList ){
+			eventDataList = new EPG_EVENT_DATA[event_count];
+			memcpy(eventDataList, o.eventDataList, sizeof(EPG_EVENT_DATA) * event_count);
+		}
+	};
+private:
+	_EPG_EVENTGROUP_INFO(const _EPG_EVENTGROUP_INFO&);
+	_EPG_EVENTGROUP_INFO& operator=(const _EPG_EVENTGROUP_INFO&);
 } EPG_EVENTGROUP_INFO;
 
 typedef struct _EPG_EVENT_INFO{
@@ -167,6 +265,9 @@ typedef struct _EPG_EVENT_INFO{
 		SAFE_DELETE(eventGroupInfo);
 		SAFE_DELETE(eventRelayInfo);
 	};
+private:
+	_EPG_EVENT_INFO(const _EPG_EVENT_INFO&);
+	_EPG_EVENT_INFO& operator=(const _EPG_EVENT_INFO&);
 }EPG_EVENT_INFO;
 
 //サービスの詳細情報
@@ -193,6 +294,9 @@ typedef struct _SERVICE_EXT_INFO{
 		SAFE_DELETE_ARRAY(network_name);
 		SAFE_DELETE_ARRAY(ts_name);
 	};
+private:
+	_SERVICE_EXT_INFO(const _SERVICE_EXT_INFO&);
+	_SERVICE_EXT_INFO& operator=(const _SERVICE_EXT_INFO&);
 }SERVICE_EXT_INFO;
 
 //サービス情報
@@ -207,6 +311,9 @@ typedef struct _SERVICE_INFO{
 	~_SERVICE_INFO(void){
 		SAFE_DELETE(extInfo);
 	};
+private:
+	_SERVICE_INFO(const _SERVICE_INFO&);
+	_SERVICE_INFO& operator=(const _SERVICE_INFO&);
 }SERVICE_INFO;
 
 #endif
