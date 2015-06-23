@@ -23,4 +23,6 @@ protected:
 	}SOCKET_DATA;
 	vector<SOCKET_DATA> SockList;
 
+	UINT m_uiSendSize;
+
 };
