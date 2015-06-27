@@ -23,6 +23,19 @@ namespace EpgTimer
         public SetApp2DelWindow()
         {
             InitializeComponent();
+
+            if (CommonManager.Instance.NWMode == true)
+            {
+                button_add.IsEnabled = false;
+                textBox_ext.IsEnabled = false;
+                label2.IsEnabled = false;
+                button_del.IsEnabled = false;
+                button_chk_del.IsEnabled = false;
+                button_chk_add.IsEnabled = false;
+                button_chk_open.IsEnabled = false;
+                textBox_chk_folder.IsEnabled = false;
+                button_OK.IsEnabled = false;
+            }
         }
 
         private void button_del_Click(object sender, RoutedEventArgs e)

@@ -520,6 +520,8 @@ namespace EpgTimer
                 return false;
             }
 
+            IniFileHandler.UpdateSrvProfileIniNW();
+
             byte[] binData;
             if (cmd.SendFileCopy("ChSet5.txt", out binData) == 1)
             {
@@ -786,6 +788,10 @@ namespace EpgTimer
                     if (CommonManager.Instance.NWMode == true)
                     {
                         CommonManager.Instance.DB.SetNoAutoReloadEPG(Settings.Instance.NgAutoEpgLoadNW);
+                    }
+                    else
+                    {
+                        CommonManager.Instance.CtrlCmd.SendNotifyProfileUpdate();
                     }
                     reserveView.UpdateInfo();
                     tunerReserveView.UpdateInfo();
@@ -1440,6 +1446,18 @@ namespace EpgTimer
                             CommonManager.Instance.DB.ReloadManualAutoAddInfo();
                         }
                         autoAddView.UpdateAutoAddInfo();
+                    }
+                    break;
+                case UpdateNotifyItem.IniFile:
+                    {
+                        if (CommonManager.Instance.NWMode == true)
+                        {
+                            IniFileHandler.UpdateSrvProfileIniNW();
+                            reserveView.UpdateInfo();
+                            autoAddView.UpdateAutoAddInfo();
+                            epgView.UpdateReserveData();
+                            tunerReserveView.UpdateInfo();
+                        }
                     }
                     break;
                 case UpdateNotifyItem.SrvStatus:

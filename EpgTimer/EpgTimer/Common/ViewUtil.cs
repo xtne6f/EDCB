@@ -178,15 +178,15 @@ namespace EpgTimer
 
         //パネルアイテムにマージンを適用。
         public void ApplyMarginForPanelView(ReserveData resInfo,
-            ref int duration, ref DateTime startTime, int defStartMargin = 0, int defEndMargin = 0, bool already_set = false)
+            ref int duration, ref DateTime startTime, bool already_set = false)
         {
             if (already_set == false)
             {
                 duration = (Int32)resInfo.DurationSecond;
                 startTime = resInfo.StartTime;
             }
-            int StartMargine = (resInfo.RecSetting.UseMargineFlag == 1 ? resInfo.RecSetting.StartMargine : defStartMargin);
-            int EndMargine = (resInfo.RecSetting.UseMargineFlag == 1 ? resInfo.RecSetting.EndMargine : defEndMargin);
+            int StartMargine = mutil.GetMargin(resInfo.RecSetting, true);
+            int EndMargine = mutil.GetMargin(resInfo.RecSetting, false);
 
             if (StartMargine < 0)
             {
@@ -225,5 +225,20 @@ namespace EpgTimer
             }
         }
 
+        public void DisableControlChildren(Control tab)
+        {
+            tab.Foreground = new SolidColorBrush(Colors.Gray);
+            ChangeChildren(tab, false);
+        }
+        public void ChangeChildren(UIElement obj, bool enabled)
+        {
+            foreach (var child in LogicalTreeHelper.GetChildren(obj))
+            {
+                if (child is UIElement)
+                {
+                    (child as UIElement).IsEnabled = enabled;
+                }
+            }
+        }
     }
 }

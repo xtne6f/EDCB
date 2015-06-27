@@ -186,10 +186,6 @@ namespace EpgTimer
             {
                 reserveList.Clear();
 
-                //TODO: ここでデフォルトマージンを確認するがEpgTimerNWでは無意味。根本的にはSendCtrlCmdの拡張が必要
-                int defStartMargin = IniFileHandler.GetPrivateProfileInt("SET", "StartMargin", 0, SettingPath.TimerSrvIniPath);
-                int defEndMargin = IniFileHandler.GetPrivateProfileInt("SET", "EndMargin", 0, SettingPath.TimerSrvIniPath);
-
                 foreach (ReserveData info in CommonManager.Instance.DB.ReserveList.Values)
                 {
                     {
@@ -220,8 +216,7 @@ namespace EpgTimer
                                 //マージンを適用
                                 Int32 duration = (Int32)info.DurationSecond;
                                 DateTime startTime = info.StartTime;
-                                vutil.ApplyMarginForPanelView(info,
-                                    ref duration, ref startTime, defStartMargin, defEndMargin, true);
+                                vutil.ApplyMarginForPanelView(info, ref duration, ref startTime, true);
 
                                 ReserveViewItem viewItem = new ReserveViewItem(info);
                                 viewItem.LeftPos = Settings.Instance.ServiceWidth * (servicePos + (double)((mergeNum + i - mergePos - 1) / 2) / mergeNum);

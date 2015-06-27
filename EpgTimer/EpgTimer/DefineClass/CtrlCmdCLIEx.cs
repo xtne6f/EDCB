@@ -247,25 +247,14 @@ namespace EpgTimer
         {
             if (reserveInfo == null) return false;
             //
-            int duration = (int)reserveInfo.DurationSecond;
             DateTime startTime = reserveInfo.StartTime;
+            int duration = (int)reserveInfo.DurationSecond;
+            int StartMargin = CommonManager.Instance.MUtil.GetMargin(reserveInfo.RecSetting, true);
+            int EndMargin = CommonManager.Instance.MUtil.GetMargin(reserveInfo.RecSetting, false);
 
-            if (reserveInfo.RecSetting.UseMargineFlag == 1)
-            {
-                startTime = reserveInfo.StartTime.AddSeconds(reserveInfo.RecSetting.StartMargine * -1);
-                duration += reserveInfo.RecSetting.StartMargine;
-                duration += reserveInfo.RecSetting.EndMargine;
-            }
-            else
-            {
-                //TODO: ここでデフォルトマージンを確認するがEpgTimerNWでは無意味。根本的にはSendCtrlCmdの拡張が必要
-                int defStartMargin = IniFileHandler.GetPrivateProfileInt("SET", "StartMargin", 0, SettingPath.TimerSrvIniPath);
-                int defEndMargin = IniFileHandler.GetPrivateProfileInt("SET", "EndMargin", 0, SettingPath.TimerSrvIniPath);
-
-                startTime = reserveInfo.StartTime.AddSeconds(defStartMargin * -1);
-                duration += defStartMargin;
-                duration += defEndMargin;
-            }
+            startTime = reserveInfo.StartTime.AddSeconds(StartMargin * -1);
+            duration += StartMargin;
+            duration += EndMargin;
 
             return isOnTime(startTime, duration);
         }

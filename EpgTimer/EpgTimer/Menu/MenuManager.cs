@@ -575,25 +575,7 @@ namespace EpgTimer
             }
             else
             {
-                int num = IniFileHandler.GetPrivateProfileInt("SET", "RecFolderNum", 0, SettingPath.CommonIniPath);
-                if (num == 0)
-                {
-                    CtxmGenerateOpenFolderItem(menu, SettingPath.SettingFolderPath, "(デフォルト) ");
-                }
-                else
-                {
-                    StringBuilder buff = new StringBuilder(512);
-                    for (uint i = 0; i < num; i++)
-                    {
-                        string key = "RecFolderPath" + i.ToString();
-                        buff.Clear();
-                        IniFileHandler.GetPrivateProfileString("SET", key, "", buff, 512, SettingPath.CommonIniPath);
-                        if (buff.Length > 0)
-                        {
-                            CtxmGenerateOpenFolderItem(menu, buff.ToString(), "(デフォルト) ");
-                        }
-                    }
-                }
+                Settings.GetDefRecFolders().ForEach(folder => CtxmGenerateOpenFolderItem(menu, folder, "(デフォルト) "));
             }
 
             if (recSetting != null)

@@ -50,9 +50,28 @@ namespace EpgTimer.Setting
 
             if (CommonManager.Instance.NWMode == true)
             {
-                tabItem1.IsEnabled = false;
-                tabItem2.IsEnabled = false;
-                tabItem7.IsEnabled = false;
+                tabItem1.Foreground = new SolidColorBrush(Colors.Gray);
+                groupBox1.Foreground = new SolidColorBrush(Colors.Gray);
+                radioButton_none.IsEnabled = false;
+                radioButton_standby.IsEnabled = false;
+                radioButton_suspend.IsEnabled = false;
+                radioButton_shutdown.IsEnabled = false;
+                checkBox_reboot.IsEnabled = false;
+                label1.IsEnabled = false;
+                label4.IsEnabled = false;
+                textBox_pcWakeTime.IsEnabled = false;
+                label2.IsEnabled = false;
+                label5.IsEnabled = false;
+                CommonManager.Instance.VUtil.DisableControlChildren(groupBox2);
+
+                tabItem2.Foreground = new SolidColorBrush(Colors.Gray);
+                checkBox_back_priority.IsEnabled = false;
+                checkBox_autoDel.IsEnabled = false;
+                checkBox_recname.IsEnabled = false;
+                comboBox_recname.IsEnabled = false;
+                button_recname.IsEnabled = false;
+                
+                CommonManager.Instance.VUtil.DisableControlChildren(tabItem7);
                 tabControl1.SelectedItem = tabItem3;
                 checkBox_tcpServer.IsEnabled = false;
                 label41.IsEnabled = false;
@@ -65,12 +84,11 @@ namespace EpgTimer.Setting
                 checkBox_suspendClose.IsEnabled = true;
                 checkBox_ngAutoEpgLoad.IsEnabled = true;
                 checkBox_srvResident.IsEnabled = false;
+                button_recDef.Content = "録画プリセットを確認";
             }
 
             try
             {
-                StringBuilder buff = new StringBuilder(512);
-                buff.Clear();
                 int recEndMode = IniFileHandler.GetPrivateProfileInt("SET", "RecEndMode", 2, SettingPath.TimerSrvIniPath);
                 switch (recEndMode)
                 {
@@ -137,21 +155,15 @@ namespace EpgTimer.Setting
                 {
                     for (int i = 0; i < ngCount; i++)
                     {
-                        buff.Clear();
-                        IniFileHandler.GetPrivateProfileString("NO_SUSPEND", i.ToString(), "", buff, 512, SettingPath.TimerSrvIniPath);
-                        ngProcessList.Add(buff.ToString());
+                        ngProcessList.Add(IniFileHandler.GetPrivateProfileString("NO_SUSPEND", i.ToString(), "", SettingPath.TimerSrvIniPath));
                     }
                 }
-                buff.Clear();
-                IniFileHandler.GetPrivateProfileString("NO_SUSPEND", "NoStandbyTime", "10", buff, 512, SettingPath.TimerSrvIniPath);
-                ngMin = buff.ToString();
+                ngMin = IniFileHandler.GetPrivateProfileString("NO_SUSPEND", "NoStandbyTime", "10", SettingPath.TimerSrvIniPath);
                 if (IniFileHandler.GetPrivateProfileInt("NO_SUSPEND", "NoUsePC", 0, SettingPath.TimerSrvIniPath) == 1)
                 {
                     ngUsePC = true;
                 }
-                buff.Clear();
-                IniFileHandler.GetPrivateProfileString("NO_SUSPEND", "NoUsePCTime", "3", buff, 512, SettingPath.TimerSrvIniPath);
-                ngUsePCMin = buff.ToString();
+                ngUsePCMin = IniFileHandler.GetPrivateProfileString("NO_SUSPEND", "NoUsePCTime", "3", SettingPath.TimerSrvIniPath);
                 if (IniFileHandler.GetPrivateProfileInt("NO_SUSPEND", "NoFileStreaming", 0, SettingPath.TimerSrvIniPath) == 1)
                 {
                     ngFileStreaming = true;
@@ -195,9 +207,7 @@ namespace EpgTimer.Setting
                     checkBox_timeSync.IsChecked = true;
                 }
 
-                buff.Clear();
-                IniFileHandler.GetPrivateProfileString("SET", "RecNamePlugInFile", "RecName_Macro.dll", buff, 512, SettingPath.TimerSrvIniPath);
-                String plugInFile = buff.ToString();
+                String plugInFile = IniFileHandler.GetPrivateProfileString("SET", "RecNamePlugInFile", "RecName_Macro.dll", SettingPath.TimerSrvIniPath);
 
                 try
                 {
@@ -238,20 +248,15 @@ namespace EpgTimer.Setting
                 {
                     for (int i = 0; i < count; i++)
                     {
-                        buff.Clear();
-                        IniFileHandler.GetPrivateProfileString("DEL_EXT", i.ToString(), "", buff, 512, SettingPath.TimerSrvIniPath);
-                        extList.Add(buff.ToString());
+                        extList.Add(IniFileHandler.GetPrivateProfileString("DEL_EXT", i.ToString(), "", SettingPath.TimerSrvIniPath));
                     }
                 }
 
                 count = IniFileHandler.GetPrivateProfileInt("DEL_CHK", "Count", 0, SettingPath.TimerSrvIniPath);
                 for (int i = 0; i < count; i++)
                 {
-                    buff.Clear();
-                    IniFileHandler.GetPrivateProfileString("DEL_CHK", i.ToString(), "", buff, 512, SettingPath.TimerSrvIniPath);
-                    delChkFolderList.Add(buff.ToString());
+                    delChkFolderList.Add(IniFileHandler.GetPrivateProfileString("DEL_CHK", i.ToString(), "", SettingPath.TimerSrvIniPath));
                 }
-
 
                 try
                 {

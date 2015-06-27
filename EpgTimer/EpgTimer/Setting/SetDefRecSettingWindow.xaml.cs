@@ -21,6 +21,11 @@ namespace EpgTimer.Setting
         public SetDefRecSettingWindow()
         {
             InitializeComponent();
+
+            if (CommonManager.Instance.NWMode == true)
+            {
+                label1.Content += "　(EpgTimerNWからはプリセットの設定は出来ません)";
+            }
         }
 
         public void SetSettingMode(string title = "", int tab = 0)

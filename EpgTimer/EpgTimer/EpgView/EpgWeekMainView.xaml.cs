@@ -185,10 +185,6 @@ namespace EpgTimer
 
                 UInt64 selectID = GetSelectID(true);
 
-                //TODO: ここでデフォルトマージンを確認するがEpgTimerNWでは無意味。根本的にはSendCtrlCmdの拡張が必要
-                int defStartMargin = IniFileHandler.GetPrivateProfileInt("SET", "StartMargin", 0, SettingPath.TimerSrvIniPath);
-                int defEndMargin = IniFileHandler.GetPrivateProfileInt("SET", "EndMargin", 0, SettingPath.TimerSrvIniPath);
-
                 foreach (ReserveData info in CommonManager.Instance.DB.ReserveList.Values)
                 {
                     UInt64 key = info.Create64Key();
@@ -204,8 +200,7 @@ namespace EpgTimer
 
                         //マージンを適用
                         Int32 duration = (Int32)info.DurationSecond;
-                        vutil.ApplyMarginForPanelView(info,
-                            ref duration, ref startTime, defStartMargin, defEndMargin, true);
+                        vutil.ApplyMarginForPanelView(info, ref duration, ref startTime, true);
 
                         ReserveViewItem viewItem = new ReserveViewItem(info);
                         //viewItem.LeftPos = i * Settings.Instance.ServiceWidth;

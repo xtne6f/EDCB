@@ -26,7 +26,7 @@ namespace EpgTimer.Setting
 
             if (CommonManager.Instance.NWMode == true)
             {
-                tabItem_play.IsEnabled = false;
+                CommonManager.Instance.VUtil.DisableControlChildren(tabItem_play);
                 label3.IsEnabled = false;
                 listBox_bon.IsEnabled = false;
                 button_del.IsEnabled = false;
@@ -66,17 +66,13 @@ namespace EpgTimer.Setting
                     comboBox_bon.SelectedIndex = 0;
                 }
 
-                StringBuilder buff = new StringBuilder(512);
-                buff.Clear();
-
                 int num = IniFileHandler.GetPrivateProfileInt("TVTEST", "Num", 0, SettingPath.TimerSrvIniPath);
                 for (uint i = 0; i < num; i++)
                 {
-                    buff.Clear();
-                    IniFileHandler.GetPrivateProfileString("TVTEST", i.ToString(), "", buff, 512, SettingPath.TimerSrvIniPath);
-                    if (buff.Length > 0)
+                    string item = IniFileHandler.GetPrivateProfileString("TVTEST", i.ToString(), "", SettingPath.TimerSrvIniPath);
+                    if (item.Length > 0)
                     {
-                        listBox_bon.Items.Add(buff.ToString());
+                        listBox_bon.Items.Add(item);
                     }
                 }
             }

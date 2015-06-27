@@ -30,6 +30,7 @@ namespace EpgTimer
         AutoAddEpgInfo = 4, //EPG自動予約登録更新
         AutoAddManualInfo = 5, //プログラム自動予約登録更新
         PlugInFile = 6, //PlugIn系のファイル一覧更新
+        IniFile = 51,//iniファイルの更新。
         SrvStatus = 100,
         PreRecStart = 101,
         RecStart = 102,

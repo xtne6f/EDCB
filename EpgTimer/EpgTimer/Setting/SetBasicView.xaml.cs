@@ -32,11 +32,14 @@ namespace EpgTimer.Setting
 
             if (CommonManager.Instance.NWMode == true)
             {
-                tabItem2.IsEnabled = false;
-                tabItem3.IsEnabled = false;
+                CommonManager.Instance.VUtil.DisableControlChildren(tabItem2);
+                CommonManager.Instance.VUtil.DisableControlChildren(tabItem3);
+                label1.IsEnabled = false;
+                textBox_setPath.IsEnabled = false;
+                button_setPath.IsEnabled = false;
+                label2.IsEnabled = false;
                 textBox_exe.IsEnabled = false;
                 button_exe.IsEnabled = false;
-                listBox_recFolder.IsEnabled = false;
                 button_rec_up.IsEnabled = false;
                 button_rec_down.IsEnabled = false;
                 button_rec_del.IsEnabled = false;
@@ -47,34 +50,10 @@ namespace EpgTimer.Setting
 
             try
             {
-                StringBuilder buff = new StringBuilder(512);
-                buff.Clear();
-                IniFileHandler.GetPrivateProfileString("SET", "DataSavePath", SettingPath.DefSettingFolderPath, buff, 512, SettingPath.CommonIniPath);
-                textBox_setPath.Text = buff.ToString();
+                textBox_setPath.Text = SettingPath.SettingFolderPath;
+                textBox_exe.Text = SettingPath.EdcbExePath;
 
-                string defRecExe = SettingPath.ModulePath.TrimEnd('\\') +"\\EpgDataCap_Bon.exe";
-                buff.Clear();
-                IniFileHandler.GetPrivateProfileString("SET", "RecExePath", defRecExe, buff, 512, SettingPath.CommonIniPath);
-                textBox_exe.Text = buff.ToString();
-
-                int num = IniFileHandler.GetPrivateProfileInt("SET", "RecFolderNum", 0, SettingPath.CommonIniPath);
-                if (num == 0)
-                {
-                    listBox_recFolder.Items.Add(SettingPath.SettingFolderPath);
-                }
-                else
-                {
-                    for (uint i = 0; i < num; i++)
-                    {
-                        string key = "RecFolderPath" + i.ToString();
-                        buff.Clear();
-                        IniFileHandler.GetPrivateProfileString("SET", key, "", buff, 512, SettingPath.CommonIniPath);
-                        if (buff.Length > 0)
-                        {
-                            listBox_recFolder.Items.Add(buff.ToString());
-                        }
-                    }
-                }
+                Settings.GetDefRecFolders().ForEach(folder => listBox_recFolder.Items.Add(folder));
 
                 string[] files = Directory.GetFiles(SettingPath.SettingFolderPath, "*.ChSet4.txt");
                 SortedList<Int32, TunerInfo> tunerInfo = new SortedList<Int32, TunerInfo>();
@@ -176,7 +155,6 @@ namespace EpgTimer.Setting
                     checkBox_cs2.IsChecked = false;
                 }
 
-                buff.Clear();
                 timeList = new ObservableCollection<EpgCaptime>();
                 int capCount = IniFileHandler.GetPrivateProfileInt("EPG_CAP", "Count", 0, SettingPath.TimerSrvIniPath);
                 if (capCount == 0)
@@ -193,10 +171,8 @@ namespace EpgTimer.Setting
                 {
                     for (int i = 0; i < capCount; i++)
                     {
-                        buff.Clear();
                         EpgCaptime item = new EpgCaptime();
-                        IniFileHandler.GetPrivateProfileString("EPG_CAP", i.ToString(), "", buff, 512, SettingPath.TimerSrvIniPath);
-                        item.Time = buff.ToString();
+                        item.Time = IniFileHandler.GetPrivateProfileString("EPG_CAP", i.ToString(), "", SettingPath.TimerSrvIniPath);
                         if (IniFileHandler.GetPrivateProfileInt("EPG_CAP", i.ToString() + "Select", 0, SettingPath.TimerSrvIniPath) == 1)
                         {
                             item.IsSelected = true;

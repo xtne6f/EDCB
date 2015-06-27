@@ -104,7 +104,7 @@
                     <CheckBox Content="最小化で起動する" Height="16" HorizontalAlignment="Left" Margin="6,28,0,0" Name="checkBox_minWake" VerticalAlignment="Top" />
                     <CheckBox Content="タスクトレイアイコンを表示する" Height="16" HorizontalAlignment="Left" Margin="212,6,0,0" Name="checkBox_showTray" VerticalAlignment="Top" />
                     <CheckBox Content="最小化時にタスクトレイに格納する" Height="16" HorizontalAlignment="Left" Margin="212,28,0,0" Name="checkBox_minHide" VerticalAlignment="Top" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_showTray, UpdateSourceTrigger=PropertyChanged}" />
-                    <Button Content="録画設定のプリセットを設定" Height="23" HorizontalAlignment="Left" Margin="6,50,0,0" Name="button_recDef" VerticalAlignment="Top" Width="209" Click="button_recDef_Click" />
+                    <Button Content="録画プリセットを設定" Height="23" HorizontalAlignment="Left" Margin="6,50,0,0" Name="button_recDef" VerticalAlignment="Top" Width="209" Click="button_recDef_Click" />
                     <Button Content="検索条件のデフォルト値を設定" Height="23" HorizontalAlignment="Left" Margin="242,50,0,0" Name="button_searchDef" VerticalAlignment="Top" Width="248" Click="button_searchDef_Click" />
                     <CheckBox Content="ネットワーク接続を許可する" Height="16" HorizontalAlignment="Left" Margin="6,81,0,0" Name="checkBox_tcpServer" VerticalAlignment="Top" />
                     <Label Content="ポート" Height="28" HorizontalAlignment="Left" Margin="212,76,0,0" Name="label41" VerticalAlignment="Top" />

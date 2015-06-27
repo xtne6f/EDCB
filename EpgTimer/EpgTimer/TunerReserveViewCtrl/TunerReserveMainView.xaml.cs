@@ -118,10 +118,6 @@ namespace EpgTimer
                 tunerList.Clear();
                 reserveList.Clear();
 
-                //TODO: ここでデフォルトマージンを確認するがEpgTimerNWでは無意味。根本的にはSendCtrlCmdの拡張が必要
-                int defStartMargin = IniFileHandler.GetPrivateProfileInt("SET", "StartMargin", 0, SettingPath.TimerSrvIniPath);
-                int defEndMargin = IniFileHandler.GetPrivateProfileInt("SET", "EndMargin", 0, SettingPath.TimerSrvIniPath);
-
                 double leftPos = 0;
                 for (int i = 0; i < CommonManager.Instance.DB.TunerReserveList.Count; i++)
                 {
@@ -144,8 +140,7 @@ namespace EpgTimer
                         //マージンを適用
                         Int32 duration = (Int32)reserveInfo.DurationSecond;
                         DateTime startTime = reserveInfo.StartTime;
-                        vutil.ApplyMarginForPanelView(reserveInfo,
-                            ref duration, ref startTime, defStartMargin, defEndMargin, true);
+                        vutil.ApplyMarginForPanelView(reserveInfo, ref duration, ref startTime, true);
 
                         DateTime EndTime = startTime.AddSeconds(duration);
 
@@ -160,8 +155,7 @@ namespace EpgTimer
                             //マージンを適用
                             Int32 durationAdd = (Int32)addInfo.DurationSecond;
                             DateTime startTimeAdd = addInfo.StartTime;
-                            vutil.ApplyMarginForPanelView(addInfo,
-                                ref durationAdd, ref startTimeAdd, defStartMargin, defEndMargin, true);
+                            vutil.ApplyMarginForPanelView(addInfo, ref durationAdd, ref startTimeAdd, true);
                             
                             DateTime endTimeAdd = startTimeAdd.AddSeconds(durationAdd);
 

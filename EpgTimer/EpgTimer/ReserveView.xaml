@@ -151,7 +151,7 @@
                     </GridViewColumn>
                     <GridViewColumn>
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="開始" Tag="MarginStart" HorizontalContentAlignment="Left" ToolTip="?=EpgtimerNWでデフォルトの場合不明のため"/>
+                            <GridViewColumnHeader Content="開始" Tag="MarginStart" HorizontalContentAlignment="Left" ToolTip="*=デフォルト設定"/>
                         </GridViewColumn.Header>
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
@@ -161,7 +161,7 @@
                     </GridViewColumn>
                     <GridViewColumn>
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="終了" Tag="MarginEnd" HorizontalContentAlignment="Left" ToolTip="?=EpgtimerNWでデフォルトの場合不明のため" />
+                            <GridViewColumnHeader Content="終了" Tag="MarginEnd" HorizontalContentAlignment="Left" ToolTip="*=デフォルト設定" />
                         </GridViewColumn.Header>
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>

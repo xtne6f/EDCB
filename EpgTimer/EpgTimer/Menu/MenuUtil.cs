@@ -267,7 +267,6 @@ namespace EpgTimer
             }
             else
             {
-                //TODO: ここでデフォルトマージンを確認するがEpgTimerNWでは無意味。根本的にはSendCtrlCmdの拡張が必要
                 marginTime = IniFileHandler.GetPrivateProfileInt("SET", start ? "StartMargin" : "EndMargin", 0, SettingPath.TimerSrvIniPath);
             }
             return marginTime;
@@ -288,20 +287,9 @@ namespace EpgTimer
                 hours = (span / 3600).ToString("0;0") + ":";
                 minutes = ((span % 3600) / 60).ToString("00;00") + ":";
             }
-            return span.ToString("+;-") + hours + minutes + seconds + CustomTimeMark(useMarginFlag);
+            return span.ToString("+;-") + hours + minutes + seconds + (useMarginFlag == 1 ? " " : "*");
         }
 
-        private string CustomTimeMark(byte useMarginFlag)
-        {
-            //EpgtimerNWの場合、デフォルト値不明のため。不明でなくなったら要らない
-            string mark = "";
-            if (CommonManager.Instance.NWMode == true)
-            {
-                mark = (useMarginFlag == 1 ? " " : "?");
-            }
-            return mark;
-        }
-        
         public TextBlock GetTooltipBlockStandard(string text)
         {
             TextBlock block = new TextBlock();
