@@ -275,6 +275,7 @@ namespace EpgTimer
             if (dlg.ShowDialog() == true)
             {
                 Settings.Instance.MenuSet = dlg.info.Clone();
+                Settings.SaveToXmlFile();//メニュー設定の保存
 
                 var mainWindow = (MainWindow)Application.Current.MainWindow;
                 mainWindow.RefreshMenu(true);

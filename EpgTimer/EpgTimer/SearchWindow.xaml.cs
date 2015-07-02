@@ -528,6 +528,7 @@ namespace EpgTimer
 
         private void Window_Closed(object sender, System.EventArgs e)
         {
+            Settings.SaveToXmlFile();//検索ワードリストの保存
             if (this.Owner as SearchWindow != null)
             {
                 (this.Owner as SearchWindow).SearchPg();

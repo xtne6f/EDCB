@@ -923,6 +923,7 @@ namespace EpgTimer
                         return;
                     }
                 }
+                Settings.SaveToXmlFile();
                 if (CommonManager.Instance.NWMode == false)
                 {
                     if (IniFileHandler.GetPrivateProfileInt("SET", "Reboot", 0, SettingPath.TimerSrvIniPath) == 1)
@@ -985,6 +986,7 @@ namespace EpgTimer
                         return;
                     }
                 }
+                Settings.SaveToXmlFile();
                 if (CommonManager.Instance.NWMode == false)
                 {
                     if (IniFileHandler.GetPrivateProfileInt("SET", "Reboot", 0, SettingPath.TimerSrvIniPath) == 1)
@@ -1262,6 +1264,7 @@ namespace EpgTimer
                             dlg.SetMode(reboot, suspendMode);
                             if (dlg.ShowDialog() != true)
                             {
+                                Settings.SaveToXmlFile();
                                 cmd.SendReboot();
                             }
                         }));
@@ -1379,6 +1382,7 @@ namespace EpgTimer
                 dlg.SetMode(0, suspendMode);
                 if (dlg.ShowDialog() != true)
                 {
+                    Settings.SaveToXmlFile();
                     cmd.SendSuspend(param);
                 }
             }
