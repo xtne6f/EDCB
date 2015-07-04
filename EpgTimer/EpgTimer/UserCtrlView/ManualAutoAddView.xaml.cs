@@ -108,9 +108,19 @@ namespace EpgTimer
                 return true;
             });
         }
+        //listView内部のMouseUpイベントによるアイテム選択処理より後でダイアログを出すようにする。
+        private bool doubleClicked = false;
         private void listView_key_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            EpgCmds.ShowDialog.Execute(sender, this);
+            doubleClicked = true;
+        }
+        private void listView_key_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            if (doubleClicked == true   )
+            {
+                doubleClicked = false;
+                EpgCmds.ShowDialog.Execute(sender, this);
+            }
         }
     }
 }
