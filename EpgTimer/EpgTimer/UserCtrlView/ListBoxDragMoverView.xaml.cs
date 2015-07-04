@@ -204,11 +204,16 @@ namespace EpgTimer.UserCtrlView
                 notifyTimer.Interval = TimeSpan.FromSeconds(0.5);
                 notifyTimer.Tick += (sender_t, e_t) =>
                 {
-                    if (_onDrag == false)
+                    if (this._onDrag == false)
                     {
                         if (Mouse.LeftButton == MouseButtonState.Pressed)
                         {
                             DragStart();
+                        }
+                        else
+                        {
+                            //通常このパスは通らないはずだが、一応クリアしておく。
+                            DragRelease();
                         }
                     }
                     notifyTimer.Stop();
@@ -220,14 +225,9 @@ namespace EpgTimer.UserCtrlView
 
         public void listBox_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
-            listBoxItem_PreviewMouseLeftButtonUp(this.cursorObj, e);
-            //            DragRelease();
-        }
-        public void listBoxItem_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
-        {
             try
             {
-                object dropTo = DragItemTest(sender);
+                object dropTo = DragItemTest(this.cursorObj);
                 if (dropTo != null)
                 {
                     this.MoveItem(dropTo);
@@ -286,10 +286,10 @@ namespace EpgTimer.UserCtrlView
         {
             try
             {
-                notifyTimer.Stop();//走ってる場合がある。
-
-                if (this._onDrag == true)
+                //タイマーが走ってる場合がある。
+                if (notifyTimer.IsEnabled == true ||  this._onDrag == true)
                 {
+                    notifyTimer.Stop();
                     this.Owner.Cursor = null;
                     this.OnDrag = false;
                     this.cursorObj = null;

@@ -23,7 +23,6 @@ namespace EpgTimer
 
         //ドラッグ移動ビュー用の設定
         private MouseButtonEventHandler listViewItem_PreviewMouseLeftButtonDown;
-        private MouseButtonEventHandler listViewItem_PreviewMouseLeftButtonUp;
         private MouseEventHandler listViewItem_MouseEnter;
         class lvDragData : ListBoxDragMoverView.LVDMHelper
         {
@@ -52,7 +51,6 @@ namespace EpgTimer
                 this.dragMover.SetData(this, listView_key, lstCtrl.dataList, new lvDragData(this));
                 listView_key.PreviewMouseLeftButtonUp += new MouseButtonEventHandler(dragMover.listBox_PreviewMouseLeftButtonUp);
                 listViewItem_PreviewMouseLeftButtonDown += new MouseButtonEventHandler(dragMover.listBoxItem_PreviewMouseLeftButtonDown);
-                listViewItem_PreviewMouseLeftButtonUp += new MouseButtonEventHandler(dragMover.listBoxItem_PreviewMouseLeftButtonUp);
                 listViewItem_MouseEnter += new MouseEventHandler(dragMover.listBoxItem_MouseEnter);
 
                 //最初にコマンド集の初期化

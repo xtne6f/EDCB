@@ -30,7 +30,6 @@
                         <Setter Property="BorderBrush" Value="{Binding BorderBrush}" />
                         <EventSetter Event="MouseDoubleClick" Handler="listView_key_MouseDoubleClick"/>
                         <EventSetter Event="PreviewMouseLeftButtonDown" Handler="listViewItem_PreviewMouseLeftButtonDown"/>
-                        <EventSetter Event="PreviewMouseLeftButtonUp" Handler="listViewItem_PreviewMouseLeftButtonUp"/>
                         <EventSetter Event="MouseEnter" Handler="listViewItem_MouseEnter"/>
                     </Style>
                     <ContextMenu x:Key="itemHeader" >
