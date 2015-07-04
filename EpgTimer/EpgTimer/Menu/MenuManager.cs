@@ -117,6 +117,7 @@ namespace EpgTimer
             
             ////終了マージン、複製してコマンドだけ差し替える。
             var cm_ChgMarginEndMenu = new CtxmItemData("終了マージン", cm_ChgMarginStartMenu);
+            cm_ChgMarginEndMenu.Command = EpgCmdsEx.ChgMarginEndMenu;
             cm_ChgMarginEndMenu.Items = cm_ChgMarginStartMenu.Items.Clone();
             cm_ChgMarginEndMenu.Items.ForEach(menu => menu.Command = menu.Command == EpgCmds.ChgMarginStart ? EpgCmds.ChgMarginEnd : menu.Command);
             cm_ChgMarginEndMenu.Items.ForEach(menu => menu.Command = menu.Command == EpgCmds.ChgMarginStartValue ? EpgCmds.ChgMarginEndValue : menu.Command);
