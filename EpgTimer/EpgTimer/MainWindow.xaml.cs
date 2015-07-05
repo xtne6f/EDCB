@@ -362,11 +362,11 @@ namespace EpgTimer
             }
             else if (String.Compare("スタンバイ", tag) == 0)
             {
-                StandbyCmd();
+                SuspendCmd(1);
             }
             else if (String.Compare("休止", tag) == 0)
             {
-                SuspendCmd();
+                SuspendCmd(2);
             }
             else if (String.Compare("EPG取得", tag) == 0)
             {
@@ -570,17 +570,16 @@ namespace EpgTimer
             }
             else
             {
+                if (initExe == true)
+                {
+                    SaveData();
+                }
                 if (CommonManager.Instance.NWMode == false)
                 {
                     if (initExe == true)
                     {
-                        reserveView.SaveViewData();
-                        recInfoView.SaveViewData();
-                        autoAddView.SaveViewData();
-
                         cmd.SetConnectTimeOut(3000);
                         cmd.SendUnRegistGUI((uint)System.Diagnostics.Process.GetCurrentProcess().Id);
-                        Settings.SaveToXmlFile();
                     }
                     pipeServer.StopServer();
 
@@ -590,16 +589,10 @@ namespace EpgTimer
                         {
                             cmd.SendClose();
                         }
-                        mutex.ReleaseMutex();
-                        mutex.Close();
                     }
                 }
                 else
                 {
-                    reserveView.SaveViewData();
-                    recInfoView.SaveViewData();
-                    autoAddView.SaveViewData();
-
                     if (CommonManager.Instance.NW.IsConnected == true && needUnRegist == true)
                     {
                         if (cmd.SendUnRegistTCP(Settings.Instance.NWServerPort) == 205)
@@ -607,19 +600,30 @@ namespace EpgTimer
                             //MessageBox.Show("サーバーに接続できませんでした");
                         }
                     }
-                    Settings.SaveToXmlFile();
-
-                    if (mutex != null)
-                    {
-                        mutex.ReleaseMutex();
-                        mutex.Close();
-                    }
+                }
+                if (mutex != null)
+                {
+                    mutex.ReleaseMutex();
+                    mutex.Close();
                 }
                 if (taskTray != null)
                 {
                     taskTray.Dispose();
                 }
             }
+        }
+
+        private void SaveData()
+        {
+            SaveViewData();
+            Settings.SaveToXmlFile();
+        }
+
+        private void SaveViewData()
+        {
+            reserveView.SaveViewData();
+            recInfoView.SaveViewData();
+            autoAddView.SaveViewData();
         }
 
         private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -775,6 +779,8 @@ namespace EpgTimer
 
         void SettingCmd()
         {
+            SaveViewData();
+
             SettingWindow setting = new SettingWindow();
             PresentationSource topWindow = PresentationSource.FromVisual(this);
             if (topWindow != null)
@@ -896,130 +902,69 @@ namespace EpgTimer
             }
         }
 
-        void suspendButton_Click(object sender, RoutedEventArgs e)
-        {
-            SuspendCmd();
-        }
-
-        void SuspendCmd()
-        {
-            UInt32 err = cmd.SendChkSuspend();
-            if (err == 205)
-            {
-                MessageBox.Show("サーバーに接続できませんでした");
-            }
-            else if (err != 1)
-            {
-                MessageBox.Show("休止に移行できる状態ではありません。\r\n（もうすぐ予約が始まる。または抑制条件のexeが起動している。など）");
-            }
-            else
-            {
-                if (Settings.Instance.SuspendChk == 1)
-                {
-                    SuspendCheckWindow dlg = new SuspendCheckWindow();
-                    dlg.SetMode(0, 2);
-                    if (dlg.ShowDialog() == true)
-                    {
-                        return;
-                    }
-                }
-                Settings.SaveToXmlFile();
-                if (CommonManager.Instance.NWMode == false)
-                {
-                    if (IniFileHandler.GetPrivateProfileInt("SET", "Reboot", 0, SettingPath.TimerSrvIniPath) == 1)
-                    {
-                        cmd.SendSuspend(0x0102);
-                    }
-                    else
-                    {
-                        cmd.SendSuspend(2);
-                    }
-                }
-                else
-                {
-                    if (Settings.Instance.SuspendCloseNW == true)
-                    {
-                        if (CommonManager.Instance.NW.IsConnected == true)
-                        {
-                            if (cmd.SendUnRegistTCP(Settings.Instance.NWServerPort) == 205)
-                            {
-
-                            }
-                            cmd.SendSuspend(0xFF02);
-                            closeFlag = true;
-                            needUnRegist = false;
-                            Close();
-                        }
-                    }
-                    else
-                    {
-                        cmd.SendSuspend(0xFF02);
-                    }
-                }
-            }
-        }
-
         void standbyButton_Click(object sender, RoutedEventArgs e)
         {
-            StandbyCmd();
+            SuspendCmd(1);
         }
 
-        void StandbyCmd()
+        void suspendButton_Click(object sender, RoutedEventArgs e)
         {
+            SuspendCmd(2);
+        }
+
+        void SuspendCmd(byte suspendMode)
+        {
+            suspendMode = suspendMode == 1 ? suspendMode : (byte)2;
             UInt32 err = cmd.SendChkSuspend();
-            if (err == 205)
+            if (err != 1)
             {
-                MessageBox.Show("サーバーに接続できませんでした");
-            }
-            else if (err != 1)
-            {
-                MessageBox.Show("スタンバイに移行できる状態ではありません。\r\n（もうすぐ予約が始まる。または抑制条件のexeが起動している。など）");
-            }
-            else
-            {
-                if (Settings.Instance.SuspendChk == 1)
+                if (err == 205)
                 {
-                    SuspendCheckWindow dlg = new SuspendCheckWindow();
-                    dlg.SetMode(0, 1);
-                    if (dlg.ShowDialog() == true)
-                    {
-                        return;
-                    }
-                }
-                Settings.SaveToXmlFile();
-                if (CommonManager.Instance.NWMode == false)
-                {
-                    if (IniFileHandler.GetPrivateProfileInt("SET", "Reboot", 0, SettingPath.TimerSrvIniPath) == 1)
-                    {
-                        cmd.SendSuspend(0x0101);
-                    }
-                    else
-                    {
-                        cmd.SendSuspend(1);
-                    }
+                    MessageBox.Show("サーバーに接続できませんでした");
                 }
                 else
                 {
-                    if (Settings.Instance.SuspendCloseNW == true)
-                    {
-                        if (CommonManager.Instance.NW.IsConnected == true)
-                        {
-                            if (cmd.SendUnRegistTCP(Settings.Instance.NWServerPort) == 205)
-                            {
+                    MessageBox.Show((suspendMode == 1 ? "スタンバイ" : "休止") +
+                        "に移行できる状態ではありません。\r\n（もうすぐ予約が始まる。または抑制条件のexeが起動している。など）");
+                }
+                return;
+            }
 
-                            }
-                            cmd.SendSuspend(0xFF01);
-                            closeFlag = true;
-                            needUnRegist = false;
-                            Close();
-                        }
-                    }
-                    else
+            if (Settings.Instance.SuspendChk == 1)
+            {
+                SuspendCheckWindow dlg = new SuspendCheckWindow();
+                dlg.SetMode(0, suspendMode);
+                if (dlg.ShowDialog() == true)
+                {
+                    return;
+                }
+            }
+
+            ushort cmdVal = suspendMode;
+            if (IniFileHandler.GetPrivateProfileInt("SET", "Reboot", 0, SettingPath.TimerSrvIniPath) == 1)
+            {
+                cmdVal |= 0x0100;
+            }
+            if (CommonManager.Instance.NWMode == true)
+            {
+                cmdVal |= 0xFF00;//今はサーバ側の設定を読めてるので無くても大丈夫なはずだけど、一応そのまま
+
+                if (Settings.Instance.SuspendCloseNW == true)
+                {
+                    if (CommonManager.Instance.NW.IsConnected == true)
                     {
-                        cmd.SendSuspend(0xFF01);
+                        if (cmd.SendUnRegistTCP(Settings.Instance.NWServerPort) == 205)
+                        { }
+
+                        cmd.SendSuspend(cmdVal);
+                        needUnRegist = false;
+                        CloseCmd();
+                        return;
                     }
                 }
             }
+            SaveData();
+            cmd.SendSuspend(cmdVal);
         }
 
         void custum1Button_Click(object sender, RoutedEventArgs e)
@@ -1264,7 +1209,7 @@ namespace EpgTimer
                             dlg.SetMode(reboot, suspendMode);
                             if (dlg.ShowDialog() != true)
                             {
-                                Settings.SaveToXmlFile();
+                                SaveData();
                                 cmd.SendReboot();
                             }
                         }));
@@ -1382,7 +1327,7 @@ namespace EpgTimer
                 dlg.SetMode(0, suspendMode);
                 if (dlg.ShowDialog() != true)
                 {
-                    Settings.SaveToXmlFile();
+                    SaveData();
                     cmd.SendSuspend(param);
                 }
             }
