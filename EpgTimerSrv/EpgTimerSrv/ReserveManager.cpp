@@ -114,6 +114,25 @@ void CReserveManager::ReloadSetting()
 		}
 	}
 
+	this->autoDelExtList.clear();
+	this->autoDelFolderList.clear();
+	if( GetPrivateProfileInt(L"SET", L"AutoDel", 0, iniPath.c_str()) != 0 ){
+		count = GetPrivateProfileInt(L"DEL_EXT", L"Count", 0, iniPath.c_str());
+		for( int i = 0; i < count; i++ ){
+			WCHAR key[64];
+			wsprintf(key, L"%d", i);
+			GetPrivateProfileString(L"DEL_EXT", key, L"", buff, 512, iniPath.c_str());
+			this->autoDelExtList.push_back(buff);
+		}
+		count = GetPrivateProfileInt(L"DEL_CHK", L"Count", 0, iniPath.c_str());
+		for( int i = 0; i < count; i++ ){
+			WCHAR key[64];
+			wsprintf(key, L"%d", i);
+			GetPrivateProfileString(L"DEL_CHK", key, L"", buff, 512, iniPath.c_str());
+			this->autoDelFolderList.push_back(buff);
+		}
+	}
+
 	this->defStartMargin = GetPrivateProfileInt(L"SET", L"StartMargin", 5, iniPath.c_str());
 	this->defEndMargin = GetPrivateProfileInt(L"SET", L"EndMargin", 2, iniPath.c_str());
 	this->backPriority = GetPrivateProfileInt(L"SET", L"BackPriority", 1, iniPath.c_str()) != 0;
@@ -320,6 +339,7 @@ bool CReserveManager::AddReserveData(const vector<RESERVE_DATA>& reserveList, bo
 	if( modified ){
 		this->reserveText.SaveText();
 		ReloadBankMap(minStartTime);
+		CheckAutoDel();
 		this->notifyManager.AddNotify(NOTIFY_UPDATE_RESERVE_INFO);
 		AddPostBatWork(batWorkList, L"PostAddReserve.bat");
 		return true;
@@ -463,6 +483,7 @@ bool CReserveManager::ChgReserveData(const vector<RESERVE_DATA>& reserveList, bo
 	if( modified ){
 		this->reserveText.SaveText();
 		ReloadBankMap(minStartTime);
+		CheckAutoDel();
 		this->notifyManager.AddNotify(NOTIFY_UPDATE_RESERVE_INFO);
 		AddPostBatWork(batWorkList, L"PostChgReserve.bat");
 		return true;
@@ -1032,6 +1053,111 @@ void CReserveManager::CheckTuijyuTuner()
 	}
 }
 
+void CReserveManager::CheckAutoDel() const
+{
+	CBlockLock lock(&this->managerLock);
+
+	if( this->autoDelFolderList.empty() ){
+		return;
+	}
+
+	//ファイル削除可能なフォルダをドライブごとに仕分け
+	map<wstring, pair<ULONGLONG, vector<wstring>>> mountMap;
+	for( size_t i = 0; i < this->autoDelFolderList.size(); i++ ){
+		wstring mountPath;
+		GetChkDrivePath(this->autoDelFolderList[i], mountPath);
+		std::transform(mountPath.begin(), mountPath.end(), mountPath.begin(), toupper);
+		map<wstring, pair<ULONGLONG, vector<wstring>>>::iterator itr = mountMap.find(mountPath);
+		if( itr == mountMap.end() ){
+			itr = mountMap.insert(std::make_pair(mountPath, std::make_pair(0ULL, vector<wstring>()))).first;
+		}
+		itr->second.second.push_back(this->autoDelFolderList[i]);
+	}
+
+	//直近で必要になりそうな空き領域を概算する
+	LONGLONG now = GetNowI64Time();
+	for( map<DWORD, RESERVE_DATA>::const_iterator itr = this->reserveText.GetMap().begin(); itr != this->reserveText.GetMap().end(); itr++ ){
+		if( itr->second.recSetting.recMode != RECMODE_NO &&
+		    itr->second.recSetting.recMode != RECMODE_VIEW &&
+		    now < ConvertI64Time(itr->second.startTime) && ConvertI64Time(itr->second.startTime) < now + 2*60*60*I64_1SEC ){
+			//録画開始2時間前までの予約
+			vector<wstring> recFolderList;
+			if( itr->second.recSetting.recFolderList.empty() ){
+				//デフォルト
+				recFolderList.push_back(L"");
+				GetRecFolderPath(recFolderList.back());
+			}else{
+				//複数指定あり
+				for( size_t i = 0; i < itr->second.recSetting.recFolderList.size(); i++ ){
+					recFolderList.push_back(itr->second.recSetting.recFolderList[i].recFolder);
+				}
+			}
+			for( size_t i = 0; i < recFolderList.size(); i++ ){
+				wstring mountPath;
+				GetChkDrivePath(recFolderList[i], mountPath);
+				std::transform(mountPath.begin(), mountPath.end(), mountPath.begin(), toupper);
+				map<wstring, pair<ULONGLONG, vector<wstring>>>::iterator jtr = mountMap.find(mountPath);
+				if( jtr != mountMap.end() ){
+					DWORD bitrate = 0;
+					_GetBitrate(itr->second.originalNetworkID, itr->second.transportStreamID, itr->second.serviceID, &bitrate);
+					jtr->second.first += (ULONGLONG)(bitrate / 8 * 1000) * itr->second.durationSecond;
+				}
+			}
+		}
+	}
+
+	//ドライブレベルでのチェック
+	map<wstring, wstring> protectFiles;
+	recInfoText.GetProtectFiles(&protectFiles);
+	for( map<wstring, pair<ULONGLONG, vector<wstring>>>::const_iterator itr = mountMap.begin(); itr != mountMap.end(); itr++ ){
+		ULARGE_INTEGER freeBytes;
+		if( itr->second.first > 0 && GetDiskFreeSpaceEx(itr->first.c_str(), &freeBytes, NULL, NULL) && freeBytes.QuadPart < itr->second.first ){
+			//ドライブにある古いTS順に必要なだけ消す
+			LONGLONG needFreeSize = itr->second.first - freeBytes.QuadPart;
+			multimap<LONGLONG, pair<ULONGLONG, wstring>> tsFileMap;
+			for( size_t i = 0; i < itr->second.second.size(); i++ ){
+				wstring delFolder = itr->second.second[i];
+				ChkFolderPath(delFolder);
+				WIN32_FIND_DATA findData;
+				HANDLE hFind = FindFirstFile((delFolder + L"\\*.ts").c_str(), &findData);
+				if( hFind != INVALID_HANDLE_VALUE ){
+					do{
+						if( (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0 && IsExt(findData.cFileName, L".ts") != FALSE ){
+							pair<LONGLONG, pair<ULONGLONG, wstring>> item;
+							item.first = (LONGLONG)findData.ftCreationTime.dwHighDateTime << 32 | findData.ftCreationTime.dwLowDateTime;
+							item.second.first = (ULONGLONG)findData.nFileSizeHigh << 32 | findData.nFileSizeLow;
+							item.second.second = delFolder + L"\\" + findData.cFileName;
+							tsFileMap.insert(item);
+						}
+					}while( FindNextFile(hFind, &findData) );
+					FindClose(hFind);
+				}
+			}
+			while( needFreeSize > 0 && tsFileMap.empty() == false ){
+				wstring delPath = tsFileMap.begin()->second.second;
+				wstring delPathUpper = delPath;
+				std::transform(delPathUpper.begin(), delPathUpper.end(), delPathUpper.begin(), toupper);
+				if( protectFiles.find(delPathUpper) != protectFiles.end() ){
+					_OutputDebugString(L"★No Delete(Protected) : %s\r\n", delPath.c_str());
+				}else{
+					DeleteFile(delPath.c_str());
+					needFreeSize -= tsFileMap.begin()->second.first;
+					_OutputDebugString(L"★Auto Delete2 : %s\r\n", delPath.c_str());
+					for( size_t i = 0 ; i < this->autoDelExtList.size(); i++ ){
+						wstring delFolder;
+						wstring delTitle;
+						GetFileFolder(delPath, delFolder);
+						GetFileTitle(delPath, delTitle);
+						DeleteFile((delFolder + L"\\" + delTitle + this->autoDelExtList[i]).c_str());
+						_OutputDebugString(L"★Auto Delete2 : %s\r\n", (delFolder + L"\\" + delTitle + this->autoDelExtList[i]).c_str());
+					}
+				}
+				tsFileMap.erase(tsFileMap.begin());
+			}
+		}
+	}
+}
+
 void CReserveManager::CheckOverTimeReserve()
 {
 	CBlockLock lock(&this->managerLock);
@@ -1207,6 +1333,9 @@ DWORD CReserveManager::Check()
 				this->notifyManager.AddNotify(NOTIFY_UPDATE_REC_INFO);
 				AddPostBatWork(batWorkList, L"PostRecEnd.bat");
 			}
+		}
+		if( this->checkCount % 60 == 0 ){
+			CheckAutoDel();
 		}
 		if( this->checkCount % 30 == 0 ){
 			CheckOverTimeReserve();
