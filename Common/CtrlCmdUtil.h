@@ -6,366 +6,246 @@
 namespace CtrlCmdUtilImpl_
 {
 
-BOOL CCUTIL_WriteStream_( const void* val, DWORD valSize, BYTE* buff, DWORD buffSize, DWORD* writeSize );
 BOOL CCUTIL_ReadStream_( void* val, DWORD valSize, const BYTE* buff, DWORD buffSize, DWORD* readSize );
-template<class T> DWORD CCUTIL_GetVectorVALUESize_( const vector<T>* val );
-template<class T> DWORD CCUTIL_GetPtrVectorVALUESize_( const vector<T>* val );
-template<class T> BOOL CCUTIL_WriteVectorVALUE_( const vector<T>* val, BYTE* buff, DWORD buffSize, DWORD* writeSize, bool bTreatNullAsEmpty );
-template<class T> BOOL CCUTIL_WritePtrVectorVALUE_( const vector<T>* val, BYTE* buff, DWORD buffSize, DWORD* writeSize );
+template<class T> DWORD CCUTIL_WriteVectorVALUE_( BYTE* buff, DWORD buffOffset, const vector<T>& val );
+template<class T> DWORD CCUTIL_WritePtrVectorVALUE_( BYTE* buff, DWORD buffOffset, const vector<T>& val );
 template<class T> BOOL CCUTIL_ReadVectorVALUE_( vector<T>* val, const BYTE* buff, DWORD buffSize, DWORD* readSize );
 template<class T> BOOL CCUTIL_ReadAndNewVectorVALUE_( vector<T*>* val, const BYTE* buff, DWORD buffSize, DWORD* readSize );
 
-#define CCUTIL_BASETYPE_GET_SIZE_		{ val; return sizeof(val); }
-#define CCUTIL_BASETYPE_GET_SIZE_PTR_	{ val; return sizeof(*val); }
-#define CCUTIL_BASETYPE_WRITE_			return CCUTIL_WriteStream_(&val, sizeof(val), buff, buffSize, writeSize)
-#define CCUTIL_BASETYPE_WRITE_PTR_		return CCUTIL_WriteStream_(val, sizeof(*val), buff, buffSize, writeSize)
+#define CCUTIL_BASETYPE_WRITE_			{ if( buff != NULL ) memcpy(buff + buffOffset, &val, sizeof(val)); return sizeof(val); }
 #define CCUTIL_BASETYPE_READ_			return CCUTIL_ReadStream_(val, sizeof(*val), buff, buffSize, readSize)
-#define CCUTIL_VECTOR_GET_SIZE_			return CCUTIL_GetVectorVALUESize_(val)
-#define CCUTIL_VECTOR_GET_SIZE_PTR_		return CCUTIL_GetPtrVectorVALUESize_(val)
-#define CCUTIL_VECTOR_WRITE_(b)			return CCUTIL_WriteVectorVALUE_(val, buff, buffSize, writeSize, b)
-#define CCUTIL_VECTOR_WRITE_PTR_		return CCUTIL_WritePtrVectorVALUE_(val, buff, buffSize, writeSize)
+#define CCUTIL_VECTOR_WRITE_			return CCUTIL_WriteVectorVALUE_(buff, buffOffset, val)
+#define CCUTIL_VECTOR_WRITE_PTR_		return CCUTIL_WritePtrVectorVALUE_(buff, buffOffset, val)
 #define CCUTIL_VECTOR_READ_				return CCUTIL_ReadVectorVALUE_(val, buff, buffSize, readSize)
 #define CCUTIL_VECTOR_READ_AND_NEW_		return CCUTIL_ReadAndNewVectorVALUE_(val, buff, buffSize, readSize)
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 //コマンド送信用バイナリ作成関数
 
-inline DWORD GetVALUESize( char val ){ CCUTIL_BASETYPE_GET_SIZE_; }
-inline BOOL WriteVALUE( char val, BYTE* buff, DWORD buffSize, DWORD* writeSize ){ CCUTIL_BASETYPE_WRITE_; }
+inline DWORD WriteVALUE( BYTE* buff, DWORD buffOffset, char val ){ CCUTIL_BASETYPE_WRITE_; }
 inline BOOL ReadVALUE( char* val, const BYTE* buff, DWORD buffSize, DWORD* readSize ){ CCUTIL_BASETYPE_READ_; }
-inline DWORD GetVALUESize( unsigned char val ){ CCUTIL_BASETYPE_GET_SIZE_; }
-inline BOOL WriteVALUE( unsigned char val, BYTE* buff, DWORD buffSize, DWORD* writeSize ){ CCUTIL_BASETYPE_WRITE_; }
+inline DWORD WriteVALUE( BYTE* buff, DWORD buffOffset, unsigned char val ){ CCUTIL_BASETYPE_WRITE_; }
 inline BOOL ReadVALUE( unsigned char* val, const BYTE* buff, DWORD buffSize, DWORD* readSize ){ CCUTIL_BASETYPE_READ_; }
 
-inline DWORD GetVALUESize( short val ){ CCUTIL_BASETYPE_GET_SIZE_; }
-inline BOOL WriteVALUE( short val, BYTE* buff, DWORD buffSize, DWORD* writeSize ){ CCUTIL_BASETYPE_WRITE_; }
+inline DWORD WriteVALUE( BYTE* buff, DWORD buffOffset, short val ){ CCUTIL_BASETYPE_WRITE_; }
 inline BOOL ReadVALUE( short* val, const BYTE* buff, DWORD buffSize, DWORD* readSize ){ CCUTIL_BASETYPE_READ_; }
-inline DWORD GetVALUESize( unsigned short val ){ CCUTIL_BASETYPE_GET_SIZE_; }
-inline BOOL WriteVALUE( unsigned short val, BYTE* buff, DWORD buffSize, DWORD* writeSize ){ CCUTIL_BASETYPE_WRITE_; }
+inline DWORD WriteVALUE( BYTE* buff, DWORD buffOffset, unsigned short val ){ CCUTIL_BASETYPE_WRITE_; }
 inline BOOL ReadVALUE( unsigned short* val, const BYTE* buff, DWORD buffSize, DWORD* readSize ){ CCUTIL_BASETYPE_READ_; }
 
-inline DWORD GetVALUESize( int val ){ CCUTIL_BASETYPE_GET_SIZE_; }
-inline BOOL WriteVALUE( int val, BYTE* buff, DWORD buffSize, DWORD* writeSize ){ CCUTIL_BASETYPE_WRITE_; }
+inline DWORD WriteVALUE( BYTE* buff, DWORD buffOffset, int val ){ CCUTIL_BASETYPE_WRITE_; }
 inline BOOL ReadVALUE( int* val, const BYTE* buff, DWORD buffSize, DWORD* readSize ){ CCUTIL_BASETYPE_READ_; }
-inline DWORD GetVALUESize( unsigned int val ){ CCUTIL_BASETYPE_GET_SIZE_; }
-inline BOOL WriteVALUE( unsigned int val, BYTE* buff, DWORD buffSize, DWORD* writeSize ){ CCUTIL_BASETYPE_WRITE_; }
+inline DWORD WriteVALUE( BYTE* buff, DWORD buffOffset, unsigned int val ){ CCUTIL_BASETYPE_WRITE_; }
 inline BOOL ReadVALUE( unsigned int* val, const BYTE* buff, DWORD buffSize, DWORD* readSize ){ CCUTIL_BASETYPE_READ_; }
 
-inline DWORD GetVALUESize( long val ){ CCUTIL_BASETYPE_GET_SIZE_; }
-inline BOOL WriteVALUE( long val, BYTE* buff, DWORD buffSize, DWORD* writeSize ){ CCUTIL_BASETYPE_WRITE_; }
+inline DWORD WriteVALUE( BYTE* buff, DWORD buffOffset, long val ){ CCUTIL_BASETYPE_WRITE_; }
 inline BOOL ReadVALUE( long* val, const BYTE* buff, DWORD buffSize, DWORD* readSize ){ CCUTIL_BASETYPE_READ_; }
-inline DWORD GetVALUESize( unsigned long val ){ CCUTIL_BASETYPE_GET_SIZE_; }
-inline BOOL WriteVALUE( unsigned long val, BYTE* buff, DWORD buffSize, DWORD* writeSize ){ CCUTIL_BASETYPE_WRITE_; }
+inline DWORD WriteVALUE( BYTE* buff, DWORD buffOffset, unsigned long val ){ CCUTIL_BASETYPE_WRITE_; }
 inline BOOL ReadVALUE( unsigned long* val, const BYTE* buff, DWORD buffSize, DWORD* readSize ){ CCUTIL_BASETYPE_READ_; }
 
-inline DWORD GetVALUESize( __int64 val ){ CCUTIL_BASETYPE_GET_SIZE_; }
-inline BOOL WriteVALUE( __int64 val, BYTE* buff, DWORD buffSize, DWORD* writeSize ){ CCUTIL_BASETYPE_WRITE_; }
+inline DWORD WriteVALUE( BYTE* buff, DWORD buffOffset, __int64 val ){ CCUTIL_BASETYPE_WRITE_; }
 inline BOOL ReadVALUE( __int64* val, const BYTE* buff, DWORD buffSize, DWORD* readSize ){ CCUTIL_BASETYPE_READ_; }
-inline DWORD GetVALUESize( unsigned __int64 val ){ CCUTIL_BASETYPE_GET_SIZE_; }
-inline BOOL WriteVALUE( unsigned __int64 val, BYTE* buff, DWORD buffSize, DWORD* writeSize ){ CCUTIL_BASETYPE_WRITE_; }
+inline DWORD WriteVALUE( BYTE* buff, DWORD buffOffset, unsigned __int64 val ){ CCUTIL_BASETYPE_WRITE_; }
 inline BOOL ReadVALUE( unsigned __int64* val, const BYTE* buff, DWORD buffSize, DWORD* readSize ){ CCUTIL_BASETYPE_READ_; }
 
-DWORD GetVALUESize( const vector<unsigned short>* val);
-inline BOOL WriteVALUE( const vector<unsigned short>* val, BYTE* buff, DWORD buffSize, DWORD* writeSize ){ CCUTIL_VECTOR_WRITE_(true); } //val==NULLは空要素ベクタと同じ扱い
+inline DWORD WriteVALUE( BYTE* buff, DWORD buffOffset, const vector<unsigned short>& val ){ CCUTIL_VECTOR_WRITE_; }
 inline BOOL ReadVALUE( vector<unsigned short>* val, const BYTE* buff, DWORD buffSize, DWORD* readSize ){ CCUTIL_VECTOR_READ_; }
 
-DWORD GetVALUESize( const vector<unsigned long>* val);
-inline BOOL WriteVALUE( const vector<unsigned long>* val, BYTE* buff, DWORD buffSize, DWORD* writeSize ){ CCUTIL_VECTOR_WRITE_(true); } //val==NULLは空要素ベクタと同じ扱い
+inline DWORD WriteVALUE( BYTE* buff, DWORD buffOffset, const vector<unsigned long>& val ){ CCUTIL_VECTOR_WRITE_; }
 inline BOOL ReadVALUE( vector<unsigned long>* val, const BYTE* buff, DWORD buffSize, DWORD* readSize ){ CCUTIL_VECTOR_READ_; }
 
-DWORD GetVALUESize( const vector<__int64>* val);
-inline BOOL WriteVALUE( const vector<__int64>* val, BYTE* buff, DWORD buffSize, DWORD* writeSize ){ CCUTIL_VECTOR_WRITE_(false); }
+inline DWORD WriteVALUE( BYTE* buff, DWORD buffOffset, const vector<__int64>& val ){ CCUTIL_VECTOR_WRITE_; }
 inline BOOL ReadVALUE( vector<__int64>* val, const BYTE* buff, DWORD buffSize, DWORD* readSize ){ CCUTIL_VECTOR_READ_; }
 
-DWORD GetVALUESize( const wstring& val );
-BOOL WriteVALUE( const wstring& val, BYTE* buff, DWORD buffSize, DWORD* writeSize );
+DWORD WriteVALUE( BYTE* buff, DWORD buffOffset, const wstring& val );
 BOOL ReadVALUE( wstring* val, const BYTE* buff, DWORD buffSize, DWORD* readSize );
 
-inline DWORD GetVALUESize( const vector<wstring>* val ){ CCUTIL_VECTOR_GET_SIZE_; }
-inline BOOL WriteVALUE( const vector<wstring>* val, BYTE* buff, DWORD buffSize, DWORD* writeSize ){ CCUTIL_VECTOR_WRITE_(false); }
+inline DWORD WriteVALUE( BYTE* buff, DWORD buffOffset, const vector<wstring>& val ){ CCUTIL_VECTOR_WRITE_; }
 inline BOOL ReadVALUE( vector<wstring>* val, const BYTE* buff, DWORD buffSize, DWORD* readSize ){ CCUTIL_VECTOR_READ_; }
 
-inline DWORD GetVALUESize( const SYSTEMTIME* val ){ CCUTIL_BASETYPE_GET_SIZE_PTR_; }
-inline BOOL WriteVALUE( const SYSTEMTIME* val, BYTE* buff, DWORD buffSize, DWORD* writeSize ){ CCUTIL_BASETYPE_WRITE_PTR_; }
+inline DWORD WriteVALUE( BYTE* buff, DWORD buffOffset, const SYSTEMTIME& val ){ CCUTIL_BASETYPE_WRITE_; }
 inline BOOL ReadVALUE( SYSTEMTIME* val, const BYTE* buff, DWORD buffSize, DWORD* readSize ){ CCUTIL_BASETYPE_READ_; }
 
-DWORD GetVALUESize( const REC_SETTING_DATA* val );
-BOOL WriteVALUE( const REC_SETTING_DATA* val, BYTE* buff, DWORD buffSize, DWORD* writeSize );
+DWORD WriteVALUE( BYTE* buff, DWORD buffOffset, const REC_SETTING_DATA& val );
 BOOL ReadVALUE( REC_SETTING_DATA* val, const BYTE* buff, DWORD buffSize, DWORD* readSize );
 
-DWORD GetVALUESize( const RESERVE_DATA* val );
-BOOL WriteVALUE( const RESERVE_DATA* val, BYTE* buff, DWORD buffSize, DWORD* writeSize );
+DWORD WriteVALUE( BYTE* buff, DWORD buffOffset, const RESERVE_DATA& val );
 BOOL ReadVALUE( RESERVE_DATA* val, const BYTE* buff, DWORD buffSize, DWORD* readSize );
 
-inline DWORD GetVALUESize( const vector<RESERVE_DATA>* val ){ CCUTIL_VECTOR_GET_SIZE_PTR_; }
-inline BOOL WriteVALUE( const vector<RESERVE_DATA>* val, BYTE* buff, DWORD buffSize, DWORD* writeSize ){ CCUTIL_VECTOR_WRITE_PTR_; }
+inline DWORD WriteVALUE( BYTE* buff, DWORD buffOffset, const vector<RESERVE_DATA>& val ){ CCUTIL_VECTOR_WRITE_; }
 inline BOOL ReadVALUE( vector<RESERVE_DATA>* val, const BYTE* buff, DWORD buffSize, DWORD* readSize ){ CCUTIL_VECTOR_READ_; }
 
-DWORD GetVALUESize( const EPGDB_SERVICE_INFO* val );
-BOOL WriteVALUE( const EPGDB_SERVICE_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize );
+DWORD WriteVALUE( BYTE* buff, DWORD buffOffset, const EPGDB_SERVICE_INFO& val );
 BOOL ReadVALUE( EPGDB_SERVICE_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize );
 
-inline DWORD GetVALUESize( const vector<EPGDB_SERVICE_INFO>* val ){ CCUTIL_VECTOR_GET_SIZE_PTR_; }
-inline BOOL WriteVALUE( const vector<EPGDB_SERVICE_INFO>* val, BYTE* buff, DWORD buffSize, DWORD* writeSize ){ CCUTIL_VECTOR_WRITE_PTR_; }
+inline DWORD WriteVALUE( BYTE* buff, DWORD buffOffset, const vector<EPGDB_SERVICE_INFO>& val ){ CCUTIL_VECTOR_WRITE_; }
 inline BOOL ReadVALUE( vector<EPGDB_SERVICE_INFO>* val, const BYTE* buff, DWORD buffSize, DWORD* readSize ){ CCUTIL_VECTOR_READ_; }
 
-DWORD GetVALUESize( const EPGDB_SHORT_EVENT_INFO* val );
-BOOL WriteVALUE( const EPGDB_SHORT_EVENT_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize );
+DWORD WriteVALUE( BYTE* buff, DWORD buffOffset, const EPGDB_SHORT_EVENT_INFO& val );
 BOOL ReadVALUE( EPGDB_SHORT_EVENT_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize );
 
-DWORD GetVALUESize( const EPGDB_EXTENDED_EVENT_INFO* val );
-BOOL WriteVALUE( const EPGDB_EXTENDED_EVENT_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize );
+DWORD WriteVALUE( BYTE* buff, DWORD buffOffset, const EPGDB_EXTENDED_EVENT_INFO& val );
 BOOL ReadVALUE( EPGDB_EXTENDED_EVENT_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize );
 
-DWORD GetVALUESize( const EPGDB_CONTENT_DATA* val );
-BOOL WriteVALUE( const EPGDB_CONTENT_DATA* val, BYTE* buff, DWORD buffSize, DWORD* writeSize );
+DWORD WriteVALUE( BYTE* buff, DWORD buffOffset, const EPGDB_CONTENT_DATA& val );
 BOOL ReadVALUE( EPGDB_CONTENT_DATA* val, const BYTE* buff, DWORD buffSize, DWORD* readSize );
 
-inline DWORD GetVALUESize( const vector<EPGDB_CONTENT_DATA>* val ){ CCUTIL_VECTOR_GET_SIZE_PTR_; }
-inline BOOL WriteVALUE( const vector<EPGDB_CONTENT_DATA>* val, BYTE* buff, DWORD buffSize, DWORD* writeSize ){ CCUTIL_VECTOR_WRITE_PTR_; }
+inline DWORD WriteVALUE( BYTE* buff, DWORD buffOffset, const vector<EPGDB_CONTENT_DATA>& val ){ CCUTIL_VECTOR_WRITE_; }
 inline BOOL ReadVALUE( vector<EPGDB_CONTENT_DATA>* val, const BYTE* buff, DWORD buffSize, DWORD* readSize ){ CCUTIL_VECTOR_READ_; }
 
-DWORD GetVALUESize( const EPGDB_CONTEN_INFO* val );
-BOOL WriteVALUE( const EPGDB_CONTEN_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize );
+DWORD WriteVALUE( BYTE* buff, DWORD buffOffset, const EPGDB_CONTEN_INFO& val );
 BOOL ReadVALUE( EPGDB_CONTEN_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize );
 
-DWORD GetVALUESize( const EPGDB_COMPONENT_INFO* val );
-BOOL WriteVALUE( const EPGDB_COMPONENT_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize );
+DWORD WriteVALUE( BYTE* buff, DWORD buffOffset, const EPGDB_COMPONENT_INFO& val );
 BOOL ReadVALUE( EPGDB_COMPONENT_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize );
 
-DWORD GetVALUESize( const EPGDB_AUDIO_COMPONENT_INFO_DATA* val );
-BOOL WriteVALUE( const EPGDB_AUDIO_COMPONENT_INFO_DATA* val, BYTE* buff, DWORD buffSize, DWORD* writeSize );
+DWORD WriteVALUE( BYTE* buff, DWORD buffOffset, const EPGDB_AUDIO_COMPONENT_INFO_DATA& val );
 BOOL ReadVALUE( EPGDB_AUDIO_COMPONENT_INFO_DATA* val, const BYTE* buff, DWORD buffSize, DWORD* readSize );
 
-inline DWORD GetVALUESize( const vector<EPGDB_AUDIO_COMPONENT_INFO_DATA>* val ){ CCUTIL_VECTOR_GET_SIZE_PTR_; }
-inline BOOL WriteVALUE( const vector<EPGDB_AUDIO_COMPONENT_INFO_DATA>* val, BYTE* buff, DWORD buffSize, DWORD* writeSize ){ CCUTIL_VECTOR_WRITE_PTR_; }
+inline DWORD WriteVALUE( BYTE* buff, DWORD buffOffset, const vector<EPGDB_AUDIO_COMPONENT_INFO_DATA>& val ){ CCUTIL_VECTOR_WRITE_; }
 inline BOOL ReadVALUE( vector<EPGDB_AUDIO_COMPONENT_INFO_DATA>* val, const BYTE* buff, DWORD buffSize, DWORD* readSize ){ CCUTIL_VECTOR_READ_; }
 
-DWORD GetVALUESize( const EPGDB_AUDIO_COMPONENT_INFO* val );
-BOOL WriteVALUE( const EPGDB_AUDIO_COMPONENT_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize );
+DWORD WriteVALUE( BYTE* buff, DWORD buffOffset, const EPGDB_AUDIO_COMPONENT_INFO& val );
 BOOL ReadVALUE( EPGDB_AUDIO_COMPONENT_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize );
 
-DWORD GetVALUESize( const EPGDB_EVENT_DATA* val );
-BOOL WriteVALUE( const EPGDB_EVENT_DATA* val, BYTE* buff, DWORD buffSize, DWORD* writeSize );
+DWORD WriteVALUE( BYTE* buff, DWORD buffOffset, const EPGDB_EVENT_DATA& val );
 BOOL ReadVALUE( EPGDB_EVENT_DATA* val, const BYTE* buff, DWORD buffSize, DWORD* readSize );
 
-inline DWORD GetVALUESize( const vector<EPGDB_EVENT_DATA>* val ){ CCUTIL_VECTOR_GET_SIZE_PTR_; }
-inline BOOL WriteVALUE( const vector<EPGDB_EVENT_DATA>* val, BYTE* buff, DWORD buffSize, DWORD* writeSize ){ CCUTIL_VECTOR_WRITE_PTR_; }
+inline DWORD WriteVALUE( BYTE* buff, DWORD buffOffset, const vector<EPGDB_EVENT_DATA>& val ){ CCUTIL_VECTOR_WRITE_; }
 inline BOOL ReadVALUE( vector<EPGDB_EVENT_DATA>* val, const BYTE* buff, DWORD buffSize, DWORD* readSize ){ CCUTIL_VECTOR_READ_; }
 
-DWORD GetVALUESize( const EPGDB_EVENTGROUP_INFO* val );
-BOOL WriteVALUE( const EPGDB_EVENTGROUP_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize );
+DWORD WriteVALUE( BYTE* buff, DWORD buffOffset, const EPGDB_EVENTGROUP_INFO& val );
 BOOL ReadVALUE( EPGDB_EVENTGROUP_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize );
 
-DWORD GetVALUESize( const EPGDB_EVENT_INFO* val );
-BOOL WriteVALUE( const EPGDB_EVENT_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize );
+DWORD WriteVALUE( BYTE* buff, DWORD buffOffset, const EPGDB_EVENT_INFO& val );
 BOOL ReadVALUE( EPGDB_EVENT_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize );
 
-inline DWORD GetVALUESize( const vector<EPGDB_EVENT_INFO*>* val ){ CCUTIL_VECTOR_GET_SIZE_; }
-inline BOOL WriteVALUE( const vector<EPGDB_EVENT_INFO*>* val, BYTE* buff, DWORD buffSize, DWORD* writeSize ){ CCUTIL_VECTOR_WRITE_(false); }
+inline DWORD WriteVALUE( BYTE* buff, DWORD buffOffset, const vector<EPGDB_EVENT_INFO*>& val ){ CCUTIL_VECTOR_WRITE_PTR_; }
 inline BOOL ReadVALUE( vector<EPGDB_EVENT_INFO*>* val, const BYTE* buff, DWORD buffSize, DWORD* readSize ){ CCUTIL_VECTOR_READ_AND_NEW_; }
 
-DWORD GetVALUESize( const EPGDB_SEARCH_DATE_INFO* val );
-BOOL WriteVALUE( const EPGDB_SEARCH_DATE_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize );
+DWORD WriteVALUE( BYTE* buff, DWORD buffOffset, const EPGDB_SEARCH_DATE_INFO& val );
 BOOL ReadVALUE( EPGDB_SEARCH_DATE_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize );
 
-inline DWORD GetVALUESize( const vector<EPGDB_SEARCH_DATE_INFO>* val ){ CCUTIL_VECTOR_GET_SIZE_PTR_; }
-inline BOOL WriteVALUE( const vector<EPGDB_SEARCH_DATE_INFO>* val, BYTE* buff, DWORD buffSize, DWORD* writeSize ){ CCUTIL_VECTOR_WRITE_PTR_; }
+inline DWORD WriteVALUE( BYTE* buff, DWORD buffOffset, const vector<EPGDB_SEARCH_DATE_INFO>& val ){ CCUTIL_VECTOR_WRITE_; }
 inline BOOL ReadVALUE( vector<EPGDB_SEARCH_DATE_INFO>* val, const BYTE* buff, DWORD buffSize, DWORD* readSize ){ CCUTIL_VECTOR_READ_; }
 
-DWORD GetVALUESize( const EPGDB_SEARCH_KEY_INFO* val );
-BOOL WriteVALUE( const EPGDB_SEARCH_KEY_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize );
+DWORD WriteVALUE( BYTE* buff, DWORD buffOffset, const EPGDB_SEARCH_KEY_INFO& val );
 BOOL ReadVALUE( EPGDB_SEARCH_KEY_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize );
 
-inline DWORD GetVALUESize( const vector<EPGDB_SEARCH_KEY_INFO>* val ){ CCUTIL_VECTOR_GET_SIZE_PTR_; }
-inline BOOL WriteVALUE( const vector<EPGDB_SEARCH_KEY_INFO>* val, BYTE* buff, DWORD buffSize, DWORD* writeSize ){ CCUTIL_VECTOR_WRITE_PTR_; }
+inline DWORD WriteVALUE( BYTE* buff, DWORD buffOffset, const vector<EPGDB_SEARCH_KEY_INFO>& val ){ CCUTIL_VECTOR_WRITE_; }
 inline BOOL ReadVALUE( vector<EPGDB_SEARCH_KEY_INFO>* val, const BYTE* buff, DWORD buffSize, DWORD* readSize ){ CCUTIL_VECTOR_READ_; }
 
-DWORD GetVALUESize( const SET_CH_INFO* val );
-BOOL WriteVALUE( const SET_CH_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize );
+DWORD WriteVALUE( BYTE* buff, DWORD buffOffset, const SET_CH_INFO& val );
 BOOL ReadVALUE( SET_CH_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize );
 
-inline DWORD GetVALUESize( const vector<SET_CH_INFO>* val ){ CCUTIL_VECTOR_GET_SIZE_PTR_; }
-inline BOOL WriteVALUE( const vector<SET_CH_INFO>* val, BYTE* buff, DWORD buffSize, DWORD* writeSize ){ CCUTIL_VECTOR_WRITE_PTR_; }
+inline DWORD WriteVALUE( BYTE* buff, DWORD buffOffset, const vector<SET_CH_INFO>& val ){ CCUTIL_VECTOR_WRITE_; }
 inline BOOL ReadVALUE( vector<SET_CH_INFO>* val, const BYTE* buff, DWORD buffSize, DWORD* readSize ){ CCUTIL_VECTOR_READ_; }
 
-DWORD GetVALUESize( const SET_CTRL_MODE* val );
-BOOL WriteVALUE( const SET_CTRL_MODE* val, BYTE* buff, DWORD buffSize, DWORD* writeSize );
+DWORD WriteVALUE( BYTE* buff, DWORD buffOffset, const SET_CTRL_MODE& val );
 BOOL ReadVALUE( SET_CTRL_MODE* val, const BYTE* buff, DWORD buffSize, DWORD* readSize );
 
-DWORD GetVALUESize( const REC_FILE_SET_INFO* val );
-BOOL WriteVALUE( const REC_FILE_SET_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize );
+DWORD WriteVALUE( BYTE* buff, DWORD buffOffset, const REC_FILE_SET_INFO& val );
 BOOL ReadVALUE( REC_FILE_SET_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize );
 
-inline DWORD GetVALUESize( const vector<REC_FILE_SET_INFO>* val ){ CCUTIL_VECTOR_GET_SIZE_PTR_; }
-inline BOOL WriteVALUE( const vector<REC_FILE_SET_INFO>* val, BYTE* buff, DWORD buffSize, DWORD* writeSize ){ CCUTIL_VECTOR_WRITE_PTR_; }
+inline DWORD WriteVALUE( BYTE* buff, DWORD buffOffset, const vector<REC_FILE_SET_INFO>& val ){ CCUTIL_VECTOR_WRITE_; }
 inline BOOL ReadVALUE( vector<REC_FILE_SET_INFO>* val, const BYTE* buff, DWORD buffSize, DWORD* readSize ){ CCUTIL_VECTOR_READ_; }
 
-DWORD GetVALUESize( const SET_CTRL_REC_PARAM* val );
-BOOL WriteVALUE( const SET_CTRL_REC_PARAM* val, BYTE* buff, DWORD buffSize, DWORD* writeSize );
+DWORD WriteVALUE( BYTE* buff, DWORD buffOffset, const SET_CTRL_REC_PARAM& val );
 BOOL ReadVALUE( SET_CTRL_REC_PARAM* val, const BYTE* buff, DWORD buffSize, DWORD* readSize );
 
-DWORD GetVALUESize( const SET_CTRL_REC_STOP_PARAM* val );
-BOOL WriteVALUE( const SET_CTRL_REC_STOP_PARAM* val, BYTE* buff, DWORD buffSize, DWORD* writeSize );
+DWORD WriteVALUE( BYTE* buff, DWORD buffOffset, const SET_CTRL_REC_STOP_PARAM& val );
 BOOL ReadVALUE( SET_CTRL_REC_STOP_PARAM* val, const BYTE* buff, DWORD buffSize, DWORD* readSize );
 
-DWORD GetVALUESize( const SET_CTRL_REC_STOP_RES_PARAM* val );
-BOOL WriteVALUE( const SET_CTRL_REC_STOP_RES_PARAM* val, BYTE* buff, DWORD buffSize, DWORD* writeSize );
+DWORD WriteVALUE( BYTE* buff, DWORD buffOffset, const SET_CTRL_REC_STOP_RES_PARAM& val );
 BOOL ReadVALUE( SET_CTRL_REC_STOP_RES_PARAM* val, const BYTE* buff, DWORD buffSize, DWORD* readSize );
 
-DWORD GetVALUESize( const REC_FILE_INFO* val );
-BOOL WriteVALUE( const REC_FILE_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize );
+DWORD WriteVALUE( BYTE* buff, DWORD buffOffset, const REC_FILE_INFO& val );
 BOOL ReadVALUE( REC_FILE_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize );
 
-inline DWORD GetVALUESize( const vector<REC_FILE_INFO>* val ){ CCUTIL_VECTOR_GET_SIZE_PTR_; }
-inline BOOL WriteVALUE( const vector<REC_FILE_INFO>* val, BYTE* buff, DWORD buffSize, DWORD* writeSize ){ CCUTIL_VECTOR_WRITE_PTR_; }
+inline DWORD WriteVALUE( BYTE* buff, DWORD buffOffset, const vector<REC_FILE_INFO>& val ){ CCUTIL_VECTOR_WRITE_; }
 inline BOOL ReadVALUE( vector<REC_FILE_INFO>* val, const BYTE* buff, DWORD buffSize, DWORD* readSize ){ CCUTIL_VECTOR_READ_; }
 
-DWORD GetVALUESize( const EPG_AUTO_ADD_DATA* val );
-BOOL WriteVALUE( const EPG_AUTO_ADD_DATA* val, BYTE* buff, DWORD buffSize, DWORD* writeSize );
+DWORD WriteVALUE( BYTE* buff, DWORD buffOffset, const EPG_AUTO_ADD_DATA& val );
 BOOL ReadVALUE( EPG_AUTO_ADD_DATA* val, const BYTE* buff, DWORD buffSize, DWORD* readSize );
 
-inline DWORD GetVALUESize( const vector<EPG_AUTO_ADD_DATA>* val ){ CCUTIL_VECTOR_GET_SIZE_PTR_; }
-inline BOOL WriteVALUE( const vector<EPG_AUTO_ADD_DATA>* val, BYTE* buff, DWORD buffSize, DWORD* writeSize ){ CCUTIL_VECTOR_WRITE_PTR_; }
+inline DWORD WriteVALUE( BYTE* buff, DWORD buffOffset, const vector<EPG_AUTO_ADD_DATA>& val ){ CCUTIL_VECTOR_WRITE_; }
 inline BOOL ReadVALUE( vector<EPG_AUTO_ADD_DATA>* val, const BYTE* buff, DWORD buffSize, DWORD* readSize ){ CCUTIL_VECTOR_READ_; }
 
-DWORD GetVALUESize( const SEARCH_EPG_INFO_PARAM* val );
-BOOL WriteVALUE( const SEARCH_EPG_INFO_PARAM* val, BYTE* buff, DWORD buffSize, DWORD* writeSize );
+DWORD WriteVALUE( BYTE* buff, DWORD buffOffset, const SEARCH_EPG_INFO_PARAM& val );
 BOOL ReadVALUE( SEARCH_EPG_INFO_PARAM* val, const BYTE* buff, DWORD buffSize, DWORD* readSize );
 
-DWORD GetVALUESize( const GET_EPG_PF_INFO_PARAM* val );
-BOOL WriteVALUE( const GET_EPG_PF_INFO_PARAM* val, BYTE* buff, DWORD buffSize, DWORD* writeSize );
+DWORD WriteVALUE( BYTE* buff, DWORD buffOffset, const GET_EPG_PF_INFO_PARAM& val );
 BOOL ReadVALUE( GET_EPG_PF_INFO_PARAM* val, const BYTE* buff, DWORD buffSize, DWORD* readSize );
 
-DWORD GetVALUESize( const MANUAL_AUTO_ADD_DATA* val );
-BOOL WriteVALUE( const MANUAL_AUTO_ADD_DATA* val, BYTE* buff, DWORD buffSize, DWORD* writeSize );
+DWORD WriteVALUE( BYTE* buff, DWORD buffOffset, const MANUAL_AUTO_ADD_DATA& val );
 BOOL ReadVALUE( MANUAL_AUTO_ADD_DATA* val, const BYTE* buff, DWORD buffSize, DWORD* readSize );
 
-inline DWORD GetVALUESize( const vector<MANUAL_AUTO_ADD_DATA>* val ){ CCUTIL_VECTOR_GET_SIZE_PTR_; }
-inline BOOL WriteVALUE( const vector<MANUAL_AUTO_ADD_DATA>* val, BYTE* buff, DWORD buffSize, DWORD* writeSize ){ CCUTIL_VECTOR_WRITE_PTR_; }
+inline DWORD WriteVALUE( BYTE* buff, DWORD buffOffset, const vector<MANUAL_AUTO_ADD_DATA>& val ){ CCUTIL_VECTOR_WRITE_; }
 inline BOOL ReadVALUE( vector<MANUAL_AUTO_ADD_DATA>* val, const BYTE* buff, DWORD buffSize, DWORD* readSize ){ CCUTIL_VECTOR_READ_; }
 
-DWORD GetVALUESize( const TUNER_RESERVE_INFO* val );
-BOOL WriteVALUE( const TUNER_RESERVE_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize );
+DWORD WriteVALUE( BYTE* buff, DWORD buffOffset, const TUNER_RESERVE_INFO& val );
 BOOL ReadVALUE( TUNER_RESERVE_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize );
 
-inline DWORD GetVALUESize( const vector<TUNER_RESERVE_INFO>* val ){ CCUTIL_VECTOR_GET_SIZE_PTR_; }
-inline BOOL WriteVALUE( const vector<TUNER_RESERVE_INFO>* val, BYTE* buff, DWORD buffSize, DWORD* writeSize ){ CCUTIL_VECTOR_WRITE_PTR_; }
+inline DWORD WriteVALUE( BYTE* buff, DWORD buffOffset, const vector<TUNER_RESERVE_INFO>& val ){ CCUTIL_VECTOR_WRITE_; }
 inline BOOL ReadVALUE( vector<TUNER_RESERVE_INFO>* val, const BYTE* buff, DWORD buffSize, DWORD* readSize ){ CCUTIL_VECTOR_READ_; }
 
-DWORD GetVALUESize( const REGIST_TCP_INFO* val );
-BOOL WriteVALUE( const REGIST_TCP_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize );
+DWORD WriteVALUE( BYTE* buff, DWORD buffOffset, const REGIST_TCP_INFO& val );
 BOOL ReadVALUE( REGIST_TCP_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize );
 
-DWORD GetVALUESize( const EPGDB_SERVICE_EVENT_INFO* val );
-BOOL WriteVALUE( const EPGDB_SERVICE_EVENT_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize );
+DWORD WriteVALUE( BYTE* buff, DWORD buffOffset, const EPGDB_SERVICE_EVENT_INFO& val );
 BOOL ReadVALUE( EPGDB_SERVICE_EVENT_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize );
 
-inline DWORD GetVALUESize( const vector<EPGDB_SERVICE_EVENT_INFO>* val ){ CCUTIL_VECTOR_GET_SIZE_PTR_; }
-inline BOOL WriteVALUE( const vector<EPGDB_SERVICE_EVENT_INFO>* val, BYTE* buff, DWORD buffSize, DWORD* writeSize ){ CCUTIL_VECTOR_WRITE_PTR_; }
+inline DWORD WriteVALUE( BYTE* buff, DWORD buffOffset, const vector<EPGDB_SERVICE_EVENT_INFO>& val ){ CCUTIL_VECTOR_WRITE_; }
 inline BOOL ReadVALUE( vector<EPGDB_SERVICE_EVENT_INFO>* val, const BYTE* buff, DWORD buffSize, DWORD* readSize ){ CCUTIL_VECTOR_READ_; }
 
-DWORD GetVALUESize( const TVTEST_CH_CHG_INFO* val );
-BOOL WriteVALUE( const TVTEST_CH_CHG_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize );
+DWORD WriteVALUE( BYTE* buff, DWORD buffOffset, const TVTEST_CH_CHG_INFO& val );
 BOOL ReadVALUE( TVTEST_CH_CHG_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize );
 
-DWORD GetVALUESize( const NWPLAY_PLAY_INFO* val );
-BOOL WriteVALUE( const NWPLAY_PLAY_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize );
+DWORD WriteVALUE( BYTE* buff, DWORD buffOffset, const NWPLAY_PLAY_INFO& val );
 BOOL ReadVALUE( NWPLAY_PLAY_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize );
 
-DWORD GetVALUESize( const NWPLAY_POS_CMD* val );
-BOOL WriteVALUE( const NWPLAY_POS_CMD* val, BYTE* buff, DWORD buffSize, DWORD* writeSize );
+DWORD WriteVALUE( BYTE* buff, DWORD buffOffset, const NWPLAY_POS_CMD& val );
 BOOL ReadVALUE( NWPLAY_POS_CMD* val, const BYTE* buff, DWORD buffSize, DWORD* readSize );
 
-DWORD GetVALUESize( const TVTEST_STREAMING_INFO* val );
-BOOL WriteVALUE( const TVTEST_STREAMING_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize );
+DWORD WriteVALUE( BYTE* buff, DWORD buffOffset, const TVTEST_STREAMING_INFO& val );
 BOOL ReadVALUE( TVTEST_STREAMING_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize );
 
-DWORD GetVALUESize( const NWPLAY_TIMESHIFT_INFO* val );
-BOOL WriteVALUE( const NWPLAY_TIMESHIFT_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize );
+DWORD WriteVALUE( BYTE* buff, DWORD buffOffset, const NWPLAY_TIMESHIFT_INFO& val );
 BOOL ReadVALUE( NWPLAY_TIMESHIFT_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize );
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 //テンプレート定義
 
 template<class T>
-DWORD CCUTIL_GetVectorVALUESize_( const vector<T>* val )
+DWORD CCUTIL_WriteVectorVALUE_( BYTE* buff, DWORD buffOffset, const vector<T>& val )
 {
-	DWORD size = sizeof(DWORD) * 2;
-	if( val != NULL ){
-		for( size_t i=0; i < val->size(); i++ ){
-			size += GetVALUESize((*val)[i]);
-		}
-	}
-	return size;
-}
-
-template<class T>
-DWORD CCUTIL_GetPtrVectorVALUESize_( const vector<T>* val )
-{
-	DWORD size = sizeof(DWORD) * 2;
-	if( val != NULL ){
-		for( size_t i=0; i < val->size(); i++ ){
-			size += GetVALUESize(&(*val)[i]);
-		}
-	}
-	return size;
-}
-
-template<class T>
-BOOL CCUTIL_WriteVectorVALUE_( const vector<T>* val, BYTE* buff, DWORD buffSize, DWORD* writeSize, bool bTreatNullAsEmpty )
-{
-	DWORD pos = sizeof(DWORD) * 2;
-	DWORD count = 0;
-	if( !bTreatNullAsEmpty && val == NULL || buff == NULL || buffSize < pos ){
-		return FALSE;
-	}
-	if( val != NULL ){
-		//リストの中身
-		DWORD size = 0;
-		for( ; count < (DWORD)val->size(); count++ ){
-			if( WriteVALUE((*val)[count], buff + pos, buffSize - pos, &size) == FALSE ){
-				return FALSE;
-			}
-			pos += size;
-		}
-	}
-	//全体のサイズ
-	WriteVALUE(pos, buff, sizeof(pos), NULL);
+	DWORD pos = buffOffset + sizeof(DWORD);
 	//リストの個数
-	WriteVALUE(count, buff + sizeof(pos), sizeof(count), NULL);
-
-	if( writeSize != NULL ){
-		*writeSize = pos;
-	}
-	return TRUE;
-}
-
-template<class T>
-BOOL CCUTIL_WritePtrVectorVALUE_( const vector<T>* val, BYTE* buff, DWORD buffSize, DWORD* writeSize )
-{
-	DWORD pos = sizeof(DWORD) * 2;
-	DWORD count = 0;
-	if( val == NULL || buff == NULL || buffSize < pos ){
-		return FALSE;
-	}
+	pos += WriteVALUE(buff, pos, (DWORD)val.size());
 	//リストの中身
-	DWORD size = 0;
-	for( ; count < (DWORD)val->size(); count++ ){
-		if( WriteVALUE(&(*val)[count], buff + pos, buffSize - pos, &size) == FALSE ){
-			return FALSE;
-		}
-		pos += size;
+	for( size_t i = 0; i < val.size(); i++ ){
+		pos += WriteVALUE(buff, pos, val[i]);
 	}
 	//全体のサイズ
-	WriteVALUE(pos, buff, sizeof(pos), NULL);
-	//リストの個数
-	WriteVALUE(count, buff + sizeof(pos), sizeof(count), NULL);
+	WriteVALUE(buff, buffOffset, pos - buffOffset);
+	return pos - buffOffset;
+}
 
-	if( writeSize != NULL ){
-		*writeSize = pos;
+template<class T>
+DWORD CCUTIL_WritePtrVectorVALUE_( BYTE* buff, DWORD buffOffset, const vector<T>& val )
+{
+	DWORD pos = buffOffset + sizeof(DWORD);
+	//リストの個数
+	pos += WriteVALUE(buff, pos, (DWORD)val.size());
+	//リストの中身
+	for( size_t i = 0; i < val.size(); i++ ){
+		if( val[i] == NULL ){
+			throw std::runtime_error("");
+		}
+		pos += WriteVALUE(buff, pos, *val[i]);
 	}
-	return TRUE;
+	//全体のサイズ
+	WriteVALUE(buff, buffOffset, pos - buffOffset);
+	return pos - buffOffset;
 }
 
 template<class T>
@@ -450,19 +330,25 @@ inline BOOL ReadVALUE( T* val, const BYTE* buff, DWORD buffSize, DWORD* readSize
 template<class T>
 BYTE* NewWriteVALUE( const T& val, DWORD& writeSize )
 {
-	DWORD buffSize = CtrlCmdUtilImpl_::GetVALUESize(val);
+	DWORD buffSize = CtrlCmdUtilImpl_::WriteVALUE(NULL, 0, val);
 	BYTE* buff = new BYTE[buffSize];
 	try{
-		if( CtrlCmdUtilImpl_::WriteVALUE(val, buff, buffSize, NULL) != FALSE ){
-			writeSize = buffSize;
-			return buff;
-		}
+		CtrlCmdUtilImpl_::WriteVALUE(buff, 0, val);
 	}catch( ... ){
 		delete[] buff;
 		throw;
 	}
-	delete[] buff;
-	return NULL;
+	writeSize = buffSize;
+	return buff;
+}
+
+template<class T>
+BYTE* NewWriteVALUE( T* val, DWORD& writeSize )
+{
+	if( val == NULL ){
+		return NULL;
+	}
+	return NewWriteVALUE(*val, writeSize);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
