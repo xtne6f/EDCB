@@ -6,14 +6,13 @@
 namespace CtrlCmdUtilImpl_
 {
 
-BOOL CCUTIL_ReadStream_( void* val, DWORD valSize, const BYTE* buff, DWORD buffSize, DWORD* readSize );
 template<class T> DWORD CCUTIL_WriteVectorVALUE_( WORD ver, BYTE* buff, DWORD buffOffset, const vector<T>& val );
 template<class T> DWORD CCUTIL_WritePtrVectorVALUE_( WORD ver, BYTE* buff, DWORD buffOffset, const vector<T>& val );
 template<class T> BOOL CCUTIL_ReadVectorVALUE_( WORD ver, vector<T>* val, const BYTE* buff, DWORD buffSize, DWORD* readSize );
 template<class T> BOOL CCUTIL_ReadAndNewVectorVALUE_( WORD ver, vector<T*>* val, const BYTE* buff, DWORD buffSize, DWORD* readSize );
 
 #define CCUTIL_BASETYPE_WRITE_			{ (void)ver; if( buff != NULL ) memcpy(buff + buffOffset, &val, sizeof(val)); return sizeof(val); }
-#define CCUTIL_BASETYPE_READ_			{ (void)ver; return CCUTIL_ReadStream_(val, sizeof(*val), buff, buffSize, readSize); }
+#define CCUTIL_BASETYPE_READ_			{ (void)ver; if( buffSize < sizeof(*val) ) return FALSE; memcpy(val, buff, sizeof(*val)); *readSize = sizeof(*val); return TRUE; }
 #define CCUTIL_VECTOR_WRITE_			return CCUTIL_WriteVectorVALUE_(ver, buff, buffOffset, val)
 #define CCUTIL_VECTOR_WRITE_PTR_		return CCUTIL_WritePtrVectorVALUE_(ver, buff, buffOffset, val)
 #define CCUTIL_VECTOR_READ_				return CCUTIL_ReadVectorVALUE_(ver, val, buff, buffSize, readSize)
@@ -254,7 +253,7 @@ DWORD CCUTIL_WritePtrVectorVALUE_( WORD ver, BYTE* buff, DWORD buffOffset, const
 template<class T>
 BOOL CCUTIL_ReadVectorVALUE_( WORD ver, vector<T>* val, const BYTE* buff, DWORD buffSize, DWORD* readSize )
 {
-	if( val == NULL || buff == NULL || buffSize < sizeof(DWORD)*2 ){
+	if( buffSize < sizeof(DWORD)*2 ){
 		return FALSE;
 	}
 
@@ -265,31 +264,32 @@ BOOL CCUTIL_ReadVectorVALUE_( WORD ver, vector<T>* val, const BYTE* buff, DWORD 
 	//全体のサイズ
 	ReadVALUE(0, &valSize, buff + pos, buffSize - pos, &size);
 	pos += size;
-	if( buffSize < valSize ){
-		return FALSE;
-	}
 	//リストの個数
 	ReadVALUE(0, &valCount, buff + pos, buffSize - pos, &size);
 	pos += size;
+	if( valSize < pos || buffSize < valSize ){
+		return FALSE;
+	}
+	buffSize = valSize;
+	val->reserve(val->size() + valCount);
 
 	for( DWORD i=0; i < valCount; i++ ){
-		T data;
-		if( ReadVALUE(ver, &data, buff + pos, buffSize - pos, &size) == FALSE ){
+		val->resize(val->size() + 1);
+		if( ReadVALUE(ver, &val->back(), buff + pos, buffSize - pos, &size) == FALSE ){
+			//Tがデストラクタで破棄されないポインタメンバをもつ場合にリークするためdeleteはできない
+			//呼び出し側はリストを適切に破棄するべき
 			return FALSE;
 		}
 		pos += size;
-		val->push_back(data);
 	}
-	if( readSize != NULL ){
-		*readSize = pos;
-	}
+	*readSize = valSize;
 	return TRUE;
 }
 
 template<class T>
 BOOL CCUTIL_ReadAndNewVectorVALUE_( WORD ver, vector<T*>* val, const BYTE* buff, DWORD buffSize, DWORD* readSize )
 {
-	if( val == NULL || buff == NULL || buffSize < sizeof(DWORD)*2 ){
+	if( buffSize < sizeof(DWORD)*2 ){
 		return FALSE;
 	}
 
@@ -300,25 +300,25 @@ BOOL CCUTIL_ReadAndNewVectorVALUE_( WORD ver, vector<T*>* val, const BYTE* buff,
 	//全体のサイズ
 	ReadVALUE(0, &valSize, buff + pos, buffSize - pos, &size);
 	pos += size;
-	if( buffSize < valSize ){
-		return FALSE;
-	}
 	//リストの個数
 	ReadVALUE(0, &valCount, buff + pos, buffSize - pos, &size);
 	pos += size;
+	if( valSize < pos || buffSize < valSize ){
+		return FALSE;
+	}
+	buffSize = valSize;
+	val->reserve(val->size() + valCount);
 
 	for( DWORD i=0; i < valCount; i++ ){
-		T* data = new T;
-		if( ReadVALUE(ver, data, buff + pos, buffSize - pos, &size) == FALSE ){
-			delete data;
+		val->push_back(new T);
+		if( ReadVALUE(ver, val->back(), buff + pos, buffSize - pos, &size) == FALSE ){
+			//Tがデストラクタで破棄されないポインタメンバをもつ場合にリークするためdeleteはできない
+			//呼び出し側はリストを適切に破棄するべき
 			return FALSE;
 		}
 		pos += size;
-		val->push_back(data);
 	}
-	if( readSize != NULL ){
-		*readSize = pos;
-	}
+	*readSize = valSize;
 	return TRUE;
 }
 
@@ -327,7 +327,11 @@ BOOL CCUTIL_ReadAndNewVectorVALUE_( WORD ver, vector<T*>* val, const BYTE* buff,
 template<class T>
 inline BOOL ReadVALUE( T* val, const BYTE* buff, DWORD buffSize, DWORD* readSize )
 {
-	return CtrlCmdUtilImpl_::ReadVALUE(0, val, buff, buffSize, readSize);
+	if( val == NULL || buff == NULL ){
+		return FALSE;
+	}
+	DWORD readSize_;
+	return CtrlCmdUtilImpl_::ReadVALUE(0, val, buff, buffSize, readSize ? readSize : &readSize_);
 }
 
 template<class T>
@@ -357,9 +361,13 @@ BYTE* NewWriteVALUE( T* val, DWORD& writeSize )
 template<class T>
 inline BOOL ReadVALUE2( WORD ver, T* val, const BYTE* buff, DWORD buffSize, DWORD* readSize )
 {
+	if( val == NULL || buff == NULL ){
+		return FALSE;
+	}
 	//2未満のコマンドバージョンは2として扱う
 	ver = max(ver, 2);
-	return CtrlCmdUtilImpl_::ReadVALUE(ver, val, buff, buffSize, readSize);
+	DWORD readSize_;
+	return CtrlCmdUtilImpl_::ReadVALUE(ver, val, buff, buffSize, readSize ? readSize : &readSize_);
 }
 
 template<class T>
