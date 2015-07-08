@@ -1672,17 +1672,16 @@ UInt32 CtrlCmdUtil::SendEnumPgAll(
 	List<Def::EpgServiceEventInfo^>^% val
 	)
 {
-	vector<EPGDB_SERVICE_EVENT_INFO*> _val;
+	vector<EPGDB_SERVICE_EVENT_INFO> _val;
 	DWORD ret = this->sendCmd->SendEnumPgAll(&_val);
 	if( ret == CMD_SUCCESS ){
 		for( size_t i=0; i<_val.size(); i++ ){
 			Def::EpgServiceEventInfo^ item = gcnew Def::EpgServiceEventInfo();
-			CopyData(_val[i], item);
+			CopyData(&_val[i], item);
 			val->Add(item);
-			for( size_t j=0; j<_val[i]->eventList.size(); j++ ){
-				SAFE_DELETE(_val[i]->eventList[j]);
+			for( size_t j=0; j<_val[i].eventList.size(); j++ ){
+				SAFE_DELETE(_val[i].eventList[j]);
 			}
-			SAFE_DELETE(_val[i]);
 		}
 	}
 	return ret;

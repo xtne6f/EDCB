@@ -97,9 +97,6 @@ BOOL ReadVALUE( RESERVE_DATA* val, const BYTE* buff, DWORD buffSize, DWORD* read
 inline DWORD GetVALUESize( const vector<RESERVE_DATA>* val ){ CCUTIL_VECTOR_GET_SIZE_PTR_; }
 inline BOOL WriteVALUE( const vector<RESERVE_DATA>* val, BYTE* buff, DWORD buffSize, DWORD* writeSize ){ CCUTIL_VECTOR_WRITE_PTR_; }
 inline BOOL ReadVALUE( vector<RESERVE_DATA>* val, const BYTE* buff, DWORD buffSize, DWORD* readSize ){ CCUTIL_VECTOR_READ_; }
-inline DWORD GetVALUESize( const vector<RESERVE_DATA*>* val ){ CCUTIL_VECTOR_GET_SIZE_; }
-inline BOOL WriteVALUE( const vector<RESERVE_DATA*>* val, BYTE* buff, DWORD buffSize, DWORD* writeSize ){ CCUTIL_VECTOR_WRITE_(false); }
-inline BOOL ReadVALUE( vector<RESERVE_DATA*>* val, const BYTE* buff, DWORD buffSize, DWORD* readSize ){ CCUTIL_VECTOR_READ_AND_NEW_; }
 
 DWORD GetVALUESize( const EPGDB_SERVICE_INFO* val );
 BOOL WriteVALUE( const EPGDB_SERVICE_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize );
@@ -261,9 +258,9 @@ DWORD GetVALUESize( const EPGDB_SERVICE_EVENT_INFO* val );
 BOOL WriteVALUE( const EPGDB_SERVICE_EVENT_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize );
 BOOL ReadVALUE( EPGDB_SERVICE_EVENT_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize );
 
-inline DWORD GetVALUESize( const vector<EPGDB_SERVICE_EVENT_INFO*>* val ){ CCUTIL_VECTOR_GET_SIZE_; }
-inline BOOL WriteVALUE( const vector<EPGDB_SERVICE_EVENT_INFO*>* val, BYTE* buff, DWORD buffSize, DWORD* writeSize ){ CCUTIL_VECTOR_WRITE_(false); }
-inline BOOL ReadVALUE( vector<EPGDB_SERVICE_EVENT_INFO*>* val, const BYTE* buff, DWORD buffSize, DWORD* readSize ){ CCUTIL_VECTOR_READ_AND_NEW_; }
+inline DWORD GetVALUESize( const vector<EPGDB_SERVICE_EVENT_INFO>* val ){ CCUTIL_VECTOR_GET_SIZE_PTR_; }
+inline BOOL WriteVALUE( const vector<EPGDB_SERVICE_EVENT_INFO>* val, BYTE* buff, DWORD buffSize, DWORD* writeSize ){ CCUTIL_VECTOR_WRITE_PTR_; }
+inline BOOL ReadVALUE( vector<EPGDB_SERVICE_EVENT_INFO>* val, const BYTE* buff, DWORD buffSize, DWORD* readSize ){ CCUTIL_VECTOR_READ_; }
 
 DWORD GetVALUESize( const TVTEST_CH_CHG_INFO* val );
 BOOL WriteVALUE( const TVTEST_CH_CHG_INFO* val, BYTE* buff, DWORD buffSize, DWORD* writeSize );

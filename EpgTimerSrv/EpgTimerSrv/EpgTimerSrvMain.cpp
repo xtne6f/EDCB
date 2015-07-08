@@ -1061,14 +1061,9 @@ static void EnumPgInfoCallback(vector<EPGDB_EVENT_INFO*>* pval, void* param)
 
 static void EnumPgAllCallback(vector<EPGDB_SERVICE_EVENT_INFO>* pval, void* param)
 {
-	vector<EPGDB_SERVICE_EVENT_INFO*> valp;
-	valp.reserve(pval->size());
-	for( size_t i = 0; i < pval->size(); i++ ){
-		valp.push_back(&(*pval)[i]);
-	}
 	CMD_STREAM *resParam = (CMD_STREAM*)param;
 	resParam->param = CMD_SUCCESS;
-	resParam->data = NewWriteVALUE(&valp, resParam->dataSize);
+	resParam->data = NewWriteVALUE(pval, resParam->dataSize);
 }
 
 int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STREAM* resParam)

@@ -252,7 +252,7 @@ public:
 	//ˆø”F
 	// val				[OUT]”Ô‘gî•ñˆê——
 	DWORD SendEnumPgAll(
-		vector<EPGDB_SERVICE_EVENT_INFO*>* val
+		vector<EPGDB_SERVICE_EVENT_INFO>* val
 		){
 		return ReceiveCmdData(CMD2_EPG_SRV_ENUM_PG_ALL, val);
 	}
