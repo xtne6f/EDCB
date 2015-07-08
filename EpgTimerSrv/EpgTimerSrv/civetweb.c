@@ -5278,7 +5278,7 @@ static void send_file_data(struct mg_connection *conn,
 			       strerror(ERRNO));
 		}
 #endif
-		if (offset > 0 && fseeko(filep->fp, offset, SEEK_SET) != 0) {
+		if (offset > 0 && fseeko(filep->fp, offset, SEEK_SET) == -1) {
 			mg_cry(conn, "%s: fseeko() failed: %s", __func__, strerror(ERRNO));
 		} else {
 			while (len > 0) {
