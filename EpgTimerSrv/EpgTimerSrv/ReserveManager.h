@@ -150,6 +150,7 @@ private:
 	wstring recInfo2RegExp;
 	bool defEnableCaption;
 	bool defEnableData;
+	bool errEndBatRun;
 	wstring recNamePlugInFileName;
 	bool recNameNoChkYen;
 

@@ -151,6 +151,7 @@ void CReserveManager::ReloadSetting()
 
 	this->defEnableCaption = GetPrivateProfileInt(L"SET", L"Caption", 1, viewIniPath.c_str()) != 0;
 	this->defEnableData = GetPrivateProfileInt(L"SET", L"Data", 0, viewIniPath.c_str()) != 0;
+	this->errEndBatRun = GetPrivateProfileInt(L"SET", L"ErrEndBatRun", 0, iniPath.c_str()) != 0;
 
 	this->recNamePlugInFileName.clear();
 	if( GetPrivateProfileInt(L"SET", L"RecNamePlugIn", 0, iniPath.c_str()) != 0 ){
@@ -1298,8 +1299,8 @@ DWORD CReserveManager::Check()
 					batInfo.macroList.push_back(pair<string, wstring>("AddKey",
 						itrRes->second.comment.compare(0, 8, L"EPGŽ©“®—\–ñ(") == 0 && itrRes->second.comment.size() >= 9 ?
 						itrRes->second.comment.substr(8, itrRes->second.comment.size() - 9) : wstring()));
-					if( (itrRet->type == CTunerBankCtrl::CHECK_END || itrRet->type == CTunerBankCtrl::CHECK_END_NEXT_START_END) && item.recFilePath.empty() == false &&
-					    itrRes->second.recSetting.batFilePath.empty() == false && itrRet->continueRec == false ){
+					if( (itrRet->type == CTunerBankCtrl::CHECK_END || itrRet->type == CTunerBankCtrl::CHECK_END_NEXT_START_END || this->errEndBatRun) &&
+					    item.recFilePath.empty() == false && itrRes->second.recSetting.batFilePath.empty() == false && itrRet->continueRec == false ){
 						batInfo.batFilePath = itrRes->second.recSetting.batFilePath;
 						this->batManager.AddBatWork(batInfo);
 					}
