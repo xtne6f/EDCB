@@ -2,6 +2,9 @@
 #include "CtrlCmdUtil2.h"
 #include "Util.h"
 
+namespace CtrlCmdUtilImpl_
+{
+
 //^\s*if *\( *WriteVALUE2 *\( *ver *,.*?, *buff *\+ *pos *, *buffSize *- *pos *, *&size *\) *== *FALSE *\) *{ *\r\n^\s*return *FALSE; *\r\n^\s*} *\r\n^\s*pos *\+= *size; *\r\n
 #define WRITE_VALUE2_OR_FAIL(ver,buff,buffSize,pos,size,val)	{ if( WriteVALUE2((ver),val,(buff)+pos,(buffSize)-pos,&size) == FALSE ) return FALSE; pos+=size; }
 #define READ_VALUE2_OR_FAIL(ver,buff,buffSize,pos,size,val)		{ if( ReadVALUE2((ver),val,(buff)+pos,(buffSize)-pos,&size) == FALSE ) return FALSE; pos+=size; }
@@ -799,4 +802,6 @@ CMD_END:
 	}
 
 	return TRUE;
+}
+
 }

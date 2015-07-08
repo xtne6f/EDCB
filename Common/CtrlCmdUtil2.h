@@ -4,6 +4,9 @@
 #include "StructDef.h"
 #include "CtrlCmdUtil.h"
 
+namespace CtrlCmdUtilImpl_
+{
+
 template<class T> DWORD CCUTIL2_GetPtrVectorVALUESize2_( WORD ver, const vector<T>* val );
 template<class T> BOOL CCUTIL2_WritePtrVectorVALUE2_( WORD ver, const vector<T>* val, BYTE* buff, DWORD buffSize, DWORD* writeSize );
 template<class T> BOOL CCUTIL2_ReadVectorVALUE2_( WORD ver, vector<T>* val, const BYTE* buff, DWORD buffSize, DWORD* readSize );
@@ -222,14 +225,22 @@ BOOL CCUTIL2_ReadVectorVALUE2_( WORD ver, vector<T>* val, const BYTE* buff, DWOR
 	return TRUE;
 }
 
+}
+
+template<class T>
+inline BOOL ReadVALUE2( WORD ver, T* val, const BYTE* buff, DWORD buffSize, DWORD* readSize )
+{
+	return CtrlCmdUtilImpl_::ReadVALUE2(ver, val, buff, buffSize, readSize);
+}
+
 template<class T>
 BYTE* NewWriteVALUE2WithVersion( WORD ver, const T& val, DWORD& writeSize )
 {
-	DWORD buffSize = GetVALUESize(ver) + GetVALUESize2(ver, val);
+	DWORD buffSize = CtrlCmdUtilImpl_::GetVALUESize(ver) + CtrlCmdUtilImpl_::GetVALUESize2(ver, val);
 	BYTE* buff = new BYTE[buffSize];
-	WriteVALUE(ver, buff, buffSize, NULL);
+	CtrlCmdUtilImpl_::WriteVALUE(ver, buff, buffSize, NULL);
 	try{
-		if( WriteVALUE2(ver, val, buff + GetVALUESize(ver), buffSize - GetVALUESize(ver), NULL) != FALSE ){
+		if( CtrlCmdUtilImpl_::WriteVALUE2(ver, val, buff + CtrlCmdUtilImpl_::GetVALUESize(ver), buffSize - CtrlCmdUtilImpl_::GetVALUESize(ver), NULL) != FALSE ){
 			writeSize = buffSize;
 			return buff;
 		}

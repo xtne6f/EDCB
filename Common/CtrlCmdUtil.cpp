@@ -2,6 +2,9 @@
 #include "CtrlCmdUtil.h"
 #include "Util.h"
 
+namespace CtrlCmdUtilImpl_
+{
+
 //^\s*if *\( *WriteVALUE *\(.*?, *buff *\+ *pos *, *buffSize *- *pos *, *&size *\) *== *FALSE *\) *{ *\r\n^\s*return *FALSE; *\r\n^\s*} *\r\n^\s*pos *\+= *size; *\r\n
 #define WRITE_VALUE_OR_FAIL(buff,buffSize,pos,size,val)		{ if( WriteVALUE(val,(buff)+pos,(buffSize)-pos,&size) == FALSE ) return FALSE; pos+=size; }
 #define READ_VALUE_OR_FAIL(buff,buffSize,pos,size,val)		{ if( ReadVALUE(val,(buff)+pos,(buffSize)-pos,&size) == FALSE ) return FALSE; pos+=size; }
@@ -2686,6 +2689,34 @@ BOOL ReadVALUE( NWPLAY_TIMESHIFT_INFO* val, const BYTE* buff, DWORD buffSize, DW
 	return TRUE;
 }
 
+BOOL CCUTIL_WriteStream_( const void* val, DWORD valSize, BYTE* buff, DWORD buffSize, DWORD* writeSize )
+{
+	if( val == NULL || buff == NULL || valSize > buffSize ){
+		return FALSE;
+	}
+	memcpy(buff, val, valSize);
+	if( writeSize != NULL ){
+		*writeSize = valSize;
+	}
+	return TRUE;
+}
+
+BOOL CCUTIL_ReadStream_( void* val, DWORD valSize, const BYTE* buff, DWORD buffSize, DWORD* readSize )
+{
+	if( buff == NULL || valSize > buffSize ){
+		return FALSE;
+	}
+	if( val != NULL ){
+		memcpy(val, buff, valSize);
+	}
+	if( readSize != NULL ){
+		*readSize = valSize;
+	}
+	return TRUE;
+}
+
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////
 //旧バージョンコマンド送信用バイナリ作成関数
 BOOL CreateReserveDataStream(OLD_RESERVE_DATA* pData, CMD_STREAM* pCmd)
@@ -3657,30 +3688,4 @@ void CopyOldNew(OLD_SEARCH_KEY* src, EPGDB_SEARCH_KEY_INFO* dest)
 			}
 	}
 	dest->serviceList = src->CHIDList;
-}
-
-BOOL CCUTIL_WriteStream_( const void* val, DWORD valSize, BYTE* buff, DWORD buffSize, DWORD* writeSize )
-{
-	if( val == NULL || buff == NULL || valSize > buffSize ){
-		return FALSE;
-	}
-	memcpy(buff, val, valSize);
-	if( writeSize != NULL ){
-		*writeSize = valSize;
-	}
-	return TRUE;
-}
-
-BOOL CCUTIL_ReadStream_( void* val, DWORD valSize, const BYTE* buff, DWORD buffSize, DWORD* readSize )
-{
-	if( buff == NULL || valSize > buffSize ){
-		return FALSE;
-	}
-	if( val != NULL ){
-		memcpy(val, buff, valSize);
-	}
-	if( readSize != NULL ){
-		*readSize = valSize;
-	}
-	return TRUE;
 }

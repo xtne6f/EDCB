@@ -3,6 +3,9 @@
 
 #include "StructDef.h"
 
+namespace CtrlCmdUtilImpl_
+{
+
 BOOL CCUTIL_WriteStream_( const void* val, DWORD valSize, BYTE* buff, DWORD buffSize, DWORD* writeSize );
 BOOL CCUTIL_ReadStream_( void* val, DWORD valSize, const BYTE* buff, DWORD buffSize, DWORD* readSize );
 template<class T> DWORD CCUTIL_GetVectorVALUESize_( const vector<T>* val );
@@ -283,21 +286,6 @@ BOOL WriteVALUE( const NWPLAY_TIMESHIFT_INFO* val, BYTE* buff, DWORD buffSize, D
 BOOL ReadVALUE( NWPLAY_TIMESHIFT_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize );
 
 ////////////////////////////////////////////////////////////////////////////////////////////
-//旧バージョンコマンド送信用バイナリ作成関数
-BOOL CreateReserveDataStream(OLD_RESERVE_DATA* pData, CMD_STREAM* pCmd);
-BOOL CopyReserveData(OLD_RESERVE_DATA* pstData, CMD_STREAM* pCmd);
-
-BOOL CreateSearchKeyDataStream(OLD_SEARCH_KEY* pData, CMD_STREAM* pCmd);
-BOOL CopySearchKeyData(OLD_SEARCH_KEY* pstData, CMD_STREAM* pCmd);
-
-BOOL CreateEventInfoData3Stream(OLD_EVENT_INFO_DATA3* pData, CMD_STREAM* pCmd);
-BOOL CopyEventInfoData3(OLD_EVENT_INFO_DATA3* pstData, CMD_STREAM* pCmd);
-
-void CopyOldNew(OLD_RESERVE_DATA* src, RESERVE_DATA* dest);
-void CopyOldNew(OLD_SEARCH_KEY* src, EPG_AUTO_ADD_DATA* dest);
-void CopyOldNew(OLD_SEARCH_KEY* src, EPGDB_SEARCH_KEY_INFO* dest);
-
-////////////////////////////////////////////////////////////////////////////////////////////
 //テンプレート定義
 
 template<class T>
@@ -451,13 +439,21 @@ BOOL CCUTIL_ReadAndNewVectorVALUE_( vector<T*>* val, const BYTE* buff, DWORD buf
 	return TRUE;
 }
 
+}
+
+template<class T>
+inline BOOL ReadVALUE( T* val, const BYTE* buff, DWORD buffSize, DWORD* readSize )
+{
+	return CtrlCmdUtilImpl_::ReadVALUE(val, buff, buffSize, readSize);
+}
+
 template<class T>
 BYTE* NewWriteVALUE( const T& val, DWORD& writeSize )
 {
-	DWORD buffSize = GetVALUESize(val);
+	DWORD buffSize = CtrlCmdUtilImpl_::GetVALUESize(val);
 	BYTE* buff = new BYTE[buffSize];
 	try{
-		if( WriteVALUE(val, buff, buffSize, NULL) != FALSE ){
+		if( CtrlCmdUtilImpl_::WriteVALUE(val, buff, buffSize, NULL) != FALSE ){
 			writeSize = buffSize;
 			return buff;
 		}
@@ -468,5 +464,20 @@ BYTE* NewWriteVALUE( const T& val, DWORD& writeSize )
 	delete[] buff;
 	return NULL;
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////
+//旧バージョンコマンド送信用バイナリ作成関数
+BOOL CreateReserveDataStream(OLD_RESERVE_DATA* pData, CMD_STREAM* pCmd);
+BOOL CopyReserveData(OLD_RESERVE_DATA* pstData, CMD_STREAM* pCmd);
+
+BOOL CreateSearchKeyDataStream(OLD_SEARCH_KEY* pData, CMD_STREAM* pCmd);
+BOOL CopySearchKeyData(OLD_SEARCH_KEY* pstData, CMD_STREAM* pCmd);
+
+BOOL CreateEventInfoData3Stream(OLD_EVENT_INFO_DATA3* pData, CMD_STREAM* pCmd);
+BOOL CopyEventInfoData3(OLD_EVENT_INFO_DATA3* pstData, CMD_STREAM* pCmd);
+
+void CopyOldNew(OLD_RESERVE_DATA* src, RESERVE_DATA* dest);
+void CopyOldNew(OLD_SEARCH_KEY* src, EPG_AUTO_ADD_DATA* dest);
+void CopyOldNew(OLD_SEARCH_KEY* src, EPGDB_SEARCH_KEY_INFO* dest);
 
 #endif
