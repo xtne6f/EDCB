@@ -384,9 +384,7 @@ void CEpgTimerTaskDlg::CmdViewExecute(CMD_STREAM* pCmdParam, CMD_STREAM* pResPar
 	CloseHandle(pi.hProcess);
 
 	if( bRet == TRUE ){
-		pResParam->dataSize = GetVALUESize(pi.dwProcessId);
-		pResParam->data = new BYTE[pResParam->dataSize];
-		WriteVALUE(pi.dwProcessId, pResParam->data, pResParam->dataSize, NULL);
+		pResParam->data = NewWriteVALUE(pi.dwProcessId, pResParam->dataSize);
 		pResParam->param = CMD_SUCCESS;
 	}else{
 		pResParam->param = CMD_ERR;

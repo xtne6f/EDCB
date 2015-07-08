@@ -206,9 +206,7 @@ UINT WINAPI CTCPServer::ServerThread(LPVOID pParam)
 						ReadVALUE(&setParam.port, stCmd.data, stCmd.dataSize, NULL);
 
 						SAFE_DELETE_ARRAY(stCmd.data);
-						stCmd.dataSize = GetVALUESize(&setParam);
-						stCmd.data = new BYTE[stCmd.dataSize];
-						WriteVALUE(&setParam, stCmd.data, stCmd.dataSize, NULL);
+						stCmd.data = NewWriteVALUE(&setParam, stCmd.dataSize);
 					}
 
 					pSys->m_pCmdProc(pSys->m_pParam, &stCmd, &stRes);

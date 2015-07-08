@@ -1060,10 +1060,8 @@ DWORD CSendCtrlCmd::SendCmdData(DWORD param, const T& val, CMD_STREAM* res)
 {
 	CMD_STREAM send;
 	send.param = param;
-	send.dataSize = GetVALUESize(val);
-	send.data = new BYTE[send.dataSize];
-
-	if( WriteVALUE(val, send.data, send.dataSize, NULL) == FALSE ){
+	send.data = NewWriteVALUE(val, send.dataSize);
+	if( send.data == NULL ){
 		return CMD_ERR;
 	}
 	return SendCmdStream(&send, res);
@@ -1075,12 +1073,8 @@ DWORD CSendCtrlCmd::SendCmdData2(DWORD param, const T& val, CMD_STREAM* res)
 	WORD ver = CMD_VER;
 	CMD_STREAM send;
 	send.param = param;
-	send.dataSize = GetVALUESize(ver) + GetVALUESize2(ver, val);
-	send.data = new BYTE[send.dataSize];
-
-	DWORD writeSize = 0;
-	if( WriteVALUE(ver, send.data, send.dataSize, &writeSize) == FALSE ||
-		WriteVALUE2(ver, val, send.data + writeSize, send.dataSize - writeSize, NULL) == FALSE ){
+	send.data = NewWriteVALUE2WithVersion(ver, val, send.dataSize);
+	if( send.data == NULL ){
 		return CMD_ERR;
 	}
 	return SendCmdStream(&send, res);
