@@ -220,9 +220,9 @@ BOOL ReadVALUE( WORD ver, NOTIFY_SRV_INFO* val, const BYTE* buff, DWORD buffSize
 template<class T>
 DWORD CCUTIL_WriteVectorVALUE_( WORD ver, BYTE* buff, DWORD buffOffset, const vector<T>& val )
 {
-	DWORD pos = buffOffset + sizeof(DWORD);
+	DWORD pos = buffOffset + sizeof(DWORD) * 2;
 	//リストの個数
-	pos += WriteVALUE(0, buff, pos, (DWORD)val.size());
+	WriteVALUE(0, buff, buffOffset + sizeof(DWORD), (DWORD)val.size());
 	//リストの中身
 	for( size_t i = 0; i < val.size(); i++ ){
 		pos += WriteVALUE(ver, buff, pos, val[i]);
@@ -235,9 +235,9 @@ DWORD CCUTIL_WriteVectorVALUE_( WORD ver, BYTE* buff, DWORD buffOffset, const ve
 template<class T>
 DWORD CCUTIL_WritePtrVectorVALUE_( WORD ver, BYTE* buff, DWORD buffOffset, const vector<T>& val )
 {
-	DWORD pos = buffOffset + sizeof(DWORD);
+	DWORD pos = buffOffset + sizeof(DWORD) * 2;
 	//リストの個数
-	pos += WriteVALUE(0, buff, pos, (DWORD)val.size());
+	WriteVALUE(0, buff, buffOffset + sizeof(DWORD), (DWORD)val.size());
 	//リストの中身
 	for( size_t i = 0; i < val.size(); i++ ){
 		if( val[i] == NULL ){
