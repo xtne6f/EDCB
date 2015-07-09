@@ -182,9 +182,13 @@ namespace EpgTimer
                     //左クリック
                     if (targetWindow != null)
                     {
-                        targetWindow.Show();
-                        targetWindow.WindowState = LastViewState;
-                        targetWindow.Activate();
+                        try
+                        {
+                            targetWindow.Show();
+                            targetWindow.WindowState = LastViewState;
+                            targetWindow.Activate();
+                        }
+                        catch { }
                     }
                 }
             }
