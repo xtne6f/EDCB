@@ -33,7 +33,7 @@ namespace EpgTimer
             {
                 if (RecInfo != null)
                 {
-                    RecInfo.ProtectFlag = value;
+                    RecInfo.ProtectFlag = Convert.ToByte(value);
                     List<RecFileInfo> list = new List<RecFileInfo>();
                     list.Add(RecInfo);
                     CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
@@ -45,7 +45,7 @@ namespace EpgTimer
                 bool chk = false;
                 if (RecInfo != null)
                 {
-                    chk = RecInfo.ProtectFlag;
+                    chk = RecInfo.ProtectFlag != 0;
                 }
                 return chk;
             }

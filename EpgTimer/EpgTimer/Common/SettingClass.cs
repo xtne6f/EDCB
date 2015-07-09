@@ -1428,7 +1428,7 @@ namespace EpgTimer
             return path;
         }
 
-        public static void GetDefRecSetting(UInt32 presetID, ref CtrlCmdCLI.Def.RecSettingData defKey)
+        public static void GetDefRecSetting(UInt32 presetID, ref RecSettingData defKey)
         {
             StringBuilder buff = new StringBuilder(512);
             String defName = "REC_DEF";
@@ -1455,7 +1455,7 @@ namespace EpgTimer
             int count = IniFileHandler.GetPrivateProfileInt(defFolderName, "Count", 0, SettingPath.TimerSrvIniPath);
             for (int i = 0; i < count; i++)
             {
-                CtrlCmdCLI.Def.RecFileSetInfo folderInfo = new CtrlCmdCLI.Def.RecFileSetInfo();
+                RecFileSetInfo folderInfo = new RecFileSetInfo();
                 buff.Clear();
                 IniFileHandler.GetPrivateProfileString(defFolderName, i.ToString(), "", buff, 512, SettingPath.TimerSrvIniPath);
                 folderInfo.RecFolder = buff.ToString();
@@ -1472,7 +1472,7 @@ namespace EpgTimer
             count = IniFileHandler.GetPrivateProfileInt(defFolder1SegName, "Count", 0, SettingPath.TimerSrvIniPath);
             for (int i = 0; i < count; i++)
             {
-                CtrlCmdCLI.Def.RecFileSetInfo folderInfo = new CtrlCmdCLI.Def.RecFileSetInfo();
+                RecFileSetInfo folderInfo = new RecFileSetInfo();
                 buff.Clear();
                 IniFileHandler.GetPrivateProfileString(defFolder1SegName, i.ToString(), "", buff, 512, SettingPath.TimerSrvIniPath);
                 folderInfo.RecFolder = buff.ToString();
@@ -1497,7 +1497,7 @@ namespace EpgTimer
 
         }
 
-        public static void GetDefSearchSetting(ref CtrlCmdCLI.Def.EpgSearchKeyInfo defKey)
+        public static void GetDefSearchSetting(ref EpgSearchKeyInfo defKey)
         {
             if (Settings.Instance.SearchKeyRegExp == true)
             {
@@ -1521,7 +1521,7 @@ namespace EpgTimer
             }
             foreach (ContentKindInfo info in Settings.Instance.SearchKeyContentList)
             {
-                CtrlCmdCLI.Def.EpgContentData item = new CtrlCmdCLI.Def.EpgContentData();
+                EpgContentData item = new EpgContentData();
                 item.content_nibble_level_1 = info.Nibble1;
                 item.content_nibble_level_2 = info.Nibble2;
                 defKey.contentList.Add(item);
