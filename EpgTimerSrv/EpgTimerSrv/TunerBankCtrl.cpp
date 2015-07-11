@@ -36,7 +36,8 @@ void CTunerBankCtrl::ReloadSetting()
 	//モジュールini以外のパラメータは必要なときにその場で取得する
 	wstring iniPath;
 	GetModuleIniPath(iniPath);
-	this->recWakeTime = (__int64)GetPrivateProfileInt(L"SET", L"RecAppWakeTime", 2, iniPath.c_str()) * 60 * I64_1SEC;
+	//録画開始のちょうどn分前だと起動と他チューナ録画開始が若干重なりやすくなるので僅かにずらす
+	this->recWakeTime = ((__int64)GetPrivateProfileInt(L"SET", L"RecAppWakeTime", 2, iniPath.c_str()) * 60 - 3) * I64_1SEC;
 	this->recWakeTime = max(this->recWakeTime, READY_MARGIN * I64_1SEC);
 	this->recMinWake = GetPrivateProfileInt(L"SET", L"RecMinWake", 1, iniPath.c_str()) != 0;
 	this->recView = GetPrivateProfileInt(L"SET", L"RecView", 1, iniPath.c_str()) != 0;
