@@ -421,16 +421,25 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 			if( ctx->sys->epgDB.IsLoadingData() == FALSE ){
 				//ƒŠƒ[ƒhI‚í‚Á‚½‚Ì‚ÅŽ©“®—\–ñ“o˜^ˆ—‚ðs‚¤
 				ctx->sys->reserveManager.CheckTuijyu();
+				bool addCountUpdated = false;
 				{
 					CBlockLock lock(&ctx->sys->settingLock);
 					for( map<DWORD, EPG_AUTO_ADD_DATA>::const_iterator itr = ctx->sys->epgAutoAdd.GetMap().begin(); itr != ctx->sys->epgAutoAdd.GetMap().end(); itr++ ){
+						DWORD addCount = itr->second.addCount;
 						ctx->sys->AutoAddReserveEPG(itr->second);
+						if( addCount != itr->second.addCount ){
+							addCountUpdated = true;
+						}
 					}
 					for( map<DWORD, MANUAL_AUTO_ADD_DATA>::const_iterator itr = ctx->sys->manualAutoAdd.GetMap().begin(); itr != ctx->sys->manualAutoAdd.GetMap().end(); itr++ ){
 						ctx->sys->AutoAddReserveProgram(itr->second);
 					}
 				}
 				KillTimer(hwnd, TIMER_RELOAD_EPG_CHK_PENDING);
+				if( addCountUpdated ){
+					//—\–ñ“o˜^”‚Ì•Ï‰»‚ð’Ê’m‚·‚é
+					ctx->sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_EPG);
+				}
 				ctx->sys->notifyManager.AddNotify(NOTIFY_UPDATE_EPGDATA);
 
 				if( ctx->sys->useSyoboi ){
