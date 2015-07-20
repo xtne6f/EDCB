@@ -42,6 +42,7 @@ namespace EpgTimer
         private bool closeFlag = false;
         private bool initExe = false;
 
+        private System.Windows.Threading.DispatcherTimer chkRegistTCPTimer = null;
         private bool needUnRegist = true;
 
         private bool idleShowBalloon = false;
@@ -57,6 +58,27 @@ namespace EpgTimer
                 CommonManager.Instance.DB.SetNoAutoReloadEPG(Settings.Instance.NgAutoEpgLoadNW);
                 cmd.SetSendMode(true);
                 cmd.SetNWSetting("", Settings.Instance.NWServerPort);
+
+                if (Settings.Instance.ChkSrvRegistTCP == true)
+                {
+                    chkRegistTCPTimer = new System.Windows.Threading.DispatcherTimer();
+                    chkRegistTCPTimer.Interval = TimeSpan.FromMinutes(Math.Max(Settings.Instance.ChkSrvRegistInterval, 1));
+                    chkRegistTCPTimer.Tick += (sender, e) =>
+                    {
+                        if (CommonManager.Instance.NW.IsConnected == true)
+                        {
+                            bool registered = true;
+                            if ((ErrCode)cmd.SendIsRegistTCP(Settings.Instance.NWWaitPort, ref registered) == ErrCode.CMD_SUCCESS)
+                            {
+                                if (registered == false)
+                                {
+                                    ConnectCmd(false);
+                                }
+                            }
+                        }
+                    };
+                    chkRegistTCPTimer.Start();
+                }
             }
 
             ChSet5.LoadFile();

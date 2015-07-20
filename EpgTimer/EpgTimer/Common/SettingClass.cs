@@ -241,6 +241,8 @@ namespace EpgTimer
         private bool wakeReconnectNW;
         private bool suspendCloseNW;
         private bool ngAutoEpgLoadNW;
+        private bool chkSrvRegistTCP;
+        private double chkSrvRegistInterval;
         private Int32 tvTestOpenWait;
         private Int32 tvTestChgBonWait;
         private String listDefFontColor;            //リストのデフォルト文字色
@@ -744,6 +746,16 @@ namespace EpgTimer
             get { return ngAutoEpgLoadNW; }
             set { ngAutoEpgLoadNW = value; }
         }
+        public bool ChkSrvRegistTCP
+        {
+            get { return chkSrvRegistTCP; }
+            set { chkSrvRegistTCP = value; }
+        }
+        public double ChkSrvRegistInterval
+        {
+            get { return chkSrvRegistInterval; }
+            set { chkSrvRegistInterval = value; }
+        }
         public Int32 TvTestOpenWait
         {
             get { return tvTestOpenWait; }
@@ -1119,6 +1131,8 @@ namespace EpgTimer
             wakeReconnectNW = false;
             suspendCloseNW = false;
             ngAutoEpgLoadNW = false;
+            chkSrvRegistTCP = false;
+            chkSrvRegistInterval = 5;
             tvTestOpenWait = 2000;
             tvTestChgBonWait = 2000;
             listDefFontColor = "#FF042271";
