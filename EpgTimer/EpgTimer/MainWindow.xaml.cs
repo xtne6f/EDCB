@@ -525,6 +525,8 @@ namespace EpgTimer
             CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.AutoAddManualInfo);
             CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.EpgData);
             CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.PlugInFile);
+            CommonManager.Instance.DB.ReloadReserveInfo();
+            CommonManager.Instance.DB.ReloadEpgData();
             reserveView.UpdateInfo();
             epgView.UpdateReserveData();
             tunerReserveView.UpdateInfo();
@@ -1028,6 +1030,7 @@ namespace EpgTimer
                             CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.RecInfo);
                             CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.AutoAddEpgInfo);
                             CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.AutoAddManualInfo);
+                            CommonManager.Instance.DB.ReloadReserveInfo();
                             reserveView.UpdateInfo();
                             epgView.UpdateReserveData();
                             tunerReserveView.UpdateInfo();
@@ -1043,10 +1046,8 @@ namespace EpgTimer
                         DispatcherCheckAction(new Action(() =>
                         {
                             CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.EpgData);
-                            if (CommonManager.Instance.NWMode == false)
-                            {
-                                CommonManager.Instance.DB.ReloadEpgData();
-                            }
+                            CommonManager.Instance.DB.ReloadEpgData();
+                            reserveView.UpdateInfo();
                             epgView.UpdateEpgData();
                         }));
                     }
@@ -1271,24 +1272,20 @@ namespace EpgTimer
                 case UpdateNotifyItem.EpgData:
                     {
                         CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.EpgData);
-                        if (CommonManager.Instance.NWMode == false)
-                        {
-                            CommonManager.Instance.DB.ReloadEpgData();
-                        }
-                        if (PresentationSource.FromVisual(Application.Current.MainWindow) != null)
-                        {
-                            epgView.UpdateEpgData();
-                        }
+                        //NWでは重いが、番組情報などをあちこちで使用しているので即取得する。
+                        //自動取得falseのときはReloadEpgData()ではじかれているので元々読込まれない。
+                        CommonManager.Instance.DB.ReloadEpgData();
+                        reserveView.UpdateInfo();//ジャンルや番組内容などが更新される
+                        epgView.UpdateEpgData();
                         GC.Collect();
                     }
                     break;
                 case UpdateNotifyItem.ReserveInfo:
                     {
                         CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.ReserveInfo);
-                        if (CommonManager.Instance.NWMode == false)
-                        {
-                            CommonManager.Instance.DB.ReloadReserveInfo();
-                        }
+                        //使用している箇所多いので即取得する。
+                        //というより後ろでタスクトレイのルーチンが取得をかけるので遅延の効果がない。
+                        CommonManager.Instance.DB.ReloadReserveInfo();
                         reserveView.UpdateInfo();
                         autoAddView.UpdateAutoAddInfo();
                         epgView.UpdateReserveData();

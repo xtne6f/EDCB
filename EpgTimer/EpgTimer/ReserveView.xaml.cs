@@ -85,9 +85,6 @@ namespace EpgTimer
                 {
                     dataList.Add(new ReserveItem(info));
                 }
-
-                // 枠線表示用
-                CommonManager.Instance.DB.ReloadEpgData();
                 return true;
             });
         }
