@@ -1272,6 +1272,8 @@ namespace EpgTimer
                     break;
                 case UpdateNotifyItem.RecStart:
                     TaskTrayBaloonWork("録画開始", status.param4);
+                    reserveView.UpdateInfo();
+                    epgView.UpdateReserveData();
                     break;
                 case UpdateNotifyItem.RecEnd:
                     TaskTrayBaloonWork("録画終了", status.param4);
