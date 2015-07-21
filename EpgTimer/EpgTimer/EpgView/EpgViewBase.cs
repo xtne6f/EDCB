@@ -138,7 +138,7 @@ namespace EpgTimer.EpgView
         public void UpdateEpgData()
         {
             updateEpgData = true;
-            if (this.IsVisible == true || CommonManager.Instance.NWMode == false)
+            if (this.IsVisible == true)
             {
                 updateEpgData = !ReloadViewData();
             }

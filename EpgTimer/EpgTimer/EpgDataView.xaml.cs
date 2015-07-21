@@ -41,7 +41,7 @@ namespace EpgTimer
         public void UpdateEpgData()
         {
             RedrawEpg = true;
-            if (this.IsVisible == true || CommonManager.Instance.NWMode == false)
+            if (this.IsVisible == true)
             {
                 RedrawEpg = !ReDrawEpgData();
             }
