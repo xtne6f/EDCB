@@ -194,6 +194,11 @@ int clock_gettime(int clk_id, struct timespec *t)
 mg_static_assert(MAX_WORKER_THREADS >= 1,
                  "worker threads must be a positive number");
 
+/* va_copy should always be a macro, C99 and C++11 - DTL */
+#ifndef va_copy
+#define va_copy(x, y) ((x) = (y))
+#endif
+
 #if defined(_WIN32) && !defined(__SYMBIAN32__) /* Windows specific */
 #include <windows.h>
 #include <winsock2.h> /* DTL add for SO_EXCLUSIVE */
@@ -272,8 +277,41 @@ typedef long off_t;
 #define SHUT_RD (0)
 #define SHUT_WR (1)
 #define SHUT_BOTH (2)
-#define snprintf _snprintf
-#define vsnprintf _vsnprintf
+#define snprintf snprintf_msvc
+#define vsnprintf vsnprintf_msvc
+
+static int vsnprintf_msvc(char *buf, size_t buflen, const char *fmt, va_list ap)
+{
+	int n;
+	va_list ap_copy;
+	if (buflen == 0) {
+#if defined(_MSC_VER) && (_MSC_VER < 1300)
+		n = _vsnprintf(NULL, 0, fmt, ap);
+#else
+		n = _vscprintf(fmt, ap);
+#endif
+	} else {
+		va_copy(ap_copy, ap);
+		n = _vsnprintf(buf, buflen, fmt, ap);
+		if (n < 0 || (size_t)n >= buflen) {
+			buf[buflen - 1] = '\0';
+			n = vsnprintf_msvc(NULL, 0, fmt, ap_copy);
+		}
+		va_end(ap_copy);
+	}
+	return n;
+}
+
+static int snprintf_msvc(char *buf, size_t buflen, const char *fmt, ...)
+{
+	int n;
+	va_list ap;
+	va_start(ap, fmt);
+	n = vsnprintf(buf, buflen, fmt, ap);
+	va_end(ap);
+	return n;
+}
+
 #define access _access
 #define mg_sleep(x) (Sleep(x))
 
@@ -438,11 +476,6 @@ typedef int SOCKET;
 #endif /* hpux */
 
 #endif /* End of Windows and UNIX specific includes */
-
-/* va_copy should always be a macro, C99 and C++11 - DTL */
-#ifndef va_copy
-#define va_copy(x, y) ((x) = (y))
-#endif
 
 #ifdef _WIN32
 static CRITICAL_SECTION global_log_file_lock;
