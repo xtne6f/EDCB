@@ -18,7 +18,7 @@ CHttpServer::~CHttpServer()
 	StopServer();
 }
 
-bool CHttpServer::StartServer(unsigned short port, LPCWSTR rootPath, int (*initProc)(lua_State*), void* initParam, bool saveLog, LPCWSTR acl)
+bool CHttpServer::StartServer(LPCWSTR ports, LPCWSTR rootPath, int (*initProc)(lua_State*), void* initParam, bool saveLog, LPCWSTR acl)
 {
 	StopServer();
 
@@ -28,8 +28,8 @@ bool CHttpServer::StartServer(unsigned short port, LPCWSTR rootPath, int (*initP
 		OutputDebugString(L"CHttpServer::StartServer(): " LUA_DLL_NAME L" not found.\r\n");
 		return false;
 	}
-	string strPort;
-	Format(strPort, "%d", port);
+	string portsU;
+	WtoUTF8(ports, portsU);
 	string rootPathU;
 	WtoUTF8(rootPath, rootPathU);
 	ChkFolderPath(rootPathU);
@@ -47,6 +47,14 @@ bool CHttpServer::StartServer(unsigned short port, LPCWSTR rootPath, int (*initP
 	WtoA(modulePath, accessLogPath);
 	string errorLogPath = accessLogPath + "\\HttpError.log";
 	accessLogPath += "\\HttpAccess.log";
+	string sslCertPath;
+	//認証鍵は実質fopen()されるのでWtoA()
+	WtoA(modulePath, sslCertPath);
+	sslCertPath += "\\ssl_cert.pem";
+	string globalAuthPath;
+	//グローバルパスワードは_wfopen()されるのでWtoUTF8()
+	WtoUTF8(modulePath, globalAuthPath);
+	globalAuthPath += "\\glpasswd";
 
 	//Access Control List
 	string aclU;
@@ -63,20 +71,42 @@ bool CHttpServer::StartServer(unsigned short port, LPCWSTR rootPath, int (*initP
 	string extraMime;
 	WtoUTF8(extraMimeW, extraMime);
 
-	const char* options[] = {
+	const char* options[32] = {
 		//mg_stop()の待ちが長くなりすぎるので(残念だが)オフ
 		//"enable_keep_alive", "yes",
 		"access_control_list", aclU.c_str(),
 		"extra_mime_types", extraMime.c_str(),
-		"listening_ports", strPort.c_str(),
+		"listening_ports", portsU.c_str(),
 		"document_root", rootPathU.c_str(),
 		//必要に応じて増やしてもいい
 		"num_threads", "3",
 		"lua_script_pattern", "**.lua$|**.html$|*/api/*$",
-		saveLog ? "access_log_file" : NULL, accessLogPath.c_str(),
-		"error_log_file", errorLogPath.c_str(),
-		NULL,
 	};
+	int opCount = 2 * 6;
+	if( saveLog ){
+		options[opCount++] = "access_log_file";
+		options[opCount++] = accessLogPath.c_str();
+		options[opCount++] = "error_log_file";
+		options[opCount++] = errorLogPath.c_str();
+	}
+	if( portsU.find('s') != string::npos ){
+		//セキュアポートを含むので認証鍵を指定する
+		options[opCount++] = "ssl_certificate";
+		options[opCount++] = sslCertPath.c_str();
+	}
+	wstring globalAuthPathW;
+	UTF8toW(globalAuthPath, globalAuthPathW);
+	WIN32_FIND_DATA findData;
+	HANDLE hFind = FindFirstFile(globalAuthPathW.c_str(), &findData);
+	if( hFind != INVALID_HANDLE_VALUE || GetLastError() != ERROR_FILE_NOT_FOUND ){
+		//グローバルパスワードは「存在しないことを確信」できなければ指定しておく
+		options[opCount++] = "global_auth_file";
+		options[opCount++] = globalAuthPath.c_str();
+		if( hFind != INVALID_HANDLE_VALUE ){
+			FindClose(hFind);
+		}
+	}
+
 	this->initLuaProc = initProc;
 	this->initLuaParam = initParam;
 	mg_callbacks callbacks = {};

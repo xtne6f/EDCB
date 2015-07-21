@@ -121,7 +121,7 @@ private:
 	bool saveNotifyLog;
 	DWORD wakeMarginSec;
 	unsigned short tcpPort;
-	unsigned short httpPort;
+	wstring httpPorts;
 	wstring httpPublicFolder;
 	wstring httpAccessControlList;
 	bool httpSaveLog;

@@ -174,7 +174,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		{
 			//サーバリセット処理
 			unsigned short tcpPort_;
-			unsigned short httpPort_;
+			wstring httpPorts_;
 			wstring httpPublicFolder_;
 			wstring httpAcl;
 			bool httpSaveLog_ = false;
@@ -182,7 +182,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 			{
 				CBlockLock lock(&ctx->sys->settingLock);
 				tcpPort_ = ctx->sys->tcpPort;
-				httpPort_ = ctx->sys->httpPort;
+				httpPorts_ = ctx->sys->httpPorts;
 				httpPublicFolder_ = ctx->sys->httpPublicFolder;
 				httpAcl = ctx->sys->httpAccessControlList;
 				httpSaveLog_ = ctx->sys->httpSaveLog;
@@ -198,10 +198,10 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				UPNP_SERVER_Stop(ctx->upnpCtrl);
 				UPNP_SERVER_CloseHandle(&ctx->upnpCtrl);
 			}
-			if( httpPort_ == 0 ){
+			if( httpPorts_.empty() ){
 				ctx->httpServer.StopServer();
 			}else{
-				if( ctx->httpServer.StartServer(httpPort_, httpPublicFolder_.c_str(), InitLuaCallback, ctx->sys, httpSaveLog_, httpAcl.c_str()) ){
+				if( ctx->httpServer.StartServer(httpPorts_.c_str(), httpPublicFolder_.c_str(), InitLuaCallback, ctx->sys, httpSaveLog_, httpAcl.c_str()) ){
 					if( enableSsdpServer_ ){
 						//"ddd.xml"の先頭から2KB以内に"<UDN>uuid:{UUID}</UDN>"が必要
 						char dddBuf[2048] = {};
@@ -216,7 +216,9 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 						size_t udnFrom = dddStr.find("<UDN>uuid:");
 						if( udnFrom != string::npos && dddStr.size() > udnFrom + 10 + 36 && dddStr.compare(udnFrom + 10 + 36, 6, "</UDN>") == 0 ){
 							ctx->sys->ssdpNotifyUuid.assign(dddStr, udnFrom + 10, 36);
-							ctx->sys->ssdpNotifyPort = httpPort_;
+							//最後にみつかった':'より後ろか先頭を_wtoiした結果を通知ポートとする
+							ctx->sys->ssdpNotifyPort = (unsigned short)_wtoi(httpPorts_.c_str() +
+								(httpPorts_.find_last_of(':') == wstring::npos ? 0 : httpPorts_.find_last_of(':') + 1));
 							//UPnPのUDP(Port1900)部分を担当するサーバ
 							ctx->upnpCtrl = UPNP_SERVER_CreateHandle(NULL, NULL, UpnpMSearchReqCallback, ctx->sys);
 							UPNP_SERVER_Start(ctx->upnpCtrl);
@@ -631,7 +633,7 @@ void CEpgTimerSrvMain::ReloadNetworkSetting()
 	if( GetPrivateProfileInt(L"SET", L"EnableTCPSrv", 0, iniPath.c_str()) != 0 ){
 		this->tcpPort = (unsigned short)GetPrivateProfileInt(L"SET", L"TCPPort", 4510, iniPath.c_str());
 	}
-	this->httpPort = 0;
+	this->httpPorts.clear();
 	int enableHttpSrv = GetPrivateProfileInt(L"SET", L"EnableHttpSrv", 0, iniPath.c_str());
 	if( enableHttpSrv != 0 ){
 		WCHAR buff[512];
@@ -648,7 +650,8 @@ void CEpgTimerSrvMain::ReloadNetworkSetting()
 		}
 		GetPrivateProfileString(L"SET", L"HttpAccessControlList", L"+127.0.0.1", buff, 512, iniPath.c_str());
 		this->httpAccessControlList = buff;
-		this->httpPort = (unsigned short)GetPrivateProfileInt(L"SET", L"HttpPort", 5510, iniPath.c_str());
+		GetPrivateProfileString(L"SET", L"HttpPort", L"5510", buff, 512, iniPath.c_str());
+		this->httpPorts = buff;
 		this->httpSaveLog = enableHttpSrv == 2;
 	}
 	this->enableSsdpServer = GetPrivateProfileInt(L"SET", L"EnableDMS", 0, iniPath.c_str()) != 0;
