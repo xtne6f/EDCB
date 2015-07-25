@@ -66,6 +66,7 @@ private:
 	};
 	static int LuaGetGenreName(lua_State* L);
 	static int LuaGetComponentTypeName(lua_State* L);
+	static int LuaSleep(lua_State* L);
 	static int LuaConvert(lua_State* L);
 	static int LuaGetPrivateProfile(lua_State* L);
 	static int LuaWritePrivateProfile(lua_State* L);

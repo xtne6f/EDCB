@@ -2153,6 +2153,7 @@ int CEpgTimerSrvMain::InitLuaCallback(lua_State* L)
 	lua_newtable(L);
 	LuaHelp::reg_function(L, "GetGenreName", LuaGetGenreName, sys);
 	LuaHelp::reg_function(L, "GetComponentTypeName", LuaGetComponentTypeName, sys);
+	LuaHelp::reg_function(L, "Sleep", LuaSleep, sys);
 	LuaHelp::reg_function(L, "Convert", LuaConvert, sys);
 	LuaHelp::reg_function(L, "GetPrivateProfile", LuaGetPrivateProfile, sys);
 	LuaHelp::reg_function(L, "WritePrivateProfile", LuaWritePrivateProfile, sys);
@@ -2243,6 +2244,12 @@ int CEpgTimerSrvMain::LuaGetComponentTypeName(lua_State* L)
 	}
 	lua_pushstring(L, ws.WtoUTF8(name));
 	return 1;
+}
+
+int CEpgTimerSrvMain::LuaSleep(lua_State* L)
+{
+	Sleep((DWORD)lua_tointeger(L, 1));
+	return 0;
 }
 
 int CEpgTimerSrvMain::LuaConvert(lua_State* L)
