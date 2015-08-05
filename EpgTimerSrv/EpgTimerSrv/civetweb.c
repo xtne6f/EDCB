@@ -325,7 +325,7 @@ static int snprintf_msvc(char *buf, size_t buflen, const char *fmt, ...)
 #define close(x) (_close(x))
 #define dlsym(x, y) (GetProcAddress((HINSTANCE)(x), (y)))
 #define RTLD_LAZY (0)
-#define fseeko(x, y, z) (_lseeki64(_fileno(x), (y), (z)))
+#define fseeko(x, y, z) (_lseeki64(_fileno(x), (y), (z)) == -1 ? -1 : 0)
 #define fdopen(x, y) (_fdopen((x), (y)))
 #define write(x, y, z) (_write((x), (y), (unsigned)z))
 #define read(x, y, z) (_read((x), (y), (unsigned)z))
@@ -358,10 +358,12 @@ typedef DWORD clockid_t;
 #endif
 
 #ifndef _TIMESPEC_DEFINED
+#if !defined(_MSC_VER) || (_MSC_VER < 1900)
 struct timespec {
 	time_t tv_sec; /* seconds */
 	long tv_nsec;  /* nanoseconds */
 };
+#endif
 #endif
 
 #define pid_t HANDLE /* MINGW typedefs pid_t to int. Using #define here. */
@@ -3768,7 +3770,7 @@ base64_decode(const unsigned char *src, int src_len, char *dst, size_t *dst_len)
 		}
 
 		d = b64reverse(i + 3 >= src_len ? 0 : src[i + 3]);
-		if (c == 254) {
+		if (d == 254) {
 			return i + 3;
 		}
 
@@ -5291,7 +5293,7 @@ static void send_file_data(struct mg_connection *conn,
 			do {
 				/* 2147479552 (0x7FFFF000) is a limit found by experiment on 64
 				 * bit Linux (2^31 minus one memory page of 4k?). */
-				ssize_t sf_tosend =
+				size_t sf_tosend =
 				    (size_t)((len < 0x7FFFF000) ? len : 0x7FFFF000);
 				sf_sent =
 				    sendfile(conn->client.sock, sf_file, &sf_offs, sf_tosend);
@@ -5311,10 +5313,13 @@ static void send_file_data(struct mg_connection *conn,
 			       "%s: sendfile() failed: %s (now trying read+write)",
 			       __func__,
 			       strerror(ERRNO));
+            offset = (int64_t)sf_offs;
 		}
 #endif
-		if (offset > 0 && fseeko(filep->fp, offset, SEEK_SET) == -1) {
+		if ((offset > 0) && (fseeko(filep->fp, offset, SEEK_SET) != 0)) {
 			mg_cry(conn, "%s: fseeko() failed: %s", __func__, strerror(ERRNO));
+            send_http_error(
+				    conn, 500, "%s", "Error: Unable to access file at requested position.");
 		} else {
 			while (len > 0) {
 				/* Calculate how much to read from the file in the buffer */
