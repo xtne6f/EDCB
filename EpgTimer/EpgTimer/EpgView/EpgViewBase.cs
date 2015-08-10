@@ -213,6 +213,15 @@ namespace EpgTimer.EpgView
         {
             if (this.IsVisible == false) return;
 
+            if (updateEpgData == true)
+            {
+                updateEpgData = !ReloadViewData();
+            }
+            if (updateReserveData == true)
+            {
+                updateReserveData = !ReloadReserveData();
+            }
+
             if (BlackoutWindow.SelectedReserveItem != null)
             {
                 MoveToReserveItem(BlackoutWindow.SelectedReserveItem, BlackoutWindow.NowJumpTable);
