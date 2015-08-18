@@ -167,15 +167,11 @@ UINT WINAPI CTCPServer::ServerThread(LPVOID pParam)
 			if ( FD_ISSET(sock, &ready) ){
 				CMD_STREAM stCmd;
 				CMD_STREAM stRes;
-				DWORD dwRead = 0;
-				DWORD dwWrite = 0;
 				DWORD head[2];
 				do{
 					int iRet = 1;
 					iRet = recv(sock, (char*)head, sizeof(DWORD)*2, 0);
-					if( iRet == SOCKET_ERROR ){
-						break;
-					}else if( iRet == 0 ){
+					if( iRet != sizeof(DWORD)*2 ){
 						break;
 					}
 					stCmd.param = head[0];
@@ -184,7 +180,8 @@ UINT WINAPI CTCPServer::ServerThread(LPVOID pParam)
 					if( stCmd.dataSize > 0 ){
 						stCmd.data = new BYTE[stCmd.dataSize];
 
-						while(iRet>0){
+						DWORD dwRead = 0;
+						while( dwRead < stCmd.dataSize ){
 							iRet = recv(sock, (char*)(stCmd.data+dwRead), stCmd.dataSize-dwRead, 0);
 							if( iRet == SOCKET_ERROR ){
 								break;
@@ -192,9 +189,9 @@ UINT WINAPI CTCPServer::ServerThread(LPVOID pParam)
 								break;
 							}
 							dwRead+=iRet;
-							if( dwRead == stCmd.dataSize ){
-								break;
-							}
+						}
+						if( dwRead < stCmd.dataSize ){
+							break;
 						}
 					}
 
