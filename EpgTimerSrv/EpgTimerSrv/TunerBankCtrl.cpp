@@ -709,7 +709,7 @@ bool CTunerBankCtrl::CreateCtrl(DWORD* ctrlID, DWORD* partialCtrlID, const TUNER
 		*ctrlID = newID;
 		*partialCtrlID = 0;
 		if( partialRecMode == 1 && partialSID != 0 && ctrlCmd.SendViewCreateCtrl(partialCtrlID) != CMD_SUCCESS ){
-			partialCtrlID = 0;
+			*partialCtrlID = 0;
 		}
 	}
 	SET_CTRL_MODE param;
