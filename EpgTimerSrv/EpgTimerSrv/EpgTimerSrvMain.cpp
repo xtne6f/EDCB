@@ -81,9 +81,10 @@ bool CEpgTimerSrvMain::Main(bool serviceFlag_)
 	this->residentFlag = serviceFlag_;
 
 	DWORD awayMode;
-	OSVERSIONINFO osvi;
-	osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-	awayMode = GetVersionEx(&osvi) && osvi.dwMajorVersion >= 6 ? ES_AWAYMODE_REQUIRED : 0;
+	OSVERSIONINFOEX osvi;
+	osvi.dwOSVersionInfoSize = sizeof(osvi);
+	osvi.dwMajorVersion = 6;
+	awayMode = VerifyVersionInfo(&osvi, VER_MAJORVERSION, VerSetConditionMask(0, VER_MAJORVERSION, VER_GREATER_EQUAL)) ? ES_AWAYMODE_REQUIRED : 0;
 
 	wstring settingPath;
 	GetSettingPath(settingPath);
