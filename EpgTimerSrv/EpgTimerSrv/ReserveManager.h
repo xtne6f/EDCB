@@ -145,6 +145,7 @@ private:
 	vector<wstring> autoDelFolderList;
 	int defStartMargin;
 	int defEndMargin;
+	int notFindTuijyuHour;
 	bool backPriority;
 	int recInfo2DropChk;
 	wstring recInfo2RegExp;

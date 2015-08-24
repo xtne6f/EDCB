@@ -135,6 +135,7 @@ void CReserveManager::ReloadSetting()
 
 	this->defStartMargin = GetPrivateProfileInt(L"SET", L"StartMargin", 5, iniPath.c_str());
 	this->defEndMargin = GetPrivateProfileInt(L"SET", L"EndMargin", 2, iniPath.c_str());
+	this->notFindTuijyuHour = GetPrivateProfileInt(L"SET", L"TuijyuHour", 3, iniPath.c_str());
 	this->backPriority = GetPrivateProfileInt(L"SET", L"BackPriority", 1, iniPath.c_str()) != 0;
 
 	this->recInfoText.SetKeepCount(
@@ -923,29 +924,39 @@ void CReserveManager::CheckTuijyuTuner()
 					continue;
 				}
 				bool pfFound = false;
+				bool pfUnknownEnd = true;
 				for( int i = (nowSuccess == 0 ? 0 : 1); i < (nextSuccess == 0 ? 2 : 1); i++ ){
 					const EPGDB_EVENT_INFO& info = resPfVal[i];
+					if( i == 1 && info.StartTimeFlag != 0 && info.DurationFlag != 0 ){
+						pfUnknownEnd = false;
+					}
 					if( info.event_id == itrRes->second.eventID && (info.StartTimeFlag != 0 || info.DurationFlag != 0) ){
 						RESERVE_DATA r = itrRes->second;
 						bool chgRes = false;
 						if( info.shortInfo != NULL && r.title != info.shortInfo->event_name ){
 							r.title = info.shortInfo->event_name;
-							r.reserveStatus = ADD_RESERVE_CHG_PF;
+							if( r.reserveStatus != ADD_RESERVE_UNKNOWN_END ){
+								r.reserveStatus = ADD_RESERVE_CHG_PF;
+							}
 							chgRes = true;
 						}
 						if( info.StartTimeFlag != 0 ){
 							if( ConvertI64Time(r.startTime) != ConvertI64Time(info.start_time) ){
 								r.startTime = info.start_time;
-								r.reserveStatus = ADD_RESERVE_CHG_PF;
+								if( r.reserveStatus != ADD_RESERVE_UNKNOWN_END ){
+									r.reserveStatus = ADD_RESERVE_CHG_PF;
+								}
 								chgRes = true;
 							}
 							if( info.DurationFlag == 0 ){
-								//継続時間未定。現在(present)かつ終了まで5分を切る予約は5分伸ばす
-								if( i == 0 && ConvertI64Time(r.startTime) + r.durationSecond * I64_1SEC < GetNowI64Time() + 300 * I64_1SEC ){
+								//継続時間未定。終了まで5分を切る予約は5分伸ばす
+								__int64 endTime;
+								CalcEntireReserveTime(NULL, &endTime, r);
+								if( endTime < GetNowI64Time() + 300 * I64_1SEC ){
 									r.durationSecond += 300;
 									r.reserveStatus = ADD_RESERVE_UNKNOWN_END;
 									chgRes = true;
-									OutputDebugString(L"●p/f 継続時間未定の現在イベントの予約を変更します\r\n");
+									OutputDebugString(L"●p/f 継続時間未定の現在/次イベントの予約を変更します\r\n");
 								}
 							}else if( r.reserveStatus == ADD_RESERVE_UNKNOWN_END || r.durationSecond != info.durationSec ){
 								r.durationSecond = info.durationSec;
@@ -953,17 +964,14 @@ void CReserveManager::CheckTuijyuTuner()
 								chgRes = true;
 							}
 						}else{
-							//開始時刻未定。次(following)かつ開始まで5分を切る予約は5分移動
-							if( i == 1 && ConvertI64Time(r.startTime) < GetNowI64Time() + 300 * I64_1SEC ){
-								ConvertSystemTime(ConvertI64Time(r.startTime) + 300 * I64_1SEC, &r.startTime);
-								r.reserveStatus = ADD_RESERVE_CHG_PF;
+							//開始時刻未定。次(following)かつ終了まで5分を切る予約は5分伸ばす
+							__int64 endTime;
+							CalcEntireReserveTime(NULL, &endTime, r);
+							if( i == 1 && endTime < GetNowI64Time() + 300 * I64_1SEC ){
+								r.durationSecond += 300;
+								r.reserveStatus = ADD_RESERVE_UNKNOWN_END;
 								chgRes = true;
 								OutputDebugString(L"●p/f 開始時刻未定の次イベントの予約を変更します\r\n");
-							}
-							if( r.reserveStatus == ADD_RESERVE_UNKNOWN_END || r.durationSecond != info.durationSec ){
-								r.durationSecond = info.durationSec;
-								r.reserveStatus = ADD_RESERVE_CHG_PF;
-								chgRes = true;
 							}
 						}
 						if( chgRes ){
@@ -1012,35 +1020,52 @@ void CReserveManager::CheckTuijyuTuner()
 						break;
 					}
 				}
-				//EIT[p/f]が正しく取得できる状況でEIT[p/f]にないものは通常チェック
-				EPGDB_EVENT_INFO info;
-				if( nowSuccess != 2 && nextSuccess != 2 && pfFound == false && itrBank->second->SearchEpgInfo(sid, itrRes->second.eventID, &info) ){
-					if( info.StartTimeFlag != 0 && info.DurationFlag != 0 ){
-						__int64 startDiff = ConvertI64Time(info.start_time) - ConvertI64Time(itrRes->second.startTime);
-						if( startDiff < -12 * 3600 * I64_1SEC || 12 * 3600 * I64_1SEC < startDiff ){
+				//EIT[p/f]にあるものやEIT[p/f]で変更されたことがあるものは除外する
+				if( pfFound == false &&
+				    itrRes->second.reserveStatus != ADD_RESERVE_CHG_PF &&
+				    itrRes->second.reserveStatus != ADD_RESERVE_UNKNOWN_END ){
+					RESERVE_DATA r = itrRes->second;
+					bool chgRes = false;
+					if( pfUnknownEnd ){
+						//EIT[p/f]の継続時間未定。以降の予約も時間未定とみなし、終了まで5分を切る予約は5分伸ばす
+						__int64 startTime, endTime;
+						CalcEntireReserveTime(&startTime, &endTime, r);
+						if( endTime - startTime < this->notFindTuijyuHour * 3600 * I64_1SEC && endTime < GetNowI64Time() + 300 * I64_1SEC ){
+							r.durationSecond += 300;
+							r.reserveStatus = ADD_RESERVE_NO_FIND;
+							chgRes = true;
+							OutputDebugString(L"●時間未定の通常イベントの予約を変更します\r\n");
+						}
+					}
+					//EIT[p/f]が正しく取得できる状況でEIT[p/f]にないものは通常チェック
+					EPGDB_EVENT_INFO info;
+					if( nowSuccess != 2 && nextSuccess != 2 && r.reserveStatus != ADD_RESERVE_NO_FIND && itrBank->second->SearchEpgInfo(sid, r.eventID, &info) ){
+						if( info.StartTimeFlag != 0 && info.DurationFlag != 0 ){
+							__int64 startDiff = ConvertI64Time(info.start_time) - ConvertI64Time(r.startTime);
 							//EventIDの再使用に備えるため12時間以上の移動は対象外
-							continue;
+							if( -12 * 3600 * I64_1SEC <= startDiff && startDiff <= 12 * 3600 * I64_1SEC ){
+								if( info.shortInfo != NULL && r.title != info.shortInfo->event_name ){
+									r.title = info.shortInfo->event_name;
+									//EPG再読み込みで変更されないようにする
+									r.reserveStatus = ADD_RESERVE_CHG_PF2;
+									chgRes = true;
+								}
+								if( ConvertI64Time(r.startTime) != ConvertI64Time(info.start_time) ){
+									r.startTime = info.start_time;
+									r.reserveStatus = ADD_RESERVE_CHG_PF2;
+									chgRes = true;
+								}
+								if( r.durationSecond != info.durationSec ){
+									r.durationSecond = info.durationSec;
+									r.reserveStatus = ADD_RESERVE_CHG_PF2;
+									chgRes = true;
+								}
+							}
 						}
-						RESERVE_DATA r = itrRes->second;
-						bool chgRes = false;
-						if( info.shortInfo != NULL && r.title != info.shortInfo->event_name ){
-							r.title = info.shortInfo->event_name;
-							chgRes = true;
-						}
-						if( ConvertI64Time(r.startTime) != ConvertI64Time(info.start_time) ){
-							r.startTime = info.start_time;
-							chgRes = true;
-						}
-						if( r.durationSecond != info.durationSec ){
-							r.durationSecond = info.durationSec;
-							chgRes = true;
-						}
-						if( chgRes ){
-							//EPG再読み込みで変更されないようにする
-							r.reserveStatus = ADD_RESERVE_CHG_PF2;
-							chgIDList.push_back(r.reserveID);
-							chgList.push_back(r);
-						}
+					}
+					if( chgRes ){
+						chgIDList.push_back(r.reserveID);
+						chgList.push_back(r);
 					}
 				}
 			}
