@@ -891,7 +891,7 @@ void CReserveManager::CheckTuijyu()
 
 void CReserveManager::CheckTuijyuTuner()
 {
-	vector<DWORD> chgIDList;
+	vector<DWORD> chkChList;
 	//tunerBankMapそのものは排他制御の対象外
 	for( map<DWORD, CTunerBankCtrl*>::const_iterator itrBank = this->tunerBankMap.begin(); itrBank != this->tunerBankMap.end(); itrBank++ ){
 		CBlockLock lock(&this->managerLock);
@@ -901,6 +901,11 @@ void CReserveManager::CheckTuijyuTuner()
 			//このチューナは起動していない
 			continue;
 		}
+		if( std::find(chkChList.begin(), chkChList.end(), (DWORD)onid << 16 | tsid) != chkChList.end() ){
+			//このチャンネルはチェック済み
+			continue;
+		}
+		chkChList.push_back((DWORD)onid << 16 | tsid);
 		vector<RESERVE_DATA> chgList;
 		vector<RESERVE_DATA> relayAddList;
 		const vector<pair<ULONGLONG, DWORD>>& cacheList = this->reserveText.GetSortByEventList();
@@ -914,10 +919,6 @@ void CReserveManager::CheckTuijyuTuner()
 			int nowSuccess = itrBank->second->GetEventPF(sid, false, &resPfVal[0]);
 			int nextSuccess = itrBank->second->GetEventPF(sid, true, &resPfVal[1]);
 			for( ; itrCache != cacheList.end() && itrCache->first <= (ULONGLONG)_Create64Key2(onid, tsid, sid, 0xFFFF); itrCache++ ){
-				if( std::find(chgIDList.begin(), chgIDList.end(), itrCache->second) != chgIDList.end() ){
-					//この予約はすでに変更済み
-					continue;
-				}
 				map<DWORD, RESERVE_DATA>::const_iterator itrRes = this->reserveText.GetMap().find(itrCache->second);
 				if( itrRes->second.eventID == 0xFFFF ||
 				    itrRes->second.recSetting.recMode == RECMODE_NO ||
@@ -987,7 +988,6 @@ void CReserveManager::CheckTuijyuTuner()
 							}
 						}
 						if( chgRes ){
-							chgIDList.push_back(r.reserveID);
 							chgList.push_back(r);
 							_OutputDebugString(L"●p/f 予約(ID=%d)を変更します\r\n", r.reserveID);
 						}
@@ -1100,7 +1100,6 @@ void CReserveManager::CheckTuijyuTuner()
 						}
 					}
 					if( chgRes ){
-						chgIDList.push_back(r.reserveID);
 						chgList.push_back(r);
 						_OutputDebugString(L"●予約(ID=%d)を変更します\r\n", r.reserveID);
 					}
