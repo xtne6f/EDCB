@@ -121,6 +121,8 @@ public:
 	DWORD AddReserve(const RESERVE_DATA& item);
 	//予約情報を変更する
 	bool ChgReserve(const RESERVE_DATA& item);
+	//presentFlagを変更する(イテレータに影響しない)
+	bool SetPresentFlag(DWORD id, BYTE presentFlag);
 	//overlapModeを変更する(イテレータに影響しない)
 	bool SetOverlapMode(DWORD id, BYTE overlapMode);
 	//予約情報を削除する

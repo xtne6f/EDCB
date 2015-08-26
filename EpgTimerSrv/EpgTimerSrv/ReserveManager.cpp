@@ -321,6 +321,7 @@ bool CReserveManager::AddReserveData(const vector<RESERVE_DATA>& reserveList, bo
 			if( setComment == false ){
 				r.comment.clear();
 			}
+			r.presentFlag = FALSE;
 			r.overlapMode = RESERVE_EXECUTE;
 			if( setReserveStatus == false ){
 				r.reserveStatus = ADD_RESERVE_NORMAL;
@@ -362,6 +363,7 @@ bool CReserveManager::ChgReserveData(const vector<RESERVE_DATA>& reserveList, bo
 		if( itr != this->reserveText.GetMap().end() ){
 			//変更できないフィールドを上書き
 			r.comment = itr->second.comment;
+			r.presentFlag = itr->second.presentFlag;
 			r.startTimeEpg = itr->second.startTimeEpg;
 			if( setReserveStatus == false ){
 				r.reserveStatus = itr->second.reserveStatus;
@@ -924,13 +926,23 @@ void CReserveManager::CheckTuijyuTuner()
 					continue;
 				}
 				bool pfFound = false;
-				bool pfUnknownEnd = true;
+				bool pfUnknownEnd = false;
+				bool pfExplicitlyUnknownEnd = false;
 				for( int i = (nowSuccess == 0 ? 0 : 1); i < (nextSuccess == 0 ? 2 : 1); i++ ){
 					const EPGDB_EVENT_INFO& info = resPfVal[i];
-					if( i == 1 && info.StartTimeFlag != 0 && info.DurationFlag != 0 ){
-						pfUnknownEnd = false;
+					if( i == 1 && (info.StartTimeFlag == 0 || info.DurationFlag == 0) ){
+						pfUnknownEnd = true;
+						if( info.StartTimeFlag == 0 && info.DurationFlag == 0 ){
+							//未定イベントのときは以降の放送未定が明示されているとみなす(主にNHK)
+							pfExplicitlyUnknownEnd = true;
+						}
 					}
 					if( info.event_id == itrRes->second.eventID && (info.StartTimeFlag != 0 || info.DurationFlag != 0) ){
+						//現在(present)に現れた予約が番組終了後に時間未定追従に移行しないようにするため(旧SetChkPfInfo()に相当)
+						if( i == 0 && itrRes->second.presentFlag == FALSE ){
+							this->reserveText.SetPresentFlag(itrRes->first, TRUE);
+							_OutputDebugString(L"●予約(ID=%d)のEIT[present]を確認しました\r\n", itrRes->first);
+						}
 						RESERVE_DATA r = itrRes->second;
 						bool chgRes = false;
 						if( info.shortInfo != NULL && r.title != info.shortInfo->event_name ){
@@ -956,7 +968,7 @@ void CReserveManager::CheckTuijyuTuner()
 									r.durationSecond += 300;
 									r.reserveStatus = ADD_RESERVE_UNKNOWN_END;
 									chgRes = true;
-									OutputDebugString(L"●p/f 継続時間未定の現在/次イベントの予約を変更します\r\n");
+									OutputDebugString(L"●p/f 継続時間未定の現在/次イベントの予約を延長します\r\n");
 								}
 							}else if( r.reserveStatus == ADD_RESERVE_UNKNOWN_END || r.durationSecond != info.durationSec ){
 								r.durationSecond = info.durationSec;
@@ -971,12 +983,13 @@ void CReserveManager::CheckTuijyuTuner()
 								r.durationSecond += 300;
 								r.reserveStatus = ADD_RESERVE_UNKNOWN_END;
 								chgRes = true;
-								OutputDebugString(L"●p/f 開始時刻未定の次イベントの予約を変更します\r\n");
+								OutputDebugString(L"●p/f 開始時刻未定の次イベントの予約を延長します\r\n");
 							}
 						}
 						if( chgRes ){
 							chgIDList.push_back(r.reserveID);
 							chgList.push_back(r);
+							_OutputDebugString(L"●p/f 予約(ID=%d)を変更します\r\n", r.reserveID);
 						}
 						//現在(present)についてはイベントリレーもチェック
 						if( i == 0 && r.recSetting.tuijyuuFlag && info.StartTimeFlag && info.DurationFlag && info.eventRelayInfo ){
@@ -1022,6 +1035,7 @@ void CReserveManager::CheckTuijyuTuner()
 				}
 				//EIT[p/f]にあるものやEIT[p/f]で変更されたことがあるものは除外する
 				if( pfFound == false &&
+				    itrRes->second.presentFlag == FALSE &&
 				    itrRes->second.reserveStatus != ADD_RESERVE_CHG_PF &&
 				    itrRes->second.reserveStatus != ADD_RESERVE_UNKNOWN_END ){
 					RESERVE_DATA r = itrRes->second;
@@ -1034,7 +1048,29 @@ void CReserveManager::CheckTuijyuTuner()
 							r.durationSecond += 300;
 							r.reserveStatus = ADD_RESERVE_NO_FIND;
 							chgRes = true;
-							OutputDebugString(L"●時間未定の通常イベントの予約を変更します\r\n");
+							OutputDebugString(L"●時間未定の通常イベントの予約を延長します\r\n");
+						}
+						if( pfExplicitlyUnknownEnd && r.reserveStatus != ADD_RESERVE_NO_FIND && ConvertI64Time(r.startTime) < GetNowI64Time() + 300 * I64_1SEC ){
+							//明示的な放送未定の場合は開始まで5分を切る時点でNO_FINDにする
+							r.reserveStatus = ADD_RESERVE_NO_FIND;
+							chgRes = true;
+							OutputDebugString(L"●時間未定の通常イベントの予約をNO_FINDモードにします\r\n");
+						}
+					}else if( r.reserveStatus == ADD_RESERVE_NO_FIND ){
+						//イベントID直前変更対応(主にNHK)
+						//時間未定解消後にNO_FINDになっている予約に限り、イベント名が完全一致するEIT[p/f]が存在すれば、そのイベントの終了時間まで予約を伸ばす
+						for( int i = (nowSuccess == 0 ? 0 : 1); i < (nextSuccess == 0 ? 2 : 1); i++ ){
+							const EPGDB_EVENT_INFO& info = resPfVal[i];
+							if( info.StartTimeFlag != 0 && info.DurationFlag != 0 &&
+							    r.title.empty() == false && info.shortInfo != NULL && r.title == info.shortInfo->event_name ){
+								__int64 endTime = ConvertI64Time(info.start_time) + info.durationSec * I64_1SEC;
+								if( endTime > ConvertI64Time(r.startTime) + r.durationSecond * I64_1SEC ){
+									r.durationSecond = (DWORD)((endTime - ConvertI64Time(r.startTime)) / I64_1SEC) + 1;
+									chgRes = true;
+									OutputDebugString(L"●時間未定の通常イベントの予約と同じイベント名のp/fが見つかりました。予約を延長します\r\n");
+								}
+								break;
+							}
 						}
 					}
 					//EIT[p/f]が正しく取得できる状況でEIT[p/f]にないものは通常チェック
@@ -1066,6 +1102,7 @@ void CReserveManager::CheckTuijyuTuner()
 					if( chgRes ){
 						chgIDList.push_back(r.reserveID);
 						chgList.push_back(r);
+						_OutputDebugString(L"●予約(ID=%d)を変更します\r\n", r.reserveID);
 					}
 				}
 			}

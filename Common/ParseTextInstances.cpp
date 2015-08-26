@@ -523,6 +523,16 @@ bool CParseReserveText::ChgReserve(const RESERVE_DATA& item)
 	return false;
 }
 
+bool CParseReserveText::SetPresentFlag(DWORD id, BYTE presentFlag)
+{
+	map<DWORD, RESERVE_DATA>::iterator itr = this->itemMap.find(id);
+	if( itr != this->itemMap.end() ){
+		itr->second.presentFlag = presentFlag;
+		return true;
+	}
+	return false;
+}
+
 bool CParseReserveText::SetOverlapMode(DWORD id, BYTE overlapMode)
 {
 	map<DWORD, RESERVE_DATA>::iterator itr = this->itemMap.find(id);
@@ -653,6 +663,7 @@ bool CParseReserveText::ParseLine(const wstring& parseLine, pair<DWORD, RESERVE_
 			item.second.recSetting.partialRecFolder.push_back(folderItem);
 		}
 	}
+	item.second.presentFlag = 0;
 	item.second.overlapMode = 0;
 	this->nextID = this->nextID > item.first + 50000000 ? item.first + 1 : (max(item.first + 1, this->nextID) - 1) % 100000000 + 1;
 	this->sortByEventCache.clear();

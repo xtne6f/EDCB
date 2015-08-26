@@ -61,6 +61,7 @@ typedef struct _RESERVE_DATA{
 	wstring comment;				//コメント
 	DWORD reserveID;				//予約識別ID 予約登録時は0
 	//BYTE recWaitFlag;				//予約待機入った？ 内部で使用（廃止）
+	BYTE presentFlag;				//EIT[present]でチェック済み？ 純粋に内部で使用
 	BYTE overlapMode;				//かぶり状態 1:かぶってチューナー足りない予約あり 2:チューナー足りなくて予約できない
 	//wstring recFilePath;			//録画ファイルパス 旧バージョン互換用 未使用（廃止）
 	SYSTEMTIME startTimeEpg;		//予約時の開始時間
@@ -80,6 +81,7 @@ typedef struct _RESERVE_DATA{
 		eventID = 0;
 		comment = L"";
 		reserveID = 0;
+		presentFlag = 0;
 		overlapMode = 0;
 		ZeroMemory(&startTimeEpg, sizeof(SYSTEMTIME));
 		reserveStatus = 0;
