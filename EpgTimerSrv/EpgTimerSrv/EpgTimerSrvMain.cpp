@@ -147,6 +147,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		SendMessage(hwnd, WM_TIMER, TIMER_SET_RESUME, 0);
 		SetTimer(hwnd, TIMER_SET_RESUME, 30000, NULL);
 		SetTimer(hwnd, TIMER_CHECK, 1000, NULL);
+		OutputDebugString(L"*** Server initialized ***\r\n");
 		return 0;
 	case WM_DESTROY:
 		if( ctx->resumeTimer ){
@@ -160,6 +161,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		ctx->tcpServer.StopServer();
 		ctx->pipeServer.StopServer();
 		ctx->sys->reserveManager.Finalize();
+		OutputDebugString(L"*** Server finalized ***\r\n");
 		//タスクトレイから削除
 		SendMessage(hwnd, WM_SHOW_TRAY, FALSE, FALSE);
 		ctx->sys->hwndMain = NULL;
