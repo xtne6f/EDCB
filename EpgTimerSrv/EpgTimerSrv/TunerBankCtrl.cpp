@@ -887,7 +887,8 @@ bool CTunerBankCtrl::RecStart(const TUNER_RESERVE& reserve, __int64 now) const
 			if( this->keepDisk ){
 				_GetBitrate(reserve.onid, reserve.tsid, reserve.sid, &bitrate);
 			}
-			param.createSize = (ULONGLONG)(bitrate / 8) * 1000 * reserve.durationSecond;
+			param.createSize = (ULONGLONG)(bitrate / 8) * 1000 *
+				max(reserve.durationSecond + (reserve.startTime + reserve.endMargin - now) / I64_1SEC, 0LL);
 			if( ctrlCmd.SendViewStartRec(param) != CMD_SUCCESS && isMainCtrl ){
 				break;
 			}

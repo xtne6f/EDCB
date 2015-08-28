@@ -1141,9 +1141,11 @@ void CReserveManager::CheckAutoDel() const
 	//直近で必要になりそうな空き領域を概算する
 	LONGLONG now = GetNowI64Time();
 	for( map<DWORD, RESERVE_DATA>::const_iterator itr = this->reserveText.GetMap().begin(); itr != this->reserveText.GetMap().end(); itr++ ){
+		__int64 startTime, endTime;
+		CalcEntireReserveTime(&startTime, &endTime, itr->second);
 		if( itr->second.recSetting.recMode != RECMODE_NO &&
 		    itr->second.recSetting.recMode != RECMODE_VIEW &&
-		    now < ConvertI64Time(itr->second.startTime) && ConvertI64Time(itr->second.startTime) < now + 2*60*60*I64_1SEC ){
+		    startTime < now + 2*60*60*I64_1SEC ){
 			//録画開始2時間前までの予約
 			vector<wstring> recFolderList;
 			if( itr->second.recSetting.recFolderList.empty() ){
@@ -1162,9 +1164,17 @@ void CReserveManager::CheckAutoDel() const
 				std::transform(mountPath.begin(), mountPath.end(), mountPath.begin(), toupper);
 				map<wstring, pair<ULONGLONG, vector<wstring>>>::iterator jtr = mountMap.find(mountPath);
 				if( jtr != mountMap.end() ){
-					DWORD bitrate = 0;
-					_GetBitrate(itr->second.originalNetworkID, itr->second.transportStreamID, itr->second.serviceID, &bitrate);
-					jtr->second.first += (ULONGLONG)(bitrate / 8 * 1000) * itr->second.durationSecond;
+					if( jtr->second.first == 0 ){
+						//延長や外部要因による空き領域減少に対処するため最低限の余裕をとる
+						jtr->second.first = 512*1024*1024;
+					}
+					//時計精度の関係で実際に録画が始まった後もしばらくこの条件を満たし、余分に確保されるかもしれない
+					//(厳密にやるのは簡単ではないので、従来通りゆるい実装にしておく)
+					if( now < startTime ){
+						DWORD bitrate = 0;
+						_GetBitrate(itr->second.originalNetworkID, itr->second.transportStreamID, itr->second.serviceID, &bitrate);
+						jtr->second.first += (ULONGLONG)(bitrate / 8 * 1000) * (endTime - startTime) / I64_1SEC;
+					}
 				}
 			}
 		}
@@ -1398,10 +1408,8 @@ DWORD CReserveManager::Check()
 				AddPostBatWork(batWorkList, L"PostRecEnd.bat");
 			}
 		}
-		if( this->checkCount % 60 == 0 ){
-			CheckAutoDel();
-		}
 		if( this->checkCount % 30 == 0 ){
+			CheckAutoDel();
 			CheckOverTimeReserve();
 		}
 		if( this->checkCount % 3 == 0 ){
