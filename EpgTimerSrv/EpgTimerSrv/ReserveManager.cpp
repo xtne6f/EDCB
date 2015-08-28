@@ -196,10 +196,12 @@ vector<TUNER_RESERVE_INFO> CReserveManager::GetTunerReserveAll() const
 	list.back().tunerID = 0xFFFFFFFF;
 	list.back().tunerName = L"チューナー不足";
 	vector<DWORD> &ngList = list.back().reserveList = GetNoTunerReserveAll();
-	for( size_t i = 0; i < ngList.size(); i++ ){
+	for( size_t i = 0; i < ngList.size(); ){
 		//無効予約は「チューナ不足」ではない
 		if( this->reserveText.GetMap().find(ngList[i])->second.recSetting.recMode == RECMODE_NO ){
 			ngList.erase(ngList.begin() + i);
+		}else{
+			i++;
 		}
 	}
 	return list;
