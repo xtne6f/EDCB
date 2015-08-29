@@ -347,7 +347,8 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 								Replace(log, L"\r\n", L"  ");
 								string logA;
 								WtoA(log + L"\r\n", logA);
-								SetFilePointer(hFile, 0, NULL, FILE_END);
+								LARGE_INTEGER liPos = {};
+								SetFilePointerEx(hFile, liPos, NULL, FILE_END);
 								DWORD dwWritten;
 								WriteFile(hFile, logA.c_str(), (DWORD)logA.size(), &dwWritten, NULL);
 								CloseHandle(hFile);

@@ -27,9 +27,12 @@ static void StartDebugLog()
 		logPath += L"\\EpgTimerSrvDebugLog.txt";
 		g_hDebugLog = CreateFile(logPath.c_str(), FILE_APPEND_DATA, FILE_SHARE_READ, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 		if( g_hDebugLog != INVALID_HANDLE_VALUE ){
-			if( SetFilePointer(g_hDebugLog, 0, NULL, FILE_END) == 0 ){
+			if( GetLastError() == ERROR_SUCCESS ){
 				DWORD dwWritten;
 				WriteFile(g_hDebugLog, "\xFF\xFE", sizeof(char) * 2, &dwWritten, NULL);
+			}else{
+				LARGE_INTEGER liPos = {};
+				SetFilePointerEx(g_hDebugLog, liPos, NULL, FILE_END);
 			}
 			InitializeCriticalSection(&g_debugLogLock);
 			g_saveDebugLog = true;
