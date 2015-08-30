@@ -93,6 +93,8 @@ private:
 	__int64 ChkInsertStatus(vector<CHK_RESERVE_DATA>& bank, CHK_RESERVE_DATA& inItem, bool modifyBank) const;
 	//マージンを考慮した予約時刻を計算する(常にendTime>=startTime)
 	void CalcEntireReserveTime(__int64* startTime, __int64* endTime, const RESERVE_DATA& data) const;
+	//追従通知用メッセージを取得する
+	static wstring GetNotifyChgReserveMessage(const RESERVE_DATA& oldInfo, const RESERVE_DATA& newInfo);
 	//最新EPG(チューナからの情報)をもとに追従処理する
 	void CheckTuijyuTuner();
 	//ディスクの空き容量を調べて必要なら自動削除する

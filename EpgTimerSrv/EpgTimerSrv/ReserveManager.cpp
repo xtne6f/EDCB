@@ -846,6 +846,23 @@ void CReserveManager::CalcEntireReserveTime(__int64* startTime, __int64* endTime
 	}
 }
 
+wstring CReserveManager::GetNotifyChgReserveMessage(const RESERVE_DATA& oldInfo, const RESERVE_DATA& newInfo)
+{
+	SYSTEMTIME stOld = oldInfo.startTime;
+	SYSTEMTIME stOldEnd;
+	ConvertSystemTime(ConvertI64Time(stOld) + oldInfo.durationSecond * I64_1SEC, &stOldEnd);
+	SYSTEMTIME stNew = newInfo.startTime;
+	SYSTEMTIME stNewEnd;
+	ConvertSystemTime(ConvertI64Time(stNew) + newInfo.durationSecond * I64_1SEC, &stNewEnd);
+	wstring msg;
+	Format(msg, L"%s %04d/%02d/%02d %02d:%02d～%02d:%02d\r\n%s\r\nEventID:0x%04X\r\n↓\r\n%s %04d/%02d/%02d %02d:%02d～%02d:%02d\r\n%s\r\nEventID:0x%04X",
+		oldInfo.stationName.c_str(), stOld.wYear, stOld.wMonth, stOld.wDay, stOld.wHour, stOld.wMinute,
+		stOldEnd.wHour, stOldEnd.wMinute, oldInfo.title.c_str(), oldInfo.eventID,
+		newInfo.stationName.c_str(), stNew.wYear, stNew.wMonth, stNew.wDay, stNew.wHour, stNew.wMinute,
+		stNewEnd.wHour, stNewEnd.wMinute, newInfo.title.c_str(), newInfo.eventID);
+	return msg;
+}
+
 void CReserveManager::CheckTuijyu()
 {
 	CBlockLock lock(&this->managerLock);
@@ -882,6 +899,10 @@ void CReserveManager::CheckTuijyu()
 				}
 				if( chgRes ){
 					chgList.push_back(r);
+					wstring msg = GetNotifyChgReserveMessage(itr->second, r);
+					this->notifyManager.AddNotifyMsg(NOTIFY_UPDATE_CHG_TUIJYU, msg);
+					Replace(msg, L"\r\n", L" ");
+					_OutputDebugString(L"●予約(ID=%d)を追従 %s\r\n", r.reserveID, msg.c_str());
 				}
 			}
 		}
@@ -928,6 +949,10 @@ void CReserveManager::CheckTuijyuTuner()
 					//プログラム予約、無効予約、および6時間以上先の予約は対象外
 					continue;
 				}
+				//ADD_RESERVE_NORMAL,RELAY
+				//├→CHG_PF2
+				//└─┼→CHG_PF←┐
+				//    └─┴→UNKNOWN_END
 				bool pfFound = false;
 				bool pfUnknownEnd = false;
 				bool pfExplicitlyUnknownEnd = false;
@@ -991,7 +1016,10 @@ void CReserveManager::CheckTuijyuTuner()
 						}
 						if( chgRes ){
 							chgList.push_back(r);
-							_OutputDebugString(L"●p/f 予約(ID=%d)を変更します\r\n", r.reserveID);
+							wstring msg = GetNotifyChgReserveMessage(itrRes->second, r);
+							this->notifyManager.AddNotifyMsg(NOTIFY_UPDATE_REC_TUIJYU, msg);
+							Replace(msg, L"\r\n", L" ");
+							_OutputDebugString(L"●p/f 予約(ID=%d)を追従 %s\r\n", r.reserveID, msg.c_str());
 						}
 						//現在(present)についてはイベントリレーもチェック
 						if( i == 0 && r.recSetting.tuijyuuFlag && info.StartTimeFlag && info.DurationFlag && info.eventRelayInfo ){
@@ -1035,32 +1063,32 @@ void CReserveManager::CheckTuijyuTuner()
 						break;
 					}
 				}
-				//EIT[p/f]にあるものやEIT[p/f]で変更されたことがあるものは除外する
-				if( pfFound == false &&
-				    itrRes->second.presentFlag == FALSE &&
-				    itrRes->second.reserveStatus != ADD_RESERVE_CHG_PF &&
-				    itrRes->second.reserveStatus != ADD_RESERVE_UNKNOWN_END ){
+				//EIT[p/f]にあるものや現在(present)に現れたことのある予約は除外する
+				if( pfFound == false && itrRes->second.presentFlag == FALSE ){
 					RESERVE_DATA r = itrRes->second;
 					bool chgRes = false;
+					bool chgResStatusOnly = false;
 					if( pfUnknownEnd ){
 						//EIT[p/f]の継続時間未定。以降の予約も時間未定とみなし、終了まで5分を切る予約は5分伸ばす
 						__int64 startTime, endTime;
 						CalcEntireReserveTime(&startTime, &endTime, r);
 						if( endTime - startTime < this->notFindTuijyuHour * 3600 * I64_1SEC && endTime < GetNowI64Time() + 300 * I64_1SEC ){
 							r.durationSecond += 300;
-							r.reserveStatus = ADD_RESERVE_NO_FIND;
+							r.reserveStatus = ADD_RESERVE_UNKNOWN_END;
 							chgRes = true;
 							OutputDebugString(L"●時間未定の通常イベントの予約を延長します\r\n");
 						}
-						if( pfExplicitlyUnknownEnd && r.reserveStatus != ADD_RESERVE_NO_FIND && ConvertI64Time(r.startTime) < GetNowI64Time() + 300 * I64_1SEC ){
-							//明示的な放送未定の場合は開始まで5分を切る時点でNO_FINDにする
-							r.reserveStatus = ADD_RESERVE_NO_FIND;
+						if( pfExplicitlyUnknownEnd && r.reserveStatus != ADD_RESERVE_UNKNOWN_END && ConvertI64Time(r.startTime) < GetNowI64Time() + 3600 * I64_1SEC ){
+							//明示的な放送未定の場合は開始まで60分を切る時点でUNKNOWN_ENDにする
+							//(この閾値は時間未定解消後のEIT[p/f]にイベントID変更で現れる可能性がありそうな範囲として適当に決めたもの)
+							r.reserveStatus = ADD_RESERVE_UNKNOWN_END;
 							chgRes = true;
-							OutputDebugString(L"●時間未定の通常イベントの予約をNO_FINDモードにします\r\n");
+							chgResStatusOnly = true;
+							OutputDebugString(L"●時間未定の通常イベントの予約をUNKNOWN_ENDにします\r\n");
 						}
-					}else if( r.reserveStatus == ADD_RESERVE_NO_FIND ){
+					}else if( r.reserveStatus == ADD_RESERVE_UNKNOWN_END ){
 						//イベントID直前変更対応(主にNHK)
-						//時間未定解消後にNO_FINDになっている予約に限り、イベント名が完全一致するEIT[p/f]が存在すれば、そのイベントの終了時間まで予約を伸ばす
+						//時間未定解消後にUNKNOWN_ENDになっている予約に限り、イベント名が完全一致するEIT[p/f]が存在すれば、そのイベントの終了時間まで予約を伸ばす
 						for( int i = (nowSuccess == 0 ? 0 : 1); i < (nextSuccess == 0 ? 2 : 1); i++ ){
 							const EPGDB_EVENT_INFO& info = resPfVal[i];
 							if( info.StartTimeFlag != 0 && info.DurationFlag != 0 &&
@@ -1077,7 +1105,10 @@ void CReserveManager::CheckTuijyuTuner()
 					}
 					//EIT[p/f]が正しく取得できる状況でEIT[p/f]にないものは通常チェック
 					EPGDB_EVENT_INFO info;
-					if( nowSuccess != 2 && nextSuccess != 2 && r.reserveStatus != ADD_RESERVE_NO_FIND && itrBank->second->SearchEpgInfo(sid, r.eventID, &info) ){
+					if( nowSuccess != 2 && nextSuccess != 2 &&
+					    r.reserveStatus != ADD_RESERVE_CHG_PF &&
+					    r.reserveStatus != ADD_RESERVE_UNKNOWN_END &&
+					    itrBank->second->SearchEpgInfo(sid, r.eventID, &info) ){
 						if( info.StartTimeFlag != 0 && info.DurationFlag != 0 ){
 							__int64 startDiff = ConvertI64Time(info.start_time) - ConvertI64Time(r.startTime);
 							//EventIDの再使用に備えるため12時間以上の移動は対象外
@@ -1103,7 +1134,12 @@ void CReserveManager::CheckTuijyuTuner()
 					}
 					if( chgRes ){
 						chgList.push_back(r);
-						_OutputDebugString(L"●予約(ID=%d)を変更します\r\n", r.reserveID);
+						wstring msg = GetNotifyChgReserveMessage(itrRes->second, r);
+						if( chgResStatusOnly == false ){
+							this->notifyManager.AddNotifyMsg(NOTIFY_UPDATE_REC_TUIJYU, msg);
+						}
+						Replace(msg, L"\r\n", L" ");
+						_OutputDebugString(L"●予約(ID=%d)を追従 %s\r\n", r.reserveID, msg.c_str());
 					}
 				}
 			}
