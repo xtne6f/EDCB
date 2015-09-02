@@ -252,6 +252,8 @@ namespace EpgTimer
         CMD_EPG_SRV_REGIST_GUI_TCP = 7,
         /// <summary>TCP接続のGUIアプリケーションのIPとポートの登録を解除</summary>
         CMD_EPG_SRV_UNREGIST_GUI_TCP = 8,
+        /// <summary>TCP接続のGUIアプリケーションのIPとポートの登録状況確認</summary>
+        CMD_EPG_SRV_ISREGIST_GUI_TCP = 9,
         /// <summary>予約一覧取得</summary>
         CMD_EPG_SRV_ENUM_RESERVE = 1011,
         /// <summary>予約情報取得</summary>
@@ -497,6 +499,14 @@ namespace EpgTimer
         public ErrCode SendRegistTCP(uint port) { return SendCmdData(CtrlCmd.CMD_EPG_SRV_REGIST_GUI_TCP, port); }
         /// <summary>EpgTimerSrv.exeのTCP接続GUI登録を解除する</summary>
         public ErrCode SendUnRegistTCP(uint port) { return SendCmdData(CtrlCmd.CMD_EPG_SRV_UNREGIST_GUI_TCP, port); }
+        /// <summary>EpgTimerSrv.exeのTCP接続GUI登録状況確認</summary>
+        public ErrCode SendIsRegistTCP(uint port, ref bool registered)
+        {
+            object o = new int();
+            ErrCode retv = SendAndReceiveCmdData(CtrlCmd.CMD_EPG_SRV_ISREGIST_GUI_TCP, port, ref o);
+            registered = ((int)o == 0 ? false : true);
+            return retv;
+        }
         /// <summary>予約を削除する</summary>
         public ErrCode SendDelReserve(List<uint> val) { return SendCmdData(CtrlCmd.CMD_EPG_SRV_DEL_RESERVE, val); }
         /// <summary>チューナーごとの予約一覧を取得する</summary>
