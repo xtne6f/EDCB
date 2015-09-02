@@ -342,6 +342,8 @@ namespace EpgTimer
         CMD_EPG_SRV_ENUM_PLUGIN = 1061,
         /// <summary>TVTestのチャンネル切り替え用の情報を取得する</summary>
         CMD_EPG_SRV_GET_CHG_CH_TVTEST = 1062,
+        /// <summary>設定ファイル(ini)の更新を通知させる</summary>
+        CMD_EPG_SRV_PROFILE_UPDATE = 1063,
         /// <summary>ネットワークモードのEpgDataCap_Bonのチャンネルを切り替え</summary>
         CMD_EPG_SRV_NWTV_SET_CH = 1070,
         /// <summary>ネットワークモードで起動中のEpgDataCap_Bonを終了</summary>
@@ -523,6 +525,8 @@ namespace EpgTimer
         public ErrCode SendEnumPlugIn(ushort val, ref List<string> resVal) { object o = resVal; return SendAndReceiveCmdData(CtrlCmd.CMD_EPG_SRV_ENUM_PLUGIN, val, ref o); }
         /// <summary>TVTestのチャンネル切り替え用の情報を取得する</summary>
         public ErrCode SendGetChgChTVTest(ulong val, ref TvTestChChgInfo resVal) { object o = resVal; return SendAndReceiveCmdData(CtrlCmd.CMD_EPG_SRV_GET_CHG_CH_TVTEST, val, ref o); }
+        /// <summary>設定ファイル(ini)の更新を通知させる</summary>
+        public ErrCode SendNotifyProfileUpdate() { return SendCmdWithoutData(CtrlCmd.CMD_EPG_SRV_PROFILE_UPDATE); }
         /// <summary>ネットワークモードのEpgDataCap_Bonのチャンネルを切り替え</summary>
         public ErrCode SendNwTVSetCh(SetChInfo val) { return SendCmdData(CtrlCmd.CMD_EPG_SRV_NWTV_SET_CH, val); }
         /// <summary>ネットワークモードで起動中のEpgDataCap_Bonを終了</summary>
