@@ -308,6 +308,8 @@ namespace EpgTimer
         CMD_EPG_SRV_SEARCH_PG = 1025,
         /// <summary>番組検索(Ver対応版)</summary>
         CMD_EPG_SRV_SEARCH_PG2 = 2125,
+        /// <summary>番組検索(key毎版)</summary>
+        CMD_EPG_SRV_SEARCH_PG_BYKEY2 = 2127,
         /// <summary>番組情報一覧取得</summary>
         CMD_EPG_SRV_ENUM_PG_ALL = 1026,
         /// <summary>自動予約登録の条件一覧取得</summary>
@@ -558,6 +560,37 @@ namespace EpgTimer
         public ErrCode SendChgProtectRecInfo(List<RecFileInfo> val) { return SendCmdData2(CtrlCmd.CMD_EPG_SRV_CHG_PROTECT_RECINFO2, val); }
         /// <summary>指定キーワードで番組情報を検索する</summary>
         public ErrCode SendSearchPg(List<EpgSearchKeyInfo> key, ref List<EpgEventInfo> val) { object o = val; return SendAndReceiveCmdData2(CtrlCmd.CMD_EPG_SRV_SEARCH_PG2, key, ref o); }
+
+        /// <summary>指定キーワードで番組情報を検索する(キーごと)</summary>
+        public ErrCode SendSearchPgByKey(List<EpgSearchKeyInfo> key, ref List<List<EpgEventInfo>> val)
+        {
+            object o = new List<EpgEventInfo>();
+            ErrCode retv = SendAndReceiveCmdData2(CtrlCmd.CMD_EPG_SRV_SEARCH_PG_BYKEY2, key, ref o);
+
+            //送られてくるデータはダミー区切りのリストなので、ここで分解する。
+            if (retv == ErrCode.CMD_SUCCESS)
+            {
+                List<EpgEventInfo> data = (List<EpgEventInfo>)o;
+
+                var list1 = new List<EpgEventInfo>();
+
+                foreach (EpgEventInfo info in data)
+                {
+                    if (info.original_network_id == 0 && info.transport_stream_id == 0 &&
+                        info.service_id == 0 && info.event_id == 0 && info.ShortInfo == null)
+                    {
+                        val.Add(list1);
+                        list1 = new List<EpgEventInfo>();
+                    }
+                    else
+                    {
+                        list1.Add(info);
+                    }
+                }
+            }
+
+            return retv;
+        }
         #endregion
         /// <summary>BonDriverの切り替え</summary>
         public ErrCode SendViewSetBonDrivere(string val) { return SendCmdData(CtrlCmd.CMD_VIEW_APP_SET_BONDRIVER, val); }
