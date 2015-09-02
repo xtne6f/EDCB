@@ -14,10 +14,10 @@ LONGLONG _Create64Key( WORD OriginalNetworkID, WORD TransportStreamID, WORD Serv
 	return Key;
 }
 
-LONGLONG _Create64Key2( WORD OriginalNetworkID, WORD TransportStreamID, WORD ServiceID, WORD EventID )
+ULONGLONG _Create64Key2( WORD OriginalNetworkID, WORD TransportStreamID, WORD ServiceID, WORD EventID )
 {
-	LONGLONG Key = 
-		(((LONGLONG)(OriginalNetworkID & 0x0000FFFF))<<48) |
+	ULONGLONG Key = 
+		(((ULONGLONG)(OriginalNetworkID & 0x0000FFFF))<<48) |
 		(((LONGLONG)(TransportStreamID & 0x0000FFFF))<<32) |
 		(((LONGLONG)(ServiceID & 0x0000FFFF))<<16) |
 		((LONGLONG)(EventID & 0x0000FFFF));
