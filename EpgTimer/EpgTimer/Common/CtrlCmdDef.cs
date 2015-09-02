@@ -1034,6 +1034,8 @@ namespace EpgTimer
         public byte chkRecEnd;
         /// <summary>(自動予約登録の条件専用)録画済かのチェック対象期間</summary>
         public ushort chkRecDay;
+        /// <summary>(自動予約登録の条件専用)録画済かのチェックの際、同一サービスのチェックを省略する</summary>
+        public byte chkRecNoService;
         /// <summary>最低番組長(分/0は無制限)</summary>
         public ushort chkDurationMin;
         /// <summary>最大番組長(分/0は無制限)</summary>
@@ -1055,6 +1057,7 @@ namespace EpgTimer
             freeCAFlag = 0;
             chkRecEnd = 0;
             chkRecDay = 6;
+            chkRecNoService = 0;
             chkDurationMin = 0;
             chkDurationMax = 0;
         }
@@ -1082,6 +1085,7 @@ namespace EpgTimer
             }
             if (version >= 5)
             {
+                w.Write(chkRecNoService);
                 w.Write(chkDurationMin);
                 w.Write(chkDurationMax);
             }
@@ -1111,6 +1115,7 @@ namespace EpgTimer
             }
             if (version >= 5)
             {
+                r.Read(ref chkRecNoService);
                 r.Read(ref chkDurationMin);
                 r.Read(ref chkDurationMax);
             }
