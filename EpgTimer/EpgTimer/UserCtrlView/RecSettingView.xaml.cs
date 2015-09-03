@@ -537,12 +537,12 @@ namespace EpgTimer
 
         private void button_recFolderAdd_Click(object sender, RoutedEventArgs e)
         {
-            recFolderAdd(listView_recFolder, recSetting.RecFolderList);
+            recFolderAdd(listView_recFolder);
         }
 
         private void button_recFolderChg_Click(object sender, RoutedEventArgs e)
         {
-            recFolderChange(listView_recFolder, recSetting.RecFolderList);
+            recFolderChange(listView_recFolder);
         }
 
         private void button_recFolderDel_Click(object sender, RoutedEventArgs e)
@@ -552,10 +552,10 @@ namespace EpgTimer
 
         private void listView_recFolder_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            recFolderChange(listView_recFolder, recSetting.RecFolderList);
+            recFolderChange(listView_recFolder);
         }
 
-        private void recFolderAdd(ListBox listbox, List<RecFileSetInfo> recFolderList)
+        private void recFolderAdd(ListBox listbox)
         {
             var setting = new RecFolderWindow();
             PresentationSource topWindow = PresentationSource.FromVisual(this);
@@ -567,7 +567,7 @@ namespace EpgTimer
             {
                 var setInfo = new RecFileSetInfo();
                 setting.GetSetting(ref setInfo);
-                foreach (RecFileSetInfo info in recFolderList)
+                foreach (RecFileSetInfo info in listbox.Items)
                 {
                     if (String.Compare(setInfo.RecFolder, info.RecFolder, true) == 0 &&
                         String.Compare(setInfo.WritePlugIn, info.WritePlugIn, true) == 0 &&
@@ -581,7 +581,7 @@ namespace EpgTimer
             }
         }
 
-        private void recFolderChange(ListBox listbox, List<RecFileSetInfo> recFolderList)
+        private void recFolderChange(ListBox listbox)
         {
             if (listbox.SelectedItem == null)
             {
@@ -608,7 +608,7 @@ namespace EpgTimer
             }
             else
             {
-                recFolderAdd(listbox, recFolderList);
+                recFolderAdd(listbox);
             }
         }
 
@@ -723,12 +723,12 @@ namespace EpgTimer
 
         private void button_recFolderChg_1seg_Click(object sender, RoutedEventArgs e)
         {
-            recFolderChange(listView_recFolder_1seg, recSetting.PartialRecFolder);
+            recFolderChange(listView_recFolder_1seg);
         }
 
         private void button_recFolderAdd_1seg_Click(object sender, RoutedEventArgs e)
         {
-            recFolderAdd(listView_recFolder_1seg, recSetting.PartialRecFolder);
+            recFolderAdd(listView_recFolder_1seg);
         }
 
         private void button_recFolderDel_1seg_Click(object sender, RoutedEventArgs e)
@@ -738,7 +738,7 @@ namespace EpgTimer
 
         private void listView_recFolder_1seg_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            recFolderChange(listView_recFolder_1seg, recSetting.PartialRecFolder);
+            recFolderChange(listView_recFolder_1seg);
         }
 
     }
