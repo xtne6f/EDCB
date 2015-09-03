@@ -12,6 +12,100 @@
 #define new DEBUG_NEW
 #endif
 
+#ifndef SUPPRESS_OUTPUT_STACK_TRACE
+// 例外によってアプリケーションが終了する直前にスタックトレースを"実行ファイル名.exe.err"に出力する
+// デバッグ情報(.pdbファイル)が存在すれば出力はより詳細になる
+
+#include <tlhelp32.h>
+#include <dbghelp.h>
+#pragma comment(lib, "dbghelp.lib")
+
+static void OutputStackTrace(DWORD exceptionCode, const PVOID* addrOffsets)
+{
+	WCHAR path[MAX_PATH + 4];
+	path[GetModuleFileName(NULL, path, MAX_PATH)] = L'\0';
+	lstrcat(path, L".err");
+	HANDLE hFile = CreateFile(path, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	if( hFile != INVALID_HANDLE_VALUE ){
+		char buff[384];
+		DWORD written;
+		int len = wsprintfA(buff, "ExceptionCode = 0x%08X\r\n", exceptionCode);
+		WriteFile(hFile, buff, len, &written, NULL);
+		for( int i = 0; addrOffsets[i]; i++ ){
+			SYMBOL_INFO symbol[1 + (256 + sizeof(SYMBOL_INFO)) / sizeof(SYMBOL_INFO)];
+			symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
+			symbol->MaxNameLen = 256;
+			DWORD64 displacement;
+			if( SymFromAddr(GetCurrentProcess(), (DWORD64)addrOffsets[i], &displacement, symbol) ){
+				len = wsprintfA(buff, "Trace%02d 0x%p = 0x%p(%s) + 0x%X\r\n", i, addrOffsets[i], (PVOID)symbol->Address, symbol->Name, (DWORD)displacement);
+			}else{
+				len = wsprintfA(buff, "Trace%02d 0x%p = ?\r\n", i, addrOffsets[i]);
+			}
+			WriteFile(hFile, buff, len, &written, NULL);
+		}
+		HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, 0);
+		if( hSnapshot != INVALID_HANDLE_VALUE ){
+			MODULEENTRY32W modent;
+			modent.dwSize = sizeof(modent);
+			if( Module32FirstW(hSnapshot, &modent) ){
+				do{
+					len = wsprintfA(buff, "0x%p - 0x%p = %S\r\n", modent.modBaseAddr, modent.modBaseAddr + modent.modBaseSize - 1, modent.szModule);
+					WriteFile(hFile, buff, len, &written, NULL);
+				}while( Module32NextW(hSnapshot, &modent) );
+			}
+			CloseHandle(hSnapshot);
+		}
+		CloseHandle(hFile);
+	}
+}
+
+static LONG WINAPI TopLevelExceptionFilter(_EXCEPTION_POINTERS* exceptionInfo)
+{
+	static struct {
+		LONG used;
+		CONTEXT contextRecord;
+		STACKFRAME64 stackFrame;
+		PVOID addrOffsets[32];
+	} work;
+
+	if( InterlockedExchange(&work.used, 1) == 0 ){
+		SymSetOptions(SYMOPT_UNDNAME | SYMOPT_DEFERRED_LOADS);
+		if( SymInitialize(GetCurrentProcess(), NULL, TRUE) ){
+			work.addrOffsets[0] = exceptionInfo->ExceptionRecord->ExceptionAddress;
+			work.contextRecord = *exceptionInfo->ContextRecord;
+			work.stackFrame.AddrPC.Mode = AddrModeFlat;
+			work.stackFrame.AddrFrame.Mode = AddrModeFlat;
+			work.stackFrame.AddrStack.Mode = AddrModeFlat;
+#if defined(_M_IX86) || defined(_M_X64)
+#ifdef _M_X64
+			work.stackFrame.AddrPC.Offset = work.contextRecord.Rip;
+			work.stackFrame.AddrFrame.Offset = work.contextRecord.Rbp;
+			work.stackFrame.AddrStack.Offset = work.contextRecord.Rsp;
+#else
+			work.stackFrame.AddrPC.Offset = work.contextRecord.Eip;
+			work.stackFrame.AddrFrame.Offset = work.contextRecord.Ebp;
+			work.stackFrame.AddrStack.Offset = work.contextRecord.Esp;
+#endif
+			for( int i = 1; i < _countof(work.addrOffsets) - 1 && StackWalk64(
+#ifdef _M_X64
+				IMAGE_FILE_MACHINE_AMD64,
+#else
+				IMAGE_FILE_MACHINE_I386,
+#endif
+				GetCurrentProcess(), GetCurrentThread(), &work.stackFrame, &work.contextRecord,
+				NULL, SymFunctionTableAccess64, SymGetModuleBase64, NULL); i++ ){
+				work.addrOffsets[i] = (PVOID)work.stackFrame.AddrPC.Offset;
+			}
+#endif
+			OutputStackTrace(exceptionInfo->ExceptionRecord->ExceptionCode, work.addrOffsets);
+			SymCleanup(GetCurrentProcess());
+		}
+	}
+	return EXCEPTION_CONTINUE_SEARCH;
+}
+
+#endif // SUPPRESS_OUTPUT_STACK_TRACE
+
 
 // CEpgDataCap_BonApp
 
@@ -44,6 +138,10 @@ BOOL CEpgDataCap_BonApp::InitInstance()
 	InitCommonControlsEx(&InitCtrls);
 
 	SetProcessShutdownParameters(0x300, 0);
+
+#ifndef SUPPRESS_OUTPUT_STACK_TRACE
+	SetUnhandledExceptionFilter(TopLevelExceptionFilter);
+#endif
 
 	// コマンドオプションを解析
 	CCmdLineUtil cCmdUtil;

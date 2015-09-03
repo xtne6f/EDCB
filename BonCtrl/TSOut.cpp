@@ -181,16 +181,12 @@ void CTSOut::OnChChanged(WORD onid, WORD tsid)
 	this->pmtUtilMap.clear();
 }
 
-DWORD CTSOut::AddTSBuff(TS_DATA* data)
+DWORD CTSOut::AddTSBuff(BYTE* data, DWORD dataSize)
 {
 	//dataは同期済みかつそのサイズは188の整数倍であること
 
 	if( Lock(L"AddTSBuff") == FALSE ) return ERR_FALSE;
-	if( data == NULL ){
-		UnLock();
-		return ERR_FALSE;
-	}
-	if( data->size == 0 || data->data == NULL ){
+	if( dataSize == 0 || data == NULL ){
 		UnLock();
 		return ERR_FALSE;
 	}
@@ -198,10 +194,10 @@ DWORD CTSOut::AddTSBuff(TS_DATA* data)
 
 	BYTE* decodeData = NULL;
 	DWORD decodeSize = 0;
-	try{
-		for( DWORD i=0; i<data->size; i+=188 ){
+	{
+		for( DWORD i=0; i<dataSize; i+=188 ){
 			CTSPacketUtil packet;
-			if( packet.Set188TS(data->data + i, 188) == TRUE ){
+			if( packet.Set188TS(data + i, 188) == TRUE ){
 				if( this->chChangeFlag == TRUE ){
 					//チャンネル切り替え中
 					if( GetTickCount() - this->chChangeTime < 1000 ){
@@ -225,13 +221,7 @@ DWORD CTSOut::AddTSBuff(TS_DATA* data)
 						//PES
 						continue;
 					}
-					try{
-						this->epgUtil.AddTSPacket(data->data + i, 188);
-					}catch(...){
-						_OutputDebugString(L"★★CTSOut::AddTSBuff epgUtil.AddTSPacket");
-						this->epgUtil.UnInitialize();
-						this->epgUtil.Initialize(FALSE);
-					}
+					this->epgUtil.AddTSPacket(data + i, 188);
 					WORD onid = 0xFFFF;
 					WORD tsid = 0xFFFF;
 					if( this->epgUtil.GetTSID(&onid, &tsid) == NO_ERR ){
@@ -311,7 +301,7 @@ DWORD CTSOut::AddTSBuff(TS_DATA* data)
 					//デコード用のバッファ作成
 					if( this->serviceOnlyFlag == FALSE ){
 						//全サービス
-						this->decodeBuff.insert(this->decodeBuff.end(), data->data + i, data->data + i + 188);
+						this->decodeBuff.insert(this->decodeBuff.end(), data + i, data + i + 188);
 					}else{
 						//指定サービス
 						if( IsNeedPID(&packet) == TRUE ){
@@ -325,14 +315,14 @@ DWORD CTSOut::AddTSBuff(TS_DATA* data)
 									}
 								}
 							}else{
-								this->decodeBuff.insert(this->decodeBuff.end(), data->data + i, data->data + i + 188);
+								this->decodeBuff.insert(this->decodeBuff.end(), data + i, data + i + 188);
 							}
 						}
 					}
 					if( this->epgFile != NULL ){
 						if( packet.PID <= 0x0030 ){
 							DWORD write=0;
-							WriteFile(this->epgFile, data->data + i, 188, &write, NULL);
+							WriteFile(this->epgFile, data + i, 188, &write, NULL);
 						}
 					}
 				}
@@ -366,10 +356,6 @@ DWORD CTSOut::AddTSBuff(TS_DATA* data)
 				}
 			}
 		}
-	}catch(...){
-		_OutputDebugString(L"★★CTSOut::AddTSBuff Exception1");
-		UnLock();
-		return ERR_FALSE;
 	}
 	try{
 		if( this->decodeBuff.empty() == false ){
@@ -400,28 +386,18 @@ DWORD CTSOut::AddTSBuff(TS_DATA* data)
 	}
 	
 	//デコード済みのデータを解析させる
-	try{
+	{
 		for( DWORD i=0; i<decodeSize; i+=188 ){
 			this->epgUtil.AddTSPacket(decodeData + i, 188);
 		}
-	}catch(...){
-		_OutputDebugString(L"★★CTSOut::AddTSBuff Exception3");
-		this->epgUtil.UnInitialize();
-		this->epgUtil.Initialize(FALSE);
-		UnLock();
-		return ERR_FALSE;
 	}
 
 	//各サービス処理にデータ渡す
-	try{
+	{
 		map<DWORD, COneServiceUtil*>::iterator itrService;
 		for( itrService = serviceUtilMap.begin(); itrService != serviceUtilMap.end(); itrService++ ){
 			itrService->second->AddTSBuff(decodeData, decodeSize);
 		}
-	}catch(...){
-		_OutputDebugString(L"★★CTSOut::AddTSBuff Exception4");
-		UnLock();
-		return ERR_FALSE;
 	}
 	UnLock();
 	return NO_ERR;
@@ -784,7 +760,6 @@ BOOL CTSOut::CreateServiceCtrl(
 	*id = GetNextID();
 
 	serviceUtil->SetEpgUtil(&this->epgUtil);
-	serviceUtil->SetID(*id);
 	serviceUtil->SetBonDriver(bonFile);
 
 	serviceUtilMap.insert(pair<DWORD, COneServiceUtil*>(*id, serviceUtil));
@@ -1145,19 +1120,6 @@ BOOL CTSOut::StartSave(
 	}
 
 	BOOL ret = itr->second->StartSave(fileName, overWriteFlag, pittariFlag, pittariONID, pittariTSID, pittariSID, pittariEventID, createSize, saveFolder, saveFolderSub, maxBuffCount);
-	if( ret == FALSE ){
-		_OutputDebugString(L"認識ドライブ");
-		WCHAR drive[4] = L"A:\\";
-		for( int i=0; i<26; i++ ){
-			ULARGE_INTEGER stFree;
-			ULARGE_INTEGER stTotal;
-			ULARGE_INTEGER stTotalFree;
-			if( _GetDiskFreeSpaceEx( drive, &stFree, &stTotal, &stTotalFree ) == TRUE ){
-				_OutputDebugString(L"%s free : %I64d byte", drive, stFree.QuadPart);
-			}
-			drive[0]++;
-		}
-	}
 	UnLock();
 	return ret;
 }

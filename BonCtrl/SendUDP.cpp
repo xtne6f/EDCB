@@ -1,5 +1,6 @@
 #include "StdAfx.h"
 #include "SendUDP.h"
+#include "../Common/PathUtil.h"
 
 static const int SNDBUF_SIZE = 3 * 1024 * 1024;
 
@@ -59,6 +60,9 @@ BOOL CSendUDP::StartUpload( vector<NW_SEND_INFO>* List )
 		}
 		SockList.push_back(Item);
 	}
+	wstring iniPath;
+	GetModuleIniPath(iniPath);
+	m_uiSendSize = GetPrivateProfileInt(L"Set", L"UDPPacket", 128, iniPath.c_str()) * 188;
 
 	return TRUE;
 }
@@ -76,8 +80,8 @@ BOOL CSendUDP::CloseUpload()
 void CSendUDP::SendData(BYTE* pbBuff, DWORD dwSize)
 {
 	for( DWORD dwRead=0; dwRead<dwSize; ){
-		//ペイロード分割。BonDriver_UDPの受信サイズ48128以下でなければならない
-		int iSendSize = min(128 * 188, dwSize - dwRead);
+		//ペイロード分割。BonDriver_UDPに送る場合は受信サイズ48128以下でなければならない
+		int iSendSize = min(max(m_uiSendSize, 188), dwSize - dwRead);
 		for( size_t i=0; i<SockList.size(); i++ ){
 			int iRet = sendto(SockList[i].sock, (char*)(pbBuff + dwRead), iSendSize, 0, (struct sockaddr *)&SockList[i].addr, sizeof(SockList[i].addr));
 			if( iRet == SOCKET_ERROR ){

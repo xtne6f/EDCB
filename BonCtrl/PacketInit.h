@@ -16,7 +16,7 @@ public:
 	//引数：
 	// inData			[IN]入力TSデータ
 	// inSize			[IN]inDataのサイズ（BYTE単位）
-	// outData			[OUT]188バイトに整列したバッファ（呼び出し元でdeleteする必要あり）
+	// outData			[OUT]188バイトに整列したバッファ（次回呼び出しまで保持）
 	// outSize			[OUT]outDataのサイズ（BYTE単位）
 	BOOL GetTSData(
 		BYTE* inData,
@@ -29,7 +29,8 @@ public:
 	void ClearBuff();
 
 protected:
-	BYTE* nextStartBuff;
+	vector<BYTE> outBuff;
+	BYTE nextStartBuff[256];
 	DWORD nextStartSize;
 
 	DWORD packetSize;

@@ -1,7 +1,6 @@
 #pragma once
 #include "lua.hpp"
 #include <string>
-#include <vector>
 
 struct mg_context;
 struct mg_connection;
@@ -11,21 +10,13 @@ class CHttpServer
 public:
 	CHttpServer();
 	~CHttpServer();
-	bool StartServer(unsigned short port, LPCWSTR rootPath_, int (*initProc)(lua_State*), void* initParam, bool saveLog = false, LPCWSTR acl = NULL);
+	bool StartServer(unsigned short port, LPCWSTR rootPath, int (*initProc)(lua_State*), void* initParam, bool saveLog = false, LPCWSTR acl = NULL);
 	void StopServer();
 private:
-	struct REDIRECT_ITEM {
-		std::string path;
-		const char* data;
-		size_t dataLen;
-	};
 	static void InitLua(const mg_connection* conn, void* luaContext);
-	static const char* OpenFile(const mg_connection* conn, const char* path, size_t* dataLen);
 	mg_context* mgContext;
-	std::string rootPath;
 	int (*initLuaProc)(lua_State*);
 	void* initLuaParam;
-	std::vector<REDIRECT_ITEM> redirectList;
 	HMODULE hLuaDll;
 };
 

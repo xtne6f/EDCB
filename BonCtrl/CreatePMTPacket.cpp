@@ -291,6 +291,10 @@ void CCreatePMTPacket::CreatePMT()
 					matched = TRUE;
 				}
 				break;
+			case 0x24:
+				//HEVC VIDEO
+				matched = TRUE;
+				break;
 			case 0x06:
 				//Žš–‹
 				if( this->needCaption == TRUE ){

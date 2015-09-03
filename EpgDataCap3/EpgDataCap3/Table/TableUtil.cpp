@@ -58,13 +58,13 @@ CTableUtil::t_type CTableUtil::Decode(BYTE* data, DWORD dataSize, CPSITable** ta
 			break;
 		case 0xA4:
 		case 0xA7:
-			type = TYPE_EIT_SD;
-			*table = new CEITTable_SD;
+			//type = TYPE_EIT_SD;
+			//*table = new CEITTable_SD;
 			break;
 		case 0xA2:
 		case 0xA3:
-			type = TYPE_EIT_SD2;
-			*table = new CEITTable_SD2;
+			//type = TYPE_EIT_SD2;
+			//*table = new CEITTable_SD2;
 			break;
 		default:
 			if( 0x4E <= data[0] && data[0] <= 0x6F ){

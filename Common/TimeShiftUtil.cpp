@@ -270,7 +270,6 @@ BOOL CTimeShiftUtil::OpenTimeShift(
 					}
 				}
 			}
-			SAFE_DELETE_ARRAY(data);
 		}
 	}
 
@@ -496,7 +495,6 @@ UINT WINAPI CTimeShiftUtil::ReadThread(LPVOID param)
 					sys->sendTcp->SendData(data, dataSize);
 				}
 			}
-			SAFE_DELETE_ARRAY(data);
 			sys->currentFilePos += readSize;
 		}
 		

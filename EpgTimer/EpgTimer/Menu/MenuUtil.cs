@@ -713,7 +713,7 @@ namespace EpgTimer
         {
             try
             {
-                itemlist.ForEach(item => item.ProtectFlag = !item.ProtectFlag);
+                itemlist.ForEach(item => item.ProtectFlag = (byte)(item.ProtectFlag == 0 ? 1 : 0));
                 return ReserveCmdSend(itemlist, cmd.SendChgProtectRecInfo, "録画情報の変更");
             }
             catch (Exception ex)
@@ -736,7 +736,7 @@ namespace EpgTimer
             }
         }
 
-        private bool ReserveCmdSend<T>(List<T> list, Func<List<T>, uint> cmdSend, string description = "", bool cautionMany = true)
+        private bool ReserveCmdSend<T>(List<T> list, Func<List<T>, ErrCode> cmdSend, string description = "", bool cautionMany = true)
         {
             try
             {
@@ -744,7 +744,7 @@ namespace EpgTimer
 
                 if (cautionMany == true && CautionManyMessage(list.Count, description) == false) return false;
 
-                ErrCode err = (ErrCode)cmdSend(list);
+                ErrCode err = cmdSend(list);
                 return CommonManager.CmdErrMsgTypical(err, description);
             }
             catch (Exception ex)

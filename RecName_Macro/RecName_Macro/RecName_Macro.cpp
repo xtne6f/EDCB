@@ -105,21 +105,38 @@ BOOL WINAPI ConvertRecName2(
 	DWORD* recNamesize
 	)
 {
+	PLUGIN_RESERVE_INFO infoEx;
+	memcpy(&infoEx, info, offsetof(PLUGIN_RESERVE_INFO, tunerID) + sizeof(infoEx.tunerID));
+	infoEx.reserveID = 0;
+	infoEx.epgInfo = epgInfo;
+	infoEx.sizeOfStruct = 0;
+	return ConvertRecName3(&infoEx, NULL, recName, recNamesize);
+}
+
+BOOL WINAPI ConvertRecName3(
+	PLUGIN_RESERVE_INFO* info,
+	const WCHAR* pattern,
+	WCHAR* recName,
+	DWORD* recNamesize
+	)
+{
 	if( recNamesize == NULL ){
 		return FALSE;
 	}
-	WCHAR dllPath[512] = L"";
-	GetModuleFileName(g_instance, dllPath, 512);
-
-	wstring iniPath = dllPath;
-	iniPath += L".ini";
-
-	WCHAR buff[1024] = L"";
-	GetPrivateProfileString(L"SET", L"Macro", L"$Title$.ts", buff, 1024, iniPath.c_str());
+	WCHAR buff[1024];
+	if( pattern == NULL ){
+		wcscpy_s(buff, L"$Title$.ts");
+		pattern = buff;
+		WCHAR dllPath[512];
+		DWORD dwRet = GetModuleFileName(g_instance, dllPath, 512);
+		if( dwRet && dwRet < 512 ){
+			GetPrivateProfileString(L"SET", L"Macro", L"$Title$.ts", buff, 1024, (wstring(dllPath) + L".ini").c_str());
+		}
+	}
 
 	wstring convert = L"";
 	CConvertMacro2 convertMacro;
-	BOOL ret = convertMacro.Convert(buff, info, epgInfo, convert);
+	BOOL ret = convertMacro.Convert(pattern, info, convert);
 	if( recName == NULL ){
 		*recNamesize = (DWORD)convert.size()+1;
 	}else{

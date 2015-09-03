@@ -467,15 +467,12 @@ public:
 
 protected:
 	CBonDriverUtil bonUtil;
-	CPacketInit packetInit;
 	CTSOut tsOut;
 	CChSetUtil chUtil;
 
-	HANDLE lockEvent;
-
 	CRITICAL_SECTION buffLock;
-	vector<TS_DATA*> TSBuff;
-	DWORD totalTSBuffSize;
+	vector<BYTE> TSBuff;
+	size_t TSBuffOffset;
 
 	HANDLE recvThread;
 	HANDLE recvStopEvent;
@@ -518,10 +515,6 @@ protected:
 	DWORD tsBuffMaxCount;
 	int writeBuffMaxCount;
 protected:
-	//PublicAPI排他制御用
-	BOOL Lock(LPCWSTR log = NULL, DWORD timeOut = 15*1000);
-	void UnLock(LPCWSTR log = NULL);
-
 	//BonDriverをロード後の初期化処理
 	//戻り値：
 	// エラーコード

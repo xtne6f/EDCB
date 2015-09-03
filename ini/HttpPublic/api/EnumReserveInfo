@@ -1,4 +1,3 @@
-<?
 edcb.htmlEscape=15
 a=edcb.GetReserveData()
 ct={'<?xml version="1.0" encoding="UTF-8" ?'..'><entry><total>'..#a..'</total><index>0</index><count>'..#a..'</count><items>\r\n'}
@@ -54,4 +53,3 @@ cl=0
 for i,v in ipairs(ct) do cl=cl+#v end
 mg.write('HTTP/1.1 200 OK\r\nContent-Type: text/xml\r\nContent-Length: '..cl..'\r\nConnection: close\r\n\r\n')
 for i,v in ipairs(ct) do mg.write(v) end
-?>

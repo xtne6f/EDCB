@@ -4,7 +4,6 @@
 
 COneServiceUtil::COneServiceUtil(void)
 {
-	this->id = 0;
 	this->SID = 0xFFFF;
 
 	this->sendUdp = NULL;
@@ -37,24 +36,6 @@ void COneServiceUtil::SetEpgUtil(
 }
 
 
-//識別IDの設定
-//引数：
-// id			[IN]識別ID
-void COneServiceUtil::SetID(
-	DWORD id
-	)
-{
-	this->id = id;
-}
-
-//識別IDの取得
-//戻り値：
-// 識別ID
-DWORD COneServiceUtil::GetID()
-{
-	return this->id;
-}
-
 //処理対象ServiceIDを設定
 //引数：
 // SID			[IN]ServiceID
@@ -83,7 +64,6 @@ WORD COneServiceUtil::GetSID()
 //戻り値：
 // TRUE（成功）、FALSE（失敗）
 //引数：
-// id			[IN]制御識別ID
 // sendList		[IN/OUT]送信先リスト。NULLで停止。Portは実際に送信に使用したPortが返る。
 BOOL COneServiceUtil::SendUdp(
 	vector<NW_SEND_INFO>* sendList
@@ -139,7 +119,6 @@ BOOL COneServiceUtil::SendUdp(
 //戻り値：
 // TRUE（成功）、FALSE（失敗）
 //引数：
-// id			[IN]制御識別ID
 // sendList		[IN/OUT]送信先リスト。NULLで停止。Portは実際に送信に使用したPortが返る。
 BOOL COneServiceUtil::SendTcp(
 	vector<NW_SEND_INFO>* sendList

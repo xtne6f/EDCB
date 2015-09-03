@@ -279,9 +279,9 @@ namespace EpgTimer
             setInfo.PittariFlag = ((YesNoInfo)comboBox_pittari.SelectedItem).Value;
             setInfo.BatFilePath = textBox_bat.Text;
             setInfo.RecFolderList.Clear();
-            foreach (RecFileSetInfo info in listView_recFolder.Items)
+            foreach (RecFileSetInfoView view in listView_recFolder.Items)
             {
-                setInfo.RecFolderList.Add(info);
+                setInfo.RecFolderList.Add(view.Info);
             }
 
             if (checkBox_suspendDef.IsChecked == true)
@@ -332,9 +332,9 @@ namespace EpgTimer
 
             setInfo.PartialRecFlag = (byte)(checkBox_partial.IsChecked == true ? 1 : 0);
             setInfo.PartialRecFolder.Clear();
-            foreach (RecFileSetInfo info in listView_recFolder_1seg.Items)
+            foreach (RecFileSetInfoView view in listView_recFolder_1seg.Items)
             {
-                setInfo.PartialRecFolder.Add(info);
+                setInfo.PartialRecFolder.Add(view.Info);
             }
             setInfo.ContinueRecFlag = (byte)(checkBox_continueRec.IsChecked == true ? 1 : 0);
 
@@ -427,7 +427,7 @@ namespace EpgTimer
                 listView_recFolder.Items.Clear();
                 foreach (RecFileSetInfo info in recSetting.RecFolderList)
                 {
-                    listView_recFolder.Items.Add(info.Clone());
+                    listView_recFolder.Items.Add(new RecFileSetInfoView(info.Clone()));
                 }
 
                 checkBox_suspendDef.IsChecked = null;//切り替え時のイベント発生のために必要
@@ -440,7 +440,7 @@ namespace EpgTimer
                 listView_recFolder_1seg.Items.Clear();
                 foreach (RecFileSetInfo info in recSetting.PartialRecFolder)
                 {
-                    listView_recFolder_1seg.Items.Add(info.Clone());
+                    listView_recFolder_1seg.Items.Add(new RecFileSetInfoView(info.Clone()));
                 }
 
                 foreach (TunerSelectInfo info in comboBox_tuner.Items)
@@ -494,6 +494,16 @@ namespace EpgTimer
                     radioButton_shutdown.IsChecked = true;
                     break;
             }
+        }
+
+        private class RecFileSetInfoView
+        {
+            public RecFileSetInfoView(RecFileSetInfo info) { Info = info; }
+            public string RecFileName { get { return Info.RecFileName; } }
+            public string RecFolder { get { return Info.RecFolder; } }
+            public string RecNamePlugIn { get { return Info.RecNamePlugIn; } }
+            public string WritePlugIn { get { return Info.WritePlugIn; } }
+            public RecFileSetInfo Info { get; private set; }
         }
 
         private void checkBox_margineDef_Checked(object sender, RoutedEventArgs e)
@@ -567,7 +577,7 @@ namespace EpgTimer
             {
                 var setInfo = new RecFileSetInfo();
                 setting.GetSetting(ref setInfo);
-                foreach (RecFileSetInfo info in listbox.Items)
+                foreach (RecFileSetInfoView info in listbox.Items)
                 {
                     if (String.Compare(setInfo.RecFolder, info.RecFolder, true) == 0 &&
                         String.Compare(setInfo.WritePlugIn, info.WritePlugIn, true) == 0 &&
@@ -577,7 +587,7 @@ namespace EpgTimer
                         return;
                     }
                 }
-                listbox.Items.Add(setInfo);
+                listbox.Items.Add(new RecFileSetInfoView(setInfo));
             }
         }
 
@@ -598,7 +608,7 @@ namespace EpgTimer
                 {
                     setting.Owner = (Window)topWindow.RootVisual;
                 }
-                var selectInfo = listbox.SelectedItem as RecFileSetInfo;
+                var selectInfo = ((RecFileSetInfoView)listbox.SelectedItem).Info;
                 setting.SetDefSetting(selectInfo);
                 if (setting.ShowDialog() == true)
                 {

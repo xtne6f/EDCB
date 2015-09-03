@@ -1061,14 +1061,9 @@ static void EnumPgInfoCallback(vector<EPGDB_EVENT_INFO*>* pval, void* param)
 
 static void EnumPgAllCallback(vector<EPGDB_SERVICE_EVENT_INFO>* pval, void* param)
 {
-	vector<EPGDB_SERVICE_EVENT_INFO*> valp;
-	valp.reserve(pval->size());
-	for( size_t i = 0; i < pval->size(); i++ ){
-		valp.push_back(&(*pval)[i]);
-	}
 	CMD_STREAM *resParam = (CMD_STREAM*)param;
 	resParam->param = CMD_SUCCESS;
-	resParam->data = NewWriteVALUE(&valp, resParam->dataSize);
+	resParam->data = NewWriteVALUE(pval, resParam->dataSize);
 }
 
 int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STREAM* resParam)
@@ -2597,28 +2592,11 @@ int CEpgTimerSrvMain::LuaSearchEpg(lua_State* L)
 	}else if( lua_gettop(L) == 1 && lua_istable(L, -1) ){
 		vector<EPGDB_SEARCH_KEY_INFO> keyList(1);
 		EPGDB_SEARCH_KEY_INFO& key = keyList.back();
-		UTF8toW(LuaHelp::get_string(L, "andKey"), key.andKey);
-		UTF8toW(LuaHelp::get_string(L, "notKey"), key.notKey);
-		//対象ジャンル
-		lua_getfield(L, -1, "contentList");
-		if( lua_istable(L, -1) ){
-			for( int i = 0;; i++ ){
-				lua_rawgeti(L, -1, i + 1);
-				if( !lua_istable(L, -1) ){
-					lua_pop(L, 1);
-					break;
-				}
-				key.contentList.resize(i + 1);
-				key.contentList[i].content_nibble_level_1 = LuaHelp::get_int(L, "content_nibble") >> 8 & 0xFF;
-				key.contentList[i].content_nibble_level_2 = LuaHelp::get_int(L, "content_nibble") & 0xFF;
-				lua_pop(L, 1);
-			}
-		}
-		lua_pop(L, 1);
+		FetchEpgSearchKeyInfo(ws, key);
 		//対象ネットワーク
 		vector<EPGDB_SERVICE_INFO> list;
-		if( ws.sys->epgDB.GetServiceList(&list) != FALSE ){
-			int network = LuaHelp::get_int(L, "network");
+		int network = LuaHelp::get_int(L, "network");
+		if( network != 0 && ws.sys->epgDB.GetServiceList(&list) != FALSE ){
 			for( size_t i = 0; i < list.size(); i++ ){
 				WORD onid = list[i].ONID;
 				if( (network & 1) && 0x7880 <= onid && onid <= 0x7FE8 || //地デジ
@@ -2626,12 +2604,15 @@ int CEpgTimerSrvMain::LuaSearchEpg(lua_State* L)
 				    (network & 4) && (onid == 6 || onid == 7) || //CS
 				    (network & 8) && ((onid < 0x7880 || 0x7FE8 < onid) && onid != 4 && onid != 6 && onid != 7) //その他
 				    ){
-					key.serviceList.push_back(_Create64Key(onid, list[i].TSID, list[i].SID));
+					LONGLONG id = _Create64Key(onid, list[i].TSID, list[i].SID);
+					if( std::find(key.serviceList.begin(), key.serviceList.end(), id) == key.serviceList.end() ){
+						key.serviceList.push_back(id);
+					}
 				}
 			}
-			if( ws.sys->epgDB.SearchEpg(&keyList, LuaSearchEpgCallback, &ws) != FALSE ){
-				return 1;
-			}
+		}
+		if( ws.sys->epgDB.SearchEpg(&keyList, LuaSearchEpgCallback, &ws) != FALSE ){
+			return 1;
 		}
 	}
 	return 0;

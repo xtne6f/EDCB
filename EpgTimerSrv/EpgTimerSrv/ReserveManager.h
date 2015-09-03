@@ -95,6 +95,8 @@ private:
 	void CalcEntireReserveTime(__int64* startTime, __int64* endTime, const RESERVE_DATA& data) const;
 	//最新EPG(チューナからの情報)をもとに追従処理する
 	void CheckTuijyuTuner();
+	//ディスクの空き容量を調べて必要なら自動削除する
+	void CheckAutoDel() const;
 	//チューナ割り当てされていない古い予約を終了処理する
 	void CheckOverTimeReserve();
 	//EPG取得可能なチューナIDのリストを取得する
@@ -139,6 +141,8 @@ private:
 	bool epgCapTimeSync;
 	//LOWORDに取得時刻の日曜日からのオフセット(分)、HIWORDに取得種別
 	vector<DWORD> epgCapTimeList;
+	vector<wstring> autoDelExtList;
+	vector<wstring> autoDelFolderList;
 	int defStartMargin;
 	int defEndMargin;
 	bool backPriority;
@@ -146,6 +150,7 @@ private:
 	wstring recInfo2RegExp;
 	bool defEnableCaption;
 	bool defEnableData;
+	bool errEndBatRun;
 	wstring recNamePlugInFileName;
 	bool recNameNoChkYen;
 

@@ -264,7 +264,7 @@ namespace EpgTimer
                     pipeEventName += System.Diagnostics.Process.GetCurrentProcess().Id.ToString();
                     pipeServer.StartServer(pipeEventName, pipeName, OutsideCmdCallback, this);
 
-                    for (int i = 0; i < 150 && cmd.SendRegistGUI((uint)System.Diagnostics.Process.GetCurrentProcess().Id) != (uint)ErrCode.CMD_SUCCESS; i++)
+                    for (int i = 0; i < 150 && cmd.SendRegistGUI((uint)System.Diagnostics.Process.GetCurrentProcess().Id) != ErrCode.CMD_SUCCESS; i++)
                     {
                         Thread.Sleep(100);
                     }
@@ -301,7 +301,7 @@ namespace EpgTimer
                     EAAFileClass eaaFile = new EAAFileClass();
                     if (eaaFile.LoadEAAFile(arg) == true)
                     {
-                        List<CtrlCmdCLI.Def.EpgAutoAddData> val = new List<CtrlCmdCLI.Def.EpgAutoAddData>();
+                        List<EpgAutoAddData> val = new List<EpgAutoAddData>();
                         val.Add(eaaFile.AddKey);
                         cmd.SendAddEpgAutoAdd(val);
                     }
@@ -316,7 +316,7 @@ namespace EpgTimer
                     IEPGFileClass iepgFile = new IEPGFileClass();
                     if (iepgFile.LoadTVPIDFile(arg) == true)
                     {
-                        List<CtrlCmdCLI.Def.ReserveData> val = new List<CtrlCmdCLI.Def.ReserveData>();
+                        List<ReserveData> val = new List<ReserveData>();
                         val.Add(iepgFile.AddInfo);
                         cmd.SendAddReserve(val);
                     }
@@ -331,7 +331,7 @@ namespace EpgTimer
                     IEPGFileClass iepgFile = new IEPGFileClass();
                     if (iepgFile.LoadTVPIFile(arg) == true)
                     {
-                        List<CtrlCmdCLI.Def.ReserveData> val = new List<CtrlCmdCLI.Def.ReserveData>();
+                        List<ReserveData> val = new List<ReserveData>();
                         val.Add(iepgFile.AddInfo);
                         cmd.SendAddReserve(val);
                     }
@@ -529,7 +529,7 @@ namespace EpgTimer
             IniFileHandler.UpdateSrvProfileIniNW();
 
             byte[] binData;
-            if (cmd.SendFileCopy("ChSet5.txt", out binData) == 1)
+            if (cmd.SendFileCopy("ChSet5.txt", out binData) == ErrCode.CMD_SUCCESS)
             {
                 string filePath = SettingPath.SettingFolderPath;
                 System.IO.Directory.CreateDirectory(filePath);
@@ -603,7 +603,7 @@ namespace EpgTimer
                 {
                     if (CommonManager.Instance.NW.IsConnected == true && needUnRegist == true)
                     {
-                        if (cmd.SendUnRegistTCP(Settings.Instance.NWServerPort) == 205)
+                        if (cmd.SendUnRegistTCP(Settings.Instance.NWServerPort) == ErrCode.CMD_ERR_CONNECT)
                         {
                             //MessageBox.Show("サーバーに接続できませんでした");
                         }
@@ -693,7 +693,7 @@ namespace EpgTimer
                     EAAFileClass eaaFile = new EAAFileClass();
                     if (eaaFile.LoadEAAFile(path) == true)
                     {
-                        List<CtrlCmdCLI.Def.EpgAutoAddData> val = new List<CtrlCmdCLI.Def.EpgAutoAddData>();
+                        List<EpgAutoAddData> val = new List<EpgAutoAddData>();
                         val.Add(eaaFile.AddKey);
                         cmd.SendAddEpgAutoAdd(val);
                     }
@@ -708,7 +708,7 @@ namespace EpgTimer
                     IEPGFileClass iepgFile = new IEPGFileClass();
                     if (iepgFile.LoadTVPIDFile(path) == true)
                     {
-                        List<CtrlCmdCLI.Def.ReserveData> val = new List<CtrlCmdCLI.Def.ReserveData>();
+                        List<ReserveData> val = new List<ReserveData>();
                         val.Add(iepgFile.AddInfo);
                         cmd.SendAddReserve(val);
                     }
@@ -723,7 +723,7 @@ namespace EpgTimer
                     IEPGFileClass iepgFile = new IEPGFileClass();
                     if (iepgFile.LoadTVPIFile(path) == true)
                     {
-                        List<CtrlCmdCLI.Def.ReserveData> val = new List<CtrlCmdCLI.Def.ReserveData>();
+                        List<ReserveData> val = new List<ReserveData>();
                         val.Add(iepgFile.AddInfo);
                         cmd.SendAddReserve(val);
                     }
@@ -886,7 +886,7 @@ namespace EpgTimer
 
         void EpgCapCmd()
         {
-            if (cmd.SendEpgCapNow() != 1)
+            if (cmd.SendEpgCapNow() != ErrCode.CMD_SUCCESS)
             {
                 MessageBox.Show("EPG取得を行える状態ではありません。\r\n（もうすぐ予約が始まる。EPGデータ読み込み中。など）");
             }
@@ -903,7 +903,7 @@ namespace EpgTimer
             {
                 CommonManager.Instance.DB.SetOneTimeReloadEpg();
             }
-            if (cmd.SendReloadEpg() != 1)
+            if (cmd.SendReloadEpg() != ErrCode.CMD_SUCCESS)
             {
                 MessageBox.Show("EPG再読み込みを行える状態ではありません。\r\n（EPGデータ読み込み中。など）");
             }
@@ -922,10 +922,10 @@ namespace EpgTimer
         void SuspendCmd(byte suspendMode)
         {
             suspendMode = suspendMode == 1 ? suspendMode : (byte)2;
-            UInt32 err = cmd.SendChkSuspend();
-            if (err != 1)
+            ErrCode err = cmd.SendChkSuspend();
+            if (err != ErrCode.CMD_SUCCESS)
             {
-                if (err == 205)
+                if (err == ErrCode.CMD_ERR_CONNECT)
                 {
                     MessageBox.Show("サーバーに接続できませんでした");
                 }
@@ -960,7 +960,7 @@ namespace EpgTimer
                 {
                     if (CommonManager.Instance.NW.IsConnected == true)
                     {
-                        if (cmd.SendUnRegistTCP(Settings.Instance.NWServerPort) == 205)
+                        if (cmd.SendUnRegistTCP(Settings.Instance.NWServerPort) == ErrCode.CMD_ERR_CONNECT)
                         { }
 
                         cmd.SendSuspend(cmdVal);
@@ -1077,7 +1077,7 @@ namespace EpgTimer
                 case CtrlCmd.CMD_TIMER_GUI_VIEW_EXECUTE:
                     {
                         String exeCmd = "";
-                        CmdStreamUtil.ReadStreamData(ref exeCmd, pCmdParam);
+                        (new CtrlCmdReader(new System.IO.MemoryStream(pCmdParam.bData, false))).Read(ref exeCmd);
                         try
                         {
                             string[] cmd = exeCmd.Split('\"');
@@ -1111,7 +1111,11 @@ namespace EpgTimer
                                 }
                             }
                             process = System.Diagnostics.Process.Start(startInfo);
-                            CmdStreamUtil.CreateStreamData(process.Id, ref pResParam);
+                            var w = new CtrlCmdWriter(new System.IO.MemoryStream());
+                            w.Write(process.Id);
+                            w.Stream.Close();
+                            pResParam.bData = w.Stream.ToArray();
+                            pResParam.uiSize = (uint)pResParam.bData.Length;
                         }
                         catch { }
                     }
@@ -1119,14 +1123,14 @@ namespace EpgTimer
                 case CtrlCmd.CMD_TIMER_GUI_QUERY_SUSPEND:
                     {
                         UInt16 param = 0;
-                        CmdStreamUtil.ReadStreamData(ref param, pCmdParam);
+                        (new CtrlCmdReader(new System.IO.MemoryStream(pCmdParam.bData, false))).Read(ref param);
                         Dispatcher.BeginInvoke(new Action(() => ShowSleepDialog(param)));
                     }
                     break;
                 case CtrlCmd.CMD_TIMER_GUI_QUERY_REBOOT:
                     {
                         UInt16 param = 0;
-                        CmdStreamUtil.ReadStreamData(ref param, pCmdParam);
+                        (new CtrlCmdReader(new System.IO.MemoryStream(pCmdParam.bData, false))).Read(ref param);
 
                         Byte reboot = (Byte)((param & 0xFF00) >> 8);
                         Byte suspendMode = (Byte)(param & 0x00FF);
@@ -1146,14 +1150,18 @@ namespace EpgTimer
                 case CtrlCmd.CMD_TIMER_GUI_SRV_STATUS_CHG:
                     {
                         UInt16 status = 0;
-                        CmdStreamUtil.ReadStreamData(ref status, pCmdParam);
+                        (new CtrlCmdReader(new System.IO.MemoryStream(pCmdParam.bData, false))).Read(ref status);
                         DispatcherCheckAction(new Action(() => taskTray.Icon = GetTaskTrayIcon(status)));
                     }
                     break;
                 case CtrlCmd.CMD_TIMER_GUI_SRV_STATUS_NOTIFY2:
                     {
                         NotifySrvInfo status = new NotifySrvInfo();
-                        CmdStreamUtil.ReadStreamData(ref status, pCmdParam);
+                        var r = new CtrlCmdReader(new System.IO.MemoryStream(pCmdParam.bData, false));
+                        ushort version = 0;
+                        r.Read(ref version);
+                        r.Version = version;
+                        r.Read(ref status);
                         DispatcherCheckAction(new Action(() => NotifyStatus(status)));
                     }
                     break;

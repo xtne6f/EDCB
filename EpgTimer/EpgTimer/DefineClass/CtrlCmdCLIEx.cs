@@ -98,11 +98,8 @@ namespace EpgTimer
             dest.EventID = src.EventID;
             dest.OriginalNetworkID = src.OriginalNetworkID;
             dest.OverlapMode = src.OverlapMode;
-            dest.param1 = src.param1;
             dest.RecFileNameList = src.RecFileNameList.ToList();
-            dest.RecFilePath = src.RecFilePath;
             dest.RecSetting = src.RecSetting.Clone();
-            dest.RecWaitFlag = src.RecWaitFlag;
             dest.ReserveID = src.ReserveID;
             dest.ReserveStatus = src.ReserveStatus;
             dest.ServiceID = src.ServiceID;
@@ -295,7 +292,7 @@ namespace EpgTimer
 
         public static List<RecFileInfo> NoProtectedInfoList(this ICollection<RecFileInfo> itemlist)
         {
-            return itemlist.Where(item => item == null ? false : item.ProtectFlag == false).ToList();
+            return itemlist.Where(item => item == null ? false : item.ProtectFlag == 0).ToList();
         }
         //public static bool HasProtected(this List<RecInfoItem> list)
         //{
@@ -303,7 +300,7 @@ namespace EpgTimer
         //}
         public static bool HasNoProtected(this List<RecFileInfo> list)
         {
-            return list.Any(info => info == null ? false : info.ProtectFlag == false);
+            return list.Any(info => info == null ? false : info.ProtectFlag == 0);
         }
     }
 }

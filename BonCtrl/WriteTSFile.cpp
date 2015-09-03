@@ -8,19 +8,18 @@
 CWriteTSFile::CWriteTSFile(void)
 {
 	InitializeCriticalSection(&this->outThreadLock);
-	this->totalTSBuffSize = 0;
+	this->TSBuffOffset = 0;
 
     this->outThread = NULL;
-    this->outStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+    this->outStopFlag = FALSE;
 	this->writeTotalSize = 0;
 	this->maxBuffCount = -1;
-	this->buffOverErr = FALSE;
 }
 
 CWriteTSFile::~CWriteTSFile(void)
 {
 	if( this->outThread != NULL ){
-		::SetEvent(this->outStopEvent);
+		this->outStopFlag = TRUE;
 		// スレッド終了待ち
 		if ( ::WaitForSingleObject(this->outThread, 10000) == WAIT_TIMEOUT ){
 			::TerminateThread(this->outThread, 0xffffffff);
@@ -28,18 +27,9 @@ CWriteTSFile::~CWriteTSFile(void)
 		CloseHandle(this->outThread);
 		this->outThread = NULL;
 	}
-	if( this->outStopEvent != NULL ){
-		CloseHandle(this->outStopEvent);
-		this->outStopEvent = NULL;
-	}
 
 
 	DeleteCriticalSection(&this->outThreadLock);
-	for( size_t i=0; i<this->TSBuff.size(); i++ ){
-		SAFE_DELETE(this->TSBuff[i]);
-	}
-	this->TSBuff.clear();
-
 	for( size_t i=0; i<this->fileList.size(); i++ ){
 		SAFE_DELETE(this->fileList[i]);
 	}
@@ -66,8 +56,6 @@ BOOL CWriteTSFile::StartSave(
 {
 	BOOL ret = TRUE;
 
-	this->exceptionErr = FALSE;
-	this->buffOverErr = FALSE;
 	this->maxBuffCount = maxBuffCount;
 
 	if( saveFolder->size() == 0 ){
@@ -78,31 +66,29 @@ BOOL CWriteTSFile::StartSave(
 	if( this->outThread == NULL && this->fileList.size() == 0 ){
 		this->writeTotalSize = 0;
 		this->subRecFlag = FALSE;
-		this->saveFileName = fileName;
-		this->overWriteFlag = overWriteFlag;
-		this->saveFolder = *saveFolder;
+		vector<REC_FILE_SET_INFO> saveFolder_ = *saveFolder;
 		this->saveFolderSub = *saveFolderSub;
 		BOOL firstFreeChek = TRUE;
-		for( size_t i=0; i<this->saveFolder.size(); i++ ){
+		for( size_t i=0; i<saveFolder_.size(); i++ ){
 			SAVE_INFO* item = new SAVE_INFO;
-			if( this->saveFolder[i].writePlugIn.size() == 0 ){
-				this->saveFolder[i].writePlugIn = L"Write_Default.dll";
+			if( saveFolder_[i].writePlugIn.size() == 0 ){
+				saveFolder_[i].writePlugIn = L"Write_Default.dll";
 			}
 			wstring plugInPath = L"";
 			GetModuleFolderPath(plugInPath);
 			plugInPath += L"\\Write\\";
-			plugInPath += this->saveFolder[i].writePlugIn.c_str();
+			plugInPath += saveFolder_[i].writePlugIn.c_str();
 
 			item->writeUtil = new CWritePlugInUtil;
 			if(item->writeUtil->Initialize(plugInPath.c_str() ) == FALSE ){
 				_OutputDebugString(L"CWriteTSFile::StartSave Err 3");
 				SAFE_DELETE(item);
 			}else{
-				wstring folderPath = this->saveFolder[i].recFolder;
-				if( CompareNoCase(this->saveFolder[i].writePlugIn, L"Write_Default.dll" ) == 0 ){
+				wstring folderPath = saveFolder_[i].recFolder;
+				if( CompareNoCase(saveFolder_[i].writePlugIn, L"Write_Default.dll" ) == 0 ){
 					//デフォルトの場合は空き容量をあらかじめチェック
 					if( createSize > 0 ){
-						if( ChkFreeFolder(createSize, this->saveFolder[i].recFolder) == FALSE ){
+						if( ChkFreeFolder(createSize, saveFolder_[i].recFolder) == FALSE ){
 							if( GetFreeFolder(createSize, folderPath) == TRUE ){
 								//空きなかったのでサブフォルダに録画
 								this->subRecFlag = TRUE;
@@ -115,15 +101,15 @@ BOOL CWriteTSFile::StartSave(
 				wstring recPath;
 				recPath = folderPath;
 				recPath += L"\\";
-				if( this->saveFolder[i].recFileName.size() == 0 ){
+				if( saveFolder_[i].recFileName.size() == 0 ){
 					recPath += fileName;
 					item->recFileName = fileName;
 				}else{
-					recPath += this->saveFolder[i].recFileName;
-					item->recFileName = this->saveFolder[i].recFileName;
+					recPath += saveFolder_[i].recFileName;
+					item->recFileName = saveFolder_[i].recFileName;
 				}
 				//開始
-				BOOL startRes = item->writeUtil->StartSave(recPath.c_str(), this->overWriteFlag, createSize);
+				BOOL startRes = item->writeUtil->StartSave(recPath.c_str(), overWriteFlag, createSize);
 				if( startRes == FALSE ){
 					_OutputDebugString(L"CWriteTSFile::StartSave Err 2");
 					//エラー時サブフォルダでリトライ
@@ -134,14 +120,14 @@ BOOL CWriteTSFile::StartSave(
 					ChkFolderPath(folderPath);
 					recPath = folderPath;
 					recPath += L"\\";
-					if( this->saveFolder[i].recFileName.size() == 0 ){
+					if( saveFolder_[i].recFileName.size() == 0 ){
 						recPath += fileName;
 						item->recFileName = fileName;
 					}else{
-						recPath += this->saveFolder[i].recFileName;
-						item->recFileName = this->saveFolder[i].recFileName;
+						recPath += saveFolder_[i].recFileName;
+						item->recFileName = saveFolder_[i].recFileName;
 					}
-					startRes = item->writeUtil->StartSave(recPath.c_str(), this->overWriteFlag, createSize);
+					startRes = item->writeUtil->StartSave(recPath.c_str(), overWriteFlag, createSize);
 				}
 				if( startRes == TRUE ){
 					WCHAR saveFilePath[512] = L"";
@@ -164,7 +150,7 @@ BOOL CWriteTSFile::StartSave(
 
 		if( this->fileList.size() > 0 ){
 			//受信スレッド起動
-			ResetEvent(this->outStopEvent);
+			this->outStopFlag = FALSE;
 			this->outThread = (HANDLE)_beginthreadex(NULL, 0, OutThread, (LPVOID)this, CREATE_SUSPENDED, NULL);
 			SetThreadPriority( this->outThread, THREAD_PRIORITY_NORMAL );
 			ResumeThread(this->outThread);
@@ -195,10 +181,8 @@ BOOL CWriteTSFile::GetFreeFolder(
 
 	for( int i = 0; i < (int)this->saveFolderSub.size(); i++ ){
 		ULARGE_INTEGER stFree;
-		ULARGE_INTEGER stTotal;
-		ULARGE_INTEGER stTotalFree;
-		if( _GetDiskFreeSpaceEx( this->saveFolderSub[i].c_str(), &stFree, &stTotal, &stTotalFree ) == TRUE ){
-			if( stFree.QuadPart > (ULONGLONG)needFreeSize ){
+		if( _GetDiskFreeSpaceEx( this->saveFolderSub[i].c_str(), &stFree, NULL, NULL ) != FALSE ){
+			if( stFree.QuadPart > needFreeSize ){
 				freeFolderPath = this->saveFolderSub[i];
 				ChkFolderPath(freeFolderPath);
 				ret = TRUE;
@@ -223,10 +207,8 @@ BOOL CWriteTSFile::ChkFreeFolder(
 	BOOL ret = FALSE;
 
 	ULARGE_INTEGER stFree;
-	ULARGE_INTEGER stTotal;
-	ULARGE_INTEGER stTotalFree;
-	if( _GetDiskFreeSpaceEx( chkFolderPath.c_str(), &stFree, &stTotal, &stTotalFree ) == TRUE ){
-		if( stFree.QuadPart > (ULONGLONG)needFreeSize ){
+	if( _GetDiskFreeSpaceEx( chkFolderPath.c_str(), &stFree, NULL, NULL ) != FALSE ){
+		if( stFree.QuadPart > needFreeSize ){
 			ret = TRUE;
 		}
 	}
@@ -241,7 +223,7 @@ BOOL CWriteTSFile::EndSave()
 	BOOL ret = TRUE;
 
 	if( this->outThread != NULL ){
-		::SetEvent(this->outStopEvent);
+		this->outStopFlag = TRUE;
 		// スレッド終了待ち
 		if ( ::WaitForSingleObject(this->outThread, 10000) == WAIT_TIMEOUT ){
 			::TerminateThread(this->outThread, 0xffffffff);
@@ -253,17 +235,18 @@ BOOL CWriteTSFile::EndSave()
 	//残っているバッファを書き出し
 	{
 		CBlockLock lock(&this->outThreadLock);
-		for( size_t i=0; i<this->TSBuff.size(); i++ ){
-			for( size_t j=0; j<this->fileList.size(); j++ ){
-				if( this->fileList[j]->writeUtil != NULL ){
+		this->TSBuff.erase(this->TSBuff.begin(), this->TSBuff.begin() + this->TSBuffOffset);
+		this->TSBuffOffset = 0;
+		while( this->TSBuff.empty() == false ){
+			DWORD dataSize = (DWORD)min(this->TSBuff.size(), 48128);
+			for( size_t i=0; i<this->fileList.size(); i++ ){
+				if( this->fileList[i]->writeUtil != NULL ){
 					DWORD write = 0;
-					this->fileList[j]->writeUtil->AddTSBuff( this->TSBuff[i]->data, this->TSBuff[i]->size, &write);
+					this->fileList[i]->writeUtil->AddTSBuff( &this->TSBuff.front(), dataSize, &write);
 				}
 			}
-			SAFE_DELETE(this->TSBuff[i]);
+			this->TSBuff.erase(this->TSBuff.begin(), this->TSBuff.begin() + dataSize);
 		}
-		this->TSBuff.clear();
-		this->totalTSBuffSize = 0;
 	}
 
 	for( size_t i=0; i<this->fileList.size(); i++ ){
@@ -274,13 +257,6 @@ BOOL CWriteTSFile::EndSave()
 		}
 	}
 	this->fileList.clear();
-
-	if( this->buffOverErr == TRUE ){
-		ret = FALSE;
-	}
-	if( this->exceptionErr == TRUE ){
-		ret = FALSE;
-	}
 
 	return ret;
 }
@@ -302,24 +278,17 @@ BOOL CWriteTSFile::AddTSBuff(
 
 	BOOL ret = TRUE;
 
-	TS_DATA* item = new TS_DATA;
-	item->size = size;
-	item->data = new BYTE[size];
-	memcpy(item->data, data, size);
 	{
 		CBlockLock lock(&this->outThreadLock);
+		this->TSBuff.erase(this->TSBuff.begin(), this->TSBuff.begin() + this->TSBuffOffset);
+		this->TSBuffOffset = 0;
 		if( this->maxBuffCount > 0 ){
-			if( this->totalTSBuffSize / 48128 > (DWORD)this->maxBuffCount ){
+			if( this->TSBuff.size() / 48128 > (size_t)this->maxBuffCount ){
 				_OutputDebugString(L"★writeBuffList MaxOver");
-				while( this->TSBuff.empty() == false && this->totalTSBuffSize / 48128 + 1000 > (DWORD)this->maxBuffCount ){
-					this->totalTSBuffSize -= this->TSBuff.back()->size;
-					SAFE_DELETE(this->TSBuff.back());
-					this->TSBuff.pop_back();
-				}
+				this->TSBuff.clear();
 			}
 		}
-		this->TSBuff.push_back(item);
-		this->totalTSBuffSize += this->TSBuff.back()->size;
+		this->TSBuff.insert(this->TSBuff.end(), data, data + size);
 	}
 	return ret;
 }
@@ -327,28 +296,26 @@ BOOL CWriteTSFile::AddTSBuff(
 UINT WINAPI CWriteTSFile::OutThread(LPVOID param)
 {
 	CWriteTSFile* sys = (CWriteTSFile*)param;
-	while(1){
-		if( ::WaitForSingleObject(sys->outStopEvent, 0) != WAIT_TIMEOUT ){
-			//キャンセルされた
-			break;
-		}
+	while( sys->outStopFlag == FALSE ){
 		//バッファからデータ取り出し
-		TS_DATA* data = NULL;
+		BYTE data[48128];
+		DWORD dataSize = 0;
 		{
 			CBlockLock lock(&sys->outThreadLock);
-			if( sys->TSBuff.empty() == false ){
-				data = sys->TSBuff.front();
-				sys->totalTSBuffSize -= data->size;
-				sys->TSBuff.erase(sys->TSBuff.begin());
+			if( sys->TSBuff.size() - sys->TSBuffOffset >= sizeof(data) ){
+				//必ず188の倍数で取り出さなければならない
+				dataSize = sizeof(data);
+				memcpy(data, &sys->TSBuff[sys->TSBuffOffset], dataSize);
+				sys->TSBuffOffset += dataSize;
 			}
 		}
 
-		if( data != NULL ){
+		if( dataSize != 0 ){
 			for( size_t i=0; i<sys->fileList.size(); i++ ){
-				try{
+				{
 					if( sys->fileList[i]->writeUtil != NULL ){
 						DWORD write = 0;
-						if( sys->fileList[i]->writeUtil->AddTSBuff( data->data, data->size, &write) == FALSE ){
+						if( sys->fileList[i]->writeUtil->AddTSBuff( data, dataSize, &write) == FALSE ){
 							//空きがなくなった
 							{
 								CBlockLock lock(&sys->outThreadLock);
@@ -375,29 +342,23 @@ UINT WINAPI CWriteTSFile::OutThread(LPVOID param)
 										sys->fileList[i]->subRecPath.push_back(saveFilePath);
 										sys->subRecFlag = TRUE;
 
-										if( data->size > write ){
-											sys->fileList[i]->writeUtil->AddTSBuff( data->data+write, data->size-write, &write);
+										if( dataSize > write ){
+											sys->fileList[i]->writeUtil->AddTSBuff( data+write, dataSize-write, &write);
 										}
 									}
 								}
 							}
 						}
 					}
-				}catch(...){
-					sys->fileList[i]->writeUtil = NULL;
-					sys->exceptionErr = TRUE;
-					_OutputDebugString(L"★★CWriteTSFile::OutThread Exception2");
 				}
 			}
 
 			{
 				CBlockLock lock(&sys->outThreadLock);
-				sys->writeTotalSize += data->size;
+				sys->writeTotalSize += dataSize;
 			}
-
-			SAFE_DELETE(data);
 		}else{
-			Sleep(10);
+			Sleep(100);
 		}
 	}
 	return 0;

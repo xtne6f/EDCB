@@ -35,7 +35,7 @@ namespace EpgTimer
             {
                 if (RecInfo != null)
                 {
-                    if (this.RecInfo.ProtectFlag != value)
+                    if (this.RecInfo.ProtectFlag != Convert.ToByte(value))
                     {
                         mutil.RecinfoChgProtect(mutil.ToList(this.RecInfo));
                     }
@@ -46,7 +46,7 @@ namespace EpgTimer
                 bool chk = false;
                 if (RecInfo != null)
                 {
-                    chk = RecInfo.ProtectFlag;
+                    chk = RecInfo.ProtectFlag != 0;
                 }
                 return chk;
             }

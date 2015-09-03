@@ -38,12 +38,6 @@ void CDecodeUtil::Clear()
 
 	SAFE_DELETE(this->patInfo);
 
-	map<WORD, CPMTTable*>::iterator itrPmt;
-	for( itrPmt = this->pmtMap.begin(); itrPmt != this->pmtMap.end(); itrPmt++ ){
-		SAFE_DELETE(itrPmt->second);
-	}
-	this->pmtMap.clear();
-
 	SAFE_DELETE(this->nitActualInfo);
 	SAFE_DELETE(this->sdtActualInfo);
 
@@ -71,12 +65,6 @@ void CDecodeUtil::ChangeTSIDClear(WORD noClearPid)
 	ClearBuff(noClearPid);
 
 	SAFE_DELETE(this->patInfo);
-
-	map<WORD, CPMTTable*>::iterator itrPmt;
-	for( itrPmt = this->pmtMap.begin(); itrPmt != this->pmtMap.end(); itrPmt++ ){
-		SAFE_DELETE(itrPmt->second);
-	}
-	this->pmtMap.clear();
 
 	SAFE_DELETE(this->nitActualInfo);
 	SAFE_DELETE(this->sdtActualInfo);
@@ -125,9 +113,6 @@ void CDecodeUtil::AddTSData(BYTE* data)
 					case CTableUtil::TYPE_PAT:
 						ret = CheckPAT(tsPacket.PID, static_cast<CPATTable*>(table));
 						break;
-					case CTableUtil::TYPE_PMT:
-						ret = CheckPMT(tsPacket.PID, static_cast<CPMTTable*>(table));
-						break;
 					case CTableUtil::TYPE_NIT:
 						ret = CheckNIT(tsPacket.PID, static_cast<CNITTable*>(table));
 						break;
@@ -148,12 +133,6 @@ void CDecodeUtil::AddTSData(BYTE* data)
 						break;
 					case CTableUtil::TYPE_SIT:
 						ret = CheckSIT(tsPacket.PID, static_cast<CSITTable*>(table));
-						break;
-					case CTableUtil::TYPE_EIT_SD:
-						ret = CheckEIT_SD(tsPacket.PID, static_cast<CEITTable_SD*>(table));
-						break;
-					case CTableUtil::TYPE_EIT_SD2:
-						ret = CheckEIT_SD2(tsPacket.PID, static_cast<CEITTable_SD2*>(table));
 						break;
 					case CTableUtil::TYPE_NONE:
 						if( section[0] == 0 ){
@@ -197,33 +176,6 @@ BOOL CDecodeUtil::CheckPAT(WORD PID, CPATTable* pat)
 			return FALSE;
 		}
 	}
-	return TRUE;
-}
-
-BOOL CDecodeUtil::CheckPMT(WORD PID, CPMTTable* pmt)
-{
-	if( pmt == NULL ){
-		return FALSE;
-	}
-
-	map<WORD, CPMTTable*>::iterator itrPmt;
-	itrPmt = this->pmtMap.find(PID);
-	if( itrPmt == this->pmtMap.end() ){
-		//初回
-		this->pmtMap.insert(pair<WORD, CPMTTable*>(PID, pmt));
-	}else{
-		if( itrPmt->second->version_number != pmt->version_number ){
-			//バージョン変わった
-			SAFE_DELETE(itrPmt->second);
-			this->pmtMap.erase(itrPmt);
-			
-			this->pmtMap.insert(pair<WORD, CPMTTable*>(PID, pmt));
-		}else{
-			//変更なし
-			return FALSE;
-		}
-	}
-
 	return TRUE;
 }
 
@@ -516,31 +468,9 @@ BOOL CDecodeUtil::CheckEIT(WORD PID, CEITTable* eit)
 	}
 	
 	if( epgDBUtil != NULL ){
-		epgDBUtil->AddEIT(PID, eit);
-	}
-	return FALSE;
-}
-
-BOOL CDecodeUtil::CheckEIT_SD(WORD PID, CEITTable_SD* eit)
-{
-	if( eit == NULL ){
-		return FALSE;
-	}
-	
-	if( epgDBUtil != NULL ){
-		epgDBUtil->AddEIT_SD(PID, eit);
-	}
-	return FALSE;
-}
-
-BOOL CDecodeUtil::CheckEIT_SD2(WORD PID, CEITTable_SD2* eit)
-{
-	if( eit == NULL ){
-		return FALSE;
-	}
-	
-	if( epgDBUtil != NULL ){
-		epgDBUtil->AddEIT_SD2(PID, eit);
+		FILETIME time = {};
+		GetNowTime(&time);
+		epgDBUtil->AddEIT(PID, eit, (__int64)time.dwHighDateTime << 32 | time.dwLowDateTime);
 	}
 	return FALSE;
 }

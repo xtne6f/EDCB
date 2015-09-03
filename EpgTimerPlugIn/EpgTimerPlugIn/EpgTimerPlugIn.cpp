@@ -228,10 +228,10 @@ void CEpgTimerPlugIn::CtrlCmdCallbackInvoked()
 			wstring bonName;
 			GetFileName(buff, bonName );
 			if( bonName.size() > 0 ){
-				resParam->dataSize = GetVALUESize(bonName);
-				if( WriteVALUE(bonName, resParam->data, resParam->dataSize, NULL) == TRUE ){
-					resParam->param = CMD_SUCCESS;
-				}
+				BYTE* newBuff = NewWriteVALUE(bonName, resParam->dataSize);
+				memcpy(resParam->data, newBuff, resParam->dataSize);
+				delete[] newBuff;
+				resParam->param = CMD_SUCCESS;
 			}
 		}
 		break;

@@ -10,9 +10,7 @@ public:
 	CEpgDBUtil(void);
 	~CEpgDBUtil(void);
 
-	BOOL AddEIT(WORD PID, CEITTable* eit);
-	BOOL AddEIT_SD(WORD PID, CEITTable_SD* eit);
-	BOOL AddEIT_SD2(WORD PID, CEITTable_SD2* eit);
+	BOOL AddEIT(WORD PID, CEITTable* eit, __int64 streamTime);
 
 	BOOL AddServiceList(CNITTable* nit);
 	BOOL AddServiceList(WORD TSID, CSITTable* sit);
@@ -100,101 +98,39 @@ protected:
 	CRITICAL_SECTION dbLock;
 
 	struct SI_TAG{
-		BYTE tableID;		//データ追加時のtable_id （優先度 0x4E > 0x50-0x5F > 0x4F > 0x60-0x6F)
+		BYTE tableID;		//データ追加時のtable_id
 		BYTE version;		//データ追加時のバージョン
+		DWORD time;			//データのタイムスタンプ(単位は10秒)
 	};
-	struct SHORT_EVENT_INFO : EPG_SHORT_EVENT_INFO, SI_TAG{
+	struct EVENT_INFO : EPG_EVENT_INFO{
+		//デストラクタは非仮想なので注意
+		DWORD time;
+		SI_TAG tagBasic;
+		SI_TAG tagExt;
 	};
-	struct EXTENDED_EVENT_INFO : EPG_EXTENDED_EVENT_INFO, SI_TAG{
-	};
-	struct CONTEN_INFO : EPG_CONTEN_INFO, SI_TAG{
-	};
-	struct COMPONENT_INFO : EPG_COMPONENT_INFO, SI_TAG{
-	};
-	struct AUDIO_COMPONENT_INFO : EPG_AUDIO_COMPONENT_INFO, SI_TAG{
-	};
-	struct EVENTGROUP_INFO : EPG_EVENTGROUP_INFO, SI_TAG{
-	};
-	struct EVENT_INFO{
-		WORD ONID;
-		WORD TSID;
-		WORD SID;
-		WORD event_id;
-		BYTE StartTimeFlag;	//start_timeの値が有効かどうか
-		SYSTEMTIME start_time;
-		BYTE DurationFlag; //durationの値が有効かどうか
-		DWORD durationSec;
-		BYTE freeCAFlag;
-		BYTE pfFlag;
-		SHORT_EVENT_INFO* shortInfo;
-		EXTENDED_EVENT_INFO* extInfo;
-		CONTEN_INFO* contentInfo;
-		COMPONENT_INFO* componentInfo;
-		AUDIO_COMPONENT_INFO* audioInfo;
-		EVENTGROUP_INFO* eventGroupInfo;
-		EVENTGROUP_INFO* eventRelayInfo;
-		EVENT_INFO(void){
-			pfFlag = FALSE;
-			shortInfo = NULL;
-			extInfo = NULL;
-			contentInfo = NULL;
-			componentInfo = NULL;
-			audioInfo = NULL;
-			eventGroupInfo = NULL;
-			eventRelayInfo = NULL;
-		}
-		~EVENT_INFO(void){
-			SAFE_DELETE(shortInfo);
-			SAFE_DELETE(extInfo);
-			SAFE_DELETE(contentInfo);
-			SAFE_DELETE(componentInfo);
-			SAFE_DELETE(audioInfo);
-			SAFE_DELETE(eventGroupInfo);
-			SAFE_DELETE(eventRelayInfo);
-		}
-	private:
-		EVENT_INFO(const EVENT_INFO&);
-		EVENT_INFO& operator=(const EVENT_INFO&);
+	struct SECTION_FLAG_INFO{
+		BYTE version;
+		BYTE flags[32];			//セグメント(0～31)毎の受信済みセクション(0～7)のフラグ
+		BYTE ignoreFlags[32];	//無視する(送出されない)セクションのフラグ
 	};
 	struct SERVICE_EVENT_INFO{
 		map<WORD, EVENT_INFO*> eventMap;
-		EVENT_INFO* nowEvent;	//map側でdeleteされるのでdeleteする必要なし
-		EVENT_INFO* nextEvent;	//map側でdeleteされるのでdeleteする必要なし
+		EVENT_INFO* nowEvent;
+		EVENT_INFO* nextEvent;
+		BYTE lastTableID;
+		BYTE lastTableIDExt;
+		vector<SECTION_FLAG_INFO> sectionList;	//添え字はテーブル番号(0～7)
+		vector<SECTION_FLAG_INFO> sectionExtList;
 		SERVICE_EVENT_INFO(void){
 			nowEvent = NULL;
 			nextEvent = NULL;
-		}
-	};
-	struct SECTION_FLAG_INFO{
-		DWORD sectionFlag;
-		DWORD maxFlag;
-		SECTION_FLAG_INFO(void){
-			sectionFlag = 0;
-			maxFlag = 0;
-		}
-	};
-	struct SECTION_STATUS_INFO{
-		BYTE HEITFlag;
-		BYTE last_section_numberBasic;
-		BYTE last_table_idBasic;
-		BYTE last_section_numberExt;
-		BYTE last_table_idExt;
-		map<WORD, SECTION_FLAG_INFO> sectionBasicMap;	//キー TableID、フラグ
-		map<WORD, SECTION_FLAG_INFO> sectionExtMap;	//キー TableID、フラグ
-		SECTION_STATUS_INFO(void){
-			HEITFlag = TRUE;
-			last_section_numberBasic = 0;
-			last_table_idBasic = 0;
-			last_section_numberExt = 0;
-			last_table_idExt = 0;
+			lastTableID = 0;
+			lastTableIDExt = 0;
+			sectionList.resize(8);
 		}
 	};
 	map<ULONGLONG, SERVICE_EVENT_INFO> serviceEventMap;
-	map<ULONGLONG, SECTION_STATUS_INFO> sectionMap;
 	map<ULONGLONG, BYTE> serviceList;
-
-	map<ULONGLONG, SERVICE_EVENT_INFO> serviceEventMapSD;
-
 
 	typedef struct _DB_SERVICE_INFO{
 		WORD original_network_id;	//original_network_id
@@ -230,8 +166,6 @@ protected:
 	}DB_TS_INFO;
 	map<DWORD, DB_TS_INFO> serviceInfoList;
 
-	DWORD sectionNowFlag;
-
 	EPG_EVENT_INFO* epgInfoList;
 
 	EPG_EVENT_INFO* epgInfo;
@@ -242,20 +176,16 @@ protected:
 protected:
 	void Clear();
 	
-	static BOOL AddShortEvent(BYTE table_id, BYTE version_number, EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* shortEvent, BOOL skySDFlag);
-	static BOOL AddExtEvent(BYTE table_id, BYTE version_number, EVENT_INFO* eventInfo, vector<AribDescriptor::CDescriptor*>* descriptorList, BOOL skySDFlag);
-	static BOOL AddContent(BYTE table_id, BYTE version_number, EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* content, BOOL skySDFlag);
-	static BOOL AddComponent(BYTE table_id, BYTE version_number, EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* component, BOOL skySDFlag);
-	static BOOL AddAudioComponent(BYTE table_id, BYTE version_number, EVENT_INFO* eventInfo, vector<AribDescriptor::CDescriptor*>* descriptorList, BOOL skySDFlag);
-	static BOOL AddEventGroup(CEITTable* eit, EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* eventGroup);
-	static BOOL AddEventRelay(CEITTable* eit, EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* eventGroup);
-	static BOOL CheckUpdate(BYTE eit_table_id, BYTE eit_version_number, BYTE tableID, BYTE version, BOOL skySDFlag);
+	static void AddBasicInfo(EVENT_INFO* eventInfo, vector<AribDescriptor::CDescriptor*>* descriptorList, WORD onid, WORD tsid);
+	static void AddShortEvent(EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* shortEvent);
+	static BOOL AddExtEvent(EVENT_INFO* eventInfo, vector<AribDescriptor::CDescriptor*>* descriptorList);
+	static void AddContent(EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* content);
+	static void AddComponent(EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* component);
+	static BOOL AddAudioComponent(EVENT_INFO* eventInfo, vector<AribDescriptor::CDescriptor*>* descriptorList);
+	static void AddEventGroup(EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* eventGroup, WORD onid, WORD tsid);
+	static void AddEventRelay(EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* eventGroup, WORD onid, WORD tsid);
 
-	static BOOL CheckUpdate_SD(BYTE eit_table_id, BYTE eit_version_number, BYTE tableID, BYTE version);
-
-	BOOL AddSDEventMap(CEITTable_SD* eit);
-
-	BOOL CheckSectionAll(map<WORD, SECTION_FLAG_INFO>* sectionMap, BOOL leitFlag = FALSE);
+	static BOOL CheckSectionAll(const vector<SECTION_FLAG_INFO>& sectionList);
 
 	void CopyEpgInfo(EPG_EVENT_INFO* destInfo, EVENT_INFO* srcInfo);
 };

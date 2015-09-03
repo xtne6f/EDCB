@@ -64,7 +64,7 @@ namespace EpgTimer
             try
             {
                 byte[] binData;
-                if (CommonManager.Instance.CtrlCmd.SendFileCopy(iniFileName, out binData) == 1)
+                if (CommonManager.Instance.CtrlCmd.SendFileCopy(iniFileName, out binData) == ErrCode.CMD_SUCCESS)
                 {
                     string filePath = SettingPath.SettingFolderPath;
                     System.IO.Directory.CreateDirectory(filePath);
@@ -1459,7 +1459,7 @@ namespace EpgTimer
             return (info == null ? null : info.GetValue(this, null));
         }
 
-        public static void GetDefRecSetting(UInt32 presetID, ref CtrlCmdCLI.Def.RecSettingData defKey)
+        public static void GetDefRecSetting(UInt32 presetID, ref RecSettingData defKey)
         {
             String defName = "REC_DEF";
             String defFolderName = "REC_DEF_FOLDER";
@@ -1484,7 +1484,7 @@ namespace EpgTimer
             int count = IniFileHandler.GetPrivateProfileInt(defFolderName, "Count", 0, SettingPath.TimerSrvIniPath);
             for (int i = 0; i < count; i++)
             {
-                CtrlCmdCLI.Def.RecFileSetInfo folderInfo = new CtrlCmdCLI.Def.RecFileSetInfo();
+                RecFileSetInfo folderInfo = new RecFileSetInfo();
                 folderInfo.RecFolder = IniFileHandler.GetPrivateProfileString(defFolderName, i.ToString(), "", SettingPath.TimerSrvIniPath);
                 folderInfo.WritePlugIn = IniFileHandler.GetPrivateProfileString(defFolderName, "WritePlugIn" + i.ToString(), "Write_Default.dll", SettingPath.TimerSrvIniPath);
                 folderInfo.RecNamePlugIn = IniFileHandler.GetPrivateProfileString(defFolderName, "RecNamePlugIn" + i.ToString(), "", SettingPath.TimerSrvIniPath);
@@ -1496,7 +1496,7 @@ namespace EpgTimer
             count = IniFileHandler.GetPrivateProfileInt(defFolder1SegName, "Count", 0, SettingPath.TimerSrvIniPath);
             for (int i = 0; i < count; i++)
             {
-                CtrlCmdCLI.Def.RecFileSetInfo folderInfo = new CtrlCmdCLI.Def.RecFileSetInfo();
+                RecFileSetInfo folderInfo = new RecFileSetInfo();
                 folderInfo.RecFolder = IniFileHandler.GetPrivateProfileString(defFolder1SegName, i.ToString(), "", SettingPath.TimerSrvIniPath);
                 folderInfo.WritePlugIn = IniFileHandler.GetPrivateProfileString(defFolder1SegName, "WritePlugIn" + i.ToString(), "Write_Default.dll", SettingPath.TimerSrvIniPath);
                 folderInfo.RecNamePlugIn = IniFileHandler.GetPrivateProfileString(defFolder1SegName, "RecNamePlugIn" + i.ToString(), "", SettingPath.TimerSrvIniPath);
@@ -1529,7 +1529,7 @@ namespace EpgTimer
             }
         }
 
-        public static void GetDefSearchSetting(ref CtrlCmdCLI.Def.EpgSearchKeyInfo defKey)
+        public static void GetDefSearchSetting(ref EpgSearchKeyInfo defKey)
         {
             if (Settings.Instance.SearchKeyRegExp == true)
             {
@@ -1553,7 +1553,7 @@ namespace EpgTimer
             }
             foreach (ContentKindInfo info in Settings.Instance.SearchKeyContentList)
             {
-                CtrlCmdCLI.Def.EpgContentData item = new CtrlCmdCLI.Def.EpgContentData();
+                EpgContentData item = new EpgContentData();
                 item.content_nibble_level_1 = info.Nibble1;
                 item.content_nibble_level_2 = info.Nibble2;
                 defKey.contentList.Add(item);

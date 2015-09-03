@@ -80,7 +80,6 @@ protected:
 	map<WORD, CTSBuffUtil> buffUtilMap;
 
 	CPATTable* patInfo;
-	map<WORD, CPMTTable*> pmtMap;
 	NIT_SECTION_INFO* nitActualInfo;
 	SDT_SECTION_INFO* sdtActualInfo;
 	CBITTable* bitInfo;
@@ -101,7 +100,6 @@ protected:
 	void ChangeTSIDClear(WORD noClearPid);
 
 	BOOL CheckPAT(WORD PID, CPATTable* pat);
-	BOOL CheckPMT(WORD PID, CPMTTable* pmt);
 	BOOL CheckNIT(WORD PID, CNITTable* nit);
 	BOOL CheckSDT(WORD PID, CSDTTable* sdt);
 	BOOL CheckTOT(WORD PID, CTOTTable* tot);
@@ -109,8 +107,6 @@ protected:
 	BOOL CheckEIT(WORD PID, CEITTable* eit);
 	BOOL CheckBIT(WORD PID, CBITTable* bit);
 	BOOL CheckSIT(WORD PID, CSITTable* sit);
-	BOOL CheckEIT_SD(WORD PID, CEITTable_SD* eit);
-	BOOL CheckEIT_SD2(WORD PID, CEITTable_SD2* eit);
 
 	//自ストリームのサービス一覧をSITから取得する
 	//引数：

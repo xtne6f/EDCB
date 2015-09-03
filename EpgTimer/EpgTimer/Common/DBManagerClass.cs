@@ -273,7 +273,7 @@ namespace EpgTimer
                 {
                     if (cmd == null) return ErrCode.CMD_ERR;
 
-                    recFileInfo = new Dictionary<uint, CtrlCmdCLI.Def.RecFileInfo>();
+                    recFileInfo = new Dictionary<uint, RecFileInfo>();
                     var list = new List<RecFileInfo>();
 
                     ret = (ErrCode)cmd.SendEnumRecInfo(ref list);
