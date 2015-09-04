@@ -42,6 +42,15 @@ namespace EpgTimer
             }
         }
 
+        protected virtual void ComboBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            var tb = e.OriginalSource as TextBox;
+            if (tb != null)
+            {
+                ((ComboBox)sender).Text = tb.Text;
+            }
+        }
+
         private void button_andIn_Click(object sender, RoutedEventArgs e)
         {
             KeyWordWindow dlg = new KeyWordWindow();
