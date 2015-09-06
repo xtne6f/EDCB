@@ -40,6 +40,7 @@ struct MAIN_WINDOW_CONTEXT {
 	HANDLE resumeTimer;
 	__int64 resumeTime;
 	WORD shutdownModePending;
+	DWORD shutdownPendingTick;
 	HWND hDlgQueryShutdown;
 	WORD queryShutdownMode;
 	bool taskFlag;
@@ -54,6 +55,7 @@ struct MAIN_WINDOW_CONTEXT {
 		, upnpCtrl(NULL)
 		, resumeTimer(NULL)
 		, shutdownModePending(0)
+		, shutdownPendingTick(0)
 		, hDlgQueryShutdown(NULL)
 		, taskFlag(false)
 		, showBalloonTip(false)
@@ -122,7 +124,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 {
 	enum {
 		TIMER_RELOAD_EPG_CHK_PENDING = 1,
-		TIMER_SHUTDOWN_PENDING_TIMEOUT,
+		TIMER_QUERY_SHUTDOWN_PENDING,
 		TIMER_RETRY_ADD_TRAY,
 		TIMER_SET_RESUME,
 		TIMER_CHECK,
@@ -240,6 +242,8 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 	case WM_RELOAD_EPG_CHK:
 		//EPGリロード完了のチェックを開始
 		SetTimer(hwnd, TIMER_RELOAD_EPG_CHK_PENDING, 200, NULL);
+		KillTimer(hwnd, TIMER_QUERY_SHUTDOWN_PENDING);
+		ctx->shutdownPendingTick = GetTickCount();
 		break;
 	case WM_REQUEST_SHUTDOWN:
 		//シャットダウン処理
@@ -424,7 +428,20 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 	case WM_TIMER:
 		switch( wParam ){
 		case TIMER_RELOAD_EPG_CHK_PENDING:
+			if( GetTickCount() - ctx->shutdownPendingTick > 30000 ){
+				//30秒以内にシャットダウン問い合わせできなければキャンセル
+				if( ctx->shutdownModePending ){
+					ctx->shutdownModePending = 0;
+					OutputDebugString(L"Shutdown cancelled\r\n");
+				}
+			}
 			if( ctx->sys->epgDB.IsLoadingData() == FALSE ){
+				KillTimer(hwnd, TIMER_RELOAD_EPG_CHK_PENDING);
+				if( ctx->shutdownModePending ){
+					//このタイマはWM_TIMER以外でもKillTimer()するためメッセージキューに残った場合に対処するためシフト
+					ctx->shutdownPendingTick -= 100000;
+					SetTimer(hwnd, TIMER_QUERY_SHUTDOWN_PENDING, 200, NULL);
+				}
 				//リロード終わったので自動予約登録処理を行う
 				ctx->sys->reserveManager.CheckTuijyu();
 				bool addCountUpdated = false;
@@ -441,7 +458,6 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 						ctx->sys->AutoAddReserveProgram(itr->second);
 					}
 				}
-				KillTimer(hwnd, TIMER_RELOAD_EPG_CHK_PENDING);
 				if( addCountUpdated ){
 					//予約登録数の変化を通知する
 					ctx->sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_EPG);
@@ -455,20 +471,29 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 					vector<TUNER_RESERVE_INFO> tunerList = ctx->sys->reserveManager.GetTunerReserveAll();
 					syoboi.SendReserve(&reserveList, &tunerList);
 				}
-				if( ctx->shutdownModePending && ctx->sys->IsSuspendOK() && ctx->sys->IsUserWorking() == false ){
-					if( 1 <= LOBYTE(ctx->shutdownModePending) && LOBYTE(ctx->shutdownModePending) <= 3 ){
+			}
+			break;
+		case TIMER_QUERY_SHUTDOWN_PENDING:
+			if( GetTickCount() - ctx->shutdownPendingTick >= 100000 ){
+				if( GetTickCount() - ctx->shutdownPendingTick - 100000 > 30000 ){
+					//30秒以内にシャットダウン問い合わせできなければキャンセル
+					KillTimer(hwnd, TIMER_QUERY_SHUTDOWN_PENDING);
+					if( ctx->shutdownModePending ){
+						ctx->shutdownModePending = 0;
+						OutputDebugString(L"Shutdown cancelled\r\n");
+					}
+				}else if( ctx->shutdownModePending && ctx->sys->IsSuspendOK() ){
+					KillTimer(hwnd, TIMER_QUERY_SHUTDOWN_PENDING);
+					if( ctx->sys->IsUserWorking() == false &&
+					    1 <= LOBYTE(ctx->shutdownModePending) && LOBYTE(ctx->shutdownModePending) <= 3 ){
 						//シャットダウン問い合わせ
 						if( SendMessage(hwnd, WM_QUERY_SHUTDOWN, ctx->shutdownModePending, 0) == FALSE ){
 							SendMessage(hwnd, WM_REQUEST_SHUTDOWN, ctx->shutdownModePending, 0);
 						}
 					}
+					ctx->shutdownModePending = 0;
 				}
-				ctx->shutdownModePending = 0;
 			}
-			break;
-		case TIMER_SHUTDOWN_PENDING_TIMEOUT:
-			KillTimer(hwnd, TIMER_SHUTDOWN_PENDING_TIMEOUT);
-			ctx->shutdownModePending = 0;
 			break;
 		case TIMER_RETRY_ADD_TRAY:
 			KillTimer(hwnd, TIMER_RETRY_ADD_TRAY);
@@ -500,8 +525,6 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 						//EPGリロード完了後にデフォルトのシャットダウン動作を試みる
 						SendMessage(hwnd, WM_RELOAD_EPG_CHK, 0, 0);
 						ctx->shutdownModePending = ctx->sys->defShutdownMode;
-						//30秒以内にシャットダウン問い合わせできなければキャンセル
-						SetTimer(hwnd, TIMER_SHUTDOWN_PENDING_TIMEOUT, 30000, NULL);
 					}
 					SendMessage(hwnd, WM_TIMER, TIMER_SET_RESUME, 0);
 					break;
@@ -513,7 +536,6 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 						if( LOBYTE(ctx->shutdownModePending) == 0 ){
 							ctx->shutdownModePending = ctx->sys->defShutdownMode;
 						}
-						SetTimer(hwnd, TIMER_SHUTDOWN_PENDING_TIMEOUT, 30000, NULL);
 					}
 					SendMessage(hwnd, WM_TIMER, TIMER_SET_RESUME, 0);
 					break;
