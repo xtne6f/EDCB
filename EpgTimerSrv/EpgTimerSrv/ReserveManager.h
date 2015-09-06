@@ -74,6 +74,8 @@ public:
 	bool ChgAutoAddNoRec(WORD onid, WORD tsid, WORD sid, WORD eid);
 	//チャンネル情報を取得する
 	vector<CH_DATA5> GetChDataList() const;
+	//パラメータなしの通知を追加する
+	void AddNotifyAndPostBat(DWORD notifyID);
 private:
 	struct CHK_RESERVE_DATA {
 		__int64 cutStartTime;

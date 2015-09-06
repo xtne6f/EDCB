@@ -345,7 +345,7 @@ bool CReserveManager::AddReserveData(const vector<RESERVE_DATA>& reserveList, bo
 		this->reserveText.SaveText();
 		ReloadBankMap(minStartTime);
 		CheckAutoDel();
-		this->notifyManager.AddNotify(NOTIFY_UPDATE_RESERVE_INFO);
+		AddNotifyAndPostBat(NOTIFY_UPDATE_RESERVE_INFO);
 		AddPostBatWork(batWorkList, L"PostAddReserve.bat");
 		return true;
 	}
@@ -490,7 +490,7 @@ bool CReserveManager::ChgReserveData(const vector<RESERVE_DATA>& reserveList, bo
 		this->reserveText.SaveText();
 		ReloadBankMap(minStartTime);
 		CheckAutoDel();
-		this->notifyManager.AddNotify(NOTIFY_UPDATE_RESERVE_INFO);
+		AddNotifyAndPostBat(NOTIFY_UPDATE_RESERVE_INFO);
 		AddPostBatWork(batWorkList, L"PostChgReserve.bat");
 		return true;
 	}
@@ -525,7 +525,7 @@ void CReserveManager::DelReserveData(const vector<DWORD>& idList)
 	if( modified ){
 		this->reserveText.SaveText();
 		ReloadBankMap(minStartTime);
-		this->notifyManager.AddNotify(NOTIFY_UPDATE_RESERVE_INFO);
+		AddNotifyAndPostBat(NOTIFY_UPDATE_RESERVE_INFO);
 	}
 }
 
@@ -549,7 +549,7 @@ void CReserveManager::DelRecFileInfo(const vector<DWORD>& idList)
 		this->recInfoText.DelRecInfo(idList[i]);
 	}
 	this->recInfoText.SaveText();
-	this->notifyManager.AddNotify(NOTIFY_UPDATE_REC_INFO);
+	AddNotifyAndPostBat(NOTIFY_UPDATE_REC_INFO);
 }
 
 void CReserveManager::ChgProtectRecFileInfo(const vector<REC_FILE_INFO>& infoList)
@@ -560,7 +560,7 @@ void CReserveManager::ChgProtectRecFileInfo(const vector<REC_FILE_INFO>& infoLis
 		this->recInfoText.ChgProtectRecInfo(infoList[i].id, infoList[i].protectFlag);
 	}
 	this->recInfoText.SaveText();
-	this->notifyManager.AddNotify(NOTIFY_UPDATE_REC_INFO);
+	AddNotifyAndPostBat(NOTIFY_UPDATE_REC_INFO);
 }
 
 void CReserveManager::ReloadBankMap(__int64 reloadTime)
@@ -1297,8 +1297,8 @@ void CReserveManager::CheckOverTimeReserve()
 	if( modified ){
 		this->reserveText.SaveText();
 		this->recInfoText.SaveText();
-		this->notifyManager.AddNotify(NOTIFY_UPDATE_RESERVE_INFO);
-		this->notifyManager.AddNotify(NOTIFY_UPDATE_REC_INFO);
+		AddNotifyAndPostBat(NOTIFY_UPDATE_RESERVE_INFO);
+		AddNotifyAndPostBat(NOTIFY_UPDATE_REC_INFO);
 	}
 }
 
@@ -1439,8 +1439,8 @@ DWORD CReserveManager::Check()
 				this->reserveText.SaveText();
 				this->recInfoText.SaveText();
 				this->recInfo2Text.SaveText();
-				this->notifyManager.AddNotify(NOTIFY_UPDATE_RESERVE_INFO);
-				this->notifyManager.AddNotify(NOTIFY_UPDATE_REC_INFO);
+				AddNotifyAndPostBat(NOTIFY_UPDATE_RESERVE_INFO);
+				AddNotifyAndPostBat(NOTIFY_UPDATE_REC_INFO);
 				AddPostBatWork(batWorkList, L"PostRecEnd.bat");
 			}
 		}
@@ -1924,6 +1924,15 @@ void CReserveManager::AddPostBatWork(vector<BAT_WORK_INFO>& workList, LPCWSTR fi
 			}
 		}
 	}
+}
+
+void CReserveManager::AddNotifyAndPostBat(DWORD notifyID)
+{
+	this->notifyManager.AddNotify(notifyID);
+	vector<BAT_WORK_INFO> workList(1);
+	workList[0].macroList.push_back(pair<string, wstring>("NotifyID", L""));
+	Format(workList[0].macroList.back().second, L"%d", notifyID);
+	AddPostBatWork(workList, L"PostNotify.bat");
 }
 
 void CReserveManager::AddTimeMacro(vector<pair<string, wstring>>& macroList, const SYSTEMTIME& startTime, DWORD durationSecond, LPCSTR suffix)

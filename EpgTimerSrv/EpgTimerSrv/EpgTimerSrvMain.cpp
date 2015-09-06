@@ -446,7 +446,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 					//予約登録数の変化を通知する
 					ctx->sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_EPG);
 				}
-				ctx->sys->notifyManager.AddNotify(NOTIFY_UPDATE_EPGDATA);
+				ctx->sys->reserveManager.AddNotifyAndPostBat(NOTIFY_UPDATE_EPGDATA);
 
 				if( ctx->sys->useSyoboi ){
 					//しょぼいカレンダー対応
