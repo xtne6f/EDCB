@@ -30,11 +30,11 @@ namespace EpgTimer.Setting
         public bool ngFileStreaming = false;
         public bool ngShareFile = false;
 
-        MenuSettingData ctxmSetInfo;
+        private MenuSettingData ctxmSetInfo;
+        private EpgSearchKeyInfo defSearchKey;
 
         private List<String> extList = new List<string>();
         private List<String> delChkFolderList = new List<string>();
-        private EpgSearchKeyInfo defSearchKey = new EpgSearchKeyInfo();
 
         private List<ViewMenuItem> buttonItem = new List<ViewMenuItem>();
         private List<ViewMenuItem> taskItem = new List<ViewMenuItem>();
@@ -285,7 +285,7 @@ namespace EpgTimer.Setting
                 }
                 textBox_tcpPort.Text = IniFileHandler.GetPrivateProfileInt("SET", "TCPPort", 4510, SettingPath.TimerSrvIniPath).ToString();
 
-                Settings.GetDefSearchSetting(ref defSearchKey);
+                defSearchKey = Settings.Instance.DefSearchKey.Clone();
 
                 checkBox_showAsTab.IsChecked = Settings.Instance.ViewButtonShowAsTab;
                 checkBox_suspendChk.IsChecked = (Settings.Instance.SuspendChk == 1);
@@ -538,39 +538,7 @@ namespace EpgTimer.Setting
             Settings.Instance.SuspendCloseNW = (checkBox_suspendClose.IsChecked == true);
             Settings.Instance.NgAutoEpgLoadNW = (checkBox_ngAutoEpgLoad.IsChecked == true);
 
-            Settings.Instance.SearchKeyRegExp = (defSearchKey.regExpFlag != 0);
-            Settings.Instance.SearchKeyAimaiFlag = (defSearchKey.aimaiFlag != 0);
-            Settings.Instance.SearchKeyTitleOnly = (defSearchKey.titleOnlyFlag != 0);
-
-            Settings.Instance.SearchKeyContentList.Clear();
-            foreach (EpgContentData info in defSearchKey.contentList)
-            {
-                ContentKindInfo item = new ContentKindInfo();
-                item.Nibble1 = info.content_nibble_level_1;
-                item.Nibble2 = info.content_nibble_level_2;
-                Settings.Instance.SearchKeyContentList.Add(item);
-            }
-            Settings.Instance.SearchKeyDateItemList.Clear();
-            foreach (EpgSearchDateInfo info in defSearchKey.dateList)
-            {
-                DateItem item = new DateItem();
-                item.DateInfo = info;
-                Settings.Instance.SearchKeyDateItemList.Add(item);
-            }
-            Settings.Instance.SearchKeyServiceList.Clear();
-            foreach (Int64 info in defSearchKey.serviceList)
-            {
-                Settings.Instance.SearchKeyServiceList.Add(info);
-            }
-
-            Settings.Instance.SearchKeyNotContent = (defSearchKey.notContetFlag != 0);
-            Settings.Instance.SearchKeyNotDate = (defSearchKey.notDateFlag != 0);
-            Settings.Instance.SearchKeyFreeCA = defSearchKey.freeCAFlag;
-            Settings.Instance.SearchKeyChkRecEnd = defSearchKey.chkRecEnd;
-            Settings.Instance.SearchKeyChkRecDay = defSearchKey.chkRecDay;
-            Settings.Instance.SearchKeyChkRecNoService = defSearchKey.chkRecNoService;
-            Settings.Instance.SearchKeyChkDurationMin = defSearchKey.chkDurationMin;
-            Settings.Instance.SearchKeyChkDurationMax = defSearchKey.chkDurationMax;
+            Settings.Instance.DefSearchKey = defSearchKey.Clone();
 
             Settings.Instance.ViewButtonShowAsTab = checkBox_showAsTab.IsChecked == true;
             Settings.Instance.SuspendChk = (uint)(checkBox_suspendChk.IsChecked == true ? 1 : 0);

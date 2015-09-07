@@ -91,16 +91,8 @@ namespace EpgTimer
         {
             try
             {
-                if (checkBox_regExp.IsChecked == true)
-                {
-                    key.regExpFlag = 1;
-                    key.aimaiFlag = 0;
-                }
-                else
-                {
-                    key.regExpFlag = 0;
-                    key.aimaiFlag = (byte)(checkBox_aimai.IsChecked == true ? 1 : 0);
-                }
+                key.regExpFlag = (byte)(checkBox_regExp.IsChecked == true ? 1 : 0);
+                key.aimaiFlag = (byte)(checkBox_aimai.IsChecked == true ? 1 : 0);
                 key.titleOnlyFlag = (byte)(checkBox_titleOnly.IsChecked == true ? 1 : 0);
                 key.caseFlag = (byte)(checkBox_case.IsChecked == true ? 1 : 0);
                 key.keyDisabledFlag = (byte)(checkBox_keyDisabled.IsChecked == true ? 1 : 0);
@@ -164,16 +156,8 @@ namespace EpgTimer
         {
             try
             {
-                if (defKey.regExpFlag == 1)
-                {
-                    checkBox_regExp.IsChecked = true;
-                    checkBox_aimai.IsChecked = false;
-                }
-                else
-                {
-                    checkBox_regExp.IsChecked = false;
-                    checkBox_aimai.IsChecked = (defKey.aimaiFlag == 1);
-                }
+                checkBox_regExp.IsChecked = (defKey.regExpFlag == 1);
+                checkBox_aimai.IsChecked = (defKey.aimaiFlag == 1);
                 checkBox_titleOnly.IsChecked = (defKey.titleOnlyFlag == 1);
                 checkBox_case.IsChecked = (defKey.caseFlag == 1);
                 checkBox_keyDisabled.IsChecked = (defKey.keyDisabledFlag == 1);
@@ -644,6 +628,11 @@ namespace EpgTimer
                     info.IsSelected = true;
                 }
             }
+        }
+
+        private void checkBox_regExp_Checked(object sender, RoutedEventArgs e)
+        {
+            checkBox_aimai.IsEnabled = checkBox_regExp.IsChecked != true;
         }
 
     }

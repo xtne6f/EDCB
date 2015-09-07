@@ -124,10 +124,7 @@ namespace EpgTimer
                     this.Height = Settings.Instance.SearchWndHeight;
                 }
 
-                EpgSearchKeyInfo defKey = new EpgSearchKeyInfo();
-                Settings.GetDefSearchSetting(ref defKey);
-
-                searchKeyView.SetSearchKey(defKey);
+                searchKeyView.SetSearchKey(Settings.Instance.DefSearchKey);
             }
             catch (Exception ex)
             {

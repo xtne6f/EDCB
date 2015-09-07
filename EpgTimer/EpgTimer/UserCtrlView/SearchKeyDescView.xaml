@@ -15,8 +15,8 @@
             <RowDefinition Height="32" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <CheckBox Content="正規表現モード" Height="16" Margin="0,12,605,0" Name="checkBox_regExp" VerticalAlignment="Top" HorizontalAlignment="Right" Width="95" />
-        <CheckBox Content="あいまい検索モード" Height="16" Margin="0,12,473,0" Name="checkBox_aimai" VerticalAlignment="Top" HorizontalAlignment="Right" Width="110" />
+        <CheckBox Content="正規表現モード" Height="16" Margin="0,12,605,0" Name="checkBox_regExp" VerticalAlignment="Top" HorizontalAlignment="Right" Width="95" Checked="checkBox_regExp_Checked" Unchecked="checkBox_regExp_Checked" />
+        <CheckBox Content="あいまい検索モード" Height="16" Margin="0,12,473,0" Name="checkBox_aimai" VerticalAlignment="Top" HorizontalAlignment="Right" Width="110" ToolTip="正規表現モードでは無効" ToolTipService.ShowOnDisabled="True" />
         <CheckBox Content="番組名のみ検索対象にする" Height="16" Margin="0,12,298,0" Name="checkBox_titleOnly" VerticalAlignment="Top" HorizontalAlignment="Right" Width="153" />
         <CheckBox Content="大小文字区別" Height="16" Margin="0,12,184,0" Name="checkBox_case" VerticalAlignment="Top" HorizontalAlignment="Right" Width="92" />
         <CheckBox Content="自動登録を無効にする" Height="16" Margin="0,12,32,0" Name="checkBox_keyDisabled" VerticalAlignment="Top" HorizontalAlignment="Right" Width="130" />

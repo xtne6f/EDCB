@@ -207,20 +207,7 @@ namespace EpgTimer
         private string cust2BtnCmdOpt;
         private List<string> andKeyList;
         private List<string> notKeyList;
-        private bool searchKeyRegExp;
-        private bool searchKeyTitleOnly;
-        private bool searchKeyAimaiFlag;
-        private bool searchKeyNotContent;
-        private bool searchKeyNotDate;
-        private List<ContentKindInfo> searchKeyContentList;
-        private List<DateItem> searchKeyDateItemList;
-        private List<Int64> searchKeyServiceList;
-        private byte searchKeyFreeCA;
-        private byte searchKeyChkRecEnd;
-        private UInt16 searchKeyChkRecDay;
-        private byte searchKeyChkRecNoService;
-        private UInt16 searchKeyChkDurationMin;
-        private UInt16 searchKeyChkDurationMax;
+        private EpgSearchKeyInfo defSearchKey;
         private List<RecPresetItem> recPresetList;
         private string recInfoColumnHead;
         private ListSortDirection recInfoSortDirection;
@@ -576,75 +563,10 @@ namespace EpgTimer
             get { return notKeyList; }
             set { notKeyList = value; }
         }
-        public bool SearchKeyRegExp
+        public EpgSearchKeyInfo DefSearchKey
         {
-            get { return searchKeyRegExp; }
-            set { searchKeyRegExp = value; }
-        }
-        public bool SearchKeyTitleOnly
-        {
-            get { return searchKeyTitleOnly; }
-            set { searchKeyTitleOnly = value; }
-        }
-        public bool SearchKeyAimaiFlag
-        {
-            get { return searchKeyAimaiFlag; }
-            set { searchKeyAimaiFlag = value; }
-        }
-        public bool SearchKeyNotContent
-        {
-            get { return searchKeyNotContent; }
-            set { searchKeyNotContent = value; }
-        }
-        public bool SearchKeyNotDate
-        {
-            get { return searchKeyNotDate; }
-            set { searchKeyNotDate = value; }
-        }
-        public List<ContentKindInfo> SearchKeyContentList
-        {
-            get { return searchKeyContentList; }
-            set { searchKeyContentList = value; }
-        }
-        public List<DateItem> SearchKeyDateItemList
-        {
-            get { return searchKeyDateItemList; }
-            set { searchKeyDateItemList = value; }
-        }
-        public List<Int64> SearchKeyServiceList
-        {
-            get { return searchKeyServiceList; }
-            set { searchKeyServiceList = value; }
-        }
-        public byte SearchKeyFreeCA
-        {
-            get { return searchKeyFreeCA; }
-            set { searchKeyFreeCA = value; }
-        }
-        public byte SearchKeyChkRecEnd
-        {
-            get { return searchKeyChkRecEnd; }
-            set { searchKeyChkRecEnd = value; }
-        }
-        public UInt16 SearchKeyChkRecDay
-        {
-            get { return searchKeyChkRecDay; }
-            set { searchKeyChkRecDay = value; }
-        }
-        public byte SearchKeyChkRecNoService
-        {
-            get { return searchKeyChkRecNoService; }
-            set { searchKeyChkRecNoService = value; }
-        }
-        public UInt16 SearchKeyChkDurationMin
-        {
-            get { return searchKeyChkDurationMin; }
-            set { searchKeyChkDurationMin = value; }
-        }
-        public UInt16 SearchKeyChkDurationMax
-        {
-            get { return searchKeyChkDurationMax; }
-            set { searchKeyChkDurationMax = value; }
+            get { return defSearchKey; }
+            set { defSearchKey = value; }
         }
         public List<RecPresetItem> RecPresetList
         {
@@ -1097,20 +1019,7 @@ namespace EpgTimer
             cust2BtnCmdOpt = "";
             andKeyList = new List<string>();
             notKeyList = new List<string>();
-            searchKeyRegExp = false;
-            searchKeyTitleOnly = false;
-            searchKeyAimaiFlag = false;
-            searchKeyNotContent = false;
-            searchKeyNotDate = false;
-            searchKeyFreeCA = 0;
-            searchKeyChkRecEnd = 0;
-            searchKeyChkRecDay = 6;
-            searchKeyChkRecNoService = 0;
-            searchKeyChkDurationMin = 0;
-            searchKeyChkDurationMax = 0;
-            searchKeyContentList = new List<ContentKindInfo>();
-            searchKeyDateItemList = new List<DateItem>();
-            searchKeyServiceList = new List<Int64>();
+            defSearchKey = new EpgSearchKeyInfo();
             recPresetList = new List<RecPresetItem>();
             recInfoColumnHead = "";
             recInfoSortDirection = ListSortDirection.Ascending;
@@ -1527,51 +1436,6 @@ namespace EpgTimer
                 string name = IniFileHandler.GetPrivateProfileString("REC_DEF" + (id == 0 ? "" : id.ToString()), "SetName", "", SettingPath.TimerSrvIniPath);
                 Settings.Instance.RecPresetList.Add(new RecPresetItem(name, id));
             }
-        }
-
-        public static void GetDefSearchSetting(ref EpgSearchKeyInfo defKey)
-        {
-            if (Settings.Instance.SearchKeyRegExp == true)
-            {
-                defKey.regExpFlag = 1;
-            }
-            if (Settings.Instance.SearchKeyAimaiFlag == true)
-            {
-                defKey.aimaiFlag = 1;
-            }
-            if (Settings.Instance.SearchKeyTitleOnly == true)
-            {
-                defKey.titleOnlyFlag = 1;
-            }
-            if (Settings.Instance.SearchKeyNotContent == true)
-            {
-                defKey.notContetFlag = 1;
-            }
-            if (Settings.Instance.SearchKeyNotDate == true)
-            {
-                defKey.notDateFlag = 1;
-            }
-            foreach (ContentKindInfo info in Settings.Instance.SearchKeyContentList)
-            {
-                EpgContentData item = new EpgContentData();
-                item.content_nibble_level_1 = info.Nibble1;
-                item.content_nibble_level_2 = info.Nibble2;
-                defKey.contentList.Add(item);
-            }
-            foreach (DateItem info in Settings.Instance.SearchKeyDateItemList)
-            {
-                defKey.dateList.Add(info.DateInfo);
-            }
-            foreach (Int64 info in Settings.Instance.SearchKeyServiceList)
-            {
-                defKey.serviceList.Add(info);
-            }
-            defKey.freeCAFlag = Settings.Instance.SearchKeyFreeCA;
-            defKey.chkRecEnd = Settings.Instance.SearchKeyChkRecEnd;
-            defKey.chkRecDay = Settings.Instance.SearchKeyChkRecDay;
-            defKey.chkRecNoService = Settings.Instance.SearchKeyChkRecNoService;
-            defKey.chkDurationMin = Settings.Instance.SearchKeyChkDurationMin;
-            defKey.chkDurationMax = Settings.Instance.SearchKeyChkDurationMax;
         }
 
         public static List<string> GetDefRecFolders()
