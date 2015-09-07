@@ -31,7 +31,7 @@ namespace EpgTimer
         public CmdExeReserve(Control owner)
             : base(owner)
         {
-            _copyItemData = CtrlCmdCLIEx.CopyTo;
+            _copyItemData = CtrlCmdDefEx.CopyTo;
         }
         protected override void SetData(bool IsAllData = false  )
         {

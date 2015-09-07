@@ -16,7 +16,7 @@ namespace EpgTimer
         public CmdExeRecinfo(Control owner)
             : base(owner)
         {
-            _copyItemData = CtrlCmdCLIEx.CopyTo;
+            _copyItemData = CtrlCmdDefEx.CopyTo;
         }
         protected override void mc_ShowDialog(object sender, ExecutedRoutedEventArgs e)
         {

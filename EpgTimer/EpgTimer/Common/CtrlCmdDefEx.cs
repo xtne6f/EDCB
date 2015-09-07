@@ -8,9 +8,9 @@ using CtrlCmdCLI.Def;
 
 namespace EpgTimer
 {
-    static class CtrlCmdCLIEx
+    static class CtrlCmdDefEx
     {
-        //シリアライズとかもろもろは使えないので地道にコピーする。
+        //シリアライズとか使わず地道にコピーする。
         //シャローコピー部分はGetType()などを使う方法もあるが、やはり地道にコピーすることにする。
 
         //CopyObj.csのジェネリックを使って定義している。
