@@ -83,7 +83,7 @@ namespace EpgTimer
                 {
                     //「検索無効」の対応のため、andKeyをコピーする。
                     EpgSearchKeyInfo key = item.searchInfo.Clone();
-                    key.andKey = key.andKey.Substring(key.andKey.StartsWith("^!{999}") ? 7 : 0);
+                    key.keyDisabledFlag = 0; //無効解除
                     keyList.Add(key);
                 }
 

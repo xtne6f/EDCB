@@ -37,6 +37,8 @@ namespace EpgTimer
             dest.chkRecNoService = src.chkRecNoService;
             dest.chkDurationMin = src.chkDurationMin;
             dest.chkDurationMax = src.chkDurationMax;
+            dest.caseFlag = src.caseFlag;
+            dest.keyDisabledFlag = src.keyDisabledFlag;
         }
 
         public static List<EpgContentData> Clone(this List<EpgContentData> src) { return CopyObj.Clone(src, CopyData); }

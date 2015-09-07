@@ -89,7 +89,7 @@ namespace EpgTimer
             dataList.ForEach(item =>
             {
                 EpgSearchKeyInfo key = item.searchInfo;
-                key.andKey = key.andKey.Substring(key.andKey.StartsWith("^!{999}") ? 7 : 0);//無効解除
+                key.keyDisabledFlag = 0; //無効解除
                 keyList.Add(key);
             });
 

@@ -102,16 +102,8 @@ namespace EpgTimer
                     key.aimaiFlag = (byte)(checkBox_aimai.IsChecked == true ? 1 : 0);
                 }
                 key.titleOnlyFlag = (byte)(checkBox_titleOnly.IsChecked == true ? 1 : 0);
-                key.andKey = key.andKey.Substring(key.andKey.StartsWith("^!{999}") ? 7 : 0);
-                key.andKey = key.andKey.Substring(key.andKey.StartsWith("C!{999}") ? 7 : 0);
-                if (checkBox_case.IsChecked == true)
-                {
-                    key.andKey = "C!{999}" + key.andKey;
-                }
-                if (checkBox_keyDisabled.IsChecked == true)
-                {
-                    key.andKey = "^!{999}" + key.andKey;
-                }
+                key.caseFlag = (byte)(checkBox_case.IsChecked == true ? 1 : 0);
+                key.keyDisabledFlag = (byte)(checkBox_keyDisabled.IsChecked == true ? 1 : 0);
 
                 key.contentList.Clear();
                 foreach (ContentKindInfo info in listBox_content.Items)
@@ -183,8 +175,8 @@ namespace EpgTimer
                     checkBox_aimai.IsChecked = (defKey.aimaiFlag == 1);
                 }
                 checkBox_titleOnly.IsChecked = (defKey.titleOnlyFlag == 1);
-                checkBox_keyDisabled.IsChecked = (defKey.andKey.StartsWith("^!{999}") == true);
-                checkBox_case.IsChecked = (defKey.andKey.StartsWith("C!{999}") || defKey.andKey.StartsWith("^!{999}C!{999}"));
+                checkBox_case.IsChecked = (defKey.caseFlag == 1);
+                checkBox_keyDisabled.IsChecked = (defKey.keyDisabledFlag == 1);
 
                 listBox_content.Items.Clear();
                 foreach (EpgContentData item in defKey.contentList)

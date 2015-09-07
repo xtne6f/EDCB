@@ -218,7 +218,7 @@ namespace EpgTimer
             {
                 EpgSearchKeyInfo key = new EpgSearchKeyInfo();
                 searchKeyView.GetSearchKey(ref key);
-                key.andKey = key.andKey.Substring(key.andKey.StartsWith("^!{999}") ? 7 : 0);
+                key.keyDisabledFlag = 0; //無効解除
                 List<EpgEventInfo> list = new List<EpgEventInfo>();
 
                 cmd.SendSearchPg(mutil.ToList(key), ref list);

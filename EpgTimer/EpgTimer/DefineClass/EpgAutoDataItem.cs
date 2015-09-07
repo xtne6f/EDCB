@@ -39,8 +39,7 @@ namespace EpgTimer
                 String view = "";
                 if (EpgAutoAddInfo != null)
                 {
-                    view = EpgAutoAddInfo.searchInfo.andKey.Substring(EpgAutoAddInfo.searchInfo.andKey.StartsWith("^!{999}") ? 7 : 0);
-                    view = view.Substring(view.StartsWith("C!{999}") ? 7 : 0);
+                    view = EpgAutoAddInfo.searchInfo.andKey;
                 }
                 return view;
             }
@@ -417,19 +416,9 @@ namespace EpgTimer
         {
             get
             {
-                String view = "";
-                if (EpgAutoAddInfo != null)
-                {
-                    if (EpgAutoAddInfo.searchInfo.andKey.StartsWith("^!{999}"))
-                    {
-                        view = "いいえ";
-                    }
-                    else
-                    {
-                        view = "はい";
-                    }
-                }
-                return view;
+                if (EpgAutoAddInfo == null) return "";
+                //
+                return (EpgAutoAddInfo.searchInfo.keyDisabledFlag == 1 ? "いいえ" : "はい");
             }
         }
 
@@ -440,7 +429,7 @@ namespace EpgTimer
                 SolidColorBrush color = CommonManager.Instance.ListDefForeColor;
                 if (EpgAutoAddInfo != null)
                 {
-                    if (EpgAutoAddInfo.searchInfo.andKey.StartsWith("^!{999}"))
+                    if (EpgAutoAddInfo.searchInfo.keyDisabledFlag == 1)
                     {
                         color = CommonManager.Instance.EventItemForeColor(5);
                     }
@@ -456,7 +445,7 @@ namespace EpgTimer
                 SolidColorBrush color = CommonManager.Instance.ResDefBackColor;
                 if (EpgAutoAddInfo != null)
                 {
-                    if (EpgAutoAddInfo.searchInfo.andKey.StartsWith("^!{999}"))
+                    if (EpgAutoAddInfo.searchInfo.keyDisabledFlag == 1)
                     {
                         color = CommonManager.Instance.ResNoBackColor;
                     }

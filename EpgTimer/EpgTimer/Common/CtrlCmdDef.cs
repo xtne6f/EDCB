@@ -1040,6 +1040,14 @@ namespace EpgTimer
         public ushort chkDurationMin;
         /// <summary>最大番組長(分/0は無制限)</summary>
         public ushort chkDurationMax;
+
+        //以下は、EpgTimerSrv側ではandKeyへの装飾で処理しているので、ここで吸収する。
+        //ほかのフラグに合わせ、byte型にしておく。
+        /// <summary>大文字小文字を区別する</summary>
+        public byte caseFlag;
+        /// <summary>自動登録を無効にする</summary>
+        public byte keyDisabledFlag;
+
         public EpgSearchKeyInfo()
         {
             andKey = "";
@@ -1060,12 +1068,18 @@ namespace EpgTimer
             chkRecNoService = 0;
             chkDurationMin = 0;
             chkDurationMax = 0;
+            caseFlag = 0;
+            keyDisabledFlag = 0;
         }
         public void Write(MemoryStream s, ushort version)
         {
+            //andKey装飾のフラグをここで処理
+            string andKey_Send = (caseFlag == 1 ? "C!{999}" : "") + andKey;
+            andKey_Send = (keyDisabledFlag == 1 ? "^!{999}" : "") + andKey_Send;
+
             var w = new CtrlCmdWriter(s, version);
             w.Begin();
-            w.Write(andKey);
+            w.Write(andKey_Send);
             w.Write(notKey);
             w.Write(regExpFlag);
             w.Write(titleOnlyFlag);
@@ -1120,6 +1134,18 @@ namespace EpgTimer
                 r.Read(ref chkDurationMax);
             }
             r.End();
+
+            //andKey装飾のフラグをここで処理
+            if (andKey.StartsWith("^!{999}") == true)//"^!{999}"が前
+            {
+                keyDisabledFlag = 1;
+                andKey = andKey.Substring(7);
+            }
+            if (andKey.StartsWith("C!{999}") == true)
+            {
+                caseFlag = 1;
+                andKey = andKey.Substring(7);
+            }
         }
     }
 
