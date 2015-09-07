@@ -883,8 +883,10 @@ namespace EpgTimer
                 dlg.Owner = (Window)PresentationSource.FromVisual(Owner).RootVisual;
                 dlg.SetViewMode(SearchWindow.SearchMode.NewAdd);
 
-                var key = new EpgSearchKeyInfo();
+                EpgSearchKeyInfo key = Settings.Instance.DefSearchKey.Clone();
                 key.andKey = TrimEpgKeyword(Title, NotToggle);
+                key.regExpFlag = 0;
+                key.serviceList.Clear();
                 key.serviceList.Add((Int64)sidKey);
 
                 dlg.SetSearchDefKey(key);
