@@ -8,10 +8,6 @@
 
 #include "../../Common/TimeUtil.h"
 
-#ifdef _DEBUG
-#define new DEBUG_NEW
-#endif
-
 
 // CEpgDataCap_BonDlg ダイアログ
 

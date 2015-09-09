@@ -8,10 +8,6 @@
 
 #include "CmdLineUtil.h"
 
-#ifdef _DEBUG
-#define new DEBUG_NEW
-#endif
-
 #ifndef SUPPRESS_OUTPUT_STACK_TRACE
 // 例外によってアプリケーションが終了する直前にスタックトレースを"実行ファイル名.exe.err"に出力する
 // デバッグ情報(.pdbファイル)が存在すれば出力はより詳細になる
