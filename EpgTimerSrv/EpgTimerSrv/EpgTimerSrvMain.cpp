@@ -635,9 +635,6 @@ bool CEpgTimerSrvMain::IsSuspendOK()
 	bool ngFileStreaming_;
 	{
 		CBlockLock lock(&this->settingLock);
-		if( IsFindNoSuspendExe() || IsFindShareTSFile() ){
-			return false;
-		}
 		//rebootFlag時の復帰マージンを基準に3分余裕を加えたものと抑制条件のどちらか大きいほう
 		marginSec = max(this->wakeMarginSec + 300 + 180, this->noStandbySec);
 		ngFileStreaming_ = this->ngFileStreaming;
@@ -646,7 +643,9 @@ bool CEpgTimerSrvMain::IsSuspendOK()
 	//シャットダウン可能で復帰が間に合うときだけ
 	return (ngFileStreaming_ == false || this->streamingManager.IsStreaming() == FALSE) &&
 	       this->reserveManager.IsActive() == false &&
-	       this->reserveManager.GetSleepReturnTime(now) > now + marginSec * I64_1SEC;
+	       this->reserveManager.GetSleepReturnTime(now) > now + marginSec * I64_1SEC &&
+	       IsFindNoSuspendExe() == false &&
+	       IsFindShareTSFile() == false;
 }
 
 void CEpgTimerSrvMain::ReloadNetworkSetting()
