@@ -47,24 +47,20 @@ Windows SDK 7.1のISOイメージ"GRMSDK_EN_DVD.iso"を7-zipなどで展開し、さらに"Setup
 
 [ビルド]
 
-1.（Expressでビルドする場合のみ）"Document\afxres_h_copy.bat"を実行
-
-2."Document\EDCB_ALL.VS2015.sln"を開き、ツールバーを[Release][Win32]にしてビルド→ソリューションのビルド
+1."Document\EDCB_ALL.VS2015.sln"を開き、ツールバーを[Release][Win32]にしてビルド→ソリューションのビルド
 
 （注意）
 WindowsXPで実行可能なファイルを作りたいときは、EpgTimerを除く全プロジェクトの
 構成プロパティ→プラットフォームツールセットを"v140_xp"に切り替える必要がある
 （ソリューションエクスプローラ―上でCtrl+マウス選択を駆使すればまとめて切り替えられる）
 
-3.（EpgTimerNWが必要な場合のみ）生成された"EpgTimer.exe"を"EpgTimerNW.exe"というファイル名でコピー
+2.（EpgTimerNWが必要な場合のみ）生成された"EpgTimer.exe"を"EpgTimerNW.exe"というファイル名でコピー
 
 
 [ビルド(VisualStudio2010)]
 
-1.（Expressでビルドする場合のみ）"Document\afxres_h_copy.bat"を実行
+1."Document\EDCB_VCALL.sln"を開き、ツールバーを[Release][Win32]にしてビルド→ソリューションのビルド
 
-2."Document\EDCB_VCALL.sln"を開き、ツールバーを[Release][Win32]にしてビルド→ソリューションのビルド
+2."EpgTimer\EpgTimer.sln"を 右クリック→プログラムから開く→C# 2010 Express で開き、ツール(T)→設定→上級者設定にチェック、[Release][x86]にしてビルド
 
-3."EpgTimer\EpgTimer.sln"を 右クリック→プログラムから開く→C# 2010 Express で開き、ツール(T)→設定→上級者設定にチェック、[Release][x86]にしてビルド
-
-4.（EpgTimerNWが必要な場合のみ）生成された"EpgTimer.exe"を"EpgTimerNW.exe"というファイル名でコピー
+3.（EpgTimerNWが必要な場合のみ）生成された"EpgTimer.exe"を"EpgTimerNW.exe"というファイル名でコピー
