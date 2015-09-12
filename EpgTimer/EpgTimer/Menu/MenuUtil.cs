@@ -505,6 +505,12 @@ namespace EpgTimer
                 {
                     infoList.ForEach(info =>
                     {
+                        if (info.UseMargineFlag == 0)
+                        {
+                            info.StartMargine = GetMargin(info, true);
+                            info.EndMargine = GetMargin(info, false);
+                        }
+
                         info.UseMargineFlag = 1;
                         if (start == true)
                         {
