@@ -482,7 +482,7 @@ namespace EpgTimer
             if (CmdExeUtil.IsMessageBeforeCommand(e) == false) return false;
 
             return (MessageBox.Show(string.Format(
-                "全て削除しますか?\r\n" + "[削除アイテム数: {0}]", Count)
+                "全て削除しますか?\r\n" + "[削除項目数: {0}]", Count)
                 , "[全削除]の確認", MessageBoxButton.OKCancel, MessageBoxImage.Exclamation, MessageBoxResult.OK) != MessageBoxResult.OK);
         }
         public static bool CheckKeyboardDeleteCancel(ExecutedRoutedEventArgs e, List<string> list)
@@ -492,9 +492,9 @@ namespace EpgTimer
 
             int DisplayNum = Settings.Instance.KeyDeleteDisplayItemNum;
             var text = new StringBuilder(string.Format("削除しますか?\r\n\r\n"
-                + "[削除アイテム数: {0}]\r\n\r\n", list.Count));
+                + "[削除項目数: {0}]\r\n\r\n", list.Count));
             foreach (var info in list.Take(DisplayNum)) { text.AppendFormat(" ・ {0}\r\n", info); }
-            if (list.Count > DisplayNum) text.AppendFormat("\r\n　　ほか {0} アイテム", list.Count - DisplayNum);
+            if (list.Count > DisplayNum) text.AppendFormat("\r\n　　ほか {0} 項目", list.Count - DisplayNum);
 
             return (MessageBox.Show(text.ToString(), "削除の確認", MessageBoxButton.OKCancel,
                 MessageBoxImage.Exclamation, MessageBoxResult.OK) != MessageBoxResult.OK);

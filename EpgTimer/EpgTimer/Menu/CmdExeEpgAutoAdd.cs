@@ -68,10 +68,10 @@ namespace EpgTimer
                 var text = new StringBuilder(
                     string.Format("予約項目ごと削除してよろしいですか?\r\n"
                                 + "(無効の「自動予約登録項目」による予約も削除されます。)\r\n\r\n"
-                                + "[削除アイテム数: {0}]\r\n[削除される予約数: {1}]\r\n\r\n"
+                                + "[削除項目数: {0}]\r\n[削除される予約数: {1}]\r\n\r\n"
                                 , dataList.Count, delList.Count));
                 foreach (var info in dataList.Take(DisplayNum)) { text.AppendFormat(" ・ {0}\r\n", new EpgAutoDataItem(info).AndKey); }
-                if (dataList.Count > DisplayNum) text.AppendFormat("\r\n　　ほか {0} アイテム", dataList.Count - DisplayNum);
+                if (dataList.Count > DisplayNum) text.AppendFormat("\r\n　　ほか {0} 項目", dataList.Count - DisplayNum);
 
                 if (MessageBox.Show(text.ToString(), "[予約ごと削除]の確認", MessageBoxButton.OKCancel,
                                     MessageBoxImage.Exclamation, MessageBoxResult.OK) != MessageBoxResult.OK)
@@ -135,9 +135,9 @@ namespace EpgTimer
             {
                 int DisplayNum = Settings.Instance.KeyDeleteDisplayItemNum;
                 var text = new StringBuilder(string.Format("Notキーを変更してよろしいですか?\r\n\r\n"
-                    + "[変更アイテム数: {0}]\r\n[貼り付けテキスト: \"{1}\"]\r\n\r\n", dataList.Count, Clipboard.GetText()));
+                    + "[変更項目数: {0}]\r\n[貼り付けテキスト: \"{1}\"]\r\n\r\n", dataList.Count, Clipboard.GetText()));
                 foreach (var info in dataList.Take(DisplayNum)) { text.AppendFormat(" ・ {0}\r\n", new EpgAutoDataItem(info).AndKey); }
-                if (dataList.Count > DisplayNum) text.AppendFormat("\r\n　　ほか {0} アイテム", dataList.Count - DisplayNum);
+                if (dataList.Count > DisplayNum) text.AppendFormat("\r\n　　ほか {0} 項目", dataList.Count - DisplayNum);
 
                 if (MessageBox.Show(text.ToString(), "[Notキーワード変更]の確認", MessageBoxButton.OKCancel,
                                     MessageBoxImage.Exclamation, MessageBoxResult.OK) != MessageBoxResult.OK)

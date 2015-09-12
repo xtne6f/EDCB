@@ -123,9 +123,9 @@
                     <CheckBox Content="EpgTimerSrvを常駐させる" Height="16" HorizontalAlignment="Left" Margin="6,225,0,0" Name="checkBox_srvResident" VerticalAlignment="Top" />
                     <CheckBox Content="タスクトレイアイコンを表示する" Height="16" HorizontalAlignment="Left" Margin="24,247,0,0" Name="checkBox_srvShowTray" VerticalAlignment="Top" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_srvResident, UpdateSourceTrigger=PropertyChanged}" />
                     <CheckBox Content="バルーンチップでの動作通知を抑制する" Height="16" HorizontalAlignment="Left" Margin="24,269,0,0" Name="checkBox_srvNoBalloonTip" VerticalAlignment="Top" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_srvResident, UpdateSourceTrigger=PropertyChanged}" />
-                    <CheckBox Content="多数の予約項目を処理するとき警告する" Height="16" HorizontalAlignment="Left" Margin="6,299,0,0" Name="checkBox_cautionManyChange" VerticalAlignment="Top" />
-                    <Label Content="以上" Height="28" HorizontalAlignment="Right" Margin="0,293,415,0" Name="label_cautionManyChange" VerticalAlignment="Top" />
-                    <TextBox Height="24" HorizontalAlignment="Left" Margin="236,293,0,0" Name="textBox_cautionManyChange" VerticalAlignment="Top" Width="62" />
+                    <CheckBox Content="多数の項目を処理するとき警告する" Height="16" HorizontalAlignment="Left" Margin="6,299,0,0" Name="checkBox_cautionManyChange" VerticalAlignment="Top" />
+                    <Label Content="以上" Height="28" Margin="300,293,0,0" Name="label_cautionManyChange" VerticalAlignment="Top" HorizontalAlignment="Left" Width="34" />
+                    <TextBox Height="24" HorizontalAlignment="Left" Margin="212,293,0,0" Name="textBox_cautionManyChange" VerticalAlignment="Top" Width="62" />
                     <Button Content="右クリックメニューの設定" Height="23" HorizontalAlignment="Left" Margin="6,327,0,0" Name="button_set_cm" Click="button_set_cm_Click" VerticalAlignment="Top" Width="171" />
                 </Grid>
             </TabItem>
