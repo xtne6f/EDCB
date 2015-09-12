@@ -140,5 +140,15 @@ namespace EpgTimer
                 }
             }
         }
+        //リストのチェックボックスからの呼び出し
+        public bool ChgKeyEnabledFromCheckbox(EpgAutoDataItem hitItem)
+        {
+            if (listView_key.SelectedItems.Contains(hitItem) == true)
+            {
+                EpgCmds.ChgOnOffKeyEnabled.Execute(listView_key, this);
+                return true;
+            }
+            return false;
+        }
     }
 }

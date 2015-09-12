@@ -99,7 +99,7 @@ namespace EpgTimer
             }
         }
         //リストのカギマークからの呼び出し
-        public bool ChgProtectRecInfoForMark(RecInfoItem hitItem)
+        public bool ChgProtectRecInfoFromCheckbox(RecInfoItem hitItem)
         {
             if (listView_recinfo.SelectedItems.Contains(hitItem) == true)
             {

@@ -52,7 +52,7 @@
                         <MenuItem Header="予約数" Name="ReserveCount" IsCheckable="True" />
                         <MenuItem Header="有効予約数" Name="OnCount" IsCheckable="True" />
                         <MenuItem Header="無効予約数" Name="OffCount" IsCheckable="True" />
-                        <MenuItem Header="有効" Name="KeyEnabled" IsCheckable="True" />
+                        <MenuItem Header="有効/無効" Name="KeyEnabled" IsCheckable="True" />
                     </ContextMenu>
                     <ContextMenu x:Key="itemMenu" />
                     <!-- MenuManagerからメニューを展開する -->
@@ -169,10 +169,15 @@
                                 <GridViewColumnHeader Content="無効予約数" Tag="OffCount" HorizontalContentAlignment="Left" />
                             </GridViewColumn.Header>
                         </GridViewColumn>
-                        <GridViewColumn DisplayMemberBinding="{Binding Path=KeyEnabled}">
+                        <GridViewColumn>
                             <GridViewColumn.Header>
                                 <GridViewColumnHeader Content="有効" Tag="KeyEnabled" HorizontalContentAlignment="Left" />
                             </GridViewColumn.Header>
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <CheckBox IsChecked="{Binding Path=KeyEnabled}" />
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
                         </GridViewColumn>
                     </GridView>
                 </ListView.View>

@@ -97,5 +97,15 @@ namespace EpgTimer
             //DoubleClickのジェスチャうまく反応してくれない‥。
             EpgCmds.ShowDialog.Execute(sender, this);
         }
+        //リストのチェックボックスからの呼び出し
+        public bool ChgOnOffFromCheckbox(ReserveItem hitItem)
+        {
+            if (listView_reserve.SelectedItems.Contains(hitItem) == true)
+            {
+                EpgCmds.ChgOnOff.Execute(listView_reserve, this);
+                return true;
+            }
+            return false;
+        }
     }
 }

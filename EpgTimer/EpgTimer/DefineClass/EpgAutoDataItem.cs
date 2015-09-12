@@ -412,13 +412,28 @@ namespace EpgTimer
             }
         }
 
-        public String KeyEnabled
+        public bool KeyEnabled
         {
+            set
+            {
+                //選択されている場合、複数選択時に1回の通信で処理するため、処理を割り込ませる。
+                MainWindow mainWindow = (MainWindow)Application.Current.MainWindow;
+                if (mainWindow.autoAddView.epgAutoAddView.ChgKeyEnabledFromCheckbox(this) == true) return;
+
+                //通常(単独)の処理
+                if (EpgAutoAddInfo != null)
+                {
+                    if ((this.EpgAutoAddInfo.searchInfo.keyDisabledFlag != 1) != value)
+                    {
+                        mutil.EpgAutoAddChangeOnOffKeyEnabled(mutil.ToList(this.EpgAutoAddInfo));
+                    }
+                }
+            }
             get
             {
-                if (EpgAutoAddInfo == null) return "";
+                if (EpgAutoAddInfo == null) return false;
                 //
-                return (EpgAutoAddInfo.searchInfo.keyDisabledFlag == 1 ? "いいえ" : "はい");
+                return EpgAutoAddInfo.searchInfo.keyDisabledFlag != 1;
             }
         }
 

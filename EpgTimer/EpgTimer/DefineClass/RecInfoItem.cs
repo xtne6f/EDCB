@@ -33,6 +33,11 @@ namespace EpgTimer
         {
             set
             {
+                //選択されている場合、複数選択時に1回の通信で処理するため、処理を割り込ませる。
+                MainWindow mainWindow = (MainWindow)Application.Current.MainWindow;
+                if (mainWindow.recInfoView.ChgProtectRecInfoFromCheckbox(this) == true) return;
+
+                //通常(単独)の処理
                 if (RecInfo != null)
                 {
                     if (this.RecInfo.ProtectFlag != Convert.ToByte(value))
@@ -43,26 +48,9 @@ namespace EpgTimer
             }
             get
             {
-                bool chk = false;
-                if (RecInfo != null)
-                {
-                    chk = RecInfo.ProtectFlag != 0;
-                }
-                return chk;
-            }
-        }
-        public bool IsProtect_InfoView
-        {
-            set
-            {
-                //1回の通信で実施する。
-                MainWindow mainWindow = (MainWindow)Application.Current.MainWindow;
-                if (mainWindow.recInfoView.ChgProtectRecInfoForMark(this) == true) return;
-                IsProtect = value;
-            }
-            get
-            {
-                return IsProtect;
+                if (RecInfo == null) return false;
+                //
+                return  RecInfo.ProtectFlag != 0;
             }
         }
         public String EventName
