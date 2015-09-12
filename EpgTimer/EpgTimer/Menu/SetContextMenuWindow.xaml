@@ -15,6 +15,7 @@
                             <CheckBox Margin="6,0,0,0" Content="簡易予約/予約←→無効" />
                             <CheckBox Margin="6,0,0,0" Content="削除" />
                             <CheckBox Margin="6,0,0,0" Content="予約ごと削除" />
+                            <CheckBox Margin="6,0,0,0" Content="予約のみ削除" />
                             <CheckBox Margin="6,0,0,0" Content="プロテクト←→解除" />
                             <CheckBox Margin="6,0,0,0" Content="プログラム予約/自動登録追加" />
                             <Separator Margin="12,0,12,0" Height="10" />
@@ -40,7 +41,8 @@
                             <Separator Height="10" />
                             <CheckBox Margin="6,0,0,0" Visibility="Hidden"/>
                             <CheckBox Margin="6,0,0,0" Visibility="Hidden"/>
-                            <CheckBox Margin="6,0,0,0" Content="確認メッセージを表示しない" Name="checkBox_NoMessageDelete2"/>
+                            <CheckBox Margin="6,0,0,0" Content="確認メッセージを表示しない" Name="checkBox_NoMessageDelete2" Checked="checkBox_NoMessageDelete2_ValueChanged" Unchecked="checkBox_NoMessageDelete2_ValueChanged" />
+                            <CheckBox Margin="6,0,0,0" Content="(予約ごと削除と共通)" IsEnabled="false" Name="checkBox_NoMessageDelete3"/>
                             <CheckBox Margin="6,0,0,0" Visibility="Hidden"/>
                             <CheckBox Margin="6,0,0,0" Visibility="Hidden"/>
                             <Separator Margin="12,0,12,0" Height="10" />

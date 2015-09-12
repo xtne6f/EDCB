@@ -33,6 +33,7 @@ namespace EpgTimer
             new List<ICommand>{EpgCmds.ChgOnOff},
             new List<ICommand>{EpgCmds.Delete},
             new List<ICommand>{EpgCmds.Delete2},
+            new List<ICommand>{EpgCmds.Delete3},
             new List<ICommand>{EpgCmds.ProtectChange},
             new List<ICommand>{EpgCmds.ShowAddDialog},
 
@@ -287,6 +288,11 @@ namespace EpgTimer
         {
             checkBox_EpgKeyword_Trim2.IsChecked = checkBox_EpgKeyword_Trim.IsChecked;
             checkBox_EpgKeyword_Trim3.IsChecked = checkBox_EpgKeyword_Trim.IsChecked;
+        }
+
+        private void checkBox_NoMessageDelete2_ValueChanged(object sender, RoutedEventArgs e)
+        {
+            checkBox_NoMessageDelete3.IsChecked = checkBox_NoMessageDelete2.IsChecked;
         }
 
         private void button_allDefault_Click(object sender, RoutedEventArgs e)

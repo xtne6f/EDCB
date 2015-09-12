@@ -52,37 +52,50 @@ namespace EpgTimer
         }
         protected override void mc_Delete2(object sender, ExecutedRoutedEventArgs e)
         {
+            IsCommandExecuted = mcs_Delete2_3(sender, e, true);
+        }
+        protected override void mc_Delete3(object sender, ExecutedRoutedEventArgs e)
+        {
+            IsCommandExecuted = mcs_Delete2_3(sender, e, false);
+        }
+        protected bool mcs_Delete2_3(object sender, ExecutedRoutedEventArgs e, bool deleteAutoAddItem)
+        {
             var delList = new List<ReserveData>();
 
             if (CmdExeUtil.IsMessageBeforeCommand(e) == true)
             {
+                string msg1 = deleteAutoAddItem == true ? "予約ごと削除" : "予約のみ削除";
+                string msg2 = deleteAutoAddItem == true ? "削除項目数" : "処理項目数";
+
                 dataList.ForEach(info => delList.AddRange(info.GetReserveList()));
                 delList = delList.Distinct().ToList();
                 int DisplayNum = Settings.Instance.KeyDeleteDisplayItemNum;
 
                 var text = new StringBuilder(
-                    string.Format("予約項目ごと削除してよろしいですか?\r\n\r\n"
-                                + "[削除項目数: {0}]\r\n[削除される予約数: {1}]\r\n\r\n"
+                    string.Format(msg1 + "してよろしいですか?\r\n\r\n"
+                                + "[" + msg2 + ": {0}]\r\n[削除される予約数: {1}]\r\n\r\n"
                                 , dataList.Count, delList.Count));
                 foreach (var info in dataList.Take(DisplayNum)) { text.AppendFormat(" ・ {0}\r\n", info.title); }
                 if (dataList.Count > DisplayNum) text.AppendFormat("\r\n　　ほか {0} 項目", dataList.Count - DisplayNum);
 
-                if (MessageBox.Show(text.ToString(), "[予約ごと削除]の確認", MessageBoxButton.OKCancel,
+                if (MessageBox.Show(text.ToString(), "[" + msg1 + "]の確認", MessageBoxButton.OKCancel,
                                     MessageBoxImage.Exclamation, MessageBoxResult.OK) != MessageBoxResult.OK)
-                { return; }
+                { return false; }
             }
 
-            //EpgTimerSrvでの自動予約登録の実行タイミングに左右されず確実に予約を削除するため、
-            //先に自動予約登録項目を削除する。
-
-            if (mutil.ManualAutoAddDelete(dataList) == false) return;
+            if (deleteAutoAddItem == true)
+            {
+                //EpgTimerSrvでの自動予約登録の実行タイミングに左右されず確実に予約を削除するため、
+                //先に自動予約登録項目を削除する。
+                if (mutil.ManualAutoAddDelete(dataList) == false) return false;
+            }
 
             //配下の予約の削除、一応再度収集する
             delList.Clear();
             dataList.ForEach(info => delList.AddRange(info.GetReserveList()));
             delList = delList.Distinct().ToList();
 
-            IsCommandExecuted = mutil.ReserveDelete(delList);
+            return mutil.ReserveDelete(delList);
         }
         protected override void mc_CopyTitle(object sender, ExecutedRoutedEventArgs e)
         {

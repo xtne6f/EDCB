@@ -60,6 +60,7 @@ namespace EpgTimer
             EpgCmds.ChgOnOff.Text = "簡易予約/予約←→無効";
             EpgCmds.Delete.Text = "削除";
             EpgCmds.Delete2.Text = "予約ごと削除";
+            EpgCmds.Delete3.Text = "予約のみ削除";
             EpgCmds.DeleteAll.Text = "全て削除";
             EpgCmds.ShowDialog.Text = "変更/ダイアログ表示";
             EpgCmds.JumpTable.Text = "番組表へジャンプ";
@@ -98,6 +99,7 @@ namespace EpgTimer
             AddCommand(EpgCmds.ChgGenre, isEnable: false, isSave: false);
             AddCommand(EpgCmds.Delete, Key.D, ModifierKeys.Control, Key.Delete);
             AddCommand(EpgCmds.Delete2, Key.D, ModifierKeys.Control | ModifierKeys.Shift);
+            AddCommand(EpgCmds.Delete3, Key.D, ModifierKeys.Control | ModifierKeys.Alt, isEnable: false);
             AddCommand(EpgCmds.DeleteAll, Key.D, ModifierKeys.Control | ModifierKeys.Alt, spc: GestureTrg.ToView);
             AddCommand(EpgCmds.ShowDialog, Key.Enter, gesNeedMenu: false);//doubleclickは上手く入らないので省略
             AddCommand(EpgCmds.JumpTable, Key.F3);
