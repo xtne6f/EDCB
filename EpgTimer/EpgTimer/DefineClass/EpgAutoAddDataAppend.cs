@@ -81,7 +81,7 @@ namespace EpgTimer
             {
                 if (searchItemList == null)
                 {
-                    this.searchItemList = new List<SearchItem>();
+                    RefreshData();
                 }
                 return searchItemList;
             }
