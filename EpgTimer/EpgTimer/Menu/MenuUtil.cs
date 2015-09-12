@@ -735,12 +735,64 @@ namespace EpgTimer
         {
             return ReserveCmdSend(itemlist, cmd.SendAddEpgAutoAdd, "EPG自動予約の追加");
         }
+        public bool EpgAutoAddChangeKeyEnabled(List<EpgAutoAddData> itemlist, byte value)
+        {
+            try
+            {
+                if (EpgAutoAddChangeKeyEnabledCautionMany(itemlist) == false) return false;
+
+                itemlist.ForEach(item => item.searchInfo.keyDisabledFlag = value);
+                return EpgAutoAddChange(itemlist, false);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                return false;
+            }
+        }
+        public bool EpgAutoAddChangeOnOffKeyEnabled(List<EpgAutoAddData> itemlist)
+        {
+            try
+            {
+                if (EpgAutoAddChangeKeyEnabledCautionMany(itemlist) == false) return false;
+
+                itemlist.ForEach(item => item.searchInfo.keyDisabledFlag = (byte)(item.searchInfo.keyDisabledFlag == 0 ? 1 : 0));
+                return EpgAutoAddChange(itemlist, false);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                return false;
+            }
+        }
+        public bool EpgAutoAddChangeKeyEnabledCautionMany(List<EpgAutoAddData> itemlist)
+        {
+            if (Settings.Instance.CautionManyChange == true)
+            {
+                long addReserveNum = itemlist.Where(item => item.searchInfo.keyDisabledFlag == 1)
+                    .Sum(item => item.SearchCount() - item.ReserveCount());
+                if (itemlist.Count >= Settings.Instance.CautionManyNum
+                    || addReserveNum >= Settings.Instance.CautionManyNum)
+                {
+                    if (MessageBox.Show("多数の項目を処理しようとしています。\r\n"
+                        + "または多数の予約が追加されます。\r\n"
+                        + "よろしいですか？\r\n\r\n"
+                        + "[項目数 : " + itemlist.Count + "]\r\n"
+                        + "[追加される予約数 : " + addReserveNum + "]\r\n"
+                        , "EPG自動予約の変更", MessageBoxButton.OKCancel) == MessageBoxResult.Cancel)
+                    {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
         public bool EpgAutoAddChangeNotKey(List<EpgAutoAddData> itemlist)
         {
             try
             {
                 itemlist.ForEach(item => item.searchInfo.notKey = Clipboard.GetText());
-                return ReserveCmdSend(itemlist, cmd.SendChgEpgAutoAdd, "EPG自動予約の変更");
+                return EpgAutoAddChange(itemlist);
             }
             catch (Exception ex)
             {

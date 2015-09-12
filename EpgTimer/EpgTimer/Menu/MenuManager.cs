@@ -68,6 +68,11 @@ namespace EpgTimer
             cm_AddMenu.Items.Add(new CtxmItemData("デフォルト", EpgCmds.AddOnPreset, 0));//仮
 
             //予約変更サブメニューの各サブメニュー
+            ////自動登録の有効/無効
+            var cm_ChgKeyEnabledMenu = new CtxmItemData("自動登録有効", EpgCmdsEx.ChgKeyEnabledMenu);
+            cm_ChgKeyEnabledMenu.Items.Add(new CtxmItemData("有効 (_0)", EpgCmds.ChgKeyEnabled, 0));
+            cm_ChgKeyEnabledMenu.Items.Add(new CtxmItemData("無効 (_1)", EpgCmds.ChgKeyEnabled, 1));
+
             ////プリセット変更 実行時、サブメニューにプリセットを展開する。
             var cm_ChgOnPresetMenu = new CtxmItemData("プリセットへ変更", EpgCmdsEx.ChgOnPresetMenu);
             cm_ChgOnPresetMenu.Items.Add(new CtxmItemData("デフォルト", EpgCmds.ChgOnPreset, 0));//仮
@@ -127,6 +132,7 @@ namespace EpgTimer
             //予約変更サブメニュー登録
             cm_ChangeMenu.Items.Add(new CtxmItemData("ダイアログ表示", cm_ShowDialog));
             cm_ChangeMenu.Items.Add(new CtxmItemData(cm_Separator));
+            cm_ChangeMenu.Items.Add(new CtxmItemData("自動登録有効", cm_ChgKeyEnabledMenu));
             cm_ChangeMenu.Items.Add(new CtxmItemData("プリセットへ変更", cm_ChgOnPresetMenu));
             cm_ChangeMenu.Items.Add(new CtxmItemData("まとめて録画設定を変更", EpgCmds.ChgBulkRecSet));
             cm_ChangeMenu.Items.Add(new CtxmItemData("まとめてジャンル絞り込みを変更", EpgCmds.ChgGenre));

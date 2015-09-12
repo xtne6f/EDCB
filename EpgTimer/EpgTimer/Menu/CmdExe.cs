@@ -91,6 +91,8 @@ namespace EpgTimer
             cmdList.Add(EpgCmds.ChgMarginStartValue, new cmdOption(mc_ChangeRecSetting, null, cmdExeType.MultiItem, true, changeDB: true));
             cmdList.Add(EpgCmds.ChgMarginEnd, new cmdOption(mc_ChangeRecSetting, null, cmdExeType.MultiItem, true, changeDB: true));
             cmdList.Add(EpgCmds.ChgMarginEndValue, new cmdOption(mc_ChangeRecSetting, null, cmdExeType.MultiItem, true, changeDB: true));
+            cmdList.Add(EpgCmds.ChgKeyEnabled, new cmdOption(mc_ChangeKeyEnabled, null, cmdExeType.MultiItem, true, changeDB: true));
+            cmdList.Add(EpgCmds.ChgOnOffKeyEnabled, new cmdOption(mc_ChangeOnOffKeyEnabled, null, cmdExeType.MultiItem, true, changeDB: true));
             cmdList.Add(EpgCmds.Delete, new cmdOption(mc_Delete, null, cmdExeType.MultiItem, changeDB: true));
             cmdList.Add(EpgCmds.Delete2, new cmdOption(mc_Delete2, null, cmdExeType.MultiItem, changeDB: true));
             cmdList.Add(EpgCmds.Delete3, new cmdOption(mc_Delete3, null, cmdExeType.MultiItem, changeDB: true));
@@ -251,6 +253,8 @@ namespace EpgTimer
         protected virtual void mc_ChangeRecSetting(object sender, ExecutedRoutedEventArgs e) { }
         protected virtual void mc_ChgBulkRecSet(object sender, ExecutedRoutedEventArgs e) { }
         protected virtual void mc_ChgGenre(object sender, ExecutedRoutedEventArgs e) { }
+        protected virtual void mc_ChangeKeyEnabled(object sender, ExecutedRoutedEventArgs e) { }
+        protected virtual void mc_ChangeOnOffKeyEnabled(object sender, ExecutedRoutedEventArgs e) { }
         protected virtual void mc_Delete(object sender, ExecutedRoutedEventArgs e) { }
         protected virtual void mc_Delete2(object sender, ExecutedRoutedEventArgs e) { }
         protected virtual void mc_Delete3(object sender, ExecutedRoutedEventArgs e) { }
@@ -400,7 +404,16 @@ namespace EpgTimer
             //選択アイテムが全て同じ設定の場合だけチェックを表示する
             foreach (var subMenu in menu.Items.OfType<MenuItem>())
             {
-                if (subMenu.Tag == EpgCmdsEx.ChgOnPresetMenu)
+                if (subMenu.Tag == EpgCmdsEx.ChgKeyEnabledMenu)
+                {
+                    if (view != CtxmCode.EpgAutoAddView)
+                    {
+                        subMenu.Visibility = Visibility.Collapsed;
+                        continue;
+                    }
+                    subMenu.Visibility = Visibility.Visible;
+                }
+                else if (subMenu.Tag == EpgCmdsEx.ChgOnPresetMenu)
                 {
                     mm.CtxmGenerateChgOnPresetItems(subMenu);
                 }
@@ -417,7 +430,6 @@ namespace EpgTimer
                         subMenu.Visibility = Visibility.Collapsed;
                         continue;
                     }
-
                     subMenu.Visibility = (recSettings.Count < 2 ? Visibility.Collapsed : Visibility.Visible);
                 }
                 else if (subMenu.Tag == EpgCmdsEx.ChgRecmodeMenu)

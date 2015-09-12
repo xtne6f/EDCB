@@ -26,6 +26,8 @@ namespace EpgTimer
         public static RoutedUICommand ChgMarginStartValue { get; private set; }
         public static RoutedUICommand ChgMarginEnd { get; private set; }
         public static RoutedUICommand ChgMarginEndValue { get; private set; }
+        public static RoutedUICommand ChgKeyEnabled { get; private set; }
+        public static RoutedUICommand ChgOnOffKeyEnabled { get; private set; }
         public static RoutedUICommand Delete { get; private set; }
         public static RoutedUICommand Delete2 { get; private set; }
         public static RoutedUICommand Delete3 { get; private set; }
@@ -74,6 +76,7 @@ namespace EpgTimer
         public static RoutedUICommand ChgTunerMenu { get; private set; }
         public static RoutedUICommand ChgMarginStartMenu { get; private set; }
         public static RoutedUICommand ChgMarginEndMenu { get; private set; }
+        public static RoutedUICommand ChgKeyEnabledMenu { get; private set; }
         public static RoutedUICommand ChgOnPresetMenu { get; private set; }
         public static RoutedUICommand OpenFolderMenu { get; private set; }
         public static RoutedUICommand ViewMenu { get; private set; }

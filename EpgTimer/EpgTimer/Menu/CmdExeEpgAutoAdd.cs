@@ -26,6 +26,14 @@ namespace EpgTimer
         {
             IsCommandExecuted = true == mutil.OpenAddEpgAutoAddDialog(Owner);
         }
+        protected override void mc_ChangeKeyEnabled(object sender, ExecutedRoutedEventArgs e)
+        {
+            IsCommandExecuted = mutil.EpgAutoAddChangeKeyEnabled(dataList, (byte)CmdExeUtil.ReadIdData(e, 0, 1));
+        }
+        protected override void mc_ChangeOnOffKeyEnabled(object sender, ExecutedRoutedEventArgs e)
+        {
+            IsCommandExecuted = mutil.EpgAutoAddChangeOnOffKeyEnabled(dataList);
+        }
         protected override void mc_ChangeRecSetting(object sender, ExecutedRoutedEventArgs e)
         {
             if (mcc_chgRecSetting(dataList.RecSettingList(), e, this.Owner) == false) return;
@@ -181,10 +189,30 @@ namespace EpgTimer
             if (menu.Tag == EpgCmdsEx.ChgMenu)
             {
                 mcs_chgMenuOpening(menu, dataList.RecSettingList(), false, false);
+                mcs_chgMenuOpening2(menu, dataList.RecSearchKeyList());
             }
             else if (menu.Tag == EpgCmdsEx.OpenFolderMenu)
             {
                 mm.CtxmGenerateOpenFolderItems(menu, this.itemCount == 0 ? null : dataList[0].recSetting);
+            }
+        }
+        protected void mcs_chgMenuOpening2(MenuItem menu, List<EpgSearchKeyInfo> keys)
+        {
+            if (menu.IsEnabled == false) return;
+
+            foreach (var subMenu in menu.Items.OfType<MenuItem>())
+            {
+                if (subMenu.Tag == EpgCmdsEx.ChgKeyEnabledMenu)
+                {
+                    byte value = keys.All(info => info.keyDisabledFlag == keys[0].keyDisabledFlag) ? keys[0].keyDisabledFlag : byte.MaxValue;
+                    subMenu.Header = string.Format("自動登録有効 : {0}", value == byte.MaxValue ? "*" : (value == 0 ? "有効" : "無効"));
+                    foreach (var item in subMenu.Items.OfType<MenuItem>())
+                    {
+                        //選択アイテムが全て同じ設定の場合だけチェックを表示する
+                        item.IsChecked = ((item.CommandParameter as EpgCmdParam).ID == value);
+                    }
+                    break;
+                }
             }
         }
     }

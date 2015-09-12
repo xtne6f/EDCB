@@ -181,7 +181,7 @@ namespace EpgTimer
                     cmdData.IsGestureEnabled = cmdSave.IsGestureEnabled;
                     cmdData.IsGesNeedMenu = cmdSave.IsGesNeedMenu;
 
-                    //入出力はキージェスチャだけなので、それだけ入れ替える。
+                    //入出力はキージェスチャだけなので、それだけ入れ替える。(キージェスチャ以外はそのまま)
                     var delList = cmdData.Gestures.OfType<KeyGesture>().ToList();
                     delList.ForEach(gs => cmdData.Gestures.Remove(gs));
                     cmdData.Gestures.AddRange(cmdSave.GetGestuers());
