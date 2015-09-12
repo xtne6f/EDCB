@@ -310,7 +310,7 @@ namespace EpgTimer
             }
             else if (e.Command == EpgCmds.ChgTuner)
             {
-                return mutil.ChangeTuner(infoList, (uint)CmdExeUtil.ReadIdData(e, 0, 0xFE));
+                return mutil.ChangeTuner(infoList, (uint)CmdExeUtil.ReadIdData(e, 0, int.MaxValue - 1));
             }
             else if (e.Command == EpgCmds.ChgMarginStart)
             {
