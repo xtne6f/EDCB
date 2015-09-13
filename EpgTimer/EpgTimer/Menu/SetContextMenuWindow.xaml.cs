@@ -34,6 +34,7 @@ namespace EpgTimer
             new List<ICommand>{EpgCmds.Delete},
             new List<ICommand>{EpgCmds.Delete2},
             new List<ICommand>{EpgCmds.Delete3},
+            new List<ICommand>{EpgCmds.AdjustReserve},
             new List<ICommand>{EpgCmds.ProtectChange},
             new List<ICommand>{EpgCmds.ShowAddDialog},
 
@@ -147,6 +148,7 @@ namespace EpgTimer
                 checkBox_NoMessageKeyGesture.IsChecked = info.NoMessageKeyGesture;
                 checkBox_NoMessageDeleteAll.IsChecked = info.NoMessageDeleteAll;
                 checkBox_NoMessageDelete2.IsChecked = info.NoMessageDelete2;
+                checkBox_NoMessageAdjustRes.IsChecked = info.NoMessageAdjustRes;
                 checkBox_EpgKeyword_Trim.IsChecked = info.Keyword_Trim;
                 checkBox_CopyTitle_Trim.IsChecked = info.CopyTitle_Trim;
                 checkBox_CopyContentBasic.IsChecked = info.CopyContentBasic;
@@ -211,6 +213,7 @@ namespace EpgTimer
                 info.NoMessageKeyGesture = (checkBox_NoMessageKeyGesture.IsChecked == true);
                 info.NoMessageDeleteAll = (checkBox_NoMessageDeleteAll.IsChecked == true);
                 info.NoMessageDelete2 = (checkBox_NoMessageDelete2.IsChecked == true);
+                info.NoMessageAdjustRes = (checkBox_NoMessageAdjustRes.IsChecked == true);
                 info.ManualMenuItems = editMenu.Clone();
                 info.Keyword_Trim = (checkBox_EpgKeyword_Trim.IsChecked == true);
                 info.CopyTitle_Trim = (checkBox_CopyTitle_Trim.IsChecked == true);

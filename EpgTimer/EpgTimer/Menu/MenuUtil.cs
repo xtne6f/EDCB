@@ -636,6 +636,82 @@ namespace EpgTimer
             }
         }
 
+        public bool ReserveAdjustChange(List<EpgAutoAddData> itemlist)
+        {
+            try
+            {
+                List<RecSettingData> recSettingList = itemlist.RecSettingList();
+                var keyList = new List<EpgSearchKeyInfo>(itemlist.RecSearchKeyList().Clone());
+                keyList.ForEach(key => key.keyDisabledFlag = 0); //無効解除
+
+                var list_list = new List<List<EpgEventInfo>>();
+                CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
+                cmd.SendSearchPgByKey(keyList, ref list_list);
+
+                //何か問題があるようなら飛ばす
+                if (recSettingList.Count != list_list.Count) return false;
+
+                CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.ReserveInfo);
+                CommonManager.Instance.DB.ReloadReserveInfo();
+
+                var rlist_list = new List<List<ReserveData>>();
+                list_list.ForEach(list =>
+                {
+                    var searchItemList = new List<SearchItem>();
+                    searchItemList.AddFromEventList(list, false, true);
+                    rlist_list.Add(searchItemList.ReserveInfoList());
+                });
+
+                return ReserveAdjustChange(recSettingList, rlist_list);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                return false;
+            }
+        }
+
+        public bool ReserveAdjustChange(List<ManualAutoAddData> itemlist)
+        {
+            try
+            {
+                List<RecSettingData> recSettingList = itemlist.RecSettingList();
+                var rlist_list = new List<List<ReserveData>>();
+                itemlist.ForEach(list => rlist_list.Add(list.GetReserveList()));
+
+                return ReserveAdjustChange(recSettingList, rlist_list);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                return false;
+            }
+        }
+
+        public bool ReserveAdjustChange(List<RecSettingData> recSettingList, List<List<ReserveData>> rlist_list)
+        {
+            var adjustList = new Dictionary<uint, ReserveData>();
+            for (int i = 0; i < recSettingList.Count; i++)
+            {
+                rlist_list[i].ForEach(resinfo =>
+                {
+                    if (adjustList.ContainsKey(resinfo.ReserveID) == false)
+                    {
+                        ReserveData rdata = resinfo.Clone();
+                        bool off = rdata.RecSetting.RecMode == 5;//無効は復元する
+                        rdata.RecSetting = recSettingList[i].Clone();
+                        if (off == true)
+                        {
+                            rdata.RecSetting.RecMode = 5;
+                        }
+                        adjustList.Add(rdata.ReserveID, rdata);
+                    }
+                });
+            }
+
+            return ReserveChange(adjustList.Values.ToList());
+        }
+
         public bool ReserveChange(List<ReserveData> itemlist, bool cautionMany = true)
         {
             return ReserveCmdSend(itemlist, cmd.SendChgReserve, "予約変更", cautionMany);

@@ -124,6 +124,7 @@ namespace EpgTimer
         public bool NoMessageKeyGesture { get; set; }
         public bool NoMessageDeleteAll { get; set; }
         public bool NoMessageDelete2 { get; set; }
+        public bool NoMessageAdjustRes { get; set; }
         public bool Keyword_Trim { get; set; }
         public bool CopyTitle_Trim { get; set; }
         public bool CopyContentBasic { get; set; }
@@ -139,6 +140,7 @@ namespace EpgTimer
             NoMessageKeyGesture = false;
             NoMessageDeleteAll = false;
             NoMessageDelete2 = false;
+            NoMessageAdjustRes = false;
             Keyword_Trim = true;
             CopyTitle_Trim = false;
             CopyContentBasic = false;
@@ -155,6 +157,7 @@ namespace EpgTimer
             dest.NoMessageKeyGesture = src.NoMessageKeyGesture;
             dest.NoMessageDeleteAll = src.NoMessageDeleteAll;
             dest.NoMessageDelete2 = src.NoMessageDelete2;
+            dest.NoMessageAdjustRes = src.NoMessageAdjustRes;
             dest.Keyword_Trim = src.Keyword_Trim;
             dest.CopyTitle_Trim = src.CopyTitle_Trim;
             dest.CopyContentBasic = src.CopyContentBasic;

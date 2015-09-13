@@ -95,6 +95,7 @@ namespace EpgTimer
             cmdList.Add(EpgCmds.Delete2, new cmdOption(mc_Delete2, null, cmdExeType.MultiItem, changeDB: true));
             cmdList.Add(EpgCmds.Delete3, new cmdOption(mc_Delete3, null, cmdExeType.MultiItem, changeDB: true));
             cmdList.Add(EpgCmds.DeleteAll, new cmdOption(mc_Delete, null, cmdExeType.AllItem, changeDB: true));
+            cmdList.Add(EpgCmds.AdjustReserve, new cmdOption(mc_AdjustReserve, null, cmdExeType.MultiItem, changeDB: true));
             cmdList.Add(EpgCmds.ShowDialog, new cmdOption(mc_ShowDialog, null, cmdExeType.SingleItem, changeDB: true));
             cmdList.Add(EpgCmds.ShowAddDialog, new cmdOption(mc_ShowAddDialog, null, cmdExeType.NoSetItem, false, false, true, changeDB: true));
             cmdList.Add(EpgCmds.JumpTable, new cmdOption(mc_JumpTable, null, cmdExeType.SingleItem));
@@ -253,6 +254,7 @@ namespace EpgTimer
         protected virtual void mc_Delete(object sender, ExecutedRoutedEventArgs e) { }
         protected virtual void mc_Delete2(object sender, ExecutedRoutedEventArgs e) { }
         protected virtual void mc_Delete3(object sender, ExecutedRoutedEventArgs e) { }
+        protected virtual void mc_AdjustReserve(object sender, ExecutedRoutedEventArgs e) { }
         protected virtual void mc_ShowDialog(object sender, ExecutedRoutedEventArgs e) { }
         protected virtual void mc_ShowAddDialog(object sender, ExecutedRoutedEventArgs e) { }
         protected virtual void mc_JumpTable(object sender, ExecutedRoutedEventArgs e) { }
@@ -509,6 +511,7 @@ namespace EpgTimer
             if (e.Command == EpgCmds.DeleteAll) NoMessage = Settings.Instance.MenuSet.NoMessageDeleteAll;
             else if (e.Command == EpgCmds.Delete2 || e.Command == EpgCmds.Delete3) NoMessage = Settings.Instance.MenuSet.NoMessageDelete2;
             else if (e.Command == EpgCmds.SetNotKey) NoMessage = Settings.Instance.MenuSet.NoMessageNotKEY;
+            else if (e.Command == EpgCmds.AdjustReserve) NoMessage = Settings.Instance.MenuSet.NoMessageAdjustRes;
 
             return NoMessage == false || IsDisplayKgMessage(e);
         }

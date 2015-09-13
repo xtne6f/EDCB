@@ -97,6 +97,28 @@ namespace EpgTimer
 
             return mutil.ReserveDelete(delList);
         }
+        protected override void mc_AdjustReserve(object sender, ExecutedRoutedEventArgs e)
+        {
+            if (CmdExeUtil.IsMessageBeforeCommand(e) == true)
+            {
+                var adjList = new List<ReserveData>();
+                dataList.ForEach(info => adjList.AddRange(info.GetReserveList()));
+                adjList = adjList.Distinct().ToList();
+                int DisplayNum = Settings.Instance.KeyDeleteDisplayItemNum;
+
+                var text = new StringBuilder(
+                    string.Format("予約の録画設定を自動登録の録画設定に合わせてもよろしいですか?\r\n\r\n"
+                                + "[処理項目数: {0}]\r\n[対象予約数: {1}]\r\n\r\n"
+                                , dataList.Count, adjList.Count));
+                foreach (var info in dataList.Take(DisplayNum)) { text.AppendFormat(" ・ {0}\r\n", info.title); }
+                if (dataList.Count > DisplayNum) text.AppendFormat("\r\n　　ほか {0} 項目", dataList.Count - DisplayNum);
+
+                if (MessageBox.Show(text.ToString(), "[予約の録画設定変更]の確認", MessageBoxButton.OKCancel,
+                                    MessageBoxImage.Exclamation, MessageBoxResult.OK) != MessageBoxResult.OK)
+                { return; }
+            }
+            IsCommandExecuted = mutil.ReserveAdjustChange(dataList);
+        }
         protected override void mc_CopyTitle(object sender, ExecutedRoutedEventArgs e)
         {
             mutil.CopyTitle2Clipboard(dataList[0].title, CmdExeUtil.IsKeyGesture(e));
