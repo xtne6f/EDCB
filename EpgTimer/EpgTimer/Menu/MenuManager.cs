@@ -535,10 +535,10 @@ namespace EpgTimer
             foreach (var item in Settings.Instance.RecPresetList.Select((info, id) => new { info, id }))
             {
                 var menuItem = new MenuItem();
-                menuItem.Header = string.Format("プリセット - {0} (_{1})", item.info, item.id);
+                menuItem.Header = string.Format("プリセット - {0} (_{1})", item.info.DisplayName, item.id);
                 menuItem.Command = icmd;
                 menuItem.CommandParameter = new EpgCmdParam(menu.CommandParameter as EpgCmdParam);
-                (menuItem.CommandParameter as EpgCmdParam).ID = item.id;
+                (menuItem.CommandParameter as EpgCmdParam).ID = (int)item.info.ID;
                 menuItem.Tag = menuItem.Command;
                 menu.Items.Add(menuItem);
             }
