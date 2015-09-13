@@ -509,6 +509,10 @@ namespace EpgTimer
                         dlg.Owner = this;
                         dlg.SetViewMode(winMode == SearchMode.Change ? SearchMode.NewAdd : winMode);
                         dlg.SetSubWindow();
+                        if (Settings.Instance.MenuSet.CancelAutoAddOff == true)
+                        {
+                            defKey.keyDisabledFlag = 0;
+                        }
                         dlg.SetSearchDefKey(defKey);
                         dlg.SetRecInfoDef(setInfo);
                         //dlg.Left += 50;//なぜか動かせない‥

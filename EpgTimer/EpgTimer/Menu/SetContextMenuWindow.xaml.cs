@@ -149,6 +149,7 @@ namespace EpgTimer
                 checkBox_NoMessageDeleteAll.IsChecked = info.NoMessageDeleteAll;
                 checkBox_NoMessageDelete2.IsChecked = info.NoMessageDelete2;
                 checkBox_NoMessageAdjustRes.IsChecked = info.NoMessageAdjustRes;
+                checkBox_CancelAutoAddOff.IsChecked = info.CancelAutoAddOff;
                 checkBox_EpgKeyword_Trim.IsChecked = info.Keyword_Trim;
                 checkBox_CopyTitle_Trim.IsChecked = info.CopyTitle_Trim;
                 checkBox_CopyContentBasic.IsChecked = info.CopyContentBasic;
@@ -214,6 +215,7 @@ namespace EpgTimer
                 info.NoMessageDeleteAll = (checkBox_NoMessageDeleteAll.IsChecked == true);
                 info.NoMessageDelete2 = (checkBox_NoMessageDelete2.IsChecked == true);
                 info.NoMessageAdjustRes = (checkBox_NoMessageAdjustRes.IsChecked == true);
+                info.CancelAutoAddOff = (checkBox_CancelAutoAddOff.IsChecked == true);
                 info.ManualMenuItems = editMenu.Clone();
                 info.Keyword_Trim = (checkBox_EpgKeyword_Trim.IsChecked == true);
                 info.CopyTitle_Trim = (checkBox_CopyTitle_Trim.IsChecked == true);
@@ -285,12 +287,6 @@ namespace EpgTimer
             {
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
-        }
-
-        private void checkBox_EpgKeyword_Trim_ValueChanged(object sender, RoutedEventArgs e)
-        {
-            checkBox_EpgKeyword_Trim2.IsChecked = checkBox_EpgKeyword_Trim.IsChecked;
-            checkBox_EpgKeyword_Trim3.IsChecked = checkBox_EpgKeyword_Trim.IsChecked;
         }
 
         private void checkBox_NoMessageDelete2_ValueChanged(object sender, RoutedEventArgs e)

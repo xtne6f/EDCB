@@ -49,9 +49,9 @@
                             <CheckBox Margin="6,0,0,0" Visibility="Hidden"/>
                             <Separator Margin="12,0,12,0" Height="10" />
                             <CheckBox Margin="6,0,0,0" Visibility="Hidden"/>
-                            <CheckBox Margin="6,0,0,0" Content="記号類を取り除く" Name="checkBox_EpgKeyword_Trim" Checked="checkBox_EpgKeyword_Trim_ValueChanged" Unchecked="checkBox_EpgKeyword_Trim_ValueChanged" />
-                            <CheckBox Margin="6,0,0,0" Content="(自動予約登録と共通)" IsEnabled="false" Name="checkBox_EpgKeyword_Trim2" />
-                            <CheckBox Margin="6,0,0,0" Content="(　　〃　　)" IsEnabled="false" Name="checkBox_EpgKeyword_Trim3" />
+                            <CheckBox Margin="6,0,0,0" Content="記号類を取り除く" Name="checkBox_EpgKeyword_Trim" />
+                            <CheckBox Margin="6,0,0,0" Content="(↑再検索でも共通)" IsEnabled="false" Name="checkBox_EpgKeyword_Trim2" />
+                            <CheckBox Margin="6,0,0,0" Content="自動登録無効を解除する" Name="checkBox_CancelAutoAddOff" />
                             <CheckBox Margin="6,0,0,0" Visibility="Hidden"/>
                             <CheckBox Margin="6,0,0,0" Visibility="Hidden"/>
                             <Separator Margin="12,0,12,0" Height="10" />
