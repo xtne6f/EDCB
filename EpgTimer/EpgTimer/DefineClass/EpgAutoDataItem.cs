@@ -398,6 +398,16 @@ namespace EpgTimer
             }
         }
 
+        public String Preset
+        {
+            get
+            {
+                if (EpgAutoAddInfo == null) return "";
+                //
+                return EpgAutoAddInfo.recSetting.LookUpPreset().DisplayName;
+            }
+        }
+
         public List<String> RecFolder
         {
             get

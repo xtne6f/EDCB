@@ -591,11 +591,8 @@ namespace EpgTimer
                 Setting.SetDefRecSettingWindow dlg = new Setting.SetDefRecSettingWindow();
                 dlg.Owner = (Window)PresentationSource.FromVisual(owner).RootVisual;
                 dlg.SetSettingMode("まとめて変更");
-                dlg.recSettingView.SetDefSetting(infoList[0]);
-                if (pgAll == true)
-                {
-                    dlg.recSettingView.SetViewMode(false);
-                }
+                dlg.recSettingView.SetDefSetting(infoList[0], pgAll == true);
+                dlg.recSettingView.SetViewMode(pgAll != true);
 
                 if (dlg.ShowDialog() == false) return false;
 

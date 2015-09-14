@@ -38,6 +38,7 @@
                     <MenuItem Header="番組名" Name="EventName" IsCheckable="True" />
                     <MenuItem Header="番組内容" Name="ProgramContent" IsCheckable="True" />
                     <MenuItem Header="ジャンル" Name="JyanruKey" IsCheckable="True" />
+                    <MenuItem Header="プリセット" Name="Preset" IsCheckable="True" />
                     <MenuItem Header="有効/無効" Name="IsEnabled" IsCheckable="True" />
                     <MenuItem Header="録画モード" Name="RecMode" IsCheckable="True" />
                     <MenuItem Header="優先度" Name="Priority" IsCheckable="True" />
@@ -98,6 +99,11 @@
                     <GridViewColumn DisplayMemberBinding="{Binding Path=JyanruKey}">
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="ジャンル" Tag="JyanruKey" HorizontalContentAlignment="Left" />
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=Preset}">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="プリセット" Tag="Preset" HorizontalContentAlignment="Left" />
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn>

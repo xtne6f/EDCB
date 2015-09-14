@@ -272,9 +272,7 @@ namespace EpgTimer
                 {
                     comboBox_service.SelectedItem = ChSet5.Instance.ChList[key];
                 }
-                defKey.recSetting.PittariFlag = 0;
-                defKey.recSetting.TuijyuuFlag = 0;
-                recSettingView.SetDefSetting(defKey.recSetting);
+                recSettingView.SetDefSetting(defKey.recSetting, true);
             }
         }
 

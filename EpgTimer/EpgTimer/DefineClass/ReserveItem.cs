@@ -105,6 +105,15 @@ namespace EpgTimer
         }
         //public String ProgramContent -> SearchItem.cs
         //public String JyanruKey -> SearchItem.cs
+        public String Preset
+        {
+            get
+            {
+                if (ReserveInfo == null) return "";
+                //
+                return ReserveInfo.RecSetting.LookUpPreset(ReserveInfo.EventID == 0xFFFF).DisplayName;
+            }
+        }
         public bool IsEnabled
         {
             set

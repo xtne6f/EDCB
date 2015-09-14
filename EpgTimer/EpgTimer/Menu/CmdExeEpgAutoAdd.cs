@@ -147,7 +147,7 @@ namespace EpgTimer
         {
             if (menu.Tag == EpgCmdsEx.ChgMenu)
             {
-                mcs_chgMenuOpening(menu, dataList.RecSettingList(), false, false);
+                mcs_chgMenuOpening(menu, dataList.RecSettingList(), false);
                 mcs_chgMenuOpening2(menu, dataList.RecSearchKeyList());
             }
             else if (menu.Tag == EpgCmdsEx.OpenFolderMenu)

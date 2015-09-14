@@ -210,30 +210,27 @@ namespace EpgTimer
             }
         }
 
-        public void SetDefSetting(RecSettingData set)
+        //予約データがプリセットに該当するときに、プリセットではなく予約データを画面に読むようにするフラグ
+        bool loadDefSetting = false;
+        public void SetDefSetting(RecSettingData set, bool isDisplayManual = false)
         {
-            RecPresetItem preCust = null;
-
-            foreach (RecPresetItem item in comboBox_preSet.Items)
-            {
-                if (item.ID == 0xFFFFFFFF)
-                {
-                    preCust = item;
-                    break;
-                }
-            }
-
-            if (preCust == null)
-            {
-                preCust = new RecPresetItem();
-                preCust.DisplayName = "登録時";
-                preCust.ID = 0xFFFFFFFF;
-                comboBox_preSet.Items.Add(preCust);
-            }
-            comboBox_preSet.SelectedItem = preCust;
-
+            //バックアップ
             setDefSetting = set.Clone();
             recSetting = setDefSetting;
+
+            //"登録時"が無ければ追加
+            List<RecPresetItem> boxList = comboBox_preSet.Items.OfType<RecPresetItem>().ToList();
+            RecPresetItem preCust = boxList.FirstOrDefault(item => item.ID == 0xFFFFFFFF);
+            if (preCust == null)
+            {
+                preCust = new RecPresetItem("登録時", 0xFFFFFFFF);
+                comboBox_preSet.Items.Add(preCust);
+            }
+
+            //該当するものがあれば選択、無ければ"登録時"。一応特定条件下で齟齬が出ないように2回検索にしておく。
+            RecPresetItem preSelect = boxList.FirstOrDefault(item => item.ID == setDefSetting.LookUpPreset(isDisplayManual).ID);
+            loadDefSetting = true;
+            comboBox_preSet.SelectedItem = preSelect != null ? preSelect : preCust;
 
             UpdateView();
         }
@@ -358,7 +355,7 @@ namespace EpgTimer
                 if (comboBox_preSet.SelectedItem != null)
                 {
                     RecPresetItem item = comboBox_preSet.SelectedItem as RecPresetItem;
-                    if (item.ID == 0xFFFFFFFF)
+                    if (item.ID == 0xFFFFFFFF || loadDefSetting == true)
                     {
                         recSetting = setDefSetting;
                     }
@@ -376,6 +373,7 @@ namespace EpgTimer
             {
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
+            loadDefSetting = false;
         }
 
         private void UpdateView()

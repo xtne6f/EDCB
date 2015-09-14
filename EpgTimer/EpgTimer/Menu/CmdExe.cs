@@ -386,12 +386,12 @@ namespace EpgTimer
             ClearData();
         }
         protected virtual void mcs_ctxmLoading_switch(ContextMenu ctxm, MenuItem menu) { }
-        protected void mcs_chgMenuOpening(MenuItem menu, List<RecSettingData> recSettings, bool pg1 = false, bool pgAll = false)
+        protected void mcs_chgMenuOpening(MenuItem menu, List<RecSettingData> recSettings, bool pgAll = false, List<int> isManuals = null)
         {
             if (menu.IsEnabled == false) return;
 
             var view = (menu.CommandParameter as EpgCmdParam).Code;
-            pg1 |= pgAll;
+            if (isManuals != null) pgAll = recSettings.Count == isManuals.Sum();
 
             Action<MenuItem, int> SetCheckmarkSubMenus = (subMenu, value) =>
             {
@@ -416,12 +416,17 @@ namespace EpgTimer
                 else if (subMenu.Tag == EpgCmdsEx.ChgOnPresetMenu)
                 {
                     mm.CtxmGenerateChgOnPresetItems(subMenu);
+
+                    Func<int, bool> IsManual = (idx) => isManuals == null ? pgAll == true : isManuals[idx] == 1;
+                    RecPresetItem pre_0 = recSettings[0].LookUpPreset(IsManual(0));
+                    RecPresetItem value = recSettings.Select((info, i) => new { info, i })
+                        .All(data => data.info.LookUpPreset(IsManual(data.i)).ID == pre_0.ID) ? pre_0 : null;
+                    subMenu.Header = string.Format("プリセット : {0}", value == null ? "*" : value.DisplayName);
+                    SetCheckmarkSubMenus(subMenu, value == null ? int.MinValue : (int)value.ID);
                 }
                 else if (subMenu.Tag == EpgCmds.ChgBulkRecSet)
                 {
                     subMenu.Visibility = (recSettings.Count < 2 ? Visibility.Collapsed : Visibility.Visible);
-                    subMenu.ToolTip = (pg1 == true ?
-                        "プログラム予約は「イベントリレー追従」「ぴったり(？)録画」のオプションは設定対象外" : null);
                 }
                 else if (subMenu.Tag == EpgCmds.ChgGenre)
                 {
@@ -464,11 +469,10 @@ namespace EpgTimer
                         value = recSettings.All(info => info.PittariFlag == recSettings[0].PittariFlag) ? recSettings[0].PittariFlag : byte.MaxValue;
                         format = "ぴったり（？）録画 : {0}";
                     }
-                    value = (pg1 == true ? byte.MaxValue : value);
                     subMenu.Header = string.Format(format, value == byte.MaxValue ? "*" : CommonManager.Instance.YesNoDictionary[value].DisplayName);
                     SetCheckmarkSubMenus(subMenu, value);
-                    subMenu.ToolTip = (pg1 == true ? "プログラム予約は対象外" : null);
                     subMenu.IsEnabled = (pgAll == false);
+                    subMenu.ToolTip = (pgAll == true ? "プログラム予約は対象外" : null);
                 }
                 else if (subMenu.Tag == EpgCmdsEx.ChgTunerMenu)
                 {

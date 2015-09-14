@@ -91,7 +91,7 @@ namespace EpgTimer
         public void SetReserveInfo(ReserveData info)
         {
             reserveInfo = info.Clone();
-            recSettingView.SetDefSetting(reserveInfo.RecSetting);
+            recSettingView.SetDefSetting(reserveInfo.RecSetting, reserveInfo.EventID == 0xFFFF);
         }
 
         private void SetResModeProgram(bool mode)
@@ -355,9 +355,6 @@ namespace EpgTimer
                         reserveInfo.Comment = "";
                     }
                     reserveInfo.StartTimeEpg = reserveInfo.StartTime;
-
-                    setInfo.TuijyuuFlag = 0;
-                    setInfo.PittariFlag = 0;
                 }
                 else
                 {

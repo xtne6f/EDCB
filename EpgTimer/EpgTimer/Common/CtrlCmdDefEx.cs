@@ -101,7 +101,7 @@ namespace EpgTimer
             dest.OriginalNetworkID = src.OriginalNetworkID;
             dest.OverlapMode = src.OverlapMode;
             dest.RecFileNameList = src.RecFileNameList.ToList();
-            dest.RecSetting = src.RecSetting.Clone();
+            dest.RecSetting = src.RecSetting.Clone();               //RecSettingData
             dest.ReserveID = src.ReserveID;
             dest.ReserveStatus = src.ReserveStatus;
             dest.ServiceID = src.ServiceID;
@@ -121,11 +121,11 @@ namespace EpgTimer
             dest.ContinueRecFlag = src.ContinueRecFlag;
             dest.EndMargine = src.EndMargine;
             dest.PartialRecFlag = src.PartialRecFlag;
-            dest.PartialRecFolder = src.PartialRecFolder.Clone();
+            dest.PartialRecFolder = src.PartialRecFolder.Clone();   //RecFileSetInfo
             dest.PittariFlag = src.PittariFlag;
             dest.Priority = src.Priority;
             dest.RebootFlag = src.RebootFlag;
-            dest.RecFolderList = src.RecFolderList.Clone();
+            dest.RecFolderList = src.RecFolderList.Clone();         //RecFileSetInfo
             dest.RecMode = src.RecMode;
             dest.ServiceMode = src.ServiceMode;
             dest.StartMargine = src.StartMargine;
@@ -133,6 +133,49 @@ namespace EpgTimer
             dest.TuijyuuFlag = src.TuijyuuFlag;
             dest.TunerID = src.TunerID;
             dest.UseMargineFlag = src.UseMargineFlag;
+        }
+
+        public static bool EqualsTo(this IList<RecSettingData> src, IList<RecSettingData> dest) { return CopyObj.EqualsTo(src, dest, EqualsValue); }
+        public static bool EqualsTo(this RecSettingData src, RecSettingData dest) { return CopyObj.EqualsTo(src, dest, EqualsValue); }
+        public static bool EqualsValue(RecSettingData src, RecSettingData dest)
+        {
+            return src.BatFilePath == dest.BatFilePath
+                && src.ContinueRecFlag == dest.ContinueRecFlag
+                && src.EndMargine == dest.EndMargine
+                && src.PartialRecFlag == dest.PartialRecFlag
+                && src.PartialRecFolder.EqualsTo(dest.PartialRecFolder) //RecFileSetInfo
+                && src.PittariFlag == dest.PittariFlag
+                && src.Priority == dest.Priority
+                && src.RebootFlag == dest.RebootFlag
+                && src.RecFolderList.EqualsTo(dest.RecFolderList)       //RecFileSetInfo
+                && src.RecMode == dest.RecMode
+                && src.ServiceMode == dest.ServiceMode
+                && src.StartMargine == dest.StartMargine
+                && src.SuspendMode == dest.SuspendMode
+                && src.TuijyuuFlag == dest.TuijyuuFlag
+                && src.TunerID == dest.TunerID
+                && src.UseMargineFlag == dest.UseMargineFlag;
+        }
+
+        public static bool EqualsSettingTo(this RecSettingData src, RecSettingData dest, bool IsManual = false)
+        {
+            if (src == null || dest == null) return false;
+            return src.BatFilePath == dest.BatFilePath
+                && src.ContinueRecFlag == dest.ContinueRecFlag
+                && (src.EndMargine == dest.EndMargine || src.UseMargineFlag == 0)//マージンデフォルト時
+                && src.PartialRecFlag == dest.PartialRecFlag
+                && src.PartialRecFolder.EqualsTo(dest.PartialRecFolder)
+                && (src.PittariFlag == dest.PittariFlag || IsManual == true)//プログラム予約時
+                && src.Priority == dest.Priority
+                && (src.RebootFlag == dest.RebootFlag || src.SuspendMode == 0)//動作後設定デフォルト時
+                && src.RecFolderList.EqualsTo(dest.RecFolderList)
+                && src.RecMode == dest.RecMode
+                && (src.ServiceMode == dest.ServiceMode || ((src.ServiceMode | dest.ServiceMode) & 0x0F) == 0)//字幕等データ設定デフォルト時
+                && (src.StartMargine == dest.StartMargine || src.UseMargineFlag == 0)//マージンデフォルト時
+                && src.SuspendMode == dest.SuspendMode//動作後設定
+                && (src.TuijyuuFlag == dest.TuijyuuFlag || IsManual == true)//プログラム予約時
+                && src.TunerID == dest.TunerID
+                && src.UseMargineFlag == dest.UseMargineFlag;
         }
 
         public static List<RecFileSetInfo> Clone(this List<RecFileSetInfo> src) { return CopyObj.Clone(src, CopyData); }
@@ -146,6 +189,16 @@ namespace EpgTimer
             dest.WritePlugIn = src.WritePlugIn;
         }
 
+        public static bool EqualsTo(this IList<RecFileSetInfo> src, IList<RecFileSetInfo> dest) { return CopyObj.EqualsTo(src, dest, EqualsValue); }
+        public static bool EqualsTo(this RecFileSetInfo src, RecFileSetInfo dest) { return CopyObj.EqualsTo(src, dest, EqualsValue); }
+        public static bool EqualsValue(RecFileSetInfo src, RecFileSetInfo dest)
+        {
+            return src.RecFileName == dest.RecFileName
+                && src.RecFolder == dest.RecFolder
+                && src.RecNamePlugIn == dest.RecNamePlugIn
+                && src.WritePlugIn == dest.WritePlugIn;
+        }
+
         public static List<EpgAutoAddData> Clone(this List<EpgAutoAddData> src) { return CopyObj.Clone(src, CopyData); }
         public static EpgAutoAddData Clone(this EpgAutoAddData src) { return CopyObj.Clone(src, CopyData); }
         public static void CopyTo(this EpgAutoAddData src, EpgAutoAddData dest) { CopyObj.CopyTo(src, dest, CopyData); }
@@ -153,8 +206,8 @@ namespace EpgTimer
         {
             dest.addCount = src.addCount;
             dest.dataID = src.dataID;
-            dest.recSetting = src.recSetting.Clone();
-            dest.searchInfo = src.searchInfo.Clone();
+            dest.recSetting = src.recSetting.Clone();       //RecSettingData
+            dest.searchInfo = src.searchInfo.Clone();       //EpgSearchKeyInfo
         }
 
         public static List<ManualAutoAddData> Clone(this List<ManualAutoAddData> src) { return CopyObj.Clone(src, CopyData); }
@@ -166,7 +219,7 @@ namespace EpgTimer
             dest.dayOfWeekFlag = src.dayOfWeekFlag;
             dest.durationSecond = src.durationSecond;
             dest.originalNetworkID = src.originalNetworkID;
-            dest.recSetting = src.recSetting.Clone();
+            dest.recSetting = src.recSetting.Clone();       //RecSettingData
             dest.serviceID = src.serviceID;
             dest.startTime = src.startTime;
             dest.stationName = src.stationName;
@@ -276,6 +329,17 @@ namespace EpgTimer
             if (startTime > System.DateTime.Now) return false;
             //
             return (startTime + TimeSpan.FromSeconds(duration) >= System.DateTime.Now);
+        }
+
+        public static RecPresetItem LookUpPreset(this RecSettingData data, bool IsManual = false)
+        {
+            RecPresetItem preset = Settings.Instance.RecPresetList.FirstOrDefault(p1 =>
+            {
+                var pdata = new RecSettingData();
+                Settings.GetDefRecSetting(p1.ID, ref pdata);
+                return pdata.EqualsSettingTo(data, IsManual);
+            });
+            return preset == null ? new RecPresetItem("登録時", 0xFFFFFFFF) : preset;
         }
 
         public static List<ReserveData> GetReserveList(this ManualAutoAddData mdata)

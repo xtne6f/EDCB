@@ -39,6 +39,7 @@
                         <MenuItem Header="ジャンル" Name="JyanruKey" IsCheckable="True" />
                         <MenuItem Header="ネットワーク" Name="NetworkKey" IsCheckable="True" />
                         <MenuItem Header="サービス名" Name="ServiceKey" IsCheckable="True" />
+                        <MenuItem Header="プリセット" Name="Preset" IsCheckable="True" />
                         <MenuItem Header="録画フォルダ" Name="RecFolder" IsCheckable="True" />
                         <MenuItem Header="録画モード" Name="RecMode" IsCheckable="True" />
                         <MenuItem Header="優先度" Name="Priority" IsCheckable="True" />
@@ -87,6 +88,11 @@
                         <GridViewColumn DisplayMemberBinding="{Binding Path=ServiceKey}">
                             <GridViewColumn.Header>
                                 <GridViewColumnHeader Content="サービス名" Tag="ServiceKey" HorizontalContentAlignment="Left" />
+                            </GridViewColumn.Header>
+                        </GridViewColumn>
+                        <GridViewColumn DisplayMemberBinding="{Binding Path=Preset}">
+                            <GridViewColumn.Header>
+                                <GridViewColumnHeader Content="プリセット" Tag="Preset" HorizontalContentAlignment="Left" />
                             </GridViewColumn.Header>
                         </GridViewColumn>
                         <GridViewColumn>

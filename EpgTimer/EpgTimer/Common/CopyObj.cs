@@ -30,5 +30,20 @@ namespace EpgTimer
             if (src == null || dest == null) return;
             CopyData(src, dest);
         }
+
+        //static EqualsValue(src,dest)を用意して、拡張メソッドを追加するため用。
+        //public static bool EqualsTo(this IList<クラス名> src,  IList<RecSettingData> dest) { return CopyObj.EqualsTo(src, dest, EqualsValue); }
+        //public static bool EqualsTo(this クラス名 src, クラス名 dest) { return CopyObj.EqualsTo(src, dest, EqualsValue); }
+
+        public static bool EqualsTo<T>(IList<T> src, IList<T> dest, Func<T, T, bool> EqualsValue) where T : class, new()
+        {
+            if (src == null || dest == null || src.Count != dest.Count) return false;
+            return src.Zip(dest, (s, d) => EqualsValue(s, d)).All(r => r == true);
+        }
+        public static bool EqualsTo<T>(T src, T dest, Func<T, T, bool> EqualsValue)
+        {
+            if (src == null || dest == null) return false;
+            return EqualsValue(src, dest);
+        }
     }
 }

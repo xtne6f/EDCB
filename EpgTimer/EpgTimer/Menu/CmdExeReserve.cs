@@ -115,23 +115,13 @@ namespace EpgTimer
         }
         protected override void mc_ChangeRecSetting(object sender, ExecutedRoutedEventArgs e)
         {
-            if (e.Command == EpgCmds.ChgRelay || e.Command == EpgCmds.ChgPittari)
-            {
-                dataList = dataList.Where(info => info.EventID != 0xFFFF).ToList();
-            }
             if (mcc_chgRecSetting(dataList.RecSettingList(), e, this.Owner) == false) return;
-
             IsCommandExecuted = mutil.ReserveChange(dataList);
         }
         protected override void mc_ChgBulkRecSet(object sender, ExecutedRoutedEventArgs e)
         {
             var mList = dataList.Where(info => info.EventID == 0xFFFF).ToList();
             if (mutil.ChangeBulkSet(dataList.RecSettingList(), this.Owner, mList.Count == dataList.Count) == false) return;
-            mList.ForEach(info =>
-            {
-                info.RecSetting.TuijyuuFlag = 0;
-                info.RecSetting.PittariFlag = 0;
-            });
             IsCommandExecuted = mutil.ReserveChange(dataList);
         }
         protected override void mc_Delete(object sender, ExecutedRoutedEventArgs e)
@@ -269,8 +259,8 @@ namespace EpgTimer
             }
             else if (menu.Tag == EpgCmdsEx.ChgMenu)
             {
-                int mCount = dataList.Count(info => info.EventID == 0xFFFF);
-                mcs_chgMenuOpening(menu, dataList.RecSettingList(), mCount != 0, mCount == dataList.Count);
+                List<int> mList = dataList.Select(info => info.EventID == 0xFFFF ? 1 : 0).ToList();
+                mcs_chgMenuOpening(menu, dataList.RecSettingList(), mList.Sum() == dataList.Count, mList);
             }
             else if (menu.Tag == EpgCmds.JumpTable)
             {
