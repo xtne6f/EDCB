@@ -30,27 +30,6 @@ namespace EpgTimer
             getKey = _key;
         }
 
-        private Func<object, ulong> SetFunc()
-        {
-            switch (oldItem.GetType().Name)
-            {
-                case "ReserveItem":
-                    return info => (info as ReserveItem).ReserveInfo.ReserveID;
-                case "RecInfoItem":
-                    return info => (info as RecInfoItem).RecInfo.ID;
-                case "EpgAutoDataItem":
-                    return info => (info as EpgAutoDataItem).EpgAutoAddInfo.dataID;
-                case "ManualAutoAddDataItem":
-                    return info => (info as ManualAutoAddDataItem).ManualAutoAddInfo.dataID;
-                case "SearchItem":
-                    return info => (info as SearchItem).EventInfo.Create64PgKey();
-                case "NotifySrvInfoItem":
-                    return info => (info as NotifySrvInfoItem).NotifyInfo.notifyID;
-                default:
-                    return info => (ulong)info.GetHashCode();
-            }
-        }
-
         public void StoreListViewSelected()
         {
             if (listBox != null && listBox.SelectedItem != null)
@@ -84,7 +63,7 @@ namespace EpgTimer
 
                     if (getKey == null)
                     {
-                        getKey = SetFunc();
+                        getKey = CtrlCmdDefEx.GetKeyFunc(oldItem);
                     }
 
                     foreach (object listItem1 in listBox.Items)

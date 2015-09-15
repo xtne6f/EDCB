@@ -18,17 +18,14 @@ namespace EpgTimer {
         Brush defaultHeaderBorderBrush;
         List<string> exceptionHeaders = null;
 
+        //リフレクション+毎回プロパティ読み出しがかなり重いので、キャッシュを使用する
+        static gvCache gvCache1;
+
         /// <summary>
         /// 必要なら引数に無効扱いのキーを指定する。動かせない列などあれば。
         /// </summary>
-        public GridViewSorter()
-        { exceptionHeaders = new List<string>(); }
-        public GridViewSorter(string exception)
-        { exceptionHeaders = new List<string> { exception }; }
-        public GridViewSorter(string[] exception)
-        { exceptionHeaders = exception.ToList(); }
-        public GridViewSorter(List<string> exception)
-        { exceptionHeaders = exception.ToList(); }
+        public GridViewSorter(List<string> exception = null)
+        { exceptionHeaders = exception == null ? new List<string>() : exception.ToList(); }
 
         public void ResetSortParams() {
             if (this._multiHeaderSortDict.Count > 0) {
@@ -46,6 +43,12 @@ namespace EpgTimer {
         /// </summary>
         public bool SortByMultiHeader(List<T> itemList0)
         {
+            //キャッシュ初期化
+            gvCache1 = new gvCache(itemList0);
+
+            //前処理(キャッシュからDictionaryを排除するため)
+            List<int> idxData = Enumerable.Range(0, itemList0.Count).ToList();
+
             string prevHeader1 = "";
             // key:first index, value: last index
             Dictionary<int, int> sortGroupDict1 = new Dictionary<int, int>();
@@ -57,13 +60,22 @@ namespace EpgTimer {
 
                 sortGroupDict1 = this.createSortedItemGroupDict(itemList0, prevHeader1, sortGroupDict1);
                 foreach (KeyValuePair<int, int> kvp1 in sortGroupDict1) {
-                    itemList0.Sort(
+                    idxData.Sort(
                         kvp1.Key,
                         kvp1.Value - kvp1.Key + 1,
                         new ItemComparer(header, sortDirection1));
                 }
                 prevHeader1 = header;
             }
+
+            //後処理
+            List<T> srcList = itemList0.ToList();
+            itemList0.Clear();
+            itemList0.AddRange(idxData.Select(idx => srcList[idx]));
+
+            //キャッシュクリア(staticなのでクリアしておく)
+            gvCache1 = null;
+
             return this._multiHeaderSortDict.Count != 0;
         }
 
@@ -198,46 +210,107 @@ namespace EpgTimer {
             get { return (this._multiHeaderSortDict.Count > 0); }
         }
 
-        class ItemComparer : IComparer<T> {
+        class ItemComparer : IComparer<int>
+        {
             string sortBy;
             ListSortDirection direction;
+            List<string> values;
+            List<ulong> keys;
 
             public ItemComparer(string sortBy0, ListSortDirection direction0) {
                 this.sortBy = sortBy0;
                 this.direction = direction0;
+                this.values = gvCache1.GetDataCache(sortBy0);
+                this.keys = gvCache1.GetIDCache();
             }
 
-            public int Compare(T x1, T x2) {
+            public int Compare(int x1, int x2)
+            {
                 int cmprResult1 = 0;
-
-                PropertyInfo pi1 = typeof(T).GetProperty(this.sortBy);
-                string val1 = pi1.GetValue(x1, null).ToString();
-                string val2 = pi1.GetValue(x2, null).ToString();
+                string val1 = values[x1];
+                string val2 = values[x2];
                 double d1, d2;
                 if (double.TryParse(val1, out d1) && double.TryParse(val2, out d2)) {   // 数値？
                     cmprResult1 = d1.CompareTo(d2);
                 } else {
                     cmprResult1 = val1.CompareTo(val2);
                 }
+                // 比較結果が同じ // 再読み込みなどで並びが変わるのを防ぐ
+                if (cmprResult1 == 0) {
+                    cmprResult1 = keys[x1].CompareTo(keys[x2]);
+                }
                 // 降順
                 if (this.direction == ListSortDirection.Descending) {
                     cmprResult1 *= -1;
                 }
-                // 比較結果が同じ
-                if (cmprResult1 == 0) {
-                    // 再読み込みなどで並びが変わるのを防ぐ
-                    Type type1 = x1.GetType();
-                    if (type1 == typeof(SearchItem)) {
-                        SearchItem x1_1 = x1 as SearchItem;
-                        SearchItem x2_1 = x2 as SearchItem;
-                        cmprResult1 = x1_1.EventInfo.event_id.CompareTo(x2_1.EventInfo.event_id);
+                return cmprResult1;
+            }
+        }
+
+        //キャッシュ
+        class gvCache
+        {
+            static Func<object, ulong> getKey = null;
+
+            //arrayにするともう少し早くなるかも？
+            Dictionary<string, List<string>> dataCache = new Dictionary<string, List<string>>();
+            List<ulong> idCache = new List<ulong>();
+            List<T> list;
+
+            public gvCache(List<T> itemList)
+            {
+                list = itemList;
+
+                if (getKey == null)
+                {
+                    if (list.Count != 0)
+                    {
+                        getKey = CtrlCmdDefEx.GetKeyFunc(list[0]);
                     }
                 }
 
-                return cmprResult1;
+                if (getKey != null)
+                {
+                    idCache.AddRange(list.Select(item => getKey(item)));
+                }
+                else
+                {
+                    idCache.AddRange(Enumerable.Repeat<ulong>(0, list.Count));//一応ここに来ることは無いはず
+                }
             }
+            public List<ulong> GetIDCache()
+            {
+                return idCache;
+            }
+            public List<string> GetDataCache(string strKey)
+            {
+                if (dataCache.ContainsKey(strKey) == false)
+                {
+                    PropertyInfo pi1 = typeof(T).GetProperty(strKey);
 
+                    var dCache1 = new List<string>();
+                    if (pi1.PropertyType == typeof(List<string>))//ドロップリスト対応
+                    {
+                        dCache1.AddRange(list.Select(item =>
+                        {
+                            var data = pi1.GetValue(item, null) as List<string>;
+                            return data == null || data.Count == 0 || data[0] == null ? "" : data[0];
+                        }));
+                    }
+                    else// (t == typeof(string))//string,boolなど基本型、またはイレギュラー
+                    {
+                        dCache1.AddRange(list.Select(item =>
+                        {
+                            object obj = pi1.GetValue(item, null);
+                            string data = obj == null ? "" : obj.ToString();
+                            return data == null ? "" : data;
+                        }));
+                    }
+                    dataCache.Add(strKey, dCache1);
+                }
+                return dataCache[strKey];
+            }
         }
-
     }
+
 }

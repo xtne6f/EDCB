@@ -31,7 +31,7 @@ namespace EpgTimer
                 lstCtrl.SetSavePath(mutil.GetMemberName(() => Settings.Instance.ReserveListColumn)
                     , mutil.GetMemberName(() => Settings.Instance.ResColumnHead)
                     , mutil.GetMemberName(() => Settings.Instance.ResSortDirection));
-                lstCtrl.SetViewSetting(listView_reserve, gridView_reserve, true, new string[] { "RecFileName", "RecFolder" });
+                lstCtrl.SetViewSetting(listView_reserve, gridView_reserve, true);
 
                 //最初にコマンド集の初期化
                 mc = new CmdExeReserve(this);

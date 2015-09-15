@@ -225,7 +225,43 @@ namespace EpgTimer
             dest.stationName = src.stationName;
             dest.title = src.title;
             dest.transportStreamID = src.transportStreamID;
-}
+        }
+
+        public static Func<object, ulong> GetKeyFunc(object refobj)
+        {
+            if (refobj != null)
+            {
+                string typeName = refobj.GetType().Name;
+                if (refobj is ReserveItem)
+                {
+                    return info => (info as ReserveItem).ReserveInfo.ReserveID;
+                }
+                else if (refobj is RecInfoItem)
+                {
+                    return info => (info as RecInfoItem).RecInfo.ID;
+                }
+                else if (refobj is EpgAutoDataItem)
+                {
+                    return info => (info as EpgAutoDataItem).EpgAutoAddInfo.dataID;
+                }
+                else if (refobj is ManualAutoAddDataItem)
+                {
+                    return info => (info as ManualAutoAddDataItem).ManualAutoAddInfo.dataID;
+                }
+                else if (refobj is SearchItem)
+                {
+                    return info => (info as SearchItem).EventInfo.Create64PgKey();
+                }
+                else if (refobj is NotifySrvInfoItem)
+                {
+                    return info => (info as NotifySrvInfoItem).NotifyInfo.notifyID;
+                }
+            }
+
+            //キーにはなっていないが、エラーにしないため一応返す
+            return info => (ulong)info.GetHashCode();
+        }
+
 
         public static List<RecSettingData> RecSettingList(this List<ReserveData> list)
         {
