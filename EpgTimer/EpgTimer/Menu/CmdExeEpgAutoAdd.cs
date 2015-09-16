@@ -59,7 +59,7 @@ namespace EpgTimer
             else
             {
                 if (CmdExeUtil.CheckKeyboardDeleteCancel(e, 
-                    dataList.Select(data => new EpgAutoDataItem(data).AndKey).ToList()) == true) return;
+                    dataList.Select(data => data.searchInfo.andKey).ToList()) == true) return;
             }
             IsCommandExecuted = mutil.EpgAutoAddDelete(dataList);
         }
@@ -73,80 +73,39 @@ namespace EpgTimer
         }
         protected bool mcs_Delete2_3(object sender, ExecutedRoutedEventArgs e, bool deleteAutoAddItem)
         {
-            var delList = new List<ReserveData>();
-
             if (CmdExeUtil.IsMessageBeforeCommand(e) == true)
             {
                 string msg1 = deleteAutoAddItem == true ? "予約ごと削除" : "予約のみ削除";
                 string msg2 = deleteAutoAddItem == true ? "削除項目数" : "処理項目数";
 
-                dataList.ForEach(info => delList.AddRange(info.SearchItemList().ReserveInfoList()));
-                delList = delList.Distinct().ToList();
-                int DisplayNum = Settings.Instance.KeyDeleteDisplayItemNum;
+                string text = string.Format(msg1 + "してよろしいですか?\r\n"
+                    + "(無効の「自動予約登録項目」による予約も削除されます。)\r\n\r\n"
+                    + "[" + msg2 + ": {0}]\r\n[削除される予約数: {1}]\r\n\r\n", dataList.Count, dataList.Sum(data => data.ReserveCount()))
+                    + CmdExeUtil.FormatTitleListForDialog(dataList.Select(info => info.searchInfo.andKey).ToList());
 
-                var text = new StringBuilder(
-                    string.Format(msg1 + "してよろしいですか?\r\n"
-                                + "(無効の「自動予約登録項目」による予約も削除されます。)\r\n\r\n"
-                                + "[" + msg2 + ": {0}]\r\n[削除される予約数: {1}]\r\n\r\n"
-                                , dataList.Count, delList.Count));
-                foreach (var info in dataList.Take(DisplayNum)) { text.AppendFormat(" ・ {0}\r\n", new EpgAutoDataItem(info).AndKey); }
-                if (dataList.Count > DisplayNum) text.AppendFormat("\r\n　　ほか {0} 項目", dataList.Count - DisplayNum);
-
-                if (MessageBox.Show(text.ToString(), "[" + msg1 + "]の確認", MessageBoxButton.OKCancel,
+                if (MessageBox.Show(text, "[" + msg1 + "]の確認", MessageBoxButton.OKCancel,
                                     MessageBoxImage.Exclamation, MessageBoxResult.OK) != MessageBoxResult.OK)
                 { return false; }
             }
 
             if (deleteAutoAddItem == true)
             {
-                //EpgTimerSrvでの自動予約登録の実行タイミングに左右されず確実に予約を削除するため、
-                //先に自動予約登録項目を削除する。
+                //EpgTimerSrvでの自動予約登録の実行タイミングに左右されず確実に予約を削除するため、先に削除
                 if (mutil.EpgAutoAddDelete(dataList) == false) return false;
             }
 
-            //配下の予約の削除、リストはAutoAddAppendにあるが、きちんと読み直す
-            var keyList = new List<EpgSearchKeyInfo>(dataList.RecSearchKeyList().Clone());
-            keyList.ForEach(key => key.keyDisabledFlag = 0); //無効解除
-
-            var list = new List<EpgEventInfo>();
-            cmd.SendSearchPg(keyList, ref list);
-
-            delList.Clear();
-            foreach (EpgEventInfo info in list)
-            {
-                if (info.start_time.AddSeconds(info.DurationFlag == 0 ? 0 : info.durationSec) > DateTime.Now)
-                {
-                    foreach (ReserveData info2 in CommonManager.Instance.DB.ReserveList.Values)
-                    {
-                        if (CommonManager.EqualsPg(info, info2) == true)
-                        {
-                            //重複したEpgEventInfoは送られてこないので、登録時の重複チェックは不要
-                            delList.Add(info2);
-                            break;
-                        }
-                    }
-                }
-            }
-
-            return mutil.ReserveDelete(delList);
+            //配下の予約の削除、再収集する
+            return mutil.ReserveDelete(dataList.GetReserveList());
         }
         protected override void mc_AdjustReserve(object sender, ExecutedRoutedEventArgs e)
         {
             if (CmdExeUtil.IsMessageBeforeCommand(e) == true)
             {
-                var adjList = new List<ReserveData>();
-                dataList.ForEach(info => adjList.AddRange(info.SearchItemList().ReserveInfoList()));
-                adjList = adjList.Distinct().ToList();
-                int DisplayNum = Settings.Instance.KeyDeleteDisplayItemNum;
+                string text = string.Format("予約の録画設定を自動登録の録画設定に合わせてもよろしいですか?\r\n\r\n"
+                    + "[処理項目数: {0}]\r\n[対象予約数: {1}]\r\n\r\n", dataList.Count, dataList.Sum(data => data.ReserveCount()))
+                    + CmdExeUtil.FormatTitleListForDialog(dataList.Select(info => info.searchInfo.andKey).ToList());
 
-                var text = new StringBuilder(
-                    string.Format("予約の録画設定を自動登録の録画設定に合わせてもよろしいですか?\r\n\r\n"
-                                + "[処理項目数: {0}]\r\n[対象予約数: {1}]\r\n\r\n"
-                                , dataList.Count, adjList.Count));
-                foreach (var info in dataList.Take(DisplayNum)) { text.AppendFormat(" ・ {0}\r\n", new EpgAutoDataItem(info).AndKey); }
-                if (dataList.Count > DisplayNum) text.AppendFormat("\r\n　　ほか {0} 項目", dataList.Count - DisplayNum);
-
-                if (MessageBox.Show(text.ToString(), "[予約の録画設定変更]の確認", MessageBoxButton.OKCancel,
+                if (MessageBox.Show(text, "[予約の録画設定変更]の確認", MessageBoxButton.OKCancel,
                                     MessageBoxImage.Exclamation, MessageBoxResult.OK) != MessageBoxResult.OK)
                 { return; }
             }
@@ -154,12 +113,12 @@ namespace EpgTimer
         }
         protected override void mc_CopyTitle(object sender, ExecutedRoutedEventArgs e)
         {
-            mutil.CopyTitle2Clipboard(new EpgAutoDataItem(dataList[0]).AndKey, CmdExeUtil.IsKeyGesture(e));
+            mutil.CopyTitle2Clipboard(dataList[0].searchInfo.andKey, CmdExeUtil.IsKeyGesture(e));
             IsCommandExecuted = true;
         }
         protected override void mc_SearchTitle(object sender, ExecutedRoutedEventArgs e)
         {
-            mutil.SearchText(new EpgAutoDataItem(dataList[0]).AndKey, CmdExeUtil.IsKeyGesture(e));
+            mutil.SearchText(dataList[0].searchInfo.andKey, CmdExeUtil.IsKeyGesture(e));
             IsCommandExecuted = true;
         }
         protected override void mc_CopyNotKey(object sender, ExecutedRoutedEventArgs e)
@@ -174,7 +133,7 @@ namespace EpgTimer
                 int DisplayNum = Settings.Instance.KeyDeleteDisplayItemNum;
                 var text = new StringBuilder(string.Format("Notキーを変更してよろしいですか?\r\n\r\n"
                     + "[変更項目数: {0}]\r\n[貼り付けテキスト: \"{1}\"]\r\n\r\n", dataList.Count, Clipboard.GetText()));
-                foreach (var info in dataList.Take(DisplayNum)) { text.AppendFormat(" ・ {0}\r\n", new EpgAutoDataItem(info).AndKey); }
+                foreach (var info in dataList.Take(DisplayNum)) { text.AppendFormat(" ・ {0}\r\n", info.searchInfo.andKey); }
                 if (dataList.Count > DisplayNum) text.AppendFormat("\r\n　　ほか {0} 項目", dataList.Count - DisplayNum);
 
                 if (MessageBox.Show(text.ToString(), "[Notキーワード変更]の確認", MessageBoxButton.OKCancel,

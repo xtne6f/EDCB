@@ -28,7 +28,7 @@ namespace EpgTimer
         }
         protected override void mc_Delete(object sender, ExecutedRoutedEventArgs e)
         {
-            dataList = dataList.NoProtectedInfoList();
+            dataList = dataList.GetNoProtectedList();
             if (dataList.Count == 0) return;
 
             if (e.Command == EpgCmds.DeleteAll)

@@ -27,7 +27,7 @@ namespace EpgTimer
         {
             return CommonManager.Instance.DB.GetEpgAutoAddDataAppend(master).OffCount;
         }
-        public static List<SearchItem> SearchItemList(this EpgAutoAddData master)
+        public static List<SearchItem> GetSearchList(this EpgAutoAddData master)
         {
             return CommonManager.Instance.DB.GetEpgAutoAddDataAppend(master).SearchItemList;
         }
@@ -51,43 +51,25 @@ namespace EpgTimer
         //予約情報の更新があったとき、CommonManager.Instance.DB.epgAutoAddAppendList()に入っていればフラグを立ててもらえる。
         public bool updateCounts = true;
 
-        public EpgAutoAddData Master{ get { return master; } }
-        public uint dataID          { get { return (master != null ? master.dataID : 0); } }
-        public uint SearchCount     { get { RefreshData(); return searchCount; } }
-        public uint ReserveCount    { get { RefreshData(); return onCount + offCount; } }
-        public uint OnCount         { get { RefreshData(); return onCount; } }
-        public uint OffCount        { get { RefreshData(); return offCount; } }
+        public EpgAutoAddData Master            { get { return master; } }
+        public uint dataID                      { get { return (master != null ? master.dataID : 0); } }
+        public uint SearchCount                 { get { RefreshData(); return searchCount; } }
+        public uint ReserveCount                { get { RefreshData(); return onCount + offCount; } }
+        public uint OnCount                     { get { RefreshData(); return onCount; } }
+        public uint OffCount                    { get { RefreshData(); return offCount; } }
+        public List<SearchItem> SearchItemList  { get { RefreshData(); return searchItemList; } }
 
         public List<EpgEventInfo> EpgEventList
         {
             get
             {
-                if (epgEventList == null)
-                {
-                    this.EpgEventList = new List<EpgEventInfo>();
-                }
+                if (epgEventList == null) this.EpgEventList = new List<EpgEventInfo>();
                 return epgEventList;
             }
             set
             {
                 epgEventList = value;
                 updateCounts = true;
-            }
-        }
-
-        public List<SearchItem> SearchItemList
-        {
-            get
-            {
-                if (searchItemList == null)
-                {
-                    RefreshData();
-                }
-                return searchItemList;
-            }
-            set
-            {
-                searchItemList = value;
             }
         }
 
@@ -106,7 +88,7 @@ namespace EpgTimer
             searchItemList = new List<SearchItem>();
             searchItemList.AddFromEventList(epgEventList, false, true);
 
-            var rlist = searchItemList.ReserveInfoList();
+            var rlist = searchItemList.GetReserveList();
 
             searchCount = (uint)searchItemList.Count;
             onCount = (uint)rlist.Count(info => info.RecSetting.RecMode != 5);

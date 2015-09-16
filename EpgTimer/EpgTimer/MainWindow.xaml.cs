@@ -1412,9 +1412,7 @@ namespace EpgTimer
                     if (DB.ReserveList.Count != 0)
                     {
                         //予約一覧は一つでも更新をかければ、再構築される。
-                        List<ReserveData> list = new List<ReserveData>();
-                        list.Add(DB.ReserveList.Values.ToList()[0]);
-                        cmd.SendChgReserve(list);
+                        cmd.SendChgReserve(new List<ReserveData> { DB.ReserveList.Values.ToList()[0] });
                     }
                     else
                     {

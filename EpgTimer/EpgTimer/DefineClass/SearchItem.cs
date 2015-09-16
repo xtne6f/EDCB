@@ -238,15 +238,15 @@ namespace EpgTimer
 
     public static class SearchItemEx
     {
-        public static List<EpgEventInfo> EventInfoList(this ICollection<SearchItem> itemlist)
+        public static List<EpgEventInfo> GetEventList(this ICollection<SearchItem> itemlist)
         {
             return itemlist.Where(item => item != null).Select(item => item.EventInfo).ToList();
         }
-        public static List<EpgEventInfo> NoReserveInfoList(this ICollection<SearchItem> itemlist)
+        public static List<EpgEventInfo> GetNoReserveList(this ICollection<SearchItem> itemlist)
         {
             return itemlist.Where(item => item == null ? false : item.IsReserved == false).Select(item => item.EventInfo).ToList();
         }
-        public static List<ReserveData> ReserveInfoList(this ICollection<SearchItem> itemlist)
+        public static List<ReserveData> GetReserveList(this ICollection<SearchItem> itemlist)
         {
             return itemlist.Where(item => item == null ? false : item.IsReserved == true).Select(item => item.ReserveInfo).ToList();
         }

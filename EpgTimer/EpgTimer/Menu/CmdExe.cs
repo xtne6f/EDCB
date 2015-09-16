@@ -506,14 +506,18 @@ namespace EpgTimer
             if (IsDisplayKgMessage(e) == false) return false;
             if (list == null || list.Count == 0) return false;
 
+            return (MessageBox.Show(
+                string.Format("削除しますか?\r\n\r\n" + "[削除項目数: {0}]\r\n\r\n", list.Count) + FormatTitleListForDialog(list)
+                , "削除の確認", MessageBoxButton.OKCancel,
+                MessageBoxImage.Exclamation, MessageBoxResult.OK) != MessageBoxResult.OK);
+        }
+        public static string FormatTitleListForDialog(ICollection<string> list)
+        {
             int DisplayNum = Settings.Instance.KeyDeleteDisplayItemNum;
-            var text = new StringBuilder(string.Format("削除しますか?\r\n\r\n"
-                + "[削除項目数: {0}]\r\n\r\n", list.Count));
+            var text = new StringBuilder();
             foreach (var info in list.Take(DisplayNum)) { text.AppendFormat(" ・ {0}\r\n", info); }
             if (list.Count > DisplayNum) text.AppendFormat("\r\n　　ほか {0} 項目", list.Count - DisplayNum);
-
-            return (MessageBox.Show(text.ToString(), "削除の確認", MessageBoxButton.OKCancel,
-                MessageBoxImage.Exclamation, MessageBoxResult.OK) != MessageBoxResult.OK);
+            return text.ToString();
         }
         public static bool IsMessageBeforeCommand(ExecutedRoutedEventArgs e)
         {

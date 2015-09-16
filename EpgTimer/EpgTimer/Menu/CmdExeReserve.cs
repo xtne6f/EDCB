@@ -41,9 +41,9 @@ namespace EpgTimer
                 List<SearchItem> searchList = _getSearchList(IsAllData);
                 searchList = searchList == null ? new List<SearchItem>() : searchList.OfType<SearchItem>().ToList();//無くても大丈夫なはずだが一応
                 OrderAdjust<SearchItem>(searchList, _selectSingleSearchData);
-                dataList = searchList.ReserveInfoList();
-                eventList = searchList.EventInfoList();
-                eventListEx = searchList.NoReserveInfoList();
+                dataList = searchList.GetReserveList();
+                eventList = searchList.GetEventList();
+                eventListEx = searchList.GetNoReserveList();
                 headData = searchList.Count == 0 ? null : searchList[0].IsReserved == true ? searchList[0].ReserveInfo as object : searchList[0].EventInfo as object;
             }
             else

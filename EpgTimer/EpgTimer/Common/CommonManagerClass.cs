@@ -753,7 +753,7 @@ namespace EpgTimer
             return false;
         }
 
-        public EpgEventInfo GetEpgEventInfoFromReserveData(ReserveData info, bool getSrv=false)
+        public EpgEventInfo GetEpgEventInfoFromReserveData(ReserveData info, bool getSrv = false)
         {
             CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
             EpgEventInfo eventInfo = null;

@@ -233,7 +233,7 @@ namespace EpgTimer
             {
                 SearchPg();
 
-                if (mutil.CautionManyMessage(lstCtrl.dataList.NoReserveInfoList().Count, "予約追加の確認") == false)
+                if (mutil.CautionManyMessage(lstCtrl.dataList.GetNoReserveList().Count, "予約追加の確認") == false)
                 {
                     return false;
                 }

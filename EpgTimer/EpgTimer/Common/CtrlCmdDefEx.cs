@@ -291,8 +291,37 @@ namespace EpgTimer
                     ;
             }).ToList();
         }
+        public static List<ReserveData> GetReserveList(this ICollection<ManualAutoAddData> mlist)
+        {
+            var retList = new List<ReserveData>();
+            foreach (ManualAutoAddData info in mlist) retList.AddRange(info.GetReserveList());
+            return retList.Distinct().ToList();
+        }
+        public static List<List<ReserveData>> GetReserveListList(this ICollection<ManualAutoAddData> mlist)
+        {
+            var rlist_list = new List<List<ReserveData>>();
+            foreach (ManualAutoAddData info in mlist) rlist_list.Add(info.GetReserveList());
+            return rlist_list;
+        }
 
-        public static List<RecFileInfo> NoProtectedInfoList(this ICollection<RecFileInfo> itemlist)
+        public static List<ReserveData> GetReserveList(this EpgAutoAddData mdata)
+        {
+            return mdata.GetSearchList().GetReserveList();
+        }
+        public static List<ReserveData> GetReserveList(this ICollection<EpgAutoAddData> mlist)
+        {
+            var retList = new List<ReserveData>();
+            foreach (EpgAutoAddData info in mlist) retList.AddRange(info.GetReserveList());
+            return retList.Distinct().ToList();
+        }
+        public static List<List<ReserveData>> GetReserveListList(this ICollection<EpgAutoAddData> mlist)
+        {
+            var rlist_list = new List<List<ReserveData>>();
+            foreach (EpgAutoAddData info in mlist) rlist_list.Add(info.GetReserveList());
+            return rlist_list;
+        }
+
+        public static List<RecFileInfo> GetNoProtectedList(this ICollection<RecFileInfo> itemlist)
         {
             return itemlist.Where(item => item == null ? false : item.ProtectFlag == 0).ToList();
         }

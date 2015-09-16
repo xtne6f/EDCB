@@ -636,58 +636,14 @@ namespace EpgTimer
             }
         }
 
-        public bool ReserveAdjustChange(List<EpgAutoAddData> itemlist)
+        public bool ReserveAdjustChange(List<EpgAutoAddData> dataList)
         {
-            try
-            {
-                List<RecSettingData> recSettingList = itemlist.RecSettingList();
-                var keyList = new List<EpgSearchKeyInfo>(itemlist.RecSearchKeyList().Clone());
-                keyList.ForEach(key => key.keyDisabledFlag = 0); //無効解除
-
-                var list_list = new List<List<EpgEventInfo>>();
-                CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
-                cmd.SendSearchPgByKey(keyList, ref list_list);
-
-                //何か問題があるようなら飛ばす
-                if (recSettingList.Count != list_list.Count) return false;
-
-                CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.ReserveInfo);
-                CommonManager.Instance.DB.ReloadReserveInfo();
-
-                var rlist_list = new List<List<ReserveData>>();
-                list_list.ForEach(list =>
-                {
-                    var searchItemList = new List<SearchItem>();
-                    searchItemList.AddFromEventList(list, false, true);
-                    rlist_list.Add(searchItemList.ReserveInfoList());
-                });
-
-                return ReserveAdjustChange(recSettingList, rlist_list);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                return false;
-            }
+            return ReserveAdjustChange(dataList.RecSettingList(), dataList.GetReserveListList());
         }
-
-        public bool ReserveAdjustChange(List<ManualAutoAddData> itemlist)
+        public bool ReserveAdjustChange(List<ManualAutoAddData> dataList)
         {
-            try
-            {
-                List<RecSettingData> recSettingList = itemlist.RecSettingList();
-                var rlist_list = new List<List<ReserveData>>();
-                itemlist.ForEach(list => rlist_list.Add(list.GetReserveList()));
-
-                return ReserveAdjustChange(recSettingList, rlist_list);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                return false;
-            }
+            return ReserveAdjustChange(dataList.RecSettingList(), dataList.GetReserveListList());
         }
-
         public bool ReserveAdjustChange(List<RecSettingData> recSettingList, List<List<ReserveData>> rlist_list)
         {
             var adjustList = new Dictionary<uint, ReserveData>();
@@ -697,14 +653,14 @@ namespace EpgTimer
                 {
                     if (adjustList.ContainsKey(resinfo.ReserveID) == false)
                     {
-                        ReserveData rdata = resinfo.Clone();
-                        bool off = rdata.RecSetting.RecMode == 5;//無効は復元する
+                        ReserveData rdata = resinfo.Clone();//変更かけるのでコピーしておく
                         rdata.RecSetting = recSettingList[i].Clone();
-                        if (off == true)
+                        //無効は保持する
+                        if (resinfo.RecSetting.RecMode == 5)
                         {
                             rdata.RecSetting.RecMode = 5;
                         }
-                        adjustList.Add(rdata.ReserveID, rdata);
+                        adjustList.Add(resinfo.ReserveID, rdata);
                     }
                 });
             }
