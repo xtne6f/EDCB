@@ -918,7 +918,7 @@ void CEpgDataCap_BonDlg::ReloadBonDriver()
 	this->bonList.clear();
 	ComboBox_ResetContent(GetDlgItem(IDC_COMBO_TUNER));
 
-	this->main.EnumBonDriver(&bonList);
+	this->bonList = this->main.EnumBonDriver();
 
 	int selectIndex = 0;
 	vector<wstring>::iterator itr;

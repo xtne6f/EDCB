@@ -194,7 +194,10 @@ BOOL CEpgDataCap_BonApp::InitInstance()
 
 int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow)
 {
+	//メインスレッドに対するCOMの初期化
+	CoInitialize(NULL);
 	theApp.InitInstance();
+	CoUninitialize();
 	return 0;
 }
 

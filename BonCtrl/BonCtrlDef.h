@@ -8,12 +8,6 @@
 #define CHSET_SAVE_EVENT_WAIT		 _T("Global\\EpgTimer_ChSet")
 
 
-//BonDriverのチューナー空間情報
-typedef struct _BON_SPACE_INFO{
-	wstring spaceName;					//チューナー空間名
-	map<DWORD, wstring> chMap;			//チャンネルリスト（キー CH）
-}BON_SPACE_INFO;
-
 //受信データのバッファリング用
 typedef struct _TS_DATA{
 	BYTE* data;				//TSデータ
