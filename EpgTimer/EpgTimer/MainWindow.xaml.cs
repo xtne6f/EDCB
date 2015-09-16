@@ -279,6 +279,13 @@ namespace EpgTimer
                 ResetTaskMenu();
 
                 CheckCmdLine();
+
+                if (CommonManager.Instance.NWMode == false)
+                {
+                    //予約一覧の表示に使用したりするのであらかじめ読込んでおく(暫定処置)
+                    CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.EpgData);
+                    CommonManager.Instance.DB.ReloadEpgData();
+                }
             }
             catch (Exception ex)
             {
