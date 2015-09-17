@@ -284,6 +284,8 @@ namespace EpgTimer
         private int noStyle;
         private bool cautionManyChange;
         private int cautionManyNum;
+        private bool cautionOnRecChange;
+        private int cautionOnRecMarginMin;
         private int keyDeleteDisplayItemNum;
         private bool displayNotifyEpgChange;
         private int displayNotifyJumpTime;
@@ -948,6 +950,16 @@ namespace EpgTimer
             get { return cautionManyNum; }
             set { cautionManyNum = value; }
         }
+        public bool CautionOnRecChange
+        {
+            get { return cautionOnRecChange; }
+            set { cautionOnRecChange = value; }
+        }
+        public int CautionOnRecMarginMin
+        {
+            get { return cautionOnRecMarginMin; }
+            set { cautionOnRecMarginMin = value; }
+        }
         public int KeyDeleteDisplayItemNum
         {
             get { return keyDeleteDisplayItemNum; }
@@ -1096,6 +1108,8 @@ namespace EpgTimer
             noStyle = 0;
             cautionManyChange = true;
             cautionManyNum = 10;
+            cautionOnRecChange = true;
+            cautionOnRecMarginMin = 5;
             keyDeleteDisplayItemNum = 10;
             displayNotifyEpgChange = false;
             displayNotifyJumpTime = 3;

@@ -219,7 +219,9 @@ namespace EpgTimer.Setting
                     checkBox_showTray.IsChecked = Settings.Instance.ShowTray;
                     checkBox_minHide.IsChecked = Settings.Instance.MinHide;
                     checkBox_cautionManyChange.IsChecked = Settings.Instance.CautionManyChange;
-                    textBox_cautionManyChange.Text = Settings.Instance.CautionManyNum.ToString(); 
+                    textBox_cautionManyChange.Text = Settings.Instance.CautionManyNum.ToString();
+                    checkBox_cautionOnRecChange.IsChecked = Settings.Instance.CautionOnRecChange;
+                    textBox_cautionOnRecMarginMin.Text = Settings.Instance.CautionOnRecMarginMin.ToString(); 
 
                     checkBox_wakeReconnect.IsChecked = Settings.Instance.WakeReconnectNW;
                     checkBox_suspendClose.IsChecked = Settings.Instance.SuspendCloseNW;
@@ -528,9 +530,11 @@ namespace EpgTimer.Setting
             Settings.Instance.NoBallonTips = (checkBox_noBallonTips.IsChecked == true);
             Settings.Instance.PlayDClick = (checkBox_playDClick.IsChecked == true);
             Settings.Instance.CautionManyChange = (checkBox_cautionManyChange.IsChecked != false);
+            Settings.Instance.CautionOnRecChange = (checkBox_cautionOnRecChange.IsChecked != false);
             try
             {
                 Settings.Instance.CautionManyNum = Convert.ToInt32(textBox_cautionManyChange.Text);
+                Settings.Instance.CautionOnRecMarginMin = Convert.ToInt32(textBox_cautionOnRecMarginMin.Text);
             }
             catch { }
 

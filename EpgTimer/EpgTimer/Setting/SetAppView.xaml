@@ -124,9 +124,12 @@
                     <CheckBox Content="タスクトレイアイコンを表示する" Height="16" HorizontalAlignment="Left" Margin="24,247,0,0" Name="checkBox_srvShowTray" VerticalAlignment="Top" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_srvResident, UpdateSourceTrigger=PropertyChanged}" />
                     <CheckBox Content="バルーンチップでの動作通知を抑制する" Height="16" HorizontalAlignment="Left" Margin="24,269,0,0" Name="checkBox_srvNoBalloonTip" VerticalAlignment="Top" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_srvResident, UpdateSourceTrigger=PropertyChanged}" />
                     <CheckBox Content="多数の項目を処理するとき警告する" Height="16" HorizontalAlignment="Left" Margin="6,299,0,0" Name="checkBox_cautionManyChange" VerticalAlignment="Top" />
-                    <Label Content="以上" Height="28" Margin="300,293,0,0" Name="label_cautionManyChange" VerticalAlignment="Top" HorizontalAlignment="Left" Width="34" />
+                    <Label Content="以上" Height="28" Margin="281,293,0,0" Name="label_cautionManyChange" VerticalAlignment="Top" HorizontalAlignment="Left" Width="34" />
                     <TextBox Height="24" HorizontalAlignment="Left" Margin="212,293,0,0" Name="textBox_cautionManyChange" VerticalAlignment="Top" Width="62" />
-                    <Button Content="右クリックメニューの設定" Height="23" HorizontalAlignment="Left" Margin="6,327,0,0" Name="button_set_cm" Click="button_set_cm_Click" VerticalAlignment="Top" Width="171" />
+                    <CheckBox Content="録画中または開始直前の予約を変更・削除するとき警告する" Height="16" HorizontalAlignment="Left" Margin="6,326,0,0" Name="checkBox_cautionOnRecChange" VerticalAlignment="Top" />
+                    <Label Content="分以内" Height="28" Margin="281,348,0,0" Name="label_cautionOnRecMarginMin" VerticalAlignment="Top" HorizontalAlignment="Left" Width="53" />
+                    <TextBox Height="24" HorizontalAlignment="Left" Margin="212,348,0,0" Name="textBox_cautionOnRecMarginMin" VerticalAlignment="Top" Width="62" />
+                    <Button Content="右クリックメニューの設定" Height="23" HorizontalAlignment="Left" Margin="6,383,0,0" Name="button_set_cm" Click="button_set_cm_Click" VerticalAlignment="Top" Width="171" />
                 </Grid>
             </TabItem>
             <TabItem Header="カスタムボタン" Name="tabItem5">

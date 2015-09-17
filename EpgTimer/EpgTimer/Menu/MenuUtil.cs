@@ -667,6 +667,7 @@ namespace EpgTimer
 
         public bool ReserveChange(List<ReserveData> itemlist, bool cautionMany = true)
         {
+            if (CheckReserveOnRec(itemlist,"変更") == false) return false;
             return ReserveCmdSend(itemlist, cmd.SendChgReserve, "予約変更", cautionMany);
         }
 
@@ -674,6 +675,7 @@ namespace EpgTimer
         {
             try
             {
+                if (CheckReserveOnRec(itemlist, "削除") == false) return false;
                 List<uint> list = itemlist.Select(item => item.ReserveID).ToList();
                 return ReserveCmdSend(list, cmd.SendDelReserve, "予約削除");
             }
@@ -682,6 +684,25 @@ namespace EpgTimer
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
                 return false;
             }
+        }
+
+        public bool CheckReserveOnRec(List<ReserveData> itemlist, string description)
+        {
+            if (Settings.Instance.CautionOnRecChange == false) return true;
+            int cMin = Settings.Instance.CautionOnRecMarginMin;
+
+            List<string> list = itemlist.Where(item => item.RecSetting.RecMode != 5 && item.IsOnRec(cMin) == true)
+                .Select(item => new ReserveItem(item).StartTime + "　" + item.Title).ToList();
+
+            if (list.Count == 0) return true;
+
+            string text = string.Format("録画中または{0}分以内に録画開始される予約が含まれています。\r\n"
+                + "処理を続けますか?\r\n\r\n"
+                + "[該当予約数: {1}]\r\n\r\n", cMin, list.Count)
+                + CmdExeUtil.FormatTitleListForDialog(list);
+
+            return MessageBox.Show(text, "[予約" + description + "]の確認", MessageBoxButton.OKCancel,
+                                MessageBoxImage.Exclamation, MessageBoxResult.OK) == MessageBoxResult.OK;
         }
 
         public bool EpgAutoAddAdd(List<EpgAutoAddData> itemlist)
