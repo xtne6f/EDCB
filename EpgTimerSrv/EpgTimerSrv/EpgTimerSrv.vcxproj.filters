@@ -25,12 +25,6 @@
     <Filter Include="ヘッダー ファイル\BonCtrl">
       <UniqueIdentifier>{cce20c92-24e6-47aa-9ccb-3dbb4c749986}</UniqueIdentifier>
     </Filter>
-    <Filter Include="ソース ファイル\UPnPCtrl">
-      <UniqueIdentifier>{235f2aa2-a38e-42b5-b427-6167e37a6f1c}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="ヘッダー ファイル\UPnPCtrl">
-      <UniqueIdentifier>{5b968ac7-23f3-49ff-af07-8514fa958e20}</UniqueIdentifier>
-    </Filter>
     <Filter Include="ソース ファイル\civetweb">
       <UniqueIdentifier>{9c22de38-0a12-4f99-ac9a-9e83b4b0065f}</UniqueIdentifier>
     </Filter>
@@ -198,33 +192,6 @@
     <ClInclude Include="..\..\Common\TCPServerUtil.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\UPnPCtrl\CharUtil.h">
-      <Filter>ヘッダー ファイル\UPnPCtrl</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\UPnPCtrl\UpnpStructDef.h">
-      <Filter>ヘッダー ファイル\UPnPCtrl</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\UPnPCtrl\HttpUtil.h">
-      <Filter>ヘッダー ファイル\UPnPCtrl</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\UPnPCtrl\MPInclude.h">
-      <Filter>ヘッダー ファイル\UPnPCtrl</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\UPnPCtrl\NICUtil.h">
-      <Filter>ヘッダー ファイル\UPnPCtrl</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\UPnPCtrl\SortListUtil.h">
-      <Filter>ヘッダー ファイル\UPnPCtrl</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\UPnPCtrl\ThreadUtil.h">
-      <Filter>ヘッダー ファイル\UPnPCtrl</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\UPnPCtrl\UpnpSsdpUtil.h">
-      <Filter>ヘッダー ファイル\UPnPCtrl</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\UPnPCtrl\UpnpUtil.h">
-      <Filter>ヘッダー ファイル\UPnPCtrl</Filter>
-    </ClInclude>
     <ClInclude Include="civetweb.h">
       <Filter>ヘッダー ファイル\civetweb</Filter>
     </ClInclude>
@@ -244,6 +211,9 @@
       <Filter>ヘッダー ファイル\civetweb</Filter>
     </ClInclude>
     <ClInclude Include="HttpServer.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="UpnpSsdpServer.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
@@ -359,34 +329,13 @@
     <ClCompile Include="..\..\Common\TCPServerUtil.cpp">
       <Filter>ソース ファイル\Common</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\UPnPCtrl\CharUtil.cpp">
-      <Filter>ソース ファイル\UPnPCtrl</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\UPnPCtrl\HttpUtil.cpp">
-      <Filter>ソース ファイル\UPnPCtrl</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\UPnPCtrl\NICUtil.cpp">
-      <Filter>ソース ファイル\UPnPCtrl</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\UPnPCtrl\SortListUtil.cpp">
-      <Filter>ソース ファイル\UPnPCtrl</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\UPnPCtrl\ThreadUtil.cpp">
-      <Filter>ソース ファイル\UPnPCtrl</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\UPnPCtrl\UpnpSsdpUtil.cpp">
-      <Filter>ソース ファイル\UPnPCtrl</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\UPnPCtrl\UpnpStructDef.cpp">
-      <Filter>ソース ファイル\UPnPCtrl</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\UPnPCtrl\UpnpUtil.cpp">
-      <Filter>ソース ファイル\UPnPCtrl</Filter>
-    </ClCompile>
     <ClCompile Include="civetweb.c">
       <Filter>ソース ファイル\civetweb</Filter>
     </ClCompile>
     <ClCompile Include="HttpServer.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="UpnpSsdpServer.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>

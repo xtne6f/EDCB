@@ -2,8 +2,7 @@
 #include "EpgTimerSrvMain.h"
 #include "HttpServer.h"
 #include "SyoboiCalUtil.h"
-#include "../../UPnPCtrl/UpnpUtil.h"
-#include "../../UPnPCtrl/UpnpSsdpUtil.h"
+#include "UpnpSsdpServer.h"
 #include "../../Common/PipeServer.h"
 #include "../../Common/TCPServer.h"
 #include "../../Common/SendCtrlCmd.h"
@@ -17,6 +16,9 @@
 #pragma comment (lib, "netapi32.lib")
 
 static const char UPNP_URN_DMS_1[] = "urn:schemas-upnp-org:device:MediaServer:1";
+static const char UPNP_URN_CDS_1[] = "urn:schemas-upnp-org:service:ContentDirectory:1";
+static const char UPNP_URN_CMS_1[] = "urn:schemas-upnp-org:service:ConnectionManager:1";
+static const char UPNP_URN_AVT_1[] = "urn:schemas-upnp-org:service:AVTransport:1";
 
 enum {
 	WM_RESET_SERVER = WM_APP,
@@ -36,7 +38,7 @@ struct MAIN_WINDOW_CONTEXT {
 	CPipeServer pipeServer;
 	CTCPServer tcpServer;
 	CHttpServer httpServer;
-	UPNP_SERVER_HANDLE upnpCtrl;
+	CUpnpSsdpServer upnpServer;
 	HANDLE resumeTimer;
 	__int64 resumeTime;
 	WORD shutdownModePending;
@@ -52,7 +54,6 @@ struct MAIN_WINDOW_CONTEXT {
 		, serviceFlag(serviceFlag_)
 		, awayMode(awayMode_)
 		, msgTaskbarCreated(RegisterWindowMessage(L"TaskbarCreated"))
-		, upnpCtrl(NULL)
 		, resumeTimer(NULL)
 		, shutdownModePending(0)
 		, shutdownPendingTick(0)
@@ -155,10 +156,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		if( ctx->resumeTimer ){
 			CloseHandle(ctx->resumeTimer);
 		}
-		if( ctx->upnpCtrl ){
-			UPNP_SERVER_Stop(ctx->upnpCtrl);
-			UPNP_SERVER_CloseHandle(&ctx->upnpCtrl);
-		}
+		ctx->upnpServer.Stop();
 		ctx->httpServer.StopServer();
 		ctx->tcpServer.StopServer();
 		ctx->pipeServer.StopServer();
@@ -198,11 +196,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 			}else{
 				ctx->tcpServer.StartServer(tcpPort_, CtrlCmdCallback, ctx->sys, 0, GetCurrentProcessId());
 			}
-			if( ctx->upnpCtrl ){
-				UPNP_SERVER_RemoveNotifyInfo(ctx->upnpCtrl, ctx->sys->ssdpNotifyUuid.c_str());
-				UPNP_SERVER_Stop(ctx->upnpCtrl);
-				UPNP_SERVER_CloseHandle(&ctx->upnpCtrl);
-			}
+			ctx->upnpServer.Stop();
 			if( httpPorts_.empty() ){
 				ctx->httpServer.StopServer();
 			}else{
@@ -220,17 +214,28 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 						string dddStr = dddBuf;
 						size_t udnFrom = dddStr.find("<UDN>uuid:");
 						if( udnFrom != string::npos && dddStr.size() > udnFrom + 10 + 36 && dddStr.compare(udnFrom + 10 + 36, 6, "</UDN>") == 0 ){
-							ctx->sys->ssdpNotifyUuid.assign(dddStr, udnFrom + 10, 36);
+							string notifyUuid(dddStr, udnFrom + 5, 41);
 							//最後にみつかった':'より後ろか先頭を_wtoiした結果を通知ポートとする
-							ctx->sys->ssdpNotifyPort = (unsigned short)_wtoi(httpPorts_.c_str() +
+							unsigned short notifyPort = (unsigned short)_wtoi(httpPorts_.c_str() +
 								(httpPorts_.find_last_of(':') == wstring::npos ? 0 : httpPorts_.find_last_of(':') + 1));
 							//UPnPのUDP(Port1900)部分を担当するサーバ
-							ctx->upnpCtrl = UPNP_SERVER_CreateHandle(NULL, NULL, UpnpMSearchReqCallback, ctx->sys);
-							UPNP_SERVER_Start(ctx->upnpCtrl);
-							LPCSTR urnList[] = { UPNP_URN_DMS_1, UPNP_URN_CDS_1, UPNP_URN_CMS_1, UPNP_URN_AVT_1, NULL };
-							for( int i = 0; urnList[i]; i++ ){
-								UPNP_SERVER_AddNotifyInfo(ctx->upnpCtrl, ctx->sys->ssdpNotifyUuid.c_str(), urnList[i], ctx->sys->ssdpNotifyPort, "/dlna/dms/ddd.xml");
+							LPCSTR targetArray[] = { "upnp:rootdevice", UPNP_URN_DMS_1, UPNP_URN_CDS_1, UPNP_URN_CMS_1, UPNP_URN_AVT_1 };
+							vector<CUpnpSsdpServer::SSDP_TARGET_INFO> targetList(2 + _countof(targetArray));
+							targetList[0].target = notifyUuid;
+							Format(targetList[0].location, "http://$HOST$:%d/dlna/dms/ddd.xml", notifyPort);
+							targetList[0].usn = targetList[0].target;
+							targetList[0].notifyFlag = true;
+							targetList[1].target = "ssdp:all";
+							targetList[1].location = targetList[0].location;
+							targetList[1].usn = notifyUuid + "::" + "upnp:rootdevice";
+							targetList[1].notifyFlag = false;
+							for( size_t i = 2; i < targetList.size(); i++ ){
+								targetList[i].target = targetArray[i - 2];
+								targetList[i].location = targetList[0].location;
+								targetList[i].usn = notifyUuid + "::" + targetList[i].target;
+								targetList[i].notifyFlag = true;
 							}
+							ctx->upnpServer.Start(targetList);
 						}else{
 							OutputDebugString(L"Invalid ddd.xml\r\n");
 						}
@@ -2123,53 +2128,6 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 	}
 
 	return 0;
-}
-
-int CEpgTimerSrvMain::UpnpMSearchReqCallback(UPNP_MSEARCH_REQUEST_INFO* requestParam, void* param, SORT_LIST_HANDLE resDeviceList)
-{
-	if( requestParam == NULL || lstrcmpiA(requestParam->man, "\"ssdp:discover\"") != 0 ){
-		return -1;
-	}
-	//ここではUDPで投げられたデバイス検索の要求に対する応答を作成する
-	const string& uuid = ((CEpgTimerSrvMain*)param)->ssdpNotifyUuid;
-	unsigned short port = ((CEpgTimerSrvMain*)param)->ssdpNotifyPort;
-	char ua[128] = "";
-	UPNP_UTIL_GetUserAgent(ua, _countof(ua));
-	string st = requestParam->st;
-	if( CompareNoCase(st, "upnp:rootdevice") == 0 || CompareNoCase(st, "ssdp:all") == 0 ){
-		UPNP_MSEARCH_RES_DEV_INFO* resDevInfo = UPNP_MSEARCH_RES_DEV_INFO_New();
-		resDevInfo->max_age = 1800;
-		resDevInfo->port = port;
-		resDevInfo->uri = _strdup("/dlna/dms/ddd.xml");
-		resDevInfo->uuid = _strdup(uuid.c_str());
-		resDevInfo->usn = _strdup(("uuid:" + uuid + "::urn:rootdevice").c_str());
-		resDevInfo->server = _strdup(ua);
-		SORT_LIST_AddItem(resDeviceList, resDevInfo->uuid, resDevInfo);
-	}
-	if( st.compare(0, 5, "uuid:") == 0 && st.find(uuid) != string::npos ){
-		UPNP_MSEARCH_RES_DEV_INFO* resDevInfo = UPNP_MSEARCH_RES_DEV_INFO_New();
-		resDevInfo->max_age = 1800;
-		resDevInfo->port = port;
-		resDevInfo->uri = _strdup("/dlna/dms/ddd.xml");
-		resDevInfo->uuid = _strdup(uuid.c_str());
-		resDevInfo->usn = _strdup(("uuid:" + uuid).c_str());
-		resDevInfo->server = _strdup(ua);
-		SORT_LIST_AddItem(resDeviceList, resDevInfo->uuid, resDevInfo);
-	}
-	if( CompareNoCase(st, UPNP_URN_DMS_1) == 0 ||
-	    CompareNoCase(st, UPNP_URN_CDS_1) == 0 ||
-	    CompareNoCase(st, UPNP_URN_CMS_1) == 0 ||
-	    CompareNoCase(st, UPNP_URN_AVT_1) == 0 ){
-		UPNP_MSEARCH_RES_DEV_INFO* resDevInfo = UPNP_MSEARCH_RES_DEV_INFO_New();
-		resDevInfo->max_age = 1800;
-		resDevInfo->port = port;
-		resDevInfo->uri = _strdup("/dlna/dms/ddd.xml");
-		resDevInfo->uuid = _strdup(uuid.c_str());
-		resDevInfo->usn = _strdup(("uuid:" + uuid + "::" + st).c_str());
-		resDevInfo->server = _strdup(ua);
-		SORT_LIST_AddItem(resDeviceList, resDevInfo->uuid, resDevInfo);	
-	}
-	return -1;
 }
 
 int CEpgTimerSrvMain::InitLuaCallback(lua_State* L)

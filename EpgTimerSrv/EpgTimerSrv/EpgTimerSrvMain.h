@@ -50,7 +50,6 @@ private:
 	bool AutoAddReserveProgram(const MANUAL_AUTO_ADD_DATA& data);
 	//外部制御コマンド関係
 	static int CALLBACK CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STREAM* resParam);
-	static int UpnpMSearchReqCallback(_UPNP_MSEARCH_REQUEST_INFO* requestParam, void* param, void* resDeviceList);
 	static int InitLuaCallback(lua_State* L);
 	//Lua-edcb空間のコールバック
 	class CLuaWorkspace
@@ -127,8 +126,6 @@ private:
 	wstring httpAccessControlList;
 	bool httpSaveLog;
 	bool enableSsdpServer;
-	string ssdpNotifyUuid;
-	unsigned short ssdpNotifyPort;
 	vector<pair<int, wstring>> dmsPublicFileList;
 	int autoAddHour;
 	bool chkGroupEvent;
