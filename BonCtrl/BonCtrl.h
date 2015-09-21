@@ -455,7 +455,8 @@ protected:
 	size_t TSBuffOffset;
 
 	HANDLE analyzeThread;
-	HANDLE analyzeStopEvent;
+	HANDLE analyzeEvent;
+	BOOL analyzeStopFlag;
 
 	//チャンネルスキャン用
 	HANDLE chScanThread;

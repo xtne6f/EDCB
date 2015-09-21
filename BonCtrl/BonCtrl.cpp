@@ -13,7 +13,8 @@ CBonCtrl::CBonCtrl(void)
 	this->TSBuffOffset = 0;
 
     this->analyzeThread = NULL;
-    this->analyzeStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+    this->analyzeEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+    this->analyzeStopFlag = FALSE;
 
     this->chScanThread = NULL;
     this->chScanStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
@@ -89,7 +90,8 @@ CBonCtrl::~CBonCtrl(void)
 	}
 
 	if( this->analyzeThread != NULL ){
-		::SetEvent(this->analyzeStopEvent);
+		this->analyzeStopFlag = TRUE;
+		::SetEvent(this->analyzeEvent);
 		// スレッド終了待ち
 		if ( ::WaitForSingleObject(this->analyzeThread, 15000) == WAIT_TIMEOUT ){
 			::TerminateThread(this->analyzeThread, 0xffffffff);
@@ -97,9 +99,9 @@ CBonCtrl::~CBonCtrl(void)
 		CloseHandle(this->analyzeThread);
 		this->analyzeThread = NULL;
 	}
-	if( this->analyzeStopEvent != NULL ){
-		CloseHandle(this->analyzeStopEvent);
-		this->analyzeStopEvent = NULL;
+	if( this->analyzeEvent != NULL ){
+		CloseHandle(this->analyzeEvent);
+		this->analyzeEvent = NULL;
 	}
 	DeleteCriticalSection(&this->buffLock);
 }
@@ -348,7 +350,7 @@ DWORD CBonCtrl::_OpenBonDriver()
 {
 	if( this->analyzeThread == NULL ){
 		//解析スレッド起動
-		ResetEvent(this->analyzeStopEvent);
+		this->analyzeStopFlag = FALSE;
 		this->analyzeThread = (HANDLE)_beginthreadex(NULL, 0, AnalyzeThread, (LPVOID)this, CREATE_SUSPENDED, NULL);
 		SetThreadPriority( this->analyzeThread, THREAD_PRIORITY_NORMAL );
 		ResumeThread(this->analyzeThread);
@@ -381,7 +383,8 @@ void CBonCtrl::_CloseBonDriver()
 	}
 
 	if( this->analyzeThread != NULL ){
-		::SetEvent(this->analyzeStopEvent);
+		this->analyzeStopFlag = TRUE;
+		::SetEvent(this->analyzeEvent);
 		// スレッド終了待ち
 		if ( ::WaitForSingleObject(this->analyzeThread, 15000) == WAIT_TIMEOUT ){
 			::TerminateThread(this->analyzeThread, 0xffffffff);
@@ -401,7 +404,7 @@ void CBonCtrl::RecvCallback(void* param, BYTE* data, DWORD size, DWORD remain)
 	CBonCtrl* sys = (CBonCtrl*)param;
 	BYTE* outData;
 	DWORD outSize;
-	if( sys->packetInit.GetTSData(data, size, &outData, &outSize) ){
+	if( data != NULL && size != 0 && sys->packetInit.GetTSData(data, size, &outData, &outSize) ){
 		CBlockLock lock(&sys->buffLock);
 		sys->TSBuff.erase(sys->TSBuff.begin(), sys->TSBuff.begin() + sys->TSBuffOffset);
 		sys->TSBuffOffset = 0;
@@ -410,18 +413,16 @@ void CBonCtrl::RecvCallback(void* param, BYTE* data, DWORD size, DWORD remain)
 		}
 		sys->TSBuff.insert(sys->TSBuff.end(), outData, outData + outSize);
 	}
+	if( remain == 0 ){
+		SetEvent(sys->analyzeEvent);
+	}
 }
 
 UINT WINAPI CBonCtrl::AnalyzeThread(LPVOID param)
 {
 	CBonCtrl* sys = (CBonCtrl*)param;
 
-	while(1){
-		if( ::WaitForSingleObject(sys->analyzeStopEvent, 0) != WAIT_TIMEOUT ){
-			//キャンセルされた
-			break;
-		}
-
+	while( sys->analyzeStopFlag == FALSE ){
 		//バッファからデータ取り出し
 		BYTE data[48128];
 		DWORD dataSize = 0;
@@ -437,7 +438,7 @@ UINT WINAPI CBonCtrl::AnalyzeThread(LPVOID param)
 		if( dataSize != 0 ){
 			sys->tsOut.AddTSBuff(data, dataSize);
 		}else{
-			Sleep(10);
+			WaitForSingleObject(sys->analyzeEvent, 1000);
 		}
 	}
 	return 0;

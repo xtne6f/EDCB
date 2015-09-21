@@ -6,7 +6,8 @@
 #include <process.h>
 
 enum {
-	WM_SET_CH = WM_APP,
+	WM_GET_TS_STREAM = WM_APP,
+	WM_SET_CH,
 	WM_GET_NOW_CH,
 	WM_GET_SIGNAL_LEVEL,
 };
@@ -180,7 +181,7 @@ LRESULT CALLBACK CBonDriverUtil::DriverWindowProc(HWND hwnd, UINT uMsg, WPARAM w
 	case WM_CREATE:
 		sys = (CBonDriverUtil*)((LPCREATESTRUCT)lParam)->lpCreateParams;
 		SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)sys);
-		SetTimer(hwnd, 1, 50, NULL);
+		SetTimer(hwnd, 1, 20, NULL);
 		return 0;
 	case WM_DESTROY:
 		SetWindowLongPtr(hwnd, GWLP_USERDATA, NULL);
@@ -188,18 +189,29 @@ LRESULT CALLBACK CBonDriverUtil::DriverWindowProc(HWND hwnd, UINT uMsg, WPARAM w
 		return 0;
 	case WM_TIMER:
 		if( wParam == 1 ){
-			//TSストリームを取得
-			BYTE *data;
-			DWORD size;
-			DWORD remain;
-			while( sys->bon2IF->GetTsStream(&data, &size, &remain) && data && size != 0 ){
-				if( sys->recvFunc ){
-					sys->recvFunc(sys->recvParam, data, size, remain);
-				}
-			}
+			SendMessage(hwnd, WM_GET_TS_STREAM, 0, 0);
 			return 0;
 		}
 		break;
+	case WM_GET_TS_STREAM:
+		{
+			//TSストリームを取得
+			BYTE* data;
+			DWORD size;
+			DWORD remain;
+			if( sys->bon2IF->GetTsStream(&data, &size, &remain) && data && size != 0 ){
+				if( sys->recvFunc ){
+					sys->recvFunc(sys->recvParam, data, size, 1);
+				}
+				PostMessage(hwnd, WM_GET_TS_STREAM, 1, 0);
+			}else if( wParam ){
+				//EDCBは(伝統的に)GetTsStreamのremainを利用しないので、受け取るものがなくなったらremain=0を知らせる
+				if( sys->recvFunc ){
+					sys->recvFunc(sys->recvParam, NULL, 0, 0);
+				}
+			}
+		}
+		return 0;
 	case WM_SET_CH:
 		if( sys->bon2IF->SetChannel((DWORD)wParam, (DWORD)lParam) == FALSE ){
 			Sleep(500);
