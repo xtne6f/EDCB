@@ -229,6 +229,7 @@ namespace EpgTimer
 
             //該当するものがあれば選択、無ければ"登録時"。一応特定条件下で齟齬が出ないように2回検索にしておく。
             RecPresetItem preSelect = boxList.FirstOrDefault(item => item.ID == setDefSetting.LookUpPreset(isDisplayManual).ID);
+            comboBox_preSet.SelectedItem = null;// プリセットがデフォルトの場合でも最初にSelectionChanged()を走らせるため
             loadDefSetting = true;
             comboBox_preSet.SelectedItem = preSelect != null ? preSelect : preCust;
 
