@@ -72,6 +72,7 @@ public:
 		__int64 startOrder; //開始順(予約の前後関係を決める)
 		__int64 effectivePriority; //実効優先度(予約の優先度を決める。小さいほうが高優先度)
 		TR_STATE state;
+		int retryOpenCount;
 		//以下はstate!=TR_IDLEのとき有効
 		DWORD ctrlID[2]; //要素1は部分受信録画制御
 		//以下はstate==TR_RECのとき有効

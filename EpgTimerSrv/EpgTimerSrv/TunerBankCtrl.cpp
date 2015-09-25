@@ -74,6 +74,7 @@ bool CTunerBankCtrl::AddReserve(const TUNER_RESERVE& reserve)
 	r.startOrder = (r.startTime - r.startMargin) / I64_1SEC << 16 | r.reserveID & 0xFFFF;
 	r.effectivePriority = (this->backPriority ? -1 : 1) * ((__int64)((this->backPriority ? r.priority : ~r.priority) & 7) << 60 | r.startOrder);
 	r.state = TR_IDLE;
+	r.retryOpenCount = 0;
 	return true;
 }
 
@@ -112,6 +113,7 @@ bool CTunerBankCtrl::ChgCtrlReserve(TUNER_RESERVE* reserve)
 		r.startOrder = (r.startTime - r.startMargin) / I64_1SEC << 16 | r.reserveID & 0xFFFF;
 		r.effectivePriority = (this->backPriority ? -1 : 1) * ((__int64)((this->backPriority ? r.priority : ~r.priority) & 7) << 60 | r.startOrder);
 		r.state = save.state;
+		r.retryOpenCount = save.retryOpenCount;
 		r.ctrlID[0] = save.ctrlID[0];
 		r.ctrlID[1] = save.ctrlID[1];
 		r.notStartHead = save.notStartHead;
@@ -453,8 +455,7 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 			initCh.useSID = TRUE;
 			initCh.useBonCh = FALSE;
 			bool nwUdpTcp = this->recNW || r.recMode == RECMODE_VIEW;
-			if( OpenTuner(this->recMinWake, nwUdpTcp, nwUdpTcp, true, &initCh) ||
-			    CloseOtherTuner() && OpenTuner(this->recMinWake, nwUdpTcp, nwUdpTcp, true, &initCh) ){
+			if( OpenTuner(this->recMinWake, nwUdpTcp, nwUdpTcp, true, &initCh) ){
 				this->tunerONID = r.onid;
 				this->tunerTSID = r.tsid;
 				this->tunerChLocked = true;
@@ -462,10 +463,13 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 				this->tunerChChgTick = GetTickCount();
 				this->notifyManager.AddNotifyMsg(NOTIFY_UPDATE_PRE_REC_START, this->bonFileName);
 				ctrlCmd.SetPipeSetting(CMD2_VIEW_CTRL_WAIT_CONNECT, CMD2_VIEW_CTRL_PIPE, this->tunerPid);
-			}else{
-				//起動できなかった
+				r.retryOpenCount = 0;
+			}else if( ++r.retryOpenCount >= 4 || r.retryOpenCount == 2 && CloseOtherTuner() == false ){
+				//試行2回→他チューナ終了成功時さらに2回→起動できなかった
 				ret.type = CHECK_ERR_OPEN;
 			}
+		}else{
+			r.retryOpenCount = 0;
 		}
 		if( this->hTunerProcess && (r.startTime - r.startMargin) / I64_1SEC - READY_MARGIN < now / I64_1SEC ){
 			//録画開始READY_MARGIN秒前～
