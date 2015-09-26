@@ -98,14 +98,13 @@ namespace EpgTimer
             EpgCmds.ShowDialog.Execute(sender, this);
         }
         //リストのチェックボックスからの呼び出し
-        public bool ChgOnOffFromCheckbox(ReserveItem hitItem)
+        public void ChgOnOffFromCheckbox(ReserveItem hitItem)
         {
-            if (listView_reserve.SelectedItems.Contains(hitItem) == true)
+            if (listView_reserve.SelectedItems.Contains(hitItem) == false)
             {
-                EpgCmds.ChgOnOff.Execute(listView_reserve, this);
-                return true;
+                listView_reserve.SelectedItem = hitItem;
             }
-            return false;
+            EpgCmds.ChgOnOff.Execute(listView_reserve, this);
         }
     }
 }

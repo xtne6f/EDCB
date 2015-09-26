@@ -99,14 +99,13 @@ namespace EpgTimer
             }
         }
         //リストのカギマークからの呼び出し
-        public bool ChgProtectRecInfoFromCheckbox(RecInfoItem hitItem)
+        public void ChgProtectRecInfoFromCheckbox(RecInfoItem hitItem)
         {
-            if (listView_recinfo.SelectedItems.Contains(hitItem) == true)
+            if (listView_recinfo.SelectedItems.Contains(hitItem) == false)
             {
-                EpgCmds.ProtectChange.Execute(listView_recinfo, this);
-                return true;
+                listView_recinfo.SelectedItem = hitItem;
             }
-            return false;
+            EpgCmds.ProtectChange.Execute(listView_recinfo, this);
         }
     }
 }

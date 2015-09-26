@@ -118,18 +118,9 @@ namespace EpgTimer
         {
             set
             {
-                //選択されている場合、複数選択時に1回の通信で処理するため、処理を割り込ませる。
+                //選択されている場合、複数選択時に1回の通信で処理するため、ウインドウ側に処理を渡す。
                 MainWindow mainWindow = (MainWindow)Application.Current.MainWindow;
-                if (mainWindow.reserveView.ChgOnOffFromCheckbox(this) == true) return;
-
-                //通常(単独)の処理
-                if (ReserveInfo != null)
-                {
-                    if ((this.ReserveInfo.RecSetting.RecMode != 5) != value)
-                    {
-                        mutil.ReserveChangeOnOff(mutil.ToList(this.ReserveInfo));
-                    }
-                }
+                mainWindow.reserveView.ChgOnOffFromCheckbox(this);
             }
             get
             {
