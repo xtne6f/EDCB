@@ -75,6 +75,26 @@ namespace EpgTimer.UserCtrlView
                 {
                     mBinds.ResetInputBindings(this.Owner, this.listBox);
                 }
+
+                //コマンドだと、DragCancelしない場合に、CanExecuteを割り当てても、Handled=falseにしても、
+                //Keygestureが先へ伝搬してくれないので、対処療法的だけど先に処理してしまうことにする。コマンドの意味無い‥。
+                listBox.PreviewKeyDown += new KeyEventHandler((sender, e) =>
+                {
+                    if (Keyboard.Modifiers == ModifierKeys.None)
+                    {
+                        switch (e.Key)
+                        {
+                            case Key.Escape:
+                                if (_onDrag == true)
+                                {
+                                    EpgCmds.DragCancel.Execute(null, null);
+                                    e.Handled = true;
+                                }
+                                break;
+                        }
+                    }
+                });
+
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
@@ -232,6 +252,7 @@ namespace EpgTimer.UserCtrlView
                 {
                     this.MoveItem(dropTo);
                 }
+                e.Handled = _onDrag == true;
                 DragRelease();
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }

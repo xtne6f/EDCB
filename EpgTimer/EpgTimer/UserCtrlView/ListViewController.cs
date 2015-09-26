@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.ComponentModel;
 
 using System.Reflection;
@@ -83,8 +84,35 @@ namespace EpgTimer
             }
 
             gvSelector = new GridViewSelector(gv, this.columnSaveList);
+
+            //アイテムの無い場所でクリックしたとき、選択を解除する。
+            listView.MouseLeftButtonUp += new MouseButtonEventHandler((sender, e) =>
+            {
+                if (listView.InputHitTest(e.GetPosition(listView)) is ScrollViewer)//本当にこれで良いのだろうか？
+                {
+                    listView.UnselectAll();
+                }
+            });
+
+            //Escapeキーで選択を解除する。
+            listView.KeyDown += new KeyEventHandler((sender, e) =>
+            {
+                if (Keyboard.Modifiers == ModifierKeys.None)
+                {
+                    switch (e.Key)
+                    {
+                        case Key.Escape:
+                            if (listView.SelectedItem != null)
+                            {
+                                listView.UnselectAll();
+                                e.Handled = true;
+                            }
+                            break;
+                    }
+                }
+            });
         }
-        
+
         public void SaveViewDataToSettings()
         {
             try
