@@ -106,30 +106,19 @@ protected:
 
 	HANDLE outThread;
 	BOOL outStopFlag;
+	BOOL outStartFlag;
 
 	typedef struct _SAVE_INFO{
 		CWritePlugInUtil* writeUtil;
 		BOOL freeChk;
-		BOOL overWriteFlag;
-		wstring recFilePath;
-		vector<wstring> subRecPath;
+		wstring writePlugIn;
+		wstring recFolder;
 		wstring recFileName;
-		_SAVE_INFO(void){
-			freeChk = FALSE;
-			overWriteFlag = FALSE;
-			recFilePath = L"";
-			writeUtil = NULL;
-			recFileName = L"";
-		};
-		~_SAVE_INFO(void){
-			if( writeUtil != NULL ){
-				writeUtil->UnInitialize();
-				SAFE_DELETE(writeUtil);
-			}
-		};
 	}SAVE_INFO;
-	vector<SAVE_INFO*> fileList;
+	vector<SAVE_INFO> fileList;
 
+	BOOL overWriteFlag;
+	ULONGLONG createSize;
 	vector<wstring> saveFolderSub;
 
 	BOOL subRecFlag;
