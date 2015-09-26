@@ -169,7 +169,7 @@ namespace EpgTimer
                 && src.Priority == dest.Priority
                 && (src.RebootFlag == dest.RebootFlag || src.SuspendMode == 0)//動作後設定デフォルト時
                 && src.RecFolderList.EqualsTo(dest.RecFolderList)
-                && src.RecMode == dest.RecMode
+                && (src.RecMode == dest.RecMode || src.RecMode == 5 || dest.RecMode == 5)
                 && (src.ServiceMode == dest.ServiceMode || ((src.ServiceMode | dest.ServiceMode) & 0x0F) == 0)//字幕等データ設定デフォルト時
                 && (src.StartMargine == dest.StartMargine || src.UseMargineFlag == 0)//マージンデフォルト時
                 && src.SuspendMode == dest.SuspendMode//動作後設定
