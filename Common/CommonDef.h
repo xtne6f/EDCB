@@ -29,26 +29,15 @@
 #define RECMODE_SERVICE_NOB25 3 //指定サービスのみ（B25処理なし）
 #define RECMODE_VIEW 4 //視聴
 #define RECMODE_NO 5 //無効
-#define RECMODE_EPG 0xFF //EPG取得
 
 #define RESERVE_EXECUTE 0 //普通に予約実行
 #define RESERVE_PILED_UP 1 //重なって実行できない予約あり
 #define RESERVE_NO_EXECUTE 2 //重なって実行できない
-#define RESERVE_NO 3 //無効
 
 #define RECSERVICEMODE_DEF	0x00000000	//デフォルト設定
 #define RECSERVICEMODE_SET	0x00000001	//設定値使用
 #define RECSERVICEMODE_CAP	0x00000010	//字幕データ含む
 #define RECSERVICEMODE_DATA	0x00000020	//データカルーセル含む
-
-#define REC_STATUS_WAIT		0x00000000	//録画待ち
-#define REC_STATUS_END		0x00000001	//正常終了
-#define REC_STATUS_ERR_WAKE	0x00000002	//録画時間過ぎてエラー
-#define	REC_STATUS_ERR_OPEN	0x00000004	//EXE起動できなくてエラー
-#define	REC_STATUS_ERR_FIND	0x00000008	//EPG情報見つからなくてエラー
-#define	REC_STATUS_END_PG	0x00000010	//プログラム予約に変更して録画終了（EPG情報確認できなかった）
-#define REC_STATUS_CHG_TIME	0x00000100	//予約時の開始時間と変わって録画
-#define REC_STATUS_RELAY	0x00000200	//イベントリレーで録画
 
 //予約追加状態
 #define ADD_RESERVE_NORMAL		0x00	//通常

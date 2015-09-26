@@ -590,8 +590,8 @@ bool CParseReserveText::ParseLine(const wstring& parseLine, pair<DWORD, RESERVE_
 		item.second.recSetting.suspendMode = 4;
 	}
 	item.second.recSetting.rebootFlag = _wtoi(NextToken(token)) != 0;
+	//”pŽ~(‹ŒrecFilePath)
 	NextToken(token);
-	item.second.recFilePath.assign(token[0], token[1]);
 	item.second.recSetting.useMargineFlag = _wtoi(NextToken(token)) != 0;
 	item.second.recSetting.startMargine = _wtoi(NextToken(token));
 	item.second.recSetting.endMargine = _wtoi(NextToken(token));
@@ -637,7 +637,6 @@ bool CParseReserveText::ParseLine(const wstring& parseLine, pair<DWORD, RESERVE_
 			item.second.recSetting.partialRecFolder.push_back(folderItem);
 		}
 	}
-	item.second.recWaitFlag = FALSE;
 	item.second.overlapMode = 0;
 	this->nextID = this->nextID > item.first + 50000000 ? item.first + 1 : (max(item.first + 1, this->nextID) - 1) % 100000000 + 1;
 	return true;
@@ -683,7 +682,7 @@ bool CParseReserveText::SaveLine(const pair<DWORD, RESERVE_DATA>& item, wstring&
 			item.second.recSetting.recFolderList[0].recNamePlugIn).c_str(),
 		item.second.recSetting.suspendMode,
 		item.second.recSetting.rebootFlag,
-		item.second.recFilePath.c_str(),
+		L"",
 		item.second.recSetting.useMargineFlag,
 		item.second.recSetting.startMargine,
 		item.second.recSetting.endMargine,

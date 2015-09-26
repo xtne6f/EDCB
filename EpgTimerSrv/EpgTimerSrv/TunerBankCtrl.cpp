@@ -1546,8 +1546,7 @@ BOOL CTunerBankCtrl::RecStart(LONGLONG nowTime, RESERVE_WORK* reserve, BOOL send
 		param.ctrlID = reserve->ctrlID[i];
 		//デフォルトファイル名
 		if( this->useRecNamePlugIn == TRUE ){
-			CReNamePlugInUtil plugIn;
-			if( plugIn.Initialize(this->recNamePlugInFilePath.c_str()) == TRUE ){
+			{
 				WCHAR name[512] = L"";
 				DWORD size = 512;
 				PLUGIN_RESERVE_INFO info;
@@ -1572,16 +1571,13 @@ BOOL CTunerBankCtrl::RecStart(LONGLONG nowTime, RESERVE_WORK* reserve, BOOL send
 						CopyEpgInfo(epgInfo, &epgDBInfo);
 					}
 				}
-				if( epgInfo != NULL ){
-					if( plugIn.ConvertRecName2(&info, epgInfo, name, &size) == TRUE ){
-						param.fileName = name;
-					}
-					SAFE_DELETE(epgInfo);
-				}else{
-					if( plugIn.ConvertRecName(&info, name, &size) == TRUE ){
-						param.fileName = name;
-					}
+				info.reserveID = data.reserveID;
+				info.epgInfo = epgInfo;
+				info.sizeOfStruct = 0;
+				if( CReNamePlugInUtil::ConvertRecName3(&info, L"", this->recNamePlugInFilePath.c_str(), name, &size) ){
+					param.fileName = name;
 				}
+				SAFE_DELETE(epgInfo);
 			}
 		}
 		if( param.fileName.size() == 0 ){
@@ -1632,13 +1628,11 @@ BOOL CTunerBankCtrl::RecStart(LONGLONG nowTime, RESERVE_WORK* reserve, BOOL send
 				}
 				for( size_t j=0; j<data.recSetting.partialRecFolder.size(); j++ ){
 					if( data.recSetting.partialRecFolder[j].recNamePlugIn.size() > 0 ){
-						CReNamePlugInUtil plugIn;
 						wstring plugInPath;
 						GetModuleFolderPath(plugInPath);
 						plugInPath += L"\\RecName\\";
-						plugInPath += data.recSetting.partialRecFolder[j].recNamePlugIn;
 
-						if( plugIn.Initialize(plugInPath.c_str()) == TRUE ){
+						{
 							WCHAR name[512] = L"";
 							DWORD size = 512;
 							PLUGIN_RESERVE_INFO info;
@@ -1663,20 +1657,15 @@ BOOL CTunerBankCtrl::RecStart(LONGLONG nowTime, RESERVE_WORK* reserve, BOOL send
 									CopyEpgInfo(epgInfo, &epgDBInfo);
 								}
 							}
-							if( epgInfo != NULL ){
-								if( plugIn.ConvertRecName2(&info, epgInfo, name, &size) == TRUE ){
-									wstring fileName = name;
-									CheckFileName(fileName, noChkYen);
-									data.recSetting.partialRecFolder[j].recFileName = fileName;
-								}
-								SAFE_DELETE(epgInfo);
-							}else{
-								if( plugIn.ConvertRecName(&info, name, &size) == TRUE ){
-									wstring fileName = name;
-									CheckFileName(fileName, noChkYen);
-									data.recSetting.partialRecFolder[j].recFileName = fileName;
-								}
+							info.reserveID = data.reserveID;
+							info.epgInfo = epgInfo;
+							info.sizeOfStruct = 0;
+							if( CReNamePlugInUtil::ConvertRecName3(&info, data.recSetting.partialRecFolder[j].recNamePlugIn.c_str(), plugInPath.c_str(), name, &size) ){
+								wstring fileName = name;
+								CheckFileName(fileName, noChkYen);
+								data.recSetting.partialRecFolder[j].recFileName = fileName;
 							}
+							SAFE_DELETE(epgInfo);
 						}
 					}
 				}
@@ -1693,13 +1682,11 @@ BOOL CTunerBankCtrl::RecStart(LONGLONG nowTime, RESERVE_WORK* reserve, BOOL send
 			}else{
 				for( size_t j=0; j<data.recSetting.recFolderList.size(); j++ ){
 					if( data.recSetting.recFolderList[j].recNamePlugIn.size() > 0 ){
-						CReNamePlugInUtil plugIn;
 						wstring plugInPath;
 						GetModuleFolderPath(plugInPath);
 						plugInPath += L"\\RecName\\";
-						plugInPath += data.recSetting.recFolderList[j].recNamePlugIn;
 
-						if( plugIn.Initialize(plugInPath.c_str()) == TRUE ){
+						{
 							WCHAR name[512] = L"";
 							DWORD size = 512;
 							PLUGIN_RESERVE_INFO info;
@@ -1724,20 +1711,15 @@ BOOL CTunerBankCtrl::RecStart(LONGLONG nowTime, RESERVE_WORK* reserve, BOOL send
 									CopyEpgInfo(epgInfo, &epgDBInfo);
 								}
 							}
-							if( epgInfo != NULL ){
-								if( plugIn.ConvertRecName2(&info, epgInfo, name, &size) == TRUE ){
-									wstring fileName = name;
-									CheckFileName(fileName, noChkYen);
-									data.recSetting.recFolderList[j].recFileName = fileName;
-								}
-								SAFE_DELETE(epgInfo);
-							}else{
-								if( plugIn.ConvertRecName(&info, name, &size) == TRUE ){
-									wstring fileName = name;
-									CheckFileName(fileName, noChkYen);
-									data.recSetting.recFolderList[j].recFileName = fileName;
-								}
+							info.reserveID = data.reserveID;
+							info.epgInfo = epgInfo;
+							info.sizeOfStruct = 0;
+							if( CReNamePlugInUtil::ConvertRecName3(&info, data.recSetting.recFolderList[j].recNamePlugIn.c_str(), plugInPath.c_str(), name, &size) ){
+								wstring fileName = name;
+								CheckFileName(fileName, noChkYen);
+								data.recSetting.recFolderList[j].recFileName = fileName;
 							}
+							SAFE_DELETE(epgInfo);
 						}
 					}
 				}

@@ -349,376 +349,231 @@ void _ConvertEpgInfoText(EPGDB_EVENT_INFO* info, wstring& text)
 	text += buff;
 }
 
-static map<WORD, wstring> contentKindMap;
-static map<WORD, wstring> componentKindMap;
-static vector<GENRU_INFO> genruList;
+static const struct KIND_INFO {
+	WORD key;
+	LPCWSTR str;
+} contentKindSortedArray[] = {
+	{ 0x0000, L"定時・総合" },
+	{ 0x0001, L"天気" },
+	{ 0x0002, L"特集・ドキュメント" },
+	{ 0x0003, L"政治・国会" },
+	{ 0x0004, L"経済・市況" },
+	{ 0x0005, L"海外・国際" },
+	{ 0x0006, L"解説" },
+	{ 0x0007, L"討論・会談" },
+	{ 0x0008, L"報道特番" },
+	{ 0x0009, L"ローカル・地域" },
+	{ 0x000A, L"交通" },
+	{ 0x000F, L"その他" },
+	{ 0x00FF, L"ニュース／報道" },
 
-GENRU_INFO CreateGenruInfo(WORD key, wstring name){
-	GENRU_INFO info;
-	info.key = key;
-	info.name = name;
-	info.nibble1 = key>>8;
-	info.nibble2 = (BYTE)(key&0x00FF);
-	return info;
-}
+	{ 0x0100, L"スポーツニュース" },
+	{ 0x0101, L"野球" },
+	{ 0x0102, L"サッカー" },
+	{ 0x0103, L"ゴルフ" },
+	{ 0x0104, L"その他の球技" },
+	{ 0x0105, L"相撲・格闘技" },
+	{ 0x0106, L"オリンピック・国際大会" },
+	{ 0x0107, L"マラソン・陸上・水泳" },
+	{ 0x0108, L"モータースポーツ" },
+	{ 0x0109, L"マリン・ウィンタースポーツ" },
+	{ 0x010A, L"競馬・公営競技" },
+	{ 0x010F, L"その他" },
+	{ 0x01FF, L"スポーツ" },
 
-void CreateContentKindMap()
+	{ 0x0200, L"芸能・ワイドショー" },
+	{ 0x0201, L"ファッション" },
+	{ 0x0202, L"暮らし・住まい" },
+	{ 0x0203, L"健康・医療" },
+	{ 0x0204, L"ショッピング・通販" },
+	{ 0x0205, L"グルメ・料理" },
+	{ 0x0206, L"イベント" },
+	{ 0x0207, L"番組紹介・お知らせ" },
+	{ 0x020F, L"その他" },
+	{ 0x02FF, L"情報／ワイドショー" },
+
+	{ 0x0300, L"国内ドラマ" },
+	{ 0x0301, L"海外ドラマ" },
+	{ 0x0302, L"時代劇" },
+	{ 0x030F, L"その他" },
+	{ 0x03FF, L"ドラマ" },
+
+	{ 0x0400, L"国内ロック・ポップス" },
+	{ 0x0401, L"海外ロック・ポップス" },
+	{ 0x0402, L"クラシック・オペラ" },
+	{ 0x0403, L"ジャズ・フュージョン" },
+	{ 0x0404, L"歌謡曲・演歌" },
+	{ 0x0405, L"ライブ・コンサート" },
+	{ 0x0406, L"ランキング・リクエスト" },
+	{ 0x0407, L"カラオケ・のど自慢" },
+	{ 0x0408, L"民謡・邦楽" },
+	{ 0x0409, L"童謡・キッズ" },
+	{ 0x040A, L"民族音楽・ワールドミュージック" },
+	{ 0x040F, L"その他" },
+	{ 0x04FF, L"音楽" },
+
+	{ 0x0500, L"クイズ" },
+	{ 0x0501, L"ゲーム" },
+	{ 0x0502, L"トークバラエティ" },
+	{ 0x0503, L"お笑い・コメディ" },
+	{ 0x0504, L"音楽バラエティ" },
+	{ 0x0505, L"旅バラエティ" },
+	{ 0x0506, L"料理バラエティ" },
+	{ 0x050F, L"その他" },
+	{ 0x05FF, L"バラエティ" },
+
+	{ 0x0600, L"洋画" },
+	{ 0x0601, L"邦画" },
+	{ 0x0602, L"アニメ" },
+	{ 0x060F, L"その他" },
+	{ 0x06FF, L"映画" },
+
+	{ 0x0700, L"国内アニメ" },
+	{ 0x0701, L"海外アニメ" },
+	{ 0x0702, L"特撮" },
+	{ 0x070F, L"その他" },
+	{ 0x07FF, L"アニメ／特撮" },
+
+	{ 0x0800, L"社会・時事" },
+	{ 0x0801, L"歴史・紀行" },
+	{ 0x0802, L"自然・動物・環境" },
+	{ 0x0803, L"宇宙・科学・医学" },
+	{ 0x0804, L"カルチャー・伝統文化" },
+	{ 0x0805, L"文学・文芸" },
+	{ 0x0806, L"スポーツ" },
+	{ 0x0807, L"ドキュメンタリー全般" },
+	{ 0x0808, L"インタビュー・討論" },
+	{ 0x080F, L"その他" },
+	{ 0x08FF, L"ドキュメンタリー／教養" },
+
+	{ 0x0900, L"現代劇・新劇" },
+	{ 0x0901, L"ミュージカル" },
+	{ 0x0902, L"ダンス・バレエ" },
+	{ 0x0903, L"落語・演芸" },
+	{ 0x0904, L"歌舞伎・古典" },
+	{ 0x090F, L"その他" },
+	{ 0x09FF, L"劇場／公演" },
+
+	{ 0x0A00, L"旅・釣り・アウトドア" },
+	{ 0x0A01, L"園芸・ペット・手芸" },
+	{ 0x0A02, L"音楽・美術・工芸" },
+	{ 0x0A03, L"囲碁・将棋" },
+	{ 0x0A04, L"麻雀・パチンコ" },
+	{ 0x0A05, L"車・オートバイ" },
+	{ 0x0A06, L"コンピュータ・ＴＶゲーム" },
+	{ 0x0A07, L"会話・語学" },
+	{ 0x0A08, L"幼児・小学生" },
+	{ 0x0A09, L"中学生・高校生" },
+	{ 0x0A0A, L"大学生・受験" },
+	{ 0x0A0B, L"生涯教育・資格" },
+	{ 0x0A0C, L"教育問題" },
+	{ 0x0A0F, L"その他" },
+	{ 0x0AFF, L"趣味／教育" },
+
+	{ 0x0B00, L"高齢者" },
+	{ 0x0B01, L"障害者" },
+	{ 0x0B02, L"社会福祉" },
+	{ 0x0B03, L"ボランティア" },
+	{ 0x0B04, L"手話" },
+	{ 0x0B05, L"文字（字幕）" },
+	{ 0x0B06, L"音声解説" },
+	{ 0x0B0F, L"その他" },
+	{ 0x0BFF, L"福祉" },
+
+	{ 0x0FFF, L"その他" },
+	{ 0xFFFF, L"なし" },
+},
+componentKindSortedArray[] = {
+	{ 0x0101, L"480i(525i)、アスペクト比4:3" },
+	{ 0x0102, L"480i(525i)、アスペクト比16:9 パンベクトルあり" },
+	{ 0x0103, L"480i(525i)、アスペクト比16:9 パンベクトルなし" },
+	{ 0x0104, L"480i(525i)、アスペクト比 > 16:9" },
+	{ 0x0191, L"2160p、アスペクト比4:3" },
+	{ 0x0192, L"2160p、アスペクト比16:9 パンベクトルあり" },
+	{ 0x0193, L"2160p、アスペクト比16:9 パンベクトルなし" },
+	{ 0x0194, L"2160p、アスペクト比 > 16:9" },
+	{ 0x01A1, L"480p(525p)、アスペクト比4:3" },
+	{ 0x01A2, L"480p(525p)、アスペクト比16:9 パンベクトルあり" },
+	{ 0x01A3, L"480p(525p)、アスペクト比16:9 パンベクトルなし" },
+	{ 0x01A4, L"480p(525p)、アスペクト比 > 16:9" },
+	{ 0x01B1, L"1080i(1125i)、アスペクト比4:3" },
+	{ 0x01B2, L"1080i(1125i)、アスペクト比16:9 パンベクトルあり" },
+	{ 0x01B3, L"1080i(1125i)、アスペクト比16:9 パンベクトルなし" },
+	{ 0x01B4, L"1080i(1125i)、アスペクト比 > 16:9" },
+	{ 0x01C1, L"720p(750p)、アスペクト比4:3" },
+	{ 0x01C2, L"720p(750p)、アスペクト比16:9 パンベクトルあり" },
+	{ 0x01C3, L"720p(750p)、アスペクト比16:9 パンベクトルなし" },
+	{ 0x01C4, L"720p(750p)、アスペクト比 > 16:9" },
+	{ 0x01D1, L"240p アスペクト比4:3" },
+	{ 0x01D2, L"240p アスペクト比16:9 パンベクトルあり" },
+	{ 0x01D3, L"240p アスペクト比16:9 パンベクトルなし" },
+	{ 0x01D4, L"240p アスペクト比 > 16:9" },
+	{ 0x01E1, L"1080p(1125p)、アスペクト比4:3" },
+	{ 0x01E2, L"1080p(1125p)、アスペクト比16:9 パンベクトルあり" },
+	{ 0x01E3, L"1080p(1125p)、アスペクト比16:9 パンベクトルなし" },
+	{ 0x01E4, L"1080p(1125p)、アスペクト比 > 16:9" },
+	{ 0x0201, L"1/0モード（シングルモノ）" },
+	{ 0x0202, L"1/0＋1/0モード（デュアルモノ）" },
+	{ 0x0203, L"2/0モード（ステレオ）" },
+	{ 0x0204, L"2/1モード" },
+	{ 0x0205, L"3/0モード" },
+	{ 0x0206, L"2/2モード" },
+	{ 0x0207, L"3/1モード" },
+	{ 0x0208, L"3/2モード" },
+	{ 0x0209, L"3/2＋LFEモード（3/2.1モード）" },
+	{ 0x020A, L"3/3.1モード" },
+	{ 0x020B, L"2/0/0-2/0/2-0.1モード" },
+	{ 0x020C, L"5/2.1モード" },
+	{ 0x020D, L"3/2/2.1モード" },
+	{ 0x020E, L"2/0/0-3/0/2-0.1モード" },
+	{ 0x020F, L"0/2/0-3/0/2-0.1モード" },
+	{ 0x0210, L"2/0/0-3/2/3-0.2モード" },
+	{ 0x0211, L"3/3/3-5/2/3-3/0/0.2モード" },
+	{ 0x0240, L"視覚障害者用音声解説" },
+	{ 0x0241, L"聴覚障害者用音声" },
+	{ 0x0501, L"H.264|MPEG-4 AVC、480i(525i)、アスペクト比4:3" },
+	{ 0x0502, L"H.264|MPEG-4 AVC、480i(525i)、アスペクト比16:9 パンベクトルあり" },
+	{ 0x0503, L"H.264|MPEG-4 AVC、480i(525i)、アスペクト比16:9 パンベクトルなし" },
+	{ 0x0504, L"H.264|MPEG-4 AVC、480i(525i)、アスペクト比 > 16:9" },
+	{ 0x0591, L"H.264|MPEG-4 AVC、2160p、アスペクト比4:3" },
+	{ 0x0592, L"H.264|MPEG-4 AVC、2160p、アスペクト比16:9 パンベクトルあり" },
+	{ 0x0593, L"H.264|MPEG-4 AVC、2160p、アスペクト比16:9 パンベクトルなし" },
+	{ 0x0594, L"H.264|MPEG-4 AVC、2160p、アスペクト比 > 16:9" },
+	{ 0x05A1, L"H.264|MPEG-4 AVC、480p(525p)、アスペクト比4:3" },
+	{ 0x05A2, L"H.264|MPEG-4 AVC、480p(525p)、アスペクト比16:9 パンベクトルあり" },
+	{ 0x05A3, L"H.264|MPEG-4 AVC、480p(525p)、アスペクト比16:9 パンベクトルなし" },
+	{ 0x05A4, L"H.264|MPEG-4 AVC、480p(525p)、アスペクト比 > 16:9" },
+	{ 0x05B1, L"H.264|MPEG-4 AVC、1080i(1125i)、アスペクト比4:3" },
+	{ 0x05B2, L"H.264|MPEG-4 AVC、1080i(1125i)、アスペクト比16:9 パンベクトルあり" },
+	{ 0x05B3, L"H.264|MPEG-4 AVC、1080i(1125i)、アスペクト比16:9 パンベクトルなし" },
+	{ 0x05B4, L"H.264|MPEG-4 AVC、1080i(1125i)、アスペクト比 > 16:9" },
+	{ 0x05C1, L"H.264|MPEG-4 AVC、720p(750p)、アスペクト比4:3" },
+	{ 0x05C2, L"H.264|MPEG-4 AVC、720p(750p)、アスペクト比16:9 パンベクトルあり" },
+	{ 0x05C3, L"H.264|MPEG-4 AVC、720p(750p)、アスペクト比16:9 パンベクトルなし" },
+	{ 0x05C4, L"H.264|MPEG-4 AVC、720p(750p)、アスペクト比 > 16:9" },
+	{ 0x05D1, L"H.264|MPEG-4 AVC、240p アスペクト比4:3" },
+	{ 0x05D2, L"H.264|MPEG-4 AVC、240p アスペクト比16:9 パンベクトルあり" },
+	{ 0x05D3, L"H.264|MPEG-4 AVC、240p アスペクト比16:9 パンベクトルなし" },
+	{ 0x05D4, L"H.264|MPEG-4 AVC、240p アスペクト比 > 16:9" },
+	{ 0x05E1, L"H.264|MPEG-4 AVC、1080p(1125p)、アスペクト比4:3" },
+	{ 0x05E2, L"H.264|MPEG-4 AVC、1080p(1125p)、アスペクト比16:9 パンベクトルあり" },
+	{ 0x05E3, L"H.264|MPEG-4 AVC、1080p(1125p)、アスペクト比16:9 パンベクトルなし" },
+	{ 0x05E4, L"H.264|MPEG-4 AVC、1080p(1125p)、アスペクト比 > 16:9" },
+};
+
+static LPCWSTR SearchKindInfoArray(WORD key, const KIND_INFO* arr, size_t len)
 {
-	contentKindMap.clear();
-
-    contentKindMap.insert(pair<WORD,wstring>(0x00FF, L"ニュース／報道"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0000, L"定時・総合"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0001, L"天気"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0002, L"特集・ドキュメント"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0003, L"政治・国会"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0004, L"経済・市況"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0005, L"海外・国際"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0006, L"解説"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0007, L"討論・会談"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0008, L"報道特番"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0009, L"ローカル・地域"));
-    contentKindMap.insert(pair<WORD,wstring>(0x000A, L"交通"));
-    contentKindMap.insert(pair<WORD,wstring>(0x000F, L"その他"));
-
-    contentKindMap.insert(pair<WORD,wstring>(0x01FF, L"スポーツ"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0100, L"スポーツニュース"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0101, L"野球"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0102, L"サッカー"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0103, L"ゴルフ"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0104, L"その他の球技"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0105, L"相撲・格闘技"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0106, L"オリンピック・国際大会"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0107, L"マラソン・陸上・水泳"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0108, L"モータースポーツ"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0109, L"マリン・ウィンタースポーツ"));
-    contentKindMap.insert(pair<WORD,wstring>(0x010A, L"競馬・公営競技"));
-    contentKindMap.insert(pair<WORD,wstring>(0x010F, L"その他"));
-
-    contentKindMap.insert(pair<WORD,wstring>(0x02FF, L"情報／ワイドショー"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0200, L"芸能・ワイドショー"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0201, L"ファッション"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0202, L"暮らし・住まい"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0203, L"健康・医療"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0204, L"ショッピング・通販"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0205, L"グルメ・料理"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0206, L"イベント"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0207, L"番組紹介・お知らせ"));
-    contentKindMap.insert(pair<WORD,wstring>(0x020F, L"その他"));
-
-    contentKindMap.insert(pair<WORD,wstring>(0x03FF, L"ドラマ"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0300, L"国内ドラマ"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0301, L"海外ドラマ"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0302, L"時代劇"));
-    contentKindMap.insert(pair<WORD,wstring>(0x030F, L"その他"));
-
-    contentKindMap.insert(pair<WORD,wstring>(0x04FF, L"音楽"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0400, L"国内ロック・ポップス"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0401, L"海外ロック・ポップス"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0402, L"クラシック・オペラ"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0403, L"ジャズ・フュージョン"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0404, L"歌謡曲・演歌"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0405, L"ライブ・コンサート"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0406, L"ランキング・リクエスト"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0407, L"カラオケ・のど自慢"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0408, L"民謡・邦楽"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0409, L"童謡・キッズ"));
-    contentKindMap.insert(pair<WORD,wstring>(0x040A, L"民族音楽・ワールドミュージック"));
-    contentKindMap.insert(pair<WORD,wstring>(0x040F, L"その他"));
-
-    contentKindMap.insert(pair<WORD,wstring>(0x05FF, L"バラエティ"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0500, L"クイズ"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0501, L"ゲーム"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0502, L"トークバラエティ"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0503, L"お笑い・コメディ"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0504, L"音楽バラエティ"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0505, L"旅バラエティ"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0506, L"料理バラエティ"));
-    contentKindMap.insert(pair<WORD,wstring>(0x050F, L"その他"));
-
-    contentKindMap.insert(pair<WORD,wstring>(0x06FF, L"映画"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0600, L"洋画"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0601, L"邦画"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0602, L"アニメ"));
-    contentKindMap.insert(pair<WORD,wstring>(0x060F, L"その他"));
-
-    contentKindMap.insert(pair<WORD,wstring>(0x07FF, L"アニメ／特撮"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0700, L"国内アニメ"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0701, L"海外アニメ"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0702, L"特撮"));
-    contentKindMap.insert(pair<WORD,wstring>(0x070F, L"その他"));
-
-    contentKindMap.insert(pair<WORD,wstring>(0x08FF, L"ドキュメンタリー／教養"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0800, L"社会・時事"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0801, L"歴史・紀行"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0802, L"自然・動物・環境"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0803, L"宇宙・科学・医学"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0804, L"カルチャー・伝統文化"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0805, L"文学・文芸"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0806, L"スポーツ"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0807, L"ドキュメンタリー全般"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0808, L"インタビュー・討論"));
-    contentKindMap.insert(pair<WORD,wstring>(0x080F, L"その他"));
-
-    contentKindMap.insert(pair<WORD,wstring>(0x09FF, L"劇場／公演"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0900, L"現代劇・新劇"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0901, L"ミュージカル"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0902, L"ダンス・バレエ"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0903, L"落語・演芸"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0904, L"歌舞伎・古典"));
-    contentKindMap.insert(pair<WORD,wstring>(0x090F, L"その他"));
-
-    contentKindMap.insert(pair<WORD,wstring>(0x0AFF, L"趣味／教育"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0A00, L"旅・釣り・アウトドア"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0A01, L"園芸・ペット・手芸"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0A02, L"音楽・美術・工芸"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0A03, L"囲碁・将棋"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0A04, L"麻雀・パチンコ"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0A05, L"車・オートバイ"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0A06, L"コンピュータ・ＴＶゲーム"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0A07, L"会話・語学"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0A08, L"幼児・小学生"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0A09, L"中学生・高校生"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0A0A, L"大学生・受験"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0A0B, L"生涯教育・資格"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0A0C, L"教育問題"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0A0F, L"その他"));
-
-    contentKindMap.insert(pair<WORD,wstring>(0x0BFF, L"福祉"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0B00, L"高齢者"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0B01, L"障害者"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0B02, L"社会福祉"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0B03, L"ボランティア"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0B04, L"手話"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0B05, L"文字（字幕）"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0B06, L"音声解説"));
-    contentKindMap.insert(pair<WORD,wstring>(0x0B0F, L"その他"));
-
-    contentKindMap.insert(pair<WORD,wstring>(0x0FFF, L"その他"));
-    contentKindMap.insert(pair<WORD,wstring>(0xFFFF, L"なし"));
-
-
-	genruList.clear();
-    genruList.push_back(CreateGenruInfo(0x00FF, L"ニュース／報道"));
-    genruList.push_back(CreateGenruInfo(0x0000, L"定時・総合"));
-    genruList.push_back(CreateGenruInfo(0x0001, L"天気"));
-    genruList.push_back(CreateGenruInfo(0x0002, L"特集・ドキュメント"));
-    genruList.push_back(CreateGenruInfo(0x0003, L"政治・国会"));
-    genruList.push_back(CreateGenruInfo(0x0004, L"経済・市況"));
-    genruList.push_back(CreateGenruInfo(0x0005, L"海外・国際"));
-    genruList.push_back(CreateGenruInfo(0x0006, L"解説"));
-    genruList.push_back(CreateGenruInfo(0x0007, L"討論・会談"));
-    genruList.push_back(CreateGenruInfo(0x0008, L"報道特番"));
-    genruList.push_back(CreateGenruInfo(0x0009, L"ローカル・地域"));
-    genruList.push_back(CreateGenruInfo(0x000A, L"交通"));
-    genruList.push_back(CreateGenruInfo(0x000F, L"その他"));
-
-    genruList.push_back(CreateGenruInfo(0x01FF, L"スポーツ"));
-    genruList.push_back(CreateGenruInfo(0x0100, L"スポーツニュース"));
-    genruList.push_back(CreateGenruInfo(0x0101, L"野球"));
-    genruList.push_back(CreateGenruInfo(0x0102, L"サッカー"));
-    genruList.push_back(CreateGenruInfo(0x0103, L"ゴルフ"));
-    genruList.push_back(CreateGenruInfo(0x0104, L"その他の球技"));
-    genruList.push_back(CreateGenruInfo(0x0105, L"相撲・格闘技"));
-    genruList.push_back(CreateGenruInfo(0x0106, L"オリンピック・国際大会"));
-    genruList.push_back(CreateGenruInfo(0x0107, L"マラソン・陸上・水泳"));
-    genruList.push_back(CreateGenruInfo(0x0108, L"モータースポーツ"));
-    genruList.push_back(CreateGenruInfo(0x0109, L"マリン・ウィンタースポーツ"));
-    genruList.push_back(CreateGenruInfo(0x010A, L"競馬・公営競技"));
-    genruList.push_back(CreateGenruInfo(0x010F, L"その他"));
-
-    genruList.push_back(CreateGenruInfo(0x02FF, L"情報／ワイドショー"));
-    genruList.push_back(CreateGenruInfo(0x0200, L"芸能・ワイドショー"));
-    genruList.push_back(CreateGenruInfo(0x0201, L"ファッション"));
-    genruList.push_back(CreateGenruInfo(0x0202, L"暮らし・住まい"));
-    genruList.push_back(CreateGenruInfo(0x0203, L"健康・医療"));
-    genruList.push_back(CreateGenruInfo(0x0204, L"ショッピング・通販"));
-    genruList.push_back(CreateGenruInfo(0x0205, L"グルメ・料理"));
-    genruList.push_back(CreateGenruInfo(0x0206, L"イベント"));
-    genruList.push_back(CreateGenruInfo(0x0207, L"番組紹介・お知らせ"));
-    genruList.push_back(CreateGenruInfo(0x020F, L"その他"));
-
-    genruList.push_back(CreateGenruInfo(0x03FF, L"ドラマ"));
-    genruList.push_back(CreateGenruInfo(0x0300, L"国内ドラマ"));
-    genruList.push_back(CreateGenruInfo(0x0301, L"海外ドラマ"));
-    genruList.push_back(CreateGenruInfo(0x0302, L"時代劇"));
-    genruList.push_back(CreateGenruInfo(0x030F, L"その他"));
-
-    genruList.push_back(CreateGenruInfo(0x04FF, L"音楽"));
-    genruList.push_back(CreateGenruInfo(0x0400, L"国内ロック・ポップス"));
-    genruList.push_back(CreateGenruInfo(0x0401, L"海外ロック・ポップス"));
-    genruList.push_back(CreateGenruInfo(0x0402, L"クラシック・オペラ"));
-    genruList.push_back(CreateGenruInfo(0x0403, L"ジャズ・フュージョン"));
-    genruList.push_back(CreateGenruInfo(0x0404, L"歌謡曲・演歌"));
-    genruList.push_back(CreateGenruInfo(0x0405, L"ライブ・コンサート"));
-    genruList.push_back(CreateGenruInfo(0x0406, L"ランキング・リクエスト"));
-    genruList.push_back(CreateGenruInfo(0x0407, L"カラオケ・のど自慢"));
-    genruList.push_back(CreateGenruInfo(0x0408, L"民謡・邦楽"));
-    genruList.push_back(CreateGenruInfo(0x0409, L"童謡・キッズ"));
-    genruList.push_back(CreateGenruInfo(0x040A, L"民族音楽・ワールドミュージック"));
-    genruList.push_back(CreateGenruInfo(0x040F, L"その他"));
-
-    genruList.push_back(CreateGenruInfo(0x05FF, L"バラエティ"));
-    genruList.push_back(CreateGenruInfo(0x0500, L"クイズ"));
-    genruList.push_back(CreateGenruInfo(0x0501, L"ゲーム"));
-    genruList.push_back(CreateGenruInfo(0x0502, L"トークバラエティ"));
-    genruList.push_back(CreateGenruInfo(0x0503, L"お笑い・コメディ"));
-    genruList.push_back(CreateGenruInfo(0x0504, L"音楽バラエティ"));
-    genruList.push_back(CreateGenruInfo(0x0505, L"旅バラエティ"));
-    genruList.push_back(CreateGenruInfo(0x0506, L"料理バラエティ"));
-    genruList.push_back(CreateGenruInfo(0x050F, L"その他"));
-
-    genruList.push_back(CreateGenruInfo(0x06FF, L"映画"));
-    genruList.push_back(CreateGenruInfo(0x0600, L"洋画"));
-    genruList.push_back(CreateGenruInfo(0x0601, L"邦画"));
-    genruList.push_back(CreateGenruInfo(0x0602, L"アニメ"));
-    genruList.push_back(CreateGenruInfo(0x060F, L"その他"));
-
-    genruList.push_back(CreateGenruInfo(0x07FF, L"アニメ／特撮"));
-    genruList.push_back(CreateGenruInfo(0x0700, L"国内アニメ"));
-    genruList.push_back(CreateGenruInfo(0x0701, L"海外アニメ"));
-    genruList.push_back(CreateGenruInfo(0x0702, L"特撮"));
-    genruList.push_back(CreateGenruInfo(0x070F, L"その他"));
-
-    genruList.push_back(CreateGenruInfo(0x08FF, L"ドキュメンタリー／教養"));
-    genruList.push_back(CreateGenruInfo(0x0800, L"社会・時事"));
-    genruList.push_back(CreateGenruInfo(0x0801, L"歴史・紀行"));
-    genruList.push_back(CreateGenruInfo(0x0802, L"自然・動物・環境"));
-    genruList.push_back(CreateGenruInfo(0x0803, L"宇宙・科学・医学"));
-    genruList.push_back(CreateGenruInfo(0x0804, L"カルチャー・伝統文化"));
-    genruList.push_back(CreateGenruInfo(0x0805, L"文学・文芸"));
-    genruList.push_back(CreateGenruInfo(0x0806, L"スポーツ"));
-    genruList.push_back(CreateGenruInfo(0x0807, L"ドキュメンタリー全般"));
-    genruList.push_back(CreateGenruInfo(0x0808, L"インタビュー・討論"));
-    genruList.push_back(CreateGenruInfo(0x080F, L"その他"));
-
-    genruList.push_back(CreateGenruInfo(0x09FF, L"劇場／公演"));
-    genruList.push_back(CreateGenruInfo(0x0900, L"現代劇・新劇"));
-    genruList.push_back(CreateGenruInfo(0x0901, L"ミュージカル"));
-    genruList.push_back(CreateGenruInfo(0x0902, L"ダンス・バレエ"));
-    genruList.push_back(CreateGenruInfo(0x0903, L"落語・演芸"));
-    genruList.push_back(CreateGenruInfo(0x0904, L"歌舞伎・古典"));
-    genruList.push_back(CreateGenruInfo(0x090F, L"その他"));
-
-    genruList.push_back(CreateGenruInfo(0x0AFF, L"趣味／教育"));
-    genruList.push_back(CreateGenruInfo(0x0A00, L"旅・釣り・アウトドア"));
-    genruList.push_back(CreateGenruInfo(0x0A01, L"園芸・ペット・手芸"));
-    genruList.push_back(CreateGenruInfo(0x0A02, L"音楽・美術・工芸"));
-    genruList.push_back(CreateGenruInfo(0x0A03, L"囲碁・将棋"));
-    genruList.push_back(CreateGenruInfo(0x0A04, L"麻雀・パチンコ"));
-    genruList.push_back(CreateGenruInfo(0x0A05, L"車・オートバイ"));
-    genruList.push_back(CreateGenruInfo(0x0A06, L"コンピュータ・ＴＶゲーム"));
-    genruList.push_back(CreateGenruInfo(0x0A07, L"会話・語学"));
-    genruList.push_back(CreateGenruInfo(0x0A08, L"幼児・小学生"));
-    genruList.push_back(CreateGenruInfo(0x0A09, L"中学生・高校生"));
-    genruList.push_back(CreateGenruInfo(0x0A0A, L"大学生・受験"));
-    genruList.push_back(CreateGenruInfo(0x0A0B, L"生涯教育・資格"));
-    genruList.push_back(CreateGenruInfo(0x0A0C, L"教育問題"));
-    genruList.push_back(CreateGenruInfo(0x0A0F, L"その他"));
-
-    genruList.push_back(CreateGenruInfo(0x0BFF, L"福祉"));
-    genruList.push_back(CreateGenruInfo(0x0B00, L"高齢者"));
-    genruList.push_back(CreateGenruInfo(0x0B01, L"障害者"));
-    genruList.push_back(CreateGenruInfo(0x0B02, L"社会福祉"));
-    genruList.push_back(CreateGenruInfo(0x0B03, L"ボランティア"));
-    genruList.push_back(CreateGenruInfo(0x0B04, L"手話"));
-    genruList.push_back(CreateGenruInfo(0x0B05, L"文字（字幕）"));
-    genruList.push_back(CreateGenruInfo(0x0B06, L"音声解説"));
-    genruList.push_back(CreateGenruInfo(0x0B0F, L"その他"));
-
-    genruList.push_back(CreateGenruInfo(0x0FFF, L"その他"));
-
-}
-void CreateComponentKindMap()
-{
-	componentKindMap.clear();
-
-    componentKindMap.insert(pair<WORD,wstring>(0x0101, L"480i(525i)、アスペクト比4:3"));
-    componentKindMap.insert(pair<WORD,wstring>(0x0102, L"480i(525i)、アスペクト比16:9 パンベクトルあり"));
-    componentKindMap.insert(pair<WORD,wstring>(0x0103, L"480i(525i)、アスペクト比16:9 パンベクトルなし"));
-    componentKindMap.insert(pair<WORD,wstring>(0x0104, L"480i(525i)、アスペクト比 > 16:9"));
-    componentKindMap.insert(pair<WORD,wstring>(0x0191, L"2160p、アスペクト比4:3"));
-    componentKindMap.insert(pair<WORD,wstring>(0x0192, L"2160p、アスペクト比16:9 パンベクトルあり"));
-    componentKindMap.insert(pair<WORD,wstring>(0x0193, L"2160p、アスペクト比16:9 パンベクトルなし"));
-    componentKindMap.insert(pair<WORD,wstring>(0x0194, L"2160p、アスペクト比 > 16:9"));
-    componentKindMap.insert(pair<WORD,wstring>(0x01A1, L"480p(525p)、アスペクト比4:3"));
-    componentKindMap.insert(pair<WORD,wstring>(0x01A2, L"480p(525p)、アスペクト比16:9 パンベクトルあり"));
-    componentKindMap.insert(pair<WORD,wstring>(0x01A3, L"480p(525p)、アスペクト比16:9 パンベクトルなし"));
-    componentKindMap.insert(pair<WORD,wstring>(0x01A4, L"480p(525p)、アスペクト比 > 16:9"));
-    componentKindMap.insert(pair<WORD,wstring>(0x01B1, L"1080i(1125i)、アスペクト比4:3"));
-    componentKindMap.insert(pair<WORD,wstring>(0x01B2, L"1080i(1125i)、アスペクト比16:9 パンベクトルあり"));
-    componentKindMap.insert(pair<WORD,wstring>(0x01B3, L"1080i(1125i)、アスペクト比16:9 パンベクトルなし"));
-    componentKindMap.insert(pair<WORD,wstring>(0x01B4, L"1080i(1125i)、アスペクト比 > 16:9"));
-    componentKindMap.insert(pair<WORD,wstring>(0x01C1, L"720p(750p)、アスペクト比4:3"));
-    componentKindMap.insert(pair<WORD,wstring>(0x01C2, L"720p(750p)、アスペクト比16:9 パンベクトルあり"));
-    componentKindMap.insert(pair<WORD,wstring>(0x01C3, L"720p(750p)、アスペクト比16:9 パンベクトルなし"));
-    componentKindMap.insert(pair<WORD,wstring>(0x01C4, L"720p(750p)、アスペクト比 > 16:9"));
-    componentKindMap.insert(pair<WORD,wstring>(0x01D1, L"240p アスペクト比4:3"));
-    componentKindMap.insert(pair<WORD,wstring>(0x01D2, L"240p アスペクト比16:9 パンベクトルあり"));
-    componentKindMap.insert(pair<WORD,wstring>(0x01D3, L"240p アスペクト比16:9 パンベクトルなし"));
-    componentKindMap.insert(pair<WORD,wstring>(0x01D4, L"240p アスペクト比 > 16:9"));
-    componentKindMap.insert(pair<WORD,wstring>(0x01E1, L"1080p(1125p)、アスペクト比4:3"));
-    componentKindMap.insert(pair<WORD,wstring>(0x01E2, L"1080p(1125p)、アスペクト比16:9 パンベクトルあり"));
-    componentKindMap.insert(pair<WORD,wstring>(0x01E3, L"1080p(1125p)、アスペクト比16:9 パンベクトルなし"));
-    componentKindMap.insert(pair<WORD,wstring>(0x01E4, L"1080p(1125p)、アスペクト比 > 16:9"));
-    componentKindMap.insert(pair<WORD,wstring>(0x0201, L"1/0モード（シングルモノ）"));
-    componentKindMap.insert(pair<WORD,wstring>(0x0202, L"1/0＋1/0モード（デュアルモノ）"));
-    componentKindMap.insert(pair<WORD,wstring>(0x0203, L"2/0モード（ステレオ）"));
-    componentKindMap.insert(pair<WORD,wstring>(0x0204, L"2/1モード"));
-    componentKindMap.insert(pair<WORD,wstring>(0x0205, L"3/0モード"));
-    componentKindMap.insert(pair<WORD,wstring>(0x0206, L"2/2モード"));
-    componentKindMap.insert(pair<WORD,wstring>(0x0207, L"3/1モード"));
-    componentKindMap.insert(pair<WORD,wstring>(0x0208, L"3/2モード"));
-    componentKindMap.insert(pair<WORD,wstring>(0x0209, L"3/2＋LFEモード（3/2.1モード）"));
-    componentKindMap.insert(pair<WORD,wstring>(0x020A, L"3/3.1モード"));
-    componentKindMap.insert(pair<WORD,wstring>(0x020B, L"2/0/0-2/0/2-0.1モード"));
-    componentKindMap.insert(pair<WORD,wstring>(0x020C, L"5/2.1モード"));
-    componentKindMap.insert(pair<WORD,wstring>(0x020D, L"3/2/2.1モード"));
-    componentKindMap.insert(pair<WORD,wstring>(0x020E, L"2/0/0-3/0/2-0.1モード"));
-    componentKindMap.insert(pair<WORD,wstring>(0x020F, L"0/2/0-3/0/2-0.1モード"));
-    componentKindMap.insert(pair<WORD,wstring>(0x0210, L"2/0/0-3/2/3-0.2モード"));
-    componentKindMap.insert(pair<WORD,wstring>(0x0211, L"3/3/3-5/2/3-3/0/0.2モード"));
-    componentKindMap.insert(pair<WORD,wstring>(0x0240, L"視覚障害者用音声解説"));
-    componentKindMap.insert(pair<WORD,wstring>(0x0241, L"聴覚障害者用音声"));
-    componentKindMap.insert(pair<WORD,wstring>(0x0501, L"H.264|MPEG-4 AVC、480i(525i)、アスペクト比4:3"));
-    componentKindMap.insert(pair<WORD,wstring>(0x0502, L"H.264|MPEG-4 AVC、480i(525i)、アスペクト比16:9 パンベクトルあり"));
-    componentKindMap.insert(pair<WORD,wstring>(0x0503, L"H.264|MPEG-4 AVC、480i(525i)、アスペクト比16:9 パンベクトルなし"));
-    componentKindMap.insert(pair<WORD,wstring>(0x0504, L"H.264|MPEG-4 AVC、480i(525i)、アスペクト比 > 16:9"));
-    componentKindMap.insert(pair<WORD,wstring>(0x0591, L"H.264|MPEG-4 AVC、2160p、アスペクト比4:3"));
-    componentKindMap.insert(pair<WORD,wstring>(0x0592, L"H.264|MPEG-4 AVC、2160p、アスペクト比16:9 パンベクトルあり"));
-    componentKindMap.insert(pair<WORD,wstring>(0x0593, L"H.264|MPEG-4 AVC、2160p、アスペクト比16:9 パンベクトルなし"));
-    componentKindMap.insert(pair<WORD,wstring>(0x0594, L"H.264|MPEG-4 AVC、2160p、アスペクト比 > 16:9"));
-    componentKindMap.insert(pair<WORD,wstring>(0x05A1, L"H.264|MPEG-4 AVC、480p(525p)、アスペクト比4:3"));
-    componentKindMap.insert(pair<WORD,wstring>(0x05A2, L"H.264|MPEG-4 AVC、480p(525p)、アスペクト比16:9 パンベクトルあり"));
-    componentKindMap.insert(pair<WORD,wstring>(0x05A3, L"H.264|MPEG-4 AVC、480p(525p)、アスペクト比16:9 パンベクトルなし"));
-    componentKindMap.insert(pair<WORD,wstring>(0x05A4, L"H.264|MPEG-4 AVC、480p(525p)、アスペクト比 > 16:9"));
-    componentKindMap.insert(pair<WORD,wstring>(0x05B1, L"H.264|MPEG-4 AVC、1080i(1125i)、アスペクト比4:3"));
-    componentKindMap.insert(pair<WORD,wstring>(0x05B2, L"H.264|MPEG-4 AVC、1080i(1125i)、アスペクト比16:9 パンベクトルあり"));
-    componentKindMap.insert(pair<WORD,wstring>(0x05B3, L"H.264|MPEG-4 AVC、1080i(1125i)、アスペクト比16:9 パンベクトルなし"));
-    componentKindMap.insert(pair<WORD,wstring>(0x05B4, L"H.264|MPEG-4 AVC、1080i(1125i)、アスペクト比 > 16:9"));
-    componentKindMap.insert(pair<WORD,wstring>(0x05C1, L"H.264|MPEG-4 AVC、720p(750p)、アスペクト比4:3"));
-    componentKindMap.insert(pair<WORD,wstring>(0x05C2, L"H.264|MPEG-4 AVC、720p(750p)、アスペクト比16:9 パンベクトルあり"));
-    componentKindMap.insert(pair<WORD,wstring>(0x05C3, L"H.264|MPEG-4 AVC、720p(750p)、アスペクト比16:9 パンベクトルなし"));
-    componentKindMap.insert(pair<WORD,wstring>(0x05C4, L"H.264|MPEG-4 AVC、720p(750p)、アスペクト比 > 16:9"));
-    componentKindMap.insert(pair<WORD,wstring>(0x05D1, L"H.264|MPEG-4 AVC、240p アスペクト比4:3"));
-    componentKindMap.insert(pair<WORD,wstring>(0x05D2, L"H.264|MPEG-4 AVC、240p アスペクト比16:9 パンベクトルあり"));
-    componentKindMap.insert(pair<WORD,wstring>(0x05D3, L"H.264|MPEG-4 AVC、240p アスペクト比16:9 パンベクトルなし"));
-    componentKindMap.insert(pair<WORD,wstring>(0x05D4, L"H.264|MPEG-4 AVC、240p アスペクト比 > 16:9"));
-    componentKindMap.insert(pair<WORD,wstring>(0x05E1, L"H.264|MPEG-4 AVC、1080p(1125p)、アスペクト比4:3"));
-    componentKindMap.insert(pair<WORD,wstring>(0x05E2, L"H.264|MPEG-4 AVC、1080p(1125p)、アスペクト比16:9 パンベクトルあり"));
-    componentKindMap.insert(pair<WORD,wstring>(0x05E3, L"H.264|MPEG-4 AVC、1080p(1125p)、アスペクト比16:9 パンベクトルなし"));
-    componentKindMap.insert(pair<WORD,wstring>(0x05E4, L"H.264|MPEG-4 AVC、1080p(1125p)、アスペクト比 > 16:9"));
-
+	struct KIND_INFO_COMPARE {
+		bool operator()(const KIND_INFO& l, const KIND_INFO& r) const { return l.key < r.key; }
+	};
+	KIND_INFO info = { key };
+	const KIND_INFO* ret = std::lower_bound(arr, arr + len, info, KIND_INFO_COMPARE());
+	return ret != arr + len && ret->key == key ? ret->str : NULL;
 }
 
 //EPG情報をTextに変換
 void _ConvertEpgInfoText2(EPGDB_EVENT_INFO* info, wstring& text, wstring serviceName)
 {
-	if( contentKindMap.size() == 0 ){
-		CreateContentKindMap();
-	}
-	if( componentKindMap.size() == 0 ){
-		CreateComponentKindMap();
-	}
 	text = L"";
 	if( info == NULL ){
 		return ;
@@ -754,14 +609,13 @@ void _ConvertEpgInfoText2(EPGDB_EVENT_INFO* info, wstring& text, wstring service
 		for( size_t i=0; i<info->contentInfo->nibbleList.size(); i++ ){
 			WORD key1 = ((WORD)info->contentInfo->nibbleList[i].content_nibble_level_1) << 8 | 0xFF;
 			WORD key2 = ((WORD)info->contentInfo->nibbleList[i].content_nibble_level_1) << 8 | info->contentInfo->nibbleList[i].content_nibble_level_2;
-			map<WORD, wstring>::iterator itr;
-			itr = contentKindMap.find(key1);
-			if( itr != contentKindMap.end()){
-				text+=itr->second;
-				itr = contentKindMap.find(key2);
-				if( itr != contentKindMap.end()){
+			LPCWSTR retStr = SearchKindInfoArray(key1, contentKindSortedArray, _countof(contentKindSortedArray));
+			if( retStr != NULL ){
+				text+=retStr;
+				retStr = SearchKindInfoArray(key2, contentKindSortedArray, _countof(contentKindSortedArray));
+				if( retStr != NULL ){
 					text+=L" - ";
-					text+=itr->second;
+					text+=retStr;
 				}
 			}
 			text+=L"\r\n";
@@ -772,10 +626,9 @@ void _ConvertEpgInfoText2(EPGDB_EVENT_INFO* info, wstring& text, wstring service
 	if( info->componentInfo != NULL ){
 		text+=L"映像 : ";
 		WORD key = ((WORD)info->componentInfo->stream_content) << 8 | info->componentInfo->component_type;
-		map<WORD, wstring>::iterator itr;
-		itr = componentKindMap.find(key);
-		if( itr != componentKindMap.end()){
-			text+=itr->second;
+		LPCWSTR retStr = SearchKindInfoArray(key, componentKindSortedArray, _countof(componentKindSortedArray));
+		if( retStr != NULL ){
+			text+=retStr;
 			if( info->componentInfo->text_char.size() > 0 ){
 				text+=L"\r\n";
 				text+=info->componentInfo->text_char;
@@ -788,10 +641,9 @@ void _ConvertEpgInfoText2(EPGDB_EVENT_INFO* info, wstring& text, wstring service
 		text+=L"音声 : ";
 		for( size_t i=0; i<info->audioInfo->componentList.size(); i++ ){
 			WORD key = ((WORD)info->audioInfo->componentList[i].stream_content) << 8 | info->audioInfo->componentList[i].component_type;
-			map<WORD, wstring>::iterator itr;
-			itr = componentKindMap.find(key);
-			if( itr != componentKindMap.end()){
-				text+=itr->second;
+			LPCWSTR retStr = SearchKindInfoArray(key, componentKindSortedArray, _countof(componentKindSortedArray));
+			if( retStr != NULL ){
+				text+=retStr;
 				if( info->audioInfo->componentList[i].text_char.size() > 0 ){
 					text+=L"\r\n";
 					text+=info->audioInfo->componentList[i].text_char;
@@ -863,14 +715,9 @@ void GetChkDrivePath(wstring directoryPath, wstring& mountPath)
 
 void GetGenreName(BYTE nibble1, BYTE nibble2, wstring& name)
 {
-	if( contentKindMap.size() == 0 ){
-		CreateContentKindMap();
-	}
-	WORD key = ((WORD)nibble1)<<8 | nibble2;
-	map<WORD, wstring>::iterator itr;
-	itr = contentKindMap.find(key);
-	if( itr != contentKindMap.end()){
-		name = itr->second;
+	LPCWSTR retStr = SearchKindInfoArray(nibble1 << 8 | nibble2, contentKindSortedArray, _countof(contentKindSortedArray));
+	if( retStr != NULL ){
+		name = retStr;
 	}
 }
 
@@ -1015,8 +862,25 @@ void CopyEpgInfo(EPG_EVENT_INFO* destInfo, EPGDB_EVENT_INFO* srcInfo)
 
 void GetGenreList(vector<GENRU_INFO>* list)
 {
-	if( genruList.size() == 0 ){
-		CreateContentKindMap();
+	list->clear();
+	for( BYTE i = 0; i <= 15; i++ ){
+		LPCWSTR retStr = SearchKindInfoArray(i << 8 | 0xFF, contentKindSortedArray, _countof(contentKindSortedArray));
+		if( retStr != NULL ){
+			list->resize(list->size() + 1);
+			list->back().key = i << 8 | 0xFF;
+			list->back().name = retStr;
+			list->back().nibble1 = i;
+			list->back().nibble2 = 0xFF;
+			for( BYTE j = 0; j <= 15; j++ ){
+				retStr = SearchKindInfoArray(i << 8 | j, contentKindSortedArray, _countof(contentKindSortedArray));
+				if( retStr != NULL ){
+					list->resize(list->size() + 1);
+					list->back().key = i << 8 | j;
+					list->back().name = retStr;
+					list->back().nibble1 = i;
+					list->back().nibble2 = j;
+				}
+			}
+		}
 	}
-	*list = genruList;
 }

@@ -328,7 +328,6 @@ UINT WINAPI CNWCoopManager::ChkThread(LPVOID param)
 									vector<RESERVE_DATA> addList;
 									data.reserveID = 0;
 									data.overlapMode = 0;
-									data.recWaitFlag = 0;
 									data.reserveStatus = 0;
 									data.recSetting.batFilePath = L"";
 									data.recSetting.partialRecFolder.clear();
