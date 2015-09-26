@@ -95,7 +95,7 @@ namespace EpgTimer
         public void AddPreset(String name)
         {
             RecSettingData newSet = new RecSettingData();
-            GetRecSetting(ref newSet);
+            Settings.GetDefRecSetting(0, ref newSet);
 
             RecPresetItem newInfo = new RecPresetItem();
             newInfo.DisplayName = name;
