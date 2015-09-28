@@ -395,7 +395,6 @@ namespace EpgTimer.UserCtrlView
                 DragItemsSelect();
 
                 this.listBox.Items.Refresh();
-                ClearDropLineData();//ドロップラインは既に消えているので。
 
                 if (CheckOrderChanged(oldList, newList) == true)
                 {
