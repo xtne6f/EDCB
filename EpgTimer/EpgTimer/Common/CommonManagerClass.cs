@@ -315,6 +315,8 @@ namespace EpgTimer
                 ContentKindDictionary.Add(0x0B0F, new ContentKindInfo("福祉", "その他", 0x0B, 0x0F));
 
                 ContentKindDictionary.Add(0x0FFF, new ContentKindInfo("その他", "", 0x0F, 0xFF));
+                ContentKindDictionary.Add(0x0F0F, new ContentKindInfo("その他", "その他", 0x0F, 0x0F));
+
                 ContentKindDictionary.Add(0xFFFF, new ContentKindInfo("なし", "", 0xFF, 0xFF));
             }
             if (ContentKindDictionary2 == null)
@@ -1009,47 +1011,33 @@ namespace EpgTimer
                 {
                     foreach (EpgContentData info in eventInfo.ContentInfo.nibbleList)
                     {
-                        String content = "";
-                        int nibble1 = info.content_nibble_level_1;
-                        int nibble2 = info.content_nibble_level_2;
-                        if (nibble1 == 0x0E && nibble2 == 0x01)
+                        UInt16 ID1 = (UInt16)(((UInt16)info.content_nibble_level_1) << 8 | 0xFF);
+                        UInt16 ID2 = (UInt16)(((UInt16)info.content_nibble_level_1) << 8 | info.content_nibble_level_2);
+                        if (ID2 == 0x0e01)//CS、仮対応データをそのまま使用。
                         {
-                            nibble1 = info.user_nibble_1;
-                            nibble2 = info.user_nibble_2;
-                            UInt16 contentKey1 = (UInt16)(nibble1 << 8 | 0xFF);
-                            UInt16 contentKey2 = (UInt16)(nibble1 << 8 | nibble2);
-                            if (ContentKindDictionary2.ContainsKey(contentKey1) == true)
-                            {
-                                content += ContentKindDictionary2[contentKey1];
-                            }
-                            if (ContentKindDictionary2.ContainsKey(contentKey2) == true)
-                            {
-                                content += " - " + ContentKindDictionary2[contentKey2];
-                            }
-                            if (content.Length == 0 || nibble1 == 0x0F)
-                            {
-                                content += "(0x" + info.user_nibble_1.ToString("X2") + info.user_nibble_2.ToString("X2") + ")" + "(0x" + info.user_nibble_1.ToString("X2") + info.user_nibble_2.ToString("X2") + ")";
-                            }
-                            extInfo += content + "\r\n";
+                            ID1 = (UInt16)(((UInt16)info.user_nibble_1) << 8 | 0x70FF);
+                            ID2 = (UInt16)(((UInt16)info.user_nibble_1) << 8 | 0x7000 | info.user_nibble_2);
+                        }
+
+                        String content = "";
+                        ContentKindInfo kindInfo;
+                        if (ContentKindDictionary.TryGetValue(ID1, out kindInfo) == true)
+                        {
+                            content += kindInfo.ContentName;
                         }
                         else
                         {
-                            UInt16 contentKey1 = (UInt16)(nibble1 << 8 | 0xFF);
-                            UInt16 contentKey2 = (UInt16)(nibble1 << 8 | nibble2);
-                            if (ContentKindDictionary.ContainsKey(contentKey1) == true)
-                            {
-                                content += ContentKindDictionary[contentKey1];
-                            }
-                            if (ContentKindDictionary.ContainsKey(contentKey2) == true)
-                            {
-                                content += " - " + ContentKindDictionary[contentKey2];
-                            }
-                            if (content.Length == 0 || nibble1 == 0x0F)
-                            {
-                                content += "(0x" + nibble1.ToString("X2") + nibble2.ToString("X2") + ")" + "(0x" + info.user_nibble_1.ToString("X2") + info.user_nibble_2.ToString("X2") + ")";
-                            }
-                            extInfo += content + "\r\n";
+                            content += "不明" + "(0x" + info.content_nibble_level_1.ToString("X2") + info.content_nibble_level_2.ToString("X2") + ")";
                         }
+                        if (ContentKindDictionary.TryGetValue(ID2, out kindInfo) == true)
+                        {
+                            content += " - " + kindInfo.SubName;
+                        }
+                        else
+                        {
+                            content += " - " + "不明" + "(0x" + info.user_nibble_1.ToString("X2") + info.user_nibble_2.ToString("X2") + ")";
+                        }
+                        extInfo += content + "\r\n";
                     }
                 }
                 extInfo += "\r\n";
@@ -1235,13 +1223,21 @@ namespace EpgTimer
                 Dictionary<int, List<int>> nibbleDict1 = new Dictionary<int, List<int>>();  // 小ジャンルを大ジャンルでまとめる
                 foreach (EpgContentData ecd1 in nibbleList)
                 {
-                    if (nibbleDict1.ContainsKey(ecd1.content_nibble_level_1))
+                    int nibble1 = ecd1.content_nibble_level_1;
+                    int nibble2 = ecd1.content_nibble_level_2;
+                    if (nibble1 == 0x0E && nibble2 == 0x01)//CS、仮対応データをそのまま使用
                     {
-                        nibbleDict1[ecd1.content_nibble_level_1].Add(ecd1.content_nibble_level_2);
+                        nibble1 = ecd1.user_nibble_1 | 0x70;
+                        nibble2 = ecd1.user_nibble_2;
+                    }
+
+                    if (nibbleDict1.ContainsKey(nibble1))
+                    {
+                        nibbleDict1[nibble1].Add(nibble2);
                     }
                     else
                     {
-                        nibbleDict1.Add(ecd1.content_nibble_level_1, new List<int>() { ecd1.content_nibble_level_2 });
+                        nibbleDict1.Add(nibble1, new List<int>() { nibble2 });
                     }
                 }
                 foreach (KeyValuePair<int, List<int>> kvp1 in nibbleDict1)
@@ -1250,7 +1246,7 @@ namespace EpgTimer
                     UInt16 contentKey1 = (UInt16)(nibble1 << 8 | 0xFF);
                     //
                     string smallCategory1 = "";
-                    foreach (int nibble2 in kvp1.Value)
+                    foreach (int nibble2 in kvp1.Value.Distinct())
                     {
                         UInt16 contentKey2 = (UInt16)(nibble1 << 8 | nibble2);
                         if (nibble2 != 0xFF)

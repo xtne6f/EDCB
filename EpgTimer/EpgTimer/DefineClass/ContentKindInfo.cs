@@ -18,7 +18,7 @@ namespace EpgTimer
             this.Nibble2 = nibble2;
             this.ID = (UInt16)(((UInt16)nibble1) << 8 | nibble2);
             this.SortKey = (UInt16)(((UInt16)nibble1) << 8 | ((UInt16)nibble2 + 1) & 0x00FF);
-            this.SortKey = (UInt16)(this.SortKey == 0x0F00 ? 0xFE00 : this.SortKey);//「その他」をラストへ
+            this.SortKey = (UInt16)((this.SortKey & 0xFF00) == 0x0F00 ? 0xFE00 | this.SortKey & 0x00FF : this.SortKey);//「その他」をラストへ
         }
         public UInt16 ID
         {
