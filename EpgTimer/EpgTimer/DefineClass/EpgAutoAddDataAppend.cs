@@ -31,6 +31,14 @@ namespace EpgTimer
         {
             return CommonManager.Instance.DB.GetEpgAutoAddDataAppend(master).SearchItemList;
         }
+        public static List<ReserveData> GetReserveList(this EpgAutoAddData master)
+        {
+            return CommonManager.Instance.DB.GetEpgAutoAddDataAppend(master).ReseveItemList;
+        }
+        public static ReserveData GetNextReserve(this EpgAutoAddData master)
+        {
+            return CommonManager.Instance.DB.GetEpgAutoAddDataAppend(master).NextReserve;
+        }
     }
 
     public class EpgAutoAddDataAppend
@@ -44,6 +52,8 @@ namespace EpgTimer
         private EpgAutoAddData master = null;
         private List<EpgEventInfo> epgEventList = null;
         private List<SearchItem> searchItemList = null;
+        private List<ReserveData> reseveItemList = null;
+        private ReserveData nextReserve = null;
         private uint searchCount = 0;
         private uint onCount = 0;
         private uint offCount = 0;
@@ -58,6 +68,8 @@ namespace EpgTimer
         public uint OnCount                     { get { RefreshData(); return onCount; } }
         public uint OffCount                    { get { RefreshData(); return offCount; } }
         public List<SearchItem> SearchItemList  { get { RefreshData(); return searchItemList; } }
+        public List<ReserveData> ReseveItemList { get { RefreshData(); return reseveItemList; } }
+        public ReserveData NextReserve          { get { RefreshData(); return nextReserve; } }
 
         public List<EpgEventInfo> EpgEventList
         {
@@ -88,11 +100,12 @@ namespace EpgTimer
             searchItemList = new List<SearchItem>();
             searchItemList.AddFromEventList(epgEventList, false, true);
 
-            var rlist = searchItemList.GetReserveList();
+            reseveItemList = searchItemList.GetReserveList();
 
             searchCount = (uint)searchItemList.Count;
-            onCount = (uint)rlist.Count(info => info.RecSetting.RecMode != 5);
-            offCount = (uint)rlist.Count - onCount;
+            onCount = (uint)reseveItemList.Count(info => info.RecSetting.RecMode != 5);
+            offCount = (uint)reseveItemList.Count - onCount;
+            nextReserve = reseveItemList.GetNextReserve();
         }
 
     }

@@ -221,6 +221,16 @@ namespace EpgTimer
             }
         }
 
+        public String NextReserve
+        {
+            get
+            {
+                if (EpgAutoAddInfo == null) return "";
+                //
+                return new ReserveItem(EpgAutoAddInfo.GetNextReserve()).StartTime;
+            }
+        }
+
         public String JyanruKey
         {
             get

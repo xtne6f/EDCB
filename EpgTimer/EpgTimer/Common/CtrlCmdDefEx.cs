@@ -377,6 +377,26 @@ namespace EpgTimer
             return preset == null ? new RecPresetItem("登録時", 0xFFFFFFFF) : preset;
         }
 
+        public static ReserveData GetNextReserve(this List<ReserveData> resList, bool IsTargetOffRes = false)
+        {
+            ReserveData ret = null;
+            long value = long.MaxValue;
+
+            foreach(ReserveData data in resList)
+            {
+                if (IsTargetOffRes == true || data.RecSetting.RecMode != 5)
+                {
+                    if (value > data.StartTime.ToBinary())
+                    {
+                        ret = data;
+                        value = data.StartTime.ToBinary();
+                    }
+                }
+            }
+
+            return ret;
+        }
+
         public static List<ReserveData> GetReserveList(this ManualAutoAddData mdata)
         {
             return CommonManager.Instance.DB.ReserveList.Values.Where(info =>
@@ -403,10 +423,6 @@ namespace EpgTimer
             return rlist_list;
         }
 
-        public static List<ReserveData> GetReserveList(this EpgAutoAddData mdata)
-        {
-            return mdata.GetSearchList().GetReserveList();
-        }
         public static List<ReserveData> GetReserveList(this ICollection<EpgAutoAddData> mlist)
         {
             var retList = new List<ReserveData>();

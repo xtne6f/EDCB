@@ -53,6 +53,7 @@
                         <MenuItem Header="予約数" Name="ReserveCount" IsCheckable="True" />
                         <MenuItem Header="有効予約数" Name="OnCount" IsCheckable="True" />
                         <MenuItem Header="無効予約数" Name="OffCount" IsCheckable="True" />
+                        <MenuItem Header="次の予約" Name="NextReserve" IsCheckable="True" />
                         <MenuItem Header="有効/無効" Name="KeyEnabled" IsCheckable="True" />
                     </ContextMenu>
                     <ContextMenu x:Key="itemMenu" />
@@ -173,6 +174,11 @@
                         <GridViewColumn DisplayMemberBinding="{Binding Path=OffCount}">
                             <GridViewColumn.Header>
                                 <GridViewColumnHeader Content="無効予約数" Tag="OffCount" HorizontalContentAlignment="Left" />
+                            </GridViewColumn.Header>
+                        </GridViewColumn>
+                        <GridViewColumn DisplayMemberBinding="{Binding Path=NextReserve}">
+                            <GridViewColumn.Header>
+                                <GridViewColumnHeader Content="次の予約" Tag="NextReserve" HorizontalContentAlignment="Left" />
                             </GridViewColumn.Header>
                         </GridViewColumn>
                         <GridViewColumn>
