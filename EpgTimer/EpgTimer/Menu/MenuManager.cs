@@ -7,8 +7,6 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Reflection;
 
-using CtrlCmdCLI.Def;
-
 namespace EpgTimer
 {
     public class MenuManager

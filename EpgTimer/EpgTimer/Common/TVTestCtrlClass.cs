@@ -7,9 +7,6 @@ using System.Windows;
 using System.Runtime.InteropServices;
 using System.Net;
 
-using CtrlCmdCLI;
-using CtrlCmdCLI.Def;
-
 namespace EpgTimer
 {
     public class TVTestCtrlClass

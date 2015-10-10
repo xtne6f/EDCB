@@ -8,9 +8,6 @@ using System.Windows.Input;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 
-using CtrlCmdCLI;
-using CtrlCmdCLI.Def;
-
 namespace EpgTimer.EpgView
 {
     public class EpgMainViewBase : EpgViewBase

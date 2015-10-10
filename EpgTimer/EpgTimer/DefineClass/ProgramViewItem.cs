@@ -5,9 +5,6 @@ using System.Text;
 using System.Windows;
 using System.Windows.Media;
 
-using CtrlCmdCLI;
-using CtrlCmdCLI.Def;
-
 namespace EpgTimer
 {
     public class ViewPanelItem<T>

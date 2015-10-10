@@ -3,9 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Media;
 
-using CtrlCmdCLI;
-using CtrlCmdCLI.Def;
-
 namespace EpgTimer
 {
     public class ManualAutoAddDataItem

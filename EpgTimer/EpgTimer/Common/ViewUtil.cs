@@ -8,9 +8,6 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 
-using CtrlCmdCLI;
-using CtrlCmdCLI.Def;
-
 namespace EpgTimer
 {
     public class ViewUtil

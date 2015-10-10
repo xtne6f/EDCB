@@ -8,8 +8,6 @@ using System.Windows.Media;
 using System.Windows.Shapes;
 using System.Collections;
 
-using CtrlCmdCLI;
-using CtrlCmdCLI.Def;
 using EpgTimer.EpgView;
 
 namespace EpgTimer

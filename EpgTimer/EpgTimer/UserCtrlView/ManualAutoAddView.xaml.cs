@@ -7,8 +7,6 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 
-using CtrlCmdCLI;
-using CtrlCmdCLI.Def;
 using EpgTimer.UserCtrlView;
 
 namespace EpgTimer

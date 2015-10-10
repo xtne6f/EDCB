@@ -4,9 +4,6 @@ using System.Linq;
 using System.Text;
 using System.Windows;
 
-using CtrlCmdCLI;
-using CtrlCmdCLI.Def;
-
 namespace EpgTimer
 {
     public class ReserveViewItem : ViewPanelItem<ReserveData>

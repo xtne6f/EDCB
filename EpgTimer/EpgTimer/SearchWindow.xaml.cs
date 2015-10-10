@@ -8,9 +8,6 @@ using System.Windows.Data;
 using System.Windows.Input;
 using System.ComponentModel;
 
-using CtrlCmdCLI;
-using CtrlCmdCLI.Def;
-
 namespace EpgTimer
 {
     /// <summary>

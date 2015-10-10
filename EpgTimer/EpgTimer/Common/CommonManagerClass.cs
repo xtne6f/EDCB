@@ -11,9 +11,6 @@ using System.Windows.Media;
 using System.Collections;
 using System.IO;
 
-using CtrlCmdCLI;
-using CtrlCmdCLI.Def;
-
 namespace EpgTimer
 {
     class CommonManager

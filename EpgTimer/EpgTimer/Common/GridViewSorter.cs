@@ -6,7 +6,6 @@ using System.Windows.Controls;
 using System.ComponentModel;
 using System.Windows.Media;
 using System.Reflection;
-using EpgTimer;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Data;
