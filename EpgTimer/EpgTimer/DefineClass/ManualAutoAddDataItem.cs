@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Windows.Media;
 
 using CtrlCmdCLI;
@@ -11,6 +10,7 @@ namespace EpgTimer
 {
     public class ManualAutoAddDataItem
     {
+        public ManualAutoAddDataItem() { }
         public ManualAutoAddDataItem(ManualAutoAddData item)
         {
             this.ManualAutoAddInfo = item;
@@ -22,16 +22,15 @@ namespace EpgTimer
         {
             get
             {
+                if (ManualAutoAddInfo == null) return "";
+                //
                 String view = "";
-                if (ManualAutoAddInfo != null)
+                String[] wiewString = { "日", "月", "火", "水", "木", "金", "土" };
+                for (int i = 0; i < 7; i++)
                 {
-                    String[] wiewString = { "日", "月", "火", "水", "木", "金", "土" };
-                    for (int i = 0; i < 7; i++)
+                    if ((ManualAutoAddInfo.dayOfWeekFlag & 0x01<<i) != 0)
                     {
-                        if ((ManualAutoAddInfo.dayOfWeekFlag & 0x01<<i) != 0)
-                        {
-                            view += wiewString[i];
-                        }
+                        view += wiewString[i];
                     }
                 }
                 return view;

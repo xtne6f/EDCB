@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Windows.Media;
 using System.Windows.Controls;
 using System.Windows;
@@ -46,14 +45,13 @@ namespace EpgTimer
         {
             get
             {
+                if (EventInfo == null) return "";
+                //
                 String view = "";
-                if (EventInfo != null)
+                UInt64 serviceKey = EventInfo.Create64Key();
+                if (ChSet5.Instance.ChList.ContainsKey(serviceKey) == true)
                 {
-                    UInt64 serviceKey = EventInfo.Create64Key();
-                    if (ChSet5.Instance.ChList.ContainsKey(serviceKey) == true)
-                    {
-                        view = ChSet5.Instance.ChList[serviceKey].ServiceName;
-                    }
+                    view = ChSet5.Instance.ChList[serviceKey].ServiceName;
                 }
                 return view;
             }
@@ -115,14 +113,9 @@ namespace EpgTimer
             get
             {
                 if (Settings.Instance.NoToolTip == true) return null;
-
-                String view = "";
-                if (EventInfo != null)
-                {
-                    view = CommonManager.Instance.ConvertProgramText(EventInfo, EventInfoTextMode.All);
-                }
-
-                return mutil.GetTooltipBlockStandard(view);
+                if (EventInfo == null) return mutil.GetTooltipBlockStandard("");
+                //
+                return mutil.GetTooltipBlockStandard(CommonManager.Instance.ConvertProgramText(EventInfo, EventInfoTextMode.All));
             }
         }
         public virtual String Status

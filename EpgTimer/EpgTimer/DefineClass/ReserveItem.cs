@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Windows.Media;
 using System.Windows.Controls;
 using System.Windows;
@@ -151,38 +150,18 @@ namespace EpgTimer
         {
             get
             {
-                String view = "";
-                if (ReserveInfo != null)
-                {
-                    if (ReserveInfo.RecSetting.TuijyuuFlag == 0)
-                    {
-                        view = "しない";
-                    }
-                    else if (ReserveInfo.RecSetting.TuijyuuFlag == 1)
-                    {
-                        view = "する";
-                    }
-                }
-                return view;
+                if (ReserveInfo == null) return "";
+                //
+                return ReserveInfo.RecSetting.TuijyuuFlag == 0 ? "しない" : "する";
             }
         }
         public String Pittari
         {
             get
             {
-                String view = "";
-                if (ReserveInfo != null)
-                {
-                    if (ReserveInfo.RecSetting.PittariFlag == 0)
-                    {
-                        view = "しない";
-                    }
-                    else if (ReserveInfo.RecSetting.PittariFlag == 1)
-                    {
-                        view = "する";
-                    }
-                }
-                return view;
+                if (ReserveInfo == null) return "";
+                //
+                return ReserveInfo.RecSetting.PittariFlag == 0 ? "しない" : "する";
             }
         }
         public String Tuner
@@ -235,14 +214,9 @@ namespace EpgTimer
             get
             {
                 if (Settings.Instance.NoToolTip == true) return null;
-
-                String view = "";
-                if (ReserveInfo != null)
-                {
-                    view = CommonManager.Instance.ConvertReserveText(ReserveInfo);
-                }
-
-                return mutil.GetTooltipBlockStandard(view);
+                if (ReserveInfo == null) return mutil.GetTooltipBlockStandard("");
+                //
+                return mutil.GetTooltipBlockStandard(CommonManager.Instance.ConvertReserveText(ReserveInfo));
             }
         }
         public override String Status
@@ -273,8 +247,6 @@ namespace EpgTimer
         {
             get
             {
-                List<ReserveData> test = new List<ReserveData>();
-
                 SolidColorBrush color = CommonManager.Instance.StatResForeColor;
                 if (ReserveInfo != null)
                 {
