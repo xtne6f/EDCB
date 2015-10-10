@@ -13,9 +13,6 @@ using System.Windows.Shapes;
 
 using System.Text.RegularExpressions;
 
-using CtrlCmdCLI;
-using CtrlCmdCLI.Def;
-
 namespace EpgTimer
 {
     /// <summary>

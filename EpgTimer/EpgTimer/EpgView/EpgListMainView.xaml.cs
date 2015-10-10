@@ -16,8 +16,6 @@ using System.Collections.ObjectModel;
 using System.Collections;
 using System.Text.RegularExpressions;
 
-using CtrlCmdCLI;
-using CtrlCmdCLI.Def;
 
 
 namespace EpgTimer

@@ -14,9 +14,6 @@ using System.Windows.Shapes;
 using System.IO;
 using System.Windows.Interop;
 
-using CtrlCmdCLI;
-using CtrlCmdCLI.Def;
-
 namespace EpgTimer
 {
     /// <summary>

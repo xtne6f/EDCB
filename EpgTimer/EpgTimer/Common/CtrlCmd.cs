@@ -3,14 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-// 古い名前空間
-namespace CtrlCmdCLI
-{
-    namespace Def
-    {
-    }
-}
-
 namespace EpgTimer
 {
     /// <summary>CtrlCmdバイナリ形式との相互変換インターフェイス</summary>

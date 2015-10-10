@@ -11,10 +11,6 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-
-using CtrlCmdCLI;
-using CtrlCmdCLI.Def;
-using EpgTimer.EpgView;
 using System.Windows.Threading;
 using System.Windows.Controls.Primitives;
 

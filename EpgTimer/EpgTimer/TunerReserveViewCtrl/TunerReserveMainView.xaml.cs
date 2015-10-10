@@ -14,8 +14,6 @@ using System.Windows.Shapes;
 using System.Collections;
 using System.Windows.Threading;
 
-using CtrlCmdCLI;
-using CtrlCmdCLI.Def;
 using EpgTimer.TunerReserveViewCtrl;
 
 namespace EpgTimer
