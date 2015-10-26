@@ -84,6 +84,7 @@ namespace EpgTimer
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
+            button_cancel.Focus();
             progressBar.Maximum = Settings.Instance.SuspendChkTime;
             progressBar.Value = progressBar.Maximum;
             labelTimer.Content = progressBar.Value;
