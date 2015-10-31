@@ -129,14 +129,10 @@ void CEpgDataCap_BonMain::ReloadSetting()
 
 //BonDriverフォルダのBonDriver_*.dllを列挙
 //戻り値：
-// エラーコード
-//引数：
-// bonList			[OUT]検索できたBonDriver一覧
-DWORD CEpgDataCap_BonMain::EnumBonDriver(
-	vector<wstring>* bonList
-)
+// 検索できたBonDriver一覧
+vector<wstring> CEpgDataCap_BonMain::EnumBonDriver()
 {
-	return this->bonCtrl.EnumBonDriver(bonList);
+	return this->bonCtrl.EnumBonDriver();
 }
 
 //BonDriverをロードしてチャンネル情報などを取得（ファイル名で指定）
@@ -169,12 +165,10 @@ DWORD CEpgDataCap_BonMain::OpenBonDriver(
 }
 
 //ロードしているBonDriverの開放
-//戻り値：
-// エラーコード
-DWORD CEpgDataCap_BonMain::CloseBonDriver()
+void CEpgDataCap_BonMain::CloseBonDriver()
 {
 	this->currentBonDriver = L"";
-	return this->bonCtrl.CloseBonDriver();
+	this->bonCtrl.CloseBonDriver();
 }
 
 //サービス一覧を取得する

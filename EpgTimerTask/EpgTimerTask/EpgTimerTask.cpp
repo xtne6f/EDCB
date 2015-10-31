@@ -6,10 +6,6 @@
 #include "EpgTimerTask.h"
 #include "EpgTimerTaskDlg.h"
 
-#ifdef _DEBUG
-#define new DEBUG_NEW
-#endif
-
 
 // CEpgTimerTaskApp
 
