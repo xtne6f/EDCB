@@ -111,7 +111,7 @@ namespace EpgTimer
         public void AddPreset(String name)
         {
             RecSettingData newSet = new RecSettingData();
-            Settings.GetDefRecSetting(0, ref newSet);
+            GetRecSetting(ref newSet);
 
             RecPresetItem newInfo = new RecPresetItem();
             newInfo.DisplayName = name;
@@ -649,7 +649,7 @@ namespace EpgTimer
             {
                 RecFileSetInfo setInfo = new RecFileSetInfo();
                 setting.GetSetting(ref setInfo);
-                foreach (RecFileSetInfo info in recSetting.RecFolderList)
+                foreach (RecFileSetInfoView info in listView_recFolder.Items)
                 {
                     if (String.Compare(setInfo.RecFolder, info.RecFolder, true) == 0 &&
                         String.Compare(setInfo.WritePlugIn, info.WritePlugIn, true) == 0 &&
@@ -826,7 +826,7 @@ namespace EpgTimer
             {
                 RecFileSetInfo setInfo = new RecFileSetInfo();
                 setting.GetSetting(ref setInfo);
-                foreach (RecFileSetInfo info in recSetting.PartialRecFolder)
+                foreach (RecFileSetInfoView info in listView_recFolder_1seg.Items)
                 {
                     if (String.Compare(setInfo.RecFolder, info.RecFolder, true) == 0 &&
                         String.Compare(setInfo.WritePlugIn, info.WritePlugIn, true) == 0 &&
