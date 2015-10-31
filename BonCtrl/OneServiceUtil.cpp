@@ -87,20 +87,22 @@ BOOL COneServiceUtil::SendUdp(
 		}
 		for( size_t i=0; i<sendList->size(); i++ ){
 			wstring key = L"";
+			HANDLE portMutex;
 
 			while(1){
 				Format(key, L"%s%d_%d", MUTEX_UDP_PORT_NAME, (*sendList)[i].ip, (*sendList)[i].port );
-				HANDLE mutex = ::OpenMutex(MUTEX_ALL_ACCESS, FALSE, key.c_str());
+				portMutex = CreateMutex(NULL, TRUE, key.c_str());
 		
-				if(mutex){
-					::CloseHandle(mutex);
+				if( portMutex == NULL ){
+					(*sendList)[i].port++;
+				}else if( GetLastError() == ERROR_ALREADY_EXISTS ){
+					CloseHandle(portMutex);
 					(*sendList)[i].port++;
 				}else{
 					break;
 				}
 			}
 
-			HANDLE portMutex = _CreateMutex( TRUE, key.c_str());
 			_OutputDebugString(L"%s\r\n", key.c_str());
 			udpPortMutex.push_back(portMutex);
 		}
@@ -140,20 +142,22 @@ BOOL COneServiceUtil::SendTcp(
 		}
 		for( size_t i=0; i<sendList->size(); i++ ){
 			wstring key = L"";
+			HANDLE portMutex;
 
 			while(1){
 				Format(key, L"%s%d_%d", MUTEX_TCP_PORT_NAME, (*sendList)[i].ip, (*sendList)[i].port );
-				HANDLE mutex = ::OpenMutex(MUTEX_ALL_ACCESS, FALSE, key.c_str());
+				portMutex = CreateMutex(NULL, TRUE, key.c_str());
 		
-				if(mutex){
-					::CloseHandle(mutex);
+				if( portMutex == NULL ){
+					(*sendList)[i].port++;
+				}else if( GetLastError() == ERROR_ALREADY_EXISTS ){
+					CloseHandle(portMutex);
 					(*sendList)[i].port++;
 				}else{
 					break;
 				}
 			}
 
-			HANDLE portMutex = _CreateMutex( TRUE, key.c_str());
 			_OutputDebugString(L"%s\r\n", key.c_str());
 			tcpPortMutex.push_back(portMutex);
 		}

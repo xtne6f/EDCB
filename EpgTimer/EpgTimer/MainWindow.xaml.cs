@@ -343,7 +343,10 @@ namespace EpgTimer
                     pipeEventName += System.Diagnostics.Process.GetCurrentProcess().Id.ToString();
                     pipeServer.StartServer(pipeEventName, pipeName, OutsideCmdCallback, this);
 
-                    cmd.SendRegistGUI((uint)System.Diagnostics.Process.GetCurrentProcess().Id);
+                    for (int i = 0; i < 150 && cmd.SendRegistGUI((uint)System.Diagnostics.Process.GetCurrentProcess().Id) != (uint)ErrCode.CMD_SUCCESS; i++)
+                    {
+                        Thread.Sleep(100);
+                    }
                 }
 
                 //タスクトレイの表示
@@ -663,15 +666,7 @@ namespace EpgTimer
                     {
                         if (serviceMode == false && initExe == true)
                         {
-                            try
-                            {
-                                //EpgTimerTaskがMutex付きで動作しているときはEpgTimerSrvの終了をEpgTimerTaskに任せる
-                                Mutex.OpenExisting("Global\\EpgTimer_Bon2_Lite", System.Security.AccessControl.MutexRights.Synchronize);
-                            }
-                            catch (WaitHandleCannotBeOpenedException)
-                            {
-                                cmd.SendClose();
-                            }
+                            cmd.SendClose();
                         }
                         mutex.ReleaseMutex();
                         mutex.Close();

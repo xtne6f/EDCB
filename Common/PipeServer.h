@@ -16,7 +16,8 @@ public:
 		CMD_CALLBACK_PROC cmdCallback, 
 		void* callbackParam, 
 		int threadPriority = THREAD_PRIORITY_NORMAL,
-		int ctrlCmdEventID = -1
+		int ctrlCmdEventID = -1,
+		BOOL insecureFlag = FALSE
 		);
 	void StopServer();
 
@@ -28,6 +29,7 @@ protected:
 
 	int threadPriority;
 	int ctrlCmdEventID;
+	BOOL insecureFlag;
 
 	HANDLE stopEvent;
 	HANDLE workThread;

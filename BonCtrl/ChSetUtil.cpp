@@ -35,7 +35,7 @@ BOOL CChSetUtil::SaveChSet(
 	)
 {
 	//ê⁄ë±ë“Çø
-	HANDLE waitEvent = _CreateEvent(FALSE, TRUE, CHSET_SAVE_EVENT_WAIT);
+	HANDLE waitEvent = CreateEvent(NULL, FALSE, TRUE, CHSET_SAVE_EVENT_WAIT);
 	if( waitEvent == NULL ){
 		return FALSE;
 	}

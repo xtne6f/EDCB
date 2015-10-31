@@ -27,8 +27,17 @@ public:
 	// eventName	[IN]排他制御用Eventの名前
 	// pipeName		[IN]接続パイプの名前
 	void SetPipeSetting(
-		wstring eventName,
-		wstring pipeName
+		LPCWSTR eventName,
+		LPCWSTR pipeName
+		);
+
+	//名前付きパイプモード時の接続先を設定（接尾にプロセスIDを伴うタイプ）
+	//引数：
+	// pid			[IN]プロセスID
+	void SetPipeSetting(
+		LPCWSTR eventName,
+		LPCWSTR pipeName,
+		DWORD pid
 		);
 
 	//TCP/IPモード時の接続先を設定
@@ -243,7 +252,7 @@ public:
 	//引数：
 	// val				[OUT]番組情報一覧
 	DWORD SendEnumPgAll(
-		vector<EPGDB_SERVICE_EVENT_INFO*>* val
+		vector<EPGDB_SERVICE_EVENT_INFO>* val
 		){
 		return ReceiveCmdData(CMD2_EPG_SRV_ENUM_PG_ALL, val);
 	}
@@ -1051,10 +1060,8 @@ DWORD CSendCtrlCmd::SendCmdData(DWORD param, const T& val, CMD_STREAM* res)
 {
 	CMD_STREAM send;
 	send.param = param;
-	send.dataSize = GetVALUESize(val);
-	send.data = new BYTE[send.dataSize];
-
-	if( WriteVALUE(val, send.data, send.dataSize, NULL) == FALSE ){
+	send.data = NewWriteVALUE(val, send.dataSize);
+	if( send.data == NULL ){
 		return CMD_ERR;
 	}
 	return SendCmdStream(&send, res);
@@ -1066,12 +1073,8 @@ DWORD CSendCtrlCmd::SendCmdData2(DWORD param, const T& val, CMD_STREAM* res)
 	WORD ver = CMD_VER;
 	CMD_STREAM send;
 	send.param = param;
-	send.dataSize = GetVALUESize(ver) + GetVALUESize2(ver, val);
-	send.data = new BYTE[send.dataSize];
-
-	DWORD writeSize = 0;
-	if( WriteVALUE(ver, send.data, send.dataSize, &writeSize) == FALSE ||
-		WriteVALUE2(ver, val, send.data + writeSize, send.dataSize - writeSize, NULL) == FALSE ){
+	send.data = NewWriteVALUE2WithVersion(ver, val, send.dataSize);
+	if( send.data == NULL ){
 		return CMD_ERR;
 	}
 	return SendCmdStream(&send, res);

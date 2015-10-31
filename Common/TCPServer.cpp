@@ -115,7 +115,7 @@ UINT WINAPI CTCPServer::ServerThread(LPVOID pParam)
 	if( pSys->m_iCtrlCmdEventID != -1 ){
 		wstring strCmdEvent;
 		Format(strCmdEvent, L"%s%d", CMD2_CTRL_EVENT_WAIT, pSys->m_iCtrlCmdEventID);
-		hEventCmdWait = _CreateEvent(FALSE, TRUE, strCmdEvent.c_str());
+		hEventCmdWait = CreateEvent(NULL, FALSE, TRUE, strCmdEvent.c_str());
 	}
 	
 	fd_set ready;
@@ -203,9 +203,7 @@ UINT WINAPI CTCPServer::ServerThread(LPVOID pParam)
 						ReadVALUE(&setParam.port, stCmd.data, stCmd.dataSize, NULL);
 
 						SAFE_DELETE_ARRAY(stCmd.data);
-						stCmd.dataSize = GetVALUESize(&setParam);
-						stCmd.data = new BYTE[stCmd.dataSize];
-						WriteVALUE(&setParam, stCmd.data, stCmd.dataSize, NULL);
+						stCmd.data = NewWriteVALUE(&setParam, stCmd.dataSize);
 					}
 
 					pSys->m_pCmdProc(pSys->m_pParam, &stCmd, &stRes);

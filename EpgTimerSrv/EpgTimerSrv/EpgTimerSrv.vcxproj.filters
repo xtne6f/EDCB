@@ -25,11 +25,11 @@
     <Filter Include="ヘッダー ファイル\BonCtrl">
       <UniqueIdentifier>{cce20c92-24e6-47aa-9ccb-3dbb4c749986}</UniqueIdentifier>
     </Filter>
-    <Filter Include="ソース ファイル\UPnPCtrl">
-      <UniqueIdentifier>{235f2aa2-a38e-42b5-b427-6167e37a6f1c}</UniqueIdentifier>
+    <Filter Include="ソース ファイル\civetweb">
+      <UniqueIdentifier>{9c22de38-0a12-4f99-ac9a-9e83b4b0065f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="ヘッダー ファイル\UPnPCtrl">
-      <UniqueIdentifier>{5b968ac7-23f3-49ff-af07-8514fa958e20}</UniqueIdentifier>
+    <Filter Include="ヘッダー ファイル\civetweb">
+      <UniqueIdentifier>{d06eb7fc-fc46-4201-a8f9-c57d6c944769}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -42,6 +42,12 @@
     </None>
     <None Include="RegExp.tlb">
       <Filter>ソース ファイル</Filter>
+    </None>
+    <None Include="mod_lua.inl">
+      <Filter>ヘッダー ファイル\civetweb</Filter>
+    </None>
+    <None Include="md5.inl">
+      <Filter>ヘッダー ファイル\civetweb</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -59,9 +65,6 @@
     </ClInclude>
     <ClInclude Include="..\..\Common\ServiceUtil.h">
       <Filter>ヘッダー ファイル\Common</Filter>
-    </ClInclude>
-    <ClInclude Include="EpgTimerSrvDef.h">
-      <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Common\CommonDef.h">
       <Filter>ヘッダー ファイル\Common</Filter>
@@ -94,9 +97,6 @@
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
     <ClInclude Include="ReserveManager.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="ReserveInfo.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Common\TimeUtil.h">
@@ -138,14 +138,8 @@
     <ClInclude Include="..\..\Common\TCPServer.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Common\twitterUtil.h">
-      <Filter>ヘッダー ファイル\Common</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Common\NWStructDef.h">
       <Filter>ヘッダー ファイル\Common</Filter>
-    </ClInclude>
-    <ClInclude Include="TwitterManager.h">
-      <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="FileStreamingUtil.h">
       <Filter>ヘッダー ファイル</Filter>
@@ -189,21 +183,6 @@
     <ClInclude Include="NotifyManager.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="NWCoopManager.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Common\HttpServer.h">
-      <Filter>ヘッダー ファイル\Common</Filter>
-    </ClInclude>
-    <ClInclude Include="HTMLManager.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="RestApiManager.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Common\ProxyUtil.h">
-      <Filter>ヘッダー ファイル\Common</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Common\WinHTTPUtil.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
@@ -213,64 +192,28 @@
     <ClInclude Include="..\..\Common\TCPServerUtil.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
-    <ClInclude Include="HttpPublicFileSend.h">
+    <ClInclude Include="civetweb.h">
+      <Filter>ヘッダー ファイル\civetweb</Filter>
+    </ClInclude>
+    <ClInclude Include="lua.h">
+      <Filter>ヘッダー ファイル\civetweb</Filter>
+    </ClInclude>
+    <ClInclude Include="lauxlib.h">
+      <Filter>ヘッダー ファイル\civetweb</Filter>
+    </ClInclude>
+    <ClInclude Include="luaconf.h">
+      <Filter>ヘッダー ファイル\civetweb</Filter>
+    </ClInclude>
+    <ClInclude Include="lualib.h">
+      <Filter>ヘッダー ファイル\civetweb</Filter>
+    </ClInclude>
+    <ClInclude Include="lua.hpp">
+      <Filter>ヘッダー ファイル\civetweb</Filter>
+    </ClInclude>
+    <ClInclude Include="HttpServer.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="HttpRecFileSend.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="HttpFileSend.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="DLNAManager.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\UPnPCtrl\CharUtil.h">
-      <Filter>ヘッダー ファイル\UPnPCtrl</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\UPnPCtrl\UpnpStructDef.h">
-      <Filter>ヘッダー ファイル\UPnPCtrl</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\UPnPCtrl\HttpUtil.h">
-      <Filter>ヘッダー ファイル\UPnPCtrl</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\UPnPCtrl\MPInclude.h">
-      <Filter>ヘッダー ファイル\UPnPCtrl</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\UPnPCtrl\NICUtil.h">
-      <Filter>ヘッダー ファイル\UPnPCtrl</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\UPnPCtrl\SortListUtil.h">
-      <Filter>ヘッダー ファイル\UPnPCtrl</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\UPnPCtrl\ThreadUtil.h">
-      <Filter>ヘッダー ファイル\UPnPCtrl</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\UPnPCtrl\UpnpSsdpUtil.h">
-      <Filter>ヘッダー ファイル\UPnPCtrl</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\UPnPCtrl\UpnpUtil.h">
-      <Filter>ヘッダー ファイル\UPnPCtrl</Filter>
-    </ClInclude>
-    <ClInclude Include="DLNADmsManager.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="SOAPUtil.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="HttpRequestReader.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="DLNAParseProtocolInfo.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="DLNADmsContentDB.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Common\LockUtil.h">
-      <Filter>ヘッダー ファイル\Common</Filter>
-    </ClInclude>
-    <ClInclude Include="DLNAParsePublicFolder.h">
+    <ClInclude Include="UpnpSsdpServer.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
@@ -308,9 +251,6 @@
     <ClCompile Include="ReserveManager.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="ReserveInfo.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\Common\TimeUtil.cpp">
       <Filter>ソース ファイル\Common</Filter>
     </ClCompile>
@@ -340,12 +280,6 @@
     </ClCompile>
     <ClCompile Include="..\..\Common\TCPServer.cpp">
       <Filter>ソース ファイル\Common</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Common\twitterUtil.cpp">
-      <Filter>ソース ファイル\Common</Filter>
-    </ClCompile>
-    <ClCompile Include="TwitterManager.cpp">
-      <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="FileStreamingUtil.cpp">
       <Filter>ソース ファイル</Filter>
@@ -386,21 +320,6 @@
     <ClCompile Include="NotifyManager.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="NWCoopManager.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Common\HttpServer.cpp">
-      <Filter>ソース ファイル\Common</Filter>
-    </ClCompile>
-    <ClCompile Include="HTMLManager.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="RestApiManager.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Common\ProxyUtil.cpp">
-      <Filter>ソース ファイル\Common</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\Common\WinHTTPUtil.cpp">
       <Filter>ソース ファイル\Common</Filter>
     </ClCompile>
@@ -410,61 +329,13 @@
     <ClCompile Include="..\..\Common\TCPServerUtil.cpp">
       <Filter>ソース ファイル\Common</Filter>
     </ClCompile>
-    <ClCompile Include="HttpPublicFileSend.cpp">
+    <ClCompile Include="civetweb.c">
+      <Filter>ソース ファイル\civetweb</Filter>
+    </ClCompile>
+    <ClCompile Include="HttpServer.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="HttpRecFileSend.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="HttpFileSend.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="DLNAManager.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\UPnPCtrl\CharUtil.cpp">
-      <Filter>ソース ファイル\UPnPCtrl</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\UPnPCtrl\HttpUtil.cpp">
-      <Filter>ソース ファイル\UPnPCtrl</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\UPnPCtrl\NICUtil.cpp">
-      <Filter>ソース ファイル\UPnPCtrl</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\UPnPCtrl\SortListUtil.cpp">
-      <Filter>ソース ファイル\UPnPCtrl</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\UPnPCtrl\ThreadUtil.cpp">
-      <Filter>ソース ファイル\UPnPCtrl</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\UPnPCtrl\UpnpSsdpUtil.cpp">
-      <Filter>ソース ファイル\UPnPCtrl</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\UPnPCtrl\UpnpStructDef.cpp">
-      <Filter>ソース ファイル\UPnPCtrl</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\UPnPCtrl\UpnpUtil.cpp">
-      <Filter>ソース ファイル\UPnPCtrl</Filter>
-    </ClCompile>
-    <ClCompile Include="DLNADmsManager.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="SOAPUtil.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="HttpRequestReader.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="DLNAParseProtocolInfo.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="DLNADmsContentDB.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Common\LockUtil.cpp">
-      <Filter>ソース ファイル\Common</Filter>
-    </ClCompile>
-    <ClCompile Include="DLNAParsePublicFolder.cpp">
+    <ClCompile Include="UpnpSsdpServer.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>

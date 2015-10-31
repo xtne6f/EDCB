@@ -1,0 +1,96 @@
+key={
+  onid=mg.get_var(mg.request_info.query_string,'ONID'),
+  tsid=mg.get_var(mg.request_info.query_string,'TSID'),
+  sid=mg.get_var(mg.request_info.query_string,'SID')
+}
+edcb.htmlEscape=15
+a=edcb.EnumEventInfo({key})
+ct={'<?xml version="1.0" encoding="UTF-8" ?'..'>'}
+if not a then
+  table.insert(ct, '<entry><err>EPGデータを読み込み中、または存在しません</err></entry>')
+else
+  basic=0+(mg.get_var(mg.request_info.query_string,'basic') or 1)~=0
+  index=math.max(0+(mg.get_var(mg.request_info.query_string,'index') or 0),0)
+  count=math.max(0+(mg.get_var(mg.request_info.query_string,'count') or 200),0)
+  countTo=math.min(index+count,#a)
+  table.insert(ct, '<entry><total>'..#a..'</total><index>'..index..'</index><count>'..math.max(countTo-index,0)..'</count><items>\r\n')
+  for i=index+1,countTo do
+    v=a[i]
+    table.insert(ct, '<eventinfo><ONID>'
+      ..v.onid..'</ONID><TSID>'
+      ..v.tsid..'</TSID><SID>'
+      ..v.sid..'</SID><eventID>'
+      ..v.eid..'</eventID>')
+    if v.startTime then
+      table.insert(ct, os.date('<startDate>%Y/%m/%d</startDate><startTime>%H:%M:%S</startTime><startDayOfWeek>', os.time(v.startTime))
+        ..(v.startTime.wday-1)..'</startDayOfWeek>')
+    end
+    if v.durationSecond then
+      table.insert(ct, '<duration>'..v.durationSecond..'</duration>')
+    end
+    if v.shortInfo then
+      table.insert(ct, '<event_name>'
+        ..v.shortInfo.event_name..'</event_name><event_text>'
+        ..v.shortInfo.text_char..'</event_text>')
+    end
+    if v.contentInfoList then
+      for j,w in ipairs(v.contentInfoList) do
+        table.insert(ct, '<contentInfo><nibble1>'
+          ..math.floor(w.content_nibble / 256)..'</nibble1><nibble2>'
+          ..(w.content_nibble % 256)..'</nibble2></contentInfo>')
+      end
+    end
+    if v.eventGroupInfo then
+      for j,w in ipairs(v.eventGroupInfo.eventDataList) do
+        table.insert(ct, '<groupInfo><ONID>'
+          ..w.onid..'</ONID><TSID>'
+          ..w.tsid..'</TSID><SID>'
+          ..w.sid..'</SID><eventID>'
+          ..w.eid..'</eventID></groupInfo>')
+      end
+    end
+    table.insert(ct, '<freeCAFlag>'..(v.freeCAFlag and 1 or 0)..'</freeCAFlag>')
+    if not basic then
+      if v.extInfo then
+        table.insert(ct, '<event_ext_text>'..v.extInfo.text_char..'</event_ext_text>')
+      end
+      if v.componentInfo then
+        table.insert(ct, '<videoInfo><stream_content>'
+          ..v.componentInfo.stream_content..'</stream_content><component_type>'
+          ..v.componentInfo.component_type..'</component_type><component_tag>'
+          ..v.componentInfo.component_tag..'</component_tag><text>'
+          ..v.componentInfo.text_char..'</text></videoInfo>')
+      end
+      if v.audioInfoList then
+        for j,w in ipairs(v.audioInfoList) do
+          table.insert(ct, '<audioInfo><stream_content>'
+            ..w.stream_content..'</stream_content><component_type>'
+            ..w.component_type..'</component_type><component_tag>'
+            ..w.component_tag..'</component_tag><stream_type>'
+            ..w.stream_type..'</stream_type><simulcast_group_tag>'
+            ..w.simulcast_group_tag..'</simulcast_group_tag><ES_multi_lingual_flag>'
+            ..(w.ES_multi_lingual_flag and 1 or 0)..'</ES_multi_lingual_flag><main_component_flag>'
+            ..(w.main_component_flag and 1 or 0)..'</main_component_flag><quality_indicator>'
+            ..w.quality_indicator..'</quality_indicator><sampling_rate>'
+            ..w.sampling_rate..'</sampling_rate><text>'
+            ..w.text_char..'</text></audioInfo>')
+        end
+      end
+      if v.eventRelayInfo then
+        for j,w in ipairs(v.eventRelayInfo.eventDataList) do
+          table.insert(ct, '<relayInfo><ONID>'
+            ..w.onid..'</ONID><TSID>'
+            ..w.tsid..'</TSID><SID>'
+            ..w.sid..'</SID><eventID>'
+            ..w.eid..'</eventID></relayInfo>')
+        end
+      end
+    end
+    table.insert(ct, '</eventinfo>\r\n')
+  end
+  table.insert(ct, '</items></entry>')
+end
+cl=0
+for i,v in ipairs(ct) do cl=cl+#v end
+mg.write('HTTP/1.1 200 OK\r\nContent-Type: text/xml\r\nContent-Length: '..cl..'\r\nConnection: close\r\n\r\n')
+for i,v in ipairs(ct) do mg.write(v) end

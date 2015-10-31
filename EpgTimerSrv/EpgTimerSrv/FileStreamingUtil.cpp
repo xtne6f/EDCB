@@ -71,13 +71,7 @@ BOOL CFileStreamingUtil::OpenTimeShift(LPCWSTR filePath, DWORD processID,DWORD e
 	}
 	this->timeShiftUtil.StopTimeShift();
 
-	wstring pipeName = L"";
-	wstring waitEventName = L"";
-		
-	Format(pipeName, L"%s%d", CMD2_VIEW_CTRL_PIPE, processID );
-	Format(waitEventName, L"%s%d", CMD2_VIEW_CTRL_WAIT_CONNECT, processID );
-
-	cmd.SetPipeSetting(waitEventName, pipeName);
+	cmd.SetPipeSetting(CMD2_VIEW_CTRL_WAIT_CONNECT, CMD2_VIEW_CTRL_PIPE, processID);
 	cmd.SetConnectTimeOut(3*1000);
 
 	BOOL ret = FALSE;
@@ -182,19 +176,21 @@ BOOL CFileStreamingUtil::SetIP(
 			item.broadcastFlag = 0;
 
 			wstring mutexKey = L"";
+			HANDLE portMutex;
 			while(1){
 				Format(mutexKey, L"%s%d_%d", MUTEX_UDP_PORT_NAME, item.ip, item.port );
-				HANDLE mutex = ::OpenMutex(MUTEX_ALL_ACCESS, FALSE, mutexKey.c_str());
+				portMutex = CreateMutex(NULL, TRUE, mutexKey.c_str());
 		
-				if(mutex){
-					::CloseHandle(mutex);
+				if( portMutex == NULL ){
+					item.port++;
+				}else if( GetLastError() == ERROR_ALREADY_EXISTS ){
+					CloseHandle(portMutex);
 					item.port++;
 				}else{
 					break;
 				}
 			}
 
-			HANDLE portMutex = _CreateMutex( TRUE, mutexKey.c_str());
 			_OutputDebugString(L"%s\r\n", mutexKey.c_str());
 			this->udpPortMutex.push_back(portMutex);
 
@@ -236,20 +232,22 @@ BOOL CFileStreamingUtil::SetIP(
 			item.broadcastFlag = 0;
 
 			wstring mutexKey = L"";
+			HANDLE portMutex;
 
 			while(1){
 				Format(mutexKey, L"%s%d_%d", MUTEX_TCP_PORT_NAME, item.ip, item.port );
-				HANDLE mutex = ::OpenMutex(MUTEX_ALL_ACCESS, FALSE, mutexKey.c_str());
+				portMutex = CreateMutex(NULL, TRUE, mutexKey.c_str());
 		
-				if(mutex){
-					::CloseHandle(mutex);
+				if( portMutex == NULL ){
+					item.port++;
+				}else if( GetLastError() == ERROR_ALREADY_EXISTS ){
+					CloseHandle(portMutex);
 					item.port++;
 				}else{
 					break;
 				}
 			}
 
-			HANDLE portMutex = _CreateMutex( TRUE, mutexKey.c_str());
 			_OutputDebugString(L"%s\r\n", mutexKey.c_str());
 			this->tcpPortMutex.push_back(portMutex);
 

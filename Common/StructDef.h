@@ -15,7 +15,7 @@ typedef struct _REC_FILE_SET_INFO{
 typedef struct _REC_SETTING_DATA{
 	BYTE recMode;				//録画モード
 	BYTE priority;				//優先度
-	BYTE tuijyuuFlag;			//追従モード
+	BYTE tuijyuuFlag;			//イベントリレー追従するかどうか
 	DWORD serviceMode;			//処理対象データモード
 	BYTE pittariFlag;			//ぴったり？録画
 	wstring batFilePath;		//録画後BATファイルパス
@@ -60,15 +60,16 @@ typedef struct _RESERVE_DATA{
 	WORD eventID;					//EventID
 	wstring comment;				//コメント
 	DWORD reserveID;				//予約識別ID 予約登録時は0
-	BYTE recWaitFlag;				//予約待機入った？ 内部で使用
+	//BYTE recWaitFlag;				//予約待機入った？ 内部で使用（廃止）
+	BYTE presentFlag;				//EIT[present]でチェック済み？ 純粋に内部で使用
 	BYTE overlapMode;				//かぶり状態 1:かぶってチューナー足りない予約あり 2:チューナー足りなくて予約できない
-	wstring recFilePath;			//録画ファイルパス 旧バージョン互換用 未使用
+	//wstring recFilePath;			//録画ファイルパス 旧バージョン互換用 未使用（廃止）
 	SYSTEMTIME startTimeEpg;		//予約時の開始時間
 	REC_SETTING_DATA recSetting;	//録画設定
 	DWORD reserveStatus;			//予約追加状態 内部で使用
 	//CMD_VER 5以降
 	vector<wstring> recFileNameList;	//録画予定ファイル名
-	DWORD param1;					//将来用
+	//DWORD param1;					//将来用
 	_RESERVE_DATA(void){
 		title=L"";
 		ZeroMemory(&startTime, sizeof(SYSTEMTIME));
@@ -80,12 +81,10 @@ typedef struct _RESERVE_DATA{
 		eventID = 0;
 		comment = L"";
 		reserveID = 0;
-		recWaitFlag = FALSE;
+		presentFlag = 0;
 		overlapMode = 0;
 		ZeroMemory(&startTimeEpg, sizeof(SYSTEMTIME));
-		recFilePath = L"";
 		reserveStatus = 0;
-		param1 = 0;
 	};
 } RESERVE_DATA;
 
@@ -131,7 +130,7 @@ typedef struct _REC_FILE_INFO{
 	};
 	_REC_FILE_INFO & operator= (const _RESERVE_DATA & o) {
 		id = 0;
-		recFilePath=o.recFilePath;
+		recFilePath = L"";
 		title = o.title;
 		startTime = o.startTime;
 		durationSecond = o.durationSecond;
@@ -144,7 +143,7 @@ typedef struct _REC_FILE_INFO{
 		scrambles = 0;
 		recStatus = 0;
 		startTimeEpg = o.startTimeEpg;
-		comment = o.comment;
+		comment = L"";
 		programInfo = L"";
 		errInfo = L"";
 		protectFlag = 0;
@@ -593,38 +592,6 @@ typedef struct _NOTIFY_SRV_INFO{
 } NOTIFY_SRV_INFO;
 
 
-//連携サーバー情報
-typedef struct _COOP_SERVER_INFO{
-	wstring hostName;	//アドレス
-	WORD srvPort;		//サーバーアプリ待ち受けポート
-	BOOL wolFlag;		//WOLによる起動を行う
-	BYTE mac[6];		//サーバーMACアドレス
-	WORD magicSendPort;	//マジックパケット送信用ポート（0でLAN内ブロードキャスト、0以外でWANへの送信）
-	BYTE suspendMode;	//登録後のサスペンド動作
-	_COOP_SERVER_INFO(void){
-		hostName= L"";
-		srvPort = 0;
-		wolFlag = FALSE;
-		memset(mac, 0, 6);
-		magicSendPort = 0;
-		suspendMode = 0;
-	};
-} COOP_SERVER_INFO;
-
-typedef struct _GENRU_INFO{
-	BYTE nibble1;
-	BYTE nibble2;
-	WORD key;
-	wstring name;
-	_GENRU_INFO(void){
-		nibble1= 0xFF;
-		nibble2 = 0xFF;
-		key = 0xFFFF;
-		name = L"";
-	};
-} GENRU_INFO;
-
-
 ////////////////////////////////////////////////////////////////////////////////////////////
 //旧バージョンコマンド送信用
 typedef struct _OLD_RESERVE_DATA{
@@ -678,7 +645,7 @@ typedef struct _OLD_RESERVE_DATA{
 		}
 		wSuspendMode = o.recSetting.suspendMode;
 		bReboot = o.recSetting.rebootFlag;
-		strRecFilePath = o.recFilePath;
+		strRecFilePath = L"";
 		bUseMargine = o.recSetting.useMargineFlag;
 		iStartMargine = o.recSetting.startMargine;
 		iEndMargine = o.recSetting.endMargine;

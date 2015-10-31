@@ -290,7 +290,6 @@ void CtrlCmdUtil::CopyData(Def::ReserveData^ src, RESERVE_DATA* dest)
 	pin_ptr<const wchar_t> titlePin = PtrToStringChars(src->Title);
 	pin_ptr<const wchar_t> stationNamePin = PtrToStringChars(src->StationName);
 	pin_ptr<const wchar_t> commentPin = PtrToStringChars(src->Comment);
-	pin_ptr<const wchar_t> recFilePathPin = PtrToStringChars(src->RecFilePath);
 
 	dest->title = titlePin;
 	CopyData(src->StartTime, &dest->startTime);
@@ -302,9 +301,7 @@ void CtrlCmdUtil::CopyData(Def::ReserveData^ src, RESERVE_DATA* dest)
 	dest->eventID = src->EventID;
 	dest->comment = commentPin;
 	dest->reserveID = src->ReserveID;
-	dest->recWaitFlag = src->RecWaitFlag;
 	dest->overlapMode = src->OverlapMode;
-	dest->recFilePath = recFilePathPin;
 	CopyData(src->StartTimeEpg, &dest->startTimeEpg);
 	CopyData(src->RecSetting, &dest->recSetting);
 	dest->reserveStatus = src->ReserveStatus;
@@ -314,7 +311,6 @@ void CtrlCmdUtil::CopyData(Def::ReserveData^ src, RESERVE_DATA* dest)
 
 		dest->recFileNameList.push_back(namePin);
 	}
-	dest->param1 = src->param1;
 }
 
 void CtrlCmdUtil::CopyData(RESERVE_DATA* src, Def::ReserveData^% dest)
@@ -330,9 +326,7 @@ void CtrlCmdUtil::CopyData(RESERVE_DATA* src, Def::ReserveData^% dest)
 	dest->EventID = src->eventID;
 	dest->Comment = gcnew String(src->comment.c_str());
 	dest->ReserveID = src->reserveID;
-	dest->RecWaitFlag = src->recWaitFlag;
 	dest->OverlapMode = src->overlapMode;
-	dest->RecFilePath = gcnew String(src->recFilePath.c_str());
 	dest->StartTimeEpg = ConvertTime( &src->startTimeEpg );
 //	CopyData(&src->startTimeEpg, dest->StartTimeEpg);
 	CopyData(&src->recSetting, dest->RecSetting);
@@ -341,7 +335,6 @@ void CtrlCmdUtil::CopyData(RESERVE_DATA* src, Def::ReserveData^% dest)
 	for( size_t i=0; i<src->recFileNameList.size(); i++){
 		dest->RecFileNameList->Add( gcnew String(src->recFileNameList[i].c_str()) );
 	}
-	dest->param1 = src->param1;
 
 }
 
@@ -1086,11 +1079,9 @@ void CtrlCmdUtil::SetPipeSetting(
 	)
 {
 	pin_ptr<const wchar_t> eventNamePin = PtrToStringChars(eventName);
-	std::wstring _eventName(eventNamePin);
 	pin_ptr<const wchar_t> pipeNamePin = PtrToStringChars(pipeName);
-	std::wstring _pipeName(pipeNamePin);
 
-	this->sendCmd->SetPipeSetting(_eventName, _pipeName);
+	this->sendCmd->SetPipeSetting(eventNamePin, pipeNamePin);
 }
 
 /// <summary>
@@ -1681,17 +1672,16 @@ UInt32 CtrlCmdUtil::SendEnumPgAll(
 	List<Def::EpgServiceEventInfo^>^% val
 	)
 {
-	vector<EPGDB_SERVICE_EVENT_INFO*> _val;
+	vector<EPGDB_SERVICE_EVENT_INFO> _val;
 	DWORD ret = this->sendCmd->SendEnumPgAll(&_val);
 	if( ret == CMD_SUCCESS ){
 		for( size_t i=0; i<_val.size(); i++ ){
 			Def::EpgServiceEventInfo^ item = gcnew Def::EpgServiceEventInfo();
-			CopyData(_val[i], item);
+			CopyData(&_val[i], item);
 			val->Add(item);
-			for( size_t j=0; j<_val[i]->eventList.size(); j++ ){
-				SAFE_DELETE(_val[i]->eventList[j]);
+			for( size_t j=0; j<_val[i].eventList.size(); j++ ){
+				SAFE_DELETE(_val[i].eventList[j]);
 			}
-			SAFE_DELETE(_val[i]);
 		}
 	}
 	return ret;

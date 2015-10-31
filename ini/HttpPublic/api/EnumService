@@ -1,0 +1,26 @@
+edcb.htmlEscape=15
+a=edcb.GetServiceList()
+ct={'<?xml version="1.0" encoding="UTF-8" ?'..'>'}
+if not a then
+  table.insert(ct, '<entry><err>EPGデータを読み込み中、または存在しません</err></entry>')
+else
+  table.insert(ct, '<entry><total>'..#a..'</total><index>0</index><count>'..#a..'</count><items>\r\n')
+  for i,v in ipairs(a) do
+    table.insert(ct, '<serviceinfo><ONID>'
+      ..v.onid..'</ONID><TSID>'
+      ..v.tsid..'</TSID><SID>'
+      ..v.sid..'</SID><service_type>'
+      ..v.service_type..'</service_type><partialReceptionFlag>'
+      ..(v.partialReceptionFlag and 1 or 0)..'</partialReceptionFlag><service_provider_name>'
+      ..v.service_provider_name..'</service_provider_name><service_name>'
+      ..v.service_name..'</service_name><network_name>'
+      ..v.network_name..'</network_name><ts_name>'
+      ..v.ts_name..'</ts_name><remote_control_key_id>'
+      ..v.remote_control_key_id..'</remote_control_key_id></serviceinfo>\r\n')
+  end
+  table.insert(ct, '</items></entry>')
+end
+cl=0
+for i,v in ipairs(ct) do cl=cl+#v end
+mg.write('HTTP/1.1 200 OK\r\nContent-Type: text/xml\r\nContent-Length: '..cl..'\r\nConnection: close\r\n\r\n')
+for i,v in ipairs(ct) do mg.write(v) end

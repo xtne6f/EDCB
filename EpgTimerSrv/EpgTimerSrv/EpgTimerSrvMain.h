@@ -4,114 +4,143 @@
 #include "ReserveManager.h"
 #include "FileStreamingManager.h"
 #include "NotifyManager.h"
-
 #include "../../Common/ParseTextInstances.h"
-#include "../../Common/PipeServer.h"
-#include "../../Common/TCPServer.h"
-#include "../../Common/HttpServer.h"
-#include "../../Common/TCPServerUtil.h"
 
-#include "DLNAManager.h"
+struct lua_State;
+struct _UPNP_MSEARCH_REQUEST_INFO;
 
+//各種サーバと自動予約の管理をおこなう
+//必ずオブジェクト生成→Main()→…→破棄の順番で利用しなければならない
 class CEpgTimerSrvMain
 {
 public:
-	CEpgTimerSrvMain(void);
-	~CEpgTimerSrvMain(void);
-
+	CEpgTimerSrvMain();
+	~CEpgTimerSrvMain();
 	//メインループ処理
-	//引数：
-	// serviceFlag			[IN]サービスとしての起動かどうか
-	void StartMain(
-		BOOL serviceFlag
-		);
-
+	//serviceFlag_: サービスとしての起動かどうか
+	bool Main(bool serviceFlag_);
 	//メイン処理停止
 	void StopMain();
-
-	//休止／スタンバイ移行処理中かどうか
-	//戻り値：
-	// TRUE（移行中）、FALSE
-	BOOL IsSuspending();
-
 	//休止／スタンバイに移行して構わない状況かどうか
-	//戻り値：
-	// TRUE（構わない）、FALSE（移行しては駄目）
-	BOOL ChkSuspend();
-
+	bool IsSuspendOK(); //const;
+private:
+	//メインウィンドウ
+	static LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	//シャットダウン問い合わせダイアログ
+	static INT_PTR CALLBACK QueryShutdownDlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	void ReloadNetworkSetting();
+	void ReloadSetting();
+	//プリセット録画設定を読み込む(旧CRestApiManagerから移動)
+	pair<wstring, REC_SETTING_DATA> LoadRecSetData(WORD preset) const;
+	//現在の予約状態に応じた復帰タイマをセットする
+	bool SetResumeTimer(HANDLE* resumeTimer, __int64* resumeTime, DWORD marginSec);
+	//システムをシャットダウンする
+	static void SetShutdown(BYTE shutdownMode);
+	//GUIにシャットダウン可能かどうかの問い合わせを開始させる
+	//suspendMode==0:再起動(常にrebootFlag==1とする)
+	//suspendMode!=0:スタンバイ休止または電源断
+	bool QueryShutdown(BYTE rebootFlag, BYTE suspendMode);
 	//ユーザーがPCを使用中かどうか
-	//戻り値：
-	// TRUE（使用中）、FALSE（使用していない）
-	BOOL IsUserWorking();
+	bool IsUserWorking() const;
+	//共有フォルダのTSファイルにアクセスがあるかどうか
+	bool IsFindShareTSFile() const;
+	//抑制条件のプロセスが起動しているかどうか
+	bool IsFindNoSuspendExe() const;
+	bool AutoAddReserveEPG(const EPG_AUTO_ADD_DATA& data);
+	bool AutoAddReserveProgram(const MANUAL_AUTO_ADD_DATA& data);
+	//外部制御コマンド関係
+	static int CALLBACK CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STREAM* resParam);
+	static int InitLuaCallback(lua_State* L);
+	//Lua-edcb空間のコールバック
+	class CLuaWorkspace
+	{
+	public:
+		CLuaWorkspace(lua_State* L_);
+		const char* WtoUTF8(const wstring& strIn);
+		lua_State* const L;
+		CEpgTimerSrvMain* const sys;
+		int htmlEscape;
+	private:
+		vector<char> strOut;
+	};
+	static int LuaGetGenreName(lua_State* L);
+	static int LuaGetComponentTypeName(lua_State* L);
+	static int LuaSleep(lua_State* L);
+	static int LuaConvert(lua_State* L);
+	static int LuaGetPrivateProfile(lua_State* L);
+	static int LuaWritePrivateProfile(lua_State* L);
+	static int LuaReloadEpg(lua_State* L);
+	static int LuaReloadSetting(lua_State* L);
+	static int LuaEpgCapNow(lua_State* L);
+	static int LuaGetChDataList(lua_State* L);
+	static int LuaGetServiceList(lua_State* L);
+	static void LuaGetEventMinMaxTimeCallback(vector<EPGDB_EVENT_INFO*>* pval, void* param);
+	static int LuaGetEventMinMaxTime(lua_State* L);
+	static void LuaEnumEventInfoCallback(vector<EPGDB_EVENT_INFO*>* pval, void* param);
+	static void LuaEnumEventAllCallback(vector<EPGDB_SERVICE_EVENT_INFO>* pval, void* param);
+	static int LuaEnumEventInfo(lua_State* L);
+	static void LuaSearchEpgCallback(vector<CEpgDBManager::SEARCH_RESULT_EVENT>* pval, void* param);
+	static int LuaSearchEpg(lua_State* L);
+	static int LuaAddReserveData(lua_State* L);
+	static int LuaChgReserveData(lua_State* L);
+	static int LuaDelReserveData(lua_State* L);
+	static int LuaGetReserveData(lua_State* L);
+	static int LuaGetRecFileInfo(lua_State* L);
+	static int LuaDelRecFileInfo(lua_State* L);
+	static int LuaGetTunerReserveAll(lua_State* L);
+	static int LuaEnumRecPresetInfo(lua_State* L);
+	static int LuaEnumAutoAdd(lua_State* L);
+	static int LuaEnumManuAdd(lua_State* L);
+	static int LuaDelAutoAdd(lua_State* L);
+	static int LuaDelManuAdd(lua_State* L);
+	static int LuaAddOrChgAutoAdd(lua_State* L);
+	static int LuaAddOrChgManuAdd(lua_State* L);
+	static int LuaGetNotifyUpdateCount(lua_State* L);
+	static int LuaListDmsPublicFile(lua_State* L);
+	static void PushEpgEventInfo(CLuaWorkspace& ws, const EPGDB_EVENT_INFO& e);
+	static void PushReserveData(CLuaWorkspace& ws, const RESERVE_DATA& r);
+	static void PushRecSettingData(CLuaWorkspace& ws, const REC_SETTING_DATA& rs);
+	static void PushEpgSearchKeyInfo(CLuaWorkspace& ws, const EPGDB_SEARCH_KEY_INFO& k);
+	static bool FetchReserveData(CLuaWorkspace& ws, RESERVE_DATA& r);
+	static void FetchRecSettingData(CLuaWorkspace& ws, REC_SETTING_DATA& rs);
+	static void FetchEpgSearchKeyInfo(CLuaWorkspace& ws, EPGDB_SEARCH_KEY_INFO& k);
 
-protected:
+	CNotifyManager notifyManager;
 	CEpgDBManager epgDB;
+	//reserveManagerはnotifyManagerとepgDBに依存するので、順序を入れ替えてはいけない
 	CReserveManager reserveManager;
 	CFileStreamingManager streamingManager;
-	CNotifyManager notifyManager;
 
 	CParseEpgAutoAddText epgAutoAdd;
 	CParseManualAutoAddText manualAutoAdd;
 
-	CDLNAManager* dlnaManager;
+	mutable CRITICAL_SECTION settingLock;
+	HWND hwndMain;
 
-	HANDLE stopEvent;
-	HANDLE sleepEvent;
-	HANDLE resetServerEvent;
-	HANDLE reloadEpgChkEvent;
-
-	//map<DWORD,DWORD> registGUI; //PID,PID
-	//map<wstring,REGIST_TCP_INFO> registTCP; //IP:Port
-
-	BYTE suspendModeWork;
-	BYTE rebootFlagWork;
-
-	int wakeMargin;
-	BOOL enableTCPSrv;
-	DWORD tcpPort;
-	int autoAddDays;
-	int autoAddHour;
-	BOOL chkGroupEvent;
-	BYTE rebootDef;
-	BOOL ngUsePC;
-	DWORD ngUsePCTime;
-	BOOL ngFileStreaming;
-	BOOL ngEpgFileSrvCoop;
-	BOOL enableHttpSrv;
-	DWORD httpPort;
-	BOOL enableDMS;
-
-	BOOL enableHttpPublic;
+	bool residentFlag;
+	bool saveNotifyLog;
+	DWORD wakeMarginSec;
+	unsigned short tcpPort;
+	wstring httpPorts;
 	wstring httpPublicFolder;
-
-	BOOL awayMode;
+	wstring httpAccessControlList;
+	bool httpSaveLog;
+	bool enableSsdpServer;
+	vector<pair<int, wstring>> dmsPublicFileList;
+	int autoAddHour;
+	bool chkGroupEvent;
+	bool useSyoboi;
+	//LOBYTEにモード(1=スタンバイ,2=休止,3=電源断,4=なにもしない)、HIBYTEに再起動フラグ
+	WORD defShutdownMode;
+	DWORD ngUsePCTime;
+	bool ngFileStreaming;
+	bool ngShareFile;
+	DWORD noStandbySec;
+	vector<wstring> noSuspendExeList;
+	vector<wstring> tvtestUseBon;
+	bool nwtvUdp;
+	bool nwtvTcp;
+	DWORD notifyUpdateCount[6];
 
 	vector<OLD_EVENT_INFO_DATA3> oldSearchList;
-
-	//このオブジェクトが持つ設定変数を保護するロック
-	//独自にアトミック性を確保するオブジェクトは対象外
-	CRITICAL_SECTION settingLock;
-protected:
-	BOOL CheckTuijyu();
-
-	BOOL AutoAddReserveEPG(int targetSize = -1, EPG_AUTO_ADD_DATA* target = NULL);
-	BOOL AutoAddReserveProgram();
-
-	static void SetShutdown(BYTE shutdownMode);
-	BOOL QuerySleep(BYTE rebootFlag, BYTE suspendMode);
-	BOOL QueryReboot(BYTE rebootFlag);
-
-	BOOL SetResumeTimer(HANDLE* resumeTimer, LONGLONG* resumeTime, BOOL rebootFlag);
-	void ResetServer(CTCPServer& tcpServer, CHttpServer& httpServer, CTCPServerUtil& tcpSrvUtil);
-	void ReloadSetting();
-
-	void AddRecFileDMS();
-
-	//外部制御コマンド関係
-	static int CALLBACK CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STREAM* resParam);
-	static int CALLBACK HttpCallback(void* param, HTTP_STREAM* recvParam, HTTP_STREAM* sendParam);
-	static int CALLBACK TcpAcceptCallback(void* param, SOCKET clientSock, struct sockaddr_in* client, HANDLE stopEvent);
-
-
 };
-

@@ -121,10 +121,16 @@ public:
 	DWORD AddReserve(const RESERVE_DATA& item);
 	//予約情報を変更する
 	bool ChgReserve(const RESERVE_DATA& item);
+	//presentFlagを変更する(イテレータに影響しない)
+	bool SetPresentFlag(DWORD id, BYTE presentFlag);
+	//overlapModeを変更する(イテレータに影響しない)
+	bool SetOverlapMode(DWORD id, BYTE overlapMode);
 	//予約情報を削除する
 	bool DelReserve(DWORD id);
 	//録画開始日時でソートされた予約一覧を取得する
 	vector<pair<LONGLONG, const RESERVE_DATA*>> GetReserveList(BOOL calcMargin = FALSE, int defStartMargin = 0) const;
+	//ONID<<48|TSID<<32|SID<<16|EID,予約IDでソートされた予約一覧を取得する。戻り値は次の非const操作まで有効
+	const vector<pair<ULONGLONG, DWORD>>& GetSortByEventList() const;
 protected:
 	bool ParseLine(const wstring& parseLine, pair<DWORD, RESERVE_DATA>& item);
 	bool SaveLine(const pair<DWORD, RESERVE_DATA>& item, wstring& saveLine) const;
@@ -133,6 +139,7 @@ protected:
 	//過去に追加したIDよりも大きな値。100000000(1億)IDで巡回する(ただし1日に1000ID消費しても200年以上かかるので考えるだけ無駄)
 	DWORD nextID;
 	DWORD saveNextID;
+	mutable vector<pair<ULONGLONG, DWORD>> sortByEventCache;
 };
 
 //予約情報ファイル「EpgAutoAdd.txt」の読み込みと保存処理を行う
