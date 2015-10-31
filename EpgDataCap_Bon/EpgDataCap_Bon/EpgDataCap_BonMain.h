@@ -19,12 +19,8 @@ public:
 	
 	//BonDriverフォルダのBonDriver_*.dllを列挙
 	//戻り値：
-	// エラーコード
-	//引数：
-	// bonList			[OUT]検索できたBonDriver一覧
-	DWORD EnumBonDriver(
-		vector<wstring>* bonList
-		);
+	// 検索できたBonDriver一覧
+	vector<wstring> EnumBonDriver();
 
 	//BonDriverをロードしてチャンネル情報などを取得（ファイル名で指定）
 	//戻り値：
@@ -36,9 +32,7 @@ public:
 		);
 
 	//ロードしているBonDriverの開放
-	//戻り値：
-	// エラーコード
-	DWORD CloseBonDriver();
+	void CloseBonDriver();
 
 	//サービス一覧を取得する
 	//戻り値：

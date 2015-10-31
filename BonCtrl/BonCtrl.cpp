@@ -12,10 +12,9 @@ CBonCtrl::CBonCtrl(void)
 	InitializeCriticalSection(&this->buffLock);
 	this->TSBuffOffset = 0;
 
-    this->recvThread = NULL;
-    this->recvStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
     this->analyzeThread = NULL;
-    this->analyzeStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+    this->analyzeEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+    this->analyzeStopFlag = FALSE;
 
     this->chScanThread = NULL;
     this->chScanStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
@@ -91,7 +90,8 @@ CBonCtrl::~CBonCtrl(void)
 	}
 
 	if( this->analyzeThread != NULL ){
-		::SetEvent(this->analyzeStopEvent);
+		this->analyzeStopFlag = TRUE;
+		::SetEvent(this->analyzeEvent);
 		// スレッド終了待ち
 		if ( ::WaitForSingleObject(this->analyzeThread, 15000) == WAIT_TIMEOUT ){
 			::TerminateThread(this->analyzeThread, 0xffffffff);
@@ -99,23 +99,9 @@ CBonCtrl::~CBonCtrl(void)
 		CloseHandle(this->analyzeThread);
 		this->analyzeThread = NULL;
 	}
-	if( this->analyzeStopEvent != NULL ){
-		CloseHandle(this->analyzeStopEvent);
-		this->analyzeStopEvent = NULL;
-	}
-
-	if( this->recvThread != NULL ){
-		::SetEvent(this->recvStopEvent);
-		// スレッド終了待ち
-		if ( ::WaitForSingleObject(this->recvThread, 15000) == WAIT_TIMEOUT ){
-			::TerminateThread(this->recvThread, 0xffffffff);
-		}
-		CloseHandle(this->recvThread);
-		this->recvThread = NULL;
-	}
-	if( this->recvStopEvent != NULL ){
-		CloseHandle(this->recvStopEvent);
-		this->recvStopEvent = NULL;
+	if( this->analyzeEvent != NULL ){
+		CloseHandle(this->analyzeEvent);
+		this->analyzeEvent = NULL;
 	}
 	DeleteCriticalSection(&this->buffLock);
 }
@@ -143,14 +129,10 @@ void CBonCtrl::SetTsBuffMaxCount(DWORD tsBuffMaxCount, int writeBuffMaxCount)
 
 //BonDriverフォルダのBonDriver_*.dllを列挙
 //戻り値：
-// エラーコード
-//引数：
-// bonList			[OUT]検索できたBonDriver一覧
-DWORD CBonCtrl::EnumBonDriver(
-	vector<wstring>* bonList
-)
+// 検索できたBonDriver一覧
+vector<wstring> CBonCtrl::EnumBonDriver()
 {
-	return this->bonUtil.EnumBonDriver(bonList);
+	return this->bonUtil.EnumBonDriver();
 }
 
 //BonDriverをロードしてチャンネル情報などを取得（ファイル名で指定）
@@ -164,15 +146,13 @@ DWORD CBonCtrl::OpenBonDriver(
 )
 {
 	_CloseBonDriver();
-	DWORD ret = this->bonUtil.OpenBonDriver(bonDriverFile, openWait);
-	wstring bonFile = this->bonUtil.GetOpenBonDriverFileName();
-	if( ret == NO_ERR ){
+	DWORD ret = ERR_FALSE;
+	if( this->bonUtil.OpenBonDriver(bonDriverFile, RecvCallback, this, openWait) ){
+		wstring bonFile = this->bonUtil.GetOpenBonDriverFileName();
 		ret = _OpenBonDriver();
 		this->tsOut.ResetChChange();
 
 		this->tsOut.SetBonDriver(bonFile);
-	}
-	if( bonFile.empty() == false ){
 		wstring settingPath;
 		GetSettingPath(settingPath);
 		wstring bonFileTitle;
@@ -186,12 +166,10 @@ DWORD CBonCtrl::OpenBonDriver(
 }
 
 //ロードしているBonDriverの開放
-//戻り値：
-// エラーコード
-DWORD CBonCtrl::CloseBonDriver()
+void CBonCtrl::CloseBonDriver()
 {
 	StopBackgroundEpgCap();
-	return _CloseBonDriver();
+	_CloseBonDriver();
 }
 
 //ロード中のBonDriverのファイル名を取得する（ロード成功しているかの判定）
@@ -214,26 +192,6 @@ BOOL CBonCtrl::GetOpenBonDriver(
 	}
 
 	return ret;
-}
-//ロードしたBonDriverの情報取得
-//SpaceとChの一覧を取得する
-//戻り値：
-// エラーコード
-//引数：
-// spaceMap			[OUT] SpaceとChの一覧（mapのキー Space）
-DWORD CBonCtrl::GetOriginalChList(
-	map<DWORD, BON_SPACE_INFO>* spaceMap
-)
-{
-	return this->bonUtil.GetOriginalChList(spaceMap);
-}
-
-//BonDriverのチューナー名を取得
-//戻り値：
-// チューナー名
-wstring CBonCtrl::GetTunerName()
-{
-	return this->bonUtil.GetTunerName();
 }
 
 //チャンネル変更
@@ -319,10 +277,10 @@ DWORD CBonCtrl::_SetCh(
 	DWORD ret = ERR_FALSE;
 	if( this->bonUtil.GetOpenBonDriverFileName().empty() == false ){
 		ret = NO_ERR;
-		if( this->bonUtil.GetNowCh(&spaceNow, &chNow) == FALSE || space != spaceNow || ch != chNow ){
+		if( this->bonUtil.GetNowCh(&spaceNow, &chNow) == false || space != spaceNow || ch != chNow ){
 			this->tsOut.SetChChangeEvent(chScan);
 			_OutputDebugString(L"SetCh space %d, ch %d", space, ch);
-			ret = this->bonUtil.SetCh(space, ch);
+			ret = this->bonUtil.SetCh(space, ch) ? NO_ERR : ERR_FALSE;
 
 			StartBackgroundEpgCap();
 		}else{
@@ -332,7 +290,7 @@ DWORD CBonCtrl::_SetCh(
 					//エラーの時は再設定
 					this->tsOut.SetChChangeEvent();
 					_OutputDebugString(L"SetCh space %d, ch %d", space, ch);
-					ret = this->bonUtil.SetCh(space, ch);
+					ret = this->bonUtil.SetCh(space, ch) ? NO_ERR : ERR_FALSE;
 
 					StartBackgroundEpgCap();
 				}
@@ -341,7 +299,7 @@ DWORD CBonCtrl::_SetCh(
 					//エラーの時は再設定
 					this->tsOut.SetChChangeEvent();
 					_OutputDebugString(L"SetCh space %d, ch %d", space, ch);
-					ret = this->bonUtil.SetCh(space, ch);
+					ret = this->bonUtil.SetCh(space, ch) ? NO_ERR : ERR_FALSE;
 
 					StartBackgroundEpgCap();
 				}
@@ -390,16 +348,9 @@ float CBonCtrl::GetSignalLevel()
 // エラーコード
 DWORD CBonCtrl::_OpenBonDriver()
 {
-	if( this->recvThread == NULL ){
-		//受信スレッド起動
-		ResetEvent(this->recvStopEvent);
-		this->recvThread = (HANDLE)_beginthreadex(NULL, 0, RecvThread, (LPVOID)this, CREATE_SUSPENDED, NULL);
-		SetThreadPriority( this->recvThread, THREAD_PRIORITY_NORMAL );
-		ResumeThread(this->recvThread);
-	}
 	if( this->analyzeThread == NULL ){
 		//解析スレッド起動
-		ResetEvent(this->analyzeStopEvent);
+		this->analyzeStopFlag = FALSE;
 		this->analyzeThread = (HANDLE)_beginthreadex(NULL, 0, AnalyzeThread, (LPVOID)this, CREATE_SUSPENDED, NULL);
 		SetThreadPriority( this->analyzeThread, THREAD_PRIORITY_NORMAL );
 		ResumeThread(this->analyzeThread);
@@ -409,9 +360,7 @@ DWORD CBonCtrl::_OpenBonDriver()
 }
 
 //ロードしているBonDriverの開放本体
-//戻り値：
-// エラーコード
-DWORD CBonCtrl::_CloseBonDriver()
+void CBonCtrl::_CloseBonDriver()
 {
 	if( this->epgCapBackThread != NULL ){
 		::SetEvent(this->epgCapBackStopEvent);
@@ -433,17 +382,9 @@ DWORD CBonCtrl::_CloseBonDriver()
 		this->epgCapThread = NULL;
 	}
 
-	if( this->recvThread != NULL ){
-		::SetEvent(this->recvStopEvent);
-		// スレッド終了待ち
-		if ( ::WaitForSingleObject(this->recvThread, 15000) == WAIT_TIMEOUT ){
-			::TerminateThread(this->recvThread, 0xffffffff);
-		}
-		CloseHandle(this->recvThread);
-		this->recvThread = NULL;
-	}
 	if( this->analyzeThread != NULL ){
-		::SetEvent(this->analyzeStopEvent);
+		this->analyzeStopFlag = TRUE;
+		::SetEvent(this->analyzeEvent);
 		// スレッド終了待ち
 		if ( ::WaitForSingleObject(this->analyzeThread, 15000) == WAIT_TIMEOUT ){
 			::TerminateThread(this->analyzeThread, 0xffffffff);
@@ -452,59 +393,36 @@ DWORD CBonCtrl::_CloseBonDriver()
 		this->analyzeThread = NULL;
 	}
 
+	this->bonUtil.CloseBonDriver();
+	this->packetInit.ClearBuff();
 	this->TSBuff.clear();
 	this->TSBuffOffset = 0;
-
-	return this->bonUtil.CloseBonDriver();
 }
 
-UINT WINAPI CBonCtrl::RecvThread(LPVOID param)
+void CBonCtrl::RecvCallback(void* param, BYTE* data, DWORD size, DWORD remain)
 {
 	CBonCtrl* sys = (CBonCtrl*)param;
-	CPacketInit packetInit;
-	while(1){
-		if( ::WaitForSingleObject(sys->recvStopEvent, 0) != WAIT_TIMEOUT ){
-			//キャンセルされた
-			break;
+	BYTE* outData;
+	DWORD outSize;
+	if( data != NULL && size != 0 && sys->packetInit.GetTSData(data, size, &outData, &outSize) ){
+		CBlockLock lock(&sys->buffLock);
+		sys->TSBuff.erase(sys->TSBuff.begin(), sys->TSBuff.begin() + sys->TSBuffOffset);
+		sys->TSBuffOffset = 0;
+		if( sys->TSBuff.size() / 48128 > sys->tsBuffMaxCount ){
+			sys->TSBuff.clear();
 		}
-		BYTE *data = NULL;
-		DWORD size = 0;
-		DWORD remain = 0;
-		{
-			if( sys->bonUtil.GetTsStream(&data,&size,&remain) == TRUE ){
-				if( size != 0 && data != NULL){
-					BYTE* outData;
-					DWORD outSize;
-					if( packetInit.GetTSData(data, size, &outData, &outSize) == TRUE ){
-						CBlockLock lock(&sys->buffLock);
-						sys->TSBuff.erase(sys->TSBuff.begin(), sys->TSBuff.begin() + sys->TSBuffOffset);
-						sys->TSBuffOffset = 0;
-						if( sys->TSBuff.size() / 48128 > sys->tsBuffMaxCount ){
-							sys->TSBuff.clear();
-						}
-						sys->TSBuff.insert(sys->TSBuff.end(), outData, outData + outSize);
-					}
-				}else{
-					Sleep(10);
-				}
-			}else{
-				Sleep(10);
-			}
-		}
+		sys->TSBuff.insert(sys->TSBuff.end(), outData, outData + outSize);
 	}
-	return 0;
+	if( remain == 0 ){
+		SetEvent(sys->analyzeEvent);
+	}
 }
 
 UINT WINAPI CBonCtrl::AnalyzeThread(LPVOID param)
 {
 	CBonCtrl* sys = (CBonCtrl*)param;
 
-	while(1){
-		if( ::WaitForSingleObject(sys->analyzeStopEvent, 0) != WAIT_TIMEOUT ){
-			//キャンセルされた
-			break;
-		}
-
+	while( sys->analyzeStopFlag == FALSE ){
 		//バッファからデータ取り出し
 		BYTE data[48128];
 		DWORD dataSize = 0;
@@ -520,7 +438,7 @@ UINT WINAPI CBonCtrl::AnalyzeThread(LPVOID param)
 		if( dataSize != 0 ){
 			sys->tsOut.AddTSBuff(data, dataSize);
 		}else{
-			Sleep(10);
+			WaitForSingleObject(sys->analyzeEvent, 1000);
 		}
 	}
 	return 0;
@@ -934,25 +852,20 @@ UINT WINAPI CBonCtrl::ChScanThread(LPVOID param)
 	wstring chSet5 = settingPath + L"\\ChSet5.txt";
 
 	vector<CHK_CH_INFO> chkList;
-	map<DWORD, BON_SPACE_INFO> spaceMap;
-	if( sys->bonUtil.GetOriginalChList(&spaceMap) != NO_ERR ){
-		sys->chSt_err = ST_COMPLETE;
-		sys->chUtil.SaveChSet(chSet4, chSet5);
-		return 0;
-	}
-	map<DWORD, BON_SPACE_INFO>::iterator itrSpace;
-	for( itrSpace = spaceMap.begin(); itrSpace != spaceMap.end(); itrSpace++ ){
-		sys->chSt_totalNum += (DWORD)itrSpace->second.chMap.size();
-		map<DWORD, wstring>::iterator itrCh;
-		for( itrCh = itrSpace->second.chMap.begin(); itrCh != itrSpace->second.chMap.end(); itrCh++ ){
-			CHK_CH_INFO item;
-			item.space = itrSpace->first;
-			item.spaceName = itrSpace->second.spaceName;
-			item.ch = itrCh->first;
-			item.chName = itrCh->second;
-			chkList.push_back(item);
+	vector<pair<wstring, vector<wstring>>> spaceList = sys->bonUtil.GetOriginalChList();
+	for( size_t i = 0; i < spaceList.size(); i++ ){
+		for( size_t j = 0; j < spaceList[i].second.size(); j++ ){
+			if( spaceList[i].second[j].empty() == false ){
+				CHK_CH_INFO item;
+				item.space = (DWORD)i;
+				item.spaceName = spaceList[i].first;
+				item.ch = (DWORD)j;
+				item.chName = spaceList[i].second[j];
+				chkList.push_back(item);
+			}
 		}
 	}
+	sys->chSt_totalNum = (DWORD)chkList.size();
 
 	if( sys->chSt_totalNum == 0 ){
 		sys->chSt_err = ST_COMPLETE;
@@ -1534,7 +1447,7 @@ BOOL CBonCtrl::GetViewStatusInfo(
 	*signal = this->bonUtil.GetSignalLevel();
 	this->tsOut.SetSignalLevel(*signal);
 
-	if( this->bonUtil.GetNowCh(space, ch) == TRUE ){
+	if( this->bonUtil.GetNowCh(space, ch) ){
 		ret = TRUE;
 	}
 

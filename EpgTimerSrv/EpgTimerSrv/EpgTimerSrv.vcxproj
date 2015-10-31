@@ -91,7 +91,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>LUA_BUILD_AS_DLL;USE_LUA;NO_SSL;NO_CGI;WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>LUA_BUILD_AS_DLL;USE_LUA;NO_CGI;WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -105,7 +105,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>LUA_BUILD_AS_DLL;USE_LUA;NO_SSL;NO_CGI;WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>LUA_BUILD_AS_DLL;USE_LUA;NO_CGI;WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -121,7 +121,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>LUA_BUILD_AS_DLL;USE_LUA;NO_SSL;NO_CGI;WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>LUA_BUILD_AS_DLL;USE_LUA;NO_CGI;WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AssemblerOutput>All</AssemblerOutput>
     </ClCompile>
     <Link>
@@ -141,7 +141,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>LUA_BUILD_AS_DLL;USE_LUA;NO_SSL;NO_CGI;WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>LUA_BUILD_AS_DLL;USE_LUA;NO_CGI;WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -195,15 +195,6 @@
     <ClInclude Include="..\..\Common\TSPacketUtil.h" />
     <ClInclude Include="..\..\Common\Util.h" />
     <ClInclude Include="..\..\Common\WinHTTPUtil.h" />
-    <ClInclude Include="..\..\UPnPCtrl\CharUtil.h" />
-    <ClInclude Include="..\..\UPnPCtrl\HttpUtil.h" />
-    <ClInclude Include="..\..\UPnPCtrl\MPInclude.h" />
-    <ClInclude Include="..\..\UPnPCtrl\NICUtil.h" />
-    <ClInclude Include="..\..\UPnPCtrl\SortListUtil.h" />
-    <ClInclude Include="..\..\UPnPCtrl\ThreadUtil.h" />
-    <ClInclude Include="..\..\UPnPCtrl\UpnpSsdpUtil.h" />
-    <ClInclude Include="..\..\UPnPCtrl\UpnpStructDef.h" />
-    <ClInclude Include="..\..\UPnPCtrl\UpnpUtil.h" />
     <ClInclude Include="BatManager.h" />
     <ClInclude Include="civetweb.h" />
     <ClInclude Include="EpgDBManager.h" />
@@ -225,6 +216,7 @@
     <ClInclude Include="targetver.h" />
     <ClInclude Include="TunerBankCtrl.h" />
     <ClInclude Include="TunerManager.h" />
+    <ClInclude Include="UpnpSsdpServer.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\BonCtrl\CreatePATPacket.cpp" />
@@ -252,14 +244,6 @@
     <ClCompile Include="..\..\Common\TSPacketUtil.cpp" />
     <ClCompile Include="..\..\Common\Util.cpp" />
     <ClCompile Include="..\..\Common\WinHTTPUtil.cpp" />
-    <ClCompile Include="..\..\UPnPCtrl\CharUtil.cpp" />
-    <ClCompile Include="..\..\UPnPCtrl\HttpUtil.cpp" />
-    <ClCompile Include="..\..\UPnPCtrl\NICUtil.cpp" />
-    <ClCompile Include="..\..\UPnPCtrl\SortListUtil.cpp" />
-    <ClCompile Include="..\..\UPnPCtrl\ThreadUtil.cpp" />
-    <ClCompile Include="..\..\UPnPCtrl\UpnpSsdpUtil.cpp" />
-    <ClCompile Include="..\..\UPnPCtrl\UpnpStructDef.cpp" />
-    <ClCompile Include="..\..\UPnPCtrl\UpnpUtil.cpp" />
     <ClCompile Include="BatManager.cpp" />
     <ClCompile Include="civetweb.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
@@ -288,6 +272,7 @@
     <ClCompile Include="SyoboiCalUtil.cpp" />
     <ClCompile Include="TunerBankCtrl.cpp" />
     <ClCompile Include="TunerManager.cpp" />
+    <ClCompile Include="UpnpSsdpServer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="EpgTimerSrv.rc" />

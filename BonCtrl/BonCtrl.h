@@ -31,12 +31,8 @@ public:
 
 	//BonDriverフォルダのBonDriver_*.dllを列挙
 	//戻り値：
-	// エラーコード
-	//引数：
-	// bonList			[OUT]検索できたBonDriver一覧
-	DWORD EnumBonDriver(
-		vector<wstring>* bonList
-		);
+	// 検索できたBonDriver一覧
+	vector<wstring> EnumBonDriver();
 
 	//BonDriverをロードしてチャンネル情報などを取得（ファイル名で指定）
 	//戻り値：
@@ -49,9 +45,7 @@ public:
 		);
 
 	//ロードしているBonDriverの開放
-	//戻り値：
-	// エラーコード
-	DWORD CloseBonDriver();
+	void CloseBonDriver();
 
 	//ロード中のBonDriverのファイル名を取得する（ロード成功しているかの判定）
 	//戻り値：
@@ -61,21 +55,6 @@ public:
 	BOOL GetOpenBonDriver(
 		wstring* bonDriverFile
 		);
-
-	//ロードしたBonDriverの情報取得
-	//SpaceとChの一覧を取得する
-	//戻り値：
-	// エラーコード
-	//引数：
-	// spaceMap			[OUT] SpaceとChの一覧（mapのキー Space）
-	DWORD GetOriginalChList(
-		map<DWORD, BON_SPACE_INFO>* spaceMap
-	);
-
-	//BonDriverのチューナー名を取得
-	//戻り値：
-	// チューナー名
-	wstring GetTunerName();
 
 	//チャンネル変更
 	//戻り値：
@@ -467,6 +446,7 @@ public:
 
 protected:
 	CBonDriverUtil bonUtil;
+	CPacketInit packetInit;
 	CTSOut tsOut;
 	CChSetUtil chUtil;
 
@@ -474,10 +454,9 @@ protected:
 	vector<BYTE> TSBuff;
 	size_t TSBuffOffset;
 
-	HANDLE recvThread;
-	HANDLE recvStopEvent;
 	HANDLE analyzeThread;
-	HANDLE analyzeStopEvent;
+	HANDLE analyzeEvent;
+	BOOL analyzeStopFlag;
 
 	//チャンネルスキャン用
 	HANDLE chScanThread;
@@ -521,9 +500,7 @@ protected:
 	DWORD _OpenBonDriver();
 
 	//ロードしているBonDriverの開放本体
-	//戻り値：
-	// エラーコード
-	DWORD _CloseBonDriver();
+	void _CloseBonDriver();
 
 	DWORD _SetCh(
 		DWORD space,
@@ -533,7 +510,7 @@ protected:
 
 	static void GetEpgDataFilePath(WORD ONID, WORD TSID, wstring& epgDataFilePath, BOOL BSBasic, BOOL CS1Basic, BOOL CS2Basic);
 
-	static UINT WINAPI RecvThread(LPVOID param);
+	static void RecvCallback(void* param, BYTE* data, DWORD size, DWORD remain);
 	static UINT WINAPI AnalyzeThread(LPVOID param);
 
 	static UINT WINAPI ChScanThread(LPVOID param);

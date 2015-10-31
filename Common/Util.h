@@ -1,25 +1,10 @@
 #ifndef __UTIL_H__
 #define __UTIL_H__
 
-// MFC‚ÅŽg‚¤Žž—p
-//#define _MFC
-#ifdef _MFC
-#ifdef _DEBUG
-#undef new
-#endif
 #include <string>
 #include <map>
 #include <vector>
 #include <algorithm>
-#ifdef _DEBUG
-#define new DEBUG_NEW
-#endif
-#else
-#include <string>
-#include <map>
-#include <vector>
-#include <algorithm>
-#endif
 using std::string;
 using std::wstring;
 using std::pair;

@@ -135,6 +135,7 @@ void CReserveManager::ReloadSetting()
 
 	this->defStartMargin = GetPrivateProfileInt(L"SET", L"StartMargin", 5, iniPath.c_str());
 	this->defEndMargin = GetPrivateProfileInt(L"SET", L"EndMargin", 2, iniPath.c_str());
+	this->notFindTuijyuHour = GetPrivateProfileInt(L"SET", L"TuijyuHour", 3, iniPath.c_str());
 	this->backPriority = GetPrivateProfileInt(L"SET", L"BackPriority", 1, iniPath.c_str()) != 0;
 
 	this->recInfoText.SetKeepCount(
@@ -195,10 +196,12 @@ vector<TUNER_RESERVE_INFO> CReserveManager::GetTunerReserveAll() const
 	list.back().tunerID = 0xFFFFFFFF;
 	list.back().tunerName = L"チューナー不足";
 	vector<DWORD> &ngList = list.back().reserveList = GetNoTunerReserveAll();
-	for( size_t i = 0; i < ngList.size(); i++ ){
+	for( size_t i = 0; i < ngList.size(); ){
 		//無効予約は「チューナ不足」ではない
 		if( this->reserveText.GetMap().find(ngList[i])->second.recSetting.recMode == RECMODE_NO ){
 			ngList.erase(ngList.begin() + i);
+		}else{
+			i++;
 		}
 	}
 	return list;
@@ -320,6 +323,7 @@ bool CReserveManager::AddReserveData(const vector<RESERVE_DATA>& reserveList, bo
 			if( setComment == false ){
 				r.comment.clear();
 			}
+			r.presentFlag = FALSE;
 			r.overlapMode = RESERVE_EXECUTE;
 			if( setReserveStatus == false ){
 				r.reserveStatus = ADD_RESERVE_NORMAL;
@@ -341,7 +345,7 @@ bool CReserveManager::AddReserveData(const vector<RESERVE_DATA>& reserveList, bo
 		this->reserveText.SaveText();
 		ReloadBankMap(minStartTime);
 		CheckAutoDel();
-		this->notifyManager.AddNotify(NOTIFY_UPDATE_RESERVE_INFO);
+		AddNotifyAndPostBat(NOTIFY_UPDATE_RESERVE_INFO);
 		AddPostBatWork(batWorkList, L"PostAddReserve.bat");
 		return true;
 	}
@@ -361,6 +365,7 @@ bool CReserveManager::ChgReserveData(const vector<RESERVE_DATA>& reserveList, bo
 		if( itr != this->reserveText.GetMap().end() ){
 			//変更できないフィールドを上書き
 			r.comment = itr->second.comment;
+			r.presentFlag = itr->second.presentFlag;
 			r.startTimeEpg = itr->second.startTimeEpg;
 			if( setReserveStatus == false ){
 				r.reserveStatus = itr->second.reserveStatus;
@@ -485,7 +490,7 @@ bool CReserveManager::ChgReserveData(const vector<RESERVE_DATA>& reserveList, bo
 		this->reserveText.SaveText();
 		ReloadBankMap(minStartTime);
 		CheckAutoDel();
-		this->notifyManager.AddNotify(NOTIFY_UPDATE_RESERVE_INFO);
+		AddNotifyAndPostBat(NOTIFY_UPDATE_RESERVE_INFO);
 		AddPostBatWork(batWorkList, L"PostChgReserve.bat");
 		return true;
 	}
@@ -520,7 +525,7 @@ void CReserveManager::DelReserveData(const vector<DWORD>& idList)
 	if( modified ){
 		this->reserveText.SaveText();
 		ReloadBankMap(minStartTime);
-		this->notifyManager.AddNotify(NOTIFY_UPDATE_RESERVE_INFO);
+		AddNotifyAndPostBat(NOTIFY_UPDATE_RESERVE_INFO);
 	}
 }
 
@@ -544,7 +549,7 @@ void CReserveManager::DelRecFileInfo(const vector<DWORD>& idList)
 		this->recInfoText.DelRecInfo(idList[i]);
 	}
 	this->recInfoText.SaveText();
-	this->notifyManager.AddNotify(NOTIFY_UPDATE_REC_INFO);
+	AddNotifyAndPostBat(NOTIFY_UPDATE_REC_INFO);
 }
 
 void CReserveManager::ChgProtectRecFileInfo(const vector<REC_FILE_INFO>& infoList)
@@ -555,7 +560,7 @@ void CReserveManager::ChgProtectRecFileInfo(const vector<REC_FILE_INFO>& infoLis
 		this->recInfoText.ChgProtectRecInfo(infoList[i].id, infoList[i].protectFlag);
 	}
 	this->recInfoText.SaveText();
-	this->notifyManager.AddNotify(NOTIFY_UPDATE_REC_INFO);
+	AddNotifyAndPostBat(NOTIFY_UPDATE_REC_INFO);
 }
 
 void CReserveManager::ReloadBankMap(__int64 reloadTime)
@@ -841,6 +846,23 @@ void CReserveManager::CalcEntireReserveTime(__int64* startTime, __int64* endTime
 	}
 }
 
+wstring CReserveManager::GetNotifyChgReserveMessage(const RESERVE_DATA& oldInfo, const RESERVE_DATA& newInfo)
+{
+	SYSTEMTIME stOld = oldInfo.startTime;
+	SYSTEMTIME stOldEnd;
+	ConvertSystemTime(ConvertI64Time(stOld) + oldInfo.durationSecond * I64_1SEC, &stOldEnd);
+	SYSTEMTIME stNew = newInfo.startTime;
+	SYSTEMTIME stNewEnd;
+	ConvertSystemTime(ConvertI64Time(stNew) + newInfo.durationSecond * I64_1SEC, &stNewEnd);
+	wstring msg;
+	Format(msg, L"%s %04d/%02d/%02d %02d:%02d～%02d:%02d\r\n%s\r\nEventID:0x%04X\r\n↓\r\n%s %04d/%02d/%02d %02d:%02d～%02d:%02d\r\n%s\r\nEventID:0x%04X",
+		oldInfo.stationName.c_str(), stOld.wYear, stOld.wMonth, stOld.wDay, stOld.wHour, stOld.wMinute,
+		stOldEnd.wHour, stOldEnd.wMinute, oldInfo.title.c_str(), oldInfo.eventID,
+		newInfo.stationName.c_str(), stNew.wYear, stNew.wMonth, stNew.wDay, stNew.wHour, stNew.wMinute,
+		stNewEnd.wHour, stNewEnd.wMinute, newInfo.title.c_str(), newInfo.eventID);
+	return msg;
+}
+
 void CReserveManager::CheckTuijyu()
 {
 	CBlockLock lock(&this->managerLock);
@@ -877,6 +899,10 @@ void CReserveManager::CheckTuijyu()
 				}
 				if( chgRes ){
 					chgList.push_back(r);
+					wstring msg = GetNotifyChgReserveMessage(itr->second, r);
+					this->notifyManager.AddNotifyMsg(NOTIFY_UPDATE_CHG_TUIJYU, msg);
+					Replace(msg, L"\r\n", L" ");
+					_OutputDebugString(L"●予約(ID=%d)を追従 %s\r\n", r.reserveID, msg.c_str());
 				}
 			}
 		}
@@ -888,7 +914,7 @@ void CReserveManager::CheckTuijyu()
 
 void CReserveManager::CheckTuijyuTuner()
 {
-	vector<DWORD> chgIDList;
+	vector<DWORD> chkChList;
 	//tunerBankMapそのものは排他制御の対象外
 	for( map<DWORD, CTunerBankCtrl*>::const_iterator itrBank = this->tunerBankMap.begin(); itrBank != this->tunerBankMap.end(); itrBank++ ){
 		CBlockLock lock(&this->managerLock);
@@ -898,23 +924,24 @@ void CReserveManager::CheckTuijyuTuner()
 			//このチューナは起動していない
 			continue;
 		}
+		if( std::find(chkChList.begin(), chkChList.end(), (DWORD)onid << 16 | tsid) != chkChList.end() ){
+			//このチャンネルはチェック済み
+			continue;
+		}
+		chkChList.push_back((DWORD)onid << 16 | tsid);
 		vector<RESERVE_DATA> chgList;
 		vector<RESERVE_DATA> relayAddList;
 		const vector<pair<ULONGLONG, DWORD>>& cacheList = this->reserveText.GetSortByEventList();
 
 		vector<pair<ULONGLONG, DWORD>>::const_iterator itrCache = std::lower_bound(
 			cacheList.begin(), cacheList.end(), pair<ULONGLONG, DWORD>(_Create64Key2(onid, tsid, 0, 0), 0));
-		for( ; itrCache != cacheList.end() && itrCache->first <= (ULONGLONG)_Create64Key2(onid, tsid, 0xFFFF, 0xFFFF); ){
+		for( ; itrCache != cacheList.end() && itrCache->first <= _Create64Key2(onid, tsid, 0xFFFF, 0xFFFF); ){
 			//起動中のチャンネルに一致する予約をEIT[p/f]と照合する
 			WORD sid = itrCache->first >> 16 & 0xFFFF;
 			EPGDB_EVENT_INFO resPfVal[2];
 			int nowSuccess = itrBank->second->GetEventPF(sid, false, &resPfVal[0]);
 			int nextSuccess = itrBank->second->GetEventPF(sid, true, &resPfVal[1]);
-			for( ; itrCache != cacheList.end() && itrCache->first <= (ULONGLONG)_Create64Key2(onid, tsid, sid, 0xFFFF); itrCache++ ){
-				if( std::find(chgIDList.begin(), chgIDList.end(), itrCache->second) != chgIDList.end() ){
-					//この予約はすでに変更済み
-					continue;
-				}
+			for( ; itrCache != cacheList.end() && itrCache->first <= _Create64Key2(onid, tsid, sid, 0xFFFF); itrCache++ ){
 				map<DWORD, RESERVE_DATA>::const_iterator itrRes = this->reserveText.GetMap().find(itrCache->second);
 				if( itrRes->second.eventID == 0xFFFF ||
 				    itrRes->second.recSetting.recMode == RECMODE_NO ||
@@ -922,30 +949,54 @@ void CReserveManager::CheckTuijyuTuner()
 					//プログラム予約、無効予約、および6時間以上先の予約は対象外
 					continue;
 				}
+				//ADD_RESERVE_NORMAL,RELAY
+				//├→CHG_PF2
+				//└─┼→CHG_PF←┐
+				//    └─┴→UNKNOWN_END
 				bool pfFound = false;
+				bool pfUnknownEnd = false;
+				bool pfExplicitlyUnknownEnd = false;
 				for( int i = (nowSuccess == 0 ? 0 : 1); i < (nextSuccess == 0 ? 2 : 1); i++ ){
 					const EPGDB_EVENT_INFO& info = resPfVal[i];
+					if( i == 1 && (info.StartTimeFlag == 0 || info.DurationFlag == 0) ){
+						pfUnknownEnd = true;
+						if( info.StartTimeFlag == 0 && info.DurationFlag == 0 ){
+							//未定イベントのときは以降の放送未定が明示されているとみなす(主にNHK)
+							pfExplicitlyUnknownEnd = true;
+						}
+					}
 					if( info.event_id == itrRes->second.eventID && (info.StartTimeFlag != 0 || info.DurationFlag != 0) ){
+						//現在(present)に現れた予約が番組終了後に時間未定追従に移行しないようにするため(旧SetChkPfInfo()に相当)
+						if( i == 0 && itrRes->second.presentFlag == FALSE ){
+							this->reserveText.SetPresentFlag(itrRes->first, TRUE);
+							_OutputDebugString(L"●予約(ID=%d)のEIT[present]を確認しました\r\n", itrRes->first);
+						}
 						RESERVE_DATA r = itrRes->second;
 						bool chgRes = false;
 						if( info.shortInfo != NULL && r.title != info.shortInfo->event_name ){
 							r.title = info.shortInfo->event_name;
-							r.reserveStatus = ADD_RESERVE_CHG_PF;
+							if( r.reserveStatus != ADD_RESERVE_UNKNOWN_END ){
+								r.reserveStatus = ADD_RESERVE_CHG_PF;
+							}
 							chgRes = true;
 						}
 						if( info.StartTimeFlag != 0 ){
 							if( ConvertI64Time(r.startTime) != ConvertI64Time(info.start_time) ){
 								r.startTime = info.start_time;
-								r.reserveStatus = ADD_RESERVE_CHG_PF;
+								if( r.reserveStatus != ADD_RESERVE_UNKNOWN_END ){
+									r.reserveStatus = ADD_RESERVE_CHG_PF;
+								}
 								chgRes = true;
 							}
 							if( info.DurationFlag == 0 ){
-								//継続時間未定。現在(present)かつ終了まで5分を切る予約は5分伸ばす
-								if( i == 0 && ConvertI64Time(r.startTime) + r.durationSecond * I64_1SEC < GetNowI64Time() + 300 * I64_1SEC ){
+								//継続時間未定。終了まで5分を切る予約は5分伸ばす
+								__int64 endTime;
+								CalcEntireReserveTime(NULL, &endTime, r);
+								if( endTime < GetNowI64Time() + 300 * I64_1SEC ){
 									r.durationSecond += 300;
 									r.reserveStatus = ADD_RESERVE_UNKNOWN_END;
 									chgRes = true;
-									OutputDebugString(L"●p/f 継続時間未定の現在イベントの予約を変更します\r\n");
+									OutputDebugString(L"●p/f 継続時間未定の現在/次イベントの予約を延長します\r\n");
 								}
 							}else if( r.reserveStatus == ADD_RESERVE_UNKNOWN_END || r.durationSecond != info.durationSec ){
 								r.durationSecond = info.durationSec;
@@ -953,22 +1004,22 @@ void CReserveManager::CheckTuijyuTuner()
 								chgRes = true;
 							}
 						}else{
-							//開始時刻未定。次(following)かつ開始まで5分を切る予約は5分移動
-							if( i == 1 && ConvertI64Time(r.startTime) < GetNowI64Time() + 300 * I64_1SEC ){
-								ConvertSystemTime(ConvertI64Time(r.startTime) + 300 * I64_1SEC, &r.startTime);
-								r.reserveStatus = ADD_RESERVE_CHG_PF;
+							//開始時刻未定。次(following)かつ終了まで5分を切る予約は5分伸ばす
+							__int64 endTime;
+							CalcEntireReserveTime(NULL, &endTime, r);
+							if( i == 1 && endTime < GetNowI64Time() + 300 * I64_1SEC ){
+								r.durationSecond += 300;
+								r.reserveStatus = ADD_RESERVE_UNKNOWN_END;
 								chgRes = true;
-								OutputDebugString(L"●p/f 開始時刻未定の次イベントの予約を変更します\r\n");
-							}
-							if( r.reserveStatus == ADD_RESERVE_UNKNOWN_END || r.durationSecond != info.durationSec ){
-								r.durationSecond = info.durationSec;
-								r.reserveStatus = ADD_RESERVE_CHG_PF;
-								chgRes = true;
+								OutputDebugString(L"●p/f 開始時刻未定の次イベントの予約を延長します\r\n");
 							}
 						}
 						if( chgRes ){
-							chgIDList.push_back(r.reserveID);
 							chgList.push_back(r);
+							wstring msg = GetNotifyChgReserveMessage(itrRes->second, r);
+							this->notifyManager.AddNotifyMsg(NOTIFY_UPDATE_REC_TUIJYU, msg);
+							Replace(msg, L"\r\n", L" ");
+							_OutputDebugString(L"●p/f 予約(ID=%d)を追従 %s\r\n", r.reserveID, msg.c_str());
 						}
 						//現在(present)についてはイベントリレーもチェック
 						if( i == 0 && r.recSetting.tuijyuuFlag && info.StartTimeFlag && info.DurationFlag && info.eventRelayInfo ){
@@ -1012,35 +1063,83 @@ void CReserveManager::CheckTuijyuTuner()
 						break;
 					}
 				}
-				//EIT[p/f]が正しく取得できる状況でEIT[p/f]にないものは通常チェック
-				EPGDB_EVENT_INFO info;
-				if( nowSuccess != 2 && nextSuccess != 2 && pfFound == false && itrBank->second->SearchEpgInfo(sid, itrRes->second.eventID, &info) ){
-					if( info.StartTimeFlag != 0 && info.DurationFlag != 0 ){
-						__int64 startDiff = ConvertI64Time(info.start_time) - ConvertI64Time(itrRes->second.startTime);
-						if( startDiff < -12 * 3600 * I64_1SEC || 12 * 3600 * I64_1SEC < startDiff ){
+				//EIT[p/f]にあるものや現在(present)に現れたことのある予約は除外する
+				if( pfFound == false && itrRes->second.presentFlag == FALSE ){
+					RESERVE_DATA r = itrRes->second;
+					bool chgRes = false;
+					bool chgResStatusOnly = false;
+					if( pfUnknownEnd ){
+						//EIT[p/f]の継続時間未定。以降の予約も時間未定とみなし、終了まで5分を切る予約は5分伸ばす
+						__int64 startTime, endTime;
+						CalcEntireReserveTime(&startTime, &endTime, r);
+						if( endTime - startTime < this->notFindTuijyuHour * 3600 * I64_1SEC && endTime < GetNowI64Time() + 300 * I64_1SEC ){
+							r.durationSecond += 300;
+							r.reserveStatus = ADD_RESERVE_UNKNOWN_END;
+							chgRes = true;
+							OutputDebugString(L"●時間未定の通常イベントの予約を延長します\r\n");
+						}
+						if( pfExplicitlyUnknownEnd && r.reserveStatus != ADD_RESERVE_UNKNOWN_END && ConvertI64Time(r.startTime) < GetNowI64Time() + 3600 * I64_1SEC ){
+							//明示的な放送未定の場合は開始まで60分を切る時点でUNKNOWN_ENDにする
+							//(この閾値は時間未定解消後のEIT[p/f]にイベントID変更で現れる可能性がありそうな範囲として適当に決めたもの)
+							r.reserveStatus = ADD_RESERVE_UNKNOWN_END;
+							chgRes = true;
+							chgResStatusOnly = true;
+							OutputDebugString(L"●時間未定の通常イベントの予約をUNKNOWN_ENDにします\r\n");
+						}
+					}else if( r.reserveStatus == ADD_RESERVE_UNKNOWN_END ){
+						//イベントID直前変更対応(主にNHK)
+						//時間未定解消後にUNKNOWN_ENDになっている予約に限り、イベント名が完全一致するEIT[p/f]が存在すれば、そのイベントの終了時間まで予約を伸ばす
+						for( int i = (nowSuccess == 0 ? 0 : 1); i < (nextSuccess == 0 ? 2 : 1); i++ ){
+							const EPGDB_EVENT_INFO& info = resPfVal[i];
+							if( info.StartTimeFlag != 0 && info.DurationFlag != 0 &&
+							    r.title.empty() == false && info.shortInfo != NULL && r.title == info.shortInfo->event_name ){
+								__int64 endTime = ConvertI64Time(info.start_time) + info.durationSec * I64_1SEC;
+								if( endTime > ConvertI64Time(r.startTime) + r.durationSecond * I64_1SEC ){
+									r.durationSecond = (DWORD)((endTime - ConvertI64Time(r.startTime)) / I64_1SEC) + 1;
+									chgRes = true;
+									OutputDebugString(L"●時間未定の通常イベントの予約と同じイベント名のp/fが見つかりました。予約を延長します\r\n");
+								}
+								break;
+							}
+						}
+					}
+					//EIT[p/f]が正しく取得できる状況でEIT[p/f]にないものは通常チェック
+					EPGDB_EVENT_INFO info;
+					if( nowSuccess != 2 && nextSuccess != 2 &&
+					    r.reserveStatus != ADD_RESERVE_CHG_PF &&
+					    r.reserveStatus != ADD_RESERVE_UNKNOWN_END &&
+					    itrBank->second->SearchEpgInfo(sid, r.eventID, &info) ){
+						if( info.StartTimeFlag != 0 && info.DurationFlag != 0 ){
+							__int64 startDiff = ConvertI64Time(info.start_time) - ConvertI64Time(r.startTime);
 							//EventIDの再使用に備えるため12時間以上の移動は対象外
-							continue;
+							if( -12 * 3600 * I64_1SEC <= startDiff && startDiff <= 12 * 3600 * I64_1SEC ){
+								if( info.shortInfo != NULL && r.title != info.shortInfo->event_name ){
+									r.title = info.shortInfo->event_name;
+									//EPG再読み込みで変更されないようにする
+									r.reserveStatus = ADD_RESERVE_CHG_PF2;
+									chgRes = true;
+								}
+								if( ConvertI64Time(r.startTime) != ConvertI64Time(info.start_time) ){
+									r.startTime = info.start_time;
+									r.reserveStatus = ADD_RESERVE_CHG_PF2;
+									chgRes = true;
+								}
+								if( r.durationSecond != info.durationSec ){
+									r.durationSecond = info.durationSec;
+									r.reserveStatus = ADD_RESERVE_CHG_PF2;
+									chgRes = true;
+								}
+							}
 						}
-						RESERVE_DATA r = itrRes->second;
-						bool chgRes = false;
-						if( info.shortInfo != NULL && r.title != info.shortInfo->event_name ){
-							r.title = info.shortInfo->event_name;
-							chgRes = true;
+					}
+					if( chgRes ){
+						chgList.push_back(r);
+						wstring msg = GetNotifyChgReserveMessage(itrRes->second, r);
+						if( chgResStatusOnly == false ){
+							this->notifyManager.AddNotifyMsg(NOTIFY_UPDATE_REC_TUIJYU, msg);
 						}
-						if( ConvertI64Time(r.startTime) != ConvertI64Time(info.start_time) ){
-							r.startTime = info.start_time;
-							chgRes = true;
-						}
-						if( r.durationSecond != info.durationSec ){
-							r.durationSecond = info.durationSec;
-							chgRes = true;
-						}
-						if( chgRes ){
-							//EPG再読み込みで変更されないようにする
-							r.reserveStatus = ADD_RESERVE_CHG_PF2;
-							chgIDList.push_back(r.reserveID);
-							chgList.push_back(r);
-						}
+						Replace(msg, L"\r\n", L" ");
+						_OutputDebugString(L"●予約(ID=%d)を追従 %s\r\n", r.reserveID, msg.c_str());
 					}
 				}
 			}
@@ -1078,9 +1177,11 @@ void CReserveManager::CheckAutoDel() const
 	//直近で必要になりそうな空き領域を概算する
 	LONGLONG now = GetNowI64Time();
 	for( map<DWORD, RESERVE_DATA>::const_iterator itr = this->reserveText.GetMap().begin(); itr != this->reserveText.GetMap().end(); itr++ ){
+		__int64 startTime, endTime;
+		CalcEntireReserveTime(&startTime, &endTime, itr->second);
 		if( itr->second.recSetting.recMode != RECMODE_NO &&
 		    itr->second.recSetting.recMode != RECMODE_VIEW &&
-		    now < ConvertI64Time(itr->second.startTime) && ConvertI64Time(itr->second.startTime) < now + 2*60*60*I64_1SEC ){
+		    startTime < now + 2*60*60*I64_1SEC ){
 			//録画開始2時間前までの予約
 			vector<wstring> recFolderList;
 			if( itr->second.recSetting.recFolderList.empty() ){
@@ -1099,9 +1200,17 @@ void CReserveManager::CheckAutoDel() const
 				std::transform(mountPath.begin(), mountPath.end(), mountPath.begin(), toupper);
 				map<wstring, pair<ULONGLONG, vector<wstring>>>::iterator jtr = mountMap.find(mountPath);
 				if( jtr != mountMap.end() ){
-					DWORD bitrate = 0;
-					_GetBitrate(itr->second.originalNetworkID, itr->second.transportStreamID, itr->second.serviceID, &bitrate);
-					jtr->second.first += (ULONGLONG)(bitrate / 8 * 1000) * itr->second.durationSecond;
+					if( jtr->second.first == 0 ){
+						//延長や外部要因による空き領域減少に対処するため最低限の余裕をとる
+						jtr->second.first = 512*1024*1024;
+					}
+					//時計精度の関係で実際に録画が始まった後もしばらくこの条件を満たし、余分に確保されるかもしれない
+					//(厳密にやるのは簡単ではないので、従来通りゆるい実装にしておく)
+					if( now < startTime ){
+						DWORD bitrate = 0;
+						_GetBitrate(itr->second.originalNetworkID, itr->second.transportStreamID, itr->second.serviceID, &bitrate);
+						jtr->second.first += (ULONGLONG)(bitrate / 8 * 1000) * (endTime - startTime) / I64_1SEC;
+					}
 				}
 			}
 		}
@@ -1188,8 +1297,8 @@ void CReserveManager::CheckOverTimeReserve()
 	if( modified ){
 		this->reserveText.SaveText();
 		this->recInfoText.SaveText();
-		this->notifyManager.AddNotify(NOTIFY_UPDATE_RESERVE_INFO);
-		this->notifyManager.AddNotify(NOTIFY_UPDATE_REC_INFO);
+		AddNotifyAndPostBat(NOTIFY_UPDATE_RESERVE_INFO);
+		AddNotifyAndPostBat(NOTIFY_UPDATE_REC_INFO);
 	}
 }
 
@@ -1330,15 +1439,13 @@ DWORD CReserveManager::Check()
 				this->reserveText.SaveText();
 				this->recInfoText.SaveText();
 				this->recInfo2Text.SaveText();
-				this->notifyManager.AddNotify(NOTIFY_UPDATE_RESERVE_INFO);
-				this->notifyManager.AddNotify(NOTIFY_UPDATE_REC_INFO);
+				AddNotifyAndPostBat(NOTIFY_UPDATE_RESERVE_INFO);
+				AddNotifyAndPostBat(NOTIFY_UPDATE_REC_INFO);
 				AddPostBatWork(batWorkList, L"PostRecEnd.bat");
 			}
 		}
-		if( this->checkCount % 60 == 0 ){
-			CheckAutoDel();
-		}
 		if( this->checkCount % 30 == 0 ){
+			CheckAutoDel();
 			CheckOverTimeReserve();
 		}
 		if( this->checkCount % 3 == 0 ){
@@ -1615,7 +1722,7 @@ bool CReserveManager::IsFindReserve(WORD onid, WORD tsid, WORD sid, WORD eid) co
 
 	vector<pair<ULONGLONG, DWORD>>::const_iterator itr = std::lower_bound(
 		sortList.begin(), sortList.end(), pair<ULONGLONG, DWORD>(_Create64Key2(onid, tsid, sid, eid), 0));
-	return itr != sortList.end() && itr->first == (ULONGLONG)_Create64Key2(onid, tsid, sid, eid);
+	return itr != sortList.end() && itr->first == _Create64Key2(onid, tsid, sid, eid);
 }
 
 bool CReserveManager::IsFindProgramReserve(WORD onid, WORD tsid, WORD sid, __int64 startTime, DWORD durationSec) const
@@ -1626,7 +1733,7 @@ bool CReserveManager::IsFindProgramReserve(WORD onid, WORD tsid, WORD sid, __int
 
 	vector<pair<ULONGLONG, DWORD>>::const_iterator itr = std::lower_bound(
 		sortList.begin(), sortList.end(), pair<ULONGLONG, DWORD>(_Create64Key2(onid, tsid, sid, 0xFFFF), 0));
-	for( ; itr != sortList.end() && itr->first == (ULONGLONG)_Create64Key2(onid, tsid, sid, 0xFFFF); itr++ ){
+	for( ; itr != sortList.end() && itr->first == _Create64Key2(onid, tsid, sid, 0xFFFF); itr++ ){
 		map<DWORD, RESERVE_DATA>::const_iterator itrRes = this->reserveText.GetMap().find(itr->second);
 		if( itrRes->second.durationSecond == durationSec && ConvertI64Time(itrRes->second.startTime) == startTime ){
 			return true;
@@ -1768,7 +1875,7 @@ bool CReserveManager::ChgAutoAddNoRec(WORD onid, WORD tsid, WORD sid, WORD eid)
 
 	vector<pair<ULONGLONG, DWORD>>::const_iterator itr = std::lower_bound(
 		sortList.begin(), sortList.end(), pair<ULONGLONG, DWORD>(_Create64Key2(onid, tsid, sid, eid), 0));
-	for( ; itr != sortList.end() && itr->first == (ULONGLONG)_Create64Key2(onid, tsid, sid, eid); itr++ ){
+	for( ; itr != sortList.end() && itr->first == _Create64Key2(onid, tsid, sid, eid); itr++ ){
 		map<DWORD, RESERVE_DATA>::const_iterator itrRes = this->reserveText.GetMap().find(itr->second);
 		if( itrRes->second.recSetting.recMode != RECMODE_NO && itrRes->second.comment.compare(0, 7, L"EPG自動予約") == 0 ){
 			chgList.push_back(itrRes->second);
@@ -1817,6 +1924,15 @@ void CReserveManager::AddPostBatWork(vector<BAT_WORK_INFO>& workList, LPCWSTR fi
 			}
 		}
 	}
+}
+
+void CReserveManager::AddNotifyAndPostBat(DWORD notifyID)
+{
+	this->notifyManager.AddNotify(notifyID);
+	vector<BAT_WORK_INFO> workList(1);
+	workList[0].macroList.push_back(pair<string, wstring>("NotifyID", L""));
+	Format(workList[0].macroList.back().second, L"%d", notifyID);
+	AddPostBatWork(workList, L"PostNotify.bat");
 }
 
 void CReserveManager::AddTimeMacro(vector<pair<string, wstring>>& macroList, const SYSTEMTIME& startTime, DWORD durationSecond, LPCSTR suffix)

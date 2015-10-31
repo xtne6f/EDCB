@@ -5,6 +5,7 @@
 #include "EpgTimerSrv.h"
 #include "EpgTimerSrvMain.h"
 #include "../../Common/ServiceUtil.h"
+#include "../../Common/BlockLock.h"
 
 #include "../../Common/CommonDef.h"
 #include <WinSvc.h>
@@ -12,6 +13,43 @@
 
 SERVICE_STATUS_HANDLE g_hStatusHandle;
 CEpgTimerSrvMain* g_pMain;
+static HANDLE g_hDebugLog;
+static CRITICAL_SECTION g_debugLogLock;
+static bool g_saveDebugLog;
+
+static void StartDebugLog()
+{
+	wstring iniPath;
+	GetModuleIniPath(iniPath);
+	if( GetPrivateProfileInt(L"SET", L"SaveDebugLog", 0, iniPath.c_str()) != 0 ){
+		wstring logPath;
+		GetModuleFolderPath(logPath);
+		logPath += L"\\EpgTimerSrvDebugLog.txt";
+		g_hDebugLog = CreateFile(logPath.c_str(), FILE_APPEND_DATA, FILE_SHARE_READ, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+		if( g_hDebugLog != INVALID_HANDLE_VALUE ){
+			if( GetLastError() == ERROR_SUCCESS ){
+				DWORD dwWritten;
+				WriteFile(g_hDebugLog, "\xFF\xFE", sizeof(char) * 2, &dwWritten, NULL);
+			}else{
+				LARGE_INTEGER liPos = {};
+				SetFilePointerEx(g_hDebugLog, liPos, NULL, FILE_END);
+			}
+			InitializeCriticalSection(&g_debugLogLock);
+			g_saveDebugLog = true;
+			OutputDebugString(L"****** LOG START ******\r\n");
+		}
+	}
+}
+
+static void StopDebugLog()
+{
+	if( g_saveDebugLog ){
+		OutputDebugString(L"****** LOG STOP ******\r\n");
+		g_saveDebugLog = false;
+		DeleteCriticalSection(&g_debugLogLock);
+		CloseHandle(g_hDebugLog);
+	}
+}
 
 int APIENTRY _tWinMain(HINSTANCE hInstance,
                      HINSTANCE hPrevInstance,
@@ -69,6 +107,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 		HANDLE hMutex = CreateMutex(NULL, TRUE, EPG_TIMER_BON_SRV_MUTEX);
 		if( hMutex != NULL ){
 			if( GetLastError() != ERROR_ALREADY_EXISTS ){
+				StartDebugLog();
 				//メインスレッドに対するCOMの初期化
 				CoInitialize(NULL);
 				CEpgTimerSrvMain* pMain = new CEpgTimerSrvMain;
@@ -77,6 +116,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 				}
 				delete pMain;
 				CoUninitialize();
+				StopDebugLog();
 			}
 			ReleaseMutex(hMutex);
 			CloseHandle(hMutex);
@@ -86,6 +126,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 		HANDLE hMutex = CreateMutex(NULL, TRUE, EPG_TIMER_BON_SRV_MUTEX);
 		if( hMutex != NULL ){
 			if( GetLastError() != ERROR_ALREADY_EXISTS ){
+				StartDebugLog();
 				SERVICE_TABLE_ENTRY dispatchTable[] = {
 					{ SERVICE_NAME, service_main },
 					{ NULL, NULL }
@@ -93,6 +134,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 				if( StartServiceCtrlDispatcher(dispatchTable) == FALSE ){
 					OutputDebugString(_T("_tWinMain(): StartServiceCtrlDispatcher failed\r\n"));
 				}
+				StopDebugLog();
 			}
 			ReleaseMutex(hMutex);
 			CloseHandle(hMutex);
@@ -180,4 +222,27 @@ void ReportServiceStatus(DWORD dwCurrentState, DWORD dwControlsAccepted, DWORD d
 	ss.dwWaitHint = dwWaitHint;
 
 	SetServiceStatus(g_hStatusHandle, &ss);
+}
+
+void OutputDebugStringWrapper(LPCWSTR lpOutputString)
+{
+	if( g_saveDebugLog ){
+		//デバッグ出力ログ保存
+		CBlockLock lock(&g_debugLogLock);
+		SYSTEMTIME st;
+		GetLocalTime(&st);
+		WCHAR header[64];
+		int len = wsprintf(header, L"[%02d%02d%02d%02d%02d%02d.%03d] ",
+		                   st.wYear % 100, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, st.wMilliseconds);
+		DWORD dwWritten;
+		WriteFile(g_hDebugLog, header, sizeof(WCHAR) * len, &dwWritten, NULL);
+		if( lpOutputString ){
+			len = lstrlen(lpOutputString);
+			WriteFile(g_hDebugLog, lpOutputString, sizeof(WCHAR) * len, &dwWritten, NULL);
+			if( len == 0 || lpOutputString[len - 1] != L'\n' ){
+				WriteFile(g_hDebugLog, L"<NOBR>\r\n", sizeof(WCHAR) * 8, &dwWritten, NULL);
+			}
+		}
+	}
+	OutputDebugStringW(lpOutputString);
 }

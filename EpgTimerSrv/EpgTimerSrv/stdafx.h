@@ -34,3 +34,11 @@
 #endif
 
 // TODO: プログラムに必要な追加ヘッダーをここで参照してください。
+
+#if defined(_UNICODE) && defined(OutputDebugString)
+#undef OutputDebugString
+#define OutputDebugString OutputDebugStringWrapper
+// OutputDebugStringWのラッパー関数
+// APIフックによる高度なものでなく単なる置換。OutputDebugStringAやDLLからの呼び出しはラップされない
+void OutputDebugStringWrapper(LPCWSTR lpOutputString);
+#endif

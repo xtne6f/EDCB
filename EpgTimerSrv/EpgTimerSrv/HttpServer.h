@@ -10,7 +10,7 @@ class CHttpServer
 public:
 	CHttpServer();
 	~CHttpServer();
-	bool StartServer(unsigned short port, LPCWSTR rootPath, int (*initProc)(lua_State*), void* initParam, bool saveLog = false, LPCWSTR acl = NULL);
+	bool StartServer(LPCWSTR ports, LPCWSTR rootPath, int (*initProc)(lua_State*), void* initParam, bool saveLog = false, LPCWSTR acl = NULL);
 	void StopServer();
 private:
 	static void InitLua(const mg_connection* conn, void* luaContext);

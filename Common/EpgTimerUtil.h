@@ -7,12 +7,10 @@
 
 //チャンネルを__int64としてキーにする
 LONGLONG _Create64Key( WORD OriginalNetworkID, WORD TransportStreamID, WORD ServiceID );
-//EventIDを__int64としてキーにする
-LONGLONG _Create64Key2( WORD OriginalNetworkID, WORD TransportStreamID, WORD ServiceID, WORD EventID );
+//EventIDをunsigned __int64としてキーにする
+ULONGLONG _Create64Key2( WORD OriginalNetworkID, WORD TransportStreamID, WORD ServiceID, WORD EventID );
 //CRC32をもとめる
 unsigned long _Crc32(int n,  BYTE c[]);
-//録画予想サイズを取得
-LONGLONG _GetRecSize( DWORD OriginalNetworkID, DWORD TransportStreamID, DWORD ServiceID, BOOL ServiceOnlyFlag, DWORD DurationSecond );
 //BCD->DWORD変換
 DWORD _BCDtoDWORD(BYTE* data, BYTE size, BYTE digit);
 //MJD->YYYY/MM/DD変換

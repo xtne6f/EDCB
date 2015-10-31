@@ -140,7 +140,7 @@ UINT WINAPI CPipeServer::ServerThread(LPVOID pParam)
 			DWORD dwWrite = 0;
 			DWORD head[2];
 			do{
-				if( ReadFile(hPipe, head, sizeof(DWORD)*2, &dwRead, NULL ) == FALSE ){
+				if( ReadFile(hPipe, head, sizeof(DWORD)*2, &dwRead, NULL ) == FALSE || dwRead != sizeof(DWORD)*2 ){
 					break;
 				}
 				stCmd.param = head[0];

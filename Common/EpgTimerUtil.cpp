@@ -14,10 +14,10 @@ LONGLONG _Create64Key( WORD OriginalNetworkID, WORD TransportStreamID, WORD Serv
 	return Key;
 }
 
-LONGLONG _Create64Key2( WORD OriginalNetworkID, WORD TransportStreamID, WORD ServiceID, WORD EventID )
+ULONGLONG _Create64Key2( WORD OriginalNetworkID, WORD TransportStreamID, WORD ServiceID, WORD EventID )
 {
-	LONGLONG Key = 
-		(((LONGLONG)(OriginalNetworkID & 0x0000FFFF))<<48) |
+	ULONGLONG Key = 
+		(((ULONGLONG)(OriginalNetworkID & 0x0000FFFF))<<48) |
 		(((LONGLONG)(TransportStreamID & 0x0000FFFF))<<32) |
 		(((LONGLONG)(ServiceID & 0x0000FFFF))<<16) |
 		((LONGLONG)(EventID & 0x0000FFFF));
@@ -69,91 +69,6 @@ unsigned long _Crc32(int n, BYTE c[])
 	while (--n >= 0)
 		r = (r << CHAR_BIT) ^ crctable[(byte)(r >> (32 - CHAR_BIT)) ^ *c++];
 	return r & 0xFFFFFFFFUL;
-}
-
-LONGLONG _GetRecSize( DWORD OriginalNetworkID, DWORD TransportStreamID, DWORD ServiceID, BOOL ServiceOnlyFlag, DWORD DurationSecond )
-{
-	LONGLONG RecSize = 0;
-	if( OriginalNetworkID == 4 ){
-		//BS
-		if( ServiceOnlyFlag == TRUE ){
-			if( ServiceID == 101 || ServiceID == 102 ){
-				//BS1、BS2
-				//9Mbpsで計算
-				RecSize = ( 9 * 1024 * 1024 * ((LONGLONG)DurationSecond) ) / 8;
-			}if( ServiceID == 910 ){
-				//WNI・910は2Mbps
-				RecSize = ( 2 * 1024 * 1024 * ((LONGLONG)DurationSecond) ) / 8;
-			}else{
-				//18Mbpsで計算
-				RecSize = ( 18 * 1024 * 1024 * ((LONGLONG)DurationSecond) ) / 8;
-			}
-		}else{
-			//20Mbpsで計算
-			RecSize = ( 20 * 1024 * 1024 * ((LONGLONG)DurationSecond) ) / 8;
-		}
-	}else if( OriginalNetworkID == 6 ){
-		//CS1
-		if( ServiceOnlyFlag == TRUE ){
-			switch( ServiceID ){
-				case 239: //日本映画専門ｃｈＨＤ
-				case 306: //フジテレビＮＥＸＴ
-				case 800: //スカチャンＨＤ８００
-				case 55: //ショップチャンネル
-					//13Mbpsで計算
-					RecSize = ( 13 * 1024 * 1024 * ((LONGLONG)DurationSecond) ) / 8;
-					break;
-				default:
-					//5Mbpsで計算
-					RecSize = ( 5 * 1024 * 1024 * ((LONGLONG)DurationSecond) ) / 8;
-					break;
-			}
-		}else{
-			//40Mbpsで計算
-			RecSize = ( 40 * 1024 * 1024 * ((LONGLONG)DurationSecond) ) / 8;
-		}
-	}else if( OriginalNetworkID == 7 ){
-		//CS2
-		if( ServiceOnlyFlag == TRUE ){
-			switch( ServiceID ){
-				case 240: //ムービープラスＨＤ
-				case 253: //ＪスポーツＰｌｕｓＨ
-				case 314: //ＬａＬａ　ＨＤ
-					//13Mbpsで計算
-					RecSize = ( 13 * 1024 * 1024 * ((LONGLONG)DurationSecond) ) / 8;
-					break;
-				case 257: //日テレＧ＋
-				case 262: //ゴルフネットワーク
-				case 290: //ＳＫＹ・ＳＴＡＧＥ
-				case 300: //日テレプラス
-				case 307: //フジテレビＯＮＥ
-				case 308: //フジテレビＴＷＯ
-				case 333: //ＡＴ－Ｘ
-				case 350: //日テレＮＥＷＳ２４
-				case 354: //ＣＮＮｊ
-					//8Mbpsで計算
-					RecSize = ( 5 * 1024 * 1024 * ((LONGLONG)DurationSecond) ) / 8;
-					break;
-				default:
-					//5Mbpsで計算
-					RecSize = ( 5 * 1024 * 1024 * ((LONGLONG)DurationSecond) ) / 8;
-					break;
-			}
-		}else{
-			//40Mbpsで計算
-			RecSize = ( 40 * 1024 * 1024 * ((LONGLONG)DurationSecond) ) / 8;
-		}
-	}else{
-		//地デジ
-		if( ServiceOnlyFlag == TRUE ){
-			//15Mbpsで計算
-			RecSize = ( 15 * 1024 * 1024 * ((LONGLONG)DurationSecond) ) / 8;
-		}else{
-			//18Mbpsで計算
-			RecSize = ( 18 * 1024 * 1024 * ((LONGLONG)DurationSecond) ) / 8;
-		}
-	}
-	return RecSize;
 }
 
 DWORD _BCDtoDWORD(BYTE* data, BYTE size, BYTE digit)

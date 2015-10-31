@@ -2,8 +2,7 @@
 #include "EpgTimerSrvMain.h"
 #include "HttpServer.h"
 #include "SyoboiCalUtil.h"
-#include "../../UPnPCtrl/UpnpUtil.h"
-#include "../../UPnPCtrl/UpnpSsdpUtil.h"
+#include "UpnpSsdpServer.h"
 #include "../../Common/PipeServer.h"
 #include "../../Common/TCPServer.h"
 #include "../../Common/SendCtrlCmd.h"
@@ -17,6 +16,9 @@
 #pragma comment (lib, "netapi32.lib")
 
 static const char UPNP_URN_DMS_1[] = "urn:schemas-upnp-org:device:MediaServer:1";
+static const char UPNP_URN_CDS_1[] = "urn:schemas-upnp-org:service:ContentDirectory:1";
+static const char UPNP_URN_CMS_1[] = "urn:schemas-upnp-org:service:ConnectionManager:1";
+static const char UPNP_URN_AVT_1[] = "urn:schemas-upnp-org:service:AVTransport:1";
 
 enum {
 	WM_RESET_SERVER = WM_APP,
@@ -36,10 +38,11 @@ struct MAIN_WINDOW_CONTEXT {
 	CPipeServer pipeServer;
 	CTCPServer tcpServer;
 	CHttpServer httpServer;
-	UPNP_SERVER_HANDLE upnpCtrl;
+	CUpnpSsdpServer upnpServer;
 	HANDLE resumeTimer;
 	__int64 resumeTime;
 	WORD shutdownModePending;
+	DWORD shutdownPendingTick;
 	HWND hDlgQueryShutdown;
 	WORD queryShutdownMode;
 	bool taskFlag;
@@ -51,9 +54,9 @@ struct MAIN_WINDOW_CONTEXT {
 		, serviceFlag(serviceFlag_)
 		, awayMode(awayMode_)
 		, msgTaskbarCreated(RegisterWindowMessage(L"TaskbarCreated"))
-		, upnpCtrl(NULL)
 		, resumeTimer(NULL)
 		, shutdownModePending(0)
+		, shutdownPendingTick(0)
 		, hDlgQueryShutdown(NULL)
 		, taskFlag(false)
 		, showBalloonTip(false)
@@ -81,9 +84,10 @@ bool CEpgTimerSrvMain::Main(bool serviceFlag_)
 	this->residentFlag = serviceFlag_;
 
 	DWORD awayMode;
-	OSVERSIONINFO osvi;
-	osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-	awayMode = GetVersionEx(&osvi) && osvi.dwMajorVersion >= 6 ? ES_AWAYMODE_REQUIRED : 0;
+	OSVERSIONINFOEX osvi;
+	osvi.dwOSVersionInfoSize = sizeof(osvi);
+	osvi.dwMajorVersion = 6;
+	awayMode = VerifyVersionInfo(&osvi, VER_MAJORVERSION, VerSetConditionMask(0, VER_MAJORVERSION, VER_GREATER_EQUAL)) ? ES_AWAYMODE_REQUIRED : 0;
 
 	wstring settingPath;
 	GetSettingPath(settingPath);
@@ -121,7 +125,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 {
 	enum {
 		TIMER_RELOAD_EPG_CHK_PENDING = 1,
-		TIMER_SHUTDOWN_PENDING_TIMEOUT,
+		TIMER_QUERY_SHUTDOWN_PENDING,
 		TIMER_RETRY_ADD_TRAY,
 		TIMER_SET_RESUME,
 		TIMER_CHECK,
@@ -146,19 +150,18 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		SendMessage(hwnd, WM_TIMER, TIMER_SET_RESUME, 0);
 		SetTimer(hwnd, TIMER_SET_RESUME, 30000, NULL);
 		SetTimer(hwnd, TIMER_CHECK, 1000, NULL);
+		OutputDebugString(L"*** Server initialized ***\r\n");
 		return 0;
 	case WM_DESTROY:
 		if( ctx->resumeTimer ){
 			CloseHandle(ctx->resumeTimer);
 		}
-		if( ctx->upnpCtrl ){
-			UPNP_SERVER_Stop(ctx->upnpCtrl);
-			UPNP_SERVER_CloseHandle(&ctx->upnpCtrl);
-		}
+		ctx->upnpServer.Stop();
 		ctx->httpServer.StopServer();
 		ctx->tcpServer.StopServer();
 		ctx->pipeServer.StopServer();
 		ctx->sys->reserveManager.Finalize();
+		OutputDebugString(L"*** Server finalized ***\r\n");
 		//タスクトレイから削除
 		SendMessage(hwnd, WM_SHOW_TRAY, FALSE, FALSE);
 		ctx->sys->hwndMain = NULL;
@@ -174,7 +177,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		{
 			//サーバリセット処理
 			unsigned short tcpPort_;
-			unsigned short httpPort_;
+			wstring httpPorts_;
 			wstring httpPublicFolder_;
 			wstring httpAcl;
 			bool httpSaveLog_ = false;
@@ -182,7 +185,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 			{
 				CBlockLock lock(&ctx->sys->settingLock);
 				tcpPort_ = ctx->sys->tcpPort;
-				httpPort_ = ctx->sys->httpPort;
+				httpPorts_ = ctx->sys->httpPorts;
 				httpPublicFolder_ = ctx->sys->httpPublicFolder;
 				httpAcl = ctx->sys->httpAccessControlList;
 				httpSaveLog_ = ctx->sys->httpSaveLog;
@@ -193,15 +196,11 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 			}else{
 				ctx->tcpServer.StartServer(tcpPort_, CtrlCmdCallback, ctx->sys, 0, GetCurrentProcessId());
 			}
-			if( ctx->upnpCtrl ){
-				UPNP_SERVER_RemoveNotifyInfo(ctx->upnpCtrl, ctx->sys->ssdpNotifyUuid.c_str());
-				UPNP_SERVER_Stop(ctx->upnpCtrl);
-				UPNP_SERVER_CloseHandle(&ctx->upnpCtrl);
-			}
-			if( httpPort_ == 0 ){
+			ctx->upnpServer.Stop();
+			if( httpPorts_.empty() ){
 				ctx->httpServer.StopServer();
 			}else{
-				if( ctx->httpServer.StartServer(httpPort_, httpPublicFolder_.c_str(), InitLuaCallback, ctx->sys, httpSaveLog_, httpAcl.c_str()) ){
+				if( ctx->httpServer.StartServer(httpPorts_.c_str(), httpPublicFolder_.c_str(), InitLuaCallback, ctx->sys, httpSaveLog_, httpAcl.c_str()) ){
 					if( enableSsdpServer_ ){
 						//"ddd.xml"の先頭から2KB以内に"<UDN>uuid:{UUID}</UDN>"が必要
 						char dddBuf[2048] = {};
@@ -215,15 +214,28 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 						string dddStr = dddBuf;
 						size_t udnFrom = dddStr.find("<UDN>uuid:");
 						if( udnFrom != string::npos && dddStr.size() > udnFrom + 10 + 36 && dddStr.compare(udnFrom + 10 + 36, 6, "</UDN>") == 0 ){
-							ctx->sys->ssdpNotifyUuid.assign(dddStr, udnFrom + 10, 36);
-							ctx->sys->ssdpNotifyPort = httpPort_;
+							string notifyUuid(dddStr, udnFrom + 5, 41);
+							//最後にみつかった':'より後ろか先頭を_wtoiした結果を通知ポートとする
+							unsigned short notifyPort = (unsigned short)_wtoi(httpPorts_.c_str() +
+								(httpPorts_.find_last_of(':') == wstring::npos ? 0 : httpPorts_.find_last_of(':') + 1));
 							//UPnPのUDP(Port1900)部分を担当するサーバ
-							ctx->upnpCtrl = UPNP_SERVER_CreateHandle(NULL, NULL, UpnpMSearchReqCallback, ctx->sys);
-							UPNP_SERVER_Start(ctx->upnpCtrl);
-							LPCSTR urnList[] = { UPNP_URN_DMS_1, UPNP_URN_CDS_1, UPNP_URN_CMS_1, UPNP_URN_AVT_1, NULL };
-							for( int i = 0; urnList[i]; i++ ){
-								UPNP_SERVER_AddNotifyInfo(ctx->upnpCtrl, ctx->sys->ssdpNotifyUuid.c_str(), urnList[i], ctx->sys->ssdpNotifyPort, "/dlna/dms/ddd.xml");
+							LPCSTR targetArray[] = { "upnp:rootdevice", UPNP_URN_DMS_1, UPNP_URN_CDS_1, UPNP_URN_CMS_1, UPNP_URN_AVT_1 };
+							vector<CUpnpSsdpServer::SSDP_TARGET_INFO> targetList(2 + _countof(targetArray));
+							targetList[0].target = notifyUuid;
+							Format(targetList[0].location, "http://$HOST$:%d/dlna/dms/ddd.xml", notifyPort);
+							targetList[0].usn = targetList[0].target;
+							targetList[0].notifyFlag = true;
+							targetList[1].target = "ssdp:all";
+							targetList[1].location = targetList[0].location;
+							targetList[1].usn = notifyUuid + "::" + "upnp:rootdevice";
+							targetList[1].notifyFlag = false;
+							for( size_t i = 2; i < targetList.size(); i++ ){
+								targetList[i].target = targetArray[i - 2];
+								targetList[i].location = targetList[0].location;
+								targetList[i].usn = notifyUuid + "::" + targetList[i].target;
+								targetList[i].notifyFlag = true;
 							}
+							ctx->upnpServer.Start(targetList);
 						}else{
 							OutputDebugString(L"Invalid ddd.xml\r\n");
 						}
@@ -235,6 +247,8 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 	case WM_RELOAD_EPG_CHK:
 		//EPGリロード完了のチェックを開始
 		SetTimer(hwnd, TIMER_RELOAD_EPG_CHK_PENDING, 200, NULL);
+		KillTimer(hwnd, TIMER_QUERY_SHUTDOWN_PENDING);
+		ctx->shutdownPendingTick = GetTickCount();
 		break;
 	case WM_REQUEST_SHUTDOWN:
 		//シャットダウン処理
@@ -342,7 +356,8 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 								Replace(log, L"\r\n", L"  ");
 								string logA;
 								WtoA(log + L"\r\n", logA);
-								SetFilePointer(hFile, 0, NULL, FILE_END);
+								LARGE_INTEGER liPos = {};
+								SetFilePointerEx(hFile, liPos, NULL, FILE_END);
 								DWORD dwWritten;
 								WriteFile(hFile, logA.c_str(), (DWORD)logA.size(), &dwWritten, NULL);
 								CloseHandle(hFile);
@@ -418,20 +433,41 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 	case WM_TIMER:
 		switch( wParam ){
 		case TIMER_RELOAD_EPG_CHK_PENDING:
+			if( GetTickCount() - ctx->shutdownPendingTick > 30000 ){
+				//30秒以内にシャットダウン問い合わせできなければキャンセル
+				if( ctx->shutdownModePending ){
+					ctx->shutdownModePending = 0;
+					OutputDebugString(L"Shutdown cancelled\r\n");
+				}
+			}
 			if( ctx->sys->epgDB.IsLoadingData() == FALSE ){
+				KillTimer(hwnd, TIMER_RELOAD_EPG_CHK_PENDING);
+				if( ctx->shutdownModePending ){
+					//このタイマはWM_TIMER以外でもKillTimer()するためメッセージキューに残った場合に対処するためシフト
+					ctx->shutdownPendingTick -= 100000;
+					SetTimer(hwnd, TIMER_QUERY_SHUTDOWN_PENDING, 200, NULL);
+				}
 				//リロード終わったので自動予約登録処理を行う
 				ctx->sys->reserveManager.CheckTuijyu();
+				bool addCountUpdated = false;
 				{
 					CBlockLock lock(&ctx->sys->settingLock);
 					for( map<DWORD, EPG_AUTO_ADD_DATA>::const_iterator itr = ctx->sys->epgAutoAdd.GetMap().begin(); itr != ctx->sys->epgAutoAdd.GetMap().end(); itr++ ){
+						DWORD addCount = itr->second.addCount;
 						ctx->sys->AutoAddReserveEPG(itr->second);
+						if( addCount != itr->second.addCount ){
+							addCountUpdated = true;
+						}
 					}
 					for( map<DWORD, MANUAL_AUTO_ADD_DATA>::const_iterator itr = ctx->sys->manualAutoAdd.GetMap().begin(); itr != ctx->sys->manualAutoAdd.GetMap().end(); itr++ ){
 						ctx->sys->AutoAddReserveProgram(itr->second);
 					}
 				}
-				KillTimer(hwnd, TIMER_RELOAD_EPG_CHK_PENDING);
-				ctx->sys->notifyManager.AddNotify(NOTIFY_UPDATE_EPGDATA);
+				if( addCountUpdated ){
+					//予約登録数の変化を通知する
+					ctx->sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_EPG);
+				}
+				ctx->sys->reserveManager.AddNotifyAndPostBat(NOTIFY_UPDATE_EPGDATA);
 
 				if( ctx->sys->useSyoboi ){
 					//しょぼいカレンダー対応
@@ -440,20 +476,29 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 					vector<TUNER_RESERVE_INFO> tunerList = ctx->sys->reserveManager.GetTunerReserveAll();
 					syoboi.SendReserve(&reserveList, &tunerList);
 				}
-				if( ctx->shutdownModePending && ctx->sys->IsSuspendOK() && ctx->sys->IsUserWorking() == false ){
-					if( 1 <= LOBYTE(ctx->shutdownModePending) && LOBYTE(ctx->shutdownModePending) <= 3 ){
+			}
+			break;
+		case TIMER_QUERY_SHUTDOWN_PENDING:
+			if( GetTickCount() - ctx->shutdownPendingTick >= 100000 ){
+				if( GetTickCount() - ctx->shutdownPendingTick - 100000 > 30000 ){
+					//30秒以内にシャットダウン問い合わせできなければキャンセル
+					KillTimer(hwnd, TIMER_QUERY_SHUTDOWN_PENDING);
+					if( ctx->shutdownModePending ){
+						ctx->shutdownModePending = 0;
+						OutputDebugString(L"Shutdown cancelled\r\n");
+					}
+				}else if( ctx->shutdownModePending && ctx->sys->IsSuspendOK() ){
+					KillTimer(hwnd, TIMER_QUERY_SHUTDOWN_PENDING);
+					if( ctx->sys->IsUserWorking() == false &&
+					    1 <= LOBYTE(ctx->shutdownModePending) && LOBYTE(ctx->shutdownModePending) <= 3 ){
 						//シャットダウン問い合わせ
 						if( SendMessage(hwnd, WM_QUERY_SHUTDOWN, ctx->shutdownModePending, 0) == FALSE ){
 							SendMessage(hwnd, WM_REQUEST_SHUTDOWN, ctx->shutdownModePending, 0);
 						}
 					}
+					ctx->shutdownModePending = 0;
 				}
-				ctx->shutdownModePending = 0;
 			}
-			break;
-		case TIMER_SHUTDOWN_PENDING_TIMEOUT:
-			KillTimer(hwnd, TIMER_SHUTDOWN_PENDING_TIMEOUT);
-			ctx->shutdownModePending = 0;
 			break;
 		case TIMER_RETRY_ADD_TRAY:
 			KillTimer(hwnd, TIMER_RETRY_ADD_TRAY);
@@ -485,8 +530,6 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 						//EPGリロード完了後にデフォルトのシャットダウン動作を試みる
 						SendMessage(hwnd, WM_RELOAD_EPG_CHK, 0, 0);
 						ctx->shutdownModePending = ctx->sys->defShutdownMode;
-						//30秒以内にシャットダウン問い合わせできなければキャンセル
-						SetTimer(hwnd, TIMER_SHUTDOWN_PENDING_TIMEOUT, 30000, NULL);
 					}
 					SendMessage(hwnd, WM_TIMER, TIMER_SET_RESUME, 0);
 					break;
@@ -498,7 +541,6 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 						if( LOBYTE(ctx->shutdownModePending) == 0 ){
 							ctx->shutdownModePending = ctx->sys->defShutdownMode;
 						}
-						SetTimer(hwnd, TIMER_SHUTDOWN_PENDING_TIMEOUT, 30000, NULL);
 					}
 					SendMessage(hwnd, WM_TIMER, TIMER_SET_RESUME, 0);
 					break;
@@ -598,9 +640,6 @@ bool CEpgTimerSrvMain::IsSuspendOK()
 	bool ngFileStreaming_;
 	{
 		CBlockLock lock(&this->settingLock);
-		if( IsFindNoSuspendExe() || IsFindShareTSFile() ){
-			return false;
-		}
 		//rebootFlag時の復帰マージンを基準に3分余裕を加えたものと抑制条件のどちらか大きいほう
 		marginSec = max(this->wakeMarginSec + 300 + 180, this->noStandbySec);
 		ngFileStreaming_ = this->ngFileStreaming;
@@ -609,7 +648,9 @@ bool CEpgTimerSrvMain::IsSuspendOK()
 	//シャットダウン可能で復帰が間に合うときだけ
 	return (ngFileStreaming_ == false || this->streamingManager.IsStreaming() == FALSE) &&
 	       this->reserveManager.IsActive() == false &&
-	       this->reserveManager.GetSleepReturnTime(now) > now + marginSec * I64_1SEC;
+	       this->reserveManager.GetSleepReturnTime(now) > now + marginSec * I64_1SEC &&
+	       IsFindNoSuspendExe() == false &&
+	       IsFindShareTSFile() == false;
 }
 
 void CEpgTimerSrvMain::ReloadNetworkSetting()
@@ -622,7 +663,7 @@ void CEpgTimerSrvMain::ReloadNetworkSetting()
 	if( GetPrivateProfileInt(L"SET", L"EnableTCPSrv", 0, iniPath.c_str()) != 0 ){
 		this->tcpPort = (unsigned short)GetPrivateProfileInt(L"SET", L"TCPPort", 4510, iniPath.c_str());
 	}
-	this->httpPort = 0;
+	this->httpPorts.clear();
 	int enableHttpSrv = GetPrivateProfileInt(L"SET", L"EnableHttpSrv", 0, iniPath.c_str());
 	if( enableHttpSrv != 0 ){
 		WCHAR buff[512];
@@ -639,7 +680,8 @@ void CEpgTimerSrvMain::ReloadNetworkSetting()
 		}
 		GetPrivateProfileString(L"SET", L"HttpAccessControlList", L"+127.0.0.1", buff, 512, iniPath.c_str());
 		this->httpAccessControlList = buff;
-		this->httpPort = (unsigned short)GetPrivateProfileInt(L"SET", L"HttpPort", 5510, iniPath.c_str());
+		GetPrivateProfileString(L"SET", L"HttpPort", L"5510", buff, 512, iniPath.c_str());
+		this->httpPorts = buff;
 		this->httpSaveLog = enableHttpSrv == 2;
 	}
 	this->enableSsdpServer = GetPrivateProfileInt(L"SET", L"EnableDMS", 0, iniPath.c_str()) != 0;
@@ -2088,59 +2130,13 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 	return 0;
 }
 
-int CEpgTimerSrvMain::UpnpMSearchReqCallback(UPNP_MSEARCH_REQUEST_INFO* requestParam, void* param, SORT_LIST_HANDLE resDeviceList)
-{
-	if( requestParam == NULL || lstrcmpiA(requestParam->man, "\"ssdp:discover\"") != 0 ){
-		return -1;
-	}
-	//ここではUDPで投げられたデバイス検索の要求に対する応答を作成する
-	const string& uuid = ((CEpgTimerSrvMain*)param)->ssdpNotifyUuid;
-	unsigned short port = ((CEpgTimerSrvMain*)param)->ssdpNotifyPort;
-	char ua[128] = "";
-	UPNP_UTIL_GetUserAgent(ua, _countof(ua));
-	string st = requestParam->st;
-	if( CompareNoCase(st, "upnp:rootdevice") == 0 || CompareNoCase(st, "ssdp:all") == 0 ){
-		UPNP_MSEARCH_RES_DEV_INFO* resDevInfo = UPNP_MSEARCH_RES_DEV_INFO_New();
-		resDevInfo->max_age = 1800;
-		resDevInfo->port = port;
-		resDevInfo->uri = _strdup("/dlna/dms/ddd.xml");
-		resDevInfo->uuid = _strdup(uuid.c_str());
-		resDevInfo->usn = _strdup(("uuid:" + uuid + "::urn:rootdevice").c_str());
-		resDevInfo->server = _strdup(ua);
-		SORT_LIST_AddItem(resDeviceList, resDevInfo->uuid, resDevInfo);
-	}
-	if( st.compare(0, 5, "uuid:") == 0 && st.find(uuid) != string::npos ){
-		UPNP_MSEARCH_RES_DEV_INFO* resDevInfo = UPNP_MSEARCH_RES_DEV_INFO_New();
-		resDevInfo->max_age = 1800;
-		resDevInfo->port = port;
-		resDevInfo->uri = _strdup("/dlna/dms/ddd.xml");
-		resDevInfo->uuid = _strdup(uuid.c_str());
-		resDevInfo->usn = _strdup(("uuid:" + uuid).c_str());
-		resDevInfo->server = _strdup(ua);
-		SORT_LIST_AddItem(resDeviceList, resDevInfo->uuid, resDevInfo);
-	}
-	if( CompareNoCase(st, UPNP_URN_DMS_1) == 0 ||
-	    CompareNoCase(st, UPNP_URN_CDS_1) == 0 ||
-	    CompareNoCase(st, UPNP_URN_CMS_1) == 0 ||
-	    CompareNoCase(st, UPNP_URN_AVT_1) == 0 ){
-		UPNP_MSEARCH_RES_DEV_INFO* resDevInfo = UPNP_MSEARCH_RES_DEV_INFO_New();
-		resDevInfo->max_age = 1800;
-		resDevInfo->port = port;
-		resDevInfo->uri = _strdup("/dlna/dms/ddd.xml");
-		resDevInfo->uuid = _strdup(uuid.c_str());
-		resDevInfo->usn = _strdup(("uuid:" + uuid + "::" + st).c_str());
-		resDevInfo->server = _strdup(ua);
-		SORT_LIST_AddItem(resDeviceList, resDevInfo->uuid, resDevInfo);	
-	}
-	return -1;
-}
-
 int CEpgTimerSrvMain::InitLuaCallback(lua_State* L)
 {
 	CEpgTimerSrvMain* sys = (CEpgTimerSrvMain*)lua_touserdata(L, -1);
 	lua_newtable(L);
 	LuaHelp::reg_function(L, "GetGenreName", LuaGetGenreName, sys);
 	LuaHelp::reg_function(L, "GetComponentTypeName", LuaGetComponentTypeName, sys);
+	LuaHelp::reg_function(L, "Sleep", LuaSleep, sys);
 	LuaHelp::reg_function(L, "Convert", LuaConvert, sys);
 	LuaHelp::reg_function(L, "GetPrivateProfile", LuaGetPrivateProfile, sys);
 	LuaHelp::reg_function(L, "WritePrivateProfile", LuaWritePrivateProfile, sys);
@@ -2231,6 +2227,12 @@ int CEpgTimerSrvMain::LuaGetComponentTypeName(lua_State* L)
 	}
 	lua_pushstring(L, ws.WtoUTF8(name));
 	return 1;
+}
+
+int CEpgTimerSrvMain::LuaSleep(lua_State* L)
+{
+	Sleep((DWORD)lua_tointeger(L, 1));
+	return 0;
 }
 
 int CEpgTimerSrvMain::LuaConvert(lua_State* L)

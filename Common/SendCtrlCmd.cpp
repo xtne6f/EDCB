@@ -193,7 +193,7 @@ DWORD CSendCtrlCmd::SendPipe(LPCWSTR pipeName, LPCWSTR eventName, DWORD timeOut,
 	}
 
 	//ŽóM
-	if( ReadFile(pipe, head, sizeof(DWORD)*2, &read, NULL ) == FALSE ){
+	if( ReadFile(pipe, head, sizeof(DWORD)*2, &read, NULL ) == FALSE || read != sizeof(DWORD)*2 ){
 		CloseHandle(pipe);
 		return CMD_ERR;
 	}
@@ -255,7 +255,7 @@ DWORD CSendCtrlCmd::SendTCP(wstring ip, DWORD port, DWORD timeOut, CMD_STREAM* s
 	DWORD head[2];
 	head[0] = sendCmd->param;
 	head[1] = sendCmd->dataSize;
-	send(sock, (char*)head, sizeof(DWORD)*2, 0 );
+	ret = send(sock, (char*)head, sizeof(DWORD)*2, 0 );
 	if( ret == SOCKET_ERROR ){
 		closesocket(sock);
 		return CMD_ERR;
@@ -273,7 +273,7 @@ DWORD CSendCtrlCmd::SendTCP(wstring ip, DWORD port, DWORD timeOut, CMD_STREAM* s
 	}
 	//ŽóM
 	ret = recv(sock, (char*)head, sizeof(DWORD)*2, 0 );
-	if( ret == SOCKET_ERROR ){
+	if( ret != sizeof(DWORD)*2 ){
 		closesocket(sock);
 		return CMD_ERR;
 	}
@@ -282,18 +282,13 @@ DWORD CSendCtrlCmd::SendTCP(wstring ip, DWORD port, DWORD timeOut, CMD_STREAM* s
 	if( resCmd->dataSize > 0 ){
 		resCmd->data = new BYTE[resCmd->dataSize];
 		read = 0;
-		while(ret>0){
+		while( read < resCmd->dataSize ){
 			ret = recv(sock, (char*)(resCmd->data + read), resCmd->dataSize - read, 0);
-			if( ret == SOCKET_ERROR ){
+			if( ret == SOCKET_ERROR || ret == 0 ){
 				closesocket(sock);
 				return CMD_ERR;
-			}else if( ret == 0 ){
-				break;
 			}
 			read += ret;
-			if( read >= resCmd->dataSize ){
-				break;
-			}
 		}
 	}
 	closesocket(sock);

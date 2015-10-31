@@ -7,10 +7,50 @@
 #include "EpgDataCap_BonDlg.h"
 
 #include "CmdLineUtil.h"
+#include "../../Common/BlockLock.h"
 
-#ifdef _DEBUG
-#define new DEBUG_NEW
-#endif
+static HANDLE g_hDebugLog;
+static CRITICAL_SECTION g_debugLogLock;
+static bool g_saveDebugLog;
+
+static void StartDebugLog()
+{
+	wstring iniPath;
+	GetModuleIniPath(iniPath);
+	if( GetPrivateProfileInt(L"SET", L"SaveDebugLog", 0, iniPath.c_str()) != 0 ){
+		wstring logFolder;
+		GetModuleFolderPath(logFolder);
+		for( int i = 0; i < 100; i++ ){
+			//パスに添え字をつけて書き込み可能な最初のものに記録する
+			WCHAR logFileName[64];
+			wsprintf(logFileName, L"\\EpgDataCap_Bon_DebugLog-%d.txt", i);
+			g_hDebugLog = CreateFile((logFolder + logFileName).c_str(), FILE_APPEND_DATA, FILE_SHARE_READ, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+			if( g_hDebugLog != INVALID_HANDLE_VALUE ){
+				if( GetLastError() == ERROR_SUCCESS ){
+					DWORD dwWritten;
+					WriteFile(g_hDebugLog, "\xFF\xFE", sizeof(char) * 2, &dwWritten, NULL);
+				}else{
+					LARGE_INTEGER liPos = {};
+					SetFilePointerEx(g_hDebugLog, liPos, NULL, FILE_END);
+				}
+				InitializeCriticalSection(&g_debugLogLock);
+				g_saveDebugLog = true;
+				OutputDebugString(L"****** LOG START ******\r\n");
+				break;
+			}
+		}
+	}
+}
+
+static void StopDebugLog()
+{
+	if( g_saveDebugLog ){
+		OutputDebugString(L"****** LOG STOP ******\r\n");
+		g_saveDebugLog = false;
+		DeleteCriticalSection(&g_debugLogLock);
+		CloseHandle(g_hDebugLog);
+	}
+}
 
 #ifndef SUPPRESS_OUTPUT_STACK_TRACE
 // 例外によってアプリケーションが終了する直前にスタックトレースを"実行ファイル名.exe.err"に出力する
@@ -198,7 +238,12 @@ BOOL CEpgDataCap_BonApp::InitInstance()
 
 int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow)
 {
+	StartDebugLog();
+	//メインスレッドに対するCOMの初期化
+	CoInitialize(NULL);
 	theApp.InitInstance();
+	CoUninitialize();
+	StopDebugLog();
 	return 0;
 }
 
@@ -207,4 +252,27 @@ BOOL WritePrivateProfileInt(LPCTSTR lpAppName, LPCTSTR lpKeyName, int value, LPC
 	TCHAR sz[32];
 	wsprintf(sz, TEXT("%d"), value);
 	return WritePrivateProfileString(lpAppName, lpKeyName, sz, lpFileName);
+}
+
+void OutputDebugStringWrapper(LPCWSTR lpOutputString)
+{
+	if( g_saveDebugLog ){
+		//デバッグ出力ログ保存
+		CBlockLock lock(&g_debugLogLock);
+		SYSTEMTIME st;
+		GetLocalTime(&st);
+		WCHAR header[64];
+		int len = wsprintf(header, L"[%02d%02d%02d%02d%02d%02d.%03d] ",
+		                   st.wYear % 100, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, st.wMilliseconds);
+		DWORD dwWritten;
+		WriteFile(g_hDebugLog, header, sizeof(WCHAR) * len, &dwWritten, NULL);
+		if( lpOutputString ){
+			len = lstrlen(lpOutputString);
+			WriteFile(g_hDebugLog, lpOutputString, sizeof(WCHAR) * len, &dwWritten, NULL);
+			if( len == 0 || lpOutputString[len - 1] != L'\n' ){
+				WriteFile(g_hDebugLog, L"<NOBR>\r\n", sizeof(WCHAR) * 8, &dwWritten, NULL);
+			}
+		}
+	}
+	OutputDebugStringW(lpOutputString);
 }
