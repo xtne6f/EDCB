@@ -1,6 +1,8 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual C++ Express 2010
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Express 14 for Windows Desktop
+VisualStudioVersion = 14.0.23107.0
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EpgDataCap_Bon", "..\EpgDataCap_Bon\EpgDataCap_Bon\EpgDataCap_Bon.vcxproj", "{A690F4ED-0014-4346-AC5B-9FB4F2B3D05F}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EpgDataCap3", "..\EpgDataCap3\EpgDataCap3\EpgDataCap3.vcxproj", "{2342998F-86F9-4819-8B01-6E9103F0DCD4}"
@@ -18,6 +20,8 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Write_AVIVO", "..\Write_AVIVO\Write_AVIVO\Write_AVIVO.vcxproj", "{6497AE8C-A158-4262-850B-B17B24B7B22A}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Write_Default", "..\Write_Default\Write_Default\Write_Default.vcxproj", "{1A31824D-D8E5-4AC5-9D89-354FEC750B94}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EpgTimer", "..\EpgTimer\EpgTimer\EpgTimer.csproj", "{6B82030F-99FB-4D11-81E2-BAFD81A672BC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -99,6 +103,14 @@ Global
 		{1A31824D-D8E5-4AC5-9D89-354FEC750B94}.Release|Win32.Build.0 = Release|Win32
 		{1A31824D-D8E5-4AC5-9D89-354FEC750B94}.Release|x64.ActiveCfg = Release|x64
 		{1A31824D-D8E5-4AC5-9D89-354FEC750B94}.Release|x64.Build.0 = Release|x64
+		{6B82030F-99FB-4D11-81E2-BAFD81A672BC}.Debug|Win32.ActiveCfg = Debug|x86
+		{6B82030F-99FB-4D11-81E2-BAFD81A672BC}.Debug|Win32.Build.0 = Debug|x86
+		{6B82030F-99FB-4D11-81E2-BAFD81A672BC}.Debug|x64.ActiveCfg = Debug|x64
+		{6B82030F-99FB-4D11-81E2-BAFD81A672BC}.Debug|x64.Build.0 = Debug|x64
+		{6B82030F-99FB-4D11-81E2-BAFD81A672BC}.Release|Win32.ActiveCfg = Release|x86
+		{6B82030F-99FB-4D11-81E2-BAFD81A672BC}.Release|Win32.Build.0 = Release|x86
+		{6B82030F-99FB-4D11-81E2-BAFD81A672BC}.Release|x64.ActiveCfg = Release|x64
+		{6B82030F-99FB-4D11-81E2-BAFD81A672BC}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

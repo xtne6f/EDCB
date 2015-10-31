@@ -300,7 +300,7 @@ namespace EpgTimer
                     {
                         recFileInfo.Clear();
                         recFileInfo = null;
-                        recFileInfo = new Dictionary<uint, CtrlCmdCLI.Def.RecFileInfo>();
+                        recFileInfo = new Dictionary<uint, RecFileInfo>();
                         List<RecFileInfo> list = new List<RecFileInfo>();
                         ret = (ErrCode)cmd.SendEnumRecInfo(ref list);
                         if (ret == ErrCode.CMD_SUCCESS)

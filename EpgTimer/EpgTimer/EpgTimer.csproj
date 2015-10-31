@@ -58,11 +58,6 @@
     <ApplicationIcon>Resources\EpgTimer_Bon_Vista_blue_rev2.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="CtrlCmdCLI">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\$(Platform)\$(Configuration)\CtrlCmdCLI.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="PresentationFramework.Aero" />
     <Reference Include="PresentationFramework.Classic" />
     <Reference Include="System" />
@@ -96,6 +91,8 @@
     <Compile Include="BlackoutWindow.xaml.cs">
       <DependentUpon>BlackoutWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Common\CtrlCmd.cs" />
+    <Compile Include="Common\CtrlCmdDef.cs" />
     <Compile Include="Common\GridViewSorter.cs" />
     <Compile Include="ConnectWindow.xaml.cs">
       <DependentUpon>ConnectWindow.xaml</DependentUpon>
@@ -104,7 +101,6 @@
     <Compile Include="Setting\ColorSetWindow.xaml.cs">
       <DependentUpon>ColorSetWindow.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Common\CmdStreamUtil.cs" />
     <Compile Include="Common\EAAFileClass.cs" />
     <Compile Include="Common\IEPGFileClass.cs" />
     <Compile Include="Common\NWConnectClass.cs" />

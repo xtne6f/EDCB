@@ -319,7 +319,7 @@ namespace EpgTimer
                 List<EpgAutoAddData> addList = new List<EpgAutoAddData>();
                 addList.Add(addItem);
 
-                if (cmd.SendAddEpgAutoAdd(addList) != 1)
+                if (cmd.SendAddEpgAutoAdd(addList) != ErrCode.CMD_SUCCESS)
                 {
                     MessageBox.Show("追加に失敗しました");
                 }
@@ -354,7 +354,7 @@ namespace EpgTimer
                 List<EpgAutoAddData> addList = new List<EpgAutoAddData>();
                 addList.Add(addItem);
 
-                if (cmd.SendChgEpgAutoAdd(addList) != 1)
+                if (cmd.SendChgEpgAutoAdd(addList) != ErrCode.CMD_SUCCESS)
                 {
                     MessageBox.Show("変更に失敗しました");
                 }

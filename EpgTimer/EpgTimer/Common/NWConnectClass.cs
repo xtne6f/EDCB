@@ -109,7 +109,7 @@ namespace EpgTimer
             cmd.SetNWSetting(wIPAddress, srvPort);
 
             //cmd.SetNWSetting(srvIP, srvPort);
-            if (cmd.SendRegistTCP(waitPort) != 1)
+            if (cmd.SendRegistTCP(waitPort) != ErrCode.CMD_SUCCESS)
             {
                 return false;
             }

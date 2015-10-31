@@ -67,14 +67,14 @@ namespace EpgTimer
                         nwBonDriver = "BonDriver_TCP.dll";
                     }
                     
-                    if (cmd.SendNwTVMode(nwMode) == 1)
+                    if (cmd.SendNwTVMode(nwMode) == ErrCode.CMD_SUCCESS)
                     {
-                        if (cmd.SendNwTVSetCh(chInfo) == 1)
+                        if (cmd.SendNwTVSetCh(chInfo) == ErrCode.CMD_SUCCESS)
                         {
                             String val = "";
                             for (int i = 0; i < 10; i++)
                             {
-                                if (cmdTvTest.SendViewGetBonDrivere(ref val) != 1)
+                                if (cmdTvTest.SendViewGetBonDrivere(ref val) != ErrCode.CMD_SUCCESS)
                                 {
                                     System.Threading.Thread.Sleep(1000);
                                     continue;
@@ -94,20 +94,20 @@ namespace EpgTimer
                         ((UInt64)TSID) << 16 |
                         ((UInt64)SID);
                     TvTestChChgInfo chInfo = new TvTestChChgInfo();
-                    UInt32 err = cmd.SendGetChgChTVTest(key, ref chInfo);
-                    if (err == 1)
+                    ErrCode err = cmd.SendGetChgChTVTest(key, ref chInfo);
+                    if (err == ErrCode.CMD_SUCCESS)
                     {
                         String val = "";
                         for (int i = 0; i < 10; i++)
                         {
-                            if (cmdTvTest.SendViewGetBonDrivere(ref val) != 1)
+                            if (cmdTvTest.SendViewGetBonDrivere(ref val) != ErrCode.CMD_SUCCESS)
                             {
                                 System.Threading.Thread.Sleep(1000);
                                 continue;
                             }
                             if (String.Compare(val, chInfo.bonDriver, true) != 0)
                             {
-                                if (cmdTvTest.SendViewSetBonDrivere(chInfo.bonDriver) == 1)
+                                if (cmdTvTest.SendViewSetBonDrivere(chInfo.bonDriver) == ErrCode.CMD_SUCCESS)
                                 {
                                     System.Threading.Thread.Sleep(Settings.Instance.TvTestChgBonWait);
                                     cmdTvTest.SendViewSetCh(chInfo.chInfo);
@@ -120,7 +120,7 @@ namespace EpgTimer
                             break;
                         }
                     }
-                    else if (err == 205)
+                    else if (err == ErrCode.CMD_ERR_CONNECT)
                     {
                         MessageBox.Show("サーバーに接続できませんでした");
                         return false;
@@ -159,13 +159,13 @@ namespace EpgTimer
                     }
                 }
                 NWPlayTimeShiftInfo playInfo = new NWPlayTimeShiftInfo();
-                UInt32 err = cmd.SendNwTimeShiftOpen(reserveID, ref playInfo);
-                if (err == 205)
+                ErrCode err = cmd.SendNwTimeShiftOpen(reserveID, ref playInfo);
+                if (err == ErrCode.CMD_ERR_CONNECT)
                 {
                     MessageBox.Show("サーバーに接続できませんでした");
                     return false;
                 }
-                else if( err != 1 )
+                else if( err != ErrCode.CMD_SUCCESS )
                 {
                     MessageBox.Show("まだ録画が開始されていません");
                     return false;
@@ -238,7 +238,7 @@ namespace EpgTimer
                 {
                     sendInfo.tcpSend = 1;
                 }
-                for (int i = 0; i < 10 && cmdTvTest.SendViewSetStreamingInfo(sendInfo) != 1; i++)
+                for (int i = 0; i < 10 && cmdTvTest.SendViewSetStreamingInfo(sendInfo) != ErrCode.CMD_SUCCESS; i++)
                 {
                     System.Threading.Thread.Sleep(1000);
                 }
@@ -263,13 +263,13 @@ namespace EpgTimer
                 }
 
                 UInt32 ctrlID = 0;
-                UInt32 err = cmd.SendNwPlayOpen(filePath, ref ctrlID);
-                if (err == 205)
+                ErrCode err = cmd.SendNwPlayOpen(filePath, ref ctrlID);
+                if (err == ErrCode.CMD_ERR_CONNECT)
                 {
                     MessageBox.Show("サーバーに接続できませんでした");
                     return false;
                 }
-                else if (err != 1)
+                else if (err != ErrCode.CMD_SUCCESS)
                 {
                     MessageBox.Show("まだ録画が開始されていません");
                     return false;
@@ -317,7 +317,7 @@ namespace EpgTimer
                 {
                     sendInfo.tcpSend = 1;
                 }
-                for (int i = 0; i < 10 && cmdTvTest.SendViewSetStreamingInfo(sendInfo) != 1; i++)
+                for (int i = 0; i < 10 && cmdTvTest.SendViewSetStreamingInfo(sendInfo) != ErrCode.CMD_SUCCESS; i++)
                 {
                     System.Threading.Thread.Sleep(1000);
                 }
