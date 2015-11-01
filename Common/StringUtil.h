@@ -1,8 +1,6 @@
 #ifndef __STRING_UTIL_H__
 #define __STRING_UTIL_H__
 
-#include "Util.h"
-
 void Format(string& strBuff, const char *format, ...);
 
 void Format(wstring& strBuff, const WCHAR *format, ...);

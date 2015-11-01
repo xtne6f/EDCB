@@ -40,7 +40,6 @@ CRC_32（CRC）：これは付録B で定義するデコーダにおいて、セクション全体を処理
 
 */
 
-#include "../../../Common/Util.h"
 #include "../AribDescriptor.h"
 #include "PSITable.h"
 

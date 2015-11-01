@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Util.h"
 #include "StructDef.h"
 
 #include "CtrlCmdDef.h"

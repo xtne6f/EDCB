@@ -1,7 +1,6 @@
 #include "StdAfx.h"
 #include "WritePlugInUtil.h"
 
-#include "Util.h"
 #include "ErrDef.h"
 
 CWritePlugInUtil::CWritePlugInUtil(void)

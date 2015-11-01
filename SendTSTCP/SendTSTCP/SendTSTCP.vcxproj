@@ -161,7 +161,6 @@
   <ItemGroup>
     <ClInclude Include="..\..\Common\ErrDef.h" />
     <ClInclude Include="..\..\Common\StringUtil.h" />
-    <ClInclude Include="..\..\Common\Util.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="SendTSTCP.h" />
     <ClInclude Include="SendTSTCPMain.h" />
@@ -170,7 +169,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Common\StringUtil.cpp" />
-    <ClCompile Include="..\..\Common\Util.cpp" />
     <ClCompile Include="dllmain.cpp">
       <CompileAsManaged Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</CompileAsManaged>
       <CompileAsManaged Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</CompileAsManaged>

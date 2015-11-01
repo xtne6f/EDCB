@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../../Common/Util.h"
 #include "../../Common/StructDef.h"
 #include "../../Common/EpgDataCap3Def.h"
 #include <memory>

@@ -2,7 +2,6 @@
 
 #include <Windows.h>
 
-#include "../Common/Util.h"
 #include "../Common/PathUtil.h"
 #include "../Common/StringUtil.h"
 #include "../Common/ErrDef.h"

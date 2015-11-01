@@ -1,7 +1,6 @@
 #ifndef __EPG_TIMER_UTIL_H__
 #define __EPG_TIMER_UTIL_H__
 
-#include "Util.h"
 #include "StructDef.h"
 #include "EpgDataCap3Def.h"
 

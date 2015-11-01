@@ -167,7 +167,6 @@
     <ClInclude Include="..\..\Common\TimeUtil.h" />
     <ClInclude Include="..\..\Common\TSBuffUtil.h" />
     <ClInclude Include="..\..\Common\TSPacketUtil.h" />
-    <ClInclude Include="..\..\Common\Util.h" />
     <ClInclude Include="ARIB8CharDecode.h" />
     <ClInclude Include="AribDescriptor.h" />
     <ClInclude Include="DecodeUtil.h" />
@@ -202,7 +201,6 @@
     <ClCompile Include="..\..\Common\TimeUtil.cpp" />
     <ClCompile Include="..\..\Common\TSBuffUtil.cpp" />
     <ClCompile Include="..\..\Common\TSPacketUtil.cpp" />
-    <ClCompile Include="..\..\Common\Util.cpp" />
     <ClCompile Include="ARIB8CharDecode.cpp" />
     <ClCompile Include="AribDescriptor.cpp" />
     <ClCompile Include="DecodeUtil.cpp" />

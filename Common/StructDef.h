@@ -1,8 +1,6 @@
 #ifndef __STRUCT_DEF_H__
 #define __STRUCT_DEF_H__
 
-#include "Util.h"
-
 //録画フォルダ情報
 typedef struct _REC_FILE_SET_INFO{
 	wstring recFolder;			//録画フォルダ

@@ -1,7 +1,6 @@
 #ifndef __SEND_TS_TCP_H__
 #define __SEND_TS_TCP_H__
 
-#include "Util.h"
 namespace sendtstcp{
 //DLLの初期化
 //戻り値：識別ID（-1でエラー）

@@ -2,8 +2,6 @@
 
 #include <windows.h>
 
-#include "../Common/Util.h"
-
 class CPacketInit
 {
 public:

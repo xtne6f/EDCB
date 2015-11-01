@@ -2,7 +2,6 @@
 
 #include <windows.h>
 
-#include "../Common/Util.h"
 #include "../Common/StructDef.h"
 #include "../Common/EpgTimerUtil.h"
 #include "../Common/StringUtil.h"

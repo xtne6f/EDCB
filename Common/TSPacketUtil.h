@@ -85,8 +85,6 @@ adaptation_field() {
 
 */
 
-#include "Util.h"
-
 class CTSPacketUtil
 {
 public:

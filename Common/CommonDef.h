@@ -2,7 +2,6 @@
 #define __COMMON_DEF_H__
 
 #include "ErrDef.h"
-#include "Util.h"
 #include "StructDef.h"
 
 #define SAVE_FOLDER L"\\EpgTimerBon"
