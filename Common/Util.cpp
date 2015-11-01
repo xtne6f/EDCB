@@ -55,26 +55,6 @@ BOOL _GetDiskFreeSpaceEx(
 	return GetDiskFreeSpaceEx( szMount, lpFreeBytesAvailable, lpTotalNumberOfBytes, lpTotalNumberOfFreeBytes );
 }
 
-void _OutputDebugString(const TCHAR *format, ...)
-{
-	va_list params;
-
-	va_start(params, format);
-	try{
-		int length = _vsctprintf(format, params);
-		if( length >= 0 ){
-			vector<TCHAR> buff(length + 1);
-			_vstprintf_s(&buff.front(), buff.size(), format, params);
-			OutputDebugString(&buff.front());
-		}
-	}catch(...){
-		va_end(params);
-		throw;
-	}
-
-	va_end(params);
-}
-
 void GetLastErrMsg(DWORD err, wstring& msg)
 {
 	LPVOID lpMsgBuf;
