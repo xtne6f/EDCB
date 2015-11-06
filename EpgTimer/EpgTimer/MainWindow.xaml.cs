@@ -1188,18 +1188,40 @@ namespace EpgTimer
         private string GetTaskTrayReserveInfoText()
         {
             CommonManager.Instance.DB.ReloadReserveInfo();
-            ReserveData item = new ReserveData();
-            if (CommonManager.Instance.DB.GetNextReserve(ref item) == true)
+
+            var sortList = CommonManager.Instance.DB.ReserveList.Values
+                .Where(info => info.RecSetting.RecMode != 5 && info.EndTimeWithMargin() > DateTime.Now)
+                .OrderBy(info => info.StartTimeWithMargin()).ToList();
+
+            if (sortList.Count == 0) return "次の予約なし";
+
+            string infoText = "";
+            int infoCount = 0;
+            if (sortList[0].IsOnRec() == true)
             {
-                String timeView = item.StartTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss ～ ");
-                DateTime endTime = item.StartTime + TimeSpan.FromSeconds(item.DurationSecond);
-                timeView += endTime.ToString("HH:mm:ss");
-                return "次の予約：" + item.StationName + " " + timeView + " " + item.Title;
+                infoText = "録画中:";
+                infoCount = sortList.Count(info => info.IsOnRec()) - 1;
             }
+            /* 予約情報が更新されないと走らないので無意味。
+             * テキスト更新用のタイマーでも走らせるなら別だが‥そこまでのものでもない。
+            else if (sortList[0].IsOnRec(60) == true) //1時間以内に開始されるもの
+            {
+                infoText = "間もなく開始:";
+                infoCount = sortList.Count(info => info.IsOnRec(60)) - 1;
+            }*/
             else
             {
-                return "次の予約なし";
+                infoText = "次の予約:";
             }
+
+            infoText += sortList[0].StationName + " " + new ReserveItem(sortList[0]).StartTimeShort + " " + sortList[0].Title;
+            string endText = (infoCount == 0 ? "" : "\r\n他" + infoCount.ToString());
+
+            if (infoText.Length + endText.Length > 63)
+            {
+                infoText = infoText.Substring(0, 60 - endText.Length) + "...";
+            }
+            return infoText + endText;
         }
 
         internal struct LASTINPUTINFO

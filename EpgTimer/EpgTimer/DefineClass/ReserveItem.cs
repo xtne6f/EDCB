@@ -72,6 +72,16 @@ namespace EpgTimer
                 return ReserveInfo.StartTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss ～ ") + endTime.ToString("HH:mm:ss");
             }
         }
+        public String StartTimeShort
+        {
+            get
+            {
+                if (ReserveInfo == null) return "";
+                //
+                DateTime endTime = ReserveInfo.StartTime + TimeSpan.FromSeconds(ReserveInfo.DurationSecond);
+                return ReserveInfo.StartTime.ToString("MM/dd(ddd)HH:mm～") + endTime.ToString("HH:mm");
+            }
+        }
         public override TimeSpan ProgramDuration
         {
             get

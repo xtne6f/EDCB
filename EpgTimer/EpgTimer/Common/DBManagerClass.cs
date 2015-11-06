@@ -394,26 +394,5 @@ namespace EpgTimer
             return ret;
         }
 
-        public bool GetNextReserve(ref ReserveData info)
-        {
-            var sortList = new SortedList<String, ReserveData>();
-            foreach (ReserveData resInfo in reserveList.Values)
-            {
-                if (resInfo.RecSetting.RecMode != 5 && resInfo.StartTime > DateTime.Now)
-                {
-                    String key = resInfo.StartTime.ToString("yyyyMMddHHmmss");
-                    key += resInfo.ReserveID.ToString("X8");
-                    sortList.Add(key, resInfo);
-                }
-            }
-
-            if (sortList.Count != 0)
-            {
-                info = sortList.Values[0];
-                return true;
-            }
-
-            return false;
-        }
     }
 }

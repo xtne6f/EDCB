@@ -328,17 +328,30 @@ namespace EpgTimer
             return CommonManager.Create64PgKey(obj.OriginalNetworkID, obj.TransportStreamID, obj.ServiceID, obj.EventID);
         }
 
+        public static DateTime StartTimeWithMargin(this ReserveData reserveInfo, int MarginMin = 0)
+        {
+            if (reserveInfo == null) return new DateTime();
+            //
+            int StartMargin = CommonManager.Instance.MUtil.GetMargin(reserveInfo.RecSetting, true) + 60 * MarginMin;
+            return reserveInfo.StartTime.AddSeconds(StartMargin * -1);
+        }
+        public static DateTime EndTimeWithMargin(this ReserveData reserveInfo)
+        {
+            if (reserveInfo == null) return new DateTime();
+            //
+            int EndMargin = CommonManager.Instance.MUtil.GetMargin(reserveInfo.RecSetting, false);
+            return reserveInfo.StartTime.AddSeconds((int)reserveInfo.DurationSecond + EndMargin);
+        }
+
         public static bool IsOnRec(this ReserveData reserveInfo, int MarginMin = 0)
         {
             if (reserveInfo == null) return false;
             //
-            int duration = (int)reserveInfo.DurationSecond;
             int StartMargin = CommonManager.Instance.MUtil.GetMargin(reserveInfo.RecSetting, true) + 60 * MarginMin;
             int EndMargin = CommonManager.Instance.MUtil.GetMargin(reserveInfo.RecSetting, false);
 
             DateTime startTime = reserveInfo.StartTime.AddSeconds(StartMargin * -1);
-            duration += StartMargin;
-            duration += EndMargin;
+            int duration = (int)reserveInfo.DurationSecond + StartMargin + EndMargin;
 
             return isOnTime(startTime, duration);
         }
