@@ -92,6 +92,7 @@ namespace EpgTimer
             get
             {
                 if (EventInfo == null) return "";
+                if (EventInfo.ShortInfo == null) return "";
                 //
                 return EventInfo.ShortInfo.text_char.Replace("\r\n", " ");
             }
