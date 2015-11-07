@@ -199,6 +199,11 @@ namespace EpgTimer
             autoAddID = id;
         }
 
+        public void UpdateSearch()
+        {
+            SearchPg();
+        }
+
         private void RefreshAndSearch()
         {
             CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.ReserveInfo);
