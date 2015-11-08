@@ -36,18 +36,6 @@ namespace EpgTimer
             return txtKey1;
         }
 
-        public string EpgKeyword_TrimMode()
-        {
-            return TrimModeTooltip(Settings.Instance.MenuSet.Keyword_Trim);
-        }
-
-        private string TrimModeTooltip(bool mode)
-        {
-            string str_mode = (mode == true ? "オン" : "オフ");
-            string str_mode_toggle = (mode == false ? "'オン'" : "'オフ'");
-            return "記号除去モード : " + str_mode + " (Shift+クリックで一時的に" + str_mode_toggle + ")";
-        }
-
         public void CopyTitle2Clipboard(string txtTitle, bool NotToggle = false)
         {
             string txtTitle1 = txtTitle;
@@ -63,11 +51,6 @@ namespace EpgTimer
             }
 
             Clipboard.SetDataObject(txtTitle1, true);
-        }
-
-        public string CopyTitle_TrimMode()
-        {
-            return TrimModeTooltip(Settings.Instance.MenuSet.CopyTitle_Trim);
         }
 
         public void CopyContent2Clipboard(EpgEventInfo eventInfo, bool NotToggle = false)
@@ -136,13 +119,6 @@ namespace EpgTimer
             Clipboard.SetDataObject(text, true);
         }
 
-        public string CopyContent_Mode()
-        {
-            string mode = (Settings.Instance.MenuSet.CopyContentBasic == true ? "基本情報のみ" : "詳細情報");
-            string mode_toggle = (Settings.Instance.MenuSet.CopyContentBasic == false ? "'基本情報のみ'" : "'詳細情報'");
-            return "取得モード : " + mode + " (Shift+クリックで一時的に" + mode_toggle + ")";
-        }
-
         public void SearchText(string txtKey, bool NotToggle = false)
         {
             string txtKey1 = txtKey;
@@ -169,11 +145,6 @@ namespace EpgTimer
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
                 MessageBox.Show("'検索のURI'の設定を確認してください。");
             }
-        }
-
-        public string SearchText_TrimMode()
-        {
-            return TrimModeTooltip(Settings.Instance.MenuSet.SearchTitle_Trim);
         }
 
         public string TrimKeyword(string txtKey)

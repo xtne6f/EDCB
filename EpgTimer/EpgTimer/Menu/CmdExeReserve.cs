@@ -247,7 +247,24 @@ namespace EpgTimer
             //switch使えないのでifで回す。
             if (menu.Tag == EpgCmds.ChgOnOff)
             {
-                menu.Header = dataList.Count == 0 ? "簡易予約" : "予約←→無効";
+                if (dataList.Count == 0)
+                {
+                    menu.Header = "簡易予約";
+                    //予約データの有無で切り替える。
+                    if (view == CtxmCode.SearchWindow)
+                    {
+                        menu.ToolTip = "このダイアログの録画設定で予約する";
+                    }
+                    else
+                    {
+                        menu.ToolTip = "プリセット'デフォルト'で予約する";
+                    }
+                }
+                else
+                {
+                    menu.Header = "予約←→無効";
+                    menu.ToolTip = null;
+                }
             }
             else if (menu.Tag == EpgCmdsEx.AddMenu)
             {
