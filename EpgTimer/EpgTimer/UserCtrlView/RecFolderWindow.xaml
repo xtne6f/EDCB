@@ -23,7 +23,7 @@
         <Label Content="ファイル名PlugIn" Height="28" HorizontalAlignment="Left" Margin="12,80,0,0" Name="label3" VerticalAlignment="Top" />
         <ComboBox Height="24" HorizontalAlignment="Left" Margin="125,80,0,0" Name="comboBox_recNamePlugIn" VerticalAlignment="Top" Width="254" />
         <Button Content="設定" Height="23" HorizontalAlignment="Left" Margin="385,82,0,0" Name="button_recName" VerticalAlignment="Top" Width="43" Click="button_recName_Click" />
-        <Label Content="ファイル名PlugInのオプション" Height="28" HorizontalAlignment="Left" Margin="12,114,0,0" VerticalAlignment="Top" />
+        <Label Content="ファイル名PlugInオプション" Height="28" HorizontalAlignment="Left" Margin="12,114,0,0" VerticalAlignment="Top" />
         <TextBox Height="24" Margin="180,114,12,0" Name="textBox_recNameOption" VerticalAlignment="Top" />
         <Button Content="OK" Height="23" HorizontalAlignment="Right" Margin="0,151,99,0" Name="button_ok" VerticalAlignment="Top" Width="75" Click="button_ok_Click" />
         <Button Content="キャンセル" Height="23" HorizontalAlignment="Right" Margin="0,151,12,0" Name="button_cancel" VerticalAlignment="Top" Width="75" Click="button_cancel_Click" />

@@ -26,7 +26,7 @@
                     <Label Content="録画モード" Height="28" HorizontalAlignment="Left" Margin="6,6,0,0" Name="label7" VerticalAlignment="Top" />
                     <ComboBox Height="24" HorizontalAlignment="Left" Margin="83,6,0,0" Name="comboBox_recMode" VerticalAlignment="Top" Width="160" ItemsSource="{Binding}"/>
                     <Label Content="イベントリレー追従" Height="28" HorizontalAlignment="Left" Margin="300,6,0,0" Name="label8" VerticalAlignment="Top" />
-                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="415,6,0,0" Name="comboBox_tuijyu" VerticalAlignment="Top" Width="75" ItemsSource="{Binding}" />
+                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="455,6,0,0" Name="comboBox_tuijyu" VerticalAlignment="Top" Width="75" ItemsSource="{Binding}" />
                     <Label Content="ぴったり（？）録画" Height="28" HorizontalAlignment="Left" Margin="300,40,0,0" Name="label9" VerticalAlignment="Top" />
                     <ComboBox Height="24" HorizontalAlignment="Left" Margin="455,40,0,0" Name="comboBox_pittari" VerticalAlignment="Top" Width="75" ItemsSource="{Binding}" />
                     <Label Content="優先度" Height="28" HorizontalAlignment="Left" Margin="6,40,0,0" Name="label10" VerticalAlignment="Top" />
