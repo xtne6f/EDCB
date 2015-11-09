@@ -184,6 +184,33 @@ namespace EpgTimer
                 return CommonManager.Instance.RecModeForeColor[ReserveInfo.RecSetting.RecMode];
             }
         }
+        public string Remarks
+        {
+            get
+            {
+                string view = "";
+                if (ReserveInfo != null)
+                {
+                    if (ReserveInfo.OverlapMode == 2)
+                    {
+                        view += "不可(チューナ不足)/";
+                    }
+                    else if (ReserveInfo.OverlapMode == 1)
+                    {
+                        view += "一部不可(チューナ不足)/";
+                    }
+                    if (ReserveInfo.IsAutoAddMissing() == true)
+                    {
+                        view += "不明な自動登録/";
+                    }
+                    if (ReserveInfo.RecSetting.RecMode == 5)
+                    {
+                        view += "無効予約/";
+                    }
+                }
+                return view.TrimEnd('/');
+            }
+        }
         public SolidColorBrush BackColor
         {
             get
