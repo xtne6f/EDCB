@@ -254,19 +254,18 @@ namespace EpgTimer
         {
             get
             {
-                SolidColorBrush color = CommonManager.Instance.StatResForeColor;
                 if (ReserveInfo != null)
                 {
-                    if (ReserveInfo.IsOnAir() == true)
-                    {
-                        color = CommonManager.Instance.StatOnAirForeColor;
-                    }
                     if (ReserveInfo.IsOnRec() == true)
                     {
-                        color = CommonManager.Instance.StatRecForeColor;
+                        return CommonManager.Instance.StatRecForeColor;
+                    }
+                    if (ReserveInfo.IsOnAir() == true)
+                    {
+                        return CommonManager.Instance.StatOnAirForeColor;
                     }
                 }
-                return color;
+                return CommonManager.Instance.StatResForeColor;
             }
         }
 

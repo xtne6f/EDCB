@@ -28,7 +28,6 @@ namespace EpgTimer
                 return (ReserveInfo != null);
             }
         }
-
         public virtual String EventName
         {
             get
@@ -42,15 +41,15 @@ namespace EpgTimer
         {
             get
             {
-                if (EventInfo == null) return "";
-                //
-                String view = "";
-                UInt64 serviceKey = EventInfo.Create64Key();
-                if (ChSet5.Instance.ChList.ContainsKey(serviceKey) == true)
+                if (EventInfo != null)
                 {
-                    view = ChSet5.Instance.ChList[serviceKey].ServiceName;
+                    UInt64 serviceKey = EventInfo.Create64Key();
+                    if (ChSet5.Instance.ChList.ContainsKey(serviceKey) == true)
+                    {
+                        return ChSet5.Instance.ChList[serviceKey].ServiceName;
+                    }
                 }
-                return view;
+                return "";
             }
         }
         public virtual String NetworkName
@@ -79,7 +78,7 @@ namespace EpgTimer
         {
             get
             {
-                if (this.EventInfo == null || this.EventInfo.DurationFlag == 0) { return new TimeSpan(); }
+                if (EventInfo == null || EventInfo.DurationFlag == 0) return new TimeSpan();
                 //
                 return TimeSpan.FromSeconds(EventInfo.durationSec);
             }
@@ -91,8 +90,7 @@ namespace EpgTimer
         {
             get
             {
-                if (EventInfo == null) return "";
-                if (EventInfo.ShortInfo == null) return "";
+                if (EventInfo == null || EventInfo.ShortInfo == null) return "";
                 //
                 return EventInfo.ShortInfo.text_char.Replace("\r\n", " ");
             }
@@ -151,22 +149,21 @@ namespace EpgTimer
         {
             get
             {
-                SolidColorBrush color = CommonManager.Instance.StatResForeColor;
                 if (EventInfo != null)
                 {
-                    if (EventInfo.IsOnAir() == true)
-                    {
-                        color = CommonManager.Instance.StatOnAirForeColor;
-                    }
                     if (IsReserved == true)
                     {
                         if (ReserveInfo.IsOnRec() == true)
                         {
-                            color = CommonManager.Instance.StatRecForeColor;
+                            return CommonManager.Instance.StatRecForeColor;
                         }
                     }
+                    if (EventInfo.IsOnAir() == true)
+                    {
+                        return CommonManager.Instance.StatOnAirForeColor;
+                    }
                 }
-                return color;
+                return CommonManager.Instance.StatResForeColor;
             }
         }
         public int NowJumpingTable { set; get; }

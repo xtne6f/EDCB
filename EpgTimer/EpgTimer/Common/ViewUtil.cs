@@ -222,14 +222,14 @@ namespace EpgTimer
             }
         }
 
-        public void DisableControlChildren(Control tab)
+        public void DisableControlChildren(Control ctrl)
         {
-            tab.Foreground = new SolidColorBrush(Colors.Gray);
-            ChangeChildren(tab, false);
+            ctrl.Foreground = new SolidColorBrush(Colors.Gray);
+            ChangeChildren(ctrl, false);
         }
-        public void ChangeChildren(UIElement obj, bool enabled)
+        public void ChangeChildren(UIElement ele, bool enabled)
         {
-            foreach (var child in LogicalTreeHelper.GetChildren(obj))
+            foreach (var child in LogicalTreeHelper.GetChildren(ele))
             {
                 if (child is UIElement)
                 {

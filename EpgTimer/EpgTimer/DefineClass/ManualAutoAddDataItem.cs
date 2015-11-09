@@ -33,7 +33,6 @@ namespace EpgTimer
                 return view;
             }
         }
-
         public String Time
         {
             get
@@ -41,18 +40,16 @@ namespace EpgTimer
                 if (ManualAutoAddInfo == null) return "";
                 //
                 uint endTime = ManualAutoAddInfo.startTime + ManualAutoAddInfo.durationSecond;
-                return timeSting(ManualAutoAddInfo.startTime) + " ～ " + timeSting(endTime % (24 * 60 * 60));
+                return timeString(ManualAutoAddInfo.startTime) + " ～ " + timeString(endTime % (24 * 60 * 60));
             }
         }
-
-        private String timeSting(uint time_sconds)
+        private String timeString(uint time_sconds)
         {
             uint hh = time_sconds / (60 * 60);
             uint mm = (time_sconds % (60 * 60)) / 60;
             uint ss = time_sconds % 60;
             return hh.ToString("00") + ":" + mm.ToString("00") + ":" + ss.ToString("00");
         }
-
         public String Title
         {
             get
@@ -62,7 +59,6 @@ namespace EpgTimer
                 return ManualAutoAddInfo.title;
             }
         }
-
         public String StationName
         {
             get
@@ -72,7 +68,6 @@ namespace EpgTimer
                 return ManualAutoAddInfo.stationName;
             }
         }
-
         public String RecMode
         {
             get
@@ -82,7 +77,6 @@ namespace EpgTimer
                 return CommonManager.Instance.ConvertRecModeText(ManualAutoAddInfo.recSetting.RecMode);
             }
         }
-
         public String Priority
         {
             get
@@ -92,7 +86,6 @@ namespace EpgTimer
                 return ManualAutoAddInfo.recSetting.Priority.ToString();
             }
         }
-
         public String ReserveCount
         {
             get
@@ -102,7 +95,6 @@ namespace EpgTimer
                 return ManualAutoAddInfo.GetReserveList().Count.ToString();
             }
         }
-
         public SolidColorBrush ForeColor
         {
             get

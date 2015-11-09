@@ -67,14 +67,11 @@ namespace EpgTimer
                     return CommonManager.Instance.DayOfWeekDictionary[info.startDayOfWeek] + " " + info.startHour.ToString("00") + ":" + info.startMin.ToString("00") +
                         " ～ " + CommonManager.Instance.DayOfWeekDictionary[info.endDayOfWeek] + " " + info.endHour.ToString("00") + ":" + info.endMin.ToString("00");
                 }
-                else if (EpgAutoAddInfo.searchInfo.dateList.Count > 1)
+                if (EpgAutoAddInfo.searchInfo.dateList.Count > 1)
                 {
                     return "複数指定";
                 }
-                else
-                {
-                    return "なし";
-                }
+                return "なし";
             }
         }
         public String RecMode
@@ -113,7 +110,6 @@ namespace EpgTimer
                 return EpgAutoAddInfo.recSetting.PittariFlag == 0 ? "しない" : "する";
             }
         }
-
         public String AddCount
         {
             get
@@ -123,7 +119,6 @@ namespace EpgTimer
                 return EpgAutoAddInfo.addCount.ToString();
             }
         }
-
         //詳細ウィンドウを開いたときの項目数と同じもの。
         //無効時でも有効時のAddCountと同じ数字が入る。
         public String SearchCount 
@@ -135,7 +130,6 @@ namespace EpgTimer
                 return EpgAutoAddInfo.SearchCount().ToString();
             }
         }
-
         //"SearchCount"のうち、予約アイテム数
         //検索の無効・有効によってAddCountやSearchCountと異なる値になる。
         public String ReserveCount 
@@ -147,7 +141,6 @@ namespace EpgTimer
                 return EpgAutoAddInfo.ReserveCount().ToString();
             }
         }
-
         //"ReserveCount"のうち、有効な予約アイテム数
         public String OnCount
         {
@@ -158,7 +151,6 @@ namespace EpgTimer
                 return EpgAutoAddInfo.OnCount().ToString();
             }
         }
-
         //"ReserveCount"のうち、無効な予約アイテム数
         public String OffCount
         {
@@ -169,7 +161,6 @@ namespace EpgTimer
                 return EpgAutoAddInfo.OffCount().ToString();
             }
         }
-
         public String NextReserve
         {
             get
@@ -179,7 +170,6 @@ namespace EpgTimer
                 return new ReserveItem(EpgAutoAddInfo.GetNextReserve()).StartTime;
             }
         }
-
         public String JyanruKey
         {
             get
@@ -194,7 +184,6 @@ namespace EpgTimer
                 return view;
             }
         }
-
         /// <summary>
         /// NHK総合１・東京、NHKBS1
         /// </summary>
@@ -224,7 +213,6 @@ namespace EpgTimer
                 return view;
             }
         }
-
         /// <summary>
         /// 地デジ、BS、CS
         /// </summary>
@@ -285,7 +273,6 @@ namespace EpgTimer
                 return view1;
             }
         }
-
         public String Tuner
         {
             get
@@ -295,7 +282,6 @@ namespace EpgTimer
                 return CommonManager.Instance.ConvertTunerText(EpgAutoAddInfo.recSetting.TunerID);
             }
         }
-
         public String MarginStart
         {
             get
@@ -305,7 +291,6 @@ namespace EpgTimer
                 return mutil.MarginText(EpgAutoAddInfo.recSetting, true);
             }
         }
-
         public String MarginEnd
         {
             get
@@ -315,7 +300,6 @@ namespace EpgTimer
                 return mutil.MarginText(EpgAutoAddInfo.recSetting, false);
             }
         }
-
         public String Preset
         {
             get
@@ -325,7 +309,6 @@ namespace EpgTimer
                 return EpgAutoAddInfo.recSetting.LookUpPreset().DisplayName;
             }
         }
-
         public List<String> RecFolder
         {
             get
@@ -339,7 +322,6 @@ namespace EpgTimer
                 return list;
             }
         }
-
         public bool KeyEnabled
         {
             set
@@ -355,39 +337,34 @@ namespace EpgTimer
                 return EpgAutoAddInfo.searchInfo.keyDisabledFlag != 1;
             }
         }
-
         public SolidColorBrush ForeColor
         {
             get
             {
-                SolidColorBrush color = CommonManager.Instance.ListDefForeColor;
                 if (EpgAutoAddInfo != null)
                 {
                     if (EpgAutoAddInfo.searchInfo.keyDisabledFlag == 1)
                     {
-                        color = CommonManager.Instance.RecModeForeColor[5];
+                        return CommonManager.Instance.RecModeForeColor[5];
                     }
                 }
-                return color;
+                return CommonManager.Instance.ListDefForeColor;
             }
         }
-        
         public SolidColorBrush BackColor
         {
             get
             {
-                SolidColorBrush color = CommonManager.Instance.ResDefBackColor;
                 if (EpgAutoAddInfo != null)
                 {
                     if (EpgAutoAddInfo.searchInfo.keyDisabledFlag == 1)
                     {
-                        color = CommonManager.Instance.ResNoBackColor;
+                        return CommonManager.Instance.ResNoBackColor;
                     }
                 }
-                return color;
+                return CommonManager.Instance.ResDefBackColor;
             }
         }
-
         public TextBlock ToolTipView
         {
             get
@@ -397,7 +374,6 @@ namespace EpgTimer
                 return mutil.GetTooltipBlockStandard(SearchInfoText);
             }
         }
-
         public String SearchInfoText
         {
             get
@@ -500,7 +476,6 @@ namespace EpgTimer
                 return view;
             }
         }
-
         public Brush BorderBrush
         {
             get

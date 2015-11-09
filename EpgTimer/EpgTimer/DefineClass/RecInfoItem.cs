@@ -16,16 +16,13 @@ namespace EpgTimer
     public class RecInfoItem
     {
         private MenuUtil mutil = CommonManager.Instance.MUtil;
-        
+
+        public RecFileInfo RecInfo { get; set; }
         public RecInfoItem(RecFileInfo item)
         {
             this.RecInfo = item;
         }
-        public RecFileInfo RecInfo
-        {
-            get;
-            set;
-        }
+
         public bool IsProtect
         {
             set
@@ -45,110 +42,82 @@ namespace EpgTimer
         {
             get
             {
-                String view = "";
-                if (RecInfo != null)
-                {
-                    view = RecInfo.Title;
-                }
-                return view;
+                if (RecInfo == null) return "";
+                //
+                return RecInfo.Title;
             }
         }
         public String ServiceName
         {
             get
             {
-                String view = "";
-                if (RecInfo != null)
-                {
-                    view = RecInfo.ServiceName;
-                }
-                return view;
+                if (RecInfo == null) return "";
+                //
+                return RecInfo.ServiceName;
             }
         }
         public TimeSpan ProgramDuration
         {
             get
             {
-                TimeSpan view = new TimeSpan();
-                if (RecInfo != null)
-                {
-                    view = TimeSpan.FromSeconds(RecInfo.DurationSecond);
-                }
-                return view;
+                if (RecInfo == null) return new TimeSpan();
+                //
+                return TimeSpan.FromSeconds(RecInfo.DurationSecond);
             }
         }
         public String StartTime
         {
             get
             {
-                String view = "";
-                if (RecInfo != null)
-                {
-                    view = RecInfo.StartTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss ～ ");
-                    DateTime endTime = RecInfo.StartTime + TimeSpan.FromSeconds(RecInfo.DurationSecond);
-                    view += endTime.ToString("HH:mm:ss");
-                }
-                return view;
+                if (RecInfo == null) return "";
+                //
+                DateTime endTime = RecInfo.StartTime + TimeSpan.FromSeconds(RecInfo.DurationSecond);
+                return RecInfo.StartTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss ～ ") + endTime.ToString("HH:mm:ss");
             }
         }
         public String Drops
         {
             get
             {
-                String view = "";
-                if (RecInfo != null)
-                {
-                    view = RecInfo.Drops.ToString();
-                }
-                return view;
+                if (RecInfo == null) return "";
+                //
+                return RecInfo.Drops.ToString();
             }
         }
         public String Scrambles
         {
             get
             {
-                String view = "";
-                if (RecInfo != null)
-                {
-                    view = RecInfo.Scrambles.ToString();
-                }
-                return view;
+                if (RecInfo == null) return "";
+                //
+                return RecInfo.Scrambles.ToString();
             }
         }
         public String Result
         {
             get
             {
-                String view = "";
-                if (RecInfo != null)
-                {
-                    view = RecInfo.Comment;
-                }
-                return view;
+                if (RecInfo == null) return "";
+                //
+                return RecInfo.Comment;
             }
         }
         public String NetworkName
         {
             get
             {
-                String view = "";
-                if (RecInfo != null)
-                {
-                    view = CommonManager.Instance.ConvertNetworkNameText(RecInfo.OriginalNetworkID);
-                }
-                return view;
+                if (RecInfo == null) return "";
+                //
+                return CommonManager.Instance.ConvertNetworkNameText(RecInfo.OriginalNetworkID);
             }
         }
         public String RecFilePath
         {
             get
             {
-                String view = "";
-                if (RecInfo != null)
-                {
-                    view = RecInfo.RecFilePath;
-                }
-                return view;
+                if (RecInfo == null) return "";
+                //
+                return RecInfo.RecFilePath;
             }
         }
         public SolidColorBrush ForeColor
@@ -162,19 +131,18 @@ namespace EpgTimer
         {
             get
             {
-                SolidColorBrush color = CommonManager.Instance.RecEndDefBackColor;
                 if (RecInfo != null)
                 {
-                    if (RecInfo.Scrambles > 0)
-                    {
-                        color = CommonManager.Instance.RecEndWarBackColor;
-                    }
                     if (RecInfo.Drops > 0)
                     {
-                        color = CommonManager.Instance.RecEndErrBackColor;
+                        return CommonManager.Instance.RecEndErrBackColor;
+                    }
+                    if (RecInfo.Scrambles > 0)
+                    {
+                        return CommonManager.Instance.RecEndWarBackColor;
                     }
                 }
-                return color;
+                return CommonManager.Instance.RecEndDefBackColor;
             }
         }
         public TextBlock ToolTipView
