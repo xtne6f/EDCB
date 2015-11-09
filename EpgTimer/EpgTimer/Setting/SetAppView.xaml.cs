@@ -206,28 +206,24 @@ namespace EpgTimer.Setting
 
                 String plugInFile = IniFileHandler.GetPrivateProfileString("SET", "RecNamePlugInFile", "RecName_Macro.dll", SettingPath.TimerSrvIniPath);
 
-                try
-                {
-                    checkBox_cautionOnRecChange.IsChecked = Settings.Instance.CautionOnRecChange;
-                    textBox_cautionOnRecMarginMin.Text = Settings.Instance.CautionOnRecMarginMin.ToString();
-                    checkBox_displayAutoAddMissing.IsChecked = Settings.Instance.DisplayReserveAutoAddMissing;
+                checkBox_cautionOnRecChange.IsChecked = Settings.Instance.CautionOnRecChange;
+                textBox_cautionOnRecMarginMin.Text = Settings.Instance.CautionOnRecMarginMin.ToString();
+                checkBox_displayAutoAddMissing.IsChecked = Settings.Instance.DisplayReserveAutoAddMissing;
 
-                    //4
-                    checkBox_closeMin.IsChecked = Settings.Instance.CloseMin;
-                    checkBox_minWake.IsChecked = Settings.Instance.WakeMin;
-                    checkBox_noToolTips.IsChecked = Settings.Instance.NoToolTip;
-                    checkBox_noBallonTips.IsChecked = Settings.Instance.NoBallonTips;
-                    checkBox_playDClick.IsChecked = Settings.Instance.PlayDClick;
-                    checkBox_showTray.IsChecked = Settings.Instance.ShowTray;
-                    checkBox_minHide.IsChecked = Settings.Instance.MinHide;
-                    checkBox_cautionManyChange.IsChecked = Settings.Instance.CautionManyChange;
-                    textBox_cautionManyChange.Text = Settings.Instance.CautionManyNum.ToString();
+                //4
+                checkBox_closeMin.IsChecked = Settings.Instance.CloseMin;
+                checkBox_minWake.IsChecked = Settings.Instance.WakeMin;
+                checkBox_noToolTips.IsChecked = Settings.Instance.NoToolTip;
+                checkBox_noBallonTips.IsChecked = Settings.Instance.NoBallonTips;
+                checkBox_playDClick.IsChecked = Settings.Instance.PlayDClick;
+                checkBox_showTray.IsChecked = Settings.Instance.ShowTray;
+                checkBox_minHide.IsChecked = Settings.Instance.MinHide;
+                checkBox_cautionManyChange.IsChecked = Settings.Instance.CautionManyChange;
+                textBox_cautionManyChange.Text = Settings.Instance.CautionManyNum.ToString();
 
-                    checkBox_wakeReconnect.IsChecked = Settings.Instance.WakeReconnectNW;
-                    checkBox_suspendClose.IsChecked = Settings.Instance.SuspendCloseNW;
-                    checkBox_ngAutoEpgLoad.IsChecked = Settings.Instance.NgAutoEpgLoadNW;
-                }
-                catch { }
+                checkBox_wakeReconnect.IsChecked = Settings.Instance.WakeReconnectNW;
+                checkBox_suspendClose.IsChecked = Settings.Instance.SuspendCloseNW;
+                checkBox_ngAutoEpgLoad.IsChecked = Settings.Instance.NgAutoEpgLoadNW;
 
                 if (checkBox_srvResident.IsEnabled)
                 {
@@ -275,9 +271,7 @@ namespace EpgTimer.Setting
                         comboBox_recname.SelectedIndex = select;
                     }
                 }
-                catch
-                {
-                }
+                catch { }
 
                 if (IniFileHandler.GetPrivateProfileInt("SET", "EnableTCPSrv", 0, SettingPath.TimerSrvIniPath) == 1)
                 {
@@ -412,172 +406,181 @@ namespace EpgTimer.Setting
 
         public void SaveSetting()
         {
-            if (radioButton_none.IsChecked == true)
-            {
-                IniFileHandler.WritePrivateProfileString("SET", "RecEndMode", "0", SettingPath.TimerSrvIniPath);
-            }
-            if (radioButton_standby.IsChecked == true)
-            {
-                IniFileHandler.WritePrivateProfileString("SET", "RecEndMode", "1", SettingPath.TimerSrvIniPath);
-            }
-            if (radioButton_suspend.IsChecked == true)
-            {
-                IniFileHandler.WritePrivateProfileString("SET", "RecEndMode", "2", SettingPath.TimerSrvIniPath);
-            }
-            if (radioButton_shutdown.IsChecked == true)
-            {
-                IniFileHandler.WritePrivateProfileString("SET", "RecEndMode", "3", SettingPath.TimerSrvIniPath);
-            }
-
-            string setValue = (checkBox_reboot.IsChecked == true ? "1" : "0");
-            IniFileHandler.WritePrivateProfileString("SET", "Reboot", setValue, SettingPath.TimerSrvIniPath);
-
-            IniFileHandler.WritePrivateProfileString("SET", "WakeTime", textBox_pcWakeTime.Text, SettingPath.TimerSrvIniPath);
-            IniFileHandler.WritePrivateProfileString("SET", "StartMargin", textBox_megine_start.Text, SettingPath.TimerSrvIniPath);
-            IniFileHandler.WritePrivateProfileString("SET", "EndMargin", textBox_margine_end.Text, SettingPath.TimerSrvIniPath);
-            IniFileHandler.WritePrivateProfileString("SET", "RecAppWakeTime", textBox_appWakeTime.Text, SettingPath.TimerSrvIniPath);
-
-            setValue = (checkBox_appMin.IsChecked == true ? "1" : "0");
-            IniFileHandler.WritePrivateProfileString("SET", "RecMinWake", setValue, SettingPath.TimerSrvIniPath);
-
-            setValue = (checkBox_appView.IsChecked == true ? "1" : "0");
-            IniFileHandler.WritePrivateProfileString("SET", "RecView", setValue, SettingPath.TimerSrvIniPath);
-
-            setValue = (checkBox_appDrop.IsChecked == true ? "1" : "0");
-            IniFileHandler.WritePrivateProfileString("SET", "DropLog", setValue, SettingPath.TimerSrvIniPath);
-
-            setValue = (checkBox_addPgInfo.IsChecked == true ? "1" : "0");
-            IniFileHandler.WritePrivateProfileString("SET", "PgInfoLog", setValue, SettingPath.TimerSrvIniPath);
-
-            setValue = (checkBox_appNW.IsChecked == true ? "1" : "0");
-            IniFileHandler.WritePrivateProfileString("SET", "RecNW", setValue, SettingPath.TimerSrvIniPath);
-
-            setValue = (checkBox_appOverWrite.IsChecked == true ? "1" : "0");
-            IniFileHandler.WritePrivateProfileString("SET", "RecOverWrite", setValue, SettingPath.TimerSrvIniPath);
-
-            IniFileHandler.WritePrivateProfileString("NO_SUSPEND", "Count", ngProcessList.Count.ToString(), SettingPath.TimerSrvIniPath);
-            for (int i = 0; i < ngProcessList.Count; i++)
-            {
-                IniFileHandler.WritePrivateProfileString("NO_SUSPEND", i.ToString(), ngProcessList[i], SettingPath.TimerSrvIniPath);
-            }
-
-            IniFileHandler.WritePrivateProfileString("NO_SUSPEND", "NoStandbyTime", ngMin, SettingPath.TimerSrvIniPath);
-
-            setValue = (ngUsePC == true ? "1" : "0");
-            IniFileHandler.WritePrivateProfileString("NO_SUSPEND", "NoUsePC", setValue, SettingPath.TimerSrvIniPath);
-            
-            IniFileHandler.WritePrivateProfileString("NO_SUSPEND", "NoUsePCTime", ngUsePCMin, SettingPath.TimerSrvIniPath);
-
-            setValue = (ngFileStreaming == true ? "1" : "0");
-            IniFileHandler.WritePrivateProfileString("NO_SUSPEND", "NoFileStreaming", setValue, SettingPath.TimerSrvIniPath);
-
-            setValue = (ngShareFile == true ? "1" : "0");
-            IniFileHandler.WritePrivateProfileString("NO_SUSPEND", "NoShareFile", setValue, SettingPath.TimerSrvIniPath);
-
-            IniFileHandler.WritePrivateProfileString("SET", "ProcessPriority", comboBox_process.SelectedIndex.ToString(), SettingPath.TimerSrvIniPath);
-
-            Settings.Instance.MenuSet = this.ctxmSetInfo.Clone();
-
-            setValue = (checkBox_back_priority.IsChecked == true ? "1" : "0");
-            IniFileHandler.WritePrivateProfileString("SET", "BackPriority", setValue, SettingPath.TimerSrvIniPath);
-
-            setValue = (checkBox_autoDel.IsChecked == true ? "1" : "0");
-            IniFileHandler.WritePrivateProfileString("SET", "AutoDel", setValue, SettingPath.TimerSrvIniPath);
-
-            setValue = (checkBox_recname.IsChecked == true ? "1" : "0");
-            IniFileHandler.WritePrivateProfileString("SET", "RecNamePlugIn", setValue, SettingPath.TimerSrvIniPath);
-
-            setValue = (comboBox_recname.SelectedItem != null ? (string)comboBox_recname.SelectedItem : "");
-            IniFileHandler.WritePrivateProfileString("SET", "RecNamePlugInFile", setValue, SettingPath.TimerSrvIniPath);
-
-            setValue = (checkBox_autoDelRecInfo.IsChecked == true ? "1" : "0");
-            IniFileHandler.WritePrivateProfileString("SET", "AutoDelRecInfo", setValue, SettingPath.TimerSrvIniPath);
-
-            IniFileHandler.WritePrivateProfileString("SET", "AutoDelRecInfoNum", textBox_autoDelRecInfo.Text.ToString(), SettingPath.TimerSrvIniPath);
-
-            setValue = (checkBox_timeSync.IsChecked == true ? "1" : "0");
-            IniFileHandler.WritePrivateProfileString("SET", "TimeSync", setValue, SettingPath.TimerSrvIniPath);
-
-            Settings.Instance.CautionOnRecChange = (checkBox_cautionOnRecChange.IsChecked != false);
-            Settings.Instance.CautionOnRecMarginMin = Convert.ToInt32(textBox_cautionOnRecMarginMin.Text);
-            Settings.Instance.DisplayReserveAutoAddMissing = (checkBox_displayAutoAddMissing.IsChecked != false);
-
-            Settings.Instance.CloseMin = (bool)checkBox_closeMin.IsChecked;
-            Settings.Instance.WakeMin = (bool)checkBox_minWake.IsChecked;
-            Settings.Instance.ShowTray = (bool)checkBox_showTray.IsChecked;
-            Settings.Instance.MinHide = (bool)checkBox_minHide.IsChecked;
-
-            IniFileHandler.WritePrivateProfileString("SET", "ResidentMode",
-                checkBox_srvResident.IsChecked == false ? "0" : checkBox_srvShowTray.IsChecked == false ? "1" : "2", SettingPath.TimerSrvIniPath);
-            IniFileHandler.WritePrivateProfileString("SET", "NoBalloonTip", checkBox_srvNoBalloonTip.IsChecked == false ? "0" : "1", SettingPath.TimerSrvIniPath);
-
-            IniFileHandler.WritePrivateProfileString("DEL_EXT", "Count", extList.Count.ToString(), SettingPath.TimerSrvIniPath);
-            for (int i = 0; i < extList.Count; i++)
-            {
-                IniFileHandler.WritePrivateProfileString("DEL_EXT", i.ToString(), extList[i], SettingPath.TimerSrvIniPath);
-            }
-
-            IniFileHandler.WritePrivateProfileString("DEL_CHK", "Count", delChkFolderList.Count.ToString(), SettingPath.TimerSrvIniPath);
-            for (int i = 0; i < delChkFolderList.Count; i++)
-            {
-                IniFileHandler.WritePrivateProfileString("DEL_CHK", i.ToString(), delChkFolderList[i], SettingPath.TimerSrvIniPath);
-            }
-
-            setValue = (checkBox_tcpServer.IsChecked == true ? "1" : "0");
-            IniFileHandler.WritePrivateProfileString("SET", "EnableTCPSrv", setValue, SettingPath.TimerSrvIniPath);
-
-            IniFileHandler.WritePrivateProfileString("SET", "TCPPort", textBox_tcpPort.Text, SettingPath.TimerSrvIniPath);
-
-            Settings.Instance.NoToolTip = (checkBox_noToolTips.IsChecked == true);
-            Settings.Instance.NoBallonTips = (checkBox_noBallonTips.IsChecked == true);
-            Settings.Instance.PlayDClick = (checkBox_playDClick.IsChecked == true);
-
             try
             {
+                if (radioButton_none.IsChecked == true)
+                {
+                    IniFileHandler.WritePrivateProfileString("SET", "RecEndMode", "0", SettingPath.TimerSrvIniPath);
+                }
+                if (radioButton_standby.IsChecked == true)
+                {
+                    IniFileHandler.WritePrivateProfileString("SET", "RecEndMode", "1", SettingPath.TimerSrvIniPath);
+                }
+                if (radioButton_suspend.IsChecked == true)
+                {
+                    IniFileHandler.WritePrivateProfileString("SET", "RecEndMode", "2", SettingPath.TimerSrvIniPath);
+                }
+                if (radioButton_shutdown.IsChecked == true)
+                {
+                    IniFileHandler.WritePrivateProfileString("SET", "RecEndMode", "3", SettingPath.TimerSrvIniPath);
+                }
+
+                string setValue = (checkBox_reboot.IsChecked == true ? "1" : "0");
+                IniFileHandler.WritePrivateProfileString("SET", "Reboot", setValue, SettingPath.TimerSrvIniPath);
+
+                IniFileHandler.WritePrivateProfileString("SET", "WakeTime", textBox_pcWakeTime.Text, SettingPath.TimerSrvIniPath);
+                IniFileHandler.WritePrivateProfileString("SET", "StartMargin", textBox_megine_start.Text, SettingPath.TimerSrvIniPath);
+                IniFileHandler.WritePrivateProfileString("SET", "EndMargin", textBox_margine_end.Text, SettingPath.TimerSrvIniPath);
+                IniFileHandler.WritePrivateProfileString("SET", "RecAppWakeTime", textBox_appWakeTime.Text, SettingPath.TimerSrvIniPath);
+
+                setValue = (checkBox_appMin.IsChecked == true ? "1" : "0");
+                IniFileHandler.WritePrivateProfileString("SET", "RecMinWake", setValue, SettingPath.TimerSrvIniPath);
+
+                setValue = (checkBox_appView.IsChecked == true ? "1" : "0");
+                IniFileHandler.WritePrivateProfileString("SET", "RecView", setValue, SettingPath.TimerSrvIniPath);
+
+                setValue = (checkBox_appDrop.IsChecked == true ? "1" : "0");
+                IniFileHandler.WritePrivateProfileString("SET", "DropLog", setValue, SettingPath.TimerSrvIniPath);
+
+                setValue = (checkBox_addPgInfo.IsChecked == true ? "1" : "0");
+                IniFileHandler.WritePrivateProfileString("SET", "PgInfoLog", setValue, SettingPath.TimerSrvIniPath);
+
+                setValue = (checkBox_appNW.IsChecked == true ? "1" : "0");
+                IniFileHandler.WritePrivateProfileString("SET", "RecNW", setValue, SettingPath.TimerSrvIniPath);
+
+                setValue = (checkBox_appOverWrite.IsChecked == true ? "1" : "0");
+                IniFileHandler.WritePrivateProfileString("SET", "RecOverWrite", setValue, SettingPath.TimerSrvIniPath);
+
+                IniFileHandler.WritePrivateProfileString("NO_SUSPEND", "Count", ngProcessList.Count.ToString(), SettingPath.TimerSrvIniPath);
+                for (int i = 0; i < ngProcessList.Count; i++)
+                {
+                    IniFileHandler.WritePrivateProfileString("NO_SUSPEND", i.ToString(), ngProcessList[i], SettingPath.TimerSrvIniPath);
+                }
+
+                IniFileHandler.WritePrivateProfileString("NO_SUSPEND", "NoStandbyTime", ngMin, SettingPath.TimerSrvIniPath);
+
+                setValue = (ngUsePC == true ? "1" : "0");
+                IniFileHandler.WritePrivateProfileString("NO_SUSPEND", "NoUsePC", setValue, SettingPath.TimerSrvIniPath);
+
+                IniFileHandler.WritePrivateProfileString("NO_SUSPEND", "NoUsePCTime", ngUsePCMin, SettingPath.TimerSrvIniPath);
+
+                setValue = (ngFileStreaming == true ? "1" : "0");
+                IniFileHandler.WritePrivateProfileString("NO_SUSPEND", "NoFileStreaming", setValue, SettingPath.TimerSrvIniPath);
+
+                setValue = (ngShareFile == true ? "1" : "0");
+                IniFileHandler.WritePrivateProfileString("NO_SUSPEND", "NoShareFile", setValue, SettingPath.TimerSrvIniPath);
+
+                IniFileHandler.WritePrivateProfileString("SET", "ProcessPriority", comboBox_process.SelectedIndex.ToString(), SettingPath.TimerSrvIniPath);
+
+                Settings.Instance.MenuSet = this.ctxmSetInfo.Clone();
+
+                setValue = (checkBox_back_priority.IsChecked == true ? "1" : "0");
+                IniFileHandler.WritePrivateProfileString("SET", "BackPriority", setValue, SettingPath.TimerSrvIniPath);
+
+                setValue = (checkBox_autoDel.IsChecked == true ? "1" : "0");
+                IniFileHandler.WritePrivateProfileString("SET", "AutoDel", setValue, SettingPath.TimerSrvIniPath);
+
+                setValue = (checkBox_recname.IsChecked == true ? "1" : "0");
+                IniFileHandler.WritePrivateProfileString("SET", "RecNamePlugIn", setValue, SettingPath.TimerSrvIniPath);
+
+                setValue = (comboBox_recname.SelectedItem != null ? (string)comboBox_recname.SelectedItem : "");
+                IniFileHandler.WritePrivateProfileString("SET", "RecNamePlugInFile", setValue, SettingPath.TimerSrvIniPath);
+
+                setValue = (checkBox_autoDelRecInfo.IsChecked == true ? "1" : "0");
+                IniFileHandler.WritePrivateProfileString("SET", "AutoDelRecInfo", setValue, SettingPath.TimerSrvIniPath);
+
+                IniFileHandler.WritePrivateProfileString("SET", "AutoDelRecInfoNum", textBox_autoDelRecInfo.Text.ToString(), SettingPath.TimerSrvIniPath);
+
+                setValue = (checkBox_timeSync.IsChecked == true ? "1" : "0");
+                IniFileHandler.WritePrivateProfileString("SET", "TimeSync", setValue, SettingPath.TimerSrvIniPath);
+
+                Settings.Instance.CautionOnRecChange = (checkBox_cautionOnRecChange.IsChecked != false);
+                try
+                {
+                    Settings.Instance.CautionOnRecMarginMin = Convert.ToInt32(textBox_cautionOnRecMarginMin.Text);
+                }
+                catch { }
+                Settings.Instance.DisplayReserveAutoAddMissing = (checkBox_displayAutoAddMissing.IsChecked != false);
+
+                Settings.Instance.CloseMin = (bool)checkBox_closeMin.IsChecked;
+                Settings.Instance.WakeMin = (bool)checkBox_minWake.IsChecked;
+                Settings.Instance.ShowTray = (bool)checkBox_showTray.IsChecked;
+                Settings.Instance.MinHide = (bool)checkBox_minHide.IsChecked;
+
+                IniFileHandler.WritePrivateProfileString("SET", "ResidentMode",
+                    checkBox_srvResident.IsChecked == false ? "0" : checkBox_srvShowTray.IsChecked == false ? "1" : "2", SettingPath.TimerSrvIniPath);
+                IniFileHandler.WritePrivateProfileString("SET", "NoBalloonTip", checkBox_srvNoBalloonTip.IsChecked == false ? "0" : "1", SettingPath.TimerSrvIniPath);
+
+                IniFileHandler.WritePrivateProfileString("DEL_EXT", "Count", extList.Count.ToString(), SettingPath.TimerSrvIniPath);
+                for (int i = 0; i < extList.Count; i++)
+                {
+                    IniFileHandler.WritePrivateProfileString("DEL_EXT", i.ToString(), extList[i], SettingPath.TimerSrvIniPath);
+                }
+
+                IniFileHandler.WritePrivateProfileString("DEL_CHK", "Count", delChkFolderList.Count.ToString(), SettingPath.TimerSrvIniPath);
+                for (int i = 0; i < delChkFolderList.Count; i++)
+                {
+                    IniFileHandler.WritePrivateProfileString("DEL_CHK", i.ToString(), delChkFolderList[i], SettingPath.TimerSrvIniPath);
+                }
+
+                setValue = (checkBox_tcpServer.IsChecked == true ? "1" : "0");
+                IniFileHandler.WritePrivateProfileString("SET", "EnableTCPSrv", setValue, SettingPath.TimerSrvIniPath);
+
+                IniFileHandler.WritePrivateProfileString("SET", "TCPPort", textBox_tcpPort.Text, SettingPath.TimerSrvIniPath);
+
+                Settings.Instance.NoToolTip = (checkBox_noToolTips.IsChecked == true);
+                Settings.Instance.NoBallonTips = (checkBox_noBallonTips.IsChecked == true);
+                Settings.Instance.PlayDClick = (checkBox_playDClick.IsChecked == true);
                 Settings.Instance.CautionManyChange = (checkBox_cautionManyChange.IsChecked != false);
-                Settings.Instance.CautionManyNum = Convert.ToInt32(textBox_cautionManyChange.Text);
+                try
+                {
+                    Settings.Instance.CautionManyNum = Convert.ToInt32(textBox_cautionManyChange.Text);
+                }
+                catch { }
+                Settings.Instance.WakeReconnectNW = (checkBox_wakeReconnect.IsChecked == true);
+                Settings.Instance.SuspendCloseNW = (checkBox_suspendClose.IsChecked == true);
+                Settings.Instance.NgAutoEpgLoadNW = (checkBox_ngAutoEpgLoad.IsChecked == true);
+                Settings.Instance.DefSearchKey = defSearchKey.Clone();
+
+                Settings.Instance.ViewButtonShowAsTab = checkBox_showAsTab.IsChecked == true;
+                Settings.Instance.SuspendChk = (uint)(checkBox_suspendChk.IsChecked == true ? 1 : 0);
+                try
+                {
+                    Settings.Instance.SuspendChkTime = Convert.ToUInt16(textBox_suspendChkTime.Text.ToString());
+                }
+                catch { }
+
+                Settings.Instance.ViewButtonList.Clear();
+                foreach (ViewMenuItem info in listBox_viewBtn.Items)
+                {
+                    Settings.Instance.ViewButtonList.Add(info.MenuName);
+                }
+                if (Settings.Instance.ViewButtonList.Count == 0)
+                {
+                    //リストが空であることを示す特殊なアイテムを追加
+                    Settings.Instance.ViewButtonList.Add("（なし）");
+                }
+
+                Settings.Instance.TaskMenuList.Clear();
+                foreach (ViewMenuItem info in listBox_viewTask.Items)
+                {
+                    Settings.Instance.TaskMenuList.Add(info.MenuName);
+                }
+
+                Settings.Instance.Cust1BtnName = textBox_name1.Text;
+                Settings.Instance.Cust1BtnCmd = textBox_exe1.Text;
+                Settings.Instance.Cust1BtnCmdOpt = textBox_opt1.Text;
+
+                Settings.Instance.Cust2BtnName = textBox_name2.Text;
+                Settings.Instance.Cust2BtnCmd = textBox_exe2.Text;
+                Settings.Instance.Cust2BtnCmdOpt = textBox_opt2.Text;
+
+                Settings.Instance.IEpgStationList = stationList;
             }
-            catch { }
-
-            Settings.Instance.WakeReconnectNW = (checkBox_wakeReconnect.IsChecked == true);
-            Settings.Instance.SuspendCloseNW = (checkBox_suspendClose.IsChecked == true);
-            Settings.Instance.NgAutoEpgLoadNW = (checkBox_ngAutoEpgLoad.IsChecked == true);
-            Settings.Instance.DefSearchKey = defSearchKey.Clone();
-
-            Settings.Instance.ViewButtonShowAsTab = checkBox_showAsTab.IsChecked == true;
-            Settings.Instance.SuspendChk = (uint)(checkBox_suspendChk.IsChecked == true ? 1 : 0);
-            try
+            catch (Exception ex)
             {
-                Settings.Instance.SuspendChkTime = Convert.ToUInt16(textBox_suspendChkTime.Text.ToString());
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
-            catch { }
-
-            Settings.Instance.ViewButtonList.Clear();
-            foreach (ViewMenuItem info in listBox_viewBtn.Items)
-            {
-                Settings.Instance.ViewButtonList.Add(info.MenuName);
-            }
-            if (Settings.Instance.ViewButtonList.Count == 0)
-            {
-                //リストが空であることを示す特殊なアイテムを追加
-                Settings.Instance.ViewButtonList.Add("（なし）");
-            }
-
-            Settings.Instance.TaskMenuList.Clear();
-            foreach (ViewMenuItem info in listBox_viewTask.Items)
-            {
-                Settings.Instance.TaskMenuList.Add(info.MenuName);
-            }
-
-            Settings.Instance.Cust1BtnName = textBox_name1.Text;
-            Settings.Instance.Cust1BtnCmd = textBox_exe1.Text;
-            Settings.Instance.Cust1BtnCmdOpt = textBox_opt1.Text;
-
-            Settings.Instance.Cust2BtnName = textBox_name2.Text;
-            Settings.Instance.Cust2BtnCmd = textBox_exe2.Text;
-            Settings.Instance.Cust2BtnCmdOpt = textBox_opt2.Text;
-
-            Settings.Instance.IEpgStationList = stationList;
         }
 
         private void button_standbyCtrl_Click(object sender, RoutedEventArgs e)
