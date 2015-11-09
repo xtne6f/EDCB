@@ -212,6 +212,9 @@ namespace EpgTimer
         private List<RecPresetItem> recPresetList;
         private string recInfoColumnHead;
         private ListSortDirection recInfoSortDirection;
+        private long recInfoDropErrIgnore;
+        private long recInfoDropWrnIgnore;
+        private long recInfoScrambleIgnore;
         private string tvTestExe;
         private string tvTestCmd;
         private bool nwTvMode;
@@ -572,6 +575,21 @@ namespace EpgTimer
         {
             get { return recInfoSortDirection; }
             set { recInfoSortDirection = value; }
+        }
+        public long RecInfoDropErrIgnore
+        {
+            get { return recInfoDropErrIgnore; }
+            set { recInfoDropErrIgnore = value; }
+        }
+        public long RecInfoDropWrnIgnore
+        {
+            get { return recInfoDropWrnIgnore; }
+            set { recInfoDropWrnIgnore = value; }
+        }
+        public long RecInfoScrambleIgnore
+        {
+            get { return recInfoScrambleIgnore; }
+            set { recInfoScrambleIgnore = value; }
         }
         public string TvTestExe
         {
@@ -934,6 +952,9 @@ namespace EpgTimer
             recPresetList = new List<RecPresetItem>();
             recInfoColumnHead = "";
             recInfoSortDirection = ListSortDirection.Ascending;
+            recInfoDropErrIgnore = 0;
+            recInfoDropWrnIgnore = 0;
+            recInfoScrambleIgnore = 0;
             tvTestExe = "";
             tvTestCmd = "";
             nwTvMode = false;

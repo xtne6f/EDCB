@@ -259,6 +259,45 @@ namespace EpgTimer
             return info => (ulong)info.GetHashCode();
         }
 
+        //簡易ステータス
+        public static RecEndStatusBasic RecStatusBasic(this RecFileInfo info)
+        {
+            switch ((RecEndStatus)info.RecStatus)
+            {
+                case RecEndStatus.NORMAL:           //正常終了
+                    return RecEndStatusBasic.DEFAULT;
+                case RecEndStatus.OPEN_ERR:         //チューナーのオープンができなかった
+                    return RecEndStatusBasic.ERR;   
+                case RecEndStatus.ERR_END:          //録画中にエラーが発生した
+                    return RecEndStatusBasic.ERR;
+                case RecEndStatus.NEXT_START_END:   //次の予約開始のため終了
+                    return RecEndStatusBasic.ERR;
+                case RecEndStatus.START_ERR:        //開始時間が過ぎていた
+                    return RecEndStatusBasic.ERR;
+                case RecEndStatus.CHG_TIME:         //開始時間が変更された
+                    return RecEndStatusBasic.DEFAULT;
+                case RecEndStatus.NO_TUNER:         //チューナーが足りなかった
+                    return RecEndStatusBasic.ERR;
+                case RecEndStatus.NO_RECMODE:       //無効扱いだった
+                    return RecEndStatusBasic.DEFAULT;
+                case RecEndStatus.NOT_FIND_PF:      //p/fに番組情報確認できなかった
+                    return RecEndStatusBasic.WARN;
+                case RecEndStatus.NOT_FIND_6H:      //6時間番組情報確認できなかった
+                    return RecEndStatusBasic.WARN;
+                case RecEndStatus.END_SUBREC:       //サブフォルダへの録画が発生した
+                    return RecEndStatusBasic.WARN;
+                case RecEndStatus.ERR_RECSTART:     //録画開始に失敗した
+                    return RecEndStatusBasic.ERR;
+                case RecEndStatus.NOT_START_HEAD:   //一部のみ録画された
+                    return RecEndStatusBasic.ERR;
+                case RecEndStatus.ERR_CH_CHG:       //チャンネル切り替えに失敗した
+                    return RecEndStatusBasic.ERR;
+                case RecEndStatus.ERR_END2:         //録画中にエラーが発生した(Writeでexception)
+                    return RecEndStatusBasic.ERR;
+                default:                            //状況不明
+                    return RecEndStatusBasic.ERR;
+            }
+        }
 
         public static List<RecSettingData> RecSettingList(this List<ReserveData> list)
         {

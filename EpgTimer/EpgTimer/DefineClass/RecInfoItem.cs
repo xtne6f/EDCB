@@ -133,11 +133,14 @@ namespace EpgTimer
             {
                 if (RecInfo != null)
                 {
-                    if (RecInfo.Drops > 0)
+                    if (Settings.Instance.RecInfoDropErrIgnore >= 0 && RecInfo.Drops > Settings.Instance.RecInfoDropErrIgnore
+                        || RecInfo.RecStatusBasic() == RecEndStatusBasic.ERR)
                     {
                         return CommonManager.Instance.RecEndErrBackColor;
                     }
-                    if (RecInfo.Scrambles > 0)
+                    if (Settings.Instance.RecInfoDropWrnIgnore >= 0 && RecInfo.Drops > Settings.Instance.RecInfoDropWrnIgnore
+                        || Settings.Instance.RecInfoScrambleIgnore >= 0 && RecInfo.Scrambles > Settings.Instance.RecInfoScrambleIgnore
+                        || RecInfo.RecStatusBasic() == RecEndStatusBasic.WARN)
                     {
                         return CommonManager.Instance.RecEndWarBackColor;
                     }
