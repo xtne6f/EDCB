@@ -176,6 +176,7 @@ namespace EpgTimer
         private string reserveRectColorNo;
         private string reserveRectColorNoTuner;
         private string reserveRectColorWarning;
+        private string reserveRectColorAutoAddMissing;
         private string titleColor1;
         private string titleColor2;
         private UInt32 titleCustColor1;
@@ -232,38 +233,19 @@ namespace EpgTimer
         private double chkSrvRegistInterval;
         private Int32 tvTestOpenWait;
         private Int32 tvTestChgBonWait;
-        private String listDefFontColor;            //リストのデフォルト文字色
-        private List<String> recModeFontColorList;  //録画モードごとの文字色
-        private byte resDefColorR;
-        private byte resDefColorG;
-        private byte resDefColorB;
-        private byte resErrColorR;
-        private byte resErrColorG;
-        private byte resErrColorB;
-        private byte resWarColorR;
-        private byte resWarColorG;
-        private byte resWarColorB;
-        private byte resNoColorR;
-        private byte resNoColorG;
-        private byte resNoColorB;
-        private byte recEndDefColorR;
-        private byte recEndDefColorG;
-        private byte recEndDefColorB;
-        private byte recEndErrColorR;
-        private byte recEndErrColorG;
-        private byte recEndErrColorB;
-        private byte recEndWarColorR;
-        private byte recEndWarColorG;
-        private byte recEndWarColorB;
-        private String statResForeColor;            //ステータスの予約色
-        private String statRecForeColor;            //ステータスの録画色
-        private String statOnAirForeColor;          //ステータスの放送色
-        private byte epgTipsBackColorR;
-        private byte epgTipsBackColorG;
-        private byte epgTipsBackColorB;
-        private byte epgTipsForeColorR;
-        private byte epgTipsForeColorG;
-        private byte epgTipsForeColorB;
+        private string listDefFontColor;            //各画面のリストのデフォルト文字色
+        private List<string> recModeFontColorList;  //予約リストなどの録画モードごとの文字色
+        private string resDefBackColor;             //予約リストなどのデフォルト背景色
+        private string resErrBackColor;             //予約リストなどのチューナ不足の背景色
+        private string resWarBackColor;             //予約リストなどのチューナ不足で一部実行の背景色
+        private string resNoBackColor;              //予約リストなどの無効予約の背景色
+        private string resAutoAddMissingBackColor;  //予約リストなどの自動登録が見つからない予約の背景色
+        private string recEndDefBackColor;          //録画済リストのデフォルト背景色
+        private string recEndErrBackColor;          //録画済リストのエラー表示の背景色
+        private string recEndWarBackColor;          //録画済リストの警告表示の背景色
+        private string statResForeColor;            //予約リストなどの「状態」列の予約色
+        private string statRecForeColor;            //予約リストなどの「状態」の録画色
+        private string statOnAirForeColor;          //予約リストなどの「状態」の放送色
         private bool epgInfoSingleClick;
         private byte epgInfoOpenMode;
         private UInt32 execBat;
@@ -289,6 +271,7 @@ namespace EpgTimer
         private int keyDeleteDisplayItemNum;
         private bool displayNotifyEpgChange;
         private int displayNotifyJumpTime;
+        private bool displayReserveAutoAddMissing;
 
         public bool UseCustomEpgView
         {
@@ -409,6 +392,11 @@ namespace EpgTimer
         {
             get { return reserveRectColorWarning; }
             set { reserveRectColorWarning = value; }
+        }
+        public string ReserveRectColorAutoAddMissing
+        {
+            get { return reserveRectColorAutoAddMissing; }
+            set { reserveRectColorAutoAddMissing = value; }
         }
         public bool ReserveRectBackground
         {
@@ -690,165 +678,70 @@ namespace EpgTimer
             get { return tvTestChgBonWait; }
             set { tvTestChgBonWait = value; }
         }
-        public String ListDefFontColor
+        public string ListDefFontColor
         {
             get { return listDefFontColor; }
             set { listDefFontColor = value; }
         }
-        public List<String> RecModeFontColorList
+        public List<string> RecModeFontColorList
         {
             get { return recModeFontColorList; }
             set { recModeFontColorList = value; }
         }
-        public byte ResDefColorR
+        public string ResDefBackColor
         {
-            get { return resDefColorR; }
-            set { resDefColorR = value; }
+            get { return resDefBackColor; }
+            set { resDefBackColor = value; }
         }
-        public byte ResDefColorG
+        public string ResErrBackColor
         {
-            get { return resDefColorG; }
-            set { resDefColorG = value; }
+            get { return resErrBackColor; }
+            set { resErrBackColor = value; }
         }
-        public byte ResDefColorB
+        public string ResWarBackColor
         {
-            get { return resDefColorB; }
-            set { resDefColorB = value; }
+            get { return resWarBackColor; }
+            set { resWarBackColor = value; }
         }
-        public byte ResErrColorR
+        public string ResNoBackColor
         {
-            get { return resErrColorR; }
-            set { resErrColorR = value; }
+            get { return resNoBackColor; }
+            set { resNoBackColor = value; }
         }
-        public byte ResErrColorG
+        public string ResAutoAddMissingBackColor
         {
-            get { return resErrColorG; }
-            set { resErrColorG = value; }
+            get { return resAutoAddMissingBackColor; }
+            set { resAutoAddMissingBackColor = value; }
         }
-        public byte ResErrColorB
+        public string RecEndDefBackColor
         {
-            get { return resErrColorB; }
-            set { resErrColorB = value; }
+            get { return recEndDefBackColor; }
+            set { recEndDefBackColor = value; }
         }
-        public byte ResWarColorR
+        public string RecEndErrBackColor
         {
-            get { return resWarColorR; }
-            set { resWarColorR = value; }
+            get { return recEndErrBackColor; }
+            set { recEndErrBackColor = value; }
         }
-        public byte ResWarColorG
+        public string RecEndWarBackColor
         {
-            get { return resWarColorG; }
-            set { resWarColorG = value; }
+            get { return recEndWarBackColor; }
+            set { recEndWarBackColor = value; }
         }
-        public byte ResWarColorB
-        {
-            get { return resWarColorB; }
-            set { resWarColorB = value; }
-        }
-        public byte ResNoColorR
-        {
-            get { return resNoColorR; }
-            set { resNoColorR = value; }
-        }
-        public byte ResNoColorG
-        {
-            get { return resNoColorG; }
-            set { resNoColorG = value; }
-        }
-        public byte ResNoColorB
-        {
-            get { return resNoColorB; }
-            set { resNoColorB = value; }
-        }
-        public byte RecEndDefColorR
-        {
-            get { return recEndDefColorR; }
-            set { recEndDefColorR = value; }
-        }
-        public byte RecEndDefColorG
-        {
-            get { return recEndDefColorG; }
-            set { recEndDefColorG = value; }
-        }
-        public byte RecEndDefColorB
-        {
-            get { return recEndDefColorB; }
-            set { recEndDefColorB = value; }
-        }
-        public byte RecEndErrColorR
-        {
-            get { return recEndErrColorR; }
-            set { recEndErrColorR = value; }
-        }
-        public byte RecEndErrColorG
-        {
-            get { return recEndErrColorG; }
-            set { recEndErrColorG = value; }
-        }
-        public byte RecEndErrColorB
-        {
-            get { return recEndErrColorB; }
-            set { recEndErrColorB = value; }
-        }
-        public byte RecEndWarColorR
-        {
-            get { return recEndWarColorR; }
-            set { recEndWarColorR = value; }
-        }
-        public byte RecEndWarColorG
-        {
-            get { return recEndWarColorG; }
-            set { recEndWarColorG = value; }
-        }
-        public byte RecEndWarColorB
-        {
-            get { return recEndWarColorB; }
-            set { recEndWarColorB = value; }
-        }
-        public String StatResForeColor
+        public string StatResForeColor
         {
             get { return statResForeColor; }
             set { statResForeColor = value; }
         }
-        public String StatRecForeColor
+        public string StatRecForeColor
         {
             get { return statRecForeColor; }
             set { statRecForeColor = value; }
         }
-        public String StatOnAirForeColor
+        public string StatOnAirForeColor
         {
             get { return statOnAirForeColor; }
             set { statOnAirForeColor = value; }
-        }
-        public byte EpgTipsBackColorR
-        {
-            get { return epgTipsBackColorR; }
-            set { epgTipsBackColorR = value; }
-        }
-        public byte EpgTipsBackColorG
-        {
-            get { return epgTipsBackColorG; }
-            set { epgTipsBackColorG = value; }
-        }
-        public byte EpgTipsBackColorB
-        {
-            get { return epgTipsBackColorB; }
-            set { epgTipsBackColorB = value; }
-        }
-        public byte EpgTipsForeColorR
-        {
-            get { return epgTipsForeColorR; }
-            set { epgTipsForeColorR = value; }
-        }
-        public byte EpgTipsForeColorG
-        {
-            get { return epgTipsForeColorG; }
-            set { epgTipsForeColorG = value; }
-        }
-        public byte EpgTipsForeColorB
-        {
-            get { return epgTipsForeColorB; }
-            set { epgTipsForeColorB = value; }
         }
         public bool EpgInfoSingleClick
         {
@@ -975,6 +868,11 @@ namespace EpgTimer
             get { return displayNotifyJumpTime; }
             set { displayNotifyJumpTime = value; }
         }
+        public bool DisplayReserveAutoAddMissing
+        {
+            get { return displayReserveAutoAddMissing; }
+            set { displayReserveAutoAddMissing = value; }
+        }
         
         public Settings()
         {
@@ -1000,6 +898,7 @@ namespace EpgTimer
             reserveRectColorNo = "Black";
             reserveRectColorNoTuner = "Red";
             reserveRectColorWarning = "Yellow";
+            reserveRectColorAutoAddMissing = "Blue";
             titleColor1 = "Black";
             titleColor2 = "Black";
             titleCustColor1 = 0xFFFFFFFF;
@@ -1058,36 +957,17 @@ namespace EpgTimer
             tvTestChgBonWait = 2000;
             listDefFontColor = "#FF042271";
             recModeFontColorList = new List<String>();
-            resDefColorR = 0xFF;
-            resDefColorG = 0xFF;
-            resDefColorB = 0xFF;
-            resErrColorR = 0xFF;
-            resErrColorG = 0;
-            resErrColorB = 0;
-            resWarColorR = 0xFF;
-            resWarColorG = 0xFF;
-            resWarColorB = 0;
-            resNoColorR = 0xA9;
-            resNoColorG = 0xA9;
-            resNoColorB = 0xA9;
-            recEndDefColorR = 0xFF;
-            recEndDefColorG = 0xFF;
-            recEndDefColorB = 0xFF;
-            recEndErrColorR = 0xFF;
-            recEndErrColorG = 0;
-            recEndErrColorB = 0;
-            recEndWarColorR = 0xFF;
-            recEndWarColorG = 0xFF;
-            recEndWarColorB = 0;
+            resDefBackColor = "White";
+            resErrBackColor = "#FFFFAAAA";
+            resWarBackColor = "#FFFFFFAA";
+            resNoBackColor = "#FFAAAAAA";
+            resAutoAddMissingBackColor = "Powderblue";
+            recEndDefBackColor = "White";
+            recEndErrBackColor = "#FFFFAAAA";
+            recEndWarBackColor = "#FFFFFFAA";
             statResForeColor = "RoyalBlue";
             statRecForeColor = "OrangeRed";
             statOnAirForeColor = "LimeGreen";
-            epgTipsBackColorR = 0xD3;
-            epgTipsBackColorG = 0xD3;
-            epgTipsBackColorB = 0xD3;
-            epgTipsForeColorR = 0;
-            epgTipsForeColorG = 0;
-            epgTipsForeColorB = 0;
             epgInfoSingleClick = false;
             epgInfoOpenMode = 0;
             execBat = 0;
@@ -1113,6 +993,7 @@ namespace EpgTimer
             keyDeleteDisplayItemNum = 10;
             displayNotifyEpgChange = false;
             displayNotifyJumpTime = 3;
+            displayReserveAutoAddMissing = false;
         }
 
         [NonSerialized()]
@@ -1180,36 +1061,36 @@ namespace EpgTimer
                     Instance.recModeFontColorList.Add("#FF042271"); //4 視聴
                     Instance.recModeFontColorList.Add("#FF042271"); //5 無効
                 }
-                if (Instance.contentColorList.Count == 0x10)//多分旧バージョンの互換用コード
-                {
-                    Instance.contentColorList.Add("White");
-                }
-                else if (Instance.contentColorList.Count != 0x11)
+                if (Instance.contentColorList.Count < 0x11)
                 {
                     //番組表のデフォルトの背景色
-                    Instance.contentColorList.Clear();
-                    Instance.contentColorList.Add("LightYellow");
-                    Instance.contentColorList.Add("Lavender");
-                    Instance.contentColorList.Add("LavenderBlush");
-                    Instance.contentColorList.Add("MistyRose");
-                    Instance.contentColorList.Add("Honeydew");
-                    Instance.contentColorList.Add("LightCyan");
-                    Instance.contentColorList.Add("PapayaWhip");
-                    Instance.contentColorList.Add("Pink");
-                    Instance.contentColorList.Add("LightYellow");
-                    Instance.contentColorList.Add("PapayaWhip");
-                    Instance.contentColorList.Add("AliceBlue");
-                    Instance.contentColorList.Add("AliceBlue");
-                    Instance.contentColorList.Add("White");
-                    Instance.contentColorList.Add("White");
-                    Instance.contentColorList.Add("White");
-                    Instance.contentColorList.Add("WhiteSmoke");
-                    Instance.contentColorList.Add("White");
+                    var defColors = new List<string>{
+                        "LightYellow"
+                        ,"Lavender"
+                        ,"LavenderBlush"
+                        ,"MistyRose"
+                        ,"Honeydew"
+                        ,"LightCyan"
+                        ,"PapayaWhip"
+                        ,"Pink"
+                        ,"LightYellow"
+                        ,"PapayaWhip"
+                        ,"AliceBlue"
+                        ,"AliceBlue"
+                        ,"White"
+                        ,"White"
+                        ,"White"
+                        ,"WhiteSmoke"
+                        ,"White"
+                    };
+                    for (int i = Instance.contentColorList.Count; i < 0x11; i++)
+                    {
+                        Instance.contentColorList.Add(defColors[i]);
+                    }
                 }
-                if (Instance.ContentCustColorList.Count != 0x11 + 4)
+                if (Instance.ContentCustColorList.Count < 0x11 + 5)
                 {
-                    Instance.ContentCustColorList.Clear();
-                    for (int i = 0; i < 0x11+4; i++)
+                    for (int i = Instance.ContentCustColorList.Count; i < 0x11 + 5; i++)
                     {
                         Instance.ContentCustColorList.Add(0xFFFFFFFF);
                     }

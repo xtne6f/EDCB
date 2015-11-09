@@ -28,6 +28,7 @@ namespace EpgTimer
         Dictionary<UInt32, ManualAutoAddData> manualAutoAddList = new Dictionary<UInt32, ManualAutoAddData>();
         Dictionary<UInt32, EpgAutoAddData> epgAutoAddList = new Dictionary<UInt32, EpgAutoAddData>();
         Dictionary<UInt32, EpgAutoAddDataAppend> epgAutoAddAppendList = null;
+        Dictionary<UInt32, bool> reserveAutoAddMissing = null;
 
         public Dictionary<UInt64, EpgServiceEventInfo> ServiceEventList
         {
@@ -64,6 +65,10 @@ namespace EpgTimer
         public Dictionary<UInt32, EpgAutoAddDataAppend> EpgAutoAddAppendList
         {
             get { return epgAutoAddAppendList; }
+        }
+        public Dictionary<UInt32, bool> ReserveAutoAddMissing
+        {
+            get { return reserveAutoAddMissing; }
         }
         public EpgAutoAddDataAppend GetEpgAutoAddDataAppend(EpgAutoAddData master)
         {
@@ -126,6 +131,55 @@ namespace EpgTimer
             return retv;
         }
 
+        public bool IsReserveAutoAddMissing(ReserveData info)
+        {
+            if (info == null) return false;
+
+            if (reserveAutoAddMissing == null)
+            {
+                //EPG自動登録リスト
+                ReloadEpgAutoAddInfo();//notifyかかってれば更新
+                var EpgAutoResList = new List<ReserveData>();
+                foreach (var data in EpgAutoAddList.Values)
+                {
+                    EpgAutoResList.AddRange(data.GetReserveList());
+                }
+                var EpgAutoResDict = EpgAutoResList.Distinct().ToDictionary(data => data.ReserveID, data => data);
+
+                //マニュアル自動登録リスト
+                ReloadManualAutoAddInfo();//notifyかかってれば更新
+                var ManualAutoResList = new List<ReserveData>();
+                foreach (var data in ManualAutoAddList.Values)
+                {
+                    ManualAutoResList.AddRange(data.GetReserveList());
+                }
+                var ManualAutoResDict = ManualAutoResList.Distinct().ToDictionary(data => data.ReserveID, data => data);
+
+                //突き合わせ
+                reserveAutoAddMissing = new Dictionary<uint, bool>();
+                foreach (var resdata in reserveList.Values)
+                {
+                    if (resdata.Comment.StartsWith("EPG自動予約") == true)
+                    {
+                        reserveAutoAddMissing.Add(resdata.ReserveID, !EpgAutoResDict.ContainsKey(resdata.ReserveID));
+                    }
+                    else if (resdata.Comment.StartsWith("プログラム自動予約") == true)
+                    {
+                        reserveAutoAddMissing.Add(resdata.ReserveID, !ManualAutoResDict.ContainsKey(resdata.ReserveID));
+                    }
+                    else
+                    {
+                        reserveAutoAddMissing.Add(resdata.ReserveID, false);
+                    }
+                }
+            }
+
+            bool retv;
+            if (reserveAutoAddMissing.TryGetValue(info.ReserveID, out retv) == false) return false;
+
+            return retv;
+        }
+
         public DBManager(CtrlCmdUtil ctrlCmd)
         {
             cmd = ctrlCmd;
@@ -142,6 +196,7 @@ namespace EpgTimer
             manualAutoAddList = new Dictionary<uint, ManualAutoAddData>();
             epgAutoAddList = new Dictionary<uint, EpgAutoAddData>();
             epgAutoAddAppendList = null;
+            reserveAutoAddMissing = null;
         }
 
         /// <summary>
@@ -248,6 +303,7 @@ namespace EpgTimer
 
                     updateReserveInfo = false;
                     updateAutoAddAppendReserveInfo = true;
+                    reserveAutoAddMissing = null;
                 }
             }
             catch (Exception ex)
@@ -350,6 +406,7 @@ namespace EpgTimer
 
                         updateAutoAddEpgInfo = false;
                         epgAutoAddAppendList = null;
+                        reserveAutoAddMissing = null;
                     }
                 }
             }
@@ -384,6 +441,7 @@ namespace EpgTimer
                         list.ForEach(info => manualAutoAddList.Add(info.dataID, info));
 
                         updateAutoAddManualInfo = false;
+                        reserveAutoAddMissing = null;
                     }
                 }
             }

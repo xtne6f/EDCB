@@ -184,7 +184,7 @@ namespace EpgTimer
                 //通常表示
                 if (ReserveInfo == null) return CommonManager.Instance.ListDefForeColor;
                 //
-                return CommonManager.Instance.EventItemForeColor(ReserveInfo.RecSetting.RecMode);
+                return CommonManager.Instance.RecModeForeColor[ReserveInfo.RecSetting.RecMode];
             }
         }
         public SolidColorBrush BackColor
@@ -199,23 +199,26 @@ namespace EpgTimer
                 }
 
                 //通常表示
-                SolidColorBrush color = CommonManager.Instance.ResDefBackColor;
                 if (ReserveInfo != null)
                 {
                     if (ReserveInfo.RecSetting.RecMode == 5)
                     {
-                        color = CommonManager.Instance.ResNoBackColor;
+                        return CommonManager.Instance.ResNoBackColor;
                     }
-                    else if (ReserveInfo.OverlapMode == 2)
+                    if (ReserveInfo.OverlapMode == 2)
                     {
-                        color = CommonManager.Instance.ResErrBackColor;
+                        return CommonManager.Instance.ResErrBackColor;
                     }
-                    else if (ReserveInfo.OverlapMode == 1)
+                    if (ReserveInfo.OverlapMode == 1)
                     {
-                        color = CommonManager.Instance.ResWarBackColor;
+                        return CommonManager.Instance.ResWarBackColor;
+                    }
+                    if (ReserveInfo.IsAutoAddMissing() == true)
+                    {
+                        return CommonManager.Instance.ResAutoAddMissingBackColor;
                     }
                 }
-                return color;
+                return CommonManager.Instance.ResDefBackColor;
             }
         }
         public Brush BorderBrush

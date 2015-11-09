@@ -62,7 +62,6 @@ namespace EpgTimer.Setting
                 label5.IsEnabled = false;
                 CommonManager.Instance.VUtil.DisableControlChildren(groupBox2);
 
-                tabItem2.Foreground = new SolidColorBrush(Colors.Gray);
                 checkBox_back_priority.IsEnabled = false;
                 checkBox_autoDel.IsEnabled = false;
                 checkBox_recname.IsEnabled = false;
@@ -209,6 +208,11 @@ namespace EpgTimer.Setting
 
                 try
                 {
+                    checkBox_cautionOnRecChange.IsChecked = Settings.Instance.CautionOnRecChange;
+                    textBox_cautionOnRecMarginMin.Text = Settings.Instance.CautionOnRecMarginMin.ToString();
+                    checkBox_displayAutoAddMissing.IsChecked = Settings.Instance.DisplayReserveAutoAddMissing;
+
+                    //4
                     checkBox_closeMin.IsChecked = Settings.Instance.CloseMin;
                     checkBox_minWake.IsChecked = Settings.Instance.WakeMin;
                     checkBox_noToolTips.IsChecked = Settings.Instance.NoToolTip;
@@ -218,16 +222,12 @@ namespace EpgTimer.Setting
                     checkBox_minHide.IsChecked = Settings.Instance.MinHide;
                     checkBox_cautionManyChange.IsChecked = Settings.Instance.CautionManyChange;
                     textBox_cautionManyChange.Text = Settings.Instance.CautionManyNum.ToString();
-                    checkBox_cautionOnRecChange.IsChecked = Settings.Instance.CautionOnRecChange;
-                    textBox_cautionOnRecMarginMin.Text = Settings.Instance.CautionOnRecMarginMin.ToString(); 
 
                     checkBox_wakeReconnect.IsChecked = Settings.Instance.WakeReconnectNW;
                     checkBox_suspendClose.IsChecked = Settings.Instance.SuspendCloseNW;
                     checkBox_ngAutoEpgLoad.IsChecked = Settings.Instance.NgAutoEpgLoadNW;
                 }
-                catch
-                {
-                }
+                catch { }
 
                 if (checkBox_srvResident.IsEnabled)
                 {
@@ -498,6 +498,10 @@ namespace EpgTimer.Setting
             setValue = (checkBox_timeSync.IsChecked == true ? "1" : "0");
             IniFileHandler.WritePrivateProfileString("SET", "TimeSync", setValue, SettingPath.TimerSrvIniPath);
 
+            Settings.Instance.CautionOnRecChange = (checkBox_cautionOnRecChange.IsChecked != false);
+            Settings.Instance.CautionOnRecMarginMin = Convert.ToInt32(textBox_cautionOnRecMarginMin.Text);
+            Settings.Instance.DisplayReserveAutoAddMissing = (checkBox_displayAutoAddMissing.IsChecked != false);
+
             Settings.Instance.CloseMin = (bool)checkBox_closeMin.IsChecked;
             Settings.Instance.WakeMin = (bool)checkBox_minWake.IsChecked;
             Settings.Instance.ShowTray = (bool)checkBox_showTray.IsChecked;
@@ -527,19 +531,17 @@ namespace EpgTimer.Setting
             Settings.Instance.NoToolTip = (checkBox_noToolTips.IsChecked == true);
             Settings.Instance.NoBallonTips = (checkBox_noBallonTips.IsChecked == true);
             Settings.Instance.PlayDClick = (checkBox_playDClick.IsChecked == true);
-            Settings.Instance.CautionManyChange = (checkBox_cautionManyChange.IsChecked != false);
-            Settings.Instance.CautionOnRecChange = (checkBox_cautionOnRecChange.IsChecked != false);
+
             try
             {
+                Settings.Instance.CautionManyChange = (checkBox_cautionManyChange.IsChecked != false);
                 Settings.Instance.CautionManyNum = Convert.ToInt32(textBox_cautionManyChange.Text);
-                Settings.Instance.CautionOnRecMarginMin = Convert.ToInt32(textBox_cautionOnRecMarginMin.Text);
             }
             catch { }
 
             Settings.Instance.WakeReconnectNW = (checkBox_wakeReconnect.IsChecked == true);
             Settings.Instance.SuspendCloseNW = (checkBox_suspendClose.IsChecked == true);
             Settings.Instance.NgAutoEpgLoadNW = (checkBox_ngAutoEpgLoad.IsChecked == true);
-
             Settings.Instance.DefSearchKey = defSearchKey.Clone();
 
             Settings.Instance.ViewButtonShowAsTab = checkBox_showAsTab.IsChecked == true;

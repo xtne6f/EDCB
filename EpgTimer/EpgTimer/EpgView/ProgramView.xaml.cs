@@ -206,24 +206,7 @@ namespace EpgTimer.EpgView
                 foreach (ReserveViewItem info in reserveList)
                 {
                     Rectangle rect = new Rectangle();
-
-                    Brush color;
-                    if (info.ReserveInfo.RecSetting.RecMode == 5)
-                    {
-                        color = CommonManager.Instance.CustContentColorList[0x12];
-                    }
-                    else if (info.ReserveInfo.OverlapMode == 2)
-                    {
-                        color = CommonManager.Instance.CustContentColorList[0x13];
-                    }
-                    else if (info.ReserveInfo.OverlapMode == 1)
-                    {
-                        color = CommonManager.Instance.CustContentColorList[0x14];
-                    }
-                    else
-                    {
-                        color = CommonManager.Instance.CustContentColorList[0x11];
-                    }
+                    Brush color = info.BorderBrush;
 
                     if (Settings.Instance.ReserveRectBackground == false)
                     {

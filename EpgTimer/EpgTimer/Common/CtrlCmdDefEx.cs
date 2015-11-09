@@ -328,6 +328,13 @@ namespace EpgTimer
             return CommonManager.Create64PgKey(obj.OriginalNetworkID, obj.TransportStreamID, obj.ServiceID, obj.EventID);
         }
 
+        public static bool IsAutoAddMissing(this ReserveData reserveInfo)
+        {
+            if (Settings.Instance.DisplayReserveAutoAddMissing == false) return false;
+            //
+            return CommonManager.Instance.DB.IsReserveAutoAddMissing(reserveInfo);
+        }
+
         public static DateTime StartTimeWithMargin(this ReserveData reserveInfo, int MarginMin = 0)
         {
             if (reserveInfo == null) return new DateTime();

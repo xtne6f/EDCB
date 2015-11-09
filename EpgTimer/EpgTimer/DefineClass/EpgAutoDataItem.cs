@@ -365,7 +365,7 @@ namespace EpgTimer
                 {
                     if (EpgAutoAddInfo.searchInfo.keyDisabledFlag == 1)
                     {
-                        color = CommonManager.Instance.EventItemForeColor(5);
+                        color = CommonManager.Instance.RecModeForeColor[5];
                     }
                 }
                 return color;

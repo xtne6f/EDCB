@@ -203,12 +203,7 @@ namespace EpgTimer.TunerReserveViewCtrl
                     dc.DrawRectangle(Brushes.LightGray, null, new Rect(info.LeftPos, dInfoTopPos, info.Width, Math.Max(dInfoHeight, 0)));
                     if (dInfoHeight > 2)
                     {
-                        SolidColorBrush color = Brushes.White;
-                        if (info.ReserveInfo.OverlapMode == 1)
-                        {
-                            color = Brushes.Yellow;
-                            //color = CommonManager.Instance.CustContentColorList[0x14];
-                        }
+                        SolidColorBrush color = info.BackColor;
                         dc.DrawRectangle(color, null, new Rect(info.LeftPos + 1, dInfoTopPos + 1, info.Width - 2, dInfoHeight - 2));
                         if (dInfoHeight < 4 + sizeTitle + 2)
                         {

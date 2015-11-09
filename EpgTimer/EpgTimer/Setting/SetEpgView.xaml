@@ -27,7 +27,7 @@
                             <ComboBox Height="24" HorizontalAlignment="Left" Margin="167,36,0,0" Name="comboBox_font" VerticalAlignment="Top" Width="203" />
                             <Label Content="サイズ" Height="28" HorizontalAlignment="Left" Margin="386,36,0,0" Name="label6" VerticalAlignment="Top" />
                             <TextBox Height="24" HorizontalAlignment="Left" Margin="438,38,0,0" Name="textBox_fontSize" VerticalAlignment="Top" Width="39" />
-                            <ComboBox Height="24" HorizontalAlignment="Left" Margin="539,8,0,0" Name="comboBox_colorTitle1" VerticalAlignment="Top" Width="98" ItemsSource="{Binding}">
+                            <ComboBox Height="24" HorizontalAlignment="Left" Margin="539,8,0,0" Name="comboBox_colorTitle1" VerticalAlignment="Top" Width="98" ItemsSource="{Binding}" Tag="0">
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
@@ -37,7 +37,7 @@
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>
                             </ComboBox>
-                            <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding}" Margin="539,36,0,0" Name="comboBox_colorTitle2" VerticalAlignment="Top" Width="98">
+                            <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding}" Margin="539,36,0,0" Name="comboBox_colorTitle2" VerticalAlignment="Top" Width="98" Tag="1">
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
@@ -47,8 +47,8 @@
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>
                             </ComboBox>
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="643,8,0,0" Name="button_colorTitle1" VerticalAlignment="Top" Width="58" Click="button_colorTitle1_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="643,35,0,0" Name="button_colorTitle2" VerticalAlignment="Top" Width="58" Click="button_colorTitle2_Click" />
+                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="643,8,0,0" Name="button_colorTitle1" VerticalAlignment="Top" Width="58" Click="button_colorTitle_Click" Tag="0" />
+                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="643,35,0,0" Name="button_colorTitle2" VerticalAlignment="Top" Width="58" Click="button_colorTitle_Click" Tag="1" />
                         </Grid>
                     </GroupBox>
                     <GroupBox Header="表示" Height="213" Margin="6,114,7,0" Name="groupBox2" VerticalAlignment="Top" >
@@ -79,9 +79,9 @@
             <TabItem Header="色" Name="tabItem_color">
                 <Grid>
                     <GroupBox Header="ジャンル別背景色" Height="267" Margin="6,6,6,0" Name="groupBox1" VerticalAlignment="Top" >
-                        <Grid>
+                        <Grid x:Name="grid_Epg">
                             <Label Content="ニュース／報道" Height="28" HorizontalAlignment="Left" Margin="12,27,0,0" Name="label11" VerticalAlignment="Top" />
-                            <ComboBox Height="24" HorizontalAlignment="Left" Margin="166,27,0,0" Name="comboBox0" VerticalAlignment="Top" Width="120" ItemsSource="{Binding}">
+                            <ComboBox Height="24" HorizontalAlignment="Left" Margin="166,27,0,0" Name="comboBox0" VerticalAlignment="Top" Width="120" ItemsSource="{Binding}" Tag="0">
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
@@ -92,7 +92,7 @@
                                 </ComboBox.ItemTemplate>
                             </ComboBox>
                             <Label Content="スポーツ" Height="28" HorizontalAlignment="Left" Margin="400,27,0,0" Name="label12" VerticalAlignment="Top" />
-                            <ComboBox Height="24" HorizontalAlignment="Left" Margin="498,27,0,0" Name="comboBox1" VerticalAlignment="Top" Width="120" ItemsSource="{Binding}">
+                            <ComboBox Height="24" HorizontalAlignment="Left" Margin="498,27,0,0" Name="comboBox1" VerticalAlignment="Top" Width="120" ItemsSource="{Binding}" Tag="1">
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
@@ -103,7 +103,7 @@
                                 </ComboBox.ItemTemplate>
                             </ComboBox>
                             <Label Content="情報／ワイドショー" Height="28" HorizontalAlignment="Left" Margin="12,57,0,0" Name="label13" VerticalAlignment="Top" />
-                            <ComboBox Height="24" HorizontalAlignment="Left" Margin="166,57,0,0" Name="comboBox2" VerticalAlignment="Top" Width="120" ItemsSource="{Binding}">
+                            <ComboBox Height="24" HorizontalAlignment="Left" Margin="166,57,0,0" Name="comboBox2" VerticalAlignment="Top" Width="120" ItemsSource="{Binding}" Tag="2">
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
@@ -114,7 +114,7 @@
                                 </ComboBox.ItemTemplate>
                             </ComboBox>
                             <Label Content="ドラマ" Height="28" HorizontalAlignment="Left" Margin="400,57,0,0" Name="label14" VerticalAlignment="Top" />
-                            <ComboBox Height="24" HorizontalAlignment="Left" Margin="498,57,0,0" Name="comboBox3" VerticalAlignment="Top" Width="120" ItemsSource="{Binding}">
+                            <ComboBox Height="24" HorizontalAlignment="Left" Margin="498,57,0,0" Name="comboBox3" VerticalAlignment="Top" Width="120" ItemsSource="{Binding}" Tag="3">
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
@@ -125,7 +125,7 @@
                                 </ComboBox.ItemTemplate>
                             </ComboBox>
                             <Label Content="音楽" Height="28" HorizontalAlignment="Left" Margin="12,91,0,0" Name="label15" VerticalAlignment="Top" />
-                            <ComboBox Height="24" HorizontalAlignment="Left" Margin="166,91,0,0" Name="comboBox4" VerticalAlignment="Top" Width="120" ItemsSource="{Binding}">
+                            <ComboBox Height="24" HorizontalAlignment="Left" Margin="166,91,0,0" Name="comboBox4" VerticalAlignment="Top" Width="120" ItemsSource="{Binding}" Tag="4">
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
@@ -136,7 +136,7 @@
                                 </ComboBox.ItemTemplate>
                             </ComboBox>
                             <Label Content="バラエティ" Height="28" HorizontalAlignment="Left" Margin="400,91,0,0" Name="label16" VerticalAlignment="Top" />
-                            <ComboBox Height="24" HorizontalAlignment="Left" Margin="498,91,0,0" Name="comboBox5" VerticalAlignment="Top" Width="120" ItemsSource="{Binding}">
+                            <ComboBox Height="24" HorizontalAlignment="Left" Margin="498,91,0,0" Name="comboBox5" VerticalAlignment="Top" Width="120" ItemsSource="{Binding}" Tag="5">
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
@@ -147,7 +147,7 @@
                                 </ComboBox.ItemTemplate>
                             </ComboBox>
                             <Label Content="映画" Height="28" HorizontalAlignment="Left" Margin="12,121,0,0" Name="label17" VerticalAlignment="Top" />
-                            <ComboBox Height="24" HorizontalAlignment="Left" Margin="166,121,0,0" Name="comboBox6" VerticalAlignment="Top" Width="120" ItemsSource="{Binding}">
+                            <ComboBox Height="24" HorizontalAlignment="Left" Margin="166,121,0,0" Name="comboBox6" VerticalAlignment="Top" Width="120" ItemsSource="{Binding}" Tag="6">
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
@@ -158,7 +158,7 @@
                                 </ComboBox.ItemTemplate>
                             </ComboBox>
                             <Label Content="アニメ／特撮" Height="28" HorizontalAlignment="Left" Margin="400,121,0,0" Name="label18" VerticalAlignment="Top" />
-                            <ComboBox Height="24" HorizontalAlignment="Left" Margin="498,121,0,0" Name="comboBox7" VerticalAlignment="Top" Width="120" ItemsSource="{Binding}">
+                            <ComboBox Height="24" HorizontalAlignment="Left" Margin="498,121,0,0" Name="comboBox7" VerticalAlignment="Top" Width="120" ItemsSource="{Binding}" Tag="7">
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
@@ -169,7 +169,7 @@
                                 </ComboBox.ItemTemplate>
                             </ComboBox>
                             <Label Content="ドキュメンタリー／教養" Height="28" HorizontalAlignment="Left" Margin="12,151,0,0" Name="label19" VerticalAlignment="Top" />
-                            <ComboBox Height="24" HorizontalAlignment="Left" Margin="166,151,0,0" Name="comboBox8" VerticalAlignment="Top" Width="120" ItemsSource="{Binding}">
+                            <ComboBox Height="24" HorizontalAlignment="Left" Margin="166,151,0,0" Name="comboBox8" VerticalAlignment="Top" Width="120" ItemsSource="{Binding}" Tag="8">
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
@@ -180,7 +180,7 @@
                                 </ComboBox.ItemTemplate>
                             </ComboBox>
                             <Label Content="劇場／公演" Height="28" HorizontalAlignment="Left" Margin="400,151,0,0" Name="label20" VerticalAlignment="Top" />
-                            <ComboBox Height="24" HorizontalAlignment="Left" Margin="498,151,0,0" Name="comboBox9" VerticalAlignment="Top" Width="120" ItemsSource="{Binding}">
+                            <ComboBox Height="24" HorizontalAlignment="Left" Margin="498,151,0,0" Name="comboBox9" VerticalAlignment="Top" Width="120" ItemsSource="{Binding}" Tag="9">
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
@@ -191,7 +191,7 @@
                                 </ComboBox.ItemTemplate>
                             </ComboBox>
                             <Label Content="趣味／教育" Height="28" HorizontalAlignment="Left" Margin="12,181,0,0" Name="label21" VerticalAlignment="Top" />
-                            <ComboBox Height="24" HorizontalAlignment="Left" Margin="166,181,0,0" Name="comboBox10" VerticalAlignment="Top" Width="120" ItemsSource="{Binding}">
+                            <ComboBox Height="24" HorizontalAlignment="Left" Margin="166,181,0,0" Name="comboBox10" VerticalAlignment="Top" Width="120" ItemsSource="{Binding}" Tag="10">
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
@@ -202,7 +202,7 @@
                                 </ComboBox.ItemTemplate>
                             </ComboBox>
                             <Label Content="福祉" Height="28" HorizontalAlignment="Left" Margin="400,181,0,0" Name="label22" VerticalAlignment="Top" />
-                            <ComboBox Height="24" HorizontalAlignment="Left" Margin="498,181,0,0" Name="comboBox11" VerticalAlignment="Top" Width="120" ItemsSource="{Binding}">
+                            <ComboBox Height="24" HorizontalAlignment="Left" Margin="498,181,0,0" Name="comboBox11" VerticalAlignment="Top" Width="120" ItemsSource="{Binding}" Tag="11">
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
@@ -213,7 +213,7 @@
                                 </ComboBox.ItemTemplate>
                             </ComboBox>
                             <Label Content="その他" Height="28" HorizontalAlignment="Left" Margin="12,211,0,0" Name="label23" VerticalAlignment="Top" />
-                            <ComboBox Height="24" HorizontalAlignment="Left" Margin="166,211,0,0" Name="comboBox12" VerticalAlignment="Top" Width="120" ItemsSource="{Binding}">
+                            <ComboBox Height="24" HorizontalAlignment="Left" Margin="166,211,0,0" Name="comboBox15" VerticalAlignment="Top" Width="120" ItemsSource="{Binding}" Tag="15">
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
@@ -224,7 +224,7 @@
                                 </ComboBox.ItemTemplate>
                             </ComboBox>
                             <Label Content="なし" Height="28" HorizontalAlignment="Left" Margin="400,211,0,0" Name="label24" VerticalAlignment="Top" />
-                            <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding}" Margin="498,211,0,0" Name="comboBox13" VerticalAlignment="Top" Width="120">
+                            <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding}" Margin="498,211,0,0" Name="comboBox16" VerticalAlignment="Top" Width="120" Tag="16">
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
@@ -234,26 +234,26 @@
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>
                             </ComboBox>
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="292,27,0,0" Name="button0" VerticalAlignment="Top" Width="58" Click="button0_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="624,27,0,0" Name="button1" VerticalAlignment="Top" Width="58" Click="button1_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="292,56,0,0" Name="button2" VerticalAlignment="Top" Width="58" Click="button2_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="624,56,0,0" Name="button3" VerticalAlignment="Top" Width="58" Click="button3_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="292,90,0,0" Name="button4" VerticalAlignment="Top" Width="58" Click="button4_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="624,90,0,0" Name="button5" VerticalAlignment="Top" Width="58" Click="button5_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="292,120,0,0" Name="button6" VerticalAlignment="Top" Width="58" Click="button6_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="624,120,0,0" Name="button7" VerticalAlignment="Top" Width="58" Click="button7_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="292,150,0,0" Name="button8" VerticalAlignment="Top" Width="58" Click="button8_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="624,150,0,0" Name="button9" VerticalAlignment="Top" Width="58" Click="button9_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="292,180,0,0" Name="button10" VerticalAlignment="Top" Width="58" Click="button10_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="624,180,0,0" Name="button11" VerticalAlignment="Top" Width="58" Click="button11_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="292,210,0,0" Name="button12" VerticalAlignment="Top" Width="58" Click="button12_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="624,210,0,0" Name="button13" VerticalAlignment="Top" Width="58" Click="button13_Click" />
+                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="292,27,0,0" Name="button0" VerticalAlignment="Top" Width="58" Click="button_colorEpg_Click" Tag="0" />
+                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="624,27,0,0" Name="button1" VerticalAlignment="Top" Width="58" Click="button_colorEpg_Click" Tag="1" />
+                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="292,56,0,0" Name="button2" VerticalAlignment="Top" Width="58" Click="button_colorEpg_Click" Tag="2" />
+                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="624,56,0,0" Name="button3" VerticalAlignment="Top" Width="58" Click="button_colorEpg_Click" Tag="3" />
+                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="292,90,0,0" Name="button4" VerticalAlignment="Top" Width="58" Click="button_colorEpg_Click" Tag="4" />
+                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="624,90,0,0" Name="button5" VerticalAlignment="Top" Width="58" Click="button_colorEpg_Click" Tag="5" />
+                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="292,120,0,0" Name="button6" VerticalAlignment="Top" Width="58" Click="button_colorEpg_Click" Tag="6" />
+                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="624,120,0,0" Name="button7" VerticalAlignment="Top" Width="58" Click="button_colorEpg_Click" Tag="7" />
+                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="292,150,0,0" Name="button8" VerticalAlignment="Top" Width="58" Click="button_colorEpg_Click" Tag="8" />
+                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="624,150,0,0" Name="button9" VerticalAlignment="Top" Width="58" Click="button_colorEpg_Click" Tag="9" />
+                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="292,180,0,0" Name="button10" VerticalAlignment="Top" Width="58" Click="button_colorEpg_Click" Tag="10" />
+                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="624,180,0,0" Name="button11" VerticalAlignment="Top" Width="58" Click="button_colorEpg_Click" Tag="11" />
+                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="292,210,0,0" Name="button15" VerticalAlignment="Top" Width="58" Click="button_colorEpg_Click" Tag="15" />
+                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="624,210,0,0" Name="button16" VerticalAlignment="Top" Width="58" Click="button_colorEpg_Click" Tag="16" />
                             <Label Content="カスタム色" Height="28" HorizontalAlignment="Left" Margin="292,0,0,0" Name="label30" VerticalAlignment="Top" />
                             <Label Content="カスタム色" Height="28" HorizontalAlignment="Left" Margin="624,0,0,0" Name="label31" VerticalAlignment="Top" />
                         </Grid>
                     </GroupBox>
                     <GroupBox Header="予約枠" Height="147" Margin="0,279,12,0" Name="groupBox4" VerticalAlignment="Top" >
-                        <Grid>
+                        <Grid x:Name="grid_Reserve">
                             <Label Content="通常" Height="28" HorizontalAlignment="Left" Margin="18,28,0,0" Name="label25" VerticalAlignment="Top" />
                             <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding}" Margin="172,28,0,0" Name="comboBox_reserveNormal" VerticalAlignment="Top" Width="120">
                                 <ComboBox.ItemTemplate>
@@ -298,11 +298,24 @@
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>
                             </ComboBox>
-                            <CheckBox Content="塗りつぶしで表示" Height="16" HorizontalAlignment="Left" Margin="18,92,0,0" Name="checkBox_reserveBackground" VerticalAlignment="Top" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="298,27,0,0" Name="button14" VerticalAlignment="Top" Width="58" Click="button14_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="630,28,0,0" Name="button15" VerticalAlignment="Top" Width="58" Click="button15_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="298,57,0,0" Name="button16" VerticalAlignment="Top" Width="58" Click="button16_Click" />
-                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="630,57,0,0" Name="button17" VerticalAlignment="Top" Width="58" Click="button17_Click" />
+                            <Label Content="自動予約登録不明" Height="28" HorizontalAlignment="Left" Margin="18,80,0,0" Name="label34" VerticalAlignment="Top" ToolTip="[動作設定]-[予約情報管理]画面参照" />
+                            <Label Content="(オプション有効時のみ)" Height="28" HorizontalAlignment="Left" Margin="18,94,0,0" Name="label35" VerticalAlignment="Top" ToolTip="[動作設定]-[予約情報管理]画面参照" />
+                            <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding}" Margin="172,88,0,0" Name="comboBox_reserveAutoAddMissing" VerticalAlignment="Top" Width="120">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Label Background="{Binding Path=Color}" Width="20" />
+                                            <TextBlock Margin="5,0,0,0" Text="{Binding Path=ColorName}" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                            <CheckBox Content="塗りつぶしで表示" Height="16" HorizontalAlignment="Left" Margin="504,94,0,0" Name="checkBox_reserveBackground" VerticalAlignment="Top" />
+                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="298,27,0,0" Name="button17" VerticalAlignment="Top" Width="58" Click="button_colorEpg_Click" Tag="17" />
+                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="630,27,0,0" Name="button18" VerticalAlignment="Top" Width="58" Click="button_colorEpg_Click" Tag="18" />
+                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="298,57,0,0" Name="button19" VerticalAlignment="Top" Width="58" Click="button_colorEpg_Click" Tag="19" />
+                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="630,57,0,0" Name="button20" VerticalAlignment="Top" Width="58" Click="button_colorEpg_Click" Tag="20" />
+                            <Button Content="" Height="25" HorizontalAlignment="Left" Margin="298,87,0,0" Name="button21" VerticalAlignment="Top" Width="58" Click="button_colorEpg_Click" Tag="21" />
                             <Label Content="カスタム色" Height="28" HorizontalAlignment="Left" Margin="298,0,0,0" Name="label32" VerticalAlignment="Top" />
                             <Label Content="カスタム色" Height="28" HorizontalAlignment="Left" Margin="630,0,0,0" Name="label33" VerticalAlignment="Top" />
                         </Grid>
@@ -316,12 +329,12 @@
                     <GroupBox Header="カスタマイズ表示設定" Name="groupBox5" Margin="1,50,6,0" Height="225" Width="763" VerticalAlignment="Top">
                         <Grid>
                             <Label Content="表示タブ" Height="28" HorizontalAlignment="Left" Margin="6,6,0,0" Name="label29" VerticalAlignment="Top" />
-                            <ListBox Height="148" HorizontalAlignment="Left" Margin="23,40,0,0" Name="listBox_tab" VerticalAlignment="Top" Width="172" />
+                            <ListBox Height="148" HorizontalAlignment="Left" Margin="23,40,0,0" Name="listBox_tab" VerticalAlignment="Top" Width="172" SelectionMode="Extended" />
                             <Button Content="追加" Height="23" HorizontalAlignment="Left" Margin="213,40,0,0" Name="button_tab_add" VerticalAlignment="Top" Width="46" Click="button_tab_add_Click" />
                             <Button Content="変更" Height="23" HorizontalAlignment="Left" Margin="213,69,0,0" Name="button_tab_chg" VerticalAlignment="Top" Width="46" Click="button_tab_chg_Click" />
-                            <Button Content="削除" Height="23" HorizontalAlignment="Left" Margin="213,98,0,0" Name="button_tab_del" VerticalAlignment="Top" Width="46" Click="button_tab_del_Click" />
-                            <Button Content="↑" Height="23" HorizontalAlignment="Left" Margin="213,136,0,0" Name="button_tab_up" VerticalAlignment="Top" Width="46" Click="button_tab_up_Click" />
-                            <Button Content="↓" Height="23" HorizontalAlignment="Left" Margin="213,165,0,0" Name="buttontab_down" VerticalAlignment="Top" Width="46" Click="buttontab_down_Click" />
+                            <Button Content="削除" Height="23" HorizontalAlignment="Left" Margin="213,98,0,0" Name="button_tab_del" VerticalAlignment="Top" Width="46" />
+                            <Button Content="↑" Height="23" HorizontalAlignment="Left" Margin="213,136,0,0" Name="button_tab_up" VerticalAlignment="Top" Width="46" />
+                            <Button Content="↓" Height="23" HorizontalAlignment="Left" Margin="213,165,0,0" Name="button_tab_down" VerticalAlignment="Top" Width="46" />
                         </Grid>
                     </GroupBox>
                 </Grid>

@@ -1367,6 +1367,13 @@ namespace EpgTimer
                             CommonManager.Instance.DB.ReloadEpgAutoAddInfo();
                         }
                         autoAddView.UpdateAutoAddInfo();
+
+                        if (Settings.Instance.DisplayReserveAutoAddMissing == true)
+                        {
+                            reserveView.UpdateInfo();
+                            epgView.UpdateReserveData();
+                            tunerReserveView.UpdateInfo();
+                        }
                     }
                     break;
                 case UpdateNotifyItem.AutoAddManualInfo:
@@ -1377,6 +1384,13 @@ namespace EpgTimer
                             CommonManager.Instance.DB.ReloadManualAutoAddInfo();
                         }
                         autoAddView.UpdateAutoAddInfo();
+
+                        if (Settings.Instance.DisplayReserveAutoAddMissing == true)
+                        {
+                            reserveView.UpdateInfo();
+                            epgView.UpdateReserveData();
+                            tunerReserveView.UpdateInfo();
+                        }
                     }
                     break;
                 case UpdateNotifyItem.IniFile:

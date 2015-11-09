@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Windows.Media;
 using System.Reflection;
 using System.Windows;
@@ -54,12 +53,27 @@ namespace EpgTimer
             }
         }
 
-        public static Color ColorFromName(string name)
+        public static Color FromName(string name)
         {
             var colortype = typeof(Colors);
             return (Color)colortype.GetProperty(name).GetValue(colortype, null);
         }
 
+        public static Color FromUInt(UInt32 value)
+        {
+            return (Color)ColorConverter.ConvertFromString("#" + value.ToString("X8"));
+        }
+        public static UInt32 ToUInt(Color c)
+        {
+            return ((UInt32)c.A) << 24 | ((UInt32)c.R) << 16 | ((UInt32)c.G) << 8 | (UInt32)c.B;;
+        }
+
+        public static SolidColorBrush SolidBrush(Color color)
+        {
+            var brsh = new SolidColorBrush(color);
+            brsh.Freeze();
+            return brsh;
+        }
         public static LinearGradientBrush GradientBrush(Color color, double luminance = 0.94, double saturation = 1.2)
         {
             // 彩度を上げる

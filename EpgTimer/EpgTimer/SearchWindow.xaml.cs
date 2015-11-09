@@ -365,6 +365,10 @@ namespace EpgTimer
             {
                 SetViewMode(SearchMode.NewAdd);
                 this.autoAddID = 0;
+                if (Settings.Instance.DisplayReserveAutoAddMissing == true)
+                {
+                    RefreshAndSearch();
+                }
             }
         }
 
