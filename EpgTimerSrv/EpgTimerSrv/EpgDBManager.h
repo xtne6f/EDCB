@@ -99,7 +99,6 @@ protected:
 
 	map<LONGLONG, EPGDB_SERVICE_DATA*> epgMap;
 protected:
-	static BOOL ConvertEpgInfo(WORD ONID, WORD TSID, WORD SID, EPG_EVENT_INFO* src, EPGDB_EVENT_INFO* dest);
 	static BOOL CALLBACK EnumEpgInfoListProc(DWORD epgInfoListSize, EPG_EVENT_INFO* epgInfoList, LPVOID param);
 	void ClearEpgData();
 	static UINT WINAPI LoadThread(LPVOID param);

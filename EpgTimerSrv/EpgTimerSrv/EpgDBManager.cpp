@@ -275,96 +275,6 @@ UINT WINAPI CEpgDBManager::LoadThread(LPVOID param)
 	return 0;
 }
 
-//EPGデータをコピーする
-BOOL CEpgDBManager::ConvertEpgInfo(WORD ONID, WORD TSID, WORD SID, EPG_EVENT_INFO* src, EPGDB_EVENT_INFO* dest)
-{
-	if( src == NULL || dest == NULL ){
-		return FALSE;
-	}
-
-	dest->original_network_id = ONID;
-	dest->transport_stream_id = TSID;
-	dest->service_id = SID;
-	dest->event_id = src->event_id;
-	dest->StartTimeFlag = src->StartTimeFlag;
-	dest->start_time = src->start_time;
-	dest->DurationFlag = src->DurationFlag;
-	dest->durationSec = src->durationSec;
-	dest->freeCAFlag = src->freeCAFlag;
-
-	if( src->shortInfo != NULL ){
-		dest->shortInfo = new EPGDB_SHORT_EVENT_INFO;
-		dest->shortInfo->event_name = src->shortInfo->event_name;
-		//ごく稀にAPR(改行)を含むため
-		Replace(dest->shortInfo->event_name, L"\r\n", L"");
-		dest->shortInfo->text_char = src->shortInfo->text_char;
-	}
-	if( src->extInfo != NULL ){
-		dest->extInfo = new EPGDB_EXTENDED_EVENT_INFO;
-		dest->extInfo->text_char = src->extInfo->text_char;
-	}
-	if( src->contentInfo != NULL ){
-		dest->contentInfo = new EPGDB_CONTEN_INFO;
-		for( BYTE i=0; i<src->contentInfo->listSize; i++ ){
-			EPGDB_CONTENT_DATA item;
-			item.content_nibble_level_1 = src->contentInfo->nibbleList[i].content_nibble_level_1;
-			item.content_nibble_level_2 = src->contentInfo->nibbleList[i].content_nibble_level_2;
-			item.user_nibble_1 = src->contentInfo->nibbleList[i].user_nibble_1;
-			item.user_nibble_2 = src->contentInfo->nibbleList[i].user_nibble_2;
-			dest->contentInfo->nibbleList.push_back(item);
-		}
-	}
-	if( src->componentInfo != NULL ){
-		dest->componentInfo = new EPGDB_COMPONENT_INFO;
-		dest->componentInfo->stream_content = src->componentInfo->stream_content;
-		dest->componentInfo->component_type = src->componentInfo->component_type;
-		dest->componentInfo->component_tag = src->componentInfo->component_tag;
-		dest->componentInfo->text_char = src->componentInfo->text_char;
-	}
-	if( src->audioInfo != NULL ){
-		dest->audioInfo = new EPGDB_AUDIO_COMPONENT_INFO;
-		for( WORD i=0; i<src->audioInfo->listSize; i++ ){
-			EPGDB_AUDIO_COMPONENT_INFO_DATA item;
-			item.stream_content = src->audioInfo->audioList[i].stream_content;
-			item.component_type = src->audioInfo->audioList[i].component_type;
-			item.component_tag = src->audioInfo->audioList[i].component_tag;
-			item.stream_type = src->audioInfo->audioList[i].stream_type;
-			item.simulcast_group_tag = src->audioInfo->audioList[i].simulcast_group_tag;
-			item.ES_multi_lingual_flag = src->audioInfo->audioList[i].ES_multi_lingual_flag;
-			item.main_component_flag = src->audioInfo->audioList[i].main_component_flag;
-			item.quality_indicator = src->audioInfo->audioList[i].quality_indicator;
-			item.sampling_rate = src->audioInfo->audioList[i].sampling_rate;
-			item.text_char = src->audioInfo->audioList[i].text_char;
-			dest->audioInfo->componentList.push_back(item);
-		}
-	}
-	if( src->eventGroupInfo != NULL ){
-		dest->eventGroupInfo = new EPGDB_EVENTGROUP_INFO;
-		dest->eventGroupInfo->group_type = src->eventGroupInfo->group_type;
-		for( BYTE i = 0; i<src->eventGroupInfo->event_count; i++ ){
-			EPGDB_EVENT_DATA item;
-			item.original_network_id = src->eventGroupInfo->eventDataList[i].original_network_id;
-			item.transport_stream_id = src->eventGroupInfo->eventDataList[i].transport_stream_id;
-			item.service_id = src->eventGroupInfo->eventDataList[i].service_id;
-			item.event_id = src->eventGroupInfo->eventDataList[i].event_id;
-			dest->eventGroupInfo->eventDataList.push_back(item);
-		}
-	}
-	if( src->eventRelayInfo != NULL ){
-		dest->eventRelayInfo = new EPGDB_EVENTGROUP_INFO;
-		dest->eventRelayInfo->group_type = src->eventRelayInfo->group_type;
-		for( BYTE i = 0; i<src->eventRelayInfo->event_count; i++ ){
-			EPGDB_EVENT_DATA item;
-			item.original_network_id = src->eventRelayInfo->eventDataList[i].original_network_id;
-			item.transport_stream_id = src->eventRelayInfo->eventDataList[i].transport_stream_id;
-			item.service_id = src->eventRelayInfo->eventDataList[i].service_id;
-			item.event_id = src->eventRelayInfo->eventDataList[i].event_id;
-			dest->eventRelayInfo->eventDataList.push_back(item);
-		}
-	}
-	return TRUE;
-}
-
 BOOL CALLBACK CEpgDBManager::EnumEpgInfoListProc(DWORD epgInfoListSize, EPG_EVENT_INFO* epgInfoList, LPVOID param)
 {
 	EPGDB_SERVICE_DATA* item = (EPGDB_SERVICE_DATA*)param;
@@ -377,6 +287,10 @@ BOOL CALLBACK CEpgDBManager::EnumEpgInfoListProc(DWORD epgInfoListSize, EPG_EVEN
 			for( DWORD i=0; i<epgInfoListSize; i++ ){
 				size_t j = item->eventList.size();
 				ConvertEpgInfo(item->serviceInfo.ONID, item->serviceInfo.TSID, item->serviceInfo.SID, &epgInfoList[i], &item->eventArray[j]);
+				if( item->eventArray[j].shortInfo != NULL ){
+					//ごく稀にAPR(改行)を含むため
+					Replace(item->eventArray[j].shortInfo->event_name, L"\r\n", L"");
+				}
 				item->eventList.push_back(&item->eventArray[j]);
 				//実装上は既ソートだが仕様ではないので挿入ソートしておく
 				for( ; j>0 && item->eventList[j] < item->eventList[j-1]; j-- ){

@@ -30,6 +30,7 @@ void GetChkDrivePath(wstring directoryPath, wstring& mountPath);
 void GetGenreName(BYTE nibble1, BYTE nibble2, wstring& name);
 void GetComponentTypeName(BYTE content, BYTE type, wstring& name);
 
-void CopyEpgInfo(EPG_EVENT_INFO* destInfo, EPGDB_EVENT_INFO* srcInfo);
+void CopyEpgInfo(EPG_EVENT_INFO* destInfo, const EPGDB_EVENT_INFO* srcInfo);
+void ConvertEpgInfo(WORD onid, WORD tsid, WORD sid, const EPG_EVENT_INFO* src, EPGDB_EVENT_INFO* dest);
 
 #endif
