@@ -5,6 +5,7 @@
 #include "EpgDataCap_Bon.h"
 #include "SetDlgBasic.h"
 
+#include "../../Common/Util.h"
 #include "../../Common/PathUtil.h"
 #include "../../Common/StringUtil.h"
 

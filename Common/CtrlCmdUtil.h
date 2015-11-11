@@ -9,14 +9,12 @@ namespace CtrlCmdUtilImpl_
 template<class T> DWORD CCUTIL_WriteVectorVALUE_( WORD ver, BYTE* buff, DWORD buffOffset, const vector<T>& val );
 template<class T> DWORD CCUTIL_WritePtrVectorVALUE_( WORD ver, BYTE* buff, DWORD buffOffset, const vector<T>& val );
 template<class T> BOOL CCUTIL_ReadVectorVALUE_( WORD ver, vector<T>* val, const BYTE* buff, DWORD buffSize, DWORD* readSize );
-template<class T> BOOL CCUTIL_ReadAndNewVectorVALUE_( WORD ver, vector<T*>* val, const BYTE* buff, DWORD buffSize, DWORD* readSize );
 
 #define CCUTIL_BASETYPE_WRITE_			{ (void)ver; if( buff != NULL ) memcpy(buff + buffOffset, &val, sizeof(val)); return sizeof(val); }
 #define CCUTIL_BASETYPE_READ_			{ (void)ver; if( buffSize < sizeof(*val) ) return FALSE; memcpy(val, buff, sizeof(*val)); *readSize = sizeof(*val); return TRUE; }
 #define CCUTIL_VECTOR_WRITE_			return CCUTIL_WriteVectorVALUE_(ver, buff, buffOffset, val)
 #define CCUTIL_VECTOR_WRITE_PTR_		return CCUTIL_WritePtrVectorVALUE_(ver, buff, buffOffset, val)
 #define CCUTIL_VECTOR_READ_				return CCUTIL_ReadVectorVALUE_(ver, val, buff, buffSize, readSize)
-#define CCUTIL_VECTOR_READ_AND_NEW_		return CCUTIL_ReadAndNewVectorVALUE_(ver, val, buff, buffSize, readSize)
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 //コマンド送信用バイナリ作成関数
@@ -118,8 +116,9 @@ BOOL ReadVALUE( WORD ver, EPGDB_EVENTGROUP_INFO* val, const BYTE* buff, DWORD bu
 DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const EPGDB_EVENT_INFO& val );
 BOOL ReadVALUE( WORD ver, EPGDB_EVENT_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize );
 
-inline DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const vector<EPGDB_EVENT_INFO*>& val ){ CCUTIL_VECTOR_WRITE_PTR_; }
-inline BOOL ReadVALUE( WORD ver, vector<EPGDB_EVENT_INFO*>* val, const BYTE* buff, DWORD buffSize, DWORD* readSize ){ CCUTIL_VECTOR_READ_AND_NEW_; }
+inline DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const vector<EPGDB_EVENT_INFO>& val ){ CCUTIL_VECTOR_WRITE_; }
+inline DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const vector<const EPGDB_EVENT_INFO*>& val ){ CCUTIL_VECTOR_WRITE_PTR_; }
+inline BOOL ReadVALUE( WORD ver, vector<EPGDB_EVENT_INFO>* val, const BYTE* buff, DWORD buffSize, DWORD* readSize ){ CCUTIL_VECTOR_READ_; }
 
 DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const EPGDB_SEARCH_DATE_INFO& val );
 BOOL ReadVALUE( WORD ver, EPGDB_SEARCH_DATE_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize );
@@ -193,7 +192,7 @@ BOOL ReadVALUE( WORD ver, REGIST_TCP_INFO* val, const BYTE* buff, DWORD buffSize
 DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const EPGDB_SERVICE_EVENT_INFO& val );
 BOOL ReadVALUE( WORD ver, EPGDB_SERVICE_EVENT_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize );
 
-inline DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const vector<EPGDB_SERVICE_EVENT_INFO>& val ){ CCUTIL_VECTOR_WRITE_; }
+inline DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const vector<const EPGDB_SERVICE_EVENT_INFO*>& val ){ CCUTIL_VECTOR_WRITE_PTR_; }
 inline BOOL ReadVALUE( WORD ver, vector<EPGDB_SERVICE_EVENT_INFO>* val, const BYTE* buff, DWORD buffSize, DWORD* readSize ){ CCUTIL_VECTOR_READ_; }
 
 DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const TVTEST_CH_CHG_INFO& val );
@@ -276,44 +275,7 @@ BOOL CCUTIL_ReadVectorVALUE_( WORD ver, vector<T>* val, const BYTE* buff, DWORD 
 	for( DWORD i=0; i < valCount; i++ ){
 		val->resize(val->size() + 1);
 		if( ReadVALUE(ver, &val->back(), buff + pos, buffSize - pos, &size) == FALSE ){
-			//Tがデストラクタで破棄されないポインタメンバをもつ場合にリークするためdeleteはできない
-			//呼び出し側はリストを適切に破棄するべき
-			return FALSE;
-		}
-		pos += size;
-	}
-	*readSize = valSize;
-	return TRUE;
-}
-
-template<class T>
-BOOL CCUTIL_ReadAndNewVectorVALUE_( WORD ver, vector<T*>* val, const BYTE* buff, DWORD buffSize, DWORD* readSize )
-{
-	if( buffSize < sizeof(DWORD)*2 ){
-		return FALSE;
-	}
-
-	DWORD pos = 0;
-	DWORD size = 0;
-	DWORD valSize = 0;
-	DWORD valCount = 0;
-	//全体のサイズ
-	ReadVALUE(0, &valSize, buff + pos, buffSize - pos, &size);
-	pos += size;
-	//リストの個数
-	ReadVALUE(0, &valCount, buff + pos, buffSize - pos, &size);
-	pos += size;
-	if( valSize < pos || buffSize < valSize ){
-		return FALSE;
-	}
-	buffSize = valSize;
-	val->reserve(val->size() + valCount);
-
-	for( DWORD i=0; i < valCount; i++ ){
-		val->push_back(new T);
-		if( ReadVALUE(ver, val->back(), buff + pos, buffSize - pos, &size) == FALSE ){
-			//Tがデストラクタで破棄されないポインタメンバをもつ場合にリークするためdeleteはできない
-			//呼び出し側はリストを適切に破棄するべき
+			val->pop_back();
 			return FALSE;
 		}
 		pos += size;

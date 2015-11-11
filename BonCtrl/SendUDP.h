@@ -3,7 +3,6 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include "BonCtrlDef.h"
-#include "../Common/Util.h"
 #include "../Common/StringUtil.h"
 
 class CSendUDP

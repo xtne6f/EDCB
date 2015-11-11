@@ -7,11 +7,6 @@ CChSetUtil::CChSetUtil(void)
 {
 }
 
-
-CChSetUtil::~CChSetUtil(void)
-{
-}
-
 //チャンネル設定ファイルを読み込む
 BOOL CChSetUtil::LoadChSet(
 	wstring chSet4FilePath,

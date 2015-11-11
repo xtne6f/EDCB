@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../Common/Util.h"
 #include "../Common/EpgTimerUtil.h"
 #include "../Common/ErrDef.h"
 
@@ -13,7 +12,6 @@ public:
 	}PROGRAM_PID_INFO;
 public:
 	CCreatePATPacket(void);
-	~CCreatePATPacket(void);
 
 	//作成PATのパラメータを設定
 	//引数：

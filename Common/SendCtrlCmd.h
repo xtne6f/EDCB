@@ -1,12 +1,10 @@
 #pragma once
 
-#include "Util.h"
 #include "StructDef.h"
 
 #include "CtrlCmdDef.h"
 #include "ErrDef.h"
 #include "CtrlCmdUtil.h"
-#include "CtrlCmdUtil2.h"
 
 class CSendCtrlCmd
 {
@@ -215,7 +213,7 @@ public:
 	// val				[OUT]”Ô‘gî•ñˆê——
 	DWORD SendEnumPgInfo(
 		ULONGLONG service,
-		vector<EPGDB_EVENT_INFO*>* val
+		vector<EPGDB_EVENT_INFO>* val
 		){
 		return SendAndReceiveCmdData(CMD2_EPG_SRV_ENUM_PG_INFO, service, val);
 	}
@@ -241,7 +239,7 @@ public:
 	// val				[OUT]”Ô‘gî•ñˆê——
 	DWORD SendSearchPg(
 		const vector<EPGDB_SEARCH_KEY_INFO>* key,
-		vector<EPGDB_EVENT_INFO*>* val
+		vector<EPGDB_EVENT_INFO>* val
 		){
 		return SendAndReceiveCmdData(CMD2_EPG_SRV_SEARCH_PG, key, val);
 	}

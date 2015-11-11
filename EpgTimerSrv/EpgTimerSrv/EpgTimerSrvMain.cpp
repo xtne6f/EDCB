@@ -958,11 +958,11 @@ bool CEpgTimerSrvMain::AutoAddReserveEPG(const EPG_AUTO_ADD_DATA& data)
 	}
 	__int64 now = GetNowI64Time();
 
-	vector<std::unique_ptr<CEpgDBManager::SEARCH_RESULT_EVENT_DATA>> resultList;
+	vector<CEpgDBManager::SEARCH_RESULT_EVENT_DATA> resultList;
 	vector<EPGDB_SEARCH_KEY_INFO> key(1, data.searchInfo);
 	this->epgDB.SearchEpg(&key, &resultList);
 	for( size_t i = 0; i < resultList.size(); i++ ){
-		const EPGDB_EVENT_INFO& info = resultList[i]->info;
+		const EPGDB_EVENT_INFO& info = resultList[i].info;
 		//éûä‘ñ¢íËÇ≈Ç»Ç≠ëŒè€ä˙ä‘ì‡Ç©Ç«Ç§Ç©
 		if( info.StartTimeFlag != 0 && info.DurationFlag != 0 &&
 		    now < ConvertI64Time(info.start_time) && ConvertI64Time(info.start_time) < now + autoAddHour_ * 60 * 60 * I64_1SEC ){
@@ -1019,8 +1019,8 @@ bool CEpgTimerSrvMain::AutoAddReserveEPG(const EPG_AUTO_ADD_DATA& data)
 						item.recSetting.recMode = RECMODE_NO;
 					}
 					item.comment = L"EPGé©ìÆó\ñÒ";
-					if( resultList[i]->findKey.empty() == false ){
-						item.comment += L"(" + resultList[i]->findKey + L")";
+					if( resultList[i].findKey.empty() == false ){
+						item.comment += L"(" + resultList[i].findKey + L")";
 						Replace(item.comment, L"\r", L"");
 						Replace(item.comment, L"\n", L"");
 					}
@@ -1084,7 +1084,7 @@ bool CEpgTimerSrvMain::AutoAddReserveProgram(const MANUAL_AUTO_ADD_DATA& data)
 
 static void SearchPgCallback(vector<CEpgDBManager::SEARCH_RESULT_EVENT>* pval, void* param)
 {
-	vector<EPGDB_EVENT_INFO*> valp;
+	vector<const EPGDB_EVENT_INFO*> valp;
 	valp.reserve(pval->size());
 	for( size_t i = 0; i < pval->size(); i++ ){
 		valp.push_back((*pval)[i].info);
@@ -1094,14 +1094,14 @@ static void SearchPgCallback(vector<CEpgDBManager::SEARCH_RESULT_EVENT>* pval, v
 	resParam->data = NewWriteVALUE(&valp, resParam->dataSize);
 }
 
-static void EnumPgInfoCallback(vector<EPGDB_EVENT_INFO*>* pval, void* param)
+static void EnumPgInfoCallback(const vector<EPGDB_EVENT_INFO>* pval, void* param)
 {
 	CMD_STREAM *resParam = (CMD_STREAM*)param;
 	resParam->param = CMD_SUCCESS;
 	resParam->data = NewWriteVALUE(pval, resParam->dataSize);
 }
 
-static void EnumPgAllCallback(vector<EPGDB_SERVICE_EVENT_INFO>* pval, void* param)
+static void EnumPgAllCallback(vector<const EPGDB_SERVICE_EVENT_INFO*>* pval, void* param)
 {
 	CMD_STREAM *resParam = (CMD_STREAM*)param;
 	resParam->param = CMD_SUCCESS;
@@ -2070,7 +2070,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 						CopyOldNew(&oldItem, &item);
 
 						vector<EPGDB_SEARCH_KEY_INFO> key;
-						vector<std::unique_ptr<CEpgDBManager::SEARCH_RESULT_EVENT_DATA>> val;
+						vector<CEpgDBManager::SEARCH_RESULT_EVENT_DATA> val;
 						key.push_back(item);
 						if( sys->epgDB.SearchEpg(&key, &val) != FALSE ){
 							CBlockLock lock(&sys->settingLock);
@@ -2078,7 +2078,7 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 							sys->oldSearchList.clear();
 							for( size_t i=0; i<val.size(); i++ ){
 								OLD_EVENT_INFO_DATA3 add;
-								add = val[i]->info;
+								add = val[i].info;
 								sys->oldSearchList.push_back(add);
 							}
 							if( sys->oldSearchList.size() == 0 ){
@@ -2413,13 +2413,13 @@ int CEpgTimerSrvMain::LuaGetServiceList(lua_State* L)
 	return 0;
 }
 
-void CEpgTimerSrvMain::LuaGetEventMinMaxTimeCallback(vector<EPGDB_EVENT_INFO*>* pval, void* param)
+void CEpgTimerSrvMain::LuaGetEventMinMaxTimeCallback(const vector<EPGDB_EVENT_INFO>* pval, void* param)
 {
 	__int64 minTime = LLONG_MAX;
 	__int64 maxTime = LLONG_MIN;
 	for( size_t i = 0; i < pval->size(); i++ ){
-		if( (*pval)[i]->StartTimeFlag ){
-			__int64 startTime = ConvertI64Time((*pval)[i]->start_time);
+		if( (*pval)[i].StartTimeFlag ){
+			__int64 startTime = ConvertI64Time((*pval)[i].start_time);
 			minTime = min(minTime, startTime);
 			maxTime = max(maxTime, startTime);
 		}
@@ -2455,29 +2455,29 @@ struct EnumEventParam {
 	__int64 endTime;
 };
 
-void CEpgTimerSrvMain::LuaEnumEventInfoCallback(vector<EPGDB_EVENT_INFO*>* pval, void* param)
+void CEpgTimerSrvMain::LuaEnumEventInfoCallback(const vector<EPGDB_EVENT_INFO>* pval, void* param)
 {
 	const EnumEventParam& ep = *(const EnumEventParam*)param;
 	CLuaWorkspace& ws = *(CLuaWorkspace*)ep.param;
 	lua_newtable(ws.L);
 	int n = 0;
 	for( size_t i = 0; i < pval->size(); i++ ){
-		if( (ep.startTime != 0 || ep.endTime != LLONG_MAX) && (ep.startTime != LLONG_MAX || (*pval)[i]->StartTimeFlag) ){
-			if( (*pval)[i]->StartTimeFlag == 0 ){
+		if( (ep.startTime != 0 || ep.endTime != LLONG_MAX) && (ep.startTime != LLONG_MAX || (*pval)[i].StartTimeFlag) ){
+			if( (*pval)[i].StartTimeFlag == 0 ){
 				continue;
 			}
-			__int64 startTime = ConvertI64Time((*pval)[i]->start_time);
+			__int64 startTime = ConvertI64Time((*pval)[i].start_time);
 			if( startTime < ep.startTime || ep.endTime <= startTime ){
 				continue;
 			}
 		}
 		lua_newtable(ws.L);
-		PushEpgEventInfo(ws, *(*pval)[i]);
+		PushEpgEventInfo(ws, (*pval)[i]);
 		lua_rawseti(ws.L, -2, ++n);
 	}
 }
 
-void CEpgTimerSrvMain::LuaEnumEventAllCallback(vector<EPGDB_SERVICE_EVENT_INFO>* pval, void* param)
+void CEpgTimerSrvMain::LuaEnumEventAllCallback(vector<const EPGDB_SERVICE_EVENT_INFO*>* pval, void* param)
 {
 	const EnumEventParam& ep = *(const EnumEventParam*)param;
 	CLuaWorkspace& ws = *(CLuaWorkspace*)ep.param;
@@ -2485,21 +2485,21 @@ void CEpgTimerSrvMain::LuaEnumEventAllCallback(vector<EPGDB_SERVICE_EVENT_INFO>*
 	int n = 0;
 	for( size_t i = 0; i < pval->size(); i++ ){
 		for( size_t j = 0; j + 2 < ep.key.size(); j += 3 ){
-			if( (ep.key[j] < 0 || ep.key[j] == (*pval)[i].serviceInfo.ONID) &&
-			    (ep.key[j+1] < 0 || ep.key[j+1] == (*pval)[i].serviceInfo.TSID) &&
-			    (ep.key[j+2] < 0 || ep.key[j+2] == (*pval)[i].serviceInfo.SID) ){
-				for( size_t k = 0; k < (*pval)[i].eventList.size(); k++ ){
-					if( (ep.startTime != 0 || ep.endTime != LLONG_MAX) && (ep.startTime != LLONG_MAX || (*pval)[i].eventList[k]->StartTimeFlag) ){
-						if( (*pval)[i].eventList[k]->StartTimeFlag == 0 ){
+			if( (ep.key[j] < 0 || ep.key[j] == (*pval)[i]->serviceInfo.ONID) &&
+			    (ep.key[j+1] < 0 || ep.key[j+1] == (*pval)[i]->serviceInfo.TSID) &&
+			    (ep.key[j+2] < 0 || ep.key[j+2] == (*pval)[i]->serviceInfo.SID) ){
+				for( size_t k = 0; k < (*pval)[i]->eventList.size(); k++ ){
+					if( (ep.startTime != 0 || ep.endTime != LLONG_MAX) && (ep.startTime != LLONG_MAX || (*pval)[i]->eventList[k].StartTimeFlag) ){
+						if( (*pval)[i]->eventList[k].StartTimeFlag == 0 ){
 							continue;
 						}
-						__int64 startTime = ConvertI64Time((*pval)[i].eventList[k]->start_time);
+						__int64 startTime = ConvertI64Time((*pval)[i]->eventList[k].start_time);
 						if( startTime < ep.startTime || ep.endTime <= startTime ){
 							continue;
 						}
 					}
 					lua_newtable(ws.L);
-					PushEpgEventInfo(ws, *(*pval)[i].eventList[k]);
+					PushEpgEventInfo(ws, (*pval)[i]->eventList[k]);
 					lua_rawseti(ws.L, -2, ++n);
 				}
 				break;

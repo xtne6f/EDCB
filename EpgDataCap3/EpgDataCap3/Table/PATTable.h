@@ -30,7 +30,6 @@ program_association_section(){
 }
 */
 
-#include "../../../Common/Util.h"
 #include "PSITable.h"
 
 class CPATTable : public CPSITable

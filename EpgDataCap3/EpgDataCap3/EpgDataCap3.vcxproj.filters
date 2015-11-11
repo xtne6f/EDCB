@@ -87,9 +87,6 @@
     <ClInclude Include="..\..\Common\EpgTimerUtil.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Common\Util.h">
-      <Filter>ヘッダー ファイル\Common</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Common\StringUtil.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
@@ -192,9 +189,6 @@
       <Filter>ソース ファイル\Table</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Common\EpgTimerUtil.cpp">
-      <Filter>ソース ファイル\Common</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Common\Util.cpp">
       <Filter>ソース ファイル\Common</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Common\StringUtil.cpp">

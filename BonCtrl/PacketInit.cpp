@@ -7,10 +7,6 @@ CPacketInit::CPacketInit(void)
 	this->packetSize = 0;
 }
 
-CPacketInit::~CPacketInit(void)
-{
-}
-
 void CPacketInit::ClearBuff()
 {
 	this->nextStartSize = 0;

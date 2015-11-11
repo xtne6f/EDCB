@@ -1,8 +1,6 @@
 #ifndef __STRUCT_DEF_H__
 #define __STRUCT_DEF_H__
 
-#include "Util.h"
-
 //録画フォルダ情報
 typedef struct _REC_FILE_SET_INFO{
 	wstring recFolder;			//録画フォルダ
@@ -234,23 +232,6 @@ private:
 	_CMD_STREAM & operator= (const _CMD_STREAM &);
 } CMD_STREAM;
 
-typedef struct _HTTP_STREAM{
-	string httpHeader;	//送信時コマンド、受信時エラーコード
-	DWORD dataSize;	//dataのサイズ（BYTE単位）
-	BYTE* data;		//送受信するバイナリデータ
-	_HTTP_STREAM(void){
-		httpHeader = "";
-		dataSize = 0;
-		data = NULL;
-	}
-	~_HTTP_STREAM(void){
-		delete[] data;
-	}
-private:
-	_HTTP_STREAM(const _HTTP_STREAM &);
-	_HTTP_STREAM & operator= (const _HTTP_STREAM &);
-} HTTP_STREAM;
-
 //EPG基本情報
 typedef struct _EPGDB_SHORT_EVENT_INFO{
 	wstring event_name;			//イベント名
@@ -326,32 +307,16 @@ typedef struct _EPGDB_EVENT_INFO{
 	BYTE DurationFlag;						//durationの値が有効かどうか
 	DWORD durationSec;						//総時間（単位：秒）
 
-	EPGDB_SHORT_EVENT_INFO* shortInfo;		//基本情報
-	EPGDB_EXTENDED_EVENT_INFO* extInfo;		//拡張情報
-	EPGDB_CONTEN_INFO* contentInfo;			//ジャンル情報
-	EPGDB_COMPONENT_INFO* componentInfo;		//映像情報
-	EPGDB_AUDIO_COMPONENT_INFO* audioInfo;	//音声情報
-	EPGDB_EVENTGROUP_INFO* eventGroupInfo;	//イベントグループ情報
-	EPGDB_EVENTGROUP_INFO* eventRelayInfo;	//イベントリレー情報
+	std::unique_ptr<EPGDB_SHORT_EVENT_INFO> shortInfo;		//基本情報
+	std::unique_ptr<EPGDB_EXTENDED_EVENT_INFO> extInfo;		//拡張情報
+	std::unique_ptr<EPGDB_CONTEN_INFO> contentInfo;			//ジャンル情報
+	std::unique_ptr<EPGDB_COMPONENT_INFO> componentInfo;	//映像情報
+	std::unique_ptr<EPGDB_AUDIO_COMPONENT_INFO> audioInfo;	//音声情報
+	std::unique_ptr<EPGDB_EVENTGROUP_INFO> eventGroupInfo;	//イベントグループ情報
+	std::unique_ptr<EPGDB_EVENTGROUP_INFO> eventRelayInfo;	//イベントリレー情報
 
 	BYTE freeCAFlag;						//ノンスクランブルフラグ
 	_EPGDB_EVENT_INFO(void){
-		shortInfo = NULL;
-		extInfo = NULL;
-		contentInfo = NULL;
-		componentInfo = NULL;
-		audioInfo = NULL;
-		eventGroupInfo = NULL;
-		eventRelayInfo = NULL;
-	};
-	~_EPGDB_EVENT_INFO(void){
-		delete shortInfo;
-		delete extInfo;
-		delete contentInfo;
-		delete componentInfo;
-		delete audioInfo;
-		delete eventGroupInfo;
-		delete eventRelayInfo;
 	};
 	void DeepCopy(const _EPGDB_EVENT_INFO & o){
 		original_network_id = o.original_network_id;
@@ -363,24 +328,20 @@ typedef struct _EPGDB_EVENT_INFO{
 		DurationFlag = o.DurationFlag;
 		durationSec = o.durationSec;
 		freeCAFlag = o.freeCAFlag;
-		SAFE_DELETE(shortInfo);
-		SAFE_DELETE(extInfo);
-		SAFE_DELETE(contentInfo);
-		SAFE_DELETE(componentInfo);
-		SAFE_DELETE(audioInfo);
-		SAFE_DELETE(eventGroupInfo);
-		SAFE_DELETE(eventRelayInfo);
-		if( o.shortInfo ) shortInfo = new EPGDB_SHORT_EVENT_INFO(*o.shortInfo);
-		if( o.extInfo ) extInfo = new EPGDB_EXTENDED_EVENT_INFO(*o.extInfo);
-		if( o.contentInfo ) contentInfo = new EPGDB_CONTEN_INFO(*o.contentInfo);
-		if( o.componentInfo ) componentInfo = new EPGDB_COMPONENT_INFO(*o.componentInfo);
-		if( o.audioInfo ) audioInfo = new EPGDB_AUDIO_COMPONENT_INFO(*o.audioInfo);
-		if( o.eventGroupInfo ) eventGroupInfo = new EPGDB_EVENTGROUP_INFO(*o.eventGroupInfo);
-		if( o.eventRelayInfo ) eventRelayInfo = new EPGDB_EVENTGROUP_INFO(*o.eventRelayInfo);
+		shortInfo.reset(o.shortInfo ? new EPGDB_SHORT_EVENT_INFO(*o.shortInfo) : NULL);
+		extInfo.reset(o.extInfo ? new EPGDB_EXTENDED_EVENT_INFO(*o.extInfo) : NULL);
+		contentInfo.reset(o.contentInfo ? new EPGDB_CONTEN_INFO(*o.contentInfo) : NULL);
+		componentInfo.reset(o.componentInfo ? new EPGDB_COMPONENT_INFO(*o.componentInfo) : NULL);
+		audioInfo.reset(o.audioInfo ? new EPGDB_AUDIO_COMPONENT_INFO(*o.audioInfo) : NULL);
+		eventGroupInfo.reset(o.eventGroupInfo ? new EPGDB_EVENTGROUP_INFO(*o.eventGroupInfo) : NULL);
+		eventRelayInfo.reset(o.eventRelayInfo ? new EPGDB_EVENTGROUP_INFO(*o.eventRelayInfo) : NULL);
 	};
-private:
-	_EPGDB_EVENT_INFO(const _EPGDB_EVENT_INFO &);
-	_EPGDB_EVENT_INFO & operator= (const _EPGDB_EVENT_INFO &);
+#if defined(_MSC_VER) && _MSC_VER < 1900
+	//暗黙ムーブ未対応の古いコンパイラに限りコピーを定義しておく
+	//コンテナで無駄なコピーが走らないように少しだけ考慮すべき(神経質になる必要はない)
+	_EPGDB_EVENT_INFO(const _EPGDB_EVENT_INFO & o){ DeepCopy(o); }
+	_EPGDB_EVENT_INFO & operator= (const _EPGDB_EVENT_INFO & o){ DeepCopy(o); return *this; }
+#endif
 }EPGDB_EVENT_INFO;
 
 typedef struct _EPGDB_SERVICE_INFO{
@@ -410,7 +371,7 @@ typedef struct _EPGDB_SERVICE_INFO{
 
 typedef struct _EPGDB_SERVICE_EVENT_INFO{
 	EPGDB_SERVICE_INFO serviceInfo;
-	vector<EPGDB_EVENT_INFO*> eventList;
+	vector<EPGDB_EVENT_INFO> eventList;
 }EPGDB_SERVICE_EVENT_INFO;
 
 typedef struct _EPGDB_SEARCH_DATE_INFO{

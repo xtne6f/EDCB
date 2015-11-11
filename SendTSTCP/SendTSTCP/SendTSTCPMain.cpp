@@ -381,7 +381,7 @@ UINT WINAPI CSendTSTCPMain::SendThread(LPVOID pParam)
 						sizeof(itr->second.addr)
 						) == INVALID_SOCKET){
 							closesocket(itr->second.sock);
-							itr->second.sock = NULL;
+							itr->second.sock = INVALID_SOCKET;
 							itr->second.bConnect = FALSE;
 					}
 					dwCount++;

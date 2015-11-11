@@ -8,11 +8,6 @@ CCATUtil::CCATUtil(void)
 {
 }
 
-
-CCATUtil::~CCATUtil(void)
-{
-}
-
 BOOL CCATUtil::AddPacket(CTSPacketUtil* packet)
 {
 	if( packet == NULL ){

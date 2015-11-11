@@ -7,10 +7,6 @@ CTSPacketUtil::CTSPacketUtil(void)
 	data_byte = NULL;
 }
 
-CTSPacketUtil::~CTSPacketUtil(void)
-{
-}
-
 BOOL CTSPacketUtil::Set188TS(BYTE* data, DWORD dataSize)
 {
 	if( data == NULL || dataSize != 188){

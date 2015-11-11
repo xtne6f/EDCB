@@ -1,8 +1,6 @@
 #ifndef __NW_STRUCT_DEF_H__
 #define __NW_STRUCT_DEF_H__
 
-#include "Util.h"
-
 enum NW_VERB_MODE{
 	NW_VERB_GET = 0,
 	NW_VERB_POST,

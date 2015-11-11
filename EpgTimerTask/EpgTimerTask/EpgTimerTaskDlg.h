@@ -3,13 +3,11 @@
 //
 
 #pragma once
-#include "../../Common/Util.h"
 #include "../../Common/StringUtil.h"
 #include "../../Common/PathUtil.h"
 #include "../../Common/PipeServer.h"
 #include "../../Common/SendCtrlCmd.h"
 #include "../../Common/CtrlCmdUtil.h"
-#include "../../Common/CtrlCmdUtil2.h"
 #include "QueryWaitDlg.h"
 
 #define WM_TRAY_PUSHICON (WM_USER+51) //トレイアイコン押された

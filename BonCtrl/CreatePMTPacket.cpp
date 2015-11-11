@@ -15,10 +15,6 @@ CCreatePMTPacket::CCreatePMTPacket(void)
 	this->createCounter = 0;
 }
 
-CCreatePMTPacket::~CCreatePMTPacket(void)
-{
-}
-
 //PMT作成時のモード
 //引数：
 // needCaption			[IN]字幕データを含めるかどうか（TRUE:含める、FALSE：含めない）

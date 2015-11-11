@@ -1,6 +1,5 @@
 #include "StdAfx.h"
 #include "UpnpSsdpServer.h"
-#include "../../Common/Util.h"
 #include "../../Common/StringUtil.h"
 #include <process.h>
 #include <iphlpapi.h>

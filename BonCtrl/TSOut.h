@@ -359,9 +359,6 @@ protected:
 
 	DWORD GetNextID();
 
-	//EPGデータをコピーする
-	BOOL ConvertEpgInfo(EPG_EVENT_INFO* src, EPGDB_EVENT_INFO* dest);
-
 	void ResetErrCount();
 
 	void OnChChanged(WORD onid, WORD tsid);

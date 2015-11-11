@@ -1,6 +1,7 @@
 #include "StdAfx.h"
 #include "resource.h"
 #include "SettingDlg.h"
+#include "../../Common/Util.h"
 
 CDShowCtrl ctrl;
 wstring grfPath = L"";

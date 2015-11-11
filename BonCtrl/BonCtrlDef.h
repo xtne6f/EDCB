@@ -1,8 +1,6 @@
 #ifndef __BON_CTRL_DEF_H__
 #define __BON_CTRL_DEF_H__
 
-#include "../Common/Util.h"
-
 #define MUTEX_UDP_PORT_NAME			TEXT("Global\\EpgDataCap_Bon_UDP_PORT_")
 #define MUTEX_TCP_PORT_NAME			TEXT("Global\\EpgDataCap_Bon_TCP_PORT_")
 #define CHSET_SAVE_EVENT_WAIT		 _T("Global\\EpgTimer_ChSet")

@@ -3,7 +3,6 @@
 
 #include "stdafx.h"
 
-#include "../../Common/Util.h"
 #include "../../Common/ErrDef.h"
 #include "SendTSTCPMain.h"
 #include "../../Common/InstanceManager.h"

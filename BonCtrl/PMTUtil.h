@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../Common/Util.h"
 #include "../Common/ErrDef.h"
 #include "../Common/TSBuffUtil.h"
 #include "../Common/TSPacketUtil.h"
@@ -14,7 +13,6 @@ public:
 
 public:
 	CPMTUtil(void);
-	~CPMTUtil(void);
 
 	BOOL AddPacket(CTSPacketUtil* packet);
 

@@ -3,7 +3,6 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 
-#include "../../Common/Util.h"
 #include "../../Common/StringUtil.h"
 #pragma comment(lib, "wsock32.lib")
 

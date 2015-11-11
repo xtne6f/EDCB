@@ -13,7 +13,7 @@ CTCPServerUtil::CTCPServerUtil(void)
 	this->stopEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 	this->serverThread = NULL;
 
-	this->srvSock = NULL;
+	this->srvSock = INVALID_SOCKET;
 
 	WSAData wsaData;
 	WSAStartup(MAKEWORD(2,0), &wsaData);
@@ -21,10 +21,10 @@ CTCPServerUtil::CTCPServerUtil(void)
 
 CTCPServerUtil::~CTCPServerUtil(void)
 {
-	if( this->srvSock != NULL ){
+	if( this->srvSock != INVALID_SOCKET ){
 		shutdown(this->srvSock,SD_BOTH);
 		closesocket(this->srvSock);
-		this->srvSock = NULL;
+		this->srvSock = INVALID_SOCKET;
 	}
 
 	map<HANDLE, TCP_ACCEPT_PARAM*>::iterator itr;
@@ -119,7 +119,6 @@ BOOL CTCPServerUtil::StartServer(DWORD port, TCP_ACCEPT_CALLBACK_PROC tcpAcceptP
 
 	this->srvSock = socket(AF_INET, SOCK_STREAM, 0);
 	if( this->srvSock == INVALID_SOCKET ){
-		this->srvSock = NULL;
 		return FALSE;
 	}
 	this->srvAddr.sin_family = AF_INET;
@@ -148,10 +147,10 @@ BOOL CTCPServerUtil::StartServer(DWORD port, TCP_ACCEPT_CALLBACK_PROC tcpAcceptP
 
 void CTCPServerUtil::StopServer()
 {
-	if( this->srvSock != NULL ){
+	if( this->srvSock != INVALID_SOCKET ){
 		shutdown(this->srvSock,SD_BOTH);
 		closesocket(this->srvSock);
-		this->srvSock = NULL;
+		this->srvSock = INVALID_SOCKET;
 	}
 
 	map<HANDLE, TCP_ACCEPT_PARAM*>::iterator itr;
@@ -191,8 +190,6 @@ UINT WINAPI CTCPServerUtil::ServerThread(LPVOID pParam)
 	HANDLE curThread = GetCurrentThread();
 	SetThreadPriority(curThread, pSys->threadPriority);
 
-	SOCKET sock = NULL;
-	SOCKET sock2 = NULL;
 	struct sockaddr_in client;
 	
 	fd_set ready;
@@ -235,7 +232,7 @@ UINT WINAPI CTCPServerUtil::ServerThread(LPVOID pParam)
 		}
 		if ( FD_ISSET(pSys->srvSock, &ready) ){
 			int len = sizeof(client);
-			sock = accept(pSys->srvSock, (struct sockaddr *)&client, &len);
+			SOCKET sock = accept(pSys->srvSock, (struct sockaddr *)&client, &len);
 			if (sock == INVALID_SOCKET) {
 				continue;
 			}else{
@@ -272,7 +269,7 @@ UINT WINAPI CTCPServerUtil::AcceptThread(LPVOID pParam)
 //Err_End:
 	shutdown(pTemp->sock,SD_SEND);
 	closesocket(pTemp->sock);
-	pTemp->sock = NULL;
+	pTemp->sock = INVALID_SOCKET;
 
 	return 0;
 }

@@ -120,7 +120,7 @@ DWORD CWinHTTPUtil::CloseSession()
 
 	//コネクション系のクローズ
 	if( this->request != NULL ){
-		WinHttpSetStatusCallback( this->request, NULL, NULL, NULL );
+		WinHttpSetStatusCallback( this->request, NULL, 0, 0 );
 		WinHttpCloseHandle(this->request);
 		this->request = NULL;
 	}
@@ -174,7 +174,7 @@ DWORD CWinHTTPUtil::SendRequest(
 	}
 	//リクエストクローズ
 	if( this->request != NULL ){
-		WinHttpSetStatusCallback( this->request, NULL, NULL, NULL );
+		WinHttpSetStatusCallback( this->request, NULL, 0, 0 );
 		WinHttpCloseHandle(this->request);
 		this->request = NULL;
 	}
@@ -194,7 +194,7 @@ DWORD CWinHTTPUtil::SendRequest(
 	stURL.dwUrlPathLength   = -1;
 	stURL.dwExtraInfoLength = -1;
 
-	if( WinHttpCrackUrl( url, (DWORD)wcslen(url), 0, &stURL) == NULL ){
+	if( WinHttpCrackUrl( url, (DWORD)wcslen(url), 0, &stURL) == FALSE ){
 		return ERR_FALSE;
 	}
 	if( stURL.dwHostNameLength <= 0 ){
@@ -271,7 +271,7 @@ DWORD CWinHTTPUtil::SendRequest(
 	}
 
 	//コールバック設定
-	WinHttpSetStatusCallback(this->request, StatusCallback, WINHTTP_CALLBACK_FLAG_ALL_COMPLETIONS, NULL );
+	WinHttpSetStatusCallback(this->request, StatusCallback, WINHTTP_CALLBACK_FLAG_ALL_COMPLETIONS, 0 );
 
 	//アップロードデータのコピー
 	this->totalUpSize = 0;
@@ -343,7 +343,7 @@ DWORD CWinHTTPUtil::CloseRequest()
 		this->upThread = NULL;
 	}
 	if( this->request != NULL ){
-		WinHttpSetStatusCallback( this->request, NULL, NULL, NULL );
+		WinHttpSetStatusCallback( this->request, NULL, 0, 0 );
 		WinHttpCloseHandle(this->request);
 		this->request = NULL;
 	}
@@ -387,7 +387,7 @@ void CALLBACK CWinHTTPUtil::StatusCallback (
 		case WINHTTP_CALLBACK_STATUS_REQUEST_ERROR:
 			//エラー発生
 			{
-				WinHttpSetStatusCallback( sys->request, NULL, NULL, NULL );
+				WinHttpSetStatusCallback( sys->request, NULL, 0, 0 );
 				sys->errEndCode = ERR_NW_FALSE;
 				SetEvent(sys->responseCompEvent);
 			}
@@ -519,7 +519,7 @@ UINT CWinHTTPUtil::UploadThread(LPVOID pParam)
 			file = CreateFile( (WCHAR*)data->buff, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
 			if( file == INVALID_HANDLE_VALUE ){
 				sys->errEndCode = ERR_NW_FILE_OPEN;
-				WinHttpSetStatusCallback( sys->request, NULL, NULL, NULL );
+				WinHttpSetStatusCallback( sys->request, NULL, 0, 0 );
 				SetEvent(sys->responseCompEvent);
 				return 0;
 			}
@@ -541,7 +541,7 @@ UINT CWinHTTPUtil::UploadThread(LPVOID pParam)
 					}
 					if( ReadFile(file, buff, SEND_BUFF_SIZE, &readBuffSize, NULL ) == FALSE ){
 						sys->errEndCode = ERR_NW_FILE_OPEN;
-						WinHttpSetStatusCallback( sys->request, NULL, NULL, NULL );
+						WinHttpSetStatusCallback( sys->request, NULL, 0, 0 );
 						SetEvent(sys->responseCompEvent);
 						return 0;
 					}else{
@@ -550,7 +550,7 @@ UINT CWinHTTPUtil::UploadThread(LPVOID pParam)
 							Sleep(200);
 							if( retryCount > 100 ){
 								sys->errEndCode = ERR_NW_FALSE;
-								WinHttpSetStatusCallback( sys->request, NULL, NULL, NULL );
+								WinHttpSetStatusCallback( sys->request, NULL, 0, 0 );
 								SetEvent(sys->responseCompEvent);
 								return 0;
 							}

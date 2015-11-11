@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../Common/Util.h"
 #include "../Common/StructDef.h"
 #include "../Common/EpgDataCap3Def.h"
 #include "BonCtrlDef.h"
@@ -11,7 +10,6 @@ class CChSetUtil
 {
 public:
 	CChSetUtil(void);
-	~CChSetUtil(void);
 
 	//チャンネル設定ファイルを読み込む
 	BOOL LoadChSet(

@@ -1,8 +1,6 @@
 #ifndef __EPG_DATA_CAP3_DEF_H__
 #define __EPG_DATA_CAP3_DEF_H__
 
-#include "Util.h"
-
 //EPGデータ取得ステータス
 typedef enum{
 	EpgNoData			= 0x0000,	//データがない

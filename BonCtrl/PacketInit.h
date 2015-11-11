@@ -2,13 +2,10 @@
 
 #include <windows.h>
 
-#include "../Common/Util.h"
-
 class CPacketInit
 {
 public:
 	CPacketInit(void);
-	~CPacketInit(void);
 
 	//入力バッファを188バイト単位のTSに変換し、188の倍数になるようにそろえる
 	//戻り値：

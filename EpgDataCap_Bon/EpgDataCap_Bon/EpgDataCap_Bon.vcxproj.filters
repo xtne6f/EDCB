@@ -213,9 +213,6 @@
     <ClInclude Include="SetDlgService.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Common\CtrlCmdUtil2.h">
-      <Filter>ヘッダー ファイル\Common</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="EpgDataCap_Bon.cpp">
@@ -340,9 +337,6 @@
     </ClCompile>
     <ClCompile Include="SetDlgService.cpp">
       <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Common\CtrlCmdUtil2.cpp">
-      <Filter>ソース ファイル\Common</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
