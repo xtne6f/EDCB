@@ -10,7 +10,6 @@ class CChSetUtil
 {
 public:
 	CChSetUtil(void);
-	~CChSetUtil(void);
 
 	//チャンネル設定ファイルを読み込む
 	BOOL LoadChSet(

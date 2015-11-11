@@ -15,11 +15,6 @@ CDropCount::CDropCount(void)
 	this->bonFile = L"";
 }
 
-
-CDropCount::~CDropCount(void)
-{
-}
-
 void CDropCount::AddData(BYTE* data, DWORD size)
 {
 	if( data == NULL || size == 0 ){

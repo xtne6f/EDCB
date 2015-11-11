@@ -9,7 +9,6 @@ class CCreatePMTPacket
 {
 public:
 	CCreatePMTPacket(void);
-	~CCreatePMTPacket(void);
 
 	//PMTì¬‚Ìƒ‚[ƒh
 	//ˆø”F

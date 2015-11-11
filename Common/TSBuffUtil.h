@@ -9,7 +9,6 @@ class CTSBuffUtil
 {
 public:
 	CTSBuffUtil(BOOL supportPES = FALSE);
-	~CTSBuffUtil(void);
 
 	//Add188TS()がTRUEを返せばGetSectionBuff()は1回以上成功する。このとき受け取らなかったバッファは次のAdd188TS()で消える
 	DWORD Add188TS(CTSPacketUtil* tsPacket);

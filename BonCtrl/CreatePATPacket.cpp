@@ -7,10 +7,6 @@ CCreatePATPacket::CCreatePATPacket(void)
 	this->counter = 0;
 }
 
-CCreatePATPacket::~CCreatePATPacket(void)
-{
-}
-
 //作成PATのパラメータを設定
 //引数：
 // TSID				[IN]TransportStreamID

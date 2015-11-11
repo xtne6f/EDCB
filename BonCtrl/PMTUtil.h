@@ -13,7 +13,6 @@ public:
 
 public:
 	CPMTUtil(void);
-	~CPMTUtil(void);
 
 	BOOL AddPacket(CTSPacketUtil* packet);
 

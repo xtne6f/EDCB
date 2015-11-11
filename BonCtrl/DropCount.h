@@ -9,7 +9,6 @@ class CDropCount
 {
 public:
 	CDropCount(void);
-	~CDropCount(void);
 
 	void AddData(BYTE* data, DWORD size);
 

@@ -10,11 +10,6 @@ CPMTUtil::CPMTUtil(void)
 	this->PCR_PID = 0xFFFF;
 }
 
-
-CPMTUtil::~CPMTUtil(void)
-{
-}
-
 BOOL CPMTUtil::AddPacket(CTSPacketUtil* packet)
 {
 	if( packet == NULL ){

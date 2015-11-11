@@ -11,7 +11,6 @@ public:
 
 public:
 	CCATUtil(void);
-	~CCATUtil(void);
 
 	BOOL AddPacket(CTSPacketUtil* packet);
 

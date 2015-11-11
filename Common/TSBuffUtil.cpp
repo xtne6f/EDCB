@@ -13,10 +13,6 @@ CTSBuffUtil::CTSBuffUtil(BOOL supportPES)
 	this->PESMode = FALSE;
 }
 
-CTSBuffUtil::~CTSBuffUtil(void)
-{
-}
-
 void CTSBuffUtil::Clear()
 {
 	this->sectionSize = 0;

@@ -128,7 +128,6 @@ public:
 
 public:
 	CTSPacketUtil(void);
-	~CTSPacketUtil(void);
 
 	BOOL Set188TS(BYTE* data, DWORD dataSize);
 };

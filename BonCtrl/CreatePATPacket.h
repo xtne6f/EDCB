@@ -12,7 +12,6 @@ public:
 	}PROGRAM_PID_INFO;
 public:
 	CCreatePATPacket(void);
-	~CCreatePATPacket(void);
 
 	//作成PATのパラメータを設定
 	//引数：
