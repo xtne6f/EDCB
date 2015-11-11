@@ -5,7 +5,6 @@
 #include "CtrlCmdDef.h"
 #include "ErrDef.h"
 #include "CtrlCmdUtil.h"
-#include "CtrlCmdUtil2.h"
 
 class CSendCtrlCmd
 {

@@ -174,7 +174,6 @@
     <ClInclude Include="..\..\Common\CommonDef.h" />
     <ClInclude Include="..\..\Common\CtrlCmdDef.h" />
     <ClInclude Include="..\..\Common\CtrlCmdUtil.h" />
-    <ClInclude Include="..\..\Common\CtrlCmdUtil2.h" />
     <ClInclude Include="..\..\Common\EpgDataCap3Def.h" />
     <ClInclude Include="..\..\Common\EpgDataCap3Util.h" />
     <ClInclude Include="..\..\Common\EpgTimerUtil.h" />
@@ -229,7 +228,6 @@
     <ClCompile Include="..\..\BonCtrl\SendTCP.cpp" />
     <ClCompile Include="..\..\BonCtrl\SendUDP.cpp" />
     <ClCompile Include="..\..\Common\CtrlCmdUtil.cpp" />
-    <ClCompile Include="..\..\Common\CtrlCmdUtil2.cpp" />
     <ClCompile Include="..\..\Common\EpgDataCap3Util.cpp" />
     <ClCompile Include="..\..\Common\EpgTimerUtil.cpp" />
     <ClCompile Include="..\..\Common\ParseTextInstances.cpp" />

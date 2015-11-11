@@ -197,7 +197,6 @@
     <ClInclude Include="..\..\Common\CommonDef.h" />
     <ClInclude Include="..\..\Common\CtrlCmdDef.h" />
     <ClInclude Include="..\..\Common\CtrlCmdUtil.h" />
-    <ClInclude Include="..\..\Common\CtrlCmdUtil2.h" />
     <ClInclude Include="..\..\Common\ErrDef.h" />
     <ClInclude Include="..\..\Common\NWStructDef.h" />
     <ClInclude Include="..\..\Common\PathUtil.h" />
@@ -216,7 +215,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Common\CtrlCmdUtil.cpp" />
-    <ClCompile Include="..\..\Common\CtrlCmdUtil2.cpp" />
     <ClCompile Include="..\..\Common\PathUtil.cpp" />
     <ClCompile Include="..\..\Common\PipeServer.cpp" />
     <ClCompile Include="..\..\Common\SendCtrlCmd.cpp" />
