@@ -10,11 +10,6 @@
 
 CSendCtrlCmd::CSendCtrlCmd(void)
 {
-	WSAData wsaData;
-	WSAStartup(MAKEWORD(2,0), &wsaData);
-
-	this->lockEvent = CreateEvent(NULL, FALSE, TRUE, NULL);
-
 	this->tcpFlag = FALSE;
 	this->connectTimeOut = CONNECT_TIMEOUT;
 
@@ -29,38 +24,7 @@ CSendCtrlCmd::CSendCtrlCmd(void)
 
 CSendCtrlCmd::~CSendCtrlCmd(void)
 {
-	if( this->lockEvent != NULL ){
-		UnLock();
-		CloseHandle(this->lockEvent);
-		this->lockEvent = NULL;
-	}
-	WSACleanup();
-}
-
-BOOL CSendCtrlCmd::Lock(LPCWSTR log, DWORD timeOut)
-{
-	if( this->lockEvent == NULL ){
-		return FALSE;
-	}
-	if( log != NULL ){
-		OutputDebugString(log);
-	}
-	DWORD dwRet = WaitForSingleObject(this->lockEvent, timeOut);
-	if( dwRet == WAIT_ABANDONED || 
-		dwRet == WAIT_FAILED){
-		return FALSE;
-	}
-	return TRUE;
-}
-
-void CSendCtrlCmd::UnLock(LPCWSTR log)
-{
-	if( this->lockEvent != NULL ){
-		SetEvent(this->lockEvent);
-	}
-	if( log != NULL ){
-		OutputDebugString(log);
-	}
+	SetSendMode(FALSE);
 }
 
 //コマンド送信方法の設定
@@ -70,9 +34,14 @@ void CSendCtrlCmd::SetSendMode(
 	BOOL tcpFlag
 	)
 {
-	if( Lock() == FALSE ) return ;
-	this->tcpFlag = tcpFlag;
-	UnLock();
+	if( this->tcpFlag == FALSE && tcpFlag ){
+		WSAData wsaData;
+		WSAStartup(MAKEWORD(2, 0), &wsaData);
+		this->tcpFlag = TRUE;
+	}else if( this->tcpFlag && tcpFlag == FALSE ){
+		WSACleanup();
+		this->tcpFlag = FALSE;
+	}
 }
 
 //名前付きパイプモード時の接続先を設定
@@ -85,10 +54,8 @@ void CSendCtrlCmd::SetPipeSetting(
 	LPCWSTR pipeName
 	)
 {
-	if( Lock() == FALSE ) return ;
 	this->eventName = eventName;
 	this->pipeName = pipeName;
-	UnLock();
 }
 
 //名前付きパイプモード時の接続先を設定（接尾にプロセスIDを伴うタイプ）
@@ -100,10 +67,8 @@ void CSendCtrlCmd::SetPipeSetting(
 	DWORD pid
 	)
 {
-	if( Lock() == FALSE ) return ;
 	Format(this->eventName, L"%s%d", eventName, pid);
 	Format(this->pipeName, L"%s%d", pipeName, pid);
-	UnLock();
 }
 
 //TCP/IPモード時の接続先を設定
@@ -115,10 +80,8 @@ void CSendCtrlCmd::SetNWSetting(
 	DWORD port
 	)
 {
-	if( Lock() == FALSE ) return ;
 	this->ip = ip;
 	this->port = port;
-	UnLock();
 }
 
 //接続処理時のタイムアウト設定
@@ -127,9 +90,7 @@ void CSendCtrlCmd::SetConnectTimeOut(
 	DWORD timeOut
 	)
 {
-	if( Lock() == FALSE ) return ;
 	this->connectTimeOut = timeOut;
-	UnLock();
 }
 
 DWORD CSendCtrlCmd::SendPipe(LPCWSTR pipeName, LPCWSTR eventName, DWORD timeOut, CMD_STREAM* send, CMD_STREAM* res)
@@ -340,7 +301,6 @@ DWORD CSendCtrlCmd::SendGetEpgFile2(
 
 DWORD CSendCtrlCmd::SendCmdStream(CMD_STREAM* send, CMD_STREAM* res)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
 	DWORD ret = CMD_ERR;
 	CMD_STREAM tmpRes;
 
@@ -353,7 +313,6 @@ DWORD CSendCtrlCmd::SendCmdStream(CMD_STREAM* send, CMD_STREAM* res)
 		ret = SendTCP(this->ip, this->port, this->connectTimeOut, send, res);
 	}
 
-	UnLock();
 	return ret;
 }
 
