@@ -130,7 +130,7 @@ BOOL CEpgDataCap3Main::GetEpgInfo(
 		nowTime = (__int64)time.dwHighDateTime << 32 | time.dwLowDateTime;
 	}
 	if( nextFlag == FALSE && (*epgInfo)->StartTimeFlag != FALSE && (*epgInfo)->DurationFlag != FALSE ){
-		if( nowTime < ConvertI64Time((*epgInfo)->start_time) || GetSumTime((*epgInfo)->start_time, (*epgInfo)->durationSec) < nowTime ){
+		if( nowTime < ConvertI64Time((*epgInfo)->start_time) || ConvertI64Time((*epgInfo)->start_time) + (*epgInfo)->durationSec * I64_1SEC < nowTime ){
 			//ŽžŠÔ“à‚É‚È‚¢‚Ì‚ÅŽ¸”s
 			epgInfo = NULL;
 			return FALSE;

@@ -73,7 +73,7 @@ static BOOL ExpandMacro(wstring var, PLUGIN_RESERVE_INFO* info, wstring& convert
 	}
 
 	SYSTEMTIME tEnd;
-	GetI64Time(info->startTime, info->durationSec, NULL, NULL, &tEnd);
+	GetSumTime(info->startTime, info->durationSec, &tEnd);
 
 	wstring strEDW28;
 	SYSTEMTIME t28TimeE;
