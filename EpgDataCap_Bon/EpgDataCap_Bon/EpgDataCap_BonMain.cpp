@@ -2,6 +2,7 @@
 #include "EpgDataCap_BonMain.h"
 
 #include "EpgDataCap_BonDef.h"
+#include "../../Common/CommonDef.h"
 #include "../../Common/CtrlCmdDef.h"
 #include "../../Common/CtrlCmdUtil.h"
 

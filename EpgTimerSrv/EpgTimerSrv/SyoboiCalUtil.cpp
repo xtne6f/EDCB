@@ -4,6 +4,7 @@
 #include <wincrypt.h>
 #pragma comment (lib, "Crypt32.lib")
 
+#include "../../Common/CommonDef.h"
 #include "../../Common/PathUtil.h"
 #include "../../Common/StringUtil.h"
 #include "../../Common/TimeUtil.h"

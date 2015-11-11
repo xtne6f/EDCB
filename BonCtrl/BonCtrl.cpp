@@ -2,7 +2,7 @@
 #include "BonCtrl.h"
 #include <process.h>
 
-#include "../Common/ErrDef.h"
+#include "../Common/CommonDef.h"
 #include "../Common/TimeUtil.h"
 #include "../Common/SendCtrlCmd.h"
 #include "../Common/BlockLock.h"

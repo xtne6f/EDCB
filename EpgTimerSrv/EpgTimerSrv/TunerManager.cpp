@@ -47,7 +47,7 @@ BOOL CTunerManager::ReloadTuner()
 	GetSettingPath(path);
 
 	wstring srvIniPath = L"";
-	GetEpgTimerSrvIniPath(srvIniPath);
+	GetModuleIniPath(srvIniPath);
 
 	wstring searchKey = path;
 	searchKey += L"\\*.ChSet4.txt";

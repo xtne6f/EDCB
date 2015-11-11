@@ -1,202 +1,130 @@
 #include "stdafx.h"
 #include "PathUtil.h"
-#include "StringUtil.h"
-#include <shlobj.h>
+#include <wchar.h>
 
 void GetDefSettingPath(wstring& strPath)
 {
-/*	strPath = L"";
-
-	WCHAR szPathM[_MAX_PATH];
-	::SHGetFolderPath(NULL, CSIDL_PERSONAL|CSIDL_FLAG_CREATE, NULL, 0, szPathM);
-
-	strPath = szPathM;
-	strPath += SAVE_FOLDER;
-	ChkFolderPath(strPath);
-*/
-	WCHAR strExePath[512] = L"";
-	GetModuleFileName(NULL, strExePath, 512);
-
-	WCHAR szPath[_MAX_PATH];	// ÉpÉX
-	WCHAR szDrive[_MAX_DRIVE];
-	WCHAR szDir[_MAX_DIR];
-	WCHAR szFname[_MAX_FNAME];
-	WCHAR szExt[_MAX_EXT];
-	_wsplitpath_s( strExePath, szDrive, _MAX_DRIVE, szDir, _MAX_DIR, szFname, _MAX_FNAME, szExt, _MAX_EXT );
-	_wmakepath_s(  szPath, _MAX_PATH, szDrive, szDir, NULL, NULL );
-	
-	strPath = L"";
-	strPath += szPath;
-	strPath += L"Setting";
+	GetModuleFolderPath(strPath);
+	strPath += L"\\Setting";
 }
 
 void GetSettingPath(wstring& strPath)
 {
-	strPath = L"";
 	wstring strIni = L"";
 	GetCommonIniPath(strIni);
 	
-	WCHAR wPath[512]=L"";
-	GetPrivateProfileString( L"Set", L"DataSavePath", L"", wPath, 512, strIni.c_str() );
+	WCHAR wPath[MAX_PATH + 8];
+	GetPrivateProfileString( L"Set", L"DataSavePath", L"", wPath, MAX_PATH + 8, strIni.c_str() );
 	strPath = wPath;
+	ChkFolderPath(strPath);
+	if( strPath.size() >= MAX_PATH ){
+		throw std::runtime_error("");
+	}
 	if( strPath.empty() == true ){
 		GetDefSettingPath(strPath);
 	}
-	ChkFolderPath(strPath);
 }
 
 void GetModuleFolderPath(wstring& strPath)
 {
-	WCHAR strExePath[512] = L"";
-	GetModuleFileName(NULL, strExePath, 512);
+	WCHAR strExePath[MAX_PATH];
+	DWORD len = GetModuleFileName(NULL, strExePath, MAX_PATH);
+	if( len == 0 || len >= MAX_PATH ){
+		throw std::runtime_error("");
+	}
 
-	WCHAR szPath[_MAX_PATH];	// ÉpÉX
+	WCHAR szPath[_MAX_DRIVE + _MAX_DIR + 8];
 	WCHAR szDrive[_MAX_DRIVE];
 	WCHAR szDir[_MAX_DIR];
-	WCHAR szFname[_MAX_FNAME];
-	WCHAR szExt[_MAX_EXT];
-	_wsplitpath_s( strExePath, szDrive, _MAX_DRIVE, szDir, _MAX_DIR, szFname, _MAX_FNAME, szExt, _MAX_EXT );
-	_wmakepath_s(  szPath, _MAX_PATH, szDrive, szDir, NULL, NULL );
-	int iLen = lstrlen(szPath);
-	szPath[iLen-1] = '\0';
-	
-	strPath = L"";
-	strPath += szPath;
+	_wsplitpath_s( strExePath, szDrive, _MAX_DRIVE, szDir, _MAX_DIR, NULL, 0, NULL, 0 );
+	_wmakepath_s(  szPath, szDrive, szDir, NULL, NULL );
+	strPath = szPath;
 	ChkFolderPath(strPath);
 }
 
 void GetModuleIniPath(wstring& strPath)
 {
-	WCHAR strExePath[512] = L"";
-	GetModuleFileName(NULL, strExePath, 512);
+	WCHAR strExePath[MAX_PATH];
+	DWORD len = GetModuleFileName(NULL, strExePath, MAX_PATH);
+	if( len == 0 || len >= MAX_PATH ){
+		throw std::runtime_error("");
+	}
 
-	WCHAR szPath[_MAX_PATH];	// ÉpÉX
+	WCHAR szPath[_MAX_DRIVE + _MAX_DIR + _MAX_FNAME + 4 + 8];
 	WCHAR szDrive[_MAX_DRIVE];
 	WCHAR szDir[_MAX_DIR];
 	WCHAR szFname[_MAX_FNAME];
-	WCHAR szExt[_MAX_EXT];
-	_wsplitpath_s( strExePath, szDrive, _MAX_DRIVE, szDir, _MAX_DIR, szFname, _MAX_FNAME, szExt, _MAX_EXT );
-	_wmakepath_s(  szPath, _MAX_PATH, szDrive, szDir, NULL, NULL );
-	
-	strPath = L"";
-	strPath += szPath;
-	strPath += szFname;
-	strPath += L".ini";
+	_wsplitpath_s( strExePath, szDrive, _MAX_DRIVE, szDir, _MAX_DIR, szFname, _MAX_FNAME, NULL, 0 );
+	_wmakepath_s(  szPath, szDrive, szDir, szFname, L".ini" );
+	strPath = szPath;
 }
 
 void GetCommonIniPath(wstring& strPath)
 {
-	WCHAR strExePath[512] = L"";
-	GetModuleFileName(NULL, strExePath, 512);
-
-	WCHAR szPath[_MAX_PATH];	// ÉpÉX
-	WCHAR szDrive[_MAX_DRIVE];
-	WCHAR szDir[_MAX_DIR];
-	WCHAR szFname[_MAX_FNAME];
-	WCHAR szExt[_MAX_EXT];
-	_wsplitpath_s( strExePath, szDrive, _MAX_DRIVE, szDir, _MAX_DIR, szFname, _MAX_FNAME, szExt, _MAX_EXT );
-	_wmakepath_s(  szPath, _MAX_PATH, szDrive, szDir, NULL, NULL );
-	
-	strPath = L"";
-	strPath += szPath;
-	strPath += L"Common.ini";
+	GetModuleFolderPath(strPath);
+	strPath += L"\\Common.ini";
 }
 
 void GetEpgTimerSrvIniPath(wstring& strPath)
 {
-	WCHAR strExePath[512] = L"";
-	GetModuleFileName(NULL, strExePath, 512);
-
-	WCHAR szPath[_MAX_PATH];	// ÉpÉX
-	WCHAR szDrive[_MAX_DRIVE];
-	WCHAR szDir[_MAX_DIR];
-	WCHAR szFname[_MAX_FNAME];
-	WCHAR szExt[_MAX_EXT];
-	_wsplitpath_s( strExePath, szDrive, _MAX_DRIVE, szDir, _MAX_DIR, szFname, _MAX_FNAME, szExt, _MAX_EXT );
-	_wmakepath_s(  szPath, _MAX_PATH, szDrive, szDir, NULL, NULL );
-	
-	strPath = L"";
-	strPath += szPath;
-	strPath += L"EpgTimerSrv.ini";
-}
-
-void GetEpgSavePath(wstring& strPath)
-{
-	strPath = L"";
-	GetSettingPath(strPath);
-	strPath += EPG_SAVE_FOLDER;
-}
-
-void GetLogoSavePath(wstring& strPath)
-{
-	strPath = L"";
-	GetSettingPath(strPath);
-	strPath += LOGO_SAVE_FOLDER;
+	GetModuleFolderPath(strPath);
+	strPath += L"\\EpgTimerSrv.ini";
 }
 
 void GetRecFolderPath(wstring& strPath)
 {
-	strPath = L"";
 	wstring strIni = L"";
 	GetCommonIniPath(strIni);
 	
-	WCHAR wPath[512]=L"";
-	GetPrivateProfileString( L"Set", L"RecFolderPath0", L"", wPath, 512, strIni.c_str() );
+	WCHAR wPath[MAX_PATH + 8];
+	GetPrivateProfileString( L"Set", L"RecFolderPath0", L"", wPath, MAX_PATH + 8, strIni.c_str() );
 	strPath = wPath;
+	ChkFolderPath(strPath);
+	if( strPath.size() >= MAX_PATH ){
+		throw std::runtime_error("");
+	}
 	if( strPath.empty() || GetPrivateProfileInt(L"SET", L"RecFolderNum", 0, strIni.c_str()) <= 0 ){
 		GetSettingPath(strPath);
 	}
-	ChkFolderPath(strPath);
 }
 
-void GetFileTitle(wstring strPath, wstring& strTitle)
+void GetFileTitle(const wstring& strPath, wstring& strTitle)
 {
-	WCHAR szDrive[_MAX_DRIVE];
-	WCHAR szDir[_MAX_DIR];
 	WCHAR szFname[_MAX_FNAME];
-	WCHAR szExt[_MAX_EXT];
-	_wsplitpath_s( strPath.c_str(), szDrive, _MAX_DRIVE, szDir, _MAX_DIR, szFname, _MAX_FNAME, szExt, _MAX_EXT );
+	_wsplitpath_s( strPath.c_str(), NULL, 0, NULL, 0, szFname, _MAX_FNAME, NULL, 0 );
 
 	strTitle = szFname;
 	return ;
 }
 
-void GetFileName(wstring strPath, wstring& strName)
+void GetFileName(const wstring& strPath, wstring& strName)
 {
-	WCHAR strFileName[512] = L"";
-	WCHAR szDrive[_MAX_DRIVE];
-	WCHAR szDir[_MAX_DIR];
+	WCHAR strFileName[_MAX_FNAME + _MAX_EXT + 8];
 	WCHAR szFname[_MAX_FNAME];
 	WCHAR szExt[_MAX_EXT];
-	_wsplitpath_s( strPath.c_str(), szDrive, _MAX_DRIVE, szDir, _MAX_DIR, szFname, _MAX_FNAME, szExt, _MAX_EXT );
-	_wmakepath_s( strFileName, _MAX_PATH, NULL, NULL, szFname, szExt );
+	_wsplitpath_s( strPath.c_str(), NULL, 0, NULL, 0, szFname, _MAX_FNAME, szExt, _MAX_EXT );
+	_wmakepath_s( strFileName, NULL, NULL, szFname, szExt );
 
 	strName = strFileName;
 	return ;
 }
 
-void GetFileExt(wstring strPath, wstring& strExt)
+void GetFileExt(const wstring& strPath, wstring& strExt)
 {
-	WCHAR strFileName[512] = L"";
-	WCHAR szDrive[_MAX_DRIVE];
-	WCHAR szDir[_MAX_DIR];
-	WCHAR szFname[_MAX_FNAME];
 	WCHAR szExt[_MAX_EXT];
-	_wsplitpath_s( strPath.c_str(), szDrive, _MAX_DRIVE, szDir, _MAX_DIR, szFname, _MAX_FNAME, szExt, _MAX_EXT );
+	_wsplitpath_s( strPath.c_str(), NULL, 0, NULL, 0, NULL, 0, szExt, _MAX_EXT );
 
 	strExt = szExt;
 	return ;
 }
 
-void GetFileFolder(wstring strPath, wstring& strFolder)
+void GetFileFolder(const wstring& strPath, wstring& strFolder)
 {
-	WCHAR szPath[512] = L"";
+	WCHAR szPath[_MAX_DRIVE + _MAX_DIR + 8];
 	WCHAR szDrive[_MAX_DRIVE];
 	WCHAR szDir[_MAX_DIR];
-	WCHAR szFname[_MAX_FNAME];
-	WCHAR szExt[_MAX_EXT];
-	_wsplitpath_s( strPath.c_str(), szDrive, _MAX_DRIVE, szDir, _MAX_DIR, szFname, _MAX_FNAME, szExt, _MAX_EXT );
-	_wmakepath_s( szPath, _MAX_PATH, szDrive, szDir, NULL, NULL );
+	_wsplitpath_s( strPath.c_str(), szDrive, _MAX_DRIVE, szDir, _MAX_DIR, NULL, 0, NULL, 0 );
+	_wmakepath_s( szPath, szDrive, szDir, NULL, NULL );
 
 	strFolder = szPath;
 	ChkFolderPath(strFolder);
@@ -204,18 +132,12 @@ void GetFileFolder(wstring strPath, wstring& strFolder)
 }
 
 
-BOOL IsExt(wstring filePath, wstring ext)
+BOOL IsExt(const WCHAR* filePath, const WCHAR* ext)
 {
-	if( filePath.empty() == true ){
-		return FALSE;
-	}
-	WCHAR szDrive[_MAX_DRIVE];
-	WCHAR szDir[_MAX_DIR];
-	WCHAR szFname[_MAX_FNAME];
 	WCHAR szExt[_MAX_EXT];
-	_wsplitpath_s( filePath.c_str(), szDrive, _MAX_DRIVE, szDir, _MAX_DIR, szFname, _MAX_FNAME, szExt, _MAX_EXT );
+	_wsplitpath_s( filePath, NULL, 0, NULL, 0, NULL, 0, szExt, _MAX_EXT );
 
-	if( CompareNoCase( szExt, ext ) != 0 ){
+	if( _wcsicmp( szExt, ext ) != 0 ){
 		return FALSE;
 	}
 
@@ -224,31 +146,20 @@ BOOL IsExt(wstring filePath, wstring ext)
 
 void CheckFileName(wstring& fileName, BOOL noChkYen)
 {
-	if( noChkYen == FALSE ){
-		Replace(fileName, L"\\",L"Åè");
+	const WCHAR s[] = { L'/', L':', L'*', L'?', L'"', L'<', L'>', L'|', (noChkYen ? L'\0' : L'\\'), L'\0' };
+	const WCHAR r[] = { L'Å^', L'ÅF', L'Åñ', L'ÅH', L'Åh', L'ÅÉ', L'ÅÑ', L'Åb', L'Åè', L'\0' };
+	for( size_t i = 0; i < fileName.size(); i++ ){
+		const WCHAR* p = wcschr(s, fileName[i]);
+		if( p ){
+			fileName[i] = r[p - s];
+		}
 	}
-	Replace(fileName, L"/",L"Å^");
-	Replace(fileName, L":",L"ÅF");
-	Replace(fileName, L"*",L"Åñ");
-	Replace(fileName, L"?",L"ÅH");
-	Replace(fileName, L"\"",L"Åh");
-	Replace(fileName, L"<",L"ÅÉ");
-	Replace(fileName, L">",L"ÅÑ");
-	Replace(fileName, L"|",L"Åb");
 }
 
-void CheckFileName(string& fileName, BOOL noChkYen)
+void ChkFolderPath(wstring& strPath)
 {
-	if( noChkYen == FALSE ){
-		Replace(fileName, "\\","Åè");
+	if( strPath.empty() == false && strPath.back() == L'\\' ){
+		strPath.pop_back();
 	}
-	Replace(fileName, "/","Å^");
-	Replace(fileName, ":","ÅF");
-	Replace(fileName, "*","Åñ");
-	Replace(fileName, "?","ÅH");
-	Replace(fileName, "\"","Åh");
-	Replace(fileName, "<","ÅÉ");
-	Replace(fileName, ">","ÅÑ");
-	Replace(fileName, "|","Åb");
 }
 

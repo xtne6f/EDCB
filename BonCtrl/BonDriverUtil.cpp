@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "BonDriverUtil.h"
+#include "../Common/PathUtil.h"
 #include "../Common/StringUtil.h"
 #include "../Common/BlockLock.h"
 #include "IBonDriver2.h"

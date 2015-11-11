@@ -23,24 +23,10 @@ inline BOOL Separate(const string& strIn, const string& strSep, string& strLeft,
 BOOL Separate(const wstring& strIn, const WCHAR *sep, wstring& strLeft, wstring& strRight); //alias-safe
 inline BOOL Separate(const wstring& strIn, const wstring& strSep, wstring& strLeft, wstring& strRight){ return Separate(strIn, strSep.c_str(), strLeft, strRight); }
 
-void ChkFolderPath(string& strPath);
+int CompareNoCase(const string& str1, const char *str2);
+inline int CompareNoCase(const string& str1, const string& str2) { return CompareNoCase(str1, str2.c_str()); }
 
-void ChkFolderPath(wstring& strPath);
-
-int CompareNoCase(const string& str1, const string& str2);
-
-int CompareNoCase(const wstring& str1, const wstring& str2);
-
-BOOL UrlDecode(LPCSTR src, DWORD srcSize, string& dest);
-
-void Trim(string& strBuff);
-
-void Trim(wstring& strBuff);
-
-string Tolower(const string& src);
-
-wstring Tolower(const wstring& src);
-
-void EscapeXmlString(wstring& src);
+int CompareNoCase(const wstring& str1, const WCHAR *str2);
+inline int CompareNoCase(const wstring& str1, const wstring& str2) { return CompareNoCase(str1, str2.c_str()); }
 
 #endif

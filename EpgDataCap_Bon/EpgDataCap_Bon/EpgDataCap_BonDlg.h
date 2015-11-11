@@ -61,7 +61,6 @@ protected:
 
 	wstring moduleIniPath;
 	wstring commonIniPath;
-	wstring timerSrvIniPath;
 
 	wstring iniBonDriver;
 	int initONID;

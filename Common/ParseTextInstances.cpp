@@ -303,6 +303,12 @@ void CParseRecInfoText::GetProtectFiles(map<wstring, wstring>* fileMap) const
 	}
 }
 
+void CParseRecInfoText::SetRecInfoFolder(LPCWSTR recInfoFolder)
+{
+	this->recInfoFolder = recInfoFolder;
+	ChkFolderPath(this->recInfoFolder);
+}
+
 bool CParseRecInfoText::ParseLine(const wstring& parseLine, pair<DWORD, REC_FILE_INFO>& item)
 {
 	if( parseLine.find(L'\t') == wstring::npos || parseLine[0] == L';' ){

@@ -71,7 +71,7 @@ public:
 	//AddRecInfo直後に残しておく非プロテクトの録画済み情報の個数を設定する
 	void SetKeepCount(DWORD keepCount = UINT_MAX) { this->keepCount = keepCount; }
 	void SetRecInfoDelFile(bool recInfoDelFile) { this->recInfoDelFile = recInfoDelFile; }
-	void SetRecInfoFolder(LPCWSTR recInfoFolder) { ChkFolderPath(this->recInfoFolder = recInfoFolder); }
+	void SetRecInfoFolder(LPCWSTR recInfoFolder);
 protected:
 	bool ParseLine(const wstring& parseLine, pair<DWORD, REC_FILE_INFO>& item);
 	bool SaveLine(const pair<DWORD, REC_FILE_INFO>& item, wstring& saveLine) const;

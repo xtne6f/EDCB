@@ -204,8 +204,10 @@ string CUpnpSsdpServer::GetMSearchReply(const char* header, const char* host) co
 			string prop;
 			string val;
 			Separate(string(header, tail), ":", prop, val);
-			Trim(prop);
-			Trim(val);
+			prop.erase(prop.find_last_not_of(' ') == string::npos ? 0 : prop.find_last_not_of(' ') + 1);
+			prop.erase(0, prop.find_first_not_of(' '));
+			val.erase(val.find_last_not_of(' ') == string::npos ? 0 : val.find_last_not_of(' ') + 1);
+			val.erase(0, val.find_first_not_of(' '));
 			if( CompareNoCase(prop, "MAN") == 0 ){
 				man = val;
 			}else if( CompareNoCase(prop, "ST") == 0 ){

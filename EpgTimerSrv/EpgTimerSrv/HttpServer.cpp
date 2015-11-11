@@ -30,9 +30,10 @@ bool CHttpServer::StartServer(LPCWSTR ports, LPCWSTR rootPath, int (*initProc)(l
 	}
 	string portsU;
 	WtoUTF8(ports, portsU);
+	wstring rootPathW = rootPath;
+	ChkFolderPath(rootPathW);
 	string rootPathU;
-	WtoUTF8(rootPath, rootPathU);
-	ChkFolderPath(rootPathU);
+	WtoUTF8(rootPathW, rootPathU);
 	//ƒpƒX‚ÉASCII”ÍˆÍŠO‚ğŠÜ‚Ş‚Ì‚Í(å‚ÉLua‚ªŒ´ˆö‚Å)“ï‚ ‚è‚È‚Ì‚ÅR‚é
 	for( size_t i = 0; i < rootPathU.size(); i++ ){
 		if( rootPathU[i] & 0x80 ){
