@@ -156,7 +156,7 @@ BOOL CEpgDataCap_BonDlg::OnInitDialog()
 	//ウインドウの復元
 	WINDOWPLACEMENT Pos;
 	Pos.length = sizeof(WINDOWPLACEMENT);
-	Pos.flags = NULL;
+	Pos.flags = 0;
 	if( this->iniMin == FALSE ){
 		Pos.showCmd = SW_SHOW;
 	}else{

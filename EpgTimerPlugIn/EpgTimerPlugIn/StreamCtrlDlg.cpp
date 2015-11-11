@@ -229,7 +229,7 @@ LRESULT CALLBACK CStreamCtrlDlg::DlgProc(HWND hDlgWnd, UINT msg, WPARAM wp, LPAR
 
 							sys->cmd->SendNwPlayStop(sys->ctrlID);
 
-							__int64 filePos = SendDlgItemMessage( hDlgWnd, IDC_SLIDER_SEEK, TBM_GETPOS, NULL, NULL);
+							__int64 filePos = SendDlgItemMessage( hDlgWnd, IDC_SLIDER_SEEK, TBM_GETPOS, 0, 0);
 
 							NWPLAY_POS_CMD item;
 							item.ctrlID = sys->ctrlID;

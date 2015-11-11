@@ -65,7 +65,7 @@ BOOL CEpgTimerTaskDlg::OnInitDialog()
 	//ウインドウの復元
 	WINDOWPLACEMENT Pos;
 	Pos.length = sizeof(WINDOWPLACEMENT);
-	Pos.flags = NULL;
+	Pos.flags = 0;
 	Pos.showCmd = SW_HIDE;
 	Pos.rcNormalPosition.left = 0;
 	Pos.rcNormalPosition.right = 0;

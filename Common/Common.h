@@ -18,6 +18,10 @@ using std::map;
 using std::multimap;
 using std::vector;
 
+// “KØ‚Å‚È‚¢NULL‚ÌŒŸo—p
+//#undef NULL
+//#define NULL nullptr
+
 template<class T> inline void SAFE_DELETE(T*& p) { delete p; p = NULL; }
 template<class T> inline void SAFE_DELETE_ARRAY(T*& p) { delete[] p; p = NULL; }
 
