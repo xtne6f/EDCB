@@ -232,23 +232,6 @@ private:
 	_CMD_STREAM & operator= (const _CMD_STREAM &);
 } CMD_STREAM;
 
-typedef struct _HTTP_STREAM{
-	string httpHeader;	//送信時コマンド、受信時エラーコード
-	DWORD dataSize;	//dataのサイズ（BYTE単位）
-	BYTE* data;		//送受信するバイナリデータ
-	_HTTP_STREAM(void){
-		httpHeader = "";
-		dataSize = 0;
-		data = NULL;
-	}
-	~_HTTP_STREAM(void){
-		delete[] data;
-	}
-private:
-	_HTTP_STREAM(const _HTTP_STREAM &);
-	_HTTP_STREAM & operator= (const _HTTP_STREAM &);
-} HTTP_STREAM;
-
 //EPG基本情報
 typedef struct _EPGDB_SHORT_EVENT_INFO{
 	wstring event_name;			//イベント名
