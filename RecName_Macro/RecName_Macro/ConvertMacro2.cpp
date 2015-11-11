@@ -227,6 +227,19 @@ static BOOL ExpandMacro(wstring var, PLUGIN_RESERVE_INFO* info, wstring& convert
 					*itr = func[n + 1 + m];
 				}
 			}
+		}else if( func.compare(0, 1, L"S") == 0 && func.size() >= 2 ){
+			//文字列置換(S/置換文字列/置換後/)
+			size_t n = func.find(func[1], 2);
+			if( n == wstring::npos ){
+				return FALSE;
+			}
+			size_t m = func.find(func[1], n + 1);
+			if( m == wstring::npos ){
+				return FALSE;
+			}
+			if( n > 2 ){
+				Replace(ret, func.substr(2, n - 2), func.substr(n + 1, m - n - 1));
+			}
 		}else if( func.compare(0, 2, L"Rm") == 0 && func.size() >= 3 ){
 			//文字削除(Rm/削除文字リスト/)
 			size_t n = func.find(func[2], 3);
@@ -242,8 +255,13 @@ static BOOL ExpandMacro(wstring var, PLUGIN_RESERVE_INFO* info, wstring& convert
 				}
 			}
 		}else if( func.compare(0, 2, L"Head") && func.size() >= 5 ){
-			//足切り(Head文字数)
-			ret = ret.substr(0, wcstol(&func.c_str()[4], NULL, 10));
+			//足切り(Head文字数[省略記号])
+			size_t n = ret.size();
+			wchar_t* p;
+			ret = ret.substr(0, wcstol(&func.c_str()[4], &p, 10));
+			if( *p && !ret.empty() && ret.size() < n ){
+				ret.back() = *p;
+			}
 		}else{
 			return FALSE;
 		}
