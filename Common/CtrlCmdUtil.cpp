@@ -545,10 +545,9 @@ BOOL ReadVALUE( WORD ver, EPGDB_EVENT_INFO* val, const BYTE* buff, DWORD buffSiz
 
 		DWORD infoValSize;
 
-		SAFE_DELETE(val->shortInfo);
-		val->shortInfo = new EPGDB_SHORT_EVENT_INFO;
-		if( ReadVALUE(ver, val->shortInfo, buff + pos, buffSize - pos, &size) == FALSE ){
-			SAFE_DELETE(val->shortInfo);
+		val->shortInfo.reset(new EPGDB_SHORT_EVENT_INFO);
+		if( ReadVALUE(ver, val->shortInfo.get(), buff + pos, buffSize - pos, &size) == FALSE ){
+			val->shortInfo = NULL;
 			READ_VALUE_OR_FAIL( 0, buff, buffSize, pos, size, &infoValSize );
 			if( infoValSize != sizeof(DWORD) ){
 				return FALSE;
@@ -557,10 +556,9 @@ BOOL ReadVALUE( WORD ver, EPGDB_EVENT_INFO* val, const BYTE* buff, DWORD buffSiz
 			pos += size;
 		}
 
-		SAFE_DELETE(val->extInfo);
-		val->extInfo = new EPGDB_EXTENDED_EVENT_INFO;
-		if( ReadVALUE(ver, val->extInfo, buff + pos, buffSize - pos, &size) == FALSE ){
-			SAFE_DELETE(val->extInfo);
+		val->extInfo.reset(new EPGDB_EXTENDED_EVENT_INFO);
+		if( ReadVALUE(ver, val->extInfo.get(), buff + pos, buffSize - pos, &size) == FALSE ){
+			val->extInfo = NULL;
 			READ_VALUE_OR_FAIL( 0, buff, buffSize, pos, size, &infoValSize );
 			if( infoValSize != sizeof(DWORD) ){
 				return FALSE;
@@ -569,10 +567,9 @@ BOOL ReadVALUE( WORD ver, EPGDB_EVENT_INFO* val, const BYTE* buff, DWORD buffSiz
 			pos += size;
 		}
 
-		SAFE_DELETE(val->contentInfo);
-		val->contentInfo = new EPGDB_CONTEN_INFO;
-		if( ReadVALUE(ver, val->contentInfo, buff + pos, buffSize - pos, &size) == FALSE ){
-			SAFE_DELETE(val->contentInfo);
+		val->contentInfo.reset(new EPGDB_CONTEN_INFO);
+		if( ReadVALUE(ver, val->contentInfo.get(), buff + pos, buffSize - pos, &size) == FALSE ){
+			val->contentInfo = NULL;
 			READ_VALUE_OR_FAIL( 0, buff, buffSize, pos, size, &infoValSize );
 			if( infoValSize != sizeof(DWORD) ){
 				return FALSE;
@@ -581,10 +578,9 @@ BOOL ReadVALUE( WORD ver, EPGDB_EVENT_INFO* val, const BYTE* buff, DWORD buffSiz
 			pos += size;
 		}
 
-		SAFE_DELETE(val->componentInfo);
-		val->componentInfo = new EPGDB_COMPONENT_INFO;
-		if( ReadVALUE(ver, val->componentInfo, buff + pos, buffSize - pos, &size) == FALSE ){
-			SAFE_DELETE(val->componentInfo);
+		val->componentInfo.reset(new EPGDB_COMPONENT_INFO);
+		if( ReadVALUE(ver, val->componentInfo.get(), buff + pos, buffSize - pos, &size) == FALSE ){
+			val->componentInfo = NULL;
 			READ_VALUE_OR_FAIL( 0, buff, buffSize, pos, size, &infoValSize );
 			if( infoValSize != sizeof(DWORD) ){
 				return FALSE;
@@ -593,10 +589,9 @@ BOOL ReadVALUE( WORD ver, EPGDB_EVENT_INFO* val, const BYTE* buff, DWORD buffSiz
 			pos += size;
 		}
 
-		SAFE_DELETE(val->audioInfo);
-		val->audioInfo = new EPGDB_AUDIO_COMPONENT_INFO;
-		if( ReadVALUE(ver, val->audioInfo, buff + pos, buffSize - pos, &size) == FALSE ){
-			SAFE_DELETE(val->audioInfo);
+		val->audioInfo.reset(new EPGDB_AUDIO_COMPONENT_INFO);
+		if( ReadVALUE(ver, val->audioInfo.get(), buff + pos, buffSize - pos, &size) == FALSE ){
+			val->audioInfo = NULL;
 			READ_VALUE_OR_FAIL( 0, buff, buffSize, pos, size, &infoValSize );
 			if( infoValSize != sizeof(DWORD) ){
 				return FALSE;
@@ -605,10 +600,9 @@ BOOL ReadVALUE( WORD ver, EPGDB_EVENT_INFO* val, const BYTE* buff, DWORD buffSiz
 			pos += size;
 		}
 
-		SAFE_DELETE(val->eventGroupInfo);
-		val->eventGroupInfo = new EPGDB_EVENTGROUP_INFO;
-		if( ReadVALUE(ver, val->eventGroupInfo, buff + pos, buffSize - pos, &size) == FALSE ){
-			SAFE_DELETE(val->eventGroupInfo);
+		val->eventGroupInfo.reset(new EPGDB_EVENTGROUP_INFO);
+		if( ReadVALUE(ver, val->eventGroupInfo.get(), buff + pos, buffSize - pos, &size) == FALSE ){
+			val->eventGroupInfo = NULL;
 			READ_VALUE_OR_FAIL( 0, buff, buffSize, pos, size, &infoValSize );
 			if( infoValSize != sizeof(DWORD) ){
 				return FALSE;
@@ -617,10 +611,9 @@ BOOL ReadVALUE( WORD ver, EPGDB_EVENT_INFO* val, const BYTE* buff, DWORD buffSiz
 			pos += size;
 		}
 
-		SAFE_DELETE(val->eventRelayInfo);
-		val->eventRelayInfo = new EPGDB_EVENTGROUP_INFO;
-		if( ReadVALUE(ver, val->eventRelayInfo, buff + pos, buffSize - pos, &size) == FALSE ){
-			SAFE_DELETE(val->eventRelayInfo);
+		val->eventRelayInfo.reset(new EPGDB_EVENTGROUP_INFO);
+		if( ReadVALUE(ver, val->eventRelayInfo.get(), buff + pos, buffSize - pos, &size) == FALSE ){
+			val->eventRelayInfo = NULL;
 			READ_VALUE_OR_FAIL( 0, buff, buffSize, pos, size, &infoValSize );
 			if( infoValSize != sizeof(DWORD) ){
 				return FALSE;

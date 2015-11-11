@@ -746,17 +746,20 @@ void ConvertEpgInfo(WORD onid, WORD tsid, WORD sid, const EPG_EVENT_INFO* src, E
 	dest->durationSec = src->durationSec;
 	dest->freeCAFlag = src->freeCAFlag;
 
+	dest->shortInfo = NULL;
 	if( src->shortInfo != NULL ){
-		dest->shortInfo = new EPGDB_SHORT_EVENT_INFO;
+		dest->shortInfo.reset(new EPGDB_SHORT_EVENT_INFO);
 		dest->shortInfo->event_name = src->shortInfo->event_name;
 		dest->shortInfo->text_char = src->shortInfo->text_char;
 	}
+	dest->extInfo = NULL;
 	if( src->extInfo != NULL ){
-		dest->extInfo = new EPGDB_EXTENDED_EVENT_INFO;
+		dest->extInfo.reset(new EPGDB_EXTENDED_EVENT_INFO);
 		dest->extInfo->text_char = src->extInfo->text_char;
 	}
+	dest->contentInfo = NULL;
 	if( src->contentInfo != NULL ){
-		dest->contentInfo = new EPGDB_CONTEN_INFO;
+		dest->contentInfo.reset(new EPGDB_CONTEN_INFO);
 		for( BYTE i=0; i<src->contentInfo->listSize; i++ ){
 			EPGDB_CONTENT_DATA item;
 			item.content_nibble_level_1 = src->contentInfo->nibbleList[i].content_nibble_level_1;
@@ -766,15 +769,17 @@ void ConvertEpgInfo(WORD onid, WORD tsid, WORD sid, const EPG_EVENT_INFO* src, E
 			dest->contentInfo->nibbleList.push_back(item);
 		}
 	}
+	dest->componentInfo = NULL;
 	if( src->componentInfo != NULL ){
-		dest->componentInfo = new EPGDB_COMPONENT_INFO;
+		dest->componentInfo.reset(new EPGDB_COMPONENT_INFO);
 		dest->componentInfo->stream_content = src->componentInfo->stream_content;
 		dest->componentInfo->component_type = src->componentInfo->component_type;
 		dest->componentInfo->component_tag = src->componentInfo->component_tag;
 		dest->componentInfo->text_char = src->componentInfo->text_char;
 	}
+	dest->audioInfo = NULL;
 	if( src->audioInfo != NULL ){
-		dest->audioInfo = new EPGDB_AUDIO_COMPONENT_INFO;
+		dest->audioInfo.reset(new EPGDB_AUDIO_COMPONENT_INFO);
 		for( WORD i=0; i<src->audioInfo->listSize; i++ ){
 			EPGDB_AUDIO_COMPONENT_INFO_DATA item;
 			item.stream_content = src->audioInfo->audioList[i].stream_content;
@@ -790,8 +795,9 @@ void ConvertEpgInfo(WORD onid, WORD tsid, WORD sid, const EPG_EVENT_INFO* src, E
 			dest->audioInfo->componentList.push_back(item);
 		}
 	}
+	dest->eventGroupInfo = NULL;
 	if( src->eventGroupInfo != NULL ){
-		dest->eventGroupInfo = new EPGDB_EVENTGROUP_INFO;
+		dest->eventGroupInfo.reset(new EPGDB_EVENTGROUP_INFO);
 		dest->eventGroupInfo->group_type = src->eventGroupInfo->group_type;
 		for( BYTE i = 0; i<src->eventGroupInfo->event_count; i++ ){
 			EPGDB_EVENT_DATA item;
@@ -802,8 +808,9 @@ void ConvertEpgInfo(WORD onid, WORD tsid, WORD sid, const EPG_EVENT_INFO* src, E
 			dest->eventGroupInfo->eventDataList.push_back(item);
 		}
 	}
+	dest->eventRelayInfo = NULL;
 	if( src->eventRelayInfo != NULL ){
-		dest->eventRelayInfo = new EPGDB_EVENTGROUP_INFO;
+		dest->eventRelayInfo.reset(new EPGDB_EVENTGROUP_INFO);
 		dest->eventRelayInfo->group_type = src->eventRelayInfo->group_type;
 		for( BYTE i = 0; i<src->eventRelayInfo->event_count; i++ ){
 			EPGDB_EVENT_DATA item;

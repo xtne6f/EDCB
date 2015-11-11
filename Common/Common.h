@@ -6,6 +6,7 @@
 #include <utility>
 #include <map>
 #include <vector>
+#include <memory>
 #include <algorithm>
 #include <tchar.h>
 #include <windows.h>
