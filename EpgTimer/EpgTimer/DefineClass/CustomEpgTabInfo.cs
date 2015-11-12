@@ -17,6 +17,7 @@ namespace EpgTimer
             SearchMode = false;
             SearchKey = new EpgSearchKeyInfo();
             FilterEnded = false;
+            ID = -1;
         }
         public String TabName { get; set; }
         public int ViewMode { get; set; }
@@ -28,6 +29,7 @@ namespace EpgTimer
         public bool SearchMode { get; set; }
         public EpgSearchKeyInfo SearchKey { get; set; }
         public bool FilterEnded { get; set; }
+        public int ID { get; set; }
 
         public CustomEpgTabInfo Clone() { return CopyObj.Clone(this, CopyData); }
         protected static void CopyData(CustomEpgTabInfo src, CustomEpgTabInfo dest)
@@ -42,6 +44,7 @@ namespace EpgTimer
             dest.SearchMode = src.SearchMode;
             dest.FilterEnded = src.FilterEnded;
             dest.SearchKey = src.SearchKey.Clone();
+            dest.ID = src.ID;
         }
 
         public override string ToString()

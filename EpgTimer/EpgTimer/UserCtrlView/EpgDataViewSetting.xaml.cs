@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -14,6 +13,7 @@ namespace EpgTimer
     {
         private BoxExchangeEditor bx = new BoxExchangeEditor();
         private EpgSearchKeyInfo searchKey = new EpgSearchKeyInfo();
+        private int tabInfoID = -1;
 
         public EpgDataViewSetting()
         {
@@ -63,6 +63,7 @@ namespace EpgTimer
         /// <param name="setInfo"></param>
         public void SetSetting(CustomEpgTabInfo setInfo)
         {
+            tabInfoID = setInfo.ID;
             searchKey = setInfo.SearchKey.Clone();
 
             textBox_tabName.Text = setInfo.TabName;
@@ -127,6 +128,7 @@ namespace EpgTimer
             info.SearchMode = (checkBox_searchMode.IsChecked == true);
             info.FilterEnded = (checkBox_filterEnded.IsChecked == true);
             info.SearchKey = searchKey.Clone();
+            info.ID = tabInfoID;
  
             info.ViewServiceList.Clear();
             foreach (ChSet5Item item in listBox_serviceView.Items)

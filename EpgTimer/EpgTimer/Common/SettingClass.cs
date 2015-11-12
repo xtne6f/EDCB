@@ -275,6 +275,7 @@ namespace EpgTimer
         private bool displayNotifyEpgChange;
         private int displayNotifyJumpTime;
         private bool displayReserveAutoAddMissing;
+        private bool tryEpgSetting;
 
         public bool UseCustomEpgView
         {
@@ -891,6 +892,11 @@ namespace EpgTimer
             get { return displayReserveAutoAddMissing; }
             set { displayReserveAutoAddMissing = value; }
         }
+        public bool TryEpgSetting
+        {
+            get { return tryEpgSetting; }
+            set { tryEpgSetting = value; }
+        }
         
         public Settings()
         {
@@ -1015,6 +1021,7 @@ namespace EpgTimer
             displayNotifyEpgChange = false;
             displayNotifyJumpTime = 3;
             displayReserveAutoAddMissing = false;
+            tryEpgSetting = true;
         }
 
         [NonSerialized()]
@@ -1070,6 +1077,8 @@ namespace EpgTimer
             {
                 // タイミング合わせにくいので、メニュー系のデータチェックは
                 // MenuManager側のワークデータ作成時に実行する。
+
+                SetCustomEpgTabInfoID();
 
                 if (Instance.recModeFontColorList.Count != 6)
                 {
@@ -1375,6 +1384,14 @@ namespace EpgTimer
                 }
             }
             return folders;
+        }
+
+        public static void SetCustomEpgTabInfoID()
+        {
+            for (int i = 0; i < Settings.Instance.CustomEpgTabList.Count; i++)
+            {
+                Settings.Instance.CustomEpgTabList[i].ID = i;
+            }
         }
     }
 }

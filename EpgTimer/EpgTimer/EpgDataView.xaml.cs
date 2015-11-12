@@ -195,10 +195,20 @@ namespace EpgTimer
                                 dlg.Owner = (Window)topWindow.RootVisual;
                             }
                             dlg.SetDefSetting(item.GetViewMode());
+                            dlg.SetTrySetModeEnable();
                             if (dlg.ShowDialog() == true)
                             {
                                 var setInfo = new CustomEpgTabInfo(); ;
                                 dlg.GetSetting(ref setInfo);
+
+                                if (Settings.Instance.TryEpgSetting == false)
+                                {
+                                    if (setInfo.ID >= 0 && setInfo.ID <= Settings.Instance.CustomEpgTabList.Count)
+                                    {
+                                        Settings.Instance.CustomEpgTabList[setInfo.ID] = setInfo;
+                                    }
+                                }
+
                                 item.SetViewMode(setInfo);
                             }
                         }

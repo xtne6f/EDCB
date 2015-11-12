@@ -183,6 +183,7 @@ namespace EpgTimer.Setting
 
                 Settings.Instance.UseCustomEpgView = (radioButton_1_cust.IsChecked == true);
                 Settings.Instance.CustomEpgTabList = listBox_tab.Items.OfType<CustomEpgTabInfo>().ToList();
+                Settings.SetCustomEpgTabInfoID();
 
                 Settings.Instance.ContentCustColorList = custColorList.Select(c => ColorDef.ToUInt(c)).ToList();
                 Settings.Instance.TitleCustColor1 = ColorDef.ToUInt(custTitleColorList[0]);
