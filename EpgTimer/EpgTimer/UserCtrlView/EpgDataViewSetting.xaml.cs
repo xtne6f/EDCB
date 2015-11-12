@@ -63,7 +63,7 @@ namespace EpgTimer
         /// <param name="setInfo"></param>
         public void SetSetting(CustomEpgTabInfo setInfo)
         {
-            setInfo.SearchKey.CopyTo(searchKey);
+            searchKey = setInfo.SearchKey.Clone();
 
             textBox_tabName.Text = setInfo.TabName;
             radioButton_rate.IsChecked = false;
@@ -126,8 +126,7 @@ namespace EpgTimer
             info.StartTimeWeek = comboBox_timeH_week.SelectedIndex;
             info.SearchMode = (checkBox_searchMode.IsChecked == true);
             info.FilterEnded = (checkBox_filterEnded.IsChecked == true);
-
-            searchKey.CopyTo(info.SearchKey);
+            info.SearchKey = searchKey.Clone();
  
             info.ViewServiceList.Clear();
             foreach (ChSet5Item item in listBox_serviceView.Items)

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -67,7 +66,6 @@ namespace EpgTimer
             try
             {
                 //一度全部削除して作り直す。
-                this.Views.ForEach(view => view.ClearInfo());
                 tabControl.Items.Clear();
                 ReDrawEpgData();
             }
@@ -190,18 +188,16 @@ namespace EpgTimer
                         EpgDataViewItem item = sender as EpgDataViewItem;
                         if (param == null)
                         {
-                            CustomEpgTabInfo setInfo = new CustomEpgTabInfo();
-                            item.GetViewMode(ref setInfo);
-
-                            EpgDataViewSettingWindow dlg = new EpgDataViewSettingWindow();
-                            PresentationSource topWindow = PresentationSource.FromVisual(this);
+                            var dlg = new EpgDataViewSettingWindow();
+                            var topWindow = PresentationSource.FromVisual(this);
                             if (topWindow != null)
                             {
                                 dlg.Owner = (Window)topWindow.RootVisual;
                             }
-                            dlg.SetDefSetting(setInfo);
+                            dlg.SetDefSetting(item.GetViewMode());
                             if (dlg.ShowDialog() == true)
                             {
+                                var setInfo = new CustomEpgTabInfo(); ;
                                 dlg.GetSetting(ref setInfo);
                                 item.SetViewMode(setInfo);
                             }
@@ -291,7 +287,7 @@ namespace EpgTimer
             foreach (TabItem tabItem1 in this.tabControl.Items)
             {
                 EpgDataViewItem epgView1 = tabItem1.Content as EpgDataViewItem;
-                foreach (UInt64 serviceKey_OnTab1 in epgView1.ViewInfo.ViewServiceList)
+                foreach (UInt64 serviceKey_OnTab1 in epgView1.GetViewMode().ViewServiceList)
                 {
                     if (serviceKey_Target1 == serviceKey_OnTab1)
                     {
