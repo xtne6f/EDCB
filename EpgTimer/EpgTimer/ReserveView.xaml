@@ -46,7 +46,6 @@
                     <MenuItem Header="ぴったり（？）" Name="Pittari" IsCheckable="True" />
                     <MenuItem Header="チューナー" Name="Tuner" IsCheckable="True" />
                     <MenuItem Header="予約状況" Name="Comment" IsCheckable="True" />
-                    <MenuItem Header="備考" Name="Remarks" IsCheckable="True" />
                     <MenuItem Header="録画フォルダ" Name="RecFolder" IsCheckable="True" />
                     <MenuItem Header="予定ファイル名" Name="RecFileName" IsCheckable="True" />
                     <MenuItem Header="開始タイミング" Name="MarginStart" IsCheckable="True" />
@@ -145,11 +144,6 @@
                     <GridViewColumn DisplayMemberBinding="{Binding Path=Comment}">
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="予約状況" Tag="Comment" HorizontalContentAlignment="Left" />
-                        </GridViewColumn.Header>
-                    </GridViewColumn>
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=Remarks}">
-                        <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="備考" Tag="Remarks" HorizontalContentAlignment="Left" />
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn>
