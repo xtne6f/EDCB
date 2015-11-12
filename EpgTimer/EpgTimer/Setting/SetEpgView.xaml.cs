@@ -272,66 +272,12 @@ namespace EpgTimer.Setting
                 if (radioButton_1_cust.IsChecked == true)
                 {
                     Settings.Instance.UseCustomEpgView = true;
-                    IniFileHandler.WritePrivateProfileString("HTTP", "HttpCustEpg", "1", SettingPath.TimerSrvIniPath);
                 }
                 else
                 {
                     Settings.Instance.UseCustomEpgView = false;
-                    IniFileHandler.WritePrivateProfileString("HTTP", "HttpCustEpg", "0", SettingPath.TimerSrvIniPath);
                 }
-
-                Settings.Instance.CustomEpgTabList.Clear();
-                int custCount = listBox_tab.Items.Count;
-                IniFileHandler.WritePrivateProfileString("HTTP", "HttpCustCount", custCount.ToString(), SettingPath.TimerSrvIniPath);
-                custCount = 0;
-                foreach (CustomEpgTabInfo info in listBox_tab.Items)
-                {
-                    Settings.Instance.CustomEpgTabList.Add(info);
-
-                    IniFileHandler.WritePrivateProfileString("HTTP_CUST" + custCount.ToString(), "Name", info.TabName, SettingPath.TimerSrvIniPath);
-                    IniFileHandler.WritePrivateProfileString("HTTP_CUST" + custCount.ToString(), "ViewServiceCount", info.ViewServiceList.Count.ToString(), SettingPath.TimerSrvIniPath);
-                    int serviceCount = 0;
-                    foreach (Int64 id in info.ViewServiceList)
-                    {
-                        IniFileHandler.WritePrivateProfileString("HTTP_CUST" + custCount.ToString(), "ViewService" + serviceCount.ToString(), id.ToString(), SettingPath.TimerSrvIniPath);
-                        serviceCount++;
-                    }
-
-                    IniFileHandler.WritePrivateProfileString("HTTP_CUST" + custCount.ToString(), "ContentCount", info.ViewContentKindList.Count.ToString(), SettingPath.TimerSrvIniPath);
-                    int contentCount = 0;
-                    foreach (UInt16 id in info.ViewContentKindList)
-                    {
-                        IniFileHandler.WritePrivateProfileString("HTTP_CUST" + custCount.ToString(), "Content" + contentCount.ToString(), id.ToString(), SettingPath.TimerSrvIniPath);
-                        contentCount++;
-                    }
-                    IniFileHandler.WritePrivateProfileString("HTTP_CUST" + custCount.ToString(), "ViewMode", info.ViewMode.ToString(), SettingPath.TimerSrvIniPath);
-                    if (info.NeedTimeOnlyBasic == true)
-                    {
-                        IniFileHandler.WritePrivateProfileString("HTTP_CUST" + custCount.ToString(), "NeedTimeOnlyBasic", "1", SettingPath.TimerSrvIniPath);
-                    }
-                    else
-                    {
-                        IniFileHandler.WritePrivateProfileString("HTTP_CUST" + custCount.ToString(), "NeedTimeOnlyBasic", "0", SettingPath.TimerSrvIniPath);
-                    }
-                    if (info.NeedTimeOnlyWeek == true)
-                    {
-                        IniFileHandler.WritePrivateProfileString("HTTP_CUST" + custCount.ToString(), "NeedTimeOnlyWeek", "1", SettingPath.TimerSrvIniPath);
-                    }
-                    else
-                    {
-                        IniFileHandler.WritePrivateProfileString("HTTP_CUST" + custCount.ToString(), "NeedTimeOnlyWeek", "0", SettingPath.TimerSrvIniPath);
-                    }
-                    if (info.SearchMode == true)
-                    {
-                        IniFileHandler.WritePrivateProfileString("HTTP_CUST" + custCount.ToString(), "SearchMode", "1", SettingPath.TimerSrvIniPath);
-                    }
-                    else
-                    {
-                        IniFileHandler.WritePrivateProfileString("HTTP_CUST" + custCount.ToString(), "SearchMode", "0", SettingPath.TimerSrvIniPath);
-                    }
-                    
-                    custCount++;
-                }
+                Settings.Instance.CustomEpgTabList = listBox_tab.Items.OfType<CustomEpgTabInfo>().ToList();
 
                 Settings.Instance.ContentCustColorList[0x00] = ColorDef.ToUInt(((SolidColorBrush)button0.Background).Color);
                 Settings.Instance.ContentCustColorList[0x01] = ColorDef.ToUInt(((SolidColorBrush)button1.Background).Color);
