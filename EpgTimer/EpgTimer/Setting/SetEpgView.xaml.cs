@@ -181,48 +181,8 @@ namespace EpgTimer.Setting
                 Settings.Instance.FontSizeTitle = Convert.ToDouble(textBox_fontSizeTitle.Text);
                 Settings.Instance.FontBoldTitle = (checkBox_fontBoldTitle.IsChecked == true);
 
-                string iniValue = "";
-                iniValue = (radioButton_1_cust.IsChecked == true ? "1" : "0");
-                IniFileHandler.WritePrivateProfileString("HTTP", "HttpCustEpg", iniValue, SettingPath.TimerSrvIniPath);
                 Settings.Instance.UseCustomEpgView = (radioButton_1_cust.IsChecked == true);
-
-                Settings.Instance.CustomEpgTabList.Clear();
-                int custCount = listBox_tab.Items.Count;
-                IniFileHandler.WritePrivateProfileString("HTTP", "HttpCustCount", custCount.ToString(), SettingPath.TimerSrvIniPath);
-                custCount = 0;
-                foreach (CustomEpgTabInfo info in listBox_tab.Items)
-                {
-                    Settings.Instance.CustomEpgTabList.Add(info);
-
-                    IniFileHandler.WritePrivateProfileString("HTTP_CUST" + custCount.ToString(), "Name", info.TabName, SettingPath.TimerSrvIniPath);
-                    IniFileHandler.WritePrivateProfileString("HTTP_CUST" + custCount.ToString(), "ViewServiceCount", info.ViewServiceList.Count.ToString(), SettingPath.TimerSrvIniPath);
-                    int serviceCount = 0;
-                    foreach (Int64 id in info.ViewServiceList)
-                    {
-                        IniFileHandler.WritePrivateProfileString("HTTP_CUST" + custCount.ToString(), "ViewService" + serviceCount.ToString(), id.ToString(), SettingPath.TimerSrvIniPath);
-                        serviceCount++;
-                    }
-
-                    IniFileHandler.WritePrivateProfileString("HTTP_CUST" + custCount.ToString(), "ContentCount", info.ViewContentKindList.Count.ToString(), SettingPath.TimerSrvIniPath);
-                    int contentCount = 0;
-                    foreach (UInt16 id in info.ViewContentKindList)
-                    {
-                        IniFileHandler.WritePrivateProfileString("HTTP_CUST" + custCount.ToString(), "Content" + contentCount.ToString(), id.ToString(), SettingPath.TimerSrvIniPath);
-                        contentCount++;
-                    }
-                    IniFileHandler.WritePrivateProfileString("HTTP_CUST" + custCount.ToString(), "ViewMode", info.ViewMode.ToString(), SettingPath.TimerSrvIniPath);
-
-                    iniValue = (info.NeedTimeOnlyBasic == true ? "1" : "0");
-                    IniFileHandler.WritePrivateProfileString("HTTP_CUST" + custCount.ToString(), "NeedTimeOnlyBasic", iniValue, SettingPath.TimerSrvIniPath);
-
-                    iniValue = (info.NeedTimeOnlyWeek == true ? "1" : "0");
-                    IniFileHandler.WritePrivateProfileString("HTTP_CUST" + custCount.ToString(), "NeedTimeOnlyWeek", iniValue, SettingPath.TimerSrvIniPath);
-
-                    iniValue = (info.SearchMode == true ? "1" : "0");
-                    IniFileHandler.WritePrivateProfileString("HTTP_CUST" + custCount.ToString(), "SearchMode", iniValue, SettingPath.TimerSrvIniPath);
-
-                    custCount++;
-                }
+                Settings.Instance.CustomEpgTabList = listBox_tab.Items.OfType<CustomEpgTabInfo>().ToList();
 
                 Settings.Instance.ContentCustColorList = custColorList.Select(c => ColorDef.ToUInt(c)).ToList();
                 Settings.Instance.TitleCustColor1 = ColorDef.ToUInt(custTitleColorList[0]);
