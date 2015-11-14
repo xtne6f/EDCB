@@ -1484,12 +1484,25 @@ namespace EpgTimer
             base.OnKeyDown(e);
         }
 
-        public void moveTo_tabItem_epg()
+        public void moveTo_tabItem(CtxmCode code)
         {
+            TabItem tab;
+            switch (code)
+            {
+                case CtxmCode.ReserveView:
+                    tab = this.tabItem_reserve;
+                    break;
+                case CtxmCode.TunerReserveView:
+                    tab = this.tabItem_tunerReserve;
+                    break;
+                default://CtxmCode.EpgView
+                    tab = this.tabItem_epg;
+                    break;
+            }
             BlackoutWindow.NowJumpTable = true;
-            new BlackoutWindow(this).showWindow(this.tabItem_epg.Header.ToString());
-            this.Focus();//チューナ画面でのフォーカス対策。とりあえずこれで解決する。
-            this.tabItem_epg.IsSelected = true;
+            new BlackoutWindow(this).showWindow(tab.Header.ToString());
+            this.Focus();//チューナ画面やEPG画面でのフォーカス対策。とりあえずこれで解決する。
+            tab.IsSelected = true;
         }
 
         public void EmphasizeSearchButton(bool emphasize)

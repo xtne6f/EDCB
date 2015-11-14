@@ -7,6 +7,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Shapes;
 
 namespace EpgTimer
 {
@@ -219,6 +220,132 @@ namespace EpgTimer
                     item.TopPos = lastBottom;
                 }
                 lastBottom = item.TopPos + item.Height;
+            }
+        }
+
+        public void ScrollToFindItem(SearchItem target_item, ListBox listBox, bool IsMarking)
+        {
+            try
+            {
+                ScrollToItem(target_item, listBox);
+
+                //パネルビューと比較して、こちらでは最後までゆっくり点滅させる。全表示時間は同じ。
+                //ただ、結局スクロールさせる位置がうまく調整できてないので効果は限定的。
+                if (IsMarking == true)
+                {
+                    listBox.SelectedItem = null;
+
+                    var notifyTimer = new System.Windows.Threading.DispatcherTimer();
+                    notifyTimer.Interval = TimeSpan.FromSeconds(0.2);
+                    TimeSpan RemainTime = TimeSpan.FromSeconds(Settings.Instance.DisplayNotifyJumpTime);
+                    notifyTimer.Tick += (sender, e) =>
+                    {
+                        RemainTime -= notifyTimer.Interval;
+                        if (RemainTime <= TimeSpan.FromSeconds(0))
+                        {
+                            target_item.NowJumpingTable = 0;
+                            listBox.SelectedItem = target_item;
+                            notifyTimer.Stop();
+                        }
+                        else
+                        {
+                            target_item.NowJumpingTable = target_item.NowJumpingTable != 1 ? 1 : 2;
+                        }
+                        listBox.Items.Refresh();
+                    };
+                    notifyTimer.Start();
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+            }
+        }
+
+        public void ScrollToItem(object target_item, ListBox listBox)
+        {
+            try
+            {
+                if (target_item == null) return;
+
+                listBox.SelectedItem = target_item;
+                listBox.ScrollIntoView(target_item);
+
+                //いまいちな感じ
+                //listView_event.ScrollIntoView(listView_event.Items[0]);
+                //listView_event.ScrollIntoView(listView_event.Items[listView_event.Items.Count-1]);
+                //int scrollpos = ((listView_event.SelectedIndex - 5) >= 0 ? listView_event.SelectedIndex - 5 : 0);
+                //listView_event.ScrollIntoView(listView_event.Items[scrollpos]);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+            }
+        }
+
+        public void ScrollToFindItem<T>(ViewPanelItem<T> target_item, ScrollViewer scrollViewer, Canvas canvas, bool IsMarking)
+        {
+            //TunerReserveViewとProgramViewをくくれたらそっちに移動する
+            try
+            {
+                //可能性低いが0では無さそう
+                if (target_item == null) return;
+
+                scrollViewer.ScrollToHorizontalOffset(target_item.LeftPos - 100);
+                scrollViewer.ScrollToVerticalOffset(target_item.TopPos - 100);
+
+                //マーキング要求のあるとき
+                if (IsMarking == true)
+                {
+                    Rectangle rect = new Rectangle();
+
+                    rect.Stroke = new SolidColorBrush(Colors.Red);
+                    rect.StrokeThickness = 5;
+                    rect.Opacity = 1;
+                    rect.Fill = System.Windows.Media.Brushes.Transparent;
+                    rect.Effect = new System.Windows.Media.Effects.DropShadowEffect() { BlurRadius = 10 };
+
+                    rect.Width = target_item.Width + 20;
+                    rect.Height = target_item.Height + 20;
+                    rect.IsHitTestVisible = false;
+
+                    Canvas.SetLeft(rect, target_item.LeftPos - 10);
+                    Canvas.SetTop(rect, target_item.TopPos - 10);
+                    Canvas.SetZIndex(rect, 20);
+
+                    // 一定時間枠を表示する
+                    var notifyTimer = new System.Windows.Threading.DispatcherTimer();
+                    notifyTimer.Interval = TimeSpan.FromSeconds(0.1);
+                    TimeSpan RemainTime = TimeSpan.FromSeconds(Settings.Instance.DisplayNotifyJumpTime);
+                    int Brinks = 3;
+                    bool IsDisplay = false;
+                    notifyTimer.Tick += (sender, e) =>
+                    {
+                        RemainTime -= notifyTimer.Interval;
+                        if (RemainTime <= TimeSpan.FromSeconds(0))
+                        {
+                            canvas.Children.Remove(rect);
+                            notifyTimer.Stop();
+                        }
+                        else if (IsDisplay == false)
+                        {
+                            canvas.Children.Add(rect);
+                            IsDisplay = true;
+                        }
+                        else if (Brinks > 0)
+                        {
+                            canvas.Children.Remove(rect);
+                            IsDisplay = false;
+                            Brinks--;
+                        }
+                    };
+
+                    notifyTimer.Start();
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
 

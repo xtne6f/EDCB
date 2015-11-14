@@ -232,5 +232,26 @@ namespace EpgTimer
             }
         }
 
+        protected override void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            base.UserControl_IsVisibleChanged(sender, e);
+
+            if (this.IsVisible == false) return;
+
+            if (BlackoutWindow.SelectedReserveItem != null)
+            {
+                MoveToReserveItem(BlackoutWindow.SelectedReserveItem, BlackoutWindow.NowJumpTable);
+            }
+
+            BlackoutWindow.Clear();
+        }
+
+        protected void MoveToReserveItem(ReserveItem target, bool IsMarking)
+        {
+            uint ID = target.ReserveInfo.ReserveID;
+            ReserveViewItem target_item = this.reserveList.Find(item => item.ReserveInfo.ReserveID == ID);
+            this.tunerReserveView.ScrollToFindItem(target_item, IsMarking);
+        }
+
     }
 }

@@ -253,13 +253,13 @@ namespace EpgTimer
             EpgCmds.ShowDialog.Execute(sender, this);
         }
 
-        protected override void MoveToReserveItem(ReserveItem target, bool JumpingTable)
+        protected override void MoveToReserveItem(ReserveItem target, bool IsMarking)
         {
             uint ID = target.ReserveInfo.ReserveID;
             SearchItem target_item = lstCtrl.dataList.Find(item => item.ReserveInfo != null && item.ReserveInfo.ReserveID == ID);
             if (target_item != null)
             {
-                ScrollToFindItem(target_item, JumpingTable);
+                vutil.ScrollToFindItem(target_item, listView_event, IsMarking);
             }
             else
             {
@@ -268,7 +268,7 @@ namespace EpgTimer
                 target_item = new SearchItem(mutil.SearchEventLikeThat(target.ReserveInfo));
                 if (target_item.EventInfo != null)
                 {
-                    MoveToProgramItem(target_item, JumpingTable);
+                    MoveToProgramItem(target_item, IsMarking);
                 }
                 else
                 {
@@ -280,62 +280,12 @@ namespace EpgTimer
             }
         }
 
-        protected override void MoveToProgramItem(SearchItem target, bool JumpingTable)
+        protected override void MoveToProgramItem(SearchItem target, bool IsMarking)
         {
             ulong PgKey = target.EventInfo.Create64PgKey();
             SearchItem target_item = lstCtrl.dataList.Find(item => item.EventInfo.Create64PgKey() == PgKey);
-            ScrollToFindItem(target_item, JumpingTable);
+            vutil.ScrollToFindItem(target_item, listView_event, IsMarking);
         }
-
-        private void ScrollToFindItem(SearchItem target_item, bool JumpingTable)
-        {
-            try
-            {
-                //可能性低いが0では無さそう。検索ダイアログからの検索などではあり得る。
-                if (target_item == null) return;
-
-                listView_event.SelectedItem = target_item;
-                listView_event.ScrollIntoView(target_item);
-
-                //いまいちな感じ
-                //listView_event.ScrollIntoView(listView_event.Items[0]);
-                //listView_event.ScrollIntoView(listView_event.Items[listView_event.Items.Count-1]);
-                //int scrollpos = ((listView_event.SelectedIndex - 5) >= 0 ? listView_event.SelectedIndex - 5 : 0);
-                //listView_event.ScrollIntoView(listView_event.Items[scrollpos]);
-
-                //「番組表へジャンプ」の場合、またはオプションで指定のある場合に強調表示する。
-                //パネルビューと比較して、こちらでは最後までゆっくり点滅させる。全表示時間は同じ。
-                //ただ、結局スクロールさせる位置がうまく調整できてないので効果は限定的。
-                if (JumpingTable || Settings.Instance.DisplayNotifyEpgChange)
-                {
-                    listView_event.SelectedItem = null;
-
-                    var notifyTimer = new System.Windows.Threading.DispatcherTimer();
-                    notifyTimer.Interval = TimeSpan.FromSeconds(0.2);
-                    TimeSpan RemainTime = TimeSpan.FromSeconds(Settings.Instance.DisplayNotifyJumpTime);
-                    notifyTimer.Tick += (sender, e) =>
-                    {
-                        RemainTime -= notifyTimer.Interval;
-                        if (RemainTime <= TimeSpan.FromSeconds(0))
-                        {
-                            target_item.NowJumpingTable = 0;
-                            listView_event.SelectedItem = target_item;
-                            notifyTimer.Stop();
-                        }
-                        else
-                        {
-                            target_item.NowJumpingTable = target_item.NowJumpingTable != 1 ? 1 : 2;
-                        }
-                        listView_event.Items.Refresh();
-                    };
-                    notifyTimer.Start();
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
-
+        
     }
 }

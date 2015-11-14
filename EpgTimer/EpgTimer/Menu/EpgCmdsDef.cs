@@ -34,6 +34,8 @@ namespace EpgTimer
         public static RoutedUICommand DeleteAll { get; private set; }
         public static RoutedUICommand AdjustReserve { get; private set; }
         public static RoutedUICommand ShowDialog { get; private set; }
+        public static RoutedUICommand JumpReserve { get; private set; }
+        public static RoutedUICommand JumpTuner { get; private set; }
         public static RoutedUICommand JumpTable { get; private set; }
         public static RoutedUICommand ToAutoadd { get; private set; }
         public static RoutedUICommand ReSearch { get; private set; }

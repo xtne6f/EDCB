@@ -97,6 +97,8 @@ namespace EpgTimer
             cmdList.Add(EpgCmds.AdjustReserve, new cmdOption(mc_AdjustReserve, null, cmdExeType.MultiItem, changeDB: true));
             cmdList.Add(EpgCmds.ShowDialog, new cmdOption(mc_ShowDialog, null, cmdExeType.SingleItem, changeDB: true));
             cmdList.Add(EpgCmds.ShowAddDialog, new cmdOption(mc_ShowAddDialog, null, cmdExeType.NoSetItem, false, false, true, changeDB: true));
+            cmdList.Add(EpgCmds.JumpReserve, new cmdOption(mc_JumpReserve, null, cmdExeType.SingleItem));
+            cmdList.Add(EpgCmds.JumpTuner, new cmdOption(mc_JumpTuner, null, cmdExeType.SingleItem));
             cmdList.Add(EpgCmds.JumpTable, new cmdOption(mc_JumpTable, null, cmdExeType.SingleItem));
             cmdList.Add(EpgCmds.ToAutoadd, new cmdOption(mc_ToAutoadd, null, cmdExeType.SingleItem));
             cmdList.Add(EpgCmds.ReSearch, new cmdOption(null, null, cmdExeType.Direct));//個別に指定
@@ -258,6 +260,8 @@ namespace EpgTimer
         protected virtual void mc_AdjustReserve(object sender, ExecutedRoutedEventArgs e) { }
         protected virtual void mc_ShowDialog(object sender, ExecutedRoutedEventArgs e) { }
         protected virtual void mc_ShowAddDialog(object sender, ExecutedRoutedEventArgs e) { }
+        protected virtual void mc_JumpReserve(object sender, ExecutedRoutedEventArgs e) { }
+        protected virtual void mc_JumpTuner(object sender, ExecutedRoutedEventArgs e) { }
         protected virtual void mc_JumpTable(object sender, ExecutedRoutedEventArgs e) { }
         protected virtual void mc_ToAutoadd(object sender, ExecutedRoutedEventArgs e) { }
         protected virtual void mc_Play(object sender, ExecutedRoutedEventArgs e) { }

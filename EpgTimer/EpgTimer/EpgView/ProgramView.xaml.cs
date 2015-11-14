@@ -259,61 +259,9 @@ namespace EpgTimer.EpgView
             }
         }
 
-        public void SetFindItem<T>(ViewPanelItem<T> info)
+        public void ScrollToFindItem<T>(ViewPanelItem<T> target_item, bool IsMarking)
         {
-            try
-            {
-                if (info == null) return;
-
-                Rectangle rect = new Rectangle();
-
-                rect.Stroke = new SolidColorBrush(Colors.Red);
-                rect.StrokeThickness = 5;
-                rect.Opacity = 1;
-                rect.Fill = System.Windows.Media.Brushes.Transparent;
-                rect.Effect = new System.Windows.Media.Effects.DropShadowEffect() { BlurRadius = 10 };
-
-                rect.Width = info.Width + 20;
-                rect.Height = info.Height + 20;
-                rect.IsHitTestVisible = false;
-
-                Canvas.SetLeft(rect, info.LeftPos - 10);
-                Canvas.SetTop(rect, info.TopPos - 10);
-                Canvas.SetZIndex(rect, 20);
-
-                // 一定時間枠を表示する
-                var notifyTimer = new System.Windows.Threading.DispatcherTimer();
-                notifyTimer.Interval = TimeSpan.FromSeconds(0.1);
-                TimeSpan RemainTime = TimeSpan.FromSeconds(Settings.Instance.DisplayNotifyJumpTime);
-                int Brinks = 3;
-                bool IsDisplay = false;
-                notifyTimer.Tick += (sender, e) =>
-                {
-                    RemainTime -= notifyTimer.Interval;
-                    if (RemainTime <= TimeSpan.FromSeconds(0))
-                    {
-                        canvas.Children.Remove(rect);
-                        notifyTimer.Stop();
-                    }
-                    else if (IsDisplay == false)
-                    {
-                        canvas.Children.Add(rect);
-                        IsDisplay = true;
-                    }
-                    else if (Brinks > 0)
-                    {
-                        canvas.Children.Remove(rect);
-                        IsDisplay = false;
-                        Brinks--;
-                    }
-                };
-
-                notifyTimer.Start();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            CommonManager.Instance.VUtil.ScrollToFindItem(target_item, scrollViewer, canvas, IsMarking);
         }
         
         private void epgViewPanel_MouseMove(object sender, MouseEventArgs e)

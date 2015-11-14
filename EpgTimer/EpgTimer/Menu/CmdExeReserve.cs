@@ -138,6 +138,14 @@ namespace EpgTimer
                 IsCommandExecuted = mutil.ReserveDelete(dataList);
             }
         }
+        protected override void mc_JumpReserve(object sender, ExecutedRoutedEventArgs e)
+        {
+            mcs_JumpTab(CtxmCode.ReserveView, true);
+        }
+        protected override void mc_JumpTuner(object sender, ExecutedRoutedEventArgs e)
+        {
+            mcs_JumpTab(CtxmCode.TunerReserveView, true, true);
+        }
         protected override void mc_JumpTable(object sender, ExecutedRoutedEventArgs e)
         {
             var param = e.Parameter as EpgCmdParam;
@@ -147,17 +155,25 @@ namespace EpgTimer
             {
                 param.ID = 0;//実際は設定するまでもなく、初期値0。
                 BlackoutWindow.NowJumpTable = true;
-                var mainWindow = (MainWindow)Application.Current.MainWindow;
+                var mainWindow = Application.Current.MainWindow as MainWindow;
                 new BlackoutWindow(mainWindow).showWindow(mainWindow.tabItem_epg.Header.ToString());
 
                 EpgCmds.ViewChgMode.Execute(e.Parameter, (IInputElement)sender);
+                IsCommandExecuted = true;
             }
             else
             {
-                mcs_SetBlackoutWindow();
-                var mainWindow = Application.Current.MainWindow as MainWindow;
-                mainWindow.moveTo_tabItem_epg();
+                mcs_JumpTab(CtxmCode.EpgView);
             }
+        }
+        protected void mcs_JumpTab(CtxmCode code, bool reserveOnly = false, bool onReserveOnly = false)
+        {
+            if (reserveOnly && dataList.Count == 0) return;
+            if (onReserveOnly && dataList[0].RecSetting.RecMode == 5) return;
+
+            mcs_SetBlackoutWindow();
+            var mainWindow = Application.Current.MainWindow as MainWindow;
+            mainWindow.moveTo_tabItem(code);
             IsCommandExecuted = true;
         }
         protected void mcs_SetBlackoutWindow()
@@ -275,6 +291,18 @@ namespace EpgTimer
             {
                 List<int> mList = dataList.Select(info => info.EventID == 0xFFFF ? 1 : 0).ToList();
                 mcs_chgMenuOpening(menu, dataList.RecSettingList(), mList.Sum() == dataList.Count, mList);
+            }
+            else if (menu.Tag == EpgCmds.JumpReserve || menu.Tag == EpgCmds.JumpTuner)
+            {
+                //メニュー実行時に選択されるアイテムが予約でないときは無効
+                menu.IsEnabled = (headData as ReserveData != null);
+
+                if (menu.IsEnabled == true && menu.Tag == EpgCmds.JumpTuner)
+                {
+                    //無効予約を回避
+                    menu.IsEnabled = dataList[0].RecSetting.RecMode != 5;
+                    menu.ToolTip = "無効予約は使用予定チューナー画面に表示されません。";
+                }
             }
             else if (menu.Tag == EpgCmds.JumpTable)
             {

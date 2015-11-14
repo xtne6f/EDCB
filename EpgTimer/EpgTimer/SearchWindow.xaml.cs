@@ -75,7 +75,9 @@ namespace EpgTimer
                 mc.AddReplaceCommand(EpgCmds.Cancel, (sender, e) => this.Close());
 
                 //コマンド集を振り替えるもの
-                mc.AddReplaceCommand(EpgCmds.JumpTable, mc_JumpTable);
+                mc.AddReplaceCommand(EpgCmds.JumpReserve, (sender, e) => mc_JumpTab(CtxmCode.ReserveView, true));
+                mc.AddReplaceCommand(EpgCmds.JumpTuner, (sender, e) => mc_JumpTab(CtxmCode.TunerReserveView, true, true));
+                mc.AddReplaceCommand(EpgCmds.JumpTable, (sender, e) => mc_JumpTab(CtxmCode.EpgView));
 
                 //コマンド集からコマンドを登録。
                 mc.ResetCommandBindings(this, listView_result.ContextMenu);
@@ -442,11 +444,23 @@ namespace EpgTimer
             }
         }
 
-        private void mc_JumpTable(object sender, ExecutedRoutedEventArgs e)
+        private void mc_JumpTab(CtxmCode code, bool reserveOnly = false, bool onReserveOnly = false)
         {
             if (listView_result.SelectedItem != null)
             {
-                BlackoutWindow.SelectedSearchItem = lstCtrl.SelectSingleItem();
+                SearchItem item = lstCtrl.SelectSingleItem();
+
+                if (reserveOnly && item.IsReserved == false) return;
+                if (onReserveOnly && item.ReserveInfo.RecSetting.RecMode == 5) return;
+
+                if (item.IsReserved == true)
+                {
+                    BlackoutWindow.SelectedReserveItem = new ReserveItem(item.ReserveInfo);
+                }
+                else
+                {
+                    BlackoutWindow.SelectedSearchItem = item;
+                }
                 var mainWindow1 = this.Owner as MainWindow;
                 if (mainWindow1 != null)
                 {
@@ -461,8 +475,8 @@ namespace EpgTimer
                         mainWindow1.EmphasizeSearchButton(true);
                         BlackoutWindow.unvisibleSearchWindow = this;
                     }
-                    mainWindow1.moveTo_tabItem_epg();
-                    mainWindow1.Hide(); // EpgDataView.UserControl_IsVisibleChangedイベントを発生させる
+                    mainWindow1.moveTo_tabItem(code);
+                    mainWindow1.Hide(); // UserControl_IsVisibleChangedイベントを発生させる
                     mainWindow1.Show();
                 }
             }

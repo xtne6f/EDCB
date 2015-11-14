@@ -358,6 +358,10 @@ namespace EpgTimer.TunerReserveViewCtrl
             }
         }
 
+        public void ScrollToFindItem<T>(ViewPanelItem<T> target_item, bool IsMarking)
+        {
+            CommonManager.Instance.VUtil.ScrollToFindItem(target_item, scrollViewer, canvas, IsMarking);
+        }
     }
 
 }
