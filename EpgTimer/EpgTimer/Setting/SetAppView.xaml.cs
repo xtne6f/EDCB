@@ -69,7 +69,7 @@ namespace EpgTimer.Setting
                 button_recname.IsEnabled = false;
                 
                 CommonManager.Instance.VUtil.DisableControlChildren(tabItem7);
-                tabControl1.SelectedItem = tabItem3;
+                tabControl1.SelectedItem = tabItem2;
                 checkBox_tcpServer.IsEnabled = false;
                 label41.IsEnabled = false;
                 textBox_tcpPort.IsEnabled = false;
