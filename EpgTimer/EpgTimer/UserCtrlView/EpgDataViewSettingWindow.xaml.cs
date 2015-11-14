@@ -24,6 +24,13 @@ namespace EpgTimer
             checkBox_tryEpgSetting.IsChecked = (Settings.Instance.TryEpgSetting == true);
         }
 
+        public void SetTrySetModeOnly()
+        {
+            checkBox_tryEpgSetting.IsEnabled  = false;
+            checkBox_tryEpgSetting.IsChecked = true;
+            checkBox_tryEpgSetting.ToolTip = "デフォルト表示では一時的な変更のみ可能で設定は保存されません。";
+        }
+
         /// <summary>
         /// デフォルト表示の設定値
         /// </summary>

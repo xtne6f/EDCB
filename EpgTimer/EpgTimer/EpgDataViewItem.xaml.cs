@@ -22,8 +22,6 @@ namespace EpgTimer
     /// </summary>
     public partial class EpgDataViewItem : UserControl
     {
-        public event ViewSettingClickHandler ViewSettingClick = null;
-
         private IEpgDataViewItem viewCtrl = null;
         public EpgDataViewItem()
         {
@@ -92,9 +90,48 @@ namespace EpgTimer
 
         private void item_ViewSettingClick(object sender, object param)
         {
-            if (ViewSettingClick == null) return;
+            try
+            {
+                if (param == null)
+                {
+                    var dlg = new EpgDataViewSettingWindow();
+                    var topWindow = PresentationSource.FromVisual(this);
+                    if (topWindow != null)
+                    {
+                        dlg.Owner = (Window)topWindow.RootVisual;
+                    }
+                    dlg.SetDefSetting(this.GetViewMode());
+                    dlg.SetTrySetModeEnable();
+                    if (Settings.Instance.UseCustomEpgView == false)
+                    {
+                        dlg.SetTrySetModeOnly();
+                    }
+                    if (dlg.ShowDialog() == true)
+                    {
+                        var setInfo = new CustomEpgTabInfo(); ;
+                        dlg.GetSetting(ref setInfo);
 
-            ViewSettingClick(this, param);
+                        if (Settings.Instance.UseCustomEpgView == true && Settings.Instance.TryEpgSetting == false)
+                        {
+                            if (setInfo.ID >= 0 && setInfo.ID <= Settings.Instance.CustomEpgTabList.Count)
+                            {
+                                Settings.Instance.CustomEpgTabList[setInfo.ID] = setInfo;
+                            }
+                        }
+
+                        this.SetViewMode(setInfo);
+                    }
+                }
+                else
+                {
+                    CustomEpgTabInfo setInfo = param as CustomEpgTabInfo;
+                    this.SetViewMode(setInfo);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+            } 
         }
 
         public void RefreshMenu()

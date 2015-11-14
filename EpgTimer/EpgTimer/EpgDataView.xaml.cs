@@ -165,65 +165,11 @@ namespace EpgTimer
         {
             EpgDataViewItem epgView = new EpgDataViewItem();
             epgView.SetViewMode(info);
-            epgView.ViewSettingClick += new ViewSettingClickHandler(epgView_ViewSettingClick);
 
             TabItem tabItem = new TabItem();
             tabItem.Header = info.TabName;
             tabItem.Content = epgView;
             tabControl.Items.Add(tabItem);
-        }
-
-        void epgView_ViewSettingClick(object sender, object param)
-        {
-            try
-            {
-                if (Settings.Instance.UseCustomEpgView == false)
-                {
-                    MessageBox.Show("デフォルト表示では設定を変更することはできません。");
-                }
-                else
-                {
-                    if (sender is EpgDataViewItem)
-                    {
-                        EpgDataViewItem item = sender as EpgDataViewItem;
-                        if (param == null)
-                        {
-                            var dlg = new EpgDataViewSettingWindow();
-                            var topWindow = PresentationSource.FromVisual(this);
-                            if (topWindow != null)
-                            {
-                                dlg.Owner = (Window)topWindow.RootVisual;
-                            }
-                            dlg.SetDefSetting(item.GetViewMode());
-                            dlg.SetTrySetModeEnable();
-                            if (dlg.ShowDialog() == true)
-                            {
-                                var setInfo = new CustomEpgTabInfo(); ;
-                                dlg.GetSetting(ref setInfo);
-
-                                if (Settings.Instance.TryEpgSetting == false)
-                                {
-                                    if (setInfo.ID >= 0 && setInfo.ID <= Settings.Instance.CustomEpgTabList.Count)
-                                    {
-                                        Settings.Instance.CustomEpgTabList[setInfo.ID] = setInfo;
-                                    }
-                                }
-
-                                item.SetViewMode(setInfo);
-                            }
-                        }
-                        else
-                        {
-                            CustomEpgTabInfo setInfo = param as CustomEpgTabInfo;
-                            item.SetViewMode(setInfo);
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
         }
 
         /// <summary>
