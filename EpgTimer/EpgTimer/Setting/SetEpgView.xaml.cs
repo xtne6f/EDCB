@@ -90,6 +90,8 @@ namespace EpgTimer.Setting
                 textBox_minimumHeight.Text = Settings.Instance.MinimumHeight.ToString();
                 checkBox_title_indent.IsChecked = Settings.Instance.EpgTitleIndent;
                 checkBox_epg_popup.IsChecked = Settings.Instance.EpgPopup;
+                checkBox_epg_popup_resOnly.IsEnabled = Settings.Instance.EpgPopup;
+                checkBox_epg_popup_resOnly.IsChecked = Settings.Instance.EpgPopupResOnly;
                 checkBox_gradation.IsChecked = Settings.Instance.EpgGradation;
                 checkBox_gradationHeader.IsChecked = Settings.Instance.EpgGradationHeader;
 
@@ -149,6 +151,7 @@ namespace EpgTimer.Setting
                 Settings.Instance.MinimumHeight = Convert.ToDouble(textBox_minimumHeight.Text);
                 Settings.Instance.EpgTitleIndent = (checkBox_title_indent.IsChecked == true);
                 Settings.Instance.EpgPopup = (checkBox_epg_popup.IsChecked == true);
+                Settings.Instance.EpgPopupResOnly = (checkBox_epg_popup_resOnly.IsChecked == true);
                 Settings.Instance.EpgGradation = (checkBox_gradation.IsChecked == true);
                 Settings.Instance.EpgGradationHeader = (checkBox_gradationHeader.IsChecked == true);
 
@@ -304,6 +307,11 @@ namespace EpgTimer.Setting
                 colorList[idx] = item;
                 btn.Background = ColorDef.SolidBrush(item);
             }
+        }
+
+        private void checkBox_epg_popup_Click(object sender, RoutedEventArgs e)
+        {
+            checkBox_epg_popup_resOnly.IsEnabled = (checkBox_epg_popup.IsChecked == true);
         }
 
     }

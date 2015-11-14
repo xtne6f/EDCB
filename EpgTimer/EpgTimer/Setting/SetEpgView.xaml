@@ -62,7 +62,8 @@
                             <Label Content="ドラッグスクロール倍率" Height="28" HorizontalAlignment="Left" Margin="327,36,0,0" Name="label10" VerticalAlignment="Top" />
                             <TextBox Height="24" HorizontalAlignment="Left" Margin="470,38,0,0" Name="textBox_dragScroll" VerticalAlignment="Top" Width="55" />
                             <CheckBox Content="番組内容表示位置を番組名表示位置にあわせる" Height="16" HorizontalAlignment="Left" Margin="357,70,0,0" Name="checkBox_title_indent" VerticalAlignment="Top" />
-                            <CheckBox Content="番組内容をポップアップ表示する" Height="16" HorizontalAlignment="Left" Margin="357,92,0,0" Name="checkBox_epg_popup" VerticalAlignment="Top" />
+                            <CheckBox Content="番組内容をポップアップ表示する" Height="16" HorizontalAlignment="Left" Margin="357,92,0,0" Name="checkBox_epg_popup" VerticalAlignment="Top" Click="checkBox_epg_popup_Click" />
+                            <CheckBox Content="EPG予約のみポップアップ" Height="16" HorizontalAlignment="Left" Margin="551,92,0,0" Name="checkBox_epg_popup_resOnly" VerticalAlignment="Top" />
                             <Label Content="グラデーション表示を行う" Height="28" HorizontalAlignment="Left" Margin="357,114,0,0" VerticalAlignment="Top" />
                             <CheckBox Content="番組" Height="16" HorizontalAlignment="Left" Margin="510,119,0,0" Name="checkBox_gradation" VerticalAlignment="Top" />
                             <CheckBox Content="サービス・時刻軸" Height="16" HorizontalAlignment="Left" Margin="570,119,0,0" Name="checkBox_gradationHeader" VerticalAlignment="Top" />

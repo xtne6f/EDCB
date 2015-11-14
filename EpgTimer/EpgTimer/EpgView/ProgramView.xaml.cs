@@ -27,6 +27,7 @@ namespace EpgTimer.EpgView
         public event ProgramViewClickHandler RightClick = null;
         private List<Rectangle> reserveBorder = new List<Rectangle>();
         private SortedList<DateTime, List<ProgramViewItem>> programTimeList = null;
+        private List<ReserveViewItem> reserveList = null;
 
         private Point lastDownMousePos;
         private double lastDownHOffset;
@@ -57,21 +58,25 @@ namespace EpgTimer.EpgView
                     return;
                 }
                 Point cursorPos = Mouse.GetPosition(epgViewPanel);
-                int index = (int)(cursorPos.Y / epgViewPanel.Height * programTimeList.Count);
-                if (0 <= index && index < programTimeList.Count)
-                {
-                    foreach (ProgramViewItem item in programTimeList.Values[index])
-                    {
-                        if (item.LeftPos <= cursorPos.X && cursorPos.X < item.LeftPos + item.Width)
-                        {
-                            if (item.TopPos <= cursorPos.Y && cursorPos.Y < item.TopPos + item.Height)
-                            {
-                                if (item == lastPopupInfo) return;
 
-                                info = item;
-                                lastPopupInfo = info;
-                                break;
-                            }
+                bool isSearchEpg = Settings.Instance.EpgPopupResOnly == false;
+                if (isSearchEpg == false)
+                {
+                    if (reserveList == null) return;
+                    isSearchEpg = (reserveList.Find(pg => pg.IsPicked(cursorPos)) != null);
+                }
+
+                if (isSearchEpg == true)
+                {
+                    int index = (int)(cursorPos.Y / epgViewPanel.Height * programTimeList.Count);
+                    if (0 <= index && index < programTimeList.Count)
+                    {
+                        ProgramViewItem item = programTimeList.Values[index].Find(pg => pg.IsPicked(cursorPos));
+                        if (item != null)
+                        {
+                            if (item == lastPopupInfo) return;
+                            info = item;
+                            lastPopupInfo = info;
                         }
                     }
                 }
@@ -193,10 +198,11 @@ namespace EpgTimer.EpgView
             programTimeList = null;
         }
 
-        public void SetReserveList(List<ReserveViewItem> reserveList)
+        public void SetReserveList(List<ReserveViewItem> resList)
         {
             try
             {
+                reserveList = resList;
                 foreach (Rectangle info in reserveBorder)
                 {
                     canvas.Children.Remove(info);

@@ -188,6 +188,7 @@ namespace EpgTimer
         private bool reserveRectBackground;
         private bool epgTitleIndent;
         private bool epgPopup;
+        private bool epgPopupResOnly;
         private bool epgGradation;
         private bool epgGradationHeader;
         private string resColumnHead;
@@ -448,6 +449,11 @@ namespace EpgTimer
         {
             get { return epgPopup; }
             set { epgPopup = value; }
+        }
+        public bool EpgPopupResOnly
+        {
+            get { return epgPopupResOnly; }
+            set { epgPopupResOnly = value; }
         }
         public bool EpgGradation
         {
@@ -934,6 +940,7 @@ namespace EpgTimer
             reserveRectBackground = false;
             epgTitleIndent = true;
             epgPopup = true;
+            epgPopupResOnly = false;
             epgGradation = true;
             epgGradationHeader = true;
             resColumnHead = "";
