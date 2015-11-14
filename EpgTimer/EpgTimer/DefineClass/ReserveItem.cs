@@ -159,7 +159,7 @@ namespace EpgTimer
             {
                 if (ReserveInfo == null) return "";
                 //
-                return ReserveInfo.RecSetting.TuijyuuFlag == 0 ? "しない" : "する";
+                return CommonManager.Instance.YesNoDictionary[ReserveInfo.RecSetting.TuijyuuFlag].DisplayName;
             }
         }
         public String Pittari
@@ -168,7 +168,7 @@ namespace EpgTimer
             {
                 if (ReserveInfo == null) return "";
                 //
-                return ReserveInfo.RecSetting.PittariFlag == 0 ? "しない" : "する";
+                return CommonManager.Instance.YesNoDictionary[ReserveInfo.RecSetting.PittariFlag].DisplayName;
             }
         }
         public String Tuner

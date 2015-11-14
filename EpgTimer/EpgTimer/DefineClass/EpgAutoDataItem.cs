@@ -98,7 +98,7 @@ namespace EpgTimer
             {
                 if (EpgAutoAddInfo == null) return "";
                 //
-                return EpgAutoAddInfo.recSetting.TuijyuuFlag == 0 ? "しない" : "する";
+                return CommonManager.Instance.YesNoDictionary[EpgAutoAddInfo.recSetting.TuijyuuFlag].DisplayName;
             }
         }
         public String Pittari
@@ -107,7 +107,7 @@ namespace EpgTimer
             {
                 if (EpgAutoAddInfo == null) return "";
                 //
-                return EpgAutoAddInfo.recSetting.PittariFlag == 0 ? "しない" : "する";
+                return CommonManager.Instance.YesNoDictionary[EpgAutoAddInfo.recSetting.PittariFlag].DisplayName;
             }
         }
         public String AddCount

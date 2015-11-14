@@ -740,24 +740,6 @@ namespace EpgTimer
             view += endTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss") + "\r\n";
 
             String recMode = ConvertRecModeText(reserveInfo.RecSetting.RecMode);
-            String tuijyu = "";
-            if (reserveInfo.RecSetting.TuijyuuFlag == 0)
-            {
-                tuijyu = "しない";
-            }
-            else if (reserveInfo.RecSetting.TuijyuuFlag == 1)
-            {
-                tuijyu = "する";
-            }
-            String pittari = "";
-            if (reserveInfo.RecSetting.PittariFlag == 0)
-            {
-                pittari = "しない";
-            }
-            else if (reserveInfo.RecSetting.PittariFlag == 1)
-            {
-                pittari = "する";
-            }
 
             view += reserveInfo.StationName;
             if (0x7880 <= reserveInfo.OriginalNetworkID && reserveInfo.OriginalNetworkID <= 0x7FE8)
@@ -785,8 +767,8 @@ namespace EpgTimer
             view += reserveInfo.Title + "\r\n\r\n";
             view += "録画モード : " + recMode + "\r\n";
             view += "優先度 : " + reserveInfo.RecSetting.Priority.ToString() + "\r\n";
-            view += "追従 : " + tuijyu + "\r\n";
-            view += "ぴったり（？） : " + pittari + "\r\n";
+            view += "追従 : " + YesNoDictionary[reserveInfo.RecSetting.TuijyuuFlag] + "\r\n";
+            view += "ぴったり（？） : " + YesNoDictionary[reserveInfo.RecSetting.PittariFlag] + "\r\n";
             if ((reserveInfo.RecSetting.ServiceMode & 0x01) == 0)
             {
                 view += "指定サービス対象データ : デフォルト\r\n";
