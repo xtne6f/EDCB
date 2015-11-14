@@ -1261,6 +1261,38 @@ namespace EpgTimer
             return flowDoc;
         }
 
+        //デフォルト番組表の情報作成
+        public List<CustomEpgTabInfo> CreateDefaultTabInfo()
+        {
+            List<CustomEpgTabInfo> setInfo = Enumerable.Range(0, 4).Select(i => new CustomEpgTabInfo()).ToList();
+
+            setInfo[0].TabName = "地デジ";
+            setInfo[1].TabName = "BS";
+            setInfo[2].TabName = "CS";
+            setInfo[3].TabName = "その他";
+
+            foreach (ChSet5Item info in ChSet5.Instance.ChList.Values)
+            {
+                int i = 3;//その他
+                if (info.IsTere == true)//地デジ
+                {
+                    i = 0;
+                }
+                else if (info.IsBS == true)//BS
+                {
+                    i = 1;
+                }
+                else if (info.IsCS == true)//CS
+                {
+                    i = 2;
+                }
+
+                setInfo[i].ViewServiceList.Add(info.Key);
+            }
+
+            return setInfo.Where(info => info.ViewServiceList.Count != 0).ToList();
+        }
+        
         void h_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             try

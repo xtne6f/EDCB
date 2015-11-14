@@ -52,4 +52,10 @@ namespace EpgTimer
             return TabName;
         }
     }
+
+    public static class CustomEpgTabInfoEx
+    {
+        static public List<CustomEpgTabInfo> Clone(this List<CustomEpgTabInfo> src)
+        { return src == null ? null : src.Select(item => item.Clone()).ToList(); }
+    }
 }

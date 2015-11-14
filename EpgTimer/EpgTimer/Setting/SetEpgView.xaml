@@ -329,12 +329,20 @@
                     <GroupBox Header="カスタマイズ表示設定" Name="groupBox5" Margin="1,50,6,0" Height="225" Width="763" VerticalAlignment="Top">
                         <Grid>
                             <Label Content="表示タブ" Height="28" HorizontalAlignment="Left" Margin="6,6,0,0" Name="label29" VerticalAlignment="Top" />
-                            <ListBox Height="148" HorizontalAlignment="Left" Margin="23,40,0,0" Name="listBox_tab" VerticalAlignment="Top" Width="172" SelectionMode="Extended" />
+                            <ListBox Height="148" HorizontalAlignment="Left" Margin="23,40,0,0" Name="listBox_tab" VerticalAlignment="Top" Width="172" SelectionMode="Extended" >
+                                <ListBox.Resources>
+                                    <Style TargetType="ListBoxItem">
+                                        <EventSetter Event="MouseDoubleClick" Handler="listBox_tab_MouseDoubleClick"/>
+                                    </Style>
+                                </ListBox.Resources>
+                            </ListBox>
                             <Button Content="追加" Height="23" HorizontalAlignment="Left" Margin="213,40,0,0" Name="button_tab_add" VerticalAlignment="Top" Width="46" Click="button_tab_add_Click" />
                             <Button Content="変更" Height="23" HorizontalAlignment="Left" Margin="213,69,0,0" Name="button_tab_chg" VerticalAlignment="Top" Width="46" Click="button_tab_chg_Click" />
                             <Button Content="削除" Height="23" HorizontalAlignment="Left" Margin="213,98,0,0" Name="button_tab_del" VerticalAlignment="Top" Width="46" />
                             <Button Content="↑" Height="23" HorizontalAlignment="Left" Margin="213,136,0,0" Name="button_tab_up" VerticalAlignment="Top" Width="46" />
                             <Button Content="↓" Height="23" HorizontalAlignment="Left" Margin="213,165,0,0" Name="button_tab_down" VerticalAlignment="Top" Width="46" />
+                            <Button Content="コピーする" Height="23" HorizontalAlignment="Left" Margin="265,40,0,0" Name="button_tab_clone" VerticalAlignment="Top" Width="128" Click="button_tab_clone_Click" />
+                            <Button Content="デフォルト表示をコピー" Height="23" HorizontalAlignment="Left" Margin="265,69,0,0" Name="button_tab_defaultCopy" VerticalAlignment="Top" Width="128" Click="button_tab_defaultCopy_Click" />
                         </Grid>
                     </GroupBox>
                 </Grid>

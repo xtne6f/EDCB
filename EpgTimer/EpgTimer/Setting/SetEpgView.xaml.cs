@@ -219,18 +219,24 @@ namespace EpgTimer.Setting
         }
         private void button_tab_chg_Click(object sender, RoutedEventArgs e)
         {
-            object info = listBox_tab.SelectedItem;
-            if (info != null)
+            if (listBox_tab.SelectedItem == null)
+            {
+                if (listBox_tab.Items.Count != 0)
+                {
+                    listBox_tab.SelectedIndex = 0;
+                }
+            }
+            var setInfo = listBox_tab.SelectedItem as CustomEpgTabInfo;
+            if (setInfo != null)
             {
                 listBox_tab.UnselectAll();
-                listBox_tab.SelectedItem = info;
+                listBox_tab.SelectedItem = setInfo;
                 var dlg = new EpgDataViewSettingWindow();
                 var topWindow = PresentationSource.FromVisual(this);
                 if (topWindow != null)
                 {
                     dlg.Owner = (Window)topWindow.RootVisual;
                 }
-                var setInfo = info as CustomEpgTabInfo;
                 dlg.SetDefSetting(setInfo);
                 if (dlg.ShowDialog() == true)
                 {
@@ -238,6 +244,41 @@ namespace EpgTimer.Setting
                     listBox_tab.Items.Refresh();
                 }
             }
+            else
+            {
+                button_tab_add_Click(null, null);
+            }
+        }
+
+        private void button_tab_clone_Click(object sender, RoutedEventArgs e)
+        {
+            if (listBox_tab.SelectedItem != null)
+            {
+                List<CustomEpgTabInfo> items = listBox_tab.SelectedItems.OfType<CustomEpgTabInfo>().ToList().Clone();
+                items.ForEach(info => info.TabName += "～コピー");
+                button_tab_copyAdd(items);
+            }
+        }
+
+        private void button_tab_defaultCopy_Click(object sender, RoutedEventArgs e)
+        {
+            button_tab_copyAdd(CommonManager.Instance.CreateDefaultTabInfo());
+        }
+
+        private void button_tab_copyAdd(List<CustomEpgTabInfo> items)
+        {
+            if (items.Count != 0)
+            {
+                items.ForEach(info => listBox_tab.Items.Add(info));
+                listBox_tab.ScrollIntoView(listBox_tab.Items[listBox_tab.Items.Count - 1]);
+                listBox_tab.SelectedItem = items[0];
+                items.ForEach(info => listBox_tab.SelectedItems.Add(info));
+            }
+        }
+
+        private void listBox_tab_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            button_tab_chg_Click(null, null);
         }
 
         private void button_colorTitle_Click(object sender, RoutedEventArgs e)
@@ -264,7 +305,6 @@ namespace EpgTimer.Setting
                 btn.Background = ColorDef.SolidBrush(item);
             }
         }
-        
 
     }
 }

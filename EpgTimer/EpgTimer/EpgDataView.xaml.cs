@@ -82,69 +82,27 @@ namespace EpgTimer
         {
             try
             {
+                List<CustomEpgTabInfo> setInfo = null;
                 if (Settings.Instance.UseCustomEpgView == false)
                 {
-                    if (CommonManager.Instance.VUtil.EpgTimerNWNotConnect() == true) return false;
-
-                    ErrCode err = CommonManager.Instance.DB.ReloadEpgData();
-                    if (CommonManager.CmdErrMsgTypical(err, "EPGデータの取得", this) == false)
-                    {
-                        return false;
-                    }
-
-                    CommonManager.Instance.DB.ReloadReserveInfo();
-
-                    var findService = new List<bool>();//その他、地デジ、BS、CS
-                    var setInfo = new List<CustomEpgTabInfo>();
-                    for (int i = 0; i < 4; i++)
-                    {
-                        findService.Add(false);
-                        var info = new CustomEpgTabInfo();
-                        info.ViewMode = 0;
-                        info.NeedTimeOnlyBasic = false;
-                        setInfo.Add(info);
-                    }
-
-                    setInfo[0].TabName = "地デジ";
-                    setInfo[1].TabName = "BS";
-                    setInfo[2].TabName = "CS";
-                    setInfo[3].TabName = "その他";
-
-                    //デフォルト表示
-                    foreach (EpgServiceEventInfo info in CommonManager.Instance.DB.ServiceEventList.Values)
-                    {
-                        int i = 3;//その他
-                        if (ChSet5.IsTere(info.serviceInfo.ONID) == true)
-                        {
-                            i = 0;//地デジ
-                        }
-                        else if (ChSet5.IsBS(info.serviceInfo.ONID) == true)
-                        {
-                            i = 1;//BS
-                        }
-                        else if (ChSet5.IsCS(info.serviceInfo.ONID) == true)
-                        {
-                            i = 2;//CS
-                        }
-
-                        UInt64 id = info.serviceInfo.Create64Key();
-                        setInfo[i].ViewServiceList.Add(id);
-                        findService[i] = true;
-                    }
-
-                    for (int i = 0; i < 4; i++)
-                    {
-                        if(findService[i] ==true)
-                        {
-                            SetTabs(setInfo[i]);
-                        }
-                    }
+                    setInfo = CommonManager.Instance.CreateDefaultTabInfo();
                 }
                 else
                 {
-                    //カスタム表示
-                    Settings.Instance.CustomEpgTabList.ForEach(info => SetTabs(info));
+                    setInfo = Settings.Instance.CustomEpgTabList;
                 }
+
+                setInfo.ForEach(info => 
+                {
+                    EpgDataViewItem epgView = new EpgDataViewItem();
+                    epgView.SetViewMode(info);
+
+                    TabItem tabItem = new TabItem();
+                    tabItem.Header = info.TabName;
+                    tabItem.Content = epgView;
+                    tabControl.Items.Add(tabItem);
+                });
+
                 if (tabControl.Items.Count > 0)
                 {
                     tabControl.SelectedIndex = 0;
@@ -159,17 +117,6 @@ namespace EpgTimer
 
             }
             return true;
-        }
-
-        private void SetTabs(CustomEpgTabInfo info)
-        {
-            EpgDataViewItem epgView = new EpgDataViewItem();
-            epgView.SetViewMode(info);
-
-            TabItem tabItem = new TabItem();
-            tabItem.Header = info.TabName;
-            tabItem.Content = epgView;
-            tabControl.Items.Add(tabItem);
         }
 
         /// <summary>
