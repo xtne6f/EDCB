@@ -58,7 +58,7 @@ namespace EpgTimer
             {
                 if (EventInfo == null) return "";
                 //
-                return CommonManager.Instance.ConvertNetworkNameText(EventInfo.original_network_id);
+                return CommonManager.ConvertNetworkNameText(EventInfo.original_network_id);
             }
         }
         public virtual String StartTime

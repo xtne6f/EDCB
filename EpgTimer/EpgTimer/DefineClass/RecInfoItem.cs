@@ -108,7 +108,7 @@ namespace EpgTimer
             {
                 if (RecInfo == null) return "";
                 //
-                return CommonManager.Instance.ConvertNetworkNameText(RecInfo.OriginalNetworkID);
+                return CommonManager.ConvertNetworkNameText(RecInfo.OriginalNetworkID);
             }
         }
         public String RecFilePath
@@ -169,27 +169,7 @@ namespace EpgTimer
                     view += endTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss") + "\r\n";
 
                     view += ServiceName;
-                    if (0x7880 <= RecInfo.OriginalNetworkID && RecInfo.OriginalNetworkID <= 0x7FE8)
-                    {
-                        view += " (地デジ)";
-                    }
-                    else if (RecInfo.OriginalNetworkID == 0x0004)
-                    {
-                        view += " (BS)";
-                    }
-                    else if (RecInfo.OriginalNetworkID == 0x0006)
-                    {
-                        view += " (CS1)";
-                    }
-                    else if (RecInfo.OriginalNetworkID == 0x0007)
-                    {
-                        view += " (CS2)";
-                    }
-                    else
-                    {
-                        view += " (その他)";
-                    }
-                    view += "\r\n";
+                    view += "(" + CommonManager.ConvertNetworkNameText(RecInfo.OriginalNetworkID) + ")" + "\r\n";
                     view += EventName + "\r\n";
                     view += "\r\n";
                     view += "録画結果 : " + RecInfo.Comment + "\r\n";

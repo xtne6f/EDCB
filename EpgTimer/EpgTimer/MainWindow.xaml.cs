@@ -531,19 +531,6 @@ namespace EpgTimer
 
             IniFileHandler.UpdateSrvProfileIniNW();
 
-            byte[] binData;
-            if (cmd.SendFileCopy("ChSet5.txt", out binData) == ErrCode.CMD_SUCCESS)
-            {
-                string filePath = SettingPath.SettingFolderPath;
-                System.IO.Directory.CreateDirectory(filePath);
-                filePath += "\\ChSet5.txt";
-                using (System.IO.BinaryWriter w = new System.IO.BinaryWriter(System.IO.File.Create(filePath)))
-                {
-                    w.Write(binData);
-                    w.Close();
-                }
-                ChSet5.LoadFile();
-            }
             CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.ReserveInfo);
             CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.RecInfo);
             CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.AutoAddEpgInfo);
@@ -828,7 +815,6 @@ namespace EpgTimer
                 CloseCmd();
                 return;
             }
-            ChSet5.LoadFile();
         }
 
         public void RefreshMenu(bool MenuOnly = false)

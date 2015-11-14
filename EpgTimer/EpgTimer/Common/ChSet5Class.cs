@@ -7,11 +7,7 @@ namespace EpgTimer
 {
     class ChSet5
     {
-        public Dictionary<UInt64, ChSet5Item> ChList
-        {
-            get;
-            set;
-        }
+        public Dictionary<UInt64, ChSet5Item> ChList { get; set; }
         
         private static ChSet5 _instance;
         public static ChSet5 Instance
@@ -30,20 +26,43 @@ namespace EpgTimer
             ChList = new Dictionary<UInt64, ChSet5Item>();
         }
 
+        public static bool IsVideo(UInt16 ServiceType)
+        {
+            return ServiceType == 0x01 || ServiceType == 0xA5;
+        }
+        public static bool IsTere(UInt16 ONID)
+        {
+            return 0x7880 <= ONID && ONID <= 0x7FE8;
+        }
+        public static bool IsBS(UInt16 ONID)
+        {
+            return ONID == 0x0004;
+        }
+        public static bool IsCS(UInt16 ONID)
+        {
+            return IsCS1(ONID) || IsCS2(ONID);
+        }
+        public static bool IsCS1(UInt16 ONID)
+        {
+            return ONID == 0x0006;
+        }
+        public static bool IsCS2(UInt16 ONID)
+        {
+            return ONID == 0x0007;
+        }
+        public static bool IsOther(UInt16 ONID)
+        {
+            return IsTere(ONID) == false && IsBS(ONID) == false && IsCS(ONID) == false;
+        }
+
         public static bool LoadFile()
         {
             try
             {
-                if (Instance.ChList == null)
-                {
-                    Instance.ChList = new Dictionary<UInt64, ChSet5Item>();
-                }
-                else
-                {
-                    Instance.ChList.Clear();
-                }
-                String filePath = SettingPath.SettingFolderPath + "\\ChSet5.txt";
-                System.IO.StreamReader reader = (new System.IO.StreamReader(filePath, System.Text.Encoding.Default));
+                Instance.ChList = new Dictionary<UInt64, ChSet5Item>();
+
+                string filePath = SettingPath.SettingFolderPath + "\\ChSet5.txt";
+                System.IO.StreamReader reader = (new System.IO.StreamReader(filePath, Encoding.Default));
                 while (reader.Peek() >= 0)
                 {
                     string buff = reader.ReadLine();
@@ -118,66 +137,27 @@ namespace EpgTimer
 
     public class ChSet5Item
     {
-        public ChSet5Item()
-        {
-        }
-        public UInt64 Key
-        {
-            get
-            {
-                return CommonManager.Create64Key(ONID, TSID, SID);
-            }
-        }
-        public UInt16 ONID
-        {
-            get;
-            set;
-        }
-        public UInt16 TSID
-        {
-            get;
-            set;
-        }
-        public UInt16 SID
-        {
-            get;
-            set;
-        }
-        public UInt16 ServiceType
-        {
-            get;
-            set;
-        }
-        public Byte PartialFlag
-        {
-            get;
-            set;
-        }
-        public String ServiceName
-        {
-            get;
-            set;
-        }
-        public String NetworkName
-        {
-            get;
-            set;
-        }
-        public Byte EpgCapFlag
-        {
-            get;
-            set;
-        }
-        public Byte SearchFlag
-        {
-            get;
-            set;
-        }
-        public Byte RemoconID
-        {
-            get;
-            set;
-        }
+        public ChSet5Item() { }
+
+        public UInt64 Key { get { return CommonManager.Create64Key(ONID, TSID, SID); } }
+        public UInt16 ONID { get; set; }
+        public UInt16 TSID { get; set; }
+        public UInt16 SID { get; set; }
+        public UInt16 ServiceType { get; set; }
+        public Byte PartialFlag { get; set; }
+        public String ServiceName { get; set; }
+        public String NetworkName { get; set; }
+        public Byte EpgCapFlag { get; set; }
+        public Byte SearchFlag { get; set; }
+        public Byte RemoconID { get; set; }
+
+        public bool IsVideo { get { return ChSet5.IsVideo(ServiceType); } }
+        public bool IsTere { get { return ChSet5.IsTere(ONID); } }
+        public bool IsBS { get { return ChSet5.IsBS(ONID); } }
+        public bool IsCS { get { return ChSet5.IsCS(ONID); } }
+        public bool IsCS1 { get { return ChSet5.IsCS1(ONID); } }
+        public bool IsCS2 { get { return ChSet5.IsCS2(ONID); } }
+        public bool IsOther { get { return ChSet5.IsOther(ONID); } }
 
         public override string ToString()
         {

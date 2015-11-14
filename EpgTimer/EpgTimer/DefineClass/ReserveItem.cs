@@ -59,7 +59,7 @@ namespace EpgTimer
             {
                 if (ReserveInfo == null) return "";
                 //
-                return CommonManager.Instance.ConvertNetworkNameText(ReserveInfo.OriginalNetworkID);
+                return CommonManager.ConvertNetworkNameText(ReserveInfo.OriginalNetworkID);
             }
         }
         public override String StartTime

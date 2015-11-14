@@ -262,107 +262,102 @@ namespace EpgTimer
             foreach (ServiceItem item in listView_service.Items) { item.IsSelected = true; }
         }
 
+        private void button_all_off_Click(object sender, RoutedEventArgs e)
+        {
+            foreach (ServiceItem item in listView_service.Items) { item.IsSelected = false; }
+        }
+
         private void button_video_on_Click(object sender, RoutedEventArgs e)
         {
             foreach (ServiceItem info in listView_service.Items)
             {
-                if (info.ServiceInfo.service_type == 0x01 || info.ServiceInfo.service_type == 0xA5)
-                {
-                    info.IsSelected = true;
-                }
-                else
-                {
-                    info.IsSelected = false;
-                }
+                info.IsSelected = (ChSet5.IsVideo(info.ServiceInfo.service_type) == true);
             }
         }
 
         private void button_bs_on_Click(object sender, RoutedEventArgs e)
         {
+            button_all_off_Click(sender, e);
+            button_bs_on2_Click(sender, e);
+        }
+
+        private void button_bs_on2_Click(object sender, RoutedEventArgs e)
+        {
             foreach (ServiceItem info in listView_service.Items)
             {
-                if (info.ServiceInfo.ONID == 0x04 &&
-                    (info.ServiceInfo.service_type == 0x01 || info.ServiceInfo.service_type == 0xA5))
+                if (ChSet5.IsBS(info.ServiceInfo.ONID) == true && ChSet5.IsVideo(info.ServiceInfo.service_type) == true)
                 {
                     info.IsSelected = true;
-                }
-                else
-                {
-                    info.IsSelected = false;
                 }
             }
         }
 
         private void button_cs_on_Click(object sender, RoutedEventArgs e)
         {
+            button_all_off_Click(sender, e);
+            button_cs_on2_Click(sender, e);
+        }
+
+        private void button_cs_on2_Click(object sender, RoutedEventArgs e)
+        {
             foreach (ServiceItem info in listView_service.Items)
             {
-                if ((info.ServiceInfo.ONID == 0x06 || info.ServiceInfo.ONID == 0x07) &&
-                    (info.ServiceInfo.service_type == 0x01 || info.ServiceInfo.service_type == 0xA5))
+                if (ChSet5.IsCS(info.ServiceInfo.ONID) == true && ChSet5.IsVideo(info.ServiceInfo.service_type) == true)
                 {
                     info.IsSelected = true;
-                }
-                else
-                {
-                    info.IsSelected = false;
                 }
             }
         }
 
         private void button_tere_on_Click(object sender, RoutedEventArgs e)
         {
+            button_all_off_Click(sender, e);
+            button_tere_on2_Click(sender, e);
+        }
+
+        private void button_tere_on2_Click(object sender, RoutedEventArgs e)
+        {
             foreach (ServiceItem info in listView_service.Items)
             {
-                if ((0x7880 <= info.ServiceInfo.ONID && info.ServiceInfo.ONID <= 0x7FE8) &&
-                    (info.ServiceInfo.service_type == 0x01 || info.ServiceInfo.service_type == 0xA5))
+                if (ChSet5.IsTere(info.ServiceInfo.ONID) == true && ChSet5.IsVideo(info.ServiceInfo.service_type) == true)
                 {
                     info.IsSelected = true;
-                }
-                else
-                {
-                    info.IsSelected = false;
                 }
             }
         }
 
         private void button_1seg_on_Click(object sender, RoutedEventArgs e)
         {
+            button_all_off_Click(sender, e);
+            button_1seg_on2_Click(sender, e);
+        }
+
+        private void button_1seg_on2_Click(object sender, RoutedEventArgs e)
+        {
             foreach (ServiceItem info in listView_service.Items)
             {
-                if ((0x7880 <= info.ServiceInfo.ONID && info.ServiceInfo.ONID <= 0x7FE8) &&
-                    info.ServiceInfo.partialReceptionFlag == 1)
+                if (ChSet5.IsTere(info.ServiceInfo.ONID) == true && info.ServiceInfo.partialReceptionFlag == 1)
                 {
                     info.IsSelected = true;
-                }
-                else
-                {
-                    info.IsSelected = false;
                 }
             }
         }
 
         private void button_other_on_Click(object sender, RoutedEventArgs e)
         {
+            button_all_off_Click(sender, e);
+            button_other_on2_Click(sender, e);
+        }
+
+        private void button_other_on2_Click(object sender, RoutedEventArgs e)
+        {
             foreach (ServiceItem info in listView_service.Items)
             {
-                if (info.ServiceInfo.ONID != 0x04 &&
-                    info.ServiceInfo.ONID != 0x06 &&
-                    info.ServiceInfo.ONID != 0x07 &&
-                    !(0x7880 <= info.ServiceInfo.ONID && info.ServiceInfo.ONID <= 0x7FE8)
-                    )
+                if (ChSet5.IsOther(info.ServiceInfo.ONID) == true)
                 {
                     info.IsSelected = true;
                 }
-                else
-                {
-                    info.IsSelected = false;
-                }
             }
-        }
-
-        private void button_all_off_Click(object sender, RoutedEventArgs e)
-        {
-            foreach (ServiceItem item in listView_service.Items) { item.IsSelected = false; }
         }
 
         private void button_timeAdd_Click(object sender, RoutedEventArgs e)
@@ -456,69 +451,6 @@ namespace EpgTimer
         private void button_date_clear_Click(object sender, RoutedEventArgs e)
         {
             listBox_date.Items.Clear();
-        }
-
-        private void button_bs_on2_Click(object sender, RoutedEventArgs e)
-        {
-            foreach (ServiceItem info in listView_service.Items)
-            {
-                if (info.ServiceInfo.ONID == 0x04 &&
-                    (info.ServiceInfo.service_type == 0x01 || info.ServiceInfo.service_type == 0xA5))
-                {
-                    info.IsSelected = true;
-                }
-            }
-        }
-
-        private void button_cs_on2_Click(object sender, RoutedEventArgs e)
-        {
-            foreach (ServiceItem info in listView_service.Items)
-            {
-                if ((info.ServiceInfo.ONID == 0x06 || info.ServiceInfo.ONID == 0x07) &&
-                    (info.ServiceInfo.service_type == 0x01 || info.ServiceInfo.service_type == 0xA5))
-                {
-                    info.IsSelected = true;
-                }
-            }
-        }
-
-        private void button_tere_on2_Click(object sender, RoutedEventArgs e)
-        {
-            foreach (ServiceItem info in listView_service.Items)
-            {
-                if ((0x7880 <= info.ServiceInfo.ONID && info.ServiceInfo.ONID <= 0x7FE8) &&
-                    (info.ServiceInfo.service_type == 0x01 || info.ServiceInfo.service_type == 0xA5))
-                {
-                    info.IsSelected = true;
-                }
-            }
-        }
-
-        private void button_1seg_on2_Click(object sender, RoutedEventArgs e)
-        {
-            foreach (ServiceItem info in listView_service.Items)
-            {
-                if ((0x7880 <= info.ServiceInfo.ONID && info.ServiceInfo.ONID <= 0x7FE8) &&
-                    info.ServiceInfo.partialReceptionFlag == 1)
-                {
-                    info.IsSelected = true;
-                }
-            }
-        }
-
-        private void button_other_on2_Click(object sender, RoutedEventArgs e)
-        {
-            foreach (ServiceItem info in listView_service.Items)
-            {
-                if (info.ServiceInfo.ONID != 0x04 &&
-                    info.ServiceInfo.ONID != 0x06 &&
-                    info.ServiceInfo.ONID != 0x07 &&
-                    !(0x7880 <= info.ServiceInfo.ONID && info.ServiceInfo.ONID <= 0x7FE8)
-                    )
-                {
-                    info.IsSelected = true;
-                }
-            }
         }
 
         private void checkBox_regExp_Checked(object sender, RoutedEventArgs e)

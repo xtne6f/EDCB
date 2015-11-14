@@ -55,8 +55,10 @@ namespace EpgTimer
             SendIniCopy("EpgTimerSrv.ini");
             SendIniCopy("Common.ini");
             SendIniCopy("EpgDataCap_Bon.ini");
+            SendIniCopy("ChSet5.txt");
 
             Settings.UpdateDefRecSetting();
+            ChSet5.LoadFile();
         }
 
         private static bool SendIniCopy(string iniFileName)

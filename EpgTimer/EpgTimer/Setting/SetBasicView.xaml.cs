@@ -580,14 +580,7 @@ namespace EpgTimer.Setting
             {
                 foreach (ServiceViewItem info in this.serviceList)
                 {
-                    if (info.ServiceInfo.ServiceType == 0x01 || info.ServiceInfo.ServiceType == 0xA5)
-                    {
-                        info.IsSelected = true;
-                    }
-                    else
-                    {
-                        info.IsSelected = false;
-                    }
+                    info.IsSelected = (ChSet5.IsVideo(info.ServiceInfo.ServiceType) == true);
                 }
             }
             catch (Exception ex)

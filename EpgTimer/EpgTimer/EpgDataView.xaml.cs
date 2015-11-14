@@ -105,26 +105,26 @@ namespace EpgTimer
                         setInfo.Add(info);
                     }
 
-                    setInfo[0].TabName = "その他";
-                    setInfo[1].TabName = "地デジ";
-                    setInfo[2].TabName = "BS";
-                    setInfo[3].TabName = "CS";
+                    setInfo[0].TabName = "地デジ";
+                    setInfo[1].TabName = "BS";
+                    setInfo[2].TabName = "CS";
+                    setInfo[3].TabName = "その他";
 
                     //デフォルト表示
                     foreach (EpgServiceEventInfo info in CommonManager.Instance.DB.ServiceEventList.Values)
                     {
-                        int i = 0;//その他
-                        if (info.serviceInfo.ONID == 0x0004)
+                        int i = 3;//その他
+                        if (ChSet5.IsTere(info.serviceInfo.ONID) == true)
                         {
-                            i = 2;//BS
+                            i = 0;//地デジ
                         }
-                        else if (info.serviceInfo.ONID == 0x0006 || info.serviceInfo.ONID == 0x0007)
+                        else if (ChSet5.IsBS(info.serviceInfo.ONID) == true)
                         {
-                            i = 3;//CS
+                            i = 1;//BS
                         }
-                        else if (0x7880 <= info.serviceInfo.ONID && info.serviceInfo.ONID <= 0x7FE8)
+                        else if (ChSet5.IsCS(info.serviceInfo.ONID) == true)
                         {
-                            i = 1;//地デジ
+                            i = 2;//CS
                         }
 
                         UInt64 id = info.serviceInfo.Create64Key();

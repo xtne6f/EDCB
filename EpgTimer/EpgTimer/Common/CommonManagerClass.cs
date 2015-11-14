@@ -742,27 +742,7 @@ namespace EpgTimer
             String recMode = ConvertRecModeText(reserveInfo.RecSetting.RecMode);
 
             view += reserveInfo.StationName;
-            if (0x7880 <= reserveInfo.OriginalNetworkID && reserveInfo.OriginalNetworkID <= 0x7FE8)
-            {
-                view += " (地デジ)";
-            }
-            else if (reserveInfo.OriginalNetworkID == 0x0004)
-            {
-                view += " (BS)";
-            }
-            else if (reserveInfo.OriginalNetworkID == 0x0006)
-            {
-                view += " (CS1)";
-            }
-            else if (reserveInfo.OriginalNetworkID == 0x0007)
-            {
-                view += " (CS2)";
-            }
-            else
-            {
-                view += " (その他)";
-            }
-            view += "\r\n";
+            view += "(" + ConvertNetworkNameText(reserveInfo.OriginalNetworkID) + ")" + "\r\n";
 
             view += reserveInfo.Title + "\r\n\r\n";
             view += "録画モード : " + recMode + "\r\n";
@@ -1028,7 +1008,7 @@ namespace EpgTimer
                 extInfo += "\r\n";
 
                 //スクランブル
-                if (!(0x7880 <= eventInfo.original_network_id && eventInfo.original_network_id <= 0x7FE8))
+                if (!ChSet5.IsTere(eventInfo.original_network_id))
                 {
                     if (eventInfo.FreeCAFlag == 0)
                     {
@@ -1085,24 +1065,24 @@ namespace EpgTimer
             return retText;
         }
 
-        public String ConvertNetworkNameText(ushort originalNetworkID)
+        public static String ConvertNetworkNameText(ushort originalNetworkID, bool IsSimple = false)
         {
             String retText = "";
-            if (0x7880 <= originalNetworkID && originalNetworkID <= 0x7FE8)
+            if (ChSet5.IsTere(originalNetworkID) == true)
             {
                 retText = "地デジ";
             }
-            else if (originalNetworkID == 0x0004)
+            else if (ChSet5.IsBS(originalNetworkID) == true)
             {
                 retText = "BS";
             }
-            else if (originalNetworkID == 0x0006)
+            else if (ChSet5.IsCS1(originalNetworkID) == true)
             {
-                retText = "CS1";
+                retText = IsSimple == true ? "CS" : "CS1";
             }
-            else if (originalNetworkID == 0x0007)
+            else if (ChSet5.IsCS2(originalNetworkID) == true)
             {
-                retText = "CS2";
+                retText = IsSimple == true ? "CS" : "CS2";
             }
             else
             {
