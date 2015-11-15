@@ -29,7 +29,7 @@ namespace EpgTimer.TunerReserveViewCtrl
             set;
         }
 
-        protected bool RenderText(String text, DrawingContext dc, GlyphTypeface glyphType, double fontSize, double maxWidth, double maxHeight, double x, double y, ref double useHeight)
+        protected bool RenderText(String text, DrawingContext dc, GlyphTypeface glyphType, double fontSize, double maxWidth, double maxHeight, double x, double y, ref double useHeight, bool nowrap = false)
         {
             if (maxHeight < fontSize + 2)
             {
@@ -41,6 +41,13 @@ namespace EpgTimer.TunerReserveViewCtrl
             string[] lineText = text.Replace("\r", "").Split('\n');
             foreach (string line in lineText)
             {
+                //高さ確認
+                if (totalHeight + fontSize > maxHeight)
+                {
+                    //これ以上は無理
+                    useHeight = totalHeight;
+                    return false;
+                }
                 totalHeight += Math.Floor(2 + fontSize);
                 List<ushort> glyphIndexes = new List<ushort>();
                 List<double> advanceWidths = new List<double>();
@@ -51,6 +58,8 @@ namespace EpgTimer.TunerReserveViewCtrl
                     double width = glyphType.AdvanceWidths[glyphIndex] * fontSize;
                     if (totalWidth + width > maxWidth)
                     {
+                        if (nowrap == true) break;//改行しない場合ここで終り
+
                         if (totalHeight + fontSize > maxHeight)
                         {
                             //次の行無理
@@ -97,14 +106,6 @@ namespace EpgTimer.TunerReserveViewCtrl
 
                     dc.DrawGlyphRun(Brushes.Black, glyphRun);
                 }
-                //高さ確認
-                if (totalHeight + fontSize > maxHeight)
-                {
-                    //これ以上は無理
-                    useHeight = totalHeight;
-                    return false;
-                }
-
             }
             useHeight = Math.Floor(totalHeight);
             return true;
@@ -232,7 +233,7 @@ namespace EpgTimer.TunerReserveViewCtrl
                         {
                             String serviceName = info.ReserveInfo.StationName;
                             serviceName += "(" + CommonManager.ConvertNetworkNameText(info.ReserveInfo.OriginalNetworkID) + ")";
-                            if (RenderText(serviceName, dc, glyphTypefaceTitle, sizeTitle, info.Width - 6 - widthOffset, dInfoHeight - 6 - totalHeight, info.LeftPos + widthOffset, dInfoTopPos + totalHeight, ref useHeight) == false)
+                            if (RenderText(serviceName, dc, glyphTypefaceTitle, sizeTitle, info.Width - 6 - widthOffset, dInfoHeight - 6 - totalHeight, info.LeftPos + widthOffset, dInfoTopPos + totalHeight, ref useHeight, Settings.Instance.ReserveServiceNoWrap) == false)
                             {
                                 info.TitleDrawErr = true;
                                 continue;
@@ -240,7 +241,7 @@ namespace EpgTimer.TunerReserveViewCtrl
                             // ビットマップフォントがかすれる問題
                             totalHeight += useHeight + Math.Floor(sizeNormal / 2);
                         }
-                        widthOffset = 2;
+                        widthOffset = Settings.Instance.ReserveTitleIndent ? sizeNormal * 2 : 2;
                         //番組名
                         if (info.ReserveInfo.Title.Length > 0)
                         {

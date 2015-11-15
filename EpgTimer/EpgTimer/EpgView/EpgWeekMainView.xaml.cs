@@ -384,7 +384,7 @@ namespace EpgTimer
                     }
                 }
                 //最低表示行数を適用
-                vutil.ModifierMinimumHeight<EpgEventInfo, ProgramViewItem>(programList);
+                vutil.ModifierMinimumHeight<EpgEventInfo, ProgramViewItem>(programList, Settings.Instance.MinimumHeight);
 
                 //必要時間リストと時間と番組の関連づけ
                 foreach (ProgramViewItem item in programList)

@@ -38,7 +38,7 @@ namespace EpgTimer.TunerReserveViewCtrl
                 {
                     TextBlock item = new TextBlock();
 
-                    double height = Settings.Instance.MinHeight;
+                    double height = Settings.Instance.ReserveMinHeight;
                     item.Height = (60 * height) - 4;
 
                     if (time.Hour % 3 == 0 || NeedTimeOnly == true)

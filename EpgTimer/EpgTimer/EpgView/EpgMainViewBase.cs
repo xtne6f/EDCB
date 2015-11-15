@@ -156,7 +156,7 @@ namespace EpgTimer.EpgView
         /// <summary>マウスホイールイベント呼び出し</summary>
         protected void epgProgramView_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
         {
-            vutil.view_PreviewMouseWheel<ProgramView>(sender, e, programView.scrollViewer);
+            vutil.view_PreviewMouseWheel<ProgramView>(sender, e, programView.scrollViewer, Settings.Instance.MouseScrollAuto, Settings.Instance.ScrollSize);
         }
 
         /// <summary>左ボタンダブルクリックイベント呼び出し/summary>

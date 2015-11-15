@@ -85,14 +85,14 @@ namespace EpgTimer
             }
         }
 
-        public void view_PreviewMouseWheel<T>(object sender, MouseWheelEventArgs e, ScrollViewer scrollViewer)
+        public void view_PreviewMouseWheel<T>(object sender, MouseWheelEventArgs e, ScrollViewer scrollViewer, bool auto, double scrollSize)
         {
             try
             {
                 e.Handled = true;
                 if (sender.GetType() == typeof(T))
                 {
-                    if (Settings.Instance.MouseScrollAuto == true)
+                    if (auto == true)
                     {
                         scrollViewer.ScrollToVerticalOffset(scrollViewer.VerticalOffset - e.Delta);
                     }
@@ -101,18 +101,18 @@ namespace EpgTimer
                         if (e.Delta < 0)
                         {
                             //下方向
-                            scrollViewer.ScrollToVerticalOffset(scrollViewer.VerticalOffset + Settings.Instance.ScrollSize);
+                            scrollViewer.ScrollToVerticalOffset(scrollViewer.VerticalOffset + scrollSize);
                         }
                         else
                         {
                             //上方向
-                            if (scrollViewer.VerticalOffset < Settings.Instance.ScrollSize)
+                            if (scrollViewer.VerticalOffset < scrollSize)
                             {
                                 scrollViewer.ScrollToVerticalOffset(0);
                             }
                             else
                             {
-                                scrollViewer.ScrollToVerticalOffset(scrollViewer.VerticalOffset - Settings.Instance.ScrollSize);
+                                scrollViewer.ScrollToVerticalOffset(scrollViewer.VerticalOffset - scrollSize);
                             }
                         }
                     }
@@ -198,12 +198,12 @@ namespace EpgTimer
         }
 
         //最低表示行数を適用
-        public void ModifierMinimumHeight<T, S>(List<S> list) where S : ViewPanelItem<T>
+        public void ModifierMinimumHeight<T, S>(List<S> list, double MinLineHeight) where S : ViewPanelItem<T>
         {
-            if (Settings.Instance.MinimumHeight <= 0) return;
+            if (MinLineHeight <= 0) return;
 
             list.Sort((x, y) => Math.Sign(x.LeftPos - y.LeftPos) * 2 + Math.Sign(x.TopPos - y.TopPos));
-            double minimum = (Settings.Instance.FontSizeTitle + 2) * Settings.Instance.MinimumHeight;
+            double minimum = (Settings.Instance.FontSizeTitle + 2) * MinLineHeight;
             double lastLeft = double.MinValue;
             double lastBottom = 0;
             foreach (S item in list)

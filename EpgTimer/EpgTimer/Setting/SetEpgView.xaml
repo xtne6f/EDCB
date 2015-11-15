@@ -14,7 +14,13 @@
         <TabControl Name="tabControl">
             <TabItem Header="基本" Name="tabItem_basic">
                 <Grid>
-                    <GroupBox Header="フォント" Margin="6,6,6,0" Name="groupBox3" Height="102" VerticalAlignment="Top">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="auto"/>
+                        <RowDefinition Height="auto"/>
+                        <RowDefinition Height="auto"/>
+                        <RowDefinition Height="auto" />
+                    </Grid.RowDefinitions>
+                    <GroupBox Header="フォント" Margin="6,6,6,6" Name="groupBox3" VerticalAlignment="Top" Grid.Row="0">
                         <Grid>
                             <Label Content="タイトル" Height="28" HorizontalAlignment="Left" Margin="6,6,0,0" Name="label1" VerticalAlignment="Top" />
                             <Label Content="フォント" Height="28" HorizontalAlignment="Left" Margin="96,6,0,0" Name="label2" VerticalAlignment="Top" />
@@ -51,7 +57,7 @@
                             <Button Content="" Height="25" HorizontalAlignment="Left" Margin="643,35,0,0" Name="button_colorTitle2" VerticalAlignment="Top" Width="58" Click="button_colorTitle_Click" Tag="1" />
                         </Grid>
                     </GroupBox>
-                    <GroupBox Header="表示" Height="213" Margin="6,114,7,0" Name="groupBox2" VerticalAlignment="Top" >
+                    <GroupBox Header="番組表の表示" Margin="6,6,6,6" Name="groupBox2" VerticalAlignment="Top" Grid.Row="1" Height="186">
                         <Grid>
                             <Label Content="マウススクロールサイズ" Height="28" HorizontalAlignment="Left" Margin="11,6,0,0" Name="label7" VerticalAlignment="Top" />
                             <TextBox Height="24" HorizontalAlignment="Left" Margin="165,6,0,0" Name="textBox_mouse_scroll" VerticalAlignment="Top" Width="55" />
@@ -61,18 +67,36 @@
                             <TextBox Height="24" HorizontalAlignment="Left" Margin="470,8,0,0" Name="textBox_minHeight" VerticalAlignment="Top" Width="55" />
                             <Label Content="ドラッグスクロール倍率" Height="28" HorizontalAlignment="Left" Margin="327,36,0,0" Name="label10" VerticalAlignment="Top" />
                             <TextBox Height="24" HorizontalAlignment="Left" Margin="470,38,0,0" Name="textBox_dragScroll" VerticalAlignment="Top" Width="55" />
-                            <CheckBox Content="番組内容表示位置を番組名表示位置にあわせる" Height="16" HorizontalAlignment="Left" Margin="357,70,0,0" Name="checkBox_title_indent" VerticalAlignment="Top" />
-                            <CheckBox Content="番組内容をポップアップ表示する" Height="16" HorizontalAlignment="Left" Margin="357,92,0,0" Name="checkBox_epg_popup" VerticalAlignment="Top" Click="checkBox_epg_popup_Click" />
-                            <CheckBox Content="EPG予約のみポップアップ" Height="16" HorizontalAlignment="Left" Margin="551,92,0,0" Name="checkBox_epg_popup_resOnly" VerticalAlignment="Top" />
-                            <Label Content="グラデーション表示を行う" Height="28" HorizontalAlignment="Left" Margin="357,114,0,0" VerticalAlignment="Top" />
-                            <CheckBox Content="番組" Height="16" HorizontalAlignment="Left" Margin="510,119,0,0" Name="checkBox_gradation" VerticalAlignment="Top" />
-                            <CheckBox Content="サービス・時刻軸" Height="16" HorizontalAlignment="Left" Margin="570,119,0,0" Name="checkBox_gradationHeader" VerticalAlignment="Top" />
-                            <CheckBox Content="シングルクリックで予約ダイアログを開く" Height="16" HorizontalAlignment="Left" Margin="11,148,0,0" Name="checkBox_singleOpen" VerticalAlignment="Top" />
-                            <CheckBox Content="番組詳細タブを選択した状態で予約ダイアログを開く" Height="16" HorizontalAlignment="Left" Margin="357,148,0,0" Name="checkBox_openInfo" VerticalAlignment="Top" />
+                            <CheckBox Content="番組名と番組内容の表示位置をあわせる" Height="16" HorizontalAlignment="Left" Margin="11,70,0,0" Name="checkBox_title_indent" VerticalAlignment="Top" />
+                            <CheckBox Content="番組内容をポップアップ表示する" Height="16" HorizontalAlignment="Left" Margin="328,114,0,0" Name="checkBox_epg_popup" VerticalAlignment="Top" Click="checkBox_epg_popup_Click" />
+                            <CheckBox Content="予約のある番組のみポップアップ" Height="16" HorizontalAlignment="Left" Margin="346,136,0,0" Name="checkBox_epg_popup_resOnly" VerticalAlignment="Top" />
+                            <Label Content="グラデーション表示を行う" Height="28" HorizontalAlignment="Left" Margin="327,70,0,0" VerticalAlignment="Top" />
+                            <CheckBox Content="番組" Height="16" HorizontalAlignment="Left" Margin="470,76,0,0" Name="checkBox_gradation" VerticalAlignment="Top" />
+                            <CheckBox Content="サービス・時刻軸" Height="16" HorizontalAlignment="Left" Margin="534,76,0,0" Name="checkBox_gradationHeader" VerticalAlignment="Top" />
+                            <CheckBox Content="シングルクリックで予約ダイアログを開く" Height="16" HorizontalAlignment="Left" Margin="11,92,0,0" Name="checkBox_singleOpen" VerticalAlignment="Top" />
+                            <CheckBox Content="番組詳細タブを選択した状態で予約ダイアログを開く" Height="16" HorizontalAlignment="Left" Margin="11,114,0,0" Name="checkBox_openInfo" VerticalAlignment="Top" />
                             <CheckBox Content="自動" Height="16" HorizontalAlignment="Left" Margin="226,11,0,0" Name="checkBox_scrollAuto" VerticalAlignment="Top" />
                             <Label Content="最低表示行数" Height="28" HorizontalAlignment="Left" Margin="551,6,0,0" Name="label36" VerticalAlignment="Top" />
                             <TextBox Height="24" HorizontalAlignment="Left" Margin="650,8,0,0" Name="textBox_minimumHeight" VerticalAlignment="Top" Width="55" />
-                            <CheckBox Content="番組表の切り替え時にも強調表示をする" Height="16" HorizontalAlignment="Left" Margin="11,70,0,0" Name="checkBox_displayNotifyChange" VerticalAlignment="Top" />
+                            <CheckBox Content="番組表の切り替え時にも強調表示をする" Height="16" HorizontalAlignment="Left" Margin="11,136,0,0" Name="checkBox_displayNotifyChange" VerticalAlignment="Top" />
+                        </Grid>
+                    </GroupBox>
+                    <GroupBox Header="使用予定チューナーの表示設定" Margin="6,6,6,0" Name="groupBox" VerticalAlignment="Top" Grid.Row="2" Height="146" Grid.RowSpan="2">
+                        <Grid>
+                            <Label Content="マウススクロールサイズ" Height="28" HorizontalAlignment="Left" Margin="11,6,0,0" Name="label47" VerticalAlignment="Top" />
+                            <TextBox Height="24" HorizontalAlignment="Left" Margin="165,6,0,0" Name="textBox_res_mouse_scroll" VerticalAlignment="Top" Width="55" />
+                            <CheckBox Content="自動" Height="16" HorizontalAlignment="Left" Margin="226,11,0,0" Name="checkBox_res_scrollAuto" VerticalAlignment="Top" />
+                            <Label Content="チューナ１つの幅" Height="28" HorizontalAlignment="Left" Margin="11,36,0,0" Name="label48" VerticalAlignment="Top" />
+                            <TextBox Height="24" HorizontalAlignment="Left" Margin="165,36,0,0" Name="textBox_tuner_width" VerticalAlignment="Top" Width="55" />
+                            <Label Content="1分あたりの高さ" Height="28" HorizontalAlignment="Left" Margin="327,7,0,0" VerticalAlignment="Top" />
+                            <TextBox Height="24" HorizontalAlignment="Left" Margin="470,9,0,0" Name="textBox_reserve_minHeight" VerticalAlignment="Top" Width="55" />
+                            <Label Content="最低表示行数" Height="28" HorizontalAlignment="Left" Margin="551,6,0,0" Name="label39" VerticalAlignment="Top" />
+                            <TextBox Height="24" HorizontalAlignment="Left" Margin="650,8,0,0" Name="textBox_resMinLineHeight" VerticalAlignment="Top" Width="55" />
+                            <Label Content="ドラッグスクロール倍率" Height="28" HorizontalAlignment="Left" Margin="327,36,0,0" Name="label38" VerticalAlignment="Top" />
+                            <TextBox Height="24" HorizontalAlignment="Left" Margin="470,38,0,0" Name="textBox_resDdragScroll" VerticalAlignment="Top" Width="55" />
+                            <CheckBox Content="サービス名を改行しない" Height="16" HorizontalAlignment="Left" Margin="11,92,0,0" Name="checkBox_res_service_nowrap" VerticalAlignment="Top" />
+                            <CheckBox Content="サービス名と番組名の表示位置をあわせる" Height="16" HorizontalAlignment="Left" Margin="11,70,0,0" Name="checkBox_res_title_indent" VerticalAlignment="Top" />
+                            <CheckBox Content="予約をポップアップ表示する" Height="16" HorizontalAlignment="Left" Margin="327,70,0,0" Name="checkBox_reserve_popup" VerticalAlignment="Top" />
                         </Grid>
                     </GroupBox>
                 </Grid>

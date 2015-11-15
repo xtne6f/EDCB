@@ -186,6 +186,15 @@ namespace EpgTimer
         private string serviceColor;
         private UInt32 serviceCustColor;
         private bool reserveRectBackground;
+        private double reserveMinHeight;
+        private double reserveMinLineHeight;
+        private double reserveDragScroll;
+        private double reserveScrollSize;
+        private bool reserveMouseScrollAuto;
+        private double tunerWidth;
+        private bool reserveServiceNoWrap;
+        private bool reserveTitleIndent;
+        private bool reservePopup;
         private bool epgTitleIndent;
         private bool epgPopup;
         private bool epgPopupResOnly;
@@ -439,6 +448,51 @@ namespace EpgTimer
         {
             get { return serviceCustColor; }
             set { serviceCustColor = value; }
+        }
+        public double ReserveMinHeight
+        {
+            get { return reserveMinHeight; }
+            set { reserveMinHeight = value; }
+        }
+        public double ReserveMinLineHeight
+        {
+            get { return reserveMinLineHeight; }
+            set { reserveMinLineHeight = value; }
+        }
+        public double ReserveDragScroll
+        {
+            get { return reserveDragScroll; }
+            set { reserveDragScroll = value; }
+        }
+        public double ReserveScrollSize
+        {
+            get { return reserveScrollSize; }
+            set { reserveScrollSize = value; }
+        }
+        public bool ReserveMouseScrollAuto
+        {
+            get { return reserveMouseScrollAuto; }
+            set { reserveMouseScrollAuto = value; }
+        }
+        public double TunerWidth
+        {
+            get { return tunerWidth; }
+            set { tunerWidth = value; }
+        }
+        public bool ReserveServiceNoWrap
+        {
+            get { return reserveServiceNoWrap; }
+            set { reserveServiceNoWrap = value; }
+        }
+        public bool ReserveTitleIndent
+        {
+            get { return reserveTitleIndent; }
+            set { reserveTitleIndent = value; }
+        }
+        public bool ReservePopup
+        {
+            get { return reservePopup; }
+            set { reservePopup = value; }
         }
         public bool EpgTitleIndent
         {
@@ -938,6 +992,15 @@ namespace EpgTimer
             serviceColor = "LightSlateGray";
             serviceCustColor = 0xFFFFFFFF;
             reserveRectBackground = false;
+            reserveMinHeight = 2;
+            reserveMinLineHeight = 0;
+            reserveDragScroll = 1.5;
+            reserveScrollSize = 240;
+            reserveMouseScrollAuto = false;
+            tunerWidth = 150;
+            reserveServiceNoWrap = true;
+            reserveTitleIndent = true;
+            reservePopup = false;
             epgTitleIndent = true;
             epgPopup = true;
             epgPopupResOnly = false;

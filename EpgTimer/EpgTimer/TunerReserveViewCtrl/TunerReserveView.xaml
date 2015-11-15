@@ -22,8 +22,17 @@
     <Grid>
         <ScrollViewer Name="scrollViewer" HorizontalScrollBarVisibility="Visible" ScrollChanged="scrollViewer_ScrollChanged">
             <Canvas Name="canvas" HorizontalAlignment="Left" VerticalAlignment="Top">
-
-                <local:TunerReservePanel x:Name="reserveViewPanel" Background="DarkGray" MouseMove="reserveViewPanel_MouseMove" MouseLeftButtonDown="reserveViewPanel_MouseLeftButtonDown" MouseLeftButtonUp="reserveViewPanel_MouseLeftButtonUp" HorizontalAlignment="Left" VerticalAlignment="Top" MouseRightButtonDown="reserveViewPanel_MouseRightButtonDown" />
+                <local:TunerReservePanel x:Name="reserveViewPanel" Background="DarkGray" MouseMove="reserveViewPanel_MouseMove" MouseLeftButtonDown="reserveViewPanel_MouseLeftButtonDown" MouseLeftButtonUp="reserveViewPanel_MouseLeftButtonUp" HorizontalAlignment="Left" VerticalAlignment="Top" MouseRightButtonDown="reserveViewPanel_MouseRightButtonDown" MouseLeave="reserveViewPanel_MouseLeave"/>
+                <Border x:Name="popupItem" Background="DarkGray" Visibility="Visible" IsHitTestVisible="False" Canvas.ZIndex="20" BorderBrush="DarkGray" BorderThickness="0.5">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="12" Opacity="0.5"/>
+                    </Border.Effect>
+                    <StackPanel Orientation="Vertical">
+                        <TextBlock x:Name="minText" TextWrapping="Wrap" LineStackingStrategy="BlockLineHeight" VerticalAlignment="Stretch" />
+                        <TextBlock x:Name="titleText" TextWrapping="Wrap" LineStackingStrategy="BlockLineHeight"/>
+                        <TextBlock x:Name="infoText" TextWrapping="Wrap" LineStackingStrategy="BlockLineHeight"/>
+                    </StackPanel>
+                </Border>
             </Canvas>
         </ScrollViewer>
     </Grid>

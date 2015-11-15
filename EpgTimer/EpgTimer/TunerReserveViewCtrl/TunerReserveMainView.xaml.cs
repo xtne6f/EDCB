@@ -73,7 +73,7 @@ namespace EpgTimer
         /// <summary>マウスホイールイベント呼び出し</summary>
         void tunerReserveView_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
         {
-            vutil.view_PreviewMouseWheel<TunerReserveView>(sender, e, tunerReserveView.scrollViewer);
+            vutil.view_PreviewMouseWheel<TunerReserveView>(sender, e, tunerReserveView.scrollViewer, Settings.Instance.ReserveMouseScrollAuto, Settings.Instance.ReserveScrollSize);
         }
 
         /// <summary>左ボタンダブルクリックイベント呼び出し/summary>
@@ -119,7 +119,7 @@ namespace EpgTimer
                 double leftPos = 0;
                 for (int i = 0; i < CommonManager.Instance.DB.TunerReserveList.Count; i++)
                 {
-                    double width = 150;
+                    double width = Settings.Instance.TunerWidth;
                     TunerReserveInfo info = CommonManager.Instance.DB.TunerReserveList.Values.ElementAt(i);
                     TunerNameViewItem tunerInfo = new TunerNameViewItem(info, width);
                     tunerList.Add(tunerInfo);
@@ -142,8 +142,8 @@ namespace EpgTimer
 
                         DateTime EndTime = startTime.AddSeconds(duration);
 
-                        viewItem.Height = Math.Max((duration * Settings.Instance.MinHeight) / 60, Settings.Instance.MinHeight);
-                        viewItem.Width = 150;
+                        viewItem.Height = Math.Max((duration * Settings.Instance.ReserveMinHeight) / 60, Settings.Instance.ReserveMinHeight);
+                        viewItem.Width = Settings.Instance.TunerWidth;
                         viewItem.LeftPos = leftPos;
 
                         foreach (ReserveViewItem addItem in tunerAddList)
@@ -165,10 +165,10 @@ namespace EpgTimer
                             {
                                 if (addItem.LeftPos >= viewItem.LeftPos)
                                 {
-                                    viewItem.LeftPos += 150;
+                                    viewItem.LeftPos += Settings.Instance.TunerWidth;
                                     if (viewItem.LeftPos - leftPos >= width)
                                     {
-                                        width += 150;
+                                        width += Settings.Instance.TunerWidth;
                                     }
                                 }
                             }
@@ -216,15 +216,18 @@ namespace EpgTimer
                     int index = timeList.BinarySearch(chkStartTime);
                     if (index >= 0)
                     {
-                        item.TopPos = (index * 60 + (startTime - chkStartTime).TotalMinutes) * Settings.Instance.MinHeight;
+                        item.TopPos = (index * 60 + (startTime - chkStartTime).TotalMinutes) * Settings.Instance.ReserveMinHeight;
                     }
                 }
+
+                //最低表示行数を適用
+                vutil.ModifierMinimumHeight<ReserveData, ReserveViewItem>(reserveList, Settings.Instance.ReserveMinLineHeight);
 
                 tunerReserveTimeView.SetTime(timeList, true);
                 tunerReserveNameView.SetTunerInfo(tunerList);
                 tunerReserveView.SetReserveList(reserveList,
                     leftPos,
-                    timeList.Count * 60 * Settings.Instance.MinHeight);
+                    timeList.Count * 60 * Settings.Instance.ReserveMinHeight);
             }
             catch (Exception ex)
             {
