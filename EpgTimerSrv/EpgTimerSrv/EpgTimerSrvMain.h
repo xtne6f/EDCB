@@ -142,5 +142,5 @@ private:
 	bool nwtvTcp;
 	DWORD notifyUpdateCount[6];
 
-	vector<OLD_EVENT_INFO_DATA3> oldSearchList;
+	vector<EPGDB_EVENT_INFO> oldSearchList;
 };

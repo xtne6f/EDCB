@@ -53,8 +53,8 @@ inline BOOL ReadVALUE( WORD ver, vector<unsigned long>* val, const BYTE* buff, D
 inline DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const vector<__int64>& val ){ CCUTIL_VECTOR_WRITE_; }
 inline BOOL ReadVALUE( WORD ver, vector<__int64>* val, const BYTE* buff, DWORD buffSize, DWORD* readSize ){ CCUTIL_VECTOR_READ_; }
 
-DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const wstring& val );
-BOOL ReadVALUE( WORD ver, wstring* val, const BYTE* buff, DWORD buffSize, DWORD* readSize );
+DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const wstring& val, bool oldFormat = false );
+BOOL ReadVALUE( WORD ver, wstring* val, const BYTE* buff, DWORD buffSize, DWORD* readSize, bool oldFormat = false );
 
 inline DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const vector<wstring>& val ){ CCUTIL_VECTOR_WRITE_; }
 inline BOOL ReadVALUE( WORD ver, vector<wstring>* val, const BYTE* buff, DWORD buffSize, DWORD* readSize ){ CCUTIL_VECTOR_READ_; }
@@ -360,17 +360,9 @@ BYTE* NewWriteVALUE2WithVersion( WORD ver, T* val, DWORD& writeSize )
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 //旧バージョンコマンド送信用バイナリ作成関数
-BOOL CreateReserveDataStream(OLD_RESERVE_DATA* pData, CMD_STREAM* pCmd);
-BOOL CopyReserveData(OLD_RESERVE_DATA* pstData, CMD_STREAM* pCmd);
-
-BOOL CreateSearchKeyDataStream(OLD_SEARCH_KEY* pData, CMD_STREAM* pCmd);
-BOOL CopySearchKeyData(OLD_SEARCH_KEY* pstData, CMD_STREAM* pCmd);
-
-BOOL CreateEventInfoData3Stream(OLD_EVENT_INFO_DATA3* pData, CMD_STREAM* pCmd);
-BOOL CopyEventInfoData3(OLD_EVENT_INFO_DATA3* pstData, CMD_STREAM* pCmd);
-
-void CopyOldNew(OLD_RESERVE_DATA* src, RESERVE_DATA* dest);
-void CopyOldNew(OLD_SEARCH_KEY* src, EPG_AUTO_ADD_DATA* dest);
-void CopyOldNew(OLD_SEARCH_KEY* src, EPGDB_SEARCH_KEY_INFO* dest);
+BYTE* DeprecatedNewWriteVALUE( const RESERVE_DATA& val, DWORD& writeSize, BYTE* buff = NULL );
+BOOL DeprecatedReadVALUE( RESERVE_DATA* val, const BYTE* buff, DWORD buffSize );
+BOOL DeprecatedReadVALUE( EPG_AUTO_ADD_DATA* val, const BYTE* buff, DWORD buffSize );
+BYTE* DeprecatedNewWriteVALUE( const EPGDB_EVENT_INFO& val, DWORD& writeSize, BYTE* buff = NULL );
 
 #endif

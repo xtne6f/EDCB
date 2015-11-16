@@ -1933,16 +1933,12 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 	case CMD_EPG_SRV_GET_RESERVE_INFO:
 		{
 			resParam->param = OLD_CMD_ERR;
-			{
-				DWORD reserveID = 0;
-				if( ReadVALUE(&reserveID, cmdParam->data, cmdParam->dataSize, NULL ) != FALSE ){
-					RESERVE_DATA info;
-					if(sys->reserveManager.GetReserveData(reserveID, &info) ){
-						OLD_RESERVE_DATA oldInfo;
-						oldInfo = info;
-						CreateReserveDataStream(&oldInfo, resParam);
-						resParam->param = OLD_CMD_SUCCESS;
-					}
+			DWORD reserveID;
+			if( ReadVALUE(&reserveID, cmdParam->data, cmdParam->dataSize, NULL) ){
+				RESERVE_DATA info;
+				if( sys->reserveManager.GetReserveData(reserveID, &info) ){
+					resParam->data = DeprecatedNewWriteVALUE(info, resParam->dataSize);
+					resParam->param = OLD_CMD_SUCCESS;
 				}
 			}
 		}
@@ -1950,50 +1946,31 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 	case CMD_EPG_SRV_ADD_RESERVE:
 		{
 			resParam->param = OLD_CMD_ERR;
-			{
-				OLD_RESERVE_DATA oldItem;
-				if( CopyReserveData(&oldItem, cmdParam) == TRUE){
-					RESERVE_DATA item;
-					CopyOldNew(&oldItem, &item);
-
-					vector<RESERVE_DATA> list;
-					list.push_back(item);
-					if(sys->reserveManager.AddReserveData(list) ){
-						resParam->param = OLD_CMD_SUCCESS;
-					}
-				}
+			vector<RESERVE_DATA> list(1);
+			if( DeprecatedReadVALUE(&list.back(), cmdParam->data, cmdParam->dataSize) &&
+			    sys->reserveManager.AddReserveData(list) ){
+				resParam->param = OLD_CMD_SUCCESS;
 			}
 		}
 		break;
 	case CMD_EPG_SRV_DEL_RESERVE:
 		{
 			resParam->param = OLD_CMD_ERR;
-			{
-				OLD_RESERVE_DATA oldItem;
-				if( CopyReserveData(&oldItem, cmdParam) == TRUE){
-					vector<DWORD> list;
-					list.push_back(oldItem.dwReserveID);
-					sys->reserveManager.DelReserveData(list);
-					resParam->param = OLD_CMD_SUCCESS;
-				}
+			RESERVE_DATA item;
+			if( DeprecatedReadVALUE(&item, cmdParam->data, cmdParam->dataSize) ){
+				vector<DWORD> list(1, item.reserveID);
+				sys->reserveManager.DelReserveData(list);
+				resParam->param = OLD_CMD_SUCCESS;
 			}
 		}
 		break;
 	case CMD_EPG_SRV_CHG_RESERVE:
 		{
 			resParam->param = OLD_CMD_ERR;
-			{
-				OLD_RESERVE_DATA oldItem;
-				if( CopyReserveData(&oldItem, cmdParam) == TRUE){
-					RESERVE_DATA item;
-					CopyOldNew(&oldItem, &item);
-
-					vector<RESERVE_DATA> list;
-					list.push_back(item);
-					if(sys->reserveManager.ChgReserveData(list) ){
-						resParam->param = OLD_CMD_SUCCESS;
-					}
-				}
+			vector<RESERVE_DATA> list(1);
+			if( DeprecatedReadVALUE(&list.back(), cmdParam->data, cmdParam->dataSize) &&
+			    sys->reserveManager.ChgReserveData(list) ){
+				resParam->param = OLD_CMD_SUCCESS;
 			}
 		}
 
@@ -2001,59 +1978,45 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 	case CMD_EPG_SRV_ADD_AUTO_ADD:
 		{
 			resParam->param = OLD_CMD_ERR;
-			{
-				OLD_SEARCH_KEY oldItem;
-				if( CopySearchKeyData(&oldItem, cmdParam) == TRUE){
-					EPG_AUTO_ADD_DATA item;
-					CopyOldNew(&oldItem, &item);
-
-					{
-						CBlockLock lock(&sys->settingLock);
-						item.dataID = sys->epgAutoAdd.AddData(item);
-						sys->epgAutoAdd.SaveText();
-					}
-					resParam->param = OLD_CMD_SUCCESS;
-					sys->AutoAddReserveEPG(item);
-					sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_EPG);
+			EPG_AUTO_ADD_DATA item;
+			if( DeprecatedReadVALUE(&item, cmdParam->data, cmdParam->dataSize) ){
+				{
+					CBlockLock lock(&sys->settingLock);
+					item.dataID = sys->epgAutoAdd.AddData(item);
+					sys->epgAutoAdd.SaveText();
 				}
+				resParam->param = OLD_CMD_SUCCESS;
+				sys->AutoAddReserveEPG(item);
+				sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_EPG);
 			}
 		}
 		break;
 	case CMD_EPG_SRV_DEL_AUTO_ADD:
 		{
 			resParam->param = OLD_CMD_ERR;
-			{
-				OLD_SEARCH_KEY oldItem;
-				if( CopySearchKeyData(&oldItem, cmdParam) == TRUE){
-					{
-						CBlockLock lock(&sys->settingLock);
-						sys->epgAutoAdd.DelData((DWORD)oldItem.iAutoAddID);
-						sys->epgAutoAdd.SaveText();
-					}
-					resParam->param = OLD_CMD_SUCCESS;
-					sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_EPG);
-				}
+			EPG_AUTO_ADD_DATA item;
+			if( DeprecatedReadVALUE(&item, cmdParam->data, cmdParam->dataSize) ){
+				CBlockLock lock(&sys->settingLock);
+				sys->epgAutoAdd.DelData(item.dataID);
+				sys->epgAutoAdd.SaveText();
+				resParam->param = OLD_CMD_SUCCESS;
+				sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_EPG);
 			}
 		}
 		break;
 	case CMD_EPG_SRV_CHG_AUTO_ADD:
 		{
 			resParam->param = OLD_CMD_ERR;
-			{
-				OLD_SEARCH_KEY oldItem;
-				if( CopySearchKeyData(&oldItem, cmdParam) == TRUE){
-					EPG_AUTO_ADD_DATA item;
-					CopyOldNew(&oldItem, &item);
-
-					{
-						CBlockLock lock(&sys->settingLock);
-						sys->epgAutoAdd.ChgData(item);
-						sys->epgAutoAdd.SaveText();
-					}
-					resParam->param = OLD_CMD_SUCCESS;
-					sys->AutoAddReserveEPG(item);
-					sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_EPG);
+			EPG_AUTO_ADD_DATA item;
+			if( DeprecatedReadVALUE(&item, cmdParam->data, cmdParam->dataSize) ){
+				{
+					CBlockLock lock(&sys->settingLock);
+					sys->epgAutoAdd.ChgData(item);
+					sys->epgAutoAdd.SaveText();
 				}
+				resParam->param = OLD_CMD_SUCCESS;
+				sys->AutoAddReserveEPG(item);
+				sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_EPG);
 			}
 		}
 		break;
@@ -2063,36 +2026,21 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 			if( sys->epgDB.IsInitialLoadingDataDone() == FALSE ){
 				resParam->param = CMD_ERR_BUSY;
 			}else{
-				{
-					OLD_SEARCH_KEY oldItem;
-					if( CopySearchKeyData(&oldItem, cmdParam) == TRUE){
-						EPGDB_SEARCH_KEY_INFO item;
-						CopyOldNew(&oldItem, &item);
-
-						vector<EPGDB_SEARCH_KEY_INFO> key;
-						vector<CEpgDBManager::SEARCH_RESULT_EVENT_DATA> val;
-						key.push_back(item);
-						if( sys->epgDB.SearchEpg(&key, &val) != FALSE ){
-							CBlockLock lock(&sys->settingLock);
-
-							sys->oldSearchList.clear();
-							for( size_t i=0; i<val.size(); i++ ){
-								OLD_EVENT_INFO_DATA3 add;
-								add = val[i].info;
-								sys->oldSearchList.push_back(add);
-							}
-							if( sys->oldSearchList.size() == 0 ){
-								resParam->param = OLD_CMD_ERR;
-							}else{
-								if( sys->oldSearchList.size() == 1 ){
-									resParam->param = OLD_CMD_SUCCESS;
-								}else{
-									resParam->param = OLD_CMD_NEXT;
-								}
-								CreateEventInfoData3Stream(&sys->oldSearchList[0], resParam);
-								sys->oldSearchList.erase(sys->oldSearchList.begin());
-								vector<OLD_EVENT_INFO_DATA3>(sys->oldSearchList).swap(sys->oldSearchList);
-							}
+				EPG_AUTO_ADD_DATA item;
+				if( DeprecatedReadVALUE(&item, cmdParam->data, cmdParam->dataSize) ){
+					vector<EPGDB_SEARCH_KEY_INFO> key(1, item.searchInfo);
+					vector<CEpgDBManager::SEARCH_RESULT_EVENT_DATA> val;
+					if( sys->epgDB.SearchEpg(&key, &val) != FALSE ){
+						CBlockLock lock(&sys->settingLock);
+						sys->oldSearchList.clear();
+						sys->oldSearchList.resize(val.size());
+						for( size_t i = 0; i < val.size(); i++ ){
+							sys->oldSearchList[val.size() - i - 1].DeepCopy(val[i].info);
+						}
+						if( sys->oldSearchList.empty() == false ){
+							resParam->data = DeprecatedNewWriteVALUE(sys->oldSearchList.back(), resParam->dataSize);
+							sys->oldSearchList.pop_back();
+							resParam->param = sys->oldSearchList.empty() ? OLD_CMD_SUCCESS : OLD_CMD_NEXT;
 						}
 					}
 				}
@@ -2104,18 +2052,10 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 			CBlockLock lock(&sys->settingLock);
 
 			resParam->param = OLD_CMD_ERR;
-			if( sys->oldSearchList.size() == 0 ){
-				resParam->param = OLD_CMD_ERR;
-			}else{
-				{
-					if( sys->oldSearchList.size() == 1 ){
-						resParam->param = OLD_CMD_SUCCESS;
-					}else{
-						resParam->param = OLD_CMD_NEXT;
-					}
-					CreateEventInfoData3Stream(&sys->oldSearchList[0], resParam);
-					sys->oldSearchList.erase(sys->oldSearchList.begin());
-				}
+			if( sys->oldSearchList.empty() == false ){
+				resParam->data = DeprecatedNewWriteVALUE(sys->oldSearchList.back(), resParam->dataSize);
+				sys->oldSearchList.pop_back();
+				resParam->param = sys->oldSearchList.empty() ? OLD_CMD_SUCCESS : OLD_CMD_NEXT;
 			}
 		}
 		break;
