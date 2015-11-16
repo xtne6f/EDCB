@@ -469,8 +469,10 @@ bool CReserveManager::ChgReserveData(const vector<RESERVE_DATA>& reserveList, bo
 				    r.durationSecond != itr->second.durationSecond ||
 				    r.recSetting.recMode != itr->second.recSetting.recMode ||
 				    r.recSetting.priority != itr->second.recSetting.priority ||
-				    r.recSetting.startMargine != itr->second.recSetting.startMargine ||
-				    r.recSetting.endMargine != itr->second.recSetting.endMargine ||
+				    r.recSetting.useMargineFlag != itr->second.recSetting.useMargineFlag ||
+				    r.recSetting.useMargineFlag && (
+				        r.recSetting.startMargine != itr->second.recSetting.startMargine ||
+				        r.recSetting.endMargine != itr->second.recSetting.endMargine) ||
 				    r.recSetting.tunerID != itr->second.recSetting.tunerID ){
 					__int64 startTime, startTimeNext;
 					CalcEntireReserveTime(&startTime, NULL, itr->second);
