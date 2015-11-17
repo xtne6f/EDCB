@@ -389,15 +389,23 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		switch( LOWORD(lParam) ){
 		case WM_LBUTTONUP:
 			{
-				//EpgTimer.exeがあれば起動
 				wstring moduleFolder;
 				GetModuleFolderPath(moduleFolder);
-				PROCESS_INFORMATION pi;
-				STARTUPINFO si = {};
-				si.cb = sizeof(si);
-				if( CreateProcess((moduleFolder + L"\\EpgTimer.exe").c_str(), NULL, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi) != FALSE ){
-					CloseHandle(pi.hThread);
-					CloseHandle(pi.hProcess);
+				WIN32_FIND_DATA findData;
+				HANDLE hFind = FindFirstFile((moduleFolder + L"\\EpgTimer.lnk").c_str(), &findData);
+				if( hFind != INVALID_HANDLE_VALUE ){
+					//EpgTimer.lnk(ショートカット)を優先的に開く
+					ShellExecute(NULL, L"open", (moduleFolder + L"\\EpgTimer.lnk").c_str(), NULL, NULL, SW_SHOWNORMAL);
+					FindClose(hFind);
+				}else{
+					//EpgTimer.exeがあれば起動
+					PROCESS_INFORMATION pi;
+					STARTUPINFO si = {};
+					si.cb = sizeof(si);
+					if( CreateProcess((moduleFolder + L"\\EpgTimer.exe").c_str(), NULL, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi) != FALSE ){
+						CloseHandle(pi.hThread);
+						CloseHandle(pi.hProcess);
+					}
 				}
 			}
 			break;
