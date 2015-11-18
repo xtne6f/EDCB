@@ -67,7 +67,7 @@ namespace EpgTimer
             {
                 //一度全部削除して作り直す。
                 tabControl.Items.Clear();
-                ReDrawEpgData();
+                UpdateEpgData();
             }
             catch (Exception ex)
             {
