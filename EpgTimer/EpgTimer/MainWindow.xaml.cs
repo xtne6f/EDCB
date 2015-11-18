@@ -795,14 +795,14 @@ namespace EpgTimer
                     }
                     else
                     {
-                        CommonManager.Instance.CtrlCmd.SendNotifyProfileUpdate();
+                        cmd.SendReloadSetting();
+                        cmd.SendNotifyProfileUpdate();
                     }
                     reserveView.UpdateInfo();
                     tunerReserveView.UpdateInfo();
                     recInfoView.UpdateInfo();
                     autoAddView.UpdateAutoAddInfo();
                     epgView.UpdateSetting();
-                    cmd.SendReloadSetting();
                     ResetButtonView();
                     ResetTaskMenu();
                     RefreshMenu(false);
