@@ -29,7 +29,7 @@ namespace EpgTimer
             if (chgMode == true)
             {
                 button_add.Content = "変更";
-                label_chgMsg.Visibility = System.Windows.Visibility.Visible;
+                label_chgMsg.Visibility = Visibility.Visible;
             }
             else
             {

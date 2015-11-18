@@ -106,7 +106,7 @@ namespace EpgTimer
                 {
                     nowLine = new Line();
                     Canvas.SetZIndex(nowLine, 20);
-                    nowLine.Stroke = new SolidColorBrush(Colors.Red);
+                    nowLine.Stroke = Brushes.Red;
                     nowLine.StrokeThickness = Settings.Instance.MinHeight * 2;
                     nowLine.Opacity = 0.5;
                     epgProgramView.canvas.Children.Add(nowLine);

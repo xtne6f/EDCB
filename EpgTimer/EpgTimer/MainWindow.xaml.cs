@@ -192,7 +192,7 @@ namespace EpgTimer
                 {
                     if (Settings.Instance.ShowTray && Settings.Instance.MinHide)
                     {
-                        this.Visibility = System.Windows.Visibility.Hidden;
+                        this.Visibility = Visibility.Hidden;
                     }
                     else
                     {
@@ -353,7 +353,7 @@ namespace EpgTimer
                 PresentationSource topWindow = PresentationSource.FromVisual(this);
                 if (topWindow == null)
                 {
-                    this.Visibility = System.Windows.Visibility.Visible;
+                    this.Visibility = Visibility.Visible;
                     this.WindowState = Settings.Instance.LastWindowState;
                     Dispatcher.BeginInvoke(new Action(() =>
                     {
@@ -628,7 +628,7 @@ namespace EpgTimer
         {
             if (this.WindowState == WindowState.Normal)
             {
-                if (this.Visibility == System.Windows.Visibility.Visible && this.Width > 0 && this.Height > 0)
+                if (this.Visibility == Visibility.Visible && this.Width > 0 && this.Height > 0)
                 {
                     Settings.Instance.MainWndWidth = this.Width;
                     Settings.Instance.MainWndHeight = this.Height;
@@ -640,7 +640,7 @@ namespace EpgTimer
         {
             if (this.WindowState == WindowState.Normal)
             {
-                if (this.Visibility == System.Windows.Visibility.Visible && this.Top > 0 && this.Left > 0)
+                if (this.Visibility == Visibility.Visible && this.Top > 0 && this.Left > 0)
                 {
                     Settings.Instance.MainWndTop = this.Top;
                     Settings.Instance.MainWndLeft = this.Left;
@@ -654,12 +654,12 @@ namespace EpgTimer
             {
                 if (Settings.Instance.ShowTray && Settings.Instance.MinHide)
                 {
-                    this.Visibility = System.Windows.Visibility.Hidden;
+                    this.Visibility = Visibility.Hidden;
                 }
             }
             if (this.WindowState == WindowState.Normal || this.WindowState == WindowState.Maximized)
             {
-                this.Visibility = System.Windows.Visibility.Visible;
+                this.Visibility = Visibility.Visible;
                 taskTray.LastViewState = this.WindowState;
                 Settings.Instance.LastWindowState = this.WindowState;
             }
@@ -1031,7 +1031,7 @@ namespace EpgTimer
             switch ((CtrlCmd)pCmdParam.uiParam)
             {
                 case CtrlCmd.CMD_TIMER_GUI_SHOW_DLG:
-                    this.Visibility = System.Windows.Visibility.Visible;
+                    this.Visibility = Visibility.Visible;
                     break;
                 case CtrlCmd.CMD_TIMER_GUI_UPDATE_RESERVE:
                     {

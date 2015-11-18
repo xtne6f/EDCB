@@ -73,7 +73,7 @@ namespace EpgTimer
                     this.Title = "予約登録";
                     button_chg_reserve.Content = "予約";
                     mBinds.SetCommandToButton(button_chg_reserve, EpgCmds.AddInDialog);
-                    button_del_reserve.Visibility = System.Windows.Visibility.Hidden;
+                    button_del_reserve.Visibility = Visibility.Hidden;
                     break;
                 case AddMode.Re_Add:
                     button_chg_reserve.Content = "再予約";

@@ -62,8 +62,7 @@ namespace EpgTimer
 
         public void SetSpecificChgAppearance(Control obj)
         {
-            obj.Background = new SolidColorBrush(Colors.LavenderBlush);
-            //obj.BorderBrush = new SolidColorBrush(Colors.Red);
+            obj.Background = Brushes.LavenderBlush;
             obj.BorderThickness = new Thickness(2);
         }
 
@@ -351,7 +350,7 @@ namespace EpgTimer
 
         public void DisableControlChildren(Control ctrl)
         {
-            ctrl.Foreground = new SolidColorBrush(Colors.Gray);
+            ctrl.Foreground = Brushes.Gray;
             ChangeChildren(ctrl, false);
         }
         public void ChangeChildren(UIElement ele, bool enabled)

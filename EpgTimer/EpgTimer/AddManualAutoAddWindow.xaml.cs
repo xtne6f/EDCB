@@ -73,7 +73,7 @@ namespace EpgTimer
         public void SetChangeMode(bool chgFlag)
         {
             chgMode = chgFlag;
-            button_chg.Visibility = (chgFlag == true ? System.Windows.Visibility.Visible : System.Windows.Visibility.Hidden);
+            button_chg.Visibility = (chgFlag == true ? Visibility.Visible : Visibility.Hidden);
             button_del.Visibility = button_chg.Visibility;
         }
 

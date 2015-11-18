@@ -48,8 +48,8 @@ namespace EpgTimer.Setting
 
             if (CommonManager.Instance.NWMode == true)
             {
-                tabItem1.Foreground = new SolidColorBrush(Colors.Gray);
-                groupBox1.Foreground = new SolidColorBrush(Colors.Gray);
+                tabItem1.Foreground = Brushes.Gray;
+                groupBox1.Foreground = Brushes.Gray;
                 radioButton_none.IsEnabled = false;
                 radioButton_standby.IsEnabled = false;
                 radioButton_suspend.IsEnabled = false;

@@ -174,7 +174,7 @@ namespace EpgTimer
                 //番組表へジャンプ時の強調表示
                 switch(NowJumpingTable)
                 {
-                    case 1: return new SolidColorBrush(Colors.Red);
+                    case 1: return Brushes.Red;
                     case 2: return CommonManager.Instance.ListDefForeColor;
                 }
 
