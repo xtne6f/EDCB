@@ -232,7 +232,7 @@ public:
 	void ViewAppOpen();
 
 	void StartServer();
-	void StopServer();
+	BOOL StopServer(BOOL checkOnlyFlag = FALSE);
 
 	BOOL GetViewStatusInfo(
 		float* signal,

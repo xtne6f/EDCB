@@ -734,9 +734,9 @@ void CEpgDataCap_BonMain::StartServer()
 	this->pipeServer.StartServer(eventName.c_str(), pipeName.c_str(), CtrlCmdCallback, this);
 }
 
-void CEpgDataCap_BonMain::StopServer()
+BOOL CEpgDataCap_BonMain::StopServer(BOOL checkOnlyFlag)
 {
-	this->pipeServer.StopServer();
+	return this->pipeServer.StopServer(checkOnlyFlag);
 }
 
 BOOL CEpgDataCap_BonMain::GetViewStatusInfo(

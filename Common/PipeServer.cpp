@@ -61,17 +61,25 @@ BOOL CPipeServer::StartServer(
 	return TRUE;
 }
 
-void CPipeServer::StopServer()
+BOOL CPipeServer::StopServer(BOOL checkOnlyFlag)
 {
 	if( this->workThread != NULL ){
 		::SetEvent(this->stopEvent);
-		// スレッド終了待ち
-		if ( ::WaitForSingleObject(this->workThread, 60000) == WAIT_TIMEOUT ){
-			::TerminateThread(this->workThread, 0xffffffff);
+		if( checkOnlyFlag ){
+			//終了チェックして結果を返すだけ
+			if( WaitForSingleObject(this->workThread, 0) == WAIT_TIMEOUT ){
+				return FALSE;
+			}
+		}else{
+			//スレッド終了待ち
+			if( WaitForSingleObject(this->workThread, 60000) == WAIT_TIMEOUT ){
+				TerminateThread(this->workThread, 0xffffffff);
+			}
 		}
 		CloseHandle(this->workThread);
 		this->workThread = NULL;
 	}
+	return TRUE;
 }
 
 UINT WINAPI CPipeServer::ServerThread(LPVOID pParam)

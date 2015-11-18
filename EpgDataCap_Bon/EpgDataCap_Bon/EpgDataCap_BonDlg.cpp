@@ -465,6 +465,13 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 				}
 			}
 			break;
+		case TIMER_TRY_STOP_SERVER:
+			if( this->main.StopServer(true) ){
+				KillTimer(TIMER_TRY_STOP_SERVER);
+				OutputDebugString(L"CmdServer stopped\r\n");
+				EndDialog(m_hWnd, IDCANCEL);
+			}
+			break;
 		default:
 			break;
 	}
@@ -1243,7 +1250,9 @@ INT_PTR CALLBACK CEpgDataCap_BonDlg::DlgProc(HWND hDlg, UINT uMsg, WPARAM wParam
 			break;
 		case IDOK:
 		case IDCANCEL:
-			EndDialog(hDlg, LOWORD(wParam));
+			//デッドロック回避のためメッセージポンプを維持しつつサーバを終わらせる
+			pSys->main.StopServer(true);
+			pSys->SetTimer(TIMER_TRY_STOP_SERVER, 20, NULL);
 			SetWindowLongPtr(hDlg, DWLP_MSGRESULT, 0);
 			return TRUE;
 		}

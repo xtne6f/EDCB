@@ -17,7 +17,7 @@ public:
 		void* callbackParam, 
 		BOOL insecureFlag = FALSE
 		);
-	void StopServer();
+	BOOL StopServer(BOOL checkOnlyFlag = FALSE);
 
 protected:
 	CMD_CALLBACK_PROC cmdProc;
