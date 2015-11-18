@@ -41,7 +41,7 @@ CTCPServer::~CTCPServer(void)
 	WSACleanup();
 }
 
-BOOL CTCPServer::StartServer(DWORD dwPort, CMD_CALLBACK_PROC pfnCmdProc, void* pParam, int iThreadPriority, int iCtrlCmdEventID)
+BOOL CTCPServer::StartServer(DWORD dwPort, CMD_CALLBACK_PROC pfnCmdProc, void* pParam)
 {
 	if( pfnCmdProc == NULL || pParam == NULL ){
 		return FALSE;
@@ -52,8 +52,6 @@ BOOL CTCPServer::StartServer(DWORD dwPort, CMD_CALLBACK_PROC pfnCmdProc, void* p
 	m_pCmdProc = pfnCmdProc;
 	m_pParam = pParam;
 	m_dwPort = dwPort;
-	m_iThreadPriority = iThreadPriority;
-	m_iCtrlCmdEventID = iCtrlCmdEventID;
 
 	m_sock = socket(AF_INET, SOCK_STREAM, 0);
 	if( m_sock == INVALID_SOCKET ){
@@ -103,18 +101,8 @@ UINT WINAPI CTCPServer::ServerThread(LPVOID pParam)
 {
 	CTCPServer* pSys = (CTCPServer*)pParam;
 
-	HANDLE hCurThread = GetCurrentThread();
-	SetThreadPriority(hCurThread, pSys->m_iThreadPriority);
-
 	SOCKET sock = INVALID_SOCKET;
 	struct sockaddr_in client;
-	
-	HANDLE hEventCmdWait = NULL;
-	if( pSys->m_iCtrlCmdEventID != -1 ){
-		wstring strCmdEvent;
-		Format(strCmdEvent, L"%s%d", CMD2_CTRL_EVENT_WAIT, pSys->m_iCtrlCmdEventID);
-		hEventCmdWait = CreateEvent(NULL, FALSE, TRUE, strCmdEvent.c_str());
-	}
 	
 	fd_set ready;
 	struct timeval to;
@@ -145,10 +133,6 @@ UINT WINAPI CTCPServer::ServerThread(LPVOID pParam)
 			}
 		}
 		if( sock != INVALID_SOCKET ){
-			//ほかのサーバーで処理中？
-			if( hEventCmdWait != NULL ){
-				WaitForSingleObject(hEventCmdWait, INFINITE);
-			}
 			DWORD socketBuffSize = 1024*1024;
 			setsockopt(sock, SOL_SOCKET, SO_SNDBUF, (const char*)&socketBuffSize, sizeof(socketBuffSize));
 			setsockopt(sock, SOL_SOCKET, SO_SNDBUF, (const char*)&socketBuffSize, sizeof(socketBuffSize));
@@ -235,18 +219,12 @@ UINT WINAPI CTCPServer::ServerThread(LPVOID pParam)
 			shutdown(sock,SD_RECEIVE);
 			closesocket(sock);
 			sock = INVALID_SOCKET;
-			if( hEventCmdWait != NULL ){
-				SetEvent(hEventCmdWait);
-			}
 		}
 	}
 
 	if( sock != INVALID_SOCKET ){
 		shutdown(sock,SD_RECEIVE);
 		closesocket(sock);
-	}
-	if( hEventCmdWait != NULL ){
-		CloseHandle(hEventCmdWait);
 	}
 	
 	return 0;

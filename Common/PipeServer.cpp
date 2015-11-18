@@ -39,8 +39,6 @@ BOOL CPipeServer::StartServer(
 	LPCWSTR pipeName, 
 	CMD_CALLBACK_PROC cmdCallback, 
 	void* callbackParam, 
-	int threadPriority,
-	int ctrlCmdEventID,
 	BOOL insecureFlag
 )
 {
@@ -54,8 +52,6 @@ BOOL CPipeServer::StartServer(
 	this->cmdParam = callbackParam;
 	this->eventName = eventName;
 	this->pipeName = pipeName;
-	this->threadPriority = threadPriority;
-	this->ctrlCmdEventID = ctrlCmdEventID;
 	this->insecureFlag = insecureFlag;
 
 	ResetEvent(this->stopEvent);
@@ -82,20 +78,11 @@ UINT WINAPI CPipeServer::ServerThread(LPVOID pParam)
 {
 	CPipeServer* pSys = (CPipeServer*)pParam;
 
-	HANDLE hCurThread = GetCurrentThread();
-	SetThreadPriority(hCurThread, pSys->threadPriority);
-
 	HANDLE hPipe = NULL;
-	HANDLE hEventCmdWait = NULL;
 	HANDLE hEventConnect = NULL;
 	HANDLE hEventArray[2];
 	OVERLAPPED stOver;
 
-	if( pSys->ctrlCmdEventID != -1 ){
-		wstring strCmdEvent;
-		Format(strCmdEvent, L"%s%d", CMD2_CTRL_EVENT_WAIT, pSys->ctrlCmdEventID);
-		hEventCmdWait = CreateEvent(NULL, FALSE, TRUE, strCmdEvent.c_str());
-	}
 	SECURITY_DESCRIPTOR sd = {};
 	SECURITY_ATTRIBUTES sa = {};
 	if( pSys->insecureFlag != FALSE &&
@@ -129,10 +116,6 @@ UINT WINAPI CPipeServer::ServerThread(LPVOID pParam)
 			//STOP
 			break;
 		}else if( dwRes == WAIT_OBJECT_0+1 ){
-			//ほかのサーバーで処理中？
-			if( hEventCmdWait != NULL ){
-				WaitForSingleObject(hEventCmdWait, INFINITE);
-			}
 			//コマンド受信
 			CMD_STREAM stCmd;
 			CMD_STREAM stRes;
@@ -209,9 +192,6 @@ UINT WINAPI CPipeServer::ServerThread(LPVOID pParam)
 
 			FlushFileBuffers(hPipe);
 			DisconnectNamedPipe(hPipe);
-			if( hEventCmdWait != NULL ){
-				SetEvent(hEventCmdWait);
-			}
 		}
 	}
 
@@ -223,8 +203,5 @@ UINT WINAPI CPipeServer::ServerThread(LPVOID pParam)
 
 	CloseHandle(hEventArray[1]);
 	CloseHandle(hEventConnect);
-	if( hEventCmdWait != NULL ){
-		CloseHandle(hEventCmdWait);
-	}
 	return 0;
 }

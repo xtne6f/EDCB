@@ -19,9 +19,7 @@ public:
 	BOOL StartServer(
 		DWORD dwPort, 
 		CMD_CALLBACK_PROC pfnCmdProc, 
-		void* pParam, 
-		int iThreadPriority = THREAD_PRIORITY_NORMAL,
-		int iCtrlCmdEventID = -1
+		void* pParam
 		);
 	void StopServer();
 
@@ -29,9 +27,6 @@ protected:
 	CMD_CALLBACK_PROC m_pCmdProc;
 	void* m_pParam;
 	DWORD m_dwPort;
-
-	int m_iThreadPriority;
-	int m_iCtrlCmdEventID;
 
 	HANDLE m_hStopEvent;
 	HANDLE m_hThread;

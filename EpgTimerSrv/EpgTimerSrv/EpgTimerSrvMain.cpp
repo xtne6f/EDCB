@@ -144,7 +144,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		ctx->sys->reserveManager.Initialize();
 		ctx->sys->ReloadSetting();
 		ctx->sys->ReloadNetworkSetting();
-		ctx->pipeServer.StartServer(CMD2_EPG_SRV_EVENT_WAIT_CONNECT, CMD2_EPG_SRV_PIPE, CtrlCmdCallback, ctx->sys, 0, GetCurrentProcessId(), ctx->serviceFlag);
+		ctx->pipeServer.StartServer(CMD2_EPG_SRV_EVENT_WAIT_CONNECT, CMD2_EPG_SRV_PIPE, CtrlCmdPipeCallback, ctx->sys, ctx->serviceFlag);
 		ctx->sys->epgDB.ReloadEpgData();
 		SendMessage(hwnd, WM_RELOAD_EPG_CHK, 0, 0);
 		SendMessage(hwnd, WM_TIMER, TIMER_SET_RESUME, 0);
@@ -194,7 +194,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 			if( tcpPort_ == 0 ){
 				ctx->tcpServer.StopServer();
 			}else{
-				ctx->tcpServer.StartServer(tcpPort_, CtrlCmdCallback, ctx->sys, 0, GetCurrentProcessId());
+				ctx->tcpServer.StartServer(tcpPort_, CtrlCmdTcpCallback, ctx->sys);
 			}
 			ctx->upnpServer.Stop();
 			if( httpPorts_.empty() ){
@@ -1116,8 +1116,19 @@ static void EnumPgAllCallback(vector<const EPGDB_SERVICE_EVENT_INFO*>* pval, voi
 	resParam->data = NewWriteVALUE(pval, resParam->dataSize);
 }
 
-int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STREAM* resParam)
+int CALLBACK CEpgTimerSrvMain::CtrlCmdPipeCallback(void* param, CMD_STREAM* cmdParam, CMD_STREAM* resParam)
 {
+	return CtrlCmdCallback(param, cmdParam, resParam, false);
+}
+
+int CALLBACK CEpgTimerSrvMain::CtrlCmdTcpCallback(void* param, CMD_STREAM* cmdParam, CMD_STREAM* resParam)
+{
+	return CtrlCmdCallback(param, cmdParam, resParam, true);
+}
+
+int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STREAM* resParam, bool tcpFlag)
+{
+	//この関数はPipeとTCPとで同時に呼び出されるかもしれない(各々が同時に複数呼び出すことはない)
 	CEpgTimerSrvMain* sys = (CEpgTimerSrvMain*)param;
 
 	resParam->dataSize = 0;
@@ -2039,16 +2050,15 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 					vector<EPGDB_SEARCH_KEY_INFO> key(1, item.searchInfo);
 					vector<CEpgDBManager::SEARCH_RESULT_EVENT_DATA> val;
 					if( sys->epgDB.SearchEpg(&key, &val) != FALSE ){
-						CBlockLock lock(&sys->settingLock);
-						sys->oldSearchList.clear();
-						sys->oldSearchList.resize(val.size());
+						sys->oldSearchList[tcpFlag].clear();
+						sys->oldSearchList[tcpFlag].resize(val.size());
 						for( size_t i = 0; i < val.size(); i++ ){
-							sys->oldSearchList[val.size() - i - 1].DeepCopy(val[i].info);
+							sys->oldSearchList[tcpFlag][val.size() - i - 1].DeepCopy(val[i].info);
 						}
-						if( sys->oldSearchList.empty() == false ){
-							resParam->data = DeprecatedNewWriteVALUE(sys->oldSearchList.back(), resParam->dataSize);
-							sys->oldSearchList.pop_back();
-							resParam->param = sys->oldSearchList.empty() ? OLD_CMD_SUCCESS : OLD_CMD_NEXT;
+						if( sys->oldSearchList[tcpFlag].empty() == false ){
+							resParam->data = DeprecatedNewWriteVALUE(sys->oldSearchList[tcpFlag].back(), resParam->dataSize);
+							sys->oldSearchList[tcpFlag].pop_back();
+							resParam->param = sys->oldSearchList[tcpFlag].empty() ? OLD_CMD_SUCCESS : OLD_CMD_NEXT;
 						}
 					}
 				}
@@ -2057,13 +2067,11 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 		break;
 	case CMD_EPG_SRV_SEARCH_PG_NEXT:
 		{
-			CBlockLock lock(&sys->settingLock);
-
 			resParam->param = OLD_CMD_ERR;
-			if( sys->oldSearchList.empty() == false ){
-				resParam->data = DeprecatedNewWriteVALUE(sys->oldSearchList.back(), resParam->dataSize);
-				sys->oldSearchList.pop_back();
-				resParam->param = sys->oldSearchList.empty() ? OLD_CMD_SUCCESS : OLD_CMD_NEXT;
+			if( sys->oldSearchList[tcpFlag].empty() == false ){
+				resParam->data = DeprecatedNewWriteVALUE(sys->oldSearchList[tcpFlag].back(), resParam->dataSize);
+				sys->oldSearchList[tcpFlag].pop_back();
+				resParam->param = sys->oldSearchList[tcpFlag].empty() ? OLD_CMD_SUCCESS : OLD_CMD_NEXT;
 			}
 		}
 		break;

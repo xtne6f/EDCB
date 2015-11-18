@@ -20,9 +20,6 @@
 #define CMD2_VIEW_CTRL_WAIT_CONNECT _T("Global\\View_Ctrl_BonConnect_") //+プロセスID
 #define CMD2_TVTEST_CTRL_WAIT_CONNECT _T("Global\\TvTest_Ctrl_BonConnect_") //+プロセスID
 
-//モジュール内コマンド実行イベント
-#define CMD2_CTRL_EVENT_WAIT _T("CtrlCmdEvent_") //+ID
-
 //コマンドバージョン
 //#define CMD_VER 2	//バージョン情報追加対応　録画設定への部分受信録画フォルダ指定追加
 //#define CMD_VER 3	//検索条件に同一録画チェック追加
