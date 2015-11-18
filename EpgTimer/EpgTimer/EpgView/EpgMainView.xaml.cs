@@ -74,71 +74,14 @@ namespace EpgTimer
         /// </summary>
         protected override void ReDrawNowLine()
         {
-            try
+            var nowTime = DateTime.Now;
+            if (timeList.Count < 1 || nowTime < timeList.Keys[0])
             {
-                nowViewTimer.Stop();
-                DateTime nowTime = DateTime.Now;
-                if (timeList.Count < 1 || nowTime < timeList.Keys[0])
-                {
-                    if (nowLine != null)
-                    {
-                        epgProgramView.canvas.Children.Remove(nowLine);
-                    }
-                    nowLine = null;
-                    return;
-                }
-                if (nowLine == null)
-                {
-                    nowLine = new Line();
-                    Canvas.SetZIndex(nowLine, 20);
-                    nowLine.Stroke = Brushes.Red;
-                    //nowLine.StrokeThickness = Settings.Instance.MinHeight * 2;
-                    //nowLine.Opacity = 0.5;
-                    nowLine.StrokeThickness = 3;
-                    nowLine.Opacity = 0.7;
-                    nowLine.Effect = new System.Windows.Media.Effects.DropShadowEffect() { BlurRadius = 10 };
-                    nowLine.IsHitTestVisible = false;
-                    epgProgramView.canvas.Children.Add(nowLine);
-                }
-
-                double posY = 0;
-                DateTime chkNowTime = new DateTime(nowTime.Year, nowTime.Month, nowTime.Day, nowTime.Hour, 0, 0);
-                for (int i = 0; i < timeList.Count; i++)
-                {
-                    if (chkNowTime == timeList.Keys[i])
-                    {
-                        posY = Math.Ceiling((i * 60 + (nowTime - chkNowTime).TotalMinutes) * Settings.Instance.MinHeight);
-                        break;
-                    }
-                    else if (chkNowTime < timeList.Keys[i])
-                    {
-                        //時間省かれてる
-                        posY = Math.Ceiling(i * 60 * Settings.Instance.MinHeight);
-                        break;
-                    }
-                }
-
-                if (posY > epgProgramView.canvas.Height)
-                {
-                    if (nowLine != null)
-                    {
-                        epgProgramView.canvas.Children.Remove(nowLine);
-                    }
-                    nowLine = null;
-                    return;
-                }
-
-                nowLine.X1 = 0;
-                nowLine.Y1 = posY;
-                nowLine.X2 = epgProgramView.canvas.Width;
-                nowLine.Y2 = posY;
-
-                nowViewTimer.Interval = TimeSpan.FromSeconds(60 - nowTime.Second);
-                nowViewTimer.Start();
+                NowLineDelete();
+                return;
             }
-            catch
-            {
-            }
+
+            ReDrawNowLineBase(nowTime, new DateTime(nowTime.Year, nowTime.Month, nowTime.Day, nowTime.Hour, 0, 0));
         }
 
         /// <summary>

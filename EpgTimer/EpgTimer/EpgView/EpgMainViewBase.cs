@@ -7,6 +7,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Shapes;
 using System.Windows.Threading;
+using System.Windows.Media;
 
 namespace EpgTimer.EpgView
 {
@@ -21,7 +22,7 @@ namespace EpgTimer.EpgView
         protected Line nowLine = null;
 
         protected virtual void ReDrawNowLine() { }
-        
+
         private ProgramView programView = null;
         private TimeView timeView = null;
         private ScrollViewer horizontalViewScroll = null;
@@ -198,6 +199,72 @@ namespace EpgTimer.EpgView
             ulong PgKey = target.EventInfo.Create64PgKey();
             ProgramViewItem target_item = this.programList.Find(item => item.EventInfo.Create64PgKey() == PgKey);
             this.programView.ScrollToFindItem(target_item, IsMarking);
+        }
+
+        protected virtual void ReDrawNowLineBase(DateTime nowTime, DateTime chkNowTime)
+        {
+            try
+            {
+                nowViewTimer.Stop();
+
+                double posY = 0;
+                for (int i = 0; i < timeList.Count; i++)
+                {
+                    if (chkNowTime == timeList.Keys[i])
+                    {
+                        posY = Math.Ceiling((i * 60 + (nowTime - chkNowTime).TotalMinutes) * Settings.Instance.MinHeight);
+                        break;
+                    }
+                    else if (chkNowTime < timeList.Keys[i])
+                    {
+                        //時間省かれてる
+                        posY = Math.Ceiling(i * 60 * Settings.Instance.MinHeight);
+                        break;
+                    }
+                }
+                if (posY > programView.canvas.Height)
+                {
+                    NowLineDelete();
+                    return;
+                }
+
+                if (nowLine == null)
+                {
+                    NowLineGenerate();
+                }
+
+                nowLine.X1 = 0;
+                nowLine.Y1 = posY;
+                nowLine.X2 = programView.canvas.Width;
+                nowLine.Y2 = posY;
+
+                nowViewTimer.Interval = TimeSpan.FromSeconds(60 - nowTime.Second);
+                nowViewTimer.Start();
+            }
+            catch { }
+        }
+
+        protected virtual void NowLineGenerate()
+        {
+            nowLine = new Line();
+            Canvas.SetZIndex(nowLine, 20);
+            nowLine.Stroke = Brushes.Red;
+            nowLine.StrokeThickness = 3;
+            nowLine.Opacity = 0.7;
+            nowLine.Effect = new System.Windows.Media.Effects.DropShadowEffect() { BlurRadius = 10 };
+            nowLine.IsHitTestVisible = false;
+            this.programView.canvas.Children.Add(nowLine);
+        }
+
+        protected virtual void NowLineDelete()
+        {
+            if (nowLine != null)
+            {
+                this.programView.canvas.Children.Remove(nowLine);
+            }
+            nowLine = null;
+            nowViewTimer.Stop();
+            return;
         }
 
     }

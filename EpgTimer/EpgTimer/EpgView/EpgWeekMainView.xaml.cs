@@ -97,59 +97,8 @@ namespace EpgTimer
         /// </summary>
         protected override void ReDrawNowLine()
         {
-            try
-            {
-                nowViewTimer.Stop();
-                DateTime nowTime = GetWeekMainViewTime(DateTime.Now);
-
-                if (nowLine == null)
-                {
-                    nowLine = new Line();
-                    Canvas.SetZIndex(nowLine, 20);
-                    nowLine.Stroke = Brushes.Red;
-                    nowLine.StrokeThickness = Settings.Instance.MinHeight * 2;
-                    nowLine.Opacity = 0.5;
-                    epgProgramView.canvas.Children.Add(nowLine);
-                }
-
-                double posY = 0;
-                DateTime chkNowTime = GetWeekMainViewTime(DateTime.Now, TimeSelect.HourOnly);
-                for (int i = 0; i < timeList.Count; i++)
-                {
-                    if (chkNowTime == timeList.Keys[i])
-                    {
-                        posY = Math.Ceiling((i * 60 + (nowTime - chkNowTime).TotalMinutes) * Settings.Instance.MinHeight);
-                        break;
-                    }
-                    else if (chkNowTime < timeList.Keys[i])
-                    {
-                        //時間省かれてる
-                        posY = Math.Ceiling(i * 60 * Settings.Instance.MinHeight);
-                        break;
-                    }
-                }
-
-                if (posY > epgProgramView.canvas.Height)
-                {
-                    if (nowLine != null)
-                    {
-                        epgProgramView.canvas.Children.Remove(nowLine);
-                    }
-                    nowLine = null;
-                    return;
-                }
-
-                nowLine.X1 = 0;
-                nowLine.Y1 = posY;
-                nowLine.X2 = epgProgramView.canvas.Width;
-                nowLine.Y2 = posY;
-
-                nowViewTimer.Interval = TimeSpan.FromSeconds(60 - nowTime.Second);
-                nowViewTimer.Start();
-            }
-            catch
-            {
-            }
+            var nowTime = DateTime.Now;
+            ReDrawNowLineBase(GetWeekMainViewTime(nowTime), GetWeekMainViewTime(nowTime, TimeSelect.HourOnly));
         }
 
         protected override DateTime SetNowTime()
