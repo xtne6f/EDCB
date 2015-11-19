@@ -19,7 +19,7 @@
                     <RadioButton Content="リスト表示モード" Height="16" HorizontalAlignment="Left" Margin="27,196,0,0" Name="radioButton_list" VerticalAlignment="Top" />
                     <CheckBox Content="番組のない時間帯は表示しない" Height="16" HorizontalAlignment="Left" Margin="52,96,0,0" Name="checkBox_noTimeView_rate" VerticalAlignment="Top" />
                     <CheckBox Content="番組のない時間帯は表示しない" Height="16" HorizontalAlignment="Left" Margin="52,140,0,0" Name="checkBox_noTimeView_week" VerticalAlignment="Top" />
-                    <Label Content="表示開始時間" Height="28" HorizontalAlignment="Left" Margin="52,162,0,0" Name="label1" VerticalAlignment="Top" />
+                    <Label Content="表示開始時刻" Height="28" HorizontalAlignment="Left" Margin="52,162,0,0" Name="label1" VerticalAlignment="Top" />
                     <ComboBox Height="24" HorizontalAlignment="Left" Margin="140,162,0,0" Name="comboBox_timeH_week" VerticalAlignment="Top" Width="51" ItemsSource="{Binding}" />
                     <Label Content="タブ名" Height="28" HorizontalAlignment="Left" Margin="6,6,0,0" Name="label2" VerticalAlignment="Top" />
                     <TextBox Height="24" HorizontalAlignment="Left" Margin="58,8,0,0" Name="textBox_tabName" VerticalAlignment="Top" Width="200" />
