@@ -1,56 +1,32 @@
-﻿<UserControl x:Class="EpgTimer.EpgView.ProgramView"
+﻿<local2:PanelViewBase x:Class="EpgTimer.EpgView.ProgramView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d" 
              xmlns:local="clr-namespace:EpgTimer.EpgView"
+             xmlns:local2="clr-namespace:EpgTimer.UserCtrlView"
              d:DesignHeight="300" d:DesignWidth="300">
-    <UserControl.Resources>
-        <Style TargetType="{x:Type ComboBox}">
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-        </Style>
-        <Style TargetType="{x:Type CheckBox}">
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-        </Style>
-        <Style TargetType="{x:Type Button}">
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-        </Style>
-        <Style TargetType="{x:Type ListBox}">
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-        </Style>
-        <Style TargetType="{x:Type TextBox}">
-            <Setter Property="InputMethod.PreferredImeState" Value="Off" />
-        </Style>
-    </UserControl.Resources>
     <Grid>
         <ScrollViewer Name="scrollViewer" HorizontalScrollBarVisibility="Visible" ScrollChanged="scrollViewer_ScrollChanged">
             <Canvas Name="canvas" HorizontalAlignment="Left" VerticalAlignment="Top">
-                <local:EpgViewPanel x:Name="epgViewPanel" Background="DarkGray" MouseMove="epgViewPanel_MouseMove" MouseLeftButtonDown="epgViewPanel_MouseLeftButtonDown" MouseLeftButtonUp="epgViewPanel_MouseLeftButtonUp" HorizontalAlignment="Left" VerticalAlignment="Top" MouseRightButtonDown="epgViewPanel_MouseRightButtonDown" MouseLeave="epgViewPanel_MouseLeave"/>
-                <Canvas Canvas.ZIndex="20" x:Name="popupItem" IsHitTestVisible="False" Visibility="Hidden">
-                    <Grid x:Name="popupItemContainer">
-                        <Border BorderBrush="DarkGray" BorderThickness="0,0.5,1,0.5">
-                            <Border.Background>
-                                <Binding ElementName="popupItemContainer" Path="Background"/>
-                            </Border.Background>
-                            <Border.Effect>
-                                <DropShadowEffect BlurRadius="12" Opacity="0.5"/>
-                            </Border.Effect>
-                        </Border>
-                        <StackPanel Orientation="Vertical" Margin="0.5">
+                <local:EpgViewPanel x:Name="epgViewPanel" Background="DarkGray" MouseMove="viewPanel_MouseMove" MouseLeftButtonDown="viewPanel_MouseLeftButtonDown" MouseLeftButtonUp="viewPanel_MouseLeftButtonUp" HorizontalAlignment="Left" VerticalAlignment="Top" MouseRightButtonDown="viewPanel_MouseRightButtonDown" MouseLeave="viewPanel_MouseLeave"/>
+                <Border x:Name="popupItem" BorderBrush="DarkGray" BorderThickness="0,0.5,1,0.5" IsHitTestVisible="False" Canvas.ZIndex="20" >
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="12" Opacity="0.5"/>
+                    </Border.Effect>
+                    <Grid>
+                        <Rectangle x:Name="popupItemBorder" />
+                        <StackPanel x:Name="popupItemTextArea">
                             <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition x:Name="minGrid"/>
-                                <ColumnDefinition x:Name="infoGrid"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock x:Name="minText" Grid.Column="0"/>
-                            <TextBlock x:Name="titleText" Grid.Column="1" TextWrapping="Wrap" LineStackingStrategy="BlockLineHeight"/>
+                                <TextBlock x:Name="minText" LineStackingStrategy="BlockLineHeight" />
+                                <TextBlock x:Name="titleText" TextWrapping="Wrap" LineStackingStrategy="BlockLineHeight" />
                             </Grid>
-                            <TextBlock x:Name="infoText" TextWrapping="Wrap" LineStackingStrategy="BlockLineHeight"/>
+                            <TextBlock x:Name="infoText" TextWrapping="Wrap" LineStackingStrategy="BlockLineHeight" />
                         </StackPanel>
                     </Grid>
-                </Canvas>
+                </Border>
             </Canvas>
         </ScrollViewer>            
     </Grid>
-</UserControl>
+</local2:PanelViewBase>

@@ -15,11 +15,20 @@ namespace EpgTimer
             get { return _Data; }
             set { _Data = value; }
         }
+        public SolidColorBrush ForeColorPri
+        {
+            get
+            {
+                if (ReserveInfo == null)return Brushes.Black;
+
+                return CommonManager.Instance.CustTunerServiceColorPri[ReserveInfo.RecSetting.Priority - 1];
+            }
+        }
         public SolidColorBrush BackColor
         {
             get
             {
-                return new ReserveItem(ReserveInfo).BackColor;
+                return vutil.ReserveErrBrush(ReserveInfo);
             }
         }
         public Brush BorderBrush

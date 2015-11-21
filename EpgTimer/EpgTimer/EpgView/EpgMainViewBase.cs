@@ -66,8 +66,8 @@ namespace EpgTimer.EpgView
 
             programView.PreviewMouseWheel += new MouseWheelEventHandler(epgProgramView_PreviewMouseWheel);
             programView.ScrollChanged += new ScrollChangedEventHandler(epgProgramView_ScrollChanged);
-            programView.LeftDoubleClick += new ProgramView.ProgramViewClickHandler(epgProgramView_LeftDoubleClick);
-            programView.RightClick += new ProgramView.ProgramViewClickHandler(epgProgramView_RightClick);
+            programView.LeftDoubleClick += new ProgramView.PanelViewClickHandler(epgProgramView_LeftDoubleClick);
+            programView.RightClick += new ProgramView.PanelViewClickHandler(epgProgramView_RightClick);
             
             nowViewTimer = new DispatcherTimer(DispatcherPriority.Normal);
             nowViewTimer.Tick += new EventHandler(WaitReDrawNowLine);

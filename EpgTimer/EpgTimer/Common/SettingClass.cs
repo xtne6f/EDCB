@@ -186,15 +186,25 @@ namespace EpgTimer
         private string serviceColor;
         private UInt32 serviceCustColor;
         private bool reserveRectBackground;
-        private double reserveMinHeight;
-        private double reserveMinLineHeight;
-        private double reserveDragScroll;
-        private double reserveScrollSize;
-        private bool reserveMouseScrollAuto;
+        private string tunerFontNameService;
+        private double tunerFontSizeService;
+        private bool tunerFontBoldService;
+        private string tunerFontName;
+        private double tunerFontSize;
+        private List<string> tunerServiceColors;
+        private List<UInt32> tunerServiceCustColors;
+        private double tunerMinHeight;
+        private double tunerMinimumLine;
+        private double tunerDragScroll;
+        private double tunerScrollSize;
+        private bool tunerMouseScrollAuto;
         private double tunerWidth;
-        private bool reserveServiceNoWrap;
-        private bool reserveTitleIndent;
-        private bool reservePopup;
+        private bool tunerServiceNoWrap;
+        private bool tunerTitleIndent;
+        private bool tunerPopup;
+        private bool tunerPopupRecinfo;
+        private bool tunerInfoSingleClick;
+        private bool tunerColorModeUse;
         private bool epgTitleIndent;
         private bool epgPopup;
         private bool epgPopupResOnly;
@@ -449,50 +459,100 @@ namespace EpgTimer
             get { return serviceCustColor; }
             set { serviceCustColor = value; }
         }
-        public double ReserveMinHeight
+        public string TunerFontNameService
         {
-            get { return reserveMinHeight; }
-            set { reserveMinHeight = value; }
+            get { return tunerFontNameService; }
+            set { tunerFontNameService = value; }
         }
-        public double ReserveMinLineHeight
+        public double TunerFontSizeService
         {
-            get { return reserveMinLineHeight; }
-            set { reserveMinLineHeight = value; }
+            get { return tunerFontSizeService; }
+            set { tunerFontSizeService = value; }
         }
-        public double ReserveDragScroll
+        public bool TunerFontBoldService
         {
-            get { return reserveDragScroll; }
-            set { reserveDragScroll = value; }
+            get { return tunerFontBoldService; }
+            set { tunerFontBoldService = value; }
         }
-        public double ReserveScrollSize
+        public string TunerFontName
         {
-            get { return reserveScrollSize; }
-            set { reserveScrollSize = value; }
+            get { return tunerFontName; }
+            set { tunerFontName = value; }
         }
-        public bool ReserveMouseScrollAuto
+        public double TunerFontSize
         {
-            get { return reserveMouseScrollAuto; }
-            set { reserveMouseScrollAuto = value; }
+            get { return tunerFontSize; }
+            set { tunerFontSize = value; }
+        }
+        public List<string> TunerServiceColors
+        {
+            get { return tunerServiceColors; }
+            set { tunerServiceColors = value; }
+        }
+        public List<UInt32> TunerServiceCustColors
+        {
+            get { return tunerServiceCustColors; }
+            set { tunerServiceCustColors = value; }
+        }
+        public double TunerMinHeight
+        {
+            get { return tunerMinHeight; }
+            set { tunerMinHeight = value; }
+        }
+        public double TunerMinimumLine
+        {
+            get { return tunerMinimumLine; }
+            set { tunerMinimumLine = value; }
+        }
+        public double TunerDragScroll
+        {
+            get { return tunerDragScroll; }
+            set { tunerDragScroll = value; }
+        }
+        public double TunerScrollSize
+        {
+            get { return tunerScrollSize; }
+            set { tunerScrollSize = value; }
+        }
+        public bool TunerMouseScrollAuto
+        {
+            get { return tunerMouseScrollAuto; }
+            set { tunerMouseScrollAuto = value; }
         }
         public double TunerWidth
         {
             get { return tunerWidth; }
             set { tunerWidth = value; }
         }
-        public bool ReserveServiceNoWrap
+        public bool TunerServiceNoWrap
         {
-            get { return reserveServiceNoWrap; }
-            set { reserveServiceNoWrap = value; }
+            get { return tunerServiceNoWrap; }
+            set { tunerServiceNoWrap = value; }
         }
-        public bool ReserveTitleIndent
+        public bool TunerTitleIndent
         {
-            get { return reserveTitleIndent; }
-            set { reserveTitleIndent = value; }
+            get { return tunerTitleIndent; }
+            set { tunerTitleIndent = value; }
         }
-        public bool ReservePopup
+        public bool TunerPopup
         {
-            get { return reservePopup; }
-            set { reservePopup = value; }
+            get { return tunerPopup; }
+            set { tunerPopup = value; }
+        }
+        public bool TunerPopupRecinfo
+        {
+            get { return tunerPopupRecinfo; }
+            set { tunerPopupRecinfo = value; }
+        }
+        public bool TunerInfoSingleClick
+        {
+            get { return tunerInfoSingleClick; }
+            set { tunerInfoSingleClick = value; }
+        }
+        public bool TunerColorModeUse
+        {
+            get { return tunerColorModeUse; }
+            set { tunerColorModeUse = value; }
         }
         public bool EpgTitleIndent
         {
@@ -968,9 +1028,9 @@ namespace EpgTimer
             minimumHeight = 0;
             serviceWidth = 150;
             scrollSize = 240;
-            fontName = "メイリオ";
+            fontName = System.Drawing.SystemFonts.DefaultFont.Name;
             fontSize = 12;
-            fontNameTitle = "メイリオ";
+            fontNameTitle = System.Drawing.SystemFonts.DefaultFont.Name;
             fontSizeTitle = 12;
             fontBoldTitle = true;
             noToolTip = false;
@@ -992,15 +1052,25 @@ namespace EpgTimer
             serviceColor = "LightSlateGray";
             serviceCustColor = 0xFFFFFFFF;
             reserveRectBackground = false;
-            reserveMinHeight = 2;
-            reserveMinLineHeight = 0;
-            reserveDragScroll = 1.5;
-            reserveScrollSize = 240;
-            reserveMouseScrollAuto = false;
+            tunerFontNameService = System.Drawing.SystemFonts.DefaultFont.Name;
+            tunerFontSizeService = 12;
+            tunerFontBoldService = true;
+            tunerFontName = System.Drawing.SystemFonts.DefaultFont.Name;
+            tunerFontSize = 12;
+            tunerServiceColors = new List<string>();
+            tunerServiceCustColors = new List<uint>();
+            tunerMinHeight = 2;
+            tunerMinimumLine = 0;
+            tunerDragScroll = 1.5;
+            tunerScrollSize = 240;
+            tunerMouseScrollAuto = false;
             tunerWidth = 150;
-            reserveServiceNoWrap = true;
-            reserveTitleIndent = true;
-            reservePopup = false;
+            tunerServiceNoWrap = true;
+            tunerTitleIndent = true;
+            tunerPopup = false;
+            tunerPopupRecinfo = false;
+            tunerInfoSingleClick = false;
+            tunerColorModeUse = false;
             epgTitleIndent = true;
             epgPopup = true;
             epgPopupResOnly = false;
@@ -1155,14 +1225,10 @@ namespace EpgTimer
                 if (Instance.recModeFontColorList.Count != 6)
                 {
                     //予約アイテムのデフォルトの文字色
-                    Instance.recModeFontColorList.Clear();
-                    Instance.recModeFontColorList.Add("#FF042271"); //0 全サービス
-                    Instance.recModeFontColorList.Add("#FF042271"); //1 指定サービス
-                    Instance.recModeFontColorList.Add("#FF042271"); //2 全サービス(デコード処理なし)
-                    Instance.recModeFontColorList.Add("#FF042271"); //3 指定サービス(デコード処理なし)
-                    Instance.recModeFontColorList.Add("#FF042271"); //4 視聴
-                    Instance.recModeFontColorList.Add("#FF042271"); //5 無効
+                    Instance.recModeFontColorList = Enumerable.Repeat("#FF042271", 6).ToList();
                 }
+                int num;
+                num = 0x11;//番組表17色。forは色の増加対策の読込。過去に16色時代があった。
                 if (Instance.contentColorList.Count < 0x11)
                 {
                     //番組表のデフォルトの背景色
@@ -1190,12 +1256,22 @@ namespace EpgTimer
                         Instance.contentColorList.Add(defColors[i]);
                     }
                 }
-                if (Instance.ContentCustColorList.Count < 0x11 + 5)
+                num = 0x11 + 5;//番組表17色+予約枠5色
+                if (Instance.contentCustColorList.Count < num)
                 {
-                    for (int i = Instance.ContentCustColorList.Count; i < 0x11 + 5; i++)
-                    {
-                        Instance.ContentCustColorList.Add(0xFFFFFFFF);
-                    }
+                    Instance.contentCustColorList.AddRange(
+                        Enumerable.Repeat(0xFFFFFFFF, num - Instance.contentCustColorList.Count));
+                }
+                num = 2 + 5;//固定色2+優先度色5
+                if (Instance.tunerServiceColors.Count < num)
+                {
+                    Instance.tunerServiceColors.AddRange(
+                        Enumerable.Repeat("Black", num - Instance.tunerServiceColors.Count));
+                }
+                if (Instance.tunerServiceCustColors.Count < num)
+                {
+                    Instance.tunerServiceCustColors.AddRange(
+                        Enumerable.Repeat(0xFFFFFFFF, num - Instance.tunerServiceCustColors.Count));
                 }
                 if (Instance.timeColorList.Count != 4)
                 {
@@ -1206,13 +1282,9 @@ namespace EpgTimer
                     Instance.timeColorList.Add("LightSalmon");
                     Instance.timeColorList.Add("CornflowerBlue");
                 }
-                if (Instance.TimeCustColorList.Count != 4)
+                if (Instance.timeCustColorList.Count != 4)
                 {
-                    Instance.TimeCustColorList.Clear();
-                    for (int i = 0; i < 4; i++)
-                    {
-                        Instance.TimeCustColorList.Add(0xFFFFFFFF);
-                    }
+                    Instance.timeCustColorList = Enumerable.Repeat(0xFFFFFFFF, 4).ToList();
                 }
                 if (Instance.viewButtonList.Count == 0)
                 {

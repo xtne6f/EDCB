@@ -192,37 +192,18 @@ namespace EpgTimer
                 switch (NowJumpingTable)
                 {
                     case 1: return CommonManager.Instance.ResDefBackColor;
-                    case 2: return new SolidColorBrush(Colors.Red);
+                    case 2: return Brushes.Red;
                 }
 
                 //通常表示
-                if (ReserveInfo != null)
-                {
-                    if (ReserveInfo.RecSetting.RecMode == 5)
-                    {
-                        return CommonManager.Instance.ResNoBackColor;
-                    }
-                    if (ReserveInfo.OverlapMode == 2)
-                    {
-                        return CommonManager.Instance.ResErrBackColor;
-                    }
-                    if (ReserveInfo.OverlapMode == 1)
-                    {
-                        return CommonManager.Instance.ResWarBackColor;
-                    }
-                    if (ReserveInfo.IsAutoAddMissing() == true)
-                    {
-                        return CommonManager.Instance.ResAutoAddMissingBackColor;
-                    }
-                }
-                return CommonManager.Instance.ResDefBackColor;
+                return vutil.ReserveErrBrush(ReserveInfo);
             }
         }
         public Brush BorderBrush
         {
             get
             {
-                return vutil.EventDataBorderBrush(EventInfo);
+                return vutil.EpgDataContentBrush(EventInfo);
             }
         }
     }

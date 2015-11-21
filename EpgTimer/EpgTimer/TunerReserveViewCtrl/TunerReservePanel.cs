@@ -1,35 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Collections.ObjectModel;
-using System.Collections.Specialized;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Media;
-using System.ComponentModel;
-using System.Windows.Input;
 
 namespace EpgTimer.TunerReserveViewCtrl
 {
-    class TunerReservePanel : FrameworkElement
+    class TunerReservePanel : EpgTimer.UserCtrlView.PanelBase
     {
-        public static readonly DependencyProperty BackgroundProperty =
-            Panel.BackgroundProperty.AddOwner(typeof(TunerReservePanel));
+        public List<ReserveViewItem> Items { get; set; }
 
-        public Brush Background
+        public override void ClearInfo() 
         {
-            set { SetValue(BackgroundProperty, value); }
-            get { return (Brush)GetValue(BackgroundProperty); }
+            Items = new List<ReserveViewItem>();
         }
 
-        public List<ReserveViewItem> Items
-        {
-            get;
-            set;
-        }
-
-        protected bool RenderText(String text, DrawingContext dc, GlyphTypeface glyphType, double fontSize, double maxWidth, double maxHeight, double x, double y, ref double useHeight, bool nowrap = false)
+        protected bool RenderText(String text, DrawingContext dc, GlyphTypeface glyphType, SolidColorBrush brush, double fontSize, double maxWidth, double maxHeight, double x, double y, ref double useHeight, bool nowrap = false)
         {
             if (maxHeight < fontSize + 2)
             {
@@ -72,7 +58,7 @@ namespace EpgTimer.TunerReserveViewCtrl
                                 glyphIndexes, origin, advanceWidths, null, null, null, null,
                                 null, null);
 
-                            dc.DrawGlyphRun(Brushes.Black, glyphRun);
+                            dc.DrawGlyphRun(brush, glyphRun);
 
                             useHeight = totalHeight;
                             return false;
@@ -80,13 +66,12 @@ namespace EpgTimer.TunerReserveViewCtrl
                         else
                         {
                             //次の行いけるので今までの分出力
-                            //次の行いける
                             Point origin = new Point(x + 2, y + totalHeight);
                             GlyphRun glyphRun = new GlyphRun(glyphType, 0, false, fontSize,
                                 glyphIndexes, origin, advanceWidths, null, null, null, null,
                                 null, null);
 
-                            dc.DrawGlyphRun(Brushes.Black, glyphRun);
+                            dc.DrawGlyphRun(brush, glyphRun);
                             totalHeight += fontSize + 2;
                             glyphIndexes = new List<ushort>();
                             advanceWidths = new List<double>();
@@ -104,7 +89,7 @@ namespace EpgTimer.TunerReserveViewCtrl
                         glyphIndexes, origin, advanceWidths, null, null, null, null,
                         null, null);
 
-                    dc.DrawGlyphRun(Brushes.Black, glyphRun);
+                    dc.DrawGlyphRun(brush, glyphRun);
                 }
             }
             useHeight = Math.Floor(totalHeight);
@@ -116,96 +101,32 @@ namespace EpgTimer.TunerReserveViewCtrl
             this.VisualTextRenderingMode = TextRenderingMode.ClearType;
             this.VisualTextHintingMode = TextHintingMode.Fixed;
 
-            if (Items == null)
-            {
-                return;
-            }
-
-            Typeface typefaceNormal = null;
-            Typeface typefaceTitle = null;
-            GlyphTypeface glyphTypefaceNormal = null;
-            GlyphTypeface glyphTypefaceTitle = null;
+            if (Items == null) return;
 
             try
             {
-                if (Settings.Instance.FontName.Length > 0)
-                {
-                    typefaceNormal = new Typeface(new FontFamily(Settings.Instance.FontName),
-                                                 FontStyles.Normal,
-                                                 FontWeights.Normal,
-                                                 FontStretches.Normal);
-                }
-                if (Settings.Instance.FontNameTitle.Length > 0)
-                {
-                    if (Settings.Instance.FontBoldTitle == true)
-                    {
-                        typefaceTitle = new Typeface(new FontFamily(Settings.Instance.FontNameTitle),
-                                                     FontStyles.Normal,
-                                                     FontWeights.Bold,
-                                                     FontStretches.Normal);
-                    }
-                    else
-                    {
-                        typefaceTitle = new Typeface(new FontFamily(Settings.Instance.FontNameTitle),
-                                                     FontStyles.Normal,
-                                                     FontWeights.Normal,
-                                                     FontStretches.Normal);
-                    }
-                }
-                if (!typefaceNormal.TryGetGlyphTypeface(out glyphTypefaceNormal))
-                {
-                    typefaceNormal = null;
-                }
-                if (!typefaceTitle.TryGetGlyphTypeface(out glyphTypefaceTitle))
-                {
-                    typefaceTitle = null;
-                }
+                // ビットマップフォントがかすれる問題 とりあえず整数にしておく
+                double sizeMin = Settings.Instance.TunerFontSize;
+                double sizeTitle = Settings.Instance.TunerFontSizeService;
+                double sizeNormal = Settings.Instance.TunerFontSize;
+                double indentTitle = Math.Floor(sizeMin * 1.7);
+                double indentNormal = Math.Floor(Settings.Instance.TunerTitleIndent ? indentTitle : 2);
+                GlyphTypeface glyphTypefaceSeervice = vutil.GetGlyphTypeface(Settings.Instance.TunerFontNameService, Settings.Instance.TunerFontBoldService);
+                GlyphTypeface glyphTypefaceNormal = vutil.GetGlyphTypeface(Settings.Instance.TunerFontName, false);
+                SolidColorBrush colorTitle = CommonManager.Instance.CustTunerServiceColor;
+                SolidColorBrush colorNormal = CommonManager.Instance.CustTunerTextColor;
 
-                if (typefaceNormal == null)
-                {
-                    typefaceNormal = new Typeface(new FontFamily("MS UI Gothic"),
-                                                 FontStyles.Normal,
-                                                 FontWeights.Normal,
-                                                 FontStretches.Normal);
-                    if (!typefaceNormal.TryGetGlyphTypeface(out glyphTypefaceNormal))
-                    {
-                        MessageBox.Show("フォント指定が不正です");
-                        return;
-                    }
-                }
-                if (typefaceTitle == null)
-                {
-                    typefaceTitle = new Typeface(new FontFamily("MS UI Gothic"),
-                                                 FontStyles.Normal,
-                                                 FontWeights.Bold,
-                                                 FontStretches.Normal);
-                    if (!typefaceTitle.TryGetGlyphTypeface(out glyphTypefaceTitle))
-                    {
-                        MessageBox.Show("フォント指定が不正です");
-                        return;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-
-            try
-            {
-                double sizeNormal = Settings.Instance.FontSize;
-                double sizeTitle = Settings.Instance.FontSizeTitle;
                 foreach (ReserveViewItem info in Items)
                 {
-                    // ビットマップフォントがかすれる問題
+                    colorTitle = Settings.Instance.TunerColorModeUse == true ? info.ForeColorPri : colorTitle;
+
                     double dInfoTopPos = Math.Floor(info.TopPos);
                     double dInfoHeight = Math.Floor(info.Height);
 
                     dc.DrawRectangle(Brushes.LightGray, null, new Rect(info.LeftPos, dInfoTopPos, info.Width, Math.Max(dInfoHeight, 0)));
                     if (dInfoHeight > 2)
                     {
-                        SolidColorBrush color = info.BackColor;
-                        dc.DrawRectangle(color, null, new Rect(info.LeftPos + 1, dInfoTopPos + 1, info.Width - 2, dInfoHeight - 2));
+                        dc.DrawRectangle(info.BackColor, null, new Rect(info.LeftPos + 1, dInfoTopPos + 1, info.Width - 2, dInfoHeight - 2));
                         if (dInfoHeight < 4 + sizeTitle + 2)
                         {
                             //高さ足りない
@@ -214,38 +135,33 @@ namespace EpgTimer.TunerReserveViewCtrl
                         }
 
                         double totalHeight = 0;
+                        double useHeight = 0;
 
                         //分
-                        string min;
-                        min = info.ReserveInfo.StartTime.Minute.ToString("d02") + "  ";
-
-                        double useHeight = 0;
-                        if (RenderText(min, dc, glyphTypefaceNormal, sizeNormal, info.Width - 4, dInfoHeight - 4, info.LeftPos, dInfoTopPos, ref useHeight) == false)
+                        string min = info.ReserveInfo.StartTime.Minute.ToString("d02");
+                        if (RenderText(min, dc, glyphTypefaceNormal, colorTitle, sizeMin, info.Width - 4, dInfoHeight - 4, info.LeftPos, dInfoTopPos, ref useHeight) == false)
                         {
                             info.TitleDrawErr = true;
                             continue;
                         }
 
-                        double widthOffset = sizeNormal * 2;
-
                         //サービス名
                         if (info.ReserveInfo.StationName.Length > 0)
                         {
-                            String serviceName = info.ReserveInfo.StationName;
-                            serviceName += "(" + CommonManager.ConvertNetworkNameText(info.ReserveInfo.OriginalNetworkID) + ")";
-                            if (RenderText(serviceName, dc, glyphTypefaceTitle, sizeTitle, info.Width - 6 - widthOffset, dInfoHeight - 6 - totalHeight, info.LeftPos + widthOffset, dInfoTopPos + totalHeight, ref useHeight, Settings.Instance.ReserveServiceNoWrap) == false)
+                            string serviceName = info.ReserveInfo.StationName
+                                + "(" + CommonManager.ConvertNetworkNameText(info.ReserveInfo.OriginalNetworkID) + ")";
+                            if (RenderText(serviceName, dc, glyphTypefaceSeervice, colorTitle, sizeTitle, info.Width - 6 - indentTitle, dInfoHeight - 6 - totalHeight, info.LeftPos + indentTitle, dInfoTopPos + totalHeight, ref useHeight, Settings.Instance.TunerServiceNoWrap) == false)
                             {
                                 info.TitleDrawErr = true;
                                 continue;
                             }
-                            // ビットマップフォントがかすれる問題
-                            totalHeight += useHeight + Math.Floor(sizeNormal / 2);
+                            totalHeight += Math.Floor(useHeight + sizeTitle / 3);
                         }
-                        widthOffset = Settings.Instance.ReserveTitleIndent ? sizeNormal * 2 : 2;
+
                         //番組名
                         if (info.ReserveInfo.Title.Length > 0)
                         {
-                            if (RenderText(info.ReserveInfo.Title, dc, glyphTypefaceNormal, sizeNormal, info.Width - 6 - widthOffset, dInfoHeight - 6 - totalHeight, info.LeftPos + widthOffset, dInfoTopPos + totalHeight, ref useHeight) == false)
+                            if (RenderText(info.ReserveInfo.Title, dc, glyphTypefaceNormal, colorNormal, sizeNormal, info.Width - 6 - indentNormal, dInfoHeight - 6 - totalHeight, info.LeftPos + indentNormal, dInfoTopPos + totalHeight, ref useHeight) == false)
                             {
                                 info.TitleDrawErr = true;
                                 continue;

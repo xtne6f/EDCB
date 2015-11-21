@@ -1,29 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Collections.ObjectModel;
-using System.Collections.Specialized;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Media;
-using System.ComponentModel;
-using System.Windows.Input;
 
 namespace EpgTimer.EpgView
 {
-    class EpgViewPanel : FrameworkElement
+    class EpgViewPanel : EpgTimer.UserCtrlView.PanelBase
     {
-        public static readonly DependencyProperty BackgroundProperty =
-            Panel.BackgroundProperty.AddOwner(typeof(EpgViewPanel));
-        private List<ProgramViewItem> items;
         private Dictionary<ProgramViewItem, List<TextDrawItem>> textDrawDict = new Dictionary<ProgramViewItem, List<TextDrawItem>>();
-        public Brush Background
-        {
-            set { SetValue(BackgroundProperty, value); }
-            get { return (Brush)GetValue(BackgroundProperty); }
-        }
 
+        private List<ProgramViewItem> items;
         public List<ProgramViewItem> Items
         {
             get
@@ -32,16 +19,14 @@ namespace EpgTimer.EpgView
             }
             set
             {
-                items = null;
                 items = value;
                 CreateDrawTextList();
             }
         }
 
-        public bool IsTitleIndent
+        public override void ClearInfo()
         {
-            get;
-            set;
+            items = new List<ProgramViewItem>();
         }
 
         protected void CreateDrawTextList()
@@ -59,79 +44,18 @@ namespace EpgTimer.EpgView
                 return;
             }
 
-            Typeface typefaceNormal = null;
-            Typeface typefaceTitle = null;
-            GlyphTypeface glyphTypefaceNormal = null;
-            GlyphTypeface glyphTypefaceTitle = null;
             try
             {
-                if (Settings.Instance.FontName.Length > 0)
-                {
-                    typefaceNormal = new Typeface(new FontFamily(Settings.Instance.FontName),
-                                                 FontStyles.Normal,
-                                                 FontWeights.Normal,
-                                                 FontStretches.Normal);
-                }
-                if (Settings.Instance.FontNameTitle.Length > 0)
-                {
-                    if (Settings.Instance.FontBoldTitle == true)
-                    {
-                        typefaceTitle = new Typeface(new FontFamily(Settings.Instance.FontNameTitle),
-                                                     FontStyles.Normal,
-                                                     FontWeights.Bold,
-                                                     FontStretches.Normal);
-                    }
-                    else
-                    {
-                        typefaceTitle = new Typeface(new FontFamily(Settings.Instance.FontNameTitle),
-                                                     FontStyles.Normal,
-                                                     FontWeights.Normal,
-                                                     FontStretches.Normal);
-                    }
-                }
-                if (!typefaceNormal.TryGetGlyphTypeface(out glyphTypefaceNormal))
-                {
-                    typefaceNormal = null;
-                }
-                if (!typefaceTitle.TryGetGlyphTypeface(out glyphTypefaceTitle))
-                {
-                    typefaceTitle = null;
-                }
-
-                if (typefaceNormal == null)
-                {
-                    typefaceNormal = new Typeface(new FontFamily("MS UI Gothic"),
-                                                 FontStyles.Normal,
-                                                 FontWeights.Normal,
-                                                 FontStretches.Normal);
-                    if (!typefaceNormal.TryGetGlyphTypeface(out glyphTypefaceNormal))
-                    {
-                        MessageBox.Show("フォント指定が不正です");
-                        return;
-                    }
-                }
-                if (typefaceTitle == null)
-                {
-                    typefaceTitle = new Typeface(new FontFamily("MS UI Gothic"),
-                                                 FontStyles.Normal,
-                                                 FontWeights.Bold,
-                                                 FontStretches.Normal);
-                    if (!typefaceTitle.TryGetGlyphTypeface(out glyphTypefaceTitle))
-                    {
-                        MessageBox.Show("フォント指定が不正です");
-                        return;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-
-            try
-            {
-                double sizeNormal = Settings.Instance.FontSize;
+                GlyphTypeface glyphTypefaceNormal = vutil.GetGlyphTypeface(Settings.Instance.FontName, false);
+                GlyphTypeface glyphTypefaceTitle = vutil.GetGlyphTypeface(Settings.Instance.FontNameTitle, Settings.Instance.FontBoldTitle);
+                double sizeMin = Settings.Instance.FontSizeTitle - 1;
                 double sizeTitle = Settings.Instance.FontSizeTitle;
+                double sizeNormal = Settings.Instance.FontSize;
+                double indentTitle = Math.Floor(sizeMin * 1.7);
+                double indentNormal = Settings.Instance.EpgTitleIndent ? indentTitle : 2;
+                SolidColorBrush colorTitle = CommonManager.Instance.CustTitle1Color;
+                SolidColorBrush colorNormal = CommonManager.Instance.CustTitle2Color;
+
                 foreach (ProgramViewItem info in Items)
                 {
                     List<TextDrawItem> textDrawList = new List<TextDrawItem>();
@@ -147,44 +71,31 @@ namespace EpgTimer.EpgView
                         double totalHeight = -2;
 
                         //分
-                        string min;
-                        if (info.EventInfo.StartTimeFlag == 1)
-                        {
-                            min = info.EventInfo.start_time.Minute.ToString("d02") + "  ";
-                        }
-                        else
-                        {
-                            min = "未定 ";
-                        }
+                        string min = (info.EventInfo.StartTimeFlag != 1 ? "未定 " : info.EventInfo.start_time.Minute.ToString("d02"));
                         double useHeight = 0;
-                        if (RenderText(min, ref textDrawList, glyphTypefaceTitle, sizeTitle - 0.5, info.Width - 4, info.Height + 10, info.LeftPos - 1, info.TopPos - 1, ref useHeight, CommonManager.Instance.CustTitle1Color, m) == false)
+                        if (RenderText(min, ref textDrawList, glyphTypefaceTitle, sizeMin, info.Width - 4, info.Height + 10, info.LeftPos - 1, info.TopPos - 1, ref useHeight, colorTitle, m) == false)
                         {
                             info.TitleDrawErr = true;
                             continue;
                         }
 
-                        double widthOffset = sizeNormal * 1.7;
                         //番組情報
                         if (info.EventInfo.ShortInfo != null)
                         {
                             //タイトル
                             if (info.EventInfo.ShortInfo.event_name.Length > 0)
                             {
-                                if (RenderText(info.EventInfo.ShortInfo.event_name, ref textDrawList, glyphTypefaceTitle, sizeTitle, info.Width - 6 - widthOffset, info.Height - 1 - totalHeight, info.LeftPos + widthOffset, info.TopPos + totalHeight, ref useHeight, CommonManager.Instance.CustTitle1Color, m) == false)
+                                if (RenderText(info.EventInfo.ShortInfo.event_name, ref textDrawList, glyphTypefaceTitle, sizeTitle, info.Width - 6 - indentTitle, info.Height - 1 - totalHeight, info.LeftPos + indentTitle, info.TopPos + 1 + totalHeight, ref useHeight, colorTitle, m) == false)
                                 {
                                     info.TitleDrawErr = true;
                                     continue;
                                 }
-                                totalHeight += Math.Floor(useHeight + (sizeNormal / 2));
-                            }
-                            if (IsTitleIndent == false)
-                            {
-                                widthOffset = 0;
+                                totalHeight += Math.Floor(useHeight + (sizeTitle / 3));
                             }
                             //説明
                             if (info.EventInfo.ShortInfo.text_char.Length > 0)
                             {
-                                if (RenderText(info.EventInfo.ShortInfo.text_char, ref textDrawList, glyphTypefaceNormal, sizeNormal, info.Width - 10 - widthOffset, info.Height - 5 - totalHeight, info.LeftPos + widthOffset, info.TopPos + totalHeight, ref useHeight, CommonManager.Instance.CustTitle2Color, m) == false)
+                                if (RenderText(info.EventInfo.ShortInfo.text_char, ref textDrawList, glyphTypefaceNormal, sizeNormal, info.Width - 10 - indentNormal, info.Height - 5 - totalHeight, info.LeftPos + indentNormal, info.TopPos + totalHeight, ref useHeight, colorNormal, m) == false)
                                 {
                                     continue;
                                 }
@@ -196,7 +107,7 @@ namespace EpgTimer.EpgView
 //                            {
 //                                if (info.EventInfo.ExtInfo.text_char.Length > 0)
 //                                {
-//                                    if (RenderText(info.EventInfo.ExtInfo.text_char, ref textDrawList, glyphTypefaceNormal, sizeNormal, info.Width - 6 - widthOffset, info.Height - 6 - totalHeight, info.LeftPos + widthOffset, info.TopPos + totalHeight, ref useHeight, CommonManager.Instance.CustTitle2Color, m) == false)
+//                                    if (RenderText(info.EventInfo.ExtInfo.text_char, ref textDrawList, glyphTypefaceNormal, sizeNormal, info.Width - 6 - widthOffset, info.Height - 6 - totalHeight, info.LeftPos + widthOffset, info.TopPos + totalHeight, ref useHeight, colorNormal, m) == false)
 //                                    {
 //                                        continue;
 //                                    }
@@ -283,7 +194,8 @@ namespace EpgTimer.EpgView
 
         protected override void OnRender(DrawingContext dc)
         {
-            dc.DrawRectangle(Background, null, new Rect(RenderSize));
+            Brush bgBrush = Background;
+            dc.DrawRectangle(bgBrush, null, new Rect(RenderSize));
             this.VisualTextRenderingMode = TextRenderingMode.ClearType;
             this.VisualTextHintingMode = TextHintingMode.Fixed;
             this.UseLayoutRounding = true;
@@ -297,7 +209,6 @@ namespace EpgTimer.EpgView
             {
                 double sizeNormal = Settings.Instance.FontSize;
                 double sizeTitle = Settings.Instance.FontSizeTitle;
-                Brush bgBrush = Background;
                 foreach (ProgramViewItem info in Items)
                 {
                     dc.DrawRectangle(bgBrush, null, new Rect(info.LeftPos, info.TopPos, info.Width, 1));

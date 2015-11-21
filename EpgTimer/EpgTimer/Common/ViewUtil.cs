@@ -22,44 +22,52 @@ namespace EpgTimer
             mutil = MUtil;
         }
 
-        public Brush EventDataBorderBrush(EpgEventInfo EventInfo)
+        public Brush EpgDataContentBrush(EpgEventInfo EventInfo)
         {
-            Brush color1 = Brushes.White;
-            if (EventInfo != null)
+            if (EventInfo == null) return Brushes.White;
+            if (EventInfo.ContentInfo == null) return CommonManager.Instance.CustContentColorList[0x10];
+
+            return EpgDataContentBrush(EventInfo.ContentInfo.nibbleList);
+        }
+        public Brush EpgDataContentBrush(List<EpgContentData> nibbleList)
+        {
+            if (nibbleList != null)
             {
-                if (EventInfo.ContentInfo != null)
+                EpgContentData info = nibbleList.Find(info1 =>
+                    info1.content_nibble_level_1 <= 0x0B || info1.content_nibble_level_1 == 0x0F);
+
+                if (info != null)
                 {
-                    if (EventInfo.ContentInfo.nibbleList.Count > 0)
-                    {
-                        try
-                        {
-                            foreach (EpgContentData info1 in EventInfo.ContentInfo.nibbleList)
-                            {
-                                if (info1.content_nibble_level_1 <= 0x0B || info1.content_nibble_level_1 == 0x0F && Settings.Instance.ContentColorList.Count > info1.content_nibble_level_1)
-                                {
-                                    color1 = CommonManager.Instance.CustContentColorList[info1.content_nibble_level_1];
-                                    break;
-                                }
-                            }
-                        }
-                        catch
-                        {
-                        }
-                    }
-                    else
-                    {
-                        color1 = CommonManager.Instance.CustContentColorList[0x10];
-                    }
-                }
-                else
-                {
-                    color1 = CommonManager.Instance.CustContentColorList[0x10];
+                    return CommonManager.Instance.CustContentColorList[info.content_nibble_level_1];
                 }
             }
-
-            return color1;
+            return CommonManager.Instance.CustContentColorList[0x10];
         }
 
+        public SolidColorBrush ReserveErrBrush(ReserveData ReserveData)
+        {
+            if (ReserveData != null)
+            {
+                if (ReserveData.RecSetting.RecMode == 5)
+                {
+                    return CommonManager.Instance.ResNoBackColor;
+                }
+                if (ReserveData.OverlapMode == 2)
+                {
+                    return CommonManager.Instance.ResErrBackColor;
+                }
+                if (ReserveData.OverlapMode == 1)
+                {
+                    return CommonManager.Instance.ResWarBackColor;
+                }
+                if (ReserveData.IsAutoAddMissing() == true)
+                {
+                    return CommonManager.Instance.ResAutoAddMissingBackColor;
+                }
+            }
+            return CommonManager.Instance.ResDefBackColor;
+        }
+        
         public void SetSpecificChgAppearance(Control obj)
         {
             obj.Background = Brushes.LavenderBlush;
@@ -196,13 +204,42 @@ namespace EpgTimer
             }
         }
 
-        //最低表示行数を適用
-        public void ModifierMinimumHeight<T, S>(List<S> list, double MinLineHeight) where S : ViewPanelItem<T>
+        public GlyphTypeface GetGlyphTypeface(string fontName, bool isBold)
         {
-            if (MinLineHeight <= 0) return;
+            try
+            {
+                var fontWeights = (isBold == true ? FontWeights.Bold : FontWeights.Normal);
+                Typeface typeface = new Typeface(new FontFamily(fontName),
+                                                FontStyles.Normal, fontWeights, FontStretches.Normal);
+
+                GlyphTypeface glyphTypeface;
+                if (typeface.TryGetGlyphTypeface(out glyphTypeface) == false)
+                {
+                    typeface = new Typeface(new FontFamily(System.Drawing.SystemFonts.DefaultFont.Name),
+                                                    FontStyles.Normal, fontWeights, FontStretches.Normal);
+
+                    if (typeface.TryGetGlyphTypeface(out glyphTypeface) == false)
+                    {
+                        MessageBox.Show("フォント指定が不正です");
+                        return null;
+                    }
+                }
+                return glyphTypeface;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                return null;
+            }
+        }
+
+        //最低表示行数を適用
+        public void ModifierMinimumLine<T, S>(List<S> list, double MinimumLine) where S : ViewPanelItem<T>
+        {
+            if (MinimumLine <= 0) return;
 
             list.Sort((x, y) => Math.Sign(x.LeftPos - y.LeftPos) * 2 + Math.Sign(x.TopPos - y.TopPos));
-            double minimum = (Settings.Instance.FontSizeTitle + 2) * MinLineHeight;
+            double minimum = (Settings.Instance.FontSizeTitle + 2) * MinimumLine;
             double lastLeft = double.MinValue;
             double lastBottom = 0;
             foreach (S item in list)
@@ -275,72 +312,6 @@ namespace EpgTimer
                 //listView_event.ScrollIntoView(listView_event.Items[listView_event.Items.Count-1]);
                 //int scrollpos = ((listView_event.SelectedIndex - 5) >= 0 ? listView_event.SelectedIndex - 5 : 0);
                 //listView_event.ScrollIntoView(listView_event.Items[scrollpos]);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
-
-        public void ScrollToFindItem<T>(ViewPanelItem<T> target_item, ScrollViewer scrollViewer, Canvas canvas, bool IsMarking)
-        {
-            //TunerReserveViewとProgramViewをくくれたらそっちに移動する
-            try
-            {
-                //可能性低いが0では無さそう
-                if (target_item == null) return;
-
-                scrollViewer.ScrollToHorizontalOffset(target_item.LeftPos - 100);
-                scrollViewer.ScrollToVerticalOffset(target_item.TopPos - 100);
-
-                //マーキング要求のあるとき
-                if (IsMarking == true)
-                {
-                    Rectangle rect = new Rectangle();
-
-                    rect.Stroke = new SolidColorBrush(Colors.Red);
-                    rect.StrokeThickness = 5;
-                    rect.Opacity = 1;
-                    rect.Fill = System.Windows.Media.Brushes.Transparent;
-                    rect.Effect = new System.Windows.Media.Effects.DropShadowEffect() { BlurRadius = 10 };
-
-                    rect.Width = target_item.Width + 20;
-                    rect.Height = target_item.Height + 20;
-                    rect.IsHitTestVisible = false;
-
-                    Canvas.SetLeft(rect, target_item.LeftPos - 10);
-                    Canvas.SetTop(rect, target_item.TopPos - 10);
-                    Canvas.SetZIndex(rect, 20);
-
-                    // 一定時間枠を表示する
-                    var notifyTimer = new System.Windows.Threading.DispatcherTimer();
-                    notifyTimer.Interval = TimeSpan.FromSeconds(0.1);
-                    TimeSpan RemainTime = TimeSpan.FromSeconds(Settings.Instance.DisplayNotifyJumpTime);
-                    int Brinks = 3;
-                    bool IsDisplay = false;
-                    notifyTimer.Tick += (sender, e) =>
-                    {
-                        RemainTime -= notifyTimer.Interval;
-                        if (RemainTime <= TimeSpan.FromSeconds(0))
-                        {
-                            canvas.Children.Remove(rect);
-                            notifyTimer.Stop();
-                        }
-                        else if (IsDisplay == false)
-                        {
-                            canvas.Children.Add(rect);
-                            IsDisplay = true;
-                        }
-                        else if (Brinks > 0)
-                        {
-                            canvas.Children.Remove(rect);
-                            IsDisplay = false;
-                            Brinks--;
-                        }
-                    };
-
-                    notifyTimer.Start();
-                }
             }
             catch (Exception ex)
             {

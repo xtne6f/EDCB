@@ -9,6 +9,8 @@ namespace EpgTimer
 {
     public class ViewPanelItem<T>
     {
+        protected ViewUtil vutil = CommonManager.Instance.VUtil;
+
         protected T data = default(T);
 
         public ViewPanelItem()
@@ -68,7 +70,7 @@ namespace EpgTimer
         {
             get
             {
-                return CommonManager.Instance.VUtil.EventDataBorderBrush(EventInfo);
+                return CommonManager.Instance.VUtil.EpgDataContentBrush(EventInfo);
             }
         }
     }

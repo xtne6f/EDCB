@@ -10,6 +10,7 @@ namespace EpgTimer
     public class EpgAutoDataItem
     {
         private MenuUtil mutil = CommonManager.Instance.MUtil;
+        private ViewUtil vutil = CommonManager.Instance.VUtil;
 
         public EpgAutoDataItem() { }
         public EpgAutoDataItem(EpgAutoAddData item)
@@ -453,20 +454,13 @@ namespace EpgTimer
         {
             get
             {
-                Brush color1 = Brushes.Gainsboro;
-                if (this.EpgAutoAddInfo.searchInfo.contentList.Count > 0 && this.EpgAutoAddInfo.searchInfo.notContetFlag == 0)
+                if (EpgAutoAddInfo == null) return Brushes.White;
+                //
+                if (EpgAutoAddInfo.searchInfo.contentList.Count == 0 || EpgAutoAddInfo.searchInfo.notContetFlag != 0)
                 {
-                    byte content_nibble_level_1 = this.EpgAutoAddInfo.searchInfo.contentList[0].content_nibble_level_1;
-                    if (content_nibble_level_1 <= 0x0B || content_nibble_level_1 == 0x0F && Settings.Instance.ContentColorList.Count > content_nibble_level_1)
-                    {
-                        try
-                        {
-                            color1 = CommonManager.Instance.CustContentColorList[content_nibble_level_1];
-                        }
-                        catch { }
-                    }
+                    return Brushes.Gainsboro;
                 }
-                return color1;
+                return vutil.EpgDataContentBrush(EpgAutoAddInfo.searchInfo.contentList);
             }
         }
 

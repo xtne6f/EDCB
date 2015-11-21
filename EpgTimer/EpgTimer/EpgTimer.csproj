@@ -196,7 +196,6 @@
     <Compile Include="Common\PipeServer.cs" />
     <Compile Include="Common\RecNamePluginClass.cs" />
     <Compile Include="Common\WritePlugInClass.cs" />
-    <Compile Include="DefineClass\ColorSelectionItem.cs" />
     <Compile Include="Common\ChSet5Class.cs" />
     <Compile Include="Common\ColorDefClass.cs" />
     <Compile Include="DefineClass\DateItem.cs" />
@@ -233,6 +232,9 @@
     </Compile>
     <Compile Include="Setting\SetDefSearchSettingWindow.xaml.cs">
       <DependentUpon>SetDefSearchSettingWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UserCtrlView\PanelViewBase.cs">
+      <SubType>Code</SubType>
     </Compile>
     <Compile Include="UserCtrlView\RecFolderWindow.xaml.cs">
       <DependentUpon>RecFolderWindow.xaml</DependentUpon>

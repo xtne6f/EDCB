@@ -68,6 +68,9 @@ namespace EpgTimer
         public List<Brush> CustContentColorList { get; private set; }
         public SolidColorBrush CustTitle1Color { get; private set; }
         public SolidColorBrush CustTitle2Color { get; private set; }
+        public SolidColorBrush CustTunerServiceColor { get; private set; }
+        public SolidColorBrush CustTunerTextColor { get; private set; }
+        public List<SolidColorBrush> CustTunerServiceColorPri { get; private set; }
         public List<Brush> CustTimeColorList { get; private set; }
         public Brush CustServiceColor { get; private set; }
         public SolidColorBrush ResDefBackColor { get; private set; }
@@ -456,6 +459,10 @@ namespace EpgTimer
             if( CustContentColorList == null )
             {
                 CustContentColorList = new List<Brush>();
+            }
+            if (CustTunerServiceColorPri == null)
+            {
+                CustTunerServiceColorPri = new List<SolidColorBrush>();
             }
             if (CustTimeColorList == null)
             {
@@ -1461,6 +1468,14 @@ namespace EpgTimer
 
                 CustTitle1Color = (SolidColorBrush)_GetColorBrush(Settings.Instance.TitleColor1, Settings.Instance.TitleCustColor1);
                 CustTitle2Color = (SolidColorBrush)_GetColorBrush(Settings.Instance.TitleColor2, Settings.Instance.TitleCustColor2);
+                CustTunerServiceColor = (SolidColorBrush)_GetColorBrush(Settings.Instance.TunerServiceColors[0], Settings.Instance.TunerServiceCustColors[0]);
+                CustTunerTextColor = (SolidColorBrush)_GetColorBrush(Settings.Instance.TunerServiceColors[1], Settings.Instance.TunerServiceCustColors[1]);
+
+                CustTunerServiceColorPri.Clear();
+                for (int i = 2; i < 2 + 5; i++)
+                {
+                    CustTunerServiceColorPri.Add((SolidColorBrush)_GetColorBrush(Settings.Instance.TunerServiceColors[i], Settings.Instance.TunerServiceCustColors[i]));
+                }
 
                 CustTimeColorList.Clear();
                 for (int i = 0; i < Settings.Instance.TimeColorList.Count; i++)
