@@ -11,10 +11,8 @@ namespace EpgTimer
     //設定画面用
     public static class MenuSettingDataEx
     {
-        static public List<MenuSettingData> Clone(this List<MenuSettingData> src)
-        { return src == null ? null : src.Select(item => item.Clone()).ToList(); }
-        static public List<MenuSettingData.CmdSaveData> Clone(this List<MenuSettingData.CmdSaveData> src)
-        { return src == null ? null : src.Select(item => item.Clone()).ToList(); }
+        public static List<MenuSettingData> Clone(this List<MenuSettingData> src) { return MenuSettingData.Clone(src); }
+        public static List<MenuSettingData.CmdSaveData> Clone(this List<MenuSettingData.CmdSaveData> src) { return MenuSettingData.CmdSaveData.Clone(src); }
     }
     public class MenuSettingData
     {
@@ -28,6 +26,7 @@ namespace EpgTimer
             public List<ShortCutData> ShortCuts { get; set; }
 
             public CmdSaveData() { ShortCuts = new List<ShortCutData>(); }
+            public static List<CmdSaveData> Clone(List<CmdSaveData> src) { return CopyObj.Clone(src, CmdSaveData.CopyData); }
             public CmdSaveData Clone() { return CopyObj.Clone(this, CopyData); }
             protected static void CopyData(CmdSaveData src, CmdSaveData dest)
             {
@@ -152,6 +151,7 @@ namespace EpgTimer
             EasyMenuItems = new List<CmdSaveData>();
             ManualMenuItems = new List<CtxmSetting>();
         }
+        public static List<MenuSettingData> Clone(List<MenuSettingData> src) { return CopyObj.Clone(src, MenuSettingData.CopyData); }
         public MenuSettingData Clone() { return CopyObj.Clone(this, CopyData); }
         protected static void CopyData(MenuSettingData src, MenuSettingData dest)
         {
@@ -190,6 +190,7 @@ namespace EpgTimer
             data.Items.ForEach(item => Items.Add(item.Header));
         }
 
+        public static List<CtxmSetting> Clone(List<CtxmSetting> src) { return CopyObj.Clone(src, CtxmSetting.CopyData); }
         public CtxmSetting Clone() { return CopyObj.Clone(this, CopyData); }
         protected static void CopyData(CtxmSetting src, CtxmSetting dest)
         {
@@ -200,9 +201,7 @@ namespace EpgTimer
 
     public static class CtxmSettingEx
     {
-        static public List<CtxmSetting> Clone(this List<CtxmSetting> src)
-        { return src == null ? null : src.Select(item => item.Clone()).ToList(); ; }
-
+        public static List<CtxmSetting> Clone(this List<CtxmSetting> src) { return CtxmSetting.Clone(src); }
         public static CtxmSetting FindData(this List<CtxmSetting> list, CtxmCode code)
         { return list.Find(data => data.ctxmCode == code); }
     }
