@@ -35,11 +35,6 @@ namespace EpgTimer {
             return 0;
         }
 
-        /// <summary>
-        /// 番組表へジャンプした際に非表示にしたSearchWindow
-        /// </summary>
-        public static SearchWindow unvisibleSearchWindow = null;
-
         public BlackoutWindow(Window owner0) {
             InitializeComponent();
             //

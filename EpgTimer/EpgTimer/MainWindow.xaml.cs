@@ -545,6 +545,7 @@ namespace EpgTimer
             autoAddView.UpdateAutoAddInfo();
             recInfoView.UpdateInfo();
             epgView.UpdateEpgData();
+            SearchWindow.UpdateInfo(this);
             return true;
         }
 
@@ -803,6 +804,7 @@ namespace EpgTimer
                     recInfoView.UpdateInfo();
                     autoAddView.UpdateAutoAddInfo();
                     epgView.UpdateSetting();
+                    SearchWindow.UpdateInfo(this, true);
                     ResetButtonView();
                     ResetTaskMenu();
                     RefreshMenu(false);
@@ -824,12 +826,12 @@ namespace EpgTimer
             tunerReserveView.RefreshMenu();
             recInfoView.RefreshMenu();
             autoAddView.RefreshMenu();
-
             //epgViewでは設定全体の更新の際に、EPG再描画に合わせてメニューも更新されるため。
             if (MenuOnly == true)
             {
                 epgView.RefreshMenu();
             }
+            SearchWindow.RefreshMenu(this);
 
             RefreshButton();
         }
@@ -839,19 +841,31 @@ namespace EpgTimer
             mBinds.ResetInputBindings(this);
         }
 
+        /// <summary>番組表へジャンプした際に非表示にしたSearchWindow</summary>
+        private SearchWindow hideSearchWindow = null;
+        public bool HasHideSearchWindow { get { return hideSearchWindow != null; } }
+        public void SetHideSearchWindow(SearchWindow win)
+        {
+            // 非表示で保存するSearchWindowは最新のもの1つだけ
+            if (hideSearchWindow != null && hideSearchWindow != win)
+            {
+                hideSearchWindow.Close();
+            }
+            hideSearchWindow = win;
+            EmphasizeSearchButton(this.HasHideSearchWindow);
+        }
+
         void searchButton_Click(object sender, ExecutedRoutedEventArgs e)
         {
             // Hide()したSearchWindowを復帰
-            foreach (Window win1 in this.OwnedWindows)
+            if (this.HasHideSearchWindow == true)
             {
-                if (win1 is SearchWindow)
-                {
-                    //他で予約情報が更新されてたりするので情報を再読み込みさせる。その後はモーダルウィンドウに。
-                    //ウィンドウ管理を真面目にやればモードレスもありか
-                    (win1 as SearchWindow).UpdateSearch();
-                    win1.ShowDialog();
-                    return;
-                }
+                //ウィンドウ管理を真面目にやればモードレスもありか
+                Window win = hideSearchWindow;
+                EmphasizeSearchButton(false);
+                hideSearchWindow = null;
+                win.ShowDialog();
+                return;
             }
             //
             CommonManager.Instance.MUtil.OpenSearchEpgDialog(this);
@@ -1047,6 +1061,7 @@ namespace EpgTimer
                             tunerReserveView.UpdateInfo();
                             autoAddView.UpdateAutoAddInfo();
                             recInfoView.UpdateInfo();
+                            SearchWindow.UpdateInfo(this, true);
 
                             taskTray.Text = GetTaskTrayReserveInfoText();
                         }));
@@ -1060,6 +1075,7 @@ namespace EpgTimer
                             CommonManager.Instance.DB.ReloadEpgData();
                             reserveView.UpdateInfo();
                             epgView.UpdateEpgData();
+                            SearchWindow.UpdateInfo(this);
                         }));
                     }
                     break;
@@ -1293,6 +1309,7 @@ namespace EpgTimer
                     TaskTrayBaloonWork("録画開始", status.param4);
                     reserveView.UpdateInfo();
                     epgView.UpdateReserveData();
+                    SearchWindow.UpdateInfo(this, true);
                     break;
                 case UpdateNotifyItem.RecEnd:
                     TaskTrayBaloonWork("録画終了", status.param4);
@@ -1320,6 +1337,7 @@ namespace EpgTimer
                         CommonManager.Instance.DB.ReloadEpgData();
                         reserveView.UpdateInfo();//ジャンルや番組内容などが更新される
                         epgView.UpdateEpgData();
+                        SearchWindow.UpdateInfo(this);
                         GC.Collect();
                     }
                     break;
@@ -1333,6 +1351,7 @@ namespace EpgTimer
                         autoAddView.UpdateAutoAddInfo();
                         epgView.UpdateReserveData();
                         tunerReserveView.UpdateInfo();
+                        SearchWindow.UpdateInfo(this, true);
                     }
                     break;
                 case UpdateNotifyItem.RecInfo:
@@ -1356,9 +1375,11 @@ namespace EpgTimer
 
                         if (Settings.Instance.DisplayReserveAutoAddMissing == true)
                         {
+                            //UpdateNotifyItem.ReserveInfoが走らなくても、表示を更新する必要がある。
                             reserveView.UpdateInfo();
                             epgView.UpdateReserveData();
                             tunerReserveView.UpdateInfo();
+                            SearchWindow.UpdateInfo(this, true);
                         }
                     }
                     break;
@@ -1373,9 +1394,11 @@ namespace EpgTimer
 
                         if (Settings.Instance.DisplayReserveAutoAddMissing == true)
                         {
+                            //UpdateNotifyItem.ReserveInfoが走らなくても、表示を更新する必要がある。
                             reserveView.UpdateInfo();
                             epgView.UpdateReserveData();
                             tunerReserveView.UpdateInfo();
+                            SearchWindow.UpdateInfo(this, true);
                         }
                     }
                     break;
@@ -1388,6 +1411,7 @@ namespace EpgTimer
                             autoAddView.UpdateAutoAddInfo();
                             epgView.UpdateReserveData();
                             tunerReserveView.UpdateInfo();
+                            SearchWindow.UpdateInfo(this, true);
                         }
                     }
                     break;
@@ -1446,6 +1470,7 @@ namespace EpgTimer
                         tunerReserveView.UpdateInfo();
                         autoAddView.UpdateAutoAddInfo();
                         epgView.UpdateReserveData();
+                        SearchWindow.UpdateInfo(this, true);
                     }
                 }
             }

@@ -11,8 +11,6 @@ namespace EpgTimer
 {
     public class MenuManager
     {
-        public DateTime? LastMenuSettingTime { get; private set; }
-
         private Dictionary<CtxmCode, CtxmData> DefCtxmData;//デフォルトのコンテキストメニュー
         private Dictionary<CtxmCode, List<ICommand>> DefCtxmCmdList;//デフォルトのコンテキストメニューのコマンドリスト
 
@@ -295,8 +293,6 @@ namespace EpgTimer
 
         public void ReloadWorkData()
         {
-            LastMenuSettingTime = DateTime.Now;
-
             MC.SetWorkCmdOptions();
             SetWorkCxtmData();
             SetWorkGestureCmdList();

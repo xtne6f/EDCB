@@ -93,7 +93,7 @@ namespace EpgTimer
         {
             EpgCmds.DragCancel.Execute(null, this);
 
-            return lstCtrl.ReloadInfoData(dataList =>
+            bool ret = lstCtrl.ReloadInfoData(dataList =>
             {
                 ErrCode err = CommonManager.Instance.DB.ReloadEpgAutoAddInfo();
                 if (CommonManager.CmdErrMsgTypical(err, "情報の取得", this) == false) return false;
@@ -105,6 +105,10 @@ namespace EpgTimer
                 dragMover.NotSaved = false;
                 return true;
             });
+
+            //行選択の更新
+            SearchWindow.UpdateEpgAutoAddViewSelection(Application.Current.MainWindow);
+            return ret;
         }
         //SearchWindowからのリスト選択状態の変更を優先するために、MouseUpイベントによる
         //listViewによるアイテム選択処理より後でダイアログを出すようにする。

@@ -928,8 +928,8 @@ namespace EpgTimer
                 if (Data != null)
                 {
                     dlg.SetChgAutoAddID(Data.dataID);
-                    dlg.SetSearchDefKey(Data.searchInfo);
-                    dlg.SetRecInfoDef(Data.recSetting);
+                    dlg.SetSearchKey(Data.searchInfo);
+                    dlg.SetRecSetting(Data.recSetting);
                 }
                 return dlg.ShowDialog();
             }
@@ -965,7 +965,7 @@ namespace EpgTimer
                 key.serviceList.Clear();
                 key.serviceList.Add((Int64)sidKey);
 
-                dlg.SetSearchDefKey(key);
+                dlg.SetSearchKey(key);
                 dlg.ShowDialog();
             }
             catch (Exception ex)

@@ -288,11 +288,6 @@ namespace EpgTimer
 
                 var mainWindow = (MainWindow)Application.Current.MainWindow;
                 mainWindow.RefreshMenu(true);
-
-                if (dlg.Owner is SearchWindow)
-                {
-                    (dlg.Owner as SearchWindow).RefreshMenu();
-                }
             }
         }
         protected bool mcc_chgRecSetting(List<RecSettingData> infoList, ExecutedRoutedEventArgs e, Control owner = null)

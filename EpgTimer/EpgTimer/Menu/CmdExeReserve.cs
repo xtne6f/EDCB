@@ -267,9 +267,14 @@ namespace EpgTimer
                 {
                     menu.Header = "簡易予約";
                     //予約データの有無で切り替える。
+
                     if (view == CtxmCode.SearchWindow)
                     {
-                        menu.ToolTip = "このダイアログの録画設定で予約する";
+                        var recInfo = new RecSettingData();
+                        (this.Owner as SearchWindow).GetRecSetting(ref recInfo);
+                        RecPresetItem preset = recInfo.LookUpPreset();
+                        string text = preset.ID == 0xFFFFFFFF ? "カスタム設定" : string.Format("プリセット'{0}'", preset.DisplayName);
+                        menu.ToolTip = string.Format("このダイアログの録画設定({0})で予約する", text);
                     }
                     else
                     {
@@ -294,6 +299,9 @@ namespace EpgTimer
             }
             else if (menu.Tag == EpgCmds.JumpReserve || menu.Tag == EpgCmds.JumpTuner)
             {
+                //先にサブウィンドウ関係をチェック
+                if (mcs_ctxmLoading_CheckSearchSubWindow(menu) == true) return;
+
                 //メニュー実行時に選択されるアイテムが予約でないときは無効
                 menu.IsEnabled = (headData as ReserveData != null);
 
@@ -306,6 +314,7 @@ namespace EpgTimer
             }
             else if (menu.Tag == EpgCmds.JumpTable)
             {
+                if (mcs_ctxmLoading_CheckSearchSubWindow(menu) == true) return;
                 if (view != CtxmCode.EpgView) return;
 
                 //標準モードでは非表示。
@@ -314,16 +323,9 @@ namespace EpgTimer
                     menu.Visibility = Visibility.Collapsed;
                 }
             }
-            else if (menu.Tag == EpgCmds.ReSearch2 || menu.Tag == EpgCmds.JumpTable)
+            else if (menu.Tag == EpgCmds.ReSearch2)
             {
-                if (view != CtxmCode.SearchWindow) return;
-
-                if (((SearchWindow)ctxm.Tag).Owner is SearchWindow)
-                {
-                    menu.IsEnabled = false;
-                    menu.Header += menu.Header.ToString().EndsWith("(無効)") ? "" : "(無効)";
-                    menu.ToolTip = "サブウィンドウでは無効になります。";
-                }
+                mcs_ctxmLoading_CheckSearchSubWindow(menu);
             }
             else if (menu.Tag == EpgCmdsEx.OpenFolderMenu)
             {
@@ -336,6 +338,17 @@ namespace EpgTimer
                     item.IsChecked = ((item.CommandParameter as EpgCmdParam).ID == (int)ctxm.Tag);
                 }
             }
+        }
+        protected bool mcs_ctxmLoading_CheckSearchSubWindow(MenuItem menu)
+        {
+            bool isHit = (this.Owner is SearchWindow) == true && ((SearchWindow)this.Owner).IsThisSubWindow == true;
+            if (isHit == true)
+            {
+                menu.IsEnabled = false;
+                menu.Header += menu.Header.ToString().EndsWith("(無効)") ? "" : "(無効)";
+                menu.ToolTip = "サブウィンドウでは無効になります。";
+            }
+            return isHit;
         }
     }
 }
