@@ -244,6 +244,7 @@ namespace EpgTimer
         private bool nwTvModeTCP;
         private string filePlayExe;
         private string filePlayCmd;
+        private bool filePlayOnAirWithExe;
         private bool openFolderWithFileDialog;
         private List<IEPGStationInfo> iEpgStationList;
         private MenuSettingData menuSet;
@@ -749,6 +750,11 @@ namespace EpgTimer
             get { return filePlayCmd; }
             set { filePlayCmd = value; }
         }
+        public bool FilePlayOnAirWithExe
+        {
+            get { return filePlayOnAirWithExe; }
+            set { filePlayOnAirWithExe = value; }
+        }
         public bool OpenFolderWithFileDialog
         {
             get { return openFolderWithFileDialog; }
@@ -1110,6 +1116,7 @@ namespace EpgTimer
             nwTvModeTCP = false;
             filePlayExe = "";
             filePlayCmd = "\"$FilePath$\"";
+            filePlayOnAirWithExe = false;
             openFolderWithFileDialog = false;
             iEpgStationList = new List<IEPGStationInfo>();
             menuSet = new MenuSettingData();

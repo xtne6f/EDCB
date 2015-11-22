@@ -205,7 +205,15 @@ namespace EpgTimer
         {
             if (dataList.Count != 0)
             {
-                CommonManager.Instance.TVTestCtrl.StartTimeShift(dataList[0].ReserveID);
+                if (CommonManager.Instance.NWMode == false && Settings.Instance.FilePlayOnAirWithExe == true
+                    && dataList[0].RecSetting.RecMode != 4)//視聴モードは録画ファイル無いので対象外
+                {
+                    mutil.FilePlay(dataList[0]);
+                }
+                else
+                {
+                    CommonManager.Instance.TVTestCtrl.StartTimeShift(dataList[0].ReserveID);
+                }
                 IsCommandExecuted = true;
             }
         }
@@ -326,6 +334,23 @@ namespace EpgTimer
             else if (menu.Tag == EpgCmds.ReSearch2)
             {
                 mcs_ctxmLoading_CheckSearchSubWindow(menu);
+            }
+            else if (menu.Tag == EpgCmds.Play)
+            {
+                menu.IsEnabled = false;
+                menu.ToolTip = null;
+                var info = headData as ReserveData;
+                if (info != null && info.RecSetting.RecMode != 5)
+                {
+                    if (info.IsOnRec() == true)
+                    {
+                        menu.IsEnabled = true;
+                    }
+                    else
+                    {
+                        menu.ToolTip = "まだ録画が開始されていません。";
+                    }
+                }
             }
             else if (menu.Tag == EpgCmdsEx.OpenFolderMenu)
             {

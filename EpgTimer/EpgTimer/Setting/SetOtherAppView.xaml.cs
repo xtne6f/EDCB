@@ -44,6 +44,7 @@ namespace EpgTimer.Setting
 
                 textBox_playExe.Text = Settings.Instance.FilePlayExe;
                 textBox_playCmd.Text = Settings.Instance.FilePlayCmd;
+                checkBox_playOnAirWithExe.IsChecked = Settings.Instance.FilePlayOnAirWithExe;
 
                 string[] files = Directory.GetFiles(SettingPath.SettingFolderPath, "*.ChSet4.txt");
                 SortedList<Int32, TunerInfo> tunerInfo = new SortedList<Int32, TunerInfo>();
@@ -148,7 +149,7 @@ namespace EpgTimer.Setting
 
             Settings.Instance.FilePlayExe = textBox_playExe.Text;
             Settings.Instance.FilePlayCmd = textBox_playCmd.Text;
-
+            Settings.Instance.FilePlayOnAirWithExe = checkBox_playOnAirWithExe.IsChecked == true;
         }
 
         private void button_exe_Click(object sender, RoutedEventArgs e)

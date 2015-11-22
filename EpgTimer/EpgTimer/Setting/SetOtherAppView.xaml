@@ -40,6 +40,7 @@
                     <Label Content="コマンドライン引数" Height="28" HorizontalAlignment="Left" Margin="16,38,0,0" Name="label7" VerticalAlignment="Top" />
                     <TextBox Height="24" HorizontalAlignment="Left" Margin="138,38,0,0" Name="textBox_playCmd" VerticalAlignment="Top" Width="456" />
                     <Label Content="($FilePath$マクロでファイルパスを指定できます)" Height="28" HorizontalAlignment="Left" Margin="138,68,0,0" Name="label8" VerticalAlignment="Top" />
+                    <CheckBox Content="追っかけ再生にも使用する(EpgTimerNWでは無効)" Height="16" HorizontalAlignment="Left" Margin="138,102,0,0" Name="checkBox_playOnAirWithExe" VerticalAlignment="Top" />
                 </Grid>
             </TabItem>
         </TabControl>
