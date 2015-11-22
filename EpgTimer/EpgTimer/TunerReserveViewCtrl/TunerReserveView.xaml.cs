@@ -61,7 +61,7 @@ namespace EpgTimer.TunerReserveViewCtrl
             Canvas.SetTop(popupItem, Math.Floor(viewInfo.TopPos));
             popupItem.Width = Math.Ceiling(viewInfo.Width);
             popupItem.MinHeight = Math.Ceiling(viewInfo.Height);
-            popupItemTextArea.Margin = new Thickness(1);
+            popupItemTextArea.Margin = new Thickness(1, -1, 1, 1);
 
             double sizeTitle = Settings.Instance.TunerFontSizeService;
             double sizeNormal = Settings.Instance.TunerFontSize;

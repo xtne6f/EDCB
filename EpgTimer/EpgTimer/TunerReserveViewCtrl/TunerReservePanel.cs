@@ -139,7 +139,7 @@ namespace EpgTimer.TunerReserveViewCtrl
 
                         //分
                         string min = info.ReserveInfo.StartTime.Minute.ToString("d02");
-                        if (RenderText(min, dc, glyphTypefaceNormal, colorTitle, sizeMin, info.Width - 4, dInfoHeight - 4, info.LeftPos, dInfoTopPos, ref useHeight) == false)
+                        if (RenderText(min, dc, glyphTypefaceNormal, colorTitle, sizeMin, info.Width - 4, dInfoHeight - 4, info.LeftPos, dInfoTopPos - 2, ref useHeight) == false)
                         {
                             info.TitleDrawErr = true;
                             continue;
@@ -150,7 +150,7 @@ namespace EpgTimer.TunerReserveViewCtrl
                         {
                             string serviceName = info.ReserveInfo.StationName
                                 + "(" + CommonManager.ConvertNetworkNameText(info.ReserveInfo.OriginalNetworkID) + ")";
-                            if (RenderText(serviceName, dc, glyphTypefaceSeervice, colorTitle, sizeTitle, info.Width - 6 - indentTitle, dInfoHeight - 6 - totalHeight, info.LeftPos + indentTitle, dInfoTopPos + totalHeight, ref useHeight, Settings.Instance.TunerServiceNoWrap) == false)
+                            if (RenderText(serviceName, dc, glyphTypefaceSeervice, colorTitle, sizeTitle, info.Width - 6 - indentTitle, dInfoHeight - 6 - totalHeight, info.LeftPos + indentTitle, dInfoTopPos - 2 + totalHeight, ref useHeight, Settings.Instance.TunerServiceNoWrap) == false)
                             {
                                 info.TitleDrawErr = true;
                                 continue;
@@ -161,7 +161,7 @@ namespace EpgTimer.TunerReserveViewCtrl
                         //番組名
                         if (info.ReserveInfo.Title.Length > 0)
                         {
-                            if (RenderText(info.ReserveInfo.Title, dc, glyphTypefaceNormal, colorNormal, sizeNormal, info.Width - 6 - indentNormal, dInfoHeight - 6 - totalHeight, info.LeftPos + indentNormal, dInfoTopPos + totalHeight, ref useHeight) == false)
+                            if (RenderText(info.ReserveInfo.Title, dc, glyphTypefaceNormal, colorNormal, sizeNormal, info.Width - 6 - indentNormal, dInfoHeight - 6 - totalHeight, info.LeftPos + indentNormal, dInfoTopPos - 2 + totalHeight, ref useHeight) == false)
                             {
                                 info.TitleDrawErr = true;
                                 continue;

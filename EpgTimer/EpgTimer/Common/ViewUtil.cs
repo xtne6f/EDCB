@@ -252,10 +252,10 @@ namespace EpgTimer
                     lastLeft = item.LeftPos;
                     lastBottom = double.MinValue;
                 }
-                item.Height = Math.Max(item.Height, minimum);
+                item.Height = Math.Ceiling(Math.Max(item.Height, minimum));
                 if (item.TopPos < lastBottom)
                 {
-                    item.Height = Math.Max(item.TopPos + item.Height - lastBottom, minimum);
+                    item.Height = Math.Ceiling(Math.Max(item.TopPos + item.Height - lastBottom, minimum));
                     item.TopPos = lastBottom;
                 }
                 lastBottom = item.TopPos + item.Height;

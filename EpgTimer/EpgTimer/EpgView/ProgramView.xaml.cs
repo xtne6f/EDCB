@@ -96,7 +96,7 @@ namespace EpgTimer.EpgView
                 titleText.FontSize = sizeTitle;
                 titleText.FontWeight = titleWeight;
                 titleText.Foreground = CommonManager.Instance.CustTitle1Color;
-                titleText.Margin = new Thickness(indentTitle, 0, 0, Math.Floor(sizeTitle / 3) - 1);
+                titleText.Margin = new Thickness(indentTitle, 0, 0, Math.Floor(sizeTitle / 3));
                 titleText.LineHeight = sizeTitle + 2;
 
                 infoText.Text = System.Text.RegularExpressions.Regex.Replace(epgInfo.ShortInfo.text_char, "\\w", "$0\u200b");
@@ -116,14 +116,14 @@ namespace EpgTimer.EpgView
             //予約枠の表示
             double marginEpg = 1;
             double marginRes = marginEpg + 3;
-            popupItemTextArea.Margin = new Thickness(marginEpg, marginEpg - marginEpg, marginEpg, marginEpg);
+            popupItemTextArea.Margin = new Thickness(marginEpg, marginEpg - 2, marginEpg, marginEpg);
             if (resPopItem != null)
             {
                 SetReserveBorder(popupItemBorder, resPopItem);
                 popupItemBorder.Visibility = Visibility.Visible;
                 if (Settings.Instance.ReserveRectBackground == false)
                 {
-                    popupItemTextArea.Margin = new Thickness(marginRes, marginRes - marginEpg, marginRes, marginRes);
+                    popupItemTextArea.Margin = new Thickness(marginRes, marginRes - 1, marginRes, marginRes);
                 }
             }
             else
