@@ -227,8 +227,8 @@
                                         <TextBox Height="24" HorizontalAlignment="Left" Margin="426,36,0,0" Name="textBox_fontTunerSize" VerticalAlignment="Top" Width="39" />
                                     </Grid>
                                     <Grid x:Name="grid_TunerFontColor">
-                                        <ComboBox Style="{StaticResource colorCombo}" Margin="12,6,0,0" Width="98" Name="comboBox_tunerFontColorService" Tag="0" />
-                                        <ComboBox Style="{StaticResource colorCombo}" Margin="12,36,0,0" Width="98" Tag="1"/>
+                                        <ComboBox Style="{StaticResource colorCombo}" Margin="12,6,0,0" Width="96" Name="comboBox_tunerFontColorService" Tag="0" />
+                                        <ComboBox Style="{StaticResource colorCombo}" Margin="12,36,0,0" Width="96" Tag="1"/>
                                         <Button Style="{StaticResource colorButton}" Margin="116,6,0,0" Name="button_tunerFontCustColorService" Tag="0" />
                                         <Button Style="{StaticResource colorButton}" Margin="116,36,0,0" Tag="1" />
                                     </Grid>
