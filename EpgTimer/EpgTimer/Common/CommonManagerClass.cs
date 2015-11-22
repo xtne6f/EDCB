@@ -316,7 +316,7 @@ namespace EpgTimer
                     if (ContentKindList == null)
                     {
                         ContentKindList = new List<ContentKindInfo>(ContentKindDictionary.Values);
-                        ContentKindList.Sort((i1, i2) => (int)i1.SortKey - (int)i2.SortKey);
+                        ContentKindList.Sort((i1, i2) => i1.SortKey - i2.SortKey);
                     }
                 }
             }
