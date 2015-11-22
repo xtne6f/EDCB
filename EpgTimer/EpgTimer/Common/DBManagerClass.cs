@@ -62,14 +62,6 @@ namespace EpgTimer
         {
             get { return epgAutoAddList; }
         }
-        public Dictionary<UInt32, EpgAutoAddDataAppend> EpgAutoAddAppendList
-        {
-            get { return epgAutoAddAppendList; }
-        }
-        public Dictionary<UInt32, bool> ReserveAutoAddMissing
-        {
-            get { return reserveAutoAddMissing; }
-        }
         public EpgAutoAddDataAppend GetEpgAutoAddDataAppend(EpgAutoAddData master)
         {
             if (master == null) return null;
@@ -96,10 +88,10 @@ namespace EpgTimer
                     cmd.SendSearchPgByKey(keyList, ref list_list);
 
                     //通常あり得ないが、コマンド成功にもかかわらず何か問題があった場合は飛ばす
-                    if (EpgAutoAddList.Count == list_list.Count)
+                    if (epgAutoAddList.Count == list_list.Count)
                     {
                         int i = 0;
-                        foreach (EpgAutoAddData item in EpgAutoAddList.Values)
+                        foreach (EpgAutoAddData item in epgAutoAddList.Values)
                         {
                             epgAutoAddAppendList.Add(item.dataID, new EpgAutoAddDataAppend(item, list_list[i++]));
                         }
@@ -114,6 +106,7 @@ namespace EpgTimer
             //予約情報との突き合わせが古い場合
             if (updateAutoAddAppendReserveInfo == true)
             {
+                ReloadReserveInfo();//notify残ってれば更新
                 foreach (EpgAutoAddDataAppend item in epgAutoAddAppendList.Values)
                 {
                     item.updateCounts = true;
@@ -137,23 +130,26 @@ namespace EpgTimer
 
             if (reserveAutoAddMissing == null)
             {
+                //notify残ってれば更新
+                ReloadReserveInfo();//通常残ってないはず
+                ReloadEpgAutoAddInfo();
+                ReloadManualAutoAddInfo();
+
                 //EPG自動登録リスト
-                ReloadEpgAutoAddInfo();//notifyかかってれば更新
-                var EpgAutoResList = new List<ReserveData>();
-                foreach (var data in EpgAutoAddList.Values)
+                var epgAutoResList = new List<ReserveData>();
+                foreach (var data in epgAutoAddList.Values)
                 {
-                    EpgAutoResList.AddRange(data.GetReserveList());
+                    epgAutoResList.AddRange(data.GetReserveList());
                 }
-                var EpgAutoResDict = EpgAutoResList.Distinct().ToDictionary(data => data.ReserveID, data => data);
+                var epgAutoResDict = epgAutoResList.Distinct().ToDictionary(data => data.ReserveID, data => data);
 
                 //マニュアル自動登録リスト
-                ReloadManualAutoAddInfo();//notifyかかってれば更新
-                var ManualAutoResList = new List<ReserveData>();
-                foreach (var data in ManualAutoAddList.Values)
+                var manualAutoResList = new List<ReserveData>();
+                foreach (var data in manualAutoAddList.Values)
                 {
-                    ManualAutoResList.AddRange(data.GetReserveList());
+                    manualAutoResList.AddRange(data.GetReserveList());
                 }
-                var ManualAutoResDict = ManualAutoResList.Distinct().ToDictionary(data => data.ReserveID, data => data);
+                var manualAutoResDict = manualAutoResList.Distinct().ToDictionary(data => data.ReserveID, data => data);
 
                 //突き合わせ
                 reserveAutoAddMissing = new Dictionary<uint, bool>();
@@ -161,11 +157,11 @@ namespace EpgTimer
                 {
                     if (resdata.Comment.StartsWith("EPG自動予約") == true)
                     {
-                        reserveAutoAddMissing.Add(resdata.ReserveID, !EpgAutoResDict.ContainsKey(resdata.ReserveID));
+                        reserveAutoAddMissing.Add(resdata.ReserveID, !epgAutoResDict.ContainsKey(resdata.ReserveID));
                     }
                     else if (resdata.Comment.StartsWith("プログラム自動予約") == true)
                     {
-                        reserveAutoAddMissing.Add(resdata.ReserveID, !ManualAutoResDict.ContainsKey(resdata.ReserveID));
+                        reserveAutoAddMissing.Add(resdata.ReserveID, !manualAutoResDict.ContainsKey(resdata.ReserveID));
                     }
                     else
                     {
@@ -223,18 +219,24 @@ namespace EpgTimer
             {
                 case UpdateNotifyItem.EpgData:
                     updateEpgData = true;
+                    epgAutoAddAppendList = null;//検索数が変わる。
                     break;
                 case UpdateNotifyItem.ReserveInfo:
                     updateReserveInfo = true;
+                    updateAutoAddAppendReserveInfo = true;
+                    reserveAutoAddMissing = null;
                     break;
                 case UpdateNotifyItem.RecInfo:
                     updateRecInfo = true;
                     break;
                 case UpdateNotifyItem.AutoAddEpgInfo:
                     updateAutoAddEpgInfo = true;
+                    epgAutoAddAppendList = null;
+                    reserveAutoAddMissing = null;
                     break;
                 case UpdateNotifyItem.AutoAddManualInfo:
                     updateAutoAddManualInfo = true;
+                    reserveAutoAddMissing = null;
                     break;
                 case UpdateNotifyItem.PlugInFile:
                     updatePlugInFile = true;
@@ -302,8 +304,6 @@ namespace EpgTimer
                     list2.ForEach(info => tunerReserveList.Add(info.tunerID, info));
 
                     updateReserveInfo = false;
-                    updateAutoAddAppendReserveInfo = true;
-                    reserveAutoAddMissing = null;
                 }
             }
             catch (Exception ex)
@@ -405,8 +405,6 @@ namespace EpgTimer
                         list.ForEach(info => epgAutoAddList.Add(info.dataID, info));
 
                         updateAutoAddEpgInfo = false;
-                        epgAutoAddAppendList = null;
-                        reserveAutoAddMissing = null;
                     }
                 }
             }
@@ -441,7 +439,6 @@ namespace EpgTimer
                         list.ForEach(info => manualAutoAddList.Add(info.dataID, info));
 
                         updateAutoAddManualInfo = false;
-                        reserveAutoAddMissing = null;
                     }
                 }
             }

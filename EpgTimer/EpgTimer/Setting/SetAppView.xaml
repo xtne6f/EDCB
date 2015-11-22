@@ -66,6 +66,7 @@
                     <Label Content="分以内" Height="28" Margin="437,87,0,0" Name="label_cautionOnRecMarginMin" VerticalAlignment="Top" HorizontalAlignment="Left" Width="53" />
                     <TextBox Height="24" HorizontalAlignment="Left" Margin="368,87,0,0" Name="textBox_cautionOnRecMarginMin" VerticalAlignment="Top" Width="62" />
                     <CheckBox Content="自動予約登録(EPG予約、プログラム予約)を見失った予約を強調表示する" Height="16" HorizontalAlignment="Left" Margin="6,117,0,0" Name="checkBox_displayAutoAddMissing" VerticalAlignment="Top" ToolTip="自動予約登録を削除・変更した場合や、EPGのタイトルが変わった場合などに発生する場合があります" />
+                    <Label Content="※EpgTimerNWでは若干もたつく感じがあるかもしれません" Height="28" Margin="26,131,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" Width="404" />
                 </Grid>
             </TabItem>
             <TabItem Header="ボタン表示" Name="tabItem3">

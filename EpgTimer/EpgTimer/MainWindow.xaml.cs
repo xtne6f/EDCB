@@ -540,7 +540,6 @@ namespace EpgTimer
             CommonManager.Instance.DB.ReloadReserveInfo();
             CommonManager.Instance.DB.ReloadEpgData();
             reserveView.UpdateInfo();
-            epgView.UpdateReserveData();
             tunerReserveView.UpdateInfo();
             autoAddView.UpdateAutoAddInfo();
             recInfoView.UpdateInfo();
@@ -1057,10 +1056,10 @@ namespace EpgTimer
                             CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.AutoAddManualInfo);
                             CommonManager.Instance.DB.ReloadReserveInfo();
                             reserveView.UpdateInfo();
-                            epgView.UpdateReserveData();
                             tunerReserveView.UpdateInfo();
-                            autoAddView.UpdateAutoAddInfo();
                             recInfoView.UpdateInfo();
+                            autoAddView.UpdateAutoAddInfo();
+                            epgView.UpdateReserveData();
                             SearchWindow.UpdateInfo(this, true);
 
                             taskTray.Text = GetTaskTrayReserveInfoText();
@@ -1074,6 +1073,11 @@ namespace EpgTimer
                             CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.EpgData);
                             CommonManager.Instance.DB.ReloadEpgData();
                             reserveView.UpdateInfo();
+                            if (Settings.Instance.DisplayReserveAutoAddMissing == true)
+                            {
+                                tunerReserveView.UpdateInfo();
+                            }
+                            autoAddView.epgAutoAddView.UpdateInfo();//検索数の更新
                             epgView.UpdateEpgData();
                             SearchWindow.UpdateInfo(this);
                         }));
@@ -1331,26 +1335,32 @@ namespace EpgTimer
                     break;
                 case UpdateNotifyItem.EpgData:
                     {
-                        CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.EpgData);
-                        //NWでは重いが、番組情報などをあちこちで使用しているので即取得する。
+                        //NWでは重いが、使用している箇所多いので即取得する。
                         //自動取得falseのときはReloadEpgData()ではじかれているので元々読込まれない。
+                        CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.EpgData);
                         CommonManager.Instance.DB.ReloadEpgData();
                         reserveView.UpdateInfo();//ジャンルや番組内容などが更新される
+                        if (Settings.Instance.DisplayReserveAutoAddMissing == true)
+                        {
+                            tunerReserveView.UpdateInfo();
+                        }
+                        autoAddView.epgAutoAddView.UpdateInfo();//検索数の更新
                         epgView.UpdateEpgData();
                         SearchWindow.UpdateInfo(this);
+                        
                         GC.Collect();
                     }
                     break;
                 case UpdateNotifyItem.ReserveInfo:
                     {
-                        CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.ReserveInfo);
                         //使用している箇所多いので即取得する。
                         //というより後ろでタスクトレイのルーチンが取得をかけるので遅延の効果がない。
+                        CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.ReserveInfo);
                         CommonManager.Instance.DB.ReloadReserveInfo();
                         reserveView.UpdateInfo();
+                        tunerReserveView.UpdateInfo();
                         autoAddView.UpdateAutoAddInfo();
                         epgView.UpdateReserveData();
-                        tunerReserveView.UpdateInfo();
                         SearchWindow.UpdateInfo(this, true);
                     }
                     break;
@@ -1371,14 +1381,13 @@ namespace EpgTimer
                         {
                             CommonManager.Instance.DB.ReloadEpgAutoAddInfo();
                         }
-                        autoAddView.UpdateAutoAddInfo();
+                        autoAddView.epgAutoAddView.UpdateInfo();
 
                         if (Settings.Instance.DisplayReserveAutoAddMissing == true)
                         {
-                            //UpdateNotifyItem.ReserveInfoが走らなくても、表示を更新する必要がある。
                             reserveView.UpdateInfo();
-                            epgView.UpdateReserveData();
                             tunerReserveView.UpdateInfo();
+                            epgView.UpdateReserveData();
                             SearchWindow.UpdateInfo(this, true);
                         }
                     }
@@ -1390,14 +1399,13 @@ namespace EpgTimer
                         {
                             CommonManager.Instance.DB.ReloadManualAutoAddInfo();
                         }
-                        autoAddView.UpdateAutoAddInfo();
+                        autoAddView.manualAutoAddView.UpdateInfo();
 
                         if (Settings.Instance.DisplayReserveAutoAddMissing == true)
                         {
-                            //UpdateNotifyItem.ReserveInfoが走らなくても、表示を更新する必要がある。
                             reserveView.UpdateInfo();
-                            epgView.UpdateReserveData();
                             tunerReserveView.UpdateInfo();
+                            epgView.UpdateReserveData();
                             SearchWindow.UpdateInfo(this, true);
                         }
                     }
@@ -1408,9 +1416,9 @@ namespace EpgTimer
                         {
                             IniFileHandler.UpdateSrvProfileIniNW();
                             reserveView.UpdateInfo();
+                            tunerReserveView.UpdateInfo();
                             autoAddView.UpdateAutoAddInfo();
                             epgView.UpdateReserveData();
-                            tunerReserveView.UpdateInfo();
                             SearchWindow.UpdateInfo(this, true);
                         }
                     }
