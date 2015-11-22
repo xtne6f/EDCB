@@ -184,6 +184,7 @@ namespace EpgTimer
 
             //メニューアイテム:使用予定チューナー
             ctmd = DefCtxmData[CtxmCode.TunerReserveView];
+            ctmd.Items.Add(new CtxmItemData("予約←→無効", cm_ChangeOnOff));
             ctmd.Items.Add(new CtxmItemData("変更", cm_ChangeMenu));
             ctmd.Items.Add(new CtxmItemData("削除", cm_Delete));
             ctmd.Items.Add(new CtxmItemData("プログラム予約追加", cm_ShowAddDialog));

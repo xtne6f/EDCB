@@ -61,6 +61,7 @@ namespace EpgTimer.Setting
                 checkBox_tunerColorModeUse.IsChecked = Settings.Instance.TunerColorModeUse;
                 comboBox_tunerFontColorService.IsEnabled = !Settings.Instance.TunerColorModeUse;
                 button_tunerFontCustColorService.IsEnabled = !Settings.Instance.TunerColorModeUse;
+                checkBox_tuner_display_offres.IsChecked = Settings.Instance.TunerDisplayOffReserve;
 
                 var setTunerColorModeUseTooltip = new Action<Control>((obj) =>
                 {
@@ -186,6 +187,7 @@ namespace EpgTimer.Setting
                 Settings.Instance.TunerPopupRecinfo = (checkBox_tuner_popup_recInfo.IsChecked == true);
                 Settings.Instance.TunerInfoSingleClick = (checkBox_tunerSingleOpen.IsChecked == true);
                 Settings.Instance.TunerColorModeUse = (checkBox_tunerColorModeUse.IsChecked == true);
+                Settings.Instance.TunerDisplayOffReserve = (checkBox_tuner_display_offres.IsChecked == true);
 
                 if (comboBox_font.SelectedItem != null)
                 {

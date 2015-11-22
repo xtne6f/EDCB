@@ -144,7 +144,7 @@ namespace EpgTimer
         }
         protected override void mc_JumpTuner(object sender, ExecutedRoutedEventArgs e)
         {
-            mcs_JumpTab(CtxmCode.TunerReserveView, true, true);
+            mcs_JumpTab(CtxmCode.TunerReserveView, true, Settings.Instance.TunerDisplayOffReserve == false);
         }
         protected override void mc_JumpTable(object sender, ExecutedRoutedEventArgs e)
         {
@@ -293,6 +293,15 @@ namespace EpgTimer
                 {
                     menu.Header = "予約←→無効";
                     menu.ToolTip = null;
+                    menu.Visibility = Visibility.Visible;
+                    if (view == CtxmCode.TunerReserveView && Settings.Instance.MenuSet.IsManualMenu == false)
+                    {
+                        //簡易メニュー時は、無効列非表示のとき表示しない。
+                        if( Settings.Instance.TunerDisplayOffReserve == false)
+                        {
+                            menu.Visibility = Visibility.Collapsed;
+                        }
+                    }
                 }
             }
             else if (menu.Tag == EpgCmdsEx.AddMenu)
@@ -312,12 +321,13 @@ namespace EpgTimer
 
                 //メニュー実行時に選択されるアイテムが予約でないときは無効
                 menu.IsEnabled = (headData as ReserveData != null);
-
-                if (menu.IsEnabled == true && menu.Tag == EpgCmds.JumpTuner)
+                menu.ToolTip = null;
+ 
+                if (menu.Tag == EpgCmds.JumpTuner && Settings.Instance.TunerDisplayOffReserve == false && menu.IsEnabled == true)
                 {
                     //無効予約を回避
                     menu.IsEnabled = dataList[0].RecSetting.RecMode != 5;
-                    menu.ToolTip = "無効予約は使用予定チューナー画面に表示されません。";
+                    menu.ToolTip = "無効予約は使用予定チューナー画面に表示されない設定になっています。";
                 }
             }
             else if (menu.Tag == EpgCmds.JumpTable)

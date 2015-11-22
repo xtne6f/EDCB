@@ -253,6 +253,7 @@
                                     <CheckBox Content="サービスのフォント色を優先度で変える('色'タブの設定)" Height="16" HorizontalAlignment="Left" Margin="11,136,0,0" Name="checkBox_tunerColorModeUse" VerticalAlignment="Top" ToolTip="チェックされていない場合はこの画面の設定色が使われます。" Click="checkBox_tunerColorModeUse_Click" />
                                     <CheckBox Content="サービス名と番組名の表示位置をあわせる" Height="16" HorizontalAlignment="Left" Margin="11,158,0,0" Name="checkBox_tuner_title_indent" VerticalAlignment="Top" />
                                     <CheckBox Content="サービス名を改行しない" Height="16" HorizontalAlignment="Left" Margin="11,180,0,0" Name="checkBox_tuner_service_nowrap" VerticalAlignment="Top" />
+                                    <CheckBox Content="無効の予約も表示する" Height="16" HorizontalAlignment="Left" Margin="327,70,0,0" Name="checkBox_tuner_display_offres" VerticalAlignment="Top" />
                                 </Grid>
                             </GroupBox>
                         </StackPanel>

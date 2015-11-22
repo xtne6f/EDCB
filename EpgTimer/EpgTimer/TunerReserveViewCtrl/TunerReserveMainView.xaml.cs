@@ -116,16 +116,27 @@ namespace EpgTimer
                 tunerList.Clear();
                 reserveList.Clear();
 
+                List<TunerReserveInfo> tunerReserveList = CommonManager.Instance.DB.TunerReserveList.Values.ToList();
+                tunerReserveList.Sort((i1, i2) => (int)(i1.tunerID & 0x7FFFFFFF) - (int)(i2.tunerID & 0x7FFFFFFF));
+                if (Settings.Instance.TunerDisplayOffReserve == true)
+                {
+                    var tuner_off = new TunerReserveInfo();
+                    tuner_off.tunerID = 0xFFFFFFFF;
+                    tuner_off.tunerName = "無効予約";
+                    tuner_off.reserveList = CommonManager.Instance.DB.ReserveList.Values
+                        .Where(info => info.RecSetting.RecMode == 5).Select(info => info.ReserveID).ToList();
+                    tunerReserveList.Add(tuner_off);
+                }
+
                 double leftPos = 0;
-                for (int i = 0; i < CommonManager.Instance.DB.TunerReserveList.Count; i++)
+                tunerReserveList.ForEach(info =>
                 {
                     double width = Settings.Instance.TunerWidth;
-                    TunerReserveInfo info = CommonManager.Instance.DB.TunerReserveList.Values.ElementAt(i);
                     TunerNameViewItem tunerInfo = new TunerNameViewItem(info, width);
                     tunerList.Add(tunerInfo);
 
                     List<ReserveViewItem> tunerAddList = new List<ReserveViewItem>();
-                    for (int j = 0; j < info.reserveList.Count; j++ )
+                    for (int j = 0; j < info.reserveList.Count; j++)
                     {
                         UInt32 reserveID = (UInt32)info.reserveList[j];
                         if (CommonManager.Instance.DB.ReserveList.ContainsKey(reserveID) == false)
@@ -154,11 +165,11 @@ namespace EpgTimer
                             Int32 durationAdd = (Int32)addInfo.DurationSecond;
                             DateTime startTimeAdd = addInfo.StartTime;
                             vutil.ApplyMarginForPanelView(addInfo, ref durationAdd, ref startTimeAdd, true);
-                            
+
                             DateTime endTimeAdd = startTimeAdd.AddSeconds(durationAdd);
 
                             if ((startTimeAdd <= startTime && startTime < endTimeAdd) ||
-                                (startTimeAdd < EndTime && EndTime <= endTimeAdd) || 
+                                (startTimeAdd < EndTime && EndTime <= endTimeAdd) ||
                                 (startTime <= startTimeAdd && startTimeAdd < EndTime) ||
                                 (startTime < endTimeAdd && endTimeAdd <= EndTime)
                                 )
@@ -193,7 +204,7 @@ namespace EpgTimer
                     }
                     tunerInfo.Width = width;
                     leftPos += width;
-                }
+                });
 
                 //表示位置設定
                 foreach (ReserveViewItem item in reserveList)

@@ -205,6 +205,7 @@ namespace EpgTimer
         private bool tunerPopupRecinfo;
         private bool tunerInfoSingleClick;
         private bool tunerColorModeUse;
+        private bool tunerDisplayOffReserve;
         private bool epgTitleIndent;
         private bool epgPopup;
         private bool epgPopupResOnly;
@@ -554,6 +555,11 @@ namespace EpgTimer
         {
             get { return tunerColorModeUse; }
             set { tunerColorModeUse = value; }
+        }
+        public bool TunerDisplayOffReserve
+        {
+            get { return tunerDisplayOffReserve; }
+            set { tunerDisplayOffReserve = value; }
         }
         public bool EpgTitleIndent
         {
@@ -1077,6 +1083,7 @@ namespace EpgTimer
             tunerPopupRecinfo = false;
             tunerInfoSingleClick = false;
             tunerColorModeUse = false;
+            tunerDisplayOffReserve = false;
             epgTitleIndent = true;
             epgPopup = true;
             epgPopupResOnly = false;
