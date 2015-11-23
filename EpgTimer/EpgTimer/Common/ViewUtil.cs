@@ -185,19 +185,14 @@ namespace EpgTimer
         }
 
         //パネルアイテムにマージンを適用。
-        public void ApplyMarginForPanelView(ReserveData resInfo,
-            ref int duration, ref DateTime startTime, bool already_set = false)
+        public void ApplyMarginForPanelView(ReserveData resInfo, ref DateTime startTime, ref int duration)
         {
-            if (already_set == false)
-            {
-                duration = (Int32)resInfo.DurationSecond;
-                startTime = resInfo.StartTime;
-            }
             int StartMargine = mutil.GetMargin(resInfo.RecSetting, true);
             int EndMargine = mutil.GetMargin(resInfo.RecSetting, false);
 
             if (StartMargine < 0)
             {
+                //メモ:番組長より長いマイナスマージンの扱いは?
                 startTime = startTime.AddSeconds(StartMargine * -1);
                 duration += StartMargine;
             }
@@ -236,13 +231,11 @@ namespace EpgTimer
             }
         }
 
-        //最低表示行数を適用
+        //最低表示行数を適用。また、最低表示高さ2pxを確保して、位置も調整する。
         public void ModifierMinimumLine<T, S>(List<S> list, double MinimumLine) where S : ViewPanelItem<T>
         {
-            if (MinimumLine <= 0) return;
-
             list.Sort((x, y) => Math.Sign(x.LeftPos - y.LeftPos) * 2 + Math.Sign(x.TopPos - y.TopPos));
-            double minimum = (Settings.Instance.FontSizeTitle + 2) * MinimumLine;
+            double minimum = Math.Max((Settings.Instance.FontSizeTitle + 2) * MinimumLine, 2);
             double lastLeft = double.MinValue;
             double lastBottom = 0;
             foreach (S item in list)
@@ -252,11 +245,14 @@ namespace EpgTimer
                     lastLeft = item.LeftPos;
                     lastBottom = double.MinValue;
                 }
-                item.Height = Math.Ceiling(Math.Max(item.Height, minimum));
                 if (item.TopPos < lastBottom)
                 {
-                    item.Height = Math.Ceiling(Math.Max(item.TopPos + item.Height - lastBottom, minimum));
+                    item.Height = Math.Max(item.TopPos + item.Height - lastBottom, minimum);
                     item.TopPos = lastBottom;
+                }
+                else
+                {
+                    item.Height = Math.Max(item.Height, minimum);
                 }
                 lastBottom = item.TopPos + item.Height;
             }

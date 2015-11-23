@@ -45,6 +45,7 @@ namespace EpgTimer.TunerReserveViewCtrl
                     if (totalWidth + width > maxWidth)
                     {
                         if (nowrap == true) break;//改行しない場合ここで終り
+                        if (totalWidth == 0) return false;//一文字も置けなかった(glyphIndexesなどのCount=0のまま)
 
                         if (totalHeight + fontSize > maxHeight)
                         {

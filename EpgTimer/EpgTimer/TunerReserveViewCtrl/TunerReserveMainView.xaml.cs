@@ -116,45 +116,43 @@ namespace EpgTimer
                 tunerList.Clear();
                 reserveList.Clear();
 
-                List<TunerReserveInfo> tunerReserveList = CommonManager.Instance.DB.TunerReserveList.Values.ToList();
-                tunerReserveList.Sort((i1, i2) => (int)(i1.tunerID & 0x7FFFFFFF) - (int)(i2.tunerID & 0x7FFFFFFF));
+                List<TunerReserveInfo> tunerReserveList = CommonManager.Instance.DB.TunerReserveList.Values
+                    .OrderBy(info => info.tunerID).ToList();//多分大丈夫だけど一応ソートしておく
                 if (Settings.Instance.TunerDisplayOffReserve == true)
                 {
                     var tuner_off = new TunerReserveInfo();
-                    tuner_off.tunerID = 0xFFFFFFFF;
+                    tuner_off.tunerID = 0xFFFFFFFF;//IDの表示判定に使っている
                     tuner_off.tunerName = "無効予約";
                     tuner_off.reserveList = CommonManager.Instance.DB.ReserveList.Values
                         .Where(info => info.RecSetting.RecMode == 5).Select(info => info.ReserveID).ToList();
                     tunerReserveList.Add(tuner_off);
                 }
 
+                double tunerWidthSingle = Settings.Instance.TunerWidth;
                 double leftPos = 0;
                 tunerReserveList.ForEach(info =>
                 {
-                    double width = Settings.Instance.TunerWidth;
-                    TunerNameViewItem tunerInfo = new TunerNameViewItem(info, width);
-                    tunerList.Add(tunerInfo);
+                    double tunerWidth = tunerWidthSingle;
 
-                    List<ReserveViewItem> tunerAddList = new List<ReserveViewItem>();
-                    for (int j = 0; j < info.reserveList.Count; j++)
+                    var tunerAddList = new List<ReserveViewItem>();
+                    foreach(UInt32 reserveID in info.reserveList)
                     {
-                        UInt32 reserveID = (UInt32)info.reserveList[j];
-                        if (CommonManager.Instance.DB.ReserveList.ContainsKey(reserveID) == false)
+                        ReserveData reserveInfo;
+                        if (CommonManager.Instance.DB.ReserveList.TryGetValue(reserveID,out reserveInfo) == false)
                         {
                             continue;
                         }
-                        ReserveData reserveInfo = CommonManager.Instance.DB.ReserveList[reserveID];
-                        ReserveViewItem viewItem = new ReserveViewItem(CommonManager.Instance.DB.ReserveList[reserveID]);
+                        var viewItem = new ReserveViewItem(reserveInfo);
 
                         //マージンを適用
-                        Int32 duration = (Int32)reserveInfo.DurationSecond;
                         DateTime startTime = reserveInfo.StartTime;
-                        vutil.ApplyMarginForPanelView(reserveInfo, ref duration, ref startTime, true);
+                        Int32 duration = (Int32)reserveInfo.DurationSecond;
+                        vutil.ApplyMarginForPanelView(reserveInfo, ref startTime, ref duration);
 
                         DateTime EndTime = startTime.AddSeconds(duration);
 
-                        viewItem.Height = Math.Max((duration * Settings.Instance.TunerMinHeight) / 60, Settings.Instance.TunerMinHeight);
-                        viewItem.Width = Settings.Instance.TunerWidth;
+                        viewItem.Height = duration * Settings.Instance.TunerMinHeight / 60;
+                        viewItem.Width = tunerWidthSingle;
                         viewItem.LeftPos = leftPos;
 
                         foreach (ReserveViewItem addItem in tunerAddList)
@@ -162,9 +160,9 @@ namespace EpgTimer
                             ReserveData addInfo = addItem.ReserveInfo;
 
                             //マージンを適用
-                            Int32 durationAdd = (Int32)addInfo.DurationSecond;
                             DateTime startTimeAdd = addInfo.StartTime;
-                            vutil.ApplyMarginForPanelView(addInfo, ref durationAdd, ref startTimeAdd, true);
+                            Int32 durationAdd = (Int32)addInfo.DurationSecond;
+                            vutil.ApplyMarginForPanelView(addInfo, ref startTimeAdd, ref durationAdd);
 
                             DateTime endTimeAdd = startTimeAdd.AddSeconds(durationAdd);
 
@@ -176,10 +174,10 @@ namespace EpgTimer
                             {
                                 if (addItem.LeftPos >= viewItem.LeftPos)
                                 {
-                                    viewItem.LeftPos += Settings.Instance.TunerWidth;
-                                    if (viewItem.LeftPos - leftPos >= width)
+                                    viewItem.LeftPos += tunerWidthSingle;
+                                    if (viewItem.LeftPos - leftPos >= tunerWidth)
                                     {
-                                        width += Settings.Instance.TunerWidth;
+                                        tunerWidth += tunerWidthSingle;
                                     }
                                 }
                             }
@@ -189,8 +187,7 @@ namespace EpgTimer
                         tunerAddList.Add(viewItem);
 
                         //必要時間リストの構築
-
-                        DateTime chkStartTime = new DateTime(startTime.Year, startTime.Month, startTime.Day, startTime.Hour, 0, 0);
+                        var chkStartTime = new DateTime(startTime.Year, startTime.Month, startTime.Day, startTime.Hour, 0, 0);
                         while (chkStartTime <= EndTime)
                         {
                             int index = timeList.BinarySearch(chkStartTime);
@@ -202,8 +199,9 @@ namespace EpgTimer
                         }
 
                     }
-                    tunerInfo.Width = width;
-                    leftPos += width;
+
+                    tunerList.Add(new TunerNameViewItem(info, tunerWidth));
+                    leftPos += tunerWidth;
                 });
 
                 //表示位置設定
@@ -214,11 +212,11 @@ namespace EpgTimer
                     {
                         if (item.ReserveInfo.RecSetting.StartMargine < 0)
                         {
-                            startTime = item.ReserveInfo.StartTime.AddSeconds(item.ReserveInfo.RecSetting.StartMargine*-1);
+                            startTime = item.ReserveInfo.StartTime.AddSeconds(item.ReserveInfo.RecSetting.StartMargine * -1);
                         }
                     }
 
-                    DateTime chkStartTime = new DateTime(startTime.Year,
+                    var chkStartTime = new DateTime(startTime.Year,
                         startTime.Month,
                         startTime.Day,
                         startTime.Hour,
@@ -231,7 +229,7 @@ namespace EpgTimer
                     }
                 }
 
-                //最低表示行数を適用
+                //最低表示行数を適用。また、最低表示高さを確保して、位置も調整する。
                 vutil.ModifierMinimumLine<ReserveData, ReserveViewItem>(reserveList, Settings.Instance.TunerMinimumLine);
 
                 tunerReserveTimeView.SetTime(timeList, true);

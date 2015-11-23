@@ -49,12 +49,19 @@ namespace EpgTimer.EpgView
             if (programTimeList == null) return null;
             if (reserveList == null) return null;
 
+            ReserveViewItem lastresPopItem = resPopItem;
             resPopItem = reserveList.Find(pg => pg.IsPicked(cursorPos));
 
             if (Settings.Instance.EpgPopupResOnly == true && resPopItem == null) return null;
 
             int index = (int)(cursorPos.Y / epgViewPanel.Height * programTimeList.Count);
             if ((0 <= index && index < programTimeList.Count) == false) return null;
+
+            //予約枠を通過したので同じ番組でもポップアップを書き直させる。
+            if (lastresPopItem != resPopItem)
+            {
+                base.PopupClear();
+            }
 
             return programTimeList.Values[index].Find(pg => pg.IsPicked(cursorPos));
         }
@@ -66,16 +73,16 @@ namespace EpgTimer.EpgView
 
             popupItem.Background = viewInfo.ContentColor;
 
-            Canvas.SetLeft(popupItem, viewInfo.LeftPos);
-            Canvas.SetTop(popupItem, viewInfo.TopPos);
+            Canvas.SetLeft(popupItem, Math.Floor(viewInfo.LeftPos));
+            Canvas.SetTop(popupItem, Math.Floor(viewInfo.TopPos));
             popupItem.Width = viewInfo.Width;
             popupItem.MinHeight = viewInfo.Height;
 
             double sizeMin = Settings.Instance.FontSizeTitle - 1;
             double sizeTitle = Settings.Instance.FontSizeTitle;
             double sizeNormal = Settings.Instance.FontSize;
-            double indentTitle = Math.Floor(sizeMin * 1.7) + 1;
-            double indentNormal = Settings.Instance.EpgTitleIndent ? indentTitle : 3;
+            double indentTitle = Math.Floor(sizeMin * 1.7 + 1);
+            double indentNormal = Math.Floor(Settings.Instance.EpgTitleIndent ? indentTitle : 3);
             var fontNormal = new FontFamily(Settings.Instance.FontName);
             var fontTitle = new FontFamily(Settings.Instance.FontNameTitle);
             FontWeight titleWeight = Settings.Instance.FontBoldTitle == true ? FontWeights.Bold : FontWeights.Normal;

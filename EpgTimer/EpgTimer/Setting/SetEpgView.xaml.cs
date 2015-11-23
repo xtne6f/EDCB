@@ -21,6 +21,7 @@ namespace EpgTimer.Setting
             public Brush Color { get; private set; }
         }
 
+        private MenuUtil mutil = CommonManager.Instance.MUtil;
         private BoxExchangeEditor bx = new BoxExchangeEditor();
 
         public SetEpgView()
@@ -160,11 +161,11 @@ namespace EpgTimer.Setting
         {
             try
             {
-                Settings.Instance.ScrollSize = Convert.ToDouble(textBox_mouse_scroll.Text);
-                Settings.Instance.MinHeight = Convert.ToDouble(textBox_minHeight.Text);
-                Settings.Instance.ServiceWidth = Convert.ToDouble(textBox_service_width.Text);
-                Settings.Instance.DragScroll = Convert.ToDouble(textBox_dragScroll.Text);
-                Settings.Instance.MinimumHeight = Convert.ToDouble(textBox_minimumHeight.Text);
+                Settings.Instance.ScrollSize = mutil.MyToNumerical(textBox_mouse_scroll, Convert.ToDouble, 0);
+                Settings.Instance.ServiceWidth = mutil.MyToNumerical(textBox_service_width, Convert.ToDouble, double.MaxValue, 16, 16);//小さいと描画で落ちる
+                Settings.Instance.MinHeight = mutil.MyToNumerical(textBox_minHeight, Convert.ToDouble, double.MaxValue, 0.1, 1);
+                Settings.Instance.MinimumHeight = mutil.MyToNumerical(textBox_minimumHeight, Convert.ToDouble, double.MaxValue, 0, 0);
+                Settings.Instance.DragScroll = mutil.MyToNumerical(textBox_dragScroll, Convert.ToDouble, 0);
                 Settings.Instance.EpgTitleIndent = (checkBox_title_indent.IsChecked == true);
                 Settings.Instance.EpgPopup = (checkBox_epg_popup.IsChecked == true);
                 Settings.Instance.EpgPopupResOnly = (checkBox_epg_popup_resOnly.IsChecked == true);
@@ -175,12 +176,12 @@ namespace EpgTimer.Setting
                 Settings.Instance.MouseScrollAuto = (checkBox_scrollAuto.IsChecked == true);
                 Settings.Instance.DisplayNotifyEpgChange = (checkBox_displayNotifyChange.IsChecked == true);
                 Settings.Instance.ReserveRectBackground = (checkBox_reserveBackground.IsChecked == true);
-                Settings.Instance.TunerMinHeight = Convert.ToDouble(textBox_tuner_minHeight.Text);
-                Settings.Instance.TunerMinimumLine = Convert.ToDouble(textBox_tunerMinLineHeight.Text);
-                Settings.Instance.TunerDragScroll = Convert.ToDouble(textBox_tunerDdragScroll.Text);
-                Settings.Instance.TunerScrollSize = Convert.ToDouble(textBox_tuner_mouse_scroll.Text);
+                Settings.Instance.TunerScrollSize = mutil.MyToNumerical(textBox_tuner_mouse_scroll, Convert.ToDouble, 0);
+                Settings.Instance.TunerWidth = mutil.MyToNumerical(textBox_tuner_width, Convert.ToDouble, double.MaxValue, 16, 16);//小さいと描画で落ちる
+                Settings.Instance.TunerMinHeight = mutil.MyToNumerical(textBox_tuner_minHeight, Convert.ToDouble, double.MaxValue, 0.1, 1);
+                Settings.Instance.TunerMinimumLine = mutil.MyToNumerical(textBox_tunerMinLineHeight, Convert.ToDouble, double.MaxValue,0,0);
+                Settings.Instance.TunerDragScroll = mutil.MyToNumerical(textBox_tunerDdragScroll, Convert.ToDouble, 0);
                 Settings.Instance.TunerMouseScrollAuto = (checkBox_tuner_scrollAuto.IsChecked == true);
-                Settings.Instance.TunerWidth = Convert.ToDouble(textBox_tuner_width.Text);
                 Settings.Instance.TunerServiceNoWrap = (checkBox_tuner_service_nowrap.IsChecked == true);
                 Settings.Instance.TunerTitleIndent = (checkBox_tuner_title_indent.IsChecked == true);
                 Settings.Instance.TunerPopup = (checkBox_tuner_popup.IsChecked == true);
@@ -193,24 +194,24 @@ namespace EpgTimer.Setting
                 {
                     Settings.Instance.FontName = comboBox_font.SelectedItem as string;
                 }
-                Settings.Instance.FontSize = Convert.ToDouble(textBox_fontSize.Text);
+                Settings.Instance.FontSize = mutil.MyToNumerical(textBox_fontSize, Convert.ToDouble, 72, 1, 1);
                 if (comboBox_fontTitle.SelectedItem != null)
                 {
                     Settings.Instance.FontNameTitle = comboBox_fontTitle.SelectedItem as string;
                 }
-                Settings.Instance.FontSizeTitle = Convert.ToDouble(textBox_fontSizeTitle.Text);
+                Settings.Instance.FontSizeTitle = mutil.MyToNumerical(textBox_fontSizeTitle, Convert.ToDouble, 72, 1, 1);
                 Settings.Instance.FontBoldTitle = (checkBox_fontBoldTitle.IsChecked == true);
 
                 if (comboBox_fontTuner.SelectedItem != null)
                 {
                     Settings.Instance.TunerFontName = comboBox_fontTuner.SelectedItem as string;
                 }
-                Settings.Instance.TunerFontSize = Convert.ToDouble(textBox_fontTunerSize.Text);
+                Settings.Instance.TunerFontSize = mutil.MyToNumerical(textBox_fontTunerSize, Convert.ToDouble, 72, 1, 1);
                 if (comboBox_fontTunerService.SelectedItem != null)
                 {
                     Settings.Instance.TunerFontNameService = comboBox_fontTunerService.SelectedItem as string;
                 }
-                Settings.Instance.TunerFontSizeService = Convert.ToDouble(textBox_fontTunerSizeService.Text);
+                Settings.Instance.TunerFontSizeService = mutil.MyToNumerical(textBox_fontTunerSizeService, Convert.ToDouble, 72, 1, 1);
                 Settings.Instance.TunerFontBoldService = (checkBox_fontTunerBoldService.IsChecked == true);
 
                 Settings.Instance.UseCustomEpgView = (radioButton_1_cust.IsChecked == true);

@@ -294,6 +294,29 @@ namespace EpgTimer
                 return defValue;
             }
         }
+        public T MyToNumerical<T>(TextBox box, Func<string, T> converter, T max, T min, T defValue = default(T)) where T : IComparable
+        {
+            try
+            {
+                T val = MyToNumerical(box, converter, defValue);
+                if (val.CompareTo(min) < 0)
+                {
+                    box.Text = min.ToString();
+                    return min;
+                }
+                if (val.CompareTo(max) > 0)
+                {
+                    box.Text = max.ToString();
+                    return max;
+                }
+                return val;
+            }
+            catch
+            {
+                box.Text = defValue.ToString();
+                return defValue;
+            }
+        }
         
         public bool ReserveAdd(List<EpgEventInfo> itemlist, RecSettingView recSettingView, uint presetID = 0, bool cautionMany = true)
         {

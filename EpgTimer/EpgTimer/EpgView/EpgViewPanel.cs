@@ -31,8 +31,6 @@ namespace EpgTimer.EpgView
 
         protected void CreateDrawTextList()
         {
-            textDrawDict.Clear();
-            textDrawDict = null;
             textDrawDict = new Dictionary<ProgramViewItem, List<TextDrawItem>>();
             Matrix m = PresentationSource.FromVisual(Application.Current.MainWindow).CompositionTarget.TransformToDevice;
 
@@ -52,7 +50,7 @@ namespace EpgTimer.EpgView
                 double sizeTitle = Settings.Instance.FontSizeTitle;
                 double sizeNormal = Settings.Instance.FontSize;
                 double indentTitle = Math.Floor(sizeMin * 1.7);
-                double indentNormal = Settings.Instance.EpgTitleIndent ? indentTitle : 2;
+                double indentNormal = Math.Floor(Settings.Instance.EpgTitleIndent ? indentTitle : 2);
                 SolidColorBrush colorTitle = CommonManager.Instance.CustTitle1Color;
                 SolidColorBrush colorNormal = CommonManager.Instance.CustTitle2Color;
 
