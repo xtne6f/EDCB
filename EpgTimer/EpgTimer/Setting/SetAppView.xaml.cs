@@ -67,7 +67,7 @@ namespace EpgTimer.Setting
                 checkBox_recname.IsEnabled = false;
                 comboBox_recname.IsEnabled = false;
                 button_recname.IsEnabled = false;
-                
+
                 CommonManager.Instance.VUtil.DisableControlChildren(tabItem7);
                 tabControl1.SelectedItem = tabItem2;
                 checkBox_tcpServer.IsEnabled = false;
@@ -795,6 +795,30 @@ namespace EpgTimer.Setting
             }
         }
 
+        private void listBox_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            ListBox clicked = sender as ListBox;
+            if (clicked != null && clicked.IsMouseCaptured)
+            {
+                if (clicked.Equals(listBox_viewBtn))
+                {
+                    button_btnDel_Click(sender, e);
+                }
+                else if (clicked.Equals(listBox_itemBtn))
+                {
+                    button_btnAdd_Click(sender, e);
+                }
+                else if (clicked.Equals(listBox_viewTask))
+                {
+                    button_taskDel_Click(sender, e);
+                }
+                else if (clicked.Equals(listBox_itemTask))
+                {
+                    button_taskAdd_Click(sender, e);
+                }
+            }
+        }
+
         private void button_recDef_Click(object sender, RoutedEventArgs e)
         {
             SetDefRecSettingWindow dlg = new SetDefRecSettingWindow();
@@ -819,7 +843,7 @@ namespace EpgTimer.Setting
             SetContextMenuWindow dlg = new SetContextMenuWindow();
             dlg.info = this.ctxmSetInfo.Clone();
             dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-            
+
             if (dlg.ShowDialog() == true)
             {
                 this.ctxmSetInfo = dlg.info.Clone();
@@ -828,7 +852,7 @@ namespace EpgTimer.Setting
 
         private void button_exe1_Click(object sender, RoutedEventArgs e)
         {
-            string path = CommonManager.Instance.GetFileNameByDialog(textBox_exe1.Text,"",".exe");
+            string path = CommonManager.Instance.GetFileNameByDialog(textBox_exe1.Text, "", ".exe");
             if (path != null)
             {
                 textBox_exe1.Text = path;
@@ -920,7 +944,7 @@ namespace EpgTimer.Setting
                 }
             }
         }
-        
+
         private void button_inst_Click(object sender, RoutedEventArgs e)
         {
             String exePath = SettingPath.ModulePath + "\\EpgTimerSrv.exe";
