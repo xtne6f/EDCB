@@ -75,8 +75,8 @@
                         <Grid>
                             <Label Content="表示ボタン" Height="28" HorizontalAlignment="Left" Margin="6,6,0,0" Name="label31" VerticalAlignment="Top" />
                             <ListBox Height="124" HorizontalAlignment="Left" Margin="6,40,0,0" Name="listBox_viewBtn" VerticalAlignment="Top" Width="172" MouseDoubleClick="listBox_MouseDoubleClick" />
-                            <Button Content="↑" Height="23" HorizontalAlignment="Left" Margin="205,40,0,0" Name="button_btnUp" VerticalAlignment="Top" Width="47" Click="button_btnUp_Click" />
-                            <Button Content="↓" Height="23" HorizontalAlignment="Left" Margin="205,141,0,0" Name="button_btnDown" VerticalAlignment="Top" Width="47" Click="button_btnDown_Click" />
+                            <Button Content="↑" Height="23" HorizontalAlignment="Left" Margin="205,40,0,0" Name="button_btnUp" VerticalAlignment="Top" Width="47" />
+                            <Button Content="↓" Height="23" HorizontalAlignment="Left" Margin="205,141,0,0" Name="button_btnDown" VerticalAlignment="Top" Width="47" />
                             <Button Content="→" Height="23" HorizontalAlignment="Left" Margin="205,77,0,0" Name="button_btnDel" VerticalAlignment="Top" Width="47" Click="button_btnDel_Click" />
                             <Button Content="←" Height="23" HorizontalAlignment="Left" Margin="205,106,0,0" Name="button_btnAdd" VerticalAlignment="Top" Width="47" Click="button_btnAdd_Click" />
                             <Label Content="項目" Height="28" HorizontalAlignment="Left" Margin="281,6,0,0" Name="label32" VerticalAlignment="Top" />
@@ -93,8 +93,8 @@
                         <Grid>
                             <Label Content="表示ボタン" Height="28" HorizontalAlignment="Left" Margin="6,6,0,0" Name="label33" VerticalAlignment="Top" />
                             <ListBox Height="124" HorizontalAlignment="Left" Margin="6,40,0,0" Name="listBox_viewTask" VerticalAlignment="Top" Width="172" MouseDoubleClick="listBox_MouseDoubleClick" />
-                            <Button Content="↑" Height="23" HorizontalAlignment="Left" Margin="205,40,0,0" Name="button_taskUp" VerticalAlignment="Top" Width="47" Click="button_taskUp_Click" />
-                            <Button Content="↓" Height="23" HorizontalAlignment="Left" Margin="205,141,0,0" Name="button_taskDown" VerticalAlignment="Top" Width="47" Click="button_taskDown_Click" />
+                            <Button Content="↑" Height="23" HorizontalAlignment="Left" Margin="205,40,0,0" Name="button_taskUp" VerticalAlignment="Top" Width="47" />
+                            <Button Content="↓" Height="23" HorizontalAlignment="Left" Margin="205,141,0,0" Name="button_taskDown" VerticalAlignment="Top" Width="47" />
                             <Button Content="→" Height="23" HorizontalAlignment="Left" Margin="205,77,0,0" Name="button_taskDel" VerticalAlignment="Top" Width="47" Click="button_taskDel_Click" />
                             <Button Content="←" Height="23" HorizontalAlignment="Left" Margin="205,106,0,0" Name="button_taskAdd" VerticalAlignment="Top" Width="47" Click="button_taskAdd_Click" />
                             <Label Content="項目" Height="28" HorizontalAlignment="Left" Margin="281,6,0,0" Name="label34" VerticalAlignment="Top" />

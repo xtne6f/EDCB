@@ -116,6 +116,7 @@ namespace EpgTimer
                 bx.SourceBox = this.listBox_Default;
                 bx.TargetBox = this.listBox_Setting;
                 bx.DuplicationSpecific = new List<object> { EpgCmdsEx.SeparatorString };
+                bx.DoubleClickMoveAllow();
                 button_reset.Click += new RoutedEventHandler(bx.button_reset_Click);
                 button_add.Click += new RoutedEventHandler(bx.button_add_Click);
                 button_del.Click += new RoutedEventHandler(bx.button_del_Click);

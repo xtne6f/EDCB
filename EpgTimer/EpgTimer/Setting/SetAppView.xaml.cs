@@ -84,6 +84,8 @@ namespace EpgTimer.Setting
                 button_recDef.Content = "録画プリセットを確認";
             }
 
+            listBox_Button_Set();
+
             try
             {
                 int recEndMode = IniFileHandler.GetPrivateProfileInt("SET", "RecEndMode", 2, SettingPath.TimerSrvIniPath);
@@ -633,21 +635,22 @@ namespace EpgTimer.Setting
             }
         }
 
-        private void button_btnUp_Click(object sender, RoutedEventArgs e)
+        //ボタン表示画面の上下ボタンのみ他と同じものを使用する。
+        private BoxExchangeEditor bxb = new BoxExchangeEditor();
+        private BoxExchangeEditor bxt = new BoxExchangeEditor();
+        private void listBox_Button_Set()
         {
-            if (listBox_viewBtn.SelectedItem != null)
-            {
-                if (listBox_viewBtn.SelectedIndex >= 1)
-                {
-                    object temp = listBox_viewBtn.SelectedItem;
-                    int index = listBox_viewBtn.SelectedIndex;
-                    listBox_viewBtn.Items.RemoveAt(listBox_viewBtn.SelectedIndex);
-                    listBox_viewBtn.Items.Insert(index - 1, temp);
-                    listBox_viewBtn.SelectedIndex = index - 1;
-                }
-            }
-        }
+            //上部表示ボタン関係
+            bxb.TargetBox = this.listBox_viewBtn;
+            button_btnUp.Click += new RoutedEventHandler(bxb.button_up_Click);
+            button_btnDown.Click += new RoutedEventHandler(bxb.button_down_Click);
 
+            //タスクアイコン関係
+            bxt.TargetBox = this.listBox_viewTask;
+            button_taskUp.Click += new RoutedEventHandler(bxt.button_up_Click);
+            button_taskDown.Click += new RoutedEventHandler(bxt.button_down_Click);
+        }
+        
         private void button_btnDel_Click(object sender, RoutedEventArgs e)
         {
             if (listBox_viewBtn.SelectedItem != null)
@@ -699,36 +702,6 @@ namespace EpgTimer.Setting
             }
         }
 
-        private void button_btnDown_Click(object sender, RoutedEventArgs e)
-        {
-            if (listBox_viewBtn.SelectedItem != null)
-            {
-                if (listBox_viewBtn.SelectedIndex < listBox_viewBtn.Items.Count - 1)
-                {
-                    object temp = listBox_viewBtn.SelectedItem;
-                    int index = listBox_viewBtn.SelectedIndex;
-                    listBox_viewBtn.Items.RemoveAt(listBox_viewBtn.SelectedIndex);
-                    listBox_viewBtn.Items.Insert(index + 1, temp);
-                    listBox_viewBtn.SelectedIndex = index + 1;
-                }
-            }
-        }
-
-        private void button_taskUp_Click(object sender, RoutedEventArgs e)
-        {
-            if (listBox_viewTask.SelectedItem != null)
-            {
-                if (listBox_viewTask.SelectedIndex >= 1)
-                {
-                    object temp = listBox_viewTask.SelectedItem;
-                    int index = listBox_viewTask.SelectedIndex;
-                    listBox_viewTask.Items.RemoveAt(listBox_viewTask.SelectedIndex);
-                    listBox_viewTask.Items.Insert(index - 1, temp);
-                    listBox_viewTask.SelectedIndex = index - 1;
-                }
-            }
-        }
-
         private void button_taskDel_Click(object sender, RoutedEventArgs e)
         {
             if (listBox_viewTask.SelectedItem != null)
@@ -777,21 +750,6 @@ namespace EpgTimer.Setting
                 }
                 listBox_viewTask.Items.Add(new ViewMenuItem(info.MenuName, true));
                 ReLoadTaskItem();
-            }
-        }
-
-        private void button_taskDown_Click(object sender, RoutedEventArgs e)
-        {
-            if (listBox_viewTask.SelectedItem != null)
-            {
-                if (listBox_viewTask.SelectedIndex < listBox_viewTask.Items.Count - 1)
-                {
-                    object temp = listBox_viewTask.SelectedItem;
-                    int index = listBox_viewTask.SelectedIndex;
-                    listBox_viewTask.Items.RemoveAt(listBox_viewTask.SelectedIndex);
-                    listBox_viewTask.Items.Insert(index + 1, temp);
-                    listBox_viewTask.SelectedIndex = index + 1;
-                }
             }
         }
 

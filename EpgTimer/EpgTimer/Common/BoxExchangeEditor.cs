@@ -5,6 +5,7 @@ using System.Text;
 using System.Collections;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 
 namespace EpgTimer
 {
@@ -19,6 +20,23 @@ namespace EpgTimer
 
         public bool DuplicationAllowed { set; get; }//項目の重複を全て許可
         public IList DuplicationSpecific { set; get; }//特定の項目のみ重複を許可
+
+        //ダブルクリックでの移動を行うかどうか
+        public void DoubleClickMoveAllow()
+        {
+            if (SourceBox != null) SourceBox.MouseDoubleClick += new MouseButtonEventHandler(sourceBox_MouseDoubleClick);
+            if (TargetBox != null) TargetBox.MouseDoubleClick += new MouseButtonEventHandler(targetBox_MouseDoubleClick);
+        }
+
+        public void sourceBox_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            addItems(SourceBox, TargetBox);
+        }
+
+        public void targetBox_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            deleteItems(TargetBox);
+        }
 
         /// <summary>全アイテム追加</summary>
         public void button_addAll_Click(object sender, RoutedEventArgs e)

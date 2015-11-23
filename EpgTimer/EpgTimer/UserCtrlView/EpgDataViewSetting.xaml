@@ -39,41 +39,31 @@
                                 <Label Content="サービス一覧" Height="28" HorizontalAlignment="Left" Margin="267,6,0,0" Name="label32" VerticalAlignment="Top" />
                                 <TabControl Height="186" HorizontalAlignment="Left" Margin="268,40,0,0" Name="tabControl2" VerticalAlignment="Top" Width="244">
                                     <TabItem Header="地デジ" Name="tabItem_tere">
-                                        <Grid>
-                                            <ListBox Name="listBox_serviceTere" SelectionChanged="listBox_service_SelectionChanged" SelectionMode="Extended" />
-                                        </Grid>
+                                        <ListBox Name="listBox_serviceTere" SelectionChanged="listBox_service_SelectionChanged" SelectionMode="Extended" MouseDoubleClick="listBox_service_MouseDoubleClick" />
                                     </TabItem>
                                     <TabItem Header="BS" Name="tabItem_bs">
-                                        <Grid>
-                                            <ListBox Name="listBox_serviceBS" SelectionChanged="listBox_service_SelectionChanged" SelectionMode="Extended" />
-                                        </Grid>
+                                        <ListBox Name="listBox_serviceBS" SelectionChanged="listBox_service_SelectionChanged" SelectionMode="Extended" MouseDoubleClick="listBox_service_MouseDoubleClick" />
                                     </TabItem>
                                     <TabItem Header="CS" Name="tabItem_cs">
-                                        <Grid>
-                                            <ListBox Name="listBox_serviceCS" SelectionChanged="listBox_service_SelectionChanged" SelectionMode="Extended" />
-                                        </Grid>
+                                        <ListBox Name="listBox_serviceCS" SelectionChanged="listBox_service_SelectionChanged" SelectionMode="Extended" MouseDoubleClick="listBox_service_MouseDoubleClick" />
                                     </TabItem>
                                     <TabItem Header="その他" Name="tabItem_other">
-                                        <Grid>
-                                            <ListBox Name="listBox_serviceOther" SelectionChanged="listBox_service_SelectionChanged" SelectionMode="Extended" />
-                                        </Grid>
+                                        <ListBox Name="listBox_serviceOther" SelectionChanged="listBox_service_SelectionChanged" SelectionMode="Extended" MouseDoubleClick="listBox_service_MouseDoubleClick" />
                                     </TabItem>
                                     <TabItem Header="全て" Name="tabItem_all">
-                                        <Grid>
-                                            <ListBox Name="listBox_serviceAll" SelectionChanged="listBox_service_SelectionChanged" SelectionMode="Extended" />
-                                        </Grid>
+                                        <ListBox Name="listBox_serviceAll" SelectionChanged="listBox_service_SelectionChanged" SelectionMode="Extended" MouseDoubleClick="listBox_service_MouseDoubleClick" />
                                     </TabItem>
                                 </TabControl>
                                 <TextBox HorizontalAlignment="Left" IsReadOnly="True" Margin="10,238,0,6" Name="textBox_serviceView1" TextWrapping="Wrap" VerticalScrollBarVisibility="Visible" Width="247" Height="117" />
                                 <TextBox HorizontalAlignment="Left" IsReadOnly="True" Margin="267,238,0,6" Name="textBox_serviceView2" TextWrapping="Wrap" VerticalScrollBarVisibility="Visible" Width="245" Height="117" />
-                                <Button Content="全追加" Height="23" HorizontalAlignment="Left" Margin="146,29,0,0" Name="button_service_addAll" VerticalAlignment="Top" Width="58" Click="button_service_addAll_Click" />
-                                <Button Content="追加" Height="23" HorizontalAlignment="Left" Margin="146,87,0,0" Name="button_service_add" VerticalAlignment="Top" Width="58" Click="button_service_add_Click" />
-                                <Button Content="削除" Height="23" HorizontalAlignment="Left" Margin="146,116,0,0" Name="button_service_del" VerticalAlignment="Top" Width="58" Click="button_service_del_Click" />
-                                <Button Content="全削除" Height="23" HorizontalAlignment="Left" Margin="146,145,0,0" Name="button_service_delAll" VerticalAlignment="Top" Width="58" Click="button_service_delAll_Click" />
-                                <Button Content="↑" Height="23" HorizontalAlignment="Left" Margin="146,174,0,0" Name="button_service_up" VerticalAlignment="Top" Width="50" Click="button_service_up_Click" ToolTip="1つ上へ" />
-                                <Button Content="↑↑" Height="23" HorizontalAlignment="Left" Margin="206,174,0,0" Name="button_service_top" VerticalAlignment="Top" Width="50" Click="button_service_top_Click" ToolTip="一番上へ" />
-                                <Button Content="↓" Height="23" HorizontalAlignment="Left" Margin="146,203,0,0" Name="button_service_down" VerticalAlignment="Top" Width="50" Click="button_service_down_Click" ToolTip="1つ下へ" />
-                                <Button Content="↓↓" Height="23" HorizontalAlignment="Left" Margin="206,203,0,0" Name="button_service_bottom" VerticalAlignment="Top" Width="50" Click="button_service_bottom_Click" ToolTip="一番下へ" />
+                                <Button Content="全追加" Height="23" HorizontalAlignment="Left" Margin="146,29,0,0" Name="button_service_addAll" VerticalAlignment="Top" Width="58" />
+                                <Button Content="追加" Height="23" HorizontalAlignment="Left" Margin="146,87,0,0" Name="button_service_add" VerticalAlignment="Top" Width="58" />
+                                <Button Content="削除" Height="23" HorizontalAlignment="Left" Margin="146,116,0,0" Name="button_service_del" VerticalAlignment="Top" Width="58" />
+                                <Button Content="全削除" Height="23" HorizontalAlignment="Left" Margin="146,145,0,0" Name="button_service_delAll" VerticalAlignment="Top" Width="58" />
+                                <Button Content="↑" Height="23" HorizontalAlignment="Left" Margin="146,174,0,0" Name="button_service_up" VerticalAlignment="Top" Width="50" ToolTip="1つ上へ" />
+                                <Button Content="↑↑" Height="23" HorizontalAlignment="Left" Margin="206,174,0,0" Name="button_service_top" VerticalAlignment="Top" Width="50" ToolTip="一番上へ" />
+                                <Button Content="↓" Height="23" HorizontalAlignment="Left" Margin="146,203,0,0" Name="button_service_down" VerticalAlignment="Top" Width="50" ToolTip="1つ下へ" />
+                                <Button Content="↓↓" Height="23" HorizontalAlignment="Left" Margin="206,203,0,0" Name="button_service_bottom" VerticalAlignment="Top" Width="50" ToolTip="一番下へ" />
                                 <Button Content="映像のみ全追加" Height="23" HorizontalAlignment="Left" Margin="146,58,0,0" Name="button_service_addVideo" VerticalAlignment="Top" Width="111" Click="button_service_addVideo_Click" />
                             </Grid>
                         </TabItem>
@@ -82,11 +72,11 @@
                                 <Label Content="表示ジャンル(未登録で全ジャンル対象)" Height="28" HorizontalAlignment="Left" Margin="10,10,0,0" Name="label30" VerticalAlignment="Top" />
                                 <ListBox HorizontalAlignment="Left" Margin="10,44,0,6" Name="listBox_jyanruView" Width="246"  DisplayMemberPath="ListBoxView" SelectionMode="Extended" />
                                 <Label Content="ジャンル一覧" Height="28" HorizontalAlignment="Left" Margin="323,10,0,0" Name="label33" VerticalAlignment="Top" />
-                                <ListBox HorizontalAlignment="Left" Margin="326,44,0,6" Name="listBox_jyanru" Width="188" SelectionMode="Extended" ItemsSource="{Binding}" />
-                                <Button Content="全追加" Height="23" HorizontalAlignment="Left" Margin="262,135,0,0" Name="button_jyanru_addAll" VerticalAlignment="Top" Width="58" Click="button_jyanru_addAll_Click" />
-                                <Button Content="追加" Height="23" HorizontalAlignment="Left" Margin="262,164,0,0" Name="button_jyanru_add" VerticalAlignment="Top" Width="58" Click="button_jyanru_add_Click" />
-                                <Button Content="削除" Height="23" HorizontalAlignment="Left" Margin="262,193,0,0" Name="button_jyanru_del" VerticalAlignment="Top" Width="58" Click="button_jyanru_del_Click" />
-                                <Button Content="全削除" Height="23" HorizontalAlignment="Left" Margin="262,222,0,0" Name="button_jyanru_delAll" VerticalAlignment="Top" Width="58" Click="button_jyanru_delAll_Click" />
+                                <ListBox HorizontalAlignment="Left" Margin="326,44,0,6" Name="listBox_jyanru" Width="188" SelectionMode="Extended" />
+                                <Button Content="全追加" Height="23" HorizontalAlignment="Left" Margin="262,135,0,0" Name="button_jyanru_addAll" VerticalAlignment="Top" Width="58" />
+                                <Button Content="追加" Height="23" HorizontalAlignment="Left" Margin="262,164,0,0" Name="button_jyanru_add" VerticalAlignment="Top" Width="58" />
+                                <Button Content="削除" Height="23" HorizontalAlignment="Left" Margin="262,193,0,0" Name="button_jyanru_del" VerticalAlignment="Top" Width="58" />
+                                <Button Content="全削除" Height="23" HorizontalAlignment="Left" Margin="262,222,0,0" Name="button_jyanru_delAll" VerticalAlignment="Top" Width="58" />
                             </Grid>
                         </TabItem>
                     </TabControl>
