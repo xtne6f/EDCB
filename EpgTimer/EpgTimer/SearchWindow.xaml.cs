@@ -119,7 +119,7 @@ namespace EpgTimer
                 SetSearchKey(Settings.Instance.DefSearchKey);
 
                 //notify残ってれば更新。通常残ってないはず。
-                CommonManager.Instance.DB.ReloadReserveInfo();
+                vutil.ReloadReserveData();
             }
             catch (Exception ex)
             {
@@ -513,14 +513,12 @@ namespace EpgTimer
         {
             foreach (SearchWindow win in owner_win.OwnedWindows.OfType<SearchWindow>())
             {
+                SearchWindow.UpdateInfo(win, refreshOnly);
                 win.UpdateInfo(refreshOnly);
             }
         }
         public void UpdateInfo(bool refreshOnly = false)
         {
-            //孫Windowから更新
-            SearchWindow.UpdateInfo(this, refreshOnly);
-
             if (refreshOnly == false)
             {
                 ReloadInfo = true;
