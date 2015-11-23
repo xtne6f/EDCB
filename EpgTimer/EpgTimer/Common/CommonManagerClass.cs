@@ -258,7 +258,8 @@ namespace EpgTimer
                 ContentKindDictionary.Add(0x0FFF, new ContentKindInfo("その他", "", 0x0F, 0xFF));
                 ContentKindDictionary.Add(0x0F0F, new ContentKindInfo("その他", "その他", 0x0F, 0x0F));
 
-                ContentKindDictionary.Add(0xFFFF, new ContentKindInfo("なし", "", 0xFF, 0xFF));
+                ContentKindDictionary.Add(0xFEFF, new ContentKindInfo("不明なジャンル(未実装)", "", 0xFE, 0xFF));
+                ContentKindDictionary.Add(0xFFFF, new ContentKindInfo("ジャンル情報なし", "", 0xFF, 0xFF));
             }
             if (ContentKindDictionary2 == null)
             {
@@ -315,8 +316,7 @@ namespace EpgTimer
                     //表示順が追加順にならないことの対策。OrderedDictionary使えるならその方が簡単かとは思うが
                     if (ContentKindList == null)
                     {
-                        ContentKindList = new List<ContentKindInfo>(ContentKindDictionary.Values);
-                        ContentKindList.Sort((i1, i2) => i1.SortKey - i2.SortKey);
+                        ContentKindList = ContentKindDictionary.Values.OrderBy(info => info.SortKey).ToList();
                     }
                 }
             }

@@ -79,7 +79,7 @@
                         </TabItem>
                         <TabItem Header="表示ジャンル" Name="tabItem_content">
                             <Grid>
-                                <Label Content="表示ジャンル(項目なしで全ジャンル)" Height="28" HorizontalAlignment="Left" Margin="10,10,0,0" Name="label30" VerticalAlignment="Top" />
+                                <Label Content="表示ジャンル(未登録で全ジャンル対象)" Height="28" HorizontalAlignment="Left" Margin="10,10,0,0" Name="label30" VerticalAlignment="Top" />
                                 <ListBox HorizontalAlignment="Left" Margin="10,44,0,6" Name="listBox_jyanruView" Width="246"  DisplayMemberPath="ListBoxView" SelectionMode="Extended" />
                                 <Label Content="ジャンル一覧" Height="28" HorizontalAlignment="Left" Margin="323,10,0,0" Name="label33" VerticalAlignment="Top" />
                                 <ListBox HorizontalAlignment="Left" Margin="326,44,0,6" Name="listBox_jyanru" Width="188" SelectionMode="Extended" ItemsSource="{Binding}" />

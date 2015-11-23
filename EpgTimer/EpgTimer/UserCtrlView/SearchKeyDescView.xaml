@@ -23,7 +23,7 @@
         <TabControl Grid.Row="1" Name="tabControl1" TabStripPlacement="Bottom">
             <TabItem Header="詳細1" Name="tabItem1">
                 <Grid>
-                    <Label Content="ジャンル絞り込み（項目なしで全ジャンル対象）" Height="28" HorizontalAlignment="Left" Margin="6,6,0,0" Name="label1" VerticalAlignment="Top" />
+                    <Label Content="ジャンル絞り込み（未登録で全ジャンル対象）" Height="28" HorizontalAlignment="Left" Margin="6,6,0,0" Name="label1" VerticalAlignment="Top" />
                     <ListBox HorizontalAlignment="Left" Margin="6,40,0,65" Name="listBox_content" Width="238" SelectionMode="Extended" DisplayMemberPath="ListBoxView"/>
                     <CheckBox Content="NOT扱いとする" Height="16" HorizontalAlignment="Left" Margin="6,0,0,40" Name="checkBox_notContent" VerticalAlignment="Bottom" />
                     <ComboBox Height="24" HorizontalAlignment="Left" Margin="6,0,0,6" Name="comboBox_content" VerticalAlignment="Bottom" Width="176" ItemsSource="{Binding}" />
