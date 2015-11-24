@@ -39,19 +39,19 @@
                                 <Label Content="サービス一覧" Height="28" HorizontalAlignment="Left" Margin="267,6,0,0" Name="label32" VerticalAlignment="Top" />
                                 <TabControl Height="186" HorizontalAlignment="Left" Margin="268,40,0,0" Name="tabControl2" VerticalAlignment="Top" Width="244">
                                     <TabItem Header="地デジ" Name="tabItem_tere">
-                                        <ListBox Name="listBox_serviceTere" SelectionChanged="listBox_service_SelectionChanged" SelectionMode="Extended" MouseDoubleClick="listBox_service_MouseDoubleClick" />
+                                        <ListBox Name="listBox_serviceTere" SelectionChanged="listBox_service_SelectionChanged" SelectionMode="Extended" />
                                     </TabItem>
                                     <TabItem Header="BS" Name="tabItem_bs">
-                                        <ListBox Name="listBox_serviceBS" SelectionChanged="listBox_service_SelectionChanged" SelectionMode="Extended" MouseDoubleClick="listBox_service_MouseDoubleClick" />
+                                        <ListBox Name="listBox_serviceBS" SelectionChanged="listBox_service_SelectionChanged" SelectionMode="Extended" />
                                     </TabItem>
                                     <TabItem Header="CS" Name="tabItem_cs">
-                                        <ListBox Name="listBox_serviceCS" SelectionChanged="listBox_service_SelectionChanged" SelectionMode="Extended" MouseDoubleClick="listBox_service_MouseDoubleClick" />
+                                        <ListBox Name="listBox_serviceCS" SelectionChanged="listBox_service_SelectionChanged" SelectionMode="Extended" />
                                     </TabItem>
                                     <TabItem Header="その他" Name="tabItem_other">
-                                        <ListBox Name="listBox_serviceOther" SelectionChanged="listBox_service_SelectionChanged" SelectionMode="Extended" MouseDoubleClick="listBox_service_MouseDoubleClick" />
+                                        <ListBox Name="listBox_serviceOther" SelectionChanged="listBox_service_SelectionChanged" SelectionMode="Extended" />
                                     </TabItem>
                                     <TabItem Header="全て" Name="tabItem_all">
-                                        <ListBox Name="listBox_serviceAll" SelectionChanged="listBox_service_SelectionChanged" SelectionMode="Extended" MouseDoubleClick="listBox_service_MouseDoubleClick" />
+                                        <ListBox Name="listBox_serviceAll" SelectionChanged="listBox_service_SelectionChanged" SelectionMode="Extended" />
                                     </TabItem>
                                 </TabControl>
                                 <TextBox HorizontalAlignment="Left" IsReadOnly="True" Margin="10,238,0,6" Name="textBox_serviceView1" TextWrapping="Wrap" VerticalScrollBarVisibility="Visible" Width="247" Height="117" />

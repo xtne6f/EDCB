@@ -74,13 +74,13 @@
                     <GroupBox Header="上部表示ボタン" Height="197" Margin="12,12,12,0" Name="groupBox31" VerticalAlignment="Top">
                         <Grid>
                             <Label Content="表示ボタン" Height="28" HorizontalAlignment="Left" Margin="6,6,0,0" Name="label31" VerticalAlignment="Top" />
-                            <ListBox Height="124" HorizontalAlignment="Left" Margin="6,40,0,0" Name="listBox_viewBtn" VerticalAlignment="Top" Width="172" MouseDoubleClick="listBox_MouseDoubleClick" />
+                            <ListBox Height="124" HorizontalAlignment="Left" Margin="6,40,0,0" Name="listBox_viewBtn" VerticalAlignment="Top" Width="172" SelectionMode="Extended" />
                             <Button Content="↑" Height="23" HorizontalAlignment="Left" Margin="205,40,0,0" Name="button_btnUp" VerticalAlignment="Top" Width="47" />
                             <Button Content="↓" Height="23" HorizontalAlignment="Left" Margin="205,141,0,0" Name="button_btnDown" VerticalAlignment="Top" Width="47" />
-                            <Button Content="→" Height="23" HorizontalAlignment="Left" Margin="205,77,0,0" Name="button_btnDel" VerticalAlignment="Top" Width="47" Click="button_btnDel_Click" />
-                            <Button Content="←" Height="23" HorizontalAlignment="Left" Margin="205,106,0,0" Name="button_btnAdd" VerticalAlignment="Top" Width="47" Click="button_btnAdd_Click" />
+                            <Button Content="→" Height="23" HorizontalAlignment="Left" Margin="205,77,0,0" Name="button_btnDel" VerticalAlignment="Top" Width="47" />
+                            <Button Content="←" Height="23" HorizontalAlignment="Left" Margin="205,106,0,0" Name="button_btnAdd" VerticalAlignment="Top" Width="47" />
                             <Label Content="項目" Height="28" HorizontalAlignment="Left" Margin="281,6,0,0" Name="label32" VerticalAlignment="Top" />
-                            <ListBox Height="124" HorizontalAlignment="Left" Margin="281,40,0,0" Name="listBox_itemBtn" VerticalAlignment="Top" Width="172" MouseDoubleClick="listBox_MouseDoubleClick" />
+                            <ListBox Height="124" HorizontalAlignment="Left" Margin="281,40,0,0" Name="listBox_itemBtn" VerticalAlignment="Top" Width="172" SelectionMode="Extended" />
                             <CheckBox Content="タブの位置に表示" Height="16" HorizontalAlignment="Left" Margin="469,40,0,0" Name="checkBox_showAsTab" VerticalAlignment="Top" />
                             <CheckBox Content="スタンバイ、休止ボタンでもカウントダウンを表示" Height="16" HorizontalAlignment="Left" Margin="469,62,0,0" Name="checkBox_suspendChk" VerticalAlignment="Top" Width="263"/>
                             <TextBox Height="24" Margin="499,80,0,0" Name="textBox_suspendChkTime" VerticalAlignment="Top" HorizontalAlignment="Left" Width="42" />
@@ -92,13 +92,13 @@
                     <GroupBox Header="タスクアイコン 右クリック表示項目" Height="197" Margin="12,217,12,0" Name="groupBox32" VerticalAlignment="Top">
                         <Grid>
                             <Label Content="表示ボタン" Height="28" HorizontalAlignment="Left" Margin="6,6,0,0" Name="label33" VerticalAlignment="Top" />
-                            <ListBox Height="124" HorizontalAlignment="Left" Margin="6,40,0,0" Name="listBox_viewTask" VerticalAlignment="Top" Width="172" MouseDoubleClick="listBox_MouseDoubleClick" />
+                            <ListBox Height="124" HorizontalAlignment="Left" Margin="6,40,0,0" Name="listBox_viewTask" VerticalAlignment="Top" Width="172" SelectionMode="Extended" />
                             <Button Content="↑" Height="23" HorizontalAlignment="Left" Margin="205,40,0,0" Name="button_taskUp" VerticalAlignment="Top" Width="47" />
                             <Button Content="↓" Height="23" HorizontalAlignment="Left" Margin="205,141,0,0" Name="button_taskDown" VerticalAlignment="Top" Width="47" />
-                            <Button Content="→" Height="23" HorizontalAlignment="Left" Margin="205,77,0,0" Name="button_taskDel" VerticalAlignment="Top" Width="47" Click="button_taskDel_Click" />
-                            <Button Content="←" Height="23" HorizontalAlignment="Left" Margin="205,106,0,0" Name="button_taskAdd" VerticalAlignment="Top" Width="47" Click="button_taskAdd_Click" />
+                            <Button Content="→" Height="23" HorizontalAlignment="Left" Margin="205,77,0,0" Name="button_taskDel" VerticalAlignment="Top" Width="47" />
+                            <Button Content="←" Height="23" HorizontalAlignment="Left" Margin="205,106,0,0" Name="button_taskAdd" VerticalAlignment="Top" Width="47" />
                             <Label Content="項目" Height="28" HorizontalAlignment="Left" Margin="281,6,0,0" Name="label34" VerticalAlignment="Top" />
-                            <ListBox Height="124" HorizontalAlignment="Left" Margin="281,40,0,0" Name="listBox_itemTask" VerticalAlignment="Top" Width="172" MouseDoubleClick="listBox_MouseDoubleClick" />
+                            <ListBox Height="124" HorizontalAlignment="Left" Margin="281,40,0,0" Name="listBox_itemTask" VerticalAlignment="Top" Width="172" SelectionMode="Extended" />
                         </Grid>
                     </GroupBox>
                 </Grid>

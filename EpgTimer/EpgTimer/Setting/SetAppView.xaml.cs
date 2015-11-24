@@ -34,9 +34,9 @@ namespace EpgTimer.Setting
         private List<String> extList = new List<string>();
         private List<String> delChkFolderList = new List<string>();
 
-        private List<ViewMenuItem> buttonItem = new List<ViewMenuItem>();
-        private List<ViewMenuItem> taskItem = new List<ViewMenuItem>();
-
+        private List<string> buttonItem;
+        private List<string> taskItem;
+        
         private Dictionary<UInt64, ServiceViewItem> serviceList = new Dictionary<UInt64, ServiceViewItem>();
         private List<IEPGStationInfo> stationList = new List<IEPGStationInfo>();
 
@@ -83,8 +83,6 @@ namespace EpgTimer.Setting
                 checkBox_srvResident.IsEnabled = false;
                 button_recDef.Content = "録画プリセットを確認";
             }
-
-            listBox_Button_Set();
 
             try
             {
@@ -295,66 +293,7 @@ namespace EpgTimer.Setting
                     textblockTimer.Text = "録画終了時にスタンバイ、休止する場合は必ず表示されます(ただし、サービス未使用時はこの設定は使用されず15秒固定)。";
                 }
 
-                buttonItem.Add(new ViewMenuItem("（空白）", false));
-                buttonItem.Add(new ViewMenuItem("設定", false));
-                buttonItem.Add(new ViewMenuItem("検索", false));
-                buttonItem.Add(new ViewMenuItem("スタンバイ", false));
-                buttonItem.Add(new ViewMenuItem("休止", false));
-                buttonItem.Add(new ViewMenuItem("EPG取得", false));
-                buttonItem.Add(new ViewMenuItem("EPG再読み込み", false));
-                buttonItem.Add(new ViewMenuItem("終了", false));
-                buttonItem.Add(new ViewMenuItem("カスタム１", false));
-                buttonItem.Add(new ViewMenuItem("カスタム２", false));
-                buttonItem.Add(new ViewMenuItem("NetworkTV終了", false));
-                buttonItem.Add(new ViewMenuItem("情報通知ログ", false));
-
-                taskItem.Add(new ViewMenuItem("（セパレータ）", false));
-                taskItem.Add(new ViewMenuItem("設定", false));
-                taskItem.Add(new ViewMenuItem("スタンバイ", false));
-                taskItem.Add(new ViewMenuItem("休止", false));
-                taskItem.Add(new ViewMenuItem("EPG取得", false));
-                taskItem.Add(new ViewMenuItem("終了", false));
-
-                foreach (String info in Settings.Instance.ViewButtonList)
-                {
-                    //リストが空であることを示す特殊なアイテムを無視
-                    if (String.Compare(info, "（なし）") == 0)
-                    {
-                        continue;
-                    }
-                    //.NET的に同一文字列のStringを入れると選択動作がおかしくなるみたいなので毎回作成しておく
-                    listBox_viewBtn.Items.Add(new ViewMenuItem(info, true));
-                    if (String.Compare(info, "（空白）") != 0)
-                    {
-                        foreach (ViewMenuItem item in buttonItem)
-                        {
-                            if (String.Compare(info, item.MenuName) == 0)
-                            {
-                                item.IsSelected = true;
-                                break;
-                            }
-                        }
-                    }
-                }
-                foreach (String info in Settings.Instance.TaskMenuList)
-                {
-                    //.NET的に同一文字列のStringを入れると選択動作がおかしくなるみたいなので毎回作成しておく
-                    listBox_viewTask.Items.Add(new ViewMenuItem(info, true));
-                    if (String.Compare(info, "（セパレータ）") != 0)
-                    {
-                        foreach (ViewMenuItem item in taskItem)
-                        {
-                            if (String.Compare(info, item.MenuName) == 0)
-                            {
-                                item.IsSelected = true;
-                                break;
-                            }
-                        }
-                    }
-                }
-
-                ReLoadButtonItem();
-                ReLoadTaskItem();
+                listBox_Button_Set();
 
                 textBox_name1.Text = Settings.Instance.Cust1BtnName;
                 textBox_exe1.Text = Settings.Instance.Cust1BtnCmd;
@@ -379,30 +318,6 @@ namespace EpgTimer.Setting
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
-
-        private void ReLoadButtonItem()
-        {
-            listBox_itemBtn.Items.Clear();
-            foreach (ViewMenuItem info in buttonItem)
-            {
-                if (info.IsSelected == false)
-                {
-                    listBox_itemBtn.Items.Add(info);
-                }
-            }
-        }
-
-        private void ReLoadTaskItem()
-        {
-            listBox_itemTask.Items.Clear();
-            foreach (ViewMenuItem info in taskItem)
-            {
-                if (info.IsSelected == false)
-                {
-                    listBox_itemTask.Items.Add(info);
-                }
             }
         }
 
@@ -552,22 +467,14 @@ namespace EpgTimer.Setting
                 }
                 catch { }
 
-                Settings.Instance.ViewButtonList.Clear();
-                foreach (ViewMenuItem info in listBox_viewBtn.Items)
-                {
-                    Settings.Instance.ViewButtonList.Add(info.MenuName);
-                }
+                Settings.Instance.ViewButtonList = listBox_viewBtn.Items.OfType<string>().ToList();
                 if (Settings.Instance.ViewButtonList.Count == 0)
                 {
                     //リストが空であることを示す特殊なアイテムを追加
                     Settings.Instance.ViewButtonList.Add("（なし）");
                 }
 
-                Settings.Instance.TaskMenuList.Clear();
-                foreach (ViewMenuItem info in listBox_viewTask.Items)
-                {
-                    Settings.Instance.TaskMenuList.Add(info.MenuName);
-                }
+                Settings.Instance.TaskMenuList = listBox_viewTask.Items.OfType<string>().ToList();
 
                 Settings.Instance.Cust1BtnName = textBox_name1.Text;
                 Settings.Instance.Cust1BtnCmd = textBox_exe1.Text;
@@ -642,139 +549,98 @@ namespace EpgTimer.Setting
         {
             //上部表示ボタン関係
             bxb.TargetBox = this.listBox_viewBtn;
+            bxb.SourceBox = this.listBox_itemBtn;
+            bxb.DuplicationSpecific = new List<object> { "（空白）" };
             button_btnUp.Click += new RoutedEventHandler(bxb.button_up_Click);
             button_btnDown.Click += new RoutedEventHandler(bxb.button_down_Click);
+            button_btnAdd.Click += new RoutedEventHandler((sender, e) => button_Add(bxb, buttonItem));
+            button_btnDel.Click += new RoutedEventHandler((sender, e) => button_Dell(bxb, bxt, buttonItem));
+            bxb.sourceBoxKeyEnable(listBox_itemBtn, (sender, e) => button_btnAdd.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
+            bxb.targetBoxKeyEnable(listBox_viewBtn, (sender, e) => button_btnDel.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
+            bxb.doubleClickSetter(listBox_itemBtn, (sender, e) => button_btnAdd.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
+            bxb.doubleClickSetter(listBox_viewBtn, (sender, e) => button_btnDel.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
 
             //タスクアイコン関係
             bxt.TargetBox = this.listBox_viewTask;
+            bxt.SourceBox = this.listBox_itemTask;
+            bxt.DuplicationSpecific = new List<object> { "（セパレータ）" };
             button_taskUp.Click += new RoutedEventHandler(bxt.button_up_Click);
             button_taskDown.Click += new RoutedEventHandler(bxt.button_down_Click);
-        }
-        
-        private void button_btnDel_Click(object sender, RoutedEventArgs e)
-        {
-            if (listBox_viewBtn.SelectedItem != null)
+            button_taskAdd.Click += new RoutedEventHandler((sender, e) => button_Add(bxt, taskItem));
+            button_taskDel.Click += new RoutedEventHandler((sender, e) => button_Dell(bxt, bxb, taskItem));
+            bxt.sourceBoxKeyEnable(listBox_itemTask, (sender, e) => button_taskAdd.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
+            bxt.targetBoxKeyEnable(listBox_viewTask, (sender, e) => button_taskDel.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
+            bxt.doubleClickSetter(listBox_itemTask, (sender, e) => button_taskAdd.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
+            bxt.doubleClickSetter(listBox_viewTask, (sender, e) => button_taskDel.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
+
+            buttonItem = new List<string>
             {
-                ViewMenuItem info = listBox_viewBtn.SelectedItem as ViewMenuItem;
-                if (String.Compare(info.MenuName, "設定") == 0)
-                {
-                    bool found = false;
-                    foreach (ViewMenuItem item in listBox_viewTask.Items)
-                    {
-                        if ((found = item.MenuName == "設定") != false)
-                        {
-                            break;
-                        }
-                    }
-                    if (!found)
-                    {
-                        MessageBox.Show("設定は上部表示ボタンか右クリック表示項目のどちらかに必要です");
-                        return;
-                    }
-                }
-                if (String.Compare(info.MenuName, "（空白）") != 0)
-                {
-                    foreach (ViewMenuItem item in buttonItem)
-                    {
-                        if (String.Compare(info.MenuName, item.MenuName) == 0)
-                        {
-                            item.IsSelected = false;
-                            break;
-                        }
-                    }
-                }
-                listBox_viewBtn.Items.Remove(info);
-                ReLoadButtonItem();
-            }
+                "（空白）",
+                "設定",
+                "検索",
+                "スタンバイ",
+                "休止",
+                "EPG取得",
+                "EPG再読み込み",
+                "終了",
+                "カスタム１",
+                "カスタム２",
+                "NetworkTV終了",
+                "情報通知ログ"
+            };
+            //リストが空であることを示す特殊なアイテムを無視
+            List<string> viewButtonList2 = Settings.Instance.ViewButtonList.Where(str => str != "（なし）").ToList();
+            viewButtonList2.ForEach(str => listBox_viewBtn.Items.Add(str));
+            reLoadButtonItem(bxb, buttonItem);
+
+            taskItem = new List<string>
+            {
+                "（セパレータ）",
+                "設定",
+                "スタンバイ",
+                "休止",
+                "EPG取得",
+                "終了"
+            };
+            Settings.Instance.TaskMenuList.ForEach(str => listBox_viewTask.Items.Add(str));
+            reLoadButtonItem(bxt, taskItem);
         }
 
-        private void button_btnAdd_Click(object sender, RoutedEventArgs e)
+        private void button_Add(BoxExchangeEditor bx, List<string> src)
         {
-            if (listBox_itemBtn.SelectedItem != null)
+            int pos = bx.SourceBox.SelectedIndex - bx.SourceBox.SelectedItems.Count;
+            bx.addItems(bx.SourceBox, bx.TargetBox);
+            reLoadButtonItem(bx, src);
+            if (bx.SourceBox.Items.Count != 0)
             {
-                ViewMenuItem info = listBox_itemBtn.SelectedItem as ViewMenuItem;
-                if (String.Compare(info.MenuName, "（空白）") != 0)
-                {
-                    info.IsSelected = true;
-                }
-                listBox_viewBtn.Items.Add(new ViewMenuItem(info.MenuName, true));
-                ReLoadButtonItem();
+                pos = pos <= 1 ? 1 : pos;
+                pos = Math.Max(0, Math.Min(pos, bx.SourceBox.Items.Count - 1));
+                bx.SourceBox.SelectedIndex = pos - 1;//順序がヘンだが、ENTERの場合はこの後に+1処理が入る模様
             }
         }
-
-        private void button_taskDel_Click(object sender, RoutedEventArgs e)
+        private void button_Dell(BoxExchangeEditor bx, BoxExchangeEditor bx_other, List<string> src)
         {
-            if (listBox_viewTask.SelectedItem != null)
+            if (bx.TargetBox.SelectedItem == null) return;
+            //
+            string item1 = bx.TargetBox.SelectedItems.OfType<string>().FirstOrDefault(item => item == "設定");
+            string item2 = bx_other.TargetBox.Items.OfType<string>().FirstOrDefault(item => item == "設定");
+            if (item1 != null && item2 == null)
             {
-                ViewMenuItem info = listBox_viewTask.SelectedItem as ViewMenuItem;
-                if (String.Compare(info.MenuName, "設定") == 0)
-                {
-                    bool found = false;
-                    foreach (ViewMenuItem item in listBox_viewBtn.Items)
-                    {
-                        if ((found = item.MenuName == "設定") != false)
-                        {
-                            break;
-                        }
-                    }
-                    if (!found)
-                    {
-                        MessageBox.Show("設定は上部表示ボタンか右クリック表示項目のどちらかに必要です");
-                        return;
-                    }
-                }
-                if (String.Compare(info.MenuName, "（セパレータ）") != 0)
-                {
-                    foreach (ViewMenuItem item in taskItem)
-                    {
-                        if (String.Compare(info.MenuName, item.MenuName) == 0)
-                        {
-                            item.IsSelected = false;
-                            break;
-                        }
-                    }
-                }
-                listBox_viewTask.Items.Remove(info);
-                ReLoadTaskItem();
+                MessageBox.Show("設定は上部表示ボタンか右クリック表示項目のどちらかに必要です");
+                return;
             }
+
+            bx.deleteItems(bx.TargetBox);
+            reLoadButtonItem(bx, src);
         }
-
-        private void button_taskAdd_Click(object sender, RoutedEventArgs e)
+        private void reLoadButtonItem(BoxExchangeEditor bx, List<string> src)
         {
-            if (listBox_itemTask.SelectedItem != null)
-            {
-                ViewMenuItem info = listBox_itemTask.SelectedItem as ViewMenuItem;
-                if (String.Compare(info.MenuName, "（セパレータ）") != 0)
-                {
-                    info.IsSelected = true;
-                }
-                listBox_viewTask.Items.Add(new ViewMenuItem(info.MenuName, true));
-                ReLoadTaskItem();
-            }
-        }
+            var viewlist = bx.TargetBox.Items.OfType<string>().ToList();
+            var diflist = src.Except(viewlist).ToList();
+            diflist.Insert(0, bx.DuplicationSpecific.OfType<string>().ElementAt(0));
+            var newlist = diflist.Distinct().ToList();
 
-        private void listBox_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-        {
-            ListBox clicked = sender as ListBox;
-            if (clicked != null && clicked.IsMouseCaptured)
-            {
-                if (clicked.Equals(listBox_viewBtn))
-                {
-                    button_btnDel_Click(sender, e);
-                }
-                else if (clicked.Equals(listBox_itemBtn))
-                {
-                    button_btnAdd_Click(sender, e);
-                }
-                else if (clicked.Equals(listBox_viewTask))
-                {
-                    button_taskDel_Click(sender, e);
-                }
-                else if (clicked.Equals(listBox_itemTask))
-                {
-                    button_taskAdd_Click(sender, e);
-                }
-            }
+            bx.SourceBox.ItemsSource = newlist;
         }
 
         private void button_recDef_Click(object sender, RoutedEventArgs e)

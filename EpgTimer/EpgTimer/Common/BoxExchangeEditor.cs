@@ -21,18 +21,76 @@ namespace EpgTimer
         public bool DuplicationAllowed { set; get; }//項目の重複を全て許可
         public IList DuplicationSpecific { set; get; }//特定の項目のみ重複を許可
 
-        //ダブルクリックでの移動を行うかどうか
-        public void DoubleClickMoveAllow()
+        /// <summary>ソース側のEnter、ターゲット側のDelete、Escによる選択解除を有効にする</summary>
+        public void KeyActionAllow()
         {
-            if (SourceBox != null) SourceBox.MouseDoubleClick += new MouseButtonEventHandler(sourceBox_MouseDoubleClick);
-            if (TargetBox != null) TargetBox.MouseDoubleClick += new MouseButtonEventHandler(targetBox_MouseDoubleClick);
+            if (SourceBox != null) sourceBoxKeyEnable(SourceBox, button_add_Click);
+            if (TargetBox != null) targetBoxKeyEnable(TargetBox, button_del_Click);
+        }
+        public void sourceBoxKeyEnable(ListBox box, KeyEventHandler add_handler)
+        {
+            if (box == null) return;
+            //
+            box.PreviewKeyDown += getBoxKeyEnableHandler(box, add_handler, true);
+        }
+        public void targetBoxKeyEnable(ListBox box, KeyEventHandler delete_handler)
+        {
+            if (box == null) return;
+            //
+            box.PreviewKeyDown += getBoxKeyEnableHandler(box, delete_handler, false);
+        }
+        private KeyEventHandler getBoxKeyEnableHandler(ListBox box, KeyEventHandler handler, bool src)
+        {
+            return new KeyEventHandler((sender, e) =>
+            {
+                if (Keyboard.Modifiers == ModifierKeys.None)
+                {
+                    e.Handled = true;
+                    switch (e.Key)
+                    {
+                        case Key.Escape:
+                            if (box.SelectedItem == null) break;
+                            box.UnselectAll();
+                            return;
+                        case Key.Enter:
+                            if (src == true)
+                            {
+                                handler(sender, e);
+                                //一つ下へ移動する。ただし、カーソル位置は正しく動かない。
+                                int pos = box.SelectedIndex + 1;
+                                box.SelectedIndex = Math.Max(0, Math.Min(pos, box.Items.Count - 1));
+                                box.ScrollIntoView(box.SelectedItem);
+                            }
+                            return;
+                        case Key.Delete:
+                            if (src == false) handler(sender, e);
+                            return;
+                    }
+                    e.Handled = false;
+                }
+            });
         }
 
+        /// <summary>ダブルクリックでの移動を行うよう設定する</summary>
+        public void DoubleClickMoveAllow()
+        {
+            if (SourceBox != null) doubleClickSetter(SourceBox, sourceBox_MouseDoubleClick);
+            if (TargetBox != null) doubleClickSetter(TargetBox, targetBox_MouseDoubleClick);
+        }
+        public void doubleClickSetter(ListBox box, MouseButtonEventHandler handler)
+        {
+            if (box == null) return;
+            //
+            if (box.ItemContainerStyle == null)
+            {
+                box.ItemContainerStyle = (Style)new Style(typeof(ListBoxItem));
+            }
+            box.ItemContainerStyle.Setters.Add(new EventSetter(Button.MouseDoubleClickEvent, new MouseButtonEventHandler(handler)));
+        }
         public void sourceBox_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             addItems(SourceBox, TargetBox);
         }
-
         public void targetBox_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             deleteItems(TargetBox);
@@ -152,7 +210,7 @@ namespace EpgTimer
                 if (target.Items.Count != 0 && LastIndex >=0)
                 {
                     target.SelectedIndex = LastIndex;
-                    target.ScrollIntoView(target.SelectedItem);
+                    target.ScrollIntoView(target.SelectedItem);//同じ名前などがあると、そこまでしか動かない。
                 }
             }
             catch (Exception ex)

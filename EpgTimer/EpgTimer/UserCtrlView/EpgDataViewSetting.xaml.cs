@@ -124,7 +124,14 @@ namespace EpgTimer
         {
             //サービス選択関係はソースのリストボックスが複数あるので、追加関連操作のみリストボックス選択操作を追加する。
             bxs.TargetBox = this.listBox_serviceView;
+            bxs.KeyActionAllow();
             bxs.DoubleClickMoveAllow();
+            new List<ListBox> { listBox_serviceTere, listBox_serviceBS, listBox_serviceCS, listBox_serviceOther, listBox_serviceAll }
+                .ForEach(box => 
+                {
+                    bxs.sourceBoxKeyEnable(box, (sender, e) => button_service_add.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
+                    bxs.doubleClickSetter(box, (sender, e) => button_service_add.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
+                });
             button_service_addAll.Click += new RoutedEventHandler((sender, e) => bxs.SourceBox = SelectedServiceListBox());
             button_service_addAll.Click += new RoutedEventHandler(bxs.button_addAll_Click);
             button_service_add.Click += new RoutedEventHandler((sender, e) => bxs.SourceBox = SelectedServiceListBox());
@@ -139,6 +146,7 @@ namespace EpgTimer
             //ジャンル選択関係
             bxj.SourceBox = this.listBox_jyanru;
             bxj.TargetBox = this.listBox_jyanruView;
+            bxj.KeyActionAllow();
             bxj.DoubleClickMoveAllow();
             button_jyanru_addAll.Click += new RoutedEventHandler(bxj.button_addAll_Click);
             button_jyanru_add.Click += new RoutedEventHandler(bxj.button_add_Click);
@@ -146,11 +154,6 @@ namespace EpgTimer
             button_jyanru_delAll.Click += new RoutedEventHandler(bxj.button_delAll_Click);
         }
         //残りの追加イベント
-        /// <summary>サービスダブルクリック(ソース側)</summary>
-        private void listBox_service_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-        {
-            button_service_add.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-        }
         /// <summary>映像のみ全追加</summary>
         private void button_service_addVideo_Click(object sender, RoutedEventArgs e)
         {
