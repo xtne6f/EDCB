@@ -51,5 +51,7 @@
                 </Setter.Value>
             </Setter>
         </Style>
+        <Style TargetType="{x:Type ListBoxItem}" />
+        <Style TargetType="{x:Type ListViewItem}" />
     </Application.Resources>
 </Application>
