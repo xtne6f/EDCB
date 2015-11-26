@@ -72,8 +72,16 @@ namespace EpgTimer.UserCtrlView
             lastPopupInfo = null;
             lastPopupPos = new Point(-1, -1);
         }
-        public virtual bool PopupItem()
+
+        protected virtual void PopUpWork(bool reset = false)
         {
+            if (IsPopupEnabled == false) return;
+
+            if (reset == true)
+            {
+                PopupClear();
+            }
+
             Point cursorPos = Mouse.GetPosition(scroll);
             if (lastPopupPos != cursorPos)
             {
@@ -82,7 +90,8 @@ namespace EpgTimer.UserCtrlView
                 if (cursorPos.X < 0 || cursorPos.Y < 0 ||
                     scroll.ViewportWidth < cursorPos.X || scroll.ViewportHeight < cursorPos.Y)
                 {
-                    return false;
+                    PopupClear();
+                    return;
                 }
 
                 Point itemPos = Mouse.GetPosition(viewPanel);
@@ -92,13 +101,16 @@ namespace EpgTimer.UserCtrlView
                 {
                     lastPopupInfo = item;
 
-                    if (item == null) return false;
+                    if (item == null)
+                    {
+                        PopupClear();
+                        return;
+                    }
 
                     SetPopup(item);
                     PopUp.Visibility = Visibility.Visible;
                 }
             }
-            return true;
         }
 
         protected virtual void scrollViewer_ScrollChanged(object sender, ScrollChangedEventArgs e)
@@ -138,13 +150,7 @@ namespace EpgTimer.UserCtrlView
                     }
                     else
                     {
-                        if (IsPopupEnabled == true)
-                        {
-                            if (PopupItem() == false)
-                            {
-                                PopupClear();
-                            }
-                        }
+                        PopUpWork();
                     }
                 }
             }
@@ -223,7 +229,11 @@ namespace EpgTimer.UserCtrlView
         {
             if (IsPopupEnabled == true)
             {
-                PopupClear();
+                //右クリック時はポップアップを維持
+                if (e.RightButton != MouseButtonState.Pressed)
+                {
+                    PopupClear();
+                }
             }
         }
 

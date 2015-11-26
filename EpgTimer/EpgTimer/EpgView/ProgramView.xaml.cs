@@ -181,6 +181,8 @@ namespace EpgTimer.EpgView
                     canvas.Children.Add(rect);
                     rectBorder.Add(rect);
                 }
+
+                PopUpWork(true);
             }
             catch (Exception ex)
             {

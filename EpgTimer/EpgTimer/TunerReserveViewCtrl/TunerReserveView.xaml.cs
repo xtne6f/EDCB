@@ -36,6 +36,8 @@ namespace EpgTimer.TunerReserveViewCtrl
                 reserveViewPanel.Width = canvas.Width;
                 reserveViewPanel.Items = reserveList;
                 reserveViewPanel.InvalidateVisual();
+
+                PopUpWork(true);
             }
             catch (Exception ex)
             {
