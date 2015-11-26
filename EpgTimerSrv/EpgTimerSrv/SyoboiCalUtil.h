@@ -10,7 +10,7 @@ public:
 	CSyoboiCalUtil(void);
 	~CSyoboiCalUtil(void);
 
-	BOOL SendReserve(vector<RESERVE_DATA*>* reserveList, vector<TUNER_RESERVE_INFO>* tunerList);
+	BOOL SendReserve(vector<RESERVE_DATA>* reserveList, vector<TUNER_RESERVE_INFO>* tunerList);
 
 protected:
 	wstring id;

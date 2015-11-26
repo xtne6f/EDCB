@@ -8,10 +8,6 @@
 
 #include "../../Common/TimeUtil.h"
 
-#ifdef _DEBUG
-#define new DEBUG_NEW
-#endif
-
 
 // CEpgDataCap_BonDlg ダイアログ
 
@@ -129,10 +125,8 @@ BOOL CEpgDataCap_BonDlg::OnInitDialog()
 		err = SelectBonDriver(this->iniBonDriver.c_str(), TRUE);
 		Sleep(this->initOpenWait);
 	}else{
-		map<int, wstring>::iterator itr;
-		itr = this->bonList.begin();
-		if( itr != this->bonList.end() ){
-			err = SelectBonDriver(itr->second.c_str());
+		if( this->bonList.empty() == false ){
+			err = SelectBonDriver(this->bonList.front().c_str());
 		}else{
 			err = ERR_FALSE;
 			WCHAR log[512 + 64] = L"";
@@ -235,6 +229,7 @@ void CEpgDataCap_BonDlg::OnDestroy()
 	DeleteTaskBar(GetSafeHwnd(), TRAYICON_ID);
 
 	WINDOWPLACEMENT Pos;
+	Pos.length = sizeof(WINDOWPLACEMENT);
 	GetWindowPlacement(m_hWnd, &Pos);
 
 	WritePrivateProfileInt(L"SET_WINDOW", L"top", Pos.rcNormalPosition.top, this->moduleIniPath.c_str());
@@ -581,6 +576,11 @@ LRESULT CEpgDataCap_BonDlg::WindowProc(UINT message, WPARAM wParam, LPARAM lPara
 			}
 		}
 		break;
+	case WM_INVOKE_CTRL_CMD:
+		{
+			this->main.CtrlCmdCallbackInvoked();
+		}
+		break;
 	case WM_TRAY_PUSHICON:
 		{
 			//タスクトレイ関係
@@ -737,7 +737,6 @@ void CEpgDataCap_BonDlg::BtnUpdate(DWORD guiMode)
 			ENABLE_ITEM(IDC_BUTTON_VIEW, TRUE);
 			ENABLE_ITEM(IDC_CHECK_UDP, TRUE);
 			ENABLE_ITEM(IDC_CHECK_TCP, TRUE);
-			ENABLE_ITEM(IDC_BUTTON_TIMESHIFT, FALSE);
 			break;
 		case GUI_CANCEL_ONLY:
 			ENABLE_ITEM(IDC_COMBO_TUNER, FALSE);
@@ -753,7 +752,6 @@ void CEpgDataCap_BonDlg::BtnUpdate(DWORD guiMode)
 			ENABLE_ITEM(IDC_BUTTON_VIEW, TRUE);
 			ENABLE_ITEM(IDC_CHECK_UDP, TRUE);
 			ENABLE_ITEM(IDC_CHECK_TCP, TRUE);
-			ENABLE_ITEM(IDC_BUTTON_TIMESHIFT, FALSE);
 			break;
 		case GUI_OPEN_FAIL:
 			ENABLE_ITEM(IDC_COMBO_TUNER, TRUE);
@@ -769,7 +767,6 @@ void CEpgDataCap_BonDlg::BtnUpdate(DWORD guiMode)
 			ENABLE_ITEM(IDC_BUTTON_VIEW, TRUE);
 			ENABLE_ITEM(IDC_CHECK_UDP, FALSE);
 			ENABLE_ITEM(IDC_CHECK_TCP, FALSE);
-			ENABLE_ITEM(IDC_BUTTON_TIMESHIFT, FALSE);
 			break;
 		case GUI_REC:
 			ENABLE_ITEM(IDC_COMBO_TUNER, FALSE);
@@ -786,7 +783,6 @@ void CEpgDataCap_BonDlg::BtnUpdate(DWORD guiMode)
 			ENABLE_ITEM(IDC_BUTTON_VIEW, TRUE);
 			ENABLE_ITEM(IDC_CHECK_UDP, TRUE);
 			ENABLE_ITEM(IDC_CHECK_TCP, TRUE);
-			ENABLE_ITEM(IDC_BUTTON_TIMESHIFT, TRUE);
 			break;
 		case GUI_REC_SET_TIME:
 			ENABLE_ITEM(IDC_COMBO_TUNER, FALSE);
@@ -802,7 +798,6 @@ void CEpgDataCap_BonDlg::BtnUpdate(DWORD guiMode)
 			ENABLE_ITEM(IDC_BUTTON_VIEW, TRUE);
 			ENABLE_ITEM(IDC_CHECK_UDP, TRUE);
 			ENABLE_ITEM(IDC_CHECK_TCP, TRUE);
-			ENABLE_ITEM(IDC_BUTTON_TIMESHIFT, TRUE);
 			break;
 		case GUI_OTHER_CTRL:
 			ENABLE_ITEM(IDC_COMBO_TUNER, FALSE);
@@ -818,7 +813,6 @@ void CEpgDataCap_BonDlg::BtnUpdate(DWORD guiMode)
 			ENABLE_ITEM(IDC_BUTTON_VIEW, TRUE);
 			ENABLE_ITEM(IDC_CHECK_UDP, TRUE);
 			ENABLE_ITEM(IDC_CHECK_TCP, TRUE);
-			ENABLE_ITEM(IDC_BUTTON_TIMESHIFT, TRUE);
 			break;
 		case GUI_REC_STANDBY:
 			ENABLE_ITEM(IDC_COMBO_TUNER, FALSE);
@@ -834,7 +828,6 @@ void CEpgDataCap_BonDlg::BtnUpdate(DWORD guiMode)
 			ENABLE_ITEM(IDC_BUTTON_VIEW, TRUE);
 			ENABLE_ITEM(IDC_CHECK_UDP, TRUE);
 			ENABLE_ITEM(IDC_CHECK_TCP, TRUE);
-			ENABLE_ITEM(IDC_BUTTON_TIMESHIFT, FALSE);
 			break;
 		default:
 			break;
@@ -925,14 +918,14 @@ void CEpgDataCap_BonDlg::ReloadBonDriver()
 	this->bonList.clear();
 	ComboBox_ResetContent(GetDlgItem(IDC_COMBO_TUNER));
 
-	this->main.EnumBonDriver(&bonList);
+	this->bonList = this->main.EnumBonDriver();
 
 	int selectIndex = 0;
-	map<int, wstring>::iterator itr;
+	vector<wstring>::iterator itr;
 	for( itr = this->bonList.begin(); itr != this->bonList.end(); itr++ ){
-		int index = ComboBox_AddString(GetDlgItem(IDC_COMBO_TUNER), itr->second.c_str());
+		int index = ComboBox_AddString(GetDlgItem(IDC_COMBO_TUNER), itr->c_str());
 		if( this->iniBonDriver.empty() == false ){
-			if( this->iniBonDriver.compare(itr->second) == 0 ){
+			if( this->iniBonDriver.compare(*itr) == 0 ){
 				selectIndex = index;
 			}
 		}
@@ -1143,14 +1136,6 @@ void CEpgDataCap_BonDlg::OnBnClickedCheckNextpg()
 }
 
 
-
-void CEpgDataCap_BonDlg::OnBnClickedButtonTimeshift()
-{
-	// TODO: ここにコントロール通知ハンドラー コードを追加します。
-	this->main.StartTimeShift();
-}
-
-
 BOOL CEpgDataCap_BonDlg::OnQueryEndSession()
 {
 	// TODO:  ここに特定なクエリの終了セッション コードを追加してください。
@@ -1257,9 +1242,6 @@ INT_PTR CALLBACK CEpgDataCap_BonDlg::DlgProc(HWND hDlg, UINT uMsg, WPARAM wParam
 			break;
 		case IDC_CHECK_NEXTPG:
 			pSys->OnBnClickedCheckNextpg();
-			break;
-		case IDC_BUTTON_TIMESHIFT:
-			pSys->OnBnClickedButtonTimeshift();
 			break;
 		case IDOK:
 		case IDCANCEL:

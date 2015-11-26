@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../Common/ParseChText5.h"
+#include "../../Common/ParseTextInstances.h"
 
 // CSetDlgEpg ダイアログ
 

@@ -2,7 +2,6 @@
 #include "SDTTTable.h"
 
 #include "../../../Common/EpgTimerUtil.h"
-#include "../Descriptor/Descriptor.h"
 
 CSDTTTable::CSDTTTable(void)
 {
@@ -23,26 +22,10 @@ void CSDTTTable::Clear()
 
 BOOL CSDTTTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 {
-	if( data == NULL ){
+	if( InitDecode(data, dataSize, decodeReadSize, TRUE) == FALSE ){
 		return FALSE;
 	}
 	Clear();
-
-	//////////////////////////////////////////////////////
-	//サイズのチェック
-	//最低限table_idとsection_length+CRCのサイズは必須
-	if( dataSize < 7 ){
-		return FALSE;
-	}
-	//->サイズのチェック
-
-	DWORD readSize = 0;
-	//////////////////////////////////////////////////////
-	//解析処理
-	table_id = data[0];
-	section_syntax_indicator = (data[1]&0x80)>>7;
-	section_length = ((WORD)data[1]&0x0F)<<8 | data[2];
-	readSize+=3;
 
 	if( section_syntax_indicator != 1 ){
 		//固定値がおかしい
@@ -54,22 +37,8 @@ BOOL CSDTTTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 		_OutputDebugString( L"++CSDTTTable:: table_id err 0xC3 != 0x%02X", table_id );
 		return FALSE;
 	}
-	if( readSize+section_length > dataSize && section_length > 3){
-		//サイズ異常
-		_OutputDebugString( L"++CSDTTTable:: size err %d > %d", readSize+section_length, dataSize );
-		return FALSE;
-	}
-	//CRCチェック
-	crc32 = ((DWORD)data[3+section_length-4])<<24 |
-		((DWORD)data[3+section_length-3])<<16 |
-		((DWORD)data[3+section_length-2])<<8 |
-		data[3+section_length-1];
-	if( crc32 != _Crc32(3+section_length-4, data) ){
-		_OutputDebugString( L"++CSDTTTable:: CRC err" );
-		return FALSE;
-	}
 
-	if( section_length > 12 ){
+	if( section_length - 4 > 11 ){
 		maker_id = data[readSize];
 		model_id = data[readSize+1];
 		version_number = (data[readSize+2]&0x3E)>>1;
@@ -82,7 +51,7 @@ BOOL CSDTTTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 		num_of_contents = data[readSize+11];
 		readSize += 12;
 
-		for( BYTE i=0; i<num_of_contents; i++ ){
+		for( BYTE i=0; readSize+7 < (DWORD)section_length+3-4 && i<num_of_contents; i++ ){
 			CONTENT_INFO_DATA* item = new CONTENT_INFO_DATA;
 			item->group = (data[readSize]&0xF0)>>4;
 			item->target_version = ((WORD)data[readSize]&0x0F)<<8 | data[readSize+1];
@@ -94,7 +63,7 @@ BOOL CSDTTTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 			item->schedule_time_shift_information = data[readSize+7]&0x0F;
 			readSize += 8;
 
-			for( WORD j=0; j<item->schedule_description_length; j+=8){
+			for( WORD j=0; readSize+7 < (DWORD)section_length+3-4 && j<item->schedule_description_length; j+=8){
 				SCHEDULE_INFO_DATA time;
 
 				DWORD mjd = ((DWORD)data[readSize])<<8 | data[readSize+1];
@@ -113,10 +82,10 @@ BOOL CSDTTTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 			}
 
 			WORD descLength = item->content_description_length - item->schedule_description_length;
-			if( descLength > 0 ){
-				CDescriptor descriptor;
-				if( descriptor.Decode( data+readSize, descLength, &item->descriptorList, NULL ) == FALSE ){
+			if( readSize+descLength <= (DWORD)section_length+3-4 && descLength > 0 ){
+				if( AribDescriptor::CreateDescriptors( data+readSize, descLength, &item->descriptorList, NULL ) == FALSE ){
 					_OutputDebugString( L"++CSDTTTable:: descriptor err" );
+					SAFE_DELETE(item);
 					return FALSE;
 				}
 				readSize+=descLength;
@@ -127,11 +96,6 @@ BOOL CSDTTTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 
 	}else{
 		return FALSE;
-	}
-	//->解析処理
-
-	if( decodeReadSize != NULL ){
-		*decodeReadSize = 3+section_length;
 	}
 
 	return TRUE;

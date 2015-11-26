@@ -1637,9 +1637,13 @@ namespace EpgTimer
                     if (this.viewCustContentKindList.Count > 0)
                     {
                         bool find = false;
-                        if (eventInfo.ContentInfo != null)
+                        if (eventInfo.ContentInfo == null || eventInfo.ContentInfo.nibbleList.Count == 0)
                         {
-                            if (eventInfo.ContentInfo.nibbleList.Count > 0)
+                            //ジャンル情報ない
+                            find = this.viewCustContentKindList.ContainsKey(0xFFFF);
+                        }
+                        else
+                        {
                             {
                                 foreach (EpgContentData contentInfo in eventInfo.ContentInfo.nibbleList)
                                 {
@@ -1666,7 +1670,7 @@ namespace EpgTimer
                     }
 
                     ProgramViewItem viewItem = new ProgramViewItem(eventInfo);
-                    viewItem.Height = (eventInfo.durationSec * Settings.Instance.MinHeight) / 60;
+                    viewItem.Height = ((eventInfo.DurationFlag == 0 ? 300 : eventInfo.durationSec) * Settings.Instance.MinHeight) / 60;
                     viewItem.Width = Settings.Instance.ServiceWidth;
                     programList.Add(viewItem);
 

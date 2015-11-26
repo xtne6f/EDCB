@@ -55,7 +55,7 @@ BOOL CWriteMain::_StartSave(
 		Format(ext, L".%s", buff);
 	}
 
-	HANDLE file = _CreateFile( grfPath.c_str(), GENERIC_READ, FILE_SHARE_READ, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
+	HANDLE file = _CreateDirectoryAndFile( grfPath.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
 	if( file == INVALID_HANDLE_VALUE ){
 		//設定ファイルないので新規作成
 		dshowCtrl.CreateNewGraph();

@@ -6,8 +6,6 @@
 #include "../Common/StringUtil.h"
 #include "../Common//WritePlugInUtil.h"
 
-#include "BonCtrlDef.h"
-
 class CWriteTSFile
 {
 public:
@@ -65,9 +63,6 @@ public:
 		);
 
 protected:
-	//PublicAPIîrëºêßå‰óp
-	BOOL Lock(LPCWSTR log = NULL, DWORD timeOut = 30*1000);
-	void UnLock(LPCWSTR log = NULL);
 	/*
 	HANDLE OpenFile(
 		wstring recFolderPath,
@@ -105,48 +100,31 @@ protected:
 	BOOL GetNextFileName(wstring recFolder, wstring fileName, wstring& recPath);
 
 protected:
-	HANDLE lockEvent;
-
-	HANDLE buffLockEvent;
-	vector<TS_DATA*> TSBuff;
+	CRITICAL_SECTION outThreadLock;
+	vector<BYTE> TSBuff;
+	size_t TSBuffOffset;
 
 	HANDLE outThread;
-	HANDLE outStopEvent;
+	BOOL outStopFlag;
+	BOOL outStartFlag;
 
 	typedef struct _SAVE_INFO{
 		CWritePlugInUtil* writeUtil;
 		BOOL freeChk;
-		BOOL overWriteFlag;
-		wstring recFilePath;
-		vector<wstring> subRecPath;
+		wstring writePlugIn;
+		wstring recFolder;
 		wstring recFileName;
-		_SAVE_INFO(void){
-			freeChk = FALSE;
-			overWriteFlag = FALSE;
-			recFilePath = L"";
-			writeUtil = NULL;
-			recFileName = L"";
-		};
-		~_SAVE_INFO(void){
-			if( writeUtil != NULL ){
-				writeUtil->UnInitialize();
-				SAFE_DELETE(writeUtil);
-			}
-		};
 	}SAVE_INFO;
-	vector<SAVE_INFO*> fileList;
+	vector<SAVE_INFO> fileList;
 
-	wstring saveFileName;
 	BOOL overWriteFlag;
-	vector<REC_FILE_SET_INFO> saveFolder;
+	ULONGLONG createSize;
 	vector<wstring> saveFolderSub;
 
 	BOOL subRecFlag;
 	__int64 writeTotalSize;
 	wstring mainSaveFilePath;
 
-	BOOL exceptionErr;
 	int maxBuffCount;
-	BOOL buffOverErr;
 };
 

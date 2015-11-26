@@ -19,12 +19,8 @@ public:
 	
 	//BonDriverフォルダのBonDriver_*.dllを列挙
 	//戻り値：
-	// エラーコード
-	//引数：
-	// bonList			[OUT]検索できたBonDriver一覧（mapのキー 内部インデックス値、mapの値 BonDriverファイル名）
-	DWORD EnumBonDriver(
-		map<int, wstring>* bonList
-		);
+	// 検索できたBonDriver一覧
+	vector<wstring> EnumBonDriver();
 
 	//BonDriverをロードしてチャンネル情報などを取得（ファイル名で指定）
 	//戻り値：
@@ -36,9 +32,7 @@ public:
 		);
 
 	//ロードしているBonDriverの開放
-	//戻り値：
-	// エラーコード
-	DWORD CloseBonDriver();
+	void CloseBonDriver();
 
 	//サービス一覧を取得する
 	//戻り値：
@@ -99,11 +93,6 @@ public:
 		WORD* ONID,
 		WORD* TSID,
 		WORD* SID
-		);
-
-	BOOL GetCh(
-		DWORD* space,
-		DWORD* ch
 		);
 
 	//チャンネル変更中かどうか
@@ -245,8 +234,6 @@ public:
 	void StartServer();
 	void StopServer();
 
-	void StartTimeShift();
-
 	BOOL GetViewStatusInfo(
 		float* signal,
 		DWORD* space,
@@ -256,6 +243,8 @@ public:
 		vector<NW_SEND_INFO>* sendUdpList,
 		vector<NW_SEND_INFO>* sendTcpList
 		);
+
+	void CtrlCmdCallbackInvoked();
 
 protected:
 	HWND msgWnd;
@@ -273,8 +262,6 @@ protected:
 	vector<NW_SEND_INFO> udpSendList;
 	vector<NW_SEND_INFO> tcpSendList;
 
-	int startMargine;
-	int endMargine;
 	BOOL overWriteFlag;
 
 	BOOL enableScrambleFlag;
@@ -283,10 +270,6 @@ protected:
 	BOOL allService;
 	BOOL needCaption;
 	BOOL needData;
-
-	BOOL BSBasic;
-	BOOL CS1Basic;
-	BOOL CS2Basic;
 
 	int openWait;
 
@@ -302,6 +285,9 @@ protected:
 	wstring currentBonDriver;
 	int outCtrlID;
 	map<DWORD, DWORD> ctrlMap;
+
+	CMD_STREAM* cmdCapture;
+	CMD_STREAM* resCapture;
 
 protected:
 	//外部制御コマンド関係

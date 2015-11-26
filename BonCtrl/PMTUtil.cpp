@@ -13,7 +13,6 @@ CPMTUtil::CPMTUtil(void)
 
 CPMTUtil::~CPMTUtil(void)
 {
-	Clear();
 }
 
 BOOL CPMTUtil::AddPacket(CTSPacketUtil* packet)
@@ -37,11 +36,6 @@ BOOL CPMTUtil::AddPacket(CTSPacketUtil* packet)
 
 void CPMTUtil::Clear()
 {
-	for( size_t i=0 ;i<ESInfoList.size(); i++ ){
-		SAFE_DELETE(ESInfoList[i]);
-	}
-	ESInfoList.clear();
-
 	PIDList.clear();
 }
 
@@ -75,7 +69,7 @@ BOOL CPMTUtil::DecodePMT(BYTE* data, DWORD dataSize)
 		_OutputDebugString(L"CPMTUtil::table_id Err");
 		return FALSE;
 	}
-	if( readSize+section_length > dataSize && section_length > 3){
+	if( readSize+section_length > dataSize || section_length < 4){
 		//ƒTƒCƒYˆÙí
 		_OutputDebugString(L"CPMTUtil::section_length %d Err", section_length);
 		return FALSE;
@@ -90,7 +84,7 @@ BOOL CPMTUtil::DecodePMT(BYTE* data, DWORD dataSize)
 		return FALSE;
 	}
 
-	if( section_length > 8 ){
+	if( section_length > 12 ){
 		program_number = ((WORD)data[readSize])<<8 | data[readSize+1];
 		version_number = (data[readSize+2]&0x3E)>>1;
 		current_next_indicator = data[readSize+2]&0x01;
@@ -102,41 +96,44 @@ BOOL CPMTUtil::DecodePMT(BYTE* data, DWORD dataSize)
 
 		//descriptor
 		WORD infoRead = 0;
-		while(infoRead < program_info_length){
+		while(readSize+1 < (DWORD)section_length+3-4 && infoRead < program_info_length){
 			BYTE descriptor_tag = data[readSize];
 			BYTE descriptor_length = data[readSize+1];
 			readSize+=2;
 
-			if( descriptor_tag == 0x09 && descriptor_length >= 4){
+			if( descriptor_tag == 0x09 && descriptor_length >= 4 && readSize+3 < (DWORD)section_length+3-4 ){
 				//CA
 				WORD CA_PID = ((WORD)data[readSize+2]&0x1F)<<8 | (WORD)data[readSize+3];
-				PIDList.insert(pair<WORD,WORD>(CA_PID, 0));
+				if (CA_PID != 0x1fff) {
+					PIDList.insert(pair<WORD,WORD>(CA_PID, 0));
+				}
 			}
 			readSize += descriptor_length;
 
 			infoRead+= 2+descriptor_length;
 		}
 
-		while( readSize < (DWORD)section_length+3-4 ){
-			ES_INFO_DATA* item = new ES_INFO_DATA;
-			item->stream_type = data[readSize];
-			item->elementary_PID = ((WORD)data[readSize+1]&0x1F)<<8 | data[readSize+2];
-			item->ES_info_length = ((WORD)data[readSize+3]&0x0F)<<8 | data[readSize+4];
+		while( readSize+4 < (DWORD)section_length+3-4 ){
+			BYTE stream_type = data[readSize];
+			WORD elementary_PID = ((WORD)data[readSize+1]&0x1F)<<8 | data[readSize+2];
+			WORD ES_info_length = ((WORD)data[readSize+3]&0x0F)<<8 | data[readSize+4];
 			readSize += 5;
 
-			PIDList.insert(pair<WORD,WORD>(item->elementary_PID, item->stream_type));
+			PIDList.insert(pair<WORD,WORD>(elementary_PID, stream_type));
 
 			//descriptor
 			infoRead = 0;
-			while(infoRead < item->ES_info_length){
+			while(readSize+1 < (DWORD)section_length+3-4 && infoRead < ES_info_length){
 				BYTE descriptor_tag = data[readSize];
 				BYTE descriptor_length = data[readSize+1];
 				readSize+=2;
 
-				if( descriptor_tag == 0x09 && descriptor_length >= 4){
+				if( descriptor_tag == 0x09 && descriptor_length >= 4 && readSize+3 < (DWORD)section_length+3-4 ){
 					//CA
 					WORD CA_PID = ((WORD)data[readSize+2]&0x1F)<<8 | (WORD)data[readSize+3];
-					PIDList.insert(pair<WORD,WORD>(CA_PID, 0));
+					if (CA_PID != 0x1fff) {
+						PIDList.insert(pair<WORD,WORD>(CA_PID, 0));
+					}
 				}
 				readSize += descriptor_length;
 
@@ -144,7 +141,6 @@ BOOL CPMTUtil::DecodePMT(BYTE* data, DWORD dataSize)
 			}
 
 //			readSize+=item->ES_info_length;
-			ESInfoList.push_back(item);
 		}
 	}
 

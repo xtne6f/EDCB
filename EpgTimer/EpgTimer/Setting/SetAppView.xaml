@@ -14,7 +14,7 @@
         <TabControl Name="tabControl1">
             <TabItem Header="録画動作" Name="tabItem1">
                 <Grid>
-                    <GroupBox Header="録画、EPG取得終了後のデフォルト動作" Height="147" Margin="12,12,12,0" Name="groupBox1" VerticalAlignment="Top">
+                    <GroupBox Header="録画、EPG取得終了後のデフォルト動作" Height="113" Margin="12,12,12,0" Name="groupBox1" VerticalAlignment="Top">
                         <Grid>
                             <RadioButton Content="何もしない" Height="16" HorizontalAlignment="Left" Margin="119,6,0,0" Name="radioButton_none" VerticalAlignment="Top" />
                             <RadioButton Content="スタンバイ" Height="16" HorizontalAlignment="Left" Margin="217,6,0,0" Name="radioButton_standby" VerticalAlignment="Top" />
@@ -25,15 +25,11 @@
                             <Label Content="録画開始" Height="28" HorizontalAlignment="Left" Margin="119,54,0,0" Name="label4" VerticalAlignment="Top" />
                             <TextBox Height="24" Margin="178,56,0,0" Name="textBox_pcWakeTime" VerticalAlignment="Top" HorizontalAlignment="Left" Width="42" />
                             <Label Content="分前 (再起動ありの場合は＋5分)" Height="28" HorizontalAlignment="Left" Margin="226,54,0,0" Name="label2" VerticalAlignment="Top" />
-                            <Label Content="bat実行条件" Height="28" HorizontalAlignment="Left" Margin="6,88,0,0" Name="label3" VerticalAlignment="Top" />
                             <Label Content="録画後動作" Height="28" HorizontalAlignment="Left" Margin="6,6,0,0" Name="label5" VerticalAlignment="Top" />
-                            <Label Content="次の予約まで" Height="28" HorizontalAlignment="Left" Margin="119,88,0,0" Name="label6" VerticalAlignment="Top" />
-                            <TextBox Height="24" HorizontalAlignment="Left" Margin="207,90,0,0" Name="textBox_batWait" VerticalAlignment="Top" Width="42" />
-                            <Label Content="分以上の空きがある場合" Height="28" HorizontalAlignment="Left" Margin="255,88,0,0" Name="label7" VerticalAlignment="Top" />
                             <Button Content="抑制条件" Height="23" HorizontalAlignment="Left" Margin="497,11,0,0" Name="button_standbyCtrl" VerticalAlignment="Top" Width="75" Click="button_standbyCtrl_Click" Style="{StaticResource ButtonStyle1}" />
                         </Grid>
                     </GroupBox>
-                    <GroupBox Header="録画時の処理" Height="226" Margin="12,165,12,0" Name="groupBox2" VerticalAlignment="Top">
+                    <GroupBox Header="録画時の処理" Height="226" Margin="12,131,12,0" Name="groupBox2" VerticalAlignment="Top">
                         <Grid>
                             <Label Content="録画マージン" Height="28" HorizontalAlignment="Left" Margin="6,6,0,0" Name="label8" VerticalAlignment="Top" />
                             <Label Content="開始" Height="28" HorizontalAlignment="Left" Margin="119,6,0,0" Name="label9" VerticalAlignment="Top" />
@@ -61,15 +57,11 @@
             <TabItem Header="予約情報管理" Name="tabItem2">
                 <Grid>
                     <CheckBox Content="優先度が同じで時間が重なった場合、後の予約を優先する" Height="16" HorizontalAlignment="Left" Margin="6,6,0,0" Name="checkBox_back_priority" VerticalAlignment="Top" />
-                    <CheckBox Content="イベントリレーによる追従を行う" Height="16" HorizontalAlignment="Left" Margin="6,28,0,0" Name="checkBox_enable_relay" VerticalAlignment="Top" />
-                    <CheckBox Content="EPGデータ読み込み時、予約時と番組名が変わっていれば番組名を変更する" Height="16" HorizontalAlignment="Left" Margin="6,50,0,0" Name="checkBox_chgTitle" VerticalAlignment="Top" />
-                    <CheckBox Content="EPGデータ読み込み時、EventIDの変更を開始、終了時間のみで処理する(番組名を考慮しない)" Height="16" HorizontalAlignment="Left" Margin="6,72,0,0" Name="checkBox_chk_TimeOnly" VerticalAlignment="Top" />
-                    <CheckBox Content="HDDの空きが少ない場合、古い録画ファイルを削除する(追加設定で対象フォルダを設定)" Height="16" HorizontalAlignment="Left" Margin="6,97,0,0" Name="checkBox_autoDel" VerticalAlignment="Top" />
-                    <Button Content="追加設定" Height="23" HorizontalAlignment="Left" Margin="510,94,0,0" Name="button_autoDel" VerticalAlignment="Top" Width="75" Click="button_autoDel_Click" Style="{StaticResource ButtonStyle1}" />
-                    <CheckBox Content="録画時のファイル名にPlugInを使用する" Height="16" HorizontalAlignment="Left" Margin="6,126,0,0" Name="checkBox_recname" VerticalAlignment="Top" />
-                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="270,123,0,0" Name="comboBox_recname" VerticalAlignment="Top" Width="160" />
-                    <Button Content="設定" Height="23" HorizontalAlignment="Left" Margin="436,124,0,0" Name="button_recname" VerticalAlignment="Top" Width="54" Click="button_recname_Click" Style="{StaticResource ButtonStyle1}" />
-                    <CheckBox Content="同一物理チャンネルで連続となるチューナーの使用を優先する" Height="16" HorizontalAlignment="Left" Margin="6,153,0,0" Name="checkBox_sameChPriority" VerticalAlignment="Top" />
+                    <CheckBox Content="HDDの空きが少ない場合、古い録画ファイルを削除する(追加設定で対象フォルダを設定)" Height="16" HorizontalAlignment="Left" Margin="6,31,0,0" Name="checkBox_autoDel" VerticalAlignment="Top" />
+                    <Button Content="追加設定" Height="23" HorizontalAlignment="Left" Margin="510,28,0,0" Name="button_autoDel" VerticalAlignment="Top" Width="75" Click="button_autoDel_Click" Style="{StaticResource ButtonStyle1}" />
+                    <CheckBox Content="録画時のファイル名にPlugInを使用する" Height="16" HorizontalAlignment="Left" Margin="6,60,0,0" Name="checkBox_recname" VerticalAlignment="Top" />
+                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="270,57,0,0" Name="comboBox_recname" VerticalAlignment="Top" Width="160" />
+                    <Button Content="設定" Height="23" HorizontalAlignment="Left" Margin="436,58,0,0" Name="button_recname" VerticalAlignment="Top" Width="54" Click="button_recname_Click" Style="{StaticResource ButtonStyle1}" />
                 </Grid>
             </TabItem>
             <TabItem Header="ボタン表示" Name="tabItem3">
@@ -105,7 +97,8 @@
                 <Grid>
                     <CheckBox Content="×ボタンで最小化する" Height="16" HorizontalAlignment="Left" Margin="6,6,0,0" Name="checkBox_closeMin" VerticalAlignment="Top" />
                     <CheckBox Content="最小化で起動する" Height="16" HorizontalAlignment="Left" Margin="6,28,0,0" Name="checkBox_minWake" VerticalAlignment="Top" />
-                    <CheckBox Content="最小化時にタスクトレイに格納する" Height="16" HorizontalAlignment="Left" Margin="212,6,0,0" Name="checkBox_minHide" VerticalAlignment="Top" />
+                    <CheckBox Content="タスクトレイアイコンを表示する" Height="16" HorizontalAlignment="Left" Margin="212,6,0,0" Name="checkBox_showTray" VerticalAlignment="Top" />
+                    <CheckBox Content="最小化時にタスクトレイに格納する" Height="16" HorizontalAlignment="Left" Margin="230,28,0,0" Name="checkBox_minHide" VerticalAlignment="Top" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_showTray, UpdateSourceTrigger=PropertyChanged}" />
                     <Button Content="録画設定のプリセットを設定" Height="23" HorizontalAlignment="Left" Margin="6,50,0,0" Name="button_recDef" VerticalAlignment="Top" Width="209" Click="button_recDef_Click" Style="{StaticResource ButtonStyle1}" />
                     <Button Content="検索条件のデフォルト値を設定" Height="23" HorizontalAlignment="Left" Margin="242,50,0,0" Name="button_searchDef" VerticalAlignment="Top" Width="248" Click="button_searchDef_Click" Style="{StaticResource ButtonStyle1}" />
                     <CheckBox Content="ネットワーク接続を許可する" Height="16" HorizontalAlignment="Left" Margin="6,81,0,0" Name="checkBox_tcpServer" VerticalAlignment="Top" />
@@ -122,23 +115,9 @@
                     <CheckBox Content="休止／スタンバイ移行時にEpgTimerNWを終了する" Height="16" HorizontalAlignment="Left" Margin="351,181,0,0" Name="checkBox_suspendClose" VerticalAlignment="Top" IsEnabled="False" />
                     <CheckBox Content="EPGデータを自動的に読み込まない" Height="16" HorizontalAlignment="Left" Margin="351,203,0,0" Name="checkBox_ngAutoEpgLoad" VerticalAlignment="Top" IsEnabled="False" />
                     <CheckBox Content="録画済み一覧のダブルクリックで再生を行う" Height="16" HorizontalAlignment="Left" Margin="6,203,0,0" Name="checkBox_playDClick" VerticalAlignment="Top" />
-                    <GroupBox Header="サーバー間連携" Height="202" Margin="8,248,8,0" Name="groupBox3" VerticalAlignment="Top" Width="758">
-                        <Grid>
-                            <CheckBox Content="サーバー間連携を有効にする" Height="16" HorizontalAlignment="Left" Margin="6,6,0,0" Name="checkBox_useSrvCoop" VerticalAlignment="Top" />
-                            <CheckBox Content="チューナー不足の予約を連携サーバーに登録する" Height="16" HorizontalAlignment="Left" Margin="33,28,0,0" Name="checkBox_useResSrvCoop" VerticalAlignment="Top" />
-                            <CheckBox Content="EPGデータを連携サーバーから取得する" Height="16" HorizontalAlignment="Left" Margin="33,50,0,0" Name="checkBox_useEpgSrvCoop" VerticalAlignment="Top" />
-                            <CheckBox Content="他サーバーからの予約登録を許可しない" Height="16" HorizontalAlignment="Left" Margin="6,98,0,0" Name="checkBox_ngResCoop" VerticalAlignment="Top" />
-                            <CheckBox Content="他サーバーからのEPGデータ取得を許可しない" Height="16" HorizontalAlignment="Left" Margin="6,120,0,0" Name="checkBox_ngEpgCoop" VerticalAlignment="Top" />
-                            <Label Content="連携サーバー" Height="28" HorizontalAlignment="Left" Margin="356,6,0,0" Name="label17" VerticalAlignment="Top" />
-                            <ListBox Height="96" HorizontalAlignment="Left" Margin="380,40,0,0" Name="listBox_coopSrv" VerticalAlignment="Top" Width="187" />
-                            <Button Content="追加" Height="23" HorizontalAlignment="Left" Margin="574,40,0,0" Name="button_add_srvcoop" VerticalAlignment="Top" Width="59" Click="button_add_srvcoop_Click" />
-                            <Button Content="削除" Height="23" HorizontalAlignment="Left" Margin="574,69,0,0" Name="button_del_srvcoop" VerticalAlignment="Top" Width="59" Click="button_del_srvcoop_Click" />
-                            <Label Content="(他サーバーからの接続を許可するにはネットワーク接続を許可しておく必要があります)" Height="28" HorizontalAlignment="Left" Margin="6,143,0,0" Name="label18" VerticalAlignment="Top" />
-                        </Grid>
-                    </GroupBox>
-                    <CheckBox Content="検索結果の番組内容を省略する" Height="16" HorizontalAlignment="Left" Margin="6,225,0,0" Name="checkBox_fixSearchResult" VerticalAlignment="Top" />
-                    <Label Content="Baloonを閉じる時間" Height="28" HorizontalAlignment="Left" Margin="409,75,0,0" Name="label19" VerticalAlignment="Top" />
-                    <TextBox Height="24" HorizontalAlignment="Left" Margin="528,78,0,0" Name="textBox_baloonclose" VerticalAlignment="Top" Width="62" />
+                    <CheckBox Content="EpgTimerSrvを常駐させる" Height="16" HorizontalAlignment="Left" Margin="6,225,0,0" Name="checkBox_srvResident" VerticalAlignment="Top" />
+                    <CheckBox Content="タスクトレイアイコンを表示する" Height="16" HorizontalAlignment="Left" Margin="24,247,0,0" Name="checkBox_srvShowTray" VerticalAlignment="Top" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_srvResident, UpdateSourceTrigger=PropertyChanged}" />
+                    <CheckBox Content="バルーンチップでの動作通知を抑制する" Height="16" HorizontalAlignment="Left" Margin="24,269,0,0" Name="checkBox_srvNoBalloonTip" VerticalAlignment="Top" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_srvResident, UpdateSourceTrigger=PropertyChanged}" />
                 </Grid>
             </TabItem>
             <TabItem Header="カスタムボタン" Name="tabItem5">

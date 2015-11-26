@@ -1,8 +1,6 @@
 #include "StdAfx.h"
 #include "SDTTable.h"
 
-#include "../../../Common/EpgTimerUtil.h"
-#include "../Descriptor/Descriptor.h"
 #include "../ARIB8CharDecode.h"
 
 CSDTTable::CSDTTable(void)
@@ -24,26 +22,10 @@ void CSDTTable::Clear()
 
 BOOL CSDTTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 {
-	if( data == NULL ){
+	if( InitDecode(data, dataSize, decodeReadSize, TRUE) == FALSE ){
 		return FALSE;
 	}
 	Clear();
-
-	//////////////////////////////////////////////////////
-	//サイズのチェック
-	//最低限table_idとsection_length+CRCのサイズは必須
-	if( dataSize < 7 ){
-		return FALSE;
-	}
-	//->サイズのチェック
-
-	DWORD readSize = 0;
-	//////////////////////////////////////////////////////
-	//解析処理
-	table_id = data[0];
-	section_syntax_indicator = (data[1]&0x80)>>7;
-	section_length = ((WORD)data[1]&0x0F)<<8 | data[2];
-	readSize+=3;
 
 	if( section_syntax_indicator != 1 ){
 		//固定値がおかしい
@@ -55,22 +37,8 @@ BOOL CSDTTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 		_OutputDebugString( L"++CSDTTable:: table_id err 0x%02X", table_id );
 		return FALSE;
 	}
-	if( readSize+section_length > dataSize && section_length > 3){
-		//サイズ異常
-		_OutputDebugString( L"++CSDTTable:: size err %d > %d", readSize+section_length, dataSize );
-		return FALSE;
-	}
-	//CRCチェック
-	crc32 = ((DWORD)data[3+section_length-4])<<24 |
-		((DWORD)data[3+section_length-3])<<16 |
-		((DWORD)data[3+section_length-2])<<8 |
-		data[3+section_length-1];
-	if( crc32 != _Crc32(3+section_length-4, data) ){
-		_OutputDebugString( L"++CSDTTable:: CRC err" );
-		return FALSE;
-	}
 
-	if( section_length > 4 ){
+	if( section_length - 4 > 7 ){
 		transport_stream_id = ((WORD)data[readSize])<<8 | data[readSize+1];
 		version_number = (data[readSize+2]&0x3E)>>1;
 		current_next_indicator = data[readSize+2]&0x01;
@@ -78,7 +46,7 @@ BOOL CSDTTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 		last_section_number = data[readSize+4];
 		original_network_id = ((WORD)data[readSize+5])<<8 | data[readSize+6];
 		readSize += 8;
-		while( readSize < (DWORD)section_length+3-4 ){
+		while( readSize+4 < (DWORD)section_length+3-4 ){
 			SERVICE_INFO_DATA* item = new SERVICE_INFO_DATA;
 			//if( original_network_id == 0x0001 || original_network_id == 0x0003 || original_network_id == 0x000A ){
 			//	item->service_id = ((WORD)data[readSize]&0x0F)<<8 | data[readSize+1];
@@ -101,8 +69,7 @@ BOOL CSDTTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 						serviceInfoList.push_back(item);
 					}
 				}else{
-					CDescriptor descriptor;
-					if( descriptor.Decode( data+readSize, item->descriptors_loop_length, &(item->descriptorList), NULL ) == FALSE ){
+					if( AribDescriptor::CreateDescriptors( data+readSize, item->descriptors_loop_length, &(item->descriptorList), NULL ) == FALSE ){
 						_OutputDebugString( L"++CSDTTable:: descriptor2 err" );
 						SAFE_DELETE(item);
 						return FALSE;
@@ -120,16 +87,11 @@ BOOL CSDTTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 	}else{
 		return FALSE;
 	}
-	//->解析処理
-
-	if( decodeReadSize != NULL ){
-		*decodeReadSize = 3+section_length;
-	}
 
 	return TRUE;
 }
 
-BOOL CSDTTable::SDDecode( BYTE* data, DWORD dataSize, vector<DESCRIPTOR_DATA*>* descriptorList, DWORD* decodeReadSize )
+BOOL CSDTTable::SDDecode( BYTE* data, DWORD dataSize, vector<AribDescriptor::CDescriptor*>* descriptorList, DWORD* decodeReadSize )
 {
 	BOOL ret = TRUE;
 	if( data == NULL || dataSize == 0 || descriptorList == NULL ){
@@ -137,16 +99,29 @@ BOOL CSDTTable::SDDecode( BYTE* data, DWORD dataSize, vector<DESCRIPTOR_DATA*>* 
 	}
 	DWORD decodeSize = 0;
 
-	DESCRIPTOR_DATA* item = new DESCRIPTOR_DATA;
-	item->service = new CServiceDesc;
+	AribDescriptor::CDescriptor* item = new AribDescriptor::CDescriptor;
 
-	while( decodeSize < dataSize ){
+	static const short parser0x82[] = {
+		AribDescriptor::descriptor_tag, 8,
+		AribDescriptor::descriptor_length, AribDescriptor::D_LOCAL, 8,
+		AribDescriptor::D_BEGIN, AribDescriptor::descriptor_length,
+			AribDescriptor::service_type, 0,
+			AribDescriptor::reserved, AribDescriptor::D_LOCAL, 8,
+			AribDescriptor::service_name, AribDescriptor::D_STRING_TO_END,
+		AribDescriptor::D_END,
+		AribDescriptor::D_FIN,
+	};
+	AribDescriptor::PARSER_PAIR parserList[] = {{0x82, parser0x82}, {0, NULL}};
+
+	BYTE serviceType = 0;
+
+	while( decodeSize + 2 < dataSize ){
 		BYTE* readPos = data+decodeSize;
 		if( readPos[0] == 0x8A ){
 			//サービスタイプ
-			item->service->service_type = readPos[2];
-			if( item->service->service_type == 0x81 ){
-				item->service->service_type = 0xA1;
+			serviceType = readPos[2];
+			if( serviceType == 0x81 ){
+				serviceType = 0xA1;
 			}
 			decodeSize += readPos[1]+2;
 		}else
@@ -154,19 +129,21 @@ BOOL CSDTTable::SDDecode( BYTE* data, DWORD dataSize, vector<DESCRIPTOR_DATA*>* 
 			//サービス名
 			if( readPos[2] == 0x01 ){
 				//日本語版？
-				item->service->service_name_length = readPos[1]-1;
-				item->service->char_service_name = new CHAR[item->service->service_name_length];
-				memcpy(item->service->char_service_name, readPos+3, item->service->service_name_length);
+				if( item->Decode(readPos, dataSize - decodeSize, NULL, parserList) != false ){
+					//サービス記述子にキャスト
+					item->SetNumber(AribDescriptor::descriptor_tag, AribDescriptor::service_descriptor);
+				}
 			}
 			decodeSize += readPos[1]+2;
 		}else{
 			decodeSize += readPos[1]+2;
 		}
 	}
-	if( item->service->service_name_length == 0 ){
+	if( item->Has(AribDescriptor::service_name) == false ){
 		SAFE_DELETE(item);
 		ret = FALSE;
 	}else{
+		item->SetNumber(AribDescriptor::service_type, serviceType);
 		descriptorList->push_back(item);
 	}
 

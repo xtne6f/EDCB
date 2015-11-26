@@ -189,10 +189,10 @@
     <ClInclude Include="..\..\BonCtrl\ChSetUtil.h">
       <Filter>ヘッダー ファイル\BonCtrl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Common\ParseChText4.h">
+    <ClInclude Include="..\..\Common\ParseText.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Common\ParseChText5.h">
+    <ClInclude Include="..\..\Common\ParseTextInstances.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
     <ClInclude Include="SetDlgEpg.h">
@@ -320,10 +320,7 @@
     <ClCompile Include="..\..\BonCtrl\ChSetUtil.cpp">
       <Filter>ソース ファイル\BonCtrl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Common\ParseChText4.cpp">
-      <Filter>ソース ファイル\Common</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Common\ParseChText5.cpp">
+    <ClCompile Include="..\..\Common\ParseTextInstances.cpp">
       <Filter>ソース ファイル\Common</Filter>
     </ClCompile>
     <ClCompile Include="SetDlgEpg.cpp">

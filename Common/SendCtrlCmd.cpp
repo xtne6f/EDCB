@@ -13,7 +13,7 @@ CSendCtrlCmd::CSendCtrlCmd(void)
 	WSAData wsaData;
 	WSAStartup(MAKEWORD(2,0), &wsaData);
 
-	this->lockEvent = _CreateEvent(FALSE, TRUE, NULL);
+	this->lockEvent = CreateEvent(NULL, FALSE, TRUE, NULL);
 
 	this->tcpFlag = FALSE;
 	this->connectTimeOut = CONNECT_TIMEOUT;
@@ -81,13 +81,28 @@ void CSendCtrlCmd::SetSendMode(
 // eventName	[IN]排他制御用Eventの名前
 // pipeName		[IN]接続パイプの名前
 void CSendCtrlCmd::SetPipeSetting(
-	wstring eventName,
-	wstring pipeName
+	LPCWSTR eventName,
+	LPCWSTR pipeName
 	)
 {
 	if( Lock() == FALSE ) return ;
 	this->eventName = eventName;
 	this->pipeName = pipeName;
+	UnLock();
+}
+
+//名前付きパイプモード時の接続先を設定（接尾にプロセスIDを伴うタイプ）
+//引数：
+// pid			[IN]プロセスID
+void CSendCtrlCmd::SetPipeSetting(
+	LPCWSTR eventName,
+	LPCWSTR pipeName,
+	DWORD pid
+	)
+{
+	if( Lock() == FALSE ) return ;
+	Format(this->eventName, L"%s%d", eventName, pid);
+	Format(this->pipeName, L"%s%d", pipeName, pid);
 	UnLock();
 }
 
@@ -124,18 +139,22 @@ DWORD CSendCtrlCmd::SendPipe(LPCWSTR pipeName, LPCWSTR eventName, DWORD timeOut,
 	}
 
 	//接続待ち
-	HANDLE waitEvent = _CreateEvent(FALSE, FALSE, eventName);
+	//CreateEvent()してはいけない。イベントを作成するのはサーバの仕事のはず
+	//CreateEvent()してしまうとサーバが終了した後は常にタイムアウトまで待たされることになる
+	HANDLE waitEvent = OpenEvent(SYNCHRONIZE, FALSE, eventName);
 	if( waitEvent == NULL ){
-		return CMD_ERR;
+		return CMD_ERR_CONNECT;
 	}
-	if(WaitForSingleObject(waitEvent, timeOut) != WAIT_OBJECT_0){
-		CloseHandle(waitEvent);
-		return CMD_ERR_TIMEOUT;
-	}
+	DWORD dwRet = WaitForSingleObject(waitEvent, timeOut);
 	CloseHandle(waitEvent);
+	if( dwRet == WAIT_TIMEOUT ){
+		return CMD_ERR_TIMEOUT;
+	}else if( dwRet != WAIT_OBJECT_0 ){
+		return CMD_ERR_CONNECT;
+	}
 
 	//接続
-	HANDLE pipe = _CreateFile( pipeName, GENERIC_READ|GENERIC_WRITE, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+	HANDLE pipe = CreateFile( pipeName, GENERIC_READ|GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 	if( pipe == INVALID_HANDLE_VALUE ){
 		_OutputDebugString(L"*+* ConnectPipe Err:%d\r\n", GetLastError());
 		return CMD_ERR_CONNECT;
@@ -174,7 +193,7 @@ DWORD CSendCtrlCmd::SendPipe(LPCWSTR pipeName, LPCWSTR eventName, DWORD timeOut,
 	}
 
 	//受信
-	if( ReadFile(pipe, head, sizeof(DWORD)*2, &read, NULL ) == FALSE ){
+	if( ReadFile(pipe, head, sizeof(DWORD)*2, &read, NULL ) == FALSE || read != sizeof(DWORD)*2 ){
 		CloseHandle(pipe);
 		return CMD_ERR;
 	}
@@ -236,7 +255,7 @@ DWORD CSendCtrlCmd::SendTCP(wstring ip, DWORD port, DWORD timeOut, CMD_STREAM* s
 	DWORD head[2];
 	head[0] = sendCmd->param;
 	head[1] = sendCmd->dataSize;
-	send(sock, (char*)head, sizeof(DWORD)*2, 0 );
+	ret = send(sock, (char*)head, sizeof(DWORD)*2, 0 );
 	if( ret == SOCKET_ERROR ){
 		closesocket(sock);
 		return CMD_ERR;
@@ -254,7 +273,7 @@ DWORD CSendCtrlCmd::SendTCP(wstring ip, DWORD port, DWORD timeOut, CMD_STREAM* s
 	}
 	//受信
 	ret = recv(sock, (char*)head, sizeof(DWORD)*2, 0 );
-	if( ret == SOCKET_ERROR ){
+	if( ret != sizeof(DWORD)*2 ){
 		closesocket(sock);
 		return CMD_ERR;
 	}
@@ -263,18 +282,13 @@ DWORD CSendCtrlCmd::SendTCP(wstring ip, DWORD port, DWORD timeOut, CMD_STREAM* s
 	if( resCmd->dataSize > 0 ){
 		resCmd->data = new BYTE[resCmd->dataSize];
 		read = 0;
-		while(ret>0){
+		while( read < resCmd->dataSize ){
 			ret = recv(sock, (char*)(resCmd->data + read), resCmd->dataSize - read, 0);
-			if( ret == SOCKET_ERROR ){
+			if( ret == SOCKET_ERROR || ret == 0 ){
 				closesocket(sock);
 				return CMD_ERR;
-			}else if( ret == 0 ){
-				break;
 			}
 			read += ret;
-			if( read >= resCmd->dataSize ){
-				break;
-			}
 		}
 	}
 	closesocket(sock);

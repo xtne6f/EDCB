@@ -14,9 +14,9 @@ CWinHTTPUtil::CWinHTTPUtil(void)
 	this->lastPort = 0;
 
     this->upThread = NULL;
-    this->upStopEvent = _CreateEvent(FALSE, FALSE, NULL);
-	this->writeCompEvent = _CreateEvent(FALSE, FALSE, NULL);
-	this->responseCompEvent = _CreateEvent(FALSE, FALSE, NULL);
+    this->upStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+	this->writeCompEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+	this->responseCompEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 }
 
 
@@ -58,7 +58,11 @@ DWORD CWinHTTPUtil::OpenSession(
 	LPCWSTR agent,				//[IN] Agentの設定
 	BOOL async,					//[IN] 非同期モードで動くかどうか（TRUE：非同期）
 	BOOL useProxy,				//[IN] Proxy使うかどうか（TRUE:Proxy使う）
-	USE_PROXY_INFO* proxyInfo	//[IN] Proxy使う場合の設定情報
+	USE_PROXY_INFO* proxyInfo,	//[IN] Proxy使う場合の設定情報
+	int resolveTimeout,			//[IN] 名前解決/接続/送信/受信タイムアウト
+	int connectTimeout,
+	int sendTimeout,
+	int receiveTimeout
 	)
 {
 	if( this->session != NULL ){
@@ -93,7 +97,7 @@ DWORD CWinHTTPUtil::OpenSession(
 	if( this->session == NULL ){
 		return ERR_NW_OPEN_SESSION;
 	}else{
-		WinHttpSetTimeouts( this->session, 1000*60, 1000*60*2, 1000*60*2, 1000*30*4 ); 
+		WinHttpSetTimeouts( this->session, resolveTimeout, connectTimeout, sendTimeout, receiveTimeout ); 
 	}
 
 	return NO_ERR;
@@ -430,7 +434,7 @@ void CWinHTTPUtil::StatusHeadersAvailable()
 	}else{
 		this->responseHTTPHeader = L"";
 	}
-	SAFE_DELETE_ARRAY(rawHeader)
+	SAFE_DELETE_ARRAY(rawHeader);
 
 	//ContentLengthを取得してみる
 	DWORD fileLength = 0;

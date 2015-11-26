@@ -38,7 +38,7 @@ public:
 		WORD* TSID
 		);
 
-	DWORD AddTSBuff(TS_DATA* data);
+	DWORD AddTSBuff(BYTE* data, DWORD dataSize);
 
 	//EMMèàóùÇÃìÆçÏê›íË
 	//ñﬂÇËílÅF
@@ -326,13 +326,11 @@ protected:
 
 	BOOL chChangeFlag;
 	BOOL chChangeErr;
-	LONGLONG chChangeTime;
+	DWORD chChangeTime;
 	WORD lastONID;
 	WORD lastTSID;
 
-	BYTE* decodeBuff;
-	DWORD decodeBuffSize;
-	DWORD deocdeBuffWriteSize;
+	vector<BYTE> decodeBuff;
 
 	BOOL enableDecodeFlag;
 	BOOL emmEnableFlag;
@@ -365,5 +363,7 @@ protected:
 	BOOL ConvertEpgInfo(EPG_EVENT_INFO* src, EPGDB_EVENT_INFO* dest);
 
 	void ResetErrCount();
+
+	void OnChChanged(WORD onid, WORD tsid);
 };
 

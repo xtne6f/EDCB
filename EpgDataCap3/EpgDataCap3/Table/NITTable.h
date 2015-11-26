@@ -104,16 +104,17 @@ CRC_32（CRC）：これは付録B で定義するデコーダにおいて、セクション全体を処理し
 */
 
 #include "../../../Common/Util.h"
-#include "../Descriptor/DescriptorDef.h"
+#include "../AribDescriptor.h"
+#include "PSITable.h"
 
-class CNITTable
+class CNITTable : public CPSITable
 {
 public:
 	typedef struct _TS_INFO_DATA{
 		WORD transport_stream_id;
 		WORD original_network_id;
 		WORD transport_descriptors_length;
-		vector<DESCRIPTOR_DATA*> descriptorList;
+		vector<AribDescriptor::CDescriptor*> descriptorList;
 		~_TS_INFO_DATA(void){
 			for( size_t i=0; i<descriptorList.size(); i++ ){
 				SAFE_DELETE(descriptorList[i]);
@@ -121,19 +122,15 @@ public:
 			descriptorList.clear();
 		};
 	} TS_INFO_DATA;
-	BYTE table_id;
-	BYTE section_syntax_indicator;
-	WORD section_length;
 	WORD network_id;
 	BYTE version_number;
 	BYTE current_next_indicator;
 	BYTE section_number;
 	BYTE last_section_number;
 	WORD network_descriptors_length;
-	vector<DESCRIPTOR_DATA*> descriptorList;
+	vector<AribDescriptor::CDescriptor*> descriptorList;
 	WORD transport_stream_loop_length;
 	vector<TS_INFO_DATA*> TSInfoList;
-	DWORD crc32;
 
 public:
 	CNITTable(void);
@@ -143,5 +140,5 @@ public:
 protected:
 	void Clear();
 
-	BOOL SDDecode( BYTE* data, DWORD dataSize, vector<DESCRIPTOR_DATA*>* descriptorList, DWORD* decodeReadSize );
+	BOOL SDDecode( BYTE* data, DWORD dataSize, vector<AribDescriptor::CDescriptor*>* descriptorList, DWORD* decodeReadSize );
 };

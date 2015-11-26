@@ -261,7 +261,7 @@ namespace EpgTimer
         {
             get
             {
-                if (this.EventInfo == null) { return new TimeSpan(); }
+                if (this.EventInfo == null || this.EventInfo.DurationFlag == 0) { return new TimeSpan(); }
                 //
                 return TimeSpan.FromSeconds(this.EventInfo.durationSec);
             }
@@ -275,6 +275,7 @@ namespace EpgTimer
             get
             {
                 if (this.EventInfo == null) { return null; }
+                if (this.EventInfo.ShortInfo == null) { return null; }
                 //
                 return this.EventInfo.ShortInfo.text_char.Replace("\r\n", " ");
             }

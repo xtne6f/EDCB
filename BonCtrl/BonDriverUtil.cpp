@@ -1,608 +1,300 @@
 #include "stdafx.h"
 #include "BonDriverUtil.h"
+#include "../Common/StringUtil.h"
+#include "../Common/BlockLock.h"
+#include "IBonDriver2.h"
+#include <process.h>
+
+enum {
+	WM_GET_TS_STREAM = WM_APP,
+	WM_SET_CH,
+	WM_GET_NOW_CH,
+	WM_GET_SIGNAL_LEVEL,
+};
+
+CBonDriverUtil::CInit CBonDriverUtil::s_init;
+
+CBonDriverUtil::CInit::CInit()
+{
+	WNDCLASSEX wc = {};
+	wc.cbSize = sizeof(wc);
+	wc.lpfnWndProc = DriverWindowProc;
+	wc.hInstance = GetModuleHandle(NULL);
+	wc.lpszClassName = L"BonDriverUtilWorker";
+	RegisterClassEx(&wc);
+}
 
 CBonDriverUtil::CBonDriverUtil(void)
+	: hwndDriver(NULL)
 {
-	this->lockEvent = _CreateEvent(FALSE, TRUE, NULL );
-
-	this->settingFolderPath = L"";
-	GetSettingPath(this->settingFolderPath);
-
-	this->bonDriverFolderPath = L"";
-	GetModuleFolderPath(this->bonDriverFolderPath);
-	this->bonDriverFolderPath += BON_DLL_FOLDER;
-	
-	this->loadIndex = -1;
-	this->loadTunerName = L"";
-	this->initChSetFlag = FALSE;
-	this->bonIF = NULL;
-	this->bon2IF = NULL;
-	this->module = NULL;
-
-	this->setSpace = 0;
-	this->setCh = 0;
+	InitializeCriticalSection(&this->utilLock);
 }
 
 CBonDriverUtil::~CBonDriverUtil(void)
 {
-	_CloseBonDriver();
-
-	if( this->lockEvent != NULL ){
-		UnLock();
-		CloseHandle(this->lockEvent);
-		this->lockEvent = NULL;
-	}
+	CloseBonDriver();
+	DeleteCriticalSection(&this->utilLock);
 }
 
-BOOL CBonDriverUtil::Lock(LPCWSTR log, DWORD timeOut)
+void CBonDriverUtil::SetBonDriverFolder(LPCWSTR bonDriverFolderPath)
 {
-	if( this->lockEvent == NULL ){
-		return FALSE;
-	}
-	if( log != NULL ){
-		OutputDebugString(log);
-	}
-	DWORD dwRet = WaitForSingleObject(this->lockEvent, timeOut);
-	if( dwRet == WAIT_ABANDONED || 
-		dwRet == WAIT_FAILED){
-		return FALSE;
-	}
-	return TRUE;
+	CBlockLock lock(&this->utilLock);
+	this->loadDllFolder = bonDriverFolderPath;
+	ChkFolderPath(this->loadDllFolder);
 }
 
-void CBonDriverUtil::UnLock(LPCWSTR log)
+vector<wstring> CBonDriverUtil::EnumBonDriver()
 {
-	if( this->lockEvent != NULL ){
-		SetEvent(this->lockEvent);
+	CBlockLock lock(&this->utilLock);
+	vector<wstring> list;
+	if( this->loadDllFolder.empty() == false ){
+		//指定フォルダのファイル一覧取得
+		WIN32_FIND_DATA findData;
+		HANDLE hFind = FindFirstFile((this->loadDllFolder + L"\\BonDriver*.dll").c_str(), &findData);
+		if( hFind != INVALID_HANDLE_VALUE ){
+			do{
+				if( (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0 ){
+					//見つかったDLLを一覧に追加
+					list.push_back(findData.cFileName);
+				}
+			}while( FindNextFile(hFind, &findData) );
+			FindClose(hFind);
+		}
 	}
-	if( log != NULL ){
-		OutputDebugString(log);
-	}
+	return list;
 }
 
-//初期設定
-//設定ファイル保存先とBonDriverフォルダを指定
-//引数：
-// settingFolderPath		[IN]設定ファイル保存フォルダパス
-// bonDriverFolderPath		[IN]BonDriverフォルダパス
-void CBonDriverUtil::SetSettingFolder(
-	LPCWSTR settingFolderPath,
-	LPCWSTR bonDriverFolderPath
-)
+bool CBonDriverUtil::OpenBonDriver(LPCWSTR bonDriverFile, void (*recvFunc_)(void*, BYTE*, DWORD, DWORD), void* recvParam_, int openWait)
 {
-	if( Lock() == FALSE ) return ;
-
-	this->settingFolderPath = settingFolderPath;
-	this->bonDriverFolderPath = bonDriverFolderPath;
-
-	ChkFolderPath(this->settingFolderPath);
-	ChkFolderPath(this->bonDriverFolderPath);
-
-	bonDllMap.clear();
-
-	wstring searchKey = L"";
-	searchKey += this->bonDriverFolderPath;
-	searchKey += L"\\BonDriver*.dll";
-
-	WIN32_FIND_DATA findData;
-	HANDLE find;
-
-	//指定フォルダのファイル一覧取得
-	find = FindFirstFile( searchKey.c_str(), &findData);
-	if ( find == INVALID_HANDLE_VALUE ) {
-		UnLock();
-		return ;
-	}
-	do{
-		if( (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0 ){
-			//本当に拡張子DLL?
-			if( IsDllFile(findData.cFileName) == TRUE ){
-				//見つかったDLLを一覧に追加
-				BON_DRIVER_INFO Item;
-				Format(Item.filePath, L"%s\\%s", this->bonDriverFolderPath.c_str(), findData.cFileName);
-				Item.fileName = findData.cFileName;
-				GetFileTitle( Item.fileName, Item.fileTitle );
-
-				int index = (int)bonDllMap.size();
-
-				this->bonDllMap.insert(pair<int, BON_DRIVER_INFO>(index, Item));
+	CBlockLock lock(&this->utilLock);
+	CloseBonDriver();
+	this->loadDllFileName = bonDriverFile;
+	if( this->loadDllFolder.empty() == false && this->loadDllFileName.empty() == false ){
+		this->recvFunc = recvFunc_;
+		this->recvParam = recvParam_;
+		this->hDriverThread = (HANDLE)_beginthreadex(NULL, 0, DriverThread, this, 0, NULL);
+		if( this->hDriverThread ){
+			//Open処理が完了するまで待つ
+			while( WaitForSingleObject(this->hDriverThread, 10) == WAIT_TIMEOUT && this->hwndDriver == false );
+			if( this->hwndDriver ){
+				Sleep(openWait);
+				return true;
 			}
+			CloseHandle(this->hDriverThread);
 		}
-	}while(FindNextFile(find, &findData));
-
-	FindClose(find);
-
-	UnLock();
+	}
+	return false;
 }
 
-BOOL CBonDriverUtil::IsDllFile(wstring name)
+void CBonDriverUtil::CloseBonDriver()
 {
-	if( name.empty() == true ){
-		return FALSE;
+	CBlockLock lock(&this->utilLock);
+	if( this->hwndDriver ){
+		PostMessage(this->hwndDriver, WM_CLOSE, 0, 0);
+		WaitForSingleObject(this->hDriverThread, INFINITE);
+		CloseHandle(this->hDriverThread);
+		this->hwndDriver = NULL;
 	}
-	WCHAR szDrive[_MAX_DRIVE];
-	WCHAR szDir[_MAX_DIR];
-	WCHAR szFname[_MAX_FNAME];
-	WCHAR szExt[_MAX_EXT];
-	_wsplitpath_s( name.c_str(), szDrive, _MAX_DRIVE, szDir, _MAX_DIR, szFname, _MAX_FNAME, szExt, _MAX_EXT );
-
-	if( CompareNoCase( szExt, L".dll" ) != 0 ){
-		return FALSE;
-	}
-
-	return TRUE;
 }
 
-//BonDriverフォルダのBonDriver_*.dllを列挙
-//戻り値：
-// エラーコード
-//引数：
-// bonList			[OUT]検索できたBonDriver一覧（mapのキー 内部インデックス値、mapの値 BonDriverファイル名）
-DWORD CBonDriverUtil::EnumBonDriver(
-	map<int, wstring>* bonList
-)
+UINT WINAPI CBonDriverUtil::DriverThread(LPVOID param)
 {
-	if( Lock() == FALSE ) return ERR_FALSE;
+	//BonDriverがCOMを利用するかもしれないため
+	CoInitialize(NULL);
 
-	map<int, BON_DRIVER_INFO>::iterator itr;
-	for( itr = this->bonDllMap.begin(); itr != this->bonDllMap.end(); itr++ ){
-		bonList->insert(pair<int, wstring>(itr->first, itr->second.fileName));
-	}
-
-	UnLock();
-
-	return NO_ERR;
-}
-
-//BonDriverのロード
-//BonDriverをロードしてチャンネル情報などを取得（インデックス値で指定）
-//戻り値：
-// エラーコード
-//引数：
-// index			[IN]EnumBonDriverで取得されたBonDriverのインデックス値
-DWORD CBonDriverUtil::OpenBonDriver(
-	int index,
-	int openWait
-)
-{
-	if( Lock() == FALSE ) return ERR_OPEN_TUNER;
-	DWORD err = ERR_OPEN_TUNER;
-	
-	map<int, BON_DRIVER_INFO>::iterator itrF;
-	itrF = this->bonDllMap.find(index);
-	if( itrF != this->bonDllMap.end() ){
-		err = _OpenBonDriver(itrF->second.filePath.c_str(), openWait);
-		if( err == NO_ERR ){
-			this->loadIndex = index;
-		}
+	CBonDriverUtil* sys = (CBonDriverUtil*)param;
+	IBonDriver* bonIF = NULL;
+	sys->bon2IF = NULL;
+	HMODULE hModule = LoadLibrary((sys->loadDllFolder + L"\\" + sys->loadDllFileName).c_str());
+	if( hModule == NULL ){
+		OutputDebugString(L"★BonDriverがロードできません\r\n");
 	}else{
-		_OutputDebugString(L"★OpenするBonDriverが見つかりません");
-		err = ERR_FIND_TUNER;
-	}
-	
-	UnLock();
-	return err;
-}
-
-//BonDriverをロードしてチャンネル情報などを取得（ファイル名で指定）
-//戻り値：
-// エラーコード
-//引数：
-// bonDriverFile	[IN]EnumBonDriverで取得されたBonDriverのファイル名
-DWORD CBonDriverUtil::OpenBonDriver(
-	LPCWSTR bonDriverFile,
-	int openWait
-	)
-{
-	if( Lock() == FALSE ) return ERR_OPEN_TUNER;
-	DWORD err = ERR_FIND_TUNER;
-	map<int, BON_DRIVER_INFO>::iterator itrF;
-	for( itrF = this->bonDllMap.begin(); itrF != this->bonDllMap.end(); itrF++ ){
-		if( CompareNoCase(bonDriverFile, itrF->second.fileName) == 0 ){
-			err = _OpenBonDriver(itrF->second.filePath.c_str(), openWait);
-			if( err == NO_ERR ){
-				this->loadIndex = itrF->first;
-			}
-			break;
-		}
-	}
-	if( err == ERR_FIND_TUNER ){
-		_OutputDebugString(L"★OpenするBonDriverが見つかりません");
-		_OutputDebugString(bonDriverFile);
-	}
-
-	UnLock();
-	return err;
-}
-
-//BonDriverをロード時の本体
-//戻り値：
-// エラーコード
-//引数：
-// bonDriverFilePath		[IN] ロードするBonDriverのファイルパス
-DWORD CBonDriverUtil::_OpenBonDriver(
-	LPCWSTR bonDriverFilePath,
-	int openWait
-	)
-{
-	DWORD err = ERR_OPEN_TUNER;
-
-	if( this->module != NULL ){
-		_CloseBonDriver();
-	}
-	this->loadChMap.clear();
-	this->loadIndex = -1;
-	this->initChSetFlag = FALSE;
-	this->loadTunerName = L"";
-
-	this->module = ::LoadLibrary(bonDriverFilePath);
-	if( this->module == NULL ){
-		OutputDebugString(L"★BonDriverがロードできません");
-		OutputDebugString(bonDriverFilePath);
-		return ERR_LOAD_MODULE;
-	}
-	IBonDriver* (*func)();
-	func = (IBonDriver* (*)())::GetProcAddress( this->module , "CreateBonDriver");
-	if( !func ){
-		OutputDebugString(L"★GetProcAddressに失敗しました");
-		err = ERR_INIT;
-		goto ERR_END;
-	}
-	this->bonIF = func();
-	try{
-		this->bon2IF = dynamic_cast<IBonDriver2 *>(bonIF);
-		BOOL open = this->bonIF->OpenTuner();
-		if( open == FALSE ){
-			Sleep(1000);
-			open = this->bonIF->OpenTuner();
-		}
-
-		if( open == FALSE ){
-			//Open失敗
-			OutputDebugString(L"★OpenTunerに失敗しました");
-			this->bonIF->CloseTuner();
-			this->bonIF->Release();
-			this->bonIF = NULL;
-			this->bon2IF = NULL;
-			err = ERR_OPEN_TUNER;
-		}else{
-			//Open成功
-			//チューナー名の取得
-			this->loadTunerName = this->bon2IF->GetTunerName();
-			Replace(this->loadTunerName, L"(",L"（");
-			Replace(this->loadTunerName, L")",L"）");
-			//チャンネル一覧の取得
-			DWORD countSpace = 0;
-			while(1){
-				if( this->bon2IF->EnumTuningSpace(countSpace) != NULL ){
-					BON_SPACE_INFO spaceItem;
-					spaceItem.space = countSpace;
-					spaceItem.spaceName = this->bon2IF->EnumTuningSpace(countSpace);
-					DWORD countCh = 0;
-
-					while(1){
-						if( this->bon2IF->EnumChannelName(countSpace, countCh) != NULL ){
-							BON_CH_INFO chItem;
-							chItem.ch = countCh;
-							chItem.chName = this->bon2IF->EnumChannelName(countSpace, countCh);
-							if( chItem.chName.empty() == false ){
-								spaceItem.chMap.insert(pair<DWORD,BON_CH_INFO>(countCh, chItem));
-							}
-						}else{
+		IBonDriver* (*funcCreateBonDriver)() = (IBonDriver*(*)())GetProcAddress(hModule, "CreateBonDriver");
+		if( funcCreateBonDriver == NULL ){
+			OutputDebugString(L"★GetProcAddressに失敗しました\r\n");
+		}else if( (bonIF = funcCreateBonDriver()) != NULL &&
+		          (sys->bon2IF = dynamic_cast<IBonDriver2*>(bonIF)) != NULL ){
+			if( sys->bon2IF->OpenTuner() == FALSE ){
+				OutputDebugString(L"★OpenTunerに失敗しました\r\n");
+			}else{
+				sys->initChSetFlag = false;
+				//チューナー名の取得
+				LPCWSTR tunerName = sys->bon2IF->GetTunerName();
+				sys->loadTunerName = tunerName ? tunerName : L"";
+				Replace(sys->loadTunerName, L"(",L"（");
+				Replace(sys->loadTunerName, L")",L"）");
+				//チャンネル一覧の取得
+				sys->loadChList.clear();
+				for( DWORD countSpace = 0; ; countSpace++ ){
+					LPCWSTR spaceName = sys->bon2IF->EnumTuningSpace(countSpace);
+					if( spaceName == NULL ){
+						break;
+					}
+					sys->loadChList.push_back(pair<wstring, vector<wstring>>(spaceName, vector<wstring>()));
+					for( DWORD countCh = 0; ; countCh++ ){
+						LPCWSTR chName = sys->bon2IF->EnumChannelName(countSpace, countCh);
+						if( chName == NULL ){
 							break;
 						}
-						countCh++;
+						sys->loadChList.back().second.push_back(chName);
 					}
-					this->loadChMap.insert(pair<DWORD, BON_SPACE_INFO>(countSpace, spaceItem));
-				}else{
-					break;
 				}
-				countSpace++;
+				sys->hwndDriver = CreateWindow(L"BonDriverUtilWorker", NULL, WS_OVERLAPPEDWINDOW, 0, 0, 0, 0, HWND_MESSAGE, NULL, GetModuleHandle(NULL), sys);
+				if( sys->hwndDriver == NULL ){
+					sys->bon2IF->CloseTuner();
+				}
 			}
-			Sleep(openWait);
-			this->initChSetFlag = FALSE;
-			err = NO_ERR;
-		}
-	}catch(...){
-		if( this->bonIF != NULL ){
-			this->bonIF->CloseTuner();
-			this->bonIF->Release();
-			this->bonIF = NULL;
-			this->bon2IF = NULL;
-		}
-		err = ERR_OPEN_TUNER;
-	}
-ERR_END:
-	if( err != NO_ERR ){
-		if( this->module != NULL ){
-			::FreeLibrary( this->module );
-			this->module=NULL;
 		}
 	}
-
-	return err;
-}
-
-//ロードしているBonDriverの開放
-//戻り値：
-// エラーコード
-DWORD CBonDriverUtil::CloseBonDriver()
-{
-	if( Lock() == FALSE ) return ERR_FALSE;
-	DWORD err = NO_ERR;
-	err = _CloseBonDriver();
-	UnLock();
-	return err;
-}
-
-DWORD CBonDriverUtil::_CloseBonDriver()
-{
-	DWORD err = NO_ERR;
-	if( this->bonIF != NULL ){
-		this->bonIF->CloseTuner();
-		this->bonIF->Release();
-		this->bonIF = NULL;
-		this->bon2IF = NULL;
-	}
-	if( this->module != NULL ){
-		::FreeLibrary( this->module );
-		this->module = NULL;
-	}
-	return err;
-}
-
-//ロードしたBonDriverの情報取得
-//SpaceとChの一覧を取得する
-//戻り値：
-// エラーコード
-//引数：
-// spaceMap			[OUT] SpaceとChの一覧（mapのキー Space）
-DWORD CBonDriverUtil::GetOriginalChList(
-	map<DWORD, BON_SPACE_INFO>* spaceMap
-)
-{
-	if( Lock() == FALSE ) return ERR_FALSE;
-
-	if( spaceMap == NULL || this->bon2IF == NULL ){
-		UnLock();
-		return ERR_INVALID_ARG;
-	}
-
-	*spaceMap = this->loadChMap;
-
-	UnLock();
-	return NO_ERR;
-}
-
-//BonDriverのチューナー名を取得
-//戻り値：
-// チューナー名
-wstring CBonDriverUtil::GetTunerName()
-{
-	wstring name = L"";
-	if( Lock() == FALSE ) return name;
-
-	name = this->loadTunerName;
-
-	UnLock();
-	return name;
-}
-
-//チャンネル変更
-//戻り値：
-// エラーコード
-//引数：
-// space			[IN]変更チャンネルのSpace
-// ch				[IN]変更チャンネルの物理Ch
-DWORD CBonDriverUtil::SetCh(
-	DWORD space,
-	DWORD ch
-	)
-{
-	if( Lock() == FALSE ) return FALSE;
-	if( this->bon2IF == NULL ){
-		UnLock();
-		return ERR_NOT_INIT;
-	}
-	this->setSpace = space;
-	this->setCh = ch;
-	//初回は常にチャンネル設定行う
-	if( this->initChSetFlag == TRUE ){
-		//２回目以降は変更あった場合に行う
-		if( space == this->bon2IF->GetCurSpace() &&
-			ch == this->bon2IF->GetCurChannel() )
-		{
-			UnLock();
-			return NO_ERR;
+	if( sys->hwndDriver == NULL ){
+		//Openできなかった
+		if( bonIF ){
+			bonIF->Release();
 		}
-	}
-	if( this->bon2IF->SetChannel(space, ch) == FALSE ){
-		Sleep(500);
-		if( this->bon2IF->SetChannel(space, ch) == FALSE ){
-			UnLock();
-			return ERR_FALSE;
+		if( hModule ){
+			FreeLibrary(hModule);
 		}
-	}
-	this->initChSetFlag = TRUE;
-	UnLock();
-	return NO_ERR;
-}
-
-//現在のチャンネル取得
-//戻り値：
-// エラーコード
-//引数：
-// space			[IN]現在のチャンネルのSpace
-// ch				[IN]現在のチャンネルの物理Ch
-DWORD CBonDriverUtil::GetNowCh(
-	DWORD* space,
-	DWORD* ch
-	)
-{
-	if( Lock() == FALSE ) return FALSE;
-	if( this->bon2IF == NULL ){
-		UnLock();
-		return FALSE;
-	}
-	if( this->initChSetFlag == FALSE ){
-		*space = 0xFFFFFFFF;
-		*ch = 0xFFFFFFFF;
-	}else{
-		*space = this->bon2IF->GetCurSpace();
-		*ch = this->bon2IF->GetCurChannel();
-		this->setSpace = *space;
-		this->setCh = *ch;
-	}
-	UnLock();
-	return TRUE;
-}
-
-BOOL CBonDriverUtil::GetSetCh(
-	DWORD* space,
-	DWORD* ch
-	)
-{
-	*space = this->setSpace;
-	*ch = this->setCh;
-	return TRUE;
-}
-
-//TSストリームを取得
-//戻り値：
-// TRUE（成功）、FALSE（失敗）
-//引数：
-// data				[OUT]BonDriver内部バッファのポインタ
-// size				[OUT]取得バッファのサイズ
-// remain			[OUT]未取得バッファのサイズ
-BOOL CBonDriverUtil::GetTsStream(
-	BYTE **data,
-	DWORD *size,
-	DWORD *remain
-	)
-{
-	if( Lock() == FALSE ) return FALSE;
-
-	BOOL ret = FALSE;
-	if( this->bonIF == NULL ){
-		UnLock();
-		return FALSE;
-	}
-	try{
-		ret = this->bonIF->GetTsStream(data, size, remain);
-	}catch(...){
-		ret = FALSE;
-	}
-	UnLock();
-	return ret;
-}
-
-//シグナルレベルの取得
-//戻り値：
-// シグナルレベル
-float CBonDriverUtil::GetSignalLevel()
-{
-	if( Lock() == FALSE ) return 0;
-	if( this->bonIF == NULL ){
-		UnLock();
+		CoUninitialize();
 		return 0;
 	}
-	float fLevel = this->bonIF->GetSignalLevel();
-	UnLock();
+
+	//メッセージループ
+	MSG msg;
+	while( GetMessage(&msg, NULL, 0, 0) > 0 ){
+		DispatchMessage(&msg);
+	}
+	sys->bon2IF->CloseTuner();
+	bonIF->Release();
+	FreeLibrary(hModule);
+
+	CoUninitialize();
+	return 0;
+}
+
+LRESULT CALLBACK CBonDriverUtil::DriverWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	CBonDriverUtil* sys = (CBonDriverUtil*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
+	if( uMsg != WM_CREATE && sys == NULL ){
+		return DefWindowProc(hwnd, uMsg, wParam, lParam);
+	}
+	switch( uMsg ){
+	case WM_CREATE:
+		sys = (CBonDriverUtil*)((LPCREATESTRUCT)lParam)->lpCreateParams;
+		SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)sys);
+		SetTimer(hwnd, 1, 20, NULL);
+		return 0;
+	case WM_DESTROY:
+		SetWindowLongPtr(hwnd, GWLP_USERDATA, NULL);
+		PostQuitMessage(0);
+		return 0;
+	case WM_TIMER:
+		if( wParam == 1 ){
+			SendMessage(hwnd, WM_GET_TS_STREAM, 0, 0);
+			return 0;
+		}
+		break;
+	case WM_GET_TS_STREAM:
+		{
+			//TSストリームを取得
+			BYTE* data;
+			DWORD size;
+			DWORD remain;
+			if( sys->bon2IF->GetTsStream(&data, &size, &remain) && data && size != 0 ){
+				if( sys->recvFunc ){
+					sys->recvFunc(sys->recvParam, data, size, 1);
+				}
+				PostMessage(hwnd, WM_GET_TS_STREAM, 1, 0);
+			}else if( wParam ){
+				//EDCBは(伝統的に)GetTsStreamのremainを利用しないので、受け取るものがなくなったらremain=0を知らせる
+				if( sys->recvFunc ){
+					sys->recvFunc(sys->recvParam, NULL, 0, 0);
+				}
+			}
+		}
+		return 0;
+	case WM_SET_CH:
+		if( sys->bon2IF->SetChannel((DWORD)wParam, (DWORD)lParam) == FALSE ){
+			Sleep(500);
+			if( sys->bon2IF->SetChannel((DWORD)wParam, (DWORD)lParam) == FALSE ){
+				return FALSE;
+			}
+		}
+		return TRUE;
+	case WM_GET_NOW_CH:
+		*(DWORD*)wParam = sys->bon2IF->GetCurSpace();
+		*(DWORD*)lParam = sys->bon2IF->GetCurChannel();
+		return 0;
+	case WM_GET_SIGNAL_LEVEL:
+		*(float*)lParam = sys->bon2IF->GetSignalLevel();
+		return 0;
+	}
+	return DefWindowProc(hwnd, uMsg, wParam, lParam);
+}
+
+vector<pair<wstring, vector<wstring>>> CBonDriverUtil::GetOriginalChList()
+{
+	CBlockLock lock(&this->utilLock);
+	if( this->hwndDriver ){
+		return this->loadChList;
+	}
+	return vector<pair<wstring, vector<wstring>>>();
+}
+
+wstring CBonDriverUtil::GetTunerName()
+{
+	CBlockLock lock(&this->utilLock);
+	if( this->hwndDriver ){
+		return this->loadTunerName;
+	}
+	return L"";
+}
+
+bool CBonDriverUtil::SetCh(DWORD space, DWORD ch)
+{
+	CBlockLock lock(&this->utilLock);
+	if( this->hwndDriver ){
+		if( this->initChSetFlag ){
+			//2回目以降は変化のある場合だけチャンネル設定する
+			DWORD nowSpace = 0;
+			DWORD nowCh = 0;
+			SendMessage(this->hwndDriver, WM_GET_NOW_CH, (WPARAM)&nowSpace, (LPARAM)&nowCh);
+			if( nowSpace == space && nowCh == ch ){
+				return true;
+			}
+		}
+		if( SendMessage(this->hwndDriver, WM_SET_CH, (WPARAM)space, (LPARAM)ch) ){
+			this->initChSetFlag = true;
+			return true;
+		}
+	}
+	return false;
+}
+
+bool CBonDriverUtil::GetNowCh(DWORD* space, DWORD* ch)
+{
+	CBlockLock lock(&this->utilLock);
+	if( this->hwndDriver && this->initChSetFlag ){
+		SendMessage(this->hwndDriver, WM_GET_NOW_CH, (WPARAM)space, (LPARAM)ch);
+		return true;
+	}
+	return false;
+}
+
+float CBonDriverUtil::GetSignalLevel()
+{
+	CBlockLock lock(&this->utilLock);
+	float fLevel = 0.0f;
+	if( this->hwndDriver ){
+		SendMessage(this->hwndDriver, WM_GET_SIGNAL_LEVEL, 0, (LPARAM)&fLevel);
+	}
 	return fLevel;
 }
 
-//Ch設定3のファイルパスを取得
-//戻り値：
-// Ch設定3のファイルパス
-wstring CBonDriverUtil::GetChSet4Path()
-{
-	wstring ret = L"";
-	if( Lock() == FALSE ) return ret;
-
-	wstring fileTitle = L"";
-	map<int, BON_DRIVER_INFO>::iterator itrF;
-	itrF = this->bonDllMap.find(this->loadIndex);
-	if( itrF != this->bonDllMap.end() ){
-		fileTitle = itrF->second.fileTitle;
-	}
-
-	wstring tunerName = this->loadTunerName;
-	CheckFileName(tunerName);
-	Format(ret, L"%s\\%s(%s).ChSet4.txt", this->settingFolderPath.c_str(), fileTitle.c_str(), tunerName.c_str() );
-
-
-	UnLock();
-	return ret;
-}
-
-//Ch設定4のファイルパスを取得
-//戻り値：
-// Ch設定4のファイルパス
-wstring CBonDriverUtil::GetChSet5Path()
-{
-	wstring ret = L"";
-	if( Lock() == FALSE ) return ret;
-
-	wstring fileTitle = L"";
-	map<int, BON_DRIVER_INFO>::iterator itrF;
-	itrF = this->bonDllMap.find(this->loadIndex);
-	if( itrF != this->bonDllMap.end() ){
-		fileTitle = itrF->second.fileTitle;
-	}
-
-	Format(ret, L"%s\\ChSet5.txt", this->settingFolderPath.c_str() );
-
-	UnLock();
-	return ret;
-}
-
-//OpenしたBonDriverのインデックス値を取得
-//戻り値：
-// インデックス値（-1で未Open）
-int CBonDriverUtil::GetOpenBonDriverIndex()
-{
-	if( Lock() == FALSE ) return -1;
-	int index = this->loadIndex;
-	UnLock();
-	return index;
-}
-
-//OpenしたBonDriverのファイル名を取得
-//戻り値：
-// BonDriverのファイル名（拡張子含む）
 wstring CBonDriverUtil::GetOpenBonDriverFileName()
 {
-	wstring ret = L"";
-	if( Lock() == FALSE ) return ret;
-
-	map<int, BON_DRIVER_INFO>::iterator itrF;
-	itrF = this->bonDllMap.find(this->loadIndex);
-	if( itrF != this->bonDllMap.end() ){
-		ret = itrF->second.fileName;
+	CBlockLock lock(&this->utilLock);
+	if( this->hwndDriver ){
+		return this->loadDllFileName;
 	}
-
-	UnLock();
-	return ret;
-}
-
-//指定物理チャンネルのチャンネル名を取得
-//戻り値：
-// BonDriverで定義されている物理チャンネル名
-wstring CBonDriverUtil::GetChName(DWORD space, DWORD ch)
-{
-	wstring ret = L"";
-	if( Lock() == FALSE ) return ret;
-
-	map<DWORD, BON_SPACE_INFO>::iterator itrSpace;
-	itrSpace = this->loadChMap.find(space);
-	if( itrSpace != this->loadChMap.end() ){
-		map<DWORD, BON_CH_INFO>::iterator itrCh;
-		itrCh = itrSpace->second.chMap.find(ch);
-		if( itrCh != itrSpace->second.chMap.end() ){
-			ret = itrCh->second.chName;
-		}
-	}
-
-	UnLock();
-	return ret;
+	return L"";
 }

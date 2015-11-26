@@ -168,7 +168,7 @@ namespace EpgTimer
             {
                 if (Settings.Instance.WakeMin == true)
                 {
-                    if (Settings.Instance.MinHide == true)
+                    if (Settings.Instance.ShowTray && Settings.Instance.MinHide)
                     {
                         this.Visibility = System.Windows.Visibility.Hidden;
                     }
@@ -343,13 +343,16 @@ namespace EpgTimer
                     pipeEventName += System.Diagnostics.Process.GetCurrentProcess().Id.ToString();
                     pipeServer.StartServer(pipeEventName, pipeName, OutsideCmdCallback, this);
 
-                    cmd.SendRegistGUI((uint)System.Diagnostics.Process.GetCurrentProcess().Id);
+                    for (int i = 0; i < 150 && cmd.SendRegistGUI((uint)System.Diagnostics.Process.GetCurrentProcess().Id) != ErrCode.CMD_SUCCESS; i++)
+                    {
+                        Thread.Sleep(100);
+                    }
                 }
 
                 //タスクトレイの表示
                 taskTray = new TaskTrayClass(this);
                 taskTray.Icon = Properties.Resources.TaskIconBlue;
-                taskTray.Visible = true;
+                taskTray.Visible = Settings.Instance.ShowTray;
                 taskTray.ContextMenuClick += new EventHandler(taskTray_ContextMenuClick);
 
                 CommonManager.Instance.DB.ReloadReserveInfo();
@@ -391,7 +394,7 @@ namespace EpgTimer
                     EAAFileClass eaaFile = new EAAFileClass();
                     if (eaaFile.LoadEAAFile(arg) == true)
                     {
-                        List<CtrlCmdCLI.Def.EpgAutoAddData> val = new List<CtrlCmdCLI.Def.EpgAutoAddData>();
+                        List<EpgAutoAddData> val = new List<EpgAutoAddData>();
                         val.Add(eaaFile.AddKey);
                         cmd.SendAddEpgAutoAdd(val);
                     }
@@ -406,7 +409,7 @@ namespace EpgTimer
                     IEPGFileClass iepgFile = new IEPGFileClass();
                     if (iepgFile.LoadTVPIDFile(arg) == true)
                     {
-                        List<CtrlCmdCLI.Def.ReserveData> val = new List<CtrlCmdCLI.Def.ReserveData>();
+                        List<ReserveData> val = new List<ReserveData>();
                         val.Add(iepgFile.AddInfo);
                         cmd.SendAddReserve(val);
                     }
@@ -421,7 +424,7 @@ namespace EpgTimer
                     IEPGFileClass iepgFile = new IEPGFileClass();
                     if (iepgFile.LoadTVPIFile(arg) == true)
                     {
-                        List<CtrlCmdCLI.Def.ReserveData> val = new List<CtrlCmdCLI.Def.ReserveData>();
+                        List<ReserveData> val = new List<ReserveData>();
                         val.Add(iepgFile.AddInfo);
                         cmd.SendAddReserve(val);
                     }
@@ -598,7 +601,7 @@ namespace EpgTimer
             }
 
             byte[] binData;
-            if (cmd.SendFileCopy("ChSet5.txt", out binData) == 1)
+            if (cmd.SendFileCopy("ChSet5.txt", out binData) == ErrCode.CMD_SUCCESS)
             {
                 string filePath = SettingPath.SettingFolderPath;
                 System.IO.Directory.CreateDirectory(filePath);
@@ -663,15 +666,7 @@ namespace EpgTimer
                     {
                         if (serviceMode == false && initExe == true)
                         {
-                            try
-                            {
-                                //EpgTimerTaskがMutex付きで動作しているときはEpgTimerSrvの終了をEpgTimerTaskに任せる
-                                Mutex.OpenExisting("Global\\EpgTimer_Bon2_Lite", System.Security.AccessControl.MutexRights.Synchronize);
-                            }
-                            catch (WaitHandleCannotBeOpenedException)
-                            {
-                                cmd.SendClose();
-                            }
+                            cmd.SendClose();
                         }
                         mutex.ReleaseMutex();
                         mutex.Close();
@@ -685,7 +680,7 @@ namespace EpgTimer
 
                     if (CommonManager.Instance.NW.IsConnected == true && needUnRegist == true)
                     {
-                        if (cmd.SendUnRegistTCP(Settings.Instance.NWServerPort) == 205)
+                        if (cmd.SendUnRegistTCP(Settings.Instance.NWServerPort) == ErrCode.CMD_ERR_CONNECT)
                         {
                             //MessageBox.Show("サーバーに接続できませんでした");
                         }
@@ -733,7 +728,7 @@ namespace EpgTimer
         {
             if (this.WindowState == WindowState.Minimized)
             {
-                if (Settings.Instance.MinHide == true)
+                if (Settings.Instance.ShowTray && Settings.Instance.MinHide)
                 {
                     this.Visibility = System.Windows.Visibility.Hidden;
                 }
@@ -744,6 +739,7 @@ namespace EpgTimer
                 taskTray.LastViewState = this.WindowState;
                 Settings.Instance.LastWindowState = this.WindowState;
             }
+            taskTray.Visible = Settings.Instance.ShowTray;
         }
 
         private void Window_PreviewDragEnter(object sender, DragEventArgs e)
@@ -763,7 +759,7 @@ namespace EpgTimer
                     EAAFileClass eaaFile = new EAAFileClass();
                     if (eaaFile.LoadEAAFile(path) == true)
                     {
-                        List<CtrlCmdCLI.Def.EpgAutoAddData> val = new List<CtrlCmdCLI.Def.EpgAutoAddData>();
+                        List<EpgAutoAddData> val = new List<EpgAutoAddData>();
                         val.Add(eaaFile.AddKey);
                         cmd.SendAddEpgAutoAdd(val);
                     }
@@ -778,7 +774,7 @@ namespace EpgTimer
                     IEPGFileClass iepgFile = new IEPGFileClass();
                     if (iepgFile.LoadTVPIDFile(path) == true)
                     {
-                        List<CtrlCmdCLI.Def.ReserveData> val = new List<CtrlCmdCLI.Def.ReserveData>();
+                        List<ReserveData> val = new List<ReserveData>();
                         val.Add(iepgFile.AddInfo);
                         cmd.SendAddReserve(val);
                     }
@@ -793,7 +789,7 @@ namespace EpgTimer
                     IEPGFileClass iepgFile = new IEPGFileClass();
                     if (iepgFile.LoadTVPIFile(path) == true)
                     {
-                        List<CtrlCmdCLI.Def.ReserveData> val = new List<CtrlCmdCLI.Def.ReserveData>();
+                        List<ReserveData> val = new List<ReserveData>();
                         val.Add(iepgFile.AddInfo);
                         cmd.SendAddReserve(val);
                     }
@@ -940,7 +936,7 @@ namespace EpgTimer
 
         void EpgCapCmd()
         {
-            if (cmd.SendEpgCapNow() != 1)
+            if (cmd.SendEpgCapNow() != ErrCode.CMD_SUCCESS)
             {
                 MessageBox.Show("EPG取得を行える状態ではありません。\r\n（もうすぐ予約が始まる。EPGデータ読み込み中。など）");
             }
@@ -957,7 +953,7 @@ namespace EpgTimer
             {
                 CommonManager.Instance.DB.SetOneTimeReloadEpg();
             }
-            if (cmd.SendReloadEpg() != 1)
+            if (cmd.SendReloadEpg() != ErrCode.CMD_SUCCESS)
             {
                 MessageBox.Show("EPG再読み込みを行える状態ではありません。\r\n（EPGデータ読み込み中。など）");
             }
@@ -970,12 +966,12 @@ namespace EpgTimer
 
         void SuspendCmd()
         {
-            UInt32 err = cmd.SendChkSuspend();
-            if (err == 205)
+            ErrCode err = cmd.SendChkSuspend();
+            if (err == ErrCode.CMD_ERR_CONNECT)
             {
                 MessageBox.Show("サーバーに接続できませんでした");
             }
-            else if (err != 1)
+            else if (err != ErrCode.CMD_SUCCESS)
             {
                 MessageBox.Show("休止に移行できる状態ではありません。\r\n（もうすぐ予約が始まる。または抑制条件のexeが起動している。など）");
             }
@@ -1007,7 +1003,7 @@ namespace EpgTimer
                     {
                         if (CommonManager.Instance.NW.IsConnected == true)
                         {
-                            if (cmd.SendUnRegistTCP(Settings.Instance.NWServerPort) == 205)
+                            if (cmd.SendUnRegistTCP(Settings.Instance.NWServerPort) == ErrCode.CMD_ERR_CONNECT)
                             {
 
                             }
@@ -1032,12 +1028,12 @@ namespace EpgTimer
 
         void StandbyCmd()
         {
-            UInt32 err = cmd.SendChkSuspend();
-            if (err == 205)
+            ErrCode err = cmd.SendChkSuspend();
+            if (err == ErrCode.CMD_ERR_CONNECT)
             {
                 MessageBox.Show("サーバーに接続できませんでした");
             }
-            else if (err != 1)
+            else if (err != ErrCode.CMD_SUCCESS)
             {
                 MessageBox.Show("スタンバイに移行できる状態ではありません。\r\n（もうすぐ予約が始まる。または抑制条件のexeが起動している。など）");
             }
@@ -1069,7 +1065,7 @@ namespace EpgTimer
                     {
                         if (CommonManager.Instance.NW.IsConnected == true)
                         {
-                            if (cmd.SendUnRegistTCP(Settings.Instance.NWServerPort) == 205)
+                            if (cmd.SendUnRegistTCP(Settings.Instance.NWServerPort) == ErrCode.CMD_ERR_CONNECT)
                             {
 
                             }
@@ -1237,7 +1233,7 @@ namespace EpgTimer
                     {
                         pResParam.uiParam = (uint)ErrCode.CMD_SUCCESS;
                         String exeCmd = "";
-                        CmdStreamUtil.ReadStreamData(ref exeCmd, pCmdParam);
+                        (new CtrlCmdReader(new System.IO.MemoryStream(pCmdParam.bData, false))).Read(ref exeCmd);
                         try
                         {
                             string[] cmd = exeCmd.Split('\"');
@@ -1296,7 +1292,11 @@ namespace EpgTimer
                                 }
                                 process = System.Diagnostics.Process.Start(startInfo);
                             }
-                            CmdStreamUtil.CreateStreamData(process.Id, ref pResParam);
+                            var w = new CtrlCmdWriter(new System.IO.MemoryStream());
+                            w.Write(process.Id);
+                            w.Stream.Close();
+                            pResParam.bData = w.Stream.ToArray();
+                            pResParam.uiSize = (uint)pResParam.bData.Length;
                         }
                         catch
                         {
@@ -1308,26 +1308,9 @@ namespace EpgTimer
                         pResParam.uiParam = (uint)ErrCode.CMD_SUCCESS;
 
                         UInt16 param = 0;
-                        CmdStreamUtil.ReadStreamData(ref param, pCmdParam);
+                        (new CtrlCmdReader(new System.IO.MemoryStream(pCmdParam.bData, false))).Read(ref param);
 
-                        ///////////////////////////////////////////紅////////////////////////////////////
-                        ParameterizedThreadStart ts = new ParameterizedThreadStart(SuspendThread);
-                        Thread thread = new Thread(ts);
-                        thread.Start(param);
-                        /////////////////////////////////////////////////////////////////////////////////////
-
-                        /*Byte reboot = (Byte)((param & 0xFF00) >> 8);
-                        Byte suspendMode = (Byte)(param & 0x00FF);
-
-                        Dispatcher.BeginInvoke(new Action(() =>
-                        {
-                            SuspendCheckWindow dlg = new SuspendCheckWindow();
-                            dlg.SetMode(0, suspendMode);
-                            if (dlg.ShowDialog() != true)
-                            {
-                                cmd.SendSuspend(param);
-                            }
-                        }));*/
+                        Dispatcher.BeginInvoke(new Action(() => ShowSleepDialog(param)));
                     }
                     break;
                 case CtrlCmd.CMD_TIMER_GUI_QUERY_REBOOT:
@@ -1335,7 +1318,7 @@ namespace EpgTimer
                         pResParam.uiParam = (uint)ErrCode.CMD_SUCCESS;
 
                         UInt16 param = 0;
-                        CmdStreamUtil.ReadStreamData(ref param, pCmdParam);
+                        (new CtrlCmdReader(new System.IO.MemoryStream(pCmdParam.bData, false))).Read(ref param);
 
                         Byte reboot = (Byte)((param & 0xFF00) >> 8);
                         Byte suspendMode = (Byte)(param & 0x00FF);
@@ -1355,7 +1338,7 @@ namespace EpgTimer
                     {
                         pResParam.uiParam = (uint)ErrCode.CMD_SUCCESS;
                         UInt16 status = 0;
-                        CmdStreamUtil.ReadStreamData(ref status, pCmdParam);
+                        (new CtrlCmdReader(new System.IO.MemoryStream(pCmdParam.bData, false))).Read(ref status);
 
                         if (Dispatcher.CheckAccess() == true)
                         {
@@ -1397,7 +1380,11 @@ namespace EpgTimer
                         pResParam.uiParam = (uint)ErrCode.CMD_SUCCESS;
 
                         NotifySrvInfo status = new NotifySrvInfo();
-                        CmdStreamUtil.ReadStreamData(ref status, pCmdParam);
+                        var r = new CtrlCmdReader(new System.IO.MemoryStream(pCmdParam.bData, false));
+                        ushort version = 0;
+                        r.Read(ref version);
+                        r.Version = version;
+                        r.Read(ref status);
                         if (Dispatcher.CheckAccess() == true)
                         {
                             NotifyStatus(status);
@@ -1430,7 +1417,7 @@ namespace EpgTimer
         [DllImport("Kernel32.dll")]
         public static extern UInt32 GetTickCount();
 
-        private void SuspendThread(object obj)
+        private void ShowSleepDialog(UInt16 param)
         {
             LASTINPUTINFO info = new LASTINPUTINFO();
             info.cbSize = (uint)System.Runtime.InteropServices.Marshal.SizeOf(info);
@@ -1445,38 +1432,19 @@ namespace EpgTimer
                 dwNow += 0x100000000;
             }
 
-            StringBuilder sb = new StringBuilder(1024);
-            IniFileHandler.GetPrivateProfileString("SET", "RecCloseCheck", "False", sb, (uint)sb.Capacity, SettingPath.TimerSrvIniPath);
-            bool BoolTryParse = false, BoolCheck = false; ;
-            if (bool.TryParse(sb.ToString(), out BoolCheck))//紅
-                BoolTryParse = BoolCheck;
-
-            if (BoolTryParse)
+            if (IniFileHandler.GetPrivateProfileInt("NO_SUSPEND", "NoUsePC", 0, SettingPath.TimerSrvIniPath) == 1)
             {
-                UInt32 RecCloseTime = UInt32.Parse(IniFileHandler.GetPrivateProfileInt("SET", "RecCloseTime", 0, SettingPath.TimerSrvIniPath).ToString()); //紅
+                UInt32 ngUsePCTime = (UInt32)IniFileHandler.GetPrivateProfileInt("NO_SUSPEND", "NoUsePCTime", 3, SettingPath.TimerSrvIniPath);
+                UInt32 threshold = ngUsePCTime * 60 * 1000;
 
-                UInt32 threshold = RecCloseTime * 60 * 1000;
-
-                if (RecCloseTime != 0 && dwNow - info.dwTime >= threshold)
+                if (ngUsePCTime == 0 || dwNow - info.dwTime < threshold)
                 {
-                    SleepDialog(obj);
+                    return;
                 }
             }
-            else SleepDialog(obj);
-        }
 
-        void SleepDialog(object obj)
-        {
-            UInt16 param = (UInt16)obj;
-            Byte reboot = (Byte)((param & 0xFF00) >> 8);
             Byte suspendMode = (Byte)(param & 0x00FF);
 
-            Int32 sleepmin = (Int32)IniFileHandler.GetPrivateProfileInt("SET", "RecMarginTime", 0, SettingPath.TimerSrvIniPath);
-
-            sleepmin = sleepmin * 60000;
-            Thread.Sleep(sleepmin);
-
-            Dispatcher.BeginInvoke(new Action(() =>
             {
                 SuspendCheckWindow dlg = new SuspendCheckWindow();
                 dlg.SetMode(0, suspendMode);
@@ -1484,7 +1452,7 @@ namespace EpgTimer
                 {
                     cmd.SendSuspend(param);
                 }
-            }));
+            }
         }
 
         void NotifyStatus(NotifySrvInfo status)

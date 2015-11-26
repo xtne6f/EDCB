@@ -36,7 +36,6 @@ BOOL CSetDlgBasic::OnInitDialog()
 
 	int iNum = GetPrivateProfileInt( L"SET", L"RecFolderNum", 0, commonIniPath.c_str() );
 	if( iNum == 0 ){
-		GetDefSettingPath(path);
 		ListBox_AddString(GetDlgItem(IDC_LIST_REC_FOLDER), path.c_str());
 	}else{
 		for( int i = 0; i < iNum; i++ ){
@@ -60,10 +59,26 @@ void CSetDlgBasic::SaveIni()
 
 	WCHAR settingFolderPath[512] = L"";
 	GetDlgItemText(m_hWnd, IDC_EDIT_SET_PATH, settingFolderPath, 512);
-	WritePrivateProfileString(L"SET", L"DataSavePath", settingFolderPath, commonIniPath.c_str());
+	wstring chkSettingPath = settingFolderPath;
+	ChkFolderPath(chkSettingPath);
+	wstring defSettingPath;
+	GetDefSettingPath(defSettingPath);
+	WritePrivateProfileString(L"SET", L"DataSavePath", CompareNoCase(chkSettingPath, defSettingPath) ? settingFolderPath : NULL, commonIniPath.c_str());
 	_CreateDirectory(settingFolderPath);
 
 	int iNum = ListBox_GetCount(GetDlgItem(IDC_LIST_REC_FOLDER));
+	if( iNum == 1 ){
+		WCHAR folder[512] = L"";
+		int len = ListBox_GetTextLen(GetDlgItem(IDC_LIST_REC_FOLDER), 0);
+		if( 0 <= len && len < 512 ){
+			ListBox_GetText(GetDlgItem(IDC_LIST_REC_FOLDER), 0, folder);
+		}
+		wstring chkFolder = folder;
+		ChkFolderPath(chkFolder);
+		if( CompareNoCase(chkFolder, chkSettingPath) == 0 ){
+			iNum = 0;
+		}
+	}
 	WritePrivateProfileInt(L"SET", L"RecFolderNum", iNum, commonIniPath.c_str());
 	for( int i = 0; i < iNum; i++ ){
 		WCHAR key[64];

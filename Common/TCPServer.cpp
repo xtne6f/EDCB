@@ -10,7 +10,7 @@ CTCPServer::CTCPServer(void)
 	m_pParam = NULL;
 	m_dwPort = 8081;
 
-	m_hStopEvent = _CreateEvent(FALSE, FALSE, NULL);
+	m_hStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	m_hThread = NULL;
 
 	m_sock = NULL;
@@ -115,7 +115,7 @@ UINT WINAPI CTCPServer::ServerThread(LPVOID pParam)
 	if( pSys->m_iCtrlCmdEventID != -1 ){
 		wstring strCmdEvent;
 		Format(strCmdEvent, L"%s%d", CMD2_CTRL_EVENT_WAIT, pSys->m_iCtrlCmdEventID);
-		hEventCmdWait = _CreateEvent(FALSE, TRUE, strCmdEvent.c_str());
+		hEventCmdWait = CreateEvent(NULL, FALSE, TRUE, strCmdEvent.c_str());
 	}
 	
 	fd_set ready;
@@ -167,15 +167,11 @@ UINT WINAPI CTCPServer::ServerThread(LPVOID pParam)
 			if ( FD_ISSET(sock, &ready) ){
 				CMD_STREAM stCmd;
 				CMD_STREAM stRes;
-				DWORD dwRead = 0;
-				DWORD dwWrite = 0;
 				DWORD head[2];
 				do{
 					int iRet = 1;
 					iRet = recv(sock, (char*)head, sizeof(DWORD)*2, 0);
-					if( iRet == SOCKET_ERROR ){
-						break;
-					}else if( iRet == 0 ){
+					if( iRet != sizeof(DWORD)*2 ){
 						break;
 					}
 					stCmd.param = head[0];
@@ -184,7 +180,8 @@ UINT WINAPI CTCPServer::ServerThread(LPVOID pParam)
 					if( stCmd.dataSize > 0 ){
 						stCmd.data = new BYTE[stCmd.dataSize];
 
-						while(iRet>0){
+						DWORD dwRead = 0;
+						while( dwRead < stCmd.dataSize ){
 							iRet = recv(sock, (char*)(stCmd.data+dwRead), stCmd.dataSize-dwRead, 0);
 							if( iRet == SOCKET_ERROR ){
 								break;
@@ -192,9 +189,9 @@ UINT WINAPI CTCPServer::ServerThread(LPVOID pParam)
 								break;
 							}
 							dwRead+=iRet;
-							if( dwRead == stCmd.dataSize ){
-								break;
-							}
+						}
+						if( dwRead < stCmd.dataSize ){
+							break;
 						}
 					}
 
@@ -206,9 +203,7 @@ UINT WINAPI CTCPServer::ServerThread(LPVOID pParam)
 						ReadVALUE(&setParam.port, stCmd.data, stCmd.dataSize, NULL);
 
 						SAFE_DELETE_ARRAY(stCmd.data);
-						stCmd.dataSize = GetVALUESize(&setParam);
-						stCmd.data = new BYTE[stCmd.dataSize];
-						WriteVALUE(&setParam, stCmd.data, stCmd.dataSize, NULL);
+						stCmd.data = NewWriteVALUE(&setParam, stCmd.dataSize);
 					}
 
 					pSys->m_pCmdProc(pSys->m_pParam, &stCmd, &stRes);

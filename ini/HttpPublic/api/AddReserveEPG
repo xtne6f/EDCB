@@ -1,0 +1,86 @@
+post=nil
+if mg.request_info.request_method=='POST' then
+  post=''
+  repeat
+    s=mg.read()
+    post=post..(s or '')
+  until not s
+  if #post~=mg.request_info.content_length then
+    post=nil
+  end
+end
+added=false
+if post then
+  r={recSetting={}}
+  r.onid=0+(mg.get_var(post, 'onid') or 0)
+  r.tsid=0+(mg.get_var(post, 'tsid') or 0)
+  r.sid=0+(mg.get_var(post, 'sid') or 0)
+  r.eid=0+(mg.get_var(post, 'evid') or 0)
+  presetID=mg.get_var(post, 'presetID')
+  recMode=mg.get_var(post, 'recMode')
+  tuijyuuFlag=mg.get_var(post, 'tuijyuuFlag')
+  priority=mg.get_var(post, 'priority')
+  pittariFlag=mg.get_var(post, 'pittariFlag')
+  suspendMode=mg.get_var(post, 'suspendMode')
+  rebootFlag=mg.get_var(post, 'rebootFlag')
+  useDefMarginFlag=mg.get_var(post, 'useDefMargineFlag')
+  startMargin=mg.get_var(post, 'startMargine')
+  endMargin=mg.get_var(post, 'endMargine')
+  serviceMode=mg.get_var(post, 'serviceMode')
+  serviceMode_1=mg.get_var(post, 'serviceMode_1')
+  serviceMode_2=mg.get_var(post, 'serviceMode_2')
+  continueRecFlag=mg.get_var(post, 'continueRecFlag')
+  tunerID=mg.get_var(post, 'tunerID')
+  partialRecFlag=mg.get_var(post, 'partialRecFlag')
+  eventInfo=edcb.SearchEpg(r.onid, r.tsid, r.sid, r.eid)
+  if eventInfo and eventInfo.startTime and eventInfo.durationSecond and
+     presetID and
+     recMode and
+     tuijyuuFlag and
+     priority and
+     pittariFlag and
+     suspendMode and
+     (useDefMarginFlag or startMargin and endMargin) and tunerID
+  then
+    r.title=eventInfo.shortInfo and eventInfo.shortInfo.event_name or ''
+    r.startTime=eventInfo.startTime
+    r.startTimeEpg=eventInfo.startTime
+    r.durationSecond=eventInfo.durationSecond
+    r.stationName=''
+    for i,v in ipairs(edcb.GetServiceList() or {}) do
+      if v.onid==r.onid and v.tsid==r.tsid and v.sid==r.sid then
+        r.stationName=v.service_name
+        break
+      end
+    end
+    r.recSetting.batFilePath=''
+    r.recSetting.recFolderList={}
+    r.recSetting.partialRecFolder={}
+    for i,v in ipairs(edcb.EnumRecPresetInfo()) do
+      if v.id==0+presetID then
+        r.recSetting.batFilePath=v.recSetting.batFilePath
+        r.recSetting.recFolderList=v.recSetting.recFolderList
+        r.recSetting.partialRecFolder=v.recSetting.partialRecFolder
+        break
+      end
+    end
+    r.recSetting.recMode=0+recMode
+    r.recSetting.tuijyuuFlag=0+tuijyuuFlag~=0
+    r.recSetting.priority=0+priority
+    r.recSetting.pittariFlag=0+pittariFlag~=0
+    r.recSetting.suspendMode=0+suspendMode
+    r.recSetting.rebootFlag=rebootFlag~=nil
+    if not useDefMarginFlag then
+      r.recSetting.startMargin=0+startMargin
+      r.recSetting.endMargin=0+endMargin
+    end
+    r.recSetting.serviceMode=serviceMode and 0 or 1+(serviceMode_1 and 16 or 0)+(serviceMode_2 and 32 or 0)
+    r.recSetting.continueRecFlag=continueRecFlag~=nil
+    r.recSetting.tunerID=0+tunerID
+    r.recSetting.partialRecFlag=partialRecFlag and 1 or 0
+    added=edcb.AddReserveData(r)
+  end
+end
+ct='<?xml version="1.0" encoding="UTF-8" ?'..'><entry>'
+  ..(added and '<success>予約の追加に成功しました</success></entry>' or '<err>予約の追加に失敗しました</err></entry>')
+mg.write('HTTP/1.1 200 OK\r\nContent-Type: text/xml\r\nContent-Length: '..#ct..'\r\nConnection: close\r\n\r\n', ct)

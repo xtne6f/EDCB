@@ -111,7 +111,7 @@ namespace EpgTimer
         public void AddPreset(String name)
         {
             RecSettingData newSet = new RecSettingData();
-            Settings.GetDefRecSetting(0, ref newSet);
+            GetRecSetting(ref newSet);
 
             RecPresetItem newInfo = new RecPresetItem();
             newInfo.DisplayName = name;
@@ -267,9 +267,9 @@ namespace EpgTimer
             setInfo.PittariFlag = ((YesNoInfo)comboBox_pittari.SelectedItem).Value;
             setInfo.BatFilePath = textBox_bat.Text;
             setInfo.RecFolderList.Clear();
-            foreach (RecFileSetInfo info in listView_recFolder.Items)
+            foreach (RecFileSetInfoView view in listView_recFolder.Items)
             {
-                setInfo.RecFolderList.Add(info);
+                setInfo.RecFolderList.Add(view.Info);
             }
             if (checkBox_suspendDef.IsChecked == true)
             {
@@ -378,9 +378,9 @@ namespace EpgTimer
                 setInfo.PartialRecFlag = 0;
             }
             setInfo.PartialRecFolder.Clear();
-            foreach (RecFileSetInfo info in listView_recFolder_1seg.Items)
+            foreach (RecFileSetInfoView view in listView_recFolder_1seg.Items)
             {
-                setInfo.PartialRecFolder.Add(info);
+                setInfo.PartialRecFolder.Add(view.Info);
             }
             if (checkBox_continueRec.IsChecked == true)
             {
@@ -496,7 +496,7 @@ namespace EpgTimer
                 listView_recFolder.Items.Clear();
                 foreach (RecFileSetInfo info in recSetting.RecFolderList)
                 {
-                    listView_recFolder.Items.Add(info);
+                    listView_recFolder.Items.Add(new RecFileSetInfoView(GetCopyRecFileSetInfo(info)));
                 }
 
                 if (recSetting.SuspendMode == 0)
@@ -563,7 +563,7 @@ namespace EpgTimer
                 listView_recFolder_1seg.Items.Clear();
                 foreach (RecFileSetInfo info in recSetting.PartialRecFolder)
                 {
-                    listView_recFolder_1seg.Items.Add(info);
+                    listView_recFolder_1seg.Items.Add(new RecFileSetInfoView(GetCopyRecFileSetInfo(info)));
                 }
 
                 foreach (TunerSelectInfo info in comboBox_tuner.Items)
@@ -579,6 +579,26 @@ namespace EpgTimer
             {
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
+        }
+
+        private RecFileSetInfo GetCopyRecFileSetInfo(RecFileSetInfo info)
+        {
+            var info_copy = new RecFileSetInfo();
+            info_copy.RecFileName = info.RecFileName;
+            info_copy.RecFolder = info.RecFolder;
+            info_copy.RecNamePlugIn = info.RecNamePlugIn;
+            info_copy.WritePlugIn = info.WritePlugIn;
+            return info_copy;
+        }
+
+        private class RecFileSetInfoView
+        {
+            public RecFileSetInfoView(RecFileSetInfo info) { Info = info; }
+            public string RecFileName { get { return Info.RecFileName; } }
+            public string RecFolder { get { return Info.RecFolder; } }
+            public string RecNamePlugIn { get { return Info.RecNamePlugIn; } }
+            public string WritePlugIn { get { return Info.WritePlugIn; } }
+            public RecFileSetInfo Info { get; private set; }
         }
 
         private void checkBox_suspendDef_Click(object sender, RoutedEventArgs e)
@@ -639,7 +659,7 @@ namespace EpgTimer
             {
                 RecFileSetInfo setInfo = new RecFileSetInfo();
                 setting.GetSetting(ref setInfo);
-                foreach (RecFileSetInfo info in recSetting.RecFolderList)
+                foreach (RecFileSetInfoView info in listView_recFolder.Items)
                 {
                     if (String.Compare(setInfo.RecFolder, info.RecFolder, true) == 0 &&
                         String.Compare(setInfo.WritePlugIn, info.WritePlugIn, true) == 0 &&
@@ -649,7 +669,7 @@ namespace EpgTimer
                         return;
                     }
                 }
-                listView_recFolder.Items.Add(setInfo);
+                listView_recFolder.Items.Add(new RecFileSetInfoView(setInfo));
             }
 
         }
@@ -664,7 +684,7 @@ namespace EpgTimer
                 {
                     setting.Owner = (Window)topWindow.RootVisual;
                 }
-                RecFileSetInfo selectInfo = listView_recFolder.SelectedItem as RecFileSetInfo;
+                RecFileSetInfo selectInfo = ((RecFileSetInfoView)listView_recFolder.SelectedItem).Info;
                 setting.SetDefSetting(selectInfo);
                 if (setting.ShowDialog() == true)
                 {
@@ -794,7 +814,7 @@ namespace EpgTimer
                 {
                     setting.Owner = (Window)topWindow.RootVisual;
                 }
-                RecFileSetInfo selectInfo = listView_recFolder_1seg.SelectedItem as RecFileSetInfo;
+                RecFileSetInfo selectInfo = ((RecFileSetInfoView)listView_recFolder_1seg.SelectedItem).Info;
                 setting.SetDefSetting(selectInfo);
                 if (setting.ShowDialog() == true)
                 {
@@ -816,7 +836,7 @@ namespace EpgTimer
             {
                 RecFileSetInfo setInfo = new RecFileSetInfo();
                 setting.GetSetting(ref setInfo);
-                foreach (RecFileSetInfo info in recSetting.PartialRecFolder)
+                foreach (RecFileSetInfoView info in listView_recFolder_1seg.Items)
                 {
                     if (String.Compare(setInfo.RecFolder, info.RecFolder, true) == 0 &&
                         String.Compare(setInfo.WritePlugIn, info.WritePlugIn, true) == 0 &&
@@ -826,7 +846,7 @@ namespace EpgTimer
                         return;
                     }
                 }
-                listView_recFolder_1seg.Items.Add(setInfo);
+                listView_recFolder_1seg.Items.Add(new RecFileSetInfoView(setInfo));
             }
         }
 

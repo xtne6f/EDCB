@@ -13,4 +13,5 @@ EXPORTS
 	GetEpgInfoEP		@10
 	GetTimeDelayEP		@11
 	SearchEpgInfoEP		@12
+	EnumEpgInfoListEP	@13
 

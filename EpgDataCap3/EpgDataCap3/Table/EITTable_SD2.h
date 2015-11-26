@@ -1,9 +1,9 @@
 #pragma once
 
 #include "../../../Common/Util.h"
-#include "../Descriptor/DescriptorDef.h"
+#include "PSITable.h"
 
-class CEITTable_SD2
+class CEITTable_SD2 : public CPSITable
 {
 public:
 	typedef struct _EVENT_MAP_DATA{
@@ -18,9 +18,6 @@ public:
 		SYSTEMTIME start_day;
 		vector<EVENT_MAP_DATA> eventList;
 	} EVENT_MAP_INFO;
-	BYTE table_id;
-	BYTE section_syntax_indicator;
-	WORD section_length;
 	WORD service_id;
 	BYTE version_number;
 	BYTE current_next_indicator;
@@ -31,7 +28,6 @@ public:
 	SYSTEMTIME start_time;
 	SYSTEMTIME end_time;
 	vector<EVENT_MAP_INFO*> eventMapList;
-	DWORD crc32;
 
 public:
 	CEITTable_SD2(void);

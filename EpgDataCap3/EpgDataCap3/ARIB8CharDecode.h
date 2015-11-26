@@ -6,15 +6,14 @@
 #endif
 #include <string>
 #include <vector>
-#include <map>
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
 */
 #include <string>
 #include <vector>
-#include <map>
-using namespace std;
+using std::string;
+using std::vector;
 
 #include "ColorDef.h"
 

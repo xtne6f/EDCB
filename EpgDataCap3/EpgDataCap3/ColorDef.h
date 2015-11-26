@@ -3,9 +3,6 @@
 
 #pragma once
 
-#include <string>
-using namespace std;
-
 typedef struct _CLUT_DAT{
 	unsigned char ucR;
 	unsigned char ucG;

@@ -187,7 +187,6 @@ public:
 
 protected:
 	HMODULE module;
-	HANDLE lockEvent;
 	DWORD id;
 
 	GetPlugInNameWP				pfnGetPlugInNameWP;
@@ -200,8 +199,5 @@ protected:
 	AddTSBuffWP					pfnAddTSBuffWP;
 
 protected:
-	//PublicAPIîrëºêßå‰óp
-	BOOL Lock(LPCWSTR log = NULL, DWORD timeOut = 60*1000);
-	void UnLock(LPCWSTR log = NULL);
 };
 

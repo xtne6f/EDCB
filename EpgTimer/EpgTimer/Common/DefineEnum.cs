@@ -58,19 +58,6 @@ namespace EpgTimer
         ExtOnly = 2, //詳細のみ
     };
 
-    public enum CtrlCmd : uint
-    {
-        //タイマーGUI（EpgTimer_Bon.exe）用
-        CMD_TIMER_GUI_SHOW_DLG = 101, //ダイアログを前面に表示
-        CMD_TIMER_GUI_UPDATE_RESERVE = 102, //予約一覧の情報が更新された
-        CMD_TIMER_GUI_UPDATE_EPGDATA = 103, //EPGデータの再読み込みが完了した
-        CMD_TIMER_GUI_VIEW_EXECUTE = 110, //Viewアプリ（EpgDataCap_Bon.exe）を起動
-        CMD_TIMER_GUI_QUERY_SUSPEND = 120, //スタンバイ、休止、シャットダウンに入っていいかの確認をユーザーに行う（入っていいならCMD_EPG_SRV_SUSPENDを送る）
-        CMD_TIMER_GUI_QUERY_REBOOT = 121, //PC再起動に入っていいかの確認をユーザーに行う（入っていいならCMD_EPG_SRV_REBOOTを送る）
-        CMD_TIMER_GUI_SRV_STATUS_CHG = 130, //サーバーのステータス変更通知（1:通常、2:EPGデータ取得開始、3:予約録画開始）
-        CMD_TIMER_GUI_SRV_STATUS_NOTIFY2 = 1130 //サーバーの情報変更通知
-    }
-
     public class CMD_STREAM
     {
         public uint uiParam;

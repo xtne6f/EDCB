@@ -131,13 +131,15 @@ namespace EpgTimer
                 {
                     key.titleOnlyFlag = 0;
                 }
+                key.andKey = key.andKey.Substring(key.andKey.StartsWith("^!{999}") ? 7 : 0);
+                key.andKey = key.andKey.Substring(key.andKey.StartsWith("C!{999}") ? 7 : 0);
+                if (checkBox_case.IsChecked == true)
+                {
+                    key.andKey = "C!{999}" + key.andKey;
+                }
                 if (checkBox_keyDisabled.IsChecked == true)
                 {
-                    key.andKey = (key.andKey.StartsWith("^!{999}") ? "" : "^!{999}") + key.andKey;
-                }
-                else
-                {
-                    key.andKey = key.andKey.Substring(key.andKey.StartsWith("^!{999}") ? 7 : 0);
+                    key.andKey = "^!{999}" + key.andKey;
                 }
 
                 key.contentList.Clear();
@@ -248,6 +250,14 @@ namespace EpgTimer
                 {
                     checkBox_keyDisabled.IsChecked = false;
                 }
+                if (defKey.andKey.StartsWith("C!{999}") || defKey.andKey.StartsWith("^!{999}C!{999}"))
+                {
+                    checkBox_case.IsChecked = true;
+                }
+                else
+                {
+                    checkBox_case.IsChecked = false;
+                }
 
                 listBox_content.Items.Clear();
                 foreach (EpgContentData item in defKey.contentList)
@@ -356,8 +366,21 @@ namespace EpgTimer
         {
             if (listBox_content.SelectedItem != null)
             {
-                listBox_content.Items.RemoveAt(listBox_content.SelectedIndex);
+                List<ContentKindInfo> delList = new List<ContentKindInfo>(listBox_content.SelectedItems.Count);
+                foreach (ContentKindInfo info in listBox_content.SelectedItems)
+                {
+                    delList.Add(info);
+                }
+                foreach (ContentKindInfo info in delList)
+                {
+                    listBox_content.Items.Remove(info);
+                }
             }
+        }
+
+        private void button_content_clear_Click(object sender, RoutedEventArgs e)
+        {
+            listBox_content.Items.Clear();
         }
 
         private void button_all_on_Click(object sender, RoutedEventArgs e)

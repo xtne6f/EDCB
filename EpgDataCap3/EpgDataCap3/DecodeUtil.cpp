@@ -2,26 +2,23 @@
 #include "DecodeUtil.h"
 
 #include "../../Common/StringUtil.h"
-#include "../../Common/TimeUtil.h"
 #include "ARIB8CharDecode.h"
+#include "../../Common/EpgTimerUtil.h"
 
 CDecodeUtil::CDecodeUtil(void)
 {
 	this->epgDBUtil = NULL;
 
 	this->patInfo = NULL;
-	this->catInfo = NULL;
 	this->nitActualInfo = NULL;
 	this->sdtActualInfo = NULL;
-	this->totInfo = NULL;
-	this->tdtInfo = NULL;
 	this->bitInfo = NULL;
 	this->sitInfo = NULL;
+	this->totTime.dwHighDateTime = 0;
+	this->tdtTime.dwHighDateTime = 0;
+	this->sitTime.dwHighDateTime = 0;
 
-	this->serviceListSize = 0;
 	this->serviceList = NULL;
-
-	this->delaySec = 0;
 }
 
 CDecodeUtil::~CDecodeUtil(void)
@@ -37,55 +34,30 @@ void CDecodeUtil::SetEpgDB(CEpgDBUtil* epgDBUtil)
 
 void CDecodeUtil::Clear()
 {
-	map<WORD, CTSBuffUtil*>::iterator itr;
-	for( itr = this->buffUtilMap.begin(); itr != this->buffUtilMap.end(); itr++ ){
-		SAFE_DELETE(itr->second);
-	}
 	this->buffUtilMap.clear();
 
 	SAFE_DELETE(this->patInfo);
-	SAFE_DELETE(this->catInfo);
-
-	map<WORD, CPMTTable*>::iterator itrPmt;
-	for( itrPmt = this->pmtMap.begin(); itrPmt != this->pmtMap.end(); itrPmt++ ){
-		SAFE_DELETE(itrPmt->second);
-	}
-	this->pmtMap.clear();
 
 	SAFE_DELETE(this->nitActualInfo);
 	SAFE_DELETE(this->sdtActualInfo);
-	map<DWORD, SDT_SECTION_INFO*>::iterator itrSdt;
-	for( itrSdt = this->sdtOtherMap.begin(); itrSdt != this->sdtOtherMap.end(); itrSdt++ ){
-		SAFE_DELETE(itrSdt->second);
-	}
-	this->sdtOtherMap.clear();
 
-	SAFE_DELETE(this->totInfo);
-	SAFE_DELETE(this->tdtInfo);
 	SAFE_DELETE(this->bitInfo);
 	SAFE_DELETE(this->sitInfo);
+
+	this->totTime.dwHighDateTime = 0;
+	this->tdtTime.dwHighDateTime = 0;
+	this->sitTime.dwHighDateTime = 0;
 
 	if( this->epgDBUtil != NULL ){
 		this->epgDBUtil->SetStreamChangeEvent();
 		this->epgDBUtil->ClearSectionStatus();
 	}
-
-	this->delaySec = 0;
 }
 
 void CDecodeUtil::ClearBuff(WORD noClearPid)
 {
-	map<WORD, CTSBuffUtil*>::iterator itr;
-
-	itr = this->buffUtilMap.begin();
-	while( itr != this->buffUtilMap.end() ){
-		if( itr->first != noClearPid ){
-			SAFE_DELETE(itr->second);
-			this->buffUtilMap.erase(itr++);
-		}else{
-			itr++;
-		}
-	}
+	this->buffUtilMap.erase(this->buffUtilMap.begin(), this->buffUtilMap.lower_bound(noClearPid));
+	this->buffUtilMap.erase(this->buffUtilMap.upper_bound(noClearPid), this->buffUtilMap.end());
 }
 
 void CDecodeUtil::ChangeTSIDClear(WORD noClearPid)
@@ -93,59 +65,40 @@ void CDecodeUtil::ChangeTSIDClear(WORD noClearPid)
 	ClearBuff(noClearPid);
 
 	SAFE_DELETE(this->patInfo);
-	SAFE_DELETE(this->catInfo);
-
-	map<WORD, CPMTTable*>::iterator itrPmt;
-	for( itrPmt = this->pmtMap.begin(); itrPmt != this->pmtMap.end(); itrPmt++ ){
-		SAFE_DELETE(itrPmt->second);
-	}
-	this->pmtMap.clear();
 
 	SAFE_DELETE(this->nitActualInfo);
 	SAFE_DELETE(this->sdtActualInfo);
-	map<DWORD, SDT_SECTION_INFO*>::iterator itrSdt;
-	for( itrSdt = this->sdtOtherMap.begin(); itrSdt != this->sdtOtherMap.end(); itrSdt++ ){
-		SAFE_DELETE(itrSdt->second);
-	}
-	this->sdtOtherMap.clear();
 
-	SAFE_DELETE(this->totInfo);
-	SAFE_DELETE(this->tdtInfo);
 	SAFE_DELETE(this->bitInfo);
 	SAFE_DELETE(this->sitInfo);
+
+	this->totTime.dwHighDateTime = 0;
+	this->tdtTime.dwHighDateTime = 0;
+	this->sitTime.dwHighDateTime = 0;
 
 	if( this->epgDBUtil != NULL ){
 		this->epgDBUtil->SetStreamChangeEvent();
 		this->epgDBUtil->ClearSectionStatus();
 	}
-
-	this->delaySec = 0;
 }
 
-DWORD CDecodeUtil::AddTSData(BYTE* data, DWORD dataSize)
+void CDecodeUtil::AddTSData(BYTE* data)
 {
-	DWORD err = TRUE;
-
-	for( DWORD i=0; i<dataSize; i+=188 ){
+	{
 		CTSPacketUtil tsPacket;
-		if( tsPacket.Set188TS(data + i, 188) == TRUE ){
+		if( tsPacket.Set188TS(data, 188) == TRUE ){
 			if( tsPacket.PID == 0x1FFF ){
-				continue;
+				return;
 			}
 			CTSBuffUtil* buffUtil = NULL;
 
-			map<WORD, CTSBuffUtil*>::iterator itr;
+			map<WORD, CTSBuffUtil>::iterator itr;
 			itr = this->buffUtilMap.find( tsPacket.PID );
 			if( itr == this->buffUtilMap.end() ){
 				//まだPIDがないので新規
-				buffUtil = new CTSBuffUtil;
-				if( this->buffUtilMap.insert(pair<WORD, CTSBuffUtil*>(tsPacket.PID, buffUtil)).second== false ){
-					//追加に失敗？
-					SAFE_DELETE(buffUtil);
-					continue;
-				}
+				buffUtil = &this->buffUtilMap.insert(std::make_pair(tsPacket.PID, CTSBuffUtil())).first->second;
 			}else{
-				buffUtil = itr->second;
+				buffUtil = &itr->second;
 			}
 			if( buffUtil->Add188TS(&tsPacket) == TRUE ){
 				BYTE* section = NULL;
@@ -154,81 +107,50 @@ DWORD CDecodeUtil::AddTSData(BYTE* data, DWORD dataSize)
 					if( buffUtil->IsPES() == TRUE ){
 						continue;
 					}
-					CTableUtil tableUtil;
-
-					vector<TABLE_DATA*> tableList;
-					DWORD decodeReadSize = 0;
-					if( tableUtil.Decode(section, sectionSize, &tableList, &decodeReadSize) == TRUE ){
-						for( size_t j=0; j<tableList.size(); j++ ){
-							if( tableList[j]->PATTable != NULL ){
-								if( CheckPAT(tsPacket.PID, tableList[j]->PATTable) == TRUE ){
-									tableList[j]->PATTable = NULL;
-								}
-							}else if( tableList[j]->CATTable != NULL ){
-								if( CheckCAT(tsPacket.PID, tableList[j]->CATTable) == TRUE ){
-									tableList[j]->CATTable = NULL;
-								}
-							}else if( tableList[j]->PMTTable != NULL ){
-								if( CheckPMT(tsPacket.PID, tableList[j]->PMTTable) == TRUE ){
-									tableList[j]->PMTTable = NULL;
-								}
-							}else if( tableList[j]->NITTable != NULL ){
-								if( CheckNIT(tsPacket.PID, tableList[j]->NITTable) == TRUE ){
-									tableList[j]->NITTable = NULL;
-								}
-							}else if( tableList[j]->SDTTable != NULL ){
-								if( CheckSDT(tsPacket.PID, tableList[j]->SDTTable) == TRUE ){
-									tableList[j]->SDTTable = NULL;
-								}
-							}else if( tableList[j]->TOTTable != NULL ){
-								if( CheckTOT(tsPacket.PID, tableList[j]->TOTTable) == TRUE ){
-									tableList[j]->TOTTable = NULL;
-								}
-							}else if( tableList[j]->TDTTable != NULL ){
-								if( CheckTDT(tsPacket.PID, tableList[j]->TDTTable) == TRUE ){
-									tableList[j]->TDTTable = NULL;
-								}
-							}else if( tableList[j]->EITTable != NULL ){
-								if( CheckEIT(tsPacket.PID, tableList[j]->EITTable) == TRUE ){
-									tableList[j]->EITTable = NULL;
-								}
-							}else if( tableList[j]->CDTTable != NULL ){
-								if( CheckCDT(tsPacket.PID, tableList[j]->CDTTable) == TRUE ){
-									tableList[j]->CDTTable = NULL;
-								}
-							}else if( tableList[j]->SDTTTable != NULL ){
-								if( CheckSDTT(tsPacket.PID, tableList[j]->SDTTTable) == TRUE ){
-									tableList[j]->SDTTTable = NULL;
-								}
-							}else if( tableList[j]->BITTable != NULL ){
-								if( CheckBIT(tsPacket.PID, tableList[j]->BITTable) == TRUE ){
-									tableList[j]->BITTable = NULL;
-								}
-							}else if( tableList[j]->SITTable != NULL ){
-								if( CheckSIT(tsPacket.PID, tableList[j]->SITTable) == TRUE ){
-									tableList[j]->SITTable = NULL;
-								}
-							}else if( tableList[j]->EITTable_SD != NULL ){
-								if( CheckEIT_SD(tsPacket.PID, tableList[j]->EITTable_SD) == TRUE ){
-									tableList[j]->EITTable_SD = NULL;
-								}
-							}else if( tableList[j]->EITTable_SD2 != NULL ){
-								if( CheckEIT_SD2(tsPacket.PID, tableList[j]->EITTable_SD2) == TRUE ){
-									tableList[j]->EITTable_SD2 = NULL;
-								}
-							}
-							SAFE_DELETE(tableList[j]);
-						}
-					}else{
+					CPSITable* table;
+					BOOL ret;
+					switch( CTableUtil::Decode(section, sectionSize, &table) ){
+					case CTableUtil::TYPE_PAT:
+						ret = CheckPAT(tsPacket.PID, static_cast<CPATTable*>(table));
+						break;
+					case CTableUtil::TYPE_NIT:
+						ret = CheckNIT(tsPacket.PID, static_cast<CNITTable*>(table));
+						break;
+					case CTableUtil::TYPE_SDT:
+						ret = CheckSDT(tsPacket.PID, static_cast<CSDTTable*>(table));
+						break;
+					case CTableUtil::TYPE_TOT:
+						ret = CheckTOT(tsPacket.PID, static_cast<CTOTTable*>(table));
+						break;
+					case CTableUtil::TYPE_TDT:
+						ret = CheckTDT(tsPacket.PID, static_cast<CTDTTable*>(table));
+						break;
+					case CTableUtil::TYPE_EIT:
+						ret = CheckEIT(tsPacket.PID, static_cast<CEITTable*>(table));
+						break;
+					case CTableUtil::TYPE_BIT:
+						ret = CheckBIT(tsPacket.PID, static_cast<CBITTable*>(table));
+						break;
+					case CTableUtil::TYPE_SIT:
+						ret = CheckSIT(tsPacket.PID, static_cast<CSITTable*>(table));
+						break;
+					case CTableUtil::TYPE_NONE:
 						if( section[0] == 0 ){
 							_OutputDebugString(L"★pid 0x%04X\r\n", tsPacket.PID);
 						}
+						ret = TRUE;
+						break;
+					default:
+						ret = FALSE;
+						break;
+					}
+					if( ret == FALSE ){
+						delete table;
 					}
 				}
 			}
 		}
 	}
-	return err;
 }
 
 BOOL CDecodeUtil::CheckPAT(WORD PID, CPATTable* pat)
@@ -254,55 +176,6 @@ BOOL CDecodeUtil::CheckPAT(WORD PID, CPATTable* pat)
 			return FALSE;
 		}
 	}
-	return TRUE;
-}
-
-BOOL CDecodeUtil::CheckCAT(WORD PID, CCATTable* cat)
-{
-	if( cat == NULL ){
-		return FALSE;
-	}
-
-	if( this->catInfo == NULL ){
-		//初回
-		this->catInfo = cat;
-	}else{
-		if(this->catInfo->version_number != cat->version_number){
-			//バージョン変わった
-			SAFE_DELETE(this->catInfo);
-			this->catInfo = cat;
-		}else{
-			//変更なし
-			return FALSE;
-		}
-	}
-	return TRUE;
-}
-
-BOOL CDecodeUtil::CheckPMT(WORD PID, CPMTTable* pmt)
-{
-	if( pmt == NULL ){
-		return FALSE;
-	}
-
-	map<WORD, CPMTTable*>::iterator itrPmt;
-	itrPmt = this->pmtMap.find(PID);
-	if( itrPmt == this->pmtMap.end() ){
-		//初回
-		this->pmtMap.insert(pair<WORD, CPMTTable*>(PID, pmt));
-	}else{
-		if( itrPmt->second->version_number != pmt->version_number ){
-			//バージョン変わった
-			SAFE_DELETE(itrPmt->second);
-			this->pmtMap.erase(itrPmt);
-			
-			this->pmtMap.insert(pair<WORD, CPMTTable*>(PID, pmt));
-		}else{
-			//変更なし
-			return FALSE;
-		}
-	}
-
 	return TRUE;
 }
 
@@ -532,66 +405,8 @@ BOOL CDecodeUtil::CheckSDT(WORD PID, CSDTTable* sdt)
 
 	}else if( sdt->table_id == 0x46 ){
 		//他ストリーム
-/*		_OutputDebugString(L"find SDT OTHER\r\n");
-		_OutputDebugString(L"ONID 0x%04X, TSID 0x%04X\r\n", sdt->original_network_id, sdt->transport_stream_id);
-		for(size_t i=0; i<sdt->serviceInfoList.size(); i++ ){
-			_OutputDebugString(L"SID 0x%04X\r\n", sdt->serviceInfoList[i]->service_id);
-			for( size_t j=0; j<sdt->serviceInfoList[i]->descriptorList.size(); j++ ){
-				if( sdt->serviceInfoList[i]->descriptorList[j]->service != NULL ){
-					CServiceDesc* service = sdt->serviceInfoList[i]->descriptorList[j]->service;
-					CARIB8CharDecode arib;
-					string service_provider_name = "";
-					string service_name = "";
-					if( service->service_provider_name_length > 0 ){
-						arib.PSISI((const BYTE*)service->char_service_provider_name, service->service_provider_name_length, &service_provider_name);
-					}
-					if( service->service_name_length > 0 ){
-						arib.PSISI((const BYTE*)service->char_service_name, service->service_name_length, &service_name);
-					}
-					wstring service_provider_nameW = L"";
-					wstring service_nameW = L"";
-					AtoW(service_provider_name, service_provider_nameW);
-					AtoW(service_name, service_nameW);
-					_OutputDebugString(L"type 0x%04X %s %s\r\n", service->service_type, service_provider_nameW.c_str(), service_nameW.c_str());
-				}
-				//logo_transmission
-			}
-		}
-*/
-		DWORD key = ((DWORD)sdt->original_network_id)<<16 | sdt->transport_stream_id;
-		map<DWORD, SDT_SECTION_INFO*>::iterator itr;
-		itr = sdtOtherMap.find(key);
-		if( itr == sdtOtherMap.end() ){
-			SDT_SECTION_INFO* info = new SDT_SECTION_INFO;
-			info->original_network_id = sdt->original_network_id;
-			info->transport_stream_id = sdt->transport_stream_id;
-			info->version_number = sdt->version_number;
-			info->last_section_number = sdt->last_section_number;
-			info->sdtSection.insert(pair<BYTE, CSDTTable*>(sdt->section_number, sdt));
-			sdtOtherMap.insert(pair<DWORD, SDT_SECTION_INFO*>(key, info));
-		}else{
-			if( itr->second->version_number != sdt->version_number ){
-				SAFE_DELETE(itr->second);
-				sdtOtherMap.erase(itr);
-
-				SDT_SECTION_INFO* info = new SDT_SECTION_INFO;
-				info->original_network_id = sdt->original_network_id;
-				info->transport_stream_id = sdt->transport_stream_id;
-				info->version_number = sdt->version_number;
-				info->last_section_number = sdt->last_section_number;
-				info->sdtSection.insert(pair<BYTE, CSDTTable*>(sdt->section_number, sdt));
-				sdtOtherMap.insert(pair<DWORD, SDT_SECTION_INFO*>(key, info));
-			}else{
-				//変化なし
-				map<BYTE, CSDTTable*>::iterator itrTable;
-				itrTable = itr->second->sdtSection.find(sdt->section_number);
-				if( itrTable == itr->second->sdtSection.end() ){
-					itr->second->sdtSection.insert(pair<BYTE, CSDTTable*>(sdt->section_number, sdt));
-					return TRUE;
-				}
-				return FALSE;
-			}
-		}
+		//特に扱う必要性なし
+		return FALSE;
 	}else{
 		return FALSE;
 	}
@@ -605,13 +420,10 @@ BOOL CDecodeUtil::CheckTOT(WORD PID, CTOTTable* tot)
 		return FALSE;
 	}
 
-	SAFE_DELETE(this->totInfo);
-	this->totInfo = tot;
-
-	__int64 nowTime = GetNowI64Time();
-	__int64 streamTime = ConvertI64Time( tot->jst_time );
-
-	this->delaySec = (int)((streamTime - nowTime)/I64_1SEC);
+	if( SystemTimeToFileTime(&tot->jst_time, &this->totTime) == FALSE ){
+		this->totTime.dwHighDateTime = 0;
+	}
+	this->totTimeTick = GetTickCount();
 
 /*	_OutputDebugString(L"%d/%02d/%02d %02d:%02d:%02d\r\n",
 		tot->jst_time.wYear, 
@@ -623,7 +435,7 @@ BOOL CDecodeUtil::CheckTOT(WORD PID, CTOTTable* tot)
 		);
 		*/
 
-	return TRUE;
+	return FALSE;
 }
 
 BOOL CDecodeUtil::CheckTDT(WORD PID, CTDTTable* tdt)
@@ -632,13 +444,10 @@ BOOL CDecodeUtil::CheckTDT(WORD PID, CTDTTable* tdt)
 		return FALSE;
 	}
 
-	SAFE_DELETE(this->tdtInfo);
-	this->tdtInfo = tdt;
-
-	__int64 nowTime = GetNowI64Time();
-	__int64 streamTime = ConvertI64Time( tdt->jst_time );
-
-	this->delaySec = (int)((streamTime - nowTime)/I64_1SEC);
+	if( SystemTimeToFileTime(&tdt->jst_time, &this->tdtTime) == FALSE ){
+		this->tdtTime.dwHighDateTime = 0;
+	}
+	this->tdtTimeTick = GetTickCount();
 	/*
 	_OutputDebugString(L"%d/%02d/%02d %02d:%02d:%02d\r\n",
 		tdt->jst_time.wYear, 
@@ -649,7 +458,7 @@ BOOL CDecodeUtil::CheckTDT(WORD PID, CTDTTable* tdt)
 		tdt->jst_time.wSecond 
 		);*/
 		
-	return TRUE;
+	return FALSE;
 }
 
 BOOL CDecodeUtil::CheckEIT(WORD PID, CEITTable* eit)
@@ -659,64 +468,10 @@ BOOL CDecodeUtil::CheckEIT(WORD PID, CEITTable* eit)
 	}
 	
 	if( epgDBUtil != NULL ){
-		epgDBUtil->AddEIT(PID, eit);
+		FILETIME time = {};
+		GetNowTime(&time);
+		epgDBUtil->AddEIT(PID, eit, (__int64)time.dwHighDateTime << 32 | time.dwLowDateTime);
 	}
-	return FALSE;
-}
-
-BOOL CDecodeUtil::CheckEIT_SD(WORD PID, CEITTable_SD* eit)
-{
-	if( eit == NULL ){
-		return FALSE;
-	}
-	
-	if( epgDBUtil != NULL ){
-		epgDBUtil->AddEIT_SD(PID, eit);
-	}
-	return FALSE;
-}
-
-BOOL CDecodeUtil::CheckEIT_SD2(WORD PID, CEITTable_SD2* eit)
-{
-	if( eit == NULL ){
-		return FALSE;
-	}
-	
-	if( epgDBUtil != NULL ){
-		epgDBUtil->AddEIT_SD2(PID, eit);
-	}
-	return FALSE;
-}
-
-BOOL CDecodeUtil::CheckCDT(WORD PID, CCDTTable* cdt)
-{
-	if( cdt == NULL ){
-		return FALSE;
-	}
-
-	return FALSE;
-}
-
-BOOL CDecodeUtil::CheckSDTT(WORD PID, CSDTTTable* sdtt)
-{
-	if( sdtt == NULL ){
-		return FALSE;
-	}
-	/*
-	for( size_t i=0; i<sdtt->contentInfoList.size(); i++ ){
-		for( size_t j=0; j<sdtt->contentInfoList[i]->descriptorList.size(); j++ ){
-			if( sdtt->contentInfoList[i]->descriptorList[j]->downloadContent != NULL ){
-				if( sdtt->contentInfoList[i]->descriptorList[j]->downloadContent->text_char != NULL ){
-					CARIB8CharDecode arib;
-					string dec;
-					arib.PSISI(sdtt->contentInfoList[i]->descriptorList[j]->downloadContent->text_char, sdtt->contentInfoList[i]->descriptorList[j]->downloadContent->text_length, &dec);
-					dec+="\r\n";
-					OutputDebugStringA(dec.c_str());
-				}
-			}
-		}
-	}
-	*/
 	return FALSE;
 }
 
@@ -754,14 +509,28 @@ BOOL CDecodeUtil::CheckSIT(WORD PID, CSITTable* sit)
 	}
 
 	//時間計算
-	if( this->totInfo == NULL && this->tdtInfo == NULL ){
+	if( this->totTime.dwHighDateTime == 0 && this->tdtTime.dwHighDateTime == 0 ){
 		for( size_t i=0; i<sit->descriptorList.size(); i++ ){
-			if( sit->descriptorList[i]->partialTSTime != NULL ){
-				if( sit->descriptorList[i]->partialTSTime->jst_time_flag == 1 ){
-					__int64 nowTime = GetNowI64Time();
-					__int64 streamTime = ConvertI64Time( sit->descriptorList[i]->partialTSTime->jst_time );
+			if( sit->descriptorList[i]->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::partialTS_time_descriptor ){
+				if( sit->descriptorList[i]->GetNumber(AribDescriptor::jst_time_flag) == 1 ){
+					DWORD timeBytesSize;
+					const BYTE* timeBytes = sit->descriptorList[i]->GetBinary(AribDescriptor::jst_time, &timeBytesSize);
+					if( timeBytes != NULL && timeBytesSize >= 5 ){
+						DWORD mjd = timeBytes[0] << 8 | timeBytes[1];
+						SYSTEMTIME time;
+						_MJDtoSYSTEMTIME(mjd, &time);
+						BYTE b = timeBytes[2];
+						time.wHour = (WORD)_BCDtoDWORD(&b, 1, 2);
+						b = timeBytes[3];
+						time.wMinute = (WORD)_BCDtoDWORD(&b, 1, 2);
+						b = timeBytes[4];
+						time.wSecond = (WORD)_BCDtoDWORD(&b, 1, 2);
 
-					this->delaySec = (int)((streamTime - nowTime)/I64_1SEC);
+						if( SystemTimeToFileTime(&time, &this->sitTime) == FALSE ){
+							this->sitTime.dwHighDateTime = 0;
+						}
+						this->sitTimeTick = GetTickCount();
+					}
 				}
 			}
 		}
@@ -791,11 +560,9 @@ BOOL CDecodeUtil::CheckSIT(WORD PID, CSITTable* sit)
 }
 
 //解析データの現在のストリームＩＤを取得する
-//戻り値：
-// エラーコード
 // originalNetworkID		[OUT]現在のoriginalNetworkID
 // transportStreamID		[OUT]現在のtransportStreamID
-DWORD CDecodeUtil::GetTSID(
+BOOL CDecodeUtil::GetTSID(
 	WORD* originalNetworkID,
 	WORD* transportStreamID
 	)
@@ -803,58 +570,48 @@ DWORD CDecodeUtil::GetTSID(
 	if( sdtActualInfo != NULL ){
 		*originalNetworkID = sdtActualInfo->original_network_id;
 		*transportStreamID = sdtActualInfo->transport_stream_id;
-		return NO_ERR;
+		return TRUE;
 	}else if( this->sitInfo != NULL && this->patInfo != NULL ){
 		//TSID
 		*transportStreamID = this->patInfo->transport_stream_id;
 		//ONID
 		WORD ONID = 0xFFFF;
 		for( size_t i=0; i<this->sitInfo->descriptorList.size(); i++ ){
-			if( this->sitInfo->descriptorList[i]->networkIdentification != NULL ){
-				*originalNetworkID = this->sitInfo->descriptorList[i]->networkIdentification->network_id;
-				return NO_ERR;
+			if( this->sitInfo->descriptorList[i]->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::network_identification_descriptor ){
+				*originalNetworkID = (WORD)this->sitInfo->descriptorList[i]->GetNumber(AribDescriptor::network_id);
+				return TRUE;
 			}
 		}
 	}
-	return ERR_FALSE;
+	return FALSE;
 }
 
 //自ストリームのサービス一覧を取得する
-//戻り値：
-// エラーコード
 //引数：
 // serviceListSize			[OUT]serviceListの個数
 // serviceList				[OUT]サービス情報のリスト（DLL内で自動的にdeleteする。次に取得を行うまで有効）
-DWORD CDecodeUtil::GetServiceListActual(
+BOOL CDecodeUtil::GetServiceListActual(
 	DWORD* serviceListSize,
 	SERVICE_INFO** serviceList
 	)
 {
 	SAFE_DELETE_ARRAY(this->serviceList);
-	this->serviceListSize = 0;
-
-	if( serviceListSize == NULL || serviceList == NULL ){
-		return ERR_INVALID_ARG;
-	}
 
 	if( this->nitActualInfo == NULL || this->sdtActualInfo == NULL ){
-		if( GetServiceListSIT(serviceListSize, serviceList) != NO_ERR){
-			return ERR_FALSE;
-		}else{
-			return NO_ERR;
-		}
+		return GetServiceListSIT(serviceListSize, serviceList);
 	}else{
 		if( this->nitActualInfo->last_section_number+1 != this->nitActualInfo->nitSection.size() ||
 			this->sdtActualInfo->last_section_number+1 != this->sdtActualInfo->sdtSection.size() ){
-			return ERR_FALSE;
+			return FALSE;
 		}
 	}
+	*serviceListSize = 0;
 
 	map<BYTE, CSDTTable*>::iterator itrSdt;
 	for(itrSdt = this->sdtActualInfo->sdtSection.begin(); itrSdt != this->sdtActualInfo->sdtSection.end(); itrSdt++){
-		this->serviceListSize += (DWORD)itrSdt->second->serviceInfoList.size();
+		*serviceListSize += (DWORD)itrSdt->second->serviceInfoList.size();
 	}
-	this->serviceList = new SERVICE_INFO[this->serviceListSize];
+	this->serviceList = new SERVICE_INFO[*serviceListSize];
 
 
 	wstring network_nameW = L"";
@@ -865,30 +622,40 @@ DWORD CDecodeUtil::GetServiceListActual(
 	map<BYTE, CNITTable*>::iterator itrNit;
 	for( itrNit = this->nitActualInfo->nitSection.begin(); itrNit != this->nitActualInfo->nitSection.end(); itrNit++ ){
 		for( size_t i=0; i<itrNit->second->descriptorList.size(); i++ ){
-			if( itrNit->second->descriptorList[i]->networkName != NULL ){
-				CNetworkNameDesc* networkName = itrNit->second->descriptorList[i]->networkName;
-				if( networkName->char_nameLength > 0 ){
+			if( itrNit->second->descriptorList[i]->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::network_name_descriptor ){
+				AribDescriptor::CDescriptor* networkName = itrNit->second->descriptorList[i];
+				DWORD srcSize;
+				const char* src = networkName->GetStringOrEmpty(AribDescriptor::d_char, &srcSize);
+				if( srcSize > 0 ){
 					CARIB8CharDecode arib;
 					string network_name = "";
-					arib.PSISI((const BYTE*)networkName->char_name, networkName->char_nameLength, &network_name);
+					arib.PSISI((const BYTE*)src, srcSize, &network_name);
 					AtoW(network_name, network_nameW);
 				}
 			}
 		}
 		for( size_t i=0; i<itrNit->second->TSInfoList.size(); i++ ){
 			for( size_t j=0; j<itrNit->second->TSInfoList[i]->descriptorList.size(); j++ ){
-				if( itrNit->second->TSInfoList[i]->descriptorList[j]->TSInfo != NULL ){
-					CTSInfoDesc* TSInfo = itrNit->second->TSInfoList[i]->descriptorList[j]->TSInfo;
-					if( TSInfo->length_of_ts_name > 0 ){
+				if( itrNit->second->TSInfoList[i]->descriptorList[j]->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::ts_information_descriptor ){
+					AribDescriptor::CDescriptor* TSInfo = itrNit->second->TSInfoList[i]->descriptorList[j];
+					DWORD srcSize;
+					const char* src = TSInfo->GetStringOrEmpty(AribDescriptor::ts_name_char, &srcSize);
+					if( srcSize > 0 ){
 						CARIB8CharDecode arib;
 						string ts_name = "";
-						arib.PSISI((const BYTE*)TSInfo->ts_name_char, TSInfo->length_of_ts_name, &ts_name);
+						arib.PSISI((const BYTE*)src, srcSize, &ts_name);
 						AtoW(ts_name, ts_nameW);
 					}
-					remote_control_key_id = TSInfo->remote_control_key_id;
+					remote_control_key_id = (BYTE)TSInfo->GetNumber(AribDescriptor::remote_control_key_id);
 				}
-				if( itrNit->second->TSInfoList[i]->descriptorList[j]->partialReception != NULL ){
-					partialServiceList = itrNit->second->TSInfoList[i]->descriptorList[j]->partialReception->service_idList;
+				if( itrNit->second->TSInfoList[i]->descriptorList[j]->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::partial_reception_descriptor ){
+					partialServiceList.clear();
+					AribDescriptor::CDescriptor::CLoopPointer lp;
+					if( itrNit->second->TSInfoList[i]->descriptorList[j]->EnterLoop(lp) ){
+						for( DWORD k=0; itrNit->second->TSInfoList[i]->descriptorList[j]->SetLoopIndex(lp, k); k++ ){
+							partialServiceList.push_back((WORD)itrNit->second->TSInfoList[i]->descriptorList[j]->GetNumber(AribDescriptor::service_id, lp));
+						}
+					}
 				}
 			}
 		}
@@ -903,23 +670,27 @@ DWORD CDecodeUtil::GetServiceListActual(
 			this->serviceList[count].extInfo = new SERVICE_EXT_INFO;
 
 			for( size_t j=0; j<itrSdt->second->serviceInfoList[i]->descriptorList.size(); j++ ){
-				if( itrSdt->second->serviceInfoList[i]->descriptorList[j]->service != NULL ){
-					CServiceDesc* service = itrSdt->second->serviceInfoList[i]->descriptorList[j]->service;
+				if( itrSdt->second->serviceInfoList[i]->descriptorList[j]->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::service_descriptor ){
+					AribDescriptor::CDescriptor* service = itrSdt->second->serviceInfoList[i]->descriptorList[j];
 					CARIB8CharDecode arib;
 					string service_provider_name = "";
 					string service_name = "";
-					if( service->service_provider_name_length > 0 ){
-						arib.PSISI((const BYTE*)service->char_service_provider_name, service->service_provider_name_length, &service_provider_name);
+					const char* src;
+					DWORD srcSize;
+					src = service->GetStringOrEmpty(AribDescriptor::service_provider_name, &srcSize);
+					if( srcSize > 0 ){
+						arib.PSISI((const BYTE*)src, srcSize, &service_provider_name);
 					}
-					if( service->service_name_length > 0 ){
-						arib.PSISI((const BYTE*)service->char_service_name, service->service_name_length, &service_name);
+					src = service->GetStringOrEmpty(AribDescriptor::service_name, &srcSize);
+					if( srcSize > 0 ){
+						arib.PSISI((const BYTE*)src, srcSize, &service_name);
 					}
 					wstring service_provider_nameW = L"";
 					wstring service_nameW = L"";
 					AtoW(service_provider_name, service_provider_nameW);
 					AtoW(service_name, service_nameW);
 
-					this->serviceList[count].extInfo->service_type = service->service_type;
+					this->serviceList[count].extInfo->service_type = (BYTE)service->GetNumber(AribDescriptor::service_type);
 					if( service_provider_nameW.size() > 0 ){
 						this->serviceList[count].extInfo->service_provider_name = new WCHAR[service_provider_nameW.size()+1];
 						wcscpy_s(this->serviceList[count].extInfo->service_provider_name, service_provider_nameW.size()+1, service_provider_nameW.c_str());
@@ -952,36 +723,32 @@ DWORD CDecodeUtil::GetServiceListActual(
 		}
 	}
 
-	*serviceListSize = this->serviceListSize;
 	*serviceList = this->serviceList;
 
 
-	return NO_ERR;
+	return TRUE;
 }
 
 //自ストリームのサービス一覧をSITから取得する
-//戻り値：
-// エラーコード
 //引数：
 // serviceListSize			[OUT]serviceListの個数
 // serviceList				[OUT]サービス情報のリスト（DLL内で自動的にdeleteする。次に取得を行うまで有効）
-DWORD CDecodeUtil::GetServiceListSIT(
+BOOL CDecodeUtil::GetServiceListSIT(
 	DWORD* serviceListSize,
 	SERVICE_INFO** serviceList
 	)
 {
 	if( this->sitInfo == NULL || this->patInfo == NULL ){
-		return ERR_FALSE;
+		return FALSE;
 	}
 
 	SAFE_DELETE_ARRAY(this->serviceList);
-	this->serviceListSize = 0;
 
 	//ONID
 	WORD ONID = 0xFFFF;
 	for( size_t i=0; i<this->sitInfo->descriptorList.size(); i++ ){
-		if( this->sitInfo->descriptorList[i]->networkIdentification != NULL ){
-			ONID = this->sitInfo->descriptorList[i]->networkIdentification->network_id;
+		if( this->sitInfo->descriptorList[i]->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::network_identification_descriptor ){
+			ONID = (WORD)this->sitInfo->descriptorList[i]->GetNumber(AribDescriptor::network_id);
 		}
 	}
 
@@ -989,38 +756,42 @@ DWORD CDecodeUtil::GetServiceListSIT(
 	WORD TSID = 0xFFFF;
 	TSID = this->patInfo->transport_stream_id;
 
-	this->serviceListSize = (DWORD)this->sitInfo->serviceLoopList.size();
-	this->serviceList = new SERVICE_INFO[this->serviceListSize];
+	*serviceListSize = (DWORD)this->sitInfo->serviceLoopList.size();
+	this->serviceList = new SERVICE_INFO[*serviceListSize];
 
 	wstring network_nameW = L"";
 	wstring ts_nameW = L"";
 	BYTE remote_control_key_id = 0;
 
 	//サービスリスト
-	for( DWORD i=0; i<this->serviceListSize; i++ ){
+	for( DWORD i=0; i<*serviceListSize; i++ ){
 		this->serviceList[i].original_network_id = ONID;
 		this->serviceList[i].transport_stream_id = TSID;
 		this->serviceList[i].service_id = this->sitInfo->serviceLoopList[i]->service_id;
 		this->serviceList[i].extInfo = new SERVICE_EXT_INFO;
 
 		for( size_t j=0; j<this->sitInfo->serviceLoopList[i]->descriptorList.size(); j++ ){
-			if( this->sitInfo->serviceLoopList[i]->descriptorList[j]->service != NULL ){
-				CServiceDesc* service = this->sitInfo->serviceLoopList[i]->descriptorList[j]->service;
+			if( this->sitInfo->serviceLoopList[i]->descriptorList[j]->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::service_descriptor ){
+				AribDescriptor::CDescriptor* service = this->sitInfo->serviceLoopList[i]->descriptorList[j];
 				CARIB8CharDecode arib;
 				string service_provider_name = "";
 				string service_name = "";
-				if( service->service_provider_name_length > 0 ){
-					arib.PSISI((const BYTE*)service->char_service_provider_name, service->service_provider_name_length, &service_provider_name);
+				const char* src;
+				DWORD srcSize;
+				src = service->GetStringOrEmpty(AribDescriptor::service_provider_name, &srcSize);
+				if( srcSize > 0 ){
+					arib.PSISI((const BYTE*)src, srcSize, &service_provider_name);
 				}
-				if( service->service_name_length > 0 ){
-					arib.PSISI((const BYTE*)service->char_service_name, service->service_name_length, &service_name);
+				src = service->GetStringOrEmpty(AribDescriptor::service_name, &srcSize);
+				if( srcSize > 0 ){
+					arib.PSISI((const BYTE*)src, srcSize, &service_name);
 				}
 				wstring service_provider_nameW = L"";
 				wstring service_nameW = L"";
 				AtoW(service_provider_name, service_provider_nameW);
 				AtoW(service_name, service_nameW);
 
-				this->serviceList[i].extInfo->service_type = service->service_type;
+				this->serviceList[i].extInfo->service_type = (BYTE)service->GetNumber(AribDescriptor::service_type);
 				if( service_provider_nameW.size() > 0 ){
 					this->serviceList[i].extInfo->service_provider_name = new WCHAR[service_provider_nameW.size()+1];
 					wcscpy_s(this->serviceList[i].extInfo->service_provider_name, service_provider_nameW.size()+1, service_provider_nameW.c_str());
@@ -1046,47 +817,36 @@ DWORD CDecodeUtil::GetServiceListSIT(
 	}
 
 
-	*serviceListSize = this->serviceListSize;
 	*serviceList = this->serviceList;
 
-	return NO_ERR;
+	return TRUE;
 }
 
 //ストリーム内の現在の時間情報を取得する
-//戻り値：
-// エラーコード
 //引数：
 // time				[OUT]ストリーム内の現在の時間
-DWORD CDecodeUtil::GetNowTime(
-	SYSTEMTIME* time
+// tick				[OUT]timeを取得した時点のチックカウント
+BOOL CDecodeUtil::GetNowTime(
+	FILETIME* time,
+	DWORD* tick
 	)
 {
-	if( this->totInfo != NULL ){
-		*time = this->totInfo->jst_time;
-		return NO_ERR;
-	}else if( this->tdtInfo != NULL ){
-		*time = this->tdtInfo->jst_time;
-		return NO_ERR;
-	}else{
-		if( this->sitInfo != NULL ){
-			for( size_t i=0; i<this->sitInfo->descriptorList.size(); i++ ){
-				if( this->sitInfo->descriptorList[i]->partialTSTime != NULL ){
-					if( this->sitInfo->descriptorList[i]->partialTSTime->jst_time_flag == 1 ){
-						*time = this->sitInfo->descriptorList[i]->partialTSTime->jst_time;
-						return NO_ERR;
-					}
-				}
-			}
-		}
-		return ERR_FALSE;
+	DWORD tick_;
+	if( tick == NULL ){
+		tick = &tick_;
 	}
-}
-
-//PC時計を元としたストリーム時間との差を取得する
-//戻り値：
-// 差の秒数
-int CDecodeUtil::GetTimeDelay(
-	)
-{
-	return this->delaySec;
+	if( this->totTime.dwHighDateTime != 0 ){
+		*time = this->totTime;
+		*tick = this->totTimeTick;
+		return TRUE;
+	}else if( this->tdtTime.dwHighDateTime != 0 ){
+		*time = this->tdtTime;
+		*tick = this->tdtTimeTick;
+		return TRUE;
+	}else if( this->sitTime.dwHighDateTime != 0 ){
+		*time = this->sitTime;
+		*tick = this->sitTimeTick;
+		return TRUE;
+	}
+	return FALSE;
 }

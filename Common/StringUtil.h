@@ -29,17 +29,11 @@ void ChkFolderPath(string& strPath);
 
 void ChkFolderPath(wstring& strPath);
 
-void ChkFileName(string& strPath);
-
-void ChkFileName(wstring& strPath);
-
 int CompareNoCase(const string& str1, const string& str2);
 
 int CompareNoCase(const wstring& str1, const wstring& str2);
 
 BOOL UrlDecode(LPCSTR src, DWORD srcSize, string& dest);
-
-BOOL UrlDecode(LPCWSTR src, DWORD srcSize, wstring& dest);
 
 void Trim(string& strBuff);
 

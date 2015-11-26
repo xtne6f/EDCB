@@ -4,7 +4,7 @@
 
 CFileStreamingManager::CFileStreamingManager(void)
 {
-	this->lockEvent = _CreateEvent(FALSE, TRUE, NULL);
+	this->lockEvent = CreateEvent(NULL, FALSE, TRUE, NULL);
 
 	this->nextCtrlID = 1;
 }

@@ -157,7 +157,7 @@ void CDropCount::CheckCounter(CTSPacketUtil* tsPacket, DROP_INFO* info)
 
 CHK_END:
 	info->lastCounter = tsPacket->continuity_counter;
-	if( this->lastLogTime + 5 < GetTimeCount() ){
+	if( GetTickCount() - this->lastLogTime > 5000 ){
 		if( this->lastLogDrop != this->drop ||
 			this->lastLogScramble != this->scramble
 			){
@@ -179,13 +179,13 @@ CHK_END:
 				this->lastLogDrop = this->drop;
 				this->lastLogScramble = this->scramble;
 		}
-		this->lastLogTime = GetTimeCount();
+		this->lastLogTime = GetTickCount();
 	}
 }
 
 void CDropCount::SaveLog(wstring filePath)
 {
-	HANDLE file = _CreateFile2( filePath.c_str(), GENERIC_WRITE, FILE_SHARE_READ, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL );
+	HANDLE file = _CreateDirectoryAndFile( filePath.c_str(), GENERIC_WRITE, FILE_SHARE_READ, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL );
 	if( file != INVALID_HANDLE_VALUE ){
 		DWORD write;
 

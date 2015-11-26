@@ -5,19 +5,19 @@
 #include "../Common/ErrDef.h"
 #include "../Common/TimeUtil.h"
 #include "../Common/SendCtrlCmd.h"
+#include "../Common/BlockLock.h"
 
 CBonCtrl::CBonCtrl(void)
 {
-	this->lockEvent = _CreateEvent(FALSE, TRUE, NULL);
-	this->buffLockEvent = _CreateEvent(FALSE, TRUE, NULL);
+	InitializeCriticalSection(&this->buffLock);
+	this->TSBuffOffset = 0;
 
-    this->recvThread = NULL;
-    this->recvStopEvent = _CreateEvent(FALSE, FALSE, NULL);
     this->analyzeThread = NULL;
-    this->analyzeStopEvent = _CreateEvent(FALSE, FALSE, NULL);
+    this->analyzeEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+    this->analyzeStopFlag = FALSE;
 
     this->chScanThread = NULL;
-    this->chScanStopEvent = _CreateEvent(FALSE, FALSE, NULL);
+    this->chScanStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	this->chSt_space = 0;
 	this->chSt_ch = 0;
 	this->chSt_chName = L"";
@@ -26,17 +26,17 @@ CBonCtrl::CBonCtrl(void)
 	this->chSt_err = ST_STOP;
 
 	this->epgCapThread = NULL;
-	this->epgCapStopEvent = _CreateEvent(FALSE, FALSE, NULL);
-	this->BSBasic = TRUE;
-	this->CS1Basic = TRUE;
-	this->CS2Basic = TRUE;
+	this->epgCapStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	this->epgSt_err = ST_STOP;
 
 	this->epgCapBackThread = NULL;
-	this->epgCapBackStopEvent = _CreateEvent(FALSE, FALSE, NULL);
+	this->epgCapBackStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	this->enableLiveEpgCap = FALSE;
 	this->enableRecEpgCap = FALSE;
 
+	this->epgCapBackBSBasic = TRUE;
+	this->epgCapBackCS1Basic = TRUE;
+	this->epgCapBackCS2Basic = TRUE;
 	this->epgCapBackStartWaitSec = 30;
 	this->tsBuffMaxCount = 5000;
 	this->writeBuffMaxCount = -1;
@@ -90,7 +90,8 @@ CBonCtrl::~CBonCtrl(void)
 	}
 
 	if( this->analyzeThread != NULL ){
-		::SetEvent(this->analyzeStopEvent);
+		this->analyzeStopFlag = TRUE;
+		::SetEvent(this->analyzeEvent);
 		// スレッド終了待ち
 		if ( ::WaitForSingleObject(this->analyzeThread, 15000) == WAIT_TIMEOUT ){
 			::TerminateThread(this->analyzeThread, 0xffffffff);
@@ -98,150 +99,40 @@ CBonCtrl::~CBonCtrl(void)
 		CloseHandle(this->analyzeThread);
 		this->analyzeThread = NULL;
 	}
-	if( this->analyzeStopEvent != NULL ){
-		CloseHandle(this->analyzeStopEvent);
-		this->analyzeStopEvent = NULL;
+	if( this->analyzeEvent != NULL ){
+		CloseHandle(this->analyzeEvent);
+		this->analyzeEvent = NULL;
 	}
-
-	if( this->recvThread != NULL ){
-		::SetEvent(this->recvStopEvent);
-		// スレッド終了待ち
-		if ( ::WaitForSingleObject(this->recvThread, 15000) == WAIT_TIMEOUT ){
-			::TerminateThread(this->recvThread, 0xffffffff);
-		}
-		CloseHandle(this->recvThread);
-		this->recvThread = NULL;
-	}
-	if( this->recvStopEvent != NULL ){
-		CloseHandle(this->recvStopEvent);
-		this->recvStopEvent = NULL;
-	}
-	
-	if( this->lockEvent != NULL ){
-		UnLock();
-		CloseHandle(this->lockEvent);
-		this->lockEvent = NULL;
-	}
-	if( this->buffLockEvent != NULL ){
-		CloseHandle(this->buffLockEvent);
-		this->buffLockEvent = NULL;
-	}
+	DeleteCriticalSection(&this->buffLock);
 }
 
-BOOL CBonCtrl::Lock(LPCWSTR log, DWORD timeOut)
-{
-	if( this->lockEvent == NULL ){
-		return FALSE;
-	}
-	//if( log != NULL ){
-	//	OutputDebugString(log);
-	//}
-	DWORD dwRet = WaitForSingleObject(this->lockEvent, timeOut);
-	if( dwRet == WAIT_ABANDONED || 
-		dwRet == WAIT_FAILED ||
-		dwRet == WAIT_TIMEOUT){
-			if( log != NULL ){
-				_OutputDebugString(L"◆CBonCtrl::Lock FALSE : %s", log);
-			}else{
-				OutputDebugString(L"◆CBonCtrl::Lock FALSE");
-			}
-		return FALSE;
-	}
-	return TRUE;
-}
-
-void CBonCtrl::UnLock(LPCWSTR log)
-{
-	if( this->lockEvent != NULL ){
-		SetEvent(this->lockEvent);
-	}
-	if( log != NULL ){
-		OutputDebugString(log);
-	}
-}
-
-//初期設定
-//設定ファイル保存先とBonDriverフォルダを指定
+//BonDriverフォルダを指定
 //引数：
-// settingFolderPath		[IN]設定ファイル保存フォルダパス
 // bonDriverFolderPath		[IN]BonDriverフォルダパス
-void CBonCtrl::SetSettingFolder(
-	LPCWSTR settingFolderPath,
+void CBonCtrl::SetBonDriverFolder(
 	LPCWSTR bonDriverFolderPath
 )
 {
-	if( Lock(L"SetSettingFolder") == FALSE ) return ;
-	this->bonUtil.SetSettingFolder(settingFolderPath, bonDriverFolderPath);
-
-	if( this->bonUtil.GetOpenBonDriverIndex() != -1 ){
-		this->chUtil.LoadChSet( this->bonUtil.GetChSet4Path(), this->bonUtil.GetChSet5Path() );
-	}
-
-	UnLock();
+	this->bonUtil.SetBonDriverFolder(bonDriverFolderPath);
 }
 
 void CBonCtrl::SetEMMMode(BOOL enable)
 {
-	if( Lock(L"SetEMMMode") == FALSE ) return ;
-
 	this->tsOut.SetEmm(enable);
-
-	UnLock();
 }
 
 void CBonCtrl::SetTsBuffMaxCount(DWORD tsBuffMaxCount, int writeBuffMaxCount)
 {
-	if( Lock(L"SetTsBuffMaxCount") == FALSE ) return ;
-
 	this->tsBuffMaxCount = tsBuffMaxCount;
 	this->writeBuffMaxCount = writeBuffMaxCount;
-
-	UnLock();
 }
 
 //BonDriverフォルダのBonDriver_*.dllを列挙
 //戻り値：
-// エラーコード
-//引数：
-// bonList			[OUT]検索できたBonDriver一覧（mapのキー 内部インデックス値、mapの値 BonDriverファイル名）
-DWORD CBonCtrl::EnumBonDriver(
-	map<int, wstring>* bonList
-)
+// 検索できたBonDriver一覧
+vector<wstring> CBonCtrl::EnumBonDriver()
 {
-	if( Lock(L"EnumBonDriver") == FALSE ) return ERR_FALSE;
-	DWORD ret = this->bonUtil.EnumBonDriver(bonList);
-	UnLock();
-	return ret;
-}
-
-//BonDriverのロード
-//BonDriverをロードしてチャンネル情報などを取得（インデックス値で指定）
-//戻り値：
-// エラーコード
-//引数：
-// iIndex			[IN]EnumBonDriverで取得されたBonDriverのインデックス値
-DWORD CBonCtrl::OpenBonDriver(
-	int index,
-	int openWait
-)
-{
-	if( Lock(L"OpenBonDriver") == FALSE ) return ERR_FALSE;
-	_CloseBonDriver();
-	DWORD ret = this->bonUtil.OpenBonDriver(index, openWait);
-	if( ret == NO_ERR ){
-		ret = _OpenBonDriver();
-		this->tsOut.ResetChChange();
-
-		wstring bonFile;
-		bonFile = this->bonUtil.GetOpenBonDriverFileName();
-		this->tsOut.SetBonDriver(bonFile);
-	}
-	if( this->bonUtil.GetOpenBonDriverIndex() != -1 ){
-		this->chUtil.LoadChSet( this->bonUtil.GetChSet4Path(), this->bonUtil.GetChSet5Path() );
-	}
-
-	UnLock();
-	return ret;
+	return this->bonUtil.EnumBonDriver();
 }
 
 //BonDriverをロードしてチャンネル情報などを取得（ファイル名で指定）
@@ -254,35 +145,31 @@ DWORD CBonCtrl::OpenBonDriver(
 	int openWait
 )
 {
-	if( Lock(L"OpenBonDriver-2") == FALSE ) return ERR_FALSE;
 	_CloseBonDriver();
-	DWORD ret = this->bonUtil.OpenBonDriver(bonDriverFile, openWait);
-	if( ret == NO_ERR ){
+	DWORD ret = ERR_FALSE;
+	if( this->bonUtil.OpenBonDriver(bonDriverFile, RecvCallback, this, openWait) ){
+		wstring bonFile = this->bonUtil.GetOpenBonDriverFileName();
 		ret = _OpenBonDriver();
 		this->tsOut.ResetChChange();
 
-		wstring bonFile;
-		bonFile = this->bonUtil.GetOpenBonDriverFileName();
 		this->tsOut.SetBonDriver(bonFile);
-	}
-	if( this->bonUtil.GetOpenBonDriverIndex() != -1 ){
-		this->chUtil.LoadChSet( this->bonUtil.GetChSet4Path(), this->bonUtil.GetChSet5Path() );
+		wstring settingPath;
+		GetSettingPath(settingPath);
+		wstring bonFileTitle;
+		GetFileTitle(bonFile, bonFileTitle);
+		wstring tunerName = this->bonUtil.GetTunerName();
+		CheckFileName(tunerName);
+		this->chUtil.LoadChSet( settingPath + L"\\" + bonFileTitle + L"(" + tunerName + L").ChSet4.txt", settingPath + L"\\ChSet5.txt" );
 	}
 
-	UnLock();
 	return ret;
 }
 
 //ロードしているBonDriverの開放
-//戻り値：
-// エラーコード
-DWORD CBonCtrl::CloseBonDriver()
+void CBonCtrl::CloseBonDriver()
 {
-	if( Lock(L"CloseBonDriver") == FALSE ) return ERR_FALSE;
 	StopBackgroundEpgCap();
-	DWORD ret = _CloseBonDriver();
-	UnLock();
-	return ret;
+	_CloseBonDriver();
 }
 
 //ロード中のBonDriverのファイル名を取得する（ロード成功しているかの判定）
@@ -294,45 +181,16 @@ BOOL CBonCtrl::GetOpenBonDriver(
 	wstring* bonDriverFile
 	)
 {
-	if( Lock(L"GetOpenBonDriver") == FALSE ) return ERR_FALSE;
-
 	BOOL ret = FALSE;
 
-	if( this->bonUtil.GetOpenBonDriverIndex() != -1 ){
+	wstring strBonDriverFile = this->bonUtil.GetOpenBonDriverFileName();
+	if( strBonDriverFile.empty() == false ){
 		ret = TRUE;
 		if( bonDriverFile != NULL ){
-			*bonDriverFile = this->bonUtil.GetOpenBonDriverFileName();
+			*bonDriverFile = strBonDriverFile;
 		}
 	}
 
-	UnLock();
-
-	return ret;
-}
-//ロードしたBonDriverの情報取得
-//SpaceとChの一覧を取得する
-//戻り値：
-// エラーコード
-//引数：
-// spaceMap			[OUT] SpaceとChの一覧（mapのキー Space）
-DWORD CBonCtrl::GetOriginalChList(
-	map<DWORD, BON_SPACE_INFO>* spaceMap
-)
-{
-	if( Lock(L"GetOriginalChList") == FALSE ) return ERR_FALSE;
-	DWORD ret = this->bonUtil.GetOriginalChList(spaceMap);
-	UnLock();
-	return ret;
-}
-
-//BonDriverのチューナー名を取得
-//戻り値：
-// チューナー名
-wstring CBonCtrl::GetTunerName()
-{
-	if( Lock(L"GetTunerName") == FALSE ) return L"err";
-	wstring ret = this->bonUtil.GetTunerName();
-	UnLock();
 	return ret;
 }
 
@@ -347,17 +205,11 @@ DWORD CBonCtrl::SetCh(
 	DWORD ch
 )
 {
-	if( Lock(L"SetCh") == FALSE ) return ERR_FALSE;
-
 	if( this->tsOut.IsRec() == TRUE ){
-		UnLock();
 		return ERR_FALSE;
 	}
 
-	DWORD ret = _SetCh(space, ch);
-
-	UnLock();
-	return ret;
+	return _SetCh(space, ch);
 }
 
 //チャンネル変更
@@ -373,10 +225,7 @@ DWORD CBonCtrl::SetCh(
 	WORD SID
 )
 {
-	if( Lock(L"SetCh-2") == FALSE ) return ERR_FALSE;
-
 	if( this->tsOut.IsRec() == TRUE ){
-		UnLock();
 		return ERR_FALSE;
 	}
 
@@ -384,7 +233,6 @@ DWORD CBonCtrl::SetCh(
 	ret = _SetCh(space, ch);
 	this->lastSID = SID;
 
-	UnLock();
 	return ret;
 }
 
@@ -401,10 +249,7 @@ DWORD CBonCtrl::SetCh(
 	WORD SID
 )
 {
-	if( Lock(L"SetCh-3") == FALSE ) return ERR_FALSE;
-
 	if( this->tsOut.IsRec() == TRUE ){
-		UnLock();
 		return ERR_FALSE;
 	}
 
@@ -417,7 +262,6 @@ DWORD CBonCtrl::SetCh(
 		this->lastSID = SID;
 	}
 
-	UnLock();
 	return ret;
 }
 
@@ -431,12 +275,12 @@ DWORD CBonCtrl::_SetCh(
 	DWORD chNow=0;
 
 	DWORD ret = ERR_FALSE;
-	if( this->bonUtil.GetNowCh(&spaceNow, &chNow) == TRUE ){
+	if( this->bonUtil.GetOpenBonDriverFileName().empty() == false ){
 		ret = NO_ERR;
-		if( space != spaceNow || ch != chNow ){
+		if( this->bonUtil.GetNowCh(&spaceNow, &chNow) == false || space != spaceNow || ch != chNow ){
 			this->tsOut.SetChChangeEvent(chScan);
 			_OutputDebugString(L"SetCh space %d, ch %d", space, ch);
-			ret = this->bonUtil.SetCh(space, ch);
+			ret = this->bonUtil.SetCh(space, ch) ? NO_ERR : ERR_FALSE;
 
 			StartBackgroundEpgCap();
 		}else{
@@ -446,7 +290,7 @@ DWORD CBonCtrl::_SetCh(
 					//エラーの時は再設定
 					this->tsOut.SetChChangeEvent();
 					_OutputDebugString(L"SetCh space %d, ch %d", space, ch);
-					ret = this->bonUtil.SetCh(space, ch);
+					ret = this->bonUtil.SetCh(space, ch) ? NO_ERR : ERR_FALSE;
 
 					StartBackgroundEpgCap();
 				}
@@ -455,7 +299,7 @@ DWORD CBonCtrl::_SetCh(
 					//エラーの時は再設定
 					this->tsOut.SetChChangeEvent();
 					_OutputDebugString(L"SetCh space %d, ch %d", space, ch);
-					ret = this->bonUtil.SetCh(space, ch);
+					ret = this->bonUtil.SetCh(space, ch) ? NO_ERR : ERR_FALSE;
 
 					StartBackgroundEpgCap();
 				}
@@ -467,30 +311,12 @@ DWORD CBonCtrl::_SetCh(
 	return ret;
 }
 
-BOOL CBonCtrl::GetCh(
-	DWORD* space,
-	DWORD* ch
-	)
-{
-	if( Lock(L"GetCh") == FALSE ) return FALSE;
-	BOOL ret = FALSE;
-	if( this->bonUtil.GetSetCh(space, ch) == TRUE ){
-		ret = TRUE;
-	}
-	UnLock();
-	return ret;
-}
-
-
 //チャンネル変更中かどうか
 //戻り値：
 // TRUE（変更中）、FALSE（完了）
 BOOL CBonCtrl::IsChChanging(BOOL* chChgErr)
 {
-	if( Lock(L"IsChChanging") == FALSE ) return 0;
-	BOOL ret = this->tsOut.IsChChanging(chChgErr);
-	UnLock();
-	return ret;
+	return this->tsOut.IsChChanging(chChgErr);
 }
 
 //現在のストリームのIDを取得する
@@ -504,10 +330,7 @@ BOOL CBonCtrl::GetStreamID(
 	WORD* TSID
 	)
 {
-	if( Lock(L"GetStreamID") == FALSE ) return 0;
-	BOOL ret = this->tsOut.GetStreamID(ONID, TSID);
-	UnLock();
-	return ret;
+	return this->tsOut.GetStreamID(ONID, TSID);
 }
 
 //シグナルレベルの取得
@@ -515,10 +338,8 @@ BOOL CBonCtrl::GetStreamID(
 // シグナルレベル
 float CBonCtrl::GetSignalLevel()
 {
-	if( Lock(L"GetSignalLevel") == FALSE ) return 0;
 	float ret = this->bonUtil.GetSignalLevel();
 	this->tsOut.SetSignalLevel(ret);
-	UnLock();
 	return ret;
 }
 
@@ -527,16 +348,9 @@ float CBonCtrl::GetSignalLevel()
 // エラーコード
 DWORD CBonCtrl::_OpenBonDriver()
 {
-	if( this->recvThread == NULL ){
-		//受信スレッド起動
-		ResetEvent(this->recvStopEvent);
-		this->recvThread = (HANDLE)_beginthreadex(NULL, 0, RecvThread, (LPVOID)this, CREATE_SUSPENDED, NULL);
-		SetThreadPriority( this->recvThread, THREAD_PRIORITY_NORMAL );
-		ResumeThread(this->recvThread);
-	}
 	if( this->analyzeThread == NULL ){
 		//解析スレッド起動
-		ResetEvent(this->analyzeStopEvent);
+		this->analyzeStopFlag = FALSE;
 		this->analyzeThread = (HANDLE)_beginthreadex(NULL, 0, AnalyzeThread, (LPVOID)this, CREATE_SUSPENDED, NULL);
 		SetThreadPriority( this->analyzeThread, THREAD_PRIORITY_NORMAL );
 		ResumeThread(this->analyzeThread);
@@ -546,9 +360,7 @@ DWORD CBonCtrl::_OpenBonDriver()
 }
 
 //ロードしているBonDriverの開放本体
-//戻り値：
-// エラーコード
-DWORD CBonCtrl::_CloseBonDriver()
+void CBonCtrl::_CloseBonDriver()
 {
 	if( this->epgCapBackThread != NULL ){
 		::SetEvent(this->epgCapBackStopEvent);
@@ -570,17 +382,9 @@ DWORD CBonCtrl::_CloseBonDriver()
 		this->epgCapThread = NULL;
 	}
 
-	if( this->recvThread != NULL ){
-		::SetEvent(this->recvStopEvent);
-		// スレッド終了待ち
-		if ( ::WaitForSingleObject(this->recvThread, 15000) == WAIT_TIMEOUT ){
-			::TerminateThread(this->recvThread, 0xffffffff);
-		}
-		CloseHandle(this->recvThread);
-		this->recvThread = NULL;
-	}
 	if( this->analyzeThread != NULL ){
-		::SetEvent(this->analyzeStopEvent);
+		this->analyzeStopFlag = TRUE;
+		::SetEvent(this->analyzeEvent);
 		// スレッド終了待ち
 		if ( ::WaitForSingleObject(this->analyzeThread, 15000) == WAIT_TIMEOUT ){
 			::TerminateThread(this->analyzeThread, 0xffffffff);
@@ -589,140 +393,52 @@ DWORD CBonCtrl::_CloseBonDriver()
 		this->analyzeThread = NULL;
 	}
 
-	DWORD ret = this->bonUtil.CloseBonDriver();
-
-	if( WaitForSingleObject( this->buffLockEvent, 1000 ) == WAIT_OBJECT_0 ){
-		for( size_t i=0; i<this->TSBuff.size(); i++ ){
-			SAFE_DELETE(this->TSBuff[i])
-		}
-		this->TSBuff.clear();
-	}
-	if( this->buffLockEvent != NULL ){
-		SetEvent(this->buffLockEvent);
-	}
+	this->bonUtil.CloseBonDriver();
 	this->packetInit.ClearBuff();
-
-	return ret;
+	this->TSBuff.clear();
+	this->TSBuffOffset = 0;
 }
 
-UINT WINAPI CBonCtrl::RecvThread(LPVOID param)
+void CBonCtrl::RecvCallback(void* param, BYTE* data, DWORD size, DWORD remain)
 {
 	CBonCtrl* sys = (CBonCtrl*)param;
-	while(1){
-		if( ::WaitForSingleObject(sys->recvStopEvent, 0) != WAIT_TIMEOUT ){
-			//キャンセルされた
-			break;
+	BYTE* outData;
+	DWORD outSize;
+	if( data != NULL && size != 0 && sys->packetInit.GetTSData(data, size, &outData, &outSize) ){
+		CBlockLock lock(&sys->buffLock);
+		sys->TSBuff.erase(sys->TSBuff.begin(), sys->TSBuff.begin() + sys->TSBuffOffset);
+		sys->TSBuffOffset = 0;
+		if( sys->TSBuff.size() / 48128 > sys->tsBuffMaxCount ){
+			sys->TSBuff.clear();
 		}
-		BYTE *data = NULL;
-		DWORD size = 0;
-		DWORD remain = 0;
-		try{
-			if( sys->bonUtil.GetTsStream(&data,&size,&remain) == TRUE ){
-				if( size != 0 && data != NULL){
-					TS_DATA* item = new TS_DATA;
-					try{
-						if( sys->packetInit.GetTSData(data, size, &item->data, &item->size) == TRUE ){
-							if( WaitForSingleObject( sys->buffLockEvent, 50000 ) == WAIT_OBJECT_0 ){
-								if(sys->TSBuff.size() > sys->tsBuffMaxCount){
-									size_t startIndex = sys->tsBuffMaxCount;
-									if( sys->tsBuffMaxCount < 1000 ){
-										startIndex = 0;
-									}else{
-										startIndex -= 1000;
-									}
-									for( size_t i=startIndex; i<sys->TSBuff.size(); i++ ){
-										SAFE_DELETE(sys->TSBuff[i]);
-									}
-									vector<TS_DATA*>::iterator itr;
-									itr = sys->TSBuff.begin();
-									advance(itr,startIndex);
-									sys->TSBuff.erase( itr, sys->TSBuff.end() );
-								}
-								sys->TSBuff.push_back(item);
-								if( sys->buffLockEvent != NULL ){
-									SetEvent(sys->buffLockEvent);
-								}
-							}else{
-								delete item;
-								_OutputDebugString(L"★★Buff Write TimeOut");
-							}
-						}else{
-							delete item;
-						}
-					}catch(...){
-						delete item;
-						_OutputDebugString(L"★★RecvThread Exception2");
-					}
-				}else{
-					Sleep(10);
-				}
-			}else{
-				Sleep(10);
-			}
-		}catch(...){
-			_OutputDebugString(L"★★RecvThread Exception1");
-		}
+		sys->TSBuff.insert(sys->TSBuff.end(), outData, outData + outSize);
 	}
-	return 0;
+	if( remain == 0 ){
+		SetEvent(sys->analyzeEvent);
+	}
 }
 
 UINT WINAPI CBonCtrl::AnalyzeThread(LPVOID param)
 {
 	CBonCtrl* sys = (CBonCtrl*)param;
 
-	while(1){
-		if( ::WaitForSingleObject(sys->analyzeStopEvent, 0) != WAIT_TIMEOUT ){
-			//キャンセルされた
-			break;
-		}
-
+	while( sys->analyzeStopFlag == FALSE ){
 		//バッファからデータ取り出し
-		TS_DATA* data = NULL;
-		try{
-			if( WaitForSingleObject( sys->buffLockEvent, 5000 ) == WAIT_OBJECT_0 ){
-				if(sys->TSBuff.size() > sys->tsBuffMaxCount){
-					size_t startIndex = sys->tsBuffMaxCount;
-					if( sys->tsBuffMaxCount < 1000 ){
-						startIndex = 0;
-					}else{
-						startIndex -= 1000;
-					}
-					for( size_t i=startIndex; i<sys->TSBuff.size(); i++ ){
-						SAFE_DELETE(sys->TSBuff[i]);
-					}
-					vector<TS_DATA*>::iterator itr;
-					itr = sys->TSBuff.begin();
-					advance(itr,startIndex);
-					sys->TSBuff.erase( itr, sys->TSBuff.end() );
-				}
-				if( sys->TSBuff.size() != 0 ){
-					data = sys->TSBuff[0];
-					sys->TSBuff.erase( sys->TSBuff.begin() );
-				}
-				if( sys->buffLockEvent != NULL ){
-					SetEvent(sys->buffLockEvent);
-				}
-			}else{
-				Sleep(10);
-				continue ;
+		BYTE data[48128];
+		DWORD dataSize = 0;
+		{
+			CBlockLock lock(&sys->buffLock);
+			if( sys->TSBuff.size() - sys->TSBuffOffset >= sizeof(data) ){
+				//必ず188の倍数で取り出さなければならない
+				dataSize = sizeof(data);
+				memcpy(data, &sys->TSBuff[sys->TSBuffOffset], dataSize);
+				sys->TSBuffOffset += dataSize;
 			}
-		}catch(...){
-			_OutputDebugString(L"★★AnalyzeThread Exception1");
-			if( data != NULL ){
-				sys->tsOut.AddTSBuff(data);
-				SAFE_DELETE(data);
-			}
-			continue ;
 		}
-		try{
-			if( data != NULL ){
-				sys->tsOut.AddTSBuff(data);
-				SAFE_DELETE(data);
-			}else{
-				Sleep(5);
-			}
-		}catch(...){
-			_OutputDebugString(L"★★AnalyzeThread Exception2");
+		if( dataSize != 0 ){
+			sys->tsOut.AddTSBuff(data, dataSize);
+		}else{
+			WaitForSingleObject(sys->analyzeEvent, 1000);
 		}
 	}
 	return 0;
@@ -731,11 +447,7 @@ UINT WINAPI CBonCtrl::AnalyzeThread(LPVOID param)
 //EPGデータの蓄積状態をリセットする
 void CBonCtrl::ClearSectionStatus()
 {
-	if( Lock(L"ClearSectionStatus") == FALSE ) return ;
 	this->tsOut.ClearSectionStatus();
-
-	UnLock();
-	return ;
 }
 
 //EPGデータの蓄積状態を取得する
@@ -747,11 +459,7 @@ EPG_SECTION_STATUS CBonCtrl::GetSectionStatus(
 	BOOL l_eitFlag
 	)
 {
-	if( Lock(L"GetSectionStatus") == FALSE ) return EpgNoData;
-	EPG_SECTION_STATUS status = this->tsOut.GetSectionStatus(l_eitFlag);
-
-	UnLock();
-	return status;
+	return this->tsOut.GetSectionStatus(l_eitFlag);
 }
 
 //自ストリームのサービス一覧を取得する
@@ -763,8 +471,6 @@ DWORD CBonCtrl::GetServiceListActual(
 	vector<TS_SERVICE_INFO>* serviceList
 	)
 {
-	if( Lock(L"GetServiceListActual") == FALSE ) return EpgNoData;
-
 	DWORD _serviceListSize = 0;
 	SERVICE_INFO* _serviceList = NULL;
 	DWORD err = this->tsOut.GetServiceListActual(&_serviceListSize, &_serviceList);
@@ -799,7 +505,6 @@ DWORD CBonCtrl::GetServiceListActual(
 		}
 	}
 
-	UnLock();
 	return err;
 }
 
@@ -812,11 +517,7 @@ DWORD CBonCtrl::GetServiceList(
 	vector<CH_DATA4>* serviceList
 	)
 {
-	if( Lock(L"GetServiceList") == FALSE ) return FALSE;
-	BOOL ret = this->chUtil.GetEnumService(serviceList);
-
-	UnLock();
-	return ret;
+	return this->chUtil.GetEnumService(serviceList);
 }
 
 //TSストリーム制御用コントロールを作成する
@@ -828,11 +529,7 @@ BOOL CBonCtrl::CreateServiceCtrl(
 	DWORD* id
 	)
 {
-	if( Lock(L"CreateServiceCtrl") == FALSE ) return FALSE;
-	BOOL ret = this->tsOut.CreateServiceCtrl(id);
-
-	UnLock();
-	return ret;
+	return this->tsOut.CreateServiceCtrl(id);
 }
 
 //TSストリーム制御用コントロールを作成する
@@ -844,11 +541,7 @@ BOOL CBonCtrl::DeleteServiceCtrl(
 	DWORD id
 	)
 {
-	if( Lock(L"DeleteServiceCtrl") == FALSE ) return FALSE;
-	BOOL ret = this->tsOut.DeleteServiceCtrl(id);
-
-	UnLock();
-	return ret;
+	return this->tsOut.DeleteServiceCtrl(id);
 }
 
 //制御対象のサービスを設定する
@@ -857,11 +550,7 @@ BOOL CBonCtrl::SetServiceID(
 	WORD serviceID
 	)
 {
-	if( Lock(L"SetServiceID") == FALSE ) return FALSE;
-	BOOL ret = this->tsOut.SetServiceID(id,serviceID);
-
-	UnLock();
-	return ret;
+	return this->tsOut.SetServiceID(id,serviceID);
 }
 
 BOOL CBonCtrl::GetServiceID(
@@ -869,11 +558,7 @@ BOOL CBonCtrl::GetServiceID(
 	WORD* serviceID
 	)
 {
-	if( Lock(L"SetServiceID") == FALSE ) return FALSE;
-	BOOL ret = this->tsOut.GetServiceID(id,serviceID);
-
-	UnLock();
-	return ret;
+	return this->tsOut.GetServiceID(id,serviceID);
 }
 
 //UDPで送信を行う
@@ -887,11 +572,7 @@ BOOL CBonCtrl::SendUdp(
 	vector<NW_SEND_INFO>* sendList
 	)
 {
-	if( Lock(L"SendUdp") == FALSE ) return FALSE;
-	BOOL ret = this->tsOut.SendUdp(id,sendList);
-
-	UnLock();
-	return ret;
+	return this->tsOut.SendUdp(id,sendList);
 }
 
 //TCPで送信を行う
@@ -905,11 +586,7 @@ BOOL CBonCtrl::SendTcp(
 	vector<NW_SEND_INFO>* sendList
 	)
 {
-	if( Lock(L"SendTcp") == FALSE ) return FALSE;
-	BOOL ret = this->tsOut.SendTcp(id,sendList);
-
-	UnLock();
-	return ret;
+	return this->tsOut.SendTcp(id,sendList);
 }
 
 //ファイル保存を開始する
@@ -941,12 +618,10 @@ BOOL CBonCtrl::StartSave(
 	vector<wstring>* saveFolderSub
 )
 {
-	if( Lock(L"StartSave") == FALSE ) return FALSE;
 	BOOL ret = this->tsOut.StartSave(id, fileName, overWriteFlag, pittariFlag, pittariONID, pittariTSID, pittariSID, pittariEventID, createSize, saveFolder, saveFolderSub, writeBuffMaxCount);
 
 	StartBackgroundEpgCap();
 
-	UnLock();
 	return ret;
 }
 
@@ -959,11 +634,7 @@ BOOL CBonCtrl::EndSave(
 	DWORD id
 	)
 {
-	if( Lock(L"EndSave") == FALSE ) return FALSE;
-	BOOL ret = this->tsOut.EndSave(id);
-
-	UnLock();
-	return ret;
+	return this->tsOut.EndSave(id);
 }
 
 //スクランブル解除処理の動作設定
@@ -976,11 +647,7 @@ BOOL CBonCtrl::SetScramble(
 	BOOL enable
 	)
 {
-	if( Lock(L"SetScramble") == FALSE ) return FALSE;
-	BOOL ret = this->tsOut.SetScramble(id, enable);
-
-	UnLock();
-	return ret;
+	return this->tsOut.SetScramble(id, enable);
 }
 
 //字幕とデータ放送含めるかどうか
@@ -994,10 +661,7 @@ void CBonCtrl::SetServiceMode(
 	BOOL enableData
 	)
 {
-	if( Lock(L"SetServiceMode") == FALSE ) return ;
 	this->tsOut.SetServiceMode(id, enableCaption, enableData);
-
-	UnLock();
 }
 
 //エラーカウントをクリアする
@@ -1005,10 +669,7 @@ void CBonCtrl::ClearErrCount(
 	DWORD id
 	)
 {
-	if( Lock(L"ClearErrCount") == FALSE ) return ;
 	this->tsOut.ClearErrCount(id);
-
-	UnLock();
 }
 
 //ドロップとスクランブルのカウントを取得する
@@ -1021,10 +682,7 @@ void CBonCtrl::GetErrCount(
 	ULONGLONG* scramble
 	)
 {
-	if( Lock(L"GetErrCount") == FALSE ) return ;
 	this->tsOut.GetErrCount(id, drop, scramble);
-
-	UnLock();
 }
 
 //指定サービスの現在or次のEPG情報を取得する
@@ -1044,11 +702,7 @@ DWORD CBonCtrl::GetEpgInfo(
 	EPGDB_EVENT_INFO* epgInfo
 	)
 {
-	if( Lock(L"GetEpgInfo") == FALSE ) return FALSE;
-	DWORD ret = this->tsOut.GetEpgInfo(originalNetworkID, transportStreamID, serviceID, nextFlag, epgInfo);
-
-	UnLock();
-	return ret;
+	return this->tsOut.GetEpgInfo(originalNetworkID, transportStreamID, serviceID, nextFlag, epgInfo);
 }
 
 //指定イベントのEPG情報を取得する
@@ -1070,11 +724,7 @@ DWORD CBonCtrl::SearchEpgInfo(
 	EPGDB_EVENT_INFO* epgInfo
 	)
 {
-	if( Lock(L"SearchEpgInfo") == FALSE ) return FALSE;
-	DWORD ret = this->tsOut.SearchEpgInfo(originalNetworkID, transportStreamID, serviceID, eventID, pfOnlyFlag, epgInfo);
-
-	UnLock();
-	return ret;
+	return this->tsOut.SearchEpgInfo(originalNetworkID, transportStreamID, serviceID, eventID, pfOnlyFlag, epgInfo);
 }
 
 //PC時計を元としたストリーム時間との差を取得する
@@ -1083,37 +733,24 @@ DWORD CBonCtrl::SearchEpgInfo(
 int CBonCtrl::GetTimeDelay(
 	)
 {
-	if( Lock(L"GetTimeDelay") == FALSE ) return 0;
-	int delay = this->tsOut.GetTimeDelay();
-
-	UnLock();
-	return delay;
+	return this->tsOut.GetTimeDelay();
 }
 
 //録画中かどうかを取得する
 // TRUE（録画中）、FALSE（録画していない）
 BOOL CBonCtrl::IsRec()
 {
-	if( Lock(L"IsRec") == FALSE ) return FALSE;
-
-	BOOL ret = this->tsOut.IsRec();
-
-	UnLock();
-	return ret;
+	return this->tsOut.IsRec();
 }
 //チャンネルスキャンを開始する
 //戻り値：
 // エラーコード
 DWORD CBonCtrl::StartChScan()
 {
-	if( Lock(L"StartChScan") == FALSE ) return ERR_FALSE;
-
 	if( this->tsOut.IsRec() == TRUE ){
-		UnLock();
 		return ERR_FALSE;
 	}
 	if( this->epgSt_err == ST_WORKING ){
-		UnLock();
 		return ERR_FALSE;
 	}
 
@@ -1124,7 +761,7 @@ DWORD CBonCtrl::StartChScan()
 
 	DWORD ret = ERR_FALSE;
 	if( this->chScanThread == NULL ){
-		if( this->bonUtil.GetOpenBonDriverIndex() != -1 ){
+		if( this->bonUtil.GetOpenBonDriverFileName().empty() == false ){
 			ret = NO_ERR;
 			this->chSt_space = 0;
 			this->chSt_ch = 0;
@@ -1141,7 +778,6 @@ DWORD CBonCtrl::StartChScan()
 		}
 	}
 
-	UnLock();
 	return ret;
 }
 
@@ -1150,8 +786,6 @@ DWORD CBonCtrl::StartChScan()
 // エラーコード
 DWORD CBonCtrl::StopChScan()
 {
-	if( Lock(L"StopChScan") == FALSE ) return ERR_FALSE;
-
 	if( this->chScanThread != NULL ){
 		::SetEvent(this->chScanStopEvent);
 		// スレッド終了待ち
@@ -1162,7 +796,6 @@ DWORD CBonCtrl::StopChScan()
 		this->chScanThread = NULL;
 	}
 
-	UnLock();
 	return NO_ERR;
 }
 
@@ -1183,9 +816,6 @@ DWORD CBonCtrl::GetChScanStatus(
 	DWORD* totalNum
 	)
 {
-	if( Lock(L"GetChScanStatus") == FALSE ) return ERR_FALSE;
-
-	DWORD ret;
 	if( space != NULL ){
 		*space = this->chSt_space;
 	}
@@ -1201,41 +831,41 @@ DWORD CBonCtrl::GetChScanStatus(
 	if( totalNum != NULL ){
 		*totalNum = this->chSt_totalNum;
 	}
-	ret = this->chSt_err;
-
-	UnLock();
-	return ret;
+	return this->chSt_err;
 }
 
 UINT WINAPI CBonCtrl::ChScanThread(LPVOID param)
 {
 	CBonCtrl* sys = (CBonCtrl*)param;
 
+	//TODO: chUtilをconstに保っていないのでスレッド安全性は破綻している。スキャン時だけの問題なので修正はしないが要注意
 	sys->chUtil.Clear();
 
-	wstring chSet4 = sys->bonUtil.GetChSet4Path();
-	wstring chSet5 = sys->bonUtil.GetChSet5Path();
+	wstring settingPath;
+	GetSettingPath(settingPath);
+	wstring bonFileTitle;
+	GetFileTitle(sys->bonUtil.GetOpenBonDriverFileName(), bonFileTitle);
+	wstring tunerName = sys->bonUtil.GetTunerName();
+	CheckFileName(tunerName);
+
+	wstring chSet4 = settingPath + L"\\" + bonFileTitle + L"(" + tunerName + L").ChSet4.txt";
+	wstring chSet5 = settingPath + L"\\ChSet5.txt";
 
 	vector<CHK_CH_INFO> chkList;
-	map<DWORD, BON_SPACE_INFO> spaceMap;
-	if( sys->bonUtil.GetOriginalChList(&spaceMap) != NO_ERR ){
-		sys->chSt_err = ST_COMPLETE;
-		sys->chUtil.SaveChSet(chSet4, chSet5);
-		return 0;
-	}
-	map<DWORD, BON_SPACE_INFO>::iterator itrSpace;
-	for( itrSpace = spaceMap.begin(); itrSpace != spaceMap.end(); itrSpace++ ){
-		sys->chSt_totalNum += (DWORD)itrSpace->second.chMap.size();
-		map<DWORD, BON_CH_INFO>::iterator itrCh;
-		for( itrCh = itrSpace->second.chMap.begin(); itrCh != itrSpace->second.chMap.end(); itrCh++ ){
-			CHK_CH_INFO item;
-			item.space = itrSpace->second.space;
-			item.spaceName = itrSpace->second.spaceName;
-			item.ch = itrCh->second.ch;
-			item.chName = itrCh->second.chName;
-			chkList.push_back(item);
+	vector<pair<wstring, vector<wstring>>> spaceList = sys->bonUtil.GetOriginalChList();
+	for( size_t i = 0; i < spaceList.size(); i++ ){
+		for( size_t j = 0; j < spaceList[i].second.size(); j++ ){
+			if( spaceList[i].second[j].empty() == false ){
+				CHK_CH_INFO item;
+				item.space = (DWORD)i;
+				item.spaceName = spaceList[i].first;
+				item.ch = (DWORD)j;
+				item.chName = spaceList[i].second[j];
+				chkList.push_back(item);
+			}
 		}
 	}
+	sys->chSt_totalNum = (DWORD)chkList.size();
 
 	if( sys->chSt_totalNum == 0 ){
 		sys->chSt_err = ST_COMPLETE;
@@ -1254,7 +884,7 @@ UINT WINAPI CBonCtrl::ChScanThread(LPVOID param)
 
 	DWORD wait = 0;
 	BOOL chkNext = TRUE;
-	LONGLONG startTime = 0;
+	DWORD startTime = 0;
 	DWORD chkWait = 0;
 	DWORD chkCount = 0;
 	BOOL firstChg = FALSE;
@@ -1274,20 +904,20 @@ UINT WINAPI CBonCtrl::ChScanThread(LPVOID param)
 				firstChg = TRUE;
 				sys->tsOut.ResetChChange();
 			}
-			startTime = GetTimeCount();
+			startTime = GetTickCount();
 			chkNext = FALSE;
 			wait = 1000;
 			chkWait = chChgTimeOut;
 		}else{
 			BOOL chChgErr = FALSE;
 			if( sys->tsOut.IsChChanging(&chChgErr) == TRUE ){
-				if( startTime + chkWait < GetTimeCount() ){
+				if( GetTickCount() - startTime > chkWait * 1000 ){
 					//チャンネル切り替えに8秒以上かかってるので無信号と判断
 					OutputDebugString(L"★AutoScan Ch Change timeout\r\n");
 					chkNext = TRUE;
 				}
 			}else{
-				if( startTime + chkWait+serviceChkTimeOut < GetTimeCount() || chChgErr == TRUE){
+				if( GetTickCount() - startTime > (chkWait + serviceChkTimeOut) * 1000 || chChgErr == TRUE){
 					//チャンネル切り替え成功したけどサービス一覧とれないので無信号と判断
 					OutputDebugString(L"★AutoScan GetService timeout\r\n");
 					chkNext = TRUE;
@@ -1340,12 +970,8 @@ DWORD CBonCtrl::GetEpgCapService(
 	vector<EPGCAP_SERVICE_INFO>* chList
 	)
 {
-	if( Lock(L"GetEpgCapService") == FALSE ) return ERR_FALSE;
-
-	DWORD ret = NO_ERR;
 	this->chUtil.GetEpgCapService(chList);
-	UnLock();
-	return ret;
+	return NO_ERR;
 }
 
 //EPG取得を開始する
@@ -1353,24 +979,14 @@ DWORD CBonCtrl::GetEpgCapService(
 // エラーコード
 //引数：
 // chList		[IN]EPG取得するチャンネル一覧
-// BSBasic		[IN]BSで１チャンネルから基本情報のみ取得するかどうか
-// CS1Basic		[IN]CS1で１チャンネルから基本情報のみ取得するかどうか
-// CS2Basic		[IN]CS2で１チャンネルから基本情報のみ取得するかどうか
 DWORD CBonCtrl::StartEpgCap(
-	vector<EPGCAP_SERVICE_INFO>* chList,
-	BOOL BSBasic,
-	BOOL CS1Basic,
-	BOOL CS2Basic
+	vector<EPGCAP_SERVICE_INFO>* chList
 	)
 {
-	if( Lock(L"StartEpgCap") == FALSE ) return ERR_FALSE;
-
 	if( this->tsOut.IsRec() == TRUE ){
-		UnLock();
 		return ERR_FALSE;
 	}
 	if( this->chSt_err == ST_WORKING ){
-		UnLock();
 		return ERR_FALSE;
 	}
 
@@ -1383,12 +999,9 @@ DWORD CBonCtrl::StartEpgCap(
 
 	DWORD ret = ERR_FALSE;
 	if( this->epgCapThread == NULL ){
-		if( this->bonUtil.GetOpenBonDriverIndex() != -1 ){
+		if( this->bonUtil.GetOpenBonDriverFileName().empty() == false ){
 			ret = NO_ERR;
 			this->epgCapChList = *chList;
-			this->BSBasic = BSBasic;
-			this->CS1Basic = CS1Basic;
-			this->CS2Basic = CS2Basic;
 			this->epgSt_err = ST_WORKING;
 			this->epgSt_ch.ONID = 0xFFFF;
 			this->epgSt_ch.TSID = 0xFFFF;
@@ -1402,7 +1015,6 @@ DWORD CBonCtrl::StartEpgCap(
 		}
 	}
 
-	UnLock();
 	return ret;
 }
 
@@ -1412,8 +1024,6 @@ DWORD CBonCtrl::StartEpgCap(
 DWORD CBonCtrl::StopEpgCap(
 	)
 {
-	if( Lock(L"StopEpgCap") == FALSE ) return ERR_FALSE;
-
 	if( this->epgCapThread != NULL ){
 		::SetEvent(this->epgCapStopEvent);
 		// スレッド終了待ち
@@ -1424,7 +1034,6 @@ DWORD CBonCtrl::StopEpgCap(
 		this->epgCapThread = NULL;
 	}
 
-	UnLock();
 	return NO_ERR;
 }
 
@@ -1437,15 +1046,10 @@ DWORD CBonCtrl::GetEpgCapStatus(
 	EPGCAP_SERVICE_INFO* info
 	)
 {
-	if( Lock(L"GetEpgCapStatus") == FALSE ) return ERR_FALSE;
-
 	if( info != NULL ){
 		*info = this->epgSt_ch;
 	}
-	DWORD ret = this->epgSt_err;
-
-	UnLock();
-	return ret;
+	return this->epgSt_err;
 }
 
 UINT WINAPI CBonCtrl::EpgCapThread(LPVOID param)
@@ -1455,7 +1059,7 @@ UINT WINAPI CBonCtrl::EpgCapThread(LPVOID param)
 	BOOL chkNext = TRUE;
 	BOOL startCap = FALSE;
 	DWORD wait = 0;
-	LONGLONG startTime = 0;
+	DWORD startTime = 0;
 	DWORD chkCount = 0;
 	DWORD chkWait = 8;
 
@@ -1470,6 +1074,13 @@ UINT WINAPI CBonCtrl::EpgCapThread(LPVOID param)
 
 	DWORD timeOut = GetPrivateProfileInt(L"EPGCAP", L"EpgCapTimeOut", 15, iniPath.c_str());
 	BOOL saveTimeOut = GetPrivateProfileInt(L"EPGCAP", L"EpgCapSaveTimeOut", 0, iniPath.c_str());
+
+	//Common.iniは一般に外部プロセスが変更する可能性のある(はずの)ものなので、利用の直前にチェックする
+	wstring commonIniPath;
+	GetCommonIniPath(commonIniPath);
+	BOOL BSBasic = GetPrivateProfileInt(L"SET", L"BSBasicOnly", 1, commonIniPath.c_str());
+	BOOL CS1Basic = GetPrivateProfileInt(L"SET", L"CS1BasicOnly", 1, commonIniPath.c_str());
+	BOOL CS2Basic = GetPrivateProfileInt(L"SET", L"CS2BasicOnly", 1, commonIniPath.c_str());
 
 	while(1){
 		if( ::WaitForSingleObject(sys->epgCapStopEvent, wait) != WAIT_TIMEOUT ){
@@ -1487,7 +1098,7 @@ UINT WINAPI CBonCtrl::EpgCapThread(LPVOID param)
 			DWORD ch = 0;
 			sys->chUtil.GetCh(sys->epgCapChList[chkCount].ONID, sys->epgCapChList[chkCount].TSID, space, ch);
 			sys->_SetCh(space, ch);
-			startTime = GetTimeCount();
+			startTime = GetTickCount();
 			chkNext = FALSE;
 			startCap = FALSE;
 			wait = 1000;
@@ -1502,24 +1113,24 @@ UINT WINAPI CBonCtrl::EpgCapThread(LPVOID param)
 		}else{
 			BOOL chChgErr = FALSE;
 			if( sys->tsOut.IsChChanging(&chChgErr) == TRUE ){
-				if( startTime + chkWait < GetTimeCount() ){
+				if( GetTickCount() - startTime > chkWait * 1000 ){
 					//チャンネル切り替えに10秒以上かかってるので無信号と判断
 					chkNext = TRUE;
 				}
 			}else{
-				if( (startTime + chkWait + timeOut*60 < GetTimeCount()) || chChgErr == TRUE){
+				if( GetTickCount() - startTime > (chkWait + timeOut * 60) * 1000 || chChgErr == TRUE){
 					//15分以上かかっているなら停止
 					sys->tsOut.StopSaveEPG(saveTimeOut);
 					chkNext = TRUE;
 					wait = 0;
 					_OutputDebugString(L"++%d分でEPG取得完了せず or Ch変更でエラー", timeOut);
-				}else if(startTime + chkWait < GetTimeCount() ){
+				}else if( GetTickCount() - startTime > chkWait * 1000 ){
 					//切り替えから15秒以上過ぎているので取得処理
 					if( startCap == FALSE ){
 						//取得開始
 						startCap = TRUE;
 						wstring epgDataPath = L"";
-						sys->GetEpgDataFilePath(sys->epgCapChList[chkCount].ONID, sys->epgCapChList[chkCount].TSID, epgDataPath);
+						sys->GetEpgDataFilePath(sys->epgCapChList[chkCount].ONID, sys->epgCapChList[chkCount].TSID, epgDataPath, BSBasic, CS1Basic, CS2Basic);
 						sys->tsOut.StartSaveEPG(epgDataPath);
 						sys->tsOut.ClearSectionStatus();
 						wait = 60*1000;
@@ -1527,15 +1138,15 @@ UINT WINAPI CBonCtrl::EpgCapThread(LPVOID param)
 						//蓄積状態チェック
 						BOOL leitFlag = sys->chUtil.IsPartial(sys->epgCapChList[chkCount].ONID, sys->epgCapChList[chkCount].TSID, sys->epgCapChList[chkCount].SID);
 						EPG_SECTION_STATUS status = sys->tsOut.GetSectionStatus(leitFlag);
-						if( sys->epgCapChList[chkCount].ONID == 4 && sys->BSBasic == TRUE ){
+						if( sys->epgCapChList[chkCount].ONID == 4 && BSBasic == TRUE ){
 							if( status == EpgBasicAll || status == EpgHEITAll ){
 								chkNext = TRUE;
 							}
-						}else if( sys->epgCapChList[chkCount].ONID == 6 && sys->CS1Basic == TRUE ){
+						}else if( sys->epgCapChList[chkCount].ONID == 6 && CS1Basic == TRUE ){
 							if( status == EpgBasicAll || status == EpgHEITAll ){
 								chkNext = TRUE;
 							}
-						}else if( sys->epgCapChList[chkCount].ONID == 7 && sys->CS2Basic == TRUE ){
+						}else if( sys->epgCapChList[chkCount].ONID == 7 && CS2Basic == TRUE ){
 							if( status == EpgBasicAll || status == EpgHEITAll ){
 								chkNext = TRUE;
 							}
@@ -1564,7 +1175,7 @@ UINT WINAPI CBonCtrl::EpgCapThread(LPVOID param)
 					return 0;
 				}
 				//BS 1チャンネルのみ？
-				if( sys->epgCapChList[chkCount].ONID == 4 && sys->BSBasic == TRUE && chkBS == TRUE){
+				if( sys->epgCapChList[chkCount].ONID == 4 && BSBasic == TRUE && chkBS == TRUE){
 					while(chkCount<(DWORD)sys->epgCapChList.size()){
 						if( sys->epgCapChList[chkCount].ONID != 4 ){
 							break;
@@ -1578,7 +1189,7 @@ UINT WINAPI CBonCtrl::EpgCapThread(LPVOID param)
 					}
 				}
 				//CS1 1チャンネルのみ？
-				if( sys->epgCapChList[chkCount].ONID == 6 && sys->CS1Basic == TRUE && chkCS1 == TRUE ){
+				if( sys->epgCapChList[chkCount].ONID == 6 && CS1Basic == TRUE && chkCS1 == TRUE ){
 					while(chkCount<(DWORD)sys->epgCapChList.size()){
 						if( sys->epgCapChList[chkCount].ONID != 6 ){
 							break;
@@ -1592,7 +1203,7 @@ UINT WINAPI CBonCtrl::EpgCapThread(LPVOID param)
 					}
 				}
 				//CS2 1チャンネルのみ？
-				if( sys->epgCapChList[chkCount].ONID == 7 && sys->CS2Basic == TRUE && chkCS2 == TRUE ){
+				if( sys->epgCapChList[chkCount].ONID == 7 && CS2Basic == TRUE && chkCS2 == TRUE ){
 					while(chkCount<(DWORD)sys->epgCapChList.size()){
 						if( sys->epgCapChList[chkCount].ONID != 7 ){
 							break;
@@ -1611,17 +1222,17 @@ UINT WINAPI CBonCtrl::EpgCapThread(LPVOID param)
 	return 0;
 }
 
-void CBonCtrl::GetEpgDataFilePath(WORD ONID, WORD TSID, wstring& epgDataFilePath)
+void CBonCtrl::GetEpgDataFilePath(WORD ONID, WORD TSID, wstring& epgDataFilePath, BOOL BSBasic, BOOL CS1Basic, BOOL CS2Basic)
 {
 	wstring epgDataFolderPath = L"";
 	GetSettingPath(epgDataFolderPath);
 	epgDataFolderPath += EPG_SAVE_FOLDER;
 
-	if( ONID == 4 && this->BSBasic == TRUE ){
+	if( ONID == 4 && BSBasic == TRUE ){
 		Format(epgDataFilePath, L"%s\\%04XFFFF_epg.dat", epgDataFolderPath.c_str(), ONID);
-	}else if( ONID == 6 && this->CS1Basic == TRUE ){
+	}else if( ONID == 6 && CS1Basic == TRUE ){
 		Format(epgDataFilePath, L"%s\\%04XFFFF_epg.dat", epgDataFolderPath.c_str(), ONID);
-	}else if( ONID == 7 && this->CS2Basic == TRUE ){
+	}else if( ONID == 7 && CS2Basic == TRUE ){
 		Format(epgDataFilePath, L"%s\\%04XFFFF_epg.dat", epgDataFolderPath.c_str(), ONID);
 	}else{
 		Format(epgDataFilePath, L"%s\\%04X%04X_epg.dat", epgDataFolderPath.c_str(), ONID, TSID);
@@ -1639,10 +1250,7 @@ void CBonCtrl::GetSaveFilePath(
 	BOOL* subRecFlag
 	)
 {
-	if( Lock(L"GetSaveFilePath") == FALSE ) return ;
 	this->tsOut.GetSaveFilePath(id, filePath, subRecFlag);
-
-	UnLock();
 }
 
 //ドロップとスクランブルのカウントを保存する
@@ -1654,10 +1262,7 @@ void CBonCtrl::SaveErrCount(
 	wstring filePath
 	)
 {
-	if( Lock(L"SaveErrCount") == FALSE ) return ;
 	this->tsOut.SaveErrCount(id, filePath);
-
-	UnLock();
 }
 
 //録画中のファイルの出力サイズを取得する
@@ -1669,10 +1274,7 @@ void CBonCtrl::GetRecWriteSize(
 	__int64* writeSize
 	)
 {
-	if( Lock(L"GetRecWriteSize") == FALSE ) return ;
 	this->tsOut.GetRecWriteSize(id, writeSize);
-
-	UnLock();
 }
 
 //バックグラウンドでのEPG取得設定
@@ -1693,25 +1295,21 @@ void CBonCtrl::SetBackGroundEpgCap(
 	DWORD backStartWaitSec
 	)
 {
-	if( Lock(L"SetBackGroundEpgCap") == FALSE ) return ;
-
 	this->enableLiveEpgCap = enableLive;
 	this->enableRecEpgCap = enableRec;
-	this->BSBasic = BSBasic;
-	this->CS1Basic = CS1Basic;
-	this->CS2Basic = CS2Basic;
+	this->epgCapBackBSBasic = BSBasic;
+	this->epgCapBackCS1Basic = CS1Basic;
+	this->epgCapBackCS2Basic = CS2Basic;
 	this->epgCapBackStartWaitSec = backStartWaitSec;
 
 	StartBackgroundEpgCap();
-
-	UnLock();
 }
 
 void CBonCtrl::StartBackgroundEpgCap()
 {
 	StopBackgroundEpgCap();
-	if( this->epgCapBackThread == NULL && this->epgCapThread == NULL ){
-		if( this->bonUtil.GetOpenBonDriverIndex() != -1 ){
+	if( this->epgCapBackThread == NULL && this->epgCapThread == NULL && this->chScanThread == NULL ){
+		if( this->bonUtil.GetOpenBonDriverFileName().empty() == false ){
 			//受信スレッド起動
 			ResetEvent(this->epgCapBackStopEvent);
 			this->epgCapBackThread = (HANDLE)_beginthreadex(NULL, 0, EpgCapBackThread, (LPVOID)this, CREATE_SUSPENDED, NULL);
@@ -1760,7 +1358,7 @@ UINT WINAPI CBonCtrl::EpgCapBackThread(LPVOID param)
 		}
 	}
 
-	LONGLONG startTime = GetTimeCount();
+	DWORD startTime = GetTickCount();
 
 	wstring epgDataPath = L"";
 	WORD ONID;
@@ -1771,7 +1369,7 @@ UINT WINAPI CBonCtrl::EpgCapBackThread(LPVOID param)
 		return 0;
 	}
 
-	sys->GetEpgDataFilePath(ONID, TSID, epgDataPath);
+	sys->GetEpgDataFilePath(ONID, TSID, epgDataPath, sys->epgCapBackBSBasic, sys->epgCapBackCS1Basic, sys->epgCapBackCS2Basic);
 	sys->tsOut.StartSaveEPG(epgDataPath);
 	sys->tsOut.ClearSectionStatus();
 
@@ -1785,15 +1383,15 @@ UINT WINAPI CBonCtrl::EpgCapBackThread(LPVOID param)
 		BOOL chkNext = FALSE;
 		BOOL leitFlag = sys->chUtil.IsPartial(ONID, TSID, sys->lastSID);
 		EPG_SECTION_STATUS status = sys->tsOut.GetSectionStatus(leitFlag);
-		if( ONID == 4 && sys->BSBasic == TRUE ){
+		if( ONID == 4 && sys->epgCapBackBSBasic == TRUE ){
 			if( status == EpgBasicAll || status == EpgHEITAll ){
 				chkNext = TRUE;
 			}
-		}else if( ONID == 6 && sys->CS1Basic == TRUE ){
+		}else if( ONID == 6 && sys->epgCapBackCS1Basic == TRUE ){
 			if( status == EpgBasicAll || status == EpgHEITAll ){
 				chkNext = TRUE;
 			}
-		}else if( ONID == 7 && sys->CS2Basic == TRUE ){
+		}else if( ONID == 7 && sys->epgCapBackCS2Basic == TRUE ){
 			if( status == EpgBasicAll || status == EpgHEITAll ){
 				chkNext = TRUE;
 			}
@@ -1812,7 +1410,7 @@ UINT WINAPI CBonCtrl::EpgCapBackThread(LPVOID param)
 			cmd.SendReloadEpg();
 			break;
 		}else{
-			if( (startTime + timeOut*60 < GetTimeCount()) ){
+			if( GetTickCount() - startTime > timeOut * 60 * 1000 ){
 				//15分以上かかっているなら停止
 				sys->tsOut.StopSaveEPG(saveTimeOut);
 				CSendCtrlCmd cmd;
@@ -1842,7 +1440,6 @@ BOOL CBonCtrl::GetViewStatusInfo(
 	ULONGLONG* scramble
 	)
 {
-	if( Lock(L"GetViewStatusInfo") == FALSE ) return FALSE;
 	BOOL ret = FALSE;
 
 	this->tsOut.GetErrCount(id, drop, scramble);
@@ -1850,10 +1447,9 @@ BOOL CBonCtrl::GetViewStatusInfo(
 	*signal = this->bonUtil.GetSignalLevel();
 	this->tsOut.SetSignalLevel(*signal);
 
-	if( this->bonUtil.GetSetCh(space, ch) == TRUE ){
+	if( this->bonUtil.GetNowCh(space, ch) ){
 		ret = TRUE;
 	}
 
-	UnLock();
 	return ret;
 }
