@@ -30,7 +30,6 @@ namespace EpgTimer.EpgView
         public event ProgramViewClickHandler LeftDoubleClick = null;
         public event ProgramViewClickHandler RightClick = null;
         private List<Rectangle> reserveBorder = new List<Rectangle>();
-        private SortedList<DateTime, List<ProgramViewItem>> programTimeList = null;
 
         private Point lastDownMousePos;
         private double lastDownHOffset;
@@ -54,7 +53,7 @@ namespace EpgTimer.EpgView
 
             ProgramViewItem info = null;
 
-            if (programTimeList != null)
+            if (epgViewPanel.Items != null)
             {
                 Point cursorPos2 = Mouse.GetPosition(scrollViewer);
                 if (cursorPos2.X < 0 || cursorPos2.Y < 0 ||
@@ -63,21 +62,17 @@ namespace EpgTimer.EpgView
                     return;
                 }
                 Point cursorPos = Mouse.GetPosition(epgViewPanel);
-                int index = (int)(cursorPos.Y / epgViewPanel.Height * programTimeList.Count);
-                if (0 <= index && index < programTimeList.Count)
+                foreach (ProgramViewItem item in epgViewPanel.Items)
                 {
-                    foreach (ProgramViewItem item in programTimeList.Values[index])
+                    if (item.LeftPos <= cursorPos.X && cursorPos.X < item.LeftPos + item.Width)
                     {
-                        if (item.LeftPos <= cursorPos.X && cursorPos.X < item.LeftPos + item.Width)
+                        if (item.TopPos <= cursorPos.Y && cursorPos.Y < item.TopPos + item.Height)
                         {
-                            if (item.TopPos <= cursorPos.Y && cursorPos.Y < item.TopPos + item.Height)
-                            {
-                                if (item == lastPopupInfo) return;
+                            if (item == lastPopupInfo) return;
 
-                                info = item;
-                                lastPopupInfo = info;
-                                break;
-                            }
+                            info = item;
+                            lastPopupInfo = info;
+                            break;
                         }
                     }
                 }
@@ -196,7 +191,6 @@ namespace EpgTimer.EpgView
             epgViewPanel.Width = 0;
             canvas.Height = 0;
             canvas.Width = 0;
-            programTimeList = null;
         }
 
         public void SetReserveList(List<ReserveViewItem> reserveList)
@@ -261,11 +255,10 @@ namespace EpgTimer.EpgView
             }
         }
 
-        public void SetProgramList(List<ProgramViewItem> programList, SortedList<DateTime, List<ProgramViewItem>> timeList, double width, double height)
+        public void SetProgramList(List<ProgramViewItem> programList, double width, double height)
         {
             try
             {
-                programTimeList = timeList;
                 canvas.Height = Math.Ceiling(height);
                 canvas.Width = Math.Ceiling(width);
                 epgViewPanel.Height = Math.Ceiling(height);
