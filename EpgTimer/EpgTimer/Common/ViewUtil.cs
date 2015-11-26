@@ -8,6 +8,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using System.Windows.Threading;
 
 namespace EpgTimer
 {
@@ -332,6 +333,41 @@ namespace EpgTimer
                     (child as UIElement).IsEnabled = enabled;
                 }
             }
+        }
+    }
+
+    public static class ViewUtilEx
+    {
+        ///<summary>同じアイテムがあってもスクロールするようにしたもの(ItemSource使用時無効)</summary>
+        //ScrollIntoView()は同じアイテムが複数あると上手く動作しないので、ダミーを使って無理矢理移動させる。
+        //同じ理由でSelectedItemも正しく動作しないので、スクロール位置はindexで取るようにする。
+        public static void ScrollIntoViewFix(this ListBox box, int index)
+        {
+            try
+            {
+                if (box == null || index < 0 || index >= box.Items.Count) return;
+
+                //リストに追加・削除をするので、ItemsSourceなどあるときは動作しない
+                if (box.ItemsSource == null)
+                {
+                    object key = box.Items[index];
+                    if (box.Items.OfType<object>().Count(item => item.Equals(key)) != 1)//==は失敗する
+                    {
+                        var dummy = new ListBoxItem();
+                        dummy.Visibility = Visibility.Collapsed;//まだスクロールバーがピクピクする
+                        box.Items.Insert(index + (index == 0 ? 0 : 1), dummy);
+                        box.ScrollIntoView(dummy);
+
+                        //ScrollIntoView()は遅延して実行されるので、実行後にダミーを削除する。
+                        Dispatcher.CurrentDispatcher.BeginInvoke(new Action(() => box.Items.Remove(dummy)), DispatcherPriority.ContextIdle);
+
+                        return;
+                    }
+                }
+
+                box.ScrollIntoView(box.Items[index]);
+            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
     }
 }

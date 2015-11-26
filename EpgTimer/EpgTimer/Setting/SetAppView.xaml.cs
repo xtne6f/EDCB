@@ -468,12 +468,6 @@ namespace EpgTimer.Setting
                 catch { }
 
                 Settings.Instance.ViewButtonList = listBox_viewBtn.Items.OfType<string>().ToList();
-                if (Settings.Instance.ViewButtonList.Count == 0)
-                {
-                    //リストが空であることを示す特殊なアイテムを追加
-                    Settings.Instance.ViewButtonList.Add("（なし）");
-                }
-
                 Settings.Instance.TaskMenuList = listBox_viewTask.Items.OfType<string>().ToList();
 
                 Settings.Instance.Cust1BtnName = textBox_name1.Text;
@@ -588,9 +582,7 @@ namespace EpgTimer.Setting
                 "NetworkTV終了",
                 "情報通知ログ"
             };
-            //リストが空であることを示す特殊なアイテムを無視
-            List<string> viewButtonList2 = Settings.Instance.ViewButtonList.Where(str => str != "（なし）").ToList();
-            viewButtonList2.ForEach(str => listBox_viewBtn.Items.Add(str));
+            Settings.Instance.ViewButtonList.ForEach(str => listBox_viewBtn.Items.Add(str));
             reLoadButtonItem(bxb, buttonItem);
 
             taskItem = new List<string>

@@ -320,7 +320,7 @@ namespace EpgTimer
         {
             listBox_Setting.Items.Add(EpgCmdsEx.SeparatorString);
             listBox_Setting.SelectedIndex = listBox_Setting.Items.Count - 1;
-            listBox_Setting.ScrollIntoView(listBox_Setting.SelectedItem);
+            listBox_Setting.ScrollIntoViewFix(listBox_Setting.SelectedIndex);
         }
         
     }

@@ -45,13 +45,15 @@ namespace EpgTimer
             {
                 if (Keyboard.Modifiers == ModifierKeys.None)
                 {
-                    e.Handled = true;
                     switch (e.Key)
                     {
                         case Key.Escape:
-                            if (box.SelectedItem == null) break;
-                            box.UnselectAll();
-                            return;
+                            if (box.SelectedItem != null)
+                            {
+                                box.UnselectAll();
+                                e.Handled = true;
+                            }
+                            break;
                         case Key.Enter:
                             if (src == true)
                             {
@@ -59,14 +61,18 @@ namespace EpgTimer
                                 //一つ下へ移動する。ただし、カーソル位置は正しく動かない。
                                 int pos = box.SelectedIndex + 1;
                                 box.SelectedIndex = Math.Max(0, Math.Min(pos, box.Items.Count - 1));
-                                box.ScrollIntoView(box.SelectedItem);
+                                box.ScrollIntoViewFix(box.SelectedIndex);
+                                e.Handled = true;
                             }
-                            return;
+                            break;
                         case Key.Delete:
-                            if (src == false) handler(sender, e);
-                            return;
+                            if (src == false)
+                            {
+                                handler(sender, e);
+                                e.Handled = true;
+                            }
+                            break;
                     }
-                    e.Handled = false;
                 }
             });
         }
@@ -210,7 +216,7 @@ namespace EpgTimer
                 if (target.Items.Count != 0 && LastIndex >=0)
                 {
                     target.SelectedIndex = LastIndex;
-                    target.ScrollIntoView(target.SelectedItem);//同じ名前などがあると、そこまでしか動かない。
+                    target.ScrollIntoViewFix(LastIndex);
                 }
             }
             catch (Exception ex)
@@ -242,9 +248,10 @@ namespace EpgTimer
 
                 if (target.Items.Count != 0)
                 {
+                    target.Items.Refresh();
                     newSelectedIndex = (newSelectedIndex == target.Items.Count ? newSelectedIndex - 1 : newSelectedIndex);
                     target.SelectedIndex = newSelectedIndex;
-                    target.ScrollIntoView(target.SelectedItem);
+                    target.ScrollIntoViewFix(newSelectedIndex);
                 }
             }
             catch (Exception ex)
@@ -265,14 +272,13 @@ namespace EpgTimer
                 target.Items.RemoveAt(target.SelectedIndex);
                 target.Items.Insert(newIndex, temp);
                 target.SelectedIndex = newIndex;
-                target.ScrollIntoView(target.SelectedItem);
+                target.ScrollIntoViewFix(newIndex);
             }
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
-
 
     }
 }
