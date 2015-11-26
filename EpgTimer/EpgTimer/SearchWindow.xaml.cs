@@ -432,14 +432,7 @@ namespace EpgTimer
                 if (reserveOnly && item.IsReserved == false) return;
                 if (onReserveOnly && item.ReserveInfo.RecSetting.RecMode == 5) return;
 
-                if (item.IsReserved == true)
-                {
-                    BlackoutWindow.SelectedReserveItem = new ReserveItem(item.ReserveInfo);
-                }
-                else
-                {
-                    BlackoutWindow.SelectedSearchItem = item;
-                }
+                BlackoutWindow.SelectedItem = item;
 
                 this.Hide();
                 mainWindow.SetHideSearchWindow(this);

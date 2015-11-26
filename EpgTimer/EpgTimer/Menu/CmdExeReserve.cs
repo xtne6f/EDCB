@@ -180,13 +180,11 @@ namespace EpgTimer
         {
             if (dataList.Count != 0)//予約情報優先
             {
-                BlackoutWindow.SelectedReserveItem = new ReserveItem(dataList[0]);
-                BlackoutWindow.SelectedSearchItem = null;
+                BlackoutWindow.SelectedItem = new ReserveItem(dataList[0]);
             }
             else if (eventList.Count != 0)
             {
-                BlackoutWindow.SelectedReserveItem = null;
-                BlackoutWindow.SelectedSearchItem = new SearchItem(eventList[0]);
+                BlackoutWindow.SelectedItem = new SearchItem(eventList[0]);
             }
         }
         protected override void mc_ToAutoadd(object sender, ExecutedRoutedEventArgs e)

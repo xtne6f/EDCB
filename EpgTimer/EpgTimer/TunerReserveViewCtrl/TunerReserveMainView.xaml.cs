@@ -250,17 +250,17 @@ namespace EpgTimer
 
             if (this.IsVisible == false) return;
 
-            if (BlackoutWindow.SelectedReserveItem != null)
+            if (BlackoutWindow.HasReserveData == true)
             {
-                MoveToReserveItem(BlackoutWindow.SelectedReserveItem, BlackoutWindow.NowJumpTable);
+                MoveToReserveItem(BlackoutWindow.SelectedItem.ReserveInfo, BlackoutWindow.NowJumpTable);
             }
 
             BlackoutWindow.Clear();
         }
 
-        protected void MoveToReserveItem(ReserveItem target, bool IsMarking)
+        protected void MoveToReserveItem(ReserveData target, bool IsMarking)
         {
-            uint ID = target.ReserveInfo.ReserveID;
+            uint ID = target.ReserveID;
             ReserveViewItem target_item = this.reserveList.Find(item => item.ReserveInfo.ReserveID == ID);
             this.tunerReserveView.ScrollToFindItem(target_item, IsMarking);
         }

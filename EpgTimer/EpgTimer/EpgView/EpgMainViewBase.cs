@@ -187,16 +187,16 @@ namespace EpgTimer.EpgView
             }
         }
 
-        protected override void MoveToReserveItem(ReserveItem target, bool IsMarking)
+        protected override void MoveToReserveItem(ReserveData target, bool IsMarking)
         {
-            uint ID = target.ReserveInfo.ReserveID;
+            uint ID = target.ReserveID;
             ReserveViewItem target_item = this.reserveList.Find(item => item.ReserveInfo.ReserveID == ID);
             this.programView.ScrollToFindItem(target_item, IsMarking);
         }
 
-        protected override void MoveToProgramItem(SearchItem target, bool IsMarking)
+        protected override void MoveToProgramItem(EpgEventInfo target, bool IsMarking)
         {
-            ulong PgKey = target.EventInfo.Create64PgKey();
+            ulong PgKey = target.Create64PgKey();
             ProgramViewItem target_item = this.programList.Find(item => item.EventInfo.Create64PgKey() == PgKey);
             this.programView.ScrollToFindItem(target_item, IsMarking);
         }

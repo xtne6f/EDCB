@@ -222,20 +222,20 @@ namespace EpgTimer.EpgView
 
             //「番組表へジャンプ」の場合、またはオプションで指定のある場合に強調表示する。
             bool isMarking = BlackoutWindow.NowJumpTable || Settings.Instance.DisplayNotifyEpgChange;
-            if (BlackoutWindow.SelectedReserveItem != null)
+            if (BlackoutWindow.HasReserveData == true)
             {
-                MoveToReserveItem(BlackoutWindow.SelectedReserveItem, isMarking);
+                MoveToReserveItem(BlackoutWindow.SelectedItem.ReserveInfo, isMarking);
             }
-            else if (BlackoutWindow.SelectedSearchItem != null)
+            else if (BlackoutWindow.HasProgramData == true)
             {
-                MoveToProgramItem(BlackoutWindow.SelectedSearchItem, isMarking);
+                MoveToProgramItem(BlackoutWindow.SelectedItem.EventInfo, isMarking);
             }
 
             BlackoutWindow.Clear();
         }
 
-        protected virtual void MoveToReserveItem(ReserveItem target, bool IsMarking) { }
-        protected virtual void MoveToProgramItem(SearchItem target, bool IsMarking) { }
+        protected virtual void MoveToReserveItem(ReserveData target, bool IsMarking) { }
+        protected virtual void MoveToProgramItem(EpgEventInfo target, bool IsMarking) { }
 
     }
 }

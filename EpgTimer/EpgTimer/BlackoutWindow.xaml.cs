@@ -15,23 +15,23 @@ namespace EpgTimer {
         /// <summary>
         /// 番組表への受け渡し
         /// </summary>
-        public static ReserveItem SelectedReserveItem = null;
-        public static SearchItem SelectedSearchItem = null;
+        public static SearchItem SelectedItem = null;
+        public static bool HasReserveData { get { return SelectedItem != null && SelectedItem.ReserveInfo != null; } }
+        public static bool HasProgramData { get { return SelectedItem != null && SelectedItem.EventInfo != null; } }
 
         //番組表へジャンプ中
         public static bool NowJumpTable = false;
 
         public static void Clear()
         {
-            SelectedReserveItem = null;
-            SelectedSearchItem = null;
+            SelectedItem = null;
             NowJumpTable = false;
         }
 
         public static ulong Create64Key()
         {
-            if (SelectedReserveItem != null) return SelectedReserveItem.ReserveInfo.Create64Key();
-            if (SelectedSearchItem != null) return SelectedSearchItem.EventInfo.Create64Key();
+            if (HasReserveData == true) return SelectedItem.ReserveInfo.Create64Key();
+            if (HasProgramData == true) return SelectedItem.EventInfo.Create64Key();
             return 0;
         }
 

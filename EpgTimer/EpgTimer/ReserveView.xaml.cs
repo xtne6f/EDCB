@@ -111,17 +111,17 @@ namespace EpgTimer
 
             if (this.IsVisible == false) return;
 
-            if (BlackoutWindow.SelectedReserveItem != null)
+            if (BlackoutWindow.HasReserveData == true)
             {
-                MoveToReserveItem(BlackoutWindow.SelectedReserveItem, BlackoutWindow.NowJumpTable);
+                MoveToReserveItem(BlackoutWindow.SelectedItem.ReserveInfo, BlackoutWindow.NowJumpTable);
             }
 
             BlackoutWindow.Clear();
         }
 
-        protected void MoveToReserveItem(ReserveItem target, bool IsMarking)
+        protected void MoveToReserveItem(ReserveData target, bool IsMarking)
         {
-            uint ID = target.ReserveInfo.ReserveID;
+            uint ID = target.ReserveID;
             ReserveItem item = lstCtrl.dataList.Find(data => data.ReserveInfo.ReserveID == ID);
             vutil.ScrollToFindItem(item, listView_reserve, IsMarking);
         }

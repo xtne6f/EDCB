@@ -253,9 +253,9 @@ namespace EpgTimer
             EpgCmds.ShowDialog.Execute(sender, this);
         }
 
-        protected override void MoveToReserveItem(ReserveItem target, bool IsMarking)
+        protected override void MoveToReserveItem(ReserveData target, bool IsMarking)
         {
-            uint ID = target.ReserveInfo.ReserveID;
+            uint ID = target.ReserveID;
             SearchItem target_item = lstCtrl.dataList.Find(item => item.ReserveInfo != null && item.ReserveInfo.ReserveID == ID);
             if (target_item != null)
             {
@@ -265,10 +265,10 @@ namespace EpgTimer
             {
                 //プログラム予約だと見つからないので、それらしい番組を引っ張ってきて再度確認する。
                 //でもリスト番組表で探すより、プログラム予約でも表示させられる標準モードへ投げてしまった方が良いのかも？
-                target_item = new SearchItem(mutil.SearchEventLikeThat(target.ReserveInfo));
-                if (target_item.EventInfo != null)
+                EpgEventInfo target_like = mutil.SearchEventLikeThat(target);
+                if (target_like != null)
                 {
-                    MoveToProgramItem(target_item, IsMarking);
+                    MoveToProgramItem(target_like, IsMarking);
                 }
                 else
                 {
@@ -280,9 +280,9 @@ namespace EpgTimer
             }
         }
 
-        protected override void MoveToProgramItem(SearchItem target, bool IsMarking)
+        protected override void MoveToProgramItem(EpgEventInfo target, bool IsMarking)
         {
-            ulong PgKey = target.EventInfo.Create64PgKey();
+            ulong PgKey = target.Create64PgKey();
             SearchItem target_item = lstCtrl.dataList.Find(item => item.EventInfo.Create64PgKey() == PgKey);
             vutil.ScrollToFindItem(target_item, listView_event, IsMarking);
         }
