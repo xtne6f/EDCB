@@ -112,24 +112,26 @@ namespace EpgTimer.EpgView
                 {
                     return;
                 }
-                if (epgViewPanel.Items != null)
+                if (MainWindow.GetWindow(this).IsActive == false)
                 {
-                    if (MainWindow.GetWindow(this).IsActive == false)
+                    return;
+                }
+                Point cursorPos2 = Mouse.GetPosition(scrollViewer);
+                if (cursorPos2.X < 0 || cursorPos2.Y < 0 ||
+                    scrollViewer.ViewportWidth < cursorPos2.X || scrollViewer.ViewportHeight < cursorPos2.Y)
+                {
+                    return;
+                }
+                Point cursorPos = Mouse.GetPosition(canvas);
+                foreach (UIElement child in canvas.Children)
+                {
+                    EpgViewPanel childPanel = child as EpgViewPanel;
+                    if (childPanel != null && childPanel.Items != null && Canvas.GetLeft(child) <= cursorPos.X && cursorPos.X < Canvas.GetLeft(child) + childPanel.Width)
                     {
-                        return;
-                    }
-                    Point cursorPos2 = Mouse.GetPosition(scrollViewer);
-                    if (cursorPos2.X < 0 || cursorPos2.Y < 0 ||
-                        scrollViewer.ViewportWidth < cursorPos2.X || scrollViewer.ViewportHeight < cursorPos2.Y)
-                    {
-                        return;
-                    }
-                    Point cursorPos = Mouse.GetPosition(canvas);
-                    foreach (ProgramViewItem info in epgViewPanel.Items)
-                    {
-                        if (info.LeftPos <= cursorPos.X && cursorPos.X < info.LeftPos + info.Width)
+                        foreach (ProgramViewItem info in childPanel.Items)
                         {
-                            if (info.TopPos <= cursorPos.Y && cursorPos.Y < info.TopPos + info.Height)
+                            if (info.LeftPos <= cursorPos.X && cursorPos.X < info.LeftPos + info.Width &&
+                                info.TopPos <= cursorPos.Y && cursorPos.Y < info.TopPos + info.Height)
                             {
                                 if (info.TitleDrawErr == false && Settings.Instance.EpgToolTipNoViewOnly == true)
                                 {
@@ -187,6 +189,7 @@ namespace EpgTimer.EpgView
                                 lastPopupPos = cursorPos;
                             }
                         }
+                        break;
                     }
                 }
             }
@@ -215,9 +218,13 @@ namespace EpgTimer.EpgView
             canvas.ReleaseMouseCapture();
             isDrag = false;
 
-            epgViewPanel.Items = null;
-            epgViewPanel.Height = 0;
-            epgViewPanel.Width = 0;
+            for (int i = 0; i < canvas.Children.Count; i++)
+            {
+                if (canvas.Children[i] is EpgViewPanel)
+                {
+                    canvas.Children.RemoveAt(i--);
+                }
+            }
             canvas.Height = 0;
             canvas.Width = 0;
         }
@@ -287,15 +294,38 @@ namespace EpgTimer.EpgView
 
         public void SetProgramList(List<ProgramViewItem> programList, double width, double height)
         {
+            var programGroupList = new List<Tuple<double, List<ProgramViewItem>>>();
+            programGroupList.Add(new Tuple<double, List<ProgramViewItem>>(width, programList));
+            SetProgramList(programGroupList, height);
+        }
+
+        public void SetProgramList(List<Tuple<double, List<ProgramViewItem>>> programGroupList, double height)
+        {
             try
             {
+                for (int i = 0; i < canvas.Children.Count; i++)
+                {
+                    if (canvas.Children[i] is EpgViewPanel)
+                    {
+                        canvas.Children.RemoveAt(i--);
+                    }
+                }
+                double totalWidth = 0;
+                foreach (var programList in programGroupList)
+                {
+                    EpgViewPanel item = new EpgViewPanel();
+                    item.Background = epgViewPanel.Background;
+                    item.Height = Math.Ceiling(height);
+                    item.Width = programList.Item1;
+                    item.IsTitleIndent = Settings.Instance.EpgTitleIndent;
+                    Canvas.SetLeft(item, totalWidth);
+                    item.Items = programList.Item2;
+                    item.InvalidateVisual();
+                    canvas.Children.Add(item);
+                    totalWidth += programList.Item1;
+                }
                 canvas.Height = Math.Ceiling(height);
-                canvas.Width = Math.Ceiling(width);
-                epgViewPanel.Height = Math.Ceiling(height);
-                epgViewPanel.Width = Math.Ceiling(width);
-                epgViewPanel.IsTitleIndent = Settings.Instance.EpgTitleIndent;
-                epgViewPanel.Items = programList;
-                epgViewPanel.InvalidateVisual();
+                canvas.Width = totalWidth;
             }
             catch (Exception ex)
             {
