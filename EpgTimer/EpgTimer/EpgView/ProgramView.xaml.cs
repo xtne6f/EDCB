@@ -56,7 +56,7 @@ namespace EpgTimer.EpgView
 
             toolTip.Placement = PlacementMode.MousePoint;
             toolTip.PopupAnimation = PopupAnimation.Fade;
-            toolTip.PlacementTarget = epgViewPanel;
+            toolTip.PlacementTarget = canvas;
             toolTip.AllowsTransparency = true;
             toolTip.MouseLeftButtonDown += new MouseButtonEventHandler(toolTip_MouseLeftButtonDown);
             toolTip.PreviewMouseWheel += new MouseWheelEventHandler(toolTip_PreviewMouseWheel);
@@ -124,7 +124,7 @@ namespace EpgTimer.EpgView
                     {
                         return;
                     }
-                    Point cursorPos = Mouse.GetPosition(epgViewPanel);
+                    Point cursorPos = Mouse.GetPosition(canvas);
                     foreach (ProgramViewItem info in epgViewPanel.Items)
                     {
                         if (info.LeftPos <= cursorPos.X && cursorPos.X < info.LeftPos + info.Width)
@@ -212,7 +212,7 @@ namespace EpgTimer.EpgView
             reserveBorder = null;
             reserveBorder = new List<Rectangle>();
 
-            epgViewPanel.ReleaseMouseCapture();
+            canvas.ReleaseMouseCapture();
             isDrag = false;
 
             epgViewPanel.Items = null;
@@ -272,10 +272,6 @@ namespace EpgTimer.EpgView
                     rect.Width = info.Width;
                     rect.Height = info.Height;
 
-                    rect.MouseLeftButtonDown += new MouseButtonEventHandler(epgViewPanel_MouseLeftButtonDown);
-                    rect.MouseLeftButtonUp += new MouseButtonEventHandler(epgViewPanel_MouseLeftButtonUp);
-                    rect.MouseRightButtonDown += new MouseButtonEventHandler(epgViewPanel_MouseRightButtonDown);
-
                     Canvas.SetLeft(rect, info.LeftPos);
                     Canvas.SetTop(rect, info.TopPos);
                     Canvas.SetZIndex(rect, 10);
@@ -307,11 +303,10 @@ namespace EpgTimer.EpgView
             }
         }
 
-        private void epgViewPanel_MouseMove(object sender, MouseEventArgs e)
+        private void canvas_MouseMove(object sender, MouseEventArgs e)
         {
             try
             {
-                if (sender.GetType() == typeof(EpgViewPanel))
                 {
                     if (e.LeftButton == MouseButtonState.Pressed && isDrag == true)
                     {
@@ -344,7 +339,7 @@ namespace EpgTimer.EpgView
                     }
                     else
                     {
-                        Point CursorPos = Mouse.GetPosition(epgViewPanel);
+                        Point CursorPos = Mouse.GetPosition(canvas);
                         if (lastPopupPos != CursorPos)
                         {
                             toolTipTimer.Stop();
@@ -357,7 +352,7 @@ namespace EpgTimer.EpgView
                                 lastDownVOffset = scrollViewer.VerticalOffset;
                                 if (e.LeftButton == MouseButtonState.Pressed)
                                 {
-                                    epgViewPanel.CaptureMouse();
+                                    canvas.CaptureMouse();
                                     isDrag = true;
                                 }
 
@@ -376,7 +371,7 @@ namespace EpgTimer.EpgView
             }
         }
 
-        private void epgViewPanel_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        private void canvas_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             try
             {
@@ -387,13 +382,13 @@ namespace EpgTimer.EpgView
                 lastDownMousePos = Mouse.GetPosition(null);
                 lastDownHOffset = scrollViewer.HorizontalOffset;
                 lastDownVOffset = scrollViewer.VerticalOffset;
-                epgViewPanel.CaptureMouse();
+                canvas.CaptureMouse();
                 isDrag = true;
                 isDragMoved = false;
 
                 if (e.ClickCount == 2)
                 {
-                    Point cursorPos = Mouse.GetPosition(epgViewPanel);
+                    Point cursorPos = Mouse.GetPosition(canvas);
                     if (LeftDoubleClick != null)
                     {
                         LeftDoubleClick(sender, cursorPos);
@@ -406,17 +401,17 @@ namespace EpgTimer.EpgView
             }
         }
 
-        private void epgViewPanel_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        private void canvas_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
             try
             {
-                epgViewPanel.ReleaseMouseCapture();
+                canvas.ReleaseMouseCapture();
                 isDrag = false;
                 if (isDragMoved == false)
                 {
                     if (Settings.Instance.EpgInfoSingleClick == true)
                     {
-                        Point cursorPos = Mouse.GetPosition(epgViewPanel);
+                        Point cursorPos = Mouse.GetPosition(canvas);
                         if (LeftDoubleClick != null)
                         {
                             LeftDoubleClick(sender, cursorPos);
@@ -441,20 +436,20 @@ namespace EpgTimer.EpgView
             }
         }
 
-        private void epgViewPanel_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
+        private void canvas_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
         {
             toolTipTimer.Stop();
             toolTipOffTimer.Stop();
             toolTip.IsOpen = false;
 
-            epgViewPanel.ReleaseMouseCapture();
+            canvas.ReleaseMouseCapture();
             isDrag = false; 
             lastDownMousePos = Mouse.GetPosition(null);
             lastDownHOffset = scrollViewer.HorizontalOffset;
             lastDownVOffset = scrollViewer.VerticalOffset;
             if (e.ClickCount == 1)
             {
-                Point cursorPos = Mouse.GetPosition(epgViewPanel);
+                Point cursorPos = Mouse.GetPosition(canvas);
                 if (RightClick != null)
                 {
                     RightClick(sender, cursorPos);
