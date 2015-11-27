@@ -176,14 +176,14 @@ namespace EpgTimer
                                 if (pgInfo != null)
                                 {
                                     viewItem.TopPos = pgInfo.TopPos + pgInfo.Height * (startTime - info.StartTime).TotalSeconds / info.DurationSecond;
-                                    viewItem.Height = Math.Max(pgInfo.Height * duration / info.DurationSecond, 2);//最低2px。MinHeightの値は信用できない。
+                                    viewItem.Height = Math.Max(pgInfo.Height * duration / info.DurationSecond, ViewUtil.PanelMinimumHeight);
                                     viewItem.Width = pgInfo.Width;
                                 }
                                 else
                                 {
                                     int index = timeList.IndexOfKey(chkStartTime);
                                     viewItem.TopPos = Settings.Instance.MinHeight * (index * 60 + (startTime - chkStartTime).TotalMinutes);
-                                    viewItem.Height = Math.Max(duration * Settings.Instance.MinHeight / 60, 2);//最低2px。
+                                    viewItem.Height = Math.Max(duration * Settings.Instance.MinHeight / 60, ViewUtil.PanelMinimumHeight);
 
                                     //番組表の統合関係
                                     pgInfo = timeList.Values[index].Find(info1 => info1.LeftPos == viewItem.LeftPos
@@ -397,7 +397,7 @@ namespace EpgTimer
                 }
 
                 //最低表示行数を適用。また、最低表示高さを確保して、位置も調整する。
-                vutil.ModifierMinimumLine<EpgEventInfo, ProgramViewItem>(programList, Settings.Instance.MinimumHeight);
+                vutil.ModifierMinimumLine<EpgEventInfo, ProgramViewItem>(programList, Settings.Instance.MinimumHeight, Settings.Instance.FontSizeTitle);
 
                 //必要時間リストと時間と番組の関連づけ
                 foreach (ProgramViewItem item in programList)

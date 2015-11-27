@@ -232,11 +232,14 @@ namespace EpgTimer
             }
         }
 
-        //最低表示行数を適用。また、最低表示高さ2pxを確保して、位置も調整する。
-        public void ModifierMinimumLine<T, S>(List<S> list, double MinimumLine) where S : ViewPanelItem<T>
+        //最低表示高さ
+        public const double PanelMinimumHeight = 2;
+
+        //最低表示行数を適用。また、最低表示高さを確保して、位置も調整する。
+        public void ModifierMinimumLine<T, S>(List<S> list, double minimumLine, double fontHeight) where S : ViewPanelItem<T>
         {
             list.Sort((x, y) => Math.Sign(x.LeftPos - y.LeftPos) * 2 + Math.Sign(x.TopPos - y.TopPos));
-            double minimum = Math.Max((Settings.Instance.FontSizeTitle + 2) * MinimumLine, 2);
+            double minimum = Math.Max((fontHeight + 2) * minimumLine, PanelMinimumHeight);
             double lastLeft = double.MinValue;
             double lastBottom = 0;
             foreach (S item in list)
