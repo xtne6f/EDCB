@@ -128,6 +128,10 @@ namespace EpgTimer
                     tunerReserveList.Add(tuner_off);
                 }
 
+                //チューナ不足と無効予約はアイテムがなければ非表示
+                var delList = tunerReserveList.Where(item => item.tunerID == 0xFFFFFFFF && item.reserveList.Count == 0).ToList();
+                delList.ForEach(item => tunerReserveList.Remove(item));
+
                 double tunerWidthSingle = Settings.Instance.TunerWidth;
                 double leftPos = 0;
                 tunerReserveList.ForEach(info =>
