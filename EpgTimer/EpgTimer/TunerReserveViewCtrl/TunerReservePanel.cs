@@ -10,11 +10,6 @@ namespace EpgTimer.TunerReserveViewCtrl
     {
         public List<ReserveViewItem> Items { get; set; }
 
-        public override void ClearInfo() 
-        {
-            Items = new List<ReserveViewItem>();
-        }
-
         protected bool RenderText(String text, DrawingContext dc, GlyphTypeface glyphType, SolidColorBrush brush, double fontSize, double maxWidth, double maxHeight, double x, double y, ref double useHeight, bool nowrap = false)
         {
             if (maxHeight < fontSize + 2)

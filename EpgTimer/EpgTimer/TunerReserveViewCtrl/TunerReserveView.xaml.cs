@@ -22,7 +22,6 @@ namespace EpgTimer.TunerReserveViewCtrl
             InitializeComponent();
 
             base.scroll = scrollViewer;
-            base.viewPanel = reserveViewPanel;
             base.cnvs = canvas;
         }
 

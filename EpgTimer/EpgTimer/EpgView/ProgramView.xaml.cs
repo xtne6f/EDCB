@@ -27,7 +27,6 @@ namespace EpgTimer.EpgView
             InitializeComponent();
 
             base.scroll = scrollViewer;
-            base.viewPanel = epgViewPanel;
             base.cnvs = canvas;
         }
 
@@ -36,6 +35,7 @@ namespace EpgTimer.EpgView
             base.ClearInfo();
             rectBorder.ForEach(item => canvas.Children.Remove(item));
             rectBorder.Clear();
+            epgViewPanel.ClearInfo();
         }
 
         protected override void PopupClear()

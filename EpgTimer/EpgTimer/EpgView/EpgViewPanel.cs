@@ -24,7 +24,7 @@ namespace EpgTimer.EpgView
             }
         }
 
-        public override void ClearInfo()
+        public void ClearInfo()
         {
             items = new List<ProgramViewItem>();
         }
