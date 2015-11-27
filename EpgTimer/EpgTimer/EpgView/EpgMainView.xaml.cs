@@ -242,6 +242,9 @@ namespace EpgTimer
 
                 //必要番組の抽出と時間チェック
                 List<EpgServiceInfo> primeServiceList = new List<EpgServiceInfo>();
+                //番組表でまとめて描画する矩形の幅と番組集合のリスト
+                var programGroupList = new List<Tuple<double, List<ProgramViewItem>>>();
+                int groupSpan = 1;
                 int mergePos = 0;
                 int mergeNum = 0;
                 int servicePos = -1;
@@ -277,6 +280,11 @@ namespace EpgTimer
                                 break;
                             }
                             curr = next;
+                        }
+                        if (--groupSpan <= 0)
+                        {
+                            groupSpan = spanCheckNum;
+                            programGroupList.Add(new Tuple<double, List<ProgramViewItem>>(Settings.Instance.ServiceWidth * groupSpan, new List<ProgramViewItem>()));
                         }
                         primeServiceList.Add(serviceList[mergePos]);
                     }
@@ -344,6 +352,7 @@ namespace EpgTimer
                         viewItem.Width = Settings.Instance.ServiceWidth * widthSpan / mergeNum;
                         viewItem.LeftPos = Settings.Instance.ServiceWidth * (servicePos + (double)((mergeNum+i-mergePos-1)/2) / mergeNum);
                         //viewItem.TopPos = (eventInfo.start_time - startTime).TotalMinutes * Settings.Instance.MinHeight;
+                        programGroupList[programGroupList.Count - 1].Item2.Add(viewItem);
                         programList.Add(viewItem);
 
                         //必要時間リストの構築
@@ -410,8 +419,7 @@ namespace EpgTimer
                 }
 
                 epgProgramView.SetProgramList(
-                    programList,
-                    primeServiceList.Count() * Settings.Instance.ServiceWidth,
+                    programGroupList,
                     timeList.Count * 60 * Settings.Instance.MinHeight);
 
                 var dateTimeList = new List<DateTime>();

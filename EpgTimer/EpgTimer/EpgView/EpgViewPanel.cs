@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Media;
 
 namespace EpgTimer.EpgView
@@ -19,14 +20,10 @@ namespace EpgTimer.EpgView
             }
             set
             {
+                //ProgramViewItemの座標系は番組表基準なので、この時点でCanvas.SetLeft()によりEpgViewPanel自身の座標を添付済みでなければならない
                 items = value;
                 CreateDrawTextList();
             }
-        }
-
-        public void ClearInfo()
-        {
-            items = new List<ProgramViewItem>();
         }
 
         protected void CreateDrawTextList()
@@ -46,6 +43,7 @@ namespace EpgTimer.EpgView
             {
                 GlyphTypeface glyphTypefaceNormal = vutil.GetGlyphTypeface(Settings.Instance.FontName, false);
                 GlyphTypeface glyphTypefaceTitle = vutil.GetGlyphTypeface(Settings.Instance.FontNameTitle, Settings.Instance.FontBoldTitle);
+                double selfLeft = Canvas.GetLeft(this); 
                 double sizeMin = Settings.Instance.FontSizeTitle - 1;
                 double sizeTitle = Settings.Instance.FontSizeTitle;
                 double sizeNormal = Settings.Instance.FontSize;
@@ -71,7 +69,7 @@ namespace EpgTimer.EpgView
                         //分
                         string min = (info.EventInfo.StartTimeFlag != 1 ? "未定 " : info.EventInfo.start_time.Minute.ToString("d02"));
                         double useHeight = 0;
-                        if (RenderText(min, ref textDrawList, glyphTypefaceTitle, sizeMin, info.Width - 4, info.Height + 10, info.LeftPos - 1, info.TopPos - 2, ref useHeight, colorTitle, m) == false)
+                        if (RenderText(min, ref textDrawList, glyphTypefaceTitle, sizeMin, info.Width - 4, info.Height + 10, info.LeftPos - selfLeft - 1, info.TopPos - 2, ref useHeight, colorTitle, m) == false)
                         {
                             info.TitleDrawErr = true;
                             continue;
@@ -83,7 +81,7 @@ namespace EpgTimer.EpgView
                             //タイトル
                             if (info.EventInfo.ShortInfo.event_name.Length > 0)
                             {
-                                if (RenderText(info.EventInfo.ShortInfo.event_name, ref textDrawList, glyphTypefaceTitle, sizeTitle, info.Width - 6 - indentTitle, info.Height - 3 - totalHeight, info.LeftPos + indentTitle, info.TopPos - 2 + totalHeight, ref useHeight, colorTitle, m) == false)
+                                if (RenderText(info.EventInfo.ShortInfo.event_name, ref textDrawList, glyphTypefaceTitle, sizeTitle, info.Width - 6 - indentTitle, info.Height - 3 - totalHeight, info.LeftPos - selfLeft + indentTitle, info.TopPos - 2 + totalHeight, ref useHeight, colorTitle, m) == false)
                                 {
                                     info.TitleDrawErr = true;
                                     continue;
@@ -93,7 +91,7 @@ namespace EpgTimer.EpgView
                             //説明
                             if (info.EventInfo.ShortInfo.text_char.Length > 0)
                             {
-                                if (RenderText(info.EventInfo.ShortInfo.text_char, ref textDrawList, glyphTypefaceNormal, sizeNormal, info.Width - 10 - indentNormal, info.Height - 7 - totalHeight, info.LeftPos + indentNormal, info.TopPos - 2 + totalHeight, ref useHeight, colorNormal, m) == false)
+                                if (RenderText(info.EventInfo.ShortInfo.text_char, ref textDrawList, glyphTypefaceNormal, sizeNormal, info.Width - 10 - indentNormal, info.Height - 7 - totalHeight, info.LeftPos - selfLeft + indentNormal, info.TopPos - 2 + totalHeight, ref useHeight, colorNormal, m) == false)
                                 {
                                     continue;
                                 }
@@ -105,7 +103,7 @@ namespace EpgTimer.EpgView
 //                            {
 //                                if (info.EventInfo.ExtInfo.text_char.Length > 0)
 //                                {
-//                                    if (RenderText(info.EventInfo.ExtInfo.text_char, ref textDrawList, glyphTypefaceNormal, sizeNormal, info.Width - 6 - widthOffset, info.Height - 8 - totalHeight, info.LeftPos + widthOffset, info.TopPos - 1 + totalHeight, ref useHeight, colorNormal, m) == false)
+//                                    if (RenderText(info.EventInfo.ExtInfo.text_char, ref textDrawList, glyphTypefaceNormal, sizeNormal, info.Width - 6 - widthOffset, info.Height - 8 - totalHeight, info.LeftPos - selfLeft + widthOffset, info.TopPos - 1 + totalHeight, ref useHeight, colorNormal, m) == false)
 //                                    {
 //                                        continue;
 //                                    }
@@ -205,18 +203,19 @@ namespace EpgTimer.EpgView
             
             try
             {
+                double selfLeft = Canvas.GetLeft(this); 
                 double sizeNormal = Settings.Instance.FontSize;
                 double sizeTitle = Settings.Instance.FontSizeTitle;
                 foreach (ProgramViewItem info in Items)
                 {
-                    dc.DrawRectangle(bgBrush, null, new Rect(info.LeftPos, info.TopPos, info.Width, 1));
-                    dc.DrawRectangle(bgBrush, null, new Rect(info.LeftPos, info.TopPos + info.Height, info.Width, 1));
+                    dc.DrawRectangle(bgBrush, null, new Rect(info.LeftPos - selfLeft, info.TopPos, info.Width, 1));
+                    dc.DrawRectangle(bgBrush, null, new Rect(info.LeftPos - selfLeft, info.TopPos + info.Height, info.Width, 1));
                     if (info.Height > 1)
                     {
-                        dc.DrawRectangle(info.ContentColor, null, new Rect(info.LeftPos + 0, info.TopPos + 0.5, info.Width - 1, info.Height - 0.5));
+                        dc.DrawRectangle(info.ContentColor, null, new Rect(info.LeftPos - selfLeft, info.TopPos + 0.5, info.Width - 1, info.Height - 0.5));
                         if (textDrawDict.ContainsKey(info))
                         {
-                            dc.PushClip(new RectangleGeometry(new Rect(info.LeftPos + 0, info.TopPos + 0.5, info.Width - 1, info.Height - 0.5)));
+                            dc.PushClip(new RectangleGeometry(new Rect(info.LeftPos - selfLeft, info.TopPos + 0.5, info.Width - 1, info.Height - 0.5)));
                             foreach (TextDrawItem txtinfo in textDrawDict[info])
                             {
                                 dc.DrawGlyphRun(txtinfo.FontColor, txtinfo.Text);

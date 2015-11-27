@@ -35,7 +35,14 @@ namespace EpgTimer.EpgView
             base.ClearInfo();
             rectBorder.ForEach(item => canvas.Children.Remove(item));
             rectBorder.Clear();
-            epgViewPanel.ClearInfo();
+
+            for (int i = 0; i < canvas.Children.Count; i++)
+            {
+                if (canvas.Children[i] is EpgViewPanel)
+                {
+                    canvas.Children.RemoveAt(i--);
+                }
+            }
         }
 
         protected override void PopupClear()
@@ -45,7 +52,6 @@ namespace EpgTimer.EpgView
         }
         protected override object GetPopupItem(Point cursorPos)
         {
-            if (epgViewPanel.Items == null) return null;
             if (reserveList == null) return null;
 
             ReserveViewItem lastresPopItem = resPopItem;
@@ -59,7 +65,15 @@ namespace EpgTimer.EpgView
                 base.PopupClear();
             }
 
-            return epgViewPanel.Items.OfType<ProgramViewItem>().FirstOrDefault(pg => pg.IsPicked(cursorPos));
+            foreach (var childPanel in canvas.Children.OfType<EpgViewPanel>())
+            {
+                if (childPanel.Items != null && Canvas.GetLeft(childPanel) <= cursorPos.X && cursorPos.X < Canvas.GetLeft(childPanel) + childPanel.Width)
+                {
+                    return childPanel.Items.OfType<ProgramViewItem>().FirstOrDefault(pg => pg.IsPicked(cursorPos));
+                }
+            }
+
+            return null;
         }
 
         protected override void SetPopup(object item)
@@ -188,14 +202,37 @@ namespace EpgTimer.EpgView
 
         public void SetProgramList(List<ProgramViewItem> programList, double width, double height)
         {
+            var programGroupList = new List<Tuple<double, List<ProgramViewItem>>>();
+            programGroupList.Add(new Tuple<double, List<ProgramViewItem>>(width, programList));
+            SetProgramList(programGroupList, height);
+        }
+
+        public void SetProgramList(List<Tuple<double, List<ProgramViewItem>>> programGroupList, double height)
+        {
             try
             {
+                for (int i = 0; i < canvas.Children.Count; i++)
+                {
+                    if (canvas.Children[i] is EpgViewPanel)
+                    {
+                        canvas.Children.RemoveAt(i--);
+                    }
+                }
+                double totalWidth = 0;
+                foreach (var programList in programGroupList)
+                {
+                    EpgViewPanel item = new EpgViewPanel();
+                    item.Background = epgViewPanel.Background;
+                    item.Height = Math.Ceiling(height);
+                    item.Width = programList.Item1;
+                    Canvas.SetLeft(item, totalWidth);
+                    item.Items = programList.Item2;
+                    item.InvalidateVisual();
+                    canvas.Children.Add(item);
+                    totalWidth += programList.Item1;
+                }
                 canvas.Height = Math.Ceiling(height);
-                canvas.Width = Math.Ceiling(width);
-                epgViewPanel.Height = canvas.Height;
-                epgViewPanel.Width = canvas.Width;
-                epgViewPanel.Items = programList;
-                epgViewPanel.InvalidateVisual();
+                canvas.Width = totalWidth;
             }
             catch (Exception ex)
             {
