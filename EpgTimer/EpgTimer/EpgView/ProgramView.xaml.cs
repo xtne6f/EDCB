@@ -52,10 +52,8 @@ namespace EpgTimer.EpgView
         }
         protected override object GetPopupItem(Point cursorPos)
         {
-            if (reserveList == null) return null;
-
             ReserveViewItem lastresPopItem = resPopItem;
-            resPopItem = reserveList.Find(pg => pg.IsPicked(cursorPos));
+            resPopItem = reserveList == null ? null : reserveList.Find(pg => pg.IsPicked(cursorPos));
 
             if (Settings.Instance.EpgPopupResOnly == true && resPopItem == null) return null;
 
