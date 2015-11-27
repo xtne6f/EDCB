@@ -18,7 +18,6 @@ namespace EpgTimer.EpgView
         protected override bool IsPopupEnabled { get { return Settings.Instance.EpgPopup; } }
         protected override FrameworkElement PopUp { get { return popupItem; } }
 
-        private SortedList<DateTime, List<ProgramViewItem>> programTimeList = null;
         private List<ReserveViewItem> reserveList = null;
         private List<Rectangle> rectBorder = new List<Rectangle>();
         private ReserveViewItem resPopItem = null;
@@ -46,7 +45,7 @@ namespace EpgTimer.EpgView
         }
         protected override object GetPopupItem(Point cursorPos)
         {
-            if (programTimeList == null) return null;
+            if (epgViewPanel.Items == null) return null;
             if (reserveList == null) return null;
 
             ReserveViewItem lastresPopItem = resPopItem;
@@ -54,16 +53,13 @@ namespace EpgTimer.EpgView
 
             if (Settings.Instance.EpgPopupResOnly == true && resPopItem == null) return null;
 
-            int index = (int)(cursorPos.Y / epgViewPanel.Height * programTimeList.Count);
-            if ((0 <= index && index < programTimeList.Count) == false) return null;
-
             //予約枠を通過したので同じ番組でもポップアップを書き直させる。
             if (lastresPopItem != resPopItem)
             {
                 base.PopupClear();
             }
 
-            return programTimeList.Values[index].Find(pg => pg.IsPicked(cursorPos));
+            return epgViewPanel.Items.OfType<ProgramViewItem>().FirstOrDefault(pg => pg.IsPicked(cursorPos));
         }
 
         protected override void SetPopup(object item)
@@ -190,11 +186,10 @@ namespace EpgTimer.EpgView
             }
         }
 
-        public void SetProgramList(List<ProgramViewItem> programList, SortedList<DateTime, List<ProgramViewItem>> timeList, double width, double height)
+        public void SetProgramList(List<ProgramViewItem> programList, double width, double height)
         {
             try
             {
-                programTimeList = timeList;
                 canvas.Height = Math.Ceiling(height);
                 canvas.Width = Math.Ceiling(width);
                 epgViewPanel.Height = canvas.Height;

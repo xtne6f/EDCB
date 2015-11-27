@@ -411,7 +411,6 @@ namespace EpgTimer
 
                 epgProgramView.SetProgramList(
                     programList,
-                    timeList,
                     primeServiceList.Count() * Settings.Instance.ServiceWidth,
                     timeList.Count * 60 * Settings.Instance.MinHeight);
 
