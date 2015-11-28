@@ -41,13 +41,13 @@ namespace EpgTimer
                     {
                         if (ReserveInfo.RecSetting.RecMode == 5 || ReserveInfo.OverlapMode == 2)
                         {
-                            return "放送中";
+                            return "放送中*";
                         }
                         if (ReserveInfo.OverlapMode == 1)
                         {
-                            return "一部のみ録画中";
+                            return "一部のみ録画中*";
                         }
-                        return "録画中";
+                        return "録画中*";
                     }
                 }
                 return "";
