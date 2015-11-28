@@ -234,6 +234,15 @@ namespace EpgTimer
                 //最低表示行数を適用。また、最低表示高さを確保して、位置も調整する。
                 vutil.ModifierMinimumLine<ReserveData, ReserveViewItem>(reserveList, Settings.Instance.TunerMinimumLine, Settings.Instance.TunerFontSizeService);
 
+                //必要時間リストの修正。最低表示行数の適用で下に溢れた分を追加する。
+                double bottom = reserveList.Max(info => info.TopPos + info.Height);
+                int end = (int)(bottom / (60 * Settings.Instance.TunerMinHeight)) + 1;
+                while (end > timeList.Count)
+                {
+                    DateTime time_tail = timeList[timeList.Count - 1].AddHours(1);
+                    timeList.Add(time_tail);
+                }
+
                 tunerReserveTimeView.SetTime(timeList, true);
                 tunerReserveNameView.SetTunerInfo(tunerList);
                 tunerReserveView.SetReserveList(reserveList,

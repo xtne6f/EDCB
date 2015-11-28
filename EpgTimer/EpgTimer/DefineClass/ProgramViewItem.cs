@@ -31,6 +31,10 @@ namespace EpgTimer
         public double Height { get; set; }
         public double LeftPos { get; set; }
         public double TopPos { get; set; }
+
+        public double HeightDef { get; set; }
+        public double TopPosDef { get; set; }
+
         public bool TitleDrawErr { get; set; }
 
         public bool IsPicked(Point cursorPos)

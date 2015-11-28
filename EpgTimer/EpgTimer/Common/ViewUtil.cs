@@ -271,6 +271,30 @@ namespace EpgTimer
             }
         }
 
+        public void SetTimeList(List<ProgramViewItem> programList, SortedList<DateTime, List<ProgramViewItem>> timeList)
+        {
+            foreach (ProgramViewItem item in programList)
+            {
+                double top = Math.Min(item.TopPos, item.TopPosDef);
+                double bottom = Math.Max(item.TopPos + item.Height, item.TopPosDef + item.HeightDef);
+                int index = Math.Max((int)(top / (60 * Settings.Instance.MinHeight)), 0);
+                int end = (int)(bottom / (60 * Settings.Instance.MinHeight)) + 1;
+
+                //必要時間リストの修正。最低表示行数の適用で下に溢れた分を追加する。
+                while (end > timeList.Count)
+                {
+                    DateTime time_tail = timeList.Keys[timeList.Count - 1].AddHours(1);
+                    timeList.Add(time_tail, new List<ProgramViewItem>());
+                }
+
+                //必要時間リストと時間と番組の関連づけ。
+                while (index < end)
+                {
+                    timeList.Values[index++].Add(item);
+                }
+            }
+        }
+
         public void ScrollToFindItem(SearchItem target_item, ListBox listBox, bool IsMarking)
         {
             try

@@ -152,8 +152,14 @@ namespace EpgTimer
                         }
                         if (serviceList[mergePos].Create64Key() == info.Create64Key())
                         {
-                            //マージンを適用
+                            //timeListは番組表ベースなので、chkStartTimeはマージン適用前に作成する。
                             DateTime startTime = info.StartTime;
+                            DateTime chkStartTime = new DateTime(startTime.Year, startTime.Month, startTime.Day, startTime.Hour, 0, 0);
+
+                            //離れた時間のプログラム予約など、番組表が無いので表示不可
+                            if (timeList.ContainsKey(chkStartTime) == false) break;
+
+                            //マージンを適用
                             Int32 duration = (Int32)info.DurationSecond;
                             vutil.ApplyMarginForPanelView(info, ref startTime, ref duration);
 
@@ -162,40 +168,36 @@ namespace EpgTimer
 
                             viewItem.LeftPos = Settings.Instance.ServiceWidth * (servicePos + (double)((mergeNum + i - mergePos - 1) / 2) / mergeNum);
 
-                            var chkStartTime = new DateTime(startTime.Year, startTime.Month, startTime.Day, startTime.Hour, 0, 0);
-                            if (timeList.ContainsKey(chkStartTime) == true)
+                            ProgramViewItem pgInfo = null;
+                            if (Settings.Instance.MinimumHeight > 0 && viewItem.ReserveInfo.EventID != 0xFFFF && info.DurationSecond != 0)
                             {
-                                ProgramViewItem pgInfo = null;
-                                if (Settings.Instance.MinimumHeight > 0 && viewItem.ReserveInfo.EventID != 0xFFFF && info.DurationSecond != 0)
-                                {
-                                    //予約情報から番組情報を特定し、枠表示位置を再設定する
-                                    UInt64 key = info.Create64PgKey();
-                                    pgInfo = timeList[chkStartTime].Find(info1 => key == info1.EventInfo.Create64PgKey());
-                                }
+                                //予約情報から番組情報を特定し、枠表示位置を再設定する
+                                UInt64 key = info.Create64PgKey();
+                                pgInfo = timeList[chkStartTime].Find(info1 => key == info1.EventInfo.Create64PgKey());
+                            }
 
+                            if (pgInfo != null)
+                            {
+                                viewItem.TopPos = pgInfo.TopPos + pgInfo.Height * (startTime - info.StartTime).TotalSeconds / info.DurationSecond;
+                                viewItem.Height = Math.Max(pgInfo.Height * duration / info.DurationSecond, ViewUtil.PanelMinimumHeight);
+                                viewItem.Width = pgInfo.Width;
+                            }
+                            else
+                            {
+                                int index = timeList.IndexOfKey(chkStartTime);
+                                viewItem.TopPos = Settings.Instance.MinHeight * (index * 60 + (startTime - chkStartTime).TotalMinutes);
+                                viewItem.Height = Math.Max(duration * Settings.Instance.MinHeight / 60, ViewUtil.PanelMinimumHeight);
+
+                                //番組表の統合関係
+                                pgInfo = timeList.Values[index].Find(info1 => info1.LeftPos == viewItem.LeftPos
+                                    && info1.TopPos <= viewItem.TopPos && viewItem.TopPos < info1.TopPos + info1.Height);
                                 if (pgInfo != null)
                                 {
-                                    viewItem.TopPos = pgInfo.TopPos + pgInfo.Height * (startTime - info.StartTime).TotalSeconds / info.DurationSecond;
-                                    viewItem.Height = Math.Max(pgInfo.Height * duration / info.DurationSecond, ViewUtil.PanelMinimumHeight);
                                     viewItem.Width = pgInfo.Width;
                                 }
                                 else
                                 {
-                                    int index = timeList.IndexOfKey(chkStartTime);
-                                    viewItem.TopPos = Settings.Instance.MinHeight * (index * 60 + (startTime - chkStartTime).TotalMinutes);
-                                    viewItem.Height = Math.Max(duration * Settings.Instance.MinHeight / 60, ViewUtil.PanelMinimumHeight);
-
-                                    //番組表の統合関係
-                                    pgInfo = timeList.Values[index].Find(info1 => info1.LeftPos == viewItem.LeftPos
-                                        && info1.TopPos <= viewItem.TopPos && viewItem.TopPos < info1.TopPos + info1.Height);
-                                    if (pgInfo != null)
-                                    {
-                                        viewItem.Width = pgInfo.Width;
-                                    }
-                                    else
-                                    {
-                                        viewItem.Width = Settings.Instance.ServiceWidth / mergeNum;
-                                    }
+                                    viewItem.Width = Settings.Instance.ServiceWidth / mergeNum;
                                 }
                             }
 
@@ -349,9 +351,9 @@ namespace EpgTimer
 
                         var viewItem = new ProgramViewItem(eventInfo);
                         viewItem.Height = Settings.Instance.MinHeight * (eventInfo.DurationFlag == 0 ? 300 : eventInfo.durationSec) / 60;
+                        viewItem.HeightDef = viewItem.Height;//元の情報も保存
                         viewItem.Width = Settings.Instance.ServiceWidth * widthSpan / mergeNum;
-                        viewItem.LeftPos = Settings.Instance.ServiceWidth * (servicePos + (double)((mergeNum+i-mergePos-1)/2) / mergeNum);
-                        //viewItem.TopPos = (eventInfo.start_time - startTime).TotalMinutes * Settings.Instance.MinHeight;
+                        viewItem.LeftPos = Settings.Instance.ServiceWidth * (servicePos + (double)((mergeNum + i - mergePos - 1) / 2) / mergeNum);
                         programGroupList[programGroupList.Count - 1].Item2.Add(viewItem);
                         programList.Add(viewItem);
 
@@ -384,6 +386,7 @@ namespace EpgTimer
                     foreach (ProgramViewItem item in programList)
                     {
                         item.TopPos = (item.EventInfo.start_time - timeList.Keys[0]).TotalMinutes * Settings.Instance.MinHeight;
+                        item.TopPosDef = item.TopPos;//元の情報も保存
                     }
                 }
                 else
@@ -409,14 +412,7 @@ namespace EpgTimer
                 vutil.ModifierMinimumLine<EpgEventInfo, ProgramViewItem>(programList, Settings.Instance.MinimumHeight, Settings.Instance.FontSizeTitle);
 
                 //必要時間リストと時間と番組の関連づけ
-                foreach (ProgramViewItem item in programList)
-                {
-                    int index = Math.Max((int)(item.TopPos / (60 * Settings.Instance.MinHeight)), 0);
-                    while (index < Math.Min((int)((item.TopPos + item.Height) / (60 * Settings.Instance.MinHeight)) + 1, timeList.Count))
-                    {
-                        timeList.Values[index++].Add(item);
-                    }
-                }
+                vutil.SetTimeList(programList, timeList);
 
                 epgProgramView.SetProgramList(
                     programGroupList,
