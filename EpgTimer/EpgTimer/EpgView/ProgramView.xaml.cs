@@ -33,6 +33,7 @@ namespace EpgTimer.EpgView
         public override void ClearInfo()
         {
             base.ClearInfo();
+            reserveList = null;
             rectBorder.ForEach(item => canvas.Children.Remove(item));
             rectBorder.Clear();
 
@@ -105,8 +106,8 @@ namespace EpgTimer.EpgView
 
             if (epgInfo.ShortInfo != null)
             {
-                //必ず文字単位で折り返すためにZWSPを挿入
-                titleText.Text = System.Text.RegularExpressions.Regex.Replace(epgInfo.ShortInfo.event_name, "\\w", "$0\u200b");
+                //必ず文字単位で折り返すためにZWSPを挿入 (\\w を使うと記号の間にZWSPが入らない)
+                titleText.Text = System.Text.RegularExpressions.Regex.Replace(epgInfo.ShortInfo.event_name, ".", "$0\u200b");
                 titleText.FontFamily = fontTitle;
                 titleText.FontSize = sizeTitle;
                 titleText.FontWeight = titleWeight;
@@ -114,7 +115,7 @@ namespace EpgTimer.EpgView
                 titleText.Margin = new Thickness(indentTitle, 0, 0, Math.Floor(sizeTitle / 3));
                 titleText.LineHeight = sizeTitle + 2;
 
-                infoText.Text = System.Text.RegularExpressions.Regex.Replace(epgInfo.ShortInfo.text_char, "\\w", "$0\u200b");
+                infoText.Text = System.Text.RegularExpressions.Regex.Replace(epgInfo.ShortInfo.text_char, ".", "$0\u200b");
                 infoText.FontFamily = fontNormal;
                 infoText.FontSize = sizeNormal;
                 //infoText.FontWeight = FontWeights.Normal;
@@ -131,7 +132,7 @@ namespace EpgTimer.EpgView
             //予約枠の表示
             double marginEpg = 1;
             double marginRes = marginEpg + 3;
-            popupItemTextArea.Margin = new Thickness(marginEpg, marginEpg - 2, marginEpg, marginEpg);
+            popupItemTextArea.Margin = new Thickness(marginEpg, marginEpg - 2, marginEpg + 3, marginEpg);
             if (resPopItem != null)
             {
                 SetReserveBorder(popupItemBorder, resPopItem);

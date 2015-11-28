@@ -188,19 +188,28 @@ namespace EpgTimer
         //パネルアイテムにマージンを適用。
         public void ApplyMarginForPanelView(ReserveData resInfo, ref DateTime startTime, ref int duration)
         {
-            int StartMargine = mutil.GetMargin(resInfo.RecSetting, true);
-            int EndMargine = mutil.GetMargin(resInfo.RecSetting, false);
+            int StartMargin = mutil.GetMargin(resInfo.RecSetting, true);
+            int EndMargin = mutil.GetMargin(resInfo.RecSetting, false);
 
-            if (StartMargine < 0)
+            if (StartMargin < 0)
             {
                 //メモ:番組長より長いマイナスマージンの扱いは?
-                startTime = startTime.AddSeconds(StartMargine * -1);
-                duration += StartMargine;
+                startTime = startTime.AddSeconds(StartMargin * -1);
+                duration += StartMargin;
             }
-            if (EndMargine < 0)
+            if (EndMargin < 0)
             {
-                duration += EndMargine;
+                duration += EndMargin;
             }
+        }
+
+        public void ApplyMarginForTunerPanelView(ReserveData resInfo, ref DateTime startTime, ref int duration)
+        {
+            int StartMargin = mutil.GetMargin(resInfo.RecSetting, true);
+            int EndMargin = mutil.GetMargin(resInfo.RecSetting, false);
+
+            startTime = resInfo.StartTime.AddSeconds(StartMargin * -1);
+            duration = (int)resInfo.DurationSecond + StartMargin + EndMargin;
         }
 
         public GlyphTypeface GetGlyphTypeface(string fontName, bool isBold)

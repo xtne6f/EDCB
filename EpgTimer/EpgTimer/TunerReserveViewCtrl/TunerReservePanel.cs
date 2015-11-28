@@ -112,17 +112,22 @@ namespace EpgTimer.TunerReserveViewCtrl
                 SolidColorBrush colorTitle = CommonManager.Instance.CustTunerServiceColor;
                 SolidColorBrush colorNormal = CommonManager.Instance.CustTunerTextColor;
 
+                //録画中のものを後で描画する
+                List<ReserveViewItem> postdrawList = Items.Where(info => info.ReserveInfo.IsOnRec()).ToList();
+                postdrawList.ForEach(info => Items.Remove(info));
+                Items.AddRange(postdrawList);
+
                 foreach (ReserveViewItem info in Items)
                 {
-                    colorTitle = Settings.Instance.TunerColorModeUse == true ? info.ForeColorPri : colorTitle;
+                    colorTitle = Settings.Instance.TunerColorModeUse == true ? info.ForeColorPriTuner : colorTitle;
 
                     double dInfoTopPos = Math.Floor(info.TopPos);
                     double dInfoHeight = Math.Floor(info.Height);
 
-                    dc.DrawRectangle(Brushes.LightGray, null, new Rect(info.LeftPos, dInfoTopPos, info.Width, Math.Max(dInfoHeight, 0)));
+                    dc.DrawRectangle(info.BorderBrushTuner, null, new Rect(info.LeftPos, dInfoTopPos, info.Width + 1, Math.Max(dInfoHeight + 1, 0)));
                     if (dInfoHeight > 2)
                     {
-                        dc.DrawRectangle(info.BackColor, null, new Rect(info.LeftPos + 1, dInfoTopPos + 1, info.Width - 2, dInfoHeight - 2));
+                        dc.DrawRectangle(info.BackColorTuner, null, new Rect(info.LeftPos + 1, dInfoTopPos + 1, info.Width - 1, dInfoHeight - 1));
                         if (dInfoHeight < 4 + sizeTitle + 2)
                         {
                             //高さ足りない

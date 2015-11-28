@@ -91,7 +91,7 @@ namespace EpgTimer.EpgView
                             //説明
                             if (info.EventInfo.ShortInfo.text_char.Length > 0)
                             {
-                                if (RenderText(info.EventInfo.ShortInfo.text_char, ref textDrawList, glyphTypefaceNormal, sizeNormal, info.Width - 10 - indentNormal, info.Height - 7 - totalHeight, info.LeftPos - selfLeft + indentNormal, info.TopPos - 2 + totalHeight, ref useHeight, colorNormal, m) == false)
+                                if (RenderText(info.EventInfo.ShortInfo.text_char, ref textDrawList, glyphTypefaceNormal, sizeNormal, info.Width - 6 - indentNormal, info.Height - 7 - totalHeight, info.LeftPos - selfLeft + indentNormal, info.TopPos - 2 + totalHeight, ref useHeight, colorNormal, m) == false)
                                 {
                                     continue;
                                 }
@@ -103,7 +103,7 @@ namespace EpgTimer.EpgView
 //                            {
 //                                if (info.EventInfo.ExtInfo.text_char.Length > 0)
 //                                {
-//                                    if (RenderText(info.EventInfo.ExtInfo.text_char, ref textDrawList, glyphTypefaceNormal, sizeNormal, info.Width - 6 - widthOffset, info.Height - 8 - totalHeight, info.LeftPos - selfLeft + widthOffset, info.TopPos - 1 + totalHeight, ref useHeight, colorNormal, m) == false)
+//                                    if (RenderText(info.EventInfo.ExtInfo.text_char, ref textDrawList, glyphTypefaceNormal, sizeNormal, info.Width - 6 - widthOffset, info.Height - 7 - totalHeight, info.LeftPos - selfLeft + widthOffset, info.TopPos - 1 + totalHeight, ref useHeight, colorNormal, m) == false)
 //                                    {
 //                                        continue;
 //                                    }

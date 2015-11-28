@@ -1095,9 +1095,10 @@ namespace EpgTimer
             return eventPossible;
         }
 
-        private double CulcOverlapLength(DateTime s1, uint d1, DateTime s2, uint d2)
+        /// <summary>重複してない場合は負数が返る。</summary>
+        public static double CulcOverlapLength(DateTime s1, uint d1, DateTime s2, uint d2)
         {
-            //重複してない場合は負数が返る。
+            //
             TimeSpan ts1 = s1 + TimeSpan.FromSeconds(d1) - s2;
             TimeSpan ts2 = s2 + TimeSpan.FromSeconds(d2) - s1;
             return Math.Min(Math.Min(ts1.TotalSeconds, ts2.TotalSeconds), Math.Min(d1, d2));

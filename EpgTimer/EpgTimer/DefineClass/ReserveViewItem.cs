@@ -15,20 +15,60 @@ namespace EpgTimer
             get { return _Data; }
             set { _Data = value; }
         }
-        public SolidColorBrush ForeColorPri
+        public SolidColorBrush ForeColorPriTuner
         {
             get
             {
-                if (ReserveInfo == null)return Brushes.Black;
+                if (ReserveInfo == null) return Brushes.Black;
 
                 return CommonManager.Instance.CustTunerServiceColorPri[ReserveInfo.RecSetting.Priority - 1];
             }
         }
-        public SolidColorBrush BackColor
+        public SolidColorBrush BackColorTuner
         {
             get
             {
                 return vutil.ReserveErrBrush(ReserveInfo);
+            }
+        }
+        public String StatusTuner
+        {
+            get
+            {
+                if (ReserveInfo != null)
+                {
+                    if (ReserveInfo.IsOnRec() == true)
+                    {
+                        if (ReserveInfo.RecSetting.RecMode == 5 || ReserveInfo.OverlapMode == 2)
+                        {
+                            return "放送中";
+                        }
+                        if (ReserveInfo.OverlapMode == 1)
+                        {
+                            return "一部のみ録画中";
+                        }
+                        return "録画中";
+                    }
+                }
+                return "";
+            }
+        }
+        public SolidColorBrush BorderBrushTuner
+        {
+            get
+            {
+                if (ReserveInfo != null)
+                {
+                    if (ReserveInfo.IsOnRec() == true)
+                    {
+                        return CommonManager.Instance.StatRecForeColor;
+                    }
+                    if (ReserveInfo.RecSetting.RecMode == 5)
+                    {
+                        return Brushes.Black;
+                    }
+                }
+                return Brushes.DarkGray;
             }
         }
         public Brush BorderBrush
