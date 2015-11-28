@@ -35,21 +35,10 @@ namespace EpgTimer.EpgView
 
             //コマンド集の初期化の続き
             mc.SetFuncGetDataList(isAll => isAll == true ? reserveList.GetDataList() : reserveList.GetHitDataList(clickPos));
-            mc.SetFuncGetEpgEventList(() =>
+            mc.SetFuncGetEpgEventList(() => 
             {
-                try
-                {
-                    int timeIndex = (int)(clickPos.Y / (60 * Settings.Instance.MinHeight));
-                    if (0 <= timeIndex && timeIndex < timeList.Count)
-                    {
-                        return timeList.Values[timeIndex].GetHitDataList(clickPos);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                }
-                return new List<EpgEventInfo>();
+                ProgramViewItem hitItem = programView.GetProgramViewData(clickPos);
+                return hitItem != null && hitItem.EventInfo !=null ? mutil.ToList(hitItem.EventInfo) : new List<EpgEventInfo>();
             });
         }
         public override void RefreshMenu()
