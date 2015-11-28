@@ -27,7 +27,6 @@ namespace EpgTimer
         {
             InitializeComponent();
 
-            tunerReserveView.PreviewMouseWheel += new MouseWheelEventHandler(tunerReserveView_PreviewMouseWheel);
             tunerReserveView.ScrollChanged += new ScrollChangedEventHandler(tunerReserveView_ScrollChanged);
             tunerReserveView.LeftDoubleClick += new TunerReserveView.PanelViewClickHandler(tunerReserveView_LeftDoubleClick);
             tunerReserveView.RightClick += new TunerReserveView.PanelViewClickHandler(tunerReserveView_RightClick);
@@ -66,14 +65,7 @@ namespace EpgTimer
         /// <summary>表示スクロールイベント呼び出し</summary>
         void tunerReserveView_ScrollChanged(object sender, ScrollChangedEventArgs e)
         {
-            vutil.view_ScrollChanged<TunerReserveView>(sender, e,
-                tunerReserveView.scrollViewer, tunerReserveTimeView.scrollViewer, tunerReserveNameView.scrollViewer);
-        }
-
-        /// <summary>マウスホイールイベント呼び出し</summary>
-        void tunerReserveView_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
-        {
-            vutil.view_PreviewMouseWheel<TunerReserveView>(sender, e, tunerReserveView.scrollViewer, Settings.Instance.TunerMouseScrollAuto, Settings.Instance.TunerScrollSize);
+            tunerReserveView.view_ScrollChanged(tunerReserveView.scrollViewer, tunerReserveTimeView.scrollViewer, tunerReserveNameView.scrollViewer);
         }
 
         /// <summary>左ボタンダブルクリックイベント呼び出し/summary>

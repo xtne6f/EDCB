@@ -15,6 +15,8 @@ namespace EpgTimer.EpgView
     {
         protected override bool IsSingleClickOpen { get { return Settings.Instance.EpgInfoSingleClick; } }
         protected override double DragScroll { get { return Settings.Instance.DragScroll; } }
+        protected override bool IsMouseScrollAuto { get { return Settings.Instance.MouseScrollAuto; } }
+        protected override double ScrollSize { get { return Settings.Instance.ScrollSize; } }
         protected override bool IsPopupEnabled { get { return Settings.Instance.EpgPopup; } }
         protected override FrameworkElement PopUp { get { return popupItem; } }
 
@@ -247,6 +249,5 @@ namespace EpgTimer.EpgView
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
-
     }
 }

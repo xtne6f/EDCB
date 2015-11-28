@@ -53,7 +53,6 @@ namespace EpgTimer.EpgView
             timeView = tv;
             horizontalViewScroll = hv;
 
-            programView.PreviewMouseWheel += new MouseWheelEventHandler(epgProgramView_PreviewMouseWheel);
             programView.ScrollChanged += new ScrollChangedEventHandler(epgProgramView_ScrollChanged);
             programView.LeftDoubleClick += new ProgramView.PanelViewClickHandler(epgProgramView_LeftDoubleClick);
             programView.RightClick += new ProgramView.PanelViewClickHandler(epgProgramView_RightClick);
@@ -139,14 +138,7 @@ namespace EpgTimer.EpgView
         /// <summary>表示スクロールイベント呼び出し</summary>
         protected void epgProgramView_ScrollChanged(object sender, ScrollChangedEventArgs e)
         {
-            vutil.view_ScrollChanged<ProgramView>(sender, e,
-                programView.scrollViewer, timeView.scrollViewer, horizontalViewScroll);
-        }
-
-        /// <summary>マウスホイールイベント呼び出し</summary>
-        protected void epgProgramView_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
-        {
-            vutil.view_PreviewMouseWheel<ProgramView>(sender, e, programView.scrollViewer, Settings.Instance.MouseScrollAuto, Settings.Instance.ScrollSize);
+            programView.view_ScrollChanged(programView.scrollViewer, timeView.scrollViewer, horizontalViewScroll);
         }
 
         /// <summary>左ボタンダブルクリックイベント呼び出し/summary>

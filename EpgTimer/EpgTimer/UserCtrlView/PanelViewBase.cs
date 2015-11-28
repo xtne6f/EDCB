@@ -41,6 +41,8 @@ namespace EpgTimer.UserCtrlView
 
         protected virtual bool IsSingleClickOpen { get { return false; } }
         protected virtual double DragScroll { get { return 1; } }
+        protected virtual bool IsMouseScrollAuto { get { return false; } }
+        protected virtual double ScrollSize { get { return 240; } }
         protected virtual bool IsPopupEnabled { get { return false; } }
         protected virtual object GetPopupItem(Point cursorPos) { return null; }
         protected virtual void SetPopup(object item) { return; }
@@ -107,6 +109,41 @@ namespace EpgTimer.UserCtrlView
             }
         }
 
+        /// <summary>マウスホイールイベント呼び出し</summary>
+        protected virtual void scrollViewer_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            try
+            {
+                e.Handled = true;
+
+                if (IsMouseScrollAuto == true)
+                {
+                    scroll.ScrollToVerticalOffset(scroll.VerticalOffset - e.Delta);
+                }
+                else
+                {
+                    if (e.Delta < 0)
+                    {
+                        //下方向
+                        scroll.ScrollToVerticalOffset(scroll.VerticalOffset + ScrollSize);
+                    }
+                    else
+                    {
+                        //上方向
+                        if (scroll.VerticalOffset < ScrollSize)
+                        {
+                            scroll.ScrollToVerticalOffset(0);
+                        }
+                        else
+                        {
+                            scroll.ScrollToVerticalOffset(scroll.VerticalOffset - ScrollSize);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
+        }
+
         protected virtual void scrollViewer_ScrollChanged(object sender, ScrollChangedEventArgs e)
         {
             if (ScrollChanged != null)
@@ -116,6 +153,19 @@ namespace EpgTimer.UserCtrlView
                 ScrollChanged(this, e);
             }
         }
+
+        public void view_ScrollChanged(ScrollViewer main_scroll, ScrollViewer v_scroll, ScrollViewer h_scroll)
+        {
+            try
+            {
+                //時間軸の表示もスクロール
+                v_scroll.ScrollToVerticalOffset(main_scroll.VerticalOffset);
+                //サービス名表示もスクロール
+                h_scroll.ScrollToHorizontalOffset(main_scroll.HorizontalOffset);
+            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
+        }
+
         protected virtual void canvas_MouseMove(object sender, MouseEventArgs e)
         {
             try

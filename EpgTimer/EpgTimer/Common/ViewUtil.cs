@@ -75,63 +75,6 @@ namespace EpgTimer
             obj.BorderThickness = new Thickness(2);
         }
 
-        public void view_ScrollChanged<T>(object sender, ScrollChangedEventArgs e, ScrollViewer main_scroll, ScrollViewer v_scroll, ScrollViewer h_scroll)
-        {
-            try
-            {
-                if (sender.GetType() == typeof(T))
-                {
-                    //時間軸の表示もスクロール
-                    v_scroll.ScrollToVerticalOffset(main_scroll.VerticalOffset);
-                    //サービス名表示もスクロール
-                    h_scroll.ScrollToHorizontalOffset(main_scroll.HorizontalOffset);
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
-
-        public void view_PreviewMouseWheel<T>(object sender, MouseWheelEventArgs e, ScrollViewer scrollViewer, bool auto, double scrollSize)
-        {
-            try
-            {
-                e.Handled = true;
-                if (sender.GetType() == typeof(T))
-                {
-                    if (auto == true)
-                    {
-                        scrollViewer.ScrollToVerticalOffset(scrollViewer.VerticalOffset - e.Delta);
-                    }
-                    else
-                    {
-                        if (e.Delta < 0)
-                        {
-                            //下方向
-                            scrollViewer.ScrollToVerticalOffset(scrollViewer.VerticalOffset + scrollSize);
-                        }
-                        else
-                        {
-                            //上方向
-                            if (scrollViewer.VerticalOffset < scrollSize)
-                            {
-                                scrollViewer.ScrollToVerticalOffset(0);
-                            }
-                            else
-                            {
-                                scrollViewer.ScrollToVerticalOffset(scrollViewer.VerticalOffset - scrollSize);
-                            }
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
-
         public bool ReloadReserveData(Control Owner = null)
         {
             if (EpgTimerNWNotConnect() == true) return false;
