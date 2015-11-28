@@ -136,7 +136,7 @@ BOOL CARIB8CharDecode::PSISI( const BYTE* pbSrc, DWORD dwSrcSize, string* strDec
 	bSrcList.insert(bSrcList.end(), bMargin, bMargin + 8);
 
 	BOOL bRet = Analyze(bSrcList.data(), dwSrcSize, &dwReadSize );
-	*strDec = m_strDecode;
+	*strDec = std::move(m_strDecode);
 	return bRet;
 }
 
