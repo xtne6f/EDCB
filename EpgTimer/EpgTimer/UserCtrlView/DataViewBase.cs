@@ -17,10 +17,6 @@ namespace EpgTimer.UserCtrlView
             ReloadInfo = true;
             if (ReloadInfo == true && this.IsVisible == true) ReloadInfo = !ReloadInfoData();
         }
-        protected virtual void UserControl_Loaded(object sender, RoutedEventArgs e)
-        {
-            if (ReloadInfo == true && this.IsVisible == true) ReloadInfo = !ReloadInfoData();
-        }
         protected virtual void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
             if (ReloadInfo == true && this.IsVisible == true) ReloadInfo = !ReloadInfoData();

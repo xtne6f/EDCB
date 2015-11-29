@@ -18,14 +18,6 @@ namespace EpgTimer
             InitializeComponent();
         }
 
-        private void UserControl_Loaded(object sender, RoutedEventArgs e)
-        {
-            if (RedrawEpg == true && this.IsVisible == true)
-            {
-                RedrawEpg = !ReDrawEpgData();
-            }
-        }
-
         private List<EpgDataViewItem> Views
         {
             get { return tabControl.Items.Cast<TabItem>().Select(item => item.Content).OfType<EpgDataViewItem>().ToList(); }
