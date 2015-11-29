@@ -14,6 +14,9 @@ namespace EpgTimer.EpgView
         //ProgramViewItemの座標系は番組表基準なので、この時点でCanvas.SetLeft()によりEpgViewPanel自身の座標を添付済みでなければならない
         public List<ProgramViewItem> Items { get; set; }
 
+        public ItemFont ItemFontNormal { get; set; }
+        public ItemFont ItemFontTitle { get; set; }
+
         public EpgViewPanel()
         {
             // これらの設定を OnRender 中に行うと、再度 OnRender イベントが発生してしまうようだ。
@@ -28,15 +31,18 @@ namespace EpgTimer.EpgView
             textDrawDict = new Dictionary<ProgramViewItem, List<TextDrawItem>>();
             Matrix m = PresentationSource.FromVisual(Application.Current.MainWindow).CompositionTarget.TransformToDevice;
 
-            if (Items == null)
+            if (Items == null) return;
+
+            if (ItemFontNormal == null || ItemFontNormal.GlyphType == null ||
+                ItemFontTitle == null || ItemFontTitle.GlyphType == null)
             {
                 return;
             }
+            ItemFontNormal.PrepareCache();
+            ItemFontTitle.PrepareCache();
 
             try
             {
-                GlyphTypeface glyphTypefaceNormal = vutil.GetGlyphTypeface(Settings.Instance.FontName, false);
-                GlyphTypeface glyphTypefaceTitle = vutil.GetGlyphTypeface(Settings.Instance.FontNameTitle, Settings.Instance.FontBoldTitle);
                 double selfLeft = Canvas.GetLeft(this); 
                 double sizeMin = Settings.Instance.FontSizeTitle - 1;
                 double sizeTitle = Settings.Instance.FontSizeTitle;
@@ -63,7 +69,7 @@ namespace EpgTimer.EpgView
                         //分
                         string min = (info.EventInfo.StartTimeFlag != 1 ? "未定 " : info.EventInfo.start_time.Minute.ToString("d02"));
                         double useHeight = 0;
-                        if (RenderText(min, ref textDrawList, glyphTypefaceTitle, sizeMin, info.Width - 4, info.Height + 10, info.LeftPos - selfLeft - 1, info.TopPos - 2, ref useHeight, colorTitle, m) == false)
+                        if (RenderText(min, ref textDrawList, ItemFontTitle, sizeMin, info.Width - 4, info.Height + 10, info.LeftPos - selfLeft - 1, info.TopPos - 2, ref useHeight, colorTitle, m) == false)
                         {
                             info.TitleDrawErr = true;
                             continue;
@@ -75,7 +81,7 @@ namespace EpgTimer.EpgView
                             //タイトル
                             if (info.EventInfo.ShortInfo.event_name.Length > 0)
                             {
-                                if (RenderText(info.EventInfo.ShortInfo.event_name, ref textDrawList, glyphTypefaceTitle, sizeTitle, info.Width - 6 - indentTitle, info.Height - 3 - totalHeight, info.LeftPos - selfLeft + indentTitle, info.TopPos - 2 + totalHeight, ref useHeight, colorTitle, m) == false)
+                                if (RenderText(info.EventInfo.ShortInfo.event_name, ref textDrawList, ItemFontTitle, sizeTitle, info.Width - 6 - indentTitle, info.Height - 3 - totalHeight, info.LeftPos - selfLeft + indentTitle, info.TopPos - 2 + totalHeight, ref useHeight, colorTitle, m) == false)
                                 {
                                     info.TitleDrawErr = true;
                                     continue;
@@ -85,7 +91,7 @@ namespace EpgTimer.EpgView
                             //説明
                             if (info.EventInfo.ShortInfo.text_char.Length > 0)
                             {
-                                if (RenderText(info.EventInfo.ShortInfo.text_char, ref textDrawList, glyphTypefaceNormal, sizeNormal, info.Width - 6 - indentNormal, info.Height - 7 - totalHeight, info.LeftPos - selfLeft + indentNormal, info.TopPos - 2 + totalHeight, ref useHeight, colorNormal, m) == false)
+                                if (RenderText(info.EventInfo.ShortInfo.text_char, ref textDrawList, ItemFontNormal, sizeNormal, info.Width - 6 - indentNormal, info.Height - 7 - totalHeight, info.LeftPos - selfLeft + indentNormal, info.TopPos - 2 + totalHeight, ref useHeight, colorNormal, m) == false)
                                 {
                                     continue;
                                 }
@@ -114,7 +120,7 @@ namespace EpgTimer.EpgView
             }
         }
 
-        protected bool RenderText(String text, ref List<TextDrawItem> textDrawList, GlyphTypeface glyphType, double fontSize, double maxWidth, double maxHeight, double x, double y, ref double useHeight, SolidColorBrush fontColor, Matrix m)
+        protected bool RenderText(String text, ref List<TextDrawItem> textDrawList, ItemFont itemFont, double fontSize, double maxWidth, double maxHeight, double x, double y, ref double useHeight, SolidColorBrush fontColor, Matrix m)
         {
             double totalHeight = 0;
 
@@ -127,8 +133,16 @@ namespace EpgTimer.EpgView
                 double totalWidth = 0;
                 for (int n = 0; n < line.Length; n++)
                 {
-                    ushort glyphIndex = glyphType.CharacterToGlyphMap[line[n]];
-                    double width = glyphType.AdvanceWidths[glyphIndex] * fontSize;
+                    //この辞書検索が負荷の大部分を占めているのでテーブルルックアップする
+                    //ushort glyphIndex = itemFont.GlyphType.CharacterToGlyphMap[line[n]];
+                    //double width = itemFont.GlyphType.AdvanceWidths[glyphIndex] * fontSize;
+                    ushort glyphIndex = itemFont.GlyphIndexCache[line[n]];
+                    if (glyphIndex == 0)
+                    {
+                        itemFont.GlyphIndexCache[line[n]] = glyphIndex = itemFont.GlyphType.CharacterToGlyphMap[line[n]];
+                        itemFont.GlyphWidthCache[glyphIndex] = (float)itemFont.GlyphType.AdvanceWidths[glyphIndex];
+                    }
+                    double width = itemFont.GlyphWidthCache[glyphIndex] * fontSize;
                     if (totalWidth + width > maxWidth)
                     {
                         if (glyphIndexes.Count > 0)
@@ -138,7 +152,7 @@ namespace EpgTimer.EpgView
                             Point origin = new Point(dpix / m.M11, dpiy / m.M22);
                             TextDrawItem item = new TextDrawItem();
                             item.FontColor = fontColor;
-                            item.Text = new GlyphRun(glyphType, 0, false, fontSize,
+                            item.Text = new GlyphRun(itemFont.GlyphType, 0, false, fontSize,
                                 glyphIndexes, origin, advanceWidths, null, null, null, null,
                                 null, null);
                             textDrawList.Add(item);
@@ -171,7 +185,7 @@ namespace EpgTimer.EpgView
                     Point origin = new Point(dpix / m.M11, dpiy / m.M22);
                     TextDrawItem item = new TextDrawItem();
                     item.FontColor = fontColor;
-                    item.Text = new GlyphRun(glyphType, 0, false, fontSize,
+                    item.Text = new GlyphRun(itemFont.GlyphType, 0, false, fontSize,
                         glyphIndexes, origin, advanceWidths, null, null, null, null,
                         null, null);
                     textDrawList.Add(item);
