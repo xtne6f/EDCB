@@ -155,35 +155,6 @@ namespace EpgTimer
             duration = (int)resInfo.DurationSecond + StartMargin + EndMargin;
         }
 
-        public GlyphTypeface GetGlyphTypeface(string fontName, bool isBold)
-        {
-            try
-            {
-                var fontWeights = (isBold == true ? FontWeights.Bold : FontWeights.Normal);
-                Typeface typeface = new Typeface(new FontFamily(fontName),
-                                                FontStyles.Normal, fontWeights, FontStretches.Normal);
-
-                GlyphTypeface glyphTypeface;
-                if (typeface.TryGetGlyphTypeface(out glyphTypeface) == false)
-                {
-                    typeface = new Typeface(new FontFamily(System.Drawing.SystemFonts.DefaultFont.Name),
-                                                    FontStyles.Normal, fontWeights, FontStretches.Normal);
-
-                    if (typeface.TryGetGlyphTypeface(out glyphTypeface) == false)
-                    {
-                        MessageBox.Show("フォント指定が不正です");
-                        return null;
-                    }
-                }
-                return glyphTypeface;
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                return null;
-            }
-        }
-
         //最低表示高さ
         public const double PanelMinimumHeight = 2;
 

@@ -11,8 +11,6 @@ namespace EpgTimer.UserCtrlView
 {
     public class PanelBase : FrameworkElement //とりあえず。TunerReservePanelとEpgViewPanel結構実装違う
     {
-        protected ViewUtil vutil = CommonManager.Instance.VUtil;
- 
         public static readonly DependencyProperty BackgroundProperty =
             Panel.BackgroundProperty.AddOwner(typeof(PanelBase));
 

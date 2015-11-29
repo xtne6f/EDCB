@@ -10,7 +10,17 @@ namespace EpgTimer.TunerReserveViewCtrl
     {
         public List<ReserveViewItem> Items { get; set; }
 
-        protected bool RenderText(String text, DrawingContext dc, GlyphTypeface glyphType, SolidColorBrush brush, double fontSize, double maxWidth, double maxHeight, double x, double y, ref double useHeight, bool nowrap = false)
+        public ItemFont ItemFontNormal { get; set; }
+        public ItemFont ItemFontTitle { get; set; }
+
+        public TunerReservePanel()
+        {
+            this.VisualTextRenderingMode = TextRenderingMode.ClearType;
+            this.VisualTextHintingMode = TextHintingMode.Fixed;
+            this.UseLayoutRounding = true;
+        }
+
+        protected bool RenderText(String text, DrawingContext dc, ItemFont itemFont, SolidColorBrush brush, double fontSize, double maxWidth, double maxHeight, double x, double y, ref double useHeight, bool nowrap = false)
         {
             if (maxHeight < fontSize + 2)
             {
@@ -35,8 +45,13 @@ namespace EpgTimer.TunerReserveViewCtrl
                 double totalWidth = 0;
                 for (int n = 0; n < line.Length; n++)
                 {
-                    ushort glyphIndex = glyphType.CharacterToGlyphMap[line[n]];
-                    double width = glyphType.AdvanceWidths[glyphIndex] * fontSize;
+                    ushort glyphIndex = itemFont.GlyphIndexCache[line[n]];
+                    if (glyphIndex == 0)
+                    {
+                        itemFont.GlyphIndexCache[line[n]] = glyphIndex = itemFont.GlyphType.CharacterToGlyphMap[line[n]];
+                        itemFont.GlyphWidthCache[glyphIndex] = (float)itemFont.GlyphType.AdvanceWidths[glyphIndex];
+                    }
+                    double width = itemFont.GlyphWidthCache[glyphIndex] * fontSize;
                     if (totalWidth + width > maxWidth)
                     {
                         if (nowrap == true) break;//改行しない場合ここで終り
@@ -45,12 +60,12 @@ namespace EpgTimer.TunerReserveViewCtrl
                         if (totalHeight + fontSize > maxHeight)
                         {
                             //次の行無理
-                            glyphIndex = glyphType.CharacterToGlyphMap['…'];
+                            glyphIndex = itemFont.GlyphType.CharacterToGlyphMap['…'];
                             glyphIndexes[glyphIndexes.Count - 1] = glyphIndex;
                             advanceWidths[advanceWidths.Count - 1] = width;
 
                             Point origin = new Point(x + 2, y + totalHeight);
-                            GlyphRun glyphRun = new GlyphRun(glyphType, 0, false, fontSize,
+                            GlyphRun glyphRun = new GlyphRun(itemFont.GlyphType, 0, false, fontSize,
                                 glyphIndexes, origin, advanceWidths, null, null, null, null,
                                 null, null);
 
@@ -63,7 +78,7 @@ namespace EpgTimer.TunerReserveViewCtrl
                         {
                             //次の行いけるので今までの分出力
                             Point origin = new Point(x + 2, y + totalHeight);
-                            GlyphRun glyphRun = new GlyphRun(glyphType, 0, false, fontSize,
+                            GlyphRun glyphRun = new GlyphRun(itemFont.GlyphType, 0, false, fontSize,
                                 glyphIndexes, origin, advanceWidths, null, null, null, null,
                                 null, null);
 
@@ -81,7 +96,7 @@ namespace EpgTimer.TunerReserveViewCtrl
                 if (glyphIndexes.Count > 0)
                 {
                     Point origin = new Point(x + 2, y + totalHeight);
-                    GlyphRun glyphRun = new GlyphRun(glyphType, 0, false, fontSize,
+                    GlyphRun glyphRun = new GlyphRun(itemFont.GlyphType, 0, false, fontSize,
                         glyphIndexes, origin, advanceWidths, null, null, null, null,
                         null, null);
 
@@ -94,10 +109,16 @@ namespace EpgTimer.TunerReserveViewCtrl
         protected override void OnRender(DrawingContext dc)
         {
             dc.DrawRectangle(Background, null, new Rect(RenderSize));
-            this.VisualTextRenderingMode = TextRenderingMode.ClearType;
-            this.VisualTextHintingMode = TextHintingMode.Fixed;
 
             if (Items == null) return;
+
+            if (ItemFontNormal == null || ItemFontNormal.GlyphType == null ||
+                ItemFontTitle == null || ItemFontTitle.GlyphType == null)
+            {
+                return;
+            }
+            ItemFontNormal.PrepareCache();
+            ItemFontTitle.PrepareCache();
 
             try
             {
@@ -107,8 +128,6 @@ namespace EpgTimer.TunerReserveViewCtrl
                 double sizeNormal = Settings.Instance.TunerFontSize;
                 double indentTitle = Math.Floor(sizeMin * 1.7);
                 double indentNormal = Math.Floor(Settings.Instance.TunerTitleIndent ? indentTitle : 2);
-                GlyphTypeface glyphTypefaceSeervice = vutil.GetGlyphTypeface(Settings.Instance.TunerFontNameService, Settings.Instance.TunerFontBoldService);
-                GlyphTypeface glyphTypefaceNormal = vutil.GetGlyphTypeface(Settings.Instance.TunerFontName, false);
                 SolidColorBrush colorTitle = CommonManager.Instance.CustTunerServiceColor;
                 SolidColorBrush colorNormal = CommonManager.Instance.CustTunerTextColor;
 
@@ -140,7 +159,7 @@ namespace EpgTimer.TunerReserveViewCtrl
 
                         //分
                         string min = info.ReserveInfo.StartTime.Minute.ToString("d02");
-                        if (RenderText(min, dc, glyphTypefaceNormal, colorTitle, sizeMin, info.Width - 4, dInfoHeight - 4, info.LeftPos, dInfoTopPos - 2, ref useHeight) == false)
+                        if (RenderText(min, dc, ItemFontNormal, colorTitle, sizeMin, info.Width - 4, dInfoHeight - 4, info.LeftPos, dInfoTopPos - 2, ref useHeight) == false)
                         {
                             info.TitleDrawErr = true;
                             continue;
@@ -151,7 +170,7 @@ namespace EpgTimer.TunerReserveViewCtrl
                         {
                             string serviceName = info.ReserveInfo.StationName
                                 + "(" + CommonManager.ConvertNetworkNameText(info.ReserveInfo.OriginalNetworkID) + ")";
-                            if (RenderText(serviceName, dc, glyphTypefaceSeervice, colorTitle, sizeTitle, info.Width - 6 - indentTitle, dInfoHeight - 6 - totalHeight, info.LeftPos + indentTitle, dInfoTopPos - 2 + totalHeight, ref useHeight, Settings.Instance.TunerServiceNoWrap) == false)
+                            if (RenderText(serviceName, dc, ItemFontTitle, colorTitle, sizeTitle, info.Width - 6 - indentTitle, dInfoHeight - 6 - totalHeight, info.LeftPos + indentTitle, dInfoTopPos - 2 + totalHeight, ref useHeight, Settings.Instance.TunerServiceNoWrap) == false)
                             {
                                 info.TitleDrawErr = true;
                                 continue;
@@ -162,7 +181,7 @@ namespace EpgTimer.TunerReserveViewCtrl
                         //番組名
                         if (info.ReserveInfo.Title.Length > 0)
                         {
-                            if (RenderText(info.ReserveInfo.Title, dc, glyphTypefaceNormal, colorNormal, sizeNormal, info.Width - 6 - indentNormal, dInfoHeight - 6 - totalHeight, info.LeftPos + indentNormal, dInfoTopPos - 2 + totalHeight, ref useHeight) == false)
+                            if (RenderText(info.ReserveInfo.Title, dc, ItemFontNormal, colorNormal, sizeNormal, info.Width - 6 - indentNormal, dInfoHeight - 6 - totalHeight, info.LeftPos + indentNormal, dInfoTopPos - 2 + totalHeight, ref useHeight) == false)
                             {
                                 info.TitleDrawErr = true;
                                 continue;
