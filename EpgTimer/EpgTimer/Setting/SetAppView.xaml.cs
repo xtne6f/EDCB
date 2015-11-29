@@ -82,6 +82,9 @@ namespace EpgTimer.Setting
                 checkBox_wakeReconnect.IsEnabled = true;
                 checkBox_suspendClose.IsEnabled = true;
                 checkBox_ngAutoEpgLoad.IsEnabled = true;
+                checkBox_keepTCPConnect.IsEnabled = true;
+                textBox_keepTCPConnect.IsEnabled = true;
+                label_keepTCPConnect.IsEnabled = true;
                 checkBox_srvResident.IsEnabled = false;
                 button_recDef.Content = "録画プリセットを確認";
             }
@@ -222,6 +225,8 @@ namespace EpgTimer.Setting
                 checkBox_minHide.IsChecked = Settings.Instance.MinHide;
                 checkBox_cautionManyChange.IsChecked = Settings.Instance.CautionManyChange;
                 textBox_cautionManyChange.Text = Settings.Instance.CautionManyNum.ToString();
+                checkBox_keepTCPConnect.IsChecked = Settings.Instance.ChkSrvRegistTCP;
+                textBox_keepTCPConnect.Text = Settings.Instance.ChkSrvRegistInterval.ToString();
 
                 checkBox_wakeReconnect.IsChecked = Settings.Instance.WakeReconnectNW;
                 checkBox_suspendClose.IsChecked = Settings.Instance.SuspendCloseNW;
@@ -451,6 +456,9 @@ namespace EpgTimer.Setting
                 Settings.Instance.WakeReconnectNW = (checkBox_wakeReconnect.IsChecked == true);
                 Settings.Instance.SuspendCloseNW = (checkBox_suspendClose.IsChecked == true);
                 Settings.Instance.NgAutoEpgLoadNW = (checkBox_ngAutoEpgLoad.IsChecked == true);
+                Settings.Instance.ChkSrvRegistTCP = (checkBox_keepTCPConnect.IsChecked != false);
+                Settings.Instance.ChkSrvRegistInterval = mutil.MyToNumerical(textBox_keepTCPConnect, Convert.ToDouble, 1440 * 7, 1, Settings.Instance.ChkSrvRegistInterval);
+                
                 Settings.Instance.DefSearchKey = defSearchKey.Clone();
 
                 Settings.Instance.ViewButtonShowAsTab = checkBox_showAsTab.IsChecked == true;
