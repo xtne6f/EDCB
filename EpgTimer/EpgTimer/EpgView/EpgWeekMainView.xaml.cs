@@ -366,6 +366,10 @@ namespace EpgTimer
         {
             if (this.IsVisible == false) return;
 
+            // Loaded イベントでは Reload*Data を省略したので
+            // この IsVisibleChanged で Reload*Data を見逃してはいけない
+            base.UserControl_IsVisibleChanged(sender, e);
+
             // サービス選択
             UInt64 serviceKey_Target = BlackoutWindow.Create64Key();
             if (serviceKey_Target == 0) return;
@@ -379,8 +383,6 @@ namespace EpgTimer
                     break;
                 }
             }
-
-            base.UserControl_IsVisibleChanged(sender, e);
         }
 
         //private void button_go_Main_Click(object sender, RoutedEventArgs e)

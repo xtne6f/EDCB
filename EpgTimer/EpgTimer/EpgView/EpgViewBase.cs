@@ -95,22 +95,7 @@ namespace EpgTimer.EpgView
                 setInfo.ViewContentKindList.ForEach(val => this.viewCustContentKindList.Add(val, val));
             }
 
-            updateEpgData = !ReloadViewData();
-        }
-
-        protected virtual void UserControl_Loaded(object sender, RoutedEventArgs e)
-        {
-            if (this.IsVisible == true)
-            {
-                if (updateEpgData == true)
-                {
-                    updateEpgData = !ReloadViewData();
-                }
-                if (updateReserveData == true)
-                {
-                    updateReserveData = !ReloadReserveData();
-                }
-            }
+            updateEpgData = true;
         }
 
         /// <summary>
