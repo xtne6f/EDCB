@@ -116,6 +116,7 @@ namespace EpgTimer
                             if (setInfo.ID >= 0 && setInfo.ID <= Settings.Instance.CustomEpgTabList.Count)
                             {
                                 Settings.Instance.CustomEpgTabList[setInfo.ID] = setInfo;
+                                Settings.SaveToXmlFile();
                             }
                         }
 
