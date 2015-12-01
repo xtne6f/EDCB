@@ -35,11 +35,25 @@ namespace EpgTimer
             if (nibbleList != null)
             {
                 EpgContentData info = nibbleList.Find(info1 =>
-                    info1.content_nibble_level_1 <= 0x0B || info1.content_nibble_level_1 == 0x0F);
+                    info1.content_nibble_level_1 <= 0x0B || info1.content_nibble_level_1 == 0x0E || info1.content_nibble_level_1 == 0x0F);
 
                 if (info != null)
                 {
-                    return CommonManager.Instance.CustContentColorList[info.content_nibble_level_1];
+                    if (info.content_nibble_level_1 == 0x0E && info.content_nibble_level_2 == 0x01)
+                    {
+                        //CSのコード置き換え。通常は一般のジャンル情報も付いているので、効果は薄いかも。
+                        switch (info.user_nibble_1)
+                        {
+                            case 0x00: return CommonManager.Instance.CustContentColorList[0x01];//スポーツ(CS)→スポーツ
+                            case 0x01: return CommonManager.Instance.CustContentColorList[0x06];//洋画(CS)→映画
+                            case 0x02: return CommonManager.Instance.CustContentColorList[0x06];//邦画(CS)→映画
+                        }
+                        //ラストへ
+                    }
+                    else
+                    {
+                        return CommonManager.Instance.CustContentColorList[info.content_nibble_level_1];
+                    }
                 }
             }
             return CommonManager.Instance.CustContentColorList[0x10];
