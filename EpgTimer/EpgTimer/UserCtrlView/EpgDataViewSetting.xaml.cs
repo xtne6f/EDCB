@@ -126,15 +126,24 @@ namespace EpgTimer
             bxs.TargetBox = this.listBox_serviceView;
             bxs.KeyActionAllow();
             bxs.DoubleClickMoveAllow();
-            new List<ListBox> { listBox_serviceTere, listBox_serviceBS, listBox_serviceCS, listBox_serviceOther, listBox_serviceAll }
-                .ForEach(box => 
+
+            // タブの中の全ての ListBox とその ListBoxItem にイベントを追加する。
+            foreach (TabItem tab in tabControl2.Items)
+            {
+                if (tab.Content is ListBox)
                 {
+                    ListBox box = tab.Content as ListBox;
                     bxs.sourceBoxKeyEnable(box, (sender, e) => button_service_add.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
                     bxs.doubleClickSetter(box, (sender, e) => button_service_add.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
-                });
-            button_service_addAll.Click += new RoutedEventHandler((sender, e) => bxs.SourceBox = SelectedServiceListBox());
+                }
+            }
+            //ソースのリストボックスは複数あるので、リストボックスが選択されたときに SourceBox の登録を行う
+            tabControl2.SelectionChanged += (sender, e) =>
+            {
+                try { bxs.SourceBox = ((sender as TabControl).SelectedItem as TabItem).Content as ListBox; }
+                catch { bxs.SourceBox = null; }
+            };
             button_service_addAll.Click += new RoutedEventHandler(bxs.button_addAll_Click);
-            button_service_add.Click += new RoutedEventHandler((sender, e) => bxs.SourceBox = SelectedServiceListBox());
             button_service_add.Click += new RoutedEventHandler(bxs.button_add_Click);
             button_service_del.Click += new RoutedEventHandler(bxs.button_del_Click);
             button_service_delAll.Click += new RoutedEventHandler(bxs.button_delAll_Click);
@@ -159,7 +168,7 @@ namespace EpgTimer
         {
             try
             {
-                ListBox listBox = SelectedServiceListBox();
+                ListBox listBox = bxs.SourceBox;
                 if (listBox == null) return;
 
                 listBox.UnselectAll();
@@ -182,7 +191,7 @@ namespace EpgTimer
 
         private void listBox_service_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            Display_ServiceView(SelectedServiceListBox(), textBox_serviceView2);
+            Display_ServiceView(bxs.SourceBox, textBox_serviceView2);
         }
 
         private void Display_ServiceView(ListBox srclistBox, TextBox targetBox)
