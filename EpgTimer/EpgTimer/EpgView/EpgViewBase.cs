@@ -88,7 +88,7 @@ namespace EpgTimer.EpgView
         {
             setViewInfo = setInfo.Clone();
 
-            this.viewCustServiceList = setInfo.ViewServiceList;
+            this.viewCustServiceList = setInfo.ViewServiceList.ToList();
             this.viewCustContentKindList.Clear();
             if (setInfo.ViewContentKindList != null)
             {
