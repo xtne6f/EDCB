@@ -1278,6 +1278,12 @@ namespace EpgTimer
             setInfo[2].TabName = "CS";
             setInfo[3].TabName = "その他";
 
+            for (int i = 0; i < setInfo.Count; i++)
+            {
+                //再表示の際の認識用に、負の仮番号を与えておく。
+                setInfo[i].ID = -1 * (i + 1);
+            }
+
             foreach (ChSet5Item info in ChSet5.Instance.ChList.Values)
             {
                 int i = 3;//その他

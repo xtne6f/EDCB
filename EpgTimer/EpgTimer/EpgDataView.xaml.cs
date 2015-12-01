@@ -57,9 +57,41 @@ namespace EpgTimer
         {
             try
             {
+                //表示していた番組表の情報を保存
+                CustomEpgTabInfo oldInfo = null;
+
+                foreach (var item in tabControl.Items.OfType<TabItem>()
+                    .Where(data => data.IsSelected == true && data.Content is EpgDataViewItem))
+                {
+                    oldInfo = (item.Content as EpgDataViewItem).GetViewMode();
+                }
+
                 //一度全部削除して作り直す。
                 tabControl.Items.Clear();
                 UpdateEpgData();
+
+                if (oldInfo != null)
+                {
+                    //もしそれっぽい番組表があれば、それを前回の表示モードで表示する。
+                    foreach (var item in tabControl.Items.OfType<TabItem>()
+                        .Where(data => data.Content is EpgDataViewItem))
+                    {
+                        var view = item.Content as EpgDataViewItem;
+                        var info = view.GetViewMode();
+
+                        //とりあえず同じIDを探して表示してみる(中身は別物になってるかもしれないが、とりあえず表示を試みる)。
+                        //標準・カスタム切り替えの際は、標準番組表が負のIDを与えられているので、このコードは走らない。
+                        if (oldInfo.ID == info.ID)
+                        {
+                            var newInfo = info.Clone();
+                            newInfo.ViewMode = oldInfo.ViewMode;
+                            //本当はUpdateEpgData()に直接割り込ませたいところだけど、大変そうなので止めておく。
+                            view.SetViewMode(newInfo);
+                            tabControl.SelectedItem = item;
+                            break;
+                        }
+                    }
+                }
             }
             catch (Exception ex)
             {
