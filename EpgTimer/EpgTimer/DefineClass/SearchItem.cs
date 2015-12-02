@@ -72,7 +72,7 @@ namespace EpgTimer
             }
         }
         /// <summary>
-        /// 番組放送時間（長さ）
+        /// 番組放送時間(長さ)
         /// </summary>
         public virtual TimeSpan ProgramDuration
         {
