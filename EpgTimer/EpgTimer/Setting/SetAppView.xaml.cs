@@ -30,7 +30,6 @@ namespace EpgTimer.Setting
         public bool ngFileStreaming = false;
         public bool ngShareFile = false;
 
-        private MenuSettingData ctxmSetInfo;
         private EpgSearchKeyInfo defSearchKey;
 
         private List<String> extList = new List<string>();
@@ -175,8 +174,6 @@ namespace EpgTimer.Setting
                     ngShareFile = true;
                 }
 
-                this.ctxmSetInfo = Settings.Instance.MenuSet.Clone();
-
                 comboBox_process.Items.Add("リアルタイム");
                 comboBox_process.Items.Add("高");
                 comboBox_process.Items.Add("通常以上");
@@ -213,14 +210,12 @@ namespace EpgTimer.Setting
 
                 checkBox_cautionOnRecChange.IsChecked = Settings.Instance.CautionOnRecChange;
                 textBox_cautionOnRecMarginMin.Text = Settings.Instance.CautionOnRecMarginMin.ToString();
-                checkBox_displayAutoAddMissing.IsChecked = Settings.Instance.DisplayReserveAutoAddMissing;
 
                 //4
                 checkBox_closeMin.IsChecked = Settings.Instance.CloseMin;
                 checkBox_minWake.IsChecked = Settings.Instance.WakeMin;
                 checkBox_noToolTips.IsChecked = Settings.Instance.NoToolTip;
                 checkBox_noBallonTips.IsChecked = Settings.Instance.NoBallonTips;
-                checkBox_playDClick.IsChecked = Settings.Instance.PlayDClick;
                 checkBox_showTray.IsChecked = Settings.Instance.ShowTray;
                 checkBox_minHide.IsChecked = Settings.Instance.MinHide;
                 checkBox_cautionManyChange.IsChecked = Settings.Instance.CautionManyChange;
@@ -396,8 +391,6 @@ namespace EpgTimer.Setting
 
                 IniFileHandler.WritePrivateProfileString("SET", "ProcessPriority", comboBox_process.SelectedIndex.ToString(), SettingPath.TimerSrvIniPath);
 
-                Settings.Instance.MenuSet = this.ctxmSetInfo.Clone();
-
                 setValue = (checkBox_back_priority.IsChecked == true ? "1" : "0");
                 IniFileHandler.WritePrivateProfileString("SET", "BackPriority", setValue, SettingPath.TimerSrvIniPath);
 
@@ -420,7 +413,6 @@ namespace EpgTimer.Setting
 
                 Settings.Instance.CautionOnRecChange = (checkBox_cautionOnRecChange.IsChecked != false);
                 Settings.Instance.CautionOnRecMarginMin = mutil.MyToNumerical(textBox_cautionOnRecMarginMin, Convert.ToInt32, Settings.Instance.CautionOnRecMarginMin); 
-                Settings.Instance.DisplayReserveAutoAddMissing = (checkBox_displayAutoAddMissing.IsChecked != false);
 
                 Settings.Instance.CloseMin = (bool)checkBox_closeMin.IsChecked;
                 Settings.Instance.WakeMin = (bool)checkBox_minWake.IsChecked;
@@ -450,7 +442,6 @@ namespace EpgTimer.Setting
 
                 Settings.Instance.NoToolTip = (checkBox_noToolTips.IsChecked == true);
                 Settings.Instance.NoBallonTips = (checkBox_noBallonTips.IsChecked == true);
-                Settings.Instance.PlayDClick = (checkBox_playDClick.IsChecked == true);
                 Settings.Instance.CautionManyChange = (checkBox_cautionManyChange.IsChecked != false);
                 Settings.Instance.CautionManyNum = mutil.MyToNumerical(textBox_cautionManyChange, Convert.ToInt32, Settings.Instance.CautionManyNum); 
                 Settings.Instance.WakeReconnectNW = (checkBox_wakeReconnect.IsChecked == true);
@@ -649,18 +640,6 @@ namespace EpgTimer.Setting
             if (dlg.ShowDialog() == true)
             {
                 dlg.GetSetting(ref defSearchKey);
-            }
-        }
-
-        private void button_set_cm_Click(object sender, RoutedEventArgs e)
-        {
-            SetContextMenuWindow dlg = new SetContextMenuWindow();
-            dlg.info = this.ctxmSetInfo.Clone();
-            dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-
-            if (dlg.ShowDialog() == true)
-            {
-                this.ctxmSetInfo = dlg.info.Clone();
             }
         }
 

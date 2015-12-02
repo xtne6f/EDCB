@@ -55,13 +55,20 @@ namespace EpgTimer
 
         public static Color FromName(string name)
         {
-            var colortype = typeof(Colors);
-            return (Color)colortype.GetProperty(name).GetValue(colortype, null);
+            try
+            {
+                return (Color)ColorConverter.ConvertFromString(name);
+                //var colortype = typeof(Colors);
+                //return (Color)colortype.GetProperty(name).GetValue(colortype, null);
+            }
+            catch 
+            {
+                return Colors.White;
+            }
         }
-
         public static Color FromUInt(UInt32 value)
         {
-            return (Color)ColorConverter.ConvertFromString("#" + value.ToString("X8"));
+            return ColorDef.FromName("#" + value.ToString("X8"));
         }
         public static UInt32 ToUInt(Color c)
         {

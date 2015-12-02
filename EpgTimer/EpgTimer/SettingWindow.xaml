@@ -15,7 +15,7 @@
                     <my:SetAppView x:Name="setAppView" />
                 </Grid>
             </TabItem>
-            <TabItem Header="番組表等" Name="tabItem_epgView">
+            <TabItem Header="各画面の設定" Name="tabItem_epgView">
                 <Grid>
                     <my:SetEpgView x:Name="setEpgView" />
                 </Grid>

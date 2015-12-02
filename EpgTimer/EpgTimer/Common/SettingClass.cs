@@ -172,8 +172,8 @@ namespace EpgTimer
         private double dragScroll;
         private List<string> contentColorList;
         private List<UInt32> contentCustColorList;
-        private List<string> timeColorList;
-        private List<UInt32> timeCustColorList;
+        private List<string> epgEtcColors;
+        private List<UInt32> epgEtcCustColors;
         private string reserveRectColorNormal;
         private string reserveRectColorNo;
         private string reserveRectColorNoTuner;
@@ -183,8 +183,6 @@ namespace EpgTimer
         private string titleColor2;
         private UInt32 titleCustColor1;
         private UInt32 titleCustColor2;
-        private string serviceColor;
-        private UInt32 serviceCustColor;
         private bool reserveRectBackground;
         private string tunerFontNameService;
         private double tunerFontSizeService;
@@ -260,19 +258,16 @@ namespace EpgTimer
         private double chkSrvRegistInterval;
         private Int32 tvTestOpenWait;
         private Int32 tvTestChgBonWait;
-        private string listDefFontColor;            //各画面のリストのデフォルト文字色
-        private List<string> recModeFontColorList;  //予約リストなどの録画モードごとの文字色
-        private string resDefBackColor;             //予約リストなどのデフォルト背景色
-        private string resErrBackColor;             //予約リストなどのチューナ不足の背景色
-        private string resWarBackColor;             //予約リストなどのチューナ不足で一部実行の背景色
-        private string resNoBackColor;              //予約リストなどの無効予約の背景色
-        private string resAutoAddMissingBackColor;  //予約リストなどの自動登録が見つからない予約の背景色
-        private string recEndDefBackColor;          //録画済リストのデフォルト背景色
-        private string recEndErrBackColor;          //録画済リストのエラー表示の背景色
-        private string recEndWarBackColor;          //録画済リストの警告表示の背景色
-        private string statResForeColor;            //予約リストなどの「状態」列の予約色
-        private string statRecForeColor;            //予約リストなどの「状態」の録画色
-        private string statOnAirForeColor;          //予約リストなどの「状態」の放送色
+        private List<string> recEndColors;          //録画済リストの背景色
+        private List<UInt32> recEndCustColors;      //録画済リストのカスタム背景色
+        private string listDefColor;                //各画面のリストのデフォルト文字色
+        private UInt32 listDefCustColor;            //各画面のリストのデフォルトカスタム文字色
+        private List<string> recModeFontColors;     //予約リストなどの録画モードごとの文字色
+        private List<UInt32> recModeFontCustColors; //予約リストなどの録画モードごとのカスタム文字色
+        private List<string> resBackColors;         //予約リストなどの背景色
+        private List<UInt32> resBackCustColors;     //予約リストなどのカスタム背景色
+        private List<string> statColors;            //予約リストなどの「状態」列の予約色
+        private List<UInt32> statCustColors;        //予約リストなどの「状態」列のカスタム予約色
         private bool epgInfoSingleClick;
         private byte epgInfoOpenMode;
         private UInt32 execBat;
@@ -297,7 +292,7 @@ namespace EpgTimer
         private int cautionOnRecMarginMin;
         private int keyDeleteDisplayItemNum;
         private bool displayNotifyEpgChange;
-        private int displayNotifyJumpTime;
+        private double displayNotifyJumpTime;
         private bool displayReserveAutoAddMissing;
         private bool tryEpgSetting;
 
@@ -391,15 +386,15 @@ namespace EpgTimer
             get { return contentCustColorList; }
             set { contentCustColorList = value; }
         }
-        public List<string> TimeColorList
+        public List<string> EpgEtcColors
         {
-            get { return timeColorList; }
-            set { timeColorList = value; }
+            get { return epgEtcColors; }
+            set { epgEtcColors = value; }
         }
-        public List<UInt32> TimeCustColorList
+        public List<UInt32> EpgEtcCustColors
         {
-            get { return timeCustColorList; }
-            set { timeCustColorList = value; }
+            get { return epgEtcCustColors; }
+            set { epgEtcCustColors = value; }
         }
         public string ReserveRectColorNormal
         {
@@ -450,16 +445,6 @@ namespace EpgTimer
         {
             get { return titleCustColor2; }
             set { titleCustColor2 = value; }
-        }
-        public string ServiceColor
-        {
-            get { return serviceColor; }
-            set { serviceColor = value; }
-        }
-        public UInt32 ServiceCustColor
-        {
-            get { return serviceCustColor; }
-            set { serviceCustColor = value; }
         }
         public string TunerFontNameService
         {
@@ -831,70 +816,55 @@ namespace EpgTimer
             get { return tvTestChgBonWait; }
             set { tvTestChgBonWait = value; }
         }
-        public string ListDefFontColor
+        public List<string> RecEndColors
         {
-            get { return listDefFontColor; }
-            set { listDefFontColor = value; }
+            get { return recEndColors; }
+            set { recEndColors = value; }
         }
-        public List<string> RecModeFontColorList
+        public List<uint> RecEndCustColors
         {
-            get { return recModeFontColorList; }
-            set { recModeFontColorList = value; }
+            get { return recEndCustColors; }
+            set { recEndCustColors = value; }
         }
-        public string ResDefBackColor
+        public string ListDefColor
         {
-            get { return resDefBackColor; }
-            set { resDefBackColor = value; }
+            get { return listDefColor; }
+            set { listDefColor = value; }
         }
-        public string ResErrBackColor
+        public UInt32 ListDefCustColor
         {
-            get { return resErrBackColor; }
-            set { resErrBackColor = value; }
+            get { return listDefCustColor; }
+            set { listDefCustColor = value; }
         }
-        public string ResWarBackColor
+        public List<string> RecModeFontColors
         {
-            get { return resWarBackColor; }
-            set { resWarBackColor = value; }
+            get { return recModeFontColors; }
+            set { recModeFontColors = value; }
         }
-        public string ResNoBackColor
+        public List<uint> RecModeFontCustColors
         {
-            get { return resNoBackColor; }
-            set { resNoBackColor = value; }
+            get { return recModeFontCustColors; }
+            set { recModeFontCustColors = value; }
         }
-        public string ResAutoAddMissingBackColor
+        public List<string> ResBackColors
         {
-            get { return resAutoAddMissingBackColor; }
-            set { resAutoAddMissingBackColor = value; }
+            get { return resBackColors; }
+            set { resBackColors = value; }
         }
-        public string RecEndDefBackColor
+        public List<uint> ResBackCustColors
         {
-            get { return recEndDefBackColor; }
-            set { recEndDefBackColor = value; }
+            get { return resBackCustColors; }
+            set { resBackCustColors = value; }
         }
-        public string RecEndErrBackColor
+        public List<string> StatColors
         {
-            get { return recEndErrBackColor; }
-            set { recEndErrBackColor = value; }
+            get { return statColors; }
+            set { statColors = value; }
         }
-        public string RecEndWarBackColor
+        public List<uint> StatCustColors
         {
-            get { return recEndWarBackColor; }
-            set { recEndWarBackColor = value; }
-        }
-        public string StatResForeColor
-        {
-            get { return statResForeColor; }
-            set { statResForeColor = value; }
-        }
-        public string StatRecForeColor
-        {
-            get { return statRecForeColor; }
-            set { statRecForeColor = value; }
-        }
-        public string StatOnAirForeColor
-        {
-            get { return statOnAirForeColor; }
-            set { statOnAirForeColor = value; }
+            get { return statCustColors; }
+            set { statCustColors = value; }
         }
         public bool EpgInfoSingleClick
         {
@@ -1016,7 +986,7 @@ namespace EpgTimer
             get { return displayNotifyEpgChange; }
             set { displayNotifyEpgChange = value; }
         }
-        public int DisplayNotifyJumpTime
+        public double DisplayNotifyJumpTime
         {
             get { return displayNotifyJumpTime; }
             set { displayNotifyJumpTime = value; }
@@ -1050,8 +1020,8 @@ namespace EpgTimer
             dragScroll = 1.5;
             contentColorList = new List<string>();
             contentCustColorList = new List<uint>();
-            timeColorList = new List<string>();
-            timeCustColorList = new List<uint>();
+            epgEtcColors = new List<string>();
+            epgEtcCustColors = new List<uint>();
             reserveRectColorNormal = "Lime";
             reserveRectColorNo = "Black";
             reserveRectColorNoTuner = "Red";
@@ -1061,8 +1031,6 @@ namespace EpgTimer
             titleColor2 = "Black";
             titleCustColor1 = 0xFFFFFFFF;
             titleCustColor2 = 0xFFFFFFFF;
-            serviceColor = "LightSlateGray";
-            serviceCustColor = 0xFFFFFFFF;
             reserveRectBackground = false;
             tunerFontNameService = System.Drawing.SystemFonts.DefaultFont.Name;
             tunerFontSizeService = 12;
@@ -1138,19 +1106,16 @@ namespace EpgTimer
             chkSrvRegistInterval = 5;
             tvTestOpenWait = 2000;
             tvTestChgBonWait = 2000;
-            listDefFontColor = "#FF042271";
-            recModeFontColorList = new List<String>();
-            resDefBackColor = "White";
-            resErrBackColor = "#FFFFAAAA";
-            resWarBackColor = "#FFFFFFAA";
-            resNoBackColor = "#FFAAAAAA";
-            resAutoAddMissingBackColor = "Powderblue";
-            recEndDefBackColor = "White";
-            recEndErrBackColor = "#FFFFAAAA";
-            recEndWarBackColor = "#FFFFFFAA";
-            statResForeColor = "RoyalBlue";
-            statRecForeColor = "OrangeRed";
-            statOnAirForeColor = "LimeGreen";
+            recEndColors = new List<string>();
+            recEndCustColors = new List<uint>();
+            listDefColor = "カスタム";
+            listDefCustColor= 0xFF042271;
+            recModeFontColors = new List<string>();
+            recModeFontCustColors= new List<uint>();
+            resBackColors = new List<string>();
+            resBackCustColors= new List<uint>();
+            statColors = new List<string>();
+            statCustColors= new List<uint>();
             epgInfoSingleClick = false;
             epgInfoOpenMode = 0;
             execBat = 0;
@@ -1192,6 +1157,25 @@ namespace EpgTimer
                 return _instance;
             }
             set { _instance = value; }
+        }
+
+        //色リストの初期化用
+        private static void _FillList<T>(List<T> list, T val, int num)
+        {
+            if (list.Count < num)
+            {
+                list.AddRange(Enumerable.Repeat(val, num - list.Count));
+            }
+        }
+        private static void _FillList<T>(List<T> list, List<T> val)
+        {
+            if (list.Count < val.Count)
+            {
+                for (int i = list.Count; i < val.Count; i++)
+                {
+                    list.Add(val[i]);
+                }
+            }
         }
 
         /// <summary>
@@ -1236,17 +1220,14 @@ namespace EpgTimer
 
                 SetCustomEpgTabInfoID();
 
-                if (Instance.recModeFontColorList.Count != 6)
-                {
-                    //予約アイテムのデフォルトの文字色
-                    Instance.recModeFontColorList = Enumerable.Repeat("#FF042271", 6).ToList();
-                }
                 int num;
-                num = 0x11;//番組表17色。forは色の増加対策の読込。過去に16色時代があった。
-                if (Instance.contentColorList.Count < 0x11)
+                List<string> defColors = new List<string>();
+
+                //番組表の背景色
+                num = 0x11;//番組表17色。過去に16色時代があった。
+                if (Instance.contentColorList.Count < num)
                 {
-                    //番組表のデフォルトの背景色
-                    var defColors = new List<string>{
+                    defColors = new List<string>{
                         "LightYellow"
                         ,"Lavender"
                         ,"LavenderBlush"
@@ -1265,41 +1246,77 @@ namespace EpgTimer
                         ,"WhiteSmoke"
                         ,"White"
                     };
-                    for (int i = Instance.contentColorList.Count; i < 0x11; i++)
-                    {
-                        Instance.contentColorList.Add(defColors[i]);
-                    }
+                    _FillList(Instance.contentColorList, defColors);
                 }
                 num = 0x11 + 5;//番組表17色+予約枠5色
-                if (Instance.contentCustColorList.Count < num)
-                {
-                    Instance.contentCustColorList.AddRange(
-                        Enumerable.Repeat(0xFFFFFFFF, num - Instance.contentCustColorList.Count));
-                }
+                _FillList(Instance.contentCustColorList, 0xFFFFFFFF, num);
+
+                //チューナ画面各フォント色
                 num = 2 + 5;//固定色2+優先度色5
-                if (Instance.tunerServiceColors.Count < num)
+                _FillList(Instance.tunerServiceColors, "Black", num);
+                _FillList(Instance.tunerServiceCustColors, 0xFFFFFFFF, num);
+
+                //番組表の時間軸のデフォルトの背景色、その他色
+                num = 5;
+                if (Instance.epgEtcColors.Count < num)
                 {
-                    Instance.tunerServiceColors.AddRange(
-                        Enumerable.Repeat("Black", num - Instance.tunerServiceColors.Count));
+                    defColors = new List<string>{
+                        "MediumPurple"      //00-05時
+                        ,"LightSeaGreen"    //06-11時
+                        ,"LightSalmon"      //12-17時
+                        ,"CornflowerBlue"   //18-23時
+                        ,"LightSlateGray"   //サービス色
+                    };
+                    _FillList(Instance.epgEtcColors, defColors);
                 }
-                if (Instance.tunerServiceCustColors.Count < num)
+                _FillList(Instance.epgEtcCustColors, 0xFFFFFFFF, num);
+
+                //録画済み一覧背景色
+                num = 3;
+                if (Instance.recEndColors.Count < num)
                 {
-                    Instance.tunerServiceCustColors.AddRange(
-                        Enumerable.Repeat(0xFFFFFFFF, num - Instance.tunerServiceCustColors.Count));
+                    defColors = new List<string>{
+                        "White"//デフォルト
+                        ,"LightPink"//エラー
+                        ,"LightYellow"//ワーニング
+                    };
+                    _FillList(Instance.recEndColors, defColors);
                 }
-                if (Instance.timeColorList.Count != 4)
+                _FillList(Instance.recEndCustColors, 0xFFFFFFFF, num);
+
+                //録画モード別予約文字色
+                num = 6;
+                _FillList(Instance.recModeFontColors, "カスタム", num);
+                _FillList(Instance.recModeFontCustColors, 0xFF042271, num);
+
+                //状態別予約背景色
+                num = 5;
+                if (Instance.resBackColors.Count < num)
                 {
-                    //番組表の時間軸のデフォルトの背景色
-                    Instance.timeColorList.Clear();
-                    Instance.timeColorList.Add("MediumPurple");
-                    Instance.timeColorList.Add("LightSeaGreen");
-                    Instance.timeColorList.Add("LightSalmon");
-                    Instance.timeColorList.Add("CornflowerBlue");
+                    defColors = new List<string>{
+                        "White"//通常
+                        ,"LightGray"//無効
+                        ,"LightPink"//チューナー不足
+                        ,"LightYellow"//一部実行
+                        ,"LightBlue"//自動予約登録不明
+                    };
+                    _FillList(Instance.resBackColors, defColors);
                 }
-                if (Instance.timeCustColorList.Count != 4)
+                _FillList(Instance.resBackCustColors, 0xFFFFFFFF, num);
+
+                //予約状態列文字色
+                num = 3;
+                if (Instance.statColors.Count < num)
                 {
-                    Instance.timeCustColorList = Enumerable.Repeat(0xFFFFFFFF, 4).ToList();
+                    defColors = new List<string>{
+                        "Blue"//予約中
+                        ,"OrangeRed"//録画中
+                        ,"LimeGreen"//放送中
+                    };
+                    _FillList(Instance.statColors, defColors);
                 }
+                _FillList(Instance.statCustColors, 0xFFFFFFFF, num);
+
                 if (Instance.viewButtonList.Count == 0)
                 {
                     if (nwMode == false)
