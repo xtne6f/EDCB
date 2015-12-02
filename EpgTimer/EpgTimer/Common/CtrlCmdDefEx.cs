@@ -505,4 +505,70 @@ namespace EpgTimer
             return list.Any(info => info == null ? false : info.ProtectFlag == 0);
         }
     }
+
+    public partial class RecFileInfo : ICtrlCmdReadWrite
+    {
+        //ファイル数が多くなる場合もあるようなので、拡張メソッドにせず、中へ置く。
+        private long dropsCritical = -1;
+        public long DropsCritical
+        {
+            get 
+            {
+                if (dropsCritical == -1) CheckCriticalDrops();
+                return dropsCritical;
+            }
+        }
+        private long scramblesCritical = -1;
+        public long ScramblesCritical
+        {
+            get
+            {
+                if (scramblesCritical == -1) CheckCriticalDrops();
+                return scramblesCritical;
+            }
+        }
+        private void CheckCriticalDrops()
+        {
+            if (this.ErrInfo != null && this.ErrInfo != "")
+            {
+                try
+                {
+                    dropsCritical = 0;
+                    scramblesCritical = 0;
+                    var newInfo = new StringBuilder("");
+
+                    string[] lines = this.ErrInfo.Split(new char[] { '\n' });
+                    foreach (string line1 in lines)
+                    {
+                        string line_new = line1;
+                        if (line1.StartsWith("PID:") == true)
+                        {
+                            string[] words = line1.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                            //デフォルト { "EIT", "NIT", "CAT", "SDT", "SDTT", "TOT", "ECM", "EMM" }
+                            if (Settings.Instance.RecInfoDropExclude.FirstOrDefault(s => words[8].Contains(s)) == null)
+                            {
+                                dropsCritical += (Int64)Convert.ToUInt64(words[5]);
+                                scramblesCritical += (Int64)Convert.ToUInt64(words[7]);
+                                line_new = line1.Replace(" " + words[8], "*" + words[8]);
+                            }
+                        }
+                        newInfo.Append(line_new.TrimEnd('\r') + "\r\n");//単に\n付けるだけでも良いが、一応"\r\n"に確定させる
+                    }
+
+                    newInfo.Append(string.Format("                              * = Critical Drop/Scramble Parameter.\r\n"));
+                    newInfo.Append(string.Format("                              Drop:{0,9}  Scramble:{1,10}  Total\r\n", this.Drops, this.Scrambles));
+                    newInfo.Append(string.Format("                              Drop:{0,9}  Scramble:{1,10} *Critical\r\n", this.dropsCritical, this.scramblesCritical));
+                    this.ErrInfo = newInfo.ToString();
+
+                    return;
+                }
+                catch { }//エラーがあったときは、ラストへ
+            }
+
+            dropsCritical = this.Drops;
+            scramblesCritical = this.Scrambles;
+        }
+    }
+
+
 }

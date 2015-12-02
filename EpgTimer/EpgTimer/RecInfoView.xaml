@@ -58,8 +58,10 @@
                     <MenuItem Header="ネットワーク" Name="NetworkName" IsCheckable="True" />
                     <MenuItem Header="サービス名" Name="ServiceName" IsCheckable="True" />
                     <MenuItem Header="番組名" Name="EventName" IsCheckable="True" />
-                    <MenuItem Header="Drop" Name="Drops" IsCheckable="True" />
-                    <MenuItem Header="Scramble" Name="Scrambles" IsCheckable="True" />
+                    <MenuItem Header="Drop(全信号)" Name="Drops" IsCheckable="True" />
+                    <MenuItem Header="Drop(映像・音声)" Name="DropsSerious" IsCheckable="True" />
+                    <MenuItem Header="Scramble(全信号)" Name="Scrambles" IsCheckable="True" />
+                    <MenuItem Header="Scramble(映像・音声)" Name="ScramblesSerious" IsCheckable="True" />
                     <MenuItem Header="結果" Name="Result" IsCheckable="True" />
                     <MenuItem Header="録画ファイル" Name="RecFilePath" IsCheckable="True" />
                 </ContextMenu>
@@ -110,9 +112,19 @@
                             <GridViewColumnHeader Content="Drop" Tag="Drops" HorizontalContentAlignment="Left"/>
                         </GridViewColumn.Header>
                     </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=DropsSerious}">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="Drop(映像・音声)" Tag="DropsSerious" HorizontalContentAlignment="Left"/>
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=Scrambles}">
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="Scramble" Tag="Scrambles" HorizontalContentAlignment="Left"/>
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=ScramblesSerious}">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="Scramble(映像・音声)" Tag="ScramblesSerious" HorizontalContentAlignment="Left"/>
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=Result}">

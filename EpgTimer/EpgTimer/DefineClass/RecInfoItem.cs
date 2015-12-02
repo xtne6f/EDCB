@@ -84,6 +84,15 @@ namespace EpgTimer
                 return RecInfo.Drops.ToString();
             }
         }
+        public String DropsSerious
+        {
+            get
+            {
+                if (RecInfo == null) return "";
+                //
+                return RecInfo.DropsCritical.ToString();
+            }
+        }
         public String Scrambles
         {
             get
@@ -91,6 +100,15 @@ namespace EpgTimer
                 if (RecInfo == null) return "";
                 //
                 return RecInfo.Scrambles.ToString();
+            }
+        }
+        public String ScramblesSerious
+        {
+            get
+            {
+                if (RecInfo == null) return "";
+                //
+                return RecInfo.ScramblesCritical.ToString();
             }
         }
         public String Result
@@ -133,13 +151,16 @@ namespace EpgTimer
             {
                 if (RecInfo != null)
                 {
-                    if (Settings.Instance.RecInfoDropErrIgnore >= 0 && RecInfo.Drops > Settings.Instance.RecInfoDropErrIgnore
+                    long drops = Settings.Instance.RecinfoErrCriticalDrops == false ? RecInfo.Drops : RecInfo.DropsCritical;
+                    long scrambles = Settings.Instance.RecinfoErrCriticalDrops == false ? RecInfo.Scrambles : RecInfo.ScramblesCritical;
+
+                    if (Settings.Instance.RecInfoDropErrIgnore >= 0 && drops > Settings.Instance.RecInfoDropErrIgnore
                         || RecInfo.RecStatusBasic() == RecEndStatusBasic.ERR)
                     {
                         return CommonManager.Instance.RecEndErrBackColor;
                     }
-                    if (Settings.Instance.RecInfoDropWrnIgnore >= 0 && RecInfo.Drops > Settings.Instance.RecInfoDropWrnIgnore
-                        || Settings.Instance.RecInfoScrambleIgnore >= 0 && RecInfo.Scrambles > Settings.Instance.RecInfoScrambleIgnore
+                    if (Settings.Instance.RecInfoDropWrnIgnore >= 0 && drops > Settings.Instance.RecInfoDropWrnIgnore
+                        || Settings.Instance.RecInfoScrambleIgnore >= 0 && scrambles > Settings.Instance.RecInfoScrambleIgnore
                         || RecInfo.RecStatusBasic() == RecEndStatusBasic.WARN)
                     {
                         return CommonManager.Instance.RecEndWarBackColor;

@@ -169,6 +169,7 @@ namespace EpgTimer
         private bool noBallonTips;
         private int forceHideBalloonTipSec;
         private bool playDClick;
+        private bool recinfoErrCriticalDrops;
         private double dragScroll;
         private List<string> contentColorList;
         private List<UInt32> contentCustColorList;
@@ -236,6 +237,7 @@ namespace EpgTimer
         private long recInfoDropErrIgnore;
         private long recInfoDropWrnIgnore;
         private long recInfoScrambleIgnore;
+        private List<string> recInfoDropExclude;
         private string tvTestExe;
         private string tvTestCmd;
         private bool nwTvMode;
@@ -371,6 +373,11 @@ namespace EpgTimer
             get { return playDClick; }
             set { playDClick = value; }
         }
+        public bool RecinfoErrCriticalDrops
+        {
+            get { return recinfoErrCriticalDrops; }
+            set { recinfoErrCriticalDrops = value; }
+        }        
         public double DragScroll
         {
             get { return dragScroll; }
@@ -706,6 +713,11 @@ namespace EpgTimer
             get { return recInfoScrambleIgnore; }
             set { recInfoScrambleIgnore = value; }
         }
+        public List<string> RecInfoDropExclude
+        {
+            get { return recInfoDropExclude; }
+            set { recInfoDropExclude = value; }
+        }
         public string TvTestExe
         {
             get { return tvTestExe; }
@@ -1017,6 +1029,7 @@ namespace EpgTimer
             fontBoldTitle = true;
             noToolTip = false;
             playDClick = false;
+            recinfoErrCriticalDrops = false;
             dragScroll = 1.5;
             contentColorList = new List<string>();
             contentCustColorList = new List<uint>();
@@ -1084,6 +1097,7 @@ namespace EpgTimer
             recInfoDropErrIgnore = 0;
             recInfoDropWrnIgnore = 0;
             recInfoScrambleIgnore = 0;
+            recInfoDropExclude = new List<string>();
             tvTestExe = "";
             tvTestCmd = "";
             nwTvMode = false;
@@ -1410,6 +1424,10 @@ namespace EpgTimer
                     Instance.autoAddManualColumn.Add(new ListColumnInfo("StationName", double.NaN));
                     Instance.autoAddManualColumn.Add(new ListColumnInfo("RecMode", double.NaN));
                     Instance.autoAddManualColumn.Add(new ListColumnInfo("Priority", double.NaN));
+                }
+                if (Instance.recInfoDropExclude.Count == 0)
+                {
+                    Settings.Instance.RecInfoDropExclude = new List<string> { "EIT", "NIT", "CAT", "SDT", "SDTT", "TOT", "ECM", "EMM" };
                 }
             }
             catch (Exception ex)

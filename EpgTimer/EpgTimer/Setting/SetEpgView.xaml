@@ -332,6 +332,8 @@
                                 <Label Content="スクランブル未解除を警告扱いしない閾値" Height="28" HorizontalAlignment="Left" Margin="6,66,0,0" VerticalAlignment="Top" />
                                 <TextBox Height="24" HorizontalAlignment="Left" Margin="264,66,0,0" Name="textBox_scrambleIgnore" VerticalAlignment="Top" Width="62" />
                                 <Label Content="※それぞれ-1指定で、ドロップなどを全て無視。" Height="28" HorizontalAlignment="Left" Margin="6,87,0,0" VerticalAlignment="Top" />
+                                <CheckBox Content="エラー・警告表示にドロップ(映像・音声)、" Height="16" HorizontalAlignment="Left" Margin="352,12,0,0" Name="checkBox_recinfo_errCritical" VerticalAlignment="Top" />
+                                <Label Content="スクランブル未解除(映像・音声)を使う" Height="28" HorizontalAlignment="Left" Margin="410,21,0,0" VerticalAlignment="Top" />
                             </Grid>
                         </GroupBox>
                     </Grid>

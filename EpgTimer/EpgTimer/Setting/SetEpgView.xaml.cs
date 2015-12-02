@@ -172,6 +172,7 @@ namespace EpgTimer.Setting
                 textBox_dropWrnIgnore.Text = Settings.Instance.RecInfoDropWrnIgnore.ToString();
                 textBox_scrambleIgnore.Text = Settings.Instance.RecInfoScrambleIgnore.ToString();
                 checkBox_playDClick.IsChecked = Settings.Instance.PlayDClick;
+                checkBox_recinfo_errCritical.IsChecked = Settings.Instance.RecinfoErrCriticalDrops;
 
                 setComboColors(Settings.Instance.RecEndColors, grid_RecInfoBackColors);
                 setButtonColors(Settings.Instance.RecEndCustColors, grid_RecInfoBackColors);
@@ -302,6 +303,7 @@ namespace EpgTimer.Setting
                 Settings.Instance.RecInfoDropErrIgnore = mutil.MyToNumerical(textBox_dropErrIgnore, Convert.ToInt64, Settings.Instance.RecInfoDropErrIgnore);
                 Settings.Instance.RecInfoDropWrnIgnore = mutil.MyToNumerical(textBox_dropWrnIgnore, Convert.ToInt64, Settings.Instance.RecInfoDropWrnIgnore);
                 Settings.Instance.RecInfoScrambleIgnore = mutil.MyToNumerical(textBox_scrambleIgnore, Convert.ToInt64, Settings.Instance.RecInfoScrambleIgnore);
+                Settings.Instance.RecinfoErrCriticalDrops = (checkBox_recinfo_errCritical.IsChecked == true);
                 getComboColors(Settings.Instance.RecEndColors, grid_RecInfoBackColors);
                 getButtonColors(Settings.Instance.RecEndCustColors, grid_RecInfoBackColors);
 
