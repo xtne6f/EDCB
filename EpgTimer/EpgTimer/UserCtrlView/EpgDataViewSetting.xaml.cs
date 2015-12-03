@@ -122,23 +122,22 @@ namespace EpgTimer
         private BoxExchangeEditor bxj = new BoxExchangeEditor();
         private void listBox_Button_Set()
         {
-            //サービス選択関係はソースのリストボックスが複数あるので、追加関連操作のみリストボックス選択操作を追加する。
             bxs.TargetBox = this.listBox_serviceView;
             bxs.KeyActionAllow();
             bxs.DoubleClickMoveAllow();
 
-            // タブの中の全ての ListBox とその ListBoxItem にイベントを追加する。
-            foreach (TabItem tab in tabControl2.Items)
+            //サービス選択関係はソースの ListBox が複数あるので、全ての ListBoxItem にイベントを追加する。
+            foreach (TabItem tab in tab_ServiceList.Items)
             {
                 if (tab.Content is ListBox)
                 {
                     ListBox box = tab.Content as ListBox;
-                    bxs.sourceBoxKeyEnable(box, (sender, e) => button_service_add.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
-                    bxs.doubleClickSetter(box, (sender, e) => button_service_add.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
+                    bxs.sourceBoxKeyEnable(box, bxs.button_add_Click);//button_service_add.Clickに追加があるなら、RaiseEventをあてる
+                    bxs.doubleClickSetter(box, bxs.button_add_Click);
                 }
             }
             //ソースのリストボックスは複数あるので、リストボックスが選択されたときに SourceBox の登録を行う
-            tabControl2.SelectionChanged += (sender, e) =>
+            tab_ServiceList.SelectionChanged += (sender, e) =>
             {
                 try { bxs.SourceBox = ((sender as TabControl).SelectedItem as TabItem).Content as ListBox; }
                 catch { bxs.SourceBox = null; }
@@ -212,16 +211,6 @@ namespace EpgTimer
                     "ServiceID : " + info.SID.ToString() + " (0x" + info.SID.ToString("X4") + ")\r\n";
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
-        }
-
-        private ListBox SelectedServiceListBox()
-        {
-            if (tabItem_bs.IsSelected == true) return listBox_serviceBS;
-            if (tabItem_cs.IsSelected == true) return listBox_serviceCS;
-            if (tabItem_tere.IsSelected == true) return listBox_serviceTere;
-            if (tabItem_other.IsSelected == true) return listBox_serviceOther;
-            if (tabItem_all.IsSelected == true) return listBox_serviceAll;
-            return null;
         }
 
         private void button_searchKey_Click(object sender, RoutedEventArgs e)

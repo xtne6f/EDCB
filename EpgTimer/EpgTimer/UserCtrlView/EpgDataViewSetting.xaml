@@ -37,7 +37,7 @@
                                 <Label Content="表示サービス (同一TSでSIDを逆順にすると結合)" Height="28" HorizontalAlignment="Left" Margin="6,6,0,0" Name="label31" VerticalAlignment="Top" />
                                 <ListBox Height="186" HorizontalAlignment="Left" Margin="6,40,0,0" Name="listBox_serviceView" VerticalAlignment="Top" Width="134" SelectionChanged="listBox_serviceView_SelectionChanged" IsManipulationEnabled="False" SelectionMode="Extended" />
                                 <Label Content="サービス一覧" Height="28" HorizontalAlignment="Left" Margin="267,6,0,0" Name="label32" VerticalAlignment="Top" />
-                                <TabControl Height="186" HorizontalAlignment="Left" Margin="268,40,0,0" Name="tabControl2" VerticalAlignment="Top" Width="244">
+                                <TabControl Height="186" HorizontalAlignment="Left" Margin="268,40,0,0" Name="tab_ServiceList" VerticalAlignment="Top" Width="244">
                                     <TabItem Header="地デジ" Name="tabItem_tere">
                                         <ListBox Name="listBox_serviceTere" SelectionChanged="listBox_service_SelectionChanged" SelectionMode="Extended" />
                                     </TabItem>
