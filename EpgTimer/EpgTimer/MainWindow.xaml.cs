@@ -534,8 +534,8 @@ namespace EpgTimer
             if (chkRegistTCPTimer != null)
             {
                 chkRegistTCPTimer.Stop();
+                chkRegistTCPTimer = null;
             }
-            chkRegistTCPTimer = null;
 
             if (CommonManager.Instance.NWMode == true && Settings.Instance.ChkSrvRegistTCP == true)
             {
