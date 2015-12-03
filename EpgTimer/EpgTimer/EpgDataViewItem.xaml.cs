@@ -4,41 +4,43 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 
+using EpgTimer.EpgView;
+
 namespace EpgTimer
 {
-
-    interface IEpgDataViewItem
-    {
-        event ViewSettingClickHandler ViewSettingClick;
-        void RefreshMenu();
-        CustomEpgTabInfo GetViewMode();
-        void SetViewMode(CustomEpgTabInfo setInfo);
-        void UpdateReserveData();
-        void UpdateEpgData();
-    }
-
     /// <summary>
     /// EpgDataViewItem.xaml の相互作用ロジック
     /// </summary>
     public partial class EpgDataViewItem : UserControl
     {
-        private IEpgDataViewItem viewCtrl = null;
+        private EpgViewBase viewCtrl = null;
         public EpgDataViewItem()
         {
             InitializeComponent();
         }
 
-        /// <summary>
-        /// 現在のEPGデータ表示モードの設定を取得する
-        /// </summary>
+        public void RefreshMenu()
+        {
+            if (viewCtrl != null) viewCtrl.RefreshMenu();
+        }
+
+        /// <summary>現在のEPGデータ表示モードの設定を取得する</summary>
         public CustomEpgTabInfo GetViewMode()
         {
             return viewCtrl == null ? null : viewCtrl.GetViewMode();
         }
 
-        /// <summary>
-        /// EPGデータの表示モードを設定する
-        /// </summary>
+        public void UpdateReserveData()
+        {
+            if (viewCtrl != null) viewCtrl.UpdateReserveData();
+        }
+
+        public void UpdateEpgData()
+        {
+            if (viewCtrl != null) viewCtrl.UpdateEpgData();
+        }
+
+        /// <summary>EPGデータの表示モードを設定する</summary>
         /// <param name="setInfo">[IN]表示モードの設定値</param>
         public void SetViewMode(CustomEpgTabInfo setInfo)
         {
@@ -72,20 +74,6 @@ namespace EpgTimer
             viewCtrl.SetViewMode(setInfo);
             grid_main.Children.Clear();
             grid_main.Children.Add(viewCtrl as UIElement);
-        }
-
-        public void UpdateReserveData()
-        {
-            if (viewCtrl == null) return;
-
-            viewCtrl.UpdateReserveData();
-        }
-
-        public void UpdateEpgData()
-        {
-            if (viewCtrl == null) return;
-
-            viewCtrl.UpdateEpgData();
         }
 
         private void item_ViewSettingClick(object sender, object param)
@@ -135,11 +123,5 @@ namespace EpgTimer
             } 
         }
 
-        public void RefreshMenu()
-        {
-            if (viewCtrl == null) return;
-
-            viewCtrl.RefreshMenu();
-        }
     }
 }

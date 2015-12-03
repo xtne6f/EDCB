@@ -8,7 +8,7 @@ using System.Windows.Input;
 
 namespace EpgTimer.EpgView
 {
-    public class EpgViewBase : UserControl, IEpgDataViewItem
+    public class EpgViewBase : UserControl
     {
         protected CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
         protected MenuUtil mutil = CommonManager.Instance.MUtil;
