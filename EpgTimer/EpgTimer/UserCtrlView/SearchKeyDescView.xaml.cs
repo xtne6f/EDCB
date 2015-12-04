@@ -411,35 +411,35 @@ namespace EpgTimer
                 return;
             }
 
-            var Add_week = new Action<CheckBox>(chbox =>
-                {
-                    if (chbox.IsChecked != true) return;
-                    //
-                    var info = new EpgSearchDateInfo();
-                    info.startDayOfWeek = 1;
-                    info.startHour = (UInt16)comboBox_week_sh.SelectedItem;
-                    info.startMin = (UInt16)comboBox_week_sm.SelectedItem;
-                    info.endDayOfWeek = 1;
-                    info.endHour = (UInt16)comboBox_week_eh.SelectedItem;
-                    info.endMin = (UInt16)comboBox_week_em.SelectedItem;
+            var Add_week = new Action<CheckBox, byte>((chbox, day) =>
+            {
+                if (chbox.IsChecked != true) return;
+                //
+                var info = new EpgSearchDateInfo();
+                info.startDayOfWeek = day;
+                info.startHour = (UInt16)comboBox_week_sh.SelectedItem;
+                info.startMin = (UInt16)comboBox_week_sm.SelectedItem;
+                info.endDayOfWeek = info.startDayOfWeek;
+                info.endHour = (UInt16)comboBox_week_eh.SelectedItem;
+                info.endMin = (UInt16)comboBox_week_em.SelectedItem;
 
-                    string dayText = chbox.Content + " ";
-                    string viewText = dayText + info.startHour.ToString("00") + ":" + info.startMin.ToString("00") +
-                        " ～ " + dayText + info.endHour.ToString("00") + ":" + info.endMin.ToString("00");
+                string dayText = chbox.Content + " ";
+                string viewText = dayText + info.startHour.ToString("00") + ":" + info.startMin.ToString("00") +
+                    " ～ " + dayText + info.endHour.ToString("00") + ":" + info.endMin.ToString("00");
 
-                    var item = new DateItem();
-                    item.DateInfo = info;
-                    item.ViewText = viewText;
-                    listBox_date.Items.Add(item);
-                });
+                var item = new DateItem();
+                item.DateInfo = info;
+                item.ViewText = viewText;
+                listBox_date.Items.Add(item);
+            });
 
-            Add_week(checkBox_mon);
-            Add_week(checkBox_tue);
-            Add_week(checkBox_wen);
-            Add_week(checkBox_thu);
-            Add_week(checkBox_fri);
-            Add_week(checkBox_sat);
-            Add_week(checkBox_sun);
+            Add_week(checkBox_mon, 1);
+            Add_week(checkBox_tue, 2);
+            Add_week(checkBox_wen, 3);
+            Add_week(checkBox_thu, 4);
+            Add_week(checkBox_fri, 5);
+            Add_week(checkBox_sat, 6);
+            Add_week(checkBox_sun, 0);
         }
 
         private void button_date_del_Click(object sender, RoutedEventArgs e)
