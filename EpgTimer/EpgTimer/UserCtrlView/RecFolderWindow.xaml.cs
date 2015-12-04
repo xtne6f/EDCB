@@ -21,40 +21,17 @@ namespace EpgTimer
         {
             InitializeComponent();
 
-            String plugInFile = "Write_Default.dll";
-            String recNamePlugInFile = "";
+            if (CommonManager.Instance.VUtil.EpgTimerNWNotConnect() != true)
+            {
+                CommonManager.Instance.DB.ReloadPlugInFile();
+            }
+            comboBox_writePlugIn.ItemsSource = CommonManager.Instance.DB.WritePlugInList.Values;
+            comboBox_writePlugIn.SelectedItem = "Write_Default.dll";
 
-            ErrCode err = CommonManager.Instance.DB.ReloadPlugInFile();
-            CommonManager.CmdErrMsgTypical(err, "PlugIn一覧の取得");
-
-            int select = 0;
-            foreach (string info in CommonManager.Instance.DB.WritePlugInList.Values)
-            {
-                int index = comboBox_writePlugIn.Items.Add(info);
-                if (String.Compare(info, plugInFile, true) == 0)
-                {
-                    select = index;
-                }
-            }
-            if (comboBox_writePlugIn.Items.Count != 0)
-            {
-                comboBox_writePlugIn.SelectedIndex = select;
-            }
-
-            select = 0;
-            comboBox_recNamePlugIn.Items.Add("なし");
-            foreach (string info in CommonManager.Instance.DB.RecNamePlugInList.Values)
-            {
-                int index = comboBox_recNamePlugIn.Items.Add(info);
-                if (String.Compare(info, recNamePlugInFile, true) == 0)
-                {
-                    select = index;
-                }
-            }
-            if (comboBox_recNamePlugIn.Items.Count != 0)
-            {
-                comboBox_recNamePlugIn.SelectedIndex = select;
-            }
+            var list = CommonManager.Instance.DB.RecNamePlugInList.Values.ToList();
+            list.Insert(0, "なし");
+            comboBox_recNamePlugIn.ItemsSource = list;
+            comboBox_recNamePlugIn.SelectedItem = "なし";
 
             if (CommonManager.Instance.NWMode == true)
             {

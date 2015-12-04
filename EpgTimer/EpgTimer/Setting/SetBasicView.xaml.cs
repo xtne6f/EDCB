@@ -18,6 +18,17 @@ using System.Runtime.InteropServices;
 
 namespace EpgTimer.Setting
 {
+    //BonDriver一覧の表示・設定用クラス
+    public class TunerInfo
+    {
+        public TunerInfo(string bon) { BonDriver = bon; }
+        public String BonDriver { get; set; }
+        public String TunerNum { get; set; }
+        public String EPGNum { get; set; }
+        public bool IsEpgCap { get; set; }
+        public override string ToString() { return BonDriver; }
+    }
+
     /// <summary>
     /// SetBasicView.xaml の相互作用ロジック
     /// </summary>
@@ -33,6 +44,9 @@ namespace EpgTimer.Setting
             if (CommonManager.Instance.NWMode == true)
             {
                 CommonManager.Instance.VUtil.DisableControlChildren(tabItem2);
+                grid_tuner.IsEnabled = true;
+                CommonManager.Instance.VUtil.ChangeChildren(grid_tuner, false);
+                listBox_bon.IsEnabled = true;
                 CommonManager.Instance.VUtil.DisableControlChildren(tabItem3);
                 label1.IsEnabled = false;
                 textBox_setPath.IsEnabled = false;
@@ -57,25 +71,14 @@ namespace EpgTimer.Setting
 
                 Settings.GetDefRecFolders().ForEach(folder => listBox_recFolder.Items.Add(folder));
 
-                string[] files = Directory.GetFiles(SettingPath.SettingFolderPath, "*.ChSet4.txt");
                 SortedList<Int32, TunerInfo> tunerInfo = new SortedList<Int32, TunerInfo>();
-                foreach (string info in files)
+                foreach (string fileName in CommonManager.Instance.GetBonFileList())
                 {
                     try
                     {
-                        TunerInfo item = new TunerInfo();
-                        String fileName = System.IO.Path.GetFileName(info);
-                        item.BonDriver = GetBonFileName(fileName);
-                        item.BonDriver += ".dll";
+                        TunerInfo item = new TunerInfo(fileName);
                         item.TunerNum = IniFileHandler.GetPrivateProfileInt(item.BonDriver, "Count", 0, SettingPath.TimerSrvIniPath).ToString();
-                        if (IniFileHandler.GetPrivateProfileInt(item.BonDriver, "GetEpg", 1, SettingPath.TimerSrvIniPath) == 0)
-                        {
-                            item.IsEpgCap = false;
-                        }
-                        else
-                        {
-                            item.IsEpgCap = true;
-                        }
+                        item.IsEpgCap = (IniFileHandler.GetPrivateProfileInt(item.BonDriver, "GetEpg", 1, SettingPath.TimerSrvIniPath) != 0);
                         item.EPGNum = IniFileHandler.GetPrivateProfileInt(item.BonDriver, "EPGCount", 0, SettingPath.TimerSrvIniPath).ToString();
                         int priority = IniFileHandler.GetPrivateProfileInt(item.BonDriver, "Priority", 0xFFFF, SettingPath.TimerSrvIniPath);
                         while (true)
@@ -210,33 +213,6 @@ namespace EpgTimer.Setting
             {
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
-        }
-
-        private String GetBonFileName(String src)
-        {
-            int pos = src.LastIndexOf(")");
-            if (pos < 1)
-            {
-                return src;
-            }
-
-            int count = 1;
-            for (int i = pos - 1; i >= 0; i--)
-            {
-                if (src[i] == '(')
-                {
-                    count--;
-                }
-                else if (src[i] == ')')
-                {
-                    count++;
-                }
-                if (count == 0)
-                {
-                    return src.Substring(0, i);
-                }
-            }
-            return src;
         }
 
         public void SaveSetting()

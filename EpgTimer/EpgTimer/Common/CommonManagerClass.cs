@@ -1531,5 +1531,71 @@ namespace EpgTimer
                 file.Close();
             }
         }
+
+        public List<string> GetBonFileList()
+        {
+            var list = new List<string>();
+
+            try
+            {
+                if (CommonManager.Instance.NWMode == false)
+                {
+                    foreach (string info in Directory.GetFiles(SettingPath.SettingFolderPath, "*.ChSet4.txt"))
+                    {
+                        list.Add(GetBonFileName(System.IO.Path.GetFileName(info)) + ".dll");
+                    }
+                }
+                else
+                {
+                    //EpgTimerが作成したEpgTimerSrv.iniからBonDriverセクションを拾い出す
+                    //将来にわたって確実なリストアップではないし、本来ならSendEnumPlugIn()あたりを変更して取得すべきだが、
+                    //参考表示なので構わない
+                    using (var reader = (new System.IO.StreamReader(SettingPath.TimerSrvIniPath, Encoding.Default)))
+                    {
+                        while (reader.Peek() >= 0)
+                        {
+                            string buff = reader.ReadLine();
+                            int start = buff.IndexOf('[');
+                            int end = buff.LastIndexOf(".dll]");
+                            if (start >= 0 && end >= start + 2)
+                            {
+                                list.Add(buff.Substring(start + 1, end + 3 - start));
+                            }
+                        }
+                    }
+                }
+            }
+            catch { }
+
+            return list;
+        }
+
+        private String GetBonFileName(String src)
+        {
+            int pos = src.LastIndexOf(")");
+            if (pos < 1)
+            {
+                return src;
+            }
+
+            int count = 1;
+            for (int i = pos - 1; i >= 0; i--)
+            {
+                if (src[i] == '(')
+                {
+                    count--;
+                }
+                else if (src[i] == ')')
+                {
+                    count++;
+                }
+                if (count == 0)
+                {
+                    return src.Substring(0, i);
+                }
+            }
+            return src;
+        }
+
     }
 }

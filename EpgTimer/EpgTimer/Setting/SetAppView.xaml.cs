@@ -256,24 +256,12 @@ namespace EpgTimer.Setting
                     delChkFolderList.Add(IniFileHandler.GetPrivateProfileString("DEL_CHK", i.ToString(), "", SettingPath.TimerSrvIniPath));
                 }
 
-                try
+                if (CommonManager.Instance.VUtil.EpgTimerNWNotConnect() != true)
                 {
-                    string[] files = Directory.GetFiles(SettingPath.ModulePath + "\\RecName", "RecName*.dll");
-                    int select = 0;
-                    foreach (string info in files)
-                    {
-                        int index = comboBox_recname.Items.Add(System.IO.Path.GetFileName(info));
-                        if (String.Compare(System.IO.Path.GetFileName(info), plugInFile, true) == 0)
-                        {
-                            select = index;
-                        }
-                    }
-                    if (comboBox_recname.Items.Count != 0)
-                    {
-                        comboBox_recname.SelectedIndex = select;
-                    }
+                    CommonManager.Instance.DB.ReloadPlugInFile();
                 }
-                catch { }
+                comboBox_recname.ItemsSource = CommonManager.Instance.DB.RecNamePlugInList.Values;
+                comboBox_recname.SelectedItem = plugInFile;
 
                 if (IniFileHandler.GetPrivateProfileInt("SET", "EnableTCPSrv", 0, SettingPath.TimerSrvIniPath) == 1)
                 {
