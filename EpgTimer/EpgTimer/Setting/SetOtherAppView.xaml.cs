@@ -44,8 +44,6 @@ namespace EpgTimer.Setting
                 textBox_playCmd.Text = Settings.Instance.FilePlayCmd;
                 checkBox_playOnAirWithExe.IsChecked = Settings.Instance.FilePlayOnAirWithExe;
 
-                SortedList<Int32, TunerInfo> tunerInfo = new SortedList<Int32, TunerInfo>();
-
                 comboBox_bon.ItemsSource = CommonManager.Instance.GetBonFileList();
                 if (comboBox_bon.Items.Count > 0)
                 {
