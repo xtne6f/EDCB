@@ -59,7 +59,7 @@
                 <Grid>
                     <CheckBox Content="優先度が同じで時間が重なった場合、後の予約を優先する" Height="16" HorizontalAlignment="Left" Margin="6,6,0,0" Name="checkBox_back_priority" VerticalAlignment="Top" />
                     <CheckBox Content="HDDの空きが少ない場合、古い録画ファイルを削除する(追加設定で対象フォルダを設定)" Height="16" HorizontalAlignment="Left" Margin="6,31,0,0" Name="checkBox_autoDel" VerticalAlignment="Top" />
-                    <Button Content="追加設定" Height="23" HorizontalAlignment="Left" Margin="510,28,0,0" Name="button_autoDel" VerticalAlignment="Top" Width="75" Click="button_autoDel_Click" />
+                    <Button Content="削除設定" Height="23" HorizontalAlignment="Left" Margin="510,28,0,0" Name="button_autoDel" VerticalAlignment="Top" Width="75" Click="button_autoDel_Click" />
                     <CheckBox Content="録画時のファイル名にPlugInを使用する" Height="16" HorizontalAlignment="Left" Margin="6,60,0,0" Name="checkBox_recname" VerticalAlignment="Top" />
                     <ComboBox Height="24" HorizontalAlignment="Left" Margin="270,57,0,0" Name="comboBox_recname" VerticalAlignment="Top" Width="160" />
                     <Button Content="設定" Height="23" HorizontalAlignment="Left" Margin="436,58,0,0" Name="button_recname" VerticalAlignment="Top" Width="54" Click="button_recname_Click" />
