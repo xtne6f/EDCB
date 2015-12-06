@@ -474,6 +474,8 @@ namespace EpgTimer
             }
         }
 
+        public bool IsConnected { get { return NWMode == false || NW.IsConnected == true; } }
+
         public static UInt64 Create64Key(UInt16 ONID, UInt16 TSID, UInt16 SID)
         {
             UInt64 key = ((UInt64)ONID) << 32 | ((UInt64)TSID) << 16 | (UInt64)SID;

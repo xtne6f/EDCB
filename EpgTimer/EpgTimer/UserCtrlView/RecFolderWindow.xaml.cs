@@ -21,7 +21,7 @@ namespace EpgTimer
         {
             InitializeComponent();
 
-            if (CommonManager.Instance.VUtil.EpgTimerNWNotConnect() != true)
+            if (CommonManager.Instance.IsConnected == true)
             {
                 CommonManager.Instance.DB.ReloadPlugInFile();
             }

@@ -144,7 +144,7 @@ namespace EpgTimer
                 listView.ItemsSource = null;
                 dataList.Clear();
 
-                if (vutil.EpgTimerNWNotConnect() == true) return false;
+                if (CommonManager.Instance.IsConnected == false) return false;
 
                 if (reloadData(dataList) == false) return false;
 

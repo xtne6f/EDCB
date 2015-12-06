@@ -140,7 +140,7 @@ namespace EpgTimer.EpgView
             try
             {
                 if (setViewInfo == null) return true;
-                if (vutil.EpgTimerNWNotConnect() == true) return false;
+                if (CommonManager.Instance.IsConnected == false) return false;
 
                 if (setViewInfo.SearchMode == false)
                 {

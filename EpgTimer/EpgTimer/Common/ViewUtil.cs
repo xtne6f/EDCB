@@ -91,7 +91,7 @@ namespace EpgTimer
 
         public bool ReloadReserveData(Control Owner = null)
         {
-            if (EpgTimerNWNotConnect() == true) return false;
+            if (CommonManager.Instance.IsConnected == false) return false;
 
             ErrCode err = CommonManager.Instance.DB.ReloadReserveInfo();
             if (CommonManager.CmdErrMsgTypical(err, "予約情報の取得", Owner) == false) return false;
@@ -99,11 +99,6 @@ namespace EpgTimer
             return true;
         }
         
-        public bool EpgTimerNWNotConnect()
-        {
-            return CommonManager.Instance.NWMode == true && CommonManager.Instance.NW.IsConnected == false;
-        }
-
         //ジャンル絞り込み
         public bool ContainsContent(EpgEventInfo info, Dictionary<UInt16, UInt16> ContentKindList)
         {
