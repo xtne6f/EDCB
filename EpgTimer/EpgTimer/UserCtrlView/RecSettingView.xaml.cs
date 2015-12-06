@@ -660,6 +660,11 @@ namespace EpgTimer
             }
         }
 
+        private void button_reload_preset_Click(object sender, RoutedEventArgs e)
+        {
+            comboBox_preSet_SelectionChanged(null, null);
+        }
+
         private void button_add_preset_Click(object sender, RoutedEventArgs e)
         {
             try
