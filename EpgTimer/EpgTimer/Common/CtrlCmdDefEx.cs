@@ -555,9 +555,9 @@ namespace EpgTimer
                         newInfo.Append(line_new.TrimEnd('\r') + "\r\n");//単に\n付けるだけでも良いが、一応"\r\n"に確定させる
                     }
 
-                    newInfo.Append(string.Format("                              * = Critical Drop/Scramble Parameter.\r\n"));
-                    newInfo.Append(string.Format("                              Drop:{0,9}  Scramble:{1,10}  Total\r\n", this.Drops, this.Scrambles));
-                    newInfo.Append(string.Format("                              Drop:{0,9}  Scramble:{1,10} *Critical\r\n", this.dropsCritical, this.scramblesCritical));
+                    newInfo.AppendFormat("                              * = Critical Drop/Scramble Parameter.\r\n");
+                    newInfo.AppendFormat("                              Drop:{0,9}  Scramble:{1,10}  Total\r\n", this.Drops, this.Scrambles);
+                    newInfo.AppendFormat("                              Drop:{0,9}  Scramble:{1,10} *Critical\r\n", this.dropsCritical, this.scramblesCritical);
                     this.ErrInfo = newInfo.ToString();
 
                     return;

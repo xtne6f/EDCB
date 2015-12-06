@@ -92,7 +92,7 @@ namespace EpgTimer
             onCount = 0;
             offCount = 0;
 
-            if (master == null || epgEventList == null) return;
+            if (epgEventList == null) return;
 
             searchItemList = new List<SearchItem>();
             searchItemList.AddFromEventList(epgEventList, false, true);
