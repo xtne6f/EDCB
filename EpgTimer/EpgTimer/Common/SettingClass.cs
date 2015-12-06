@@ -253,6 +253,7 @@ namespace EpgTimer
         private UInt32 nwServerPort;
         private UInt32 nwWaitPort;
         private string nwMacAdd;
+        private List<NWPresetItem> nwPreset; 
         private bool wakeReconnectNW;
         private bool suspendCloseNW;
         private bool ngAutoEpgLoadNW;
@@ -793,6 +794,11 @@ namespace EpgTimer
             get { return nwMacAdd; }
             set { nwMacAdd = value; }
         }
+        public List<NWPresetItem> NWPerset
+        {
+            get { return nwPreset; }
+            set { nwPreset = value; }
+        }
         public bool WakeReconnectNW
         {
             get { return wakeReconnectNW; }
@@ -1113,6 +1119,7 @@ namespace EpgTimer
             nwServerPort = 4510;
             nwWaitPort = 4520;
             nwMacAdd = "";
+            nwPreset = new List<NWPresetItem>();
             wakeReconnectNW = false;
             suspendCloseNW = false;
             ngAutoEpgLoadNW = false;

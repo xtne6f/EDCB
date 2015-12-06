@@ -91,6 +91,7 @@
       <DependentUpon>BlackoutWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="Common\BoxExchangeEditor.cs" />
+    <Compile Include="DefineClass\NWPresetItem.cs" />
     <Compile Include="UserCtrlView\DataViewBase.cs" />
     <Compile Include="UserCtrlView\ListViewController.cs" />
     <Compile Include="Menu\MenuSettingData.cs" />
