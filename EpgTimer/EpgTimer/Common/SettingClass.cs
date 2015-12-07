@@ -49,38 +49,48 @@ namespace EpgTimer
             IniFileHandler.GetPrivateProfileString(lpAppName, lpKeyName, lpDefault, buff, 512, lpFileName);
             return buff.ToString();
         }
-        
-        public static void UpdateSrvProfileIniNW()
-        {
-            SendIniCopy("EpgTimerSrv.ini");
-            SendIniCopy("Common.ini");
-            SendIniCopy("EpgDataCap_Bon.ini");
-            SendIniCopy("ChSet5.txt");
 
+        public static void UpdateSrvProfileIniNW(List<string> iniList = null)
+        {
+            if (CommonManager.Instance.NW.IsConnected == false) return;
+
+            ReloadSettingFilesNW(iniList);
             Settings.UpdateDefRecSetting();
             ChSet5.LoadFile();
         }
 
-        private static bool SendIniCopy(string iniFileName)
+        public static void ReloadSettingFilesNW(List<string> iniList = null)
         {
+            if (iniList == null)
+            {
+                iniList = new List<string> {
+                    "EpgTimerSrv.ini"
+                    ,"Common.ini"
+                    ,"EpgDataCap_Bon.ini"
+                    ,"ChSet5.txt"
+                };
+            }
+
             try
             {
-                byte[] binData;
-                if (CommonManager.Instance.CtrlCmd.SendFileCopy(iniFileName, out binData) == ErrCode.CMD_SUCCESS)
+                var datalist = new List<FileData>();
+                if (CommonManager.Instance.CtrlCmd.SendFileCopy2(iniList, ref datalist) == ErrCode.CMD_SUCCESS)
                 {
-                    string filePath = SettingPath.SettingFolderPath;
-                    System.IO.Directory.CreateDirectory(filePath);
-                    filePath = filePath.TrimEnd('\\') + "\\" + iniFileName;
-                    using (System.IO.BinaryWriter w = new System.IO.BinaryWriter(System.IO.File.Create(filePath)))
+                    Directory.CreateDirectory(SettingPath.SettingFolderPath);
+                    foreach (var data in datalist.Where(d1 => d1.Size != 0))
                     {
-                        w.Write(binData);
-                        w.Close();
+                        try
+                        {
+                            using (var w = new BinaryWriter(File.Create(Path.Combine(SettingPath.SettingFolderPath, data.Name))))
+                            {
+                                w.Write(data.Data);
+                            }
+                        }
+                        catch { }
                     }
-                    return true;
                 }
             }
-            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
-            return false;
+            catch { }
         }
 
     }

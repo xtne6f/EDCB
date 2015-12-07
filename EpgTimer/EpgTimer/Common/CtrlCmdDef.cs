@@ -25,6 +25,37 @@ namespace EpgTimer
     // sed 's/_\(.*\)(void){$/public \1(){/' |
     // sed 's/\t/    /g'
 
+    /// <summary>転送ファイルデータ</summary>
+    public class FileData : ICtrlCmdReadWrite
+    {
+        public string Name = "";
+        public uint Size = 0;
+        public uint Status = 0;
+        public byte[] Data = null;
+
+        public void Read(MemoryStream s, ushort version)
+        {
+            var r = new CtrlCmdReader(s, version);
+            r.Begin();
+            r.Read(ref Name);
+            r.Read(ref Size);
+            r.Read(ref Status);
+            Data = null;
+            if (Size != 0) Data = r.ReadBytes((int)Size);
+            r.End();
+        }
+        public void Write(MemoryStream s, ushort version)
+        {
+            var w = new CtrlCmdWriter(s, version);
+            w.Begin();
+            w.Write(Name);
+            w.Write(Size);
+            w.Write(Status);
+            if (Size != 0) w.Stream.Write(Data, 0, (int)Size);
+            w.End();
+        }
+    }
+
     /// <summary>録画フォルダ情報</summary>
     public class RecFileSetInfo : ICtrlCmdReadWrite
     {
