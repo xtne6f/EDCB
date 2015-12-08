@@ -638,12 +638,17 @@ namespace EpgTimer
         {
             lock (thisLock)
             {
+                System.Net.IPAddress addr;
+                if (System.Net.IPAddress.TryParse(ip, out addr) == false)
+                {
+                    return ErrCode.CMD_ERR_CONNECT;
+                }
                 // 接続
                 using (var tcp = new System.Net.Sockets.TcpClient())
                 {
                     try
                     {
-                        tcp.Connect(ip, (int)port);
+                        tcp.Connect(addr, (int)port);
                     }
                     catch (System.Net.Sockets.SocketException)
                     {
