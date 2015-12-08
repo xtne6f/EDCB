@@ -15,8 +15,7 @@ namespace EpgTimer
 {
     public class NWConnect
     {
-        private CMD_CALLBACK_PROC cmdProc = null;
-        private object cmdParam = null;
+        private Action<CMD_STREAM, CMD_STREAM> cmdProc = null;
 
         private bool connectFlag;
         private UInt32 serverPort;
@@ -80,7 +79,7 @@ namespace EpgTimer
             client.Send(stream.ToArray(), (int)stream.Position, new IPEndPoint(broad, 0));
         }
 
-        public bool ConnectServer(String srvIP, UInt32 srvPort, UInt32 waitPort, CMD_CALLBACK_PROC pfnCmdProc, object pParam)
+        public bool ConnectServer(String srvIP, UInt32 srvPort, UInt32 waitPort, Action<CMD_STREAM, CMD_STREAM> pfnCmdProc)
         {
             if (srvIP.Length == 0)
             {
@@ -89,7 +88,6 @@ namespace EpgTimer
             connectFlag = false;
 
             cmdProc = pfnCmdProc;
-            cmdParam = pParam;
             StartTCPServer(waitPort);
 
             cmd.SetSendMode(true);
@@ -180,7 +178,7 @@ namespace EpgTimer
                     {
                         readSize += stream.Read(stCmd.bData, readSize, (int)stCmd.uiSize);
                     }
-                    cmdProc.Invoke(cmdParam, stCmd, ref stRes);
+                    cmdProc.Invoke(stCmd, stRes);
 
                     Array.Copy(BitConverter.GetBytes(stRes.uiParam), 0, bHead, 0, sizeof(uint));
                     Array.Copy(BitConverter.GetBytes(stRes.uiSize), 0, bHead, 4, sizeof(uint));
