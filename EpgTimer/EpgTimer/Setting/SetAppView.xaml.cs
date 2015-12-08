@@ -55,6 +55,8 @@ namespace EpgTimer.Setting
                 checkBox_tcpServer.IsEnabled = false;
                 label41.IsEnabled = false;
                 textBox_tcpPort.IsEnabled = false;
+                label_tcpAcl.IsEnabled = false;
+                textBox_tcpAcl.IsEnabled = false;
                 checkBox_autoDelRecInfo.IsEnabled = false;
                 label42.IsEnabled = false;
                 textBox_autoDelRecInfo.IsEnabled = false;
@@ -298,6 +300,9 @@ namespace EpgTimer.Setting
                     checkBox_tcpServer.IsChecked = true;
                 }
                 textBox_tcpPort.Text = IniFileHandler.GetPrivateProfileInt("SET", "TCPPort", 4510, SettingPath.TimerSrvIniPath).ToString();
+                buff.Clear();
+                IniFileHandler.GetPrivateProfileString("SET", "TCPAccessControlList", "+127.0.0.1,+192.168.0.0/16", buff, 512, SettingPath.TimerSrvIniPath);
+                textBox_tcpAcl.Text = buff.ToString();
 
                 Settings.GetDefSearchSetting(ref defSearchKey);
 
@@ -618,6 +623,7 @@ namespace EpgTimer.Setting
                 IniFileHandler.WritePrivateProfileString("SET", "EnableTCPSrv", "0", SettingPath.TimerSrvIniPath);
             }
             IniFileHandler.WritePrivateProfileString("SET", "TCPPort", textBox_tcpPort.Text, SettingPath.TimerSrvIniPath);
+            IniFileHandler.WritePrivateProfileString("SET", "TCPAccessControlList", textBox_tcpAcl.Text, SettingPath.TimerSrvIniPath);
 
             if (checkBox_noToolTips.IsChecked == true)
             {
