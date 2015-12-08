@@ -112,6 +112,8 @@
                     <CheckBox Content="ネットワーク接続を許可する" Height="16" HorizontalAlignment="Left" Margin="6,81,0,0" Name="checkBox_tcpServer" VerticalAlignment="Top" />
                     <Label Content="ポート" Height="28" HorizontalAlignment="Left" Margin="212,76,0,0" Name="label41" VerticalAlignment="Top" />
                     <TextBox Height="24" HorizontalAlignment="Left" Margin="276,78,0,0" Name="textBox_tcpPort" VerticalAlignment="Top" Width="62" />
+                    <Label Content="アクセス制御" Height="28" HorizontalAlignment="Left" Margin="350,76,0,0" Name="label_tcpAcl" VerticalAlignment="Top" />
+                    <TextBox Height="24" HorizontalAlignment="Left" Margin="440,78,0,0" Name="textBox_tcpAcl" VerticalAlignment="Top" Width="220" />
                     <CheckBox Content="録画結果を自動的に削除する" Height="16" HorizontalAlignment="Left" Margin="6,108,0,0" Name="checkBox_autoDelRecInfo" VerticalAlignment="Top" />
                     <Label Content="保持件数" Height="28" HorizontalAlignment="Left" Margin="212,103,0,0" Name="label42" VerticalAlignment="Top" />
                     <TextBox Height="24" HorizontalAlignment="Left" Margin="276,105,0,0" Name="textBox_autoDelRecInfo" VerticalAlignment="Top" Width="62" />
