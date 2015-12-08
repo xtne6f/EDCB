@@ -238,7 +238,7 @@ namespace EpgTimer
                     pipeServer = new PipeServer();
                     pipeName += System.Diagnostics.Process.GetCurrentProcess().Id.ToString();
                     pipeEventName += System.Diagnostics.Process.GetCurrentProcess().Id.ToString();
-                    pipeServer.StartServer(pipeEventName, pipeName, OutsideCmdCallback, this);
+                    pipeServer.StartServer(pipeEventName, pipeName, (c, r) => OutsideCmdCallback(c, r, false));
 
                     for (int i = 0; i < 150 && cmd.SendRegistGUI((uint)System.Diagnostics.Process.GetCurrentProcess().Id) != ErrCode.CMD_SUCCESS; i++)
                     {
@@ -490,7 +490,7 @@ namespace EpgTimer
                 foreach (var address in System.Net.Dns.GetHostAddresses(srvIP))
                 {
                     srvIP = address.ToString();
-                    if (CommonManager.Instance.NW.ConnectServer(srvIP, Settings.Instance.NWServerPort, Settings.Instance.NWWaitPort, OutsideCmdCallback, this) == true)
+                    if (CommonManager.Instance.NW.ConnectServer(srvIP, Settings.Instance.NWServerPort, Settings.Instance.NWWaitPort, (c, r) => OutsideCmdCallback(c, r, true)) == true)
                     {
                         connected = true;
                         break;
@@ -1036,7 +1036,7 @@ namespace EpgTimer
             }
         }
 
-        private int OutsideCmdCallback(object pParam, CMD_STREAM pCmdParam, ref CMD_STREAM pResParam)
+        private void OutsideCmdCallback(CMD_STREAM pCmdParam, CMD_STREAM pResParam, bool networkFlag)
         {
             var DispatcherCheckAction = new Action<Action>((action) =>
             {
@@ -1056,7 +1056,14 @@ namespace EpgTimer
             switch ((CtrlCmd)pCmdParam.uiParam)
             {
                 case CtrlCmd.CMD_TIMER_GUI_SHOW_DLG:
-                    this.Visibility = Visibility.Visible;
+                    if (networkFlag)
+                    {
+                        pResParam.uiParam = (uint)ErrCode.CMD_NON_SUPPORT;
+                    }
+                    else
+                    {
+                        this.Visibility = System.Windows.Visibility.Visible;
+                    }
                     break;
                 case CtrlCmd.CMD_TIMER_GUI_UPDATE_RESERVE:
                     {
@@ -1096,6 +1103,11 @@ namespace EpgTimer
                     }
                     break;
                 case CtrlCmd.CMD_TIMER_GUI_VIEW_EXECUTE:
+                    if (networkFlag)
+                    {
+                        pResParam.uiParam = (uint)ErrCode.CMD_NON_SUPPORT;
+                    }
+                    else
                     {
                         String exeCmd = "";
                         (new CtrlCmdReader(new System.IO.MemoryStream(pCmdParam.bData, false))).Read(ref exeCmd);
@@ -1142,6 +1154,11 @@ namespace EpgTimer
                     }
                     break;
                 case CtrlCmd.CMD_TIMER_GUI_QUERY_SUSPEND:
+                    if (networkFlag)
+                    {
+                        pResParam.uiParam = (uint)ErrCode.CMD_NON_SUPPORT;
+                    }
+                    else
                     {
                         UInt16 param = 0;
                         (new CtrlCmdReader(new System.IO.MemoryStream(pCmdParam.bData, false))).Read(ref param);
@@ -1149,6 +1166,11 @@ namespace EpgTimer
                     }
                     break;
                 case CtrlCmd.CMD_TIMER_GUI_QUERY_REBOOT:
+                    if (networkFlag)
+                    {
+                        pResParam.uiParam = (uint)ErrCode.CMD_NON_SUPPORT;
+                    }
+                    else
                     {
                         UInt16 param = 0;
                         (new CtrlCmdReader(new System.IO.MemoryStream(pCmdParam.bData, false))).Read(ref param);
@@ -1190,7 +1212,6 @@ namespace EpgTimer
                     pResParam.uiParam = (uint)ErrCode.CMD_NON_SUPPORT;
                     break;
             }
-            return 0;
         }
 
         private System.Drawing.Icon GetTaskTrayIcon(uint status)
