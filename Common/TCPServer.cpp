@@ -41,7 +41,7 @@ CTCPServer::~CTCPServer(void)
 	WSACleanup();
 }
 
-BOOL CTCPServer::StartServer(DWORD dwPort, CMD_CALLBACK_PROC pfnCmdProc, void* pParam)
+BOOL CTCPServer::StartServer(DWORD dwPort, LPCWSTR acl, CMD_CALLBACK_PROC pfnCmdProc, void* pParam)
 {
 	if( pfnCmdProc == NULL || pParam == NULL ){
 		return FALSE;
@@ -52,6 +52,7 @@ BOOL CTCPServer::StartServer(DWORD dwPort, CMD_CALLBACK_PROC pfnCmdProc, void* p
 	m_pCmdProc = pfnCmdProc;
 	m_pParam = pParam;
 	m_dwPort = dwPort;
+	m_acl = acl;
 
 	m_sock = socket(AF_INET, SOCK_STREAM, 0);
 	if( m_sock == INVALID_SOCKET ){
@@ -97,6 +98,37 @@ void CTCPServer::StopServer()
 	}
 }
 
+static BOOL TestAcl(struct in_addr addr, wstring acl)
+{
+	//書式例: +192.168.0.0/16,-192.168.0.1
+	BOOL ret = FALSE;
+	for(;;){
+		wstring val;
+		BOOL sep = Separate(acl, L",", val, acl);
+		if( val.empty() || val[0] != L'+' && val[0] != L'-' ){
+			//書式エラー
+			return FALSE;
+		}
+		wstring a, b, c, d, m;
+		Separate(val.substr(1), L".", a, b);
+		Separate(b, L".", b, c);
+		Separate(c, L".", c, d);
+		ULONG mask = Separate(d, L"/", d, m) ? _wtoi(m.c_str()) : 32;
+		if( a.empty() || b.empty() || c.empty() || d.empty() || mask > 32 ){
+			//書式エラー
+			return FALSE;
+		}
+		mask = mask == 0 ? 0 : 0xFFFFFFFFUL << (32 - mask);
+		ULONG host = (ULONG)_wtoi(a.c_str()) << 24 | _wtoi(b.c_str()) << 16 | _wtoi(c.c_str()) << 8 | _wtoi(d.c_str());
+		if( (ntohl(addr.s_addr) & mask) == (host & mask) ){
+			ret = val[0] == L'+';
+		}
+		if( sep == FALSE ){
+			return ret;
+		}
+	}
+}
+
 UINT WINAPI CTCPServer::ServerThread(LPVOID pParam)
 {
 	CTCPServer* pSys = (CTCPServer*)pParam;
@@ -129,6 +161,10 @@ UINT WINAPI CTCPServer::ServerThread(LPVOID pParam)
 					closesocket(pSys->m_sock);
 					pSys->m_sock = INVALID_SOCKET;
 					break;
+				} else if (TestAcl(client.sin_addr, pSys->m_acl) == FALSE) {
+					_OutputDebugString(L"Deny from IP:0x%08x\r\n", ntohl(client.sin_addr.s_addr));
+					closesocket(sock);
+					sock = INVALID_SOCKET;
 				}
 			}
 		}

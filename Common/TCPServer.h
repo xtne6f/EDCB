@@ -18,6 +18,7 @@ public:
 
 	BOOL StartServer(
 		DWORD dwPort, 
+		LPCWSTR acl,
 		CMD_CALLBACK_PROC pfnCmdProc, 
 		void* pParam
 		);
@@ -27,6 +28,7 @@ protected:
 	CMD_CALLBACK_PROC m_pCmdProc;
 	void* m_pParam;
 	DWORD m_dwPort;
+	wstring m_acl;
 
 	HANDLE m_hStopEvent;
 	HANDLE m_hThread;

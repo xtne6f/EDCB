@@ -177,6 +177,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		{
 			//サーバリセット処理
 			unsigned short tcpPort_;
+			wstring tcpAcl;
 			wstring httpPorts_;
 			wstring httpPublicFolder_;
 			wstring httpAcl;
@@ -185,6 +186,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 			{
 				CBlockLock lock(&ctx->sys->settingLock);
 				tcpPort_ = ctx->sys->tcpPort;
+				tcpAcl = ctx->sys->tcpAccessControlList;
 				httpPorts_ = ctx->sys->httpPorts;
 				httpPublicFolder_ = ctx->sys->httpPublicFolder;
 				httpAcl = ctx->sys->httpAccessControlList;
@@ -194,7 +196,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 			if( tcpPort_ == 0 ){
 				ctx->tcpServer.StopServer();
 			}else{
-				ctx->tcpServer.StartServer(tcpPort_, CtrlCmdTcpCallback, ctx->sys);
+				ctx->tcpServer.StartServer(tcpPort_, tcpAcl.c_str(), CtrlCmdTcpCallback, ctx->sys);
 			}
 			ctx->upnpServer.Stop();
 			if( httpPorts_.empty() ){
@@ -669,6 +671,9 @@ void CEpgTimerSrvMain::ReloadNetworkSetting()
 	GetModuleIniPath(iniPath);
 	this->tcpPort = 0;
 	if( GetPrivateProfileInt(L"SET", L"EnableTCPSrv", 0, iniPath.c_str()) != 0 ){
+		WCHAR buff[512];
+		GetPrivateProfileString(L"SET", L"TCPAccessControlList", L"+127.0.0.1,+192.168.0.0/16", buff, 512, iniPath.c_str());
+		this->tcpAccessControlList = buff;
 		this->tcpPort = (unsigned short)GetPrivateProfileInt(L"SET", L"TCPPort", 4510, iniPath.c_str());
 	}
 	this->httpPorts.clear();
