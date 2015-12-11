@@ -80,6 +80,7 @@ namespace EpgTimer.Setting
                 label42.IsEnabled = false;
                 textBox_autoDelRecInfo.IsEnabled = false;
                 checkBox_timeSync.IsEnabled = false;
+                label43.IsEnabled = false;
                 checkBox_wakeReconnect.IsEnabled = true;
                 checkBox_suspendClose.IsEnabled = true;
                 checkBox_ngAutoEpgLoad.IsEnabled = true;

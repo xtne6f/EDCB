@@ -1202,10 +1202,7 @@ namespace EpgTimer
         {
             if (list.Count < val.Count)
             {
-                for (int i = list.Count; i < val.Count; i++)
-                {
-                    list.Add(val[i]);
-                }
+                list.AddRange(val.Skip(list.Count));
             }
         }
 

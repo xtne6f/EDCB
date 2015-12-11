@@ -155,13 +155,13 @@ namespace EpgTimer
                     long scrambles = Settings.Instance.RecinfoErrCriticalDrops == false ? RecInfo.Scrambles : RecInfo.ScramblesCritical;
 
                     if (Settings.Instance.RecInfoDropErrIgnore >= 0 && drops > Settings.Instance.RecInfoDropErrIgnore
-                        || RecInfo.RecStatusBasic() == RecEndStatusBasic.ERR)
+                        || RecInfo.RecStatusBasic == RecEndStatusBasic.ERR)
                     {
                         return CommonManager.Instance.RecEndErrBackColor;
                     }
                     if (Settings.Instance.RecInfoDropWrnIgnore >= 0 && drops > Settings.Instance.RecInfoDropWrnIgnore
                         || Settings.Instance.RecInfoScrambleIgnore >= 0 && scrambles > Settings.Instance.RecInfoScrambleIgnore
-                        || RecInfo.RecStatusBasic() == RecEndStatusBasic.WARN)
+                        || RecInfo.RecStatusBasic == RecEndStatusBasic.WARN)
                     {
                         return CommonManager.Instance.RecEndWarBackColor;
                     }
