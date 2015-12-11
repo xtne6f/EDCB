@@ -68,8 +68,7 @@ namespace EpgTimer
             {
                 if (ReserveInfo == null) return "";
                 //
-                DateTime endTime = ReserveInfo.StartTime + TimeSpan.FromSeconds(ReserveInfo.DurationSecond);
-                return ReserveInfo.StartTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss ～ ") + endTime.ToString("HH:mm:ss");
+                return CommonManager.ConvertTimeText(ReserveInfo.StartTime, ReserveInfo.DurationSecond, Settings.Instance.ResInfoNoYear, Settings.Instance.ResInfoNoSecond);
             }
         }
         public String StartTimeShort
@@ -78,17 +77,16 @@ namespace EpgTimer
             {
                 if (ReserveInfo == null) return "";
                 //
-                DateTime endTime = ReserveInfo.StartTime + TimeSpan.FromSeconds(ReserveInfo.DurationSecond);
-                return ReserveInfo.StartTime.ToString("MM/dd(ddd) HH:mm～") + endTime.ToString("HH:mm");
+                return CommonManager.ConvertTimeText(ReserveInfo.StartTime, ReserveInfo.DurationSecond, true, true);
             }
         }
-        public override TimeSpan ProgramDuration
+        public override String ProgramDuration
         {
             get
             {
-                if (ReserveInfo == null) { return new TimeSpan(); }
+                if (ReserveInfo == null) return "";
                 //
-                return TimeSpan.FromSeconds(ReserveInfo.DurationSecond);
+                return CommonManager.ConvertDurationText(ReserveInfo.DurationSecond, Settings.Instance.ResInfoNoDurSecond);
             }
         }
         public String MarginStart

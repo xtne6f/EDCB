@@ -248,6 +248,12 @@ namespace EpgTimer
         private long recInfoDropWrnIgnore;
         private long recInfoScrambleIgnore;
         private List<string> recInfoDropExclude;
+        private bool recInfoNoYear;
+        private bool recInfoNoSecond;
+        private bool recInfoNoDurSecond;
+        private bool resInfoNoYear;
+        private bool resInfoNoSecond;
+        private bool resInfoNoDurSecond;
         private string tvTestExe;
         private string tvTestCmd;
         private bool nwTvMode;
@@ -729,6 +735,36 @@ namespace EpgTimer
             get { return recInfoDropExclude; }
             set { recInfoDropExclude = value; }
         }
+        public bool RecInfoNoYear
+        {
+            get { return recInfoNoYear; }
+            set { recInfoNoYear = value; }
+        }
+        public bool RecInfoNoSecond
+        {
+            get { return recInfoNoSecond; }
+            set { recInfoNoSecond = value; }
+        }
+        public bool RecInfoNoDurSecond
+        {
+            get { return recInfoNoDurSecond; }
+            set { recInfoNoDurSecond = value; }
+        }
+        public bool ResInfoNoYear
+        {
+            get { return resInfoNoYear; }
+            set { resInfoNoYear = value; }
+        }
+        public bool ResInfoNoSecond
+        {
+            get { return resInfoNoSecond; }
+            set { resInfoNoSecond = value; }
+        }
+        public bool ResInfoNoDurSecond
+        {
+            get { return resInfoNoDurSecond; }
+            set { resInfoNoDurSecond = value; }
+        }
         public string TvTestExe
         {
             get { return tvTestExe; }
@@ -1114,6 +1150,12 @@ namespace EpgTimer
             recInfoDropWrnIgnore = 0;
             recInfoScrambleIgnore = 0;
             recInfoDropExclude = new List<string>();
+            recInfoNoYear = false;
+            recInfoNoSecond = false;
+            recInfoNoDurSecond = false;
+            resInfoNoYear = false;
+            resInfoNoSecond = false;
+            resInfoNoDurSecond = false;
             tvTestExe = "";
             tvTestCmd = "";
             nwTvMode = false;

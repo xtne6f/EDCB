@@ -214,7 +214,7 @@
                     <Grid>
                         <RadioButton Content="デフォルト表示" Height="16" HorizontalAlignment="Left" Margin="6,6,0,0" Name="radioButton_1_def" VerticalAlignment="Top" />
                         <RadioButton Content="カスタマイズ表示" Height="16" HorizontalAlignment="Left" Margin="6,28,0,0" Name="radioButton_1_cust" VerticalAlignment="Top" />
-                        <GroupBox Header="カスタマイズ表示設定" Margin="6,50,6,0" Height="266" VerticalAlignment="Top">
+                        <GroupBox Header="カスタマイズ表示設定" Margin="6,50,6,0" VerticalAlignment="Top" Padding="0,0,0,6">
                             <Grid>
                                 <Label Content="表示タブ" Height="28" HorizontalAlignment="Left" Margin="6,6,0,0" VerticalAlignment="Top" />
                                 <ListBox Height="148" HorizontalAlignment="Left" Margin="23,40,0,0" Name="listBox_tab" VerticalAlignment="Top" Width="172" SelectionMode="Extended" >
@@ -320,10 +320,14 @@
         </TabItem>
         <TabItem Header="録画済み一覧">
             <StackPanel>
-                <GroupBox Header="各種設定" Margin="6,6,6,0" VerticalAlignment="Top" Height="207">
+                <GroupBox Header="各種設定" Margin="6,6,6,0" VerticalAlignment="Top" >
                     <Grid>
                         <CheckBox Content="録画済み一覧のダブルクリックで再生を行う" Height="16" HorizontalAlignment="Left" Margin="6,12,0,0" Name="checkBox_playDClick" VerticalAlignment="Top" />
-                        <GroupBox Header="ドロップ・スクランブル未解除" Margin="6,41,6,0" VerticalAlignment="Top" >
+                        <Label Content="リスト表示で省略する" Height="24" HorizontalAlignment="Left" Margin="6,34,0,0" VerticalAlignment="Top" />
+                        <CheckBox Content="'年'" Height="16" HorizontalAlignment="Left" Margin="140,40,0,0" Name="checkBox_recNoYear" VerticalAlignment="Top" />
+                        <CheckBox Content="'秒'" Height="16" HorizontalAlignment="Left" Margin="190,40,0,0" Name="checkBox_recNoSecond" VerticalAlignment="Top" />
+                        <CheckBox Content="長さの'秒'" Height="16" HorizontalAlignment="Left" Margin="240,40,0,0" Name="checkBox_recNoDurSecond" VerticalAlignment="Top" />
+                        <GroupBox Header="ドロップ・スクランブル未解除" Margin="0,64,0,0" VerticalAlignment="Top" >
                             <Grid>
                                 <Label Content="ドロップをエラー扱いしない閾値" Height="28" HorizontalAlignment="Left" Margin="6,6,0,0" VerticalAlignment="Top" />
                                 <TextBox Height="24" HorizontalAlignment="Left" Margin="264,6,0,0" Name="textBox_dropErrIgnore" VerticalAlignment="Top" Width="62" />
@@ -362,14 +366,18 @@
             <TabControl>
                 <TabItem Header="基本" >
                     <StackPanel>
-                        <GroupBox Header="各種設定" Margin="6,6,6,0" VerticalAlignment="Top" Height="150">
+                        <GroupBox Header="各種設定" Margin="6,6,6,0" VerticalAlignment="Top" Padding="0,0,0,6">
                             <Grid>
-                                <Button Content="右クリックメニューの設定" Height="23" HorizontalAlignment="Left" Margin="6,0,0,100" Name="button_set_cm" Click="button_set_cm_Click" VerticalAlignment="Bottom" Width="171" />
+                                <Button Content="右クリックメニューの設定" Height="23" HorizontalAlignment="Left" Margin="6,5,0,0" Name="button_set_cm" Click="button_set_cm_Click" VerticalAlignment="Top" Width="171" />
                                 <CheckBox Content="自動予約登録(EPG予約、プログラム予約)を見失った予約を強調表示する" Height="16" HorizontalAlignment="Left" Margin="6,43,0,0" Name="checkBox_displayAutoAddMissing" VerticalAlignment="Top" ToolTip="自動予約登録を削除・変更した場合や、EPGのタイトルが変わった場合などに発生する場合があります" />
                                 <Label Content="※EpgTimerNWでは若干もたつく感じがあるかもしれません" Height="28" Margin="20,52,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" Width="404" />
                                 <Label Content="番組表などへジャンプしたときの強調表示の継続時間" Height="24" HorizontalAlignment="Left" Margin="6,74,0,0" VerticalAlignment="Top" Width="305" />
                                 <Label Content="秒" Height="24" HorizontalAlignment="Left" Margin="375,74,0,0" VerticalAlignment="Top" Width="49" />
                                 <TextBox Height="24" HorizontalAlignment="Left" Margin="317,74,0,0" Name="textBox_DisplayJumpTime" VerticalAlignment="Top" Width="55" />
+                                <Label Content="リスト表示で省略する" Height="24" HorizontalAlignment="Left" Margin="6,96,0,0" VerticalAlignment="Top" />
+                                <CheckBox Content="'年'" Height="16" HorizontalAlignment="Left" Margin="140,102,0,0" Name="checkBox_resNoYear" VerticalAlignment="Top" />
+                                <CheckBox Content="'秒'" Height="16" HorizontalAlignment="Left" Margin="190,102,0,0" Name="checkBox_resNoSecond" VerticalAlignment="Top" ToolTip="たまに'秒'単位の番組も存在します。" />
+                                <CheckBox Content="長さの'秒'" Height="16" HorizontalAlignment="Left" Margin="240,102,0,0" Name="checkBox_resNoDurSecond" VerticalAlignment="Top" ToolTip="たまに'秒'単位の番組も存在します。" />
                             </Grid>
                         </GroupBox>
                     </StackPanel>

@@ -173,6 +173,9 @@ namespace EpgTimer.Setting
                 textBox_scrambleIgnore.Text = Settings.Instance.RecInfoScrambleIgnore.ToString();
                 checkBox_playDClick.IsChecked = Settings.Instance.PlayDClick;
                 checkBox_recinfo_errCritical.IsChecked = Settings.Instance.RecinfoErrCriticalDrops;
+                checkBox_recNoYear.IsChecked = Settings.Instance.RecInfoNoYear;
+                checkBox_recNoSecond.IsChecked = Settings.Instance.RecInfoNoSecond;
+                checkBox_recNoDurSecond.IsChecked = Settings.Instance.RecInfoNoDurSecond;
 
                 setComboColors(Settings.Instance.RecEndColors, grid_RecInfoBackColors);
                 setButtonColors(Settings.Instance.RecEndCustColors, grid_RecInfoBackColors);
@@ -180,6 +183,9 @@ namespace EpgTimer.Setting
                 //予約一覧画面
                 this.ctxmSetInfo = Settings.Instance.MenuSet.Clone();
                 checkBox_displayAutoAddMissing.IsChecked = Settings.Instance.DisplayReserveAutoAddMissing;
+                checkBox_resNoYear.IsChecked = Settings.Instance.ResInfoNoYear;
+                checkBox_resNoSecond.IsChecked = Settings.Instance.ResInfoNoSecond;
+                checkBox_resNoDurSecond.IsChecked = Settings.Instance.ResInfoNoDurSecond;
 
                 setComboColor1(Settings.Instance.ListDefColor, cmb_ListDefFontColor);
                 setComboColors(Settings.Instance.RecModeFontColors, grid_ReserveRecModeColors);
@@ -304,12 +310,18 @@ namespace EpgTimer.Setting
                 Settings.Instance.RecInfoDropWrnIgnore = mutil.MyToNumerical(textBox_dropWrnIgnore, Convert.ToInt64, Settings.Instance.RecInfoDropWrnIgnore);
                 Settings.Instance.RecInfoScrambleIgnore = mutil.MyToNumerical(textBox_scrambleIgnore, Convert.ToInt64, Settings.Instance.RecInfoScrambleIgnore);
                 Settings.Instance.RecinfoErrCriticalDrops = (checkBox_recinfo_errCritical.IsChecked == true);
+                Settings.Instance.RecInfoNoYear = (checkBox_recNoYear.IsChecked == true);
+                Settings.Instance.RecInfoNoSecond = (checkBox_recNoSecond.IsChecked == true);
+                Settings.Instance.RecInfoNoDurSecond = (checkBox_recNoDurSecond.IsChecked == true);
                 getComboColors(Settings.Instance.RecEndColors, grid_RecInfoBackColors);
                 getButtonColors(Settings.Instance.RecEndCustColors, grid_RecInfoBackColors);
 
                 //予約一覧画面
                 Settings.Instance.MenuSet = this.ctxmSetInfo.Clone();
                 Settings.Instance.DisplayReserveAutoAddMissing = (checkBox_displayAutoAddMissing.IsChecked != false);
+                Settings.Instance.ResInfoNoYear = (checkBox_resNoYear.IsChecked == true);
+                Settings.Instance.ResInfoNoSecond = (checkBox_resNoSecond.IsChecked == true);
+                Settings.Instance.ResInfoNoDurSecond = (checkBox_resNoDurSecond.IsChecked == true);
 
                 Settings.Instance.ListDefColor = getComboColor1(cmb_ListDefFontColor);
                 getComboColors(Settings.Instance.RecModeFontColors, grid_ReserveRecModeColors);

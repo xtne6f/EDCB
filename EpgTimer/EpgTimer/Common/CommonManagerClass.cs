@@ -741,20 +741,33 @@ namespace EpgTimer
             return eventInfo;
         }
 
+        public static String ConvertTimeText(DateTime start, uint duration, bool isNoYear, bool isNoSecond, bool isNoEndDay = true)
+        {
+            return ConvertTimeText(start, isNoYear, isNoSecond) 
+                + (isNoSecond == true ? "～" : " ～ ")
+                + ConvertTimeText(start + TimeSpan.FromSeconds(duration), isNoYear, isNoSecond, isNoEndDay);
+        }
+        public static String ConvertTimeText(DateTime start, bool isNoYear, bool isNoSecond, bool isNoDay = false)
+        {
+            return start.ToString((isNoDay == true ? "" :
+                (isNoYear == true ? "MM/dd(ddd) " : "yyyy/MM/dd(ddd) ")) + (isNoSecond == true ? "HH:mm" : "HH:mm:ss"));
+        }
+        public static String ConvertDurationText(uint duration, bool isNoSecond)
+        {
+            return (duration / 3600).ToString() 
+                + ((duration % 3600) / 60).ToString(":00") 
+                + (isNoSecond == true ? "" : (duration % 60).ToString(":00"));
+        }
+
         public String ConvertReserveText(ReserveData reserveInfo)
         {
-            String view = "";
-            view = reserveInfo.StartTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss ～ ");
-            DateTime endTime = reserveInfo.StartTime + TimeSpan.FromSeconds(reserveInfo.DurationSecond);
-            view += endTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss") + "\r\n";
-
-            String recMode = ConvertRecModeText(reserveInfo.RecSetting.RecMode);
+            String view = ConvertTimeText(reserveInfo.StartTime, reserveInfo.DurationSecond, false, false, false) + "\r\n";
 
             view += reserveInfo.StationName;
             view += "(" + ConvertNetworkNameText(reserveInfo.OriginalNetworkID) + ")" + "\r\n";
 
             view += reserveInfo.Title + "\r\n\r\n";
-            view += "録画モード : " + recMode + "\r\n";
+            view += "録画モード : " + ConvertRecModeText(reserveInfo.RecSetting.RecMode) + "\r\n";
             view += "優先度 : " + reserveInfo.RecSetting.Priority.ToString() + "\r\n";
             view += "追従 : " + YesNoDictionary[reserveInfo.RecSetting.TuijyuuFlag] + "\r\n";
             view += "ぴったり（？） : " + YesNoDictionary[reserveInfo.RecSetting.PittariFlag] + "\r\n";
@@ -885,7 +898,7 @@ namespace EpgTimer
 
                 if (eventInfo.StartTimeFlag == 1)
                 {
-                    basicInfo += eventInfo.start_time.ToString("yyyy/MM/dd(ddd) HH:mm:ss ～ ");
+                    basicInfo += ConvertTimeText(eventInfo.start_time, false, false) + " ～ ";
                 }
                 else
                 {
@@ -894,7 +907,7 @@ namespace EpgTimer
                 if (eventInfo.DurationFlag == 1)
                 {
                     DateTime endTime = eventInfo.start_time + TimeSpan.FromSeconds(eventInfo.durationSec);
-                    basicInfo += endTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss") + "\r\n";
+                    basicInfo += ConvertTimeText(endTime, false, false) + "\r\n";
                 }
                 else
                 {
