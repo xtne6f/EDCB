@@ -23,6 +23,16 @@ namespace EpgTimer
             this.RecInfo = item;
         }
 
+        public static string GetValuePropertyName(string key)
+        {
+            switch (key)
+            {
+                case "StartTime": return "StartTimeValue";
+                case "ProgramDuration": return "ProgramDurationValue";
+                default: return key;
+            }
+        }
+
         public bool IsProtect
         {
             set
@@ -65,6 +75,15 @@ namespace EpgTimer
                 return CommonManager.ConvertDurationText(RecInfo.DurationSecond, Settings.Instance.RecInfoNoDurSecond);
             }
         }
+        public UInt32 ProgramDurationValue
+        {
+            get
+            {
+                if (RecInfo == null) return UInt32.MinValue;
+                //
+                return RecInfo.DurationSecond;
+            }
+        }
         public String StartTime
         {
             get
@@ -72,6 +91,15 @@ namespace EpgTimer
                 if (RecInfo == null) return "";
                 //
                 return CommonManager.ConvertTimeText(RecInfo.StartTime, RecInfo.DurationSecond, Settings.Instance.RecInfoNoYear, Settings.Instance.RecInfoNoSecond);
+            }
+        }
+        public DateTime StartTimeValue
+        {
+            get
+            {
+                if (RecInfo == null) return new DateTime();
+                //
+                return RecInfo.StartTime;
             }
         }
         public String Drops

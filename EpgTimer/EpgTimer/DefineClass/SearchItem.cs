@@ -21,6 +21,16 @@ namespace EpgTimer
             EventInfo = item;
         }
 
+        public static string GetValuePropertyName(string key)
+        {
+            switch (key)
+            {
+                case "StartTime": return "StartTimeValue";
+                case "ProgramDuration": return "ProgramDurationValue";
+                default: return key;
+            }
+        }
+
         public bool IsReserved
         {
             get
@@ -71,6 +81,15 @@ namespace EpgTimer
                 return CommonManager.ConvertTimeText(EventInfo.start_time, Settings.Instance.ResInfoNoYear, Settings.Instance.ResInfoNoSecond);
             }
         }
+        public virtual DateTime StartTimeValue
+        {
+            get
+            {
+                if (EventInfo == null || EventInfo.StartTimeFlag == 0) return new DateTime();
+                //
+                return EventInfo.start_time;
+            }
+        }
         /// <summary>
         /// 番組放送時間(長さ)
         /// </summary>
@@ -82,6 +101,15 @@ namespace EpgTimer
                 if (EventInfo.DurationFlag == 0) return "不明";
                 //
                 return CommonManager.ConvertDurationText(EventInfo.durationSec, Settings.Instance.ResInfoNoDurSecond);
+            }
+        }
+        public virtual UInt32 ProgramDurationValue
+        {
+            get
+            {
+                if (EventInfo == null || EventInfo.DurationFlag == 0) return UInt32.MinValue;
+                //
+                return EventInfo.durationSec;
             }
         }
         /// <summary>

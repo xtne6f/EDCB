@@ -17,6 +17,16 @@ namespace EpgTimer
             base.ReserveInfo = item;
         }
 
+        public static new string GetValuePropertyName(string key)
+        {
+            switch (key)
+            {
+                case "MarginStart": return "MarginStartValue";
+                case "MarginEnd": return "MarginEndValue";
+                default: return SearchItem.GetValuePropertyName(key);
+            }
+        }
+
         private EpgEventInfo eventInfo = null;
         public override EpgEventInfo EventInfo
         {
@@ -71,6 +81,15 @@ namespace EpgTimer
                 return CommonManager.ConvertTimeText(ReserveInfo.StartTime, ReserveInfo.DurationSecond, Settings.Instance.ResInfoNoYear, Settings.Instance.ResInfoNoSecond);
             }
         }
+        public override DateTime StartTimeValue
+        {
+            get
+            {
+                if (ReserveInfo == null) return new DateTime();
+                //
+                return ReserveInfo.StartTime;
+            }
+        }
         public String StartTimeShort
         {
             get
@@ -89,6 +108,15 @@ namespace EpgTimer
                 return CommonManager.ConvertDurationText(ReserveInfo.DurationSecond, Settings.Instance.ResInfoNoDurSecond);
             }
         }
+        public override UInt32 ProgramDurationValue
+        {
+            get
+            {
+                if (ReserveInfo == null) return UInt32.MinValue;
+                //
+                return ReserveInfo.DurationSecond;
+            }
+        }
         public String MarginStart
         {
             get
@@ -98,6 +126,15 @@ namespace EpgTimer
                 return mutil.MarginText(ReserveInfo.RecSetting,true);
             }
         }
+        public Double MarginStartValue
+        {
+            get
+            {
+                if (ReserveInfo == null) return Double.MinValue;
+                //
+                return mutil.GetMarginForSort(ReserveInfo.RecSetting, true);
+            }
+        }
         public String MarginEnd
         {
             get
@@ -105,6 +142,15 @@ namespace EpgTimer
                 if (ReserveInfo == null) return "";
                 //
                 return mutil.MarginText(ReserveInfo.RecSetting, false);
+            }
+        }
+        public Double MarginEndValue
+        {
+            get
+            {
+                if (ReserveInfo == null) return Double.MinValue;
+                //
+                return mutil.GetMarginForSort(ReserveInfo.RecSetting, false);
             }
         }
         //public String ProgramContent -> SearchItem.cs

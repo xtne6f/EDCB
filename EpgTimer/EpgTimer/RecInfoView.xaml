@@ -44,6 +44,7 @@
         <ListView Name="listView_recinfo" Margin="10" SelectionMode="Extended" ContextMenu="{DynamicResource itemMenu}" >
             <ListView.Resources>
                 <Style TargetType="ListViewItem">
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
                     <Setter Property="ToolTipService.ShowDuration" Value="20000" />
                     <Setter Property="ToolTip" Value="{Binding ToolTipView}"/>
                     <Setter Property="Foreground"  Value="{Binding ForeColor}" />
@@ -87,10 +88,15 @@
                             <GridViewColumnHeader Content="日時" Tag="StartTime" HorizontalContentAlignment="Left"/>
                         </GridViewColumn.Header>
                     </GridViewColumn>
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=ProgramDuration}">
+                    <GridViewColumn>
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="時間(長さ)" Tag="ProgramDuration" HorizontalContentAlignment="Left" />
                         </GridViewColumn.Header>
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Path=ProgramDuration}" HorizontalAlignment="Right" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=NetworkName}">
                         <GridViewColumn.Header>

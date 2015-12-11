@@ -60,7 +60,7 @@ namespace EpgTimer
 
                     if (getKey == null)
                     {
-                        getKey = CtrlCmdDefEx.GetKeyFunc(oldItem);
+                        getKey = CtrlCmdDefEx.GetKeyFunc(oldItem.GetType());
                     }
 
                     foreach (object listItem1 in listBox.Items)

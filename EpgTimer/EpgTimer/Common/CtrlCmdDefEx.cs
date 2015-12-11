@@ -224,39 +224,62 @@ namespace EpgTimer
             dest.transportStreamID = src.transportStreamID;
         }
 
-        public static Func<object, ulong> GetKeyFunc(object refobj)
+        public static Func<object, ulong> GetKeyFunc(Type t)
         {
-            if (refobj != null)
+            if (t == typeof(ReserveItem))
             {
-                string typeName = refobj.GetType().Name;
-                if (refobj is ReserveItem)
-                {
-                    return info => (info as ReserveItem).ReserveInfo.ReserveID;
-                }
-                else if (refobj is RecInfoItem)
-                {
-                    return info => (info as RecInfoItem).RecInfo.ID;
-                }
-                else if (refobj is EpgAutoDataItem)
-                {
-                    return info => (info as EpgAutoDataItem).EpgAutoAddInfo.dataID;
-                }
-                else if (refobj is ManualAutoAddDataItem)
-                {
-                    return info => (info as ManualAutoAddDataItem).ManualAutoAddInfo.dataID;
-                }
-                else if (refobj is SearchItem)
-                {
-                    return info => (info as SearchItem).EventInfo.Create64PgKey();
-                }
-                else if (refobj is NotifySrvInfoItem)
-                {
-                    return info => (info as NotifySrvInfoItem).NotifyInfo.notifyID;
-                }
+                return info => (info as ReserveItem).ReserveInfo.ReserveID;
             }
+            else if (t == typeof(RecInfoItem))
+            {
+                return info => (info as RecInfoItem).RecInfo.ID;
+            }
+            else if (t == typeof(EpgAutoDataItem))
+            {
+                return info => (info as EpgAutoDataItem).EpgAutoAddInfo.dataID;
+            }
+            else if (t == typeof(ManualAutoAddDataItem))
+            {
+                return info => (info as ManualAutoAddDataItem).ManualAutoAddInfo.dataID;
+            }
+            else if (t == typeof(SearchItem))
+            {
+                return info => (info as SearchItem).EventInfo.Create64PgKey();
+            }
+            else if (t == typeof(NotifySrvInfoItem))
+            {
+                return info => (info as NotifySrvInfoItem).NotifyInfo.notifyID;
+            }
+            else
+            {
+                //必ずしもキーにはなるとは限らないが、エラーにしないため一応返す。
+                return info => (ulong)info.GetHashCode();
+            }
+        }
 
-            //キーにはなっていないが、エラーにしないため一応返す
-            return info => (ulong)info.GetHashCode();
+        //ソート用の代替プロパティがあればその名前を返す
+        public static string GetValuePropertyName(Type t, string key)
+        {
+            if (t == typeof(ReserveItem))
+            {
+                return ReserveItem.GetValuePropertyName(key);
+            }
+            else if (t == typeof(SearchItem))
+            {
+                return SearchItem.GetValuePropertyName(key);
+            }
+            else if (t == typeof(RecInfoItem))
+            {
+                return RecInfoItem.GetValuePropertyName(key);
+            }
+            else if (t == typeof(EpgAutoDataItem))
+            {
+                return EpgAutoDataItem.GetValuePropertyName(key);
+            }
+            else
+            {
+                return key;
+            }
         }
 
         public static List<RecSettingData> RecSettingList(this List<ReserveData> list)

@@ -20,6 +20,17 @@ namespace EpgTimer
 
         public EpgAutoAddData EpgAutoAddInfo { get; set; }
 
+        public static string GetValuePropertyName(string key)
+        {
+            switch (key)
+            {
+                case "NextReserve": return "NextReserveValue";
+                case "MarginStart": return "MarginStartValue";
+                case "MarginEnd": return "MarginEndValue";
+                default: return key;
+            }
+        }
+
         public String AndKey
         {
             get
@@ -171,6 +182,15 @@ namespace EpgTimer
                 return new ReserveItem(EpgAutoAddInfo.GetNextReserve()).StartTime;
             }
         }
+        public DateTime NextReserveValue
+        {
+            get
+            {
+                if (EpgAutoAddInfo == null) return new DateTime();
+                //
+                return new ReserveItem(EpgAutoAddInfo.GetNextReserve()).StartTimeValue;
+            }
+        }
         public String JyanruKey
         {
             get
@@ -265,6 +285,15 @@ namespace EpgTimer
                 return mutil.MarginText(EpgAutoAddInfo.recSetting, true);
             }
         }
+        public Double MarginStartValue
+        {
+            get
+            {
+                if (EpgAutoAddInfo == null) return Double.MinValue;
+                //
+                return mutil.GetMarginForSort(EpgAutoAddInfo.recSetting, true);
+            }
+        }
         public String MarginEnd
         {
             get
@@ -272,6 +301,15 @@ namespace EpgTimer
                 if (EpgAutoAddInfo == null) return "";
                 //
                 return mutil.MarginText(EpgAutoAddInfo.recSetting, false);
+            }
+        }
+        public Double MarginEndValue
+        {
+            get
+            {
+                if (EpgAutoAddInfo == null) return Double.MinValue;
+                //
+                return mutil.GetMarginForSort(EpgAutoAddInfo.recSetting, false);
             }
         }
         public String Preset

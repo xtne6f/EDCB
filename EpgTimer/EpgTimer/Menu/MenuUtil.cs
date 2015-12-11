@@ -240,6 +240,13 @@ namespace EpgTimer
             return marginTime;
         }
 
+        public double GetMarginForSort(RecSettingData recSetting, bool start)
+        {
+            if (recSetting == null) return 0;
+            //
+            return GetMargin(recSetting, start) * (start ? -1 : 1) + (recSetting.UseMargineFlag == 1 ? 0.1 : 0);
+        }
+
         private string CustomTimeFormat(int span, byte useMarginFlag)
         {
             string hours;
