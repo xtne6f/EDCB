@@ -68,9 +68,10 @@ namespace EpgTimer
 
             //データ更新は必要になったときにまとめて行う
             //未使用か、EpgAutoAddData更新により古いデータ廃棄済みでデータが無い場合
-            if (epgAutoAddAppendList == null)
+            Dictionary<uint, EpgAutoAddDataAppend> dict = epgAutoAddAppendList;
+            if (dict == null)
             {
-                epgAutoAddAppendList = new Dictionary<uint, EpgAutoAddDataAppend>();
+                dict = new Dictionary<uint, EpgAutoAddDataAppend>();
                 List<EpgSearchKeyInfo> keyList = new List<EpgSearchKeyInfo>();
 
                 foreach (EpgAutoAddData item in EpgAutoAddList.Values)
@@ -93,9 +94,11 @@ namespace EpgTimer
                         int i = 0;
                         foreach (EpgAutoAddData item in epgAutoAddList.Values)
                         {
-                            epgAutoAddAppendList.Add(item.dataID, new EpgAutoAddDataAppend(item, list_list[i++]));
+                            dict.Add(item.dataID, new EpgAutoAddDataAppend(item, list_list[i++]));
                         }
                     }
+
+                    epgAutoAddAppendList = dict;
                 }
                 catch (Exception ex)
                 {
@@ -107,7 +110,7 @@ namespace EpgTimer
             if (updateAutoAddAppendReserveInfo == true)
             {
                 ReloadReserveInfo();//notify残ってれば更新
-                foreach (EpgAutoAddDataAppend item in epgAutoAddAppendList.Values)
+                foreach (EpgAutoAddDataAppend item in dict.Values)
                 {
                     item.updateCounts = true;
                 }
@@ -116,10 +119,9 @@ namespace EpgTimer
 
             //SendSearchPgByKeyに失敗した場合などは引っかかる。
             EpgAutoAddDataAppend retv;
-            if (epgAutoAddAppendList.TryGetValue(master.dataID, out retv) == false)
+            if (dict.TryGetValue(master.dataID, out retv) == false)
             {
                 retv = new EpgAutoAddDataAppend(master);
-                epgAutoAddAppendList.Add(master.dataID, retv);
             }
             return retv;
         }
@@ -128,7 +130,8 @@ namespace EpgTimer
         {
             if (info == null) return false;
 
-            if (reserveAutoAddMissing == null)
+            Dictionary<uint, bool> dict = reserveAutoAddMissing;
+            if (dict == null)
             {
                 //notify残ってれば更新
                 ReloadReserveInfo();//通常残ってないはず
@@ -152,26 +155,28 @@ namespace EpgTimer
                 var manualAutoResDict = manualAutoResList.Distinct().ToDictionary(data => data.ReserveID, data => data);
 
                 //突き合わせ
-                reserveAutoAddMissing = new Dictionary<uint, bool>();
+                dict = new Dictionary<uint, bool>();
                 foreach (var resdata in reserveList.Values)
                 {
                     if (resdata.Comment.StartsWith("EPG自動予約") == true)
                     {
-                        reserveAutoAddMissing.Add(resdata.ReserveID, !epgAutoResDict.ContainsKey(resdata.ReserveID));
+                        dict.Add(resdata.ReserveID, !epgAutoResDict.ContainsKey(resdata.ReserveID));
                     }
                     else if (resdata.Comment.StartsWith("プログラム自動予約") == true)
                     {
-                        reserveAutoAddMissing.Add(resdata.ReserveID, !manualAutoResDict.ContainsKey(resdata.ReserveID));
+                        dict.Add(resdata.ReserveID, !manualAutoResDict.ContainsKey(resdata.ReserveID));
                     }
                     else
                     {
-                        reserveAutoAddMissing.Add(resdata.ReserveID, false);
+                        dict.Add(resdata.ReserveID, false);
                     }
                 }
+
+                reserveAutoAddMissing = dict;
             }
 
             bool retv;
-            if (reserveAutoAddMissing.TryGetValue(info.ReserveID, out retv) == false) return false;
+            if (dict.TryGetValue(info.ReserveID, out retv) == false) return false;
 
             return retv;
         }
