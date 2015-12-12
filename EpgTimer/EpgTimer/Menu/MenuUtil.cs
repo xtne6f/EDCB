@@ -700,7 +700,7 @@ namespace EpgTimer
                 + CmdExeUtil.FormatTitleListForDialog(list);
 
             return MessageBox.Show(text, "[予約" + description + "]の確認", MessageBoxButton.OKCancel,
-                                MessageBoxImage.Exclamation, MessageBoxResult.OK) == MessageBoxResult.OK;
+                                MessageBoxImage.Exclamation, MessageBoxResult.Cancel) == MessageBoxResult.OK;
         }
 
         public bool EpgAutoAddAdd(List<EpgAutoAddData> itemlist)
@@ -751,7 +751,8 @@ namespace EpgTimer
                         + "よろしいですか？\r\n\r\n"
                         + "[項目数 : " + itemlist.Count + "]\r\n"
                         + "[追加される予約数 : " + addReserveNum + "]\r\n"
-                        , "EPG自動予約の変更", MessageBoxButton.OKCancel) == MessageBoxResult.Cancel)
+                        , "EPG自動予約の変更", MessageBoxButton.OKCancel,
+                        MessageBoxImage.Exclamation, MessageBoxResult.Cancel) == MessageBoxResult.Cancel)
                     {
                         return false;
                     }
@@ -865,7 +866,7 @@ namespace EpgTimer
             {
                 if (MessageBox.Show("多数の項目を処理しようとしています。\r\nよろしいですか？\r\n"
                     + "　項目数: " + Count + "\r\n"
-                    , description, MessageBoxButton.OKCancel) == MessageBoxResult.Cancel)
+                    , description, MessageBoxButton.OKCancel, MessageBoxImage.Exclamation, MessageBoxResult.Cancel) == MessageBoxResult.Cancel)
                 {
                     return false;
                 }
