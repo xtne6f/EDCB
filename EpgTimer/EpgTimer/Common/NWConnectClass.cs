@@ -18,7 +18,6 @@ namespace EpgTimer
         private Action<CMD_STREAM, CMD_STREAM> cmdProc = null;
 
         private bool connectFlag;
-        private UInt32 serverPort;
         private TcpListener server = null;
 
         private String connectedIP;
@@ -79,12 +78,8 @@ namespace EpgTimer
             client.Send(stream.ToArray(), (int)stream.Position, new IPEndPoint(broad, 0));
         }
 
-        public bool ConnectServer(String srvIP, UInt32 srvPort, UInt32 waitPort, Action<CMD_STREAM, CMD_STREAM> pfnCmdProc)
+        public bool ConnectServer(IPAddress srvIP, UInt32 srvPort, UInt32 waitPort, Action<CMD_STREAM, CMD_STREAM> pfnCmdProc)
         {
-            if (srvIP.Length == 0)
-            {
-                return false;
-            }
             connectFlag = false;
 
             cmdProc = pfnCmdProc;
@@ -92,21 +87,8 @@ namespace EpgTimer
 
             cmd.SetSendMode(true);
 
-            String wIPAddress = srvIP;
-            IPAddress[] IpAddress = Dns.GetHostAddresses(srvIP);
+            cmd.SetNWSetting(srvIP.ToString(), srvPort);
 
-            foreach (IPAddress wIP in IpAddress)
-            {
-                if (!wIP.IsIPv6LinkLocal)
-                {
-                    wIPAddress = wIP.ToString();
-                    break;
-                }
-            }
-
-            cmd.SetNWSetting(wIPAddress, srvPort);
-
-            //cmd.SetNWSetting(srvIP, srvPort);
             if (cmd.SendRegistTCP(waitPort) != ErrCode.CMD_SUCCESS)
             {
                 return false;
@@ -114,7 +96,7 @@ namespace EpgTimer
             else
             {
                 connectFlag = true;
-                connectedIP = srvIP;
+                connectedIP = srvIP.ToString();
                 connectedPort = srvPort;
                 return true;
             }
@@ -122,30 +104,14 @@ namespace EpgTimer
 
         private bool StartTCPServer(UInt32 port)
         {
-            if (serverPort == port && server != null)
+            if (server != null)
             {
                 return true;
             }
-            if (server != null)
-            {
-                server.Stop();
-                server = null;
-            }
-            serverPort = port;
             server = new TcpListener(IPAddress.Any, (int)port);
             server.Start();
             server.BeginAcceptTcpClient(new AsyncCallback(DoAcceptTcpClientCallback), server);
 
-            return true;
-        }
-
-        private bool StopTCPServer()
-        {
-            if (server != null)
-            {
-                server.Stop();
-                server = null;
-            } 
             return true;
         }
 

@@ -575,13 +575,12 @@ namespace EpgTimer
             }
 
             bool connected = false;
-            String srvIP = Settings.Instance.NWServerIP;
             try
             {
-                foreach (var address in System.Net.Dns.GetHostAddresses(srvIP))
+                foreach (var address in System.Net.Dns.GetHostAddresses(Settings.Instance.NWServerIP))
                 {
-                    srvIP = address.ToString();
-                    if (CommonManager.Instance.NW.ConnectServer(srvIP, Settings.Instance.NWServerPort, Settings.Instance.NWWaitPort, (c, r) => OutsideCmdCallback(c, r, true)) == true)
+                    if (address.IsIPv6LinkLocal == false &&
+                        CommonManager.Instance.NW.ConnectServer(address, Settings.Instance.NWServerPort, Settings.Instance.NWWaitPort, (c, r) => OutsideCmdCallback(c, r, true)) == true)
                     {
                         connected = true;
                         break;
@@ -1147,93 +1146,6 @@ namespace EpgTimer
                         this.Visibility = System.Windows.Visibility.Visible;
                     }
                     break;
-                case CtrlCmd.CMD_TIMER_GUI_UPDATE_RESERVE:
-                    {
-                        pResParam.uiParam = (uint)ErrCode.CMD_SUCCESS;
-                        if (Dispatcher.CheckAccess() == true)
-                        {
-                            CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.ReserveInfo);
-                            CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.RecInfo);
-                            CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.AutoAddEpgInfo);
-                            CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.AutoAddManualInfo);
-                            reserveView.UpdateReserveData();
-                            epgView.UpdateReserveData();
-                            tunerReserveView.UpdateReserveData();
-                            autoAddView.UpdateAutoAddInfo();
-                            recInfoView.UpdateInfo();
-
-                            CommonManager.Instance.DB.ReloadReserveInfo();
-                            ReserveData item = new ReserveData();
-                            if (CommonManager.Instance.DB.GetNextReserve(ref item) == true)
-                            {
-                                String timeView = item.StartTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss ～ ");
-                                DateTime endTime = item.StartTime + TimeSpan.FromSeconds(item.DurationSecond);
-                                timeView += endTime.ToString("HH:mm:ss");
-                                taskTray.Text = "次の予約：" + item.StationName + " " + timeView + " " + item.Title;
-                            }
-                            else
-                            {
-                                taskTray.Text = "次の予約なし";
-                            }
-                        }
-                        else
-                        {
-                            Dispatcher.BeginInvoke(new Action(() =>
-                            {
-                                CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.ReserveInfo);
-                                CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.RecInfo);
-                                CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.AutoAddEpgInfo);
-                                CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.AutoAddManualInfo);
-                                reserveView.UpdateReserveData();
-                                epgView.UpdateReserveData();
-                                tunerReserveView.UpdateReserveData();
-                                autoAddView.UpdateAutoAddInfo();
-                                recInfoView.UpdateInfo();
-
-                                CommonManager.Instance.DB.ReloadReserveInfo();
-                                ReserveData item = new ReserveData();
-                                if (CommonManager.Instance.DB.GetNextReserve(ref item) == true)
-                                {
-                                    String timeView = item.StartTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss ～ ");
-                                    DateTime endTime = item.StartTime + TimeSpan.FromSeconds(item.DurationSecond);
-                                    timeView += endTime.ToString("HH:mm:ss");
-                                    taskTray.Text = "次の予約：" + item.StationName + " " + timeView + " " + item.Title;
-                                }
-                                else
-                                {
-                                    taskTray.Text = "次の予約なし";
-                                }
-
-                            }));
-                        }
-                    }
-                    break;
-                case CtrlCmd.CMD_TIMER_GUI_UPDATE_EPGDATA:
-                    {
-                        pResParam.uiParam = (uint)ErrCode.CMD_SUCCESS;
-                        if (Dispatcher.CheckAccess() == true)
-                        {
-                            CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.EpgData);
-                            if (CommonManager.Instance.NWMode == false)
-                            {
-                                CommonManager.Instance.DB.ReloadEpgData();
-                            }
-                            epgView.UpdateEpgData();
-                        }
-                        else
-                        {
-                            Dispatcher.BeginInvoke(new Action(() =>
-                            {
-                                CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.EpgData);
-                                if (CommonManager.Instance.NWMode == false)
-                                {
-                                    CommonManager.Instance.DB.ReloadEpgData();
-                                }
-                                epgView.UpdateEpgData();
-                            }));
-                        }
-                    }
-                    break;
                 case CtrlCmd.CMD_TIMER_GUI_VIEW_EXECUTE:
                     if (networkFlag)
                     {
@@ -1352,47 +1264,6 @@ namespace EpgTimer
                                 cmd.SendReboot();
                             }
                         }));
-                    }
-                    break;
-                case CtrlCmd.CMD_TIMER_GUI_SRV_STATUS_CHG:
-                    {
-                        pResParam.uiParam = (uint)ErrCode.CMD_SUCCESS;
-                        UInt16 status = 0;
-                        (new CtrlCmdReader(new System.IO.MemoryStream(pCmdParam.bData, false))).Read(ref status);
-
-                        if (Dispatcher.CheckAccess() == true)
-                        {
-                            if (status == 1)
-                            {
-                                taskTray.Icon = Properties.Resources.TaskIconRed;
-                            }
-                            else if (status == 2)
-                            {
-                                taskTray.Icon = Properties.Resources.TaskIconGreen;
-                            }
-                            else
-                            {
-                                taskTray.Icon = Properties.Resources.TaskIconBlue;
-                            }
-                        }
-                        else
-                        {
-                            Dispatcher.BeginInvoke(new Action(() =>
-                            {
-                                if (status == 1)
-                                {
-                                    taskTray.Icon = Properties.Resources.TaskIconRed;
-                                }
-                                else if (status == 2)
-                                {
-                                    taskTray.Icon = Properties.Resources.TaskIconGreen;
-                                }
-                                else
-                                {
-                                    taskTray.Icon = Properties.Resources.TaskIconBlue;
-                                }
-                            }));
-                        }
                     }
                     break;
                 case CtrlCmd.CMD_TIMER_GUI_SRV_STATUS_NOTIFY2:
