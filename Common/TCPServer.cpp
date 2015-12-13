@@ -25,7 +25,7 @@ CTCPServer::~CTCPServer(void)
 	WSACleanup();
 }
 
-BOOL CTCPServer::StartServer(DWORD dwPort, LPCWSTR acl, CMD_CALLBACK_PROC pfnCmdProc, void* pParam)
+BOOL CTCPServer::StartServer(DWORD dwPort, DWORD dwResponseTimeout, LPCWSTR acl, CMD_CALLBACK_PROC pfnCmdProc, void* pParam)
 {
 	if( pfnCmdProc == NULL || pParam == NULL ){
 		return FALSE;
@@ -36,6 +36,7 @@ BOOL CTCPServer::StartServer(DWORD dwPort, LPCWSTR acl, CMD_CALLBACK_PROC pfnCmd
 	m_pCmdProc = pfnCmdProc;
 	m_pParam = pParam;
 	m_dwPort = dwPort;
+	m_dwResponseTimeout = dwResponseTimeout;
 	m_acl = acl;
 
 	m_sock = socket(AF_INET, SOCK_STREAM, 0);
@@ -117,17 +118,59 @@ UINT WINAPI CTCPServer::ServerThread(LPVOID pParam)
 {
 	CTCPServer* pSys = (CTCPServer*)pParam;
 
+	struct WAIT_INFO {
+		SOCKET sock;
+		CMD_STREAM* cmd;
+		DWORD tick;
+	};
+	vector<WAIT_INFO> waitList;
+
 	while( pSys->m_stopFlag == FALSE ){
 		fd_set ready;
 		struct timeval to;
-		to.tv_sec = 1;
-		to.tv_usec = 0;
+		if( waitList.empty() ){
+			//StopServer()が固まらない程度
+			to.tv_sec = 1;
+			to.tv_usec = 0;
+		}else{
+			//適度に迅速
+			to.tv_sec = 0;
+			to.tv_usec = 200000;
+		}
 		FD_ZERO(&ready);
 		FD_SET(pSys->m_sock, &ready);
+		for( size_t i = 0; i < waitList.size(); i++ ){
+			FD_SET(waitList[i].sock, &ready);
+		}
 
 		if( select(0, &ready, NULL, NULL, &to ) == SOCKET_ERROR ){
 			break;
 		}
+		for( size_t i = 0; i < waitList.size(); i++ ){
+			if( FD_ISSET(waitList[i].sock, &ready) == 0 ){
+				CMD_STREAM stRes;
+				pSys->m_pCmdProc(pSys->m_pParam, waitList[i].cmd, &stRes);
+				if( stRes.param == CMD_NO_RES ){
+					//応答は保留された
+					if( GetTickCount() - waitList[i].tick <= pSys->m_dwResponseTimeout ){
+						continue;
+					}
+				}else{
+					DWORD head[2] = { stRes.param, stRes.dataSize };
+					if( send(waitList[i].sock, (const char*)head, sizeof(head), 0) != SOCKET_ERROR ){
+						if( stRes.dataSize > 0 && stRes.data != NULL ){
+							send(waitList[i].sock, (const char*)stRes.data, stRes.dataSize, 0);
+						}
+					}
+				}
+				shutdown(waitList[i].sock, SD_BOTH);
+			}
+			//応答待ちソケットは応答済みかタイムアウトか切断を含むなんらかの受信があれば閉じる
+			closesocket(waitList[i].sock);
+			delete waitList[i].cmd;
+			waitList.erase(waitList.begin() + i--);
+		}
+
 		if( FD_ISSET(pSys->m_sock, &ready) ){
 			struct sockaddr_in client;
 			int len = sizeof(client);
@@ -183,6 +226,21 @@ UINT WINAPI CTCPServer::ServerThread(LPVOID pParam)
 
 					pSys->m_pCmdProc(pSys->m_pParam, &stCmd, &stRes);
 					if( stRes.param == CMD_NO_RES ){
+						if( stCmd.param == CMD2_EPG_SRV_GET_STATUS_NOTIFY2 ){
+							//保留可能なコマンドは応答待ちリストに移動
+							if( waitList.size() < FD_SETSIZE - 1 ){
+								WAIT_INFO waitInfo;
+								waitInfo.sock = sock;
+								waitInfo.cmd = new CMD_STREAM;
+								waitInfo.cmd->param = stCmd.param;
+								waitInfo.cmd->dataSize = stCmd.dataSize;
+								waitInfo.cmd->data = stCmd.data;
+								waitInfo.tick = GetTickCount();
+								waitList.push_back(waitInfo);
+								sock = INVALID_SOCKET;
+								stCmd.data = NULL;
+							}
+						}
 						break;
 					}
 					head[0] = stRes.param;
@@ -206,10 +264,18 @@ UINT WINAPI CTCPServer::ServerThread(LPVOID pParam)
 						break;
 					}
 				}
-				shutdown(sock, SD_BOTH);
-				closesocket(sock);
+				if( sock != INVALID_SOCKET ){
+					shutdown(sock, SD_BOTH);
+					closesocket(sock);
+				}
 			}
 		}
+	}
+
+	while( waitList.empty() == false ){
+		closesocket(waitList.back().sock);
+		delete waitList.back().cmd;
+		waitList.pop_back();
 	}
 
 	return 0;

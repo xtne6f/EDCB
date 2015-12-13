@@ -123,6 +123,7 @@ private:
 	bool saveNotifyLog;
 	DWORD wakeMarginSec;
 	unsigned short tcpPort;
+	DWORD tcpResponseTimeoutSec;
 	wstring tcpAccessControlList;
 	wstring httpPorts;
 	wstring httpPublicFolder;

@@ -540,7 +540,7 @@ typedef struct _NOTIFY_SRV_INFO{
 	SYSTEMTIME time;	//通知状態の発生した時間
 	DWORD param1;		//パラメーター１（種類によって内容変更）
 	DWORD param2;		//パラメーター２（種類によって内容変更）
-	DWORD param3;		//パラメーター３（種類によって内容変更）
+	DWORD param3;		//パラメーター３（通知の巡回カウンタ）
 	wstring param4;		//パラメーター４（種類によって内容変更）
 	wstring param5;		//パラメーター５（種類によって内容変更）
 	wstring param6;		//パラメーター６（種類によって内容変更）

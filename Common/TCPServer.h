@@ -18,6 +18,7 @@ public:
 
 	BOOL StartServer(
 		DWORD dwPort, 
+		DWORD dwResponseTimeout,
 		LPCWSTR acl,
 		CMD_CALLBACK_PROC pfnCmdProc, 
 		void* pParam
@@ -28,6 +29,7 @@ protected:
 	CMD_CALLBACK_PROC m_pCmdProc;
 	void* m_pParam;
 	DWORD m_dwPort;
+	DWORD m_dwResponseTimeout;
 	wstring m_acl;
 
 	BOOL m_stopFlag;
