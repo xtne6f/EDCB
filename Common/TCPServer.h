@@ -30,11 +30,10 @@ protected:
 	DWORD m_dwPort;
 	wstring m_acl;
 
-	HANDLE m_hStopEvent;
+	BOOL m_stopFlag;
 	HANDLE m_hThread;
 
 	SOCKET m_sock;
-	struct sockaddr_in m_addr;
 	
 protected:
 	static UINT WINAPI ServerThread(LPVOID pParam);
