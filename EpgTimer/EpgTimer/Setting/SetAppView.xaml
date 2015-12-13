@@ -106,20 +106,22 @@
                     <TextBox Height="24" HorizontalAlignment="Left" Margin="276,78,0,0" Name="textBox_tcpPort" VerticalAlignment="Top" Width="62" />
                     <Label Content="アクセス制御" Height="28" HorizontalAlignment="Left" Margin="350,76,0,0" Name="label_tcpAcl" VerticalAlignment="Top" />
                     <TextBox Height="24" HorizontalAlignment="Left" Margin="440,78,0,0" Name="textBox_tcpAcl" VerticalAlignment="Top" Width="220" />
-                    <CheckBox Content="録画結果を自動的に削除する" Height="16" HorizontalAlignment="Left" Margin="6,108,0,0" Name="checkBox_autoDelRecInfo" VerticalAlignment="Top" />
-                    <Label Content="保持件数" Height="28" HorizontalAlignment="Left" Margin="212,103,0,0" Name="label42" VerticalAlignment="Top" />
-                    <TextBox Height="24" HorizontalAlignment="Left" Margin="276,105,0,0" Name="textBox_autoDelRecInfo" VerticalAlignment="Top" Width="62" />
-                    <CheckBox Content="EPG取得時に放送波時間でPC時計を同期する" Height="16" HorizontalAlignment="Left" Margin="6,137,0,0" Name="checkBox_timeSync" VerticalAlignment="Top" />
-                    <Label Content="（※EpgTimerSrv.exeが管理者権限で起動している必要があります）" Height="28" HorizontalAlignment="Left" Margin="276,132,0,0" Name="label43" VerticalAlignment="Top" Foreground="Red" />
-                    <CheckBox Content="ツールチップの表示を抑制する" Height="16" HorizontalAlignment="Left" Margin="6,159,0,0" Name="checkBox_noToolTips" VerticalAlignment="Top" />
-                    <CheckBox Content="バルーンチップでの動作通知を抑制する" Height="16" HorizontalAlignment="Left" Margin="6,181,0,0" Name="checkBox_noBallonTips" VerticalAlignment="Top" />
-                    <CheckBox Content="起動時に前回接続サーバーに接続する" Height="16" HorizontalAlignment="Left" Margin="351,159,0,0" Name="checkBox_wakeReconnect" VerticalAlignment="Top" IsEnabled="False" />
-                    <CheckBox Content="休止／スタンバイ移行時にEpgTimerNWを終了する" Height="16" HorizontalAlignment="Left" Margin="351,181,0,0" Name="checkBox_suspendClose" VerticalAlignment="Top" IsEnabled="False" />
-                    <CheckBox Content="EPGデータを自動的に読み込まない" Height="16" HorizontalAlignment="Left" Margin="351,203,0,0" Name="checkBox_ngAutoEpgLoad" VerticalAlignment="Top" IsEnabled="False" />
-                    <CheckBox Content="録画済み一覧のダブルクリックで再生を行う" Height="16" HorizontalAlignment="Left" Margin="6,203,0,0" Name="checkBox_playDClick" VerticalAlignment="Top" />
-                    <CheckBox Content="EpgTimerSrvを常駐させる" Height="16" HorizontalAlignment="Left" Margin="6,225,0,0" Name="checkBox_srvResident" VerticalAlignment="Top" />
-                    <CheckBox Content="タスクトレイアイコンを表示する" Height="16" HorizontalAlignment="Left" Margin="24,247,0,0" Name="checkBox_srvShowTray" VerticalAlignment="Top" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_srvResident, UpdateSourceTrigger=PropertyChanged}" />
-                    <CheckBox Content="バルーンチップでの動作通知を抑制する" Height="16" HorizontalAlignment="Left" Margin="24,269,0,0" Name="checkBox_srvNoBalloonTip" VerticalAlignment="Top" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_srvResident, UpdateSourceTrigger=PropertyChanged}" />
+                    <Label Content="無通信タイムアウト(秒)" Height="28" HorizontalAlignment="Left" Margin="212,103,0,0" Name="label_tcpResTo" VerticalAlignment="Top" />
+                    <TextBox Height="24" HorizontalAlignment="Left" Margin="365,105,0,0" Name="textBox_tcpResTo" VerticalAlignment="Top" Width="62" />
+                    <CheckBox Content="録画結果を自動的に削除する" Height="16" HorizontalAlignment="Left" Margin="6,135,0,0" Name="checkBox_autoDelRecInfo" VerticalAlignment="Top" />
+                    <Label Content="保持件数" Height="28" HorizontalAlignment="Left" Margin="212,130,0,0" Name="label42" VerticalAlignment="Top" />
+                    <TextBox Height="24" HorizontalAlignment="Left" Margin="276,132,0,0" Name="textBox_autoDelRecInfo" VerticalAlignment="Top" Width="62" />
+                    <CheckBox Content="EPG取得時に放送波時間でPC時計を同期する" Height="16" HorizontalAlignment="Left" Margin="6,164,0,0" Name="checkBox_timeSync" VerticalAlignment="Top" />
+                    <Label Content="（※EpgTimerSrv.exeが管理者権限で起動している必要があります）" Height="28" HorizontalAlignment="Left" Margin="276,159,0,0" Name="label43" VerticalAlignment="Top" Foreground="Red" />
+                    <CheckBox Content="ツールチップの表示を抑制する" Height="16" HorizontalAlignment="Left" Margin="6,186,0,0" Name="checkBox_noToolTips" VerticalAlignment="Top" />
+                    <CheckBox Content="バルーンチップでの動作通知を抑制する" Height="16" HorizontalAlignment="Left" Margin="6,208,0,0" Name="checkBox_noBallonTips" VerticalAlignment="Top" />
+                    <CheckBox Content="起動時に前回接続サーバーに接続する" Height="16" HorizontalAlignment="Left" Margin="351,186,0,0" Name="checkBox_wakeReconnect" VerticalAlignment="Top" IsEnabled="False" />
+                    <CheckBox Content="休止／スタンバイ移行時にEpgTimerNWを終了する" Height="16" HorizontalAlignment="Left" Margin="351,208,0,0" Name="checkBox_suspendClose" VerticalAlignment="Top" IsEnabled="False" />
+                    <CheckBox Content="EPGデータを自動的に読み込まない" Height="16" HorizontalAlignment="Left" Margin="351,230,0,0" Name="checkBox_ngAutoEpgLoad" VerticalAlignment="Top" IsEnabled="False" />
+                    <CheckBox Content="録画済み一覧のダブルクリックで再生を行う" Height="16" HorizontalAlignment="Left" Margin="6,230,0,0" Name="checkBox_playDClick" VerticalAlignment="Top" />
+                    <CheckBox Content="EpgTimerSrvを常駐させる" Height="16" HorizontalAlignment="Left" Margin="6,252,0,0" Name="checkBox_srvResident" VerticalAlignment="Top" />
+                    <CheckBox Content="タスクトレイアイコンを表示する" Height="16" HorizontalAlignment="Left" Margin="24,274,0,0" Name="checkBox_srvShowTray" VerticalAlignment="Top" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_srvResident, UpdateSourceTrigger=PropertyChanged}" />
+                    <CheckBox Content="バルーンチップでの動作通知を抑制する" Height="16" HorizontalAlignment="Left" Margin="24,296,0,0" Name="checkBox_srvNoBalloonTip" VerticalAlignment="Top" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_srvResident, UpdateSourceTrigger=PropertyChanged}" />
                 </Grid>
             </TabItem>
             <TabItem Header="カスタムボタン" Name="tabItem5">

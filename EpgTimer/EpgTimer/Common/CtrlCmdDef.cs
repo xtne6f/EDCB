@@ -1381,7 +1381,7 @@ namespace EpgTimer
         public uint param1;
         /// <summary>パラメーター２（種類によって内容変更）</summary>
         public uint param2;
-        /// <summary>パラメーター３（種類によって内容変更）</summary>
+        /// <summary>パラメーター３（通知の巡回カウンタ）</summary>
         public uint param3;
         /// <summary>パラメーター４（種類によって内容変更）</summary>
         public string param4;

@@ -24,8 +24,8 @@
                 </Style>
             </TextBox.Resources>
         </TextBox>
-        <Label Content="クライアント側 待ち受けポート" Height="28" HorizontalAlignment="Left" Margin="12,46,0,0" Name="label3" VerticalAlignment="Top" />
-        <TextBox Height="24" HorizontalAlignment="Left" Margin="200,48,0,0" Name="textBox_clientPort" VerticalAlignment="Top" Width="86">
+        <CheckBox Content="クライアント側に待ち受けポートを作る" Height="24" HorizontalAlignment="Left" Margin="12,50,0,0" Name="checkBox_clientPort" VerticalAlignment="Top" />
+        <TextBox Height="24" HorizontalAlignment="Left" Margin="260,48,0,0" Name="textBox_clientPort" VerticalAlignment="Top" Width="86" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_clientPort, UpdateSourceTrigger=PropertyChanged}" >
             <TextBox.Resources>
                 <Style TargetType="{x:Type TextBox}">
                     <Setter Property="InputMethod.PreferredImeState" Value="Off" />

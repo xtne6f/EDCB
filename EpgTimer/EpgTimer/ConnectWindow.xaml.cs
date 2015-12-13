@@ -42,7 +42,8 @@ namespace EpgTimer
             {
                 textBox_srvIP.Text = Settings.Instance.NWServerIP.ToString();
                 textBox_srvPort.Text = Settings.Instance.NWServerPort.ToString();
-                textBox_clientPort.Text = Settings.Instance.NWWaitPort.ToString();
+                checkBox_clientPort.IsChecked = Settings.Instance.NWWaitPort != 0;
+                textBox_clientPort.Text = Settings.Instance.NWWaitPort == 0 ? "4520" : Settings.Instance.NWWaitPort.ToString();
                 textBox_mac.Text = Settings.Instance.NWMacAdd.ToString();
             }
             catch
@@ -56,7 +57,7 @@ namespace EpgTimer
             {
                 Settings.Instance.NWServerIP = textBox_srvIP.Text;
                 Settings.Instance.NWServerPort = Convert.ToUInt32(textBox_srvPort.Text);
-                Settings.Instance.NWWaitPort = Convert.ToUInt32(textBox_clientPort.Text);
+                Settings.Instance.NWWaitPort = checkBox_clientPort.IsChecked == false ? 0 : Convert.ToUInt32(textBox_clientPort.Text);
             }
             catch (Exception ex)
             {
