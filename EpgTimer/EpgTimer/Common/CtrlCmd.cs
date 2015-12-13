@@ -292,6 +292,8 @@ namespace EpgTimer
         CMD_EPG_SRV_ADD_MANU_ADD2 = 2142,
         /// <summary>プログラム予約自動登録の条件変更</summary>
         CMD_EPG_SRV_CHG_MANU_ADD2 = 2144,
+        /// <summary>サーバーの情報変更通知を取得（ロングポーリング）</summary>
+        CMD_EPG_SRV_GET_STATUS_NOTIFY2 = 2200,
         /// <summary>読み込まれたEPGデータのサービスの一覧取得</summary>
         CMD_EPG_SRV_ENUM_SERVICE = 1021,
         /// <summary>サービス指定で番組情報一覧を取得する</summary>
@@ -566,6 +568,8 @@ namespace EpgTimer
         public ErrCode SendEnumRecInfo(ref List<RecFileInfo> val) { object o = val; return ReceiveCmdData2(CtrlCmd.CMD_EPG_SRV_ENUM_RECINFO2, ref o); }
         /// <summary>録画済み情報のプロテクト変更</summary>
         public ErrCode SendChgProtectRecInfo(List<RecFileInfo> val) { return SendCmdData2(CtrlCmd.CMD_EPG_SRV_CHG_PROTECT_RECINFO2, val); }
+        /// <summary>現在のNOTIFY_UPDATE_SRV_STATUSを取得する</summary>
+        public ErrCode SendGetNotifySrvStatus(ref NotifySrvInfo val) { object o = val; return SendAndReceiveCmdData2(CtrlCmd.CMD_EPG_SRV_GET_STATUS_NOTIFY2, 0, ref o); }
         /// <summary>指定キーワードで番組情報を検索する</summary>
         public ErrCode SendSearchPg(List<EpgSearchKeyInfo> key, ref List<EpgEventInfo> val) { object o = val; return SendAndReceiveCmdData2(CtrlCmd.CMD_EPG_SRV_SEARCH_PG2, key, ref o); }
 

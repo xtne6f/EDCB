@@ -95,7 +95,8 @@ namespace EpgTimer
             {
                 textBox_srvIP.Text = data.NWServerIP;
                 textBox_srvPort.Text = data.NWServerPort.ToString();
-                textBox_clientPort.Text = data.NWWaitPort.ToString();
+                checkBox_clientPort.IsChecked = data.NWWaitPort != 0;
+                textBox_clientPort.Text = data.NWWaitPort == 0 ? "4520" : data.NWWaitPort.ToString();
                 textBox_mac.Text = data.NWMacAdd;
             }
         }
@@ -104,7 +105,7 @@ namespace EpgTimer
             var preset = new NWPresetItem();
             preset.NWServerIP = textBox_srvIP.Text;
             preset.NWServerPort = mutil.MyToNumerical(textBox_srvPort, Convert.ToUInt32, Settings.Instance.NWServerPort);
-            preset.NWWaitPort = mutil.MyToNumerical(textBox_clientPort, Convert.ToUInt32, Settings.Instance.NWWaitPort);
+            preset.NWWaitPort = checkBox_clientPort.IsChecked == false ? 0 : mutil.MyToNumerical(textBox_clientPort, Convert.ToUInt32, Settings.Instance.NWWaitPort);
             preset.NWMacAdd = textBox_mac.Text;
             return preset;
         }

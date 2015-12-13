@@ -1160,6 +1160,8 @@ namespace EpgTimer
                         r.Read(ref version);
                         r.Version = version;
                         r.Read(ref status);
+                        //通知の巡回カウンタをuiSizeを利用して返す(やや汚い)
+                        pCmdParam.uiSize = status.param3;
                         DispatcherCheckAction(new Action(() => NotifyStatus(status)));
                     }
                     break;
