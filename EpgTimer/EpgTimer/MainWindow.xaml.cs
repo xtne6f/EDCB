@@ -604,7 +604,7 @@ namespace EpgTimer
                 {
                     if (CommonManager.Instance.NW.IsConnected == true && needUnRegist == true)
                     {
-                        if (cmd.SendUnRegistTCP(Settings.Instance.NWServerPort) == ErrCode.CMD_ERR_CONNECT)
+                        if (cmd.SendUnRegistTCP(Settings.Instance.NWWaitPort) == ErrCode.CMD_ERR_CONNECT)
                         {
                             //MessageBox.Show("サーバーに接続できませんでした");
                         }
@@ -974,7 +974,7 @@ namespace EpgTimer
                 {
                     if (CommonManager.Instance.NW.IsConnected == true)
                     {
-                        if (cmd.SendUnRegistTCP(Settings.Instance.NWServerPort) == ErrCode.CMD_ERR_CONNECT)
+                        if (cmd.SendUnRegistTCP(Settings.Instance.NWWaitPort) == ErrCode.CMD_ERR_CONNECT)
                         { }
 
                         cmd.SendSuspend(cmdVal);
