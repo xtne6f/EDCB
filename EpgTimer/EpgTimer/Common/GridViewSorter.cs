@@ -57,7 +57,7 @@ namespace EpgTimer {
                 string path = getPathString(columnHeader1);
                 if (string.IsNullOrEmpty(path) == true) continue;
 
-                sortGroupList1 = CreateSortedItemGroupList(prevPath, sortGroupList1);
+                sortGroupList1 = CreateSortedItemGroupList(prevPath, sortGroupList1, idxData);
                 foreach (var kvp1 in sortGroupList1) {
                     idxData.Sort(
                         kvp1.Item1,
@@ -173,7 +173,8 @@ namespace EpgTimer {
             }
         }
 
-        private List<Tuple<int, int>> CreateSortedItemGroupList(string prevPath, List<Tuple<int, int>> prevSortGroupList0)
+        private List<Tuple<int, int>> CreateSortedItemGroupList(string prevPath
+            , List<Tuple<int, int>> prevSortGroupList0, List<int> orderdIdxData)
         {
             var sortGroupList1 = new List<Tuple<int, int>>();
             if (prevSortGroupList0 == null){    // 最初
@@ -186,7 +187,7 @@ namespace EpgTimer {
                     int i_First1 = kvp1.Item1;
                     int i_Last1 = kvp1.Item2;
                     for (int i1 = i_First1; i1 <= i_Last1; i1++) {
-                        IComparable val1 = values[i1];
+                        IComparable val1 = values[orderdIdxData[i1]];
                         if (i1 != i_First1 && NullableEqualsTo(val1, prevVal1) == false)
                         {  // 値が変化
                             sortGroupList1.Add(new Tuple<int, int>(startIndex1, i1 - 1));
