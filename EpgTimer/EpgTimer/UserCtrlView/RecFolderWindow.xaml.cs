@@ -44,7 +44,7 @@ namespace EpgTimer
         public void SetDefSetting(RecFileSetInfo info)
         {
             button_ok.Content = "変更";
-            textBox_recFolder.Text = info.RecFolder;
+            textBox_recFolder.Text = String.Compare(info.RecFolder, "!Default", true) == 0 ? "" : info.RecFolder;
             foreach (string text in comboBox_writePlugIn.Items)
             {
                 if (String.Compare(text, info.WritePlugIn, true) == 0)
@@ -113,12 +113,7 @@ namespace EpgTimer
 
         private void button_ok_Click(object sender, RoutedEventArgs e)
         {
-            if (textBox_recFolder.Text.Length == 0)
-            {
-                MessageBox.Show("録画フォルダが指定されていません。");
-                return;
-            }
-            defSet.RecFolder = textBox_recFolder.Text;
+            defSet.RecFolder = textBox_recFolder.Text == "" ? "!Default" : textBox_recFolder.Text;
             defSet.WritePlugIn = (String)comboBox_writePlugIn.SelectedItem;
             defSet.RecNamePlugIn = (String)comboBox_recNamePlugIn.SelectedItem;
             if (String.Compare(defSet.RecNamePlugIn, "なし", true) == 0)
