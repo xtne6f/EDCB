@@ -819,6 +819,10 @@ bool CTunerBankCtrl::RecStart(const TUNER_RESERVE& reserve, __int64 now) const
 				param.saveFolder[0].recNamePlugIn = this->recNamePlugInFileName;
 			}else{
 				for( size_t j = 0; j < param.saveFolder.size(); j++ ){
+					if( CompareNoCase(param.saveFolder[j].recFolder, L"!Default") == 0 ){
+						//’ˆÓ: ‚±‚Ì’uŠ·‚ÍŒ´ì‚É‚Í‚È‚¢
+						GetRecFolderPath(param.saveFolder[j].recFolder);
+					}
 					if( param.saveFolder[j].recNamePlugIn.empty() ){
 						param.saveFolder[j].recNamePlugIn = this->recNamePlugInFileName;
 					}
