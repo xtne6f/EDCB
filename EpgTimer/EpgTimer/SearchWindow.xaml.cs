@@ -299,6 +299,8 @@ namespace EpgTimer
                         SetSearchKey(newinfo.searchInfo);
                         SetRecSetting(newinfo.recSetting);
                     }
+
+                    SearchPg();
                 }
             }
             catch (Exception ex)
@@ -343,7 +345,10 @@ namespace EpgTimer
                 addItem.searchInfo = searchKey;
                 addItem.recSetting = recSetKey;
 
-                mutil.EpgAutoAddChange(mutil.ToList(addItem));
+                if (mutil.EpgAutoAddChange(mutil.ToList(addItem)) == true)
+                {
+                    SearchPg();
+                }
             }
             catch (Exception ex)
             {
@@ -365,6 +370,7 @@ namespace EpgTimer
             {
                 SetViewMode(SearchMode.NewAdd);
                 this.autoAddID = 0;
+                SearchPg();
             }
         }
 
