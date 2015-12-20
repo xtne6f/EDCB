@@ -538,7 +538,7 @@ namespace EpgTimer
 
                 Setting.SetDefRecSettingWindow dlg = new Setting.SetDefRecSettingWindow();
                 dlg.Owner = (Window)PresentationSource.FromVisual(owner).RootVisual;
-                dlg.SetSettingMode(start == true ? "開始マージン設定" : "終了マージン設定", 1);
+                dlg.SetSettingMode(start == true ? "開始マージン設定" : "終了マージン設定");
                 dlg.recSettingView.SetDefSetting(infoList[0]);
                 dlg.recSettingView.SetChangeMode(start == true ? 0 : 1);
 
