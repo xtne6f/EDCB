@@ -274,9 +274,10 @@ namespace EpgTimer
             setInfo.PittariFlag = ((YesNoInfo)comboBox_pittari.SelectedItem).Value;
             setInfo.BatFilePath = textBox_bat.Text;
             setInfo.RecFolderList.Clear();
+            setInfo.PartialRecFolder.Clear();
             foreach (RecFileSetInfoView view in listView_recFolder.Items)
             {
-                setInfo.RecFolderList.Add(view.Info);
+                (view.PartialRec ? setInfo.PartialRecFolder : setInfo.RecFolderList).Add(view.Info);
             }
 
             if (checkBox_suspendDef.IsChecked == true)
@@ -326,11 +327,6 @@ namespace EpgTimer
             setInfo.EndMargine = GetMargin(textBox_margineEnd.Text);
 
             setInfo.PartialRecFlag = (byte)(checkBox_partial.IsChecked == true ? 1 : 0);
-            setInfo.PartialRecFolder.Clear();
-            foreach (RecFileSetInfoView view in listView_recFolder_1seg.Items)
-            {
-                setInfo.PartialRecFolder.Add(view.Info);
-            }
             setInfo.ContinueRecFlag = (byte)(checkBox_continueRec.IsChecked == true ? 1 : 0);
 
             TunerSelectInfo tuner = comboBox_tuner.SelectedItem as TunerSelectInfo;
@@ -423,7 +419,11 @@ namespace EpgTimer
                 listView_recFolder.Items.Clear();
                 foreach (RecFileSetInfo info in recSetting.RecFolderList)
                 {
-                    listView_recFolder.Items.Add(new RecFileSetInfoView(info.Clone()));
+                    listView_recFolder.Items.Add(new RecFileSetInfoView(info.Clone(), false));
+                }
+                foreach (RecFileSetInfo info in recSetting.PartialRecFolder)
+                {
+                    listView_recFolder.Items.Add(new RecFileSetInfoView(info.Clone(), true));
                 }
 
                 checkBox_suspendDef.IsChecked = null;//切り替え時のイベント発生のために必要
@@ -432,12 +432,6 @@ namespace EpgTimer
                 checkBox_margineDef.IsChecked = recSetting.UseMargineFlag == 0;
                 checkBox_continueRec.IsChecked = (recSetting.ContinueRecFlag == 1);
                 checkBox_partial.IsChecked = (recSetting.PartialRecFlag == 1);
-
-                listView_recFolder_1seg.Items.Clear();
-                foreach (RecFileSetInfo info in recSetting.PartialRecFolder)
-                {
-                    listView_recFolder_1seg.Items.Add(new RecFileSetInfoView(info.Clone()));
-                }
 
                 foreach (TunerSelectInfo info in comboBox_tuner.Items)
                 {
@@ -456,12 +450,6 @@ namespace EpgTimer
 
         private void checkBox_suspendDef_Checked(object sender, RoutedEventArgs e)
         {
-            radioButton_non.IsEnabled = checkBox_suspendDef.IsChecked != true;
-            radioButton_standby.IsEnabled = checkBox_suspendDef.IsChecked != true;
-            radioButton_suspend.IsEnabled = checkBox_suspendDef.IsChecked != true;
-            radioButton_shutdown.IsEnabled = checkBox_suspendDef.IsChecked != true;
-            checkBox_reboot.IsEnabled = checkBox_suspendDef.IsChecked != true;
-
             int recEndMode = 0;
             bool reboot = false;
             if (checkBox_suspendDef.IsChecked == true)
@@ -494,19 +482,18 @@ namespace EpgTimer
 
         private class RecFileSetInfoView
         {
-            public RecFileSetInfoView(RecFileSetInfo info) { Info = info; }
+            public RecFileSetInfoView(RecFileSetInfo info, bool partialRec) { Info = info; PartialRec = partialRec; }
             public string RecFileName { get { return Info.RecFileName; } }
             public string RecFolder { get { return Info.RecFolder; } }
             public string RecNamePlugIn { get { return Info.RecNamePlugIn; } }
             public string WritePlugIn { get { return Info.WritePlugIn; } }
             public RecFileSetInfo Info { get; private set; }
+            public bool PartialRec { get; private set; }
+            public string PartialRecYesNo { get { return PartialRec ? "はい" : "いいえ"; } } 
         }
 
         private void checkBox_margineDef_Checked(object sender, RoutedEventArgs e)
         {
-            textBox_margineStart.IsEnabled = checkBox_margineDef.IsChecked != true;
-            textBox_margineEnd.IsEnabled = checkBox_margineDef.IsChecked != true;
-            
             RecSettingData recSet = recSetting.Clone();
             recSet.UseMargineFlag = (byte)(checkBox_margineDef.IsChecked == true ? 0 : 1);
             textBox_margineStart.Text = CommonManager.Instance.MUtil.GetMargin(recSet, true).ToString();
@@ -515,9 +502,6 @@ namespace EpgTimer
 
         private void checkBox_serviceMode_Checked(object sender, RoutedEventArgs e)
         {
-            checkBox_serviceCaption.IsEnabled = checkBox_serviceMode.IsChecked != true;
-            checkBox_serviceData.IsEnabled = checkBox_serviceMode.IsChecked != true;
-
             if (checkBox_serviceMode.IsChecked == true)
             {
                 checkBox_serviceCaption.IsChecked =
@@ -543,25 +527,54 @@ namespace EpgTimer
 
         private void button_recFolderAdd_Click(object sender, RoutedEventArgs e)
         {
-            recFolderAdd(listView_recFolder);
+            recFolderAdd(false);
         }
 
         private void button_recFolderChg_Click(object sender, RoutedEventArgs e)
         {
-            recFolderChange(listView_recFolder);
+            if (listView_recFolder.SelectedItem == null)
+            {
+                if (listView_recFolder.Items.Count != 0)
+                {
+                    listView_recFolder.SelectedIndex = 0;
+                }
+            }
+            if (listView_recFolder.SelectedItem != null)
+            {
+                var setting = new RecFolderWindow();
+                PresentationSource topWindow = PresentationSource.FromVisual(this);
+                if (topWindow != null)
+                {
+                    setting.Owner = (Window)topWindow.RootVisual;
+                }
+                var selectInfo = ((RecFileSetInfoView)listView_recFolder.SelectedItem).Info;
+                setting.SetDefSetting(selectInfo);
+                if (setting.ShowDialog() == true)
+                {
+                    setting.GetSetting(ref selectInfo);
+                }
+                listView_recFolder.Items.Refresh();
+            }
+            else
+            {
+                recFolderAdd(false);
+            }
         }
 
         private void button_recFolderDel_Click(object sender, RoutedEventArgs e)
         {
-            recFolderDelete(listView_recFolder);
+            if (listView_recFolder.SelectedItem != null)
+            {
+                listView_recFolder.Items.RemoveAt(listView_recFolder.SelectedIndex);
+            }
         }
 
         private void listView_recFolder_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            recFolderChange(listView_recFolder);
+            button_recFolderChg.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         }
 
-        private void recFolderAdd(ListBox listbox)
+        private void recFolderAdd(bool partialRec)
         {
             var setting = new RecFolderWindow();
             PresentationSource topWindow = PresentationSource.FromVisual(this);
@@ -573,9 +586,10 @@ namespace EpgTimer
             {
                 var setInfo = new RecFileSetInfo();
                 setting.GetSetting(ref setInfo);
-                foreach (RecFileSetInfoView info in listbox.Items)
+                foreach (RecFileSetInfoView info in listView_recFolder.Items)
                 {
-                    if (String.Compare(setInfo.RecFolder, info.RecFolder, true) == 0 &&
+                    if (info.PartialRec == partialRec &&
+                        String.Compare(setInfo.RecFolder, info.RecFolder, true) == 0 &&
                         String.Compare(setInfo.WritePlugIn, info.WritePlugIn, true) == 0 &&
                         String.Compare(setInfo.RecNamePlugIn, info.RecNamePlugIn, true) == 0)
                     {
@@ -583,49 +597,10 @@ namespace EpgTimer
                         return;
                     }
                 }
-                listbox.Items.Add(new RecFileSetInfoView(setInfo));
+                listView_recFolder.Items.Add(new RecFileSetInfoView(setInfo, partialRec));
             }
         }
-
-        private void recFolderChange(ListBox listbox)
-        {
-            if (listbox.SelectedItem == null)
-            {
-                if (listbox.Items.Count != 0)
-                {
-                    listbox.SelectedIndex = 0;
-                }
-            }
-            if (listbox.SelectedItem != null)
-            {
-                var setting = new RecFolderWindow();
-                PresentationSource topWindow = PresentationSource.FromVisual(this);
-                if (topWindow != null)
-                {
-                    setting.Owner = (Window)topWindow.RootVisual;
-                }
-                var selectInfo = ((RecFileSetInfoView)listbox.SelectedItem).Info;
-                setting.SetDefSetting(selectInfo);
-                if (setting.ShowDialog() == true)
-                {
-                    setting.GetSetting(ref selectInfo);
-                }
-                listbox.Items.Refresh();
-            }
-            else
-            {
-                recFolderAdd(listbox);
-            }
-        }
-
-        private void recFolderDelete(ListBox listbox)
-        {
-            if (listbox.SelectedItem != null)
-            {
-                listbox.Items.RemoveAt(listbox.SelectedIndex);
-            }
-        }
-
+        
         private void button_del_preset_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -732,25 +707,22 @@ namespace EpgTimer
             }
         }
 
-        private void button_recFolderChg_1seg_Click(object sender, RoutedEventArgs e)
-        {
-            recFolderChange(listView_recFolder_1seg);
-        }
-
         private void button_recFolderAdd_1seg_Click(object sender, RoutedEventArgs e)
         {
-            recFolderAdd(listView_recFolder_1seg);
+            recFolderAdd(true);
         }
 
-        private void button_recFolderDel_1seg_Click(object sender, RoutedEventArgs e)
+    }
+
+    public class RecSettingViewInverter : IValueConverter
+    {
+        public object Convert(object v, Type t, object p, System.Globalization.CultureInfo c)
         {
-            recFolderDelete(listView_recFolder_1seg);
+            return !(v is bool && (bool)v);
         }
-
-        private void listView_recFolder_1seg_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        public object ConvertBack(object v, Type t, object p, System.Globalization.CultureInfo c)
         {
-            recFolderChange(listView_recFolder_1seg);
+            return !(v is bool && (bool)v);
         }
-
     }
 }
