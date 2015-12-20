@@ -591,19 +591,28 @@ namespace EpgTimer
 
             menu.Items.Clear();
 
-            if (recSetting != null && recSetting.RecFolderList.Count != 0)
-            {
-                recSetting.RecFolderList.ForEach(info => CtxmGenerateOpenFolderItem(menu, info.RecFolder));
-            }
-            else
-            {
-                Settings.GetDefRecFolders().ForEach(folder => CtxmGenerateOpenFolderItem(menu, folder, "(デフォルト) "));
-            }
+            bool defOutPutted = false;
+            recSetting = recSetting == null ? new RecSettingData() : recSetting;
 
-            if (recSetting != null)
+            var addFolderList = new Action<List<RecFileSetInfo>, bool, string>((fldrs, recflg, header_exp) =>
             {
-                recSetting.PartialRecFolder.ForEach(info => CtxmGenerateOpenFolderItem(menu, info.RecFolder, "(ワンセグ) "));
-            }
+                //ワンセグ出力未チェックでも、フォルダ設定があれば表示する。
+                //ただし、デフォルトフォルダは1回だけ展開して表示する。
+                if (defOutPutted == false && (recflg && fldrs.Count == 0 || fldrs.Any(info => info.RecFolder == "!Default")))
+                {
+                    defOutPutted = true;
+                    Settings.GetDefRecFolders().ForEach(folder => CtxmGenerateOpenFolderItem(menu, folder, header_exp + "(デフォルト) "));
+                }
+
+                foreach (var info in fldrs.Where(info => info.RecFolder != "!Default"))
+                {
+                    CtxmGenerateOpenFolderItem(menu, info.RecFolder, header_exp);
+                }
+            });
+
+            addFolderList(recSetting.RecFolderList, true, "");
+            addFolderList(recSetting.PartialRecFolder, recSetting.PartialRecFlag != 0, "(ワンセグ) ");
+
         }
         private void CtxmGenerateOpenFolderItem(MenuItem menu, string path, string header_exp = "")
         {

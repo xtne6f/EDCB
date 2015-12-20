@@ -325,13 +325,9 @@ namespace EpgTimer
         {
             get
             {
-                List<String> list = new List<string>();
-                if (EpgAutoAddInfo != null)
-                {
-                    EpgAutoAddInfo.recSetting.RecFolderList.ForEach(info => list.Add(info.RecFolder));
-                    EpgAutoAddInfo.recSetting.PartialRecFolder.ForEach(info => list.Add("(ワンセグ) " + info.RecFolder));
-                }
-                return list;
+                if (EpgAutoAddInfo == null) new List<string>();
+                //
+                return mutil.GetRecFolderViewList(EpgAutoAddInfo.recSetting);
             }
         }
         public bool KeyEnabled

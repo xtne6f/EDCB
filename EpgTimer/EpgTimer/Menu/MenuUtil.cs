@@ -1180,6 +1180,20 @@ namespace EpgTimer
             }
         }
 
+        public List<string> GetRecFolderViewList(RecSettingData recSetting)
+        {
+            var list = new List<string>();
+            List<string> defs = Settings.GetDefRecFolders();
+            string def1 = defs.Count == 0 ? "!Default" : defs[0];
+            Func<string, string> AdjustName = (f => f == "!Default" ? def1 : f);
+            if (recSetting != null)
+            {
+                recSetting.RecFolderList.ForEach(info => list.Add(AdjustName(info.RecFolder)));
+                recSetting.PartialRecFolder.ForEach(info => list.Add("(ワンセグ) " + AdjustName(info.RecFolder)));
+            }
+            return list;
+        }
+
     }
 
 }

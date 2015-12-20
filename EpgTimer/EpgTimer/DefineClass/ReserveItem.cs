@@ -242,13 +242,9 @@ namespace EpgTimer
         {
             get
             {
-                List<String> list = new List<string>();
-                if (ReserveInfo != null)
-                {
-                    ReserveInfo.RecSetting.RecFolderList.ForEach(info => list.Add(info.RecFolder));
-                    ReserveInfo.RecSetting.PartialRecFolder.ForEach(info => list.Add("(ワンセグ) " + info.RecFolder));
-                }
-                return list;
+                if (ReserveInfo == null) new List<string>();
+                //
+                return mutil.GetRecFolderViewList(ReserveInfo.RecSetting);
             }
         }
         public List<String> RecFileName
