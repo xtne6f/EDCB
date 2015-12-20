@@ -437,11 +437,11 @@ namespace EpgTimer
             if (PriorityDictionary == null)
             {
                 PriorityDictionary = new Dictionary<byte, PriorityInfo>();
-                PriorityDictionary.Add(0x01, new PriorityInfo("1", 0x01));
+                PriorityDictionary.Add(0x01, new PriorityInfo("1 (低)", 0x01));
                 PriorityDictionary.Add(0x02, new PriorityInfo("2", 0x02));
                 PriorityDictionary.Add(0x03, new PriorityInfo("3", 0x03));
                 PriorityDictionary.Add(0x04, new PriorityInfo("4", 0x04));
-                PriorityDictionary.Add(0x05, new PriorityInfo("5", 0x05));
+                PriorityDictionary.Add(0x05, new PriorityInfo("5 (高)", 0x05));
             }
             NWMode = false;
             if (NotifyLogList == null)
