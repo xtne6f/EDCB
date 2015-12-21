@@ -542,11 +542,6 @@ namespace EpgTimer
             }
             Int32 start = ((UInt16)comboBox_week_sh.SelectedItem) * 60+ (UInt16)comboBox_week_sm.SelectedItem;
             Int32 end = ((UInt16)comboBox_week_eh.SelectedItem) * 60+ (UInt16)comboBox_week_em.SelectedItem;
-            if (end < start)
-            {
-                MessageBox.Show("開始時間が終了時間より前です");
-                return;
-            }
 
             var Add_week = new Action<CheckBox, byte>((chbox, day) =>
             {
@@ -559,10 +554,14 @@ namespace EpgTimer
                 info.endDayOfWeek = info.startDayOfWeek;
                 info.endHour = (UInt16)comboBox_week_eh.SelectedItem;
                 info.endMin = (UInt16)comboBox_week_em.SelectedItem;
+                if (end < start)
+                {
+                    //終了時間は翌日のものとみなす
+                    info.endDayOfWeek = (byte)((info.endDayOfWeek + 1) % 7);
+                }
 
-                string dayText = chbox.Content + " ";
-                string viewText = dayText + info.startHour.ToString("00") + ":" + info.startMin.ToString("00") +
-                    " ～ " + dayText + info.endHour.ToString("00") + ":" + info.endMin.ToString("00");
+                string viewText = "日月火水木金土"[info.startDayOfWeek] + " " + info.startHour.ToString("00") + ":" + info.startMin.ToString("00") +
+                    " ～ " + "日月火水木金土"[info.endDayOfWeek] + " " + info.endHour.ToString("00") + ":" + info.endMin.ToString("00");
 
                 var item = new DateItem();
                 item.DateInfo = info;
