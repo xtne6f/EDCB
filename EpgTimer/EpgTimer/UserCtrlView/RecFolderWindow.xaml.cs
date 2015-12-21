@@ -41,6 +41,11 @@ namespace EpgTimer
             }
         }
 
+        public void SetPartialMode(bool partialRec)
+        {
+            this.Title = "録画フォルダ、使用PlugIn設定" + (partialRec == true ? " (部分受信)" : "");
+        }
+
         public void SetDefSetting(RecFileSetInfo info)
         {
             button_ok.Content = "変更";

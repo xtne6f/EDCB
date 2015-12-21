@@ -549,6 +549,7 @@ namespace EpgTimer
                 }
                 var selectInfo = ((RecFileSetInfoView)listView_recFolder.SelectedItem).Info;
                 setting.SetDefSetting(selectInfo);
+                setting.SetPartialMode(((RecFileSetInfoView)listView_recFolder.SelectedItem).PartialRec);
                 if (setting.ShowDialog() == true)
                 {
                     setting.GetSetting(ref selectInfo);
@@ -577,6 +578,7 @@ namespace EpgTimer
         private void recFolderAdd(bool partialRec)
         {
             var setting = new RecFolderWindow();
+            setting.SetPartialMode(partialRec);
             PresentationSource topWindow = PresentationSource.FromVisual(this);
             if (topWindow != null)
             {

@@ -87,8 +87,8 @@ namespace EpgTimer
             var cm_ChgPriorityMenu = new CtxmItemData("優先度", EpgCmdsEx.ChgPriorityMenu);
             for (int i = 1; i <= 5; i++)
             {
-                cm_ChgPriorityMenu.Items.Add(new CtxmItemData(string.Format("{0} (_{0})", i)
-                    , EpgCmds.ChgPriority, i));
+                cm_ChgPriorityMenu.Items.Add(new CtxmItemData(
+                    CommonManager.Instance.PriorityDictionary[(byte)i].DisplayName.Insert(1, string.Format(" (_{0})", i)), EpgCmds.ChgPriority, i));
             }
 
             ////イベントリレー変更
