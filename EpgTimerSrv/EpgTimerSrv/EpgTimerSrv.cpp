@@ -56,6 +56,8 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
                      LPTSTR    lpCmdLine,
                      int       nCmdShow)
 {
+	SetDllDirectory(_T(""));
+
 	if( lpCmdLine[0] == _T('-') || lpCmdLine[0] == _T('/') ){
 		if( lstrcmpi(_T("install"), lpCmdLine + 1) == 0 ){
 			bool installed = false;

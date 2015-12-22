@@ -238,6 +238,7 @@ BOOL CEpgDataCap_BonApp::InitInstance()
 
 int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow)
 {
+	SetDllDirectory(TEXT(""));
 	StartDebugLog();
 	//メインスレッドに対するCOMの初期化
 	CoInitialize(NULL);
