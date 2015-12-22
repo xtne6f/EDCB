@@ -109,6 +109,7 @@ namespace EpgTimer
                         }
 
                         this.SetViewMode(setInfo);
+                        viewCtrl.UpdateEpgData();
                     }
                 }
                 else
