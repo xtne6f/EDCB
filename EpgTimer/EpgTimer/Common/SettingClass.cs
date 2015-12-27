@@ -113,8 +113,8 @@ namespace EpgTimer
         {
             get
             {
-                string defRecExe = SettingPath.ModulePath.TrimEnd('\\') + "\\EpgDataCap_Bon.exe";
-                return IniFileHandler.GetPrivateProfileString("SET", "RecExePath", defRecExe, SettingPath.CommonIniPath);
+                string defRecExe = ModulePath.TrimEnd('\\') + "\\EpgDataCap_Bon.exe";
+                return IniFileHandler.GetPrivateProfileString("SET", "RecExePath", defRecExe, CommonIniPath);
             }
         }
         public static string EdcbIniPath
@@ -144,12 +144,12 @@ namespace EpgTimer
             {
                 if (CommonManager.Instance.NWMode == false)
                 {
-                    string path = IniFileHandler.GetPrivateProfileString("SET", "DataSavePath", SettingPath.DefSettingFolderPath, SettingPath.CommonIniPath);
-                    return (Path.IsPathRooted(path) ? "" : SettingPath.ModulePath.TrimEnd('\\') + "\\") + path;
+                    string path = IniFileHandler.GetPrivateProfileString("SET", "DataSavePath", DefSettingFolderPath, CommonIniPath);
+                    return (Path.IsPathRooted(path) ? "" : ModulePath.TrimEnd('\\') + "\\") + path;
                 }
                 else
                 {
-                    return SettingPath.DefSettingFolderPath;
+                    return DefSettingFolderPath;
                 }
             }
         }
