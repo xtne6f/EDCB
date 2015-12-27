@@ -30,11 +30,8 @@ BOOL CSetDlgAppBtn::Create(LPCTSTR lpszTemplateName, HWND hWndParent)
 BOOL CSetDlgAppBtn::OnInitDialog()
 {
 	// TODO:  ここに初期化を追加してください
-	WCHAR buff[512]=L"";
-	GetPrivateProfileString( L"SET", L"ViewPath", L"", buff, 512, appIniPath.c_str() );
-	SetDlgItemText(m_hWnd, IDC_EDIT_VIEW_EXE, buff);
-	GetPrivateProfileString( L"SET", L"ViewOption", L"", buff, 512, appIniPath.c_str() );
-	SetDlgItemText(m_hWnd, IDC_EDIT_VIEW_OPT, buff);
+	SetDlgItemText(m_hWnd, IDC_EDIT_VIEW_EXE, GetPrivateProfileToString( L"SET", L"ViewPath", L"", appIniPath.c_str() ).c_str());
+	SetDlgItemText(m_hWnd, IDC_EDIT_VIEW_OPT, GetPrivateProfileToString( L"SET", L"ViewOption", L"", appIniPath.c_str() ).c_str());
 
 	return TRUE;  // return TRUE unless you set the focus to a control
 	// 例外 : OCX プロパティ ページは必ず FALSE を返します。

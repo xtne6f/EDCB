@@ -11,5 +11,7 @@ BOOL _GetDiskFreeSpaceEx(
   PULARGE_INTEGER lpTotalNumberOfFreeBytes // ディスク全体の空きバイト数
 );
 void GetLastErrMsg(DWORD err, wstring& msg);
+std::basic_string<TCHAR> GetPrivateProfileToString(LPCTSTR lpAppName, LPCTSTR lpKeyName, LPCTSTR lpDefault, LPCTSTR lpFileName);
+BOOL WritePrivateProfileInt(LPCTSTR lpAppName, LPCTSTR lpKeyName, int value, LPCTSTR lpFileName);
 
 #endif

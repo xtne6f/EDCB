@@ -248,13 +248,6 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCm
 	return 0;
 }
 
-BOOL WritePrivateProfileInt(LPCTSTR lpAppName, LPCTSTR lpKeyName, int value, LPCTSTR lpFileName)
-{
-	TCHAR sz[32];
-	wsprintf(sz, TEXT("%d"), value);
-	return WritePrivateProfileString(lpAppName, lpKeyName, sz, lpFileName);
-}
-
 void OutputDebugStringWrapper(LPCWSTR lpOutputString)
 {
 	if( g_saveDebugLog ){

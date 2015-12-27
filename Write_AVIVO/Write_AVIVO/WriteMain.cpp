@@ -48,11 +48,9 @@ BOOL CWriteMain::_StartSave(
 	Format(grfPath, L"%s\\%s.grf", folder.c_str(), fileTitle.c_str());
 	Format(iniPath, L"%s\\%s.ini", folder.c_str(), fileTitle.c_str());
 
-	WCHAR buff[256] = L"";
-	GetPrivateProfileString(L"SET", L"ext", L"ts", buff, 256, iniPath.c_str());
-	wstring ext = buff;
+	wstring ext = GetPrivateProfileToString(L"SET", L"ext", L"ts", iniPath.c_str());
 	if( ext.find(L".") == string::npos ){
-		Format(ext, L".%s", buff);
+		ext = L"." + ext;
 	}
 
 	HANDLE file = _CreateDirectoryAndFile( grfPath.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );

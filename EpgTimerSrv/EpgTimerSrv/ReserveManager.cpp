@@ -80,7 +80,6 @@ void CReserveManager::ReloadSetting()
 	viewIniPath += L"\\EpgDataCap_Bon.ini";
 	wstring settingPath;
 	GetSettingPath(settingPath);
-	WCHAR buff[1024];
 
 	this->chUtil.ParseText((settingPath + L"\\ChSet5.txt").c_str());
 
@@ -94,10 +93,10 @@ void CReserveManager::ReloadSetting()
 		wsprintf(key, L"%dSelect", i);
 		if( GetPrivateProfileInt(L"EPG_CAP", key, 0, iniPath.c_str()) != 0 ){
 			wsprintf(key, L"%d", i);
-			GetPrivateProfileString(L"EPG_CAP", key, L"", buff, 256, iniPath.c_str());
+			wstring buff = GetPrivateProfileToString(L"EPG_CAP", key, L"", iniPath.c_str());
 			//—j“úw’èÚ”ö«(w1=Mon,...,w7=Sun)
 			unsigned int hour, minute, wday = 0;
-			if( swscanf_s(buff, L"%u:%uw%u", &hour, &minute, &wday) >= 2 ){
+			if( swscanf_s(buff.c_str(), L"%u:%uw%u", &hour, &minute, &wday) >= 2 ){
 				//æ“¾í•Ê(bit0(LSB)=BS,bit1=CS1,bit2=CS2)B•‰’l‚Ì‚Æ‚«‚Í‹¤’Êİ’è‚É]‚¤
 				wsprintf(key, L"%dBasicOnlyFlags", i);
 				int basicOnlyFlags = GetPrivateProfileInt(L"EPG_CAP", key, -1, iniPath.c_str());
@@ -121,15 +120,13 @@ void CReserveManager::ReloadSetting()
 		for( int i = 0; i < count; i++ ){
 			WCHAR key[64];
 			wsprintf(key, L"%d", i);
-			GetPrivateProfileString(L"DEL_EXT", key, L"", buff, 512, iniPath.c_str());
-			this->autoDelExtList.push_back(buff);
+			this->autoDelExtList.push_back(GetPrivateProfileToString(L"DEL_EXT", key, L"", iniPath.c_str()));
 		}
 		count = GetPrivateProfileInt(L"DEL_CHK", L"Count", 0, iniPath.c_str());
 		for( int i = 0; i < count; i++ ){
 			WCHAR key[64];
 			wsprintf(key, L"%d", i);
-			GetPrivateProfileString(L"DEL_CHK", key, L"", buff, 512, iniPath.c_str());
-			this->autoDelFolderList.push_back(buff);
+			this->autoDelFolderList.push_back(GetPrivateProfileToString(L"DEL_CHK", key, L"", iniPath.c_str()));
 		}
 	}
 
@@ -142,13 +139,11 @@ void CReserveManager::ReloadSetting()
 		GetPrivateProfileInt(L"SET", L"AutoDelRecInfo", 0, iniPath.c_str()) == 0 ? UINT_MAX :
 		GetPrivateProfileInt(L"SET", L"AutoDelRecInfoNum", 100, iniPath.c_str()));
 	this->recInfoText.SetRecInfoDelFile(GetPrivateProfileInt(L"SET", L"RecInfoDelFile", 0, commonIniPath.c_str()) != 0);
-	GetPrivateProfileString(L"SET", L"RecInfoFolder", L"", buff, 512, commonIniPath.c_str());
-	this->recInfoText.SetRecInfoFolder(buff);
+	this->recInfoText.SetRecInfoFolder(GetPrivateProfileToString(L"SET", L"RecInfoFolder", L"", commonIniPath.c_str()).c_str());
 
 	this->recInfo2Text.SetKeepCount(GetPrivateProfileInt(L"SET", L"RecInfo2Max", 1000, iniPath.c_str()));
 	this->recInfo2DropChk = GetPrivateProfileInt(L"SET", L"RecInfo2DropChk", 15, iniPath.c_str());
-	GetPrivateProfileString(L"SET", L"RecInfo2RegExp", L"", buff, 1024, iniPath.c_str());
-	this->recInfo2RegExp = buff;
+	this->recInfo2RegExp = GetPrivateProfileToString(L"SET", L"RecInfo2RegExp", L"", iniPath.c_str());
 
 	this->defEnableCaption = GetPrivateProfileInt(L"SET", L"Caption", 1, viewIniPath.c_str()) != 0;
 	this->defEnableData = GetPrivateProfileInt(L"SET", L"Data", 0, viewIniPath.c_str()) != 0;
@@ -156,8 +151,7 @@ void CReserveManager::ReloadSetting()
 
 	this->recNamePlugInFileName.clear();
 	if( GetPrivateProfileInt(L"SET", L"RecNamePlugIn", 0, iniPath.c_str()) != 0 ){
-		GetPrivateProfileString(L"SET", L"RecNamePlugInFile", L"RecName_Macro.dll", buff, 512, iniPath.c_str());
-		this->recNamePlugInFileName = buff;
+		this->recNamePlugInFileName = GetPrivateProfileToString(L"SET", L"RecNamePlugInFile", L"RecName_Macro.dll", iniPath.c_str());
 	}
 	this->recNameNoChkYen = GetPrivateProfileInt(L"SET", L"NoChkYen", 0, iniPath.c_str()) != 0;
 

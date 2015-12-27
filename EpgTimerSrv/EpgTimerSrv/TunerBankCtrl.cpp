@@ -58,9 +58,7 @@ void CTunerBankCtrl::ReloadSetting()
 	this->recNameNoChkYen = GetPrivateProfileInt(L"SET", L"NoChkYen", 0, iniPath.c_str()) != 0;
 	this->recNamePlugInFileName.clear();
 	if( GetPrivateProfileInt(L"SET", L"RecNamePlugIn", 0, iniPath.c_str()) != 0 ){
-		WCHAR buff[512];
-		GetPrivateProfileString(L"SET", L"RecNamePlugInFile", L"RecName_Macro.dll", buff, 512, iniPath.c_str());
-		this->recNamePlugInFileName = buff;
+		this->recNamePlugInFileName = GetPrivateProfileToString(L"SET", L"RecNamePlugInFile", L"RecName_Macro.dll", iniPath.c_str());
 	}
 }
 
@@ -749,9 +747,7 @@ void CTunerBankCtrl::SaveProgramInfo(LPCWSTR recPath, const EPGDB_EVENT_INFO& in
 {
 	wstring iniCommonPath;
 	GetCommonIniPath(iniCommonPath);
-	WCHAR buff[512];
-	GetPrivateProfileString(L"SET", L"RecInfoFolder", L"", buff, 512, iniCommonPath.c_str());
-	wstring infoFolder = buff;
+	wstring infoFolder = GetPrivateProfileToString(L"SET", L"RecInfoFolder", L"", iniCommonPath.c_str());
 	ChkFolderPath(infoFolder);
 
 	wstring savePath;
@@ -812,10 +808,8 @@ bool CTunerBankCtrl::RecStart(const TUNER_RESERVE& reserve, __int64 now) const
 				param.saveFolder.resize(1);
 				wstring commonIniPath;
 				GetCommonIniPath(commonIniPath);
-				WCHAR buff[512];
 				GetRecFolderPath(param.saveFolder[0].recFolder);
-				GetPrivateProfileString(L"SET", L"RecWritePlugIn0", L"", buff, 512, commonIniPath.c_str());
-				param.saveFolder[0].writePlugIn = buff;
+				param.saveFolder[0].writePlugIn = GetPrivateProfileToString(L"SET", L"RecWritePlugIn0", L"", commonIniPath.c_str());
 				param.saveFolder[0].recNamePlugIn = this->recNamePlugInFileName;
 			}else{
 				for( size_t j = 0; j < param.saveFolder.size(); j++ ){
@@ -1085,28 +1079,21 @@ bool CTunerBankCtrl::OpenTuner(bool minWake, bool nwUdp, bool nwTcp, bool standb
 	wstring strIni;
 	GetModuleFolderPath(strIni);
 	strIni += L"\\ViewApp.ini";
-	WCHAR buff[512];
 
-	GetPrivateProfileString(L"SET", L"RecExePath", L"", buff, 512, commonIniPath.c_str());
-	wstring strExecute = buff;
+	wstring strExecute = GetPrivateProfileToString(L"SET", L"RecExePath", L"", commonIniPath.c_str());
 	if( strExecute.empty() ){
 		GetModuleFolderPath(strExecute);
 		strExecute += L"\\EpgDataCap_Bon.exe";
 	}
 
-	GetPrivateProfileString(L"APP_CMD_OPT", L"Bon", L"-d", buff, 512, strIni.c_str());
-	wstring strParam = wstring(L" ") + buff + L" " + this->bonFileName;
+	wstring strParam = L" " + GetPrivateProfileToString(L"APP_CMD_OPT", L"Bon", L"-d", strIni.c_str()) + L" " + this->bonFileName;
 
 	if( minWake ){
-		GetPrivateProfileString(L"APP_CMD_OPT", L"Min", L"-min", buff, 512, strIni.c_str());
-		strParam += L" ";
-		strParam += buff;
+		strParam += L" " + GetPrivateProfileToString(L"APP_CMD_OPT", L"Min", L"-min", strIni.c_str());
 	}
 	//à¯êî"-noview"ÇÕàµÇÌÇ»Ç¢(Ç¢Ç‹ÇÃÇ∆Ç±ÇÎâΩÇÃå¯â Ç‡Ç»Ç¢ÇΩÇﬂ)
 	if( nwUdp == false && nwTcp == false ){
-		GetPrivateProfileString(L"APP_CMD_OPT", L"NetworkOff", L"-nonw", buff, 512, strIni.c_str());
-		strParam += L" ";
-		strParam += buff;
+		strParam += L" " + GetPrivateProfileToString(L"APP_CMD_OPT", L"NetworkOff", L"-nonw", strIni.c_str());
 	}else{
 		strParam += nwUdp ? L" -nwudp" : L"";
 		strParam += nwTcp ? L" -nwtcp" : L"";

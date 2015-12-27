@@ -64,11 +64,8 @@ void WINAPI Setting(
 	wstring iniPath = dllPath;
 	iniPath += L".ini";
 
-	WCHAR buff[1024] = L"";
-	GetPrivateProfileString(L"SET", L"Size", L"770048", buff, 1024, iniPath.c_str());
-
 	CSettingDlg dlg;
-	dlg.size = buff;
+	dlg.size = GetPrivateProfileToString(L"SET", L"Size", L"770048", iniPath.c_str());
 	if( dlg.CreateSettingDialog(g_instance, parentWnd) == IDOK ){
 		WritePrivateProfileString(L"SET", L"Size", dlg.size.c_str(), iniPath.c_str());
 	}

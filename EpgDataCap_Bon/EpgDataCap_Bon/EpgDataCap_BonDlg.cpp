@@ -37,9 +37,7 @@ CEpgDataCap_BonDlg::CEpgDataCap_BonDlg()
 	this->initONID = GetPrivateProfileInt( L"Set", L"LastONID", -1, this->moduleIniPath.c_str() );
 	this->initTSID = GetPrivateProfileInt( L"Set", L"LastTSID", -1, this->moduleIniPath.c_str() );
 	this->initSID = GetPrivateProfileInt( L"Set", L"LastSID", -1, this->moduleIniPath.c_str() );
-	WCHAR buff[512]=L"";
-	GetPrivateProfileString( L"Set", L"LastBon", L"", buff, 512, this->moduleIniPath.c_str() );
-	this->iniBonDriver = buff;
+	this->iniBonDriver = GetPrivateProfileToString( L"Set", L"LastBon", L"", this->moduleIniPath.c_str() );
 
 	iniView = FALSE;
 	iniNetwork = TRUE;
@@ -54,8 +52,7 @@ CEpgDataCap_BonDlg::CEpgDataCap_BonDlg()
 			this->initONID = GetPrivateProfileInt( L"Set", L"FixONID", -1, this->moduleIniPath.c_str() );
 			this->initTSID = GetPrivateProfileInt( L"Set", L"FixTSID", -1, this->moduleIniPath.c_str() );
 			this->initSID = GetPrivateProfileInt( L"Set", L"FixSID", -1, this->moduleIniPath.c_str() );
-			GetPrivateProfileString( L"Set", L"FixBon", L"", buff, 512, this->moduleIniPath.c_str() );
-			this->iniBonDriver = buff;
+			this->iniBonDriver = GetPrivateProfileToString( L"Set", L"FixBon", L"", this->moduleIniPath.c_str() );
 		}else{
 			this->initONID = -1;
 			this->initTSID = -1;

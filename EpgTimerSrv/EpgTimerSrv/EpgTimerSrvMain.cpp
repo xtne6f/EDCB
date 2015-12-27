@@ -673,18 +673,14 @@ void CEpgTimerSrvMain::ReloadNetworkSetting()
 	GetModuleIniPath(iniPath);
 	this->tcpPort = 0;
 	if( GetPrivateProfileInt(L"SET", L"EnableTCPSrv", 0, iniPath.c_str()) != 0 ){
-		WCHAR buff[512];
-		GetPrivateProfileString(L"SET", L"TCPAccessControlList", L"+127.0.0.1,+192.168.0.0/16", buff, 512, iniPath.c_str());
-		this->tcpAccessControlList = buff;
+		this->tcpAccessControlList = GetPrivateProfileToString(L"SET", L"TCPAccessControlList", L"+127.0.0.1,+192.168.0.0/16", iniPath.c_str());
 		this->tcpResponseTimeoutSec = GetPrivateProfileInt(L"SET", L"TCPResponseTimeoutSec", 120, iniPath.c_str());
 		this->tcpPort = (unsigned short)GetPrivateProfileInt(L"SET", L"TCPPort", 4510, iniPath.c_str());
 	}
 	this->httpPorts.clear();
 	int enableHttpSrv = GetPrivateProfileInt(L"SET", L"EnableHttpSrv", 0, iniPath.c_str());
 	if( enableHttpSrv != 0 ){
-		WCHAR buff[512];
-		GetPrivateProfileString(L"SET", L"HttpPublicFolder", L"", buff, 512, iniPath.c_str());
-		this->httpPublicFolder = buff;
+		this->httpPublicFolder = GetPrivateProfileToString(L"SET", L"HttpPublicFolder", L"", iniPath.c_str());
 		if( this->httpPublicFolder.empty() ){
 			GetModuleFolderPath(this->httpPublicFolder);
 			this->httpPublicFolder += L"\\HttpPublic";
@@ -694,10 +690,8 @@ void CEpgTimerSrvMain::ReloadNetworkSetting()
 			//公開フォルダの場所が変わったのでクリア
 			this->dmsPublicFileList.clear();
 		}
-		GetPrivateProfileString(L"SET", L"HttpAccessControlList", L"+127.0.0.1", buff, 512, iniPath.c_str());
-		this->httpAccessControlList = buff;
-		GetPrivateProfileString(L"SET", L"HttpPort", L"5510", buff, 512, iniPath.c_str());
-		this->httpPorts = buff;
+		this->httpAccessControlList = GetPrivateProfileToString(L"SET", L"HttpAccessControlList", L"+127.0.0.1", iniPath.c_str());
+		this->httpPorts = GetPrivateProfileToString(L"SET", L"HttpPort", L"5510", iniPath.c_str());
 		this->httpSaveLog = enableHttpSrv == 2;
 	}
 	this->enableSsdpServer = GetPrivateProfileInt(L"SET", L"EnableDMS", 0, iniPath.c_str()) != 0;
@@ -751,9 +745,8 @@ void CEpgTimerSrvMain::ReloadSetting()
 	for( int i = 0; i < count; i++ ){
 		WCHAR key[16];
 		wsprintf(key, L"%d", i);
-		WCHAR buff[256];
-		GetPrivateProfileString(L"NO_SUSPEND", key, L"", buff, 256, iniPath.c_str());
-		if( buff[0] != L'\0' ){
+		wstring buff = GetPrivateProfileToString(L"NO_SUSPEND", key, L"", iniPath.c_str());
+		if( buff.empty() == false ){
 			this->noSuspendExeList.push_back(buff);
 		}
 	}
@@ -763,9 +756,8 @@ void CEpgTimerSrvMain::ReloadSetting()
 	for( int i = 0; i < count; i++ ){
 		WCHAR key[16];
 		wsprintf(key, L"%d", i);
-		WCHAR buff[256];
-		GetPrivateProfileString(L"TVTEST", key, L"", buff, 256, iniPath.c_str());
-		if( buff[0] != L'\0' ){
+		wstring buff = GetPrivateProfileToString(L"TVTEST", key, L"", iniPath.c_str());
+		if( buff.empty() == false ){
 			this->tvtestUseBon.push_back(buff);
 		}
 	}
@@ -775,25 +767,23 @@ pair<wstring, REC_SETTING_DATA> CEpgTimerSrvMain::LoadRecSetData(WORD preset) co
 {
 	wstring iniPath;
 	GetModuleIniPath(iniPath);
-	WCHAR buff[512];
+	WCHAR defIndex[32];
 	WCHAR defName[32];
 	WCHAR defFolderName[2][32];
-	buff[preset == 0 ? 0 : wsprintf(buff, L"%d", preset)] = L'\0';
-	wsprintf(defName, L"REC_DEF%s", buff);
-	wsprintf(defFolderName[0], L"REC_DEF_FOLDER%s", buff);
-	wsprintf(defFolderName[1], L"REC_DEF_FOLDER_1SEG%s", buff);
+	defIndex[preset == 0 ? 0 : wsprintf(defIndex, L"%d", preset)] = L'\0';
+	wsprintf(defName, L"REC_DEF%s", defIndex);
+	wsprintf(defFolderName[0], L"REC_DEF_FOLDER%s", defIndex);
+	wsprintf(defFolderName[1], L"REC_DEF_FOLDER_1SEG%s", defIndex);
 
 	pair<wstring, REC_SETTING_DATA> ret;
-	GetPrivateProfileString(defName, L"SetName", L"", buff, 512, iniPath.c_str());
-	ret.first = preset == 0 ? L"デフォルト" : buff;
+	ret.first = preset == 0 ? wstring(L"デフォルト") : GetPrivateProfileToString(defName, L"SetName", L"", iniPath.c_str());
 	REC_SETTING_DATA& rs = ret.second;
 	rs.recMode = (BYTE)GetPrivateProfileInt(defName, L"RecMode", 1, iniPath.c_str());
 	rs.priority = (BYTE)GetPrivateProfileInt(defName, L"Priority", 2, iniPath.c_str());
 	rs.tuijyuuFlag = (BYTE)GetPrivateProfileInt(defName, L"TuijyuuFlag", 1, iniPath.c_str());
 	rs.serviceMode = (BYTE)GetPrivateProfileInt(defName, L"ServiceMode", 0, iniPath.c_str());
 	rs.pittariFlag = (BYTE)GetPrivateProfileInt(defName, L"PittariFlag", 0, iniPath.c_str());
-	GetPrivateProfileString(defName, L"BatFilePath", L"", buff, 512, iniPath.c_str());
-	rs.batFilePath = buff;
+	rs.batFilePath = GetPrivateProfileToString(defName, L"BatFilePath", L"", iniPath.c_str());
 	for( int i = 0; i < 2; i++ ){
 		vector<REC_FILE_SET_INFO>& recFolderList = i == 0 ? rs.recFolderList : rs.partialRecFolder;
 		int count = GetPrivateProfileInt(defFolderName[i], L"Count", 0, iniPath.c_str());
@@ -801,14 +791,11 @@ pair<wstring, REC_SETTING_DATA> CEpgTimerSrvMain::LoadRecSetData(WORD preset) co
 			recFolderList.resize(j + 1);
 			WCHAR key[32];
 			wsprintf(key, L"%d", j);
-			GetPrivateProfileString(defFolderName[i], key, L"", buff, 512, iniPath.c_str());
-			recFolderList[j].recFolder = buff;
+			recFolderList[j].recFolder = GetPrivateProfileToString(defFolderName[i], key, L"", iniPath.c_str());
 			wsprintf(key, L"WritePlugIn%d", j);
-			GetPrivateProfileString(defFolderName[i], key, L"Write_Default.dll", buff, 512, iniPath.c_str());
-			recFolderList[j].writePlugIn = buff;
+			recFolderList[j].writePlugIn = GetPrivateProfileToString(defFolderName[i], key, L"Write_Default.dll", iniPath.c_str());
 			wsprintf(key, L"RecNamePlugIn%d", j);
-			GetPrivateProfileString(defFolderName[i], key, L"", buff, 512, iniPath.c_str());
-			recFolderList[j].recNamePlugIn = buff;
+			recFolderList[j].recNamePlugIn = GetPrivateProfileToString(defFolderName[i], key, L"", iniPath.c_str());
 		}
 	}
 	rs.suspendMode = (BYTE)GetPrivateProfileInt(defName, L"SuspendMode", 0, iniPath.c_str());
@@ -2277,8 +2264,7 @@ int CEpgTimerSrvMain::LuaGetPrivateProfile(lua_State* L)
 					GetModuleFolderPath(path);
 					strFile = path + L"\\" + strFile;
 				}
-				WCHAR buff[8192];
-				GetPrivateProfileString(strApp.c_str(), strKey.c_str(), strDef.c_str(), buff, 8192, strFile.c_str());
+				wstring buff = GetPrivateProfileToString(strApp.c_str(), strKey.c_str(), strDef.c_str(), strFile.c_str());
 				lua_pushstring(L, ws.WtoUTF8(buff));
 			}
 			return 1;
@@ -2742,9 +2728,7 @@ int CEpgTimerSrvMain::LuaEnumRecPresetInfo(lua_State* L)
 	lua_newtable(L);
 	wstring iniPath;
 	GetModuleIniPath(iniPath);
-	WCHAR buff[512];
-	GetPrivateProfileString(L"SET", L"PresetID", L"", buff, 512, iniPath.c_str());
-	wstring parseBuff = buff;
+	wstring parseBuff = GetPrivateProfileToString(L"SET", L"PresetID", L"", iniPath.c_str());
 	vector<WORD> idList(1, 0);
 	while( parseBuff.empty() == false ){
 		wstring presetID;

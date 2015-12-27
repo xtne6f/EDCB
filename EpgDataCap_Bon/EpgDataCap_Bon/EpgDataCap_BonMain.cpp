@@ -76,10 +76,7 @@ void CEpgDataCap_BonMain::ReloadSetting()
 		for( int i = 0; i < iNum; i++ ){
 			WCHAR key[64];
 			wsprintf(key, L"RecFolderPath%d", i );
-			WCHAR wBuff[512]=L"";
-			GetPrivateProfileString( L"SET", key, L"", wBuff, 512, commonIniPath.c_str() );
-
-			this->recFolderList.push_back(wBuff);
+			this->recFolderList.push_back(GetPrivateProfileToString( L"SET", key, L"", commonIniPath.c_str() ));
 		}
 	}
 
@@ -91,11 +88,8 @@ void CEpgDataCap_BonMain::ReloadSetting()
 
 	this->overWriteFlag = GetPrivateProfileInt( L"SET", L"OverWrite", 0, appIniPath.c_str() );
 
-	WCHAR buff[512]=L"";
-	GetPrivateProfileString( L"SET", L"ViewPath", L"", buff, 512, appIniPath.c_str() );
-	this->viewPath = buff;
-	GetPrivateProfileString( L"SET", L"ViewOption", L"", buff, 512, appIniPath.c_str() );
-	this->viewOpt = buff;
+	this->viewPath = GetPrivateProfileToString( L"SET", L"ViewPath", L"", appIniPath.c_str() );
+	this->viewOpt = GetPrivateProfileToString( L"SET", L"ViewOption", L"", appIniPath.c_str() );
 
 	this->udpCount = (DWORD)GetPrivateProfileInt( L"SET_UDP", L"Count", 0, appIniPath.c_str() );
 	this->tcpCount = (DWORD)GetPrivateProfileInt( L"SET_TCP", L"Count", 0, appIniPath.c_str() );
@@ -988,9 +982,7 @@ void CEpgDataCap_BonMain::CtrlCmdCallbackInvoked()
 					wstring iniCommonPath = L"";
 					GetCommonIniPath(iniCommonPath);
 
-					WCHAR buff[512] = L"";
-					GetPrivateProfileString(L"SET", L"RecInfoFolder", L"", buff, 512, iniCommonPath.c_str());
-					wstring infoFolder = buff;
+					wstring infoFolder = GetPrivateProfileToString(L"SET", L"RecInfoFolder", L"", iniCommonPath.c_str());
 					ChkFolderPath(infoFolder);
 
 					if( infoFolder.size() > 0 ){
