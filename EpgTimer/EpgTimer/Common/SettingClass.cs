@@ -14,27 +14,19 @@ namespace EpgTimer
 {
     class IniFileHandler
     {
-        [DllImport("KERNEL32.DLL")]
+        [DllImport("KERNEL32.DLL", CharSet = CharSet.Unicode)]
         public static extern uint
           GetPrivateProfileString(string lpAppName,
           string lpKeyName, string lpDefault,
           StringBuilder lpReturnedString, uint nSize,
           string lpFileName);
 
-        [DllImport("KERNEL32.DLL",
-            EntryPoint = "GetPrivateProfileStringA")]
-        public static extern uint
-          GetPrivateProfileStringByByteArray(string lpAppName,
-          string lpKeyName, string lpDefault,
-          byte[] lpReturnedString, uint nSize,
-          string lpFileName);
-
-        [DllImport("KERNEL32.DLL")]
+        [DllImport("KERNEL32.DLL", CharSet = CharSet.Unicode)]
         public static extern int
           GetPrivateProfileInt(string lpAppName,
           string lpKeyName, int nDefault, string lpFileName);
 
-        [DllImport("KERNEL32.DLL")]
+        [DllImport("KERNEL32.DLL", CharSet = CharSet.Unicode)]
         public static extern uint WritePrivateProfileString(
           string lpAppName,
           string lpKeyName,
@@ -45,8 +37,16 @@ namespace EpgTimer
           GetPrivateProfileString(string lpAppName,
           string lpKeyName, string lpDefault, string lpFileName)
         {
-            StringBuilder buff = new StringBuilder(512);
-            IniFileHandler.GetPrivateProfileString(lpAppName, lpKeyName, lpDefault, buff, 512, lpFileName);
+            StringBuilder buff = null;
+            for (uint n = 512; n <= 1024 * 1024; n *= 2)
+            {
+                //セクション名取得などのNUL文字分割された結果は先頭要素のみ格納される
+                buff = new StringBuilder((int)n);
+                if (GetPrivateProfileString(lpAppName, lpKeyName, lpDefault, buff, n, lpFileName) < n - 2)
+                {
+                    break;
+                }
+            }
             return buff.ToString();
         }
 
