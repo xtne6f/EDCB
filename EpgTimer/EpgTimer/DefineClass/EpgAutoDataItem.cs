@@ -22,12 +22,22 @@ namespace EpgTimer
 
         public static string GetValuePropertyName(string key)
         {
-            switch (key)
+            var obj = new EpgAutoDataItem();
+            if (key == MenuUtil.GetMemberName(() => obj.NextReserve))
             {
-                case "NextReserve": return "NextReserveValue";
-                case "MarginStart": return "MarginStartValue";
-                case "MarginEnd": return "MarginEndValue";
-                default: return key;
+                return MenuUtil.GetMemberName(() => obj.NextReserveValue);
+            }
+            else if (key == MenuUtil.GetMemberName(() => obj.MarginStart))
+            {
+                return MenuUtil.GetMemberName(() => obj.MarginStartValue);
+            }
+            else if (key == MenuUtil.GetMemberName(() => obj.MarginEnd))
+            {
+                return MenuUtil.GetMemberName(() => obj.MarginEndValue);
+            }
+            else
+            {
+                return key;
             }
         }
 

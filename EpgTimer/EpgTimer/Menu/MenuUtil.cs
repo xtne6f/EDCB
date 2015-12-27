@@ -280,7 +280,7 @@ namespace EpgTimer
         }
 
         /// <summary>メンバ名を返す。</summary>
-        public string GetMemberName<T>(Expression<Func<T>> e)
+        public static string GetMemberName<T>(Expression<Func<T>> e)
         {
             var member = (MemberExpression)e.Body;
             return member.Member.Name;
