@@ -180,11 +180,11 @@ namespace EpgTimer
 
                 if (chgFlag == true)
                 {
-                    mutil.ManualAutoAddChange(mutil.ToList(defKey));
+                    mutil.ManualAutoAddChange(CommonUtil.ToList(defKey));
                 }
                 else
                 {
-                    mutil.ManualAutoAddAdd(mutil.ToList(defKey));
+                    mutil.ManualAutoAddAdd(CommonUtil.ToList(defKey));
                 }
             }
             catch (Exception ex)
@@ -203,7 +203,7 @@ namespace EpgTimer
             }
             if (CheckExistAutoAddItem() == false) return;
             
-            mutil.ManualAutoAddDelete(mutil.ToList(defKey));
+            mutil.ManualAutoAddDelete(CommonUtil.ToList(defKey));
             DialogResult = true;
         }
 

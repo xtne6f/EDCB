@@ -41,7 +41,7 @@ namespace EpgTimer
             {
                 //リストビュー関連の設定
                 lstCtrl = new ListViewController<EpgAutoDataItem>(this);
-                lstCtrl.SetSavePath(MenuUtil.GetMemberName(() => Settings.Instance.AutoAddEpgColumn));
+                lstCtrl.SetSavePath(CommonUtil.GetMemberName(() => Settings.Instance.AutoAddEpgColumn));
                 lstCtrl.SetViewSetting(listView_key, gridView_key, false, null
                     , (sender, e) => dragMover.NotSaved |= lstCtrl.GridViewHeaderClickSort(e));
 

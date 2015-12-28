@@ -38,7 +38,7 @@ namespace EpgTimer.EpgView
             mc.SetFuncGetEpgEventList(() => 
             {
                 ProgramViewItem hitItem = programView.GetProgramViewData(clickPos);
-                return hitItem != null && hitItem.EventInfo !=null ? mutil.ToList(hitItem.EventInfo) : new List<EpgEventInfo>();
+                return hitItem != null && hitItem.EventInfo !=null ? CommonUtil.ToList(hitItem.EventInfo) : new List<EpgEventInfo>();
             });
         }
         public override void RefreshMenu()

@@ -369,11 +369,11 @@ namespace EpgTimer
 
                 if (addMode == AddMode.Change)
                 {
-                    mutil.ReserveChange(mutil.ToList(reserveInfo));
+                    mutil.ReserveChange(CommonUtil.ToList(reserveInfo));
                 }
                 else
                 {
-                    mutil.ReserveAdd(mutil.ToList(reserveInfo));
+                    mutil.ReserveAdd(CommonUtil.ToList(reserveInfo));
                 }
             }
             catch (Exception ex)
@@ -393,7 +393,7 @@ namespace EpgTimer
 
             if (CheckExistReserveItem() == false) return;
 
-            mutil.ReserveDelete(mutil.ToList(reserveInfo));
+            mutil.ReserveDelete(CommonUtil.ToList(reserveInfo));
 
             DialogResult = true;
         }

@@ -52,7 +52,7 @@ namespace EpgTimer
                 if (MessageBox.Show("予約を追加します。\r\nよろしいですか？", "追加の確認", MessageBoxButton.OKCancel) != MessageBoxResult.OK)
                 { return; }
             }
-            if (mutil.ReserveAdd(mutil.ToList(eventInfo), recSettingView) == false) return;
+            if (mutil.ReserveAdd(CommonUtil.ToList(eventInfo), recSettingView) == false) return;
             DialogResult = true;
         }
 

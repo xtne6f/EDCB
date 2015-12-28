@@ -150,10 +150,8 @@ namespace EpgTimer.EpgView
                 else
                 {
                     //番組情報の検索
-                    List<EpgSearchKeyInfo> keyList = mutil.ToList(setViewInfo.SearchKey);
                     var list = new List<EpgEventInfo>();
-
-                    ErrCode err = (ErrCode)cmd.SendSearchPg(keyList, ref list);
+                    ErrCode err = (ErrCode)cmd.SendSearchPg(CommonUtil.ToList(setViewInfo.SearchKey), ref list);
                     if (CommonManager.CmdErrMsgTypical(err, "EPGデータの取得", this) == false) return false;
 
                     //サービス毎のリストに変換

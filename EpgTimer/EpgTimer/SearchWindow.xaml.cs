@@ -202,12 +202,12 @@ namespace EpgTimer
         {
             lstCtrl.ReloadInfoData(dataList =>
             {
-                EpgSearchKeyInfo key = new EpgSearchKeyInfo();
+                var key = new EpgSearchKeyInfo();
                 GetSearchKey(ref key);
                 key.keyDisabledFlag = 0; //無効解除
-                List<EpgEventInfo> list = new List<EpgEventInfo>();
+                var list = new List<EpgEventInfo>();
 
-                cmd.SendSearchPg(mutil.ToList(key), ref list);
+                cmd.SendSearchPg(CommonUtil.ToList(key), ref list);
 
                 lstCtrl.dataList.AddFromEventList(list, false, true);
 
@@ -279,7 +279,7 @@ namespace EpgTimer
                     CommonManager.Instance.DB.ReloadEpgAutoAddInfo();
                 }
 
-                if (mutil.EpgAutoAddAdd(mutil.ToList(addItem)) == true)
+                if (mutil.EpgAutoAddAdd(CommonUtil.ToList(addItem)) == true)
                 {
                     List<uint> oldlist = CommonManager.Instance.DB.EpgAutoAddList.Keys.ToList();
 
@@ -345,7 +345,7 @@ namespace EpgTimer
                 addItem.searchInfo = searchKey;
                 addItem.recSetting = recSetKey;
 
-                if (mutil.EpgAutoAddChange(mutil.ToList(addItem)) == true)
+                if (mutil.EpgAutoAddChange(CommonUtil.ToList(addItem)) == true)
                 {
                     SearchPg();
                 }
@@ -366,7 +366,7 @@ namespace EpgTimer
             }
             if (CheckExistAutoAddItem() == false) return;
 
-            if (mutil.EpgAutoAddDelete(mutil.ToList(autoAddID)) == true)
+            if (mutil.EpgAutoAddDelete(CommonUtil.ToList(autoAddID)) == true)
             {
                 SetViewMode(SearchMode.NewAdd);
                 this.autoAddID = 0;

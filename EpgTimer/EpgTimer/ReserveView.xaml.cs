@@ -26,9 +26,9 @@ namespace EpgTimer
             {
                 //リストビュー関連の設定
                 lstCtrl = new ListViewController<ReserveItem>(this);
-                lstCtrl.SetSavePath(MenuUtil.GetMemberName(() => Settings.Instance.ReserveListColumn)
-                    , MenuUtil.GetMemberName(() => Settings.Instance.ResColumnHead)
-                    , MenuUtil.GetMemberName(() => Settings.Instance.ResSortDirection));
+                lstCtrl.SetSavePath(CommonUtil.GetMemberName(() => Settings.Instance.ReserveListColumn)
+                    , CommonUtil.GetMemberName(() => Settings.Instance.ResColumnHead)
+                    , CommonUtil.GetMemberName(() => Settings.Instance.ResSortDirection));
                 lstCtrl.SetViewSetting(listView_reserve, gridView_reserve, true);
 
                 //最初にコマンド集の初期化

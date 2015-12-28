@@ -23,17 +23,17 @@ namespace EpgTimer
         public static string GetValuePropertyName(string key)
         {
             var obj = new EpgAutoDataItem();
-            if (key == MenuUtil.GetMemberName(() => obj.NextReserve))
+            if (key == CommonUtil.GetMemberName(() => obj.NextReserve))
             {
-                return MenuUtil.GetMemberName(() => obj.NextReserveValue);
+                return CommonUtil.GetMemberName(() => obj.NextReserveValue);
             }
-            else if (key == MenuUtil.GetMemberName(() => obj.MarginStart))
+            else if (key == CommonUtil.GetMemberName(() => obj.MarginStart))
             {
-                return MenuUtil.GetMemberName(() => obj.MarginStartValue);
+                return CommonUtil.GetMemberName(() => obj.MarginStartValue);
             }
-            else if (key == MenuUtil.GetMemberName(() => obj.MarginEnd))
+            else if (key == CommonUtil.GetMemberName(() => obj.MarginEnd))
             {
-                return MenuUtil.GetMemberName(() => obj.MarginEndValue);
+                return CommonUtil.GetMemberName(() => obj.MarginEndValue);
             }
             else
             {

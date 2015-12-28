@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows;
@@ -274,18 +273,6 @@ namespace EpgTimer
             return block;
         }
 
-        public List<T> ToList<T>(T item)
-        {
-            return new List<T> { item };
-        }
-
-        /// <summary>メンバ名を返す。</summary>
-        public static string GetMemberName<T>(Expression<Func<T>> e)
-        {
-            var member = (MemberExpression)e.Body;
-            return member.Member.Name;
-        }
-        
         /// <summary>
         /// 変換エラーの場合、デフォルト値を返し、テキストボックスの内容をデフォルト値に置き換える。
         /// </summary>

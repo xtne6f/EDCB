@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Runtime.InteropServices;
+using System.Linq.Expressions;
 
 namespace EpgTimer
 {
@@ -40,6 +41,19 @@ namespace EpgTimer
                 IdleTicks = systemUptime - LastInputTicks;
             }
             return IdleTicks / 1000;
+        }
+
+        /// <summary>メンバ名を返す。</summary>
+        public static string GetMemberName<T>(Expression<Func<T>> e)
+        {
+            var member = (MemberExpression)e.Body;
+            return member.Member.Name;
+        }
+
+        /// <summary>リストにして返す。(return new List&lt;T&gt; { item })</summary>
+        public static List<T> ToList<T>(T item)
+        {
+            return new List<T> { item };
         }
     }
 }
