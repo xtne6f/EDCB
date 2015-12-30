@@ -9,7 +9,7 @@
 -->
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="420" />
+            <RowDefinition Height="410" />
             <RowDefinition Height="35" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
@@ -26,10 +26,10 @@
             </TabItem>
         </TabControl>
         <GridSplitter Grid.Row="0" Height="2" HorizontalAlignment="Stretch" Name="gridSplitter1" VerticalAlignment="Bottom" BorderBrush="DarkGray" Background="DarkGray" />
-        <Button Content="検索" Grid.Row="1" Height="23" HorizontalAlignment="Left" Margin="12,6,0,0" Name="button_search" VerticalAlignment="Top" Width="75" Click="button_search_Click" Style="{StaticResource ButtonStyle1}" ToolTip="Ctrl + Shift + F"/>
-        <Button Content="予約" Grid.Row="1" Height="23" HorizontalAlignment="Left" Margin="126,6,0,0" Name="button_add_reserve" VerticalAlignment="Top" Width="75" Click="button_add_reserve_Click" Style="{StaticResource ButtonStyle1}" ToolTip="Ctrl + Shift + S"/>
-        <Button Content="自動予約登録条件に追加" Grid.Row="1" Height="23" HorizontalAlignment="Left" Margin="244,6,0,0" Name="button_add_epgAutoAdd" VerticalAlignment="Top" Width="178" Click="button_add_epgAutoAdd_Click" Style="{StaticResource ButtonStyle1}" ToolTip="Ctrl + Shift + A"/>
-        <Button Content="自動予約登録条件を変更" Grid.Row="1" Height="23" HorizontalAlignment="Left" Margin="450,6,0,0" Name="button_chg_epgAutoAdd" VerticalAlignment="Top" Width="178" Click="button_chg_epgAutoAdd_Click" Style="{StaticResource ButtonStyle1}" ToolTip="Ctrl + Shift + C"/>
+        <Button Content="検索" Grid.Row="1" Height="23" HorizontalAlignment="Left" Margin="12,6,0,0" Name="button_search" VerticalAlignment="Top" Width="75" Click="button_search_Click" ToolTip="Ctrl + Shift + F"/>
+        <Button Content="予約" Grid.Row="1" Height="23" HorizontalAlignment="Left" Margin="126,6,0,0" Name="button_add_reserve" VerticalAlignment="Top" Width="75" Click="button_add_reserve_Click" ToolTip="Ctrl + Shift + S"/>
+        <Button Content="自動予約登録条件に追加" Grid.Row="1" Height="23" HorizontalAlignment="Left" Margin="244,6,0,0" Name="button_add_epgAutoAdd" VerticalAlignment="Top" Width="178" Click="button_add_epgAutoAdd_Click" ToolTip="Ctrl + Shift + A"/>
+        <Button Content="自動予約登録条件を変更" Grid.Row="1" Height="23" HorizontalAlignment="Left" Margin="450,6,0,0" Name="button_chg_epgAutoAdd" VerticalAlignment="Top" Width="178" Click="button_chg_epgAutoAdd_Click" ToolTip="Ctrl + Shift + C"/>
         <ListView Grid.Row="2" Name="listView_result" Margin="10" SelectionMode="Extended" ItemsSource="{Binding}" GridViewColumnHeader.Click="GridViewColumnHeader_Click">
             <ListView.Resources>
                 <ContextMenu x:Key="itemMenu" x:Name="cmdMenu" Loaded="cmdMenu_Loaded">

@@ -31,22 +31,6 @@ namespace EpgTimer
         {
             InitializeComponent();
 
-            if (Settings.Instance.NoStyle == 0)
-            {
-                ResourceDictionary rd = new ResourceDictionary();
-                rd.MergedDictionaries.Add(
-                    Application.LoadComponent(new Uri("/PresentationFramework.Aero, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35;component/themes/aero.normalcolor.xaml", UriKind.Relative)) as ResourceDictionary
-                    //Application.LoadComponent(new Uri("/PresentationFramework.Classic, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, ProcessorArchitecture=MSIL;component/themes/Classic.xaml", UriKind.Relative)) as ResourceDictionary
-                    );
-                this.Resources = rd;
-            }
-            else
-            {
-                button_chg_reserve.Style = null;
-                button_del_reserve.Style = null;
-                button_cancel.Style = null;
-            }
-
             comboBox_service.ItemsSource = ChSet5.Instance.ChList.Values;
             comboBox_sh.ItemsSource = CommonManager.Instance.HourDictionary.Values;
             comboBox_eh.ItemsSource = CommonManager.Instance.HourDictionary.Values;

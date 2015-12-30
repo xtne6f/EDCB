@@ -29,22 +29,6 @@ namespace EpgTimer
 
             try
             {
-                if (Settings.Instance.NoStyle == 1)
-                {
-                    button_searchKey.Style = null;
-                    button_service_addAll.Style = null;
-                    button_service_add.Style = null;
-                    button_service_del.Style = null;
-                    button_service_delAll.Style = null;
-                    button_service_up.Style = null;
-                    button_service_down.Style = null;
-                    button_service_addVideo.Style = null;
-                    button_jyanru_addAll.Style = null;
-                    button_jyanru_add.Style = null;
-                    button_jyanru_del.Style = null;
-                    button_jyanru_delAll.Style = null;
-                }
-
                 comboBox_timeH_week.ItemsSource = CommonManager.Instance.HourDictionary.Values;
                 comboBox_timeH_week.SelectedIndex = 4;
 

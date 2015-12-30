@@ -36,7 +36,7 @@
         </TextBox>
         <Slider Height="23" HorizontalAlignment="Left" Margin="93,75,0,0" Maximum="255" Minimum="0" Name="slider_B" VerticalAlignment="Top" Width="114" ValueChanged="slider_B_ValueChanged" SmallChange="1" />
         <Rectangle Height="86" HorizontalAlignment="Left" Margin="222,12,0,0" Name="rectangle_color" Stroke="Black" VerticalAlignment="Top" Width="114" />
-        <Button Content="OK" Height="23" HorizontalAlignment="Left" Margin="163,115,0,0" Name="button_OK" VerticalAlignment="Top" Width="77" Click="button_OK_Click" Style="{StaticResource ButtonStyle1}" />
-        <Button Content="キャンセル" Height="23" HorizontalAlignment="Left" Margin="259,115,0,0" Name="button_cancel" VerticalAlignment="Top" Width="77" Click="button_cancel_Click" Style="{StaticResource ButtonStyle1}" />
+        <Button Content="OK" Height="23" HorizontalAlignment="Left" Margin="163,115,0,0" Name="button_OK" VerticalAlignment="Top" Width="77" Click="button_OK_Click" />
+        <Button Content="キャンセル" Height="23" HorizontalAlignment="Left" Margin="259,115,0,0" Name="button_cancel" VerticalAlignment="Top" Width="77" Click="button_cancel_Click" />
     </Grid>
 </Window>

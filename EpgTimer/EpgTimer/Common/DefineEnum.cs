@@ -72,6 +72,4 @@ namespace EpgTimer
         }
     }
 
-    public delegate int CMD_CALLBACK_PROC(object pParam, CMD_STREAM pCmdParam, ref CMD_STREAM pResParam);
-
 }

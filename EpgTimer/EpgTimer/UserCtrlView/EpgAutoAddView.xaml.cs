@@ -33,15 +33,6 @@ namespace EpgTimer
             InitializeComponent();
             try
             {
-                if (Settings.Instance.NoStyle == 1)
-                {
-                    button_add.Style = null;
-                    button_del.Style = null;
-                    button_change.Style = null;
-                    button_up.Style = null;
-                    button_down.Style = null;
-                }
-
                 foreach (GridViewColumn info in gridView_key.Columns)
                 {
                     GridViewColumnHeader header = info.Header as GridViewColumnHeader;

@@ -55,6 +55,10 @@ namespace EpgTimer.Setting
                 checkBox_tcpServer.IsEnabled = false;
                 label41.IsEnabled = false;
                 textBox_tcpPort.IsEnabled = false;
+                label_tcpAcl.IsEnabled = false;
+                textBox_tcpAcl.IsEnabled = false;
+                label_tcpResTo.IsEnabled = false;
+                textBox_tcpResTo.IsEnabled = false;
                 checkBox_autoDelRecInfo.IsEnabled = false;
                 label42.IsEnabled = false;
                 textBox_autoDelRecInfo.IsEnabled = false;
@@ -67,33 +71,6 @@ namespace EpgTimer.Setting
 
             try
             {
-                if (Settings.Instance.NoStyle == 1)
-                {
-                    button_standbyCtrl.Style = null;
-                    button_autoDel.Style = null;
-                    button_recname.Style = null;
-                    button_btnUp.Style = null;
-                    button_btnDown.Style = null;
-                    button_btnDel.Style = null;
-                    button_btnAdd.Style = null;
-                    button_taskUp.Style = null;
-                    button_taskDown.Style = null;
-                    button_taskDel.Style = null;
-                    button_taskAdd.Style = null;
-                    button_searchDef.Style = null;
-                    button_recDef.Style = null;
-                    button_exe1.Style = null;
-                    button_exe2.Style = null;
-                    button_add.Style = null;
-                    button_del.Style = null;
-                    button_inst.Style = null;
-                    button_uninst.Style = null;
-                    button_stop.Style = null;
-
-                }
-
-                StringBuilder buff = new StringBuilder(512);
-                buff.Clear();
                 int recEndMode = IniFileHandler.GetPrivateProfileInt("SET", "RecEndMode", 2, SettingPath.TimerSrvIniPath);
                 switch (recEndMode)
                 {
@@ -160,21 +137,15 @@ namespace EpgTimer.Setting
                 {
                     for (int i = 0; i < ngCount; i++)
                     {
-                        buff.Clear();
-                        IniFileHandler.GetPrivateProfileString("NO_SUSPEND", i.ToString(), "", buff, 512, SettingPath.TimerSrvIniPath);
-                        ngProcessList.Add(buff.ToString());
+                        ngProcessList.Add(IniFileHandler.GetPrivateProfileString("NO_SUSPEND", i.ToString(), "", SettingPath.TimerSrvIniPath));
                     }
                 }
-                buff.Clear();
-                IniFileHandler.GetPrivateProfileString("NO_SUSPEND", "NoStandbyTime", "10", buff, 512, SettingPath.TimerSrvIniPath);
-                ngMin = buff.ToString();
+                ngMin = IniFileHandler.GetPrivateProfileString("NO_SUSPEND", "NoStandbyTime", "10", SettingPath.TimerSrvIniPath);
                 if (IniFileHandler.GetPrivateProfileInt("NO_SUSPEND", "NoUsePC", 0, SettingPath.TimerSrvIniPath) == 1)
                 {
                     ngUsePC = true;
                 }
-                buff.Clear();
-                IniFileHandler.GetPrivateProfileString("NO_SUSPEND", "NoUsePCTime", "3", buff, 512, SettingPath.TimerSrvIniPath);
-                ngUsePCMin = buff.ToString();
+                ngUsePCMin = IniFileHandler.GetPrivateProfileString("NO_SUSPEND", "NoUsePCTime", "3", SettingPath.TimerSrvIniPath);
                 if (IniFileHandler.GetPrivateProfileInt("NO_SUSPEND", "NoFileStreaming", 0, SettingPath.TimerSrvIniPath) == 1)
                 {
                     ngFileStreaming = true;
@@ -216,9 +187,7 @@ namespace EpgTimer.Setting
                     checkBox_timeSync.IsChecked = true;
                 }
 
-                buff.Clear();
-                IniFileHandler.GetPrivateProfileString("SET", "RecNamePlugInFile", "RecName_Macro.dll", buff, 512, SettingPath.TimerSrvIniPath);
-                String plugInFile = buff.ToString();
+                String plugInFile = IniFileHandler.GetPrivateProfileString("SET", "RecNamePlugInFile", "RecName_Macro.dll", SettingPath.TimerSrvIniPath);
 
                 try
                 {
@@ -257,18 +226,14 @@ namespace EpgTimer.Setting
                 {
                     for (int i = 0; i < count; i++)
                     {
-                        buff.Clear();
-                        IniFileHandler.GetPrivateProfileString("DEL_EXT", i.ToString(), "", buff, 512, SettingPath.TimerSrvIniPath);
-                        extList.Add(buff.ToString());
+                        extList.Add(IniFileHandler.GetPrivateProfileString("DEL_EXT", i.ToString(), "", SettingPath.TimerSrvIniPath));
                     }
                 }
 
                 count = IniFileHandler.GetPrivateProfileInt("DEL_CHK", "Count", 0, SettingPath.TimerSrvIniPath);
                 for (int i = 0; i < count; i++)
                 {
-                    buff.Clear();
-                    IniFileHandler.GetPrivateProfileString("DEL_CHK", i.ToString(), "", buff, 512, SettingPath.TimerSrvIniPath);
-                    delChkFolderList.Add(buff.ToString());
+                    delChkFolderList.Add(IniFileHandler.GetPrivateProfileString("DEL_CHK", i.ToString(), "", SettingPath.TimerSrvIniPath));
                 }
 
 
@@ -298,6 +263,8 @@ namespace EpgTimer.Setting
                     checkBox_tcpServer.IsChecked = true;
                 }
                 textBox_tcpPort.Text = IniFileHandler.GetPrivateProfileInt("SET", "TCPPort", 4510, SettingPath.TimerSrvIniPath).ToString();
+                textBox_tcpAcl.Text = IniFileHandler.GetPrivateProfileString("SET", "TCPAccessControlList", "+127.0.0.1,+192.168.0.0/16", SettingPath.TimerSrvIniPath);
+                textBox_tcpResTo.Text = IniFileHandler.GetPrivateProfileInt("SET", "TCPResponseTimeoutSec", 120, SettingPath.TimerSrvIniPath).ToString();
 
                 Settings.GetDefSearchSetting(ref defSearchKey);
 
@@ -618,6 +585,8 @@ namespace EpgTimer.Setting
                 IniFileHandler.WritePrivateProfileString("SET", "EnableTCPSrv", "0", SettingPath.TimerSrvIniPath);
             }
             IniFileHandler.WritePrivateProfileString("SET", "TCPPort", textBox_tcpPort.Text, SettingPath.TimerSrvIniPath);
+            IniFileHandler.WritePrivateProfileString("SET", "TCPAccessControlList", textBox_tcpAcl.Text, SettingPath.TimerSrvIniPath);
+            IniFileHandler.WritePrivateProfileString("SET", "TCPResponseTimeoutSec", textBox_tcpResTo.Text, SettingPath.TimerSrvIniPath);
 
             if (checkBox_noToolTips.IsChecked == true)
             {
