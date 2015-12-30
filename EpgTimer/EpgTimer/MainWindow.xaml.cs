@@ -61,21 +61,29 @@ namespace EpgTimer
             CommonManager.Instance.MM.ReloadWorkData();
             CommonManager.Instance.ReloadCustContentColorList();
 
-            if (Settings.Instance.NoStyle == 1)
+            if (Settings.Instance.NoStyle == 0)
             {
-                App.Current.Resources = new ResourceDictionary();
-            }
-            else
-            {
-                //EpgTimerはボタンだけ独自テーマだけど、どういう経緯があったのだろう？
-                App.Current.Resources.MergedDictionaries.Add(
-                    //Application.LoadComponent(new Uri("/PresentationFramework.AeroLite, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35;component/themes/aerolite.normalcolor.xaml", UriKind.Relative)) as ResourceDictionary
-                    //Application.LoadComponent(new Uri("/PresentationFramework.Aero2, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35;component/themes/aero2.normalcolor.xaml", UriKind.Relative)) as ResourceDictionary
-                    Application.LoadComponent(new Uri("/PresentationFramework.Aero, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35;component/themes/aero.normalcolor.xaml", UriKind.Relative)) as ResourceDictionary
-                    //Application.LoadComponent(new Uri("/PresentationFramework.Royale, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35;component/themes/royale.normalcolor.xaml", UriKind.Relative)) as ResourceDictionary
-                    //Application.LoadComponent(new Uri("/PresentationFramework.Luna, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35;component/themes/luna.normalcolor.xaml", UriKind.Relative)) as ResourceDictionary
-                    //Application.LoadComponent(new Uri("/PresentationFramework.Classic, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35;component/themes/classic.xaml", UriKind.Relative)) as ResourceDictionary
-                    );
+                if (System.IO.File.Exists(System.Reflection.Assembly.GetEntryAssembly().Location + ".rd.xaml"))
+                {
+                    //ResourceDictionaryを定義したファイルがあるので本体にマージする
+                    try
+                    {
+                        App.Current.Resources.MergedDictionaries.Add(
+                            (ResourceDictionary)System.Windows.Markup.XamlReader.Load(
+                                System.Xml.XmlReader.Create(System.Reflection.Assembly.GetEntryAssembly().Location + ".rd.xaml")));
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show(ex.ToString());
+                    }
+                }
+                else
+                {
+                    //既定のテーマ(Aero)をマージする
+                    App.Current.Resources.MergedDictionaries.Add(
+                        Application.LoadComponent(new Uri("/PresentationFramework.Aero, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35;component/themes/aero.normalcolor.xaml", UriKind.Relative)) as ResourceDictionary
+                        );
+                }
             }
 
             mutex = new System.Threading.Mutex(false, CommonManager.Instance.NWMode ? "Global\\EpgTimer_BonNW" : "Global\\EpgTimer_Bon2");

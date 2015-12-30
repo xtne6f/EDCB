@@ -24,7 +24,6 @@ namespace EpgTimer.EpgView
         public DateView()
         {
             InitializeComponent();
-            this.Resources = App.Current.Resources;//設定してやらないとリソースが繋がらない。
         }
 
         public void ClearInfo()
