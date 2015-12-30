@@ -34,28 +34,6 @@ namespace EpgTimer
             InitializeComponent();
             try
             {
-                if (Settings.Instance.NoStyle == 1)
-                {
-                    button_content_add.Style = null;
-                    button_content_del.Style = null;
-                    button_all_on.Style = null;
-                    button_video_on.Style = null;
-                    button_bs_on.Style = null;
-                    button_cs_on.Style = null;
-                    button_tere_on.Style = null;
-                    button_1seg_on.Style = null;
-                    button_other_on.Style = null;
-                    button_all_off.Style = null;
-                    button_bs_on2.Style = null;
-                    button_cs_on2.Style = null;
-                    button_tere_on2.Style = null;
-                    button_1seg_on2.Style = null;
-                    button_other_on2.Style = null;
-                    button_date_del.Style = null;
-                    button_timeAdd.Style = null;
-                    button_weekAdd.Style = null;
-                }
-
                 foreach (ChSet5Item info in ChSet5.Instance.ChList.Values)
                 {
                     ServiceItem item = new ServiceItem();

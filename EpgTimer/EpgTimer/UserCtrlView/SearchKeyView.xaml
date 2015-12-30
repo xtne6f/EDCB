@@ -19,8 +19,8 @@
         <Label Content="NOTキーワード" Height="28" HorizontalAlignment="Left" Margin="12,44,0,0" Name="label2" VerticalAlignment="Top" />
         <ComboBox Height="24" Margin="112,13,82,0" Name="ComboBox_andKey" VerticalAlignment="Top" IsEditable="True" IsTextSearchEnabled="False"/>
         <ComboBox Height="24" Margin="112,46,82,0" Name="ComboBox_notKey" VerticalAlignment="Top" IsEditable="True" IsTextSearchEnabled="False"/>
-        <Button Content="改行入力" Height="23" Margin="0,12,12,0" Name="button_andIn" VerticalAlignment="Top" HorizontalAlignment="Right" Width="64" Style="{StaticResource ButtonStyle1}" Click="button_andIn_Click" />
-        <Button Content="改行入力" Height="23" HorizontalAlignment="Right" Margin="0,46,12,0" Name="button_notIn" Style="{StaticResource ButtonStyle1}" VerticalAlignment="Top" Width="64" Click="button_notIn_Click" />
+        <Button Content="改行入力" Height="23" Margin="0,12,12,0" Name="button_andIn" VerticalAlignment="Top" HorizontalAlignment="Right" Width="64" Click="button_andIn_Click" />
+        <Button Content="改行入力" Height="23" HorizontalAlignment="Right" Margin="0,46,12,0" Name="button_notIn" VerticalAlignment="Top" Width="64" Click="button_notIn_Click" />
         <my:SearchKeyDescView Grid.Row="1" x:Name="searchKeyDescView" />
     </Grid>
 </UserControl>

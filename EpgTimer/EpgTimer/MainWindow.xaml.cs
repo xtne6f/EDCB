@@ -66,12 +66,27 @@ namespace EpgTimer
 
             if (Settings.Instance.NoStyle == 0)
             {
-                ResourceDictionary rd = new ResourceDictionary();
-                rd.MergedDictionaries.Add(
-                    Application.LoadComponent(new Uri("/PresentationFramework.Aero, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35;component/themes/aero.normalcolor.xaml", UriKind.Relative)) as ResourceDictionary
-                    //Application.LoadComponent(new Uri("/PresentationFramework.Classic, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, ProcessorArchitecture=MSIL;component/themes/Classic.xaml", UriKind.Relative)) as ResourceDictionary
-                    );
-                this.Resources = rd;
+                if (System.IO.File.Exists(System.Reflection.Assembly.GetEntryAssembly().Location + ".rd.xaml"))
+                {
+                    //ResourceDictionaryを定義したファイルがあるので本体にマージする
+                    try
+                    {
+                        App.Current.Resources.MergedDictionaries.Add(
+                            (ResourceDictionary)System.Windows.Markup.XamlReader.Load(
+                                System.Xml.XmlReader.Create(System.Reflection.Assembly.GetEntryAssembly().Location + ".rd.xaml")));
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show(ex.ToString());
+                    }
+                }
+                else
+                {
+                    //既定のテーマ(Aero)をマージする
+                    App.Current.Resources.MergedDictionaries.Add(
+                        Application.LoadComponent(new Uri("/PresentationFramework.Aero, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35;component/themes/aero.normalcolor.xaml", UriKind.Relative)) as ResourceDictionary
+                        );
+                }
             }
 
             mutex = new System.Threading.Mutex(false, CommonManager.Instance.NWMode ? "Global\\EpgTimer_BonNW" : "Global\\EpgTimer_Bon2");
@@ -207,10 +222,6 @@ namespace EpgTimer
                 settingButton.Margin = new Thickness(2, 2, 2, 5);
                 settingButton.Click += new RoutedEventHandler(settingButton_Click);
                 settingButton.Content = "設定";
-                if (Settings.Instance.NoStyle == 0)
-                {
-                    settingButton.Style = (Style)App.Current.Resources["ButtonStyle1"];
-                }
                 buttonList.Add("設定", settingButton);
 
                 Button searchButton = new Button();
@@ -218,10 +229,6 @@ namespace EpgTimer
                 searchButton.Margin = new Thickness(2, 2, 2, 5);
                 searchButton.Click += new RoutedEventHandler(searchButton_Click);
                 searchButton.Content = "検索";
-                if (Settings.Instance.NoStyle == 0)
-                {
-                    searchButton.Style = (Style)App.Current.Resources["ButtonStyle1"];
-                }
                 buttonList.Add("検索", searchButton);
 
                 Button closeButton = new Button();
@@ -229,10 +236,6 @@ namespace EpgTimer
                 closeButton.Margin = new Thickness(2, 2, 2, 5);
                 closeButton.Click += new RoutedEventHandler(closeButton_Click);
                 closeButton.Content = "終了";
-                if (Settings.Instance.NoStyle == 0)
-                {
-                    closeButton.Style = (Style)App.Current.Resources["ButtonStyle1"];
-                }
                 buttonList.Add("終了", closeButton);
 
                 Button stanbyButton = new Button();
@@ -240,10 +243,6 @@ namespace EpgTimer
                 stanbyButton.Margin = new Thickness(2, 2, 2, 5);
                 stanbyButton.Click += new RoutedEventHandler(standbyButton_Click);
                 stanbyButton.Content = "スタンバイ";
-                if (Settings.Instance.NoStyle == 0)
-                {
-                    stanbyButton.Style = (Style)App.Current.Resources["ButtonStyle1"];
-                }
                 buttonList.Add("スタンバイ", stanbyButton);
 
                 Button suspendButton = new Button();
@@ -251,10 +250,6 @@ namespace EpgTimer
                 suspendButton.Margin = new Thickness(2, 2, 2, 5);
                 suspendButton.Click += new RoutedEventHandler(suspendButton_Click);
                 suspendButton.Content = "休止";
-                if (Settings.Instance.NoStyle == 0)
-                {
-                    suspendButton.Style = (Style)App.Current.Resources["ButtonStyle1"];
-                }
                 buttonList.Add("休止", suspendButton);
 
                 Button epgCapButton = new Button();
@@ -262,10 +257,6 @@ namespace EpgTimer
                 epgCapButton.Margin = new Thickness(2, 2, 2, 5);
                 epgCapButton.Click += new RoutedEventHandler(epgCapButton_Click);
                 epgCapButton.Content = "EPG取得";
-                if (Settings.Instance.NoStyle == 0)
-                {
-                    epgCapButton.Style = (Style)App.Current.Resources["ButtonStyle1"];
-                }
                 buttonList.Add("EPG取得", epgCapButton);
 
                 Button epgReloadButton = new Button();
@@ -273,10 +264,6 @@ namespace EpgTimer
                 epgReloadButton.Margin = new Thickness(2, 2, 2, 5);
                 epgReloadButton.Click += new RoutedEventHandler(epgReloadButton_Click);
                 epgReloadButton.Content = "EPG再読み込み";
-                if (Settings.Instance.NoStyle == 0)
-                {
-                    epgReloadButton.Style = (Style)App.Current.Resources["ButtonStyle1"];
-                }
                 buttonList.Add("EPG再読み込み", epgReloadButton);
 
                 Button custum1Button = new Button();
@@ -284,10 +271,6 @@ namespace EpgTimer
                 custum1Button.Margin = new Thickness(2, 2, 2, 5);
                 custum1Button.Click += new RoutedEventHandler(custum1Button_Click);
                 custum1Button.Content = "カスタム１";
-                if (Settings.Instance.NoStyle == 0)
-                {
-                    custum1Button.Style = (Style)App.Current.Resources["ButtonStyle1"];
-                }
                 buttonList.Add("カスタム１", custum1Button);
 
                 Button custum2Button = new Button();
@@ -295,10 +278,6 @@ namespace EpgTimer
                 custum2Button.Margin = new Thickness(2, 2, 2, 5);
                 custum2Button.Click += new RoutedEventHandler(custum2Button_Click);
                 custum2Button.Content = "カスタム２";
-                if (Settings.Instance.NoStyle == 0)
-                {
-                    custum2Button.Style = (Style)App.Current.Resources["ButtonStyle1"];
-                }
                 buttonList.Add("カスタム２", custum2Button);
 
                 Button nwTVEndButton = new Button();
@@ -306,10 +285,6 @@ namespace EpgTimer
                 nwTVEndButton.Margin = new Thickness(2, 2, 2, 5);
                 nwTVEndButton.Click += new RoutedEventHandler(nwTVEndButton_Click);
                 nwTVEndButton.Content = "NetworkTV終了";
-                if (Settings.Instance.NoStyle == 0)
-                {
-                    nwTVEndButton.Style = (Style)App.Current.Resources["ButtonStyle1"];
-                }
                 buttonList.Add("NetworkTV終了", nwTVEndButton);
 
                 Button logViewButton = new Button();
@@ -317,10 +292,6 @@ namespace EpgTimer
                 logViewButton.Margin = new Thickness(2, 2, 2, 5);
                 logViewButton.Click += new RoutedEventHandler(logViewButton_Click);
                 logViewButton.Content = "情報通知ログ";
-                if (Settings.Instance.NoStyle == 0)
-                {
-                    logViewButton.Style = (Style)App.Current.Resources["ButtonStyle1"];
-                }
                 buttonList.Add("情報通知ログ", logViewButton);
 
                 Button connectButton = new Button();
@@ -328,10 +299,6 @@ namespace EpgTimer
                 connectButton.Margin = new Thickness(2, 2, 2, 5);
                 connectButton.Click += new RoutedEventHandler(connectButton_Click);
                 connectButton.Content = "再接続";
-                if (Settings.Instance.NoStyle == 0)
-                {
-                    connectButton.Style = (Style)App.Current.Resources["ButtonStyle1"];
-                }
                 buttonList.Add("再接続", connectButton);
 
                 ResetButtonView();

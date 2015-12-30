@@ -47,27 +47,6 @@ namespace EpgTimer.Setting
 
             try
             {
-                if (Settings.Instance.NoStyle == 1)
-                {
-                    button_setPath.Style = null;
-                    button_exe.Style = null;
-                    button_rec_up.Style = null;
-                    button_rec_down.Style = null;
-                    button_rec_del.Style = null;
-                    button_rec_open.Style = null;
-                    button_rec_add.Style = null;
-                    button_shortCut.Style = null;
-                    button_bon_up.Style = null;
-                    button_bon_down.Style = null;
-                    button_allChk.Style = null;
-                    button_videoChk.Style = null;
-                    button_allClear.Style = null;
-                    button_addTime.Style = null;
-                    button_delTime.Style = null;
-
-                }
-
-
                 textBox_setPath.Text = IniFileHandler.GetPrivateProfileString("SET", "DataSavePath", SettingPath.DefSettingFolderPath, SettingPath.CommonIniPath);
 
                 string defRecExe = SettingPath.ModulePath.TrimEnd('\\') +"\\EpgDataCap_Bon.exe";
