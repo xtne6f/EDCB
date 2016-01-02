@@ -43,23 +43,17 @@ namespace EpgTimer.Setting
 
             if (CommonManager.Instance.NWMode == true)
             {
+                CommonManager.Instance.VUtil.ChangeChildren(grid_folder, false);
+                label3.IsEnabled = true;
+                listBox_recFolder.IsEnabled = true;
+                label4.IsEnabled = true;
+                button_shortCut.IsEnabled = true;
+                label5.IsEnabled = true;
                 CommonManager.Instance.VUtil.DisableControlChildren(tabItem2);
                 grid_tuner.IsEnabled = true;
                 CommonManager.Instance.VUtil.ChangeChildren(grid_tuner, false);
                 listBox_bon.IsEnabled = true;
                 CommonManager.Instance.VUtil.DisableControlChildren(tabItem3);
-                label1.IsEnabled = false;
-                textBox_setPath.IsEnabled = false;
-                button_setPath.IsEnabled = false;
-                label2.IsEnabled = false;
-                textBox_exe.IsEnabled = false;
-                button_exe.IsEnabled = false;
-                button_rec_up.IsEnabled = false;
-                button_rec_down.IsEnabled = false;
-                button_rec_del.IsEnabled = false;
-                textBox_recFolder.IsEnabled = false;
-                button_rec_open.IsEnabled = false;
-                button_rec_add.IsEnabled = false;
             }
 
             listBox_Button_Set();
@@ -70,6 +64,7 @@ namespace EpgTimer.Setting
                 textBox_exe.Text = SettingPath.EdcbExePath;
 
                 Settings.GetDefRecFolders().ForEach(folder => listBox_recFolder.Items.Add(folder));
+                textBox_recInfoFolder.Text = IniFileHandler.GetPrivateProfileString("SET", "RecInfoFolder", "", SettingPath.CommonIniPath);
 
                 SortedList<Int32, TunerInfo> tunerInfo = new SortedList<Int32, TunerInfo>();
                 foreach (string fileName in CommonManager.Instance.GetBonFileList())
@@ -235,6 +230,9 @@ namespace EpgTimer.Setting
                     IniFileHandler.WritePrivateProfileString("SET", key, val, SettingPath.CommonIniPath);
                 }
 
+                IniFileHandler.WritePrivateProfileString("SET", "RecInfoFolder",
+                    textBox_recInfoFolder.Text.Trim() == "" ? null : textBox_recInfoFolder.Text, SettingPath.CommonIniPath);
+
                 for (int i = 0; i < listBox_bon.Items.Count; i++)
                 {
                     TunerInfo info = listBox_bon.Items[i] as TunerInfo;
@@ -340,6 +338,16 @@ namespace EpgTimer.Setting
                 textBox_exe.Text = path;
             }
         }
+
+        private void button_recInfoFolder_Click(object sender, RoutedEventArgs e)
+        {
+            string path = CommonManager.Instance.GetFolderNameByDialog(textBox_recInfoFolder.Text, "録画情報保存フォルダの選択");
+            if (path != null)
+            {
+                textBox_recInfoFolder.Text = path;
+            }
+        }
+
 
         //ボタン表示画面の上下ボタンのみ他と同じものを使用する。
         private BoxExchangeEditor bxr = new BoxExchangeEditor();

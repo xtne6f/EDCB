@@ -79,6 +79,7 @@ namespace EpgTimer.Setting
                 label_tcpResTo.IsEnabled = false;
                 textBox_tcpResTo.IsEnabled = false;
                 checkBox_autoDelRecInfo.IsEnabled = false;
+                checkBox_autoDelRecFile.IsEnabled = false;
                 label42.IsEnabled = false;
                 textBox_autoDelRecInfo.IsEnabled = false;
                 checkBox_timeSync.IsEnabled = false;
@@ -203,6 +204,10 @@ namespace EpgTimer.Setting
                 if (IniFileHandler.GetPrivateProfileInt("SET", "AutoDelRecInfo", 0, SettingPath.TimerSrvIniPath) == 1)
                 {
                     checkBox_autoDelRecInfo.IsChecked = true;
+                }
+                if (IniFileHandler.GetPrivateProfileInt("SET", "RecInfoDelFile", 0, SettingPath.CommonIniPath) == 1)
+                {
+                    checkBox_autoDelRecFile.IsChecked = true;
                 }
                 textBox_autoDelRecInfo.Text = IniFileHandler.GetPrivateProfileInt("SET", "AutoDelRecInfoNum", 100, SettingPath.TimerSrvIniPath).ToString();
 
@@ -400,6 +405,9 @@ namespace EpgTimer.Setting
 
                 setValue = (checkBox_autoDelRecInfo.IsChecked == true ? "1" : "0");
                 IniFileHandler.WritePrivateProfileString("SET", "AutoDelRecInfo", setValue, SettingPath.TimerSrvIniPath);
+
+                setValue = (checkBox_autoDelRecFile.IsChecked == true ? "1" : null);
+                IniFileHandler.WritePrivateProfileString("SET", "RecInfoDelFile", setValue, SettingPath.CommonIniPath);
 
                 IniFileHandler.WritePrivateProfileString("SET", "AutoDelRecInfoNum", textBox_autoDelRecInfo.Text.ToString(), SettingPath.TimerSrvIniPath);
 

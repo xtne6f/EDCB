@@ -116,11 +116,12 @@
                     <TextBox Height="24" HorizontalAlignment="Left" Margin="440,78,0,0" Name="textBox_tcpAcl" VerticalAlignment="Top" Width="220" />
                     <Label Content="無通信タイムアウト(秒)" Height="28" HorizontalAlignment="Left" Margin="212,103,0,0" Name="label_tcpResTo" VerticalAlignment="Top" />
                     <TextBox Height="24" HorizontalAlignment="Left" Margin="365,105,0,0" Name="textBox_tcpResTo" VerticalAlignment="Top" Width="62" />
-                    <CheckBox Content="録画結果を自動的に削除する" Height="16" HorizontalAlignment="Left" Margin="6,135,0,0" Name="checkBox_autoDelRecInfo" VerticalAlignment="Top" />
+                    <CheckBox Content="録画結果を自動的に削除する" Height="16" HorizontalAlignment="Left" Margin="6,130,0,0" Name="checkBox_autoDelRecInfo" VerticalAlignment="Top" />
+                    <CheckBox Content="録画ファイルも削除する" Height="16" HorizontalAlignment="Left" Margin="24,148,0,0" Name="checkBox_autoDelRecFile" VerticalAlignment="Top" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_autoDelRecInfo, UpdateSourceTrigger=PropertyChanged}" />
                     <Label Content="保持件数" Height="28" HorizontalAlignment="Left" Margin="212,130,0,0" Name="label42" VerticalAlignment="Top" />
                     <TextBox Height="24" HorizontalAlignment="Left" Margin="276,132,0,0" Name="textBox_autoDelRecInfo" VerticalAlignment="Top" Width="62" />
-                    <CheckBox Content="EPG取得時に放送波時間でPC時計を同期する" Height="16" HorizontalAlignment="Left" Margin="6,164,0,0" Name="checkBox_timeSync" VerticalAlignment="Top" />
-                    <Label Content="※EpgTimerSrv.exeが管理者権限で起動している必要があります" Height="28" HorizontalAlignment="Left" Margin="6,174,0,0" Name="label43" VerticalAlignment="Top" />
+                    <CheckBox Content="EPG取得時に放送波時間でPC時計を同期する" Height="16" HorizontalAlignment="Left" Margin="6,170,0,0" Name="checkBox_timeSync" VerticalAlignment="Top" />
+                    <Label Content="※EpgTimerSrv.exeが管理者権限で起動している必要があります" Height="28" HorizontalAlignment="Left" Margin="6,180,0,0" Name="label43" VerticalAlignment="Top" />
                     <CheckBox Content="ツールチップの表示を抑制する" Height="16" HorizontalAlignment="Left" Margin="6,208,0,0" Name="checkBox_noToolTips" VerticalAlignment="Top" />
                     <CheckBox Content="バルーンチップでの動作通知を抑制する" Height="16" HorizontalAlignment="Left" Margin="6,230,0,0" Name="checkBox_noBallonTips" VerticalAlignment="Top" />
                     <CheckBox Content="起動時に前回接続サーバーに接続する" Height="16" HorizontalAlignment="Left" Margin="351,186,0,0" Name="checkBox_wakeReconnect" VerticalAlignment="Top" IsEnabled="False" />
