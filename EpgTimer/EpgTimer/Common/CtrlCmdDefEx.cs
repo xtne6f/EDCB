@@ -526,7 +526,7 @@ namespace EpgTimer
                         string line_new = line1;
                         if (line1.StartsWith("PID:") == true)
                         {
-                            string[] words = line1.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                            string[] words = line1.Split(new char[] { ' ', ':' }, StringSplitOptions.RemoveEmptyEntries);
                             //デフォルト { "EIT", "NIT", "CAT", "SDT", "SDTT", "TOT", "ECM", "EMM" }
                             if (Settings.Instance.RecInfoDropExclude.FirstOrDefault(s => words[8].Contains(s)) == null)
                             {
