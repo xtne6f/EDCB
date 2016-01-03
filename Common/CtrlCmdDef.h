@@ -4,10 +4,6 @@
 //デフォルトコネクトタイムアウト
 #define CONNECT_TIMEOUT 15*1000
 
-//ストリームバッファのサイズ
-#define CMD2_SEND_BUFF_SIZE 1024*1024
-#define CMD2_RES_BUFF_SIZE 1024*1024
-
 //パイプ名
 #define CMD2_EPG_SRV_PIPE _T("\\\\.\\pipe\\EpgTimerSrvPipe")
 #define CMD2_GUI_CTRL_PIPE _T("\\\\.\\pipe\\EpgTimerGUI_Ctrl_BonPipe_") //+プロセスID

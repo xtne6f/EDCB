@@ -82,6 +82,13 @@ BOOL CPipeServer::StopServer(BOOL checkOnlyFlag)
 	return TRUE;
 }
 
+static DWORD ReadFileAll(HANDLE hFile, BYTE* lpBuffer, DWORD dwToRead)
+{
+	DWORD dwRet = 0;
+	for( DWORD dwRead; dwRet < dwToRead && ReadFile(hFile, lpBuffer + dwRet, dwToRead - dwRet, &dwRead, NULL); dwRet += dwRead );
+	return dwRet;
+}
+
 UINT WINAPI CPipeServer::ServerThread(LPVOID pParam)
 {
 	CPipeServer* pSys = (CPipeServer*)pParam;
@@ -106,7 +113,7 @@ UINT WINAPI CPipeServer::ServerThread(LPVOID pParam)
 	
 	if( hPipe == NULL ){
 		hPipe = CreateNamedPipe(pSys->pipeName.c_str(), PIPE_ACCESS_DUPLEX | FILE_FLAG_WRITE_THROUGH | FILE_FLAG_OVERLAPPED,
-		                        PIPE_TYPE_BYTE, 1, CMD2_SEND_BUFF_SIZE, CMD2_RES_BUFF_SIZE, PIPE_TIMEOUT, sa.nLength != 0 ? &sa : NULL);
+		                        PIPE_TYPE_BYTE, 1, 8192, 8192, PIPE_TIMEOUT, sa.nLength != 0 ? &sa : NULL);
 		if( hPipe == INVALID_HANDLE_VALUE ){
 			hPipe = NULL;
 		}
@@ -127,31 +134,17 @@ UINT WINAPI CPipeServer::ServerThread(LPVOID pParam)
 			//コマンド受信
 			CMD_STREAM stCmd;
 			CMD_STREAM stRes;
-			DWORD dwRead = 0;
 			DWORD dwWrite = 0;
 			DWORD head[2];
 			do{
-				if( ReadFile(hPipe, head, sizeof(DWORD)*2, &dwRead, NULL ) == FALSE || dwRead != sizeof(DWORD)*2 ){
+				if( ReadFileAll(hPipe, (BYTE*)head, sizeof(head)) != sizeof(head) ){
 					break;
 				}
 				stCmd.param = head[0];
 				stCmd.dataSize = head[1];
 				if( stCmd.dataSize > 0 ){
 					stCmd.data = new BYTE[stCmd.dataSize];
-					DWORD ReadNum = 0;
-					while(ReadNum < stCmd.dataSize ){
-						DWORD dwReadSize = 0;
-						if( stCmd.dataSize-ReadNum < CMD2_SEND_BUFF_SIZE ){
-							dwReadSize = stCmd.dataSize-ReadNum;
-						}else{
-							dwReadSize = CMD2_SEND_BUFF_SIZE;
-						}
-						if( ReadFile(hPipe, stCmd.data+ReadNum, dwReadSize, &dwRead, NULL ) == FALSE ){
-							break;
-						}
-						ReadNum+=dwRead;
-					}
-					if( ReadNum < stCmd.dataSize ){
+					if( ReadFileAll(hPipe, stCmd.data, stCmd.dataSize) != stCmd.dataSize ){
 						break;
 					}
 				}
@@ -164,23 +157,7 @@ UINT WINAPI CPipeServer::ServerThread(LPVOID pParam)
 						break;
 					}
 					if( stRes.dataSize > 0 ){
-						if( stRes.data == NULL ){
-							break;
-						}
-						DWORD SendNum = 0;
-						while(SendNum < stRes.dataSize ){
-							DWORD dwSendSize = 0;
-							if( stRes.dataSize-SendNum < CMD2_RES_BUFF_SIZE ){
-								dwSendSize = stRes.dataSize-SendNum;
-							}else{
-								dwSendSize = CMD2_RES_BUFF_SIZE;
-							}
-							if( WriteFile(hPipe, stRes.data+SendNum, dwSendSize, &dwWrite, NULL ) == FALSE ){
-								break;
-							}
-							SendNum+=dwWrite;
-						}
-						if( SendNum < stRes.dataSize ){
+						if( WriteFile(hPipe, stRes.data, stRes.dataSize, &dwWrite, NULL ) == FALSE ){
 							break;
 						}
 					}
