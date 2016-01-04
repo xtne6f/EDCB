@@ -125,16 +125,24 @@ namespace EpgTimer
             return true;
         }
 
+        private static int ReadAll(Stream s, byte[] buffer, int offset, int size)
+        {
+            int n = 0;
+            for (int m; n < size && (m = s.Read(buffer, offset + n, size - n)) > 0; n += m) ;
+            return n;
+        }
+
         private void StartPolling(TcpClient client, IPAddress srvIP, uint srvPort, uint targetCount)
         {
             //巡回カウンタがtargetCountよりも大きくなる新しい通知を待ち受ける
             var w = new CtrlCmdWriter(new MemoryStream());
             w.Write((ushort)0);
             w.Write(targetCount);
-            byte[] bData = w.Stream.ToArray();
-            byte[] bHead = new byte[8];
-            Array.Copy(BitConverter.GetBytes((uint)CtrlCmd.CMD_EPG_SRV_GET_STATUS_NOTIFY2), 0, bHead, 0, 4);
-            Array.Copy(BitConverter.GetBytes(bData.Length), 0, bHead, 4, 4);
+            byte[] bHead = new byte[8 + w.Stream.Length];
+            BitConverter.GetBytes((uint)CtrlCmd.CMD_EPG_SRV_GET_STATUS_NOTIFY2).CopyTo(bHead, 0);
+            BitConverter.GetBytes((uint)w.Stream.Length).CopyTo(bHead, 4);
+            w.Stream.Close();
+            w.Stream.ToArray().CopyTo(bHead, 8);
 
             try
             {
@@ -147,8 +155,7 @@ namespace EpgTimer
                 return;
             }
             NetworkStream stream = client.GetStream();
-            stream.Write(bHead, 0, 8);
-            stream.Write(bData, 0, bData.Length);
+            stream.Write(bHead, 0, bHead.Length);
             stream.BeginRead(bHead, 0, 8, (IAsyncResult ar) =>
             {
                 using (client)
@@ -162,26 +169,18 @@ namespace EpgTimer
                     {
                         System.Diagnostics.Trace.WriteLine(ex);
                     }
-                    if (readSize == 8)
+                    if (readSize > 0 && ReadAll(stream, bHead, readSize, 8 - readSize) == 8 - readSize)
                     {
                         CMD_STREAM stCmd = new CMD_STREAM();
                         stCmd.uiParam = BitConverter.ToUInt32(bHead, 0);
                         stCmd.uiSize = BitConverter.ToUInt32(bHead, 4);
-                        if (stCmd.uiSize > 0)
+                        stCmd.bData = new byte[stCmd.uiSize];
+                        if (ReadAll(stream, stCmd.bData, 0, stCmd.bData.Length) == stCmd.bData.Length && stCmd.uiParam == (uint)ErrCode.CMD_SUCCESS)
                         {
-                            stCmd.bData = new byte[stCmd.uiSize];
-                            for (stCmd.uiSize = 0; stCmd.uiSize != stCmd.bData.Length; stCmd.uiSize += (uint)readSize)
-                            {
-                                readSize = stream.Read(stCmd.bData, (int)stCmd.uiSize, stCmd.bData.Length - (int)stCmd.uiSize);
-                                if (readSize == 0) break;
-                            }
-                            if (stCmd.uiSize == stCmd.bData.Length && stCmd.uiParam == (uint)ErrCode.CMD_SUCCESS)
-                            {
-                                //通常の通知コマンドに変換
-                                stCmd.uiParam = (uint)CtrlCmd.CMD_TIMER_GUI_SRV_STATUS_NOTIFY2;
-                                cmdProc.Invoke(stCmd, new CMD_STREAM());
-                                targetCount = stCmd.uiSize;
-                            }
+                            //通常の通知コマンドに変換
+                            stCmd.uiParam = (uint)CtrlCmd.CMD_TIMER_GUI_SRV_STATUS_NOTIFY2;
+                            cmdProc.Invoke(stCmd, new CMD_STREAM());
+                            targetCount = stCmd.uiSize;
                         }
                     }
                 }
@@ -199,7 +198,6 @@ namespace EpgTimer
             TcpListener listener = (TcpListener)ar.AsyncState;
 
             TcpClient client = listener.EndAcceptTcpClient(ar);
-            client.ReceiveBufferSize = 1024 * 1024;
 
             NetworkStream stream = client.GetStream();
 
@@ -210,27 +208,21 @@ namespace EpgTimer
             {
                 byte[] bHead = new byte[8];
 
-                if (stream.Read(bHead, 0, bHead.Length) == 8)
+                if (ReadAll(stream, bHead, 0, 8) == 8)
                 {
                     stCmd.uiParam = BitConverter.ToUInt32(bHead, 0);
                     stCmd.uiSize = BitConverter.ToUInt32(bHead, 4);
-                    if (stCmd.uiSize > 0)
+                    stCmd.bData = new byte[stCmd.uiSize];
+                    if (ReadAll(stream, stCmd.bData, 0, stCmd.bData.Length) == stCmd.bData.Length)
                     {
-                        stCmd.bData = new Byte[stCmd.uiSize];
-                    }
-                    int readSize = 0;
-                    while (readSize < stCmd.uiSize)
-                    {
-                        readSize += stream.Read(stCmd.bData, readSize, (int)stCmd.uiSize);
-                    }
-                    cmdProc.Invoke(stCmd, stRes);
-
-                    Array.Copy(BitConverter.GetBytes(stRes.uiParam), 0, bHead, 0, sizeof(uint));
-                    Array.Copy(BitConverter.GetBytes(stRes.uiSize), 0, bHead, 4, sizeof(uint));
-                    stream.Write(bHead, 0, 8);
-                    if (stRes.uiSize > 0)
-                    {
-                        stream.Write(stRes.bData, 0, (int)stRes.uiSize);
+                        cmdProc.Invoke(stCmd, stRes);
+                        BitConverter.GetBytes(stRes.uiParam).CopyTo(bHead, 0);
+                        BitConverter.GetBytes(stRes.uiSize).CopyTo(bHead, 4);
+                        stream.Write(bHead, 0, 8);
+                        if (stRes.uiSize > 0)
+                        {
+                            stream.Write(stRes.bData, 0, (int)stRes.uiSize);
+                        }
                     }
                 }
             }
