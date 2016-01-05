@@ -18,7 +18,7 @@ namespace EpgTimer
         private TcpListener server = null;
         private TcpClient pollingClient = null;
 
-        private String connectedIP;
+        private IPAddress connectedIP = null;
         private UInt32 connectedPort = 0;
 
         private CtrlCmdUtil cmd = null;
@@ -31,7 +31,7 @@ namespace EpgTimer
             }
         }
 
-        public String ConnectedIP
+        public IPAddress ConnectedIP
         {
             get
             {
@@ -98,7 +98,7 @@ namespace EpgTimer
             else
             {
                 connectFlag = true;
-                connectedIP = srvIP.ToString();
+                connectedIP = srvIP;
                 connectedPort = srvPort;
                 if (waitPort == 0)
                 {
