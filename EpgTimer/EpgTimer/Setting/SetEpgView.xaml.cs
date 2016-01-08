@@ -66,15 +66,6 @@ namespace EpgTimer.Setting
                 button_tunerFontCustColorService.IsEnabled = !Settings.Instance.TunerColorModeUse;
                 checkBox_tuner_display_offres.IsChecked = Settings.Instance.TunerDisplayOffReserve;
 
-                var setTunerColorModeUseTooltip = new Action<Control>((obj) =>
-                {
-                    obj.ToolTip = "'サービスのフォント色を優先度で変える'オプションが有効です。('色'タブの設定が使用されます。)";
-                    obj.ToolTipOpening += new ToolTipEventHandler((sender, e) => e.Handled = (sender as Control).IsEnabled);
-                    ToolTipService.SetShowOnDisabled(obj, true);
-                });
-                setTunerColorModeUseTooltip(comboBox_tunerFontColorService);
-                setTunerColorModeUseTooltip(button_tunerFontCustColorService);
-
                 bx.TargetBox = this.listBox_tab;
                 button_tab_del.Click += new RoutedEventHandler(bx.button_del_Click);
                 button_tab_up.Click += new RoutedEventHandler(bx.button_up_Click);
