@@ -469,8 +469,8 @@ namespace EpgTimer
                         }
                         dlg.SetSearchKey(defKey);
                         dlg.SetRecSetting(this.GetRecSetting());
-                        //dlg.Left += 50;//なぜか動かせない‥
-                        //dlg.Top += 50;
+                        dlg.Left += 50;
+                        dlg.Top += 25;
                         dlg.ShowDialog();
                     }
                 }
