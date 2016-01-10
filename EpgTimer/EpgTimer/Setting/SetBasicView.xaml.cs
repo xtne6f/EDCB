@@ -66,6 +66,11 @@ namespace EpgTimer.Setting
                 Settings.GetDefRecFolders().ForEach(folder => listBox_recFolder.Items.Add(folder));
                 textBox_recInfoFolder.Text = IniFileHandler.GetPrivateProfileString("SET", "RecInfoFolder", "", SettingPath.CommonIniPath);
 
+                button_shortCut.Content = (string)button_shortCut.Content + (File.Exists(
+                    System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Startup), "EpgTime.lnk")) ? "を解除" : "");
+                button_shortCutSrv.Content = (string)button_shortCutSrv.Content + (File.Exists(
+                    System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Startup), "EpgTimerSrv.lnk")) ? "を解除" : "");
+
                 SortedList<Int32, TunerInfo> tunerInfo = new SortedList<Int32, TunerInfo>();
                 foreach (string fileName in CommonManager.Instance.GetBonFileList())
                 {
@@ -402,13 +407,37 @@ namespace EpgTimer.Setting
         {
             try
             {
-                Assembly myAssembly = Assembly.GetEntryAssembly();
-                string targetPath = myAssembly.Location;
-                string shortcutPath = System.IO.Path.Combine(
-                    Environment.GetFolderPath(System.Environment.SpecialFolder.Startup),
-                    @"EpgTime.lnk");
+                string shortcutPath = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Startup), "EpgTime.lnk");
+                if (File.Exists(shortcutPath))
+                {
+                    File.Delete(shortcutPath);
+                }
+                else
+                {
+                    CreateShortCut(shortcutPath, Assembly.GetEntryAssembly().Location, "");
+                }
+                button_shortCut.Content = ((string)button_shortCut.Content).Replace("を解除", "") + (File.Exists(shortcutPath) ? "を解除" : "");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+            }
+        }
 
-                CreateShortCut(shortcutPath, targetPath, "");
+        private void button_shortCutSrv_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                string shortcutPath = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Startup), "EpgTimerSrv.lnk");
+                if (File.Exists(shortcutPath))
+                {
+                    File.Delete(shortcutPath);
+                }
+                else
+                {
+                    CreateShortCut(shortcutPath, System.IO.Path.Combine(SettingPath.ModulePath, "EpgTimerSrv.exe"), "");
+                }
+                button_shortCutSrv.Content = ((string)button_shortCutSrv.Content).Replace("を解除", "") + (File.Exists(shortcutPath) ? "を解除" : "");
             }
             catch (Exception ex)
             {
@@ -435,6 +464,7 @@ namespace EpgTimer.Setting
             Type shortcutType = shell.GetType();
             // TargetPathプロパティをセットする
             shortcutType.InvokeMember("TargetPath", BindingFlags.SetProperty, null, shortCut, new object[] { targetPath });
+            shortcutType.InvokeMember("WorkingDirectory", BindingFlags.SetProperty, null, shortCut, new object[] { System.IO.Path.GetDirectoryName(targetPath) });
             // Descriptionプロパティをセットする
             shortcutType.InvokeMember("Description", BindingFlags.SetProperty, null, shortCut, new object[] { description });
             // Saveメソッドを実行する
