@@ -1,12 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
 using System.Windows.Input;
-using System.ComponentModel;
 
 namespace EpgTimer
 {
@@ -140,9 +137,9 @@ namespace EpgTimer
             mm.CtxmGenerateContextMenu(listView_result.ContextMenu, CtxmCode.SearchWindow, true);
         }
 
-        public void GetSearchKey(ref EpgSearchKeyInfo key)
+        public EpgSearchKeyInfo GetSearchKey()
         {
-            searchKeyView.GetSearchKey(ref key);
+            return searchKeyView.GetSearchKey();
         }
 
         public void SetSearchKey(EpgSearchKeyInfo key)
@@ -150,14 +147,30 @@ namespace EpgTimer
             searchKeyView.SetSearchKey(key);
         }
 
-        public void GetRecSetting(ref RecSettingData set)
+        public RecSettingData GetRecSetting()
         {
-            recSettingView.GetRecSetting(ref set);
+            return recSettingView.GetRecSetting();
         }
 
         public void SetRecSetting(RecSettingData set)
         {
             recSettingView.SetDefSetting(set);
+        }
+
+        public EpgAutoAddData GetAutoAddData()
+        {
+            var data = new EpgAutoAddData();
+            data.dataID = autoAddID;
+            data.searchInfo = GetSearchKey();
+            data.recSetting = GetRecSetting();
+            return data;
+        }
+
+        public void SetAutoAddData(EpgAutoAddData data)
+        {
+            autoAddID = data.dataID;
+            searchKeyView.SetSearchKey(data.searchInfo);
+            recSettingView.SetDefSetting(data.recSetting);
         }
 
         public void SetViewMode(SearchMode md)
@@ -193,17 +206,11 @@ namespace EpgTimer
             }
         }
 
-        public void SetChgAutoAddID(UInt32 id)
-        {
-            autoAddID = id;
-        }
-
         private void SearchPg()
         {
             lstCtrl.ReloadInfoData(dataList =>
             {
-                var key = new EpgSearchKeyInfo();
-                GetSearchKey(ref key);
+                EpgSearchKeyInfo key = GetSearchKey();
                 key.keyDisabledFlag = 0; //無効解除
                 var list = new List<EpgEventInfo>();
 
@@ -243,16 +250,6 @@ namespace EpgTimer
             {
                 if (CheckAutoAddChange(e, 0) == false) return;
 
-                var addItem = new EpgAutoAddData();
-                var searchKey = new EpgSearchKeyInfo();
-                GetSearchKey(ref searchKey);
-
-                var recSetKey = new RecSettingData();
-                GetRecSetting(ref recSetKey);
-
-                addItem.searchInfo = searchKey;
-                addItem.recSetting = recSetKey;
-
                 //一覧画面非表示の状態から実施する場合のためのコード
                 if (mainWindow.autoAddView.epgAutoAddView.IsVisible == false && CommonManager.Instance.DB.EpgAutoAddList.Count == 0)
                 {
@@ -260,7 +257,7 @@ namespace EpgTimer
                     CommonManager.Instance.DB.ReloadEpgAutoAddInfo();
                 }
 
-                if (mutil.EpgAutoAddAdd(CommonUtil.ToList(addItem)) == true)
+                if (mutil.EpgAutoAddAdd(CommonUtil.ToList(this.GetAutoAddData())) == true)
                 {
                     List<uint> oldlist = CommonManager.Instance.DB.EpgAutoAddList.Keys.ToList();
 
@@ -272,13 +269,8 @@ namespace EpgTimer
 
                     if (diflist.Count == 1)
                     {
-                        EpgAutoAddData newinfo = CommonManager.Instance.DB.EpgAutoAddList[diflist[0]];
                         this.SetViewMode(SearchMode.Change);
-                        this.SetChgAutoAddID(newinfo.dataID);
-                        
-                        //情報の再読み込みは不要なはずだが、安全のため実行しておく
-                        SetSearchKey(newinfo.searchInfo);
-                        SetRecSetting(newinfo.recSetting);
+                        this.SetAutoAddData(CommonManager.Instance.DB.EpgAutoAddList[diflist[0]]);
                     }
                 }
             }
@@ -294,18 +286,7 @@ namespace EpgTimer
             {
                 if (CheckAutoAddChange(e, 1) == false) return;
 
-                var addItem = new EpgAutoAddData();
-                addItem.dataID = autoAddID;
-                var searchKey = new EpgSearchKeyInfo();
-                GetSearchKey(ref searchKey);
-
-                var recSetKey = new RecSettingData();
-                GetRecSetting(ref recSetKey);
-
-                addItem.searchInfo = searchKey;
-                addItem.recSetting = recSetKey;
-
-                mutil.EpgAutoAddChange(CommonUtil.ToList(addItem));
+                mutil.EpgAutoAddChange(CommonUtil.ToList(this.GetAutoAddData()));
             }
             catch (Exception ex)
             {
@@ -376,12 +357,7 @@ namespace EpgTimer
             if (epglist.SelectedIndex == -1) return;
 
             epglist.SelectedIndex = ((epglist.SelectedIndex + direction) % epglist.Items.Count + epglist.Items.Count) % epglist.Items.Count;
-            EpgAutoAddData newinfo = (epglist.SelectedItem as EpgAutoDataItem).EpgAutoAddInfo;
-
-            SetChgAutoAddID(newinfo.dataID);
-            SetSearchKey(newinfo.searchInfo);
-            SetRecSetting(newinfo.recSetting);
-
+            this.SetAutoAddData((epglist.SelectedItem as EpgAutoDataItem).EpgAutoAddInfo);
             SearchPg();
         }
 
@@ -416,8 +392,7 @@ namespace EpgTimer
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            if ((winMode == SearchMode.Find || winMode == SearchMode.NewAdd) && 
-                (searchKeyView.ComboBox_andKey.Text == null || searchKeyView.ComboBox_andKey.Text == ""))
+            if ((winMode == SearchMode.Find || winMode == SearchMode.NewAdd) && string.IsNullOrEmpty(searchKeyView.ComboBox_andKey.Text))
             {
                 this.searchKeyView.ComboBox_andKey.Focus();
             }
@@ -454,8 +429,7 @@ namespace EpgTimer
                 {
                     SearchItem item = lstCtrl.SelectSingleItem();
 
-                    EpgSearchKeyInfo defKey = new EpgSearchKeyInfo();
-                    GetSearchKey(ref defKey);
+                    EpgSearchKeyInfo defKey = GetSearchKey();
                     defKey.andKey = mutil.TrimEpgKeyword(item.EventName, CmdExeUtil.IsKeyGesture(e));
                     defKey.regExpFlag = 0;
                     defKey.serviceList.Clear();
@@ -472,9 +446,6 @@ namespace EpgTimer
                         //「番組名で再検索」と比べてどうなのという感じだが、元の検索を残したまま作業できる
                         //新番組チェックなんかには向いてるかもしれないが、機能としては微妙なところ。
 
-                        var setInfo = new RecSettingData();
-                        GetRecSetting(ref setInfo);
-
                         var dlg = new SearchWindow();
                         //SearchWindowからの呼び出しを記録する。表示制御などでも使う。
                         dlg.Owner = this;
@@ -484,7 +455,7 @@ namespace EpgTimer
                             defKey.keyDisabledFlag = 0;
                         }
                         dlg.SetSearchKey(defKey);
-                        dlg.SetRecSetting(setInfo);
+                        dlg.SetRecSetting(this.GetRecSetting());
                         //dlg.Left += 50;//なぜか動かせない‥
                         //dlg.Top += 50;
                         dlg.ShowDialog();

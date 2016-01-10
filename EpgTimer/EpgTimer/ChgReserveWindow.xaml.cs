@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -329,9 +328,6 @@ namespace EpgTimer
 
                 if (addMode == AddMode.Change && CheckExistReserveItem() == false) return;
 
-                var setInfo = new RecSettingData();
-                recSettingView.GetRecSetting(ref setInfo);
-
                 //ダイアログを閉じないときはreserveInfoを変更しないよう注意する
                 if (resModeProgram == true)
                 {
@@ -365,7 +361,7 @@ namespace EpgTimer
                     }
                 }
 
-                reserveInfo.RecSetting = setInfo;
+                reserveInfo.RecSetting = recSettingView.GetRecSetting();
 
                 if (addMode == AddMode.Change)
                 {

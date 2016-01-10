@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -276,9 +275,7 @@ namespace EpgTimer
 
                     if (view == CtxmCode.SearchWindow)
                     {
-                        var recInfo = new RecSettingData();
-                        (this.Owner as SearchWindow).GetRecSetting(ref recInfo);
-                        RecPresetItem preset = recInfo.LookUpPreset();
+                        RecPresetItem preset = (this.Owner as SearchWindow).GetRecSetting().LookUpPreset();
                         string text = preset.ID == 0xFFFFFFFF ? "カスタム設定" : string.Format("プリセット'{0}'", preset.DisplayName);
                         menu.ToolTip = string.Format("このダイアログの録画設定({0})で予約する", text);
                     }

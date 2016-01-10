@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Input;
 
 namespace EpgTimer
 {
@@ -221,7 +220,7 @@ namespace EpgTimer
 
             if (dlg.ShowDialog() == true)
             {
-                dlg.GetSetting(ref searchKey);
+                searchKey = dlg.GetSetting();
             }
         }
 

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Input;
@@ -325,7 +324,7 @@ namespace EpgTimer
                 if (recSettingView != null)
                 {
                     //ダイアログからの予約、SearchWindowの簡易予約
-                    recSettingView.GetRecSetting(ref setInfo);
+                    setInfo = recSettingView.GetRecSetting();
                 }
                 else
                 {
@@ -380,7 +379,7 @@ namespace EpgTimer
                 //現在の設定を読み込む。SearchWindowの場合だけ。
                 if (recSettingView != null)
                 {
-                    recSettingView.GetRecSetting(ref setInfo);
+                    setInfo = recSettingView.GetRecSetting();
                     
                     //現在の設定が無効で登録の場合は、デフォルトの設定を読み込みに行く
                     if (setInfo.RecMode == 5)
@@ -523,7 +522,7 @@ namespace EpgTimer
             {
                 infoList[0].UseMargineFlag = 1;
 
-                Setting.SetDefRecSettingWindow dlg = new Setting.SetDefRecSettingWindow();
+                var dlg = new Setting.SetDefRecSettingWindow();
                 dlg.Owner = (Window)PresentationSource.FromVisual(owner).RootVisual;
                 dlg.SetSettingMode(start == true ? "開始マージン設定" : "終了マージン設定");
                 dlg.recSettingView.SetDefSetting(infoList[0]);
@@ -531,8 +530,7 @@ namespace EpgTimer
 
                 if (dlg.ShowDialog() == false) return false;
 
-                var setData = new RecSettingData();
-                dlg.recSettingView.GetRecSetting(ref setData);
+                RecSettingData setData = dlg.recSettingView.GetRecSetting();
 
                 infoList.ForEach(info =>
                 {
@@ -573,7 +571,7 @@ namespace EpgTimer
         {
             try
             {
-                Setting.SetDefRecSettingWindow dlg = new Setting.SetDefRecSettingWindow();
+                var dlg = new Setting.SetDefRecSettingWindow();
                 dlg.Owner = (Window)PresentationSource.FromVisual(owner).RootVisual;
                 dlg.SetSettingMode("まとめて変更");
                 dlg.recSettingView.SetDefSetting(infoList[0], pgAll == true);
@@ -581,9 +579,8 @@ namespace EpgTimer
 
                 if (dlg.ShowDialog() == false) return false;
 
-                var setData = new RecSettingData();
-                dlg.recSettingView.GetRecSetting(ref setData);
-
+                RecSettingData setData = dlg.recSettingView.GetRecSetting();
+                
                 infoList.ForEach(info => setData.CopyTo(info));
                 return true;
             }
@@ -598,16 +595,14 @@ namespace EpgTimer
         {
             try
             {
-                SetDefSearchSettingWindow dlg = new SetDefSearchSettingWindow();
+                var dlg = new SetDefSearchSettingWindow();
                 dlg.Owner = (Window)PresentationSource.FromVisual(owner).RootVisual;
                 dlg.SetDefSetting(infoList[0]);
                 dlg.searchKey.searchKeyDescView.SetChangeMode(0);
 
                 if (dlg.ShowDialog() == false) return false;
 
-                var setData = new EpgSearchKeyInfo();
-                dlg.GetSetting(ref setData);
-
+                EpgSearchKeyInfo setData = dlg.GetSetting();
                 infoList.ForEach(info => info.contentList = setData.contentList.Clone());
                 return true;
             }
@@ -945,9 +940,7 @@ namespace EpgTimer
                 dlg.SetViewMode(mode);
                 if (Data != null)
                 {
-                    dlg.SetChgAutoAddID(Data.dataID);
-                    dlg.SetSearchKey(Data.searchInfo);
-                    dlg.SetRecSetting(Data.recSetting);
+                    dlg.SetAutoAddData(Data);
                 }
                 return dlg.ShowDialog();
             }

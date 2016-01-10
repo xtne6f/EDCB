@@ -1,18 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using System.IO;
-using System.Windows.Interop;
 
 namespace EpgTimer
 {
@@ -91,9 +83,6 @@ namespace EpgTimer
 
         public void AddPreset(String name)
         {
-            RecSettingData newSet = new RecSettingData();
-            GetRecSetting(ref newSet);
-
             RecPresetItem newInfo = new RecPresetItem();
             newInfo.DisplayName = name;
             newInfo.ID = 0;
@@ -103,7 +92,7 @@ namespace EpgTimer
                 newInfo.ID++;
             }
 
-            presetList.Add(newInfo.ID, newSet);
+            presetList.Add(newInfo.ID, GetRecSetting());
             int index = comboBox_preSet.Items.Add(newInfo);
             SavePreset();
             comboBox_preSet.SelectedIndex = index;
@@ -249,13 +238,14 @@ namespace EpgTimer
             UpdateView();
         }
 
-        public void GetRecSetting(ref RecSettingData setInfo)
+        public RecSettingData GetRecSetting()
         {
             if (initLoad == false)
             {
-                setInfo = recSetting.Clone();
-                return;
+                return recSetting.Clone();
             }
+
+            var setInfo = new RecSettingData();
 
             setInfo.RecMode = ((RecModeInfo)comboBox_recMode.SelectedItem).Value;
             setInfo.Priority = ((PriorityInfo)comboBox_priority.SelectedItem).Value;
@@ -331,6 +321,8 @@ namespace EpgTimer
 
             TunerSelectInfo tuner = comboBox_tuner.SelectedItem as TunerSelectInfo;
             setInfo.TunerID = tuner.ID;
+
+            return setInfo;
         }
 
         private void UserControl_Loaded(object sender, RoutedEventArgs e)
@@ -654,9 +646,7 @@ namespace EpgTimer
                 }
                 if (setting.ShowDialog() == true)
                 {
-                    String name = "";
-                    setting.GetName(ref name);
-                    AddPreset(name);
+                    AddPreset(setting.GetName());
                 }
             }
             catch (Exception ex)
@@ -689,13 +679,8 @@ namespace EpgTimer
                     setting.SetName(item.DisplayName);
                     if (setting.ShowDialog() == true)
                     {
-                        String name = "";
-                        setting.GetName(ref name);
-
-                        RecSettingData newSet = new RecSettingData();
-                        GetRecSetting(ref newSet);
-                        item.DisplayName = name;
-                        presetList[item.ID] = newSet;
+                        item.DisplayName = setting.GetName();
+                        presetList[item.ID] = GetRecSetting();
 
                         SavePreset();
 

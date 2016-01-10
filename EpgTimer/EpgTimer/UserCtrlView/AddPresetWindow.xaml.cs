@@ -1,15 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 
 namespace EpgTimer
 {
@@ -43,9 +37,9 @@ namespace EpgTimer
             textBox_name.Text = name;
         }
 
-        public void GetName(ref String name)
+        public String GetName()
         {
-            name = textBox_name.Text;
+            return textBox_name.Text;
         }
 
         private void button_add_Click(object sender, RoutedEventArgs e)
