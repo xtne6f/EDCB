@@ -349,30 +349,21 @@ namespace EpgTimer.UserCtrlView
                     // 一定時間枠を表示する
                     var notifyTimer = new System.Windows.Threading.DispatcherTimer();
                     notifyTimer.Interval = TimeSpan.FromSeconds(0.1);
-                    TimeSpan RemainTime = TimeSpan.FromSeconds(Settings.Instance.DisplayNotifyJumpTime);
-                    int Brinks = 3;
-                    bool IsDisplay = false;
+                    int Brinks = 2 * 3;
+                    cnvs.Children.Add(rect);
+                    var sw = System.Diagnostics.Stopwatch.StartNew();
                     notifyTimer.Tick += (sender, e) =>
                     {
-                        RemainTime -= notifyTimer.Interval;
-                        if (RemainTime <= TimeSpan.FromSeconds(0))
+                        if (sw.ElapsedMilliseconds > Settings.Instance.DisplayNotifyJumpTime * 1000)
                         {
-                            cnvs.Children.Remove(rect);
                             notifyTimer.Stop();
-                        }
-                        else if (IsDisplay == false)
-                        {
-                            cnvs.Children.Add(rect);
-                            IsDisplay = true;
-                        }
-                        else if (Brinks > 0)
-                        {
                             cnvs.Children.Remove(rect);
-                            IsDisplay = false;
-                            Brinks--;
+                        }
+                        else if (--Brinks >= 0)
+                        {
+                            rect.Visibility = (Brinks % 2) == 0 ? Visibility.Visible : Visibility.Hidden;
                         }
                     };
-
                     notifyTimer.Start();
                 }
             }

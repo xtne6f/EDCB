@@ -232,15 +232,14 @@ namespace EpgTimer
 
                     var notifyTimer = new System.Windows.Threading.DispatcherTimer();
                     notifyTimer.Interval = TimeSpan.FromSeconds(0.2);
-                    TimeSpan RemainTime = TimeSpan.FromSeconds(Settings.Instance.DisplayNotifyJumpTime);
+                    var sw = System.Diagnostics.Stopwatch.StartNew();
                     notifyTimer.Tick += (sender, e) =>
                     {
-                        RemainTime -= notifyTimer.Interval;
-                        if (RemainTime <= TimeSpan.FromSeconds(0))
+                        if (sw.ElapsedMilliseconds > Settings.Instance.DisplayNotifyJumpTime * 1000)
                         {
+                            notifyTimer.Stop();
                             target_item.NowJumpingTable = 0;
                             listBox.SelectedItem = target_item;
-                            notifyTimer.Stop();
                         }
                         else
                         {
