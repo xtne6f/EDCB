@@ -311,9 +311,6 @@ namespace EpgTimer
             }
             else if (menu.Tag == EpgCmds.JumpReserve || menu.Tag == EpgCmds.JumpTuner)
             {
-                //先にサブウィンドウ関係をチェック
-                if (mcs_ctxmLoading_CheckSearchSubWindow(menu) == true) return;
-
                 //メニュー実行時に選択されるアイテムが予約でないときは無効
                 menu.IsEnabled = (headData as ReserveData != null);
                 menu.ToolTip = null;
@@ -327,7 +324,6 @@ namespace EpgTimer
             }
             else if (menu.Tag == EpgCmds.JumpTable)
             {
-                if (mcs_ctxmLoading_CheckSearchSubWindow(menu) == true) return;
                 if (view != CtxmCode.EpgView) return;
 
                 //標準モードでは非表示。
@@ -335,10 +331,6 @@ namespace EpgTimer
                 {
                     menu.Visibility = Visibility.Collapsed;
                 }
-            }
-            else if (menu.Tag == EpgCmds.ReSearch2)
-            {
-                mcs_ctxmLoading_CheckSearchSubWindow(menu);
             }
             else if (menu.Tag == EpgCmds.Play)
             {
@@ -368,17 +360,6 @@ namespace EpgTimer
                     item.IsChecked = ((item.CommandParameter as EpgCmdParam).ID == (int)ctxm.Tag);
                 }
             }
-        }
-        protected bool mcs_ctxmLoading_CheckSearchSubWindow(MenuItem menu)
-        {
-            bool isHit = (this.Owner is SearchWindow) == true && ((SearchWindow)this.Owner).IsThisSubWindow == true;
-            if (isHit == true)
-            {
-                menu.IsEnabled = false;
-                menu.Header += menu.Header.ToString().EndsWith("(無効)") ? "" : "(無効)";
-                menu.ToolTip = "サブウィンドウでは無効になります。";
-            }
-            return isHit;
         }
     }
 }

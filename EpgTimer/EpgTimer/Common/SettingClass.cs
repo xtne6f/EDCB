@@ -1202,10 +1202,10 @@ namespace EpgTimer
             recInfoListColumn = new List<ListColumnInfo>();
             autoAddEpgColumn = new List<ListColumnInfo>();
             autoAddManualColumn = new List<ListColumnInfo>();
-            searchWndLeft = 0;
-            searchWndTop = 0;
-            searchWndWidth = 0;
-            searchWndHeight = 0;
+            searchWndLeft = -100;
+            searchWndTop = -100;
+            searchWndWidth = -100;
+            searchWndHeight = -100;
             autoSaveNotifyLog = 0;
             showTray = true;
             minHide = true;

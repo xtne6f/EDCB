@@ -1,7 +1,7 @@
 ﻿<Window x:Class="EpgTimer.SearchWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="検索" Height="600" Width="780" xmlns:my="clr-namespace:EpgTimer" WindowStartupLocation="Manual" SizeChanged="Window_SizeChanged" LocationChanged="Window_LocationChanged" Loaded="Window_Loaded" Closed="Window_Closed" Activated="Window_Activated">
+        Title="検索" Height="600" Width="780" xmlns:my="clr-namespace:EpgTimer" WindowStartupLocation="Manual" Loaded="Window_Loaded" Closed="Window_Closed" Activated="Window_Activated" StateChanged="Window_StateChanged">
 
     <Grid>
         <Grid.RowDefinitions>

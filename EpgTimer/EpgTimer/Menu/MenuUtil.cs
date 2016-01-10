@@ -936,13 +936,13 @@ namespace EpgTimer
             try
             {
                 var dlg = new SearchWindow();
-                dlg.Owner = (Window)PresentationSource.FromVisual(Owner).RootVisual;
                 dlg.SetViewMode(mode);
                 if (Data != null)
                 {
                     dlg.SetAutoAddData(Data);
                 }
-                return dlg.ShowDialog();
+                dlg.Show();
+                return true;
             }
             catch (Exception ex)
             {
@@ -967,7 +967,6 @@ namespace EpgTimer
             try
             {
                 var dlg = new SearchWindow();
-                dlg.Owner = (Window)PresentationSource.FromVisual(Owner).RootVisual;
                 dlg.SetViewMode(SearchWindow.SearchMode.NewAdd);
 
                 EpgSearchKeyInfo key = Settings.Instance.DefSearchKey.Clone();
@@ -977,7 +976,7 @@ namespace EpgTimer
                 key.serviceList.Add((Int64)sidKey);
 
                 dlg.SetSearchKey(key);
-                dlg.ShowDialog();
+                dlg.Show();
             }
             catch (Exception ex)
             {

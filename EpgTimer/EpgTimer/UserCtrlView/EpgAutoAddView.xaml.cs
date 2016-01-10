@@ -107,7 +107,7 @@ namespace EpgTimer
             });
 
             //行選択の更新
-            SearchWindow.UpdateEpgAutoAddViewSelection(Application.Current.MainWindow);
+            SearchWindow.UpdatesEpgAutoAddViewSelection();
             return ret;
         }
         //SearchWindowからのリスト選択状態の変更を優先するために、MouseUpイベントによる
