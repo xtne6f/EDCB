@@ -111,7 +111,7 @@
                     <Label Content="分以上" Height="28" Margin="514,112,0,0" Name="label12" VerticalAlignment="Top" HorizontalAlignment="Left" Width="46" />
                     <TextBox Height="24" HorizontalAlignment="Left" Margin="583,112,0,0" Name="textBox_chkDurationMax" VerticalAlignment="Top" Width="48"/>
                     <Label Content="分以下" Height="28" Margin="629,112,0,0" Name="label14" VerticalAlignment="Top" HorizontalAlignment="Left" Width="46" />
-                    <GroupBox Header="EPG 自動予約登録専用" HorizontalAlignment="Left" Margin="448,146,0,0" Name="groupBox1" Width="290" Height="96" VerticalAlignment="Top">
+                    <GroupBox Header="キーワード自動予約登録専用" HorizontalAlignment="Left" Margin="448,146,0,0" Name="groupBox1" Width="290" Height="96" VerticalAlignment="Top">
                         <Grid Height="77">
                             <CheckBox Content="同一番組名の録画結果があれば無効で登録する" Height="16" HorizontalAlignment="Left" Margin="6,8,0,0" Name="checkBox_chkRecEnd" VerticalAlignment="Top" />
                             <Label Content="録画済み確認対象期間" Height="28" HorizontalAlignment="Left" Margin="18,26,0,0" Name="label9" VerticalAlignment="Top" />

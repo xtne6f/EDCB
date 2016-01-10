@@ -12,7 +12,7 @@
     </UserControl.Resources>
     <Grid>
         <TabControl Name="tabControl" >
-            <TabItem Header="EPG予約" Name="tabItem_epg">
+            <TabItem Header="キーワード予約" Name="tabItem_epg">
                 <Grid>
                     <local:EpgAutoAddView x:Name="epgAutoAddView" />
                 </Grid>

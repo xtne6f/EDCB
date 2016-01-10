@@ -173,7 +173,7 @@ namespace EpgTimer
             }
             else if (winMode == SearchMode.NewAdd)
             {
-                Title = "EPG予約条件";
+                Title = "キーワード自動予約登録";
                 button_chg_epgAutoAdd.Visibility = Visibility.Hidden;
                 button_del_epgAutoAdd.Visibility = Visibility.Hidden;
                 button_up_epgAutoAdd.Visibility = Visibility.Hidden;
@@ -181,7 +181,7 @@ namespace EpgTimer
             }
             else if (winMode == SearchMode.Change)
             {
-                Title = "EPG予約条件";
+                Title = "キーワード自動予約登録";
                 button_chg_epgAutoAdd.Visibility = Visibility.Visible;
                 button_del_epgAutoAdd.Visibility = Visibility.Visible;
                 button_up_epgAutoAdd.Visibility = Visibility.Visible;

@@ -237,7 +237,9 @@ namespace EpgTimer
             {
                 if (ReserveInfo == null) return "";
                 //
-                String view = (ReserveInfo.IsAutoAddMissing() == true ? "不明な" : "") + ReserveInfo.Comment.ToString();
+                String view = ReserveInfo.Comment;
+                view = view.StartsWith("EPG自動予約(") == true ? "キーワード予約(" + view.Substring(8) : view;
+                view = (ReserveInfo.IsAutoAddMissing() == true ? "不明な" : "") + view;
                 if (view == "")
                 {
                     view = "個別予約(" + (ReserveInfo.EventID == 0xFFFF ? "プログラム" : "EPG") + ")";
