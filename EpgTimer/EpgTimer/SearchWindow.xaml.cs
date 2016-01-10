@@ -237,30 +237,11 @@ namespace EpgTimer
             RefreshStatus();
         }
 
-        private bool CheckCautionMany()
-        {
-            if (Settings.Instance.CautionManyChange == true && searchKeyView.searchKeyDescView.checkBox_keyDisabled.IsChecked != true)
-            {
-                SearchPg();
-
-                if (mutil.CautionManyMessage(lstCtrl.dataList.GetNoReserveList().Count, "予約追加の確認") == false)
-                {
-                    return false;
-                }
-            }
-            return true;
-        }
-
         private void button_add_epgAutoAdd_Click(object sender, ExecutedRoutedEventArgs e)
         {
             try
             {
-                if (CmdExeUtil.IsDisplayKgMessage(e) == true)
-                {
-                    if (MessageBox.Show("自動予約登録を追加します。\r\nよろしいですか？", "追加の確認", MessageBoxButton.OKCancel) != MessageBoxResult.OK)
-                    { return; }
-                }
-                if (CheckCautionMany() == false) return;
+                if (CheckAutoAddChange(e, 0) == false) return;
 
                 var addItem = new EpgAutoAddData();
                 var searchKey = new EpgSearchKeyInfo();
@@ -299,8 +280,6 @@ namespace EpgTimer
                         SetSearchKey(newinfo.searchInfo);
                         SetRecSetting(newinfo.recSetting);
                     }
-
-                    SearchPg();
                 }
             }
             catch (Exception ex)
@@ -309,30 +288,11 @@ namespace EpgTimer
             }
         }
 
-        private bool CheckExistAutoAddItem()
-        {
-            bool retval = CommonManager.Instance.DB.EpgAutoAddList.ContainsKey(this.autoAddID);
-            if (retval == false)
-            {
-                MessageBox.Show("項目がありません。\r\n" + "既に削除されています。\r\n" + "(別のEpgtimerによる操作など)");
-                SetViewMode(SearchMode.NewAdd);
-                this.autoAddID = 0;
-            }
-            return retval;
-        }
-
         private void button_chg_epgAutoAdd_Click(object sender, ExecutedRoutedEventArgs e)
         {
             try
             {
-                if (this.autoAddID == 0) return;
-                if (CmdExeUtil.IsDisplayKgMessage(e) == true)
-                {
-                    if (MessageBox.Show("自動予約登録を変更します。\r\nよろしいですか？", "変更の確認", MessageBoxButton.OKCancel) != MessageBoxResult.OK)
-                    { return; }
-                }
-                if (CheckExistAutoAddItem() == false) return;
-                if (CheckCautionMany() == false) return;
+                if (CheckAutoAddChange(e, 1) == false) return;
 
                 var addItem = new EpgAutoAddData();
                 addItem.dataID = autoAddID;
@@ -345,10 +305,7 @@ namespace EpgTimer
                 addItem.searchInfo = searchKey;
                 addItem.recSetting = recSetKey;
 
-                if (mutil.EpgAutoAddChange(CommonUtil.ToList(addItem)) == true)
-                {
-                    SearchPg();
-                }
+                mutil.EpgAutoAddChange(CommonUtil.ToList(addItem));
             }
             catch (Exception ex)
             {
@@ -358,20 +315,46 @@ namespace EpgTimer
 
         private void button_del_epgAutoAdd_Click(object sender, ExecutedRoutedEventArgs e)
         {
-            if (this.autoAddID == 0) return;
-            if (CmdExeUtil.IsDisplayKgMessage(e) == true)
-            {
-                if (MessageBox.Show("この自動予約登録を削除します。\r\nよろしいですか？", "削除の確認", MessageBoxButton.OKCancel) != MessageBoxResult.OK)
-                { return; }
-            }
-            if (CheckExistAutoAddItem() == false) return;
+            if (CheckAutoAddChange(e, 2) == false) return;
 
             if (mutil.EpgAutoAddDelete(CommonUtil.ToList(autoAddID)) == true)
             {
                 SetViewMode(SearchMode.NewAdd);
                 this.autoAddID = 0;
-                SearchPg();
             }
+        }
+
+        //proc 0:追加、1:変更、2:削除
+        private bool CheckAutoAddChange(ExecutedRoutedEventArgs e, int proc)
+        {
+            if (CmdExeUtil.IsDisplayKgMessage(e) == true)
+            {
+                var strMode = new string[] { "追加", "変更", "削除" }[proc];
+                if (MessageBox.Show("自動予約登録を" + strMode + "します。\r\nよろしいですか？", strMode + "の確認", MessageBoxButton.OKCancel) != MessageBoxResult.OK)
+                { return false; }
+            }
+
+            //データの更新
+            SearchPg();
+
+            if (proc != 0)
+            {
+                if (CommonManager.Instance.DB.EpgAutoAddList.ContainsKey(this.autoAddID) == false)
+                {
+                    MessageBox.Show("項目がありません。\r\n" + "既に削除されています。\r\n" + "(別のEpgtimerによる操作など)");
+                    SetViewMode(SearchMode.NewAdd);
+                    this.autoAddID = 0;
+                    return false;
+                }
+            }
+
+            if (proc != 2 && Settings.Instance.CautionManyChange == true && searchKeyView.searchKeyDescView.checkBox_keyDisabled.IsChecked != true)
+            {
+                if (mutil.CautionManyMessage(lstCtrl.dataList.GetNoReserveList().Count, "予約追加の確認") == false)
+                { return false; }
+            }
+
+            return true;
         }
 
         private void button_up_epgAutoAdd_Click(object sender, ExecutedRoutedEventArgs e)
