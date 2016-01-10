@@ -139,6 +139,7 @@ namespace EpgTimer
                 if (target != null)
                 {
                     listView_key.SelectedItem = target;
+                    listView_key.ScrollIntoView(target);
                 }
             }
         }
