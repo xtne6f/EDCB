@@ -29,8 +29,9 @@
                     <Button Content="開く" Height="23" Margin="485,221,0,0" Name="button_rec_open" VerticalAlignment="Top" HorizontalAlignment="Left" Width="44" Click="button_rec_open_Click" />
                     <Button Content="追加" Height="23" Margin="535,221,0,0" Name="button_rec_add" VerticalAlignment="Top" Click="button_rec_add_Click" HorizontalAlignment="Left" Width="44" />
                     <Label Content="※ 録画中やEPG取得中に設定を変更すると正常動作しなくなる可能性があります。" Height="28" HorizontalAlignment="Left" Margin="12,278,0,0" Name="label4" VerticalAlignment="Top" Foreground="Red" />
-                    <Button Content="スタートアップにショートカットを作成する" Height="23" HorizontalAlignment="Left" Margin="12,333,0,0" Name="button_shortCut" VerticalAlignment="Top" Width="265" Click="button_shortCut_Click" />
-                    <Label Content="※ 削除時は手動で行ってください" Height="28" HorizontalAlignment="Left" Margin="12,360,0,0" Name="label5" VerticalAlignment="Top" />
+                    <Label Content="スタートアップにショートカットを作成する" Height="28" HorizontalAlignment="Left" Margin="12,331,0,0" Name="label5" VerticalAlignment="Top" />
+                    <Button Content="EpgTimer.exe" Height="23" HorizontalAlignment="Left" Margin="273,333,0,0" Name="button_shortCut" VerticalAlignment="Top" Width="140" Click="button_shortCut_Click" />
+                    <Button Content="EpgTimerSrv.exe" Height="23" HorizontalAlignment="Left" Margin="419,333,0,0" Name="button_shortCutSrv" VerticalAlignment="Top" Width="160" Click="button_shortCutSrv_Click" />
                 </Grid>
             </TabItem>
             <TabItem Header="チューナー" Name="tabItem2">
