@@ -79,20 +79,20 @@
                     <CheckBox Content="NOT扱いとする" Height="16" HorizontalAlignment="Left" Margin="6,0,0,14" Name="checkBox_notDate" VerticalAlignment="Bottom" />
                     <Button Content="削除" Height="23" HorizontalAlignment="Left" Margin="114,0,0,10" Name="button_date_del" VerticalAlignment="Bottom" Width="56" Click="button_date_del_Click" />
                     <Label Content="期間" Height="28" HorizontalAlignment="Left" Margin="176,40,0,0" Name="label4" VerticalAlignment="Top" />
-                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="192,74,0,0" Name="comboBox_time_sw" VerticalAlignment="Top" Width="40" ItemsSource="{Binding}" />
-                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="242,74,0,0" Name="comboBox_time_sh" VerticalAlignment="Top" Width="40" ItemsSource="{Binding}" />
-                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="288,74,0,0" Name="comboBox_time_sm" VerticalAlignment="Top" Width="40" ItemsSource="{Binding}" />
+                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="192,74,0,0" Name="comboBox_time_sw" VerticalAlignment="Top" Width="44" ItemsSource="{Binding}" />
+                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="242,74,0,0" Name="comboBox_time_sh" VerticalAlignment="Top" Width="44" ItemsSource="{Binding}" />
+                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="289,74,0,0" Name="comboBox_time_sm" VerticalAlignment="Top" Width="44" ItemsSource="{Binding}" />
                     <Label Content="～" Height="28" HorizontalAlignment="Left" Margin="192,108,0,0" Name="label6" VerticalAlignment="Top" />
-                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="223,108,0,0" Name="comboBox_time_ew" VerticalAlignment="Top" Width="40" ItemsSource="{Binding}" />
-                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="273,108,0,0" Name="comboBox_time_eh" VerticalAlignment="Top" Width="40" ItemsSource="{Binding}" />
-                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="319,108,0,0" Name="comboBox_time_em" VerticalAlignment="Top" Width="40" ItemsSource="{Binding}" />
+                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="223,108,0,0" Name="comboBox_time_ew" VerticalAlignment="Top" Width="44" ItemsSource="{Binding}" />
+                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="273,108,0,0" Name="comboBox_time_eh" VerticalAlignment="Top" Width="44" ItemsSource="{Binding}" />
+                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="320,108,0,0" Name="comboBox_time_em" VerticalAlignment="Top" Width="44" ItemsSource="{Binding}" />
                     <Button Content="追加" Height="23" HorizontalAlignment="Left" Margin="375,108,0,0" Name="button_timeAdd" VerticalAlignment="Top" Width="56" Click="button_timeAdd_Click" />
                     <Label Content="曜日毎" Height="28" HorizontalAlignment="Left" Margin="176,133,0,0" Name="label5" VerticalAlignment="Top" />
-                    <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding}" Margin="192,179,0,0" Name="comboBox_week_sh" VerticalAlignment="Top" Width="40" />
-                    <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding}" Margin="238,179,0,0" Name="comboBox_week_sm" VerticalAlignment="Top" Width="40" />
+                    <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding}" Margin="192,179,0,0" Name="comboBox_week_sh" VerticalAlignment="Top" Width="44" />
+                    <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding}" Margin="239,179,0,0" Name="comboBox_week_sm" VerticalAlignment="Top" Width="44" />
                     <Label Content="～" Height="28" HorizontalAlignment="Left" Margin="288,175,0,0" Name="label7" VerticalAlignment="Top" />
-                    <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding}" Margin="316,179,0,0" Name="comboBox_week_eh" VerticalAlignment="Top" Width="40" />
-                    <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding}" Margin="362,179,0,0" Name="comboBox_week_em" VerticalAlignment="Top" Width="40" />
+                    <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding}" Margin="316,179,0,0" Name="comboBox_week_eh" VerticalAlignment="Top" Width="44" />
+                    <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding}" Margin="363,179,0,0" Name="comboBox_week_em" VerticalAlignment="Top" Width="44" />
                     <CheckBox Content="月" Height="16" HorizontalAlignment="Left" Margin="192,157,0,0" Name="checkBox_mon" VerticalAlignment="Top" />
                     <CheckBox Content="火" Height="16" HorizontalAlignment="Left" Margin="227,157,0,0" Name="checkBox_tue" VerticalAlignment="Top" />
                     <CheckBox Content="水" Height="16" HorizontalAlignment="Left" Margin="262,157,0,0" Name="checkBox_wen" VerticalAlignment="Top" />
