@@ -160,6 +160,10 @@ namespace EpgTimer
                 return Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
             }
         }
+        public static string ModuleName
+        {
+            get { return Path.GetFileNameWithoutExtension(Assembly.GetExecutingAssembly().Location); }
+        }
     }
 
     public class Settings
