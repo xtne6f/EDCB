@@ -203,6 +203,11 @@ namespace EpgTimer.EpgView
                 updateReserveData = !ReloadReserveData();
             }
 
+            // Loaded イベントでは Reload*Data を省略したので
+            // この IsVisibleChanged で Reload*Data を見逃してはいけない
+            // (EpgWeekMainでの追加処理用)
+            OnLoadingSubProc();
+
             //「番組表へジャンプ」の場合、またはオプションで指定のある場合に強調表示する。
             bool isMarking = BlackoutWindow.NowJumpTable || Settings.Instance.DisplayNotifyEpgChange;
             if (BlackoutWindow.HasReserveData == true)
@@ -217,6 +222,7 @@ namespace EpgTimer.EpgView
             BlackoutWindow.Clear();
         }
 
+        protected virtual void OnLoadingSubProc() { }
         protected virtual void MoveToReserveItem(ReserveData target, bool IsMarking) { }
         protected virtual void MoveToProgramItem(EpgEventInfo target, bool IsMarking) { }
 
