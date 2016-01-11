@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Windows;
 
 namespace EpgTimer
 {
@@ -36,6 +35,40 @@ namespace EpgTimer
         {
             return CommonManager.Instance.DB.GetEpgAutoAddDataAppend(master).NextReserve;
         }
+
+        public static List<ReserveData> GetReserveList(this ICollection<EpgAutoAddData> mlist)
+        {
+            var retList = new List<ReserveData>();
+            foreach (EpgAutoAddData info in mlist) retList.AddRange(info.GetReserveList());
+            return retList.Distinct().ToList();
+        }
+        public static List<List<ReserveData>> GetReserveListList(this ICollection<EpgAutoAddData> mlist)
+        {
+            var rlist_list = new List<List<ReserveData>>();
+            foreach (EpgAutoAddData info in mlist) rlist_list.Add(info.GetReserveList());
+            return rlist_list;
+        }
+
+        public static List<RecSettingData> RecSettingList(this List<EpgAutoAddData> list)
+        {
+            return list.Where(item => item != null).Select(item => item.recSetting).ToList();
+        }
+        public static List<EpgSearchKeyInfo> RecSearchKeyList(this List<EpgAutoAddData> list)
+        {
+            return list.Where(item => item != null).Select(item => item.searchInfo).ToList();
+        }
+
+        public static List<EpgAutoAddData> Clone(this List<EpgAutoAddData> src) { return CopyObj.Clone(src, CopyData); }
+        public static EpgAutoAddData Clone(this EpgAutoAddData src) { return CopyObj.Clone(src, CopyData); }
+        public static void CopyTo(this EpgAutoAddData src, EpgAutoAddData dest) { CopyObj.CopyTo(src, dest, CopyData); }
+        private static void CopyData(EpgAutoAddData src, EpgAutoAddData dest)
+        {
+            dest.addCount = src.addCount;
+            dest.dataID = src.dataID;
+            dest.recSetting = src.recSetting.Clone();       //RecSettingData
+            dest.searchInfo = src.searchInfo.Clone();       //EpgSearchKeyInfo
+        }
+
     }
 
     public class EpgAutoAddDataAppend

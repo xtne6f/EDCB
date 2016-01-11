@@ -13,7 +13,7 @@ namespace EpgTimer
         public CmdExeManualAutoAdd(Control owner)
             : base(owner)
         {
-            _copyItemData = CtrlCmdDefEx.CopyTo;
+            _copyItemData = ManualAutoAddDataEx.CopyTo;
         }
         protected override void mc_ShowDialog(object sender, ExecutedRoutedEventArgs e)
         {

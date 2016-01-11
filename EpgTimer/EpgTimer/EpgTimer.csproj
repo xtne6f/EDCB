@@ -91,6 +91,10 @@
       <DependentUpon>BlackoutWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="Common\BoxExchangeEditor.cs" />
+    <Compile Include="CtrlCmdDefEx\RecSettingDataEx.cs" />
+    <Compile Include="CtrlCmdDefEx\ReserveDataEx.cs" />
+    <Compile Include="CtrlCmdDefEx\ManualAutoAddDataEx.cs" />
+    <Compile Include="CtrlCmdDefEx\RecFileInfoEx.cs" />
     <Compile Include="DefineClass\NWPresetItem.cs" />
     <Compile Include="UserCtrlView\DataViewBase.cs" />
     <Compile Include="UserCtrlView\ListViewController.cs" />
@@ -100,7 +104,7 @@
     <Compile Include="Common\GridViewSelector.cs" />
     <Compile Include="Menu\MenuManager.cs" />
     <Compile Include="Menu\CtxmData.cs" />
-    <Compile Include="DefineClass\EpgAutoAddDataAppend.cs" />
+    <Compile Include="CtrlCmdDefEx\EpgAutoAddDataEx.cs" />
     <Compile Include="Common\CtrlCmd.cs" />
     <Compile Include="Common\CtrlCmdDef.cs" />
     <Compile Include="Common\GridViewSorter.cs" />
@@ -127,7 +131,7 @@
     <Compile Include="Common\ViewUtil.cs" />
     <Compile Include="Common\NWConnectClass.cs" />
     <Compile Include="Common\ServiceCtrlClass.cs" />
-    <Compile Include="Common\CtrlCmdDefEx.cs" />
+    <Compile Include="CtrlCmdDefEx\CtrlCmdDefEx.cs" />
     <Compile Include="NotifyLogWindow.xaml.cs">
       <DependentUpon>NotifyLogWindow.xaml</DependentUpon>
     </Compile>
