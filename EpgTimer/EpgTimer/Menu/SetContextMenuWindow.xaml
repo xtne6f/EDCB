@@ -44,8 +44,8 @@
                             <Separator Height="10" />
                             <CheckBox Margin="6,0,0,0" Visibility="Hidden"/>
                             <CheckBox Margin="6,0,0,0" Visibility="Hidden"/>
-                            <CheckBox Margin="6,0,0,0" Content="確認メッセージを表示しない" Name="checkBox_NoMessageDelete2" Checked="checkBox_NoMessageDelete2_ValueChanged" Unchecked="checkBox_NoMessageDelete2_ValueChanged" />
-                            <CheckBox Margin="6,0,0,0" Content="(予約ごと削除と共通)" IsEnabled="false" Name="checkBox_NoMessageDelete3"/>
+                            <CheckBox Margin="6,0,0,0" Content="確認メッセージを表示しない" Name="checkBox_NoMessageDelete2" />
+                            <CheckBox Margin="6,0,0,0" Content="(予約ごと削除と共通)" IsEnabled="false" Name="checkBox_NoMessageDelete3" IsChecked="{Binding Path=IsChecked, ElementName=checkBox_NoMessageDelete2, UpdateSourceTrigger=PropertyChanged}" />
                             <CheckBox Margin="6,0,0,0" Content="確認メッセージを表示しない" Name="checkBox_NoMessageAdjustRes" />
                             <CheckBox Margin="6,0,0,0" Visibility="Hidden"/>
                             <CheckBox Margin="6,0,0,0" Visibility="Hidden"/>
@@ -54,7 +54,7 @@
                             <CheckBox Margin="6,0,0,0" Visibility="Hidden"/>
                             <CheckBox Margin="6,0,0,0" Visibility="Hidden"/>
                             <CheckBox Margin="6,0,0,0" Content="記号類を取り除く" Name="checkBox_EpgKeyword_Trim" />
-                            <CheckBox Margin="6,0,0,0" Content="(↑再検索でも共通)" IsEnabled="false" Name="checkBox_EpgKeyword_Trim2" />
+                            <CheckBox Margin="6,0,0,0" Content="(↑再検索でも共通)" IsEnabled="false" Name="checkBox_EpgKeyword_Trim2" IsChecked="{Binding Path=IsChecked, ElementName=checkBox_EpgKeyword_Trim, UpdateSourceTrigger=PropertyChanged}" />
                             <CheckBox Margin="6,0,0,0" Content="自動登録無効を解除する" Name="checkBox_CancelAutoAddOff" />
                             <CheckBox Margin="6,0,0,0" Visibility="Hidden"/>
                             <CheckBox Margin="6,0,0,0" Visibility="Hidden"/>

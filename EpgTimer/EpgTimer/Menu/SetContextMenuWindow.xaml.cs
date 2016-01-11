@@ -293,11 +293,6 @@ namespace EpgTimer
             }
         }
 
-        private void checkBox_NoMessageDelete2_ValueChanged(object sender, RoutedEventArgs e)
-        {
-            checkBox_NoMessageDelete3.IsChecked = checkBox_NoMessageDelete2.IsChecked;
-        }
-
         private void button_allDefault_Click(object sender, RoutedEventArgs e)
         {
             try
