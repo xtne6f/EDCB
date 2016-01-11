@@ -140,8 +140,8 @@ namespace EpgTimer
         //パネルアイテムにマージンを適用。
         public void ApplyMarginForPanelView(ReserveData resInfo, ref DateTime startTime, ref int duration)
         {
-            int StartMargin = mutil.GetMargin(resInfo.RecSetting, true);
-            int EndMargin = mutil.GetMargin(resInfo.RecSetting, false);
+            int StartMargin = resInfo.RecSetting.GetTrueMargin(true);
+            int EndMargin = resInfo.RecSetting.GetTrueMargin(false);
 
             if (StartMargin < 0)
             {
@@ -157,8 +157,8 @@ namespace EpgTimer
 
         public void ApplyMarginForTunerPanelView(ReserveData resInfo, ref DateTime startTime, ref int duration)
         {
-            int StartMargin = mutil.GetMargin(resInfo.RecSetting, true);
-            int EndMargin = mutil.GetMargin(resInfo.RecSetting, false);
+            int StartMargin = resInfo.RecSetting.GetTrueMargin(true);
+            int EndMargin = resInfo.RecSetting.GetTrueMargin(false);
 
             startTime = resInfo.StartTime.AddSeconds(StartMargin * -1);
             duration = (int)resInfo.DurationSecond + StartMargin + EndMargin;

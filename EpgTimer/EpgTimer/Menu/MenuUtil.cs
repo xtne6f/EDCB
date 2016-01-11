@@ -81,7 +81,7 @@ namespace EpgTimer
 
         public void CopyContent2Clipboard(ReserveData resInfo, bool NotToggle = false)
         {
-            CopyContent2Clipboard(CommonManager.Instance.GetEpgEventInfoFromReserveData(resInfo, true), NotToggle);
+            CopyContent2Clipboard(resInfo.SearchEventInfo(true), NotToggle);
         }
 
         public void CopyContent2Clipboard(RecFileInfo recInfo, bool NotToggle = false)
@@ -117,7 +117,7 @@ namespace EpgTimer
             Clipboard.SetDataObject(text, true);
         }
 
-        public void SearchText(string txtKey, bool NotToggle = false)
+        public void SearchTextWeb(string txtKey, bool NotToggle = false)
         {
             string txtKey1 = txtKey;
             bool setting = Settings.Instance.MenuSet.SearchTitle_Trim;
@@ -217,52 +217,6 @@ namespace EpgTimer
             return rt.ToString();
         }
 
-        public string MarginText(RecSettingData recSetting, bool start)
-        {
-            return CustomTimeFormat(GetMargin(recSetting, start) * (start ? -1 : 1), recSetting.UseMargineFlag);
-        }
-
-        public int GetMargin(RecSettingData recSetting, bool start)
-        {
-            if (recSetting == null) return 0;
-
-            int marginTime;
-            if (recSetting.UseMargineFlag == 1)
-            {
-                marginTime = start ? recSetting.StartMargine : recSetting.EndMargine;
-            }
-            else
-            {
-                marginTime = IniFileHandler.GetPrivateProfileInt("SET", start ? "StartMargin" : "EndMargin", 0, SettingPath.TimerSrvIniPath);
-            }
-            return marginTime;
-        }
-
-        public double GetMarginForSort(RecSettingData recSetting, bool start)
-        {
-            if (recSetting == null) return 0;
-            //
-            return GetMargin(recSetting, start) * (start ? -1 : 1) + (recSetting.UseMargineFlag == 1 ? 0.1 : 0);
-        }
-
-        private string CustomTimeFormat(int span, byte useMarginFlag)
-        {
-            string hours;
-            string minutes;
-            string seconds = (span % 60).ToString("00;00");
-            if (Math.Abs(span) < 3600)
-            {
-                hours = "";
-                minutes = (span / 60).ToString("0;0") + ":";
-            }
-            else
-            {
-                hours = (span / 3600).ToString("0;0") + ":";
-                minutes = ((span % 3600) / 60).ToString("00;00") + ":";
-            }
-            return span.ToString("+;-") + hours + minutes + seconds + (useMarginFlag == 1 ? " " : "*");
-        }
-
         public TextBlock GetTooltipBlockStandard(string text)
         {
             TextBlock block = new TextBlock();
@@ -339,7 +293,7 @@ namespace EpgTimer
                     if (item.StartTimeFlag != 0)
                     {
                         var resInfo = new ReserveData();
-                        CommonManager.ConvertEpgToReserveData(item, ref resInfo);
+                        item.ConvertToReserveData(ref resInfo);
                         resInfo.RecSetting = setInfo;
                         list.Add(resInfo);
                     }
@@ -491,8 +445,8 @@ namespace EpgTimer
                     {
                         if (info.UseMargineFlag == 0)
                         {
-                            info.StartMargine = GetMargin(info, true);
-                            info.EndMargine = GetMargin(info, false);
+                            info.StartMargine = info.GetTrueMargin(true);
+                            info.EndMargine = info.GetTrueMargin(false);
                         }
 
                         info.UseMargineFlag = 1;
@@ -1028,60 +982,6 @@ namespace EpgTimer
             }
         }
 
-        public void SetSearchItemReserved(ICollection<SearchItem> list)
-        {
-            var listKeys = new Dictionary<ulong, SearchItem>();
-
-            foreach (SearchItem listItem1 in list)
-            {
-                //重複するキーは基本的に無いという前提
-                try
-                {
-                    listKeys.Add(listItem1.EventInfo.Create64PgKey(), listItem1);
-                    listItem1.ReserveInfo = null;
-                }
-                catch { }
-            }
-
-            SearchItem setItem;
-            foreach (ReserveData data in CommonManager.Instance.DB.ReserveList.Values)
-            {
-                if (listKeys.TryGetValue(data.Create64PgKey(), out setItem))
-                {
-                    setItem.ReserveInfo = data;
-                }
-            }
-        }
-
-        public EpgEventInfo SearchEventLikeThat(ReserveData resInfo)
-        {
-            if (resInfo == null) return null;
-            double dist = double.MaxValue, dist1;
-            EpgEventInfo eventPossible = null;
-
-            UInt64 key = resInfo.Create64Key();
-            if (CommonManager.Instance.DB.ServiceEventList.ContainsKey(key) == true)
-            {
-                foreach (EpgEventInfo eventChkInfo in CommonManager.Instance.DB.ServiceEventList[key].eventList)
-                {
-                    dist1 = Math.Abs((resInfo.StartTime - eventChkInfo.start_time).TotalSeconds);
-                    double overlapLength = CulcOverlapLength(resInfo.StartTime, resInfo.DurationSecond,
-                                                            eventChkInfo.start_time, eventChkInfo.durationSec);
-
-                    //開始時間が最も近いものを選ぶ。同じ差なら時間が前のものを選ぶ
-                    if (overlapLength >= 0 && (dist > dist1 ||
-                        dist == dist1 && (eventPossible == null || resInfo.StartTime > eventChkInfo.start_time)))
-                    {
-                        dist = dist1;
-                        eventPossible = eventChkInfo;
-                        if (dist == 0) break;
-                    }
-                }
-            }
-
-            return eventPossible;
-        }
-
         /// <summary>重複してない場合は負数が返る。</summary>
         public static double CulcOverlapLength(DateTime s1, uint d1, DateTime s2, uint d2)
         {
@@ -1157,20 +1057,6 @@ namespace EpgTimer
             {
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
-        }
-
-        public List<string> GetRecFolderViewList(RecSettingData recSetting)
-        {
-            var list = new List<string>();
-            List<string> defs = Settings.GetDefRecFolders();
-            string def1 = defs.Count == 0 ? "!Default" : defs[0];
-            Func<string, string> AdjustName = (f => f == "!Default" ? def1 : f);
-            if (recSetting != null)
-            {
-                recSetting.RecFolderList.ForEach(info => list.Add(AdjustName(info.RecFolder)));
-                recSetting.PartialRecFolder.ForEach(info => list.Add("(ワンセグ) " + AdjustName(info.RecFolder)));
-            }
-            return list;
         }
 
     }

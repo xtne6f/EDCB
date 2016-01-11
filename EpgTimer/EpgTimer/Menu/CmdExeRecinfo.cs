@@ -75,7 +75,7 @@ namespace EpgTimer
         }
         protected override void mc_SearchTitle(object sender, ExecutedRoutedEventArgs e)
         {
-            mutil.SearchText(dataList[0].Title, CmdExeUtil.IsKeyGesture(e));
+            mutil.SearchTextWeb(dataList[0].Title, CmdExeUtil.IsKeyGesture(e));
             IsCommandExecuted = true;
         }
         protected override void mcs_ctxmLoading_switch(ContextMenu ctxm, MenuItem menu)

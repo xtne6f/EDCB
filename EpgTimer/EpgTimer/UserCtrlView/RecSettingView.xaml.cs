@@ -488,8 +488,8 @@ namespace EpgTimer
         {
             RecSettingData recSet = recSetting.Clone();
             recSet.UseMargineFlag = (byte)(checkBox_margineDef.IsChecked == true ? 0 : 1);
-            textBox_margineStart.Text = CommonManager.Instance.MUtil.GetMargin(recSet, true).ToString();
-            textBox_margineEnd.Text = CommonManager.Instance.MUtil.GetMargin(recSet, false).ToString();
+            textBox_margineStart.Text = recSet.GetTrueMargin(true).ToString();
+            textBox_margineEnd.Text = recSet.GetTrueMargin(false).ToString();
         }
 
         private void checkBox_serviceMode_Checked(object sender, RoutedEventArgs e)

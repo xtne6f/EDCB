@@ -256,7 +256,7 @@ namespace EpgTimer
 
         private void ReloadReserveData()
         {
-            mutil.SetSearchItemReserved(lstCtrl.dataList);
+            lstCtrl.dataList.SetReserveData();
             this.listView_result.Items.Refresh();
             RefreshStatus();
         }

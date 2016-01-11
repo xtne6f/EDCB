@@ -115,7 +115,7 @@ namespace EpgTimer
         private void ReloadReserveViewItem()
         {
             //予約チェック
-            mutil.SetSearchItemReserved(lstCtrl.dataList);
+            lstCtrl.dataList.SetReserveData();
             listView_event.Items.Refresh();
         }
 
@@ -265,7 +265,7 @@ namespace EpgTimer
             {
                 //プログラム予約だと見つからないので、それらしい番組を引っ張ってきて再度確認する。
                 //でもリスト番組表で探すより、プログラム予約でも表示させられる標準モードへ投げてしまった方が良いのかも？
-                EpgEventInfo target_like = mutil.SearchEventLikeThat(target);
+                EpgEventInfo target_like = target.SearchEventInfoLikeThat();
                 if (target_like != null)
                 {
                     MoveToProgramItem(target_like, IsMarking);

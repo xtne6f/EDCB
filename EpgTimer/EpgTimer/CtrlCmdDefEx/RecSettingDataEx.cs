@@ -18,6 +18,66 @@ namespace EpgTimer
             return preset == null ? new RecPresetItem("登録時", 0xFFFFFFFF) : preset;
         }
 
+        public static List<string> GetRecFolderViewList(this RecSettingData recSetting)
+        {
+            var list = new List<string>();
+            List<string> defs = Settings.GetDefRecFolders();
+            string def1 = defs.Count == 0 ? "!Default" : defs[0];
+            Func<string, string> AdjustName = (f => f == "!Default" ? def1 : f);
+            if (recSetting != null)
+            {
+                recSetting.RecFolderList.ForEach(info => list.Add(AdjustName(info.RecFolder)));
+                recSetting.PartialRecFolder.ForEach(info => list.Add("(ワンセグ) " + AdjustName(info.RecFolder)));
+            }
+            return list;
+        }
+
+        public static string GetTrueMarginText(this RecSettingData recSetting, bool start)
+        {
+            return CustomTimeFormat(recSetting.GetTrueMargin(start) * (start ? -1 : 1), recSetting.UseMargineFlag);
+        }
+
+        public static int GetTrueMargin(this RecSettingData recSetting, bool start)
+        {
+            if (recSetting == null) return 0;
+
+            int marginTime;
+            if (recSetting.UseMargineFlag == 1)
+            {
+                marginTime = start ? recSetting.StartMargine : recSetting.EndMargine;
+            }
+            else
+            {
+                marginTime = IniFileHandler.GetPrivateProfileInt("SET", start ? "StartMargin" : "EndMargin", 0, SettingPath.TimerSrvIniPath);
+            }
+            return marginTime;
+        }
+
+        public static double GetTrueMarginForSort(this RecSettingData recSetting, bool start)
+        {
+            if (recSetting == null) return 0;
+            //
+            return recSetting.GetTrueMargin(start) * (start ? -1 : 1) + (recSetting.UseMargineFlag == 1 ? 0.1 : 0);
+        }
+
+        private static string CustomTimeFormat(int span, byte useMarginFlag)
+        {
+            string hours;
+            string minutes;
+            string seconds = (span % 60).ToString("00;00");
+            if (Math.Abs(span) < 3600)
+            {
+                hours = "";
+                minutes = (span / 60).ToString("0;0") + ":";
+            }
+            else
+            {
+                hours = (span / 3600).ToString("0;0") + ":";
+                minutes = ((span % 3600) / 60).ToString("00;00") + ":";
+            }
+            return span.ToString("+;-") + hours + minutes + seconds + (useMarginFlag == 1 ? " " : "*");
+        }
+
         public static List<RecSettingData> Clone(this List<RecSettingData> src) { return CopyObj.Clone(src, CopyData); }
         public static RecSettingData Clone(this RecSettingData src) { return CopyObj.Clone(src, CopyData); }
         public static void CopyTo(this RecSettingData src, RecSettingData dest) { CopyObj.CopyTo(src, dest, CopyData); }

@@ -43,7 +43,7 @@ namespace EpgTimer
                 {
                     if (ReserveInfo != null)
                     {
-                        eventInfo = CommonManager.Instance.GetEpgEventInfoFromReserveData(ReserveInfo, false);
+                        eventInfo = ReserveInfo.SearchEventInfo(false);
                     }
                 }
                 return eventInfo;
@@ -130,7 +130,7 @@ namespace EpgTimer
             {
                 if (ReserveInfo == null) return "";
                 //
-                return mutil.MarginText(ReserveInfo.RecSetting,true);
+                return ReserveInfo.RecSetting.GetTrueMarginText(true);
             }
         }
         public Double MarginStartValue
@@ -139,7 +139,7 @@ namespace EpgTimer
             {
                 if (ReserveInfo == null) return Double.MinValue;
                 //
-                return mutil.GetMarginForSort(ReserveInfo.RecSetting, true);
+                return ReserveInfo.RecSetting.GetTrueMarginForSort(true);
             }
         }
         public String MarginEnd
@@ -148,7 +148,7 @@ namespace EpgTimer
             {
                 if (ReserveInfo == null) return "";
                 //
-                return mutil.MarginText(ReserveInfo.RecSetting, false);
+                return ReserveInfo.RecSetting.GetTrueMarginText(false);
             }
         }
         public Double MarginEndValue
@@ -157,7 +157,7 @@ namespace EpgTimer
             {
                 if (ReserveInfo == null) return Double.MinValue;
                 //
-                return mutil.GetMarginForSort(ReserveInfo.RecSetting, false);
+                return ReserveInfo.RecSetting.GetTrueMarginForSort(false);
             }
         }
         //public String ProgramContent -> SearchItem.cs
@@ -253,7 +253,7 @@ namespace EpgTimer
             {
                 if (ReserveInfo == null) new List<string>();
                 //
-                return mutil.GetRecFolderViewList(ReserveInfo.RecSetting);
+                return ReserveInfo.RecSetting.GetRecFolderViewList();
             }
         }
         public List<String> RecFileName

@@ -286,7 +286,32 @@ namespace EpgTimer
 
                 itemlist.Add(new SearchItem(info));
             }
-            CommonManager.Instance.MUtil.SetSearchItemReserved(itemlist);
+            itemlist.SetReserveData();
+        }
+
+        public static void SetReserveData(this ICollection<SearchItem> list)
+        {
+            var listKeys = new Dictionary<ulong, SearchItem>();
+
+            foreach (SearchItem listItem1 in list)
+            {
+                //重複するキーは基本的に無いという前提
+                try
+                {
+                    listKeys.Add(listItem1.EventInfo.Create64PgKey(), listItem1);
+                    listItem1.ReserveInfo = null;
+                }
+                catch { }
+            }
+
+            SearchItem setItem;
+            foreach (ReserveData data in CommonManager.Instance.DB.ReserveList.Values)
+            {
+                if (listKeys.TryGetValue(data.Create64PgKey(), out setItem))
+                {
+                    setItem.ReserveInfo = data;
+                }
+            }
         }
 
     }

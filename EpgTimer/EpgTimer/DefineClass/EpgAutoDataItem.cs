@@ -292,7 +292,7 @@ namespace EpgTimer
             {
                 if (EpgAutoAddInfo == null) return "";
                 //
-                return mutil.MarginText(EpgAutoAddInfo.recSetting, true);
+                return EpgAutoAddInfo.recSetting.GetTrueMarginText(true);
             }
         }
         public Double MarginStartValue
@@ -301,7 +301,7 @@ namespace EpgTimer
             {
                 if (EpgAutoAddInfo == null) return Double.MinValue;
                 //
-                return mutil.GetMarginForSort(EpgAutoAddInfo.recSetting, true);
+                return EpgAutoAddInfo.recSetting.GetTrueMarginForSort(true);
             }
         }
         public String MarginEnd
@@ -310,7 +310,7 @@ namespace EpgTimer
             {
                 if (EpgAutoAddInfo == null) return "";
                 //
-                return mutil.MarginText(EpgAutoAddInfo.recSetting, false);
+                return EpgAutoAddInfo.recSetting.GetTrueMarginText(false);
             }
         }
         public Double MarginEndValue
@@ -319,7 +319,7 @@ namespace EpgTimer
             {
                 if (EpgAutoAddInfo == null) return Double.MinValue;
                 //
-                return mutil.GetMarginForSort(EpgAutoAddInfo.recSetting, false);
+                return EpgAutoAddInfo.recSetting.GetTrueMarginForSort(false);
             }
         }
         public String Preset
@@ -337,7 +337,7 @@ namespace EpgTimer
             {
                 if (EpgAutoAddInfo == null) new List<string>();
                 //
-                return mutil.GetRecFolderViewList(EpgAutoAddInfo.recSetting);
+                return EpgAutoAddInfo.recSetting.GetRecFolderViewList();
             }
         }
         public bool KeyEnabled

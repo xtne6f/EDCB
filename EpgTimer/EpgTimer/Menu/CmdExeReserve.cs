@@ -49,7 +49,7 @@ namespace EpgTimer
                 eventListEx = new List<EpgEventInfo>();
                 eventList.ForEach(epg => 
                 {
-                    if (dataList.All(res => CommonManager.EqualsPg(epg, res) == false))
+                    if (dataList.All(res => CtrlCmdDefEx.EqualsPg(epg, res) == false))
                     {
                         eventListEx.Add(epg);
                     }
@@ -242,11 +242,11 @@ namespace EpgTimer
         {
             if (eventList.Count != 0)//番組情報優先
             {
-                mutil.SearchText(eventList[0].Title(), CmdExeUtil.IsKeyGesture(e));
+                mutil.SearchTextWeb(eventList[0].Title(), CmdExeUtil.IsKeyGesture(e));
             }
             else if (dataList.Count != 0)
             {
-                mutil.SearchText(dataList[0].Title, CmdExeUtil.IsKeyGesture(e));
+                mutil.SearchTextWeb(dataList[0].Title, CmdExeUtil.IsKeyGesture(e));
             }
             IsCommandExecuted = true;
         }
