@@ -134,7 +134,6 @@ namespace EpgTimer
             if (dict == null)
             {
                 //notify残ってれば更新
-                ReloadReserveInfo();//通常残ってないはず
                 ReloadEpgAutoAddInfo();
                 ReloadManualAutoAddInfo();
 
