@@ -237,14 +237,17 @@ namespace EpgTimer
             {
                 if (ReserveInfo == null) return "";
                 //
-                String view = ReserveInfo.Comment;
-                view = view.StartsWith("EPG自動予約(") == true ? "キーワード予約(" + view.Substring(8) : view;
-                view = (ReserveInfo.IsAutoAddMissing() == true ? "不明な" : "") + view;
-                if (view == "")
+
+                if (ReserveInfo.Comment == "")
                 {
-                    view = "個別予約(" + (ReserveInfo.EventID == 0xFFFF ? "プログラム" : "EPG") + ")";
+                    return "個別予約(" + (ReserveInfo.EventID == 0xFFFF ? "プログラム" : "EPG") + ")";
                 }
-                return view;
+                else
+                {
+                    string s = ReserveInfo.Comment;
+                    return (ReserveInfo.IsAutoAddMissing() == true ? "不明な" : "")
+                            + (s.StartsWith("EPG自動予約(") == true ? "キーワード予約(" + s.Substring(8) : s);
+                }
             }
         }
         public List<String> RecFolder
