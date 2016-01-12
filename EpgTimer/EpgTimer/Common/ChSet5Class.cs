@@ -10,7 +10,6 @@ namespace EpgTimer
         public Dictionary<UInt64, ChSet5Item> ChList
         {
             get;
-            set;
         }
         
         private static ChSet5 _instance;
@@ -22,7 +21,6 @@ namespace EpgTimer
                     _instance = new ChSet5();
                 return _instance;
             }
-            set { _instance = value; }
         }
 
         public ChSet5()
@@ -30,20 +28,11 @@ namespace EpgTimer
             ChList = new Dictionary<UInt64, ChSet5Item>();
         }
 
-        public static bool LoadFile()
+        public static bool Load(System.IO.StreamReader reader)
         {
             try
             {
-                if (Instance.ChList == null)
-                {
-                    Instance.ChList = new Dictionary<UInt64, ChSet5Item>();
-                }
-                else
-                {
-                    Instance.ChList.Clear();
-                }
-                String filePath = SettingPath.SettingFolderPath + "\\ChSet5.txt";
-                System.IO.StreamReader reader = (new System.IO.StreamReader(filePath, System.Text.Encoding.Default));
+                Instance.ChList.Clear();
                 while (reader.Peek() >= 0)
                 {
                     string buff = reader.ReadLine();
@@ -74,9 +63,6 @@ namespace EpgTimer
                         }
                     }
                 }
-
-                reader.Close();
-
             }
             catch
             {

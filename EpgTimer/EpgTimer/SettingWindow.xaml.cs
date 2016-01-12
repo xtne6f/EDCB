@@ -31,7 +31,10 @@ namespace EpgTimer
             setOtherAppView.SaveSetting();
 
             Settings.SaveToXmlFile();
-            ChSet5.SaveFile();
+            if (CommonManager.Instance.NWMode == false)
+            {
+                ChSet5.SaveFile();
+            }
             CommonManager.Instance.ReloadCustContentColorList();
 
             this.DialogResult = true;
