@@ -25,7 +25,6 @@ namespace EpgTimer
         private System.Threading.Mutex mutex;
 
         private TaskTrayClass taskTray = null;
-        private bool serviceMode = false;
         private Dictionary<string, Button> buttonList = new Dictionary<string, Button>();
         private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
 
@@ -100,54 +99,24 @@ namespace EpgTimer
 
             if (CommonManager.Instance.NWMode == false)
             {
-                bool startExe = false;
+                bool startExe = true;
                 try
                 {
-                    if (ServiceCtrlClass.ServiceIsInstalled("EpgTimer Service") == true)
+                    using (Mutex.OpenExisting("Global\\EpgTimer_Bon_Service")) { }
+                }
+                catch (WaitHandleCannotBeOpenedException)
+                {
+                    //二重起動抑止Mutexが存在しないのでEpgTimerSrvを起動する
+                    //サービスモード時は何もしない(遅延開始かもしれないので失敗にはしない)
+                    if (System.ServiceProcess.ServiceController.GetServices().All(sc => string.Compare(sc.ServiceName, "EpgTimer Service", true) != 0))
                     {
-                        if (ServiceCtrlClass.IsStarted("EpgTimer Service") == false)
-                        {
-                            bool check = false;
-                            for (int i = 0; i < 5; i++)
-                            {
-                                if (ServiceCtrlClass.StartService("EpgTimer Service") == true)
-                                {
-                                    check = true;
-                                }
-                                System.Threading.Thread.Sleep(1000);
-                                if (ServiceCtrlClass.IsStarted("EpgTimer Service") == true)
-                                {
-                                    check = true;
-                                }
-                            }
-                            if (check == false)
-                            {
-                                MessageBox.Show("サービスの開始に失敗しました。\r\nVista以降のOSでは、管理者権限で起動されている必要があります。");
-                                closeFlag = true;
-                                Close();
-                                return;
-                            }
-                            else
-                            {
-                                serviceMode = true;
-                                startExe = true;
-                            }
-                        }
-                        else
-                        {
-                            serviceMode = true;
-                            startExe = true;
-                        }
+                        startExe = false;
                     }
                 }
-                catch (Exception ex)
-                {
-                    MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                    serviceMode = false;
-                }
+                catch { }
                 try
                 {
-                    if (serviceMode == false)
+                    if (startExe == false)
                     {
                         String moduleFolder = SettingPath.ModulePath.TrimEnd('\\');
                         String exePath = moduleFolder + "\\EpgTimerSrv.exe";
@@ -603,7 +572,7 @@ namespace EpgTimer
 
                     if (mutex != null)
                     {
-                        if (serviceMode == false && initExe == true)
+                        if (System.ServiceProcess.ServiceController.GetServices().All(sc => string.Compare(sc.ServiceName, "EpgTimer Service", true) != 0) && initExe == true)
                         {
                             cmd.SendClose();
                         }
@@ -813,7 +782,6 @@ namespace EpgTimer
             }
             if (setting.ShowDialog() == true)
             {
-                if (setting.ServiceStop == false)
                 {
                     if (CommonManager.Instance.NWMode == true)
                     {
@@ -835,13 +803,6 @@ namespace EpgTimer
                     ResetTaskMenu();
                     RefreshMenu(false);
                 }
-            }
-            if (setting.ServiceStop == true)
-            {
-                MessageBox.Show("サービスの状態を変更したため終了します。");
-                initExe = false;
-                CloseCmd();
-                return;
             }
         }
 

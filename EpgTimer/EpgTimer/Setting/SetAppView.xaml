@@ -183,14 +183,6 @@
                     <Button Content="削除" Height="23" HorizontalAlignment="Left" Margin="412,80,0,0" Name="button_del" VerticalAlignment="Top" Width="59" Click="button_del_iepg_Click" />
                 </Grid>
             </TabItem>
-            <TabItem Header="Windowsサービス" Name="tabItem7">
-                <Grid>
-                    <Label Content="※ Vista以降のOSでは、管理者権限で起動されている必要があります。" Height="28" HorizontalAlignment="Left" Margin="12,12,0,0" Name="label71" VerticalAlignment="Top" Foreground="Red" />
-                    <Button Content="Windowsサービスとしてインストール" Height="23" HorizontalAlignment="Left" Margin="12,46,0,0" Name="button_inst" VerticalAlignment="Top" Width="258" Click="button_inst_Click" />
-                    <Button Content="Windowsサービスからアンインストール" Height="23" HorizontalAlignment="Left" Margin="12,89,0,0" Name="button_uninst" VerticalAlignment="Top" Width="258" Click="button_uninst_Click" />
-                    <Button Content="サービスを停止" Height="23" HorizontalAlignment="Left" Margin="12,132,0,0" Name="button_stop" VerticalAlignment="Top" Width="258" Click="button_stop_Click" />
-                </Grid>
-            </TabItem>
         </TabControl>
     </Grid>
 </UserControl>
