@@ -59,7 +59,6 @@ namespace EpgTimer
 
         public void SavePreset()
         {
-            Settings.Instance.RecPresetList.Clear();
             string saveID = "";
             for (int i = 0; i < comboBox_preSet.Items.Count; i++)
             {
@@ -68,7 +67,6 @@ namespace EpgTimer
 
                 preItem.ID = (UInt32)i;
                 preItem.SaveRecPresetData();
-                Settings.Instance.RecPresetList.Add(preItem.Clone());
 
                 if (preItem.ID != 0)
                 {
@@ -78,6 +76,7 @@ namespace EpgTimer
             }
             IniFileHandler.WritePrivateProfileString("SET", "PresetID", saveID, SettingPath.TimerSrvIniPath);
             Settings.SaveToXmlFile();
+            Settings.Instance.RecPresetList = null;
 
             if (CommonManager.Instance.NWMode == false) CommonManager.Instance.CtrlCmd.SendNotifyProfileUpdate();
         }

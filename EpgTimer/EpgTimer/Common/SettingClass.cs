@@ -55,7 +55,6 @@ namespace EpgTimer
             if (CommonManager.Instance.NW.IsConnected == false) return;
 
             ReloadSettingFilesNW(iniList);
-            Settings.UpdateDefRecSetting();
             Settings.Instance.ReloadOtherOptions();
             ChSet5.LoadFile();
         }
@@ -705,9 +704,29 @@ namespace EpgTimer
             get { return defSearchKey; }
             set { defSearchKey = value; }
         }
+        [System.Xml.Serialization.XmlIgnore]
         public List<RecPresetItem> RecPresetList
         {
-            get { return recPresetList; }
+            get
+            {
+                if (recPresetList == null)
+                {
+                    recPresetList = new List<RecPresetItem>();
+                    recPresetList.Add(new RecPresetItem("デフォルト", 0));
+                    foreach (string s in IniFileHandler.GetPrivateProfileString("SET", "PresetID", "", SettingPath.TimerSrvIniPath).Split(','))
+                    {
+                        uint id;
+                        uint.TryParse(s, out id);
+                        if (recPresetList.Exists(p => p.ID == id) == false)
+                        {
+                            recPresetList.Add(new RecPresetItem(
+                                IniFileHandler.GetPrivateProfileString("REC_DEF" + id, "SetName", "", SettingPath.TimerSrvIniPath)
+                                , id));
+                        }
+                    }
+                }
+                return recPresetList;
+            }
             set { recPresetList = value; }
         }
         public string RecInfoColumnHead
@@ -1148,7 +1167,7 @@ namespace EpgTimer
             andKeyList = new List<string>();
             notKeyList = new List<string>();
             defSearchKey = new EpgSearchKeyInfo();
-            recPresetList = new List<RecPresetItem>();
+            recPresetList = null;
             recInfoColumnHead = "";
             recInfoSortDirection = ListSortDirection.Ascending;
             recInfoDropErrIgnore = 0;
@@ -1558,25 +1577,12 @@ namespace EpgTimer
             preset.RecPresetData.CopyTo(defKey);
         }
 
-        //プリセットの更新
-        public static void UpdateDefRecSetting()
-        {
-            Settings.Instance.RecPresetList.Clear();
-            string pIDs = "0," + IniFileHandler.GetPrivateProfileString("SET", "PresetID", "", SettingPath.TimerSrvIniPath);
-            foreach (string pID in pIDs.Split(','))
-            {
-                uint id;
-                if (uint.TryParse(pID, out id) == false) continue;
-                string name = IniFileHandler.GetPrivateProfileString("REC_DEF" + (id == 0 ? "" : id.ToString()), "SetName", "", SettingPath.TimerSrvIniPath);
-                Settings.Instance.RecPresetList.Add(new RecPresetItem(name, id));
-            }
-        }
-
         public void ReloadOtherOptions()
         {
             DefStartMargin = IniFileHandler.GetPrivateProfileInt("SET", "StartMargin", 0, SettingPath.TimerSrvIniPath);
             DefEndMargin = IniFileHandler.GetPrivateProfileInt("SET", "EndMargin", 0, SettingPath.TimerSrvIniPath);
             folders = null;
+            recPresetList = null;
         }
 
         //デフォルトマージン
