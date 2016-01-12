@@ -40,8 +40,6 @@ namespace EpgTimer.Setting
         private Dictionary<UInt64, ServiceViewItem> serviceList = new Dictionary<UInt64, ServiceViewItem>();
         private List<IEPGStationInfo> stationList = new List<IEPGStationInfo>();
 
-        public bool ServiceStop = false;
-
         public SetAppView()
         {
             InitializeComponent();
@@ -50,7 +48,6 @@ namespace EpgTimer.Setting
             {
                 tabItem1.IsEnabled = false;
                 tabItem2.IsEnabled = false;
-                tabItem7.IsEnabled = false;
                 tabControl1.SelectedItem = tabItem3;
                 checkBox_tcpServer.IsEnabled = false;
                 label41.IsEnabled = false;
@@ -348,8 +345,6 @@ namespace EpgTimer.Setting
 
                 stationList = Settings.Instance.IEpgStationList;
                 ReLoadStation();
-
-                UpdateServiceBtn();
             }
             catch (Exception ex)
             {
@@ -1047,65 +1042,6 @@ namespace EpgTimer.Setting
         private void listBox_service_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             ReLoadStation();
-        }
-
-        private void UpdateServiceBtn()
-        {
-            if (ServiceCtrlClass.ServiceIsInstalled("EpgTimer Service") == false)
-            {
-                button_inst.IsEnabled = true;
-                button_uninst.IsEnabled = false;
-                button_stop.IsEnabled = false;
-            }
-            else
-            {
-                button_inst.IsEnabled = false;
-                button_uninst.IsEnabled = true;
-                if (ServiceCtrlClass.IsStarted("EpgTimer Service") == true)
-                {
-                    button_stop.IsEnabled = true;
-                }
-                else
-                {
-                    button_stop.IsEnabled = false;
-                }
-            }
-        }
-        
-        private void button_inst_Click(object sender, RoutedEventArgs e)
-        {
-            String exePath = SettingPath.ModulePath + "\\EpgTimerSrv.exe";
-            if (ServiceCtrlClass.Install("EpgTimer Service", "EpgTimer Service", exePath) == false)
-            {
-                MessageBox.Show("インストールに失敗しました。\r\nVista以降のOSでは、管理者権限で起動されている必要があります。");
-            }
-            UpdateServiceBtn();
-        }
-
-        private void button_uninst_Click(object sender, RoutedEventArgs e)
-        {
-            if (ServiceCtrlClass.Uninstall("EpgTimer Service") == false)
-            {
-                MessageBox.Show("アンインストールに失敗しました。\r\nVista以降のOSでは、管理者権限で起動されている必要があります。");
-            }
-            else
-            {
-                ServiceStop = true;
-            }
-            UpdateServiceBtn();
-        }
-
-        private void button_stop_Click(object sender, RoutedEventArgs e)
-        {
-            if (ServiceCtrlClass.StopService("EpgTimer Service") == false)
-            {
-                MessageBox.Show("サービスの停止に失敗しました。\r\nVista以降のOSでは、管理者権限で起動されている必要があります。");
-            }
-            else
-            {
-                ServiceStop = true;
-            }
-            UpdateServiceBtn();
         }
     }
 }

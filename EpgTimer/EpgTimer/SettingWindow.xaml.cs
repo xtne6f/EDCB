@@ -18,8 +18,6 @@ namespace EpgTimer
     /// </summary>
     public partial class SettingWindow : Window
     {
-        public bool ServiceStop = false;
-
         public SettingWindow()
         {
             InitializeComponent();
@@ -27,10 +25,6 @@ namespace EpgTimer
 
         private void button_OK_Click(object sender, RoutedEventArgs e)
         {
-            if (setAppView.ServiceStop == true)
-            {
-                ServiceStop = true;
-            }
             setBasicView.SaveSetting();
             setAppView.SaveSetting();
             setEpgView.SaveSetting();
