@@ -178,7 +178,6 @@ namespace EpgTimer
         private byte searchKeyFreeCA;
         private byte searchKeyChkRecEnd;
         private UInt16 searchKeyChkRecDay;
-        private List<RecPresetItem> recPresetList;
         private double recInfoColumnWidth0;
         private double recInfoColumnWidth1;
         private double recInfoColumnWidth2;
@@ -600,10 +599,28 @@ namespace EpgTimer
             get { return searchKeyChkRecDay; }
             set { searchKeyChkRecDay = value; }
         }
+        [System.Xml.Serialization.XmlIgnore]
         public List<RecPresetItem> RecPresetList
         {
-            get { return recPresetList; }
-            set { recPresetList = value; }
+            get
+            {
+                var list = new List<RecPresetItem>();
+                list.Add(new RecPresetItem());
+                list[0].DisplayName = "デフォルト";
+                list[0].ID = 0;
+                foreach (string s in IniFileHandler.GetPrivateProfileString("SET", "PresetID", "", SettingPath.TimerSrvIniPath).Split(','))
+                {
+                    uint id;
+                    uint.TryParse(s, out id);
+                    if (list.Exists(p => p.ID == id) == false)
+                    {
+                        list.Add(new RecPresetItem());
+                        list.Last().DisplayName = IniFileHandler.GetPrivateProfileString("REC_DEF" + id, "SetName", "", SettingPath.TimerSrvIniPath);
+                        list.Last().ID = id;
+                    }
+                }
+                return list;
+            }
         }
         public double RecInfoColumnWidth0
         {
@@ -1019,7 +1036,6 @@ namespace EpgTimer
             searchKeyContentList = new List<ContentKindInfo>();
             searchKeyDateItemList = new List<DateItem>();
             searchKeyServiceList = new List<Int64>();
-            recPresetList = new List<RecPresetItem>();
             recInfoColumnHead = "";
             recInfoSortDirection = ListSortDirection.Ascending;
             tvTestExe = "";
