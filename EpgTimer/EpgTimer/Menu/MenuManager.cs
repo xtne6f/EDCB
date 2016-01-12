@@ -601,7 +601,7 @@ namespace EpgTimer
                 if (defOutPutted == false && (recflg && fldrs.Count == 0 || fldrs.Any(info => info.RecFolder == "!Default")))
                 {
                     defOutPutted = true;
-                    Settings.GetDefRecFolders().ForEach(folder => CtxmGenerateOpenFolderItem(menu, folder, header_exp + "(デフォルト) "));
+                    Settings.Instance.DefRecFolders.ForEach(folder => CtxmGenerateOpenFolderItem(menu, folder, header_exp + "(デフォルト) "));
                 }
 
                 foreach (var info in fldrs.Where(info => info.RecFolder != "!Default"))

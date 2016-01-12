@@ -40,6 +40,7 @@ namespace EpgTimer
 
                 Settings.SaveToXmlFile();
                 ChSet5.SaveFile();
+                Settings.Instance.ReloadOtherOptions();
                 CommonManager.Instance.ReloadCustContentColorList();
             }
             catch (Exception ex)

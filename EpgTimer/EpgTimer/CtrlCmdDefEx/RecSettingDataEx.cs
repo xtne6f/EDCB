@@ -7,21 +7,19 @@ namespace EpgTimer
 {
     public static class RecSettingDataEx
     {
-        public static RecPresetItem LookUpPreset(this RecSettingData data, bool IsManual = false)
+        public static RecPresetItem LookUpPreset(this RecSettingData data, bool IsManual = false, bool CopyData = false)
         {
             RecPresetItem preset = Settings.Instance.RecPresetList.FirstOrDefault(p1 =>
             {
-                var pdata = new RecSettingData();
-                Settings.GetDefRecSetting(p1.ID, ref pdata);
-                return pdata.EqualsSettingTo(data, IsManual);
+                return p1.RecPresetData.EqualsSettingTo(data, IsManual);
             });
-            return preset == null ? new RecPresetItem("登録時", 0xFFFFFFFF) : preset;
+            return preset == null ? new RecPresetItem("登録時", 0xFFFFFFFF, CopyData == true ? data.Clone() : null) : preset;
         }
 
         public static List<string> GetRecFolderViewList(this RecSettingData recSetting)
         {
             var list = new List<string>();
-            List<string> defs = Settings.GetDefRecFolders();
+            List<string> defs = Settings.Instance.DefRecFolders;
             string def1 = defs.Count == 0 ? "!Default" : defs[0];
             Func<string, string> AdjustName = (f => f == "!Default" ? def1 : f);
             if (recSetting != null)
@@ -48,7 +46,7 @@ namespace EpgTimer
             }
             else
             {
-                marginTime = IniFileHandler.GetPrivateProfileInt("SET", start ? "StartMargin" : "EndMargin", 0, SettingPath.TimerSrvIniPath);
+                marginTime = start ? Settings.Instance.DefStartMargin : Settings.Instance.DefEndMargin;
             }
             return marginTime;
         }

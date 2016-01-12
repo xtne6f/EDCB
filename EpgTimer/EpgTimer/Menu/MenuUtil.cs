@@ -1012,7 +1012,7 @@ namespace EpgTimer
             }
             else
             {
-                List<string> defFolders = Settings.GetDefRecFolders();
+                List<string> defFolders = Settings.Instance.DefRecFolders;
                 if (defFolders.Count != 0)
                 {
                     folder = defFolders[0];

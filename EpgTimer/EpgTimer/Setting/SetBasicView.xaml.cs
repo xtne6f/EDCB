@@ -63,7 +63,7 @@ namespace EpgTimer.Setting
                 textBox_setPath.Text = SettingPath.SettingFolderPath;
                 textBox_exe.Text = SettingPath.EdcbExePath;
 
-                Settings.GetDefRecFolders().ForEach(folder => listBox_recFolder.Items.Add(folder));
+                Settings.Instance.DefRecFolders.ForEach(folder => listBox_recFolder.Items.Add(folder));
                 textBox_recInfoFolder.Text = IniFileHandler.GetPrivateProfileString("SET", "RecInfoFolder", "", SettingPath.CommonIniPath);
 
                 button_shortCut.Content = SettingPath.ModuleName + ".exe" + (File.Exists(
