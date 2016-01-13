@@ -26,7 +26,6 @@ namespace EpgTimer.Setting
 
             if (CommonManager.Instance.NWMode == true)
             {
-                tabItem_play.IsEnabled = false;
                 label3.IsEnabled = false;
                 listBox_bon.IsEnabled = false;
                 button_del.IsEnabled = false;
