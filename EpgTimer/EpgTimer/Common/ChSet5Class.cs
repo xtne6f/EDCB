@@ -7,7 +7,17 @@ namespace EpgTimer
 {
     class ChSet5
     {
-        public Dictionary<UInt64, ChSet5Item> ChList { get; set; }
+        private Dictionary<UInt64, ChSet5Item> _chList = null;
+        public Dictionary<UInt64, ChSet5Item> ChList
+        {
+            get
+            {
+                if (_chList == null) LoadFile();
+                return _chList;
+            }
+            private set { _chList = value; }
+        }
+        public static void Clear() { Instance._chList = null; }
         
         private static ChSet5 _instance;
         public static ChSet5 Instance
@@ -21,10 +31,7 @@ namespace EpgTimer
             set { _instance = value; }
         }
 
-        public ChSet5()
-        {
-            ChList = new Dictionary<UInt64, ChSet5Item>();
-        }
+        public ChSet5() { }
 
         public static bool IsVideo(UInt16 ServiceType)
         {
@@ -59,7 +66,7 @@ namespace EpgTimer
         {
             try
             {
-                Instance.ChList = new Dictionary<UInt64, ChSet5Item>();
+                Instance._chList = new Dictionary<UInt64, ChSet5Item>();
 
                 string filePath = SettingPath.SettingFolderPath + "\\ChSet5.txt";
                 System.IO.StreamReader reader = (new System.IO.StreamReader(filePath, Encoding.Default));
@@ -89,7 +96,7 @@ namespace EpgTimer
                         finally
                         {
                             UInt64 key = item.Key;
-                            Instance.ChList.Add(key, item);
+                            Instance._chList.Add(key, item);
                         }
                     }
                 }
@@ -109,9 +116,9 @@ namespace EpgTimer
             {
                 String filePath = SettingPath.SettingFolderPath + "\\ChSet5.txt";
                 System.IO.StreamWriter writer = (new System.IO.StreamWriter(filePath, false, System.Text.Encoding.Default));
-                if (Instance.ChList != null)
+                if (Instance._chList != null)
                 {
-                    foreach (ChSet5Item info in Instance.ChList.Values)
+                    foreach (ChSet5Item info in Instance._chList.Values)
                     {
                         writer.WriteLine("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}",
                             info.ServiceName,

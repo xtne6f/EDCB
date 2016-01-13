@@ -56,7 +56,6 @@ namespace EpgTimer
                 ChkRegistTCPTimerWork();
             }
 
-            ChSet5.LoadFile();
             CommonManager.Instance.MM.ReloadWorkData();
             CommonManager.Instance.ReloadCustContentColorList();
 

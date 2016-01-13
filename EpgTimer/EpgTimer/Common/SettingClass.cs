@@ -55,8 +55,8 @@ namespace EpgTimer
             if (CommonManager.Instance.NW.IsConnected == false) return;
 
             ReloadSettingFilesNW(iniList);
+            ChSet5.Clear();
             Settings.Instance.ReloadOtherOptions();
-            ChSet5.LoadFile();
         }
 
         public static void ReloadSettingFilesNW(List<string> iniList = null)
