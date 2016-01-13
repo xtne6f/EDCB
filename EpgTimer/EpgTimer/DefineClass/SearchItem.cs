@@ -150,6 +150,10 @@ namespace EpgTimer
                 return mutil.GetTooltipBlockStandard(CommonManager.Instance.ConvertProgramText(EventInfo, EventInfoTextMode.All));
             }
         }
+        public override string ToString()
+        {
+            return CommonManager.Instance.ConvertTextSearchString(this.EventName);
+        }
         public virtual String Status
         {
             get

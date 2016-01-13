@@ -214,6 +214,10 @@ namespace EpgTimer
                 return mutil.GetTooltipBlockStandard(RecInfoText);
             }
         }
+        public override string ToString()
+        {
+            return CommonManager.Instance.ConvertTextSearchString(this.EventName);
+        }
         public string RecInfoText
         {
             get
