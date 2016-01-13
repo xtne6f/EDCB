@@ -72,29 +72,23 @@ namespace EpgTimer
             if (dict == null)
             {
                 dict = new Dictionary<uint, EpgAutoAddDataAppend>();
-                List<EpgSearchKeyInfo> keyList = new List<EpgSearchKeyInfo>();
+                List<EpgAutoAddData> srcList = epgAutoAddList.Values.ToList();
 
-                foreach (EpgAutoAddData item in EpgAutoAddList.Values)
-                {
-                    //「検索無効」の対応のため、andKeyをコピーする。
-                    EpgSearchKeyInfo key = item.searchInfo.Clone();
-                    key.keyDisabledFlag = 0; //無効解除
-                    keyList.Add(key);
-                }
+                List<EpgSearchKeyInfo> keyList = srcList.RecSearchKeyList().Clone();
+                keyList.ForEach(key => key.keyDisabledFlag = 0); //無効解除
 
                 try
                 {
-                    List<List<EpgEventInfo>> list_list = new List<List<EpgEventInfo>>();
-                    CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
+                    var list_list = new List<List<EpgEventInfo>>();
                     cmd.SendSearchPgByKey(keyList, ref list_list);
 
                     //通常あり得ないが、コマンド成功にもかかわらず何か問題があった場合は飛ばす
-                    if (epgAutoAddList.Count == list_list.Count)
+                    if (srcList.Count == list_list.Count)
                     {
                         int i = 0;
-                        foreach (EpgAutoAddData item in epgAutoAddList.Values)
+                        foreach (EpgAutoAddData item in srcList)
                         {
-                            dict.Add(item.dataID, new EpgAutoAddDataAppend(item, list_list[i++]));
+                            dict.Add(item.dataID, new EpgAutoAddDataAppend(list_list[i++]));
                         }
                     }
 
@@ -104,16 +98,15 @@ namespace EpgTimer
                 {
                     MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
                 }
+
+                updateAutoAddAppendReserveInfo = true;
             }
 
             //予約情報との突き合わせが古い場合
             if (updateAutoAddAppendReserveInfo == true)
             {
                 ReloadReserveInfo();//notify残ってれば更新
-                foreach (EpgAutoAddDataAppend item in dict.Values)
-                {
-                    item.updateCounts = true;
-                }
+                foreach (EpgAutoAddDataAppend item in dict.Values) item.UpdateCounts();
                 updateAutoAddAppendReserveInfo = false;
             }
 
@@ -121,7 +114,7 @@ namespace EpgTimer
             EpgAutoAddDataAppend retv;
             if (dict.TryGetValue(master.dataID, out retv) == false)
             {
-                retv = new EpgAutoAddDataAppend(master);
+                retv = new EpgAutoAddDataAppend();
             }
             return retv;
         }

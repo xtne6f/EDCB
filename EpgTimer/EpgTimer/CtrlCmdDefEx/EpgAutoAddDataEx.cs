@@ -9,11 +9,11 @@ namespace EpgTimer
     {
         public static uint SearchCount(this EpgAutoAddData master)
         {
-            return CommonManager.Instance.DB.GetEpgAutoAddDataAppend(master).SearchCount;
+            return (uint)CommonManager.Instance.DB.GetEpgAutoAddDataAppend(master).SearchItemList.Count;
         }
         public static uint ReserveCount(this EpgAutoAddData master)
         {
-            return CommonManager.Instance.DB.GetEpgAutoAddDataAppend(master).ReserveCount;
+            return (uint)CommonManager.Instance.DB.GetEpgAutoAddDataAppend(master).ReseveItemList.Count;
         }
         public static uint OnCount(this EpgAutoAddData master)
         {
@@ -68,67 +68,36 @@ namespace EpgTimer
             dest.recSetting = src.recSetting.Clone();       //RecSettingData
             dest.searchInfo = src.searchInfo.Clone();       //EpgSearchKeyInfo
         }
-
     }
 
     public class EpgAutoAddDataAppend
     {
-        public EpgAutoAddDataAppend(EpgAutoAddData master1, List<EpgEventInfo> eventlist = null)
+        public EpgAutoAddDataAppend(List<EpgEventInfo> eventlist = null)
         {
-            master = master1;
-            SetEpgData(eventlist);
+            EpgEventList = eventlist != null ? eventlist : new List<EpgEventInfo>();
+            SearchItemList = new List<SearchItem>();
+            ReseveItemList = new List<ReserveData>();
+            NextReserve = null;
+            OnCount = 0;
+            OffCount = 0;
         }
 
-        private EpgAutoAddData master;
-        private List<EpgEventInfo> epgEventList;
-        private List<SearchItem> searchItemList;
-        private List<ReserveData> reseveItemList;
-        private ReserveData nextReserve;
-        private uint searchCount;
-        private uint onCount;
-        private uint offCount;
+        public List<EpgEventInfo> EpgEventList { get; private set; }
+        public List<SearchItem> SearchItemList { get; private set; }
+        public List<ReserveData> ReseveItemList { get; private set; }
+        public ReserveData NextReserve { get; private set; }
+        public uint OnCount { get; private set; }
+        public uint OffCount { get; private set; }
 
-        //予約情報の更新があったとき、CommonManager.Instance.DB.epgAutoAddAppendList()に入っていればフラグを立ててもらえる。
-        public bool updateCounts;
-
-        public EpgAutoAddData Master            { get { return master; } }
-        public uint dataID                      { get { return (master != null ? master.dataID : 0); } }
-        public List<EpgEventInfo> EpgEventList  { get { return epgEventList; } }
-        public List<SearchItem> SearchItemList  { get { RefreshData(); return searchItemList; } }
-        public List<ReserveData> ReseveItemList { get { RefreshData(); return reseveItemList; } }
-        public ReserveData NextReserve          { get { RefreshData(); return nextReserve; } }
-        public uint SearchCount                 { get { RefreshData(); return searchCount; } }
-        public uint ReserveCount                { get { RefreshData(); return onCount + offCount; } }
-        public uint OnCount                     { get { RefreshData(); return onCount; } }
-        public uint OffCount                    { get { RefreshData(); return offCount; } }
-
-        public void SetEpgData(List<EpgEventInfo> eventlist)
+        //情報の更新をする。
+        public void UpdateCounts()
         {
-            epgEventList = eventlist != null ? eventlist : new List<EpgEventInfo>();
-            searchItemList = new List<SearchItem>();
-            reseveItemList = new List<ReserveData>();
-            nextReserve = null;
-            searchCount = 0;
-            onCount = 0;
-            offCount = 0;
-            updateCounts = true;
-        }
-
-        //必要なら情報の更新をする。
-        public void RefreshData()
-        {
-            if (updateCounts == false) return;
-            updateCounts = false;
-
-            searchItemList = new List<SearchItem>();
-            searchItemList.AddFromEventList(epgEventList, false, true);
-
-            reseveItemList = searchItemList.GetReserveList();
-
-            searchCount = (uint)searchItemList.Count;
-            onCount = (uint)reseveItemList.Count(info => info.RecSetting.RecMode != 5);
-            offCount = (uint)reseveItemList.Count - onCount;
-            nextReserve = reseveItemList.GetNextReserve();
+            SearchItemList = new List<SearchItem>();
+            SearchItemList.AddFromEventList(EpgEventList, false, true);
+            ReseveItemList = SearchItemList.GetReserveList();
+            NextReserve = ReseveItemList.GetNextReserve();
+            OnCount = (uint)ReseveItemList.Count(info => info.RecSetting.RecMode != 5);
+            OffCount = (uint)ReseveItemList.Count - OnCount;
         }
 
     }
