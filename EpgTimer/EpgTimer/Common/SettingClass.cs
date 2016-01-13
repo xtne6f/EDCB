@@ -55,7 +55,9 @@ namespace EpgTimer
             if (CommonManager.Instance.NW.IsConnected == false) return;
 
             ReloadSettingFilesNW(iniList);
+
             ChSet5.Clear();
+            Settings.Instance.RecPresetList = null;
             Settings.Instance.ReloadOtherOptions();
         }
 
@@ -1581,8 +1583,7 @@ namespace EpgTimer
         {
             DefStartMargin = IniFileHandler.GetPrivateProfileInt("SET", "StartMargin", 0, SettingPath.TimerSrvIniPath);
             DefEndMargin = IniFileHandler.GetPrivateProfileInt("SET", "EndMargin", 0, SettingPath.TimerSrvIniPath);
-            folders = null;
-            recPresetList = null;
+            defRecfolders = null;
         }
 
         //デフォルトマージン
@@ -1591,19 +1592,19 @@ namespace EpgTimer
         [System.Xml.Serialization.XmlIgnore]
         public int DefEndMargin { get;private set; }
 
-        List<string> folders = null;
+        List<string> defRecfolders = null;
         [System.Xml.Serialization.XmlIgnore]
         public List<string> DefRecFolders
         {
             get
             {
-                if (folders == null)
+                if (defRecfolders == null)
                 {
-                    folders = new List<string>();
+                    defRecfolders = new List<string>();
                     int num = IniFileHandler.GetPrivateProfileInt("SET", "RecFolderNum", 0, SettingPath.CommonIniPath);
                     if (num == 0)
                     {
-                        folders.Add(IniFileHandler.GetPrivateProfileString("SET", "DataSavePath", "Setting", SettingPath.CommonIniPath));
+                        defRecfolders.Add(IniFileHandler.GetPrivateProfileString("SET", "DataSavePath", "Setting", SettingPath.CommonIniPath));
                     }
                     else
                     {
@@ -1613,12 +1614,12 @@ namespace EpgTimer
                             string folder = IniFileHandler.GetPrivateProfileString("SET", key, "", SettingPath.CommonIniPath);
                             if (folder.Length > 0)
                             {
-                                folders.Add(folder);
+                                defRecfolders.Add(folder);
                             }
                         }
                     }
                 }
-                return folders;
+                return defRecfolders;
             }
         }
 

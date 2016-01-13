@@ -36,8 +36,8 @@ namespace EpgTimer
                 if (CommonManager.Instance.NWMode == false)
                 {
                     ChSet5.SaveFile();
+                    Settings.Instance.ReloadOtherOptions();//NWでは別途iniの更新通知後に実行される。
                 }
-                Settings.Instance.ReloadOtherOptions();
                 CommonManager.Instance.ReloadCustContentColorList();
             }
             catch (Exception ex)
