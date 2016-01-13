@@ -514,7 +514,7 @@ namespace EpgTimer
                 {
                     return;
                 }
-                CommonManager.Instance.TVTestCtrl.StartTimeShift(reserve.ReserveID);
+                CommonManager.Instance.FilePlay(reserve.ReserveID);
             }
             catch (Exception ex)
             {

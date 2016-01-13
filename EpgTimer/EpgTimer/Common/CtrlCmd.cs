@@ -529,6 +529,8 @@ namespace EpgTimer
         public ErrCode SendNwTVMode(uint val) { return SendCmdData(CtrlCmd.CMD_EPG_SRV_NWTV_MODE, val); }
         /// <summary>ストリーム配信用ファイルを開く</summary>
         public ErrCode SendNwPlayOpen(string val, ref uint resVal) { object o = resVal; var ret = SendAndReceiveCmdData(CtrlCmd.CMD_EPG_SRV_NWPLAY_OPEN, val, ref o); resVal = (uint)o; return ret; }
+        /// <summary>ストリーム配信用ファイルを閉じる</summary>
+        public ErrCode SendNwPlayClose(uint val) { return SendCmdData(CtrlCmd.CMD_EPG_SRV_NWPLAY_CLOSE, val); }
         /// <summary>ストリーム配信用ファイルをタイムシフトモードで開く</summary>
         public ErrCode SendNwTimeShiftOpen(uint val, ref NWPlayTimeShiftInfo resVal) { object o = resVal; return SendAndReceiveCmdData(CtrlCmd.CMD_EPG_SRV_NWPLAY_TF_OPEN, val, ref o); }
         #region // コマンドバージョン対応版

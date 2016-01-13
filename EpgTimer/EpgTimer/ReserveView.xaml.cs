@@ -548,7 +548,7 @@ namespace EpgTimer
             if (listView_reserve.SelectedItem != null)
             {
                 ReserveItem info = listView_reserve.SelectedItem as ReserveItem;
-                CommonManager.Instance.TVTestCtrl.StartTimeShift(info.ReserveInfo.ReserveID);
+                CommonManager.Instance.FilePlay(info.ReserveInfo.ReserveID);
             }
         }
 

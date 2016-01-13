@@ -1137,7 +1137,7 @@ namespace EpgTimer
                     SearchItem item = listView_event.SelectedItem as SearchItem;
                     if (item.IsReserved == true)
                     {
-                        CommonManager.Instance.TVTestCtrl.StartTimeShift(item.ReserveInfo.ReserveID);
+                        CommonManager.Instance.FilePlay(item.ReserveInfo.ReserveID);
                     }
                 }
             }

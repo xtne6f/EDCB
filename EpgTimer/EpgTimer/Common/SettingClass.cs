@@ -194,6 +194,7 @@ namespace EpgTimer
         private bool nwTvModeTCP;
         private string filePlayExe;
         private string filePlayCmd;
+        private bool filePlayOnAirWithExe;
         private List<IEPGStationInfo> iEpgStationList;
         private string nwServerIP;
         private UInt32 nwServerPort;
@@ -702,6 +703,11 @@ namespace EpgTimer
             get { return filePlayCmd; }
             set { filePlayCmd = value; }
         }
+        public bool FilePlayOnAirWithExe
+        {
+            get { return filePlayOnAirWithExe; }
+            set { filePlayOnAirWithExe = value; }
+        }
         public List<IEPGStationInfo> IEpgStationList
         {
             get { return iEpgStationList; }
@@ -1045,6 +1051,7 @@ namespace EpgTimer
             nwTvModeTCP = false;
             filePlayExe = "";
             filePlayCmd = "\"$FilePath$\"";
+            filePlayOnAirWithExe = false;
             iEpgStationList = new List<IEPGStationInfo>();
             nwServerIP = "";
             nwServerPort = 4510;

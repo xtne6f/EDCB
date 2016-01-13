@@ -1004,6 +1004,29 @@ namespace EpgTimer
             return retText;
         }
 
+        public void FilePlay(uint reserveID)
+        {
+            if (Settings.Instance.FilePlayOnAirWithExe && (NWMode == false || Settings.Instance.FilePlayExe.Length != 0))
+            {
+                //ファイルパスを取得するため開いてすぐ閉じる
+                var info = new NWPlayTimeShiftInfo();
+                if (CtrlCmd.SendNwTimeShiftOpen(reserveID, ref info) == ErrCode.CMD_SUCCESS)
+                {
+                    CtrlCmd.SendNwPlayClose(info.ctrlID);
+                    if (info.filePath != "")
+                    {
+                        FilePlay(info.filePath);
+                        return;
+                    }
+                }
+                MessageBox.Show("録画ファイルの場所がわかりませんでした。", "追っかけ再生", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            else
+            {
+                TVTestCtrl.StartTimeShift(reserveID);
+            }
+        }
+
         public void FilePlay(String filePath)
         {
             try
