@@ -10,6 +10,7 @@ namespace EpgTimer
         public Dictionary<UInt64, ChSet5Item> ChList
         {
             get;
+            private set;
         }
         
         private static ChSet5 _instance;
