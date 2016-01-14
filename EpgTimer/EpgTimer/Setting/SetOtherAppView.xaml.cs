@@ -26,7 +26,6 @@ namespace EpgTimer.Setting
 
             if (CommonManager.Instance.NWMode == true)
             {
-                CommonManager.Instance.VUtil.DisableControlChildren(tabItem_play);
                 label3.IsEnabled = false;
                 button_del.IsEnabled = false;
                 button_add.IsEnabled = false;

@@ -1396,9 +1396,9 @@ namespace EpgTimer
         {
             try
             {
-                if (filePath == null || filePath.Length == 0) return;
+                if (string.IsNullOrWhiteSpace(filePath) == true) return;
 
-                if (NWMode == false)
+                if (NWMode == false || Settings.Instance.FilePlayExe.Length != 0)
                 {
                     System.Diagnostics.Process process;
                     if (Settings.Instance.FilePlayExe.Length == 0)
@@ -1408,7 +1408,9 @@ namespace EpgTimer
                     else
                     {
                         String cmdLine = Settings.Instance.FilePlayCmd;
-                        cmdLine = cmdLine.Replace("$FilePath$", filePath);
+                        //'$'->'\t'は再帰的な展開を防ぐため
+                        cmdLine = cmdLine.Replace("$FileNameExt$", Path.GetFileName(filePath).Replace('$', '\t'));
+                        cmdLine = cmdLine.Replace("$FilePath$", filePath).Replace('\t', '$');
                         process = System.Diagnostics.Process.Start(Settings.Instance.FilePlayExe, cmdLine);
                     }
                 }
