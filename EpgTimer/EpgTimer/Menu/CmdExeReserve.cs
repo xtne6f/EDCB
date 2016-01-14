@@ -205,7 +205,7 @@ namespace EpgTimer
                 if (CommonManager.Instance.NWMode == false && Settings.Instance.FilePlayOnAirWithExe == true
                     && dataList[0].RecSetting.RecMode != 4)//視聴モードは録画ファイル無いので対象外
                 {
-                    mutil.FilePlay(dataList[0]);
+                    CommonManager.Instance.FilePlay(dataList[0]);
                 }
                 else
                 {

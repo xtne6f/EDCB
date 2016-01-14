@@ -55,7 +55,7 @@ namespace EpgTimer
         }
         protected override void mc_Play(object sender, ExecutedRoutedEventArgs e)
         {
-            mutil.FilePlay(dataList[0].RecFilePath);
+            CommonManager.Instance.FilePlay(dataList[0].RecFilePath);
             IsCommandExecuted = true;
         }
         protected override void mc_OpenFolder(object sender, ExecutedRoutedEventArgs e)

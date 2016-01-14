@@ -36,7 +36,7 @@ namespace EpgTimer
         {
             if (recInfo != null)
             {
-                CommonManager.Instance.MUtil.FilePlay(recInfo.RecFilePath);
+                CommonManager.Instance.FilePlay(recInfo.RecFilePath);
             }
         }        
 
