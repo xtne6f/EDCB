@@ -45,7 +45,7 @@ namespace EpgTimer
         public MainWindow()
         {
             string appName = System.IO.Path.GetFileNameWithoutExtension(System.Reflection.Assembly.GetEntryAssembly().Location);
-            CommonManager.Instance.NWMode = appName == "EpgTimerNW";
+            CommonManager.Instance.NWMode = appName.StartsWith("EpgTimerNW", StringComparison.OrdinalIgnoreCase);
 
             Settings.LoadFromXmlFile(CommonManager.Instance.NWMode);
             if (CommonManager.Instance.NWMode == true)
@@ -84,7 +84,7 @@ namespace EpgTimer
                 }
             }
 
-            mutex = new System.Threading.Mutex(false, CommonManager.Instance.NWMode ? "Global\\EpgTimer_BonNW" : "Global\\EpgTimer_Bon2");
+            mutex = new Mutex(false, CommonManager.Instance.NWMode ? "Global\\EpgTimer_BonNW" + appName.Substring(10).ToUpper() : "Global\\EpgTimer_Bon2");
             if (!mutex.WaitOne(0, false))
             {
                 CheckCmdLine();

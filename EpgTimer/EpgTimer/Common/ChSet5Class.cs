@@ -28,7 +28,6 @@ namespace EpgTimer
                     _instance = new ChSet5();
                 return _instance;
             }
-            set { _instance = value; }
         }
 
         public ChSet5() { }
@@ -66,10 +65,19 @@ namespace EpgTimer
         {
             try
             {
+                using (var sr = new System.IO.StreamReader(SettingPath.SettingFolderPath + "\\ChSet5.txt", Encoding.Default))
+                {
+                    return ChSet5.Load(sr);
+                }
+            }
+            catch { }
+            return false;
+        }
+        public static bool Load(System.IO.StreamReader reader)
+        {
+            try
+            {
                 Instance._chList = new Dictionary<UInt64, ChSet5Item>();
-
-                string filePath = SettingPath.SettingFolderPath + "\\ChSet5.txt";
-                System.IO.StreamReader reader = (new System.IO.StreamReader(filePath, Encoding.Default));
                 while (reader.Peek() >= 0)
                 {
                     string buff = reader.ReadLine();
@@ -100,9 +108,6 @@ namespace EpgTimer
                         }
                     }
                 }
-
-                reader.Close();
-
             }
             catch
             {
