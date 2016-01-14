@@ -1356,41 +1356,34 @@ namespace EpgTimer
             }
         }
 
-        public void FilePlay(ReserveData info)
+        public void FilePlay(ReserveData data)
         {
-            if (info == null || info.RecSetting == null || info.RecSetting.RecMode == 5) return;
-            if (info.IsOnRec() == false)
+            if (data == null || data.RecSetting == null || data.RecSetting.RecMode == 5) return;
+            if (data.IsOnRec() == false)
             {
                 MessageBox.Show("まだ録画が開始されていません。", "追っかけ再生", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 
-            string file = "";
-            string folder = "";
-            if (info.RecFileNameList.Count != 0)
+            if (Settings.Instance.FilePlayOnAirWithExe && (NWMode == false || Settings.Instance.FilePlayExe.Length != 0))
             {
-                file = info.RecFileNameList[0];
-            }
-            if (info.RecSetting.RecFolderList.Count != 0)
-            {
-                folder = info.RecSetting.RecFolderList[0].RecFolder;
+                //ファイルパスを取得するため開いてすぐ閉じる
+                var info = new NWPlayTimeShiftInfo();
+                if (CtrlCmd.SendNwTimeShiftOpen(data.ReserveID, ref info) == ErrCode.CMD_SUCCESS)
+                {
+                    CtrlCmd.SendNwPlayClose(info.ctrlID);
+                    if (info.filePath != "")
+                    {
+                        FilePlay(info.filePath);
+                        return;
+                    }
+                }
+                MessageBox.Show("録画ファイルの場所がわかりませんでした。", "追っかけ再生", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             else
             {
-                List<string> defFolders = Settings.Instance.DefRecFolders;
-                if (defFolders.Count != 0)
-                {
-                    folder = defFolders[0];
-                }
+                TVTestCtrl.StartTimeShift(data.ReserveID);
             }
-
-            if (file == "" || folder == "")
-            {
-                MessageBox.Show("録画ファイルの場所がわかりませんでした。", "追っかけ再生", MessageBoxButton.OK, MessageBoxImage.Information);
-                return;
-            }
-
-            FilePlay(folder.TrimEnd('\\') + "\\" + file);
         }
         public void FilePlay(String filePath)
         {
