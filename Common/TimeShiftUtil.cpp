@@ -10,7 +10,6 @@ CTimeShiftUtil::CTimeShiftUtil(void)
     this->readThread = NULL;
     this->readStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 
-	this->packetInit = NULL;
 	this->sendUdp = NULL;
 	this->sendTcp = NULL;
 
@@ -48,8 +47,6 @@ CTimeShiftUtil::~CTimeShiftUtil(void)
 		CloseHandle(this->lockBuffEvent);
 		this->lockBuffEvent = NULL;
 	}
-
-	SAFE_DELETE(this->packetInit);
 
 	map<WORD, CPMTUtil*>::iterator itrPmt;
 	for( itrPmt = this->pmtUtilMap.begin(); itrPmt != this->pmtUtilMap.end(); itrPmt++ ){
@@ -183,109 +180,26 @@ BOOL CTimeShiftUtil::OpenTimeShift(
 	this->PCR_PID = 0xFFFF;
 	this->availableFileSize = fileSize;
 
-	BOOL ret = TRUE;
-	if( filePath == NULL ){
+	WIN32_FIND_DATA findData;
+	HANDLE hFind = FindFirstFile(filePath, &findData);
+	if( hFind == INVALID_HANDLE_VALUE ){
 		UnLock();
 		return FALSE;
 	}
-	if( this->packetInit == NULL ){
-		this->packetInit = new CPacketInit;
-	}
-	HANDLE file = CreateFile( filePath, GENERIC_READ, FILE_SHARE_READ|FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
-	if( file == INVALID_HANDLE_VALUE ){
-		UnLock();
-		return FALSE;
-	}
-	DWORD lenH = 0;
-	DWORD lenL = GetFileSize(file, &lenH);
-	__int64 totlaFileSize = ((__int64)lenH)<<32 | lenL;
+	FindClose(hFind);
+	this->totalFileSize = (__int64)findData.nFileSizeHigh << 32 | findData.nFileSizeLow;
 	if( this->availableFileSize != -1 ){
-		if( totlaFileSize > this->availableFileSize ){
-			totlaFileSize = this->availableFileSize;
+		if( this->totalFileSize > this->availableFileSize ){
+			this->totalFileSize = this->availableFileSize;
 		}
 	}
 
-	//PCRのPIDを解析する
-	BYTE buff[188*256];
-	DWORD totalReadSize = 0;
-	while(this->PCR_PID == 0xFFFF && (totalReadSize < 1024*1024*40 || (__int64)totalReadSize < totlaFileSize)){
-		DWORD readSize = 0;
-		DWORD buffSize = 188*256;
-		if( totalReadSize + buffSize > totlaFileSize ){
-			buffSize = (DWORD)(totlaFileSize-totalReadSize);
-		}
-		if( ReadFile( file, buff, buffSize, &readSize, NULL ) == FALSE ){
-			CloseHandle(file);
-			UnLock();
-			return FALSE;
-		}
-		if( readSize < buffSize){
-			CloseHandle(file);
-			UnLock();
-			return FALSE;
-		}
-		totalReadSize += readSize;
-
-		BYTE* data = NULL;
-		DWORD dataSize = 0;
-		if( this->packetInit->GetTSData(buff, readSize, &data, &dataSize) == TRUE ){
-			for( DWORD i=0; i<dataSize; i+=188 ){
-				CTSPacketUtil packet;
-				if( packet.Set188TS(data + i, 188) == TRUE ){
-					if( packet.transport_scrambling_control == 0 ){
-						//PMT
-						if( packet.payload_unit_start_indicator == 1 && packet.data_byteSize > 0){
-							BYTE pointer = packet.data_byte[0];
-							if( pointer+1 < packet.data_byteSize ){
-								if( packet.data_byte[1+pointer] == 0x02 ){
-									//PMT
-									map<WORD, CPMTUtil*>::iterator itrPmt;
-									itrPmt = this->pmtUtilMap.find(packet.PID);
-									if( itrPmt == this->pmtUtilMap.end() ){
-										CPMTUtil* util = new CPMTUtil;
-										this->pmtUtilMap.insert(pair<WORD, CPMTUtil*>(packet.PID, util));
-										if( util->AddPacket(&packet) == TRUE ){
-											this->PCR_PID = util->PCR_PID;
-											break;
-										}
-									}else{
-										if( itrPmt->second->AddPacket(&packet) == TRUE ){
-											this->PCR_PID = itrPmt->second->PCR_PID;
-											break;
-										}
-									}
-								}
-							}
-						}else{
-							//PMTの2パケット目かチェック
-							map<WORD, CPMTUtil*>::iterator itrPmt;
-							itrPmt = this->pmtUtilMap.find(packet.PID);
-							if( itrPmt != this->pmtUtilMap.end() ){
-								if( itrPmt->second->AddPacket(&packet) == TRUE ){
-									this->PCR_PID = itrPmt->second->PCR_PID;
-									break;
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-
-	if( this->PCR_PID == 0xFFFF ){
-		ret = FALSE;
-	}else{
-		this->filePath = filePath;
-		this->fileMode = fileMode;
-		this->currentFilePos = 0;
-		this->totalFileSize = totlaFileSize;
-	}
-
-	CloseHandle(file);
+	this->filePath = filePath;
+	this->fileMode = fileMode;
+	this->currentFilePos = 0;
 
 	UnLock();
-	return ret;
+	return TRUE;
 }
 
 //タイムシフト送信を開始する
@@ -333,6 +247,7 @@ UINT WINAPI CTimeShiftUtil::ReadThread(LPVOID param)
 {
 	CTimeShiftUtil* sys = (CTimeShiftUtil*)param;
 	BYTE buff[188*256];
+	CPacketInit packetInit;
 
 	HANDLE file = CreateFile( sys->filePath.c_str(), GENERIC_READ, FILE_SHARE_READ|FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
 	if( file == INVALID_HANDLE_VALUE ){
@@ -421,7 +336,7 @@ UINT WINAPI CTimeShiftUtil::ReadThread(LPVOID param)
 		BYTE* data = NULL;
 		DWORD dataSize = 0;
 		__int64 base = -1;
-		if( sys->packetInit->GetTSData(buff, readSize, &data, &dataSize) == TRUE ){
+		if( packetInit.GetTSData(buff, readSize, &data, &dataSize) == TRUE ){
 			if( sys->LockBuff() == TRUE ){
 				for( DWORD i=0; i<dataSize; i+=188 ){
 					CTSPacketUtil packet;
@@ -474,8 +389,13 @@ UINT WINAPI CTimeShiftUtil::ReadThread(LPVOID param)
 								}
 							}
 
-							if( packet.PID == sys->PCR_PID && packet.adaptation_field_length > 0 ){
-								if( packet.PCR_flag == 1 ){
+							if( packet.adaptation_field_length > 0 && packet.PCR_flag == 1 ){
+								if( sys->PCR_PID == 0xFFFF ){
+									//最初に捕まえたPCRを暫定的に使う
+									initTime = -1;
+									sys->PCR_PID = packet.PID;
+								}
+								if( sys->PCR_PID == packet.PID ){
 									base = (__int64)packet.program_clock_reference_base/90;
 									if( initTime == -1 ){
 										initTime = base;
@@ -564,14 +484,11 @@ void CTimeShiftUtil::SetAvailableSize(__int64 fileSize)
 	this->availableFileSize = fileSize;
 
 	if( fileSize == -1 ){
-		HANDLE file = CreateFile( this->filePath.c_str(), GENERIC_READ, FILE_SHARE_READ|FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
-		if( file != INVALID_HANDLE_VALUE ){
-			DWORD lenH = 0;
-			DWORD lenL = GetFileSize(file, &lenH);
-			__int64 newSize = ((__int64)lenH)<<32 | lenL;
-
-			this->totalFileSize = newSize;
-			CloseHandle(file);
+		WIN32_FIND_DATA findData;
+		HANDLE hFind = FindFirstFile(this->filePath.c_str(), &findData);
+		if( hFind != INVALID_HANDLE_VALUE ){
+			FindClose(hFind);
+			this->totalFileSize = (__int64)findData.nFileSizeHigh << 32 | findData.nFileSizeLow;
 		}
 	}
 	UnLock();
@@ -636,9 +553,6 @@ BOOL CTimeShiftUtil::SetFilePos(__int64 filePos)
 
 	BOOL ret = FALSE;
 	this->currentFilePos = filePos;
-	if( this->packetInit != NULL ){
-		this->packetInit->ClearBuff();
-	}
 
 	UnLock();
 	return ret;
