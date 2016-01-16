@@ -306,6 +306,7 @@ namespace EpgTimer
         private double searchWndTop;
         private double searchWndWidth;
         private double searchWndHeight;
+        private bool searchWndPinned;
         private short autoSaveNotifyLog;
         private bool showTray;
         private bool minHide;
@@ -1021,6 +1022,11 @@ namespace EpgTimer
             get { return searchWndHeight; }
             set { searchWndHeight = value; }
         }
+        public bool SearchWndPinned
+        {
+            get { return searchWndPinned; }
+            set { searchWndPinned = value; }
+        }
         public short AutoSaveNotifyLog
         {
             get { return autoSaveNotifyLog; }
@@ -1228,6 +1234,7 @@ namespace EpgTimer
             searchWndTop = -100;
             searchWndWidth = -100;
             searchWndHeight = -100;
+            searchWndPinned = false;
             autoSaveNotifyLog = 0;
             showTray = true;
             minHide = true;

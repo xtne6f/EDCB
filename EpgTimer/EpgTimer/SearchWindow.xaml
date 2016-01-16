@@ -104,5 +104,6 @@
             </ListView.View>
         </ListView>
         <TextBox Grid.Row="2" Name="text_result" Margin="10,0,10,5" Height="23" VerticalAlignment="Bottom" BorderThickness="0" IsReadOnlyCaretVisible="True" IsReadOnly="True" />
+        <CheckBox Grid.Row="2" Content="メインウィンドウの前面に表示" Height="16" Margin="10,0,10,5" VerticalAlignment="Bottom" HorizontalAlignment="Right" Name="checkBox_windowPinned" Checked="checkBox_windowPinned_Checked" Unchecked="checkBox_windowPinned_Checked" />
     </Grid>
 </Window>

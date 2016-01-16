@@ -116,6 +116,7 @@ namespace EpgTimer
                 {
                     this.Height = Settings.Instance.SearchWndHeight;
                 }
+                checkBox_windowPinned.IsChecked = Settings.Instance.SearchWndPinned;
 
                 SetSearchKey(Settings.Instance.DefSearchKey);
 
@@ -448,6 +449,7 @@ namespace EpgTimer
                         dlg.SetRecSetting(this.GetRecSetting());
                         dlg.Left = this.Left + 50;
                         dlg.Top = this.Top + 25;
+                        dlg.checkBox_windowPinned.IsChecked = checkBox_windowPinned.IsChecked;
                         dlg.Show();
                     }
                 }
@@ -484,6 +486,7 @@ namespace EpgTimer
                 Settings.Instance.SearchWndLeft = this.Left;
             }
 
+            Settings.Instance.SearchWndPinned = checkBox_windowPinned.IsChecked == true;
             if (hideSearchWindow == this) SearchWindow.SetHideSearchWindow(null);
 
             if (AllClosing == false)
@@ -590,5 +593,9 @@ namespace EpgTimer
             }
         }
 
+        private void checkBox_windowPinned_Checked(object sender, RoutedEventArgs e)
+        {
+            this.Owner = ((sender as CheckBox).IsChecked == true) ? mainWindow : null;
+        }
     }
 }
