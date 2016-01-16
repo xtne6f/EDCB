@@ -645,9 +645,9 @@ namespace EpgTimer
             return false;
         }
 
-        public static String ConvertTimeText(DateTime start, uint duration, bool isNoYear, bool isNoSecond, bool isNoEndDay = true)
+        public static String ConvertTimeText(DateTime start, uint duration, bool isNoYear, bool isNoSecond, bool isNoEndDay = true, bool isNoStartDay = false)
         {
-            return ConvertTimeText(start, isNoYear, isNoSecond) 
+            return ConvertTimeText(start, isNoYear, isNoSecond, isNoStartDay) 
                 + (isNoSecond == true ? "～" : " ～ ")
                 + ConvertTimeText(start + TimeSpan.FromSeconds(duration), isNoYear, isNoSecond, isNoEndDay);
         }

@@ -188,6 +188,10 @@ namespace EpgTimer
             {
                 return EpgAutoDataItem.GetValuePropertyName(key);
             }
+            else if (t == typeof(ManualAutoAddDataItem))
+            {
+                return ManualAutoAddDataItem.GetValuePropertyName(key);
+            }
             else
             {
                 return key;

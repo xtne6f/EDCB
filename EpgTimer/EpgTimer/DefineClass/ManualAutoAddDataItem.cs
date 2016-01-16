@@ -15,6 +15,19 @@ namespace EpgTimer
 
         public ManualAutoAddData ManualAutoAddInfo { get; set; }
 
+        public static string GetValuePropertyName(string key)
+        {
+            var obj = new ManualAutoAddDataItem();
+            if (key == CommonUtil.GetMemberName(() => obj.Time))
+            {
+                return CommonUtil.GetMemberName(() => obj.TimeValue);
+            }
+            else
+            {
+                return key;
+            }
+        }
+
         public String DayOfWeek
         {
             get
@@ -39,16 +52,28 @@ namespace EpgTimer
             {
                 if (ManualAutoAddInfo == null) return "";
                 //
-                uint endTime = ManualAutoAddInfo.startTime + ManualAutoAddInfo.durationSecond;
-                return timeString(ManualAutoAddInfo.startTime) + " ～ " + timeString(endTime % (24 * 60 * 60));
+                return CommonManager.ConvertTimeText(new DateTime().AddSeconds(ManualAutoAddInfo.startTime)
+                    , ManualAutoAddInfo.durationSecond, true, Settings.Instance.ResInfoNoSecond, true, true);
             }
         }
-        private String timeString(uint time_sconds)
+        public UInt32 TimeValue
         {
-            uint hh = time_sconds / (60 * 60);
-            uint mm = (time_sconds % (60 * 60)) / 60;
-            uint ss = time_sconds % 60;
-            return hh.ToString("00") + ":" + mm.ToString("00") + ":" + ss.ToString("00");
+            get
+            {
+                if (ManualAutoAddInfo == null) return UInt32.MinValue;
+                //
+                return ManualAutoAddInfo.startTime;
+            }
+        }
+        public String TimeShort
+        {
+            get
+            {
+                if (ManualAutoAddInfo == null) return "";
+                //
+                return CommonManager.ConvertTimeText(new DateTime().AddSeconds(ManualAutoAddInfo.startTime)
+                    , ManualAutoAddInfo.durationSecond, true, true, true, true);
+            }
         }
         public String Title
         {
