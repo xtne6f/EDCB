@@ -175,6 +175,19 @@ namespace EpgTimer
             mainWindow.moveTo_tabItem(code);
             IsCommandExecuted = true;
         }
+        protected override void mc_ShowAutoAddDialog(object sender, ExecutedRoutedEventArgs e)
+        {
+            var data = CmdExeUtil.ReadObjData(e) as Type;
+            uint id = (uint)CmdExeUtil.ReadIdData(e);
+            if (data == typeof(EpgAutoAddData))
+            {
+                IsCommandExecuted = true == mutil.OpenChangeEpgAutoAddDialog(CommonManager.Instance.DB.EpgAutoAddList[id], this.Owner);
+            }
+            else if (data == typeof(ManualAutoAddData))
+            {
+                IsCommandExecuted = true == mutil.OpenChangeManualAutoAddDialog(CommonManager.Instance.DB.ManualAutoAddList[id], this.Owner);
+            }
+        }
         protected void mcs_SetBlackoutWindow()
         {
             if (dataList.Count != 0)//予約情報優先
@@ -323,6 +336,10 @@ namespace EpgTimer
                 {
                     menu.Visibility = Visibility.Collapsed;
                 }
+            }
+            else if (menu.Tag == EpgCmdsEx.ShowAutoAddDialogMenu)
+            {
+                menu.IsEnabled = mm.CtxmGenerateChgAutoAdd(menu, headData as ReserveData);
             }
             else if (menu.Tag == EpgCmds.Play)
             {

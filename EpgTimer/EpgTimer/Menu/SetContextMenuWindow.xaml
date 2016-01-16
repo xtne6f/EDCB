@@ -22,6 +22,7 @@
                             <CheckBox Margin="6,0,0,0" Content="予約一覧へジャンプ" />
                             <CheckBox Margin="6,0,0,0" Content="チューナ画面へジャンプ" />
                             <CheckBox Margin="6,0,0,0" Content="番組表へジャンプ" />
+                            <CheckBox Margin="6,0,0,0" Content="自動予約登録変更" />
                             <CheckBox Margin="6,0,0,0" Content="番組名で自動予約登録作成" />
                             <CheckBox Margin="6,0,0,0" Content="番組名で再検索" />
                             <CheckBox Margin="6,0,0,0" Content="番組名で再検索(別ウィンドウ)" />
@@ -48,6 +49,7 @@
                             <CheckBox Margin="6,0,0,0" Visibility="Hidden"/>
                             <CheckBox Margin="6,0,0,0" Visibility="Hidden"/>
                             <Separator Margin="12,0,12,0" Height="10" />
+                            <CheckBox Margin="6,0,0,0" Visibility="Hidden"/>
                             <CheckBox Margin="6,0,0,0" Visibility="Hidden"/>
                             <CheckBox Margin="6,0,0,0" Visibility="Hidden"/>
                             <CheckBox Margin="6,0,0,0" Visibility="Hidden"/>

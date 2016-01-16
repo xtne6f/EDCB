@@ -237,8 +237,7 @@ namespace EpgTimer
             {
                 if (ReserveInfo == null) return "";
                 //
-
-                if (ReserveInfo.Comment == "")
+                if (ReserveInfo.IsAutoAdded() == false)
                 {
                     return "個別予約(" + (ReserveInfo.EventID == 0xFFFF ? "プログラム" : "EPG") + ")";
                 }

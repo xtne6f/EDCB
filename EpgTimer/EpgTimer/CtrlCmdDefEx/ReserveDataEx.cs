@@ -106,6 +106,36 @@ namespace EpgTimer
             return eventPossible;
         }
 
+        public static List<EpgAutoAddData> GetEpgAutoAddList(this ReserveData resInfo)
+        {
+            if (resInfo == null || resInfo.IsEpgReserve() != true) return new List<EpgAutoAddData>();
+            //
+            return CommonManager.Instance.DB.EpgAutoAddList.Values
+                .Where(data => data.GetReserveList().Contains(resInfo)).ToList();
+        }
+
+        public static List<ManualAutoAddData> GetManualAutoAddList(this ReserveData resInfo)
+        {
+            if (resInfo == null || resInfo.IsEpgReserve() == true) return new List<ManualAutoAddData>();
+            //
+            return CommonManager.Instance.DB.ManualAutoAddList.Values
+                .Where(data => data.GetReserveList().Contains(resInfo)).ToList();
+        }
+
+        public static bool IsEpgReserve(this ReserveData reserveInfo)
+        {
+            if (reserveInfo == null) return false;
+            //
+            return reserveInfo.EventID != 0xFFFF;
+        }
+
+        public static bool IsAutoAdded(this ReserveData reserveInfo)
+        {
+            if (reserveInfo == null) return false;
+            //
+            return reserveInfo.Comment != "";
+        }
+
         public static bool IsOnRec(this ReserveData reserveInfo, int MarginMin = 0)
         {
             if (reserveInfo == null) return false;

@@ -88,6 +88,7 @@ namespace EpgTimer
             EpgCmds.DownItem.Text = "下へ移動(自動予約登録一覧)";
             EpgCmds.SaveOrder.Text = "並びを保存(自動予約登録一覧)";
             EpgCmds.RestoreOrder.Text = "並びを元に戻す(自動予約登録一覧)";
+            EpgCmdsEx.ShowAutoAddDialogMenu.Text = "自動予約登録変更"; 
 
             //ショートカットは、個別に無効にしたり範囲を限定したりするのでこちらで管理する。
             //AddCommand:コマンド、ショートカット、isEnable: 有効無効、
@@ -137,6 +138,7 @@ namespace EpgTimer
             //ダミーコマンドは、キーとして使用しているが、メニュー自体には割り付けされない。
             AddCommand(EpgCmdsEx.AddMenu);
             AddCommand(EpgCmdsEx.ChgMenu);
+            AddCommand(EpgCmdsEx.ShowAutoAddDialogMenu);
             AddCommand(EpgCmdsEx.ChgMarginStartMenu, isEnable: false, isSave: false);
             AddCommand(EpgCmdsEx.ChgMarginEndMenu, isEnable: false, isSave: false);
             AddCommand(EpgCmdsEx.OpenFolderMenu, isEnable: false);
