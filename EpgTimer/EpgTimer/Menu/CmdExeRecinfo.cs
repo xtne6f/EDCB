@@ -84,6 +84,10 @@ namespace EpgTimer
             {
                 menu.IsEnabled = dataList.HasNoProtected();
             }
+            else if (menu.Tag == EpgCmds.OpenFolder)
+            {
+                menu.ToolTip = (dataList.Count == 0 ? null : System.IO.Path.GetDirectoryName(dataList[0].RecFilePath));
+            }
         }
     }
 }

@@ -548,10 +548,10 @@ namespace EpgTimer
         public void CtxmGenerateChgOnPresetItems(MenuItem menu) { CtxmGenerateOnPresetItems(menu, EpgCmds.ChgOnPreset); }
         public void CtxmGenerateOnPresetItems(MenuItem menu, ICommand icmd)
         {
-            if (menu.IsEnabled == false) return;
-
             var delList = menu.Items.OfType<MenuItem>().Where(item => item.Command == icmd).ToList();
             delList.ForEach(item => menu.Items.Remove(item));
+
+            if (menu.IsEnabled == false) return;
 
             foreach (var item in Settings.Instance.RecPresetList.Select((info, id) => new { info, id }))
             {
@@ -567,10 +567,10 @@ namespace EpgTimer
 
         public void CtxmGenerateTunerMenuItems(MenuItem menu)
         {
-            if (menu.IsEnabled == false) return;
-
             var delList = menu.Items.OfType<MenuItem>().Where(item => (item.CommandParameter as EpgCmdParam).ID != 0).ToList();
             delList.ForEach(item => menu.Items.Remove(item));
+
+            if (menu.IsEnabled == false) return;
 
             foreach (var info in CommonManager.Instance.DB.TunerReserveList.Values.Where(info => info.tunerID != 0xFFFFFFFF)
                 .Select(info => new TunerSelectInfo(info.tunerName, info.tunerID)))
@@ -587,9 +587,9 @@ namespace EpgTimer
 
         public void CtxmGenerateOpenFolderItems(MenuItem menu, RecSettingData recSetting = null)
         {
-            if (menu.IsEnabled == false) return;
+            CtxmClearItemMenu(menu);//ツールチップのクリアがあるので先
 
-            menu.Items.Clear();
+            if (menu.IsEnabled == false) return;
 
             bool defOutPutted = false;
             recSetting = recSetting == null ? new RecSettingData() : recSetting;
@@ -613,6 +613,8 @@ namespace EpgTimer
             addFolderList(recSetting.RecFolderList, true, "");
             addFolderList(recSetting.PartialRecFolder, recSetting.PartialRecFlag != 0, "(ワンセグ) ");
 
+            //候補が一つの時は直接メニューを実行出来るようにする
+            CtxmPullUpSubMenu(menu);
         }
         private void CtxmGenerateOpenFolderItem(MenuItem menu, string path, string header_exp = "")
         {
@@ -625,5 +627,25 @@ namespace EpgTimer
             menu.Items.Add(menuItem);
         }
 
+        private void CtxmClearItemMenu(MenuItem menu)
+        {
+            menu.Items.Clear();
+            menu.ToolTip = null;
+            menu.Command = null;
+            (menu.CommandParameter as EpgCmdParam).Data = null;
+            (menu.CommandParameter as EpgCmdParam).ID = 0;
+        }
+        private void CtxmPullUpSubMenu(MenuItem menu)
+        {
+            if (menu.Items.Count == 1)
+            {
+                var submenu = (menu.Items[0] as MenuItem);
+                menu.ToolTip = (submenu.ToolTip == null ? submenu.Header : submenu.ToolTip);
+                menu.Command = submenu.Command;
+                (menu.CommandParameter as EpgCmdParam).Data = (submenu.CommandParameter as EpgCmdParam).Data;
+                (menu.CommandParameter as EpgCmdParam).ID = (submenu.CommandParameter as EpgCmdParam).ID;
+                menu.Items.Clear();
+            }
+        }
     }
 }
