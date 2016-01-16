@@ -49,36 +49,22 @@ namespace EpgTimer
         }
         protected override void mc_Delete2(object sender, ExecutedRoutedEventArgs e)
         {
-            IsCommandExecuted = mcs_Delete2_3(sender, e, true);
-        }
-        protected override void mc_Delete3(object sender, ExecutedRoutedEventArgs e)
-        {
-            IsCommandExecuted = mcs_Delete2_3(sender, e, false);
-        }
-        protected bool mcs_Delete2_3(object sender, ExecutedRoutedEventArgs e, bool deleteAutoAddItem)
-        {
             if (CmdExeUtil.IsMessageBeforeCommand(e) == true)
             {
-                string msg1 = deleteAutoAddItem == true ? "予約ごと削除" : "予約のみ削除";
-                string msg2 = deleteAutoAddItem == true ? "削除項目数" : "処理項目数";
-
-                string text = string.Format(msg1 + "してよろしいですか?\r\n\r\n"
-                    + "[" + msg2 + ": {0}]\r\n[削除される予約数: {1}]\r\n\r\n", dataList.Count, dataList.GetReserveList().Count)
+                string text = string.Format("予約ごと削除してよろしいですか?\r\n\r\n"
+                    + "[削除項目数: {0}]\r\n[削除される予約数: {1}]\r\n\r\n", dataList.Count, dataList.GetReserveList().Count)
                     + CmdExeUtil.FormatTitleListForDialog(dataList.Select(info => info.title).ToList());
 
-                if (MessageBox.Show(text, "[" + msg1 + "]の確認", MessageBoxButton.OKCancel,
+                if (MessageBox.Show(text, "[予約ごと削除]の確認", MessageBoxButton.OKCancel,
                                     MessageBoxImage.Exclamation, MessageBoxResult.OK) != MessageBoxResult.OK)
-                { return false; }
+                { return; }
             }
 
-            if (deleteAutoAddItem == true)
-            {
-                //EpgTimerSrvでの自動予約登録の実行タイミングに左右されず確実に予約を削除するため、先に削除
-                if (mutil.ManualAutoAddDelete(dataList) == false) return false;
-            }
+            //EpgTimerSrvでの自動予約登録の実行タイミングに左右されず確実に予約を削除するため、先に削除
+            if (mutil.ManualAutoAddDelete(dataList) == false) return;
 
             //配下の予約の削除、再収集する
-            return mutil.ReserveDelete(dataList.GetReserveList());
+            IsCommandExecuted = mutil.ReserveDelete(dataList.GetReserveList());
         }
         protected override void mc_AdjustReserve(object sender, ExecutedRoutedEventArgs e)
         {

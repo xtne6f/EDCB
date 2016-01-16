@@ -48,7 +48,6 @@ namespace EpgTimer
     public class CtxmItemData
     {
         public string Header { set; get; }
-        public string Name { set; get; }
         public int ID { set; get; }
         public ICommand Command { set; get; }
         public List<CtxmItemData> Items { set; get; }
@@ -57,10 +56,9 @@ namespace EpgTimer
         public CtxmItemData(CtxmItemData data) { CopyData(data, this); }
 
         //デフォルト定義用
-        public CtxmItemData(string header, ICommand icmd = null, int id = 0, string name = null)
+        public CtxmItemData(string header, ICommand icmd = null, int id = 0)
         {
             Header = header;
-            Name = name;
             ID = id;
             Command = icmd;
             Items = new List<CtxmItemData>();
@@ -78,7 +76,6 @@ namespace EpgTimer
         protected static void CopyData(CtxmItemData src, CtxmItemData dest)
         {
             dest.Header = src.Header;
-            dest.Name = src.Name;
             dest.ID = src.ID;
             dest.Command = src.Command;
             dest.Items = src.Items.Clone();

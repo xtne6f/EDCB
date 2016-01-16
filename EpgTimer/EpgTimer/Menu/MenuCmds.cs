@@ -56,20 +56,19 @@ namespace EpgTimer
 
             //設定画面など用のテキスト設定
             EpgCmds.Add.Text = "予約(検索ダイアログ)";
-            EpgCmds.ShowAddDialog.Text = "プログラム予約/自動登録追加";
+            EpgCmds.ShowAddDialog.Text = "新規プログラム予約/自動登録...";
             EpgCmds.ChgOnOff.Text = "簡易予約/予約←→無効";
             EpgCmds.Delete.Text = "削除";
             EpgCmds.Delete2.Text = "予約ごと削除";
-            EpgCmds.Delete3.Text = "予約のみ削除";
             EpgCmds.DeleteAll.Text = "全て削除";
             EpgCmds.AdjustReserve.Text = "予約を自動登録に合わせる";
             EpgCmds.ShowDialog.Text = "変更/ダイアログ表示";
             EpgCmds.JumpReserve.Text = "予約一覧へジャンプ";
             EpgCmds.JumpTuner.Text = "チューナ画面へジャンプ";
             EpgCmds.JumpTable.Text = "番組表へジャンプ";
-            EpgCmds.ToAutoadd.Text = "自動予約登録";
+            EpgCmds.ToAutoadd.Text = "番組名で自動予約登録作成...";
             EpgCmds.ReSearch.Text = "番組名で再検索";
-            EpgCmds.ReSearch2.Text = "番組名で再検索(サブウィンドウ)";
+            EpgCmds.ReSearch2.Text = "番組名で再検索(別ウィンドウ)";
             EpgCmds.Play.Text = "再生/追っかけ再生";
             EpgCmds.OpenFolder.Text = "録画フォルダを開く";
             EpgCmds.CopyTitle.Text = "番組名/ANDキーをコピー";
@@ -78,7 +77,7 @@ namespace EpgTimer
             EpgCmds.CopyNotKey.Text = "NOTキーをコピー";
             EpgCmds.SetNotKey.Text = "NOTキーに貼り付け";
             EpgCmds.ProtectChange.Text = "プロテクト←→解除";
-            EpgCmds.ViewChgSet.Text = "表示設定";
+            EpgCmds.ViewChgSet.Text = "表示設定...";
             EpgCmds.ViewChgMode.Text = "標準モード";
             EpgCmds.MenuSetting.Text = "右クリックメニューの設定...";
             EpgCmds.AddInDialog .Text = "追加(ダイアログ内)";
@@ -102,7 +101,6 @@ namespace EpgTimer
             AddCommand(EpgCmds.ChgGenre, isEnable: false, isSave: false);
             AddCommand(EpgCmds.Delete, Key.D, ModifierKeys.Control, Key.Delete);
             AddCommand(EpgCmds.Delete2, Key.D, ModifierKeys.Control | ModifierKeys.Shift);
-            AddCommand(EpgCmds.Delete3, Key.D, ModifierKeys.Control | ModifierKeys.Alt, isEnable: false);
             AddCommand(EpgCmds.DeleteAll, Key.D, ModifierKeys.Control | ModifierKeys.Alt, spc: GestureTrg.ToView);
             AddCommand(EpgCmds.AdjustReserve, isEnable: false);
             AddCommand(EpgCmds.ShowDialog, Key.Enter, gesNeedMenu: false);//doubleclickは上手く入らないので省略

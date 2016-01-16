@@ -30,7 +30,6 @@ namespace EpgTimer
         public static RoutedUICommand ChgOnOffKeyEnabled { get; private set; }
         public static RoutedUICommand Delete { get; private set; }
         public static RoutedUICommand Delete2 { get; private set; }
-        public static RoutedUICommand Delete3 { get; private set; }
         public static RoutedUICommand DeleteAll { get; private set; }
         public static RoutedUICommand AdjustReserve { get; private set; }
         public static RoutedUICommand ShowDialog { get; private set; }

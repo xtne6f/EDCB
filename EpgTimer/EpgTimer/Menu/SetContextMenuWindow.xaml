@@ -15,17 +15,16 @@
                             <CheckBox Margin="6,0,0,0" Content="簡易予約/予約←→無効" />
                             <CheckBox Margin="6,0,0,0" Content="削除" />
                             <CheckBox Margin="6,0,0,0" Content="予約ごと削除" />
-                            <CheckBox Margin="6,0,0,0" Content="予約のみ削除" />
                             <CheckBox Margin="6,0,0,0" Content="予約を自動登録に合わせる" />
                             <CheckBox Margin="6,0,0,0" Content="プロテクト←→解除" />
-                            <CheckBox Margin="6,0,0,0" Content="プログラム予約/自動登録追加" />
+                            <CheckBox Margin="6,0,0,0" Content="新規プログラム予約/自動登録" />
                             <Separator Margin="12,0,12,0" Height="10" />
                             <CheckBox Margin="6,0,0,0" Content="予約一覧へジャンプ" />
                             <CheckBox Margin="6,0,0,0" Content="チューナ画面へジャンプ" />
                             <CheckBox Margin="6,0,0,0" Content="番組表へジャンプ" />
-                            <CheckBox Margin="6,0,0,0" Content="自動予約登録" />
+                            <CheckBox Margin="6,0,0,0" Content="番組名で自動予約登録作成" />
                             <CheckBox Margin="6,0,0,0" Content="番組名で再検索" />
-                            <CheckBox Margin="6,0,0,0" Content="番組名で再検索(サブウィンドウ)" />
+                            <CheckBox Margin="6,0,0,0" Content="番組名で再検索(別ウィンドウ)" />
                             <CheckBox Margin="6,0,0,0" Content="再生/追っかけ再生" />
                             <CheckBox Margin="6,0,0,0" Content="録画フォルダを開く" />
                             <Separator Margin="12,0,12,0" Height="10" />
@@ -45,7 +44,6 @@
                             <CheckBox Margin="6,0,0,0" Visibility="Hidden"/>
                             <CheckBox Margin="6,0,0,0" Visibility="Hidden"/>
                             <CheckBox Margin="6,0,0,0" Content="確認メッセージを表示しない" Name="checkBox_NoMessageDelete2" />
-                            <CheckBox Margin="6,0,0,0" Content="(予約ごと削除と共通)" IsEnabled="false" Name="checkBox_NoMessageDelete3" IsChecked="{Binding Path=IsChecked, ElementName=checkBox_NoMessageDelete2, UpdateSourceTrigger=PropertyChanged}" />
                             <CheckBox Margin="6,0,0,0" Content="確認メッセージを表示しない" Name="checkBox_NoMessageAdjustRes" />
                             <CheckBox Margin="6,0,0,0" Visibility="Hidden"/>
                             <CheckBox Margin="6,0,0,0" Visibility="Hidden"/>
