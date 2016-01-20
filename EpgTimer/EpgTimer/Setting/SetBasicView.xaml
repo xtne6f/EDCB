@@ -28,7 +28,10 @@
                     <TextBox Height="24" HorizontalAlignment="Left" Margin="45,221,0,0" Name="textBox_recFolder" VerticalAlignment="Top" Width="427" />
                     <Button Content="開く" Height="23" Margin="485,221,0,0" Name="button_rec_open" VerticalAlignment="Top" HorizontalAlignment="Left" Width="44" Click="button_rec_open_Click" />
                     <Button Content="追加" Height="23" Margin="535,221,0,0" Name="button_rec_add" VerticalAlignment="Top" Click="button_rec_add_Click" HorizontalAlignment="Left" Width="44" />
-                    <Label Content="※ 録画中やEPG取得中に設定を変更すると正常動作しなくなる可能性があります。" Height="28" HorizontalAlignment="Left" Margin="12,278,0,0" Name="label4" VerticalAlignment="Top" Foreground="Red" />
+                    <Label Content="録画情報保存フォルダ" Height="28" HorizontalAlignment="Left" Margin="12,253,0,0" VerticalAlignment="Top" />
+                    <TextBox Height="24" HorizontalAlignment="Left" Margin="157,255,0,0" Name="textBox_recInfoFolder" VerticalAlignment="Top" Width="372" ToolTip="未指定の場合は録画ファイルと同じ場所に保存されます。" />
+                    <Button Content="開く" Height="23" HorizontalAlignment="Left" Margin="535,255,0,0" Name="button_recInfoFolder" VerticalAlignment="Top" Width="44" Click="button_recInfoFolder_Click" />
+                    <Label Content="※ 録画中やEPG取得中に設定を変更すると正常動作しなくなる可能性があります。" Height="28" HorizontalAlignment="Left" Margin="12,290,0,0" Name="label4" VerticalAlignment="Top" Foreground="Red" />
                     <Label Content="スタートアップにショートカットを作成する" Height="28" HorizontalAlignment="Left" Margin="12,331,0,0" Name="label5" VerticalAlignment="Top" />
                     <Button Content="EpgTimer.exe" Height="23" HorizontalAlignment="Left" Margin="273,333,0,0" Name="button_shortCut" VerticalAlignment="Top" Width="140" Click="button_shortCut_Click" />
                     <Button Content="EpgTimerSrv.exe" Height="23" HorizontalAlignment="Left" Margin="419,333,0,0" Name="button_shortCutSrv" VerticalAlignment="Top" Width="160" Click="button_shortCutSrv_Click" />

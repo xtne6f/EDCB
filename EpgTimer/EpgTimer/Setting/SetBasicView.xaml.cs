@@ -43,6 +43,8 @@ namespace EpgTimer.Setting
                 textBox_recFolder.IsEnabled = false;
                 button_rec_open.IsEnabled = false;
                 button_rec_add.IsEnabled = false;
+                textBox_recInfoFolder.IsEnabled = false;
+                button_recInfoFolder.IsEnabled = false;
                 button_shortCutSrv.IsEnabled = false;
             }
 
@@ -70,6 +72,8 @@ namespace EpgTimer.Setting
                         }
                     }
                 }
+                textBox_recInfoFolder.Text = IniFileHandler.GetPrivateProfileString("SET", "RecInfoFolder", "", SettingPath.CommonIniPath);
+
                 button_shortCut.Content = (string)button_shortCut.Content + (File.Exists(
                     System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Startup), "EpgTime.lnk")) ? "を解除" : "");
                 button_shortCutSrv.Content = (string)button_shortCutSrv.Content + (File.Exists(
@@ -278,6 +282,9 @@ namespace EpgTimer.Setting
                     IniFileHandler.WritePrivateProfileString("SET", key, val, SettingPath.CommonIniPath);
                 }
 
+                IniFileHandler.WritePrivateProfileString("SET", "RecInfoFolder",
+                    textBox_recInfoFolder.Text.Trim() == "" ? null : textBox_recInfoFolder.Text, SettingPath.CommonIniPath);
+
                 for (int i = 0; i < listBox_bon.Items.Count; i++)
                 {
                     TunerInfo info = listBox_bon.Items[i] as TunerInfo;
@@ -395,6 +402,23 @@ namespace EpgTimer.Setting
                 if (result == true)
                 {
                     textBox_exe.Text = dlg.FileName;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+            }
+        }
+
+        private void button_recInfoFolder_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var dlg = new System.Windows.Forms.FolderBrowserDialog();
+                dlg.Description = "保存フォルダ";
+                if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                {
+                    textBox_recInfoFolder.Text = dlg.SelectedPath;
                 }
             }
             catch (Exception ex)
