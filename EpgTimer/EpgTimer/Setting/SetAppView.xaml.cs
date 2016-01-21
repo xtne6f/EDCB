@@ -80,6 +80,8 @@ namespace EpgTimer.Setting
                 textBox_keepTCPConnect.IsEnabled = true;
                 label_keepTCPConnect.IsEnabled = true;
                 checkBox_srvResident.IsEnabled = false;
+                checkBox_srvSaveNotifyLog.IsEnabled = false;
+                checkBox_srvSaveDebugLog.IsEnabled = false;
                 button_recDef.Content = "録画プリセットを確認";
             }
 
@@ -137,6 +139,10 @@ namespace EpgTimer.Setting
                 {
                     checkBox_appNW.IsChecked = true;
                 }
+                if (IniFileHandler.GetPrivateProfileInt("SET", "KeepDisk", 1, SettingPath.TimerSrvIniPath) == 1)
+                {
+                    checkBox_appKeepDisk.IsChecked = true;
+                }
                 if (IniFileHandler.GetPrivateProfileInt("SET", "RecOverWrite", 0, SettingPath.TimerSrvIniPath) == 1)
                 {
                     checkBox_appOverWrite.IsChecked = true;
@@ -190,6 +196,10 @@ namespace EpgTimer.Setting
                 {
                     checkBox_recname.IsChecked = true;
                 }
+                if (IniFileHandler.GetPrivateProfileInt("SET", "NoChkYen", 0, SettingPath.TimerSrvIniPath) == 1)
+                {
+                    checkBox_noChkYen.IsChecked = true;
+                }
                 if (IniFileHandler.GetPrivateProfileInt("SET", "AutoDelRecInfo", 0, SettingPath.TimerSrvIniPath) == 1)
                 {
                     checkBox_autoDelRecInfo.IsChecked = true;
@@ -233,6 +243,8 @@ namespace EpgTimer.Setting
                     checkBox_srvShowTray.IsChecked = residentMode >= 2;
                     checkBox_srvNoBalloonTip.IsChecked = IniFileHandler.GetPrivateProfileInt("SET", "NoBalloonTip", 0, SettingPath.TimerSrvIniPath) != 0;
                 }
+                checkBox_srvSaveNotifyLog.IsChecked = IniFileHandler.GetPrivateProfileInt("SET", "SaveNotifyLog", 0, SettingPath.TimerSrvIniPath) != 0;
+                checkBox_srvSaveDebugLog.IsChecked = IniFileHandler.GetPrivateProfileInt("SET", "SaveDebugLog", 0, SettingPath.TimerSrvIniPath) != 0;
 
                 int count;
                 count = IniFileHandler.GetPrivateProfileInt("DEL_EXT", "Count", 0, SettingPath.TimerSrvIniPath);
@@ -357,6 +369,8 @@ namespace EpgTimer.Setting
                 setValue = (checkBox_appOverWrite.IsChecked == true ? "1" : "0");
                 IniFileHandler.WritePrivateProfileString("SET", "RecOverWrite", setValue, SettingPath.TimerSrvIniPath);
 
+                IniFileHandler.WritePrivateProfileString("SET", "KeepDisk", checkBox_appKeepDisk.IsChecked == true ? "1" : "0", SettingPath.TimerSrvIniPath);
+
                 IniFileHandler.WritePrivateProfileString("NO_SUSPEND", "Count", ngProcessList.Count.ToString(), SettingPath.TimerSrvIniPath);
                 for (int i = 0; i < ngProcessList.Count; i++)
                 {
@@ -390,6 +404,8 @@ namespace EpgTimer.Setting
                 setValue = (comboBox_recname.SelectedItem != null ? (string)comboBox_recname.SelectedItem : "");
                 IniFileHandler.WritePrivateProfileString("SET", "RecNamePlugInFile", setValue, SettingPath.TimerSrvIniPath);
 
+                IniFileHandler.WritePrivateProfileString("SET", "NoChkYen", checkBox_noChkYen.IsChecked == true ? "1" : "0", SettingPath.TimerSrvIniPath);
+
                 setValue = (checkBox_autoDelRecInfo.IsChecked == true ? "1" : "0");
                 IniFileHandler.WritePrivateProfileString("SET", "AutoDelRecInfo", setValue, SettingPath.TimerSrvIniPath);
 
@@ -412,6 +428,8 @@ namespace EpgTimer.Setting
                 IniFileHandler.WritePrivateProfileString("SET", "ResidentMode",
                     checkBox_srvResident.IsChecked == false ? "0" : checkBox_srvShowTray.IsChecked == false ? "1" : "2", SettingPath.TimerSrvIniPath);
                 IniFileHandler.WritePrivateProfileString("SET", "NoBalloonTip", checkBox_srvNoBalloonTip.IsChecked == false ? "0" : "1", SettingPath.TimerSrvIniPath);
+                IniFileHandler.WritePrivateProfileString("SET", "SaveNotifyLog", checkBox_srvSaveNotifyLog.IsChecked == false ? "0" : "1", SettingPath.TimerSrvIniPath);
+                IniFileHandler.WritePrivateProfileString("SET", "SaveDebugLog", checkBox_srvSaveDebugLog.IsChecked == false ? "0" : "1", SettingPath.TimerSrvIniPath);
 
                 IniFileHandler.WritePrivateProfileString("DEL_EXT", "Count", extList.Count.ToString(), SettingPath.TimerSrvIniPath);
                 for (int i = 0; i < extList.Count; i++)

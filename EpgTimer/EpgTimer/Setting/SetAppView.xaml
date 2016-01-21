@@ -47,6 +47,7 @@
                             <CheckBox Content="ドロップログを出力する" Height="16" HorizontalAlignment="Left" Margin="127,96,0,0" Name="checkBox_appDrop" VerticalAlignment="Top" />
                             <CheckBox Content="番組情報を出力する" Height="16" HorizontalAlignment="Left" Margin="305,96,0,0" Name="checkBox_addPgInfo" VerticalAlignment="Top" />
                             <CheckBox Content="UDP、TCP送信を行う" Height="16" HorizontalAlignment="Left" Margin="127,118,0,0" Name="checkBox_appNW" VerticalAlignment="Top" />
+                            <CheckBox Content="録画ファイルの容量確保を行う" Height="16" HorizontalAlignment="Left" Margin="305,118,0,0" Name="checkBox_appKeepDisk" VerticalAlignment="Top" />
                             <CheckBox Content="同一ファイル名が存在した場合に上書きする" Height="16" HorizontalAlignment="Left" Margin="127,140,0,0" Name="checkBox_appOverWrite" VerticalAlignment="Top" />
                             <Label Content="プロセス優先度" Height="28" HorizontalAlignment="Left" Margin="6,162,0,0" Name="label16" VerticalAlignment="Top" />
                             <ComboBox Height="24" HorizontalAlignment="Left" Margin="127,162,0,0" Name="comboBox_process" VerticalAlignment="Top" Width="157" />
@@ -62,9 +63,10 @@
                     <CheckBox Content="録画時のファイル名にPlugInを使用する" Height="16" HorizontalAlignment="Left" Margin="6,60,0,0" Name="checkBox_recname" VerticalAlignment="Top" />
                     <ComboBox Height="24" HorizontalAlignment="Left" Margin="270,57,0,0" Name="comboBox_recname" VerticalAlignment="Top" Width="160" />
                     <Button Content="設定" Height="23" HorizontalAlignment="Left" Margin="436,58,0,0" Name="button_recname" VerticalAlignment="Top" Width="54" Click="button_recname_Click" />
-                    <CheckBox Content="録画中または開始直前の予約を変更・削除するとき警告する" Height="16" HorizontalAlignment="Left" Margin="6,95,0,0" Name="checkBox_cautionOnRecChange" VerticalAlignment="Top" />
-                    <Label Content="分以内" Height="28" Margin="437,87,0,0" Name="label_cautionOnRecMarginMin" VerticalAlignment="Top" HorizontalAlignment="Left" Width="53" />
-                    <TextBox Height="24" HorizontalAlignment="Left" Margin="368,87,0,0" Name="textBox_cautionOnRecMarginMin" VerticalAlignment="Top" Width="62" />
+                    <CheckBox Content="ファイル名の禁則文字の変換対象から「\」を除外する" Height="16" HorizontalAlignment="Left" Margin="6,87,0,0" Name="checkBox_noChkYen" VerticalAlignment="Top" />
+                    <CheckBox Content="録画中または開始直前の予約を変更・削除するとき警告する" Height="16" HorizontalAlignment="Left" Margin="6,112,0,0" Name="checkBox_cautionOnRecChange" VerticalAlignment="Top" />
+                    <Label Content="分以内" Height="28" Margin="437,112,0,0" Name="label_cautionOnRecMarginMin" VerticalAlignment="Top" HorizontalAlignment="Left" Width="53" />
+                    <TextBox Height="24" HorizontalAlignment="Left" Margin="368,112,0,0" Name="textBox_cautionOnRecMarginMin" VerticalAlignment="Top" Width="62" />
                 </Grid>
             </TabItem>
             <TabItem Header="ボタン表示" Name="tabItem3">
@@ -130,9 +132,11 @@
                     <CheckBox Content="EpgTimerSrvを常駐させる" Height="16" HorizontalAlignment="Left" Margin="6,252,0,0" Name="checkBox_srvResident" VerticalAlignment="Top" />
                     <CheckBox Content="タスクトレイアイコンを表示する" Height="16" HorizontalAlignment="Left" Margin="24,274,0,0" Name="checkBox_srvShowTray" VerticalAlignment="Top" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_srvResident, UpdateSourceTrigger=PropertyChanged}" />
                     <CheckBox Content="バルーンチップでの動作通知を抑制する" Height="16" HorizontalAlignment="Left" Margin="24,296,0,0" Name="checkBox_srvNoBalloonTip" VerticalAlignment="Top" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_srvResident, UpdateSourceTrigger=PropertyChanged}" />
-                    <CheckBox Content="多数の項目を処理するとき警告する" Height="16" HorizontalAlignment="Left" Margin="6,326,0,0" Name="checkBox_cautionManyChange" VerticalAlignment="Top" />
-                    <Label Content="以上" Height="28" Margin="300,320,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" Width="34" />
-                    <TextBox Height="24" HorizontalAlignment="Left" Margin="235,320,0,0" Name="textBox_cautionManyChange" VerticalAlignment="Top" Width="62" />
+                    <CheckBox Content="情報通知ログをファイルに保存する" Height="16" HorizontalAlignment="Left" Margin="6,318,0,0" Name="checkBox_srvSaveNotifyLog" VerticalAlignment="Top" />
+                    <CheckBox Content="デバッグ出力をファイルに保存する" Height="16" HorizontalAlignment="Left" Margin="6,340,0,0" Name="checkBox_srvSaveDebugLog" VerticalAlignment="Top" />
+                    <CheckBox Content="多数の項目を処理するとき警告する" Height="16" HorizontalAlignment="Left" Margin="6,360,0,0" Name="checkBox_cautionManyChange" VerticalAlignment="Top" />
+                    <Label Content="以上" Height="28" Margin="300,354,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" Width="34" />
+                    <TextBox Height="24" HorizontalAlignment="Left" Margin="235,354,0,0" Name="textBox_cautionManyChange" VerticalAlignment="Top" Width="62" />
                     <CheckBox Content="EpgTimerSrvとの接続維持を試みる" Height="16" HorizontalAlignment="Left" Margin="351,252,0,0" Name="checkBox_keepTCPConnect" VerticalAlignment="Top" IsEnabled="False" />
                     <Label Content="分間隔" Height="28" Margin="657,246,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" Width="54" IsEnabled="False" Name="label_keepTCPConnect" />
                     <TextBox Height="24" Margin="592,246,0,0" HorizontalAlignment="Left" Name="textBox_keepTCPConnect" VerticalAlignment="Top" Width="62" IsEnabled="False" />
