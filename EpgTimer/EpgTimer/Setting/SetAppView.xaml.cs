@@ -80,6 +80,7 @@ namespace EpgTimer.Setting
                 textBox_keepTCPConnect.IsEnabled = true;
                 label_keepTCPConnect.IsEnabled = true;
                 checkBox_srvResident.IsEnabled = false;
+                checkBox_noChkYen.IsEnabled = false;
                 checkBox_srvSaveNotifyLog.IsEnabled = false;
                 checkBox_srvSaveDebugLog.IsEnabled = false;
                 button_recDef.Content = "録画プリセットを確認";
