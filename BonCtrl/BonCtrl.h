@@ -10,6 +10,7 @@
 #include "PacketInit.h"
 #include "TSOut.h"
 #include "ChSetUtil.h"
+#include <list>
 
 class CBonCtrl
 {
@@ -450,8 +451,7 @@ protected:
 	CChSetUtil chUtil;
 
 	CRITICAL_SECTION buffLock;
-	vector<BYTE> TSBuff;
-	size_t TSBuffOffset;
+	std::list<vector<BYTE>> tsBuffList;
 
 	HANDLE analyzeThread;
 	HANDLE analyzeEvent;
