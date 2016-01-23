@@ -66,7 +66,7 @@ namespace EpgTimer
             EpgCmds.JumpReserve.Text = "予約一覧へジャンプ";
             EpgCmds.JumpTuner.Text = "チューナ画面へジャンプ";
             EpgCmds.JumpTable.Text = "番組表へジャンプ";
-            EpgCmds.ToAutoadd.Text = "番組名で自動予約登録作成...";
+            EpgCmds.ToAutoadd.Text = "番組名でキーワード予約作成...";
             EpgCmds.ReSearch.Text = "番組名で再検索";
             EpgCmds.ReSearch2.Text = "番組名で再検索(別ウィンドウ)";
             EpgCmds.Play.Text = "再生/追っかけ再生";

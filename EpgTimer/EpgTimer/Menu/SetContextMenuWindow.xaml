@@ -23,7 +23,7 @@
                             <CheckBox Margin="6,0,0,0" Content="チューナ画面へジャンプ" />
                             <CheckBox Margin="6,0,0,0" Content="番組表へジャンプ" />
                             <CheckBox Margin="6,0,0,0" Content="自動予約登録変更" />
-                            <CheckBox Margin="6,0,0,0" Content="番組名で自動予約登録作成" />
+                            <CheckBox Margin="6,0,0,0" Content="番組名でキーワード予約作成" />
                             <CheckBox Margin="6,0,0,0" Content="番組名で再検索" />
                             <CheckBox Margin="6,0,0,0" Content="番組名で再検索(別ウィンドウ)" />
                             <CheckBox Margin="6,0,0,0" Content="再生/追っかけ再生" />
