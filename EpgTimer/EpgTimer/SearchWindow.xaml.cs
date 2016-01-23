@@ -65,8 +65,8 @@ namespace EpgTimer
                 mc.AddReplaceCommand(EpgCmds.AddInDialog, button_add_epgAutoAdd_Click);
                 mc.AddReplaceCommand(EpgCmds.ChangeInDialog, button_chg_epgAutoAdd_Click, (sender, e) => e.CanExecute = winMode == SearchMode.Change);
                 mc.AddReplaceCommand(EpgCmds.DeleteInDialog, button_del_epgAutoAdd_Click, (sender, e) => e.CanExecute = winMode == SearchMode.Change);
-                mc.AddReplaceCommand(EpgCmds.UpItem, (sender, e) => button_up_down_Click(-1), button_up_down_CanExecute);
-                mc.AddReplaceCommand(EpgCmds.DownItem, (sender, e) => button_up_down_Click(1), button_up_down_CanExecute);
+                mc.AddReplaceCommand(EpgCmds.UpItem, (sender, e) => button_up_down_Click(-1));
+                mc.AddReplaceCommand(EpgCmds.DownItem, (sender, e) => button_up_down_Click(1));
                 mc.AddReplaceCommand(EpgCmds.Cancel, (sender, e) => this.Close());
 
                 //コマンド集を振り替えるもの
@@ -189,27 +189,8 @@ namespace EpgTimer
         public void SetViewMode(SearchMode md)
         {
             winMode = md;
-            if (winMode == SearchMode.Find)
-            {
-                button_chg_epgAutoAdd.Visibility = Visibility.Hidden;
-                button_del_epgAutoAdd.Visibility = Visibility.Hidden;
-                button_up_epgAutoAdd.Visibility = Visibility.Hidden;
-                button_down_epgAutoAdd.Visibility = Visibility.Hidden;
-            }
-            else if (winMode == SearchMode.NewAdd)
-            {
-                button_chg_epgAutoAdd.Visibility = Visibility.Hidden;
-                button_del_epgAutoAdd.Visibility = Visibility.Hidden;
-                button_up_epgAutoAdd.Visibility = Visibility.Visible;
-                button_down_epgAutoAdd.Visibility = Visibility.Visible;
-            }
-            else if (winMode == SearchMode.Change)
-            {
-                button_chg_epgAutoAdd.Visibility = Visibility.Visible;
-                button_del_epgAutoAdd.Visibility = Visibility.Visible;
-                button_up_epgAutoAdd.Visibility = Visibility.Visible;
-                button_down_epgAutoAdd.Visibility = Visibility.Visible;
-            }
+            button_chg_epgAutoAdd.Visibility = (winMode == SearchMode.Change ? Visibility.Visible : Visibility.Hidden);
+            button_del_epgAutoAdd.Visibility = button_chg_epgAutoAdd.Visibility;
             WindowTitleSet();
         }
 
@@ -358,30 +339,51 @@ namespace EpgTimer
 
         private void button_up_down_Click(int direction)
         {
-            ListView list = autoAddView.listView_key;
+            EpgAutoAddData newItem;
 
-            if (list.Items.Count == 0) return;//ここには引っかからないはずだけど一応チェック入れておく。
-
-            this.UpdateEpgAutoAddViewSelection();
-            if (list.SelectedIndex == -1)
+            Func<int, int, int> GetNextIdx = (oldIdx, listCount) =>
             {
-                list.SelectedIndex = direction >= 0 ? 0 : list.Items.Count - 1;
+                if (oldIdx == -1)
+                {
+                    return direction >= 0 ? 0 : listCount - 1;
+                }
+                else
+                {
+                    return ((oldIdx + direction) % listCount + listCount) % listCount;
+                }
+            };
+
+            if(autoAddView.IsVisible == true)
+            {
+                ListView list = autoAddView.listView_key;
+                if (list.Items.Count == 0) return;//ここには引っかからないはずだけど一応チェック入れておく。
+
+                this.UpdateEpgAutoAddViewSelection();
+                list.SelectedIndex = GetNextIdx(list.SelectedIndex, list.Items.Count);
+                newItem = (list.SelectedItem as EpgAutoDataItem).EpgAutoAddInfo;
             }
             else
             {
-                list.SelectedIndex = ((list.SelectedIndex + direction) % list.Items.Count + list.Items.Count) % list.Items.Count;
+                //並べ替え中など、一覧画面と順番が異なる場合もある。
+                CommonManager.Instance.DB.ReloadEpgAutoAddInfo();
+                Dictionary<uint, EpgAutoAddData> dict = CommonManager.Instance.DB.EpgAutoAddList;
+                if (dict.Count == 0) return;
+                
+                EpgAutoAddData oldItem;
+                List<EpgAutoAddData> list = dict.Values.ToList();
+                if (this.autoAddID == 0 || dict.TryGetValue(this.autoAddID, out oldItem) == false)
+                {
+                    newItem = list[GetNextIdx(-1, list.Count)];
+                }
+                else
+                {
+                    newItem = list[GetNextIdx(list.IndexOf(oldItem), list.Count)];
+                }
             }
 
-            ChangeAutoAddData((list.SelectedItem as EpgAutoDataItem).EpgAutoAddInfo);
+            ChangeAutoAddData(newItem);
         }
-
-        private void button_up_down_CanExecute(object sender, CanExecuteRoutedEventArgs e)
-        {
-            e.CanExecute = winMode != SearchMode.Find //1行目、ボタンは非表示だがショートカットキーを抑制する。
-                            && autoAddView.IsVisible == true
-                            && autoAddView.listView_key.Items.Count != 0;
-        }
-
+        
         private void listView_result_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             EpgCmds.ShowDialog.Execute(sender, null);
