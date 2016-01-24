@@ -6,76 +6,74 @@
     <Grid>
         <TabControl Margin="10,10,10,45" Name="tabControlSetting">
             <TabItem Header="共通設定" Name="tabItem_MenuEasy">
-                <Grid>
-                    <StackPanel Orientation="Horizontal">
-                        <StackPanel Name="stackPanel_menu" VerticalAlignment="Top" HorizontalAlignment="Left" Width="188">
-                            <Label Margin="0,0,0,-10" Content="表示項目" Height="28" />
-                            <Separator Height="10" Margin="0,0,0,-6" />
-                            <Separator Height="10" />
-                            <CheckBox Margin="6,0,0,0" Content="簡易予約/予約←→無効" />
-                            <CheckBox Margin="6,0,0,0" Content="削除" />
-                            <CheckBox Margin="6,0,0,0" Content="予約ごと削除" />
-                            <CheckBox Margin="6,0,0,0" Content="予約を自動登録に合わせる" />
-                            <CheckBox Margin="6,0,0,0" Content="プロテクト←→解除" />
-                            <CheckBox Margin="6,0,0,0" Content="新規プログラム予約/自動登録" />
-                            <Separator Margin="12,0,12,0" Height="10" />
-                            <CheckBox Margin="6,0,0,0" Content="予約一覧へジャンプ" />
-                            <CheckBox Margin="6,0,0,0" Content="チューナ画面へジャンプ" />
-                            <CheckBox Margin="6,0,0,0" Content="番組表へジャンプ" />
-                            <CheckBox Margin="6,0,0,0" Content="自動予約登録変更" />
-                            <CheckBox Margin="6,0,0,0" Content="番組名でキーワード予約作成" />
-                            <CheckBox Margin="6,0,0,0" Content="番組名で再検索" />
-                            <CheckBox Margin="6,0,0,0" Content="番組名で再検索(別ウィンドウ)" />
-                            <CheckBox Margin="6,0,0,0" Content="再生/追っかけ再生" />
-                            <CheckBox Margin="6,0,0,0" Content="録画フォルダを開く" />
-                            <Separator Margin="12,0,12,0" Height="10" />
-                            <CheckBox Margin="6,0,0,0" Content="番組名/ANDキーをコピー" />
-                            <CheckBox Margin="6,0,0,0" Content="番組情報をコピー" />
-                            <CheckBox Margin="6,0,0,0" Content="番組名/ANDキーをネットで検索" />
-                            <CheckBox Margin="6,0,0,0" Content="NOTキーをコピー" />
-                            <CheckBox Margin="6,0,0,0" Content="NOTキーに貼り付け" />
-                            <Separator Margin="12,0,12,0" Height="10" />
-                            <CheckBox Margin="6,0,0,0" Content="右クリックメニューの設定..." />
-                            <Separator Height="10" />
-                        </StackPanel>
-                        <StackPanel Name="stackPanel_option" VerticalAlignment="Top" Width="168" HorizontalAlignment="Left">
-                            <Label Margin="0,0,0,-10" Content="オプション" Height="28" Name="Option" />
-                            <Separator Height="10" Margin="0,0,0,-6" />
-                            <Separator Height="10" />
-                            <CheckBox Margin="6,0,0,0" Visibility="Hidden"/>
-                            <CheckBox Margin="6,0,0,0" Visibility="Hidden"/>
-                            <CheckBox Margin="6,0,0,0" Content="確認メッセージを表示しない" Name="checkBox_NoMessageDelete2" />
-                            <CheckBox Margin="6,0,0,0" Content="確認メッセージを表示しない" Name="checkBox_NoMessageAdjustRes" />
-                            <CheckBox Margin="6,0,0,0" Visibility="Hidden"/>
-                            <CheckBox Margin="6,0,0,0" Visibility="Hidden"/>
-                            <Separator Margin="12,0,12,0" Height="10" />
-                            <CheckBox Margin="6,0,0,0" Visibility="Hidden"/>
-                            <CheckBox Margin="6,0,0,0" Visibility="Hidden"/>
-                            <CheckBox Margin="6,0,0,0" Visibility="Hidden"/>
-                            <CheckBox Margin="6,0,0,0" Visibility="Hidden"/>
-                            <CheckBox Margin="6,0,0,0" Content="記号類を取り除く" Name="checkBox_EpgKeyword_Trim" />
-                            <CheckBox Margin="6,0,0,0" Content="(↑再検索でも共通)" IsEnabled="false" Name="checkBox_EpgKeyword_Trim2" IsChecked="{Binding Path=IsChecked, ElementName=checkBox_EpgKeyword_Trim, UpdateSourceTrigger=PropertyChanged}" />
-                            <CheckBox Margin="6,0,0,0" Content="自動登録無効を解除する" Name="checkBox_CancelAutoAddOff" />
-                            <CheckBox Margin="6,0,0,0" Visibility="Hidden"/>
-                            <CheckBox Margin="6,0,0,0" Visibility="Hidden"/>
-                            <Separator Margin="12,0,12,0" Height="10" />
-                            <CheckBox Margin="6,0,0,0" Content="記号類を取り除く" Name="checkBox_CopyTitle_Trim" />
-                            <CheckBox Margin="6,0,0,0" Content="基本情報のみコピーする" Name="checkBox_CopyContentBasic" />
-                            <CheckBox Margin="6,0,0,0" Content="記号類を取り除く" Name="checkBox_SearchTtile_Trim" />
-                            <CheckBox Margin="6,0,6,0" Visibility="Hidden" />
-                            <CheckBox Margin="6,0,6,0" Content="確認メッセージを表示しない" Name="checkBox_NoMessageNotKEY" />
-                            <Separator Margin="12,0,12,0" Height="10" />
-                            <CheckBox Margin="6,0,6,0" Visibility="Hidden" />
-                            <Separator Height="10" />
-                        </StackPanel>
-                        <StackPanel HorizontalAlignment="Left" Name="stackPanel_gesture" VerticalAlignment="Top" Width="122">
-                            <Label Margin="0,0,0,-10" Content="ショートカット有効" Height="28" Name="Gesture1" />
-                        </StackPanel>
-                        <StackPanel HorizontalAlignment="Left" Name="stackPanel_gesture2" VerticalAlignment="Top" Width="112">
-                            <Label Margin="0,0,0,-10" Content="ショートカットのみ使用" Height="28" Name="Gesture2" ToolTip="メニュー非表示でもショートカットを使用できます"/>
-                        </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <StackPanel Name="stackPanel_menu" VerticalAlignment="Top" HorizontalAlignment="Left" Width="188">
+                        <Label Margin="0,0,0,-10" Content="表示項目" Height="28" />
+                        <Separator Height="10" Margin="0,0,0,-6" />
+                        <Separator Height="10" />
+                        <CheckBox Margin="6,0,0,0" Content="簡易予約/予約←→無効" />
+                        <CheckBox Margin="6,0,0,0" Content="削除" />
+                        <CheckBox Margin="6,0,0,0" Content="予約ごと削除" />
+                        <CheckBox Margin="6,0,0,0" Content="予約を自動登録に合わせる" />
+                        <CheckBox Margin="6,0,0,0" Content="プロテクト←→解除" />
+                        <CheckBox Margin="6,0,0,0" Content="新規プログラム予約/自動登録" />
+                        <Separator Margin="12,0,12,0" Height="10" />
+                        <CheckBox Margin="6,0,0,0" Content="予約一覧へジャンプ" />
+                        <CheckBox Margin="6,0,0,0" Content="チューナ画面へジャンプ" />
+                        <CheckBox Margin="6,0,0,0" Content="番組表へジャンプ" />
+                        <CheckBox Margin="6,0,0,0" Content="自動予約登録変更" />
+                        <CheckBox Margin="6,0,0,0" Content="番組名でキーワード予約作成" />
+                        <CheckBox Margin="6,0,0,0" Content="番組名で再検索" />
+                        <CheckBox Margin="6,0,0,0" Content="番組名で再検索(別ウィンドウ)" />
+                        <CheckBox Margin="6,0,0,0" Content="再生/追っかけ再生" />
+                        <CheckBox Margin="6,0,0,0" Content="録画フォルダを開く" />
+                        <Separator Margin="12,0,12,0" Height="10" />
+                        <CheckBox Margin="6,0,0,0" Content="番組名/ANDキーをコピー" />
+                        <CheckBox Margin="6,0,0,0" Content="番組情報をコピー" />
+                        <CheckBox Margin="6,0,0,0" Content="番組名/ANDキーをネットで検索" />
+                        <CheckBox Margin="6,0,0,0" Content="NOTキーをコピー" />
+                        <CheckBox Margin="6,0,0,0" Content="NOTキーに貼り付け" />
+                        <Separator Margin="12,0,12,0" Height="10" />
+                        <CheckBox Margin="6,0,0,0" Content="右クリックメニューの設定..." />
+                        <Separator Height="10" />
                     </StackPanel>
-                </Grid>
+                    <StackPanel Name="stackPanel_option" VerticalAlignment="Top" Width="168" HorizontalAlignment="Left">
+                        <Label Margin="0,0,0,-10" Content="オプション" Height="28" Name="Option" />
+                        <Separator Height="10" Margin="0,0,0,-6" />
+                        <Separator Height="10" />
+                        <CheckBox Margin="6,0,0,0" Visibility="Hidden"/>
+                        <CheckBox Margin="6,0,0,0" Visibility="Hidden"/>
+                        <CheckBox Margin="6,0,0,0" Content="確認メッセージを表示しない" Name="checkBox_NoMessageDelete2" />
+                        <CheckBox Margin="6,0,0,0" Content="確認メッセージを表示しない" Name="checkBox_NoMessageAdjustRes" />
+                        <CheckBox Margin="6,0,0,0" Visibility="Hidden"/>
+                        <CheckBox Margin="6,0,0,0" Visibility="Hidden"/>
+                        <Separator Margin="12,0,12,0" Height="10" />
+                        <CheckBox Margin="6,0,0,0" Visibility="Hidden"/>
+                        <CheckBox Margin="6,0,0,0" Visibility="Hidden"/>
+                        <CheckBox Margin="6,0,0,0" Visibility="Hidden"/>
+                        <CheckBox Margin="6,0,0,0" Visibility="Hidden"/>
+                        <CheckBox Margin="6,0,0,0" Content="記号類を取り除く" Name="checkBox_EpgKeyword_Trim" />
+                        <CheckBox Margin="6,0,0,0" Content="(↑再検索でも共通)" IsEnabled="false" Name="checkBox_EpgKeyword_Trim2" IsChecked="{Binding Path=IsChecked, ElementName=checkBox_EpgKeyword_Trim, UpdateSourceTrigger=PropertyChanged}" />
+                        <CheckBox Margin="6,0,0,0" Content="自動登録無効を解除する" Name="checkBox_CancelAutoAddOff" />
+                        <CheckBox Margin="6,0,0,0" Visibility="Hidden"/>
+                        <CheckBox Margin="6,0,0,0" Visibility="Hidden"/>
+                        <Separator Margin="12,0,12,0" Height="10" />
+                        <CheckBox Margin="6,0,0,0" Content="記号類を取り除く" Name="checkBox_CopyTitle_Trim" />
+                        <CheckBox Margin="6,0,0,0" Content="基本情報のみコピーする" Name="checkBox_CopyContentBasic" />
+                        <CheckBox Margin="6,0,0,0" Content="記号類を取り除く" Name="checkBox_SearchTtile_Trim" />
+                        <CheckBox Margin="6,0,6,0" Visibility="Hidden" />
+                        <CheckBox Margin="6,0,6,0" Content="確認メッセージを表示しない" Name="checkBox_NoMessageNotKEY" />
+                        <Separator Margin="12,0,12,0" Height="10" />
+                        <CheckBox Margin="6,0,6,0" Visibility="Hidden" />
+                        <Separator Height="10" />
+                    </StackPanel>
+                    <StackPanel HorizontalAlignment="Left" Name="stackPanel_gesture" VerticalAlignment="Top" Width="122">
+                        <Label Margin="0,0,0,-10" Content="ショートカット有効" Height="28" Name="Gesture1" />
+                    </StackPanel>
+                    <StackPanel HorizontalAlignment="Left" Name="stackPanel_gesture2" VerticalAlignment="Top" Width="112">
+                        <Label Margin="0,0,0,-10" Content="ショートカットのみ使用" Height="28" Name="Gesture2" ToolTip="メニュー非表示でもショートカットを使用できます"/>
+                    </StackPanel>
+                </StackPanel>
             </TabItem>
             <TabItem Header="個別設定" Name="tabItem_MenuManual">
                 <Grid>
@@ -109,15 +107,17 @@
                 </Grid>
             </TabItem>
             <TabItem Header="その他" Name="tabItem_Etc">
-                <Grid>
-                    <Label Margin="6,6,0,0" Content="検索のURI" HorizontalAlignment="Left" Name="label2" Height="28" VerticalAlignment="Top" />
-                    <TextBox Margin="77,6,0,0" Name="textBox_SearchURI" Height="24" VerticalAlignment="Top" Width="503" HorizontalAlignment="Left" />
-                    <CheckBox Margin="6,53,0,0" Content="表示項目は個別設定を使用する" Name="checkBox_ManualMenu" HorizontalAlignment="Left" Width="217" Height="16" VerticalAlignment="Top" />
-                    <Label Margin="21,64,0,0" Content="※[編集]サブメニューはこの設定にかかわらず、常に個別設定が有効になります。" Name="label1" Height="24" VerticalAlignment="Top" Width="559" HorizontalAlignment="Left" />
-                    <CheckBox Margin="6,91,0,0" Content="ショートカット操作に対する確認メッセージを表示しない" Height="16" HorizontalAlignment="Left" Name="checkBox_NoMessageKeyGesture" VerticalAlignment="Top" Width="290" />
-                    <Label Margin="21,102,0,0" Content="※削除、自動予約登録画面の並び替え関係、予約ダイアログの確定操作など" Name="label3" Height="24" VerticalAlignment="Top" Width="559" HorizontalAlignment="Left" />
-                    <CheckBox Margin="6,129,0,0" Content="全て削除(録画済み一覧、検索/自動登録ダイアログ)で確認メッセージを表示しない" Height="16" HorizontalAlignment="Left" Name="checkBox_NoMessageDeleteAll" VerticalAlignment="Top" Width="574" />
-                </Grid>
+                <StackPanel Margin="6,6,6,6">
+                    <DockPanel Margin="0,0,0,12" >
+                        <Label Content="検索のURI " Height="24" />
+                        <TextBox Name="textBox_SearchURI" Height="24" />
+                    </DockPanel>
+                    <CheckBox Margin="0,0,0,6" Content="表示項目は個別設定を使用する" Name="checkBox_ManualMenu" />
+                    <Label Margin="0,-12,0,2" Content="※[編集]サブメニューはこの設定にかかわらず、常に個別設定が有効になります。" />
+                    <CheckBox Margin="0,0,0,6" Content="ショートカット操作に対する確認メッセージを表示しない" Name="checkBox_NoMessageKeyGesture" />
+                    <Label Margin="0,-12,0,2" Content="※削除、自動予約登録画面の並び替え関係、予約ダイアログの確定操作など" />
+                    <CheckBox Margin="0,0,0,6" Content="「全て削除」(録画済み一覧、検索/自動登録ダイアログ)で確認メッセージを表示しない" Name="checkBox_NoMessageDeleteAll" />
+                </StackPanel>
             </TabItem>
         </TabControl>
         <Button Content="設定の初期化" Height="23" HorizontalAlignment="Right" Margin="0,0,502,12" Name="button_Initialize" VerticalAlignment="Bottom" Width="100" Click="button_Initialize_Click" />
