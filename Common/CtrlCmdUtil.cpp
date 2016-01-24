@@ -10,13 +10,10 @@ namespace CtrlCmdUtilImpl_
 DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const wstring& val, bool oldFormat )
 {
 	(void)ver;
-	DWORD size = (DWORD)((val.size() + 1) * sizeof(WCHAR));
-	if( !oldFormat ){
-		size += sizeof(DWORD);
-	}
+	DWORD size = (DWORD)((val.size() + 1) * sizeof(WCHAR) + sizeof(DWORD));
 	if( buff != NULL ){
 		//全体のサイズ
-		WriteVALUE(0, buff, buffOffset, size);
+		WriteVALUE(0, buff, buffOffset, oldFormat ? size - (DWORD)sizeof(DWORD) : size);
 		memcpy(buff + buffOffset + sizeof(DWORD), val.c_str(), (val.size() + 1) * sizeof(WCHAR));
 	}
 	return size;
