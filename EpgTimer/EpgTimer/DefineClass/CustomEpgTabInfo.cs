@@ -31,7 +31,7 @@ namespace EpgTimer
         public bool FilterEnded { get; set; }
         public int ID { get; set; }
 
-        public static List<CustomEpgTabInfo> Clone(List<CustomEpgTabInfo> src) { return CopyObj.Clone(src, CustomEpgTabInfo.CopyData); }
+        public static List<CustomEpgTabInfo> Clone(IEnumerable<CustomEpgTabInfo> src) { return CopyObj.Clone(src, CopyData); }
         public CustomEpgTabInfo Clone() { return CopyObj.Clone(this, CopyData); }
         protected static void CopyData(CustomEpgTabInfo src, CustomEpgTabInfo dest)
         {
@@ -56,6 +56,6 @@ namespace EpgTimer
 
     public static class CustomEpgTabInfoEx
     {
-        public static List<CustomEpgTabInfo> Clone(this List<CustomEpgTabInfo> src) { return CustomEpgTabInfo.Clone(src); }
+        public static List<CustomEpgTabInfo> Clone(this IEnumerable<CustomEpgTabInfo> src) { return CustomEpgTabInfo.Clone(src); }
     }
 }

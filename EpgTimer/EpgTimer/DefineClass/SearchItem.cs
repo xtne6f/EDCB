@@ -51,7 +51,7 @@ namespace EpgTimer
             {
                 if (EventInfo == null) return "";
                 //
-                return EventInfo.Title();
+                return EventInfo.DataTitle;
             }
         }
         public virtual String ServiceName
@@ -250,25 +250,25 @@ namespace EpgTimer
 
     public static class SearchItemEx
     {
-        public static List<EpgEventInfo> GetEventList(this ICollection<SearchItem> itemlist)
+        public static List<EpgEventInfo> GetEventList(this IEnumerable<SearchItem> list)
         {
-            return itemlist.Where(item => item != null).Select(item => item.EventInfo).ToList();
+            return list.Where(item => item != null).Select(item => item.EventInfo).ToList();
         }
-        public static List<EpgEventInfo> GetNoReserveList(this ICollection<SearchItem> itemlist)
+        public static List<EpgEventInfo> GetNoReserveList(this IEnumerable<SearchItem> list)
         {
-            return itemlist.Where(item => item == null ? false : item.IsReserved == false).Select(item => item.EventInfo).ToList();
+            return list.Where(item => item != null && item.IsReserved == false).Select(item => item.EventInfo).ToList();
         }
-        public static List<ReserveData> GetReserveList(this ICollection<SearchItem> itemlist)
+        public static List<ReserveData> GetReserveList(this IEnumerable<SearchItem> list)
         {
-            return itemlist.Where(item => item == null ? false : item.IsReserved == true).Select(item => item.ReserveInfo).ToList();
+            return list.Where(item => item != null && item.IsReserved == true).Select(item => item.ReserveInfo).ToList();
         }
-        //public static bool HasReserved(this List<SearchItem> list)
+        //public static bool HasReserved(this IEnumerable<SearchItem> list)
         //{
-        //    return list.Any(info => info == null ? false : info.IsReserved);
+        //    return list.Any(info => item != null && item.IsReserved == false);
         //}
-        //public static bool HasNoReserved(this List<SearchItem> list)
+        //public static bool HasNoReserved(this IEnumerable<SearchItem> list)
         //{
-        //    return list.Any(info => info == null ? false : !info.IsReserved);
+        //    return list.Any(info => item != null && item.IsReserved == true);
         //}
         public static void AddFromEventList(this ICollection<SearchItem> itemlist, ICollection<EpgEventInfo> eventList, bool isExceptUnknownStartTime, bool isExceptEnded)
         {

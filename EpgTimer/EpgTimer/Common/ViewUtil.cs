@@ -75,7 +75,7 @@ namespace EpgTimer
                 {
                     return CommonManager.Instance.ResWarBackColor;
                 }
-                if (ReserveData.IsAutoAddMissing() == true)
+                if (ReserveData.IsAutoAddInvalid == true)
                 {
                     return CommonManager.Instance.ResAutoAddMissingBackColor;
                 }

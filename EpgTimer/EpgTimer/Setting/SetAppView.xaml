@@ -64,9 +64,19 @@
                     <ComboBox Height="24" HorizontalAlignment="Left" Margin="270,57,0,0" Name="comboBox_recname" VerticalAlignment="Top" Width="160" />
                     <Button Content="設定" Height="23" HorizontalAlignment="Left" Margin="436,58,0,0" Name="button_recname" VerticalAlignment="Top" Width="54" Click="button_recname_Click" />
                     <CheckBox Content="ファイル名の禁則文字の変換対象から「\」を除外する" Height="16" HorizontalAlignment="Left" Margin="6,87,0,0" Name="checkBox_noChkYen" VerticalAlignment="Top" />
-                    <CheckBox Content="録画中または開始直前の予約を変更・削除するとき警告する" Height="16" HorizontalAlignment="Left" Margin="6,112,0,0" Name="checkBox_cautionOnRecChange" VerticalAlignment="Top" />
-                    <Label Content="分以内" Height="28" Margin="437,112,0,0" Name="label_cautionOnRecMarginMin" VerticalAlignment="Top" HorizontalAlignment="Left" Width="53" />
-                    <TextBox Height="24" HorizontalAlignment="Left" Margin="368,112,0,0" Name="textBox_cautionOnRecMarginMin" VerticalAlignment="Top" Width="62" />
+                    <StackPanel Margin="6,112,0,0" >
+                        <StackPanel Margin="0,0,0,6" Orientation="Horizontal" >
+                            <CheckBox  VerticalAlignment="Center" Content="録画中または開始直前の予約を変更・削除するとき警告する" Name="checkBox_cautionOnRecChange"/>
+                            <TextBox Height="24" Margin="12,0,0,0" Name="textBox_cautionOnRecMarginMin" Width="62" />
+                            <Label Margin="12,0,0,0" VerticalAlignment="Center" Content="分以内" />
+                        </StackPanel >
+                        <StackPanel Orientation="Horizontal" >
+                            <Label Content="自動予約登録の変更・削除に合わせて予約を変更・削除する"  ToolTipService.ShowDuration="600000" ToolTip="個別予約は対象外です。また、他の有効な自動予約登録の対象になっている予約は連動削除されません。&#10;＊右クリックメニューの「予約を自動登録に合わせる」「予約ごと削除」では、検索された予約は全て変更・削除されます。&#10;＊自動予約登録から外れた予約は、[各画面の設定][予約一覧・共通]のオプションで強調表示することができます。" />
+                            <CheckBox Margin="12,0,0,0" VerticalAlignment="Center"  Content="変更" Name="checkBox_SyncResAutoAddChange" />
+                            <CheckBox Margin="12,0,0,0" VerticalAlignment="Center"  Content="削除" Name="checkBox_SyncResAutoAddDelete" />
+                        </StackPanel>
+                        <CheckBox Margin="18,0,0,6" Content="変更時、予約を一度削除してから再登録する (無効の予約を除く)" Name="checkBox_SyncResAutoAddChgNewRes" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_SyncResAutoAddChange, UpdateSourceTrigger=PropertyChanged}" ToolTipService.ShowDuration="600000" ToolTip="キーワード予約無効時や検索条件変更時など、対象外となった予約が削除されるので注意が必要です。" />
+                    </StackPanel>
                 </Grid>
             </TabItem>
             <TabItem Header="ボタン表示" Name="tabItem3">

@@ -6,17 +6,175 @@ using System.Windows;
 
 namespace EpgTimer
 {
-    public static class ReserveDataEx
+    public partial class ReserveData : IAutoAddTargetData
     {
-        static CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
-
-        public static bool IsAutoAddMissing(this ReserveData reserveInfo)
+        public string DataTitle { get { return Title; } }
+        public DateTime PgStartTime { get { return StartTime; } }
+        public uint PgDurationSecond { get { return DurationSecond; } }
+        public UInt64 Create64Key()
         {
-            if (Settings.Instance.DisplayReserveAutoAddMissing == false) return false;
-            //
-            return CommonManager.Instance.DB.IsReserveAutoAddMissing(reserveInfo);
+            return CommonManager.Create64Key(OriginalNetworkID, TransportStreamID, ServiceID);
+        }
+        public UInt64 Create64PgKey()
+        {
+            return CommonManager.Create64PgKey(OriginalNetworkID, TransportStreamID, ServiceID, EventID);
         }
 
+        public ReserveMode ReserveMode
+        {
+            get
+            {
+                if (IsAutoAdded == true)
+                {
+                    return IsEpgReserve == true ? ReserveMode.KeywordAuto : ReserveMode.ManualAuto;
+                }
+                else
+                {
+                    return IsEpgReserve == true ? ReserveMode.EPG : ReserveMode.Program;
+                }
+
+            }
+        }
+        public bool IsEpgReserve { get { return EventID != 0xFFFF; } }
+        public bool IsAutoAdded { get { return Comment != ""; } }
+
+        public bool IsEnabled { get { return RecSetting.RecMode != 5; } }
+
+        public bool IsOnRec(int MarginMin = 0)
+        {
+            int StartMargin = RecSetting.GetTrueMargin(true) + 60 * MarginMin;
+            int EndMargin = RecSetting.GetTrueMargin(false);
+
+            DateTime startTime = StartTime.AddSeconds(StartMargin * -1);
+            int duration = (int)DurationSecond + StartMargin + EndMargin;
+
+            return CtrlCmdDefEx.isOnTime(startTime, duration);
+        }
+
+        public bool IsOnAir()
+        {
+            return CtrlCmdDefEx.isOnTime(StartTime, (int)DurationSecond);
+        }
+
+        public DateTime StartTimeWithMargin(int MarginMin = 0)
+        {
+            int StartMargin = RecSetting.GetTrueMargin(true) + 60 * MarginMin;
+            return StartTime.AddSeconds(StartMargin * -1);
+        }
+        public DateTime EndTimeWithMargin()
+        {
+            int EndMargin = RecSetting.GetTrueMargin(false);
+            return StartTime.AddSeconds((int)DurationSecond + EndMargin);
+        }
+
+        public EpgEventInfo SearchEventInfo(bool getSrv = false)
+        {
+            EpgEventInfo eventInfo = null;
+
+            try
+            {
+                if (EventID != 0xFFFF)
+                {
+                    UInt64 key = Create64Key();
+                    if (CommonManager.Instance.DB.ServiceEventList.ContainsKey(key) == true)
+                    {
+                        foreach (EpgEventInfo eventChkInfo in CommonManager.Instance.DB.ServiceEventList[key].eventList)
+                        {
+                            if (eventChkInfo.event_id == EventID)
+                            {
+                                eventInfo = eventChkInfo;
+                                break;
+                            }
+                        }
+                    }
+                    if (eventInfo == null && getSrv == true)
+                    {
+                        UInt64 pgId = Create64PgKey();
+                        eventInfo = new EpgEventInfo();
+                        CommonManager.Instance.CtrlCmd.SendGetPgInfo(pgId, ref eventInfo);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+            }
+
+            return eventInfo;
+        }
+
+        public EpgEventInfo SearchEventInfoLikeThat()
+        {
+            double dist = double.MaxValue, dist1;
+            EpgEventInfo eventPossible = null;
+
+            UInt64 key = Create64Key();
+            if (CommonManager.Instance.DB.ServiceEventList.ContainsKey(key) == true)
+            {
+                foreach (EpgEventInfo eventChkInfo in CommonManager.Instance.DB.ServiceEventList[key].eventList)
+                {
+                    dist1 = Math.Abs((StartTime - eventChkInfo.start_time).TotalSeconds);
+                    double overlapLength = MenuUtil.CulcOverlapLength(StartTime, DurationSecond,
+                                                            eventChkInfo.start_time, eventChkInfo.durationSec);
+
+                    //開始時間が最も近いものを選ぶ。同じ差なら時間が前のものを選ぶ
+                    if (overlapLength >= 0 && (dist > dist1 ||
+                        dist == dist1 && (eventPossible == null || StartTime > eventChkInfo.start_time)))
+                    {
+                        dist = dist1;
+                        eventPossible = eventChkInfo;
+                        if (dist == 0) break;
+                    }
+                }
+            }
+
+            return eventPossible;
+        }
+
+        //AppendData 関係。ID(元データ)に対して一意の情報なので、データ自体はDB側。
+        private ReserveDataAppend Append { get { return CommonManager.Instance.DB.GetReserveDataAppend(this); } }
+        public bool IsAutoAddMissing
+        {
+            get
+            {
+                if (Settings.Instance.DisplayReserveAutoAddMissing == false) return false;
+                return IsAutoAdded && Append.IsAutoAddMissing;
+            }
+        }
+        public bool IsAutoAddInvalid
+        {
+            get
+            {
+                if (Settings.Instance.DisplayReserveAutoAddMissing == false) return false;
+                return IsAutoAdded && Append.IsAutoAddInvalid;
+            }
+        }
+        public List<EpgAutoAddData> GetEpgAutoAddList(bool? IsEnabled = null, bool ByFazy = false)
+        {
+            var list = IsEnabled == null ? Append.EpgAutoList : IsEnabled == true ? Append.EpgAutoListEnabled : Append.EpgAutoListEnabled;
+            if (ByFazy == true)
+            {
+                //プログラム予約の場合だけ、それっぽい番組を選んで、キーワード予約の検索にヒットしていたら選択する。
+                if (IsEpgReserve == false)
+                {
+                    EpgEventInfo trgInfo = this.SearchEventInfoLikeThat();
+                    if (trgInfo != null)
+                    {
+                        list.AddRange(trgInfo.GetEpgAutoAddList(IsEnabled, false));
+                    }
+                }
+                list = list.Distinct().ToList();
+            }
+            return list;
+        }
+        public List<ManualAutoAddData> GetManualAutoAddList(bool? IsEnabled = null)
+        {
+            return IsEnabled == null ? Append.ManualAutoList : IsEnabled == true ? Append.ManualAutoListEnabled : Append.ManualAutoListEnabled;
+        }
+    }
+
+    public static class ReserveDataEx
+    {
         public static ReserveData GetNextReserve(this List<ReserveData> resList, bool IsTargetOffRes = false)
         {
             ReserveData ret = null;
@@ -37,155 +195,12 @@ namespace EpgTimer
             return ret;
         }
 
-        public static EpgEventInfo SearchEventInfo(this ReserveData info, bool getSrv = false)
-        {
-            EpgEventInfo eventInfo = null;
-
-            if (info != null)
-            {
-                try
-                {
-                    if (info.EventID != 0xFFFF)
-                    {
-                        UInt64 key = info.Create64Key();
-                        if (CommonManager.Instance.DB.ServiceEventList.ContainsKey(key) == true)
-                        {
-                            foreach (EpgEventInfo eventChkInfo in CommonManager.Instance.DB.ServiceEventList[key].eventList)
-                            {
-                                if (eventChkInfo.event_id == info.EventID)
-                                {
-                                    eventInfo = eventChkInfo;
-                                    break;
-                                }
-                            }
-                        }
-                        if (eventInfo == null && getSrv == true)
-                        {
-                            UInt64 pgId = info.Create64PgKey();
-                            eventInfo = new EpgEventInfo();
-                            cmd.SendGetPgInfo(pgId, ref eventInfo);
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                }
-
-            }
-
-            return eventInfo;
-        }
-
-        public static EpgEventInfo SearchEventInfoLikeThat(this ReserveData resInfo)
-        {
-            if (resInfo == null) return null;
-            double dist = double.MaxValue, dist1;
-            EpgEventInfo eventPossible = null;
-
-            UInt64 key = resInfo.Create64Key();
-            if (CommonManager.Instance.DB.ServiceEventList.ContainsKey(key) == true)
-            {
-                foreach (EpgEventInfo eventChkInfo in CommonManager.Instance.DB.ServiceEventList[key].eventList)
-                {
-                    dist1 = Math.Abs((resInfo.StartTime - eventChkInfo.start_time).TotalSeconds);
-                    double overlapLength = MenuUtil.CulcOverlapLength(resInfo.StartTime, resInfo.DurationSecond,
-                                                            eventChkInfo.start_time, eventChkInfo.durationSec);
-
-                    //開始時間が最も近いものを選ぶ。同じ差なら時間が前のものを選ぶ
-                    if (overlapLength >= 0 && (dist > dist1 ||
-                        dist == dist1 && (eventPossible == null || resInfo.StartTime > eventChkInfo.start_time)))
-                    {
-                        dist = dist1;
-                        eventPossible = eventChkInfo;
-                        if (dist == 0) break;
-                    }
-                }
-            }
-
-            return eventPossible;
-        }
-
-        public static List<EpgAutoAddData> GetEpgAutoAddList(this ReserveData resInfo)
-        {
-            if (resInfo == null || resInfo.IsEpgReserve() != true) return new List<EpgAutoAddData>();
-            //
-            return CommonManager.Instance.DB.EpgAutoAddList.Values
-                .Where(data => data.GetReserveList().Contains(resInfo)).ToList();
-        }
-
-        public static List<ManualAutoAddData> GetManualAutoAddList(this ReserveData resInfo)
-        {
-            if (resInfo == null || resInfo.IsEpgReserve() == true) return new List<ManualAutoAddData>();
-            //
-            return CommonManager.Instance.DB.ManualAutoAddList.Values
-                .Where(data => data.GetReserveList().Contains(resInfo)).ToList();
-        }
-
-        public static bool IsEpgReserve(this ReserveData reserveInfo)
-        {
-            if (reserveInfo == null) return false;
-            //
-            return reserveInfo.EventID != 0xFFFF;
-        }
-
-        public static bool IsAutoAdded(this ReserveData reserveInfo)
-        {
-            if (reserveInfo == null) return false;
-            //
-            return reserveInfo.Comment != "";
-        }
-
-        public static bool IsOnRec(this ReserveData reserveInfo, int MarginMin = 0)
-        {
-            if (reserveInfo == null) return false;
-            //
-            int StartMargin = reserveInfo.RecSetting.GetTrueMargin(true) + 60 * MarginMin;
-            int EndMargin = reserveInfo.RecSetting.GetTrueMargin(false);
-
-            DateTime startTime = reserveInfo.StartTime.AddSeconds(StartMargin * -1);
-            int duration = (int)reserveInfo.DurationSecond + StartMargin + EndMargin;
-
-            return CtrlCmdDefEx.isOnTime(startTime, duration);
-        }
-
-        public static bool IsOnAir(this ReserveData reserveInfo)
-        {
-            if (reserveInfo == null) return false;
-            //
-            return CtrlCmdDefEx.isOnTime(reserveInfo.StartTime, (int)reserveInfo.DurationSecond);
-        }
-
-        public static DateTime StartTimeWithMargin(this ReserveData reserveInfo, int MarginMin = 0)
-        {
-            if (reserveInfo == null) return new DateTime();
-            //
-            int StartMargin = reserveInfo.RecSetting.GetTrueMargin(true) + 60 * MarginMin;
-            return reserveInfo.StartTime.AddSeconds(StartMargin * -1);
-        }
-        public static DateTime EndTimeWithMargin(this ReserveData reserveInfo)
-        {
-            if (reserveInfo == null) return new DateTime();
-            //
-            int EndMargin = reserveInfo.RecSetting.GetTrueMargin(false);
-            return reserveInfo.StartTime.AddSeconds((int)reserveInfo.DurationSecond + EndMargin);
-        }
-
-        public static List<RecSettingData> RecSettingList(this List<ReserveData> list)
+        public static List<RecSettingData> RecSettingList(this IEnumerable<ReserveData> list)
         {
             return list.Where(item => item != null).Select(item => item.RecSetting).ToList();
         }
 
-        public static UInt64 Create64Key(this ReserveData obj)
-        {
-            return CommonManager.Create64Key(obj.OriginalNetworkID, obj.TransportStreamID, obj.ServiceID);
-        }
-        public static UInt64 Create64PgKey(this ReserveData obj)
-        {
-            return CommonManager.Create64PgKey(obj.OriginalNetworkID, obj.TransportStreamID, obj.ServiceID, obj.EventID);
-        }
-
-        public static List<ReserveData> Clone(this List<ReserveData> src) { return CopyObj.Clone(src, CopyData); }
+        public static List<ReserveData> Clone(this IEnumerable<ReserveData> src) { return CopyObj.Clone(src, CopyData); }
         public static ReserveData Clone(this ReserveData src) { return CopyObj.Clone(src, CopyData); }
         public static void CopyTo(this ReserveData src, ReserveData dest) { CopyObj.CopyTo(src, dest, CopyData); }
         private static void CopyData(ReserveData src, ReserveData dest)
@@ -206,6 +221,35 @@ namespace EpgTimer
             dest.Title = src.Title;
             dest.TransportStreamID = src.TransportStreamID;
         }
+    }
 
+    //AutoAddAppendに依存するので生成時は注意
+    public class ReserveDataAppend
+    {
+        public ReserveDataAppend()
+        {
+            EpgAutoList = new List<EpgAutoAddData>();
+            EpgAutoListEnabled = new List<EpgAutoAddData>();
+            ManualAutoList = new List<ManualAutoAddData>();
+            ManualAutoListEnabled = new List<ManualAutoAddData>();
+        }
+
+        public bool IsAutoAddMissing { get; protected set; }
+        public bool IsAutoAddInvalid { get; protected set; }
+        public List<EpgAutoAddData> EpgAutoList { get; protected set; }
+        public List<EpgAutoAddData> EpgAutoListEnabled { get; protected set; }
+        public List<EpgAutoAddData> EpgAutoListDisabled { get { return EpgAutoList.GetAutoAddList(false); } }
+        public List<ManualAutoAddData> ManualAutoList { get; protected set; }
+        public List<ManualAutoAddData> ManualAutoListEnabled { get; protected set; }
+        public List<ManualAutoAddData> ManualAutoListDisabled { get { return ManualAutoList.FindAll(data => data.IsEnabled == false); } }
+
+        //情報の更新をする。
+        public void UpdateData()
+        {
+            EpgAutoListEnabled = EpgAutoList.FindAll(data => data.IsEnabled == true);
+            ManualAutoListEnabled = ManualAutoList.GetAutoAddList(true);
+            IsAutoAddMissing = (EpgAutoList.Count + ManualAutoList.Count) == 0;
+            IsAutoAddInvalid = (EpgAutoListEnabled.Count + ManualAutoListEnabled.Count) == 0;
+        }
     }
 }

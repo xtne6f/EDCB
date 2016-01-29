@@ -30,12 +30,14 @@ namespace EpgTimer
                 this.CommandBindings.Add(new CommandBinding(EpgCmds.AddInDialog, button_add_click));
                 this.CommandBindings.Add(new CommandBinding(EpgCmds.ChangeInDialog, button_chg_click, (sender, e) => e.CanExecute = chgMode));
                 this.CommandBindings.Add(new CommandBinding(EpgCmds.DeleteInDialog, button_del_click, (sender, e) => e.CanExecute = chgMode));
+                this.CommandBindings.Add(new CommandBinding(EpgCmds.Delete2InDialog, button_del2_click, (sender, e) => e.CanExecute = chgMode));
 
                 //ボタンの設定
                 mBinds.SetCommandToButton(button_cancel, EpgCmds.Cancel);
                 mBinds.SetCommandToButton(button_chg, EpgCmds.ChangeInDialog);
                 mBinds.SetCommandToButton(button_add, EpgCmds.AddInDialog);
                 mBinds.SetCommandToButton(button_del, EpgCmds.DeleteInDialog);
+                mBinds.SetCommandToButton(button_del2, EpgCmds.Delete2InDialog);
                 mBinds.ResetInputBindings(this);
 
                 //その他設定
@@ -69,6 +71,7 @@ namespace EpgTimer
             chgMode = chgFlag;
             button_chg.Visibility = (chgFlag == true ? Visibility.Visible : Visibility.Hidden);
             button_del.Visibility = button_chg.Visibility;
+            button_del2.Visibility = button_chg.Visibility;
         }
 
         public void SetDefaultSetting(ManualAutoAddData item)
@@ -76,45 +79,56 @@ namespace EpgTimer
             defKey = item.Clone();
         }
 
-        private bool CheckExistAutoAddItem()
+        //proc 0:追加、1:変更、2:削除、3:予約ごと削除
+        private bool CheckAutoAddChange(ExecutedRoutedEventArgs e, int proc)
         {
-            bool retval = CommonManager.Instance.DB.ManualAutoAddList.ContainsKey(this.defKey.dataID);
-            if (retval == false)
+            if (proc != 3)
             {
-                MessageBox.Show("項目がありません。\r\n" +
-                    "既に削除されています。\r\n" +
-                    "(別のEpgtimerによる操作など)");
-
-                //追加モードに変更
-                SetChangeMode(false);
-                defKey = null;
+                if (CmdExeUtil.IsDisplayKgMessage(e) == true)
+                {
+                    var strMode = new string[] { "追加", "変更", "削除" }[proc];
+                    if (MessageBox.Show("プログラム予約登録を" + strMode + "します。\r\nよろしいですか？", strMode + "の確認", MessageBoxButton.OKCancel) != MessageBoxResult.OK)
+                    { return false; }
+                }
             }
-            return retval;
+            else
+            {
+                if (CmdExeUtil.CheckAllProcCancel(e, CommonUtil.ToList(defKey), true) == true)
+                { return false; }
+            }
+
+            if (proc != 0)
+            {
+                if (CommonManager.Instance.DB.ManualAutoAddList.ContainsKey(this.defKey.dataID) == false)
+                {
+                    MessageBox.Show("項目がありません。\r\n" +
+                        "既に削除されています。\r\n" +
+                        "(別のEpgtimerによる操作など)");
+
+                    //追加モードに変更
+                    SetChangeMode(false);
+                    defKey = null;
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         private void button_add_click(object sender, ExecutedRoutedEventArgs e)
         {
-            if (CmdExeUtil.IsDisplayKgMessage(e) == true)
-            {
-                if (MessageBox.Show("プログラム予約登録を追加します。\r\nよろしいですか？", "予約の確認", MessageBoxButton.OKCancel) != MessageBoxResult.OK)
-                { return; }
-            }
             button_add_chg(sender, e, false);
         }
         private void button_chg_click(object sender, ExecutedRoutedEventArgs e)
         {
-            if (CmdExeUtil.IsDisplayKgMessage(e) == true)
-            {
-                if (MessageBox.Show("プログラム予約登録を変更します。\r\nよろしいですか？", "変更の確認", MessageBoxButton.OKCancel) != MessageBoxResult.OK)
-                { return; }
-            }
-            if (CheckExistAutoAddItem() == false) return;
             button_add_chg(sender, e, true);
         }
         private void button_add_chg(object sender, ExecutedRoutedEventArgs e, bool chgFlag)
         {
             try
             {
+                if (CheckAutoAddChange(e, chgFlag == false ? 0 : 1) == false) return;
+                //
                 if (defKey == null)
                 {
                     defKey = new ManualAutoAddData();
@@ -171,11 +185,11 @@ namespace EpgTimer
 
                 if (chgFlag == true)
                 {
-                    mutil.ManualAutoAddChange(CommonUtil.ToList(defKey));
+                    mutil.AutoAddChange(CommonUtil.ToList(defKey));
                 }
                 else
                 {
-                    mutil.ManualAutoAddAdd(CommonUtil.ToList(defKey));
+                    mutil.AutoAddAdd(CommonUtil.ToList(defKey));
                 }
             }
             catch (Exception ex)
@@ -187,14 +201,17 @@ namespace EpgTimer
 
         private void button_del_click(object sender, ExecutedRoutedEventArgs e)
         {
-            if (CmdExeUtil.IsDisplayKgMessage(e) == true)
-            {
-                if (MessageBox.Show("プログラム予約登録を削除します。\r\nよろしいですか？", "削除の確認", MessageBoxButton.OKCancel) != MessageBoxResult.OK)
-                { return; }
-            }
-            if (CheckExistAutoAddItem() == false) return;
-            
-            mutil.ManualAutoAddDelete(CommonUtil.ToList(defKey));
+            if (CheckAutoAddChange(e, 2) == false) return;
+            //
+            mutil.AutoAddDelete(CommonUtil.ToList(defKey));
+            DialogResult = true;
+        }
+
+        private void button_del2_click(object sender, ExecutedRoutedEventArgs e)
+        {
+            if (CheckAutoAddChange(e, 3) == false) return;
+            //
+            mutil.AutoAddDelete(CommonUtil.ToList(defKey), true, true, false);
             DialogResult = true;
         }
 

@@ -8,7 +8,7 @@ using System.Windows.Input;
 
 namespace EpgTimer
 {
-    public class CmdExe<T> where T : class, new()
+    public class CmdExe<T> where T : class, IRecWorkMainData, new()
     {
         public struct cmdOption
         {
@@ -77,6 +77,7 @@ namespace EpgTimer
             cmdList.Add(EpgCmds.AddOnPreset, new cmdOption(mc_AddOnPreset, null, cmdExeType.MultiItem, changeDB: true));
             cmdList.Add(EpgCmds.ChgOnOff, new cmdOption(mc_ChangeOnOff, null, cmdExeType.MultiItem, true, changeDB: true));
             cmdList.Add(EpgCmds.ChgOnPreset, new cmdOption(mc_ChangeRecSetting, null, cmdExeType.MultiItem, true, changeDB: true));
+            cmdList.Add(EpgCmds.ChgResMode, new cmdOption(mc_ChgResMode, null, cmdExeType.MultiItem, changeDB: true));
             cmdList.Add(EpgCmds.ChgBulkRecSet, new cmdOption(mc_ChgBulkRecSet, null, cmdExeType.MultiItem, true, changeDB: true));
             cmdList.Add(EpgCmds.ChgGenre, new cmdOption(mc_ChgGenre, null, cmdExeType.MultiItem, true, changeDB: true));
             cmdList.Add(EpgCmds.ChgRecmode, new cmdOption(mc_ChangeRecSetting, null, cmdExeType.MultiItem, true, changeDB: true));
@@ -250,6 +251,7 @@ namespace EpgTimer
         protected virtual void mc_AddOnPreset(object sender, ExecutedRoutedEventArgs e) { }
         protected virtual void mc_ChangeOnOff(object sender, ExecutedRoutedEventArgs e) { }
         protected virtual void mc_ChangeRecSetting(object sender, ExecutedRoutedEventArgs e) { }
+        protected virtual void mc_ChgResMode(object sender, ExecutedRoutedEventArgs e) { }
         protected virtual void mc_ChgBulkRecSet(object sender, ExecutedRoutedEventArgs e) { }
         protected virtual void mc_ChgGenre(object sender, ExecutedRoutedEventArgs e) { }
         protected virtual void mc_ChangeKeyEnabled(object sender, ExecutedRoutedEventArgs e) { }
@@ -262,16 +264,39 @@ namespace EpgTimer
         protected virtual void mc_JumpReserve(object sender, ExecutedRoutedEventArgs e) { }
         protected virtual void mc_JumpTuner(object sender, ExecutedRoutedEventArgs e) { }
         protected virtual void mc_JumpTable(object sender, ExecutedRoutedEventArgs e) { }
-        protected virtual void mc_ShowAutoAddDialog(object sender, ExecutedRoutedEventArgs e) { }
-        protected virtual void mc_ToAutoadd(object sender, ExecutedRoutedEventArgs e) { }
+        protected virtual void mc_ShowAutoAddDialog(object sender, ExecutedRoutedEventArgs e)
+        {
+            AutoAddData autoAdd = AutoAddData.AutoAddList(CmdExeUtil.ReadObjData(e) as Type, (uint)CmdExeUtil.ReadIdData(e));
+            if (autoAdd is EpgAutoAddData)
+            {
+                IsCommandExecuted = true == mutil.OpenChangeEpgAutoAddDialog(autoAdd as EpgAutoAddData, this.Owner);
+            }
+            else if (autoAdd is ManualAutoAddData)
+            {
+                IsCommandExecuted = true == mutil.OpenChangeManualAutoAddDialog(autoAdd as ManualAutoAddData, this.Owner);
+            }
+        }
+        protected virtual void mc_ToAutoadd(object sender, ExecutedRoutedEventArgs e)
+        {
+            mutil.SendAutoAdd(dataList[0] as IBasicPgInfo, this.Owner, CmdExeUtil.IsKeyGesture(e));
+            IsCommandExecuted = true;
+        }
         protected virtual void mc_Play(object sender, ExecutedRoutedEventArgs e) { }
         protected virtual void mc_OpenFolder(object sender, ExecutedRoutedEventArgs e)
         {
             CommonManager.Instance.OpenFolder(CmdExeUtil.ReadObjData(e) as string);
         }
-        protected virtual void mc_CopyTitle(object sender, ExecutedRoutedEventArgs e) { }
+        protected virtual void mc_CopyTitle(object sender, ExecutedRoutedEventArgs e)
+        {
+            mutil.CopyTitle2Clipboard(dataList[0].DataTitle, CmdExeUtil.IsKeyGesture(e));
+            IsCommandExecuted = true;
+        }
         protected virtual void mc_CopyContent(object sender, ExecutedRoutedEventArgs e) { }
-        protected virtual void mc_SearchTitle(object sender, ExecutedRoutedEventArgs e) { }
+        protected virtual void mc_SearchTitle(object sender, ExecutedRoutedEventArgs e)
+        {
+            mutil.SearchTextWeb(dataList[0].DataTitle, CmdExeUtil.IsKeyGesture(e));
+            IsCommandExecuted = true;
+        }
         protected virtual void mc_CopyNotKey(object sender, ExecutedRoutedEventArgs e) { }
         protected virtual void mc_SetNotKey(object sender, ExecutedRoutedEventArgs e) { }
         protected virtual void mc_ProtectChange(object sender, ExecutedRoutedEventArgs e) { }
@@ -402,7 +427,7 @@ namespace EpgTimer
             {
                 if (subMenu.Tag == EpgCmdsEx.ChgKeyEnabledMenu)
                 {
-                    if (view != CtxmCode.EpgAutoAddView)
+                    if (typeof(T) != typeof(EpgAutoAddData))
                     {
                         subMenu.Visibility = Visibility.Collapsed;
                         continue;
@@ -420,13 +445,43 @@ namespace EpgTimer
                     subMenu.Header = string.Format("プリセット : {0}", value == null ? "*" : value.DisplayName);
                     SetCheckmarkSubMenus(subMenu, value == null ? int.MinValue : (int)value.ID);
                 }
+                else if (subMenu.Tag == EpgCmdsEx.ChgResModeMenu)
+                {
+                    mm.CtxmGenerateChgAutoAddItems(subMenu, itemCount == 1 ? dataList[0] as ReserveData : null);
+
+                    if (typeof(T) != typeof(ReserveData))
+                    {
+                        subMenu.Visibility = Visibility.Collapsed;
+                        continue;
+                    }
+                    subMenu.Visibility = Visibility.Visible;
+
+                    var list = dataList.OfType<ReserveData>().ToList();
+                    ReserveMode? resMode_0 = list[0].ReserveMode;
+                    ReserveMode? value = list.All(info => info.ReserveMode == resMode_0) ? resMode_0 : null;
+                    subMenu.Header = string.Format("予約モード : {0}", value == null ? "*" : CommonManager.ConvertResModeText(value));
+                    SetCheckmarkSubMenus(subMenu, value == ReserveMode.EPG ? 0 : value == ReserveMode.Program ? 1 : int.MinValue);
+
+                    if (list[0].IsAutoAdded == false) continue;
+
+                    foreach (var item in subMenu.Items.OfType<MenuItem>())
+                    {
+                        Type type = (item.CommandParameter as EpgCmdParam).Data as Type;
+                        int id = (item.CommandParameter as EpgCmdParam).ID;
+                        AutoAddData autoAdd = AutoAddData.AutoAddList(type, (uint)id);
+                        if (autoAdd != null)
+                        {
+                            item.IsChecked = autoAdd.GetReserveList().Any(info => info.ReserveID == list[0].ReserveID);
+                        }
+                    }
+                }
                 else if (subMenu.Tag == EpgCmds.ChgBulkRecSet)
                 {
                     subMenu.Visibility = (recSettings.Count < 2 ? Visibility.Collapsed : Visibility.Visible);
                 }
                 else if (subMenu.Tag == EpgCmds.ChgGenre)
                 {
-                    if (view != CtxmCode.EpgAutoAddView)
+                    if (typeof(T) != typeof(EpgAutoAddData))
                     {
                         subMenu.Visibility = Visibility.Collapsed;
                         continue;
@@ -447,7 +502,7 @@ namespace EpgTimer
                 }
                 else if (subMenu.Tag == EpgCmdsEx.ChgRelayMenu || subMenu.Tag == EpgCmdsEx.ChgPittariMenu)
                 {
-                    if (view == CtxmCode.ManualAutoAddView)
+                    if (typeof(T) != typeof(ReserveData) && typeof(T) != typeof(EpgAutoAddData))
                     {
                         subMenu.Visibility = Visibility.Collapsed;
                         continue;
@@ -510,6 +565,26 @@ namespace EpgTimer
                 string.Format("削除しますか?\r\n\r\n" + "[削除項目数: {0}]\r\n\r\n", list.Count) + FormatTitleListForDialog(list)
                 , "削除の確認", MessageBoxButton.OKCancel,
                 MessageBoxImage.Exclamation, MessageBoxResult.OK) != MessageBoxResult.OK);
+        }
+        public static bool CheckAllProcCancel(ExecutedRoutedEventArgs e, IEnumerable<AutoAddData> dataList, bool IsDelete)
+        {
+            if (CmdExeUtil.IsMessageBeforeCommand(e) == false) return false;
+
+            List<string> titleList = dataList.Select(info => info.DataTitle).ToList();
+            if (titleList.Count == 0) return false;
+
+            var s = IsDelete == true
+                ? new string[] { "予約ごと削除して", "削除", "削除される予約数", "予約ごと削除" }
+                : new string[] { "予約の録画設定を自動登録の録画設定に合わせても", "処理", "対象予約数", "予約の録画設定変更" };
+
+            var text = string.Format("{0}よろしいですか?\r\n"
+                                        + "(個別予約も処理の対象となります。)\r\n\r\n"
+                                        + "[{1}項目数: {2}]\r\n"
+                                        + "[{3}: {4}]\r\n\r\n", s[0], s[1], titleList.Count, s[2], dataList.GetReserveList().Count)
+                + CmdExeUtil.FormatTitleListForDialog(titleList);
+
+            return (MessageBox.Show(text, "[" + s[3] + "]の確認", MessageBoxButton.OKCancel,
+                                MessageBoxImage.Exclamation, MessageBoxResult.OK) != MessageBoxResult.OK);
         }
         public static string FormatTitleListForDialog(ICollection<string> list)
         {

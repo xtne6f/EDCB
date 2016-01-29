@@ -110,7 +110,7 @@ namespace EpgTimer
             AddCommand(EpgCmds.JumpTable, Key.F3);
             AddCommand(EpgCmds.ToAutoadd);
             AddCommand(EpgCmds.ReSearch);
-            AddCommand(EpgCmds.ReSearch2);
+            AddCommand(EpgCmds.ReSearch2, isEnable: false);
             AddCommand(EpgCmds.Play, Key.P, ModifierKeys.Control);
             AddCommand(EpgCmds.OpenFolder, isEnable: false);
             AddCommand(EpgCmds.CopyTitle, Key.C, ModifierKeys.Control, isEnable: false);
@@ -127,6 +127,7 @@ namespace EpgTimer
             AddCommand(EpgCmds.AddInDialog, Key.A, ModifierKeys.Control | ModifierKeys.Shift, spc: GestureTrg.ToView, gesNeedMenu: false);
             AddCommand(EpgCmds.ChangeInDialog, Key.C, ModifierKeys.Control | ModifierKeys.Shift, spc: GestureTrg.ToView, gesNeedMenu: false);
             AddCommand(EpgCmds.DeleteInDialog, Key.X, ModifierKeys.Control | ModifierKeys.Shift, spc: GestureTrg.ToView, gesNeedMenu: false);
+            AddCommand(EpgCmds.Delete2InDialog, Key.D, ModifierKeys.Control | ModifierKeys.Shift, spc: GestureTrg.ToView, gesNeedMenu: false);
             AddCommand(EpgCmds.Search, Key.F, ModifierKeys.Control, spc: GestureTrg.ToView, gesNeedMenu: false);
             AddCommand(EpgCmds.UpItem, Key.Up, ModifierKeys.Control, spc: GestureTrg.ToList | GestureTrg.ToView, gesNeedMenu: false);
             AddCommand(EpgCmds.DownItem, Key.Down, ModifierKeys.Control, spc: GestureTrg.ToList | GestureTrg.ToView, gesNeedMenu: false);
@@ -138,7 +139,8 @@ namespace EpgTimer
             //ダミーコマンドは、キーとして使用しているが、メニュー自体には割り付けされない。
             AddCommand(EpgCmdsEx.AddMenu);
             AddCommand(EpgCmdsEx.ChgMenu);
-            AddCommand(EpgCmdsEx.ShowAutoAddDialogMenu);
+            AddCommand(EpgCmdsEx.ShowAutoAddDialogMenu, isEnable: false);
+            AddCommand(EpgCmdsEx.ChgResModeMenu, isEnable: false, isSave: false);
             AddCommand(EpgCmdsEx.ChgMarginStartMenu, isEnable: false, isSave: false);
             AddCommand(EpgCmdsEx.ChgMarginEndMenu, isEnable: false, isSave: false);
             AddCommand(EpgCmdsEx.OpenFolderMenu, isEnable: false);

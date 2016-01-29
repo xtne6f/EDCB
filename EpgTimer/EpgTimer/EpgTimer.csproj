@@ -91,9 +91,9 @@
       <DependentUpon>BlackoutWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="Common\BoxExchangeEditor.cs" />
+    <Compile Include="CtrlCmdDefEx\EpgEventInfoEx.cs" />
     <Compile Include="CtrlCmdDefEx\RecSettingDataEx.cs" />
     <Compile Include="CtrlCmdDefEx\ReserveDataEx.cs" />
-    <Compile Include="CtrlCmdDefEx\ManualAutoAddDataEx.cs" />
     <Compile Include="CtrlCmdDefEx\RecFileInfoEx.cs" />
     <Compile Include="DefineClass\NWPresetItem.cs" />
     <Compile Include="UserCtrlView\DataViewBase.cs" />
@@ -104,7 +104,7 @@
     <Compile Include="Common\GridViewSelector.cs" />
     <Compile Include="Menu\MenuManager.cs" />
     <Compile Include="Menu\CtxmData.cs" />
-    <Compile Include="CtrlCmdDefEx\EpgAutoAddDataEx.cs" />
+    <Compile Include="CtrlCmdDefEx\AutoAddDataEx.cs" />
     <Compile Include="Common\CtrlCmd.cs" />
     <Compile Include="Common\CtrlCmdDef.cs" />
     <Compile Include="Common\GridViewSorter.cs" />
@@ -117,8 +117,7 @@
     <Compile Include="EpgView\EpgViewBase.cs" />
     <Compile Include="Menu\CmdExe.cs" />
     <Compile Include="Menu\CmdExeRecinfo.cs" />
-    <Compile Include="Menu\CmdExeEpgAutoAdd.cs" />
-    <Compile Include="Menu\CmdExeManualAutoAdd.cs" />
+    <Compile Include="Menu\CmdExeAutoAdd.cs" />
     <Compile Include="Menu\MenuCmds.cs" />
     <Compile Include="Menu\MenuBinds.cs" />
     <Compile Include="Setting\ColorSetWindow.xaml.cs">

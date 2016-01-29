@@ -316,6 +316,9 @@ namespace EpgTimer
         private int cautionManyNum;
         private bool cautionOnRecChange;
         private int cautionOnRecMarginMin;
+        private bool syncResAutoAddChange;
+        private bool syncResAutoAddChgNewRes;
+        private bool syncResAutoAddDelete;
         private int keyDeleteDisplayItemNum;
         private bool displayNotifyEpgChange;
         private double displayNotifyJumpTime;
@@ -1072,6 +1075,21 @@ namespace EpgTimer
             get { return cautionOnRecMarginMin; }
             set { cautionOnRecMarginMin = value; }
         }
+        public bool SyncResAutoAddChange
+        {
+            get { return syncResAutoAddChange; }
+            set { syncResAutoAddChange = value; }
+        }
+        public bool SyncResAutoAddChgNewRes
+        {
+            get { return syncResAutoAddChgNewRes; }
+            set { syncResAutoAddChgNewRes = value; }
+        }
+        public bool SyncResAutoAddDelete
+        {
+            get { return syncResAutoAddDelete; }
+            set { syncResAutoAddDelete = value; }
+        }
         public int KeyDeleteDisplayItemNum
         {
             get { return keyDeleteDisplayItemNum; }
@@ -1244,6 +1262,9 @@ namespace EpgTimer
             cautionManyNum = 10;
             cautionOnRecChange = true;
             cautionOnRecMarginMin = 5;
+            syncResAutoAddChange = false;
+            syncResAutoAddChgNewRes = false;
+            syncResAutoAddDelete = false;
             keyDeleteDisplayItemNum = 10;
             displayNotifyEpgChange = false;
             displayNotifyJumpTime = 3;

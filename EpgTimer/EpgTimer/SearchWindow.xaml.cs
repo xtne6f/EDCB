@@ -258,7 +258,7 @@ namespace EpgTimer
 
                 List<uint> oldlist = CommonManager.Instance.DB.EpgAutoAddList.Keys.ToList();
 
-                if (mutil.EpgAutoAddAdd(CommonUtil.ToList(this.GetAutoAddData())) == true)
+                if (mutil.AutoAddAdd(CommonUtil.ToList(this.GetAutoAddData())) == true)
                 {
                     //以降の処理をEpgTimerSrvからの更新通知後に実行すればReload減らせるが、トラブル増えそうなのでこのまま。
                     CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.AutoAddEpgInfo);
@@ -285,7 +285,7 @@ namespace EpgTimer
             {
                 if (CheckAutoAddChange(e, 1) == false) return;
 
-                mutil.EpgAutoAddChange(CommonUtil.ToList(this.GetAutoAddData()));
+                mutil.AutoAddChange(CommonUtil.ToList(this.GetAutoAddData()));
             }
             catch (Exception ex)
             {
@@ -297,7 +297,7 @@ namespace EpgTimer
         {
             if (CheckAutoAddChange(e, 2) == false) return;
 
-            if (mutil.EpgAutoAddDelete(CommonUtil.ToList(autoAddID)) == true)
+            if (mutil.AutoAddDelete(CommonUtil.ToList(CommonManager.Instance.DB.EpgAutoAddList[autoAddID])) == true)
             {
                 SetViewMode(SearchMode.NewAdd);
                 this.autoAddID = 0;

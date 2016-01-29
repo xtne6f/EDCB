@@ -48,11 +48,6 @@ namespace EpgTimer
 
             IsCommandExecuted = mutil.RecinfoDelete(dataList);
         }
-        protected override void mc_ToAutoadd(object sender, ExecutedRoutedEventArgs e)
-        {
-            mutil.SendAutoAdd(dataList[0], this.Owner, CmdExeUtil.IsKeyGesture(e));
-            IsCommandExecuted = true;
-        }
         protected override void mc_Play(object sender, ExecutedRoutedEventArgs e)
         {
             CommonManager.Instance.FilePlay(dataList[0].RecFilePath);
@@ -63,19 +58,9 @@ namespace EpgTimer
             CommonManager.Instance.OpenFolder(dataList[0].RecFilePath);
             IsCommandExecuted = true;
         }
-        protected override void mc_CopyTitle(object sender, ExecutedRoutedEventArgs e)
-        {
-            mutil.CopyTitle2Clipboard(dataList[0].Title, CmdExeUtil.IsKeyGesture(e));
-            IsCommandExecuted = true;
-        }
         protected override void mc_CopyContent(object sender, ExecutedRoutedEventArgs e)
         {
             mutil.CopyContent2Clipboard(dataList[0], CmdExeUtil.IsKeyGesture(e));
-            IsCommandExecuted = true;
-        }
-        protected override void mc_SearchTitle(object sender, ExecutedRoutedEventArgs e)
-        {
-            mutil.SearchTextWeb(dataList[0].Title, CmdExeUtil.IsKeyGesture(e));
             IsCommandExecuted = true;
         }
         protected override void mcs_ctxmLoading_switch(ContextMenu ctxm, MenuItem menu)
@@ -83,6 +68,10 @@ namespace EpgTimer
             if (menu.Tag == EpgCmds.Delete || menu.Tag == EpgCmds.DeleteAll)
             {
                 menu.IsEnabled = dataList.HasNoProtected();
+            }
+            else if (menu.Tag == EpgCmdsEx.ShowAutoAddDialogMenu)
+            {
+                menu.IsEnabled = mm.CtxmGenerateChgAutoAdd(menu, dataList[0]);
             }
             else if (menu.Tag == EpgCmds.OpenFolder)
             {

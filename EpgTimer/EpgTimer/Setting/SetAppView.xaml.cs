@@ -230,6 +230,9 @@ namespace EpgTimer.Setting
                 checkBox_minHide.IsChecked = Settings.Instance.MinHide;
                 checkBox_cautionManyChange.IsChecked = Settings.Instance.CautionManyChange;
                 textBox_cautionManyChange.Text = Settings.Instance.CautionManyNum.ToString();
+                checkBox_SyncResAutoAddChange.IsChecked = Settings.Instance.SyncResAutoAddChange;
+                checkBox_SyncResAutoAddChgNewRes.IsChecked = Settings.Instance.SyncResAutoAddChgNewRes;
+                checkBox_SyncResAutoAddDelete.IsChecked = Settings.Instance.SyncResAutoAddDelete;
                 checkBox_keepTCPConnect.IsChecked = Settings.Instance.ChkSrvRegistTCP;
                 textBox_keepTCPConnect.Text = Settings.Instance.ChkSrvRegistInterval.ToString();
 
@@ -455,6 +458,9 @@ namespace EpgTimer.Setting
                 Settings.Instance.NoBallonTips = (checkBox_noBallonTips.IsChecked == true);
                 Settings.Instance.CautionManyChange = (checkBox_cautionManyChange.IsChecked != false);
                 Settings.Instance.CautionManyNum = mutil.MyToNumerical(textBox_cautionManyChange, Convert.ToInt32, Settings.Instance.CautionManyNum); 
+                Settings.Instance.SyncResAutoAddChange = (checkBox_SyncResAutoAddChange.IsChecked != false);
+                Settings.Instance.SyncResAutoAddDelete = (checkBox_SyncResAutoAddDelete.IsChecked != false);
+                Settings.Instance.SyncResAutoAddChgNewRes = (checkBox_SyncResAutoAddChgNewRes.IsChecked != false);
                 Settings.Instance.WakeReconnectNW = (checkBox_wakeReconnect.IsChecked == true);
                 Settings.Instance.SuspendCloseNW = (checkBox_suspendClose.IsChecked == true);
                 Settings.Instance.NgAutoEpgLoadNW = (checkBox_ngAutoEpgLoad.IsChecked == true);

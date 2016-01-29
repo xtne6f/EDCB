@@ -22,7 +22,7 @@ namespace EpgTimer
             new ComboItem(CtxmCode.ReserveView, "予約一覧"),
             new ComboItem(CtxmCode.TunerReserveView, "使用予定チューナ"),
             new ComboItem(CtxmCode.RecInfoView, "録画済み一覧"),
-            new ComboItem(CtxmCode.EpgAutoAddView, "EPG自動予約登録"),
+            new ComboItem(CtxmCode.EpgAutoAddView, "キーワード自動予約登録"),
             new ComboItem(CtxmCode.ManualAutoAddView, "プログラム自動予約登録"),
             new ComboItem(CtxmCode.EpgView, "番組表(共通)"),
             new ComboItem(CtxmCode.SearchWindow, "検索/キーワード予約ダイアログ"),
@@ -279,8 +279,9 @@ namespace EpgTimer
                         break;
                     case CtxmCode.EditChgMenu:
                         textblocExp.Text = "・[編集]サブメニューは「表示項目は個別設定を使用する」の設定に関わらず、常にこの個別設定が反映されます。\r\n\r\n"
-                            + "・「自動登録有効」「まとめてジャンル絞り込みを変更」は、EPG自動予約登録画面のみ表示されます。\r\n\r\n"
-                            + "・「イベントリレー追従」「ぴったり（？）録画」は、プログラム自動予約登録画面では表示されません。";
+                            + "・「自動登録有効」「まとめてジャンル絞り込みを変更」は、キーワード自動予約登録画面のみ表示されます。\r\n\r\n"
+                            + "・「イベントリレー追従」「ぴったり（？）録画」は、プログラム自動予約登録画面では表示されません。\r\n\r\n"
+                            + "・「予約モード変更」は、録画済み一覧画面及び自動予約登録画面では表示されません。";
                             break;
                     default:
                         textblocExp.Text = "";

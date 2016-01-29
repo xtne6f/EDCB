@@ -7,27 +7,22 @@ using System.Windows;
 
 namespace EpgTimer
 {
-    public class EpgAutoDataItem
+    //キーワード予約とプログラム自動登録の共通項目
+    public class AutoAddDataItem
     {
-        private MenuUtil mutil = CommonManager.Instance.MUtil;
-        private ViewUtil vutil = CommonManager.Instance.VUtil;
+        protected MenuUtil mutil = CommonManager.Instance.MUtil;
+        protected ViewUtil vutil = CommonManager.Instance.VUtil;
 
-        public EpgAutoDataItem() { }
-        public EpgAutoDataItem(EpgAutoAddData item)
-        {
-            this.EpgAutoAddInfo = item;
-        }
+        protected AutoAddData _data;
+        public AutoAddData Data { get { return _data; } set { _data = value; } }
 
-        public EpgAutoAddData EpgAutoAddInfo { get; set; }
+        public AutoAddDataItem() {}
+        public AutoAddDataItem(AutoAddData data) { _data = data; }
 
         public static string GetValuePropertyName(string key)
         {
-            var obj = new EpgAutoDataItem();
-            if (key == CommonUtil.GetMemberName(() => obj.NextReserve))
-            {
-                return CommonUtil.GetMemberName(() => obj.NextReserveValue);
-            }
-            else if (key == CommonUtil.GetMemberName(() => obj.MarginStart))
+            var obj = new AutoAddDataItem();
+            if (key == CommonUtil.GetMemberName(() => obj.MarginStart))
             {
                 return CommonUtil.GetMemberName(() => obj.MarginStartValue);
             }
@@ -41,15 +36,165 @@ namespace EpgTimer
             }
         }
 
-        public String AndKey
+        public String Title
         {
             get
             {
-                if (EpgAutoAddInfo == null) return "";
+                if (_data == null) return "";
                 //
-                return EpgAutoAddInfo.searchInfo.andKey;
+                return _data.DataTitle;
             }
         }
+        public String RecMode
+        {
+            get
+            {
+                if (_data == null) return "";
+                //
+                return CommonManager.Instance.ConvertRecModeText(_data.RecSetting.RecMode);
+            }
+        }
+        public String Priority
+        {
+            get
+            {
+                if (_data == null) return "";
+                //
+                return _data.RecSetting.Priority.ToString();
+            }
+        }
+        public String Tuijyu
+        {
+            get
+            {
+                if (_data == null) return "";
+                //
+                return CommonManager.Instance.YesNoDictionary[_data.RecSetting.TuijyuuFlag].DisplayName;
+            }
+        }
+        public String Pittari
+        {
+            get
+            {
+                if (_data == null) return "";
+                //
+                return CommonManager.Instance.YesNoDictionary[_data.RecSetting.PittariFlag].DisplayName;
+            }
+        }
+        public String ReserveCount
+        {
+            get
+            {
+                if (_data == null) return "";
+                //
+                return _data.ReserveCount.ToString();
+            }
+        }
+        public String Tuner
+        {
+            get
+            {
+                if (_data == null) return "";
+                //
+                return CommonManager.Instance.ConvertTunerText(_data.RecSetting.TunerID);
+            }
+        }
+        public String MarginStart
+        {
+            get
+            {
+                if (_data == null) return "";
+                //
+                return _data.RecSetting.GetTrueMarginText(true);
+            }
+        }
+        public Double MarginStartValue
+        {
+            get
+            {
+                if (_data == null) return Double.MinValue;
+                //
+                return _data.RecSetting.GetTrueMarginForSort(true);
+            }
+        }
+        public String MarginEnd
+        {
+            get
+            {
+                if (_data == null) return "";
+                //
+                return _data.RecSetting.GetTrueMarginText(false);
+            }
+        }
+        public Double MarginEndValue
+        {
+            get
+            {
+                if (_data == null) return Double.MinValue;
+                //
+                return _data.RecSetting.GetTrueMarginForSort(false);
+            }
+        }
+        public String Preset
+        {
+            get
+            {
+                if (_data == null) return "";
+                //
+                return _data.RecSetting.LookUpPreset().DisplayName;
+            }
+        }
+        public List<String> RecFolder
+        {
+            get
+            {
+                if (_data == null) new List<string>();
+                //
+                return _data.RecSetting.GetRecFolderViewList();
+            }
+        }
+        public override string ToString()
+        {
+            return CommonManager.Instance.ConvertTextSearchString(Title);
+        }
+    }
+
+    //T型との関連付け
+    public class AutoAddDataItemT<T> : AutoAddDataItem
+    {
+        public AutoAddDataItemT() { }
+        public AutoAddDataItemT(AutoAddData item) : base(item) { }
+    }
+
+    public static class AutoDataItemEx
+    {
+        public static List<T> AutoAddInfoList<T>(this IEnumerable<AutoAddDataItemT<T>> itemlist) where T : AutoAddData
+        {
+            return itemlist.Where(item => item != null).Select(item => (T)item.Data).ToList();
+        }
+    }
+
+    public class EpgAutoDataItem : AutoAddDataItemT<EpgAutoAddData>
+    {
+        public EpgAutoDataItem() { }
+        public EpgAutoDataItem(EpgAutoAddData item) : base(item) { }
+
+        public EpgAutoAddData EpgAutoAddInfo { get { return (EpgAutoAddData)_data; } set { _data = value; } }
+
+        public static new string GetValuePropertyName(string key)
+        {
+            var obj = new EpgAutoDataItem();
+            if (key == CommonUtil.GetMemberName(() => obj.NextReserve))
+            {
+                return CommonUtil.GetMemberName(() => obj.NextReserveValue);
+            }
+            else
+            {
+                return AutoAddDataItem.GetValuePropertyName(key);
+            }
+        }
+
+        public String AndKey { get { return Title; } }
         public String NotKey
         {
             get
@@ -96,42 +241,6 @@ namespace EpgTimer
                 return "なし";
             }
         }
-        public String RecMode
-        {
-            get
-            {
-                if (EpgAutoAddInfo == null) return "";
-                //
-                return CommonManager.Instance.ConvertRecModeText(EpgAutoAddInfo.recSetting.RecMode);
-            }
-        }
-        public String Priority
-        {
-            get
-            {
-                if (EpgAutoAddInfo == null) return "";
-                //
-                return EpgAutoAddInfo.recSetting.Priority.ToString();
-            }
-        }
-        public String Tuijyu
-        {
-            get
-            {
-                if (EpgAutoAddInfo == null) return "";
-                //
-                return CommonManager.Instance.YesNoDictionary[EpgAutoAddInfo.recSetting.TuijyuuFlag].DisplayName;
-            }
-        }
-        public String Pittari
-        {
-            get
-            {
-                if (EpgAutoAddInfo == null) return "";
-                //
-                return CommonManager.Instance.YesNoDictionary[EpgAutoAddInfo.recSetting.PittariFlag].DisplayName;
-            }
-        }
         public String AddCount
         {
             get
@@ -149,20 +258,13 @@ namespace EpgTimer
             {
                 if (EpgAutoAddInfo == null) return "";
                 //
-                return EpgAutoAddInfo.SearchCount().ToString();
+                return EpgAutoAddInfo.SearchCount.ToString();
             }
         }
         //"SearchCount"のうち、予約アイテム数
         //検索の無効・有効によってAddCountやSearchCountと異なる値になる。
-        public String ReserveCount 
-        {
-            get
-            {
-                if (EpgAutoAddInfo == null) return "";
-                //
-                return EpgAutoAddInfo.ReserveCount().ToString();
-            }
-        }
+        //public String ReserveCount -> AutoDataItem.ReserveCount
+
         //"ReserveCount"のうち、有効な予約アイテム数
         public String OnCount
         {
@@ -170,7 +272,7 @@ namespace EpgTimer
             {
                 if (EpgAutoAddInfo == null) return "";
                 //
-                return EpgAutoAddInfo.OnCount().ToString();
+                return EpgAutoAddInfo.OnCount.ToString();
             }
         }
         //"ReserveCount"のうち、無効な予約アイテム数
@@ -180,7 +282,7 @@ namespace EpgTimer
             {
                 if (EpgAutoAddInfo == null) return "";
                 //
-                return EpgAutoAddInfo.OffCount().ToString();
+                return EpgAutoAddInfo.OffCount.ToString();
             }
         }
         public String NextReserve
@@ -277,69 +379,6 @@ namespace EpgTimer
                 return view1.TrimEnd(',');;
             }
         }
-        public String Tuner
-        {
-            get
-            {
-                if (EpgAutoAddInfo == null) return "";
-                //
-                return CommonManager.Instance.ConvertTunerText(EpgAutoAddInfo.recSetting.TunerID);
-            }
-        }
-        public String MarginStart
-        {
-            get
-            {
-                if (EpgAutoAddInfo == null) return "";
-                //
-                return EpgAutoAddInfo.recSetting.GetTrueMarginText(true);
-            }
-        }
-        public Double MarginStartValue
-        {
-            get
-            {
-                if (EpgAutoAddInfo == null) return Double.MinValue;
-                //
-                return EpgAutoAddInfo.recSetting.GetTrueMarginForSort(true);
-            }
-        }
-        public String MarginEnd
-        {
-            get
-            {
-                if (EpgAutoAddInfo == null) return "";
-                //
-                return EpgAutoAddInfo.recSetting.GetTrueMarginText(false);
-            }
-        }
-        public Double MarginEndValue
-        {
-            get
-            {
-                if (EpgAutoAddInfo == null) return Double.MinValue;
-                //
-                return EpgAutoAddInfo.recSetting.GetTrueMarginForSort(false);
-            }
-        }
-        public String Preset
-        {
-            get
-            {
-                if (EpgAutoAddInfo == null) return "";
-                //
-                return EpgAutoAddInfo.recSetting.LookUpPreset().DisplayName;
-            }
-        }
-        public List<String> RecFolder
-        {
-            get
-            {
-                if (EpgAutoAddInfo == null) new List<string>();
-                //
-                return EpgAutoAddInfo.recSetting.GetRecFolderViewList();
-            }
-        }
         public bool KeyEnabled
         {
             set
@@ -352,7 +391,7 @@ namespace EpgTimer
             {
                 if (EpgAutoAddInfo == null) return false;
                 //
-                return EpgAutoAddInfo.searchInfo.keyDisabledFlag != 1;
+                return EpgAutoAddInfo.IsEnabled;
             }
         }
         public SolidColorBrush ForeColor
@@ -361,7 +400,7 @@ namespace EpgTimer
             {
                 if (EpgAutoAddInfo != null)
                 {
-                    if (EpgAutoAddInfo.searchInfo.keyDisabledFlag == 1)
+                    if (EpgAutoAddInfo.IsEnabled == false)
                     {
                         return CommonManager.Instance.RecModeForeColor[5];
                     }
@@ -375,7 +414,7 @@ namespace EpgTimer
             {
                 if (EpgAutoAddInfo != null)
                 {
-                    if (EpgAutoAddInfo.searchInfo.keyDisabledFlag == 1)
+                    if (EpgAutoAddInfo.IsEnabled == false)
                     {
                         return CommonManager.Instance.ResNoBackColor;
                     }
@@ -508,14 +547,6 @@ namespace EpgTimer
             }
         }
 
-    }
-
-    public static class EpgAutoDataItemEx
-    {
-        public static List<EpgAutoAddData> EpgAutoAddInfoList(this ICollection<EpgAutoDataItem> itemlist)
-        {
-            return itemlist.Where(item => item != null).Select(item => item.EpgAutoAddInfo).ToList();
-        }
     }
 
 }

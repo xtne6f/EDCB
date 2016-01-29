@@ -33,7 +33,7 @@ namespace EpgTimer
 
                 //最初にコマンド集の初期化
                 mc = new CmdExeReserve(this);
-                mc.SetFuncGetDataList(isAll => (isAll == true ? lstCtrl.dataList : lstCtrl.GetSelectedItemsList()).ReserveInfoList());
+                mc.SetFuncGetDataList(isAll => (isAll == true ? lstCtrl.dataList : lstCtrl.GetSelectedItemsList()).GetReserveList());
                 mc.SetFuncSelectSingleData((noChange) =>
                 {
                     var item = lstCtrl.SelectSingleItem(noChange);

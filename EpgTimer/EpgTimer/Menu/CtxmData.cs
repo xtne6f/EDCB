@@ -71,7 +71,7 @@ namespace EpgTimer
             Header = header;
         }
 
-        public static List<CtxmItemData> Clone(List<CtxmItemData> src) { return CopyObj.Clone(src, CtxmItemData.CopyData); }
+        public static List<CtxmItemData> Clone(IEnumerable<CtxmItemData> src) { return CopyObj.Clone(src, CopyData); }
         public CtxmItemData Clone() { return CopyObj.Clone(this, CopyData); }
         protected static void CopyData(CtxmItemData src, CtxmItemData dest)
         {
@@ -84,7 +84,7 @@ namespace EpgTimer
 
     public static class CtxmItemDataEx
     {
-        public static List<CtxmItemData> Clone(this List<CtxmItemData> src) { return CtxmItemData.Clone(src); }
+        public static List<CtxmItemData> Clone(this IEnumerable<CtxmItemData> src) { return CtxmItemData.Clone(src); }
     }
 
 }

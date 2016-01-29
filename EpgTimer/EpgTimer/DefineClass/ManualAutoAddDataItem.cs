@@ -5,17 +5,14 @@ using System.Windows.Media;
 
 namespace EpgTimer
 {
-    public class ManualAutoAddDataItem
+    public class ManualAutoAddDataItem : AutoAddDataItemT<ManualAutoAddData>
     {
         public ManualAutoAddDataItem() { }
-        public ManualAutoAddDataItem(ManualAutoAddData item)
-        {
-            this.ManualAutoAddInfo = item;
-        }
+        public ManualAutoAddDataItem(ManualAutoAddData item) : base(item) { }
 
-        public ManualAutoAddData ManualAutoAddInfo { get; set; }
+        public ManualAutoAddData ManualAutoAddInfo { get { return (ManualAutoAddData)_data; } set { _data = value; } }
 
-        public static string GetValuePropertyName(string key)
+        public static new string GetValuePropertyName(string key)
         {
             var obj = new ManualAutoAddDataItem();
             if (key == CommonUtil.GetMemberName(() => obj.Time))
@@ -24,7 +21,7 @@ namespace EpgTimer
             }
             else
             {
-                return key;
+                return AutoAddDataItem.GetValuePropertyName(key);
             }
         }
 
@@ -52,7 +49,7 @@ namespace EpgTimer
             {
                 if (ManualAutoAddInfo == null) return "";
                 //
-                return CommonManager.ConvertTimeText(new DateTime().AddSeconds(ManualAutoAddInfo.startTime)
+                return CommonManager.ConvertTimeText(ManualAutoAddInfo.PgStartTime
                     , ManualAutoAddInfo.durationSecond, true, Settings.Instance.ResInfoNoSecond, true, true);
             }
         }
@@ -71,17 +68,8 @@ namespace EpgTimer
             {
                 if (ManualAutoAddInfo == null) return "";
                 //
-                return CommonManager.ConvertTimeText(new DateTime().AddSeconds(ManualAutoAddInfo.startTime)
+                return CommonManager.ConvertTimeText(ManualAutoAddInfo.PgStartTime
                     , ManualAutoAddInfo.durationSecond, true, true, true, true);
-            }
-        }
-        public String Title
-        {
-            get
-            {
-                if (ManualAutoAddInfo == null) return "";
-                //
-                return ManualAutoAddInfo.title;
             }
         }
         public String StationName
@@ -93,33 +81,6 @@ namespace EpgTimer
                 return ManualAutoAddInfo.stationName;
             }
         }
-        public String RecMode
-        {
-            get
-            {
-                if (ManualAutoAddInfo == null) return "";
-                //
-                return CommonManager.Instance.ConvertRecModeText(ManualAutoAddInfo.recSetting.RecMode);
-            }
-        }
-        public String Priority
-        {
-            get
-            {
-                if (ManualAutoAddInfo == null) return "";
-                //
-                return ManualAutoAddInfo.recSetting.Priority.ToString();
-            }
-        }
-        public String ReserveCount
-        {
-            get
-            {
-                if (ManualAutoAddInfo == null) return "";
-                //
-                return ManualAutoAddInfo.GetReserveList().Count.ToString();
-            }
-        }
         public SolidColorBrush ForeColor
         {
             get
@@ -129,11 +90,4 @@ namespace EpgTimer
         }
     }
 
-    public static class ManualAutoAddDataItemEx
-    {
-        public static List<ManualAutoAddData> ManualAutoAddInfoList(this ICollection<ManualAutoAddDataItem> itemlist)
-        {
-            return itemlist.Where(item => item != null).Select(item => item.ManualAutoAddInfo).ToList();
-        }
-    }
 }

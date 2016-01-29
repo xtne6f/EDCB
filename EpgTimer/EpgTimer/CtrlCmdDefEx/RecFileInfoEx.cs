@@ -5,9 +5,16 @@ using System.Text;
 
 namespace EpgTimer
 {
-    public partial class RecFileInfo : ICtrlCmdReadWrite
+    public partial class RecFileInfo : IAutoAddTargetData
     {
-        //ファイル数が多くなる場合もあるようなので、拡張メソッドにせず、中へ置く。
+        public string DataTitle { get { return Title; } }
+        public DateTime PgStartTime { get { return StartTime; } }
+        public uint PgDurationSecond { get { return DurationSecond; } }
+        public UInt64 Create64Key()
+        {
+            return CommonManager.Create64Key(OriginalNetworkID, TransportStreamID, ServiceID);
+        }
+
         private long dropsCritical = -1;
         public long DropsCritical
         {
@@ -111,33 +118,34 @@ namespace EpgTimer
             }
         }
 
+        public List<EpgAutoAddData> GetEpgAutoAddList(bool? IsEnabled = null, bool ByFazy = false)
+        {
+            //EpgTimerSrv側のSearch()をEpgTimerで実装してないので、簡易な推定によるもの
+            return CommonManager.Instance.MUtil.FazySearchEpgAutoAddData(DataTitle, IsEnabled);
+        }
+        public List<ManualAutoAddData> GetManualAutoAddList(bool? IsEnabled = null)
+        {
+            return CommonManager.Instance.DB.ManualAutoAddList.Values.GetAutoAddList(IsEnabled)
+                .FindAll(data => data.CheckPgHit(this) == true);
+        }
     }
 
     public static class RecFileInfoEx
     {
-        public static List<RecFileInfo> GetNoProtectedList(this ICollection<RecFileInfo> itemlist)
+        public static List<RecFileInfo> GetNoProtectedList(this IEnumerable<RecFileInfo> itemlist)
         {
             return itemlist.Where(item => item == null ? false : item.ProtectFlag == 0).ToList();
         }
-        //public static bool HasProtected(this List<RecInfoItem> list)
+        //public static bool HasProtected(this IEnumerable<RecInfoItem> list)
         //{
         //    return list.Any(info => info == null ? false : info.RecInfo.ProtectFlag == true);
         //}
-        public static bool HasNoProtected(this List<RecFileInfo> list)
+        public static bool HasNoProtected(this IEnumerable<RecFileInfo> list)
         {
             return list.Any(info => info == null ? false : info.ProtectFlag == 0);
         }
 
-        public static UInt64 Create64Key(this RecFileInfo obj)
-        {
-            return CommonManager.Create64Key(obj.OriginalNetworkID, obj.TransportStreamID, obj.ServiceID);
-        }
-        public static UInt64 Create64PgKey(this RecFileInfo obj)
-        {
-            return CommonManager.Create64PgKey(obj.OriginalNetworkID, obj.TransportStreamID, obj.ServiceID, obj.EventID);
-        }
-
-        public static List<RecFileInfo> Clone(this List<RecFileInfo> src) { return CopyObj.Clone(src, CopyData); }
+        public static List<RecFileInfo> Clone(this IEnumerable<RecFileInfo> src) { return CopyObj.Clone(src, CopyData); }
         public static RecFileInfo Clone(this RecFileInfo src) { return CopyObj.Clone(src, CopyData); }
         public static void CopyTo(this RecFileInfo src, RecFileInfo dest) { CopyObj.CopyTo(src, dest, CopyData); }
         private static void CopyData(RecFileInfo src, RecFileInfo dest)

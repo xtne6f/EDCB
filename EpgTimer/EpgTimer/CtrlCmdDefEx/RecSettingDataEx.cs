@@ -76,7 +76,7 @@ namespace EpgTimer
             return span.ToString("+;-") + hours + minutes + seconds + (useMarginFlag == 1 ? " " : "*");
         }
 
-        public static List<RecSettingData> Clone(this List<RecSettingData> src) { return CopyObj.Clone(src, CopyData); }
+        public static List<RecSettingData> Clone(this IEnumerable<RecSettingData> src) { return CopyObj.Clone(src, CopyData); }
         public static RecSettingData Clone(this RecSettingData src) { return CopyObj.Clone(src, CopyData); }
         public static void CopyTo(this RecSettingData src, RecSettingData dest) { CopyObj.CopyTo(src, dest, CopyData); }
         private static void CopyData(RecSettingData src, RecSettingData dest)
@@ -98,7 +98,7 @@ namespace EpgTimer
             dest.TunerID = src.TunerID;
             dest.UseMargineFlag = src.UseMargineFlag;
         }
-
+        /*
         public static bool EqualsTo(this IList<RecSettingData> src, IList<RecSettingData> dest) { return CopyObj.EqualsTo(src, dest, EqualsValue); }
         public static bool EqualsTo(this RecSettingData src, RecSettingData dest) { return CopyObj.EqualsTo(src, dest, EqualsValue); }
         public static bool EqualsValue(RecSettingData src, RecSettingData dest)
@@ -120,7 +120,7 @@ namespace EpgTimer
                 && src.TunerID == dest.TunerID
                 && src.UseMargineFlag == dest.UseMargineFlag;
         }
-
+        */
         public static bool EqualsSettingTo(this RecSettingData src, RecSettingData dest, bool IsManual = false)
         {
             if (src == null || dest == null) return false;

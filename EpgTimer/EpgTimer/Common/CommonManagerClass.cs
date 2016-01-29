@@ -478,14 +478,12 @@ namespace EpgTimer
 
         public static UInt64 Create64Key(UInt16 ONID, UInt16 TSID, UInt16 SID)
         {
-            UInt64 key = ((UInt64)ONID) << 32 | ((UInt64)TSID) << 16 | (UInt64)SID;
-            return key;
+            return ((UInt64)ONID) << 32 | ((UInt64)TSID) << 16 | (UInt64)SID;
         }
 
         public static UInt64 Create64PgKey(UInt16 ONID, UInt16 TSID, UInt16 SID, UInt16 EventID)
         {
-            UInt64 key = ((UInt64)ONID) << 48 | ((UInt64)TSID) << 32 | ((UInt64)SID) << 16 | (UInt64)EventID;
-            return key;
+            return ((UInt64)ONID) << 48 | ((UInt64)TSID) << 32 | ((UInt64)SID) << 16 | (UInt64)EventID;
         }
 
         public static EpgServiceInfo ConvertChSet5To(ChSet5Item item)
@@ -663,6 +661,17 @@ namespace EpgTimer
                 + (isNoSecond == true ? "" : (duration % 60).ToString(":00"));
         }
 
+        public static String ConvertResModeText(ReserveMode? mode)
+        {
+            switch (mode)
+            {
+                case ReserveMode.KeywordAuto: return "キーワード予約";
+                case ReserveMode.ManualAuto : return "プログラム自動予約";
+                case ReserveMode.EPG        : return "個別予約(EPG)";
+                case ReserveMode.Program    : return "個別予約(プログラム)";
+                default                     : return "";
+            }
+        }
         public String ConvertReserveText(ReserveData reserveInfo)
         {
             String view = ConvertTimeText(reserveInfo.StartTime, reserveInfo.DurationSecond, false, false, false) + "\r\n";

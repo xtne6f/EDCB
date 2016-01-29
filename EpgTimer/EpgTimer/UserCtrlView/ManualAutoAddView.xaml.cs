@@ -28,7 +28,7 @@ namespace EpgTimer
             public lvDragData(ManualAutoAddView view) { View = view; }
             public override uint GetID(object data) { return (data as ManualAutoAddDataItem).ManualAutoAddInfo.dataID; }
             public override void SetID(object data, uint ID) { (data as ManualAutoAddDataItem).ManualAutoAddInfo.dataID = ID; }
-            public override bool SaveChange() { return View.mutil.ManualAutoAddChange(View.lstCtrl.dataList.ManualAutoAddInfoList(), false); }
+            public override bool SaveChange() { return View.mutil.AutoAddChange(View.lstCtrl.dataList.AutoAddInfoList(), false, false, false); }
             public override bool RestoreOrder() { return View.ReloadInfoData(); }
             public override void ItemMoved() { View.lstCtrl.gvSorter.ResetSortParams(); }
         }
@@ -53,7 +53,7 @@ namespace EpgTimer
 
                 //最初にコマンド集の初期化
                 mc = new CmdExeManualAutoAdd(this);
-                mc.SetFuncGetDataList(isAll => (isAll == true ? lstCtrl.dataList : lstCtrl.GetSelectedItemsList()).ManualAutoAddInfoList());
+                mc.SetFuncGetDataList(isAll => (isAll == true ? lstCtrl.dataList : lstCtrl.GetSelectedItemsList()).AutoAddInfoList());
                 mc.SetFuncSelectSingleData((noChange) =>
                 {
                     var item = lstCtrl.SelectSingleItem(noChange);

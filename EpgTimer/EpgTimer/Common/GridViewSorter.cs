@@ -298,7 +298,7 @@ namespace EpgTimer {
                         //数値化可能な文字列を格納したstringは想定しない
                         dCache1 = list.Select(item => (pi1.GetValue(item, null) as GvSortItem).Value).ToArray();
                     }//*/
-                    else if (pi1.PropertyType.GetInterface("IComparable") != null)
+                    else if (pi1.PropertyType.GetInterface(typeof(IComparable).Name) != null)
                     {
                         isString = pi1.PropertyType == typeof(string);
                         dCache1 = list.Select(item => pi1.GetValue(item, null) as IComparable).ToArray();

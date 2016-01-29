@@ -11,7 +11,8 @@ namespace EpgTimer
     {
         protected ViewUtil vutil = CommonManager.Instance.VUtil;
 
-        protected T data = default(T);
+        protected T _data = default(T);
+        public T Data { get { return _data; } set { _data = value; } }
 
         public ViewPanelItem()
         {
@@ -19,13 +20,8 @@ namespace EpgTimer
         }
         public ViewPanelItem(T info)
         {
-            data = info;
+            _data = info;
             TitleDrawErr = false;
-        }
-        public T _Data
-        {
-            get { return data; }
-            set { data = value; }
         }
         public double Width { get; set; }
         public double Height { get; set; }
@@ -42,33 +38,24 @@ namespace EpgTimer
             return LeftPos <= cursorPos.X && cursorPos.X < LeftPos + Width &&
                     TopPos <= cursorPos.Y && cursorPos.Y < TopPos + Height;
         }
+    }
 
-        public static List<T> GetHitDataList<S>(List<S> list, Point cursorPos) where S : ViewPanelItem<T>
+    public static class ViewPanelItemEx
+    {
+        public static List<T> GetHitDataList<T>(this IEnumerable<ViewPanelItem<T>> list, Point cursorPos)
         {
-            try
-            {
-                return list.FindAll(info => info == null ? false : info.IsPicked(cursorPos)).Select(info => info._Data).ToList();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-            return new List<T>();
+            return list.Where(info => info != null && info.IsPicked(cursorPos)).Select(info => info.Data).ToList();
         }
-        public static List<T> GetDataList<S>(ICollection<S> list) where S : ViewPanelItem<T>
+        public static List<T> GetDataList<T>(this IEnumerable<ViewPanelItem<T>> list)
         {
-            return list.OfType<S>().Select(info => info._Data).ToList();
+            return list.Where(info => info != null).Select(info => info.Data).ToList();
         }
     }
 
     public class ProgramViewItem : ViewPanelItem<EpgEventInfo>
     {
         public ProgramViewItem(EpgEventInfo info) : base(info) { }
-        public EpgEventInfo EventInfo
-        {
-            get { return _Data; }
-            set { _Data = value; }
-        }
+        public EpgEventInfo EventInfo { get { return _data; } set { _data = value; } }
 
         public Brush ContentColor
         {
@@ -79,15 +66,4 @@ namespace EpgTimer
         }
     }
 
-    public static class ProgramViewItemEx
-    {
-        public static List<EpgEventInfo> GetHitDataList(this List<ProgramViewItem> list, Point cursorPos)
-        {
-            return ProgramViewItem.GetHitDataList(list, cursorPos);
-        }
-        public static List<EpgEventInfo> GetDataList(this ICollection<ProgramViewItem> list)
-        {
-            return ProgramViewItem.GetDataList(list);
-        }
-    }
 }

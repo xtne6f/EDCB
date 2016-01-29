@@ -203,7 +203,7 @@ namespace EpgTimer
     }
 
     /// <summary>登録予約情報</summary>
-    public class ReserveData : ICtrlCmdReadWrite
+    public partial class ReserveData : ICtrlCmdReadWrite
     {
         /// <summary>番組名</summary>
         public string Title;
@@ -764,7 +764,7 @@ namespace EpgTimer
         }
     }
 
-    public class EpgEventInfo : ICtrlCmdReadWrite
+    public partial class EpgEventInfo : ICtrlCmdReadWrite
     {
         public ushort original_network_id;
         public ushort transport_stream_id;
@@ -1181,7 +1181,7 @@ namespace EpgTimer
     }
 
     /// <summary>自動予約登録情報</summary>
-    public class EpgAutoAddData : ICtrlCmdReadWrite
+    public partial class EpgAutoAddData : ICtrlCmdReadWrite
     {
         public uint dataID;
         /// <summary>検索キー</summary>
@@ -1225,7 +1225,7 @@ namespace EpgTimer
         }
     }
 
-    public class ManualAutoAddData : ICtrlCmdReadWrite
+    public partial class ManualAutoAddData : ICtrlCmdReadWrite
     {
         public uint dataID;
         /// <summary>対象曜日</summary>

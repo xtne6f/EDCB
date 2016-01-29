@@ -237,14 +237,14 @@ namespace EpgTimer
             {
                 if (ReserveInfo == null) return "";
                 //
-                if (ReserveInfo.IsAutoAdded() == false)
+                if (ReserveInfo.IsAutoAdded == false)
                 {
                     return "個別予約(" + (ReserveInfo.EventID == 0xFFFF ? "プログラム" : "EPG") + ")";
                 }
                 else
                 {
                     string s = ReserveInfo.Comment;
-                    return (ReserveInfo.IsAutoAddMissing() == true ? "不明な" : "")
+                    return (ReserveInfo.IsAutoAddMissing == true ? "不明な" : ReserveInfo.IsAutoAddInvalid == true ? "無効の" : "")
                             + (s.StartsWith("EPG自動予約(") == true ? "キーワード予約(" + s.Substring(8) : s);
                 }
             }
@@ -320,13 +320,5 @@ namespace EpgTimer
             }
         }
 
-    }
-
-    public static class ReserveItemEx
-    {
-        public static List<ReserveData> ReserveInfoList(this ICollection<ReserveItem> itemlist)
-        {
-            return itemlist.Where(item => item != null).Select(item => item.ReserveInfo).ToList();
-        }
     }
 }

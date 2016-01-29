@@ -15,6 +15,7 @@ namespace EpgTimer
         public static RoutedUICommand AddOnPreset { get; private set; }
         public static RoutedUICommand ChgOnOff { get; private set; }
         public static RoutedUICommand ChgOnPreset { get; private set; }
+        public static RoutedUICommand ChgResMode { get; private set; }
         public static RoutedUICommand ChgBulkRecSet { get; private set; }
         public static RoutedUICommand ChgGenre { get; private set; }
         public static RoutedUICommand ChgRecmode { get; private set; }
@@ -55,6 +56,7 @@ namespace EpgTimer
         public static RoutedUICommand AddInDialog { get; private set; }
         public static RoutedUICommand ChangeInDialog { get; private set; }
         public static RoutedUICommand DeleteInDialog { get; private set; }
+        public static RoutedUICommand Delete2InDialog { get; private set; }
         public static RoutedUICommand Search { get; private set; }
         public static RoutedUICommand UpItem { get; private set; }
         public static RoutedUICommand DownItem { get; private set; }
@@ -81,6 +83,7 @@ namespace EpgTimer
         public static RoutedUICommand ChgMarginEndMenu { get; private set; }
         public static RoutedUICommand ChgKeyEnabledMenu { get; private set; }
         public static RoutedUICommand ChgOnPresetMenu { get; private set; }
+        public static RoutedUICommand ChgResModeMenu { get; private set; }
         public static RoutedUICommand OpenFolderMenu { get; private set; }
         public static RoutedUICommand ViewMenu { get; private set; }
         public static RoutedUICommand Separator { get; private set; }

@@ -29,6 +29,7 @@
         <Label Content="サービス" Height="28" HorizontalAlignment="Left" Margin="12,114,0,0" Name="label9" VerticalAlignment="Top" />
         <ComboBox Height="24" HorizontalAlignment="Left" Margin="88,114,0,0" Name="comboBox_service" VerticalAlignment="Top" Width="194" />
         <my:RecSettingView Margin="0,144,0,0" x:Name="recSettingView" VerticalAlignment="Top" Height="400" />
+        <Button Content="予約ごと削除" Height="23" HorizontalAlignment="Right" Margin="0,0,456,12" Name="button_del2" VerticalAlignment="Bottom" Width="75" />
         <Button Content="削除" Height="23" HorizontalAlignment="Right" Margin="0,0,345,12" Name="button_del" VerticalAlignment="Bottom" Width="75" />
         <Button Content="変更" Height="23" HorizontalAlignment="Right" Margin="0,0,234,12" Name="button_chg" VerticalAlignment="Bottom" Width="75" />
         <Button Content="追加" Height="23" HorizontalAlignment="Right" Margin="0,0,123,12" Name="button_add" VerticalAlignment="Bottom" Width="75" />

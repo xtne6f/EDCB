@@ -17,18 +17,19 @@ namespace EpgTimer
         private bool updatePlugInFile = true;
         private bool noAutoReloadEpg = false;
         private bool oneTimeReloadEpg = false;
-        private bool updateAutoAddAppendReserveInfo = true;
+        private bool updateEpgAutoAddAppendReserveInfo = true;
 
         Dictionary<UInt64, EpgServiceEventInfo> serviceEventList = new Dictionary<UInt64, EpgServiceEventInfo>();
         Dictionary<UInt32, ReserveData> reserveList = new Dictionary<UInt32, ReserveData>();
+        Dictionary<UInt32, ReserveDataAppend> reserveAppendList = null;
         Dictionary<UInt32, TunerReserveInfo> tunerReserveList = new Dictionary<UInt32, TunerReserveInfo>();
         Dictionary<UInt32, RecFileInfo> recFileInfo = new Dictionary<UInt32, RecFileInfo>();
         Dictionary<Int32, String> writePlugInList = new Dictionary<Int32, String>();
         Dictionary<Int32, String> recNamePlugInList = new Dictionary<Int32, String>();
         Dictionary<UInt32, ManualAutoAddData> manualAutoAddList = new Dictionary<UInt32, ManualAutoAddData>();
+        Dictionary<UInt32, AutoAddDataAppend> manualAutoAddAppendList = null;
         Dictionary<UInt32, EpgAutoAddData> epgAutoAddList = new Dictionary<UInt32, EpgAutoAddData>();
         Dictionary<UInt32, EpgAutoAddDataAppend> epgAutoAddAppendList = null;
-        Dictionary<UInt32, bool> reserveAutoAddMissing = null;
 
         public Dictionary<UInt64, EpgServiceEventInfo> ServiceEventList
         {
@@ -61,6 +62,32 @@ namespace EpgTimer
         public Dictionary<UInt32, EpgAutoAddData> EpgAutoAddList
         {
             get { return epgAutoAddList; }
+        }
+        public AutoAddDataAppend GetManualAutoAddDataAppend(ManualAutoAddData master)
+        {
+            if (master == null) return null;
+
+            //データ更新は必要になったときにまとめて行う
+            //未使用か、ManualAutoAddData更新により古いデータ廃棄済みでデータが無い場合
+            Dictionary<uint, AutoAddDataAppend> dict = manualAutoAddAppendList;
+            if (dict == null)
+            {
+                ReloadReserveInfo();//notify残ってれば更新
+
+                dict = manualAutoAddList.Values.ToDictionary(item => item.dataID, item => new AutoAddDataAppend(
+                    reserveList.Values.Where(info => info != null && info.IsEpgReserve == false && item.CheckPgHit(info)).ToList()));
+
+                foreach (AutoAddDataAppend item in dict.Values) item.UpdateCounts();
+
+                manualAutoAddAppendList = dict;
+            }
+
+            AutoAddDataAppend retv;
+            if (dict.TryGetValue(master.dataID, out retv) == false)
+            {
+                retv = new AutoAddDataAppend();
+            }
+            return retv;
         }
         public EpgAutoAddDataAppend GetEpgAutoAddDataAppend(EpgAutoAddData master)
         {
@@ -99,15 +126,15 @@ namespace EpgTimer
                     MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
                 }
 
-                updateAutoAddAppendReserveInfo = true;
+                updateEpgAutoAddAppendReserveInfo = true;
             }
 
             //予約情報との突き合わせが古い場合
-            if (updateAutoAddAppendReserveInfo == true)
+            if (updateEpgAutoAddAppendReserveInfo == true)
             {
                 ReloadReserveInfo();//notify残ってれば更新
                 foreach (EpgAutoAddDataAppend item in dict.Values) item.UpdateCounts();
-                updateAutoAddAppendReserveInfo = false;
+                updateEpgAutoAddAppendReserveInfo = false;
             }
 
             //SendSearchPgByKeyに失敗した場合などは引っかかる。
@@ -118,61 +145,42 @@ namespace EpgTimer
             }
             return retv;
         }
-
-        public bool IsReserveAutoAddMissing(ReserveData info)
+        public ReserveDataAppend GetReserveDataAppend(ReserveData master)
         {
-            if (info == null) return false;
+            if (master == null) return null;
 
-            Dictionary<uint, bool> dict = reserveAutoAddMissing;
+            Dictionary<uint, ReserveDataAppend> dict = reserveAppendList;
             if (dict == null)
             {
-                //notify残ってれば更新
-                ReloadEpgAutoAddInfo();
-                ReloadManualAutoAddInfo();
+                dict = reserveList.ToDictionary(data => data.Key, data => new ReserveDataAppend());
+                reserveAppendList = dict;
 
-                //EPG自動登録リスト
-                var epgAutoResList = new List<ReserveData>();
-                foreach (var data in epgAutoAddList.Values)
+                ReloadEpgAutoAddInfo();//notify残ってれば更新
+                foreach (EpgAutoAddData item in epgAutoAddList.Values)
                 {
-                    epgAutoResList.AddRange(data.GetReserveList());
-                }
-                var epgAutoResDict = epgAutoResList.Distinct().ToDictionary(data => data.ReserveID, data => data);
-
-                //マニュアル自動登録リスト
-                var manualAutoResList = new List<ReserveData>();
-                foreach (var data in manualAutoAddList.Values)
-                {
-                    manualAutoResList.AddRange(data.GetReserveList());
-                }
-                var manualAutoResDict = manualAutoResList.Distinct().ToDictionary(data => data.ReserveID, data => data);
-
-                //突き合わせ
-                dict = new Dictionary<uint, bool>();
-                foreach (var resdata in reserveList.Values)
-                {
-                    if (resdata.Comment.StartsWith("EPG自動予約") == true)
-                    {
-                        dict.Add(resdata.ReserveID, !epgAutoResDict.ContainsKey(resdata.ReserveID));
-                    }
-                    else if (resdata.Comment.StartsWith("プログラム自動予約") == true)
-                    {
-                        dict.Add(resdata.ReserveID, !manualAutoResDict.ContainsKey(resdata.ReserveID));
-                    }
-                    else
-                    {
-                        dict.Add(resdata.ReserveID, false);
-                    }
+                    item.GetReserveList().ForEach(info => dict[info.ReserveID].EpgAutoList.Add(item));
                 }
 
-                reserveAutoAddMissing = dict;
+                ReloadManualAutoAddInfo();//notify残ってれば更新
+                foreach (ManualAutoAddData item in manualAutoAddList.Values)
+                {
+                    item.GetReserveList().ForEach(info => dict[info.ReserveID].ManualAutoList.Add(item));
+                }
+
+                foreach (ReserveDataAppend data in dict.Values)
+                {
+                    data.UpdateData();
+                }
             }
 
-            bool retv;
-            if (dict.TryGetValue(info.ReserveID, out retv) == false) return false;
-
+            ReserveDataAppend retv;
+            if (dict.TryGetValue(master.ReserveID, out retv) == false)
+            {
+                retv = new ReserveDataAppend();
+            }
             return retv;
         }
-
+        
         public DBManager(CtrlCmdUtil ctrlCmd)
         {
             cmd = ctrlCmd;
@@ -188,8 +196,8 @@ namespace EpgTimer
             recNamePlugInList = new Dictionary<int, string>();
             manualAutoAddList = new Dictionary<uint, ManualAutoAddData>();
             epgAutoAddList = new Dictionary<uint, EpgAutoAddData>();
+            manualAutoAddAppendList = null;
             epgAutoAddAppendList = null;
-            reserveAutoAddMissing = null;
         }
 
         /// <summary>
@@ -220,8 +228,9 @@ namespace EpgTimer
                     break;
                 case UpdateNotifyItem.ReserveInfo:
                     updateReserveInfo = true;
-                    updateAutoAddAppendReserveInfo = true;
-                    reserveAutoAddMissing = null;
+                    manualAutoAddAppendList = null;
+                    updateEpgAutoAddAppendReserveInfo = true;
+                    reserveAppendList = null;
                     break;
                 case UpdateNotifyItem.RecInfo:
                     updateRecInfo = true;
@@ -229,11 +238,12 @@ namespace EpgTimer
                 case UpdateNotifyItem.AutoAddEpgInfo:
                     updateAutoAddEpgInfo = true;
                     epgAutoAddAppendList = null;
-                    reserveAutoAddMissing = null;
+                    reserveAppendList = null;
                     break;
                 case UpdateNotifyItem.AutoAddManualInfo:
                     updateAutoAddManualInfo = true;
-                    reserveAutoAddMissing = null;
+                    manualAutoAddAppendList = null;
+                    reserveAppendList = null;
                     break;
                 case UpdateNotifyItem.PlugInFile:
                     updatePlugInFile = true;

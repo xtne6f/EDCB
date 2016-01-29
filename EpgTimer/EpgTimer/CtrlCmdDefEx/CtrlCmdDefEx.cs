@@ -6,10 +6,31 @@ using System.Windows;
 
 namespace EpgTimer
 {
+    public interface IRecWorkMainData
+    {
+        string DataTitle { get; }
+        //ulong DataID { get; }
+    }
+
+    public interface IBasicPgInfo : IRecWorkMainData
+    {
+        //string PgTitle { get; }
+        //string PgInfo { get; }
+        DateTime PgStartTime { get; }
+        uint PgDurationSecond { get; }
+        UInt64 Create64Key();
+    }
+
+    public interface IAutoAddTargetData : IBasicPgInfo
+    {
+        List<EpgAutoAddData> GetEpgAutoAddList(bool? IsEnabled = null, bool ByFazy = false);
+        List<ManualAutoAddData> GetManualAutoAddList(bool? IsEnabled = null);
+    }
+
     static class CtrlCmdDefEx
     {
         //CopyObj.csのジェネリックを使って定義している。
-        public static List<EpgSearchKeyInfo> Clone(this List<EpgSearchKeyInfo> src) { return CopyObj.Clone(src, CopyData); }
+        public static List<EpgSearchKeyInfo> Clone(this IEnumerable<EpgSearchKeyInfo> src) { return CopyObj.Clone(src, CopyData); }
         public static EpgSearchKeyInfo Clone(this EpgSearchKeyInfo src) { return CopyObj.Clone(src, CopyData); }
         public static void CopyTo(this EpgSearchKeyInfo src, EpgSearchKeyInfo dest) { CopyObj.CopyTo(src, dest, CopyData); }
         private static void CopyData(EpgSearchKeyInfo src, EpgSearchKeyInfo dest)
@@ -36,7 +57,7 @@ namespace EpgTimer
             dest.keyDisabledFlag = src.keyDisabledFlag;
         }
 
-        public static List<EpgContentData> Clone(this List<EpgContentData> src) { return CopyObj.Clone(src, CopyData); }
+        public static List<EpgContentData> Clone(this IEnumerable<EpgContentData> src) { return CopyObj.Clone(src, CopyData); }
         public static EpgContentData Clone(this EpgContentData src) { return CopyObj.Clone(src, CopyData); }
         public static void CopyTo(this EpgContentData src, EpgContentData dest) { CopyObj.CopyTo(src, dest, CopyData); }
         private static void CopyData(EpgContentData src, EpgContentData dest)
@@ -47,7 +68,7 @@ namespace EpgTimer
             dest.user_nibble_2 = src.user_nibble_2;
         }
 
-        public static List<EpgSearchDateInfo> Clone(this List<EpgSearchDateInfo> src) { return CopyObj.Clone(src, CopyData); }
+        public static List<EpgSearchDateInfo> Clone(this IEnumerable<EpgSearchDateInfo> src) { return CopyObj.Clone(src, CopyData); }
         public static EpgSearchDateInfo Clone(this EpgSearchDateInfo src) { return CopyObj.Clone(src, CopyData); }
         public static void CopyTo(this EpgSearchDateInfo src, EpgSearchDateInfo dest) { CopyObj.CopyTo(src, dest, CopyData); }
         private static void CopyData(EpgSearchDateInfo src, EpgSearchDateInfo dest)
@@ -60,7 +81,7 @@ namespace EpgTimer
             dest.startMin = src.startMin;
         }
 
-        public static List<RecFileSetInfo> Clone(this List<RecFileSetInfo> src) { return CopyObj.Clone(src, CopyData); }
+        public static List<RecFileSetInfo> Clone(this IEnumerable<RecFileSetInfo> src) { return CopyObj.Clone(src, CopyData); }
         public static RecFileSetInfo Clone(this RecFileSetInfo src) { return CopyObj.Clone(src, CopyData); }
         public static void CopyTo(this RecFileSetInfo src, RecFileSetInfo dest) { CopyObj.CopyTo(src, dest, CopyData); }
         private static void CopyData(RecFileSetInfo src, RecFileSetInfo dest)
@@ -81,35 +102,43 @@ namespace EpgTimer
                 && src.WritePlugIn == dest.WritePlugIn;
         }
 
-        public static bool EqualsPg(ReserveData i1, ReserveData i2, bool IdMode = true, bool TimeMode = false)
+        private static bool EqualsPg(ushort eID1, DateTime start1, uint duration1, ulong key1,
+                                     ushort eID2, DateTime start2, uint duration2, ulong key2, bool IdMode, bool TimeMode)
+        {
+            return (IdMode == false || eID1 == eID2) &&
+                   (TimeMode == false || start1 == start2 && duration1 == duration2) &&
+                    key1 == key2;
+        }
+        public static bool EqualsPg(this ReserveData i1, ReserveData i2, bool IdMode = true, bool TimeMode = false)
         {
             if (i1 == null && i2 == null) return true;
             if (i1 == null || i2 == null) return false;
-            return (IdMode == false || i1.EventID == i2.EventID)
-                    && (TimeMode == false || i1.StartTime == i2.StartTime && i1.DurationSecond == i2.DurationSecond)
-                    && i1.Create64Key() == i2.Create64Key();
+            return EqualsPg(i1.EventID, i1.StartTime, i1.DurationSecond, i1.Create64Key(),
+                            i2.EventID, i2.StartTime, i2.DurationSecond, i2.Create64Key(), IdMode, TimeMode);
         }
-
-        //以降の三つは数の多いEpgEventInfo相手に実行されるので、Convert使わずバラしちゃった方がいいのかも
-        public static bool EqualsPg(EpgEventInfo i1, EpgEventInfo i2, bool IdMode = true, bool TimeMode = false)
+        public static bool EqualsPg(this EpgEventInfo i1, EpgEventInfo i2, bool IdMode = true, bool TimeMode = false)
         {
-            return EqualsPg(ConvertEpgToReserveData(i1), ConvertEpgToReserveData(i2), IdMode, TimeMode);
+            if (i1 == null && i2 == null) return true;
+            if (i1 == null || i2 == null) return false;
+            return EqualsPg(i1.event_id, i1.start_time, i1.durationSec, i1.Create64Key(),
+                            i2.event_id, i2.start_time, i2.durationSec, i2.Create64Key(), IdMode, TimeMode);
         }
-
-        public static bool EqualsPg(EpgEventInfo i1, ReserveData i2, bool IdMode = true, bool TimeMode = false)
+        public static bool EqualsPg(this EpgEventInfo i1, ReserveData i2, bool IdMode = true, bool TimeMode = false)
         {
-            return EqualsPg(ConvertEpgToReserveData(i1), i2, IdMode, TimeMode);
+            if (i1 == null && i2 == null) return true;
+            if (i1 == null || i2 == null) return false;
+            return EqualsPg(i1.event_id, i1.start_time, i1.durationSec, i1.Create64Key(),
+                            i2.EventID, i2.StartTime, i2.DurationSecond, i2.Create64Key(), IdMode, TimeMode);
         }
-
-        public static bool EqualsPg(ReserveData i1, EpgEventInfo i2, bool IdMode = true, bool TimeMode = false)
+        public static bool EqualsPg(this ReserveData i1, EpgEventInfo i2, bool IdMode = true, bool TimeMode = false)
         {
-            return EqualsPg(i1, ConvertEpgToReserveData(i2), IdMode, TimeMode);
+            return EqualsPg(i2, i1, IdMode, TimeMode);
         }
 
         public static ReserveData ConvertEpgToReserveData(EpgEventInfo epgInfo)
         {
             if (epgInfo == null) return null;
-            ReserveData resInfo = new ReserveData();
+            var resInfo = new ReserveData();
             epgInfo.ConvertToReserveData(ref resInfo);
             return resInfo;
         }
@@ -118,7 +147,7 @@ namespace EpgTimer
         {
             if (epgInfo == null || resInfo == null) return false;
 
-            resInfo.Title = epgInfo.Title();
+            resInfo.Title = epgInfo.DataTitle;
             resInfo.StartTime = epgInfo.start_time;
             resInfo.StartTimeEpg = epgInfo.start_time;
             resInfo.DurationSecond = (epgInfo.DurationFlag == 0 ? 10 * 60 : epgInfo.durationSec);
@@ -146,13 +175,9 @@ namespace EpgTimer
             {
                 return info => (info as RecInfoItem).RecInfo.ID;
             }
-            else if (t == typeof(EpgAutoDataItem))
+            else if (t.IsSubclassOf(typeof(AutoAddDataItem)))
             {
-                return info => (info as EpgAutoDataItem).EpgAutoAddInfo.dataID;
-            }
-            else if (t == typeof(ManualAutoAddDataItem))
-            {
-                return info => (info as ManualAutoAddDataItem).ManualAutoAddInfo.dataID;
+                return info => (info as AutoAddDataItem).Data.DataID;
             }
             else if (t == typeof(SearchItem))
             {
@@ -203,33 +228,9 @@ namespace EpgTimer
             return CommonManager.Create64Key(obj.ONID, obj.TSID, obj.SID);
         }
 
-        public static UInt64 Create64Key(this EpgEventInfo obj)
-        {
-            return CommonManager.Create64Key(obj.original_network_id, obj.transport_stream_id, obj.service_id);
-        }
-        public static UInt64 Create64PgKey(this EpgEventInfo obj)
-        {
-            return CommonManager.Create64PgKey(obj.original_network_id, obj.transport_stream_id, obj.service_id, obj.event_id);
-        }
-        public static string Title(this EpgEventInfo info)
-        {
-            return (info.ShortInfo == null ? "" : info.ShortInfo.event_name);
-        }
-        
         public static UInt64 Create64Key(this EpgEventData obj)
         {
             return CommonManager.Create64Key(obj.original_network_id, obj.transport_stream_id, obj.service_id);
-        }
-        public static UInt64 Create64PgKey(this EpgEventData obj)
-        {
-            return CommonManager.Create64PgKey(obj.original_network_id, obj.transport_stream_id, obj.service_id, obj.event_id);
-        }
-
-        public static bool IsOnAir(this EpgEventInfo eventInfo)
-        {
-            if (eventInfo == null) return false;
-            //
-            return isOnTime(eventInfo.start_time, (int)eventInfo.durationSec);
         }
 
         public static bool isOnTime(DateTime startTime, int duration)

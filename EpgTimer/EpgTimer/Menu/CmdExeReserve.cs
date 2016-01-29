@@ -114,6 +114,27 @@ namespace EpgTimer
             if (mcc_chgRecSetting(dataList.RecSettingList(), e, this.Owner) == false) return;
             IsCommandExecuted = mutil.ReserveChange(dataList);
         }
+        protected override void mc_ChgResMode(object sender, ExecutedRoutedEventArgs e)
+        {
+            if (dataList.Count == 0) return;
+
+            var data = CmdExeUtil.ReadObjData(e) as Type;
+            uint id = (uint)CmdExeUtil.ReadIdData(e);
+
+            if (data == null)
+            {
+                //通常の変更
+                IsCommandExecuted = mutil.ReserveChangeResMode(dataList, id);
+            }
+
+            if (dataList.Count != 1) return;//通常はここに引っかかることは無いはず
+
+            AutoAddData autoAdd = AutoAddData.AutoAddList(data, id);
+            if (autoAdd != null)
+            {
+                IsCommandExecuted = mutil.ReserveChangeResModeAutoAdded(dataList, autoAdd);
+            }
+        }
         protected override void mc_ChgBulkRecSet(object sender, ExecutedRoutedEventArgs e)
         {
             var mList = dataList.Where(info => info.EventID == 0xFFFF).ToList();
@@ -175,19 +196,6 @@ namespace EpgTimer
             mainWindow.moveTo_tabItem(code);
             IsCommandExecuted = true;
         }
-        protected override void mc_ShowAutoAddDialog(object sender, ExecutedRoutedEventArgs e)
-        {
-            var data = CmdExeUtil.ReadObjData(e) as Type;
-            uint id = (uint)CmdExeUtil.ReadIdData(e);
-            if (data == typeof(EpgAutoAddData))
-            {
-                IsCommandExecuted = true == mutil.OpenChangeEpgAutoAddDialog(CommonManager.Instance.DB.EpgAutoAddList[id], this.Owner);
-            }
-            else if (data == typeof(ManualAutoAddData))
-            {
-                IsCommandExecuted = true == mutil.OpenChangeManualAutoAddDialog(CommonManager.Instance.DB.ManualAutoAddList[id], this.Owner);
-            }
-        }
         protected void mcs_SetBlackoutWindow()
         {
             if (dataList.Count != 0)//予約情報優先
@@ -223,11 +231,11 @@ namespace EpgTimer
         {
             if (eventList.Count != 0)//番組情報優先
             {
-                mutil.CopyTitle2Clipboard(eventList[0].Title(), CmdExeUtil.IsKeyGesture(e));
+                mutil.CopyTitle2Clipboard(eventList[0].DataTitle, CmdExeUtil.IsKeyGesture(e));
             }
             else if (dataList.Count != 0)
             {
-                mutil.CopyTitle2Clipboard(dataList[0].Title, CmdExeUtil.IsKeyGesture(e));
+                mutil.CopyTitle2Clipboard(dataList[0].DataTitle, CmdExeUtil.IsKeyGesture(e));
             }
             IsCommandExecuted = true; //itemCount!=0 だが、この条件はこの位置では常に満たされている。
         }
@@ -247,11 +255,11 @@ namespace EpgTimer
         {
             if (eventList.Count != 0)//番組情報優先
             {
-                mutil.SearchTextWeb(eventList[0].Title(), CmdExeUtil.IsKeyGesture(e));
+                mutil.SearchTextWeb(eventList[0].DataTitle, CmdExeUtil.IsKeyGesture(e));
             }
             else if (dataList.Count != 0)
             {
-                mutil.SearchTextWeb(dataList[0].Title, CmdExeUtil.IsKeyGesture(e));
+                mutil.SearchTextWeb(dataList[0].DataTitle, CmdExeUtil.IsKeyGesture(e));
             }
             IsCommandExecuted = true;
         }

@@ -13,7 +13,7 @@ namespace EpgTimer
         //public static クラス名 Clone(this クラス名 src) { return CopyObj.Clone(src, CopyData); }
         //public static void CopyTo(this クラス名 src, クラス名 dest) { CopyObj.CopyTo(src, dest, CopyData); }
 
-        public static List<T> Clone<T>(List<T> src, Action<T, T> CopyData) where T : class, new()
+        public static List<T> Clone<T>(IEnumerable<T> src, Action<T, T> CopyData) where T : class, new()
         {
             if (src == null) return null;
             return src.Select(item => Clone(item, CopyData)).ToList();

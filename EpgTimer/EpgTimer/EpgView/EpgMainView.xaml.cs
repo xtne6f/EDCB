@@ -351,7 +351,7 @@ namespace EpgTimer
                         }
 
                         var viewItem = new ProgramViewItem(eventInfo);
-                        viewItem.Height = Settings.Instance.MinHeight * (eventInfo.DurationFlag == 0 ? 300 : eventInfo.durationSec) / 60;
+                        viewItem.Height = Settings.Instance.MinHeight * eventInfo.PgDurationSecond / 60;
                         viewItem.HeightDef = viewItem.Height;//元の情報も保存
                         viewItem.Width = Settings.Instance.ServiceWidth * widthSpan / mergeNum;
                         viewItem.LeftPos = Settings.Instance.ServiceWidth * (servicePos + (double)((mergeNum + i - mergePos - 1) / 2) / mergeNum);
@@ -360,7 +360,7 @@ namespace EpgTimer
 
                         //必要時間リストの構築
                         var chkStartTime = new DateTime(eventInfo.start_time.Year, eventInfo.start_time.Month, eventInfo.start_time.Day, eventInfo.start_time.Hour, 0, 0);
-                        while (chkStartTime <= eventInfo.start_time.AddSeconds((eventInfo.DurationFlag == 0 ? 300 : eventInfo.durationSec)))
+                        while (chkStartTime <= eventInfo.start_time.AddSeconds(eventInfo.PgDurationSecond))
                         {
                             if (timeList.ContainsKey(chkStartTime) == false)
                             {

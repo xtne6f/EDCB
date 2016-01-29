@@ -86,6 +86,15 @@ namespace EpgTimer
         ERR = 128   //重度なエラー
     };
 
+    //EpgTimer内部用、予約モード
+    public enum ReserveMode : uint
+    {
+        KeywordAuto = 0,        //キーワード予約
+        ManualAuto = 1,	    //プログラム自動予約
+        EPG = 2,            //個別予約(EPG)
+        Program = 3         //個別予約(プログラム)
+    };
+
     public class CMD_STREAM
     {
         public uint uiParam;
