@@ -5,8 +5,18 @@ using System.Text;
 
 namespace EpgTimer
 {
+    public interface IRecSetttingData
+    {
+        RecSettingData RecSettingInfo { get; }
+    }
+
     public static class RecSettingDataEx
     {
+        public static List<RecSettingData> RecSettingList(this IEnumerable<IRecSetttingData> list)
+        {
+            return list.Where(item => item != null).Select(item => item.RecSettingInfo).ToList();
+        }
+
         public static RecPresetItem LookUpPreset(this RecSettingData data, bool IsManual = false, bool CopyData = false)
         {
             RecPresetItem preset = Settings.Instance.RecPresetList.FirstOrDefault(p1 =>

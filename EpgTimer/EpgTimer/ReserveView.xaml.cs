@@ -29,7 +29,8 @@ namespace EpgTimer
                 lstCtrl.SetSavePath(CommonUtil.GetMemberName(() => Settings.Instance.ReserveListColumn)
                     , CommonUtil.GetMemberName(() => Settings.Instance.ResColumnHead)
                     , CommonUtil.GetMemberName(() => Settings.Instance.ResSortDirection));
-                lstCtrl.SetViewSetting(listView_reserve, gridView_reserve, true);
+                lstCtrl.SetViewSetting(listView_reserve, gridView_reserve, true
+                    , Resources["RecSettingViewColumns"] as GridViewColumnList);
 
                 //最初にコマンド集の初期化
                 mc = new CmdExeReserve(this);

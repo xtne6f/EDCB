@@ -1367,7 +1367,7 @@ namespace EpgTimer
 
         public void FilePlay(ReserveData data)
         {
-            if (data == null || data.RecSetting == null || data.RecSetting.RecMode == 5) return;
+            if (data == null || data.RecSetting == null || data.IsEnabled == false) return;
             if (data.IsOnRec() == false)
             {
                 MessageBox.Show("まだ録画が開始されていません。", "追っかけ再生", MessageBoxButton.OK, MessageBoxImage.Information);

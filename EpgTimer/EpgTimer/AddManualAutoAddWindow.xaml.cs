@@ -163,6 +163,8 @@ namespace EpgTimer
                     defKey.dayOfWeekFlag |= 0x40;
                 }
 
+                defKey.IsEnabled = checkBox_keyDisabled.IsChecked != true;
+
                 defKey.startTime = ((UInt32)comboBox_startHH.SelectedIndex * 60 * 60) + ((UInt32)comboBox_startMM.SelectedIndex * 60) + (UInt32)comboBox_startSS.SelectedIndex;
                 UInt32 endTime = ((UInt32)comboBox_endHH.SelectedIndex * 60 * 60) + ((UInt32)comboBox_endMM.SelectedIndex * 60) + (UInt32)comboBox_endSS.SelectedIndex;
                 if (endTime < defKey.startTime)
@@ -247,6 +249,8 @@ namespace EpgTimer
                 {
                     checkBox_week6.IsChecked = true;
                 }
+
+                checkBox_keyDisabled.IsChecked = defKey.IsEnabled == false;
 
                 UInt32 hh = defKey.startTime / (60 * 60);
                 UInt32 mm = (defKey.startTime % (60 * 60)) / 60;

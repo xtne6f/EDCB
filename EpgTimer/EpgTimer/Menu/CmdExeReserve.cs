@@ -137,7 +137,7 @@ namespace EpgTimer
         }
         protected override void mc_ChgBulkRecSet(object sender, ExecutedRoutedEventArgs e)
         {
-            var mList = dataList.Where(info => info.EventID == 0xFFFF).ToList();
+            var mList = dataList.FindAll(info => info.IsEpgReserve == false);
             if (mutil.ChangeBulkSet(dataList.RecSettingList(), this.Owner, mList.Count == dataList.Count) == false) return;
             IsCommandExecuted = mutil.ReserveChange(dataList);
         }
@@ -189,7 +189,7 @@ namespace EpgTimer
         protected void mcs_JumpTab(CtxmCode code, bool reserveOnly = false, bool onReserveOnly = false)
         {
             if (reserveOnly && dataList.Count == 0) return;
-            if (onReserveOnly && dataList[0].RecSetting.RecMode == 5) return;
+            if (onReserveOnly && dataList[0].IsEnabled == false) return;
 
             mcs_SetBlackoutWindow();
             var mainWindow = Application.Current.MainWindow as MainWindow;
@@ -319,7 +319,7 @@ namespace EpgTimer
             }
             else if (menu.Tag == EpgCmdsEx.ChgMenu)
             {
-                List<int> mList = dataList.Select(info => info.EventID == 0xFFFF ? 1 : 0).ToList();
+                List<int> mList = dataList.Select(info => info.IsEpgReserve == true ? 0 : 1).ToList();
                 mcs_chgMenuOpening(menu, dataList.RecSettingList(), mList.Sum() == dataList.Count, mList);
             }
             else if (menu.Tag == EpgCmds.JumpReserve || menu.Tag == EpgCmds.JumpTuner)
@@ -331,7 +331,7 @@ namespace EpgTimer
                 if (menu.Tag == EpgCmds.JumpTuner && Settings.Instance.TunerDisplayOffReserve == false && menu.IsEnabled == true)
                 {
                     //無効予約を回避
-                    menu.IsEnabled = dataList[0].RecSetting.RecMode != 5;
+                    menu.IsEnabled = dataList[0].IsEnabled;
                     menu.ToolTip = "無効予約は使用予定チューナー画面に表示されない設定になっています。";
                 }
             }
@@ -354,7 +354,7 @@ namespace EpgTimer
                 menu.IsEnabled = false;
                 menu.ToolTip = null;
                 var info = headData as ReserveData;
-                if (info != null && info.RecSetting.RecMode != 5)
+                if (info != null && info.IsEnabled == true)
                 {
                     if (info.IsOnRec() == true)
                     {

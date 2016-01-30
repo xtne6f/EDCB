@@ -95,7 +95,11 @@
     <Compile Include="CtrlCmdDefEx\RecSettingDataEx.cs" />
     <Compile Include="CtrlCmdDefEx\ReserveDataEx.cs" />
     <Compile Include="CtrlCmdDefEx\RecFileInfoEx.cs" />
+    <Compile Include="DefineClass\RecSettingItem.cs" />
     <Compile Include="DefineClass\NWPresetItem.cs" />
+    <Compile Include="UserCtrlView\AutoAddListView.xaml.cs">
+      <DependentUpon>AutoAddListView.xaml</DependentUpon>
+    </Compile>
     <Compile Include="UserCtrlView\DataViewBase.cs" />
     <Compile Include="UserCtrlView\ListViewController.cs" />
     <Compile Include="Menu\MenuSettingData.cs" />
@@ -137,17 +141,11 @@
     <Compile Include="Menu\SetContextMenuWindow.xaml.cs">
       <DependentUpon>SetContextMenuWindow.xaml</DependentUpon>
     </Compile>
-    <Compile Include="UserCtrlView\EpgAutoAddView.xaml.cs">
-      <DependentUpon>EpgAutoAddView.xaml</DependentUpon>
-    </Compile>
     <Compile Include="DefineClass\ManualAutoAddDataItem.cs" />
     <Compile Include="DefineClass\EpgAutoDataItem.cs" />
     <Compile Include="DefineClass\EpgCaptime.cs" />
     <Compile Include="UserCtrlView\ListBoxDragMoverView.xaml.cs">
       <DependentUpon>ListBoxDragMoverView.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="UserCtrlView\ManualAutoAddView.xaml.cs">
-      <DependentUpon>ManualAutoAddView.xaml</DependentUpon>
     </Compile>
     <Compile Include="RecInfoDescWindow.xaml.cs">
       <DependentUpon>RecInfoDescWindow.xaml</DependentUpon>
@@ -300,15 +298,11 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="UserCtrlView\EpgAutoAddView.xaml">
-      <SubType>Designer</SubType>
+    <Page Include="UserCtrlView\AutoAddListView.xaml">
       <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="UserCtrlView\ListBoxDragMoverView.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="UserCtrlView\ManualAutoAddView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -502,6 +496,10 @@
     <Page Include="Setting\SetEpgView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UserCtrlView\RecSettingListViewColumns.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
   </ItemGroup>
   <ItemGroup>

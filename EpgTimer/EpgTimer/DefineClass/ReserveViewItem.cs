@@ -36,7 +36,7 @@ namespace EpgTimer
                 {
                     if (ReserveInfo.IsOnRec() == true)
                     {
-                        if (ReserveInfo.RecSetting.RecMode == 5 || ReserveInfo.OverlapMode == 2)
+                        if (ReserveInfo.IsEnabled == false || ReserveInfo.OverlapMode == 2)
                         {
                             return "放送中*";
                         }
@@ -60,7 +60,7 @@ namespace EpgTimer
                     {
                         return CommonManager.Instance.StatRecForeColor;
                     }
-                    if (ReserveInfo.RecSetting.RecMode == 5)
+                    if (ReserveInfo.IsEnabled == false)
                     {
                         return Brushes.Black;
                     }
@@ -74,7 +74,7 @@ namespace EpgTimer
             {
                 if (ReserveInfo != null)
                 {
-                    if (ReserveInfo.RecSetting.RecMode == 5)
+                    if (ReserveInfo.IsEnabled == false)
                     {
                         return CommonManager.Instance.CustContentColorList[0x12];
                     }

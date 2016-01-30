@@ -58,7 +58,19 @@ namespace EpgTimer.UserCtrlView
                 hlp = helper;
                 MenuBinds mBinds = (mbinds != null ? mbinds : new MenuBinds());
 
-                //this.listBox.PreviewMouseLeftButtonUp += new MouseButtonEventHandler(listBox_PreviewMouseLeftButtonUp);
+                //マウスイベント関係
+                /*/ いろいろ問題がある(1行目除く)
+                this.listBox.PreviewMouseLeftButtonUp += new MouseButtonEventHandler(listBox_PreviewMouseLeftButtonUp);
+                if (listbox.ItemContainerStyle == null)
+                {
+                    var itemType = **;//真面目にやると結構面倒?
+                    var itemStyle = lv.TryFindResource(itemType) as Style;//Ownerがジェネリックの時動かない
+                    lv.ItemContainerStyle = itemStyle != null ? itemStyle : (Style)new Style(typeof(itemType));
+                }
+                listbox.ItemContainerStyle.Setters.Add(new EventSetter(Button.PreviewMouseLeftButtonDownEvent, new MouseButtonEventHandler(listBoxItem_PreviewMouseLeftButtonDown)));
+                listbox.ItemContainerStyle.Setters.Add(new EventSetter(Mouse.MouseEnterEvent, new MouseEventHandler(listBoxItem_MouseEnter)));
+                //Style使わずに、PrepareContainerForItemOverride/ClearContainerForItemOverrideとかでも一応出来るようだが‥今度はイベントハンドラの管理？
+                /*/
 
                 this.Owner.CommandBindings.Add(new CommandBinding(EpgCmds.UpItem, (sender, e) => MoveItem(-1)));
                 this.Owner.CommandBindings.Add(new CommandBinding(EpgCmds.DownItem, (sender, e) => MoveItem(1)));

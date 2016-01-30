@@ -5,14 +5,14 @@ using System.Text;
 
 namespace EpgTimer
 {
-    public abstract class AutoAddData : IRecWorkMainData
+    public abstract class AutoAddData : IRecWorkMainData, IRecSetttingData
     {
         //IRecWorkMainData
         public abstract string DataTitle { get; set; }
         //
         public abstract uint DataID { get; set; }
         public abstract bool IsEnabled { get; set; }
-        public abstract RecSettingData RecSetting { get; set; }
+        public abstract RecSettingData RecSettingInfo { get; }
 
         public static AutoAddData AutoAddList(Type t, uint id)
         {
@@ -29,6 +29,7 @@ namespace EpgTimer
 
         //AppendData 関係。ID(元データ)に対して一意の情報なので、データ自体はDB側。
         protected virtual AutoAddDataAppend Append { get { return new AutoAddDataAppend(); } }
+        public virtual uint SearchCount { get { return 0; } }
         public uint ReserveCount { get { return (uint)Append.ReseveItemList.Count; } }
         public uint OnCount { get { return Append.OnCount; } }
         public uint OffCount { get { return Append.OffCount; } }
@@ -44,10 +45,6 @@ namespace EpgTimer
             foreach (AutoAddData info in mlist) retList.AddRange(info.GetReserveList());
             return retList.Distinct().ToList();
         }
-        public static List<RecSettingData> RecSettingList(this IEnumerable<AutoAddData> list)
-        {
-            return list.Where(item => item != null).Select(item => item.RecSetting).ToList();
-        }
         public static List<T> GetAutoAddList<T>(this IEnumerable<T> mlist, bool? IsEnabled = null) where T : AutoAddData
         {
             return IsEnabled == null ? mlist.ToList() : mlist.Where(data => data.IsEnabled == IsEnabled).ToList();
@@ -59,11 +56,11 @@ namespace EpgTimer
         public override string DataTitle { get { return searchInfo.andKey; } set { searchInfo.andKey = value; } }
         public override uint DataID { get { return dataID; } set { dataID = value; } }
         public override bool IsEnabled { get { return searchInfo.keyDisabledFlag == 0; } set { searchInfo.keyDisabledFlag = (byte)(value == true ? 0 : 1); } }
-        public override RecSettingData RecSetting { get { return recSetting; } set { recSetting = value; } }
+        public override RecSettingData RecSettingInfo { get { return recSetting; } }
 
         //EpgAutoAddDataAppend 追加分
         protected override AutoAddDataAppend Append { get { return CommonManager.Instance.DB.GetEpgAutoAddDataAppend(this); } }
-        public uint SearchCount { get { return (uint)(Append as EpgAutoAddDataAppend).SearchItemList.Count; } }
+        public override uint SearchCount { get { return (uint)(Append as EpgAutoAddDataAppend).SearchItemList.Count; } }
         public List<SearchItem> GetSearchList() { return (Append as EpgAutoAddDataAppend).SearchItemList; }
     }
 
@@ -97,8 +94,8 @@ namespace EpgTimer
         }
 
         public override uint DataID { get { return dataID; } set { dataID = value; } }
-        public override bool IsEnabled { get { return true; } set { ; } }
-        public override RecSettingData RecSetting { get { return recSetting; } set { recSetting = value; } }
+        public override bool IsEnabled { get { return keyDisabledFlag == 0; } set { keyDisabledFlag = (byte)(value == true ? 0 : 1); } }
+        public override RecSettingData RecSettingInfo { get { return recSetting; } }
         public bool CheckPgHit(IBasicPgInfo data)
         {
             return Create64Key() == data.Create64Key()
@@ -110,6 +107,7 @@ namespace EpgTimer
 
         //AutoAddDataAppend
         protected override AutoAddDataAppend Append { get { return CommonManager.Instance.DB.GetManualAutoAddDataAppend(this); } }
+        public override uint SearchCount { get { return (uint)CommonUtil.NumBits(dayOfWeekFlag); } }
     }
     public static class ManualAutoAddDataEx
     {
@@ -128,6 +126,7 @@ namespace EpgTimer
             dest.stationName = src.stationName;
             dest.title = src.title;
             dest.transportStreamID = src.transportStreamID;
+            dest.keyDisabledFlag = src.keyDisabledFlag;
         }
     }
 
@@ -150,7 +149,7 @@ namespace EpgTimer
         public virtual void UpdateCounts()
         {
             NextReserve = ReseveItemList.GetNextReserve();
-            OnCount = (uint)ReseveItemList.Count(info => info.RecSetting.RecMode != 5);
+            OnCount = (uint)ReseveItemList.Count(info => info.IsEnabled == true);
             OffCount = (uint)ReseveItemList.Count - OnCount;
         }
     }

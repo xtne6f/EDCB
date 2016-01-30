@@ -63,7 +63,7 @@ namespace EpgTimer
         {
             if (ReserveData != null)
             {
-                if (ReserveData.RecSetting.RecMode == 5)
+                if (ReserveData.IsEnabled == false)
                 {
                     return CommonManager.Instance.ResNoBackColor;
                 }

@@ -662,7 +662,7 @@ namespace EpgTimer
                 foreach (var data in info.GetManualAutoAddList(IsAutoAddEnabled))
                 {
                     var view = new ManualAutoAddDataItem(data);
-                    addSubMenuItem(data, string.Format("({0}){1} {2}", view.DayOfWeek, view.TimeShort, data.DataTitle == "" ? "(空白)" : data.DataTitle), data.dataID);
+                    addSubMenuItem(data, string.Format("({0}){1} {2}", view.DayOfWeek, view.StartTimeShort, data.DataTitle == "" ? "(空白)" : data.DataTitle), data.dataID);
                 }
             }
         }

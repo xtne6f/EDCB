@@ -7,7 +7,7 @@ using System.Windows;
 
 namespace EpgTimer
 {
-    public class SearchItem
+    public class SearchItem : RecSettingItem
     {
         protected MenuUtil mutil = CommonManager.Instance.MUtil;
         protected ViewUtil vutil = CommonManager.Instance.VUtil;
@@ -21,7 +21,7 @@ namespace EpgTimer
             EventInfo = item;
         }
 
-        public static string GetValuePropertyName(string key)
+        public static new string GetValuePropertyName(string key)
         {
             var obj = new SearchItem();
             if (key == CommonUtil.GetMemberName(() => obj.StartTime))
@@ -34,9 +34,11 @@ namespace EpgTimer
             }
             else
             {
-                return key;
+                return RecSettingItem.GetValuePropertyName(key);
             }
         }
+
+        public override RecSettingData RecSettingInfo { get { return ReserveInfo != null ? ReserveInfo.RecSetting : null; } }
 
         public bool IsReserved
         {
@@ -172,7 +174,7 @@ namespace EpgTimer
                         {
                             index = 5;
                         }
-                        if (ReserveInfo.RecSetting.RecMode == 5) //無効の判定
+                        if (ReserveInfo.IsEnabled == false) //無効の判定
                         {
                             index += 2;
                         }

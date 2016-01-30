@@ -1,0 +1,67 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:my="clr-namespace:EpgTimer">
+
+    <my:GridViewColumnList x:Key="RecSettingViewColumns">
+        <GridViewColumn DisplayMemberBinding="{Binding Path=Preset}">
+            <GridViewColumn.Header>
+                <GridViewColumnHeader Content="プリセット" Uid="Preset"/>
+            </GridViewColumn.Header>
+        </GridViewColumn>
+        <GridViewColumn DisplayMemberBinding="{Binding Path=RecMode}">
+            <GridViewColumn.Header>
+                <GridViewColumnHeader Content="録画モード" Uid="RecMode"/>
+            </GridViewColumn.Header>
+        </GridViewColumn>
+        <GridViewColumn DisplayMemberBinding="{Binding Path=Priority}">
+            <GridViewColumn.Header>
+                <GridViewColumnHeader Content="優先度" Uid="Priority"/>
+            </GridViewColumn.Header>
+        </GridViewColumn>
+        <GridViewColumn DisplayMemberBinding="{Binding Path=Tuijyu}">
+            <GridViewColumn.Header>
+                <GridViewColumnHeader Content="追従" Uid="Tuijyu"/>
+            </GridViewColumn.Header>
+        </GridViewColumn>
+        <GridViewColumn DisplayMemberBinding="{Binding Path=Pittari}">
+            <GridViewColumn.Header>
+                <GridViewColumnHeader Content="ぴったり(?)" Uid="Pittari"/>
+            </GridViewColumn.Header>
+        </GridViewColumn>
+        <GridViewColumn DisplayMemberBinding="{Binding Path=Tuner}">
+            <GridViewColumn.Header>
+                <GridViewColumnHeader Content="チューナー" Uid="Tuner"/>
+            </GridViewColumn.Header>
+        </GridViewColumn>
+        <GridViewColumn>
+            <GridViewColumn.Header>
+                <GridViewColumnHeader Content="録画フォルダ" Uid="RecFolder"/>
+            </GridViewColumn.Header>
+            <GridViewColumn.CellTemplate>
+                <DataTemplate>
+                    <ComboBox ItemsSource="{Binding Path=RecFolder}" SelectedIndex="0" Padding="6,0,5,0"></ComboBox>
+                </DataTemplate>
+            </GridViewColumn.CellTemplate>
+        </GridViewColumn>
+        <GridViewColumn>
+            <GridViewColumn.Header>
+                <GridViewColumnHeader Content="開始" Tag="開始タイミング" Uid="MarginStart" ToolTip="*=デフォルト設定"/>
+            </GridViewColumn.Header>
+            <GridViewColumn.CellTemplate>
+                <DataTemplate>
+                    <TextBlock Text="{Binding Path=MarginStart}" HorizontalAlignment="Right" />
+                </DataTemplate>
+            </GridViewColumn.CellTemplate>
+        </GridViewColumn>
+        <GridViewColumn>
+            <GridViewColumn.Header>
+                <GridViewColumnHeader Content="終了" Tag="終了タイミング" Uid="MarginEnd" ToolTip="*=デフォルト設定" />
+            </GridViewColumn.Header>
+            <GridViewColumn.CellTemplate>
+                <DataTemplate>
+                    <TextBlock Text="{Binding Path=MarginEnd}" HorizontalAlignment="Right" />
+                </DataTemplate>
+            </GridViewColumn.CellTemplate>
+        </GridViewColumn>
+    </my:GridViewColumnList>
+</ResourceDictionary>

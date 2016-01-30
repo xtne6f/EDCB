@@ -629,7 +629,7 @@ namespace EpgTimer
             if (Settings.Instance.CautionOnRecChange == false) return true;
             int cMin = Settings.Instance.CautionOnRecMarginMin;
 
-            List<string> list = itemlist.Where(item => item.RecSetting.RecMode != 5 && item.IsOnRec(cMin) == true)
+            List<string> list = itemlist.Where(item => item.IsEnabled == true && item.IsOnRec(cMin) == true)
                 .Select(item => new ReserveItem(item).StartTime + "　" + item.Title).ToList();
 
             if (list.Count == 0) return true;
@@ -643,37 +643,31 @@ namespace EpgTimer
                                 MessageBoxImage.Exclamation, MessageBoxResult.Cancel) == MessageBoxResult.OK;
         }
 
-        public bool EpgAutoAddChangeKeyEnabled(List<EpgAutoAddData> itemlist, byte value)
+        public bool AutoAddChangeKeyEnabled<T>(List<T> itemlist, byte value) where T : AutoAddData
         {
             try
             {
-                if (EpgAutoAddChangeKeyEnabledCautionMany(itemlist) == false) return false;
+                if (AutoAddChangeKeyEnabledCautionMany(itemlist) == false) return false;
 
                 itemlist.ForEach(item => item.IsEnabled = value == 0);
                 return AutoAddChange(itemlist, false);
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                return false;
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
+            return false;
         }
-        public bool EpgAutoAddChangeOnOffKeyEnabled(List<EpgAutoAddData> itemlist)
+        public bool AutoAddChangeOnOffKeyEnabled<T>(List<T> itemlist) where T : AutoAddData
         {
             try
             {
-                if (EpgAutoAddChangeKeyEnabledCautionMany(itemlist) == false) return false;
+                if (AutoAddChangeKeyEnabledCautionMany(itemlist) == false) return false;
 
                 itemlist.ForEach(item => item.IsEnabled = !item.IsEnabled);
                 return AutoAddChange(itemlist, false);
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                return false;
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
+            return false;
         }
-        public bool EpgAutoAddChangeKeyEnabledCautionMany(List<EpgAutoAddData> itemlist)
+        public bool AutoAddChangeKeyEnabledCautionMany<T>(List<T> itemlist) where T : AutoAddData
         {
             if (Settings.Instance.CautionManyChange == true)
             {
@@ -687,7 +681,7 @@ namespace EpgTimer
                         + "よろしいですか？\r\n\r\n"
                         + "[項目数 : " + itemlist.Count + "]\r\n"
                         + "[追加される予約数 : " + addReserveNum + "]\r\n"
-                        , "キーワード予約の変更", MessageBoxButton.OKCancel,
+                        , "自動予約登録の変更", MessageBoxButton.OKCancel,
                         MessageBoxImage.Exclamation, MessageBoxResult.Cancel) == MessageBoxResult.Cancel)
                     {
                         return false;
@@ -752,7 +746,7 @@ namespace EpgTimer
                     if (syncDict.ContainsKey(resinfo.ReserveID) == false)
                     {
                         ReserveData rdata = resinfo.Clone();//変更かけるのでコピーする
-                        rdata.RecSetting = data.RecSetting.Clone();
+                        rdata.RecSetting = data.RecSettingInfo.Clone();
                         //無効は保持する
                         if (resinfo.RecSetting.RecMode == 5)
                         {

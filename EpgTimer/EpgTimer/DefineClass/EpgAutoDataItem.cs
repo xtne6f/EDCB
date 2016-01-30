@@ -8,7 +8,7 @@ using System.Windows;
 namespace EpgTimer
 {
     //キーワード予約とプログラム自動登録の共通項目
-    public class AutoAddDataItem
+    public class AutoAddDataItem : RecSettingItem
     {
         protected MenuUtil mutil = CommonManager.Instance.MUtil;
         protected ViewUtil vutil = CommonManager.Instance.VUtil;
@@ -19,24 +19,22 @@ namespace EpgTimer
         public AutoAddDataItem() {}
         public AutoAddDataItem(AutoAddData data) { _data = data; }
 
-        public static string GetValuePropertyName(string key)
+        public static new string GetValuePropertyName(string key)
         {
             var obj = new AutoAddDataItem();
-            if (key == CommonUtil.GetMemberName(() => obj.MarginStart))
+            if (key == CommonUtil.GetMemberName(() => obj.NextReserve))
             {
-                return CommonUtil.GetMemberName(() => obj.MarginStartValue);
-            }
-            else if (key == CommonUtil.GetMemberName(() => obj.MarginEnd))
-            {
-                return CommonUtil.GetMemberName(() => obj.MarginEndValue);
+                return CommonUtil.GetMemberName(() => obj.NextReserveValue);
             }
             else
             {
-                return key;
+                return RecSettingItem.GetValuePropertyName(key);
             }
         }
 
-        public String Title
+        public override RecSettingData RecSettingInfo { get { return _data != null ? _data.RecSettingInfo : null; } }
+
+        public String EventName
         {
             get
             {
@@ -45,40 +43,13 @@ namespace EpgTimer
                 return _data.DataTitle;
             }
         }
-        public String RecMode
+        public String SearchCount
         {
             get
             {
                 if (_data == null) return "";
                 //
-                return CommonManager.Instance.ConvertRecModeText(_data.RecSetting.RecMode);
-            }
-        }
-        public String Priority
-        {
-            get
-            {
-                if (_data == null) return "";
-                //
-                return _data.RecSetting.Priority.ToString();
-            }
-        }
-        public String Tuijyu
-        {
-            get
-            {
-                if (_data == null) return "";
-                //
-                return CommonManager.Instance.YesNoDictionary[_data.RecSetting.TuijyuuFlag].DisplayName;
-            }
-        }
-        public String Pittari
-        {
-            get
-            {
-                if (_data == null) return "";
-                //
-                return CommonManager.Instance.YesNoDictionary[_data.RecSetting.PittariFlag].DisplayName;
+                return _data.SearchCount.ToString();
             }
         }
         public String ReserveCount
@@ -90,80 +61,97 @@ namespace EpgTimer
                 return _data.ReserveCount.ToString();
             }
         }
-        public String Tuner
+        //"ReserveCount"のうち、有効な予約アイテム数
+        public String OnCount
         {
             get
             {
                 if (_data == null) return "";
                 //
-                return CommonManager.Instance.ConvertTunerText(_data.RecSetting.TunerID);
+                return _data.OnCount.ToString();
             }
         }
-        public String MarginStart
+        //"ReserveCount"のうち、無効な予約アイテム数
+        public String OffCount
         {
             get
             {
                 if (_data == null) return "";
                 //
-                return _data.RecSetting.GetTrueMarginText(true);
+                return _data.OffCount.ToString();
             }
         }
-        public Double MarginStartValue
-        {
-            get
-            {
-                if (_data == null) return Double.MinValue;
-                //
-                return _data.RecSetting.GetTrueMarginForSort(true);
-            }
-        }
-        public String MarginEnd
+        public String NextReserve
         {
             get
             {
                 if (_data == null) return "";
                 //
-                return _data.RecSetting.GetTrueMarginText(false);
+                return new ReserveItem(_data.GetNextReserve()).StartTime;
             }
         }
-        public Double MarginEndValue
+        public DateTime NextReserveValue
         {
             get
             {
-                if (_data == null) return Double.MinValue;
+                if (_data == null) return new DateTime();
                 //
-                return _data.RecSetting.GetTrueMarginForSort(false);
+                return new ReserveItem(_data.GetNextReserve()).StartTimeValue;
             }
         }
-        public String Preset
-        {
-            get
-            {
-                if (_data == null) return "";
-                //
-                return _data.RecSetting.LookUpPreset().DisplayName;
-            }
-        }
-        public List<String> RecFolder
-        {
-            get
-            {
-                if (_data == null) new List<string>();
-                //
-                return _data.RecSetting.GetRecFolderViewList();
-            }
-        }
+        public virtual String NetworkName { get { return ""; } }
+        public virtual String ServiceName { get { return ""; } }
         public override string ToString()
         {
-            return CommonManager.Instance.ConvertTextSearchString(Title);
+            return CommonManager.Instance.ConvertTextSearchString(EventName);
         }
+        public virtual TextBlock ToolTipView { get { return null; } }
+        public virtual bool KeyEnabled
+        {
+            set { ;}
+            get
+            {
+                if (_data == null) return false;
+                //
+                return _data.IsEnabled;
+            }
+        }
+        public SolidColorBrush ForeColor
+        {
+            get
+            {
+                if (_data != null)
+                {
+                    if (_data.IsEnabled == false)
+                    {
+                        return CommonManager.Instance.RecModeForeColor[5];
+                    }
+                }
+                return CommonManager.Instance.ListDefForeColor;
+            }
+        }
+        public SolidColorBrush BackColor
+        {
+            get
+            {
+                if (_data != null)
+                {
+                    if (_data.IsEnabled == false)
+                    {
+                        return CommonManager.Instance.ResNoBackColor;
+                    }
+                }
+                return CommonManager.Instance.ResDefBackColor;
+            }
+        }
+        public virtual Brush BorderBrush { get { return Brushes.White; } }
     }
 
     //T型との関連付け
-    public class AutoAddDataItemT<T> : AutoAddDataItem
+    public class AutoAddDataItemT<T> : AutoAddDataItem where T : AutoAddData
     {
         public AutoAddDataItemT() { }
-        public AutoAddDataItemT(AutoAddData item) : base(item) { }
+        public AutoAddDataItemT(T item) : base(item) { }
     }
 
     public static class AutoDataItemEx
@@ -181,20 +169,6 @@ namespace EpgTimer
 
         public EpgAutoAddData EpgAutoAddInfo { get { return (EpgAutoAddData)_data; } set { _data = value; } }
 
-        public static new string GetValuePropertyName(string key)
-        {
-            var obj = new EpgAutoDataItem();
-            if (key == CommonUtil.GetMemberName(() => obj.NextReserve))
-            {
-                return CommonUtil.GetMemberName(() => obj.NextReserveValue);
-            }
-            else
-            {
-                return AutoAddDataItem.GetValuePropertyName(key);
-            }
-        }
-
-        public String AndKey { get { return Title; } }
         public String NotKey
         {
             get
@@ -250,59 +224,6 @@ namespace EpgTimer
                 return EpgAutoAddInfo.addCount.ToString();
             }
         }
-        //詳細ウィンドウを開いたときの項目数と同じもの。
-        //無効時でも有効時のAddCountと同じ数字が入る。
-        public String SearchCount 
-        {
-            get
-            {
-                if (EpgAutoAddInfo == null) return "";
-                //
-                return EpgAutoAddInfo.SearchCount.ToString();
-            }
-        }
-        //"SearchCount"のうち、予約アイテム数
-        //検索の無効・有効によってAddCountやSearchCountと異なる値になる。
-        //public String ReserveCount -> AutoDataItem.ReserveCount
-
-        //"ReserveCount"のうち、有効な予約アイテム数
-        public String OnCount
-        {
-            get
-            {
-                if (EpgAutoAddInfo == null) return "";
-                //
-                return EpgAutoAddInfo.OnCount.ToString();
-            }
-        }
-        //"ReserveCount"のうち、無効な予約アイテム数
-        public String OffCount
-        {
-            get
-            {
-                if (EpgAutoAddInfo == null) return "";
-                //
-                return EpgAutoAddInfo.OffCount.ToString();
-            }
-        }
-        public String NextReserve
-        {
-            get
-            {
-                if (EpgAutoAddInfo == null) return "";
-                //
-                return new ReserveItem(EpgAutoAddInfo.GetNextReserve()).StartTime;
-            }
-        }
-        public DateTime NextReserveValue
-        {
-            get
-            {
-                if (EpgAutoAddInfo == null) return new DateTime();
-                //
-                return new ReserveItem(EpgAutoAddInfo.GetNextReserve()).StartTimeValue;
-            }
-        }
         public String JyanruKey
         {
             get
@@ -318,38 +239,9 @@ namespace EpgTimer
             }
         }
         /// <summary>
-        /// NHK総合１・東京、NHKBS1
-        /// </summary>
-        public String ServiceKey
-        {
-            get
-            {
-                if (EpgAutoAddInfo == null) return "";
-                //
-                String view = "";
-                foreach (ulong service1 in EpgAutoAddInfo.searchInfo.serviceList)
-                {
-                    try
-                    {
-                        if (view != "") { view += ", "; }
-                        view += ChSet5.Instance.ChList[service1].ServiceName;
-                    }
-                    catch
-                    {
-                        view += "(x_x)";
-                    }
-                }
-                if (view == "")
-                {
-                    view = "なし";
-                }
-                return view;
-            }
-        }
-        /// <summary>
         /// 地デジ、BS、CS
         /// </summary>
-        public String NetworkKey
+        public override String NetworkName
         {
             get
             {
@@ -379,7 +271,36 @@ namespace EpgTimer
                 return view1.TrimEnd(',');;
             }
         }
-        public bool KeyEnabled
+        /// <summary>
+        /// NHK総合１・東京、NHKBS1
+        /// </summary>
+        public override String ServiceName
+        {
+            get
+            {
+                if (EpgAutoAddInfo == null) return "";
+                //
+                String view = "";
+                foreach (ulong service1 in EpgAutoAddInfo.searchInfo.serviceList)
+                {
+                    try
+                    {
+                        if (view != "") { view += ", "; }
+                        view += ChSet5.Instance.ChList[service1].ServiceName;
+                    }
+                    catch
+                    {
+                        view += "(x_x)";
+                    }
+                }
+                if (view == "")
+                {
+                    view = "なし";
+                }
+                return view;
+            }
+        }
+        public override bool KeyEnabled
         {
             set
             {
@@ -387,42 +308,8 @@ namespace EpgTimer
                 MainWindow mainWindow = (MainWindow)Application.Current.MainWindow;
                 mainWindow.autoAddView.epgAutoAddView.ChgKeyEnabledFromCheckbox(this);
             }
-            get
-            {
-                if (EpgAutoAddInfo == null) return false;
-                //
-                return EpgAutoAddInfo.IsEnabled;
-            }
         }
-        public SolidColorBrush ForeColor
-        {
-            get
-            {
-                if (EpgAutoAddInfo != null)
-                {
-                    if (EpgAutoAddInfo.IsEnabled == false)
-                    {
-                        return CommonManager.Instance.RecModeForeColor[5];
-                    }
-                }
-                return CommonManager.Instance.ListDefForeColor;
-            }
-        }
-        public SolidColorBrush BackColor
-        {
-            get
-            {
-                if (EpgAutoAddInfo != null)
-                {
-                    if (EpgAutoAddInfo.IsEnabled == false)
-                    {
-                        return CommonManager.Instance.ResNoBackColor;
-                    }
-                }
-                return CommonManager.Instance.ResDefBackColor;
-            }
-        }
-        public TextBlock ToolTipView
+        public override TextBlock ToolTipView
         {
             get
             {
@@ -441,13 +328,13 @@ namespace EpgTimer
                 if (EpgAutoAddInfo.searchInfo != null)
                 {
                     view += "検索条件\r\n";
-                    view += "Andキーワード：" + AndKey + "\r\n";
+                    view += "Andキーワード：" + EventName + "\r\n";
                     view += "Notキーワード：" + NotKey + "\r\n";
                     view += "正規表現モード：" + RegExp + "\r\n";
                     view += "番組名のみ検索対象：" + TitleOnly + "\r\n";
                     view += "ジャンル絞り込み：" + JyanruKey + "\r\n";
                     view += "時間絞り込み：" + DateKey + "\r\n";
-                    view += "検索対象サービス：" + ServiceKey + "\r\n";
+                    view += "検索対象サービス：" + ServiceName + "\r\n";
 
                     view += "\r\n";
                 }
@@ -533,7 +420,7 @@ namespace EpgTimer
                 return view;
             }
         }
-        public Brush BorderBrush
+        public override Brush BorderBrush
         {
             get
             {

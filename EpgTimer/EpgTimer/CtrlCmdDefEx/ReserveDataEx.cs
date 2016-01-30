@@ -6,7 +6,7 @@ using System.Windows;
 
 namespace EpgTimer
 {
-    public partial class ReserveData : IAutoAddTargetData
+    public partial class ReserveData : IAutoAddTargetData, IRecSetttingData
     {
         public string DataTitle { get { return Title; } }
         public DateTime PgStartTime { get { return StartTime; } }
@@ -19,6 +19,7 @@ namespace EpgTimer
         {
             return CommonManager.Create64PgKey(OriginalNetworkID, TransportStreamID, ServiceID, EventID);
         }
+        public RecSettingData RecSettingInfo { get { return RecSetting; } }
 
         public ReserveMode ReserveMode
         {
@@ -73,7 +74,7 @@ namespace EpgTimer
 
             try
             {
-                if (EventID != 0xFFFF)
+                if (IsEpgReserve == true)
                 {
                     UInt64 key = Create64Key();
                     if (CommonManager.Instance.DB.ServiceEventList.ContainsKey(key) == true)
@@ -182,7 +183,7 @@ namespace EpgTimer
 
             foreach (ReserveData data in resList)
             {
-                if (IsTargetOffRes == true || data.RecSetting.RecMode != 5)
+                if (IsTargetOffRes == true || data.IsEnabled == true)
                 {
                     if (value > data.StartTime.ToBinary())
                     {
@@ -193,11 +194,6 @@ namespace EpgTimer
             }
 
             return ret;
-        }
-
-        public static List<RecSettingData> RecSettingList(this IEnumerable<ReserveData> list)
-        {
-            return list.Where(item => item != null).Select(item => item.RecSetting).ToList();
         }
 
         public static List<ReserveData> Clone(this IEnumerable<ReserveData> src) { return CopyObj.Clone(src, CopyData); }

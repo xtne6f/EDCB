@@ -9,29 +9,12 @@ namespace EpgTimer
 {
     public class ReserveItem : SearchItem
     {
-        //EventInfo、ReserveInfo、JyanruKey、ForeColor、BackColor、BorderBrush -> SearchItem.cs
+        //EventInfo、ReserveInfo、ProgramContent、JyanruKey、ForeColor、BackColor、BorderBrush -> SearchItem.cs
 
         public ReserveItem() { }
         public ReserveItem(ReserveData item)
         {
             base.ReserveInfo = item;
-        }
-
-        public static new string GetValuePropertyName(string key)
-        {
-            var obj = new ReserveItem();
-            if (key == CommonUtil.GetMemberName(() => obj.MarginStart))
-            {
-                return CommonUtil.GetMemberName(() => obj.MarginStartValue);
-            }
-            else if (key == CommonUtil.GetMemberName(() => obj.MarginEnd))
-            {
-                return CommonUtil.GetMemberName(() => obj.MarginEndValue);
-            }
-            else
-            {
-                return SearchItem.GetValuePropertyName(key);
-            }
         }
 
         private EpgEventInfo eventInfo = null;
@@ -124,51 +107,13 @@ namespace EpgTimer
                 return ReserveInfo.DurationSecond;
             }
         }
-        public String MarginStart
+        public override String Preset
         {
             get
             {
                 if (ReserveInfo == null) return "";
                 //
-                return ReserveInfo.RecSetting.GetTrueMarginText(true);
-            }
-        }
-        public Double MarginStartValue
-        {
-            get
-            {
-                if (ReserveInfo == null) return Double.MinValue;
-                //
-                return ReserveInfo.RecSetting.GetTrueMarginForSort(true);
-            }
-        }
-        public String MarginEnd
-        {
-            get
-            {
-                if (ReserveInfo == null) return "";
-                //
-                return ReserveInfo.RecSetting.GetTrueMarginText(false);
-            }
-        }
-        public Double MarginEndValue
-        {
-            get
-            {
-                if (ReserveInfo == null) return Double.MinValue;
-                //
-                return ReserveInfo.RecSetting.GetTrueMarginForSort(false);
-            }
-        }
-        //public String ProgramContent -> SearchItem.cs
-        //public String JyanruKey -> SearchItem.cs
-        public String Preset
-        {
-            get
-            {
-                if (ReserveInfo == null) return "";
-                //
-                return ReserveInfo.RecSetting.LookUpPreset(ReserveInfo.EventID == 0xFFFF).DisplayName;
+                return ReserveInfo.RecSetting.LookUpPreset(ReserveInfo.IsEpgReserve == false).DisplayName;
             }
         }
         public bool IsEnabled
@@ -183,52 +128,7 @@ namespace EpgTimer
             {
                 if (ReserveInfo == null) return false;
                 //
-                return ReserveInfo.RecSetting.RecMode != 5;
-            }
-        }
-        public String RecMode
-        {
-            get
-            {
-                if (ReserveInfo == null) return "";
-                //
-                return CommonManager.Instance.ConvertRecModeText(ReserveInfo.RecSetting.RecMode);
-            }
-        }
-        public String Priority
-        {
-            get
-            {
-                if (ReserveInfo == null) return "";
-                //
-                return ReserveInfo.RecSetting.Priority.ToString();
-            }
-        }
-        public String Tuijyu
-        {
-            get
-            {
-                if (ReserveInfo == null) return "";
-                //
-                return CommonManager.Instance.YesNoDictionary[ReserveInfo.RecSetting.TuijyuuFlag].DisplayName;
-            }
-        }
-        public String Pittari
-        {
-            get
-            {
-                if (ReserveInfo == null) return "";
-                //
-                return CommonManager.Instance.YesNoDictionary[ReserveInfo.RecSetting.PittariFlag].DisplayName;
-            }
-        }
-        public String Tuner
-        {
-            get
-            {
-                if (ReserveInfo == null) return "";
-                //
-                return CommonManager.Instance.ConvertTunerText(ReserveInfo.RecSetting.TunerID);
+                return ReserveInfo.IsEnabled;
             }
         }
         public String Comment
@@ -239,7 +139,7 @@ namespace EpgTimer
                 //
                 if (ReserveInfo.IsAutoAdded == false)
                 {
-                    return "個別予約(" + (ReserveInfo.EventID == 0xFFFF ? "プログラム" : "EPG") + ")";
+                    return "個別予約(" + (ReserveInfo.IsEpgReserve == true ? "EPG" : "プログラム") + ")";
                 }
                 else
                 {
@@ -247,15 +147,6 @@ namespace EpgTimer
                     return (ReserveInfo.IsAutoAddMissing == true ? "不明な" : ReserveInfo.IsAutoAddInvalid == true ? "無効の" : "")
                             + (s.StartsWith("EPG自動予約(") == true ? "キーワード予約(" + s.Substring(8) : s);
                 }
-            }
-        }
-        public List<String> RecFolder
-        {
-            get
-            {
-                if (ReserveInfo == null) new List<string>();
-                //
-                return ReserveInfo.RecSetting.GetRecFolderViewList();
             }
         }
         public List<String> RecFileName
@@ -293,7 +184,7 @@ namespace EpgTimer
                     {
                         index = 4;
                     }
-                    if (ReserveInfo.RecSetting.RecMode == 5) //無効の判定
+                    if (ReserveInfo.IsEnabled == false) //無効の判定
                     {
                         index += 1;
                     }

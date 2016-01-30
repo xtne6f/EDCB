@@ -87,7 +87,7 @@ namespace EpgTimer
         public void SetReserveInfo(ReserveData info)
         {
             reserveInfo = info.Clone();
-            recSettingView.SetDefSetting(reserveInfo.RecSetting, reserveInfo.EventID == 0xFFFF);
+            recSettingView.SetDefSetting(reserveInfo.RecSetting, reserveInfo.IsEpgReserve == false);
         }
 
         private void SetResModeProgram(bool mode)
@@ -130,7 +130,7 @@ namespace EpgTimer
                     if (CtrlCmdDefEx.EqualsPg(resInfoDisplay, resInfo, false, true) == false)
                     {
                         //EPGを自動で読み込んでない時でも、元がEPG予約ならその番組情報は表示させられるようにする
-                        if (reserveInfo.EventID != 0xFFFF && CtrlCmdDefEx.EqualsPg(reserveInfo, resInfo, false, true) == true)
+                        if (reserveInfo.IsEpgReserve == true && CtrlCmdDefEx.EqualsPg(reserveInfo, resInfo, false, true) == true)
                         {
                             SetProgramContent(reserveInfo.SearchEventInfo(true));
                         }
@@ -190,7 +190,7 @@ namespace EpgTimer
             }
             else
             {
-                SetResModeProgram(reserveInfo.EventID == 0xFFFF);
+                SetResModeProgram(reserveInfo.IsEpgReserve == false);
                 SetReserveTimeInfo(reserveInfo);
             }
 
@@ -424,7 +424,7 @@ namespace EpgTimer
                 var resInfo = new ReserveData();
                 GetReserveTimeInfo(ref resInfo);
 
-                if (reserveInfo.EventID != 0xFFFF && CtrlCmdDefEx.EqualsPg(reserveInfo, resInfo, false, true) == true)
+                if (reserveInfo.IsEpgReserve == true && CtrlCmdDefEx.EqualsPg(reserveInfo, resInfo, false, true) == true)
                 {
                     //EPG予約で、元の状態に戻る場合
                     textBox_title.Text = reserveInfo.Title;

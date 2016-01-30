@@ -116,7 +116,7 @@ namespace EpgTimer
                     tuner_off.tunerID = 0xFFFFFFFF;//IDの表示判定に使っている
                     tuner_off.tunerName = "無効予約";
                     tuner_off.reserveList = CommonManager.Instance.DB.ReserveList.Values
-                        .Where(info => info.RecSetting.RecMode == 5).Select(info => info.ReserveID).ToList();
+                        .Where(info => info.IsEnabled == false).Select(info => info.ReserveID).ToList();
                     tunerReserveList.Add(tuner_off);
                 }
 

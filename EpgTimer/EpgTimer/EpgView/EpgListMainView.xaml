@@ -36,6 +36,9 @@
                         <Setter Property="BorderThickness" Value="5,0,0,1" />
                         <Setter Property="BorderBrush" Value="{Binding BorderBrush}" />
                     </Style>
+                    <Style TargetType="GridViewColumnHeader" BasedOn="{StaticResource {x:Type GridViewColumnHeader}}">
+                        <Setter Property="HorizontalContentAlignment" Value="Left"/>
+                    </Style>
                     <ContextMenu x:Key="itemMenu"/>
                     <!-- MenuManagerからメニューを展開する -->
                 </ListView.Resources>
@@ -43,7 +46,7 @@
                     <GridView x:Name="gridView_event">
                         <GridViewColumn Width="35">
                             <GridViewColumn.Header>
-                                <GridViewColumnHeader Content="状態" Tag="Status" HorizontalContentAlignment="Left" />
+                                <GridViewColumnHeader Content="状態" Uid="Status" />
                             </GridViewColumn.Header>
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
@@ -53,22 +56,22 @@
                         </GridViewColumn>
                         <GridViewColumn DisplayMemberBinding="{Binding Path=StartTime}">
                             <GridViewColumn.Header>
-                                <GridViewColumnHeader Content="日時" Tag="StartTime" HorizontalContentAlignment="Left"/>
+                                <GridViewColumnHeader Content="日時" Uid="StartTime"/>
                             </GridViewColumn.Header>
                         </GridViewColumn>
                         <GridViewColumn DisplayMemberBinding="{Binding Path=NetworkName}">
                             <GridViewColumn.Header>
-                                <GridViewColumnHeader Content="ネットワーク" Tag="NetworkName" HorizontalContentAlignment="Left"/>
+                                <GridViewColumnHeader Content="ネットワーク" Uid="NetworkName"/>
                             </GridViewColumn.Header>
                         </GridViewColumn>
                         <GridViewColumn DisplayMemberBinding="{Binding Path=ServiceName}">
                             <GridViewColumn.Header>
-                                <GridViewColumnHeader Content="サービス名" Tag="ServiceName" HorizontalContentAlignment="Left"/>
+                                <GridViewColumnHeader Content="サービス名" Uid="ServiceName"/>
                             </GridViewColumn.Header>
                         </GridViewColumn>
                         <GridViewColumn DisplayMemberBinding="{Binding Path=EventName}">
                             <GridViewColumn.Header>
-                                <GridViewColumnHeader Content="番組名" Tag="EventName" HorizontalContentAlignment="Left"/>
+                                <GridViewColumnHeader Content="番組名" Uid="EventName"/>
                             </GridViewColumn.Header>
                         </GridViewColumn>
                     </GridView>
@@ -90,7 +93,7 @@
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=ServiceName}" >
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="サービス名" HorizontalContentAlignment="Left" Width="150"/>
+                            <GridViewColumnHeader Content="サービス名" HorizontalContentAlignment="Left" />
                         </GridViewColumn.Header>
                     </GridViewColumn>
                 </GridView>

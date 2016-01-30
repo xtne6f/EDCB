@@ -7,9 +7,6 @@
              xmlns:local="clr-namespace:EpgTimer.UserCtrlView"
              d:DesignHeight="300" d:DesignWidth="300" IsVisibleChanged="UserControl_IsVisibleChanged">
     <UserControl.Resources>
-        <Style TargetType="{x:Type TextBox}">
-            <Setter Property="InputMethod.PreferredImeState" Value="Off" />
-        </Style>
         <Style TargetType="{x:Type CheckBox}">
             <Setter Property="Template">
                 <Setter.Value>
@@ -52,28 +49,17 @@
                     <Setter Property="ContextMenu" Value="{DynamicResource itemMenu}" />
                     <EventSetter Event="MouseDoubleClick" Handler="listView_recinfo_MouseDoubleClick"/>
                 </Style>
-                <ContextMenu x:Key="itemHeader" >
-                    <MenuItem Header="プロテクト" Name="IsProtect" IsCheckable="True" />
-                    <MenuItem Header="日時" Name="StartTime" IsCheckable="True" />
-                    <MenuItem Header="時間(長さ)" Name="ProgramDuration" IsCheckable="True" />
-                    <MenuItem Header="ネットワーク" Name="NetworkName" IsCheckable="True" />
-                    <MenuItem Header="サービス名" Name="ServiceName" IsCheckable="True" />
-                    <MenuItem Header="番組名" Name="EventName" IsCheckable="True" />
-                    <MenuItem Header="Drop(全信号)" Name="Drops" IsCheckable="True" />
-                    <MenuItem Header="Drop(映像・音声)" Name="DropsSerious" IsCheckable="True" />
-                    <MenuItem Header="Scramble(全信号)" Name="Scrambles" IsCheckable="True" />
-                    <MenuItem Header="Scramble(映像・音声)" Name="ScramblesSerious" IsCheckable="True" />
-                    <MenuItem Header="結果" Name="Result" IsCheckable="True" />
-                    <MenuItem Header="録画ファイル" Name="RecFilePath" IsCheckable="True" />
-                </ContextMenu>
+                <Style TargetType="GridViewColumnHeader" BasedOn="{StaticResource {x:Type GridViewColumnHeader}}">
+                    <Setter Property="HorizontalContentAlignment" Value="Left"/>
+                </Style>
                 <ContextMenu x:Key="itemMenu"/>
                 <!-- MenuManagerからメニューを展開する -->
             </ListView.Resources>
             <ListView.View>
-                <GridView x:Name="gridView_recinfo" ColumnHeaderContextMenu="{DynamicResource itemHeader}">
+                <GridView x:Name="gridView_recinfo" >
                     <GridViewColumn>
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Tag="IsProtect">
+                            <GridViewColumnHeader Tag="プロテクト" Uid="IsProtect">
                                 <Image Source="/Resources/key.png" Stretch="None" IsHitTestVisible="False" />
                             </GridViewColumnHeader>
                         </GridViewColumn.Header>
@@ -85,12 +71,12 @@
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=StartTime}">
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="日時" Tag="StartTime" HorizontalContentAlignment="Left"/>
+                            <GridViewColumnHeader Content="日時" Uid="StartTime" />
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn>
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="時間(長さ)" Tag="ProgramDuration" HorizontalContentAlignment="Left" />
+                            <GridViewColumnHeader Content="時間(長さ)" Uid="ProgramDuration" />
                         </GridViewColumn.Header>
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
@@ -100,47 +86,47 @@
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=NetworkName}">
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="ネットワーク" Tag="NetworkName" HorizontalContentAlignment="Left"/>
+                            <GridViewColumnHeader Content="ネットワーク" Uid="NetworkName" />
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=ServiceName}">
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="サービス名" Tag="ServiceName" HorizontalContentAlignment="Left"/>
+                            <GridViewColumnHeader Content="サービス名" Uid="ServiceName" />
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=EventName}">
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="番組名" Tag="EventName" HorizontalContentAlignment="Left"/>
+                            <GridViewColumnHeader Content="番組名" Uid="EventName" />
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=Drops}">
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="Drop" Tag="Drops" HorizontalContentAlignment="Left"/>
+                            <GridViewColumnHeader Content="Drop" Tag="Drop(全信号)" Uid="Drops" />
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=DropsSerious}">
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="Drop(映像・音声)" Tag="DropsSerious" HorizontalContentAlignment="Left"/>
+                            <GridViewColumnHeader Content="Drop(映像・音声)" Tag="Drop(映像・音声)" Uid="DropsSerious" />
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=Scrambles}">
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="Scramble" Tag="Scrambles" HorizontalContentAlignment="Left"/>
+                            <GridViewColumnHeader Content="Scramble" Tag="Scramble(全信号)" Uid="Scrambles" />
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=ScramblesSerious}">
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="Scramble(映像・音声)" Tag="ScramblesSerious" HorizontalContentAlignment="Left"/>
+                            <GridViewColumnHeader Content="Scramble(映像・音声)" Tag="Scramble(映像・音声)" Uid="ScramblesSerious" />
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=Result}">
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="結果" Tag="Result" HorizontalContentAlignment="Left"/>
+                            <GridViewColumnHeader Content="結果" Uid="Result" />
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=RecFilePath}">
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="録画ファイル" Tag="RecFilePath" HorizontalContentAlignment="Left"/>
+                            <GridViewColumnHeader Content="録画ファイル" Uid="RecFilePath" />
                         </GridViewColumn.Header>
                     </GridViewColumn>
                 </GridView>

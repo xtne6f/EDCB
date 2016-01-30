@@ -12,6 +12,7 @@
         <CheckBox Content="木" Height="16" HorizontalAlignment="Left" Margin="228,17,0,0" Name="checkBox_week4" VerticalAlignment="Top" />
         <CheckBox Content="金" Height="16" HorizontalAlignment="Left" Margin="263,17,0,0" Name="checkBox_week5" VerticalAlignment="Top" />
         <CheckBox Content="土" Height="16" HorizontalAlignment="Left" Margin="298,17,0,0" Name="checkBox_week6" VerticalAlignment="Top" />
+        <CheckBox Content="自動登録を無効にする" Height="16" HorizontalAlignment="Left" Margin="360,17,0,0" Name="checkBox_keyDisabled" VerticalAlignment="Top" />
         <Label Content="録画時間" Height="28" HorizontalAlignment="Left" Margin="12,46,0,0" Name="label2" VerticalAlignment="Top" />
         <ComboBox Height="24" HorizontalAlignment="Left" Margin="88,46,0,0" Name="comboBox_startHH" VerticalAlignment="Top" Width="46" ItemsSource="{Binding}" />
         <Label Content="：" Height="28" HorizontalAlignment="Left" Margin="146,46,0,0" Name="label3" VerticalAlignment="Top" />

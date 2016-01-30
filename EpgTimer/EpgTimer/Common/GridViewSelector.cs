@@ -11,37 +11,44 @@ namespace EpgTimer
     {
         GridView gridView = null;
         Dictionary<String, GridViewColumn> columnList = new Dictionary<String, GridViewColumn>();   //カラムの一覧を保存しておく
-        List<ListColumnInfo> settingList = new List<ListColumnInfo>();                              //設定情報
 
         public GridViewSelector(GridView gv, List<ListColumnInfo> setting = null)
         {
             try
             {
                 gridView = gv;
+
+                //セレクト用の右クリックメニュー関係
+                gridView.ColumnHeaderContextMenu = new ContextMenu();
+                gridView.ColumnHeaderContextMenu.Opened += new RoutedEventHandler(ContextMenuOpening);
                 foreach (GridViewColumn info in gridView.Columns)
                 {
-                    GridViewColumnHeader header = info.Header as GridViewColumnHeader;
-                    columnList.Add((string)header.Tag, info);
+                    var header = info.Header as GridViewColumnHeader;
+
+                    //セレクト用のメニュー生成
+                    var menu = new MenuItem();
+                    menu.Uid = header.Uid;
+                    menu.Header = header.Tag == null ? header.Content : header.Tag.ToString();
+                    menu.IsCheckable = true;
+                    menu.Click += new RoutedEventHandler(HeaderSelectClick);
+                    gridView.ColumnHeaderContextMenu.Items.Add(menu);
+
+                    columnList.Add(menu.Uid, info);
                 }
 
-                if (gridView.ColumnHeaderContextMenu != null)
+                //表示列の初期化
+                if (setting != null)
                 {
-                    gridView.ColumnHeaderContextMenu.Opened += new RoutedEventHandler(ContextMenuOpening);
-                    foreach (MenuItem menu in gridView.ColumnHeaderContextMenu.Items)
+                    gridView.Columns.Clear();
+                    foreach (ListColumnInfo info in setting)
                     {
-                        menu.Click += new RoutedEventHandler(HeaderSelectClick);
+                        try
+                        {
+                            columnList[info.Tag].Width = info.Width;
+                            gridView.Columns.Add(columnList[info.Tag]);
+                        }
+                        catch { }
                     }
-                }
-
-                if (setting == null) return;
-
-                //設定情報がある場合は続ける
-                settingList.AddRange(setting);
-                gridView.Columns.Clear();
-                foreach (ListColumnInfo info in settingList)
-                {
-                    columnList[info.Tag].Width = info.Width;
-                    gridView.Columns.Add(columnList[info.Tag]);
                 }
             }
             catch (Exception ex)
@@ -57,20 +64,11 @@ namespace EpgTimer
                 MenuItem menuItem = sender as MenuItem;
                 if (menuItem.IsChecked == true)
                 {
-                    gridView.Columns.Add(columnList[menuItem.Name]);
-                    settingList.Add(new ListColumnInfo(menuItem.Name, Double.NaN));
+                    gridView.Columns.Add(columnList[menuItem.Uid]);
                 }
                 else
                 {
-                    foreach (ListColumnInfo info in settingList)
-                    {
-                        if (info.Tag.CompareTo(menuItem.Name) == 0)
-                        {
-                            gridView.Columns.Remove(columnList[menuItem.Name]);
-                            settingList.Remove(info);
-                            break;
-                        }
-                    }
+                    gridView.Columns.Remove(columnList[menuItem.Uid]);
                 }
             }
             catch (Exception ex)
@@ -83,9 +81,9 @@ namespace EpgTimer
         {
             try
             {
-                foreach (MenuItem item in (sender as ContextMenu).Items)
+                foreach (MenuItem menuItem in (sender as ContextMenu).Items)
                 {
-                    item.IsChecked = settingList.Exists(setinfo => setinfo.Tag == item.Name);
+                    menuItem.IsChecked = gridView.Columns.Contains(columnList[menuItem.Uid]);
                 }
             }
             catch (Exception ex)
@@ -104,7 +102,7 @@ namespace EpgTimer
                 foreach (GridViewColumn info in gridView.Columns)
                 {
                     GridViewColumnHeader header = info.Header as GridViewColumnHeader;
-                    setting.Add(new ListColumnInfo((String)header.Tag, info.Width));
+                    setting.Add(new ListColumnInfo(header.Uid, info.Width));
                 }
             }
             catch (Exception ex)

@@ -69,7 +69,6 @@ namespace EpgTimer
         protected List<T> dataList = new List<T>();
         public bool IsCommandExecuted { get; protected set; }
 
-        public CmdExe() { }
         public CmdExe(Control owner)
         {
             this.Owner = owner;
@@ -427,12 +426,17 @@ namespace EpgTimer
             {
                 if (subMenu.Tag == EpgCmdsEx.ChgKeyEnabledMenu)
                 {
-                    if (typeof(T) != typeof(EpgAutoAddData))
+                    if (typeof(T).IsSubclassOf(typeof(AutoAddData)) == false)
                     {
                         subMenu.Visibility = Visibility.Collapsed;
                         continue;
                     }
                     subMenu.Visibility = Visibility.Visible;
+
+                    var list = dataList.OfType<AutoAddData>().ToList();
+                    bool? value = list.All(info => info.IsEnabled == list[0].IsEnabled) ? (bool?)list[0].IsEnabled : null;
+                    subMenu.Header = string.Format("自動登録有効 : {0}", value == null ? "*" : (value == true ? "有効" : "無効"));
+                    SetCheckmarkSubMenus(subMenu, value == true ? 0 : value == false ? 1 : int.MinValue);
                 }
                 else if (subMenu.Tag == EpgCmdsEx.ChgOnPresetMenu)
                 {

@@ -1495,45 +1495,49 @@ namespace EpgTimer
                 }
                 if (Instance.reserveListColumn.Count == 0)
                 {
-                    Instance.reserveListColumn.Add(new ListColumnInfo("StartTime", double.NaN));
-                    Instance.reserveListColumn.Add(new ListColumnInfo("NetworkName", double.NaN));
-                    Instance.reserveListColumn.Add(new ListColumnInfo("ServiceName", double.NaN));
-                    Instance.reserveListColumn.Add(new ListColumnInfo("EventName", double.NaN));
-                    Instance.reserveListColumn.Add(new ListColumnInfo("RecMode", double.NaN));
-                    Instance.reserveListColumn.Add(new ListColumnInfo("Priority", double.NaN));
-                    Instance.reserveListColumn.Add(new ListColumnInfo("Tuijyu", double.NaN));
-                    Instance.reserveListColumn.Add(new ListColumnInfo("Comment", double.NaN));
-                    Instance.reserveListColumn.Add(new ListColumnInfo("RecFileName", double.NaN));
+                    var obj = new ReserveItem();
+                    Instance.reserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.StartTime), double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.NetworkName), double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.ServiceName), double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.EventName), double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.RecMode), double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.Priority), double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.Tuijyu), double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.Comment), double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.RecFileName), double.NaN));
                 }
                 if (Instance.recInfoListColumn.Count == 0)
                 {
-                    Instance.recInfoListColumn.Add(new ListColumnInfo("IsProtect", double.NaN));
-                    Instance.recInfoListColumn.Add(new ListColumnInfo("StartTime", double.NaN));
-                    Instance.recInfoListColumn.Add(new ListColumnInfo("NetworkName", double.NaN));
-                    Instance.recInfoListColumn.Add(new ListColumnInfo("ServiceName", double.NaN));
-                    Instance.recInfoListColumn.Add(new ListColumnInfo("EventName", double.NaN));
-                    Instance.recInfoListColumn.Add(new ListColumnInfo("Drops", double.NaN));
-                    Instance.recInfoListColumn.Add(new ListColumnInfo("Scrambles", double.NaN));
-                    Instance.recInfoListColumn.Add(new ListColumnInfo("Result", double.NaN));
-                    Instance.recInfoListColumn.Add(new ListColumnInfo("RecFilePath", double.NaN));
+                    var obj = new RecInfoItem();
+                    Instance.reserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.IsProtect), double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.StartTime), double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.NetworkName), double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.ServiceName), double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.EventName), double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.Drops), double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.Scrambles), double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.Result), double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.RecFilePath), double.NaN));
                 }
                 if (Instance.autoAddEpgColumn.Count == 0)
                 {
-                    Instance.autoAddEpgColumn.Add(new ListColumnInfo("AndKey", double.NaN));
-                    Instance.autoAddEpgColumn.Add(new ListColumnInfo("NotKey", double.NaN));
-                    Instance.autoAddEpgColumn.Add(new ListColumnInfo("RegExp", double.NaN));
-                    Instance.autoAddEpgColumn.Add(new ListColumnInfo("RecMode", double.NaN));
-                    Instance.autoAddEpgColumn.Add(new ListColumnInfo("Priority", double.NaN));
-                    Instance.autoAddEpgColumn.Add(new ListColumnInfo("Tuijyu", double.NaN));
+                    var obj = new EpgAutoDataItem();
+                    Instance.reserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.EventName), double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.NotKey), double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.RegExp), double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.RecMode), double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.Priority), double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.Tuijyu), double.NaN));
                 }
                 if (Instance.autoAddManualColumn.Count == 0)
                 {
-                    Instance.autoAddManualColumn.Add(new ListColumnInfo("DayOfWeek", double.NaN));
-                    Instance.autoAddManualColumn.Add(new ListColumnInfo("Time", double.NaN));
-                    Instance.autoAddManualColumn.Add(new ListColumnInfo("Title", double.NaN));
-                    Instance.autoAddManualColumn.Add(new ListColumnInfo("StationName", double.NaN));
-                    Instance.autoAddManualColumn.Add(new ListColumnInfo("RecMode", double.NaN));
-                    Instance.autoAddManualColumn.Add(new ListColumnInfo("Priority", double.NaN));
+                    var obj = new ManualAutoAddDataItem();
+                    Instance.reserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.DayOfWeek), double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.StartTime), double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.EventName), double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.ServiceName), double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.RecMode), double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.Priority), double.NaN));
                 }
                 if (Instance.recInfoDropExclude.Count == 0)
                 {

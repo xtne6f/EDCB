@@ -12,6 +12,10 @@ namespace EpgTimer
     /// </summary>
     public partial class SearchWindow : Window
     {
+        //よく使うので
+        static MainWindow mainWindow { get { return (MainWindow)Application.Current.MainWindow; } }
+        static EpgAutoAddView autoAddView { get { return mainWindow.autoAddView.epgAutoAddView; } }
+
         private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
         private MenuUtil mutil = CommonManager.Instance.MUtil;
         private ViewUtil vutil = CommonManager.Instance.VUtil;
@@ -29,16 +33,6 @@ namespace EpgTimer
 
         private bool ReloadInfo = false;
         private bool ReloadReserveInfo = false;
-
-        static MainWindow mainWindow = null;
-        static EpgAutoAddView autoAddView = null;
-
-        static SearchWindow()
-        {
-            //比較その他でよく使う
-            mainWindow = (MainWindow)Application.Current.MainWindow;
-            autoAddView = mainWindow.autoAddView.epgAutoAddView;
-        }
 
         public SearchWindow()
         {
@@ -230,7 +224,7 @@ namespace EpgTimer
             List<ReserveData> rlist = lstCtrl.dataList.GetReserveList();
             if (rlist.Count != 0)
             {
-                int OnCount = rlist.Count(data => data.RecSetting.RecMode != 5);
+                int OnCount = rlist.Count(data => data.IsEnabled == true);
                 int OffCount = rlist.Count - OnCount;
                 text_result.Text += string.Format("予約数:{0} ( 有効 {1} / 無効 {2} )", rlist.Count, OnCount, OffCount);
             }
@@ -408,7 +402,7 @@ namespace EpgTimer
                 SearchItem item = lstCtrl.SelectSingleItem();
 
                 if (reserveOnly && item.IsReserved == false) return;
-                if (onReserveOnly && item.ReserveInfo.RecSetting.RecMode == 5) return;
+                if (onReserveOnly && item.ReserveInfo.IsEnabled == false) return;
 
                 BlackoutWindow.SelectedItem = item;
 

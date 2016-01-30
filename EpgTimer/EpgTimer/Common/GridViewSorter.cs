@@ -134,9 +134,7 @@ namespace EpgTimer {
 
         private string getHeaderString(GridViewColumnHeader columnHeader1)
         {
-            if (columnHeader1 == null || columnHeader1.Tag is string == false) return "";
-            //
-            return columnHeader1.Tag as string;
+            return columnHeader1.Uid;
         }
 
         private string getPathString(GridViewColumnHeader columnHeader1)

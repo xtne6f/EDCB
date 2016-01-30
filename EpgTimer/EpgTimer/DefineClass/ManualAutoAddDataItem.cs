@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Windows;
 using System.Windows.Media;
 
 namespace EpgTimer
@@ -15,9 +16,13 @@ namespace EpgTimer
         public static new string GetValuePropertyName(string key)
         {
             var obj = new ManualAutoAddDataItem();
-            if (key == CommonUtil.GetMemberName(() => obj.Time))
+            if (key == CommonUtil.GetMemberName(() => obj.StartTime))
             {
-                return CommonUtil.GetMemberName(() => obj.TimeValue);
+                return CommonUtil.GetMemberName(() => obj.StartTimeValue);
+            }
+            else if (key == CommonUtil.GetMemberName(() => obj.ProgramDuration))
+            {
+                return CommonUtil.GetMemberName(() => obj.ProgramDurationValue);
             }
             else
             {
@@ -43,7 +48,7 @@ namespace EpgTimer
                 return view;
             }
         }
-        public String Time
+        public String StartTime
         {
             get
             {
@@ -53,7 +58,7 @@ namespace EpgTimer
                     , ManualAutoAddInfo.durationSecond, true, Settings.Instance.ResInfoNoSecond, true, true);
             }
         }
-        public UInt32 TimeValue
+        public UInt32 StartTimeValue
         {
             get
             {
@@ -62,7 +67,7 @@ namespace EpgTimer
                 return ManualAutoAddInfo.startTime;
             }
         }
-        public String TimeShort
+        public String StartTimeShort
         {
             get
             {
@@ -72,7 +77,34 @@ namespace EpgTimer
                     , ManualAutoAddInfo.durationSecond, true, true, true, true);
             }
         }
-        public String StationName
+        public String ProgramDuration
+        {
+            get
+            {
+                if (ManualAutoAddInfo == null) return "";
+                //
+                return CommonManager.ConvertDurationText(ManualAutoAddInfo.PgDurationSecond, Settings.Instance.ResInfoNoDurSecond);
+            }
+        }
+        public UInt32 ProgramDurationValue
+        {
+            get
+            {
+                if (ManualAutoAddInfo == null) return UInt32.MinValue;
+                //
+                return ManualAutoAddInfo.PgDurationSecond;
+            }
+        }
+        public override String NetworkName
+        {
+            get
+            {
+                if (ManualAutoAddInfo == null) return "";
+                //
+                return CommonManager.ConvertNetworkNameText(ManualAutoAddInfo.originalNetworkID);
+            }
+        }
+        public override String ServiceName
         {
             get
             {
@@ -81,11 +113,13 @@ namespace EpgTimer
                 return ManualAutoAddInfo.stationName;
             }
         }
-        public SolidColorBrush ForeColor
+        public override bool KeyEnabled
         {
-            get
+            set
             {
-                return CommonManager.Instance.ListDefForeColor;
+                //選択されている場合、複数選択時に1回の通信で処理するため、ウインドウ側に処理を渡す。
+                MainWindow mainWindow = (MainWindow)Application.Current.MainWindow;
+                mainWindow.autoAddView.manualAutoAddView.ChgKeyEnabledFromCheckbox(this);
             }
         }
     }

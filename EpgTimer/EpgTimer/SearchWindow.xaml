@@ -47,12 +47,15 @@
                     <Setter Property="BorderThickness" Value="5,0,0,1" />
                     <Setter Property="BorderBrush" Value="{Binding BorderBrush}" />
                 </Style>
+                <Style TargetType="GridViewColumnHeader" BasedOn="{StaticResource {x:Type GridViewColumnHeader}}">
+                    <Setter Property="HorizontalContentAlignment" Value="Left"/>
+                </Style>
             </ListView.Resources>
             <ListView.View>
                 <GridView x:Name="gridView_result">
                     <GridViewColumn Width="35">
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="状態" Tag="Status" HorizontalContentAlignment="Left" />
+                            <GridViewColumnHeader Content="状態" Uid="Status" />
                         </GridViewColumn.Header>
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
@@ -62,12 +65,12 @@
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=StartTime}">
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="日時" Tag="StartTime" HorizontalContentAlignment="Left"/>
+                            <GridViewColumnHeader Content="日時" Uid="StartTime" />
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn>
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="時間(長さ)" Tag="ProgramDuration" HorizontalContentAlignment="Left"/>
+                            <GridViewColumnHeader Content="時間(長さ)" Uid="ProgramDuration" />
                         </GridViewColumn.Header>
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
@@ -77,27 +80,27 @@
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=EventName}">
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="番組名" Tag="EventName" HorizontalContentAlignment="Left"/>
+                            <GridViewColumnHeader Content="番組名" Uid="EventName" />
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=NetworkName}">
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="ネットワーク" Tag="NetworkName" HorizontalContentAlignment="Left"/>
+                            <GridViewColumnHeader Content="ネットワーク" Uid="NetworkName" />
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=ServiceName}">
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="サービス名" Tag="ServiceName" HorizontalContentAlignment="Left"/>
+                            <GridViewColumnHeader Content="サービス名" Uid="ServiceName" />
                         </GridViewColumn.Header>
                     </GridViewColumn>
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=ProgramContent}">
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=ProgramContent}" >
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="番組内容" Tag="ProgramContent" HorizontalContentAlignment="Left" />
+                            <GridViewColumnHeader Content="番組内容" Uid="ProgramContent" />
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=JyanruKey}">
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="ジャンル" Tag="JyanruKey" HorizontalContentAlignment="Left" />
+                            <GridViewColumnHeader Content="ジャンル" Uid="JyanruKey" />
                         </GridViewColumn.Header>
                     </GridViewColumn>
                 </GridView>

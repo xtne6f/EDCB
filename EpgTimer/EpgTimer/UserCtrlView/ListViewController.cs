@@ -11,6 +11,8 @@ using System.Reflection;
 
 namespace EpgTimer
 {
+    public class GridViewColumnList : List<GridViewColumn> { }
+
     public class ListViewController<T> where T : class
     {
         private MenuUtil mutil = CommonManager.Instance.MUtil;
@@ -25,7 +27,6 @@ namespace EpgTimer
         private string column_SavePath = null;
         private string sort_HeaderSavePath = null;
         private string sort_DirectionSavePath = null;
-        private List<string> gridHeaderExceptionList = new List<string>();
         private bool IsSortViewOnReload = false;
 
         private string initialSortKey = null;
@@ -58,26 +59,28 @@ namespace EpgTimer
             initialDirection = sortDirection;
         }
         public void SetViewSetting(ListView lv, GridView gv, bool isSortOnReload
-            , string[] gvHeaderException = null, RoutedEventHandler headerclick = null)
+            , List<GridViewColumn> cols_source = null, RoutedEventHandler headerclick = null)
         {
             listView = lv;
             gridView = gv;
             IsSortViewOnReload = isSortOnReload;
-            if (gvHeaderException != null)
-            {
-                gridHeaderExceptionList = new List<string>(gvHeaderException);
-            }
             if (IsSortViewOnReload == false)
             {
-                this.gvSorter = new GridViewSorter<T>(gridHeaderExceptionList);
+                this.gvSorter = new GridViewSorter<T>();
             }
 
+            //グリッド列の差し込み。クリアせずに追加する。
+            if (cols_source != null)
+            {
+                cols_source.ForEach(col => gridView.Columns.Add(col));
+            }
+            
             var hclick = headerclick != null ? headerclick : (sender, e) => this.GridViewHeaderClickSort(e);
             foreach (GridViewColumn info in gridView.Columns)
             {
-                GridViewColumnHeader header = info.Header as GridViewColumnHeader;
+                var header = info.Header as GridViewColumnHeader;
                 header.Click += new RoutedEventHandler(hclick);
-                if (header.ToolTip == null && gridHeaderExceptionList.All(str => str != header.Tag as string) == true)
+                if (header.ToolTip == null)
                 {
                     header.ToolTip = "Ctrl+Click(マルチ・ソート)、Shift+Click(解除)";
                 }
@@ -156,7 +159,7 @@ namespace EpgTimer
                     }
                     else
                     {
-                        this.gvSorter = new GridViewSorter<T>(gridHeaderExceptionList);
+                        this.gvSorter = new GridViewSorter<T>();
                         this.gvSorter.SortByMultiHeaderWithKey(dataList, gridView.Columns,
                             initialSortKey, true, initialDirection);
                     }

@@ -1246,6 +1246,11 @@ namespace EpgTimer
         public ushort serviceID;
         /// <summary>録画設定</summary>
         public RecSettingData recSetting;
+
+        //以下は、titleを装飾してEpgTimer側で実装する。
+        /// <summary>自動登録を無効にする</summary>
+        public byte keyDisabledFlag;
+
         public ManualAutoAddData()
         {
             dataID = 0;
@@ -1258,16 +1263,21 @@ namespace EpgTimer
             transportStreamID = 0;
             serviceID = 0;
             recSetting = new RecSettingData();
+            keyDisabledFlag = 0;
         }
         public void Write(MemoryStream s, ushort version)
         {
+            //andKey装飾のフラグをここで処理。dayOfWeekFlagをtitleに移動して保存。
+            string title_Send = (keyDisabledFlag == 1 ? "^!{999}" + string.Format("[{0,0:X2}]", dayOfWeekFlag) : "") + title;
+            byte dayOfWeekFlag_Send = (byte)(keyDisabledFlag == 1 ? 0 : dayOfWeekFlag);
+
             var w = new CtrlCmdWriter(s, version);
             w.Begin();
             w.Write(dataID);
-            w.Write(dayOfWeekFlag);
+            w.Write(dayOfWeekFlag_Send);
             w.Write(startTime);
             w.Write(durationSecond);
-            w.Write(title);
+            w.Write(title_Send);
             w.Write(stationName);
             w.Write(originalNetworkID);
             w.Write(transportStreamID);
@@ -1290,6 +1300,14 @@ namespace EpgTimer
             r.Read(ref serviceID);
             r.Read(ref recSetting);
             r.End();
+
+            //andKey装飾のフラグをここで処理
+            if (title.StartsWith("^!{999}") == true)
+            {
+                keyDisabledFlag = 1;
+                byte.TryParse(title.Substring(8, 2), System.Globalization.NumberStyles.AllowHexSpecifier, null, out dayOfWeekFlag);
+                title = title.Substring(11);
+            }
         }
     }
 

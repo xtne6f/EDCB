@@ -170,7 +170,7 @@ namespace EpgTimer
 
                             //最低表示行数の適用の際、最低表示高さを設定しているので、Settings.Instance.MinimumHeight == 0 でも検索するようにする
                             ProgramViewItem pgInfo = null;
-                            if (info.EventID != 0xFFFF && info.DurationSecond != 0)
+                            if (info.IsEpgReserve == true && info.DurationSecond != 0)
                             {
                                 //予約情報から番組情報を特定し、枠表示位置を再設定する
                                 UInt64 key = info.Create64PgKey();
