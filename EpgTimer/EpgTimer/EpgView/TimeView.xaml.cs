@@ -33,10 +33,14 @@ namespace EpgTimer.EpgView
         {
             try
             {
+                bool? use28 = Settings.Instance.LaterTimeUse == true ? null : (bool?)false;
                 stackPanel_time.Children.Clear();
-                foreach (DateTime time in timeList)
+                foreach (DateTime time1 in timeList)
                 {
-                    TextBlock item = new TextBlock();
+                    var item = new TextBlock();
+                    var timeMod = new DateTime28(time1, use28);
+                    DateTime time = timeMod.DateTimeMod;
+                    string HourMod = timeMod.HourMod.ToString();
 
                     double height = Settings.Instance.MinHeight;
                     item.Height = (60 * height) - 1;
@@ -45,7 +49,7 @@ namespace EpgTimer.EpgView
                     {
                         if (height >= 1) item.Inlines.Add(new LineBreak());
                         if (height >= 1.5) item.Inlines.Add(new LineBreak());
-                        PutTime(item.Inlines, time);
+                        PutTime(item.Inlines, HourMod);
                     }
                     else
                     {
@@ -54,46 +58,46 @@ namespace EpgTimer.EpgView
                             if (height < 1)
                             {
                                 PutDate(item.Inlines, time);
-                                PutTime(item.Inlines, time);
+                                PutTime(item.Inlines, HourMod);
 
                             }
                             else if (height < 1.5)
                             {
                                 PutDate(item.Inlines, time);
                                 PutWeekDay(item.Inlines, time);
-                                PutTime(item.Inlines, time);
+                                PutTime(item.Inlines, HourMod);
                             }
                             else
                             {
                                 PutDate(item.Inlines, time);
                                 PutWeekDay(item.Inlines, time);
                                 item.Inlines.Add(new LineBreak());
-                                PutTime(item.Inlines, time);
+                                PutTime(item.Inlines, HourMod);
                             }
                         }
                         else
                         {
                             if (height < 1)
                             {
-                                PutTime(item.Inlines, time);
+                                PutTime(item.Inlines, HourMod);
                             }
                             else if (height < 1.5)
                             {
                                 item.Inlines.Add(new LineBreak());
-                                PutTime(item.Inlines, time);
+                                PutTime(item.Inlines, HourMod);
                             }
                             else
                             {
                                 item.Inlines.Add(new LineBreak());
                                 item.Inlines.Add(new LineBreak());
                                 item.Inlines.Add(new LineBreak());
-                                PutTime(item.Inlines, time);
+                                PutTime(item.Inlines, HourMod);
                             }
                         }
                     }
 
                     item.Margin = new Thickness(1, 1, 1, 0);
-                    item.Background = CommonManager.Instance.CustTimeColorList[time.Hour / 6];
+                    item.Background = CommonManager.Instance.CustTimeColorList[time1.Hour / 6];
                     item.TextAlignment = TextAlignment.Center;
                     item.Foreground = Brushes.White;
                     item.FontSize = 12;
@@ -135,9 +139,9 @@ namespace EpgTimer.EpgView
             inline.Add(new LineBreak());
         }
 
-        private static void PutTime(InlineCollection inline, DateTime time)
+        private static void PutTime(InlineCollection inline, string HourMod)
         {
-            Run text = new Run(time.ToString("%H"));
+            Run text = new Run(HourMod);
             text.FontSize = 13;
             text.FontWeight = FontWeights.Bold;
             inline.Add(text);

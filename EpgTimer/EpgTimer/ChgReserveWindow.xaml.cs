@@ -44,9 +44,11 @@ namespace EpgTimer
             mBinds.ResetInputBindings(this);
 
             //その他設定
+            //深夜時間関係は、comboBoxの表示だけ変更する手もあるが、
+            //オプション変更タイミングなどいろいろ面倒なので、実際の値で処理することにする。
             comboBox_service.ItemsSource = ChSet5.Instance.ChList.Values;
-            comboBox_sh.ItemsSource = CommonManager.Instance.HourDictionary.Values;
-            comboBox_eh.ItemsSource = CommonManager.Instance.HourDictionary.Values;
+            comboBox_sh.ItemsSource = CommonManager.Instance.HourDictionarySelect.Values;
+            comboBox_eh.ItemsSource = CommonManager.Instance.HourDictionarySelect.Values;
             comboBox_sm.ItemsSource = CommonManager.Instance.MinDictionary.Values;
             comboBox_em.ItemsSource = CommonManager.Instance.MinDictionary.Values;
             comboBox_ss.ItemsSource = CommonManager.Instance.MinDictionary.Values;
@@ -200,13 +202,18 @@ namespace EpgTimer
 
         private void SetReserveTime(DateTime startTime, DateTime endTime)
         {
-            datePicker_start.SelectedDate = startTime;
-            comboBox_sh.SelectedIndex = startTime.Hour;
+            //深夜時間帯の処理
+            bool use28 = Settings.Instance.LaterTimeUse == true && (endTime - startTime).TotalDays < 1;
+            bool late_start = use28 && startTime.Hour + 24 < comboBox_sh.Items.Count && DateTime28.IsLateHour(startTime.Hour);
+            bool late_end = use28 && endTime.Hour + 24 < comboBox_eh.Items.Count && DateTime28.JudgeLateHour(endTime, startTime);
+
+            datePicker_start.SelectedDate = startTime.AddDays(late_start == true ? -1 : 0);
+            comboBox_sh.SelectedIndex = startTime.Hour + (late_start == true ? 24 : 0);
             comboBox_sm.SelectedIndex = startTime.Minute;
             comboBox_ss.SelectedIndex = startTime.Second;
 
-            datePicker_end.SelectedDate = endTime;
-            comboBox_eh.SelectedIndex = endTime.Hour;
+            datePicker_end.SelectedDate = endTime.AddDays(late_end == true ? -1 : 0);
+            comboBox_eh.SelectedIndex = endTime.Hour + (late_end == true ? 24 : 0);
             comboBox_em.SelectedIndex = endTime.Minute;
             comboBox_es.SelectedIndex = endTime.Second;
         }
@@ -226,20 +233,20 @@ namespace EpgTimer
                 resInfo.ServiceID = ch.SID;
                 //resInfo.EventID = 0xFFFF;　条件付の情報なのでここでは書き換えないことにする
 
-                resInfo.StartTime = new DateTime(datePicker_start.SelectedDate.Value.Year,
-                    datePicker_start.SelectedDate.Value.Month,
-                    datePicker_start.SelectedDate.Value.Day,
-                    comboBox_sh.SelectedIndex,
+                //深夜時間帯の処理
+                DateTime date_start = datePicker_start.SelectedDate.Value.AddDays((int)(comboBox_sh.SelectedIndex / 24));
+                DateTime date_end = datePicker_end.SelectedDate.Value.AddDays((int)(comboBox_eh.SelectedIndex / 24));
+
+                resInfo.StartTime = new DateTime(date_start.Year, date_start.Month, date_start.Day,
+                    comboBox_sh.SelectedIndex % 24,
                     comboBox_sm.SelectedIndex,
                     comboBox_ss.SelectedIndex,
                     0,
                     DateTimeKind.Utc
                     );
 
-                DateTime endTime = new DateTime(datePicker_end.SelectedDate.Value.Year,
-                    datePicker_end.SelectedDate.Value.Month,
-                    datePicker_end.SelectedDate.Value.Day,
-                    comboBox_eh.SelectedIndex,
+                DateTime endTime = new DateTime(date_start.Year, date_end.Month, date_end.Day,
+                    comboBox_eh.SelectedIndex % 24,
                     comboBox_em.SelectedIndex,
                     comboBox_es.SelectedIndex,
                     0,

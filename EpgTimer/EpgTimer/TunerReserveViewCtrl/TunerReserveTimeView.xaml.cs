@@ -29,47 +29,33 @@ namespace EpgTimer.TunerReserveViewCtrl
             stackPanel_time.Children.Clear();
         }
 
-        public void SetTime(List<DateTime> timeList, bool NeedTimeOnly)
+        public void SetTime(List<DateTime> timeList)
         {
             try
             {
+                bool? use28 = Settings.Instance.LaterTimeUse == true ? null : (bool?)false;
                 stackPanel_time.Children.Clear();
-                foreach (DateTime time in timeList)
+                foreach (DateTime time1 in timeList)
                 {
-                    TextBlock item = new TextBlock();
+                    var item = new TextBlock();
+                    var timeMod = new DateTime28(time1, use28);
+                    DateTime time = timeMod.DateTimeMod;
+                    string HourMod = timeMod.HourMod.ToString();
 
                     double height = Settings.Instance.TunerMinHeight;
                     item.Height = (60 * height) - 4;
 
-                    if (time.Hour % 3 == 0 || NeedTimeOnly == true)
+                    if (height < 1)
                     {
-                        if (height < 1)
-                        {
-                            item.Text = time.ToString("M/d\r\nH");
-                        }
-                        else if (height < 1.5)
-                        {
-                            item.Text = time.ToString("M/d\r\n(ddd)\r\nH");
-                        }
-                        else
-                        {
-                            item.Text = time.ToString("M/d\r\n(ddd)\r\n\r\nH");
-                        }
+                        item.Text = time.ToString("M/d\r\n") + HourMod;
+                    }
+                    else if (height < 1.5)
+                    {
+                        item.Text = time.ToString("M/d\r\n(ddd)\r\n") + HourMod;
                     }
                     else
                     {
-                        if (height < 1)
-                        {
-                            item.Text = time.Hour.ToString();
-                        }
-                        else if (height < 1.5)
-                        {
-                            item.Text = time.ToString("\r\nH");
-                        }
-                        else
-                        {
-                            item.Text = time.ToString("\r\n\r\n\r\nH");
-                        }
+                        item.Text = time.ToString("M/d\r\n(ddd)\r\n\r\n") + HourMod;
                     }
 
                     if (time.DayOfWeek == DayOfWeek.Saturday)

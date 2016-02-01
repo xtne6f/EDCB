@@ -165,6 +165,29 @@ namespace EpgTimer
             return true;
         }
 
+
+        public static void RegulateData(this EpgSearchDateInfo info)
+        {
+            //早い終了時間を翌日のものとみなす
+            Int32 start = (info.startHour) * 60 + info.startMin;
+            Int32 end = (info.endHour) * 60 + info.endMin;
+            while (end < start)
+            {
+                end += 24 * 60;
+                info.endDayOfWeek = (byte)((info.endDayOfWeek + 1) % 7);
+            }
+
+            //28時間表示対応の処置。実際はシフトは1回で十分ではある。
+            while (info.startHour >= 24) ShiftRecDayPart(1, ref info.startHour, ref info.startDayOfWeek);
+            while (info.endHour >= 24) ShiftRecDayPart(1, ref info.endHour, ref info.endDayOfWeek);
+        }
+        private static void ShiftRecDayPart(int direction, ref ushort hour, ref byte weekFlg)
+        {
+            int shift_day = (direction > 0 ? 1 : -1);
+            hour = (ushort)((int)hour + -1 * shift_day * 24);
+            weekFlg = (byte)((weekFlg + 7 + shift_day) % 7);
+        }
+
         public static Func<object, ulong> GetKeyFunc(Type t)
         {
             if (t == typeof(ReserveItem))

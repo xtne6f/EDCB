@@ -202,17 +202,12 @@ namespace EpgTimer
             {
                 if (EpgAutoAddInfo == null) return "";
                 //
-                if (EpgAutoAddInfo.searchInfo.dateList.Count == 1)
+                switch (EpgAutoAddInfo.searchInfo.dateList.Count)
                 {
-                    EpgSearchDateInfo info = EpgAutoAddInfo.searchInfo.dateList[0];
-                    return CommonManager.Instance.DayOfWeekDictionary[info.startDayOfWeek] + " " + info.startHour.ToString("00") + ":" + info.startMin.ToString("00") +
-                        " ～ " + CommonManager.Instance.DayOfWeekDictionary[info.endDayOfWeek] + " " + info.endHour.ToString("00") + ":" + info.endMin.ToString("00");
+                    case 0: return "なし";
+                    case 1: return CommonManager.ConvertTimeText(EpgAutoAddInfo.searchInfo.dateList[0]);
+                    default: return "複数指定";
                 }
-                if (EpgAutoAddInfo.searchInfo.dateList.Count > 1)
-                {
-                    return "複数指定";
-                }
-                return "なし";
             }
         }
         public String AddCount

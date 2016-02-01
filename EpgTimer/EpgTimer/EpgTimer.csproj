@@ -95,6 +95,7 @@
     <Compile Include="CtrlCmdDefEx\RecSettingDataEx.cs" />
     <Compile Include="CtrlCmdDefEx\ReserveDataEx.cs" />
     <Compile Include="CtrlCmdDefEx\RecFileInfoEx.cs" />
+    <Compile Include="DefineClass\DateTime28.cs" />
     <Compile Include="DefineClass\RecSettingItem.cs" />
     <Compile Include="DefineClass\NWPresetItem.cs" />
     <Compile Include="UserCtrlView\AutoAddListView.xaml.cs">
@@ -198,7 +199,6 @@
     <Compile Include="Common\WritePlugInClass.cs" />
     <Compile Include="Common\ChSet5Class.cs" />
     <Compile Include="Common\ColorDefClass.cs" />
-    <Compile Include="DefineClass\DateItem.cs" />
     <Compile Include="DefineClass\IEPGStationInfo.cs" />
     <Compile Include="DefineClass\PriorityInfo.cs" />
     <Compile Include="DefineClass\RecModeInfo.cs" />

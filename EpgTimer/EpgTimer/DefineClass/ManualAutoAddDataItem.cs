@@ -36,13 +36,18 @@ namespace EpgTimer
             {
                 if (ManualAutoAddInfo == null) return "";
                 //
+                byte weekFlgMod = ManualAutoAddInfo.dayOfWeekFlag;
+                if (Settings.Instance.LaterTimeUse == true && DateTime28.IsLateHour(ManualAutoAddInfo.PgStartTime.Hour) == true)
+                {
+                    weekFlgMod = ManualAutoAddData.ShiftWeekFlag(weekFlgMod, -1);
+                }
+
                 String view = "";
-                String[] wiewString = { "日", "月", "火", "水", "木", "金", "土" };
                 for (int i = 0; i < 7; i++)
                 {
-                    if ((ManualAutoAddInfo.dayOfWeekFlag & 0x01<<i) != 0)
+                    if ((weekFlgMod & 0x01 << i) != 0)
                     {
-                        view += wiewString[i];
+                        view += "日月火水木金土"[i];
                     }
                 }
                 return view;

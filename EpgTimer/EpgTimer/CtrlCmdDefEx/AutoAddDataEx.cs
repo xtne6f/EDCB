@@ -86,7 +86,7 @@ namespace EpgTimer
     public partial class ManualAutoAddData : AutoAddData, IBasicPgInfo
     {
         public override string DataTitle { get { return title; } set { title = value; } }
-        public DateTime PgStartTime { get { return new DateTime().AddSeconds(startTime); } }
+        public DateTime PgStartTime { get { return new DateTime(2000, 1, 1).AddSeconds(startTime); } }
         public uint PgDurationSecond { get { return durationSecond; } }
         public UInt64 Create64Key()
         {
@@ -101,10 +101,30 @@ namespace EpgTimer
             return Create64Key() == data.Create64Key()
                 && startTime == data.PgStartTime.Hour * 3600 + data.PgStartTime.Minute * 60 + data.PgStartTime.Second
                 && durationSecond == data.PgDurationSecond
-                && (dayOfWeekFlag & (byte)(0x01 << (int)data.PgStartTime.DayOfWeek)) != 0
-                ;
+                && (dayOfWeekFlag & (byte)(0x01 << (int)data.PgStartTime.DayOfWeek)) != 0;
         }
 
+        public void RegulateData()
+        {
+            while (startTime >= 24 * 60 * 60) ShiftRecDay(1);
+        }
+        public void ShiftRecDay(int direction)
+        {
+            startTime = (uint)((int)startTime + (direction > 0 ? -1 : 1) * 24 * 60 * 60);
+            dayOfWeekFlag = ShiftWeekFlag(dayOfWeekFlag, direction);
+        }
+        public static byte ShiftWeekFlag(byte flg, int direction)
+        {
+            if (direction > 0)
+            {
+                return (byte)(0x7E & ((int)flg << 1) | ((flg & 0x40) != 0 ? 0x01 : 0x00));
+            }
+            else
+            {
+                return (byte)(0x3F & ((int)flg >> 1) | ((flg & 0x01) != 0 ? 0x40 : 0x00));
+            }
+        }
+        
         //AutoAddDataAppend
         protected override AutoAddDataAppend Append { get { return CommonManager.Instance.DB.GetManualAutoAddDataAppend(this); } }
         public override uint SearchCount { get { return (uint)CommonUtil.NumBits(dayOfWeekFlag); } }

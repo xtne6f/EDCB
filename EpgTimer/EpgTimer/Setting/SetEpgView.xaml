@@ -373,18 +373,27 @@
                 <TabItem Header="基本" >
                     <StackPanel>
                         <GroupBox Header="各種設定" Margin="6,6,6,0" VerticalAlignment="Top" Padding="0,0,0,6">
-                            <Grid>
-                                <Button Content="右クリックメニューの設定" Height="23" HorizontalAlignment="Left" Margin="6,5,0,0" Name="button_set_cm" Click="button_set_cm_Click" VerticalAlignment="Top" Width="171" />
-                                <CheckBox Content="自動予約登録(EPG予約、プログラム予約)を見失った予約を強調表示する" Height="16" HorizontalAlignment="Left" Margin="6,43,0,0" Name="checkBox_displayAutoAddMissing" VerticalAlignment="Top" ToolTip="自動予約登録を削除・変更した場合や、EPGのタイトルが変わった場合などに発生する場合があります" />
-                                <Label Content="※EpgTimerNWでは若干もたつく感じがあるかもしれません" Height="28" Margin="20,52,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" Width="404" />
-                                <Label Content="番組表などへジャンプしたときの強調表示の継続時間" Height="24" HorizontalAlignment="Left" Margin="6,74,0,0" VerticalAlignment="Top" Width="305" />
-                                <Label Content="秒" Height="24" HorizontalAlignment="Left" Margin="375,74,0,0" VerticalAlignment="Top" Width="49" />
-                                <TextBox Height="24" HorizontalAlignment="Left" Margin="317,74,0,0" Name="textBox_DisplayJumpTime" VerticalAlignment="Top" Width="55" />
-                                <Label Content="リスト表示で省略する" Height="24" HorizontalAlignment="Left" Margin="6,96,0,0" VerticalAlignment="Top" />
-                                <CheckBox Content="'年'" Height="16" HorizontalAlignment="Left" Margin="140,102,0,0" Name="checkBox_resNoYear" VerticalAlignment="Top" />
-                                <CheckBox Content="'秒'" Height="16" HorizontalAlignment="Left" Margin="190,102,0,0" Name="checkBox_resNoSecond" VerticalAlignment="Top" ToolTip="たまに'秒'単位の番組も存在します。" />
-                                <CheckBox Content="長さの'秒'" Height="16" HorizontalAlignment="Left" Margin="240,102,0,0" Name="checkBox_resNoDurSecond" VerticalAlignment="Top" ToolTip="たまに'秒'単位の番組も存在します。" />
-                            </Grid>
+                            <StackPanel Margin="11,6,0,0" >
+                                <Button Content="右クリックメニューの設定" Height="23" HorizontalAlignment="Left" Margin="0,0,0,12" Name="button_set_cm" Click="button_set_cm_Click" Width="171" />
+                                <CheckBox Content="自動予約登録(EPG予約、プログラム予約)を見失った予約を強調表示する" HorizontalAlignment="Left" Name="checkBox_displayAutoAddMissing" ToolTip="自動予約登録を削除・変更した場合や、EPGのタイトルが変わった場合などに発生する場合があります" />
+                                <Label Content="※EpgTimerNWでは若干もたつく感じがあるかもしれません" Margin="14,-4,0,6" HorizontalAlignment="Left" />
+                                <StackPanel Margin="0,0,0,6" Orientation="Horizontal" >
+                                    <Label Content="番組表などへジャンプしたときの強調表示の継続時間" VerticalAlignment="Center" />
+                                    <TextBox Width="55" Height="24" Margin="12,0,0,0" Name="textBox_DisplayJumpTime" VerticalAlignment="Center" />
+                                    <Label Content="秒" Margin="12,0,0,0" VerticalAlignment="Center" />
+                                </StackPanel>
+                                <StackPanel Margin="0,0,0,6" Orientation="Horizontal" >
+                                    <Label Content="リスト表示で省略する" VerticalAlignment="Center" />
+                                    <CheckBox Content="'年'" Margin="12,0,0,0" Name="checkBox_resNoYear" VerticalAlignment="Center" />
+                                    <CheckBox Content="'秒'" Margin="12,0,0,0" Name="checkBox_resNoSecond" VerticalAlignment="Center" ToolTip="たまに'秒'単位の番組も存在します。" />
+                                    <CheckBox Content="長さの'秒'" Margin="12,0,0,0" Name="checkBox_resNoDurSecond" VerticalAlignment="Center" ToolTip="たまに'秒'単位の番組も存在します。" />
+                                </StackPanel>
+                                <StackPanel Margin="0,0,0,6" Orientation="Horizontal" >
+                                    <CheckBox Content="深夜時間表示をする" Name="checkBox_LaterTimeUse" VerticalAlignment="Center" />
+                                    <TextBox Width="55" Height="24" Margin="12,0,0,0" Name="textBox_LaterTimeHour" VerticalAlignment="Center" />
+                                    <Label Content="時まで" Margin="12,0,0,0" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </StackPanel>
                         </GroupBox>
                     </StackPanel>
                 </TabItem>

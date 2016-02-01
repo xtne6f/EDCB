@@ -41,13 +41,13 @@ namespace EpgTimer
                 mBinds.ResetInputBindings(this);
 
                 //その他設定
-                comboBox_startHH.DataContext = CommonManager.Instance.HourDictionary.Values;
+                comboBox_startHH.DataContext = CommonManager.Instance.HourDictionarySelect.Values;
                 comboBox_startHH.SelectedIndex = 0;
                 comboBox_startMM.DataContext = CommonManager.Instance.MinDictionary.Values;
                 comboBox_startMM.SelectedIndex = 0;
                 comboBox_startSS.DataContext = CommonManager.Instance.MinDictionary.Values;
                 comboBox_startSS.SelectedIndex = 0;
-                comboBox_endHH.DataContext = CommonManager.Instance.HourDictionary.Values;
+                comboBox_endHH.DataContext = CommonManager.Instance.HourDictionarySelect.Values;
                 comboBox_endHH.SelectedIndex = 0;
                 comboBox_endMM.DataContext = CommonManager.Instance.MinDictionary.Values;
                 comboBox_endMM.SelectedIndex = 0;
@@ -127,12 +127,27 @@ namespace EpgTimer
         {
             try
             {
+                UInt32 startTime = ((UInt32)comboBox_startHH.SelectedIndex * 60 * 60) + ((UInt32)comboBox_startMM.SelectedIndex * 60) + (UInt32)comboBox_startSS.SelectedIndex;
+                UInt32 endTime = ((UInt32)comboBox_endHH.SelectedIndex * 60 * 60) + ((UInt32)comboBox_endMM.SelectedIndex * 60) + (UInt32)comboBox_endSS.SelectedIndex;
+                while (endTime < startTime) endTime += 24 * 60 * 60;
+                UInt32 duration = endTime - startTime;
+                if (duration >= 24 * 60 * 60)
+                {
+                    //深夜時間帯の処理の関係で、不可条件が新たに発生しているため、その対応。
+                    MessageBox.Show("24時間以上の録画時間は設定出来ません。", "録画時間長の確認", MessageBoxButton.OK);
+                    return;
+                }
+
                 if (CheckAutoAddChange(e, chgFlag == false ? 0 : 1) == false) return;
                 //
                 if (defKey == null)
                 {
                     defKey = new ManualAutoAddData();
                 }
+
+                defKey.startTime = startTime;
+                defKey.durationSecond = duration;
+                
                 defKey.dayOfWeekFlag = 0;
                 if (checkBox_week0.IsChecked == true)
                 {
@@ -163,18 +178,10 @@ namespace EpgTimer
                     defKey.dayOfWeekFlag |= 0x40;
                 }
 
+                //開始時刻を0～24時に調整する。
+                defKey.RegulateData();
+                
                 defKey.IsEnabled = checkBox_keyDisabled.IsChecked != true;
-
-                defKey.startTime = ((UInt32)comboBox_startHH.SelectedIndex * 60 * 60) + ((UInt32)comboBox_startMM.SelectedIndex * 60) + (UInt32)comboBox_startSS.SelectedIndex;
-                UInt32 endTime = ((UInt32)comboBox_endHH.SelectedIndex * 60 * 60) + ((UInt32)comboBox_endMM.SelectedIndex * 60) + (UInt32)comboBox_endSS.SelectedIndex;
-                if (endTime < defKey.startTime)
-                {
-                    defKey.durationSecond = (24 * 60 * 60 + endTime) - defKey.startTime;
-                }
-                else
-                {
-                    defKey.durationSecond = endTime - defKey.startTime;
-                }
 
                 defKey.title = textBox_title.Text;
 
@@ -221,6 +228,15 @@ namespace EpgTimer
         {
             if (defKey != null)
             {
+                //正しく保存されていれば特に何も行われないが、一応
+                defKey.RegulateData();
+
+                //深夜時間帯の処理
+                if (Settings.Instance.LaterTimeUse == true && DateTime28.IsLateHour(defKey.PgStartTime.Hour) == true)
+                {
+                    defKey.ShiftRecDay(-1);
+                }
+
                 if ((defKey.dayOfWeekFlag & 0x01) != 0)
                 {
                     checkBox_week0.IsChecked = true;
@@ -260,9 +276,12 @@ namespace EpgTimer
                 comboBox_startMM.SelectedIndex = (int)mm;
                 comboBox_startSS.SelectedIndex = (int)ss;
 
+                //深夜時間帯の処理も含む
                 UInt32 endTime = defKey.startTime + defKey.durationSecond;
-                if (endTime > 24 * 60 * 60)
+                if (endTime >= comboBox_endHH.Items.Count * 60 * 60 || endTime >= 24 * 60 * 60
+                    && DateTime28.JudgeLateHour(defKey.PgStartTime.AddSeconds(defKey.durationSecond), defKey.PgStartTime) == false)
                 {
+                    //正規のデータであれば、必ず0～23時台かつstartTimeより小さくなる。
                     endTime -= 24 * 60 * 60;
                 }
                 hh = endTime / (60 * 60);

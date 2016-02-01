@@ -324,6 +324,8 @@ namespace EpgTimer
         private double displayNotifyJumpTime;
         private bool displayReserveAutoAddMissing;
         private bool tryEpgSetting;
+        private bool laterTimeUse;
+        private int laterTimeHour;
 
         public bool UseCustomEpgView
         {
@@ -1115,6 +1117,16 @@ namespace EpgTimer
             get { return tryEpgSetting; }
             set { tryEpgSetting = value; }
         }
+        public bool LaterTimeUse
+        {
+            get { return laterTimeUse; }
+            set { laterTimeUse = value; }
+        }
+        public int LaterTimeHour
+        {
+            get { return laterTimeHour; }
+            set { laterTimeHour = value; }
+        }
         
         public Settings()
         {
@@ -1270,6 +1282,8 @@ namespace EpgTimer
             displayNotifyJumpTime = 3;
             displayReserveAutoAddMissing = false;
             tryEpgSetting = true;
+            laterTimeUse = false;
+            laterTimeHour = 28 - 24;
         }
 
         [NonSerialized()]
