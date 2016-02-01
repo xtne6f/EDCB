@@ -764,8 +764,11 @@ namespace EpgTimer
             if (NewRes == true)
             {
                 List<ReserveData> modList = (SyncAll == true ? syncList : AutoAddSyncModifyReserveList(syncList, itemlist));
-                List<ReserveData> delList = modList.FindAll(data => data.IsEnabled == true);
+
+                int cMin = Settings.Instance.CautionOnRecChange == true ? Settings.Instance.CautionOnRecMarginMin : 1;
+                List<ReserveData> delList = modList.FindAll(data => data.IsEnabled == true && data.IsOnRec(cMin) == false);
                 syncList = syncList.Except(delList).ToList();
+
                 return ReserveDelete(delList, false) && ReserveChange(syncList, false);
             }
             else
