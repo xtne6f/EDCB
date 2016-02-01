@@ -158,14 +158,6 @@ namespace EpgTimer
                 IsCommandExecuted = mutil.ReserveDelete(dataList);
             }
         }
-        protected override void mc_JumpReserve(object sender, ExecutedRoutedEventArgs e)
-        {
-            mcs_JumpTab(CtxmCode.ReserveView, true);
-        }
-        protected override void mc_JumpTuner(object sender, ExecutedRoutedEventArgs e)
-        {
-            mcs_JumpTab(CtxmCode.TunerReserveView, true, Settings.Instance.TunerDisplayOffReserve == false);
-        }
         protected override void mc_JumpTable(object sender, ExecutedRoutedEventArgs e)
         {
             var param = e.Parameter as EpgCmdParam;
@@ -186,17 +178,7 @@ namespace EpgTimer
                 mcs_JumpTab(CtxmCode.EpgView);
             }
         }
-        protected void mcs_JumpTab(CtxmCode code, bool reserveOnly = false, bool onReserveOnly = false)
-        {
-            if (reserveOnly && dataList.Count == 0) return;
-            if (onReserveOnly && dataList[0].IsEnabled == false) return;
-
-            mcs_SetBlackoutWindow();
-            var mainWindow = Application.Current.MainWindow as MainWindow;
-            mainWindow.moveTo_tabItem(code);
-            IsCommandExecuted = true;
-        }
-        protected void mcs_SetBlackoutWindow()
+        protected override void mcs_SetBlackoutWindow(SearchItem item = null)
         {
             if (dataList.Count != 0)//予約情報優先
             {
@@ -206,6 +188,10 @@ namespace EpgTimer
             {
                 BlackoutWindow.SelectedItem = new SearchItem(eventList[0]);
             }
+        }
+        protected override ReserveData mcs_GetNextReserve()
+        {
+            return headData as ReserveData;
         }
         protected override void mc_ToAutoadd(object sender, ExecutedRoutedEventArgs e)
         {
@@ -324,16 +310,7 @@ namespace EpgTimer
             }
             else if (menu.Tag == EpgCmds.JumpReserve || menu.Tag == EpgCmds.JumpTuner)
             {
-                //メニュー実行時に選択されるアイテムが予約でないときは無効
-                menu.IsEnabled = (headData as ReserveData != null);
-                menu.ToolTip = null;
- 
-                if (menu.Tag == EpgCmds.JumpTuner && Settings.Instance.TunerDisplayOffReserve == false && menu.IsEnabled == true)
-                {
-                    //無効予約を回避
-                    menu.IsEnabled = dataList[0].IsEnabled;
-                    menu.ToolTip = "無効予約は使用予定チューナー画面に表示されない設定になっています。";
-                }
+                mcs_jumpTabMenuOpening(menu);
             }
             else if (menu.Tag == EpgCmds.JumpTable)
             {

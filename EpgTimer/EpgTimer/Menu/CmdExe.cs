@@ -260,9 +260,31 @@ namespace EpgTimer
         protected virtual void mc_AdjustReserve(object sender, ExecutedRoutedEventArgs e) { }
         protected virtual void mc_ShowDialog(object sender, ExecutedRoutedEventArgs e) { }
         protected virtual void mc_ShowAddDialog(object sender, ExecutedRoutedEventArgs e) { }
-        protected virtual void mc_JumpReserve(object sender, ExecutedRoutedEventArgs e) { }
-        protected virtual void mc_JumpTuner(object sender, ExecutedRoutedEventArgs e) { }
+        protected virtual void mc_JumpReserve(object sender, ExecutedRoutedEventArgs e)
+        {
+            mcs_JumpTab(CtxmCode.ReserveView, true);
+        }
+        protected virtual void mc_JumpTuner(object sender, ExecutedRoutedEventArgs e)
+        {
+            mcs_JumpTab(CtxmCode.TunerReserveView, true, Settings.Instance.TunerDisplayOffReserve == false);
+        }
         protected virtual void mc_JumpTable(object sender, ExecutedRoutedEventArgs e) { }
+        protected virtual void mcs_JumpTab(CtxmCode code, bool reserveOnly = false, bool onReserveOnly = false)
+        {
+            ReserveData resinfo = mcs_GetNextReserve();
+            if (reserveOnly && resinfo == null) return;
+            if (onReserveOnly && resinfo.IsEnabled == false) return;
+
+            mcs_SetBlackoutWindow(new ReserveItem(resinfo));
+            var mainWindow = Application.Current.MainWindow as MainWindow;
+            mainWindow.moveTo_tabItem(code);
+            IsCommandExecuted = true;
+        }
+        protected virtual void mcs_SetBlackoutWindow(SearchItem item = null)
+        {
+            BlackoutWindow.SelectedItem = item;
+        }
+        protected virtual ReserveData mcs_GetNextReserve() { return new ReserveData(); }
         protected virtual void mc_ShowAutoAddDialog(object sender, ExecutedRoutedEventArgs e)
         {
             AutoAddData autoAdd = AutoAddData.AutoAddList(CmdExeUtil.ReadObjData(e) as Type, (uint)CmdExeUtil.ReadIdData(e));
@@ -406,6 +428,26 @@ namespace EpgTimer
             ClearData();
         }
         protected virtual void mcs_ctxmLoading_switch(ContextMenu ctxm, MenuItem menu) { }
+        protected virtual void mcs_jumpTabMenuOpening(MenuItem menu, string offres_tooltip = null)
+        {
+            //メニュー実行時に選択されるアイテムが予約でないとき、または予約が無いときは無効
+            ReserveData resinfo = mcs_GetNextReserve();
+            menu.IsEnabled = (resinfo != null);
+            menu.ToolTip = null;
+            if (resinfo == null) return;
+
+            if (resinfo.IsEnabled == false)
+            {
+                menu.ToolTip = offres_tooltip;
+
+                if (menu.Tag == EpgCmds.JumpTuner && Settings.Instance.TunerDisplayOffReserve == false)
+                {
+                    //無効予約を回避
+                    menu.IsEnabled = false;
+                    menu.ToolTip = "無効予約は使用予定チューナー画面に表示されない設定になっています。";
+                }
+            }
+        }
         protected void mcs_chgMenuOpening(MenuItem menu, List<RecSettingData> recSettings, bool pgAll = false, List<int> isManuals = null)
         {
             if (menu.IsEnabled == false) return;

@@ -54,11 +54,26 @@ namespace EpgTimer
             if (CmdExeUtil.CheckAllProcCancel(e, dataList, false) == true) return;
             IsCommandExecuted = mutil.AutoAddChangeSyncReserve(dataList, true, false, true);
         }
+        protected override void mc_JumpTable(object sender, ExecutedRoutedEventArgs e)
+        {
+            mcs_JumpTab(CtxmCode.EpgView, true);
+        }
+        protected override ReserveData mcs_GetNextReserve()
+        {
+            if (dataList.Count == 0) return null;
+
+            ReserveData resinfo = dataList[0].GetNextReserve();
+            return resinfo != null ? resinfo : dataList[0].GetReserveList().GetNextReserve(true);
+        }
         protected override void mcs_ctxmLoading_switch(ContextMenu ctxm, MenuItem menu)
         {
             if (menu.Tag == EpgCmdsEx.ChgMenu)
             {
                 mcs_chgMenuOpening(menu, dataList.RecSettingList(), typeof(T) == typeof(ManualAutoAddData));
+            }
+            else if (menu.Tag == EpgCmds.JumpReserve || menu.Tag == EpgCmds.JumpTuner || menu.Tag == EpgCmds.JumpTable)
+            {
+                mcs_jumpTabMenuOpening(menu, "次の無効予約へジャンプ");
             }
             else if (menu.Tag == EpgCmdsEx.OpenFolderMenu)
             {
