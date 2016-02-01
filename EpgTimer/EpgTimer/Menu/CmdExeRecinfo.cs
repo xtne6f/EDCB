@@ -53,11 +53,6 @@ namespace EpgTimer
             CommonManager.Instance.FilePlay(dataList[0].RecFilePath);
             IsCommandExecuted = true;
         }
-        protected override void mc_OpenFolder(object sender, ExecutedRoutedEventArgs e)
-        {
-            CommonManager.Instance.OpenFolder(dataList[0].RecFilePath);
-            IsCommandExecuted = true;
-        }
         protected override void mc_CopyContent(object sender, ExecutedRoutedEventArgs e)
         {
             mutil.CopyContent2Clipboard(dataList[0], CmdExeUtil.IsKeyGesture(e));
@@ -75,7 +70,9 @@ namespace EpgTimer
             }
             else if (menu.Tag == EpgCmds.OpenFolder)
             {
-                menu.ToolTip = (dataList.Count == 0 ? null : System.IO.Path.GetDirectoryName(dataList[0].RecFilePath));
+                string path = (dataList.Count == 0 ? null : System.IO.Path.GetDirectoryName(dataList[0].RecFilePath));
+                (menu.CommandParameter as EpgCmdParam).Data = path;
+                menu.ToolTip = path;
             }
         }
     }
