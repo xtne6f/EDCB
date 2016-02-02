@@ -610,6 +610,7 @@ namespace EpgTimer
             reserveView.SaveViewData();
             recInfoView.SaveViewData();
             autoAddView.SaveViewData();
+            epgView.SaveViewData(true);
         }
 
         private void Window_SizeChanged(object sender, SizeChangedEventArgs e)

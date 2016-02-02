@@ -1,0 +1,160 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:my="clr-namespace:EpgTimer">
+
+    <Style TargetType="ListViewItem" x:Key="DataListViewStyle">
+        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+        <Setter Property="ToolTipService.ShowDuration" Value="20000" />
+        <Setter Property="ToolTip" Value="{Binding ToolTipView}"/>
+        <Setter Property="Foreground"  Value="{Binding ForeColor}" />
+        <Setter Property="Background" Value="{Binding BackColor}" />
+        <Setter Property="BorderThickness" Value="5,0,0,1" />
+        <Setter Property="BorderBrush" Value="{Binding BorderBrush}" />
+        <Setter Property="ContextMenu" Value="{DynamicResource itemMenu}" />
+    </Style>
+
+    <Style TargetType="GridViewColumnHeader" x:Key="DataListViewHeaderStyle" BasedOn="{StaticResource {x:Type GridViewColumnHeader}}">
+        <Setter Property="HorizontalContentAlignment" Value="Left"/>
+    </Style>
+
+    <my:GridViewColumnList x:Key="ReserveItemViewColumns">
+        <GridViewColumn Width="35">
+            <GridViewColumn.Header>
+                <GridViewColumnHeader Content="状態" Uid="Status" />
+            </GridViewColumn.Header>
+            <GridViewColumn.CellTemplate>
+                <DataTemplate>
+                    <TextBlock Text="{Binding Path=Status}" Foreground="{Binding Path=StatusColor}"/>
+                </DataTemplate>
+            </GridViewColumn.CellTemplate>
+        </GridViewColumn>
+        <GridViewColumn DisplayMemberBinding="{Binding Path=StartTime}">
+            <GridViewColumn.Header>
+                <GridViewColumnHeader Content="日時" Uid="StartTime" />
+            </GridViewColumn.Header>
+        </GridViewColumn>
+        <GridViewColumn>
+            <GridViewColumn.Header>
+                <GridViewColumnHeader Content="時間(長さ)" Uid="ProgramDuration" />
+            </GridViewColumn.Header>
+            <GridViewColumn.CellTemplate>
+                <DataTemplate>
+                    <TextBlock Text="{Binding Path=ProgramDuration}" HorizontalAlignment="Right" />
+                </DataTemplate>
+            </GridViewColumn.CellTemplate>
+        </GridViewColumn>
+        <GridViewColumn DisplayMemberBinding="{Binding Path=NetworkName}" >
+            <GridViewColumn.Header>
+                <GridViewColumnHeader Content="ネットワーク" Uid="NetworkName" />
+            </GridViewColumn.Header>
+        </GridViewColumn>
+        <GridViewColumn DisplayMemberBinding="{Binding Path=ServiceName}">
+            <GridViewColumn.Header>
+                <GridViewColumnHeader Content="サービス名" Uid="ServiceName" />
+            </GridViewColumn.Header>
+        </GridViewColumn>
+        <GridViewColumn DisplayMemberBinding="{Binding Path=EventName}">
+            <GridViewColumn.Header>
+                <GridViewColumnHeader Content="番組名" Uid="EventName" />
+            </GridViewColumn.Header>
+        </GridViewColumn>
+        <GridViewColumn DisplayMemberBinding="{Binding Path=ProgramContent}">
+            <GridViewColumn.Header>
+                <GridViewColumnHeader Content="番組内容" Uid="ProgramContent" />
+            </GridViewColumn.Header>
+        </GridViewColumn>
+        <GridViewColumn DisplayMemberBinding="{Binding Path=JyanruKey}">
+            <GridViewColumn.Header>
+                <GridViewColumnHeader Content="ジャンル" Uid="JyanruKey" />
+            </GridViewColumn.Header>
+        </GridViewColumn>
+        <GridViewColumn>
+            <GridViewColumn.Header>
+                <GridViewColumnHeader Content="有効" Tag="有効/無効" Uid="IsEnabled" />
+            </GridViewColumn.Header>
+            <GridViewColumn.CellTemplate>
+                <DataTemplate>
+                    <CheckBox IsChecked="{Binding Path=IsEnabled}" />
+                </DataTemplate>
+            </GridViewColumn.CellTemplate>
+        </GridViewColumn>
+        <GridViewColumn DisplayMemberBinding="{Binding Path=Comment}">
+            <GridViewColumn.Header>
+                <GridViewColumnHeader Content="予約状況" Uid="Comment" />
+            </GridViewColumn.Header>
+        </GridViewColumn>
+        <GridViewColumn>
+            <GridViewColumn.Header>
+                <GridViewColumnHeader Content="予定ファイル名" Uid="RecFileName" />
+            </GridViewColumn.Header>
+            <GridViewColumn.CellTemplate>
+                <DataTemplate>
+                    <ComboBox ItemsSource="{Binding Path=RecFileName}" SelectedIndex="0" Padding="6,0,5,0"></ComboBox>
+                </DataTemplate>
+            </GridViewColumn.CellTemplate>
+        </GridViewColumn>
+    </my:GridViewColumnList>
+    
+    <my:GridViewColumnList x:Key="RecSettingViewColumns">
+        <GridViewColumn DisplayMemberBinding="{Binding Path=Preset}">
+            <GridViewColumn.Header>
+                <GridViewColumnHeader Content="プリセット" Uid="Preset"/>
+            </GridViewColumn.Header>
+        </GridViewColumn>
+        <GridViewColumn DisplayMemberBinding="{Binding Path=RecMode}">
+            <GridViewColumn.Header>
+                <GridViewColumnHeader Content="録画モード" Uid="RecMode"/>
+            </GridViewColumn.Header>
+        </GridViewColumn>
+        <GridViewColumn DisplayMemberBinding="{Binding Path=Priority}">
+            <GridViewColumn.Header>
+                <GridViewColumnHeader Content="優先度" Uid="Priority"/>
+            </GridViewColumn.Header>
+        </GridViewColumn>
+        <GridViewColumn DisplayMemberBinding="{Binding Path=Tuijyu}">
+            <GridViewColumn.Header>
+                <GridViewColumnHeader Content="追従" Uid="Tuijyu"/>
+            </GridViewColumn.Header>
+        </GridViewColumn>
+        <GridViewColumn DisplayMemberBinding="{Binding Path=Pittari}">
+            <GridViewColumn.Header>
+                <GridViewColumnHeader Content="ぴったり(?)" Uid="Pittari"/>
+            </GridViewColumn.Header>
+        </GridViewColumn>
+        <GridViewColumn DisplayMemberBinding="{Binding Path=Tuner}">
+            <GridViewColumn.Header>
+                <GridViewColumnHeader Content="チューナー" Uid="Tuner"/>
+            </GridViewColumn.Header>
+        </GridViewColumn>
+        <GridViewColumn>
+            <GridViewColumn.Header>
+                <GridViewColumnHeader Content="録画フォルダ" Uid="RecFolder"/>
+            </GridViewColumn.Header>
+            <GridViewColumn.CellTemplate>
+                <DataTemplate>
+                    <ComboBox ItemsSource="{Binding Path=RecFolder}" SelectedIndex="0" Padding="6,0,5,0"></ComboBox>
+                </DataTemplate>
+            </GridViewColumn.CellTemplate>
+        </GridViewColumn>
+        <GridViewColumn>
+            <GridViewColumn.Header>
+                <GridViewColumnHeader Content="開始" Tag="開始タイミング" Uid="MarginStart" ToolTip="*=デフォルト設定"/>
+            </GridViewColumn.Header>
+            <GridViewColumn.CellTemplate>
+                <DataTemplate>
+                    <TextBlock Text="{Binding Path=MarginStart}" HorizontalAlignment="Right" />
+                </DataTemplate>
+            </GridViewColumn.CellTemplate>
+        </GridViewColumn>
+        <GridViewColumn>
+            <GridViewColumn.Header>
+                <GridViewColumnHeader Content="終了" Tag="終了タイミング" Uid="MarginEnd" ToolTip="*=デフォルト設定" />
+            </GridViewColumn.Header>
+            <GridViewColumn.CellTemplate>
+                <DataTemplate>
+                    <TextBlock Text="{Binding Path=MarginEnd}" HorizontalAlignment="Right" />
+                </DataTemplate>
+            </GridViewColumn.CellTemplate>
+        </GridViewColumn>
+    </my:GridViewColumnList>
+</ResourceDictionary>

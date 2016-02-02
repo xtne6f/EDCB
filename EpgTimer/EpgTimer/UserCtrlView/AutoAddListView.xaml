@@ -48,7 +48,7 @@
     <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="RecSettingListViewColumns.xaml"/>
+                <ResourceDictionary Source="ReserveListViewStyles.xaml"/>
             </ResourceDictionary.MergedDictionaries>
             <my:GridViewColumnList x:Key="EpgAutoAddView">
                 <GridViewColumn DisplayMemberBinding="{Binding Path=EventName}">

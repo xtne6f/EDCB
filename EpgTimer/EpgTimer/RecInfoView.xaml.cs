@@ -41,6 +41,9 @@ namespace EpgTimer
                 });
                 mc.SetFuncReleaseSelectedData(() => listView_recinfo.UnselectAll());
 
+                //コマンド集に無いもの
+                mc.AddReplaceCommand(EpgCmds.ChgOnOffCheck, (sender, e) => lstCtrl.ChgOnOffFromCheckbox(e.Parameter, EpgCmds.ProtectChange));
+
                 //コマンド集からコマンドを登録
                 mc.ResetCommandBindings(this, listView_recinfo.ContextMenu);
 
@@ -95,15 +98,6 @@ namespace EpgTimer
             {
                 EpgCmds.ShowDialog.Execute(sender, this);
             }
-        }
-        //リストのカギマークからの呼び出し
-        public void ChgProtectRecInfoFromCheckbox(RecInfoItem hitItem)
-        {
-            if (listView_recinfo.SelectedItems.Contains(hitItem) == false)
-            {
-                listView_recinfo.SelectedItem = hitItem;
-            }
-            EpgCmds.ProtectChange.Execute(listView_recinfo, this);
         }
     }
 }

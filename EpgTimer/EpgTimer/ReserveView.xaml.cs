@@ -25,12 +25,14 @@ namespace EpgTimer
             try
             {
                 //リストビュー関連の設定
+                var list_columns = Resources["ReserveItemViewColumns"] as GridViewColumnList;
+                list_columns.AddRange(Resources["RecSettingViewColumns"] as GridViewColumnList);
+
                 lstCtrl = new ListViewController<ReserveItem>(this);
                 lstCtrl.SetSavePath(CommonUtil.GetMemberName(() => Settings.Instance.ReserveListColumn)
                     , CommonUtil.GetMemberName(() => Settings.Instance.ResColumnHead)
                     , CommonUtil.GetMemberName(() => Settings.Instance.ResSortDirection));
-                lstCtrl.SetViewSetting(listView_reserve, gridView_reserve, true
-                    , Resources["RecSettingViewColumns"] as GridViewColumnList);
+                lstCtrl.SetViewSetting(listView_reserve, gridView_reserve, true, list_columns);
 
                 //最初にコマンド集の初期化
                 mc = new CmdExeReserve(this);
@@ -41,6 +43,9 @@ namespace EpgTimer
                     return item == null ? null : item.ReserveInfo;
                 });
                 mc.SetFuncReleaseSelectedData(() => listView_reserve.UnselectAll());
+
+                //コマンド集に無いもの
+                mc.AddReplaceCommand(EpgCmds.ChgOnOffCheck, (sender, e) => lstCtrl.ChgOnOffFromCheckbox(e.Parameter, EpgCmds.ChgOnOff));
 
                 //コマンド集からコマンドを登録。多少冗長だが、持っているコマンドは全部登録してしまう。
                 //フォーカスによってコンテキストメニューからウィンドウにコマンドが繋がらない場合があるので、
@@ -95,15 +100,6 @@ namespace EpgTimer
         {
             //DoubleClickのジェスチャうまく反応してくれない‥。
             EpgCmds.ShowDialog.Execute(sender, this);
-        }
-        //リストのチェックボックスからの呼び出し
-        public void ChgOnOffFromCheckbox(ReserveItem hitItem)
-        {
-            if (listView_reserve.SelectedItems.Contains(hitItem) == false)
-            {
-                listView_reserve.SelectedItem = hitItem;
-            }
-            EpgCmds.ChgOnOff.Execute(listView_reserve, this);
         }
 
         protected override void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)

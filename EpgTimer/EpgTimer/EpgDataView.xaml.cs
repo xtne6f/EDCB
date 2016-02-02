@@ -23,6 +23,12 @@ namespace EpgTimer
             get { return tabControl.Items.Cast<TabItem>().Select(item => item.Content).OfType<EpgDataViewItem>().ToList(); }
         }
 
+        public void SaveViewData(bool IfThisLastView = false)
+        {
+            //存在しないときは、本当に無いか、破棄されて保存済み
+            this.Views.ForEach(view => view.SaveViewData(IfThisLastView));
+        }
+
         /// <summary>
         /// EPGデータの更新通知
         /// </summary>
@@ -58,6 +64,7 @@ namespace EpgTimer
             try
             {
                 //表示していた番組表の情報を保存
+                SaveViewData(true);
                 CustomEpgTabInfo oldInfo = null;
 
                 foreach (var item in tabControl.Items.OfType<TabItem>()

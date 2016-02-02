@@ -9,15 +9,9 @@ namespace EpgTimer
 {
     public class ReserveItem : SearchItem
     {
-        //EventInfo、ReserveInfo、ProgramContent、JyanruKey、ForeColor、BackColor、BorderBrush -> SearchItem.cs
-
         public ReserveItem() { }
-        public ReserveItem(ReserveData item)
-        {
-            base.ReserveInfo = item;
-        }
+        public ReserveItem(ReserveData item) { base.ReserveInfo = item; }
 
-        private EpgEventInfo eventInfo = null;
         public override EpgEventInfo EventInfo
         {
             get
@@ -31,8 +25,6 @@ namespace EpgTimer
                 }
                 return eventInfo;
             }
-
-            set { eventInfo = value; }
         }
 
         public override String EventName
@@ -114,48 +106,6 @@ namespace EpgTimer
                 if (ReserveInfo == null) return "";
                 //
                 return ReserveInfo.RecSetting.LookUpPreset(ReserveInfo.IsEpgReserve == false).DisplayName;
-            }
-        }
-        public bool IsEnabled
-        {
-            set
-            {
-                //選択されている場合、複数選択時に1回の通信で処理するため、ウインドウ側に処理を渡す。
-                MainWindow mainWindow = (MainWindow)Application.Current.MainWindow;
-                mainWindow.reserveView.ChgOnOffFromCheckbox(this);
-            }
-            get
-            {
-                if (ReserveInfo == null) return false;
-                //
-                return ReserveInfo.IsEnabled;
-            }
-        }
-        public String Comment
-        {
-            get
-            {
-                if (ReserveInfo == null) return "";
-                //
-                if (ReserveInfo.IsAutoAdded == false)
-                {
-                    return "個別予約(" + (ReserveInfo.IsEpgReserve == true ? "EPG" : "プログラム") + ")";
-                }
-                else
-                {
-                    string s = ReserveInfo.Comment;
-                    return (ReserveInfo.IsAutoAddMissing == true ? "不明な" : ReserveInfo.IsAutoAddInvalid == true ? "無効の" : "")
-                            + (s.StartsWith("EPG自動予約(") == true ? "キーワード予約(" + s.Substring(8) : s);
-                }
-            }
-        }
-        public List<String> RecFileName
-        {
-            get
-            {
-                if (ReserveInfo == null) return new List<string>();
-                //
-                return ReserveInfo.RecFileNameList;
             }
         }
         public override TextBlock ToolTipView

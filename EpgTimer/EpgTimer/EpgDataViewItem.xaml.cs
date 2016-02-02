@@ -19,6 +19,11 @@ namespace EpgTimer
             InitializeComponent();
         }
 
+        public void SaveViewData(bool IfThisLastView = false)
+        {
+            if (viewCtrl != null) viewCtrl.SaveViewData(IfThisLastView);
+        }
+
         public void RefreshMenu()
         {
             if (viewCtrl != null) viewCtrl.RefreshMenu();
@@ -57,6 +62,7 @@ namespace EpgTimer
             }
 
             //切り替える場合
+            SaveViewData();
             switch (setInfo.ViewMode)
             {
                 case 1://1週間表示

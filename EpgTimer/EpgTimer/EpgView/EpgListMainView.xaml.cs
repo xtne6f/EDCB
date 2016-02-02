@@ -15,6 +15,10 @@ namespace EpgTimer
     /// </summary>
     public partial class EpgListMainView : EpgViewBase
     {
+        private static long lastActivateClass = new DateTime().Ticks;
+        private long lastActivate = long.MinValue;
+        public override bool IsLastActivate { get { return lastActivate == lastActivateClass; } }
+
         private ListViewController<SearchItem> lstCtrl;
         private List<ServiceItem> serviceList = new List<ServiceItem>();
 
@@ -26,9 +30,14 @@ namespace EpgTimer
             InitializeComponent();
 
             //リストビュー関連の設定
+            var list_columns = Resources["ReserveItemViewColumns"] as GridViewColumnList;
+            list_columns.AddRange(Resources["RecSettingViewColumns"] as GridViewColumnList);
+
             lstCtrl = new ListViewController<SearchItem>(this);
-            lstCtrl.SetInitialSortKey("StartTime");
-            lstCtrl.SetViewSetting(listView_event, gridView_event, true);
+            lstCtrl.SetSavePath(CommonUtil.GetMemberName(() => Settings.Instance.EpgListColumn)
+                    , CommonUtil.GetMemberName(() => Settings.Instance.EpgListColumnHead)
+                    , CommonUtil.GetMemberName(() => Settings.Instance.EpgListSortDirection));
+            lstCtrl.SetViewSetting(listView_event, gridView_event, true, list_columns);
 
             InitCommand();
         }
@@ -40,6 +49,9 @@ namespace EpgTimer
             mc.SetFuncGetSearchList(isAll => (isAll == true ? lstCtrl.dataList.ToList() : lstCtrl.GetSelectedItemsList()));
             mc.SetFuncSelectSingleSearchData(lstCtrl.SelectSingleItem);
             mc.SetFuncReleaseSelectedData(() => listView_event.UnselectAll());
+
+            //コマンド集に無いもの
+            mc.AddReplaceCommand(EpgCmds.ChgOnOffCheck, (sender, e) => lstCtrl.ChgOnOffFromCheckbox(e.Parameter, EpgCmds.ChgOnOff));
 
             //コマンド集からコマンドを登録
             mc.ResetCommandBindings(this, listView_event.ContextMenu);
@@ -286,6 +298,20 @@ namespace EpgTimer
             SearchItem target_item = lstCtrl.dataList.Find(item => item.EventInfo.Create64PgKey() == PgKey);
             vutil.ScrollToFindItem(target_item, listView_event, IsMarking);
         }
-        
+
+        protected override void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            base.UserControl_IsVisibleChanged(sender, e);
+            if (IsVisible == true)
+            {
+                lastActivate = DateTime.Now.Ticks;
+                lastActivateClass = lastActivate;
+            }
+        }
+
+        public override void SaveViewData(bool IfThisLastView = false)
+        {
+            if (IfThisLastView == false || IsLastActivate == true) lstCtrl.SaveViewDataToSettings();
+        }
     }
 }

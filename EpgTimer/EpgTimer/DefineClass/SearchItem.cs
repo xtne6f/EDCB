@@ -12,14 +12,12 @@ namespace EpgTimer
         protected MenuUtil mutil = CommonManager.Instance.MUtil;
         protected ViewUtil vutil = CommonManager.Instance.VUtil;
 
-        public virtual EpgEventInfo EventInfo { get; set; }
+        protected EpgEventInfo eventInfo = null;
+        public virtual EpgEventInfo EventInfo { get { return eventInfo; } set { eventInfo = value; } }
         public ReserveData ReserveInfo { get; set; }
 
         public SearchItem() { }
-        public SearchItem(EpgEventInfo item)
-        {
-            EventInfo = item;
-        }
+        public SearchItem(EpgEventInfo item) { eventInfo = item; }
 
         public static new string GetValuePropertyName(string key)
         {
@@ -38,15 +36,9 @@ namespace EpgTimer
             }
         }
 
+        public bool IsReserved { get { return (ReserveInfo != null); } }
         public override RecSettingData RecSettingInfo { get { return ReserveInfo != null ? ReserveInfo.RecSetting : null; } }
 
-        public bool IsReserved
-        {
-            get
-            {
-                return (ReserveInfo != null);
-            }
-        }
         public virtual String EventName
         {
             get
@@ -124,7 +116,7 @@ namespace EpgTimer
         /// <summary>
         /// 番組内容
         /// </summary>
-        public virtual String ProgramContent
+        public String ProgramContent
         {
             get
             {
@@ -140,6 +132,46 @@ namespace EpgTimer
                 if (EventInfo == null) return "";
                 //
                 return CommonManager.Instance.ConvertJyanruText(EventInfo);
+            }
+        }
+        public bool IsEnabled
+        {
+            set
+            {
+                EpgCmds.ChgOnOffCheck.Execute(this, null);
+            }
+            get
+            {
+                if (ReserveInfo == null) return false;
+                //
+                return ReserveInfo.IsEnabled;
+            }
+        }
+        public String Comment
+        {
+            get
+            {
+                if (ReserveInfo == null) return "";
+                //
+                if (ReserveInfo.IsAutoAdded == false)
+                {
+                    return "個別予約(" + (ReserveInfo.IsEpgReserve == true ? "EPG" : "プログラム") + ")";
+                }
+                else
+                {
+                    string s = ReserveInfo.Comment;
+                    return (ReserveInfo.IsAutoAddMissing == true ? "不明な" : ReserveInfo.IsAutoAddInvalid == true ? "無効の" : "")
+                            + (s.StartsWith("EPG自動予約(") == true ? "キーワード予約(" + s.Substring(8) : s);
+                }
+            }
+        }
+        public List<String> RecFileName
+        {
+            get
+            {
+                if (ReserveInfo == null) return new List<string>();
+                //
+                return ReserveInfo.RecFileNameList;
             }
         }
         public virtual TextBlock ToolTipView

@@ -7,31 +7,36 @@
              xmlns:local="clr-namespace:EpgTimer.UserCtrlView"
              d:DesignHeight="300" d:DesignWidth="300" IsVisibleChanged="UserControl_IsVisibleChanged">
     <UserControl.Resources>
-        <Style TargetType="{x:Type CheckBox}">
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="CheckBox">
-                        <BulletDecorator>
-                            <BulletDecorator.Bullet>
-                                <!--オフ状態のイメージ-->
-                                <Image Name="TickImage" Source="/Resources/key_no.png" Grid.Column="0" Stretch="None" />
-                            </BulletDecorator.Bullet>
-                            <ContentPresenter VerticalAlignment="Center" Grid.Column="1"/>
-                        </BulletDecorator>
-                        <ControlTemplate.Triggers>
-                            <!--オン状態のイメージ-->
-                            <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="TickImage" Property="Source" Value="/Resources/key.png" />
-                            </Trigger>
-                            <!--未確定状態のイメージ-->
-                            <Trigger Property="IsChecked" Value="{x:Null}">
-                                <Setter TargetName="TickImage" Property="Source" Value="/Resources/key.png" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="UserCtrlView\ReserveListViewStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <Style TargetType="{x:Type CheckBox}">
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="CheckBox">
+                            <BulletDecorator>
+                                <BulletDecorator.Bullet>
+                                    <!--オフ状態のイメージ-->
+                                    <Image Name="TickImage" Source="/Resources/key_no.png" Grid.Column="0" Stretch="None" />
+                                </BulletDecorator.Bullet>
+                                <ContentPresenter VerticalAlignment="Center" Grid.Column="1"/>
+                            </BulletDecorator>
+                            <ControlTemplate.Triggers>
+                                <!--オン状態のイメージ-->
+                                <Trigger Property="IsChecked" Value="True">
+                                    <Setter TargetName="TickImage" Property="Source" Value="/Resources/key.png" />
+                                </Trigger>
+                                <!--未確定状態のイメージ-->
+                                <Trigger Property="IsChecked" Value="{x:Null}">
+                                    <Setter TargetName="TickImage" Property="Source" Value="/Resources/key.png" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+        </ResourceDictionary>
     </UserControl.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
@@ -40,18 +45,11 @@
         </Grid.ColumnDefinitions>
         <ListView Name="listView_recinfo" Margin="10" SelectionMode="Extended" ContextMenu="{DynamicResource itemMenu}" >
             <ListView.Resources>
-                <Style TargetType="ListViewItem">
-                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                    <Setter Property="ToolTipService.ShowDuration" Value="20000" />
-                    <Setter Property="ToolTip" Value="{Binding ToolTipView}"/>
-                    <Setter Property="Foreground"  Value="{Binding ForeColor}" />
-                    <Setter Property="Background" Value="{Binding BackColor}" />
-                    <Setter Property="ContextMenu" Value="{DynamicResource itemMenu}" />
+                <Style TargetType="ListViewItem" BasedOn="{StaticResource DataListViewStyle}" >
+                    <Setter Property="BorderBrush" Value="{x:Null}" />
                     <EventSetter Event="MouseDoubleClick" Handler="listView_recinfo_MouseDoubleClick"/>
                 </Style>
-                <Style TargetType="GridViewColumnHeader" BasedOn="{StaticResource {x:Type GridViewColumnHeader}}">
-                    <Setter Property="HorizontalContentAlignment" Value="Left"/>
-                </Style>
+                <Style TargetType="GridViewColumnHeader" BasedOn="{StaticResource DataListViewHeaderStyle}" />
                 <ContextMenu x:Key="itemMenu"/>
                 <!-- MenuManagerからメニューを展開する -->
             </ListView.Resources>

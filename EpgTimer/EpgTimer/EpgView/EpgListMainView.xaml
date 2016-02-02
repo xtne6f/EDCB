@@ -7,9 +7,11 @@
              xmlns:local="clr-namespace:EpgTimer.EpgView"
              d:DesignHeight="500" d:DesignWidth="700" IsVisibleChanged="UserControl_IsVisibleChanged">
     <UserControl.Resources>
-        <Style TargetType="{x:Type TextBox}">
-            <Setter Property="InputMethod.PreferredImeState" Value="Off" />
-        </Style>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="..\UserCtrlView\ReserveListViewStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
     </UserControl.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
@@ -28,53 +30,16 @@
             <GridSplitter Grid.RowSpan="1" Height="5" Name="gridSplitter2" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" />
             <ListView Grid.Row="1" Name="listView_event" SelectionMode="Extended" SelectionChanged="listView_event_SelectionChanged" ContextMenu="{DynamicResource itemMenu}" >
                 <ListView.Resources>
-                    <Style TargetType="ListViewItem">
-                        <Setter Property="Foreground"  Value="{Binding ForeColor}" />
-                        <Setter Property="Background" Value="{Binding BackColor}" />
-                        <Setter Property="ContextMenu" Value="{DynamicResource itemMenu}" />
+                    <Style TargetType="ListViewItem" BasedOn="{StaticResource DataListViewStyle}" >
+                        <Setter Property="ToolTip" Value="{x:Null}" />
                         <EventSetter Event="MouseDoubleClick" Handler="listView_event_MouseDoubleClick"/>
-                        <Setter Property="BorderThickness" Value="5,0,0,1" />
-                        <Setter Property="BorderBrush" Value="{Binding BorderBrush}" />
                     </Style>
-                    <Style TargetType="GridViewColumnHeader" BasedOn="{StaticResource {x:Type GridViewColumnHeader}}">
-                        <Setter Property="HorizontalContentAlignment" Value="Left"/>
-                    </Style>
+                    <Style TargetType="GridViewColumnHeader" BasedOn="{StaticResource DataListViewHeaderStyle}" />
                     <ContextMenu x:Key="itemMenu"/>
                     <!-- MenuManagerからメニューを展開する -->
                 </ListView.Resources>
                 <ListView.View>
-                    <GridView x:Name="gridView_event">
-                        <GridViewColumn Width="35">
-                            <GridViewColumn.Header>
-                                <GridViewColumnHeader Content="状態" Uid="Status" />
-                            </GridViewColumn.Header>
-                            <GridViewColumn.CellTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding Path=Status}" Foreground="{Binding Path=StatusColor}"/>
-                                </DataTemplate>
-                            </GridViewColumn.CellTemplate>
-                        </GridViewColumn>
-                        <GridViewColumn DisplayMemberBinding="{Binding Path=StartTime}">
-                            <GridViewColumn.Header>
-                                <GridViewColumnHeader Content="日時" Uid="StartTime"/>
-                            </GridViewColumn.Header>
-                        </GridViewColumn>
-                        <GridViewColumn DisplayMemberBinding="{Binding Path=NetworkName}">
-                            <GridViewColumn.Header>
-                                <GridViewColumnHeader Content="ネットワーク" Uid="NetworkName"/>
-                            </GridViewColumn.Header>
-                        </GridViewColumn>
-                        <GridViewColumn DisplayMemberBinding="{Binding Path=ServiceName}">
-                            <GridViewColumn.Header>
-                                <GridViewColumnHeader Content="サービス名" Uid="ServiceName"/>
-                            </GridViewColumn.Header>
-                        </GridViewColumn>
-                        <GridViewColumn DisplayMemberBinding="{Binding Path=EventName}">
-                            <GridViewColumn.Header>
-                                <GridViewColumnHeader Content="番組名" Uid="EventName"/>
-                            </GridViewColumn.Header>
-                        </GridViewColumn>
-                    </GridView>
+                    <GridView x:Name="gridView_event" />
                 </ListView.View>
             </ListView>
         </Grid>

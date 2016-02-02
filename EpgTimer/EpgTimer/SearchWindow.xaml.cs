@@ -41,9 +41,14 @@ namespace EpgTimer
             try
             {
                 //リストビュー関連の設定
+                var list_columns = Resources["ReserveItemViewColumns"] as GridViewColumnList;
+                list_columns.AddRange(Resources["RecSettingViewColumns"] as GridViewColumnList);
+
                 lstCtrl = new ListViewController<SearchItem>(this);
-                lstCtrl.SetInitialSortKey("StartTime");
-                lstCtrl.SetViewSetting(listView_result, gridView_result, true);
+                lstCtrl.SetSavePath(CommonUtil.GetMemberName(() => Settings.Instance.SearchWndColumn)
+                    , CommonUtil.GetMemberName(() => Settings.Instance.SearchColumnHead)
+                    , CommonUtil.GetMemberName(() => Settings.Instance.SearchSortDirection));
+                lstCtrl.SetViewSetting(listView_result, gridView_result, true, list_columns);
 
                 //最初にコマンド集の初期化
                 mc = new CmdExeReserve(this);
@@ -62,6 +67,7 @@ namespace EpgTimer
                 mc.AddReplaceCommand(EpgCmds.UpItem, (sender, e) => button_up_down_Click(-1));
                 mc.AddReplaceCommand(EpgCmds.DownItem, (sender, e) => button_up_down_Click(1));
                 mc.AddReplaceCommand(EpgCmds.Cancel, (sender, e) => this.Close());
+                mc.AddReplaceCommand(EpgCmds.ChgOnOffCheck, (sender, e) => lstCtrl.ChgOnOffFromCheckbox(e.Parameter, EpgCmds.ChgOnOff));
 
                 //コマンド集を振り替えるもの
                 mc.AddReplaceCommand(EpgCmds.JumpReserve, (sender, e) => mc_JumpTab(CtxmCode.ReserveView, true));
@@ -483,6 +489,7 @@ namespace EpgTimer
             }
 
             Settings.Instance.SearchWndPinned = checkBox_windowPinned.IsChecked == true;
+            lstCtrl.SaveViewDataToSettings();
             if (hideSearchWindow == this) SearchWindow.SetHideSearchWindow(null);
 
             if (AllClosing == false)

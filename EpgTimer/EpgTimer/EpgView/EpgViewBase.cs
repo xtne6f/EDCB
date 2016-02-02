@@ -98,6 +98,10 @@ namespace EpgTimer.EpgView
             updateEpgData = true;
         }
 
+        /// 保存関係
+        public virtual bool IsLastActivate { get { return false; } }
+        public virtual void SaveViewData(bool IfThisLastView = false) { }
+
         /// <summary>
         /// 予約情報更新通知
         /// </summary>

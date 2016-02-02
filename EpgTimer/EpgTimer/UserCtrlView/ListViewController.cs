@@ -245,5 +245,15 @@ namespace EpgTimer
             ctxm.Opened += (sender, e) => ClickTarget = (sender as ContextMenu).PlacementTarget as ListBoxItem;
             ctxm.Closed += (sender, e) => ClickTarget = null;
         }
+
+        //リストのチェックボックスからの呼び出し
+        public void ChgOnOffFromCheckbox(object hitItem, RoutedCommand cmd)
+        {
+            if (listView.SelectedItems.Contains(hitItem) == false)
+            {
+                listView.SelectedItem = hitItem;
+            }
+            cmd.Execute(listView, this.Owner);
+        }
     }
 }

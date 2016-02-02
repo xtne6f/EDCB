@@ -100,6 +100,9 @@ namespace EpgTimer
                 });
                 mc.SetFuncReleaseSelectedData(() => listView_key.UnselectAll());
 
+                //コマンド集に無いもの
+                mc.AddReplaceCommand(EpgCmds.ChgOnOffCheck, (sender, e) => lstCtrl.ChgOnOffFromCheckbox(e.Parameter, EpgCmds.ChgOnOffKeyEnabled));
+
                 //コマンドをコマンド集から登録
                 mc.ResetCommandBindings(this, listView_key.ContextMenu);
 
@@ -162,15 +165,6 @@ namespace EpgTimer
                     listView_key.ScrollIntoView(target);
                 }
             }
-        }
-        //リストのチェックボックスからの呼び出し
-        public void ChgKeyEnabledFromCheckbox(S hitItem)
-        {
-            if (listView_key.SelectedItems.Contains(hitItem) == false)
-            {
-                listView_key.SelectedItem = hitItem;
-            }
-            EpgCmds.ChgOnOffKeyEnabled.Execute(listView_key, this);
         }
     }
 

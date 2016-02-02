@@ -497,7 +497,7 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="UserCtrlView\RecSettingListViewColumns.xaml">
+    <Page Include="UserCtrlView\ReserveListViewStyles.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>

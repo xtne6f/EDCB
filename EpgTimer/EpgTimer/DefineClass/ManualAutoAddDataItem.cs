@@ -118,15 +118,6 @@ namespace EpgTimer
                 return ManualAutoAddInfo.stationName;
             }
         }
-        public override bool KeyEnabled
-        {
-            set
-            {
-                //選択されている場合、複数選択時に1回の通信で処理するため、ウインドウ側に処理を渡す。
-                MainWindow mainWindow = (MainWindow)Application.Current.MainWindow;
-                mainWindow.autoAddView.manualAutoAddView.ChgKeyEnabledFromCheckbox(this);
-            }
-        }
     }
 
 }
