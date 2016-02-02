@@ -63,9 +63,15 @@ void WINAPI Setting(
 	if( ret && ret < MAX_PATH ){
 		wstring iniPath = wstring(dllPath) + L".ini";
 		wstring size = GetPrivateProfileToString(L"SET", L"Size", L"770048", iniPath.c_str());
+		wstring teeCmd = GetPrivateProfileToString(L"SET", L"TeeCmd", L"", iniPath.c_str());
+		wstring teeSize = GetPrivateProfileToString(L"SET", L"TeeSize", L"770048", iniPath.c_str());
+		wstring teeDelay = GetPrivateProfileToString(L"SET", L"TeeDelay", L"0", iniPath.c_str());
 		CSettingDlg dlg;
-		if( dlg.CreateSettingDialog(g_instance, parentWnd, size) == IDOK ){
+		if( dlg.CreateSettingDialog(g_instance, parentWnd, size, teeCmd, teeSize, teeDelay) == IDOK ){
 			WritePrivateProfileString(L"SET", L"Size", size.c_str(), iniPath.c_str());
+			WritePrivateProfileString(L"SET", L"TeeCmd", (teeCmd.find(L'"') == wstring::npos ? teeCmd : L'"' + teeCmd + L'"').c_str(), iniPath.c_str());
+			WritePrivateProfileString(L"SET", L"TeeSize", teeSize.c_str(), iniPath.c_str());
+			WritePrivateProfileString(L"SET", L"TeeDelay", teeDelay.c_str(), iniPath.c_str());
 		}
 	}
 

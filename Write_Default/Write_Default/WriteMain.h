@@ -55,5 +55,16 @@ protected:
 
 	vector<BYTE> writeBuff;
 	DWORD writeBuffSize;
+	__int64 wrotePos;
+	CRITICAL_SECTION wroteLock;
+
+	HANDLE teeFile;
+	HANDLE teeThread;
+	BOOL teeThreadStopFlag;
+	wstring teeCmd;
+	vector<BYTE> teeBuff;
+	DWORD teeDelay;
+
+	static UINT WINAPI TeeThread(LPVOID param);
 };
 
