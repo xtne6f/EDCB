@@ -58,16 +58,15 @@ void WINAPI Setting(
 	HWND parentWnd
 	)
 {
-	WCHAR dllPath[512] = L"";
-	GetModuleFileName(g_instance, dllPath, 512);
-
-	wstring iniPath = dllPath;
-	iniPath += L".ini";
-
-	CSettingDlg dlg;
-	dlg.size = GetPrivateProfileToString(L"SET", L"Size", L"770048", iniPath.c_str());
-	if( dlg.CreateSettingDialog(g_instance, parentWnd) == IDOK ){
-		WritePrivateProfileString(L"SET", L"Size", dlg.size.c_str(), iniPath.c_str());
+	WCHAR dllPath[MAX_PATH];
+	DWORD ret = GetModuleFileName(g_instance, dllPath, MAX_PATH);
+	if( ret && ret < MAX_PATH ){
+		wstring iniPath = wstring(dllPath) + L".ini";
+		wstring size = GetPrivateProfileToString(L"SET", L"Size", L"770048", iniPath.c_str());
+		CSettingDlg dlg;
+		if( dlg.CreateSettingDialog(g_instance, parentWnd, size) == IDOK ){
+			WritePrivateProfileString(L"SET", L"Size", size.c_str(), iniPath.c_str());
+		}
 	}
 
 //	MessageBox(parentWnd, PLUGIN_NAME, L"Write PlugIn", MB_OK);
@@ -133,7 +132,7 @@ BOOL WINAPI StartSave(
 		return FALSE;
 	}
 
-	return ptr->_StartSave(fileName, overWriteFlag, createSize);
+	return ptr->Start(fileName, overWriteFlag, createSize);
 }
 
 //ファイル保存を終了する
@@ -150,7 +149,7 @@ BOOL WINAPI StopSave(
 		return FALSE;
 	}
 
-	return ptr->_StopSave();
+	return ptr->Stop();
 }
 
 //実際に保存しているファイルパスを取得する（再生やバッチ処理に利用される）
@@ -173,7 +172,17 @@ BOOL WINAPI GetSaveFilePath(
 		return FALSE;
 	}
 
-	return ptr->_GetSaveFilePath(filePath, filePathSize);
+	if( filePathSize == NULL ){
+		return FALSE;
+	}else if( filePath == NULL ){
+		*filePathSize = (DWORD)ptr->GetSavePath().size() + 1;
+	}else if( *filePathSize < (DWORD)ptr->GetSavePath().size() + 1 ){
+		*filePathSize = (DWORD)ptr->GetSavePath().size() + 1;
+		return FALSE;
+	}else{
+		wcscpy_s(filePath, *filePathSize, ptr->GetSavePath().c_str());
+	}
+	return TRUE;
 }
 
 //保存用TSデータを送る
@@ -198,5 +207,5 @@ BOOL WINAPI AddTSBuff(
 		return FALSE;
 	}
 
-	return ptr->_AddTSBuff(data, size, writeSize);
+	return ptr->Write(data, size, writeSize);
 }
