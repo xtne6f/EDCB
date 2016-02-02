@@ -125,6 +125,7 @@ namespace EpgTimer
         public bool NoMessageDelete2 { get; set; }
         public bool NoMessageAdjustRes { get; set; }
         public bool CancelAutoAddOff { get; set; }
+        public bool AutoAddFazySerach { get; set; }
         public bool Keyword_Trim { get; set; }
         public bool CopyTitle_Trim { get; set; }
         public bool CopyContentBasic { get; set; }
@@ -142,6 +143,7 @@ namespace EpgTimer
             NoMessageDelete2 = false;
             NoMessageAdjustRes = false;
             CancelAutoAddOff = false;
+            AutoAddFazySerach = false;
             Keyword_Trim = true;
             CopyTitle_Trim = false;
             CopyContentBasic = false;
@@ -161,6 +163,7 @@ namespace EpgTimer
             dest.NoMessageDelete2 = src.NoMessageDelete2;
             dest.NoMessageAdjustRes = src.NoMessageAdjustRes;
             dest.CancelAutoAddOff = src.CancelAutoAddOff;
+            dest.AutoAddFazySerach = src.AutoAddFazySerach;
             dest.Keyword_Trim = src.Keyword_Trim;
             dest.CopyTitle_Trim = src.CopyTitle_Trim;
             dest.CopyContentBasic = src.CopyContentBasic;

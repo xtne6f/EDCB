@@ -23,7 +23,8 @@ namespace EpgTimer
 
     public interface IAutoAddTargetData : IBasicPgInfo
     {
-        List<EpgAutoAddData> GetEpgAutoAddList(bool? IsEnabled = null, bool ByFazy = false);
+        List<EpgAutoAddData> SearchEpgAutoAddList(bool? IsEnabled, bool ByFazy);
+        List<EpgAutoAddData> GetEpgAutoAddList(bool? IsEnabled = null);
         List<ManualAutoAddData> GetManualAutoAddList(bool? IsEnabled = null);
     }
 

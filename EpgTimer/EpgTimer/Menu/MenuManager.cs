@@ -562,14 +562,14 @@ namespace EpgTimer
             }
         }
 
-        public void CtxmGenerateChgAutoAddItems(MenuItem menu, IAutoAddTargetData info)
+        public void CtxmGenerateChgResModeAutoAddItems(MenuItem menu, IAutoAddTargetData info)
         {
             //クリア
             for (int i = menu.Items.Count - 1; i >= 2; i--) menu.Items.RemoveAt(i);
 
             if (menu.IsEnabled == false || info == null) return;
 
-            CtxmGenerateChgAutoAddMenuItem(menu, info, EpgCmds.ChgResMode, true, 30);
+            CtxmGenerateChgAutoAddMenuItem(menu, info, EpgCmds.ChgResMode, true, false, 30);
 
             if (menu.Items.Count > 2)
             {
@@ -611,7 +611,7 @@ namespace EpgTimer
 
             if (menu.IsEnabled == false) return false;
 
-            CtxmGenerateChgAutoAddMenuItem(menu, info, EpgCmds.ShowAutoAddDialog);
+            CtxmGenerateChgAutoAddMenuItem(menu, info, EpgCmds.ShowAutoAddDialog, null, Settings.Instance.MenuSet.AutoAddFazySerach);
 
             if (menu.Items.Count == 0) return false;
 
@@ -620,7 +620,7 @@ namespace EpgTimer
             return true;
         }
 
-        private void CtxmGenerateChgAutoAddMenuItem(MenuItem menu, IAutoAddTargetData info, ICommand cmd, bool? IsAutoAddEnabled = null, int str_max = 35)
+        private void CtxmGenerateChgAutoAddMenuItem(MenuItem menu, IAutoAddTargetData info, ICommand cmd, bool? IsAutoAddEnabled, bool ByFasy, int str_max = 35)
         {
             if (info != null)
             {
@@ -643,7 +643,7 @@ namespace EpgTimer
                     menu.Items.Add(menuItem);
                 };
 
-                foreach (var data in info.GetEpgAutoAddList(IsAutoAddEnabled, true))
+                foreach (var data in info.SearchEpgAutoAddList(IsAutoAddEnabled, ByFasy))
                 {
                     addSubMenuItem(data, data.DataTitle == "" ? "(空白)" : data.DataTitle, data.dataID);
                 }

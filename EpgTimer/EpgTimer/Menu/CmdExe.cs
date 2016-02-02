@@ -493,7 +493,7 @@ namespace EpgTimer
                 }
                 else if (subMenu.Tag == EpgCmdsEx.ChgResModeMenu)
                 {
-                    mm.CtxmGenerateChgAutoAddItems(subMenu, itemCount == 1 ? dataList[0] as ReserveData : null);
+                    mm.CtxmGenerateChgResModeAutoAddItems(subMenu, itemCount == 1 ? dataList[0] as ReserveData : null);
 
                     if (typeof(T) != typeof(ReserveData))
                     {

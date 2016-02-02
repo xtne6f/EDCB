@@ -118,10 +118,14 @@ namespace EpgTimer
             }
         }
 
-        public List<EpgAutoAddData> GetEpgAutoAddList(bool? IsEnabled = null, bool ByFazy = false)
+        public List<EpgAutoAddData> SearchEpgAutoAddList(bool? IsEnabled = null, bool ByFazy = false)
         {
             //EpgTimerSrv側のSearch()をEpgTimerで実装してないので、簡易な推定によるもの
             return CommonManager.Instance.MUtil.FazySearchEpgAutoAddData(DataTitle, IsEnabled);
+        }
+        public List<EpgAutoAddData> GetEpgAutoAddList(bool? IsEnabled = null)
+        {
+            return new List<EpgAutoAddData>();
         }
         public List<ManualAutoAddData> GetManualAutoAddList(bool? IsEnabled = null)
         {

@@ -24,16 +24,20 @@ namespace EpgTimer
             return CtrlCmdDefEx.isOnTime(start_time, (int)durationSec);
         }
 
-        public List<EpgAutoAddData> GetEpgAutoAddList(bool? IsEnabled = null, bool ByFazy = false)
+        public List<EpgAutoAddData> SearchEpgAutoAddList(bool? IsEnabled = null, bool ByFazy = false)
         {
-            var list = CommonManager.Instance.DB.EpgAutoAddList.Values.GetAutoAddList(IsEnabled)
-                .FindAll(data => data.GetSearchList().Any(item => item.EventInfo.Create64PgKey() == this.Create64PgKey()));
+            var list = GetEpgAutoAddList(IsEnabled);
             if (ByFazy == true)
             {
                 list.AddRange(CommonManager.Instance.MUtil.FazySearchEpgAutoAddData(DataTitle, IsEnabled));
                 list = list.Distinct().ToList();
             }
             return list;
+        }
+        public List<EpgAutoAddData> GetEpgAutoAddList(bool? IsEnabled = null)
+        {
+            return CommonManager.Instance.DB.EpgAutoAddList.Values.GetAutoAddList(IsEnabled)
+                .FindAll(data => data.GetSearchList().Any(item => item.EventInfo.Create64PgKey() == this.Create64PgKey()));
         }
         public List<ManualAutoAddData> GetManualAutoAddList(bool? IsEnabled = null)
         {

@@ -51,7 +51,7 @@
                         <CheckBox Margin="6,0,0,0" Visibility="Hidden"/>
                         <CheckBox Margin="6,0,0,0" Visibility="Hidden"/>
                         <CheckBox Margin="6,0,0,0" Visibility="Hidden"/>
-                        <CheckBox Margin="6,0,0,0" Visibility="Hidden"/>
+                        <CheckBox Margin="6,0,0,0" Content="関連候補も表示する" Name="checkBox_AutoAddFazySerach" />
                         <CheckBox Margin="6,0,0,0" Content="記号類を取り除く" Name="checkBox_EpgKeyword_Trim" />
                         <CheckBox Margin="6,0,0,0" Content="(↑再検索でも共通)" IsEnabled="false" Name="checkBox_EpgKeyword_Trim2" IsChecked="{Binding Path=IsChecked, ElementName=checkBox_EpgKeyword_Trim, UpdateSourceTrigger=PropertyChanged}" />
                         <CheckBox Margin="6,0,0,0" Content="自動登録無効を解除する" Name="checkBox_CancelAutoAddOff" />

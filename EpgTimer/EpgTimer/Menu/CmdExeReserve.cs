@@ -324,7 +324,7 @@ namespace EpgTimer
             }
             else if (menu.Tag == EpgCmdsEx.ShowAutoAddDialogMenu)
             {
-                menu.IsEnabled = mm.CtxmGenerateChgAutoAdd(menu, headData as ReserveData);
+                menu.IsEnabled = mm.CtxmGenerateChgAutoAdd(menu, headData as IAutoAddTargetData);
             }
             else if (menu.Tag == EpgCmds.Play)
             {
