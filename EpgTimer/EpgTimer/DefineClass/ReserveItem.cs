@@ -63,13 +63,13 @@ namespace EpgTimer
                 return CommonManager.ConvertTimeText(ReserveInfo.StartTime, ReserveInfo.DurationSecond, Settings.Instance.ResInfoNoYear, Settings.Instance.ResInfoNoSecond);
             }
         }
-        public override DateTime StartTimeValue
+        public override long StartTimeValue
         {
             get
             {
-                if (ReserveInfo == null) return new DateTime();
+                if (ReserveInfo == null) return long.MinValue;
                 //
-                return ReserveInfo.StartTime;
+                return ReserveInfo.StartTime.Ticks;
             }
         }
         public String StartTimeShort

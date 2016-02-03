@@ -24,6 +24,10 @@ namespace EpgTimer
             {
                 return CommonUtil.GetMemberName(() => obj.ProgramDurationValue);
             }
+            else if (key == CommonUtil.GetMemberName(() => obj.DayOfWeek))
+            {
+                return CommonUtil.GetMemberName(() => obj.DayOfWeekValue);
+            }
             else
             {
                 return AutoAddDataItem.GetValuePropertyName(key);
@@ -36,22 +40,45 @@ namespace EpgTimer
             {
                 if (ManualAutoAddInfo == null) return "";
                 //
-                byte weekFlgMod = ManualAutoAddInfo.dayOfWeekFlag;
-                if (Settings.Instance.LaterTimeUse == true && DateTime28.IsLateHour(ManualAutoAddInfo.PgStartTime.Hour) == true)
-                {
-                    weekFlgMod = ManualAutoAddData.ShiftWeekFlag(weekFlgMod, -1);
-                }
-
                 String view = "";
+                byte dayOfWeekFlag = GetWeekFlgMod();
                 for (int i = 0; i < 7; i++)
                 {
-                    if ((weekFlgMod & 0x01 << i) != 0)
+                    if ((dayOfWeekFlag & 0x01) != 0)
                     {
                         view += "日月火水木金土"[i];
                     }
+                    dayOfWeekFlag >>= 1;
                 }
                 return view;
             }
+        }
+        public double DayOfWeekValue
+        {
+            get
+            {
+                if (ManualAutoAddInfo == null) return double.MinValue;
+                //
+                int ret = 0;
+                byte dayOfWeekFlag = GetWeekFlgMod();
+                for (int i = 1; i <= 7; i++)
+                {
+                    if ((dayOfWeekFlag & 0x01) != 0)
+                    {
+                        ret = 10 * ret + i;
+                    }
+                    dayOfWeekFlag >>= 1;
+                }
+                return ret * Math.Pow(10, (7 - ret.ToString().Length));
+            }
+        }
+        private byte GetWeekFlgMod()
+        {
+            if (Settings.Instance.LaterTimeUse == true && DateTime28.IsLateHour(ManualAutoAddInfo.PgStartTime.Hour) == true)
+            {
+                return ManualAutoAddData.ShiftWeekFlag(ManualAutoAddInfo.dayOfWeekFlag, -1);
+            }
+            return ManualAutoAddInfo.dayOfWeekFlag;
         }
         public String StartTime
         {

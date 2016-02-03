@@ -184,7 +184,7 @@ namespace EpgTimer
         }
         private static void ShiftRecDayPart(int direction, ref ushort hour, ref byte weekFlg)
         {
-            int shift_day = (direction > 0 ? 1 : -1);
+            int shift_day = (direction >= 0 ? 1 : -1);
             hour = (ushort)((int)hour + -1 * shift_day * 24);
             weekFlg = (byte)((weekFlg + 7 + shift_day) % 7);
         }

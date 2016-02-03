@@ -110,12 +110,12 @@ namespace EpgTimer
         }
         public void ShiftRecDay(int direction)
         {
-            startTime = (uint)((int)startTime + (direction > 0 ? -1 : 1) * 24 * 60 * 60);
+            startTime = (uint)((int)startTime + (direction >= 0 ? -1 : 1) * 24 * 60 * 60);
             dayOfWeekFlag = ShiftWeekFlag(dayOfWeekFlag, direction);
         }
         public static byte ShiftWeekFlag(byte flg, int direction)
         {
-            if (direction > 0)
+            if (direction >= 0)
             {
                 return (byte)(0x7E & ((int)flg << 1) | ((flg & 0x40) != 0 ? 0x01 : 0x00));
             }

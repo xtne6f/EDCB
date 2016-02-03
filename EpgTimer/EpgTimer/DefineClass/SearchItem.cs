@@ -82,13 +82,13 @@ namespace EpgTimer
                 return CommonManager.ConvertTimeText(EventInfo.start_time, Settings.Instance.ResInfoNoYear, Settings.Instance.ResInfoNoSecond);
             }
         }
-        public virtual DateTime StartTimeValue
+        public virtual long StartTimeValue
         {
             get
             {
-                if (EventInfo == null || EventInfo.StartTimeFlag == 0) return new DateTime();
+                if (EventInfo == null || EventInfo.StartTimeFlag == 0) return long.MinValue;
                 //
-                return EventInfo.start_time;
+                return EventInfo.start_time.Ticks;
             }
         }
         /// <summary>

@@ -228,9 +228,6 @@ namespace EpgTimer
         {
             if (defKey != null)
             {
-                //正しく保存されていれば特に何も行われないが、一応
-                defKey.RegulateData();
-
                 //深夜時間帯の処理
                 if (Settings.Instance.LaterTimeUse == true && DateTime28.IsLateHour(defKey.PgStartTime.Hour) == true)
                 {

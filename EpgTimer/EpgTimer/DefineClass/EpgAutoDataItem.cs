@@ -90,11 +90,11 @@ namespace EpgTimer
                 return new ReserveItem(_data.GetNextReserve()).StartTime;
             }
         }
-        public DateTime NextReserveValue
+        public long NextReserveValue
         {
             get
             {
-                if (_data == null) return new DateTime();
+                if (_data == null) return long.MinValue;
                 //
                 return new ReserveItem(_data.GetNextReserve()).StartTimeValue;
             }

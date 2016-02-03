@@ -100,13 +100,13 @@ namespace EpgTimer
                 return CommonManager.ConvertTimeText(RecInfo.StartTime, RecInfo.DurationSecond, Settings.Instance.RecInfoNoYear, Settings.Instance.RecInfoNoSecond);
             }
         }
-        public DateTime StartTimeValue
+        public long StartTimeValue
         {
             get
             {
-                if (RecInfo == null) return new DateTime();
+                if (RecInfo == null) return long.MinValue;
                 //
-                return RecInfo.StartTime;
+                return RecInfo.StartTime.Ticks;
             }
         }
         public String Drops

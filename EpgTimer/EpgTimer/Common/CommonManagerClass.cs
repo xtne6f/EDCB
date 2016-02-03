@@ -662,7 +662,7 @@ namespace EpgTimer
             if (info.StartTimeFlag != 1) return "未定 ～ 未定";
             //
             string reftxt = ConvertTimeText(info.start_time, info.PgDurationSecond, false, false, false, false);
-            return info.DurationFlag == 1 ? reftxt : reftxt.Split(new char[] { '～' })[0] + " ～ 未定";
+            return info.DurationFlag == 1 ? reftxt : reftxt.Split(new char[] { '～' })[0] + "～ 未定";
         }
         public static String ConvertTimeText(EpgSearchDateInfo info)
         {
@@ -677,30 +677,39 @@ namespace EpgTimer
         {
             DateTime end = start + TimeSpan.FromSeconds(duration);
 
-            bool? isStartLate = false;
-            bool isEndLate = false;
-            DateTime28 ref_start = null;
-
             if (Settings.Instance.LaterTimeUse == true)
             {
                 bool over1Day = duration >= 24 * 60 * 60;
-                isStartLate = (isNoEndDay == false && over1Day == true) ? (bool?)false : null;
-                isEndLate = (isNoEndDay == false || isNoStartDay == true && over1Day == false 
+                bool? isStartLate = (isNoEndDay == false && over1Day == true) ? (bool?)false : null;
+                bool isEndLate = (isNoEndDay == false || isNoStartDay == true && over1Day == false
                     ? over1Day == false && DateTime28.JudgeLateHour(end, start)
                     : DateTime28.JudgeLateHour(end, start, 99));
-                ref_start = (isEndLate == true && isNoEndDay == true && isNoStartDay == false) ? new DateTime28(start) : null;
-            }
+                DateTime28 ref_start = (isEndLate == true && isNoEndDay == true && isNoStartDay == false) ? new DateTime28(start) : null;
 
-            return ConvertTimeText(start, isNoYear, isNoSecond, isNoStartDay, isStartLate)
+                return ConvertTimeText(start, isNoYear, isNoSecond, isNoStartDay, isStartLate)
+                    + (isNoSecond == true ? "～" : " ～ ")
+                    + ConvertTimeText(end, isNoYear, isNoSecond, isNoEndDay, isEndLate, ref_start);
+            }
+            else
+            {
+                return ConvertTimeText(start, isNoYear, isNoSecond, isNoStartDay)
                 + (isNoSecond == true ? "～" : " ～ ")
-                + ConvertTimeText(end, isNoYear, isNoSecond, isNoEndDay, isEndLate, ref_start);
+                + ConvertTimeText(end, isNoYear, isNoSecond, isNoEndDay);
+            }
         }
         public static String ConvertTimeText(DateTime time, bool isNoYear, bool isNoSecond, bool isNoDay = false, bool? isUse28 = null, DateTime28 ref_start = null)
         {
-            isUse28 = Settings.Instance.LaterTimeUse == false ? false : isUse28;
-            var time28 = new DateTime28(time, isUse28, ref_start);
-            return (isNoDay == true ? "" : time28.DateTimeMod.ToString((isNoYear == true ? "" : "yyyy/") + "MM/dd(ddd) "))
-                + time28.HourMod.ToString("00") + ":" + time.ToString(isNoSecond == true ? "mm" : "mm:ss");
+            if (Settings.Instance.LaterTimeUse == true)
+            {
+                var time28 = new DateTime28(time, isUse28, ref_start);
+                return time28.DateTimeMod.ToString((isNoDay == true ? "" : (isNoYear == true ? "MM/dd(ddd) " : "yyyy/MM/dd(ddd) "))
+                 + time28.HourMod.ToString("00:") + (isNoSecond == true ? "mm" : "mm:ss"));
+            }
+            else
+            {
+                return time.ToString((isNoDay == true ? "" :
+                (isNoYear == true ? "MM/dd(ddd) " : "yyyy/MM/dd(ddd) ")) + (isNoSecond == true ? "HH:mm" : "HH:mm:ss"));
+            }
         }
         public static String ConvertDurationText(uint duration, bool isNoSecond)
         {
