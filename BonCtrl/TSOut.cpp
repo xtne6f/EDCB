@@ -321,8 +321,31 @@ DWORD CTSOut::AddTSBuff(BYTE* data, DWORD dataSize)
 						}
 					}
 					if( this->epgFile != NULL ){
-						if( packet.PID <= 0x0030 ){
-							DWORD write=0;
+						DWORD write;
+						if( packet.PID == 0 && packet.payload_unit_start_indicator ){
+							if( this->epgFileState == EPG_FILE_ST_NONE ){
+								this->epgFileState = EPG_FILE_ST_PAT;
+							}else if( this->epgFileState == EPG_FILE_ST_PAT ){
+								this->epgFileState = EPG_FILE_ST_TOT;
+								//番組情報が不足しないよう改めて蓄積状態をリセット
+								this->epgUtil.ClearSectionStatus();
+								//TOTを前倒しで書き込むための場所を確保
+								BYTE nullData[188] = { 0x47, 0x1F, 0xFF, 0x10 };
+								memset(nullData + 4, 0xFF, 184);
+								this->epgFileTotPos = SetFilePointer(this->epgFile, 0, NULL, FILE_CURRENT);
+								WriteFile(this->epgFile, nullData, 188, &write, NULL);
+							}
+						}
+						//まずPAT、次に(あれば)TOTを書き込む。この処理は必須ではないが番組情報をより確実かつ効率的に読み出せる
+						if( packet.PID == 0x14 && this->epgFileState == EPG_FILE_ST_TOT ){
+							this->epgFileState = EPG_FILE_ST_ALL;
+							if( this->epgFileTotPos != INVALID_SET_FILE_POINTER ){
+								SetFilePointer(this->epgFile, this->epgFileTotPos, NULL, FILE_BEGIN);
+							}
+							WriteFile(this->epgFile, data + i, 188, &write, NULL);
+							LONG posHigh = 0;
+							SetFilePointer(this->epgFile, 0, &posHigh, FILE_END);
+						}else if( packet.PID == 0 && this->epgFileState >= EPG_FILE_ST_PAT || packet.PID <= 0x30 && this->epgFileState >= EPG_FILE_ST_TOT ){
 							WriteFile(this->epgFile, data + i, 188, &write, NULL);
 						}
 					}
@@ -555,6 +578,9 @@ BOOL CTSOut::StartSaveEPG(
 	_OutputDebugString(L"★%s\r\n", this->epgFilePath.c_str());
 	_OutputDebugString(L"★%s\r\n", this->epgTempFilePath.c_str());
 
+	this->epgUtil.ClearSectionStatus();
+	this->epgFileState = EPG_FILE_ST_NONE;
+
 	BOOL ret = TRUE;
 	this->epgFile = _CreateDirectoryAndFile(this->epgTempFilePath.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL );
 	if( this->epgFile == INVALID_HANDLE_VALUE ){
@@ -593,17 +619,6 @@ BOOL CTSOut::StopSaveEPG(
 
 	UnLock();
 	return TRUE;
-}
-
-//EPGデータの蓄積状態をリセットする
-void CTSOut::ClearSectionStatus()
-{
-	if( Lock(L"ClearSectionStatus") == FALSE ) return ;
-
-	this->epgUtil.ClearSectionStatus();
-
-	UnLock();
-	return ;
 }
 
 //EPGデータの蓄積状態を取得する

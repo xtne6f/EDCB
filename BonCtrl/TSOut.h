@@ -79,9 +79,6 @@ public:
 		BOOL copy
 		);
 
-	//EPGデータの蓄積状態をリセットする
-	void ClearSectionStatus();
-
 	//EPGデータの蓄積状態を取得する
 	//戻り値：
 	// ステータス
@@ -345,6 +342,8 @@ protected:
 	DWORD nextCtrlID;
 
 	HANDLE epgFile;
+	enum { EPG_FILE_ST_NONE, EPG_FILE_ST_PAT, EPG_FILE_ST_TOT, EPG_FILE_ST_ALL } epgFileState;
+	DWORD epgFileTotPos;
 	wstring epgFilePath;
 	wstring epgTempFilePath;
 

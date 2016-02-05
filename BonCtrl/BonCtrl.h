@@ -114,18 +114,6 @@ public:
 	// シグナルレベル
 	float GetSignalLevel();
 
-	//EPGデータの蓄積状態をリセットする
-	void ClearSectionStatus();
-
-	//EPGデータの蓄積状態を取得する
-	//戻り値：
-	// ステータス
-	//引数：
-	// l_eitFlag		[IN]L-EITのステータスを取得
-	EPG_SECTION_STATUS GetSectionStatus(
-		BOOL l_eitFlag
-		);
-
 	//自ストリームのサービス一覧を取得する
 	//戻り値：
 	// エラーコード

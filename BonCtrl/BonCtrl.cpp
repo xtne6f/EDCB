@@ -456,24 +456,6 @@ UINT WINAPI CBonCtrl::AnalyzeThread(LPVOID param)
 	return 0;
 }
 
-//EPGデータの蓄積状態をリセットする
-void CBonCtrl::ClearSectionStatus()
-{
-	this->tsOut.ClearSectionStatus();
-}
-
-//EPGデータの蓄積状態を取得する
-//戻り値：
-// ステータス
-//引数：
-// l_eitFlag		[IN]L-EITのステータスを取得
-EPG_SECTION_STATUS CBonCtrl::GetSectionStatus(
-	BOOL l_eitFlag
-	)
-{
-	return this->tsOut.GetSectionStatus(l_eitFlag);
-}
-
 //自ストリームのサービス一覧を取得する
 //戻り値：
 // エラーコード
@@ -1144,7 +1126,6 @@ UINT WINAPI CBonCtrl::EpgCapThread(LPVOID param)
 						wstring epgDataPath = L"";
 						sys->GetEpgDataFilePath(sys->epgCapChList[chkCount].ONID, sys->epgCapChList[chkCount].TSID, epgDataPath, BSBasic, CS1Basic, CS2Basic);
 						sys->tsOut.StartSaveEPG(epgDataPath);
-						sys->tsOut.ClearSectionStatus();
 						wait = 60*1000;
 					}else{
 						//蓄積状態チェック
@@ -1383,7 +1364,6 @@ UINT WINAPI CBonCtrl::EpgCapBackThread(LPVOID param)
 
 	sys->GetEpgDataFilePath(ONID, TSID, epgDataPath, sys->epgCapBackBSBasic, sys->epgCapBackCS1Basic, sys->epgCapBackCS2Basic);
 	sys->tsOut.StartSaveEPG(epgDataPath);
-	sys->tsOut.ClearSectionStatus();
 
 	if( ::WaitForSingleObject(sys->epgCapBackStopEvent, 60*1000) != WAIT_TIMEOUT ){
 		//キャンセルされた
