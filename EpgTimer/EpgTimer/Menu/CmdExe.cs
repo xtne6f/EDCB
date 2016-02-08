@@ -290,7 +290,7 @@ namespace EpgTimer
             AutoAddData autoAdd = AutoAddData.AutoAddList(CmdExeUtil.ReadObjData(e) as Type, (uint)CmdExeUtil.ReadIdData(e));
             if (autoAdd is EpgAutoAddData)
             {
-                IsCommandExecuted = true == mutil.OpenChangeEpgAutoAddDialog(autoAdd as EpgAutoAddData, this.Owner);
+                IsCommandExecuted = true == mutil.OpenChangeEpgAutoAddDialog(autoAdd as EpgAutoAddData);
             }
             else if (autoAdd is ManualAutoAddData)
             {
@@ -299,7 +299,7 @@ namespace EpgTimer
         }
         protected virtual void mc_ToAutoadd(object sender, ExecutedRoutedEventArgs e)
         {
-            mutil.SendAutoAdd(dataList[0] as IBasicPgInfo, this.Owner, CmdExeUtil.IsKeyGesture(e));
+            mutil.SendAutoAdd(dataList[0] as IBasicPgInfo, CmdExeUtil.IsKeyGesture(e));
             IsCommandExecuted = true;
         }
         protected virtual void mc_Play(object sender, ExecutedRoutedEventArgs e) { }

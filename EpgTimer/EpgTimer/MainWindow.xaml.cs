@@ -837,7 +837,7 @@ namespace EpgTimer
             }
             else
             {
-                CommonManager.Instance.MUtil.OpenSearchEpgDialog(this);
+                CommonManager.Instance.MUtil.OpenSearchEpgDialog();
             }
         }
 

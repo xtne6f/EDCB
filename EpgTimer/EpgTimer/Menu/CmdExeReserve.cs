@@ -197,11 +197,11 @@ namespace EpgTimer
         {
             if (eventList.Count != 0)//番組情報優先
             {
-                mutil.SendAutoAdd(eventList[0], this.Owner, CmdExeUtil.IsKeyGesture(e));
+                mutil.SendAutoAdd(eventList[0], CmdExeUtil.IsKeyGesture(e));
             }
             else if (dataList.Count != 0)
             {
-                mutil.SendAutoAdd(dataList[0], this.Owner, CmdExeUtil.IsKeyGesture(e));
+                mutil.SendAutoAdd(dataList[0], CmdExeUtil.IsKeyGesture(e));
             }
             IsCommandExecuted = true;
         }

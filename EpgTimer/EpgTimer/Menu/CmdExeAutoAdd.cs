@@ -102,11 +102,11 @@ namespace EpgTimer
         public CmdExeEpgAutoAdd(Control owner) : base(owner) { _copyItemData = EpgAutoAddDataEx.CopyTo; }
         protected override void mc_ShowDialog(object sender, ExecutedRoutedEventArgs e)
         {
-            IsCommandExecuted = true == mutil.OpenChangeEpgAutoAddDialog(dataList[0], this.Owner);
+            IsCommandExecuted = true == mutil.OpenChangeEpgAutoAddDialog(dataList[0]);
         }
         protected override void mc_ShowAddDialog(object sender, ExecutedRoutedEventArgs e)
         {
-            IsCommandExecuted = true == mutil.OpenAddEpgAutoAddDialog(Owner);
+            IsCommandExecuted = true == mutil.OpenAddEpgAutoAddDialog();
         }
         protected override void mc_ChgGenre(object sender, ExecutedRoutedEventArgs e)
         {

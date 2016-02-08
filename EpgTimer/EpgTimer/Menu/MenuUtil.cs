@@ -937,19 +937,19 @@ namespace EpgTimer
             }
         }
 
-        public bool? OpenSearchEpgDialog(Control Owner)
+        public bool? OpenSearchEpgDialog()
         {
-            return OpenEpgAutoAddDialog(null, Owner, SearchWindow.SearchMode.Find);
+            return OpenEpgAutoAddDialog(null, SearchWindow.SearchMode.Find);
         }
-        public bool? OpenAddEpgAutoAddDialog(Control Owner)
+        public bool? OpenAddEpgAutoAddDialog()
         {
-            return OpenEpgAutoAddDialog(null, Owner, SearchWindow.SearchMode.NewAdd);
+            return OpenEpgAutoAddDialog(null, SearchWindow.SearchMode.NewAdd);
         }
-        public bool? OpenChangeEpgAutoAddDialog(EpgAutoAddData Data, Control Owner)
+        public bool? OpenChangeEpgAutoAddDialog(EpgAutoAddData Data)
         {
-            return OpenEpgAutoAddDialog(Data, Owner, SearchWindow.SearchMode.Change);
+            return OpenEpgAutoAddDialog(Data, SearchWindow.SearchMode.Change);
         }
-        private bool? OpenEpgAutoAddDialog(EpgAutoAddData Data, Control Owner, SearchWindow.SearchMode mode)
+        private bool? OpenEpgAutoAddDialog(EpgAutoAddData Data, SearchWindow.SearchMode mode)
         {
             try
             {
@@ -968,7 +968,7 @@ namespace EpgTimer
                 return null;
             }
         }
-        public void SendAutoAdd(IBasicPgInfo item, Control Owner, bool NotToggle = false)
+        public void SendAutoAdd(IBasicPgInfo item, bool NotToggle = false)
         {
             try
             {
