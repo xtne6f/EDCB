@@ -38,6 +38,7 @@ namespace EpgTimer
                     , CommonUtil.GetMemberName(() => Settings.Instance.EpgListColumnHead)
                     , CommonUtil.GetMemberName(() => Settings.Instance.EpgListSortDirection));
             lstCtrl.SetViewSetting(listView_event, gridView_event, true, list_columns);
+            lstCtrl.SetSelectedItemDoubleClick(EpgCmds.ShowDialog);
 
             InitCommand();
         }
@@ -258,11 +259,6 @@ namespace EpgTimer
                 EpgEventInfo eventInfo = item.EventInfo;
                 richTextBox_eventInfo.Document = CommonManager.Instance.ConvertDisplayText(eventInfo);
             }
-        }
-
-        private void listView_event_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-        {
-            EpgCmds.ShowDialog.Execute(sender, this);
         }
 
         protected override void MoveToReserveItem(ReserveData target, bool IsMarking)

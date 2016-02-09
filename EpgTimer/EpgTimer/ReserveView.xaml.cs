@@ -33,6 +33,7 @@ namespace EpgTimer
                     , CommonUtil.GetMemberName(() => Settings.Instance.ResColumnHead)
                     , CommonUtil.GetMemberName(() => Settings.Instance.ResSortDirection));
                 lstCtrl.SetViewSetting(listView_reserve, gridView_reserve, true, list_columns);
+                lstCtrl.SetSelectedItemDoubleClick(EpgCmds.ShowDialog);
 
                 //最初にコマンド集の初期化
                 mc = new CmdExeReserve(this);
@@ -95,11 +96,6 @@ namespace EpgTimer
         public void SaveViewData()
         {
             lstCtrl.SaveViewDataToSettings();
-        }
-        private void listView_reserve_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-        {
-            //DoubleClickのジェスチャうまく反応してくれない‥。
-            EpgCmds.ShowDialog.Execute(sender, this);
         }
 
         protected override void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)

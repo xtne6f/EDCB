@@ -25,7 +25,6 @@
                     <Setter Property="Background" Value="{Binding BackColor}" />
                     <Setter Property="BorderThickness" Value="5,0,0,1" />
                     <Setter Property="BorderBrush" Value="{Binding BorderBrush}" />
-                    <EventSetter Event="MouseDoubleClick" Handler="listView_key_MouseDoubleClick"/>
                     <EventSetter Event="PreviewMouseLeftButtonDown" Handler="listViewItem_PreviewMouseLeftButtonDown"/>
                     <EventSetter Event="MouseEnter" Handler="listViewItem_MouseEnter"/>
                 </Style>

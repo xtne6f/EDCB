@@ -49,6 +49,7 @@ namespace EpgTimer
                     , CommonUtil.GetMemberName(() => Settings.Instance.SearchColumnHead)
                     , CommonUtil.GetMemberName(() => Settings.Instance.SearchSortDirection));
                 lstCtrl.SetViewSetting(listView_result, gridView_result, true, list_columns);
+                lstCtrl.SetSelectedItemDoubleClick(EpgCmds.ShowDialog);
 
                 //最初にコマンド集の初期化
                 mc = new CmdExeReserve(this);
@@ -382,11 +383,6 @@ namespace EpgTimer
             }
 
             ChangeAutoAddData(newItem);
-        }
-        
-        private void listView_result_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-        {
-            EpgCmds.ShowDialog.Execute(sender, null);
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)

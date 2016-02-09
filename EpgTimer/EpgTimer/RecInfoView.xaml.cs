@@ -30,6 +30,11 @@ namespace EpgTimer
                     , CommonUtil.GetMemberName(() => Settings.Instance.RecInfoColumnHead)
                     , CommonUtil.GetMemberName(() => Settings.Instance.RecInfoSortDirection));
                 lstCtrl.SetViewSetting(listView_recinfo, gridView_recinfo, true);
+                lstCtrl.SetSelectedItemDoubleClick((sender, e) =>
+                {
+                    var cmd = Settings.Instance.PlayDClick == true ? EpgCmds.Play : EpgCmds.ShowDialog;
+                    cmd.Execute(sender, listView_recinfo);
+                });
 
                 //最初にコマンド集の初期化
                 mc = new CmdExeRecinfo(this);
@@ -87,17 +92,6 @@ namespace EpgTimer
                 }
                 return true;
             });
-        }
-        private void listView_recinfo_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-        {
-            if (Settings.Instance.PlayDClick == true)
-            {
-                EpgCmds.Play.Execute(sender, this);
-            }
-            else
-            {
-                EpgCmds.ShowDialog.Execute(sender, this);
-            }
         }
     }
 }

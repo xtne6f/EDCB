@@ -9,6 +9,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using System.Windows.Threading;
+using System.Reflection;
 
 namespace EpgTimer
 {
@@ -290,6 +291,25 @@ namespace EpgTimer
                 {
                     (child as UIElement).IsEnabled = enabled;
                 }
+            }
+        }
+
+        public DependencyObject SearchParentWpfTree(DependencyObject obj, Type t_trg, Type t_cut = null)
+        {
+            Func<string, DependencyObject> GetParentFromProperty = name =>
+            {
+                PropertyInfo p = obj.GetType().GetProperty(name);
+                return p == null ? null : p.GetValue(obj, null) as DependencyObject;
+            };
+            while (true)
+            {
+                if (obj == null || obj.GetType() == t_trg) return obj;
+                if (obj.GetType() == t_cut) return null;
+
+                DependencyObject trg = GetParentFromProperty("TemplatedParent");
+                if (trg == null) trg = GetParentFromProperty("Parent");//次の行と同じ？
+                if (trg == null) trg = LogicalTreeHelper.GetParent(obj);
+                obj = trg;
             }
         }
     }

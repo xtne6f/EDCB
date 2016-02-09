@@ -15,7 +15,6 @@ namespace EpgTimer
     /// </summary>
     public partial class AutoAddListView : DataViewBase
     {
-        protected MouseButtonEventHandler listView_key_MouseDoubleClick;
         protected MouseButtonEventHandler listViewItem_PreviewMouseLeftButtonDown;
         protected MouseEventHandler listViewItem_MouseEnter;
 
@@ -31,8 +30,6 @@ namespace EpgTimer
         protected CtxmCode viewCode;
         protected string ColumnSavePath;
         protected List<GridViewColumn> ColumnList;
-
-        private bool doubleClicked = false;
 
         protected ListViewController<S> lstCtrl;
         protected CmdExeAutoAdd<T> mc;
@@ -69,20 +66,7 @@ namespace EpgTimer
                 lstCtrl.SetViewSetting(listView_key, gridView_key, false
                     , ColumnList, (sender, e) => dragMover.NotSaved |= lstCtrl.GridViewHeaderClickSort(e));
                 ColumnList = null;
-
-                //ダブルクリック関係
-                //並べ替えやSearchWindowからのリスト選択状態の変更を優先するために、MouseUpイベントによる
-                //listViewによるアイテム選択処理より後でダイアログを出すようにする。
-                //単純にlistViewControllerに移動してしまうと、xaml側のListViewItemのスタイルとコンフリクトする。
-                listView_key_MouseDoubleClick += new MouseButtonEventHandler((sender, e) => doubleClicked = true);
-                listView_key.MouseLeftButtonUp += new MouseButtonEventHandler((sender, e) =>
-                {
-                    if (doubleClicked == true)
-                    {
-                        doubleClicked = false;
-                        EpgCmds.ShowDialog.Execute(sender, this);
-                    }
-                });
+                lstCtrl.SetSelectedItemDoubleClick(EpgCmds.ShowDialog);
 
                 //ドラッグ移動関係、イベント追加はdragMoverでやりたいが、あまり綺麗にならないのでこっちに並べる
                 this.dragMover.SetData(this, listView_key, lstCtrl.dataList, new lvDragData(this));

@@ -116,6 +116,23 @@ namespace EpgTimer
             });
         }
 
+        public void SetSelectedItemDoubleClick(RoutedCommand cmd)
+        {
+            if (cmd == null) return;
+            SetSelectedItemDoubleClick((sender, e) => cmd.Execute(sender, this.Owner));
+        }
+
+        public void SetSelectedItemDoubleClick(MouseButtonEventHandler hdlr)
+        {
+            if (hdlr == null) return;
+            listView.MouseDoubleClick += new MouseButtonEventHandler((sender, e) =>
+            {
+                var hitobj = listView.InputHitTest(e.GetPosition(listView)) as DependencyObject;
+                var hitItem = vutil.SearchParentWpfTree(hitobj, typeof(ListViewItem), typeof(ListView)) as ListViewItem;
+                if (hitItem != null) hdlr(hitItem, e);
+            });
+        }
+
         public void SaveViewDataToSettings()
         {
             try

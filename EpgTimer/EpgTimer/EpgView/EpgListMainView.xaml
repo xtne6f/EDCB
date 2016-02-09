@@ -32,7 +32,6 @@
                 <ListView.Resources>
                     <Style TargetType="ListViewItem" BasedOn="{StaticResource DataListViewStyle}" >
                         <Setter Property="ToolTip" Value="{x:Null}" />
-                        <EventSetter Event="MouseDoubleClick" Handler="listView_event_MouseDoubleClick"/>
                     </Style>
                     <Style TargetType="GridViewColumnHeader" BasedOn="{StaticResource DataListViewHeaderStyle}" />
                     <ContextMenu x:Key="itemMenu"/>
