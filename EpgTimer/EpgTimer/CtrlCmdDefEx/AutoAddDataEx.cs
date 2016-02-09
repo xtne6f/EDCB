@@ -13,6 +13,7 @@ namespace EpgTimer
         public abstract uint DataID { get; set; }
         public abstract bool IsEnabled { get; set; }
         public abstract RecSettingData RecSettingInfo { get; }
+        public virtual bool IsManual { get { return false; } }
 
         public static AutoAddData AutoAddList(Type t, uint id)
         {
@@ -96,6 +97,7 @@ namespace EpgTimer
         public override uint DataID { get { return dataID; } set { dataID = value; } }
         public override bool IsEnabled { get { return keyDisabledFlag == 0; } set { keyDisabledFlag = (byte)(value == true ? 0 : 1); } }
         public override RecSettingData RecSettingInfo { get { return recSetting; } }
+        public override bool IsManual { get { return true; } }
         public bool CheckPgHit(IBasicPgInfo data)
         {
             return Create64Key() == data.Create64Key()

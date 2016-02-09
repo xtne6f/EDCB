@@ -34,6 +34,8 @@ namespace EpgTimer
             }
         }
 
+        public override bool IsManual { get { return true; } }
+
         public String DayOfWeek
         {
             get

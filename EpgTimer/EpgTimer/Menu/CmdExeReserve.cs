@@ -195,14 +195,24 @@ namespace EpgTimer
         }
         protected override void mc_ToAutoadd(object sender, ExecutedRoutedEventArgs e)
         {
-            if (eventList.Count != 0)//番組情報優先
+            ReserveData resData = null;
+            if (eventList.Count != 0)
             {
-                mutil.SendAutoAdd(eventList[0], CmdExeUtil.IsKeyGesture(e));
+                resData = CtrlCmdDefEx.ConvertEpgToReserveData(eventList[0]);
+                if (dataList.Count != 0)
+                {
+                    resData.RecSetting = dataList[0].RecSetting.Clone();
+                }
+                else
+                {
+                    resData.RecSetting = Settings.Instance.RecPresetList[0].RecPresetData.Clone();
+                }
             }
             else if (dataList.Count != 0)
             {
-                mutil.SendAutoAdd(dataList[0], CmdExeUtil.IsKeyGesture(e));
+                resData = dataList[0];
             }
+            mutil.SendAutoAdd(resData, CmdExeUtil.IsKeyGesture(e));
             IsCommandExecuted = true;
         }
         protected override void mc_Play(object sender, ExecutedRoutedEventArgs e)
@@ -275,7 +285,7 @@ namespace EpgTimer
                     if (view == CtxmCode.SearchWindow)
                     {
                         RecPresetItem preset = (this.Owner as SearchWindow).GetRecSetting().LookUpPreset();
-                        string text = preset.ID == 0xFFFFFFFF ? "カスタム設定" : string.Format("プリセット'{0}'", preset.DisplayName);
+                        string text = preset.IsCustom == true ? "カスタム設定" : string.Format("プリセット'{0}'", preset.DisplayName);
                         menu.ToolTip = string.Format("このダイアログの録画設定({0})で予約する", text);
                     }
                     else

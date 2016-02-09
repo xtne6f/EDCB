@@ -20,6 +20,7 @@ namespace EpgTimer
             return CommonManager.Create64PgKey(OriginalNetworkID, TransportStreamID, ServiceID, EventID);
         }
         public RecSettingData RecSettingInfo { get { return RecSetting; } }
+        public bool IsManual { get { return IsEpgReserve == false; } }
 
         public ReserveMode ReserveMode
         {

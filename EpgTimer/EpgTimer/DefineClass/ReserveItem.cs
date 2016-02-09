@@ -99,15 +99,6 @@ namespace EpgTimer
                 return ReserveInfo.DurationSecond;
             }
         }
-        public override String Preset
-        {
-            get
-            {
-                if (ReserveInfo == null) return "";
-                //
-                return ReserveInfo.RecSetting.LookUpPreset(ReserveInfo.IsEpgReserve == false).DisplayName;
-            }
-        }
         public override TextBlock ToolTipView
         {
             get

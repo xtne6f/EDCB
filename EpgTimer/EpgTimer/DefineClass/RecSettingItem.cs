@@ -24,6 +24,8 @@ namespace EpgTimer
             }
         }
         public virtual RecSettingData RecSettingInfo { get { return null; } }
+        public virtual bool IsManual { get { return false; } }
+
         public virtual String MarginStart
         {
             get
@@ -66,7 +68,7 @@ namespace EpgTimer
             {
                 if (RecSettingInfo == null) return "";
                 //
-                return RecSettingInfo.LookUpPreset().DisplayName;
+                return RecSettingInfo.LookUpPreset(IsManual).DisplayName;
             }
         }
         public virtual String RecMode

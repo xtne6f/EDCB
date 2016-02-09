@@ -7,6 +7,7 @@ namespace EpgTimer
 {
     public class RecPresetItem
     {
+        public const UInt32 CustomID = 0xFFFFFFFF;
         public RecPresetItem() { }
         public RecPresetItem(string name, UInt32 id, RecSettingData data = null)
         { DisplayName = name; ID = id; recPresetData = data; }
@@ -36,6 +37,8 @@ namespace EpgTimer
                 recPresetData = value;
             }
         }
+        [System.Xml.Serialization.XmlIgnore]
+        public bool IsCustom { get { return ID == RecPresetItem.CustomID; } }
 
         public void LoadRecPresetData()
         {

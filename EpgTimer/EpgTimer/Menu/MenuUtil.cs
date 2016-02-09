@@ -972,6 +972,8 @@ namespace EpgTimer
         {
             try
             {
+                if (item == null) return;
+
                 var dlg = new SearchWindow();
                 dlg.SetViewMode(SearchWindow.SearchMode.NewAdd);
 
@@ -980,8 +982,20 @@ namespace EpgTimer
                 key.regExpFlag = 0;
                 key.serviceList.Clear();
                 key.serviceList.Add((Int64)item.Create64Key());
-
                 dlg.SetSearchKey(key);
+
+                if (item is IRecSetttingData)
+                {
+                    var item_r = (item as IRecSetttingData);
+                    RecPresetItem recPreSet = item_r.RecSettingInfo.LookUpPreset(item_r.IsManual, true);
+                    RecSettingData recSet = recPreSet.RecPresetData;
+                    if (recPreSet.IsCustom == true && recSet.RecMode == 5)
+                    {
+                        recSet.RecMode = 1;
+                    }
+                    dlg.SetRecSetting(recSet);
+                }
+
                 dlg.Show();
             }
             catch (Exception ex)

@@ -63,7 +63,7 @@ namespace EpgTimer
             for (int i = 0; i < comboBox_preSet.Items.Count; i++)
             {
                 var preItem = comboBox_preSet.Items[i] as RecPresetItem;
-                if (preItem.ID == 0xFFFFFFFF) continue;
+                if (preItem.IsCustom == true) continue;
 
                 preItem.ID = (UInt32)i;
                 preItem.SaveRecPresetData();
@@ -111,8 +111,8 @@ namespace EpgTimer
             recSetting = set.Clone();
 
             //"登録時"を追加する。既存があれば追加前に削除する。検索ダイアログの上下ボタンの移動用のコード。
-            comboBox_preSet.Items.Remove(FindPresetItem(0xFFFFFFFF));
-            comboBox_preSet.Items.Add(new RecPresetItem("登録時", 0xFFFFFFFF, set.Clone()));
+            comboBox_preSet.Items.Remove(FindPresetItem(RecPresetItem.CustomID));
+            comboBox_preSet.Items.Add(new RecPresetItem("登録時", RecPresetItem.CustomID, set.Clone()));
 
             //該当するものがあれば選択、無ければ"登録時"。一応特定条件下で齟齬が出ないように2回検索にしておく。
             object target = FindPresetItem(set.LookUpPreset(isDisplayManual).ID);
@@ -503,7 +503,7 @@ namespace EpgTimer
                         MessageBox.Show("デフォルトは削除できません");
                         return;
                     }
-                    else if (item.ID == 0xFFFFFFFF)
+                    else if (item.IsCustom == true)
                     {
                         MessageBox.Show("このプリセットは変更できません");
                         return;
@@ -540,7 +540,7 @@ namespace EpgTimer
                 }
                 if (setting.ShowDialog() == true)
                 {
-                    RecPresetItem preCust = FindPresetItem(0xFFFFFFFF);
+                    RecPresetItem preCust = FindPresetItem(RecPresetItem.CustomID);
                     int insertIndex = comboBox_preSet.Items.Count + (preCust == null ? 0 : -1);
                     var newInfo = new RecPresetItem(setting.GetName(), 0, GetRecSetting());//IDはSavePresetですぐ割り振られる。
                     comboBox_preSet.Items.Insert(insertIndex, newInfo);
@@ -562,7 +562,7 @@ namespace EpgTimer
                 {
                     var item = comboBox_preSet.SelectedItem as RecPresetItem;
 
-                    if (item.ID == 0xFFFFFFFF)
+                    if (item.IsCustom == true)
                     {
                         MessageBox.Show("このプリセットは変更できません");
                         return;

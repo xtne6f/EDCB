@@ -8,6 +8,7 @@ namespace EpgTimer
     public interface IRecSetttingData
     {
         RecSettingData RecSettingInfo { get; }
+        bool IsManual { get; }
     }
 
     public static class RecSettingDataEx
@@ -23,7 +24,7 @@ namespace EpgTimer
             {
                 return p1.RecPresetData.EqualsSettingTo(data, IsManual);
             });
-            return preset == null ? new RecPresetItem("登録時", 0xFFFFFFFF, CopyData == true ? data.Clone() : null) : preset;
+            return preset == null ? new RecPresetItem("登録時", RecPresetItem.CustomID, CopyData == true ? data.Clone() : null) : preset;
         }
 
         public static List<string> GetRecFolderViewList(this RecSettingData recSetting)
