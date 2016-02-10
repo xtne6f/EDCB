@@ -22,7 +22,7 @@ namespace EpgTimer
         }
         protected override void mc_ChangeRecSetting(object sender, ExecutedRoutedEventArgs e)
         {
-            if (mcc_chgRecSetting(dataList.RecSettingList(), e, this.Owner) == false) return;
+            if (mcc_chgRecSetting(e) == false) return;
             IsCommandExecuted = mutil.AutoAddChange(dataList);
         }
         protected override void mc_ChgBulkRecSet(object sender, ExecutedRoutedEventArgs e)
@@ -69,7 +69,7 @@ namespace EpgTimer
         {
             if (menu.Tag == EpgCmdsEx.ChgMenu)
             {
-                mcs_chgMenuOpening(menu, dataList.RecSettingList(), typeof(T) == typeof(ManualAutoAddData));
+                mcs_chgMenuOpening(menu);
             }
             else if (menu.Tag == EpgCmds.JumpReserve || menu.Tag == EpgCmds.JumpTuner || menu.Tag == EpgCmds.JumpTable)
             {

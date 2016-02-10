@@ -111,7 +111,7 @@ namespace EpgTimer
         }
         protected override void mc_ChangeRecSetting(object sender, ExecutedRoutedEventArgs e)
         {
-            if (mcc_chgRecSetting(dataList.RecSettingList(), e, this.Owner) == false) return;
+            if (mcc_chgRecSetting(e) == false) return;
             IsCommandExecuted = mutil.ReserveChange(dataList);
         }
         protected override void mc_ChgResMode(object sender, ExecutedRoutedEventArgs e)
@@ -315,8 +315,7 @@ namespace EpgTimer
             }
             else if (menu.Tag == EpgCmdsEx.ChgMenu)
             {
-                List<int> mList = dataList.Select(info => info.IsEpgReserve == true ? 0 : 1).ToList();
-                mcs_chgMenuOpening(menu, dataList.RecSettingList(), mList.Sum() == dataList.Count, mList);
+                mcs_chgMenuOpening(menu);
             }
             else if (menu.Tag == EpgCmds.JumpReserve || menu.Tag == EpgCmds.JumpTuner)
             {

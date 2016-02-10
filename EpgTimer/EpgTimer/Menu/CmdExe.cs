@@ -336,8 +336,10 @@ namespace EpgTimer
                 mainWindow.RefreshMenu(true);
             }
         }
-        protected bool mcc_chgRecSetting(List<RecSettingData> infoList, ExecutedRoutedEventArgs e, Control owner = null)
+        protected bool mcc_chgRecSetting(ExecutedRoutedEventArgs e)
         {
+            List<RecSettingData> infoList = dataList.OfType<IRecSetttingData>().RecSettingList();
+
             if (e.Command == EpgCmds.ChgOnPreset)
             {
                 return mutil.ChangeOnPreset(infoList, (uint)CmdExeUtil.ReadIdData(e, 0, 0xFE));
@@ -368,7 +370,7 @@ namespace EpgTimer
             }
             else if (e.Command == EpgCmds.ChgMarginStartValue)
             {
-                return mutil.ChangeMarginValue(infoList, true, owner);
+                return mutil.ChangeMarginValue(infoList, true, this.Owner);
             }
             else if (e.Command == EpgCmds.ChgMarginEnd)
             {
@@ -376,7 +378,7 @@ namespace EpgTimer
             }
             else if (e.Command == EpgCmds.ChgMarginEndValue)
             {
-                return mutil.ChangeMarginValue(infoList, false, owner);
+                return mutil.ChangeMarginValue(infoList, false, this.Owner);
             }
             return false;
         }
@@ -448,12 +450,13 @@ namespace EpgTimer
                 }
             }
         }
-        protected void mcs_chgMenuOpening(MenuItem menu, List<RecSettingData> recSettings, bool pgAll = false, List<int> isManuals = null)
+        protected void mcs_chgMenuOpening(MenuItem menu)
         {
             if (menu.IsEnabled == false) return;
 
+            var listr = dataList.OfType<IRecSetttingData>().ToList();
+            List<RecSettingData> recSettings = listr.RecSettingList();
             var view = (menu.CommandParameter as EpgCmdParam).Code;
-            if (isManuals != null) pgAll = recSettings.Count == isManuals.Sum();
 
             Action<MenuItem, int> SetCheckmarkSubMenus = (subMenu, value) =>
             {
@@ -484,10 +487,8 @@ namespace EpgTimer
                 {
                     mm.CtxmGenerateChgOnPresetItems(subMenu);
 
-                    Func<int, bool> IsManual = (idx) => isManuals == null ? pgAll == true : isManuals[idx] == 1;
-                    RecPresetItem pre_0 = recSettings[0].LookUpPreset(IsManual(0));
-                    RecPresetItem value = recSettings.Select((info, i) => new { info, i })
-                        .All(data => data.info.LookUpPreset(IsManual(data.i)).ID == pre_0.ID) ? pre_0 : null;
+                    RecPresetItem pre_0 = listr[0].RecSettingInfo.LookUpPreset(listr[0].IsManual);
+                    RecPresetItem value = listr.All(data => data.RecSettingInfo.LookUpPreset(data.IsManual).ID == pre_0.ID) ? pre_0 : null;
                     subMenu.Header = string.Format("プリセット : {0}", value == null ? "*" : value.DisplayName);
                     SetCheckmarkSubMenus(subMenu, value == null ? int.MinValue : (int)value.ID);
                 }
@@ -568,8 +569,8 @@ namespace EpgTimer
                     }
                     subMenu.Header = string.Format(format, value == byte.MaxValue ? "*" : CommonManager.Instance.YesNoDictionary[value].DisplayName);
                     SetCheckmarkSubMenus(subMenu, value);
-                    subMenu.IsEnabled = (pgAll == false);
-                    subMenu.ToolTip = (pgAll == true ? "プログラム予約は対象外" : null);
+                    subMenu.IsEnabled = listr.Any(info => info.IsManual == false);
+                    subMenu.ToolTip = (subMenu.IsEnabled != true ? "プログラム予約は対象外" : null);
                 }
                 else if (subMenu.Tag == EpgCmdsEx.ChgTunerMenu)
                 {
