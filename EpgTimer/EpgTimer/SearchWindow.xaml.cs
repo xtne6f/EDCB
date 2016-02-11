@@ -120,6 +120,7 @@ namespace EpgTimer
                 checkBox_windowPinned.IsChecked = Settings.Instance.SearchWndPinned;
 
                 SetSearchKey(Settings.Instance.DefSearchKey);
+                SetRecSetting(Settings.Instance.RecPresetList[0].RecPresetData);
 
                 //notify残ってれば更新。通常残ってないはず。
                 vutil.ReloadReserveData();
@@ -161,6 +162,19 @@ namespace EpgTimer
         public void SetRecSetting(RecSettingData set)
         {
             recSettingView.SetDefSetting(set);
+
+            if (Settings.Instance.DisplayPresetOnSearch == true)
+            {
+                var preset = recSettingView.comboBox_preSet.SelectedItem as RecPresetItem;
+                if (preset != null && string.IsNullOrEmpty(preset.DisplayName) == false)
+                {
+                    tabItem2.Header = string.Format("録画設定 - {0}", preset.DisplayName);
+                }
+            }
+            else
+            {
+                tabItem2.Header = "録画設定";
+            }
         }
 
         public EpgAutoAddData GetAutoAddData()
@@ -175,8 +189,8 @@ namespace EpgTimer
         public void SetAutoAddData(EpgAutoAddData data)
         {
             autoAddID = data.dataID;
-            searchKeyView.SetSearchKey(data.searchInfo);
-            recSettingView.SetDefSetting(data.recSetting);
+            SetSearchKey(data.searchInfo);
+            SetRecSetting(data.recSetting);
         }
 
         private void ChangeAutoAddData(EpgAutoAddData data, bool refresh = true)

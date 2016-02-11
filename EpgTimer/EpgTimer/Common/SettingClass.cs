@@ -332,6 +332,7 @@ namespace EpgTimer
         private bool tryEpgSetting;
         private bool laterTimeUse;
         private int laterTimeHour;
+        private bool displayPresetOnSearch;
 
         public bool UseCustomEpgView
         {
@@ -1163,6 +1164,11 @@ namespace EpgTimer
             get { return laterTimeHour; }
             set { laterTimeHour = value; }
         }
+        public bool DisplayPresetOnSearch
+        {
+            get { return displayPresetOnSearch; }
+            set { displayPresetOnSearch = value; }
+        }
         
         public Settings()
         {
@@ -1326,6 +1332,7 @@ namespace EpgTimer
             tryEpgSetting = true;
             laterTimeUse = false;
             laterTimeHour = 28 - 24;
+            displayPresetOnSearch = false;
         }
 
         [NonSerialized()]
