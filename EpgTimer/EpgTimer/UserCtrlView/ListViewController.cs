@@ -18,8 +18,8 @@ namespace EpgTimer
         private MenuUtil mutil = CommonManager.Instance.MUtil;
         private ViewUtil vutil = CommonManager.Instance.VUtil;
 
-        public GridViewSelector gvSelector { get; set; }
-        public GridViewSorter gvSorter { get; set; }
+        public GridViewSelector gvSelector { get; private set; }
+        public GridViewSorter gvSorter { get; private set; }
         public List<T> dataList { get; set; }
 
         private ListBoxItem ClickTarget = null;
@@ -49,14 +49,21 @@ namespace EpgTimer
             sort_HeaderSavePath = sortHeaderSavePath;
             sort_DirectionSavePath = sortDirectionSavePath;
 
-            initialSortKey = Settings.Instance.GetSettings(sort_HeaderSavePath) as string;
             object direction = Settings.Instance.GetSettings(sort_DirectionSavePath);
-            if (direction != null) initialDirection = (ListSortDirection)direction;
+            SetInitialSortKey(Settings.Instance.GetSettings(sort_HeaderSavePath) as string,
+                direction != null ? (ListSortDirection)direction : ListSortDirection.Ascending);
         }
         public void SetInitialSortKey(string sortKsy, ListSortDirection sortDirection = ListSortDirection.Ascending)
         {
             initialSortKey = sortKsy;
             initialDirection = sortDirection;
+            gvInitialSort();
+        }
+        private void gvInitialSort()
+        {
+            //アイテム無くてもカラムに強調表示が付く
+            if (gvSorter == null || gridView == null) return;
+            this.gvSorter.SortByMultiHeaderWithKey(dataList, gridView.Columns, initialSortKey, true, initialDirection);
         }
         public void SetViewSetting(ListView lv, GridView gv, bool isSortOnReload
             , List<GridViewColumn> cols_source = null, RoutedEventHandler headerclick = null)
@@ -64,10 +71,6 @@ namespace EpgTimer
             listView = lv;
             gridView = gv;
             IsSortViewOnReload = isSortOnReload;
-            if (IsSortViewOnReload == false)
-            {
-                this.gvSorter = new GridViewSorter();
-            }
 
             //グリッド列の差し込み。クリアせずに追加する。
             if (cols_source != null)
@@ -87,6 +90,8 @@ namespace EpgTimer
             }
 
             gvSelector = new GridViewSelector(gv, this.columnSaveList);
+            gvSorter = new GridViewSorter();
+            gvInitialSort();
 
             //アイテムの無い場所でクリックしたとき、選択を解除する。
             listView.MouseLeftButtonUp += new MouseButtonEventHandler((sender, e) =>
@@ -138,11 +143,8 @@ namespace EpgTimer
             try
             {
                 gvSelector.SaveSize(this.columnSaveList);
-                if (gvSorter != null)
-                {
-                    Settings.Instance.SetSettings(sort_HeaderSavePath, this.gvSorter.LastHeader);
-                    Settings.Instance.SetSettings(sort_DirectionSavePath, this.gvSorter.LastDirection);
-                }
+                Settings.Instance.SetSettings(sort_HeaderSavePath, this.gvSorter.LastHeader);
+                Settings.Instance.SetSettings(sort_DirectionSavePath, this.gvSorter.LastDirection);
             }
             catch (Exception ex)
             {
@@ -170,16 +172,7 @@ namespace EpgTimer
 
                 if (IsSortViewOnReload == true)
                 {
-                    if (this.gvSorter != null)
-                    {
-                        this.gvSorter.SortByMultiHeader(dataList);
-                    }
-                    else
-                    {
-                        this.gvSorter = new GridViewSorter();
-                        this.gvSorter.SortByMultiHeaderWithKey(dataList, gridView.Columns,
-                            initialSortKey, true, initialDirection);
-                    }
+                    this.gvSorter.SortByMultiHeader(dataList);
                 }
                 else
                 {
@@ -206,8 +199,6 @@ namespace EpgTimer
         {
             try
             {
-                if (gvSorter == null) return false;
-
                 GridViewColumnHeader headerClicked1 = e.OriginalSource as GridViewColumnHeader;
                 if (headerClicked1 != null)
                 {
