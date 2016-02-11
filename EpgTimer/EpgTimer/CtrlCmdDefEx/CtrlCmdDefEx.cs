@@ -218,32 +218,32 @@ namespace EpgTimer
             }
         }
 
-        //ソート用の代替プロパティがあればその名前を返す
-        public static string GetValuePropertyName(Type t, string key)
+        //ソート用の代替プロパティ用の変換メソッドを返す
+        public static Func<string, string> GetValuePropertyFunc(Type t)
         {
             if (t == typeof(ReserveItem))
             {
-                return ReserveItem.GetValuePropertyName(key);
+                return ReserveItem.GetValuePropertyName;
             }
             else if (t == typeof(SearchItem))
             {
-                return SearchItem.GetValuePropertyName(key);
+                return SearchItem.GetValuePropertyName;
             }
             else if (t == typeof(RecInfoItem))
             {
-                return RecInfoItem.GetValuePropertyName(key);
+                return RecInfoItem.GetValuePropertyName;
             }
             else if (t == typeof(EpgAutoDataItem))
             {
-                return EpgAutoDataItem.GetValuePropertyName(key);
+                return EpgAutoDataItem.GetValuePropertyName;
             }
             else if (t == typeof(ManualAutoAddDataItem))
             {
-                return ManualAutoAddDataItem.GetValuePropertyName(key);
+                return ManualAutoAddDataItem.GetValuePropertyName;
             }
             else
             {
-                return key;
+                return str => str;
             }
         }
 

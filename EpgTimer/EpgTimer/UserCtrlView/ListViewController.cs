@@ -19,7 +19,7 @@ namespace EpgTimer
         private ViewUtil vutil = CommonManager.Instance.VUtil;
 
         public GridViewSelector gvSelector { get; set; }
-        public GridViewSorter<T> gvSorter { get; set; }
+        public GridViewSorter gvSorter { get; set; }
         public List<T> dataList { get; set; }
 
         private ListBoxItem ClickTarget = null;
@@ -66,7 +66,7 @@ namespace EpgTimer
             IsSortViewOnReload = isSortOnReload;
             if (IsSortViewOnReload == false)
             {
-                this.gvSorter = new GridViewSorter<T>();
+                this.gvSorter = new GridViewSorter();
             }
 
             //グリッド列の差し込み。クリアせずに追加する。
@@ -176,7 +176,7 @@ namespace EpgTimer
                     }
                     else
                     {
-                        this.gvSorter = new GridViewSorter<T>();
+                        this.gvSorter = new GridViewSorter();
                         this.gvSorter.SortByMultiHeaderWithKey(dataList, gridView.Columns,
                             initialSortKey, true, initialDirection);
                     }

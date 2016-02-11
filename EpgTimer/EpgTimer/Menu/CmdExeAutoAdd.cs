@@ -14,7 +14,7 @@ namespace EpgTimer
         public CmdExeAutoAdd(Control owner) : base(owner) { }
         protected override void mc_ChangeKeyEnabled(object sender, ExecutedRoutedEventArgs e)
         {
-            IsCommandExecuted = mutil.AutoAddChangeKeyEnabled(dataList, (byte)CmdExeUtil.ReadIdData(e, 0, 1));
+            IsCommandExecuted = mutil.AutoAddChangeKeyEnabled(dataList, (byte)CmdExeUtil.ReadIdData(e, 0, 1) == 0);
         }
         protected override void mc_ChangeOnOffKeyEnabled(object sender, ExecutedRoutedEventArgs e)
         {

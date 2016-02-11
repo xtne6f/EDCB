@@ -643,43 +643,43 @@ namespace EpgTimer
                                 MessageBoxImage.Exclamation, MessageBoxResult.Cancel) == MessageBoxResult.OK;
         }
 
-        public bool AutoAddChangeKeyEnabled<T>(List<T> itemlist, byte value) where T : AutoAddData
+        public bool AutoAddChangeKeyEnabled(IEnumerable<AutoAddData> itemlist, bool value)
         {
             try
             {
                 if (AutoAddChangeKeyEnabledCautionMany(itemlist) == false) return false;
 
-                itemlist.ForEach(item => item.IsEnabled = value == 0);
+                foreach (var item in itemlist) item.IsEnabled = value;
                 return AutoAddChange(itemlist, false);
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
             return false;
         }
-        public bool AutoAddChangeOnOffKeyEnabled<T>(List<T> itemlist) where T : AutoAddData
+        public bool AutoAddChangeOnOffKeyEnabled(IEnumerable<AutoAddData> itemlist)
         {
             try
             {
                 if (AutoAddChangeKeyEnabledCautionMany(itemlist) == false) return false;
 
-                itemlist.ForEach(item => item.IsEnabled = !item.IsEnabled);
+                foreach (var item in itemlist) item.IsEnabled = !item.IsEnabled;
                 return AutoAddChange(itemlist, false);
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
             return false;
         }
-        public bool AutoAddChangeKeyEnabledCautionMany<T>(List<T> itemlist) where T : AutoAddData
+        public bool AutoAddChangeKeyEnabledCautionMany(IEnumerable<AutoAddData> itemlist)
         {
             if (Settings.Instance.CautionManyChange == true)
             {
                 long addReserveNum = itemlist.Where(item => item.IsEnabled == false)
                     .Sum(item => item.SearchCount - item.ReserveCount);
-                if (itemlist.Count >= Settings.Instance.CautionManyNum
+                if (itemlist.Count() >= Settings.Instance.CautionManyNum
                     || addReserveNum >= Settings.Instance.CautionManyNum)
                 {
                     if (MessageBox.Show("多数の項目を処理しようとしています。\r\n"
                         + "または多数の予約が追加されます。\r\n"
                         + "よろしいですか？\r\n\r\n"
-                        + "[項目数 : " + itemlist.Count + "]\r\n"
+                        + "[項目数 : " + itemlist.Count() + "]\r\n"
                         + "[追加される予約数 : " + addReserveNum + "]\r\n"
                         , "自動予約登録の変更", MessageBoxButton.OKCancel,
                         MessageBoxImage.Exclamation, MessageBoxResult.Cancel) == MessageBoxResult.Cancel)
@@ -703,20 +703,20 @@ namespace EpgTimer
                 return false;
             }
         }
-        public bool AutoAddAdd<T>(List<T> itemlist, bool cautionMany = true) where T : AutoAddData
+        public bool AutoAddAdd(IEnumerable<AutoAddData> itemlist, bool cautionMany = true)
         {
             return ReserveCmdSend(itemlist.OfType<EpgAutoAddData>().ToList(), cmd.SendAddEpgAutoAdd, "キーワード予約の追加") 
                 && ReserveCmdSend(itemlist.OfType<ManualAutoAddData>().ToList(), cmd.SendAddManualAdd, "プログラム自動予約の追加");
         }
-        public bool AutoAddChange<T>(List<T> itemlist, bool cautionMany = true) where T : AutoAddData
+        public bool AutoAddChange(IEnumerable<AutoAddData> itemlist, bool cautionMany = true)
         {
             return AutoAddChange(itemlist, Settings.Instance.SyncResAutoAddChange, Settings.Instance.SyncResAutoAddChgNewRes, cautionMany);
         }
-        public bool AutoAddChange<T>(List<T> itemlist, bool SyncChange, bool NewRes, bool cautionMany) where T : AutoAddData
+        public bool AutoAddChange(IEnumerable<AutoAddData> itemlist, bool SyncChange, bool NewRes, bool cautionMany)
         {
             try
             {
-                if (cautionMany == true && CautionManyMessage(itemlist.Count, "自動予約登録の変更") == false) return false;
+                if (cautionMany == true && CautionManyMessage(itemlist.Count(), "自動予約登録の変更") == false) return false;
 
                 if (SyncChange == true)
                 {
@@ -776,11 +776,11 @@ namespace EpgTimer
                 return ReserveChange(syncList, false);
             }
         }
-        public bool AutoAddDelete<T>(List<T> itemlist) where T : AutoAddData
+        public bool AutoAddDelete(IEnumerable<AutoAddData> itemlist)
         {
             return AutoAddDelete(itemlist, Settings.Instance.SyncResAutoAddDelete, false, false);
         }
-        public bool AutoAddDelete<T>(List<T> itemlist, bool SyncDelete, bool SyncAll, bool cautionManyRes) where T : AutoAddData
+        public bool AutoAddDelete(IEnumerable<AutoAddData> itemlist, bool SyncDelete, bool SyncAll, bool cautionManyRes)
         {
             try
             {
