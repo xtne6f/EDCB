@@ -129,6 +129,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		TIMER_RETRY_ADD_TRAY,
 		TIMER_SET_RESUME,
 		TIMER_CHECK,
+		TIMER_RESET_HTTP_SERVER,
 	};
 
 	MAIN_WINDOW_CONTEXT* ctx = (MAIN_WINDOW_CONTEXT*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
@@ -179,73 +180,18 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 			unsigned short tcpPort_;
 			DWORD tcpResTo;
 			wstring tcpAcl;
-			wstring httpPorts_;
-			wstring httpPublicFolder_;
-			wstring httpAcl;
-			bool httpSaveLog_ = false;
-			bool enableSsdpServer_;
 			{
 				CBlockLock lock(&ctx->sys->settingLock);
 				tcpPort_ = ctx->sys->tcpPort;
 				tcpResTo = ctx->sys->tcpResponseTimeoutSec * 1000;
 				tcpAcl = ctx->sys->tcpAccessControlList;
-				httpPorts_ = ctx->sys->httpPorts;
-				httpPublicFolder_ = ctx->sys->httpPublicFolder;
-				httpAcl = ctx->sys->httpAccessControlList;
-				httpSaveLog_ = ctx->sys->httpSaveLog;
-				enableSsdpServer_ = ctx->sys->enableSsdpServer;
 			}
 			if( tcpPort_ == 0 ){
 				ctx->tcpServer.StopServer();
 			}else{
 				ctx->tcpServer.StartServer(tcpPort_, tcpResTo ? tcpResTo : MAXDWORD, tcpAcl.c_str(), CtrlCmdTcpCallback, ctx->sys);
 			}
-			ctx->upnpServer.Stop();
-			if( httpPorts_.empty() ){
-				ctx->httpServer.StopServer();
-			}else{
-				if( ctx->httpServer.StartServer(httpPorts_.c_str(), httpPublicFolder_.c_str(), InitLuaCallback, ctx->sys, httpSaveLog_, httpAcl.c_str()) ){
-					if( enableSsdpServer_ ){
-						//"ddd.xml"の先頭から2KB以内に"<UDN>uuid:{UUID}</UDN>"が必要
-						char dddBuf[2048] = {};
-						HANDLE hFile = CreateFile((httpPublicFolder_ + L"\\dlna\\dms\\ddd.xml").c_str(),
-						                          GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-						if( hFile != INVALID_HANDLE_VALUE ){
-							DWORD dwRead;
-							ReadFile(hFile, dddBuf, sizeof(dddBuf) - 1, &dwRead, NULL);
-							CloseHandle(hFile);
-						}
-						string dddStr = dddBuf;
-						size_t udnFrom = dddStr.find("<UDN>uuid:");
-						if( udnFrom != string::npos && dddStr.size() > udnFrom + 10 + 36 && dddStr.compare(udnFrom + 10 + 36, 6, "</UDN>") == 0 ){
-							string notifyUuid(dddStr, udnFrom + 5, 41);
-							//最後にみつかった':'より後ろか先頭を_wtoiした結果を通知ポートとする
-							unsigned short notifyPort = (unsigned short)_wtoi(httpPorts_.c_str() +
-								(httpPorts_.find_last_of(':') == wstring::npos ? 0 : httpPorts_.find_last_of(':') + 1));
-							//UPnPのUDP(Port1900)部分を担当するサーバ
-							LPCSTR targetArray[] = { "upnp:rootdevice", UPNP_URN_DMS_1, UPNP_URN_CDS_1, UPNP_URN_CMS_1, UPNP_URN_AVT_1 };
-							vector<CUpnpSsdpServer::SSDP_TARGET_INFO> targetList(2 + _countof(targetArray));
-							targetList[0].target = notifyUuid;
-							Format(targetList[0].location, "http://$HOST$:%d/dlna/dms/ddd.xml", notifyPort);
-							targetList[0].usn = targetList[0].target;
-							targetList[0].notifyFlag = true;
-							targetList[1].target = "ssdp:all";
-							targetList[1].location = targetList[0].location;
-							targetList[1].usn = notifyUuid + "::" + "upnp:rootdevice";
-							targetList[1].notifyFlag = false;
-							for( size_t i = 2; i < targetList.size(); i++ ){
-								targetList[i].target = targetArray[i - 2];
-								targetList[i].location = targetList[0].location;
-								targetList[i].usn = notifyUuid + "::" + targetList[i].target;
-								targetList[i].notifyFlag = true;
-							}
-							ctx->upnpServer.Start(targetList);
-						}else{
-							OutputDebugString(L"Invalid ddd.xml\r\n");
-						}
-					}
-				}
-			}
+			SetTimer(hwnd, TIMER_RESET_HTTP_SERVER, 200, NULL);
 		}
 		break;
 	case WM_RELOAD_EPG_CHK:
@@ -559,6 +505,66 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				case CReserveManager::CHECK_RESERVE_MODIFIED:
 					SendMessage(hwnd, WM_TIMER, TIMER_SET_RESUME, 0);
 					break;
+				}
+			}
+			break;
+		case TIMER_RESET_HTTP_SERVER:
+			ctx->upnpServer.Stop();
+			if( ctx->httpServer.StopServer(true) ){
+				KillTimer(hwnd, TIMER_RESET_HTTP_SERVER);
+				wstring httpPorts_;
+				wstring httpPublicFolder_;
+				wstring httpAcl;
+				bool httpSaveLog_;
+				bool enableSsdpServer_;
+				{
+					CBlockLock lock(&ctx->sys->settingLock);
+					httpPorts_ = ctx->sys->httpPorts;
+					httpPublicFolder_ = ctx->sys->httpPublicFolder;
+					httpAcl = ctx->sys->httpAccessControlList;
+					httpSaveLog_ = ctx->sys->httpSaveLog;
+					enableSsdpServer_ = ctx->sys->enableSsdpServer;
+				}
+				if( httpPorts_.empty() == false &&
+				    ctx->httpServer.StartServer(httpPorts_.c_str(), httpPublicFolder_.c_str(), InitLuaCallback, ctx->sys, httpSaveLog_, httpAcl.c_str()) &&
+				    enableSsdpServer_ ){
+					//"ddd.xml"の先頭から2KB以内に"<UDN>uuid:{UUID}</UDN>"が必要
+					char dddBuf[2048] = {};
+					HANDLE hFile = CreateFile((httpPublicFolder_ + L"\\dlna\\dms\\ddd.xml").c_str(),
+					                          GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+					if( hFile != INVALID_HANDLE_VALUE ){
+						DWORD dwRead;
+						ReadFile(hFile, dddBuf, sizeof(dddBuf) - 1, &dwRead, NULL);
+						CloseHandle(hFile);
+					}
+					string dddStr = dddBuf;
+					size_t udnFrom = dddStr.find("<UDN>uuid:");
+					if( udnFrom != string::npos && dddStr.size() > udnFrom + 10 + 36 && dddStr.compare(udnFrom + 10 + 36, 6, "</UDN>") == 0 ){
+						string notifyUuid(dddStr, udnFrom + 5, 41);
+						//最後にみつかった':'より後ろか先頭を_wtoiした結果を通知ポートとする
+						unsigned short notifyPort = (unsigned short)_wtoi(httpPorts_.c_str() +
+							(httpPorts_.find_last_of(':') == wstring::npos ? 0 : httpPorts_.find_last_of(':') + 1));
+						//UPnPのUDP(Port1900)部分を担当するサーバ
+						LPCSTR targetArray[] = { "upnp:rootdevice", UPNP_URN_DMS_1, UPNP_URN_CDS_1, UPNP_URN_CMS_1, UPNP_URN_AVT_1 };
+						vector<CUpnpSsdpServer::SSDP_TARGET_INFO> targetList(2 + _countof(targetArray));
+						targetList[0].target = notifyUuid;
+						Format(targetList[0].location, "http://$HOST$:%d/dlna/dms/ddd.xml", notifyPort);
+						targetList[0].usn = targetList[0].target;
+						targetList[0].notifyFlag = true;
+						targetList[1].target = "ssdp:all";
+						targetList[1].location = targetList[0].location;
+						targetList[1].usn = notifyUuid + "::" + "upnp:rootdevice";
+						targetList[1].notifyFlag = false;
+						for( size_t i = 2; i < targetList.size(); i++ ){
+							targetList[i].target = targetArray[i - 2];
+							targetList[i].location = targetList[0].location;
+							targetList[i].usn = notifyUuid + "::" + targetList[i].target;
+							targetList[i].notifyFlag = true;
+						}
+						ctx->upnpServer.Start(targetList);
+					}else{
+						OutputDebugString(L"Invalid ddd.xml\r\n");
+					}
 				}
 			}
 			break;

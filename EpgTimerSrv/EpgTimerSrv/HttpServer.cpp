@@ -116,16 +116,23 @@ bool CHttpServer::StartServer(LPCWSTR ports, LPCWSTR rootPath, int (*initProc)(l
 	return this->mgContext != NULL;
 }
 
-void CHttpServer::StopServer()
+bool CHttpServer::StopServer(bool checkOnly)
 {
 	if( this->mgContext ){
-		mg_stop(this->mgContext);
+		if( checkOnly ){
+			if( mg_check_stop(this->mgContext) == 0 ){
+				return false;
+			}
+		}else{
+			mg_stop(this->mgContext);
+		}
 		this->mgContext = NULL;
 	}
 	if( this->hLuaDll ){
 		FreeLibrary(this->hLuaDll);
 		this->hLuaDll = NULL;
 	}
+	return true;
 }
 
 void CHttpServer::InitLua(const mg_connection* conn, void* luaContext)
