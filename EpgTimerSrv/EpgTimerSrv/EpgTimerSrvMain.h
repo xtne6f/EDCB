@@ -128,6 +128,9 @@ private:
 	wstring httpPorts;
 	wstring httpPublicFolder;
 	wstring httpAccessControlList;
+	wstring httpAuthenticationDomain;
+	int httpNumThreads;
+	int httpRequestTimeoutSec;
 	bool httpSaveLog;
 	bool enableSsdpServer;
 	vector<pair<int, wstring>> dmsPublicFileList;

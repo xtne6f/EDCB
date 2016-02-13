@@ -515,6 +515,9 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				wstring httpPorts_;
 				wstring httpPublicFolder_;
 				wstring httpAcl;
+				wstring httpAuthDomain;
+				int httpNumThreads_;
+				int httpReqTo;
 				bool httpSaveLog_;
 				bool enableSsdpServer_;
 				{
@@ -522,11 +525,15 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 					httpPorts_ = ctx->sys->httpPorts;
 					httpPublicFolder_ = ctx->sys->httpPublicFolder;
 					httpAcl = ctx->sys->httpAccessControlList;
+					httpAuthDomain = ctx->sys->httpAuthenticationDomain;
+					httpNumThreads_ = ctx->sys->httpNumThreads;
+					httpReqTo = ctx->sys->httpRequestTimeoutSec * 1000;
 					httpSaveLog_ = ctx->sys->httpSaveLog;
 					enableSsdpServer_ = ctx->sys->enableSsdpServer;
 				}
 				if( httpPorts_.empty() == false &&
-				    ctx->httpServer.StartServer(httpPorts_.c_str(), httpPublicFolder_.c_str(), InitLuaCallback, ctx->sys, httpSaveLog_, httpAcl.c_str()) &&
+				    ctx->httpServer.StartServer(httpPorts_.c_str(), httpPublicFolder_.c_str(), InitLuaCallback, ctx->sys, httpSaveLog_,
+				                                httpAcl.c_str(), httpAuthDomain.c_str(), httpNumThreads_, httpReqTo) &&
 				    enableSsdpServer_ ){
 					//"ddd.xml"‚Ìæ“ª‚©‚ç2KBˆÈ“à‚É"<UDN>uuid:{UUID}</UDN>"‚ª•K—v
 					char dddBuf[2048] = {};
@@ -697,6 +704,9 @@ void CEpgTimerSrvMain::ReloadNetworkSetting()
 			this->dmsPublicFileList.clear();
 		}
 		this->httpAccessControlList = GetPrivateProfileToString(L"SET", L"HttpAccessControlList", L"+127.0.0.1", iniPath.c_str());
+		this->httpAuthenticationDomain = GetPrivateProfileToString(L"SET", L"HttpAuthenticationDomain", L"", iniPath.c_str());
+		this->httpNumThreads = GetPrivateProfileInt(L"SET", L"HttpNumThreads", 3, iniPath.c_str());
+		this->httpRequestTimeoutSec = GetPrivateProfileInt(L"SET", L"HttpRequestTimeoutSec", 120, iniPath.c_str());
 		this->httpPorts = GetPrivateProfileToString(L"SET", L"HttpPort", L"5510", iniPath.c_str());
 		this->httpSaveLog = enableHttpSrv == 2;
 	}

@@ -18,7 +18,8 @@ CHttpServer::~CHttpServer()
 	StopServer();
 }
 
-bool CHttpServer::StartServer(LPCWSTR ports, LPCWSTR rootPath, int (*initProc)(lua_State*), void* initParam, bool saveLog, LPCWSTR acl)
+bool CHttpServer::StartServer(LPCWSTR ports, LPCWSTR rootPath, int (*initProc)(lua_State*), void* initParam, bool saveLog,
+                              LPCWSTR acl, LPCWSTR authDomain, int numThreads, int requestTimeout)
 {
 	StopServer();
 
@@ -59,8 +60,15 @@ bool CHttpServer::StartServer(LPCWSTR ports, LPCWSTR rootPath, int (*initProc)(l
 
 	//Access Control List
 	string aclU;
-	WtoUTF8(acl ? acl : L"", aclU);
+	WtoUTF8(acl, aclU);
 	aclU = "-0.0.0.0/0," + aclU;
+
+	string authDomainU;
+	WtoUTF8(authDomain, authDomainU);
+	string numThreadsU;
+	Format(numThreadsU, "%d", min(max(numThreads, 1), 50));
+	string requestTimeoutU;
+	Format(requestTimeoutU, "%d", max(requestTimeout, 1));
 
 	//追加のMIMEタイプ
 	CParseContentTypeText contentType;
@@ -79,16 +87,20 @@ bool CHttpServer::StartServer(LPCWSTR ports, LPCWSTR rootPath, int (*initProc)(l
 		"extra_mime_types", extraMime.c_str(),
 		"listening_ports", portsU.c_str(),
 		"document_root", rootPathU.c_str(),
-		//必要に応じて増やしてもいい
-		"num_threads", "3",
+		"num_threads", numThreadsU.c_str(),
+		"request_timeout_ms", requestTimeoutU.c_str(),
 		"lua_script_pattern", "**.lua$|**.html$|*/api/*$",
 	};
-	int opCount = 2 * 6;
+	int opCount = 2 * 7;
 	if( saveLog ){
 		options[opCount++] = "access_log_file";
 		options[opCount++] = accessLogPath.c_str();
 		options[opCount++] = "error_log_file";
 		options[opCount++] = errorLogPath.c_str();
+	}
+	if( authDomainU.empty() == false ){
+		options[opCount++] = "authentication_domain";
+		options[opCount++] = authDomainU.c_str();
 	}
 	if( portsU.find('s') != string::npos ){
 		//セキュアポートを含むので認証鍵を指定する
