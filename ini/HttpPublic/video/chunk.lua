@@ -6,9 +6,12 @@
 -- トランスコードするかどうか(する場合はreadex.exeとffmpeg.exeをパスの通ったどこかに用意すること)
 XCODE=false
 -- 変換コマンド
-XCMD='ffmpeg -i pipe:0 -vcodec vp8 -s 512x288 -r 15000/1001 -acodec libvorbis -f webm -'
--- 変換後のメディアタイプ
-XMTYPE=mg.get_mime_type('a.webm')
+-- libvpxの例:リアルタイム変換と画質が両立するようにビットレート-bと計算量-cpu-usedを調整する
+XCMD='ffmpeg -i pipe:0 -vcodec libvpx -b 896k -quality realtime -cpu-used 1 -vf yadif=0:-1:1 -s 512x288 -r 30000/1001 -acodec libvorbis -ab 128k -f webm -'
+-- 変換後の拡張子
+XEXT='.webm'
+-- 転送開始前に変換しておく量(bytes)
+XPREPARE=nil
 
 fname=nil
 for i=0,99 do
@@ -31,10 +34,11 @@ if fname then
     if XCODE then
       f:close()
       f=io.popen('readex '..offset..' 4 "'..fpath..'" | '..XCMD, 'rb')
-      mtype=XMTYPE
+      fname='chunk'..XEXT
     else
       f:seek('set', offset)
-      mtype=mg.get_mime_type(fname)
+      fname='chunk'..(string.match(fname, '%.[0-9A-Za-z]+$') or '')
+      XPREPARE=nil
     end
   end
 end
@@ -42,14 +46,14 @@ end
 if not f then
   mg.write('HTTP/1.1 404 Not Found\r\nConnection: close\r\n\r\n')
 else
-  mg.write('HTTP/1.1 200 OK\r\nContent-Type: '..mtype..'\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\n')
+  mg.write('HTTP/1.1 200 OK\r\nContent-Type: '..mg.get_mime_type(fname)..'\r\nContent-Disposition: filename='..fname..'\r\nConnection: close\r\n\r\n')
   retry=0
   while true do
-    buf=f:read(188 * 64)
+    buf=f:read(XPREPARE or 48128)
+    XPREPARE=nil
     if buf and #buf ~= 0 then
-      -- チャンク転送
       retry=0
-      if not mg.write(string.format('%x\r\n', #buf), buf, '\r\n') then
+      if not mg.write(buf) then
         -- キャンセルされた
         mg.cry('canceled')
         break
@@ -59,7 +63,6 @@ else
       retry=retry+1
       if XCODE or retry > 20 then
         mg.cry('end')
-        mg.write('0\r\n\r\n')
         break
       end
       edcb.Sleep(200)
