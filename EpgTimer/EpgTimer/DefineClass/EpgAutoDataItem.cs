@@ -281,12 +281,12 @@ namespace EpgTimer
                 String view = "";
                 foreach (ulong service1 in EpgAutoAddInfo.searchInfo.serviceList)
                 {
-                    try
+                    if (view != "") { view += ", "; }
+                    if (ChSet5.Instance.ChList.ContainsKey(service1))
                     {
-                        if (view != "") { view += ", "; }
                         view += ChSet5.Instance.ChList[service1].ServiceName;
                     }
-                    catch
+                    else
                     {
                         view += "(x_x)";
                     }
