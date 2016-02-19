@@ -136,7 +136,19 @@ bool CHttpServer::StopServer(bool checkOnly)
 				return false;
 			}
 		}else{
-			mg_stop(this->mgContext);
+			//³í‚Å‚ ‚ê‚Îmg_stop()‚ÍreqTo‚ð’´‚¦‚Ä‘Ò‹@‚·‚é‚±‚Æ‚Í‚È‚¢
+			DWORD reqTo = atoi(mg_get_option(this->mgContext, "request_timeout_ms"));
+			DWORD tick = GetTickCount();
+			while( GetTickCount() - tick < reqTo + 10000 ){
+				if( mg_check_stop(this->mgContext) ){
+					this->mgContext = NULL;
+					break;
+				}
+				Sleep(10);
+			}
+			if( this->mgContext ){
+				OutputDebugString(L"CHttpServer::StopServer(): failed to stop service.\r\n");
+			}
 		}
 		this->mgContext = NULL;
 	}
