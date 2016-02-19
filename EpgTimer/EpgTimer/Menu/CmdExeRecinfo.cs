@@ -66,7 +66,7 @@ namespace EpgTimer
             }
             else if (menu.Tag == EpgCmdsEx.ShowAutoAddDialogMenu)
             {
-                menu.IsEnabled = mm.CtxmGenerateChgAutoAdd(menu, dataList[0]);
+                menu.IsEnabled = mm.CtxmGenerateChgAutoAdd(menu, dataList.Count != 0 ? dataList[0] : null);
             }
             else if (menu.Tag == EpgCmds.OpenFolder)
             {
