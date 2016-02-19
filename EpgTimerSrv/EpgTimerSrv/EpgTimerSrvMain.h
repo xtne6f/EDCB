@@ -7,8 +7,6 @@
 #include "HttpServer.h"
 #include "../../Common/ParseTextInstances.h"
 
-struct _UPNP_MSEARCH_REQUEST_INFO;
-
 //各種サーバと自動予約の管理をおこなう
 //必ずオブジェクト生成→Main()→…→破棄の順番で利用しなければならない
 class CEpgTimerSrvMain
