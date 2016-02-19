@@ -1,6 +1,5 @@
 #include "StdAfx.h"
 #include "EpgTimerSrvMain.h"
-#include "HttpServer.h"
 #include "SyoboiCalUtil.h"
 #include "UpnpSsdpServer.h"
 #include "../../Common/PipeServer.h"
@@ -512,32 +511,19 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 			ctx->upnpServer.Stop();
 			if( ctx->httpServer.StopServer(true) ){
 				KillTimer(hwnd, TIMER_RESET_HTTP_SERVER);
-				wstring httpPorts_;
-				wstring httpPublicFolder_;
-				wstring httpAcl;
-				wstring httpAuthDomain;
-				int httpNumThreads_;
-				int httpReqTo;
-				bool httpSaveLog_;
+				CHttpServer::SERVER_OPTIONS op;
 				bool enableSsdpServer_;
 				{
 					CBlockLock lock(&ctx->sys->settingLock);
-					httpPorts_ = ctx->sys->httpPorts;
-					httpPublicFolder_ = ctx->sys->httpPublicFolder;
-					httpAcl = ctx->sys->httpAccessControlList;
-					httpAuthDomain = ctx->sys->httpAuthenticationDomain;
-					httpNumThreads_ = ctx->sys->httpNumThreads;
-					httpReqTo = ctx->sys->httpRequestTimeoutSec * 1000;
-					httpSaveLog_ = ctx->sys->httpSaveLog;
+					op = ctx->sys->httpOptions;
 					enableSsdpServer_ = ctx->sys->enableSsdpServer;
 				}
-				if( httpPorts_.empty() == false &&
-				    ctx->httpServer.StartServer(httpPorts_.c_str(), httpPublicFolder_.c_str(), InitLuaCallback, ctx->sys, httpSaveLog_,
-				                                httpAcl.c_str(), httpAuthDomain.c_str(), httpNumThreads_, httpReqTo) &&
+				if( op.ports.empty() == false &&
+				    ctx->httpServer.StartServer(op, InitLuaCallback, ctx->sys) &&
 				    enableSsdpServer_ ){
 					//"ddd.xml"の先頭から2KB以内に"<UDN>uuid:{UUID}</UDN>"が必要
 					char dddBuf[2048] = {};
-					HANDLE hFile = CreateFile((httpPublicFolder_ + L"\\dlna\\dms\\ddd.xml").c_str(),
+					HANDLE hFile = CreateFile((op.rootPath + L"\\dlna\\dms\\ddd.xml").c_str(),
 					                          GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 					if( hFile != INVALID_HANDLE_VALUE ){
 						DWORD dwRead;
@@ -549,8 +535,8 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 					if( udnFrom != string::npos && dddStr.size() > udnFrom + 10 + 36 && dddStr.compare(udnFrom + 10 + 36, 6, "</UDN>") == 0 ){
 						string notifyUuid(dddStr, udnFrom + 5, 41);
 						//最後にみつかった':'より後ろか先頭を_wtoiした結果を通知ポートとする
-						unsigned short notifyPort = (unsigned short)_wtoi(httpPorts_.c_str() +
-							(httpPorts_.find_last_of(':') == wstring::npos ? 0 : httpPorts_.find_last_of(':') + 1));
+						unsigned short notifyPort = (unsigned short)_wtoi(op.ports.c_str() +
+							(op.ports.find_last_of(':') == wstring::npos ? 0 : op.ports.find_last_of(':') + 1));
 						//UPnPのUDP(Port1900)部分を担当するサーバ
 						LPCSTR targetArray[] = { "upnp:rootdevice", UPNP_URN_DMS_1, UPNP_URN_CDS_1, UPNP_URN_CMS_1, UPNP_URN_AVT_1 };
 						vector<CUpnpSsdpServer::SSDP_TARGET_INFO> targetList(2 + _countof(targetArray));
@@ -690,25 +676,26 @@ void CEpgTimerSrvMain::ReloadNetworkSetting()
 		this->tcpResponseTimeoutSec = GetPrivateProfileInt(L"SET", L"TCPResponseTimeoutSec", 120, iniPath.c_str());
 		this->tcpPort = (unsigned short)GetPrivateProfileInt(L"SET", L"TCPPort", 4510, iniPath.c_str());
 	}
-	this->httpPorts.clear();
+	this->httpOptions.ports.clear();
 	int enableHttpSrv = GetPrivateProfileInt(L"SET", L"EnableHttpSrv", 0, iniPath.c_str());
 	if( enableHttpSrv != 0 ){
-		this->httpPublicFolder = GetPrivateProfileToString(L"SET", L"HttpPublicFolder", L"", iniPath.c_str());
-		if( this->httpPublicFolder.empty() ){
-			GetModuleFolderPath(this->httpPublicFolder);
-			this->httpPublicFolder += L"\\HttpPublic";
+		this->httpOptions.rootPath = GetPrivateProfileToString(L"SET", L"HttpPublicFolder", L"", iniPath.c_str());
+		if(this->httpOptions.rootPath.empty() ){
+			GetModuleFolderPath(this->httpOptions.rootPath);
+			this->httpOptions.rootPath += L"\\HttpPublic";
 		}
-		ChkFolderPath(this->httpPublicFolder);
-		if( this->dmsPublicFileList.empty() || CompareNoCase(this->httpPublicFolder, this->dmsPublicFileList[0].second) != 0 ){
+		ChkFolderPath(this->httpOptions.rootPath);
+		if( this->dmsPublicFileList.empty() || CompareNoCase(this->httpOptions.rootPath, this->dmsPublicFileList[0].second) != 0 ){
 			//公開フォルダの場所が変わったのでクリア
 			this->dmsPublicFileList.clear();
 		}
-		this->httpAccessControlList = GetPrivateProfileToString(L"SET", L"HttpAccessControlList", L"+127.0.0.1", iniPath.c_str());
-		this->httpAuthenticationDomain = GetPrivateProfileToString(L"SET", L"HttpAuthenticationDomain", L"", iniPath.c_str());
-		this->httpNumThreads = GetPrivateProfileInt(L"SET", L"HttpNumThreads", 3, iniPath.c_str());
-		this->httpRequestTimeoutSec = GetPrivateProfileInt(L"SET", L"HttpRequestTimeoutSec", 120, iniPath.c_str());
-		this->httpPorts = GetPrivateProfileToString(L"SET", L"HttpPort", L"5510", iniPath.c_str());
-		this->httpSaveLog = enableHttpSrv == 2;
+		this->httpOptions.accessControlList = GetPrivateProfileToString(L"SET", L"HttpAccessControlList", L"+127.0.0.1", iniPath.c_str());
+		this->httpOptions.authenticationDomain = GetPrivateProfileToString(L"SET", L"HttpAuthenticationDomain", L"", iniPath.c_str());
+		this->httpOptions.numThreads = GetPrivateProfileInt(L"SET", L"HttpNumThreads", 3, iniPath.c_str());
+		this->httpOptions.requestTimeout = GetPrivateProfileInt(L"SET", L"HttpRequestTimeoutSec", 120, iniPath.c_str()) * 1000;
+		this->httpOptions.keepAlive = GetPrivateProfileInt(L"SET", L"HttpKeepAlive", 0, iniPath.c_str()) != 0;
+		this->httpOptions.ports = GetPrivateProfileToString(L"SET", L"HttpPort", L"5510", iniPath.c_str());
+		this->httpOptions.saveLog = enableHttpSrv == 2;
 	}
 	this->enableSsdpServer = GetPrivateProfileInt(L"SET", L"EnableDMS", 0, iniPath.c_str()) != 0;
 
@@ -2936,14 +2923,14 @@ int CEpgTimerSrvMain::LuaListDmsPublicFile(lua_State* L)
 	CLuaWorkspace ws(L);
 	CBlockLock lock(&ws.sys->settingLock);
 	WIN32_FIND_DATA findData;
-	HANDLE hFind = FindFirstFile((ws.sys->httpPublicFolder + L"\\dlna\\dms\\PublicFile\\*").c_str(), &findData);
+	HANDLE hFind = FindFirstFile((ws.sys->httpOptions.rootPath + L"\\dlna\\dms\\PublicFile\\*").c_str(), &findData);
 	vector<pair<int, WIN32_FIND_DATA>> newList;
 	if( hFind == INVALID_HANDLE_VALUE ){
 		ws.sys->dmsPublicFileList.clear();
 	}else{
 		if( ws.sys->dmsPublicFileList.empty() ){
 			//要素0には公開フォルダの場所と次のIDを格納する
-			ws.sys->dmsPublicFileList.push_back(std::make_pair(0, ws.sys->httpPublicFolder));
+			ws.sys->dmsPublicFileList.push_back(std::make_pair(0, ws.sys->httpOptions.rootPath));
 		}
 		do{
 			//TODO: 再帰的にリストしほうがいいがとりあえず…

@@ -4,9 +4,9 @@
 #include "ReserveManager.h"
 #include "FileStreamingManager.h"
 #include "NotifyManager.h"
+#include "HttpServer.h"
 #include "../../Common/ParseTextInstances.h"
 
-struct lua_State;
 struct _UPNP_MSEARCH_REQUEST_INFO;
 
 //各種サーバと自動予約の管理をおこなう
@@ -125,13 +125,7 @@ private:
 	unsigned short tcpPort;
 	DWORD tcpResponseTimeoutSec;
 	wstring tcpAccessControlList;
-	wstring httpPorts;
-	wstring httpPublicFolder;
-	wstring httpAccessControlList;
-	wstring httpAuthenticationDomain;
-	int httpNumThreads;
-	int httpRequestTimeoutSec;
-	bool httpSaveLog;
+	CHttpServer::SERVER_OPTIONS httpOptions;
 	bool enableSsdpServer;
 	vector<pair<int, wstring>> dmsPublicFileList;
 	int autoAddHour;

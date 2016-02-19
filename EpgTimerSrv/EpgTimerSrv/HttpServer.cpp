@@ -18,8 +18,7 @@ CHttpServer::~CHttpServer()
 	StopServer();
 }
 
-bool CHttpServer::StartServer(LPCWSTR ports, LPCWSTR rootPath, int (*initProc)(lua_State*), void* initParam, bool saveLog,
-                              LPCWSTR acl, LPCWSTR authDomain, int numThreads, int requestTimeout)
+bool CHttpServer::StartServer(const SERVER_OPTIONS& op, int (*initProc)(lua_State*), void* initParam)
 {
 	StopServer();
 
@@ -29,9 +28,9 @@ bool CHttpServer::StartServer(LPCWSTR ports, LPCWSTR rootPath, int (*initProc)(l
 		OutputDebugString(L"CHttpServer::StartServer(): " LUA_DLL_NAME L" not found.\r\n");
 		return false;
 	}
-	string portsU;
-	WtoUTF8(ports, portsU);
-	wstring rootPathW = rootPath;
+	string ports;
+	WtoUTF8(op.ports, ports);
+	wstring rootPathW = op.rootPath;
 	ChkFolderPath(rootPathW);
 	string rootPathU;
 	WtoUTF8(rootPathW, rootPathU);
@@ -59,16 +58,16 @@ bool CHttpServer::StartServer(LPCWSTR ports, LPCWSTR rootPath, int (*initProc)(l
 	globalAuthPath += "\\glpasswd";
 
 	//Access Control List
-	string aclU;
-	WtoUTF8(acl, aclU);
-	aclU = "-0.0.0.0/0," + aclU;
+	string acl;
+	WtoUTF8(op.accessControlList, acl);
+	acl = "-0.0.0.0/0," + acl;
 
-	string authDomainU;
-	WtoUTF8(authDomain, authDomainU);
-	string numThreadsU;
-	Format(numThreadsU, "%d", min(max(numThreads, 1), 50));
-	string requestTimeoutU;
-	Format(requestTimeoutU, "%d", max(requestTimeout, 1));
+	string authDomain;
+	WtoUTF8(op.authenticationDomain, authDomain);
+	string numThreads;
+	Format(numThreads, "%d", min(max(op.numThreads, 1), 50));
+	string requestTimeout;
+	Format(requestTimeout, "%d", max(op.requestTimeout, 1));
 
 	//追加のMIMEタイプ
 	CParseContentTypeText contentType;
@@ -81,28 +80,27 @@ bool CHttpServer::StartServer(LPCWSTR ports, LPCWSTR rootPath, int (*initProc)(l
 	WtoUTF8(extraMimeW, extraMime);
 
 	const char* options[32] = {
-		//mg_stop()の待ちが長くなりすぎるので(残念だが)オフ
-		//"enable_keep_alive", "yes",
-		"access_control_list", aclU.c_str(),
+		"enable_keep_alive", op.keepAlive ? "yes" : "no",
+		"access_control_list", acl.c_str(),
 		"extra_mime_types", extraMime.c_str(),
-		"listening_ports", portsU.c_str(),
+		"listening_ports", ports.c_str(),
 		"document_root", rootPathU.c_str(),
-		"num_threads", numThreadsU.c_str(),
-		"request_timeout_ms", requestTimeoutU.c_str(),
+		"num_threads", numThreads.c_str(),
+		"request_timeout_ms", requestTimeout.c_str(),
 		"lua_script_pattern", "**.lua$|**.html$|*/api/*$",
 	};
-	int opCount = 2 * 7;
-	if( saveLog ){
+	int opCount = 2 * 8;
+	if( op.saveLog ){
 		options[opCount++] = "access_log_file";
 		options[opCount++] = accessLogPath.c_str();
 		options[opCount++] = "error_log_file";
 		options[opCount++] = errorLogPath.c_str();
 	}
-	if( authDomainU.empty() == false ){
+	if( authDomain.empty() == false ){
 		options[opCount++] = "authentication_domain";
-		options[opCount++] = authDomainU.c_str();
+		options[opCount++] = authDomain.c_str();
 	}
-	if( portsU.find('s') != string::npos ){
+	if( ports.find('s') != string::npos ){
 		//セキュアポートを含むので認証鍵を指定する
 		options[opCount++] = "ssl_certificate";
 		options[opCount++] = sslCertPath.c_str();
