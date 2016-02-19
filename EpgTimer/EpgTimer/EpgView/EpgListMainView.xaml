@@ -28,14 +28,12 @@
                 <RichTextBox Name="richTextBox_eventInfo" IsReadOnly="True" />
             </ScrollViewer>
             <GridSplitter Grid.RowSpan="1" Height="5" Name="gridSplitter2" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" />
-            <ListView Grid.Row="1" Name="listView_event" SelectionMode="Extended" SelectionChanged="listView_event_SelectionChanged" ContextMenu="{DynamicResource itemMenu}" >
+            <ListView Grid.Row="1" Name="listView_event" SelectionMode="Extended" SelectionChanged="listView_event_SelectionChanged" >
                 <ListView.Resources>
                     <Style TargetType="ListViewItem" BasedOn="{StaticResource DataListViewStyle}" >
                         <Setter Property="ToolTip" Value="{x:Null}" />
                     </Style>
                     <Style TargetType="GridViewColumnHeader" BasedOn="{StaticResource DataListViewHeaderStyle}" />
-                    <ContextMenu x:Key="itemMenu"/>
-                    <!-- MenuManagerからメニューを展開する -->
                 </ListView.Resources>
                 <ListView.View>
                     <GridView x:Name="gridView_event" />

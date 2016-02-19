@@ -29,7 +29,7 @@ namespace EpgTimer
                 lstCtrl.SetSavePath(CommonUtil.GetMemberName(() => Settings.Instance.RecInfoListColumn)
                     , CommonUtil.GetMemberName(() => Settings.Instance.RecInfoColumnHead)
                     , CommonUtil.GetMemberName(() => Settings.Instance.RecInfoSortDirection));
-                lstCtrl.SetViewSetting(listView_recinfo, gridView_recinfo, true);
+                lstCtrl.SetViewSetting(listView_recinfo, gridView_recinfo, true, true);
                 lstCtrl.SetSelectedItemDoubleClick((sender, e) =>
                 {
                     var cmd = Settings.Instance.PlayDClick == true ? EpgCmds.Play : EpgCmds.ShowDialog;
@@ -53,7 +53,6 @@ namespace EpgTimer
                 mc.ResetCommandBindings(this, listView_recinfo.ContextMenu);
 
                 //コンテキストメニューを開く時の設定
-                lstCtrl.SetCtxmTargetSave(listView_recinfo.ContextMenu);//こっちが先
                 listView_recinfo.ContextMenu.Opened += new RoutedEventHandler(mc.SupportContextMenuLoading);
 
                 //ボタンの設定

@@ -10,7 +10,6 @@
         <Setter Property="Background" Value="{Binding BackColor}" />
         <Setter Property="BorderThickness" Value="5,0,0,1" />
         <Setter Property="BorderBrush" Value="{Binding BorderBrush}" />
-        <Setter Property="ContextMenu" Value="{DynamicResource itemMenu}" />
     </Style>
 
     <Style TargetType="GridViewColumnHeader" x:Key="DataListViewHeaderStyle" BasedOn="{StaticResource {x:Type GridViewColumnHeader}}">

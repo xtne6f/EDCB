@@ -65,7 +65,7 @@ namespace EpgTimer
             if (gvSorter == null || gridView == null) return;
             this.gvSorter.SortByMultiHeaderWithKey(dataList, gridView.Columns, initialSortKey, true, initialDirection);
         }
-        public void SetViewSetting(ListView lv, GridView gv, bool isSortOnReload
+        public void SetViewSetting(ListView lv, GridView gv, bool defaultContextMenu, bool isSortOnReload
             , List<GridViewColumn> cols_source = null, RoutedEventHandler headerclick = null)
         {
             listView = lv;
@@ -87,6 +87,19 @@ namespace EpgTimer
                 {
                     header.ToolTip = "Ctrl+Click(マルチ・ソート)、Shift+Click(解除)";
                 }
+            }
+
+            if (defaultContextMenu == true)
+            {
+                if (lv.ContextMenu == null) lv.ContextMenu = new ContextMenu();
+
+                lv.ContextMenu.Opened += (sender, e) =>
+                {
+                    //コンテキストメニューを開いたとき、アイテムがあればそれを保存する。無ければNULLになる。
+                    var lb = (sender as ContextMenu).PlacementTarget as ListBox;
+                    if (lb != null) ClickTarget = lb.PlacementItem();
+                };
+                lv.ContextMenu.Closed += (sender, e) => ClickTarget = null;
             }
 
             gvSelector = new GridViewSelector(gv, this.columnSaveList);
@@ -132,8 +145,7 @@ namespace EpgTimer
             if (hdlr == null) return;
             listView.MouseDoubleClick += new MouseButtonEventHandler((sender, e) =>
             {
-                var hitobj = listView.InputHitTest(e.GetPosition(listView)) as DependencyObject;
-                var hitItem = vutil.SearchParentWpfTree(hitobj, typeof(ListViewItem), typeof(ListView)) as ListViewItem;
+                var hitItem = listView.PlacementItem(e.GetPosition(listView));
                 if (hitItem != null) hdlr(hitItem, e);
             });
         }
@@ -245,13 +257,6 @@ namespace EpgTimer
                 listView.SelectedItem = item;
             }
             return item as T;
-        }
-
-        public void SetCtxmTargetSave(ContextMenu ctxm)
-        {
-            //コンテキストメニューを開いたとき、アイテムがあればそれを保存する。無ければキャスト出来ずNULLになる。
-            ctxm.Opened += (sender, e) => ClickTarget = (sender as ContextMenu).PlacementTarget as ListBoxItem;
-            ctxm.Closed += (sender, e) => ClickTarget = null;
         }
 
         //リストのチェックボックスからの呼び出し

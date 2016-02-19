@@ -294,7 +294,7 @@ namespace EpgTimer
             }
         }
 
-        public DependencyObject SearchParentWpfTree(DependencyObject obj, Type t_trg, Type t_cut = null)
+        public static DependencyObject SearchParentWpfTree(DependencyObject obj, Type t_trg, Type t_cut = null)
         {
             Func<string, DependencyObject> GetParentFromProperty = name =>
             {
@@ -346,6 +346,15 @@ namespace EpgTimer
                 box.ScrollIntoView(box.Items[index]);
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
+        }
+
+        public static ListBoxItem PlacementItem(this ListBox lb, Point? pt = null)
+        {
+            if (lb == null) return null;
+            if (pt == null) pt = Mouse.GetPosition(lb);
+            var hitobj = lb.InputHitTest((Point)pt) as DependencyObject;
+            var item_type = lb is ListView ? typeof(ListViewItem) : lb is ListBox ? typeof(ListBoxItem) : typeof(object);//場合分けしないで取得する方法があるはず
+            return ViewUtil.SearchParentWpfTree(hitobj, item_type, lb.GetType()) as ListBoxItem;
         }
     }
 }

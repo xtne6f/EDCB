@@ -32,7 +32,7 @@ namespace EpgTimer
                 lstCtrl.SetSavePath(CommonUtil.GetMemberName(() => Settings.Instance.ReserveListColumn)
                     , CommonUtil.GetMemberName(() => Settings.Instance.ResColumnHead)
                     , CommonUtil.GetMemberName(() => Settings.Instance.ResSortDirection));
-                lstCtrl.SetViewSetting(listView_reserve, gridView_reserve, true, list_columns);
+                lstCtrl.SetViewSetting(listView_reserve, gridView_reserve, true, true, list_columns);
                 lstCtrl.SetSelectedItemDoubleClick(EpgCmds.ShowDialog);
 
                 //最初にコマンド集の初期化
@@ -66,7 +66,6 @@ namespace EpgTimer
                 RefreshMenu();
 
                 //コンテキストメニューを開く時の設定
-                lstCtrl.SetCtxmTargetSave(listView_reserve.ContextMenu);//こっちが先
                 listView_reserve.ContextMenu.Opened += new RoutedEventHandler(mc.SupportContextMenuLoading);
             }
             catch (Exception ex)

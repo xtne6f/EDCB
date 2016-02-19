@@ -48,7 +48,7 @@ namespace EpgTimer
                 lstCtrl.SetSavePath(CommonUtil.GetMemberName(() => Settings.Instance.SearchWndColumn)
                     , CommonUtil.GetMemberName(() => Settings.Instance.SearchColumnHead)
                     , CommonUtil.GetMemberName(() => Settings.Instance.SearchSortDirection));
-                lstCtrl.SetViewSetting(listView_result, gridView_result, true, list_columns);
+                lstCtrl.SetViewSetting(listView_result, gridView_result, true, true, list_columns);
                 lstCtrl.SetSelectedItemDoubleClick(EpgCmds.ShowDialog);
 
                 //最初にコマンド集の初期化
@@ -79,7 +79,6 @@ namespace EpgTimer
                 mc.ResetCommandBindings(this, listView_result.ContextMenu);
 
                 //コンテキストメニューを開く時の設定
-                lstCtrl.SetCtxmTargetSave(listView_result.ContextMenu);//こっちが先
                 listView_result.ContextMenu.Opened += new RoutedEventHandler(mc.SupportContextMenuLoading);
 
                 //ボタンの設定

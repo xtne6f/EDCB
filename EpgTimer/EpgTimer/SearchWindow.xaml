@@ -39,12 +39,10 @@
             <Button Content="前へ" Height="23" Margin="20,0,0,0" Name="button_up_epgAutoAdd" VerticalAlignment="Center" Width="48" />
             <Button Content="次へ" Height="23" Margin="10,0,0,0" Name="button_down_epgAutoAdd" VerticalAlignment="Center" Width="48" />
         </StackPanel>
-        <ListView Grid.Row="2" Name="listView_result" Margin="10,10,10,28" SelectionMode="Extended" ContextMenu="{DynamicResource itemMenu}" >
+        <ListView Grid.Row="2" Name="listView_result" Margin="10,10,10,28" SelectionMode="Extended" >
             <ListView.Resources>
                 <Style TargetType="ListViewItem" BasedOn="{StaticResource DataListViewStyle}" />
                 <Style TargetType="GridViewColumnHeader" BasedOn="{StaticResource DataListViewHeaderStyle}" />
-                <ContextMenu x:Key="itemMenu"/>
-                <!-- MenuManagerからメニューを展開する -->
             </ListView.Resources>
             <ListView.View>
                 <GridView x:Name="gridView_result" />

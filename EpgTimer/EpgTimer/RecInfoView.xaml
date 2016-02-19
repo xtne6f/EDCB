@@ -43,14 +43,12 @@
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="100" />
         </Grid.ColumnDefinitions>
-        <ListView Name="listView_recinfo" Margin="10" SelectionMode="Extended" ContextMenu="{DynamicResource itemMenu}" >
+        <ListView Name="listView_recinfo" Margin="10" SelectionMode="Extended" >
             <ListView.Resources>
                 <Style TargetType="ListViewItem" BasedOn="{StaticResource DataListViewStyle}" >
                     <Setter Property="BorderBrush" Value="{x:Null}" />
                 </Style>
                 <Style TargetType="GridViewColumnHeader" BasedOn="{StaticResource DataListViewHeaderStyle}" />
-                <ContextMenu x:Key="itemMenu"/>
-                <!-- MenuManagerからメニューを展開する -->
             </ListView.Resources>
             <ListView.View>
                 <GridView x:Name="gridView_recinfo" >

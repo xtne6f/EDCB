@@ -13,14 +13,12 @@
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="130" />
         </Grid.ColumnDefinitions>
-        <ListView Margin="10" x:Name="listView_key" SelectionMode="Extended" ContextMenu="{DynamicResource itemMenu}" >
+        <ListView Margin="10" x:Name="listView_key" SelectionMode="Extended" >
             <ListView.Resources>
-                <ContextMenu x:Key="itemMenu" />
                 <Style TargetType="ListViewItem">
                     <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
                     <Setter Property="ToolTipService.ShowDuration" Value="20000" />
                     <Setter Property="ToolTip" Value="{Binding ToolTipView}"/>
-                    <Setter Property="ContextMenu" Value="{DynamicResource itemMenu}" />
                     <Setter Property="Foreground"  Value="{Binding ForeColor}" />
                     <Setter Property="Background" Value="{Binding BackColor}" />
                     <Setter Property="BorderThickness" Value="5,0,0,1" />

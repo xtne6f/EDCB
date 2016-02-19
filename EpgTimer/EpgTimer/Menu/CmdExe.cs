@@ -49,6 +49,7 @@ namespace EpgTimer
 
         protected CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
         protected MenuUtil mutil = CommonManager.Instance.MUtil;
+        protected ViewUtil vutil = CommonManager.Instance.VUtil;
         protected MenuManager mm = CommonManager.Instance.MM;
 
         protected Control Owner;
@@ -397,10 +398,10 @@ namespace EpgTimer
                     return;
                 }
 
-                if (e != null)
+                if (ctxm.PlacementTarget is ListBox && e != null)
                 {
                     //リストビューの場合は、アイテムの無いところではデータ選択してないものと見なす。
-                    if (ctxm.PlacementTarget is ListBoxItem == false)
+                    if ((ctxm.PlacementTarget as ListBox).PlacementItem() == null)
                     {
                         ClearData();
                     }

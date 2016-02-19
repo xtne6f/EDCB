@@ -63,7 +63,7 @@ namespace EpgTimer
                 //リストビュー関連の設定
                 lstCtrl = new ListViewController<S>(this);
                 lstCtrl.SetSavePath(ColumnSavePath);
-                lstCtrl.SetViewSetting(listView_key, gridView_key, false
+                lstCtrl.SetViewSetting(listView_key, gridView_key, true, false
                     , ColumnList, (sender, e) => dragMover.NotSaved |= lstCtrl.GridViewHeaderClickSort(e));
                 ColumnList = null;
                 lstCtrl.SetSelectedItemDoubleClick(EpgCmds.ShowDialog);
@@ -91,7 +91,6 @@ namespace EpgTimer
                 mc.ResetCommandBindings(this, listView_key.ContextMenu);
 
                 //コンテキストメニューを開く時の設定
-                lstCtrl.SetCtxmTargetSave(listView_key.ContextMenu);//こっちが先
                 listView_key.ContextMenu.Opened += new RoutedEventHandler(mc.SupportContextMenuLoading);
 
                 //ボタンの設定
