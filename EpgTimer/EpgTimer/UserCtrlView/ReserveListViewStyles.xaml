@@ -2,7 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:my="clr-namespace:EpgTimer">
 
-    <Style TargetType="ListViewItem" x:Key="DataListViewStyle">
+    <Style TargetType="ListViewItem" x:Key="DataListItemStyle" BasedOn="{StaticResource {x:Type ListViewItem}}">
         <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
         <Setter Property="ToolTipService.ShowDuration" Value="20000" />
         <Setter Property="ToolTip" Value="{Binding ToolTipView}"/>
@@ -14,6 +14,14 @@
 
     <Style TargetType="GridViewColumnHeader" x:Key="DataListViewHeaderStyle" BasedOn="{StaticResource {x:Type GridViewColumnHeader}}">
         <Setter Property="HorizontalContentAlignment" Value="Left"/>
+    </Style>
+
+    <Style TargetType="ListView" x:Key="DataListViewStyle">
+        <Setter Property="SelectionMode" Value="Extended"/>
+        <Style.Resources>
+            <Style TargetType="ListViewItem" BasedOn="{StaticResource DataListItemStyle}" />
+            <Style TargetType="GridViewColumnHeader" BasedOn="{StaticResource DataListViewHeaderStyle}" />
+        </Style.Resources>
     </Style>
 
     <my:GridViewColumnList x:Key="ReserveItemViewColumns">

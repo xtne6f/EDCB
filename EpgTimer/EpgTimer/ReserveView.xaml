@@ -18,11 +18,7 @@
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="130" />
         </Grid.ColumnDefinitions>
-        <ListView Name="listView_reserve" Margin="10" SelectionMode="Extended" >
-            <ListView.Resources>
-                <Style TargetType="ListViewItem" BasedOn="{StaticResource DataListViewStyle}" />
-                <Style TargetType="GridViewColumnHeader" BasedOn="{StaticResource DataListViewHeaderStyle}" />
-            </ListView.Resources>
+        <ListView Name="listView_reserve" Margin="10" Style="{StaticResource DataListViewStyle}" >
             <ListView.View>
                 <GridView x:Name="gridView_reserve" />
             </ListView.View>

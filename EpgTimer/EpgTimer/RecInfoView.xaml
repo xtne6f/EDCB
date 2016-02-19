@@ -43,12 +43,11 @@
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="100" />
         </Grid.ColumnDefinitions>
-        <ListView Name="listView_recinfo" Margin="10" SelectionMode="Extended" >
+        <ListView Name="listView_recinfo" Margin="10" Style="{StaticResource DataListViewStyle}" >
             <ListView.Resources>
-                <Style TargetType="ListViewItem" BasedOn="{StaticResource DataListViewStyle}" >
+                <Style TargetType="ListViewItem" BasedOn="{StaticResource DataListItemStyle}" >
                     <Setter Property="BorderBrush" Value="{x:Null}" />
                 </Style>
-                <Style TargetType="GridViewColumnHeader" BasedOn="{StaticResource DataListViewHeaderStyle}" />
             </ListView.Resources>
             <ListView.View>
                 <GridView x:Name="gridView_recinfo" >

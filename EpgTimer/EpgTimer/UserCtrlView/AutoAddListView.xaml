@@ -8,40 +8,6 @@
              xmlns:local="clr-namespace:EpgTimer.UserCtrlView"
              d:DesignHeight="400" d:DesignWidth="300" IsVisibleChanged="UserControl_IsVisibleChanged">
 
-    <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="130" />
-        </Grid.ColumnDefinitions>
-        <ListView Margin="10" x:Name="listView_key" SelectionMode="Extended" >
-            <ListView.Resources>
-                <Style TargetType="ListViewItem">
-                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                    <Setter Property="ToolTipService.ShowDuration" Value="20000" />
-                    <Setter Property="ToolTip" Value="{Binding ToolTipView}"/>
-                    <Setter Property="Foreground"  Value="{Binding ForeColor}" />
-                    <Setter Property="Background" Value="{Binding BackColor}" />
-                    <Setter Property="BorderThickness" Value="5,0,0,1" />
-                    <Setter Property="BorderBrush" Value="{Binding BorderBrush}" />
-                    <EventSetter Event="PreviewMouseLeftButtonDown" Handler="listViewItem_PreviewMouseLeftButtonDown"/>
-                    <EventSetter Event="MouseEnter" Handler="listViewItem_MouseEnter"/>
-                </Style>
-                <Style TargetType="GridViewColumnHeader" BasedOn="{StaticResource {x:Type GridViewColumnHeader}}">
-                    <Setter Property="HorizontalContentAlignment" Value="Left"/>
-                </Style>
-            </ListView.Resources>
-            <ListView.View>
-                <GridView x:Name="gridView_key" />
-            </ListView.View>
-        </ListView>
-        <StackPanel Grid.Column="1">
-            <Button Content="追加" Height="23" Name="button_add" Margin="0,10,0,0" />
-            <Button Content="変更" Height="23" Name="button_change" Margin="0,10,0,0" />
-            <Button Content="削除" Height="23" Name="button_del" Margin="0,10,0,0" />
-            <Button Content="予約ごと削除" Height="23" Name="button_del2" Margin="0,10,0,0" />
-            <local:ListBoxDragMoverView x:Name="dragMover" Margin="0,20,0,0" />
-        </StackPanel>
-    </Grid>
     <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -150,4 +116,28 @@
             </my:GridViewColumnList>
         </ResourceDictionary>
     </UserControl.Resources>
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="130" />
+        </Grid.ColumnDefinitions>
+        <ListView Margin="10" x:Name="listView_key" Style="{StaticResource DataListViewStyle}" >
+            <ListView.Resources>
+                <Style TargetType="ListViewItem" BasedOn="{StaticResource DataListItemStyle}" >
+                    <EventSetter Event="PreviewMouseLeftButtonDown" Handler="listViewItem_PreviewMouseLeftButtonDown"/>
+                    <EventSetter Event="MouseEnter" Handler="listViewItem_MouseEnter"/>
+                </Style>
+            </ListView.Resources>
+            <ListView.View>
+                <GridView x:Name="gridView_key" />
+            </ListView.View>
+        </ListView>
+        <StackPanel Grid.Column="1">
+            <Button Content="追加" Height="23" Name="button_add" Margin="0,10,0,0" />
+            <Button Content="変更" Height="23" Name="button_change" Margin="0,10,0,0" />
+            <Button Content="削除" Height="23" Name="button_del" Margin="0,10,0,0" />
+            <Button Content="予約ごと削除" Height="23" Name="button_del2" Margin="0,10,0,0" />
+            <local:ListBoxDragMoverView x:Name="dragMover" Margin="0,20,0,0" />
+        </StackPanel>
+    </Grid>
 </local:DataViewBase>
