@@ -132,7 +132,7 @@ BOOL CTunerManager::GetEnumID(
 // notifyManager	[IN]CTunerBankCtrl‚É“n‚·ˆø”
 // epgDBManager		[IN]CTunerBankCtrl‚É“n‚·ˆø”
 BOOL CTunerManager::GetEnumTunerBank(
-	map<DWORD, CTunerBankCtrl*>* ctrlMap,
+	map<DWORD, std::unique_ptr<CTunerBankCtrl>>* ctrlMap,
 	CNotifyManager& notifyManager,
 	CEpgDBManager& epgDBManager
 	) const
@@ -142,8 +142,8 @@ BOOL CTunerManager::GetEnumTunerBank(
 	}
 	map<DWORD, TUNER_INFO>::const_iterator itr;
 	for( itr = this->tunerMap.begin(); itr != this->tunerMap.end(); itr++ ){
-		CTunerBankCtrl* ctrl = new CTunerBankCtrl(itr->first, itr->second.bonFileName.c_str(), itr->second.chList, notifyManager, epgDBManager);
-		ctrlMap->insert(pair<DWORD, CTunerBankCtrl*>(itr->first, ctrl));
+		ctrlMap->insert(std::make_pair(itr->first,
+			std::unique_ptr<CTunerBankCtrl>(new CTunerBankCtrl(itr->first, itr->second.bonFileName.c_str(), itr->second.chList, notifyManager, epgDBManager))));
 	}
 	return TRUE;
 }

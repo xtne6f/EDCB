@@ -62,9 +62,7 @@ void CReserveManager::Finalize()
 		CloseHandle(this->watchdogStopEvent);
 		this->watchdogStopEvent = NULL;
 	}
-	for( map<DWORD, CTunerBankCtrl*>::iterator itr = this->tunerBankMap.begin(); itr != this->tunerBankMap.end(); itr++ ){
-		SAFE_DELETE(itr->second);
-	}
+	this->tunerBankMap.clear();
 }
 
 void CReserveManager::ReloadSetting()
@@ -155,7 +153,7 @@ void CReserveManager::ReloadSetting()
 	}
 	this->recNameNoChkYen = GetPrivateProfileInt(L"SET", L"NoChkYen", 0, iniPath.c_str()) != 0;
 
-	for( map<DWORD, CTunerBankCtrl*>::const_iterator itr = this->tunerBankMap.begin(); itr != this->tunerBankMap.end(); itr++ ){
+	for( auto itr = this->tunerBankMap.cbegin(); itr != this->tunerBankMap.end(); itr++ ){
 		itr->second->ReloadSetting();
 	}
 	ReloadBankMap();
@@ -180,7 +178,7 @@ vector<TUNER_RESERVE_INFO> CReserveManager::GetTunerReserveAll() const
 
 	vector<TUNER_RESERVE_INFO> list;
 	list.reserve(this->tunerBankMap.size() + 1);
-	for( map<DWORD, CTunerBankCtrl*>::const_iterator itr = this->tunerBankMap.begin(); itr != this->tunerBankMap.end(); itr++ ){
+	for( auto itr = this->tunerBankMap.cbegin(); itr != this->tunerBankMap.end(); itr++ ){
 		list.resize(list.size() + 1);
 		list.back().tunerID = itr->first;
 		this->tunerManager.GetBonFileName(itr->first, list.back().tunerName);
@@ -211,7 +209,7 @@ vector<DWORD> CReserveManager::GetNoTunerReserveAll() const
 		list.push_back(itr->first);
 	}
 	//全予約からバンクに存在する予約を引く
-	for( map<DWORD, CTunerBankCtrl*>::const_iterator itr = this->tunerBankMap.begin(); itr != this->tunerBankMap.end(); itr++ ){
+	for( auto itr = this->tunerBankMap.cbegin(); itr != this->tunerBankMap.end(); itr++ ){
 		vector<DWORD> diffList = itr->second->GetReserveIDList();
 		size_t k = 0;
 		for( size_t i = 0, j = 0; i < list.size(); ){
@@ -266,16 +264,16 @@ bool CReserveManager::GetReserveData(DWORD id, RESERVE_DATA* reserveData, bool g
 						wcscpy_s(info.bonDriverName, L"チューナー不明");
 						info.bonDriverID = 0xFFFF;
 						info.tunerID = 0xFFFF;
-						EPG_EVENT_INFO* epgInfo = NULL;
+						std::unique_ptr<EPG_EVENT_INFO> epgInfo;
 						if( info.EventID != 0xFFFF ){
 							EPGDB_EVENT_INFO epgDBInfo;
 							if( this->epgDBManager.SearchEpg(info.ONID, info.TSID, info.SID, info.EventID, &epgDBInfo) != FALSE ){
-								epgInfo = new EPG_EVENT_INFO;
-								CopyEpgInfo(epgInfo, &epgDBInfo);
+								epgInfo.reset(new EPG_EVENT_INFO);
+								CopyEpgInfo(epgInfo.get(), &epgDBInfo);
 							}
 						}
 						info.reserveID = reserveData->reserveID;
-						info.epgInfo = epgInfo;
+						info.epgInfo = epgInfo.get();
 						info.sizeOfStruct = 0;
 						WCHAR name[512];
 						DWORD size = 512;
@@ -285,7 +283,6 @@ bool CReserveManager::GetReserveData(DWORD id, RESERVE_DATA* reserveData, bool g
 						}else{
 							nameList[i].clear();
 						}
-						delete epgInfo;
 					}
 				}
 				//実ファイル名は空にしない
@@ -369,7 +366,7 @@ bool CReserveManager::ChgReserveData(const vector<RESERVE_DATA>& reserveList, bo
 			if( r.recSetting.recMode == RECMODE_NO ){
 				if( itr->second.recSetting.recMode != RECMODE_NO ){
 					//バンクから削除
-					for( map<DWORD, CTunerBankCtrl*>::const_iterator jtr = this->tunerBankMap.begin(); jtr != this->tunerBankMap.end(); jtr++ ){
+					for( auto jtr = this->tunerBankMap.cbegin(); jtr != this->tunerBankMap.end(); jtr++ ){
 						if( jtr->second->DelReserve(r.reserveID) ){
 							break;
 						}
@@ -408,8 +405,8 @@ bool CReserveManager::ChgReserveData(const vector<RESERVE_DATA>& reserveList, bo
 				tr.partialRecFolder = r.recSetting.partialRecFolder;
 
 				bool bankDeleted = false;
-				map<DWORD, CTunerBankCtrl*>::const_iterator jtr;
-				for( jtr = this->tunerBankMap.begin(); jtr != this->tunerBankMap.end(); jtr++ ){
+				auto jtr = this->tunerBankMap.cbegin();
+				for( ; jtr != this->tunerBankMap.end(); jtr++ ){
 					if( jtr->second->ChgCtrlReserve(&tr) ){
 						//この予約はこのバンクに待機状態で存在する
 						if( tr.onid != r.originalNetworkID ||
@@ -502,7 +499,7 @@ void CReserveManager::DelReserveData(const vector<DWORD>& idList)
 		if( itr != this->reserveText.GetMap().end() ){
 			if( itr->second.recSetting.recMode != RECMODE_NO ){
 				//バンクから削除
-				for( map<DWORD, CTunerBankCtrl*>::const_iterator jtr = this->tunerBankMap.begin(); jtr != this->tunerBankMap.end(); jtr++ ){
+				for( auto jtr = this->tunerBankMap.cbegin(); jtr != this->tunerBankMap.end(); jtr++ ){
 					if( jtr->second->DelReserve(idList[i]) ){
 						break;
 					}
@@ -598,7 +595,7 @@ void CReserveManager::ReloadBankMap(__int64 reloadTime)
 
 	//開始済み予約リスト
 	vector<pair<DWORD, vector<DWORD>>> startedResList;
-	for( map<DWORD, CTunerBankCtrl*>::const_iterator itr = this->tunerBankMap.begin(); itr != this->tunerBankMap.end(); itr++ ){
+	for( auto itr = this->tunerBankMap.cbegin(); itr != this->tunerBankMap.end(); itr++ ){
 		//待機状態に入っているもの以外クリア
 		itr->second->ClearNoCtrl(boundaryReloadTime);
 		startedResList.push_back(std::make_pair(itr->first, itr->second->GetReserveIDList()));
@@ -910,7 +907,7 @@ void CReserveManager::CheckTuijyuTuner()
 {
 	vector<DWORD> chkChList;
 	//tunerBankMapそのものは排他制御の対象外
-	for( map<DWORD, CTunerBankCtrl*>::const_iterator itrBank = this->tunerBankMap.begin(); itrBank != this->tunerBankMap.end(); itrBank++ ){
+	for( auto itrBank = this->tunerBankMap.cbegin(); itrBank != this->tunerBankMap.end(); itrBank++ ){
 		CBlockLock lock(&this->managerLock);
 
 		WORD onid, tsid;
@@ -1302,7 +1299,7 @@ DWORD CReserveManager::Check()
 		bool isRec = false;
 		bool isEpgCap = false;
 		//tunerBankMapそのものは排他制御の対象外
-		for( map<DWORD, CTunerBankCtrl*>::const_iterator itrBank = this->tunerBankMap.begin(); itrBank != this->tunerBankMap.end(); itrBank++ ){
+		for( auto itrBank = this->tunerBankMap.cbegin(); itrBank != this->tunerBankMap.end(); itrBank++ ){
 			CBlockLock lock(&this->managerLock);
 
 			// チューナの予約状態遷移を行い、予約終了をチェックする
@@ -1481,7 +1478,7 @@ vector<DWORD> CReserveManager::GetEpgCapTunerIDList(__int64 now) const
 		WORD epgCapMax = tunerIDList[i].second;
 		WORD ngCapCount = 0;
 		for( size_t j = 0; j < tunerIDList[i].first.size() && epgCapMax > 0; j++ ){
-			map<DWORD, CTunerBankCtrl*>::const_iterator itr = this->tunerBankMap.find(tunerIDList[i].first[j]);
+			auto itr = this->tunerBankMap.find(tunerIDList[i].first[j]);
 			CTunerBankCtrl::TR_STATE state = itr->second->GetState();
 			__int64 minTime = itr->second->GetNearestReserveTime();
 			if( this->ngCapTimeSec != 0 && (state != CTunerBankCtrl::TR_IDLE || minTime < now + this->ngCapTimeSec * I64_1SEC) ){
@@ -1596,7 +1593,7 @@ bool CReserveManager::CheckEpgCap(bool isEpgCap)
 		//EPG取得中
 		if( this->epgCapTimeSync && this->epgCapSetTimeSync == false ){
 			//時計合わせ(要SE_SYSTEMTIME_NAME特権)
-			for( map<DWORD, CTunerBankCtrl*>::const_iterator itr = this->tunerBankMap.begin(); itr != this->tunerBankMap.end(); itr++ ){
+			for( auto itr = this->tunerBankMap.cbegin(); itr != this->tunerBankMap.end(); itr++ ){
 				if( itr->second->GetState() == CTunerBankCtrl::TR_EPGCAP ){
 					__int64 delay = itr->second->DelayTime();
 					if( delay < -10 * I64_1SEC || 10 * I64_1SEC < delay ){
@@ -1636,7 +1633,7 @@ bool CReserveManager::IsActive() const
 	    this->batPostManager.GetWorkCount() != 0 || this->batPostManager.IsWorking() ){
 		return true;
 	}
-	for( map<DWORD, CTunerBankCtrl*>::const_iterator itr = this->tunerBankMap.begin(); itr != this->tunerBankMap.end(); itr++ ){
+	for( auto itr = this->tunerBankMap.cbegin(); itr != this->tunerBankMap.end(); itr++ ){
 		if( itr->second->GetState() != CTunerBankCtrl::TR_IDLE ){
 			return true;
 		}
@@ -1758,7 +1755,7 @@ bool CReserveManager::IsOpenTuner(DWORD tunerID) const
 {
 	CBlockLock lock(&this->managerLock);
 
-	map<DWORD, CTunerBankCtrl*>::const_iterator itr = this->tunerBankMap.find(tunerID);
+	auto itr = this->tunerBankMap.find(tunerID);
 	return itr != this->tunerBankMap.end() && itr->second->GetState() != CTunerBankCtrl::TR_IDLE;
 }
 
@@ -1766,7 +1763,7 @@ bool CReserveManager::SetNWTVCh(bool nwUdp, bool nwTcp, const SET_CH_INFO& chInf
 {
 	CBlockLock lock(&this->managerLock);
 
-	for( map<DWORD, CTunerBankCtrl*>::const_iterator itr = this->tunerBankMap.begin(); itr != this->tunerBankMap.end(); itr++ ){
+	for( auto itr = this->tunerBankMap.cbegin(); itr != this->tunerBankMap.end(); itr++ ){
 		if( itr->second->GetState() == CTunerBankCtrl::TR_NWTV ){
 			//すでに起動しているので使えたら使う
 			if( this->tunerManager.IsSupportService(itr->first, chInfo.ONID, chInfo.TSID, chInfo.SID) ){
@@ -1779,7 +1776,7 @@ bool CReserveManager::SetNWTVCh(bool nwUdp, bool nwTcp, const SET_CH_INFO& chInf
 	}
 	for( size_t i = 0; i < tunerIDList.size(); i++ ){
 		if( this->tunerManager.IsSupportService(tunerIDList[i], chInfo.ONID, chInfo.TSID, chInfo.SID) ){
-			map<DWORD, CTunerBankCtrl*>::const_iterator itr = this->tunerBankMap.find(tunerIDList[i]);
+			auto itr = this->tunerBankMap.find(tunerIDList[i]);
 			if( itr != this->tunerBankMap.end() && itr->second->SetNWTVCh(nwUdp, nwTcp, chInfo) ){
 				return true;
 			}
@@ -1792,7 +1789,7 @@ bool CReserveManager::CloseNWTV()
 {
 	CBlockLock lock(&this->managerLock);
 
-	for( map<DWORD, CTunerBankCtrl*>::const_iterator itr = this->tunerBankMap.begin(); itr != this->tunerBankMap.end(); itr++ ){
+	for( auto itr = this->tunerBankMap.cbegin(); itr != this->tunerBankMap.end(); itr++ ){
 		if( itr->second->GetState() == CTunerBankCtrl::TR_NWTV ){
 			itr->second->CloseNWTV();
 			return true;
@@ -1805,7 +1802,7 @@ bool CReserveManager::GetRecFilePath(DWORD reserveID, wstring& filePath, DWORD* 
 {
 	CBlockLock lock(&this->managerLock);
 
-	for( map<DWORD, CTunerBankCtrl*>::const_iterator itr = this->tunerBankMap.begin(); itr != this->tunerBankMap.end(); itr++ ){
+	for( auto itr = this->tunerBankMap.cbegin(); itr != this->tunerBankMap.end(); itr++ ){
 		if( itr->second->GetRecFilePath(reserveID, filePath, ctrlID, processID) ){
 			return true;
 		}
@@ -1893,7 +1890,7 @@ UINT WINAPI CReserveManager::WatchdogThread(LPVOID param)
 {
 	CReserveManager* sys = (CReserveManager*)param;
 	while( WaitForSingleObject(sys->watchdogStopEvent, 2000) == WAIT_TIMEOUT ){
-		for( map<DWORD, CTunerBankCtrl*>::const_iterator itr = sys->tunerBankMap.begin(); itr != sys->tunerBankMap.end(); itr++ ){
+		for( auto itr = sys->tunerBankMap.cbegin(); itr != sys->tunerBankMap.end(); itr++ ){
 			itr->second->Watch();
 		}
 	}

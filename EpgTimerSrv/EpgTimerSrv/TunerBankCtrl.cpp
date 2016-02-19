@@ -849,16 +849,16 @@ bool CTunerBankCtrl::RecStart(const TUNER_RESERVE& reserve, __int64 now) const
 						wcscpy_s(info.bonDriverName, this->bonFileName.c_str());
 						info.bonDriverID = this->tunerID >> 16;
 						info.tunerID = this->tunerID & 0xFFFF;
-						EPG_EVENT_INFO* epgInfo = NULL;
+						std::unique_ptr<EPG_EVENT_INFO> epgInfo;
 						if( info.EventID != 0xFFFF ){
 							EPGDB_EVENT_INFO epgDBInfo;
 							if( this->epgDBManager.SearchEpg(info.ONID, info.TSID, info.SID, info.EventID, &epgDBInfo) != FALSE ){
-								epgInfo = new EPG_EVENT_INFO;
-								CopyEpgInfo(epgInfo, &epgDBInfo);
+								epgInfo.reset(new EPG_EVENT_INFO);
+								CopyEpgInfo(epgInfo.get(), &epgDBInfo);
 							}
 						}
 						info.reserveID = reserve.reserveID;
-						info.epgInfo = epgInfo;
+						info.epgInfo = epgInfo.get();
 						info.sizeOfStruct = 0;
 						WCHAR name[512];
 						DWORD size = 512;
@@ -866,7 +866,6 @@ bool CTunerBankCtrl::RecStart(const TUNER_RESERVE& reserve, __int64 now) const
 							param.saveFolder[j].recFileName = name;
 							CheckFileName(param.saveFolder[j].recFileName, this->recNameNoChkYen);
 						}
-						delete epgInfo;
 					}
 					param.saveFolder[j].recNamePlugIn.clear();
 				}
