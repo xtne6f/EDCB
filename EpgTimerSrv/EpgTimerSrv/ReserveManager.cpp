@@ -1371,6 +1371,7 @@ DWORD CReserveManager::Check()
 						item.recStatus = REC_END_STATUS_ERR_END2;
 						item.comment = L"ファイル保存で致命的なエラーが発生した可能性があります";
 						break;
+					case CTunerBankCtrl::CHECK_END_CANCEL:
 					case CTunerBankCtrl::CHECK_ERR_REC:
 						item.recStatus = REC_END_STATUS_ERR_END;
 						item.comment = L"録画中にキャンセルされた可能性があります";

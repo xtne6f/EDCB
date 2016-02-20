@@ -22,6 +22,7 @@ public:
 	};
 	enum {
 		CHECK_END = 1,				//正常終了
+		CHECK_END_CANCEL,			//キャンセルにより録画が中断した
 		CHECK_END_NOT_FIND_PF,		//p/fに番組情報確認できなかった
 		CHECK_END_NEXT_START_END,	//次の予約開始のため終了
 		CHECK_END_END_SUBREC,		//サブフォルダへの録画が発生した
@@ -123,6 +124,7 @@ private:
 		//以下はstate!=TR_IDLEのとき有効
 		DWORD ctrlID[2]; //要素1は部分受信録画制御
 		//以下はstate==TR_RECのとき有効
+		wstring recFilePath[2];
 		bool notStartHead;
 		bool appendPgInfo;
 		bool savedPgInfo;

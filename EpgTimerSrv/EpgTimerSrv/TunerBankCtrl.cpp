@@ -327,6 +327,15 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 								ctrlCmd.SendViewExecViewApp();
 							}
 						}
+					}else{
+						//録画ファイルパス取得
+						for( int i = 0; i < 2; i++ ){
+							if( r.ctrlID[i] != 0 ){
+								//ぴったり録画は取得成功が遅れる
+								//たとえサブ録画が発生してもこのコマンドで得られるパスは変化しない
+								ctrlCmd.SendViewGetRecFilePath(r.ctrlID[i], &r.recFilePath[i]);
+							}
+						}
 					}
 					if( startedReserveIDList ){
 						startedReserveIDList->push_back(r.reserveID);
@@ -343,7 +352,11 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 				DWORD status;
 				if( r.recMode != RECMODE_VIEW && ctrlCmd.SendViewGetStatus(&status) == CMD_SUCCESS && status != VIEW_APP_ST_REC ){
 					//キャンセルされた？
-					ret.type = CHECK_ERR_REC;
+					ret.type = CHECK_END_CANCEL;
+					ret.recFilePath = r.ctrlID[0] != 0 ? r.recFilePath[0] : r.recFilePath[1];
+					ret.continueRec = false;
+					ret.drops = 0;
+					ret.scrambles = 0;
 					this->tunerResetLock = true;
 				}else if( r.startTime + r.endMargin + r.durationSecond * I64_1SEC < now ){
 					ret.type = CHECK_ERR_REC;
@@ -384,6 +397,12 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 					//録画終了に伴ってGUIキープが解除されたかもしれない
 					this->tunerResetLock = true;
 				}else{
+					//録画ファイルパス取得
+					for( int i = 0; i < 2; i++ ){
+						if( r.recMode != RECMODE_VIEW && r.ctrlID[i] != 0 && r.recFilePath[i].empty() ){
+							ctrlCmd.SendViewGetRecFilePath(r.ctrlID[i], &r.recFilePath[i]);
+						}
+					}
 					//番組情報確認
 					if( r.savedPgInfo == false && r.recMode != RECMODE_VIEW ){
 						GET_EPG_PF_INFO_PARAM val;
@@ -405,9 +424,8 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 							Replace(r.epgEventName, L"\r\n", L"");
 							if( this->saveProgramInfo ){
 								for( int i = 0; i < 2; i++ ){
-									wstring recPath;
-									if( r.ctrlID[i] != 0 && ctrlCmd.SendViewGetRecFilePath(r.ctrlID[i], &recPath) == CMD_SUCCESS ){
-										SaveProgramInfo(recPath.c_str(), resVal, r.appendPgInfo);
+									if( r.recFilePath[i].empty() == false ){
+										SaveProgramInfo(r.recFilePath[i].c_str(), resVal, r.appendPgInfo);
 									}
 								}
 							}
@@ -593,7 +611,8 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 							retOther.scrambles = 0;
 							for( int i = 0; i < 2; i++ ){
 								if( itr->second.ctrlID[i] != 0 ){
-									if( ctrlCmd.SendViewGetRecFilePath(itr->second.ctrlID[i], &retOther.recFilePath) == CMD_SUCCESS ){
+									if( itr->second.recFilePath[i].empty() == false ){
+										retOther.recFilePath = itr->second.recFilePath[i];
 										retOther.type = itr->second.notStartHead ? CHECK_END_NOT_START_HEAD :
 										                itr->second.savedPgInfo == false ? CHECK_END_NOT_FIND_PF : CHECK_END;
 										retOther.epgStartTime = itr->second.epgStartTime;
@@ -1043,15 +1062,11 @@ void CTunerBankCtrl::CloseNWTV()
 bool CTunerBankCtrl::GetRecFilePath(DWORD reserveID, wstring& filePath, DWORD* ctrlID, DWORD* processID) const
 {
 	auto itr = this->reserveMap.find(reserveID);
-	if( itr != this->reserveMap.end() && itr->second.state == TR_REC && itr->second.recMode != RECMODE_VIEW ){
-		CWatchBlock watchBlock(&this->watchContext);
-		CSendCtrlCmd ctrlCmd;
-		ctrlCmd.SetPipeSetting(CMD2_VIEW_CTRL_WAIT_CONNECT, CMD2_VIEW_CTRL_PIPE, this->tunerPid);
-		wstring recFilePath;
-		DWORD mainCtrlID = itr->second.ctrlID[0] ? itr->second.ctrlID[0] : itr->second.ctrlID[1];
-		if( ctrlCmd.SendViewGetRecFilePath(mainCtrlID, &recFilePath) == CMD_SUCCESS ){
-			filePath = recFilePath;
-			*ctrlID = mainCtrlID;
+	if( itr != this->reserveMap.end() && itr->second.state == TR_REC ){
+		int i = itr->second.ctrlID[0] != 0 ? 0 : 1;
+		if( itr->second.recFilePath[i].empty() == false ){
+			filePath = itr->second.recFilePath[i];
+			*ctrlID = itr->second.ctrlID[i];
 			*processID = this->tunerPid;
 			return true;
 		}
