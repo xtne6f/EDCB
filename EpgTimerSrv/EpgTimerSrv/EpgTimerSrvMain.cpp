@@ -2124,6 +2124,7 @@ int CEpgTimerSrvMain::InitLuaCallback(lua_State* L)
 	LuaHelp::reg_function(L, "ChgReserveData", LuaChgReserveData, sys);
 	LuaHelp::reg_function(L, "DelReserveData", LuaDelReserveData, sys);
 	LuaHelp::reg_function(L, "GetReserveData", LuaGetReserveData, sys);
+	LuaHelp::reg_function(L, "GetRecFilePath", LuaGetRecFilePath, sys);
 	LuaHelp::reg_function(L, "GetRecFileInfo", LuaGetRecFileInfo, sys);
 	LuaHelp::reg_function(L, "DelRecFileInfo", LuaDelRecFileInfo, sys);
 	LuaHelp::reg_function(L, "GetTunerReserveAll", LuaGetTunerReserveAll, sys);
@@ -2646,6 +2647,21 @@ int CEpgTimerSrvMain::LuaGetReserveData(lua_State* L)
 		if( ws.sys->reserveManager.GetReserveData((DWORD)lua_tointeger(L, 1), &r) ){
 			lua_newtable(L);
 			PushReserveData(ws, r);
+			return 1;
+		}
+	}
+	return 0;
+}
+
+int CEpgTimerSrvMain::LuaGetRecFilePath(lua_State* L)
+{
+	CLuaWorkspace ws(L);
+	if( lua_gettop(L) == 1 ){
+		wstring filePath;
+		DWORD ctrlID;
+		DWORD processID;
+		if( ws.sys->reserveManager.GetRecFilePath((DWORD)lua_tointeger(L, 1), filePath, &ctrlID, &processID) ){
+			lua_pushstring(L, ws.WtoUTF8(filePath));
 			return 1;
 		}
 	}
