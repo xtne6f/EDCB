@@ -42,12 +42,14 @@ namespace EpgTimer
                     gridView.Columns.Clear();
                     foreach (ListColumnInfo info in setting)
                     {
-                        try
+                        if (columnList.ContainsKey(info.Tag))
                         {
                             columnList[info.Tag].Width = info.Width;
-                            gridView.Columns.Add(columnList[info.Tag]);
+                            if (!gridView.Columns.Contains(columnList[info.Tag]))
+                            {
+                                gridView.Columns.Add(columnList[info.Tag]);
+                            }
                         }
-                        catch { }
                     }
                 }
             }
