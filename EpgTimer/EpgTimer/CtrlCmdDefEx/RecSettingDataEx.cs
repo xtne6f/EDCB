@@ -20,7 +20,11 @@ namespace EpgTimer
 
         public static RecPresetItem LookUpPreset(this RecSettingData data, bool IsManual = false, bool CopyData = false)
         {
-            RecPresetItem preset = Settings.Instance.RecPresetList.FirstOrDefault(p1 =>
+            return LookUpPreset(data, Settings.Instance.RecPresetList, IsManual, CopyData);
+        }
+        public static RecPresetItem LookUpPreset(this RecSettingData data, IEnumerable<RecPresetItem> refdata, bool IsManual = false, bool CopyData = false)
+        {
+            RecPresetItem preset = refdata.FirstOrDefault(p1 =>
             {
                 return p1.RecPresetData.EqualsSettingTo(data, IsManual);
             });

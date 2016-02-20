@@ -99,6 +99,9 @@ namespace EpgTimer
                 //その他のショートカット(検索ダイアログ固有の設定)
                 searchKeyView.InputBindings.Add(new InputBinding(EpgCmds.Search, new KeyGesture(Key.Enter)));
 
+                //録画プリセット変更時の対応
+                recSettingView.SelectedPresetChanged += new EventHandler(SetRecSettingTabHeader);
+
                 //ウインドウ位置の復元
                 if (Settings.Instance.SearchWndTop != -100)
                 {
@@ -161,19 +164,6 @@ namespace EpgTimer
         public void SetRecSetting(RecSettingData set)
         {
             recSettingView.SetDefSetting(set);
-
-            if (Settings.Instance.DisplayPresetOnSearch == true)
-            {
-                var preset = recSettingView.comboBox_preSet.SelectedItem as RecPresetItem;
-                if (preset != null && string.IsNullOrEmpty(preset.DisplayName) == false)
-                {
-                    tabItem2.Header = string.Format("録画設定 - {0}", preset.DisplayName);
-                }
-            }
-            else
-            {
-                tabItem2.Header = "録画設定";
-            }
         }
 
         public EpgAutoAddData GetAutoAddData()
@@ -218,6 +208,20 @@ namespace EpgTimer
             this.Title = s;
         }
 
+        public void SetRecSettingTabHeader(object sender, EventArgs e)
+        {
+            string preset_str = "";
+            if (Settings.Instance.DisplayPresetOnSearch == true)
+            {
+                RecPresetItem preset = recSettingView.SelectedPreset(sender == null);
+                if (preset != null && string.IsNullOrEmpty(preset.DisplayName) == false)
+                {
+                    preset_str = string.Format(" - {0}", preset.DisplayName);
+                }
+            }
+            tabItem2.Header = "録画設定" + preset_str;
+        }
+
         private void SearchPg()
         {
             lstCtrl.ReloadInfoData(dataList =>
@@ -235,6 +239,7 @@ namespace EpgTimer
             });
 
             RefreshStatus();
+            SetRecSettingTabHeader(null, null);
             WindowTitleSet();
         }
 

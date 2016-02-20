@@ -13,6 +13,8 @@ namespace EpgTimer
     /// </summary>
     public partial class RecSettingView : UserControl
     {
+        public virtual event EventHandler SelectedPresetChanged = null;
+        
         private RecSettingData recSetting;
         private List<TunerSelectInfo> tunerList = new List<TunerSelectInfo>();
         private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
@@ -142,6 +144,21 @@ namespace EpgTimer
             return comboBox_preSet.Items.OfType<RecPresetItem>().FirstOrDefault(item => item.ID == presetID);
         }
 
+        public RecPresetItem SelectedPreset(bool isCheckData = false, bool isDisplayManual = false)
+        {
+            RecPresetItem preset = comboBox_preSet.SelectedItem as RecPresetItem;
+            if (isCheckData == true)
+            {
+                var preset_back = preset;
+                preset = GetRecSetting().LookUpPreset(comboBox_preSet.Items.OfType<RecPresetItem>(), isDisplayManual);
+                if (preset != null & comboBox_preSet.Items.Contains(preset) == false)
+                {
+                    preset.DisplayName = (preset_back != null ? preset_back.DisplayName : "カスタム") + "*";
+                }
+            }
+            return preset;
+        }
+
         public RecSettingData GetRecSetting()
         {
             if (initLoad == false)
@@ -244,6 +261,7 @@ namespace EpgTimer
             {
                 if (comboBox_preSet.SelectedItem != null)
                 {
+                    if (SelectedPresetChanged != null) SelectedPresetChanged(this, new EventArgs());
                     if (loadingDefSetting != true)
                     {
                         recSetting = (comboBox_preSet.SelectedItem as RecPresetItem).RecPresetData;
