@@ -22,7 +22,7 @@ namespace EpgTimer
             {
                 var nowSet = new NWPresetItem(DefPresetStr, Settings.Instance.NWServerIP, Settings.Instance.NWServerPort, Settings.Instance.NWWaitPort, Settings.Instance.NWMacAdd);
                 cmb_preset.Items.Add(nowSet);
-                Settings.Instance.NWPerset.ForEach(item => cmb_preset.Items.Add(item.Clone()));
+                Settings.Instance.NWPreset.ForEach(item => cmb_preset.Items.Add(item.Clone()));
                 cmb_preset.SelectedIndex = FindCmbPresetItem(nowSet, true);
             }
             catch { }
@@ -164,7 +164,7 @@ namespace EpgTimer
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            Settings.Instance.NWPerset = cmb_preset.Items.OfType<NWPresetItem>().Skip(1).ToList();
+            Settings.Instance.NWPreset = cmb_preset.Items.OfType<NWPresetItem>().Skip(1).ToList();
             Settings.SaveToXmlFile();
         }
 
