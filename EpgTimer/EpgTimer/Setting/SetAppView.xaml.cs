@@ -235,6 +235,7 @@ namespace EpgTimer.Setting
                 checkBox_SyncResAutoAddDelete.IsChecked = Settings.Instance.SyncResAutoAddDelete;
                 checkBox_keepTCPConnect.IsChecked = Settings.Instance.ChkSrvRegistTCP;
                 textBox_keepTCPConnect.Text = Settings.Instance.ChkSrvRegistInterval.ToString();
+                checkBox_forceNWMode.IsChecked = Settings.Instance.ForceNWMode;
 
                 checkBox_wakeReconnect.IsChecked = Settings.Instance.WakeReconnectNW;
                 checkBox_suspendClose.IsChecked = Settings.Instance.SuspendCloseNW;
@@ -466,7 +467,8 @@ namespace EpgTimer.Setting
                 Settings.Instance.NgAutoEpgLoadNW = (checkBox_ngAutoEpgLoad.IsChecked == true);
                 Settings.Instance.ChkSrvRegistTCP = (checkBox_keepTCPConnect.IsChecked != false);
                 Settings.Instance.ChkSrvRegistInterval = mutil.MyToNumerical(textBox_keepTCPConnect, Convert.ToDouble, 1440 * 7, 1, Settings.Instance.ChkSrvRegistInterval);
-                
+                Settings.Instance.ForceNWMode = (checkBox_forceNWMode.IsChecked != false);
+
                 Settings.Instance.DefSearchKey = defSearchKey.Clone();
 
                 Settings.Instance.ViewButtonShowAsTab = checkBox_showAsTab.IsChecked == true;

@@ -358,7 +358,8 @@ namespace EpgTimer
         public bool LaterTimeUse { get; set; }
         public int LaterTimeHour { get; set; }
         public bool DisplayPresetOnSearch { get; set; }
-        
+        public bool ForceNWMode { get; set; }
+
         public Settings()
         {
             UseCustomEpgView = false;
@@ -523,6 +524,7 @@ namespace EpgTimer
             LaterTimeUse = false;
             LaterTimeHour = 28 - 24;
             DisplayPresetOnSearch = false;
+            ForceNWMode = false;
         }
 
         [NonSerialized()]

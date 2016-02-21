@@ -48,6 +48,11 @@ namespace EpgTimer
             CommonManager.Instance.NWMode = appName.StartsWith("EpgTimerNW", StringComparison.OrdinalIgnoreCase);
 
             Settings.LoadFromXmlFile(CommonManager.Instance.NWMode);
+            if (Settings.Instance.ForceNWMode == true)
+            {
+                CommonManager.Instance.NWMode = true;
+                Settings.LoadFromXmlFile(CommonManager.Instance.NWMode);
+            }
             if (CommonManager.Instance.NWMode == true)
             {
                 CommonManager.Instance.DB.SetNoAutoReloadEPG(Settings.Instance.NgAutoEpgLoadNW);
@@ -84,7 +89,11 @@ namespace EpgTimer
                 }
             }
 
-            mutex = new Mutex(false, CommonManager.Instance.NWMode ? "Global\\EpgTimer_BonNW" + appName.Substring(10).ToUpper() : "Global\\EpgTimer_Bon2");
+            string appMutexName = Settings.Instance.ForceNWMode && appName.StartsWith("EpgTimerNW") == false ? "EpgTimerNW" + appName.Substring(8): appName;
+#if DEBUG
+            appMutexName += "(debug)";
+#endif
+            mutex = new Mutex(false, CommonManager.Instance.NWMode ? "Global\\EpgTimer_BonNW" + appMutexName.Substring(10).ToUpper() : "Global\\EpgTimer_Bon2");
             if (!mutex.WaitOne(0, false))
             {
                 CheckCmdLine();
@@ -139,7 +148,7 @@ namespace EpgTimer
 
             InitializeComponent();
 
-            Title = appName;
+            Title = appMutexName;
             initExe = true;
 
             try
