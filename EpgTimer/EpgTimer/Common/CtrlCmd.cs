@@ -364,6 +364,8 @@ namespace EpgTimer
         CMD_EPG_SRV_NWPLAY_SET_IP = 1086,
         /// <summary>ストリーム配信用ファイルをタイムシフトモードで開く</summary>
         CMD_EPG_SRV_NWPLAY_TF_OPEN = 1087,
+        /// <summary>録画ファイルのネットワークパスを取得</summary>
+        CMD_EPG_SRV_GET_NETWORK_PATH = 1299,
         /// <summary>ダイアログを前面に表示</summary>
         CMD_TIMER_GUI_SHOW_DLG = 101,
         /// <summary>予約一覧の情報が更新された</summary>
@@ -574,6 +576,8 @@ namespace EpgTimer
         public ErrCode SendGetNotifySrvStatus(ref NotifySrvInfo val) { object o = val; return SendAndReceiveCmdData2(CtrlCmd.CMD_EPG_SRV_GET_STATUS_NOTIFY2, 0, ref o); }
         /// <summary>指定キーワードで番組情報を検索する</summary>
         public ErrCode SendSearchPg(List<EpgSearchKeyInfo> key, ref List<EpgEventInfo> val) { object o = val; return SendAndReceiveCmdData2(CtrlCmd.CMD_EPG_SRV_SEARCH_PG2, key, ref o); }
+        /// <summary>録画ファイルのネットワークパスを取得</summary>
+        public ErrCode SendGetRecFileNetworkPath(string path, ref string val) { object o = val; var ret = SendAndReceiveCmdData(CtrlCmd.CMD_EPG_SRV_GET_NETWORK_PATH, path, ref o); val = (string)o; return ret; }
 
         /// <summary>指定キーワードで番組情報を検索する(キーごと)</summary>
         public ErrCode SendSearchPgByKey(List<EpgSearchKeyInfo> key, ref List<List<EpgEventInfo>> val)

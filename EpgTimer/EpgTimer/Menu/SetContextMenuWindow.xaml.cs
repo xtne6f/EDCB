@@ -161,6 +161,7 @@ namespace EpgTimer
                 checkBox_SearchTtile_Trim.IsChecked = info.SearchTitle_Trim;
                 textBox_SearchURI.Text = info.SearchURI;
                 checkBox_NoMessageNotKEY.IsChecked = info.NoMessageNotKEY;
+                checkBox_OpenParentFolder.IsChecked = info.OpenParentFolder;
 
                 defaultMenu = mm.GetDefaultCtxmSettingForEditor();
                 editMenu = info.ManualMenuItems.Clone();
@@ -229,6 +230,7 @@ namespace EpgTimer
                 info.SearchTitle_Trim = (checkBox_SearchTtile_Trim.IsChecked == true);
                 info.SearchURI = textBox_SearchURI.Text;
                 info.NoMessageNotKEY = (checkBox_NoMessageNotKEY.IsChecked == true);
+                info.OpenParentFolder = (checkBox_OpenParentFolder.IsChecked == true);
 
                 DialogResult = true;
             }

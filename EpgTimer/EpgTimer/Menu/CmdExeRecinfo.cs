@@ -70,7 +70,7 @@ namespace EpgTimer
             }
             else if (menu.Tag == EpgCmds.OpenFolder)
             {
-                string path = (dataList.Count == 0 ? null : System.IO.Path.GetDirectoryName(dataList[0].RecFilePath));
+                string path = (dataList.Count == 0 ? null : dataList[0].RecFilePath);
                 (menu.CommandParameter as EpgCmdParam).Data = path;
                 menu.ToolTip = path;
             }

@@ -42,6 +42,7 @@ namespace EpgTimer.Setting
                 textBox_playExe.Text = Settings.Instance.FilePlayExe;
                 textBox_playCmd.Text = Settings.Instance.FilePlayCmd;
                 checkBox_playOnAirWithExe.IsChecked = Settings.Instance.FilePlayOnAirWithExe;
+                checkBox_playOnNwWithExe.IsChecked = Settings.Instance.FilePlayOnNwWithExe;
 
                 comboBox_bon.ItemsSource = CommonManager.Instance.GetBonFileList();
                 if (comboBox_bon.Items.Count > 0)
@@ -105,6 +106,7 @@ namespace EpgTimer.Setting
             Settings.Instance.FilePlayExe = textBox_playExe.Text;
             Settings.Instance.FilePlayCmd = textBox_playCmd.Text;
             Settings.Instance.FilePlayOnAirWithExe = checkBox_playOnAirWithExe.IsChecked == true;
+            Settings.Instance.FilePlayOnNwWithExe = checkBox_playOnNwWithExe.IsChecked == true;
         }
 
         private void button_exe_Click(object sender, RoutedEventArgs e)

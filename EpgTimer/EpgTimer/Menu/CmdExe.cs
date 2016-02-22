@@ -306,7 +306,7 @@ namespace EpgTimer
         protected virtual void mc_Play(object sender, ExecutedRoutedEventArgs e) { }
         protected virtual void mc_OpenFolder(object sender, ExecutedRoutedEventArgs e)
         {
-            CommonManager.Instance.OpenFolder(CmdExeUtil.ReadObjData(e) as string);
+            CommonManager.Instance.OpenFolder(CmdExeUtil.ReadObjData(e) as string, "録画フォルダを開く");
         }
         protected virtual void mc_CopyTitle(object sender, ExecutedRoutedEventArgs e)
         {

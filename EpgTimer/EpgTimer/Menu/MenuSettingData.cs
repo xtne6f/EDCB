@@ -126,6 +126,7 @@ namespace EpgTimer
         public bool NoMessageAdjustRes { get; set; }
         public bool CancelAutoAddOff { get; set; }
         public bool AutoAddFazySerach { get; set; }
+        public bool OpenParentFolder { get; set; }
         public bool Keyword_Trim { get; set; }
         public bool CopyTitle_Trim { get; set; }
         public bool CopyContentBasic { get; set; }
@@ -144,6 +145,7 @@ namespace EpgTimer
             NoMessageAdjustRes = false;
             CancelAutoAddOff = false;
             AutoAddFazySerach = false;
+            OpenParentFolder = false;
             Keyword_Trim = true;
             CopyTitle_Trim = false;
             CopyContentBasic = false;
@@ -164,6 +166,7 @@ namespace EpgTimer
             dest.NoMessageAdjustRes = src.NoMessageAdjustRes;
             dest.CancelAutoAddOff = src.CancelAutoAddOff;
             dest.AutoAddFazySerach = src.AutoAddFazySerach;
+            dest.OpenParentFolder = src.OpenParentFolder;
             dest.Keyword_Trim = src.Keyword_Trim;
             dest.CopyTitle_Trim = src.CopyTitle_Trim;
             dest.CopyContentBasic = src.CopyContentBasic;

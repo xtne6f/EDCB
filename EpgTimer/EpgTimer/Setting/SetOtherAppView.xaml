@@ -39,8 +39,9 @@
                     <Button Content="開く" Height="23" HorizontalAlignment="Left" Margin="600,8,0,0" Name="button_playExe" VerticalAlignment="Top" Width="56" Click="button_playExe_Click" />
                     <Label Content="コマンドライン引数" Height="28" HorizontalAlignment="Left" Margin="16,38,0,0" Name="label7" VerticalAlignment="Top" />
                     <TextBox Height="24" HorizontalAlignment="Left" Margin="138,38,0,0" Name="textBox_playCmd" VerticalAlignment="Top" Width="456" />
-                    <Label Content="($FilePath$:ファイルパス、$FileNameExt$:ファイル名、を指定できます)" Height="28" HorizontalAlignment="Left" Margin="138,68,0,0" Name="label8" VerticalAlignment="Top" />
-                    <CheckBox Content="追っかけ再生にも使用する" Height="16" HorizontalAlignment="Left" Margin="138,102,0,0" Name="checkBox_playOnAirWithExe" VerticalAlignment="Top" />
+                    <CheckBox Content="EpgTimerNWでも使用する" Height="16" HorizontalAlignment="Left" Margin="323,68,0,0" Name="checkBox_playOnNwWithExe" VerticalAlignment="Top" />
+                    <CheckBox Content="追っかけ再生にも使用する" Height="16" HorizontalAlignment="Left" Margin="138,68,0,0" Name="checkBox_playOnAirWithExe" VerticalAlignment="Top" />
+                    <Label HorizontalAlignment="Left" Margin="138,90,0,0" VerticalAlignment="Top" Content="再生アプリのexeパスが未指定の場合は規定の再生アプリを使用します。&#10;コマンドラインでは、$FilePath$:ファイルパス、$FileNameExt$:ファイル名、が使用出来ます。&#10;　※再生アプリが未指定の場合も、コマンドラインをファイル名として展開します。&#10;　※空白は$FilePath$相当です。" />
                 </Grid>
             </TabItem>
         </TabControl>

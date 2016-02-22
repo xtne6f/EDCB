@@ -56,7 +56,7 @@
                         <CheckBox Margin="6,0,0,0" Content="(↑再検索でも共通)" IsEnabled="false" Name="checkBox_EpgKeyword_Trim2" IsChecked="{Binding Path=IsChecked, ElementName=checkBox_EpgKeyword_Trim, UpdateSourceTrigger=PropertyChanged}" />
                         <CheckBox Margin="6,0,0,0" Content="自動登録無効を解除する" Name="checkBox_CancelAutoAddOff" />
                         <CheckBox Margin="6,0,0,0" Visibility="Hidden"/>
-                        <CheckBox Margin="6,0,0,0" Visibility="Hidden"/>
+                        <CheckBox Margin="6,0,0,0" Content="一つ上で開く(録画結果除く)" Name="checkBox_OpenParentFolder" />
                         <Separator Margin="12,0,12,0" Height="10" />
                         <CheckBox Margin="6,0,0,0" Content="記号類を取り除く" Name="checkBox_CopyTitle_Trim" />
                         <CheckBox Margin="6,0,0,0" Content="基本情報のみコピーする" Name="checkBox_CopyContentBasic" />
