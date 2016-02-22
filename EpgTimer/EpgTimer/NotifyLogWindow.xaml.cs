@@ -1,18 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 using System.ComponentModel;
-using System.Collections.ObjectModel;
-using System.Collections;
 using System.IO;
 
 namespace EpgTimer
@@ -32,47 +23,36 @@ namespace EpgTimer
             lstCtrl.SetInitialSortKey(CommonUtil.GetMemberName(() => (new NotifySrvInfoItem()).Time), ListSortDirection.Descending);
             lstCtrl.SetViewSetting(listView_log, gridView_log, false, true);
         }
-
         private bool ReloadList()
         {
             return lstCtrl.ReloadInfoData(dataList =>
             {
-                foreach (NotifySrvInfo info in CommonManager.Instance.NotifyLogList)
-                {
-                    NotifySrvInfoItem item = new NotifySrvInfoItem();
-                    item.NotifyInfo = info;
-                    dataList.Add(item);
-                }
+                dataList.AddRange(CommonManager.Instance.NotifyLogList.Select(info => new NotifySrvInfoItem(info)));
                 return true;
             });
         }
-
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             ReloadList();
         }
-
         private void button_clear_Click(object sender, RoutedEventArgs e)
         {
             CommonManager.Instance.NotifyLogList.Clear();
             ReloadList();
         }
-
         private void button_save_Click(object sender, RoutedEventArgs e)
         {
-            Microsoft.Win32.SaveFileDialog dlg = new Microsoft.Win32.SaveFileDialog();
+            var dlg = new Microsoft.Win32.SaveFileDialog();
             dlg.DefaultExt = ".txt";
             dlg.Filter = "txt Files (.txt)|*.txt;|all Files(*.*)|*.*";
-
-            Nullable<bool> result = dlg.ShowDialog();
-            if (result == true)
+            if (dlg.ShowDialog() == true)
             {
-                StreamWriter file = new StreamWriter(dlg.FileName, false, System.Text.Encoding.GetEncoding("shift_jis") );
-                lstCtrl.dataList.ForEach(info => file.Write(info.FileLogText));
-                file.Close();
+                using (var file = new StreamWriter(dlg.FileName))
+                {
+                    lstCtrl.dataList.ForEach(info => file.Write(info.FileLogText));
+                }
             }
         }
-
         protected override void OnKeyDown(KeyEventArgs e)
         {
             if (Keyboard.Modifiers == ModifierKeys.None)
@@ -86,6 +66,5 @@ namespace EpgTimer
             }
             base.OnKeyDown(e);
         }
-
     }
 }

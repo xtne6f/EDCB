@@ -1556,15 +1556,13 @@ namespace EpgTimer
         {
             if (Settings.Instance.AutoSaveNotifyLog == 1)
             {
-                String filePath = SettingPath.ModulePath;
-                filePath += "\\Log";
+                String filePath = SettingPath.ModulePath + "\\Log";
                 Directory.CreateDirectory(filePath);
                 filePath += "\\EpgTimerNotify_" + DateTime.Now.ToString("yyyyMMdd") + ".txt";
-                StreamWriter file = new StreamWriter(filePath, true, System.Text.Encoding.GetEncoding("shift_jis"));
-                NotifySrvInfoItem info = new NotifySrvInfoItem();
-                info.NotifyInfo = notifyInfo;
-                file.Write(info.FileLogText);
-                file.Close();
+                using (var file = new StreamWriter(filePath, true))
+                {
+                    file.Write((new NotifySrvInfoItem(notifyInfo)).FileLogText);
+                }
             }
         }
 
