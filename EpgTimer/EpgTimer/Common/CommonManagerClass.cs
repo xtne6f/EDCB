@@ -670,6 +670,7 @@ namespace EpgTimer
             //超手抜き。書式が変ったら、巻き込まれて死ぬ。
             var start = new DateTime(2000, 1, 2 + info.startDayOfWeek, info.startHour, info.startMin, 0);
             var end = new DateTime(2000, 1, 2 + info.endDayOfWeek, info.endHour, info.endMin, 0);
+            if (end < start) end = end.AddDays(7);
             string reftxt = ConvertTimeText(start, (uint)(end - start).TotalSeconds, true, true, false, false);
             string[] src = reftxt.Split(new char[] { ' ', '～' });
             return src[0].Substring(6, 1) + " " + src[1] + " ～ " + src[2].Substring(6, 1) + " " + src[3];

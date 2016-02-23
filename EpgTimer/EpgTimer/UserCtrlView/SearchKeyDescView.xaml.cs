@@ -361,7 +361,6 @@ namespace EpgTimer
             info.endDayOfWeek = endWeek.Value;
             info.endHour = (UInt16)comboBox_time_eh.SelectedIndex;
             info.endMin = (UInt16)comboBox_time_em.SelectedIndex;
-            info.RegulateData();
 
             listBox_date.Items.Add(new DateItem(info));
         }
