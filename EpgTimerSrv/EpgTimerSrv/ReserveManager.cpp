@@ -235,62 +235,17 @@ bool CReserveManager::GetReserveData(DWORD id, RESERVE_DATA* reserveData, bool g
 		*reserveData = itr->second;
 		reserveData->recFileNameList.clear();
 		if( getRecFileName ){
-			const vector<REC_FILE_SET_INFO>& folderList = reserveData->recSetting.recFolderList;
-			vector<wstring>& nameList = reserveData->recFileNameList;
-			if( folderList.empty() ){
-				nameList.push_back(this->recNamePlugInFileName);
-			}else{
-				for( size_t i = 0; i < folderList.size(); i++ ){
-					nameList.push_back(folderList[i].recNamePlugIn.empty() ? this->recNamePlugInFileName : folderList[i].recNamePlugIn);
-				}
-			}
+			RESERVE_DATA& r = *reserveData;
 			//recNamePlugInを展開して実ファイル名をセット
-			for( size_t i = 0; i < nameList.size(); i++ ){
-				if( nameList[i].empty() == false ){
-					wstring plugInPath;
-					GetModuleFolderPath(plugInPath);
-					plugInPath += L"\\RecName\\";
-					{
-						PLUGIN_RESERVE_INFO info;
-						info.startTime = reserveData->startTime;
-						info.durationSec = reserveData->durationSecond;
-						wcscpy_s(info.eventName, reserveData->title.c_str());
-						info.ONID = reserveData->originalNetworkID;
-						info.TSID = reserveData->transportStreamID;
-						info.SID = reserveData->serviceID;
-						info.EventID = reserveData->eventID;
-						wcscpy_s(info.serviceName, reserveData->stationName.c_str());
-						//TODO: チューナに関する情報をセット
-						wcscpy_s(info.bonDriverName, L"チューナー不明");
-						info.bonDriverID = 0xFFFF;
-						info.tunerID = 0xFFFF;
-						std::unique_ptr<EPG_EVENT_INFO> epgInfo;
-						if( info.EventID != 0xFFFF ){
-							EPGDB_EVENT_INFO epgDBInfo;
-							if( this->epgDBManager.SearchEpg(info.ONID, info.TSID, info.SID, info.EventID, &epgDBInfo) != FALSE ){
-								epgInfo.reset(new EPG_EVENT_INFO);
-								CopyEpgInfo(epgInfo.get(), &epgDBInfo);
-							}
-						}
-						info.reserveID = reserveData->reserveID;
-						info.epgInfo = epgInfo.get();
-						info.sizeOfStruct = 0;
-						WCHAR name[512];
-						DWORD size = 512;
-						if( CReNamePlugInUtil::ConvertRecName3(&info, nameList[i].c_str(), plugInPath.c_str(), name, &size) ){
-							nameList[i] = name;
-							CheckFileName(nameList[i], this->recNameNoChkYen);
-						}else{
-							nameList[i].clear();
-						}
+			for( size_t i = 0; i <= r.recSetting.recFolderList.size(); i++ ){
+				if( i < r.recSetting.recFolderList.size() || r.recSetting.recFolderList.empty() ){
+					const wstring* recNamePlugIn = &this->recNamePlugInFileName;
+					if( i < r.recSetting.recFolderList.size() && r.recSetting.recFolderList[i].recNamePlugIn.empty() == false ){
+						recNamePlugIn = &r.recSetting.recFolderList[i].recNamePlugIn;
 					}
-				}
-				//実ファイル名は空にしない
-				if( nameList[i].empty() ){
-					SYSTEMTIME st = reserveData->startTime;
-					Format(nameList[i], L"%04d%02d%02d%02d%02dFFFFFFFF0-%s.ts",
-					       st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, reserveData->title.c_str());
-					CheckFileName(nameList[i]);
+					r.recFileNameList.push_back(CTunerBankCtrl::ConvertRecName(
+						recNamePlugIn->c_str(), r.startTime, r.durationSecond, r.title.c_str(), r.originalNetworkID, r.transportStreamID, r.serviceID, r.eventID,
+						r.stationName.c_str(), L"チューナー不明", 0xFFFFFFFF, r.reserveID, this->epgDBManager, r.startTime, 0, this->recNameNoChkYen));
 				}
 			}
 		}

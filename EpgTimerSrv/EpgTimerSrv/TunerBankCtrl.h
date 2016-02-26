@@ -112,6 +112,11 @@ public:
 	void CloseNWTV();
 	//予約が録画中であればその録画ファイル名などを取得する
 	bool GetRecFilePath(DWORD reserveID, wstring& filePath, DWORD* ctrlID, DWORD* processID) const;
+	//予約情報をもとにファイル名を生成する
+	static wstring ConvertRecName(
+		LPCWSTR recNamePlugIn, const SYSTEMTIME& startTime, DWORD durationSec, LPCWSTR eventName, WORD onid, WORD tsid, WORD sid, WORD eid,
+		LPCWSTR serviceName, LPCWSTR bonDriverName, DWORD tunerID, DWORD reserveID, CEpgDBManager& epgDBManager_,
+		const SYSTEMTIME& startTimeForDefault, DWORD ctrlID, bool noChkYen);
 	//バンクを監視して必要ならチューナを強制終了する
 	//概ね2秒ごとにワーカスレッドから呼ぶ
 	void Watch();
