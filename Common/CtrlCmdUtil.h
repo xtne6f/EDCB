@@ -312,15 +312,6 @@ BYTE* NewWriteVALUE( const T& val, DWORD& writeSize )
 }
 
 template<class T>
-BYTE* NewWriteVALUE( T* val, DWORD& writeSize )
-{
-	if( val == NULL ){
-		return NULL;
-	}
-	return NewWriteVALUE(*val, writeSize);
-}
-
-template<class T>
 inline BOOL ReadVALUE2( WORD ver, T* val, const BYTE* buff, DWORD buffSize, DWORD* readSize )
 {
 	if( val == NULL || buff == NULL ){
@@ -347,15 +338,6 @@ BYTE* NewWriteVALUE2WithVersion( WORD ver, const T& val, DWORD& writeSize )
 	}
 	writeSize = buffSize;
 	return buff;
-}
-
-template<class T>
-BYTE* NewWriteVALUE2WithVersion( WORD ver, T* val, DWORD& writeSize )
-{
-	if( val == NULL ){
-		return NULL;
-	}
-	return NewWriteVALUE2WithVersion(ver, *val, writeSize);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////

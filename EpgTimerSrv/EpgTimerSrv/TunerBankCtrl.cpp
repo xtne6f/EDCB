@@ -411,7 +411,7 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 						val.SID = r.sid;
 						val.pfNextFlag = FALSE;
 						EPGDB_EVENT_INFO resVal;
-						if( ctrlCmd.SendViewGetEventPF(&val, &resVal) == CMD_SUCCESS &&
+						if( ctrlCmd.SendViewGetEventPF(val, &resVal) == CMD_SUCCESS &&
 						    resVal.StartTimeFlag && resVal.DurationFlag &&
 						    ConvertI64Time(resVal.start_time) <= r.startTime + 30 * I64_1SEC &&
 						    r.startTime + 30 * I64_1SEC < ConvertI64Time(resVal.start_time) + resVal.durationSec * I64_1SEC &&
@@ -577,7 +577,7 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 					chgCh.useBonCh = FALSE;
 					//u—\–ñ˜^‰æ‘Ò‹@’†v
 					ctrlCmd.SendViewSetStandbyRec(1);
-					if( ctrlCmd.SendViewSetCh(&chgCh) == CMD_SUCCESS ){
+					if( ctrlCmd.SendViewSetCh(chgCh) == CMD_SUCCESS ){
 						this->tunerChLocked = true;
 						this->tunerResetLock = false;
 						this->tunerChChgTick = GetTickCount();
@@ -919,7 +919,7 @@ bool CTunerBankCtrl::StartEpgCap(const vector<SET_CH_INFO>& setChList)
 			CSendCtrlCmd ctrlCmd;
 			ctrlCmd.SetPipeSetting(CMD2_VIEW_CTRL_WAIT_CONNECT, CMD2_VIEW_CTRL_PIPE, this->tunerPid);
 			//EPGŽæ“¾ŠJŽn
-			if( ctrlCmd.SendViewEpgCapStart(&setChList) == CMD_SUCCESS ){
+			if( ctrlCmd.SendViewEpgCapStart(setChList) == CMD_SUCCESS ){
 				this->specialState = TR_EPGCAP;
 				return true;
 			}
@@ -951,7 +951,7 @@ bool CTunerBankCtrl::SearchEpgInfo(WORD sid, WORD eid, EPGDB_EVENT_INFO* resVal)
 		val.SID = sid;
 		val.eventID = eid;
 		val.pfOnlyFlag = 0;
-		if( ctrlCmd.SendViewSearchEvent(&val, resVal) == CMD_SUCCESS ){
+		if( ctrlCmd.SendViewSearchEvent(val, resVal) == CMD_SUCCESS ){
 			if( resVal->shortInfo ){
 				//‚²‚­‹H‚ÉAPR(‰üs)‚ðŠÜ‚Þ‚½‚ß
 				Replace(resVal->shortInfo->event_name, L"\r\n", L"");
@@ -975,7 +975,7 @@ int CTunerBankCtrl::GetEventPF(WORD sid, bool pfNextFlag, EPGDB_EVENT_INFO* resV
 		val.TSID = this->tunerTSID;
 		val.SID = sid;
 		val.pfNextFlag = pfNextFlag;
-		DWORD ret = ctrlCmd.SendViewGetEventPF(&val, resVal);
+		DWORD ret = ctrlCmd.SendViewGetEventPF(val, resVal);
 		if( ret == CMD_SUCCESS ){
 			if( resVal->shortInfo ){
 				//‚²‚­‹H‚ÉAPR(‰üs)‚ðŠÜ‚Þ‚½‚ß
@@ -1006,7 +1006,7 @@ bool CTunerBankCtrl::SetNWTVCh(bool nwUdp, bool nwTcp, const SET_CH_INFO& chInfo
 		CWatchBlock watchBlock(&this->watchContext);
 		CSendCtrlCmd ctrlCmd;
 		ctrlCmd.SetPipeSetting(CMD2_VIEW_CTRL_WAIT_CONNECT, CMD2_VIEW_CTRL_PIPE, this->tunerPid);
-		ctrlCmd.SendViewSetCh(&chInfo);
+		ctrlCmd.SendViewSetCh(chInfo);
 		return true;
 	}
 	return false;
@@ -1119,7 +1119,7 @@ bool CTunerBankCtrl::OpenTuner(bool minWake, bool nwUdp, bool nwTcp, bool standb
 					ctrlCmd.SendViewSetStandbyRec(1);
 				}
 				if( initCh ){
-					ctrlCmd.SendViewSetCh(initCh);
+					ctrlCmd.SendViewSetCh(*initCh);
 				}
 				return true;
 			}

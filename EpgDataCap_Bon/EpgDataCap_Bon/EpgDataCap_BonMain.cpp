@@ -1004,7 +1004,7 @@ void CEpgDataCap_BonMain::CtrlCmdCallbackInvoked()
 				resVal.subRecFlag = (BYTE)subRec;
 				sys->bonCtrl.GetErrCount(val.ctrlID, &resVal.drop, &resVal.scramble);
 				if(sys->bonCtrl.EndSave(val.ctrlID) == TRUE){
-					resParam->data = NewWriteVALUE(&resVal, resParam->dataSize);
+					resParam->data = NewWriteVALUE(resVal, resParam->dataSize);
 					resParam->param = CMD_SUCCESS;
 					if( sys->ctrlMap.size() == 1 ){
 						PostMessage(sys->msgWnd, WM_RESERVE_REC_STOP, 0, 0);
@@ -1084,7 +1084,7 @@ void CEpgDataCap_BonMain::CtrlCmdCallbackInvoked()
 			if( ReadVALUE(&key, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
 				EPGDB_EVENT_INFO epgInfo;
 				if( sys->bonCtrl.SearchEpgInfo(key.ONID, key.TSID, key.SID, key.eventID, key.pfOnlyFlag, &epgInfo) == TRUE ){
-					resParam->data = NewWriteVALUE(&epgInfo, resParam->dataSize);
+					resParam->data = NewWriteVALUE(epgInfo, resParam->dataSize);
 					resParam->param = CMD_SUCCESS;
 				}
 			}
@@ -1096,7 +1096,7 @@ void CEpgDataCap_BonMain::CtrlCmdCallbackInvoked()
 			if( ReadVALUE(&key, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
 				EPGDB_EVENT_INFO epgInfo;
 				if( sys->bonCtrl.GetEpgInfo(key.ONID, key.TSID, key.SID, key.pfNextFlag, &epgInfo) == TRUE ){
-					resParam->data = NewWriteVALUE(&epgInfo, resParam->dataSize);
+					resParam->data = NewWriteVALUE(epgInfo, resParam->dataSize);
 					resParam->param = CMD_SUCCESS;
 				}
 			}
