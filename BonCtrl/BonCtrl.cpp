@@ -456,52 +456,6 @@ UINT WINAPI CBonCtrl::AnalyzeThread(LPVOID param)
 	return 0;
 }
 
-//自ストリームのサービス一覧を取得する
-//戻り値：
-// エラーコード
-//引数：
-// serviceList				[OUT]サービス情報のリスト
-DWORD CBonCtrl::GetServiceListActual(
-	vector<TS_SERVICE_INFO>* serviceList
-	)
-{
-	DWORD _serviceListSize = 0;
-	SERVICE_INFO* _serviceList = NULL;
-	DWORD err = this->tsOut.GetServiceListActual(&_serviceListSize, &_serviceList);
-	if( err == NO_ERR ){
-		for( DWORD i=0; i<_serviceListSize; i++ ){
-			TS_SERVICE_INFO item;
-			item.ONID = _serviceList[i].original_network_id;
-			item.TSID = _serviceList[i].transport_stream_id;
-			item.SID = _serviceList[i].service_id;
-			if( _serviceList[i].extInfo != NULL ){
-				item.serviceType = _serviceList[i].extInfo->service_type;
-				item.partialFlag = _serviceList[i].extInfo->partialReceptionFlag;
-				if( _serviceList[i].extInfo->service_name != NULL ){
-					item.serviceName = _serviceList[i].extInfo->service_name;
-				}else{
-					item.serviceName = L"";
-				}
-				if( _serviceList[i].extInfo->network_name != NULL ){
-					item.networkName = _serviceList[i].extInfo->network_name;
-				}else{
-					item.networkName = L"";
-				}
-				item.remoteControlKeyID = _serviceList[i].extInfo->remote_control_key_id;
-			}else{
-				item.serviceType = 0;
-				item.partialFlag = 0;
-				item.serviceName = L"";
-				item.networkName = L"";
-				item.remoteControlKeyID = 0;
-			}
-			serviceList->push_back(item);
-		}
-	}
-
-	return err;
-}
-
 //サービス一覧を取得する
 //戻り値：
 // エラーコード

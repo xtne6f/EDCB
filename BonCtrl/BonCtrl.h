@@ -114,15 +114,6 @@ public:
 	// シグナルレベル
 	float GetSignalLevel();
 
-	//自ストリームのサービス一覧を取得する
-	//戻り値：
-	// エラーコード
-	//引数：
-	// serviceList				[OUT]サービス情報のリスト
-	DWORD GetServiceListActual(
-		vector<TS_SERVICE_INFO>* serviceList
-		);
-
 	//サービス一覧を取得する
 	//戻り値：
 	// エラーコード
