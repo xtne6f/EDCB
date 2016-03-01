@@ -187,8 +187,10 @@ public:
 	// エラーコード
 	//引数：
 	// asyncMode		[IN]TRUE:非同期モード、FALSE:同期モード
+	// loadDllFilePath	[IN]ロードするDLLパス
 	DWORD Initialize(
-		BOOL asyncFlag
+		BOOL asyncFlag,
+		LPCWSTR loadDllFilePath = L"EpgDataCap3.dll"
 		);
 
 	//DLLの開放
@@ -341,7 +343,7 @@ protected:
 	GetTimeDelayEP3			pfnGetTimeDelayEP3;
 
 protected:
-	BOOL LoadDll();
+	BOOL LoadDll(LPCWSTR loadDllFilePath);
 	BOOL UnLoadDll(void);
 };
 

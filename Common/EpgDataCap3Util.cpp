@@ -14,7 +14,7 @@ CEpgDataCap3Util::~CEpgDataCap3Util(void)
 	UnLoadDll();
 }
 
-BOOL CEpgDataCap3Util::LoadDll(void)
+BOOL CEpgDataCap3Util::LoadDll(LPCWSTR loadDllFilePath)
 {
 	if( module != NULL ){
 		return FALSE;
@@ -37,10 +37,10 @@ BOOL CEpgDataCap3Util::LoadDll(void)
 
 	BOOL ret = TRUE;
 
-	module = ::LoadLibrary(L"EpgDataCap3.dll");
+	module = ::LoadLibrary(loadDllFilePath);
 
 	if( module == NULL ){
-		OutputDebugString(L"EpgDataCap3.dllのロードに失敗しました\r\n");
+		_OutputDebugString(L"%sのロードに失敗しました\r\n", loadDllFilePath);
 		return FALSE;
 	}
 
@@ -161,11 +161,13 @@ BOOL CEpgDataCap3Util::UnLoadDll(void)
 // エラーコード
 //引数：
 // asyncMode		[IN]TRUE:非同期モード、FALSE:同期モード
+// loadDllFilePath	[IN]ロードするDLLパス
 DWORD CEpgDataCap3Util::Initialize(
-	BOOL asyncFlag
+	BOOL asyncFlag,
+	LPCWSTR loadDllFilePath
 	)
 {
-	if( LoadDll() == FALSE ){
+	if( LoadDll(loadDllFilePath) == FALSE ){
 		return ERR_INIT;
 	}
 	DWORD err = pfnInitializeEP3(asyncFlag, &id);
