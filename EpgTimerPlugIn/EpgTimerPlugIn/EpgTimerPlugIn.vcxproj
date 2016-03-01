@@ -166,12 +166,12 @@
     <ClInclude Include="..\..\Common\SendCtrlCmd.h" />
     <ClInclude Include="..\..\Common\StringUtil.h" />
     <ClInclude Include="..\..\Common\StructDef.h" />
+    <ClInclude Include="..\..\Common\TVTestPlugin.h" />
     <ClInclude Include="EpgTimerPlugIn.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="StreamCtrlDlg.h" />
     <ClInclude Include="targetver.h" />
-    <ClInclude Include="TVTestPlugin.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Common\CtrlCmdUtil.cpp" />
