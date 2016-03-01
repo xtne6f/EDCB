@@ -82,7 +82,6 @@ public:
 protected:
 	HANDLE lockEvent;
 	HANDLE lockBuffEvent;
-	CPacketInit* packetInit;
 	CSendUDP* sendUdp;
 	CSendTCP* sendTcp;
 
