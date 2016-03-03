@@ -76,10 +76,16 @@ namespace EpgTimer.EpgView
 
             popupItem.Background = viewInfo.ContentColor;
 
-            Canvas.SetLeft(popupItem, Math.Floor(viewInfo.LeftPos));
-            Canvas.SetTop(popupItem, Math.Floor(viewInfo.TopPos));
+            UpdatePopupPosition(viewInfo.LeftPos, viewInfo.TopPos);
             popupItem.Width = viewInfo.Width;
-            popupItem.MinHeight = viewInfo.Height;
+            if (viewInfo.TopPos < scroll.ContentVerticalOffset)
+            {
+                popupItem.MinHeight = viewInfo.TopPos + viewInfo.Height - scroll.ContentVerticalOffset;
+            }
+            else
+            {
+                popupItem.MinHeight = Math.Min(scroll.ContentVerticalOffset + scroll.ActualHeight - viewInfo.TopPos - 18, viewInfo.Height);
+            }
 
             double sizeMin = Settings.Instance.FontSizeTitle - 1;
             double sizeTitle = Settings.Instance.FontSizeTitle;

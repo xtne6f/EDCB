@@ -148,6 +148,44 @@ namespace EpgTimer.UserCtrlView
             }
         }
 
+        // PopUp が画面内に収まるように調整する
+        protected void UpdatePopupPosition(double LeftPos, double TopPos)
+        {
+            // offsetHが正のとき右にはみ出している
+            double offsetH = LeftPos + PopUp.ActualWidth - (scroll.ContentHorizontalOffset + scroll.ActualWidth - 18);
+            // 右にはみ出した分だけ左にずらす
+            double left = LeftPos - Math.Max(0, offsetH);
+            // 左にはみ出てる場合はscrollエリアの左端から表示する
+            Canvas.SetLeft(PopUp, Math.Floor(Math.Max(left, scroll.ContentHorizontalOffset)));
+
+            // offsetVが正のとき下にはみ出している
+            double offsetV = TopPos + PopUp.ActualHeight - (scroll.ContentVerticalOffset + scroll.ActualHeight - 18);
+            // 下にはみ出した分だけ上にずらす
+            double top = TopPos - Math.Max(0, offsetV);
+            // 上にはみ出てる場合はscrollエリアの上端から表示する
+            Canvas.SetTop(PopUp, Math.Floor(Math.Max(top, scroll.ContentVerticalOffset)));
+        }
+
+        // PopUp の ActualWidth と ActualHeight を取得するために SizeChanged イベントを捕捉する
+        protected virtual void popupItem_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            double LeftPos = 0;
+            double TopPos = 0;
+            if (lastPopupInfo is ProgramViewItem)
+            {
+                var popup = lastPopupInfo as ProgramViewItem;
+                LeftPos = popup.LeftPos;
+                TopPos = popup.TopPos;
+            }
+            else if (lastPopupInfo is ReserveViewItem)
+            {
+                var popup = lastPopupInfo as ReserveViewItem;
+                LeftPos = popup.LeftPos;
+                TopPos = popup.TopPos;
+            }
+            UpdatePopupPosition(LeftPos, TopPos);
+        }
+
         /// <summary>マウスホイールイベント呼び出し</summary>
         protected virtual void scrollViewer_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
         {

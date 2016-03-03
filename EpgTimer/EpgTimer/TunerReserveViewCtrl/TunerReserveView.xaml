@@ -11,7 +11,7 @@
         <ScrollViewer Name="scrollViewer" HorizontalScrollBarVisibility="Visible" ScrollChanged="scrollViewer_ScrollChanged" PreviewMouseWheel="scrollViewer_PreviewMouseWheel">
             <Canvas Name="canvas" HorizontalAlignment="Left" VerticalAlignment="Top" MouseMove="canvas_MouseMove" MouseLeftButtonDown="canvas_MouseLeftButtonDown" MouseLeftButtonUp="canvas_MouseLeftButtonUp" MouseRightButtonDown="canvas_MouseRightButtonDown" MouseLeave="canvas_MouseLeave" >
                 <local:TunerReservePanel x:Name="reserveViewPanel" Background="DarkGray" HorizontalAlignment="Left" VerticalAlignment="Top" />
-                <Border x:Name="popupItem" BorderBrush="DarkGray" BorderThickness="1" IsHitTestVisible="False" Canvas.ZIndex="20">
+                <Border x:Name="popupItem" BorderBrush="DarkGray" BorderThickness="1" IsHitTestVisible="False" Canvas.ZIndex="20" SizeChanged="popupItem_SizeChanged">
                     <Border.Effect>
                         <DropShadowEffect BlurRadius="12" Opacity="0.5"/>
                     </Border.Effect>

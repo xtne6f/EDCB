@@ -66,10 +66,16 @@ namespace EpgTimer.TunerReserveViewCtrl
             
             popupItem.Background = viewInfo.BackColorTuner;
 
-            Canvas.SetLeft(popupItem, Math.Floor(viewInfo.LeftPos));
-            Canvas.SetTop(popupItem, Math.Floor(viewInfo.TopPos));
-            popupItem.Width = Math.Ceiling(viewInfo.Width + 1);
-            popupItem.MinHeight = Math.Ceiling(viewInfo.Height + 1);
+            UpdatePopupPosition(viewInfo.LeftPos, viewInfo.TopPos);
+            popupItem.Width = viewInfo.Width;
+            if (viewInfo.TopPos < scroll.ContentVerticalOffset)
+            {
+                popupItem.MinHeight = viewInfo.TopPos + viewInfo.Height - scroll.ContentVerticalOffset;
+            }
+            else
+            {
+                popupItem.MinHeight = Math.Min(scroll.ContentVerticalOffset + scroll.ActualHeight - viewInfo.TopPos - 18, viewInfo.Height);
+            }
             popupItemTextArea.Margin = new Thickness(1, -1, 5, 1);
 
             double sizeTitle = Settings.Instance.TunerFontSizeService;
