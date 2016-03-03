@@ -7,22 +7,10 @@ using System.Windows.Media;
 
 namespace EpgTimer
 {
-    public class ViewPanelItem<T>
+    public class ViewPanelItemBase
     {
-        protected ViewUtil vutil = CommonManager.Instance.VUtil;
+        public ViewPanelItemBase() { TitleDrawErr = false; }
 
-        protected T _data = default(T);
-        public T Data { get { return _data; } set { _data = value; } }
-
-        public ViewPanelItem()
-        {
-            TitleDrawErr = false;
-        }
-        public ViewPanelItem(T info)
-        {
-            _data = info;
-            TitleDrawErr = false;
-        }
         public double Width { get; set; }
         public double Height { get; set; }
         public double LeftPos { get; set; }
@@ -38,6 +26,13 @@ namespace EpgTimer
             return LeftPos <= cursorPos.X && cursorPos.X < LeftPos + Width &&
                     TopPos <= cursorPos.Y && cursorPos.Y < TopPos + Height;
         }
+    }
+
+    public class ViewPanelItem<T> : ViewPanelItemBase
+    {
+        protected T _data = default(T);
+        public T Data { get { return _data; } set { _data = value; } }
+        public ViewPanelItem(T info) : base() { _data = info; }
     }
 
     public static class ViewPanelItemEx

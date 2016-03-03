@@ -53,7 +53,7 @@ namespace EpgTimer.EpgView
             base.PopupClear();
             resPopItem = null;
         }
-        protected override object GetPopupItem(Point cursorPos)
+        protected override ViewPanelItemBase GetPopupItem(Point cursorPos)
         {
             ReserveViewItem lastresPopItem = resPopItem;
             resPopItem = reserveList == null ? null : reserveList.Find(pg => pg.IsPicked(cursorPos));
@@ -69,23 +69,14 @@ namespace EpgTimer.EpgView
             return GetProgramViewData(cursorPos);
         }
 
-        protected override void SetPopup(object item)
+        protected override void SetPopup(ViewPanelItemBase item)
         {
+            base.SetPopup(item);
+
             var viewInfo = (ProgramViewItem)item;
             EpgEventInfo epgInfo = viewInfo.EventInfo;
 
             popupItem.Background = viewInfo.ContentColor;
-
-            UpdatePopupPosition(viewInfo.LeftPos, viewInfo.TopPos);
-            popupItem.Width = viewInfo.Width;
-            if (viewInfo.TopPos < scroll.ContentVerticalOffset)
-            {
-                popupItem.MinHeight = viewInfo.TopPos + viewInfo.Height - scroll.ContentVerticalOffset;
-            }
-            else
-            {
-                popupItem.MinHeight = Math.Min(scroll.ContentVerticalOffset + scroll.ActualHeight - viewInfo.TopPos - 18, viewInfo.Height);
-            }
 
             double sizeMin = Settings.Instance.FontSizeTitle - 1;
             double sizeTitle = Settings.Instance.FontSizeTitle;

@@ -25,7 +25,7 @@ namespace EpgTimer
         {
             get
             {
-                return vutil.ReserveErrBrush(ReserveInfo);
+                return CommonManager.Instance.VUtil.ReserveErrBrush(ReserveInfo);
             }
         }
         public String StatusTuner
