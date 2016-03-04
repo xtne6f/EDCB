@@ -159,7 +159,7 @@ namespace EpgTimer.UserCtrlView
             }
             else
             {
-                PopUp.MinHeight = Math.Min(scroll.ContentVerticalOffset + scroll.ActualHeight - popInfo.TopPos - 18, popInfo.Height);
+                PopUp.MinHeight = Math.Max(0, Math.Min(scroll.ContentVerticalOffset + scroll.ActualHeight - popInfo.TopPos - 18, popInfo.Height));
             }
         }
 
