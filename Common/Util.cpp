@@ -72,3 +72,25 @@ void GetLastErrMsg(DWORD err, wstring& msg)
 	msg = (LPWSTR)lpMsgBuf;
 	LocalFree( lpMsgBuf );
 }
+
+std::basic_string<TCHAR> GetPrivateProfileToString(LPCTSTR lpAppName, LPCTSTR lpKeyName, LPCTSTR lpDefault, LPCTSTR lpFileName)
+{
+	TCHAR szBuff[512];
+	DWORD n = GetPrivateProfileString(lpAppName, lpKeyName, lpDefault, szBuff, 512, lpFileName);
+	if( n >= 510 ){
+		vector<TCHAR> buff(512);
+		do{
+			buff.resize(buff.size() * 2);
+			n = GetPrivateProfileString(lpAppName, lpKeyName, lpDefault, &buff.front(), (DWORD)buff.size(), lpFileName);
+		}while( n >= buff.size() - 2 && buff.size() < 1024 * 1024 );
+		return std::basic_string<TCHAR>(buff.begin(), buff.begin() + n);
+	}
+	return std::basic_string<TCHAR>(szBuff, szBuff + n);
+}
+
+BOOL WritePrivateProfileInt(LPCTSTR lpAppName, LPCTSTR lpKeyName, int value, LPCTSTR lpFileName)
+{
+	TCHAR sz[32];
+	wsprintf(sz, TEXT("%d"), value);
+	return WritePrivateProfileString(lpAppName, lpKeyName, sz, lpFileName);
+}

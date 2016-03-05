@@ -291,16 +291,10 @@ bool CParseRecInfoText::ChgProtectRecInfo(DWORD id, BYTE flag)
 	return false;
 }
 
-void CParseRecInfoText::GetProtectFiles(map<wstring, wstring>* fileMap) const
+void CParseRecInfoText::SetRecInfoFolder(LPCWSTR recInfoFolder)
 {
-	fileMap->clear();
-	for( map<DWORD, REC_FILE_INFO>::const_iterator itr = this->itemMap.begin(); itr != this->itemMap.end(); itr++ ){
-		if( itr->second.recFilePath.empty() == false && itr->second.protectFlag != 0 ){
-			pair<wstring, wstring> file(itr->second.recFilePath, itr->second.recFilePath);
-			transform(file.first.begin(), file.first.end(), file.first.begin(), toupper);
-			fileMap->insert(file);
-		}
-	}
+	this->recInfoFolder = recInfoFolder;
+	ChkFolderPath(this->recInfoFolder);
 }
 
 bool CParseRecInfoText::ParseLine(const wstring& parseLine, pair<DWORD, REC_FILE_INFO>& item)

@@ -10,11 +10,6 @@
 
 CSendCtrlCmd::CSendCtrlCmd(void)
 {
-	WSAData wsaData;
-	WSAStartup(MAKEWORD(2,0), &wsaData);
-
-	this->lockEvent = CreateEvent(NULL, FALSE, TRUE, NULL);
-
 	this->tcpFlag = FALSE;
 	this->connectTimeOut = CONNECT_TIMEOUT;
 
@@ -29,38 +24,7 @@ CSendCtrlCmd::CSendCtrlCmd(void)
 
 CSendCtrlCmd::~CSendCtrlCmd(void)
 {
-	if( this->lockEvent != NULL ){
-		UnLock();
-		CloseHandle(this->lockEvent);
-		this->lockEvent = NULL;
-	}
-	WSACleanup();
-}
-
-BOOL CSendCtrlCmd::Lock(LPCWSTR log, DWORD timeOut)
-{
-	if( this->lockEvent == NULL ){
-		return FALSE;
-	}
-	if( log != NULL ){
-		OutputDebugString(log);
-	}
-	DWORD dwRet = WaitForSingleObject(this->lockEvent, timeOut);
-	if( dwRet == WAIT_ABANDONED || 
-		dwRet == WAIT_FAILED){
-		return FALSE;
-	}
-	return TRUE;
-}
-
-void CSendCtrlCmd::UnLock(LPCWSTR log)
-{
-	if( this->lockEvent != NULL ){
-		SetEvent(this->lockEvent);
-	}
-	if( log != NULL ){
-		OutputDebugString(log);
-	}
+	SetSendMode(FALSE);
 }
 
 //コマンド送信方法の設定
@@ -70,9 +34,14 @@ void CSendCtrlCmd::SetSendMode(
 	BOOL tcpFlag
 	)
 {
-	if( Lock() == FALSE ) return ;
-	this->tcpFlag = tcpFlag;
-	UnLock();
+	if( this->tcpFlag == FALSE && tcpFlag ){
+		WSAData wsaData;
+		WSAStartup(MAKEWORD(2, 0), &wsaData);
+		this->tcpFlag = TRUE;
+	}else if( this->tcpFlag && tcpFlag == FALSE ){
+		WSACleanup();
+		this->tcpFlag = FALSE;
+	}
 }
 
 //名前付きパイプモード時の接続先を設定
@@ -85,10 +54,8 @@ void CSendCtrlCmd::SetPipeSetting(
 	LPCWSTR pipeName
 	)
 {
-	if( Lock() == FALSE ) return ;
 	this->eventName = eventName;
 	this->pipeName = pipeName;
-	UnLock();
 }
 
 //名前付きパイプモード時の接続先を設定（接尾にプロセスIDを伴うタイプ）
@@ -100,10 +67,8 @@ void CSendCtrlCmd::SetPipeSetting(
 	DWORD pid
 	)
 {
-	if( Lock() == FALSE ) return ;
 	Format(this->eventName, L"%s%d", eventName, pid);
 	Format(this->pipeName, L"%s%d", pipeName, pid);
-	UnLock();
 }
 
 //TCP/IPモード時の接続先を設定
@@ -115,10 +80,8 @@ void CSendCtrlCmd::SetNWSetting(
 	DWORD port
 	)
 {
-	if( Lock() == FALSE ) return ;
 	this->ip = ip;
 	this->port = port;
-	UnLock();
 }
 
 //接続処理時のタイムアウト設定
@@ -127,9 +90,14 @@ void CSendCtrlCmd::SetConnectTimeOut(
 	DWORD timeOut
 	)
 {
-	if( Lock() == FALSE ) return ;
 	this->connectTimeOut = timeOut;
-	UnLock();
+}
+
+static DWORD ReadFileAll(HANDLE hFile, BYTE* lpBuffer, DWORD dwToRead)
+{
+	DWORD dwRet = 0;
+	for( DWORD dwRead; dwRet < dwToRead && ReadFile(hFile, lpBuffer + dwRet, dwToRead - dwRet, &dwRead, NULL); dwRet += dwRead );
+	return dwRet;
 }
 
 DWORD CSendCtrlCmd::SendPipe(LPCWSTR pipeName, LPCWSTR eventName, DWORD timeOut, CMD_STREAM* send, CMD_STREAM* res)
@@ -161,7 +129,6 @@ DWORD CSendCtrlCmd::SendPipe(LPCWSTR pipeName, LPCWSTR eventName, DWORD timeOut,
 	}
 
 	DWORD write = 0;
-	DWORD read = 0;
 
 	//送信
 	DWORD head[2];
@@ -172,28 +139,14 @@ DWORD CSendCtrlCmd::SendPipe(LPCWSTR pipeName, LPCWSTR eventName, DWORD timeOut,
 		return CMD_ERR;
 	}
 	if( send->dataSize > 0 ){
-		if( send->data == NULL ){
+		if( WriteFile(pipe, send->data, send->dataSize, &write, NULL ) == FALSE ){
 			CloseHandle(pipe);
-			return CMD_ERR_INVALID_ARG;
-		}
-		DWORD sendNum = 0;
-		while(sendNum < send->dataSize ){
-			DWORD sendSize = 0;
-			if( send->dataSize - sendNum < CMD2_SEND_BUFF_SIZE ){
-				sendSize = send->dataSize - sendNum;
-			}else{
-				sendSize = CMD2_SEND_BUFF_SIZE;
-			}
-			if( WriteFile(pipe, send->data + sendNum, sendSize, &write, NULL ) == FALSE ){
-				CloseHandle(pipe);
-				return CMD_ERR;
-			}
-			sendNum += write;
+			return CMD_ERR;
 		}
 	}
 
 	//受信
-	if( ReadFile(pipe, head, sizeof(DWORD)*2, &read, NULL ) == FALSE || read != sizeof(DWORD)*2 ){
+	if( ReadFileAll(pipe, (BYTE*)head, sizeof(head)) != sizeof(head) ){
 		CloseHandle(pipe);
 		return CMD_ERR;
 	}
@@ -201,24 +154,29 @@ DWORD CSendCtrlCmd::SendPipe(LPCWSTR pipeName, LPCWSTR eventName, DWORD timeOut,
 	res->dataSize = head[1];
 	if( res->dataSize > 0 ){
 		res->data = new BYTE[res->dataSize];
-		DWORD readNum = 0;
-		while(readNum < res->dataSize ){
-			DWORD readSize = 0;
-			if( res->dataSize - readNum < CMD2_RES_BUFF_SIZE ){
-				readSize = res->dataSize - readNum;
-			}else{
-				readSize = CMD2_RES_BUFF_SIZE;
-			}
-			if( ReadFile(pipe, res->data + readNum, readSize, &read, NULL ) == FALSE ){
-				CloseHandle(pipe);
-				return CMD_ERR;
-			}
-			readNum += read;
+		if( ReadFileAll(pipe, res->data, res->dataSize) != res->dataSize ){
+			CloseHandle(pipe);
+			return CMD_ERR;
 		}
 	}
 	CloseHandle(pipe);
 
 	return res->param;
+}
+
+static int RecvAll(SOCKET sock, char* buf, int len, int flags)
+{
+	int n = 0;
+	while( n < len ){
+		int ret = recv(sock, buf + n, len - n, flags);
+		if( ret < 0 ){
+			return ret;
+		}else if( ret <= 0 ){
+			break;
+		}
+		n += ret;
+	}
+	return n;
 }
 
 DWORD CSendCtrlCmd::SendTCP(wstring ip, DWORD port, DWORD timeOut, CMD_STREAM* sendCmd, CMD_STREAM* resCmd)
@@ -236,9 +194,6 @@ DWORD CSendCtrlCmd::SendTCP(wstring ip, DWORD port, DWORD timeOut, CMD_STREAM* s
 	string strA = "";
 	WtoA(ip, strA);
 	server.sin_addr.S_un.S_addr = inet_addr(strA.c_str());
-	DWORD socketBuffSize = 1024*1024;
-	setsockopt(sock, SOL_SOCKET, SO_SNDBUF, (const char*)&socketBuffSize, sizeof(socketBuffSize));
-	setsockopt(sock, SOL_SOCKET, SO_SNDBUF, (const char*)&socketBuffSize, sizeof(socketBuffSize));
 
 	int ret = connect(sock, (struct sockaddr *)&server, sizeof(server));
 	if( ret == SOCKET_ERROR ){
@@ -250,30 +205,22 @@ DWORD CSendCtrlCmd::SendTCP(wstring ip, DWORD port, DWORD timeOut, CMD_STREAM* s
 		return CMD_ERR_CONNECT;
 	}
 
-	DWORD read = 0;
 	//送信
-	DWORD head[2];
+	DWORD head[256];
 	head[0] = sendCmd->param;
 	head[1] = sendCmd->dataSize;
-	ret = send(sock, (char*)head, sizeof(DWORD)*2, 0 );
-	if( ret == SOCKET_ERROR ){
+	DWORD extSize = 0;
+	if( sendCmd->dataSize > 0 ){
+		extSize = min(sendCmd->dataSize, sizeof(head) - sizeof(DWORD)*2);
+		memcpy(head + 2, sendCmd->data, extSize);
+	}
+	if( send(sock, (char*)head, sizeof(DWORD)*2 + extSize, 0) == SOCKET_ERROR ||
+	    sendCmd->dataSize > extSize && send(sock, (char*)sendCmd->data + extSize, sendCmd->dataSize - extSize, 0) == SOCKET_ERROR ){
 		closesocket(sock);
 		return CMD_ERR;
 	}
-	if( sendCmd->dataSize > 0 ){
-		if( sendCmd->data == NULL ){
-			closesocket(sock);
-			return CMD_ERR_INVALID_ARG;
-		}
-		ret = send(sock, (char*)sendCmd->data, sendCmd->dataSize, 0 );
-		if( ret == SOCKET_ERROR ){
-			closesocket(sock);
-			return CMD_ERR;
-		}
-	}
 	//受信
-	ret = recv(sock, (char*)head, sizeof(DWORD)*2, 0 );
-	if( ret != sizeof(DWORD)*2 ){
+	if( RecvAll(sock, (char*)head, sizeof(DWORD)*2, 0) != sizeof(DWORD)*2 ){
 		closesocket(sock);
 		return CMD_ERR;
 	}
@@ -281,14 +228,9 @@ DWORD CSendCtrlCmd::SendTCP(wstring ip, DWORD port, DWORD timeOut, CMD_STREAM* s
 	resCmd->dataSize = head[1];
 	if( resCmd->dataSize > 0 ){
 		resCmd->data = new BYTE[resCmd->dataSize];
-		read = 0;
-		while( read < resCmd->dataSize ){
-			ret = recv(sock, (char*)(resCmd->data + read), resCmd->dataSize - read, 0);
-			if( ret == SOCKET_ERROR || ret == 0 ){
-				closesocket(sock);
-				return CMD_ERR;
-			}
-			read += ret;
+		if( RecvAll(sock, (char*)resCmd->data, resCmd->dataSize, 0) != resCmd->dataSize ){
+			closesocket(sock);
+			return CMD_ERR;
 		}
 	}
 	closesocket(sock);
@@ -340,7 +282,6 @@ DWORD CSendCtrlCmd::SendGetEpgFile2(
 
 DWORD CSendCtrlCmd::SendCmdStream(CMD_STREAM* send, CMD_STREAM* res)
 {
-	if( Lock() == FALSE ) return CMD_ERR_TIMEOUT;
 	DWORD ret = CMD_ERR;
 	CMD_STREAM tmpRes;
 
@@ -353,7 +294,6 @@ DWORD CSendCtrlCmd::SendCmdStream(CMD_STREAM* send, CMD_STREAM* res)
 		ret = SendTCP(this->ip, this->port, this->connectTimeOut, send, res);
 	}
 
-	UnLock();
 	return ret;
 }
 

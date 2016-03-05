@@ -5,6 +5,7 @@
 #include "stdafx.h"
 #include "EpgTimerTask.h"
 #include "EpgTimerTaskDlg.h"
+#include "../../Common/CommonDef.h"
 
 
 // CEpgTimerTaskDlg ダイアログ

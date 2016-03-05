@@ -35,7 +35,7 @@ public:
 	// notifyManager	[IN]CTunerBankCtrl‚É“n‚·ˆø”
 	// epgDBManager		[IN]CTunerBankCtrl‚É“n‚·ˆø”
 	BOOL GetEnumTunerBank(
-		map<DWORD, CTunerBankCtrl*>* ctrlMap,
+		map<DWORD, std::unique_ptr<CTunerBankCtrl>>* ctrlMap,
 		CNotifyManager& notifyManager,
 		CEpgDBManager& epgDBManager
 		) const;

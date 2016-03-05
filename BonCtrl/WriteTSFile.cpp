@@ -8,7 +8,6 @@
 CWriteTSFile::CWriteTSFile(void)
 {
 	InitializeCriticalSection(&this->outThreadLock);
-	this->TSBuffOffset = 0;
 
     this->outThread = NULL;
     this->outStopFlag = FALSE;
@@ -160,8 +159,7 @@ BOOL CWriteTSFile::EndSave()
 		this->outThread = NULL;
 	}
 
-	this->TSBuff.clear();
-	this->TSBuffOffset = 0;
+	this->tsBuffList.clear();
 
 	return ret;
 }
@@ -185,15 +183,24 @@ BOOL CWriteTSFile::AddTSBuff(
 
 	{
 		CBlockLock lock(&this->outThreadLock);
-		this->TSBuff.erase(this->TSBuff.begin(), this->TSBuff.begin() + this->TSBuffOffset);
-		this->TSBuffOffset = 0;
-		if( this->maxBuffCount > 0 ){
-			if( this->TSBuff.size() / 48128 > (size_t)this->maxBuffCount ){
-				_OutputDebugString(L"★writeBuffList MaxOver");
-				this->TSBuff.clear();
+		for( std::list<vector<BYTE>>::iterator itr = this->tsBuffList.begin(); size != 0; itr++ ){
+			if( itr == this->tsBuffList.end() ){
+				//バッファを増やす
+				if( this->maxBuffCount > 0 && this->tsBuffList.size() > (size_t)this->maxBuffCount ){
+					_OutputDebugString(L"★writeBuffList MaxOver");
+					for( itr = this->tsBuffList.begin(); itr != this->tsBuffList.end(); (itr++)->clear() );
+					itr = this->tsBuffList.begin();
+				}else{
+					this->tsBuffList.push_back(vector<BYTE>());
+					itr = this->tsBuffList.end();
+					(--itr)->reserve(48128);
+				}
 			}
+			DWORD insertSize = min(48128 - (DWORD)itr->size(), size);
+			itr->insert(itr->end(), data, data + insertSize);
+			data += insertSize;
+			size -= insertSize;
 		}
-		this->TSBuff.insert(this->TSBuff.end(), data, data + size);
 	}
 	return ret;
 }
@@ -259,27 +266,31 @@ UINT WINAPI CWriteTSFile::OutThread(LPVOID param)
 		return 0;
 	}
 	sys->outStartFlag = TRUE;
+	std::list<vector<BYTE>> data;
 
 	while( sys->outStopFlag == FALSE ){
 		//バッファからデータ取り出し
-		BYTE data[48128];
-		DWORD dataSize = 0;
 		{
 			CBlockLock lock(&sys->outThreadLock);
-			if( sys->TSBuff.size() - sys->TSBuffOffset >= sizeof(data) ){
-				//必ず188の倍数で取り出さなければならない
-				dataSize = sizeof(data);
-				memcpy(data, &sys->TSBuff[sys->TSBuffOffset], dataSize);
-				sys->TSBuffOffset += dataSize;
+			if( data.empty() == false ){
+				//返却
+				data.front().clear();
+				std::list<vector<BYTE>>::iterator itr;
+				for( itr = sys->tsBuffList.begin(); itr != sys->tsBuffList.end() && itr->empty() == false; itr++ );
+				sys->tsBuffList.splice(itr, data);
+			}
+			if( sys->tsBuffList.empty() == false && sys->tsBuffList.front().size() == 48128 ){
+				data.splice(data.end(), sys->tsBuffList, sys->tsBuffList.begin());
 			}
 		}
 
-		if( dataSize != 0 ){
+		if( data.empty() == false ){
+			DWORD dataSize = (DWORD)data.front().size();
 			for( size_t i=0; i<sys->fileList.size(); i++ ){
 				{
 					if( sys->fileList[i].writeUtil != NULL ){
 						DWORD write = 0;
-						if( sys->fileList[i].writeUtil->AddTSBuff( data, dataSize, &write) == FALSE ){
+						if( sys->fileList[i].writeUtil->AddTSBuff( &data.front().front(), dataSize, &write) == FALSE ){
 							//空きがなくなった
 							if( i == 0 ){
 								CBlockLock lock(&sys->outThreadLock);
@@ -306,7 +317,7 @@ UINT WINAPI CWriteTSFile::OutThread(LPVOID param)
 										sys->subRecFlag = TRUE;
 
 										if( dataSize > write ){
-											sys->fileList[i].writeUtil->AddTSBuff( data+write, dataSize-write, &write);
+											sys->fileList[i].writeUtil->AddTSBuff( &data.front().front()+write, dataSize-write, &write);
 										}
 									}
 								}
@@ -336,17 +347,14 @@ UINT WINAPI CWriteTSFile::OutThread(LPVOID param)
 	//残っているバッファを書き出し
 	{
 		CBlockLock lock(&sys->outThreadLock);
-		sys->TSBuff.erase(sys->TSBuff.begin(), sys->TSBuff.begin() + sys->TSBuffOffset);
-		sys->TSBuffOffset = 0;
-		while( sys->TSBuff.empty() == false ){
-			DWORD dataSize = (DWORD)min(sys->TSBuff.size(), 48128);
+		for( std::list<vector<BYTE>>::iterator itr = sys->tsBuffList.begin(); itr != sys->tsBuffList.end() && itr->empty() == false; itr++ ){
 			for( size_t i=0; i<sys->fileList.size(); i++ ){
 				if( sys->fileList[i].writeUtil ){
 					DWORD write = 0;
-					sys->fileList[i].writeUtil->AddTSBuff( &sys->TSBuff.front(), dataSize, &write);
+					sys->fileList[i].writeUtil->AddTSBuff( &itr->front(), (DWORD)itr->size(), &write);
 				}
 			}
-			sys->TSBuff.erase(sys->TSBuff.begin(), sys->TSBuff.begin() + dataSize);
+			itr->clear();
 		}
 	}
 	for( size_t i=0; i<sys->fileList.size(); i++ ){

@@ -138,7 +138,7 @@ private:
 	CBatManager batManager;
 	CBatManager batPostManager;
 
-	map<DWORD, CTunerBankCtrl*> tunerBankMap;
+	map<DWORD, std::unique_ptr<CTunerBankCtrl>> tunerBankMap;
 
 	DWORD ngCapTimeSec;
 	DWORD ngCapTunerTimeSec;

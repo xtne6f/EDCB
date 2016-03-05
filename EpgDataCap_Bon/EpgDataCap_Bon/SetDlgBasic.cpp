@@ -42,9 +42,7 @@ BOOL CSetDlgBasic::OnInitDialog()
 		for( int i = 0; i < iNum; i++ ){
 			WCHAR key[64];
 			wsprintf(key, L"RecFolderPath%d", i);
-			WCHAR buff[512]=L"";
-			GetPrivateProfileString( L"SET", key, L"", buff, 512, commonIniPath.c_str() );
-			ListBox_AddString(GetDlgItem(IDC_LIST_REC_FOLDER), buff);
+			ListBox_AddString(GetDlgItem(IDC_LIST_REC_FOLDER), GetPrivateProfileToString( L"SET", key, L"", commonIniPath.c_str() ).c_str());
 		}
 	}
 

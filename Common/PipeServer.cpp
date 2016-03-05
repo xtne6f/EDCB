@@ -39,8 +39,6 @@ BOOL CPipeServer::StartServer(
 	LPCWSTR pipeName, 
 	CMD_CALLBACK_PROC cmdCallback, 
 	void* callbackParam, 
-	int threadPriority,
-	int ctrlCmdEventID,
 	BOOL insecureFlag
 )
 {
@@ -54,8 +52,6 @@ BOOL CPipeServer::StartServer(
 	this->cmdParam = callbackParam;
 	this->eventName = eventName;
 	this->pipeName = pipeName;
-	this->threadPriority = threadPriority;
-	this->ctrlCmdEventID = ctrlCmdEventID;
 	this->insecureFlag = insecureFlag;
 
 	ResetEvent(this->stopEvent);
@@ -65,37 +61,43 @@ BOOL CPipeServer::StartServer(
 	return TRUE;
 }
 
-void CPipeServer::StopServer()
+BOOL CPipeServer::StopServer(BOOL checkOnlyFlag)
 {
 	if( this->workThread != NULL ){
 		::SetEvent(this->stopEvent);
-		// スレッド終了待ち
-		if ( ::WaitForSingleObject(this->workThread, 60000) == WAIT_TIMEOUT ){
-			::TerminateThread(this->workThread, 0xffffffff);
+		if( checkOnlyFlag ){
+			//終了チェックして結果を返すだけ
+			if( WaitForSingleObject(this->workThread, 0) == WAIT_TIMEOUT ){
+				return FALSE;
+			}
+		}else{
+			//スレッド終了待ち
+			if( WaitForSingleObject(this->workThread, 60000) == WAIT_TIMEOUT ){
+				TerminateThread(this->workThread, 0xffffffff);
+			}
 		}
 		CloseHandle(this->workThread);
 		this->workThread = NULL;
 	}
+	return TRUE;
+}
+
+static DWORD ReadFileAll(HANDLE hFile, BYTE* lpBuffer, DWORD dwToRead)
+{
+	DWORD dwRet = 0;
+	for( DWORD dwRead; dwRet < dwToRead && ReadFile(hFile, lpBuffer + dwRet, dwToRead - dwRet, &dwRead, NULL); dwRet += dwRead );
+	return dwRet;
 }
 
 UINT WINAPI CPipeServer::ServerThread(LPVOID pParam)
 {
 	CPipeServer* pSys = (CPipeServer*)pParam;
 
-	HANDLE hCurThread = GetCurrentThread();
-	SetThreadPriority(hCurThread, pSys->threadPriority);
-
 	HANDLE hPipe = NULL;
-	HANDLE hEventCmdWait = NULL;
 	HANDLE hEventConnect = NULL;
 	HANDLE hEventArray[2];
 	OVERLAPPED stOver;
 
-	if( pSys->ctrlCmdEventID != -1 ){
-		wstring strCmdEvent;
-		Format(strCmdEvent, L"%s%d", CMD2_CTRL_EVENT_WAIT, pSys->ctrlCmdEventID);
-		hEventCmdWait = CreateEvent(NULL, FALSE, TRUE, strCmdEvent.c_str());
-	}
 	SECURITY_DESCRIPTOR sd = {};
 	SECURITY_ATTRIBUTES sa = {};
 	if( pSys->insecureFlag != FALSE &&
@@ -111,7 +113,7 @@ UINT WINAPI CPipeServer::ServerThread(LPVOID pParam)
 	
 	if( hPipe == NULL ){
 		hPipe = CreateNamedPipe(pSys->pipeName.c_str(), PIPE_ACCESS_DUPLEX | FILE_FLAG_WRITE_THROUGH | FILE_FLAG_OVERLAPPED,
-		                        PIPE_TYPE_BYTE, 1, CMD2_SEND_BUFF_SIZE, CMD2_RES_BUFF_SIZE, PIPE_TIMEOUT, sa.nLength != 0 ? &sa : NULL);
+		                        PIPE_TYPE_BYTE, 1, 8192, 8192, PIPE_TIMEOUT, sa.nLength != 0 ? &sa : NULL);
 		if( hPipe == INVALID_HANDLE_VALUE ){
 			hPipe = NULL;
 		}
@@ -129,38 +131,20 @@ UINT WINAPI CPipeServer::ServerThread(LPVOID pParam)
 			//STOP
 			break;
 		}else if( dwRes == WAIT_OBJECT_0+1 ){
-			//ほかのサーバーで処理中？
-			if( hEventCmdWait != NULL ){
-				WaitForSingleObject(hEventCmdWait, INFINITE);
-			}
 			//コマンド受信
 			CMD_STREAM stCmd;
 			CMD_STREAM stRes;
-			DWORD dwRead = 0;
 			DWORD dwWrite = 0;
 			DWORD head[2];
 			do{
-				if( ReadFile(hPipe, head, sizeof(DWORD)*2, &dwRead, NULL ) == FALSE || dwRead != sizeof(DWORD)*2 ){
+				if( ReadFileAll(hPipe, (BYTE*)head, sizeof(head)) != sizeof(head) ){
 					break;
 				}
 				stCmd.param = head[0];
 				stCmd.dataSize = head[1];
 				if( stCmd.dataSize > 0 ){
 					stCmd.data = new BYTE[stCmd.dataSize];
-					DWORD ReadNum = 0;
-					while(ReadNum < stCmd.dataSize ){
-						DWORD dwReadSize = 0;
-						if( stCmd.dataSize-ReadNum < CMD2_SEND_BUFF_SIZE ){
-							dwReadSize = stCmd.dataSize-ReadNum;
-						}else{
-							dwReadSize = CMD2_SEND_BUFF_SIZE;
-						}
-						if( ReadFile(hPipe, stCmd.data+ReadNum, dwReadSize, &dwRead, NULL ) == FALSE ){
-							break;
-						}
-						ReadNum+=dwRead;
-					}
-					if( ReadNum < stCmd.dataSize ){
+					if( ReadFileAll(hPipe, stCmd.data, stCmd.dataSize) != stCmd.dataSize ){
 						break;
 					}
 				}
@@ -173,23 +157,7 @@ UINT WINAPI CPipeServer::ServerThread(LPVOID pParam)
 						break;
 					}
 					if( stRes.dataSize > 0 ){
-						if( stRes.data == NULL ){
-							break;
-						}
-						DWORD SendNum = 0;
-						while(SendNum < stRes.dataSize ){
-							DWORD dwSendSize = 0;
-							if( stRes.dataSize-SendNum < CMD2_RES_BUFF_SIZE ){
-								dwSendSize = stRes.dataSize-SendNum;
-							}else{
-								dwSendSize = CMD2_RES_BUFF_SIZE;
-							}
-							if( WriteFile(hPipe, stRes.data+SendNum, dwSendSize, &dwWrite, NULL ) == FALSE ){
-								break;
-							}
-							SendNum+=dwWrite;
-						}
-						if( SendNum < stRes.dataSize ){
+						if( WriteFile(hPipe, stRes.data, stRes.dataSize, &dwWrite, NULL ) == FALSE ){
 							break;
 						}
 					}
@@ -209,9 +177,6 @@ UINT WINAPI CPipeServer::ServerThread(LPVOID pParam)
 
 			FlushFileBuffers(hPipe);
 			DisconnectNamedPipe(hPipe);
-			if( hEventCmdWait != NULL ){
-				SetEvent(hEventCmdWait);
-			}
 		}
 	}
 
@@ -223,8 +188,5 @@ UINT WINAPI CPipeServer::ServerThread(LPVOID pParam)
 
 	CloseHandle(hEventArray[1]);
 	CloseHandle(hEventConnect);
-	if( hEventCmdWait != NULL ){
-		CloseHandle(hEventCmdWait);
-	}
 	return 0;
 }

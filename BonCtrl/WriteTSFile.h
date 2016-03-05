@@ -5,6 +5,7 @@
 #include "../Common/ErrDef.h"
 #include "../Common/StringUtil.h"
 #include "../Common//WritePlugInUtil.h"
+#include <list>
 
 class CWriteTSFile
 {
@@ -101,8 +102,7 @@ protected:
 
 protected:
 	CRITICAL_SECTION outThreadLock;
-	vector<BYTE> TSBuff;
-	size_t TSBuffOffset;
+	std::list<vector<BYTE>> tsBuffList;
 
 	HANDLE outThread;
 	BOOL outStopFlag;

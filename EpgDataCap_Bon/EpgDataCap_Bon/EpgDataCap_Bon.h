@@ -5,6 +5,7 @@
 #pragma once
 
 #include "resource.h"		// ÉÅÉCÉì ÉVÉìÉ{Éã
+#include "../../Common/Util.h"
 
 
 // CEpgDataCap_BonApp:
@@ -19,7 +20,5 @@ public:
 public:
 	BOOL InitInstance();
 };
-
-BOOL WritePrivateProfileInt(LPCTSTR lpAppName, LPCTSTR lpKeyName, int value, LPCTSTR lpFileName);
 
 extern CEpgDataCap_BonApp theApp;

@@ -2,6 +2,7 @@
 #include "EpgDataCap_BonMain.h"
 
 #include "EpgDataCap_BonDef.h"
+#include "../../Common/CommonDef.h"
 #include "../../Common/CtrlCmdDef.h"
 #include "../../Common/CtrlCmdUtil.h"
 
@@ -75,10 +76,7 @@ void CEpgDataCap_BonMain::ReloadSetting()
 		for( int i = 0; i < iNum; i++ ){
 			WCHAR key[64];
 			wsprintf(key, L"RecFolderPath%d", i );
-			WCHAR wBuff[512]=L"";
-			GetPrivateProfileString( L"SET", key, L"", wBuff, 512, commonIniPath.c_str() );
-
-			this->recFolderList.push_back(wBuff);
+			this->recFolderList.push_back(GetPrivateProfileToString( L"SET", key, L"", commonIniPath.c_str() ));
 		}
 	}
 
@@ -90,11 +88,8 @@ void CEpgDataCap_BonMain::ReloadSetting()
 
 	this->overWriteFlag = GetPrivateProfileInt( L"SET", L"OverWrite", 0, appIniPath.c_str() );
 
-	WCHAR buff[512]=L"";
-	GetPrivateProfileString( L"SET", L"ViewPath", L"", buff, 512, appIniPath.c_str() );
-	this->viewPath = buff;
-	GetPrivateProfileString( L"SET", L"ViewOption", L"", buff, 512, appIniPath.c_str() );
-	this->viewOpt = buff;
+	this->viewPath = GetPrivateProfileToString( L"SET", L"ViewPath", L"", appIniPath.c_str() );
+	this->viewOpt = GetPrivateProfileToString( L"SET", L"ViewOption", L"", appIniPath.c_str() );
 
 	this->udpCount = (DWORD)GetPrivateProfileInt( L"SET_UDP", L"Count", 0, appIniPath.c_str() );
 	this->tcpCount = (DWORD)GetPrivateProfileInt( L"SET_TCP", L"Count", 0, appIniPath.c_str() );
@@ -730,12 +725,12 @@ void CEpgDataCap_BonMain::StartServer()
 
 	OutputDebugString(pipeName.c_str());
 	OutputDebugString(eventName.c_str());
-	this->pipeServer.StartServer(eventName.c_str(), pipeName.c_str(), CtrlCmdCallback, this, 0, GetCurrentProcessId());
+	this->pipeServer.StartServer(eventName.c_str(), pipeName.c_str(), CtrlCmdCallback, this);
 }
 
-void CEpgDataCap_BonMain::StopServer()
+BOOL CEpgDataCap_BonMain::StopServer(BOOL checkOnlyFlag)
 {
-	this->pipeServer.StopServer();
+	return this->pipeServer.StopServer(checkOnlyFlag);
 }
 
 BOOL CEpgDataCap_BonMain::GetViewStatusInfo(
@@ -987,9 +982,7 @@ void CEpgDataCap_BonMain::CtrlCmdCallbackInvoked()
 					wstring iniCommonPath = L"";
 					GetCommonIniPath(iniCommonPath);
 
-					WCHAR buff[512] = L"";
-					GetPrivateProfileString(L"SET", L"RecInfoFolder", L"", buff, 512, iniCommonPath.c_str());
-					wstring infoFolder = buff;
+					wstring infoFolder = GetPrivateProfileToString(L"SET", L"RecInfoFolder", L"", iniCommonPath.c_str());
 					ChkFolderPath(infoFolder);
 
 					if( infoFolder.size() > 0 ){
@@ -1011,7 +1004,7 @@ void CEpgDataCap_BonMain::CtrlCmdCallbackInvoked()
 				resVal.subRecFlag = (BYTE)subRec;
 				sys->bonCtrl.GetErrCount(val.ctrlID, &resVal.drop, &resVal.scramble);
 				if(sys->bonCtrl.EndSave(val.ctrlID) == TRUE){
-					resParam->data = NewWriteVALUE(&resVal, resParam->dataSize);
+					resParam->data = NewWriteVALUE(resVal, resParam->dataSize);
 					resParam->param = CMD_SUCCESS;
 					if( sys->ctrlMap.size() == 1 ){
 						PostMessage(sys->msgWnd, WM_RESERVE_REC_STOP, 0, 0);
@@ -1091,7 +1084,7 @@ void CEpgDataCap_BonMain::CtrlCmdCallbackInvoked()
 			if( ReadVALUE(&key, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
 				EPGDB_EVENT_INFO epgInfo;
 				if( sys->bonCtrl.SearchEpgInfo(key.ONID, key.TSID, key.SID, key.eventID, key.pfOnlyFlag, &epgInfo) == TRUE ){
-					resParam->data = NewWriteVALUE(&epgInfo, resParam->dataSize);
+					resParam->data = NewWriteVALUE(epgInfo, resParam->dataSize);
 					resParam->param = CMD_SUCCESS;
 				}
 			}
@@ -1103,7 +1096,7 @@ void CEpgDataCap_BonMain::CtrlCmdCallbackInvoked()
 			if( ReadVALUE(&key, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
 				EPGDB_EVENT_INFO epgInfo;
 				if( sys->bonCtrl.GetEpgInfo(key.ONID, key.TSID, key.SID, key.pfNextFlag, &epgInfo) == TRUE ){
-					resParam->data = NewWriteVALUE(&epgInfo, resParam->dataSize);
+					resParam->data = NewWriteVALUE(epgInfo, resParam->dataSize);
 					resParam->param = CMD_SUCCESS;
 				}
 			}

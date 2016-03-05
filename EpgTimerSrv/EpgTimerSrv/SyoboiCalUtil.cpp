@@ -4,6 +4,7 @@
 #include <wincrypt.h>
 #pragma comment (lib, "Crypt32.lib")
 
+#include "../../Common/CommonDef.h"
 #include "../../Common/PathUtil.h"
 #include "../../Common/StringUtil.h"
 #include "../../Common/TimeUtil.h"
@@ -166,55 +167,41 @@ BOOL CSyoboiCalUtil::SendReserve(vector<RESERVE_DATA>* reserveList, vector<TUNER
 	srvChg.ParseText(textPath.c_str());
 
 	SAFE_DELETE(this->proxyInfo);
-	WCHAR buff[512] = L"";
-	int length = 0;
 	BOOL useProxy = (BOOL)GetPrivateProfileInt(L"SYOBOI", L"useProxy", 0, iniAppPath.c_str());
 	if( useProxy == TRUE ){
 		this->proxyInfo = new USE_PROXY_INFO;
 
-		GetPrivateProfileString(L"SYOBOI", L"ProxyServer", L"", buff, 512, iniAppPath.c_str());
-		this->proxyInfo->serverName = new WCHAR[wcslen(buff)+1];
-		wcscpy_s(this->proxyInfo->serverName, wcslen(buff)+1, buff);
+		wstring buff = GetPrivateProfileToString(L"SYOBOI", L"ProxyServer", L"", iniAppPath.c_str());
+		this->proxyInfo->serverName = new WCHAR[buff.size()+1];
+		wcscpy_s(this->proxyInfo->serverName, buff.size()+1, buff.c_str());
 
-		ZeroMemory(buff, (sizeof(WCHAR)*512));
-		GetPrivateProfileString(L"SYOBOI", L"ProxyID", L"", buff, 512, iniAppPath.c_str());
-		length = (int)wcslen(buff);
-		if( length > 0 ){
-			this->proxyInfo->userName = new WCHAR[length+1];
-			wcscpy_s(this->proxyInfo->userName, length+1, buff);
+		buff = GetPrivateProfileToString(L"SYOBOI", L"ProxyID", L"", iniAppPath.c_str());
+		if( buff.empty() == false ){
+			this->proxyInfo->userName = new WCHAR[buff.size()+1];
+			wcscpy_s(this->proxyInfo->userName, buff.size()+1, buff.c_str());
 		}else{
 			this->proxyInfo->userName = NULL;
 		}
 
-		ZeroMemory(buff, (sizeof(WCHAR)*512));
-		GetPrivateProfileString(L"SYOBOI", L"ProxyPWD", L"", buff, 512, iniAppPath.c_str());
-		length = (int)wcslen(buff);
-		if( length > 0 ){
-			this->proxyInfo->password = new WCHAR[length+1];
-			wcscpy_s(this->proxyInfo->password, length+1, buff);
+		buff = GetPrivateProfileToString(L"SYOBOI", L"ProxyPWD", L"", iniAppPath.c_str());
+		if( buff.empty() == false ){
+			this->proxyInfo->password = new WCHAR[buff.size()+1];
+			wcscpy_s(this->proxyInfo->password, buff.size()+1, buff.c_str());
 		}else{
 			this->proxyInfo->password = NULL;
 		}
 
 	}
 
-	ZeroMemory(buff, (sizeof(WCHAR)*512));
-	GetPrivateProfileString(L"SYOBOI", L"userID", L"", buff, 512, iniAppPath.c_str());
-	this->id=buff;
+	this->id=GetPrivateProfileToString(L"SYOBOI", L"userID", L"", iniAppPath.c_str());
 
-	ZeroMemory(buff, (sizeof(WCHAR)*512));
-	GetPrivateProfileString(L"SYOBOI", L"PWD", L"", buff, 512, iniAppPath.c_str());
-	this->pass=buff;
+	this->pass=GetPrivateProfileToString(L"SYOBOI", L"PWD", L"", iniAppPath.c_str());
 
 	int slot = GetPrivateProfileInt(L"SYOBOI", L"slot", 0, iniAppPath.c_str());
 
-	ZeroMemory(buff, (sizeof(WCHAR)*512));
-	GetPrivateProfileString(L"SYOBOI", L"devcolors", L"", buff, 512, iniAppPath.c_str());
-	wstring devcolors=buff;
+	wstring devcolors=GetPrivateProfileToString(L"SYOBOI", L"devcolors", L"", iniAppPath.c_str());
 	
-	ZeroMemory(buff, (sizeof(WCHAR)*512));
-	GetPrivateProfileString(L"SYOBOI", L"epgurl", L"", buff, 512, iniAppPath.c_str());
-	wstring epgurl=buff;
+	wstring epgurl=GetPrivateProfileToString(L"SYOBOI", L"epgurl", L"", iniAppPath.c_str());
 
 	if( this->id.size() == 0 ){
 		_OutputDebugString(L"ÅöSyoboiCalUtil:NoUserID");

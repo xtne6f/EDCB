@@ -10,6 +10,7 @@
 #include "PacketInit.h"
 #include "TSOut.h"
 #include "ChSetUtil.h"
+#include <list>
 
 class CBonCtrl
 {
@@ -112,27 +113,6 @@ public:
 	//戻り値：
 	// シグナルレベル
 	float GetSignalLevel();
-
-	//EPGデータの蓄積状態をリセットする
-	void ClearSectionStatus();
-
-	//EPGデータの蓄積状態を取得する
-	//戻り値：
-	// ステータス
-	//引数：
-	// l_eitFlag		[IN]L-EITのステータスを取得
-	EPG_SECTION_STATUS GetSectionStatus(
-		BOOL l_eitFlag
-		);
-
-	//自ストリームのサービス一覧を取得する
-	//戻り値：
-	// エラーコード
-	//引数：
-	// serviceList				[OUT]サービス情報のリスト
-	DWORD GetServiceListActual(
-		vector<TS_SERVICE_INFO>* serviceList
-		);
 
 	//サービス一覧を取得する
 	//戻り値：
@@ -450,8 +430,7 @@ protected:
 	CChSetUtil chUtil;
 
 	CRITICAL_SECTION buffLock;
-	vector<BYTE> TSBuff;
-	size_t TSBuffOffset;
+	std::list<vector<BYTE>> tsBuffList;
 
 	HANDLE analyzeThread;
 	HANDLE analyzeEvent;

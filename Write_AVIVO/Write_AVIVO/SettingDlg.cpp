@@ -33,9 +33,7 @@ DWORD CSettingDlg::CreateSettingDialog(HINSTANCE hInstance)
 	Format(grfPath, L"%s\\%s.grf", folder.c_str(), fileTitle.c_str());
 	Format(iniPath, L"%s\\%s.ini", folder.c_str(), fileTitle.c_str());
 
-	WCHAR buff[256] = L"";
-	GetPrivateProfileString(L"SET", L"ext", L"ts", buff, 256, iniPath.c_str());
-	ext = buff;
+	ext = GetPrivateProfileToString(L"SET", L"ext", L"ts", iniPath.c_str());
 
 
 	HANDLE file = _CreateDirectoryAndFile( grfPath.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );

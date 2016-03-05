@@ -48,8 +48,8 @@ vector<string> CUpnpSsdpServer::GetNICList()
 {
 	vector<string> nicList(1, string("127.0.0.1"));
 	//MSDN: "The recommended method ~ is to pre-allocate a 15KB working buffer pointed to by the AdapterAddresses parameter."
-	PIP_ADAPTER_ADDRESSES adpts = new IP_ADAPTER_ADDRESSES[16384 / sizeof(IP_ADAPTER_ADDRESSES)];
-	ULONG len = sizeof(adpts[0]) * (16384 / sizeof(IP_ADAPTER_ADDRESSES));
+	IP_ADAPTER_ADDRESSES adpts[16384 / sizeof(IP_ADAPTER_ADDRESSES)];
+	ULONG len = sizeof(adpts);
 	if( GetAdaptersAddresses(AF_INET, 0, 0, adpts, &len) == ERROR_SUCCESS ){
 		for( PIP_ADAPTER_ADDRESSES adpt = adpts; adpt; adpt = adpt->Next ){
 			if( adpt->PhysicalAddressLength != 0 &&
@@ -68,7 +68,6 @@ vector<string> CUpnpSsdpServer::GetNICList()
 			}
 		}
 	}
-	delete[] adpts;
 	return nicList;
 }
 
@@ -204,8 +203,10 @@ string CUpnpSsdpServer::GetMSearchReply(const char* header, const char* host) co
 			string prop;
 			string val;
 			Separate(string(header, tail), ":", prop, val);
-			Trim(prop);
-			Trim(val);
+			prop.erase(prop.find_last_not_of(' ') == string::npos ? 0 : prop.find_last_not_of(' ') + 1);
+			prop.erase(0, prop.find_first_not_of(' '));
+			val.erase(val.find_last_not_of(' ') == string::npos ? 0 : val.find_last_not_of(' ') + 1);
+			val.erase(0, val.find_first_not_of(' '));
 			if( CompareNoCase(prop, "MAN") == 0 ){
 				man = val;
 			}else if( CompareNoCase(prop, "ST") == 0 ){

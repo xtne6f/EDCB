@@ -238,6 +238,7 @@ BOOL CEpgDataCap_BonApp::InitInstance()
 
 int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow)
 {
+	SetDllDirectory(TEXT(""));
 	StartDebugLog();
 	//メインスレッドに対するCOMの初期化
 	CoInitialize(NULL);
@@ -245,13 +246,6 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCm
 	CoUninitialize();
 	StopDebugLog();
 	return 0;
-}
-
-BOOL WritePrivateProfileInt(LPCTSTR lpAppName, LPCTSTR lpKeyName, int value, LPCTSTR lpFileName)
-{
-	TCHAR sz[32];
-	wsprintf(sz, TEXT("%d"), value);
-	return WritePrivateProfileString(lpAppName, lpKeyName, sz, lpFileName);
 }
 
 void OutputDebugStringWrapper(LPCWSTR lpOutputString)

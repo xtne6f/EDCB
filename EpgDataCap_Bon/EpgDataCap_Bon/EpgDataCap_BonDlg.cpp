@@ -33,15 +33,11 @@ CEpgDataCap_BonDlg::CEpgDataCap_BonDlg()
 	this->moduleIniPath = strPath.c_str();
 	GetCommonIniPath(strPath);
 	this->commonIniPath = strPath.c_str();
-	GetEpgTimerSrvIniPath(strPath);
-	this->timerSrvIniPath = strPath.c_str();
 
 	this->initONID = GetPrivateProfileInt( L"Set", L"LastONID", -1, this->moduleIniPath.c_str() );
 	this->initTSID = GetPrivateProfileInt( L"Set", L"LastTSID", -1, this->moduleIniPath.c_str() );
 	this->initSID = GetPrivateProfileInt( L"Set", L"LastSID", -1, this->moduleIniPath.c_str() );
-	WCHAR buff[512]=L"";
-	GetPrivateProfileString( L"Set", L"LastBon", L"", buff, 512, this->moduleIniPath.c_str() );
-	this->iniBonDriver = buff;
+	this->iniBonDriver = GetPrivateProfileToString( L"Set", L"LastBon", L"", this->moduleIniPath.c_str() );
 
 	iniView = FALSE;
 	iniNetwork = TRUE;
@@ -56,8 +52,7 @@ CEpgDataCap_BonDlg::CEpgDataCap_BonDlg()
 			this->initONID = GetPrivateProfileInt( L"Set", L"FixONID", -1, this->moduleIniPath.c_str() );
 			this->initTSID = GetPrivateProfileInt( L"Set", L"FixTSID", -1, this->moduleIniPath.c_str() );
 			this->initSID = GetPrivateProfileInt( L"Set", L"FixSID", -1, this->moduleIniPath.c_str() );
-			GetPrivateProfileString( L"Set", L"FixBon", L"", buff, 512, this->moduleIniPath.c_str() );
-			this->iniBonDriver = buff;
+			this->iniBonDriver = GetPrivateProfileToString( L"Set", L"FixBon", L"", this->moduleIniPath.c_str() );
 		}else{
 			this->initONID = -1;
 			this->initTSID = -1;
@@ -467,6 +462,13 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 				}
 			}
 			break;
+		case TIMER_TRY_STOP_SERVER:
+			if( this->main.StopServer(true) ){
+				KillTimer(TIMER_TRY_STOP_SERVER);
+				OutputDebugString(L"CmdServer stopped\r\n");
+				EndDialog(m_hWnd, IDCANCEL);
+			}
+			break;
 		default:
 			break;
 	}
@@ -735,8 +737,6 @@ void CEpgDataCap_BonDlg::BtnUpdate(DWORD guiMode)
 			Button_SetCheck(GetDlgItem(IDC_CHECK_REC_SET), BST_UNCHECKED);
 			ENABLE_ITEM(IDC_BUTTON_CANCEL, FALSE);
 			ENABLE_ITEM(IDC_BUTTON_VIEW, TRUE);
-			ENABLE_ITEM(IDC_CHECK_UDP, TRUE);
-			ENABLE_ITEM(IDC_CHECK_TCP, TRUE);
 			break;
 		case GUI_CANCEL_ONLY:
 			ENABLE_ITEM(IDC_COMBO_TUNER, FALSE);
@@ -750,8 +750,6 @@ void CEpgDataCap_BonDlg::BtnUpdate(DWORD guiMode)
 			ENABLE_ITEM(IDC_CHECK_REC_SET, FALSE);
 			ENABLE_ITEM(IDC_BUTTON_CANCEL, TRUE);
 			ENABLE_ITEM(IDC_BUTTON_VIEW, TRUE);
-			ENABLE_ITEM(IDC_CHECK_UDP, TRUE);
-			ENABLE_ITEM(IDC_CHECK_TCP, TRUE);
 			break;
 		case GUI_OPEN_FAIL:
 			ENABLE_ITEM(IDC_COMBO_TUNER, TRUE);
@@ -765,8 +763,6 @@ void CEpgDataCap_BonDlg::BtnUpdate(DWORD guiMode)
 			ENABLE_ITEM(IDC_CHECK_REC_SET, FALSE);
 			ENABLE_ITEM(IDC_BUTTON_CANCEL, FALSE);
 			ENABLE_ITEM(IDC_BUTTON_VIEW, TRUE);
-			ENABLE_ITEM(IDC_CHECK_UDP, FALSE);
-			ENABLE_ITEM(IDC_CHECK_TCP, FALSE);
 			break;
 		case GUI_REC:
 			ENABLE_ITEM(IDC_COMBO_TUNER, FALSE);
@@ -781,8 +777,6 @@ void CEpgDataCap_BonDlg::BtnUpdate(DWORD guiMode)
 			Button_SetCheck(GetDlgItem(IDC_CHECK_REC_SET), BST_UNCHECKED);
 			ENABLE_ITEM(IDC_BUTTON_CANCEL, TRUE);
 			ENABLE_ITEM(IDC_BUTTON_VIEW, TRUE);
-			ENABLE_ITEM(IDC_CHECK_UDP, TRUE);
-			ENABLE_ITEM(IDC_CHECK_TCP, TRUE);
 			break;
 		case GUI_REC_SET_TIME:
 			ENABLE_ITEM(IDC_COMBO_TUNER, FALSE);
@@ -796,8 +790,6 @@ void CEpgDataCap_BonDlg::BtnUpdate(DWORD guiMode)
 			ENABLE_ITEM(IDC_CHECK_REC_SET, TRUE);
 			ENABLE_ITEM(IDC_BUTTON_CANCEL, TRUE);
 			ENABLE_ITEM(IDC_BUTTON_VIEW, TRUE);
-			ENABLE_ITEM(IDC_CHECK_UDP, TRUE);
-			ENABLE_ITEM(IDC_CHECK_TCP, TRUE);
 			break;
 		case GUI_OTHER_CTRL:
 			ENABLE_ITEM(IDC_COMBO_TUNER, FALSE);
@@ -811,8 +803,6 @@ void CEpgDataCap_BonDlg::BtnUpdate(DWORD guiMode)
 			ENABLE_ITEM(IDC_CHECK_REC_SET, FALSE);
 			ENABLE_ITEM(IDC_BUTTON_CANCEL, TRUE);
 			ENABLE_ITEM(IDC_BUTTON_VIEW, TRUE);
-			ENABLE_ITEM(IDC_CHECK_UDP, TRUE);
-			ENABLE_ITEM(IDC_CHECK_TCP, TRUE);
 			break;
 		case GUI_REC_STANDBY:
 			ENABLE_ITEM(IDC_COMBO_TUNER, FALSE);
@@ -826,8 +816,6 @@ void CEpgDataCap_BonDlg::BtnUpdate(DWORD guiMode)
 			ENABLE_ITEM(IDC_CHECK_REC_SET, FALSE);
 			ENABLE_ITEM(IDC_BUTTON_CANCEL, FALSE);
 			ENABLE_ITEM(IDC_BUTTON_VIEW, TRUE);
-			ENABLE_ITEM(IDC_CHECK_UDP, TRUE);
-			ENABLE_ITEM(IDC_CHECK_TCP, TRUE);
 			break;
 		default:
 			break;
@@ -1245,7 +1233,9 @@ INT_PTR CALLBACK CEpgDataCap_BonDlg::DlgProc(HWND hDlg, UINT uMsg, WPARAM wParam
 			break;
 		case IDOK:
 		case IDCANCEL:
-			EndDialog(hDlg, LOWORD(wParam));
+			//デッドロック回避のためメッセージポンプを維持しつつサーバを終わらせる
+			pSys->main.StopServer(true);
+			pSys->SetTimer(TIMER_TRY_STOP_SERVER, 20, NULL);
 			SetWindowLongPtr(hDlg, DWLP_MSGRESULT, 0);
 			return TRUE;
 		}

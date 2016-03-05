@@ -22,6 +22,7 @@ public:
 	};
 	enum {
 		CHECK_END = 1,				//正常終了
+		CHECK_END_CANCEL,			//キャンセルにより録画が中断した
 		CHECK_END_NOT_FIND_PF,		//p/fに番組情報確認できなかった
 		CHECK_END_NEXT_START_END,	//次の予約開始のため終了
 		CHECK_END_END_SUBREC,		//サブフォルダへの録画が発生した
@@ -68,19 +69,6 @@ public:
 		__int64 endMargin;
 		vector<REC_FILE_SET_INFO> recFolder;
 		vector<REC_FILE_SET_INFO> partialRecFolder;
-		//以下は内部パラメータ
-		__int64 startOrder; //開始順(予約の前後関係を決める)
-		__int64 effectivePriority; //実効優先度(予約の優先度を決める。小さいほうが高優先度)
-		TR_STATE state;
-		int retryOpenCount;
-		//以下はstate!=TR_IDLEのとき有効
-		DWORD ctrlID[2]; //要素1は部分受信録画制御
-		//以下はstate==TR_RECのとき有効
-		bool notStartHead;
-		bool appendPgInfo;
-		bool savedPgInfo;
-		SYSTEMTIME epgStartTime;
-		wstring epgEventName;
 	};
 
 	CTunerBankCtrl(DWORD tunerID_, LPCWSTR bonFileName_, const vector<CH_DATA4>& chList_, CNotifyManager& notifyManager_, CEpgDBManager& epgDBManager_);
@@ -124,10 +112,30 @@ public:
 	void CloseNWTV();
 	//予約が録画中であればその録画ファイル名などを取得する
 	bool GetRecFilePath(DWORD reserveID, wstring& filePath, DWORD* ctrlID, DWORD* processID) const;
+	//予約情報をもとにファイル名を生成する
+	static wstring ConvertRecName(
+		LPCWSTR recNamePlugIn, const SYSTEMTIME& startTime, DWORD durationSec, LPCWSTR eventName, WORD onid, WORD tsid, WORD sid, WORD eid,
+		LPCWSTR serviceName, LPCWSTR bonDriverName, DWORD tunerID, DWORD reserveID, CEpgDBManager& epgDBManager_,
+		const SYSTEMTIME& startTimeForDefault, DWORD ctrlID, bool noChkYen);
 	//バンクを監視して必要ならチューナを強制終了する
 	//概ね2秒ごとにワーカスレッドから呼ぶ
 	void Watch();
 private:
+	struct TUNER_RESERVE_WORK : TUNER_RESERVE {
+		__int64 startOrder; //開始順(予約の前後関係を決める)
+		__int64 effectivePriority; //実効優先度(予約の優先度を決める。小さいほうが高優先度)
+		TR_STATE state;
+		int retryOpenCount;
+		//以下はstate!=TR_IDLEのとき有効
+		DWORD ctrlID[2]; //要素1は部分受信録画制御
+		//以下はstate==TR_RECのとき有効
+		wstring recFilePath[2];
+		bool notStartHead;
+		bool appendPgInfo;
+		bool savedPgInfo;
+		SYSTEMTIME epgStartTime;
+		wstring epgEventName;
+	};
 	//チューナを閉じてはいけない状態かどうか
 	bool IsNeedOpenTuner() const;
 	//部分受信サービスを探す
@@ -137,7 +145,7 @@ private:
 	//録画ファイルに対応する番組情報ファイルを保存する
 	void SaveProgramInfo(LPCWSTR recPath, const EPGDB_EVENT_INFO& info, bool append) const;
 	//チューナに録画を開始させる
-	bool RecStart(const TUNER_RESERVE& reserve, __int64 now) const;
+	bool RecStart(const TUNER_RESERVE_WORK& reserve, __int64 now) const;
 	//チューナを起動する
 	bool OpenTuner(bool minWake, bool nwUdp, bool nwTcp, bool standbyRec, const SET_CH_INFO* initCh);
 	//チューナを閉じる
@@ -150,7 +158,7 @@ private:
 	const vector<CH_DATA4> chList;
 	CNotifyManager& notifyManager;
 	CEpgDBManager& epgDBManager;
-	map<DWORD, TUNER_RESERVE> reserveMap;
+	map<DWORD, TUNER_RESERVE_WORK> reserveMap;
 	HANDLE hTunerProcess;
 	DWORD tunerPid;
 	WORD tunerONID;

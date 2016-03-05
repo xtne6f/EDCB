@@ -18,10 +18,10 @@ public:
 
 	BOOL StartServer(
 		DWORD dwPort, 
+		DWORD dwResponseTimeout,
+		LPCWSTR acl,
 		CMD_CALLBACK_PROC pfnCmdProc, 
-		void* pParam, 
-		int iThreadPriority = THREAD_PRIORITY_NORMAL,
-		int iCtrlCmdEventID = -1
+		void* pParam
 		);
 	void StopServer();
 
@@ -29,15 +29,13 @@ protected:
 	CMD_CALLBACK_PROC m_pCmdProc;
 	void* m_pParam;
 	DWORD m_dwPort;
+	DWORD m_dwResponseTimeout;
+	wstring m_acl;
 
-	int m_iThreadPriority;
-	int m_iCtrlCmdEventID;
-
-	HANDLE m_hStopEvent;
+	BOOL m_stopFlag;
 	HANDLE m_hThread;
 
 	SOCKET m_sock;
-	struct sockaddr_in m_addr;
 	
 protected:
 	static UINT WINAPI ServerThread(LPVOID pParam);

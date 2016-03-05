@@ -4,10 +4,8 @@
 #include "ReserveManager.h"
 #include "FileStreamingManager.h"
 #include "NotifyManager.h"
+#include "HttpServer.h"
 #include "../../Common/ParseTextInstances.h"
-
-struct lua_State;
-struct _UPNP_MSEARCH_REQUEST_INFO;
 
 //各種サーバと自動予約の管理をおこなう
 //必ずオブジェクト生成→Main()→…→破棄の順番で利用しなければならない
@@ -49,7 +47,9 @@ private:
 	bool AutoAddReserveEPG(const EPG_AUTO_ADD_DATA& data);
 	bool AutoAddReserveProgram(const MANUAL_AUTO_ADD_DATA& data);
 	//外部制御コマンド関係
-	static int CALLBACK CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STREAM* resParam);
+	static int CALLBACK CtrlCmdPipeCallback(void* param, CMD_STREAM* cmdParam, CMD_STREAM* resParam);
+	static int CALLBACK CtrlCmdTcpCallback(void* param, CMD_STREAM* cmdParam, CMD_STREAM* resParam);
+	static int CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STREAM* resParam, bool tcpFlag);
 	static int InitLuaCallback(lua_State* L);
 	//Lua-edcb空間のコールバック
 	class CLuaWorkspace
@@ -85,6 +85,7 @@ private:
 	static int LuaChgReserveData(lua_State* L);
 	static int LuaDelReserveData(lua_State* L);
 	static int LuaGetReserveData(lua_State* L);
+	static int LuaGetRecFilePath(lua_State* L);
 	static int LuaGetRecFileInfo(lua_State* L);
 	static int LuaDelRecFileInfo(lua_State* L);
 	static int LuaGetTunerReserveAll(lua_State* L);
@@ -121,10 +122,9 @@ private:
 	bool saveNotifyLog;
 	DWORD wakeMarginSec;
 	unsigned short tcpPort;
-	wstring httpPorts;
-	wstring httpPublicFolder;
-	wstring httpAccessControlList;
-	bool httpSaveLog;
+	DWORD tcpResponseTimeoutSec;
+	wstring tcpAccessControlList;
+	CHttpServer::SERVER_OPTIONS httpOptions;
 	bool enableSsdpServer;
 	vector<pair<int, wstring>> dmsPublicFileList;
 	int autoAddHour;
@@ -142,5 +142,5 @@ private:
 	bool nwtvTcp;
 	DWORD notifyUpdateCount[6];
 
-	vector<OLD_EVENT_INFO_DATA3> oldSearchList;
+	vector<EPGDB_EVENT_INFO> oldSearchList[2];
 };

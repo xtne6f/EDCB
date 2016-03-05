@@ -4,10 +4,6 @@
 //デフォルトコネクトタイムアウト
 #define CONNECT_TIMEOUT 15*1000
 
-//ストリームバッファのサイズ
-#define CMD2_SEND_BUFF_SIZE 1024*1024
-#define CMD2_RES_BUFF_SIZE 1024*1024
-
 //パイプ名
 #define CMD2_EPG_SRV_PIPE _T("\\\\.\\pipe\\EpgTimerSrvPipe")
 #define CMD2_GUI_CTRL_PIPE _T("\\\\.\\pipe\\EpgTimerGUI_Ctrl_BonPipe_") //+プロセスID
@@ -19,9 +15,6 @@
 #define CMD2_GUI_CTRL_WAIT_CONNECT _T("Global\\EpgTimerGUI_Ctrl_BonConnect_") //+プロセスID
 #define CMD2_VIEW_CTRL_WAIT_CONNECT _T("Global\\View_Ctrl_BonConnect_") //+プロセスID
 #define CMD2_TVTEST_CTRL_WAIT_CONNECT _T("Global\\TvTest_Ctrl_BonConnect_") //+プロセスID
-
-//モジュール内コマンド実行イベント
-#define CMD2_CTRL_EVENT_WAIT _T("CtrlCmdEvent_") //+ID
 
 //コマンドバージョン
 //#define CMD_VER 2	//バージョン情報追加対応　録画設定への部分受信録画フォルダ指定追加
@@ -64,6 +57,7 @@
 #define CMD2_EPG_SRV_ENUM_MANU_ADD2			2141 //プログラム予約自動登録の条件一覧取得
 #define CMD2_EPG_SRV_ADD_MANU_ADD2			2142 //プログラム予約自動登録の条件追加
 #define CMD2_EPG_SRV_CHG_MANU_ADD2			2144 //プログラム予約自動登録の条件変更
+#define CMD2_EPG_SRV_GET_STATUS_NOTIFY2		2200 //サーバーの情報変更通知を取得（ロングポーリング）
 
 #define CMD2_EPG_SRV_ENUM_SERVICE			1021 //読み込まれたEPGデータのサービスの一覧取得
 #define CMD2_EPG_SRV_ENUM_PG_INFO			1022 //サービス指定で番組情報一覧を取得する

@@ -2,7 +2,7 @@
 #include "BonCtrl.h"
 #include <process.h>
 
-#include "../Common/ErrDef.h"
+#include "../Common/CommonDef.h"
 #include "../Common/TimeUtil.h"
 #include "../Common/SendCtrlCmd.h"
 #include "../Common/BlockLock.h"
@@ -10,7 +10,6 @@
 CBonCtrl::CBonCtrl(void)
 {
 	InitializeCriticalSection(&this->buffLock);
-	this->TSBuffOffset = 0;
 
     this->analyzeThread = NULL;
     this->analyzeEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
@@ -395,8 +394,7 @@ void CBonCtrl::_CloseBonDriver()
 
 	this->bonUtil.CloseBonDriver();
 	this->packetInit.ClearBuff();
-	this->TSBuff.clear();
-	this->TSBuffOffset = 0;
+	this->tsBuffList.clear();
 }
 
 void CBonCtrl::RecvCallback(void* param, BYTE* data, DWORD size, DWORD remain)
@@ -406,12 +404,23 @@ void CBonCtrl::RecvCallback(void* param, BYTE* data, DWORD size, DWORD remain)
 	DWORD outSize;
 	if( data != NULL && size != 0 && sys->packetInit.GetTSData(data, size, &outData, &outSize) ){
 		CBlockLock lock(&sys->buffLock);
-		sys->TSBuff.erase(sys->TSBuff.begin(), sys->TSBuff.begin() + sys->TSBuffOffset);
-		sys->TSBuffOffset = 0;
-		if( sys->TSBuff.size() / 48128 > sys->tsBuffMaxCount ){
-			sys->TSBuff.clear();
+		for( std::list<vector<BYTE>>::iterator itr = sys->tsBuffList.begin(); outSize != 0; itr++ ){
+			if( itr == sys->tsBuffList.end() ){
+				//バッファを増やす
+				if( sys->tsBuffList.size() > sys->tsBuffMaxCount ){
+					for( itr = sys->tsBuffList.begin(); itr != sys->tsBuffList.end(); (itr++)->clear() );
+					itr = sys->tsBuffList.begin();
+				}else{
+					sys->tsBuffList.push_back(vector<BYTE>());
+					itr = sys->tsBuffList.end();
+					(--itr)->reserve(48128);
+				}
+			}
+			DWORD insertSize = min(48128 - (DWORD)itr->size(), outSize);
+			itr->insert(itr->end(), outData, outData + insertSize);
+			outData += insertSize;
+			outSize -= insertSize;
 		}
-		sys->TSBuff.insert(sys->TSBuff.end(), outData, outData + outSize);
 	}
 	if( remain == 0 ){
 		SetEvent(sys->analyzeEvent);
@@ -421,91 +430,30 @@ void CBonCtrl::RecvCallback(void* param, BYTE* data, DWORD size, DWORD remain)
 UINT WINAPI CBonCtrl::AnalyzeThread(LPVOID param)
 {
 	CBonCtrl* sys = (CBonCtrl*)param;
+	std::list<vector<BYTE>> data;
 
 	while( sys->analyzeStopFlag == FALSE ){
 		//バッファからデータ取り出し
-		BYTE data[48128];
-		DWORD dataSize = 0;
 		{
 			CBlockLock lock(&sys->buffLock);
-			if( sys->TSBuff.size() - sys->TSBuffOffset >= sizeof(data) ){
-				//必ず188の倍数で取り出さなければならない
-				dataSize = sizeof(data);
-				memcpy(data, &sys->TSBuff[sys->TSBuffOffset], dataSize);
-				sys->TSBuffOffset += dataSize;
+			if( data.empty() == false ){
+				//返却
+				data.front().clear();
+				std::list<vector<BYTE>>::iterator itr;
+				for( itr = sys->tsBuffList.begin(); itr != sys->tsBuffList.end() && itr->empty() == false; itr++ );
+				sys->tsBuffList.splice(itr, data);
+			}
+			if( sys->tsBuffList.empty() == false && sys->tsBuffList.front().size() == 48128 ){
+				data.splice(data.end(), sys->tsBuffList, sys->tsBuffList.begin());
 			}
 		}
-		if( dataSize != 0 ){
-			sys->tsOut.AddTSBuff(data, dataSize);
+		if( data.empty() == false ){
+			sys->tsOut.AddTSBuff(&data.front().front(), (DWORD)data.front().size());
 		}else{
 			WaitForSingleObject(sys->analyzeEvent, 1000);
 		}
 	}
 	return 0;
-}
-
-//EPGデータの蓄積状態をリセットする
-void CBonCtrl::ClearSectionStatus()
-{
-	this->tsOut.ClearSectionStatus();
-}
-
-//EPGデータの蓄積状態を取得する
-//戻り値：
-// ステータス
-//引数：
-// l_eitFlag		[IN]L-EITのステータスを取得
-EPG_SECTION_STATUS CBonCtrl::GetSectionStatus(
-	BOOL l_eitFlag
-	)
-{
-	return this->tsOut.GetSectionStatus(l_eitFlag);
-}
-
-//自ストリームのサービス一覧を取得する
-//戻り値：
-// エラーコード
-//引数：
-// serviceList				[OUT]サービス情報のリスト
-DWORD CBonCtrl::GetServiceListActual(
-	vector<TS_SERVICE_INFO>* serviceList
-	)
-{
-	DWORD _serviceListSize = 0;
-	SERVICE_INFO* _serviceList = NULL;
-	DWORD err = this->tsOut.GetServiceListActual(&_serviceListSize, &_serviceList);
-	if( err == NO_ERR ){
-		for( DWORD i=0; i<_serviceListSize; i++ ){
-			TS_SERVICE_INFO item;
-			item.ONID = _serviceList[i].original_network_id;
-			item.TSID = _serviceList[i].transport_stream_id;
-			item.SID = _serviceList[i].service_id;
-			if( _serviceList[i].extInfo != NULL ){
-				item.serviceType = _serviceList[i].extInfo->service_type;
-				item.partialFlag = _serviceList[i].extInfo->partialReceptionFlag;
-				if( _serviceList[i].extInfo->service_name != NULL ){
-					item.serviceName = _serviceList[i].extInfo->service_name;
-				}else{
-					item.serviceName = L"";
-				}
-				if( _serviceList[i].extInfo->network_name != NULL ){
-					item.networkName = _serviceList[i].extInfo->network_name;
-				}else{
-					item.networkName = L"";
-				}
-				item.remoteControlKeyID = _serviceList[i].extInfo->remote_control_key_id;
-			}else{
-				item.serviceType = 0;
-				item.partialFlag = 0;
-				item.serviceName = L"";
-				item.networkName = L"";
-				item.remoteControlKeyID = 0;
-			}
-			serviceList->push_back(item);
-		}
-	}
-
-	return err;
 }
 
 //サービス一覧を取得する
@@ -1132,7 +1080,6 @@ UINT WINAPI CBonCtrl::EpgCapThread(LPVOID param)
 						wstring epgDataPath = L"";
 						sys->GetEpgDataFilePath(sys->epgCapChList[chkCount].ONID, sys->epgCapChList[chkCount].TSID, epgDataPath, BSBasic, CS1Basic, CS2Basic);
 						sys->tsOut.StartSaveEPG(epgDataPath);
-						sys->tsOut.ClearSectionStatus();
 						wait = 60*1000;
 					}else{
 						//蓄積状態チェック
@@ -1371,7 +1318,6 @@ UINT WINAPI CBonCtrl::EpgCapBackThread(LPVOID param)
 
 	sys->GetEpgDataFilePath(ONID, TSID, epgDataPath, sys->epgCapBackBSBasic, sys->epgCapBackCS1Basic, sys->epgCapBackCS2Basic);
 	sys->tsOut.StartSaveEPG(epgDataPath);
-	sys->tsOut.ClearSectionStatus();
 
 	if( ::WaitForSingleObject(sys->epgCapBackStopEvent, 60*1000) != WAIT_TIMEOUT ){
 		//キャンセルされた

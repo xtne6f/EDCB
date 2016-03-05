@@ -1,7 +1,8 @@
 #pragma once
 
 #define TVTEST_PLUGIN_CLASS_IMPLEMENT	// ƒNƒ‰ƒX‚Æ‚µ‚ÄŽÀ‘•
-#include "TVTestPlugin.h"
+#define TVTEST_PLUGIN_VERSION TVTEST_PLUGIN_VERSION_(0,0,13)
+#include "../../Common/TVTestPlugin.h"
 
 #include "../../Common/PipeServer.h"
 #include "../../Common/ErrDef.h"

@@ -82,7 +82,7 @@ void CEpgTimerPlugIn::EnablePlugin(BOOL enable)
 
 		OutputDebugString(pipeName.c_str());
 		OutputDebugString(eventName.c_str());
-		this->pipeServer.StartServer(eventName.c_str(), pipeName.c_str(), CtrlCmdCallback, this, 0, GetCurrentProcessId());
+		this->pipeServer.StartServer(eventName.c_str(), pipeName.c_str(), CtrlCmdCallback, this);
 
 		if( this->nwMode == TRUE ){
 			this->ctrlDlg.SetCtrlCmd(&this->cmd, this->nwModeInfo.ctrlID, this->nwModeInfo.udpSend, this->nwModeInfo.tcpSend, FALSE, this->nwModeInfo.timeShiftMode);

@@ -18,7 +18,7 @@ CHttpServer::~CHttpServer()
 	StopServer();
 }
 
-bool CHttpServer::StartServer(LPCWSTR ports, LPCWSTR rootPath, int (*initProc)(lua_State*), void* initParam, bool saveLog, LPCWSTR acl)
+bool CHttpServer::StartServer(const SERVER_OPTIONS& op, int (*initProc)(lua_State*), void* initParam)
 {
 	StopServer();
 
@@ -28,11 +28,12 @@ bool CHttpServer::StartServer(LPCWSTR ports, LPCWSTR rootPath, int (*initProc)(l
 		OutputDebugString(L"CHttpServer::StartServer(): " LUA_DLL_NAME L" not found.\r\n");
 		return false;
 	}
-	string portsU;
-	WtoUTF8(ports, portsU);
+	string ports;
+	WtoUTF8(op.ports, ports);
+	wstring rootPathW = op.rootPath;
+	ChkFolderPath(rootPathW);
 	string rootPathU;
-	WtoUTF8(rootPath, rootPathU);
-	ChkFolderPath(rootPathU);
+	WtoUTF8(rootPathW, rootPathU);
 	//パスにASCII範囲外を含むのは(主にLuaが原因で)難ありなので蹴る
 	for( size_t i = 0; i < rootPathU.size(); i++ ){
 		if( rootPathU[i] & 0x80 ){
@@ -57,9 +58,16 @@ bool CHttpServer::StartServer(LPCWSTR ports, LPCWSTR rootPath, int (*initProc)(l
 	globalAuthPath += "\\glpasswd";
 
 	//Access Control List
-	string aclU;
-	WtoUTF8(acl ? acl : L"", aclU);
-	aclU = "-0.0.0.0/0," + aclU;
+	string acl;
+	WtoUTF8(op.accessControlList, acl);
+	acl = "-0.0.0.0/0," + acl;
+
+	string authDomain;
+	WtoUTF8(op.authenticationDomain, authDomain);
+	string numThreads;
+	Format(numThreads, "%d", min(max(op.numThreads, 1), 50));
+	string requestTimeout;
+	Format(requestTimeout, "%d", max(op.requestTimeout, 1));
 
 	//追加のMIMEタイプ
 	CParseContentTypeText contentType;
@@ -72,24 +80,27 @@ bool CHttpServer::StartServer(LPCWSTR ports, LPCWSTR rootPath, int (*initProc)(l
 	WtoUTF8(extraMimeW, extraMime);
 
 	const char* options[32] = {
-		//mg_stop()の待ちが長くなりすぎるので(残念だが)オフ
-		//"enable_keep_alive", "yes",
-		"access_control_list", aclU.c_str(),
+		"enable_keep_alive", op.keepAlive ? "yes" : "no",
+		"access_control_list", acl.c_str(),
 		"extra_mime_types", extraMime.c_str(),
-		"listening_ports", portsU.c_str(),
+		"listening_ports", ports.c_str(),
 		"document_root", rootPathU.c_str(),
-		//必要に応じて増やしてもいい
-		"num_threads", "3",
+		"num_threads", numThreads.c_str(),
+		"request_timeout_ms", requestTimeout.c_str(),
 		"lua_script_pattern", "**.lua$|**.html$|*/api/*$",
 	};
-	int opCount = 2 * 6;
-	if( saveLog ){
+	int opCount = 2 * 8;
+	if( op.saveLog ){
 		options[opCount++] = "access_log_file";
 		options[opCount++] = accessLogPath.c_str();
 		options[opCount++] = "error_log_file";
 		options[opCount++] = errorLogPath.c_str();
 	}
-	if( portsU.find('s') != string::npos ){
+	if( authDomain.empty() == false ){
+		options[opCount++] = "authentication_domain";
+		options[opCount++] = authDomain.c_str();
+	}
+	if( ports.find('s') != string::npos ){
 		//セキュアポートを含むので認証鍵を指定する
 		options[opCount++] = "ssl_certificate";
 		options[opCount++] = sslCertPath.c_str();
@@ -115,16 +126,35 @@ bool CHttpServer::StartServer(LPCWSTR ports, LPCWSTR rootPath, int (*initProc)(l
 	return this->mgContext != NULL;
 }
 
-void CHttpServer::StopServer()
+bool CHttpServer::StopServer(bool checkOnly)
 {
 	if( this->mgContext ){
-		mg_stop(this->mgContext);
+		if( checkOnly ){
+			if( mg_check_stop(this->mgContext) == 0 ){
+				return false;
+			}
+		}else{
+			//正常であればmg_stop()はreqToを超えて待機することはない
+			DWORD reqTo = atoi(mg_get_option(this->mgContext, "request_timeout_ms"));
+			DWORD tick = GetTickCount();
+			while( GetTickCount() - tick < reqTo + 10000 ){
+				if( mg_check_stop(this->mgContext) ){
+					this->mgContext = NULL;
+					break;
+				}
+				Sleep(10);
+			}
+			if( this->mgContext ){
+				OutputDebugString(L"CHttpServer::StopServer(): failed to stop service.\r\n");
+			}
+		}
 		this->mgContext = NULL;
 	}
 	if( this->hLuaDll ){
 		FreeLibrary(this->hLuaDll);
 		this->hLuaDll = NULL;
 	}
+	return true;
 }
 
 void CHttpServer::InitLua(const mg_connection* conn, void* luaContext)

@@ -33,8 +33,8 @@
     <ClInclude Include="targetver.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="TVTestPlugin.h">
-      <Filter>ヘッダー ファイル</Filter>
+    <ClInclude Include="..\..\Common\TVTestPlugin.h">
+      <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
     <ClInclude Include="EpgTimerPlugIn.h">
       <Filter>ヘッダー ファイル</Filter>

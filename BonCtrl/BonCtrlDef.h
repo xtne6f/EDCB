@@ -6,19 +6,6 @@
 #define CHSET_SAVE_EVENT_WAIT		 _T("Global\\EpgTimer_ChSet")
 
 
-//受信データのバッファリング用
-typedef struct _TS_DATA{
-	BYTE* data;				//TSデータ
-	DWORD size;				//dataのサイズ
-	_TS_DATA(void){
-		data = NULL;
-		size = 0;
-	}
-	~_TS_DATA(void){
-		SAFE_DELETE_ARRAY(data);
-	}
-} TS_DATA;
-
 //ネットワーク送信用設定
 typedef struct _NW_SEND_INFO{
 	wstring ipString;
@@ -26,18 +13,6 @@ typedef struct _NW_SEND_INFO{
 	DWORD port;
 	BOOL broadcastFlag;
 }NW_SEND_INFO;
-
-//サービス情報
-typedef struct _TS_SERVICE_INFO{
-	WORD ONID;
-	WORD TSID;
-	WORD SID;
-	BYTE serviceType;
-	BOOL partialFlag;
-	wstring serviceName;
-	wstring networkName;
-	BYTE remoteControlKeyID;
-}TS_SERVICE_INFO;
 
 //EPG取得用サービス情報
 typedef struct _EPGCAP_SERVICE_INFO{

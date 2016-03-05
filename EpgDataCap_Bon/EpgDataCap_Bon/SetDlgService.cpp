@@ -89,9 +89,6 @@ BOOL CSetDlgService::OnInitDialog()
 	wstring path = L"";
 	GetSettingPath(path);
 
-	wstring srvIniPath = L"";
-	GetEpgTimerSrvIniPath(srvIniPath);
-
 	wstring searchKey = path;
 	searchKey += L"\\*.ChSet4.txt";
 

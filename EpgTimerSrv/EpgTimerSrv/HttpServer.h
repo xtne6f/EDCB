@@ -8,10 +8,20 @@ struct mg_connection;
 class CHttpServer
 {
 public:
+	struct SERVER_OPTIONS {
+		std::wstring ports;
+		std::wstring rootPath;
+		std::wstring accessControlList;
+		std::wstring authenticationDomain;
+		int numThreads;
+		int requestTimeout;
+		bool keepAlive;
+		bool saveLog;
+	};
 	CHttpServer();
 	~CHttpServer();
-	bool StartServer(LPCWSTR ports, LPCWSTR rootPath, int (*initProc)(lua_State*), void* initParam, bool saveLog = false, LPCWSTR acl = NULL);
-	void StopServer();
+	bool StartServer(const SERVER_OPTIONS& op, int (*initProc)(lua_State*), void* initParam);
+	bool StopServer(bool checkOnly = false);
 private:
 	static void InitLua(const mg_connection* conn, void* luaContext);
 	mg_context* mgContext;
