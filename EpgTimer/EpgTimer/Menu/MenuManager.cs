@@ -607,7 +607,7 @@ namespace EpgTimer
 
         public bool CtxmGenerateChgAutoAdd(MenuItem menu, IAutoAddTargetData info)
         {
-            CtxmClearItemMenu(menu, true, true);
+            CtxmClearItemMenu(menu, true);
 
             if (menu.IsEnabled == false) return false;
 
@@ -616,7 +616,7 @@ namespace EpgTimer
             if (menu.Items.Count == 0) return false;
 
             //候補が一つの時は直接メニューを実行出来るようにする
-            CtxmPullUpSubMenu(menu, true, true);
+            CtxmPullUpSubMenu(menu, true);
             return true;
         }
 
@@ -697,43 +697,41 @@ namespace EpgTimer
             menu.Items.Add(menuItem);
         }
 
-        private void CtxmClearItemMenu(MenuItem menu, bool isDialog = false, bool isSingleBase = false)
+        private void CtxmClearItemMenu(MenuItem menu, bool isEndDot = false)
         {
-            menu.Items.Clear();
-            var header = menu.Header as string;
-            if (isDialog == true && header != null)
-            {
-                if (header.EndsWith("...") == true)
-                {
-                    menu.Header = header.Substring(0, header.Length - 3);
-                }
-                if (isSingleBase == true)
-                {
-                    menu.Header += "...";
-                }
-            }
             menu.ToolTip = null;
             menu.Command = null;
             (menu.CommandParameter as EpgCmdParam).Data = null;
             (menu.CommandParameter as EpgCmdParam).ID = 0;
+            menu.Items.Clear();
+            if (isEndDot == true) CtxmPullUpSubMenuSwitchEndDot(menu);
         }
-        private void CtxmPullUpSubMenu(MenuItem menu, bool isDialog = false, bool isSingleBase = false)
+        private void CtxmPullUpSubMenu(MenuItem menu, bool isEndDot = false)
         {
             if (menu.Items.Count == 1)
             {
                 var submenu = (menu.Items[0] as MenuItem);
-                menu.ToolTip = (submenu.ToolTip == null ? submenu.Header : submenu.ToolTip);
+                menu.ToolTip = submenu.ToolTip ?? submenu.Header;
                 menu.Command = submenu.Command;
                 (menu.CommandParameter as EpgCmdParam).Data = (submenu.CommandParameter as EpgCmdParam).Data;
                 (menu.CommandParameter as EpgCmdParam).ID = (submenu.CommandParameter as EpgCmdParam).ID;
                 menu.Items.Clear();
             }
-
+            if (isEndDot == true) CtxmPullUpSubMenuSwitchEndDot(menu);
+        }
+        private void CtxmPullUpSubMenuSwitchEndDot(MenuItem menu)
+        {
             var header = menu.Header as string;
-            if (isDialog == true && header != null && (menu.Items.Count == 1 || menu.Items.Count == 0 && isSingleBase == true)
-                && header.EndsWith("...") != true)
+            if (header != null)
             {
-                menu.Header += "...";
+                if (header.EndsWith("...") == true)
+                {
+                    menu.Header = header.Substring(0, header.Length - 3);
+                }
+                if (menu.Items.Count == 0)
+                {
+                    menu.Header += "...";
+                }
             }
         }
     }
