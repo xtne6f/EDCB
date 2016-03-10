@@ -155,11 +155,11 @@ namespace EpgTimer.UserCtrlView
             PopUp.Width = popInfo.Width;
             if (popInfo.TopPos < scroll.ContentVerticalOffset)
             {
-                PopUp.MinHeight = popInfo.TopPos + popInfo.Height - scroll.ContentVerticalOffset;
+                PopUp.MinHeight = Math.Max(0, popInfo.TopPos + popInfo.Height - scroll.ContentVerticalOffset);
             }
             else
             {
-                PopUp.MinHeight = Math.Max(0, Math.Min(scroll.ContentVerticalOffset + scroll.ActualHeight - popInfo.TopPos - 18, popInfo.Height));
+                PopUp.MinHeight = Math.Max(0, Math.Min(scroll.ContentVerticalOffset + scroll.ViewportHeight - popInfo.TopPos, popInfo.Height));
             }
         }
 
@@ -167,16 +167,16 @@ namespace EpgTimer.UserCtrlView
         protected void UpdatePopupPosition(ViewPanelItemBase popInfo)
         {
             // offsetHが正のとき右にはみ出している
-            double offsetH = popInfo.LeftPos + PopUp.ActualWidth - (scroll.ContentHorizontalOffset + scroll.ActualWidth - 18);
+            double offsetH = popInfo.LeftPos + PopUp.ActualWidth - (scroll.ContentHorizontalOffset + scroll.ViewportWidth);
             // 右にはみ出した分だけ左にずらす
-            double left = popInfo.LeftPos - Math.Max(0, offsetH - 1);
+            double left = popInfo.LeftPos - Math.Max(0, offsetH);
             // 左にはみ出てる場合はscrollエリアの左端から表示する
             Canvas.SetLeft(PopUp, Math.Floor(Math.Max(left, scroll.ContentHorizontalOffset)));
 
             // offsetVが正のとき下にはみ出している
-            double offsetV = popInfo.TopPos + PopUp.ActualHeight - (scroll.ContentVerticalOffset + scroll.ActualHeight - 18);
+            double offsetV = popInfo.TopPos + PopUp.ActualHeight - (scroll.ContentVerticalOffset + scroll.ViewportHeight);
             // 下にはみ出した分だけ上にずらす
-            double top = popInfo.TopPos - Math.Max(0, offsetV - 1);
+            double top = popInfo.TopPos - Math.Max(0, offsetV);
             // 上にはみ出てる場合はscrollエリアの上端から表示する
             Canvas.SetTop(PopUp, Math.Floor(Math.Max(top, scroll.ContentVerticalOffset - 1)));
         }
