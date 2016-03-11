@@ -48,7 +48,8 @@ namespace EpgTimer.TunerReserveViewCtrl
                     ushort glyphIndex = itemFont.GlyphIndexCache[line[n]];
                     if (glyphIndex == 0)
                     {
-                        itemFont.GlyphIndexCache[line[n]] = glyphIndex = itemFont.GlyphType.CharacterToGlyphMap[line[n]];
+                        itemFont.GlyphType.CharacterToGlyphMap.TryGetValue(line[n], out glyphIndex);
+                        itemFont.GlyphIndexCache[line[n]] = glyphIndex;
                         itemFont.GlyphWidthCache[glyphIndex] = (float)itemFont.GlyphType.AdvanceWidths[glyphIndex];
                     }
                     double width = itemFont.GlyphWidthCache[glyphIndex] * fontSize;
