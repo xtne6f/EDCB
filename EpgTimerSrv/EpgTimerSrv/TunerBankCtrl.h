@@ -147,7 +147,7 @@ private:
 	//チューナに録画を開始させる
 	bool RecStart(const TUNER_RESERVE_WORK& reserve, __int64 now) const;
 	//チューナを起動する
-	bool OpenTuner(bool minWake, bool nwUdp, bool nwTcp, bool standbyRec, const SET_CH_INFO* initCh);
+	bool OpenTuner(bool minWake, bool noView, bool nwUdp, bool nwTcp, bool standbyRec, const SET_CH_INFO* initCh);
 	//チューナを閉じる
 	void CloseTuner();
 	//このバンクのBonDriverを使用しているプロセスを1つだけ閉じる

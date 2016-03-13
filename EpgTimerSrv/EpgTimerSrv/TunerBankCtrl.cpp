@@ -464,7 +464,7 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 			initCh.useSID = TRUE;
 			initCh.useBonCh = FALSE;
 			bool nwUdpTcp = this->recNW || r.recMode == RECMODE_VIEW;
-			if( OpenTuner(this->recMinWake, nwUdpTcp, nwUdpTcp, true, &initCh) ){
+			if( OpenTuner(this->recMinWake, this->recView == false || r.recMode != RECMODE_VIEW, nwUdpTcp, nwUdpTcp, true, &initCh) ){
 				this->tunerONID = r.onid;
 				this->tunerTSID = r.tsid;
 				this->tunerChLocked = true;
@@ -914,7 +914,7 @@ bool CTunerBankCtrl::StartEpgCap(const vector<SET_CH_INFO>& setChList)
 {
 	if( setChList.empty() == false && this->hTunerProcess == NULL ){
 		//EPG取得についてはチューナの再利用はしない
-		if( OpenTuner(this->recMinWake, false, false, true, NULL) ){
+		if( OpenTuner(this->recMinWake, true, false, false, true, NULL) ){
 			CWatchBlock watchBlock(&this->watchContext);
 			CSendCtrlCmd ctrlCmd;
 			ctrlCmd.SetPipeSetting(CMD2_VIEW_CTRL_WAIT_CONNECT, CMD2_VIEW_CTRL_PIPE, this->tunerPid);
@@ -998,7 +998,7 @@ __int64 CTunerBankCtrl::DelayTime() const
 bool CTunerBankCtrl::SetNWTVCh(bool nwUdp, bool nwTcp, const SET_CH_INFO& chInfo)
 {
 	if( this->hTunerProcess == NULL ){
-		if( OpenTuner(true, nwUdp, nwTcp, false, &chInfo) ){
+		if( OpenTuner(true, true, nwUdp, nwTcp, false, &chInfo) ){
 			this->specialState = TR_NWTV;
 			return true;
 		}
@@ -1035,7 +1035,7 @@ bool CTunerBankCtrl::GetRecFilePath(DWORD reserveID, wstring& filePath, DWORD* c
 	return false;
 }
 
-bool CTunerBankCtrl::OpenTuner(bool minWake, bool nwUdp, bool nwTcp, bool standbyRec, const SET_CH_INFO* initCh)
+bool CTunerBankCtrl::OpenTuner(bool minWake, bool noView, bool nwUdp, bool nwTcp, bool standbyRec, const SET_CH_INFO* initCh)
 {
 	if( this->hTunerProcess ){
 		return false;
@@ -1057,7 +1057,9 @@ bool CTunerBankCtrl::OpenTuner(bool minWake, bool nwUdp, bool nwTcp, bool standb
 	if( minWake ){
 		strParam += L" " + GetPrivateProfileToString(L"APP_CMD_OPT", L"Min", L"-min", strIni.c_str());
 	}
-	//引数"-noview"は扱わない(いまのところ何の効果もないため)
+	if( noView ){
+		strParam += L" " + GetPrivateProfileToString(L"APP_CMD_OPT", L"ViewOff", L"-noview", strIni.c_str());
+	}
 	if( nwUdp == false && nwTcp == false ){
 		strParam += L" " + GetPrivateProfileToString(L"APP_CMD_OPT", L"NetworkOff", L"-nonw", strIni.c_str());
 	}else{
