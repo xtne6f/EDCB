@@ -12,12 +12,14 @@ public:
 	CSendCtrlCmd(void);
 	~CSendCtrlCmd(void);
 
+#ifndef SEND_CTRL_CMD_NO_TCP
 	//コマンド送信方法の設定
 	//引数：
 	// tcpFlag		[IN] TRUE：TCP/IPモード、FALSE：名前付きパイプモード
 	void SetSendMode(
 		BOOL tcpFlag
 		);
+#endif
 
 	//名前付きパイプモード時の接続先を設定
 	//EpgTimerSrv.exeに対するコマンドは設定しなくても可（デフォルト値になっている）
@@ -1020,7 +1022,9 @@ protected:
 
 protected:
 	DWORD SendPipe(LPCWSTR pipeName, LPCWSTR eventName, DWORD timeOut, CMD_STREAM* send, CMD_STREAM* res);
+#ifndef SEND_CTRL_CMD_NO_TCP
 	DWORD SendTCP(wstring ip, DWORD port, DWORD timeOut, CMD_STREAM* sendCmd, CMD_STREAM* resCmd);
+#endif
 
 	DWORD SendCmdStream(CMD_STREAM* send, CMD_STREAM* res);
 	DWORD SendCmdWithoutData(DWORD param, CMD_STREAM* res = NULL);
