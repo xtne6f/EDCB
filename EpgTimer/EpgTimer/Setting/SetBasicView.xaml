@@ -17,13 +17,20 @@
                     <Label Content="設定関係保存フォルダ" Height="28" HorizontalAlignment="Left" Margin="12,12,0,0" Name="label1" VerticalAlignment="Top" />
                     <TextBox Height="24" HorizontalAlignment="Left" Margin="157,14,0,0" Name="textBox_setPath" VerticalAlignment="Top" Width="372" />
                     <Button Content="開く" Height="23" HorizontalAlignment="Left" Margin="535,14,0,0" Name="button_setPath" VerticalAlignment="Top" Width="44" Click="button_setPath_Click" />
-                    <Label Content="録画用アプリのexe" Height="28" HorizontalAlignment="Left" Margin="12,46,0,0" Name="label2" VerticalAlignment="Top" />
-                    <TextBox Height="24" HorizontalAlignment="Left" Margin="157,48,0,0" Name="textBox_exe" VerticalAlignment="Top" Width="372" ToolTip="{Binding ElementName=textBox_exe, Path=Text}" />
-                    <Button Content="開く" Height="23" HorizontalAlignment="Left" Margin="535,48,0,0" Name="button_exe" VerticalAlignment="Top" Width="44" Click="button_exe_Click" />
-                    <Label Content="録画保存フォルダ　（空き容量が少ない場合、上から順に録画対象のフォルダとします）" Height="28" HorizontalAlignment="Left" Margin="12,80,0,0" Name="label3" VerticalAlignment="Top" />
-                    <ListBox Height="100" HorizontalAlignment="Left" Margin="45,114,0,0" Name="listBox_recFolder" VerticalAlignment="Top" Width="484" />
-                    <Button Content="↑" Height="23" HorizontalAlignment="Left" Margin="535,114,0,0" Name="button_rec_up" VerticalAlignment="Top" Width="44" Click="button_rec_up_Click" />
-                    <Button Content="↓" Height="23" HorizontalAlignment="Left" Margin="535,143,0,0" Name="button_rec_down" VerticalAlignment="Top" Width="44" Click="button_rec_down_Click" />
+                    <Label Content="録画用アプリのexe" Height="28" HorizontalAlignment="Left" Margin="12,42,0,0" Name="label2" VerticalAlignment="Top" />
+                    <TextBox Height="24" HorizontalAlignment="Left" Margin="157,44,0,0" Name="textBox_exe" VerticalAlignment="Top" Width="372" ToolTip="{Binding ElementName=textBox_exe, Path=Text}" />
+                    <Button Content="開く" Height="23" HorizontalAlignment="Left" Margin="535,44,0,0" Name="button_exe" VerticalAlignment="Top" Width="44" Click="button_exe_Click" />
+                    <Label Content="コマンドライン引数" Height="28" HorizontalAlignment="Left" Margin="12,72,0,0" VerticalAlignment="Top" />
+                    <TextBox Height="24" HorizontalAlignment="Left" Margin="157,74,0,0" Name="textBox_cmdBon" VerticalAlignment="Top" Width="96" />
+                    <Label Content="{}{BonDriver}" Height="28" HorizontalAlignment="Left" Margin="253,72,0,0" VerticalAlignment="Top" IsEnabled="False" />
+                    <Label Content="最小化" Height="28" HorizontalAlignment="Left" Margin="337,72,0,0" VerticalAlignment="Top" />
+                    <TextBox Height="24" HorizontalAlignment="Left" Margin="388,74,0,0" Name="textBox_cmdMin" VerticalAlignment="Top" Width="64" />
+                    <Label Content="非視聴時" Height="28" HorizontalAlignment="Left" Margin="452,72,0,0" VerticalAlignment="Top" />
+                    <TextBox Height="24" HorizontalAlignment="Left" Margin="515,74,0,0" Name="textBox_cmdViewOff" VerticalAlignment="Top" Width="64" />
+                    <Label Content="録画保存フォルダ　（空き容量が少ない場合、上から順に録画対象のフォルダとします）" Height="28" HorizontalAlignment="Left" Margin="12,102,0,0" Name="label3" VerticalAlignment="Top" />
+                    <ListBox Height="83" HorizontalAlignment="Left" Margin="45,131,0,0" Name="listBox_recFolder" VerticalAlignment="Top" Width="484" />
+                    <Button Content="↑" Height="23" HorizontalAlignment="Left" Margin="535,131,0,0" Name="button_rec_up" VerticalAlignment="Top" Width="44" Click="button_rec_up_Click" />
+                    <Button Content="↓" Height="23" HorizontalAlignment="Left" Margin="535,161,0,0" Name="button_rec_down" VerticalAlignment="Top" Width="44" Click="button_rec_down_Click" />
                     <Button Content="削除" Height="23" HorizontalAlignment="Left" Margin="535,191,0,0" Name="button_rec_del" VerticalAlignment="Top" Width="44" Click="button_rec_del_Click" />
                     <TextBox Height="24" HorizontalAlignment="Left" Margin="45,221,0,0" Name="textBox_recFolder" VerticalAlignment="Top" Width="427" />
                     <Button Content="開く" Height="23" Margin="485,221,0,0" Name="button_rec_open" VerticalAlignment="Top" HorizontalAlignment="Left" Width="44" Click="button_rec_open_Click" />
