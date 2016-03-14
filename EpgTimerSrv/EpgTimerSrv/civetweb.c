@@ -11010,6 +11010,7 @@ initialize_ssl(struct mg_context *ctx)
 		       "%s: cannot allocate mutexes: %s",
 		       __func__,
 		       ssl_error());
+		mg_atomic_dec(&cryptolib_users);
 		return 0;
 	}
 
@@ -12694,9 +12695,9 @@ master_thread_run(void *thread_func_param)
 	}
 
 #if !defined(NO_SSL)
-	if (ctx->ssl_ctx != NULL) {
-		uninitialize_ssl(ctx);
-	}
+	//if (ctx->ssl_ctx != NULL) {
+	//	uninitialize_ssl(ctx);
+	//}
 #endif
 	DEBUG_TRACE("%s", "exiting");
 
@@ -12780,6 +12781,7 @@ free_context(struct mg_context *ctx)
 	/* Deallocate SSL context */
 	if (ctx->ssl_ctx != NULL) {
 		SSL_CTX_free(ctx->ssl_ctx);
+		uninitialize_ssl(ctx);
 	}
 #endif /* !NO_SSL */
 
