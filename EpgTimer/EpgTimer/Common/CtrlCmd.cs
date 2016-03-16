@@ -569,6 +569,8 @@ namespace EpgTimer
         public ErrCode SendViewSetCh(SetChInfo chInfo) { return SendCmdData(CtrlCmd.CMD_VIEW_APP_SET_CH, chInfo); }
         /// <summary>アプリケーションの終了</summary>
         public ErrCode SendViewAppClose() { return SendCmdWithoutData(CtrlCmd.CMD_VIEW_APP_CLOSE); }
+        /// <summary>識別用IDの取得</summary>
+        public ErrCode SendViewGetID(ref int val) { object o = val; var ret = ReceiveCmdData(CtrlCmd.CMD_VIEW_APP_GET_ID, ref o); val = (int)o; return ret; }
         /// <summary>ストリーミング配信制御IDの設定</summary>
         public ErrCode SendViewSetStreamingInfo(TVTestStreamingInfo val) { return SendCmdData(CtrlCmd.CMD_VIEW_APP_TT_SET_CTRL, val); }
 
