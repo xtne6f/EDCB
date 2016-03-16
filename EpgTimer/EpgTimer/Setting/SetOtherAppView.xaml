@@ -14,7 +14,7 @@
         <TabControl Name="tabControl">
             <TabItem Header="TVTest連携" Name="tabItem_tvtest">
                 <Grid>
-                    <Label Content="※利用にはTVtestのPlugInに EpgTimerPlugIn.tvtp を追加しておく必要があります。" Height="28" HorizontalAlignment="Left" Margin="12,12,0,0" Name="label1" VerticalAlignment="Top" Foreground="Red" />
+                    <Label Content="※利用にはTVtestに EpgTimerPlugIn.tvtp か EdcbPlugIn.tvtp を追加しておく必要があります。" Height="28" HorizontalAlignment="Left" Margin="12,12,0,0" Name="label1" VerticalAlignment="Top" Foreground="Red" />
                     <Label Content="TVTest.exeパス" Height="28" HorizontalAlignment="Left" Margin="12,46,0,0" Name="label2" VerticalAlignment="Top" />
                     <TextBox Height="24" HorizontalAlignment="Left" Margin="134,48,0,0" Name="textBox_exe" VerticalAlignment="Top" Width="456" />
                     <Button Content="開く" Height="23" HorizontalAlignment="Left" Margin="596,48,0,0" Name="button_exe" VerticalAlignment="Top" Width="56" Click="button_exe_Click" />
@@ -25,11 +25,11 @@
                     <Button Content="削除" Height="23" HorizontalAlignment="Left" Margin="297,178,0,0" Name="button_del" VerticalAlignment="Top" Width="56" Click="button_del_Click" />
                     <Button Content="追加" Height="23" HorizontalAlignment="Left" Margin="297,248,0,0" Name="button_add" VerticalAlignment="Top" Width="56" Click="button_add_Click" />
                     <ComboBox Height="24" HorizontalAlignment="Left" Margin="44,248,0,0" Name="comboBox_bon" VerticalAlignment="Top" Width="247" />
-                    <CheckBox Content="NetworkTVモード(EpgDataCap__BonからのUDP、TCP送信で行う)" Height="16" HorizontalAlignment="Left" Margin="12,277,0,0" Name="checkBox_nwTvMode" VerticalAlignment="Top" />
-                    <CheckBox Content="UDP有効" Height="16" HorizontalAlignment="Left" Margin="44,299,0,0" Name="checkBox_nwUDP" VerticalAlignment="Top" />
-                    <CheckBox Content="TCP有効" Height="16" HorizontalAlignment="Left" Margin="134,299,0,0" Name="checkBox_nwTCP" VerticalAlignment="Top" />
+                    <CheckBox Content="NetworkTVモード(録画用アプリやEpgTimerSrvからのUDP、TCP送信)で視聴する" Height="16" HorizontalAlignment="Left" Margin="12,277,0,0" Name="checkBox_nwTvMode" VerticalAlignment="Top" />
+                    <CheckBox Content="UDP有効" Height="16" HorizontalAlignment="Left" Margin="44,330,0,0" Name="checkBox_nwUDP" VerticalAlignment="Top" />
+                    <CheckBox Content="TCP有効" Height="16" HorizontalAlignment="Left" Margin="134,330,0,0" Name="checkBox_nwTCP" VerticalAlignment="Top" />
                     <Label Content="(BonDriverに関するオプションは自動的に付加されます)" Height="28" HorizontalAlignment="Left" Margin="134,110,0,0" Name="label5" VerticalAlignment="Top" />
-                    <Label Content="(追っかけ再生はNetworkモードでの動作になります。使用する場合はUDPかTCPにチェックを入れておいてください。)" Height="28" HorizontalAlignment="Left" Margin="44,321,0,0" Name="label9" VerticalAlignment="Top" />
+                    <Label Content="NetworkTVモードの送信方式 (追っかけ再生はNetworkTVモードで動作します。使用する場合はチェックしてください)" Height="28" HorizontalAlignment="Left" Margin="12,302,0,0" Name="label9" VerticalAlignment="Top" />
                 </Grid>
             </TabItem>
             <TabItem Header="ファイル再生" Name="tabItem_play">
