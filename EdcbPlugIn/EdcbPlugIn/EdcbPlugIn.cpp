@@ -247,6 +247,7 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 			m_nonTunerDrivers = L"::" + GetPrivateProfileToString(L"SET", L"NonTunerDrivers",
 				L"BonDriver_UDP.dll:BonDriver_TCP.dll:BonDriver_File.dll:BonDriver_RecTask.dll:BonDriver_Pipe.dll", iniPath.c_str()) + L':';
 			std::transform(m_nonTunerDrivers.begin(), m_nonTunerDrivers.end(), m_nonTunerDrivers.begin(), towupper);
+			m_recNamePrefix = GetPrivateProfileToString(L"SET", L"RecNamePrefix", L"", iniPath.c_str());
 			m_epgCapBackStartWaitSec = GetPrivateProfileInt(L"SET", L"EpgCapLive", 1, iniPath.c_str()) == 0 ? MAXDWORD :
 				GetPrivateProfileInt(L"SET", L"EpgCapBackStartWaitSec", 30, iniPath.c_str());
 			m_epgCapBackBSBasic = GetPrivateProfileInt(L"SET", L"EpgCapBackBSBasicOnly", 1, iniPath.c_str()) != 0;
@@ -600,7 +601,10 @@ int CALLBACK CEdcbPlugIn::CtrlCmdCallback(void *param, CMD_STREAM *cmdParam, CMD
 		{
 			SET_CTRL_MODE val;
 			if (ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, nullptr)) {
-				// 無視
+				CBlockLock lock(&this_.m_streamLock);
+				if (this_.m_recCtrlMap.count(val.ctrlID) != 0) {
+					this_.m_recCtrlMap[val.ctrlID].sid = val.SID;
+				}
 				resParam->param = CMD_SUCCESS;
 			}
 		}
@@ -692,6 +696,7 @@ void CEdcbPlugIn::CtrlCmdCallbackInvoked(CMD_STREAM *cmdParam, CMD_STREAM *resPa
 				resParam->param = CMD_SUCCESS;
 				CBlockLock lock(&m_streamLock);
 				m_recCtrlMap[i] = REC_CTRL();
+				m_recCtrlMap[i].sid = 0xFFFF;
 				break;
 			}
 		}
@@ -733,6 +738,19 @@ void CEdcbPlugIn::CtrlCmdCallbackInvoked(CMD_STREAM *cmdParam, CMD_STREAM *resPa
 					wstring filePath = val.saveFolder[0].recFolder;
 					ChkFolderPath(filePath);
 					filePath += L'\\' + val.saveFolder[0].recFileName;
+					if (!m_recNamePrefix.empty()) {
+						// 対象サービスIDをファイル名に前置する
+						wstring prefix = m_recNamePrefix;
+						wstring macro;
+						Format(macro, L"%d", recCtrl.sid);
+						Replace(prefix, L"$SID10$", macro);
+						Format(macro, L"%04X", recCtrl.sid);
+						Replace(prefix, L"$SID16$", macro);
+						wstring name;
+						GetFileName(filePath, name);
+						GetFileFolder(filePath, filePath);
+						filePath += L'\\' + prefix + name;
+					}
 					if (IsEdcbRecording()) {
 						// 重複録画
 						wstring dir;

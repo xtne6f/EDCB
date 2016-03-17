@@ -41,6 +41,7 @@ private:
 	struct REC_CTRL
 	{
 		wstring filePath;
+		WORD sid;
 		DWORD duplicateTargetID;
 		CDropCount dropCount;
 	};
@@ -70,6 +71,7 @@ private:
 	wstring m_edcbDir;
 	wstring m_nonTunerDrivers;
 	wstring m_currentBonDriver;
+	wstring m_recNamePrefix;
 	DWORD m_statusCode;
 	DWORD m_chChangeID;
 	DWORD m_chChangeTick;
