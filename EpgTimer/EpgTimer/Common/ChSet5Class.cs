@@ -13,7 +13,7 @@ namespace EpgTimer
             get
             {
                 if (_chList == null) LoadFile();
-                return _chList;
+                return _chList != null ? _chList : new Dictionary<UInt64, ChSet5Item>();
             }
             private set { _chList = value; }
         }
