@@ -16,13 +16,13 @@
                         <CheckBox Margin="6,0,0,0" Content="予約ごと削除" />
                         <CheckBox Margin="6,0,0,0" Content="予約を自動登録に合わせる" />
                         <CheckBox Margin="6,0,0,0" Content="プロテクト←→解除" />
-                        <CheckBox Margin="6,0,0,0" Content="新規プログラム予約/自動登録" />
+                        <CheckBox Margin="6,0,0,0" Content="新規プログラム予約/自動登録..." />
                         <Separator Margin="12,0,12,0" Height="10" />
                         <CheckBox Margin="6,0,0,0" Content="予約一覧へジャンプ" />
                         <CheckBox Margin="6,0,0,0" Content="チューナ画面へジャンプ" />
                         <CheckBox Margin="6,0,0,0" Content="番組表へジャンプ" />
                         <CheckBox Margin="6,0,0,0" Content="自動予約登録変更" />
-                        <CheckBox Margin="6,0,0,0" Content="番組名でキーワード予約作成" />
+                        <CheckBox Margin="6,0,0,0" Content="番組名でキーワード予約作成..." />
                         <CheckBox Margin="6,0,0,0" Content="番組名で再検索" />
                         <CheckBox Margin="6,0,0,0" Content="番組名で再検索(別ウィンドウ)" />
                         <CheckBox Margin="6,0,0,0" Content="再生/追っかけ再生" />

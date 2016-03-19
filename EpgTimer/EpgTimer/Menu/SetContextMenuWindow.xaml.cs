@@ -175,7 +175,6 @@ namespace EpgTimer
                     stackItems_ges1[i].IsChecked = src.IsGestureEnabled;
                     stackItems_ges2[i].IsChecked = !src.IsGesNeedMenu;
 
-                    stackItems_menu[i].Content = src.GetCommand().Text;
                     stackItems_ges1[i].Content = MenuBinds.GetInputGestureText(src.GetGestuers());
                     stackItems_ges2[i].Content = "使用する";
 
@@ -283,9 +282,8 @@ namespace EpgTimer
                         break;
                     case CtxmCode.EditChgMenu:
                         textblocExp.Text = "・[編集]サブメニューは「表示項目は個別設定を使用する」の設定に関わらず、常にこの個別設定が反映されます。\r\n\r\n"
-                            + "・「まとめてジャンル絞り込みを変更」は、キーワード自動予約登録画面のみ表示されます。\r\n\r\n"
-                            + "・「イベントリレー追従」「ぴったり（？）録画」は、プログラム自動予約登録画面では表示されません。\r\n\r\n"
-                            + "・「予約モード変更」は、録画済み一覧画面及び自動予約登録画面では表示されません。";
+                        + "・「自動登録有効」「予約モード変更」「まとめてジャンル絞り込みを変更」は該当画面のみ表示されます。\r\n\r\n"
+                        + "・「イベントリレー追従」「ぴったり（？）録画」は、プログラム自動予約登録画面では表示されません。";
                             break;
                     default:
                         textblocExp.Text = "";
