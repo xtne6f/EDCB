@@ -350,7 +350,7 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 						Format(name, L"%04X%04X_epg.dat", chInfo.ONID,
 						       chInfo.ONID == 4 && m_epgCapBSBasic || chInfo.ONID == 6 && m_epgCapCS1Basic || chInfo.ONID == 7 && m_epgCapCS2Basic ? 0xFFFF : chInfo.TSID);
 						m_epgFilePath = GetEdcbSettingPath() + L"\\EpgData\\" + name;
-						HANDLE epgFile = CreateFile((m_epgFilePath + L".tmp").c_str(), GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
+						HANDLE epgFile = _CreateDirectoryAndFile((m_epgFilePath + L".tmp").c_str(), GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
 						if (epgFile != INVALID_HANDLE_VALUE) {
 							m_pApp->AddLog((L'Åö' + name).c_str());
 							CBlockLock lock(&m_streamLock);
@@ -420,7 +420,7 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 						Format(name, L"%04X%04X_epg.dat", onid,
 						       onid == 4 && m_epgCapBackBSBasic || onid == 6 && m_epgCapBackCS1Basic || onid == 7 && m_epgCapBackCS2Basic ? 0xFFFF : tsid);
 						m_epgFilePath = GetEdcbSettingPath() + L"\\EpgData\\" + name;
-						HANDLE epgFile = CreateFile((m_epgFilePath + L".tmp").c_str(), GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
+						HANDLE epgFile = _CreateDirectoryAndFile((m_epgFilePath + L".tmp").c_str(), GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
 						if (epgFile != INVALID_HANDLE_VALUE) {
 							m_pApp->AddLog((L'Åö' + name).c_str());
 							CBlockLock lock(&m_streamLock);
