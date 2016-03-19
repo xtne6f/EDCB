@@ -37,13 +37,20 @@ namespace EpgTimer.Setting
         private ObservableCollection<EpgCaptime> timeList;
         private List<ServiceViewItem> serviceList;
 
+        public bool IsChangeSettingPath { get; private set; }
+
         public SetBasicView()
         {
             InitializeComponent();
 
+            IsChangeSettingPath = false;
+
             if (CommonManager.Instance.NWMode == true)
             {
                 CommonManager.Instance.VUtil.ChangeChildren(grid_folder, false);
+                label1.IsEnabled = true;
+                textBox_setPath.IsEnabled = true;
+                button_setPath.IsEnabled = true;
                 label3.IsEnabled = true;
                 listBox_recFolder.IsEnabled = true;
                 label4.IsEnabled = true;
@@ -224,10 +231,13 @@ namespace EpgTimer.Setting
         {
             try
             {
-                System.IO.Directory.CreateDirectory(textBox_setPath.Text);
+                string setPath = textBox_setPath.Text.Trim();
+                setPath = setPath == "" ? SettingPath.DefSettingFolderPath : setPath;
+                System.IO.Directory.CreateDirectory(setPath);
 
-                IniFileHandler.WritePrivateProfileString("SET", "DataSavePath",
-                    string.Compare(textBox_setPath.Text.TrimEnd('\\'), SettingPath.DefSettingFolderPath, true) == 0 ? null : textBox_setPath.Text, SettingPath.CommonIniPath);
+                IsChangeSettingPath = SettingPath.SettingFolderPath.TrimEnd('\\') != setPath.TrimEnd('\\');
+                SettingPath.SettingFolderPath = setPath;
+
                 IniFileHandler.WritePrivateProfileString("SET", "RecExePath",
                     string.Compare(textBox_exe.Text, SettingPath.ModulePath.TrimEnd('\\') + "\\EpgDataCap_Bon.exe", true) == 0 ? null : textBox_exe.Text, SettingPath.CommonIniPath);
 

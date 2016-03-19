@@ -135,32 +135,40 @@ namespace EpgTimer
         }
         public static string DefSettingFolderPath
         {
-            get
-            {
-                return ModulePath.TrimEnd('\\') + "\\Setting" + (CommonManager.Instance.NWMode == false ? "" : "NW");
-            }
+            get { return ModulePath.TrimEnd('\\') + "\\Setting" + (CommonManager.Instance.NWMode == false ? "" : "\\EpgTimerNW"); }
         }
         public static string SettingFolderPath
         {
             get
             {
+                string path = DefSettingFolderPath;
                 if (CommonManager.Instance.NWMode == false)
                 {
-                    string path = IniFileHandler.GetPrivateProfileString("SET", "DataSavePath", DefSettingFolderPath, CommonIniPath);
-                    return (Path.IsPathRooted(path) ? "" : ModulePath.TrimEnd('\\') + "\\") + path;
+                    path = IniFileHandler.GetPrivateProfileString("SET", "DataSavePath", path, CommonIniPath);
                 }
                 else
                 {
-                    return DefSettingFolderPath;
+                    path = Settings.Instance.SettingFolderPathNW == "" ? path : Settings.Instance.SettingFolderPathNW;
+                }
+                return (Path.IsPathRooted(path) ? "" : ModulePath.TrimEnd('\\') + "\\") + path;
+            }
+            set
+            {
+                string path = value.Trim();
+                bool isDefaultPath = string.Compare(path.TrimEnd('\\'), SettingPath.DefSettingFolderPath.TrimEnd('\\'), true) == 0;
+                if (CommonManager.Instance.NWMode == false)
+                {
+                    IniFileHandler.WritePrivateProfileString("SET", "DataSavePath", isDefaultPath == true ? null : path, SettingPath.CommonIniPath);
+                }
+                else
+                {
+                    Settings.Instance.SettingFolderPathNW = isDefaultPath == true ? "" : path;
                 }
             }
         }
         public static string ModulePath
         {
-            get
-            {
-                return Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
-            }
+            get { return Path.GetDirectoryName(Assembly.GetEntryAssembly().Location); }
         }
         public static string ModuleName
         {
@@ -360,6 +368,7 @@ namespace EpgTimer
         public int LaterTimeHour { get; set; }
         public bool DisplayPresetOnSearch { get; set; }
         public bool ForceNWMode { get; set; }
+        public string SettingFolderPathNW { get; set; }
 
         public Settings()
         {
@@ -527,6 +536,7 @@ namespace EpgTimer
             LaterTimeHour = 28 - 24;
             DisplayPresetOnSearch = false;
             ForceNWMode = false;
+            SettingFolderPathNW = "";
         }
 
         [NonSerialized()]

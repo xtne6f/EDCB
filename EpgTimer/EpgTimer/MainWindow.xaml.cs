@@ -795,6 +795,10 @@ namespace EpgTimer
                 {
                     if (CommonManager.Instance.NWMode == true)
                     {
+                        if (setting.setBasicView.IsChangeSettingPath == true)
+                        {
+                            IniFileHandler.UpdateSrvProfileIniNW();
+                        }
                         CommonManager.Instance.DB.SetNoAutoReloadEPG(Settings.Instance.NgAutoEpgLoadNW);
                         ChkRegistTCPTimerWork();
                     }
