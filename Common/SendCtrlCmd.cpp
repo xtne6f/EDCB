@@ -24,8 +24,12 @@ CSendCtrlCmd::CSendCtrlCmd(void)
 
 CSendCtrlCmd::~CSendCtrlCmd(void)
 {
+#ifndef SEND_CTRL_CMD_NO_TCP
 	SetSendMode(FALSE);
+#endif
 }
+
+#ifndef SEND_CTRL_CMD_NO_TCP
 
 //コマンド送信方法の設定
 //引数：
@@ -43,6 +47,8 @@ void CSendCtrlCmd::SetSendMode(
 		this->tcpFlag = FALSE;
 	}
 }
+
+#endif
 
 //名前付きパイプモード時の接続先を設定
 //EpgTimerSrv.exeに対するコマンドは設定しなくても可（デフォルト値になっている）
@@ -164,6 +170,8 @@ DWORD CSendCtrlCmd::SendPipe(LPCWSTR pipeName, LPCWSTR eventName, DWORD timeOut,
 	return res->param;
 }
 
+#ifndef SEND_CTRL_CMD_NO_TCP
+
 static int RecvAll(SOCKET sock, char* buf, int len, int flags)
 {
 	int n = 0;
@@ -238,6 +246,8 @@ DWORD CSendCtrlCmd::SendTCP(wstring ip, DWORD port, DWORD timeOut, CMD_STREAM* s
 	return resCmd->param;
 }
 
+#endif
+
 DWORD CSendCtrlCmd::SendFileCopy(
 	wstring val,
 	BYTE** resVal,
@@ -290,9 +300,12 @@ DWORD CSendCtrlCmd::SendCmdStream(CMD_STREAM* send, CMD_STREAM* res)
 	}
 	if( this->tcpFlag == FALSE ){
 		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, send, res);
-	}else{
+	}
+#ifndef SEND_CTRL_CMD_NO_TCP
+	else{
 		ret = SendTCP(this->ip, this->port, this->connectTimeOut, send, res);
 	}
+#endif
 
 	return ret;
 }
