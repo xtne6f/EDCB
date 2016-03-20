@@ -792,7 +792,6 @@ namespace EpgTimer
             }
             if (setting.ShowDialog() == true)
             {
-                {
                     if (CommonManager.Instance.NWMode == true)
                     {
                         if (setting.setBasicView.IsChangeSettingPath == true)
@@ -815,8 +814,8 @@ namespace EpgTimer
                     SearchWindow.UpdatesInfo(true);
                     ResetButtonView();
                     ResetTaskMenu();
+                    taskTray.Text = GetTaskTrayReserveInfoText();
                     RefreshMenu(false);
-                }
             }
         }
 
