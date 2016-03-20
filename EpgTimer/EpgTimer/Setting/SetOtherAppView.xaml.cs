@@ -29,6 +29,7 @@ namespace EpgTimer.Setting
                 label3.IsEnabled = false;
                 button_del.IsEnabled = false;
                 button_add.IsEnabled = false;
+                checkBox_playOnNwWithExe.IsEnabled = true;
             }
 
             try
