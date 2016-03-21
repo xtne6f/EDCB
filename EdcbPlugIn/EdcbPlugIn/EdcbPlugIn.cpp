@@ -90,6 +90,7 @@ bool CEdcbPlugIn::CMyEventHandler::OnChannelChange()
 			m_outer.m_chChangeTick = GetTickCount();
 		}
 	}
+	m_outer.m_chChangedAfterSetCh = true;
 	SendMessage(m_outer.m_hwnd, WM_UPDATE_STATUS_CODE, 0, 0);
 	SendMessage(m_outer.m_hwnd, WM_EPGCAP_BACK_START, 0, 0);
 	return false;
@@ -102,6 +103,7 @@ bool CEdcbPlugIn::CMyEventHandler::OnDriverChange()
 		WCHAR name[MAX_PATH];
 		m_outer.m_currentBonDriver = (m_outer.m_pApp->GetDriverName(name, _countof(name)) > 0 ? name : L"");
 	}
+	m_outer.m_lastSetCh.useSID = FALSE;
 	SendMessage(m_outer.m_hwnd, WM_UPDATE_STATUS_CODE, 0, 0);
 	SendMessage(m_outer.m_hwnd, WM_EPGCAP_STOP, 0, 0);
 	return false;
@@ -145,6 +147,7 @@ CEdcbPlugIn::CEdcbPlugIn()
 	, m_epgReloadThread(nullptr)
 	, m_epgCapBack(false)
 {
+	m_lastSetCh.useSID = FALSE;
 	InitializeCriticalSection(&m_streamLock);
 	InitializeCriticalSection(&m_statusLock);
 }
@@ -681,6 +684,8 @@ void CEdcbPlugIn::CtrlCmdCallbackInvoked(CMD_STREAM *cmdParam, CMD_STREAM *resPa
 					si.TransportStreamID = val.TSID;
 					si.ServiceID = val.SID;
 					if (m_pApp->SelectChannel(&si)) {
+						m_lastSetCh = val;
+						m_chChangedAfterSetCh = false;
 						resParam->param = CMD_SUCCESS;
 					}
 				}
@@ -694,6 +699,20 @@ void CEdcbPlugIn::CtrlCmdCallbackInvoked(CMD_STREAM *cmdParam, CMD_STREAM *resPa
 			if (m_recCtrlMap.count(i) == 0) {
 				resParam->data = NewWriteVALUE(i, resParam->dataSize);
 				resParam->param = CMD_SUCCESS;
+				// TVTestはチャンネルをロックできないので、CMD2_VIEW_APP_SET_CH後にユーザによる変更があれば戻しておく
+				if (m_lastSetCh.useSID && m_chChangedAfterSetCh && IsNotRecording()) {
+					m_pApp->AddLog(L"SetCh", TVTest::LOG_TYPE_WARNING);
+					TVTest::ChannelSelectInfo si = {};
+					si.Size = sizeof(si);
+					si.Space = -1;
+					si.Channel = -1;
+					si.NetworkID = m_lastSetCh.ONID;
+					si.TransportStreamID = m_lastSetCh.TSID;
+					si.ServiceID = m_lastSetCh.SID;
+					if (m_pApp->SelectChannel(&si)) {
+						m_chChangedAfterSetCh = false;
+					}
+				}
 				CBlockLock lock(&m_streamLock);
 				m_recCtrlMap[i] = REC_CTRL();
 				m_recCtrlMap[i].sid = 0xFFFF;

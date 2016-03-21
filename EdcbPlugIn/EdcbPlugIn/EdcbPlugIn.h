@@ -73,6 +73,8 @@ private:
 	wstring m_currentBonDriver;
 	wstring m_recNamePrefix;
 	DWORD m_statusCode;
+	SET_CH_INFO m_lastSetCh;
+	bool m_chChangedAfterSetCh;
 	DWORD m_chChangeID;
 	DWORD m_chChangeTick;
 	HANDLE m_epgFile;
