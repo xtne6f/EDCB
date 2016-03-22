@@ -99,6 +99,7 @@ private:
 	bool m_epgCapBackCS2Basic;
 	DWORD m_epgCapBackStartWaitSec;
 	DWORD m_epgCapBackStartTick;
+	DWORD m_recCtrlCount;
 	map<DWORD, REC_CTRL> m_recCtrlMap;
 	wstring m_duplicateOriginalPath;
 };

@@ -115,7 +115,12 @@ bool CEdcbPlugIn::CMyEventHandler::OnRecordStatusChange(int Status)
 		if (m_outer.IsEdcbRecording()) {
 			// キャンセル動作とみなす
 			CBlockLock lock(&m_outer.m_streamLock);
-			m_outer.m_recCtrlMap.clear();
+			for (map<DWORD, REC_CTRL>::iterator it = m_outer.m_recCtrlMap.begin(); it != m_outer.m_recCtrlMap.end(); ++it) {
+				if (!it->second.filePath.empty()) {
+					std::swap(it->second.filePath, wstring());
+					std::swap(it->second.dropCount, CDropCount());
+				}
+			}
 		}
 	}
 	SendMessage(m_outer.m_hwnd, WM_UPDATE_STATUS_CODE, 0, 0);
@@ -146,6 +151,7 @@ CEdcbPlugIn::CEdcbPlugIn()
 	, m_epgFile(INVALID_HANDLE_VALUE)
 	, m_epgReloadThread(nullptr)
 	, m_epgCapBack(false)
+	, m_recCtrlCount(0)
 {
 	m_lastSetCh.useSID = FALSE;
 	InitializeCriticalSection(&m_streamLock);
@@ -695,29 +701,26 @@ void CEdcbPlugIn::CtrlCmdCallbackInvoked(CMD_STREAM *cmdParam, CMD_STREAM *resPa
 		break;
 	case CMD2_VIEW_APP_CREATE_CTRL:
 		m_pApp->AddLog(L"CMD2_VIEW_APP_CREATE_CTRL");
-		for (DWORD i = 1; ; ++i) {
-			if (m_recCtrlMap.count(i) == 0) {
-				resParam->data = NewWriteVALUE(i, resParam->dataSize);
-				resParam->param = CMD_SUCCESS;
-				// TVTestはチャンネルをロックできないので、CMD2_VIEW_APP_SET_CH後にユーザによる変更があれば戻しておく
-				if (m_lastSetCh.useSID && m_chChangedAfterSetCh && IsNotRecording()) {
-					m_pApp->AddLog(L"SetCh", TVTest::LOG_TYPE_WARNING);
-					TVTest::ChannelSelectInfo si = {};
-					si.Size = sizeof(si);
-					si.Space = -1;
-					si.Channel = -1;
-					si.NetworkID = m_lastSetCh.ONID;
-					si.TransportStreamID = m_lastSetCh.TSID;
-					si.ServiceID = m_lastSetCh.SID;
-					if (m_pApp->SelectChannel(&si)) {
-						m_chChangedAfterSetCh = false;
-					}
-				}
-				CBlockLock lock(&m_streamLock);
-				m_recCtrlMap[i] = REC_CTRL();
-				m_recCtrlMap[i].sid = 0xFFFF;
-				break;
+		resParam->data = NewWriteVALUE(++m_recCtrlCount, resParam->dataSize);
+		resParam->param = CMD_SUCCESS;
+		// TVTestはチャンネルをロックできないので、CMD2_VIEW_APP_SET_CH後にユーザによる変更があれば戻しておく
+		if (m_lastSetCh.useSID && m_chChangedAfterSetCh && IsNotRecording()) {
+			m_pApp->AddLog(L"SetCh", TVTest::LOG_TYPE_WARNING);
+			TVTest::ChannelSelectInfo si = {};
+			si.Size = sizeof(si);
+			si.Space = -1;
+			si.Channel = -1;
+			si.NetworkID = m_lastSetCh.ONID;
+			si.TransportStreamID = m_lastSetCh.TSID;
+			si.ServiceID = m_lastSetCh.SID;
+			if (m_pApp->SelectChannel(&si)) {
+				m_chChangedAfterSetCh = false;
 			}
+		}
+		{
+			CBlockLock lock(&m_streamLock);
+			m_recCtrlMap[m_recCtrlCount] = REC_CTRL();
+			m_recCtrlMap[m_recCtrlCount].sid = 0xFFFF;
 		}
 		break;
 	case CMD2_VIEW_APP_DELETE_CTRL:
@@ -728,7 +731,7 @@ void CEdcbPlugIn::CtrlCmdCallbackInvoked(CMD_STREAM *cmdParam, CMD_STREAM *resPa
 				REC_CTRL recCtrl;
 				{
 					CBlockLock lock(&m_streamLock);
-					recCtrl = m_recCtrlMap[val];
+					recCtrl = std::move(m_recCtrlMap[val]);
 					m_recCtrlMap.erase(val);
 				}
 				if (!recCtrl.filePath.empty()) {
@@ -824,8 +827,9 @@ void CEdcbPlugIn::CtrlCmdCallbackInvoked(CMD_STREAM *cmdParam, CMD_STREAM *resPa
 				REC_CTRL recCtrl;
 				{
 					CBlockLock lock(&m_streamLock);
-					recCtrl = m_recCtrlMap[val.ctrlID];
-					m_recCtrlMap.erase(val.ctrlID);
+					std::swap(m_recCtrlMap[val.ctrlID].filePath, recCtrl.filePath);
+					std::swap(m_recCtrlMap[val.ctrlID].dropCount, recCtrl.dropCount);
+					recCtrl.duplicateTargetID = m_recCtrlMap[val.ctrlID].duplicateTargetID;
 				}
 				if (!recCtrl.filePath.empty()) {
 					if (val.saveErrLog) {
