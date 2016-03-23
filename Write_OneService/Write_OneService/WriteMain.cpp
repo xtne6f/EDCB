@@ -161,30 +161,32 @@ BOOL CWriteMain::Write(
 			this->outBuff.clear();
 			for( DWORD i = 0; i < outSize; i += 188 ){
 				CTSPacketUtil packet;
-				if( packet.Set188TS(outData + i, 188) && packet.transport_scrambling_control == 0 ){
+				if( packet.Set188TS(outData + i, 188) ){
 					//指定サービスに必要なPIDを解析
-					if( packet.PID == 1 ){
-						//CAT
-						if( this->catUtil.AddPacket(&packet) ){
-							CheckNeedPID();
-						}
-					}
-					if( packet.payload_unit_start_indicator && packet.data_byteSize > 0 ){
-						BYTE pointer = packet.data_byte[0];
-						if( 1 + pointer < packet.data_byteSize && packet.data_byte[1 + pointer] == 2 ){
-							//PMT
-							if( this->pmtUtilMap.count(packet.PID) == 0 ){
-								this->pmtUtilMap[packet.PID] = CPMTUtil();
-							}
-							if( this->pmtUtilMap[packet.PID].AddPacket(&packet) ){
+					if( packet.transport_scrambling_control == 0 ){
+						if( packet.PID == 1 ){
+							//CAT
+							if( this->catUtil.AddPacket(&packet) ){
 								CheckNeedPID();
 							}
 						}
-					}else{
-						//PMTの2パケット目かチェック
-						if( this->pmtUtilMap.count(packet.PID) != 0 ){
-							if( this->pmtUtilMap[packet.PID].AddPacket(&packet) ){
-								CheckNeedPID();
+						if( packet.payload_unit_start_indicator && packet.data_byteSize > 0 ){
+							BYTE pointer = packet.data_byte[0];
+							if( 1 + pointer < packet.data_byteSize && packet.data_byte[1 + pointer] == 2 ){
+								//PMT
+								if( this->pmtUtilMap.count(packet.PID) == 0 ){
+									this->pmtUtilMap[packet.PID] = CPMTUtil();
+								}
+								if( this->pmtUtilMap[packet.PID].AddPacket(&packet) ){
+									CheckNeedPID();
+								}
+							}
+						}else{
+							//PMTの2パケット目かチェック
+							if( this->pmtUtilMap.count(packet.PID) != 0 ){
+								if( this->pmtUtilMap[packet.PID].AddPacket(&packet) ){
+									CheckNeedPID();
+								}
 							}
 						}
 					}
