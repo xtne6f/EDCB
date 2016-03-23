@@ -56,6 +56,8 @@ private:
 	bool IsNotRecording() const;
 	// EDCBの制御下で録画中かどうか調べる
 	bool IsEdcbRecording() const;
+	// 現在のBonDriverはチューナかどうか調べる
+	bool IsTunerBonDriver() const;
 	// EpgTimerSrvにEPG再読み込みを要求するスレッド
 	static UINT WINAPI ReloadEpgThread(void *param);
 	// ストリームコールバック(別スレッド)

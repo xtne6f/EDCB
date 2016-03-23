@@ -103,6 +103,8 @@ bool CEdcbPlugIn::CMyEventHandler::OnDriverChange()
 		WCHAR name[MAX_PATH];
 		m_outer.m_currentBonDriver = (m_outer.m_pApp->GetDriverName(name, _countof(name)) > 0 ? name : L"");
 	}
+	// ストリームコールバックはチューナ使用時だけ
+	m_outer.m_pApp->SetStreamCallback(m_outer.IsTunerBonDriver() ? 0 : TVTest::STREAM_CALLBACK_REMOVE, StreamCallback, &m_outer);
 	m_outer.m_lastSetCh.useSID = FALSE;
 	SendMessage(m_outer.m_hwnd, WM_UPDATE_STATUS_CODE, 0, 0);
 	SendMessage(m_outer.m_hwnd, WM_EPGCAP_STOP, 0, 0);
@@ -255,14 +257,12 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 			wstring iniPath = GetDllIniPath();
 			m_nonTunerDrivers = L"::" + GetPrivateProfileToString(L"SET", L"NonTunerDrivers",
 				L"BonDriver_UDP.dll:BonDriver_TCP.dll:BonDriver_File.dll:BonDriver_RecTask.dll:BonDriver_Pipe.dll", iniPath.c_str()) + L':';
-			std::transform(m_nonTunerDrivers.begin(), m_nonTunerDrivers.end(), m_nonTunerDrivers.begin(), towupper);
 			m_recNamePrefix = GetPrivateProfileToString(L"SET", L"RecNamePrefix", L"", iniPath.c_str());
 			m_epgCapBackStartWaitSec = GetPrivateProfileInt(L"SET", L"EpgCapLive", 1, iniPath.c_str()) == 0 ? MAXDWORD :
 				GetPrivateProfileInt(L"SET", L"EpgCapBackStartWaitSec", 30, iniPath.c_str());
 			m_epgCapBackBSBasic = GetPrivateProfileInt(L"SET", L"EpgCapBackBSBasicOnly", 1, iniPath.c_str()) != 0;
 			m_epgCapBackCS1Basic = GetPrivateProfileInt(L"SET", L"EpgCapBackCS1BasicOnly", 1, iniPath.c_str()) != 0;
 			m_epgCapBackCS2Basic = GetPrivateProfileInt(L"SET", L"EpgCapBackCS2BasicOnly", 1, iniPath.c_str()) != 0;
-			m_pApp->SetStreamCallback(0, StreamCallback, this);
 		}
 		return 0;
 	case WM_DESTROY:
@@ -501,9 +501,7 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 	case WM_EPGCAP_START:
 		{
 			SendMessage(hwnd, WM_EPGCAP_STOP, 0, 0);
-			wstring driver = L':' + m_currentBonDriver + L':';
-			std::transform(driver.begin(), driver.end(), driver.begin(), towupper);
-			if (m_nonTunerDrivers.find(driver) == wstring::npos) {
+			if (IsTunerBonDriver()) {
 				m_epgCapChList = *reinterpret_cast<vector<SET_CH_INFO>*>(lParam);
 				if (!m_epgCapChList.empty()) {
 					SetTimer(hwnd, TIMER_EPGCAP, 2000, nullptr);
@@ -523,9 +521,7 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 	case WM_EPGCAP_BACK_START:
 		{
 			SendMessage(hwnd, WM_EPGCAP_BACK_STOP, 0, 0);
-			wstring driver = L':' + m_currentBonDriver + L':';
-			std::transform(driver.begin(), driver.end(), driver.begin(), towupper);
-			if (m_nonTunerDrivers.find(driver) == wstring::npos && m_epgCapChList.empty()) {
+			if (IsTunerBonDriver() && m_epgCapChList.empty()) {
 				m_epgCapBack = m_epgCapBackStartWaitSec != MAXDWORD;
 				m_epgCapBackStartTick = GetTickCount();
 				SetTimer(hwnd, TIMER_EPGCAP_BACK, 2000, nullptr);
@@ -960,6 +956,13 @@ bool CEdcbPlugIn::IsEdcbRecording() const
 {
 	return std::find_if(m_recCtrlMap.begin(), m_recCtrlMap.end(),
 		[](const pair<DWORD, REC_CTRL> &a) { return !a.second.filePath.empty(); }) != m_recCtrlMap.end();
+}
+
+bool CEdcbPlugIn:: IsTunerBonDriver() const
+{
+	wstring driver = L':' + m_currentBonDriver + L':';
+	return std::search(m_nonTunerDrivers.begin(), m_nonTunerDrivers.end(), driver.begin(), driver.end(),
+		[](wchar_t a, wchar_t b) { return towupper(a) == towupper(b); }) == m_nonTunerDrivers.end();
 }
 
 UINT WINAPI CEdcbPlugIn::ReloadEpgThread(void *param)
