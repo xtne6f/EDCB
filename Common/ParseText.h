@@ -62,22 +62,23 @@ bool CParseText<K, V>::ParseText(LPCWSTR filePath)
 			buf.resize(buf.size() - 4096 + dwRead);
 		}
 		//Š®‘S‚É“Ç‚İ‚Ü‚ê‚½s‚ğ‚Å‚«‚é‚¾‚¯‰ğÍ
+		size_t offset = 0;
 		for( size_t i = 0; i < buf.size(); i++ ){
 			if( buf[i] == '\0' || buf[i] == '\r' && i + 1 < buf.size() && buf[i + 1] == '\n' ){
-				parseLineA.assign(buf.begin(), buf.begin() + i);
+				parseLineA.assign(buf.begin() + offset, buf.begin() + i);
 				AtoW(parseLineA, parseLine);
 				pair<K, V> item;
 				if( ParseLine(parseLine, item) ){
 					this->itemMap.insert(item);
 				}
 				if( buf[i] == '\0' ){
-					buf.erase(buf.begin(), buf.begin() + i);
+					offset = i;
 					break;
 				}
-				buf.erase(buf.begin(), buf.begin() + i + 2);
-				i = 0;
+				offset = (++i) + 1;
 			}
 		}
+		buf.erase(buf.begin(), buf.begin() + offset);
 		if( buf.empty() == false && buf[0] == '\0' ){
 			break;
 		}
