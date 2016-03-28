@@ -97,7 +97,7 @@ bool CParseText<K, V>::SaveText() const
 	}
 	HANDLE hFile;
 	for( int retry = 0;; ){
-		hFile = _CreateDirectoryAndFile(this->filePath.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+		hFile = _CreateDirectoryAndFile((this->filePath + L".tmp").c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 		if( hFile != INVALID_HANDLE_VALUE ){
 			break;
 		}else if( ++retry > 5 ){
@@ -107,6 +107,7 @@ bool CParseText<K, V>::SaveText() const
 		Sleep(200 * retry);
 	}
 
+	bool ret = true;
 	wstring saveLine;
 	vector<char> saveBuf;
 	vector<K> idList;
@@ -118,7 +119,7 @@ bool CParseText<K, V>::SaveText() const
 				saveLine += L"\r\n";
 				size_t len = WtoA(saveLine.c_str(), saveLine.size(), saveBuf);
 				DWORD dwWrite;
-				WriteFile(hFile, &saveBuf.front(), (DWORD)len, &dwWrite, NULL);
+				ret = ret && WriteFile(hFile, &saveBuf.front(), (DWORD)len, &dwWrite, NULL);
 			}
 		}
 	}else{
@@ -128,7 +129,7 @@ bool CParseText<K, V>::SaveText() const
 				saveLine += L"\r\n";
 				size_t len = WtoA(saveLine.c_str(), saveLine.size(), saveBuf);
 				DWORD dwWrite;
-				WriteFile(hFile, &saveBuf.front(), (DWORD)len, &dwWrite, NULL);
+				ret = ret && WriteFile(hFile, &saveBuf.front(), (DWORD)len, &dwWrite, NULL);
 			}
 		}
 	}
@@ -137,8 +138,20 @@ bool CParseText<K, V>::SaveText() const
 		saveLine += L"\r\n";
 		size_t len = WtoA(saveLine.c_str(), saveLine.size(), saveBuf);
 		DWORD dwWrite;
-		WriteFile(hFile, &saveBuf.front(), (DWORD)len, &dwWrite, NULL);
+		ret = ret && WriteFile(hFile, &saveBuf.front(), (DWORD)len, &dwWrite, NULL);
 	}
 	CloseHandle(hFile);
-	return true;
+
+	if( ret ){
+		for( int retry = 0;; ){
+			if( MoveFileEx((this->filePath + L".tmp").c_str(), this->filePath.c_str(), MOVEFILE_REPLACE_EXISTING) ){
+				return true;
+			}else if( ++retry > 5 ){
+				OutputDebugString(L"CParseText<>::SaveText(): Error: Cannot open file\r\n");
+				break;
+			}
+			Sleep(200 * retry);
+		}
+	}
+	return false;
 }
