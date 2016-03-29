@@ -19,6 +19,7 @@ public:
 
 	void SetSignal(float level);
 	void SetBonDriver(wstring bonDriver);
+	void SetNoLog(BOOL noLogDrop, BOOL noLogScramble);
 
 	void SetPIDName(
 		const map<WORD, string>* pidName

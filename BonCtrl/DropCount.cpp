@@ -42,8 +42,8 @@ void CDropCount::AddData(const BYTE* data, DWORD size)
 	}
 	DWORD tick = GetTickCount();
 	if( tick - this->lastLogTime > 5000 ){
-		if( this->lastLogDrop != this->drop ||
-		    this->lastLogScramble != this->scramble ){
+		if( this->lastLogDrop < this->drop ||
+		    this->lastLogScramble < this->scramble ){
 			string logline;
 			SYSTEMTIME now;
 			GetLocalTime(&now);
@@ -59,8 +59,8 @@ void CDropCount::AddData(const BYTE* data, DWORD size)
 				this->signalLv
 				);
 			this->log += logline;
-			this->lastLogDrop = this->drop;
-			this->lastLogScramble = this->scramble;
+			this->lastLogDrop = max(this->drop, this->lastLogDrop);
+			this->lastLogScramble = max(this->scramble, this->lastLogScramble);
 		}
 		this->lastLogTime = tick;
 	}
@@ -74,8 +74,12 @@ void CDropCount::Clear()
 	this->log.clear();
 	this->lastLogTime = 0;
 
-	this->lastLogDrop = 0;
-	this->lastLogScramble = 0;
+	if( this->lastLogDrop != MAXULONGLONG ){
+		this->lastLogDrop = 0;
+	}
+	if( this->lastLogScramble != MAXULONGLONG ){
+		this->lastLogScramble = 0;
+	}
 	this->signalLv = 0;
 }
 
@@ -87,6 +91,12 @@ void CDropCount::SetSignal(float level)
 void CDropCount::SetBonDriver(wstring bonDriver)
 {
 	this->bonFile = bonDriver;
+}
+
+void CDropCount::SetNoLog(BOOL noLogDrop, BOOL noLogScramble)
+{
+	this->lastLogDrop = noLogDrop ? MAXULONGLONG : this->lastLogDrop == MAXULONGLONG ? 0 : this->lastLogDrop;
+	this->lastLogScramble = noLogScramble ? MAXULONGLONG : this->lastLogScramble == MAXULONGLONG ? 0 : this->lastLogScramble;
 }
 
 void CDropCount::GetCount(ULONGLONG* drop, ULONGLONG* scramble)
