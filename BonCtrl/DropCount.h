@@ -2,15 +2,12 @@
 
 #include "../Common/Util.h"
 
-#include "../Common/TSPacketUtil.h"
-#include "../Common/TimeUtil.h"
-
 class CDropCount
 {
 public:
 	CDropCount(void);
 
-	void AddData(BYTE* data, DWORD size);
+	void AddData(const BYTE* data, DWORD size);
 
 	void Clear();
 
@@ -22,32 +19,24 @@ public:
 
 	void SetSignal(float level);
 	void SetBonDriver(wstring bonDriver);
+	void SetNoLog(BOOL noLogDrop, BOOL noLogScramble);
 
 	void SetPIDName(
-		map<WORD, string>* pidName
+		const map<WORD, string>* pidName
 		);
 protected:
-	typedef struct _DROP_INFO{
-		WORD PID;
+	struct DROP_INFO {
 		BYTE lastCounter;
 		BOOL duplicateFlag;
 		ULONGLONG total;
 		ULONGLONG drop;
 		ULONGLONG scramble;
-		_DROP_INFO(){
-			PID = 0xFFFF;
-			lastCounter = 0;
-			duplicateFlag = FALSE;
-			total = 0;
-			drop = 0;
-			scramble = 0;
-		};
-	}DROP_INFO;
+	};
 
 	map<WORD, DROP_INFO> infoMap;
 	ULONGLONG drop;
 	ULONGLONG scramble;
-	vector<wstring> log;
+	string log;
 	DWORD lastLogTime;
 	ULONGLONG lastLogDrop;
 	ULONGLONG lastLogScramble;
@@ -56,7 +45,7 @@ protected:
 
 	map<WORD, string> pidName;
 protected:
-	void CheckCounter(CTSPacketUtil* tsPacket, DROP_INFO* info);
+	void CheckCounter(const BYTE* packet, DROP_INFO* info);
 
 };
 
