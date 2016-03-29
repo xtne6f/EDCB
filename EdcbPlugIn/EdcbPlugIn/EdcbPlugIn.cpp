@@ -83,7 +83,7 @@ bool CEdcbPlugIn::CMyEventHandler::OnChannelChange()
 		CBlockLock lock(&m_outer.m_streamLock);
 		// EpgDataCap3は内部メソッド単位でアトミック。UnInitialize()中にワーカースレッドにアクセスさせないよう排他制御が必要
 		m_outer.m_epgUtil.UnInitialize();
-		m_outer.m_epgUtil.Initialize(FALSE, (m_outer.m_edcbDir + L"\\EpgDataCap3.dll").c_str());
+		m_outer.m_epgUtil.Initialize(FALSE, m_outer.m_epgUtilPath.c_str());
 		m_outer.m_chChangeID = CH_CHANGE_ERR;
 		if (ret) {
 			m_outer.m_chChangeID = static_cast<DWORD>(ci.NetworkID) << 16 | ci.TransportStreamID;
@@ -185,15 +185,22 @@ bool CEdcbPlugIn::Initialize()
 	m_edcbDir = GetPrivateProfileToString(L"SET", L"EdcbFolderPath", L"", GetDllIniPath().c_str());
 	ChkFolderPath(m_edcbDir);
 	// 未指定のときはTVTestと同階層のEDCBフォルダ
+	GetModuleFolderPath(m_epgUtilPath);
 	if (m_edcbDir.empty()) {
-		GetModuleFolderPath(m_edcbDir);
-		GetFileFolder(m_edcbDir, m_edcbDir);
+		GetFileFolder(m_epgUtilPath, m_edcbDir);
 		if (!m_edcbDir.empty()) {
 			m_edcbDir += L"\\EDCB";
 		}
 	}
-	if (m_edcbDir.empty() || m_epgUtil.Initialize(FALSE, (m_edcbDir + L"\\EpgDataCap3.dll").c_str()) != NO_ERR) {
-		m_pApp->AddLog(L"EDCBフォルダにEpgDataCap3.dllが見つかりません。", TVTest::LOG_TYPE_ERROR);
+	m_epgUtilPath += L"\\EpgDataCap3.dll";
+	if (m_epgUtil.Initialize(FALSE, m_epgUtilPath.c_str()) != NO_ERR) {
+		m_epgUtilPath = m_edcbDir + L"\\EpgDataCap3.dll";
+		if (m_epgUtil.Initialize(FALSE, m_epgUtilPath.c_str()) != NO_ERR) {
+			m_epgUtilPath.clear();
+		}
+	}
+	if (m_edcbDir.empty() || m_epgUtilPath.empty()) {
+		m_pApp->AddLog(L"EpgDataCap3.dllが見つかりません。", TVTest::LOG_TYPE_ERROR);
 		return false;
 	}
 	// イベントコールバック関数を登録

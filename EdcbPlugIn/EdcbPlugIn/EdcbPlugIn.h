@@ -69,6 +69,7 @@ private:
 	HWND m_hwnd;
 	CPipeServer m_pipeServer;
 	CEpgDataCap3Util m_epgUtil;
+	wstring m_epgUtilPath;
 	int m_outCtrlID;
 	wstring m_edcbDir;
 	wstring m_nonTunerDrivers;
