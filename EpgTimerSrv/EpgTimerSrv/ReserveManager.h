@@ -34,7 +34,9 @@ public:
 	//予約情報を削除する
 	void DelReserveData(const vector<DWORD>& idList);
 	//録画済み情報一覧を取得する
-	vector<REC_FILE_INFO> GetRecFileInfoAll() const;
+	vector<REC_FILE_INFO> GetRecFileInfoAll(bool getExtraInfo = true) const;
+	//録画済み情報を取得する
+	bool GetRecFileInfo(DWORD id, REC_FILE_INFO* recInfo, bool getExtraInfo = true) const;
 	//録画済み情報を削除する
 	void DelRecFileInfo(const vector<DWORD>& idList);
 	//録画済み情報のプロテクトを変更する

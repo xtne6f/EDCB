@@ -73,12 +73,12 @@ public:
 	void SetKeepCount(DWORD keepCount = UINT_MAX) { this->keepCount = keepCount; }
 	void SetRecInfoDelFile(bool recInfoDelFile) { this->recInfoDelFile = recInfoDelFile; }
 	void SetRecInfoFolder(LPCWSTR recInfoFolder);
+	//補足の録画情報を取得する
+	wstring GetExtraInfo(LPCWSTR recFilePath, LPCWSTR extension) const;
 protected:
 	bool ParseLine(LPCWSTR parseLine, pair<DWORD, REC_FILE_INFO>& item);
 	bool SaveLine(const pair<DWORD, REC_FILE_INFO>& item, wstring& saveLine) const;
 	bool SelectIDToSave(vector<DWORD>& sortList) const;
-	//情報が追加される直前の補足作業
-	void OnAddRecInfo(REC_FILE_INFO& item);
 	//情報が削除される直前の補足作業
 	void OnDelRecInfo(const REC_FILE_INFO& item);
 	//このクラスのnextIDは永続的ではない

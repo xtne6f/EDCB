@@ -248,7 +248,6 @@ DWORD CParseRecInfoText::AddRecInfo(const REC_FILE_INFO& item)
 {
 	REC_FILE_INFO info = item;
 	info.id = this->nextID++;
-	OnAddRecInfo(info);
 	this->itemMap[info.id] = info;
 
 	//非プロテクトの要素数がkeepCount以下になるまで削除
@@ -344,7 +343,6 @@ bool CParseRecInfoText::ParseLine(LPCWSTR parseLine, pair<DWORD, REC_FILE_INFO>&
 	item.second.comment.assign(token[0], token[1]);
 	item.second.protectFlag = _wtoi(NextToken(token)) != 0;
 	item.second.id = this->nextID++;
-	OnAddRecInfo(item.second);
 	item.first = item.second.id;
 	return true;
 }
@@ -390,22 +388,16 @@ bool CParseRecInfoText::SelectIDToSave(vector<DWORD>& sortList) const
 	return true;
 }
 
-void CParseRecInfoText::OnAddRecInfo(REC_FILE_INFO& item)
+wstring CParseRecInfoText::GetExtraInfo(LPCWSTR recFilePath, LPCWSTR extension) const
 {
-	if( item.recFilePath.empty() ){
-		return;
-	}
-	//補足の録画情報ファイルを読み込む
-	struct { LPCWSTR ext; wstring* info; } infoList[2] = {
-		{ L".err", &item.errInfo },
-		{ L".program.txt", &item.programInfo },
-	};
-	for( int i = 0; i < 2; i++ ){
-		HANDLE hFile = CreateFile((item.recFilePath + infoList[i].ext).c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+	wstring info;
+	if( recFilePath[0] != L'\0' ){
+		//補足の録画情報ファイルを読み込む
+		HANDLE hFile = CreateFile((wstring(recFilePath) + extension).c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 		if( hFile == INVALID_HANDLE_VALUE && this->recInfoFolder.empty() == false ){
 			wstring recFileName;
-			GetFileName(item.recFilePath, recFileName);
-			hFile = CreateFile((this->recInfoFolder + L"\\" + recFileName + infoList[i].ext).c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+			GetFileName(recFilePath, recFileName);
+			hFile = CreateFile((this->recInfoFolder + L"\\" + recFileName + extension).c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 		}
 		if( hFile != INVALID_HANDLE_VALUE ){
 			DWORD dwSize = GetFileSize(hFile, NULL);
@@ -414,12 +406,13 @@ void CParseRecInfoText::OnAddRecInfo(REC_FILE_INFO& item)
 				DWORD dwRead;
 				if( ReadFile(hFile, &buf.front(), dwSize, &dwRead, NULL) != FALSE && dwRead != 0 ){
 					string errInfoA(&buf.front(), &buf.front() + dwRead);
-					AtoW(errInfoA, *infoList[i].info);
+					AtoW(errInfoA, info);
 				}
 			}
 			CloseHandle(hFile);
 		}
 	}
+	return info;
 }
 
 void CParseRecInfoText::OnDelRecInfo(const REC_FILE_INFO& item)
