@@ -2145,15 +2145,7 @@ CEpgTimerSrvMain::CLuaWorkspace::CLuaWorkspace(lua_State* L_)
 
 const char* CEpgTimerSrvMain::CLuaWorkspace::WtoUTF8(const wstring& strIn)
 {
-	this->strOut.resize(strIn.size() * 3 + 1);
-	this->strOut.resize(WideCharToMultiByte(CP_UTF8, 0, strIn.c_str(), -1, &this->strOut[0], (int)this->strOut.size(), NULL, NULL));
-	if( this->strOut.empty() ){
-		//rare case
-		this->strOut.resize(WideCharToMultiByte(CP_UTF8, 0, strIn.c_str(), -1, NULL, 0, NULL, NULL));
-		if( this->strOut.empty() || WideCharToMultiByte(CP_UTF8, 0, strIn.c_str(), -1, &this->strOut[0], (int)this->strOut.size(), NULL, NULL) == 0 ){
-			this->strOut.assign(1, '\0');
-		}
-	}
+	::WtoUTF8(strIn.c_str(), strIn.size(), this->strOut);
 	if( this->htmlEscape != 0 ){
 		LPCSTR rpl[] = { "&amp;", "<lt;", ">gt;", "\"quot;", "'apos;" };
 		for( size_t i = 0; this->strOut[i] != '\0'; i++ ){
