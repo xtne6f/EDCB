@@ -247,7 +247,7 @@ bool CParseServiceChgText::ParseLine(LPCWSTR parseLine, pair<wstring, wstring>& 
 DWORD CParseRecInfoText::AddRecInfo(const REC_FILE_INFO& item)
 {
 	REC_FILE_INFO info = item;
-	info.id = this->itemMap.empty() ? 1 : this->itemMap.rbegin()->first + 1;
+	info.id = this->nextID++;
 	OnAddRecInfo(info);
 	this->itemMap[info.id] = info;
 
@@ -343,7 +343,7 @@ bool CParseRecInfoText::ParseLine(LPCWSTR parseLine, pair<DWORD, REC_FILE_INFO>&
 	NextToken(token);
 	item.second.comment.assign(token[0], token[1]);
 	item.second.protectFlag = _wtoi(NextToken(token)) != 0;
-	item.second.id = this->itemMap.empty() ? 1 : this->itemMap.rbegin()->first + 1;
+	item.second.id = this->nextID++;
 	OnAddRecInfo(item.second);
 	item.first = item.second.id;
 	return true;

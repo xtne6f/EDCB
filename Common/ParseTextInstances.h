@@ -59,7 +59,7 @@ protected:
 class CParseRecInfoText : public CParseText<DWORD, REC_FILE_INFO>
 {
 public:
-	CParseRecInfoText() : keepCount(UINT_MAX), recInfoDelFile(false) {}
+	CParseRecInfoText() : nextID(1), keepCount(UINT_MAX), recInfoDelFile(false) {}
 	using CParseText<DWORD, REC_FILE_INFO>::SaveText;
 	//録画済み情報を追加する
 	DWORD AddRecInfo(const REC_FILE_INFO& item);
@@ -67,6 +67,8 @@ public:
 	bool DelRecInfo(DWORD id);
 	//プロテクト情報を変更する
 	bool ChgProtectRecInfo(DWORD id, BYTE flag);
+	//録画済み情報に割り当てる次のIDを設定する
+	DWORD SetNextID(DWORD id) { return this->nextID = max(id, this->nextID); }
 	//AddRecInfo直後に残しておく非プロテクトの録画済み情報の個数を設定する
 	void SetKeepCount(DWORD keepCount = UINT_MAX) { this->keepCount = keepCount; }
 	void SetRecInfoDelFile(bool recInfoDelFile) { this->recInfoDelFile = recInfoDelFile; }
@@ -79,6 +81,8 @@ protected:
 	void OnAddRecInfo(REC_FILE_INFO& item);
 	//情報が削除される直前の補足作業
 	void OnDelRecInfo(const REC_FILE_INFO& item);
+	//このクラスのnextIDは永続的ではない
+	DWORD nextID;
 	DWORD keepCount;
 	bool recInfoDelFile;
 	wstring recInfoFolder;
