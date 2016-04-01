@@ -302,7 +302,11 @@ namespace EpgTimer
                         recFileInfo = null;
                         recFileInfo = new Dictionary<uint, RecFileInfo>();
                         List<RecFileInfo> list = new List<RecFileInfo>();
-                        ret = (ErrCode)cmd.SendEnumRecInfo(ref list);
+                        ret = cmd.SendEnumRecInfoBasic(ref list);
+                        if (ret == ErrCode.CMD_NON_SUPPORT)
+                        {
+                            ret = cmd.SendEnumRecInfo(ref list);
+                        }
                         if (ret == ErrCode.CMD_SUCCESS)
                         {
                             foreach (RecFileInfo info in list)
