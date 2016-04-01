@@ -2115,6 +2115,8 @@ int CEpgTimerSrvMain::InitLuaCallback(lua_State* L)
 	LuaHelp::reg_function(L, "GetReserveData", LuaGetReserveData, sys);
 	LuaHelp::reg_function(L, "GetRecFilePath", LuaGetRecFilePath, sys);
 	LuaHelp::reg_function(L, "GetRecFileInfo", LuaGetRecFileInfo, sys);
+	LuaHelp::reg_function(L, "GetRecFileInfoBasic", LuaGetRecFileInfoBasic, sys);
+	LuaHelp::reg_function(L, "ChgProtectRecFileInfo", LuaChgProtectRecFileInfo, sys);
 	LuaHelp::reg_function(L, "DelRecFileInfo", LuaDelRecFileInfo, sys);
 	LuaHelp::reg_function(L, "GetTunerReserveAll", LuaGetTunerReserveAll, sys);
 	LuaHelp::reg_function(L, "EnumRecPresetInfo", LuaEnumRecPresetInfo, sys);
@@ -2651,18 +2653,32 @@ int CEpgTimerSrvMain::LuaGetRecFilePath(lua_State* L)
 
 int CEpgTimerSrvMain::LuaGetRecFileInfo(lua_State* L)
 {
+	return LuaGetRecFileInfoProc(L, true);
+}
+
+int CEpgTimerSrvMain::LuaGetRecFileInfoBasic(lua_State* L)
+{
+	return LuaGetRecFileInfoProc(L, false);
+}
+
+int CEpgTimerSrvMain::LuaGetRecFileInfoProc(lua_State* L, bool getExtraInfo)
+{
 	CLuaWorkspace ws(L);
 	bool getAll = lua_gettop(L) == 0;
-	DWORD id = 0;
+	vector<REC_FILE_INFO> list;
 	if( getAll ){
 		lua_newtable(L);
+		list = ws.sys->reserveManager.GetRecFileInfoAll(getExtraInfo);
 	}else{
-		id = (DWORD)lua_tointeger(L, 1);
+		DWORD id = (DWORD)lua_tointeger(L, 1);
+		list.resize(1);
+		if( ws.sys->reserveManager.GetRecFileInfo(id, &list.front(), getExtraInfo) == false ){
+			return 0;
+		}
 	}
-	vector<REC_FILE_INFO> list = ws.sys->reserveManager.GetRecFileInfoAll();
 	for( size_t i = 0; i < list.size(); i++ ){
 		const REC_FILE_INFO& r = list[i];
-		if( getAll || id == r.id ){
+		{
 			lua_newtable(L);
 			LuaHelp::reg_int(L, "id", (int)r.id);
 			LuaHelp::reg_string(L, "recFilePath", ws.WtoUTF8(r.recFilePath));
@@ -2682,13 +2698,25 @@ int CEpgTimerSrvMain::LuaGetRecFileInfo(lua_State* L)
 			LuaHelp::reg_string(L, "programInfo", ws.WtoUTF8(r.programInfo));
 			LuaHelp::reg_string(L, "errInfo", ws.WtoUTF8(r.errInfo));
 			LuaHelp::reg_boolean(L, "protectFlag", r.protectFlag != 0);
-			if( getAll == false && id == r.id ){
-				return 1;
+			if( getAll == false ){
+				break;
 			}
 			lua_rawseti(L, -2, (int)i + 1);
 		}
 	}
-	return getAll ? 1 : 0;
+	return 1;
+}
+
+int CEpgTimerSrvMain::LuaChgProtectRecFileInfo(lua_State* L)
+{
+	CLuaWorkspace ws(L);
+	if( lua_gettop(L) == 2 ){
+		vector<REC_FILE_INFO> list(1);
+		list.front().id = (DWORD)lua_tointeger(L, 1);
+		list.front().protectFlag = lua_toboolean(L, 2) ? 1 : 0;
+		ws.sys->reserveManager.ChgProtectRecFileInfo(list);
+	}
+	return 0;
 }
 
 int CEpgTimerSrvMain::LuaDelRecFileInfo(lua_State* L)
