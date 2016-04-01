@@ -48,6 +48,8 @@
 #define CMD2_EPG_SRV_CHG_RESERVE2			2015 //予約変更
 #define CMD2_EPG_SRV_ENUM_RECINFO2			2017 //録画済み情報一覧取得
 #define CMD2_EPG_SRV_CHG_PROTECT_RECINFO2	2019 //録画済み情報のプロテクト変更
+#define CMD2_EPG_SRV_ENUM_RECINFO_BASIC2	2020 //録画済み情報一覧取得（programInfoとerrInfoを除く）
+#define CMD2_EPG_SRV_GET_RECINFO2			2024 //録画済み情報取得
 #define CMD2_EPG_SRV_ADDCHK_RESERVE2		2030 //サーバー連携用　予約追加できるかのチェック（戻り値 0:追加不可 1:追加可能 2:追加可能だが開始か終了が重なるものあり 3:すでに同じ物がある）
 #define CMD2_EPG_SRV_GET_EPG_FILETIME2		2031 //サーバー連携用　EPGデータファイルのタイムスタンプ取得
 #define CMD2_EPG_SRV_GET_EPG_FILE2			2032 //サーバー連携用　EPGデータファイル取得
