@@ -61,12 +61,12 @@ void CParseChText4::DelChService(int space, int ch, WORD serviceID)
 	}
 }
 
-bool CParseChText4::ParseLine(const wstring& parseLine, pair<DWORD, CH_DATA4>& item)
+bool CParseChText4::ParseLine(LPCWSTR parseLine, pair<DWORD, CH_DATA4>& item)
 {
-	if( parseLine.find(L'\t') == wstring::npos ){
+	if( wcschr(parseLine, L'\t') == NULL ){
 		return false;
 	}
-	LPCWSTR token[3] = {NULL, NULL, parseLine.c_str()};
+	LPCWSTR token[3] = {NULL, NULL, parseLine};
 
 	NextToken(token);
 	item.second.chName.assign(token[0], token[1]);
@@ -136,12 +136,12 @@ bool CParseChText5::SetEpgCapMode(WORD originalNetworkID, WORD transportStreamID
 	return false;
 }
 
-bool CParseChText5::ParseLine(const wstring& parseLine, pair<LONGLONG, CH_DATA5>& item)
+bool CParseChText5::ParseLine(LPCWSTR parseLine, pair<LONGLONG, CH_DATA5>& item)
 {
-	if( parseLine.find(L'\t') == wstring::npos ){
+	if( wcschr(parseLine, L'\t') == NULL ){
 		return false;
 	}
-	LPCWSTR token[3] = {NULL, NULL, parseLine.c_str()};
+	LPCWSTR token[3] = {NULL, NULL, parseLine};
 
 	NextToken(token);
 	item.second.serviceName.assign(token[0], token[1]);
@@ -207,13 +207,13 @@ void CParseContentTypeText::GetMimeType(wstring ext, wstring& mimeType) const
 	}
 }
 
-bool CParseContentTypeText::ParseLine(const wstring& parseLine, pair<wstring, wstring>& item)
+bool CParseContentTypeText::ParseLine(LPCWSTR parseLine, pair<wstring, wstring>& item)
 {
-	if( parseLine.find(L'\t') == wstring::npos || parseLine[0] == L';' ){
+	if( wcschr(parseLine, L'\t') == NULL || parseLine[0] == L';' ){
 		//ãÛçsorÉRÉÅÉìÉg
 		return false;
 	}
-	LPCWSTR token[3] = {NULL, NULL, parseLine.c_str()};
+	LPCWSTR token[3] = {NULL, NULL, parseLine};
 
 	NextToken(token);
 	item.first.assign(token[0], token[1]);
@@ -230,12 +230,12 @@ void CParseServiceChgText::ChgText(wstring& chgText) const
 	}
 }
 
-bool CParseServiceChgText::ParseLine(const wstring& parseLine, pair<wstring, wstring>& item)
+bool CParseServiceChgText::ParseLine(LPCWSTR parseLine, pair<wstring, wstring>& item)
 {
-	if( parseLine.find(L'\t') == wstring::npos || parseLine[0] == L';' ){
+	if( wcschr(parseLine, L'\t') == NULL || parseLine[0] == L';' ){
 		return false;
 	}
-	LPCWSTR token[3] = {NULL, NULL, parseLine.c_str()};
+	LPCWSTR token[3] = {NULL, NULL, parseLine};
 
 	NextToken(token);
 	item.first.assign(token[0], token[1]);
@@ -297,12 +297,12 @@ void CParseRecInfoText::SetRecInfoFolder(LPCWSTR recInfoFolder)
 	ChkFolderPath(this->recInfoFolder);
 }
 
-bool CParseRecInfoText::ParseLine(const wstring& parseLine, pair<DWORD, REC_FILE_INFO>& item)
+bool CParseRecInfoText::ParseLine(LPCWSTR parseLine, pair<DWORD, REC_FILE_INFO>& item)
 {
-	if( parseLine.find(L'\t') == wstring::npos || parseLine[0] == L';' ){
+	if( wcschr(parseLine, L'\t') == NULL || parseLine[0] == L';' ){
 		return false;
 	}
-	LPCWSTR token[3] = {NULL, NULL, parseLine.c_str()};
+	LPCWSTR token[3] = {NULL, NULL, parseLine};
 
 	NextToken(token);
 	item.second.recFilePath.assign(token[0], token[1]);
@@ -448,12 +448,12 @@ DWORD CParseRecInfo2Text::Add(const PARSE_REC_INFO2_ITEM& item)
 	return itr->first;
 }
 
-bool CParseRecInfo2Text::ParseLine(const wstring& parseLine, pair<DWORD, PARSE_REC_INFO2_ITEM>& item)
+bool CParseRecInfo2Text::ParseLine(LPCWSTR parseLine, pair<DWORD, PARSE_REC_INFO2_ITEM>& item)
 {
-	if( parseLine.find(L'\t') == wstring::npos || parseLine[0] == L';' ){
+	if( wcschr(parseLine, L'\t') == NULL || parseLine[0] == L';' ){
 		return false;
 	}
-	LPCWSTR token[3] = {NULL, NULL, parseLine.c_str()};
+	LPCWSTR token[3] = {NULL, NULL, parseLine};
 
 	item.second.originalNetworkID = (WORD)_wtoi(NextToken(token));
 	item.second.transportStreamID = (WORD)_wtoi(NextToken(token));
@@ -546,24 +546,24 @@ bool CParseReserveText::DelReserve(DWORD id)
 	return false;
 }
 
-bool CParseReserveText::ParseLine(const wstring& parseLine, pair<DWORD, RESERVE_DATA>& item)
+bool CParseReserveText::ParseLine(LPCWSTR parseLine, pair<DWORD, RESERVE_DATA>& item)
 {
 	if( this->saveNextID == 1 ){
 		this->saveNextID = 0;
 	}
-	if( parseLine.c_str()[0] == L';' ){
-		if( parseLine.compare(0, 9, L";;NextID=") == 0 ){
-			DWORD nextID_ = (DWORD)_wtoi(&parseLine.c_str()[9]);
+	if( parseLine[0] == L';' ){
+		if( wcsncmp(parseLine, L";;NextID=", 9) == 0 ){
+			DWORD nextID_ = (DWORD)_wtoi(&parseLine[9]);
 			if( nextID_ != 0 && nextID_ <= 100000000 ){
 				this->nextID = this->nextID > nextID_ + 50000000 ? nextID_ : max(nextID_, this->nextID);
 			}
 			this->saveNextID = 2;
 		}
 		return false;
-	}else if( parseLine.find(L'\t') == wstring::npos ){
+	}else if( wcschr(parseLine, L'\t') == NULL ){
 		return false;
 	}
-	LPCWSTR token[3] = {NULL, NULL, parseLine.c_str()};
+	LPCWSTR token[3] = {NULL, NULL, parseLine};
 
 	FILETIME ft;
 	item.second.startTime.wMilliseconds = 0;
@@ -828,24 +828,24 @@ bool CParseEpgAutoAddText::DelData(DWORD id)
 	return this->itemMap.erase(id) != 0;
 }
 
-bool CParseEpgAutoAddText::ParseLine(const wstring& parseLine, pair<DWORD, EPG_AUTO_ADD_DATA>& item)
+bool CParseEpgAutoAddText::ParseLine(LPCWSTR parseLine, pair<DWORD, EPG_AUTO_ADD_DATA>& item)
 {
 	if( this->saveNextID == 1 ){
 		this->saveNextID = 0;
 	}
-	if( parseLine.c_str()[0] == L';' ){
-		if( parseLine.compare(0, 9, L";;NextID=") == 0 ){
-			DWORD nextID_ = (DWORD)_wtoi(&parseLine.c_str()[9]);
+	if( parseLine[0] == L';' ){
+		if( wcsncmp(parseLine, L";;NextID=", 9) == 0 ){
+			DWORD nextID_ = (DWORD)_wtoi(&parseLine[9]);
 			if( nextID_ != 0 && nextID_ <= 100000000 ){
 				this->nextID = this->nextID > nextID_ + 50000000 ? nextID_ : max(nextID_, this->nextID);
 			}
 			this->saveNextID = 2;
 		}
 		return false;
-	}else if( parseLine.find(L'\t') == wstring::npos ){
+	}else if( wcschr(parseLine, L'\t') == NULL ){
 		return false;
 	}
-	LPCWSTR token[3] = {NULL, NULL, parseLine.c_str()};
+	LPCWSTR token[3] = {NULL, NULL, parseLine};
 
 	item.second.dataID = item.first = _wtoi(NextToken(token));
 	if( item.first == 0 || item.first > 100000000 ){
@@ -1084,24 +1084,24 @@ bool CParseManualAutoAddText::DelData(DWORD id)
 	return this->itemMap.erase(id) != 0;
 }
 
-bool CParseManualAutoAddText::ParseLine(const wstring& parseLine, pair<DWORD, MANUAL_AUTO_ADD_DATA>& item)
+bool CParseManualAutoAddText::ParseLine(LPCWSTR parseLine, pair<DWORD, MANUAL_AUTO_ADD_DATA>& item)
 {
 	if( this->saveNextID == 1 ){
 		this->saveNextID = 0;
 	}
-	if( parseLine.c_str()[0] == L';' ){
-		if( parseLine.compare(0, 9, L";;NextID=") == 0 ){
-			DWORD nextID_ = (DWORD)_wtoi(&parseLine.c_str()[9]);
+	if( parseLine[0] == L';' ){
+		if( wcsncmp(parseLine, L";;NextID=", 9) == 0 ){
+			DWORD nextID_ = (DWORD)_wtoi(&parseLine[9]);
 			if( nextID_ != 0 && nextID_ <= 100000000 ){
 				this->nextID = this->nextID > nextID_ + 50000000 ? nextID_ : max(nextID_, this->nextID);
 			}
 			this->saveNextID = 2;
 		}
 		return false;
-	}else if( parseLine.find(L'\t') == wstring::npos ){
+	}else if( wcschr(parseLine, L'\t') == NULL ){
 		return false;
 	}
-	LPCWSTR token[3] = {NULL, NULL, parseLine.c_str()};
+	LPCWSTR token[3] = {NULL, NULL, parseLine};
 
 	item.second.dataID = item.first = _wtoi(NextToken(token));
 	if( item.first == 0 || item.first > 100000000 ){

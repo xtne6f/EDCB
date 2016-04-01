@@ -15,7 +15,7 @@ public:
 	void SetFilePath(LPCWSTR filePath) { this->filePath = filePath; }
 protected:
 	bool SaveText() const;
-	virtual bool ParseLine(const wstring& parseLine, pair<K, V>& item) = 0;
+	virtual bool ParseLine(LPCWSTR parseLine, pair<K, V>& item) = 0;
 	virtual bool SaveLine(const pair<K, V>& item, wstring& saveLine) const { return false; }
 	virtual bool SaveFooterLine(wstring& saveLine) const { return false; }
 	virtual bool SelectIDToSave(vector<K>& sortList) const { return false; }
@@ -50,7 +50,6 @@ bool CParseText<K, V>::ParseText(LPCWSTR filePath)
 
 	vector<char> buf;
 	vector<WCHAR> parseBuf;
-	wstring parseLine;
 	for(;;){
 		//4KBíPà Ç≈ì«Ç›çûÇﬁ
 		buf.resize(buf.size() + 4096);
@@ -67,10 +66,9 @@ bool CParseText<K, V>::ParseText(LPCWSTR filePath)
 			bool eof = buf[i] == '\0';
 			if( eof || buf[i] == '\r' && i + 1 < buf.size() && buf[i + 1] == '\n' ){
 				buf[i] = '\0';
-				size_t len = AtoW(&buf[offset], i - offset, parseBuf);
-				parseLine.assign(parseBuf.begin(), parseBuf.begin() + len);
+				AtoW(&buf[offset], i - offset, parseBuf);
 				pair<K, V> item;
-				if( ParseLine(parseLine, item) ){
+				if( ParseLine(&parseBuf.front(), item) ){
 					this->itemMap.insert(item);
 				}
 				if( eof ){
