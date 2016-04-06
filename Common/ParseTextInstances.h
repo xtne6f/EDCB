@@ -73,8 +73,9 @@ public:
 	void SetKeepCount(DWORD keepCount = UINT_MAX) { this->keepCount = keepCount; }
 	void SetRecInfoDelFile(bool recInfoDelFile) { this->recInfoDelFile = recInfoDelFile; }
 	void SetRecInfoFolder(LPCWSTR recInfoFolder);
+	wstring GetRecInfoFolder() const { return this->recInfoFolder; }
 	//•â‘«‚Ì˜^‰æî•ñ‚ğæ“¾‚·‚é
-	wstring GetExtraInfo(LPCWSTR recFilePath, LPCWSTR extension) const;
+	static wstring GetExtraInfo(LPCWSTR recFilePath, LPCWSTR extension, const wstring& resultOfGetRecInfoFolder);
 protected:
 	bool ParseLine(LPCWSTR parseLine, pair<DWORD, REC_FILE_INFO>& item);
 	bool SaveLine(const pair<DWORD, REC_FILE_INFO>& item, wstring& saveLine) const;

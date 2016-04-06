@@ -388,16 +388,17 @@ bool CParseRecInfoText::SelectIDToSave(vector<DWORD>& sortList) const
 	return true;
 }
 
-wstring CParseRecInfoText::GetExtraInfo(LPCWSTR recFilePath, LPCWSTR extension) const
+wstring CParseRecInfoText::GetExtraInfo(LPCWSTR recFilePath, LPCWSTR extension, const wstring& resultOfGetRecInfoFolder)
 {
 	wstring info;
 	if( recFilePath[0] != L'\0' ){
 		//•â‘«‚Ì˜^‰æî•ñƒtƒ@ƒCƒ‹‚ð“Ç‚Ýž‚Þ
-		HANDLE hFile = CreateFile((wstring(recFilePath) + extension).c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-		if( hFile == INVALID_HANDLE_VALUE && this->recInfoFolder.empty() == false ){
+		DWORD shareAll = FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE;
+		HANDLE hFile = CreateFile((wstring(recFilePath) + extension).c_str(), GENERIC_READ, shareAll, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+		if( hFile == INVALID_HANDLE_VALUE && resultOfGetRecInfoFolder.empty() == false ){
 			wstring recFileName;
 			GetFileName(recFilePath, recFileName);
-			hFile = CreateFile((this->recInfoFolder + L"\\" + recFileName + extension).c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+			hFile = CreateFile((resultOfGetRecInfoFolder + L"\\" + recFileName + extension).c_str(), GENERIC_READ, shareAll, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 		}
 		if( hFile != INVALID_HANDLE_VALUE ){
 			DWORD dwSize = GetFileSize(hFile, NULL);

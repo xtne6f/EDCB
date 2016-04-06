@@ -486,15 +486,22 @@ void CReserveManager::DelReserveData(const vector<DWORD>& idList)
 
 vector<REC_FILE_INFO> CReserveManager::GetRecFileInfoAll(bool getExtraInfo) const
 {
-	CBlockLock lock(&this->managerLock);
-
 	vector<REC_FILE_INFO> infoList;
-	infoList.reserve(this->recInfoText.GetMap().size());
-	for( map<DWORD, REC_FILE_INFO>::const_iterator itr = this->recInfoText.GetMap().begin(); itr != this->recInfoText.GetMap().end(); itr++ ){
-		infoList.push_back(itr->second);
+	wstring folder;
+	{
+		CBlockLock lock(&this->managerLock);
+		infoList.reserve(this->recInfoText.GetMap().size());
+		for( map<DWORD, REC_FILE_INFO>::const_iterator itr = this->recInfoText.GetMap().begin(); itr != this->recInfoText.GetMap().end(); itr++ ){
+			infoList.push_back(itr->second);
+		}
 		if( getExtraInfo ){
-			infoList.back().programInfo = this->recInfoText.GetExtraInfo(infoList.back().recFilePath.c_str(), L".program.txt");
-			infoList.back().errInfo = this->recInfoText.GetExtraInfo(infoList.back().recFilePath.c_str(), L".err");
+			folder = this->recInfoText.GetRecInfoFolder();
+		}
+	}
+	if( getExtraInfo ){
+		for( size_t i = 0; i < infoList.size(); i++ ){
+			infoList[i].programInfo = CParseRecInfoText::GetExtraInfo(infoList[i].recFilePath.c_str(), L".program.txt", folder);
+			infoList[i].errInfo = CParseRecInfoText::GetExtraInfo(infoList[i].recFilePath.c_str(), L".err", folder);
 		}
 	}
 	return infoList;
@@ -502,18 +509,23 @@ vector<REC_FILE_INFO> CReserveManager::GetRecFileInfoAll(bool getExtraInfo) cons
 
 bool CReserveManager::GetRecFileInfo(DWORD id, REC_FILE_INFO* recInfo, bool getExtraInfo) const
 {
-	CBlockLock lock(&this->managerLock);
-
-	map<DWORD, REC_FILE_INFO>::const_iterator itr = this->recInfoText.GetMap().find(id);
-	if( itr != this->recInfoText.GetMap().end() ){
+	wstring folder;
+	{
+		CBlockLock lock(&this->managerLock);
+		map<DWORD, REC_FILE_INFO>::const_iterator itr = this->recInfoText.GetMap().find(id);
+		if( itr == this->recInfoText.GetMap().end() ){
+			return false;
+		}
 		*recInfo = itr->second;
 		if( getExtraInfo ){
-			recInfo->programInfo = this->recInfoText.GetExtraInfo(recInfo->recFilePath.c_str(), L".program.txt");
-			recInfo->errInfo = this->recInfoText.GetExtraInfo(recInfo->recFilePath.c_str(), L".err");
+			folder = this->recInfoText.GetRecInfoFolder();
 		}
-		return true;
 	}
-	return false;
+	if( getExtraInfo ){
+		recInfo->programInfo = CParseRecInfoText::GetExtraInfo(recInfo->recFilePath.c_str(), L".program.txt", folder);
+		recInfo->errInfo = CParseRecInfoText::GetExtraInfo(recInfo->recFilePath.c_str(), L".err", folder);
+	}
+	return true;
 }
 
 void CReserveManager::DelRecFileInfo(const vector<DWORD>& idList)
