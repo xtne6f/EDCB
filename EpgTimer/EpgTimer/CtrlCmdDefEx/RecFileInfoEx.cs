@@ -15,26 +15,78 @@ namespace EpgTimer
             return CommonManager.Create64Key(OriginalNetworkID, TransportStreamID, ServiceID);
         }
 
-        private long dropsCritical = -1;
+        public bool HasExtraData { get; set; }
+        public bool IsModifiedErrInfo { get; set; }
+
+        //使用箇所少ないので、手動でデータ取得させる。
+        //(使用箇所増えるなら、ProgramInfoやErrInfoをプロパティ化して取得させる)
+        public void GetExtraData()
+        {
+            if (this.HasExtraData == false)
+            {
+                var extraRecInfo = new RecFileInfo();
+                if (CommonManager.Instance.CtrlCmd.SendGetRecInfo(this.ID, ref extraRecInfo) == ErrCode.CMD_SUCCESS)
+                {
+                    this.ProgramInfo = extraRecInfo.ProgramInfo;
+                    this.ErrInfo = extraRecInfo.ErrInfo;
+                    this.HasExtraData = true;
+                    this.IsModifiedErrInfo = false;
+                }
+            }
+            CountCriticalDrops();
+        }
+
+        private long dropsCritical = 0;
         public long DropsCritical
         {
             get
             {
-                if (dropsCritical == -1) CheckCriticalDrops();
+                if (this.Drops == 0) return 0;
+                CountCriticalDrops2();
                 return dropsCritical;
             }
         }
-        private long scramblesCritical = -1;
+        private long scramblesCritical = 0;
         public long ScramblesCritical
         {
             get
             {
-                if (scramblesCritical == -1) CheckCriticalDrops();
+                if (this.Scrambles == 0) return 0;
+                CountCriticalDrops2();
                 return scramblesCritical;
             }
         }
-        private void CheckCriticalDrops()
+        private void CountCriticalDrops2()
         {
+            if (IsModifiedErrInfo == true) return;
+
+            RecFileInfo refrence;
+            if (CommonManager.Instance.DB.RecFileInfo.TryGetValue(this.ID, out refrence) == true)
+            {
+                if (refrence.HasExtraData == false)
+                {
+                    //CheckCriticalDropsは通常連続して呼び出されるので、必要なデータをまとめて取得しておく
+                    CommonManager.Instance.DB.ReadRecFileExtraData();
+                }
+                //(現在は無いが)インスタンスがコピーだった場合に問題が起きないようにする。
+                if (this != refrence)
+                {
+                    this.ProgramInfo = refrence.ProgramInfo;
+                    this.ErrInfo = refrence.ErrInfo;
+                    this.HasExtraData = refrence.HasExtraData;
+                    this.dropsCritical = refrence.dropsCritical;
+                    this.scramblesCritical = refrence.scramblesCritical;
+                    this.IsModifiedErrInfo = refrence.IsModifiedErrInfo;
+                }
+            }
+
+            CountCriticalDrops();
+        }
+        private void CountCriticalDrops()
+        {
+            if (IsModifiedErrInfo == true) return;
+
+            IsModifiedErrInfo = true;
             if (string.IsNullOrEmpty(this.ErrInfo) == false)
             {
                 try

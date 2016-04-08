@@ -28,6 +28,7 @@ namespace EpgTimer
         public void SetRecInfo(RecFileInfo info)
         {
             recInfo = info;
+            info.GetExtraData();
             textBox_pgInfo.Text = info.ProgramInfo;
             textBox_errLog.Text = info.ErrInfo;
         }

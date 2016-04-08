@@ -336,7 +336,7 @@ namespace EpgTimer
                     recFileInfo = new Dictionary<uint, RecFileInfo>();
                     var list = new List<RecFileInfo>();
 
-                    ret = (ErrCode)cmd.SendEnumRecInfo(ref list);
+                    ret = (ErrCode)cmd.SendEnumRecInfoBasic(ref list);
                     if (ret != ErrCode.CMD_SUCCESS) return ret;
 
                     list.ForEach(info => recFileInfo.Add(info.ID, info));
@@ -348,6 +348,46 @@ namespace EpgTimer
             {
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
+            return ret;
+        }
+
+        public ErrCode ReadRecFileExtraData()
+        {
+            ErrCode ret = ErrCode.CMD_SUCCESS;
+            try
+            {
+                if (cmd == null) return ErrCode.CMD_ERR;
+
+                var extraDatalist = new List<RecFileInfo>();
+                ret = (ErrCode)cmd.SendEnumRecInfo(ref extraDatalist);
+                if (ret == ErrCode.CMD_SUCCESS)
+                {
+                    extraDatalist.ForEach(item =>
+                    {
+                        RecFileInfo info;
+                        if (recFileInfo.TryGetValue(item.ID, out info) == true)
+                        {
+                            if (info.HasExtraData == false)
+                            {
+                                info.ProgramInfo = item.ProgramInfo;
+                                info.ErrInfo = item.ErrInfo;
+                                info.IsModifiedErrInfo = false;
+                            }
+                        }
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+            }
+
+            //読込中に失敗しても(今は)全て読込済みの扱いにする。
+            foreach (var info in recFileInfo.Values)
+            {
+                info.HasExtraData = true;
+            }
+
             return ret;
         }
 
