@@ -36,6 +36,7 @@ namespace EpgTimer
             CountCriticalDrops();
         }
 
+        public bool HasErrPackets { get { return this.Drops != 0 || this.Scrambles != 0; } }
         private long dropsCritical = 0;
         public long DropsCritical
         {

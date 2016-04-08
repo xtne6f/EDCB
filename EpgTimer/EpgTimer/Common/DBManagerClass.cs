@@ -354,12 +354,15 @@ namespace EpgTimer
         public ErrCode ReadRecFileExtraData()
         {
             ErrCode ret = ErrCode.CMD_SUCCESS;
+            IEnumerable<RecFileInfo> list = new List<RecFileInfo>();
+
             try
             {
                 if (cmd == null) return ErrCode.CMD_ERR;
 
+                list = recFileInfo.Values.Where(info => info.HasErrPackets == true && info.HasExtraData == false);
                 var extraDatalist = new List<RecFileInfo>();
-                ret = (ErrCode)cmd.SendEnumRecInfo(ref extraDatalist);
+                ret = (ErrCode)cmd.SendGetRecInfoList(list.Select(info => info.ID).ToList(), ref extraDatalist);
                 if (ret == ErrCode.CMD_SUCCESS)
                 {
                     extraDatalist.ForEach(item =>
@@ -382,8 +385,8 @@ namespace EpgTimer
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
 
-            //読込中に失敗しても(今は)全て読込済みの扱いにする。
-            foreach (var info in recFileInfo.Values)
+            //読込に失敗しても全て読込済みの扱いにする。
+            foreach (var info in list)
             {
                 info.HasExtraData = true;
             }
