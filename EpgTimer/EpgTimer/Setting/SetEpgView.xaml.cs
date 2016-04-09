@@ -167,7 +167,13 @@ namespace EpgTimer.Setting
                 checkBox_recNoYear.IsChecked = Settings.Instance.RecInfoNoYear;
                 checkBox_recNoSecond.IsChecked = Settings.Instance.RecInfoNoSecond;
                 checkBox_recNoDurSecond.IsChecked = Settings.Instance.RecInfoNoDurSecond;
-
+                checkBox_ChacheOn.IsChecked = Settings.Instance.RecInfoExtraDataCache;
+                checkBox_CacheOptimize.IsChecked = Settings.Instance.RecInfoExtraDataCacheOptimize;
+                checkBox_CacheKeepConnect.IsChecked = Settings.Instance.RecInfoExtraDataCacheKeepConnect;
+                if (CommonManager.Instance.NWMode == false)
+                {
+                    checkBox_CacheKeepConnect.IsEnabled = false;//{Binding}を破棄しているので注意
+                }
                 setComboColors(Settings.Instance.RecEndColors, grid_RecInfoBackColors);
                 setButtonColors(Settings.Instance.RecEndCustColors, grid_RecInfoBackColors);
 
@@ -309,6 +315,9 @@ namespace EpgTimer.Setting
                 Settings.Instance.RecInfoNoDurSecond = (checkBox_recNoDurSecond.IsChecked == true);
                 getComboColors(Settings.Instance.RecEndColors, grid_RecInfoBackColors);
                 getButtonColors(Settings.Instance.RecEndCustColors, grid_RecInfoBackColors);
+                Settings.Instance.RecInfoExtraDataCache = (checkBox_ChacheOn.IsChecked == true);
+                Settings.Instance.RecInfoExtraDataCacheOptimize = (checkBox_CacheOptimize.IsChecked == true);
+                Settings.Instance.RecInfoExtraDataCacheKeepConnect = (checkBox_CacheKeepConnect.IsChecked == true);
 
                 //予約一覧画面
                 Settings.Instance.MenuSet = this.ctxmSetInfo.Clone();

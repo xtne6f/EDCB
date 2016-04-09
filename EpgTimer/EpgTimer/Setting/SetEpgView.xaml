@@ -326,14 +326,22 @@
         </TabItem>
         <TabItem Header="録画済み一覧">
             <StackPanel>
-                <GroupBox Header="各種設定" Margin="6,6,6,0" VerticalAlignment="Top" >
-                    <Grid>
-                        <CheckBox Content="録画済み一覧のダブルクリックで再生を行う" Height="16" HorizontalAlignment="Left" Margin="6,12,0,0" Name="checkBox_playDClick" VerticalAlignment="Top" />
-                        <Label Content="リスト表示で省略する" Height="24" HorizontalAlignment="Left" Margin="6,34,0,0" VerticalAlignment="Top" />
-                        <CheckBox Content="'年'" Height="16" HorizontalAlignment="Left" Margin="140,40,0,0" Name="checkBox_recNoYear" VerticalAlignment="Top" />
-                        <CheckBox Content="'秒'" Height="16" HorizontalAlignment="Left" Margin="190,40,0,0" Name="checkBox_recNoSecond" VerticalAlignment="Top" />
-                        <CheckBox Content="長さの'秒'" Height="16" HorizontalAlignment="Left" Margin="240,40,0,0" Name="checkBox_recNoDurSecond" VerticalAlignment="Top" />
-                        <GroupBox Header="ドロップ・スクランブル未解除" Margin="0,64,0,0" VerticalAlignment="Top" >
+                <GroupBox Header="各種設定" Margin="6,6,6,0">
+                    <StackPanel Margin="11,6,0,0" >
+                        <CheckBox Content="録画済み一覧のダブルクリックで再生を行う" Name="checkBox_playDClick" />
+                        <StackPanel Orientation="Horizontal" >
+                            <Label Content="リスト表示で省略する" VerticalAlignment="Top" />
+                            <CheckBox Content="'年'" Margin="12,0,0,0" Name="checkBox_recNoYear" VerticalAlignment="Center" />
+                            <CheckBox Content="'秒'" Margin="12,0,0,0" Name="checkBox_recNoSecond" VerticalAlignment="Center" />
+                            <CheckBox Content="長さの'秒'" Margin="12,0,0,0"  Name="checkBox_recNoDurSecond" VerticalAlignment="Center" />
+                        </StackPanel >
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                            <Label Content="番組情報・エラーログのキャッシュ" VerticalAlignment="Center" ToolTip="起動中、取得したテキストデータを保持します。(キャッシュしない場合、必要時に毎回EpgTimerSrvから取得します。)" />
+                            <CheckBox Content="する　（" Margin="12,0,0,0" Name="checkBox_ChacheOn" VerticalAlignment="Center" />
+                            <CheckBox Content="不要データを削除する　" Margin="12,0,0,0" Name="checkBox_CacheOptimize" VerticalAlignment="Center" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_ChacheOn, UpdateSourceTrigger=PropertyChanged}"/>
+                            <CheckBox Content="再接続時も保持する　）" Margin="12,0,0,0" Name="checkBox_CacheKeepConnect"  VerticalAlignment="Center" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_ChacheOn, UpdateSourceTrigger=PropertyChanged}"/>
+                        </StackPanel >
+                        <GroupBox Header="ドロップ・スクランブル未解除" Margin="0,0,0,6">
                             <Grid>
                                 <Label Content="ドロップをエラー扱いしない閾値" Height="28" HorizontalAlignment="Left" Margin="6,6,0,0" VerticalAlignment="Top" />
                                 <TextBox Height="24" HorizontalAlignment="Left" Margin="264,6,0,0" Name="textBox_dropErrIgnore" VerticalAlignment="Top" Width="62" />
@@ -346,7 +354,7 @@
                                 <Label Content="スクランブル未解除(映像・音声)を使う" Height="28" HorizontalAlignment="Left" Margin="410,21,0,0" VerticalAlignment="Top" />
                             </Grid>
                         </GroupBox>
-                    </Grid>
+                    </StackPanel>
                 </GroupBox>
                 <GroupBox Header="背景色" Margin="6,6,6,0" VerticalAlignment="Top" >
                     <GroupBox.Resources>

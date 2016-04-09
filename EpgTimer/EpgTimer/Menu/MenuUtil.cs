@@ -96,8 +96,6 @@ namespace EpgTimer
                     setting = !setting;
                 }
 
-                recInfo.GetExtraData();
-
                 if (setting == true)
                 {
                     string[] stArrayData = recInfo.ProgramInfo.Replace("\r\n", "\n").Split('\n');

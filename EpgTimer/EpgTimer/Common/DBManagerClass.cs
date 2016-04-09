@@ -24,6 +24,7 @@ namespace EpgTimer
         Dictionary<UInt32, ReserveDataAppend> reserveAppendList = null;
         Dictionary<UInt32, TunerReserveInfo> tunerReserveList = new Dictionary<UInt32, TunerReserveInfo>();
         Dictionary<UInt32, RecFileInfo> recFileInfo = new Dictionary<UInt32, RecFileInfo>();
+        Dictionary<UInt32, RecFileInfoAppend> recFileAppendList = null;
         Dictionary<Int32, String> writePlugInList = new Dictionary<Int32, String>();
         Dictionary<Int32, String> recNamePlugInList = new Dictionary<Int32, String>();
         Dictionary<UInt32, ManualAutoAddData> manualAutoAddList = new Dictionary<UInt32, ManualAutoAddData>();
@@ -180,7 +181,75 @@ namespace EpgTimer
             }
             return retv;
         }
-        
+
+        public RecFileInfoAppend GetRecFileAppend(RecFileInfo master, bool UpdateDB = false)
+        {
+            if (master == null) return null;
+
+            if (recFileAppendList == null)
+            {
+                recFileAppendList = new Dictionary<uint, RecFileInfoAppend>();
+            }
+
+            RecFileInfoAppend retv = null;
+            if (recFileAppendList.TryGetValue(master.ID, out retv) == false)
+            {
+                if (UpdateDB == true)
+                {
+                    var list = recFileInfo.Values.Where(info => info.HasErrPackets == true 
+                        && recFileAppendList.ContainsKey(info.ID) == false).ToList();
+
+                    try
+                    {
+                        var extraDatalist = new List<RecFileInfo>();
+                        if (cmd.SendGetRecInfoList(list.Select(info => info.ID).ToList(), ref extraDatalist) == ErrCode.CMD_SUCCESS)
+                        {
+                            extraDatalist.ForEach(item => recFileAppendList.Add(item.ID, new RecFileInfoAppend(item)));
+                        }
+                    }
+                    catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
+
+                    //何か問題があった場合でも何度もSendGetRecInfoList()しないよう残りも全て登録してしまう。
+                    foreach (var item in list.Where(info => recFileAppendList.ContainsKey(info.ID) == false))
+                    {
+                        recFileAppendList.Add(item.ID, new RecFileInfoAppend(item, false));
+                    }
+
+                    recFileAppendList.TryGetValue(master.ID, out retv);
+                }
+                else
+                {
+                    var extraRecInfo = new RecFileInfo();
+                    if (cmd.SendGetRecInfo(master.ID, ref extraRecInfo) == ErrCode.CMD_SUCCESS)
+                    {
+                        retv = new RecFileInfoAppend(extraRecInfo);
+                        recFileAppendList.Add(master.ID, retv);
+                    }
+                }
+            }
+            return retv ?? new RecFileInfoAppend(master);
+        }
+        public void ClearRecFileAppend(bool connect = false)
+        {
+            if (recFileAppendList == null) return;
+
+            if (Settings.Instance.RecInfoExtraDataCache == false ||
+                connect == true && Settings.Instance.RecInfoExtraDataCacheKeepConnect == false)
+            {
+                recFileAppendList = null;
+            }
+            else if (connect == false && Settings.Instance.RecInfoExtraDataCacheOptimize == true)
+            {
+                //Appendリストにあるが、有効でないデータ(通信エラーなどで仮登録されたもの)を削除。
+                var delList = recFileAppendList.Where(item => item.Value.IsValid == false).Select(item => item.Key).ToList();
+                delList.ForEach(key => recFileAppendList.Remove(key));
+
+                //現在の録画情報リストにないデータを削除。
+                var delList2 = recFileAppendList.Keys.Where(key => recFileInfo.ContainsKey(key) == false).ToList();
+                delList2.ForEach(key => recFileAppendList.Remove(key));
+            }
+        }
+
         public DBManager(CtrlCmdUtil ctrlCmd)
         {
             cmd = ctrlCmd;
@@ -341,6 +410,7 @@ namespace EpgTimer
 
                     list.ForEach(info => recFileInfo.Add(info.ID, info));
 
+                    ClearRecFileAppend();
                     updateRecInfo = false;
                 }
             }
@@ -348,49 +418,6 @@ namespace EpgTimer
             {
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
-            return ret;
-        }
-
-        public ErrCode ReadRecFileExtraData()
-        {
-            ErrCode ret = ErrCode.CMD_SUCCESS;
-            IEnumerable<RecFileInfo> list = new List<RecFileInfo>();
-
-            try
-            {
-                if (cmd == null) return ErrCode.CMD_ERR;
-
-                list = recFileInfo.Values.Where(info => info.HasErrPackets == true && info.HasExtraData == false);
-                var extraDatalist = new List<RecFileInfo>();
-                ret = (ErrCode)cmd.SendGetRecInfoList(list.Select(info => info.ID).ToList(), ref extraDatalist);
-                if (ret == ErrCode.CMD_SUCCESS)
-                {
-                    extraDatalist.ForEach(item =>
-                    {
-                        RecFileInfo info;
-                        if (recFileInfo.TryGetValue(item.ID, out info) == true)
-                        {
-                            if (info.HasExtraData == false)
-                            {
-                                info.ProgramInfo = item.ProgramInfo;
-                                info.ErrInfo = item.ErrInfo;
-                                info.IsModifiedErrInfo = false;
-                            }
-                        }
-                    });
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-
-            //読込に失敗しても全て読込済みの扱いにする。
-            foreach (var info in list)
-            {
-                info.HasExtraData = true;
-            }
-
             return ret;
         }
 

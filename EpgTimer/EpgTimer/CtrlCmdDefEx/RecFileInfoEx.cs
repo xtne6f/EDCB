@@ -15,119 +15,6 @@ namespace EpgTimer
             return CommonManager.Create64Key(OriginalNetworkID, TransportStreamID, ServiceID);
         }
 
-        public bool HasExtraData { get; set; }
-        public bool IsModifiedErrInfo { get; set; }
-
-        //使用箇所少ないので、手動でデータ取得させる。
-        //(使用箇所増えるなら、ProgramInfoやErrInfoをプロパティ化して取得させる)
-        public void GetExtraData()
-        {
-            if (this.HasExtraData == false)
-            {
-                var extraRecInfo = new RecFileInfo();
-                if (CommonManager.Instance.CtrlCmd.SendGetRecInfo(this.ID, ref extraRecInfo) == ErrCode.CMD_SUCCESS)
-                {
-                    this.ProgramInfo = extraRecInfo.ProgramInfo;
-                    this.ErrInfo = extraRecInfo.ErrInfo;
-                    this.HasExtraData = true;
-                    this.IsModifiedErrInfo = false;
-                }
-            }
-            CountCriticalDrops();
-        }
-
-        public bool HasErrPackets { get { return this.Drops != 0 || this.Scrambles != 0; } }
-        private long dropsCritical = 0;
-        public long DropsCritical
-        {
-            get
-            {
-                if (this.Drops == 0) return 0;
-                CountCriticalDrops2();
-                return dropsCritical;
-            }
-        }
-        private long scramblesCritical = 0;
-        public long ScramblesCritical
-        {
-            get
-            {
-                if (this.Scrambles == 0) return 0;
-                CountCriticalDrops2();
-                return scramblesCritical;
-            }
-        }
-        private void CountCriticalDrops2()
-        {
-            if (IsModifiedErrInfo == true) return;
-
-            RecFileInfo refrence;
-            if (CommonManager.Instance.DB.RecFileInfo.TryGetValue(this.ID, out refrence) == true)
-            {
-                if (refrence.HasExtraData == false)
-                {
-                    //CheckCriticalDropsは通常連続して呼び出されるので、必要なデータをまとめて取得しておく
-                    CommonManager.Instance.DB.ReadRecFileExtraData();
-                }
-                //(現在は無いが)インスタンスがコピーだった場合に問題が起きないようにする。
-                if (this != refrence)
-                {
-                    this.ProgramInfo = refrence.ProgramInfo;
-                    this.ErrInfo = refrence.ErrInfo;
-                    this.HasExtraData = refrence.HasExtraData;
-                    this.dropsCritical = refrence.dropsCritical;
-                    this.scramblesCritical = refrence.scramblesCritical;
-                    this.IsModifiedErrInfo = refrence.IsModifiedErrInfo;
-                }
-            }
-
-            CountCriticalDrops();
-        }
-        private void CountCriticalDrops()
-        {
-            if (IsModifiedErrInfo == true) return;
-
-            IsModifiedErrInfo = true;
-            if (string.IsNullOrEmpty(this.ErrInfo) == false)
-            {
-                try
-                {
-                    dropsCritical = 0;
-                    scramblesCritical = 0;
-                    var newInfo = new StringBuilder("");
-
-                    string[] lines = this.ErrInfo.Split(new char[] { '\n' });
-                    foreach (string line1 in lines)
-                    {
-                        string line_new = line1;
-                        if (line1.StartsWith("PID:") == true)
-                        {
-                            string[] words = line1.Split(new char[] { ' ', ':' }, StringSplitOptions.RemoveEmptyEntries);
-                            //デフォルト { "EIT", "NIT", "CAT", "SDT", "SDTT", "TOT", "ECM", "EMM" }
-                            if (Settings.Instance.RecInfoDropExclude.FirstOrDefault(s => words[8].Contains(s)) == null)
-                            {
-                                dropsCritical += (Int64)Convert.ToUInt64(words[5]);
-                                scramblesCritical += (Int64)Convert.ToUInt64(words[7]);
-                                line_new = line1.Replace(" " + words[8], "*" + words[8]);
-                            }
-                        }
-                        newInfo.Append(line_new.TrimEnd('\r') + "\r\n");//単に\n付けるだけでも良いが、一応"\r\n"に確定させる
-                    }
-
-                    newInfo.AppendFormat("                              * = Critical Drop/Scramble Parameter.\r\n");
-                    newInfo.AppendFormat("                              Drop:{0,9}  Scramble:{1,10}  Total\r\n", this.Drops, this.Scrambles);
-                    newInfo.AppendFormat("                              Drop:{0,9}  Scramble:{1,10} *Critical\r\n", this.dropsCritical, this.scramblesCritical);
-                    this.ErrInfo = newInfo.ToString();
-
-                    return;
-                }
-                catch { }//エラーがあったときは、ラストへ
-            }
-
-            dropsCritical = this.Drops;
-            scramblesCritical = this.Scrambles;
-        }
-
         //簡易ステータス
         public RecEndStatusBasic RecStatusBasic
         {
@@ -185,6 +72,15 @@ namespace EpgTimer
             return CommonManager.Instance.DB.ManualAutoAddList.Values.GetAutoAddList(IsEnabled)
                 .FindAll(data => data.CheckPgHit(this) == true);
         }
+
+        //AppendData 関係。ID(元データ)に対して一意の情報なので、データ自体はDB側。
+        private RecFileInfoAppend Append1 { get { return CommonManager.Instance.DB.GetRecFileAppend(this, false); } }
+        private RecFileInfoAppend Append2 { get { return CommonManager.Instance.DB.GetRecFileAppend(this, true); } }
+        public string ProgramInfo       { get { return Append1.ProgramInfo; } }
+        public string ErrInfo           { get { return Append1.ErrInfo; } }
+        public bool HasErrPackets       { get { return this.Drops != 0 || this.Scrambles != 0; } }
+        public long DropsCritical       { get { return this.Drops == 0 ? 0 : Append2.DropsCritical; } }
+        public long ScramblesCritical   { get { return this.Scrambles == 0 ? 0 : Append2.ScramblesCritical; } }
     }
 
     public static class RecFileInfoEx
@@ -210,11 +106,11 @@ namespace EpgTimer
             dest.Comment = src.Comment;
             dest.Drops = src.Drops;
             dest.DurationSecond = src.DurationSecond;
-            dest.ErrInfo = src.ErrInfo;
+            dest._ErrInfo = src._ErrInfo;
             dest.EventID = src.EventID;
             dest.ID = src.ID;
             dest.OriginalNetworkID = src.OriginalNetworkID;
-            dest.ProgramInfo = src.ProgramInfo;
+            dest._ProgramInfo = src._ProgramInfo;
             dest.ProtectFlag = src.ProtectFlag;
             dest.RecFilePath = src.RecFilePath;
             dest.RecStatus = src.RecStatus;
@@ -226,6 +122,62 @@ namespace EpgTimer
             dest.Title = src.Title;
             dest.TransportStreamID = src.TransportStreamID;
         }
+    }
 
+    public class RecFileInfoAppend
+    {
+        public bool IsValid { get { return ProgramInfo != null; } }
+        public string ProgramInfo { get; protected set; }
+        public string ErrInfo { get; protected set; }
+        public long DropsCritical { get; protected set; }
+        public long ScramblesCritical { get; protected set; }
+
+        public RecFileInfoAppend(RecFileInfo info, bool isValid = true)
+        {
+            if (isValid == true)
+            {
+                ProgramInfo = info._ProgramInfo;
+                ErrInfo = info._ErrInfo;
+            }
+
+            if (string.IsNullOrEmpty(ErrInfo) == false)
+            {
+                try
+                {
+                    DropsCritical = 0;
+                    ScramblesCritical = 0;
+                    var newInfo = new StringBuilder("");
+
+                    string[] lines = ErrInfo.Split(new char[] { '\n' });
+                    foreach (string line1 in lines)
+                    {
+                        string line_new = line1;
+                        if (line1.StartsWith("PID:") == true)
+                        {
+                            string[] words = line1.Split(new char[] { ' ', ':' }, StringSplitOptions.RemoveEmptyEntries);
+                            //デフォルト { "EIT", "NIT", "CAT", "SDT", "SDTT", "TOT", "ECM", "EMM" }
+                            if (Settings.Instance.RecInfoDropExclude.FirstOrDefault(s => words[8].Contains(s)) == null)
+                            {
+                                DropsCritical += (Int64)Convert.ToUInt64(words[5]);
+                                ScramblesCritical += (Int64)Convert.ToUInt64(words[7]);
+                                line_new = line1.Replace(" " + words[8], "*" + words[8]);
+                            }
+                        }
+                        newInfo.Append(line_new.TrimEnd('\r') + "\r\n");//単に\n付けるだけでも良いが、一応"\r\n"に確定させる
+                    }
+
+                    newInfo.AppendFormat("                              * = Critical Drop/Scramble Parameter.\r\n");
+                    newInfo.AppendFormat("                              Drop:{0,9}  Scramble:{1,10}  Total\r\n", info.Drops, info.Scrambles);
+                    newInfo.AppendFormat("                              Drop:{0,9}  Scramble:{1,10} *Critical\r\n", DropsCritical, ScramblesCritical);
+                    ErrInfo = newInfo.ToString();
+
+                    return;
+                }
+                catch { }//エラーがあったときは、ラストへ
+            }
+
+            DropsCritical = info.Drops;
+            ScramblesCritical = info.Scrambles;
+        }
     }
 }

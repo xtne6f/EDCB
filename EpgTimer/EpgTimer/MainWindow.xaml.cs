@@ -470,6 +470,7 @@ namespace EpgTimer
             }
 
             bool connected = false;
+            CommonManager.Instance.DB.ClearRecFileAppend(true);
             try
             {
                 foreach (var address in System.Net.Dns.GetHostAddresses(Settings.Instance.NWServerIP))
