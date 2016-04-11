@@ -3908,6 +3908,7 @@ interpret_uri(struct mg_connection *conn,   /* in: request */
 				if (mg_stat(conn, gz_path, filep)) {
 					if (filep) {
 						filep->gzipped = 1;
+						*is_found = 1;
 					}
 					/* Currently gz files can not be scripts. */
 					return;
@@ -9827,6 +9828,7 @@ static void *worker_thread_run(void *thread_func_param)
 #if defined(_WIN32) && !defined(__SYMBIAN32__)
 	CloseHandle(tls.pthread_cond_helper_mutex);
 #endif
+	pthread_mutex_destroy(&conn->mutex);
 	mg_free(conn);
 
 	DEBUG_TRACE("%s", "exiting");
