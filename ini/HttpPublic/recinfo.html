@@ -10,7 +10,7 @@ ct=[=[
 ]=]
 
 edcb.htmlEscape=15
-a=edcb.GetRecFileInfo()
+a=edcb.GetRecFileInfoBasic and edcb.GetRecFileInfoBasic() or edcb.GetRecFileInfo()
 table.sort(a, function(a,b) return os.time(a.startTime) > os.time(b.startTime) end)
 pageIndex=0+(mg.get_var(mg.request_info.query_string,'page') or 0)
 for i=1,(#a+PAGE_COUNT-1)/PAGE_COUNT do

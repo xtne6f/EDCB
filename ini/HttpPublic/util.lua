@@ -103,3 +103,20 @@ function RecSettingTemplate(rs)
   s=s..'</table><br>\n'
   return s
 end
+
+--可能ならコンテンツをzlib圧縮する(lua-zlib(zlib.dll)が必要)
+function Deflate(ct)
+  local zl
+  for k,v in pairs(mg.request_info.http_headers) do
+    if k:match('^[Aa]ccept%-[Ee]ncoding$') and v:find('deflate') then
+      local status, zlib = pcall(require, 'zlib')
+      if status then
+        zl=zlib.deflate()(ct, 'finish')
+      end
+    elseif k:match('^[Uu]ser%-[Aa]gent$') and (v:find(' MSIE ') or v:find(' Trident/7%.')) then
+      --IEのdeflate対応は腐っているので弾く
+      return nil
+    end
+  end
+  return zl
+end

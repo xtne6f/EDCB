@@ -18,6 +18,9 @@ BACK_COLOR={
   'White',
   'WhiteSmoke'
 }
+
+dofile(mg.document_root..'\\util.lua')
+
 ct=[=[
 <!doctype html><html lang="ja">
 <head>
@@ -53,16 +56,13 @@ for i,v in ipairs(edcb.GetServiceList() or {}) do
      tab==3 and v.onid~=4 and v.onid~=6 and v.onid~=7 and (v.onid<0x7880 or 0x7FE8<v.onid)) then
     table.insert(st, v)
     st[#st].et={}
-    for j,w in ipairs(edcb.EnumEventInfo({{onid=v.onid, tsid=v.tsid, sid=v.sid}}) or {}) do
-      if w.startTime then
-        startTime=os.time(w.startTime)
-        minTime=minTime and startTime>minTime and minTime or startTime
-        maxTime=maxTime and startTime<maxTime and maxTime or startTime
-        if baseTime+date*24*3600<=startTime and startTime<baseTime+((date+1)*24+1)*3600 then
-          table.insert(st[#st].et, w)
-        end
-      end
+    mmt=edcb.GetEventMinMaxTime(v.onid, v.tsid, v.sid)
+    if mmt then
+      minTime=minTime and os.time(mmt.minTime)>minTime and minTime or os.time(mmt.minTime)
+      maxTime=maxTime and os.time(mmt.maxTime)<maxTime and maxTime or os.time(mmt.maxTime)
     end
+    --表示範囲の番組だけ取得する
+    st[#st].et=edcb.EnumEventInfo({{onid=v.onid, tsid=v.tsid, sid=v.sid}}, {startTime=os.date('*t',baseTime+date*24*3600), durationSecond=25*3600}) or {}
     table.sort(st[#st].et, function(a,b) return os.time(a.startTime)<os.time(b.startTime) end)
   end
 end
@@ -138,7 +138,7 @@ table.insert(ctt, '</tr>\n'..rowTail..[=[
 </body>
 </html>
 ]=])
-cl=0
-for i,v in ipairs(ctt) do cl=cl+#v end
-mg.write('HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: '..cl..(mg.keep_alive(true) and '' or '\r\nConnection: close')..'\r\n\r\n')
-for i,v in ipairs(ctt) do mg.write(v) end
+ct=table.concat(ctt)
+zl=Deflate(ct)
+mg.write('HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n'..(zl and 'Content-Encoding: deflate\r\n' or '')
+  ..'Content-Length: '..(zl and #zl or #ct)..(mg.keep_alive(true) and '' or '\r\nConnection: close')..'\r\n\r\n', zl or ct)
