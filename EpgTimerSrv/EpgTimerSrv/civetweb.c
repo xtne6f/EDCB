@@ -1272,24 +1272,23 @@ const struct mg_option *mg_get_valid_options(void) { return config_options; }
 
 static int is_file_in_memory(struct mg_connection *conn,
                              const char *path,
-                             struct file *filep)
+                             const char **membufp,
+                             uint64_t *sizep)
 {
+	const char *membuf;
 	size_t size = 0;
-	if (!conn || !filep) {
+	if (!conn || !membufp || !sizep) {
 		return 0;
 	}
 
-	filep->last_modified = (time_t)0;
-
-	if ((filep->membuf =
+	if ((membuf =
 	         conn->ctx->callbacks.open_file == NULL
 	             ? NULL
 	             : conn->ctx->callbacks.open_file(conn, path, &size)) != NULL) {
-		/* NOTE: override filep->size only on success. Otherwise, it might
-		 * break constructs like if (!mg_stat() || !mg_fopen()) ... */
-		filep->size = size;
+		*membufp = membuf;
+		*sizep = size;
 	}
-	return filep->membuf != NULL;
+	return membuf != NULL;
 }
 
 static int is_file_opened(const struct file *filep)
@@ -1309,8 +1308,11 @@ static int mg_fopen(struct mg_connection *conn,
 	if (!filep) {
 		return 0;
 	}
+	/* Either fp or membuf must be NULL */
+	filep->fp = NULL;
+	filep->membuf = NULL;
 
-	if (!is_file_in_memory(conn, path, filep)) {
+	if (!is_file_in_memory(conn, path, &filep->membuf, &filep->size)) {
 #ifdef _WIN32
 		wchar_t wbuf[PATH_MAX], wmode[20];
 		to_unicode(path, wbuf, ARRAY_SIZE(wbuf));
@@ -2441,7 +2443,8 @@ mg_stat(struct mg_connection *conn, const char *path, struct file *filep)
 	}
 	memset(filep, 0, sizeof(*filep));
 
-	if (conn && is_file_in_memory(conn, path, filep)) {
+	if (conn && is_file_in_memory(conn, path, &filep->membuf, &filep->size)) {
+		/* membuf has size field only, last_modified is always Epoch. */
 		return 1;
 	}
 
@@ -2835,7 +2838,8 @@ mg_stat(struct mg_connection *conn, const char *path, struct file *filep)
 	}
 	memset(filep, 0, sizeof(*filep));
 
-	if (conn && is_file_in_memory(conn, path, filep)) {
+	if (conn && is_file_in_memory(conn, path, &filep->membuf, &filep->size)) {
+		/* membuf has size field only, last_modified is always Epoch. */
 		return 1;
 	}
 
