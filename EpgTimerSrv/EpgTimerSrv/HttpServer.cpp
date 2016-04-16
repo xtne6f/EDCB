@@ -68,6 +68,8 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, int (*initProc)(lua_Stat
 	Format(numThreads, "%d", min(max(op.numThreads, 1), 50));
 	string requestTimeout;
 	Format(requestTimeout, "%d", max(op.requestTimeout, 1));
+	string sslProtocolVersion;
+	Format(sslProtocolVersion, "%d", op.sslProtocolVersion);
 
 	//í«â¡ÇÃMIMEÉ^ÉCÉv
 	CParseContentTypeText contentType;
@@ -87,9 +89,10 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, int (*initProc)(lua_Stat
 		"document_root", rootPathU.c_str(),
 		"num_threads", numThreads.c_str(),
 		"request_timeout_ms", requestTimeout.c_str(),
+		"ssl_protocol_version", sslProtocolVersion.c_str(),
 		"lua_script_pattern", "**.lua$|**.html$|*/api/*$",
 	};
-	int opCount = 2 * 8;
+	int opCount = 2 * 9;
 	if( op.saveLog ){
 		options[opCount++] = "access_log_file";
 		options[opCount++] = accessLogPath.c_str();

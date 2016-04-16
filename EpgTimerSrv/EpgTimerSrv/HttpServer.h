@@ -15,6 +15,7 @@ public:
 		std::wstring authenticationDomain;
 		int numThreads;
 		int requestTimeout;
+		int sslProtocolVersion;
 		bool keepAlive;
 		bool saveLog;
 	};
