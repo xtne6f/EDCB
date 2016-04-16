@@ -765,6 +765,16 @@ typedef struct ssl_st SSL;
 typedef struct ssl_method_st SSL_METHOD;
 typedef struct ssl_ctx_st SSL_CTX;
 
+#define SSL_CTRL_OPTIONS (32)
+#define SSL_CTRL_CLEAR_OPTIONS (77)
+
+#define SSL_OP_ALL (0x80000BFFL)
+#define SSL_OP_NO_SSLv2 (0x01000000L)
+#define SSL_OP_NO_SSLv3 (0x02000000L)
+#define SSL_OP_NO_TLSv1	(0x04000000L)
+#define SSL_OP_NO_TLSv1_2 (0x08000000L)
+#define SSL_OP_NO_TLSv1_1 (0x10000000L)
+
 struct ssl_func {
 	const char *name;  /* SSL function name */
 	void (*ptr)(void); /* Function pointer */
@@ -795,6 +805,12 @@ struct ssl_func {
 #define SSL_pending (*(int (*)(SSL *))ssl_sw[18].ptr)
 #define SSL_CTX_set_verify (*(void (*)(SSL_CTX *, int, int))ssl_sw[19].ptr)
 #define SSL_shutdown (*(int (*)(SSL *))ssl_sw[20].ptr)
+#define SSL_CTX_ctrl                                                           \
+	(*(long (*)(SSL_CTX *, int, long, void *))ssl_sw[21].ptr)
+#define SSL_CTX_set_options(ctx,op)                                            \
+	SSL_CTX_ctrl((ctx),SSL_CTRL_OPTIONS,(op),NULL)
+#define SSL_CTX_clear_options(ctx,op)                                          \
+	SSL_CTX_ctrl((ctx),SSL_CTRL_CLEAR_OPTIONS,(op),NULL)
 
 #define CRYPTO_num_locks (*(int (*)(void))crypto_sw[0].ptr)
 #define CRYPTO_set_locking_callback                                            \
@@ -829,6 +845,7 @@ static struct ssl_func ssl_sw[] = {{"SSL_free", NULL},
                                    {"SSL_pending", NULL},
                                    {"SSL_CTX_set_verify", NULL},
                                    {"SSL_shutdown", NULL},
+                                   {"SSL_CTX_ctrl", NULL},
                                    {NULL, NULL}};
 
 /* Similar array as ssl_sw. These functions could be located in different
@@ -923,6 +940,7 @@ enum {
 	REWRITE,
 	HIDE_FILES,
 	REQUEST_TIMEOUT,
+	SSL_PROTOCOL_VERSION,
 #if defined(USE_WEBSOCKET)
 	WEBSOCKET_TIMEOUT,
 #endif
@@ -978,6 +996,7 @@ static struct mg_option config_options[] = {
     {"url_rewrite_patterns", CONFIG_TYPE_STRING, NULL},
     {"hide_files_patterns", CONFIG_TYPE_EXT_PATTERN, NULL},
     {"request_timeout_ms", CONFIG_TYPE_NUMBER, "30000"},
+    {"ssl_protocol_version", CONFIG_TYPE_NUMBER, "0"},
 #if defined(USE_WEBSOCKET)
     {"websocket_timeout_ms", CONFIG_TYPE_NUMBER, "30000"},
 #endif
@@ -8988,11 +9007,27 @@ static int initialize_ssl(struct mg_context *ctx)
 	return 1;
 }
 
+static long
+ssl_get_protocol(int version_id)
+{
+	long ret = SSL_OP_ALL;
+	if (version_id > 0)
+		ret |= SSL_OP_NO_SSLv2;
+	if (version_id > 1)
+		ret |= SSL_OP_NO_SSLv3;
+	if (version_id > 2)
+		ret |= SSL_OP_NO_TLSv1;
+	if(version_id > 3)
+		ret |= SSL_OP_NO_TLSv1_1;
+	return ret;
+}
+
 /* Dynamically load SSL library. Set up ctx->ssl_ctx pointer. */
 static int set_ssl_option(struct mg_context *ctx)
 {
 	const char *pem;
 	int callback_ret;
+	int protocol_ver;
 
 	/* If PEM file is not specified and the init_ssl callback
 	 * is not specified, skip SSL initialization. */
@@ -9025,6 +9060,12 @@ static int set_ssl_option(struct mg_context *ctx)
 		mg_cry(fc(ctx), "SSL_CTX_new (server) error: %s", ssl_error());
 		return 0;
 	}
+
+	SSL_CTX_clear_options(ctx->ssl_ctx, SSL_OP_NO_SSLv2 |
+                          SSL_OP_NO_SSLv3 | SSL_OP_NO_TLSv1 |
+                          SSL_OP_NO_TLSv1_1);
+	protocol_ver = atoi(ctx->config[SSL_PROTOCOL_VERSION]);
+	SSL_CTX_set_options(ctx->ssl_ctx, ssl_get_protocol(protocol_ver));
 
 	/* If a callback has been specified, call it. */
 	callback_ret =
