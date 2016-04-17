@@ -281,6 +281,10 @@ namespace EpgTimer.Setting
 
                 buttonItem.Add(new ViewMenuItem("（空白）", false));
                 buttonItem.Add(new ViewMenuItem("設定", false));
+                if (CommonManager.Instance.NWMode == true)
+                {
+                    buttonItem.Add(new ViewMenuItem("再接続", false));
+                }
                 buttonItem.Add(new ViewMenuItem("検索", false));
                 buttonItem.Add(new ViewMenuItem("スタンバイ", false));
                 buttonItem.Add(new ViewMenuItem("休止", false));
@@ -294,6 +298,10 @@ namespace EpgTimer.Setting
 
                 taskItem.Add(new ViewMenuItem("（セパレータ）", false));
                 taskItem.Add(new ViewMenuItem("設定", false));
+                if (CommonManager.Instance.NWMode == true)
+                {
+                    taskItem.Add(new ViewMenuItem("再接続", false));
+                }
                 taskItem.Add(new ViewMenuItem("スタンバイ", false));
                 taskItem.Add(new ViewMenuItem("休止", false));
                 taskItem.Add(new ViewMenuItem("EPG取得", false));
