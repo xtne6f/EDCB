@@ -579,6 +579,7 @@ namespace EpgTimer.Setting
             {
                 "（空白）",
                 "設定",
+                "再接続",
                 "検索",
                 "スタンバイ",
                 "休止",
@@ -597,6 +598,7 @@ namespace EpgTimer.Setting
             {
                 "（セパレータ）",
                 "設定",
+                "再接続",
                 "スタンバイ",
                 "休止",
                 "EPG取得",
