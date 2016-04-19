@@ -232,6 +232,17 @@ namespace EpgTimer
                     }
                 }
 
+                CheckCmdLine();
+
+                if (CommonManager.Instance.NWMode == false)
+                {
+                    //予約一覧の表示に使用したりするのであらかじめ読込んでおく(暫定処置)
+                    CommonManager.Instance.DB.ReloadReserveInfo();
+                    CommonManager.Instance.DB.ReloadEpgAutoAddInfo();
+                    CommonManager.Instance.DB.ReloadManualAutoAddInfo();
+                    CommonManager.Instance.DB.ReloadEpgData();
+                }
+
                 //タスクトレイの表示
                 taskTray = new TaskTrayClass(this);
                 taskTray.Icon = Properties.Resources.TaskIconBlue;
@@ -239,15 +250,6 @@ namespace EpgTimer
                 taskTray.ContextMenuClick += new EventHandler(taskTray_ContextMenuClick);
                 taskTray.Text = GetTaskTrayReserveInfoText();
                 ResetTaskMenu();
-
-                CheckCmdLine();
-
-                if (CommonManager.Instance.NWMode == false)
-                {
-                    //予約一覧の表示に使用したりするのであらかじめ読込んでおく(暫定処置)
-                    CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.EpgData);
-                    CommonManager.Instance.DB.ReloadEpgData();
-                }
             }
             catch (Exception ex)
             {
@@ -504,6 +506,8 @@ namespace EpgTimer
             CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.EpgData);
             CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.PlugInFile);
             CommonManager.Instance.DB.ReloadReserveInfo();
+            CommonManager.Instance.DB.ReloadEpgAutoAddInfo();
+            CommonManager.Instance.DB.ReloadManualAutoAddInfo();
             CommonManager.Instance.DB.ReloadEpgData();
             reserveView.UpdateInfo();
             tunerReserveView.UpdateInfo();
@@ -1340,11 +1344,9 @@ namespace EpgTimer
                     break;
                 case UpdateNotifyItem.AutoAddEpgInfo:
                     {
+                        //使用箇所多いので即取得する。
                         CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.AutoAddEpgInfo);
-                        if (CommonManager.Instance.NWMode == false)
-                        {
-                            CommonManager.Instance.DB.ReloadEpgAutoAddInfo();
-                        }
+                        CommonManager.Instance.DB.ReloadEpgAutoAddInfo();
                         autoAddView.epgAutoAddView.UpdateInfo();
 
                         if (Settings.Instance.DisplayReserveAutoAddMissing == true)
@@ -1358,11 +1360,9 @@ namespace EpgTimer
                     break;
                 case UpdateNotifyItem.AutoAddManualInfo:
                     {
+                        //使用箇所多いので即取得する。
                         CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.AutoAddManualInfo);
-                        if (CommonManager.Instance.NWMode == false)
-                        {
-                            CommonManager.Instance.DB.ReloadManualAutoAddInfo();
-                        }
+                        CommonManager.Instance.DB.ReloadManualAutoAddInfo();
                         autoAddView.manualAutoAddView.UpdateInfo();
 
                         if (Settings.Instance.DisplayReserveAutoAddMissing == true)
