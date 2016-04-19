@@ -174,11 +174,11 @@ namespace EpgTimer
         }
         public List<EpgAutoAddData> GetEpgAutoAddList(bool? IsEnabled = null)
         {
-            return IsEnabled == null ? Append.EpgAutoList : IsEnabled == true ? Append.EpgAutoListEnabled : Append.EpgAutoListEnabled;
+            return IsEnabled == null ? Append.EpgAutoList : IsEnabled == true ? Append.EpgAutoListEnabled : Append.EpgAutoListDisabled;
         }
         public List<ManualAutoAddData> GetManualAutoAddList(bool? IsEnabled = null)
         {
-            return IsEnabled == null ? Append.ManualAutoList : IsEnabled == true ? Append.ManualAutoListEnabled : Append.ManualAutoListEnabled;
+            return IsEnabled == null ? Append.ManualAutoList : IsEnabled == true ? Append.ManualAutoListEnabled : Append.ManualAutoListDisabled;
         }
     }
 
