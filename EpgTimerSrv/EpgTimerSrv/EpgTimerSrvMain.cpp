@@ -11,6 +11,7 @@
 #include "resource.h"
 #include <shellapi.h>
 #include <tlhelp32.h>
+#include <wincrypt.h>
 #include <LM.h>
 #pragma comment (lib, "netapi32.lib")
 
@@ -518,7 +519,18 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 					op = ctx->sys->httpOptions;
 					enableSsdpServer_ = ctx->sys->enableSsdpServer;
 				}
+				if( op.ports.empty() == false && ctx->sys->httpServerRandom.empty() ){
+					HCRYPTPROV prov;
+					if( CryptAcquireContext(&prov, NULL, NULL, PROV_RSA_FULL, 0) ){
+						unsigned __int64 r[4] = {};
+						if( CryptGenRandom(prov, sizeof(r), (BYTE*)r) ){
+							Format(ctx->sys->httpServerRandom, "%016I64x%016I64x%016I64x%016I64x", r[0], r[1], r[2], r[3]);
+						}
+						CryptReleaseContext(prov, 0);
+					}
+				}
 				if( op.ports.empty() == false &&
+				    ctx->sys->httpServerRandom.empty() == false &&
 				    ctx->httpServer.StartServer(op, InitLuaCallback, ctx->sys) &&
 				    enableSsdpServer_ ){
 					//"ddd.xml"‚Ìæ“ª‚©‚ç2KBˆÈ“à‚É"<UDN>uuid:{UUID}</UDN>"‚ª•K—v
@@ -2146,6 +2158,7 @@ int CEpgTimerSrvMain::InitLuaCallback(lua_State* L)
 	LuaHelp::reg_function(L, "GetNotifyUpdateCount", LuaGetNotifyUpdateCount, sys);
 	LuaHelp::reg_function(L, "ListDmsPublicFile", LuaListDmsPublicFile, sys);
 	LuaHelp::reg_int(L, "htmlEscape", 0);
+	LuaHelp::reg_string(L, "serverRandom", sys->httpServerRandom.c_str());
 	lua_setglobal(L, "edcb");
 	return 0;
 }
