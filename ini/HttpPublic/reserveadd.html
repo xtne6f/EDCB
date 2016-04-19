@@ -1,3 +1,5 @@
+dofile(mg.document_root..'\\util.lua')
+
 ct=[=[
 <!doctype html><html lang="ja">
 <head>
@@ -7,17 +9,10 @@ ct=[=[
 <body>
 ]=]
 
-post=nil
-if mg.request_info.request_method=='POST' then
-  post=''
-  repeat
-    s=mg.read()
-    post=post..(s or '')
-  until not s
-  if #post~=mg.request_info.content_length then
-    post=nil
-  end
-end
+post=ReadPost()
+
+AssertCsrf(post)
+
 added=false
 if post then
   r={recSetting={}}

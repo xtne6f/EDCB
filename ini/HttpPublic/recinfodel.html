@@ -1,3 +1,5 @@
+dofile(mg.document_root..'\\util.lua')
+
 ct=[=[
 <!doctype html><html lang="ja">
 <head>
@@ -7,7 +9,11 @@ ct=[=[
 <body>
 ]=]
 
-if mg.request_info.request_method=='POST' then
+post=ReadPost()
+
+AssertCsrf(post)
+
+if post then
   edcb.DelRecFileInfo(0+(mg.get_var(mg.request_info.query_string,'id') or 0))
   ct=ct..'録画情報を削除しました'
 end

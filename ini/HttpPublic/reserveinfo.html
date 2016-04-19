@@ -33,8 +33,11 @@ if r then
 
   ct=ct..'<form method="POST" action="reservechg.html?id='..r.reserveID
     ..'"><input type="hidden" name="presetID" value="'..(preset and presetID or 65535)..'">\n'
+    ..'<input type="hidden" name="ctok" value="'..CsrfToken()..'">\n'
     ..RecSettingTemplate(rs)..'<input type="submit" value="変更"></form>\n'
-    ..'<form method="POST" action="reservedel.html?id='..r.reserveID..'"><input type="submit" value="削除"></form>\n'
+    ..'<form method="POST" action="reservedel.html?id='..r.reserveID..'">\n'
+    ..'<input type="hidden" name="ctok" value="'..CsrfToken()..'">\n'
+    ..'<input type="submit" value="削除"></form>\n'
 end
 
 ct=ct..[=[

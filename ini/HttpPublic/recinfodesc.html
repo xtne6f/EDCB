@@ -1,3 +1,5 @@
+dofile(mg.document_root..'\\util.lua')
+
 ct=[=[
 <!doctype html><html lang="ja">
 <head>
@@ -15,7 +17,9 @@ if v then
     ..'結果：'..v.comment..'<br>\nドロップ：'..v.drops..'<br>\nスクランブル：'..v.scrambles..'<br><br>\n'
     ..'<hr>番組情報<hr>\n'..string.gsub(v.programInfo, '\r?\n', '<br>\n')
     ..'<hr>エラーログ<hr>\n'..string.gsub(v.errInfo, '\r?\n', '<br>\n')..'<br>\n'
-    ..'<form method="POST" action="recinfodel.html?id='..v.id..'"><input type="submit" value="削除"></form>\n'
+    ..'<form method="POST" action="recinfodel.html?id='..v.id..'">\n'
+    ..'<input type="hidden" name="ctok" value="'..CsrfToken()..'">\n'
+    ..'<input type="submit" value="削除"></form>\n'
 end
 
 ct=ct..[=[

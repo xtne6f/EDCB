@@ -39,6 +39,7 @@ end
 if aa.searchInfo then
   si=aa.searchInfo
   ct=ct..'<hr>検索条件<hr>\n<form method="POST" action="autoaddepgaddchgkey.html?id='..aa.dataID..'">\n'
+    ..'<input type="hidden" name="ctok" value="'..CsrfToken()..'">\n'
     ..'検索キーワード<input type="text" name="andKey" value="'..si.andKey..'" size="25"><br>\n'
     ..'NOTキーワード<input type="text" name="notKey" value="'..si.notKey..'" size="25"><br>\n'
     ..'<input type="checkbox" name="regExpFlag" value="1"'..(si.regExpFlag and ' checked="checked"' or '')..'>正規表現\n'
@@ -127,7 +128,9 @@ if aa.searchInfo then
   ct=ct..'<input type="submit" value="'..(aa.dataID==0 and '追加' or '変更')..'"></form>\n'
 
   if aa.dataID~=0 then
-    ct=ct..'<form method="POST" action="autoaddepgdelkey.html?id='..aa.dataID..'"><input type="submit" value="削除"></form>\n'
+    ct=ct..'<form method="POST" action="autoaddepgdelkey.html?id='..aa.dataID..'">\n'
+      ..'<input type="hidden" name="ctok" value="'..CsrfToken()..'">\n'
+      ..'<input type="submit" value="削除"></form>\n'
   end
 
   ct=ct..'<form action="autoaddepginfo.html">\n'
