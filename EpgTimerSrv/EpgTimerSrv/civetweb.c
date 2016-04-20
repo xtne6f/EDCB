@@ -2379,6 +2379,24 @@ static void to_unicode(const char *path, wchar_t *wbuf, size_t wbuf_len)
 	}
 }
 
+static int is_existing_long_path(const char *path)
+{
+	wchar_t wpath[PATH_MAX];
+	char buf[PATH_MAX], buf2[PATH_MAX];
+	DWORD len;
+
+	to_unicode(path, wpath, ARRAY_SIZE(wpath));
+	if (WideCharToMultiByte(CP_UTF8, 0, wpath, -1, buf, sizeof(buf), NULL, NULL) != 0) {
+		len = GetLongPathNameW(wpath, wpath, ARRAY_SIZE(wpath));
+		if (len != 0 && len < ARRAY_SIZE(wpath) &&
+		    WideCharToMultiByte(CP_UTF8, 0, wpath, -1, buf2, sizeof(buf2), NULL, NULL) != 0 &&
+		    mg_strcasecmp(buf, buf2) == 0) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
 #if defined(_WIN32_WCE)
 static time_t time(time_t *ptime)
 {
@@ -3886,7 +3904,11 @@ interpret_uri(struct mg_connection *conn,   /* in: request */
 
 		/* Local file path and name, corresponding to requested URI
 		 * is now stored in "filename" variable. */
-		if (mg_stat(conn, filename, filep)) {
+		if (mg_stat(conn, filename, filep)
+#if defined(_WIN32)
+		    && (filep->membuf || is_existing_long_path(filename))
+#endif
+		    ) {
 			/* File exists. Check if it is a script type. */
 			if (0
 #if !defined(NO_CGI)
@@ -3928,7 +3950,11 @@ interpret_uri(struct mg_connection *conn,   /* in: request */
 		    NULL) {
 			if (strstr(accept_encoding, "gzip") != NULL) {
 				snprintf(gz_path, sizeof(gz_path), "%s.gz", filename);
-				if (mg_stat(conn, gz_path, filep)) {
+				if (mg_stat(conn, gz_path, filep)
+#if defined(_WIN32)
+				    && (filep->membuf || is_existing_long_path(gz_path))
+#endif
+				    ) {
 					if (filep) {
 						filep->gzipped = 1;
 						*is_found = 1;
@@ -3958,7 +3984,11 @@ interpret_uri(struct mg_connection *conn,   /* in: request */
 				         filename) > 0
 #endif
 				     ) &&
-				    mg_stat(conn, filename, filep)) {
+				    mg_stat(conn, filename, filep)
+#if defined(_WIN32)
+				    && (filep->membuf || is_existing_long_path(filename))
+#endif
+				    ) {
 					/* Shift PATH_INFO block one character right, e.g.
 					 * "/x.cgi/foo/bar\x00" => "/x.cgi\x00/foo/bar\x00"
 					 * conn->path_info is pointing to the local variable "path"
