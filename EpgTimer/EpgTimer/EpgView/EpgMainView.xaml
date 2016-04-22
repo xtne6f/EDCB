@@ -6,27 +6,22 @@
              mc:Ignorable="d" 
              xmlns:local="clr-namespace:EpgTimer.EpgView"
              d:DesignHeight="300" d:DesignWidth="300" IsVisibleChanged="UserControl_IsVisibleChanged">
-    <UserControl.Resources>
-        <Style TargetType="{x:Type TextBox}">
-            <Setter Property="InputMethod.PreferredImeState" Value="Off" />
-        </Style>
-    </UserControl.Resources>
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="40" />
+            <RowDefinition Height="auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
         <local:DateView Grid.Row="0" x:Name="dateView" MouseRightButtonUp="button_erea_MouseRightButtonUp" />
         <Grid Grid.Row="1" Name="grid_PG">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="40" />
+                <ColumnDefinition Width="auto" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
-                <RowDefinition Height="40" />
+                <RowDefinition Height="auto" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
-            <Button Content="現在" Grid.Row="0" Grid.Column="0" Name="button_now" MouseRightButtonUp="button_erea_MouseRightButtonUp" />
+            <Button Grid.Row="0" Grid.Column="0" Name="button_now" Content="現在" Padding="1" VerticalAlignment="Stretch" MouseRightButtonUp="button_erea_MouseRightButtonUp" />
             <local:TimeView Grid.Row="1" x:Name="timeView" Margin="0,0,0,18" MouseRightButtonUp="button_erea_MouseRightButtonUp" />
             <local:ServiceView Grid.Column="1" x:Name="serviceView" Margin="0,0,18,0" MouseRightButtonUp="button_erea_MouseRightButtonUp" />
             <local:ProgramView Grid.Column="1" Grid.Row="1" x:Name="epgProgramView" />

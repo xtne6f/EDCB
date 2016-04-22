@@ -48,6 +48,7 @@ namespace EpgTimer.EpgView
                 while (itemTime < endTime)
                 {
                     Button day = new Button();
+                    day.Padding = new Thickness(1);
                     day.Width = 120;
                     day.Content = itemTime.ToString("M/d(ddd)");
                     if (itemTime.DayOfWeek == DayOfWeek.Saturday)
@@ -66,6 +67,7 @@ namespace EpgTimer.EpgView
                     for (int i = 6; i <= 18; i += 6)
                     {
                         Button hour_btn = new Button();
+                        hour_btn.Padding = new Thickness(1);
                         hour_btn.Width = 40;
                         hour_btn.Content = itemTime.ToString(i.ToString() + "時");
                         hour_btn.DataContext = itemTime.AddHours(i);
