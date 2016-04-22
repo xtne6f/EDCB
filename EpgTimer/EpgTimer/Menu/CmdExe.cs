@@ -273,6 +273,7 @@ namespace EpgTimer
         protected virtual void mcs_JumpTab(CtxmCode code, bool reserveOnly = false, bool onReserveOnly = false)
         {
             ReserveData resinfo = mcs_GetNextReserve();
+            reserveOnly |= onReserveOnly;
             if (reserveOnly && resinfo == null) return;
             if (onReserveOnly && resinfo.IsEnabled == false) return;
 

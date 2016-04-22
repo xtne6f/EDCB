@@ -421,6 +421,7 @@ namespace EpgTimer
             {
                 SearchItem item = lstCtrl.SelectSingleItem();
 
+                reserveOnly |= onReserveOnly;
                 if (reserveOnly && item.IsReserved == false) return;
                 if (onReserveOnly && item.ReserveInfo.IsEnabled == false) return;
 
