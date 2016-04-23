@@ -68,6 +68,7 @@ namespace EpgTimer.EpgView
                         item.Background = ColorDef.GradientBrush(backgroundColor, 0.8);
                     }
 
+                    item.Padding = new Thickness(0, 0, 0, 2);
                     item.Margin = new Thickness(1, 1, 1, 1);
                     item.TextAlignment = TextAlignment.Center;
                     item.FontSize = 12;

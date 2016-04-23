@@ -8,17 +8,22 @@
              d:DesignHeight="300" d:DesignWidth="300" IsVisibleChanged="UserControl_IsVisibleChanged">
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="45" />
+            <RowDefinition Height="auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <ComboBox Height="24" HorizontalAlignment="Left" Margin="40,12,0,0" Name="comboBox_service" VerticalAlignment="Top" Width="227" SelectionChanged="comboBox_service_SelectionChanged" />
+        <StackPanel Name="Spacer" Visibility="Hidden">
+            <Button Content="" Padding="1"/>
+            <Button Content="" Padding="1"/>
+        </StackPanel>
+        <ComboBox Height="23" HorizontalAlignment="Left" Margin="40,0,0,0" Name="comboBox_service" VerticalAlignment="Center" Width="227" SelectionChanged="comboBox_service_SelectionChanged" />
+        <Button Content="標準モード" Height="23" HorizontalAlignment="Left" Margin="273,0,0,0" Name="button_go_Main" VerticalAlignment="Center" Width="66" />
         <Grid Grid.Row="1" Name="grid_PG">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="40" />
+                <ColumnDefinition Width="auto" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
-                <RowDefinition Height="40" />
+                <RowDefinition Height="auto" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
             <Button Content="現在" Grid.Row="0" Grid.Column="0" Name="button_now" MouseRightButtonUp="button_erea_MouseRightButtonUp" />
@@ -26,6 +31,5 @@
             <local:WeekDayView Grid.Column="1" x:Name="weekDayView" Margin="0,0,18,0" MouseRightButtonUp="button_erea_MouseRightButtonUp" />
             <local:ProgramView Grid.Column="1" Grid.Row="1" x:Name="epgProgramView" />
         </Grid>
-        <Button Content="標準モード" Height="23" HorizontalAlignment="Left" Margin="273,12,0,0" Name="button_go_Main" VerticalAlignment="Top" Width="66" />
     </Grid>
 </local:EpgMainViewBase>

@@ -45,6 +45,7 @@ namespace EpgTimer.EpgView
                     item.Text += "\r\n" + info.network_name + " " + info.SID.ToString();
                 }
                 item.Width = Settings.Instance.ServiceWidth - 2;
+                item.Padding = new Thickness(0, 0, 0, 2);
                 item.Margin = new Thickness(1, 1, 1, 1);
                 item.Background = CommonManager.Instance.CustServiceColor;
                 item.Foreground = Brushes.White;

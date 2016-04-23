@@ -6,6 +6,7 @@
              mc:Ignorable="d" 
              d:DesignHeight="300" d:DesignWidth="300">
     <Grid>
+        <TextBlock Name="Spacer" Text="14/04" Margin="1,1,1,0" Padding="2,0,2,0" Visibility="Hidden"/>
         <ScrollViewer Name="scrollViewer" VerticalScrollBarVisibility="Hidden" PreviewMouseWheel="scrollViewer_PreviewMouseWheel">
             <StackPanel Name="stackPanel_time" Background="White" />
         </ScrollViewer>            
