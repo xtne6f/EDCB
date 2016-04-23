@@ -186,7 +186,7 @@ namespace EpgTimer
                 this.listBox_Setting.ItemsSource = null;//初期化ボタンでSetData()使うとき用のリセット。
                 this.comboBoxViewSelect.ItemsSource = MenuCodeToTitle;
                 this.comboBoxViewSelect.SelectedIndex = -1; //初期化ボタンでSetData()使うとき用のリセット。
-                this.comboBoxViewSelect.SelectedIndex = 0; //これでSelectionChanged発生する
+                this.comboBoxViewSelect.SelectedIndex = 7; //これでSelectionChanged発生する
             }
             catch (Exception ex)
             {
