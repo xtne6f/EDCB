@@ -147,6 +147,21 @@ namespace EpgTimer
                 return ManualAutoAddInfo.stationName;
             }
         }
+        public override String ConvertInfoText()
+        {
+            if (ManualAutoAddInfo == null) return "";
+            //
+            String view = "";
+            view += "番組名 : " + EventName + "\r\n";
+            view += "曜日 : " + DayOfWeek + "\r\n";
+            view += "時間 : " + CommonManager.ConvertTimeText(ManualAutoAddInfo.PgStartTime, ManualAutoAddInfo.durationSecond, true, false, true, true) + "\r\n";
+            view += "サービス : " + ServiceName + "(" + NetworkName + ")" + "\r\n";
+            view += "自動登録 : " + (KeyEnabled == true ? "有効" : "無効");
+
+
+            view += "\r\n\r\n" + ConvertRecSettingText();
+            return view;
+        }
     }
 
 }

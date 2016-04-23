@@ -105,7 +105,6 @@ namespace EpgTimer
         {
             return CommonManager.Instance.ConvertTextSearchString(EventName);
         }
-        public virtual TextBlock ToolTipView { get { return null; } }
         public virtual bool KeyEnabled
         {
             set
@@ -119,6 +118,16 @@ namespace EpgTimer
                 return _data.IsEnabled;
             }
         }
+        public virtual TextBlock ToolTipView
+        {
+            get
+            {
+                if (Settings.Instance.NoToolTip == true) return null;
+                //
+                return mutil.GetTooltipBlockStandard(ConvertInfoText());
+            }
+        }
+        public virtual String ConvertInfoText() { return ""; }
         public SolidColorBrush ForeColor
         {
             get
@@ -157,8 +166,24 @@ namespace EpgTimer
         public AutoAddDataItemT(T item) : base(item) { }
     }
 
-    public static class AutoDataItemEx
+    public static class AutoAddDataItemEx
     {
+        public static AutoAddDataItem CreateIncetance(AutoAddData data)
+        {
+            if (data is EpgAutoAddData)
+            {
+                return new EpgAutoDataItem(data as EpgAutoAddData);
+            }
+            else if (data is ManualAutoAddData)
+            {
+                return new ManualAutoAddDataItem(data as ManualAutoAddData);
+            }
+            else
+            {
+                return new AutoAddDataItem(data);
+            }
+        }
+
         public static List<T> AutoAddInfoList<T>(this IEnumerable<AutoAddDataItemT<T>> itemlist) where T : AutoAddData
         {
             return itemlist.Where(item => item != null).Select(item => (T)item.Data).ToList();
@@ -249,13 +274,12 @@ namespace EpgTimer
                 List<string> networkKeyList1 = new List<string>();
                 foreach (ulong service1 in this.EpgAutoAddInfo.searchInfo.serviceList)
                 {
-                    string network1 = "(x_x)";
+                    string network1 = "?";
                     ChSet5Item chSet5Item1;
                     if (ChSet5.Instance.ChList.TryGetValue(service1, out chSet5Item1) == true)
                     {
                         network1 = CommonManager.ConvertNetworkNameText(chSet5Item1.ONID, true);
                     }
-
                     if (networkKeyList1.Contains(network1) == false)
                     {
                         networkKeyList1.Add(network1);
@@ -266,148 +290,60 @@ namespace EpgTimer
                 {
                     view1 = "なし";
                 }
-                return view1.TrimEnd(',');;
+                return view1.TrimEnd(','); ;
             }
-        }
-        /// <summary>
+        }        /// <summary>
         /// NHK総合１・東京、NHKBS1
         /// </summary>
         public override String ServiceName
         {
-            get
-            {
-                if (EpgAutoAddInfo == null) return "";
-                //
-                String view = "";
-                foreach (ulong service1 in EpgAutoAddInfo.searchInfo.serviceList)
-                {
-                    if (view != "") { view += ", "; }
-                    if (ChSet5.Instance.ChList.ContainsKey(service1))
-                    {
-                        view += ChSet5.Instance.ChList[service1].ServiceName;
-                    }
-                    else
-                    {
-                        view += "(x_x)";
-                    }
-                }
-                if (view == "")
-                {
-                    view = "なし";
-                }
-                return view;
-            }
+            get { return _ServiceName(2); }
         }
-        public override TextBlock ToolTipView
+        private String _ServiceName(int count = -1, bool withNetwork = false)
         {
-            get
+            if (EpgAutoAddInfo == null) return "";
+            //
+            String view = "";
+            int countAll = EpgAutoAddInfo.searchInfo.serviceList.Count;
+            foreach (ulong service1 in EpgAutoAddInfo.searchInfo.serviceList.Take(count == -1 ? countAll : count))
             {
-                if (Settings.Instance.NoToolTip == true) return null;
-                //
-                return mutil.GetTooltipBlockStandard(SearchInfoText);
+                if (view != "") { view += ", "; }
+                ChSet5Item chSet5Item1;
+                if (ChSet5.Instance.ChList.TryGetValue(service1, out chSet5Item1) == true)
+                {
+                    view += chSet5Item1.ServiceName + (withNetwork == true ? "(" + CommonManager.ConvertNetworkNameText(chSet5Item1.ONID) + ")" : "");
+                }
+                else
+                {
+                    view += "?" + (withNetwork == true ? "(?)" : "");
+                }
             }
+            if (count != -1 && count < countAll)
+            {
+                view += (view == "" ? "" : ", ") + "他" + (countAll - count);
+            }
+            if (view == "")
+            {
+                view = "なし";
+            }
+            return view;
         }
-        public String SearchInfoText
+        public override String ConvertInfoText()
         {
-            get
-            {
-                if (EpgAutoAddInfo == null) return "";
-                //
-                String view = "";
-                if (EpgAutoAddInfo.searchInfo != null)
-                {
-                    view += "検索条件\r\n";
-                    view += "Andキーワード：" + EventName + "\r\n";
-                    view += "Notキーワード：" + NotKey + "\r\n";
-                    view += "正規表現モード：" + RegExp + "\r\n";
-                    view += "番組名のみ検索対象：" + TitleOnly + "\r\n";
-                    view += "ジャンル絞り込み：" + JyanruKey + "\r\n";
-                    view += "時間絞り込み：" + DateKey + "\r\n";
-                    view += "検索対象サービス：" + ServiceName + "\r\n";
+            if (EpgAutoAddInfo == null) return "";
+            //
+            String view = "";
+            view += "Andキーワード : " + EventName + "\r\n";
+            view += "Notキーワード : " + NotKey + "\r\n";
+            view += "正規表現モード : " + RegExp + "\r\n";
+            view += "番組名のみ検索対象 : " + TitleOnly + "\r\n";
+            view += "自動登録 : " + (KeyEnabled == true ? "有効" : "無効") + "\r\n";
+            view += "ジャンル絞り込み : " + JyanruKey + "\r\n";
+            view += "時間絞り込み : " + DateKey + "\r\n";
+            view += "検索対象サービス : " + _ServiceName(10, true);
 
-                    view += "\r\n";
-                }
-                if (EpgAutoAddInfo.recSetting != null)
-                {
-                    view += "録画設定\r\n";
-                    view += "録画モード：" + RecMode + "\r\n";
-                    view += "優先度：" + Priority + "\r\n";
-                    view += "追従：" + Tuijyu + "\r\n";
-
-                    if ((EpgAutoAddInfo.recSetting.ServiceMode & 0x01) == 0)
-                    {
-                        view += "指定サービス対象データ : デフォルト\r\n";
-                    }
-                    else
-                    {
-                        view += "指定サービス対象データ : ";
-                        if ((EpgAutoAddInfo.recSetting.ServiceMode & 0x10) > 0)
-                        {
-                            view += "字幕含む ";
-                        }
-                        if ((EpgAutoAddInfo.recSetting.ServiceMode & 0x20) > 0)
-                        {
-                            view += "データカルーセル含む";
-                        }
-                        view += "\r\n";
-                    }
-
-                    view += "録画実行bat : " + EpgAutoAddInfo.recSetting.BatFilePath + "\r\n";
-
-                    if (EpgAutoAddInfo.recSetting.RecFolderList.Count == 0)
-                    {
-                        view += "録画フォルダ : デフォルト\r\n";
-                    }
-                    else
-                    {
-                        view += "録画フォルダ : \r\n";
-                        foreach (RecFileSetInfo info in EpgAutoAddInfo.recSetting.RecFolderList)
-                        {
-                            view += info.RecFolder + " (WritePlugIn:" + info.WritePlugIn + ")\r\n";
-                        }
-                    }
-
-                    if (EpgAutoAddInfo.recSetting.UseMargineFlag == 0)
-                    {
-                        view += "録画マージン : デフォルト\r\n";
-                    }
-                    else
-                    {
-                        view += "録画マージン : 開始 " + EpgAutoAddInfo.recSetting.StartMargine.ToString() +
-                            " 終了 " + EpgAutoAddInfo.recSetting.EndMargine.ToString() + "\r\n";
-                    }
-
-                    if (EpgAutoAddInfo.recSetting.SuspendMode == 0)
-                    {
-                        view += "録画後動作 : デフォルト\r\n";
-                    }
-                    else
-                    {
-                        view += "録画後動作 : ";
-                        switch (EpgAutoAddInfo.recSetting.SuspendMode)
-                        {
-                            case 1:
-                                view += "スタンバイ";
-                                break;
-                            case 2:
-                                view += "休止";
-                                break;
-                            case 3:
-                                view += "シャットダウン";
-                                break;
-                            case 4:
-                                view += "何もしない";
-                                break;
-                        }
-                        if (EpgAutoAddInfo.recSetting.RebootFlag == 1)
-                        {
-                            view += " 復帰後再起動する";
-                        }
-                        view += "\r\n";
-                    }
-                }
-                return view;
-            }
+            view += "\r\n\r\n" + ConvertRecSettingText();
+            return view;
         }
         public override Brush BorderBrush
         {

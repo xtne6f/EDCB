@@ -104,11 +104,30 @@ namespace EpgTimer
             get
             {
                 if (Settings.Instance.NoToolTip == true) return null;
-                if (ReserveInfo == null) return mutil.GetTooltipBlockStandard("");
                 //
-                return mutil.GetTooltipBlockStandard(CommonManager.Instance.ConvertReserveText(ReserveInfo));
+                return mutil.GetTooltipBlockStandard(ConvertInfoText());
             }
         }
+        public String ConvertInfoText()
+        {
+            if (ReserveInfo == null) return "";
+            //
+            String view = CommonManager.ConvertTimeText(ReserveInfo.StartTime, ReserveInfo.DurationSecond, false, false, false) + "\r\n";
+            view += ServiceName + "(" + NetworkName + ")" + "\r\n";
+            view += EventName + "\r\n\r\n";
+
+            view += ConvertRecSettingText() + "\r\n";
+            view += "予約状況 : " + Comment;
+            view += "\r\n\r\n";
+
+            view += "OriginalNetworkID : " + ReserveInfo.OriginalNetworkID.ToString() + " (0x" + ReserveInfo.OriginalNetworkID.ToString("X4") + ")\r\n";
+            view += "TransportStreamID : " + ReserveInfo.TransportStreamID.ToString() + " (0x" + ReserveInfo.TransportStreamID.ToString("X4") + ")\r\n";
+            view += "ServiceID : " + ReserveInfo.ServiceID.ToString() + " (0x" + ReserveInfo.ServiceID.ToString("X4") + ")\r\n";
+            view += "EventID : " + ReserveInfo.EventID.ToString() + " (0x" + ReserveInfo.EventID.ToString("X4") + ")";
+
+            return view;
+        }
+
         public override String Status
         {
             get
