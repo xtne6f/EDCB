@@ -454,10 +454,12 @@ namespace EpgTimer
             return cmManualMenuSetting;
         }
 
-        public bool IsGestureEnableOnView(ICommand icmd, CtxmCode code)
+        public bool IsGestureDisableOnView(ICommand icmd, CtxmCode code)
         {
             if (icmd == null) return false;
-            return WorkDelGesCmdList[code].Contains(icmd);
+
+            MenuSettingData.CmdSaveData cmdData = Settings.Instance.MenuSet.EasyMenuItems.Find(data => data.GetCommand() == icmd);
+            return cmdData != null && cmdData.IsGestureEnabled == false || WorkDelGesCmdList[code].Contains(icmd);
         }
 
         public List<ICommand> GetWorkGestureCmdList(CtxmCode code)

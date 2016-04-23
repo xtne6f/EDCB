@@ -23,8 +23,7 @@ namespace EpgTimer
         {
             if (icmd == null) return;
 
-            //メニュー連動により、そのビューで無効になってなければ追加しておく
-            if (mm.IsGestureEnableOnView(icmd, View) == false && AppendGestureCmds.Contains(icmd) == false)
+            if (AppendGestureCmds.Contains(icmd) == false)
             {
                 AppendGestureCmds.Add(icmd);
             }
@@ -59,7 +58,7 @@ namespace EpgTimer
             ICommand icmd = (sender as ICommandSource).Command ;
             CtxmCode code = ((sender as ICommandSource).CommandParameter as EpgCmdParam).Code;
             var obj = sender as FrameworkElement;
-            obj.ToolTip = mm.IsGestureEnableOnView(icmd, code) == true ? null : GetInputGestureText(icmd);
+            obj.ToolTip = mm.IsGestureDisableOnView(icmd, code) == true ? null : GetInputGestureText(icmd);
             obj.ToolTip = obj.ToolTip == null ? "" : obj.ToolTip;
             if (obj.ToolTip as string == "")
             {
@@ -108,6 +107,17 @@ namespace EpgTimer
                     iTrg.InputBindings.AddRange(GetInputBinding(icmd));
                 }
             });
+
+            //残っている無効なジェスチャを削除。誤って追加されたりしたものがあれば、それも削除される。
+            var delBinds = new List<InputBinding>();
+            foreach (var item in iTrg.InputBindings.OfType<InputBinding>())
+            {
+                if (mm.IsGestureDisableOnView(item.Command, View) == true)
+                {
+                    delBinds.Add(item);
+                }
+            }
+            delBinds.ForEach(item => iTrg.InputBindings.Remove(item));
         }
 
         private List<InputBinding> GetInputBinding(ICommand icmd, int id = 0, object data = null)
