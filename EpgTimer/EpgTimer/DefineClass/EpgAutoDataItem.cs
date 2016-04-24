@@ -127,6 +127,10 @@ namespace EpgTimer
                 return mutil.GetTooltipBlockStandard(ConvertInfoText());
             }
         }
+        public virtual TextBlock ToolTipViewAutoAddSearch
+        {
+            get { return mutil.GetTooltipBlockStandard(ConvertInfoText()); }
+        }
         public virtual String ConvertInfoText() { return ""; }
         public SolidColorBrush ForeColor
         {

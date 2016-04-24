@@ -19,6 +19,7 @@ namespace EpgTimer
         DateTime PgStartTime { get; }
         uint PgDurationSecond { get; }
         UInt64 Create64Key();
+        UInt64 Create64PgKey();
     }
 
     public interface IAutoAddTargetData : IBasicPgInfo

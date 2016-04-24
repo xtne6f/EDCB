@@ -41,6 +41,7 @@ namespace EpgTimer
             new List<ICommand>{EpgCmds.JumpTuner},
             new List<ICommand>{EpgCmds.JumpTable},
             new List<ICommand>{EpgCmdsEx.ShowAutoAddDialogMenu},
+            new List<ICommand>{},//オプション用のダミー行
             new List<ICommand>{EpgCmds.ToAutoadd},
             new List<ICommand>{EpgCmds.ReSearch},
             new List<ICommand>{EpgCmds.ReSearch2},
@@ -93,6 +94,7 @@ namespace EpgTimer
                         else if (item is CheckBox)
                         {
                             newItem = new CheckBox();
+                            newItem.Visibility = Visibility.Hidden;
                         }
                         if (newItem != null)
                         {
@@ -155,6 +157,7 @@ namespace EpgTimer
                 checkBox_NoMessageAdjustRes.IsChecked = info.NoMessageAdjustRes;
                 checkBox_CancelAutoAddOff.IsChecked = info.CancelAutoAddOff;
                 checkBox_AutoAddFazySerach.IsChecked = info.AutoAddFazySerach;
+                checkBox_AutoAddSerachToolTip.IsChecked = info.AutoAddSerachToolTip;
                 checkBox_EpgKeyword_Trim.IsChecked = info.Keyword_Trim;
                 checkBox_CopyTitle_Trim.IsChecked = info.CopyTitle_Trim;
                 checkBox_CopyContentBasic.IsChecked = info.CopyContentBasic;
@@ -168,6 +171,8 @@ namespace EpgTimer
 
                 for (int i = 0; i < SettingTable.Count; i++)
                 {
+                    if (SettingTable[i].Count == 0) continue;
+
                     MenuSettingData.CmdSaveData src = info.EasyMenuItems.Find(item => 
                         item.GetCommand() == SettingTable[i][0]);
 
@@ -222,6 +227,7 @@ namespace EpgTimer
                 info.NoMessageAdjustRes = (checkBox_NoMessageAdjustRes.IsChecked == true);
                 info.CancelAutoAddOff = (checkBox_CancelAutoAddOff.IsChecked == true);
                 info.AutoAddFazySerach = (checkBox_AutoAddFazySerach.IsChecked == true);
+                info.AutoAddSerachToolTip = (checkBox_AutoAddSerachToolTip.IsChecked == true);
                 info.ManualMenuItems = editMenu.Clone();
                 info.Keyword_Trim = (checkBox_EpgKeyword_Trim.IsChecked == true);
                 info.CopyTitle_Trim = (checkBox_CopyTitle_Trim.IsChecked == true);
