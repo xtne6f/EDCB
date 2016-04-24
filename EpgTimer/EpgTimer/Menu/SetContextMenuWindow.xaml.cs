@@ -71,17 +71,6 @@ namespace EpgTimer
             try
 	        {
                 //共通設定画面用の設定
-                Action<StackPanel> SetCheckBox = (trg) =>
-                {
-                    foreach (var item in trg.Children.OfType<CheckBox>())
-                    {
-                        item.Height = 15;
-                        item.Margin = new Thickness(6, 0, 0, 0);
-                    }
-                };
-                SetCheckBox(stackPanel_menu);
-                SetCheckBox(stackPanel_option);
-
                 Action<StackPanel, StackPanel> CopyStackItem = (src, trg) =>
                 {
                     foreach (var item in src.Children.OfType<Control>())
