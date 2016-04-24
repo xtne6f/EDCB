@@ -265,6 +265,8 @@ namespace EpgTimer
             recNamePlugInList = new Dictionary<int, string>();
             manualAutoAddList = new Dictionary<uint, ManualAutoAddData>();
             epgAutoAddList = new Dictionary<uint, EpgAutoAddData>();
+            reserveAppendList = null;
+            recFileAppendList = null;
             manualAutoAddAppendList = null;
             epgAutoAddAppendList = null;
         }
