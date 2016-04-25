@@ -100,6 +100,11 @@
                 </DataTemplate>
             </GridViewColumn.CellTemplate>
         </GridViewColumn>
+        <GridViewColumn DisplayMemberBinding="{Binding Path=ReserveTuner}">
+            <GridViewColumn.Header>
+                <GridViewColumnHeader Content="使用予約チューナー" Uid="ReserveTuner" />
+            </GridViewColumn.Header>
+        </GridViewColumn>
     </my:GridViewColumnList>
     
     <my:GridViewColumnList x:Key="RecSettingViewColumns">
