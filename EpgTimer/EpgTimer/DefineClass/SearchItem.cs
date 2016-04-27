@@ -175,6 +175,18 @@ namespace EpgTimer
                 return ReserveInfo.RecFileNameList;
             }
         }
+        public string ReserveTuner
+        {
+            get
+            {
+                if (ReserveInfo == null) return "";
+                //
+                TunerReserveInfo info = CommonManager.Instance.DB.TunerReserveList.Values.Where(r => r.reserveList.Contains(ReserveInfo.ReserveID)).FirstOrDefault();
+                uint tID = info == null ? 0xFFFFFFFF : info.tunerID;
+                string tName = ReserveInfo.IsEnabled == false ? "無効予約" : info == null ? "不明" : info.tunerName;
+                return new TunerSelectInfo(tName, tID).ToString();
+            }
+        }
         public virtual TextBlock ToolTipView
         {
             get

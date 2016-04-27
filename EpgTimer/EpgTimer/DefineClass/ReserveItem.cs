@@ -170,20 +170,5 @@ namespace EpgTimer
                 return CommonManager.Instance.StatResForeColor;
             }
         }
-
-        private string reserveTuner;
-        public string ReserveTuner
-        {
-            get
-            {
-                if (string.IsNullOrEmpty(reserveTuner))
-                {
-                    TunerReserveInfo info = CommonManager.Instance.DB.TunerReserveList.Values.Where(r => r.reserveList.Contains(ReserveInfo.ReserveID)).FirstOrDefault();
-                    reserveTuner = (info == null) ? "(不明)" : info.tunerName;
-                }
-                return reserveTuner;
-            }
-        }
-
     }
 }

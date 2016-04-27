@@ -1032,17 +1032,17 @@ namespace EpgTimer
 
         public String ConvertTunerText(uint tunerID)
         {
+            string tunerName = "";
             TunerReserveInfo info;
-            string retv = "";
-            if (tunerID == 0)
+            if (DB.TunerReserveList.TryGetValue(tunerID, out info))
             {
-                retv = "自動";
+                tunerName = info.tunerName;
             }
-            else if (DB.TunerReserveList.TryGetValue(tunerID, out info))
+            else if (tunerID != 0)
             {
-                retv = new TunerSelectInfo(info.tunerName, tunerID).ToString();
+                tunerName = "不明なチューナー";
             }
-            return retv;
+            return new TunerSelectInfo(tunerName, tunerID).ToString();
         }
 
         public String ConvertViewModeText(int viewMode)
