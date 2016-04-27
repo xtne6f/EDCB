@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Windows;
+using System.IO;
 
 namespace EpgTimer
 {
@@ -17,6 +18,7 @@ namespace EpgTimer
         private bool updatePlugInFile = true;
         private bool noAutoReloadEpg = false;
         private bool oneTimeReloadEpg = false;
+        private bool updateEpgAutoAddAppend = true;
         private bool updateEpgAutoAddAppendReserveInfo = true;
 
         Dictionary<UInt64, EpgServiceEventInfo> serviceEventList = new Dictionary<UInt64, EpgServiceEventInfo>();
@@ -95,39 +97,37 @@ namespace EpgTimer
             if (master == null) return null;
 
             //データ更新は必要になったときにまとめて行う
-            //未使用か、EpgAutoAddData更新により古いデータ廃棄済みでデータが無い場合
-            Dictionary<uint, EpgAutoAddDataAppend> dict = epgAutoAddAppendList;
-            if (dict == null)
+            var dict = epgAutoAddAppendList ?? new Dictionary<uint, EpgAutoAddDataAppend>();
+            if (updateEpgAutoAddAppend == true)
             {
-                dict = new Dictionary<uint, EpgAutoAddDataAppend>();
-                List<EpgAutoAddData> srcList = epgAutoAddList.Values.ToList();
-
-                List<EpgSearchKeyInfo> keyList = srcList.RecSearchKeyList().Clone();
-                keyList.ForEach(key => key.keyDisabledFlag = 0); //無効解除
-
-                try
+                List<EpgAutoAddData> srcList = epgAutoAddList.Values.Where(data => dict.ContainsKey(data.dataID) == false).ToList();
+                if (srcList.Count != 0)
                 {
-                    var list_list = new List<List<EpgEventInfo>>();
-                    cmd.SendSearchPgByKey(keyList, ref list_list);
+                    List<EpgSearchKeyInfo> keyList = srcList.RecSearchKeyList().Clone();
+                    keyList.ForEach(key => key.keyDisabledFlag = 0); //無効解除
 
-                    //通常あり得ないが、コマンド成功にもかかわらず何か問題があった場合は飛ばす
-                    if (srcList.Count == list_list.Count)
+                    try
                     {
-                        int i = 0;
-                        foreach (EpgAutoAddData item in srcList)
+                        var list_list = new List<List<EpgEventInfo>>();
+                        cmd.SendSearchPgByKey(keyList, ref list_list);
+
+                        //通常あり得ないが、コマンド成功にもかかわらず何か問題があった場合は飛ばす
+                        if (srcList.Count == list_list.Count)
                         {
-                            dict.Add(item.dataID, new EpgAutoAddDataAppend(list_list[i++]));
+                            int i = 0;
+                            foreach (EpgAutoAddData item in srcList)
+                            {
+                                dict.Add(item.dataID, new EpgAutoAddDataAppend(list_list[i++]));
+                            }
                         }
+
+                        epgAutoAddAppendList = dict;
                     }
-
-                    epgAutoAddAppendList = dict;
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                    catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
                 }
 
-                updateEpgAutoAddAppendReserveInfo = true;
+                updateEpgAutoAddAppend = false;
+                updateEpgAutoAddAppendReserveInfo = true;//現時刻でのSearchList再作成も含む
             }
 
             //予約情報との突き合わせが古い場合
@@ -146,6 +146,49 @@ namespace EpgTimer
             }
             return retv;
         }
+        public void ClearEpgAutoAddDataAppend(Dictionary<UInt32, EpgAutoAddData> oldList = null)
+        {
+            if (oldList == null) epgAutoAddAppendList = null;
+            if (epgAutoAddAppendList == null) return;
+
+            var xs = new System.Xml.Serialization.XmlSerializer(typeof(EpgSearchKeyInfo));
+            var SearchKey2String = new Func<EpgAutoAddData, string>(epgdata =>
+            {
+                var ms = new MemoryStream();
+                xs.Serialize(ms, epgdata.searchInfo);
+                ms.Seek(0, SeekOrigin.Begin);
+                return new StreamReader(ms).ReadToEnd();
+            });
+
+            //並べ替えによるID変更もあるので、内容ベースでAppendを再利用する。
+            var dicOld = new Dictionary<string, EpgAutoAddDataAppend>();
+            foreach (var info in oldList.Values)
+            {
+                EpgAutoAddDataAppend data;
+                if (epgAutoAddAppendList.TryGetValue(info.dataID, out data) == true)
+                {
+                    string key = SearchKey2String(info);
+                    if (dicOld.ContainsKey(key) == false)
+                    {
+                        dicOld.Add(key, data);
+                    }
+                }
+            }
+            var newAppend = new Dictionary<uint, EpgAutoAddDataAppend>();
+            foreach (var info in epgAutoAddList.Values)
+            {
+                string key = SearchKey2String(info);
+                EpgAutoAddDataAppend append1;
+                if (dicOld.TryGetValue(key, out append1) == true)
+                {
+                    //同一内容の検索が複数ある場合は同じデータを参照することになる。
+                    //特に問題無いはずだが、マズいようなら何か対応する。
+                    newAppend.Add(info.dataID, append1);
+                }
+            }
+            epgAutoAddAppendList = newAppend;
+        }
+
         public ReserveDataAppend GetReserveDataAppend(ReserveData master)
         {
             if (master == null) return null;
@@ -295,6 +338,7 @@ namespace EpgTimer
             {
                 case UpdateNotifyItem.EpgData:
                     updateEpgData = true;
+                    updateEpgAutoAddAppend = true;
                     epgAutoAddAppendList = null;//検索数が変わる。
                     break;
                 case UpdateNotifyItem.ReserveInfo:
@@ -308,7 +352,7 @@ namespace EpgTimer
                     break;
                 case UpdateNotifyItem.AutoAddEpgInfo:
                     updateAutoAddEpgInfo = true;
-                    epgAutoAddAppendList = null;
+                    updateEpgAutoAddAppend = true;
                     reserveAppendList = null;
                     break;
                 case UpdateNotifyItem.AutoAddManualInfo:
@@ -475,6 +519,7 @@ namespace EpgTimer
                     if (cmd == null) return ErrCode.CMD_ERR;
 
                     {
+                        Dictionary<uint, EpgAutoAddData> oldList = epgAutoAddList;
                         epgAutoAddList = new Dictionary<uint, EpgAutoAddData>();
                         List<EpgAutoAddData> list = new List<EpgAutoAddData>();
 
@@ -483,6 +528,7 @@ namespace EpgTimer
 
                         list.ForEach(info => epgAutoAddList.Add(info.dataID, info));
 
+                        ClearEpgAutoAddDataAppend(oldList);
                         updateAutoAddEpgInfo = false;
                     }
                 }

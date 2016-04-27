@@ -1415,6 +1415,8 @@ namespace EpgTimer
                         cmd.SendChgEpgAutoAdd(DB.EpgAutoAddList.Values.ToList());
                     }
                 }
+                //追加データもクリアしておく。
+                DB.ClearEpgAutoAddDataAppend();
 
                 //EPG自動登録とは独立
                 DB.SetUpdateNotify((UInt32)UpdateNotifyItem.AutoAddManualInfo);
