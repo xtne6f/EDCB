@@ -592,6 +592,30 @@ namespace EpgTimer
             autoAddView.UpdateListViewSelection(this.autoAddID);
         }
 
+        public static void UpdatesEpgAutoAddViewOrderChanged(Dictionary<uint, uint> changeIDTable)
+        {
+            foreach (var win in Application.Current.Windows.OfType<SearchWindow>())
+            {
+                win.UpdateEpgAutoAddViewOrderChanged(changeIDTable);
+            }
+        }
+        private void UpdateEpgAutoAddViewOrderChanged(Dictionary<uint, uint> changeIDTable)
+        {
+            if (this.autoAddID == 0) return;
+
+            if (changeIDTable.ContainsKey(this.autoAddID) == false)
+            {
+                //ID無くなった
+                this.autoAddID = 0;
+                SetViewMode(SearchMode.NewAdd);
+            }
+            else
+            {
+                //新しいIDに変更
+                this.autoAddID = changeIDTable[this.autoAddID];
+            }
+        }
+
         /// <summary>番組表などへジャンプした際に最小化したSearchWindow</summary>
         private static SearchWindow hideSearchWindow = null;
         public static bool HasHideSearchWindow { get { return hideSearchWindow != null; } }

@@ -34,14 +34,28 @@ namespace EpgTimer
         protected ListViewController<S> lstCtrl;
         protected CmdExeAutoAdd<T> mc;
 
+        protected virtual void PostProcSaveOrder(Dictionary<uint, uint> changeIDTable) { }
+
         //ドラッグ移動ビュー用の設定
         class lvDragData : ListBoxDragMoverView.LVDMHelper
         {
             private AutoAddViewBaseT<T, S> View;
             public lvDragData(AutoAddViewBaseT<T, S> view) { View = view; }
             public override uint GetID(object data) { return (data as S).Data.DataID; }
-            public override void SetID(object data, uint ID) { (data as S).Data.DataID = ID; }
-            public override bool SaveChange() { return View.mutil.AutoAddChange(View.lstCtrl.dataList.AutoAddInfoList(), false, false, false); }
+            public override bool SaveChange(Dictionary<uint, uint> changeIDTable)
+            {
+                var newList = View.lstCtrl.dataList.Select(item => item.Data.CloneObj() as T).ToList();
+                newList.ForEach(item => item.DataID = changeIDTable[item.DataID]);
+
+                bool ret = View.mutil.AutoAddChange(newList, false, false, false);
+                if (ret == true)
+                {
+                    //dataListと検索ダイアログへのIDの反映。dataListは既にコピーだが、SaveChange成功後に行う
+                    View.lstCtrl.dataList.ForEach(item => item.Data.DataID = changeIDTable[item.Data.DataID]);
+                    View.PostProcSaveOrder(changeIDTable);
+                }
+                return ret;
+            }
             public override bool RestoreOrder() { return View.ReloadInfoData(); }
             public override void ItemMoved() { View.lstCtrl.gvSorter.ResetSortParams(); }
         }
@@ -125,7 +139,7 @@ namespace EpgTimer
                 if (CommonManager.CmdErrMsgTypical(err, "情報の取得", this) == false) return false;
 
                 ICollection values = typeof(T) == typeof(EpgAutoAddData) ? db.EpgAutoAddList.Values as ICollection : db.ManualAutoAddList.Values as ICollection;
-                dataList.AddRange(values.OfType<T>().Select(info => (S)Activator.CreateInstance(typeof(S), info)));
+                dataList.AddRange(values.OfType<T>().Select(info => (S)Activator.CreateInstance(typeof(S), info.CloneObj())));
 
                 dragMover.NotSaved = false;
                 return true;
@@ -163,12 +177,15 @@ namespace EpgTimer
             //初期化の続き
             base.InitAutoAddView();
         }
-
         protected override bool ReloadInfoData()
         {
             bool ret = base.ReloadInfoData();
             SearchWindow.UpdatesEpgAutoAddViewSelection();//行選択の更新
             return ret;
+        }
+        protected override void PostProcSaveOrder(Dictionary<uint, uint> changeIDTable)
+        {
+            SearchWindow.UpdatesEpgAutoAddViewOrderChanged(changeIDTable);
         }
     }
 

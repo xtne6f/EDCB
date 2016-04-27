@@ -36,6 +36,8 @@ namespace EpgTimer
             return null;
         }
 
+        public virtual object CloneObj() { return null; }
+
         //AppendData 関係。ID(元データ)に対して一意の情報なので、データ自体はDB側。
         protected virtual AutoAddDataAppend Append { get { return new AutoAddDataAppend(); } }
         public virtual uint SearchCount { get { return 0; } }
@@ -72,6 +74,8 @@ namespace EpgTimer
             if (data == null) return false;
             return this.GetSearchList().FirstOrDefault(info => info.EventInfo.Create64PgKey() == data.Create64PgKey()) != null;
         }
+
+        public override object CloneObj() { return EpgAutoAddDataEx.Clone(this); }
 
         //EpgAutoAddDataAppend 追加分
         protected override AutoAddDataAppend Append { get { return CommonManager.Instance.DB.GetEpgAutoAddDataAppend(this); } }
@@ -145,7 +149,9 @@ namespace EpgTimer
                 return (byte)(0x3F & ((int)flg >> 1) | ((flg & 0x01) != 0 ? 0x40 : 0x00));
             }
         }
-        
+
+        public override object CloneObj() { return ManualAutoAddDataEx.Clone(this); }
+
         //AutoAddDataAppend
         protected override AutoAddDataAppend Append { get { return CommonManager.Instance.DB.GetManualAutoAddDataAppend(this); } }
         public override uint SearchCount { get { return (uint)CommonUtil.NumBits(dayOfWeekFlag); } }
