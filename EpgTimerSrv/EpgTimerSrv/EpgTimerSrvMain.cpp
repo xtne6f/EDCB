@@ -3186,7 +3186,21 @@ void CEpgTimerSrvMain::PushRecSettingData(CLuaWorkspace& ws, const REC_SETTING_D
 void CEpgTimerSrvMain::PushEpgSearchKeyInfo(CLuaWorkspace& ws, const EPGDB_SEARCH_KEY_INFO& k)
 {
 	lua_State* L = ws.L;
-	LuaHelp::reg_string(L, "andKey", ws.WtoUTF8(k.andKey));
+	wstring andKey = k.andKey;
+	size_t pos = andKey.compare(0, 7, L"^!{999}") ? 0 : 7;
+	pos += andKey.compare(pos, 7, L"C!{999}") ? 0 : 7;
+	int durMin = 0;
+	int durMax = 0;
+	if( andKey.compare(pos, 4, L"D!{1") == 0 ){
+		LPWSTR endp;
+		DWORD dur = wcstoul(andKey.c_str() + pos + 3, &endp, 10);
+		if( endp - andKey.c_str() == pos + 12 && endp[0] == L'}' ){
+			andKey.erase(pos, 13);
+			durMin = dur / 10000 % 10000;
+			durMax = dur % 10000;
+		}
+	}
+	LuaHelp::reg_string(L, "andKey", ws.WtoUTF8(andKey));
 	LuaHelp::reg_string(L, "notKey", ws.WtoUTF8(k.notKey));
 	LuaHelp::reg_boolean(L, "regExpFlag", k.regExpFlag != 0);
 	LuaHelp::reg_boolean(L, "titleOnlyFlag", k.titleOnlyFlag != 0);
@@ -3196,6 +3210,8 @@ void CEpgTimerSrvMain::PushEpgSearchKeyInfo(CLuaWorkspace& ws, const EPGDB_SEARC
 	LuaHelp::reg_int(L, "freeCAFlag", k.freeCAFlag);
 	LuaHelp::reg_boolean(L, "chkRecEnd", k.chkRecEnd != 0);
 	LuaHelp::reg_int(L, "chkRecDay", k.chkRecDay);
+	LuaHelp::reg_int(L, "chkDurationMin", durMin);
+	LuaHelp::reg_int(L, "chkDurationMax", durMax);
 	lua_pushstring(L, "contentList");
 	lua_newtable(L);
 	for( size_t i = 0; i < k.contentList.size(); i++ ){
@@ -3303,6 +3319,15 @@ void CEpgTimerSrvMain::FetchEpgSearchKeyInfo(CLuaWorkspace& ws, EPGDB_SEARCH_KEY
 	k.freeCAFlag = (BYTE)LuaHelp::get_int(L, "freeCAFlag");
 	k.chkRecEnd = LuaHelp::get_boolean(L, "chkRecEnd");
 	k.chkRecDay = (WORD)LuaHelp::get_int(L, "chkRecDay");
+	int durMin = LuaHelp::get_int(L, "chkDurationMin");
+	int durMax = LuaHelp::get_int(L, "chkDurationMax");
+	if( durMin > 0 || durMax > 0 ){
+		wstring dur;
+		Format(dur, L"D!{%d}", (10000 + min(max(durMin, 0), 9999)) * 10000 + min(max(durMax, 0), 9999));
+		size_t pos = k.andKey.compare(0, 7, L"^!{999}") ? 0 : 7;
+		pos += k.andKey.compare(pos, 7, L"C!{999}") ? 0 : 7;
+		k.andKey.insert(pos, dur);
+	}
 	lua_getfield(L, -1, "contentList");
 	if( lua_istable(L, -1) ){
 		for( int i = 0;; i++ ){

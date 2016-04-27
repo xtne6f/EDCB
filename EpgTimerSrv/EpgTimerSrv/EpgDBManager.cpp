@@ -400,6 +400,18 @@ void CEpgDBManager::SearchEvent(EPGDB_SEARCH_KEY_INFO* key, map<ULONGLONG, SEARC
 		andKey.erase(0, 7);
 		caseFlag = TRUE;
 	}
+	DWORD chkDurationMinSec = 0;
+	DWORD chkDurationMaxSec = MAXDWORD;
+	if( andKey.compare(0, 4, L"D!{1") == 0 ){
+		LPWSTR endp;
+		DWORD dur = wcstoul(andKey.c_str() + 3, &endp, 10);
+		if( endp - andKey.c_str() == 12 && endp[0] == L'}' ){
+			//番組長を絞り込むキーワードが指定されている
+			andKey.erase(0, 13);
+			chkDurationMinSec = dur / 10000 % 10000 * 60;
+			chkDurationMaxSec = dur % 10000 == 0 ? MAXDWORD : dur % 10000 * 60;
+		}
+	}
 	if( andKey.size() == 0 && key->notKey.size() == 0 && key->contentList.size() == 0 && key->videoList.size() == 0 && key->audioList.size() == 0){
 		//キーワードもジャンル指定もないので検索しない
 		return ;
@@ -573,6 +585,18 @@ void CEpgDBManager::SearchEvent(EPGDB_SEARCH_KEY_INFO* key, map<ULONGLONG, SEARC
 						if( inTime == TRUE ){
 							continue;
 						}
+					}
+				}
+
+				//番組長で絞り込み
+				if( itrEvent->second->DurationFlag == FALSE ){
+					//不明なので絞り込みされていれば対象外
+					if( 0 < chkDurationMinSec || chkDurationMaxSec < MAXDWORD ){
+						continue;
+					}
+				}else{
+					if( itrEvent->second->durationSec < chkDurationMinSec || chkDurationMaxSec < itrEvent->second->durationSec ){
+						continue;
 					}
 				}
 

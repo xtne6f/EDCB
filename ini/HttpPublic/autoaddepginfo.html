@@ -23,6 +23,8 @@ if aa.dataID==0 then
     freeCAFlag=0,
     chkRecEnd=false,
     chkRecDay=6,
+    chkDurationMin=0,
+    chkDurationMax=0,
     contentList={},
     dateList={},
     serviceList={}
@@ -104,6 +106,9 @@ if aa.searchInfo then
     ..'<option value="1"'..(si.freeCAFlag==1 and ' selected="selected"' or '')..'>無料番組を対象とする'
     ..'<option value="2"'..(si.freeCAFlag==2 and ' selected="selected"' or '')..'>有料番組を対象とする'
     ..'</select><br><br>\n'
+  ct=ct..'番組長で絞り込み: <input type="text" name="chkDurationMin" value="'..(si.chkDurationMin or 0)..'" size="5">分以上 '
+    ..'<input type="text" name="chkDurationMax" value="'..(si.chkDurationMax or 0)..'" size="5">分以下<br>\n'
+    ..'※それぞれ0分で絞り込み無し<br><br>\n'
   ct=ct..'<input type="checkbox" name="chkRecEnd" value="1"'..(si.chkRecEnd and ' checked="checked"' or '')..'>同一番組名の録画結果があれば無効で登録する<br>\n'
     ..'確認対象期間<input type="text" name="chkRecDay" value="'..si.chkRecDay..'" size="5">日前まで<br><br>\n'
     ..'<hr>録画設定<hr>\n'

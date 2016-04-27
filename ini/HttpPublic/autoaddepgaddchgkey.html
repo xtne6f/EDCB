@@ -96,6 +96,8 @@ if post and (aa.dataID==0 or lastRecSetting) then
     si.freeCAFlag=0+(mg.get_var(post, 'freeCAFlag') or 0)
     si.chkRecEnd=0+(mg.get_var(post, 'chkRecEnd') or 0)~=0
     si.chkRecDay=0+(mg.get_var(post, 'chkRecDay') or 0)
+    si.chkDurationMin=0+(mg.get_var(post, 'chkDurationMin') or 0)
+    si.chkDurationMax=0+(mg.get_var(post, 'chkDurationMax') or 0)
     si.contentList={}
     for i=0,10000 do
       v=mg.get_var(post, 'contentList', i)
