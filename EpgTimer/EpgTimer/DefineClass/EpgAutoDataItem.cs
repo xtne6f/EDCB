@@ -37,8 +37,8 @@ namespace EpgTimer
                 String view = "";
                 if (EpgAutoAddInfo != null)
                 {
-                    view = EpgAutoAddInfo.searchInfo.andKey.Substring(EpgAutoAddInfo.searchInfo.andKey.StartsWith("^!{999}") ? 7 : 0);
-                    view = view.Substring(view.StartsWith("C!{999}") ? 7 : 0);
+                    view = System.Text.RegularExpressions.Regex.Replace(
+                        EpgAutoAddInfo.searchInfo.andKey, @"^(?:\^!\{999\})?(?:C!\{999\})?(?:D!\{1[0-9]{8}\})?", "");
                 }
                 return view;
             }

@@ -125,8 +125,8 @@ namespace EpgTimer
         public void SetSearchKey(EpgSearchKeyInfo key)
         {
             searchKeyDescView.SetSearchKey(key);
-            string s = key.andKey.Substring(key.andKey.StartsWith("^!{999}") ? 7 : 0);
-            ComboBox_andKey.Text = s.Substring(s.StartsWith("C!{999}") ? 7 : 0);
+            ComboBox_andKey.Text = System.Text.RegularExpressions.Regex.Replace(
+                key.andKey, @"^(?:\^!\{999\})?(?:C!\{999\})?(?:D!\{1[0-9]{8}\})?", "");
             ComboBox_notKey.Text = key.notKey;
         }
     }

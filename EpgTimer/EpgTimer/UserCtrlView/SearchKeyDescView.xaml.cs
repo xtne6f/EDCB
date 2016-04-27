@@ -109,8 +109,13 @@ namespace EpgTimer
                 {
                     key.titleOnlyFlag = 0;
                 }
-                key.andKey = key.andKey.Substring(key.andKey.StartsWith("^!{999}") ? 7 : 0);
-                key.andKey = key.andKey.Substring(key.andKey.StartsWith("C!{999}") ? 7 : 0);
+                uint durMin;
+                uint durMax;
+                if (uint.TryParse(textBox_chkDurationMin.Text, out durMin) &&
+                    uint.TryParse(textBox_chkDurationMax.Text, out durMax) && (durMin > 0 || durMax > 0))
+                {
+                    key.andKey = "D!{" + ((10000 + Math.Min(durMin, 9999)) * 10000 + Math.Min(durMax, 9999)) + "}" + key.andKey;
+                }
                 if (checkBox_case.IsChecked == true)
                 {
                     key.andKey = "C!{999}" + key.andKey;
@@ -220,7 +225,8 @@ namespace EpgTimer
                 {
                     checkBox_titleOnly.IsChecked = false;
                 }
-                if (defKey.andKey.StartsWith("^!{999}"))
+                var match = System.Text.RegularExpressions.Regex.Match(defKey.andKey, @"^((?:\^!\{999\})?)((?:C!\{999\})?)((?:D!\{1[0-9]{8}\})?)");
+                if (match.Groups[1].Value != "")
                 {
                     checkBox_keyDisabled.IsChecked = true;
                 }
@@ -228,13 +234,24 @@ namespace EpgTimer
                 {
                     checkBox_keyDisabled.IsChecked = false;
                 }
-                if (defKey.andKey.StartsWith("C!{999}") || defKey.andKey.StartsWith("^!{999}C!{999}"))
+                if (match.Groups[2].Value != "")
                 {
                     checkBox_case.IsChecked = true;
                 }
                 else
                 {
                     checkBox_case.IsChecked = false;
+                }
+                if (match.Groups[3].Value != "")
+                {
+                    uint dur = uint.Parse(match.Groups[3].Value.Substring(3, 9));
+                    textBox_chkDurationMin.Text = (dur / 10000 % 10000).ToString();
+                    textBox_chkDurationMax.Text = (dur % 10000).ToString();
+                }
+                else
+                {
+                    textBox_chkDurationMin.Text = "0";
+                    textBox_chkDurationMax.Text = "0";
                 }
 
                 listBox_content.Items.Clear();
