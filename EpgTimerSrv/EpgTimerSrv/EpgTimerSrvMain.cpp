@@ -521,7 +521,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				}
 				if( op.ports.empty() == false && ctx->sys->httpServerRandom.empty() ){
 					HCRYPTPROV prov;
-					if( CryptAcquireContext(&prov, NULL, NULL, PROV_RSA_FULL, 0) ){
+					if( CryptAcquireContext(&prov, NULL, NULL, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT) ){
 						unsigned __int64 r[4] = {};
 						if( CryptGenRandom(prov, sizeof(r), (BYTE*)r) ){
 							Format(ctx->sys->httpServerRandom, "%016I64x%016I64x%016I64x%016I64x", r[0], r[1], r[2], r[3]);
