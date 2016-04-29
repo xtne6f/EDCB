@@ -150,7 +150,8 @@
                     <CheckBox Content="EpgTimerSrvとの接続維持を試みる" Height="16" HorizontalAlignment="Left" Margin="351,252,0,0" Name="checkBox_keepTCPConnect" VerticalAlignment="Top" IsEnabled="False" />
                     <Label Content="分間隔" Height="28" Margin="657,246,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" Width="54" IsEnabled="False" Name="label_keepTCPConnect" />
                     <TextBox Height="24" Margin="592,246,0,0" HorizontalAlignment="Left" Name="textBox_keepTCPConnect" VerticalAlignment="Top" Width="62" IsEnabled="False" />
-                    <CheckBox Content="EpgTimerNWとして使用する (要再起動)" Height="16" HorizontalAlignment="Left" Margin="351,274,0,0" Name="checkBox_forceNWMode" VerticalAlignment="Top" ToolTip="このオプションを使用しなくても、実行ファイル名を「EpgTimerNW」から始まる名前にすればNWモードで起動します。&#10;(通常のNWモードの使用方法)" />
+                    <CheckBox Content="チェック時にタスクトレイアイコンのツールチップを更新する" Height="16" HorizontalAlignment="Left" Margin="369,274,0,0" Name="textBox_upDateTaskText" VerticalAlignment="Top" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_keepTCPConnect, UpdateSourceTrigger=PropertyChanged}" />
+                    <CheckBox Content="EpgTimerNWとして使用する (要再起動)" Height="16" HorizontalAlignment="Left" Margin="351,296,0,0" Name="checkBox_forceNWMode" VerticalAlignment="Top" ToolTip="このオプションを使用しなくても、実行ファイル名を「EpgTimerNW」から始まる名前にすればNWモードで起動します。&#10;(通常のNWモードの使用方法)" />
                 </Grid>
             </TabItem>
             <TabItem Header="カスタムボタン" Name="tabItem5">

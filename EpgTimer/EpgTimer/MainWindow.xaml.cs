@@ -568,6 +568,10 @@ namespace EpgTimer
                     {
                         taskTray.Icon = TaskIconSpec.TaskIconGray;
                     }
+                    if (Settings.Instance.UpdateTaskText == true)
+                    {
+                        taskTray.Text = GetTaskTrayReserveInfoText();
+                    }
                 };
                 chkRegistTCPTimer.Start();
             }
@@ -1192,25 +1196,25 @@ namespace EpgTimer
                 .Where(info => info.IsEnabled == true && info.EndTimeWithMargin() > DateTime.Now)
                 .OrderBy(info => info.StartTimeWithMargin()).ToList();
 
-            if (sortList.Count == 0) return "次の予約なし";
+            bool additional = CommonManager.Instance.NWMode == true && Settings.Instance.ChkSrvRegistTCP == true && Settings.Instance.UpdateTaskText == true;
+            string infoText = additional == true && taskTray.Icon == TaskIconSpec.TaskIconGray ? "[未接続]\r\n(?)" : "";
 
-            string infoText = "";
+            if (sortList.Count == 0) return infoText + "次の予約なし";
+
             int infoCount = 0;
             if (sortList[0].IsOnRec() == true)
             {
-                infoText = "録画中:";
+                infoText += "録画中:";
                 infoCount = sortList.Count(info => info.IsOnRec()) - 1;
             }
-            /* 予約情報が更新されないと走らないので無意味。
-             * テキスト更新用のタイマーでも走らせるなら別だが‥そこまでのものでもない。
-            else if (sortList[0].IsOnRec(60) == true) //1時間以内に開始されるもの
+            else if (additional == true && sortList[0].IsOnRec(60) == true) //1時間以内に開始されるもの
             {
-                infoText = "間もなく開始:";
+                infoText += "まもなく録画:";
                 infoCount = sortList.Count(info => info.IsOnRec(60)) - 1;
-            }*/
+            }
             else
             {
-                infoText = "次の予約:";
+                infoText += "次の予約:";
             }
 
             infoText += sortList[0].StationName + " " + new ReserveItem(sortList[0]).StartTimeShort + " " + sortList[0].Title;

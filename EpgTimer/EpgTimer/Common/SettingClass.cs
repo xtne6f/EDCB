@@ -372,6 +372,7 @@ namespace EpgTimer
         public bool RecInfoExtraDataCache { get; set; }
         public bool RecInfoExtraDataCacheOptimize { get; set; }
         public bool RecInfoExtraDataCacheKeepConnect { get; set; }
+        public bool UpdateTaskText { get; set; }
 
         public Settings()
         {
@@ -543,6 +544,7 @@ namespace EpgTimer
             RecInfoExtraDataCache = true;
             RecInfoExtraDataCacheOptimize = true;
             RecInfoExtraDataCacheKeepConnect = false;
+            UpdateTaskText = false;
         }
 
         [NonSerialized()]
