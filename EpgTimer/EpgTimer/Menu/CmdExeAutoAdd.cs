@@ -47,12 +47,12 @@ namespace EpgTimer
         protected override void mc_Delete2(object sender, ExecutedRoutedEventArgs e)
         {
             if (CmdExeUtil.CheckAllProcCancel(e, dataList, true) == true) return;
-            IsCommandExecuted = mutil.AutoAddDelete(dataList, true, true, true);
+            IsCommandExecuted = mutil.AutoAddDelete(dataList, true, true);
         }
         protected override void mc_AdjustReserve(object sender, ExecutedRoutedEventArgs e)
         {
             if (CmdExeUtil.CheckAllProcCancel(e, dataList, false) == true) return;
-            IsCommandExecuted = mutil.AutoAddChangeSyncReserve(dataList, true, false, true);
+            IsCommandExecuted = mutil.AutoAddChangeSyncReserve(dataList);
         }
         protected override void mc_JumpTable(object sender, ExecutedRoutedEventArgs e)
         {

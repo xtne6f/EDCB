@@ -600,7 +600,7 @@ namespace EpgTimer
         public bool ReserveChangeResModeAutoAdded(List<ReserveData> itemList, AutoAddData autoAdd)
         {
             if (ReserveDelete(itemList, false) == false) return false;
-            return AutoAddChange(CommonUtil.ToList(autoAdd), false, false, false);
+            return AutoAddChange(CommonUtil.ToList(autoAdd), false, false, false, false);
         }
 
         public bool ReserveChange(List<ReserveData> itemlist, bool cautionMany = true)
@@ -703,43 +703,39 @@ namespace EpgTimer
                 return false;
             }
         }
-        public bool AutoAddAdd(IEnumerable<AutoAddData> itemlist, bool cautionMany = true)
+        public bool AutoAddAdd(IEnumerable<AutoAddData> itemlist)
         {
-            return ReserveCmdSend(itemlist.OfType<EpgAutoAddData>().ToList(), cmd.SendAddEpgAutoAdd, "キーワード予約の追加") 
-                && ReserveCmdSend(itemlist.OfType<ManualAutoAddData>().ToList(), cmd.SendAddManualAdd, "プログラム自動予約の追加");
+            return AutoAddCmdSend(itemlist, 0);
         }
         public bool AutoAddChange(IEnumerable<AutoAddData> itemlist, bool cautionMany = true)
         {
             return AutoAddChange(itemlist, Settings.Instance.SyncResAutoAddChange, Settings.Instance.SyncResAutoAddChgNewRes, cautionMany);
         }
-        public bool AutoAddChange(IEnumerable<AutoAddData> itemlist, bool SyncChange, bool NewRes, bool cautionMany)
+        public bool AutoAddChange(IEnumerable<AutoAddData> itemlist, bool SyncChange, bool NewRes, bool cautionMany = true, bool isViewOrder = true)
         {
-            try
+            if (SyncChange == true)
             {
-                if (cautionMany == true && CautionManyMessage(itemlist.Count(), "自動予約登録の変更") == false) return false;
-
-                if (SyncChange == true)
-                {
-                    if (AutoAddChangeSyncReserve(itemlist, false, NewRes, false) == false)
-                    { return false; }
-                }
-
-                return ReserveCmdSend(itemlist.OfType<EpgAutoAddData>().ToList(), cmd.SendChgEpgAutoAdd, "キーワード予約の変更", false)
-                    && ReserveCmdSend(itemlist.OfType<ManualAutoAddData>().ToList(), cmd.SendChgManualAdd, "プログラム自動予約の変更", false);
+                //操作前にリストを作成する
+                List<ReserveData> deleteList = NewRes == false ? null : new List<ReserveData>();
+                List<ReserveData> syncList = AutoAddSyncChangeList(itemlist, false, deleteList);
+                return AutoAddCmdSend(itemlist, 1, deleteList, syncList, cautionMany, isViewOrder);
             }
-            catch (Exception ex)
+            else
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                return AutoAddCmdSend(itemlist, 1, null, null, cautionMany, isViewOrder);
             }
-            return false;
         }
-        public bool AutoAddChangeSyncReserve(IEnumerable<AutoAddData> itemlist, bool SyncAll, bool NewRes, bool cautionMany)
+        public bool AutoAddChangeSyncReserve(IEnumerable<AutoAddData> itemlist)
+        {
+            return ReserveChange(AutoAddSyncChangeList(itemlist, true), false);
+        }
+        private List<ReserveData> AutoAddSyncChangeList(IEnumerable<AutoAddData> itemlist, bool SyncAll, List<ReserveData> deleteList = null)
         {
             var syncDict = new Dictionary<uint, ReserveData>();
 
             foreach (AutoAddData data in itemlist)
             {
-                IEnumerable<ReserveData> list = SyncAll == true ? 
+                IEnumerable<ReserveData> list = SyncAll == true ?
                     data.GetReserveList() : data.GetReserveList().Where(info => info.IsAutoAdded == true);
                 foreach (ReserveData resinfo in list)
                 {
@@ -757,47 +753,32 @@ namespace EpgTimer
                 }
             }
 
-            if (cautionMany == true && CautionManyMessage(syncDict.Count, "自動予約登録の変更") == false) return false;
-
             List<ReserveData> syncList = syncDict.Values.ToList();
 
-            if (NewRes == true)
+            if (deleteList != null)
             {
                 List<ReserveData> modList = (SyncAll == true ? syncList : AutoAddSyncModifyReserveList(syncList, itemlist));
 
                 int cMin = Settings.Instance.CautionOnRecChange == true ? Settings.Instance.CautionOnRecMarginMin : 1;
-                List<ReserveData> delList = modList.FindAll(data => data.IsEnabled == true && data.IsOnRec(cMin) == false);
-                syncList = syncList.Except(delList).ToList();
+                deleteList.AddRange(modList.FindAll(data => data.IsEnabled == true && data.IsOnRec(cMin) == false));
+                syncList = syncList.Except(deleteList).ToList();
+            }
 
-                return ReserveDelete(delList, false) && ReserveChange(syncList, false);
-            }
-            else
-            {
-                return ReserveChange(syncList, false);
-            }
+            return syncList;
         }
         public bool AutoAddDelete(IEnumerable<AutoAddData> itemlist)
         {
-            return AutoAddDelete(itemlist, Settings.Instance.SyncResAutoAddDelete, false, false);
+            return AutoAddDelete(itemlist, Settings.Instance.SyncResAutoAddDelete, false);
         }
-        public bool AutoAddDelete(IEnumerable<AutoAddData> itemlist, bool SyncDelete, bool SyncAll, bool cautionManyRes)
+        public bool AutoAddDelete(IEnumerable<AutoAddData> itemlist, bool SyncDelete, bool SyncAll)
         {
-            try
-            {
-                bool ret = ReserveCmdSend(itemlist.OfType<EpgAutoAddData>().Select(item => item.DataID).ToList(), cmd.SendDelEpgAutoAdd, "キーワード予約の削除")
-                    && ReserveCmdSend(itemlist.OfType<ManualAutoAddData>().Select(item => item.DataID).ToList(), cmd.SendDelManualAdd, "プログラム自動予約の削除");
-
-                if (ret == false || SyncDelete == false) return ret;
-
-                return AutoAddDeleteSyncReserve(itemlist, SyncAll, cautionManyRes);
-            }
-            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
-            return false;
+            //操作前にリストを作成する
+            return AutoAddCmdSend(itemlist, 2, SyncDelete == false ? null : AutoAddSyncDeleteList(itemlist, SyncAll));
         }
-        private bool AutoAddDeleteSyncReserve(IEnumerable<AutoAddData> itemlist, bool SyncAll, bool cautionMany = true)
+        private List<ReserveData> AutoAddSyncDeleteList(IEnumerable<AutoAddData> itemlist, bool SyncAll)
         {
             var list = itemlist.GetReserveList();
-            return ReserveDelete((SyncAll == true ? list : AutoAddSyncModifyReserveList(list, itemlist)), cautionMany);
+            return SyncAll == true ? list : AutoAddSyncModifyReserveList(list, itemlist);
         }
 
         private List<ReserveData> AutoAddSyncModifyReserveList(List<ReserveData> reslist, IEnumerable<AutoAddData> itemlist)
@@ -815,7 +796,84 @@ namespace EpgTimer
             // 2)処理する自動登録リスト以外の有効な自動登録に含まれている予約を除外
             return reslist.FindAll(info => info.IsAutoAdded == true && (epgAutoList[info.ReserveID].Count + manualAutoList[info.ReserveID].Count) == 0);
         }
-        
+
+        //mode 0:追加、1:変更、2:削除
+        private bool AutoAddCmdSend(IEnumerable<AutoAddData> itemlist, int mode,
+            List<ReserveData> delReserveList = null, List<ReserveData> chgReserveList = null, bool cautionMany = true, bool isViewOrder = true)
+        {
+            try
+            {
+                var message = "自動予約登録の" + (new List<string> { "追加", "変更", "削除" }[(int)mode]);
+                if (cautionMany == true && CautionManyMessage(itemlist.Count(), message) == false) return false;
+
+                var epgList = itemlist.OfType<EpgAutoAddData>().ToList();
+                var manualList = itemlist.OfType<ManualAutoAddData>().ToList();
+
+                if (isViewOrder == true)
+                {
+                    //自動予約登録データ変更の前に、並び順を自動保存する。
+                    if ((AutoAddOrderAutoSave(ref epgList, mode != 0) && AutoAddOrderAutoSave(ref manualList, mode != 0)) == false)
+                    {
+                        MessageBox.Show("自動登録の並べ替え保存中に問題が発生しました。\r\n処理を中止します。", message, MessageBoxButton.OK, MessageBoxImage.Exclamation);
+                        return false;
+                    }
+                }
+
+                switch (mode)
+                {
+                    case 0:
+                        return ReserveCmdSend(epgList, cmd.SendAddEpgAutoAdd, "キーワード予約の追加", false)
+                            && ReserveCmdSend(manualList, cmd.SendAddManualAdd, "プログラム自動予約の追加", false);
+                    case 1:
+                        return (delReserveList == null ? true : ReserveDelete(delReserveList, false))
+                            && ReserveCmdSend(epgList, cmd.SendChgEpgAutoAdd, "キーワード予約の変更", false)
+                            && ReserveCmdSend(manualList, cmd.SendChgManualAdd, "プログラム自動予約の変更", false)
+                            && (chgReserveList == null ? true : ReserveChange(chgReserveList, false));
+                    case 2:
+                        return ReserveCmdSend(epgList.Select(item => item.DataID).ToList(), cmd.SendDelEpgAutoAdd, "キーワード予約の削除", false)
+                            && ReserveCmdSend(manualList.Select(item => item.DataID).ToList(), cmd.SendDelManualAdd, "プログラム自動予約の削除", false)
+                            && (delReserveList == null ? true : ReserveDelete(delReserveList, false));
+                }
+            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
+            return false;
+        }
+
+        private bool AutoAddOrderAutoSave<T>(ref List<T> list, bool changeID) where T : AutoAddData
+        {
+            //並べ替え不要
+            if (list.Count == 0) return true;
+
+            var autoView = ((MainWindow)Application.Current.MainWindow).autoAddView;
+            var view = (list[0] is EpgAutoAddData) ? (AutoAddListView)autoView.epgAutoAddView : autoView.manualAutoAddView;
+
+            if (changeID == true)
+            {
+                //並べ替えの影響回避のため。
+                list = list.Select(item => (T)item.CloneObj()).ToList();
+            }
+
+            //並べ替えしなかった
+            Dictionary<uint, uint> changeIDTable = null;
+            if (CommonManager.Instance.AutoAddViewOrderCheckAndSave(view, out changeIDTable) == false) return true;
+
+            //並べ替え保存時に何か問題があった
+            if (changeIDTable == null) return false;
+
+            if (changeID == true)
+            {
+                foreach (var item in list)
+                {
+                    //通常無いはずだが、並べ替えが上手くできない時に継続するのはとても危険なので中止する。
+                    if (changeIDTable.ContainsKey(item.DataID) == false) return false;
+
+                    //新しいIDに張り替え
+                    item.DataID = changeIDTable[item.DataID];
+                }
+            }
+            return true;
+        }
+
         public bool RecinfoChgProtect(List<RecFileInfo> itemlist)
         {
             try

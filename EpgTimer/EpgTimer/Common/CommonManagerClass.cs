@@ -1551,5 +1551,21 @@ namespace EpgTimer
             return src;
         }
 
+        public bool? AutoAddViewOrderCheckAndSave(AutoAddListView view, out Dictionary<uint, uint> changeIDTable)
+        {
+            changeIDTable = null;
+            try
+            {
+                if (view == null || view.IsVisible == false || view.dragMover.NotSaved == false) return false;
+                //
+                var cmdPrm = new EpgCmdParam(null);
+                EpgCmds.SaveOrder.Execute(cmdPrm, view);
+                changeIDTable = cmdPrm.Data as Dictionary<uint, uint>;
+                return true;
+            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
+            return null;
+        }
+
     }
 }

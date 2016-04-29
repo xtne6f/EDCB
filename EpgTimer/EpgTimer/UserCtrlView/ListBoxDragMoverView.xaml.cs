@@ -183,22 +183,34 @@ namespace EpgTimer.UserCtrlView
                         MessageBoxButton.OKCancel) != MessageBoxResult.OK) return;
                 }
 
-                List<uint> dataIdList = this.dataList.OfType<object>().Select(item => hlp.GetID(item)).ToList();
-                dataIdList.Sort();//存在する(再利用可能な)IDリストを若い順(元の順)に並べたもの。
-
                 //並び替えテーブル
-                var changeIDTable = new Dictionary<uint, uint>();
-                for (int i = 0; i < this.dataList.Count; i++)
-                {
-                    changeIDTable.Add(hlp.GetID(this.dataList[i]), dataIdList[i]);
-                }
+                var changeIDTable = GetChangeIDTable();
 
                 if (hlp.SaveChange(changeIDTable) == true)
                 {
                     this.NotSaved = false;
+
+                    //結果を保存する
+                    if (e.Parameter is EpgCmdParam)
+                    {
+                        (e.Parameter as EpgCmdParam).Data = changeIDTable;
+                    }
                 }
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
+        }
+        public Dictionary<uint, uint> GetChangeIDTable()
+        {
+            List<uint> dataIdList = this.dataList.OfType<object>().Select(item => hlp.GetID(item)).ToList();
+            dataIdList.Sort();//存在する(再利用可能な)IDリストを若い順(元の順)に並べたもの。
+
+            //並び替えテーブル
+            var changeIDTable = new Dictionary<uint, uint>();
+            for (int i = 0; i < this.dataList.Count; i++)
+            {
+                changeIDTable.Add(hlp.GetID(this.dataList[i]), dataIdList[i]);
+            }
+            return changeIDTable;
         }
 
         //移動関連

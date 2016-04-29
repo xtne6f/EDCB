@@ -220,7 +220,7 @@ namespace EpgTimer
         {
             if (CheckAutoAddChange(e, 3) == false) return;
             //
-            mutil.AutoAddDelete(CommonUtil.ToList(defKey), true, true, false);
+            mutil.AutoAddDelete(CommonUtil.ToList(defKey), true, true);
             DialogResult = true;
         }
 
