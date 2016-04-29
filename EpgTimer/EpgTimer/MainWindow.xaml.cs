@@ -245,7 +245,14 @@ namespace EpgTimer
 
                 //タスクトレイの表示
                 taskTray = new TaskTrayClass(this);
-                taskTray.Icon = Properties.Resources.TaskIconBlue;
+                if (CommonManager.Instance.NWMode == true && Settings.Instance.ChkSrvRegistTCP == true)
+                {
+                    taskTray.Icon = TaskIconSpec.TaskIconGray;
+                }
+                else
+                {
+                    taskTray.Icon = TaskIconSpec.TaskIconBlue;
+                }
                 taskTray.Visible = Settings.Instance.ShowTray;
                 taskTray.ContextMenuClick += new EventHandler(taskTray_ContextMenuClick);
                 taskTray.Text = GetTaskTrayReserveInfoText();
@@ -494,9 +501,18 @@ namespace EpgTimer
                 {
                     MessageBox.Show("サーバーへの接続に失敗しました");
                 }
+                if (Settings.Instance.ChkSrvRegistTCP == true)
+                {
+                    taskTray.Icon = TaskIconSpec.TaskIconGray;
+                }
                 return false;
             }
 
+            //Notify(OutsideCmdCallback)に割り込まれている場合もあるので
+            if (taskTray.Icon == TaskIconSpec.TaskIconGray)
+            {
+                taskTray.Icon = TaskIconSpec.TaskIconBlue;
+            }
             IniFileHandler.UpdateSrvProfileIniNW();
 
             CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.ReserveInfo);
@@ -543,6 +559,14 @@ namespace EpgTimer
                                 ConnectCmd(false);
                             }
                         }
+                        else
+                        {
+                            taskTray.Icon = TaskIconSpec.TaskIconGray;
+                        }
+                    }
+                    else
+                    {
+                        taskTray.Icon = TaskIconSpec.TaskIconGray;
                     }
                 };
                 chkRegistTCPTimer.Start();
@@ -1149,13 +1173,14 @@ namespace EpgTimer
             }
         }
 
-        private System.Drawing.Icon GetTaskTrayIcon(uint status)
+        private TaskIconSpec GetTaskTrayIcon(uint status)
         {
+            //statusは0,1,2しか取らないはずだが、コード上は任意になっているので、一応変換をかませておく。
             switch(status)
             {
-                case 1: return Properties.Resources.TaskIconRed;
-                case 2: return Properties.Resources.TaskIconGreen;
-                default: return Properties.Resources.TaskIconBlue;
+                case 1: return TaskIconSpec.TaskIconRed;
+                case 2: return TaskIconSpec.TaskIconGreen;
+                default: return TaskIconSpec.TaskIconBlue;
             }
         }
 

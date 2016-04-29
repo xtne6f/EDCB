@@ -10,6 +10,8 @@ using System.Windows.Forms;
 
 namespace EpgTimer
 {
+    public enum TaskIconSpec : uint { TaskIconBlue, TaskIconRed, TaskIconGreen, TaskIconGray, TaskIconNone };
+
     class TaskTrayClass : IDisposable
     {
         private NotifyIcon notifyIcon = new NotifyIcon();
@@ -29,9 +31,28 @@ namespace EpgTimer
                 }
             }
         }
-        public Icon Icon {
-            get { return notifyIcon.Icon; }
-            set { notifyIcon.Icon = value; }
+        private TaskIconSpec iconSpec = TaskIconSpec.TaskIconNone;
+        public TaskIconSpec Icon
+        {
+            get { return iconSpec; }
+            set
+            {
+                if (iconSpec == value) return;
+                //
+                iconSpec = value;
+                notifyIcon.Icon = GetTaskTrayIcon(value);
+            }
+        }
+        private Icon GetTaskTrayIcon(TaskIconSpec status)
+        {
+            switch (status)
+            {
+                case TaskIconSpec.TaskIconBlue:     return Properties.Resources.TaskIconBlue;
+                case TaskIconSpec.TaskIconRed:      return Properties.Resources.TaskIconRed;
+                case TaskIconSpec.TaskIconGreen:    return Properties.Resources.TaskIconGreen;
+                case TaskIconSpec.TaskIconGray:     return Properties.Resources.TaskIconGray;
+                default: return null;
+            }
         }
         public bool Visible{
             get { return notifyIcon.Visible; }
