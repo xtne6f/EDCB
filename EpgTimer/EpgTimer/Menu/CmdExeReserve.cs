@@ -167,7 +167,6 @@ namespace EpgTimer
             {
                 param.ID = 0;//実際は設定するまでもなく、初期値0。
                 BlackoutWindow.NowJumpTable = true;
-                var mainWindow = Application.Current.MainWindow as MainWindow;
                 new BlackoutWindow(mainWindow).showWindow(mainWindow.tabItem_epg.Header.ToString());
 
                 EpgCmds.ViewChgMode.Execute(e.Parameter, (IInputElement)sender);

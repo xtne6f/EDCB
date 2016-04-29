@@ -53,6 +53,7 @@ namespace EpgTimer
         protected MenuManager mm = CommonManager.Instance.MM;
 
         protected Control Owner;
+        protected static MainWindow mainWindow { get { return (MainWindow)Application.Current.MainWindow; } }
 
         protected Dictionary<ICommand, cmdOption> cmdList = new Dictionary<ICommand, cmdOption>();
 
@@ -278,7 +279,6 @@ namespace EpgTimer
             if (onReserveOnly && resinfo.IsEnabled == false) return;
 
             mcs_SetBlackoutWindow(new ReserveItem(resinfo));
-            var mainWindow = Application.Current.MainWindow as MainWindow;
             mainWindow.moveTo_tabItem(code);
             IsCommandExecuted = true;
         }
@@ -333,8 +333,6 @@ namespace EpgTimer
             {
                 Settings.Instance.MenuSet = dlg.info.Clone();
                 Settings.SaveToXmlFile();//メニュー設定の保存
-
-                var mainWindow = (MainWindow)Application.Current.MainWindow;
                 mainWindow.RefreshMenu(true);
             }
         }
