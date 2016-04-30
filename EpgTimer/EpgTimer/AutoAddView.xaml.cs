@@ -27,7 +27,7 @@ namespace EpgTimer
             manualAutoAddView.SaveViewData();
         }
 
-        public void UpdateAutoAddInfo()
+        public void UpdateInfo()
         {
             epgAutoAddView.UpdateInfo();
             manualAutoAddView.UpdateInfo();
