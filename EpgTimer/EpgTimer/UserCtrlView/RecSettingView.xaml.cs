@@ -76,11 +76,16 @@ namespace EpgTimer
                     saveID += ",";
                 }
             }
+            comboBox_preSet.Items.Refresh();
             IniFileHandler.WritePrivateProfileString("SET", "PresetID", saveID, SettingPath.TimerSrvIniPath);
             Settings.SaveToXmlFile();
             Settings.Instance.RecPresetList = null;
 
-            if (CommonManager.Instance.NWMode == false) CommonManager.Instance.CtrlCmd.SendNotifyProfileUpdate();
+            if (CommonManager.Instance.NWMode == false)
+            {
+                CommonManager.Instance.CtrlCmd.SendNotifyProfileUpdate();
+                ((MainWindow)Application.Current.MainWindow).RefreshAllViewsReserveInfo(MainWindow.UpdateViewMode.ReserveInfoNoTuner);
+            }
         }
 
         public void SetViewMode(bool epgMode)
