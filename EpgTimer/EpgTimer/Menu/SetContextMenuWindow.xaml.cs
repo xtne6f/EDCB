@@ -20,7 +20,7 @@ namespace EpgTimer
 
         private static ComboItem[] MenuCodeToTitle = new ComboItem[]{
             new ComboItem(CtxmCode.ReserveView, "予約一覧"),
-            new ComboItem(CtxmCode.TunerReserveView, "使用予定チューナ"),
+            new ComboItem(CtxmCode.TunerReserveView, "使用予定チューナー"),
             new ComboItem(CtxmCode.RecInfoView, "録画済み一覧"),
             new ComboItem(CtxmCode.EpgAutoAddView, "キーワード自動予約登録"),
             new ComboItem(CtxmCode.ManualAutoAddView, "プログラム自動予約登録"),
