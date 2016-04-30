@@ -62,13 +62,15 @@ namespace EpgTimer
                 return RecSettingInfo.GetTrueMarginForSort(false);
             }
         }
+        protected String preset = null;
         public virtual String Preset
         {
             get
             {
                 if (RecSettingInfo == null) return "";
                 //
-                return RecSettingInfo.LookUpPreset(IsManual).DisplayName;
+                if (preset == null) preset = RecSettingInfo.LookUpPreset(IsManual).DisplayName;
+                return preset;
             }
         }
         public virtual String RecMode
