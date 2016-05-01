@@ -102,7 +102,7 @@
         </GridViewColumn>
         <GridViewColumn DisplayMemberBinding="{Binding Path=ReserveTuner}">
             <GridViewColumn.Header>
-                <GridViewColumnHeader Content="使用予約チューナー" Uid="ReserveTuner" />
+                <GridViewColumnHeader Content="使用予定チューナー" Uid="ReserveTuner" />
             </GridViewColumn.Header>
         </GridViewColumn>
     </my:GridViewColumnList>
