@@ -614,6 +614,8 @@ namespace EpgTimer
 
             try
             {
+                nwMode |= Settings.Instance.ForceNWMode;
+
                 // タイミング合わせにくいので、メニュー系のデータチェックは
                 // MenuManager側のワークデータ作成時に実行する。
 

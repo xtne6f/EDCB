@@ -48,11 +48,8 @@ namespace EpgTimer
             CommonManager.Instance.NWMode = appName.StartsWith("EpgTimerNW", StringComparison.OrdinalIgnoreCase);
 
             Settings.LoadFromXmlFile(CommonManager.Instance.NWMode);
-            if (Settings.Instance.ForceNWMode == true)
-            {
-                CommonManager.Instance.NWMode = true;
-                Settings.LoadFromXmlFile(CommonManager.Instance.NWMode);
-            }
+            CommonManager.Instance.NWMode |= Settings.Instance.ForceNWMode;
+
             if (CommonManager.Instance.NWMode == true)
             {
                 CommonManager.Instance.DB.SetNoAutoReloadEPG(Settings.Instance.NgAutoEpgLoadNW);
