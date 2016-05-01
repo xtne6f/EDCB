@@ -77,17 +77,11 @@ namespace EpgTimer.Setting
                 checkBox_suspendClose.IsEnabled = true;
                 checkBox_ngAutoEpgLoad.IsEnabled = true;
                 checkBox_keepTCPConnect.IsEnabled = true;
-                textBox_keepTCPConnect.IsEnabled = true;
-                label_keepTCPConnect.IsEnabled = true;
                 checkBox_srvResident.IsEnabled = false;
                 checkBox_noChkYen.IsEnabled = false;
                 checkBox_srvSaveNotifyLog.IsEnabled = false;
                 checkBox_srvSaveDebugLog.IsEnabled = false;
                 button_recDef.Content = "録画プリセットを確認";
-            }
-            else
-            {
-                textBox_upDateTaskText.IsEnabled = false;//{Binding}は破棄
             }
 
             try
@@ -238,7 +232,7 @@ namespace EpgTimer.Setting
                 checkBox_SyncResAutoAddChgNewRes.IsChecked = Settings.Instance.SyncResAutoAddChgNewRes;
                 checkBox_SyncResAutoAddDelete.IsChecked = Settings.Instance.SyncResAutoAddDelete;
                 checkBox_keepTCPConnect.IsChecked = Settings.Instance.ChkSrvRegistTCP;
-                textBox_keepTCPConnect.Text = Settings.Instance.ChkSrvRegistInterval.ToString();
+                textBox_chkTimerInterval.Text = Settings.Instance.ChkSrvRegistInterval.ToString();
                 textBox_upDateTaskText.IsChecked = Settings.Instance.UpdateTaskText;
                 checkBox_forceNWMode.IsChecked = Settings.Instance.ForceNWMode;
 
@@ -471,7 +465,7 @@ namespace EpgTimer.Setting
                 Settings.Instance.SuspendCloseNW = (checkBox_suspendClose.IsChecked == true);
                 Settings.Instance.NgAutoEpgLoadNW = (checkBox_ngAutoEpgLoad.IsChecked == true);
                 Settings.Instance.ChkSrvRegistTCP = (checkBox_keepTCPConnect.IsChecked != false);
-                Settings.Instance.ChkSrvRegistInterval = mutil.MyToNumerical(textBox_keepTCPConnect, Convert.ToDouble, 1440 * 7, 1, Settings.Instance.ChkSrvRegistInterval);
+                Settings.Instance.ChkSrvRegistInterval = mutil.MyToNumerical(textBox_chkTimerInterval, Convert.ToDouble, 1440 * 7, 1, Settings.Instance.ChkSrvRegistInterval);
                 Settings.Instance.UpdateTaskText = (textBox_upDateTaskText.IsChecked == true);
                 Settings.Instance.ForceNWMode = (checkBox_forceNWMode.IsChecked != false);
 

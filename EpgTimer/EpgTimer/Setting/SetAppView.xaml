@@ -147,10 +147,15 @@
                     <CheckBox Content="多数の項目を処理するとき警告する" Height="16" HorizontalAlignment="Left" Margin="6,360,0,0" Name="checkBox_cautionManyChange" VerticalAlignment="Top" />
                     <Label Content="以上" Height="28" Margin="300,354,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" Width="34" />
                     <TextBox Height="24" HorizontalAlignment="Left" Margin="235,354,0,0" Name="textBox_cautionManyChange" VerticalAlignment="Top" Width="62" />
-                    <CheckBox Content="EpgTimerSrvとの接続維持を試みる" Height="16" HorizontalAlignment="Left" Margin="351,252,0,0" Name="checkBox_keepTCPConnect" VerticalAlignment="Top" IsEnabled="False" />
-                    <Label Content="分間隔" Height="28" Margin="657,246,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" Width="54" IsEnabled="False" Name="label_keepTCPConnect" />
-                    <TextBox Height="24" Margin="592,246,0,0" HorizontalAlignment="Left" Name="textBox_keepTCPConnect" VerticalAlignment="Top" Width="62" IsEnabled="False" />
-                    <CheckBox Content="チェック時にタスクトレイアイコンのツールチップを更新する" Height="16" HorizontalAlignment="Left" Margin="369,274,0,0" Name="textBox_upDateTaskText" VerticalAlignment="Top" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_keepTCPConnect, UpdateSourceTrigger=PropertyChanged}" />
+                    <StackPanel Orientation="Horizontal" Margin="351,252,0,0" VerticalAlignment="Top" HorizontalAlignment="Left">
+                        <StackPanel>
+                            <CheckBox Content="EpgTimerSrvとの接続維持を試みる" Name="checkBox_keepTCPConnect" IsEnabled="False" ToolTipService.ShowOnDisabled="True" ToolTip="EpgTimerNW使用時、EpgTimerSrv側の再起動時などに接続維持を試みます" />
+                            <CheckBox Content="タスクトレイアイコンのツールチップを更新する" Margin="0,7,6,0" Name="textBox_upDateTaskText" ToolTip="EpgTimerNWで「EpgTimerSrvとの接続維持を試みる」使用時以外はほとんど効果ありません" />
+                        </StackPanel>
+                        <Border Height="28" Width="10" VerticalAlignment="Center" BorderBrush="Gray" BorderThickness="0,1,1,1" />
+                        <TextBox Height="24" Margin="6,0,0,0" Name="textBox_chkTimerInterval" VerticalAlignment="Center" Width="62" />
+                        <Label Content="分間隔" VerticalAlignment="Center" Width="54" />
+                    </StackPanel>
                     <CheckBox Content="EpgTimerNWとして使用する (要再起動)" Height="16" HorizontalAlignment="Left" Margin="351,296,0,0" Name="checkBox_forceNWMode" VerticalAlignment="Top" ToolTip="このオプションを使用しなくても、実行ファイル名を「EpgTimerNW」から始まる名前にすればNWモードで起動します。&#10;(通常のNWモードの使用方法)" />
                 </Grid>
             </TabItem>

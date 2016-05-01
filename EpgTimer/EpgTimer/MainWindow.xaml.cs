@@ -37,7 +37,7 @@ namespace EpgTimer
         private bool closeFlag = false;
         private bool initExe = false;
 
-        private System.Windows.Threading.DispatcherTimer chkRegistTCPTimer = null;
+        private System.Windows.Threading.DispatcherTimer chkTimer = null;
         private bool needUnRegist = true;
 
         private bool idleShowBalloon = false;
@@ -55,7 +55,6 @@ namespace EpgTimer
                 CommonManager.Instance.DB.SetNoAutoReloadEPG(Settings.Instance.NgAutoEpgLoadNW);
                 cmd.SetSendMode(true);
                 cmd.SetNWSetting("", Settings.Instance.NWServerPort);
-                ChkRegistTCPTimerWork();
             }
 
             CommonManager.Instance.MM.ReloadWorkData();
@@ -254,6 +253,8 @@ namespace EpgTimer
                 taskTray.ContextMenuClick += new EventHandler(taskTray_ContextMenuClick);
                 taskTray.Text = GetTaskTrayReserveInfoText();
                 ResetTaskMenu();
+
+                ChkTimerWork();
             }
             catch (Exception ex)
             {
@@ -505,11 +506,6 @@ namespace EpgTimer
                 return false;
             }
 
-            //Notify(OutsideCmdCallback)に割り込まれている場合もあるので
-            if (taskTray.Icon == TaskIconSpec.TaskIconGray)
-            {
-                taskTray.Icon = TaskIconSpec.TaskIconBlue;
-            }
             IniFileHandler.UpdateSrvProfileIniNW();
 
             CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.ReserveInfo);
@@ -531,46 +527,46 @@ namespace EpgTimer
             return true;
         }
 
-        public void ChkRegistTCPTimerWork()
+        public void ChkTimerWork()
         {
             //オプション状態などが変っている場合もあるので、いったん破棄する。
-            if (chkRegistTCPTimer != null)
+            if (chkTimer != null)
             {
-                chkRegistTCPTimer.Stop();
-                chkRegistTCPTimer = null;
+                chkTimer.Stop();
+                chkTimer = null;
             }
 
-            if (CommonManager.Instance.NWMode == true && Settings.Instance.ChkSrvRegistTCP == true)
+            bool chkSrvRegistTCP = CommonManager.Instance.NWMode == true && Settings.Instance.ChkSrvRegistTCP == true;
+            bool updateTaskText = Settings.Instance.UpdateTaskText == true;
+
+            if (chkSrvRegistTCP == true || updateTaskText == true)
             {
-                chkRegistTCPTimer = new System.Windows.Threading.DispatcherTimer();
-                chkRegistTCPTimer.Interval = TimeSpan.FromMinutes(Math.Max(Settings.Instance.ChkSrvRegistInterval, 1));
-                chkRegistTCPTimer.Tick += (sender, e) =>
+                chkTimer = new System.Windows.Threading.DispatcherTimer();
+                chkTimer.Interval = TimeSpan.FromMinutes(Math.Max(Settings.Instance.ChkSrvRegistInterval, 1));
+                if (chkSrvRegistTCP == true)
                 {
-                    if (CommonManager.Instance.NW.IsConnected == true)
+                    chkTimer.Tick += (sender, e) =>
                     {
-                        bool registered = true;
-                        if ((ErrCode)cmd.SendIsRegistTCP(Settings.Instance.NWWaitPort, ref registered) == ErrCode.CMD_SUCCESS)
+                        if (CommonManager.Instance.NW.IsConnected == true)
                         {
-                            if (registered == false)
+                            bool registered = true;
+                            if (cmd.SendIsRegistTCP(Settings.Instance.NWWaitPort, ref registered) == ErrCode.CMD_SUCCESS)
                             {
-                                ConnectCmd(false);
+                                if (registered == false)
+                                {
+                                    ConnectCmd(false);
+                                }
+                                return;
                             }
                         }
-                        else
-                        {
-                            taskTray.Icon = TaskIconSpec.TaskIconGray;
-                        }
-                    }
-                    else
-                    {
                         taskTray.Icon = TaskIconSpec.TaskIconGray;
-                    }
-                    if (Settings.Instance.UpdateTaskText == true)
-                    {
-                        taskTray.Text = GetTaskTrayReserveInfoText();
-                    }
-                };
-                chkRegistTCPTimer.Start();
+                    };
+                }
+                if (updateTaskText == true)
+                {
+                    chkTimer.Tick += (sender, e) => taskTray.Text = GetTaskTrayReserveInfoText();
+                }
+                chkTimer.Start();
             }
         }
 
@@ -829,13 +825,15 @@ namespace EpgTimer
                             IniFileHandler.UpdateSrvProfileIniNW();
                         }
                         CommonManager.Instance.DB.SetNoAutoReloadEPG(Settings.Instance.NgAutoEpgLoadNW);
-                        ChkRegistTCPTimerWork();
                     }
                     else
                     {
                         cmd.SendReloadSetting();
                         cmd.SendNotifyProfileUpdate();
                     }
+
+                    ChkTimerWork();
+
                     reserveView.UpdateInfo();
                     tunerReserveView.UpdateInfo();
                     recInfoView.UpdateInfo();
@@ -1228,8 +1226,7 @@ namespace EpgTimer
                 .Where(info => info.IsEnabled == true && info.EndTimeWithMargin() > DateTime.Now)
                 .OrderBy(info => info.StartTimeWithMargin()).ToList();
 
-            bool additional = CommonManager.Instance.NWMode == true && Settings.Instance.ChkSrvRegistTCP == true && Settings.Instance.UpdateTaskText == true;
-            string infoText = additional == true && taskTray.Icon == TaskIconSpec.TaskIconGray ? "[未接続]\r\n(?)" : "";
+            string infoText = Settings.Instance.UpdateTaskText == true && taskTray.Icon == TaskIconSpec.TaskIconGray ? "[未接続]\r\n(?)" : "";
 
             if (sortList.Count == 0) return infoText + "次の予約なし";
 
@@ -1239,7 +1236,7 @@ namespace EpgTimer
                 infoText += "録画中:";
                 infoCount = sortList.Count(info => info.IsOnRec()) - 1;
             }
-            else if (additional == true && sortList[0].IsOnRec(60) == true) //1時間以内に開始されるもの
+            else if (Settings.Instance.UpdateTaskText == true && sortList[0].IsOnRec(60) == true) //1時間以内に開始されるもの
             {
                 infoText += "まもなく録画:";
                 infoCount = sortList.Count(info => info.IsOnRec(60)) - 1;
