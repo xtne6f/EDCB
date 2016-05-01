@@ -549,10 +549,15 @@ namespace EpgTimer
                     {
                         if (CommonManager.Instance.NW.IsConnected == true)
                         {
+                            var status = new NotifySrvInfo();
+                            var waitPort = Settings.Instance.NWWaitPort;
                             bool registered = true;
-                            if (cmd.SendIsRegistTCP(Settings.Instance.NWWaitPort, ref registered) == ErrCode.CMD_SUCCESS)
+                            if (waitPort == 0 && cmd.SendGetNotifySrvStatus(ref status) == ErrCode.CMD_SUCCESS ||
+                                waitPort != 0 && cmd.SendIsRegistTCP(waitPort, ref registered)  == ErrCode.CMD_SUCCESS)
                             {
-                                if (registered == false)
+                                if (waitPort == 0 && CommonManager.Instance.NW.OnPolling == false ||
+                                    waitPort != 0 && registered == false ||
+                                    taskTray.Icon == TaskIconSpec.TaskIconGray)//EpgTimerNW側の休止復帰も含む
                                 {
                                     ConnectCmd(false);
                                 }
