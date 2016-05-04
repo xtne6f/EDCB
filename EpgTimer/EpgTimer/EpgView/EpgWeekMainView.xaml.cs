@@ -111,7 +111,7 @@ namespace EpgTimer
             var item = comboBox_service.SelectedItem as ComboBoxItem;
             if (item == null)
             {
-                if (alternativeSelect = false || comboBox_service.Items.Count == 0) return 0;
+                if (alternativeSelect == false || comboBox_service.Items.Count == 0) return 0;
 
                 item = comboBox_service.Items.GetItemAt(0) as ComboBoxItem;
             }
@@ -373,7 +373,10 @@ namespace EpgTimer
                 EpgServiceInfo serviceInfo = item.DataContext as EpgServiceInfo;
                 if (serviceKey_Target == serviceInfo.Create64Key())
                 {
-                    this.comboBox_service.SelectedItem = item;
+                    if (this.comboBox_service.SelectedItem != item)
+                    {
+                        this.comboBox_service.SelectedItem = item;
+                    }
                     break;
                 }
             }
