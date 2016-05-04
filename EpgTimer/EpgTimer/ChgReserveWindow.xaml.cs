@@ -301,9 +301,7 @@ namespace EpgTimer
             bool retval = CommonManager.Instance.DB.ReserveList.ContainsKey(this.reserveInfo.ReserveID);
             if (retval == false)
             {
-                MessageBox.Show("項目がありません。\r\n" +
-                    "既に削除されています。\r\n" +
-                    "(別のEpgtimerによる操作など)");
+                MessageBox.Show("項目がありません。\r\n" + "既に削除されています。\r\n" + "(別のEpgtimerによる操作など)", "データエラー", MessageBoxButton.OK, MessageBoxImage.Exclamation);
 
                 //予約復旧を提示させる。これだけで大丈夫だったりする。
                 SetAddMode(AddMode.Re_Add);

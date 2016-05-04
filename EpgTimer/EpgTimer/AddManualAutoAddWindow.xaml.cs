@@ -60,10 +60,7 @@ namespace EpgTimer
                 recSettingView.SetViewMode(false);
                 SetChangeMode(false);
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
 
         public void SetChangeMode(bool chgFlag)
@@ -101,9 +98,7 @@ namespace EpgTimer
             {
                 if (CommonManager.Instance.DB.ManualAutoAddList.ContainsKey(this.defKey.dataID) == false)
                 {
-                    MessageBox.Show("項目がありません。\r\n" +
-                        "既に削除されています。\r\n" +
-                        "(別のEpgtimerによる操作など)");
+                    MessageBox.Show("項目がありません。\r\n" + "既に削除されています。\r\n" + "(別のEpgtimerによる操作など)", "データエラー", MessageBoxButton.OK, MessageBoxImage.Exclamation);
 
                     //追加モードに変更
                     SetChangeMode(false);
@@ -201,10 +196,7 @@ namespace EpgTimer
                     mutil.AutoAddAdd(CommonUtil.ToList(defKey));
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
             DialogResult = true;
         }
 

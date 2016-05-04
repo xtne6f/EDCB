@@ -127,10 +127,7 @@ namespace EpgTimer
                 //notify残ってれば更新。通常残ってないはず。
                 vutil.ReloadReserveData();
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
         public static void RefreshMenu(Window owner_win)
         {
@@ -292,10 +289,7 @@ namespace EpgTimer
                     }
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
 
         private void button_chg_epgAutoAdd_Click(object sender, ExecutedRoutedEventArgs e)
@@ -306,21 +300,22 @@ namespace EpgTimer
 
                 mutil.AutoAddChange(CommonUtil.ToList(this.GetAutoAddData()));
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
 
         private void button_del_epgAutoAdd_Click(object sender, ExecutedRoutedEventArgs e)
         {
-            if (CheckAutoAddChange(e, 2) == false) return;
-
-            if (mutil.AutoAddDelete(CommonUtil.ToList(CommonManager.Instance.DB.EpgAutoAddList[autoAddID])) == true)
+            try
             {
-                SetViewMode(SearchMode.NewAdd);
-                this.autoAddID = 0;
+                if (CheckAutoAddChange(e, 2) == false) return;
+
+                if (mutil.AutoAddDelete(CommonUtil.ToList(CommonManager.Instance.DB.EpgAutoAddList[autoAddID])) == true)
+                {
+                    SetViewMode(SearchMode.NewAdd);
+                    this.autoAddID = 0;
+                }
             }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
 
         //proc 0:追加、1:変更、2:削除
@@ -329,18 +324,18 @@ namespace EpgTimer
             if (CmdExeUtil.IsDisplayKgMessage(e) == true)
             {
                 var strMode = new string[] { "追加", "変更", "削除" }[proc];
-                if (MessageBox.Show("自動予約登録を" + strMode + "します。\r\nよろしいですか？", strMode + "の確認", MessageBoxButton.OKCancel) != MessageBoxResult.OK)
+                if (MessageBox.Show("キーワード予約登録を" + strMode + "します。\r\nよろしいですか？", strMode + "の確認", MessageBoxButton.OKCancel) != MessageBoxResult.OK)
                 { return false; }
             }
 
-            //データの更新
+            //データの更新。最初のキャンセルを過ぎたら画面を更新する。
             SearchPg();
 
             if (proc != 0)
             {
                 if (CommonManager.Instance.DB.EpgAutoAddList.ContainsKey(this.autoAddID) == false)
                 {
-                    MessageBox.Show("項目がありません。\r\n" + "既に削除されています。\r\n");
+                    MessageBox.Show("項目がありません。\r\n" + "既に削除されています。\r\n" + "(別のEpgtimerによる操作など)", "データエラー", MessageBoxButton.OK, MessageBoxImage.Exclamation);
                     SetViewMode(SearchMode.NewAdd);
                     this.autoAddID = 0;
                     return false;
@@ -471,10 +466,7 @@ namespace EpgTimer
                     }
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
 
         public static void MinimizeWindows()

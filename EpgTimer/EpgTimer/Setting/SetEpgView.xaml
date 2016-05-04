@@ -92,7 +92,7 @@
                                 <Label Content="最低表示行数" Height="28" HorizontalAlignment="Left" Margin="551,6,0,0" VerticalAlignment="Top" />
                                 <TextBox Height="24" HorizontalAlignment="Left" Margin="650,6,0,0" Name="textBox_minimumHeight" VerticalAlignment="Top" Width="55" />
                                 <CheckBox Content="番組内容をポップアップ表示する" Height="16" HorizontalAlignment="Left" Margin="11,70,0,0" Name="checkBox_epg_popup" VerticalAlignment="Top" Click="checkBox_epg_popup_Click" />
-                                <CheckBox Content="予約のある番組のみポップアップする" Height="16" HorizontalAlignment="Left" Margin="32,92,0,0" Name="checkBox_epg_popup_resOnly" VerticalAlignment="Top" />
+                                <CheckBox Content="予約のある番組のみポップアップする" Height="16" HorizontalAlignment="Left" Margin="32,92,0,0" Name="checkBox_epg_popup_resOnly" VerticalAlignment="Top" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_epg_popup, UpdateSourceTrigger=PropertyChanged}" />
                                 <CheckBox Content="シングルクリックで予約ダイアログを開く" Height="16" HorizontalAlignment="Left" Margin="11,114,0,0" Name="checkBox_singleOpen" VerticalAlignment="Top" />
                                 <CheckBox Content="番組詳細タブを選択した状態で予約ダイアログを開く" Height="16" HorizontalAlignment="Left" Margin="11,136,0,0" Name="checkBox_openInfo" VerticalAlignment="Top" />
                                 <CheckBox Content="番組名と番組内容の表示位置をあわせる" Height="16" HorizontalAlignment="Left" Margin="11,158,0,0" Name="checkBox_title_indent" VerticalAlignment="Top" />
@@ -282,7 +282,7 @@
                                 <Label Content="ドラッグスクロール倍率" Height="28" HorizontalAlignment="Left" Margin="327,36,0,0" Name="label38" VerticalAlignment="Top" />
                                 <TextBox Height="24" HorizontalAlignment="Left" Margin="470,36,0,0" Name="textBox_tunerDdragScroll" VerticalAlignment="Top" Width="55" />
                                 <CheckBox Content="予約をポップアップ表示する" Height="16" HorizontalAlignment="Left" Margin="11,70,0,0" Name="checkBox_tuner_popup" VerticalAlignment="Top" Click="checkBox_tuner_popup_Click" />
-                                <CheckBox Content="ポップアップに優先度と録画モードを表示する" Height="16" HorizontalAlignment="Left" Margin="32,92,0,0" Name="checkBox_tuner_popup_recInfo" VerticalAlignment="Top" />
+                                <CheckBox Content="ポップアップに優先度と録画モードを表示する" Height="16" HorizontalAlignment="Left" Margin="32,92,0,0" Name="checkBox_tuner_popup_recInfo" VerticalAlignment="Top" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_tuner_popup, UpdateSourceTrigger=PropertyChanged}" />
                                 <CheckBox Content="シングルクリックで予約ダイアログを開く" Height="16" HorizontalAlignment="Left" Margin="11,114,0,0" Name="checkBox_tunerSingleOpen" VerticalAlignment="Top" />
                                 <CheckBox Content="サービスのフォント色を優先度で変える('色'タブの設定)" Height="16" HorizontalAlignment="Left" Margin="11,136,0,0" Name="checkBox_tunerColorModeUse" VerticalAlignment="Top" ToolTip="チェックされていない場合はこの画面の設定色が使われます。" Click="checkBox_tunerColorModeUse_Click" />
                                 <CheckBox Content="サービス名と番組名の表示位置をあわせる" Height="16" HorizontalAlignment="Left" Margin="11,158,0,0" Name="checkBox_tuner_title_indent" VerticalAlignment="Top" />
@@ -384,24 +384,23 @@
                             <StackPanel Margin="11,6,0,0" >
                                 <Button Content="右クリックメニューの設定" Height="23" HorizontalAlignment="Left" Margin="0,0,0,12" Name="button_set_cm" Click="button_set_cm_Click" Width="171" />
                                 <CheckBox Content="自動予約登録(キーワード予約、プログラム予約)を見失った予約を強調表示する" Name="checkBox_displayAutoAddMissing" ToolTip="自動予約登録を削除・変更した場合や、EPGのタイトルが変わった場合などに発生する場合があります" />
-                                <Label Content="※EpgTimerNWでは若干もたつく感じがあるかもしれません" Margin="14,-4,0,6" />
-                                <StackPanel Margin="0,0,0,6" Orientation="Horizontal" >
+                                <StackPanel Margin="0,6,0,0" Orientation="Horizontal" >
                                     <Label Content="番組表などへジャンプしたときの強調表示の継続時間" VerticalAlignment="Center" />
                                     <TextBox Width="55" Height="24" Margin="12,0,0,0" Name="textBox_DisplayJumpTime" VerticalAlignment="Center" />
                                     <Label Content="秒" Margin="12,0,0,0" VerticalAlignment="Center" />
                                 </StackPanel>
-                                <StackPanel Margin="0,0,0,6" Orientation="Horizontal" >
+                                <StackPanel Margin="0,6,0,0" Orientation="Horizontal" >
                                     <Label Content="リスト表示で省略する(録画済み一覧以外)" VerticalAlignment="Center" />
                                     <CheckBox Content="'年'" Margin="12,0,0,0" Name="checkBox_resNoYear" VerticalAlignment="Center" />
                                     <CheckBox Content="'秒'" Margin="12,0,0,0" Name="checkBox_resNoSecond" VerticalAlignment="Center" ToolTip="たまに'秒'単位の番組も存在します。" />
                                     <CheckBox Content="長さの'秒'" Margin="12,0,0,0" Name="checkBox_resNoDurSecond" VerticalAlignment="Center" ToolTip="たまに'秒'単位の番組も存在します。" />
                                 </StackPanel>
-                                <StackPanel Margin="0,0,0,6" Orientation="Horizontal" >
+                                <StackPanel Margin="0,6,0,0" Orientation="Horizontal" >
                                     <CheckBox Content="深夜時間表示をする" Name="checkBox_LaterTimeUse" VerticalAlignment="Center" />
                                     <TextBox Width="55" Height="24" Margin="12,0,0,0" Name="textBox_LaterTimeHour" VerticalAlignment="Center" />
                                     <Label Content="時まで" Margin="12,0,0,0" VerticalAlignment="Center" />
                                 </StackPanel>
-                                <CheckBox Margin="0,0,0,6" Content="検索/キーワード予約ダイアログの録画設定タブにプリセットを表示する" Name="checkBox_displayPresetOnSearch" />
+                                <CheckBox Margin="0,6,0,0" Content="検索/キーワード予約ダイアログの録画設定タブにプリセットを表示する" Name="checkBox_displayPresetOnSearch" />
                             </StackPanel>
                         </GroupBox>
                     </StackPanel>
