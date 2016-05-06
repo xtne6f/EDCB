@@ -848,6 +848,7 @@ namespace EpgTimer
                     ResetButtonView();
                     ResetTaskMenu();
                     taskTray.Text = GetTaskTrayReserveInfoText();
+                    taskTray.Visible = Settings.Instance.ShowTray;
                     RefreshMenu(false);
             }
         }
@@ -1225,7 +1226,7 @@ namespace EpgTimer
 
         private string GetTaskTrayReserveInfoText()
         {
-            CommonManager.Instance.DB.ReloadReserveInfo();
+            if (Settings.Instance.ShowTray == false) return "";
 
             var sortList = CommonManager.Instance.DB.ReserveList.Values
                 .Where(info => info.IsEnabled == true && info.EndTimeWithMargin() > DateTime.Now)
