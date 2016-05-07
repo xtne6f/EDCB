@@ -104,17 +104,30 @@ function RecSettingTemplate(rs)
   return s
 end
 
+--ドキュメントルートへの相対パスを取得する
+function PathToRoot()
+  return ('../'):rep(#mg.script_name:gsub('[^\\/]*[\\/]+[^\\/]*','N')-#(mg.document_root..'/'):gsub('[^\\/]*[\\/]+','N'))
+end
+
+--OSの絶対パスをドキュメントルートからの相対パスに変換する
+function NativeToDocumentPath(path)
+  local root=(mg.document_root..'/'):gsub('[\\/]+','/')
+  if path:gsub('[\\/]+','/'):sub(1,#root):lower()==root:lower() then
+    return path:gsub('[\\/]+','/'):sub(#root+1)
+  end
+end
+
 --可能ならコンテンツをzlib圧縮する(lua-zlib(zlib.dll)が必要)
 function Deflate(ct)
   local zl
   local trim
   for k,v in pairs(mg.request_info.http_headers) do
-    if not zl and k:match('^[Aa]ccept%-[Ee]ncoding$') and v:find('deflate') then
+    if not zl and k:lower()=='accept-encoding' and v:lower():find('deflate') then
       local status, zlib = pcall(require, 'zlib')
       if status then
         zl=zlib.deflate()(ct, 'finish')
       end
-    elseif k:match('^[Uu]ser%-[Aa]gent$') and (v:find(' MSIE ') or v:find(' Trident/7%.') or v:find(' Edge/')) then
+    elseif k:lower()=='user-agent' and (v:find(' MSIE ') or v:find(' Trident/7%.') or v:find(' Edge/')) then
       --RFC2616非準拠のブラウザはzlibヘッダを取り除く
       trim=true
     end

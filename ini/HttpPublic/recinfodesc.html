@@ -10,11 +10,25 @@ ct=[=[
 録画済み詳細<br><br>
 ]=]
 
+id=0+(mg.get_var(mg.request_info.query_string,'id') or 0)
+w=edcb.GetRecFileInfo(id)
 edcb.htmlEscape=15
-v=edcb.GetRecFileInfo(0+(mg.get_var(mg.request_info.query_string,'id') or 0))
+v=edcb.GetRecFileInfo(id)
 if v then
+  if w and NativeToDocumentPath(w.recFilePath) then
+    for i,ext in ipairs({'.webm',''}) do
+      f=io.open(edcb.Convert('cp932', 'utf-8', w.recFilePath..ext), 'rb')
+      if f then
+        f:close()
+        video=PathToRoot()..NativeToDocumentPath(w.recFilePath)..ext
+        break
+      end
+    end
+  end
   ct=ct..os.date('%Y/%m/%d(%a) %H:%M～', os.time(v.startTime))..os.date('%H:%M ', os.time(v.startTime)+v.durationSecond)..v.serviceName..'<br>\n'..v.title..'<br><br>\n'
     ..'結果：'..v.comment..'<br>\nドロップ：'..v.drops..'<br>\nスクランブル：'..v.scrambles..'<br><br>\n'
+    ..(video and '<a href="'..mg.url_encode(video):gsub('%%2f','/')..'">'..edcb.Convert('utf-8', 'utf-8', video)..'</a> [<a href="'
+       ..mg.url_encode(video:gsub('[^\\/]*$','')..'chunk.lua'):gsub('%%2f','/')..'?0='..mg.url_encode(video:match('[^\\/]*$'))..'">chunk.lua</a>]<br><br>\n' or '')
     ..'<hr>番組情報<hr>\n'..string.gsub(v.programInfo, '\r?\n', '<br>\n')
     ..'<hr>エラーログ<hr>\n'..string.gsub(v.errInfo, '\r?\n', '<br>\n')..'<br>\n'
     ..'<form method="POST" action="recinfodel.html?id='..v.id..'">\n'

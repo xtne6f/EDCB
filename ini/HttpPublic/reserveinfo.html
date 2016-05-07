@@ -10,10 +10,24 @@ ct=[=[
 予約詳細<br><br>
 ]=]
 
+id=0+(mg.get_var(mg.request_info.query_string,'id') or 0)
+recFilePath=edcb.GetRecFilePath and edcb.GetRecFilePath(id) or nil
 edcb.htmlEscape=15
-r=edcb.GetReserveData(0+(mg.get_var(mg.request_info.query_string,'id') or 0))
+r=edcb.GetReserveData(id)
 if r then
+  if recFilePath and NativeToDocumentPath(recFilePath) then
+    for i,ext in ipairs({'.webm',''}) do
+      f=io.open(edcb.Convert('cp932', 'utf-8', recFilePath..ext), 'rb')
+      if f then
+        f:close()
+        video=PathToRoot()..NativeToDocumentPath(recFilePath)..ext
+        break
+      end
+    end
+  end
   ct=ct..'<hr>番組情報<hr>\n'..string.gsub(_ConvertEpgInfoText2(r.onid, r.tsid, r.sid, r.eid), '\r?\n', '<br>\n')
+    ..(video and '<br>\n<a href="'..mg.url_encode(video):gsub('%%2f','/')..'">'..edcb.Convert('utf-8', 'utf-8', video)..'</a> [<a href="'
+       ..mg.url_encode(video:gsub('[^\\/]*$','')..'chunk.lua'):gsub('%%2f','/')..'?0='..mg.url_encode(video:match('[^\\/]*$'))..'">chunk.lua</a>]<br>\n' or '')
     ..'<hr>録画設定<hr>\n<form action="reserveinfo.html">'
     ..'<input type="hidden" name="id" value="'..r.reserveID..'">プリセット: <select name="presetID">\n'
   presetID=0+(mg.get_var(mg.request_info.query_string,'presetID') or 65535)
