@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Input;
 
 using EpgTimer.EpgView;
 
@@ -39,6 +37,9 @@ namespace EpgTimer
                     , CommonUtil.GetMemberName(() => Settings.Instance.EpgListSortDirection));
             lstCtrl.SetViewSetting(listView_event, gridView_event, true, true, list_columns);
             lstCtrl.SetSelectedItemDoubleClick(EpgCmds.ShowDialog);
+
+            //ステータス変更の設定
+            lstCtrl.SetSelectionChangedEventHandler((sender, e) => this.UpdateStatus(1));
 
             InitCommand();
         }
@@ -99,39 +100,21 @@ namespace EpgTimer
             }
         }
 
-        protected override bool ReloadViewData()
+        protected override void UpdateStatusData(int mode = 0)
         {
-            //ReloadReserveViewItem()の実質的な重複実行を阻止。
-            //ReloadEpgData()より先に実行させておく必要がある。※パネル系Viewでは後に実行させる必要がある。
-            ClearInfo();
-            updateReserveData = !base.ReloadReserveData();
-            return ReloadEpgData();
+            if (mode == 0) this.status[1] = vutil.ConvertSearchItemStatus(lstCtrl.dataList, "番組数");
+            List<SearchItem> sList = lstCtrl.GetSelectedItemsList();
+            this.status[2] = sList.Count == 0 ? "" : vutil.ConvertSearchItemStatus(sList, "　選択中");
         }
 
-        protected override bool ReloadEpgData()
-        {
-            if (base.ReloadEpgData() == false) return false;
-
-            ReloadProgramViewItem();
-            return true;
-        }
-
-        protected override bool ReloadReserveData()
-        {
-            if (base.ReloadReserveData() == false) return false;
-
-            ReloadReserveViewItem();
-            return true;
-        }
-
-        private void ReloadReserveViewItem()
+        protected override void ReloadReserveViewItem()
         {
             //予約チェック
             lstCtrl.dataList.SetReserveData();
             listView_event.Items.Refresh();
         }
 
-        private bool ReloadProgramViewItem()
+        protected override void ReloadProgramViewItem()
         {
             try
             {
@@ -158,14 +141,8 @@ namespace EpgTimer
                 listBox_service_need_initialized = false;
 
                 UpdateEventList();
-
-                return true;
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                return false;
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
 
         private void UpdateEventList()
@@ -230,22 +207,24 @@ namespace EpgTimer
         private void CheckBox_Changed(object sender, RoutedEventArgs e)
         {
             UpdateEventList();
+            UpdateStatus();
         }
 
         private void button_chkAll_Click(object sender, RoutedEventArgs e)
         {
-            listBox_service.ItemsSource = null;
-            serviceList.ForEach(info => info.IsSelected = true);
-            listBox_service.ItemsSource = serviceList;
-            UpdateEventList();
+            button_All_Click(true);
         }
-
         private void button_clearAll_Click(object sender, RoutedEventArgs e)
         {
+            button_All_Click(false);
+        }
+        private void button_All_Click(bool selected)
+        {
             listBox_service.ItemsSource = null;
-            serviceList.ForEach(info => info.IsSelected = false);
+            serviceList.ForEach(info => info.IsSelected = selected);
             listBox_service.ItemsSource = serviceList;
             UpdateEventList();
+            UpdateStatus();
         }
 
         private void listView_event_SelectionChanged(object sender, SelectionChangedEventArgs e)

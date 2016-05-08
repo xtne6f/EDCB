@@ -34,6 +34,9 @@ namespace EpgTimer
                     , CommonUtil.GetMemberName(() => Settings.Instance.ResSortDirection));
                 lstCtrl.SetViewSetting(listView_reserve, gridView_reserve, true, true, list_columns);
                 lstCtrl.SetSelectedItemDoubleClick(EpgCmds.ShowDialog);
+                
+                //ステータス変更の設定
+                lstCtrl.SetSelectionChangedEventHandler((sender, e) => this.UpdateStatus(1));
 
                 //最初にコマンド集の初期化
                 mc = new CmdExeReserve(this);
@@ -68,10 +71,7 @@ namespace EpgTimer
                 //コンテキストメニューを開く時の設定
                 listView_reserve.ContextMenu.Opened += new RoutedEventHandler(mc.SupportContextMenuLoading);
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
         public void RefreshMenu()
         {
@@ -91,6 +91,12 @@ namespace EpgTimer
                 }
                 return true;
             });
+        }
+        protected override void UpdateStatusData(int mode = 0)
+        {
+            if (mode == 0) this.status[1] = vutil.ConvertReserveStatus(lstCtrl.dataList, "予約数", 1);
+            List<ReserveItem> sList = lstCtrl.GetSelectedItemsList();
+            this.status[2] = sList.Count == 0 ? "" : vutil.ConvertReserveStatus(sList, "　選択中", 2);
         }
         public void SaveViewData()
         {

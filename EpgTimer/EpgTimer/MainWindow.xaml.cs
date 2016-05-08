@@ -232,6 +232,8 @@ namespace EpgTimer
 
                 CheckCmdLine();
 
+                StatusbarReset();//ステータスバーリセット
+
                 if (CommonManager.Instance.NWMode == false)
                 {
                     //予約一覧の表示に使用したりするのであらかじめ読込んでおく(暫定処置)
@@ -465,7 +467,7 @@ namespace EpgTimer
                 }
             }
             //タブとして表示するかボタンが1つもないときは行を隠す
-            rowDefinition_row0.Height = new GridLength(Settings.Instance.ViewButtonShowAsTab || stackPanel_button.Children.Count == 0 ? 0 : 30);
+            stackPanel_button.Visibility = Settings.Instance.ViewButtonShowAsTab || stackPanel_button.Children.Count == 0 ? Visibility.Collapsed : Visibility.Visible;
         }
 
         bool ConnectCmd(bool showDialog)
@@ -514,6 +516,8 @@ namespace EpgTimer
                 return false;
             }
 
+            CommonManager.Instance.StatusNotifySet("EpgTimerSrvへ接続完了");
+
             IniFileHandler.UpdateSrvProfileIniNW();
 
             CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.ReserveInfo);
@@ -530,7 +534,7 @@ namespace EpgTimer
             tunerReserveView.UpdateInfo();
             autoAddView.UpdateInfo();
             recInfoView.UpdateInfo();
-            epgView.UpdateEpgData();
+            epgView.UpdateInfo();
             SearchWindow.UpdatesInfo();
             return true;
         }
@@ -567,7 +571,14 @@ namespace EpgTimer
                                     waitPort != 0 && registered == false ||
                                     taskTray.Icon == TaskIconSpec.TaskIconGray)//EpgTimerNW側の休止復帰も含む
                                 {
-                                    ConnectCmd(false);
+                                    if (ConnectCmd(false) == true)
+                                    {
+                                        CommonManager.Instance.StatusNotifyAppend("自動再接続 - ");
+                                    }
+                                    else
+                                    {
+                                        CommonManager.Instance.StatusNotifySet("自動再接続 - EpgTimerSrvへの再接続に失敗");
+                                    }
                                 }
                                 return;
                             }
@@ -859,7 +870,8 @@ namespace EpgTimer
                         cmd.SendNotifyProfileUpdate();
                     }
 
-                    ChkTimerWork();
+                    StatusbarReset();//ステータスバーリセット
+                    ChkTimerWork();//タイマーリセット
 
                     reserveView.UpdateInfo();
                     tunerReserveView.UpdateInfo();
@@ -872,6 +884,8 @@ namespace EpgTimer
                     taskTray.Text = GetTaskTrayReserveInfoText();
                     taskTray.Visible = Settings.Instance.ShowTray;
                     RefreshMenu(false);
+
+                    CommonManager.Instance.StatusNotifySet("設定変更に伴う画面再構築を実行");
             }
         }
 
@@ -932,6 +946,12 @@ namespace EpgTimer
             if (((uint)mode & 0x00000002) != 0) SearchWindow.UpdatesInfo();
         }
         */
+        void StatusbarReset()
+        {
+            statusBar.ClearText();//一応
+            statusBar.SetTimerIntervalDefault();
+            statusBar.Visibility = Settings.Instance.DisplayStatus == true ? Visibility.Visible : Visibility.Collapsed;
+        }
         void searchButton_Click(object sender, ExecutedRoutedEventArgs e)
         {
             // 最小化したSearchWindowを復帰
@@ -983,7 +1003,9 @@ namespace EpgTimer
             if (cmd.SendReloadEpg() != ErrCode.CMD_SUCCESS)
             {
                 MessageBox.Show("EPG再読み込みを行える状態ではありません。\r\n（EPGデータ読み込み中。など）");
+                return;
             }
+            CommonManager.Instance.StatusNotifySet("EPG再読み込みを実行");
         }
 
         void standbyButton_Click(object sender, RoutedEventArgs e)
@@ -1397,9 +1419,10 @@ namespace EpgTimer
                             tunerReserveView.UpdateInfo();
                         }
                         autoAddView.epgAutoAddView.UpdateInfo();//検索数の更新
-                        epgView.UpdateEpgData();
+                        epgView.UpdateInfo();
                         SearchWindow.UpdatesInfo();
-                        
+
+                        CommonManager.Instance.StatusNotifyAppend("EPGデータ更新 < ");
                         GC.Collect();
                     }
                     break;
@@ -1410,6 +1433,7 @@ namespace EpgTimer
                         CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.ReserveInfo);
                         CommonManager.Instance.DB.ReloadReserveInfo();
                         RefreshAllViewsReserveInfo();
+                        CommonManager.Instance.StatusNotifyAppend("予約データ更新 < ");
                     }
                     break;
                 case UpdateNotifyItem.RecInfo:
@@ -1420,6 +1444,7 @@ namespace EpgTimer
                             CommonManager.Instance.DB.ReloadrecFileInfo();
                         }
                         recInfoView.UpdateInfo();
+                        CommonManager.Instance.StatusNotifyAppend("録画済みデータ更新 < ");
                     }
                     break;
                 case UpdateNotifyItem.AutoAddEpgInfo:
@@ -1433,6 +1458,7 @@ namespace EpgTimer
                         {
                             RefreshAllViewsReserveInfo(UpdateViewMode.ReserveInfoNoAutoAdd);
                         }
+                        CommonManager.Instance.StatusNotifyAppend("キーワード予約データ更新 < ");
                     }
                     break;
                 case UpdateNotifyItem.AutoAddManualInfo:
@@ -1446,6 +1472,7 @@ namespace EpgTimer
                         {
                             RefreshAllViewsReserveInfo(UpdateViewMode.ReserveInfoNoAutoAdd);
                         }
+                        CommonManager.Instance.StatusNotifyAppend("プログラム予約登録データ更新 < ");
                     }
                     break;
                 case UpdateNotifyItem.IniFile:
@@ -1454,6 +1481,7 @@ namespace EpgTimer
                         {
                             IniFileHandler.UpdateSrvProfileIniNW();
                             RefreshAllViewsReserveInfo();
+                            CommonManager.Instance.StatusNotifyAppend("設定ファイル転送 < ");
                         }
                     }
                     break;
@@ -1513,6 +1541,7 @@ namespace EpgTimer
                         RefreshAllViewsReserveInfo();
                     }
                 }
+                CommonManager.Instance.StatusNotifySet("情報の強制更新を実行(F5)");
             }
             catch (Exception ex)
             {

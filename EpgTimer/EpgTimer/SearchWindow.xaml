@@ -1,6 +1,7 @@
 ﻿<Window x:Class="EpgTimer.SearchWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:user="clr-namespace:EpgTimer.UserCtrlView"
         Title="検索" Height="600" Width="780" xmlns:my="clr-namespace:EpgTimer" WindowStartupLocation="Manual" Loaded="Window_Loaded" Closed="Window_Closed" Activated="Window_Activated" StateChanged="Window_StateChanged">
 
     <Window.Resources>
@@ -15,20 +16,17 @@
             <RowDefinition Height="410" />
             <RowDefinition Height="35" />
             <RowDefinition Height="*" />
+            <RowDefinition Height="auto" />
         </Grid.RowDefinitions>
         <TabControl Name="tabControl1" TabStripPlacement="Bottom" Margin="0,0,0,3">
             <TabItem Header="検索条件" Name="tabItem1" >
-                <Grid>
-                    <my:SearchKey x:Name="searchKeyView" />
-                </Grid>
+                <my:SearchKey x:Name="searchKeyView" />
             </TabItem>
             <TabItem Header="録画設定" Name="tabItem2">
-                <Grid>
-                    <my:RecSettingView x:Name="recSettingView" />
-                </Grid>
+                <my:RecSettingView x:Name="recSettingView" />
             </TabItem>
         </TabControl>
-        <GridSplitter Grid.Row="0" Height="2" HorizontalAlignment="Stretch" Name="gridSplitter1" VerticalAlignment="Bottom" BorderBrush="DarkGray" Background="DarkGray" />
+        <GridSplitter Grid.Row="0" Height="2" HorizontalAlignment="Stretch" VerticalAlignment="Bottom" BorderBrush="DarkGray" Background="DarkGray" />
         <StackPanel Grid.Row="1" Name="stackPanel_button" Orientation="Horizontal">
             <Button Content="検索" Height="23" Margin="10,0,0,0" Name="button_search" VerticalAlignment="Center" Width="48" />
             <Button Content="予約" Height="23" Margin="20,0,0,0" Name="button_add_reserve" VerticalAlignment="Center" Width="48" />
@@ -39,12 +37,14 @@
             <Button Content="前へ" Height="23" Margin="20,0,0,0" Name="button_up_epgAutoAdd" VerticalAlignment="Center" Width="48" />
             <Button Content="次へ" Height="23" Margin="10,0,0,0" Name="button_down_epgAutoAdd" VerticalAlignment="Center" Width="48" />
         </StackPanel>
-        <ListView Grid.Row="2" Name="listView_result" Margin="10,10,10,28" Style="{StaticResource DataListViewStyle}" >
+        <ListView Grid.Row="2" Name="listView_result" Margin="10,10,10,5" Style="{StaticResource DataListViewStyle}" >
             <ListView.View>
                 <GridView x:Name="gridView_result" />
             </ListView.View>
         </ListView>
-        <TextBox Grid.Row="2" Name="text_result" Margin="10,0,10,5" Height="23" VerticalAlignment="Bottom" BorderThickness="0" IsReadOnlyCaretVisible="True" IsReadOnly="True" />
-        <CheckBox Grid.Row="2" Content="メインウィンドウの前面に表示" Height="16" Margin="10,0,10,5" VerticalAlignment="Bottom" HorizontalAlignment="Right" Name="checkBox_windowPinned" Checked="checkBox_windowPinned_Checked" Unchecked="checkBox_windowPinned_Checked" />
+        <DockPanel Grid.Row="3" Margin="10,0,10,5" >
+            <CheckBox DockPanel.Dock="Right" Content="メインウィンドウの前面に表示" Margin="6,0,0,0" VerticalAlignment="Bottom" Name="checkBox_windowPinned" Checked="checkBox_windowPinned_Checked" Unchecked="checkBox_windowPinned_Checked" />
+            <user:StatusView x:Name="statusBar" />
+        </DockPanel>
     </Grid>
 </Window>

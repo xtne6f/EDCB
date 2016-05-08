@@ -1,11 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media;
-using System.Windows.Shapes;
 
 using EpgTimer.EpgView;
 
@@ -51,24 +48,6 @@ namespace EpgTimer
             base.SetViewMode(setInfo);
         }
 
-        protected override bool ReloadEpgData()
-        {
-            if (base.ReloadEpgData() == false) return false;
-
-            ReloadProgramViewItem();
-            ReDrawNowLine();
-            base.MoveNowTime();
-            return true;
-        }
-
-        protected override bool ReloadReserveData()
-        {
-            if (base.ReloadReserveData() == false) return false;
-
-            ReloadReserveViewItem();
-            return true;
-        }
-
         /// <summary>
         /// 現在ライン表示
         /// </summary>
@@ -112,16 +91,13 @@ namespace EpgTimer
                     }
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
 
         /// <summary>
         /// 予約情報の再描画
         /// </summary>
-        private void ReloadReserveViewItem()
+        protected override void ReloadReserveViewItem()
         {
             try
             {
@@ -208,16 +184,13 @@ namespace EpgTimer
                 }
                 epgProgramView.SetReserveList(reserveList);
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
 
         /// <summary>
         /// 番組情報の再描画処理
         /// </summary>
-        private void ReloadProgramViewItem()
+        protected override void ReloadProgramViewItem()
         {
             try
             {
@@ -427,11 +400,11 @@ namespace EpgTimer
                 timeView.SetTime(dateTimeList, viewCustNeedTimeOnly, false);
                 dateView.SetTime(dateTimeList);
                 serviceView.SetService(primeServiceList);
+
+                ReDrawNowLine();
+                MoveNowTime();
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
 
     }

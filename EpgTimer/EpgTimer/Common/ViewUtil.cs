@@ -251,10 +251,7 @@ namespace EpgTimer
                     notifyTimer.Start();
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
 
         public void ScrollToItem(object target_item, ListBox listBox)
@@ -272,10 +269,7 @@ namespace EpgTimer
                 //int scrollpos = ((listView_event.SelectedIndex - 5) >= 0 ? listView_event.SelectedIndex - 5 : 0);
                 //listView_event.ScrollIntoView(listView_event.Items[scrollpos]);
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
 
         public void DisableControlChildren(Control ctrl)
@@ -311,6 +305,78 @@ namespace EpgTimer
                 if (trg == null) trg = LogicalTreeHelper.GetParent(obj);
                 obj = trg;
             }
+        }
+
+        public string ConvertSearchItemStatus(IEnumerable<SearchItem> list, string itemText = "番組数")
+        {
+            return string.Format("{0}:{1}", itemText, list.Count()) + ConvertReserveStatus(list, " 予約");
+        }
+        public string ConvertReserveStatus(IEnumerable<SearchItem> list, string itemText = "予約数", int reserveMode = 0)
+        {
+            if (reserveMode == 0 && list.Count() == 0) return "";
+            return ConvertReserveStatus(list.GetReserveList(), itemText, reserveMode);
+        }
+        public string ConvertReserveStatus(List<ReserveData> rlist, string itemText = "予約数", int reserveMode = 0)
+        {
+            var text = string.Format("{0}:{1}", itemText, rlist.Count);
+            List<ReserveData> onlist = rlist.FindAll(data => data.IsEnabled == true);
+            if (reserveMode == 0 || (reserveMode != 3 && rlist.Count != onlist.Count))
+            {
+                text += string.Format(" (有効:{0} 無効:{1})", onlist.Count, rlist.Count - onlist.Count);
+            }
+            if (reserveMode != 0)
+            {
+                if (reserveMode <= 2)
+                {
+                    uint sum = (uint)(onlist.Sum(info => info.DurationSecond
+                        + info.RecSetting.GetTrueMargin(true) + info.RecSetting.GetTrueMargin(false)));
+                    text += (reserveMode == 1 ? " 総録画時間:" : " 録画時間:")
+                            + CommonManager.ConvertDurationText(sum, false);
+                }
+                else
+                {
+                    long errs = onlist.Count(item => item.OverlapMode == 2);
+                    long warns = onlist.Count(item => item.OverlapMode == 1);
+                    if (Settings.Instance.TunerDisplayOffReserve == true)
+                    {
+                        long off = rlist.Count - onlist.Count;
+                        text += string.Format(" (チューナー不足:{0} 一部録画:{1} 無効予約:{2})", errs, warns, off);
+                    }
+                    else
+                    {
+                        text += string.Format(" (チューナー不足:{0} 一部録画:{1})", errs, warns);
+                    }
+                }
+            }
+            return text;
+        }
+        public string ConvertRecinfoStatus(IEnumerable<RecInfoItem> list, string itemText = "録画結果")
+        {
+            var format = "{0}:{1} ({2}:{3} {4}:{5})";
+            if (Settings.Instance.RecinfoErrCriticalDrops == true)
+            {
+                return string.Format(format, itemText, list.Count(),
+                    "Drop*", list.Sum(item => item.RecInfo.DropsCritical),
+                    "Scramble*", list.Sum(item => item.RecInfo.ScramblesCritical));
+            }
+            else
+            {
+                return string.Format(format, itemText, list.Count(),
+                    "Drop", list.Sum(item => item.RecInfo.Drops),
+                    "Scramble", list.Sum(item => item.RecInfo.Scrambles));
+            }
+        }
+        public string ConvertAutoAddStatus(IEnumerable<AutoAddDataItem> list, string itemText = "自動予約登録数")
+        {
+            var onRes = new List<uint>();
+            var offRes = new List<uint>();
+            foreach (var rlist in list.Select(data => data.Data.GetReserveList()))
+            {
+                onRes.AddRange(rlist.Where(item => item.IsEnabled == true).Select(res => res.ReserveID));
+                offRes.AddRange(rlist.Where(item => item.IsEnabled == false).Select(res => res.ReserveID));
+            }
+            return string.Format("{0}:{1} (有効予約数:{2} 無効予約数:{3})",
+                itemText, list.Count(), onRes.Distinct().Count(), offRes.Distinct().Count());
         }
     }
 

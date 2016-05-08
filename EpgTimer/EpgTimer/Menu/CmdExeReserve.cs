@@ -363,5 +363,24 @@ namespace EpgTimer
                 }
             }
         }
+        protected override string GetCmdMessage(ICommand icmd)
+        {
+            if (icmd != EpgCmds.Add && icmd != EpgCmds.AddOnPreset && icmd != EpgCmds.ChgOnOff)
+            {
+                return base.GetCmdMessage(icmd);
+            }
+
+            string cmdMsg = base.cmdMessage[icmd];
+            if (icmd == EpgCmds.Add && eventListEx.Count == 0)
+            {
+                return null;
+            }
+            if (icmd == EpgCmds.ChgOnOff)
+            {
+                if (eventListEx.Count == 0) cmdMsg = "有効・無効切替を実行";
+                else if (dataList.Count == 0) cmdMsg = "簡易予約を実行";
+            }
+            return GetCmdMessageFormat(cmdMsg, this.itemCount);
+        }
     }
 }

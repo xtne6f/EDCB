@@ -10,18 +10,37 @@ namespace EpgTimer.UserCtrlView
         protected ViewUtil vutil = CommonManager.Instance.VUtil;
         protected MenuManager mm = CommonManager.Instance.MM;
         protected MenuBinds mBinds = new MenuBinds();
+        protected string[] status = { "", "", "", "" };
         protected bool ReloadInfo = true;
 
-        public virtual void UpdateInfo()
+        public virtual void UpdateInfo(bool reload = true)
         {
-            ReloadInfo = true;
-            if (ReloadInfo == true && this.IsVisible == true) ReloadInfo = !ReloadInfoData();
+            if (reload == true) ReloadInfo = true;
+            if (ReloadInfo == true && this.IsVisible == true)
+            {
+                ReloadInfo = !ReloadInfoData();
+                UpdateStatus();
+            }
+        }
+        protected virtual bool ReloadInfoData() { return true; }
+        protected void UpdateStatus(int mode = 0)
+        {
+            if (Settings.Instance.DisplayStatus == false) return;
+            UpdateStatusData(mode);
+            RefreshStatus();
+        }
+        protected virtual void UpdateStatusData(int mode = 0) { }
+        protected void RefreshStatus(bool force = false)
+        {
+            if (this.IsVisible == true || force == true)
+            {
+                CommonManager.Instance.StatusSet(status[1], status[2]);
+            }
         }
         protected virtual void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
-            if (ReloadInfo == true && this.IsVisible == true) ReloadInfo = !ReloadInfoData();
+            UpdateInfo(false);
+            RefreshStatus();
         }
-        protected virtual bool ReloadInfoData() { return true; }
-
     }
 }

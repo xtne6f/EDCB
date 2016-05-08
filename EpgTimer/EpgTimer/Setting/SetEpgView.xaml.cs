@@ -198,6 +198,8 @@ namespace EpgTimer.Setting
                 checkBox_LaterTimeUse.IsChecked = Settings.Instance.LaterTimeUse;
                 textBox_LaterTimeHour.Text = (Settings.Instance.LaterTimeHour + 24).ToString();
                 checkBox_displayPresetOnSearch.IsChecked = Settings.Instance.DisplayPresetOnSearch;
+                checkBox_displayStatus.IsChecked = Settings.Instance.DisplayStatus;
+                checkBox_displayStatusNotify.IsChecked = Settings.Instance.DisplayStatusNotify;
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
@@ -340,6 +342,8 @@ namespace EpgTimer.Setting
                 Settings.Instance.LaterTimeUse = (checkBox_LaterTimeUse.IsChecked == true);
                 Settings.Instance.LaterTimeHour = mutil.MyToNumerical(textBox_LaterTimeHour, Convert.ToInt32, 36, 24, 28) - 24;
                 Settings.Instance.DisplayPresetOnSearch = (checkBox_displayPresetOnSearch.IsChecked == true);
+                Settings.Instance.DisplayStatus = (checkBox_displayStatus.IsChecked == true);
+                Settings.Instance.DisplayStatusNotify = (checkBox_displayStatusNotify.IsChecked == true);
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }

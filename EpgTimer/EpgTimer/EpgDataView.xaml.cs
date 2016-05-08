@@ -11,7 +11,7 @@ namespace EpgTimer
     /// </summary>
     public partial class EpgDataView : UserControl
     {
-        private bool RedrawEpg = true;
+        private bool ReloadInfo = true;
 
         public EpgDataView()
         {
@@ -32,12 +32,12 @@ namespace EpgTimer
         /// <summary>
         /// EPGデータの更新通知
         /// </summary>
-        public void UpdateEpgData()
+        public void UpdateInfo(bool reload = true)
         {
-            RedrawEpg = true;
-            if (this.IsVisible == true)
+            if (reload == true) ReloadInfo = true;
+            if (ReloadInfo == true && this.IsVisible == true)
             {
-                RedrawEpg = !ReDrawEpgData();
+                ReloadInfo = !ReDrawEpgData();
             }
         }
 
@@ -50,10 +50,7 @@ namespace EpgTimer
             {
                 this.Views.ForEach(view => view.UpdateReserveData());
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { CommonUtil.ModelessMsgBoxShow(this, ex.Message + "\r\n" + ex.StackTrace); }
         }
 
         /// <summary>
@@ -75,7 +72,7 @@ namespace EpgTimer
 
                 //一度全部削除して作り直す。
                 tabControl.Items.Clear();
-                UpdateEpgData();
+                UpdateInfo();
 
                 if (oldInfo != null)
                 {
@@ -100,10 +97,7 @@ namespace EpgTimer
                     }
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { CommonUtil.ModelessMsgBoxShow(this, ex.Message + "\r\n" + ex.StackTrace); }
         }
 
         /// <summary>
@@ -139,14 +133,7 @@ namespace EpgTimer
                     tabControl.SelectedIndex = 0;
                 }
             }
-            catch (Exception ex)
-            {
-                this.Dispatcher.BeginInvoke(new Action(() =>
-                {
-                    MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                }), null);
-
-            }
+            catch (Exception ex) { CommonUtil.ModelessMsgBoxShow(this, ex.Message + "\r\n" + ex.StackTrace); }
             return true;
         }
 
@@ -165,16 +152,10 @@ namespace EpgTimer
                 }
                 else
                 {
-                    this.Views.ForEach(view => view.UpdateEpgData());
+                    this.Views.ForEach(view => view.UpdateInfo());
                 }
             }
-            catch (Exception ex)
-            {
-                this.Dispatcher.BeginInvoke(new Action(() =>
-                {
-                    MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                }), null);
-            }
+            catch (Exception ex) { CommonUtil.ModelessMsgBoxShow(this, ex.Message + "\r\n" + ex.StackTrace); }
             return ret;
         }
 
@@ -185,29 +166,20 @@ namespace EpgTimer
             {
                 this.Views.ForEach(view => view.RefreshMenu());
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { CommonUtil.ModelessMsgBoxShow(this, ex.Message + "\r\n" + ex.StackTrace); }
         }
 
         private void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
             try
             {
-                if (RedrawEpg == true && this.IsVisible == true)
-                {
-                    RedrawEpg = !ReDrawEpgData();
-                }
+                UpdateInfo(false);
                 if (this.IsVisible)
                 {
                     this.searchJumpTargetProgram();//EPG更新後に探す
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { CommonUtil.ModelessMsgBoxShow(this, ex.Message + "\r\n" + ex.StackTrace); }
         }
 
         /// <summary>

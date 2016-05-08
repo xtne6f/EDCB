@@ -87,6 +87,10 @@ namespace EpgTimer
             mc.SupportContextMenuLoading(cmdMenu, null);
         }
 
+        protected override void UpdateStatusData(int mode = 0)
+        {
+            this.status[1] = vutil.ConvertReserveStatus(reserveList.GetDataList(), "予約数", 3);
+        }
         protected override bool ReloadInfoData()
         {
             if (vutil.ReloadReserveData(this) == false) return false;
@@ -244,10 +248,7 @@ namespace EpgTimer
                     leftPos,
                     timeList.Count * 60 * Settings.Instance.TunerMinHeight);
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
 
         protected override void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)

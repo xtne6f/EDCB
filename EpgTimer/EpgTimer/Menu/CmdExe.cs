@@ -71,6 +71,8 @@ namespace EpgTimer
         protected List<T> dataList = new List<T>();
         public bool IsCommandExecuted { get; protected set; }
 
+        protected Dictionary<ICommand, string> cmdMessage = new Dictionary<ICommand, string>();
+
         public CmdExe(Control owner)
         {
             this.Owner = owner;
@@ -121,6 +123,8 @@ namespace EpgTimer
             cmdList.Add(EpgCmdsEx.ChgMenu, new cmdOption(null, null, cmdExeType.MultiItem));//メニュー用
             cmdList.Add(EpgCmdsEx.OpenFolderMenu, new cmdOption(null, null, cmdExeType.SingleItem));//メニュー用
             cmdList.Add(EpgCmdsEx.ViewMenu, new cmdOption(null, null, cmdExeType.NoSetItem, false, false));//メニュー用
+
+            SetCmdMessage();
         }
         protected virtual void SetData(bool IsAllData = false)
         {
@@ -207,10 +211,7 @@ namespace EpgTimer
                     }
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
         public ExecutedRoutedEventHandler GetExecute(ICommand icmd)
         {
@@ -234,12 +235,14 @@ namespace EpgTimer
                     {
                         cmdPrm.Exe(sender, e);
                         PostProc(sender, e);//後処理があれば実施する
+                        if (Settings.Instance.DisplayStatus == true && Settings.Instance.DisplayStatusNotify == true &&
+                            e != null && e.Command != null)
+                        {
+                            CommonManager.Instance.StatusNotifySet(IsCommandExecuted, GetCmdMessage(e.Command), this.Owner);
+                        }
                     }
                 }
-                catch (Exception ex)
-                {
-                    MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                }
+                catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
                 ClearData();
             });
         }
@@ -590,6 +593,76 @@ namespace EpgTimer
                     subMenu.Header = string.Format("終了マージン : {0} 秒", value == int.MaxValue ? "*" : value.ToString());
                 }
             }
+        }
+
+        protected virtual string GetCmdMessage(ICommand icmd)
+        {
+            string cmdMsg = null;
+            cmdMessage.TryGetValue(icmd, out cmdMsg);
+            return GetCmdMessageFormat(cmdMsg, this.itemCount);
+        }
+        protected string GetCmdMessageFormat(string cmdMsg, int Count)
+        {
+            if (string.IsNullOrEmpty(cmdMsg) == true) return null;
+            return string.Format("{0}(処理数:{1})", cmdMsg, Count);
+        }
+        protected virtual void SetCmdMessage()
+        {
+            cmdMessage.Add(EpgCmds.Add, "予約を追加");
+            //cmdMessage.Add(EpgCmds.ShowAddDialog, "");
+            cmdMessage.Add(EpgCmds.AddOnPreset, "指定プリセットで予約を追加");
+            cmdMessage.Add(EpgCmds.ChgOnOff, "簡易予約/有効・無効切替を実行");
+            cmdMessage.Add(EpgCmds.ChgOnPreset, "録画プリセットを変更");
+            cmdMessage.Add(EpgCmds.ChgResMode, "予約モードを変更");
+            cmdMessage.Add(EpgCmds.ChgBulkRecSet, "録画設定を変更");
+            cmdMessage.Add(EpgCmds.ChgGenre, "ジャンル絞り込みを変更");
+            cmdMessage.Add(EpgCmds.ChgRecmode, "録画モードを変更");
+            cmdMessage.Add(EpgCmds.ChgPriority, "優先度を変更");
+            cmdMessage.Add(EpgCmds.ChgRelay, "イベントリレー追従設定を変更");
+            cmdMessage.Add(EpgCmds.ChgPittari, "ぴったり録画設定を変更");
+            cmdMessage.Add(EpgCmds.ChgTuner, "チューナー指定を変更");
+            cmdMessage.Add(EpgCmds.ChgMarginStart, "録画マージンを変更");
+            cmdMessage.Add(EpgCmds.ChgMarginStartValue, "録画マージンを変更");
+            cmdMessage.Add(EpgCmds.ChgMarginEnd, "録画マージンを変更");
+            cmdMessage.Add(EpgCmds.ChgMarginEndValue, "録画マージンを変更");
+            cmdMessage.Add(EpgCmds.ChgKeyEnabled, "有効/無効を変更");
+            cmdMessage.Add(EpgCmds.ChgOnOffKeyEnabled, "有効/無効切替を実行");
+            cmdMessage.Add(EpgCmds.Delete, "削除を実行");
+            cmdMessage.Add(EpgCmds.Delete2, "予約ごと削除を実行");
+            cmdMessage.Add(EpgCmds.DeleteAll, "全て削除を実行");
+            cmdMessage.Add(EpgCmds.AdjustReserve, "自動予約登録に予約を合わせる");
+            //cmdMessage.Add(EpgCmds.ShowDialog, "");
+            //cmdMessage.Add(EpgCmds.JumpReserve, "予約一覧へジャンプ");
+            //cmdMessage.Add(EpgCmds.JumpTuner, "チューナー画面へジャンプ");
+            //cmdMessage.Add(EpgCmds.JumpTable, "番組表へジャンプ");
+            //cmdMessage.Add(EpgCmds.ShowAutoAddDialog, "");
+            //cmdMessage.Add(EpgCmds.ToAutoadd, "");
+            //cmdMessage.Add(EpgCmds.ReSearch, "再検索を実行");
+            //cmdMessage.Add(EpgCmds.ReSearch2, "再検索を実行");
+            //cmdMessage.Add(EpgCmds.Play, "再生/追いかけ再生を実行");
+            //cmdMessage.Add(EpgCmds.OpenFolder, "フォルダーを開く");
+            //cmdMessage.Add(EpgCmds.CopyTitle, "名前をコピー");
+            //cmdMessage.Add(EpgCmds.CopyContent, "番組情報をコピー");
+            //cmdMessage.Add(EpgCmds.SearchTitle, "名前をネットで検索");
+            //cmdMessage.Add(EpgCmds.CopyNotKey, "Notキーをコピー");
+            //cmdMessage.Add(EpgCmds.SetNotKey, "Notキーに貼り付け");
+            cmdMessage.Add(EpgCmds.ProtectChange, "プロテクト切替を実行");
+            //cmdMessage.Add(EpgCmds.ViewChgSet, "");
+            //cmdMessage.Add(EpgCmds.ViewChgMode, "");
+            //cmdMessage.Add(EpgCmds.MenuSetting, "");
+
+            //cmdMessage.Add(EpgCmds.AddInDialog, "追加を実行");
+            //cmdMessage.Add(EpgCmds.ChangeInDialog, "変更を実行");
+            //cmdMessage.Add(EpgCmds.DeleteInDialog, "削除を実行");
+            //cmdMessage.Add(EpgCmds.Delete2InDialog, "全て削除を実行");
+            //cmdMessage.Add(EpgCmds.Search, "");
+            //cmdMessage.Add(EpgCmds.UpItem, "");
+            //cmdMessage.Add(EpgCmds.DownItem, "");
+            //cmdMessage.Add(EpgCmds.SaveOrder, "");
+            //cmdMessage.Add(EpgCmds.RestoreOrder, "");
+            //cmdMessage.Add(EpgCmds.DragCancel, "");
+            //cmdMessage.Add(EpgCmds.Cancel, "");
+            //cmdMessage.Add(EpgCmds.ChgOnOffCheck, "");//一覧画面のチェックボックス用
         }
     }
 

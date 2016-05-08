@@ -40,9 +40,9 @@ namespace EpgTimer
             if (viewCtrl != null) viewCtrl.UpdateReserveData();
         }
 
-        public void UpdateEpgData()
+        public void UpdateInfo()
         {
-            if (viewCtrl != null) viewCtrl.UpdateEpgData();
+            if (viewCtrl != null) viewCtrl.UpdateInfo();
         }
 
         /// <summary>EPGデータの表示モードを設定する</summary>
@@ -115,7 +115,7 @@ namespace EpgTimer
                         }
 
                         this.SetViewMode(setInfo);
-                        viewCtrl.UpdateEpgData();
+                        viewCtrl.UpdateInfo();
                     }
                 }
                 else
@@ -124,10 +124,7 @@ namespace EpgTimer
                     this.SetViewMode(setInfo);
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            } 
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
 
     }

@@ -401,6 +401,8 @@
                                     <Label Content="時まで" Margin="12,0,0,0" VerticalAlignment="Center" />
                                 </StackPanel>
                                 <CheckBox Margin="0,6,0,0" Content="検索/キーワード予約ダイアログの録画設定タブにプリセットを表示する" Name="checkBox_displayPresetOnSearch" />
+                                <CheckBox Margin="0,6,0,0" Content="ステータス表示をする" Name="checkBox_displayStatus" />
+                                <CheckBox Margin="14,6,0,0" Content="主要操作の操作結果を表示をする" Name="checkBox_displayStatusNotify" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_displayStatus, UpdateSourceTrigger=PropertyChanged}" />
                             </StackPanel>
                         </GroupBox>
                     </StackPanel>

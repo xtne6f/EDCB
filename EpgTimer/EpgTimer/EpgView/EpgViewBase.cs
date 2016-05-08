@@ -1,31 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Input;
 
 namespace EpgTimer.EpgView
 {
-    public class EpgViewBase : UserControl
+    public class EpgViewBase : EpgTimer.UserCtrlView.DataViewBase
     {
         protected CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
-        protected MenuUtil mutil = CommonManager.Instance.MUtil;
-        protected ViewUtil vutil = CommonManager.Instance.VUtil;
-        protected MenuManager mm = CommonManager.Instance.MM;
 
         protected CustomEpgTabInfo setViewInfo = null;
         protected List<UInt64> viewCustServiceList = null;
         protected Dictionary<UInt16, UInt16> viewCustContentKindList = new Dictionary<UInt16, UInt16>();
-
-        protected bool updateEpgData = true;
-        protected bool updateReserveData = true;
-
         protected Dictionary<UInt64, EpgServiceEventInfo> searchEventList = new Dictionary<UInt64, EpgServiceEventInfo>();
 
         protected CmdExeReserve mc; //予約系コマンド集
-        protected MenuBinds mBinds = new MenuBinds();
+        protected bool ReloadReserveInfo = true;
 
         protected virtual void InitCommand()
         {
@@ -65,10 +56,7 @@ namespace EpgTimer.EpgView
                 setInfo.ViewMode = param.ID;
                 ViewSetting(this, setInfo);
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
 
         public virtual bool ClearInfo()
@@ -95,7 +83,7 @@ namespace EpgTimer.EpgView
                 setInfo.ViewContentKindList.ForEach(val => this.viewCustContentKindList.Add(val, val));
             }
 
-            updateEpgData = true;
+            ReloadInfo = true;
         }
 
         /// 保存関係
@@ -105,41 +93,38 @@ namespace EpgTimer.EpgView
         /// <summary>
         /// 予約情報更新通知
         /// </summary>
-        public void UpdateReserveData()
+        public void UpdateReserveData(bool reload = true)
         {
-            updateReserveData = true;
-            if (this.IsVisible == true)
+            if (reload == true) ReloadReserveInfo = true;
+            if (ReloadReserveInfo == true && this.IsVisible == true)
             {
-                updateReserveData = !ReloadReserveData();
+                ReloadReserveInfo = !ReloadReserveData();
+                UpdateStatus();
             }
         }
-
-        protected virtual bool ReloadReserveData()
+        protected bool ReloadReserveData()
         {
-            return vutil.ReloadReserveData();
+            if (vutil.ReloadReserveData() == false) return false;
+            ReloadReserveViewItem();
+            return true;
         }
+        protected virtual void ReloadReserveViewItem() { }
 
         /// <summary>
         /// EPGデータ更新通知
         /// </summary>
-        public void UpdateEpgData()
-        {
-            updateEpgData = true;
-            if (this.IsVisible == true)
-            {
-                updateEpgData = !ReloadViewData();
-            }
-        }
-
-        protected virtual bool ReloadViewData()
+        // public void UpdateInfo() は DataViewBase へ
+        protected override bool ReloadInfoData()
         {
             ClearInfo();
             if (ReloadEpgData() == false) return false;
-            updateReserveData = !ReloadReserveData();
+            ReloadProgramViewItem();
+            ReloadReserveInfo = !ReloadReserveData();
             return true;
         }
+        protected virtual void ReloadProgramViewItem() { }
 
-        protected virtual bool ReloadEpgData()
+        protected bool ReloadEpgData()
         {
             try
             {
@@ -155,7 +140,7 @@ namespace EpgTimer.EpgView
                 {
                     //番組情報の検索
                     var list = new List<EpgEventInfo>();
-                    ErrCode err = (ErrCode)cmd.SendSearchPg(CommonUtil.ToList(setViewInfo.SearchKey), ref list);
+                    ErrCode err = cmd.SendSearchPg(CommonUtil.ToList(setViewInfo.SearchKey), ref list);
                     if (CommonManager.CmdErrMsgTypical(err, "EPGデータの取得", this) == false) return false;
 
                     //サービス毎のリストに変換
@@ -177,35 +162,22 @@ namespace EpgTimer.EpgView
                             serviceEventList.Add(id, serviceInfo);
                         }
                         serviceInfo.eventList.Add(eventInfo);
-
                     }
                     searchEventList = serviceEventList;
                 }
 
                 return true;
             }
-            catch (Exception ex)
-            {
-                this.Dispatcher.BeginInvoke(new Action(() =>
-                {
-                    MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                }), null);
-                return false;
-            }
+            catch (Exception ex) { CommonUtil.ModelessMsgBoxShow(this, ex.Message + "\r\n" + ex.StackTrace); }
+            return false;
         }
 
-        protected virtual void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+        protected override void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
             if (this.IsVisible == false) return;
 
-            if (updateEpgData == true)
-            {
-                updateEpgData = !ReloadViewData();
-            }
-            if (updateReserveData == true)
-            {
-                updateReserveData = !ReloadReserveData();
-            }
+            UpdateInfo(false);
+            UpdateReserveData(false);//こちらを後に。UpdateInfo()が実行された場合は、こちらは素通りになる。
 
             // Loaded イベントでは Reload*Data を省略したので
             // この IsVisibleChanged で Reload*Data を見逃してはいけない
@@ -224,11 +196,12 @@ namespace EpgTimer.EpgView
             }
 
             BlackoutWindow.Clear();
+
+            RefreshStatus();
         }
 
         protected virtual void OnLoadingSubProc() { }
         protected virtual void MoveToReserveItem(ReserveData target, bool IsMarking) { }
         protected virtual void MoveToProgramItem(EpgEventInfo target, bool IsMarking) { }
-
     }
 }

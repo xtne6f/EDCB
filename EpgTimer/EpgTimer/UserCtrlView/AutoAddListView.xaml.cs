@@ -82,6 +82,9 @@ namespace EpgTimer
                 ColumnList = null;
                 lstCtrl.SetSelectedItemDoubleClick(EpgCmds.ShowDialog);
 
+                //ステータス変更の設定
+                lstCtrl.SetSelectionChangedEventHandler((sender, e) => this.UpdateStatus(1));
+
                 //ドラッグ移動関係、イベント追加はdragMoverでやりたいが、あまり綺麗にならないのでこっちに並べる
                 this.dragMover.SetData(this, listView_key, lstCtrl.dataList, new lvDragData(this));
                 listView_key.PreviewMouseLeftButtonUp += new MouseButtonEventHandler(dragMover.listBox_PreviewMouseLeftButtonUp);
@@ -144,6 +147,12 @@ namespace EpgTimer
                 dragMover.NotSaved = false;
                 return true;
             });
+        }
+        protected override void UpdateStatusData(int mode = 0)
+        {
+            if (mode == 0) this.status[1] = vutil.ConvertAutoAddStatus(lstCtrl.dataList, "自動予約登録数");
+            List<S> sList = lstCtrl.GetSelectedItemsList();
+            this.status[2] = sList.Count == 0 ? "" : vutil.ConvertAutoAddStatus(sList, "　選択中");
         }
         public void UpdateListViewSelection(uint autoAddID)
         {
