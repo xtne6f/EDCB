@@ -36,6 +36,7 @@ namespace EpgTimer
 
         private bool closeFlag = false;
         private bool initExe = false;
+        private bool? minimizedStarting = false;
 
         private System.Windows.Threading.DispatcherTimer chkTimer = null;
         private bool needUnRegist = true;
@@ -161,6 +162,7 @@ namespace EpgTimer
                         Dispatcher.BeginInvoke(new Action(() =>
                         {
                             this.WindowState = System.Windows.WindowState.Minimized;
+                            minimizedStarting = true;
                         }));
                     }
                 }
@@ -255,6 +257,12 @@ namespace EpgTimer
                 ResetTaskMenu();
 
                 ChkTimerWork();
+
+                //自動接続ならWindowLoadする前に接続させる
+                if (Settings.Instance.WakeReconnectNW == true)
+                {
+                    Dispatcher.BeginInvoke(new Action(() => ConnectCmd(false)));
+                }
             }
             catch (Exception ex)
             {
@@ -579,7 +587,7 @@ namespace EpgTimer
         {
             if (CommonManager.Instance.NWMode == true)
             {
-                if (Settings.Instance.WakeReconnectNW == false || ConnectCmd(false) == false)
+                if (Settings.Instance.WakeReconnectNW == false && this.minimizedStarting == false)
                 {
                     ConnectCmd(true);
                 }
@@ -680,6 +688,7 @@ namespace EpgTimer
 
         private void Window_StateChanged(object sender, EventArgs e)
         {
+            if (this.minimizedStarting == null) return;
             if (this.WindowState == WindowState.Minimized)
             {
                 if (Settings.Instance.ShowTray && Settings.Instance.MinHide)
@@ -692,6 +701,19 @@ namespace EpgTimer
             }
             if (this.WindowState == WindowState.Normal || this.WindowState == WindowState.Maximized)
             {
+                if (this.minimizedStarting == true)
+                {
+                    minimizedStarting = null;
+                    if (Settings.Instance.LastWindowState == WindowState.Normal || Settings.Instance.LastWindowState == WindowState.Maximized)
+                    {
+                        this.WindowState = Settings.Instance.LastWindowState;
+                    }
+                    minimizedStarting = false;
+                    if (CommonManager.Instance.NWMode == true && Settings.Instance.WakeReconnectNW == false)
+                    {
+                        Dispatcher.BeginInvoke(new Action(() => ConnectCmd(true)));
+                    }
+                }
                 foreach (Window win in Application.Current.Windows)
                 {
                     win.Visibility = Visibility.Visible;
