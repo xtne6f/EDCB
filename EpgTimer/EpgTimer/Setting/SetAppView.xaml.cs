@@ -232,6 +232,7 @@ namespace EpgTimer.Setting
                 checkBox_minHide.IsChecked = Settings.Instance.MinHide;
                 checkBox_cautionManyChange.IsChecked = Settings.Instance.CautionManyChange;
                 textBox_cautionManyChange.Text = Settings.Instance.CautionManyNum.ToString();
+                checkBox_saveSearchKeyword.IsChecked = Settings.Instance.SaveSearchKeyword;
                 checkBox_SyncResAutoAddChange.IsChecked = Settings.Instance.SyncResAutoAddChange;
                 checkBox_SyncResAutoAddChgNewRes.IsChecked = Settings.Instance.SyncResAutoAddChgNewRes;
                 checkBox_SyncResAutoAddDelete.IsChecked = Settings.Instance.SyncResAutoAddDelete;
@@ -464,7 +465,8 @@ namespace EpgTimer.Setting
                 Settings.Instance.NoToolTip = (checkBox_noToolTips.IsChecked == true);
                 Settings.Instance.NoBallonTips = (checkBox_noBallonTips.IsChecked == true);
                 Settings.Instance.CautionManyChange = (checkBox_cautionManyChange.IsChecked != false);
-                Settings.Instance.CautionManyNum = mutil.MyToNumerical(textBox_cautionManyChange, Convert.ToInt32, Settings.Instance.CautionManyNum); 
+                Settings.Instance.CautionManyNum = mutil.MyToNumerical(textBox_cautionManyChange, Convert.ToInt32, Settings.Instance.CautionManyNum);
+                Settings.Instance.SaveSearchKeyword = (checkBox_saveSearchKeyword.IsChecked != false);
                 Settings.Instance.SyncResAutoAddChange = (checkBox_SyncResAutoAddChange.IsChecked != false);
                 Settings.Instance.SyncResAutoAddDelete = (checkBox_SyncResAutoAddDelete.IsChecked != false);
                 Settings.Instance.SyncResAutoAddChgNewRes = (checkBox_SyncResAutoAddChgNewRes.IsChecked != false);
@@ -753,6 +755,12 @@ namespace EpgTimer.Setting
         private void checkBox_WoLWait_Checked(object sender, RoutedEventArgs e)
         {
             checkBox_WoLWaitRecconect.IsChecked = false;
+        }
+
+        private void button_clearSerchKeywords(object sender, RoutedEventArgs e)
+        {
+            Settings.Instance.AndKeyList = new List<string>();
+            Settings.Instance.NotKeyList = new List<string>();
         }
     }
 }

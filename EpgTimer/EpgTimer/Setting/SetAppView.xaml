@@ -141,9 +141,15 @@
                     <CheckBox Content="バルーンチップでの動作通知を抑制する" Height="16" HorizontalAlignment="Left" Margin="24,296,0,0" Name="checkBox_srvNoBalloonTip" VerticalAlignment="Top" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_srvResident, UpdateSourceTrigger=PropertyChanged}" />
                     <CheckBox Content="情報通知ログをファイルに保存する" Height="16" HorizontalAlignment="Left" Margin="6,318,0,0" Name="checkBox_srvSaveNotifyLog" VerticalAlignment="Top" />
                     <CheckBox Content="デバッグ出力をファイルに保存する" Height="16" HorizontalAlignment="Left" Margin="6,340,0,0" Name="checkBox_srvSaveDebugLog" VerticalAlignment="Top" />
-                    <CheckBox Content="多数の項目を処理するとき警告する" Height="16" HorizontalAlignment="Left" Margin="6,360,0,0" Name="checkBox_cautionManyChange" VerticalAlignment="Top" />
-                    <Label Content="以上" Height="28" Margin="300,354,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" Width="34" />
-                    <TextBox Height="24" HorizontalAlignment="Left" Margin="235,354,0,0" Name="textBox_cautionManyChange" VerticalAlignment="Top" Width="62" />
+                    <StackPanel Margin="6,357,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" >
+                        <StackPanel Orientation="Horizontal" >
+                            <CheckBox Content="多数の項目を処理するとき警告する" Name="checkBox_cautionManyChange" VerticalAlignment="Center" />
+                            <TextBox Height="24" Margin="6,0,0,0" Name="textBox_cautionManyChange" Width="62" VerticalAlignment="Center" />
+                            <Label Content="以上" VerticalAlignment="Center" />
+                        </StackPanel>
+                        <CheckBox Content="検索/キーワード予約ダイアログで検索語を保存する" Name="checkBox_saveSearchKeyword" VerticalAlignment="Center" />
+                        <Button Content="検索語をクリア" Margin="18,4,0,0" Padding="6,2,6,2" HorizontalAlignment="Left" Click="button_clearSerchKeywords" />
+                    </StackPanel>
                     <StackPanel Margin="351,170,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" >
                         <CheckBox Content="起動時に前回接続サーバーに接続する" HorizontalAlignment="Left" Name="checkBox_wakeReconnect" VerticalAlignment="Top" IsEnabled="False" />
                         <StackPanel Orientation="Horizontal" Name="stackPanel_WoLWait" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_wakeReconnect, UpdateSourceTrigger=PropertyChanged}" >

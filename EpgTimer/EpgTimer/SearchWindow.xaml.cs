@@ -64,7 +64,7 @@ namespace EpgTimer
                 //コマンド集に無いもの
                 mc.AddReplaceCommand(EpgCmds.ReSearch, mc_Research);
                 mc.AddReplaceCommand(EpgCmds.ReSearch2, mc_Research);
-                mc.AddReplaceCommand(EpgCmds.Search, (sender, e) => SearchPg());
+                mc.AddReplaceCommand(EpgCmds.Search, (sender, e) => SearchPg(true));
                 mc.AddReplaceCommand(EpgCmds.AddInDialog, button_add_epgAutoAdd_Click);
                 mc.AddReplaceCommand(EpgCmds.ChangeInDialog, button_chg_epgAutoAdd_Click, (sender, e) => e.CanExecute = winMode == SearchMode.Change);
                 mc.AddReplaceCommand(EpgCmds.DeleteInDialog, button_del_epgAutoAdd_Click, (sender, e) => e.CanExecute = winMode == SearchMode.Change);
@@ -222,8 +222,10 @@ namespace EpgTimer
             tabItem2.Header = "録画設定" + preset_str;
         }
 
-        private void SearchPg()
+        private void SearchPg(bool addSearchLog = false)
         {
+            if (addSearchLog == true) searchKeyView.AddSearchLog();
+
             lstCtrl.ReloadInfoData(dataList =>
             {
                 EpgSearchKeyInfo key = GetSearchKey();
@@ -233,8 +235,6 @@ namespace EpgTimer
                 cmd.SendSearchPg(CommonUtil.ToList(key), ref list);
 
                 lstCtrl.dataList.AddFromEventList(list, false, true);
-
-                searchKeyView.AddSearchLog();
                 return true;
             });
 

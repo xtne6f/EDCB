@@ -17,18 +17,10 @@ namespace EpgTimer
 
             try
             {
-                foreach (String info in Settings.Instance.AndKeyList)
-                {
-                    ComboBox_andKey.Items.Add(info);
-                }
-                foreach (String info in Settings.Instance.NotKeyList)
-                {
-                    ComboBox_notKey.Items.Add(info);
-                }
+                Settings.Instance.AndKeyList.ForEach(s => ComboBox_andKey.Items.Add(s));
+                Settings.Instance.NotKeyList.ForEach(s => ComboBox_notKey.Items.Add(s));
             }
-            catch
-            {
-            }
+            catch { }
         }
 
         protected virtual void ComboBox_TextChanged(object sender, TextChangedEventArgs e)
@@ -40,26 +32,20 @@ namespace EpgTimer
             }
         }
 
-        private void button_andIn_Click(object sender, RoutedEventArgs e)
+        private void button_dialogIn_Click(object sender, RoutedEventArgs e)
         {
-            KeyWordWindow dlg = new KeyWordWindow();
+            var cmbBox = (sender as Button).DataContext as ComboBox;
+            var dlg = new KeyWordWindow();
             dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-            dlg.KeyWord = ComboBox_andKey.Text;
+            dlg.KeyWord = cmbBox.Text;
             dlg.ShowDialog();
-            ComboBox_andKey.Text = dlg.KeyWord;
-        }
-
-        private void button_notIn_Click(object sender, RoutedEventArgs e)
-        {
-            KeyWordWindow dlg = new KeyWordWindow();
-            dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-            dlg.KeyWord = ComboBox_notKey.Text;
-            dlg.ShowDialog();
-            ComboBox_notKey.Text = dlg.KeyWord;
+            cmbBox.Text = dlg.KeyWord;
         }
 
         public void AddSearchLog()
         {
+            if (Settings.Instance.SaveSearchKeyword == false) return;
+
             AddSerchLog(ComboBox_andKey, Settings.Instance.AndKeyList, 30);
             AddSerchLog(ComboBox_notKey, Settings.Instance.NotKeyList, 30);
         }
@@ -69,7 +55,7 @@ namespace EpgTimer
             try
             {
                 string searchWord = box.Text;
-                if (searchWord == null || searchWord == "") return;
+                if (string.IsNullOrEmpty(searchWord) == true) return;
 
                 box.Items.Remove(searchWord);
                 box.Items.Insert(0, searchWord);
