@@ -136,19 +136,29 @@
             </TabItem>
             <TabItem Header="その他" Name="tabItem_Etc">
                 <StackPanel Margin="6,6,6,6">
-                    <DockPanel Margin="0,0,0,12" >
+                    <DockPanel Margin="0,0,0,6" >
                         <Label Content="検索のURI " Height="24" />
                         <TextBox Name="textBox_SearchURI" Height="24" />
                     </DockPanel>
-                    <CheckBox Margin="0,0,0,6" Content="表示項目は個別設定を使用する" Name="checkBox_ManualMenu" />
-                    <Label Margin="0,-12,0,2" Content="※[編集]サブメニューはこの設定にかかわらず、常に個別設定が有効になります。" />
-                    <CheckBox Margin="0,0,0,6" Content="ショートカット操作に対する確認メッセージを表示しない" Name="checkBox_NoMessageKeyGesture" />
-                    <Label Margin="0,-12,0,2" Content="※削除、自動予約登録画面の並び替え関係、予約ダイアログの確定操作など" />
-                    <CheckBox Margin="0,0,0,6" Content="「全て削除」(録画済み一覧、検索/自動登録ダイアログ)で確認メッセージを表示しない" Name="checkBox_NoMessageDeleteAll" />
+                    <GroupBox Header="個別設定を使用する" Margin="0,6,0,0" >
+                        <StackPanel Margin="6,6,0,0">
+                            <CheckBox Content="全て　　※[編集]サブメニューは常に個別設定が有効です。" Name="checkBox_IsManualMenu" Checked="checkBox_IsManualMenu_Checked" Unchecked="checkBox_IsManualMenu_Checked" />
+                            <WrapPanel Margin="2,3,0,0" Name="wrapPanel_IsManualMenu">
+                                <WrapPanel.Resources>
+                                    <Style TargetType="CheckBox" BasedOn="{StaticResource {x:Type CheckBox}}">
+                                        <Setter Property="Margin" Value="12,3,0,0"/>
+                                    </Style>
+                                </WrapPanel.Resources>
+                            </WrapPanel>
+                        </StackPanel>
+                    </GroupBox>
+                    <CheckBox Margin="0,6,0,0" Content="ショートカット操作に対する確認メッセージを表示しない" Name="checkBox_NoMessageKeyGesture" />
+                    <Label Margin="0,-6,0,-4" Content="※削除、自動予約登録画面の並び替え関係、予約ダイアログの確定操作など" />
+                    <CheckBox Margin="0,6,0,0" Content="「全て削除」(録画済み一覧、検索/自動登録ダイアログ)で確認メッセージを表示しない" Name="checkBox_NoMessageDeleteAll" />
                 </StackPanel>
             </TabItem>
         </TabControl>
-        <Button Content="設定の初期化" Height="23" HorizontalAlignment="Right" Margin="0,0,502,12" Name="button_Initialize" VerticalAlignment="Bottom" Width="100" Click="button_Initialize_Click" />
+        <Button Content="設定の初期化" Height="23" Margin="26,0,0,12" Name="button_Initialize" VerticalAlignment="Bottom" Click="button_Initialize_Click" HorizontalAlignment="Left" Width="100" />
         <Button Content="OK" Height="23" HorizontalAlignment="Right" Margin="0,0,138,12" Name="button_OK" VerticalAlignment="Bottom" Width="75" Click="button_OK_Click" />
         <Button Content="キャンセル" Height="23" HorizontalAlignment="Right" Margin="0,0,28,12" Name="button_cancel" VerticalAlignment="Bottom" Width="75" Click="button_cancel_Click" />
     </Grid>

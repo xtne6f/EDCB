@@ -297,7 +297,7 @@ namespace EpgTimer
                     menu.Header = "予約←→無効";
                     menu.ToolTip = null;
                     menu.Visibility = Visibility.Visible;
-                    if (view == CtxmCode.TunerReserveView && Settings.Instance.MenuSet.IsManualMenu == false)
+                    if (view == CtxmCode.TunerReserveView && Settings.Instance.MenuSet.IsManualAssign.Contains(view) == false)
                     {
                         //簡易メニュー時は、無効列非表示のとき表示しない。
                         if( Settings.Instance.TunerDisplayOffReserve == false)

@@ -319,7 +319,7 @@ namespace EpgTimer
             CtxmData ctxmDef = DefCtxmData[code];
 
             //存在するものをコピーしていく。編集メニューは常に個別設定が有効になる。
-            if (Settings.Instance.MenuSet.IsManualMenu == true || code == CtxmCode.EditChgMenu)
+            if (Settings.Instance.MenuSet.IsManualAssign.Contains(code) == true || code == CtxmCode.EditChgMenu)
             {
                 CtxmSetting ctxmEdited = Settings.Instance.MenuSet.ManualMenuItems.FindData(code);
                 if (ctxmEdited == null)
@@ -429,18 +429,20 @@ namespace EpgTimer
         {
             var set = Settings.Instance.MenuSet.Clone();
             set.EasyMenuItems = MC.GetWorkEasyMenuSetting();
-            if (set.IsManualMenu == true)
-            {
-                set.ManualMenuItems = GetManualMenuSetting(WorkCtxmData);
-            }
-            else if (set.ManualMenuItems.Count != Enum.GetValues(typeof(CtxmCode)).Length)
-            {
-                set.ManualMenuItems = GetManualMenuSetting(DefCtxmData);
-            }
 
-            //編集メニューは常にマニュアルモードと同等のため差し替える。
-            set.ManualMenuItems.RemoveAll(item => item.ctxmCode == CtxmCode.EditChgMenu);
-            set.ManualMenuItems.Add(new CtxmSetting(WorkCtxmData[CtxmCode.EditChgMenu]));
+            foreach (CtxmCode code in Enum.GetValues(typeof(CtxmCode)))
+            {
+                //編集メニューは常にマニュアルモードと同等
+                if (set.IsManualAssign.Contains(code) == true || code == CtxmCode.EditChgMenu)
+                {
+                    set.ManualMenuItems.RemoveAll(item => item.ctxmCode == code);
+                    set.ManualMenuItems.Add(new CtxmSetting(WorkCtxmData[code]));
+                }
+                else if (set.ManualMenuItems.Find(item => item.ctxmCode == code) == null)
+                {
+                    set.ManualMenuItems.Add(new CtxmSetting(DefCtxmData[code]));
+                }
+            }
 
             return set;
         }

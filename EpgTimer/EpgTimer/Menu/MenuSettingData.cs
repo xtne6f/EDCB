@@ -118,8 +118,8 @@ namespace EpgTimer
                 return null;
             }
         }
-        
-        public bool IsManualMenu { get; set; }
+
+        public List<CtxmCode> IsManualAssign { get; set; }
         public bool NoMessageKeyGesture { get; set; }
         public bool NoMessageDeleteAll { get; set; }
         public bool NoMessageDelete2 { get; set; }
@@ -139,7 +139,7 @@ namespace EpgTimer
 
         public MenuSettingData() 
         {
-            IsManualMenu = false;
+            IsManualAssign = new List<CtxmCode>();
             NoMessageKeyGesture = false;
             NoMessageDeleteAll = false;
             NoMessageDelete2 = false;
@@ -161,7 +161,7 @@ namespace EpgTimer
         public MenuSettingData Clone() { return CopyObj.Clone(this, CopyData); }
         protected static void CopyData(MenuSettingData src, MenuSettingData dest)
         {
-            dest.IsManualMenu = src.IsManualMenu;
+            dest.IsManualAssign = src.IsManualAssign.ToList();
             dest.NoMessageKeyGesture = src.NoMessageKeyGesture;
             dest.NoMessageDeleteAll = src.NoMessageDeleteAll;
             dest.NoMessageDelete2 = src.NoMessageDelete2;
