@@ -11,6 +11,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.Windows.Threading;
 using System.Threading; //紅
 using System.Windows.Interop; //紅
 using System.Runtime.InteropServices; //紅
@@ -263,13 +264,48 @@ namespace EpgTimer
                 //自動接続ならWindowLoadする前に接続させる
                 if (Settings.Instance.WakeReconnectNW == true)
                 {
-                    Dispatcher.BeginInvoke(new Action(() => ConnectCmd(false)));
+                    Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        var cnTimer = new DispatcherTimer();
+                        string msg1 = Settings.Instance.WoLWaitRecconect == true ? "再接続" : "接続";
+                        string msg = string.Format("起動時自動" + msg1 + "待機中({0}秒間)", Settings.Instance.WoLWaitSecond);
+
+                        if (Settings.Instance.WoLWait == true || Settings.Instance.WoLWaitRecconect == true)
+                        {
+                            try
+                            {
+                                NWConnect.SendMagicPacket(ConnectWindow.ConvertTextMacAddress(Settings.Instance.NWMacAdd));
+                            }
+                            catch { }
+
+                            cnTimer.Interval = TimeSpan.FromSeconds(Math.Max(Settings.Instance.WoLWaitSecond, 1));
+                            cnTimer.Tick += (sender, e) =>
+                            {
+                                cnTimer.Stop();
+                                statusBar.SetTimerIntervalDefault();
+                                if (ConnectCmd(false) == false)
+                                {
+                                    statusBar.ClearText();
+                                    CommonManager.Instance.StatusSet(msg + " > 接続に失敗");
+                                }
+                            };
+                            cnTimer.Start();
+                        }
+
+                        if (Settings.Instance.WoLWait == true || 
+                            ConnectCmd(false) == false && Settings.Instance.WoLWaitRecconect == true)
+                        {
+                            statusBar.TimerInterval = TimeSpan.FromSeconds(Settings.Instance.WoLWaitSecond + 5);
+                            CommonManager.Instance.StatusNotifySet(msg);
+                        }
+                        else
+                        {
+                            cnTimer.Stop();
+                        }
+                    }));
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
 
         private void CheckCmdLine()

@@ -83,6 +83,10 @@ namespace EpgTimer.Setting
                 checkBox_srvSaveDebugLog.IsEnabled = false;
                 button_recDef.Content = "録画プリセットを確認";
             }
+            else
+            {
+                stackPanel_WoLWait.IsEnabled = false;//Bindingは破棄している
+            }
 
             try
             {
@@ -237,6 +241,9 @@ namespace EpgTimer.Setting
                 checkBox_forceNWMode.IsChecked = Settings.Instance.ForceNWMode;
 
                 checkBox_wakeReconnect.IsChecked = Settings.Instance.WakeReconnectNW;
+                checkBox_WoLWait.IsChecked = Settings.Instance.WoLWait;
+                checkBox_WoLWaitRecconect.IsChecked = Settings.Instance.WoLWaitRecconect;
+                textBox_WoLWaitSecond.Text = Settings.Instance.WoLWaitSecond.ToString();
                 checkBox_suspendClose.IsChecked = Settings.Instance.SuspendCloseNW;
                 checkBox_ngAutoEpgLoad.IsChecked = Settings.Instance.NgAutoEpgLoadNW;
 
@@ -462,6 +469,9 @@ namespace EpgTimer.Setting
                 Settings.Instance.SyncResAutoAddDelete = (checkBox_SyncResAutoAddDelete.IsChecked != false);
                 Settings.Instance.SyncResAutoAddChgNewRes = (checkBox_SyncResAutoAddChgNewRes.IsChecked != false);
                 Settings.Instance.WakeReconnectNW = (checkBox_wakeReconnect.IsChecked == true);
+                Settings.Instance.WoLWait = (checkBox_WoLWait.IsChecked == true);
+                Settings.Instance.WoLWaitRecconect = (checkBox_WoLWaitRecconect.IsChecked == true);
+                Settings.Instance.WoLWaitSecond = mutil.MyToNumerical(textBox_WoLWaitSecond, Convert.ToDouble, 3600, 1, Settings.Instance.WoLWaitSecond);
                 Settings.Instance.SuspendCloseNW = (checkBox_suspendClose.IsChecked == true);
                 Settings.Instance.NgAutoEpgLoadNW = (checkBox_ngAutoEpgLoad.IsChecked == true);
                 Settings.Instance.ChkSrvRegistTCP = (checkBox_keepTCPConnect.IsChecked != false);
@@ -734,6 +744,15 @@ namespace EpgTimer.Setting
         private void listBox_service_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             ReLoadStation();
+        }
+
+        private void checkBox_WoLWaitRecconect_Checked(object sender, RoutedEventArgs e)
+        {
+            checkBox_WoLWait.IsChecked = false;
+        }
+        private void checkBox_WoLWait_Checked(object sender, RoutedEventArgs e)
+        {
+            checkBox_WoLWaitRecconect.IsChecked = false;
         }
     }
 }

@@ -311,6 +311,9 @@ namespace EpgTimer
         public string NWMacAdd { get; set; }
         public List<NWPresetItem> NWPreset { get; set; }
         public bool WakeReconnectNW { get; set; }
+        public bool WoLWait { get; set; }
+        public bool WoLWaitRecconect { get; set; }
+        public double WoLWaitSecond { get; set; }
         public bool SuspendCloseNW { get; set; }
         public bool NgAutoEpgLoadNW { get; set; }
         public bool ChkSrvRegistTCP { get; set; }
@@ -485,6 +488,9 @@ namespace EpgTimer
             NWMacAdd = "";
             NWPreset = new List<NWPresetItem>();
             WakeReconnectNW = false;
+            WoLWaitRecconect = false;
+            WoLWaitSecond= 30;
+            WoLWait = false;
             SuspendCloseNW = false;
             NgAutoEpgLoadNW = false;
             ChkSrvRegistTCP = false;

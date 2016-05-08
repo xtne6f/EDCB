@@ -136,9 +136,6 @@
                     <Label Content="※EpgTimerSrv.exeが管理者権限で起動している必要があります" Height="28" HorizontalAlignment="Left" Margin="6,180,0,0" Name="label43" VerticalAlignment="Top" />
                     <CheckBox Content="ツールチップの表示を抑制する" Height="16" HorizontalAlignment="Left" Margin="6,208,0,0" Name="checkBox_noToolTips" VerticalAlignment="Top" />
                     <CheckBox Content="バルーンチップでの動作通知を抑制する" Height="16" HorizontalAlignment="Left" Margin="6,230,0,0" Name="checkBox_noBallonTips" VerticalAlignment="Top" />
-                    <CheckBox Content="起動時に前回接続サーバーに接続する" Height="16" HorizontalAlignment="Left" Margin="351,186,0,0" Name="checkBox_wakeReconnect" VerticalAlignment="Top" IsEnabled="False" />
-                    <CheckBox Content="休止／スタンバイ移行時にEpgTimerNWを終了する" Height="16" HorizontalAlignment="Left" Margin="351,208,0,0" Name="checkBox_suspendClose" VerticalAlignment="Top" IsEnabled="False" />
-                    <CheckBox Content="EPGデータを自動的に読み込まない" Height="16" HorizontalAlignment="Left" Margin="351,230,0,0" Name="checkBox_ngAutoEpgLoad" VerticalAlignment="Top" IsEnabled="False" />
                     <CheckBox Content="EpgTimerSrvを常駐させる" Height="16" HorizontalAlignment="Left" Margin="6,252,0,0" Name="checkBox_srvResident" VerticalAlignment="Top" />
                     <CheckBox Content="タスクトレイアイコンを表示する" Height="16" HorizontalAlignment="Left" Margin="24,274,0,0" Name="checkBox_srvShowTray" VerticalAlignment="Top" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_srvResident, UpdateSourceTrigger=PropertyChanged}" />
                     <CheckBox Content="バルーンチップでの動作通知を抑制する" Height="16" HorizontalAlignment="Left" Margin="24,296,0,0" Name="checkBox_srvNoBalloonTip" VerticalAlignment="Top" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_srvResident, UpdateSourceTrigger=PropertyChanged}" />
@@ -147,16 +144,30 @@
                     <CheckBox Content="多数の項目を処理するとき警告する" Height="16" HorizontalAlignment="Left" Margin="6,360,0,0" Name="checkBox_cautionManyChange" VerticalAlignment="Top" />
                     <Label Content="以上" Height="28" Margin="300,354,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" Width="34" />
                     <TextBox Height="24" HorizontalAlignment="Left" Margin="235,354,0,0" Name="textBox_cautionManyChange" VerticalAlignment="Top" Width="62" />
-                    <StackPanel Orientation="Horizontal" Margin="351,252,0,0" VerticalAlignment="Top" HorizontalAlignment="Left">
-                        <StackPanel>
-                            <CheckBox Content="EpgTimerSrvとの接続維持を試みる" Name="checkBox_keepTCPConnect" IsEnabled="False" ToolTipService.ShowOnDisabled="True" ToolTip="EpgTimerNW使用時、EpgTimerSrv側の再起動時などに接続維持を試みます" />
-                            <CheckBox Content="タスクトレイアイコンのツールチップを更新する" Margin="0,7,6,0" Name="textBox_upDateTaskText" ToolTip="EpgTimerNWで「EpgTimerSrvとの接続維持を試みる」使用時以外はほとんど効果ありません" />
+                    <StackPanel Margin="351,170,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" >
+                        <CheckBox Content="起動時に前回接続サーバーに接続する" HorizontalAlignment="Left" Name="checkBox_wakeReconnect" VerticalAlignment="Top" IsEnabled="False" />
+                        <StackPanel Orientation="Horizontal" Name="stackPanel_WoLWait" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_wakeReconnect, UpdateSourceTrigger=PropertyChanged}" >
+                            <StackPanel Margin="18,0,0,0" >
+                                <CheckBox Content="WoLしてから接続する" Margin="0,4,0,0" Name="checkBox_WoLWait" Checked="checkBox_WoLWait_Checked" ToolTipService.ShowOnDisabled="True" ToolTip="WoL→待機→接続" />
+                                <CheckBox Content="接続失敗時にWoLで再接続を試みる" Margin="0,4,0,0" VerticalAlignment="Center" Name="checkBox_WoLWaitRecconect" Checked="checkBox_WoLWaitRecconect_Checked" ToolTipService.ShowOnDisabled="True" ToolTipService.ShowDuration="20000" ToolTip="WoL→接続(→待機→接続)&#10;とりあえず最初にマジックパケットは投げます。&#10;接続失敗時はEpgTimerNWが一時的に反応しにくくなっているので注意が必要です" />
+                            </StackPanel>
+                            <Border Height="28" Width="10" Margin="6,0,0,0" VerticalAlignment="Center" BorderBrush="Gray" BorderThickness="0,1,1,1" />
+                            <TextBox Height="24" Margin="6,0,0,0" Name="textBox_WoLWaitSecond" VerticalAlignment="Center" Width="62" />
+                            <Label Content="秒後" VerticalAlignment="Center" />
                         </StackPanel>
-                        <Border Height="28" Width="10" VerticalAlignment="Center" BorderBrush="Gray" BorderThickness="0,1,1,1" />
-                        <TextBox Height="24" Margin="6,0,0,0" Name="textBox_chkTimerInterval" VerticalAlignment="Center" Width="62" />
-                        <Label Content="分間隔" VerticalAlignment="Center" Width="54" />
+                        <CheckBox Content="休止／スタンバイ移行時にEpgTimerNWを終了する" Margin="0,7,0,0" Name="checkBox_suspendClose" IsEnabled="False" />
+                        <CheckBox Content="EPGデータを自動的に読み込まない" Margin="0,7,0,0" Name="checkBox_ngAutoEpgLoad" IsEnabled="False" />
+                        <StackPanel Orientation="Horizontal" Margin="0,7,0,0" >
+                            <StackPanel>
+                                <CheckBox Content="EpgTimerSrvとの接続維持を試みる" Name="checkBox_keepTCPConnect" IsEnabled="False" ToolTipService.ShowOnDisabled="True" ToolTip="EpgTimerNW使用時、EpgTimerSrv側の再起動時などに接続維持を試みます" />
+                                <CheckBox Content="タスクトレイアイコンのツールチップを更新する" Margin="0,7,0,0" Name="textBox_upDateTaskText" ToolTip="EpgTimerNWで「EpgTimerSrvとの接続維持を試みる」使用時以外はほとんど効果ありません" />
+                            </StackPanel>
+                            <Border Height="28" Width="10" Margin="6,0,0,0" VerticalAlignment="Center" BorderBrush="Gray" BorderThickness="0,1,1,1" />
+                            <TextBox Height="24" Margin="6,0,0,0" Name="textBox_chkTimerInterval" VerticalAlignment="Center" Width="62" />
+                            <Label Content="分間隔" VerticalAlignment="Center" />
+                        </StackPanel>
+                        <CheckBox Content="EpgTimerNWとして使用する (要再起動)" Margin="0,7,0,0" Name="checkBox_forceNWMode" ToolTip="このオプションを使用しなくても、実行ファイル名を「EpgTimerNW」から始まる名前にすればNWモードで起動します。&#10;(通常のNWモードの使用方法)" />
                     </StackPanel>
-                    <CheckBox Content="EpgTimerNWとして使用する (要再起動)" Height="16" HorizontalAlignment="Left" Margin="351,296,0,0" Name="checkBox_forceNWMode" VerticalAlignment="Top" ToolTip="このオプションを使用しなくても、実行ファイル名を「EpgTimerNW」から始まる名前にすればNWモードで起動します。&#10;(通常のNWモードの使用方法)" />
                 </Grid>
             </TabItem>
             <TabItem Header="カスタムボタン" Name="tabItem5">

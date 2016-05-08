@@ -49,25 +49,29 @@ namespace EpgTimer
 
         private void button_wake_Click(object sender, RoutedEventArgs e)
         {
-            byte[] macAddress = Enumerable.Repeat<byte>(0xFF, 6).ToArray();
-
             try
             {
-                string[] mac = textBox_mac.Text.Split('-');
-                for (int i = 0; i < Math.Max(mac.Length, 6); i++)
-                {
-                    macAddress[i] = Convert.ToByte(mac[i], 16);
-                }
-
+                NWConnect.SendMagicPacket(ConvertTextMacAddress(textBox_mac.Text));
+                Settings.Instance.NWMacAdd = textBox_mac.Text;
             }
             catch
             {
                 MessageBox.Show("書式が間違っているか、16進アドレスの数値が読み取れません。");
-                return;
+            }
+        }
+
+        //失敗するとエラー
+        public static byte[] ConvertTextMacAddress(string txt)
+        {
+            byte[] macAddress = Enumerable.Repeat<byte>(0xFF, 6).ToArray();
+
+            string[] mac = txt.Split('-');
+            for (int i = 0; i < Math.Max(mac.Length, 6); i++)
+            {
+                macAddress[i] = Convert.ToByte(mac[i], 16);
             }
 
-            Settings.Instance.NWMacAdd = textBox_mac.Text;
-            NWConnect.SendMagicPacket(macAddress);
+            return macAddress;
         }
 
         protected override void OnKeyDown(KeyEventArgs e)
