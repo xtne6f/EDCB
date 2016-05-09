@@ -15,41 +15,15 @@ static char g_szDebugEIT[128];
 CEpgDBUtil::CEpgDBUtil(void)
 {
 	InitializeCriticalSection(&this->dbLock);
-
-	this->epgInfoList = NULL;
-
-	this->epgInfo = NULL;
-	this->searchEpgInfo = NULL;
-
-	this->serviceDBList = NULL;
 }
 
 CEpgDBUtil::~CEpgDBUtil(void)
 {
-	Clear();
-	ClearSectionStatus();
-
-	SAFE_DELETE_ARRAY(this->epgInfoList);
-
-	SAFE_DELETE(this->epgInfo);
-
-	SAFE_DELETE(this->searchEpgInfo);
-
 	DeleteCriticalSection(&this->dbLock);
-
-	SAFE_DELETE_ARRAY(this->serviceDBList);
 }
 
 void CEpgDBUtil::Clear()
 {
-	map<ULONGLONG, SERVICE_EVENT_INFO>::iterator itr;
-	for( itr = this->serviceEventMap.begin(); itr != this->serviceEventMap.end(); itr++ ){
-		for( map<WORD, EVENT_INFO*>::iterator jtr = itr->second.eventMap.begin(); jtr != itr->second.eventMap.end(); jtr++ ){
-			SAFE_DELETE(jtr->second);
-		}
-		SAFE_DELETE(itr->second.nowEvent);
-		SAFE_DELETE(itr->second.nextEvent);
-	}
 	this->serviceEventMap.clear();
 }
 
@@ -90,19 +64,19 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, const CEITTable* eit, __int64 streamTime)
 			//EPGファイルを入力するときは古い[p/f]による上書きが発生するので、利用側で時系列にするかタイムスタンプを確定させる工夫が必要
 			if( serviceInfo->nowEvent && serviceInfo->nowEvent->time != 0 ||
 			    serviceInfo->nextEvent && serviceInfo->nextEvent->time != 0 ){
-				SAFE_DELETE(serviceInfo->nowEvent);
-				SAFE_DELETE(serviceInfo->nextEvent);
+				serviceInfo->nowEvent.reset();
+				serviceInfo->nextEvent.reset();
 			}
 		}
 		if( eit->eventInfoList.empty() ){
 			//空セクション
 			if( eit->section_number == 0 ){
 				if( serviceInfo->nowEvent && siTag.time >= serviceInfo->nowEvent->time ){
-					SAFE_DELETE(serviceInfo->nowEvent);
+					serviceInfo->nowEvent.reset();
 				}
 			}else{
 				if( serviceInfo->nextEvent && siTag.time >= serviceInfo->nextEvent->time ){
-					SAFE_DELETE(serviceInfo->nextEvent);
+					serviceInfo->nextEvent.reset();
 				}
 			}
 		}
@@ -110,7 +84,7 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, const CEITTable* eit, __int64 streamTime)
 	//イベントごとに更新必要が判定
 	for( size_t i=0; i<eit->eventInfoList.size(); i++ ){
 		const CEITTable::EVENT_INFO_DATA* eitEventInfo = &eit->eventInfoList[i];
-		map<WORD, EVENT_INFO*>::iterator itrEvent;
+		map<WORD, std::unique_ptr<EVENT_INFO>>::iterator itrEvent;
 		EVENT_INFO* eventInfo = NULL;
 
 		if( eitEventInfo->running_status == 1 || eitEventInfo->running_status == 3 ){
@@ -136,15 +110,15 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, const CEITTable* eit, __int64 streamTime)
 				}else if( serviceInfo->nowEvent == NULL || siTag.time >= serviceInfo->nowEvent->time ){
 					if( serviceInfo->nowEvent == NULL || serviceInfo->nowEvent->event_id != eitEventInfo->event_id ){
 						//イベント入れ替わり
-						SAFE_DELETE(serviceInfo->nowEvent);
+						serviceInfo->nowEvent.reset();
 						if( serviceInfo->nextEvent && serviceInfo->nextEvent->event_id == eitEventInfo->event_id ){
-							serviceInfo->nowEvent = serviceInfo->nextEvent;
-							serviceInfo->nextEvent = NULL;
+							serviceInfo->nowEvent.swap(serviceInfo->nextEvent);
 							serviceInfo->nowEvent->time = 0;
 						}
 					}
 					if( serviceInfo->nowEvent == NULL ){
-						eventInfo = serviceInfo->nowEvent = new EVENT_INFO;
+						eventInfo = new EVENT_INFO;
+						serviceInfo->nowEvent.reset(eventInfo);
 						eventInfo->event_id = eitEventInfo->event_id;
 						eventInfo->time = 0;
 						eventInfo->tagBasic.version = 0xFF;
@@ -152,21 +126,21 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, const CEITTable* eit, __int64 streamTime)
 						eventInfo->tagExt.version = 0xFF;
 						eventInfo->tagExt.time = 0;
 					}else{
-						eventInfo = serviceInfo->nowEvent;
+						eventInfo = serviceInfo->nowEvent.get();
 					}
 				}
 			}else{
 				if( serviceInfo->nextEvent == NULL || siTag.time >= serviceInfo->nextEvent->time ){
 					if( serviceInfo->nextEvent == NULL || serviceInfo->nextEvent->event_id != eitEventInfo->event_id ){
-						SAFE_DELETE(serviceInfo->nextEvent);
+						serviceInfo->nextEvent.reset();
 						if( serviceInfo->nowEvent && serviceInfo->nowEvent->event_id == eitEventInfo->event_id ){
-							serviceInfo->nextEvent = serviceInfo->nowEvent;
-							serviceInfo->nowEvent = NULL;
+							serviceInfo->nextEvent.swap(serviceInfo->nowEvent);
 							serviceInfo->nextEvent->time = 0;
 						}
 					}
 					if( serviceInfo->nextEvent == NULL ){
-						eventInfo = serviceInfo->nextEvent = new EVENT_INFO;
+						eventInfo = new EVENT_INFO;
+						serviceInfo->nextEvent.reset(eventInfo);
 						eventInfo->event_id = eitEventInfo->event_id;
 						eventInfo->time = 0;
 						eventInfo->tagBasic.version = 0xFF;
@@ -174,7 +148,7 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, const CEITTable* eit, __int64 streamTime)
 						eventInfo->tagExt.version = 0xFF;
 						eventInfo->tagExt.time = 0;
 					}else{
-						eventInfo = serviceInfo->nextEvent;
+						eventInfo = serviceInfo->nextEvent.get();
 					}
 				}
 			}
@@ -188,14 +162,14 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, const CEITTable* eit, __int64 streamTime)
 				if( itrEvent == serviceInfo->eventMap.end() ){
 					eventInfo = new EVENT_INFO;
 					eventInfo->event_id = eitEventInfo->event_id;
-					serviceInfo->eventMap.insert(std::make_pair(eventInfo->event_id, eventInfo));
+					serviceInfo->eventMap[eventInfo->event_id].reset(eventInfo);
 					eventInfo->time = 0;
 					eventInfo->tagBasic.version = 0xFF;
 					eventInfo->tagBasic.time = 0;
 					eventInfo->tagExt.version = 0xFF;
 					eventInfo->tagExt.time = 0;
 				}else{
-					eventInfo = itrEvent->second;
+					eventInfo = itrEvent->second.get();
 				}
 			}
 		}
@@ -1032,8 +1006,6 @@ BOOL CEpgDBUtil::GetEpgInfoList(
 {
 	CBlockLock lock(&this->dbLock);
 
-	SAFE_DELETE_ARRAY(this->epgInfoList);
-
 	ULONGLONG key = _Create64Key(originalNetworkID, transportStreamID, serviceID);
 
 	map<ULONGLONG, SERVICE_EVENT_INFO>::iterator itr;
@@ -1042,7 +1014,7 @@ BOOL CEpgDBUtil::GetEpgInfoList(
 		return FALSE;
 	}
 
-	EVENT_INFO* evtPF[2] = {itr->second.nowEvent, itr->second.nextEvent};
+	EVENT_INFO* evtPF[2] = {itr->second.nowEvent.get(), itr->second.nextEvent.get()};
 	if( evtPF[0] == NULL || evtPF[1] && evtPF[0]->event_id > evtPF[1]->event_id ){
 		std::swap(evtPF[0], evtPF[1]);
 	}
@@ -1053,9 +1025,9 @@ BOOL CEpgDBUtil::GetEpgInfoList(
 		return FALSE;
 	}
 	*epgInfoListSize = (DWORD)listSize;
-	this->epgInfoList = new EPG_EVENT_INFO[*epgInfoListSize];
+	this->epgInfoList.reset(new EPG_EVENT_INFO[*epgInfoListSize]);
 
-	map<WORD, EVENT_INFO*>::iterator itrEvt = itr->second.eventMap.begin();
+	map<WORD, std::unique_ptr<EVENT_INFO>>::iterator itrEvt = itr->second.eventMap.begin();
 	DWORD count = 0;
 	while( evtPF[0] || itrEvt != itr->second.eventMap.end() ){
 		EPG_EXTENDED_EVENT_INFO* extInfoSchedule = NULL;
@@ -1077,18 +1049,18 @@ BOOL CEpgDBUtil::GetEpgInfoList(
 				}
 			}else{
 				//[schedule]を出力
-				evt = itrEvt->second;
+				evt = itrEvt->second.get();
 			}
 			itrEvt++;
 		}
-		CopyEpgInfo(this->epgInfoList+count, evt);
+		CopyEpgInfo(this->epgInfoList.get()+count, evt);
 		if( extInfoSchedule ){
 			this->epgInfoList[count].extInfo = extInfoSchedule;
 		}
 		count++;
 	}
 
-	*epgInfoList = this->epgInfoList;
+	*epgInfoList = this->epgInfoList.get();
 
 	return TRUE;
 }
@@ -1115,7 +1087,7 @@ BOOL CEpgDBUtil::EnumEpgInfoList(
 	if( itr == this->serviceEventMap.end() ){
 		return FALSE;
 	}
-	const EVENT_INFO* evtPF[2] = {itr->second.nowEvent, itr->second.nextEvent};
+	const EVENT_INFO* evtPF[2] = {itr->second.nowEvent.get(), itr->second.nextEvent.get()};
 	if( evtPF[0] == NULL || evtPF[1] && evtPF[0]->event_id > evtPF[1]->event_id ){
 		std::swap(evtPF[0], evtPF[1]);
 	}
@@ -1131,7 +1103,7 @@ BOOL CEpgDBUtil::EnumEpgInfoList(
 
 	BYTE info[__alignof(EPG_EVENT_INFO) + sizeof(EPG_EVENT_INFO) * 32];
 
-	map<WORD, EVENT_INFO*>::iterator itrEvt = itr->second.eventMap.begin();
+	map<WORD, std::unique_ptr<EVENT_INFO>>::iterator itrEvt = itr->second.eventMap.begin();
 	DWORD count = 0;
 	while( evtPF[0] || itrEvt != itr->second.eventMap.end() ){
 		//デストラクタを呼ばないよう領域だけ割り当て(POD構造体だけなので無問題)、マスターを直接参照して構築する
@@ -1154,7 +1126,7 @@ BOOL CEpgDBUtil::EnumEpgInfoList(
 				}
 			}else{
 				//[schedule]を出力
-				evt = itrEvt->second;
+				evt = itrEvt->second.get();
 			}
 			itrEvt++;
 		}
@@ -1233,10 +1205,8 @@ void CEpgDBUtil::GetServiceListEpgDB(
 {
 	CBlockLock lock(&this->dbLock);
 
-	SAFE_DELETE_ARRAY(this->serviceDBList);
-
 	*serviceListSize = (DWORD)this->serviceEventMap.size();
-	this->serviceDBList = new SERVICE_INFO[*serviceListSize];
+	this->serviceDBList.reset(new SERVICE_INFO[*serviceListSize]);
 
 	DWORD count = 0;
 	map<ULONGLONG, SERVICE_EVENT_INFO>::iterator itr;
@@ -1282,7 +1252,7 @@ void CEpgDBUtil::GetServiceListEpgDB(
 		count++;
 	}
 
-	*serviceList = this->serviceDBList;
+	*serviceList = this->serviceDBList.get();
 }
 
 //指定サービスの現在or次のEPG情報を取得する
@@ -1302,7 +1272,7 @@ BOOL CEpgDBUtil::GetEpgInfo(
 {
 	CBlockLock lock(&this->dbLock);
 
-	SAFE_DELETE(this->epgInfo);
+	this->epgInfo.reset();
 
 	ULONGLONG key = _Create64Key(originalNetworkID, transportStreamID, serviceID);
 
@@ -1313,13 +1283,13 @@ BOOL CEpgDBUtil::GetEpgInfo(
 	}
 
 	if( itr->second.nowEvent != NULL && nextFlag == FALSE ){
-		this->epgInfo = new EPG_EVENT_INFO;
-		CopyEpgInfo(this->epgInfo, itr->second.nowEvent);
-		*epgInfo = this->epgInfo;
+		this->epgInfo.reset(new EPG_EVENT_INFO);
+		CopyEpgInfo(this->epgInfo.get(), itr->second.nowEvent.get());
+		*epgInfo = this->epgInfo.get();
 	}else if( itr->second.nextEvent != NULL && nextFlag == TRUE ){
-		this->epgInfo = new EPG_EVENT_INFO;
-		CopyEpgInfo(this->epgInfo, itr->second.nextEvent);
-		*epgInfo = this->epgInfo;
+		this->epgInfo.reset(new EPG_EVENT_INFO);
+		CopyEpgInfo(this->epgInfo.get(), itr->second.nextEvent.get());
+		*epgInfo = this->epgInfo.get();
 	}
 	if( this->epgInfo != NULL ){
 		if( (*epgInfo)->extInfo == NULL && itr->second.eventMap.count((*epgInfo)->event_id) && itr->second.eventMap[(*epgInfo)->event_id]->extInfo ){
@@ -1351,7 +1321,7 @@ BOOL CEpgDBUtil::SearchEpgInfo(
 {
 	CBlockLock lock(&this->dbLock);
 
-	SAFE_DELETE(this->searchEpgInfo);
+	this->searchEpgInfo.reset();
 
 	ULONGLONG key = _Create64Key(originalNetworkID, transportStreamID, serviceID);
 
@@ -1362,13 +1332,13 @@ BOOL CEpgDBUtil::SearchEpgInfo(
 	}
 
 	if( itr->second.nowEvent != NULL && itr->second.nowEvent->event_id == eventID ){
-		this->searchEpgInfo = new EPG_EVENT_INFO;
-		CopyEpgInfo(this->searchEpgInfo, itr->second.nowEvent);
-		*epgInfo = this->searchEpgInfo;
+		this->searchEpgInfo.reset(new EPG_EVENT_INFO);
+		CopyEpgInfo(this->searchEpgInfo.get(), itr->second.nowEvent.get());
+		*epgInfo = this->searchEpgInfo.get();
 	}else if( itr->second.nextEvent != NULL && itr->second.nextEvent->event_id == eventID ){
-		this->searchEpgInfo = new EPG_EVENT_INFO;
-		CopyEpgInfo(this->searchEpgInfo, itr->second.nextEvent);
-		*epgInfo = this->searchEpgInfo;
+		this->searchEpgInfo.reset(new EPG_EVENT_INFO);
+		CopyEpgInfo(this->searchEpgInfo.get(), itr->second.nextEvent.get());
+		*epgInfo = this->searchEpgInfo.get();
 	}
 	if( this->searchEpgInfo != NULL ){
 		if( (*epgInfo)->extInfo == NULL && itr->second.eventMap.count(eventID) && itr->second.eventMap[eventID]->extInfo ){
@@ -1378,12 +1348,12 @@ BOOL CEpgDBUtil::SearchEpgInfo(
 		return TRUE;
 	}
 	if( pfOnlyFlag == 0 ){
-		map<WORD, EVENT_INFO*>::iterator itrEvent;
+		map<WORD, std::unique_ptr<EVENT_INFO>>::iterator itrEvent;
 		itrEvent = itr->second.eventMap.find(eventID);
 		if( itrEvent != itr->second.eventMap.end() ){
-			this->searchEpgInfo = new EPG_EVENT_INFO;
-			CopyEpgInfo(this->searchEpgInfo, itrEvent->second);
-			*epgInfo = this->searchEpgInfo;
+			this->searchEpgInfo.reset(new EPG_EVENT_INFO);
+			CopyEpgInfo(this->searchEpgInfo.get(), itrEvent->second.get());
+			*epgInfo = this->searchEpgInfo.get();
 			return TRUE;
 		}
 	}
