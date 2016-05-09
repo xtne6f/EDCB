@@ -74,6 +74,8 @@ protected:
 
 	CEpgDBUtil* epgDBUtil;
 
+	CTableUtil tableUtil;
+
 	//PID毎のバッファリング
 	//キー PID
 	map<WORD, CTSBuffUtil> buffUtilMap;

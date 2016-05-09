@@ -108,8 +108,9 @@ void CDecodeUtil::AddTSData(BYTE* data)
 						continue;
 					}
 					CPSITable* table;
+					CTableUtil::t_type type = this->tableUtil.Decode(section, sectionSize, &table);
 					BOOL ret;
-					switch( CTableUtil::Decode(section, sectionSize, &table) ){
+					switch( type ){
 					case CTableUtil::TYPE_PAT:
 						ret = CheckPAT(tsPacket.PID, static_cast<CPATTable*>(table));
 						break;
@@ -145,7 +146,8 @@ void CDecodeUtil::AddTSData(BYTE* data)
 						break;
 					}
 					if( ret == FALSE ){
-						delete table;
+						//’D‚í‚ê‚È‚©‚Á‚½‚Ì‚Å•Ô‚·
+						this->tableUtil.Putback(type, table);
 					}
 				}
 			}
