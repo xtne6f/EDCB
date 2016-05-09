@@ -356,8 +356,8 @@ namespace EpgTimer
             if (Settings.Instance.RecinfoErrCriticalDrops == true)
             {
                 return string.Format(format, itemText, list.Count(),
-                    "Drop*", list.Sum(item => item.RecInfo.DropsCritical),
-                    "Scramble*", list.Sum(item => item.RecInfo.ScramblesCritical));
+                    "*Drop", list.Sum(item => item.RecInfo.DropsCritical),
+                    "*Scramble", list.Sum(item => item.RecInfo.ScramblesCritical));
             }
             else
             {

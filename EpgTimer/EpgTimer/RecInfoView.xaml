@@ -100,7 +100,7 @@
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=DropsSerious}">
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="Drop(映像・音声)" Tag="Drop(映像・音声)" Uid="DropsSerious" />
+                            <GridViewColumnHeader Content="*Drop(映像・音声)" Tag="*Drop(映像・音声)" Uid="DropsSerious" />
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=Scrambles}">
@@ -110,7 +110,7 @@
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=ScramblesSerious}">
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="Scramble(映像・音声)" Tag="Scramble(映像・音声)" Uid="ScramblesSerious" />
+                            <GridViewColumnHeader Content="*Scramble(映像・音声)" Tag="*Scramble(映像・音声)" Uid="ScramblesSerious" />
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=Result}">

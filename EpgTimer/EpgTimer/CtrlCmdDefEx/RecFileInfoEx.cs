@@ -172,7 +172,7 @@ namespace EpgTimer
 
                     newInfo.AppendFormat("                              * = Critical Drop/Scramble Parameter.\r\n");
                     newInfo.AppendFormat("                              Drop:{0,9}  Scramble:{1,10}  Total\r\n", info.Drops, info.Scrambles);
-                    newInfo.AppendFormat("                              Drop:{0,9}  Scramble:{1,10} *Critical\r\n", DropsCritical, ScramblesCritical);
+                    newInfo.AppendFormat("                             *Drop:{0,9} *Scramble:{1,10} *Critical\r\n", DropsCritical, ScramblesCritical);
                     ErrInfo = newInfo.ToString();
 
                     return;
