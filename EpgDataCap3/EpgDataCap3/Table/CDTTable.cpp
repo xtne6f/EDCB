@@ -1,24 +1,11 @@
 #include "StdAfx.h"
 #include "CDTTable.h"
 
-CCDTTable::CCDTTable(void)
-{
-	data_module_byteSize = 0;
-	data_module_byte = NULL;
-}
-
-CCDTTable::~CCDTTable(void)
-{
-}
-
 void CCDTTable::Clear()
 {
-	for( size_t i=0 ;i<descriptorList.size(); i++ ){
-		SAFE_DELETE(descriptorList[i]);
-	}
 	descriptorList.clear();
 
-	SAFE_DELETE_ARRAY(data_module_byte);
+	data_module_byte.clear();
 }
 
 BOOL CCDTTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
@@ -58,11 +45,7 @@ BOOL CCDTTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 			readSize+=descriptors_loop_length;
 		}
 
-		data_module_byteSize = (3+section_length-4) - (WORD)readSize;
-		if( data_module_byteSize > 0 ){
-			data_module_byte = new BYTE[data_module_byteSize];
-			memcpy(data_module_byte, data+readSize, data_module_byteSize);
-		}
+		data_module_byte.assign(data + readSize, data + (3+section_length-4));
 	}else{
 		return FALSE;
 	}

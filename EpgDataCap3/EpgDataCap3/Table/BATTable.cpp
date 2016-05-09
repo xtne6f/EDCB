@@ -1,24 +1,9 @@
 #include "StdAfx.h"
 #include "BATTable.h"
 
-CBATTable::CBATTable(void)
-{
-}
-
-CBATTable::~CBATTable(void)
-{
-	Clear();
-}
-
 void CBATTable::Clear()
 {
-	for( size_t i=0 ;i<descriptorList.size(); i++ ){
-		SAFE_DELETE(descriptorList[i]);
-	}
 	descriptorList.clear();
-	for( size_t i=0 ;i<TSInfoList.size(); i++ ){
-		SAFE_DELETE(TSInfoList[i]);
-	}
 	TSInfoList.clear();
 }
 
@@ -59,7 +44,8 @@ BOOL CBATTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 		readSize += 2;
 		WORD tsLoopReadSize = 0;
 		while( readSize+5 < (DWORD)section_length+3-4 && tsLoopReadSize < transport_stream_loop_length){
-			TS_INFO_DATA* item = new TS_INFO_DATA;
+			TSInfoList.push_back(TS_INFO_DATA());
+			TS_INFO_DATA* item = &TSInfoList.back();
 			item->transport_stream_id = ((WORD)data[readSize])<<8 | data[readSize+1];
 			item->original_network_id = ((WORD)data[readSize+2])<<8 | data[readSize+3];
 			item->transport_descriptors_length = ((WORD)data[readSize+4]&0x0F)<<8 | data[readSize+5];
@@ -67,15 +53,12 @@ BOOL CBATTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 			if( readSize+item->transport_descriptors_length <= (DWORD)section_length+3-4 && item->transport_descriptors_length > 0){
 				if( AribDescriptor::CreateDescriptors( data+readSize, item->transport_descriptors_length, &(item->descriptorList), NULL ) == FALSE ){
 					_OutputDebugString( L"++CBATTable:: descriptor2 err" );
-					SAFE_DELETE(item);
 					return FALSE;
 				}
 			}
 
 			readSize+=item->transport_descriptors_length;
 			tsLoopReadSize += 6 + item->transport_descriptors_length;
-
-			TSInfoList.push_back(item);
 		}
 	}else{
 		return FALSE;

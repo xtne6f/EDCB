@@ -3,19 +3,8 @@
 
 #include "../../../Common/EpgTimerUtil.h"
 
-CTOTTable::CTOTTable(void)
-{
-}
-
-CTOTTable::~CTOTTable(void)
-{
-}
-
 void CTOTTable::Clear()
 {
-	for( size_t i=0 ;i<descriptorList.size(); i++ ){
-		SAFE_DELETE(descriptorList[i]);
-	}
 	descriptorList.clear();
 }
 

@@ -1,14 +1,6 @@
 #include "StdAfx.h"
 #include "PATTable.h"
 
-CPATTable::CPATTable(void)
-{
-}
-
-CPATTable::~CPATTable(void)
-{
-}
-
 BOOL CPATTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 {
 	if( InitDecode(data, dataSize, decodeReadSize, TRUE) == FALSE ){

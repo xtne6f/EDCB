@@ -1,24 +1,9 @@
 #include "StdAfx.h"
 #include "NITTable.h"
 
-CNITTable::CNITTable(void)
-{
-}
-
-CNITTable::~CNITTable(void)
-{
-	Clear();
-}
-
 void CNITTable::Clear()
 {
-	for( size_t i=0 ;i<descriptorList.size(); i++ ){
-		SAFE_DELETE(descriptorList[i]);
-	}
 	descriptorList.clear();
-	for( size_t i=0 ;i<TSInfoList.size(); i++ ){
-		SAFE_DELETE(TSInfoList[i]);
-	}
 	TSInfoList.clear();
 }
 
@@ -63,7 +48,8 @@ BOOL CNITTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 		readSize += 2;
 		WORD tsLoopReadSize = 0;
 		while( readSize+5 < (DWORD)section_length+3-4 && tsLoopReadSize < transport_stream_loop_length){
-			TS_INFO_DATA* item = new TS_INFO_DATA;
+			TSInfoList.push_back(TS_INFO_DATA());
+			TS_INFO_DATA* item = &TSInfoList.back();
 			item->transport_stream_id = ((WORD)data[readSize])<<8 | data[readSize+1];
 			item->original_network_id = ((WORD)data[readSize+2])<<8 | data[readSize+3];
 			item->transport_descriptors_length = ((WORD)data[readSize+4]&0x0F)<<8 | data[readSize+5];
@@ -71,15 +57,12 @@ BOOL CNITTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 			if( readSize+item->transport_descriptors_length <= (DWORD)section_length+3-4 && item->transport_descriptors_length > 0){
 				if( AribDescriptor::CreateDescriptors( data+readSize, item->transport_descriptors_length, &(item->descriptorList), NULL ) == FALSE ){
 					_OutputDebugString( L"++CNITTable:: descriptor2 err" );
-					SAFE_DELETE(item);
 					return FALSE;
 				}
 			}
 
 			readSize+=item->transport_descriptors_length;
 			tsLoopReadSize += 6 + item->transport_descriptors_length;
-
-			TSInfoList.push_back(item);
 		}
 	}else{
 		return FALSE;
@@ -88,7 +71,7 @@ BOOL CNITTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 	return TRUE;
 }
 
-BOOL CNITTable::SDDecode( BYTE* data, DWORD dataSize, vector<AribDescriptor::CDescriptor*>* descriptorList, DWORD* decodeReadSize )
+BOOL CNITTable::SDDecode( BYTE* data, DWORD dataSize, vector<AribDescriptor::CDescriptor>* descriptorList, DWORD* decodeReadSize )
 {
 	BOOL ret = TRUE;
 	if( data == NULL || dataSize == 0 || descriptorList == NULL ){
@@ -96,7 +79,8 @@ BOOL CNITTable::SDDecode( BYTE* data, DWORD dataSize, vector<AribDescriptor::CDe
 	}
 	DWORD decodeSize = 0;
 
-	AribDescriptor::CDescriptor* item = new AribDescriptor::CDescriptor;
+	descriptorList->push_back(AribDescriptor::CDescriptor());
+	AribDescriptor::CDescriptor* item = &descriptorList->back();
 
 	static const short parser0x82[] = {
 		AribDescriptor::descriptor_tag, 8,
@@ -126,10 +110,8 @@ BOOL CNITTable::SDDecode( BYTE* data, DWORD dataSize, vector<AribDescriptor::CDe
 		}
 	}
 	if( item->Has(AribDescriptor::d_char) == false ){
-		SAFE_DELETE(item);
+		descriptorList->pop_back();
 		ret = FALSE;
-	}else{
-		descriptorList->push_back(item);
 	}
 
 	if( decodeReadSize != NULL ){

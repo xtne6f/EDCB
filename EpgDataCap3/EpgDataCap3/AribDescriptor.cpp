@@ -1390,20 +1390,25 @@ CDescriptor::DESCRIPTOR_PROPERTY& CDescriptor::DESCRIPTOR_PROPERTY::operator=(DE
 	return *this;
 }
 
-BOOL CreateDescriptors(BYTE* data, DWORD dataSize, std::vector<CDescriptor*>* descriptorList, DWORD* decodeReadSize, const PARSER_PAIR* customParserList)
+BOOL CreateDescriptors(const BYTE* data, DWORD dataSize, std::vector<CDescriptor>* descriptorList, DWORD* decodeReadSize, const PARSER_PAIR* customParserList)
 {
 	if( data == NULL || descriptorList == NULL ){
 		return FALSE;
 	}
 	DWORD decodeSize = 0;
+	DWORD readSize;
+	DWORD reserveCount = 0;
+	while( (readSize = CDescriptor::GetDecodeReadSize(data + decodeSize, dataSize - decodeSize)) != 0 ){
+		reserveCount++;
+		decodeSize += readSize;
+	}
+	descriptorList->reserve(descriptorList->size() + reserveCount);
+
+	decodeSize = 0;
 	while( decodeSize < dataSize ){
-		descriptorList->push_back(new CDescriptor);
-		DWORD readSize;
-		if( descriptorList->back()->Decode(data + decodeSize, dataSize - decodeSize, &readSize, customParserList) == false ){
-			while( descriptorList->empty() == false ){
-				delete descriptorList->back();
-				descriptorList->pop_back();
-			}
+		descriptorList->resize(descriptorList->size() + 1);
+		if( descriptorList->back().Decode(data + decodeSize, dataSize - decodeSize, &readSize, customParserList) == false ){
+			descriptorList->clear();
 			return FALSE;
 		}
 		decodeSize += readSize;

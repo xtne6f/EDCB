@@ -364,5 +364,5 @@ namespace AribDescriptor
 		std::vector<DESCRIPTOR_PROPERTY> rootProperty;
 	};
 
-	BOOL CreateDescriptors(BYTE* data, DWORD dataSize, std::vector<CDescriptor*>* descriptorList, DWORD* decodeReadSize, const PARSER_PAIR* customParserList = NULL);
+	BOOL CreateDescriptors(const BYTE* data, DWORD dataSize, std::vector<CDescriptor>* descriptorList, DWORD* decodeReadSize, const PARSER_PAIR* customParserList = NULL);
 }

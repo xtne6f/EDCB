@@ -9,11 +9,11 @@ public:
 	CEpgDBUtil(void);
 	~CEpgDBUtil(void);
 
-	BOOL AddEIT(WORD PID, CEITTable* eit, __int64 streamTime);
+	BOOL AddEIT(WORD PID, const CEITTable* eit, __int64 streamTime);
 
-	BOOL AddServiceList(CNITTable* nit);
-	BOOL AddServiceList(WORD TSID, CSITTable* sit);
-	BOOL AddSDT(CSDTTable* sdt);
+	BOOL AddServiceList(const CNITTable* nit);
+	BOOL AddServiceList(WORD TSID, const CSITTable* sit);
+	BOOL AddSDT(const CSDTTable* sdt);
 
 	void SetStreamChangeEvent();
 
@@ -175,14 +175,14 @@ protected:
 protected:
 	void Clear();
 	
-	static void AddBasicInfo(EVENT_INFO* eventInfo, vector<AribDescriptor::CDescriptor*>* descriptorList, WORD onid, WORD tsid);
-	static void AddShortEvent(EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* shortEvent);
-	static BOOL AddExtEvent(EVENT_INFO* eventInfo, vector<AribDescriptor::CDescriptor*>* descriptorList);
-	static void AddContent(EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* content);
-	static void AddComponent(EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* component);
-	static BOOL AddAudioComponent(EVENT_INFO* eventInfo, vector<AribDescriptor::CDescriptor*>* descriptorList);
-	static void AddEventGroup(EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* eventGroup, WORD onid, WORD tsid);
-	static void AddEventRelay(EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* eventGroup, WORD onid, WORD tsid);
+	static void AddBasicInfo(EVENT_INFO* eventInfo, const vector<AribDescriptor::CDescriptor>* descriptorList, WORD onid, WORD tsid);
+	static void AddShortEvent(EVENT_INFO* eventInfo, const AribDescriptor::CDescriptor* shortEvent);
+	static BOOL AddExtEvent(EVENT_INFO* eventInfo, const vector<AribDescriptor::CDescriptor>* descriptorList);
+	static void AddContent(EVENT_INFO* eventInfo, const AribDescriptor::CDescriptor* content);
+	static void AddComponent(EVENT_INFO* eventInfo, const AribDescriptor::CDescriptor* component);
+	static BOOL AddAudioComponent(EVENT_INFO* eventInfo, const vector<AribDescriptor::CDescriptor>* descriptorList);
+	static void AddEventGroup(EVENT_INFO* eventInfo, const AribDescriptor::CDescriptor* eventGroup, WORD onid, WORD tsid);
+	static void AddEventRelay(EVENT_INFO* eventInfo, const AribDescriptor::CDescriptor* eventGroup, WORD onid, WORD tsid);
 
 	static BOOL CheckSectionAll(const vector<SECTION_FLAG_INFO>& sectionList);
 

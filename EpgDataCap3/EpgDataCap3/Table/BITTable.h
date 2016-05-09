@@ -41,17 +41,11 @@ broadcaster_information _section(){
 class CBITTable : public CPSITable
 {
 public:
-	typedef struct _BROADCASTER_DATA{
+	struct BROADCASTER_DATA {
 		BYTE broadcaster_id;
 		WORD broadcaster_descriptors_length;
-		vector<AribDescriptor::CDescriptor*> descriptorList;
-		~_BROADCASTER_DATA(void){
-			for( size_t i=0; i<descriptorList.size(); i++ ){
-				SAFE_DELETE(descriptorList[i]);
-			}
-			descriptorList.clear();
-		};
-	}BROADCASTER_DATA;
+		vector<AribDescriptor::CDescriptor> descriptorList;
+	};
 	WORD original_network_id;
 	BYTE version_number;
 	BYTE current_next_indicator;
@@ -59,13 +53,10 @@ public:
 	BYTE last_section_number;
 	BYTE broadcast_view_propriety;
 	WORD first_descriptors_length;
-	vector<AribDescriptor::CDescriptor*> descriptorList;
-	vector<BROADCASTER_DATA*> broadcasterDataList;
+	vector<AribDescriptor::CDescriptor> descriptorList;
+	vector<BROADCASTER_DATA> broadcasterDataList;
 
 public:
-	CBITTable(void);
-	~CBITTable(void);
-
 	BOOL Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize );
 protected:
 	void Clear();

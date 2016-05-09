@@ -26,12 +26,9 @@ public:
 	WORD original_network_id;
 	SYSTEMTIME start_time;
 	SYSTEMTIME end_time;
-	vector<EVENT_MAP_INFO*> eventMapList;
+	vector<EVENT_MAP_INFO> eventMapList;
 
 public:
-	CEITTable_SD2(void);
-	~CEITTable_SD2(void);
-
 	BOOL Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize );
 protected:
 	void Clear();

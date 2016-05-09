@@ -3,20 +3,8 @@
 
 #include "../../../Common/EpgTimerUtil.h"
 
-CEITTable_SD2::CEITTable_SD2(void)
-{
-}
-
-CEITTable_SD2::~CEITTable_SD2(void)
-{
-	Clear();
-}
-
 void CEITTable_SD2::Clear()
 {
-	for( size_t i=0 ;i<eventMapList.size(); i++ ){
-		SAFE_DELETE(eventMapList[i]);
-	}
 	eventMapList.clear();
 }
 
@@ -64,7 +52,8 @@ BOOL CEITTable_SD2::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 		readSize += 5;
 
 		while( readSize+3 < (DWORD)section_length+3-4 ){
-			EVENT_MAP_INFO* item = new EVENT_MAP_INFO;
+			eventMapList.push_back(EVENT_MAP_INFO());
+			EVENT_MAP_INFO* item = &eventMapList.back();
 			item->descriptor_length = ((WORD)data[readSize]&0x03)<<8 | data[readSize+1];
 
 			mjd = ((DWORD)data[readSize+2])<<8 | data[readSize+3];
@@ -92,7 +81,6 @@ BOOL CEITTable_SD2::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 				item->eventList.push_back(dataInfo);
 			}
 
-			eventMapList.push_back(item);
 			readSize+=item->descriptor_length+2;
 		}
 	}else{

@@ -45,18 +45,12 @@ TS_program_map_section(){
 class CPMTTable : public CPSITable
 {
 public:
-	typedef struct _ES_INFO_DATA{
+	struct ES_INFO_DATA {
 		BYTE stream_type;
 		WORD elementary_PID;
 		WORD ES_info_length;
-		vector<AribDescriptor::CDescriptor*> descriptorList;
-		~_ES_INFO_DATA(void){
-			for( size_t i=0; i<descriptorList.size(); i++ ){
-				SAFE_DELETE(descriptorList[i]);
-			}
-			descriptorList.clear();
-		};
-	} ES_INFO_DATA;
+		vector<AribDescriptor::CDescriptor> descriptorList;
+	};
 	WORD program_number;
 	BYTE version_number;
 	BYTE current_next_indicator;
@@ -64,13 +58,10 @@ public:
 	BYTE last_section_number;
 	WORD PCR_PID;
 	WORD program_info_length;
-	vector<AribDescriptor::CDescriptor*> descriptorList;
-	vector<ES_INFO_DATA*> ESInfoList;
+	vector<AribDescriptor::CDescriptor> descriptorList;
+	vector<ES_INFO_DATA> ESInfoList;
 
 public:
-	CPMTTable(void);
-	~CPMTTable(void);
-
 	BOOL Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize );
 protected:
 	void Clear();
