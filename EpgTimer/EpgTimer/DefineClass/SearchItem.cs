@@ -19,6 +19,11 @@ namespace EpgTimer
         public SearchItem() { }
         public SearchItem(EpgEventInfo item) { eventInfo = item; }
 
+        public override void Reset()
+        {
+            reserveTuner = null;
+            base.Reset();
+        }
         public static new string GetValuePropertyName(string key)
         {
             var obj = new SearchItem();
@@ -354,6 +359,7 @@ namespace EpgTimer
                 //重複するキーは基本的に無いという前提
                 try
                 {
+                    listItem1.Reset();
                     listKeys.Add(listItem1.EventInfo.Create64PgKey(), listItem1);
                     listItem1.ReserveInfo = null;
                 }

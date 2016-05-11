@@ -24,6 +24,7 @@ namespace EpgTimer
             }
         }
         public virtual RecSettingData RecSettingInfo { get { return null; } }
+        public virtual void Reset() { preset = null; }
         public virtual bool IsManual { get { return false; } }
 
         public virtual String MarginStart
