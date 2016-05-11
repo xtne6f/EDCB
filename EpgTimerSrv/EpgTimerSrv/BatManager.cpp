@@ -126,9 +126,8 @@ UINT WINAPI CBatManager::BatWorkThread(LPVOID param)
 					}
 					bool executed = false;
 					HANDLE hProcess = NULL;
-					if( exDirect.empty() && GetShellWindow() == NULL ){
-						OutputDebugString(L"GetShellWindow() failed\r\n");
-						//表示できない可能性が高いのでGUI経由で起動してみる
+					if( exDirect.empty() && sys->notifyManager.IsGUI() == FALSE ){
+						//表示できないのでGUI経由で起動してみる
 						CSendCtrlCmd ctrlCmd;
 						vector<DWORD> registGUI = sys->notifyManager.GetRegistGUI();
 						for( size_t i = 0; i < registGUI.size(); i++ ){

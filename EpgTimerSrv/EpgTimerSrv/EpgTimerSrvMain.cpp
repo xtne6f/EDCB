@@ -81,6 +81,7 @@ CEpgTimerSrvMain::~CEpgTimerSrvMain()
 
 bool CEpgTimerSrvMain::Main(bool serviceFlag_)
 {
+	this->notifyManager.SetGUI(!serviceFlag_);
 	this->residentFlag = serviceFlag_;
 
 	DWORD awayMode;
@@ -226,8 +227,8 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		}
 		break;
 	case WM_QUERY_SHUTDOWN:
-		if( GetShellWindow() ){
-			//ƒVƒFƒ‹‚ª‚ ‚é‚Ì‚Å’¼Úq‚Ë‚é
+		if( ctx->sys->notifyManager.IsGUI() ){
+			//’¼Úq‚Ë‚é
 			if( ctx->hDlgQueryShutdown == NULL ){
 				INITCOMMONCONTROLSEX icce;
 				icce.dwSize = sizeof(icce);

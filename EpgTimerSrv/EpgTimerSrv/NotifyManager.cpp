@@ -19,6 +19,7 @@ CNotifyManager::CNotifyManager(void)
 	this->notifyCount = 1;
 	this->notifyRemovePos = 0;
 	this->hwndNotify = NULL;
+	this->guiFlag = FALSE;
 }
 
 CNotifyManager::~CNotifyManager(void)

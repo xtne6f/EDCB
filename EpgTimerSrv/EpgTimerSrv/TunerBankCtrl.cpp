@@ -1068,10 +1068,9 @@ bool CTunerBankCtrl::OpenTuner(bool minWake, bool noView, bool nwUdp, bool nwTcp
 	}
 
 	//原作と異なりイベントオブジェクト"Global\\EpgTimerSrv_OpenTuner_Event"による排他制御はしない
-	//また、シェルがある限り(≒サービスモードでない限り)GUI経由でなく直接CreateProcess()するので注意
-	if( GetShellWindow() == NULL ){
-		OutputDebugString(L"GetShellWindow() failed\r\n");
-		//表示できない可能性が高いのでGUI経由で起動してみる
+	//また、サービスモードでない限りGUI経由でなく直接CreateProcess()するので注意
+	if( this->notifyManager.IsGUI() == FALSE ){
+		//表示できないのでGUI経由で起動してみる
 		CSendCtrlCmd ctrlCmd;
 		vector<DWORD> registGUI = this->notifyManager.GetRegistGUI();
 		for( size_t i = 0; i < registGUI.size(); i++ ){

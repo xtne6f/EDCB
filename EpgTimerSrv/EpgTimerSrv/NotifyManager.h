@@ -24,6 +24,9 @@ public:
 	void SetNotifySrvStatus(DWORD status);
 	void AddNotifyMsg(DWORD notifyID, wstring msg);
 
+	BOOL IsGUI() const { return guiFlag; }
+	void SetGUI(BOOL f) { guiFlag = f; }
+
 protected:
 	mutable CRITICAL_SECTION managerLock;
 
@@ -38,6 +41,7 @@ protected:
 	vector<REGIST_TCP_INFO> registTCPList;
 	HWND hwndNotify;
 	UINT msgIDNotify;
+	BOOL guiFlag;
 
 	vector<NOTIFY_SRV_INFO> notifyList;
 	vector<NOTIFY_SRV_INFO> notifySentList;
