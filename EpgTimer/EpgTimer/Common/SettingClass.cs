@@ -1055,7 +1055,7 @@ namespace EpgTimer
             iEpgStationList = new List<IEPGStationInfo>();
             nwServerIP = "";
             nwServerPort = 4510;
-            nwWaitPort = 4520;
+            nwWaitPort = 0;
             nwMacAdd = "";
             wakeReconnectNW = false;
             suspendCloseNW = false;
