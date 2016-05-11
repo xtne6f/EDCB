@@ -17,8 +17,8 @@ public:
 	vector<NOTIFY_SRV_INFO> RemoveSentList();
 	BOOL GetNotify(NOTIFY_SRV_INFO* info, DWORD targetCount);
 
-	void GetRegistGUI(map<DWORD, DWORD>* registGUI) const;
-	void GetRegistTCP(map<wstring, REGIST_TCP_INFO>* registTCP) const;
+	vector<DWORD> GetRegistGUI() const;
+	vector<REGIST_TCP_INFO> GetRegistTCP() const;
 
 	void AddNotify(DWORD notifyID);
 	void SetNotifySrvStatus(DWORD status);
@@ -34,15 +34,15 @@ protected:
 	DWORD notifyCount;
 	size_t notifyRemovePos;
 
-	map<DWORD, DWORD> registGUIMap;
-	map<wstring, REGIST_TCP_INFO> registTCPMap;
+	vector<pair<DWORD, HANDLE>> registGUIList;
+	vector<REGIST_TCP_INFO> registTCPList;
 	HWND hwndNotify;
 	UINT msgIDNotify;
 
 	vector<NOTIFY_SRV_INFO> notifyList;
 	vector<NOTIFY_SRV_INFO> notifySentList;
 protected:
-	void _SendNotify();
+	void SendNotify();
 	static UINT WINAPI SendNotifyThread(LPVOID param);
 };
 

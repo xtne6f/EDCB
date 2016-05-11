@@ -1073,10 +1073,9 @@ bool CTunerBankCtrl::OpenTuner(bool minWake, bool noView, bool nwUdp, bool nwTcp
 		OutputDebugString(L"GetShellWindow() failed\r\n");
 		//表示できない可能性が高いのでGUI経由で起動してみる
 		CSendCtrlCmd ctrlCmd;
-		map<DWORD, DWORD> registGUIMap;
-		this->notifyManager.GetRegistGUI(&registGUIMap);
-		for( map<DWORD, DWORD>::iterator itr = registGUIMap.begin(); itr != registGUIMap.end(); itr++ ){
-			ctrlCmd.SetPipeSetting(CMD2_GUI_CTRL_WAIT_CONNECT, CMD2_GUI_CTRL_PIPE, itr->first);
+		vector<DWORD> registGUI = this->notifyManager.GetRegistGUI();
+		for( size_t i = 0; i < registGUI.size(); i++ ){
+			ctrlCmd.SetPipeSetting(CMD2_GUI_CTRL_WAIT_CONNECT, CMD2_GUI_CTRL_PIPE, registGUI[i]);
 			if( ctrlCmd.SendGUIExecute(L'"' + strExecute + L'"' + strParam, &this->tunerPid) == CMD_SUCCESS ){
 				//ハンドル開く前に終了するかもしれない
 				this->hTunerProcess = OpenProcess(SYNCHRONIZE | PROCESS_TERMINATE | PROCESS_SET_INFORMATION, FALSE, this->tunerPid);
