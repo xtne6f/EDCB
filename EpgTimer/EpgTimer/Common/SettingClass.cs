@@ -485,7 +485,7 @@ namespace EpgTimer
             MenuSet = new MenuSettingData();
             NWServerIP = "";
             NWServerPort = 4510;
-            NWWaitPort = 4520;
+            NWWaitPort = 0;
             NWMacAdd = "";
             NWPreset = new List<NWPresetItem>();
             WakeReconnectNW = false;
