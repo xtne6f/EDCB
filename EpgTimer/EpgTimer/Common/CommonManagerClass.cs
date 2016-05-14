@@ -1570,17 +1570,17 @@ namespace EpgTimer
         public void StatusNotifySet(bool success, string subject, Visual target = null)
         {
             if (string.IsNullOrEmpty(subject)) return;
-            StatusNotifySet((success == true ? "" : "中断またはキャンセルされました < ") + subject, target);
+            StatusNotifySet((success == true ? "" : "中断またはキャンセルされました < ") + subject, null, target);
         }
-        public void StatusNotifySet(string s3, Visual target = null)
+        public void StatusNotifySet(string s3, TimeSpan? interval = null, Visual target = null)
         {
             if (Settings.Instance.DisplayStatus == false || Settings.Instance.DisplayStatusNotify == false) return;
-            GetStatusbar(target).SetText(s3:s3);
+            GetStatusbar(target).SetText(s3: s3, interval: interval);
         }
-        public void StatusNotifyAppend(string s3, Visual target = null)
+        public void StatusNotifyAppend(string s3, TimeSpan? interval = null, Visual target = null)
         {
             if (Settings.Instance.DisplayStatus == false || Settings.Instance.DisplayStatusNotify == false) return;
-            GetStatusbar(target).AppendText(s3: s3);
+            GetStatusbar(target).AppendText(s3: s3, interval: interval);
         }
         public void StatusSet(string s1 = null, string s2 = null, string s3 = null, Visual target = null)
         {

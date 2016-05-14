@@ -152,8 +152,8 @@
                     </StackPanel>
                     <StackPanel Margin="351,170,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" >
                         <CheckBox Content="起動時に前回接続サーバーに接続する" HorizontalAlignment="Left" Name="checkBox_wakeReconnect" VerticalAlignment="Top" IsEnabled="False" />
-                        <StackPanel Orientation="Horizontal" Name="stackPanel_WoLWait" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_wakeReconnect, UpdateSourceTrigger=PropertyChanged}" >
-                            <StackPanel Margin="18,0,0,0" >
+                        <StackPanel Orientation="Horizontal" Name="stackPanel_WoLWait" IsEnabled="False">
+                            <StackPanel>
                                 <CheckBox Content="WoLしてから接続する" Margin="0,4,0,0" Name="checkBox_WoLWait" Checked="checkBox_WoLWait_Checked" ToolTipService.ShowOnDisabled="True" ToolTip="WoL→待機→接続" />
                                 <CheckBox Content="接続失敗時にWoLで再接続を試みる" Margin="0,4,0,0" VerticalAlignment="Center" Name="checkBox_WoLWaitRecconect" Checked="checkBox_WoLWaitRecconect_Checked" ToolTipService.ShowOnDisabled="True" ToolTipService.ShowDuration="20000" ToolTip="WoL→接続(→待機→接続)&#10;とりあえず最初にマジックパケットは投げます。&#10;接続失敗時はEpgTimerNWが一時的に反応しにくくなっているので注意が必要です" />
                             </StackPanel>

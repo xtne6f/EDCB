@@ -74,6 +74,7 @@ namespace EpgTimer.Setting
                 checkBox_timeSync.IsEnabled = false;
                 label43.IsEnabled = false;
                 checkBox_wakeReconnect.IsEnabled = true;
+                stackPanel_WoLWait.IsEnabled = true;
                 checkBox_suspendClose.IsEnabled = true;
                 checkBox_ngAutoEpgLoad.IsEnabled = true;
                 checkBox_keepTCPConnect.IsEnabled = true;
@@ -82,10 +83,6 @@ namespace EpgTimer.Setting
                 checkBox_srvSaveNotifyLog.IsEnabled = false;
                 checkBox_srvSaveDebugLog.IsEnabled = false;
                 button_recDef.Content = "録画プリセットを確認";
-            }
-            else
-            {
-                stackPanel_WoLWait.IsEnabled = false;//Bindingは破棄している
             }
 
             try

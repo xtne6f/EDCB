@@ -261,48 +261,10 @@ namespace EpgTimer
 
                 ChkTimerWork();
 
-                //自動接続ならWindowLoadする前に接続させる
+                //自動接続ならWindowLoadedしない場合でも接続させる
                 if (Settings.Instance.WakeReconnectNW == true)
                 {
-                    Dispatcher.BeginInvoke(new Action(() =>
-                    {
-                        var cnTimer = new DispatcherTimer();
-                        string msg1 = Settings.Instance.WoLWaitRecconect == true ? "再接続" : "接続";
-                        string msg = string.Format("起動時自動" + msg1 + "待機中({0}秒間)", Settings.Instance.WoLWaitSecond);
-
-                        if (Settings.Instance.WoLWait == true || Settings.Instance.WoLWaitRecconect == true)
-                        {
-                            try
-                            {
-                                NWConnect.SendMagicPacket(ConnectWindow.ConvertTextMacAddress(Settings.Instance.NWMacAdd));
-                            }
-                            catch { }
-
-                            cnTimer.Interval = TimeSpan.FromSeconds(Math.Max(Settings.Instance.WoLWaitSecond, 1));
-                            cnTimer.Tick += (sender, e) =>
-                            {
-                                cnTimer.Stop();
-                                statusBar.SetTimerIntervalDefault();
-                                if (ConnectCmd(false) == false)
-                                {
-                                    statusBar.ClearText();
-                                    CommonManager.Instance.StatusSet(msg + " > 接続に失敗");
-                                }
-                            };
-                            cnTimer.Start();
-                        }
-
-                        if (Settings.Instance.WoLWait == true || 
-                            ConnectCmd(false) == false && Settings.Instance.WoLWaitRecconect == true)
-                        {
-                            statusBar.TimerInterval = TimeSpan.FromSeconds(Settings.Instance.WoLWaitSecond + 5);
-                            CommonManager.Instance.StatusNotifySet(msg);
-                        }
-                        else
-                        {
-                            cnTimer.Stop();
-                        }
-                    }));
+                    Dispatcher.BeginInvoke(new Action(() => ConnectCmd()), DispatcherPriority.Loaded);
                 }
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
@@ -400,7 +362,7 @@ namespace EpgTimer
             {
                 if (CommonManager.Instance.NWMode == true)
                 {
-                    ConnectCmd(true);
+                    ConnectWithDialog();
                 }
             }
         }
@@ -502,23 +464,84 @@ namespace EpgTimer
             stackPanel_button.Visibility = Settings.Instance.ViewButtonShowAsTab || stackPanel_button.Children.Count == 0 ? Visibility.Collapsed : Visibility.Visible;
         }
 
-        bool ConnectCmd(bool showDialog)
+        DispatcherTimer connectTimer = null;
+        void ConnectWithDialog()
         {
-            if (showDialog == true)
+            if (connectTimer != null) return;
+
+            var dlg = new ConnectWindow();
+            dlg.Owner = CommonUtil.GetTopWindow(this);
+            if (dlg.ShowDialog() == true)
             {
-                ConnectWindow dlg = new ConnectWindow();
-                PresentationSource topWindow = PresentationSource.FromVisual(this);
-                if (topWindow != null)
+                ConnectCmd(true);
+            }
+        }
+        void ConnectCmd(bool showDialog = false)
+        {
+            var interval = TimeSpan.FromSeconds(Settings.Instance.WoLWaitSecond + 60);
+            var CheckIsConnected = new Action(() =>
+            {
+                if (connectTimer != null)
                 {
-                    dlg.Owner = (Window)topWindow.RootVisual;
+                    connectTimer.Stop();
+                    connectTimer = null;
                 }
-                if (dlg.ShowDialog() == false)
+                if (CommonManager.Instance.NW.IsConnected == false)
                 {
-                    return true;
+                    if (showDialog == true)
+                    {
+                        MessageBox.Show("サーバーへの接続に失敗しました");
+                    }
+                    CommonManager.Instance.StatusNotifyAppend("接続に失敗 < ");
                 }
+            });
+
+            if (Settings.Instance.WoLWait == true || Settings.Instance.WoLWaitRecconect == true)
+            {
+                try { NWConnect.SendMagicPacket(ConnectWindow.ConvertTextMacAddress(Settings.Instance.NWMacAdd)); }
+                catch { }
+
+                connectTimer = new DispatcherTimer();
+                connectTimer.Interval = TimeSpan.FromSeconds(Math.Max(Settings.Instance.WoLWaitSecond, 1));
+                connectTimer.Tick += (sender, e) =>
+                {
+                    CommonManager.Instance.StatusNotifyAppend("EpgTimerSrvへ接続中... < ", interval);
+                    Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        try { ConnectSrv(); }
+                        catch { }
+                        CheckIsConnected();
+                    }), DispatcherPriority.Render);
+                };
+                connectTimer.Start();
             }
 
-            bool connected = false;
+            if (Settings.Instance.WoLWait != true)
+            {
+                CommonManager.Instance.StatusNotifySet("EpgTimerSrvへ接続中...", interval);
+            }
+
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                try
+                {
+                    if (Settings.Instance.WoLWait == true ||
+                            ConnectSrv() == false && Settings.Instance.WoLWaitRecconect == true)
+                    {
+                        string msg1 = showDialog == true ? "" : "起動時自動";
+                        string msg2 = Settings.Instance.WoLWaitRecconect == true ? "再" : "";
+                        string msg = string.Format(msg1 + msg2 + "接続待機中({0}秒間)...", Settings.Instance.WoLWaitSecond);
+                        CommonManager.Instance.StatusNotifySet(msg, interval);
+                        return;
+                    }
+                }
+                catch { }
+                CheckIsConnected();
+            }), DispatcherPriority.Render);
+        }
+        bool ConnectSrv()
+        {
+            var connected = false;
             try
             {
                 foreach (var address in System.Net.Dns.GetHostAddresses(Settings.Instance.NWServerIP))
@@ -531,15 +554,10 @@ namespace EpgTimer
                     }
                 }
             }
-            catch
-            {
-            }
+            catch { }
+
             if (connected == false)
             {
-                if (showDialog == true)
-                {
-                    MessageBox.Show("サーバーへの接続に失敗しました");
-                }
                 if (Settings.Instance.ChkSrvRegistTCP == true)
                 {
                     taskTray.Icon = TaskIconSpec.TaskIconGray;
@@ -603,7 +621,7 @@ namespace EpgTimer
                                     waitPort != 0 && registered == false ||
                                     taskTray.Icon == TaskIconSpec.TaskIconGray)//EpgTimerNW側の休止復帰も含む
                                 {
-                                    if (ConnectCmd(false) == true)
+                                    if (ConnectSrv() == true)
                                     {
                                         CommonManager.Instance.StatusNotifyAppend("自動再接続 - ");
                                     }
@@ -628,11 +646,11 @@ namespace EpgTimer
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            if (CommonManager.Instance.NWMode == true)
+            if (CommonManager.Instance.NWMode == true && CommonManager.Instance.NW.IsConnected == false)
             {
                 if (Settings.Instance.WakeReconnectNW == false && this.minimizedStarting == false)
                 {
-                    ConnectCmd(true);
+                    ConnectWithDialog();
                 }
             }
         }
@@ -752,9 +770,9 @@ namespace EpgTimer
                         this.WindowState = Settings.Instance.LastWindowState;
                     }
                     minimizedStarting = false;
-                    if (CommonManager.Instance.NWMode == true && Settings.Instance.WakeReconnectNW == false)
+                    if (CommonManager.Instance.NWMode == true && Settings.Instance.WakeReconnectNW == false && CommonManager.Instance.NW.IsConnected == false)
                     {
-                        Dispatcher.BeginInvoke(new Action(() => ConnectCmd(true)));
+                        Dispatcher.BeginInvoke(new Action(() => ConnectWithDialog()), DispatcherPriority.Render);
                     }
                 }
                 foreach (Window win in Application.Current.Windows)
@@ -977,7 +995,6 @@ namespace EpgTimer
         void StatusbarReset()
         {
             statusBar.ClearText();//一応
-            statusBar.SetTimerIntervalDefault();
             statusBar.Visibility = Settings.Instance.DisplayStatus == true ? Visibility.Visible : Visibility.Collapsed;
         }
         void searchButton_Click(object sender, ExecutedRoutedEventArgs e)
@@ -1141,7 +1158,7 @@ namespace EpgTimer
         {
             if (CommonManager.Instance.NWMode == true)
             {
-                ConnectCmd(true);
+                ConnectWithDialog();
             }
         }
 
