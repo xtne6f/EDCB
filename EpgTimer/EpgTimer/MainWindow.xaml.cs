@@ -1159,20 +1159,7 @@ namespace EpgTimer
 
         private void OutsideCmdCallback(CMD_STREAM pCmdParam, CMD_STREAM pResParam, bool networkFlag)
         {
-            var DispatcherCheckAction = new Action<Action>((action) =>
-            {
-                if (Dispatcher.CheckAccess() == true)
-                {
-                    action();
-                }
-                else
-                {
-                    Dispatcher.BeginInvoke(action);
-                }
-            });
-
             System.Diagnostics.Trace.WriteLine((CtrlCmd)pCmdParam.uiParam);
-            pResParam.uiParam = (uint)ErrCode.CMD_SUCCESS;
 
             switch ((CtrlCmd)pCmdParam.uiParam)
             {
@@ -1183,6 +1170,7 @@ namespace EpgTimer
                     }
                     else
                     {
+                        pResParam.uiParam = (uint)ErrCode.CMD_SUCCESS;
                         this.Visibility = System.Windows.Visibility.Visible;
                     }
                     break;
@@ -1193,6 +1181,7 @@ namespace EpgTimer
                     }
                     else
                     {
+                        pResParam.uiParam = (uint)ErrCode.CMD_SUCCESS;
                         String exeCmd = "";
                         (new CtrlCmdReader(new System.IO.MemoryStream(pCmdParam.bData, false))).Read(ref exeCmd);
                         try
@@ -1244,8 +1233,11 @@ namespace EpgTimer
                     }
                     else
                     {
+                        pResParam.uiParam = (uint)ErrCode.CMD_SUCCESS;
+
                         UInt16 param = 0;
                         (new CtrlCmdReader(new System.IO.MemoryStream(pCmdParam.bData, false))).Read(ref param);
+
                         Dispatcher.BeginInvoke(new Action(() => ShowSleepDialog(param)));
                     }
                     break;
@@ -1256,6 +1248,8 @@ namespace EpgTimer
                     }
                     else
                     {
+                        pResParam.uiParam = (uint)ErrCode.CMD_SUCCESS;
+
                         UInt16 param = 0;
                         (new CtrlCmdReader(new System.IO.MemoryStream(pCmdParam.bData, false))).Read(ref param);
 
@@ -1276,6 +1270,8 @@ namespace EpgTimer
                     break;
                 case CtrlCmd.CMD_TIMER_GUI_SRV_STATUS_NOTIFY2:
                     {
+                        pResParam.uiParam = (uint)ErrCode.CMD_SUCCESS;
+
                         NotifySrvInfo status = new NotifySrvInfo();
                         var r = new CtrlCmdReader(new System.IO.MemoryStream(pCmdParam.bData, false));
                         ushort version = 0;
@@ -1284,7 +1280,7 @@ namespace EpgTimer
                         r.Read(ref status);
                         //通知の巡回カウンタをuiSizeを利用して返す(やや汚い)
                         pCmdParam.uiSize = status.param3;
-                        DispatcherCheckAction(new Action(() => NotifyStatus(status)));
+                        Dispatcher.BeginInvoke(new Action(() => NotifyStatus(status)));
                     }
                     break;
                 default:
