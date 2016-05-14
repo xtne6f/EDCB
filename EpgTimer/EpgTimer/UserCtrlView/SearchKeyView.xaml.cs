@@ -36,7 +36,7 @@ namespace EpgTimer
         {
             var cmbBox = (sender as Button).DataContext as ComboBox;
             var dlg = new KeyWordWindow();
-            dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
+            dlg.Owner = CommonUtil.GetTopWindow(this);
             dlg.KeyWord = cmbBox.Text;
             dlg.ShowDialog();
             cmbBox.Text = dlg.KeyWord;

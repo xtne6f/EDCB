@@ -351,11 +351,7 @@ namespace EpgTimer.Setting
         private void button_tab_add_Click(object sender, RoutedEventArgs e)
         {
             var dlg = new EpgDataViewSettingWindow();
-            var topWindow = PresentationSource.FromVisual(this);
-            if (topWindow != null)
-            {
-                dlg.Owner = (Window)topWindow.RootVisual;
-            }
+            dlg.Owner = CommonUtil.GetTopWindow(this);
             if (dlg.ShowDialog() == true)
             {
                 var info = new CustomEpgTabInfo();
@@ -380,11 +376,7 @@ namespace EpgTimer.Setting
                 listBox_tab.UnselectAll();
                 listBox_tab.SelectedItem = setInfo;
                 var dlg = new EpgDataViewSettingWindow();
-                var topWindow = PresentationSource.FromVisual(this);
-                if (topWindow != null)
-                {
-                    dlg.Owner = (Window)topWindow.RootVisual;
-                }
+                dlg.Owner = CommonUtil.GetTopWindow(this);
                 dlg.SetDefSetting(setInfo);
                 if (dlg.ShowDialog() == true)
                 {
@@ -434,7 +426,7 @@ namespace EpgTimer.Setting
             var btn = sender as Button;
 
             var dlg = new ColorSetWindow();
-            dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
+            dlg.Owner = CommonUtil.GetTopWindow(this);
             Color item = (btn.Background as SolidColorBrush).Color;
             dlg.SetColor(item);
             if (dlg.ShowDialog() == true)
@@ -462,10 +454,9 @@ namespace EpgTimer.Setting
 
         private void button_set_cm_Click(object sender, RoutedEventArgs e)
         {
-            SetContextMenuWindow dlg = new SetContextMenuWindow();
+            var dlg = new SetContextMenuWindow();
+            dlg.Owner = CommonUtil.GetTopWindow(this);
             dlg.info = this.ctxmSetInfo.Clone();
-            dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-
             if (dlg.ShowDialog() == true)
             {
                 this.ctxmSetInfo = dlg.info.Clone();

@@ -89,11 +89,7 @@ namespace EpgTimer
                 if (param == null)
                 {
                     var dlg = new EpgDataViewSettingWindow();
-                    var topWindow = PresentationSource.FromVisual(this);
-                    if (topWindow != null)
-                    {
-                        dlg.Owner = (Window)topWindow.RootVisual;
-                    }
+                    dlg.Owner = CommonUtil.GetTopWindow(this);
                     dlg.SetDefSetting(this.GetViewMode());
                     dlg.SetTrySetModeEnable();
                     if (Settings.Instance.UseCustomEpgView == false)

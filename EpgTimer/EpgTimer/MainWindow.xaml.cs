@@ -369,15 +369,11 @@ namespace EpgTimer
             String tag = sender.ToString();
             if (String.Compare("設定", tag) == 0)
             {
-                PresentationSource topWindow = PresentationSource.FromVisual(this);
-                if (topWindow == null)
+                if (CommonUtil.GetTopWindow(this) == null)
                 {
                     this.Visibility = Visibility.Visible;
                     this.WindowState = Settings.Instance.LastWindowState;
-                    Dispatcher.BeginInvoke(new Action(() =>
-                    {
-                        SettingCmd();
-                    }));
+                    Dispatcher.BeginInvoke(new Action(() => SettingCmd()));
                 }
                 else
                 {
@@ -884,12 +880,8 @@ namespace EpgTimer
         {
             SaveViewData();
 
-            SettingWindow setting = new SettingWindow();
-            PresentationSource topWindow = PresentationSource.FromVisual(this);
-            if (topWindow != null)
-            {
-                setting.Owner = (Window)topWindow.RootVisual;
-            }
+            var setting = new SettingWindow();
+            setting.Owner = CommonUtil.GetTopWindow(this);
             if (setting.ShowDialog() == true)
             {
                     if (CommonManager.Instance.NWMode == true)
@@ -1140,12 +1132,8 @@ namespace EpgTimer
 
         void logViewButton_Click(object sender, RoutedEventArgs e)
         {
-            NotifyLogWindow dlg = new NotifyLogWindow();
-            PresentationSource topWindow = PresentationSource.FromVisual(this);
-            if (topWindow != null)
-            {
-                dlg.Owner = (Window)topWindow.RootVisual;
-            }
+            var dlg = new NotifyLogWindow();
+            dlg.Owner = CommonUtil.GetTopWindow(this);
             dlg.ShowDialog();
         }
 

@@ -508,14 +508,14 @@ namespace EpgTimer.Setting
 
         private void button_standbyCtrl_Click(object sender, RoutedEventArgs e)
         {
-            SetAppCancelWindow dlg = new SetAppCancelWindow();
+            var dlg = new SetAppCancelWindow();
+            dlg.Owner = CommonUtil.GetTopWindow(this);
             dlg.processList = this.ngProcessList;
             dlg.ngMin = this.ngMin;
             dlg.ngUsePC = this.ngUsePC;
             dlg.ngUsePCMin = this.ngUsePCMin;
             dlg.ngFileStreaming = this.ngFileStreaming;
             dlg.ngShareFile = this.ngShareFile;
-            dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
 
             if (dlg.ShowDialog() == true)
             {
@@ -530,10 +530,10 @@ namespace EpgTimer.Setting
 
         private void button_autoDel_Click(object sender, RoutedEventArgs e)
         {
-            SetApp2DelWindow dlg = new SetApp2DelWindow();
+            var dlg = new SetApp2DelWindow();
+            dlg.Owner = CommonUtil.GetTopWindow(this);
             dlg.extList = this.extList;
             dlg.delChkFolderList = this.delChkFolderList;
-            dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
 
             if (dlg.ShowDialog() == true)
             {
@@ -659,15 +659,15 @@ namespace EpgTimer.Setting
 
         private void button_recDef_Click(object sender, RoutedEventArgs e)
         {
-            SetDefRecSettingWindow dlg = new SetDefRecSettingWindow();
-            dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
+            var dlg = new SetDefRecSettingWindow();
+            dlg.Owner = CommonUtil.GetTopWindow(this);
             dlg.ShowDialog();
         }
 
         private void button_searchDef_Click(object sender, RoutedEventArgs e)
         {
-            SetDefSearchSettingWindow dlg = new SetDefSearchSettingWindow();
-            dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
+            var dlg = new SetDefSearchSettingWindow();
+            dlg.Owner = CommonUtil.GetTopWindow(this);
             dlg.SetDefSetting(defSearchKey);
 
             if (dlg.ShowDialog() == true)

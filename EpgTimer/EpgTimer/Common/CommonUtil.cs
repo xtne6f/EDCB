@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Threading;
 using System.Runtime.InteropServices;
 using System.Linq.Expressions;
+using System.Windows.Media;
 
 namespace EpgTimer
 {
@@ -78,5 +79,14 @@ namespace EpgTimer
                 obj.Dispatcher.BeginInvoke(new Action(() => MessageBox.Show(message, caption, button, icon)));
             }
         }
+
+        /// <summary>ウィンドウがあれば取得する</summary>
+        public static Window GetTopWindow(Visual obj)
+        {
+            if (obj == null) return null;
+            var topWindow = PresentationSource.FromVisual(obj);
+            return topWindow == null ? null : topWindow.RootVisual as Window;
+        }
+
     }
 }

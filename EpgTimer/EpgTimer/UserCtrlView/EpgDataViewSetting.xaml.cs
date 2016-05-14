@@ -215,7 +215,7 @@ namespace EpgTimer
         private void button_searchKey_Click(object sender, RoutedEventArgs e)
         {
             var dlg = new SetDefSearchSettingWindow();
-            dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
+            dlg.Owner = CommonUtil.GetTopWindow(this);
             dlg.SetDefSetting(searchKey);
 
             if (dlg.ShowDialog() == true)

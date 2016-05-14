@@ -328,9 +328,9 @@ namespace EpgTimer
         protected virtual void mc_ProtectChange(object sender, ExecutedRoutedEventArgs e) { }
         protected virtual void mc_MenuSetting(object sender, ExecutedRoutedEventArgs e)
         {
-            SetContextMenuWindow dlg = new SetContextMenuWindow();
+            var dlg = new SetContextMenuWindow();
+            dlg.Owner = CommonUtil.GetTopWindow(Owner);
             dlg.info = Settings.Instance.MenuSet.Clone();
-            dlg.Owner = (Window)PresentationSource.FromVisual(Owner).RootVisual;
 
             if (dlg.ShowDialog() == true)
             {
