@@ -523,7 +523,6 @@ namespace EpgTimer
             }
 
             bool connected = false;
-            CommonManager.Instance.DB.ClearRecFileAppend(true);
             try
             {
                 foreach (var address in System.Net.Dns.GetHostAddresses(Settings.Instance.NWServerIP))
@@ -563,6 +562,7 @@ namespace EpgTimer
             CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.EpgData);
             CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.PlugInFile);
             CommonManager.Instance.DB.ReloadReserveInfo();
+            CommonManager.Instance.DB.ClearRecFileAppend(true);
             CommonManager.Instance.DB.ReloadEpgAutoAddInfo();
             CommonManager.Instance.DB.ReloadManualAutoAddInfo();
             CommonManager.Instance.DB.ReloadEpgData();
