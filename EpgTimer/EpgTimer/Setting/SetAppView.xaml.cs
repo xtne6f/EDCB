@@ -678,20 +678,11 @@ namespace EpgTimer.Setting
 
         private void button_exe1_Click(object sender, RoutedEventArgs e)
         {
-            string path = CommonManager.Instance.GetFileNameByDialog(textBox_exe1.Text, "", ".exe");
-            if (path != null)
-            {
-                textBox_exe1.Text = path;
-            }
+            CommonManager.GetFileNameByDialog(textBox_exe1, false, "", ".exe");
         }
-
         private void button_exe2_Click(object sender, RoutedEventArgs e)
         {
-            string path = CommonManager.Instance.GetFileNameByDialog(textBox_exe2.Text, "", ".exe");
-            if (path != null)
-            {
-                textBox_exe2.Text = path;
-            }
+            CommonManager.GetFileNameByDialog(textBox_exe2, false, "", ".exe");
         }
 
         private void ReLoadStation()

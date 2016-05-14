@@ -1166,13 +1166,22 @@ namespace EpgTimer
             }
         }
 
-        public string GetFolderNameByDialog(string InitialPath = "", string Description = "")
+        public static void GetFolderNameByDialog(TextBox txtBox, string Description = "")
+        {
+            if (txtBox == null) return;
+            string path = CommonManager.GetFolderNameByDialog(txtBox.Text, Description);
+            if (path != null)
+            {
+                txtBox.Text = path;
+            }
+        }
+        public static string GetFolderNameByDialog(string InitialPath = "", string Description = "")
         {
             try
             {
                 if (Settings.Instance.OpenFolderWithFileDialog == true)
                 {
-                    System.Windows.Forms.OpenFileDialog dlg = new System.Windows.Forms.OpenFileDialog();
+                    var dlg = new System.Windows.Forms.OpenFileDialog();
                     dlg.Title = Description;
                     dlg.CheckFileExists = false;
                     dlg.DereferenceLinks = false;
@@ -1185,7 +1194,7 @@ namespace EpgTimer
                 }
                 else
                 {
-                    System.Windows.Forms.FolderBrowserDialog dlg = new System.Windows.Forms.FolderBrowserDialog();
+                    var dlg = new System.Windows.Forms.FolderBrowserDialog();
                     dlg.Description = Description;
                     dlg.SelectedPath = GetDirectoryName2(InitialPath);
                     if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
@@ -1194,21 +1203,26 @@ namespace EpgTimer
                     }
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
             return null;
         }
 
-        public string GetFileNameByDialog(string InitialPath = "", string Title = "", string DefaultExt = "")
+        public static void GetFileNameByDialog(TextBox txtBox, bool isNameOnly, string Title = "", string DefaultExt = "")
+        {
+            if (txtBox == null) return;
+            string path = CommonManager.GetFileNameByDialog(txtBox.Text, Title, DefaultExt);
+            if (path != null)
+            {
+                txtBox.Text = isNameOnly == true ? Path.GetFileName(path) : path;
+            }
+        }
+        public static string GetFileNameByDialog(string InitialPath = "", string Title = "", string DefaultExt = "")
         {
             try
             {
-                System.Windows.Forms.OpenFileDialog dlg = new System.Windows.Forms.OpenFileDialog();
+                var dlg = new System.Windows.Forms.OpenFileDialog();
                 dlg.Title = Title;
-                dlg.FileName = System.IO.Path.GetFileName(InitialPath);
+                dlg.FileName = Path.GetFileName(InitialPath);
                 dlg.InitialDirectory = GetDirectoryName2(InitialPath);
                 switch (DefaultExt)
                 {
@@ -1224,21 +1238,16 @@ namespace EpgTimer
                         dlg.Filter = "all Files(*.*)|*.*";
                         break;
                 }
-
                 if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
                 {
                     return dlg.FileName;
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
             return null;
         }
 
-        private string GetDirectoryName2(string folder_path)
+        private static string GetDirectoryName2(string folder_path)
         {
             string path = folder_path.Trim();
             while (path != "")

@@ -108,7 +108,7 @@ namespace EpgTimer
                 }
             }
 
-            path = CommonManager.Instance.GetFolderNameByDialog(path, "録画フォルダの選択");
+            path = CommonManager.GetFolderNameByDialog(path, "録画フォルダの選択");
             if (path != null)
             {
                 //他のドライブに変ったりしたときは何もしない

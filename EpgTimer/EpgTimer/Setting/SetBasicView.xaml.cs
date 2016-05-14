@@ -358,29 +358,15 @@ namespace EpgTimer.Setting
 
         private void button_setPath_Click(object sender, RoutedEventArgs e)
         {
-            string path = CommonManager.Instance.GetFolderNameByDialog(textBox_setPath.Text, "設定関係保存フォルダの選択");
-            if (path != null)
-            {
-                textBox_setPath.Text = path;
-            }
+            CommonManager.GetFolderNameByDialog(textBox_setPath, "設定関係保存フォルダの選択");
         }
-
         private void button_exe_Click(object sender, RoutedEventArgs e)
         {
-            string path = CommonManager.Instance.GetFileNameByDialog(textBox_exe.Text, "", ".exe");
-            if (path != null)
-            {
-                textBox_exe.Text = path;
-            }
+            CommonManager.GetFileNameByDialog(textBox_exe, false, "", ".exe");
         }
-
         private void button_recInfoFolder_Click(object sender, RoutedEventArgs e)
         {
-            string path = CommonManager.Instance.GetFolderNameByDialog(textBox_recInfoFolder.Text, "録画情報保存フォルダの選択");
-            if (path != null)
-            {
-                textBox_recInfoFolder.Text = path;
-            }
+            CommonManager.GetFolderNameByDialog(textBox_recInfoFolder, "録画情報保存フォルダの選択");
         }
 
 
@@ -403,11 +389,7 @@ namespace EpgTimer.Setting
 
         private void button_rec_open_Click(object sender, RoutedEventArgs e)
         {
-            string path = CommonManager.Instance.GetFolderNameByDialog(textBox_recFolder.Text, "録画フォルダの選択");
-            if (path != null)
-            {
-                textBox_recFolder.Text = path;
-            }
+            CommonManager.GetFolderNameByDialog(textBox_recFolder, "録画フォルダの選択");
         }
 
         private void button_rec_add_Click(object sender, RoutedEventArgs e)

@@ -112,11 +112,7 @@ namespace EpgTimer.Setting
 
         private void button_exe_Click(object sender, RoutedEventArgs e)
         {
-            string path = CommonManager.Instance.GetFileNameByDialog(textBox_exe.Text, "", ".exe");
-            if (path != null)
-            {
-                textBox_exe.Text = path;
-            }
+            CommonManager.GetFileNameByDialog(textBox_exe, false, "", ".exe");
         }
 
         private void button_del_Click(object sender, RoutedEventArgs e)
@@ -145,11 +141,7 @@ namespace EpgTimer.Setting
 
         private void button_playExe_Click(object sender, RoutedEventArgs e)
         {
-            string path = CommonManager.Instance.GetFileNameByDialog(textBox_playExe.Text, "", ".exe");
-            if (path != null)
-            {
-                textBox_playExe.Text = path;
-            }
+            CommonManager.GetFileNameByDialog(textBox_playExe, false, "", ".exe");
         }
     }
 }

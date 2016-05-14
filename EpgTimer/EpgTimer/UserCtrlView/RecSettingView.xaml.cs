@@ -429,11 +429,7 @@ namespace EpgTimer
 
         private void button_bat_Click(object sender, RoutedEventArgs e)
         {
-            string path = CommonManager.Instance.GetFileNameByDialog(textBox_bat.Text, "", ".bat");
-            if (path != null)
-            {
-                textBox_bat.Text = path;
-            }
+            CommonManager.GetFileNameByDialog(textBox_bat, false, "", ".bat");
         }
 
         private void button_recFolderAdd_Click(object sender, RoutedEventArgs e)
