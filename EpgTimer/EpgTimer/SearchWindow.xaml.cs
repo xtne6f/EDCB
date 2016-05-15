@@ -645,9 +645,23 @@ namespace EpgTimer
             }
         }
 
+        public static void UpdatesParentStatus()
+        {
+            foreach (SearchWindow win in Application.Current.Windows.OfType<SearchWindow>())
+            {
+                win.UpdateParentStatus();
+            }
+        }
+        public void UpdateParentStatus()
+        {
+            checkBox_windowPinned_Checked(checkBox_windowPinned, null);
+        }
         private void checkBox_windowPinned_Checked(object sender, RoutedEventArgs e)
         {
-            this.Owner = ((sender as CheckBox).IsChecked == true) ? mainWindow : null;
+            if (mainWindow.IsVisible == true)
+            {
+                this.Owner = ((sender as CheckBox).IsChecked == true) ? mainWindow : null;
+            }
         }
     }
 }

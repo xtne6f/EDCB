@@ -252,6 +252,9 @@ namespace EpgTimer
         public string Cust2BtnName { get; set; }
         public string Cust2BtnCmd { get; set; }
         public string Cust2BtnCmdOpt { get; set; }
+        public string Cust3BtnName { get; set; }
+        public string Cust3BtnCmd { get; set; }
+        public string Cust3BtnCmdOpt { get; set; }
         public List<string> AndKeyList { get; set; }
         public List<string> NotKeyList { get; set; }
         public EpgSearchKeyInfo DefSearchKey { get; set; }
@@ -456,6 +459,9 @@ namespace EpgTimer
             Cust2BtnName = "";
             Cust2BtnCmd = "";
             Cust2BtnCmdOpt = "";
+            Cust3BtnName = "";
+            Cust3BtnCmd = "";
+            Cust3BtnCmdOpt = "";
             AndKeyList = new List<string>();
             NotKeyList = new List<string>();
             DefSearchKey = new EpgSearchKeyInfo();
@@ -976,6 +982,34 @@ namespace EpgTimer
             {
                 Settings.Instance.CustomEpgTabList[i].ID = i;
             }
+        }
+
+        public List<string> GetViewButtonAllItems()
+        {
+            return new List<string>
+            {
+                "（空白）",
+                "設定",
+                "再接続",
+                "再接続(前回)",
+                "検索",
+                "スタンバイ",
+                "休止",
+                "終了",
+                "EPG取得",
+                "EPG再読み込み",
+                "NetworkTV終了",
+                "情報通知ログ",
+                "カスタム１",
+                "カスタム２",
+                "カスタム３"
+            };
+        }
+        public List<string> GetTaskMenuAllItems()
+        {
+            var taskItem = new List<string> { "（セパレータ）" };
+            taskItem.AddRange(GetViewButtonAllItems().Skip(1));
+            return taskItem;
         }
     }
 }

@@ -103,21 +103,23 @@ namespace EpgTimer
             notifyIcon.BalloonTipClosed += (sender, e) => balloonTimer.Stop();
         }
 
-        public void SetContextMenu(List<Object> list)
+        public void SetContextMenu(IEnumerable<Tuple<string,string>> list)
         {
-            if( list.Count == 0 )
+            if (list.Count() == 0)
             {
                 notifyIcon.ContextMenuStrip = null;
-            }else{
-                ContextMenuStrip menu = new ContextMenuStrip();
-                foreach(Object item in list)
+            }
+            else
+            {
+                var menu = new ContextMenuStrip();
+                foreach(var item in list)
                 {
                     ToolStripMenuItem newcontitem = new ToolStripMenuItem();
-                    if (item.ToString().Length > 0)
+                    if (item.Item1.Length > 0)
                     {
-                        newcontitem.Tag = item;
-                        newcontitem.Text = item.ToString();
-                        newcontitem.Click +=new EventHandler(newcontitem_Click);
+                        newcontitem.Tag = item.Item1;
+                        newcontitem.Text = item.Item2;
+                        newcontitem.Click += new EventHandler(newcontitem_Click);
                         menu.Items.Add(newcontitem);
                     }
                     else
@@ -168,8 +170,7 @@ namespace EpgTimer
             {
                 if (ContextMenuClick != null)
                 {
-                    ToolStripMenuItem item = sender as ToolStripMenuItem;
-                    ContextMenuClick(item.Tag, e);
+                    ContextMenuClick((sender as ToolStripMenuItem).Tag, e);
                 }
             }
         }

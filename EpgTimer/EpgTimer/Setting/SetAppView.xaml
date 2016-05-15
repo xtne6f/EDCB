@@ -176,31 +176,42 @@
                     </StackPanel>
                 </Grid>
             </TabItem>
-            <TabItem Header="カスタムボタン" Name="tabItem5">
-                <Grid>
-                    <GroupBox Header="カスタム１" Height="135" Margin="12,12,12,0" Name="groupBox51" VerticalAlignment="Top">
-                        <Grid >
-                            <Label Content="表示名" Height="28" HorizontalAlignment="Left" Margin="6,6,0,0" Name="label51" VerticalAlignment="Top" />
-                            <Label Content="実行exe" Height="28" HorizontalAlignment="Left" Margin="6,40,0,0" Name="label52" VerticalAlignment="Top" />
-                            <Label Content="コマンドラインオプション" Height="28" HorizontalAlignment="Left" Margin="6,74,0,0" Name="label53" VerticalAlignment="Top" />
+            <TabItem Header="カスタムボタン">
+                <StackPanel Margin="12,6,12,0">
+                    <GroupBox Header="カスタム1" Height="135" Margin="0,6,0,0" >
+                        <Grid>
+                            <Label Content="表示名" Height="28" HorizontalAlignment="Left" Margin="6,6,0,0" VerticalAlignment="Top" />
+                            <Label Content="実行exe" Height="28" HorizontalAlignment="Left" Margin="6,40,0,0" VerticalAlignment="Top" />
+                            <Label Content="コマンドラインオプション" Height="28" HorizontalAlignment="Left" Margin="6,74,0,0" VerticalAlignment="Top" />
                             <TextBox Height="24" HorizontalAlignment="Left" Margin="88,8,0,0" Name="textBox_name1" VerticalAlignment="Top" Width="149" />
                             <TextBox Height="24" HorizontalAlignment="Left" Margin="88,42,0,0" Name="textBox_exe1" VerticalAlignment="Top" Width="467" />
-                            <Button Content="開く" Height="23" HorizontalAlignment="Left" Margin="561,42,0,0" Name="button_exe1" VerticalAlignment="Top" Width="47" Click="button_exe1_Click" />
+                            <Button Content="開く" Height="23" HorizontalAlignment="Left" Margin="561,42,0,0" Name="button_exe1" VerticalAlignment="Top" Width="47" Click="button_exe_Click" DataContext="{Binding ElementName=textBox_exe1}"/>
                             <TextBox Height="24" HorizontalAlignment="Left" Margin="166,76,0,0" Name="textBox_opt1" VerticalAlignment="Top" Width="389" />
                         </Grid>
                     </GroupBox>
-                    <GroupBox Header="カスタム２" Height="135" Margin="12,153,12,0" Name="groupBox52" VerticalAlignment="Top">
+                    <GroupBox Header="カスタム2" Height="135" Margin="0,6,0,0" >
                         <Grid>
-                            <Label Content="表示名" Height="28" HorizontalAlignment="Left" Margin="6,6,0,0" Name="label54" VerticalAlignment="Top" />
-                            <Label Content="実行exe" Height="28" HorizontalAlignment="Left" Margin="6,40,0,0" Name="label55" VerticalAlignment="Top" />
-                            <Label Content="コマンドラインオプション" Height="28" HorizontalAlignment="Left" Margin="6,74,0,0" Name="label56" VerticalAlignment="Top" />
+                            <Label Content="表示名" Height="28" HorizontalAlignment="Left" Margin="6,6,0,0" VerticalAlignment="Top" />
+                            <Label Content="実行exe" Height="28" HorizontalAlignment="Left" Margin="6,40,0,0" VerticalAlignment="Top" />
+                            <Label Content="コマンドラインオプション" Height="28" HorizontalAlignment="Left" Margin="6,74,0,0" VerticalAlignment="Top" />
                             <TextBox Height="24" HorizontalAlignment="Left" Margin="88,8,0,0" Name="textBox_name2" VerticalAlignment="Top" Width="149" />
                             <TextBox Height="24" HorizontalAlignment="Left" Margin="88,42,0,0" Name="textBox_exe2" VerticalAlignment="Top" Width="467" />
-                            <Button Content="開く" Height="23" HorizontalAlignment="Left" Margin="561,42,0,0" Name="button_exe2" VerticalAlignment="Top" Width="47" Click="button_exe2_Click" />
+                            <Button Content="開く" Height="23" HorizontalAlignment="Left" Margin="561,42,0,0" Name="button_exe2" VerticalAlignment="Top" Width="47" Click="button_exe_Click" DataContext="{Binding ElementName=textBox_exe2}" />
                             <TextBox Height="24" HorizontalAlignment="Left" Margin="166,76,0,0" Name="textBox_opt2" VerticalAlignment="Top" Width="389" />
                         </Grid>
                     </GroupBox>
-                </Grid>
+                    <GroupBox Header="カスタム3" Height="135" Margin="0,6,0,0" >
+                        <Grid >
+                            <Label Content="表示名" Height="28" HorizontalAlignment="Left" Margin="6,6,0,0" VerticalAlignment="Top" />
+                            <Label Content="実行exe" Height="28" HorizontalAlignment="Left" Margin="6,40,0,0" VerticalAlignment="Top" />
+                            <Label Content="コマンドラインオプション" Height="28" HorizontalAlignment="Left" Margin="6,74,0,0" VerticalAlignment="Top" />
+                            <TextBox Height="24" HorizontalAlignment="Left" Margin="88,8,0,0" Name="textBox_name3" VerticalAlignment="Top" Width="149" />
+                            <TextBox Height="24" HorizontalAlignment="Left" Margin="88,42,0,0" Name="textBox_exe3" VerticalAlignment="Top" Width="467" />
+                            <Button Content="開く" Height="23" HorizontalAlignment="Left" Margin="561,42,0,0" Name="button_exe3" VerticalAlignment="Top" Width="47" Click="button_exe_Click" DataContext="{Binding ElementName=textBox_exe3}" />
+                            <TextBox Height="24" HorizontalAlignment="Left" Margin="166,76,0,0" Name="textBox_opt3" VerticalAlignment="Top" Width="389" />
+                        </Grid>
+                    </GroupBox>
+                </StackPanel>
             </TabItem>
             <TabItem Header="iEPG Ver.1" Name="tabItem6">
                 <Grid>

@@ -315,6 +315,10 @@ namespace EpgTimer.Setting
                 textBox_exe2.Text = Settings.Instance.Cust2BtnCmd;
                 textBox_opt2.Text = Settings.Instance.Cust2BtnCmdOpt;
 
+                textBox_name3.Text = Settings.Instance.Cust3BtnName;
+                textBox_exe3.Text = Settings.Instance.Cust3BtnCmd;
+                textBox_opt3.Text = Settings.Instance.Cust3BtnCmdOpt;
+
                 foreach (ChSet5Item info in ChSet5.Instance.ChList.Values)
                 {
                     ServiceViewItem item = new ServiceViewItem(info);
@@ -495,6 +499,10 @@ namespace EpgTimer.Setting
                 Settings.Instance.Cust2BtnCmd = textBox_exe2.Text;
                 Settings.Instance.Cust2BtnCmdOpt = textBox_opt2.Text;
 
+                Settings.Instance.Cust3BtnName = textBox_name3.Text;
+                Settings.Instance.Cust3BtnCmd = textBox_exe3.Text;
+                Settings.Instance.Cust3BtnCmdOpt = textBox_opt3.Text;
+
                 Settings.Instance.IEpgStationList = stationList;
             }
             catch (Exception ex)
@@ -584,36 +592,12 @@ namespace EpgTimer.Setting
             bxt.doubleClickSetter(listBox_itemTask, (sender, e) => button_taskAdd.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
             bxt.doubleClickSetter(listBox_viewTask, (sender, e) => button_taskDel.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
 
-            buttonItem = new List<string>
-            {
-                "（空白）",
-                "設定",
-                "再接続",
-                "検索",
-                "スタンバイ",
-                "休止",
-                "EPG取得",
-                "EPG再読み込み",
-                "終了",
-                "カスタム１",
-                "カスタム２",
-                "NetworkTV終了",
-                "情報通知ログ"
-            };
             Settings.Instance.ViewButtonList.ForEach(str => listBox_viewBtn.Items.Add(str));
+            buttonItem = Settings.Instance.GetViewButtonAllItems();
             reLoadButtonItem(bxb, buttonItem);
 
-            taskItem = new List<string>
-            {
-                "（セパレータ）",
-                "設定",
-                "再接続",
-                "スタンバイ",
-                "休止",
-                "EPG取得",
-                "終了"
-            };
             Settings.Instance.TaskMenuList.ForEach(str => listBox_viewTask.Items.Add(str));
+            taskItem = Settings.Instance.GetTaskMenuAllItems();
             reLoadButtonItem(bxt, taskItem);
         }
 
@@ -673,13 +657,9 @@ namespace EpgTimer.Setting
             }
         }
 
-        private void button_exe1_Click(object sender, RoutedEventArgs e)
+        private void button_exe_Click(object sender, RoutedEventArgs e)
         {
-            CommonManager.GetFileNameByDialog(textBox_exe1, false, "", ".exe");
-        }
-        private void button_exe2_Click(object sender, RoutedEventArgs e)
-        {
-            CommonManager.GetFileNameByDialog(textBox_exe2, false, "", ".exe");
+            CommonManager.GetFileNameByDialog((sender as Button).DataContext as TextBox, false, "", ".exe");
         }
 
         private void ReLoadStation()
