@@ -90,6 +90,7 @@ namespace EpgTimer
         {
             reserveInfo = info.Clone();
             recSettingView.SetDefSetting(reserveInfo.RecSetting, reserveInfo.IsEpgReserve == false);
+            checkBox_releaseAutoAdd.IsEnabled = reserveInfo.IsAutoAdded;
         }
 
         private void SetResModeProgram(bool mode)
@@ -358,6 +359,10 @@ namespace EpgTimer
                         eventInfoNew.ConvertToReserveData(ref reserveInfo);
                         reserveInfo.Comment = "";
                     }
+                }
+                if (checkBox_releaseAutoAdd.IsChecked == true)
+                {
+                    reserveInfo.Comment = "";
                 }
 
                 reserveInfo.RecSetting = recSettingView.GetRecSetting();
