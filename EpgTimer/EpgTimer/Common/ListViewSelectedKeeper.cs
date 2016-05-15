@@ -13,10 +13,10 @@ namespace EpgTimer
         //リスト番組表で全選択状態でチャンネル選択更新してしまったりしたときなどでも大丈夫なように、
         //一応選択数の上限を設定しておく。
         public uint MaxRestoreNum = 100;
-        
-        protected ListBox listBox = null;
-        public object oldItem = null;
-        public IList oldItems = null;
+
+        public ListBox listBox = null;
+        public ulong? oldItem = null;
+        public List<ulong> oldItems = null;
         public bool allSelected = false;
         protected Func<object, ulong> getKey = null;
 
@@ -31,17 +31,19 @@ namespace EpgTimer
         {
             if (listBox != null && listBox.SelectedItem != null)
             {
-                oldItem = listBox.SelectedItem;
-                oldItems = listBox.SelectedItems.Cast<object>().ToList();
+                getKey = getKey ?? CtrlCmdDefEx.GetKeyFunc(listBox.SelectedItem.GetType());
+                oldItem = getKey(listBox.SelectedItem);
+                oldItems = listBox.SelectedItems.Cast<object>().Select(data => getKey(data)).ToList();
                 allSelected = (oldItems.Count != 1 && oldItems.Count == listBox.Items.Count);
             }
         }
 
-        public void RestoreListViewSelected()
+        public void RestoreListViewSelected(ListBox list=null)
         {
             try
             {
-                if (listBox != null && oldItem != null && oldItems != null)
+                if (list != null) listBox = list;
+                if (listBox != null && listBox.Items.Count != 0 && oldItem != null && oldItems != null)
                 {
                     if (this.allSelected == true)
                     {
@@ -57,11 +59,7 @@ namespace EpgTimer
 
                     //選択数が少ないときは逆に遅くなる気もするが、Dictionaryにしておく
                     var listKeys = new Dictionary<ulong, object>();
-
-                    if (getKey == null)
-                    {
-                        getKey = CtrlCmdDefEx.GetKeyFunc(oldItem.GetType());
-                    }
+                    getKey = getKey ?? CtrlCmdDefEx.GetKeyFunc(listBox.Items[0].GetType());
 
                     foreach (object listItem1 in listBox.Items)
                     {
@@ -74,14 +72,14 @@ namespace EpgTimer
                     }
 
                     object setItem;
-                    if (listKeys.TryGetValue(getKey(oldItem), out setItem))
+                    if (listKeys.TryGetValue((ulong)oldItem, out setItem))
                     {
                         listBox.SelectedItem = setItem;
                     }
 
-                    foreach (object oldItem1 in oldItems)
+                    foreach (ulong oldItem1 in oldItems)
                     {
-                        if (listKeys.TryGetValue(getKey(oldItem1), out setItem))
+                        if (listKeys.TryGetValue(oldItem1, out setItem))
                         {
                             //数が多いとき、このAddが致命的に遅い
                             listBox.SelectedItems.Add(setItem);
