@@ -252,6 +252,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				list.back().param1 = ctx->notifySrvStatus;
 			}else{
 				list = ctx->sys->notifyManager.RemoveSentList();
+				ctx->tcpServer.NotifyUpdate();
 			}
 			for( vector<NOTIFY_SRV_INFO>::const_iterator itr = list.begin(); itr != list.end(); itr++ ){
 				if( itr->notifyID == NOTIFY_UPDATE_SRV_STATUS ){
