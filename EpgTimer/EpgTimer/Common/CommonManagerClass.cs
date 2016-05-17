@@ -930,6 +930,10 @@ namespace EpgTimer
             {
                 retText = IsSimple == true ? "CS" : "CS2";
             }
+            else if (ChSet5.IsSPPS(originalNetworkID) == true)
+            {
+                retText = "スカパー";
+            }
             else
             {
                 retText = "その他";

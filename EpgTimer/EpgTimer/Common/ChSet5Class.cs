@@ -56,6 +56,10 @@ namespace EpgTimer
         {
             return ONID == 0x0007;
         }
+        public static bool IsSPPS(UInt16 ONID)
+        {
+            return ONID == 0x000A;
+        }
         public static bool IsOther(UInt16 ONID)
         {
             return IsTere(ONID) == false && IsBS(ONID) == false && IsCS(ONID) == false;
@@ -169,6 +173,7 @@ namespace EpgTimer
         public bool IsCS { get { return ChSet5.IsCS(ONID); } }
         public bool IsCS1 { get { return ChSet5.IsCS1(ONID); } }
         public bool IsCS2 { get { return ChSet5.IsCS2(ONID); } }
+        public bool IsSPPS { get { return ChSet5.IsSPPS(ONID); } }
         public bool IsOther { get { return ChSet5.IsOther(ONID); } }
 
         public override string ToString()
