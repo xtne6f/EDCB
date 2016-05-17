@@ -27,10 +27,10 @@ namespace EpgTimer
             manualAutoAddView.SaveViewData();
         }
 
-        public void UpdateInfo()
+        public void UpdateInfo(bool reload = true)
         {
-            epgAutoAddView.UpdateInfo();
-            manualAutoAddView.UpdateInfo();
+            epgAutoAddView.UpdateInfo(reload);
+            manualAutoAddView.UpdateInfo(reload);
         }
 
     }

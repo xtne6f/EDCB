@@ -885,7 +885,7 @@ namespace EpgTimer
                 recInfoView.UpdateInfo();
                 autoAddView.UpdateInfo();
                 epgView.UpdateSetting();
-                SearchWindow.UpdatesInfo(true);
+                SearchWindow.UpdatesInfo(false);
                 ResetButtonView();
                 ResetTaskMenu();
                 taskTray.Text = GetTaskTrayReserveInfoText();
@@ -923,8 +923,8 @@ namespace EpgTimer
             reserveView.UpdateInfo();
             if (mode != UpdateViewMode.ReserveInfoNoTuner) tunerReserveView.UpdateInfo();
             if (mode != UpdateViewMode.ReserveInfoNoAutoAdd) autoAddView.UpdateInfo();
-            epgView.UpdateReserveData();
-            SearchWindow.UpdatesInfo(true);
+            epgView.UpdateReserveInfo();
+            SearchWindow.UpdatesInfo(false);
         }
         /*
         public enum UpdateViewMode : uint

@@ -93,9 +93,9 @@ namespace EpgTimer.EpgView
         /// <summary>
         /// 予約情報更新通知
         /// </summary>
-        public void UpdateReserveData(bool reload = true)
+        public void UpdateReserveInfo(bool reload = true)
         {
-            if (reload == true) ReloadReserveInfo = true;
+            ReloadReserveInfo |= reload;
             if (ReloadReserveInfo == true && this.IsVisible == true)
             {
                 ReloadReserveInfo = !ReloadReserveData();
@@ -177,7 +177,7 @@ namespace EpgTimer.EpgView
             if (this.IsVisible == false) return;
 
             UpdateInfo(false);
-            UpdateReserveData(false);//こちらを後に。UpdateInfo()が実行された場合は、こちらは素通りになる。
+            UpdateReserveInfo(false);//こちらを後に。UpdateInfo()が実行された場合は、こちらは素通りになる。
 
             // Loaded イベントでは Reload*Data を省略したので
             // この IsVisibleChanged で Reload*Data を見逃してはいけない

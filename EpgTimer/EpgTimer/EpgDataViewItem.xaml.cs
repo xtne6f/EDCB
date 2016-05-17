@@ -35,14 +35,14 @@ namespace EpgTimer
             return viewCtrl == null ? null : viewCtrl.GetViewMode();
         }
 
-        public void UpdateReserveData()
+        public void UpdateReserveInfo(bool reload = true)
         {
-            if (viewCtrl != null) viewCtrl.UpdateReserveData();
+            if (viewCtrl != null) viewCtrl.UpdateReserveInfo(reload);
         }
 
-        public void UpdateInfo()
+        public void UpdateInfo(bool reload = true)
         {
-            if (viewCtrl != null) viewCtrl.UpdateInfo();
+            if (viewCtrl != null) viewCtrl.UpdateInfo(reload);
         }
 
         /// <summary>EPGデータの表示モードを設定する</summary>

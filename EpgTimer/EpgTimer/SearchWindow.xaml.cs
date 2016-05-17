@@ -542,19 +542,16 @@ namespace EpgTimer
             AllClosing = false;
         }
 
-        public static void UpdatesInfo(bool refreshOnly = false)
+        public static void UpdatesInfo(bool reload = true)
         {
             foreach (SearchWindow win in Application.Current.Windows.OfType<SearchWindow>())
             {
-                win.UpdateInfo(refreshOnly);
+                win.UpdateInfo(reload);
             }
         }
-        public void UpdateInfo(bool refreshOnly = false)
+        public void UpdateInfo(bool reload = true)
         {
-            if (refreshOnly == false)
-            {
-                ReloadInfo = true;
-            }
+            ReloadInfo |= reload;
             ReloadReserveInfo = true;
             ReloadInfoData();
         }

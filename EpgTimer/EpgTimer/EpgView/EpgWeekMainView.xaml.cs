@@ -187,7 +187,7 @@ namespace EpgTimer
                         continue;
                     }
 
-                    ComboBoxItem item = new ComboBoxItem();
+                    var item = new ComboBoxItem();
                     item.Content = serviceInfo.serviceInfo.service_name;
                     item.DataContext = serviceInfo.serviceInfo;
                     int index = comboBox_service.Items.Add(item);

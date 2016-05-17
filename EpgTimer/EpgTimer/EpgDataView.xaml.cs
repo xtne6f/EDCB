@@ -34,21 +34,21 @@ namespace EpgTimer
         /// </summary>
         public void UpdateInfo(bool reload = true)
         {
-            if (reload == true) ReloadInfo = true;
+            ReloadInfo |= reload;
             if (ReloadInfo == true && this.IsVisible == true)
             {
-                ReloadInfo = !ReDrawEpgData();
+                ReloadInfo = !ReloadInfoData();
             }
         }
 
         /// <summary>
         /// 予約情報の更新通知
         /// </summary>
-        public void UpdateReserveData()
+        public void UpdateReserveInfo(bool reload = true)
         {
             try
             {
-                this.Views.ForEach(view => view.UpdateReserveData());
+                this.Views.ForEach(view => view.UpdateReserveInfo(reload));
             }
             catch (Exception ex) { CommonUtil.ModelessMsgBoxShow(this, ex.Message + "\r\n" + ex.StackTrace); }
         }
@@ -119,10 +119,10 @@ namespace EpgTimer
 
                 setInfo.ForEach(info => 
                 {
-                    EpgDataViewItem epgView = new EpgDataViewItem();
+                    var epgView = new EpgDataViewItem();
                     epgView.SetViewMode(info);
 
-                    TabItem tabItem = new TabItem();
+                    var tabItem = new TabItem();
                     tabItem.Header = info.TabName;
                     tabItem.Content = epgView;
                     tabControl.Items.Add(tabItem);
@@ -140,9 +140,8 @@ namespace EpgTimer
         /// <summary>
         /// EPGデータの再描画
         /// </summary>
-        private bool ReDrawEpgData()
+        private bool ReloadInfoData(bool reload = true)
         {
-            bool ret = true;
             try
             {
                 //タブが無ければ生成、あれば更新
@@ -152,11 +151,11 @@ namespace EpgTimer
                 }
                 else
                 {
-                    this.Views.ForEach(view => view.UpdateInfo());
+                    this.Views.ForEach(view => view.UpdateInfo(reload));
                 }
             }
             catch (Exception ex) { CommonUtil.ModelessMsgBoxShow(this, ex.Message + "\r\n" + ex.StackTrace); }
-            return ret;
+            return true;
         }
 
         //メニューの更新
@@ -192,7 +191,7 @@ namespace EpgTimer
 
             foreach (TabItem tabItem1 in this.tabControl.Items)
             {
-                EpgDataViewItem epgView1 = tabItem1.Content as EpgDataViewItem;
+                var epgView1 = tabItem1.Content as EpgDataViewItem;
                 foreach (UInt64 serviceKey_OnTab1 in epgView1.GetViewMode().ViewServiceList)
                 {
                     if (serviceKey_Target1 == serviceKey_OnTab1)

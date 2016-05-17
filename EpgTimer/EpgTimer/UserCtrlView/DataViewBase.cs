@@ -15,7 +15,7 @@ namespace EpgTimer.UserCtrlView
 
         public virtual void UpdateInfo(bool reload = true)
         {
-            if (reload == true) ReloadInfo = true;
+            ReloadInfo |= reload;
             if (ReloadInfo == true && this.IsVisible == true)
             {
                 ReloadInfo = !ReloadInfoData();
