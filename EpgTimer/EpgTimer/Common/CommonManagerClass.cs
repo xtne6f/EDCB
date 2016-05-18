@@ -312,6 +312,10 @@ namespace EpgTimer
                 ContentKindDictionary2.Add(0x020C, new ContentKindInfo("邦画(CS)", "ホームドラマ", 0x02, 0x0C));
                 ContentKindDictionary2.Add(0x020F, new ContentKindInfo("邦画(CS)", "その他", 0x02, 0x0F));
 
+                ContentKindDictionary2.Add(0x03FF, new ContentKindInfo("アダルト(CS)", "", 0x03, 0xFF));
+                ContentKindDictionary2.Add(0x0300, new ContentKindInfo("アダルト(CS)", "アダルト", 0x03, 0x00));
+                ContentKindDictionary2.Add(0x030F, new ContentKindInfo("アダルト(CS)", "その他", 0x03, 0x0F));
+
                 if (ContentKindDictionary != null)
                 {
                     //CSもまとめて検索出来るようにする仮対応。
