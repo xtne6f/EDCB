@@ -59,6 +59,7 @@ namespace EpgTimer
                 cmd.SetNWSetting("", Settings.Instance.NWServerPort);
             }
 
+            CommonManager.Instance.ContentKindDictionaryCustomize();
             CommonManager.Instance.MM.ReloadWorkData();
             CommonManager.Instance.ReloadCustContentColorList();
             Settings.Instance.ReloadOtherOptions();
