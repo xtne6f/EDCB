@@ -19,20 +19,14 @@ namespace EpgTimer
             InitializeComponent();
         }
 
-        public void SaveViewData(bool IfThisLastView = false)
+        public void SaveViewData()
         {
-            if (viewCtrl != null) viewCtrl.SaveViewData(IfThisLastView);
+            if (viewCtrl != null) viewCtrl.SaveViewData();
         }
 
         public void RefreshMenu()
         {
             if (viewCtrl != null) viewCtrl.RefreshMenu();
-        }
-
-        /// <summary>現在のEPGデータ表示モードの設定を取得する</summary>
-        public CustomEpgTabInfo GetViewMode()
-        {
-            return viewCtrl == null ? null : viewCtrl.GetViewMode();
         }
 
         public void UpdateReserveInfo(bool reload = true)
@@ -43,6 +37,12 @@ namespace EpgTimer
         public void UpdateInfo(bool reload = true)
         {
             if (viewCtrl != null) viewCtrl.UpdateInfo(reload);
+        }
+
+        /// <summary>現在のEPGデータ表示モードの設定を取得する</summary>
+        public CustomEpgTabInfo GetViewMode()
+        {
+            return viewCtrl == null ? null : viewCtrl.GetViewMode();
         }
 
         /// <summary>EPGデータの表示モードを設定する</summary>

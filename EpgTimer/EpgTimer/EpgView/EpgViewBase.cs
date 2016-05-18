@@ -13,7 +13,7 @@ namespace EpgTimer.EpgView
         protected CustomEpgTabInfo setViewInfo = null;
         protected List<UInt64> viewCustServiceList = null;
         protected Dictionary<UInt16, UInt16> viewCustContentKindList = new Dictionary<UInt16, UInt16>();
-        protected Dictionary<UInt64, EpgServiceEventInfo> searchEventList = new Dictionary<UInt64, EpgServiceEventInfo>();
+        protected Dictionary<UInt64, EpgServiceEventInfo> serviceEventList = new Dictionary<UInt64, EpgServiceEventInfo>();
 
         protected CmdExeReserve mc; //予約系コマンド集
         protected bool ReloadReserveInfo = true;
@@ -59,12 +59,6 @@ namespace EpgTimer.EpgView
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
 
-        public virtual bool ClearInfo()
-        {
-            searchEventList = new Dictionary<UInt64, EpgServiceEventInfo>();
-            return true; 
-        }
-
         public virtual void RefreshMenu() { }
 
         public virtual CustomEpgTabInfo GetViewMode()
@@ -87,8 +81,7 @@ namespace EpgTimer.EpgView
         }
 
         /// 保存関係
-        public virtual bool IsLastActivate { get { return false; } }
-        public virtual void SaveViewData(bool IfThisLastView = false) { }
+        public virtual void SaveViewData() { }
 
         /// <summary>
         /// 予約情報更新通知
@@ -116,7 +109,6 @@ namespace EpgTimer.EpgView
         // public void UpdateInfo() は DataViewBase へ
         protected override bool ReloadInfoData()
         {
-            ClearInfo();
             if (ReloadEpgData() == false) return false;
             ReloadProgramViewItem();
             ReloadReserveInfo = !ReloadReserveData();
@@ -135,6 +127,7 @@ namespace EpgTimer.EpgView
                 {
                     ErrCode err = CommonManager.Instance.DB.ReloadEpgData();
                     if (CommonManager.CmdErrMsgTypical(err, "EPGデータの取得", this) == false) return false;
+                    serviceEventList = new Dictionary<UInt64, EpgServiceEventInfo>(CommonManager.Instance.DB.ServiceEventList);
                 }
                 else
                 {
@@ -144,7 +137,7 @@ namespace EpgTimer.EpgView
                     if (CommonManager.CmdErrMsgTypical(err, "EPGデータの取得", this) == false) return false;
 
                     //サービス毎のリストに変換
-                    var serviceEventList = new Dictionary<UInt64, EpgServiceEventInfo>();
+                    serviceEventList = new Dictionary<UInt64, EpgServiceEventInfo>();
                     foreach (EpgEventInfo eventInfo in list)
                     {
                         UInt64 id = eventInfo.Create64Key();
@@ -163,7 +156,6 @@ namespace EpgTimer.EpgView
                         }
                         serviceInfo.eventList.Add(eventInfo);
                     }
-                    searchEventList = serviceEventList;
                 }
 
                 return true;

@@ -62,27 +62,6 @@ namespace EpgTimer.EpgView
             button_now.Click += new RoutedEventHandler((sender, e) => MoveNowTime());
         }
 
-        /// <summary>保持情報のクリア</summary>
-        public override bool ClearInfo()
-        {
-            base.ClearInfo();
-
-            nowViewTimer.Stop();
-            if (nowLine != null)
-            {
-                programView.canvas.Children.Remove(nowLine);
-            }
-            nowLine = null;
-
-            programView.ClearInfo();
-            timeView.ClearInfo();
-            timeList.Clear();
-            programList.Clear();
-            reserveList.Clear();
-
-            return true;
-        }
-
         protected override void UpdateStatusData(int mode = 0)
         {
             this.status[1] = string.Format("番組数:{0}", programList.Count)

@@ -23,10 +23,10 @@ namespace EpgTimer
             get { return tabControl.Items.Cast<TabItem>().Select(item => item.Content).OfType<EpgDataViewItem>().ToList(); }
         }
 
-        public void SaveViewData(bool IfThisLastView = false)
+        public void SaveViewData()
         {
             //存在しないときは、本当に無いか、破棄されて保存済み
-            this.Views.ForEach(view => view.SaveViewData(IfThisLastView));
+            this.Views.ForEach(view => view.SaveViewData());
         }
 
         /// <summary>
@@ -56,48 +56,31 @@ namespace EpgTimer
         /// <summary>
         /// 設定の更新通知
         /// </summary>
+        CustomEpgTabInfo oldInfo = null;
         public void UpdateSetting()
         {
             try
             {
-                //表示していた番組表の情報を保存
-                SaveViewData(true);
-                CustomEpgTabInfo oldInfo = null;
+                SaveViewData();
 
-                foreach (var item in tabControl.Items.OfType<TabItem>()
-                    .Where(data => data.IsSelected == true && data.Content is EpgDataViewItem))
+                //表示していた番組表の情報を保存
+                var item = tabControl.SelectedItem as TabItem;
+                if (item != null)
                 {
-                    oldInfo = (item.Content as EpgDataViewItem).GetViewMode();
+                    var view = item.Content as EpgDataViewItem;
+                    oldInfo = view.GetViewMode();
                 }
 
                 //一度全部削除して作り直す。
+                //保存情報は次回のタブ作成時に復元する。
                 tabControl.Items.Clear();
                 UpdateInfo();
-
-                if (oldInfo != null)
-                {
-                    //もしそれっぽい番組表があれば、それを前回の表示モードで表示する。
-                    foreach (var item in tabControl.Items.OfType<TabItem>()
-                        .Where(data => data.Content is EpgDataViewItem))
-                    {
-                        var view = item.Content as EpgDataViewItem;
-                        var info = view.GetViewMode();
-
-                        //とりあえず同じIDを探して表示してみる(中身は別物になってるかもしれないが、とりあえず表示を試みる)。
-                        //標準・カスタム切り替えの際は、標準番組表が負のIDを与えられているので、このコードは走らない。
-                        if (oldInfo.ID == info.ID)
-                        {
-                            var newInfo = info.Clone();
-                            newInfo.ViewMode = oldInfo.ViewMode;
-                            //本当はUpdateEpgData()に直接割り込ませたいところだけど、大変そうなので止めておく。
-                            view.SetViewMode(newInfo);
-                            tabControl.SelectedItem = item;
-                            break;
-                        }
-                    }
-                }
             }
             catch (Exception ex) { CommonUtil.ModelessMsgBoxShow(this, ex.Message + "\r\n" + ex.StackTrace); }
+
+            //UpdateInfo()は非表示の時走らない。
+            //ここでクリアしてしまうので、現に表示されているものだけ表示状態が復元される
+            oldInfo = null;
         }
 
         /// <summary>
@@ -117,21 +100,26 @@ namespace EpgTimer
                     setInfo = Settings.Instance.CustomEpgTabList;
                 }
 
+                int selectIndex = 0;
                 setInfo.ForEach(info => 
                 {
                     var epgView = new EpgDataViewItem();
-                    epgView.SetViewMode(info);
-
                     var tabItem = new TabItem();
                     tabItem.Header = info.TabName;
                     tabItem.Content = epgView;
-                    tabControl.Items.Add(tabItem);
-                });
+                    int index = tabControl.Items.Add(tabItem);
 
-                if (tabControl.Items.Count > 0)
-                {
-                    tabControl.SelectedIndex = 0;
-                }
+                    //とりあえず同じIDを探して表示してみる(中身は別物になってるかもしれないが、とりあえず表示を試みる)。
+                    //標準・カスタム切り替えの際は、標準番組表が負のIDを与えられているので、このコードは走らない。
+                    if (oldInfo != null && oldInfo.ID == info.ID)
+                    {
+                        info = info.Clone();
+                        info.ViewMode = oldInfo.ViewMode;
+                        selectIndex = index;
+                    }
+                    epgView.SetViewMode(info);
+                });
+                tabControl.SelectedIndex = selectIndex;
             }
             catch (Exception ex) { CommonUtil.ModelessMsgBoxShow(this, ex.Message + "\r\n" + ex.StackTrace); }
             return true;

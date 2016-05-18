@@ -13,15 +13,10 @@ namespace EpgTimer
     /// </summary>
     public partial class EpgListMainView : EpgViewBase
     {
-        private static long lastActivateClass = new DateTime().Ticks;
-        private long lastActivate = long.MinValue;
-        public override bool IsLastActivate { get { return lastActivate == lastActivateClass; } }
+        private static int? lastActivateClass = null;
 
         private ListViewController<SearchItem> lstCtrl;
         private List<ServiceItem> serviceList = new List<ServiceItem>();
-
-        private Dictionary<UInt64, UInt64> lastChkSID = new Dictionary<UInt64, UInt64>();
-        private bool listBox_service_need_initialized = true;
 
         public EpgListMainView()
         {
@@ -71,35 +66,6 @@ namespace EpgTimer
             mm.CtxmGenerateContextMenu(listView_event.ContextMenu, CtxmCode.EpgView, true);
         }
 
-        public override bool ClearInfo()
-        {
-            base.ClearInfo(); 
-
-            BackUpChkSID();
-            listBox_service.ItemsSource = null;
-            serviceList.Clear();
-            listView_event.ItemsSource = null;
-            lstCtrl.dataList.Clear();
-            richTextBox_eventInfo.Document.Blocks.Clear();
-
-            return true;
-        }
-
-        private void BackUpChkSID()
-        {
-            if (listBox_service_need_initialized == false && listBox_service.ItemsSource != null)
-            {
-                lastChkSID.Clear();
-                foreach (ServiceItem info in serviceList)
-                {
-                    if (info.IsSelected == true)
-                    {
-                        lastChkSID.Add(info.ID, info.ID);
-                    }
-                }
-            }
-        }
-
         protected override void UpdateStatusData(int mode = 0)
         {
             if (mode == 0) this.status[1] = vutil.ConvertSearchItemStatus(lstCtrl.dataList, "番組数");
@@ -118,10 +84,8 @@ namespace EpgTimer
         {
             try
             {
-                Dictionary<UInt64, EpgServiceEventInfo> serviceEventList =
-                    setViewInfo.SearchMode == true ? searchEventList : CommonManager.Instance.DB.ServiceEventList;
-
-                BackUpChkSID();
+                //表示していたサービスの保存
+                Dictionary<UInt64, bool> lastSID = serviceList.ToDictionary(s => s.ID, s => s.IsSelected);
 
                 listBox_service.ItemsSource = null;
                 serviceList.Clear();
@@ -130,34 +94,33 @@ namespace EpgTimer
                 {
                     if (serviceEventList.ContainsKey(id) == true)
                     {
-                        ServiceItem item = new ServiceItem();
+                        var item = new ServiceItem();
                         item.ServiceInfo = serviceEventList[id].serviceInfo;
-                        item.IsSelected = listBox_service_need_initialized || lastChkSID.ContainsKey(id);
+                        item.IsSelected = lastSID.ContainsKey(id) == false || lastSID[id];
                         serviceList.Add(item);
                     }
                 }
 
                 listBox_service.ItemsSource = serviceList;
-                listBox_service_need_initialized = false;
 
-                UpdateEventList();
+                UpdateEventList(true);
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
 
-        private void UpdateEventList()
+        private void UpdateEventList(bool scroll = false)
         {
-            //更新前の選択情報の保存。
-            //なお、EPG更新の場合はReloadEpgData()でも追加で保存・復元コードを実施する必要があるが、
-            //大きく番組表が変化するEPG更新前後で選択情報を保存する意味もないのでほっておくことにする。
             lstCtrl.ReloadInfoData(reloadEventList);
+
+            if (scroll == true)
+            {
+                //lstCtrl内のジャンプがReloadReserveData()にキャンセルされるので、ReloadProgramViewItem()からのとき再実行しておく。
+                Dispatcher.BeginInvoke(new Action(() => listView_event.ScrollIntoView(listView_event.SelectedItem)));
+            }
         }
 
         private bool reloadEventList(List<SearchItem> dataList)
         {
-            Dictionary<UInt64, EpgServiceEventInfo> serviceEventList =
-                setViewInfo.SearchMode == true ? base.searchEventList : CommonManager.Instance.DB.ServiceEventList;
-
             //絞り込んだイベントリストを作成
             var eventList = new List<EpgEventInfo>();
             foreach (ServiceItem info in serviceList)
@@ -209,7 +172,6 @@ namespace EpgTimer
             UpdateEventList();
             UpdateStatus();
         }
-
         private void button_chkAll_Click(object sender, RoutedEventArgs e)
         {
             button_All_Click(true);
@@ -223,8 +185,7 @@ namespace EpgTimer
             listBox_service.ItemsSource = null;
             serviceList.ForEach(info => info.IsSelected = selected);
             listBox_service.ItemsSource = serviceList;
-            UpdateEventList();
-            UpdateStatus();
+            CheckBox_Changed(null, null);
         }
 
         private void listView_event_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -233,7 +194,7 @@ namespace EpgTimer
             scrollViewer1.ScrollToHome();
             if (listView_event.SelectedItem != null)
             {
-                SearchItem item = listView_event.SelectedItem as SearchItem;
+                var item = listView_event.SelectedItem as SearchItem;
                 EpgEventInfo eventInfo = item.EventInfo;
                 richTextBox_eventInfo.Document = CommonManager.Instance.ConvertDisplayText(eventInfo);
             }
@@ -278,14 +239,13 @@ namespace EpgTimer
             base.UserControl_IsVisibleChanged(sender, e);
             if (IsVisible == true)
             {
-                lastActivate = DateTime.Now.Ticks;
-                lastActivateClass = lastActivate;
+                lastActivateClass = this.GetHashCode();
             }
         }
 
-        public override void SaveViewData(bool IfThisLastView = false)
+        public override void SaveViewData()
         {
-            if (IfThisLastView == false || IsLastActivate == true) lstCtrl.SaveViewDataToSettings();
+            if (lastActivateClass == this.GetHashCode()) lstCtrl.SaveViewDataToSettings();
         }
     }
 }

@@ -31,17 +31,6 @@ namespace EpgTimer
             base.RefreshMenu();
         }
 
-        public override bool ClearInfo()
-        {
-            base.ClearInfo();
-
-            serviceView.ClearInfo();
-            serviceList = new List<EpgServiceInfo>();
-            dateView.ClearInfo();
-
-            return true;
-        }
-
         public override void SetViewMode(CustomEpgTabInfo setInfo)
         {
             this.viewCustNeedTimeOnly = setInfo.NeedTimeOnlyBasic;
@@ -194,10 +183,6 @@ namespace EpgTimer
         {
             try
             {
-                Dictionary<UInt64, EpgServiceEventInfo> serviceEventList =
-                    setViewInfo.SearchMode == true ? searchEventList : CommonManager.Instance.DB.ServiceEventList;
-
-                //直前にthis.ClearInfo()が走ってるので無くても同じ
                 epgProgramView.ClearInfo();
                 timeList.Clear();
                 programList.Clear();
