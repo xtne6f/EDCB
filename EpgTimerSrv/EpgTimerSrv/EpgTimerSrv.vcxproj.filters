@@ -138,9 +138,6 @@
     <ClInclude Include="..\..\Common\TCPServer.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Common\NWStructDef.h">
-      <Filter>ヘッダー ファイル\Common</Filter>
-    </ClInclude>
     <ClInclude Include="FileStreamingUtil.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
@@ -179,9 +176,6 @@
     </ClInclude>
     <ClInclude Include="NotifyManager.h">
       <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Common\WinHTTPUtil.h">
-      <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
     <ClInclude Include="SyoboiCalUtil.h">
       <Filter>ヘッダー ファイル</Filter>
@@ -310,9 +304,6 @@
     </ClCompile>
     <ClCompile Include="NotifyManager.cpp">
       <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Common\WinHTTPUtil.cpp">
-      <Filter>ソース ファイル\Common</Filter>
     </ClCompile>
     <ClCompile Include="SyoboiCalUtil.cpp">
       <Filter>ソース ファイル</Filter>

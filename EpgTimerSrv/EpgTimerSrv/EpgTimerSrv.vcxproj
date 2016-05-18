@@ -177,7 +177,6 @@
     <ClInclude Include="..\..\Common\EpgDataCap3Util.h" />
     <ClInclude Include="..\..\Common\EpgTimerUtil.h" />
     <ClInclude Include="..\..\Common\ErrDef.h" />
-    <ClInclude Include="..\..\Common\NWStructDef.h" />
     <ClInclude Include="..\..\Common\ParseText.h" />
     <ClInclude Include="..\..\Common\ParseTextInstances.h" />
     <ClInclude Include="..\..\Common\PathUtil.h" />
@@ -195,7 +194,6 @@
     <ClInclude Include="..\..\Common\TSBuffUtil.h" />
     <ClInclude Include="..\..\Common\TSPacketUtil.h" />
     <ClInclude Include="..\..\Common\Util.h" />
-    <ClInclude Include="..\..\Common\WinHTTPUtil.h" />
     <ClInclude Include="BatManager.h" />
     <ClInclude Include="civetweb.h" />
     <ClInclude Include="EpgDBManager.h" />
@@ -242,7 +240,6 @@
     <ClCompile Include="..\..\Common\TSBuffUtil.cpp" />
     <ClCompile Include="..\..\Common\TSPacketUtil.cpp" />
     <ClCompile Include="..\..\Common\Util.cpp" />
-    <ClCompile Include="..\..\Common\WinHTTPUtil.cpp" />
     <ClCompile Include="BatManager.cpp" />
     <ClCompile Include="civetweb.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
