@@ -16,6 +16,9 @@ namespace EpgTimer
     {
         private SortedList dayList = new SortedList();
 
+        //class RestoreDateとか用意するところだけど、今回はこれだけなので手抜き
+        public override object GetViewState() { return GetSelectID(); }
+
         public EpgWeekMainView()
         {
             InitializeComponent();
@@ -161,7 +164,7 @@ namespace EpgTimer
             try
             {
                 //表示していたサービスの保存
-                ulong selectID = GetSelectID();
+                ulong selectID = (restoreData as ulong?) ?? GetSelectID();
 
                 comboBox_service.Items.Clear();
 

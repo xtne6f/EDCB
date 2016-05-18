@@ -18,6 +18,10 @@ namespace EpgTimer.EpgView
         protected CmdExeReserve mc; //予約系コマンド集
         protected bool ReloadReserveInfo = true;
 
+        protected object restoreData = null;
+        public virtual object GetViewState() { return null; }
+        public virtual void SetViewState(object data) { restoreData = data; }
+
         protected virtual void InitCommand()
         {
             //ビューコードの登録
@@ -112,6 +116,7 @@ namespace EpgTimer.EpgView
             if (ReloadEpgData() == false) return false;
             ReloadProgramViewItem();
             ReloadReserveInfo = !ReloadReserveData();
+            restoreData = null;
             return true;
         }
         protected virtual void ReloadProgramViewItem() { }

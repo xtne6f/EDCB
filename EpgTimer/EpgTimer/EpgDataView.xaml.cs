@@ -57,6 +57,8 @@ namespace EpgTimer
         /// 設定の更新通知
         /// </summary>
         CustomEpgTabInfo oldInfo = null;
+        object oldState = null;
+        int? oldID = null;
         public void UpdateSetting()
         {
             try
@@ -69,6 +71,8 @@ namespace EpgTimer
                 {
                     var view = item.Content as EpgDataViewItem;
                     oldInfo = view.GetViewMode();
+                    oldState = view.GetViewState();
+                    oldID = oldInfo.ID;
                 }
 
                 //一度全部削除して作り直す。
@@ -79,8 +83,10 @@ namespace EpgTimer
             catch (Exception ex) { CommonUtil.ModelessMsgBoxShow(this, ex.Message + "\r\n" + ex.StackTrace); }
 
             //UpdateInfo()は非表示の時走らない。
-            //ここでクリアしてしまうので、現に表示されているものだけ表示状態が復元される
+            //データはここでクリアしてしまうので、現に表示されているもの以外は表示状態はリセットされる。
+            //ただし、番組表(oldID)の選択そのものは保持する。
             oldInfo = null;
+            oldState = null;
         }
 
         /// <summary>
@@ -111,15 +117,21 @@ namespace EpgTimer
 
                     //とりあえず同じIDを探して表示してみる(中身は別物になってるかもしれないが、とりあえず表示を試みる)。
                     //標準・カスタム切り替えの際は、標準番組表が負のIDを与えられているので、このコードは走らない。
-                    if (oldInfo != null && oldInfo.ID == info.ID)
+                    object state = null;
+                    if (oldID == info.ID)
                     {
-                        info = info.Clone();
-                        info.ViewMode = oldInfo.ViewMode;
                         selectIndex = index;
+                        if (oldInfo != null)
+                        {
+                            info = info.Clone();
+                            info.ViewMode = oldInfo.ViewMode;
+                            state = oldState;
+                        }
                     }
-                    epgView.SetViewMode(info);
+                    epgView.SetViewMode(info, state);
                 });
                 tabControl.SelectedIndex = selectIndex;
+                oldID = null;
             }
             catch (Exception ex) { CommonUtil.ModelessMsgBoxShow(this, ex.Message + "\r\n" + ex.StackTrace); }
             return true;
