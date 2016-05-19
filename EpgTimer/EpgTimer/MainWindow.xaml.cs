@@ -342,7 +342,7 @@ namespace EpgTimer
             var specific = "PushLike";
 
             stackPanel_button.Children.Clear();
-            var delTabs = tabControl_main.Items.OfType<TabItem>().Where(ti => ti.Uid.StartsWith(specific) == true).ToList();
+            var delTabs = tabControl_main.Items.OfType<TabItem>().Where(ti => (string)ti.Tag == specific).ToList();
             delTabs.ForEach(ti => tabControl_main.Items.Remove(ti));
 
             foreach (string info in Settings.Instance.ViewButtonList)
@@ -377,13 +377,14 @@ namespace EpgTimer
                             //ボタン風のタブを追加する
                             var ti = new TabItem();
                             ti.Header = btn.Content;
-                            ti.Uid = specific + info;
+                            ti.Tag = specific;
+                            ti.Uid = info;
                             ti.Background = null;
                             ti.BorderBrush = null;
 
                             //タブ移動をキャンセルしつつ擬似的に対応するボタンを押す
                             ti.PreviewMouseDown += (sender, e) => e.Handled = true;
-                            ti.MouseLeftButtonUp += (sender, e) => CommonButtons_Click(((TabItem)sender).Uid.Substring(specific.Length));
+                            ti.MouseLeftButtonUp += (sender, e) => CommonButtons_Click(((TabItem)sender).Uid);
                             
                             //コマンド割り当ての場合の自動ツールチップ表示、一応ボタンと同様のショートカット変更対応のコード
                             if (btn.Command != null)
@@ -391,7 +392,7 @@ namespace EpgTimer
                                 ti.ToolTip = "";
                                 ti.ToolTipOpening += new ToolTipEventHandler((sender, e) =>
                                 {
-                                    var icmd = buttonList[((TabItem)sender).Uid.Substring(specific.Length)].Command;
+                                    var icmd = buttonList[((TabItem)sender).Uid].Command;
                                     ti.ToolTip = MenuBinds.GetInputGestureText(icmd);
                                     ti.ToolTip = ti.ToolTip == null ? "" : ti.ToolTip;
                                 });
@@ -401,8 +402,6 @@ namespace EpgTimer
                     }
                 }
             }
-            //タブとして表示するかボタンが1つもないときは行を隠す
-            stackPanel_button.Visibility = Settings.Instance.ViewButtonShowAsTab || stackPanel_button.Children.Count == 0 ? Visibility.Collapsed : Visibility.Visible;
         }
 
         void CommonButtons_Click(string tag)
