@@ -382,8 +382,6 @@ namespace EpgTimer
         public bool UpdateTaskText { get; set; }
         public bool DisplayStatus { get; set; }
         public bool DisplayStatusNotify { get; set; }
-        public List<ContentKindInfo> CustomContentKindInfo1 { get; set; }
-        public List<ContentKindInfo> CustomContentKindInfo2 { get; set; }
 
         public Settings()
         {
@@ -565,8 +563,6 @@ namespace EpgTimer
             UpdateTaskText = false;
             DisplayStatus = false;
             DisplayStatusNotify = false;
-            CustomContentKindInfo1 = null;
-            CustomContentKindInfo2 = null;
         }
 
         [NonSerialized()]
@@ -874,13 +870,6 @@ namespace EpgTimer
                 if (Instance.RecPresetList.Count == 0)
                 {
                     Instance.RecPresetList.Add(new RecPresetItem("デフォルト", 0));
-                }
-                if (Instance.CustomContentKindInfo1.Count == 0)
-                {
-                    Instance.CustomContentKindInfo1 = new List<ContentKindInfo> {
-                        new ContentKindInfo("スポーツ", "", 0x01, 0xFF),
-                        new ContentKindInfo("スポーツ", "スポーツニュース", 0x01, 0x00),
-                        new ContentKindInfo("スポーツ", "野球", 0x01, 0x01)};
                 }
             }
             catch (Exception ex)

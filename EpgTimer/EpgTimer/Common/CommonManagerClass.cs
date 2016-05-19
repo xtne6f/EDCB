@@ -311,6 +311,21 @@ namespace EpgTimer
                 ContentKindDictionary2.Add(0x020B, new ContentKindInfo("邦画(CS)", "ミュージカル／音楽映画", 0x02, 0x0B));
                 ContentKindDictionary2.Add(0x020C, new ContentKindInfo("邦画(CS)", "ホームドラマ", 0x02, 0x0C));
                 ContentKindDictionary2.Add(0x020F, new ContentKindInfo("邦画(CS)", "その他", 0x02, 0x0F));
+
+                if (ContentKindDictionary != null)
+                {
+                    //CSもまとめて検索出来るようにする仮対応。
+                    foreach (ContentKindInfo info in ContentKindDictionary2.Values)
+                    {
+                        ContentKindDictionary.Add((UInt16)(info.ID | 0x7000), new ContentKindInfo(info.ContentName, info.SubName, (Byte)(info.Nibble1 | 0x70), info.Nibble2));
+                    }
+
+                    //表示順が追加順にならないことの対策。OrderedDictionary使えるならその方が簡単かとは思うが
+                    if (ContentKindList == null)
+                    {
+                        ContentKindList = ContentKindDictionary.Values.OrderBy(info => info.SortKey).ToList();
+                    }
+                }
             }
             if (ComponentKindDictionary == null)
             {
@@ -472,39 +487,6 @@ namespace EpgTimer
             {
                 RecModeForeColor = new List<SolidColorBrush>();
             }
-        }
-
-        public void ContentKindDictionaryCustomize()
-        {
-            if (ContentKindDictionary == null || ContentKindDictionary2 == null) return;
-
-            ContentKindDictionaryMod(ContentKindDictionary, Settings.Instance.CustomContentKindInfo1);
-            ContentKindDictionaryMod(ContentKindDictionary2, Settings.Instance.CustomContentKindInfo2);
-
-            //CSもまとめて検索出来るようにする仮対応。
-            foreach (ContentKindInfo info in ContentKindDictionary2.Values)
-            {
-                ContentKindDictionary.Add((UInt16)(info.ID | 0x7000), new ContentKindInfo(info.ContentName, info.SubName, (Byte)(info.Nibble1 | 0x70), info.Nibble2));
-            }
-
-            //表示順が追加順にならないことの対策。OrderedDictionary使えるならその方が簡単かとは思うが
-            if (ContentKindList == null)
-            {
-                ContentKindList = ContentKindDictionary.Values.OrderBy(info => info.SortKey).ToList();
-            }
-        }
-        private void ContentKindDictionaryMod(Dictionary<UInt16, ContentKindInfo> dic, List<ContentKindInfo> customList)
-        {
-            if (customList == null) return;
-
-            customList.ForEach(info =>
-            {
-                if (dic.ContainsKey(info.ID) == true)
-                {
-                    dic.Remove(info.ID);
-                }
-                dic.Add(info.ID, new ContentKindInfo(info.ContentName, info.SubName, info.Nibble1, info.Nibble2));
-            });
         }
 
         public bool IsConnected { get { return NWMode == false || NW.IsConnected == true; } }
