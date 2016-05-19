@@ -298,7 +298,7 @@ namespace EpgTimer
         {
             foreach (ServiceItem info in listView_service.Items)
             {
-                if (ChSet5.IsTere(info.ServiceInfo.ONID) == true && ChSet5.IsVideo(info.ServiceInfo.service_type) == true)
+                if (ChSet5.IsDttv(info.ServiceInfo.ONID) == true && ChSet5.IsVideo(info.ServiceInfo.service_type) == true)
                 {
                     info.IsSelected = true;
                 }
@@ -315,7 +315,7 @@ namespace EpgTimer
         {
             foreach (ServiceItem info in listView_service.Items)
             {
-                if (ChSet5.IsTere(info.ServiceInfo.ONID) == true && info.ServiceInfo.partialReceptionFlag == 1)
+                if (ChSet5.IsDttv(info.ServiceInfo.ONID) == true && info.ServiceInfo.partialReceptionFlag == 1)
                 {
                     info.IsSelected = true;
                 }

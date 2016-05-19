@@ -23,7 +23,7 @@ namespace EpgTimer
                 comboBox_timeH_week.ItemsSource = CommonManager.Instance.HourDictionary.Values;
                 comboBox_timeH_week.SelectedIndex = 4;
 
-                listBox_serviceTere.ItemsSource = ChSet5.Instance.ChList.Values.Where(info => info.IsTere == true);
+                listBox_serviceDttv.ItemsSource = ChSet5.Instance.ChList.Values.Where(info => info.IsDttv == true);
                 listBox_serviceBS.ItemsSource = ChSet5.Instance.ChList.Values.Where(info => info.IsBS == true);
                 listBox_serviceCS.ItemsSource = ChSet5.Instance.ChList.Values.Where(info => info.IsCS == true);
                 listBox_serviceOther.ItemsSource = ChSet5.Instance.ChList.Values.Where(info => info.IsOther == true);

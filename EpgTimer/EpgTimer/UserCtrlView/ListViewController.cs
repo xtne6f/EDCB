@@ -6,6 +6,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.ComponentModel;
+using System.Windows.Threading;
 
 using System.Reflection;
 
@@ -55,11 +56,11 @@ namespace EpgTimer
 
                 //リスト更新中などに何度も走らないようにしておく。
                 //リストビュー自体に遅延実行があるので、イベントハンドラ外しても効果薄いため。
-                System.Windows.Threading.Dispatcher.CurrentDispatcher.BeginInvoke(new Action(() =>
+                Dispatcher.CurrentDispatcher.BeginInvoke(new Action(() =>
                 {
                     hdlr(sender, e);
                     onSelectionChanging = false;
-                }), System.Windows.Threading.DispatcherPriority.ContextIdle);
+                }), DispatcherPriority.ContextIdle);
             };
         }
         public void SetSavePath(string columnSavePath, string sortHeaderSavePath = null, string sortDirectionSavePath = null)

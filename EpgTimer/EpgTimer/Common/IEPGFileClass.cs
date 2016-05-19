@@ -50,7 +50,7 @@ namespace EpgTimer
                         UInt16 sid = Convert.ToUInt16(paramList["station"].Substring(3), 16);
                         foreach (ChSet5Item info in ChSet5.Instance.ChList.Values)
                         {
-                            if (info.IsTere == true && info.SID == sid)
+                            if (info.IsDttv == true && info.SID == sid)
                             {
                                 AddInfo.OriginalNetworkID = info.ONID;
                                 AddInfo.TransportStreamID = info.TSID;
@@ -107,7 +107,7 @@ namespace EpgTimer
                         UInt16 sid = Convert.ToUInt16(paramList["station"].Substring(3), 16);
                         foreach (ChSet5Item info in ChSet5.Instance.ChList.Values)
                         {
-                            if (info.IsTere == true && info.SID == sid)
+                            if (info.IsDttv == true && info.SID == sid)
                             {
                                 AddInfo.OriginalNetworkID = info.ONID;
                                 AddInfo.TransportStreamID = info.TSID;

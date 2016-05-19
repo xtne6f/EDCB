@@ -858,7 +858,7 @@ namespace EpgTimer
                 extInfo += "\r\n";
 
                 //スクランブル
-                if (!ChSet5.IsTere(eventInfo.original_network_id))
+                if (!ChSet5.IsDttv(eventInfo.original_network_id))
                 {
                     if (eventInfo.FreeCAFlag == 0)
                     {
@@ -918,7 +918,7 @@ namespace EpgTimer
         public static String ConvertNetworkNameText(ushort originalNetworkID, bool IsSimple = false)
         {
             String retText = "";
-            if (ChSet5.IsTere(originalNetworkID) == true)
+            if (ChSet5.IsDttv(originalNetworkID) == true)
             {
                 retText = "地デジ";
             }
@@ -934,7 +934,7 @@ namespace EpgTimer
             {
                 retText = IsSimple == true ? "CS" : "CS2";
             }
-            else if (ChSet5.IsSPPS(originalNetworkID) == true)
+            else if (ChSet5.IsSkyPerfectv(originalNetworkID) == true)
             {
                 retText = "スカパー";
             }
@@ -1139,7 +1139,7 @@ namespace EpgTimer
             foreach (ChSet5Item info in ChSet5.Instance.ChList.Values)
             {
                 int i = 3;//その他
-                if (info.IsTere == true)//地デジ
+                if (info.IsDttv == true)//地デジ
                 {
                     i = 0;
                 }

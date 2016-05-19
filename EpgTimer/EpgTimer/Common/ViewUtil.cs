@@ -231,7 +231,7 @@ namespace EpgTimer
                 {
                     listBox.SelectedItem = null;
 
-                    var notifyTimer = new System.Windows.Threading.DispatcherTimer();
+                    var notifyTimer = new DispatcherTimer();
                     notifyTimer.Interval = TimeSpan.FromSeconds(0.2);
                     var sw = System.Diagnostics.Stopwatch.StartNew();
                     notifyTimer.Tick += (sender, e) =>

@@ -36,7 +36,7 @@ namespace EpgTimer
         {
             return ServiceType == 0x01 || ServiceType == 0xA5;
         }
-        public static bool IsTere(UInt16 ONID)
+        public static bool IsDttv(UInt16 ONID)
         {
             return 0x7880 <= ONID && ONID <= 0x7FE8;
         }
@@ -56,13 +56,13 @@ namespace EpgTimer
         {
             return ONID == 0x0007;
         }
-        public static bool IsSPPS(UInt16 ONID)
+        public static bool IsSkyPerfectv(UInt16 ONID)
         {
             return ONID == 0x000A;
         }
         public static bool IsOther(UInt16 ONID)
         {
-            return IsTere(ONID) == false && IsBS(ONID) == false && IsCS(ONID) == false;
+            return IsDttv(ONID) == false && IsBS(ONID) == false && IsCS(ONID) == false;
         }
 
         public static bool LoadFile()
@@ -168,12 +168,12 @@ namespace EpgTimer
         public Byte RemoconID { get; set; }
 
         public bool IsVideo { get { return ChSet5.IsVideo(ServiceType); } }
-        public bool IsTere { get { return ChSet5.IsTere(ONID); } }
+        public bool IsDttv { get { return ChSet5.IsDttv(ONID); } }
         public bool IsBS { get { return ChSet5.IsBS(ONID); } }
         public bool IsCS { get { return ChSet5.IsCS(ONID); } }
         public bool IsCS1 { get { return ChSet5.IsCS1(ONID); } }
         public bool IsCS2 { get { return ChSet5.IsCS2(ONID); } }
-        public bool IsSPPS { get { return ChSet5.IsSPPS(ONID); } }
+        public bool IsSkyPerfectv { get { return ChSet5.IsSkyPerfectv(ONID); } }
         public bool IsOther { get { return ChSet5.IsOther(ONID); } }
 
         public override string ToString()

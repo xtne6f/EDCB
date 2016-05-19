@@ -39,7 +39,7 @@ namespace EpgTimer
         private bool initExe = false;
         private bool? minimizedStarting = false;
 
-        private System.Windows.Threading.DispatcherTimer chkTimer = null;
+        private DispatcherTimer chkTimer = null;
         private bool needUnRegist = true;
 
         private bool idleShowBalloon = false;
@@ -402,6 +402,8 @@ namespace EpgTimer
                     }
                 }
             }
+            //タブとして表示するかボタンが1つもないときは行を隠す
+            stackPanel_button.Visibility = Settings.Instance.ViewButtonShowAsTab || stackPanel_button.Children.Count == 0 ? Visibility.Collapsed : Visibility.Visible;
         }
 
         void CommonButtons_Click(string tag)
@@ -561,7 +563,7 @@ namespace EpgTimer
 
             if (chkSrvRegistTCP == true || updateTaskText == true)
             {
-                chkTimer = new System.Windows.Threading.DispatcherTimer();
+                chkTimer = new DispatcherTimer();
                 chkTimer.Interval = TimeSpan.FromMinutes(Math.Max(Settings.Instance.ChkSrvRegistInterval, 1));
                 if (chkSrvRegistTCP == true)
                 {
