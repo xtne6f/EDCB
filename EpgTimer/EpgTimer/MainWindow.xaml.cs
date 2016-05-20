@@ -194,14 +194,15 @@ namespace EpgTimer
                     Button btn = new Button();
                     btn.MinWidth = 75;
                     btn.Margin = new Thickness(2, 2, 2, 5);
-                    if (handler != null) btn.Click += (sender, e) => handler();
+                    btn.Height = 23;
+                    btn.Click += (sender, e) => handler();
                     btn.Content = key;
                     buttonList.Add(key, btn);
                 };
                 ButtonGen("設定", OpenSettingDialog);
                 ButtonGen("再接続", OpenConnectDialog);
                 ButtonGen("再接続(前回)", () => ConnectCmd());
-                ButtonGen("検索", null);
+                ButtonGen("検索", OpenSearchDialog);
                 ButtonGen("スタンバイ", () => SuspendCmd(1));
                 ButtonGen("休止", () => SuspendCmd(2));
                 ButtonGen("終了", CloseCmd);
@@ -213,9 +214,9 @@ namespace EpgTimer
                 ButtonGen("カスタム２", () => CustumCmd(2));
                 ButtonGen("カスタム３", () => CustumCmd(3));
 
-                //検索ボタンは他と共通でショートカット割り振られているので、コマンド側で処理する。
-                this.CommandBindings.Add(new CommandBinding(EpgCmds.Search, (sender, e) => OpenSearchDialog()));
-                mBinds.SetCommandToButton(buttonList["検索"], EpgCmds.Search);
+                //検索ボタンは他と共通でショートカット割り振られているので、その部分はコマンド側で処理する。
+                this.CommandBindings.Add(new CommandBinding(EpgCmds.Search, (sender, e) => CommonButtons_Click("検索")));
+                mBinds.AddInputCommand(EpgCmds.Search);
                 RefreshButton();
 
                 ResetButtonView();
@@ -339,6 +340,11 @@ namespace EpgTimer
 
         private void ResetButtonView()
         {
+            //カスタムボタンの更新
+            buttonList["カスタム１"].Content = Settings.Instance.Cust1BtnName;
+            buttonList["カスタム２"].Content = Settings.Instance.Cust2BtnName;
+            buttonList["カスタム３"].Content = Settings.Instance.Cust3BtnName;
+
             var specific = "PushLike";
 
             stackPanel_button.Children.Clear();
@@ -349,6 +355,7 @@ namespace EpgTimer
             {
                 if (String.Compare(info, "（空白）") == 0)
                 {
+                    if (Settings.Instance.ViewButtonShowAsTab == true) continue;
                     var space = new Label();
                     space.Width = 15;
                     stackPanel_button.Children.Add(space);
@@ -358,25 +365,12 @@ namespace EpgTimer
                     Button btn;
                     if (buttonList.TryGetValue(info, out btn) == true)
                     {
-                        switch (info)
-                        {
-                            case "カスタム１":
-                                btn.Content = Settings.Instance.Cust1BtnName;
-                                break;
-                            case "カスタム２":
-                                btn.Content = Settings.Instance.Cust2BtnName;
-                                break;
-                            case "カスタム３":
-                                btn.Content = Settings.Instance.Cust3BtnName;
-                                break;
-                        }
-                        stackPanel_button.Children.Add(btn);
-
-                        if (Settings.Instance.ViewButtonShowAsTab)
+                        if (Settings.Instance.ViewButtonShowAsTab == true)
                         {
                             //ボタン風のタブを追加する
                             var ti = new TabItem();
                             ti.Header = btn.Content;
+                            ti.ToolTip = btn.ToolTip;
                             ti.Tag = specific;
                             ti.Uid = info;
                             ti.Background = null;
@@ -385,40 +379,23 @@ namespace EpgTimer
                             //タブ移動をキャンセルしつつ擬似的に対応するボタンを押す
                             ti.PreviewMouseDown += (sender, e) => e.Handled = true;
                             ti.MouseLeftButtonUp += (sender, e) => CommonButtons_Click(((TabItem)sender).Uid);
-                            
-                            //コマンド割り当ての場合の自動ツールチップ表示、一応ボタンと同様のショートカット変更対応のコード
-                            if (btn.Command != null)
-                            {
-                                ti.ToolTip = "";
-                                ti.ToolTipOpening += new ToolTipEventHandler((sender, e) =>
-                                {
-                                    var icmd = buttonList[((TabItem)sender).Uid].Command;
-                                    ti.ToolTip = MenuBinds.GetInputGestureText(icmd);
-                                    ti.ToolTip = ti.ToolTip == null ? "" : ti.ToolTip;
-                                });
-                            }
+
                             tabControl_main.Items.Add(ti);
+                        }
+                        else
+                        {
+                            stackPanel_button.Children.Add(btn);
                         }
                     }
                 }
             }
-            //タブとして表示するかボタンが1つもないときは行を隠す
-            stackPanel_button.Visibility = Settings.Instance.ViewButtonShowAsTab || stackPanel_button.Children.Count == 0 ? Visibility.Collapsed : Visibility.Visible;
         }
 
         void CommonButtons_Click(string tag)
         {
             Button btn;
-            if (buttonList.TryGetValue(tag, out btn) == false) return;
-
-            if (btn.Command != null)
-            {
-                (btn.Command as RoutedCommand).Execute(btn.CommandParameter, this);
-            }
-            else
-            {
-                btn.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-            }
+            if (string.IsNullOrEmpty(tag) == true || buttonList.TryGetValue(tag, out btn) == false) return;
+            btn.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         }
 
         DispatcherTimer connectTimer = null;
@@ -916,6 +893,7 @@ namespace EpgTimer
         {
             //検索ボタン用。
             mBinds.ResetInputBindings(this);
+            buttonList["検索"].ToolTip = MenuBinds.GetInputGestureText(EpgCmds.Search);
         }
         public enum UpdateViewMode { ReserveInfo, ReserveInfoNoTuner, ReserveInfoNoAutoAdd }
         public void RefreshAllViewsReserveInfo(UpdateViewMode mode = UpdateViewMode.ReserveInfo)

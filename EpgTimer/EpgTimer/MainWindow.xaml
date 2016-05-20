@@ -11,7 +11,7 @@ TextOptions.TextFormattingMode="Display"
             <RowDefinition Height="*" />
             <RowDefinition Height="auto"/>
         </Grid.RowDefinitions>
-        <StackPanel Grid.Row="0" Name="stackPanel_button" Orientation="Horizontal" Height="30"></StackPanel>
+        <StackPanel Grid.Row="0" Name="stackPanel_button" Orientation="Horizontal" />
         <TabControl Name="tabControl_main" Grid.Row="1">
             <TabItem Header="予約一覧" Name="tabItem_reserve">
                 <local:ReserveView x:Name="reserveView" />
