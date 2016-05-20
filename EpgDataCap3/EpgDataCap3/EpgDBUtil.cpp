@@ -690,32 +690,54 @@ BOOL CEpgDBUtil::CheckSectionAll(const vector<SECTION_FLAG_INFO>& sectionList)
 	return TRUE;
 }
 
+EPG_SECTION_STATUS CEpgDBUtil::GetSectionStatusService(
+	WORD originalNetworkID,
+	WORD transportStreamID,
+	WORD serviceID,
+	BOOL l_eitFlag
+	)
+{
+	CBlockLock lock(&this->dbLock);
+
+	map<ULONGLONG, SERVICE_EVENT_INFO>::const_iterator itr =
+		this->serviceEventMap.find(_Create64Key(originalNetworkID, transportStreamID, serviceID));
+	if( itr != this->serviceEventMap.end() ){
+		if( l_eitFlag ){
+			//L-EITの状況
+			if( itr->second.lastTableID != 0 && itr->second.lastTableID <= 0x4F ){
+				return CheckSectionAll(itr->second.sectionList) ? EpgLEITAll : EpgNeedData;
+			}
+		}else{
+			//H-EITの状況
+			if( itr->second.lastTableID > 0x4F ){
+				//拡張情報がない場合も「たまった」とみなす
+				BOOL extFlag = itr->second.lastTableIDExt == 0 || CheckSectionAll(itr->second.sectionExtList);
+				return CheckSectionAll(itr->second.sectionList) ? (extFlag ? EpgHEITAll : EpgBasicAll) : (extFlag ? EpgExtendAll : EpgNeedData);
+			}
+		}
+	}
+	return EpgNoData;
+}
+
 EPG_SECTION_STATUS CEpgDBUtil::GetSectionStatus(BOOL l_eitFlag)
 {
 	CBlockLock lock(&this->dbLock);
 
 	EPG_SECTION_STATUS status = EpgNoData;
-	BOOL hasDataFlag = FALSE;
-
-	BOOL basicFlag = TRUE;
-	BOOL extFlag = TRUE;
-	BOOL leitFlag = TRUE;
 
 	map<ULONGLONG, SERVICE_EVENT_INFO>::iterator itr;
 	for( itr = this->serviceEventMap.begin(); itr != this->serviceEventMap.end(); itr++ ){
-		if( l_eitFlag == TRUE ){
-			//L-EITの状況
-			if( itr->second.lastTableID != 0 && itr->second.lastTableID <= 0x4F ){
-				hasDataFlag = TRUE;
-				if( CheckSectionAll(itr->second.sectionList) == FALSE ){
-					leitFlag = FALSE;
+		EPG_SECTION_STATUS s = GetSectionStatusService((WORD)(itr->first >> 32), (WORD)(itr->first >> 16), (WORD)itr->first, l_eitFlag);
+		if( s != EpgNoData ){
+			if( status == EpgNoData ){
+				status = l_eitFlag ? EpgLEITAll : EpgHEITAll;
+			}
+			if( l_eitFlag ){
+				if( s == EpgNeedData ){
+					status = EpgNeedData;
 					break;
 				}
-			}
-		}else{
-			//H-EITの状況
-			if( itr->second.lastTableID > 0x4F ){
-				hasDataFlag = TRUE;
+			}else{
 				//サービスリストあるなら映像サービスのみ対象
 				map<ULONGLONG, BYTE>::iterator itrType;
 				itrType = this->serviceList.find(itr->first);
@@ -724,48 +746,17 @@ EPG_SECTION_STATUS CEpgDBUtil::GetSectionStatus(BOOL l_eitFlag)
 						continue;
 					}
 				}
-				//Basic
-				if( CheckSectionAll(itr->second.sectionList) == FALSE ){
-					basicFlag = FALSE;
-				}
-				//Ext
-				if( itr->second.lastTableIDExt != 0 ){
-					if( CheckSectionAll(itr->second.sectionExtList) == FALSE ){
-						extFlag = FALSE;
-					}
-				}
-				if( basicFlag == FALSE && extFlag == FALSE ){
+				if( s == EpgNeedData || s == EpgExtendAll && status == EpgBasicAll || s == EpgBasicAll && status == EpgExtendAll ){
+					status = EpgNeedData;
 					break;
+				}
+				if( status == EpgHEITAll ){
+					status = s;
 				}
 			}
 		}
 	}
 
-	if( hasDataFlag == FALSE ){
-		status = EpgNoData;
-	}else if( l_eitFlag == TRUE ){
-		if( leitFlag == TRUE ){
-//			OutputDebugString(L"EpgLEITAll\r\n");
-			status = EpgLEITAll;
-		}else{
-//			OutputDebugString(L"EpgNeedData\r\n");
-			status = EpgNeedData;
-		}
-	}else{
-		if( basicFlag == TRUE && extFlag == TRUE ){
-//			OutputDebugString(L"EpgHEITAll\r\n");
-			status = EpgHEITAll;
-		}else if( basicFlag == TRUE ){
-//			OutputDebugString(L"EpgBasicAll\r\n");
-			status = EpgBasicAll;
-		}else if( extFlag == TRUE ){
-//			OutputDebugString(L"EpgExtendAll\r\n");
-			status = EpgExtendAll;
-		}else{
-//			OutputDebugString(L"EpgNeedData\r\n");
-			status = EpgNeedData;
-		}
-	}
 	return status;
 }
 

@@ -127,6 +127,23 @@ typedef EPG_SECTION_STATUS (WINAPI *GetSectionStatusEP3)(
 	BOOL l_eitFlag
 	);
 
+//指定サービスのEPGデータの蓄積状態を取得する
+//戻り値：
+// ステータス
+//引数：
+// id						[IN]識別ID
+// originalNetworkID		[IN]取得対象のOriginalNetworkID
+// transportStreamID		[IN]取得対象のTransportStreamID
+// serviceID				[IN]取得対象のServiceID
+// l_eitFlag				[IN]L-EITのステータスを取得
+typedef EPG_SECTION_STATUS (WINAPI *GetSectionStatusServiceEP3)(
+	DWORD id,
+	WORD originalNetworkID,
+	WORD transportStreamID,
+	WORD serviceID,
+	BOOL l_eitFlag
+	);
+
 //指定サービスの現在or次のEPG情報を取得する
 //戻り値：
 // エラーコード
@@ -282,6 +299,21 @@ public:
 		BOOL l_eitFlag
 		);
 
+	//指定サービスのEPGデータの蓄積状態を取得する
+	//戻り値：
+	// ステータス,取得できたかどうか
+	//引数：
+	// originalNetworkID		[IN]取得対象のOriginalNetworkID
+	// transportStreamID		[IN]取得対象のTransportStreamID
+	// serviceID				[IN]取得対象のServiceID
+	// l_eitFlag				[IN]L-EITのステータスを取得
+	pair<EPG_SECTION_STATUS, BOOL> GetSectionStatusService(
+		WORD originalNetworkID,
+		WORD transportStreamID,
+		WORD serviceID,
+		BOOL l_eitFlag
+		);
+
 	//指定サービスの現在or次のEPG情報を取得する
 	//戻り値：
 	// エラーコード
@@ -336,6 +368,7 @@ protected:
 	EnumEpgInfoListEP3		pfnEnumEpgInfoListEP3;
 	ClearSectionStatusEP3	pfnClearSectionStatusEP3;
 	GetSectionStatusEP3		pfnGetSectionStatusEP3;
+	GetSectionStatusServiceEP3	pfnGetSectionStatusServiceEP3;
 	GetServiceListActualEP3	pfnGetServiceListActualEP3;
 	GetServiceListEpgDBEP3	pfnGetServiceListEpgDBEP3;
 	GetEpgInfoEP3			pfnGetEpgInfoEP3;

@@ -20,6 +20,21 @@ public:
 	//EPGデータの蓄積状態をリセットする
 	void ClearSectionStatus();
 
+	//指定サービスのEPGデータの蓄積状態を取得する
+	//戻り値：
+	// ステータス
+	//引数：
+	// originalNetworkID		[IN]取得対象のOriginalNetworkID
+	// transportStreamID		[IN]取得対象のTransportStreamID
+	// serviceID				[IN]取得対象のServiceID
+	// l_eitFlag				[IN]L-EITのステータスを取得
+	EPG_SECTION_STATUS GetSectionStatusService(
+		WORD originalNetworkID,
+		WORD transportStreamID,
+		WORD serviceID,
+		BOOL l_eitFlag
+		);
+
 	//EPGデータの蓄積状態を取得する
 	//戻り値：
 	// ステータス
