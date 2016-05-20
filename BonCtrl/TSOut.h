@@ -88,6 +88,21 @@ public:
 		BOOL l_eitFlag
 		);
 
+	//指定サービスのEPGデータの蓄積状態を取得する
+	//戻り値：
+	// ステータス,取得できたかどうか
+	//引数：
+	// originalNetworkID		[IN]取得対象のOriginalNetworkID
+	// transportStreamID		[IN]取得対象のTransportStreamID
+	// serviceID				[IN]取得対象のServiceID
+	// l_eitFlag				[IN]L-EITのステータスを取得
+	pair<EPG_SECTION_STATUS, BOOL> GetSectionStatusService(
+		WORD originalNetworkID,
+		WORD transportStreamID,
+		WORD serviceID,
+		BOOL l_eitFlag
+		);
+
 	//自ストリームのサービス一覧を取得する
 	//戻り値：
 	// エラーコード

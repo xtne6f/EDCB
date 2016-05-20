@@ -215,37 +215,11 @@ DWORD CBonCtrl::SetCh(
 //戻り値：
 // エラーコード
 //引数：
-// space			[IN]変更チャンネルのSpace
-// ch				[IN]変更チャンネルの物理Ch
-// SID			[IN]変更チャンネルの物理service_id
-DWORD CBonCtrl::SetCh(
-	DWORD space,
-	DWORD ch,
-	WORD SID
-)
-{
-	if( this->tsOut.IsRec() == TRUE ){
-		return ERR_FALSE;
-	}
-
-	DWORD ret = ERR_FALSE;
-	ret = _SetCh(space, ch);
-	this->lastSID = SID;
-
-	return ret;
-}
-
-//チャンネル変更
-//戻り値：
-// エラーコード
-//引数：
 // ONID			[IN]変更チャンネルのorignal_network_id
 // TSID			[IN]変更チャンネルの物理transport_stream_id
-// SID			[IN]変更チャンネルの物理service_id
 DWORD CBonCtrl::SetCh(
 	WORD ONID,
-	WORD TSID,
-	WORD SID
+	WORD TSID
 )
 {
 	if( this->tsOut.IsRec() == TRUE ){
@@ -258,7 +232,6 @@ DWORD CBonCtrl::SetCh(
 	DWORD ret = ERR_FALSE;
 	if( this->chUtil.GetCh( ONID, TSID, space, ch ) == TRUE ){
 		ret = _SetCh(space, ch);
-		this->lastSID = SID;
 	}
 
 	return ret;
@@ -1082,26 +1055,37 @@ UINT WINAPI CBonCtrl::EpgCapThread(LPVOID param)
 						sys->tsOut.StartSaveEPG(epgDataPath);
 						wait = 60*1000;
 					}else{
-						//蓄積状態チェック
-						BOOL leitFlag = sys->chUtil.IsPartial(sys->epgCapChList[chkCount].ONID, sys->epgCapChList[chkCount].TSID, sys->epgCapChList[chkCount].SID);
-						EPG_SECTION_STATUS status = sys->tsOut.GetSectionStatus(leitFlag);
-						if( sys->epgCapChList[chkCount].ONID == 4 && BSBasic == TRUE ){
-							if( status == EpgBasicAll || status == EpgHEITAll ){
-								chkNext = TRUE;
-							}
-						}else if( sys->epgCapChList[chkCount].ONID == 6 && CS1Basic == TRUE ){
-							if( status == EpgBasicAll || status == EpgHEITAll ){
-								chkNext = TRUE;
-							}
-						}else if( sys->epgCapChList[chkCount].ONID == 7 && CS2Basic == TRUE ){
-							if( status == EpgBasicAll || status == EpgHEITAll ){
-								chkNext = TRUE;
-							}
+						vector<EPGCAP_SERVICE_INFO> chkList;
+						if( sys->epgCapChList[chkCount].ONID == 4 && BSBasic ||
+						    sys->epgCapChList[chkCount].ONID == 6 && CS1Basic ||
+						    sys->epgCapChList[chkCount].ONID == 7 && CS2Basic ){
+							chkList = sys->chUtil.GetEpgCapServiceAll(sys->epgCapChList[chkCount].ONID);
 						}else{
-							if( leitFlag == FALSE && status == EpgHEITAll ){
+							chkList = sys->chUtil.GetEpgCapServiceAll(sys->epgCapChList[chkCount].ONID, sys->epgCapChList[chkCount].TSID);
+						}
+						//epgCapChListのサービスはEPG取得対象でなかったとしてもチェックしなければならない
+						chkList.push_back(sys->epgCapChList[chkCount]);
+						for( vector<EPGCAP_SERVICE_INFO>::iterator itr = chkList.begin(); itr != chkList.end(); itr++ ){
+							if( itr->ONID == chkList.back().ONID && itr->TSID == chkList.back().TSID && itr->SID == chkList.back().SID ){
+								chkList.pop_back();
+								break;
+							}
+						}
+						//蓄積状態チェック
+						for( vector<EPGCAP_SERVICE_INFO>::iterator itr = chkList.begin(); itr != chkList.end(); itr++ ){
+							BOOL leitFlag = sys->chUtil.IsPartial(itr->ONID, itr->TSID, itr->SID);
+							pair<EPG_SECTION_STATUS, BOOL> status = sys->tsOut.GetSectionStatusService(itr->ONID, itr->TSID, itr->SID, leitFlag);
+							if( status.second == FALSE ){
+								status.first = sys->tsOut.GetSectionStatus(leitFlag);
+							}
+							if( status.first != EpgNoData ){
 								chkNext = TRUE;
-							}else if( leitFlag == TRUE && status == EpgLEITAll ){
-								chkNext = TRUE;
+								if( status.first != EpgHEITAll &&
+								    status.first != EpgLEITAll &&
+								    (status.first != EpgBasicAll || !(itr->ONID == 4 && BSBasic || itr->ONID == 6 && CS1Basic || itr->ONID == 7 && CS2Basic)) ){
+									chkNext = FALSE;
+									break;
+								}
 							}
 						}
 						if( chkNext == TRUE ){
@@ -1312,11 +1296,18 @@ UINT WINAPI CBonCtrl::EpgCapBackThread(LPVOID param)
 	WORD TSID;
 	sys->tsOut.GetStreamID(&ONID, &TSID);
 
-	if( sys->chUtil.IsEpgCapService(ONID, TSID) == FALSE ){
+	BOOL BSBasic = sys->epgCapBackBSBasic;
+	BOOL CS1Basic = sys->epgCapBackCS1Basic;
+	BOOL CS2Basic = sys->epgCapBackCS2Basic;
+	vector<EPGCAP_SERVICE_INFO> chkList = sys->chUtil.GetEpgCapServiceAll(ONID, TSID);
+	if( chkList.empty() == false && (ONID == 4 && BSBasic || ONID == 6 && CS1Basic || ONID == 7 && CS2Basic) ){
+		chkList = sys->chUtil.GetEpgCapServiceAll(ONID);
+	}
+	if( chkList.empty() ){
 		return 0;
 	}
 
-	sys->GetEpgDataFilePath(ONID, TSID, epgDataPath, sys->epgCapBackBSBasic, sys->epgCapBackCS1Basic, sys->epgCapBackCS2Basic);
+	sys->GetEpgDataFilePath(ONID, TSID, epgDataPath, BSBasic, CS1Basic, CS2Basic);
 	sys->tsOut.StartSaveEPG(epgDataPath);
 
 	if( ::WaitForSingleObject(sys->epgCapBackStopEvent, 60*1000) != WAIT_TIMEOUT ){
@@ -1327,25 +1318,20 @@ UINT WINAPI CBonCtrl::EpgCapBackThread(LPVOID param)
 	while(1){
 		//蓄積状態チェック
 		BOOL chkNext = FALSE;
-		BOOL leitFlag = sys->chUtil.IsPartial(ONID, TSID, sys->lastSID);
-		EPG_SECTION_STATUS status = sys->tsOut.GetSectionStatus(leitFlag);
-		if( ONID == 4 && sys->epgCapBackBSBasic == TRUE ){
-			if( status == EpgBasicAll || status == EpgHEITAll ){
-				chkNext = TRUE;
+		for( vector<EPGCAP_SERVICE_INFO>::iterator itr = chkList.begin(); itr != chkList.end(); itr++ ){
+			BOOL leitFlag = sys->chUtil.IsPartial(itr->ONID, itr->TSID, itr->SID);
+			pair<EPG_SECTION_STATUS, BOOL> status = sys->tsOut.GetSectionStatusService(itr->ONID, itr->TSID, itr->SID, leitFlag);
+			if( status.second == FALSE ){
+				status.first = sys->tsOut.GetSectionStatus(leitFlag);
 			}
-		}else if( ONID == 6 && sys->epgCapBackCS1Basic == TRUE ){
-			if( status == EpgBasicAll || status == EpgHEITAll ){
+			if( status.first != EpgNoData ){
 				chkNext = TRUE;
-			}
-		}else if( ONID == 7 && sys->epgCapBackCS2Basic == TRUE ){
-			if( status == EpgBasicAll || status == EpgHEITAll ){
-				chkNext = TRUE;
-			}
-		}else{
-			if( leitFlag == FALSE && status == EpgHEITAll ){
-				chkNext = TRUE;
-			}else if( leitFlag == TRUE && status == EpgLEITAll ){
-				chkNext = TRUE;
+				if( status.first != EpgHEITAll &&
+				    status.first != EpgLEITAll &&
+				    (status.first != EpgBasicAll || !(itr->ONID == 4 && BSBasic || itr->ONID == 6 && CS1Basic || itr->ONID == 7 && CS2Basic)) ){
+					chkNext = FALSE;
+					break;
+				}
 			}
 		}
 

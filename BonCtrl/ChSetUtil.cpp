@@ -219,21 +219,25 @@ void CChSetUtil::GetEpgCapService(
 	}
 }
 
-BOOL CChSetUtil::IsEpgCapService(
-	WORD ONID,
-	WORD TSID
+vector<EPGCAP_SERVICE_INFO> CChSetUtil::GetEpgCapServiceAll(
+	int ONID,
+	int TSID
 	)
 {
+	vector<EPGCAP_SERVICE_INFO> ret;
 	map<LONGLONG, CH_DATA5>::const_iterator itrCh5;
 	for( itrCh5 = this->chText5.GetMap().begin(); itrCh5 != this->chText5.GetMap().end(); itrCh5++ ){
-		if( itrCh5->second.originalNetworkID == ONID &&
-			itrCh5->second.transportStreamID == TSID &&
+		if( (ONID < 0 || itrCh5->second.originalNetworkID == ONID) &&
+			(TSID < 0 || itrCh5->second.transportStreamID == TSID) &&
 			itrCh5->second.epgCapFlag == TRUE
 			){
-				return TRUE;
+			ret.push_back(EPGCAP_SERVICE_INFO());
+			ret.back().ONID = itrCh5->second.originalNetworkID;
+			ret.back().TSID = itrCh5->second.transportStreamID;
+			ret.back().SID = itrCh5->second.serviceID;
 		}
 	}
-	return FALSE;
+	return ret;
 }
 
 BOOL CChSetUtil::IsPartial(

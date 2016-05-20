@@ -54,10 +54,10 @@ public:
 		vector<EPGCAP_SERVICE_INFO>* chList
 		);
 
-	//EPG取得対象の物理チャンネルかどうか
-	BOOL IsEpgCapService(
-		WORD ONID,
-		WORD TSID
+	//現在のチューナに限定されないEPG取得対象のサービス一覧を取得する
+	vector<EPGCAP_SERVICE_INFO> GetEpgCapServiceAll(
+		int ONID = -1,
+		int TSID = -1
 		);
 
 	//部分受信サービスかどうか

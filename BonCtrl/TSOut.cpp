@@ -638,6 +638,22 @@ EPG_SECTION_STATUS CTSOut::GetSectionStatus(
 	return status;
 }
 
+//指定サービスのEPGデータの蓄積状態を取得する
+pair<EPG_SECTION_STATUS, BOOL> CTSOut::GetSectionStatusService(
+	WORD originalNetworkID,
+	WORD transportStreamID,
+	WORD serviceID,
+	BOOL l_eitFlag
+	)
+{
+	if( Lock(L"GetSectionStatusService") == FALSE ) return pair<EPG_SECTION_STATUS, BOOL>(EpgNoData, FALSE);
+
+	pair<EPG_SECTION_STATUS, BOOL> status = this->epgUtil.GetSectionStatusService(originalNetworkID, transportStreamID, serviceID, l_eitFlag);
+
+	UnLock();
+	return status;
+}
+
 //EMM処理の動作設定
 //戻り値：
 // TRUE（成功）、FALSE（失敗）

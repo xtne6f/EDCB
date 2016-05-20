@@ -71,26 +71,11 @@ public:
 	//戻り値：
 	// エラーコード
 	//引数：
-	// space			[IN]変更チャンネルのSpace
-	// ch				[IN]変更チャンネルの物理Ch
-	// SID			[IN]変更チャンネルの物理service_id
-	DWORD SetCh(
-		DWORD space,
-		DWORD ch,
-		WORD SID
-		);
-
-	//チャンネル変更
-	//戻り値：
-	// エラーコード
-	//引数：
 	// ONID			[IN]変更チャンネルのorignal_network_id
 	// TSID			[IN]変更チャンネルの物理transport_stream_id
-	// SID			[IN]変更チャンネルの物理service_id
 	DWORD SetCh(
 		WORD ONID,
-		WORD TSID,
-		WORD SID
+		WORD TSID
 		);
 
 	//チャンネル変更中かどうか
@@ -463,7 +448,6 @@ protected:
 	HANDLE epgCapBackStopEvent;
 	BOOL enableLiveEpgCap;
 	BOOL enableRecEpgCap;
-	WORD lastSID;
 
 	BOOL epgCapBackBSBasic;
 	BOOL epgCapBackCS1Basic;
