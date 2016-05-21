@@ -456,14 +456,6 @@ protected:
 	DWORD tsBuffMaxCount;
 	int writeBuffMaxCount;
 protected:
-	//BonDriverをロード後の初期化処理
-	//戻り値：
-	// エラーコード
-	DWORD _OpenBonDriver();
-
-	//ロードしているBonDriverの開放本体
-	void _CloseBonDriver();
-
 	DWORD _SetCh(
 		DWORD space,
 		DWORD ch,
