@@ -57,19 +57,19 @@
                             </GridView>
                         </ListView.View>
                     </ListView>
-                    <Button Content="全チェック" Height="23" Margin="548,11,0,0" Name="button_all_on" VerticalAlignment="Top" HorizontalAlignment="Left" Width="122" Click="button_all_on_Click" />
-                    <Button Content="映像サービスのみ" Height="23" Margin="548,40,0,0" Name="button_video_on" VerticalAlignment="Top" HorizontalAlignment="Left" Width="122" Click="button_video_on_Click" />
-                    <Button Content="BS映像のみ" Height="23" Margin="548,69,0,0" Name="button_bs_on" VerticalAlignment="Top" HorizontalAlignment="Left" Width="95" Click="button_bs_on_Click" />
-                    <Button Content="CS映像のみ" Height="23" Margin="548,98,0,0" Name="button_cs_on" VerticalAlignment="Top" HorizontalAlignment="Left" Width="95" Click="button_cs_on_Click" />
-                    <Button Content="地デジ映像のみ" Height="23" Margin="548,127,0,0" Name="button_tere_on" VerticalAlignment="Top" HorizontalAlignment="Left" Width="95" Click="button_tere_on_Click" />
-                    <Button Content="ワンセグのみ" Height="23" Margin="548,156,0,0" Name="button_1seg_on" VerticalAlignment="Top" HorizontalAlignment="Left" Width="95" Click="button_1seg_on_Click" />
-                    <Button Content="その他のみ" Height="23" HorizontalAlignment="Left" Margin="548,185,0,0" Name="button_other_on" VerticalAlignment="Top" Width="95" Click="button_other_on_Click" />
-                    <Button Content="全クリア" Height="23" Margin="548,214,0,0" Name="button_all_off" VerticalAlignment="Top" HorizontalAlignment="Left" Width="122" Click="button_all_off_Click" />
-                    <Button Content="BS映像" Height="23" HorizontalAlignment="Left" Margin="650,69,0,0" Name="button_bs_on2" VerticalAlignment="Top" Width="84" Click="button_bs_on2_Click" />
-                    <Button Content="CS映像" Height="23" HorizontalAlignment="Left" Margin="650,98,0,0" Name="button_cs_on2" VerticalAlignment="Top" Width="84" Click="button_cs_on2_Click" />
-                    <Button Content="地デジ映像" Height="23" HorizontalAlignment="Left" Margin="650,127,0,0" Name="button_tere_on2" VerticalAlignment="Top" Width="84" Click="button_tere_on2_Click" />
-                    <Button Content="ワンセグ" Height="23" HorizontalAlignment="Left" Margin="650,156,0,0" Name="button_1seg_on2" VerticalAlignment="Top" Width="84" Click="button_1seg_on2_Click" />
-                    <Button Content="その他" Height="23" HorizontalAlignment="Left" Margin="650,185,0,0" Name="button_other_on2" VerticalAlignment="Top" Width="84" Click="button_other_on2_Click" />
+                    <Button Content="全チェック" Height="23" Margin="548,11,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" Width="122" Click="button_all_on_Click" />
+                    <Button Content="映像サービスのみ" Height="23" Margin="548,40,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" Width="122" Click="button_video_on_Click" />
+                    <Button Content="BS映像のみ" Height="23" Margin="548,69,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" Width="95" Click="button_bs_on_Click" />
+                    <Button Content="CS映像のみ" Height="23" Margin="548,98,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" Width="95" Click="button_cs_on_Click" />
+                    <Button Content="地デジ映像のみ" Height="23" Margin="548,127,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" Width="95" Click="button_dttv_on_Click" />
+                    <Button Content="ワンセグのみ" Height="23" Margin="548,156,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" Width="95" Click="button_1seg_on_Click" />
+                    <Button Content="その他のみ" Height="23" HorizontalAlignment="Left" Margin="548,185,0,0" VerticalAlignment="Top" Width="95" Click="button_other_on_Click" />
+                    <Button Content="全クリア" Height="23" Margin="548,214,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" Width="122" Click="button_all_off_Click" />
+                    <Button Content="BS映像" Height="23" HorizontalAlignment="Left" Margin="650,69,0,0" VerticalAlignment="Top" Width="84" Click="button_bs_on2_Click" />
+                    <Button Content="CS映像" Height="23" HorizontalAlignment="Left" Margin="650,98,0,0" VerticalAlignment="Top" Width="84" Click="button_cs_on2_Click" />
+                    <Button Content="地デジ映像" Height="23" HorizontalAlignment="Left" Margin="650,127,0,0" VerticalAlignment="Top" Width="84" Click="button_dttv_on2_Click" />
+                    <Button Content="ワンセグ" Height="23" HorizontalAlignment="Left" Margin="650,156,0,0" VerticalAlignment="Top" Width="84" Click="button_1seg_on2_Click" />
+                    <Button Content="その他" Height="23" HorizontalAlignment="Left" Margin="650,185,0,0" VerticalAlignment="Top" Width="84" Click="button_other_on2_Click" />
                 </Grid>
             </TabItem>
             <TabItem Header="詳細2" Name="tabItem2">

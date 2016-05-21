@@ -288,13 +288,13 @@ namespace EpgTimer
             }
         }
 
-        private void button_tere_on_Click(object sender, RoutedEventArgs e)
+        private void button_dttv_on_Click(object sender, RoutedEventArgs e)
         {
             button_all_off_Click(sender, e);
-            button_tere_on2_Click(sender, e);
+            button_dttv_on2_Click(sender, e);
         }
 
-        private void button_tere_on2_Click(object sender, RoutedEventArgs e)
+        private void button_dttv_on2_Click(object sender, RoutedEventArgs e)
         {
             foreach (ServiceItem info in listView_service.Items)
             {
