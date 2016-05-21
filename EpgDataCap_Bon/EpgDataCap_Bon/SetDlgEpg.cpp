@@ -5,6 +5,7 @@
 #include "EpgDataCap_Bon.h"
 #include "SetDlgEpg.h"
 
+#include "../../BonCtrl/ChSetUtil.h"
 #include "../../Common/PathUtil.h"
 // CSetDlgEpg ダイアログ
 
@@ -111,7 +112,7 @@ void CSetDlgEpg::OnBnClickedButtonVideoChk()
 		map<LONGLONG, CH_DATA5>::const_iterator itr;
 		itr = this->chSet.GetMap().begin();
 		advance(itr, i);
-		ListView_SetCheckState(GetDlgItem(IDC_LIST_SERVICE), i, itr->second.serviceType == 0x01 || itr->second.serviceType == 0xA5);
+		ListView_SetCheckState(GetDlgItem(IDC_LIST_SERVICE), i, CChSetUtil::IsVideoServiceType(itr->second.serviceType));
 	}
 }
 

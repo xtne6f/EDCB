@@ -4,6 +4,7 @@
 #include "stdafx.h"
 #include "EpgDataCap_Bon.h"
 #include "SetDlgService.h"
+#include "../../BonCtrl/ChSetUtil.h"
 
 static LPARAM ListView_GetItemParam(HWND hItem, int iItem, int iSubItem)
 {
@@ -57,7 +58,7 @@ void CSetDlgService::OnBnClickedButtonChkVideo()
 	for( int i=0; i<ListView_GetItemCount(GetDlgItem(IDC_LIST_SERVICE)); i++ ){
 		CH_DATA4* chSet = (CH_DATA4*)ListView_GetItemParam(GetDlgItem(IDC_LIST_SERVICE), i, 0);
 		if( chSet != NULL ){
-			ListView_SetCheckState(GetDlgItem(IDC_LIST_SERVICE), i, chSet->serviceType == 0x01 || chSet->serviceType == 0xA5);
+			ListView_SetCheckState(GetDlgItem(IDC_LIST_SERVICE), i, CChSetUtil::IsVideoServiceType(chSet->serviceType));
 		}
 	}
 }

@@ -67,6 +67,15 @@ public:
 		WORD SID
 		);
 
+	//サービスタイプが映像サービスかどうか
+	static BOOL IsVideoServiceType(
+		WORD serviceType
+		){
+		return serviceType == 0x01 //デジタルTV
+			|| serviceType == 0xA5 //プロモーション映像
+			|| serviceType == 0xAD //超高精細度4K専用TV
+			;
+	}
 
 protected:
 	CParseChText4 chText4;

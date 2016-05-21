@@ -463,6 +463,9 @@ void CTSOut::CheckNeedPID()
 			case 0x04:
 				name = "MPEG2 AUDIO";
 				break;
+			case 0x24:
+				name = "HEVC VIDEO";
+				break;
 			case 0x06:
 				name = "Žš–‹";
 				break;
