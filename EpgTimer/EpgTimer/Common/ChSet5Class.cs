@@ -34,7 +34,7 @@ namespace EpgTimer
 
         public static bool IsVideo(UInt16 ServiceType)
         {
-            return ServiceType == 0x01 || ServiceType == 0xA5;
+            return ServiceType == 0x01 || ServiceType == 0xA5 || ServiceType == 0xAD;
         }
         public static bool IsDttv(UInt16 ONID)
         {
