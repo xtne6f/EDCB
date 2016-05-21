@@ -10,6 +10,7 @@
 #include "../../Common/SendCtrlCmd.h"
 #include "../../Common/TsPacketUtil.h"
 #include "../../Common/BlockLock.h"
+#include "../../Common/ParseTextInstances.h"
 #include <process.h>
 
 namespace
@@ -203,6 +204,15 @@ bool CEdcbPlugIn::Initialize()
 		m_pApp->AddLog(L"EpgDataCap3.dllが見つかりません。", TVTest::LOG_TYPE_ERROR);
 		return false;
 	}
+	CParseChText5 chText5;
+	if (!chText5.ParseText((GetEdcbSettingPath() + L"\\ChSet5.txt").c_str())) {
+		m_pApp->AddLog(L"ChSet5.txtが見つかりません。", TVTest::LOG_TYPE_ERROR);
+		return false;
+	}
+	m_chSet5.clear();
+	for (map<LONGLONG, CH_DATA5>::const_iterator it = chText5.GetMap().begin(); it != chText5.GetMap().end(); ++it) {
+		m_chSet5.push_back(it->second);
+	}
 	// イベントコールバック関数を登録
 	m_pApp->SetEventCallback(CMyEventHandler::EventCallback, &m_handler);
 
@@ -227,6 +237,26 @@ bool CEdcbPlugIn::Finalize()
 	}
 	m_epgUtil.UnInitialize();
 	return true;
+}
+
+vector<CH_DATA5> CEdcbPlugIn::GetEpgCheckList(WORD onid, WORD tsid, int sid, bool basicFlag) const
+{
+	vector<CH_DATA5> chkList;
+	vector<CH_DATA5>::const_iterator it;
+	for (it = m_chSet5.begin(); it != m_chSet5.end(); ++it) {
+		if (it->originalNetworkID == onid && it->transportStreamID == tsid && (it->serviceID == sid || it->epgCapFlag)) {
+			chkList.push_back(*it);
+		}
+	}
+	if (!chkList.empty() && basicFlag) {
+		chkList.clear();
+		for (it = m_chSet5.begin(); it != m_chSet5.end(); ++it) {
+			if (it->originalNetworkID == onid && (it->transportStreamID == tsid && it->serviceID == sid || it->epgCapFlag)) {
+				chkList.push_back(*it);
+			}
+		}
+	}
+	return chkList;
 }
 
 LRESULT CALLBACK CEdcbPlugIn::WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -360,40 +390,56 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 						m_epgCapChkNext = true;
 						saveEpgFile = m_epgCapSaveTimeout;
 					}
-					else if (m_epgFile == INVALID_HANDLE_VALUE) {
-						// 保存開始
-						SET_CH_INFO &chInfo = m_epgCapChList.front();
-						wstring name;
-						Format(name, L"%04X%04X_epg.dat", chInfo.ONID,
-						       chInfo.ONID == 4 && m_epgCapBSBasic || chInfo.ONID == 6 && m_epgCapCS1Basic || chInfo.ONID == 7 && m_epgCapCS2Basic ? 0xFFFF : chInfo.TSID);
-						m_epgFilePath = GetEdcbSettingPath() + L"\\EpgData\\" + name;
-						HANDLE epgFile = _CreateDirectoryAndFile((m_epgFilePath + L".tmp").c_str(), GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
-						if (epgFile != INVALID_HANDLE_VALUE) {
-							m_pApp->AddLog((L'★' + name).c_str());
-							CBlockLock lock(&m_streamLock);
-							m_epgFile = epgFile;
-							m_epgFileState = EPG_FILE_ST_NONE;
-						}
-						m_epgUtil.ClearSectionStatus();
-					}
 					else {
-						// 蓄積状態チェック
 						SET_CH_INFO &chInfo = m_epgCapChList.front();
-						EPG_SECTION_STATUS status = m_epgUtil.GetSectionStatus(FALSE);
-						if (status == EpgHEITAll || status == EpgBasicAll &&
-						    (chInfo.ONID == 4 && m_epgCapBSBasic || chInfo.ONID == 6 && m_epgCapCS1Basic || chInfo.ONID == 7 && m_epgCapCS2Basic)) {
-							if (chInfo.ONID == 4) {
-								m_epgCapChkBS = m_epgCapBSBasic;
-							}
-							else if (chInfo.ONID == 6) {
-								m_epgCapChkCS1 = m_epgCapCS1Basic;
-							}
-							else if (chInfo.ONID == 7) {
-								m_epgCapChkCS2 = m_epgCapCS2Basic;
-							}
+						bool basicFlag = (chInfo.ONID == 4 && m_epgCapBSBasic || chInfo.ONID == 6 && m_epgCapCS1Basic || chInfo.ONID == 7 && m_epgCapCS2Basic);
+						vector<CH_DATA5> chkList = GetEpgCheckList(chInfo.ONID, chInfo.TSID, chInfo.SID, basicFlag);
+						if (chkList.empty()) {
 							m_epgCapChList.erase(m_epgCapChList.begin());
 							m_epgCapChkNext = true;
-							saveEpgFile = true;
+						}
+						else if (m_epgFile == INVALID_HANDLE_VALUE) {
+							// 保存開始
+							wstring name;
+							Format(name, L"%04X%04X_epg.dat", chInfo.ONID, basicFlag ? 0xFFFF : chInfo.TSID);
+							m_epgFilePath = GetEdcbSettingPath() + L"\\EpgData\\" + name;
+							HANDLE epgFile = _CreateDirectoryAndFile((m_epgFilePath + L".tmp").c_str(), GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
+							if (epgFile != INVALID_HANDLE_VALUE) {
+								m_pApp->AddLog((L'★' + name).c_str());
+								CBlockLock lock(&m_streamLock);
+								m_epgFile = epgFile;
+								m_epgFileState = EPG_FILE_ST_NONE;
+							}
+							m_epgUtil.ClearSectionStatus();
+						}
+						else {
+							// 蓄積状態チェック
+							for (vector<CH_DATA5>::iterator it = chkList.begin(); it != chkList.end(); ++it) {
+								pair<EPG_SECTION_STATUS, BOOL> status = m_epgUtil.GetSectionStatusService(it->originalNetworkID, it->transportStreamID, it->serviceID, it->partialFlag);
+								if (!status.second) {
+									status.first = m_epgUtil.GetSectionStatus(it->partialFlag);
+								}
+								if (status.first != EpgNoData) {
+									m_epgCapChkNext = true;
+									if (status.first != EpgHEITAll && status.first != EpgLEITAll && (status.first != EpgBasicAll || !basicFlag)) {
+										m_epgCapChkNext = false;
+										break;
+									}
+								}
+							}
+							if (m_epgCapChkNext) {
+								if (chInfo.ONID == 4) {
+									m_epgCapChkBS = m_epgCapBSBasic;
+								}
+								else if (chInfo.ONID == 6) {
+									m_epgCapChkCS1 = m_epgCapCS1Basic;
+								}
+								else if (chInfo.ONID == 7) {
+									m_epgCapChkCS2 = m_epgCapCS2Basic;
+								}
+								m_epgCapChList.erase(m_epgCapChList.begin());
+								saveEpgFile = true;
+							}
 						}
 					}
 					if (m_epgCapChkNext && m_epgFile != INVALID_HANDLE_VALUE) {
@@ -431,28 +477,46 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 						m_epgCapBack = false;
 						saveEpgFile = m_epgCapSaveTimeout;
 					}
-					else if (m_epgFile == INVALID_HANDLE_VALUE) {
-						// 保存開始
-						wstring name;
-						Format(name, L"%04X%04X_epg.dat", onid,
-						       onid == 4 && m_epgCapBackBSBasic || onid == 6 && m_epgCapBackCS1Basic || onid == 7 && m_epgCapBackCS2Basic ? 0xFFFF : tsid);
-						m_epgFilePath = GetEdcbSettingPath() + L"\\EpgData\\" + name;
-						HANDLE epgFile = _CreateDirectoryAndFile((m_epgFilePath + L".tmp").c_str(), GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
-						if (epgFile != INVALID_HANDLE_VALUE) {
-							m_pApp->AddLog((L'★' + name).c_str());
-							CBlockLock lock(&m_streamLock);
-							m_epgFile = epgFile;
-							m_epgFileState = EPG_FILE_ST_NONE;
-						}
-						m_epgUtil.ClearSectionStatus();
-					}
 					else {
-						// 蓄積状態チェック
-						EPG_SECTION_STATUS status = m_epgUtil.GetSectionStatus(FALSE);
-						if (status == EpgHEITAll || status == EpgBasicAll &&
-						    (onid == 4 && m_epgCapBackBSBasic || onid == 6 && m_epgCapBackCS1Basic || onid == 7 && m_epgCapBackCS2Basic)) {
+						bool basicFlag = (onid == 4 && m_epgCapBackBSBasic || onid == 6 && m_epgCapBackCS1Basic || onid == 7 && m_epgCapBackCS2Basic);
+						vector<CH_DATA5> chkList = GetEpgCheckList(onid, tsid, -1, basicFlag);
+						if (chkList.empty()) {
 							m_epgCapBack = false;
-							saveEpgFile = true;
+						}
+						else if (m_epgFile == INVALID_HANDLE_VALUE) {
+							// 保存開始
+							wstring name;
+							Format(name, L"%04X%04X_epg.dat", onid, basicFlag ? 0xFFFF : tsid);
+							m_epgFilePath = GetEdcbSettingPath() + L"\\EpgData\\" + name;
+							HANDLE epgFile = _CreateDirectoryAndFile((m_epgFilePath + L".tmp").c_str(), GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
+							if (epgFile != INVALID_HANDLE_VALUE) {
+								m_pApp->AddLog((L'★' + name).c_str());
+								CBlockLock lock(&m_streamLock);
+								m_epgFile = epgFile;
+								m_epgFileState = EPG_FILE_ST_NONE;
+							}
+							m_epgUtil.ClearSectionStatus();
+						}
+						else {
+							// 蓄積状態チェック
+							bool chkNext = false;
+							for (vector<CH_DATA5>::iterator it = chkList.begin(); it != chkList.end(); ++it) {
+								pair<EPG_SECTION_STATUS, BOOL> status = m_epgUtil.GetSectionStatusService(it->originalNetworkID, it->transportStreamID, it->serviceID, it->partialFlag);
+								if (!status.second) {
+									status.first = m_epgUtil.GetSectionStatus(it->partialFlag);
+								}
+								if (status.first != EpgNoData) {
+									chkNext = true;
+									if (status.first != EpgHEITAll && status.first != EpgLEITAll && (status.first != EpgBasicAll || !basicFlag)) {
+										chkNext = false;
+										break;
+									}
+								}
+							}
+							if (chkNext) {
+								m_epgCapBack = false;
+								saveEpgFile = true;
+							}
 						}
 					}
 				}

@@ -46,6 +46,8 @@ private:
 		CDropCount dropCount;
 	};
 
+	// EPG取得対象のサービス一覧を取得する
+	vector<CH_DATA5> GetEpgCheckList(WORD onid, WORD tsid, int sid, bool basicFlag) const;
 	static LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	LRESULT WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	static int CALLBACK CtrlCmdCallback(void *param, CMD_STREAM *cmdParam, CMD_STREAM *resParam);
@@ -68,6 +70,7 @@ private:
 	CRITICAL_SECTION m_statusLock;
 	HWND m_hwnd;
 	CPipeServer m_pipeServer;
+	vector<CH_DATA5> m_chSet5;
 	CEpgDataCap3Util m_epgUtil;
 	wstring m_epgUtilPath;
 	int m_outCtrlID;
