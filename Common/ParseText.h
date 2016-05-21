@@ -15,7 +15,7 @@ public:
 	void SetFilePath(LPCWSTR filePath) { this->filePath = filePath; }
 protected:
 	bool SaveText() const;
-	virtual bool ParseLine(const wstring& parseLine, pair<K, V>& item) = 0;
+	virtual bool ParseLine(LPCWSTR parseLine, pair<K, V>& item) = 0;
 	virtual bool SaveLine(const pair<K, V>& item, wstring& saveLine) const { return false; }
 	virtual bool SaveFooterLine(wstring& saveLine) const { return false; }
 	virtual bool SelectIDToSave(vector<K>& sortList) const { return false; }
@@ -49,8 +49,7 @@ bool CParseText<K, V>::ParseText(LPCWSTR filePath)
 	}
 
 	vector<char> buf;
-	string parseLineA;
-	wstring parseLine;
+	vector<WCHAR> parseBuf;
 	for(;;){
 		//4KBíPà Ç≈ì«Ç›çûÇﬁ
 		buf.resize(buf.size() + 4096);
@@ -62,22 +61,24 @@ bool CParseText<K, V>::ParseText(LPCWSTR filePath)
 			buf.resize(buf.size() - 4096 + dwRead);
 		}
 		//äÆëSÇ…ì«Ç›çûÇ‹ÇÍÇΩçsÇÇ≈Ç´ÇÈÇæÇØâêÕ
+		size_t offset = 0;
 		for( size_t i = 0; i < buf.size(); i++ ){
-			if( buf[i] == '\0' || buf[i] == '\r' && i + 1 < buf.size() && buf[i + 1] == '\n' ){
-				parseLineA.assign(buf.begin(), buf.begin() + i);
-				AtoW(parseLineA, parseLine);
+			bool eof = buf[i] == '\0';
+			if( eof || buf[i] == '\r' && i + 1 < buf.size() && buf[i + 1] == '\n' ){
+				buf[i] = '\0';
+				AtoW(&buf[offset], i - offset, parseBuf);
 				pair<K, V> item;
-				if( ParseLine(parseLine, item) ){
+				if( ParseLine(&parseBuf.front(), item) ){
 					this->itemMap.insert(item);
 				}
-				if( buf[i] == '\0' ){
-					buf.erase(buf.begin(), buf.begin() + i);
+				if( eof ){
+					offset = i;
 					break;
 				}
-				buf.erase(buf.begin(), buf.begin() + i + 2);
-				i = 0;
+				offset = (++i) + 1;
 			}
 		}
+		buf.erase(buf.begin(), buf.begin() + offset);
 		if( buf.empty() == false && buf[0] == '\0' ){
 			break;
 		}
@@ -94,7 +95,7 @@ bool CParseText<K, V>::SaveText() const
 	}
 	HANDLE hFile;
 	for( int retry = 0;; ){
-		hFile = _CreateDirectoryAndFile(this->filePath.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+		hFile = _CreateDirectoryAndFile((this->filePath + L".tmp").c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 		if( hFile != INVALID_HANDLE_VALUE ){
 			break;
 		}else if( ++retry > 5 ){
@@ -104,38 +105,51 @@ bool CParseText<K, V>::SaveText() const
 		Sleep(200 * retry);
 	}
 
+	bool ret = true;
 	wstring saveLine;
-	string saveLineA;
+	vector<char> saveBuf;
 	vector<K> idList;
 	if( SelectIDToSave(idList) ){
 		for( size_t i = 0; i < idList.size(); i++ ){
 			map<K, V>::const_iterator itr = this->itemMap.find(idList[i]);
 			saveLine.clear();
 			if( itr != this->itemMap.end() && SaveLine(*itr, saveLine) ){
-				WtoA(saveLine, saveLineA);
-				saveLineA += "\r\n";
+				saveLine += L"\r\n";
+				size_t len = WtoA(saveLine.c_str(), saveLine.size(), saveBuf);
 				DWORD dwWrite;
-				WriteFile(hFile, saveLineA.c_str(), (DWORD)saveLineA.size(), &dwWrite, NULL);
+				ret = ret && WriteFile(hFile, &saveBuf.front(), (DWORD)len, &dwWrite, NULL);
 			}
 		}
 	}else{
 		for( map<K, V>::const_iterator itr = this->itemMap.begin(); itr != this->itemMap.end(); itr++ ){
 			saveLine.clear();
 			if( SaveLine(*itr, saveLine) ){
-				WtoA(saveLine, saveLineA);
-				saveLineA += "\r\n";
+				saveLine += L"\r\n";
+				size_t len = WtoA(saveLine.c_str(), saveLine.size(), saveBuf);
 				DWORD dwWrite;
-				WriteFile(hFile, saveLineA.c_str(), (DWORD)saveLineA.size(), &dwWrite, NULL);
+				ret = ret && WriteFile(hFile, &saveBuf.front(), (DWORD)len, &dwWrite, NULL);
 			}
 		}
 	}
 	saveLine.clear();
 	if( SaveFooterLine(saveLine) ){
-		WtoA(saveLine, saveLineA);
-		saveLineA += "\r\n";
+		saveLine += L"\r\n";
+		size_t len = WtoA(saveLine.c_str(), saveLine.size(), saveBuf);
 		DWORD dwWrite;
-		WriteFile(hFile, saveLineA.c_str(), (DWORD)saveLineA.size(), &dwWrite, NULL);
+		ret = ret && WriteFile(hFile, &saveBuf.front(), (DWORD)len, &dwWrite, NULL);
 	}
 	CloseHandle(hFile);
-	return true;
+
+	if( ret ){
+		for( int retry = 0;; ){
+			if( MoveFileEx((this->filePath + L".tmp").c_str(), this->filePath.c_str(), MOVEFILE_REPLACE_EXISTING) ){
+				return true;
+			}else if( ++retry > 5 ){
+				OutputDebugString(L"CParseText<>::SaveText(): Error: Cannot open file\r\n");
+				break;
+			}
+			Sleep(200 * retry);
+		}
+	}
+	return false;
 }

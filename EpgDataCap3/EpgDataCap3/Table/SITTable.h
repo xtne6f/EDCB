@@ -80,30 +80,21 @@ CRC_32 (CRC)：これはARIB STD-B10 の付録B で定義するデコーダにおいて、セク
 class CSITTable : public CPSITable
 {
 public:
-	typedef struct _SERVICE_LOOP_DATA{
+	struct SERVICE_LOOP_DATA {
 		WORD service_id;
 		BYTE running_status;
 		WORD service_loop_length;
-		vector<AribDescriptor::CDescriptor*> descriptorList;
-		~_SERVICE_LOOP_DATA(void){
-			for( size_t i=0; i<descriptorList.size(); i++ ){
-				SAFE_DELETE(descriptorList[i]);
-			}
-			descriptorList.clear();
-		};
-	} SERVICE_LOOP_DATA;
+		vector<AribDescriptor::CDescriptor> descriptorList;
+	};
 	BYTE version_number;
 	BYTE current_next_indicator;
 	BYTE section_number;
 	BYTE last_section_number;
 	WORD transmission_info_loop_length;
-	vector<AribDescriptor::CDescriptor*> descriptorList;
-	vector<SERVICE_LOOP_DATA*> serviceLoopList;
+	vector<AribDescriptor::CDescriptor> descriptorList;
+	vector<SERVICE_LOOP_DATA> serviceLoopList;
 
 public:
-	CSITTable(void);
-	~CSITTable(void);
-
 	BOOL Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize );
 protected:
 	void Clear();

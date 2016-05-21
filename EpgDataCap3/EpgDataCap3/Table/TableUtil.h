@@ -34,8 +34,10 @@ public:
 		TYPE_SDTT,
 		TYPE_BIT,
 		TYPE_SIT,
-		TYPE_EIT_SD,
-		TYPE_EIT_SD2,
+		TYPE_MAX = TYPE_SIT,
 	};
-	static t_type Decode(BYTE* data, DWORD dataSize, CPSITable** table);
+	t_type Decode(BYTE* data, DWORD dataSize, CPSITable** table);
+	void Putback(t_type type, CPSITable* table) { cache[type].reset(table); }
+private:
+	std::unique_ptr<CPSITable> cache[TYPE_MAX + 1];
 };

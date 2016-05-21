@@ -765,6 +765,16 @@ typedef struct ssl_st SSL;
 typedef struct ssl_method_st SSL_METHOD;
 typedef struct ssl_ctx_st SSL_CTX;
 
+#define SSL_CTRL_OPTIONS (32)
+#define SSL_CTRL_CLEAR_OPTIONS (77)
+
+#define SSL_OP_ALL (0x80000BFFL)
+#define SSL_OP_NO_SSLv2 (0x01000000L)
+#define SSL_OP_NO_SSLv3 (0x02000000L)
+#define SSL_OP_NO_TLSv1	(0x04000000L)
+#define SSL_OP_NO_TLSv1_2 (0x08000000L)
+#define SSL_OP_NO_TLSv1_1 (0x10000000L)
+
 struct ssl_func {
 	const char *name;  /* SSL function name */
 	void (*ptr)(void); /* Function pointer */
@@ -795,6 +805,12 @@ struct ssl_func {
 #define SSL_pending (*(int (*)(SSL *))ssl_sw[18].ptr)
 #define SSL_CTX_set_verify (*(void (*)(SSL_CTX *, int, int))ssl_sw[19].ptr)
 #define SSL_shutdown (*(int (*)(SSL *))ssl_sw[20].ptr)
+#define SSL_CTX_ctrl                                                           \
+	(*(long (*)(SSL_CTX *, int, long, void *))ssl_sw[21].ptr)
+#define SSL_CTX_set_options(ctx,op)                                            \
+	SSL_CTX_ctrl((ctx),SSL_CTRL_OPTIONS,(op),NULL)
+#define SSL_CTX_clear_options(ctx,op)                                          \
+	SSL_CTX_ctrl((ctx),SSL_CTRL_CLEAR_OPTIONS,(op),NULL)
 
 #define CRYPTO_num_locks (*(int (*)(void))crypto_sw[0].ptr)
 #define CRYPTO_set_locking_callback                                            \
@@ -829,6 +845,7 @@ static struct ssl_func ssl_sw[] = {{"SSL_free", NULL},
                                    {"SSL_pending", NULL},
                                    {"SSL_CTX_set_verify", NULL},
                                    {"SSL_shutdown", NULL},
+                                   {"SSL_CTX_ctrl", NULL},
                                    {NULL, NULL}};
 
 /* Similar array as ssl_sw. These functions could be located in different
@@ -923,6 +940,7 @@ enum {
 	REWRITE,
 	HIDE_FILES,
 	REQUEST_TIMEOUT,
+	SSL_PROTOCOL_VERSION,
 #if defined(USE_WEBSOCKET)
 	WEBSOCKET_TIMEOUT,
 #endif
@@ -978,6 +996,7 @@ static struct mg_option config_options[] = {
     {"url_rewrite_patterns", CONFIG_TYPE_STRING, NULL},
     {"hide_files_patterns", CONFIG_TYPE_EXT_PATTERN, NULL},
     {"request_timeout_ms", CONFIG_TYPE_NUMBER, "30000"},
+    {"ssl_protocol_version", CONFIG_TYPE_NUMBER, "0"},
 #if defined(USE_WEBSOCKET)
     {"websocket_timeout_ms", CONFIG_TYPE_NUMBER, "30000"},
 #endif
@@ -1272,24 +1291,23 @@ const struct mg_option *mg_get_valid_options(void) { return config_options; }
 
 static int is_file_in_memory(struct mg_connection *conn,
                              const char *path,
-                             struct file *filep)
+                             const char **membufp,
+                             uint64_t *sizep)
 {
+	const char *membuf;
 	size_t size = 0;
-	if (!conn || !filep) {
+	if (!conn || !membufp || !sizep) {
 		return 0;
 	}
 
-	filep->last_modified = (time_t)0;
-
-	if ((filep->membuf =
+	if ((membuf =
 	         conn->ctx->callbacks.open_file == NULL
 	             ? NULL
 	             : conn->ctx->callbacks.open_file(conn, path, &size)) != NULL) {
-		/* NOTE: override filep->size only on success. Otherwise, it might
-		 * break constructs like if (!mg_stat() || !mg_fopen()) ... */
-		filep->size = size;
+		*membufp = membuf;
+		*sizep = size;
 	}
-	return filep->membuf != NULL;
+	return membuf != NULL;
 }
 
 static int is_file_opened(const struct file *filep)
@@ -1309,8 +1327,11 @@ static int mg_fopen(struct mg_connection *conn,
 	if (!filep) {
 		return 0;
 	}
+	/* Either fp or membuf must be NULL */
+	filep->fp = NULL;
+	filep->membuf = NULL;
 
-	if (!is_file_in_memory(conn, path, filep)) {
+	if (!is_file_in_memory(conn, path, &filep->membuf, &filep->size)) {
 #ifdef _WIN32
 		wchar_t wbuf[PATH_MAX], wmode[20];
 		to_unicode(path, wbuf, ARRAY_SIZE(wbuf));
@@ -2358,6 +2379,24 @@ static void to_unicode(const char *path, wchar_t *wbuf, size_t wbuf_len)
 	}
 }
 
+static int is_existing_long_path(const char *path)
+{
+	wchar_t wpath[PATH_MAX];
+	char buf[PATH_MAX], buf2[PATH_MAX];
+	DWORD len;
+
+	to_unicode(path, wpath, ARRAY_SIZE(wpath));
+	if (WideCharToMultiByte(CP_UTF8, 0, wpath, -1, buf, sizeof(buf), NULL, NULL) != 0) {
+		len = GetLongPathNameW(wpath, wpath, ARRAY_SIZE(wpath));
+		if (len != 0 && len < ARRAY_SIZE(wpath) &&
+		    WideCharToMultiByte(CP_UTF8, 0, wpath, -1, buf2, sizeof(buf2), NULL, NULL) != 0 &&
+		    mg_strcasecmp(buf, buf2) == 0) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
 #if defined(_WIN32_WCE)
 static time_t time(time_t *ptime)
 {
@@ -2441,7 +2480,8 @@ mg_stat(struct mg_connection *conn, const char *path, struct file *filep)
 	}
 	memset(filep, 0, sizeof(*filep));
 
-	if (conn && is_file_in_memory(conn, path, filep)) {
+	if (conn && is_file_in_memory(conn, path, &filep->membuf, &filep->size)) {
+		/* membuf has size field only, last_modified is always Epoch. */
 		return 1;
 	}
 
@@ -2835,7 +2875,8 @@ mg_stat(struct mg_connection *conn, const char *path, struct file *filep)
 	}
 	memset(filep, 0, sizeof(*filep));
 
-	if (conn && is_file_in_memory(conn, path, filep)) {
+	if (conn && is_file_in_memory(conn, path, &filep->membuf, &filep->size)) {
+		/* membuf has size field only, last_modified is always Epoch. */
 		return 1;
 	}
 
@@ -3863,7 +3904,11 @@ interpret_uri(struct mg_connection *conn,   /* in: request */
 
 		/* Local file path and name, corresponding to requested URI
 		 * is now stored in "filename" variable. */
-		if (mg_stat(conn, filename, filep)) {
+		if (mg_stat(conn, filename, filep)
+#if defined(_WIN32)
+		    && (filep->membuf || is_existing_long_path(filename))
+#endif
+		    ) {
 			/* File exists. Check if it is a script type. */
 			if (0
 #if !defined(NO_CGI)
@@ -3905,9 +3950,14 @@ interpret_uri(struct mg_connection *conn,   /* in: request */
 		    NULL) {
 			if (strstr(accept_encoding, "gzip") != NULL) {
 				snprintf(gz_path, sizeof(gz_path), "%s.gz", filename);
-				if (mg_stat(conn, gz_path, filep)) {
+				if (mg_stat(conn, gz_path, filep)
+#if defined(_WIN32)
+				    && (filep->membuf || is_existing_long_path(gz_path))
+#endif
+				    ) {
 					if (filep) {
 						filep->gzipped = 1;
+						*is_found = 1;
 					}
 					/* Currently gz files can not be scripts. */
 					return;
@@ -3934,7 +3984,11 @@ interpret_uri(struct mg_connection *conn,   /* in: request */
 				         filename) > 0
 #endif
 				     ) &&
-				    mg_stat(conn, filename, filep)) {
+				    mg_stat(conn, filename, filep)
+#if defined(_WIN32)
+				    && (filep->membuf || is_existing_long_path(filename))
+#endif
+				    ) {
 					/* Shift PATH_INFO block one character right, e.g.
 					 * "/x.cgi/foo/bar\x00" => "/x.cgi\x00/foo/bar\x00"
 					 * conn->path_info is pointing to the local variable "path"
@@ -8983,11 +9037,27 @@ static int initialize_ssl(struct mg_context *ctx)
 	return 1;
 }
 
+static long
+ssl_get_protocol(int version_id)
+{
+	long ret = SSL_OP_ALL;
+	if (version_id > 0)
+		ret |= SSL_OP_NO_SSLv2;
+	if (version_id > 1)
+		ret |= SSL_OP_NO_SSLv3;
+	if (version_id > 2)
+		ret |= SSL_OP_NO_TLSv1;
+	if(version_id > 3)
+		ret |= SSL_OP_NO_TLSv1_1;
+	return ret;
+}
+
 /* Dynamically load SSL library. Set up ctx->ssl_ctx pointer. */
 static int set_ssl_option(struct mg_context *ctx)
 {
 	const char *pem;
 	int callback_ret;
+	int protocol_ver;
 
 	/* If PEM file is not specified and the init_ssl callback
 	 * is not specified, skip SSL initialization. */
@@ -9020,6 +9090,12 @@ static int set_ssl_option(struct mg_context *ctx)
 		mg_cry(fc(ctx), "SSL_CTX_new (server) error: %s", ssl_error());
 		return 0;
 	}
+
+	SSL_CTX_clear_options(ctx->ssl_ctx, SSL_OP_NO_SSLv2 |
+                          SSL_OP_NO_SSLv3 | SSL_OP_NO_TLSv1 |
+                          SSL_OP_NO_TLSv1_1);
+	protocol_ver = atoi(ctx->config[SSL_PROTOCOL_VERSION]);
+	SSL_CTX_set_options(ctx->ssl_ctx, ssl_get_protocol(protocol_ver));
 
 	/* If a callback has been specified, call it. */
 	callback_ret =
@@ -9827,6 +9903,7 @@ static void *worker_thread_run(void *thread_func_param)
 #if defined(_WIN32) && !defined(__SYMBIAN32__)
 	CloseHandle(tls.pthread_cond_helper_mutex);
 #endif
+	pthread_mutex_destroy(&conn->mutex);
 	mg_free(conn);
 
 	DEBUG_TRACE("%s", "exiting");

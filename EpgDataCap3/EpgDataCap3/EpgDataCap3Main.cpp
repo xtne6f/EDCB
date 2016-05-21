@@ -188,6 +188,18 @@ EPG_SECTION_STATUS CEpgDataCap3Main::GetSectionStatus(BOOL l_eitFlag)
 	return status;
 }
 
+//指定サービスのEPGデータの蓄積状態を取得する
+EPG_SECTION_STATUS CEpgDataCap3Main::GetSectionStatusService(
+	WORD originalNetworkID,
+	WORD transportStreamID,
+	WORD serviceID,
+	BOOL l_eitFlag
+	)
+{
+	CBlockLock lock(&this->utilLock);
+	return this->epgDBUtilClass.GetSectionStatusService(originalNetworkID, transportStreamID, serviceID, l_eitFlag);
+}
+
 //PC時計を元としたストリーム時間との差を取得する
 //戻り値：
 // 差の秒数

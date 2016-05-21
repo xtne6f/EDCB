@@ -324,6 +324,23 @@ EPG_SECTION_STATUS WINAPI GetSectionStatusEP(
 	return ptr->GetSectionStatus(l_eitFlag);
 }
 
+//指定サービスのEPGデータの蓄積状態を取得する
+EPG_SECTION_STATUS WINAPI GetSectionStatusServiceEP(
+	DWORD id,
+	WORD originalNetworkID,
+	WORD transportStreamID,
+	WORD serviceID,
+	BOOL l_eitFlag
+	)
+{
+	std::shared_ptr<CEpgDataCap3Main> ptr = g_instMng.find(id);
+	if (ptr == NULL) {
+		return EpgNoData;
+	}
+
+	return ptr->GetSectionStatusService(originalNetworkID, transportStreamID, serviceID, l_eitFlag);
+}
+
 //PC時計を元としたストリーム時間との差を取得する
 //戻り値：
 // 差の秒数

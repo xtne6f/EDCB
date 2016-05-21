@@ -39,6 +39,13 @@ void CReserveManager::Initialize()
 	this->reserveText.ParseText((settingPath + L"\\" + RESERVE_TEXT_NAME).c_str());
 
 	ReloadSetting();
+	wstring iniPath;
+	GetModuleIniPath(iniPath);
+	DWORD shiftID = GetPrivateProfileInt(L"SET", L"RecInfoShiftID", 100000, iniPath.c_str());
+	if( shiftID != 0 ){
+		this->recInfoText.SetNextID(shiftID + 1);
+		WritePrivateProfileInt(L"SET", L"RecInfoShiftID", shiftID % 900000 + 100000, iniPath.c_str());
+	}
 	this->recInfoText.ParseText((settingPath + L"\\" + REC_INFO_TEXT_NAME).c_str());
 	this->recInfo2Text.ParseText((settingPath + L"\\" + REC_INFO2_TEXT_NAME).c_str());
 
@@ -477,16 +484,48 @@ void CReserveManager::DelReserveData(const vector<DWORD>& idList)
 	}
 }
 
-vector<REC_FILE_INFO> CReserveManager::GetRecFileInfoAll() const
+vector<REC_FILE_INFO> CReserveManager::GetRecFileInfoAll(bool getExtraInfo) const
 {
-	CBlockLock lock(&this->managerLock);
-
 	vector<REC_FILE_INFO> infoList;
-	infoList.reserve(this->recInfoText.GetMap().size());
-	for( map<DWORD, REC_FILE_INFO>::const_iterator itr = this->recInfoText.GetMap().begin(); itr != this->recInfoText.GetMap().end(); itr++ ){
-		infoList.push_back(itr->second);
+	wstring folder;
+	{
+		CBlockLock lock(&this->managerLock);
+		infoList.reserve(this->recInfoText.GetMap().size());
+		for( map<DWORD, REC_FILE_INFO>::const_iterator itr = this->recInfoText.GetMap().begin(); itr != this->recInfoText.GetMap().end(); itr++ ){
+			infoList.push_back(itr->second);
+		}
+		if( getExtraInfo ){
+			folder = this->recInfoText.GetRecInfoFolder();
+		}
+	}
+	if( getExtraInfo ){
+		for( size_t i = 0; i < infoList.size(); i++ ){
+			infoList[i].programInfo = CParseRecInfoText::GetExtraInfo(infoList[i].recFilePath.c_str(), L".program.txt", folder);
+			infoList[i].errInfo = CParseRecInfoText::GetExtraInfo(infoList[i].recFilePath.c_str(), L".err", folder);
+		}
 	}
 	return infoList;
+}
+
+bool CReserveManager::GetRecFileInfo(DWORD id, REC_FILE_INFO* recInfo, bool getExtraInfo) const
+{
+	wstring folder;
+	{
+		CBlockLock lock(&this->managerLock);
+		map<DWORD, REC_FILE_INFO>::const_iterator itr = this->recInfoText.GetMap().find(id);
+		if( itr == this->recInfoText.GetMap().end() ){
+			return false;
+		}
+		*recInfo = itr->second;
+		if( getExtraInfo ){
+			folder = this->recInfoText.GetRecInfoFolder();
+		}
+	}
+	if( getExtraInfo ){
+		recInfo->programInfo = CParseRecInfoText::GetExtraInfo(recInfo->recFilePath.c_str(), L".program.txt", folder);
+		recInfo->errInfo = CParseRecInfoText::GetExtraInfo(recInfo->recFilePath.c_str(), L".err", folder);
+	}
+	return true;
 }
 
 void CReserveManager::DelRecFileInfo(const vector<DWORD>& idList)

@@ -1,25 +1,9 @@
 #include "StdAfx.h"
 #include "SITTable.h"
 
-CSITTable::CSITTable(void)
-{
-}
-
-
-CSITTable::~CSITTable(void)
-{
-	Clear();
-}
-
 void CSITTable::Clear()
 {
-	for( size_t i=0 ;i<descriptorList.size(); i++ ){
-		SAFE_DELETE(descriptorList[i]);
-	}
 	descriptorList.clear();
-	for( size_t i=0 ;i<serviceLoopList.size(); i++ ){
-		SAFE_DELETE(serviceLoopList[i]);
-	}
 	serviceLoopList.clear();
 }
 
@@ -56,7 +40,8 @@ BOOL CSITTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 			readSize+=transmission_info_loop_length;
 		}
 		while( readSize+3 < (DWORD)section_length+3-4 ){
-			SERVICE_LOOP_DATA* item = new SERVICE_LOOP_DATA;
+			serviceLoopList.push_back(SERVICE_LOOP_DATA());
+			SERVICE_LOOP_DATA* item = &serviceLoopList.back();
 			item->service_id = ((WORD)data[readSize])<<8 | data[readSize+1];
 			item->running_status = (data[readSize+2]&0x70)>>4;
 			item->service_loop_length = ((WORD)data[readSize+2]&0x0F)<<8 | data[readSize+3];
@@ -64,12 +49,10 @@ BOOL CSITTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 			if( readSize+item->service_loop_length <= (DWORD)section_length+3-4 && item->service_loop_length > 0){
 				if( AribDescriptor::CreateDescriptors( data+readSize, item->service_loop_length, &(item->descriptorList), NULL ) == FALSE ){
 					_OutputDebugString( L"++CSITTable:: descriptor2 err" );
-					SAFE_DELETE(item);
 					return FALSE;
 				}
 			}
 			readSize+=item->service_loop_length;
-			serviceLoopList.push_back(item);
 		}
 	}else{
 		return FALSE;

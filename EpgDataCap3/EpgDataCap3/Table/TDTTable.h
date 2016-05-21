@@ -38,8 +38,5 @@ class CTDTTable : public CPSITable
 public:
 	SYSTEMTIME jst_time;
 public:
-	CTDTTable(void);
-	~CTDTTable(void);
-
 	BOOL Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize );
 };

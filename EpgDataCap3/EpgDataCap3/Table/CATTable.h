@@ -33,12 +33,9 @@ public:
 	BYTE current_next_indicator;
 	BYTE section_number;
 	BYTE last_section_number;
-	vector<AribDescriptor::CDescriptor*> descriptorList;
+	vector<AribDescriptor::CDescriptor> descriptorList;
 
 public:
-	CCATTable(void);
-	~CCATTable(void);
-
 	BOOL Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize );
 protected:
 	void Clear();

@@ -1,24 +1,9 @@
 #include "StdAfx.h"
 #include "BITTable.h"
 
-CBITTable::CBITTable(void)
-{
-}
-
-CBITTable::~CBITTable(void)
-{
-	Clear();
-}
-
 void CBITTable::Clear()
 {
-	for( size_t i=0 ;i<descriptorList.size(); i++ ){
-		SAFE_DELETE(descriptorList[i]);
-	}
 	descriptorList.clear();
-	for( size_t i=0 ;i<broadcasterDataList.size(); i++ ){
-		SAFE_DELETE(broadcasterDataList[i]);
-	}
 	broadcasterDataList.clear();
 }
 
@@ -57,21 +42,19 @@ BOOL CBITTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 			readSize+=first_descriptors_length;
 		}
 		while( readSize+2 < (DWORD)section_length+3-4 ){
-			BROADCASTER_DATA* item = new BROADCASTER_DATA;
+			broadcasterDataList.push_back(BROADCASTER_DATA());
+			BROADCASTER_DATA* item = &broadcasterDataList.back();
 			item->broadcaster_id = data[readSize];
 			item->broadcaster_descriptors_length = ((WORD)data[readSize+1]&0x0F)<<8 | data[readSize+2];
 			readSize+=3;
 			if( readSize+item->broadcaster_descriptors_length <= (DWORD)section_length+3-4 && item->broadcaster_descriptors_length > 0){
 				if( AribDescriptor::CreateDescriptors( data+readSize, item->broadcaster_descriptors_length, &(item->descriptorList), NULL ) == FALSE ){
 					_OutputDebugString( L"++CBITTable:: descriptor2 err" );
-					SAFE_DELETE(item);
 					return FALSE;
 				}
 			}
 
 			readSize+=item->broadcaster_descriptors_length;
-
-			broadcasterDataList.push_back(item);
 		}
 	}else{
 		return FALSE;

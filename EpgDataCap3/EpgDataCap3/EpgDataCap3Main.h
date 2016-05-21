@@ -112,6 +112,21 @@ public:
 		BOOL l_eitFlag
 		);
 
+	//指定サービスのEPGデータの蓄積状態を取得する
+	//戻り値：
+	// ステータス
+	//引数：
+	// originalNetworkID		[IN]取得対象のOriginalNetworkID
+	// transportStreamID		[IN]取得対象のTransportStreamID
+	// serviceID				[IN]取得対象のServiceID
+	// l_eitFlag				[IN]L-EITのステータスを取得
+	EPG_SECTION_STATUS GetSectionStatusService(
+		WORD originalNetworkID,
+		WORD transportStreamID,
+		WORD serviceID,
+		BOOL l_eitFlag
+		);
+
 	//PC時計を元としたストリーム時間との差を取得する
 	//戻り値：
 	// 差の秒数

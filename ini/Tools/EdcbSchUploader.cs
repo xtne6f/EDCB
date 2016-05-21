@@ -17,7 +17,7 @@ namespace EpgTimer
     {
         private const string DEV_COLORS = "T9999=#ff0000\t#1e90ff";
         private const string USER_AGENT = "edcbSchUploader/1.0.0";
-        private const string UPLOAD_URL = "https://cal.syoboi.jp/sch_upload";
+        private const string UPLOAD_URL = "http://cal.syoboi.jp/sch_upload";
         private const int TIMEOUT = 10000;
         // 番組名を省略する文字数
         private const int UPLOAD_TITLE_MAXLEN = 30;
@@ -28,7 +28,7 @@ namespace EpgTimer
         {
             if (args.Length < 2)
             {
-                Console.WriteLine("Usage: EdcbSchUploader <user> <pass> [epgurl] [slot]");
+                Console.WriteLine("Usage: EdcbSchUploader <user> <pass> [epgurl] [slot] [upload_url]");
                 Environment.Exit(2);
             }
 
@@ -132,7 +132,7 @@ namespace EpgTimer
                 body["data"] = data;
                 try
                 {
-                    wc.UploadValues(UPLOAD_URL, body);
+                    wc.UploadValues(args.Length < 5 ? UPLOAD_URL : args[4], body);
                     File.WriteAllText(lastPath, data.Replace("\n", "\r\n"), Encoding.UTF8);
                 }
                 catch (Exception ex)

@@ -1,4 +1,4 @@
-dofile(mg.document_root..'\\util.lua')
+dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
 
 ct=[=[
 <!doctype html><html lang="ja">
@@ -10,10 +10,26 @@ ct=[=[
 予約詳細<br><br>
 ]=]
 
+id=0+(mg.get_var(mg.request_info.query_string,'id') or 0)
+recFilePath=edcb.GetRecFilePath and edcb.GetRecFilePath(id) or nil
 edcb.htmlEscape=15
-r=edcb.GetReserveData(0+(mg.get_var(mg.request_info.query_string,'id') or 0))
+r=edcb.GetReserveData(id)
 if r then
+  if recFilePath and NativeToDocumentPath(recFilePath) then
+    for i,ext in ipairs({'.webm',''}) do
+      edcb.htmlEscape=0
+      f=io.open(edcb.Convert('cp932', 'utf-8', recFilePath..ext), 'rb')
+      edcb.htmlEscape=15
+      if f then
+        f:close()
+        video=PathToRoot()..NativeToDocumentPath(recFilePath)..ext
+        break
+      end
+    end
+  end
   ct=ct..'<hr>番組情報<hr>\n'..string.gsub(_ConvertEpgInfoText2(r.onid, r.tsid, r.sid, r.eid), '\r?\n', '<br>\n')
+    ..(video and '<br>\n<a href="'..mg.url_encode(video):gsub('%%2f','/')..'">'..edcb.Convert('utf-8', 'utf-8', video)..'</a> [<a href="'
+       ..mg.url_encode(video:gsub('[^\\/]*$','')..'chunk.lua'):gsub('%%2f','/')..'?0='..mg.url_encode(video:match('[^\\/]*$'))..'">chunk.lua</a>]<br>\n' or '')
     ..'<hr>録画設定<hr>\n<form action="reserveinfo.html">'
     ..'<input type="hidden" name="id" value="'..r.reserveID..'">プリセット: <select name="presetID">\n'
   presetID=0+(mg.get_var(mg.request_info.query_string,'presetID') or 65535)
@@ -33,8 +49,11 @@ if r then
 
   ct=ct..'<form method="POST" action="reservechg.html?id='..r.reserveID
     ..'"><input type="hidden" name="presetID" value="'..(preset and presetID or 65535)..'">\n'
+    ..'<input type="hidden" name="ctok" value="'..CsrfToken()..'">\n'
     ..RecSettingTemplate(rs)..'<input type="submit" value="変更"></form>\n'
-    ..'<form method="POST" action="reservedel.html?id='..r.reserveID..'"><input type="submit" value="削除"></form>\n'
+    ..'<form method="POST" action="reservedel.html?id='..r.reserveID..'">\n'
+    ..'<input type="hidden" name="ctok" value="'..CsrfToken()..'">\n'
+    ..'<input type="submit" value="削除"></form>\n'
 end
 
 ct=ct..[=[
@@ -42,4 +61,4 @@ ct=ct..[=[
 </body>
 </html>
 ]=]
-mg.write('HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: '..#ct..(mg.keep_alive(true) and '' or '\r\nConnection: close')..'\r\n\r\n', ct)
+mg.write(Response(200, 'text/html', 'utf-8', #ct)..'\r\n', ct)

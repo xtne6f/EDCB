@@ -103,7 +103,7 @@ public:
 		SYSTEMTIME start_time;
 		DWORD duration;	//ïbêî
 	}SCHEDULE_INFO_DATA;
-	typedef struct _CONTENT_INFO_DATA{
+	struct CONTENT_INFO_DATA {
 		BYTE group;
 		WORD target_version;
 		WORD new_version;
@@ -113,14 +113,8 @@ public:
 		WORD schedule_description_length;
 		BYTE schedule_time_shift_information;
 		vector<SCHEDULE_INFO_DATA> scheduleList;
-		vector<AribDescriptor::CDescriptor*> descriptorList;
-		~_CONTENT_INFO_DATA(void){
-			for( size_t i=0; i<descriptorList.size(); i++ ){
-				SAFE_DELETE(descriptorList[i]);
-			}
-			descriptorList.clear();
-		};
-	} CONTENT_INFO_DATA;
+		vector<AribDescriptor::CDescriptor> descriptorList;
+	};
 	BYTE maker_id;
 	BYTE model_id;
 	BYTE version_number;
@@ -131,12 +125,9 @@ public:
 	WORD original_network_id;
 	WORD service_id;
 	BYTE num_of_contents;
-	vector<CONTENT_INFO_DATA*> contentInfoList;
+	vector<CONTENT_INFO_DATA> contentInfoList;
 
 public:
-	CSDTTTable(void);
-	~CSDTTTable(void);
-
 	BOOL Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize );
 
 protected:

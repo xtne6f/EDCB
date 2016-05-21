@@ -11,7 +11,6 @@ class CDecodeUtil
 {
 public:
 	CDecodeUtil(void);
-	~CDecodeUtil(void);
 
 	void SetEpgDB(CEpgDBUtil* epgDBUtil);
 	void AddTSData(BYTE* data);
@@ -44,45 +43,28 @@ public:
 		);
 
 protected:
-	typedef struct _NIT_SECTION_INFO{
-		WORD network_id;
-		BYTE version_number;
+	struct NIT_SECTION_INFO{
 		BYTE last_section_number;
-		map<BYTE, CNITTable*> nitSection;
-		~_NIT_SECTION_INFO(void){
-			map<BYTE, CNITTable*>::iterator itr;
-			for( itr=nitSection.begin(); itr != nitSection.end(); itr++ ){
-				SAFE_DELETE(itr->second);
-			}
-			nitSection.clear();
-		};
-	}NIT_SECTION_INFO;
-	typedef struct _SDT_SECTION_INFO{
-		WORD original_network_id;
-		WORD transport_stream_id;
-		BYTE version_number;
+		map<BYTE, std::unique_ptr<const CNITTable>> nitSection;
+	};
+	struct SDT_SECTION_INFO{
 		BYTE last_section_number;
-		map<BYTE, CSDTTable*> sdtSection;
-		~_SDT_SECTION_INFO(void){
-			map<BYTE, CSDTTable*>::iterator itr;
-			for( itr=sdtSection.begin(); itr != sdtSection.end(); itr++ ){
-				SAFE_DELETE(itr->second);
-			}
-			sdtSection.clear();
-		};
-	}SDT_SECTION_INFO;
+		map<BYTE, std::unique_ptr<const CSDTTable>> sdtSection;
+	};
 
 	CEpgDBUtil* epgDBUtil;
+
+	CTableUtil tableUtil;
 
 	//PID毎のバッファリング
 	//キー PID
 	map<WORD, CTSBuffUtil> buffUtilMap;
 
-	CPATTable* patInfo;
-	NIT_SECTION_INFO* nitActualInfo;
-	SDT_SECTION_INFO* sdtActualInfo;
-	CBITTable* bitInfo;
-	CSITTable* sitInfo;
+	std::unique_ptr<const CPATTable> patInfo;
+	NIT_SECTION_INFO nitActualInfo;
+	SDT_SECTION_INFO sdtActualInfo;
+	std::unique_ptr<const CBITTable> bitInfo;
+	std::unique_ptr<const CSITTable> sitInfo;
 	FILETIME totTime;
 	FILETIME tdtTime;
 	FILETIME sitTime;
@@ -91,7 +73,7 @@ protected:
 	DWORD sitTimeTick;
 
 
-	SERVICE_INFO* serviceList;
+	std::unique_ptr<SERVICE_INFO[]> serviceList;
 
 protected:
 	void Clear();

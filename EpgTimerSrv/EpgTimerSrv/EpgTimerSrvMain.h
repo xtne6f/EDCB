@@ -87,6 +87,9 @@ private:
 	static int LuaGetReserveData(lua_State* L);
 	static int LuaGetRecFilePath(lua_State* L);
 	static int LuaGetRecFileInfo(lua_State* L);
+	static int LuaGetRecFileInfoBasic(lua_State* L);
+	static int LuaGetRecFileInfoProc(lua_State* L, bool getExtraInfo);
+	static int LuaChgProtectRecFileInfo(lua_State* L);
 	static int LuaDelRecFileInfo(lua_State* L);
 	static int LuaGetTunerReserveAll(lua_State* L);
 	static int LuaEnumRecPresetInfo(lua_State* L);
@@ -125,6 +128,7 @@ private:
 	DWORD tcpResponseTimeoutSec;
 	wstring tcpAccessControlList;
 	CHttpServer::SERVER_OPTIONS httpOptions;
+	string httpServerRandom;
 	bool enableSsdpServer;
 	vector<pair<int, wstring>> dmsPublicFileList;
 	int autoAddHour;

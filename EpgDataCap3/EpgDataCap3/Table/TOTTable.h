@@ -48,11 +48,8 @@ class CTOTTable : public CPSITable
 public:
 	SYSTEMTIME jst_time;
 	WORD descriptors_loop_length;
-	vector<AribDescriptor::CDescriptor*> descriptorList;
+	vector<AribDescriptor::CDescriptor> descriptorList;
 public:
-	CTOTTable(void);
-	~CTOTTable(void);
-
 	BOOL Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize );
 protected:
 	void Clear();

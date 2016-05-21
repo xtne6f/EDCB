@@ -109,35 +109,26 @@ CRC_32（CRC）：これは付録B で定義するデコーダにおいて、セクション全体を処理し
 class CNITTable : public CPSITable
 {
 public:
-	typedef struct _TS_INFO_DATA{
+	struct TS_INFO_DATA {
 		WORD transport_stream_id;
 		WORD original_network_id;
 		WORD transport_descriptors_length;
-		vector<AribDescriptor::CDescriptor*> descriptorList;
-		~_TS_INFO_DATA(void){
-			for( size_t i=0; i<descriptorList.size(); i++ ){
-				SAFE_DELETE(descriptorList[i]);
-			}
-			descriptorList.clear();
-		};
-	} TS_INFO_DATA;
+		vector<AribDescriptor::CDescriptor> descriptorList;
+	};
 	WORD network_id;
 	BYTE version_number;
 	BYTE current_next_indicator;
 	BYTE section_number;
 	BYTE last_section_number;
 	WORD network_descriptors_length;
-	vector<AribDescriptor::CDescriptor*> descriptorList;
+	vector<AribDescriptor::CDescriptor> descriptorList;
 	WORD transport_stream_loop_length;
-	vector<TS_INFO_DATA*> TSInfoList;
+	vector<TS_INFO_DATA> TSInfoList;
 
 public:
-	CNITTable(void);
-	~CNITTable(void);
-
 	BOOL Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize );
 protected:
 	void Clear();
 
-	BOOL SDDecode( BYTE* data, DWORD dataSize, vector<AribDescriptor::CDescriptor*>* descriptorList, DWORD* decodeReadSize );
+	BOOL SDDecode( BYTE* data, DWORD dataSize, vector<AribDescriptor::CDescriptor>* descriptorList, DWORD* decodeReadSize );
 };

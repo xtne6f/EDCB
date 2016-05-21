@@ -19,6 +19,7 @@ CNotifyManager::CNotifyManager(void)
 	this->notifyCount = 1;
 	this->notifyRemovePos = 0;
 	this->hwndNotify = NULL;
+	this->guiFlag = FALSE;
 }
 
 CNotifyManager::~CNotifyManager(void)
@@ -37,6 +38,7 @@ CNotifyManager::~CNotifyManager(void)
 		CloseHandle(this->notifyEvent);
 		this->notifyEvent = NULL;
 	}
+	for( size_t i = 0; i < this->registGUIList.size(); CloseHandle(this->registGUIList[i++].second) );
 
 	DeleteCriticalSection(&this->managerLock);
 }
@@ -45,8 +47,18 @@ void CNotifyManager::RegistGUI(DWORD processID)
 {
 	CBlockLock lock(&this->managerLock);
 
-	{
-		this->registGUIMap.insert(pair<DWORD,DWORD>(processID,processID));
+	for( size_t i = 0; i < this->registGUIList.size(); i++ ){
+		if( this->registGUIList[i].first == processID ){
+			if( WaitForSingleObject(this->registGUIList[i].second, 0) == WAIT_TIMEOUT ){
+				return;
+			}
+			UnRegistGUI(this->registGUIList[i].first);
+			break;
+		}
+	}
+	HANDLE hProcess = OpenProcess(SYNCHRONIZE, FALSE, processID);
+	if( hProcess ){
+		this->registGUIList.push_back(std::make_pair(processID, hProcess));
 		SetNotifySrvStatus(0xFFFFFFFF);
 	}
 }
@@ -55,24 +67,20 @@ void CNotifyManager::RegistTCP(const REGIST_TCP_INFO& info)
 {
 	CBlockLock lock(&this->managerLock);
 
-	{
-		wstring key = L"";
-		Format(key, L"%s:%d", info.ip.c_str(), info.port);
-
-		this->registTCPMap.insert(pair<wstring,REGIST_TCP_INFO>(key,info));
-		SetNotifySrvStatus(0xFFFFFFFF);
-	}
+	UnRegistTCP(info);
+	this->registTCPList.push_back(info);
+	SetNotifySrvStatus(0xFFFFFFFF);
 }
 
 void CNotifyManager::UnRegistGUI(DWORD processID)
 {
 	CBlockLock lock(&this->managerLock);
 
-	{
-		map<DWORD,DWORD>::iterator itr;
-		itr = this->registGUIMap.find(processID);
-		if( itr != this->registGUIMap.end() ){
-			this->registGUIMap.erase(itr);
+	for( size_t i = 0; i < this->registGUIList.size(); i++ ){
+		if( this->registGUIList[i].first == processID ){
+			CloseHandle(this->registGUIList[i].second);
+			this->registGUIList.erase(this->registGUIList.begin() + i);
+			break;
 		}
 	}
 }
@@ -81,14 +89,10 @@ void CNotifyManager::UnRegistTCP(const REGIST_TCP_INFO& info)
 {
 	CBlockLock lock(&this->managerLock);
 
-	{
-		wstring key = L"";
-		Format(key, L"%s:%d", info.ip.c_str(), info.port);
-
-		map<wstring,REGIST_TCP_INFO>::iterator itr;
-		itr = this->registTCPMap.find(key);
-		if( itr != this->registTCPMap.end() ){
-			this->registTCPMap.erase(itr);
+	for( size_t i = 0; i < this->registTCPList.size(); i++ ){
+		if( this->registTCPList[i].ip == info.ip && this->registTCPList[i].port == info.port ){
+			this->registTCPList.erase(this->registTCPList.begin() + i);
+			break;
 		}
 	}
 }
@@ -136,22 +140,24 @@ BOOL CNotifyManager::GetNotify(NOTIFY_SRV_INFO* info, DWORD targetCount)
 	}
 }
 
-void CNotifyManager::GetRegistGUI(map<DWORD, DWORD>* registGUI) const
+vector<DWORD> CNotifyManager::GetRegistGUI() const
 {
 	CBlockLock lock(&this->managerLock);
 
-	if( registGUI != NULL){
-		*registGUI = registGUIMap;
+	vector<DWORD> list;
+	for( size_t i = 0; i < this->registGUIList.size(); i++ ){
+		if( WaitForSingleObject(this->registGUIList[i].second, 0) == WAIT_TIMEOUT ){
+			list.push_back(this->registGUIList[i].first);
+		}
 	}
+	return list;
 }
 
-void CNotifyManager::GetRegistTCP(map<wstring, REGIST_TCP_INFO>* registTCP) const
+vector<REGIST_TCP_INFO> CNotifyManager::GetRegistTCP() const
 {
 	CBlockLock lock(&this->managerLock);
 
-	if( registTCP != NULL){
-		*registTCP = registTCPMap;
-	}
+	return this->registTCPList;
 }
 
 void CNotifyManager::AddNotify(DWORD status)
@@ -172,7 +178,7 @@ void CNotifyManager::AddNotify(DWORD status)
 		//同じものがあるときは追加しない
 		if( find == FALSE ){
 			this->notifyList.push_back(info);
-			_SendNotify();
+			SendNotify();
 		}
 	}
 }
@@ -188,7 +194,7 @@ void CNotifyManager::SetNotifySrvStatus(DWORD status)
 		info.param1 = this->srvStatus = (status == 0xFFFFFFFF ? this->srvStatus : status);
 
 		this->notifyList.push_back(info);
-		_SendNotify();
+		SendNotify();
 	}
 }
 
@@ -204,10 +210,10 @@ void CNotifyManager::AddNotifyMsg(DWORD notifyID, wstring msg)
 
 		this->notifyList.push_back(info);
 	}
-	_SendNotify();
+	SendNotify();
 }
 
-void CNotifyManager::_SendNotify()
+void CNotifyManager::SendNotify()
 {
 	if( this->notifyThread == NULL ){
 		this->notifyThread = (HANDLE)_beginthreadex(NULL, 0, SendNotifyThread, this, 0, NULL);
@@ -219,13 +225,12 @@ UINT WINAPI CNotifyManager::SendNotifyThread(LPVOID param)
 {
 	CNotifyManager* sys = (CNotifyManager*)param;
 	CSendCtrlCmd sendCtrl;
-	map<DWORD,DWORD>::iterator itr;
 	BOOL wait1Sec = FALSE;
 	BOOL waitNotify = FALSE;
 	DWORD waitNotifyTick;
 	while(1){
-		map<DWORD, DWORD> registGUI;
-		map<wstring, REGIST_TCP_INFO> registTCP;
+		vector<DWORD> registGUI;
+		vector<REGIST_TCP_INFO> registTCP;
 		NOTIFY_SRV_INFO notifyInfo;
 
 		if( wait1Sec != FALSE ){
@@ -242,8 +247,16 @@ UINT WINAPI CNotifyManager::SendNotifyThread(LPVOID param)
 			if( sys->notifyList.empty() ){
 				continue;
 			}
-			registGUI = sys->registGUIMap;
-			registTCP = sys->registTCPMap;
+			registGUI = sys->GetRegistGUI();
+			for( size_t i = 0; i < sys->registGUIList.size(); ){
+				if( std::find(registGUI.begin(), registGUI.end(), sys->registGUIList[i].first) == registGUI.end() ){
+					//終了したGUIを削除
+					sys->UnRegistGUI(sys->registGUIList[i].first);
+				}else{
+					i++;
+				}
+			}
+			registTCP = sys->GetRegistTCP();
 			if( waitNotify != FALSE && GetTickCount() - waitNotifyTick < 5000 ){
 				vector<NOTIFY_SRV_INFO>::const_iterator itrNotify;
 				for( itrNotify = sys->notifyList.begin(); itrNotify != sys->notifyList.end(); itrNotify++ ){
@@ -289,15 +302,14 @@ UINT WINAPI CNotifyManager::SendNotifyThread(LPVOID param)
 			}
 		}
 
-		vector<DWORD> errID;
-		for( itr = registGUI.begin(); itr != registGUI.end(); itr++){
+		for( size_t i = 0; i < registGUI.size(); i++ ){
 			if( sys->notifyStopFlag != FALSE ){
 				//キャンセルされた
 				break;
 			}
 			{
 				sendCtrl.SetSendMode(FALSE);
-				sendCtrl.SetPipeSetting(CMD2_GUI_CTRL_WAIT_CONNECT, CMD2_GUI_CTRL_PIPE, itr->first);
+				sendCtrl.SetPipeSetting(CMD2_GUI_CTRL_WAIT_CONNECT, CMD2_GUI_CTRL_PIPE, registGUI[i]);
 				sendCtrl.SetConnectTimeOut(10*1000);
 				DWORD err = sendCtrl.SendGUINotifyInfo2(notifyInfo);
 				if( err == CMD_NON_SUPPORT ){
@@ -318,22 +330,17 @@ UINT WINAPI CNotifyManager::SendNotifyThread(LPVOID param)
 						break;
 					}
 				}
-				if( err != CMD_SUCCESS && err != CMD_NON_SUPPORT){
-					errID.push_back(itr->first);
-				}
 			}
 		}
 
-		map<wstring, REGIST_TCP_INFO>::iterator itrTCP;
-		vector<wstring> errIP;
-		for( itrTCP = registTCP.begin(); itrTCP != registTCP.end(); itrTCP++){
+		for( size_t i = 0; i < registTCP.size(); i++ ){
 			if( sys->notifyStopFlag != FALSE ){
 				//キャンセルされた
 				break;
 			}
 
 			sendCtrl.SetSendMode(TRUE);
-			sendCtrl.SetNWSetting(itrTCP->second.ip, itrTCP->second.port);
+			sendCtrl.SetNWSetting(registTCP[i].ip, registTCP[i].port);
 			sendCtrl.SetConnectTimeOut(10*1000);
 
 			DWORD err = sendCtrl.SendGUINotifyInfo2(notifyInfo);
@@ -356,24 +363,9 @@ UINT WINAPI CNotifyManager::SendNotifyThread(LPVOID param)
 				}
 			}
 			if( err != CMD_SUCCESS && err != CMD_NON_SUPPORT){
-				errIP.push_back(itrTCP->first);
-			}
-		}
-
-		//送信できなかったもの削除
-		CBlockLock lock(&sys->managerLock);
-
-		for( size_t i=0; i<errID.size(); i++ ){
-			itr = sys->registGUIMap.find(errID[i]);
-			if( itr != sys->registGUIMap.end() ){
-				sys->registGUIMap.erase(itr);
-			}
-		}
-		for( size_t i=0; i<errIP.size(); i++ ){
-			itrTCP = sys->registTCPMap.find(errIP[i]);
-			if( itrTCP != sys->registTCPMap.end() ){
-				_OutputDebugString(L"notifyErr %s:%d", itrTCP->second.ip.c_str(), itrTCP->second.port);
-				sys->registTCPMap.erase(itrTCP);
+				//送信できなかったもの削除
+				_OutputDebugString(L"notifyErr %s:%d\r\n", registTCP[i].ip.c_str(), registTCP[i].port);
+				sys->UnRegistTCP(registTCP[i]);
 			}
 		}
 	}

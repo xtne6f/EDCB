@@ -9,22 +9,9 @@ CDecodeUtil::CDecodeUtil(void)
 {
 	this->epgDBUtil = NULL;
 
-	this->patInfo = NULL;
-	this->nitActualInfo = NULL;
-	this->sdtActualInfo = NULL;
-	this->bitInfo = NULL;
-	this->sitInfo = NULL;
 	this->totTime.dwHighDateTime = 0;
 	this->tdtTime.dwHighDateTime = 0;
 	this->sitTime.dwHighDateTime = 0;
-
-	this->serviceList = NULL;
-}
-
-CDecodeUtil::~CDecodeUtil(void)
-{
-	Clear();
-	SAFE_DELETE_ARRAY(this->serviceList);
 }
 
 void CDecodeUtil::SetEpgDB(CEpgDBUtil* epgDBUtil)
@@ -36,13 +23,13 @@ void CDecodeUtil::Clear()
 {
 	this->buffUtilMap.clear();
 
-	SAFE_DELETE(this->patInfo);
+	this->patInfo.reset();
 
-	SAFE_DELETE(this->nitActualInfo);
-	SAFE_DELETE(this->sdtActualInfo);
+	this->nitActualInfo.nitSection.clear();
+	this->sdtActualInfo.sdtSection.clear();
 
-	SAFE_DELETE(this->bitInfo);
-	SAFE_DELETE(this->sitInfo);
+	this->bitInfo.reset();
+	this->sitInfo.reset();
 
 	this->totTime.dwHighDateTime = 0;
 	this->tdtTime.dwHighDateTime = 0;
@@ -64,13 +51,13 @@ void CDecodeUtil::ChangeTSIDClear(WORD noClearPid)
 {
 	ClearBuff(noClearPid);
 
-	SAFE_DELETE(this->patInfo);
+	this->patInfo.reset();
 
-	SAFE_DELETE(this->nitActualInfo);
-	SAFE_DELETE(this->sdtActualInfo);
+	this->nitActualInfo.nitSection.clear();
+	this->sdtActualInfo.sdtSection.clear();
 
-	SAFE_DELETE(this->bitInfo);
-	SAFE_DELETE(this->sitInfo);
+	this->bitInfo.reset();
+	this->sitInfo.reset();
 
 	this->totTime.dwHighDateTime = 0;
 	this->tdtTime.dwHighDateTime = 0;
@@ -108,8 +95,9 @@ void CDecodeUtil::AddTSData(BYTE* data)
 						continue;
 					}
 					CPSITable* table;
+					CTableUtil::t_type type = this->tableUtil.Decode(section, sectionSize, &table);
 					BOOL ret;
-					switch( CTableUtil::Decode(section, sectionSize, &table) ){
+					switch( type ){
 					case CTableUtil::TYPE_PAT:
 						ret = CheckPAT(tsPacket.PID, static_cast<CPATTable*>(table));
 						break;
@@ -145,7 +133,8 @@ void CDecodeUtil::AddTSData(BYTE* data)
 						break;
 					}
 					if( ret == FALSE ){
-						delete table;
+						//奪われなかったので返す
+						this->tableUtil.Putback(type, table);
 					}
 				}
 			}
@@ -161,16 +150,15 @@ BOOL CDecodeUtil::CheckPAT(WORD PID, CPATTable* pat)
 
 	if( this->patInfo == NULL ){
 		//初回
-		this->patInfo = pat;
+		this->patInfo.reset(pat);
 	}else{
 		if( this->patInfo->transport_stream_id != pat->transport_stream_id ){
 			//TSID変わったのでチャンネル変わった
 			ChangeTSIDClear(PID);
-			this->patInfo = pat;
+			this->patInfo.reset(pat);
 		}else if(this->patInfo->version_number != pat->version_number){
 			//バージョン変わった
-			SAFE_DELETE(this->patInfo);
-			this->patInfo = pat;
+			this->patInfo.reset(pat);
 		}else{
 			//変更なし
 			return FALSE;
@@ -191,63 +179,43 @@ BOOL CDecodeUtil::CheckNIT(WORD PID, CNITTable* nit)
 
 	if( nit->table_id == 0x40 ){
 		//自ネットワーク
-		if( this->nitActualInfo == NULL ){
+		if( this->nitActualInfo.nitSection.empty() ){
 			//初回
-			this->nitActualInfo = new NIT_SECTION_INFO;
-			this->nitActualInfo->network_id = nit->network_id;
-			this->nitActualInfo->version_number = nit->version_number;
-			this->nitActualInfo->last_section_number = nit->last_section_number;
-			this->nitActualInfo->nitSection.insert(pair<BYTE, CNITTable*>(nit->section_number, nit));
+			this->nitActualInfo.last_section_number = nit->last_section_number;
+			this->nitActualInfo.nitSection[nit->section_number].reset(nit);
 		}else{
-			if( this->nitActualInfo->network_id != nit->network_id ){
+			if( this->nitActualInfo.nitSection.begin()->second->network_id != nit->network_id ){
 				//NID変わったのでネットワーク変わった
 				ChangeTSIDClear(PID);
-				SAFE_DELETE(this->nitActualInfo);
-				this->nitActualInfo = new NIT_SECTION_INFO;
-				this->nitActualInfo->network_id = nit->network_id;
-				this->nitActualInfo->version_number = nit->version_number;
-				this->nitActualInfo->last_section_number = nit->last_section_number;
-				this->nitActualInfo->nitSection.insert(pair<BYTE, CNITTable*>(nit->section_number, nit));
-			}else if(this->nitActualInfo->version_number != nit->version_number){
+				this->nitActualInfo.last_section_number = nit->last_section_number;
+				this->nitActualInfo.nitSection[nit->section_number].reset(nit);
+			}else if(this->nitActualInfo.nitSection.begin()->second->version_number != nit->version_number){
 				//バージョン変わった
-				SAFE_DELETE(this->nitActualInfo);
-				this->nitActualInfo = new NIT_SECTION_INFO;
-				this->nitActualInfo->network_id = nit->network_id;
-				this->nitActualInfo->version_number = nit->version_number;
-				this->nitActualInfo->last_section_number = nit->last_section_number;
-				this->nitActualInfo->nitSection.insert(pair<BYTE, CNITTable*>(nit->section_number, nit));
+				this->nitActualInfo.nitSection.clear();
+				this->nitActualInfo.last_section_number = nit->last_section_number;
+				this->nitActualInfo.nitSection[nit->section_number].reset(nit);
 			}else{
-				map<BYTE, CNITTable*>::iterator itr;
-				itr = this->nitActualInfo->nitSection.find(0);
-				if( itr != this->nitActualInfo->nitSection.end() ){
+				map<BYTE, std::unique_ptr<const CNITTable>>::iterator itr;
+				itr = this->nitActualInfo.nitSection.find(0);
+				if( itr != this->nitActualInfo.nitSection.end() ){
 					if( (itr->second->TSInfoList.size() != 0 && nit->TSInfoList.size() != 0) &&
 						(itr->first == nit->section_number)
 						){
-						if( itr->second->TSInfoList[0]->original_network_id != nit->TSInfoList[0]->original_network_id ){
+						if( itr->second->TSInfoList[0].original_network_id != nit->TSInfoList[0].original_network_id ){
 							//ONID変わったのでネットワーク変わった
 							ChangeTSIDClear(PID);
-							SAFE_DELETE(this->nitActualInfo);
-							this->nitActualInfo = new NIT_SECTION_INFO;
-							this->nitActualInfo->network_id = nit->network_id;
-							this->nitActualInfo->version_number = nit->version_number;
-							this->nitActualInfo->last_section_number = nit->last_section_number;
-							this->nitActualInfo->nitSection.insert(pair<BYTE, CNITTable*>(nit->section_number, nit));
+							this->nitActualInfo.last_section_number = nit->last_section_number;
+							this->nitActualInfo.nitSection[nit->section_number].reset(nit);
 						}else{
-							if( itr->second->TSInfoList[0]->transport_stream_id != nit->TSInfoList[0]->transport_stream_id ){
+							if( itr->second->TSInfoList[0].transport_stream_id != nit->TSInfoList[0].transport_stream_id ){
 								//TSID変わったのでネットワーク変わった
 								ChangeTSIDClear(PID);
-								SAFE_DELETE(this->nitActualInfo);
-								this->nitActualInfo = new NIT_SECTION_INFO;
-								this->nitActualInfo->network_id = nit->network_id;
-								this->nitActualInfo->version_number = nit->version_number;
-								this->nitActualInfo->last_section_number = nit->last_section_number;
-								this->nitActualInfo->nitSection.insert(pair<BYTE, CNITTable*>(nit->section_number, nit));
+								this->nitActualInfo.last_section_number = nit->last_section_number;
+								this->nitActualInfo.nitSection[nit->section_number].reset(nit);
 							}else{
 								//変化なし
-								map<BYTE, CNITTable*>::iterator itr;
-								itr = this->nitActualInfo->nitSection.find(nit->section_number);
-								if( itr == this->nitActualInfo->nitSection.end() ){
-									this->nitActualInfo->nitSection.insert(pair<BYTE, CNITTable*>(nit->section_number, nit));
+								if( this->nitActualInfo.nitSection.count(nit->section_number) == 0 ){
+									this->nitActualInfo.nitSection[nit->section_number].reset(nit);
 									return TRUE;
 								}
 								return FALSE;
@@ -255,20 +223,16 @@ BOOL CDecodeUtil::CheckNIT(WORD PID, CNITTable* nit)
 						}
 					}else{
 						//変化なし
-						map<BYTE, CNITTable*>::iterator itr;
-						itr = this->nitActualInfo->nitSection.find(nit->section_number);
-						if( itr == this->nitActualInfo->nitSection.end() ){
-							this->nitActualInfo->nitSection.insert(pair<BYTE, CNITTable*>(nit->section_number, nit));
+						if( this->nitActualInfo.nitSection.count(nit->section_number) == 0 ){
+							this->nitActualInfo.nitSection[nit->section_number].reset(nit);
 							return TRUE;
 						}
 						return FALSE;
 					}
 				}else{
 					//変化なし
-					map<BYTE, CNITTable*>::iterator itr;
-					itr = this->nitActualInfo->nitSection.find(nit->section_number);
-					if( itr == this->nitActualInfo->nitSection.end() ){
-						this->nitActualInfo->nitSection.insert(pair<BYTE, CNITTable*>(nit->section_number, nit));
+					if( this->nitActualInfo.nitSection.count(nit->section_number) == 0 ){
+						this->nitActualInfo.nitSection[nit->section_number].reset(nit);
 						return TRUE;
 					}
 					return FALSE;
@@ -328,50 +292,30 @@ BOOL CDecodeUtil::CheckSDT(WORD PID, CSDTTable* sdt)
 
 	if( sdt->table_id == 0x42 ){
 		//自ストリーム
-		if( this->sdtActualInfo == NULL ){
+		if( this->sdtActualInfo.sdtSection.empty() ){
 			//初回
-			this->sdtActualInfo = new SDT_SECTION_INFO;
-			this->sdtActualInfo->original_network_id = sdt->original_network_id;
-			this->sdtActualInfo->transport_stream_id = sdt->transport_stream_id;
-			this->sdtActualInfo->version_number = sdt->version_number;
-			this->sdtActualInfo->last_section_number = sdt->last_section_number;
-			this->sdtActualInfo->sdtSection.insert(pair<BYTE, CSDTTable*>(sdt->section_number, sdt));
+			this->sdtActualInfo.last_section_number = sdt->last_section_number;
+			this->sdtActualInfo.sdtSection[sdt->section_number].reset(sdt);
 		}else{
-			if( this->sdtActualInfo->original_network_id != sdt->original_network_id ){
+			if( this->sdtActualInfo.sdtSection.begin()->second->original_network_id != sdt->original_network_id ){
 				//ONID変わったのでネットワーク変わった
 				ChangeTSIDClear(PID);
-				SAFE_DELETE(this->sdtActualInfo);
-				this->sdtActualInfo = new SDT_SECTION_INFO;
-				this->sdtActualInfo->original_network_id = sdt->original_network_id;
-				this->sdtActualInfo->transport_stream_id = sdt->transport_stream_id;
-				this->sdtActualInfo->version_number = sdt->version_number;
-				this->sdtActualInfo->last_section_number = sdt->last_section_number;
-				this->sdtActualInfo->sdtSection.insert(pair<BYTE, CSDTTable*>(sdt->section_number, sdt));
-			}else if( this->sdtActualInfo->transport_stream_id != sdt->transport_stream_id ){
+				this->sdtActualInfo.last_section_number = sdt->last_section_number;
+				this->sdtActualInfo.sdtSection[sdt->section_number].reset(sdt);
+			}else if( this->sdtActualInfo.sdtSection.begin()->second->transport_stream_id != sdt->transport_stream_id ){
 				//TSID変わったのでチャンネル変わった
 				ChangeTSIDClear(PID);
-				SAFE_DELETE(this->sdtActualInfo);
-				this->sdtActualInfo = new SDT_SECTION_INFO;
-				this->sdtActualInfo->original_network_id = sdt->original_network_id;
-				this->sdtActualInfo->transport_stream_id = sdt->transport_stream_id;
-				this->sdtActualInfo->version_number = sdt->version_number;
-				this->sdtActualInfo->last_section_number = sdt->last_section_number;
-				this->sdtActualInfo->sdtSection.insert(pair<BYTE, CSDTTable*>(sdt->section_number, sdt));
-			}else if( this->sdtActualInfo->version_number != sdt->version_number ){
+				this->sdtActualInfo.last_section_number = sdt->last_section_number;
+				this->sdtActualInfo.sdtSection[sdt->section_number].reset(sdt);
+			}else if( this->sdtActualInfo.sdtSection.begin()->second->version_number != sdt->version_number ){
 				//バージョン変わった
-				SAFE_DELETE(this->sdtActualInfo);
-				this->sdtActualInfo = new SDT_SECTION_INFO;
-				this->sdtActualInfo->original_network_id = sdt->original_network_id;
-				this->sdtActualInfo->transport_stream_id = sdt->transport_stream_id;
-				this->sdtActualInfo->version_number = sdt->version_number;
-				this->sdtActualInfo->last_section_number = sdt->last_section_number;
-				this->sdtActualInfo->sdtSection.insert(pair<BYTE, CSDTTable*>(sdt->section_number, sdt));
+				this->sdtActualInfo.sdtSection.clear();
+				this->sdtActualInfo.last_section_number = sdt->last_section_number;
+				this->sdtActualInfo.sdtSection[sdt->section_number].reset(sdt);
 			}else{
 				//変化なし
-				map<BYTE, CSDTTable*>::iterator itr;
-				itr = this->sdtActualInfo->sdtSection.find(sdt->section_number);
-				if( itr == this->sdtActualInfo->sdtSection.end() ){
-					this->sdtActualInfo->sdtSection.insert(pair<BYTE, CSDTTable*>(sdt->section_number, sdt));
+				if( this->sdtActualInfo.sdtSection.count(sdt->section_number) == 0 ){
+					this->sdtActualInfo.sdtSection[sdt->section_number].reset(sdt);
 					return TRUE;
 				}
 				return FALSE;
@@ -483,16 +427,15 @@ BOOL CDecodeUtil::CheckBIT(WORD PID, CBITTable* bit)
 
 	if( this->bitInfo == NULL ){
 		//初回
-		this->bitInfo = bit;
+		this->bitInfo.reset(bit);
 	}else{
 		if( this->bitInfo->original_network_id != bit->original_network_id ){
 			//ONID変わったのでネットワーク変わった
 			ChangeTSIDClear(PID);
-			this->bitInfo = bit;
+			this->bitInfo.reset(bit);
 		}else if( this->bitInfo->version_number != bit->version_number ){
 			//バージョン変わった
-			SAFE_DELETE(this->bitInfo);
-			this->bitInfo = bit;
+			this->bitInfo.reset(bit);
 		}else{
 			//変化なし
 			return FALSE;
@@ -511,10 +454,10 @@ BOOL CDecodeUtil::CheckSIT(WORD PID, CSITTable* sit)
 	//時間計算
 	if( this->totTime.dwHighDateTime == 0 && this->tdtTime.dwHighDateTime == 0 ){
 		for( size_t i=0; i<sit->descriptorList.size(); i++ ){
-			if( sit->descriptorList[i]->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::partialTS_time_descriptor ){
-				if( sit->descriptorList[i]->GetNumber(AribDescriptor::jst_time_flag) == 1 ){
+			if( sit->descriptorList[i].GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::partialTS_time_descriptor ){
+				if( sit->descriptorList[i].GetNumber(AribDescriptor::jst_time_flag) == 1 ){
 					DWORD timeBytesSize;
-					const BYTE* timeBytes = sit->descriptorList[i]->GetBinary(AribDescriptor::jst_time, &timeBytesSize);
+					const BYTE* timeBytes = sit->descriptorList[i].GetBinary(AribDescriptor::jst_time, &timeBytesSize);
 					if( timeBytes != NULL && timeBytesSize >= 5 ){
 						DWORD mjd = timeBytes[0] << 8 | timeBytes[1];
 						SYSTEMTIME time;
@@ -544,12 +487,11 @@ BOOL CDecodeUtil::CheckSIT(WORD PID, CSITTable* sit)
 
 	if( this->sitInfo == NULL ){
 		//初回
-		this->sitInfo = sit;
+		this->sitInfo.reset(sit);
 	}else{
 		if( this->sitInfo->version_number != sit->version_number ){
 			//バージョン変わった
-			SAFE_DELETE(this->sitInfo);
-			this->sitInfo = sit;
+			this->sitInfo.reset(sit);
 		}else{
 			//変化なし
 			return FALSE;
@@ -567,9 +509,9 @@ BOOL CDecodeUtil::GetTSID(
 	WORD* transportStreamID
 	)
 {
-	if( sdtActualInfo != NULL ){
-		*originalNetworkID = sdtActualInfo->original_network_id;
-		*transportStreamID = sdtActualInfo->transport_stream_id;
+	if( sdtActualInfo.sdtSection.empty() == false ){
+		*originalNetworkID = sdtActualInfo.sdtSection.begin()->second->original_network_id;
+		*transportStreamID = sdtActualInfo.sdtSection.begin()->second->transport_stream_id;
 		return TRUE;
 	}else if( this->sitInfo != NULL && this->patInfo != NULL ){
 		//TSID
@@ -577,8 +519,8 @@ BOOL CDecodeUtil::GetTSID(
 		//ONID
 		WORD ONID = 0xFFFF;
 		for( size_t i=0; i<this->sitInfo->descriptorList.size(); i++ ){
-			if( this->sitInfo->descriptorList[i]->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::network_identification_descriptor ){
-				*originalNetworkID = (WORD)this->sitInfo->descriptorList[i]->GetNumber(AribDescriptor::network_id);
+			if( this->sitInfo->descriptorList[i].GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::network_identification_descriptor ){
+				*originalNetworkID = (WORD)this->sitInfo->descriptorList[i].GetNumber(AribDescriptor::network_id);
 				return TRUE;
 			}
 		}
@@ -595,23 +537,21 @@ BOOL CDecodeUtil::GetServiceListActual(
 	SERVICE_INFO** serviceList
 	)
 {
-	SAFE_DELETE_ARRAY(this->serviceList);
-
-	if( this->nitActualInfo == NULL || this->sdtActualInfo == NULL ){
+	if( this->nitActualInfo.nitSection.empty() || this->sdtActualInfo.sdtSection.empty() ){
 		return GetServiceListSIT(serviceListSize, serviceList);
 	}else{
-		if( this->nitActualInfo->last_section_number+1 != this->nitActualInfo->nitSection.size() ||
-			this->sdtActualInfo->last_section_number+1 != this->sdtActualInfo->sdtSection.size() ){
+		if( this->nitActualInfo.last_section_number+1 != this->nitActualInfo.nitSection.size() ||
+			this->sdtActualInfo.last_section_number+1 != this->sdtActualInfo.sdtSection.size() ){
 			return FALSE;
 		}
 	}
 	*serviceListSize = 0;
 
-	map<BYTE, CSDTTable*>::iterator itrSdt;
-	for(itrSdt = this->sdtActualInfo->sdtSection.begin(); itrSdt != this->sdtActualInfo->sdtSection.end(); itrSdt++){
+	map<BYTE, std::unique_ptr<const CSDTTable>>::iterator itrSdt;
+	for(itrSdt = this->sdtActualInfo.sdtSection.begin(); itrSdt != this->sdtActualInfo.sdtSection.end(); itrSdt++){
 		*serviceListSize += (DWORD)itrSdt->second->serviceInfoList.size();
 	}
-	this->serviceList = new SERVICE_INFO[*serviceListSize];
+	this->serviceList.reset(new SERVICE_INFO[*serviceListSize]);
 
 
 	wstring network_nameW = L"";
@@ -619,11 +559,11 @@ BOOL CDecodeUtil::GetServiceListActual(
 	BYTE remote_control_key_id = 0;
 	vector<WORD> partialServiceList;
 
-	map<BYTE, CNITTable*>::iterator itrNit;
-	for( itrNit = this->nitActualInfo->nitSection.begin(); itrNit != this->nitActualInfo->nitSection.end(); itrNit++ ){
+	map<BYTE, std::unique_ptr<const CNITTable>>::iterator itrNit;
+	for( itrNit = this->nitActualInfo.nitSection.begin(); itrNit != this->nitActualInfo.nitSection.end(); itrNit++ ){
 		for( size_t i=0; i<itrNit->second->descriptorList.size(); i++ ){
-			if( itrNit->second->descriptorList[i]->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::network_name_descriptor ){
-				AribDescriptor::CDescriptor* networkName = itrNit->second->descriptorList[i];
+			if( itrNit->second->descriptorList[i].GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::network_name_descriptor ){
+				const AribDescriptor::CDescriptor* networkName = &itrNit->second->descriptorList[i];
 				DWORD srcSize;
 				const char* src = networkName->GetStringOrEmpty(AribDescriptor::d_char, &srcSize);
 				if( srcSize > 0 ){
@@ -635,9 +575,9 @@ BOOL CDecodeUtil::GetServiceListActual(
 			}
 		}
 		for( size_t i=0; i<itrNit->second->TSInfoList.size(); i++ ){
-			for( size_t j=0; j<itrNit->second->TSInfoList[i]->descriptorList.size(); j++ ){
-				if( itrNit->second->TSInfoList[i]->descriptorList[j]->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::ts_information_descriptor ){
-					AribDescriptor::CDescriptor* TSInfo = itrNit->second->TSInfoList[i]->descriptorList[j];
+			for( size_t j=0; j<itrNit->second->TSInfoList[i].descriptorList.size(); j++ ){
+				if( itrNit->second->TSInfoList[i].descriptorList[j].GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::ts_information_descriptor ){
+					const AribDescriptor::CDescriptor* TSInfo = &itrNit->second->TSInfoList[i].descriptorList[j];
 					DWORD srcSize;
 					const char* src = TSInfo->GetStringOrEmpty(AribDescriptor::ts_name_char, &srcSize);
 					if( srcSize > 0 ){
@@ -648,12 +588,12 @@ BOOL CDecodeUtil::GetServiceListActual(
 					}
 					remote_control_key_id = (BYTE)TSInfo->GetNumber(AribDescriptor::remote_control_key_id);
 				}
-				if( itrNit->second->TSInfoList[i]->descriptorList[j]->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::partial_reception_descriptor ){
+				if( itrNit->second->TSInfoList[i].descriptorList[j].GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::partial_reception_descriptor ){
 					partialServiceList.clear();
 					AribDescriptor::CDescriptor::CLoopPointer lp;
-					if( itrNit->second->TSInfoList[i]->descriptorList[j]->EnterLoop(lp) ){
-						for( DWORD k=0; itrNit->second->TSInfoList[i]->descriptorList[j]->SetLoopIndex(lp, k); k++ ){
-							partialServiceList.push_back((WORD)itrNit->second->TSInfoList[i]->descriptorList[j]->GetNumber(AribDescriptor::service_id, lp));
+					if( itrNit->second->TSInfoList[i].descriptorList[j].EnterLoop(lp) ){
+						for( DWORD k=0; itrNit->second->TSInfoList[i].descriptorList[j].SetLoopIndex(lp, k); k++ ){
+							partialServiceList.push_back((WORD)itrNit->second->TSInfoList[i].descriptorList[j].GetNumber(AribDescriptor::service_id, lp));
 						}
 					}
 				}
@@ -662,16 +602,16 @@ BOOL CDecodeUtil::GetServiceListActual(
 	}
 
 	DWORD count = 0;
-	for(itrSdt = this->sdtActualInfo->sdtSection.begin(); itrSdt != this->sdtActualInfo->sdtSection.end(); itrSdt++){
+	for(itrSdt = this->sdtActualInfo.sdtSection.begin(); itrSdt != this->sdtActualInfo.sdtSection.end(); itrSdt++){
 		for( size_t i=0; i<itrSdt->second->serviceInfoList.size(); i++ ){
 			this->serviceList[count].original_network_id = itrSdt->second->original_network_id;
 			this->serviceList[count].transport_stream_id = itrSdt->second->transport_stream_id;
-			this->serviceList[count].service_id = itrSdt->second->serviceInfoList[i]->service_id;
+			this->serviceList[count].service_id = itrSdt->second->serviceInfoList[i].service_id;
 			this->serviceList[count].extInfo = new SERVICE_EXT_INFO;
 
-			for( size_t j=0; j<itrSdt->second->serviceInfoList[i]->descriptorList.size(); j++ ){
-				if( itrSdt->second->serviceInfoList[i]->descriptorList[j]->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::service_descriptor ){
-					AribDescriptor::CDescriptor* service = itrSdt->second->serviceInfoList[i]->descriptorList[j];
+			for( size_t j=0; j<itrSdt->second->serviceInfoList[i].descriptorList.size(); j++ ){
+				if( itrSdt->second->serviceInfoList[i].descriptorList[j].GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::service_descriptor ){
+					const AribDescriptor::CDescriptor* service = &itrSdt->second->serviceInfoList[i].descriptorList[j];
 					CARIB8CharDecode arib;
 					string service_provider_name = "";
 					string service_name = "";
@@ -723,7 +663,7 @@ BOOL CDecodeUtil::GetServiceListActual(
 		}
 	}
 
-	*serviceList = this->serviceList;
+	*serviceList = this->serviceList.get();
 
 
 	return TRUE;
@@ -742,13 +682,11 @@ BOOL CDecodeUtil::GetServiceListSIT(
 		return FALSE;
 	}
 
-	SAFE_DELETE_ARRAY(this->serviceList);
-
 	//ONID
 	WORD ONID = 0xFFFF;
 	for( size_t i=0; i<this->sitInfo->descriptorList.size(); i++ ){
-		if( this->sitInfo->descriptorList[i]->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::network_identification_descriptor ){
-			ONID = (WORD)this->sitInfo->descriptorList[i]->GetNumber(AribDescriptor::network_id);
+		if( this->sitInfo->descriptorList[i].GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::network_identification_descriptor ){
+			ONID = (WORD)this->sitInfo->descriptorList[i].GetNumber(AribDescriptor::network_id);
 		}
 	}
 
@@ -757,7 +695,7 @@ BOOL CDecodeUtil::GetServiceListSIT(
 	TSID = this->patInfo->transport_stream_id;
 
 	*serviceListSize = (DWORD)this->sitInfo->serviceLoopList.size();
-	this->serviceList = new SERVICE_INFO[*serviceListSize];
+	this->serviceList.reset(new SERVICE_INFO[*serviceListSize]);
 
 	wstring network_nameW = L"";
 	wstring ts_nameW = L"";
@@ -767,12 +705,12 @@ BOOL CDecodeUtil::GetServiceListSIT(
 	for( DWORD i=0; i<*serviceListSize; i++ ){
 		this->serviceList[i].original_network_id = ONID;
 		this->serviceList[i].transport_stream_id = TSID;
-		this->serviceList[i].service_id = this->sitInfo->serviceLoopList[i]->service_id;
+		this->serviceList[i].service_id = this->sitInfo->serviceLoopList[i].service_id;
 		this->serviceList[i].extInfo = new SERVICE_EXT_INFO;
 
-		for( size_t j=0; j<this->sitInfo->serviceLoopList[i]->descriptorList.size(); j++ ){
-			if( this->sitInfo->serviceLoopList[i]->descriptorList[j]->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::service_descriptor ){
-				AribDescriptor::CDescriptor* service = this->sitInfo->serviceLoopList[i]->descriptorList[j];
+		for( size_t j=0; j<this->sitInfo->serviceLoopList[i].descriptorList.size(); j++ ){
+			if( this->sitInfo->serviceLoopList[i].descriptorList[j].GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::service_descriptor ){
+				const AribDescriptor::CDescriptor* service = &this->sitInfo->serviceLoopList[i].descriptorList[j];
 				CARIB8CharDecode arib;
 				string service_provider_name = "";
 				string service_name = "";
@@ -817,7 +755,7 @@ BOOL CDecodeUtil::GetServiceListSIT(
 	}
 
 
-	*serviceList = this->serviceList;
+	*serviceList = this->serviceList.get();
 
 	return TRUE;
 }

@@ -47,8 +47,5 @@ public:
 	map<WORD, PMT_DATA> pmtMap;	//ÉLÅ[program_number(ServiceID)
 
 public:
-	CPATTable(void);
-	~CPATTable(void);
-
 	BOOL Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize );
 };

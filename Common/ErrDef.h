@@ -20,17 +20,6 @@
 #define ERR_FIND_TUNER	42			//指定BonDriverの検索に失敗
 #define ERR_LOAD_EPG	43			//EpgDataCap.dllのロードに失敗
 
-#define ERR_NW_ALREADY_SESSION	50	//セッションオープン済み
-#define ERR_NW_NO_SESSION		51	//セッション未オープン
-#define ERR_NW_OPEN_SESSION		52	//セッションオープン失敗
-#define ERR_NW_OPEN_CONNECT		53	//コネクションオープン失敗
-#define ERR_NW_OPEN_REQUEST		54	//リクエストオープン失敗
-#define ERR_NW_PROXY_LOGIN		55	//Proxy認証失敗
-#define ERR_NW_OPEN_FILE		56	//ファイルにアクセスできなかった
-#define ERR_NW_SEND_REQUEST		57	//リクエスト送信で失敗
-#define ERR_NW_FALSE			58	//ネットワーク処理でエラー
-#define ERR_NW_FILE_OPEN		59	//ファイルにアクセスできない
-
 #define NO_ERR_EPG_ALL		100		//EPG情報貯まった BasicとExtend両方
 #define NO_ERR_EPG_BASIC	101		//EPG情報貯まった Basicのみ
 #define NO_ERR_EPG_EXTENDED	102		//EPG情報貯まった Extendのみ

@@ -1,4 +1,4 @@
-dofile(mg.document_root..'\\util.lua')
+dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
 
 ct=[=[
 <!doctype html><html lang="ja">
@@ -23,6 +23,8 @@ if aa.dataID==0 then
     freeCAFlag=0,
     chkRecEnd=false,
     chkRecDay=6,
+    chkDurationMin=0,
+    chkDurationMax=0,
     contentList={},
     dateList={},
     serviceList={}
@@ -39,6 +41,7 @@ end
 if aa.searchInfo then
   si=aa.searchInfo
   ct=ct..'<hr>検索条件<hr>\n<form method="POST" action="autoaddepgaddchgkey.html?id='..aa.dataID..'">\n'
+    ..'<input type="hidden" name="ctok" value="'..CsrfToken()..'">\n'
     ..'検索キーワード<input type="text" name="andKey" value="'..si.andKey..'" size="25"><br>\n'
     ..'NOTキーワード<input type="text" name="notKey" value="'..si.notKey..'" size="25"><br>\n'
     ..'<input type="checkbox" name="regExpFlag" value="1"'..(si.regExpFlag and ' checked="checked"' or '')..'>正規表現\n'
@@ -103,6 +106,9 @@ if aa.searchInfo then
     ..'<option value="1"'..(si.freeCAFlag==1 and ' selected="selected"' or '')..'>無料番組を対象とする'
     ..'<option value="2"'..(si.freeCAFlag==2 and ' selected="selected"' or '')..'>有料番組を対象とする'
     ..'</select><br><br>\n'
+  ct=ct..'番組長で絞り込み: <input type="text" name="chkDurationMin" value="'..(si.chkDurationMin or 0)..'" size="5">分以上 '
+    ..'<input type="text" name="chkDurationMax" value="'..(si.chkDurationMax or 0)..'" size="5">分以下<br>\n'
+    ..'※それぞれ0分で絞り込み無し<br><br>\n'
   ct=ct..'<input type="checkbox" name="chkRecEnd" value="1"'..(si.chkRecEnd and ' checked="checked"' or '')..'>同一番組名の録画結果があれば無効で登録する<br>\n'
     ..'確認対象期間<input type="text" name="chkRecDay" value="'..si.chkRecDay..'" size="5">日前まで<br><br>\n'
     ..'<hr>録画設定<hr>\n'
@@ -127,7 +133,9 @@ if aa.searchInfo then
   ct=ct..'<input type="submit" value="'..(aa.dataID==0 and '追加' or '変更')..'"></form>\n'
 
   if aa.dataID~=0 then
-    ct=ct..'<form method="POST" action="autoaddepgdelkey.html?id='..aa.dataID..'"><input type="submit" value="削除"></form>\n'
+    ct=ct..'<form method="POST" action="autoaddepgdelkey.html?id='..aa.dataID..'">\n'
+      ..'<input type="hidden" name="ctok" value="'..CsrfToken()..'">\n'
+      ..'<input type="submit" value="削除"></form>\n'
   end
 
   ct=ct..'<form action="autoaddepginfo.html">\n'
@@ -146,4 +154,4 @@ ct=ct..[=[
 </body>
 </html>
 ]=]
-mg.write('HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: '..#ct..(mg.keep_alive(true) and '' or '\r\nConnection: close')..'\r\n\r\n', ct)
+mg.write(Response(200, 'text/html', 'utf-8', #ct)..'\r\n', ct)

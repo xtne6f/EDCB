@@ -3,14 +3,6 @@
 
 #include "../../../Common/EpgTimerUtil.h"
 
-CTDTTable::CTDTTable(void)
-{
-}
-
-CTDTTable::~CTDTTable(void)
-{
-}
-
 BOOL CTDTTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 {
 	if( InitDecode(data, dataSize, decodeReadSize, FALSE) == FALSE ){

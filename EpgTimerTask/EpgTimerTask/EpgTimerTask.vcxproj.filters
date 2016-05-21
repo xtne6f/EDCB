@@ -69,9 +69,6 @@
     <ClInclude Include="..\..\Common\ErrDef.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Common\NWStructDef.h">
-      <Filter>ヘッダー ファイル\Common</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Common\PathUtil.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>

@@ -128,7 +128,7 @@ CRC_32（CRC）：これは付録B で定義するデコーダにおいて、セクション全体を処理し
 class CEITTable_SD : public CPSITable
 {
 public:
-	typedef struct _EVENT_INFO_DATA{
+	struct EVENT_INFO_DATA {
 		WORD event_id;
 		BYTE StartTimeFlag;	//start_timeの値が有効かどうか
 		SYSTEMTIME start_time;
@@ -139,14 +139,8 @@ public:
 		BYTE running_status;
 		BYTE free_CA_mode;
 		WORD descriptors_loop_length;
-		vector<AribDescriptor::CDescriptor*> descriptorList;
-		~_EVENT_INFO_DATA(void){
-			for( size_t i=0; i<descriptorList.size(); i++ ){
-				SAFE_DELETE(descriptorList[i]);
-			}
-			descriptorList.clear();
-		};
-	} EVENT_INFO_DATA;
+		vector<AribDescriptor::CDescriptor> descriptorList;
+	};
 	WORD service_id;
 	BYTE version_number;
 	BYTE current_next_indicator;
@@ -154,16 +148,13 @@ public:
 	BYTE last_section_number;
 	WORD transport_stream_id;
 	WORD original_network_id;
-	vector<EVENT_INFO_DATA*> eventInfoList;
+	vector<EVENT_INFO_DATA> eventInfoList;
 
 public:
-	CEITTable_SD(void);
-	~CEITTable_SD(void);
-
 	BOOL Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize );
 protected:
 	void Clear();
 
-	BOOL SDDecode( BYTE* data, DWORD dataSize, vector<AribDescriptor::CDescriptor*>* descriptorList, DWORD* decodeReadSize );
+	BOOL SDDecode( BYTE* data, DWORD dataSize, vector<AribDescriptor::CDescriptor>* descriptorList, DWORD* decodeReadSize );
 
 };
