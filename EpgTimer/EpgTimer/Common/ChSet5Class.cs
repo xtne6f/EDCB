@@ -29,6 +29,11 @@ namespace EpgTimer
             ChList = new Dictionary<UInt64, ChSet5Item>();
         }
 
+        public static bool IsVideo(UInt16 ServiceType)
+        {
+            return ServiceType == 0x01 || ServiceType == 0xA5 || ServiceType == 0xAD;
+        }
+
         public static bool Load(System.IO.StreamReader reader)
         {
             try

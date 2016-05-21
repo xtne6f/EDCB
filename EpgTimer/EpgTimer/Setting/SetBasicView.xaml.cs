@@ -700,7 +700,7 @@ namespace EpgTimer.Setting
             {
                 foreach (ServiceItem2 info in this.serviceList)
                 {
-                    if (info.ServiceInfo.ServiceType == 0x01 || info.ServiceInfo.ServiceType == 0xA5)
+                    if (ChSet5.IsVideo(info.ServiceInfo.ServiceType))
                     {
                         info.IsSelected = true;
                     }

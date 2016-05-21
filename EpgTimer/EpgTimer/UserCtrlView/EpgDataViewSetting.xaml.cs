@@ -351,7 +351,7 @@ namespace EpgTimer
                 {
                     foreach (ChSet5Item info in listBox_serviceBS.Items)
                     {
-                        if (info.ServiceType != 0x01 && info.ServiceType != 0xA5)
+                        if (ChSet5.IsVideo(info.ServiceType) == false)
                         {
                             continue;
                         }
@@ -374,7 +374,7 @@ namespace EpgTimer
                 {
                     foreach (ChSet5Item info in listBox_serviceCS.Items)
                     {
-                        if (info.ServiceType != 0x01 && info.ServiceType != 0xA5)
+                        if (ChSet5.IsVideo(info.ServiceType) == false)
                         {
                             continue;
                         }
@@ -397,7 +397,7 @@ namespace EpgTimer
                 {
                     foreach (ChSet5Item info in listBox_serviceTere.Items)
                     {
-                        if (info.ServiceType != 0x01 && info.ServiceType != 0xA5)
+                        if (ChSet5.IsVideo(info.ServiceType) == false)
                         {
                             continue;
                         }
@@ -420,7 +420,7 @@ namespace EpgTimer
                 {
                     foreach (ChSet5Item info in listBox_serviceOther.Items)
                     {
-                        if (info.ServiceType != 0x01 && info.ServiceType != 0xA5)
+                        if (ChSet5.IsVideo(info.ServiceType) == false)
                         {
                             continue;
                         }

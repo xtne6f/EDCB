@@ -304,17 +304,17 @@ namespace EpgTimer
                             ChSet5Item chSet5Item1 = ChSet5.Instance.ChList[service1];
                             // SearchKeyDescViewよりコピペ
                             if ((0x7880 <= chSet5Item1.ONID && chSet5Item1.ONID <= 0x7FE8) &&
-                                (chSet5Item1.ServiceType == 0x01 || chSet5Item1.ServiceType == 0xA5))
+                                ChSet5.IsVideo(chSet5Item1.ServiceType))
                             {
                                 network1 = "地デジ";
                             }
                             else if (chSet5Item1.ONID == 0x04 &&
-                              (chSet5Item1.ServiceType == 0x01 || chSet5Item1.ServiceType == 0xA5))
+                              ChSet5.IsVideo(chSet5Item1.ServiceType))
                             {
                                 network1 = "BS";
                             }
                             else if ((chSet5Item1.ONID == 0x06 || chSet5Item1.ONID == 0x07) &&
-                              (chSet5Item1.ServiceType == 0x01 || chSet5Item1.ServiceType == 0xA5))
+                              ChSet5.IsVideo(chSet5Item1.ServiceType))
                             {
                                 network1 = "CS";
                             }
