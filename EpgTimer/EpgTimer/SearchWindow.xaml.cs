@@ -438,12 +438,19 @@ namespace EpgTimer
                 if (reserveOnly && item.IsReserved == false) return;
                 if (onReserveOnly && item.ReserveInfo.IsEnabled == false) return;
 
-                BlackoutWindow.SelectedItem = item;
+                if (mainWindow.IsVisible == false || mainWindow.WindowState == WindowState.Minimized)
+                {
+                    mainWindow.RestoreMinimizedWindow();
+                }
 
-                SetHideSearchWindow(this);
-                SearchWindow.MinimizeWindows();
+                mainWindow.Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    SetHideSearchWindow(this);
+                    SearchWindow.MinimizeWindows();
 
-                mainWindow.moveTo_tabItem(code);
+                    BlackoutWindow.SelectedItem = item;
+                    mainWindow.moveTo_tabItem(code);
+                }));
             }
         }
 
@@ -633,11 +640,12 @@ namespace EpgTimer
             mainWindow.EmphasizeSearchButton(SearchWindow.HasHideSearchWindow);
         }
 
-        public static void RestoreMinimizedWindow()
+        public static void RestoreHideSearchWindow()
         {
             // 最小化したSearchWindowを復帰
             if (SearchWindow.HasHideSearchWindow == true)
             {
+                hideSearchWindow.Show();
                 hideSearchWindow.WindowState = WindowState.Normal;
             }
         }
@@ -655,10 +663,7 @@ namespace EpgTimer
         }
         private void checkBox_windowPinned_Checked(object sender, RoutedEventArgs e)
         {
-            if (mainWindow.IsVisible == true)
-            {
-                this.Owner = ((sender as CheckBox).IsChecked == true) ? mainWindow : null;
-            }
+            this.Owner = (sender as CheckBox).IsChecked == true && mainWindow.IsVisible == true ? mainWindow : null;
         }
     }
 }
