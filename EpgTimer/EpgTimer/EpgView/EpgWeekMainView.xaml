@@ -26,7 +26,7 @@
                 <RowDefinition Height="auto" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
-            <Button Content="現在" Grid.Row="0" Grid.Column="0" Name="button_now" MouseRightButtonUp="button_erea_MouseRightButtonUp" />
+            <Button Grid.Row="0" Grid.Column="0" Name="button_now" Content="現在" Padding="1" VerticalAlignment="Stretch" MouseRightButtonUp="button_erea_MouseRightButtonUp" />
             <local:TimeView Grid.Row="1" x:Name="timeView" Margin="0,0,0,18" MouseRightButtonUp="button_erea_MouseRightButtonUp" />
             <local:WeekDayView Grid.Column="1" x:Name="weekDayView" Margin="0,0,18,0" MouseRightButtonUp="button_erea_MouseRightButtonUp" />
             <local:ProgramView Grid.Column="1" Grid.Row="1" x:Name="epgProgramView" />

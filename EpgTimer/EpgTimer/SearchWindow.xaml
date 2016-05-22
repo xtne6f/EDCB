@@ -28,14 +28,14 @@
         </TabControl>
         <GridSplitter Grid.Row="0" Height="2" HorizontalAlignment="Stretch" VerticalAlignment="Bottom" BorderBrush="DarkGray" Background="DarkGray" />
         <StackPanel Grid.Row="1" Name="stackPanel_button" Orientation="Horizontal">
-            <Button Content="検索" Height="23" Margin="10,0,0,0" Name="button_search" VerticalAlignment="Center" Width="48" />
-            <Button Content="予約" Height="23" Margin="20,0,0,0" Name="button_add_reserve" VerticalAlignment="Center" Width="48" />
-            <Button Content="予約全削除" Height="23" Margin="10,0,0,0" Name="button_delall_reserve" VerticalAlignment="Center" Width="71" />
-            <Button Content="自動予約登録を追加" Height="23" Margin="20,0,0,0" Name="button_add_epgAutoAdd" VerticalAlignment="Center" Width="113" />
-            <Button Content="自動予約登録を変更" Height="23" Margin="10,0,0,0" Name="button_chg_epgAutoAdd" VerticalAlignment="Center" Width="113" />
-            <Button Content="自動予約登録を削除" Height="23" Margin="10,0,0,0" Name="button_del_epgAutoAdd" VerticalAlignment="Center" Width="113" />
-            <Button Content="前へ" Height="23" Margin="20,0,0,0" Name="button_up_epgAutoAdd" VerticalAlignment="Center" Width="48" />
-            <Button Content="次へ" Height="23" Margin="10,0,0,0" Name="button_down_epgAutoAdd" VerticalAlignment="Center" Width="48" />
+            <Button Content="検索" Margin="10,0,0,0" Name="button_search" MinWidth="48" />
+            <Button Content="予約" Margin="20,0,0,0" Name="button_add_reserve" MinWidth="48" />
+            <Button Content="予約全削除" Margin="6,0,0,0" Name="button_delall_reserve" MinWidth="48" />
+            <Button Content="自動予約登録を追加" Margin="20,0,0,0" Name="button_add_epgAutoAdd" />
+            <Button Content="自動予約登録を変更" Margin="6,0,0,0" Name="button_chg_epgAutoAdd" />
+            <Button Content="自動予約登録を削除" Margin="6,0,0,0" Name="button_del_epgAutoAdd" />
+            <Button Content="前へ" Margin="20,0,0,0" Name="button_up_epgAutoAdd" MinWidth="48" />
+            <Button Content="次へ" Margin="6,0,0,0" Name="button_down_epgAutoAdd" MinWidth="48" />
         </StackPanel>
         <ListView Grid.Row="2" Name="listView_result" Margin="10,10,10,5" Style="{StaticResource DataListViewStyle}" >
             <ListView.View>

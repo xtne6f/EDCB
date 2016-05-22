@@ -2,13 +2,6 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="ネットワーク接続" Height="272" Width="446" WindowStartupLocation="CenterOwner" ResizeMode="NoResize" Loaded="Window_Loaded" Closing="Window_Closing">
-
-    <Window.Resources>
-        <Style TargetType="{x:Type TextBox}">
-            <Setter Property="InputMethod.PreferredImeState" Value="Off" />
-        </Style>
-    </Window.Resources>
-    
     <Grid>
         <Label Content="接続サーバー　IP" Height="28" HorizontalAlignment="Left" Margin="12,52,0,0" VerticalAlignment="Top" />
         <TextBox Height="24" HorizontalAlignment="Left" Margin="124,54,0,0" Name="textBox_srvIP" VerticalAlignment="Top" Width="120" />
@@ -21,11 +14,13 @@
         <Label Content="MACアドレス" Height="28" HorizontalAlignment="Left" Margin="12,164,0,0" VerticalAlignment="Top" />
         <TextBox Height="24" HorizontalAlignment="Left" Margin="102,166,0,0" Name="textBox_mac" VerticalAlignment="Top" Width="170" />
         <Label Content="（xx-xx-xx-xx-xx-xx）" Height="28" HorizontalAlignment="Left" Margin="283,164,0,0" VerticalAlignment="Top" />
-        <Label Content="プリセット" Height="28" HorizontalAlignment="Left" Margin="12,11,0,0" VerticalAlignment="Top" />
-        <ComboBox Height="23" HorizontalAlignment="Left" Margin="88,12,0,0" Name="cmb_preset" VerticalAlignment="Top" Width="120" IsEditable="True" SelectionChanged="cmb_preset_SelectionChanged" />
-        <Button Content="再読込" Height="23" HorizontalAlignment="Left" Margin="214,12,0,0" Name="btn_reload" VerticalAlignment="Top" Width="48" Click="btn_reload_Click" />
-        <Button Content="追加・変更" Height="23" HorizontalAlignment="Left" Margin="268,12,0,0" Name="btn_add" VerticalAlignment="Top" Width="72" Click="btn_add_Click" />
-        <Button Content="削除" Height="23" HorizontalAlignment="Left" Margin="346,12,0,0" Name="btn_delete" VerticalAlignment="Top" Width="48" Click="btn_delete_Click" />
+        <StackPanel Margin="12,11,0,0" Orientation="Horizontal" VerticalAlignment="Top">
+            <Label Content="プリセット" />
+            <ComboBox Height="23" Margin="6,0,0,0" Name="cmb_preset" Width="120" IsEditable="True" SelectionChanged="cmb_preset_SelectionChanged" />
+            <Button Content="再読込" Margin="12,0,0,0" Name="btn_reload" Click="btn_reload_Click" />
+            <Button Content="追加・変更" Margin="6,0,0,0" Name="btn_add" Click="btn_add_Click" />
+            <Button Content="削除" Margin="6,0,0,0" Name="btn_delete" Click="btn_delete_Click" />
+        </StackPanel>
         <Rectangle Height="1" Margin="12,41,12,0" VerticalAlignment="Top" Fill="LightGray" />
     </Grid>
 </Window>

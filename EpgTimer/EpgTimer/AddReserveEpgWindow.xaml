@@ -9,7 +9,7 @@
             <RowDefinition Height="*" />
             <RowDefinition Height="40" />
         </Grid.RowDefinitions>
-        <TextBox Name="textBox_info" IsReadOnly="True" TextWrapping="Wrap" />
+        <TextBox Name="textBox_info" IsReadOnly="True" TextWrapping="Wrap" VerticalAlignment="Stretch"/>
         <TabControl Grid.Row="1" Name="tabControl" TabStripPlacement="Bottom" >
             <TabItem Header="予約" Name="tabItem_reserve">
                 <Grid>

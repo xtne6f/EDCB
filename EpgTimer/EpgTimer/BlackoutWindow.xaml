@@ -3,13 +3,6 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="BlackoutWindow" Height="300" Width="300" WindowStartupLocation="CenterOwner" WindowStyle="None" Background="{x:Null}" AllowsTransparency="True" ShowInTaskbar="False" BorderBrush="{x:Null}">
     <Grid Background="#1E000000">
-        <!--<Grid.Clip>
-            <RectangleGeometry>
-                <RectangleGeometry.Rect>
-                    <Rect X="0" Y="0" Height="100" Width="100"/>
-                </RectangleGeometry.Rect>
-            </RectangleGeometry>
-        </Grid.Clip>-->
         <Label Opacity="1" Content="Label" Height="250" HorizontalAlignment="Center" Margin="0" Name="messageLabel" VerticalAlignment="Center" Width="250" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" FontSize="16" FontWeight="Normal" Background="WhiteSmoke" />
     </Grid>
 </Window>
