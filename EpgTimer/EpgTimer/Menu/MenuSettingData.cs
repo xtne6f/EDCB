@@ -119,6 +119,8 @@ namespace EpgTimer
             }
         }
 
+        public const int CautionDisplayItemNum = 10;
+    
         public List<CtxmCode> IsManualAssign { get; set; }
         public bool NoMessageKeyGesture { get; set; }
         public bool NoMessageDeleteAll { get; set; }

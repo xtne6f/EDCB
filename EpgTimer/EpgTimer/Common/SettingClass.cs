@@ -366,7 +366,6 @@ namespace EpgTimer
         public bool SyncResAutoAddChange { get; set; }
         public bool SyncResAutoAddChgNewRes { get; set; }
         public bool SyncResAutoAddDelete { get; set; }
-        public int KeyDeleteDisplayItemNum { get; set; }
         public bool DisplayNotifyEpgChange { get; set; }
         public double DisplayNotifyJumpTime { get; set; }
         public bool DisplayReserveAutoAddMissing { get; set; }
@@ -547,7 +546,6 @@ namespace EpgTimer
             SyncResAutoAddChange = false;
             SyncResAutoAddChgNewRes = false;
             SyncResAutoAddDelete = false;
-            KeyDeleteDisplayItemNum = 10;
             DisplayNotifyEpgChange = false;
             DisplayNotifyJumpTime = 3;
             DisplayReserveAutoAddMissing = false;

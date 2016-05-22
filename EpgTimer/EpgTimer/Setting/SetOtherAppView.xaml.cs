@@ -20,6 +20,8 @@ namespace EpgTimer.Setting
     /// </summary>
     public partial class SetOtherAppView : UserControl
     {
+        private MenuUtil mutil = CommonManager.Instance.MUtil;
+
         public SetOtherAppView()
         {
             InitializeComponent();
@@ -39,6 +41,8 @@ namespace EpgTimer.Setting
                 checkBox_nwTvMode.IsChecked = Settings.Instance.NwTvMode;
                 checkBox_nwUDP.IsChecked = Settings.Instance.NwTvModeUDP;
                 checkBox_nwTCP.IsChecked = Settings.Instance.NwTvModeTCP;
+                textBox_TvTestOpenWait.Text = Settings.Instance.TvTestOpenWait.ToString();
+                textBox_TvTestChgBonWait.Text = Settings.Instance.TvTestChgBonWait.ToString();
 
                 textBox_playExe.Text = Settings.Instance.FilePlayExe;
                 textBox_playCmd.Text = Settings.Instance.FilePlayCmd;
@@ -71,31 +75,11 @@ namespace EpgTimer.Setting
         {
             Settings.Instance.TvTestExe = textBox_exe.Text;
             Settings.Instance.TvTestCmd = textBox_cmd.Text;
-            if (checkBox_nwTvMode.IsChecked == true)
-            {
-                Settings.Instance.NwTvMode = true;
-            }
-            else
-            {
-                Settings.Instance.NwTvMode = false;
-            }
-            if (checkBox_nwUDP.IsChecked == true)
-            {
-                Settings.Instance.NwTvModeUDP = true;
-            }
-            else
-            {
-                Settings.Instance.NwTvModeUDP = false;
-            }
-
-            if (checkBox_nwTCP.IsChecked == true)
-            {
-                Settings.Instance.NwTvModeTCP = true;
-            }
-            else
-            {
-                Settings.Instance.NwTvModeTCP = false;
-            }
+            Settings.Instance.NwTvMode = (checkBox_nwTvMode.IsChecked == true);
+            Settings.Instance.NwTvModeUDP = (checkBox_nwUDP.IsChecked == true);
+            Settings.Instance.NwTvModeTCP = (checkBox_nwTCP.IsChecked == true);
+            Settings.Instance.TvTestOpenWait = mutil.MyToNumerical(textBox_TvTestOpenWait, Convert.ToInt32, 120000, 0, Settings.Instance.TvTestOpenWait);
+            Settings.Instance.TvTestChgBonWait = mutil.MyToNumerical(textBox_TvTestChgBonWait, Convert.ToInt32, 120000, 0, Settings.Instance.TvTestChgBonWait);
 
             IniFileHandler.WritePrivateProfileString("TVTEST", "Num", listBox_bon.Items.Count.ToString(), SettingPath.TimerSrvIniPath);
             for (int i = 0; i < listBox_bon.Items.Count; i++)

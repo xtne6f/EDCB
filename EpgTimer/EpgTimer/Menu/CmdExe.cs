@@ -708,7 +708,7 @@ namespace EpgTimer
         }
         public static string FormatTitleListForDialog(ICollection<string> list)
         {
-            int DisplayNum = Settings.Instance.KeyDeleteDisplayItemNum;
+            int DisplayNum = MenuSettingData.CautionDisplayItemNum;
             var text = new StringBuilder();
             foreach (var info in list.Take(DisplayNum)) { text.AppendFormat(" ・ {0}\r\n", info); }
             if (list.Count > DisplayNum) text.AppendFormat("\r\n　　ほか {0} 項目", list.Count - DisplayNum);

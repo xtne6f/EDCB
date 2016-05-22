@@ -71,8 +71,7 @@ namespace EpgTimer.Setting
                 checkBox_autoDelRecFile.IsEnabled = false;
                 label42.IsEnabled = false;
                 textBox_autoDelRecInfo.IsEnabled = false;
-                checkBox_timeSync.IsEnabled = false;
-                label43.IsEnabled = false;
+                stackPanel_timeSync.IsEnabled = false;
                 checkBox_wakeReconnect.IsEnabled = true;
                 stackPanel_WoLWait.IsEnabled = true;
                 checkBox_suspendClose.IsEnabled = true;
@@ -225,6 +224,7 @@ namespace EpgTimer.Setting
                 checkBox_minWake.IsChecked = Settings.Instance.WakeMin;
                 checkBox_noToolTips.IsChecked = Settings.Instance.NoToolTip;
                 checkBox_noBallonTips.IsChecked = Settings.Instance.NoBallonTips;
+                textBox_ForceHideBalloonTipSec.Text = Settings.Instance.ForceHideBalloonTipSec.ToString();
                 checkBox_showTray.IsChecked = Settings.Instance.ShowTray;
                 checkBox_minHide.IsChecked = Settings.Instance.MinHide;
                 checkBox_cautionManyChange.IsChecked = Settings.Instance.CautionManyChange;
@@ -253,6 +253,7 @@ namespace EpgTimer.Setting
                     checkBox_srvNoBalloonTip.IsChecked = IniFileHandler.GetPrivateProfileInt("SET", "NoBalloonTip", 0, SettingPath.TimerSrvIniPath) != 0;
                 }
                 checkBox_srvSaveNotifyLog.IsChecked = IniFileHandler.GetPrivateProfileInt("SET", "SaveNotifyLog", 0, SettingPath.TimerSrvIniPath) != 0;
+                checkBox_AutoSaveNotifyLog.IsChecked = Settings.Instance.AutoSaveNotifyLog == 1;
                 checkBox_srvSaveDebugLog.IsChecked = IniFileHandler.GetPrivateProfileInt("SET", "SaveDebugLog", 0, SettingPath.TimerSrvIniPath) != 0;
 
                 int count;
@@ -442,6 +443,7 @@ namespace EpgTimer.Setting
                     checkBox_srvResident.IsChecked == false ? "0" : checkBox_srvShowTray.IsChecked == false ? "1" : "2", SettingPath.TimerSrvIniPath);
                 IniFileHandler.WritePrivateProfileString("SET", "NoBalloonTip", checkBox_srvNoBalloonTip.IsChecked == false ? "0" : "1", SettingPath.TimerSrvIniPath);
                 IniFileHandler.WritePrivateProfileString("SET", "SaveNotifyLog", checkBox_srvSaveNotifyLog.IsChecked == false ? "0" : "1", SettingPath.TimerSrvIniPath);
+                Settings.Instance.AutoSaveNotifyLog = (short)(checkBox_AutoSaveNotifyLog.IsChecked == true ? 1 : 0);
                 IniFileHandler.WritePrivateProfileString("SET", "SaveDebugLog", checkBox_srvSaveDebugLog.IsChecked == false ? "0" : "1", SettingPath.TimerSrvIniPath);
 
                 IniFileHandler.WritePrivateProfileString("DEL_EXT", "Count", extList.Count.ToString(), SettingPath.TimerSrvIniPath);
@@ -465,6 +467,7 @@ namespace EpgTimer.Setting
 
                 Settings.Instance.NoToolTip = (checkBox_noToolTips.IsChecked == true);
                 Settings.Instance.NoBallonTips = (checkBox_noBallonTips.IsChecked == true);
+                Settings.Instance.ForceHideBalloonTipSec = mutil.MyToNumerical(textBox_ForceHideBalloonTipSec, Convert.ToInt32, 255, 0, Settings.Instance.ForceHideBalloonTipSec);
                 Settings.Instance.CautionManyChange = (checkBox_cautionManyChange.IsChecked != false);
                 Settings.Instance.CautionManyNum = mutil.MyToNumerical(textBox_cautionManyChange, Convert.ToInt32, Settings.Instance.CautionManyNum);
                 Settings.Instance.SaveSearchKeyword = (checkBox_saveSearchKeyword.IsChecked != false);

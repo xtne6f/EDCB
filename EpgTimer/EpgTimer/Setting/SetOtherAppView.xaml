@@ -5,11 +5,6 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d" 
              d:DesignHeight="500" d:DesignWidth="780">
-    <UserControl.Resources>
-        <Style TargetType="{x:Type TextBox}">
-            <Setter Property="InputMethod.PreferredImeState" Value="Off" />
-        </Style>
-    </UserControl.Resources>
     <Grid>
         <TabControl Name="tabControl">
             <TabItem Header="TVTest連携" Name="tabItem_tvtest">
@@ -30,6 +25,18 @@
                     <CheckBox Content="TCP有効" Height="16" HorizontalAlignment="Left" Margin="134,330,0,0" Name="checkBox_nwTCP" VerticalAlignment="Top" />
                     <Label Content="(BonDriverに関するオプションは自動的に付加されます)" Height="28" HorizontalAlignment="Left" Margin="134,110,0,0" Name="label5" VerticalAlignment="Top" />
                     <Label Content="NetworkTVモードの送信方式 (追っかけ再生はNetworkTVモードで動作します。使用する場合はチェックしてください)" Height="28" HorizontalAlignment="Left" Margin="12,302,0,0" Name="label9" VerticalAlignment="Top" />
+                    <StackPanel Margin="396,172,0,0" >
+                        <StackPanel Orientation="Horizontal" Margin="0,6,0,0" >
+                            <Label Content="TvTestの起動待ち時間" />
+                            <TextBox Margin="6,0,0,0" Name="textBox_TvTestOpenWait" Width="62" />
+                            <Label Content="ミリ秒" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,6,0,0" >
+                            <Label Content="BonDriverの切り替え待ち時間" />
+                            <TextBox Margin="6,0,0,0" Name="textBox_TvTestChgBonWait" Width="62" />
+                            <Label Content="ミリ秒" />
+                        </StackPanel>
+                    </StackPanel>
                 </Grid>
             </TabItem>
             <TabItem Header="ファイル再生" Name="tabItem_play">

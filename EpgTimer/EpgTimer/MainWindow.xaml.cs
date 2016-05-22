@@ -82,6 +82,9 @@ namespace EpgTimer
                 }
             }
 
+            // レイアウト用のスタイルをロード
+            App.Current.Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("pack://application:,,,/UserCtrlView/UiLayoutStyles.xaml") });
+
             string appMutexName = Settings.Instance.ForceNWMode && appName.StartsWith("EpgTimerNW") == false ? "EpgTimerNW" + appName.Substring(8): appName;
 #if DEBUG
             appMutexName += "(debug)";

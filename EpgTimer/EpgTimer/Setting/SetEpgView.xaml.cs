@@ -198,6 +198,8 @@ namespace EpgTimer.Setting
                 checkBox_LaterTimeUse.IsChecked = Settings.Instance.LaterTimeUse;
                 textBox_LaterTimeHour.Text = (Settings.Instance.LaterTimeHour + 24).ToString();
                 checkBox_displayPresetOnSearch.IsChecked = Settings.Instance.DisplayPresetOnSearch;
+                checkBox_NotNoStyle.ToolTip = string.Format("チェック時、テーマファイル「{0}」があればそれを、無ければ既定のテーマ(Aero)を適用します。", System.IO.Path.GetFileName(System.Reflection.Assembly.GetEntryAssembly().Location) + ".rd.xaml");
+                checkBox_NotNoStyle.IsChecked = Settings.Instance.NoStyle == 0;
                 checkBox_displayStatus.IsChecked = Settings.Instance.DisplayStatus;
                 checkBox_displayStatusNotify.IsChecked = Settings.Instance.DisplayStatusNotify;
             }
@@ -342,6 +344,7 @@ namespace EpgTimer.Setting
                 Settings.Instance.LaterTimeUse = (checkBox_LaterTimeUse.IsChecked == true);
                 Settings.Instance.LaterTimeHour = mutil.MyToNumerical(textBox_LaterTimeHour, Convert.ToInt32, 36, 24, 28) - 24;
                 Settings.Instance.DisplayPresetOnSearch = (checkBox_displayPresetOnSearch.IsChecked == true);
+                Settings.Instance.NoStyle = (checkBox_NotNoStyle.IsChecked == true ? 0 : 1);
                 Settings.Instance.DisplayStatus = (checkBox_displayStatus.IsChecked == true);
                 Settings.Instance.DisplayStatusNotify = (checkBox_displayStatusNotify.IsChecked == true);
             }
