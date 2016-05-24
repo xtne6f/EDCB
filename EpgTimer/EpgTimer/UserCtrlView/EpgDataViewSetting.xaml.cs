@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 
 namespace EpgTimer
 {
@@ -150,6 +151,26 @@ namespace EpgTimer
             button_service_down.Click += new RoutedEventHandler(bxs.button_down_Click);
             button_service_bottom.Click += new RoutedEventHandler(bxs.button_bottom_Click);
 
+            // 右クリックメニューにSIDのソートを登録
+            var cm = new ContextMenu();
+            var menuItemAsc = new MenuItem();
+            menuItemAsc.Header = "SIDを昇順に並び替える";
+            menuItemAsc.Tag = 0;
+            menuItemAsc.Click += listBox_serviceView_SidSort;
+            cm.Items.Insert(0, menuItemAsc);
+            var menuItemDesc = new MenuItem();
+            menuItemDesc.Header = "SIDを逆順に並び替える";
+            menuItemDesc.Tag = 1;
+            menuItemDesc.Click += listBox_serviceView_SidSort;
+            cm.Items.Insert(1, menuItemDesc);
+            listBox_serviceView.ContextMenu = cm;
+            listBox_serviceView.ContextMenuOpening += (s, e) => {
+                // 2つ以上のアイテムが選択されているときのみソート可能になるようにする
+                bool isSortable = listBox_serviceView.SelectedItems.Count > 1;
+                ((MenuItem)listBox_serviceView.ContextMenu.Items[0]).IsEnabled = isSortable;
+                ((MenuItem)listBox_serviceView.ContextMenu.Items[1]).IsEnabled = isSortable;
+            };
+
             //ジャンル選択関係
             bxj.SourceBox = this.listBox_jyanru;
             bxj.TargetBox = this.listBox_jyanruView;
@@ -160,6 +181,7 @@ namespace EpgTimer
             button_jyanru_del.Click += new RoutedEventHandler(bxj.button_del_Click);
             button_jyanru_delAll.Click += new RoutedEventHandler(bxj.button_delAll_Click);
         }
+
         //残りの追加イベント
         /// <summary>映像のみ全追加</summary>
         private void button_service_addVideo_Click(object sender, RoutedEventArgs e)
@@ -190,6 +212,47 @@ namespace EpgTimer
         private void listBox_service_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             Display_ServiceView(bxs.SourceBox, textBox_serviceView2);
+        }
+
+        private void listBox_serviceView_SidSort(object sender, RoutedEventArgs e)
+        {
+            // 昇順・逆順用コンパレーター
+            var comparerator = ((sender as MenuItem).Tag as int?) == 0 ?
+                new Func<ushort, ushort, bool>((a, b) => a <= b) : new Func<ushort, ushort, bool>((a, b) => a >= b);
+
+            // 実質、高々3つの並べ替えなので Bubble Sort で十分
+            var sort = new Action<int, int>((start, end) =>
+            {
+                for (int i = start; i < end; i++)
+                {
+                    for (int j = i + 1; j <= end; j++)
+                    {
+                        if (comparerator((listBox_serviceView.Items[j] as ChSet5Item).SID, (listBox_serviceView.Items[i] as ChSet5Item).SID))
+                        {
+                            var tmp = listBox_serviceView.Items[i];
+                            listBox_serviceView.Items[i] = listBox_serviceView.Items[j];
+                            listBox_serviceView.Items[j] = tmp;
+                        }
+                    }
+                }
+            });
+
+            // ソート中に SelectedItems が壊れるので保存しておく
+            var selected = listBox_serviceView.SelectedItems.OfType<ChSet5Item>().ToList();
+            int itemIndex = 0, firstTsidIndex = 0;
+            for (; itemIndex < listBox_serviceView.Items.Count - 1; itemIndex++)
+            {
+                // 同一TSIDが連続する部分を選択中の中から探す(散らばっているTSIDはまとめない)
+                var a = listBox_serviceView.Items[itemIndex] as ChSet5Item;
+                var b = listBox_serviceView.Items[itemIndex + 1] as ChSet5Item;
+                if (selected.IndexOf(a) >= 0 && a.TSID == b.TSID) continue;
+
+                // 見つかった場合 firstTsidIndex < itemIndex になる
+                sort(firstTsidIndex, itemIndex);
+                firstTsidIndex = itemIndex + 1;
+            }
+            sort(firstTsidIndex, itemIndex);
+            listBox_serviceView.SelectedItems.Clear();
         }
 
         private void Display_ServiceView(ListBox srclistBox, TextBox targetBox)
@@ -223,6 +286,5 @@ namespace EpgTimer
                 searchKey = dlg.GetSetting();
             }
         }
-
     }
 }
