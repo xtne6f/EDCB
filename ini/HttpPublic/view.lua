@@ -1,7 +1,7 @@
--- ローカルUDPポート1234～1243を転送するスクリプト
+-- ローカルUDPポート1234～1243またはTCPポート22230～22239を転送するスクリプト
 
 -- ffmpeg変換オプション
--- ※ローカルUDPの安定した送受信も求められるので、システムに余力を残して調整すべき
+-- ※UDPの場合はローカルでの安定した送受信も求められるので、システムに余力を残して調整すべき
 -- libvpxの例:リアルタイム変換と画質が両立するようにビットレート-bと計算量-cpu-usedを調整する
 XOPT='-vcodec libvpx -b 896k -quality realtime -cpu-used 1 -vf yadif=0:-1:1 -s 512x288 -r 15000/1001 -acodec libvorbis -ab 128k -f webm -'
 -- 変換後の拡張子
@@ -9,11 +9,15 @@ XEXT='.webm'
 -- 転送開始前に変換しておく量(bytes)
 XPREPARE=nil
 
-port=1234+math.min(math.max(0+(mg.get_var(mg.request_info.query_string, 'n') or 0), 0), 9)
+n=0+(mg.get_var(mg.request_info.query_string, 'n') or 0)
+proto=n>=10 and 'tcp' or 'udp'
+port=n>=10 and 22230+math.min(n-10, 9) or 1234+math.max(n, 0)
 f=io.popen(
   -- 前回のプロセスが残っていたら終わらせる
-  'wmic process where "name=\'ffmpeg.exe\' and commandline like \'%%udp://127.0.0.1:'..port..'%%\'" call terminate >nul & '..
-  'ffmpeg.exe -i "udp://127.0.0.1:'..port..'?pkt_size=48128&fifo_size=100000&overrun_nonfatal=1&timeout=4000000" '..XOPT, 'rb')
+  'wmic process where "name=\'ffmpeg.exe\' and commandline like \'%%'..proto..'://127.0.0.1:'..port..'%%\'" call terminate >nul & '..
+  'ffmpeg.exe -f mpegts -i "'..proto..'://127.0.0.1:'..port..'?timeout=4000000'..(
+    proto=='tcp' and '&listen=1&recv_buffer_size=481280&listen_timeout=4000' or '&pkt_size=48128&fifo_size=100000&overrun_nonfatal=1'
+  )..'" '..XOPT, 'rb')
 fname='chunk'..XEXT
 
 if not f then
