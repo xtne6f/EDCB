@@ -1,5 +1,6 @@
 #include "StdAfx.h"
 #include "SendTSTCPMain.h"
+#include "../../Common/BlockLock.h"
 
 #include <process.h>
 
@@ -10,7 +11,8 @@ CSendTSTCPMain::CSendTSTCPMain(void)
 	m_hStopConnectEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	m_hConnectThread = NULL;
 
-	m_hEvent = CreateEvent(NULL, FALSE, TRUE, NULL );
+	InitializeCriticalSection(&m_sendLock);
+	InitializeCriticalSection(&m_buffLock);
 
 	WSAData wsaData;
 	WSAStartup(MAKEWORD(2,0), &wsaData);
@@ -42,11 +44,8 @@ CSendTSTCPMain::~CSendTSTCPMain(void)
 	::CloseHandle(m_hStopSendEvent);
 	m_hStopSendEvent = NULL;
 
-	Lock();
-	if( m_hEvent != NULL ){
-		CloseHandle(m_hEvent);
-		m_hEvent = NULL;
-	}
+	DeleteCriticalSection(&m_buffLock);
+	DeleteCriticalSection(&m_sendLock);
 
 	map<wstring, SEND_INFO>::iterator itr;
 	for( itr = m_SendList.begin(); itr != m_SendList.end(); itr){
@@ -62,22 +61,6 @@ CSendTSTCPMain::~CSendTSTCPMain(void)
 	m_TSBuff.clear();
 
 	WSACleanup();
-}
-
-BOOL CSendTSTCPMain::Lock()
-{
-	if( m_hEvent == NULL ){
-		return FALSE;
-	}
-	WaitForSingleObject(m_hEvent, INFINITE);
-	return TRUE;
-}
-
-void CSendTSTCPMain::UnLock()
-{
-	if( m_hEvent != NULL ){
-		SetEvent(m_hEvent);
-	}
 }
 
 //DLLÇÃèâä˙âª
@@ -119,9 +102,8 @@ DWORD CSendTSTCPMain::AddSendAddr(
 	wstring strKey=L"";
 	Format(strKey, L"%s:%d", lpcwszIP, dwPort);
 
-	if( Lock() == FALSE ) return FALSE;
+	CBlockLock lock(&m_sendLock);
 	m_SendList.insert(pair<wstring, SEND_INFO>(strKey, Item));
-	UnLock();
 
 	return TRUE;
 
@@ -132,7 +114,7 @@ DWORD CSendTSTCPMain::AddSendAddr(
 DWORD CSendTSTCPMain::ClearSendAddr(
 	)
 {
-	if( Lock() == FALSE ) return FALSE;
+	CBlockLock lock(&m_sendLock);
 
 	map<wstring, SEND_INFO>::iterator itr;
 	for( itr = m_SendList.begin(); itr != m_SendList.end(); itr++){
@@ -144,7 +126,6 @@ DWORD CSendTSTCPMain::ClearSendAddr(
 	}
 	m_SendList.clear();
 
-	UnLock();
 	return TRUE;
 
 }
@@ -193,7 +174,7 @@ DWORD CSendTSTCPMain::StopSend(
 		m_hSendThread = NULL;
 	}
 
-	if( Lock() == FALSE ) return FALSE;
+	CBlockLock lock(&m_sendLock);
 	map<wstring, SEND_INFO>::iterator itr;
 	for( itr = m_SendList.begin(); itr != m_SendList.end(); itr++){
 		if( itr->second.sock != INVALID_SOCKET ){
@@ -203,7 +184,6 @@ DWORD CSendTSTCPMain::StopSend(
 			itr->second.bConnect = FALSE;
 		}
 	}
-	UnLock();
 
 	return TRUE;
 }
@@ -217,7 +197,7 @@ DWORD CSendTSTCPMain::AddSendData(
 {
 
 	if( m_hSendThread != NULL || m_hConnectThread != NULL){
-		if( Lock() == FALSE ) return FALSE;
+		CBlockLock lock(&m_buffLock);
 		TS_DATA* pItem = new TS_DATA;
 		pItem->pbBuff = new BYTE[dwSize];
 		ZeroMemory( pItem->pbBuff, dwSize );
@@ -225,7 +205,10 @@ DWORD CSendTSTCPMain::AddSendData(
 		pItem->dwSize = dwSize;
 
 		m_TSBuff.push_back(pItem);
-		UnLock();
+		if( m_TSBuff.size() > 500 ){
+			SAFE_DELETE(m_TSBuff[0]);
+			m_TSBuff.erase(m_TSBuff.begin());
+		}
 	}
 	return TRUE;
 }
@@ -235,12 +218,11 @@ DWORD CSendTSTCPMain::AddSendData(
 DWORD CSendTSTCPMain::ClearSendBuff(
 	)
 {
-	if( Lock() == FALSE ) return FALSE;
+	CBlockLock lock(&m_buffLock);
 	for( int i=0; i<(int)m_TSBuff.size(); i++ ){
 		SAFE_DELETE(m_TSBuff[i]);
 	}
 	m_TSBuff.clear();
-	UnLock();
 
 	return TRUE;
 }
@@ -254,7 +236,7 @@ UINT WINAPI CSendTSTCPMain::ConnectThread(LPVOID pParam)
 			break;
 		}
 
-		if( pSys->Lock() == FALSE ) return FALSE;
+		CBlockLock lock(&pSys->m_sendLock);
 
 		map<wstring, SEND_INFO>::iterator itr;
 		for( itr = pSys->m_SendList.begin(); itr != pSys->m_SendList.end(); itr++){
@@ -295,8 +277,6 @@ UINT WINAPI CSendTSTCPMain::ConnectThread(LPVOID pParam)
 				}
 			}
 		}
-
-		pSys->UnLock();
 	}
 	return 0;
 }
@@ -312,21 +292,10 @@ UINT WINAPI CSendTSTCPMain::SendThread(LPVOID pParam)
 			break;
 		}
 
-		if( pSys->Lock() == FALSE ) return FALSE;
-
-		if(pSys->m_TSBuff.size()>500){
-			for( int i=(int)pSys->m_TSBuff.size()-500; i>=0; i-- ){
-				SAFE_DELETE(pSys->m_TSBuff[i]);
-				vector<TS_DATA*>::iterator itr;
-				itr = pSys->m_TSBuff.begin();
-				advance(itr,i);
-				pSys->m_TSBuff.erase( itr );
-			}
-		}
-
 		DWORD dwSend = 0;
 		BYTE* pbSend = NULL;
-		DWORD dwCmd[2] = {0,0};
+		{
+		CBlockLock lock(&pSys->m_buffLock);
 /*
 		if( pSys->m_TSBuff.size() >= 3 ){
 
@@ -365,10 +334,15 @@ UINT WINAPI CSendTSTCPMain::SendThread(LPVOID pParam)
 			pSys->m_TSBuff.erase( pSys->m_TSBuff.begin() );
 			pSys->m_TSBuff.erase( pSys->m_TSBuff.begin() );
 		}
+		if( pSys->m_TSBuff.size() < 2 ){
+			dwWait = 10;
+		}
+		//é¿ç€Ç…Ç‚ÇËÇΩÇ©Ç¡ÇΩÇÃÇÕÇ±Ç¡ÇøÇ©Ç‡ÇµÇÍÇ»Ç¢(ãììÆÇïœÇ¶ÇÈÇÃÇÕé·ä±äÎåØÇä¥Ç∂ÇÈÇÃÇ≈ï€óØ)
+		//dwWait = pSys->m_TSBuff.size() < 2 ? 10 : 0;
 
-		pSys->UnLock();
-		if( pbSend != NULL && pSys->m_SendList.size() > 0 ){
-			if( pSys->Lock() == FALSE ) return FALSE;
+		} //m_buffLock
+		if( pbSend != NULL ){
+			CBlockLock lock(&pSys->m_sendLock);
 
 			map<wstring, SEND_INFO>::iterator itr;
 			for( itr = pSys->m_SendList.begin(); itr != pSys->m_SendList.end(); itr++){
@@ -387,14 +361,9 @@ UINT WINAPI CSendTSTCPMain::SendThread(LPVOID pParam)
 					dwCount++;
 				}
 			}
-
-			pSys->UnLock();
 		}
 		if( pbSend != NULL ){
 			delete[] pbSend;
-		}
-		if( pSys->m_TSBuff.size() == 0 ){
-			dwWait = 10;
 		}
 	}
 	return 0;
