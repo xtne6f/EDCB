@@ -4,6 +4,10 @@
 
 #include <process.h>
 
+//SendTSTCPプロトコルのヘッダの送信を抑制する既定のポート範囲
+#define SEND_TS_TCP_NOHEAD_PORT_MIN 22000
+#define SEND_TS_TCP_NOHEAD_PORT_MAX 22999
+
 CSendTSTCPMain::CSendTSTCPMain(void)
 {
 	m_hStopSendEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
@@ -97,6 +101,10 @@ DWORD CSendTSTCPMain::AddSendAddr(
 	WtoA(Item.strIP, strA);
 	Item.dwIP = inet_addr(strA.c_str());
 	Item.dwPort = dwPort;
+	if( SEND_TS_TCP_NOHEAD_PORT_MIN <= dwPort && dwPort <= SEND_TS_TCP_NOHEAD_PORT_MAX ){
+		//上位ワードが1のときはヘッダの送信が抑制される
+		Item.dwPort |= 0x10000;
+	}
 	Item.sock = INVALID_SOCKET;
 	Item.bConnect = FALSE;
 	wstring strKey=L"";
@@ -347,9 +355,10 @@ UINT WINAPI CSendTSTCPMain::SendThread(LPVOID pParam)
 			map<wstring, SEND_INFO>::iterator itr;
 			for( itr = pSys->m_SendList.begin(); itr != pSys->m_SendList.end(); itr++){
 				if( itr->second.bConnect == TRUE ){
-					if( sendto(itr->second.sock, 
-						(char*)pbSend,
-						dwSend,
+					DWORD dwAdjust = HIWORD(itr->second.dwPort) == 1 ? dwSend - sizeof(DWORD)*2 : dwSend;
+					if( dwAdjust > 0 && sendto(itr->second.sock, 
+						(char*)pbSend + (dwSend - dwAdjust),
+						dwAdjust,
 						0,
 						(struct sockaddr *)&itr->second.addr,
 						sizeof(itr->second.addr)
