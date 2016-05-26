@@ -12,9 +12,7 @@
 #include <windows.h>
 #include <commctrl.h>
 #include <shellapi.h>
-#include <winsock2.h>
 #pragma comment(lib, "comctl32.lib")
-#pragma comment(lib, "ws2_32.lib")
 
 // C ランタイム ヘッダー ファイル
 #include <tchar.h>
@@ -40,3 +38,4 @@
 
 
 #include "../../Common/Common.h"
+#define SEND_CTRL_CMD_NO_TCP

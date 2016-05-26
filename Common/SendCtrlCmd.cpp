@@ -1,11 +1,9 @@
 #include "StdAfx.h"
 #include "SendCtrlCmd.h"
-/*
+#ifndef SEND_CTRL_CMD_NO_TCP
 #include <winsock2.h>
-#include <ws2tcpip.h>
-#pragma comment(lib, "wsock32.lib")
 #pragma comment(lib, "Ws2_32.lib")
-*/
+#endif
 #include "StringUtil.h"
 
 CSendCtrlCmd::CSendCtrlCmd(void)

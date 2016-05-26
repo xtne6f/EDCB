@@ -4,7 +4,7 @@
 #include <ws2tcpip.h>
 
 #include "../../Common/StringUtil.h"
-#pragma comment(lib, "wsock32.lib")
+#pragma comment(lib, "Ws2_32.lib")
 
 class CSendTSTCPMain
 {

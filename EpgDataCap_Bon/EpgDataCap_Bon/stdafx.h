@@ -15,7 +15,6 @@
 #include <shellapi.h>
 #include <commdlg.h>
 #include <shlobj.h>
-#include <winsock2.h>
 #pragma comment(lib, "comctl32.lib")
 #pragma comment(lib, "ws2_32.lib")
 
