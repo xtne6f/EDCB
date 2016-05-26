@@ -23,8 +23,8 @@ namespace EpgTimer
         public ListViewSelectedKeeper(ListBox list, bool DoStoringNow = false, Func<object, ulong> _key = null)
         {
             listBox = list;
-            if (DoStoringNow) StoreListViewSelected();
             getKey = _key;
+            if (DoStoringNow) StoreListViewSelected();
         }
 
         public void StoreListViewSelected()
@@ -38,7 +38,7 @@ namespace EpgTimer
             }
         }
 
-        public void RestoreListViewSelected(ListBox list=null)
+        public void RestoreListViewSelected(ListBox list = null)
         {
             try
             {
