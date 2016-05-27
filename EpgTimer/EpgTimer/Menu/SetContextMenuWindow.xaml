@@ -1,39 +1,33 @@
 ﻿<Window x:Class="EpgTimer.SetContextMenuWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="右クリックメニューの設定" Height="550" Width="650" Loaded="Window_Loaded" ShowInTaskbar="False" WindowStartupLocation="CenterOwner" ResizeMode="NoResize">
+        Title="右クリックメニューの設定" Height="550" Width="650" Loaded="Window_Loaded" ShowInTaskbar="False" WindowStartupLocation="CenterOwner" >
 
-    <Grid>
-        <TabControl Margin="10,10,10,45" Name="tabControlSetting">
-            <TabItem Header="共通設定" Name="tabItem_MenuEasy">
-                <StackPanel Orientation="Horizontal">
-                    <StackPanel.Resources>
-                        <Style TargetType="StackPanel" >
-                            <Setter Property="VerticalAlignment" Value="Top"/>
-                            <Setter Property="HorizontalAlignment" Value="Left"/>
-                        </Style>
-                        <Style TargetType="Label" BasedOn="{StaticResource {x:Type Label}}">
-                            <Setter Property="Height" Value="28"/>
-                            <Setter Property="Margin" Value="0,0,0,-10"/>
-                        </Style>
-                        <Style TargetType="Separator" x:Key="LineBase" BasedOn="{StaticResource {x:Type Separator}}">
-                            <Setter Property="Height" Value="10"/>
-                        </Style>
+    <Grid Margin="6">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="auto" />
+        </Grid.RowDefinitions>
+        <TabControl>
+            <TabItem Header="共通設定" >
+                <DockPanel>
+                    <DockPanel.Resources>
+                        <Style TargetType="Separator" x:Key="LineBase" BasedOn="{StaticResource {x:Type Separator}}" />
                         <Style TargetType="Separator" x:Key="TopLine" BasedOn="{StaticResource LineBase}">
-                            <Setter Property="Margin" Value="0,0,0,-6"/>
+                            <Setter Property="Margin" Value="0,-4,0,-4"/>
                         </Style>
                         <Style TargetType="Separator" x:Key="MiddleLine" BasedOn="{StaticResource LineBase}">
-                            <Setter Property="Margin" Value="12,0,12,0"/>
+                            <Setter Property="Margin" Value="12,4,12,4"/>
                         </Style>
                         <Style TargetType="Separator" x:Key="UnderLine" BasedOn="{StaticResource LineBase}">
-                            <Setter Property="Margin" Value="0,2,0,2"/>
+                            <Setter Property="Margin" Value="0,6,0,6"/>
                         </Style>
                         <Style TargetType="CheckBox" BasedOn="{StaticResource {x:Type CheckBox}}">
-                            <Setter Property="Height" Value="15"/>
-                            <Setter Property="Margin" Value="6,0,0,0"/>
+                            <Setter Property="Content" Value=""/>
+                            <Setter Property="Margin" Value="6,0,6,0"/>
                         </Style>
-                    </StackPanel.Resources>
-                    <StackPanel Name="stackPanel_menu" Width="188">
+                    </DockPanel.Resources>
+                    <StackPanel Name="stackPanel_menu">
                         <Label Content="表示項目" />
                         <Separator Style="{StaticResource TopLine}" />
                         <Separator Style="{StaticResource UnderLine}" />
@@ -64,8 +58,8 @@
                         <CheckBox Content="右クリックメニューの設定..." />
                         <Separator Style="{StaticResource UnderLine}" />
                     </StackPanel>
-                    <StackPanel Name="stackPanel_option" Width="168" >
-                        <Label Content="オプション" Name="Option" />
+                    <StackPanel>
+                        <Label Content="オプション" />
                         <Separator Style="{StaticResource TopLine}" />
                         <Separator Style="{StaticResource UnderLine}" />
                         <CheckBox Visibility="Hidden"/>
@@ -95,49 +89,59 @@
                         <CheckBox Visibility="Hidden" />
                         <Separator Style="{StaticResource UnderLine}" />
                     </StackPanel>
-                    <StackPanel Name="stackPanel_gesture" Width="122">
-                        <Label Content="ショートカット有効" Name="Gesture1" />
+                    <StackPanel Name="stackPanel_gesture" >
+                        <Label Content="ショートカット有効" />
                     </StackPanel>
-                    <StackPanel Name="stackPanel_gesture2" Width="112">
-                        <Label Content="ショートカットのみ使用" Name="Gesture2" ToolTip="メニュー非表示でもショートカットを使用できます"/>
+                    <StackPanel Name="stackPanel_gesture2" >
+                        <Label Content="ショートカットのみ使用" ToolTip="メニュー非表示でもショートカットを使用できます"/>
                     </StackPanel>
-                </StackPanel>
+                </DockPanel>
             </TabItem>
-            <TabItem Header="個別設定" Name="tabItem_MenuManual">
-                <Grid>
+            <TabItem Header="個別設定" >
+                <Grid Margin="6" >
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="auto" />
+                        <RowDefinition Height="4" />
+                        <RowDefinition Height="auto" />
+                        <RowDefinition Height="2" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="200" />
-                        <ColumnDefinition Width="65" />
-                        <ColumnDefinition Width="200" />
-                        <ColumnDefinition Width="123*" />
+                        <ColumnDefinition Width="10*" />
+                        <ColumnDefinition Width="6" />
+                        <ColumnDefinition Width="auto" />
+                        <ColumnDefinition Width="6" />
+                        <ColumnDefinition Width="10*" />
+                        <ColumnDefinition Width="6" />
+                        <ColumnDefinition Width="7*" />
                     </Grid.ColumnDefinitions>
-                    <Label Content="画面選択" Name="SelectView" Margin="6,6,136,0" Height="24" VerticalAlignment="Top" Width="67" />
-                    <ComboBox Height="23" Name="comboBoxViewSelect" Width="200" Margin="65,6,0,0" VerticalAlignment="Top" SelectionChanged="comboBoxViewSelect_SelectionChanged" Grid.ColumnSpan="2" />
-                    <Label Content="表示項目" Name="SettingMenu" Margin="6,33,0,0" Height="24" VerticalAlignment="Top" Width="203" />
-                    <Label Content="全項目一覧" Name="DefaultMenu" Margin="6,33,0,0" Height="24" VerticalAlignment="Top" Width="203" Grid.Column="2" />
-                    <Button Content="全画面リセット" Height="23" Name="button_allDefault" Grid.Column="2" Margin="6,6,0,0" Width="96" Click="button_allDefault_Click" VerticalAlignment="Top" HorizontalAlignment="Left" />
-                    <StackPanel Grid.Column="3" HorizontalAlignment="Left" Margin="0,63,0,0" Name="stackPanel2" VerticalAlignment="Top" Width="125">
-                        <TextBlock Text="{}" Name="textblocExp" TextWrapping="Wrap" />
-                    </StackPanel>
-                    <ListBox Height="308" Margin="6,63,0,0" Name="listBox_Setting" VerticalAlignment="Top" Width="190" SelectionMode="Extended" HorizontalAlignment="Left" />
-                    <ListBox Height="308" Margin="6,63,0,0" Name="listBox_Default" VerticalAlignment="Top" Width="190" Grid.Column="2" SelectionMode="Extended" HorizontalAlignment="Left" />
-                    <StackPanel Height="308" Margin="0,63,0,0" Name="stackPanel1" VerticalAlignment="Top" Width="65" Grid.Column="1">
-                        <Button Margin="0,0,0,5" Content="全て追加" Height="23" Name="button_reset" />
-                        <Button Margin="0,0,0,5" Content="追加" Height="23" Name="button_add" />
-                        <Button Margin="0,0,0,5" Content="セパレータ" Height="23" Name="button_separator" Click="button_separator_Click" />
-                        <Button Margin="0,0,0,5" Content="削除" Height="23" Name="button_del" />
-                        <Button Margin="0,0,0,5" Content="全削除" Height="23" Name="button_delAll" />
-                        <Button Margin="0,0,0,5" Content="↑↑" Height="23" Name="button_top" ToolTip="一番上へ" />
-                        <Button Margin="0,0,0,5" Content="↑" Height="23" Name="button_up" ToolTip="1つ上へ" />
-                        <Button Margin="0,0,0,5" Content="↓" Height="23" Name="button_down" ToolTip="1つ下へ" />
-                        <Button Margin="0,0,0,5" Content="↓↓" Height="23" Name="button_bottom" ToolTip="一番下へ" />
+                    <DockPanel Grid.ColumnSpan="3">
+                        <Label Content="画面選択" />
+                        <ComboBox Grid.ColumnSpan="3" Name="comboBoxViewSelect" Margin="6,0,0,0" SelectionChanged="comboBoxViewSelect_SelectionChanged" Height="{Binding ElementName=button_allDefault,Path=ActualHeight}"/>
+                    </DockPanel>
+                    <Label Content="表示項目" Grid.Row="2"/>
+                    <Label Content="全項目一覧" Grid.Row="2" Grid.Column="4"/>
+                    <Button Content="全画面リセット" Name="button_allDefault" HorizontalAlignment="Left" Grid.Column="4" Click="button_allDefault_Click" />
+                    <TextBlock Grid.Row="4" Grid.Column="6" Text="{}" Name="textblocExp" TextWrapping="Wrap" />
+                    <ListBox Grid.Row="4" Name="listBox_Setting" VerticalAlignment="Stretch" SelectionMode="Extended" />
+                    <ListBox Grid.Row="4" Grid.Column="4" Name="listBox_Default" VerticalAlignment="Stretch" SelectionMode="Extended" />
+                    <StackPanel Grid.Row="4" Grid.Column="2" MinWidth="65" >
+                        <Button Margin="0,0,0,5" Content="全て追加" Name="button_reset" />
+                        <Button Margin="0,0,0,5" Content="追加" Name="button_add" />
+                        <Button Margin="0,0,0,5" Content="セパレータ" Name="button_separator" Click="button_separator_Click" />
+                        <Button Margin="0,0,0,5" Content="削除" Name="button_del" />
+                        <Button Margin="0,0,0,5" Content="全削除" Name="button_delAll" />
+                        <Button Margin="0,0,0,5" Content="↑↑" Name="button_top" ToolTip="一番上へ" />
+                        <Button Margin="0,0,0,5" Content="↑" Name="button_up" ToolTip="1つ上へ" />
+                        <Button Margin="0,0,0,5" Content="↓" Name="button_down" ToolTip="1つ下へ" />
+                        <Button Margin="0,0,0,5" Content="↓↓" Name="button_bottom" ToolTip="一番下へ" />
                     </StackPanel>
                 </Grid>
             </TabItem>
-            <TabItem Header="その他" Name="tabItem_Etc">
-                <StackPanel Margin="6,6,6,6">
+            <TabItem Header="その他" >
+                <StackPanel Margin="6">
                     <DockPanel Margin="0,0,0,6" >
-                        <Label Content="検索のURI " Height="24" />
+                        <Label Content="検索のURI " />
                         <TextBox Name="textBox_SearchURI" Height="24" />
                     </DockPanel>
                     <GroupBox Header="個別設定を使用する" Margin="0,6,0,0" >
@@ -158,8 +162,12 @@
                 </StackPanel>
             </TabItem>
         </TabControl>
-        <Button Content="設定の初期化" Height="23" Margin="26,0,0,12" Name="button_Initialize" VerticalAlignment="Bottom" Click="button_Initialize_Click" HorizontalAlignment="Left" Width="100" />
-        <Button Content="OK" Height="23" HorizontalAlignment="Right" Margin="0,0,138,12" Name="button_OK" VerticalAlignment="Bottom" Width="75" Click="button_OK_Click" />
-        <Button Content="キャンセル" Height="23" HorizontalAlignment="Right" Margin="0,0,28,12" Name="button_cancel" VerticalAlignment="Bottom" Width="75" Click="button_cancel_Click" />
+        <Grid Grid.Row="2" Margin="24,10,24,0" MinWidth="300">
+            <Button Content="設定の初期化" Click="button_Initialize_Click" HorizontalAlignment="Left" MinWidth="100" />
+            <DockPanel HorizontalAlignment="Right">
+                <Button Content="OK" Margin="0,0,20,0" MinWidth="75" Click="button_OK_Click" />
+                <Button Content="キャンセル" Name="button_cancel" MinWidth="75" Click="button_cancel_Click" />
+            </DockPanel>
+        </Grid>
     </Grid>
 </Window>

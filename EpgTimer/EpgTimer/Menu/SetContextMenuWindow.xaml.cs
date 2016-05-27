@@ -172,10 +172,10 @@ namespace EpgTimer
                     stackItems_ges1[i].IsChecked = src.IsGestureEnabled;
                     stackItems_ges2[i].IsChecked = !src.IsGesNeedMenu;
 
-                    stackItems_ges1[i].Content = MenuBinds.GetInputGestureText(src.GetGestuers());
+                    stackItems_ges1[i].Content = MenuBinds.GetInputGestureText(src.GetGestuers()) ?? "";
                     stackItems_ges2[i].Content = "使用する";
 
-                    stackItems_ges1[i].Visibility = (stackItems_ges1[i].Content == null) ? Visibility.Hidden : Visibility.Visible;
+                    stackItems_ges1[i].Visibility = string.IsNullOrEmpty(stackItems_ges1[i].Content as string) ? Visibility.Hidden : Visibility.Visible;
                     stackItems_ges2[i].Visibility = stackItems_ges1[i].Visibility;
                 }
 

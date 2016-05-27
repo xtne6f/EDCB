@@ -74,36 +74,78 @@
                     </StackPanel>
                 </Grid>
             </TabItem>
-            <TabItem Header="ボタン表示" Name="tabItem3">
-                <Grid>
-                    <GroupBox Header="上部表示ボタン" Height="197" Margin="12,12,12,0" Name="groupBox31" VerticalAlignment="Top">
-                        <Grid>
-                            <Label Content="表示ボタン" Height="28" HorizontalAlignment="Left" Margin="6,6,0,0" Name="label31" VerticalAlignment="Top" />
-                            <ListBox Height="124" HorizontalAlignment="Left" Margin="6,40,0,0" Name="listBox_viewBtn" VerticalAlignment="Top" Width="172" SelectionMode="Extended" />
-                            <Button Content="↑" Height="23" HorizontalAlignment="Left" Margin="205,40,0,0" Name="button_btnUp" VerticalAlignment="Top" Width="47" />
-                            <Button Content="↓" Height="23" HorizontalAlignment="Left" Margin="205,141,0,0" Name="button_btnDown" VerticalAlignment="Top" Width="47" />
-                            <Button Content="→" Height="23" HorizontalAlignment="Left" Margin="205,77,0,0" Name="button_btnDel" VerticalAlignment="Top" Width="47" />
-                            <Button Content="←" Height="23" HorizontalAlignment="Left" Margin="205,106,0,0" Name="button_btnAdd" VerticalAlignment="Top" Width="47" />
-                            <Label Content="項目" Height="28" HorizontalAlignment="Left" Margin="281,6,0,0" Name="label32" VerticalAlignment="Top" />
-                            <ListBox Height="124" HorizontalAlignment="Left" Margin="281,40,0,0" Name="listBox_itemBtn" VerticalAlignment="Top" Width="172" SelectionMode="Extended" />
-                            <CheckBox Content="タブの位置に表示" Height="16" HorizontalAlignment="Left" Margin="469,40,0,0" Name="checkBox_showAsTab" VerticalAlignment="Top" />
-                            <CheckBox Content="スタンバイ、休止ボタンでもカウントダウンを表示" Height="16" HorizontalAlignment="Left" Margin="469,62,0,0" Name="checkBox_suspendChk" VerticalAlignment="Top" Width="263"/>
-                            <TextBox Height="24" Margin="499,80,0,0" Name="textBox_suspendChkTime" VerticalAlignment="Top" HorizontalAlignment="Left" Width="42" />
-                            <Label Content="秒間" Height="28" HorizontalAlignment="Left" Margin="547,80,0,0" Name="labelTimer" VerticalAlignment="Top" />
-                            <TextBlock Text="※" Height="23" HorizontalAlignment="Left" Margin="485,106,0,0" Name="textblockStar" VerticalAlignment="Top" Width="21" />
-                            <TextBlock Text="{}" Height="58" HorizontalAlignment="Left" Margin="499,106,0,0" Name="textblockTimer" VerticalAlignment="Top" Width="213" TextWrapping="Wrap" />
+            <TabItem Header="ボタン表示">
+                <Grid Margin="12" >
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="50*" />
+                        <RowDefinition Height="50*" />
+                    </Grid.RowDefinitions>
+                    <GroupBox Header="上部表示ボタン">
+                        <Grid Margin="6">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="auto" />
+                                <RowDefinition Height="6" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="2*" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="auto" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="2*" />
+                                <ColumnDefinition Width="24" />
+                                <ColumnDefinition Width="3*" />
+                            </Grid.ColumnDefinitions>
+                            <Label Content="表示ボタン"/>
+                            <ListBox Grid.Row="2" Name="listBox_viewBtn" VerticalAlignment="Stretch" SelectionMode="Extended" />
+                            <StackPanel Grid.Row="2" Grid.Column="2" MinWidth="47">
+                                <Button Content="↑" Name="button_btnUp" />
+                                <Button Content="追加" Margin="0,8,0,0" Name="button_btnAdd" />
+                                <Button Content="削除" Margin="0,4,0,0" Name="button_btnDel" />
+                                <Button Content="↓" Margin="0,8,0,0" Name="button_btnDown" />
+                            </StackPanel>
+                            <Label Grid.Column="4" Content="項目"/>
+                            <ListBox Grid.Row="2" Grid.Column="4" Name="listBox_itemBtn" VerticalAlignment="Stretch" SelectionMode="Extended" />
+                            <StackPanel  Grid.Row="2" Grid.Column="6">
+                                <CheckBox Content="タブの位置に表示" Name="checkBox_showAsTab" VerticalAlignment="Top" />
+                                <CheckBox Content="スタンバイ、休止ボタンでもカウントダウンを表示" Margin="0,6,0,0" Name="checkBox_suspendChk" />
+                                <DockPanel Margin="0,6,0,0" >
+                                    <TextBox Margin="14,0,0,0" Name="textBox_suspendChkTime" Width="42" />
+                                    <Label Content="秒間" Margin="6,0,0,0" />
+                                </DockPanel>
+                                <DockPanel Margin="0,6,0,0">
+                                    <TextBlock Text="※" Margin="14,0,0,0"/>
+                                    <TextBlock Text="{}" Margin="6,0,0,0" Name="textblockTimer" TextWrapping="Wrap" />
+                                </DockPanel>
+                            </StackPanel>
                         </Grid>
                     </GroupBox>
-                    <GroupBox Header="タスクアイコン 右クリック表示項目" Height="197" Margin="12,217,12,0" Name="groupBox32" VerticalAlignment="Top">
-                        <Grid>
-                            <Label Content="表示ボタン" Height="28" HorizontalAlignment="Left" Margin="6,6,0,0" Name="label33" VerticalAlignment="Top" />
-                            <ListBox Height="124" HorizontalAlignment="Left" Margin="6,40,0,0" Name="listBox_viewTask" VerticalAlignment="Top" Width="172" SelectionMode="Extended" />
-                            <Button Content="↑" Height="23" HorizontalAlignment="Left" Margin="205,40,0,0" Name="button_taskUp" VerticalAlignment="Top" Width="47" />
-                            <Button Content="↓" Height="23" HorizontalAlignment="Left" Margin="205,141,0,0" Name="button_taskDown" VerticalAlignment="Top" Width="47" />
-                            <Button Content="→" Height="23" HorizontalAlignment="Left" Margin="205,77,0,0" Name="button_taskDel" VerticalAlignment="Top" Width="47" />
-                            <Button Content="←" Height="23" HorizontalAlignment="Left" Margin="205,106,0,0" Name="button_taskAdd" VerticalAlignment="Top" Width="47" />
-                            <Label Content="項目" Height="28" HorizontalAlignment="Left" Margin="281,6,0,0" Name="label34" VerticalAlignment="Top" />
-                            <ListBox Height="124" HorizontalAlignment="Left" Margin="281,40,0,0" Name="listBox_itemTask" VerticalAlignment="Top" Width="172" SelectionMode="Extended" />
+                    <GroupBox Header="タスクアイコン 右クリック表示項目" Grid.Row="1">
+                        <Grid Margin="6">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="auto" />
+                                <RowDefinition Height="6" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="2*" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="auto" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="2*" />
+                                <ColumnDefinition Width="24" />
+                                <ColumnDefinition Width="3*" />
+                            </Grid.ColumnDefinitions>
+                            <Label Content="表示ボタン"/>
+                            <ListBox Grid.Row="2" Name="listBox_viewTask" VerticalAlignment="Stretch" SelectionMode="Extended" />
+                            <StackPanel Grid.Row="2" Grid.Column="2"  MinWidth="47">
+                                <Button Content="↑" Name="button_taskUp" />
+                                <Button Content="追加" Margin="0,8,0,0" Name="button_taskAdd" />
+                                <Button Content="削除" Margin="0,4,0,0" Name="button_taskDel" />
+                                <Button Content="↓" Margin="0,8,0,0" Name="button_taskDown" />
+                            </StackPanel>
+                            <Label Grid.Column="4" Content="項目"/>
+                            <ListBox Grid.Row="2" Grid.Column="4" Name="listBox_itemTask" VerticalAlignment="Stretch" SelectionMode="Extended" />
                         </Grid>
                     </GroupBox>
                 </Grid>

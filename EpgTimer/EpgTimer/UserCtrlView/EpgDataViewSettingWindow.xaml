@@ -3,14 +3,18 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="EPGデータ表示設定" Height="550" Width="600" xmlns:my="clr-namespace:EpgTimer" WindowStartupLocation="CenterOwner">
 
-    <Grid>
+    <Grid Margin="6">
         <Grid.RowDefinitions>
             <RowDefinition Height="*" />
-            <RowDefinition Height="40" />
+            <RowDefinition Height="auto" />
         </Grid.RowDefinitions>
-        <Button Content="キャンセル" Grid.Row="1" Height="23" HorizontalAlignment="Right" Margin="0,0,12,12" Name="button_cancel" VerticalAlignment="Bottom" Width="75" Click="button_cancel_Click" />
-        <Button Content="OK" Grid.Row="1" Height="23" HorizontalAlignment="Right" Margin="0,0,122,12" Name="button_OK" VerticalAlignment="Bottom" Width="75" Click="button_OK_Click" />
-        <CheckBox Content="番組表を一時的に変更する" Grid.Row="1" Height="16" HorizontalAlignment="Left" Margin="29,0,0,14" Name="checkBox_tryEpgSetting" VerticalAlignment="Bottom" Visibility="Visible" Click="checkBox_tryEpgSetting_Click" ToolTipService.ShowOnDisabled="True" ToolTip="今だけ番組表の表示を変更し、設定を保存しません。再起動などした際は保存されている設定に戻ります。" />
         <my:EpgDataViewSetting x:Name="epgDataViewSetting" />
+        <Grid Grid.Row="1" Margin="24,10,24,0" MinWidth="300">
+            <CheckBox Content="番組表を一時的に変更する" Name="checkBox_tryEpgSetting" Click="checkBox_tryEpgSetting_Click" ToolTipService.ShowOnDisabled="True" ToolTip="今だけ番組表の表示を変更し、設定を保存しません。再起動などした際は保存されている設定に戻ります。" />
+            <DockPanel HorizontalAlignment="Right">
+                <Button Content="OK" Margin="0,0,20,0" MinWidth="75" Click="button_OK_Click" />
+                <Button Content="キャンセル" Name="button_cancel" MinWidth="75" Click="button_cancel_Click" />
+            </DockPanel>
+        </Grid>
     </Grid>
 </Window>
