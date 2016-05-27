@@ -37,6 +37,7 @@ namespace EpgTimer
                 radioButton_list.IsChecked = false;
 
                 listBox_Button_Set();
+                listBox_serviceView_ContextMenu_Set();
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
@@ -151,26 +152,6 @@ namespace EpgTimer
             button_service_down.Click += new RoutedEventHandler(bxs.button_down_Click);
             button_service_bottom.Click += new RoutedEventHandler(bxs.button_bottom_Click);
 
-            // 右クリックメニューにSIDのソートを登録
-            var cm = new ContextMenu();
-            var menuItemAsc = new MenuItem();
-            menuItemAsc.Header = "SIDを昇順に並び替える";
-            menuItemAsc.Tag = 0;
-            menuItemAsc.Click += listBox_serviceView_SidSort;
-            cm.Items.Insert(0, menuItemAsc);
-            var menuItemDesc = new MenuItem();
-            menuItemDesc.Header = "SIDを逆順に並び替える";
-            menuItemDesc.Tag = 1;
-            menuItemDesc.Click += listBox_serviceView_SidSort;
-            cm.Items.Insert(1, menuItemDesc);
-            listBox_serviceView.ContextMenu = cm;
-            listBox_serviceView.ContextMenuOpening += (s, e) => {
-                // 2つ以上のアイテムが選択されているときのみソート可能になるようにする
-                bool isSortable = listBox_serviceView.SelectedItems.Count > 1;
-                ((MenuItem)listBox_serviceView.ContextMenu.Items[0]).IsEnabled = isSortable;
-                ((MenuItem)listBox_serviceView.ContextMenu.Items[1]).IsEnabled = isSortable;
-            };
-
             //ジャンル選択関係
             bxj.SourceBox = this.listBox_jyanru;
             bxj.TargetBox = this.listBox_jyanruView;
@@ -180,6 +161,90 @@ namespace EpgTimer
             button_jyanru_add.Click += new RoutedEventHandler(bxj.button_add_Click);
             button_jyanru_del.Click += new RoutedEventHandler(bxj.button_del_Click);
             button_jyanru_delAll.Click += new RoutedEventHandler(bxj.button_delAll_Click);
+        }
+
+        List<Tuple<int, int>> sortList;
+        private void listBox_serviceView_ContextMenu_Set()
+        {
+            // 右クリックメニューにSIDのソートを登録
+            var cm = new ContextMenu();
+            var menuItemAsc = new MenuItem();
+            menuItemAsc.Header = "サブチャンネルの結合表示を解除";
+            menuItemAsc.ToolTip = "同一TSIDのサービスの結合表示が解除されるようServiceIDを昇順に並び替えます";
+            menuItemAsc.Tag = 0;
+            cm.Items.Insert(0, menuItemAsc);
+            var menuItemDesc = new MenuItem();
+            menuItemDesc.Header = "サブチャンネルを番組表で結合表示";
+            menuItemDesc.ToolTip = "同一TSIDのサービスをServiceIDが逆順になるよう並べると番組表で結合表示される機能を使い、\r\nサブチャンネルを含めて1サービスの幅で表示します";
+            menuItemDesc.Tag = 1;
+            cm.Items.Insert(0, menuItemDesc);
+            foreach (MenuItem item in cm.Items)
+            {
+                item.Click += listBox_serviceView_SidSort;
+                ToolTipService.SetShowOnDisabled(item, true);
+                ToolTipService.SetShowDuration(item, 20000);
+            }
+            listBox_serviceView.ContextMenu = cm;
+            listBox_serviceView.ContextMenuOpening += listBox_serviceView_ContextMenu_Opening;
+            listBox_serviceView.ContextMenuClosing += (s, e) => sortList = null;
+        }
+
+        private void listBox_serviceView_ContextMenu_Opening(object sender, ContextMenuEventArgs e)
+        {
+            var grpDic = new Dictionary<int, Tuple<int, int>>();
+            var grpDicAdd = new Action<int, int>((first, end) =>
+            {
+                for (int i = first; i <= end; i++) grpDic.Add(i, new Tuple<int, int>(first, end));
+            });
+            var grpDicRemove = new Action<int, int>((first, end) =>
+            {
+                for (int i = first; i <= end; i++) grpDic.Remove(i);
+            });
+
+            //並べ替え可能なグループを抽出
+            int itemIndex = 0, firstTsidIndex = 0;
+            for (; itemIndex < listBox_serviceView.Items.Count - 1; itemIndex++)
+            {
+                // 同一TSIDが連続する部分を選択中の中から探す(散らばっているTSIDはまとめない)
+                var a = listBox_serviceView.Items[itemIndex] as ChSet5Item;
+                var b = listBox_serviceView.Items[itemIndex + 1] as ChSet5Item;
+                if (a.TSID == b.TSID) continue;
+
+                // 見つかった場合 firstTsidIndex < itemIndex になる
+                if (itemIndex != firstTsidIndex) grpDicAdd(firstTsidIndex, itemIndex);
+                firstTsidIndex = itemIndex + 1;
+            }
+            if (itemIndex != firstTsidIndex) grpDicAdd(firstTsidIndex, itemIndex);
+
+            // 対象があるときのみソート可能になるようにする
+            sortList = new List<Tuple<int, int>>();
+            foreach (var item in listBox_serviceView.SelectedItems)
+            {
+                Tuple<int, int> data;
+                if (grpDic.TryGetValue(listBox_serviceView.Items.IndexOf(item), out data) == true)
+                {
+                    sortList.Add(data);
+                    grpDicRemove(data.Item1, data.Item2);
+                }
+            }
+
+            bool isSortable = sortList.Count != 0;
+            ((MenuItem)listBox_serviceView.ContextMenu.Items[0]).IsEnabled = isSortable;
+            ((MenuItem)listBox_serviceView.ContextMenu.Items[1]).IsEnabled = isSortable;
+
+            if (isSortable == false) return;
+
+            //全選択時以外は選択状態を変更する
+            if (listBox_serviceView.Items.Count == listBox_serviceView.SelectedItems.Count) return;
+
+            listBox_serviceView.UnselectAll();
+            foreach (var data in sortList)
+            {
+                for (int i = data.Item1; i <= data.Item2; i++)
+                {
+                    listBox_serviceView.SelectedItems.Add(listBox_serviceView.Items[i]);
+                }
+            }
         }
 
         //残りの追加イベント
@@ -237,22 +302,14 @@ namespace EpgTimer
                 }
             });
 
-            // ソート中に SelectedItems が壊れるので保存しておく
-            var selected = listBox_serviceView.SelectedItems.OfType<ChSet5Item>().ToList();
-            int itemIndex = 0, firstTsidIndex = 0;
-            for (; itemIndex < listBox_serviceView.Items.Count - 1; itemIndex++)
-            {
-                // 同一TSIDが連続する部分を選択中の中から探す(散らばっているTSIDはまとめない)
-                var a = listBox_serviceView.Items[itemIndex] as ChSet5Item;
-                var b = listBox_serviceView.Items[itemIndex + 1] as ChSet5Item;
-                if (selected.IndexOf(a) >= 0 && a.TSID == b.TSID) continue;
+            //選択状態を保存
+            var listKeeper = new ListViewSelectedKeeper(listBox_serviceView, true, item => (item as ChSet5Item).Key);
 
-                // 見つかった場合 firstTsidIndex < itemIndex になる
-                sort(firstTsidIndex, itemIndex);
-                firstTsidIndex = itemIndex + 1;
-            }
-            sort(firstTsidIndex, itemIndex);
-            listBox_serviceView.SelectedItems.Clear();
+            //ソート
+            sortList.ForEach(data => sort(data.Item1,data.Item2));
+
+            //選択状態を復元
+            listKeeper.RestoreListViewSelected();
         }
 
         private void Display_ServiceView(ListBox srclistBox, TextBox targetBox)
