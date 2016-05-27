@@ -99,6 +99,7 @@ namespace EpgTimer
                 bx.DoubleClickMoveAllow();
                 button_reset.Click += new RoutedEventHandler(bx.button_reset_Click);
                 button_add.Click += new RoutedEventHandler(bx.button_add_Click);
+                button_ins.Click += new RoutedEventHandler(bx.button_insert_Click);
                 button_del.Click += new RoutedEventHandler(bx.button_del_Click);
                 button_delAll.Click += new RoutedEventHandler(bx.button_delAll_Click);
                 button_top.Click += new RoutedEventHandler(bx.button_top_Click);

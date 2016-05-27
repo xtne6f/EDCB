@@ -183,10 +183,7 @@ namespace EpgTimer
                     target.UnselectAll();
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
 
         public void addItems(ListBox src, ListBox target, bool IsInsert = false)
@@ -202,9 +199,8 @@ namespace EpgTimer
                     {
                         if (IsInsert == true && target.SelectedItem != null)
                         {
-                            target.Items.Insert(target.SelectedIndex + 1, info);
-                            target.SelectedIndex += 1;
-                            LastIndex = target.SelectedIndex;
+                            if (LastIndex == -1) LastIndex = target.SelectedIndex;
+                            target.Items.Insert(target.SelectedIndex, info);
                         }
                         else
                         {
@@ -213,16 +209,13 @@ namespace EpgTimer
                         }
                     }
                 }
-                if (target.Items.Count != 0 && LastIndex >=0)
+                if (target.Items.Count != 0 && LastIndex >= 0)
                 {
                     target.SelectedIndex = LastIndex;
                     target.ScrollIntoViewFix(LastIndex);
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
 
         private bool IsEnableAdd(ListBox target, object item)
@@ -254,10 +247,7 @@ namespace EpgTimer
                     target.ScrollIntoViewFix(newSelectedIndex);
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
 
         /// <summary>アイテムを移動</summary>
@@ -274,10 +264,7 @@ namespace EpgTimer
                 target.SelectedIndex = newIndex;
                 target.ScrollIntoViewFix(newIndex);
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
 
     }

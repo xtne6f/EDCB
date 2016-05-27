@@ -128,6 +128,7 @@
                     <StackPanel Grid.Row="4" Grid.Column="2" MinWidth="65" >
                         <Button Margin="0,0,0,5" Content="全て追加" Name="button_reset" />
                         <Button Margin="0,0,0,5" Content="追加" Name="button_add" />
+                        <Button Margin="0,0,0,5" Content="挿入" Name="button_ins" />
                         <Button Margin="0,0,0,5" Content="セパレータ" Name="button_separator" Click="button_separator_Click" />
                         <Button Margin="0,0,0,5" Content="削除" Name="button_del" />
                         <Button Margin="0,0,0,5" Content="全削除" Name="button_delAll" />

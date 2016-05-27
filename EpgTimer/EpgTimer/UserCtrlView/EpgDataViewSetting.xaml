@@ -61,7 +61,10 @@
                             <StackPanel Grid.Row="2" Grid.Column="2">
                                 <Button Content="全追加" HorizontalAlignment="Left" Margin="0,0,0,4" Name="button_service_addAll" />
                                 <Button Content="映像のみ全追加" Margin="0,0,0,4" Name="button_service_addVideo" Click="button_service_addVideo_Click" />
-                                <Button Content="追加" HorizontalAlignment="Left" Margin="0,0,0,4" Name="button_service_add" />
+                                <DockPanel Margin="0,0,0,4" >
+                                    <Button Content="追加" Name="button_service_add" />
+                                    <Button Content="挿入" Margin="6,0,0,0" Name="button_service_ins" />
+                                </DockPanel>
                                 <Button Content="削除" HorizontalAlignment="Left" Margin="0,0,0,4" Name="button_service_del" />
                                 <Button Content="全削除" HorizontalAlignment="Left" Margin="0,0,0,8" Name="button_service_delAll" VerticalAlignment="Top" />
                                 <DockPanel Margin="0,0,0,4" >
@@ -120,6 +123,7 @@
                             <StackPanel Grid.Row="2" Grid.Column="2" >
                                 <Button Content="全追加" Margin="0,0,0,6" Name="button_jyanru_addAll" />
                                 <Button Content="追加" Margin="0,0,0,6" Name="button_jyanru_add" />
+                                <Button Content="挿入" Margin="0,0,0,6" Name="button_jyanru_ins" />
                                 <Button Content="削除" Margin="0,0,0,6" Name="button_jyanru_del" />
                                 <Button Content="全削除" Margin="0,0,0,6" Name="button_jyanru_delAll" />
                             </StackPanel>

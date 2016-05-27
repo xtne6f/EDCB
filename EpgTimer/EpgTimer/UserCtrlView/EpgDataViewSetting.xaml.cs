@@ -145,6 +145,7 @@ namespace EpgTimer
             };
             button_service_addAll.Click += new RoutedEventHandler(bxs.button_addAll_Click);
             button_service_add.Click += new RoutedEventHandler(bxs.button_add_Click);
+            button_service_ins.Click += new RoutedEventHandler(bxs.button_insert_Click);
             button_service_del.Click += new RoutedEventHandler(bxs.button_del_Click);
             button_service_delAll.Click += new RoutedEventHandler(bxs.button_delAll_Click);
             button_service_top.Click += new RoutedEventHandler(bxs.button_top_Click);
@@ -159,6 +160,7 @@ namespace EpgTimer
             bxj.DoubleClickMoveAllow();
             button_jyanru_addAll.Click += new RoutedEventHandler(bxj.button_addAll_Click);
             button_jyanru_add.Click += new RoutedEventHandler(bxj.button_add_Click);
+            button_jyanru_ins.Click += new RoutedEventHandler(bxj.button_insert_Click);
             button_jyanru_del.Click += new RoutedEventHandler(bxj.button_del_Click);
             button_jyanru_delAll.Click += new RoutedEventHandler(bxj.button_delAll_Click);
         }

@@ -576,6 +576,7 @@ namespace EpgTimer.Setting
             button_btnUp.Click += new RoutedEventHandler(bxb.button_up_Click);
             button_btnDown.Click += new RoutedEventHandler(bxb.button_down_Click);
             button_btnAdd.Click += new RoutedEventHandler((sender, e) => button_Add(bxb, buttonItem));
+            button_btnIns.Click += new RoutedEventHandler((sender, e) => button_Add(bxb, buttonItem, true));
             button_btnDel.Click += new RoutedEventHandler((sender, e) => button_Dell(bxb, bxt, buttonItem));
             bxb.sourceBoxKeyEnable(listBox_itemBtn, (sender, e) => button_btnAdd.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
             bxb.targetBoxKeyEnable(listBox_viewBtn, (sender, e) => button_btnDel.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
@@ -589,6 +590,7 @@ namespace EpgTimer.Setting
             button_taskUp.Click += new RoutedEventHandler(bxt.button_up_Click);
             button_taskDown.Click += new RoutedEventHandler(bxt.button_down_Click);
             button_taskAdd.Click += new RoutedEventHandler((sender, e) => button_Add(bxt, taskItem));
+            button_taskIns.Click += new RoutedEventHandler((sender, e) => button_Add(bxt, taskItem, true));
             button_taskDel.Click += new RoutedEventHandler((sender, e) => button_Dell(bxt, bxb, taskItem));
             bxt.sourceBoxKeyEnable(listBox_itemTask, (sender, e) => button_taskAdd.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
             bxt.targetBoxKeyEnable(listBox_viewTask, (sender, e) => button_taskDel.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
@@ -604,10 +606,10 @@ namespace EpgTimer.Setting
             reLoadButtonItem(bxt, taskItem);
         }
 
-        private void button_Add(BoxExchangeEditor bx, List<string> src)
+        private void button_Add(BoxExchangeEditor bx, List<string> src, bool isInsert = false)
         {
             int pos = bx.SourceBox.SelectedIndex - bx.SourceBox.SelectedItems.Count;
-            bx.addItems(bx.SourceBox, bx.TargetBox);
+            bx.addItems(bx.SourceBox, bx.TargetBox, isInsert);
             reLoadButtonItem(bx, src);
             if (bx.SourceBox.Items.Count != 0)
             {

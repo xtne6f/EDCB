@@ -101,6 +101,7 @@
                             <StackPanel Grid.Row="2" Grid.Column="2" MinWidth="47">
                                 <Button Content="↑" Name="button_btnUp" />
                                 <Button Content="追加" Margin="0,8,0,0" Name="button_btnAdd" />
+                                <Button Content="挿入" Margin="0,4,0,0" Name="button_btnIns" />
                                 <Button Content="削除" Margin="0,4,0,0" Name="button_btnDel" />
                                 <Button Content="↓" Margin="0,8,0,0" Name="button_btnDown" />
                             </StackPanel>
@@ -141,6 +142,7 @@
                             <StackPanel Grid.Row="2" Grid.Column="2"  MinWidth="47">
                                 <Button Content="↑" Name="button_taskUp" />
                                 <Button Content="追加" Margin="0,8,0,0" Name="button_taskAdd" />
+                                <Button Content="挿入" Margin="0,4,0,0" Name="button_taskIns" />
                                 <Button Content="削除" Margin="0,4,0,0" Name="button_taskDel" />
                                 <Button Content="↓" Margin="0,8,0,0" Name="button_taskDown" />
                             </StackPanel>
