@@ -95,7 +95,7 @@ namespace EpgTimer
             if (CommonManager.Instance.IsConnected == false) return false;
 
             ErrCode err = CommonManager.Instance.DB.ReloadReserveInfo();
-            if (CommonManager.CmdErrMsgTypical(err, "予約情報の取得", Owner) == false) return false;
+            if (CommonManager.CmdErrMsgTypical(err, "予約情報の取得") == false) return false;
 
             return true;
         }

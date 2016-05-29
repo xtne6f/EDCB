@@ -139,7 +139,7 @@ namespace EpgTimer
             {
                 DBManager db = CommonManager.Instance.DB;
                 ErrCode err = typeof(T) == typeof(EpgAutoAddData) ? db.ReloadEpgAutoAddInfo() : db.ReloadManualAutoAddInfo();
-                if (CommonManager.CmdErrMsgTypical(err, "情報の取得", this) == false) return false;
+                if (CommonManager.CmdErrMsgTypical(err, "情報の取得") == false) return false;
 
                 ICollection values = typeof(T) == typeof(EpgAutoAddData) ? db.EpgAutoAddList.Values as ICollection : db.ManualAutoAddList.Values as ICollection;
                 dataList.AddRange(values.OfType<T>().Select(info => (S)Activator.CreateInstance(typeof(S), info.CloneObj())));

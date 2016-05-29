@@ -83,7 +83,7 @@ namespace EpgTimer
             return lstCtrl.ReloadInfoData(dataList =>
             {
                 ErrCode err = CommonManager.Instance.DB.ReloadrecFileInfo();
-                if (CommonManager.CmdErrMsgTypical(err, "録画情報の取得", this) == false) return false;
+                if (CommonManager.CmdErrMsgTypical(err, "録画情報の取得") == false) return false;
 
                 foreach (RecFileInfo info in CommonManager.Instance.DB.RecFileInfo.Values)
                 {

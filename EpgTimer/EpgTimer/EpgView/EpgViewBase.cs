@@ -131,7 +131,7 @@ namespace EpgTimer.EpgView
                 if (setViewInfo.SearchMode == false)
                 {
                     ErrCode err = CommonManager.Instance.DB.ReloadEpgData();
-                    if (CommonManager.CmdErrMsgTypical(err, "EPGデータの取得", this) == false) return false;
+                    if (CommonManager.CmdErrMsgTypical(err, "EPGデータの取得") == false) return false;
                     serviceEventList = new Dictionary<UInt64, EpgServiceEventInfo>(CommonManager.Instance.DB.ServiceEventList);
                 }
                 else
@@ -139,7 +139,7 @@ namespace EpgTimer.EpgView
                     //番組情報の検索
                     var list = new List<EpgEventInfo>();
                     ErrCode err = cmd.SendSearchPg(CommonUtil.ToList(setViewInfo.SearchKey), ref list);
-                    if (CommonManager.CmdErrMsgTypical(err, "EPGデータの取得", this) == false) return false;
+                    if (CommonManager.CmdErrMsgTypical(err, "EPGデータの取得") == false) return false;
 
                     //サービス毎のリストに変換
                     serviceEventList = new Dictionary<UInt64, EpgServiceEventInfo>();
@@ -165,7 +165,7 @@ namespace EpgTimer.EpgView
 
                 return true;
             }
-            catch (Exception ex) { CommonUtil.ModelessMsgBoxShow(this, ex.Message + "\r\n" + ex.StackTrace); }
+            catch (Exception ex) { CommonUtil.DispatcherMsgBoxShow(ex.Message + "\r\n" + ex.StackTrace); }
             return false;
         }
 

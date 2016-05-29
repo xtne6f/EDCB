@@ -46,11 +46,7 @@ namespace EpgTimer
         /// </summary>
         public void UpdateReserveInfo(bool reload = true)
         {
-            try
-            {
-                this.Views.ForEach(view => view.UpdateReserveInfo(reload));
-            }
-            catch (Exception ex) { CommonUtil.ModelessMsgBoxShow(this, ex.Message + "\r\n" + ex.StackTrace); }
+            this.Views.ForEach(view => view.UpdateReserveInfo(reload));
         }
 
         /// <summary>
@@ -80,7 +76,7 @@ namespace EpgTimer
                 tabControl.Items.Clear();
                 UpdateInfo();
             }
-            catch (Exception ex) { CommonUtil.ModelessMsgBoxShow(this, ex.Message + "\r\n" + ex.StackTrace); }
+            catch (Exception ex) { CommonUtil.DispatcherMsgBoxShow(ex.Message + "\r\n" + ex.StackTrace); }
 
             //UpdateInfo()は非表示の時走らない。
             //データはここでクリアしてしまうので、現に表示されているもの以外は表示状態はリセットされる。
@@ -133,7 +129,7 @@ namespace EpgTimer
                 tabControl.SelectedIndex = selectIndex;
                 oldID = null;
             }
-            catch (Exception ex) { CommonUtil.ModelessMsgBoxShow(this, ex.Message + "\r\n" + ex.StackTrace); }
+            catch (Exception ex) { CommonUtil.DispatcherMsgBoxShow(ex.Message + "\r\n" + ex.StackTrace); }
             return true;
         }
 
@@ -142,30 +138,22 @@ namespace EpgTimer
         /// </summary>
         private bool ReloadInfoData(bool reload = true)
         {
-            try
+            //タブが無ければ生成、あれば更新
+            if (tabControl.Items.Count == 0)
             {
-                //タブが無ければ生成、あれば更新
-                if (tabControl.Items.Count == 0)
-                {
-                    return CreateTabItem();
-                }
-                else
-                {
-                    this.Views.ForEach(view => view.UpdateInfo(reload));
-                }
+                return CreateTabItem();
             }
-            catch (Exception ex) { CommonUtil.ModelessMsgBoxShow(this, ex.Message + "\r\n" + ex.StackTrace); }
+            else
+            {
+                this.Views.ForEach(view => view.UpdateInfo(reload));
+            }
             return true;
         }
 
         //メニューの更新
         public void RefreshMenu()
         {
-            try
-            {
-                this.Views.ForEach(view => view.RefreshMenu());
-            }
-            catch (Exception ex) { CommonUtil.ModelessMsgBoxShow(this, ex.Message + "\r\n" + ex.StackTrace); }
+            this.Views.ForEach(view => view.RefreshMenu());
         }
 
         private void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
@@ -178,7 +166,7 @@ namespace EpgTimer
                     this.searchJumpTargetProgram();//EPG更新後に探す
                 }
             }
-            catch (Exception ex) { CommonUtil.ModelessMsgBoxShow(this, ex.Message + "\r\n" + ex.StackTrace); }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
 
         /// <summary>

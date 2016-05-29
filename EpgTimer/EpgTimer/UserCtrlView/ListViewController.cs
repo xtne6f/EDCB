@@ -214,7 +214,7 @@ namespace EpgTimer
                 oldItems.RestoreListViewSelected();
                 return true;
             }
-            catch (Exception ex) { CommonUtil.ModelessMsgBoxShow(Owner, ex.Message + "\r\n" + ex.StackTrace); }
+            catch (Exception ex) { CommonUtil.DispatcherMsgBoxShow(ex.Message + "\r\n" + ex.StackTrace); }
             return false;
         }
 
