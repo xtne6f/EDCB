@@ -33,6 +33,9 @@ namespace EpgTimer.UserCtrlView
                     Stream CusorStream = Application.GetResourceStream(new Uri("pack://application:,,,/Resources/drag.cur")).Stream;
                     OnDragCursor = new Cursor(CusorStream);
                     //OnDragCursor = ((UserControl)this.Resources["DragCursor"]).Cursor;
+
+                    //ドラッグ用タイマーの初期化
+                    NotifyTimerSet();
                 }
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
@@ -98,7 +101,6 @@ namespace EpgTimer.UserCtrlView
                         }
                     }
                 });
-
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
@@ -217,7 +219,27 @@ namespace EpgTimer.UserCtrlView
         object cursorObj = null;
         object dragItem = null;
         List<object> dragItems = new List<object>();
-        DispatcherTimer notifyTimer = new DispatcherTimer();
+        DispatcherTimer notifyTimer;
+        private void NotifyTimerSet()
+        {
+            notifyTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(0.5) };
+            notifyTimer.Tick += (sender_t, e_t) =>
+            {
+                if (this._onDrag == false)
+                {
+                    if (Mouse.LeftButton == MouseButtonState.Pressed)
+                    {
+                        DragStart();
+                    }
+                    else
+                    {
+                        //通常このパスは通らないはずだが、一応クリアしておく。
+                        DragRelease();
+                    }
+                }
+                notifyTimer.Stop();
+            };
+        }
 
         public void listBoxItem_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
@@ -239,23 +261,6 @@ namespace EpgTimer.UserCtrlView
                 }
 
                 // 一定時間押下で、ドラッグ中と判定をする。
-                notifyTimer.Interval = TimeSpan.FromSeconds(0.5);
-                notifyTimer.Tick += (sender_t, e_t) =>
-                {
-                    if (this._onDrag == false)
-                    {
-                        if (Mouse.LeftButton == MouseButtonState.Pressed)
-                        {
-                            DragStart();
-                        }
-                        else
-                        {
-                            //通常このパスは通らないはずだが、一応クリアしておく。
-                            DragRelease();
-                        }
-                    }
-                    notifyTimer.Stop();
-                };
                 notifyTimer.Start();
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
