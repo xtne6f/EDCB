@@ -1900,10 +1900,7 @@ void CReserveManager::AddPostBatWork(vector<BAT_WORK_INFO>& workList, LPCWSTR fi
 		GetModuleFolderPath(workList[0].batFilePath);
 		workList[0].batFilePath += L'\\';
 		workList[0].batFilePath += fileName;
-		WIN32_FIND_DATA findData;
-		HANDLE hFind = FindFirstFile(workList[0].batFilePath.c_str(), &findData);
-		if( hFind != INVALID_HANDLE_VALUE ){
-			FindClose(hFind);
+		if( GetFileAttributes(workList[0].batFilePath.c_str()) != INVALID_FILE_ATTRIBUTES ){
 			for( size_t i = 0; i < workList.size(); i++ ){
 				workList[i].batFilePath = workList[0].batFilePath;
 				this->batPostManager.AddBatWork(workList[i]);

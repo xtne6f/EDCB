@@ -110,15 +110,10 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, int (*initProc)(lua_Stat
 	}
 	wstring globalAuthPathW;
 	UTF8toW(globalAuthPath, globalAuthPathW);
-	WIN32_FIND_DATA findData;
-	HANDLE hFind = FindFirstFile(globalAuthPathW.c_str(), &findData);
-	if( hFind != INVALID_HANDLE_VALUE || GetLastError() != ERROR_FILE_NOT_FOUND ){
+	if( GetFileAttributes(globalAuthPathW.c_str()) != INVALID_FILE_ATTRIBUTES || GetLastError() != ERROR_FILE_NOT_FOUND ){
 		//グローバルパスワードは「存在しないことを確信」できなければ指定しておく
 		options[opCount++] = "global_auth_file";
 		options[opCount++] = globalAuthPath.c_str();
-		if( hFind != INVALID_HANDLE_VALUE ){
-			FindClose(hFind);
-		}
 	}
 
 	this->initLuaProc = initProc;

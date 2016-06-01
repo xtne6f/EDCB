@@ -343,12 +343,9 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 			{
 				wstring moduleFolder;
 				GetModuleFolderPath(moduleFolder);
-				WIN32_FIND_DATA findData;
-				HANDLE hFind = FindFirstFile((moduleFolder + L"\\EpgTimer.lnk").c_str(), &findData);
-				if( hFind != INVALID_HANDLE_VALUE ){
+				if( GetFileAttributes((moduleFolder + L"\\EpgTimer.lnk").c_str()) != INVALID_FILE_ATTRIBUTES ){
 					//EpgTimer.lnk(ショートカット)を優先的に開く
 					ShellExecute(NULL, L"open", (moduleFolder + L"\\EpgTimer.lnk").c_str(), NULL, NULL, SW_SHOWNORMAL);
-					FindClose(hFind);
 				}else{
 					//EpgTimer.exeがあれば起動
 					PROCESS_INFORMATION pi;
