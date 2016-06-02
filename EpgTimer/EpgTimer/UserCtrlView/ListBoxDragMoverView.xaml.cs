@@ -33,10 +33,10 @@ namespace EpgTimer.UserCtrlView
                     Stream CusorStream = Application.GetResourceStream(new Uri("pack://application:,,,/Resources/drag.cur")).Stream;
                     OnDragCursor = new Cursor(CusorStream);
                     //OnDragCursor = ((UserControl)this.Resources["DragCursor"]).Cursor;
-
-                    //ドラッグ用タイマーの初期化
-                    NotifyTimerSet();
                 }
+
+                //ドラッグ用タイマーの初期化
+                NotifyTimerSet();
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
