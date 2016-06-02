@@ -52,6 +52,9 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, int (*initProc)(lua_Stat
 	//認証鍵は実質fopen()されるのでWtoA()
 	WtoA(modulePath, sslCertPath);
 	sslCertPath += "\\ssl_cert.pem";
+	string sslPeerPath;
+	WtoA(modulePath, sslPeerPath);
+	sslPeerPath += "\\ssl_peer.pem";
 	string globalAuthPath;
 	//グローバルパスワードは_wfopen()されるのでWtoUTF8()
 	WtoUTF8(modulePath, globalAuthPath);
@@ -64,6 +67,8 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, int (*initProc)(lua_Stat
 
 	string authDomain;
 	WtoUTF8(op.authenticationDomain, authDomain);
+	string sslCipherList;
+	WtoUTF8(op.sslCipherList, sslCipherList);
 	string numThreads;
 	Format(numThreads, "%d", min(max(op.numThreads, 1), 50));
 	string requestTimeout;
@@ -81,7 +86,7 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, int (*initProc)(lua_Stat
 	string extraMime;
 	WtoUTF8(extraMimeW, extraMime);
 
-	const char* options[32] = {
+	const char* options[64] = {
 		"enable_keep_alive", op.keepAlive ? "yes" : "no",
 		"access_control_list", acl.c_str(),
 		"extra_mime_types", extraMime.c_str(),
@@ -89,10 +94,13 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, int (*initProc)(lua_Stat
 		"document_root", rootPathU.c_str(),
 		"num_threads", numThreads.c_str(),
 		"request_timeout_ms", requestTimeout.c_str(),
+		"ssl_ca_file", sslPeerPath.c_str(),
+		"ssl_default_verify_paths", "no",
+		"ssl_cipher_list", sslCipherList.c_str(),
 		"ssl_protocol_version", sslProtocolVersion.c_str(),
 		"lua_script_pattern", "**.lua$|**.html$|*/api/*$",
 	};
-	int opCount = 2 * 9;
+	int opCount = 2 * 12;
 	if( op.saveLog ){
 		options[opCount++] = "access_log_file";
 		options[opCount++] = accessLogPath.c_str();
@@ -107,6 +115,13 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, int (*initProc)(lua_Stat
 		//セキュアポートを含むので認証鍵を指定する
 		options[opCount++] = "ssl_certificate";
 		options[opCount++] = sslCertPath.c_str();
+	}
+	wstring sslPeerPathW;
+	AtoW(sslPeerPath, sslPeerPathW);
+	if( GetFileAttributes(sslPeerPathW.c_str()) != INVALID_FILE_ATTRIBUTES || GetLastError() != ERROR_FILE_NOT_FOUND ){
+		//信頼済み証明書ファイルが「存在しないことを確信」できなければ有効にする
+		options[opCount++] = "ssl_verify_peer";
+		options[opCount++] = "yes";
 	}
 	wstring globalAuthPathW;
 	UTF8toW(globalAuthPath, globalAuthPathW);
