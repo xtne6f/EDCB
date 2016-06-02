@@ -1,4 +1,4 @@
-*EpgTimerSrv project is now using [Civetweb](https://github.com/bel2125/civetweb) embedded C/C++ web server. The following are the related licenses from [bel2125/civetweb/c8a5e26](https://github.com/bel2125/civetweb/commit/c8a5e26a9338a2a2db33a024ec4c249aa1961d79).*
+*EpgTimerSrv project is now using [CivetWeb](https://github.com/civetweb/civetweb) embedded C/C++ web server. The following are the related licenses from [civetweb/0165351](https://github.com/civetweb/civetweb/commit/016535194f6dba8e534b6eec6b9d433e6fb0a9b2).*
 
 
 Civetweb License
@@ -6,7 +6,7 @@ Civetweb License
 
 ### Included with all features.
 
-> Copyright (c) 2013-2015 The CivetWeb developers ([CREDITS.md](https://github.com/bel2125/civetweb/blob/master/CREDITS.md))
+> Copyright (c) 2013-2015 The CivetWeb developers ([CREDITS.md](https://github.com/civetweb/civetweb/blob/master/CREDITS.md))
 >
 > Copyright (c) 2004-2013 Sergey Lyubka
 >

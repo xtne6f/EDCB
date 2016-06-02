@@ -1,6 +1,5 @@
-#include <lua.h>
-#include <lauxlib.h>
-/*#include "lua_civet.h"*/
+#include "civetweb_lua.h"
+/*#include "civetweb_private_lua.h"*/
 
 #ifdef _WIN32
 static void *
@@ -26,7 +25,8 @@ mmap(void *addr, int64_t len, int prot, int flags, int fd, int offset)
 	return p;
 }
 
-static void munmap(void *addr, int64_t length)
+static void
+munmap(void *addr, int64_t length)
 {
 	/* unused parameters */
 	(void)length;
@@ -52,7 +52,8 @@ static int handle_lsp_request(struct mg_connection *,
                               struct file *,
                               struct lua_State *);
 
-static void reg_string(struct lua_State *L, const char *name, const char *val)
+static void
+reg_string(struct lua_State *L, const char *name, const char *val)
 {
 	if (name != NULL && val != NULL) {
 		lua_pushstring(L, name);
@@ -61,7 +62,8 @@ static void reg_string(struct lua_State *L, const char *name, const char *val)
 	}
 }
 
-static void reg_int(struct lua_State *L, const char *name, int val)
+static void
+reg_int(struct lua_State *L, const char *name, int val)
 {
 	if (name != NULL) {
 		lua_pushstring(L, name);
@@ -70,7 +72,8 @@ static void reg_int(struct lua_State *L, const char *name, int val)
 	}
 }
 
-static void reg_boolean(struct lua_State *L, const char *name, int val)
+static void
+reg_boolean(struct lua_State *L, const char *name, int val)
 {
 	if (name != NULL) {
 		lua_pushstring(L, name);
@@ -79,10 +82,11 @@ static void reg_boolean(struct lua_State *L, const char *name, int val)
 	}
 }
 
-static void reg_conn_function(struct lua_State *L,
-                              const char *name,
-                              lua_CFunction func,
-                              struct mg_connection *conn)
+static void
+reg_conn_function(struct lua_State *L,
+                  const char *name,
+                  lua_CFunction func,
+                  struct mg_connection *conn)
 {
 	if (name != NULL && func != NULL && conn != NULL) {
 		lua_pushstring(L, name);
@@ -102,11 +106,12 @@ reg_function(struct lua_State *L, const char *name, lua_CFunction func)
 	}
 }
 
-static void lua_cry(struct mg_connection *conn,
-                    int err,
-                    lua_State *L,
-                    const char *lua_title,
-                    const char *lua_operation)
+static void
+lua_cry(struct mg_connection *conn,
+        int err,
+        lua_State *L,
+        const char *lua_title,
+        const char *lua_operation)
 {
 	switch (err) {
 	case LUA_OK:
@@ -148,7 +153,8 @@ static void lua_cry(struct mg_connection *conn,
 	}
 }
 
-static int lsp_sock_close(lua_State *L)
+static int
+lsp_sock_close(lua_State *L)
 {
 	int num_args = lua_gettop(L);
 	if ((num_args == 1) && lua_istable(L, -1)) {
@@ -160,7 +166,8 @@ static int lsp_sock_close(lua_State *L)
 	return 1;
 }
 
-static int lsp_sock_recv(lua_State *L)
+static int
+lsp_sock_recv(lua_State *L)
 {
 	int num_args = lua_gettop(L);
 	char buf[2000];
@@ -180,7 +187,8 @@ static int lsp_sock_recv(lua_State *L)
 	return 1;
 }
 
-static int lsp_sock_send(lua_State *L)
+static int
+lsp_sock_send(lua_State *L)
 {
 	int num_args = lua_gettop(L);
 	const char *buf;
@@ -209,21 +217,26 @@ static const struct luaL_Reg luasocket_methods[] = {{"close", lsp_sock_close},
                                                     {"recv", lsp_sock_recv},
                                                     {NULL, NULL}};
 
-static int lsp_connect(lua_State *L)
+static int
+lsp_connect(lua_State *L)
 {
 	int num_args = lua_gettop(L);
 	char ebuf[100];
 	SOCKET sock;
+	union usa sa;
+	int ok;
 
-	if ((num_args == 3) && lua_isstring(L, -3) && lua_isnumber(L, -2) &&
-	    lua_isnumber(L, -1)) {
-		sock = conn2(NULL,
-		             lua_tostring(L, -3),
-		             (int)lua_tonumber(L, -2),
-		             (int)lua_tonumber(L, -1),
-		             ebuf,
-		             sizeof(ebuf));
-		if (sock == INVALID_SOCKET) {
+	if ((num_args == 3) && lua_isstring(L, -3) && lua_isnumber(L, -2)
+	    && lua_isnumber(L, -1)) {
+		ok = connect_socket(NULL,
+		                    lua_tostring(L, -3),
+		                    (int)lua_tonumber(L, -2),
+		                    (int)lua_tonumber(L, -1),
+		                    ebuf,
+		                    sizeof(ebuf),
+		                    &sock,
+		                    &sa);
+		if (!ok) {
 			return luaL_error(L, ebuf);
 		} else {
 			lua_newtable(L);
@@ -231,6 +244,8 @@ static int lsp_connect(lua_State *L)
 			reg_string(L, "host", lua_tostring(L, -4));
 			luaL_getmetatable(L, LUASOCKET);
 			lua_setmetatable(L, -2);
+			/* TODO (high): The metatable misses a _gc method to free the
+			 * sock object -> currently lsp_connect is a resource leak. */
 		}
 	} else {
 		return luaL_error(
@@ -239,7 +254,8 @@ static int lsp_connect(lua_State *L)
 	return 1;
 }
 
-static int lsp_error(lua_State *L)
+static int
+lsp_error(lua_State *L)
 {
 	lua_getglobal(L, "mg");
 	lua_getfield(L, -1, "onerror");
@@ -249,7 +265,8 @@ static int lsp_error(lua_State *L)
 }
 
 /* Silently stop processing chunks. */
-static void lsp_abort(lua_State *L)
+static void
+lsp_abort(lua_State *L)
 {
 	int top = lua_gettop(L);
 	lua_getglobal(L, "mg");
@@ -266,7 +283,9 @@ struct lsp_var_reader_data {
 	unsigned state;
 };
 
-static const char *lsp_var_reader(lua_State *L, void *ud, size_t *sz)
+
+static const char *
+lsp_var_reader(lua_State *L, void *ud, size_t *sz)
 {
 	struct lsp_var_reader_data *reader = (struct lsp_var_reader_data *)ud;
 	const char *ret;
@@ -294,11 +313,13 @@ static const char *lsp_var_reader(lua_State *L, void *ud, size_t *sz)
 	return ret;
 }
 
-static int lsp(struct mg_connection *conn,
-               const char *path,
-               const char *p,
-               int64_t len,
-               lua_State *L)
+
+static int
+lsp(struct mg_connection *conn,
+    const char *path,
+    const char *p,
+    int64_t len,
+    lua_State *L)
 {
 	int i, j, pos = 0, lines = 1, lualines = 0, is_var, lua_ok;
 	char chunkname[MG_BUF_LEN];
@@ -324,8 +345,13 @@ static int lsp(struct mg_connection *conn,
 				if ((j + 1) < len && p[j] == '?' && p[j + 1] == '>') {
 					mg_write(conn, p + pos, i - pos);
 
-					snprintf(
-					    chunkname, sizeof(chunkname), "@%s+%i", path, lines);
+					mg_snprintf(conn,
+					            NULL, /* name only used for debugging */
+					            chunkname,
+					            sizeof(chunkname),
+					            "@%s+%i",
+					            path,
+					            lines);
 					lua_pushlightuserdata(L, conn);
 					lua_pushcclosure(L, lsp_error, 1);
 
@@ -333,11 +359,13 @@ static int lsp(struct mg_connection *conn,
 						data.begin = p + (i + 3);
 						data.len = j - (i + 3);
 						data.state = 0;
-						lua_ok =
-						    lua_load(L, lsp_var_reader, &data, chunkname, NULL);
+						lua_ok = mg_lua_load(
+						    L, lsp_var_reader, &data, chunkname, NULL);
 					} else {
-						lua_ok = luaL_loadbuffer(
-						    L, p + (i + 2), j - (i + 2), chunkname);
+						lua_ok = luaL_loadbuffer(L,
+						                         p + (i + 2),
+						                         j - (i + 2),
+						                         chunkname);
 					}
 
 					if (lua_ok) {
@@ -370,8 +398,10 @@ static int lsp(struct mg_connection *conn,
 	return 0;
 }
 
+
 /* mg.write: Send data to the client */
-static int lsp_write(lua_State *L)
+static int
+lsp_write(lua_State *L)
 {
 	struct mg_connection *conn =
 	    (struct mg_connection *)lua_touserdata(L, lua_upvalueindex(1));
@@ -394,8 +424,10 @@ static int lsp_write(lua_State *L)
 	return 1;
 }
 
+
 /* mg.read: Read data from the client (e.g., from a POST request) */
-static int lsp_read(lua_State *L)
+static int
+lsp_read(lua_State *L)
 {
 	struct mg_connection *conn =
 	    (struct mg_connection *)lua_touserdata(L, lua_upvalueindex(1));
@@ -409,8 +441,10 @@ static int lsp_read(lua_State *L)
 	return 1;
 }
 
+
 /* mg.keep_alive: Allow Lua pages to use the http keep-alive mechanism */
-static int lsp_keep_alive(lua_State *L)
+static int
+lsp_keep_alive(lua_State *L)
 {
 	struct mg_connection *conn =
 	    (struct mg_connection *)lua_touserdata(L, lua_upvalueindex(1));
@@ -432,8 +466,10 @@ static int lsp_keep_alive(lua_State *L)
 	return 1;
 }
 
+
 /* mg.include: Include another .lp file */
-static int lsp_include(lua_State *L)
+static int
+lsp_include(lua_State *L)
 {
 	struct mg_connection *conn =
 	    (struct mg_connection *)lua_touserdata(L, lua_upvalueindex(1));
@@ -456,8 +492,10 @@ static int lsp_include(lua_State *L)
 	return 0;
 }
 
+
 /* mg.cry: Log an error. Default value for mg.onerror. */
-static int lsp_cry(lua_State *L)
+static int
+lsp_cry(lua_State *L)
 {
 	struct mg_connection *conn =
 	    (struct mg_connection *)lua_touserdata(L, lua_upvalueindex(1));
@@ -473,8 +511,10 @@ static int lsp_cry(lua_State *L)
 	return 0;
 }
 
+
 /* mg.redirect: Redirect the request (internally). */
-static int lsp_redirect(lua_State *L)
+static int
+lsp_redirect(lua_State *L)
 {
 	struct mg_connection *conn =
 	    (struct mg_connection *)lua_touserdata(L, lua_upvalueindex(1));
@@ -482,7 +522,7 @@ static int lsp_redirect(lua_State *L)
 	const char *target = (num_args == 1) ? lua_tostring(L, 1) : NULL;
 
 	if (target) {
-		conn->request_info.uri = target;
+		conn->request_info.local_uri = target;
 		handle_request(conn);
 		lsp_abort(L);
 	} else {
@@ -492,8 +532,10 @@ static int lsp_redirect(lua_State *L)
 	return 0;
 }
 
+
 /* mg.send_file */
-static int lsp_send_file(lua_State *L)
+static int
+lsp_send_file(lua_State *L)
 {
 	struct mg_connection *conn =
 	    (struct mg_connection *)lua_touserdata(L, lua_upvalueindex(1));
@@ -509,8 +551,10 @@ static int lsp_send_file(lua_State *L)
 	return 0;
 }
 
+
 /* mg.get_time */
-static int lsp_get_time(lua_State *L)
+static int
+lsp_get_time(lua_State *L)
 {
 	int num_args = lua_gettop(L);
 	int monotonic = (num_args > 0) ? lua_toboolean(L, 1) : 0;
@@ -523,8 +567,10 @@ static int lsp_get_time(lua_State *L)
 	return 1;
 }
 
+
 /* mg.get_var */
-static int lsp_get_var(lua_State *L)
+static int
+lsp_get_var(lua_State *L)
 {
 	int num_args = lua_gettop(L);
 	const char *data, *var_name;
@@ -553,8 +599,10 @@ static int lsp_get_var(lua_State *L)
 	return 1;
 }
 
+
 /* mg.get_mime_type */
-static int lsp_get_mime_type(lua_State *L)
+static int
+lsp_get_mime_type(lua_State *L)
 {
 	int num_args = lua_gettop(L);
 	struct vec mime_type = {0, 0};
@@ -586,8 +634,10 @@ static int lsp_get_mime_type(lua_State *L)
 	return 1;
 }
 
+
 /* mg.get_cookie */
-static int lsp_get_cookie(lua_State *L)
+static int
+lsp_get_cookie(lua_State *L)
 {
 	int num_args = lua_gettop(L);
 	const char *cookie;
@@ -616,8 +666,10 @@ static int lsp_get_cookie(lua_State *L)
 	return 1;
 }
 
+
 /* mg.md5 */
-static int lsp_md5(lua_State *L)
+static int
+lsp_md5(lua_State *L)
 {
 	int num_args = lua_gettop(L);
 	const char *text;
@@ -644,8 +696,10 @@ static int lsp_md5(lua_State *L)
 	return 1;
 }
 
+
 /* mg.url_encode */
-static int lsp_url_encode(lua_State *L)
+static int
+lsp_url_encode(lua_State *L)
 {
 	int num_args = lua_gettop(L);
 	const char *text;
@@ -667,8 +721,10 @@ static int lsp_url_encode(lua_State *L)
 	return 1;
 }
 
+
 /* mg.url_decode */
-static int lsp_url_decode(lua_State *L)
+static int
+lsp_url_decode(lua_State *L)
 {
 	int num_args = lua_gettop(L);
 	const char *text;
@@ -680,7 +736,7 @@ static int lsp_url_decode(lua_State *L)
 		text = lua_tolstring(L, 1, &text_len);
 		is_form = (num_args == 2) ? lua_isboolean(L, 2) : 0;
 		if (text) {
-			mg_url_decode(text, text_len, dst, sizeof(dst), is_form);
+			mg_url_decode(text, text_len, dst, (int)sizeof(dst), is_form);
 			lua_pushstring(L, dst);
 		} else {
 			lua_pushnil(L);
@@ -692,8 +748,10 @@ static int lsp_url_decode(lua_State *L)
 	return 1;
 }
 
+
 /* mg.base64_encode */
-static int lsp_base64_encode(lua_State *L)
+static int
+lsp_base64_encode(lua_State *L)
 {
 	int num_args = lua_gettop(L);
 	const char *text;
@@ -705,7 +763,7 @@ static int lsp_base64_encode(lua_State *L)
 		if (text) {
 			dst = (char *)mg_malloc(text_len * 8 / 6 + 4);
 			if (dst) {
-				base64_encode((const unsigned char *)text, text_len, dst);
+				base64_encode((const unsigned char *)text, (int)text_len, dst);
 				lua_pushstring(L, dst);
 				mg_free(dst);
 			} else {
@@ -721,8 +779,10 @@ static int lsp_base64_encode(lua_State *L)
 	return 1;
 }
 
+
 /* mg.base64_encode */
-static int lsp_base64_decode(lua_State *L)
+static int
+lsp_base64_decode(lua_State *L)
 {
 	int num_args = lua_gettop(L);
 	const char *text;
@@ -735,8 +795,10 @@ static int lsp_base64_decode(lua_State *L)
 		if (text) {
 			dst = (char *)mg_malloc(text_len);
 			if (dst) {
-				ret = base64_decode(
-				    (const unsigned char *)text, text_len, dst, &dst_len);
+				ret = base64_decode((const unsigned char *)text,
+				                    (int)text_len,
+				                    dst,
+				                    &dst_len);
 				if (ret != -1) {
 					mg_free(dst);
 					return luaL_error(
@@ -759,8 +821,10 @@ static int lsp_base64_decode(lua_State *L)
 	return 1;
 }
 
+
 /* mg.get_response_code_text */
-static int lsp_get_response_code_text(lua_State *L)
+static int
+lsp_get_response_code_text(lua_State *L)
 {
 	int num_args = lua_gettop(L);
 	int type1;
@@ -773,7 +837,7 @@ static int lsp_get_response_code_text(lua_State *L)
 			/* If the first argument is a number,
 			   convert it to the corresponding text. */
 			code = lua_tonumber(L, 1);
-			text = mg_get_response_code_text((int)code, NULL);
+			text = mg_get_response_code_text(NULL, (int)code);
 			if (text)
 				lua_pushstring(L, text);
 			return text ? 1 : 0;
@@ -783,6 +847,84 @@ static int lsp_get_response_code_text(lua_State *L)
 	/* Syntax error */
 	return luaL_error(L, "invalid get_response_code_text() call");
 }
+
+
+/* mg.random - might be better than math.random on some systems */
+static int
+lsp_random(lua_State *L)
+{
+	int num_args = lua_gettop(L);
+	if (num_args == 0) {
+		/* The civetweb internal random number generator will generate
+		         * a 64 bit random number. */
+		uint64_t r = get_random();
+		/* Lua "number" is a IEEE 754 double precission float:
+ * https://en.wikipedia.org/wiki/Double-precision_floating-point_format
+		 * Thus, mask with 2^53-1 to get an integer with the maximum
+ * precission available. */
+		r &= ((((uint64_t)1) << 53) - 1);
+		lua_pushnumber(L, (double)r);
+		return 1;
+	}
+
+	/* Syntax error */
+	return luaL_error(L, "invalid random() call");
+}
+
+
+union {
+	void *p;
+	void (*f)(unsigned char uuid[16]);
+} pf_uuid_generate;
+
+
+/* mg.uuid */
+static int
+lsp_uuid(lua_State *L)
+{
+	union {
+		unsigned char uuid_array[16];
+		struct uuid_struct_type {
+			uint32_t data1;
+			uint16_t data2;
+			uint16_t data3;
+			uint8_t data4[8];
+		} uuid_struct;
+	} uuid;
+
+	char uuid_str[40];
+	int num_args = lua_gettop(L);
+
+	memset(&uuid, 0, sizeof(uuid));
+	memset(uuid_str, 0, sizeof(uuid_str));
+
+	if (num_args == 0) {
+
+		pf_uuid_generate.f(uuid.uuid_array);
+
+		sprintf(uuid_str,
+		        "{%08lX-%04X-%04X-%02X%02X-"
+		        "%02X%02X%02X%02X%02X%02X}",
+		        (unsigned long)uuid.uuid_struct.data1,
+		        (unsigned)uuid.uuid_struct.data2,
+		        (unsigned)uuid.uuid_struct.data3,
+		        (unsigned)uuid.uuid_struct.data4[0],
+		        (unsigned)uuid.uuid_struct.data4[1],
+		        (unsigned)uuid.uuid_struct.data4[2],
+		        (unsigned)uuid.uuid_struct.data4[3],
+		        (unsigned)uuid.uuid_struct.data4[4],
+		        (unsigned)uuid.uuid_struct.data4[5],
+		        (unsigned)uuid.uuid_struct.data4[6],
+		        (unsigned)uuid.uuid_struct.data4[7]);
+
+		lua_pushstring(L, uuid_str);
+		return 1;
+	}
+
+	/* Syntax error */
+	return luaL_error(L, "invalid random() call");
+}
+
 
 #ifdef USE_WEBSOCKET
 struct lua_websock_data {
@@ -794,8 +936,10 @@ struct lua_websock_data {
 };
 #endif
 
+
 /* mg.write for websockets */
-static int lwebsock_write(lua_State *L)
+static int
+lwebsock_write(lua_State *L)
 {
 #ifdef USE_WEBSOCKET
 	int num_args = lua_gettop(L);
@@ -809,6 +953,8 @@ static int lwebsock_write(lua_State *L)
 	lua_pushlightuserdata(L, (void *)&lua_regkey_connlist);
 	lua_gettable(L, LUA_REGISTRYINDEX);
 	ws = (struct lua_websock_data *)lua_touserdata(L, -1);
+
+	(void)pthread_mutex_lock(&(ws->ws_mutex));
 
 	if (num_args == 1) {
 		/* just one text: send it to all client */
@@ -878,13 +1024,18 @@ static int lwebsock_write(lua_State *L)
 			}
 		}
 	} else {
+		(void)pthread_mutex_unlock(&(ws->ws_mutex));
 		return luaL_error(L, "invalid websocket write() call");
 	}
+
+	(void)pthread_mutex_unlock(&(ws->ws_mutex));
+
 #else
 	(void)(L);           /* unused */
 #endif
 	return 0;
 }
+
 
 struct laction_arg {
 	lua_State *state;
@@ -893,7 +1044,9 @@ struct laction_arg {
 	char txt[1];
 };
 
-static int lua_action(struct laction_arg *arg)
+
+static int
+lua_action(struct laction_arg *arg)
 {
 	int err, ok;
 	struct mg_context *ctx;
@@ -935,7 +1088,9 @@ static int lua_action(struct laction_arg *arg)
 	return ok;
 }
 
-static int lua_action_free(struct laction_arg *arg)
+
+static int
+lua_action_free(struct laction_arg *arg)
 {
 	if (lua_action(arg)) {
 		mg_free(arg);
@@ -943,7 +1098,9 @@ static int lua_action_free(struct laction_arg *arg)
 	return 0;
 }
 
-static int lwebsocket_set_timer(lua_State *L, int is_periodic)
+
+static int
+lwebsocket_set_timer(lua_State *L, int is_periodic)
 {
 #if defined(USE_TIMERS) && defined(USE_WEBSOCKET)
 	int num_args = lua_gettop(L);
@@ -975,8 +1132,8 @@ static int lwebsocket_set_timer(lua_State *L, int is_periodic)
 		timediff = (double)lua_tonumber(L, 2);
 		txt = lua_tostring(L, 1);
 		txt_len = strlen(txt);
-		arg = (struct laction_arg *)mg_malloc(sizeof(struct laction_arg) +
-		                                      txt_len + 10);
+		arg = (struct laction_arg *)mg_malloc(sizeof(struct laction_arg)
+		                                      + txt_len + 10);
 		arg->state = L;
 		arg->script = ws->script;
 		arg->pmutex = &(ws->ws_mutex);
@@ -984,13 +1141,14 @@ static int lwebsocket_set_timer(lua_State *L, int is_periodic)
 		memcpy(arg->txt + 7, txt, txt_len);
 		arg->txt[txt_len + 7] = ')';
 		arg->txt[txt_len + 8] = 0;
-		ok = (0 ==
-		      timer_add(ctx,
-		                timediff,
-		                is_periodic,
-		                1,
-		                (taction)(is_periodic ? lua_action : lua_action_free),
-		                (void *)arg));
+		ok =
+		    (0
+		     == timer_add(ctx,
+		                  timediff,
+		                  is_periodic,
+		                  1,
+		                  (taction)(is_periodic ? lua_action : lua_action_free),
+		                  (void *)arg));
 	} else if (type1 == LUA_TFUNCTION && type2 == LUA_TNUMBER) {
 		/* TODO (mid): not implemented yet */
 		return luaL_error(L, "invalid arguments for set_timer/interval() call");
@@ -1008,14 +1166,18 @@ static int lwebsocket_set_timer(lua_State *L, int is_periodic)
 #endif
 }
 
+
 /* mg.set_timeout for websockets */
-static int lwebsocket_set_timeout(lua_State *L)
+static int
+lwebsocket_set_timeout(lua_State *L)
 {
 	return lwebsocket_set_timer(L, 0);
 }
 
+
 /* mg.set_interval for websockets */
-static int lwebsocket_set_interval(lua_State *L)
+static int
+lwebsocket_set_interval(lua_State *L)
 {
 	return lwebsocket_set_timer(L, 1);
 }
@@ -1026,7 +1188,9 @@ enum {
 	LUA_ENV_TYPE_LUA_WEBSOCKET = 2,
 };
 
-static void prepare_lua_request_info(struct mg_connection *conn, lua_State *L)
+
+static void
+prepare_lua_request_info(struct mg_connection *conn, lua_State *L)
 {
 	const char *s;
 	int i;
@@ -1035,7 +1199,8 @@ static void prepare_lua_request_info(struct mg_connection *conn, lua_State *L)
 	lua_pushstring(L, "request_info");
 	lua_newtable(L);
 	reg_string(L, "request_method", conn->request_info.request_method);
-	reg_string(L, "uri", conn->request_info.uri);
+	reg_string(L, "request_uri", conn->request_info.request_uri);
+	reg_string(L, "uri", conn->request_info.local_uri);
 	reg_string(L, "http_version", conn->request_info.http_version);
 	reg_string(L, "query_string", conn->request_info.query_string);
 #if defined(MG_LEGACY_INTERFACE)
@@ -1087,7 +1252,9 @@ static void prepare_lua_request_info(struct mg_connection *conn, lua_State *L)
 	lua_rawset(L, -3);
 }
 
-void lua_civet_open_all_libs(lua_State *L)
+
+void
+civetweb_open_lua_libs(lua_State *L)
 {
 	{
 		extern void luaL_openlibs(lua_State *);
@@ -1124,31 +1291,39 @@ void lua_civet_open_all_libs(lua_State *L)
 #endif
 }
 
-static void prepare_lua_environment(struct mg_context *ctx,
-                                    struct mg_connection *conn,
-                                    struct lua_websock_data *conn_list,
-                                    lua_State *L,
-                                    const char *script_name,
-                                    int lua_env_type)
-{
-	lua_civet_open_all_libs(L);
 
+static void
+prepare_lua_environment(struct mg_context *ctx,
+                        struct mg_connection *conn,
+                        struct lua_websock_data *ws_conn_list,
+                        lua_State *L,
+                        const char *script_name,
+                        int lua_env_type)
+{
+	civetweb_open_lua_libs(L);
+
+#if LUA_VERSION_NUM == 502
+	/* Keep the "connect" method for compatibility,
+	 * but do not backport it to Lua 5.1.
+	 * TODO: Redesign the interface.
+	 */
 	luaL_newmetatable(L, LUASOCKET);
 	lua_pushliteral(L, "__index");
 	luaL_newlib(L, luasocket_methods);
 	lua_rawset(L, -3);
 	lua_pop(L, 1);
 	lua_register(L, "connect", lsp_connect);
+#endif
 
 	/* Store context in the registry */
-	if (ctx) {
+	if (ctx != NULL) {
 		lua_pushlightuserdata(L, (void *)&lua_regkey_ctx);
 		lua_pushlightuserdata(L, (void *)ctx);
 		lua_settable(L, LUA_REGISTRYINDEX);
 	}
-	if (conn_list) {
+	if (ws_conn_list != NULL) {
 		lua_pushlightuserdata(L, (void *)&lua_regkey_connlist);
-		lua_pushlightuserdata(L, (void *)conn_list);
+		lua_pushlightuserdata(L, (void *)ws_conn_list);
 		lua_settable(L, LUA_REGISTRYINDEX);
 	}
 
@@ -1167,8 +1342,8 @@ static void prepare_lua_environment(struct mg_context *ctx,
 		break;
 	}
 
-	if (lua_env_type == LUA_ENV_TYPE_LUA_SERVER_PAGE ||
-	    lua_env_type == LUA_ENV_TYPE_PLAIN_LUA_PAGE) {
+	if (lua_env_type == LUA_ENV_TYPE_LUA_SERVER_PAGE
+	    || lua_env_type == LUA_ENV_TYPE_PLAIN_LUA_PAGE) {
 		reg_conn_function(L, "cry", lsp_cry, conn);
 		reg_conn_function(L, "read", lsp_read, conn);
 		reg_conn_function(L, "write", lsp_write, conn);
@@ -1200,17 +1375,25 @@ static void prepare_lua_environment(struct mg_context *ctx,
 	reg_function(L, "base64_encode", lsp_base64_encode);
 	reg_function(L, "base64_decode", lsp_base64_decode);
 	reg_function(L, "get_response_code_text", lsp_get_response_code_text);
+	reg_function(L, "random", lsp_random);
+	if (pf_uuid_generate.f) {
+		reg_function(L, "uuid", lsp_uuid);
+	}
 
 	reg_string(L, "version", CIVETWEB_VERSION);
-	reg_string(L, "document_root", ctx->config[DOCUMENT_ROOT]);
-	reg_string(L, "auth_domain", ctx->config[AUTHENTICATION_DOMAIN]);
-#if defined(USE_WEBSOCKET)
-	reg_string(L, "websocket_root", ctx->config[WEBSOCKET_ROOT]);
-#endif
+
 	reg_string(L, "script_name", script_name);
 
-	if (ctx->systemName != NULL) {
-		reg_string(L, "system", ctx->systemName);
+	if (ctx != NULL) {
+		reg_string(L, "document_root", ctx->config[DOCUMENT_ROOT]);
+		reg_string(L, "auth_domain", ctx->config[AUTHENTICATION_DOMAIN]);
+#if defined(USE_WEBSOCKET)
+		reg_string(L, "websocket_root", ctx->config[WEBSOCKET_ROOT]);
+#endif
+
+		if (ctx->systemName != NULL) {
+			reg_string(L, "system", ctx->systemName);
+		}
 	}
 
 	/* Export connection specific info */
@@ -1226,17 +1409,21 @@ static void prepare_lua_environment(struct mg_context *ctx,
 	                  "mg.onerror = function(e) mg.write('\\nLua error:\\n', "
 	                  "debug.traceback(e, 1)) end"));
 
-	/* Preload */
-	if (ctx->config[LUA_PRELOAD_FILE] != NULL) {
-		IGNORE_UNUSED_RESULT(luaL_dofile(L, ctx->config[LUA_PRELOAD_FILE]));
-	}
+	if (ctx != NULL) {
+		/* Preload */
+		if (ctx->config[LUA_PRELOAD_FILE] != NULL) {
+			IGNORE_UNUSED_RESULT(luaL_dofile(L, ctx->config[LUA_PRELOAD_FILE]));
+		}
 
-	if (ctx->callbacks.init_lua != NULL) {
-		ctx->callbacks.init_lua(conn, L);
+		if (ctx->callbacks.init_lua != NULL) {
+			ctx->callbacks.init_lua(conn, L);
+		}
 	}
 }
 
-static int lua_error_handler(lua_State *L)
+
+static int
+lua_error_handler(lua_State *L)
 {
 	const char *error_msg = lua_isstring(L, -1) ? lua_tostring(L, -1) : "?\n";
 
@@ -1258,7 +1445,9 @@ static int lua_error_handler(lua_State *L)
 	return 0;
 }
 
-static void *lua_allocator(void *ud, void *ptr, size_t osize, size_t nsize)
+
+static void *
+lua_allocator(void *ud, void *ptr, size_t osize, size_t nsize)
 {
 
 	(void)ud;
@@ -1271,9 +1460,11 @@ static void *lua_allocator(void *ud, void *ptr, size_t osize, size_t nsize)
 	return mg_realloc(ptr, nsize);
 }
 
-static void mg_exec_lua_script(struct mg_connection *conn,
-                               const char *path,
-                               const void **exports)
+
+static void
+mg_exec_lua_script(struct mg_connection *conn,
+                   const char *path,
+                   const void **exports)
 {
 	int i;
 	lua_State *L;
@@ -1289,6 +1480,7 @@ static void mg_exec_lua_script(struct mg_connection *conn,
 		lua_pushcclosure(L, &lua_error_handler, 0);
 
 		if (exports != NULL) {
+#if LUA_VERSION_NUM > 501
 			lua_pushglobaltable(L);
 			for (i = 0; exports[i] != NULL && exports[i + 1] != NULL; i += 2) {
 				lua_CFunction func;
@@ -1297,6 +1489,14 @@ static void mg_exec_lua_script(struct mg_connection *conn,
 				lua_pushcclosure(L, func, 0);
 				lua_rawset(L, -3);
 			}
+#else
+			for (i = 0; exports[i] != NULL && exports[i + 1] != NULL; i += 2) {
+				lua_CFunction func;
+				const char *name = (const char *)(exports[i]);
+				*(const void **)(&func) = exports[i + 1];
+				lua_register(L, name, func);
+			}
+#endif
 		}
 
 		if (luaL_loadfile(L, path) != 0) {
@@ -1307,38 +1507,64 @@ static void mg_exec_lua_script(struct mg_connection *conn,
 	}
 }
 
-static int handle_lsp_request(struct mg_connection *conn,
-                              const char *path,
-                              struct file *filep,
-                              struct lua_State *ls)
+
+static int
+handle_lsp_request(struct mg_connection *conn,
+                   const char *path,
+                   struct file *filep,
+                   struct lua_State *ls)
 {
 	void *p = NULL;
 	lua_State *L = NULL;
 	int error = 1;
+	struct file filesize = STRUCT_FILE_INITIALIZER;
 
 	/* Assume the script does not support keep_alive. The script may change this
 	 * by calling mg.keep_alive(true). */
 	conn->must_close = 1;
 
 	/* We need both mg_stat to get file size, and mg_fopen to get fd */
-	if (!mg_stat(conn, path, filep) || !mg_fopen(conn, path, "r", filep)) {
-		/* File not found or not accessible */
+	if (!mg_stat(conn, path, &filesize)) {
+
+		/* File not found */
 		if (ls == NULL) {
-			send_http_error(
-			    conn,
-			    500,
-			    "Error: Cannot open script\nFile %s can not be read",
-			    path);
+			send_http_error(conn, 500, "Error: File %s not found", path);
 		} else {
 			luaL_error(ls, "File [%s] not found", path);
 		}
-	} else if (filep->membuf == NULL &&
-	           (p = mmap(NULL,
-	                     (size_t)filep->size,
-	                     PROT_READ,
-	                     MAP_PRIVATE,
-	                     fileno(filep->fp),
-	                     0)) == MAP_FAILED) {
+
+		goto cleanup_handle_lsp_request;
+	}
+
+	if (!mg_fopen(conn, path, "r", filep)) {
+
+		/* File not found or not accessible */
+		if (ls == NULL) {
+			send_http_error(conn,
+			                500,
+			                "Error: Cannot open script file %s",
+			                path);
+		} else {
+			luaL_error(ls, "Cannot  [%s] not found", path);
+		}
+
+		goto cleanup_handle_lsp_request;
+	}
+
+	/* TODO: Operations mg_fopen and mg_stat should do what their names
+	 * indicate. They should not fill in different members of the same
+	 * struct file.
+	 * See Github issue #225 */
+	filep->size = filesize.size;
+
+	if (filep->membuf == NULL
+	    && (p = mmap(NULL,
+	                 (size_t)filep->size,
+	                 PROT_READ,
+	                 MAP_PRIVATE,
+	                 fileno(filep->fp),
+	                 0)) == MAP_FAILED) {
+
 		/* mmap failed */
 		if (ls == NULL) {
 			send_http_error(
@@ -1354,33 +1580,48 @@ static int handle_lsp_request(struct mg_connection *conn,
 			           fileno(filep->fp),
 			           strerror(errno));
 		}
-	} else if ((L = (ls != NULL ? ls : lua_newstate(lua_allocator, NULL))) ==
-	           NULL) {
-		send_http_error(conn,
-		                500,
-		                "%s",
-		                "Error: Cannot execute script\nlua_newstate failed");
-	} else {
-		/* We're not sending HTTP headers here, Lua page must do it. */
-		if (ls == NULL) {
-			prepare_lua_environment(
-			    conn->ctx, conn, NULL, L, path, LUA_ENV_TYPE_LUA_SERVER_PAGE);
-		}
-		error = lsp(conn,
-		            path,
-		            (filep->membuf == NULL) ? (const char *)p
-		                                    : (const char *)filep->membuf,
-		            filep->size,
-		            L);
+
+		goto cleanup_handle_lsp_request;
 	}
+
+	if (ls != NULL) {
+		L = ls;
+	} else {
+		L = lua_newstate(lua_allocator, NULL);
+		if (L == NULL) {
+			send_http_error(
+			    conn,
+			    500,
+			    "%s",
+			    "Error: Cannot execute script\nlua_newstate failed");
+
+			goto cleanup_handle_lsp_request;
+		}
+		prepare_lua_environment(
+		    conn->ctx, conn, NULL, L, path, LUA_ENV_TYPE_LUA_SERVER_PAGE);
+	}
+
+	/* Lua state is ready to use */
+	/* We're not sending HTTP headers here, Lua page must do it. */
+	error = lsp(conn,
+	            path,
+	            (filep->membuf == NULL) ? (const char *)p
+	                                    : (const char *)filep->membuf,
+	            filep->size,
+	            L);
+
+
+cleanup_handle_lsp_request:
 
 	if (L != NULL && ls == NULL)
 		lua_close(L);
 	if (p != NULL)
 		munmap(p, filep->size);
 	mg_fclose(filep);
+
 	return error;
 }
+
 
 #ifdef USE_WEBSOCKET
 struct mg_shared_lua_websocket_list {
@@ -1388,7 +1629,9 @@ struct mg_shared_lua_websocket_list {
 	struct mg_shared_lua_websocket_list *next;
 };
 
-static void *lua_websocket_new(const char *script, struct mg_connection *conn)
+
+static void *
+lua_websocket_new(const char *script, struct mg_connection *conn)
 {
 	struct mg_shared_lua_websocket_list **shared_websock_list =
 	    &(conn->ctx->shared_lua_websockets);
@@ -1406,10 +1649,11 @@ static void *lua_websocket_new(const char *script, struct mg_connection *conn)
 		}
 		shared_websock_list = &((*shared_websock_list)->next);
 	}
+
 	if (*shared_websock_list == NULL) {
 		/* add ws to list */
-		*shared_websock_list = (struct mg_shared_lua_websocket_list *)mg_calloc(
-		    sizeof(struct mg_shared_lua_websocket_list), 1);
+		*shared_websock_list = (struct mg_shared_lua_websocket_list *)
+		    mg_calloc(sizeof(struct mg_shared_lua_websocket_list), 1);
 		if (*shared_websock_list == NULL) {
 			mg_unlock_context(conn->ctx);
 			mg_cry(conn, "Cannot create shared websocket struct, OOM");
@@ -1418,11 +1662,11 @@ static void *lua_websocket_new(const char *script, struct mg_connection *conn)
 		/* init ws list element */
 		ws = &(*shared_websock_list)->ws;
 		ws->script = mg_strdup(script); /* TODO (low): handle OOM */
-		pthread_mutex_init(&(ws->ws_mutex), NULL);
+		pthread_mutex_init(&(ws->ws_mutex), &pthread_mutex_attr);
+		(void)pthread_mutex_lock(&(ws->ws_mutex));
 		ws->state = lua_newstate(lua_allocator, NULL);
 		ws->conn[0] = conn;
 		ws->references = 1;
-		(void)pthread_mutex_lock(&(ws->ws_mutex));
 		prepare_lua_environment(
 		    conn->ctx, NULL, ws, ws->state, script, LUA_ENV_TYPE_LUA_WEBSOCKET);
 		err = luaL_loadfile(ws->state, script);
@@ -1470,11 +1714,13 @@ static void *lua_websocket_new(const char *script, struct mg_connection *conn)
 	return ok ? (void *)ws : NULL;
 }
 
-static int lua_websocket_data(struct mg_connection *conn,
-                              int bits,
-                              char *data,
-                              size_t data_len,
-                              void *ws_arg)
+
+static int
+lua_websocket_data(struct mg_connection *conn,
+                   int bits,
+                   char *data,
+                   size_t data_len,
+                   void *ws_arg)
 {
 	struct lua_websock_data *ws = (struct lua_websock_data *)(ws_arg);
 	int err, ok = 0;
@@ -1482,7 +1728,7 @@ static int lua_websocket_data(struct mg_connection *conn,
 	assert(ws != NULL);
 	assert(ws->state != NULL);
 
-	(void)pthread_mutex_lock(&ws->ws_mutex);
+	(void)pthread_mutex_lock(&(ws->ws_mutex));
 
 	lua_getglobal(ws->state, "data");
 	lua_newtable(ws->state);
@@ -1508,12 +1754,14 @@ static int lua_websocket_data(struct mg_connection *conn,
 		}
 		lua_pop(ws->state, 1);
 	}
-	(void)pthread_mutex_unlock(&ws->ws_mutex);
+	(void)pthread_mutex_unlock(&(ws->ws_mutex));
 
 	return ok;
 }
 
-static int lua_websocket_ready(struct mg_connection *conn, void *ws_arg)
+
+static int
+lua_websocket_ready(struct mg_connection *conn, void *ws_arg)
 {
 	struct lua_websock_data *ws = (struct lua_websock_data *)(ws_arg);
 	int err, ok = 0;
@@ -1521,14 +1769,13 @@ static int lua_websocket_ready(struct mg_connection *conn, void *ws_arg)
 	assert(ws != NULL);
 	assert(ws->state != NULL);
 
-	(void)pthread_mutex_lock(&ws->ws_mutex);
+	(void)pthread_mutex_lock(&(ws->ws_mutex));
 
 	lua_getglobal(ws->state, "ready");
 	lua_newtable(ws->state);
 	lua_pushstring(ws->state, "client");
 	lua_pushlightuserdata(ws->state, (void *)conn);
 	lua_rawset(ws->state, -3);
-
 	err = lua_pcall(ws->state, 1, 1, 0);
 	if (err != 0) {
 		lua_cry(conn, err, ws->state, ws->script, "ready handler");
@@ -1539,12 +1786,14 @@ static int lua_websocket_ready(struct mg_connection *conn, void *ws_arg)
 		lua_pop(ws->state, 1);
 	}
 
-	(void)pthread_mutex_unlock(&ws->ws_mutex);
+	(void)pthread_mutex_unlock(&(ws->ws_mutex));
 
 	return ok;
 }
 
-static void lua_websocket_close(struct mg_connection *conn, void *ws_arg)
+
+static void
+lua_websocket_close(struct mg_connection *conn, void *ws_arg)
 {
 	struct lua_websock_data *ws = (struct lua_websock_data *)(ws_arg);
 	struct mg_shared_lua_websocket_list **shared_websock_list =
@@ -1555,7 +1804,7 @@ static void lua_websocket_close(struct mg_connection *conn, void *ws_arg)
 	assert(ws != NULL);
 	assert(ws->state != NULL);
 
-	(void)pthread_mutex_lock(&ws->ws_mutex);
+	(void)pthread_mutex_lock(&(ws->ws_mutex));
 
 	lua_getglobal(ws->state, "close");
 	lua_newtable(ws->state);
@@ -1578,6 +1827,18 @@ static void lua_websocket_close(struct mg_connection *conn, void *ws_arg)
 	   asynchronous operations and timers are completed/expired. */
 	(void)shared_websock_list; /* shared_websock_list unused (see open TODO) */
 
-	(void)pthread_mutex_unlock(&ws->ws_mutex);
+	(void)pthread_mutex_unlock(&(ws->ws_mutex));
 }
 #endif
+
+
+static void
+lua_init_optional_libraries(void)
+{
+#if !defined(_WIN32)
+	void *dll_handle = dlopen("libuuid.so", RTLD_LAZY);
+	pf_uuid_generate.p = dlsym(dll_handle, "uuid_generate");
+#else
+	pf_uuid_generate.p = 0;
+#endif
+}

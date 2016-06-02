@@ -196,6 +196,7 @@
     <ClInclude Include="..\..\Common\Util.h" />
     <ClInclude Include="BatManager.h" />
     <ClInclude Include="civetweb.h" />
+    <ClInclude Include="civetweb_lua.h" />
     <ClInclude Include="EpgDBManager.h" />
     <ClInclude Include="EpgTimerSrv.h" />
     <ClInclude Include="EpgTimerSrvMain.h" />
