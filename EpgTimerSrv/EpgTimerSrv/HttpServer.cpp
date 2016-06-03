@@ -44,8 +44,8 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, int (*initProc)(lua_Stat
 	wstring modulePath;
 	GetModuleFolderPath(modulePath);
 	string accessLogPath;
-	//ログはfopen()されるのでWtoA()。civetweb.cのACCESS_LOG_FILEとERROR_LOG_FILEの扱いに注意
-	WtoA(modulePath, accessLogPath);
+	//ログは_wfopen()されるのでWtoUTF8()。civetweb.cのACCESS_LOG_FILEとERROR_LOG_FILEの扱いに注意
+	WtoUTF8(modulePath, accessLogPath);
 	string errorLogPath = accessLogPath + "\\HttpError.log";
 	accessLogPath += "\\HttpAccess.log";
 	string sslCertPath;
