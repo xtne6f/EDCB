@@ -16,7 +16,7 @@
         </Grid.RowDefinitions>
         <StackPanel Margin="12,4,0,0" Orientation="Horizontal" VerticalAlignment="Top">
             <Label Content="プリセット" />
-            <ComboBox Height="23" Margin="6,0,6,0" Name="comboBox_preSet" Width="197" SelectionChanged="comboBox_preSet_SelectionChanged" />
+            <ComboBox Height="{Binding ElementName=button_reload_preset,Path=ActualHeight}" Margin="6,0,6,0" Name="comboBox_preSet" Width="197" SelectionChanged="comboBox_preSet_SelectionChanged" />
             <Button Content="再読込" Margin="6,0,0,0" MinWidth="48" Name="button_reload_preset" Click="button_reload_preset_Click" />
             <Button Content="追加" Margin="6,0,0,0" MinWidth="48" Name="button_add_preset" Click="button_add_preset_Click" />
             <Button Content="変更" Margin="6,0,0,0" MinWidth="48" Name="button_chg_preset" Click="button_chg_preset_Click" />

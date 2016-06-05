@@ -16,7 +16,7 @@
         <Label Content="（xx-xx-xx-xx-xx-xx）" Height="28" HorizontalAlignment="Left" Margin="283,164,0,0" VerticalAlignment="Top" />
         <StackPanel Margin="12,11,0,0" Orientation="Horizontal" VerticalAlignment="Top">
             <Label Content="プリセット" />
-            <ComboBox Height="23" Margin="6,0,0,0" Name="cmb_preset" Width="120" IsEditable="True" SelectionChanged="cmb_preset_SelectionChanged" />
+            <ComboBox Height="{Binding ElementName=btn_reload,Path=ActualHeight}" Margin="6,0,0,0" Name="cmb_preset" Width="120" IsEditable="True" SelectionChanged="cmb_preset_SelectionChanged" />
             <Button Content="再読込" Margin="12,0,0,0" Name="btn_reload" Click="btn_reload_Click" />
             <Button Content="追加・変更" Margin="6,0,0,0" Name="btn_add" Click="btn_add_Click" />
             <Button Content="削除" Margin="6,0,0,0" Name="btn_delete" Click="btn_delete_Click" />
