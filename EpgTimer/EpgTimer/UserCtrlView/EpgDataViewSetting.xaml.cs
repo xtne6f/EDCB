@@ -7,6 +7,8 @@ using System.Windows.Input;
 
 namespace EpgTimer
 {
+    using EpgTimer.BoxExchangeEdit;
+
     /// <summary>
     /// EpgDataViewSetting.xaml の相互作用ロジック
     /// </summary>
@@ -124,8 +126,9 @@ namespace EpgTimer
         private void listBox_Button_Set()
         {
             bxs.TargetBox = this.listBox_serviceView;
-            bxs.KeyActionAllow();
-            bxs.DoubleClickMoveAllow();
+            bxs.AllowKeyAction();
+            bxs.AllowDoubleClickMove();
+            bxs.AllowDragDrop();
 
             //サービス選択関係はソースの ListBox が複数あるので、全ての ListBoxItem にイベントを追加する。
             foreach (TabItem tab in tab_ServiceList.Items)
@@ -133,8 +136,9 @@ namespace EpgTimer
                 if (tab.Content is ListBox)
                 {
                     ListBox box = tab.Content as ListBox;
-                    bxs.sourceBoxKeyEnable(box, bxs.button_add_Click);//button_service_add.Clickに追加があるなら、RaiseEventをあてる
-                    bxs.doubleClickSetter(box, bxs.button_add_Click);
+                    bxs.sourceBoxAllowKeyAction(box);
+                    bxs.sourceBoxAllowDoubleClickMove(box);
+                    bxs.sourceBoxAllowDragDrop(box);
                 }
             }
             //ソースのリストボックスは複数あるので、リストボックスが選択されたときに SourceBox の登録を行う
@@ -143,26 +147,27 @@ namespace EpgTimer
                 try { bxs.SourceBox = ((sender as TabControl).SelectedItem as TabItem).Content as ListBox; }
                 catch { bxs.SourceBox = null; }
             };
-            button_service_addAll.Click += new RoutedEventHandler(bxs.button_addAll_Click);
-            button_service_add.Click += new RoutedEventHandler(bxs.button_add_Click);
-            button_service_ins.Click += new RoutedEventHandler(bxs.button_insert_Click);
-            button_service_del.Click += new RoutedEventHandler(bxs.button_del_Click);
-            button_service_delAll.Click += new RoutedEventHandler(bxs.button_delAll_Click);
-            button_service_top.Click += new RoutedEventHandler(bxs.button_top_Click);
-            button_service_up.Click += new RoutedEventHandler(bxs.button_up_Click);
-            button_service_down.Click += new RoutedEventHandler(bxs.button_down_Click);
-            button_service_bottom.Click += new RoutedEventHandler(bxs.button_bottom_Click);
+            button_service_addAll.Click += new RoutedEventHandler(bxs.button_AddAll_Click);
+            button_service_add.Click += new RoutedEventHandler(bxs.button_Add_Click);
+            button_service_ins.Click += new RoutedEventHandler(bxs.button_Insert_Click);
+            button_service_del.Click += new RoutedEventHandler(bxs.button_Delete_Click);
+            button_service_delAll.Click += new RoutedEventHandler(bxs.button_DeleteAll_Click);
+            button_service_top.Click += new RoutedEventHandler(bxs.button_Top_Click);
+            button_service_up.Click += new RoutedEventHandler(bxs.button_Up_Click);
+            button_service_down.Click += new RoutedEventHandler(bxs.button_Down_Click);
+            button_service_bottom.Click += new RoutedEventHandler(bxs.button_Bottom_Click);
 
             //ジャンル選択関係
             bxj.SourceBox = this.listBox_jyanru;
             bxj.TargetBox = this.listBox_jyanruView;
-            bxj.KeyActionAllow();
-            bxj.DoubleClickMoveAllow();
-            button_jyanru_addAll.Click += new RoutedEventHandler(bxj.button_addAll_Click);
-            button_jyanru_add.Click += new RoutedEventHandler(bxj.button_add_Click);
-            button_jyanru_ins.Click += new RoutedEventHandler(bxj.button_insert_Click);
-            button_jyanru_del.Click += new RoutedEventHandler(bxj.button_del_Click);
-            button_jyanru_delAll.Click += new RoutedEventHandler(bxj.button_delAll_Click);
+            bxj.AllowKeyAction();
+            bxj.AllowDoubleClickMove();
+            bxj.AllowDragDrop();
+            button_jyanru_addAll.Click += new RoutedEventHandler(bxj.button_AddAll_Click);
+            button_jyanru_add.Click += new RoutedEventHandler(bxj.button_Add_Click);
+            button_jyanru_ins.Click += new RoutedEventHandler(bxj.button_Insert_Click);
+            button_jyanru_del.Click += new RoutedEventHandler(bxj.button_Delete_Click);
+            button_jyanru_delAll.Click += new RoutedEventHandler(bxj.button_DeleteAll_Click);
         }
 
         List<Tuple<int, int>> sortList;
@@ -259,13 +264,7 @@ namespace EpgTimer
                 if (listBox == null) return;
 
                 listBox.UnselectAll();
-                foreach (ChSet5Item info in listBox.Items)
-                {
-                    if (info.IsVideo == true)
-                    {
-                        listBox.SelectedItems.Add(info);
-                    }
-                }
+                listBox.SelectedItemsAdd(listBox.Items.OfType<ChSet5Item>().Where(info => info.IsVideo == true));
                 button_service_add.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }

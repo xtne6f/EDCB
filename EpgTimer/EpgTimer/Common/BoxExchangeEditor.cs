@@ -1,43 +1,53 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Collections;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Threading;
 
-namespace EpgTimer
+namespace EpgTimer.BoxExchangeEdit
 {
+    using BoxExchangeEditAux;
+
     class BoxExchangeEditor
     {
-        //複数選択可能なListBox同士でアイテムを交換する。
-        //・複数選択設定が必要
-        //・編集側(TargetBox)はアイテムソースを使えない
+        //ListBox同士でアイテムを交換する。
+        //・ItemsSource使用中のTargetBoxでも動かせるが、ItemsSourceのメリットは全く享受出来ない。
+        //・重複処理が必要な場合はそれなりに準備が必要。文字列の重複処理がうまく出来ないのはListBoxと同様。
 
         public ListBox SourceBox { set; get; }
         public ListBox TargetBox { set; get; }
+        public IList TargetItemsSource { set; get; }
 
-        public bool DuplicationAllowed { set; get; }//項目の重複を全て許可
-        public IList DuplicationSpecific { set; get; }//特定の項目のみ重複を許可
+        public bool DuplicationAllAllowed { private set; get; }//項目の重複を全て許可
+        public IEnumerable<object> DuplicationSpecific { private set; get; }//特定の項目のみ重複を許可
+        public Func<object, object> ItemDuplicator { private set; get; }//重複を許可する場合必要
+        public IEqualityComparer<object> ItemComparer { private set; get; }//重複を許可する場合必要
+
+        /// <summary>重複を許可。supecific未指定なら全て許可。きちんと動かすなら、duplicator、comparerが必要。</summary>
+        public void AllowDuplication(IEnumerable<object> supecific = null, Func<object, object> duplicator = null, IEqualityComparer<object> comparer = null)
+        {
+            DuplicationAllAllowed = supecific == null;
+            DuplicationSpecific = supecific;
+            ItemDuplicator = duplicator;
+            ItemComparer = comparer;
+        }
 
         /// <summary>ソース側のEnter、ターゲット側のDelete、Escによる選択解除を有効にする</summary>
-        public void KeyActionAllow()
+        public void AllowKeyAction()
         {
-            if (SourceBox != null) sourceBoxKeyEnable(SourceBox, button_add_Click);
-            if (TargetBox != null) targetBoxKeyEnable(TargetBox, button_del_Click);
+            if (SourceBox != null) sourceBoxAllowKeyAction(SourceBox);
+            if (TargetBox != null) targetBoxAllowKeyAction(TargetBox);
         }
-        public void sourceBoxKeyEnable(ListBox box, KeyEventHandler add_handler)
+        public void sourceBoxAllowKeyAction(ListBox box, KeyEventHandler add_handler = null)
         {
-            if (box == null) return;
-            //
-            box.PreviewKeyDown += getBoxKeyEnableHandler(box, add_handler, true);
+            if (box != null) box.PreviewKeyDown += getBoxKeyEnableHandler(box, add_handler ?? button_Add_Click, true);
         }
-        public void targetBoxKeyEnable(ListBox box, KeyEventHandler delete_handler)
+        public void targetBoxAllowKeyAction(ListBox box, KeyEventHandler delete_handler = null)
         {
-            if (box == null) return;
-            //
-            box.PreviewKeyDown += getBoxKeyEnableHandler(box, delete_handler, false);
+            if (box != null) box.PreviewKeyDown += getBoxKeyEnableHandler(box, delete_handler ?? button_Delete_Click, false);
         }
         private KeyEventHandler getBoxKeyEnableHandler(ListBox box, KeyEventHandler handler, bool src)
         {
@@ -48,7 +58,7 @@ namespace EpgTimer
                     switch (e.Key)
                     {
                         case Key.Escape:
-                            if (box.SelectedItem != null)
+                            if (box.SelectedIndex >= 0)
                             {
                                 box.UnselectAll();
                                 e.Handled = true;
@@ -61,7 +71,7 @@ namespace EpgTimer
                                 //一つ下へ移動する。ただし、カーソル位置は正しく動かない。
                                 int pos = box.SelectedIndex + 1;
                                 box.SelectedIndex = Math.Max(0, Math.Min(pos, box.Items.Count - 1));
-                                box.ScrollIntoViewFix(box.SelectedIndex);
+                                box.ScrollIntoViewIndex(box.SelectedIndex);
                                 e.Handled = true;
                             }
                             break;
@@ -78,194 +88,565 @@ namespace EpgTimer
         }
 
         /// <summary>ダブルクリックでの移動を行うよう設定する</summary>
-        public void DoubleClickMoveAllow()
+        public void AllowDoubleClickMove()
         {
-            if (SourceBox != null) doubleClickSetter(SourceBox, sourceBox_MouseDoubleClick);
-            if (TargetBox != null) doubleClickSetter(TargetBox, targetBox_MouseDoubleClick);
+            if (SourceBox != null) sourceBoxAllowDoubleClickMove(SourceBox);
+            if (TargetBox != null) targetBoxAllowDoubleClickMove(TargetBox);
         }
-        public void doubleClickSetter(ListBox box, MouseButtonEventHandler handler)
+        public void sourceBoxAllowDoubleClickMove(ListBox box, MouseButtonEventHandler handler = null)
         {
-            if (box == null) return;
-            //
-            if (box.ItemContainerStyle == null)
-            {
-                box.ItemContainerStyle = (Style)new Style(typeof(ListBoxItem));
-            }
-            box.ItemContainerStyle.Setters.Add(new EventSetter(Button.MouseDoubleClickEvent, new MouseButtonEventHandler(handler)));
+            if (box != null) mouseDoubleClickSetter(box, handler ?? button_Add_Click);
         }
-        public void sourceBox_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        public void targetBoxAllowDoubleClickMove(ListBox box, MouseButtonEventHandler handler = null)
         {
-            addItems(SourceBox, TargetBox);
+            if (box != null) mouseDoubleClickSetter(box, handler ?? button_Delete_Click);
         }
-        public void targetBox_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        private void mouseDoubleClickSetter(ListBox box, MouseButtonEventHandler handler)
         {
-            deleteItems(TargetBox);
+            if (box.ItemContainerStyle == null) box.ItemContainerStyle = (Style)new Style(typeof(ListBoxItem));
+            box.ItemContainerStyle.Setters.Add(new EventSetter(Button.MouseDoubleClickEvent, handler));
         }
 
         /// <summary>全アイテム追加</summary>
-        public void button_addAll_Click(object sender, RoutedEventArgs e)
+        public void button_AddAll_Click(object sender, RoutedEventArgs e)
         {
-            addAllItems(SourceBox, TargetBox);
+            bxAddItemsAll(SourceBox, TargetBox, TargetItemsSource);
         }
-
         /// <summary>全アイテムリセット</summary>
-        public void button_reset_Click(object sender, RoutedEventArgs e)
+        public void button_Reset_Click(object sender, RoutedEventArgs e)
         {
-            addAllItems(SourceBox, TargetBox, true);
+            bxResetItems(SourceBox, TargetBox, TargetItemsSource);
         }
 
         /// <summary>選択アイテム追加</summary>
-        public void button_add_Click(object sender, RoutedEventArgs e)
+        public void button_Add_Click(object sender, RoutedEventArgs e)
         {
-            addItems(SourceBox, TargetBox);
+            bxAddItems(SourceBox, TargetBox, false, TargetItemsSource);
         }
-
         /// <summary>選択アイテム挿入</summary>
-        public void button_insert_Click(object sender, RoutedEventArgs e)
+        public void button_Insert_Click(object sender, RoutedEventArgs e)
         {
-            addItems(SourceBox, TargetBox, true);
+            bxAddItems(SourceBox, TargetBox, true, TargetItemsSource);
         }
 
         /// <summary>選択アイテム削除</summary>
-        public void button_del_Click(object sender, RoutedEventArgs e)
+        public void button_Delete_Click(object sender, RoutedEventArgs e)
         {
-            deleteItems(TargetBox);
+            bxDeleteItems(TargetBox, TargetItemsSource);
         }
-
         /// <summary>アイテム全削除</summary>
-        public void button_delAll_Click(object sender, RoutedEventArgs e)
+        public void button_DeleteAll_Click(object sender, RoutedEventArgs e)
         {
-            if (TargetBox != null) TargetBox.Items.Clear();
+            bxDeleteItemsAll(TargetBox, TargetItemsSource);
         }
 
         /// <summary>1つ上に移動</summary>
-        public void button_up_Click(object sender, RoutedEventArgs e)
+        public void button_Up_Click(object sender, RoutedEventArgs e)
         {
-            move_item(TargetBox, -1);
+            bxMoveItems(TargetBox, -1, TargetItemsSource);
         }
-
         /// <summary>1つ下に移動</summary>
-        public void button_down_Click(object sender, RoutedEventArgs e)
+        public void button_Down_Click(object sender, RoutedEventArgs e)
         {
-            move_item(TargetBox, 1);
+            bxMoveItems(TargetBox, 1, TargetItemsSource);
         }
 
         /// <summary>一番上に移動</summary>
-        public void button_top_Click(object sender, RoutedEventArgs e)
+        public void button_Top_Click(object sender, RoutedEventArgs e)
         {
-            move_item(TargetBox, -1 * TargetBox.SelectedIndex);
+            bxMoveItemsTopBottom(TargetBox, -1, TargetItemsSource);
         }
-
         /// <summary>一番下に移動</summary>
-        public void button_bottom_Click(object sender, RoutedEventArgs e)
+        public void button_Bottom_Click(object sender, RoutedEventArgs e)
         {
-            move_item(TargetBox, TargetBox.Items.Count - 1 - TargetBox.SelectedIndex);
+            bxMoveItemsTopBottom(TargetBox, 1, TargetItemsSource);
+        }
+        /// <summary>一番上または下に移動</summary>
+        public bool bxMoveItemsTopBottom(ListBox target, int direction, IList trgItemsSource = null)
+        {
+            if (target == null) return false;
+            //
+            return bxMoveItemsDrop(target, direction < 0 ? target.Items.Cast<object>().FirstOrDefault() : null, trgItemsSource);
         }
 
-        public void addAllItems(ListBox src, ListBox target, bool IsReset = false)
+        /// <summary>全アイテム追加</summary>
+        public bool bxAddItemsAll(ListBox src, ListBox target, IList trgItemsSource = null)
+        {
+            if (src == null || target == null) return false;
+
+            if (src.SelectionMode != SelectionMode.Single) src.SelectAll();
+            return bxAddItems(src.Items, target, false, trgItemsSource);
+        }
+        /// <summary>全アイテムリセット</summary>
+        public bool bxResetItems(ListBox src, ListBox target, IList trgItemsSource = null)
+        {
+            if (src == null || target == null) return false;
+
+            var trgItems = trgItemsSource ?? target.Items;
+            SourceBox.UnselectAll();
+            trgItems.Clear();
+            trgItems.AddItemsAx(SourceBox.Items);
+            TargetBoxItemsRefresh(target, trgItemsSource);
+
+            return true;
+        }
+
+        /// <summary>選択アイテム追加・挿入</summary>
+        public bool bxAddItems(ListBox src, ListBox target, bool IsInsert = false, IList trgItemsSource = null)
+        {
+            if (src == null) return false;
+            //
+            return bxAddItems(src.SelectedItemsList(true), target, IsInsert, trgItemsSource);
+        }
+        /// <summary>選択アイテム追加・挿入</summary>
+        public bool bxAddItems(IEnumerable srcList, ListBox target, bool IsInsert = false, IList trgItemsSource = null)
         {
             try
             {
-                if (src == null || target == null) return;
+                if (srcList == null || srcList.Cast<object>().Count() == 0 || target == null) return false;
 
-                if (IsReset == true)
+                var trgItems = trgItemsSource ?? target.Items;
+                var addList = srcList.Cast<object>()
+                    .Where(item => IsEnableDuplicate(item) == true || bxContains(target.Items, item) == false)
+                    .Select(item => IsEnableDuplicate(item) == true ? CloneObj(item) : item).ToList();
+
+                int scrollTo = target.SelectedIndex;
+                if (IsInsert == true && target.SelectedIndex >= 0)
                 {
-                    target.Items.Clear();
+                    trgItems.InsertItemsAx(target.SelectedIndex, addList);
+                }
+                else
+                {
+                    scrollTo = trgItems.AddItemsAx(addList);
                 }
 
-                src.UnselectAll();
-                src.SelectAll();
-                addItems(src, target);
+                target.UnselectAll();
+                TargetBoxItemsRefresh(target, trgItemsSource);
+                target.SelectedItemsAdd(addList);
+                if (target.SelectedIndex >= 0) target.ScrollIntoViewIndex(scrollTo);
+            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
+            return true;
+        }
 
-                if (IsReset == true)
+        private bool IsEnableDuplicate(object item)
+        {
+            return DuplicationAllAllowed == true ||
+                DuplicationSpecific != null && bxContains(DuplicationSpecific, item) == true;
+        }
+        private bool bxContains(IEnumerable lst, object obj)
+        {
+            return ItemComparer != null ? lst.Cast<object>().Contains(obj, ItemComparer) : lst.Cast<object>().Contains(obj);
+        }
+
+        private object CloneObj(object obj)
+        {
+            return ItemDuplicator != null ? ItemDuplicator(obj) : obj;
+        }
+
+        /// <summary>選択アイテム削除</summary>
+        public bool bxDeleteItems(ListBox box, IList boxItemsSource = null)
+        {
+            try
+            {
+                if (box == null || box.SelectedIndex < 0) return false;
+
+                var boxItems = boxItemsSource ?? box.Items;
+                int newSelectedIndex = -1;
+                while (box.SelectedIndex >= 0)
                 {
-                    src.UnselectAll();
-                    target.UnselectAll();
+                    newSelectedIndex = box.SelectedIndex;
+                    boxItems.RemoveAt(newSelectedIndex);
+                    TargetBoxItemsRefresh(box, boxItemsSource);
+                }
+
+                if (box.Items.Count != 0)
+                {
+                    box.SelectedIndex = Math.Min(newSelectedIndex, box.Items.Count - 1);
+                    box.ScrollIntoViewIndex(box.SelectedIndex);
                 }
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
+            return true;
+        }
+        /// <summary>アイテム全削除</summary>
+        public bool bxDeleteItemsAll(ListBox box, IList boxItemsSource = null)
+        {
+            if (box == null) return false;
+            //
+            var boxItems = boxItemsSource ?? box.Items;
+            boxItems.Clear();
+            TargetBoxItemsRefresh(box, boxItemsSource);
+
+            return true;
         }
 
-        public void addItems(ListBox src, ListBox target, bool IsInsert = false)
+        /// <summary>アイテムを上下に一つ移動</summary>
+        public bool bxMoveItems(ListBox box, int direction, IList boxItemsSource = null)
         {
             try
             {
-                if (src == null || target == null) return;
+                if (box == null || box.SelectedIndex < 0) return false;
 
-                int LastIndex = -1;
-                foreach (object info in src.SelectedItems)
+                var boxItems = boxItemsSource ?? box.Items;
+                var selected = box.SelectedItemsList();//連続移動の視点固定のため順番保持
+                int iCount = boxItems.Count;//固定
+                var r = direction >= 0 ? (Func<int, int>)(i => iCount - 1 - i) : (i => i);
+
+                for (int i = 0; i < boxItems.Count; i++)
                 {
-                    if (IsEnableAdd(target, info) == true)
+                    var item = boxItems[r(i)];
+                    if (box.SelectedItems.Contains(item) == true)
                     {
-                        if (IsInsert == true && target.SelectedItem != null)
-                        {
-                            if (LastIndex == -1) LastIndex = target.SelectedIndex;
-                            target.Items.Insert(target.SelectedIndex, info);
-                        }
-                        else
-                        {
-                            target.Items.Add(info);
-                            LastIndex = target.Items.Count - 1;
-                        }
+                        boxItems.RemoveAt(r(i));
+                        boxItems.Insert(r((i + iCount - 1) % iCount), item);
+                        if (i == 0) break;
                     }
                 }
-                if (target.Items.Count != 0 && LastIndex >= 0)
-                {
-                    target.SelectedIndex = LastIndex;
-                    target.ScrollIntoViewFix(LastIndex);
-                }
+
+                box.UnselectAll();
+                TargetBoxItemsRefresh(box, boxItemsSource);
+                box.SelectedItemsAdd(selected);
+                box.ScrollIntoView(direction < 0 ? selected[0] : selected.Last());
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
+            return true;
         }
 
-        private bool IsEnableAdd(ListBox target, object item)
+        /// <summary>アイテムをボックス内にドロップ</summary>
+        public void targetBox_PreviewDrop_fromSelf(object sender, DragEventArgs e)
         {
-            if (DuplicationAllowed == true) return true;
-            if (DuplicationSpecific != null && DuplicationSpecific.Contains(item) == true) return true;
-            if (target.Items.Contains(item) == false) return true;
-            return false;
+            object dropTo = (sender is ListBoxItem) == false ? null : (sender as ListBoxItem).Content;
+            bool ret = bxMoveItemsDrop(TargetBox, dropTo, TargetItemsSource);
+            if (e != null) e.Handled = ret;
         }
-
-        public void deleteItems(ListBox target)
-        {
-            try
-            {
-                if (target == null) return;
-
-                int newSelectedIndex = -1;
-                while (target.SelectedIndex >= 0)
-                {
-                    newSelectedIndex = target.SelectedIndex;
-                    target.Items.RemoveAt(newSelectedIndex);
-                }
-
-                if (target.Items.Count != 0)
-                {
-                    target.Items.Refresh();
-                    newSelectedIndex = (newSelectedIndex == target.Items.Count ? newSelectedIndex - 1 : newSelectedIndex);
-                    target.SelectedIndex = newSelectedIndex;
-                    target.ScrollIntoViewFix(newSelectedIndex);
-                }
-            }
-            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
-        }
-
-        /// <summary>アイテムを移動</summary>
-        public void move_item(ListBox target, int direction)
+        /// <summary>アイテムをボックス内にドロップ</summary>
+        public bool bxMoveItemsDrop(ListBox box, object dropTo, IList boxItemsSource = null)
         {
             try
             {
-                if (target == null || target.SelectedItem == null) return;
+                if (box == null || box.SelectedIndex < 0) return false;
 
-                object temp = target.SelectedItem;
-                int newIndex = ((target.SelectedIndex + direction) % target.Items.Count + target.Items.Count) % target.Items.Count;
-                target.Items.RemoveAt(target.SelectedIndex);
-                target.Items.Insert(newIndex, temp);
-                target.SelectedIndex = newIndex;
-                target.ScrollIntoViewFix(newIndex);
+                var boxItems = boxItemsSource ?? box.Items;
+
+                //選択の上と下でドロップ位置を調整する。
+                int idx_dropTo = boxItems.IndexOf(dropTo);
+                idx_dropTo = idx_dropTo < 0 ? boxItems.Count : idx_dropTo;
+                idx_dropTo += (idx_dropTo >= box.SelectedIndex ? 1 : 0);
+
+                var selected = box.SelectedItemsList(true);
+
+                var insertItem = boxItems.Cast<object>().Skip(idx_dropTo).FirstOrDefault(item => !selected.Contains(item));
+                boxItems.RemoveItemsAx(selected);//削除はこのタイミング
+                int insertIdx = insertItem == null ? boxItems.Count : boxItems.IndexOf(insertItem);
+                boxItems.InsertItemsAx(insertIdx, selected);
+                box.SelectedItemsAdd(selected);
+
+                TargetBoxItemsRefresh(box, boxItemsSource);
+                box.ScrollIntoViewIndex(insertItem == null ? int.MaxValue : box.SelectedIndex);
+            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
+            return true;
+        }
+
+        private void TargetBoxItemsRefresh(ListBox box, object itmsSource = null)
+        {
+            if (back_font != null || itmsSource != null)
+            {
+                box.Items.Refresh();
+                back_font = null;
+            }
+        }
+
+        //ドラッグ関連
+        fromBox dragStartBox;
+        List<object> dragStartItems = null;
+        bool dragStartCancel = false;
+        DispatcherTimer notifyTimer = new DispatcherTimer();
+        private void clearDragStartData()
+        {
+            notifyTimer.Stop();
+            dragStartItems = null;
+            dragStartCancel = false;
+        }
+        public void AllowDragDrop()
+        {
+            if (SourceBox != null) sourceBoxAllowDragDrop(SourceBox);
+            if (TargetBox != null) targetBoxAllowDragDrop(TargetBox);
+        }
+        public void sourceBoxAllowDragDrop(ListBox srcBox, DragEventHandler delete_handler = null)
+        {
+            if (srcBox != null)
+            {
+                boxAllowDragDrop_common(srcBox);
+                srcBox.PreviewDrop += getDragDropHandler(fromBox.TrgBox, delete_handler ?? ((sender, e) => bxDeleteItems(TargetBox)));
+            }
+        }
+        public void targetBoxAllowDragDrop(ListBox trgBox, DragEventHandler add_handler = null)
+        {
+            if (trgBox != null)
+            {
+                boxAllowDragDrop_common(trgBox);
+                dragOverSetter(trgBox, targetBoxItem_PreviewDragOver);
+                dragLeaveSetter(trgBox, targetBoxItem_PreviewDragLeave);
+                dragDropSetter(trgBox, getDragDropHandler(fromBox.SrcBox, add_handler ?? targetBox_PreviewDrop_fromSourceBox));
+                trgBox.Drop += getDragDropHandler(fromBox.SrcBox, add_handler ?? targetBox_PreviewDrop_fromSourceBox);
+                dragDropSetter(trgBox, getDragDropHandler(fromBox.TrgBox, targetBox_PreviewDrop_fromSelf));
+                trgBox.Drop += getDragDropHandler(fromBox.TrgBox, targetBox_PreviewDrop_fromSelf);
+            }
+        }
+        private void boxAllowDragDrop_common(ListBox box)
+        {
+            box.AllowDrop = true;
+            if (box.ItemContainerStyle == null) box.ItemContainerStyle = (Style)new Style(typeof(ListBoxItem));
+
+            previewMouseLeftButtonDownSetter(box, boxItem_PreviewMouseLeftButtonDown);
+            mouseLeaveSetter(box, boxItem_MouseLeave);
+            previewMouseDoubleClicSetter(box, boxItem_PreviewMouseDoubleClick);
+            box.PreviewMouseLeftButtonUp += (sender, e) => clearDragStartData();
+        }
+        private void previewMouseLeftButtonDownSetter(ListBox box, MouseButtonEventHandler handler)
+        {
+            box.ItemContainerStyle.Setters.Add(new EventSetter(Button.PreviewMouseLeftButtonDownEvent, handler));
+        }
+        private void mouseLeaveSetter(ListBox box, MouseEventHandler handler)
+        {
+            box.ItemContainerStyle.Setters.Add(new EventSetter(Mouse.MouseLeaveEvent, handler));
+        }
+        private void previewMouseDoubleClicSetter(ListBox box, MouseButtonEventHandler handler)
+        {
+            box.ItemContainerStyle.Setters.Add(new EventSetter(Button.PreviewMouseDoubleClickEvent, handler));
+        }
+        private void dragOverSetter(ListBox box, DragEventHandler handler)
+        {
+            box.ItemContainerStyle.Setters.Add(new EventSetter(DragDrop.PreviewDragOverEvent, handler));
+        }
+        private void dragLeaveSetter(ListBox box, DragEventHandler handler)
+        {
+            box.ItemContainerStyle.Setters.Add(new EventSetter(DragDrop.PreviewDragLeaveEvent, handler));
+        }
+        private void dragDropSetter(ListBox box, DragEventHandler handler)
+        {
+            box.ItemContainerStyle.Setters.Add(new EventSetter(DragDrop.PreviewDropEvent, handler));
+        }
+
+        private void boxItem_PreviewMouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            //PreviewMouseDoubleClickはPreviewMouseLeftButtonDownより先に走るので、
+            //ダブルクリックが入る場合はキャンセルしておく。
+            dragStartCancel = true;
+        }
+        private void boxItem_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            var item = sender as ListBoxItem;
+            if (item == null || item.Content == null) return;
+
+            //ダブルクリックが入る場合もキャンセルする
+            if (dragStartCancel == true || IsMouseDragCondition() == false)
+            {
+                clearDragStartData();
+                return;
+            }
+
+            ListBox box = (SourceBox != null && SourceBox.IsMouseOver == true) ? SourceBox : TargetBox;
+            dragStartBox = box == SourceBox ? fromBox.SrcBox : fromBox.TrgBox;
+
+            //ドロップ位置の上下判定に使用するので、掴んだアイテムを先頭にする。
+            dragStartItems = new List<object> { item.Content };
+            if (box.SelectedItems.Contains(item.Content) == true)
+            {
+                dragStartItems.AddRange(box.SelectedItemsList());//重複するが特に問題ない。
+            }
+
+            // 一定時間押下で、ドラッグ中と判定をする。
+            if (notifyTimer.Tag == null)
+            {
+                notifyTimer.Tag = "Initialized";
+                notifyTimer.Interval = TimeSpan.FromSeconds(0.5);
+                notifyTimer.Tick += (sender_t, e_t) =>
+                {
+                    notifyTimer.Stop();
+                    boxItem_MouseLeave(null, null);
+                };
+            }
+            notifyTimer.Start();
+        }
+        private void boxItem_MouseLeave(object sender, MouseEventArgs e)
+        {
+            if (dragStartItems == null) return;
+            if (IsMouseDragCondition() == true)
+            {
+                notifyTimer.Stop();
+                ListBox box = dragStartBox == fromBox.SrcBox ? SourceBox : TargetBox;
+                var selList = dragStartItems;
+
+                //MouseEnterを回避
+                Dispatcher.CurrentDispatcher.BeginInvoke(new Action(() =>
+                {
+                    box.UnselectAll();
+                    box.SelectedItemsAdd(selList);
+
+                    //タイマーからの実行の際、先に画面を更新する
+                    Dispatcher.CurrentDispatcher.BeginInvoke(new Action(() =>
+                        DragDrop.DoDragDrop(box, box, box == SourceBox ? DragDropEffects.Copy : DragDropEffects.Move)),
+                        DispatcherPriority.Render);
+
+                }), DispatcherPriority.Render);
+            }
+            clearDragStartData();
+        }
+        private bool IsMouseDragCondition()
+        {
+            return Mouse.LeftButton == MouseButtonState.Pressed && Keyboard.Modifiers == ModifierKeys.None && Keyboard.Modifiers == ModifierKeys.None;
+        }
+        private ListBox dStartBox(DragEventArgs e) { return e.Data.GetData(typeof(ListBox)) as ListBox; }
+        private void targetBoxItem_PreviewDragOver(object sender, DragEventArgs e)
+        {
+            try
+            {
+                var item = sender as ListBoxItem;
+                if (item == null) return;
+
+                if (dStartBox(e) == SourceBox)
+                {
+                    TargetBox.UnselectAll();
+                    item.IsSelected = true;
+                }
+                else if (dStartBox(e) == TargetBox)
+                {
+                    if (back_font == null) back_font = item.FontWeight;
+                    item.FontWeight = FontWeights.Bold;
+                }
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
 
+        //移動ターゲットになるアイテムのフォント変更のバックアップ
+        FontWeight? back_font = null;
+
+        private void targetBoxItem_PreviewDragLeave(object sender, DragEventArgs e)
+        {
+            try
+            {
+                var item = sender as ListBoxItem;
+                if (item == null) return;
+
+                if (dStartBox(e) == TargetBox)
+                {
+                    if (back_font != null) item.FontWeight = (FontWeight)back_font;
+                    back_font = null;
+                }
+            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
+        }
+
+        public void targetBox_PreviewDrop_fromSourceBox(object sender, DragEventArgs e)
+        {
+            //sender is ListBoxItem ? button_Add_Click(sender, e) : button_Insert_Click(sender, e);
+            bool ret = bxAddItems(SourceBox, TargetBox, sender is ListBoxItem, TargetItemsSource);
+            if (e != null) e.Handled = ret;
+        }
+
+        enum fromBox { SrcBox, TrgBox };
+        private DragEventHandler getDragDropHandler(fromBox box, DragEventHandler proc)
+        {
+            return new DragEventHandler((sender, e) =>
+            {
+                try
+                {
+                    if (dStartBox(e) == (box == fromBox.SrcBox ? SourceBox : TargetBox)) proc(sender, e);
+                }
+                catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
+            });
+        }
+    }
+
+    static class BoxEx
+    {
+        //c#的でないので元々定義されてないが、ここではよく使ってるので‥
+        /// <summary>指定したコレクションの要素を追加する</summary>
+        public static int AddItems(this ItemCollection itemColloction, IEnumerable collection)
+        {
+            return itemColloction.AddItemsAx(collection);
+        }
+        /// <summary>指定したコレクションの要素を挿入する</summary>
+        public static void InsertItems(this ItemCollection itemColloction, int insertIndex, IEnumerable collection)
+        {
+            itemColloction.InsertItemsAx(insertIndex, collection);
+        }
+        /// <summary>指定したコレクションの要素を削除する</summary>
+        public static void RemoveItems(this ItemCollection itemColloction, IEnumerable collection)
+        {
+            itemColloction.RemoveItemsAx(collection);
+        }
+        /// <summary>指定したコレクションの要素を選択項目に追加する。SelectionMode.Singleでもcollectionの先頭の要素を選択要素に設定する。</summary>
+        public static int SelectedItemsAdd(this ListBox box, IEnumerable collection)
+        {
+            if (collection == null) return -1;
+
+            var addList = collection.ToListAx();
+            if (addList.Count == 0) return -1;
+
+            //下の暫定処置で順番壊れるが、先頭だけは保持できる。(SelectAllは設定されているSelectedIndexを動かさないため)
+            box.SelectedItem = addList[0];
+            if (addList.Count == 1) return 0;//SingleMode対応
+
+            //暫定処置。早くする方法は？
+            if (box.Items.Count * 0.7 <= addList.Count)
+            {
+                addList = addList.FindAll(item => box.Items.Contains(item)).Distinct().ToList();
+                if (box.Items.Count * 0.7 <= addList.Count)
+                {
+                    box.SelectAll();
+                    box.SelectedItems.RemoveItemsAx(box.Items.Cast<object>().Except(addList));
+                    return box.Items.Count - 1;
+                }
+            }
+
+            return box.SelectedItems.AddItemsAx(addList);
+        }
+        /// <summary>選択アイテムをリスト化する。SelectionMode.Singleでも選択アイテムがあれば単一要素のリストを返す。</summary>
+        public static List<object> SelectedItemsList(this ListBox box, bool isItemsOrdered = false)
+        {
+            if (isItemsOrdered == true && box.SelectedItems.Count > 1)
+            {
+                return box.Items.ToListAx().FindAll(item => box.SelectedItems.Contains(item));
+            }
+            else
+            {
+                return box.SelectedItems.ToListAx();
+            }
+        }
+    }
+
+    namespace BoxExchangeEditAux
+    {
+        static class BoxExAux
+        {
+            //コンパイル時の型チェックが効かないので、一応このファイル内だけ
+            public static int AddItemsAx(this IList list, IEnumerable collection)
+            {
+                if (list == null || collection == null) return -1;
+                int addres = -1;//追加されない場合
+                foreach (var item in collection) addres = list.Add(item);
+                return addres;
+            }
+            public static void InsertItemsAx(this IList list, int insertIndex, IEnumerable collection)
+            {
+                if (list == null || collection == null) return;
+                int i = 0;
+                foreach (var item in collection) list.Insert(insertIndex + (i++), item);
+            }
+            public static void RemoveItemsAx(this IList list, IEnumerable collection)
+            {
+                if (list == null || collection == null) return;
+                foreach (var item in collection) list.Remove(item);
+            }
+            public static List<object> ToListAx(this IEnumerable collection)
+            {
+                if (collection == null) return null;
+                return collection.Cast<object>().ToList();
+            }
+        }
     }
 }

@@ -369,22 +369,29 @@ namespace EpgTimer.Setting
             CommonManager.GetFolderNameByDialog(textBox_recInfoFolder, "録画情報保存フォルダの選択");
         }
 
-
         //ボタン表示画面の上下ボタンのみ他と同じものを使用する。
-        private BoxExchangeEditor bxr = new BoxExchangeEditor();
-        private BoxExchangeEditor bxb = new BoxExchangeEditor();
+        private BoxExchangeEdit.BoxExchangeEditor bxr = new BoxExchangeEdit.BoxExchangeEditor();
+        private BoxExchangeEdit.BoxExchangeEditor bxb = new BoxExchangeEdit.BoxExchangeEditor();
         private void listBox_Button_Set()
         {
             //録画設定関係
             bxr.TargetBox = this.listBox_recFolder;
-            button_rec_up.Click += new RoutedEventHandler(bxr.button_up_Click);
-            button_rec_down.Click += new RoutedEventHandler(bxr.button_down_Click);
-            button_rec_del.Click += new RoutedEventHandler(bxr.button_del_Click);
 
             //チューナ関係関係
             bxb.TargetBox = this.listBox_bon;
-            button_bon_up.Click += new RoutedEventHandler(bxb.button_up_Click);
-            button_bon_down.Click += new RoutedEventHandler(bxb.button_down_Click);
+
+            if (CommonManager.Instance.NWMode == false)
+            {
+                bxr.AllowKeyAction();
+                bxr.AllowDragDrop();
+                button_rec_up.Click += new RoutedEventHandler(bxr.button_Up_Click);
+                button_rec_down.Click += new RoutedEventHandler(bxr.button_Down_Click);
+                button_rec_del.Click += new RoutedEventHandler(bxr.button_Delete_Click);
+
+                bxb.AllowDragDrop();
+                button_bon_up.Click += new RoutedEventHandler(bxb.button_Up_Click);
+                button_bon_down.Click += new RoutedEventHandler(bxb.button_Down_Click);
+            }
         }
 
         private void button_rec_open_Click(object sender, RoutedEventArgs e)

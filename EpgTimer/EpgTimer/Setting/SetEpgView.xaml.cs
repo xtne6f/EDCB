@@ -9,6 +9,8 @@ using System.Windows.Shapes;
 
 namespace EpgTimer.Setting
 {
+    using EpgTimer.BoxExchangeEdit;
+
     /// <summary>
     /// SetEpgView.xaml の相互作用ロジック
     /// </summary>
@@ -67,14 +69,19 @@ namespace EpgTimer.Setting
                 checkBox_tuner_display_offres.IsChecked = Settings.Instance.TunerDisplayOffReserve;
 
                 bx.TargetBox = this.listBox_tab;
-                button_tab_del.Click += new RoutedEventHandler(bx.button_del_Click);
-                button_tab_up.Click += new RoutedEventHandler(bx.button_up_Click);
-                button_tab_down.Click += new RoutedEventHandler(bx.button_down_Click);
+                bx.AllowKeyAction();
+                bx.AllowDragDrop();
+                bx.targetBoxAllowDoubleClickMove(bx.TargetBox, (sender, e) => button_tab_chg.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
+                button_tab_del.Click += new RoutedEventHandler(bx.button_Delete_Click);
+                button_tab_up.Click += new RoutedEventHandler(bx.button_Up_Click);
+                button_tab_down.Click += new RoutedEventHandler(bx.button_Down_Click);
+                button_tab_top.Click += new RoutedEventHandler(bx.button_Top_Click);
+                button_tab_bottom.Click += new RoutedEventHandler(bx.button_Bottom_Click);
 
                 radioButton_1_def.IsChecked = (Settings.Instance.UseCustomEpgView == false);
                 radioButton_1_cust.IsChecked = (Settings.Instance.UseCustomEpgView != false);
 
-                Settings.Instance.CustomEpgTabList.ForEach(info => listBox_tab.Items.Add(info));
+                listBox_tab.Items.AddItems(Settings.Instance.CustomEpgTabList);
                 if (listBox_tab.Items.Count > 0) listBox_tab.SelectedIndex = 0;
 
                 XmlLanguage FLanguage = XmlLanguage.GetLanguage("ja-JP");
@@ -412,16 +419,11 @@ namespace EpgTimer.Setting
         {
             if (items.Count != 0)
             {
-                items.ForEach(info => listBox_tab.Items.Add(info));
-                listBox_tab.ScrollIntoView(listBox_tab.Items[listBox_tab.Items.Count - 1]);
-                listBox_tab.SelectedItem = items[0];
-                items.ForEach(info => listBox_tab.SelectedItems.Add(info));
+                listBox_tab.Items.AddItems(items);
+                listBox_tab.UnselectAll();
+                listBox_tab.SelectedItemsAdd(items);
+                listBox_tab.ScrollIntoViewIndex(int.MaxValue);
             }
-        }
-
-        private void listBox_tab_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
-        {
-            button_tab_chg_Click(null, null);
         }
 
         private void button_Color_Click(object sender, RoutedEventArgs e)

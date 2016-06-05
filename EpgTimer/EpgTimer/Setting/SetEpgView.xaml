@@ -212,29 +212,43 @@
                     </StackPanel>
                 </TabItem>
                 <TabItem Header="表示項目">
-                    <Grid>
-                        <RadioButton Content="デフォルト表示" Height="16" HorizontalAlignment="Left" Margin="6,6,0,0" Name="radioButton_1_def" VerticalAlignment="Top" />
-                        <RadioButton Content="カスタマイズ表示" Height="16" HorizontalAlignment="Left" Margin="6,28,0,0" Name="radioButton_1_cust" VerticalAlignment="Top" />
-                        <GroupBox Header="カスタマイズ表示設定" Margin="6,50,6,0" VerticalAlignment="Top" Padding="0,0,0,6">
-                            <Grid>
-                                <Label Content="表示タブ" Height="28" HorizontalAlignment="Left" Margin="6,6,0,0" VerticalAlignment="Top" />
-                                <ListBox Height="148" HorizontalAlignment="Left" Margin="23,40,0,0" Name="listBox_tab" VerticalAlignment="Top" Width="172" SelectionMode="Extended" >
-                                    <ListBox.Resources>
-                                        <Style TargetType="ListBoxItem">
-                                            <EventSetter Event="MouseDoubleClick" Handler="listBox_tab_MouseDoubleClick"/>
-                                        </Style>
-                                    </ListBox.Resources>
-                                </ListBox>
-                                <Button Content="追加" Height="23" HorizontalAlignment="Left" Margin="213,40,0,0" Name="button_tab_add" VerticalAlignment="Top" Width="46" Click="button_tab_add_Click" />
-                                <Button Content="変更" Height="23" HorizontalAlignment="Left" Margin="213,69,0,0" Name="button_tab_chg" VerticalAlignment="Top" Width="46" Click="button_tab_chg_Click" />
-                                <Button Content="削除" Height="23" HorizontalAlignment="Left" Margin="213,98,0,0" Name="button_tab_del" VerticalAlignment="Top" Width="46" />
-                                <Button Content="↑" Height="23" HorizontalAlignment="Left" Margin="213,136,0,0" Name="button_tab_up" VerticalAlignment="Top" Width="46" />
-                                <Button Content="↓" Height="23" HorizontalAlignment="Left" Margin="213,165,0,0" Name="button_tab_down" VerticalAlignment="Top" Width="46" />
-                                <Button Content="コピー" Height="23" HorizontalAlignment="Left" Margin="23,194,0,0" Name="button_tab_clone" VerticalAlignment="Top" Width="46" Click="button_tab_clone_Click" />
-                                <Button Content="デフォルト表示をコピー" Height="23" HorizontalAlignment="Left" Margin="75,194,0,0" Name="button_tab_defaultCopy" VerticalAlignment="Top" Width="120" Click="button_tab_defaultCopy_Click" />
+                    <DockPanel Margin="6">
+                        <StackPanel DockPanel.Dock="Top">
+                            <RadioButton Content="デフォルト表示" Name="radioButton_1_def" />
+                            <RadioButton Content="カスタマイズ表示" Name="radioButton_1_cust" Margin="0,6,0,0" />
+                        </StackPanel>
+                        <GroupBox Header="カスタマイズ表示設定" Margin="0,6,0,0" >
+                            <Grid Margin="6" >
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="auto" />
+                                    <RowDefinition Height="6" />
+                                    <RowDefinition Height="*" />
+                                    <RowDefinition Height="6" />
+                                    <RowDefinition Height="auto" />
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="auto" />
+                                    <ColumnDefinition Width="auto" />
+                                    <ColumnDefinition Width="7*" />
+                                </Grid.ColumnDefinitions>
+                                <Label Content="表示タブ" />
+                                <ListBox Grid.Row="2" Name="listBox_tab" SelectionMode="Extended" />
+                                <Grid Grid.Row="4" MinWidth="200" >
+                                    <Button HorizontalAlignment="Left" MinWidth="54" Content="コピー" Name="button_tab_clone" Click="button_tab_clone_Click" />
+                                    <Button HorizontalAlignment="Right" Margin="20,0,0,0" Content="デフォルト表示をコピー" Name="button_tab_defaultCopy" Click="button_tab_defaultCopy_Click" />
+                                </Grid>
+                                <StackPanel MinWidth="54" Margin="12,0,0,0" Grid.Row="2" Grid.Column="1">
+                                    <Button Content="追加" Margin="0,0,0,6" Name="button_tab_add" Click="button_tab_add_Click" />
+                                    <Button Content="変更" Margin="0,0,0,6" Name="button_tab_chg" Click="button_tab_chg_Click" />
+                                    <Button Content="削除" Margin="0,0,0,12" Name="button_tab_del" />
+                                    <Button Content="↑↑" Margin="0,0,0,6" Name="button_tab_top" />
+                                    <Button Content="↑" Margin="0,0,0,6" Name="button_tab_up" />
+                                    <Button Content="↓" Margin="0,0,0,6" Name="button_tab_down" />
+                                    <Button Content="↓↓" Margin="0,0,0,6" Name="button_tab_bottom" />
+                                </StackPanel>
                             </Grid>
                         </GroupBox>
-                    </Grid>
+                    </DockPanel>
                 </TabItem>
             </TabControl>
         </TabItem>

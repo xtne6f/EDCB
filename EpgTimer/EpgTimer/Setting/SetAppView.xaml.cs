@@ -8,6 +8,8 @@ using System.Windows.Interop;
 
 namespace EpgTimer.Setting
 {
+    using EpgTimer.BoxExchangeEdit;
+
     /// <summary>
     /// SetAppView.xaml の相互作用ロジック
     /// </summary>
@@ -491,8 +493,8 @@ namespace EpgTimer.Setting
                 Settings.Instance.SuspendChk = (uint)(checkBox_suspendChk.IsChecked == true ? 1 : 0);
                 Settings.Instance.SuspendChkTime = mutil.MyToNumerical(textBox_suspendChkTime, Convert.ToUInt32, Settings.Instance.SuspendChkTime);
 
-                Settings.Instance.ViewButtonList = listBox_viewBtn.Items.OfType<string>().ToList();
-                Settings.Instance.TaskMenuList = listBox_viewTask.Items.OfType<string>().ToList();
+                Settings.Instance.ViewButtonList = listBox_viewBtn.Items.OfType<StringItem>().ValueList();
+                Settings.Instance.TaskMenuList = listBox_viewTask.Items.OfType<StringItem>().ValueList();
 
                 Settings.Instance.Cust1BtnName = textBox_name1.Text;
                 Settings.Instance.Cust1BtnCmd = textBox_exe1.Text;
@@ -570,38 +572,42 @@ namespace EpgTimer.Setting
         private void listBox_Button_Set()
         {
             //上部表示ボタン関係
-            bxb.TargetBox = this.listBox_viewBtn;
             bxb.SourceBox = this.listBox_itemBtn;
-            bxb.DuplicationSpecific = new List<object> { "（空白）" };
-            button_btnUp.Click += new RoutedEventHandler(bxb.button_up_Click);
-            button_btnDown.Click += new RoutedEventHandler(bxb.button_down_Click);
+            bxb.TargetBox = this.listBox_viewBtn;
+            bxb.AllowDuplication(StringItem.Items("（空白）"), StringItem.Cloner, StringItem.Comparator);
+            button_btnUp.Click += new RoutedEventHandler(bxb.button_Up_Click);
+            button_btnDown.Click += new RoutedEventHandler(bxb.button_Down_Click);
             button_btnAdd.Click += new RoutedEventHandler((sender, e) => button_Add(bxb, buttonItem));
             button_btnIns.Click += new RoutedEventHandler((sender, e) => button_Add(bxb, buttonItem, true));
             button_btnDel.Click += new RoutedEventHandler((sender, e) => button_Dell(bxb, bxt, buttonItem));
-            bxb.sourceBoxKeyEnable(listBox_itemBtn, (sender, e) => button_btnAdd.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
-            bxb.targetBoxKeyEnable(listBox_viewBtn, (sender, e) => button_btnDel.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
-            bxb.doubleClickSetter(listBox_itemBtn, (sender, e) => button_btnAdd.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
-            bxb.doubleClickSetter(listBox_viewBtn, (sender, e) => button_btnDel.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
+            bxb.sourceBoxAllowKeyAction(listBox_itemBtn, (sender, e) => button_btnAdd.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
+            bxb.targetBoxAllowKeyAction(listBox_viewBtn, (sender, e) => button_btnDel.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
+            bxb.sourceBoxAllowDoubleClickMove(listBox_itemBtn, (sender, e) => button_btnAdd.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
+            bxb.targetBoxAllowDoubleClickMove(listBox_viewBtn, (sender, e) => button_btnDel.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
+            bxb.sourceBoxAllowDragDrop(listBox_itemBtn, (sender, e) => button_btnDel.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
+            bxb.targetBoxAllowDragDrop(listBox_viewBtn, (sender, e) => button_btnIns.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
 
             //タスクアイコン関係
-            bxt.TargetBox = this.listBox_viewTask;
             bxt.SourceBox = this.listBox_itemTask;
-            bxt.DuplicationSpecific = new List<object> { "（セパレータ）" };
-            button_taskUp.Click += new RoutedEventHandler(bxt.button_up_Click);
-            button_taskDown.Click += new RoutedEventHandler(bxt.button_down_Click);
+            bxt.TargetBox = this.listBox_viewTask;
+            bxt.AllowDuplication(StringItem.Items("（セパレータ）"), StringItem.Cloner, StringItem.Comparator);
+            button_taskUp.Click += new RoutedEventHandler(bxt.button_Up_Click);
+            button_taskDown.Click += new RoutedEventHandler(bxt.button_Down_Click);
             button_taskAdd.Click += new RoutedEventHandler((sender, e) => button_Add(bxt, taskItem));
             button_taskIns.Click += new RoutedEventHandler((sender, e) => button_Add(bxt, taskItem, true));
             button_taskDel.Click += new RoutedEventHandler((sender, e) => button_Dell(bxt, bxb, taskItem));
-            bxt.sourceBoxKeyEnable(listBox_itemTask, (sender, e) => button_taskAdd.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
-            bxt.targetBoxKeyEnable(listBox_viewTask, (sender, e) => button_taskDel.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
-            bxt.doubleClickSetter(listBox_itemTask, (sender, e) => button_taskAdd.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
-            bxt.doubleClickSetter(listBox_viewTask, (sender, e) => button_taskDel.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
+            bxt.sourceBoxAllowKeyAction(listBox_itemTask, (sender, e) => button_taskAdd.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
+            bxt.targetBoxAllowKeyAction(listBox_viewTask, (sender, e) => button_taskDel.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
+            bxt.sourceBoxAllowDoubleClickMove(listBox_itemTask, (sender, e) => button_taskAdd.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
+            bxt.targetBoxAllowDoubleClickMove(listBox_viewTask, (sender, e) => button_taskDel.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
+            bxt.sourceBoxAllowDragDrop(listBox_itemTask, (sender, e) => button_taskDel.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
+            bxt.targetBoxAllowDragDrop(listBox_viewTask, (sender, e) => button_taskIns.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
 
-            Settings.Instance.ViewButtonList.ForEach(str => listBox_viewBtn.Items.Add(str));
+            listBox_viewBtn.Items.AddItems(StringItem.Items(Settings.Instance.ViewButtonList));
             buttonItem = Settings.Instance.GetViewButtonAllItems();
             reLoadButtonItem(bxb, buttonItem);
 
-            Settings.Instance.TaskMenuList.ForEach(str => listBox_viewTask.Items.Add(str));
+            listBox_viewTask.Items.AddItems(StringItem.Items(Settings.Instance.TaskMenuList));
             taskItem = Settings.Instance.GetTaskMenuAllItems();
             reLoadButtonItem(bxt, taskItem);
         }
@@ -609,38 +615,36 @@ namespace EpgTimer.Setting
         private void button_Add(BoxExchangeEditor bx, List<string> src, bool isInsert = false)
         {
             int pos = bx.SourceBox.SelectedIndex - bx.SourceBox.SelectedItems.Count;
-            bx.addItems(bx.SourceBox, bx.TargetBox, isInsert);
+            bx.bxAddItems(bx.SourceBox, bx.TargetBox, isInsert);
             reLoadButtonItem(bx, src);
             if (bx.SourceBox.Items.Count != 0)
             {
-                pos = pos <= 1 ? 1 : pos;
                 pos = Math.Max(0, Math.Min(pos, bx.SourceBox.Items.Count - 1));
-                bx.SourceBox.SelectedIndex = pos - 1;//順序がヘンだが、ENTERの場合はこの後に+1処理が入る模様
+                bx.SourceBox.SelectedIndex = pos;//順序がヘンだが、ENTERの場合はこの後に+1処理が入る模様
             }
         }
         private void button_Dell(BoxExchangeEditor bx, BoxExchangeEditor bx_other, List<string> src)
         {
             if (bx.TargetBox.SelectedItem == null) return;
             //
-            string item1 = bx.TargetBox.SelectedItems.OfType<string>().FirstOrDefault(item => item == "設定");
-            string item2 = bx_other.TargetBox.Items.OfType<string>().FirstOrDefault(item => item == "設定");
+            var item1 = bx.TargetBox.SelectedItems.OfType<StringItem>().FirstOrDefault(item => item.Value == "設定");
+            var item2 = bx_other.TargetBox.Items.OfType<StringItem>().FirstOrDefault(item => item.Value == "設定");
             if (item1 != null && item2 == null)
             {
                 MessageBox.Show("設定は上部表示ボタンか右クリック表示項目のどちらかに必要です");
                 return;
             }
 
-            bx.deleteItems(bx.TargetBox);
+            bx.bxDeleteItems(bx.TargetBox);
             reLoadButtonItem(bx, src);
         }
         private void reLoadButtonItem(BoxExchangeEditor bx, List<string> src)
         {
-            var viewlist = bx.TargetBox.Items.OfType<string>().ToList();
+            var viewlist = bx.TargetBox.Items.OfType<StringItem>().Values();
             var diflist = src.Except(viewlist).ToList();
-            diflist.Insert(0, bx.DuplicationSpecific.OfType<string>().ElementAt(0));
-            var newlist = diflist.Distinct().ToList();
+            diflist.Insert(0, (bx.DuplicationSpecific.First() as StringItem).Value);
 
-            bx.SourceBox.ItemsSource = newlist;
+            bx.SourceBox.ItemsSource = StringItem.Items(diflist.Distinct());
         }
 
         private void button_recDef_Click(object sender, RoutedEventArgs e)

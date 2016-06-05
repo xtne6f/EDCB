@@ -385,31 +385,29 @@ namespace EpgTimer
         ///<summary>同じアイテムがあってもスクロールするようにしたもの(ItemSource使用時無効)</summary>
         //ScrollIntoView()は同じアイテムが複数あると上手く動作しないので、ダミーを使って無理矢理移動させる。
         //同じ理由でSelectedItemも正しく動作しないので、スクロール位置はindexで取るようにする。
-        public static void ScrollIntoViewFix(this ListBox box, int index)
+        public static void ScrollIntoViewIndex(this ListBox box, int index)
         {
             try
             {
-                if (box == null || index < 0 || index >= box.Items.Count) return;
+                if (box == null || box.Items.Count == 0) return;
+
+                index = Math.Min(Math.Max(0, index), box.Items.Count - 1);
+                object item = box.Items[index];
 
                 //リストに追加・削除をするので、ItemsSourceなどあるときは動作しない
                 if (box.ItemsSource == null)
                 {
-                    object key = box.Items[index];
-                    if (box.Items.OfType<object>().Count(item => item.Equals(key)) != 1)//==は失敗する
+                    if (box.Items.IndexOf(item) != index)
                     {
-                        var dummy = new ListBoxItem();
-                        dummy.Visibility = Visibility.Collapsed;//まだスクロールバーがピクピクする
-                        box.Items.Insert(index + (index == 0 ? 0 : 1), dummy);
-                        box.ScrollIntoView(dummy);
+                        item = new ListBoxItem { Visibility = Visibility.Collapsed };
+                        box.Items.Insert(index == 0 ? 0 : index + 1, item);
 
                         //ScrollIntoView()は遅延して実行されるので、実行後にダミーを削除する。
-                        Dispatcher.CurrentDispatcher.BeginInvoke(new Action(() => box.Items.Remove(dummy)), DispatcherPriority.ContextIdle);
-
-                        return;
+                        Dispatcher.CurrentDispatcher.BeginInvoke(new Action(() => box.Items.Remove(item)), DispatcherPriority.Loaded);
                     }
                 }
 
-                box.ScrollIntoView(box.Items[index]);
+                box.ScrollIntoView(item);
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }

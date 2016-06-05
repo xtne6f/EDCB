@@ -8,6 +8,7 @@ using System.Windows.Input;
 
 namespace EpgTimer
 {
+    using EpgTimer.BoxExchangeEdit;
     using ComboItem = KeyValuePair<CtxmCode, string>;
 
     /// <summary>
@@ -89,23 +90,23 @@ namespace EpgTimer
                 stackItems_ges2 = stackPanel_gesture2.Children.OfType<CheckBox>().ToList();
 
                 //個別設定画面用の設定
-                this.comboBoxViewSelect.DisplayMemberPath = "Value";
-                this.comboBoxViewSelect.SelectedValuePath = "Key";
-
+                this.comboBoxViewSelect.DisplayMemberPath = CommonUtil.GetMemberName(() => new ComboItem().Value);
+                this.comboBoxViewSelect.SelectedValuePath = CommonUtil.GetMemberName(() => new ComboItem().Key);
                 bx.SourceBox = this.listBox_Default;
                 bx.TargetBox = this.listBox_Setting;
-                bx.DuplicationSpecific = new List<object> { EpgCmdsEx.SeparatorString };
-                bx.KeyActionAllow();
-                bx.DoubleClickMoveAllow();
-                button_reset.Click += new RoutedEventHandler(bx.button_reset_Click);
-                button_add.Click += new RoutedEventHandler(bx.button_add_Click);
-                button_ins.Click += new RoutedEventHandler(bx.button_insert_Click);
-                button_del.Click += new RoutedEventHandler(bx.button_del_Click);
-                button_delAll.Click += new RoutedEventHandler(bx.button_delAll_Click);
-                button_top.Click += new RoutedEventHandler(bx.button_top_Click);
-                button_up.Click += new RoutedEventHandler(bx.button_up_Click);
-                button_down.Click += new RoutedEventHandler(bx.button_down_Click);
-                button_bottom.Click += new RoutedEventHandler(bx.button_bottom_Click);
+                bx.AllowDuplication(StringItem.Items(EpgCmdsEx.SeparatorString), StringItem.Cloner, StringItem.Comparator);
+                bx.AllowKeyAction();
+                bx.AllowDoubleClickMove();
+                bx.AllowDragDrop();
+                button_reset.Click += new RoutedEventHandler(bx.button_Reset_Click);
+                button_add.Click += new RoutedEventHandler(bx.button_Add_Click);
+                button_ins.Click += new RoutedEventHandler(bx.button_Insert_Click);
+                button_del.Click += new RoutedEventHandler(bx.button_Delete_Click);
+                button_delAll.Click += new RoutedEventHandler(bx.button_DeleteAll_Click);
+                button_top.Click += new RoutedEventHandler(bx.button_Top_Click);
+                button_up.Click += new RoutedEventHandler(bx.button_Up_Click);
+                button_down.Click += new RoutedEventHandler(bx.button_Down_Click);
+                button_bottom.Click += new RoutedEventHandler(bx.button_Bottom_Click);
 
                 //その他画面用の設定
                 foreach (var item in MenuCodeToTitle.Where(i => i.Key != CtxmCode.EditChgMenu))
@@ -196,7 +197,7 @@ namespace EpgTimer
                 if (comboBoxViewSelect.SelectedValue != null)
                 {
                     var code = (CtxmCode)this.comboBoxViewSelect.SelectedValue;
-                    editMenu.FindData(code).Items = this.listBox_Setting.Items.Cast<string>().ToList();
+                    editMenu.FindData(code).Items = this.listBox_Setting.Items.Cast<StringItem>().ValueList();
                 }
 
                 for (int i = 0; i < SettingTable.Count; i++)
@@ -262,12 +263,12 @@ namespace EpgTimer
                 if (this.listBox_Default.ItemsSource != null)
                 {
                     CtxmCode oldcode = ((ComboItem)e.RemovedItems[0]).Key;
-                    editMenu.FindData(oldcode).Items = this.listBox_Setting.Items.Cast<string>().ToList();
+                    editMenu.FindData(oldcode).Items = this.listBox_Setting.Items.Cast<StringItem>().ValueList();
                 }
                 CtxmCode newcode = ((ComboItem)e.AddedItems[0]).Key;
-                this.listBox_Default.ItemsSource = defaultMenu.FindData(newcode).Items;
+                this.listBox_Default.ItemsSource = StringItem.Items(defaultMenu.FindData(newcode).Items);
                 this.listBox_Setting.Items.Clear();
-                editMenu.FindData(newcode).Items.ForEach(item => this.listBox_Setting.Items.Add(item));
+                this.listBox_Setting.Items.AddItems(StringItem.Items(editMenu.FindData(newcode).Items));
 
                 switch (newcode)
                 {
@@ -296,7 +297,7 @@ namespace EpgTimer
                 {
                     var code = (CtxmCode)this.comboBoxViewSelect.SelectedValue;
                     this.listBox_Setting.Items.Clear();
-                    editMenu.FindData(code).Items.ForEach(item => this.listBox_Setting.Items.Add(item));
+                    this.listBox_Setting.Items.AddItems(StringItem.Items(editMenu.FindData(code).Items));
                 }
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
@@ -304,9 +305,9 @@ namespace EpgTimer
 
         private void button_separator_Click(object sender, RoutedEventArgs e)
         {
-            listBox_Setting.Items.Add(EpgCmdsEx.SeparatorString);
+            listBox_Setting.Items.Add(new StringItem(EpgCmdsEx.SeparatorString));
             listBox_Setting.SelectedIndex = listBox_Setting.Items.Count - 1;
-            listBox_Setting.ScrollIntoViewFix(listBox_Setting.SelectedIndex);
+            listBox_Setting.ScrollIntoView(listBox_Setting.SelectedItem);
         }
 
         private bool ManualMenuCheckboxWorking = false;

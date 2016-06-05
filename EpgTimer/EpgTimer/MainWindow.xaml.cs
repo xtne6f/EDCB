@@ -753,6 +753,8 @@ namespace EpgTimer
         private void Window_PreviewDrop(object sender, DragEventArgs e)
         {
             string[] filePath = e.Data.GetData(DataFormats.FileDrop, true) as string[];
+            if (filePath == null) return;
+
             foreach (string path in filePath)
             {
                 String ext = System.IO.Path.GetExtension(path);

@@ -24,7 +24,7 @@
                         </Style>
                         <Style TargetType="CheckBox" BasedOn="{StaticResource {x:Type CheckBox}}">
                             <Setter Property="Content" Value=""/>
-                            <Setter Property="Margin" Value="6,0,6,0"/>
+                            <Setter Property="Margin" Value="6,0,6,1"/>
                         </Style>
                     </DockPanel.Resources>
                     <StackPanel Name="stackPanel_menu">
@@ -158,7 +158,7 @@
                         </StackPanel>
                     </GroupBox>
                     <CheckBox Margin="0,6,0,0" Content="ショートカット操作に対する確認メッセージを表示しない" Name="checkBox_NoMessageKeyGesture" />
-                    <Label Margin="0,-6,0,-4" Content="※削除、自動予約登録画面の並び替え関係、予約ダイアログの確定操作など" />
+                    <Label Margin="0,-4,0,-4" Content="※削除、自動予約登録画面の並び替え関係、予約ダイアログの確定操作など" />
                     <CheckBox Margin="0,6,0,0" Content="「全て削除」(録画済み一覧、検索/自動登録ダイアログ)で確認メッセージを表示しない" Name="checkBox_NoMessageDeleteAll" />
                 </StackPanel>
             </TabItem>
