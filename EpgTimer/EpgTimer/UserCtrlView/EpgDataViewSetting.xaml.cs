@@ -74,6 +74,7 @@ namespace EpgTimer
             checkBox_noTimeView_week.IsChecked = setInfo.NeedTimeOnlyWeek;
             comboBox_timeH_week.SelectedIndex = setInfo.StartTimeWeek;
             checkBox_searchMode.IsChecked = setInfo.SearchMode;
+            checkBox_searchServiceFromView.IsChecked = setInfo.SearchServiceFromView;
             checkBox_filterEnded.IsChecked = (setInfo.FilterEnded == true);
 
             foreach (UInt64 id in setInfo.ViewServiceList)
@@ -113,6 +114,7 @@ namespace EpgTimer
             info.NeedTimeOnlyWeek = (checkBox_noTimeView_week.IsChecked == true);
             info.StartTimeWeek = comboBox_timeH_week.SelectedIndex;
             info.SearchMode = (checkBox_searchMode.IsChecked == true);
+            info.SearchServiceFromView = (checkBox_searchServiceFromView.IsChecked == true);
             info.FilterEnded = (checkBox_filterEnded.IsChecked == true);
             info.SearchKey = searchKey.Clone();
             info.ID = tabInfoID;
@@ -337,11 +339,30 @@ namespace EpgTimer
         {
             var dlg = new SetDefSearchSettingWindow();
             dlg.Owner = CommonUtil.GetTopWindow(this);
-            dlg.SetDefSetting(searchKey);
-
+            EpgSearchKeyInfo setKey = searchKey.Clone();
+            if (checkBox_searchServiceFromView.IsChecked == true)
+            {
+                setKey.serviceList = listBox_serviceView.Items.OfType<ChSet5Item>().Select(ch => (long)ch.Key).ToList();
+            }
+            dlg.SetDefSetting(setKey);
             if (dlg.ShowDialog() == true)
             {
                 searchKey = dlg.GetSetting();
+                if (checkBox_searchServiceFromView.IsChecked == true)
+                {
+                    var oldList = listBox_serviceView.Items.OfType<object>().ToList();
+                    var searchList = new List<object>();
+                    foreach (ulong sv in searchKey.serviceList)
+                    {
+                        if (ChSet5.Instance.ChList.ContainsKey(sv) == true)
+                        {
+                            searchList.Add(ChSet5.Instance.ChList[sv]);
+                        }
+                    }
+                    listBox_serviceView.UnselectAll();
+                    listBox_serviceView.Items.RemoveItems(oldList.Where(sv => searchList.Contains(sv) == false));
+                    listBox_serviceView.Items.AddItems(searchList.Where(sv => oldList.Contains(sv) == false));
+                }
             }
         }
     }

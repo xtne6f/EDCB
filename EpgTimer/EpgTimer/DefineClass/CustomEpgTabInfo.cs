@@ -16,6 +16,7 @@ namespace EpgTimer
             StartTimeWeek = 4;
             SearchMode = false;
             SearchKey = new EpgSearchKeyInfo();
+            SearchServiceFromView = false;
             FilterEnded = false;
             ID = -1;
         }
@@ -28,6 +29,7 @@ namespace EpgTimer
         public List<UInt16> ViewContentKindList { get; set; }
         public bool SearchMode { get; set; }
         public EpgSearchKeyInfo SearchKey { get; set; }
+        public bool SearchServiceFromView { get; set; }
         public bool FilterEnded { get; set; }
         public int ID { get; set; }
 
@@ -43,6 +45,7 @@ namespace EpgTimer
             dest.ViewServiceList = src.ViewServiceList.ToList();
             dest.ViewContentKindList = src.ViewContentKindList.ToList();
             dest.SearchMode = src.SearchMode;
+            dest.SearchServiceFromView = src.SearchServiceFromView;
             dest.FilterEnded = src.FilterEnded;
             dest.SearchKey = src.SearchKey.Clone();
             dest.ID = src.ID;
