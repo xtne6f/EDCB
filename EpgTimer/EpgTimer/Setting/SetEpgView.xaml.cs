@@ -184,7 +184,7 @@ namespace EpgTimer.Setting
                 setComboColors(Settings.Instance.RecEndColors, grid_RecInfoBackColors);
                 setButtonColors(Settings.Instance.RecEndCustColors, grid_RecInfoBackColors);
 
-                //予約一覧画面
+                //予約一覧・共通画面
                 this.ctxmSetInfo = Settings.Instance.MenuSet.Clone();
                 checkBox_displayAutoAddMissing.IsChecked = Settings.Instance.DisplayReserveAutoAddMissing;
                 checkBox_resNoYear.IsChecked = Settings.Instance.ResInfoNoYear;
@@ -209,6 +209,23 @@ namespace EpgTimer.Setting
                 checkBox_NotNoStyle.IsChecked = Settings.Instance.NoStyle == 0;
                 checkBox_displayStatus.IsChecked = Settings.Instance.DisplayStatus;
                 checkBox_displayStatusNotify.IsChecked = Settings.Instance.DisplayStatusNotify;
+                checkBox_IsVisibleReserveView.IsChecked = Settings.Instance.IsVisibleReserveView;
+                checkBox_IsVisibleRecInfoView.IsChecked = Settings.Instance.IsVisibleRecInfoView;
+                checkBox_IsVisibleAutoAddView.IsChecked = Settings.Instance.IsVisibleAutoAddView;
+                checkBox_IsVisibleAutoAddViewMoveOnly.IsChecked = Settings.Instance.IsVisibleAutoAddViewMoveOnly;
+
+                foreach (var dockPair in new Dictionary<Dock, string> {
+                                { Dock.Bottom, "下" },{ Dock.Top, "上" },{ Dock.Left, "左" },{ Dock.Right, "右" } })
+                {
+                    var btn = new RadioButton();
+                    btn.Tag = dockPair.Key;
+                    btn.Content = dockPair.Value;
+                    wrapPanel_MainViewButtonsDock.Children.Add(btn);
+                }
+
+                var rbtn = wrapPanel_MainViewButtonsDock.Children.OfType<RadioButton>()
+                    .FirstOrDefault(item => item.Tag as Dock? == Settings.Instance.MainViewButtonsDock);
+                if (rbtn != null) rbtn.IsChecked = true;
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
@@ -354,6 +371,14 @@ namespace EpgTimer.Setting
                 Settings.Instance.NoStyle = (checkBox_NotNoStyle.IsChecked == true ? 0 : 1);
                 Settings.Instance.DisplayStatus = (checkBox_displayStatus.IsChecked == true);
                 Settings.Instance.DisplayStatusNotify = (checkBox_displayStatusNotify.IsChecked == true);
+                Settings.Instance.IsVisibleReserveView = (checkBox_IsVisibleReserveView.IsChecked == true);
+                Settings.Instance.IsVisibleRecInfoView = (checkBox_IsVisibleRecInfoView.IsChecked == true);
+                Settings.Instance.IsVisibleAutoAddView = (checkBox_IsVisibleAutoAddView.IsChecked == true);
+                Settings.Instance.IsVisibleAutoAddViewMoveOnly = (checkBox_IsVisibleAutoAddViewMoveOnly.IsChecked == true);
+
+                Dock? dock = wrapPanel_MainViewButtonsDock.Children.OfType<RadioButton>()
+                    .Where(btn => btn.IsChecked == true).Select(btn => btn.Tag as Dock?).FirstOrDefault();
+                if (dock != null) Settings.Instance.MainViewButtonsDock = (Dock)dock;
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }

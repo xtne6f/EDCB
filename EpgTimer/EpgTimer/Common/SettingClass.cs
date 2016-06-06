@@ -9,6 +9,7 @@ using Microsoft.Win32;
 using System.Runtime.InteropServices;
 using System.ComponentModel;
 using System.Windows;
+using System.Windows.Controls;
 
 namespace EpgTimer
 {
@@ -381,6 +382,11 @@ namespace EpgTimer
         public bool UpdateTaskText { get; set; }
         public bool DisplayStatus { get; set; }
         public bool DisplayStatusNotify { get; set; }
+        public bool IsVisibleReserveView { get; set; }
+        public bool IsVisibleRecInfoView { get; set; }
+        public bool IsVisibleAutoAddView { get; set; }
+        public bool IsVisibleAutoAddViewMoveOnly { get; set; }
+        public Dock MainViewButtonsDock { get; set; }
 
         public Settings()
         {
@@ -561,6 +567,11 @@ namespace EpgTimer
             UpdateTaskText = false;
             DisplayStatus = false;
             DisplayStatusNotify = false;
+            IsVisibleReserveView = true;
+            IsVisibleRecInfoView = true;
+            IsVisibleAutoAddView = true;
+            IsVisibleAutoAddViewMoveOnly = false;
+            MainViewButtonsDock = Dock.Right;
         }
 
         [NonSerialized()]

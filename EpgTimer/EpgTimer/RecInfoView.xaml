@@ -38,12 +38,13 @@
             </Style>
         </ResourceDictionary>
     </UserControl.Resources>
-    <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="auto" />
-        </Grid.ColumnDefinitions>
-        <ListView Name="listView_recinfo" Margin="10" Style="{StaticResource DataListViewStyle}" >
+    <DockPanel>
+        <StackPanel Name="stackPanel_button" MinWidth="100" >
+            <Button Content="再生" Name="button_play" Margin="0,10,0,10" />
+            <Button Content="削除" Name="button_del" Margin="0,10,0,10" />
+            <Button Content="全クリア" Name="button_delAll" Margin="0,10,0,10" />
+        </StackPanel>
+        <ListView Name="listView_recinfo" Style="{StaticResource DataListViewStyle}" >
             <ListView.Resources>
                 <Style TargetType="ListViewItem" BasedOn="{StaticResource DataListItemStyle}" >
                     <Setter Property="BorderBrush" Value="{x:Null}" />
@@ -126,10 +127,5 @@
                 </GridView>
             </ListView.View>
         </ListView>
-        <StackPanel Grid.Column="1" Name="stackPanel_button" MinWidth="100" >
-            <Button Content="再生" Name="button_play" Margin="0,10,0,10" />
-            <Button Content="削除" Name="button_del" Margin="0,10,0,10" />
-            <Button Content="全クリア" Name="button_delAll" Margin="0,10,0,10" />
-        </StackPanel>
-    </Grid>
+    </DockPanel>
 </local:DataViewBase>

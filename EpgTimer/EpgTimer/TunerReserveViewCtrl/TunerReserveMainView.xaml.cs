@@ -42,7 +42,7 @@ namespace EpgTimer
             mc.ResetCommandBindings(this, cmdMenu);
 
             //メニューの作成、ショートカットの登録
-            RefreshMenu();
+            //RefreshMenu();
         }
         public void RefreshMenu()
         {

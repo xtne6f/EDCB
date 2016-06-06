@@ -415,6 +415,23 @@
                                 <CheckBox Margin="0,6,0,0" Content="テーマを適用する(要再起動)" Name="checkBox_NotNoStyle" />
                                 <CheckBox Margin="0,6,0,0" Content="ステータス表示をする" Name="checkBox_displayStatus" />
                                 <CheckBox Margin="14,6,0,0" Content="主要操作の操作結果を表示をする" Name="checkBox_displayStatusNotify" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_displayStatus, UpdateSourceTrigger=PropertyChanged}" />
+                                <GroupBox Header="各画面のボタン列を表示する" Margin="0,6,0,0" >
+                                    <StackPanel Orientation="Horizontal" Margin="6,6,0,0">
+                                        <CheckBox Content="予約一覧" Margin="0,0,12,0" Name="checkBox_IsVisibleReserveView" />
+                                        <CheckBox Content="録画済み一覧" Margin="0,0,12,0" Name="checkBox_IsVisibleRecInfoView" />
+                                        <CheckBox Content="自動予約登録（" Margin="0,0,12,0" Name="checkBox_IsVisibleAutoAddView" />
+                                        <CheckBox Content="「並び替え」のみ表示　）" Margin="-6,0,12,0" Name="checkBox_IsVisibleAutoAddViewMoveOnly" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_IsVisibleAutoAddView, UpdateSourceTrigger=PropertyChanged}"/>
+                                    </StackPanel>
+                                </GroupBox>
+                                <GroupBox Header="各画面のボタン列の位置" Margin="0,06,0,0" >
+                                    <WrapPanel Name="wrapPanel_MainViewButtonsDock" Margin="6,6,0,0">
+                                        <WrapPanel.Resources>
+                                            <Style TargetType="RadioButton" BasedOn="{StaticResource {x:Type RadioButton}}">
+                                                <Setter Property="Margin" Value="0,0,12,0"/>
+                                            </Style>
+                                        </WrapPanel.Resources>
+                                    </WrapPanel>
+                                </GroupBox>
                             </StackPanel>
                         </GroupBox>
                     </StackPanel>

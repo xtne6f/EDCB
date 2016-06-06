@@ -191,7 +191,6 @@ namespace EpgTimer
                     Button btn = new Button();
                     btn.MinWidth = 75;
                     btn.Margin = new Thickness(2, 2, 2, 5);
-                    btn.Height = 23;
                     btn.Click += (sender, e) => handler();
                     btn.Content = key;
                     buttonList.Add(key, btn);
@@ -215,9 +214,6 @@ namespace EpgTimer
                 this.CommandBindings.Add(new CommandBinding(EpgCmds.Search, (sender, e) => CommonButtons_Click("検索")));
                 mBinds.AddInputCommand(EpgCmds.Search);
                 SetSearchButtonTooltip(buttonList["検索"]);
-                RefreshButton();
-
-                ResetButtonView();
 
                 if (CommonManager.Instance.NWMode == false)
                 {
@@ -233,8 +229,6 @@ namespace EpgTimer
                 }
 
                 CheckCmdLine();
-
-                StatusbarReset();//ステータスバーリセット
 
                 if (CommonManager.Instance.NWMode == false)
                 {
@@ -255,12 +249,9 @@ namespace EpgTimer
                 {
                     taskTray.Icon = TaskIconSpec.TaskIconBlue;
                 }
-                taskTray.Visible = Settings.Instance.ShowTray;
                 taskTray.ContextMenuClick += (sender, e) => CommonButtons_Click(sender as string);
-                taskTray.Text = GetTaskTrayReserveInfoText();
-                ResetTaskMenu();
 
-                ChkTimerWork();
+                ResetMainView();
 
                 //自動接続ならWindowLoadedしない場合でも接続させる
                 if (Settings.Instance.WakeReconnectNW == true)
@@ -328,8 +319,68 @@ namespace EpgTimer
             }
         }
 
+        private void ResetMainView()
+        {
+            RefreshMenu();          //右クリックメニューの更新
+            ResetButtonView();      //上部ボタンの更新
+            ResetViewButtonColumn();//一覧部分ボタン表示の更新
+            StatusbarReset();       //ステータスバーリセット
+            ResetTaskMenu();        //タスクバーのリセット
+            ChkTimerWork();         //タスクツールチップ、接続維持用タイマーリセット
+        }
+
+        private void ResetViewButtonColumn()
+        {
+            var ToVisibility = new Func<bool, Visibility>(v => v == true ? Visibility.Visible : Visibility.Collapsed);
+            Dock dock = Settings.Instance.MainViewButtonsDock;
+            bool IsVertical = (dock == Dock.Right || dock == Dock.Left);
+            var panel_margin = new Dictionary<Dock, Thickness> {
+                    { Dock.Top, new Thickness(0, 0, 0, 6) },{ Dock.Bottom, new Thickness(12, 6, 0, 0) },
+                    { Dock.Left, new Thickness(0, 12, 6, 0) },{ Dock.Right, new Thickness(6, 12, 0, 0) }}[dock];
+
+            var SetButtonsPanel = new Action<StackPanel, bool, bool>((panel, pnlVisible, btnVisible) =>
+            {
+                DockPanel.SetDock(panel, dock);
+                panel.Visibility = ToVisibility(pnlVisible);
+                panel.Orientation = IsVertical ? Orientation.Vertical : Orientation.Horizontal;
+                panel.Margin = panel_margin;
+                foreach (var btn in panel.Children.OfType<Button>())
+                {
+                    btn.MinWidth = 75;
+                    btn.Margin = IsVertical ? new Thickness(0, 0, 0, 10) : new Thickness(0, 0, 12, 0);
+                    btn.Visibility = ToVisibility(btnVisible);
+                }
+            });
+            SetButtonsPanel(reserveView.stackPanel_button, Settings.Instance.IsVisibleReserveView, true);
+            SetButtonsPanel(recInfoView.stackPanel_button, Settings.Instance.IsVisibleRecInfoView, true);
+            SetButtonsPanel(autoAddView.epgAutoAddView.stackPanel_button, Settings.Instance.IsVisibleAutoAddView, Settings.Instance.IsVisibleAutoAddViewMoveOnly == false);
+            SetButtonsPanel(autoAddView.manualAutoAddView.stackPanel_button, Settings.Instance.IsVisibleAutoAddView, Settings.Instance.IsVisibleAutoAddViewMoveOnly == false);
+
+            //面倒なのでここで処理
+            var SetDragMover = new Action<UserCtrlView.ListBoxDragMoverView>(dm =>
+            {
+                dm.Margin = IsVertical ? new Thickness(0, 12, 0, 0) : dock == Dock.Top ? new Thickness(6, -2, 0, -5) : new Thickness(6, -6, 0, -1);
+                dm.groupOrder.Header = IsVertical ? dm.textBox_Header2.Text : null;
+                dm.stackPanel_Order.Orientation = IsVertical ? Orientation.Vertical : Orientation.Horizontal;
+                dm.textBox_Header2.Visibility = ToVisibility(IsVertical == false);
+                dm.textBox_Header2.Margin = new Thickness(4, 6, 8, 0);
+                foreach (var btn in dm.stackPanel_Order.Children.OfType<Button>())
+                {
+                    btn.MinWidth = 40;
+                    btn.Margin = IsVertical ? new Thickness(0, 10, 0, 0) : new Thickness(0, 3, 8, -3);
+                }
+                dm.textBox_Status.TextWrapping = IsVertical ? TextWrapping.Wrap : TextWrapping.NoWrap;
+                dm.textBox_Status.MinWidth = IsVertical ? 40 : 80;
+                dm.textBox_Status.Margin = IsVertical ? new Thickness(10, 10, 0, 10) : new Thickness(0, 6, 8, 0);
+            });
+            SetDragMover(autoAddView.epgAutoAddView.dragMover);
+            SetDragMover(autoAddView.manualAutoAddView.dragMover);
+        }
+
         private void ResetTaskMenu()
         {
+            taskTray.Visible = Settings.Instance.ShowTray;
+            taskTray.Text = GetTaskTrayReserveInfoText();
             taskTray.SetContextMenu(Settings.Instance.TaskMenuList
                 .Select(s1 => s1.Replace("（セパレータ）", ""))
                 .Where(s2 => s2 == "" || buttonList.ContainsKey(s2) == true)
@@ -873,44 +924,30 @@ namespace EpgTimer
                     cmd.SendNotifyProfileUpdate();
                 }
 
-                StatusbarReset();//ステータスバーリセット
-                ChkTimerWork();//タイマーリセット
-
                 reserveView.UpdateInfo();
                 tunerReserveView.UpdateInfo();
                 recInfoView.UpdateInfo();
                 autoAddView.UpdateInfo();
                 epgView.UpdateSetting();
                 SearchWindow.UpdatesInfo(false);
-                ResetTaskMenu();
-                taskTray.Text = GetTaskTrayReserveInfoText();
-                taskTray.Visible = Settings.Instance.ShowTray;
-                RefreshMenu(false);
-                ResetButtonView();
+
+                ResetMainView();
 
                 CommonManager.Instance.StatusNotifySet("設定変更に伴う画面再構築を実行");
             }
         }
 
-        public void RefreshMenu(bool MenuOnly = false)
+        public void RefreshMenu()
         {
             CommonManager.Instance.MM.ReloadWorkData();
             reserveView.RefreshMenu();
             tunerReserveView.RefreshMenu();
             recInfoView.RefreshMenu();
             autoAddView.RefreshMenu();
-            //epgViewでは設定全体の更新の際に、EPG再描画に合わせてメニューも更新されるため。
-            if (MenuOnly == true)
-            {
-                epgView.RefreshMenu();
-            }
+            epgView.RefreshMenu();
             SearchWindow.RefreshMenu(this);
 
-            RefreshButton();
-        }
-        public void RefreshButton()
-        {
-            //検索ボタン用。
+            //メインウィンドウの検索ボタン用。
             mBinds.ResetInputBindings(this);
         }
         public enum UpdateViewMode { ReserveInfo, ReserveInfoNoTuner, ReserveInfoNoAutoAdd }

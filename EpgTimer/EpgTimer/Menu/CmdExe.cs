@@ -336,7 +336,7 @@ namespace EpgTimer
             {
                 Settings.Instance.MenuSet = dlg.info.Clone();
                 Settings.SaveToXmlFile();//メニュー設定の保存
-                mainWindow.RefreshMenu(true);
+                mainWindow.RefreshMenu();
             }
         }
         protected bool mcc_chgRecSetting(ExecutedRoutedEventArgs e)

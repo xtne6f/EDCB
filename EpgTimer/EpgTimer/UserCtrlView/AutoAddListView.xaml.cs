@@ -118,7 +118,7 @@ namespace EpgTimer
                 mBinds.SetCommandToButton(button_del2, EpgCmds.Delete2);
 
                 //メニューの作成、ショートカットの登録
-                RefreshMenu();
+                //RefreshMenu();
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
