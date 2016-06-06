@@ -656,8 +656,10 @@ namespace EpgTimer
             //cmdMessage.Add(EpgCmds.DeleteInDialog, "削除を実行");
             //cmdMessage.Add(EpgCmds.Delete2InDialog, "全て削除を実行");
             //cmdMessage.Add(EpgCmds.Search, "");
+            //cmdMessage.Add(EpgCmds.TopItem, "");
             //cmdMessage.Add(EpgCmds.UpItem, "");
             //cmdMessage.Add(EpgCmds.DownItem, "");
+            //cmdMessage.Add(EpgCmds.BottomItem, "");
             //cmdMessage.Add(EpgCmds.SaveOrder, "");
             //cmdMessage.Add(EpgCmds.RestoreOrder, "");
             //cmdMessage.Add(EpgCmds.DragCancel, "");

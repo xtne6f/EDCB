@@ -11,6 +11,8 @@ using System.IO;
 
 namespace EpgTimer.UserCtrlView
 {
+    using EpgTimer.BoxExchangeEdit;
+
     /// <summary>
     /// ListBoxDragMover.xaml の相互作用ロジック
     /// </summary>
@@ -21,6 +23,7 @@ namespace EpgTimer.UserCtrlView
         private Control Owner;
         private ListBox listBox;
         private IList dataList;
+        private BoxExchangeEditor bx;
 
         public ListBoxDragMoverView()
         {
@@ -34,9 +37,6 @@ namespace EpgTimer.UserCtrlView
                     OnDragCursor = new Cursor(CusorStream);
                     //OnDragCursor = ((UserControl)this.Resources["DragCursor"]).Cursor;
                 }
-
-                //ドラッグ用タイマーの初期化
-                NotifyTimerSet();
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
@@ -56,25 +56,33 @@ namespace EpgTimer.UserCtrlView
             {
                 Owner = ow;
                 listBox = listbox;
-                dataList = list;
+                dataList = list ?? listbox.Items;
                 hlp = helper;
-                MenuBinds mBinds = (mbinds != null ? mbinds : new MenuBinds());
+                MenuBinds mBinds = mbinds ?? new MenuBinds();
 
                 //マウスイベント関係
                 /*/ いろいろ問題がある(1行目除く)
                 this.listBox.PreviewMouseLeftButtonUp += new MouseButtonEventHandler(listBox_PreviewMouseLeftButtonUp);
+                if (listbox.ItemContainerStyle == null) listbox.ItemContainerStyle = (Style)new Style(typeof(ListBoxItem));
                 listbox.ItemContainerStyle.Setters.Add(new EventSetter(Button.PreviewMouseLeftButtonDownEvent, new MouseButtonEventHandler(listBoxItem_PreviewMouseLeftButtonDown)));
                 listbox.ItemContainerStyle.Setters.Add(new EventSetter(Mouse.MouseEnterEvent, new MouseEventHandler(listBoxItem_MouseEnter)));
                 /*/
 
-                this.Owner.CommandBindings.Add(new CommandBinding(EpgCmds.UpItem, (sender, e) => MoveItem(-1)));
-                this.Owner.CommandBindings.Add(new CommandBinding(EpgCmds.DownItem, (sender, e) => MoveItem(1)));
+                //移動などのアクションはBoxExchangeEditorのものをそのまま使用する。
+                bx = new BoxExchangeEditor { TargetBox = listBox, TargetItemsSource = dataList };
+
+                this.Owner.CommandBindings.Add(new CommandBinding(EpgCmds.TopItem, (sender, e) => ItemsAction(() => bx.button_Top_Click(null, null))));
+                this.Owner.CommandBindings.Add(new CommandBinding(EpgCmds.UpItem, (sender, e) => ItemsAction(() => bx.button_Up_Click(null, null))));
+                this.Owner.CommandBindings.Add(new CommandBinding(EpgCmds.DownItem, (sender, e) => ItemsAction(() => bx.button_Down_Click(null, null))));
+                this.Owner.CommandBindings.Add(new CommandBinding(EpgCmds.BottomItem, (sender, e) => ItemsAction(() => bx.button_Bottom_Click(null, null))));
                 this.Owner.CommandBindings.Add(new CommandBinding(EpgCmds.SaveOrder, SaveOrder_handler, (sender, e) => e.CanExecute = NotSaved == true));
                 this.Owner.CommandBindings.Add(new CommandBinding(EpgCmds.RestoreOrder, (sender, e) => hlp.RestoreOrder(), (sender, e) => e.CanExecute = NotSaved == true));
                 this.Owner.CommandBindings.Add(new CommandBinding(EpgCmds.DragCancel, (sender, e) => DragRelease()));
 
+                mBinds.SetCommandToButton(button_top, EpgCmds.TopItem);
                 mBinds.SetCommandToButton(button_up, EpgCmds.UpItem);
                 mBinds.SetCommandToButton(button_down, EpgCmds.DownItem);
+                mBinds.SetCommandToButton(button_bottom, EpgCmds.BottomItem);
                 mBinds.SetCommandToButton(button_saveItemOrder, EpgCmds.SaveOrder);
                 mBinds.SetCommandToButton(button_reloadItem, EpgCmds.RestoreOrder);
                 mBinds.AddInputCommand(EpgCmds.DragCancel);//アイテムのドラッグキャンセル
@@ -95,6 +103,7 @@ namespace EpgTimer.UserCtrlView
                                 if (_onDrag == true)
                                 {
                                     EpgCmds.DragCancel.Execute(null, null);
+                                    //this.listBox.Items.Refresh();//壊したバインディングを修復する。モタツキ感があるので放置する。
                                     e.Handled = true;
                                 }
                                 break;
@@ -103,6 +112,19 @@ namespace EpgTimer.UserCtrlView
                 });
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
+        }
+
+        public void ItemsAction(Action func)
+        {
+            var oldList = this.dataList.Cast<object>().ToList();//ここはリストの複製が必要
+
+            func();
+
+            if (oldList.SequenceEqual(this.dataList.Cast<object>()) == false)
+            {
+                this.NotSaved = true;
+                hlp.ItemMoved();
+            }
         }
 
         private bool _notSaved = false;
@@ -129,50 +151,6 @@ namespace EpgTimer.UserCtrlView
         {
             this.textBox_Status.Text = (_onDrag == true ? "ドラッグ中..." : _notSaved == true ? "*未保存" : "");
             hlp.StatusChanged();
-        }
-
-        public void MoveItem(int direction)
-        {
-            try
-            {
-                if (this.listBox.SelectedItem == null) { return; }
-
-                //選択状態+順序のペアを作る
-                var list = this.dataList.OfType<object>().Select((item, index) => 
-                    new KeyValuePair<int, bool>(index, this.listBox.SelectedItems.Contains(item))).ToList();
-
-                //逆方向の時はリストひっくり返す
-                if (direction >= 0) list.Reverse();
-
-                //移動対象でないアイテムが上下ループを超えないよう細工
-                //超えているように見えるときでも良く見ると超えていない
-                list.Insert(0, new KeyValuePair<int, bool>(-1, false));
-                int end = list[1].Value == true ? 2 : list.Count;
-                for (int i = 1; i < end; i++)
-                {
-                    //選択状態のものだけ移動
-                    if (list[i].Value == true)
-                    {
-                        var tmp = list[i - 1];
-                        list.RemoveAt(i - 1);
-                        list.Insert(i, tmp);
-                    }
-                }
-                //ループしたものを下へ持って行く。ループしてなければダミーがコピーされるだけ
-                list.Add(list[0]);
-
-                //リンク張り替えながらダミー以外(Key!=-1)をコピー
-                var chglist = list.Skip(1).Where(item => item.Key != -1).Select(item => this.dataList[item.Key]).ToList();
-                if (direction >= 0) chglist.Reverse();
-
-                this.dataList.Clear();
-                chglist.ForEach(item => this.dataList.Add(item));
-
-                this.listBox.Items.Refresh();
-                this.NotSaved = true;
-                hlp.ItemMoved();
-            }
-            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
 
         public void SaveOrder_handler(object sender, ExecutedRoutedEventArgs e)
@@ -217,50 +195,38 @@ namespace EpgTimer.UserCtrlView
 
         //移動関連
         object cursorObj = null;
-        object dragItem = null;
-        List<object> dragItems = new List<object>();
-        DispatcherTimer notifyTimer;
-        private void NotifyTimerSet()
-        {
-            notifyTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(0.5) };
-            notifyTimer.Tick += (sender_t, e_t) =>
-            {
-                if (this._onDrag == false)
-                {
-                    if (Mouse.LeftButton == MouseButtonState.Pressed)
-                    {
-                        DragStart();
-                    }
-                    else
-                    {
-                        //通常このパスは通らないはずだが、一応クリアしておく。
-                        DragRelease();
-                    }
-                }
-                notifyTimer.Stop();
-            };
-        }
+        List<object> dragItems = null;
+        DispatcherTimer notifyTimer = new DispatcherTimer();
 
         public void listBoxItem_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             try
             {
-                this.dragItem = GetDragItemData(sender);
-                if (this.dragItem == null) return;
+                object dragItem = GetDragItemData(sender);
+                if (dragItem == null) return;
+
+                if (IsMouseDragCondition() == false) return;
 
                 this.cursorObj = sender;
 
-                if (this.listBox.SelectedItems.Contains(this.dragItem))
+                //ドロップ位置の上下判定に使用するので、掴んだアイテムを先頭にする。
+                this.dragItems = new List<object> { dragItem }; ;
+                if (this.listBox.SelectedItems.Contains(dragItem) == true)
                 {
-                    this.dragItems = this.listBox.SelectedItems.OfType<object>().ToList();
-                    this.dragItems.Sort((i1, i2) => this.dataList.IndexOf(i1) - this.dataList.IndexOf(i2));
-                }
-                else
-                {
-                    this.dragItems = new List<object> { this.dragItem };
+                    this.dragItems.AddRange(this.listBox.SelectedItemsList());
                 }
 
                 // 一定時間押下で、ドラッグ中と判定をする。
+                if (notifyTimer.Tag == null)
+                {
+                    notifyTimer.Tag = "Initialized";
+                    notifyTimer.Interval = TimeSpan.FromSeconds(0.5);
+                    notifyTimer.Tick += (sender_t, e_t) =>
+                    {
+                        notifyTimer.Stop();
+                        listBoxItem_MouseEnter(this.cursorObj, null);
+                    };
+                }
                 notifyTimer.Start();
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
@@ -270,12 +236,15 @@ namespace EpgTimer.UserCtrlView
         {
             try
             {
-                object dropTo = DragItemTest(this.cursorObj);
-                if (dropTo != null)
+                if (this._onDrag == true && this.dragItems != null && IsMouseDragCondition(false) == true)
                 {
-                    this.MoveItem(dropTo);
+                    object dropTo = GetDragItemData(this.cursorObj);
+                    if (dropTo != null)
+                    {
+                        ItemsAction(() => bx.targetBox_PreviewDrop_fromSelf(this.cursorObj, null));
+                        e.Handled = true;
+                    }
                 }
-                e.Handled = _onDrag == true;
                 DragRelease();
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
@@ -285,60 +254,54 @@ namespace EpgTimer.UserCtrlView
         {
             try
             {
-                if (Mouse.LeftButton == MouseButtonState.Released || DragItemTest(sender) == null)
+                if (this.dragItems == null) return;
+                if (IsMouseDragCondition() == false)
                 {
                     DragRelease();
                     return;
                 }
+                if (this._onDrag == false)
+                {
+                    notifyTimer.Stop();
+                    this.Owner.Cursor = OnDragCursor; //Cursors.ScrollS;Cursors.SizeNS;
+                    this.OnDrag = true;
+                }
                 this.cursorObj = sender;
-                DragStart();
+                DragItemsSelect();
+                DrawDropLine();
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
 
-        private object DragItemTest(object obj)
-        {
-            object item = GetDragItemData(obj);
-            if (this.dragItem == null || (this.dragItem == item && this._onDrag == false)
-                || Keyboard.Modifiers == ModifierKeys.Shift || Keyboard.Modifiers == ModifierKeys.Control)
-            { return null; }
-
-            return item;
-        }
         private object GetDragItemData(object obj)
         {
             //ListBoxItemじゃないものが来ることもあるのでちゃんとチェックする。
             var lvItem = obj as ListBoxItem;
             return lvItem == null ? null : lvItem.Content;
         }
+        private bool IsMouseDragCondition(bool isPressedCheck = true)
+        {
+            return (isPressedCheck == false || Mouse.LeftButton == MouseButtonState.Pressed)
+                && Keyboard.Modifiers == ModifierKeys.None && Keyboard.Modifiers == ModifierKeys.None;
+        }
         private void DragItemsSelect()
         {
-            if (dragItem != null)
-            {
-                this.listBox.SelectedItem = dragItem;
-                dragItems.ForEach(item => this.listBox.SelectedItems.Add(item));
-            }
-        }
-        private void DragStart()
-        {
-            this.Owner.Cursor = OnDragCursor; //Cursors.ScrollS;Cursors.SizeNS;
-            this.OnDrag = true;
-            DragItemsSelect();
-            DrawDropLine();
+            this.listBox.UnselectAll();
+            this.listBox.SelectedItemsAdd(dragItems);
         }
         public void DragRelease()
         {
             try
             {
                 //タイマーが走ってる場合がある。
-                if (notifyTimer.IsEnabled == true ||  this._onDrag == true)
+                notifyTimer.Stop();
+
+                if (this.dragItems != null)
                 {
-                    notifyTimer.Stop();
                     this.Owner.Cursor = null;
                     this.OnDrag = false;
                     this.cursorObj = null;
-                    this.dragItem = null;
-                    this.dragItems = new List<object>();
+                    this.dragItems = null;
                     EraseDropLine();
                     ClearDropLineData();
                 }
@@ -360,6 +323,8 @@ namespace EpgTimer.UserCtrlView
 
             if (back_Brush == null)
             {
+                //元の色を押さえておくにはこのタイミングしかない。
+                //一時的にバインディングが壊れるが、余り影響無いので気にしない。
                 back_Brush = new List<Brush>();
                 back_Thickness = new List<Thickness>();
                 for (int i = 0; i < this.listBox.Items.Count; i++)
@@ -375,7 +340,7 @@ namespace EpgTimer.UserCtrlView
 
             item.BorderBrush = Brushes.OrangeRed;
             Thickness border = item.BorderThickness;
-            border.Top = back_ListItem >= this.dataList.IndexOf(this.dragItem) ? 0 : 3;
+            border.Top = back_ListItem >= this.listBox.SelectedIndex ? 0 : 3;
             border.Bottom = 3 - border.Top;
             item.BorderThickness = border;
         }
@@ -395,45 +360,6 @@ namespace EpgTimer.UserCtrlView
             back_ListItem = -1;
             back_Brush = null;
             back_Thickness = null;
-        }
-        public void MoveItem(object dropTo)
-        {
-            try
-            {
-                var oldList = this.dataList.OfType<object>().ToList();
-                int idx_dropItems = oldList.IndexOf(this.dragItem);
-                int idx_dropTo = oldList.IndexOf(dropTo);
-
-                //一番上と一番下を選択できるように調整
-                idx_dropTo += (idx_dropTo >= idx_dropItems ? 1 : 0);
-
-                //挿入位置で分割→バラのも含め選択アイテムを除去→分割前部+選択アイテム+分割後部で連結
-                var work1 = oldList.Take(idx_dropTo).Where(item => !dragItems.Contains(item)).ToList();
-                var work2 = oldList.Skip(idx_dropTo).Where(item => !dragItems.Contains(item)).ToList();
-
-                var newList = work1.Concat(dragItems).Concat(work2).ToList();
-
-                this.dataList.Clear();
-                newList.ForEach(item => this.dataList.Add(item));
-                DragItemsSelect();
-
-                this.listBox.Items.Refresh();
-
-                if (CheckOrderChanged(oldList, newList) == true)
-                {
-                    this.NotSaved = true;
-                    hlp.ItemMoved();
-                }
-            }
-            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
-        }
-        private bool CheckOrderChanged(IList oldList, IList newList)
-        {
-            for (int i = 0; i < newList.Count; i++)
-            {
-                if (oldList[i] != newList[i]) return true;
-            }
-            return false;
         }
     }
 }

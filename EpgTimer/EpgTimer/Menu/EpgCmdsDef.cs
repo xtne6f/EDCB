@@ -58,8 +58,10 @@ namespace EpgTimer
         public static RoutedUICommand DeleteInDialog { get; private set; }
         public static RoutedUICommand Delete2InDialog { get; private set; }
         public static RoutedUICommand Search { get; private set; }
+        public static RoutedUICommand TopItem { get; private set; }
         public static RoutedUICommand UpItem { get; private set; }
         public static RoutedUICommand DownItem { get; private set; }
+        public static RoutedUICommand BottomItem { get; private set; }
         public static RoutedUICommand SaveOrder { get; private set; }
         public static RoutedUICommand RestoreOrder { get; private set; }
         public static RoutedUICommand DragCancel { get; private set; }
