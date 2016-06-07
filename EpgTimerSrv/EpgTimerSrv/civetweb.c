@@ -6654,16 +6654,19 @@ handle_static_file_request(struct mg_connection *conn,
 
 
 static void
-handle_not_modified_static_file_request(struct mg_connection *conn)
+handle_not_modified_static_file_request(struct mg_connection *conn,
+                                        struct file *filep)
 {
-	char date[64];
+	char date[64], lm[64], etag[64];
 	time_t curtime = time(NULL);
 
-	if (conn == NULL) {
+	if (conn == NULL || filep == NULL) {
 		return;
 	}
 	conn->status_code = 304;
 	gmt_time_string(date, sizeof(date), &curtime);
+	gmt_time_string(lm, sizeof(lm), &filep->last_modified);
+	construct_etag(etag, sizeof(etag), filep);
 
 	(void)mg_printf(conn,
 	                "HTTP/1.1 %d %s\r\n"
@@ -6673,9 +6676,12 @@ handle_not_modified_static_file_request(struct mg_connection *conn)
 	                date);
 	send_static_cache_header(conn);
 	(void)mg_printf(conn,
-	                "Content-Length: 0\r\n"
+	                "Last-Modified: %s\r\n"
+	                "Etag: %s\r\n"
 	                "Connection: %s\r\n"
 	                "\r\n",
+	                lm,
+	                etag,
 	                suggest_connection_header(conn));
 }
 
@@ -6834,23 +6840,12 @@ parse_http_headers(char **buf, struct mg_request_info *ri)
 
 	for (i = 0; i < (int)ARRAY_SIZE(ri->http_headers); i++) {
 		char *dp = *buf;
-		while ((*dp != ':') && (*dp != '\r') && (*dp != 0)) {
+		while ((*dp != ':') && (*dp >= 32) && (*dp <= 126)) {
 			dp++;
 		}
-		if (!*dp) {
-			/* neither : nor \r\n. This is not a valid field. */
+		if ((dp == *buf) || (*dp != ':')) {
+			/* This is not a valid field. */
 			break;
-		}
-		if (*dp == '\r') {
-			if (dp[1] == '\n') {
-				/* \r\n */
-				ri->http_headers[i].name = *buf;
-				ri->http_headers[i].value = 0;
-				*buf = dp;
-			} else {
-				/* stray \r. This is not valid. */
-				break;
-			}
 		} else {
 			/* (*dp == ':') */
 			*dp = 0;
@@ -6860,7 +6855,10 @@ parse_http_headers(char **buf, struct mg_request_info *ri)
 			} while (*dp == ' ');
 
 			ri->http_headers[i].value = dp;
-			*buf = strstr(dp, "\r\n");
+			*buf = dp + strcspn(dp, "\r\n");
+			if (((*buf)[0] != '\r') || ((*buf)[1] != '\n')) {
+				*buf = NULL;
+			}
 		}
 
 		ri->num_headers = i + 1;
@@ -6873,7 +6871,7 @@ parse_http_headers(char **buf, struct mg_request_info *ri)
 			break;
 		}
 
-		if (*buf[0] == '\r') {
+		if ((*buf)[0] == '\r') {
 			/* This is the end of the header */
 			break;
 		}
@@ -6921,6 +6919,7 @@ static int
 parse_http_message(char *buf, int len, struct mg_request_info *ri)
 {
 	int is_request, request_length;
+	char *start_line;
 
 	if (!ri) {
 		return 0;
@@ -6941,9 +6940,10 @@ parse_http_message(char *buf, int len, struct mg_request_info *ri)
 		while (*buf != '\0' && isspace(*(unsigned char *)buf)) {
 			buf++;
 		}
-		ri->request_method = skip(&buf, " ");
-		ri->request_uri = skip(&buf, " ");
-		ri->http_version = skip(&buf, "\r\n");
+		start_line = skip(&buf, "\r\n");
+		ri->request_method = skip(&start_line, " ");
+		ri->request_uri = skip(&start_line, " ");
+		ri->http_version = start_line;
 
 		/* HTTP message could be either HTTP request or HTTP response, e.g.
 		 * "GET / HTTP/1.0 ...." or  "HTTP/1.0 200 OK ..." */
@@ -9819,22 +9819,8 @@ handle_request(struct mg_connection *conn)
 		    != NULL) {
 			*((char *)conn->request_info.query_string++) = '\0';
 		}
-		uri_len = (int)strlen(ri->local_uri);
 
-		/* 1.2. decode url (if config says so) */
-		if (should_decode_url(conn)) {
-			mg_url_decode(
-			    ri->local_uri, uri_len, (char *)ri->local_uri, uri_len + 1, 0);
-		}
-
-		/* 1.3. clean URIs, so a path like allowed_dir/../forbidden_file is
-		 * not possible */
-		remove_double_dots_and_double_slashes((char *)ri->local_uri);
-
-		/* step 1. completed, the url is known now */
-		DEBUG_TRACE("URL: %s", ri->local_uri);
-
-		/* 2. do a https redirect, if required */
+		/* 1.2. do a https redirect, if required. Do not decode URIs yet. */
 		if (!conn->client.is_ssl && conn->client.ssl_redir) {
 			ssl_index = get_first_ssl_listener_index(conn->ctx);
 			if (ssl_index >= 0) {
@@ -9850,6 +9836,20 @@ handle_request(struct mg_connection *conn)
 			}
 			return;
 		}
+		uri_len = (int)strlen(ri->local_uri);
+
+		/* 1.3. decode url (if config says so) */
+		if (should_decode_url(conn)) {
+			mg_url_decode(
+			    ri->local_uri, uri_len, (char *)ri->local_uri, uri_len + 1, 0);
+		}
+
+		/* 1.4. clean URIs, so a path like allowed_dir/../forbidden_file is
+		 * not possible */
+		remove_double_dots_and_double_slashes((char *)ri->local_uri);
+
+		/* step 1. completed, the url is known now */
+		DEBUG_TRACE("URL: %s", ri->local_uri);
 
 		/* 3. if this ip has limited speed, set it for this connection */
 		conn->throttle = set_throttle(conn->ctx->config[THROTTLE],
@@ -10111,7 +10111,9 @@ handle_request(struct mg_connection *conn)
 		}
 
 		/* 12. Directory uris should end with a slash */
-		if (file.is_directory && ri->local_uri[uri_len - 1] != '/') {
+		uri_len = (int)strlen(ri->local_uri);
+		if (file.is_directory && uri_len > 0
+		    && ri->local_uri[uri_len - 1] != '/') {
 			gmt_time_string(date, sizeof(date), &curtime);
 			mg_printf(conn,
 			          "HTTP/1.1 301 Moved Permanently\r\n"
@@ -10236,7 +10238,7 @@ handle_file_based_request(struct mg_connection *conn,
 #if !defined(NO_CACHING)
 	} else if ((!conn->in_error_handler) && is_not_modified(conn, file)) {
 		/* Send 304 "Not Modified" - this must not send any body data */
-		handle_not_modified_static_file_request(conn);
+		handle_not_modified_static_file_request(conn, file);
 #endif /* !NO_CACHING */
 	} else {
 		handle_static_file_request(conn, path, file, NULL);
@@ -11469,6 +11471,7 @@ close_connection(struct mg_connection *conn)
 	mg_unlock_connection(conn);
 }
 
+#if defined(MG_CLIENT_UTIL)
 void
 mg_close_connection(struct mg_connection *conn)
 {
@@ -11661,6 +11664,7 @@ mg_connect_client(const char *host,
 	                              error_buffer,
 	                              error_buffer_size);
 }
+#endif /* MG_CLIENT_UTIL */
 
 
 static const struct {
@@ -11935,6 +11939,7 @@ getreq(struct mg_connection *conn, char *ebuf, size_t ebuf_len, int *err)
 }
 
 
+#if defined(MG_CLIENT_UTIL)
 int
 mg_get_response(struct mg_connection *conn,
                 char *ebuf,
@@ -12186,6 +12191,7 @@ mg_connect_websocket_client(const char *host,
 
 	return conn;
 }
+#endif /* MG_CLIENT_UTIL */
 
 
 static void
