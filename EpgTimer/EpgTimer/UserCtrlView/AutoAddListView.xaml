@@ -125,12 +125,6 @@
             <local:ListBoxDragMoverView x:Name="dragMover" Margin="0,20,0,0" />
         </StackPanel>
         <ListView x:Name="listView_key" Style="{StaticResource DataListViewStyle}" >
-            <ListView.Resources>
-                <Style TargetType="ListViewItem" BasedOn="{StaticResource DataListItemStyle}" >
-                    <EventSetter Event="PreviewMouseLeftButtonDown" Handler="listViewItem_PreviewMouseLeftButtonDown"/>
-                    <EventSetter Event="MouseEnter" Handler="listViewItem_MouseEnter"/>
-                </Style>
-            </ListView.Resources>
             <ListView.View>
                 <GridView x:Name="gridView_key" />
             </ListView.View>

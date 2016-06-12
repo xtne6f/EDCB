@@ -288,6 +288,7 @@ namespace EpgTimer
             }
         }
 
+        /*/未使用
         public static DependencyObject SearchParentWpfTree(DependencyObject obj, Type t_trg, Type t_cut = null)
         {
             Func<string, DependencyObject> GetParentFromProperty = name =>
@@ -306,7 +307,7 @@ namespace EpgTimer
                 obj = trg;
             }
         }
-
+        /*/
         public string ConvertSearchItemStatus(IEnumerable<SearchItem> list, string itemText = "番組数")
         {
             return string.Format("{0}:{1}", itemText, list.Count()) + ConvertReserveStatus(list, " 予約");
@@ -378,6 +379,43 @@ namespace EpgTimer
             return string.Format("{0}:{1} (有効予約数:{2} 無効予約数:{3})",
                 itemText, list.Count(), onRes.Distinct().Count(), offRes.Distinct().Count());
         }
+
+        public static Type GetListBoxItemType(ListBox lb)
+        {
+            if (lb == null) return null;
+            //場合分けしないで取得する方法があるはず
+            return lb is ListView ? typeof(ListViewItem) : lb is ListBox ? typeof(ListBoxItem) : typeof(object);
+        }
+        public static void ResetItemContainerStyle(ListBox lb)
+        {
+            try
+            {
+                if (lb == null) return;
+                if (lb.ItemContainerStyle != null && lb.ItemContainerStyle.IsSealed == false) return;
+
+                //IsSealedが設定されているので、作り直す。
+                var newStyle = new Style();
+
+                //baseStyleに元のItemContainerStyle放り込むと一見簡単だが、ここはちゃんと内容を移す。
+                if (lb.ItemContainerStyle != null)
+                {
+                    newStyle.TargetType = lb.ItemContainerStyle.TargetType;//余り意味は無いはずだが一応
+                    newStyle.BasedOn = lb.ItemContainerStyle.BasedOn;//nullならそのままnullにしておく
+                    newStyle.Resources = lb.ItemContainerStyle.Resources;
+                    foreach (var item in lb.ItemContainerStyle.Setters) newStyle.Setters.Add(item);
+                    foreach (var item in lb.ItemContainerStyle.Triggers) newStyle.Triggers.Add(item);
+                }
+                else
+                {
+                    newStyle.TargetType = GetListBoxItemType(lb);
+                    //現在のContainerTypeを引っ張る。ただし、アプリケーションリソースでListViewItemが定義されている前提。
+                    try { newStyle.BasedOn = (Style)lb.FindResource(newStyle.TargetType); }
+                    catch { }
+                }
+                lb.ItemContainerStyle = newStyle;
+            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
+        }
     }
 
     public static class ViewUtilEx
@@ -412,13 +450,11 @@ namespace EpgTimer
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
 
-        public static ListBoxItem PlacementItem(this ListBox lb, Point? pt = null)
+        public static DependencyObject GetPlacementItem(this ItemsControl lb, Point? pt = null)
         {
             if (lb == null) return null;
-            if (pt == null) pt = Mouse.GetPosition(lb);
-            var hitobj = lb.InputHitTest((Point)pt) as DependencyObject;
-            var item_type = lb is ListView ? typeof(ListViewItem) : lb is ListBox ? typeof(ListBoxItem) : typeof(object);//場合分けしないで取得する方法があるはず
-            return ViewUtil.SearchParentWpfTree(hitobj, item_type, lb.GetType()) as ListBoxItem;
+            var element = lb.InputHitTest((Point)(pt ?? Mouse.GetPosition(lb))) as DependencyObject;
+            return element == null ? null : lb.ContainerFromElement(element);
         }
     }
 }

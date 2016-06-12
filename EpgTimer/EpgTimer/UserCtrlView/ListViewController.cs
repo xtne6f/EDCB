@@ -117,7 +117,7 @@ namespace EpgTimer
                 {
                     //コンテキストメニューを開いたとき、アイテムがあればそれを保存する。無ければNULLになる。
                     var lb = (sender as ContextMenu).PlacementTarget as ListBox;
-                    if (lb != null) ClickTarget = lb.PlacementItem();
+                    if (lb != null) ClickTarget = lb.GetPlacementItem() as ListBoxItem;
                 };
                 lv.ContextMenu.Closed += (sender, e) => ClickTarget = null;
             }
@@ -129,7 +129,7 @@ namespace EpgTimer
             //アイテムの無い場所でクリックしたとき、選択を解除する。
             listView.MouseLeftButtonUp += new MouseButtonEventHandler((sender, e) =>
             {
-                if (listView.InputHitTest(e.GetPosition(listView)) is ScrollViewer)//本当にこれで良いのだろうか？
+                if (listView.GetPlacementItem() == null)
                 {
                     listView.UnselectAll();
                 }
@@ -165,7 +165,7 @@ namespace EpgTimer
             if (hdlr == null) return;
             listView.MouseDoubleClick += new MouseButtonEventHandler((sender, e) =>
             {
-                var hitItem = listView.PlacementItem(e.GetPosition(listView));
+                var hitItem = listView.GetPlacementItem();
                 if (hitItem != null) hdlr(hitItem, e);
             });
         }

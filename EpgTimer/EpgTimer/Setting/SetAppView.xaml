@@ -270,7 +270,7 @@
                     <Label Content="サービス一覧" Height="28" HorizontalAlignment="Left" Margin="12,46,0,0" Name="label61" VerticalAlignment="Top" />
                     <ListBox Height="225" HorizontalAlignment="Left" Margin="12,80,0,0" Name="listBox_service" VerticalAlignment="Top" Width="178" ItemsSource="{Binding}"  DisplayMemberPath="ServiceName" SelectionChanged="listBox_service_SelectionChanged">
                         <ListBox.ItemContainerStyle>
-                            <Style TargetType="{x:Type ListBoxItem}">
+                            <Style TargetType="{x:Type ListBoxItem}" BasedOn="{StaticResource {x:Type ListBoxItem}}">
                                 <Setter Property="ToolTipService.ShowDuration" Value="20000" />
                                 <Setter Property="ToolTip" Value="{Binding Path=ToolTipView}" />
                             </Style>

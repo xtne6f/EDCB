@@ -1,8 +1,8 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-    <Style TargetType="{x:Type ListBoxItem}" />
-    <Style TargetType="{x:Type ListViewItem}" />
+    <!-- ListViewItemのデフォルトはGridViewItemらしいが、コード内の利便性を考えてListViewItemとして定義しておく。-->
+    <Style TargetType="{x:Type ListViewItem}" BasedOn="{StaticResource {x:Static GridView.GridViewItemContainerStyleKey}}"/>
 
     <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
         <Setter Property="Padding" Value="2" />

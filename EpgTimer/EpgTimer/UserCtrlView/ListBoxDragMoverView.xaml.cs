@@ -61,12 +61,10 @@ namespace EpgTimer.UserCtrlView
                 MenuBinds mBinds = mbinds ?? new MenuBinds();
 
                 //マウスイベント関係
-                /*/ いろいろ問題がある(1行目除く)
                 this.listBox.PreviewMouseLeftButtonUp += new MouseButtonEventHandler(listBox_PreviewMouseLeftButtonUp);
-                if (listbox.ItemContainerStyle == null) listbox.ItemContainerStyle = (Style)new Style(typeof(ListBoxItem));
+                ViewUtil.ResetItemContainerStyle(listbox);
                 listbox.ItemContainerStyle.Setters.Add(new EventSetter(Button.PreviewMouseLeftButtonDownEvent, new MouseButtonEventHandler(listBoxItem_PreviewMouseLeftButtonDown)));
                 listbox.ItemContainerStyle.Setters.Add(new EventSetter(Mouse.MouseEnterEvent, new MouseEventHandler(listBoxItem_MouseEnter)));
-                /*/
 
                 //移動などのアクションはBoxExchangeEditorのものをそのまま使用する。
                 bx = new BoxExchangeEditor { TargetBox = listBox, TargetItemsSource = dataList };

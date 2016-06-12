@@ -103,7 +103,7 @@ namespace EpgTimer.BoxExchangeEdit
         }
         private void mouseDoubleClickSetter(ListBox box, MouseButtonEventHandler handler)
         {
-            if (box.ItemContainerStyle == null) box.ItemContainerStyle = (Style)new Style(typeof(ListBoxItem));
+            ViewUtil.ResetItemContainerStyle(box);
             box.ItemContainerStyle.Setters.Add(new EventSetter(Button.MouseDoubleClickEvent, handler));
         }
 
@@ -398,7 +398,7 @@ namespace EpgTimer.BoxExchangeEdit
         private void boxAllowDragDrop_common(ListBox box)
         {
             box.AllowDrop = true;
-            if (box.ItemContainerStyle == null) box.ItemContainerStyle = (Style)new Style(typeof(ListBoxItem));
+            ViewUtil.ResetItemContainerStyle(box);
 
             previewMouseLeftButtonDownSetter(box, boxItem_PreviewMouseLeftButtonDown);
             mouseLeaveSetter(box, boxItem_MouseLeave);

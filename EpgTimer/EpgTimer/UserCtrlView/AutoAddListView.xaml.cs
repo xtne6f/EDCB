@@ -15,9 +15,6 @@ namespace EpgTimer
     /// </summary>
     public partial class AutoAddListView : DataViewBase
     {
-        protected MouseButtonEventHandler listViewItem_PreviewMouseLeftButtonDown;
-        protected MouseEventHandler listViewItem_MouseEnter;
-
         public AutoAddListView()
         {
             InitializeComponent();
@@ -85,11 +82,8 @@ namespace EpgTimer
                 //ステータス変更の設定
                 lstCtrl.SetSelectionChangedEventHandler((sender, e) => this.UpdateStatus(1));
 
-                //ドラッグ移動関係、イベント追加はdragMoverでやりたいが、あまり綺麗にならないのでこっちに並べる
+                //ドラッグ移動関係
                 this.dragMover.SetData(this, listView_key, lstCtrl.dataList, new lvDragData(this));
-                listView_key.PreviewMouseLeftButtonUp += new MouseButtonEventHandler(dragMover.listBox_PreviewMouseLeftButtonUp);
-                listViewItem_PreviewMouseLeftButtonDown += new MouseButtonEventHandler(dragMover.listBoxItem_PreviewMouseLeftButtonDown);
-                listViewItem_MouseEnter += new MouseEventHandler(dragMover.listBoxItem_MouseEnter);
 
                 //最初にコマンド集の初期化
                 //mc = (R)Activator.CreateInstance(typeof(R), this);
