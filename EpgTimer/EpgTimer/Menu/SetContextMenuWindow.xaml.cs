@@ -17,7 +17,6 @@ namespace EpgTimer
     public partial class SetContextMenuWindow : Window
     {
         private MenuManager mm = CommonManager.Instance.MM;
-        private BoxExchangeEditor bx = new BoxExchangeEditor();
 
         private static ComboItem[] MenuCodeToTitle = new ComboItem[]{
             new ComboItem(CtxmCode.ReserveView, "予約一覧"),
@@ -92,12 +91,8 @@ namespace EpgTimer
                 //個別設定画面用の設定
                 this.comboBoxViewSelect.DisplayMemberPath = CommonUtil.GetMemberName(() => new ComboItem().Value);
                 this.comboBoxViewSelect.SelectedValuePath = CommonUtil.GetMemberName(() => new ComboItem().Key);
-                bx.SourceBox = this.listBox_Default;
-                bx.TargetBox = this.listBox_Setting;
+                var bx = new BoxExchangeEditor(this.listBox_Default, this.listBox_Setting, true, true, true, true);
                 bx.AllowDuplication(StringItem.Items(EpgCmdsEx.SeparatorString), StringItem.Cloner, StringItem.Comparator);
-                bx.AllowKeyAction();
-                bx.AllowDoubleClickMove();
-                bx.AllowDragDrop();
                 button_reset.Click += new RoutedEventHandler(bx.button_Reset_Click);
                 button_add.Click += new RoutedEventHandler(bx.button_Add_Click);
                 button_ins.Click += new RoutedEventHandler(bx.button_Insert_Click);

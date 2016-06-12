@@ -18,17 +18,6 @@ using System.Runtime.InteropServices;
 
 namespace EpgTimer.Setting
 {
-    //BonDriver一覧の表示・設定用クラス
-    public class TunerInfo
-    {
-        public TunerInfo(string bon) { BonDriver = bon; }
-        public String BonDriver { get; set; }
-        public String TunerNum { get; set; }
-        public String EPGNum { get; set; }
-        public bool IsEpgCap { get; set; }
-        public override string ToString() { return BonDriver; }
-    }
-
     /// <summary>
     /// SetBasicView.xaml の相互作用ロジック
     /// </summary>
@@ -369,28 +358,34 @@ namespace EpgTimer.Setting
             CommonManager.GetFolderNameByDialog(textBox_recInfoFolder, "録画情報保存フォルダの選択");
         }
 
-        //ボタン表示画面の上下ボタンのみ他と同じものを使用する。
-        private BoxExchangeEdit.BoxExchangeEditor bxr = new BoxExchangeEdit.BoxExchangeEditor();
-        private BoxExchangeEdit.BoxExchangeEditor bxb = new BoxExchangeEdit.BoxExchangeEditor();
         private void listBox_Button_Set()
         {
-            //録画設定関係
-            bxr.TargetBox = this.listBox_recFolder;
-
-            //チューナ関係関係
-            bxb.TargetBox = this.listBox_bon;
+            //エスケープキャンセルだけは常に有効にする。
+            var bxr = new BoxExchangeEdit.BoxExchangeEditor(null, this.listBox_recFolder, true);
+            var bxb = new BoxExchangeEdit.BoxExchangeEditor(null, this.listBox_bon, true);
 
             if (CommonManager.Instance.NWMode == false)
             {
-                bxr.AllowKeyAction();
+                //録画設定関係
                 bxr.AllowDragDrop();
+                bxr.AllowKeyAction();
+                bxr.targetBoxAllowDoubleClick(bxr.TargetBox, (sender, e) => button_rec_open.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
                 button_rec_up.Click += new RoutedEventHandler(bxr.button_Up_Click);
                 button_rec_down.Click += new RoutedEventHandler(bxr.button_Down_Click);
                 button_rec_del.Click += new RoutedEventHandler(bxr.button_Delete_Click);
 
+                //チューナ関係関係
                 bxb.AllowDragDrop();
                 button_bon_up.Click += new RoutedEventHandler(bxb.button_Up_Click);
                 button_bon_down.Click += new RoutedEventHandler(bxb.button_Down_Click);
+            }
+        }
+
+        private void listBox_recFolder_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (listBox_recFolder.SelectedItem is string)
+            {
+                textBox_recFolder.Text = listBox_recFolder.SelectedItem as string;
             }
         }
 
@@ -607,6 +602,16 @@ namespace EpgTimer.Setting
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
+    }
 
+    //BonDriver一覧の表示・設定用クラス
+    public class TunerInfo
+    {
+        public TunerInfo(string bon) { BonDriver = bon; }
+        public String BonDriver { get; set; }
+        public String TunerNum { get; set; }
+        public String EPGNum { get; set; }
+        public bool IsEpgCap { get; set; }
+        public override string ToString() { return BonDriver; }
     }
 }

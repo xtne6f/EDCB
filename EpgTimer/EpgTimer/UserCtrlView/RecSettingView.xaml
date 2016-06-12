@@ -43,11 +43,6 @@
                     <CheckBox Content="字幕を含める" Height="16" HorizontalAlignment="Left" Margin="260,98,0,0" Name="checkBox_serviceCaption" VerticalAlignment="Top" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_serviceMode, Converter={StaticResource invert}}" />
                     <CheckBox Content="データカルーセルを含める" Height="16" HorizontalAlignment="Left" Margin="370,98,0,0" Name="checkBox_serviceData" VerticalAlignment="Top" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_serviceMode, Converter={StaticResource invert}}" />
                     <ListView Height="79" Margin="11,125,109,0" Name="listView_recFolder" VerticalAlignment="Top" ItemsSource="{Binding}">
-                        <ListView.Resources>
-                            <Style TargetType="ListViewItem">
-                                <EventSetter Event="MouseDoubleClick" Handler="listView_recFolder_MouseDoubleClick"/>
-                            </Style>
-                        </ListView.Resources>
                         <ListView.View>
                             <GridView x:Name="gridView_recFolder">
                                 <GridViewColumn DisplayMemberBinding="{Binding Path=RecFolder}">
@@ -76,7 +71,7 @@
                     <Button Content="追加" Height="23" HorizontalAlignment="Right" Margin="0,153,11,0" Name="button_recFolderAdd" VerticalAlignment="Top" Width="93" Click="button_recFolderAdd_Click" />
                     <Button Content="部分受信追加" Height="23" HorizontalAlignment="Right" Margin="0,181,11,0" Name="button_recFolderAdd_1seg" VerticalAlignment="Top" Width="93" Click="button_recFolderAdd_1seg_Click" />
                     <Button Content="変更" Height="23" HorizontalAlignment="Right" Margin="0,125,60,0" Name="button_recFolderChg" VerticalAlignment="Top" Width="44" Click="button_recFolderChg_Click" />
-                    <Button Content="削除" Height="23" HorizontalAlignment="Right" Margin="0,125,11,0" Name="button_recFolderDel" VerticalAlignment="Top" Width="44" Click="button_recFolderDel_Click" />
+                    <Button Content="削除" Height="23" HorizontalAlignment="Right" Margin="0,125,11,0" Name="button_recFolderDel" VerticalAlignment="Top" Width="44" />
                     <CheckBox Content="部分受信（ワンセグ）を別ファイルに同時出力する" Height="16" HorizontalAlignment="Left" Margin="30,208,0,0" Name="checkBox_partial" VerticalAlignment="Top" />
                     <CheckBox Content="後ろの予約を同一ファイルで出力する" Height="16" HorizontalAlignment="Left" Margin="370,208,0,0" Name="checkBox_continueRec" VerticalAlignment="Top" />
                     <Label Content="使用チューナー強制指定" Height="28" HorizontalAlignment="Left" Margin="6,231,0,0" Name="label23" VerticalAlignment="Top" />

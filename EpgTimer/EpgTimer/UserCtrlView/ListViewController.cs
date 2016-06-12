@@ -7,7 +7,6 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.ComponentModel;
 using System.Windows.Threading;
-
 using System.Reflection;
 
 namespace EpgTimer
@@ -22,6 +21,8 @@ namespace EpgTimer
         public GridViewSelector gvSelector { get; private set; }
         public GridViewSorter gvSorter { get; private set; }
         public List<T> dataList { get; set; }
+
+        private BoxExchangeEdit.BoxExchangeEditor bx = new BoxExchangeEdit.BoxExchangeEditor();
 
         private ListBoxItem ClickTarget = null;
 
@@ -126,32 +127,8 @@ namespace EpgTimer
             gvSorter = new GridViewSorter();
             gvInitialSort();
 
-            //アイテムの無い場所でクリックしたとき、選択を解除する。
-            listView.MouseLeftButtonUp += new MouseButtonEventHandler((sender, e) =>
-            {
-                if (listView.GetPlacementItem() == null)
-                {
-                    listView.UnselectAll();
-                }
-            });
-
-            //Escapeキーで選択を解除する。
-            listView.KeyDown += new KeyEventHandler((sender, e) =>
-            {
-                if (Keyboard.Modifiers == ModifierKeys.None)
-                {
-                    switch (e.Key)
-                    {
-                        case Key.Escape:
-                            if (listView.SelectedItem != null)
-                            {
-                                listView.UnselectAll();
-                                e.Handled = true;
-                            }
-                            break;
-                    }
-                }
-            });
+            //Escapeキー及びアイテムの無い場所のクリックで、選択を解除する。
+            bx.targetBoxAllowCancelAction(listView);
         }
 
         public void SetSelectedItemDoubleClick(RoutedCommand cmd)
@@ -163,11 +140,7 @@ namespace EpgTimer
         public void SetSelectedItemDoubleClick(MouseButtonEventHandler hdlr)
         {
             if (hdlr == null) return;
-            listView.MouseDoubleClick += new MouseButtonEventHandler((sender, e) =>
-            {
-                var hitItem = listView.GetPlacementItem();
-                if (hitItem != null) hdlr(hitItem, e);
-            });
+            bx.targetBoxAllowDoubleClick(listView, hdlr);
         }
 
         public void SaveViewDataToSettings()

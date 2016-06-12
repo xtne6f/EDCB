@@ -4,6 +4,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Input;
 using System.Windows.Interop;
 
 namespace EpgTimer.Setting
@@ -566,14 +567,13 @@ namespace EpgTimer.Setting
             }
         }
 
-        //ボタン表示画面の上下ボタンのみ他と同じものを使用する。
-        private BoxExchangeEditor bxb = new BoxExchangeEditor();
-        private BoxExchangeEditor bxt = new BoxExchangeEditor();
         private void listBox_Button_Set()
         {
+            //ボタン表示画面の上下ボタンのみ他と同じものを使用する。
+            var bxb = new BoxExchangeEditor(this.listBox_itemBtn, this.listBox_viewBtn, true);
+            var bxt = new BoxExchangeEditor(this.listBox_itemTask, this.listBox_viewTask, true);
+
             //上部表示ボタン関係
-            bxb.SourceBox = this.listBox_itemBtn;
-            bxb.TargetBox = this.listBox_viewBtn;
             bxb.AllowDuplication(StringItem.Items("（空白）"), StringItem.Cloner, StringItem.Comparator);
             button_btnUp.Click += new RoutedEventHandler(bxb.button_Up_Click);
             button_btnDown.Click += new RoutedEventHandler(bxb.button_Down_Click);
@@ -582,14 +582,12 @@ namespace EpgTimer.Setting
             button_btnDel.Click += new RoutedEventHandler((sender, e) => button_Dell(bxb, bxt, buttonItem));
             bxb.sourceBoxAllowKeyAction(listBox_itemBtn, (sender, e) => button_btnAdd.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
             bxb.targetBoxAllowKeyAction(listBox_viewBtn, (sender, e) => button_btnDel.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
-            bxb.sourceBoxAllowDoubleClickMove(listBox_itemBtn, (sender, e) => button_btnAdd.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
-            bxb.targetBoxAllowDoubleClickMove(listBox_viewBtn, (sender, e) => button_btnDel.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
+            bxb.sourceBoxAllowDoubleClick(listBox_itemBtn, (sender, e) => button_btnAdd.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
+            bxb.targetBoxAllowDoubleClick(listBox_viewBtn, (sender, e) => button_btnDel.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
             bxb.sourceBoxAllowDragDrop(listBox_itemBtn, (sender, e) => button_btnDel.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
-            bxb.targetBoxAllowDragDrop(listBox_viewBtn, (sender, e) => button_btnIns.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
-
+            bxb.targetBoxAllowDragDrop(listBox_viewBtn, (sender, e) => drag_drop(sender, e, button_btnAdd, button_btnIns));
+ 
             //タスクアイコン関係
-            bxt.SourceBox = this.listBox_itemTask;
-            bxt.TargetBox = this.listBox_viewTask;
             bxt.AllowDuplication(StringItem.Items("（セパレータ）"), StringItem.Cloner, StringItem.Comparator);
             button_taskUp.Click += new RoutedEventHandler(bxt.button_Up_Click);
             button_taskDown.Click += new RoutedEventHandler(bxt.button_Down_Click);
@@ -598,10 +596,10 @@ namespace EpgTimer.Setting
             button_taskDel.Click += new RoutedEventHandler((sender, e) => button_Dell(bxt, bxb, taskItem));
             bxt.sourceBoxAllowKeyAction(listBox_itemTask, (sender, e) => button_taskAdd.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
             bxt.targetBoxAllowKeyAction(listBox_viewTask, (sender, e) => button_taskDel.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
-            bxt.sourceBoxAllowDoubleClickMove(listBox_itemTask, (sender, e) => button_taskAdd.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
-            bxt.targetBoxAllowDoubleClickMove(listBox_viewTask, (sender, e) => button_taskDel.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
+            bxt.sourceBoxAllowDoubleClick(listBox_itemTask, (sender, e) => button_taskAdd.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
+            bxt.targetBoxAllowDoubleClick(listBox_viewTask, (sender, e) => button_taskDel.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
             bxt.sourceBoxAllowDragDrop(listBox_itemTask, (sender, e) => button_taskDel.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
-            bxt.targetBoxAllowDragDrop(listBox_viewTask, (sender, e) => button_taskIns.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
+            bxt.targetBoxAllowDragDrop(listBox_viewTask, (sender, e) => drag_drop(sender, e, button_taskAdd, button_taskIns));
 
             listBox_viewBtn.Items.AddItems(StringItem.Items(Settings.Instance.ViewButtonList));
             buttonItem = Settings.Instance.GetViewButtonAllItems();
@@ -610,6 +608,16 @@ namespace EpgTimer.Setting
             listBox_viewTask.Items.AddItems(StringItem.Items(Settings.Instance.TaskMenuList));
             taskItem = Settings.Instance.GetTaskMenuAllItems();
             reLoadButtonItem(bxt, taskItem);
+
+            //iEpg関係、キャンセルアクションだけは付けておく
+            new BoxExchangeEditor(null, this.listBox_service, true);
+            var bxi = new BoxExchangeEditor(null, this.listBox_iEPG, true);
+            bxi.targetBoxAllowKeyAction(this.listBox_iEPG, new KeyEventHandler((sender, e) => button_del.RaiseEvent(new RoutedEventArgs(Button.ClickEvent))));
+        }
+        private void drag_drop(object sender, DragEventArgs e, Button add, Button ins)
+        {
+            var handler = (BoxExchangeEditor.GetDragHitItem(sender, e) == null ? add : ins);
+            handler.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         }
 
         private void button_Add(BoxExchangeEditor bx, List<string> src, bool isInsert = false)

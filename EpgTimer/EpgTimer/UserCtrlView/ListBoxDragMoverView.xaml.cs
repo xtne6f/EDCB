@@ -62,8 +62,8 @@ namespace EpgTimer.UserCtrlView
 
                 //マウスイベント関係
                 this.listBox.PreviewMouseLeftButtonUp += new MouseButtonEventHandler(listBox_PreviewMouseLeftButtonUp);
+                this.listBox.PreviewMouseLeftButtonDown += new MouseButtonEventHandler(listBox_PreviewMouseLeftButtonDown);
                 ViewUtil.ResetItemContainerStyle(listbox);
-                listbox.ItemContainerStyle.Setters.Add(new EventSetter(Button.PreviewMouseLeftButtonDownEvent, new MouseButtonEventHandler(listBoxItem_PreviewMouseLeftButtonDown)));
                 listbox.ItemContainerStyle.Setters.Add(new EventSetter(Mouse.MouseEnterEvent, new MouseEventHandler(listBoxItem_MouseEnter)));
 
                 //移動などのアクションはBoxExchangeEditorのものをそのまま使用する。
@@ -196,16 +196,17 @@ namespace EpgTimer.UserCtrlView
         List<object> dragItems = null;
         DispatcherTimer notifyTimer = new DispatcherTimer();
 
-        public void listBoxItem_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        public void listBox_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             try
             {
-                object dragItem = GetDragItemData(sender);
+                object item = (sender as ListBox).GetPlacementItem();
+                object dragItem = GetDragItemData(item);
                 if (dragItem == null) return;
 
                 if (IsMouseDragCondition() == false) return;
 
-                this.cursorObj = sender;
+                this.cursorObj = item;
 
                 //ドロップ位置の上下判定に使用するので、掴んだアイテムを先頭にする。
                 this.dragItems = new List<object> { dragItem }; ;
@@ -239,7 +240,7 @@ namespace EpgTimer.UserCtrlView
                     object dropTo = GetDragItemData(this.cursorObj);
                     if (dropTo != null)
                     {
-                        ItemsAction(() => bx.targetBox_PreviewDrop_fromSelf(this.cursorObj, null));
+                        ItemsAction(() => bx.bxMoveItemsDrop(bx.TargetBox, dropTo, bx.TargetItemsSource));
                         e.Handled = true;
                     }
                 }

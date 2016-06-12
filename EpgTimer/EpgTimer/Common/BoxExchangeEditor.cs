@@ -17,6 +17,17 @@ namespace EpgTimer.BoxExchangeEdit
         //・ItemsSource使用中のTargetBoxでも動かせるが、ItemsSourceのメリットは全く享受出来ない。
         //・重複処理が必要な場合はそれなりに準備が必要。文字列の重複処理がうまく出来ないのはListBoxと同様。
 
+        public BoxExchangeEditor() { }
+        public BoxExchangeEditor(ListBox src, ListBox trg, bool allowCancelAction = false, bool allowDragDrop = false, bool allowKeyAction = false, bool allowDoubleClickMove = false)
+        {
+            SourceBox = src;
+            TargetBox = trg;
+            if (allowCancelAction == true) this.AllowCancelAction();
+            if (allowDragDrop == true) this.AllowDragDrop();
+            if (allowKeyAction == true) this.AllowKeyAction();
+            if (allowDoubleClickMove == true) this.AllowDoubleClickMove();
+        }
+
         public ListBox SourceBox { set; get; }
         public ListBox TargetBox { set; get; }
         public IList TargetItemsSource { set; get; }
@@ -35,54 +46,83 @@ namespace EpgTimer.BoxExchangeEdit
             ItemComparer = comparer;
         }
 
-        /// <summary>ソース側のEnter、ターゲット側のDelete、Escによる選択解除を有効にする</summary>
+        /// <summary>ソース側のEnterによる追加、ターゲット側のDeleteによる削除を有効にする</summary>
         public void AllowKeyAction()
         {
-            if (SourceBox != null) sourceBoxAllowKeyAction(SourceBox);
-            if (TargetBox != null) targetBoxAllowKeyAction(TargetBox);
+            sourceBoxAllowKeyAction(SourceBox);
+            targetBoxAllowKeyAction(TargetBox);
         }
         public void sourceBoxAllowKeyAction(ListBox box, KeyEventHandler add_handler = null)
         {
-            if (box != null) box.PreviewKeyDown += getBoxKeyEnableHandler(box, add_handler ?? button_Add_Click, true);
+            if (box == null) return;
+            //
+            box.PreviewKeyDown += new KeyEventHandler((sender, e) =>
+            {
+                if (Keyboard.Modifiers != ModifierKeys.None) return;
+                //
+                switch (e.Key)
+                {
+                    case Key.Enter:
+                        (add_handler ?? button_Add_Click)(sender, e);
+                        //一つ下へ移動する。ただし、カーソル位置は正しく動かない。
+                        int pos = box.SelectedIndex + 1;
+                        box.SelectedIndex = Math.Max(0, Math.Min(pos, box.Items.Count - 1));
+                        box.ScrollIntoViewIndex(box.SelectedIndex);
+                        e.Handled = true;
+                        break;
+                }
+            });
         }
         public void targetBoxAllowKeyAction(ListBox box, KeyEventHandler delete_handler = null)
         {
-            if (box != null) box.PreviewKeyDown += getBoxKeyEnableHandler(box, delete_handler ?? button_Delete_Click, false);
-        }
-        private KeyEventHandler getBoxKeyEnableHandler(ListBox box, KeyEventHandler handler, bool src)
-        {
-            return new KeyEventHandler((sender, e) =>
+            if (box == null) return;
+            //
+            box.PreviewKeyDown += new KeyEventHandler((sender, e) =>
             {
-                if (Keyboard.Modifiers == ModifierKeys.None)
+                if (Keyboard.Modifiers != ModifierKeys.None) return;
+                //
+                switch (e.Key)
                 {
-                    switch (e.Key)
-                    {
-                        case Key.Escape:
-                            if (box.SelectedIndex >= 0)
-                            {
-                                box.UnselectAll();
-                                e.Handled = true;
-                            }
-                            break;
-                        case Key.Enter:
-                            if (src == true)
-                            {
-                                handler(sender, e);
-                                //一つ下へ移動する。ただし、カーソル位置は正しく動かない。
-                                int pos = box.SelectedIndex + 1;
-                                box.SelectedIndex = Math.Max(0, Math.Min(pos, box.Items.Count - 1));
-                                box.ScrollIntoViewIndex(box.SelectedIndex);
-                                e.Handled = true;
-                            }
-                            break;
-                        case Key.Delete:
-                            if (src == false)
-                            {
-                                handler(sender, e);
-                                e.Handled = true;
-                            }
-                            break;
-                    }
+                    case Key.Delete:
+                        (delete_handler ?? button_Delete_Click)(sender, e);
+                        e.Handled = true;
+                        break;
+                }
+            });
+        }
+
+        /// <summary>エスケープキー及びアイテムの無い場所のクリックで選択を解除する</summary>
+        public void AllowCancelAction()
+        {
+            sourceBoxAllowCancelAction(SourceBox);
+            targetBoxAllowCancelAction(TargetBox);
+        }
+        public void sourceBoxAllowCancelAction(ListBox box) { allowCancelAction(box); }
+        public void targetBoxAllowCancelAction(ListBox box) { allowCancelAction(box); }
+        private void allowCancelAction(ListBox box)
+        {
+            if (box == null) return;
+            //
+            box.MouseLeftButtonUp += new MouseButtonEventHandler((sender, e) =>
+            {
+                if (box.GetPlacementItem() != null) return;
+                //
+                box.UnselectAll();
+            });
+
+            box.KeyDown += new KeyEventHandler((sender, e) =>
+            {
+                if (Keyboard.Modifiers != ModifierKeys.None) return;
+                //
+                switch (e.Key)
+                {
+                    case Key.Escape:
+                        if (box.SelectedIndex >= 0)
+                        {
+                            box.UnselectAll();
+                            e.Handled = true;
+                        }
+                        break;
                 }
             });
         }
@@ -90,21 +130,26 @@ namespace EpgTimer.BoxExchangeEdit
         /// <summary>ダブルクリックでの移動を行うよう設定する</summary>
         public void AllowDoubleClickMove()
         {
-            if (SourceBox != null) sourceBoxAllowDoubleClickMove(SourceBox);
-            if (TargetBox != null) targetBoxAllowDoubleClickMove(TargetBox);
+            sourceBoxAllowDoubleClick(SourceBox);
+            targetBoxAllowDoubleClick(TargetBox);
         }
-        public void sourceBoxAllowDoubleClickMove(ListBox box, MouseButtonEventHandler handler = null)
+        public void sourceBoxAllowDoubleClick(ListBox box, MouseButtonEventHandler handler = null)
         {
-            if (box != null) mouseDoubleClickSetter(box, handler ?? button_Add_Click);
+            mouseDoubleClickSetter(box, handler ?? button_Add_Click);
         }
-        public void targetBoxAllowDoubleClickMove(ListBox box, MouseButtonEventHandler handler = null)
+        public void targetBoxAllowDoubleClick(ListBox box, MouseButtonEventHandler handler = null)
         {
-            if (box != null) mouseDoubleClickSetter(box, handler ?? button_Delete_Click);
+            mouseDoubleClickSetter(box, handler ?? button_Delete_Click);
         }
         private void mouseDoubleClickSetter(ListBox box, MouseButtonEventHandler handler)
         {
-            ViewUtil.ResetItemContainerStyle(box);
-            box.ItemContainerStyle.Setters.Add(new EventSetter(Button.MouseDoubleClickEvent, handler));
+            if (box == null) return;
+            //
+            box.MouseDoubleClick += new MouseButtonEventHandler((sender, e) =>
+            {
+                var hitItem = box.GetPlacementItem();
+                if (hitItem != null) handler(hitItem, e);
+            });
         }
 
         /// <summary>全アイテム追加</summary>
@@ -316,9 +361,8 @@ namespace EpgTimer.BoxExchangeEdit
         /// <summary>アイテムをボックス内にドロップ</summary>
         public void targetBox_PreviewDrop_fromSelf(object sender, DragEventArgs e)
         {
-            object dropTo = (sender is ListBoxItem) == false ? null : (sender as ListBoxItem).Content;
-            bool ret = bxMoveItemsDrop(TargetBox, dropTo, TargetItemsSource);
-            if (e != null) e.Handled = ret;
+            var hitItem = GetDragHitItem(sender, e);
+            bxMoveItemsDrop(TargetBox, hitItem == null ? null : hitItem.Content, TargetItemsSource);
         }
         /// <summary>アイテムをボックス内にドロップ</summary>
         public bool bxMoveItemsDrop(ListBox box, object dropTo, IList boxItemsSource = null)
@@ -371,8 +415,8 @@ namespace EpgTimer.BoxExchangeEdit
         }
         public void AllowDragDrop()
         {
-            if (SourceBox != null) sourceBoxAllowDragDrop(SourceBox);
-            if (TargetBox != null) targetBoxAllowDragDrop(TargetBox);
+            sourceBoxAllowDragDrop(SourceBox);
+            targetBoxAllowDragDrop(TargetBox);
         }
         public void sourceBoxAllowDragDrop(ListBox srcBox, DragEventHandler delete_handler = null)
         {
@@ -387,12 +431,10 @@ namespace EpgTimer.BoxExchangeEdit
             if (trgBox != null)
             {
                 boxAllowDragDrop_common(trgBox);
-                dragOverSetter(trgBox, targetBoxItem_PreviewDragOver);
-                dragLeaveSetter(trgBox, targetBoxItem_PreviewDragLeave);
-                dragDropSetter(trgBox, getDragDropHandler(fromBox.SrcBox, add_handler ?? targetBox_PreviewDrop_fromSourceBox));
-                trgBox.Drop += getDragDropHandler(fromBox.SrcBox, add_handler ?? targetBox_PreviewDrop_fromSourceBox);
-                dragDropSetter(trgBox, getDragDropHandler(fromBox.TrgBox, targetBox_PreviewDrop_fromSelf));
-                trgBox.Drop += getDragDropHandler(fromBox.TrgBox, targetBox_PreviewDrop_fromSelf);
+                trgBox.ItemContainerStyle.Setters.Add(new EventSetter(DragDrop.PreviewDragOverEvent, new DragEventHandler(targetBoxItem_PreviewDragOver)));
+                trgBox.ItemContainerStyle.Setters.Add(new EventSetter(DragDrop.PreviewDragLeaveEvent, new DragEventHandler(targetBoxItem_PreviewDragLeave)));
+                trgBox.PreviewDrop += getDragDropHandler(fromBox.SrcBox, add_handler ?? targetBox_PreviewDrop_fromSourceBox);
+                trgBox.PreviewDrop += getDragDropHandler(fromBox.TrgBox, targetBox_PreviewDrop_fromSelf);
             }
         }
         private void boxAllowDragDrop_common(ListBox box)
@@ -400,45 +442,17 @@ namespace EpgTimer.BoxExchangeEdit
             box.AllowDrop = true;
             ViewUtil.ResetItemContainerStyle(box);
 
-            previewMouseLeftButtonDownSetter(box, boxItem_PreviewMouseLeftButtonDown);
-            mouseLeaveSetter(box, boxItem_MouseLeave);
-            previewMouseDoubleClicSetter(box, boxItem_PreviewMouseDoubleClick);
+            //PreviewMouseLeftButtonDownより先に走るので、ダブルクリックが入る場合はキャンセルしておく。
+            box.PreviewMouseDoubleClick += (sender, e) => dragStartCancel = true;
+            box.PreviewMouseLeftButtonDown += box_PreviewMouseLeftButtonDown;
+            box.ItemContainerStyle.Setters.Add(new EventSetter(Mouse.MouseLeaveEvent, new MouseEventHandler(boxItem_MouseLeave)));
             box.PreviewMouseLeftButtonUp += (sender, e) => clearDragStartData();
         }
-        private void previewMouseLeftButtonDownSetter(ListBox box, MouseButtonEventHandler handler)
-        {
-            box.ItemContainerStyle.Setters.Add(new EventSetter(Button.PreviewMouseLeftButtonDownEvent, handler));
-        }
-        private void mouseLeaveSetter(ListBox box, MouseEventHandler handler)
-        {
-            box.ItemContainerStyle.Setters.Add(new EventSetter(Mouse.MouseLeaveEvent, handler));
-        }
-        private void previewMouseDoubleClicSetter(ListBox box, MouseButtonEventHandler handler)
-        {
-            box.ItemContainerStyle.Setters.Add(new EventSetter(Button.PreviewMouseDoubleClickEvent, handler));
-        }
-        private void dragOverSetter(ListBox box, DragEventHandler handler)
-        {
-            box.ItemContainerStyle.Setters.Add(new EventSetter(DragDrop.PreviewDragOverEvent, handler));
-        }
-        private void dragLeaveSetter(ListBox box, DragEventHandler handler)
-        {
-            box.ItemContainerStyle.Setters.Add(new EventSetter(DragDrop.PreviewDragLeaveEvent, handler));
-        }
-        private void dragDropSetter(ListBox box, DragEventHandler handler)
-        {
-            box.ItemContainerStyle.Setters.Add(new EventSetter(DragDrop.PreviewDropEvent, handler));
-        }
 
-        private void boxItem_PreviewMouseDoubleClick(object sender, MouseButtonEventArgs e)
+        private void box_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            //PreviewMouseDoubleClickはPreviewMouseLeftButtonDownより先に走るので、
-            //ダブルクリックが入る場合はキャンセルしておく。
-            dragStartCancel = true;
-        }
-        private void boxItem_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-        {
-            var item = sender as ListBoxItem;
+            var box = sender as ListBox;
+            var item = box.GetPlacementItem() as ListBoxItem;
             if (item == null || item.Content == null) return;
 
             //ダブルクリックが入る場合もキャンセルする
@@ -448,7 +462,6 @@ namespace EpgTimer.BoxExchangeEdit
                 return;
             }
 
-            ListBox box = (SourceBox != null && SourceBox.IsMouseOver == true) ? SourceBox : TargetBox;
             dragStartBox = box == SourceBox ? fromBox.SrcBox : fromBox.TrgBox;
 
             //ドロップ位置の上下判定に使用するので、掴んだアイテムを先頭にする。
@@ -495,11 +508,15 @@ namespace EpgTimer.BoxExchangeEdit
             }
             clearDragStartData();
         }
-        private bool IsMouseDragCondition()
+        private static bool IsMouseDragCondition()
         {
             return Mouse.LeftButton == MouseButtonState.Pressed && Keyboard.Modifiers == ModifierKeys.None && Keyboard.Modifiers == ModifierKeys.None;
         }
-        private ListBox dStartBox(DragEventArgs e) { return e.Data.GetData(typeof(ListBox)) as ListBox; }
+        private ListBox dStartBox(DragEventArgs e) 
+        {
+            //GetListBoxType()は正しいタイプを与えないとListBox(ListView)を返してくれない。
+            return e.Data.GetData((SourceBox ?? TargetBox).GetType()) as ListBox;
+        }
         private void targetBoxItem_PreviewDragOver(object sender, DragEventArgs e)
         {
             try
@@ -542,9 +559,11 @@ namespace EpgTimer.BoxExchangeEdit
 
         public void targetBox_PreviewDrop_fromSourceBox(object sender, DragEventArgs e)
         {
-            //sender is ListBoxItem ? button_Add_Click(sender, e) : button_Insert_Click(sender, e);
-            bool ret = bxAddItems(SourceBox, TargetBox, sender is ListBoxItem, TargetItemsSource);
-            if (e != null) e.Handled = ret;
+            bxAddItems(SourceBox, TargetBox, GetDragHitItem(sender, e) != null, TargetItemsSource);
+        }
+        public static ListBoxItem GetDragHitItem(object sender, DragEventArgs e)
+        {
+            return (sender as ListBox).GetPlacementItem(e.GetPosition(sender as ListBox)) as ListBoxItem;
         }
 
         enum fromBox { SrcBox, TrgBox };

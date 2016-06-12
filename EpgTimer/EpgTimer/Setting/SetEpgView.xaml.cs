@@ -24,7 +24,6 @@ namespace EpgTimer.Setting
         }
 
         private MenuUtil mutil = CommonManager.Instance.MUtil;
-        private BoxExchangeEditor bx = new BoxExchangeEditor();
 
         private MenuSettingData ctxmSetInfo;
 
@@ -68,10 +67,8 @@ namespace EpgTimer.Setting
                 button_tunerFontCustColorService.IsEnabled = !Settings.Instance.TunerColorModeUse;
                 checkBox_tuner_display_offres.IsChecked = Settings.Instance.TunerDisplayOffReserve;
 
-                bx.TargetBox = this.listBox_tab;
-                bx.AllowKeyAction();
-                bx.AllowDragDrop();
-                bx.targetBoxAllowDoubleClickMove(bx.TargetBox, (sender, e) => button_tab_chg.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
+                var bx = new BoxExchangeEditor(null, this.listBox_tab, true, true, true);
+                bx.targetBoxAllowDoubleClick(bx.TargetBox, (sender, e) => button_tab_chg.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
                 button_tab_del.Click += new RoutedEventHandler(bx.button_Delete_Click);
                 button_tab_up.Click += new RoutedEventHandler(bx.button_Up_Click);
                 button_tab_down.Click += new RoutedEventHandler(bx.button_Down_Click);

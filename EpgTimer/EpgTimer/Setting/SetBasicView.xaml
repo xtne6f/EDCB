@@ -23,7 +23,7 @@
                     <Label Content="非視聴時" Height="28" HorizontalAlignment="Left" Margin="452,72,0,0" VerticalAlignment="Top" />
                     <TextBox Height="24" HorizontalAlignment="Left" Margin="515,74,0,0" Name="textBox_cmdViewOff" VerticalAlignment="Top" Width="64" />
                     <Label Content="録画保存フォルダ　（空き容量が少ない場合、上から順に録画対象のフォルダとします）" Height="28" HorizontalAlignment="Left" Margin="12,102,0,0" Name="label3" VerticalAlignment="Top" />
-                    <ListBox Height="83" HorizontalAlignment="Left" Margin="45,131,0,0" Name="listBox_recFolder" VerticalAlignment="Top" Width="484" SelectionMode="Extended" />
+                    <ListBox Height="83" HorizontalAlignment="Left" Margin="45,131,0,0" Name="listBox_recFolder" VerticalAlignment="Top" Width="484" SelectionMode="Extended" SelectionChanged="listBox_recFolder_SelectionChanged" />
                     <Button Content="↑" Height="23" HorizontalAlignment="Left" Margin="535,131,0,0" Name="button_rec_up" VerticalAlignment="Top" Width="44" />
                     <Button Content="↓" Height="23" HorizontalAlignment="Left" Margin="535,161,0,0" Name="button_rec_down" VerticalAlignment="Top" Width="44" />
                     <Button Content="削除" Height="23" HorizontalAlignment="Left" Margin="535,191,0,0" Name="button_rec_del" VerticalAlignment="Top" Width="44" />

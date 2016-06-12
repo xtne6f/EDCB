@@ -53,11 +53,17 @@ namespace EpgTimer
                 comboBox_week_eh.SelectedIndex = 23;
                 comboBox_week_em.DataContext = CommonManager.Instance.MinDictionary.Values;
                 comboBox_week_em.SelectedIndex = 59;
+
+                var bxc = new BoxExchangeEdit.BoxExchangeEditor(null, listBox_content, true, true, true);
+                button_content_clear.Click += new RoutedEventHandler(bxc.button_DeleteAll_Click);
+                button_content_del.Click += new RoutedEventHandler(bxc.button_Delete_Click);
+
+                var bxd = new BoxExchangeEdit.BoxExchangeEditor(null, listBox_date, true, true, true);
+                button_date_clear.Click += new RoutedEventHandler(bxd.button_DeleteAll_Click);
+                button_date_del.Click += new RoutedEventHandler(bxd.button_Delete_Click);
+
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
 
         public void SetChangeMode(int chgMode)
@@ -225,17 +231,6 @@ namespace EpgTimer
             }
         }
 
-        private void button_content_del_Click(object sender, RoutedEventArgs e)
-        {
-            var delList = listBox_content.SelectedItems.Cast<Object>().ToList();
-            delList.ForEach(item => listBox_content.Items.Remove(item));
-        }
-
-        private void button_content_clear_Click(object sender, RoutedEventArgs e)
-        {
-            listBox_content.Items.Clear();
-        }
-
         private void button_all_on_Click(object sender, RoutedEventArgs e)
         {
             foreach (ServiceItem item in listView_service.Items) { item.IsSelected = true; }
@@ -398,17 +393,6 @@ namespace EpgTimer
             Add_week(checkBox_fri, 5);
             Add_week(checkBox_sat, 6);
             Add_week(checkBox_sun, 0);
-        }
-
-        private void button_date_del_Click(object sender, RoutedEventArgs e)
-        {
-            var delList = listBox_date.SelectedItems.Cast<Object>().ToList();
-            delList.ForEach(item => listBox_date.Items.Remove(item));
-        }
-
-        private void button_date_clear_Click(object sender, RoutedEventArgs e)
-        {
-            listBox_date.Items.Clear();
         }
 
         private void checkBox_regExp_Checked(object sender, RoutedEventArgs e)

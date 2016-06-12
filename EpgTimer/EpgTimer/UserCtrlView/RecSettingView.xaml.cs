@@ -48,15 +48,16 @@ namespace EpgTimer
                 Settings.Instance.RecPresetList.ForEach(info => comboBox_preSet.Items.Add(info.Clone()));//現在の処理ならClone()無くても大丈夫
                 comboBox_preSet.SelectedIndex = 0;
 
+                var bx = new BoxExchangeEdit.BoxExchangeEditor(null, listView_recFolder, true, true, true);
+                bx.targetBoxAllowDoubleClick(bx.TargetBox, (sender, e) => button_recFolderChg.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
+                button_recFolderDel.Click += new RoutedEventHandler(bx.button_Delete_Click);
+
                 if (CommonManager.Instance.NWMode == true)
                 {
                     button_bat.IsEnabled = false;
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
 
         public void SavePreset()
@@ -463,19 +464,6 @@ namespace EpgTimer
             {
                 recFolderAdd(false);
             }
-        }
-
-        private void button_recFolderDel_Click(object sender, RoutedEventArgs e)
-        {
-            if (listView_recFolder.SelectedItem != null)
-            {
-                listView_recFolder.Items.RemoveAt(listView_recFolder.SelectedIndex);
-            }
-        }
-
-        private void listView_recFolder_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-        {
-            button_recFolderChg.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         }
 
         private void recFolderAdd(bool partialRec)

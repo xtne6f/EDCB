@@ -123,14 +123,12 @@ namespace EpgTimer
             info.ViewContentKindList = listBox_jyanruView.Items.OfType<ContentKindInfo>().Select(item => item.ID).ToList();
         }
 
-        private BoxExchangeEditor bxs = new BoxExchangeEditor();
-        private BoxExchangeEditor bxj = new BoxExchangeEditor();
+        //サービス選択関係は他でも使用するので
+        private BoxExchangeEditor bxs;
+        
         private void listBox_Button_Set()
         {
-            bxs.TargetBox = this.listBox_serviceView;
-            bxs.AllowKeyAction();
-            bxs.AllowDoubleClickMove();
-            bxs.AllowDragDrop();
+            bxs = new BoxExchangeEditor(null, this.listBox_serviceView, true, true, true, true);
 
             //サービス選択関係はソースの ListBox が複数あるので、全ての ListBoxItem にイベントを追加する。
             foreach (TabItem tab in tab_ServiceList.Items)
@@ -138,9 +136,10 @@ namespace EpgTimer
                 if (tab.Content is ListBox)
                 {
                     ListBox box = tab.Content as ListBox;
-                    bxs.sourceBoxAllowKeyAction(box);
-                    bxs.sourceBoxAllowDoubleClickMove(box);
+                    bxs.sourceBoxAllowCancelAction(box);
                     bxs.sourceBoxAllowDragDrop(box);
+                    bxs.sourceBoxAllowKeyAction(box);
+                    bxs.sourceBoxAllowDoubleClick(box);
                 }
             }
             //ソースのリストボックスは複数あるので、リストボックスが選択されたときに SourceBox の登録を行う
@@ -160,11 +159,7 @@ namespace EpgTimer
             button_service_bottom.Click += new RoutedEventHandler(bxs.button_Bottom_Click);
 
             //ジャンル選択関係
-            bxj.SourceBox = this.listBox_jyanru;
-            bxj.TargetBox = this.listBox_jyanruView;
-            bxj.AllowKeyAction();
-            bxj.AllowDoubleClickMove();
-            bxj.AllowDragDrop();
+            var bxj = new BoxExchangeEditor(this.listBox_jyanru, this.listBox_jyanruView, true, true, true, true);
             button_jyanru_addAll.Click += new RoutedEventHandler(bxj.button_AddAll_Click);
             button_jyanru_add.Click += new RoutedEventHandler(bxj.button_Add_Click);
             button_jyanru_ins.Click += new RoutedEventHandler(bxj.button_Insert_Click);
