@@ -6,10 +6,10 @@
              mc:Ignorable="d" 
              d:DesignHeight="400" d:DesignWidth="300" xmlns:local="clr-namespace:EpgTimer">
     <TabControl>
-        <TabItem Header="キーワード予約">
+        <TabItem Header="キーワード予約" Name="tabItem_epgAutoAdd">
             <local:EpgAutoAddView x:Name="epgAutoAddView" />
         </TabItem>
-        <TabItem Header="プログラム予約">
+        <TabItem Header="プログラム予約" Name="tabItem_manualAutoAdd">
             <local:ManualAutoAddView x:Name="manualAutoAddView" />
         </TabItem>
     </TabControl>

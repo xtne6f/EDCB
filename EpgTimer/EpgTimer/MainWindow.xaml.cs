@@ -255,6 +255,31 @@ namespace EpgTimer
 
                 ResetMainView();
 
+                //初期タブ選択
+                switch (Settings.Instance.StartTab)
+                {
+                    //case CtxmCode.ReserveView:
+                    //    this.tabItem_reserve.IsSelected = true;
+                    //    break;
+                    case CtxmCode.TunerReserveView:
+                        this.tabItem_tunerReserve.IsSelected = true;
+                        break;
+                    case CtxmCode.RecInfoView:
+                        this.tabItem_recinfo.IsSelected = true;
+                        break;
+                    case CtxmCode.EpgAutoAddView:
+                        this.tabItem_AutoAdd.IsSelected = true;
+                    //    this.autoAddView.tabItem_epgAutoAdd.IsSelected = true;
+                        break;
+                    case CtxmCode.ManualAutoAddView:
+                        this.tabItem_AutoAdd.IsSelected = true;
+                        this.autoAddView.tabItem_manualAutoAdd.IsSelected = true;
+                        break;
+                    case CtxmCode.EpgView:
+                        this.tabItem_epg.IsSelected = true;
+                        break;
+                }
+
                 //自動接続ならWindowLoadedしない場合でも接続させる
                 if (Settings.Instance.WakeReconnectNW == true)
                 {
@@ -889,7 +914,7 @@ namespace EpgTimer
                     case Key.D4:
                         if (e.IsRepeat == false)
                         {
-                            this.tabItem_epgAutoAdd.IsSelected = true;
+                            this.tabItem_AutoAdd.IsSelected = true;
                         }
                         e.Handled = true;
                         break;

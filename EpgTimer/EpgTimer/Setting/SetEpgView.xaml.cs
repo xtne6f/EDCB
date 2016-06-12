@@ -214,16 +214,23 @@ namespace EpgTimer.Setting
                 checkBox_IsVisibleAutoAddView.IsChecked = Settings.Instance.IsVisibleAutoAddView;
                 checkBox_IsVisibleAutoAddViewMoveOnly.IsChecked = Settings.Instance.IsVisibleAutoAddViewMoveOnly;
 
-                foreach (var dockPair in new Dictionary<Dock, string> {
-                                { Dock.Bottom, "下" },{ Dock.Top, "上" },{ Dock.Left, "左" },{ Dock.Right, "右" } })
+                foreach (var item in new Dictionary<object, string> {
+                            { CtxmCode.ReserveView, "予約一覧" },{ CtxmCode.TunerReserveView, "使用予定チューナ" },
+                            { CtxmCode.RecInfoView, "録画済み一案" },{ CtxmCode.EpgAutoAddView, "キーワード予約登録" },
+                            { CtxmCode.ManualAutoAddView, "プログラム予約登録" },{ CtxmCode.EpgView, "番組表" } })
                 {
-                    var btn = new RadioButton();
-                    btn.Tag = dockPair.Key;
-                    btn.Content = dockPair.Value;
-                    wrapPanel_MainViewButtonsDock.Children.Add(btn);
+                    wrapPanel_StartTab.Children.Add(new RadioButton { Tag = item.Key, Content = item.Value });
                 }
+                var rbtn = wrapPanel_StartTab.Children.OfType<RadioButton>()
+                    .FirstOrDefault(item => item.Tag as CtxmCode? == Settings.Instance.StartTab);
+                if (rbtn != null) rbtn.IsChecked = true;
 
-                var rbtn = wrapPanel_MainViewButtonsDock.Children.OfType<RadioButton>()
+                foreach (var item in new Dictionary<object, string> {
+                            { Dock.Bottom, "下" },{ Dock.Top, "上" },{ Dock.Left, "左" },{ Dock.Right, "右" } })
+                {
+                    wrapPanel_MainViewButtonsDock.Children.Add(new RadioButton { Tag = item.Key, Content = item.Value });
+                }
+                rbtn = wrapPanel_MainViewButtonsDock.Children.OfType<RadioButton>()
                     .FirstOrDefault(item => item.Tag as Dock? == Settings.Instance.MainViewButtonsDock);
                 if (rbtn != null) rbtn.IsChecked = true;
             }
@@ -375,6 +382,10 @@ namespace EpgTimer.Setting
                 Settings.Instance.IsVisibleRecInfoView = (checkBox_IsVisibleRecInfoView.IsChecked == true);
                 Settings.Instance.IsVisibleAutoAddView = (checkBox_IsVisibleAutoAddView.IsChecked == true);
                 Settings.Instance.IsVisibleAutoAddViewMoveOnly = (checkBox_IsVisibleAutoAddViewMoveOnly.IsChecked == true);
+
+                CtxmCode? code = wrapPanel_StartTab.Children.OfType<RadioButton>()
+                    .Where(btn => btn.IsChecked == true).Select(btn => btn.Tag as CtxmCode?).FirstOrDefault();
+                if (code != null) Settings.Instance.StartTab = (CtxmCode)code;
 
                 Dock? dock = wrapPanel_MainViewButtonsDock.Children.OfType<RadioButton>()
                     .Where(btn => btn.IsChecked == true).Select(btn => btn.Tag as Dock?).FirstOrDefault();

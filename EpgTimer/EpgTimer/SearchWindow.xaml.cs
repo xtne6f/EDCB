@@ -388,7 +388,7 @@ namespace EpgTimer
             if(autoAddView.IsVisible == true)
             {
                 ListView list = autoAddView.listView_key;
-                if (list.Items.Count == 0) return;//ここには引っかからないはずだけど一応チェック入れておく。
+                if (list.Items.Count == 0) return;
 
                 this.UpdateEpgAutoAddViewSelection();
                 list.SelectedIndex = GetNextIdx(list.SelectedIndex, list.Items.Count);

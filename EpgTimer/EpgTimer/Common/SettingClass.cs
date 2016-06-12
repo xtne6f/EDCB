@@ -387,6 +387,7 @@ namespace EpgTimer
         public bool IsVisibleAutoAddView { get; set; }
         public bool IsVisibleAutoAddViewMoveOnly { get; set; }
         public Dock MainViewButtonsDock { get; set; }
+        public CtxmCode StartTab { get; set; }
 
         public Settings()
         {
@@ -572,6 +573,7 @@ namespace EpgTimer
             IsVisibleAutoAddView = true;
             IsVisibleAutoAddViewMoveOnly = false;
             MainViewButtonsDock = Dock.Right;
+            StartTab = CtxmCode.ReserveView;
         }
 
         [NonSerialized()]

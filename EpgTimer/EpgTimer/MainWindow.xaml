@@ -22,7 +22,7 @@ TextOptions.TextFormattingMode="Display"
             <TabItem Header="録画済み一覧" Name="tabItem_recinfo">
                 <local:RecInfoView x:Name="recInfoView" />
             </TabItem>
-            <TabItem Header="自動予約登録" Name="tabItem_epgAutoAdd">
+            <TabItem Header="自動予約登録" Name="tabItem_AutoAdd">
                 <local:AutoAddView x:Name="autoAddView" />
             </TabItem>
             <TabItem Header="番組表" Name="tabItem_epg">
