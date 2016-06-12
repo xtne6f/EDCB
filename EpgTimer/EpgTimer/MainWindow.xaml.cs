@@ -126,6 +126,8 @@ namespace EpgTimer
                         String exePath = moduleFolder + "\\EpgTimerSrv.exe";
                         System.Diagnostics.Process process = System.Diagnostics.Process.Start(exePath);
                         startExe = true;
+                        //EpgTimerSrvを自分で起動させた場合、後でUpdateNotifyItem.EpgDataが来るので、初期フラグをリセットする。
+                        CommonManager.Instance.DB.ResetUpdateNotifyEpg();
                     }
                 }
                 catch (Exception ex)
