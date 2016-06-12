@@ -379,7 +379,7 @@ namespace EpgTimer
 
         private void ResetTaskMenu()
         {
-            taskTray.Visible = Settings.Instance.ShowTray;
+            taskTray.Visible = Settings.Instance.ShowTray || this.Visibility == Visibility.Hidden;
             taskTray.Text = GetTaskTrayReserveInfoText();
             taskTray.SetContextMenu(Settings.Instance.TaskMenuList
                 .Select(s1 => s1.Replace("（セパレータ）", ""))
