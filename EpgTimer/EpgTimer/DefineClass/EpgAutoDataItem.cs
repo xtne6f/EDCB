@@ -95,6 +95,7 @@ namespace EpgTimer
             get
             {
                 if (_data == null) return long.MinValue;
+                if (_data.GetNextReserve() == null) return long.MaxValue;
                 //
                 return new ReserveItem(_data.GetNextReserve()).StartTimeValue;
             }
