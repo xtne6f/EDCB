@@ -157,6 +157,8 @@ CEdcbPlugIn::CEdcbPlugIn()
 	, m_recCtrlCount(0)
 {
 	m_lastSetCh.useSID = FALSE;
+	std::fill_n(m_epgCapBasicOnlyONIDs, _countof(m_epgCapBasicOnlyONIDs), false);
+	std::fill_n(m_epgCapBackBasicOnlyONIDs, _countof(m_epgCapBackBasicOnlyONIDs), false);
 	InitializeCriticalSection(&m_streamLock);
 	InitializeCriticalSection(&m_statusLock);
 }
@@ -298,9 +300,10 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 			m_noLogScramble = GetPrivateProfileInt(L"SET", L"NoLogScramble", 0, iniPath.c_str()) != 0;
 			m_epgCapBackStartWaitSec = GetPrivateProfileInt(L"SET", L"EpgCapLive", 1, iniPath.c_str()) == 0 ? MAXDWORD :
 				GetPrivateProfileInt(L"SET", L"EpgCapBackStartWaitSec", 30, iniPath.c_str());
-			m_epgCapBackBSBasic = GetPrivateProfileInt(L"SET", L"EpgCapBackBSBasicOnly", 1, iniPath.c_str()) != 0;
-			m_epgCapBackCS1Basic = GetPrivateProfileInt(L"SET", L"EpgCapBackCS1BasicOnly", 1, iniPath.c_str()) != 0;
-			m_epgCapBackCS2Basic = GetPrivateProfileInt(L"SET", L"EpgCapBackCS2BasicOnly", 1, iniPath.c_str()) != 0;
+			m_epgCapBackBasicOnlyONIDs[4] = GetPrivateProfileInt(L"SET", L"EpgCapBackBSBasicOnly", 1, iniPath.c_str()) != 0;
+			m_epgCapBackBasicOnlyONIDs[6] = GetPrivateProfileInt(L"SET", L"EpgCapBackCS1BasicOnly", 1, iniPath.c_str()) != 0;
+			m_epgCapBackBasicOnlyONIDs[7] = GetPrivateProfileInt(L"SET", L"EpgCapBackCS2BasicOnly", 1, iniPath.c_str()) != 0;
+			m_epgCapBackBasicOnlyONIDs[10] = GetPrivateProfileInt(L"SET", L"EpgCapBackCS3BasicOnly", 0, iniPath.c_str()) != 0;
 		}
 		return 0;
 	case WM_DESTROY:
@@ -354,7 +357,7 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 				if (m_epgCapChkNext) {
 					while (!m_epgCapChList.empty()) {
 						SET_CH_INFO &chInfo = m_epgCapChList.front();
-						if (!(chInfo.ONID == 4 && m_epgCapChkBS || chInfo.ONID == 6 && m_epgCapChkCS1 || chInfo.ONID == 7 && m_epgCapChkCS2)) {
+						if (!m_epgCapChkONIDs[min(chInfo.ONID, _countof(m_epgCapChkONIDs) - 1)]) {
 							TVTest::ChannelSelectInfo si = {};
 							si.Size = sizeof(si);
 							si.Space = -1;
@@ -392,7 +395,7 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 					}
 					else {
 						SET_CH_INFO &chInfo = m_epgCapChList.front();
-						bool basicFlag = (chInfo.ONID == 4 && m_epgCapBSBasic || chInfo.ONID == 6 && m_epgCapCS1Basic || chInfo.ONID == 7 && m_epgCapCS2Basic);
+						bool basicFlag = m_epgCapBasicOnlyONIDs[min(chInfo.ONID, _countof(m_epgCapBasicOnlyONIDs) - 1)];
 						vector<CH_DATA5> chkList = GetEpgCheckList(chInfo.ONID, chInfo.TSID, chInfo.SID, basicFlag);
 						if (chkList.empty()) {
 							m_epgCapChList.erase(m_epgCapChList.begin());
@@ -428,15 +431,7 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 								}
 							}
 							if (m_epgCapChkNext) {
-								if (chInfo.ONID == 4) {
-									m_epgCapChkBS = m_epgCapBSBasic;
-								}
-								else if (chInfo.ONID == 6) {
-									m_epgCapChkCS1 = m_epgCapCS1Basic;
-								}
-								else if (chInfo.ONID == 7) {
-									m_epgCapChkCS2 = m_epgCapCS2Basic;
-								}
+								m_epgCapChkONIDs[min(chInfo.ONID, _countof(m_epgCapChkONIDs) - 1)] = basicFlag;
 								m_epgCapChList.erase(m_epgCapChList.begin());
 								saveEpgFile = true;
 							}
@@ -478,7 +473,7 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 						saveEpgFile = m_epgCapSaveTimeout;
 					}
 					else {
-						bool basicFlag = (onid == 4 && m_epgCapBackBSBasic || onid == 6 && m_epgCapBackCS1Basic || onid == 7 && m_epgCapBackCS2Basic);
+						bool basicFlag = m_epgCapBackBasicOnlyONIDs[min(onid, _countof(m_epgCapBackBasicOnlyONIDs) - 1)];
 						vector<CH_DATA5> chkList = GetEpgCheckList(onid, tsid, -1, basicFlag);
 						if (chkList.empty()) {
 							m_epgCapBack = false;
@@ -578,12 +573,11 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 				if (!m_epgCapChList.empty()) {
 					SetTimer(hwnd, TIMER_EPGCAP, 2000, nullptr);
 					wstring commonIniPath = m_edcbDir + L"\\Common.ini";
-					m_epgCapBSBasic = GetPrivateProfileInt(L"SET", L"BSBasicOnly", 1, commonIniPath.c_str()) != 0;
-					m_epgCapCS1Basic = GetPrivateProfileInt(L"SET", L"CS1BasicOnly", 1, commonIniPath.c_str()) != 0;
-					m_epgCapCS2Basic = GetPrivateProfileInt(L"SET", L"CS2BasicOnly", 1, commonIniPath.c_str()) != 0;
-					m_epgCapChkBS = false;
-					m_epgCapChkCS1 = false;
-					m_epgCapChkCS2 = false;
+					m_epgCapBasicOnlyONIDs[4] = GetPrivateProfileInt(L"SET", L"BSBasicOnly", 1, commonIniPath.c_str()) != 0;
+					m_epgCapBasicOnlyONIDs[6] = GetPrivateProfileInt(L"SET", L"CS1BasicOnly", 1, commonIniPath.c_str()) != 0;
+					m_epgCapBasicOnlyONIDs[7] = GetPrivateProfileInt(L"SET", L"CS2BasicOnly", 1, commonIniPath.c_str()) != 0;
+					m_epgCapBasicOnlyONIDs[10] = GetPrivateProfileInt(L"SET", L"CS3BasicOnly", 0, commonIniPath.c_str()) != 0;
+					std::fill_n(m_epgCapChkONIDs, _countof(m_epgCapChkONIDs), false);
 					m_epgCapChkNext = true;
 					SendMessage(hwnd, WM_UPDATE_STATUS_CODE, 0, 0);
 				}
