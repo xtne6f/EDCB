@@ -187,6 +187,14 @@ namespace EpgTimer.Setting
                 {
                     checkBox_cs2.IsChecked = false;
                 }
+                if (IniFileHandler.GetPrivateProfileInt("SET", "CS3BasicOnly", 0, SettingPath.CommonIniPath) == 1)
+                {
+                    checkBox_cs3.IsChecked = true;
+                }
+                else
+                {
+                    checkBox_cs3.IsChecked = false;
+                }
 
                 timeList = new ObservableCollection<EpgCaptime>();
                 int capCount = IniFileHandler.GetPrivateProfileInt("EPG_CAP", "Count", 0, SettingPath.TimerSrvIniPath);
@@ -198,6 +206,7 @@ namespace EpgTimer.Setting
                     item.BSBasicOnly = checkBox_bs.IsChecked == true;
                     item.CS1BasicOnly = checkBox_cs1.IsChecked == true;
                     item.CS2BasicOnly = checkBox_cs2.IsChecked == true;
+                    item.CS3BasicOnly = checkBox_cs3.IsChecked == true;
                     timeList.Add(item);
                 }
                 else
@@ -214,19 +223,21 @@ namespace EpgTimer.Setting
                         {
                             item.IsSelected = false;
                         }
-                        // 取得種別(bit0(LSB)=BS,bit1=CS1,bit2=CS2)。負値のときは共通設定に従う
+                        // 取得種別(bit0(LSB)=BS,bit1=CS1,bit2=CS2,bit3=CS3)。負値のときは共通設定に従う
                         int flags = IniFileHandler.GetPrivateProfileInt("EPG_CAP", i.ToString() + "BasicOnlyFlags", -1, SettingPath.TimerSrvIniPath);
                         if (flags >= 0)
                         {
                             item.BSBasicOnly = (flags & 1) != 0;
                             item.CS1BasicOnly = (flags & 2) != 0;
                             item.CS2BasicOnly = (flags & 4) != 0;
+                            item.CS3BasicOnly = (flags & 8) != 0;
                         }
                         else
                         {
                             item.BSBasicOnly = checkBox_bs.IsChecked == true;
                             item.CS1BasicOnly = checkBox_cs1.IsChecked == true;
                             item.CS2BasicOnly = checkBox_cs2.IsChecked == true;
+                            item.CS3BasicOnly = checkBox_cs3.IsChecked == true;
                         }
                         timeList.Add(item);
                     }
@@ -349,6 +360,14 @@ namespace EpgTimer.Setting
                 {
                     IniFileHandler.WritePrivateProfileString("SET", "CS2BasicOnly", "0", SettingPath.CommonIniPath);
                 }
+                if (checkBox_cs3.IsChecked == true)
+                {
+                    IniFileHandler.WritePrivateProfileString("SET", "CS3BasicOnly", "1", SettingPath.CommonIniPath);
+                }
+                else
+                {
+                    IniFileHandler.WritePrivateProfileString("SET", "CS3BasicOnly", "0", SettingPath.CommonIniPath);
+                }
 
                 foreach (ServiceItem2 info in serviceList)
                 {
@@ -382,7 +401,7 @@ namespace EpgTimer.Setting
                     {
                         IniFileHandler.WritePrivateProfileString("EPG_CAP", i.ToString() + "Select", "0", SettingPath.TimerSrvIniPath);
                     }
-                    int flags = (item.BSBasicOnly ? 1 : 0) | (item.CS1BasicOnly ? 2 : 0) | (item.CS2BasicOnly ? 4 : 0);
+                    int flags = (item.BSBasicOnly ? 1 : 0) | (item.CS1BasicOnly ? 2 : 0) | (item.CS2BasicOnly ? 4 : 0) | (item.CS3BasicOnly ? 8 : 0);
                     IniFileHandler.WritePrivateProfileString("EPG_CAP", i.ToString() + "BasicOnlyFlags", flags.ToString(), SettingPath.TimerSrvIniPath);
                 }
 
@@ -761,6 +780,7 @@ namespace EpgTimer.Setting
                     item.BSBasicOnly = checkBox_bs.IsChecked == true;
                     item.CS1BasicOnly = checkBox_cs1.IsChecked == true;
                     item.CS2BasicOnly = checkBox_cs2.IsChecked == true;
+                    item.CS3BasicOnly = checkBox_cs3.IsChecked == true;
                     timeList.Add(item);
                 }
             }
