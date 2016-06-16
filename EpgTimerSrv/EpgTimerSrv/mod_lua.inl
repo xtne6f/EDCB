@@ -570,38 +570,6 @@ lsp_get_time(lua_State *L)
 }
 
 
-/* mg.get_var */
-static int
-lsp_get_var(lua_State *L)
-{
-	int num_args = lua_gettop(L);
-	const char *data, *var_name;
-	size_t data_len, occurrence;
-	int ret;
-	char dst[512];
-
-	if (num_args >= 2 && num_args <= 3) {
-		data = lua_tolstring(L, 1, &data_len);
-		var_name = lua_tostring(L, 2);
-		occurrence = (num_args > 2) ? (long)lua_tonumber(L, 3) : 0;
-
-		ret =
-		    mg_get_var2(data, data_len, var_name, dst, sizeof(dst), occurrence);
-		if (ret >= 0) {
-			/* Variable found: return value to Lua */
-			lua_pushstring(L, dst);
-		} else {
-			/* Variable not found (TODO (mid): may be string too long) */
-			lua_pushnil(L);
-		}
-	} else {
-		/* Syntax error */
-		return luaL_error(L, "invalid get_var() call");
-	}
-	return 1;
-}
-
-
 /* mg.get_mime_type */
 static int
 lsp_get_mime_type(lua_State *L)
@@ -637,38 +605,6 @@ lsp_get_mime_type(lua_State *L)
 }
 
 
-/* mg.get_cookie */
-static int
-lsp_get_cookie(lua_State *L)
-{
-	int num_args = lua_gettop(L);
-	const char *cookie;
-	const char *var_name;
-	int ret;
-	char dst[512];
-
-	if (num_args == 2) {
-		cookie = lua_tostring(L, 1);
-		var_name = lua_tostring(L, 2);
-		if (cookie != NULL && var_name != NULL) {
-			ret = mg_get_cookie(cookie, var_name, dst, sizeof(dst));
-		} else {
-			ret = -1;
-		}
-
-		if (ret >= 0) {
-			lua_pushlstring(L, dst, ret);
-		} else {
-			lua_pushnil(L);
-		}
-	} else {
-		/* Syntax error */
-		return luaL_error(L, "invalid get_cookie() call");
-	}
-	return 1;
-}
-
-
 /* mg.md5 */
 static int
 lsp_md5(lua_State *L)
@@ -694,131 +630,6 @@ lsp_md5(lua_State *L)
 	} else {
 		/* Syntax error */
 		return luaL_error(L, "invalid md5() call");
-	}
-	return 1;
-}
-
-
-/* mg.url_encode */
-static int
-lsp_url_encode(lua_State *L)
-{
-	int num_args = lua_gettop(L);
-	const char *text;
-	size_t text_len;
-	char dst[512 * 3];
-
-	if (num_args == 1) {
-		text = lua_tolstring(L, 1, &text_len);
-		if (text) {
-			mg_url_encode(text, dst, sizeof(dst));
-			lua_pushstring(L, dst);
-		} else {
-			lua_pushnil(L);
-		}
-	} else {
-		/* Syntax error */
-		return luaL_error(L, "invalid url_encode() call");
-	}
-	return 1;
-}
-
-
-/* mg.url_decode */
-static int
-lsp_url_decode(lua_State *L)
-{
-	int num_args = lua_gettop(L);
-	const char *text;
-	size_t text_len;
-	int is_form;
-	char dst[512];
-
-	if (num_args == 1 || (num_args == 2 && lua_isboolean(L, 2))) {
-		text = lua_tolstring(L, 1, &text_len);
-		is_form = (num_args == 2) ? lua_isboolean(L, 2) : 0;
-		if (text) {
-			mg_url_decode(text, text_len, dst, (int)sizeof(dst), is_form);
-			lua_pushstring(L, dst);
-		} else {
-			lua_pushnil(L);
-		}
-	} else {
-		/* Syntax error */
-		return luaL_error(L, "invalid url_decode() call");
-	}
-	return 1;
-}
-
-
-/* mg.base64_encode */
-static int
-lsp_base64_encode(lua_State *L)
-{
-	int num_args = lua_gettop(L);
-	const char *text;
-	size_t text_len;
-	char *dst;
-
-	if (num_args == 1) {
-		text = lua_tolstring(L, 1, &text_len);
-		if (text) {
-			dst = (char *)mg_malloc(text_len * 8 / 6 + 4);
-			if (dst) {
-				base64_encode((const unsigned char *)text, (int)text_len, dst);
-				lua_pushstring(L, dst);
-				mg_free(dst);
-			} else {
-				return luaL_error(L, "out of memory in base64_encode() call");
-			}
-		} else {
-			lua_pushnil(L);
-		}
-	} else {
-		/* Syntax error */
-		return luaL_error(L, "invalid base64_encode() call");
-	}
-	return 1;
-}
-
-
-/* mg.base64_encode */
-static int
-lsp_base64_decode(lua_State *L)
-{
-	int num_args = lua_gettop(L);
-	const char *text;
-	size_t text_len, dst_len;
-	int ret;
-	char *dst;
-
-	if (num_args == 1) {
-		text = lua_tolstring(L, 1, &text_len);
-		if (text) {
-			dst = (char *)mg_malloc(text_len);
-			if (dst) {
-				ret = base64_decode((const unsigned char *)text,
-				                    (int)text_len,
-				                    dst,
-				                    &dst_len);
-				if (ret != -1) {
-					mg_free(dst);
-					return luaL_error(
-					    L, "illegal character in lsp_base64_decode() call");
-				} else {
-					lua_pushlstring(L, dst, dst_len);
-					mg_free(dst);
-				}
-			} else {
-				return luaL_error(L,
-				                  "out of memory in lsp_base64_decode() call");
-			}
-		} else {
-			lua_pushnil(L);
-		}
-	} else {
-		/* Syntax error */
-		return luaL_error(L, "invalid lsp_base64_decode() call");
 	}
 	return 1;
 }
@@ -1184,6 +995,104 @@ lwebsocket_set_interval(lua_State *L)
 	return lwebsocket_set_timer(L, 1);
 }
 
+
+static const char *LUA_MG_FUNCTIONS =
+	"mg.get_var="
+	"function (src,v,occ)"
+	" if not src or not v then return nil end"
+	" v=(''..v):lower()..'='"
+	" occ=occ or 0"
+	" for i=1,#src do"
+	"  if (i<2 or src:sub(i-1,i-1)=='&') "
+	"and src:sub(i,i+#v-1):lower()==v then"
+	"   if occ==0 then"
+	"    return mg.url_decode(src:match('^[^&]*',i+#v),true)"
+	"   end"
+	"   occ=occ-1"
+	"  end"
+	" end"
+	" return nil;"
+	"end"
+	";"
+	"mg.get_cookie="
+	"function (src,v)"
+	" if not src or not v or #(''..v)<1 then return nil end"
+	" v=(''..v):lower()"
+	" for i=1,#src do"
+	"  if src:sub(i,i+#v-1):lower()==v then"
+	"   if src:sub(i+#v,i+#v)=='=' then"
+	"    return (src:match('^[^ ]*',i+#v+1):gsub(';$','')"
+	":gsub('^\"(.*)\"$','%1'))"
+	"   end"
+	"   i=i+#v-1"
+	"  end"
+	" end"
+	" return nil;"
+	"end"
+	";"
+	"mg.url_encode="
+	"function (src)"
+	" return src and (src:match('^[^%z]*')"
+	":gsub('[^0-9A-Za-z%._%-%$,;~%(%)]',"
+	" function (c)"
+	"  return string.format('%%%02x',c:byte())"
+	" end)) or nil;"
+	"end"
+	";"
+	"mg.url_decode="
+	"function (src,form)"
+	" return src and (form and src:gsub('%+',' ') or src)"
+	":gsub('%%([0-9A-Fa-f][0-9A-Fa-f])',"
+	" function (x)"
+	"  return string.char(tonumber(x,16))"
+	" end):match('^[^%z]*') or nil;"
+	"end"
+	";"
+	"mg.base64_encode="
+	"function (src)"
+	" if not src then return nil end"
+	" local t="
+	"'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/='"
+	" return (src:gsub('..?.?',"
+	" function (s)"
+	"  local a,b,c,x,y,z,w"
+	"  a=s:sub(1,1):byte()"
+	"  b=#s<2 and 0 or s:sub(2,2):byte()"
+	"  c=#s<3 and 0 or s:sub(3,3):byte()"
+	"  x=1+math.floor(a/4)"
+	"  y=1+a%4*16+math.floor(b/16)"
+	"  z=1+b%16*4+math.floor(c/64)"
+	"  w=1+c%64"
+	"  return t:sub(x,x)..t:sub(y,y)"
+	"..(#s<2 and '=' or t:sub(z,z))..(#s<3 and '=' or t:sub(w,w))"
+	" end));"
+	"end"
+	";"
+	"mg.base64_decode="
+	"function (src)"
+	" if not src then return nil end"
+	" local t="
+	"'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/='"
+	" local dst=src:gsub('..?.?.?',"
+	" function (s)"
+	"  if t then"
+	"   local a,b,c,d"
+	"   a=(t:find(s:sub(1,1),1,true) or 66)-1"
+	"   b=(#s>1 and t:find(s:sub(2,2),1,true) or 66)-1"
+	"   c=(#s>2 and t:find(s:sub(3,3),1,true) or 66)-1"
+	"   d=(#s>3 and t:find(s:sub(4,4),1,true) or 66)-1"
+	"   if a<64 and b<64 and c<65 and d<65 then"
+	"    return string.char(a*4+math.floor(b/16))"
+	"..(c<64 and string.char((b*16+math.floor(c/4))%256) or '')"
+	"..(c<64 and d<64 and string.char((c*64+d)%256) or '')"
+	"   end"
+	"   t=nil"
+	"  end"
+	" end)"
+	" return t and (dst) or nil;"
+	"end"
+	;
+
 enum {
 	LUA_ENV_TYPE_LUA_SERVER_PAGE = 0,
 	LUA_ENV_TYPE_PLAIN_LUA_PAGE = 1,
@@ -1368,14 +1277,8 @@ prepare_lua_environment(struct mg_context *ctx,
 	}
 
 	reg_function(L, "time", lsp_get_time);
-	reg_function(L, "get_var", lsp_get_var);
 	reg_function(L, "get_mime_type", lsp_get_mime_type);
-	reg_function(L, "get_cookie", lsp_get_cookie);
 	reg_function(L, "md5", lsp_md5);
-	reg_function(L, "url_encode", lsp_url_encode);
-	reg_function(L, "url_decode", lsp_url_decode);
-	reg_function(L, "base64_encode", lsp_base64_encode);
-	reg_function(L, "base64_decode", lsp_base64_decode);
 	reg_function(L, "get_response_code_text", lsp_get_response_code_text);
 	reg_function(L, "random", lsp_random);
 	if (pf_uuid_generate.f) {
@@ -1410,6 +1313,9 @@ prepare_lua_environment(struct mg_context *ctx,
 	    luaL_dostring(L,
 	                  "mg.onerror = function(e) mg.write('\\nLua error:\\n', "
 	                  "debug.traceback(e, 1)) end"));
+
+	/* Register additional mg.* functions */
+	IGNORE_UNUSED_RESULT(luaL_dostring(L, LUA_MG_FUNCTIONS));
 
 	if (ctx != NULL) {
 		/* Preload */
