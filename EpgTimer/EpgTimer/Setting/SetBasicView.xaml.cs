@@ -23,7 +23,7 @@ namespace EpgTimer.Setting
     /// </summary>
     public partial class SetBasicView : UserControl
     {
-        private ObservableCollection<EpgCaptime> timeList;
+        private ObservableCollection<EpgCaptime> timeList = new ObservableCollection<EpgCaptime>();
         private List<ServiceViewItem> serviceList;
 
         public bool IsChangeSettingPath { get; private set; }
@@ -169,7 +169,6 @@ namespace EpgTimer.Setting
                     checkBox_cs3.IsChecked = false;
                 }
 
-                timeList = new ObservableCollection<EpgCaptime>();
                 int capCount = IniFileHandler.GetPrivateProfileInt("EPG_CAP", "Count", 0, SettingPath.TimerSrvIniPath);
                 if (capCount == 0)
                 {
@@ -382,6 +381,7 @@ namespace EpgTimer.Setting
             //エスケープキャンセルだけは常に有効にする。
             var bxr = new BoxExchangeEdit.BoxExchangeEditor(null, this.listBox_recFolder, true);
             var bxb = new BoxExchangeEdit.BoxExchangeEditor(null, this.listBox_bon, true);
+            var bxt = new BoxExchangeEdit.BoxExchangeEditor(null, this.ListView_time, true);
 
             if (CommonManager.Instance.NWMode == false)
             {
@@ -397,6 +397,12 @@ namespace EpgTimer.Setting
                 bxb.AllowDragDrop();
                 button_bon_up.Click += new RoutedEventHandler(bxb.button_Up_Click);
                 button_bon_down.Click += new RoutedEventHandler(bxb.button_Down_Click);
+
+                //EPG取得関係
+                bxt.TargetItemsSource = timeList;
+                bxt.AllowDragDrop();
+                bxt.AllowKeyAction();
+                button_delTime.Click += new RoutedEventHandler(bxt.button_Delete_Click);
             }
         }
 
@@ -599,22 +605,6 @@ namespace EpgTimer.Setting
                     item.CS2BasicOnly = checkBox_cs2.IsChecked == true;
                     item.CS3BasicOnly = checkBox_cs3.IsChecked == true;
                     timeList.Add(item);
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
-
-        private void button_delTime_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                if (ListView_time.SelectedItem != null)
-                {
-                    EpgCaptime item = ListView_time.SelectedItem as EpgCaptime;
-                    timeList.Remove(item);
                 }
             }
             catch (Exception ex)

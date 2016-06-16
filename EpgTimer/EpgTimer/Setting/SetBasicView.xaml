@@ -116,7 +116,7 @@
                         </ListView.View>
                     </ListView>
                     <Button Content="追加" Height="23" HorizontalAlignment="Left" Margin="290,270,0,0" Name="button_addTime" VerticalAlignment="Top" Width="75" Click="button_addTime_Click" />
-                    <Button Content="削除" Height="23" HorizontalAlignment="Left" Margin="290,299,0,0" Name="button_delTime" VerticalAlignment="Top" Width="75" Click="button_delTime_Click" />
+                    <Button Content="削除" Height="23" HorizontalAlignment="Left" Margin="290,299,0,0" Name="button_delTime" VerticalAlignment="Top" Width="75" />
                     <ComboBox Height="24" HorizontalAlignment="Left" Margin="445,269,0,0" Name="comboBox_HH" VerticalAlignment="Top" Width="47" ItemsSource="{Binding}" />
                     <Label Content="：" Height="28" HorizontalAlignment="Left" Margin="494,268,0,0" Name="label25" VerticalAlignment="Top" />
                     <ComboBox Height="24" HorizontalAlignment="Left" Margin="518,269,0,0" Name="comboBox_MM" VerticalAlignment="Top" Width="47" ItemsSource="{Binding}" />
