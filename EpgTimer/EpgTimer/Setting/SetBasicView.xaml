@@ -85,6 +85,7 @@
                     <CheckBox Content="BS" Height="16" HorizontalAlignment="Left" Margin="275,179,0,0" Name="checkBox_bs" VerticalAlignment="Top" />
                     <CheckBox Content="CS1" Height="16" HorizontalAlignment="Left" Margin="330,179,0,0" Name="checkBox_cs1" VerticalAlignment="Top" />
                     <CheckBox Content="CS2" Height="16" HorizontalAlignment="Left" Margin="396,179,0,0" Name="checkBox_cs2" VerticalAlignment="Top" />
+                    <CheckBox Content="CS3" Height="16" HorizontalAlignment="Left" Margin="462,179,0,0" Name="checkBox_cs3" VerticalAlignment="Top" />
                     <Label Content="※詳細情報は取得できないが、短時間で取得可能になります（地デジは対象外）" Height="28" HorizontalAlignment="Left" Margin="234,201,0,0" Name="label23" VerticalAlignment="Top" />
                     <Button Content="全チェック" Height="23" HorizontalAlignment="Left" Margin="234,46,0,0" Name="button_allChk" VerticalAlignment="Top" Width="169" Click="button_allChk_Click" />
                     <Button Content="映像サービスのみチェック" Height="23" HorizontalAlignment="Left" Margin="234,75,0,0" Name="button_videoChk" VerticalAlignment="Top" Width="169" Click="button_videoChk_Click" />
@@ -108,7 +109,7 @@
                                 </GridViewColumn>
                                 <GridViewColumn DisplayMemberBinding="{Binding Path=ViewBasicOnly}" >
                                     <GridViewColumn.Header>
-                                        <GridViewColumnHeader Content="種別(BS,CS1,CS2)" HorizontalContentAlignment="Left" Width="120" />
+                                        <GridViewColumnHeader Content="種別(BS,CS1,2,3)" HorizontalContentAlignment="Left" Width="120" />
                                     </GridViewColumn.Header>
                                 </GridViewColumn>
                             </GridView>
