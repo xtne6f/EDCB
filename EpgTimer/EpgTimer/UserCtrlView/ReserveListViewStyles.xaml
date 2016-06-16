@@ -17,7 +17,6 @@
     </Style>
 
     <Style TargetType="ListView" x:Key="DataListViewStyle">
-        <Setter Property="SelectionMode" Value="Extended"/>
         <Style.Resources>
             <Style TargetType="ListViewItem" BasedOn="{StaticResource DataListItemStyle}" />
             <Style TargetType="GridViewColumnHeader" BasedOn="{StaticResource DataListViewHeaderStyle}" />

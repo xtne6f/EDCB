@@ -5,7 +5,7 @@
 
     <Grid>
         <Button Content="クリア" Height="23" HorizontalAlignment="Left" Margin="12,12,0,0" Name="button_clear" VerticalAlignment="Top" Width="75" Click="button_clear_Click" />
-        <ListView Name="listView_log" Margin="8,41,12,12" SelectionMode="Extended" >
+        <ListView Name="listView_log" Margin="8,41,12,12">
             <ListView.Resources>
                 <Style TargetType="GridViewColumnHeader" BasedOn="{StaticResource {x:Type GridViewColumnHeader}}">
                     <Setter Property="HorizontalContentAlignment" Value="Left"/>
