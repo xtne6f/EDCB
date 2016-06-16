@@ -386,9 +386,7 @@ public:
 	// enableLive	[IN]視聴中に取得する
 	// enableRec	[IN]録画中に取得する
 	// enableRec	[IN]EPG取得するチャンネル一覧
-	// BSBasic		[IN]BSで１チャンネルから基本情報のみ取得するかどうか
-	// CS1Basic		[IN]CS1で１チャンネルから基本情報のみ取得するかどうか
-	// CS2Basic		[IN]CS2で１チャンネルから基本情報のみ取得するかどうか
+	// *Basic		[IN]１チャンネルから基本情報のみ取得するかどうか
 	// backStartWaitSec	[IN]Ch切り替え、録画開始後、バックグラウンドでのEPG取得を開始するまでの秒数
 	void SetBackGroundEpgCap(
 		BOOL enableLive,
@@ -396,6 +394,7 @@ public:
 		BOOL BSBasic,
 		BOOL CS1Basic,
 		BOOL CS2Basic,
+		BOOL CS3Basic,
 		DWORD backStartWaitSec
 		);
 
@@ -452,6 +451,7 @@ protected:
 	BOOL epgCapBackBSBasic;
 	BOOL epgCapBackCS1Basic;
 	BOOL epgCapBackCS2Basic;
+	BOOL epgCapBackCS3Basic;
 	DWORD epgCapBackStartWaitSec;
 	DWORD tsBuffMaxCount;
 	int writeBuffMaxCount;
@@ -462,7 +462,7 @@ protected:
 		BOOL chScan = FALSE
 		);
 
-	static void GetEpgDataFilePath(WORD ONID, WORD TSID, wstring& epgDataFilePath, BOOL BSBasic, BOOL CS1Basic, BOOL CS2Basic);
+	static void GetEpgDataFilePath(WORD ONID, WORD TSID, wstring& epgDataFilePath);
 
 	static void RecvCallback(void* param, BYTE* data, DWORD size, DWORD remain);
 	static UINT WINAPI AnalyzeThread(LPVOID param);

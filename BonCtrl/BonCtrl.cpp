@@ -36,6 +36,7 @@ CBonCtrl::CBonCtrl(void)
 	this->epgCapBackBSBasic = TRUE;
 	this->epgCapBackCS1Basic = TRUE;
 	this->epgCapBackCS2Basic = TRUE;
+	this->epgCapBackCS3Basic = FALSE;
 	this->epgCapBackStartWaitSec = 30;
 	this->tsBuffMaxCount = 5000;
 	this->writeBuffMaxCount = -1;
@@ -905,9 +906,7 @@ UINT WINAPI CBonCtrl::EpgCapThread(LPVOID param)
 	DWORD chkCount = 0;
 	DWORD chkWait = 8;
 
-	BOOL chkBS = FALSE;
-	BOOL chkCS1 = FALSE;
-	BOOL chkCS2 = FALSE;
+	BOOL chkONIDs[16] = {};
 
 	wstring folderPath;
 	GetModuleFolderPath( folderPath );
@@ -920,9 +919,11 @@ UINT WINAPI CBonCtrl::EpgCapThread(LPVOID param)
 	//Common.iniは一般に外部プロセスが変更する可能性のある(はずの)ものなので、利用の直前にチェックする
 	wstring commonIniPath;
 	GetCommonIniPath(commonIniPath);
-	BOOL BSBasic = GetPrivateProfileInt(L"SET", L"BSBasicOnly", 1, commonIniPath.c_str());
-	BOOL CS1Basic = GetPrivateProfileInt(L"SET", L"CS1BasicOnly", 1, commonIniPath.c_str());
-	BOOL CS2Basic = GetPrivateProfileInt(L"SET", L"CS2BasicOnly", 1, commonIniPath.c_str());
+	BOOL basicOnlyONIDs[16] = {};
+	basicOnlyONIDs[4] = GetPrivateProfileInt(L"SET", L"BSBasicOnly", 1, commonIniPath.c_str());
+	basicOnlyONIDs[6] = GetPrivateProfileInt(L"SET", L"CS1BasicOnly", 1, commonIniPath.c_str());
+	basicOnlyONIDs[7] = GetPrivateProfileInt(L"SET", L"CS2BasicOnly", 1, commonIniPath.c_str());
+	basicOnlyONIDs[10] = GetPrivateProfileInt(L"SET", L"CS3BasicOnly", 0, commonIniPath.c_str());
 
 	while(1){
 		if( ::WaitForSingleObject(sys->epgCapStopEvent, wait) != WAIT_TIMEOUT ){
@@ -944,13 +945,7 @@ UINT WINAPI CBonCtrl::EpgCapThread(LPVOID param)
 			chkNext = FALSE;
 			startCap = FALSE;
 			wait = 1000;
-			if( sys->epgCapChList[chkCount].ONID == 4 ){
-				chkBS = TRUE;
-			}else if( sys->epgCapChList[chkCount].ONID == 6 ){
-				chkCS1 = TRUE;
-			}else if( sys->epgCapChList[chkCount].ONID == 7 ){
-				chkCS2 = TRUE;
-			}
+			chkONIDs[min(sys->epgCapChList[chkCount].ONID, _countof(chkONIDs) - 1)] = TRUE;
 			sys->epgSt_ch = sys->epgCapChList[chkCount];
 		}else{
 			BOOL chChgErr = FALSE;
@@ -972,14 +967,14 @@ UINT WINAPI CBonCtrl::EpgCapThread(LPVOID param)
 						//取得開始
 						startCap = TRUE;
 						wstring epgDataPath = L"";
-						sys->GetEpgDataFilePath(sys->epgCapChList[chkCount].ONID, sys->epgCapChList[chkCount].TSID, epgDataPath, BSBasic, CS1Basic, CS2Basic);
+						GetEpgDataFilePath(sys->epgCapChList[chkCount].ONID,
+						                   basicOnlyONIDs[min(sys->epgCapChList[chkCount].ONID, _countof(basicOnlyONIDs) - 1)] ? 0xFFFF : sys->epgCapChList[chkCount].TSID,
+						                   epgDataPath);
 						sys->tsOut.StartSaveEPG(epgDataPath);
 						wait = 60*1000;
 					}else{
 						vector<EPGCAP_SERVICE_INFO> chkList;
-						if( sys->epgCapChList[chkCount].ONID == 4 && BSBasic ||
-						    sys->epgCapChList[chkCount].ONID == 6 && CS1Basic ||
-						    sys->epgCapChList[chkCount].ONID == 7 && CS2Basic ){
+						if( basicOnlyONIDs[min(sys->epgCapChList[chkCount].ONID, _countof(basicOnlyONIDs) - 1)] ){
 							chkList = sys->chUtil.GetEpgCapServiceAll(sys->epgCapChList[chkCount].ONID);
 						}else{
 							chkList = sys->chUtil.GetEpgCapServiceAll(sys->epgCapChList[chkCount].ONID, sys->epgCapChList[chkCount].TSID);
@@ -1003,7 +998,7 @@ UINT WINAPI CBonCtrl::EpgCapThread(LPVOID param)
 								chkNext = TRUE;
 								if( status.first != EpgHEITAll &&
 								    status.first != EpgLEITAll &&
-								    (status.first != EpgBasicAll || !(itr->ONID == 4 && BSBasic || itr->ONID == 6 && CS1Basic || itr->ONID == 7 && CS2Basic)) ){
+								    (status.first != EpgBasicAll || basicOnlyONIDs[min(itr->ONID, _countof(basicOnlyONIDs) - 1)] == FALSE) ){
 									chkNext = FALSE;
 									break;
 								}
@@ -1026,46 +1021,20 @@ UINT WINAPI CBonCtrl::EpgCapThread(LPVOID param)
 					sys->epgSt_err = ST_COMPLETE;
 					return 0;
 				}
-				//BS 1チャンネルのみ？
-				if( sys->epgCapChList[chkCount].ONID == 4 && BSBasic == TRUE && chkBS == TRUE){
-					while(chkCount<(DWORD)sys->epgCapChList.size()){
-						if( sys->epgCapChList[chkCount].ONID != 4 ){
+				//1チャンネルのみ？
+				if( basicOnlyONIDs[min(sys->epgCapChList[chkCount].ONID, _countof(basicOnlyONIDs) - 1)] &&
+				    chkONIDs[sys->epgCapChList[chkCount].ONID] ){
+					chkCount++;
+					while( chkCount < sys->epgCapChList.size() ){
+						if( sys->epgCapChList[chkCount].ONID != sys->epgCapChList[chkCount - 1].ONID ){
 							break;
 						}
 						chkCount++;
-						if( sys->epgCapChList.size() <= chkCount ){
-							//全部チェック終わったので終了
-							sys->epgSt_err = ST_COMPLETE;
-							return 0;
-						}
 					}
-				}
-				//CS1 1チャンネルのみ？
-				if( sys->epgCapChList[chkCount].ONID == 6 && CS1Basic == TRUE && chkCS1 == TRUE ){
-					while(chkCount<(DWORD)sys->epgCapChList.size()){
-						if( sys->epgCapChList[chkCount].ONID != 6 ){
-							break;
-						}
-						chkCount++;
-						if( sys->epgCapChList.size() <= chkCount ){
-							//全部チェック終わったので終了
-							sys->epgSt_err = ST_COMPLETE;
-							return 0;
-						}
-					}
-				}
-				//CS2 1チャンネルのみ？
-				if( sys->epgCapChList[chkCount].ONID == 7 && CS2Basic == TRUE && chkCS2 == TRUE ){
-					while(chkCount<(DWORD)sys->epgCapChList.size()){
-						if( sys->epgCapChList[chkCount].ONID != 7 ){
-							break;
-						}
-						chkCount++;
-						if( sys->epgCapChList.size() <= chkCount ){
-							//全部チェック終わったので終了
-							sys->epgSt_err = ST_COMPLETE;
-							return 0;
-						}
+					if( sys->epgCapChList.size() <= chkCount ){
+						//全部チェック終わったので終了
+						sys->epgSt_err = ST_COMPLETE;
+						return 0;
 					}
 				}
 			}
@@ -1074,21 +1043,13 @@ UINT WINAPI CBonCtrl::EpgCapThread(LPVOID param)
 	return 0;
 }
 
-void CBonCtrl::GetEpgDataFilePath(WORD ONID, WORD TSID, wstring& epgDataFilePath, BOOL BSBasic, BOOL CS1Basic, BOOL CS2Basic)
+void CBonCtrl::GetEpgDataFilePath(WORD ONID, WORD TSID, wstring& epgDataFilePath)
 {
 	wstring epgDataFolderPath = L"";
 	GetSettingPath(epgDataFolderPath);
 	epgDataFolderPath += EPG_SAVE_FOLDER;
 
-	if( ONID == 4 && BSBasic == TRUE ){
-		Format(epgDataFilePath, L"%s\\%04XFFFF_epg.dat", epgDataFolderPath.c_str(), ONID);
-	}else if( ONID == 6 && CS1Basic == TRUE ){
-		Format(epgDataFilePath, L"%s\\%04XFFFF_epg.dat", epgDataFolderPath.c_str(), ONID);
-	}else if( ONID == 7 && CS2Basic == TRUE ){
-		Format(epgDataFilePath, L"%s\\%04XFFFF_epg.dat", epgDataFolderPath.c_str(), ONID);
-	}else{
-		Format(epgDataFilePath, L"%s\\%04X%04X_epg.dat", epgDataFolderPath.c_str(), ONID, TSID);
-	}
+	Format(epgDataFilePath, L"%s\\%04X%04X_epg.dat", epgDataFolderPath.c_str(), ONID, TSID);
 }
 
 //録画中のファイルのファイルパスを取得する
@@ -1134,9 +1095,7 @@ void CBonCtrl::GetRecWriteSize(
 // enableLive	[IN]視聴中に取得する
 // enableRec	[IN]録画中に取得する
 // enableRec	[IN]EPG取得するチャンネル一覧
-// BSBasic		[IN]BSで１チャンネルから基本情報のみ取得するかどうか
-// CS1Basic		[IN]CS1で１チャンネルから基本情報のみ取得するかどうか
-// CS2Basic		[IN]CS2で１チャンネルから基本情報のみ取得するかどうか
+// *Basic		[IN]１チャンネルから基本情報のみ取得するかどうか
 // backStartWaitSec	[IN]Ch切り替え、録画開始後、バックグラウンドでのEPG取得を開始するまでの秒数
 void CBonCtrl::SetBackGroundEpgCap(
 	BOOL enableLive,
@@ -1144,6 +1103,7 @@ void CBonCtrl::SetBackGroundEpgCap(
 	BOOL BSBasic,
 	BOOL CS1Basic,
 	BOOL CS2Basic,
+	BOOL CS3Basic,
 	DWORD backStartWaitSec
 	)
 {
@@ -1152,6 +1112,7 @@ void CBonCtrl::SetBackGroundEpgCap(
 	this->epgCapBackBSBasic = BSBasic;
 	this->epgCapBackCS1Basic = CS1Basic;
 	this->epgCapBackCS2Basic = CS2Basic;
+	this->epgCapBackCS3Basic = CS3Basic;
 	this->epgCapBackStartWaitSec = backStartWaitSec;
 
 	StartBackgroundEpgCap();
@@ -1215,18 +1176,19 @@ UINT WINAPI CBonCtrl::EpgCapBackThread(LPVOID param)
 	WORD TSID;
 	sys->tsOut.GetStreamID(&ONID, &TSID);
 
-	BOOL BSBasic = sys->epgCapBackBSBasic;
-	BOOL CS1Basic = sys->epgCapBackCS1Basic;
-	BOOL CS2Basic = sys->epgCapBackCS2Basic;
+	BOOL basicOnly = ONID == 4 && sys->epgCapBackBSBasic ||
+	                 ONID == 6 && sys->epgCapBackCS1Basic ||
+	                 ONID == 7 && sys->epgCapBackCS2Basic ||
+	                 ONID == 10 && sys->epgCapBackCS3Basic;
 	vector<EPGCAP_SERVICE_INFO> chkList = sys->chUtil.GetEpgCapServiceAll(ONID, TSID);
-	if( chkList.empty() == false && (ONID == 4 && BSBasic || ONID == 6 && CS1Basic || ONID == 7 && CS2Basic) ){
+	if( chkList.empty() == false && basicOnly ){
 		chkList = sys->chUtil.GetEpgCapServiceAll(ONID);
 	}
 	if( chkList.empty() ){
 		return 0;
 	}
 
-	sys->GetEpgDataFilePath(ONID, TSID, epgDataPath, BSBasic, CS1Basic, CS2Basic);
+	GetEpgDataFilePath(ONID, basicOnly ? 0xFFFF : TSID, epgDataPath);
 	sys->tsOut.StartSaveEPG(epgDataPath);
 
 	if( ::WaitForSingleObject(sys->epgCapBackStopEvent, 60*1000) != WAIT_TIMEOUT ){
@@ -1247,7 +1209,7 @@ UINT WINAPI CBonCtrl::EpgCapBackThread(LPVOID param)
 				chkNext = TRUE;
 				if( status.first != EpgHEITAll &&
 				    status.first != EpgLEITAll &&
-				    (status.first != EpgBasicAll || !(itr->ONID == 4 && BSBasic || itr->ONID == 6 && CS1Basic || itr->ONID == 7 && CS2Basic)) ){
+				    (status.first != EpgBasicAll || basicOnly == FALSE) ){
 					chkNext = FALSE;
 					break;
 				}

@@ -102,10 +102,10 @@ void CReserveManager::ReloadSetting()
 			//曜日指定接尾辞(w1=Mon,...,w7=Sun)
 			unsigned int hour, minute, wday = 0;
 			if( swscanf_s(buff.c_str(), L"%u:%uw%u", &hour, &minute, &wday) >= 2 ){
-				//取得種別(bit0(LSB)=BS,bit1=CS1,bit2=CS2)。負値のときは共通設定に従う
+				//取得種別(bit0(LSB)=BS,bit1=CS1,bit2=CS2,bit3=CS3)。負値のときは共通設定に従う
 				wsprintf(key, L"%dBasicOnlyFlags", i);
 				int basicOnlyFlags = GetPrivateProfileInt(L"EPG_CAP", key, -1, iniPath.c_str());
-				basicOnlyFlags = basicOnlyFlags < 0 ? 0xFF : basicOnlyFlags & 7;
+				basicOnlyFlags = basicOnlyFlags < 0 ? 0xFF : basicOnlyFlags & 15;
 				if( wday == 0 ){
 					//曜日指定なし
 					for( int j = 0; j < 7; j++ ){
@@ -1530,31 +1530,32 @@ bool CReserveManager::CheckEpgCap(bool isEpgCap)
 						GetCommonIniPath(iniCommonPath);
 						int lastFlags = (GetPrivateProfileInt(L"SET", L"BSBasicOnly", 1, iniCommonPath.c_str()) != 0 ? 1 : 0) |
 						                (GetPrivateProfileInt(L"SET", L"CS1BasicOnly", 1, iniCommonPath.c_str()) != 0 ? 2 : 0) |
-						                (GetPrivateProfileInt(L"SET", L"CS2BasicOnly", 1, iniCommonPath.c_str()) != 0 ? 4 : 0);
+						                (GetPrivateProfileInt(L"SET", L"CS2BasicOnly", 1, iniCommonPath.c_str()) != 0 ? 4 : 0) |
+						                (GetPrivateProfileInt(L"SET", L"CS3BasicOnly", 0, iniCommonPath.c_str()) != 0 ? 8 : 0);
 						if( basicOnlyFlags >= 0 ){
 							//一時的に設定を変更してEPG取得チューナ側の挙動を変える
 							//TODO: パイプコマンドを拡張すべき
 							this->epgCapBasicOnlyFlags = lastFlags;
-							WritePrivateProfileString(L"SET", L"BSBasicOnly", basicOnlyFlags & 1 ? L"1" : L"0", iniCommonPath.c_str());
-							WritePrivateProfileString(L"SET", L"CS1BasicOnly", basicOnlyFlags & 2 ? L"1" : L"0", iniCommonPath.c_str());
-							WritePrivateProfileString(L"SET", L"CS2BasicOnly", basicOnlyFlags & 4 ? L"1" : L"0", iniCommonPath.c_str());
+							WritePrivateProfileInt(L"SET", L"BSBasicOnly", (basicOnlyFlags & 1) != 0, iniCommonPath.c_str());
+							WritePrivateProfileInt(L"SET", L"CS1BasicOnly", (basicOnlyFlags & 2) != 0, iniCommonPath.c_str());
+							WritePrivateProfileInt(L"SET", L"CS2BasicOnly", (basicOnlyFlags & 4) != 0, iniCommonPath.c_str());
+							WritePrivateProfileInt(L"SET", L"CS3BasicOnly", (basicOnlyFlags & 8) != 0, iniCommonPath.c_str());
 						}else{
 							this->epgCapBasicOnlyFlags = -1;
 							basicOnlyFlags = lastFlags;
 						}
 						//各チューナに振り分け
 						LONGLONG lastKey = -1;
-						bool inBS = false;
-						bool inCS1 = false;
-						bool inCS2 = false;
+						bool inONIDs[16] = {};
 						size_t listIndex = 0;
 						vector<vector<SET_CH_INFO>> epgCapChList(epgCapIDList.size());
 						for( map<LONGLONG, CH_DATA5>::const_iterator itr = this->chUtil.GetMap().begin(); itr != this->chUtil.GetMap().end(); itr++ ){
 							if( itr->second.epgCapFlag == FALSE ||
 							    lastKey >= 0 && lastKey == itr->first >> 16 ||
-							    itr->second.originalNetworkID == 4 && (basicOnlyFlags & 1) && inBS ||
-							    itr->second.originalNetworkID == 6 && (basicOnlyFlags & 2) && inCS1 ||
-							    itr->second.originalNetworkID == 7 && (basicOnlyFlags & 4) && inCS2 ){
+							    itr->second.originalNetworkID == 4 && (basicOnlyFlags & 1) && inONIDs[4] ||
+							    itr->second.originalNetworkID == 6 && (basicOnlyFlags & 2) && inONIDs[6] ||
+							    itr->second.originalNetworkID == 7 && (basicOnlyFlags & 4) && inONIDs[7] ||
+							    itr->second.originalNetworkID == 10 && (basicOnlyFlags & 8) && inONIDs[10] ){
 								continue;
 							}
 							lastKey = itr->first >> 16;
@@ -1567,9 +1568,7 @@ bool CReserveManager::CheckEpgCap(bool isEpgCap)
 							for( size_t i = 0; i < epgCapIDList.size(); i++ ){
 								if( this->tunerManager.IsSupportService(epgCapIDList[listIndex], addCh.ONID, addCh.TSID, addCh.SID) ){
 									epgCapChList[listIndex].push_back(addCh);
-									inBS = inBS || addCh.ONID == 4;
-									inCS1 = inCS1 || addCh.ONID == 6;
-									inCS2 = inCS2 || addCh.ONID == 7;
+									inONIDs[min(addCh.ONID, _countof(inONIDs) - 1)] = true;
 									listIndex = (listIndex + 1) % epgCapIDList.size();
 									break;
 								}
@@ -1608,9 +1607,10 @@ bool CReserveManager::CheckEpgCap(bool isEpgCap)
 				//EPG取得開始時の設定を書き戻し
 				wstring iniCommonPath;
 				GetCommonIniPath(iniCommonPath);
-				WritePrivateProfileString(L"SET", L"BSBasicOnly", this->epgCapBasicOnlyFlags & 1 ? L"1" : L"0", iniCommonPath.c_str());
-				WritePrivateProfileString(L"SET", L"CS1BasicOnly", this->epgCapBasicOnlyFlags & 2 ? L"1" : L"0", iniCommonPath.c_str());
-				WritePrivateProfileString(L"SET", L"CS2BasicOnly", this->epgCapBasicOnlyFlags & 4 ? L"1" : L"0", iniCommonPath.c_str());
+				WritePrivateProfileInt(L"SET", L"BSBasicOnly", (this->epgCapBasicOnlyFlags & 1) != 0, iniCommonPath.c_str());
+				WritePrivateProfileInt(L"SET", L"CS1BasicOnly", (this->epgCapBasicOnlyFlags & 2) != 0, iniCommonPath.c_str());
+				WritePrivateProfileInt(L"SET", L"CS2BasicOnly", (this->epgCapBasicOnlyFlags & 4) != 0, iniCommonPath.c_str());
+				WritePrivateProfileInt(L"SET", L"CS3BasicOnly", (this->epgCapBasicOnlyFlags & 8) != 0, iniCommonPath.c_str());
 			}
 			this->epgCapWork = false;
 			doneEpgCap = true;
