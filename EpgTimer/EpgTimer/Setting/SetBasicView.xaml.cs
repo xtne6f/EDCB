@@ -403,6 +403,8 @@ namespace EpgTimer.Setting
                 bxt.AllowDragDrop();
                 bxt.AllowKeyAction();
                 button_delTime.Click += new RoutedEventHandler(bxt.button_Delete_Click);
+
+                new BoxExchangeEdit.BoxExchangeEditor(null, this.listView_service, true);
             }
         }
 

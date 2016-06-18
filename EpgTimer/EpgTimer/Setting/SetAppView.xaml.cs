@@ -9,7 +9,7 @@ using System.Windows.Interop;
 
 namespace EpgTimer.Setting
 {
-    using EpgTimer.BoxExchangeEdit;
+    using BoxExchangeEdit;
 
     /// <summary>
     /// SetAppView.xaml の相互作用ロジック

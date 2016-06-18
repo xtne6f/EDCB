@@ -7,7 +7,7 @@ using System.Windows.Input;
 
 namespace EpgTimer
 {
-    using EpgTimer.BoxExchangeEdit;
+    using BoxExchangeEdit;
 
     /// <summary>
     /// EpgDataViewSetting.xaml の相互作用ロジック

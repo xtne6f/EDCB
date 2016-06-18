@@ -8,7 +8,7 @@ using System.Windows.Controls;
 
 namespace EpgTimer
 {
-    using EpgTimer.BoxExchangeEdit;
+    using BoxExchangeEdit;
 
     public class ListViewSelectedKeeper
     {

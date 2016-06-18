@@ -62,6 +62,7 @@ namespace EpgTimer
                 button_date_clear.Click += new RoutedEventHandler(bxd.button_DeleteAll_Click);
                 button_date_del.Click += new RoutedEventHandler(bxd.button_Delete_Click);
 
+                new BoxExchangeEdit.BoxExchangeEditor(null, listView_service, true);
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }

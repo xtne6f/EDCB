@@ -4,9 +4,9 @@
         Title="抑制条件" Height="487" Width="443" Loaded="Window_Loaded" ShowInTaskbar="False" WindowStartupLocation="CenterOwner" ResizeMode="NoResize">
 
     <Grid>
-        <Label Content="指定プロセスが起動している場合" Height="28" HorizontalAlignment="Left" Margin="12,12,0,0" Name="label1" VerticalAlignment="Top" />
-        <ListBox Height="100" Margin="41,46,26,0" Name="listBox_process" VerticalAlignment="Top" />
-        <Button Content="削除" Height="23" HorizontalAlignment="Left" Margin="43,152,0,0" Name="button_process_del" VerticalAlignment="Top" Width="52" Click="button_process_del_Click" />
+        <Label Content="指定プロセスが起動している場合" Height="28" HorizontalAlignment="Left" Margin="12,12,0,0" VerticalAlignment="Top" />
+        <ListBox Height="100" Margin="41,46,26,0" Name="listBox_process" VerticalAlignment="Top" SelectionMode="Extended" SelectionChanged="listBox_process_SelectionChanged" />
+        <Button Content="削除" Height="23" HorizontalAlignment="Left" Margin="43,152,0,0" Name="button_process_del" VerticalAlignment="Top" Width="52" />
         <Label Content="exe名(拡張子含む)" Height="28" HorizontalAlignment="Left" Margin="43,181,0,0" Name="label2" VerticalAlignment="Top" />
         <TextBox Height="24" HorizontalAlignment="Left" Margin="162,183,0,0" Name="textBox_process" VerticalAlignment="Top" Width="120" />
         <Button Content="追加" Height="23" HorizontalAlignment="Left" Margin="357,184,0,0" Name="button_process_add" VerticalAlignment="Top" Width="52" Click="button_process_add_Click" />
@@ -16,7 +16,7 @@
         <Label Content="分以内に開始される場合" Height="28" HorizontalAlignment="Left" Margin="154,215,0,0" Name="label4" VerticalAlignment="Top" />
         <CheckBox Content="追っかけ再生、ストリーミング再生を行っている場合" Height="16" HorizontalAlignment="Left" Margin="12,322,0,0" Name="checkBox_ng_fileStreaming" VerticalAlignment="Top" />
         <CheckBox Content="共有フォルダのTSファイルにアクセスがある場合" Height="16" HorizontalAlignment="Left" Margin="12,344,0,0" Name="checkBox_ng_shareFile" VerticalAlignment="Top" />
-        <Label Content="（※EpgTimerSrv.exeが管理者権限で実行されている必要があります）" Height="28" HorizontalAlignment="Left" Margin="12,366,0,0" Name="label5" VerticalAlignment="Top" Foreground="Red" />
+        <Label Content="（※EpgTimerSrv.exeが管理者権限で実行されている必要があります）" Height="28" HorizontalAlignment="Left" Margin="12,366,0,0" VerticalAlignment="Top" Foreground="Red" />
         <TextBox Height="24" HorizontalAlignment="Left" Margin="31,290,0,0" Name="textBox_ng_usePC_min" VerticalAlignment="Top" Width="51" />
         <Label Content="分以内にユーザー操作があれば使用中とみなす" Height="28" HorizontalAlignment="Left" Margin="87,288,0,0" Name="label7" VerticalAlignment="Top" />
         <CheckBox Content="PCを使用中の場合" Height="16" HorizontalAlignment="Left" Margin="12,268,0,0" Name="checkBox_ng_usePC" VerticalAlignment="Top" />

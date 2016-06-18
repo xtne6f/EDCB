@@ -13,6 +13,8 @@ using System.Windows.Shapes;
 
 namespace EpgTimer
 {
+    using BoxExchangeEdit;
+
     /// <summary>
     /// SetAppCancelWindow.xaml の相互作用ロジック
     /// </summary>
@@ -46,13 +48,21 @@ namespace EpgTimer
                 checkBox_ng_usePC.IsEnabled = false;
                 button_OK.IsEnabled = false;
             }
+
+            var bx = new BoxExchangeEditor(null, listBox_process, true);
+            if (CommonManager.Instance.NWMode == false)
+            {
+                bx.AllowKeyAction();
+                bx.AllowDragDrop();
+                button_process_del.Click += new RoutedEventHandler(bx.button_Delete_Click);
+            }
         }
 
-        private void button_process_del_Click(object sender, RoutedEventArgs e)
+        private void listBox_process_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (listBox_process.SelectedItem != null)
+            if (listBox_process.SelectedItem is string)
             {
-                listBox_process.Items.RemoveAt(listBox_process.SelectedIndex);
+                textBox_process.Text = listBox_process.SelectedItem as string;
             }
         }
 
@@ -81,52 +91,22 @@ namespace EpgTimer
         {
             DialogResult = true;
 
-            processList.Clear();
-            foreach (String info in listBox_process.Items)
-            {
-                processList.Add(info);
-            }
+            processList = listBox_process.Items.OfType<string>().ToList();
             ngMin = textBox_ng_min.Text;
-            if (checkBox_ng_usePC.IsChecked == true)
-            {
-                ngUsePC = true;
-            }
-            else
-            {
-                ngUsePC = false;
-            }
+            ngUsePC = (checkBox_ng_usePC.IsChecked == true);
             ngUsePCMin = textBox_ng_usePC_min.Text;
-            if (checkBox_ng_fileStreaming.IsChecked == true)
-            {
-                ngFileStreaming = true;
-            }
-            else
-            {
-                ngFileStreaming = false;
-            }
-            if (checkBox_ng_shareFile.IsChecked == true)
-            {
-                ngShareFile = true;
-            }
-            else
-            {
-                ngShareFile = false;
-            }
+            ngFileStreaming = (checkBox_ng_fileStreaming.IsChecked == true);
+            ngShareFile = (checkBox_ng_shareFile.IsChecked == true);
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            foreach (string info in processList)
-            {
-                listBox_process.Items.Add(info);
-            }
-
+            listBox_process.Items.AddItems(processList);
             textBox_ng_min.Text = ngMin;
             checkBox_ng_usePC.IsChecked = ngUsePC;
             textBox_ng_usePC_min.Text = ngUsePCMin;
             checkBox_ng_fileStreaming.IsChecked = ngFileStreaming;
             checkBox_ng_shareFile.IsChecked = ngShareFile;
-
         }
 
         private void button_cancel_Click(object sender, RoutedEventArgs e)
@@ -147,6 +127,5 @@ namespace EpgTimer
             }
             base.OnKeyDown(e);
         }
-
     }
 }

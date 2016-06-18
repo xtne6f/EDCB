@@ -13,6 +13,8 @@ using System.Windows.Shapes;
 
 namespace EpgTimer
 {
+    using BoxExchangeEdit;
+
     /// <summary>
     /// SetApp2DelWindow.xaml の相互作用ロジック
     /// </summary>
@@ -36,13 +38,33 @@ namespace EpgTimer
                 textBox_chk_folder.IsEnabled = false;
                 button_OK.IsEnabled = false;
             }
+
+            var bxe = new BoxExchangeEditor(null, listBox_ext, true);
+            var bxc = new BoxExchangeEditor(null, listBox_chk_folder, true);
+            if (CommonManager.Instance.NWMode == false)
+            {
+                bxe.AllowKeyAction();
+                bxe.AllowDragDrop();
+                button_del.Click += new RoutedEventHandler(bxe.button_Delete_Click);
+                bxc.AllowKeyAction();
+                bxc.AllowDragDrop();
+                button_chk_del.Click += new RoutedEventHandler(bxc.button_Delete_Click);
+            }
         }
 
-        private void button_del_Click(object sender, RoutedEventArgs e)
+        private void listBox_ext_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (listBox_ext.SelectedItem != null)
+            if (listBox_ext.SelectedItem is string)
             {
-                listBox_ext.Items.RemoveAt(listBox_ext.SelectedIndex);
+                textBox_ext.Text = listBox_ext.SelectedItem as string;
+            }
+        }
+
+        private void listBox_chk_folder_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (listBox_chk_folder.SelectedItem is string)
+            {
+                textBox_chk_folder.Text = listBox_chk_folder.SelectedItem as string;
             }
         }
 
@@ -66,37 +88,14 @@ namespace EpgTimer
         {
             DialogResult = true;
 
-            extList.Clear();
-            foreach (string info in listBox_ext.Items)
-            {
-                extList.Add(info);
-            }
-            delChkFolderList.Clear();
-            foreach (string info in listBox_chk_folder.Items)
-            {
-                delChkFolderList.Add(info);
-            }
-
+            extList = listBox_ext.Items.OfType<string>().ToList();
+            delChkFolderList = listBox_chk_folder.Items.OfType<string>().ToList();
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            foreach (string info in extList)
-            {
-                listBox_ext.Items.Add(info);
-            }
-            foreach (string info in delChkFolderList)
-            {
-                listBox_chk_folder.Items.Add(info);
-            }
-        }
-
-        private void button_chk_del_Click(object sender, RoutedEventArgs e)
-        {
-            if (listBox_chk_folder.SelectedItem != null)
-            {
-                listBox_chk_folder.Items.RemoveAt(listBox_chk_folder.SelectedIndex);
-            }
+            listBox_ext.Items.AddItems(extList);
+            listBox_chk_folder.Items.AddItems(delChkFolderList);
         }
 
         private void button_chk_open_Click(object sender, RoutedEventArgs e)
@@ -138,6 +137,5 @@ namespace EpgTimer
             }
             base.OnKeyDown(e);
         }
-
     }
 }

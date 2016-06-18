@@ -11,7 +11,7 @@ using System.IO;
 
 namespace EpgTimer.UserCtrlView
 {
-    using EpgTimer.BoxExchangeEdit;
+    using BoxExchangeEdit;
 
     /// <summary>
     /// ListBoxDragMover.xaml の相互作用ロジック
