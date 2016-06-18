@@ -8,14 +8,14 @@
             <TabItem Header="番組情報" Name="tabItem_pgInfo">
                 <Grid>
                     <ScrollViewer Name="scrollViewer1">
-                        <TextBox Name="textBox_pgInfo" IsReadOnly="True" TextWrapping="Wrap" />
+                        <TextBox Name="textBox_pgInfo" IsReadOnly="True" TextWrapping="Wrap" VerticalAlignment="Stretch" />
                     </ScrollViewer>
                 </Grid>
             </TabItem>
             <TabItem Header="エラーログ" Name="tabItem_errLog">
                 <Grid>
                     <ScrollViewer Name="scrollViewer2">
-                        <TextBox Name="textBox_errLog" IsReadOnly="True" FontFamily="MS Gothic" />
+                        <TextBox Name="textBox_errLog" IsReadOnly="True" FontFamily="MS Gothic" VerticalAlignment="Stretch" />
                     </ScrollViewer>
                 </Grid>
             </TabItem>

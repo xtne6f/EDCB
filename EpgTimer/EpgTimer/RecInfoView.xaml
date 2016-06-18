@@ -11,7 +11,7 @@
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="UserCtrlView\ReserveListViewStyles.xaml"/>
             </ResourceDictionary.MergedDictionaries>
-            <Style TargetType="{x:Type CheckBox}">
+            <Style TargetType="{x:Type CheckBox}" BasedOn="{StaticResource {x:Type CheckBox}}" >
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="CheckBox">
