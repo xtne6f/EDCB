@@ -416,6 +416,46 @@ namespace EpgTimer
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
+
+        public static SelectionChangedEventHandler ListBox_TextBoxSyncSelectionChanged(ListBox lstBox, TextBox txtBox)
+        {
+            return new SelectionChangedEventHandler((sender, e) =>
+            {
+                if (lstBox == null || txtBox == null) return;
+                //
+                if (lstBox.SelectedItem is string)
+                {
+                    txtBox.Text = lstBox.SelectedItem as string;
+                }
+            });
+        }
+
+        public static RoutedEventHandler ListBox_TextCheckAdd(ListBox lstBox, TextBox txtBox)
+        {
+            return new RoutedEventHandler((sender, e) => ListBox_TextCheckAdd(lstBox, txtBox == null ? null : txtBox.Text));
+        }
+        public static void ListBox_TextCheckAdd(ListBox lstBox, string text)
+        {
+            if (lstBox == null || String.IsNullOrEmpty(text) == true) return;
+            //
+            if (lstBox.Items.OfType<string>().Any(s => String.Compare(text, s, true) == 0) == true)
+            {
+                MessageBox.Show("すでに追加されています");
+                return;
+            }
+            lstBox.Items.Add(text);
+        }
+
+        public static bool Window_EscapeKey_Close(KeyEventArgs e, Window win)
+        {
+            if (win != null && Keyboard.Modifiers == ModifierKeys.None && e.Key == Key.Escape)
+            {
+                e.Handled = true;
+                win.Close();
+            }
+            return e.Handled;
+        }
+
     }
 
     public static class ViewUtilEx

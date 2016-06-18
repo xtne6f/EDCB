@@ -50,41 +50,19 @@ namespace EpgTimer
             }
 
             var bx = new BoxExchangeEditor(null, listBox_process, true);
+            listBox_process.SelectionChanged += ViewUtil.ListBox_TextBoxSyncSelectionChanged(listBox_process, textBox_process);
             if (CommonManager.Instance.NWMode == false)
             {
                 bx.AllowKeyAction();
                 bx.AllowDragDrop();
                 button_process_del.Click += new RoutedEventHandler(bx.button_Delete_Click);
-            }
-        }
-
-        private void listBox_process_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (listBox_process.SelectedItem is string)
-            {
-                textBox_process.Text = listBox_process.SelectedItem as string;
+                button_process_add.Click += ViewUtil.ListBox_TextCheckAdd(listBox_process, textBox_process);
             }
         }
 
         private void button_process_open_Click(object sender, RoutedEventArgs e)
         {
             CommonManager.GetFileNameByDialog(textBox_process, true, "", ".exe");
-        }
-
-        private void button_process_add_Click(object sender, RoutedEventArgs e)
-        {
-            if (String.IsNullOrEmpty(textBox_process.Text) == false)
-            {
-                foreach (String info in listBox_process.Items)
-                {
-                    if (String.Compare(textBox_process.Text, info, true) == 0)
-                    {
-                        MessageBox.Show("すでに追加されています");
-                        return;
-                    }
-                }
-                listBox_process.Items.Add(textBox_process.Text);
-            }
         }
 
         private void button_OK_Click(object sender, RoutedEventArgs e)
@@ -112,20 +90,6 @@ namespace EpgTimer
         private void button_cancel_Click(object sender, RoutedEventArgs e)
         {
             DialogResult = false;
-        }
-
-        protected override void OnKeyDown(KeyEventArgs e)
-        {
-            if (Keyboard.Modifiers == ModifierKeys.None)
-            {
-                switch (e.Key)
-                {
-                    case Key.Escape:
-                        this.button_cancel.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-                        break;
-                }
-            }
-            base.OnKeyDown(e);
         }
     }
 }

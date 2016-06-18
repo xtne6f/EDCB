@@ -7,7 +7,7 @@
         <Label Content="スタンバイ、または休止に移行します" Height="28" Name="label1" HorizontalContentAlignment="Center" Margin="0,20,0,0" VerticalAlignment="Top" />
         <ProgressBar Height="34" Name="progressBar" Width="529" Margin="42,68,42,0" Maximum="20" Value="20" VerticalAlignment="Top" />
         <Label Content="15" Height="50" Name="labelTimer" HorizontalContentAlignment="Center" Margin="0,58,0,0" VerticalAlignment="Top" FontSize="32" Padding="0" VerticalContentAlignment="Center" />
-        <Button Content="キャンセル" Height="39" Name="button_cancel" Margin="90,122,0,0" Click="button_cancel_Click" VerticalAlignment="Top" HorizontalAlignment="Left" Width="320" />
+        <Button Content="キャンセル" Height="39" Name="button_cancel" Margin="90,122,0,0" Click="button_cancel_Click" VerticalAlignment="Top" HorizontalAlignment="Left" Width="320" IsCancel="True" />
         <Button Content="即実行" Height="39" Name="button_work_now" Width="80" Margin="0,122,90,0" Click="button_work_now_Click" VerticalAlignment="Top" HorizontalAlignment="Right" />
     </Grid>
 </Window>

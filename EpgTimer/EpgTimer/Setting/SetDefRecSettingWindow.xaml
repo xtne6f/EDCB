@@ -13,7 +13,7 @@
         <Label Content="※プリセットの変更を行うには、プリセットごとに変更ボタンを押してください" Height="28" HorizontalAlignment="Left" Margin="12,2,0,0" Name="label1" VerticalAlignment="Top" />
         <StackPanel Grid.Row="2" Height="40" HorizontalAlignment="Right" Name="stackPanel1" VerticalAlignment="Top" Width="338" Orientation="Horizontal" FlowDirection="RightToLeft">
             <Button Content="キャンセル" Height="23" Name="button_cancel" Width="75" Click="button_cancel_Click" Margin="40,0,0,0" Visibility="Collapsed"/>
-            <Button Content="閉じる" Height="23" Name="button_ok" Click="button_ok_Click" Width="75" Margin="40,0,0,0" />
+            <Button Content="閉じる" Height="23" Name="button_ok" Click="button_ok_Click" Width="75" Margin="40,0,0,0" IsCancel="True" />
         </StackPanel>
     </Grid>
 </Window>

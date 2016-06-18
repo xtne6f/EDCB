@@ -7,7 +7,7 @@
         <Label Content="プリセット名" Height="28" HorizontalAlignment="Left" Margin="12,12,0,0" Name="label1" VerticalAlignment="Top" />
         <TextBox Height="24" Margin="100,14,12,0" Name="textBox_name" VerticalAlignment="Top" />
         <Button Content="追加" Height="23" HorizontalAlignment="Right" Margin="0,44,99,0" Name="button_add" VerticalAlignment="Top" Width="43" Click="button_add_Click" />
-        <Button Content="キャンセル" Height="23" HorizontalAlignment="Right" Margin="0,44,12,0" Name="button_cancel" VerticalAlignment="Top" Width="81" Click="button_cancel_Click" />
+        <Button Content="キャンセル" Height="23" HorizontalAlignment="Right" Margin="0,44,12,0" Name="button_cancel" VerticalAlignment="Top" Width="81" Click="button_cancel_Click" IsCancel="True" />
         <Label Content="(※設定内容も同時に変更されます)" Height="28" HorizontalAlignment="Left" Margin="79,44,0,0" Name="label_chgMsg" VerticalAlignment="Top" Visibility="Hidden" />
     </Grid>
 </Window>

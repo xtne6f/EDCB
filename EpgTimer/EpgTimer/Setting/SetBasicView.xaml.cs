@@ -383,6 +383,8 @@ namespace EpgTimer.Setting
             var bxb = new BoxExchangeEdit.BoxExchangeEditor(null, this.listBox_bon, true);
             var bxt = new BoxExchangeEdit.BoxExchangeEditor(null, this.ListView_time, true);
 
+            listBox_recFolder.SelectionChanged += ViewUtil.ListBox_TextBoxSyncSelectionChanged(listBox_recFolder, textBox_recFolder);
+
             if (CommonManager.Instance.NWMode == false)
             {
                 //録画設定関係
@@ -392,6 +394,7 @@ namespace EpgTimer.Setting
                 button_rec_up.Click += new RoutedEventHandler(bxr.button_Up_Click);
                 button_rec_down.Click += new RoutedEventHandler(bxr.button_Down_Click);
                 button_rec_del.Click += new RoutedEventHandler(bxr.button_Delete_Click);
+                button_rec_add.Click += ViewUtil.ListBox_TextCheckAdd(listBox_recFolder, textBox_recFolder);
 
                 //チューナ関係関係
                 bxb.AllowDragDrop();
@@ -408,40 +411,9 @@ namespace EpgTimer.Setting
             }
         }
 
-        private void listBox_recFolder_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (listBox_recFolder.SelectedItem is string)
-            {
-                textBox_recFolder.Text = listBox_recFolder.SelectedItem as string;
-            }
-        }
-
         private void button_rec_open_Click(object sender, RoutedEventArgs e)
         {
             CommonManager.GetFolderNameByDialog(textBox_recFolder, "録画フォルダの選択");
-        }
-
-        private void button_rec_add_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                if (String.IsNullOrEmpty(textBox_recFolder.Text) == false)
-                {
-                    foreach (String info in listBox_recFolder.Items)
-                    {
-                        if (String.Compare(textBox_recFolder.Text, info, true) == 0)
-                        {
-                            MessageBox.Show("すでに追加されています");
-                            return;
-                        }
-                    }
-                    listBox_recFolder.Items.Add(textBox_recFolder.Text);
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
         }
 
         private void button_shortCut_Click(object sender, RoutedEventArgs e)

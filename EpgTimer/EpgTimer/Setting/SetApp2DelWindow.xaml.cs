@@ -41,46 +41,18 @@ namespace EpgTimer
 
             var bxe = new BoxExchangeEditor(null, listBox_ext, true);
             var bxc = new BoxExchangeEditor(null, listBox_chk_folder, true);
+            listBox_ext.SelectionChanged += ViewUtil.ListBox_TextBoxSyncSelectionChanged(listBox_ext, textBox_ext);
+            listBox_chk_folder.SelectionChanged += ViewUtil.ListBox_TextBoxSyncSelectionChanged(listBox_chk_folder, textBox_chk_folder);
             if (CommonManager.Instance.NWMode == false)
             {
                 bxe.AllowKeyAction();
                 bxe.AllowDragDrop();
                 button_del.Click += new RoutedEventHandler(bxe.button_Delete_Click);
+                button_add.Click += ViewUtil.ListBox_TextCheckAdd(listBox_ext, textBox_ext);
                 bxc.AllowKeyAction();
                 bxc.AllowDragDrop();
                 button_chk_del.Click += new RoutedEventHandler(bxc.button_Delete_Click);
-            }
-        }
-
-        private void listBox_ext_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (listBox_ext.SelectedItem is string)
-            {
-                textBox_ext.Text = listBox_ext.SelectedItem as string;
-            }
-        }
-
-        private void listBox_chk_folder_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (listBox_chk_folder.SelectedItem is string)
-            {
-                textBox_chk_folder.Text = listBox_chk_folder.SelectedItem as string;
-            }
-        }
-
-        private void button_add_Click(object sender, RoutedEventArgs e)
-        {
-            if (String.IsNullOrEmpty(textBox_ext.Text) == false)
-            {
-                foreach (String info in listBox_ext.Items)
-                {
-                    if (String.Compare(textBox_ext.Text, info, true) == 0)
-                    {
-                        MessageBox.Show("すでに追加されています");
-                        return;
-                    }
-                }
-                listBox_ext.Items.Add(textBox_ext.Text);
+                button_chk_add.Click += ViewUtil.ListBox_TextCheckAdd(listBox_chk_folder, textBox_chk_folder);
             }
         }
 
@@ -103,39 +75,9 @@ namespace EpgTimer
             CommonManager.GetFolderNameByDialog(textBox_chk_folder, "自動削除対象フォルダの選択");
         }
 
-        private void button_chk_add_Click(object sender, RoutedEventArgs e)
-        {
-            if (String.IsNullOrEmpty(textBox_chk_folder.Text) == false)
-            {
-                foreach (String info in listBox_chk_folder.Items)
-                {
-                    if (String.Compare(textBox_chk_folder.Text, info, true) == 0)
-                    {
-                        MessageBox.Show("すでに追加されています");
-                        return;
-                    }
-                }
-                listBox_chk_folder.Items.Add(textBox_chk_folder.Text);
-            }
-        }
-
         private void button_cancel_Click(object sender, RoutedEventArgs e)
         {
             DialogResult = false;
-        }
-
-        protected override void OnKeyDown(KeyEventArgs e)
-        {
-            if (Keyboard.Modifiers == ModifierKeys.None)
-            {
-                switch (e.Key)
-                {
-                    case Key.Escape:
-                        this.button_cancel.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-                        break;
-                }
-            }
-            base.OnKeyDown(e);
         }
     }
 }

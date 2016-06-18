@@ -23,13 +23,13 @@
                     <Label Content="非視聴時" Height="28" HorizontalAlignment="Left" Margin="452,72,0,0" VerticalAlignment="Top" />
                     <TextBox Height="24" HorizontalAlignment="Left" Margin="515,74,0,0" Name="textBox_cmdViewOff" VerticalAlignment="Top" Width="64" />
                     <Label Content="録画保存フォルダ　（空き容量が少ない場合、上から順に録画対象のフォルダとします）" Height="28" HorizontalAlignment="Left" Margin="12,102,0,0" Name="label3" VerticalAlignment="Top" />
-                    <ListBox Height="83" HorizontalAlignment="Left" Margin="45,131,0,0" Name="listBox_recFolder" VerticalAlignment="Top" Width="484" SelectionMode="Extended" SelectionChanged="listBox_recFolder_SelectionChanged" />
+                    <ListBox Height="83" HorizontalAlignment="Left" Margin="45,131,0,0" Name="listBox_recFolder" VerticalAlignment="Top" Width="484" SelectionMode="Extended" />
                     <Button Content="↑" Height="23" HorizontalAlignment="Left" Margin="535,131,0,0" Name="button_rec_up" VerticalAlignment="Top" Width="44" />
                     <Button Content="↓" Height="23" HorizontalAlignment="Left" Margin="535,161,0,0" Name="button_rec_down" VerticalAlignment="Top" Width="44" />
                     <Button Content="削除" Height="23" HorizontalAlignment="Left" Margin="535,191,0,0" Name="button_rec_del" VerticalAlignment="Top" Width="44" />
                     <TextBox Height="24" HorizontalAlignment="Left" Margin="45,221,0,0" Name="textBox_recFolder" VerticalAlignment="Top" Width="427" />
                     <Button Content="開く" Height="23" Margin="485,221,0,0" Name="button_rec_open" VerticalAlignment="Top" HorizontalAlignment="Left" Width="44" Click="button_rec_open_Click" />
-                    <Button Content="追加" Height="23" Margin="535,221,0,0" Name="button_rec_add" VerticalAlignment="Top" Click="button_rec_add_Click" HorizontalAlignment="Left" Width="44" />
+                    <Button Content="追加" Height="23" Margin="535,221,0,0" Name="button_rec_add" VerticalAlignment="Top" HorizontalAlignment="Left" Width="44" />
                     <Label Content="録画情報保存フォルダ" Height="28" HorizontalAlignment="Left" Margin="12,253,0,0" VerticalAlignment="Top" ToolTip="未指定の場合は録画ファイルと同じ場所に保存されます。" ToolTipService.ShowOnDisabled="True" />
                     <TextBox Height="24" HorizontalAlignment="Left" Margin="157,255,0,0" Name="textBox_recInfoFolder" VerticalAlignment="Top" Width="372" ToolTip="{Binding ElementName=textBox_recInfoFolder, Path=Text}" ToolTipService.ShowOnDisabled="True" />
                     <Button Content="開く" Height="23" HorizontalAlignment="Left" Margin="535,255,0,0" Name="button_recInfoFolder" VerticalAlignment="Top" Width="44" Click="button_recInfoFolder_Click" />

@@ -110,18 +110,7 @@ namespace EpgTimer.Setting
 
         private void button_add_Click(object sender, RoutedEventArgs e)
         {
-            if (String.IsNullOrEmpty(comboBox_bon.Text) == false)
-            {
-                foreach (String info in listBox_bon.Items)
-                {
-                    if (String.Compare(comboBox_bon.Text, info, true) == 0)
-                    {
-                        MessageBox.Show("すでに追加されています");
-                        return;
-                    }
-                }
-                listBox_bon.Items.Add(comboBox_bon.Text);
-            }
+            ViewUtil.ListBox_TextCheckAdd(listBox_bon, comboBox_bon.Text);
         }
 
         private void button_playExe_Click(object sender, RoutedEventArgs e)
