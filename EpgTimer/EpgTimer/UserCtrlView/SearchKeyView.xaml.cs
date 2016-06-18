@@ -39,24 +39,6 @@ namespace EpgTimer
             }
         }
 
-        private void button_andIn_Click(object sender, RoutedEventArgs e)
-        {
-            KeyWordWindow dlg = new KeyWordWindow();
-            dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-            dlg.KeyWord = ComboBox_andKey.Text;
-            dlg.ShowDialog();
-            ComboBox_andKey.Text = dlg.KeyWord;
-        }
-
-        private void button_notIn_Click(object sender, RoutedEventArgs e)
-        {
-            KeyWordWindow dlg = new KeyWordWindow();
-            dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-            dlg.KeyWord = ComboBox_notKey.Text;
-            dlg.ShowDialog();
-            ComboBox_notKey.Text = dlg.KeyWord;
-        }
-        
         public void SaveSearchLog()
         {
             try
