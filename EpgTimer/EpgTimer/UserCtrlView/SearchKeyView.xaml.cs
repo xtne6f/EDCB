@@ -32,16 +32,6 @@ namespace EpgTimer
             }
         }
 
-        private void button_dialogIn_Click(object sender, RoutedEventArgs e)
-        {
-            var cmbBox = (sender as Button).DataContext as ComboBox;
-            var dlg = new KeyWordWindow();
-            dlg.Owner = CommonUtil.GetTopWindow(this);
-            dlg.KeyWord = cmbBox.Text;
-            dlg.ShowDialog();
-            cmbBox.Text = dlg.KeyWord;
-        }
-
         public void AddSearchLog()
         {
             if (Settings.Instance.SaveSearchKeyword == false) return;

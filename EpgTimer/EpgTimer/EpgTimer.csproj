@@ -228,9 +228,6 @@
     <Compile Include="EpgView\EpgWeekMainView.xaml.cs">
       <DependentUpon>EpgWeekMainView.xaml</DependentUpon>
     </Compile>
-    <Compile Include="KeyWordWindow.xaml.cs">
-      <DependentUpon>KeyWordWindow.xaml</DependentUpon>
-    </Compile>
     <Compile Include="Setting\SetDefSearchSettingWindow.xaml.cs">
       <DependentUpon>SetDefSearchSettingWindow.xaml</DependentUpon>
     </Compile>
@@ -407,10 +404,6 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="EpgView\EpgWeekMainView.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="KeyWordWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
