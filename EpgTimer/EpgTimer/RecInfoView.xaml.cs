@@ -94,9 +94,9 @@ namespace EpgTimer
         }
         protected override void UpdateStatusData(int mode = 0)
         {
-            if (mode == 0) this.status[1] = vutil.ConvertRecinfoStatus(lstCtrl.dataList, "録画結果");
+            if (mode == 0) this.status[1] = ViewUtil.ConvertRecinfoStatus(lstCtrl.dataList, "録画結果");
             List<RecInfoItem> sList = lstCtrl.GetSelectedItemsList();
-            this.status[2] = sList.Count == 0 ? "" : vutil.ConvertRecinfoStatus(sList, "　選択中");
+            this.status[2] = sList.Count == 0 ? "" : ViewUtil.ConvertRecinfoStatus(sList, "　選択中");
         }
     }
 }

@@ -54,7 +54,7 @@ namespace EpgTimer.Setting
                 textBox_pcWakeTime.IsEnabled = false;
                 label2.IsEnabled = false;
                 label5.IsEnabled = false;
-                CommonManager.Instance.VUtil.DisableControlChildren(groupBox2);
+                ViewUtil.DisableControlChildren(groupBox2);
 
                 checkBox_back_priority.IsEnabled = false;
                 checkBox_autoDel.IsEnabled = false;

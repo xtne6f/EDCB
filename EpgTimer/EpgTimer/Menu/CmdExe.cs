@@ -49,7 +49,6 @@ namespace EpgTimer
 
         protected CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
         protected MenuUtil mutil = CommonManager.Instance.MUtil;
-        protected ViewUtil vutil = CommonManager.Instance.VUtil;
         protected MenuManager mm = CommonManager.Instance.MM;
 
         protected Control Owner;

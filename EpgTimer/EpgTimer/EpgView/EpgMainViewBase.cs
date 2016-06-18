@@ -65,7 +65,7 @@ namespace EpgTimer.EpgView
         protected override void UpdateStatusData(int mode = 0)
         {
             this.status[1] = string.Format("番組数:{0}", programList.Count)
-                + vutil.ConvertReserveStatus(reserveList.GetDataList(), "　予約");
+                + ViewUtil.ConvertReserveStatus(reserveList.GetDataList(), "　予約");
         }
 
         /// <summary>現在ライン表示用タイマーイベント呼び出し</summary>

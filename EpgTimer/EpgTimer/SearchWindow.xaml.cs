@@ -18,7 +18,6 @@ namespace EpgTimer
 
         private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
         private MenuUtil mutil = CommonManager.Instance.MUtil;
-        private ViewUtil vutil = CommonManager.Instance.VUtil;
         private MenuManager mm = CommonManager.Instance.MM;
 
         private CmdExeReserve mc; //予約系コマンド集
@@ -128,7 +127,7 @@ namespace EpgTimer
                 SetRecSetting(Settings.Instance.RecPresetList[0].RecPresetData);
 
                 //notify残ってれば更新。通常残ってないはず。
-                vutil.ReloadReserveData();
+                ViewUtil.ReloadReserveData();
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
@@ -247,11 +246,11 @@ namespace EpgTimer
         {
             string s1 = null;
             string s2 = "";
-            if (mode == 0) s1 = vutil.ConvertSearchItemStatus(lstCtrl.dataList, "検索数");
+            if (mode == 0) s1 = ViewUtil.ConvertSearchItemStatus(lstCtrl.dataList, "検索数");
             if (Settings.Instance.DisplayStatus == true)
             {
                 List<SearchItem> sList = lstCtrl.GetSelectedItemsList();
-                s2 = sList.Count == 0 ? "" : vutil.ConvertSearchItemStatus(sList, "　選択中");
+                s2 = sList.Count == 0 ? "" : ViewUtil.ConvertSearchItemStatus(sList, "　選択中");
             }
             this.statusBar.SetText(s1, s2);
         }

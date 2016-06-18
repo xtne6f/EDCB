@@ -56,7 +56,7 @@ namespace EpgTimer
         {
             get
             {
-                return CommonManager.Instance.VUtil.EpgDataContentBrush(EventInfo);
+                return ViewUtil.EpgDataContentBrush(EventInfo);
             }
         }
     }

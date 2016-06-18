@@ -83,7 +83,7 @@ namespace EpgTimer
         {
             return lstCtrl.ReloadInfoData(dataList =>
             {
-                if (vutil.ReloadReserveData(this) == false) return false;
+                if (ViewUtil.ReloadReserveData(this) == false) return false;
 
                 foreach (ReserveData info in CommonManager.Instance.DB.ReserveList.Values)
                 {
@@ -94,9 +94,9 @@ namespace EpgTimer
         }
         protected override void UpdateStatusData(int mode = 0)
         {
-            if (mode == 0) this.status[1] = vutil.ConvertReserveStatus(lstCtrl.dataList, "予約数", 1);
+            if (mode == 0) this.status[1] = ViewUtil.ConvertReserveStatus(lstCtrl.dataList, "予約数", 1);
             List<ReserveItem> sList = lstCtrl.GetSelectedItemsList();
-            this.status[2] = sList.Count == 0 ? "" : vutil.ConvertReserveStatus(sList, "　選択中", 2);
+            this.status[2] = sList.Count == 0 ? "" : ViewUtil.ConvertReserveStatus(sList, "　選択中", 2);
         }
         public void SaveViewData()
         {
@@ -121,7 +121,7 @@ namespace EpgTimer
         {
             uint ID = target.ReserveID;
             ReserveItem item = lstCtrl.dataList.Find(data => data.ReserveInfo.ReserveID == ID);
-            vutil.ScrollToFindItem(item, listView_reserve, IsMarking);
+            ViewUtil.ScrollToFindItem(item, listView_reserve, IsMarking);
         }
 
     }

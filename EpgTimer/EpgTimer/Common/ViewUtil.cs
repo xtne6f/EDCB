@@ -13,25 +13,16 @@ using System.Reflection;
 
 namespace EpgTimer
 {
-    public class ViewUtil
+    public static class ViewUtil
     {
-        private CtrlCmdUtil cmd = null;
-        private MenuUtil mutil = null;
-
-        public ViewUtil(CtrlCmdUtil ctrlCmd, MenuUtil MUtil)
-        {
-            cmd = ctrlCmd;
-            mutil = MUtil;
-        }
-
-        public Brush EpgDataContentBrush(EpgEventInfo EventInfo)
+        public static Brush EpgDataContentBrush(EpgEventInfo EventInfo)
         {
             if (EventInfo == null) return Brushes.White;
             if (EventInfo.ContentInfo == null) return CommonManager.Instance.CustContentColorList[0x10];
 
             return EpgDataContentBrush(EventInfo.ContentInfo.nibbleList);
         }
-        public Brush EpgDataContentBrush(List<EpgContentData> nibbleList)
+        public static Brush EpgDataContentBrush(List<EpgContentData> nibbleList)
         {
             if (nibbleList != null)
             {
@@ -60,7 +51,7 @@ namespace EpgTimer
             return CommonManager.Instance.CustContentColorList[0x10];
         }
 
-        public SolidColorBrush ReserveErrBrush(ReserveData ReserveData)
+        public static SolidColorBrush ReserveErrBrush(ReserveData ReserveData)
         {
             if (ReserveData != null)
             {
@@ -84,13 +75,13 @@ namespace EpgTimer
             return CommonManager.Instance.ResDefBackColor;
         }
         
-        public void SetSpecificChgAppearance(Control obj)
+        public static void SetSpecificChgAppearance(Control obj)
         {
             obj.Background = Brushes.LavenderBlush;
             obj.BorderThickness = new Thickness(2);
         }
 
-        public bool ReloadReserveData(Control Owner = null)
+        public static bool ReloadReserveData(Control Owner = null)
         {
             if (CommonManager.Instance.IsConnected == false) return false;
 
@@ -101,7 +92,7 @@ namespace EpgTimer
         }
         
         //ジャンル絞り込み
-        public bool ContainsContent(EpgEventInfo info, Dictionary<UInt16, UInt16> ContentKindList)
+        public static bool ContainsContent(EpgEventInfo info, Dictionary<UInt16, UInt16> ContentKindList)
         {
             //絞り込み無し
             if (ContentKindList.Count == 0) return true;
@@ -139,7 +130,7 @@ namespace EpgTimer
         }
 
         //パネルアイテムにマージンを適用。
-        public void ApplyMarginForPanelView(ReserveData resInfo, ref DateTime startTime, ref int duration)
+        public static void ApplyMarginForPanelView(ReserveData resInfo, ref DateTime startTime, ref int duration)
         {
             int StartMargin = resInfo.RecSetting.GetTrueMargin(true);
             int EndMargin = resInfo.RecSetting.GetTrueMargin(false);
@@ -156,7 +147,7 @@ namespace EpgTimer
             }
         }
 
-        public void ApplyMarginForTunerPanelView(ReserveData resInfo, ref DateTime startTime, ref int duration)
+        public static void ApplyMarginForTunerPanelView(ReserveData resInfo, ref DateTime startTime, ref int duration)
         {
             int StartMargin = resInfo.RecSetting.GetTrueMargin(true);
             int EndMargin = resInfo.RecSetting.GetTrueMargin(false);
@@ -169,7 +160,7 @@ namespace EpgTimer
         public const double PanelMinimumHeight = 2;
 
         //最低表示行数を適用。また、最低表示高さを確保して、位置も調整する。
-        public void ModifierMinimumLine<T, S>(List<S> list, double minimumLine, double fontHeight) where S : ViewPanelItem<T>
+        public static void ModifierMinimumLine<T, S>(List<S> list, double minimumLine, double fontHeight) where S : ViewPanelItem<T>
         {
             list.Sort((x, y) => Math.Sign(x.LeftPos - y.LeftPos) * 2 + Math.Sign(x.TopPos - y.TopPos));
             double minimum = Math.Max((fontHeight + 2) * minimumLine, PanelMinimumHeight);
@@ -195,7 +186,7 @@ namespace EpgTimer
             }
         }
 
-        public void SetTimeList(List<ProgramViewItem> programList, SortedList<DateTime, List<ProgramViewItem>> timeList)
+        public static void SetTimeList(List<ProgramViewItem> programList, SortedList<DateTime, List<ProgramViewItem>> timeList)
         {
             foreach (ProgramViewItem item in programList)
             {
@@ -219,7 +210,7 @@ namespace EpgTimer
             }
         }
 
-        public void ScrollToFindItem(SearchItem target_item, ListBox listBox, bool IsMarking)
+        public static void ScrollToFindItem(SearchItem target_item, ListBox listBox, bool IsMarking)
         {
             try
             {
@@ -254,7 +245,7 @@ namespace EpgTimer
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
 
-        public void ScrollToItem(object target_item, ListBox listBox)
+        public static void ScrollToItem(object target_item, ListBox listBox)
         {
             try
             {
@@ -272,12 +263,12 @@ namespace EpgTimer
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
 
-        public void DisableControlChildren(Control ctrl)
+        public static void DisableControlChildren(Control ctrl)
         {
             ctrl.Foreground = Brushes.Gray;
             ChangeChildren(ctrl, false);
         }
-        public void ChangeChildren(UIElement ele, bool enabled)
+        public static void ChangeChildren(UIElement ele, bool enabled)
         {
             foreach (var child in LogicalTreeHelper.GetChildren(ele))
             {
@@ -308,16 +299,16 @@ namespace EpgTimer
             }
         }
         /*/
-        public string ConvertSearchItemStatus(IEnumerable<SearchItem> list, string itemText = "番組数")
+        public static string ConvertSearchItemStatus(IEnumerable<SearchItem> list, string itemText = "番組数")
         {
             return string.Format("{0}:{1}", itemText, list.Count()) + ConvertReserveStatus(list, " 予約");
         }
-        public string ConvertReserveStatus(IEnumerable<SearchItem> list, string itemText = "予約数", int reserveMode = 0)
+        public static string ConvertReserveStatus(IEnumerable<SearchItem> list, string itemText = "予約数", int reserveMode = 0)
         {
             if (reserveMode == 0 && list.Count() == 0) return "";
             return ConvertReserveStatus(list.GetReserveList(), itemText, reserveMode);
         }
-        public string ConvertReserveStatus(List<ReserveData> rlist, string itemText = "予約数", int reserveMode = 0)
+        public static string ConvertReserveStatus(List<ReserveData> rlist, string itemText = "予約数", int reserveMode = 0)
         {
             var text = string.Format("{0}:{1}", itemText, rlist.Count);
             List<ReserveData> onlist = rlist.FindAll(data => data.IsEnabled == true);
@@ -351,7 +342,7 @@ namespace EpgTimer
             }
             return text;
         }
-        public string ConvertRecinfoStatus(IEnumerable<RecInfoItem> list, string itemText = "録画結果")
+        public static string ConvertRecinfoStatus(IEnumerable<RecInfoItem> list, string itemText = "録画結果")
         {
             var format = "{0}:{1} ({2}:{3} {4}:{5})";
             if (Settings.Instance.RecinfoErrCriticalDrops == true)
@@ -367,7 +358,7 @@ namespace EpgTimer
                     "Scramble", list.Sum(item => item.RecInfo.Scrambles));
             }
         }
-        public string ConvertAutoAddStatus(IEnumerable<AutoAddDataItem> list, string itemText = "自動予約登録数")
+        public static string ConvertAutoAddStatus(IEnumerable<AutoAddDataItem> list, string itemText = "自動予約登録数")
         {
             var onRes = new List<uint>();
             var offRes = new List<uint>();
@@ -456,10 +447,6 @@ namespace EpgTimer
             return e.Handled;
         }
 
-    }
-
-    public static class ViewUtilEx
-    {
         ///<summary>同じアイテムがあってもスクロールするようにしたもの(ItemSource使用時無効)</summary>
         //ScrollIntoView()は同じアイテムが複数あると上手く動作しないので、ダミーを使って無理矢理移動させる。
         //同じ理由でSelectedItemも正しく動作しないので、スクロール位置はindexで取るようにする。

@@ -10,7 +10,6 @@ namespace EpgTimer
     public class SearchItem : RecSettingItem
     {
         protected MenuUtil mutil = CommonManager.Instance.MUtil;
-        protected ViewUtil vutil = CommonManager.Instance.VUtil;
 
         protected EpgEventInfo eventInfo = null;
         public virtual EpgEventInfo EventInfo { get { return eventInfo; } set { eventInfo = value; } }
@@ -293,14 +292,14 @@ namespace EpgTimer
                 }
 
                 //通常表示
-                return vutil.ReserveErrBrush(ReserveInfo);
+                return ViewUtil.ReserveErrBrush(ReserveInfo);
             }
         }
         public Brush BorderBrush
         {
             get
             {
-                return vutil.EpgDataContentBrush(EventInfo);
+                return ViewUtil.EpgDataContentBrush(EventInfo);
             }
         }
     }

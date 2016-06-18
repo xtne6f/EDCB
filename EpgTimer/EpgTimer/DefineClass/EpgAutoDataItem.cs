@@ -11,7 +11,6 @@ namespace EpgTimer
     public class AutoAddDataItem : RecSettingItem
     {
         protected MenuUtil mutil = CommonManager.Instance.MUtil;
-        protected ViewUtil vutil = CommonManager.Instance.VUtil;
 
         protected AutoAddData _data;
         public AutoAddData Data { get { return _data; } set { _data = value; } }
@@ -360,7 +359,7 @@ namespace EpgTimer
                 {
                     return Brushes.Gainsboro;
                 }
-                return vutil.EpgDataContentBrush(EpgAutoAddInfo.searchInfo.contentList);
+                return ViewUtil.EpgDataContentBrush(EpgAutoAddInfo.searchInfo.contentList);
             }
         }
 

@@ -101,7 +101,7 @@ namespace EpgTimer.EpgView
         }
         protected bool ReloadReserveData()
         {
-            if (vutil.ReloadReserveData() == false) return false;
+            if (ViewUtil.ReloadReserveData() == false) return false;
             ReloadReserveViewItem();
             return true;
         }

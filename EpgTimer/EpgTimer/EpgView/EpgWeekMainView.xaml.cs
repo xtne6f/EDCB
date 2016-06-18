@@ -120,7 +120,7 @@ namespace EpgTimer
 
                         //マージンを適用
                         Int32 duration = (Int32)info.DurationSecond;
-                        vutil.ApplyMarginForPanelView(info, ref startTime, ref duration);
+                        ViewUtil.ApplyMarginForPanelView(info, ref startTime, ref duration);
 
                         var viewItem = new ReserveViewItem(info);
                         reserveList.Add(viewItem);
@@ -211,7 +211,7 @@ namespace EpgTimer
                         continue;
                     }
                     //ジャンル絞り込み
-                    if (vutil.ContainsContent(eventInfo, this.viewCustContentKindList) == false)
+                    if (ViewUtil.ContainsContent(eventInfo, this.viewCustContentKindList) == false)
                     {
                         continue;
                     }
@@ -280,10 +280,10 @@ namespace EpgTimer
                     }
                 }
                 //最低表示行数を適用。また、最低表示高さを確保して、位置も調整する。
-                vutil.ModifierMinimumLine<EpgEventInfo, ProgramViewItem>(programList, Settings.Instance.MinimumHeight, Settings.Instance.FontSizeTitle);
+                ViewUtil.ModifierMinimumLine<EpgEventInfo, ProgramViewItem>(programList, Settings.Instance.MinimumHeight, Settings.Instance.FontSizeTitle);
 
                 //必要時間リストと時間と番組の関連づけ
-                vutil.SetTimeList(programList, timeList);
+                ViewUtil.SetTimeList(programList, timeList);
                 
                 epgProgramView.SetProgramList(
                     programList,

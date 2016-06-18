@@ -69,7 +69,7 @@ namespace EpgTimer
 
         public void SetChangeMode(int chgMode)
         {
-            CommonManager.Instance.VUtil.SetSpecificChgAppearance(listBox_content);
+            ViewUtil.SetSpecificChgAppearance(listBox_content);
             listBox_content.Focus();
             if (listBox_content.Items.Count != 0) listBox_content.SelectedIndex = 0;
         }

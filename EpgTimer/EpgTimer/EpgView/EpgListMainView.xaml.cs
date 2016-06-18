@@ -68,9 +68,9 @@ namespace EpgTimer
 
         protected override void UpdateStatusData(int mode = 0)
         {
-            if (mode == 0) this.status[1] = vutil.ConvertSearchItemStatus(lstCtrl.dataList, "番組数");
+            if (mode == 0) this.status[1] = ViewUtil.ConvertSearchItemStatus(lstCtrl.dataList, "番組数");
             List<SearchItem> sList = lstCtrl.GetSelectedItemsList();
-            this.status[2] = sList.Count == 0 ? "" : vutil.ConvertSearchItemStatus(sList, "　選択中");
+            this.status[2] = sList.Count == 0 ? "" : ViewUtil.ConvertSearchItemStatus(sList, "　選択中");
         }
 
         protected override void ReloadReserveViewItem()
@@ -132,7 +132,7 @@ namespace EpgTimer
                         foreach (EpgEventInfo eventInfo in serviceEventList[info.ID].eventList)
                         {
                             //ジャンル絞り込み
-                            if (vutil.ContainsContent(eventInfo, this.viewCustContentKindList) == false)
+                            if (ViewUtil.ContainsContent(eventInfo, this.viewCustContentKindList) == false)
                             {
                                 continue;
                             }
@@ -206,7 +206,7 @@ namespace EpgTimer
             SearchItem target_item = lstCtrl.dataList.Find(item => item.ReserveInfo != null && item.ReserveInfo.ReserveID == ID);
             if (target_item != null)
             {
-                vutil.ScrollToFindItem(target_item, listView_event, IsMarking);
+                ViewUtil.ScrollToFindItem(target_item, listView_event, IsMarking);
             }
             else
             {
@@ -231,7 +231,7 @@ namespace EpgTimer
         {
             ulong PgKey = target.Create64PgKey();
             SearchItem target_item = lstCtrl.dataList.Find(item => item.EventInfo.Create64PgKey() == PgKey);
-            vutil.ScrollToFindItem(target_item, listView_event, IsMarking);
+            ViewUtil.ScrollToFindItem(target_item, listView_event, IsMarking);
         }
 
         protected override void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)

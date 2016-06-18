@@ -36,7 +36,7 @@ namespace EpgTimer.Setting
 
             if (CommonManager.Instance.NWMode == true)
             {
-                CommonManager.Instance.VUtil.ChangeChildren(grid_folder, false);
+                ViewUtil.ChangeChildren(grid_folder, false);
                 label1.IsEnabled = true;
                 textBox_setPath.IsEnabled = true;
                 button_setPath.IsEnabled = true;
@@ -45,11 +45,11 @@ namespace EpgTimer.Setting
                 label4.IsEnabled = true;
                 button_shortCut.IsEnabled = true;
                 label5.IsEnabled = true;
-                CommonManager.Instance.VUtil.DisableControlChildren(tabItem2);
+                ViewUtil.DisableControlChildren(tabItem2);
                 grid_tuner.IsEnabled = true;
-                CommonManager.Instance.VUtil.ChangeChildren(grid_tuner, false);
+                ViewUtil.ChangeChildren(grid_tuner, false);
                 listBox_bon.IsEnabled = true;
-                CommonManager.Instance.VUtil.DisableControlChildren(tabItem3);
+                ViewUtil.DisableControlChildren(tabItem3);
             }
 
             listBox_Button_Set();

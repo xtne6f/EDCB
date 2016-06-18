@@ -56,8 +56,6 @@ namespace EpgTimer
         { get; set; }
         public MenuUtil MUtil
         { get; set; }
-        public ViewUtil VUtil
-        { get; set; }
 
         MenuManager _mm;
         public MenuManager MM
@@ -127,10 +125,6 @@ namespace EpgTimer
             if (MUtil == null)
             {
                 MUtil = new MenuUtil(CtrlCmd);
-            }
-            if (VUtil == null)
-            {
-                VUtil = new ViewUtil(CtrlCmd, MUtil);
             }
             if (ContentKindDictionary == null)
             {

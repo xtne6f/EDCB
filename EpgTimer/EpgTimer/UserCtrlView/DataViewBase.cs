@@ -7,7 +7,6 @@ namespace EpgTimer.UserCtrlView
     public class DataViewBase : UserControl
     {
         protected MenuUtil mutil = CommonManager.Instance.MUtil;
-        protected ViewUtil vutil = CommonManager.Instance.VUtil;
         protected MenuManager mm = CommonManager.Instance.MM;
         protected MenuBinds mBinds = new MenuBinds();
         protected string[] status = { "", "", "", "" };
