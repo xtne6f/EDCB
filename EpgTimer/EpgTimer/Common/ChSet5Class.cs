@@ -2,36 +2,23 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.IO;
 
 namespace EpgTimer
 {
-    class ChSet5
+    static class ChSet5
     {
-        private Dictionary<UInt64, ChSet5Item> _chList = null;
-        public Dictionary<UInt64, ChSet5Item> ChList
+        private static Dictionary<UInt64, ChSet5Item> chList = null;
+        public static Dictionary<UInt64, ChSet5Item> ChList
         {
             get
             {
-                if (_chList == null) LoadFile();
-                return _chList != null ? _chList : new Dictionary<UInt64, ChSet5Item>();
+                if (chList == null) LoadFile();
+                return chList ?? new Dictionary<UInt64, ChSet5Item>();
             }
-            private set { _chList = value; }
         }
-        public static void Clear() { Instance._chList = null; }
+        public static void Clear() { chList = null; }
         
-        private static ChSet5 _instance;
-        public static ChSet5 Instance
-        {
-            get
-            {
-                if (_instance == null)
-                    _instance = new ChSet5();
-                return _instance;
-            }
-        }
-
-        public ChSet5() { }
-
         public static bool IsVideo(UInt16 ServiceType)
         {
             return ServiceType == 0x01 || ServiceType == 0xA5 || ServiceType == 0xAD;
@@ -69,7 +56,7 @@ namespace EpgTimer
         {
             try
             {
-                using (var sr = new System.IO.StreamReader(SettingPath.SettingFolderPath + "\\ChSet5.txt", Encoding.Default))
+                using (var sr = new StreamReader(SettingPath.SettingFolderPath + "\\ChSet5.txt", Encoding.Default))
                 {
                     return ChSet5.Load(sr);
                 }
@@ -77,11 +64,11 @@ namespace EpgTimer
             catch { }
             return false;
         }
-        public static bool Load(System.IO.StreamReader reader)
+        public static bool Load(StreamReader reader)
         {
             try
             {
-                Instance._chList = new Dictionary<UInt64, ChSet5Item>();
+                chList = new Dictionary<UInt64, ChSet5Item>();
                 while (reader.Peek() >= 0)
                 {
                     string buff = reader.ReadLine();
@@ -92,7 +79,7 @@ namespace EpgTimer
                     else
                     {
                         string[] list = buff.Split('\t');
-                        ChSet5Item item = new ChSet5Item();
+                        var item = new ChSet5Item();
                         try
                         {
                             item.ServiceName = list[0];
@@ -107,8 +94,7 @@ namespace EpgTimer
                         }
                         finally
                         {
-                            UInt64 key = item.Key;
-                            Instance._chList.Add(key, item);
+                            chList.Add(item.Key, item);
                         }
                     }
                 }
@@ -123,11 +109,11 @@ namespace EpgTimer
         {
             try
             {
-                String filePath = SettingPath.SettingFolderPath + "\\ChSet5.txt";
-                System.IO.StreamWriter writer = (new System.IO.StreamWriter(filePath, false, System.Text.Encoding.Default));
-                if (Instance._chList != null)
+                if (chList == null) return false;
+                //
+                using (var writer = new StreamWriter(SettingPath.SettingFolderPath + "\\ChSet5.txt", false, Encoding.Default))
                 {
-                    foreach (ChSet5Item info in Instance._chList.Values)
+                    foreach (ChSet5Item info in chList.Values)
                     {
                         writer.WriteLine("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}",
                             info.ServiceName,
@@ -141,7 +127,6 @@ namespace EpgTimer
                             info.SearchFlag);
                     }
                 }
-                writer.Close();
             }
             catch
             {

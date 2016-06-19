@@ -726,9 +726,9 @@ namespace EpgTimer
             if (eventInfo != null)
             {
                 UInt64 key = eventInfo.Create64Key();
-                if (ChSet5.Instance.ChList.ContainsKey(key) == true)
+                if (ChSet5.ChList.ContainsKey(key) == true)
                 {
-                    basicInfo += ChSet5.Instance.ChList[key].ServiceName + "(" + ChSet5.Instance.ChList[key].NetworkName + ")" + "\r\n";
+                    basicInfo += ChSet5.ChList[key].ServiceName + "(" + ChSet5.ChList[key].NetworkName + ")" + "\r\n";
                 }
 
                 basicInfo += ConvertTimeText(eventInfo) + "\r\n";
@@ -871,9 +871,9 @@ namespace EpgTimer
                         foreach (EpgEventData info in eventInfo.EventRelayInfo.eventDataList)
                         {
                             key = info.Create64Key();
-                            if (ChSet5.Instance.ChList.ContainsKey(key) == true)
+                            if (ChSet5.ChList.ContainsKey(key) == true)
                             {
-                                extInfo += ChSet5.Instance.ChList[key].ServiceName + "(" + ChSet5.Instance.ChList[key].NetworkName + ")" + " ";
+                                extInfo += ChSet5.ChList[key].ServiceName + "(" + ChSet5.ChList[key].NetworkName + ")" + " ";
                             }
                             else
                             {
@@ -1127,7 +1127,7 @@ namespace EpgTimer
                 setInfo[i].ID = -1 * (i + 1);
             }
 
-            foreach (ChSet5Item info in ChSet5.Instance.ChList.Values)
+            foreach (ChSet5Item info in ChSet5.ChList.Values)
             {
                 int i = 3;//その他
                 if (info.IsDttv == true)//地デジ

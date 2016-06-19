@@ -60,9 +60,9 @@ namespace EpgTimer
                 if (EventInfo != null)
                 {
                     UInt64 serviceKey = EventInfo.Create64Key();
-                    if (ChSet5.Instance.ChList.ContainsKey(serviceKey) == true)
+                    if (ChSet5.ChList.ContainsKey(serviceKey) == true)
                     {
-                        return ChSet5.Instance.ChList[serviceKey].ServiceName;
+                        return ChSet5.ChList[serviceKey].ServiceName;
                     }
                 }
                 return "";

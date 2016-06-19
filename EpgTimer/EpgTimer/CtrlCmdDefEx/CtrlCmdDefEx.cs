@@ -155,9 +155,9 @@ namespace EpgTimer
             resInfo.DurationSecond = (epgInfo.DurationFlag == 0 ? 10 * 60 : epgInfo.durationSec);
 
             UInt64 key = epgInfo.Create64Key();
-            if (ChSet5.Instance.ChList.ContainsKey(key) == true)
+            if (ChSet5.ChList.ContainsKey(key) == true)
             {
-                resInfo.StationName = ChSet5.Instance.ChList[key].ServiceName;
+                resInfo.StationName = ChSet5.ChList[key].ServiceName;
             }
             resInfo.OriginalNetworkID = epgInfo.original_network_id;
             resInfo.TransportStreamID = epgInfo.transport_stream_id;

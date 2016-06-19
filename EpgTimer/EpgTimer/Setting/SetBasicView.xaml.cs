@@ -117,7 +117,7 @@ namespace EpgTimer.Setting
                 serviceList = new List<ServiceViewItem>();
                 try
                 {
-                    foreach (ChSet5Item info in ChSet5.Instance.ChList.Values)
+                    foreach (ChSet5Item info in ChSet5.ChList.Values)
                     {
                         ServiceViewItem item = new ServiceViewItem(info);
                         if (info.EpgCapFlag == 1)
@@ -324,11 +324,11 @@ namespace EpgTimer.Setting
                     {
                         if (info.IsSelected == true)
                         {
-                            ChSet5.Instance.ChList[key].EpgCapFlag = 1;
+                            ChSet5.ChList[key].EpgCapFlag = 1;
                         }
                         else
                         {
-                            ChSet5.Instance.ChList[key].EpgCapFlag = 0;
+                            ChSet5.ChList[key].EpgCapFlag = 0;
                         }
                     }
                     catch

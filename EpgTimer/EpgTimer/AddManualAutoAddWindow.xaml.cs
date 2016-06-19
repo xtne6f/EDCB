@@ -54,7 +54,7 @@ namespace EpgTimer
                 comboBox_endSS.DataContext = CommonManager.Instance.MinDictionary.Values;
                 comboBox_endSS.SelectedIndex = 0;
 
-                comboBox_service.ItemsSource = ChSet5.Instance.ChList.Values;
+                comboBox_service.ItemsSource = ChSet5.ChList.Values;
                 comboBox_service.SelectedIndex = 0;
 
                 recSettingView.SetViewMode(false);
@@ -289,9 +289,9 @@ namespace EpgTimer
 
                 UInt64 key = defKey.Create64Key();
 
-                if (ChSet5.Instance.ChList.ContainsKey(key) == true)
+                if (ChSet5.ChList.ContainsKey(key) == true)
                 {
-                    comboBox_service.SelectedItem = ChSet5.Instance.ChList[key];
+                    comboBox_service.SelectedItem = ChSet5.ChList[key];
                 }
                 recSettingView.SetDefSetting(defKey.recSetting, true);
             }

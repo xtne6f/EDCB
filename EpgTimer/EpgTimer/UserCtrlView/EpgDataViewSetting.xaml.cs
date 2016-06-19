@@ -26,11 +26,11 @@ namespace EpgTimer
                 comboBox_timeH_week.ItemsSource = CommonManager.Instance.HourDictionary.Values;
                 comboBox_timeH_week.SelectedIndex = 4;
 
-                listBox_serviceDttv.ItemsSource = ChSet5.Instance.ChList.Values.Where(info => info.IsDttv == true);
-                listBox_serviceBS.ItemsSource = ChSet5.Instance.ChList.Values.Where(info => info.IsBS == true);
-                listBox_serviceCS.ItemsSource = ChSet5.Instance.ChList.Values.Where(info => info.IsCS == true);
-                listBox_serviceOther.ItemsSource = ChSet5.Instance.ChList.Values.Where(info => info.IsOther == true);
-                listBox_serviceAll.ItemsSource = ChSet5.Instance.ChList.Values;
+                listBox_serviceDttv.ItemsSource = ChSet5.ChList.Values.Where(info => info.IsDttv == true);
+                listBox_serviceBS.ItemsSource = ChSet5.ChList.Values.Where(info => info.IsBS == true);
+                listBox_serviceCS.ItemsSource = ChSet5.ChList.Values.Where(info => info.IsCS == true);
+                listBox_serviceOther.ItemsSource = ChSet5.ChList.Values.Where(info => info.IsOther == true);
+                listBox_serviceAll.ItemsSource = ChSet5.ChList.Values;
 
                 listBox_jyanru.ItemsSource = CommonManager.Instance.ContentKindList;
 
@@ -79,9 +79,9 @@ namespace EpgTimer
 
             foreach (UInt64 id in setInfo.ViewServiceList)
             {
-                if (ChSet5.Instance.ChList.ContainsKey(id) == true)
+                if (ChSet5.ChList.ContainsKey(id) == true)
                 {
-                    listBox_serviceView.Items.Add(ChSet5.Instance.ChList[id]);
+                    listBox_serviceView.Items.Add(ChSet5.ChList[id]);
                 }
             }
             foreach (UInt16 id in setInfo.ViewContentKindList)
@@ -349,9 +349,9 @@ namespace EpgTimer
                     var searchList = new List<object>();
                     foreach (ulong sv in searchKey.serviceList)
                     {
-                        if (ChSet5.Instance.ChList.ContainsKey(sv) == true)
+                        if (ChSet5.ChList.ContainsKey(sv) == true)
                         {
-                            searchList.Add(ChSet5.Instance.ChList[sv]);
+                            searchList.Add(ChSet5.ChList[sv]);
                         }
                     }
                     listBox_serviceView.UnselectAll();

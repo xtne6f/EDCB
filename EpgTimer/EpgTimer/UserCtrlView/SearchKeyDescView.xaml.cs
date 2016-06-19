@@ -20,7 +20,7 @@ namespace EpgTimer
             InitializeComponent();
             try
             {
-                foreach (ChSet5Item info in ChSet5.Instance.ChList.Values)
+                foreach (ChSet5Item info in ChSet5.ChList.Values)
                 {
                     ServiceItem item = new ServiceItem();
 

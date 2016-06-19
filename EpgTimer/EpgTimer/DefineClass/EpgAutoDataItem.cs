@@ -280,7 +280,7 @@ namespace EpgTimer
                 {
                     string network1 = "?";
                     ChSet5Item chSet5Item1;
-                    if (ChSet5.Instance.ChList.TryGetValue(service1, out chSet5Item1) == true)
+                    if (ChSet5.ChList.TryGetValue(service1, out chSet5Item1) == true)
                     {
                         network1 = CommonManager.ConvertNetworkNameText(chSet5Item1.ONID, true);
                     }
@@ -313,7 +313,7 @@ namespace EpgTimer
             {
                 if (view != "") { view += ", "; }
                 ChSet5Item chSet5Item1;
-                if (ChSet5.Instance.ChList.TryGetValue(service1, out chSet5Item1) == true)
+                if (ChSet5.ChList.TryGetValue(service1, out chSet5Item1) == true)
                 {
                     view += chSet5Item1.ServiceName + (withNetwork == true ? "(" + CommonManager.ConvertNetworkNameText(chSet5Item1.ONID) + ")" : "");
                 }

@@ -48,7 +48,7 @@ namespace EpgTimer
                     if (paramList["station"].IndexOf("DFS") == 0)
                     {
                         UInt16 sid = Convert.ToUInt16(paramList["station"].Substring(3), 16);
-                        foreach (ChSet5Item info in ChSet5.Instance.ChList.Values)
+                        foreach (ChSet5Item info in ChSet5.ChList.Values)
                         {
                             if (info.IsDttv == true && info.SID == sid)
                             {
@@ -67,7 +67,7 @@ namespace EpgTimer
                     else if (paramList["station"].IndexOf("BSDT") == 0)
                     {
                         UInt16 sid = Convert.ToUInt16(paramList["station"].Substring(4));
-                        foreach (ChSet5Item info in ChSet5.Instance.ChList.Values)
+                        foreach (ChSet5Item info in ChSet5.ChList.Values)
                         {
                             if (info.IsBS == true && info.SID == sid)
                             {
@@ -86,7 +86,7 @@ namespace EpgTimer
                     else if (paramList["station"].IndexOf("CSDT") == 0)
                     {
                         UInt16 sid = Convert.ToUInt16(paramList["station"].Substring(4));
-                        foreach (ChSet5Item info in ChSet5.Instance.ChList.Values)
+                        foreach (ChSet5Item info in ChSet5.ChList.Values)
                         {
                             if (info.IsCS == true && info.SID == sid)
                             {
@@ -105,7 +105,7 @@ namespace EpgTimer
                     else if (paramList["station"].IndexOf("DOS") == 0)
                     {
                         UInt16 sid = Convert.ToUInt16(paramList["station"].Substring(3), 16);
-                        foreach (ChSet5Item info in ChSet5.Instance.ChList.Values)
+                        foreach (ChSet5Item info in ChSet5.ChList.Values)
                         {
                             if (info.IsDttv == true && info.SID == sid)
                             {
@@ -205,12 +205,12 @@ namespace EpgTimer
                     foreach (IEPGStationInfo info in Settings.Instance.IEpgStationList)
                     {
                         if( String.Compare(info.StationName, paramList["station"]) == 0){
-                            if (ChSet5.Instance.ChList.ContainsKey(info.Key) == true)
+                            if (ChSet5.ChList.ContainsKey(info.Key) == true)
                             {
-                                AddInfo.OriginalNetworkID = ChSet5.Instance.ChList[info.Key].ONID;
-                                AddInfo.TransportStreamID = ChSet5.Instance.ChList[info.Key].TSID;
-                                AddInfo.ServiceID = ChSet5.Instance.ChList[info.Key].SID;
-                                AddInfo.StationName = ChSet5.Instance.ChList[info.Key].ServiceName;
+                                AddInfo.OriginalNetworkID = ChSet5.ChList[info.Key].ONID;
+                                AddInfo.TransportStreamID = ChSet5.ChList[info.Key].TSID;
+                                AddInfo.ServiceID = ChSet5.ChList[info.Key].SID;
+                                AddInfo.StationName = ChSet5.ChList[info.Key].ServiceName;
 
                                 AddInfo.EventID = 0xFFFF;
                                 find = true;

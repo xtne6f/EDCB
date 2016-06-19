@@ -323,7 +323,7 @@ namespace EpgTimer.Setting
                 textBox_exe3.Text = Settings.Instance.Cust3BtnCmd;
                 textBox_opt3.Text = Settings.Instance.Cust3BtnCmdOpt;
 
-                foreach (ChSet5Item info in ChSet5.Instance.ChList.Values)
+                foreach (ChSet5Item info in ChSet5.ChList.Values)
                 {
                     ServiceViewItem item = new ServiceViewItem(info);
                     serviceList.Add(item.Key, item);
