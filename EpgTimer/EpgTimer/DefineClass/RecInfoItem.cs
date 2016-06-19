@@ -172,14 +172,14 @@ namespace EpgTimer
                 return RecInfo.RecFilePath;
             }
         }
-        public SolidColorBrush ForeColor
+        public Brush ForeColor
         {
             get
             {
                 return CommonManager.Instance.ListDefForeColor;
             }
         }
-        public SolidColorBrush BackColor
+        public Brush BackColor
         {
             get
             {

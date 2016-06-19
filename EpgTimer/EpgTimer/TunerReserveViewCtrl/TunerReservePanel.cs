@@ -20,7 +20,7 @@ namespace EpgTimer.TunerReserveViewCtrl
             this.UseLayoutRounding = true;
         }
 
-        protected bool RenderText(String text, DrawingContext dc, ItemFont itemFont, SolidColorBrush brush, double fontSize, double maxWidth, double maxHeight, double x, double y, ref double useHeight, bool nowrap = false)
+        protected bool RenderText(String text, DrawingContext dc, ItemFont itemFont, Brush brush, double fontSize, double maxWidth, double maxHeight, double x, double y, ref double useHeight, bool nowrap = false)
         {
             if (maxHeight < fontSize + 2)
             {
@@ -129,8 +129,8 @@ namespace EpgTimer.TunerReserveViewCtrl
                 double sizeNormal = Settings.Instance.TunerFontSize;
                 double indentTitle = Math.Floor(sizeMin * 1.7);
                 double indentNormal = Math.Floor(Settings.Instance.TunerTitleIndent ? indentTitle : 2);
-                SolidColorBrush colorTitle = CommonManager.Instance.CustTunerServiceColor;
-                SolidColorBrush colorNormal = CommonManager.Instance.CustTunerTextColor;
+                Brush colorTitle = CommonManager.Instance.CustTunerServiceColor;
+                Brush colorNormal = CommonManager.Instance.CustTunerTextColor;
 
                 //録画中のものを後で描画する
                 List<ReserveViewItem> postdrawList = Items.Where(info => info.ReserveInfo.IsOnRec()).ToList();

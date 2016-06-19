@@ -51,7 +51,7 @@ namespace EpgTimer
             return CommonManager.Instance.CustContentColorList[0x10];
         }
 
-        public static SolidColorBrush ReserveErrBrush(ReserveData ReserveData)
+        public static Brush ReserveErrBrush(ReserveData ReserveData)
         {
             if (ReserveData != null)
             {

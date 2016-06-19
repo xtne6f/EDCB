@@ -76,8 +76,8 @@ namespace EpgTimer.TunerReserveViewCtrl
             var fontTitle = new FontFamily(Settings.Instance.TunerFontNameService);
             var fontNormal = new FontFamily(Settings.Instance.TunerFontName);
             FontWeight weightTitle = Settings.Instance.TunerFontBoldService == true ? FontWeights.Bold : FontWeights.Normal;
-            SolidColorBrush colorTitle = Settings.Instance.TunerColorModeUse == true ? viewInfo.ForeColorPriTuner : CommonManager.Instance.CustTunerServiceColor;
-            SolidColorBrush colorNormal = CommonManager.Instance.CustTunerTextColor;
+            Brush colorTitle = Settings.Instance.TunerColorModeUse == true ? viewInfo.ForeColorPriTuner : CommonManager.Instance.CustTunerServiceColor;
+            Brush colorNormal = CommonManager.Instance.CustTunerTextColor;
 
             //録画中は枠をかえる
             popupItem.BorderBrush = viewInfo.BorderBrushTuner;

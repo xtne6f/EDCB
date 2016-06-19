@@ -49,8 +49,8 @@ namespace EpgTimer.EpgView
                 double sizeNormal = Settings.Instance.FontSize;
                 double indentTitle = Math.Floor(sizeMin * 1.7);
                 double indentNormal = Math.Floor(Settings.Instance.EpgTitleIndent ? indentTitle : 2);
-                SolidColorBrush colorTitle = CommonManager.Instance.CustTitle1Color;
-                SolidColorBrush colorNormal = CommonManager.Instance.CustTitle2Color;
+                Brush colorTitle = CommonManager.Instance.CustTitle1Color;
+                Brush colorNormal = CommonManager.Instance.CustTitle2Color;
 
                 foreach (ProgramViewItem info in Items)
                 {
@@ -120,7 +120,7 @@ namespace EpgTimer.EpgView
             }
         }
 
-        protected bool RenderText(String text, ref List<TextDrawItem> textDrawList, ItemFont itemFont, double fontSize, double maxWidth, double maxHeight, double x, double y, ref double useHeight, SolidColorBrush fontColor, Matrix m)
+        protected bool RenderText(String text, ref List<TextDrawItem> textDrawList, ItemFont itemFont, double fontSize, double maxWidth, double maxHeight, double x, double y, ref double useHeight, Brush fontColor, Matrix m)
         {
             double totalHeight = 0;
 
@@ -246,7 +246,7 @@ namespace EpgTimer.EpgView
 
     class TextDrawItem
     {
-        public SolidColorBrush FontColor;
+        public Brush FontColor;
         public GlyphRun Text;
     }
 }

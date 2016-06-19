@@ -241,7 +241,7 @@ namespace EpgTimer
                 return wiewString[index];
             }
         }
-        public virtual SolidColorBrush StatusColor
+        public virtual Brush StatusColor
         {
             get
             {
@@ -263,7 +263,7 @@ namespace EpgTimer
             }
         }
         public int NowJumpingTable { set; get; }
-        public SolidColorBrush ForeColor
+        public Brush ForeColor
         {
             get
             {
@@ -280,7 +280,7 @@ namespace EpgTimer
                 return CommonManager.Instance.RecModeForeColor[ReserveInfo.RecSetting.RecMode];
             }
         }
-        public SolidColorBrush BackColor
+        public Brush BackColor
         {
             get
             {

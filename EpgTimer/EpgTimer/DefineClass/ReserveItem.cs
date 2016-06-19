@@ -152,7 +152,7 @@ namespace EpgTimer
                 return wiewString[index];
             }
         }
-        public override SolidColorBrush StatusColor
+        public override Brush StatusColor
         {
             get
             {
