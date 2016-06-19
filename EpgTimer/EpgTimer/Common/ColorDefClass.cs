@@ -7,59 +7,30 @@ using System.Windows;
 
 namespace EpgTimer
 {
-    public class ColorDef
+    public static class ColorDef
     {
-        private Dictionary<string, SolidColorBrush> colorTable;
-        private static ColorDef _instance;
-        public static ColorDef Instance
-        {
-            get
-            {
-                if (_instance == null)
-                    _instance = new ColorDef();
-                return _instance;
-            }
-            set { _instance = value; }
-        }
-
-        public static string[] ColorNames
-        {
-            get
-            {
-                PropertyInfo[] props = typeof(Colors).GetProperties();
-                List<string> colorName = props.Select(s => s.Name).ToList<string>();
-                colorName.Add("カスタム");
-                return colorName.ToArray();
-            }
-        }
-
-        public Dictionary<string, SolidColorBrush> ColorTable
+        private static Dictionary<string, SolidColorBrush> colorTable;
+        public static Dictionary<string, SolidColorBrush> ColorTable
         {
             get
             {
                 if (colorTable == null)
                 {
-                    colorTable = new Dictionary<string, SolidColorBrush>();
-
-                    var brushtype = typeof(Brushes);
-                    foreach (PropertyInfo prop in brushtype.GetProperties())
-                    {
-                        var p = brushtype.GetProperty(prop.Name);
-                        colorTable.Add(prop.Name, (SolidColorBrush)p.GetValue(brushtype, null));
-                    }
+                    colorTable = typeof(Brushes).GetProperties().ToDictionary(p => p.Name, p => (SolidColorBrush)p.GetValue(null, null));
                     colorTable.Add("カスタム", Brushes.White);
                 }
                 return colorTable;
             }
         }
+        //未使用
+        //public static List<string> ColorNames { get { return ColorTable.Keys.ToList(); } }
 
         public static Color FromName(string name)
         {
             try
             {
                 return (Color)ColorConverter.ConvertFromString(name);
-                //var colortype = typeof(Colors);
-                //return (Color)colortype.GetProperty(name).GetValue(colortype, null);
+                //return (Color)typeof(Colors).GetProperty(name).GetValue(null, null);
             }
             catch 
             {
@@ -106,9 +77,9 @@ namespace EpgTimer
             g = Math.Min(g, 255);
             b = Math.Min(b, 255);
 
-            Color color2 = Color.FromRgb((byte)r, (byte)g, (byte)b);
+            var color2 = Color.FromRgb((byte)r, (byte)g, (byte)b);
             
-            LinearGradientBrush brush = new LinearGradientBrush();
+            var brush = new LinearGradientBrush();
             brush.StartPoint = new Point(0, 0.5);
             brush.EndPoint = new Point(0, 1);
             brush.GradientStops.Add(new GradientStop(color, 0.0));

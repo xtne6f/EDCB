@@ -104,8 +104,8 @@ namespace EpgTimer.Setting
                 textBox_fontTunerSizeService.Text = Settings.Instance.TunerFontSizeService.ToString();
                 checkBox_fontTunerBoldService.IsChecked = Settings.Instance.TunerFontBoldService;
 
-                var colorReference = ColorDef.ColorNames.ToDictionary
-                    (name => name, name => new ColorReferenceViewItem(name, ColorDef.Instance.ColorTable[name]));
+                var colorReference = ColorDef.ColorTable.ToDictionary
+                    (item => item.Key, item => new ColorReferenceViewItem(item.Key, item.Value));
                 colorReference["カスタム"] = new ColorReferenceViewItem("カスタム", this.Resources["HatchBrush"] as VisualBrush);
 
                 var setComboColor1 = new Action<string, ComboBox>((name, cmb) =>
