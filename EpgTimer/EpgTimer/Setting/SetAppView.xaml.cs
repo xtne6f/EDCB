@@ -363,7 +363,7 @@ namespace EpgTimer.Setting
                 }
                 listBox_service.ItemsSource = serviceList.Values;
 
-                stationList = Settings.Instance.IEpgStationList;
+                stationList = Settings.Instance.IEpgStationList.ToList();
                 ReLoadStation();
             }
             catch (Exception ex)
@@ -760,7 +760,7 @@ namespace EpgTimer.Setting
             Settings.Instance.Cust2BtnCmd = textBox_exe2.Text;
             Settings.Instance.Cust2BtnCmdOpt = textBox_opt2.Text;
 
-            Settings.Instance.IEpgStationList = stationList;
+            Settings.Instance.IEpgStationList = stationList.ToList();
         }
 
         private void button_standbyCtrl_Click(object sender, RoutedEventArgs e)
