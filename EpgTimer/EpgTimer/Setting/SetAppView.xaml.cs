@@ -507,7 +507,7 @@ namespace EpgTimer.Setting
         {
             var dlg = new SetAppCancelWindow();
             dlg.Owner = CommonUtil.GetTopWindow(this);
-            dlg.processList = this.ngProcessList;
+            dlg.processList = this.ngProcessList.ToList();
             dlg.ngMin = this.ngMin;
             dlg.ngUsePC = this.ngUsePC;
             dlg.ngUsePCMin = this.ngUsePCMin;
@@ -516,7 +516,7 @@ namespace EpgTimer.Setting
 
             if (dlg.ShowDialog() == true)
             {
-                this.ngProcessList = dlg.processList;
+                this.ngProcessList = dlg.processList.ToList();
                 this.ngMin = dlg.ngMin;
                 this.ngUsePC = dlg.ngUsePC;
                 this.ngUsePCMin = dlg.ngUsePCMin;
@@ -529,13 +529,13 @@ namespace EpgTimer.Setting
         {
             var dlg = new SetApp2DelWindow();
             dlg.Owner = CommonUtil.GetTopWindow(this);
-            dlg.extList = this.extList;
-            dlg.delChkFolderList = this.delChkFolderList;
+            dlg.extList = this.extList.ToList();
+            dlg.delChkFolderList = this.delChkFolderList.ToList();
 
             if (dlg.ShowDialog() == true)
             {
-                this.extList = dlg.extList;
-                this.delChkFolderList = dlg.delChkFolderList;
+                this.extList = dlg.extList.ToList();
+                this.delChkFolderList = dlg.delChkFolderList.ToList();
             }
         }
 
