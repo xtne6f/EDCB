@@ -6880,7 +6880,7 @@ is_valid_http_method(const char *method)
  * buf and ri must be valid pointers (not NULL), len>0.
  * Returns <0 on error. */
 static int
-parse_http_message(char *buf, int len, struct mg_request_info *ri)
+parse_http_message(char *buf, int len, struct mg_request_info *ri, int is_req)
 {
 	int is_request, request_length;
 	char *start_line;
@@ -6912,12 +6912,12 @@ parse_http_message(char *buf, int len, struct mg_request_info *ri)
 		 * otherwise it is invalid.
 		 */
 		is_request = is_valid_http_method(ri->request_method);
-		if ((is_request && memcmp(ri->http_version, "HTTP/", 5) != 0)
-		    || (!is_request && memcmp(ri->request_method, "HTTP/", 5) != 0)) {
+		if (is_req && (!is_request || memcmp(ri->http_version, "HTTP/", 5) != 0)
+		    || (!is_req && memcmp(ri->request_method, "HTTP/", 5) != 0)) {
 			/* Not a valid request or response: invalid */
 			return -1;
 		}
-		if (is_request) {
+		if (is_req) {
 			ri->http_version += 5;
 		}
 		if (parse_http_headers(&buf, ri) < 0) {
@@ -9921,8 +9921,8 @@ handle_request(struct mg_connection *conn)
 				 * PUT/DELETE methods are not valid. */
 				send_http_error(conn,
 				                405,
-				                "%s method not allowed",
-				                conn->request_info.request_method);
+				                "%s",
+				                "Method not allowed");
 				return;
 			}
 
@@ -10073,8 +10073,8 @@ handle_request(struct mg_connection *conn)
 			 * only for scripts (Lua, CGI) and callbacks. */
 			send_http_error(conn,
 			                405,
-			                "%s method not allowed",
-			                conn->request_info.request_method);
+			                "%s",
+			                "Method not allowed");
 			return;
 		}
 
@@ -10124,8 +10124,8 @@ handle_request(struct mg_connection *conn)
 		    && 0 != strcmp(ri->request_method, "HEAD")) {
 			send_http_error(conn,
 			                405,
-			                "%s method not allowed",
-			                conn->request_info.request_method);
+			                "%s",
+			                "Method not allowed");
 			return;
 		}
 
@@ -11801,7 +11801,11 @@ get_rel_url_at_current_server(const char *uri, const struct mg_connection *conn)
 
 
 static int
-getreq(struct mg_connection *conn, char *ebuf, size_t ebuf_len, int *err)
+getreq(struct mg_connection *conn,
+       char *ebuf,
+       size_t ebuf_len,
+       int *err,
+       int is_req)
 {
 	const char *cl;
 
@@ -11873,7 +11877,8 @@ getreq(struct mg_connection *conn, char *ebuf, size_t ebuf_len, int *err)
 		return 0;
 	} else if (parse_http_message(conn->buf,
 	                              conn->buf_size,
-	                              &conn->request_info) <= 0) {
+	                              &conn->request_info,
+	                              is_req) <= 0) {
 		mg_snprintf(conn,
 		            NULL, /* No truncation check for ebuf */
 		            ebuf,
@@ -11946,7 +11951,7 @@ mg_get_response(struct mg_connection *conn,
 		}
 
 		conn->ctx = &rctx;
-		ret = getreq(conn, ebuf, ebuf_len, &err);
+		ret = getreq(conn, ebuf, ebuf_len, &err, 0);
 		conn->ctx = octx;
 
 		/* TODO: 1) uri is deprecated;
@@ -11991,7 +11996,7 @@ mg_download(const char *host,
 			            "%s",
 			            "Error sending request");
 		} else {
-			getreq(conn, ebuf, ebuf_len, &reqerr);
+			getreq(conn, ebuf, ebuf_len, &reqerr, 0);
 
 			/* TODO: 1) uri is deprecated;
 			 *       2) here, ri.uri is the http response code */
@@ -12195,7 +12200,7 @@ process_new_connection(struct mg_connection *conn)
 		 * goes to crule42. */
 		conn->data_len = 0;
 		do {
-			if (!getreq(conn, ebuf, sizeof(ebuf), &reqerr)) {
+			if (!getreq(conn, ebuf, sizeof(ebuf), &reqerr, 1)) {
 				/* The request sent by the client could not be understood by
 				 * the server, or it was incomplete or a timeout. Send an
 				 * error message and close the connection. */
@@ -12209,8 +12214,8 @@ process_new_connection(struct mg_connection *conn)
 				            NULL, /* No truncation check for ebuf */
 				            ebuf,
 				            sizeof(ebuf),
-				            "Bad HTTP version: [%s]",
-				            ri->http_version);
+				            "%s",
+				            "Bad HTTP version");
 				send_http_error(conn, 505, "%s", ebuf);
 			}
 
@@ -12242,8 +12247,8 @@ process_new_connection(struct mg_connection *conn)
 					            NULL, /* No truncation check for ebuf */
 					            ebuf,
 					            sizeof(ebuf),
-					            "Invalid URI: [%s]",
-					            ri->request_uri);
+					            "%s",
+					            "Invalid URI");
 					send_http_error(conn, 400, "%s", ebuf);
 					break;
 				}
