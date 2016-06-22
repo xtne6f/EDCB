@@ -277,7 +277,7 @@
                         </ListBox.ItemContainerStyle>
                     </ListBox>
                     <Label Content="iEPG放送局名" Height="28" HorizontalAlignment="Left" Margin="221,46,0,0" Name="label63" VerticalAlignment="Top" />
-                    <ListBox Height="125" HorizontalAlignment="Left" Margin="221,80,0,0" Name="listBox_iEPG" VerticalAlignment="Top" Width="185" />
+                    <ListBox Height="125" HorizontalAlignment="Left" Margin="221,80,0,0" Name="listBox_iEPG" VerticalAlignment="Top" Width="185" SelectionMode="Extended" />
                     <TextBox Height="24" HorizontalAlignment="Left" Margin="221,211,0,0" Name="textBox_station" VerticalAlignment="Top" Width="120" />
                     <Button Content="追加" Height="23" HorizontalAlignment="Left" Margin="347,212,0,0" Name="button_add" VerticalAlignment="Top" Width="59" Click="button_add_iepg_Click" />
                     <Button Content="削除" Height="23" HorizontalAlignment="Left" Margin="412,80,0,0" Name="button_del" VerticalAlignment="Top" Width="59" Click="button_del_iepg_Click" />

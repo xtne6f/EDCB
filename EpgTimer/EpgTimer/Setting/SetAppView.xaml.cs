@@ -32,9 +32,8 @@ namespace EpgTimer.Setting
 
         private List<string> buttonItem;
         private List<string> taskItem;
-        
-        private Dictionary<UInt64, ServiceViewItem> serviceList = new Dictionary<UInt64, ServiceViewItem>();
-        private List<IEPGStationInfo> stationList = new List<IEPGStationInfo>();
+
+        private List<IEPGStationInfo> stationList;
 
         public SetAppView()
         {
@@ -323,20 +322,10 @@ namespace EpgTimer.Setting
                 textBox_exe3.Text = Settings.Instance.Cust3BtnCmd;
                 textBox_opt3.Text = Settings.Instance.Cust3BtnCmdOpt;
 
-                foreach (ChSet5Item info in ChSet5.ChList.Values)
-                {
-                    ServiceViewItem item = new ServiceViewItem(info);
-                    serviceList.Add(item.Key, item);
-                }
-                listBox_service.ItemsSource = serviceList.Values;
-
-                stationList = Settings.Instance.IEpgStationList;
-                ReLoadStation();
+                listBox_service.Items.AddItems(ChSet5.ChList.Values.Select(info => new ServiceViewItem(info)));
+                stationList = Settings.Instance.IEpgStationList.ToList();
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
 
         public void SaveSetting()
@@ -509,12 +498,9 @@ namespace EpgTimer.Setting
                 Settings.Instance.Cust3BtnCmd = textBox_exe3.Text;
                 Settings.Instance.Cust3BtnCmdOpt = textBox_opt3.Text;
 
-                Settings.Instance.IEpgStationList = stationList;
+                Settings.Instance.IEpgStationList = stationList.ToList();
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
 
         private void button_standbyCtrl_Click(object sender, RoutedEventArgs e)
@@ -613,6 +599,7 @@ namespace EpgTimer.Setting
             new BoxExchangeEditor(null, this.listBox_service, true);
             var bxi = new BoxExchangeEditor(null, this.listBox_iEPG, true);
             bxi.targetBoxAllowKeyAction(this.listBox_iEPG, new KeyEventHandler((sender, e) => button_del.RaiseEvent(new RoutedEventArgs(Button.ClickEvent))));
+            listBox_iEPG.SelectionChanged += ViewUtil.ListBox_TextBoxSyncSelectionChanged(listBox_iEPG, textBox_station);
         }
         private void drag_drop(object sender, DragEventArgs e, Button add, Button ins)
         {
@@ -682,50 +669,32 @@ namespace EpgTimer.Setting
         private void ReLoadStation()
         {
             listBox_iEPG.Items.Clear();
-            if (listBox_service.SelectedItem != null)
-            {
-                ServiceViewItem item = listBox_service.SelectedItem as ServiceViewItem;
-                foreach (IEPGStationInfo info in stationList)
-                {
-                    if (info.Key == item.Key)
-                    {
-                        listBox_iEPG.Items.Add(info);
-                    }
-                }
-            }
+            if (listBox_service.SelectedItem == null) return;
+            //
+            var key = (listBox_service.SelectedItem as ServiceViewItem).Key;
+            listBox_iEPG.Items.AddItems(stationList.Where(item => item.Key == key));
         }
 
         private void button_add_iepg_Click(object sender, RoutedEventArgs e)
         {
-            if (listBox_service.SelectedItem != null)
+            if (listBox_service.SelectedItem == null) return;
+            //
+            if (stationList.Any(info => info.StationName == textBox_station.Text) == true)
             {
-                ServiceViewItem item = listBox_service.SelectedItem as ServiceViewItem;
-                foreach (IEPGStationInfo info in stationList)
-                {
-                    if (String.Compare(info.StationName, textBox_station.Text) == 0)
-                    {
-                        MessageBox.Show("すでに登録済みです");
-                        return;
-                    }
-                }
-                IEPGStationInfo addItem = new IEPGStationInfo();
-                addItem.StationName = textBox_station.Text;
-                addItem.Key = item.Key;
-
-                stationList.Add(addItem);
-
-                ReLoadStation();
+                MessageBox.Show("すでに追加されています");
+                return;
             }
+            var key = (listBox_service.SelectedItem as ServiceViewItem).Key;
+            stationList.Add(new IEPGStationInfo { StationName = textBox_station.Text, Key = key });
+            ReLoadStation();
         }
 
         private void button_del_iepg_Click(object sender, RoutedEventArgs e)
         {
-            if (listBox_iEPG.SelectedItem != null)
-            {
-                IEPGStationInfo item = listBox_iEPG.SelectedItem as IEPGStationInfo;
-                stationList.Remove(item);
-                ReLoadStation();
-            }
+            if (listBox_service.SelectedItem == null) return;
+            //
+            listBox_iEPG.SelectedItemsList().ForEach(item => stationList.Remove(item as IEPGStationInfo));
+            ReLoadStation();
         }
 
         private void listBox_service_SelectionChanged(object sender, SelectionChangedEventArgs e)

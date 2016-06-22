@@ -412,12 +412,9 @@ namespace EpgTimer
         {
             return new SelectionChangedEventHandler((sender, e) =>
             {
-                if (lstBox == null || txtBox == null) return;
+                if (lstBox == null || lstBox.SelectedItem == null || txtBox == null) return;
                 //
-                if (lstBox.SelectedItem is string)
-                {
-                    txtBox.Text = lstBox.SelectedItem as string;
-                }
+                txtBox.Text = lstBox.SelectedItem.ToString();
             });
         }
 
@@ -429,7 +426,7 @@ namespace EpgTimer
         {
             if (lstBox == null || String.IsNullOrEmpty(text) == true) return;
             //
-            if (lstBox.Items.OfType<string>().Any(s => String.Compare(text, s, true) == 0) == true)
+            if (lstBox.Items.OfType<object>().Any(s => String.Compare(text, s.ToString(), true) == 0) == true)
             {
                 MessageBox.Show("すでに追加されています");
                 return;
