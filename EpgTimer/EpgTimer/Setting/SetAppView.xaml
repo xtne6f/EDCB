@@ -51,28 +51,30 @@
                 </Grid>
             </TabItem>
             <TabItem Header="予約情報管理" Name="tabItem2">
-                <Grid>
-                    <CheckBox Content="優先度が同じで時間が重なった場合、後の予約を優先する" Height="16" HorizontalAlignment="Left" Margin="6,6,0,0" Name="checkBox_back_priority" VerticalAlignment="Top" />
-                    <CheckBox Content="HDDの空きが少ない場合、古い録画ファイルを削除する(追加設定で対象フォルダを設定)" Height="16" HorizontalAlignment="Left" Margin="6,31,0,0" Name="checkBox_autoDel" VerticalAlignment="Top" />
-                    <Button Content="削除設定" Height="23" HorizontalAlignment="Left" Margin="510,28,0,0" Name="button_autoDel" VerticalAlignment="Top" Width="75" Click="button_autoDel_Click" />
-                    <CheckBox Content="録画時のファイル名にPlugInを使用する" Height="16" HorizontalAlignment="Left" Margin="6,60,0,0" Name="checkBox_recname" VerticalAlignment="Top" />
-                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="270,57,0,0" Name="comboBox_recname" VerticalAlignment="Top" Width="160" />
-                    <Button Content="設定" Height="23" HorizontalAlignment="Left" Margin="436,58,0,0" Name="button_recname" VerticalAlignment="Top" Width="54" Click="button_recname_Click" />
-                    <CheckBox Content="ファイル名の禁則文字の変換対象から「\」を除外する" Height="16" HorizontalAlignment="Left" Margin="6,87,0,0" Name="checkBox_noChkYen" VerticalAlignment="Top" />
-                    <StackPanel Margin="6,112,0,0" >
-                        <StackPanel Margin="0,0,0,6" Orientation="Horizontal" >
-                            <CheckBox  VerticalAlignment="Center" Content="録画中または開始直前の予約を変更・削除するとき警告する" Name="checkBox_cautionOnRecChange"/>
-                            <TextBox Height="24" Margin="12,0,0,0" Name="textBox_cautionOnRecMarginMin" Width="62" />
-                            <Label Margin="12,0,0,0" VerticalAlignment="Center" Content="分以内" />
-                        </StackPanel >
-                        <StackPanel Orientation="Horizontal" >
-                            <Label Content="自動予約登録の変更・削除に合わせて予約を変更・削除する"  ToolTipService.ShowDuration="600000" ToolTip="個別予約は対象外です。また、他の有効な自動予約登録の対象になっている予約は連動削除されません。&#10;＊右クリックメニューの「予約を自動登録に合わせる」「予約ごと削除」では、検索された予約は全て変更・削除されます。&#10;＊自動予約登録から外れた予約は、[各画面の設定][予約一覧・共通]のオプションで強調表示することができます。" />
-                            <CheckBox Margin="12,0,0,0" VerticalAlignment="Center"  Content="変更時" Name="checkBox_SyncResAutoAddChange" />
-                            <CheckBox Margin="12,0,0,0" VerticalAlignment="Center"  Content="削除時" Name="checkBox_SyncResAutoAddDelete" />
-                        </StackPanel>
-                        <CheckBox Margin="18,0,0,6" Content="変更時、予約を一度削除してから再登録する (無効の予約を除く)" Name="checkBox_SyncResAutoAddChgNewRes" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_SyncResAutoAddChange, UpdateSourceTrigger=PropertyChanged}" ToolTipService.ShowDuration="600000" ToolTip="キーワード予約無効時や検索条件変更時など、対象外となった予約が削除されるので注意が必要です。&#10;また、「録画中または開始直前の予約を変更・削除するとき警告する」が有効の場合はその設定時間、&#10;それ以外の場合は録画開始1分以内の予約は削除せず、通常の変更のみを試みます。" />
+                <WrapPanel Margin="6,6,0,6" Orientation="Vertical">
+                    <CheckBox Margin="0,0,12,6" Content="優先度が同じで時間が重なった場合、後の予約を優先する" Name="checkBox_back_priority" />
+                    <StackPanel Margin="0,0,12,6" Orientation="Horizontal">
+                        <CheckBox Content="HDDの空きが少ない場合、古い録画ファイルを削除する" Name="checkBox_autoDel" />
+                        <Button Content="削除設定" Margin="12,0,0,0" Name="button_autoDel" Click="button_autoDel_Click" />
                     </StackPanel>
-                </Grid>
+                    <StackPanel Margin="0,0,12,6" Orientation="Horizontal">
+                        <CheckBox Content="録画時のファイル名にPlugInを使用する" Name="checkBox_recname" />
+                        <ComboBox Height="{Binding ElementName=button_recname,Path=ActualHeight}" Margin="12,0,0,0" Name="comboBox_recname" Width="160" />
+                        <Button Content="設定" Margin="12,0,0,0" Name="button_recname" Click="button_recname_Click" />
+                    </StackPanel>
+                    <CheckBox Margin="0,0,12,6" Content="ファイル名の禁則文字の変換対象から「\」を除外する" Name="checkBox_noChkYen" />
+                    <StackPanel Margin="0,0,12,6" Orientation="Horizontal" >
+                        <CheckBox  Content="録画中または開始直前の予約を変更・削除するとき警告する" Name="checkBox_cautionOnRecChange"/>
+                        <TextBox Margin="12,0,0,0" Name="textBox_cautionOnRecMarginMin" Width="62" />
+                        <Label Margin="12,0,0,0" Content="分以内" />
+                    </StackPanel >
+                    <StackPanel Margin="0,0,12,6" Orientation="Horizontal" >
+                        <Label Content="自動予約登録の変更・削除に合わせて予約を変更・削除する"  ToolTipService.ShowDuration="600000" ToolTip="個別予約は対象外です。また、他の有効な自動予約登録の対象になっている予約は連動削除されません。&#10;＊右クリックメニューの「予約を自動登録に合わせる」「予約ごと削除」では、検索された予約は全て変更・削除されます。&#10;＊自動予約登録から外れた予約は、[各画面の設定][予約一覧・共通]のオプションで強調表示することができます。" />
+                        <CheckBox Margin="12,0,0,0" Content="変更時" Name="checkBox_SyncResAutoAddChange" />
+                        <CheckBox Margin="12,0,0,0" Content="削除時" Name="checkBox_SyncResAutoAddDelete" />
+                    </StackPanel>
+                    <CheckBox Margin="18,-6,0,6" Content="変更時、予約を一度削除してから再登録する (無効の予約を除く)" Name="checkBox_SyncResAutoAddChgNewRes" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_SyncResAutoAddChange, UpdateSourceTrigger=PropertyChanged}" ToolTipService.ShowDuration="600000" ToolTip="キーワード予約無効時や検索条件変更時など、対象外となった予約が削除されるので注意が必要です。&#10;また、「録画中または開始直前の予約を変更・削除するとき警告する」が有効の場合はその設定時間、&#10;それ以外の場合は録画開始1分以内の予約は削除せず、通常の変更のみを試みます。" />
+                </WrapPanel>
             </TabItem>
             <TabItem Header="ボタン表示">
                 <Grid Margin="12" >
