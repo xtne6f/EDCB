@@ -87,6 +87,7 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, int (*initProc)(lua_Stat
 	WtoUTF8(extraMimeW, extraMime);
 
 	const char* options[64] = {
+		"ssi_pattern", "",
 		"enable_keep_alive", op.keepAlive ? "yes" : "no",
 		"access_control_list", acl.c_str(),
 		"extra_mime_types", extraMime.c_str(),
@@ -100,7 +101,7 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, int (*initProc)(lua_Stat
 		"ssl_protocol_version", sslProtocolVersion.c_str(),
 		"lua_script_pattern", "**.lua$|**.html$|*/api/*$",
 	};
-	int opCount = 2 * 12;
+	int opCount = 2 * 13;
 	if( op.saveLog ){
 		options[opCount++] = "access_log_file";
 		options[opCount++] = accessLogPath.c_str();
