@@ -15,8 +15,6 @@ namespace EpgTimer
 {
     public class RecInfoItem
     {
-        private MenuUtil mutil = CommonManager.Instance.MUtil;
-
         public RecInfoItem() { }
         public RecInfoItem(RecFileInfo item)
         {
@@ -209,7 +207,7 @@ namespace EpgTimer
             {
                 if (Settings.Instance.NoToolTip == true) return null;
                 //
-                return mutil.GetTooltipBlockStandard(RecInfoText);
+                return MenuUtil.GetTooltipBlockStandard(RecInfoText);
             }
         }
         public override string ToString()

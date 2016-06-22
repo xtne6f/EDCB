@@ -20,8 +20,6 @@ namespace EpgTimer.Setting
     /// </summary>
     public partial class SetOtherAppView : UserControl
     {
-        private MenuUtil mutil = CommonManager.Instance.MUtil;
-
         public SetOtherAppView()
         {
             InitializeComponent();
@@ -87,8 +85,8 @@ namespace EpgTimer.Setting
             Settings.Instance.NwTvMode = (checkBox_nwTvMode.IsChecked == true);
             Settings.Instance.NwTvModeUDP = (checkBox_nwUDP.IsChecked == true);
             Settings.Instance.NwTvModeTCP = (checkBox_nwTCP.IsChecked == true);
-            Settings.Instance.TvTestOpenWait = mutil.MyToNumerical(textBox_TvTestOpenWait, Convert.ToInt32, 120000, 0, Settings.Instance.TvTestOpenWait);
-            Settings.Instance.TvTestChgBonWait = mutil.MyToNumerical(textBox_TvTestChgBonWait, Convert.ToInt32, 120000, 0, Settings.Instance.TvTestChgBonWait);
+            Settings.Instance.TvTestOpenWait = MenuUtil.MyToNumerical(textBox_TvTestOpenWait, Convert.ToInt32, 120000, 0, Settings.Instance.TvTestOpenWait);
+            Settings.Instance.TvTestChgBonWait = MenuUtil.MyToNumerical(textBox_TvTestChgBonWait, Convert.ToInt32, 120000, 0, Settings.Instance.TvTestChgBonWait);
 
             IniFileHandler.WritePrivateProfileString("TVTEST", "Num", listBox_bon.Items.Count.ToString(), SettingPath.TimerSrvIniPath);
             for (int i = 0; i < listBox_bon.Items.Count; i++)

@@ -13,7 +13,6 @@ namespace EpgTimer
     public partial class ChgReserveWindow : Window
     {
         private ReserveData reserveInfo = null;
-        private MenuUtil mutil = CommonManager.Instance.MUtil;
         private MenuBinds mBinds = new MenuBinds();
 
         protected enum AddMode { Add, Re_Add, Change }
@@ -355,7 +354,7 @@ namespace EpgTimer
                     if (eventInfoNew != null)
                     {
                         //基本的にAddReserveEpgWindowと同じ処理内容
-                        if (mutil.IsEnableReserveAdd(eventInfoNew) == false) return;
+                        if (MenuUtil.IsEnableReserveAdd(eventInfoNew) == false) return;
                         eventInfoNew.ConvertToReserveData(ref reserveInfo);
                         reserveInfo.Comment = "";
                     }
@@ -369,12 +368,12 @@ namespace EpgTimer
 
                 if (addMode == AddMode.Change)
                 {
-                    bool ret = mutil.ReserveChange(CommonUtil.ToList(reserveInfo));
+                    bool ret = MenuUtil.ReserveChange(CommonUtil.ToList(reserveInfo));
                     CommonManager.Instance.StatusNotifySet(ret, "録画予約を変更");
                 }
                 else
                 {
-                    bool ret = mutil.ReserveAdd(CommonUtil.ToList(reserveInfo));
+                    bool ret = MenuUtil.ReserveAdd(CommonUtil.ToList(reserveInfo));
                     CommonManager.Instance.StatusNotifySet(ret, "録画予約を追加");
                 }
             }
@@ -392,7 +391,7 @@ namespace EpgTimer
 
             if (CheckExistReserveItem() == false) return;
 
-            bool ret = mutil.ReserveDelete(CommonUtil.ToList(reserveInfo));
+            bool ret = MenuUtil.ReserveDelete(CommonUtil.ToList(reserveInfo));
             CommonManager.Instance.StatusNotifySet(ret, "録画予約を削除");
 
             DialogResult = true;

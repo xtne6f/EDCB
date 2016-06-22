@@ -48,7 +48,6 @@ namespace EpgTimer
         }
 
         protected CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
-        protected MenuUtil mutil = CommonManager.Instance.MUtil;
         protected MenuManager mm = CommonManager.Instance.MM;
 
         protected Control Owner;
@@ -294,16 +293,16 @@ namespace EpgTimer
             AutoAddData autoAdd = AutoAddData.AutoAddList(CmdExeUtil.ReadObjData(e) as Type, (uint)CmdExeUtil.ReadIdData(e));
             if (autoAdd is EpgAutoAddData)
             {
-                IsCommandExecuted = true == mutil.OpenChangeEpgAutoAddDialog(autoAdd as EpgAutoAddData);
+                IsCommandExecuted = true == MenuUtil.OpenChangeEpgAutoAddDialog(autoAdd as EpgAutoAddData);
             }
             else if (autoAdd is ManualAutoAddData)
             {
-                IsCommandExecuted = true == mutil.OpenChangeManualAutoAddDialog(autoAdd as ManualAutoAddData, this.Owner);
+                IsCommandExecuted = true == MenuUtil.OpenChangeManualAutoAddDialog(autoAdd as ManualAutoAddData, this.Owner);
             }
         }
         protected virtual void mc_ToAutoadd(object sender, ExecutedRoutedEventArgs e)
         {
-            mutil.SendAutoAdd(dataList[0] as IBasicPgInfo, CmdExeUtil.IsKeyGesture(e));
+            MenuUtil.SendAutoAdd(dataList[0] as IBasicPgInfo, CmdExeUtil.IsKeyGesture(e));
             IsCommandExecuted = true;
         }
         protected virtual void mc_Play(object sender, ExecutedRoutedEventArgs e) { }
@@ -313,13 +312,13 @@ namespace EpgTimer
         }
         protected virtual void mc_CopyTitle(object sender, ExecutedRoutedEventArgs e)
         {
-            mutil.CopyTitle2Clipboard(dataList[0].DataTitle, CmdExeUtil.IsKeyGesture(e));
+            MenuUtil.CopyTitle2Clipboard(dataList[0].DataTitle, CmdExeUtil.IsKeyGesture(e));
             IsCommandExecuted = true;
         }
         protected virtual void mc_CopyContent(object sender, ExecutedRoutedEventArgs e) { }
         protected virtual void mc_SearchTitle(object sender, ExecutedRoutedEventArgs e)
         {
-            mutil.SearchTextWeb(dataList[0].DataTitle, CmdExeUtil.IsKeyGesture(e));
+            MenuUtil.SearchTextWeb(dataList[0].DataTitle, CmdExeUtil.IsKeyGesture(e));
             IsCommandExecuted = true;
         }
         protected virtual void mc_CopyNotKey(object sender, ExecutedRoutedEventArgs e) { }
@@ -344,43 +343,43 @@ namespace EpgTimer
 
             if (e.Command == EpgCmds.ChgOnPreset)
             {
-                return mutil.ChangeOnPreset(infoList, (uint)CmdExeUtil.ReadIdData(e, 0, 0xFE));
+                return MenuUtil.ChangeOnPreset(infoList, (uint)CmdExeUtil.ReadIdData(e, 0, 0xFE));
             }
             else if (e.Command == EpgCmds.ChgRecmode)
             {
-                return mutil.ChangeRecmode(infoList, (byte)CmdExeUtil.ReadIdData(e, 0, 5));
+                return MenuUtil.ChangeRecmode(infoList, (byte)CmdExeUtil.ReadIdData(e, 0, 5));
             }
             else if (e.Command == EpgCmds.ChgPriority)
             {
-                return mutil.ChangePriority(infoList, (byte)CmdExeUtil.ReadIdData(e, 1, 5));
+                return MenuUtil.ChangePriority(infoList, (byte)CmdExeUtil.ReadIdData(e, 1, 5));
             }
             else if (e.Command == EpgCmds.ChgRelay)
             {
-                return mutil.ChangeRelay(infoList, (byte)CmdExeUtil.ReadIdData(e, 0, 1));
+                return MenuUtil.ChangeRelay(infoList, (byte)CmdExeUtil.ReadIdData(e, 0, 1));
             }
             else if (e.Command == EpgCmds.ChgPittari)
             {
-                return mutil.ChangePittari(infoList, (byte)CmdExeUtil.ReadIdData(e, 0, 1));
+                return MenuUtil.ChangePittari(infoList, (byte)CmdExeUtil.ReadIdData(e, 0, 1));
             }
             else if (e.Command == EpgCmds.ChgTuner)
             {
-                return mutil.ChangeTuner(infoList, (uint)CmdExeUtil.ReadIdData(e, 0, int.MaxValue - 1));
+                return MenuUtil.ChangeTuner(infoList, (uint)CmdExeUtil.ReadIdData(e, 0, int.MaxValue - 1));
             }
             else if (e.Command == EpgCmds.ChgMarginStart)
             {
-                return mutil.ChangeMargin(infoList, CmdExeUtil.ReadIdData(e), true);
+                return MenuUtil.ChangeMargin(infoList, CmdExeUtil.ReadIdData(e), true);
             }
             else if (e.Command == EpgCmds.ChgMarginStartValue)
             {
-                return mutil.ChangeMarginValue(infoList, true, this.Owner);
+                return MenuUtil.ChangeMarginValue(infoList, true, this.Owner);
             }
             else if (e.Command == EpgCmds.ChgMarginEnd)
             {
-                return mutil.ChangeMargin(infoList, CmdExeUtil.ReadIdData(e), false);
+                return MenuUtil.ChangeMargin(infoList, CmdExeUtil.ReadIdData(e), false);
             }
             else if (e.Command == EpgCmds.ChgMarginEndValue)
             {
-                return mutil.ChangeMarginValue(infoList, false, this.Owner);
+                return MenuUtil.ChangeMarginValue(infoList, false, this.Owner);
             }
             return false;
         }

@@ -8,16 +8,11 @@ using System.Windows.Controls;
 
 namespace EpgTimer
 {
-    public class MenuUtil
+    public static class MenuUtil
     {
-        private CtrlCmdUtil cmd = null;
+        private static CtrlCmdUtil cmd { get { return CommonManager.Instance.CtrlCmd; } }
 
-        public MenuUtil(CtrlCmdUtil ctrlCmd)
-        {
-            cmd = ctrlCmd;
-        }
-
-        public string TrimEpgKeyword(string txtKey, bool NotToggle = false)//NotToggleはショートカット用
+        public static string TrimEpgKeyword(string txtKey, bool NotToggle = false)//NotToggleはショートカット用
         {
             string txtKey1 = txtKey;
             bool setting = Settings.Instance.MenuSet.Keyword_Trim;
@@ -34,7 +29,7 @@ namespace EpgTimer
             return txtKey1;
         }
 
-        public void CopyTitle2Clipboard(string txtTitle, bool NotToggle = false)
+        public static void CopyTitle2Clipboard(string txtTitle, bool NotToggle = false)
         {
             string txtTitle1 = txtTitle;
             bool setting = Settings.Instance.MenuSet.CopyTitle_Trim;
@@ -51,7 +46,7 @@ namespace EpgTimer
             Clipboard.SetDataObject(txtTitle1, true);
         }
 
-        public void CopyContent2Clipboard(EpgEventInfo eventInfo, bool NotToggle = false)
+        public static void CopyContent2Clipboard(EpgEventInfo eventInfo, bool NotToggle = false)
         {
             string text = "";
 
@@ -79,12 +74,12 @@ namespace EpgTimer
             Clipboard.SetDataObject(text, true);
         }
 
-        public void CopyContent2Clipboard(ReserveData resInfo, bool NotToggle = false)
+        public static void CopyContent2Clipboard(ReserveData resInfo, bool NotToggle = false)
         {
             CopyContent2Clipboard(resInfo.SearchEventInfo(true), NotToggle);
         }
 
-        public void CopyContent2Clipboard(RecFileInfo recInfo, bool NotToggle = false)
+        public static void CopyContent2Clipboard(RecFileInfo recInfo, bool NotToggle = false)
         {
             string text = "";
 
@@ -117,7 +112,7 @@ namespace EpgTimer
             Clipboard.SetDataObject(text, true);
         }
 
-        public void SearchTextWeb(string txtKey, bool NotToggle = false)
+        public static void SearchTextWeb(string txtKey, bool NotToggle = false)
         {
             string txtKey1 = txtKey;
             bool setting = Settings.Instance.MenuSet.SearchTitle_Trim;
@@ -145,7 +140,7 @@ namespace EpgTimer
             }
         }
 
-        public string TrimKeyword(string txtKey)
+        public static string TrimKeyword(string txtKey)
         {
             //
             // 前後の記号を取り除く
@@ -204,9 +199,9 @@ namespace EpgTimer
         // HttpUtility を使わないUrlEncodeの実装
         // From http://d.hatena.ne.jp/kazuv3/20080605/1212656674
         //
-        public string UrlEncode(string s, System.Text.Encoding enc)
+        public static string UrlEncode(string s, System.Text.Encoding enc)
         {
-            System.Text.StringBuilder rt = new System.Text.StringBuilder();
+            var rt = new System.Text.StringBuilder();
             foreach (byte i in enc.GetBytes(s))
                 if (i == 0x20)
                     rt.Append('+');
@@ -217,9 +212,9 @@ namespace EpgTimer
             return rt.ToString();
         }
 
-        public TextBlock GetTooltipBlockStandard(string text)
+        public static TextBlock GetTooltipBlockStandard(string text)
         {
-            TextBlock block = new TextBlock();
+            var block = new TextBlock();
             block.Text = text;
             block.MaxWidth = 400;
             block.TextWrapping = TextWrapping.Wrap;
@@ -229,7 +224,7 @@ namespace EpgTimer
         /// <summary>
         /// 変換エラーの場合、デフォルト値を返し、テキストボックスの内容をデフォルト値に置き換える。
         /// </summary>
-        public T MyToNumerical<T>(TextBox box, Func<string, T> converter, T defValue = default(T))
+        public static T MyToNumerical<T>(TextBox box, Func<string, T> converter, T defValue = default(T))
         {
             try
             {
@@ -241,7 +236,7 @@ namespace EpgTimer
                 return defValue;
             }
         }
-        public T MyToNumerical<T>(TextBox box, Func<string, T> converter, T max, T min, T defValue = default(T)) where T : IComparable
+        public static T MyToNumerical<T>(TextBox box, Func<string, T> converter, T max, T min, T defValue = default(T)) where T : IComparable
         {
             try
             {
@@ -265,7 +260,7 @@ namespace EpgTimer
             }
         }
         
-        public bool ReserveAdd(List<EpgEventInfo> itemlist, RecSettingView recSettingView, uint presetID = 0, bool cautionMany = true)
+        public static bool ReserveAdd(List<EpgEventInfo> itemlist, RecSettingView recSettingView, uint presetID = 0, bool cautionMany = true)
         {
             try
             {
@@ -301,13 +296,10 @@ namespace EpgTimer
 
                 return ReserveAdd(list, cautionMany);
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                return false;
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
+            return false;
         }
-        public bool IsEnableReserveAdd(EpgEventInfo item)
+        public static bool IsEnableReserveAdd(EpgEventInfo item)
         {
             if (item == null) return false;
 
@@ -318,12 +310,12 @@ namespace EpgTimer
             }
             return retv;
         }
-        public bool ReserveAdd(List<ReserveData> list, bool cautionMany = true)
+        public static bool ReserveAdd(List<ReserveData> list, bool cautionMany = true)
         {
             return ReserveCmdSend(list, cmd.SendAddReserve, "予約追加", cautionMany);
         }
 
-        public bool ReserveChangeOnOff(List<ReserveData> itemlist, RecSettingView recSettingView = null, bool cautionMany = true)
+        public static bool ReserveChangeOnOff(List<ReserveData> itemlist, RecSettingView recSettingView = null, bool cautionMany = true)
         {
             try
             {
@@ -354,84 +346,66 @@ namespace EpgTimer
 
                 return ReserveChange(itemlist, cautionMany);
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                return false;
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
+            return false;
         }
 
-        public bool ChangeOnPreset(List<RecSettingData> infoList, uint presetID)
+        public static bool ChangeOnPreset(List<RecSettingData> infoList, uint presetID)
         {
             try
             {
                 infoList.ForEach(info => Settings.GetDefRecSetting(presetID, ref info));
                 return true;
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                return false;
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
+            return false;
         }
 
-        public bool ChangeRecmode(List<RecSettingData> infoList, byte recMode)
+        public static bool ChangeRecmode(List<RecSettingData> infoList, byte recMode)
         {
             try
             {
                 infoList.ForEach(info => info.RecMode = recMode);
                 return true;
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                return false;
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
+            return false;
         }
 
-        public bool ChangePriority(List<RecSettingData> infoList, byte priority)
+        public static bool ChangePriority(List<RecSettingData> infoList, byte priority)
         {
             try
             {
                 infoList.ForEach(info => info.Priority = priority);
                 return true;
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                return false;
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
+            return false;
         }
 
-        public bool ChangeRelay(List<RecSettingData> infoList, byte relay)
+        public static bool ChangeRelay(List<RecSettingData> infoList, byte relay)
         {
             try
             {
                 infoList.ForEach(info => info.TuijyuuFlag = relay);
                 return true;
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                return false;
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
+            return false;
         }
 
-        public bool ChangePittari(List<RecSettingData> infoList, byte pittari)
+        public static bool ChangePittari(List<RecSettingData> infoList, byte pittari)
         {
             try
             {
                 infoList.ForEach(info => info.PittariFlag = pittari);
                 return true;
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                return false;
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
+            return false;
         }
 
-        public bool ChangeMargin(List<RecSettingData> infoList, int margin_offset, bool start)
+        public static bool ChangeMargin(List<RecSettingData> infoList, int margin_offset, bool start)
         {
             try
             {
@@ -463,14 +437,11 @@ namespace EpgTimer
 
                 return true;
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                return false;
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
+            return false;
         }
 
-        public bool ChangeMarginValue(List<RecSettingData> infoList, bool start, Control owner = null)
+        public static bool ChangeMarginValue(List<RecSettingData> infoList, bool start, Control owner = null)
         {
             try
             {
@@ -500,28 +471,22 @@ namespace EpgTimer
                 });
                 return true;
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                return false;
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
+            return false;
         }
 
-        public bool ChangeTuner(List<RecSettingData> infoList, uint tuner)
+        public static bool ChangeTuner(List<RecSettingData> infoList, uint tuner)
         {
             try
             {
                 infoList.ForEach(info => info.TunerID = tuner);
                 return true;
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                return false;
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
+            return false;
         }
 
-        public bool ChangeBulkSet(List<RecSettingData> infoList, Control owner = null, bool pgAll = false)
+        public static bool ChangeBulkSet(List<RecSettingData> infoList, Control owner = null, bool pgAll = false)
         {
             try
             {
@@ -538,14 +503,11 @@ namespace EpgTimer
                 infoList.ForEach(info => setData.CopyTo(info));
                 return true;
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                return false;
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
+            return false;
         }
 
-        public bool ChgGenre(List<EpgSearchKeyInfo> infoList, Control owner = null)
+        public static bool ChgGenre(List<EpgSearchKeyInfo> infoList, Control owner = null)
         {
             try
             {
@@ -560,14 +522,11 @@ namespace EpgTimer
                 infoList.ForEach(info => info.contentList = setData.contentList.Clone());
                 return true;
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                return false;
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
+            return false;
         }
 
-        public bool ReserveChangeResMode(List<ReserveData> itemlist, uint resMode)
+        public static bool ReserveChangeResMode(List<ReserveData> itemlist, uint resMode)
         {
             try
             {
@@ -590,26 +549,23 @@ namespace EpgTimer
                 list.ForEach(item => item.Comment = "");
                 return ReserveChange(list);
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                return false;
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
+            return false;
         }
 
-        public bool ReserveChangeResModeAutoAdded(List<ReserveData> itemList, AutoAddData autoAdd)
+        public static bool ReserveChangeResModeAutoAdded(List<ReserveData> itemList, AutoAddData autoAdd)
         {
             if (ReserveDelete(itemList, false) == false) return false;
             return AutoAddChange(CommonUtil.ToList(autoAdd), false, false, false, false);
         }
 
-        public bool ReserveChange(List<ReserveData> itemlist, bool cautionMany = true)
+        public static bool ReserveChange(List<ReserveData> itemlist, bool cautionMany = true)
         {
             if (CheckReserveOnRec(itemlist,"変更") == false) return false;
             return ReserveCmdSend(itemlist, cmd.SendChgReserve, "予約変更", cautionMany);
         }
 
-        public bool ReserveDelete(List<ReserveData> itemlist, bool cautionMany = true)
+        public static bool ReserveDelete(List<ReserveData> itemlist, bool cautionMany = true)
         {
             try
             {
@@ -617,14 +573,11 @@ namespace EpgTimer
                 List<uint> list = itemlist.Select(item => item.ReserveID).ToList();
                 return ReserveCmdSend(list, cmd.SendDelReserve, "予約削除", cautionMany);
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                return false;
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
+            return false;
         }
 
-        public bool CheckReserveOnRec(List<ReserveData> itemlist, string description)
+        public static bool CheckReserveOnRec(List<ReserveData> itemlist, string description)
         {
             if (Settings.Instance.CautionOnRecChange == false) return true;
             int cMin = Settings.Instance.CautionOnRecMarginMin;
@@ -643,7 +596,7 @@ namespace EpgTimer
                                 MessageBoxImage.Exclamation, MessageBoxResult.Cancel) == MessageBoxResult.OK;
         }
 
-        public bool AutoAddChangeKeyEnabled(IEnumerable<AutoAddData> itemlist, bool value)
+        public static bool AutoAddChangeKeyEnabled(IEnumerable<AutoAddData> itemlist, bool value)
         {
             try
             {
@@ -655,7 +608,7 @@ namespace EpgTimer
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
             return false;
         }
-        public bool AutoAddChangeOnOffKeyEnabled(IEnumerable<AutoAddData> itemlist)
+        public static bool AutoAddChangeOnOffKeyEnabled(IEnumerable<AutoAddData> itemlist)
         {
             try
             {
@@ -667,7 +620,7 @@ namespace EpgTimer
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
             return false;
         }
-        public bool AutoAddChangeKeyEnabledCautionMany(IEnumerable<AutoAddData> itemlist)
+        public static bool AutoAddChangeKeyEnabledCautionMany(IEnumerable<AutoAddData> itemlist)
         {
             if (Settings.Instance.CautionManyChange == true)
             {
@@ -690,28 +643,25 @@ namespace EpgTimer
             }
             return true;
         }
-        public bool EpgAutoAddChangeNotKey(List<EpgAutoAddData> itemlist)
+        public static bool EpgAutoAddChangeNotKey(List<EpgAutoAddData> itemlist)
         {
             try
             {
                 itemlist.ForEach(item => item.searchInfo.notKey = Clipboard.GetText());
                 return AutoAddChange(itemlist);
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                return false;
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
+            return false;
         }
-        public bool AutoAddAdd(IEnumerable<AutoAddData> itemlist)
+        public static bool AutoAddAdd(IEnumerable<AutoAddData> itemlist)
         {
             return AutoAddCmdSend(itemlist, 0);
         }
-        public bool AutoAddChange(IEnumerable<AutoAddData> itemlist, bool cautionMany = true)
+        public static bool AutoAddChange(IEnumerable<AutoAddData> itemlist, bool cautionMany = true)
         {
             return AutoAddChange(itemlist, Settings.Instance.SyncResAutoAddChange, Settings.Instance.SyncResAutoAddChgNewRes, cautionMany);
         }
-        public bool AutoAddChange(IEnumerable<AutoAddData> itemlist, bool SyncChange, bool NewRes, bool cautionMany = true, bool isViewOrder = true)
+        public static bool AutoAddChange(IEnumerable<AutoAddData> itemlist, bool SyncChange, bool NewRes, bool cautionMany = true, bool isViewOrder = true)
         {
             if (SyncChange == true)
             {
@@ -725,11 +675,11 @@ namespace EpgTimer
                 return AutoAddCmdSend(itemlist, 1, null, null, cautionMany, isViewOrder);
             }
         }
-        public bool AutoAddChangeSyncReserve(IEnumerable<AutoAddData> itemlist)
+        public static bool AutoAddChangeSyncReserve(IEnumerable<AutoAddData> itemlist)
         {
             return ReserveChange(AutoAddSyncChangeList(itemlist, true), false);
         }
-        private List<ReserveData> AutoAddSyncChangeList(IEnumerable<AutoAddData> itemlist, bool SyncAll, List<ReserveData> deleteList = null)
+        private static List<ReserveData> AutoAddSyncChangeList(IEnumerable<AutoAddData> itemlist, bool SyncAll, List<ReserveData> deleteList = null)
         {
             var syncDict = new Dictionary<uint, ReserveData>();
 
@@ -782,22 +732,22 @@ namespace EpgTimer
 
             return syncList;
         }
-        public bool AutoAddDelete(IEnumerable<AutoAddData> itemlist)
+        public static bool AutoAddDelete(IEnumerable<AutoAddData> itemlist)
         {
             return AutoAddDelete(itemlist, Settings.Instance.SyncResAutoAddDelete, false);
         }
-        public bool AutoAddDelete(IEnumerable<AutoAddData> itemlist, bool SyncDelete, bool SyncAll)
+        public static bool AutoAddDelete(IEnumerable<AutoAddData> itemlist, bool SyncDelete, bool SyncAll)
         {
             //操作前にリストを作成する
             return AutoAddCmdSend(itemlist, 2, SyncDelete == false ? null : AutoAddSyncDeleteList(itemlist, SyncAll));
         }
-        private List<ReserveData> AutoAddSyncDeleteList(IEnumerable<AutoAddData> itemlist, bool SyncAll)
+        private static List<ReserveData> AutoAddSyncDeleteList(IEnumerable<AutoAddData> itemlist, bool SyncAll)
         {
             var list = itemlist.GetReserveList();
             return SyncAll == true ? list : AutoAddSyncModifyReserveList(list, itemlist);
         }
 
-        private List<ReserveData> AutoAddSyncModifyReserveList(List<ReserveData> reslist, IEnumerable<AutoAddData> itemlist)
+        private static List<ReserveData> AutoAddSyncModifyReserveList(List<ReserveData> reslist, IEnumerable<AutoAddData> itemlist)
         {
             var epgAutoList = reslist.ToDictionary(info => info.ReserveID, info => info.GetEpgAutoAddList(true).Select(item => item.DataID).ToList());
             var manualAutoList = reslist.ToDictionary(info => info.ReserveID, info => info.GetManualAutoAddList(true).Select(item => item.DataID).ToList());
@@ -814,7 +764,7 @@ namespace EpgTimer
         }
 
         //mode 0:追加、1:変更、2:削除
-        private bool AutoAddCmdSend(IEnumerable<AutoAddData> itemlist, int mode,
+        private static bool AutoAddCmdSend(IEnumerable<AutoAddData> itemlist, int mode,
             List<ReserveData> delReserveList = null, List<ReserveData> chgReserveList = null, bool cautionMany = true, bool isViewOrder = true)
         {
             try
@@ -855,7 +805,7 @@ namespace EpgTimer
             return false;
         }
 
-        private bool AutoAddOrderAutoSave<T>(ref List<T> list, bool changeID) where T : AutoAddData
+        private static bool AutoAddOrderAutoSave<T>(ref List<T> list, bool changeID) where T : AutoAddData
         {
             //並べ替え不要
             if (list.Count == 0) return true;
@@ -890,34 +840,28 @@ namespace EpgTimer
             return true;
         }
 
-        public bool RecinfoChgProtect(List<RecFileInfo> itemlist)
+        public static bool RecinfoChgProtect(List<RecFileInfo> itemlist)
         {
             try
             {
                 itemlist.ForEach(item => item.ProtectFlag = (byte)(item.ProtectFlag == 0 ? 1 : 0));
                 return ReserveCmdSend(itemlist, cmd.SendChgProtectRecInfo, "録画情報の変更");
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                return false;
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
+            return false;
         }
-        public bool RecinfoDelete(List<RecFileInfo> itemlist)
+        public static bool RecinfoDelete(List<RecFileInfo> itemlist)
         {
             try
             {
                 List<uint> list = itemlist.Select(item => item.ID).ToList();
                 return ReserveCmdSend(list, cmd.SendDelRecInfo, "録画情報の削除");
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                return false;
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
+            return false;
         }
 
-        private bool ReserveCmdSend<T>(List<T> list, Func<List<T>, ErrCode> cmdSend, string description = "", bool cautionMany = true)
+        private static bool ReserveCmdSend<T>(List<T> list, Func<List<T>, ErrCode> cmdSend, string description = "", bool cautionMany = true)
         {
             try
             {
@@ -928,13 +872,10 @@ namespace EpgTimer
                 ErrCode err = cmdSend(list);
                 return CommonManager.CmdErrMsgTypical(err, description);
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                return false;
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
+            return false;
         }
-        public bool CautionManyMessage(int Count, string description = "")
+        public static bool CautionManyMessage(int Count, string description = "")
         {
             if (Settings.Instance.CautionManyChange == true && Count >= Settings.Instance.CautionManyNum)
             {
@@ -948,7 +889,7 @@ namespace EpgTimer
             return true;
         }
 
-        public bool? OpenSearchItemWithDialog(SearchItem item, Control Owner, byte openMode = 0)
+        public static bool? OpenSearchItemWithDialog(SearchItem item, Control Owner, byte openMode = 0)
         {
             if (item == null) return null;
 
@@ -962,7 +903,7 @@ namespace EpgTimer
             }
         }
 
-        public bool? OpenEpgReserveDialog(EpgEventInfo Data, Control Owner, byte epgInfoOpenMode = 0)
+        public static bool? OpenEpgReserveDialog(EpgEventInfo Data, Control Owner, byte epgInfoOpenMode = 0)
         {
             try
             {
@@ -972,22 +913,19 @@ namespace EpgTimer
                 dlg.SetOpenMode(epgInfoOpenMode);
                 return dlg.ShowDialog();
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                return null;
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
+            return null;
         }
 
-        public bool? OpenChangeReserveDialog(ReserveData Data, Control Owner, byte epgInfoOpenMode = 0)
+        public static bool? OpenChangeReserveDialog(ReserveData Data, Control Owner, byte epgInfoOpenMode = 0)
         {
             return OpenChgReserveDialog(Data, Owner, epgInfoOpenMode);
         }
-        public bool? OpenManualReserveDialog(Control Owner)
+        public static bool? OpenManualReserveDialog(Control Owner)
         {
             return OpenChgReserveDialog(null, Owner);
         }
-        public bool? OpenChgReserveDialog(ReserveData Data, Control Owner, byte epgInfoOpenMode = 0)
+        public static bool? OpenChgReserveDialog(ReserveData Data, Control Owner, byte epgInfoOpenMode = 0)
         {
             try
             {
@@ -1004,26 +942,23 @@ namespace EpgTimer
                 }
                 return dlg.ShowDialog();
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                return null;
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
+            return null;
         }
 
-        public bool? OpenSearchEpgDialog()
+        public static bool? OpenSearchEpgDialog()
         {
             return OpenEpgAutoAddDialog(null, SearchWindow.SearchMode.Find);
         }
-        public bool? OpenAddEpgAutoAddDialog()
+        public static bool? OpenAddEpgAutoAddDialog()
         {
             return OpenEpgAutoAddDialog(null, SearchWindow.SearchMode.NewAdd);
         }
-        public bool? OpenChangeEpgAutoAddDialog(EpgAutoAddData Data)
+        public static bool? OpenChangeEpgAutoAddDialog(EpgAutoAddData Data)
         {
             return OpenEpgAutoAddDialog(Data, SearchWindow.SearchMode.Change);
         }
-        private bool? OpenEpgAutoAddDialog(EpgAutoAddData Data, SearchWindow.SearchMode mode)
+        private static bool? OpenEpgAutoAddDialog(EpgAutoAddData Data, SearchWindow.SearchMode mode)
         {
             try
             {
@@ -1036,13 +971,10 @@ namespace EpgTimer
                 dlg.Show();
                 return true;
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                return null;
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
+            return null;
         }
-        public void SendAutoAdd(IBasicPgInfo item, bool NotToggle = false)
+        public static void SendAutoAdd(IBasicPgInfo item, bool NotToggle = false)
         {
             try
             {
@@ -1072,21 +1004,18 @@ namespace EpgTimer
 
                 dlg.Show();
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
 
-        public bool? OpenAddManualAutoAddDialog(Control Owner)
+        public static bool? OpenAddManualAutoAddDialog(Control Owner)
         {
             return OpenManualAutoAddDialog(null, Owner);
         }
-        public bool? OpenChangeManualAutoAddDialog(ManualAutoAddData Data, Control Owner)
+        public static bool? OpenChangeManualAutoAddDialog(ManualAutoAddData Data, Control Owner)
         {
             return OpenManualAutoAddDialog(Data, Owner);
         }
-        public bool? OpenManualAutoAddDialog(ManualAutoAddData Data, Control Owner)
+        public static bool? OpenManualAutoAddDialog(ManualAutoAddData Data, Control Owner)
         {
             try
             {
@@ -1099,14 +1028,11 @@ namespace EpgTimer
                 }
                 return dlg.ShowDialog();
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                return null;
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
+            return null;
         }
 
-        public bool? OpenRecInfoDialog(RecFileInfo info, Control Owner)
+        public static bool? OpenRecInfoDialog(RecFileInfo info, Control Owner)
         {
             try
             {
@@ -1115,11 +1041,8 @@ namespace EpgTimer
                 dlg.SetRecInfo(info);
                 return dlg.ShowDialog();
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                return null;
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
+            return null;
         }
 
         /// <summary>重複してない場合は負数が返る。</summary>
@@ -1131,7 +1054,7 @@ namespace EpgTimer
             return Math.Min(Math.Min(ts1.TotalSeconds, ts2.TotalSeconds), Math.Min(d1, d2));
         }
 
-        public List<EpgAutoAddData> FazySearchEpgAutoAddData(string title, bool? IsEnabled = null)
+        public static List<EpgAutoAddData> FazySearchEpgAutoAddData(string title, bool? IsEnabled = null)
         {
             Func<string, string> _regulate_str = s => CommonManager.ReplaceUrl(TrimKeyword(s)).ToLower();
 

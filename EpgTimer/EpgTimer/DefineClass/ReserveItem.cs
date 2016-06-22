@@ -105,7 +105,7 @@ namespace EpgTimer
             {
                 if (Settings.Instance.NoToolTip == true) return null;
                 //
-                return mutil.GetTooltipBlockStandard(ConvertInfoText());
+                return MenuUtil.GetTooltipBlockStandard(ConvertInfoText());
             }
         }
         public String ConvertInfoText()

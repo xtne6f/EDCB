@@ -16,8 +16,6 @@ namespace EpgTimer.Setting
     /// </summary>
     public partial class SetAppView : UserControl
     {
-        private MenuUtil mutil = CommonManager.Instance.MUtil;
-
         private List<String> ngProcessList = new List<String>();
         private String ngMin = "10";
         public bool ngUsePC = false;
@@ -424,7 +422,7 @@ namespace EpgTimer.Setting
                 IniFileHandler.WritePrivateProfileString("SET", "TimeSync", setValue, SettingPath.TimerSrvIniPath);
 
                 Settings.Instance.CautionOnRecChange = (checkBox_cautionOnRecChange.IsChecked != false);
-                Settings.Instance.CautionOnRecMarginMin = mutil.MyToNumerical(textBox_cautionOnRecMarginMin, Convert.ToInt32, Settings.Instance.CautionOnRecMarginMin); 
+                Settings.Instance.CautionOnRecMarginMin = MenuUtil.MyToNumerical(textBox_cautionOnRecMarginMin, Convert.ToInt32, Settings.Instance.CautionOnRecMarginMin); 
 
                 Settings.Instance.CloseMin = (bool)checkBox_closeMin.IsChecked;
                 Settings.Instance.WakeMin = (bool)checkBox_minWake.IsChecked;
@@ -459,9 +457,9 @@ namespace EpgTimer.Setting
 
                 Settings.Instance.NoToolTip = (checkBox_noToolTips.IsChecked == true);
                 Settings.Instance.NoBallonTips = (checkBox_noBallonTips.IsChecked == true);
-                Settings.Instance.ForceHideBalloonTipSec = mutil.MyToNumerical(textBox_ForceHideBalloonTipSec, Convert.ToInt32, 255, 0, Settings.Instance.ForceHideBalloonTipSec);
+                Settings.Instance.ForceHideBalloonTipSec = MenuUtil.MyToNumerical(textBox_ForceHideBalloonTipSec, Convert.ToInt32, 255, 0, Settings.Instance.ForceHideBalloonTipSec);
                 Settings.Instance.CautionManyChange = (checkBox_cautionManyChange.IsChecked != false);
-                Settings.Instance.CautionManyNum = mutil.MyToNumerical(textBox_cautionManyChange, Convert.ToInt32, Settings.Instance.CautionManyNum);
+                Settings.Instance.CautionManyNum = MenuUtil.MyToNumerical(textBox_cautionManyChange, Convert.ToInt32, Settings.Instance.CautionManyNum);
                 Settings.Instance.SaveSearchKeyword = (checkBox_saveSearchKeyword.IsChecked != false);
                 Settings.Instance.SyncResAutoAddChange = (checkBox_SyncResAutoAddChange.IsChecked != false);
                 Settings.Instance.SyncResAutoAddDelete = (checkBox_SyncResAutoAddDelete.IsChecked != false);
@@ -469,11 +467,11 @@ namespace EpgTimer.Setting
                 Settings.Instance.WakeReconnectNW = (checkBox_wakeReconnect.IsChecked == true);
                 Settings.Instance.WoLWait = (checkBox_WoLWait.IsChecked == true);
                 Settings.Instance.WoLWaitRecconect = (checkBox_WoLWaitRecconect.IsChecked == true);
-                Settings.Instance.WoLWaitSecond = mutil.MyToNumerical(textBox_WoLWaitSecond, Convert.ToDouble, 3600, 1, Settings.Instance.WoLWaitSecond);
+                Settings.Instance.WoLWaitSecond = MenuUtil.MyToNumerical(textBox_WoLWaitSecond, Convert.ToDouble, 3600, 1, Settings.Instance.WoLWaitSecond);
                 Settings.Instance.SuspendCloseNW = (checkBox_suspendClose.IsChecked == true);
                 Settings.Instance.NgAutoEpgLoadNW = (checkBox_ngAutoEpgLoad.IsChecked == true);
                 Settings.Instance.ChkSrvRegistTCP = (checkBox_keepTCPConnect.IsChecked != false);
-                Settings.Instance.ChkSrvRegistInterval = mutil.MyToNumerical(textBox_chkTimerInterval, Convert.ToDouble, 1440 * 7, 1, Settings.Instance.ChkSrvRegistInterval);
+                Settings.Instance.ChkSrvRegistInterval = MenuUtil.MyToNumerical(textBox_chkTimerInterval, Convert.ToDouble, 1440 * 7, 1, Settings.Instance.ChkSrvRegistInterval);
                 Settings.Instance.UpdateTaskText = (textBox_upDateTaskText.IsChecked == true);
                 Settings.Instance.ForceNWMode = (checkBox_forceNWMode.IsChecked != false);
 
@@ -481,7 +479,7 @@ namespace EpgTimer.Setting
 
                 Settings.Instance.ViewButtonShowAsTab = checkBox_showAsTab.IsChecked == true;
                 Settings.Instance.SuspendChk = (uint)(checkBox_suspendChk.IsChecked == true ? 1 : 0);
-                Settings.Instance.SuspendChkTime = mutil.MyToNumerical(textBox_suspendChkTime, Convert.ToUInt32, Settings.Instance.SuspendChkTime);
+                Settings.Instance.SuspendChkTime = MenuUtil.MyToNumerical(textBox_suspendChkTime, Convert.ToUInt32, Settings.Instance.SuspendChkTime);
 
                 Settings.Instance.ViewButtonList = listBox_viewBtn.Items.OfType<StringItem>().ValueList();
                 Settings.Instance.TaskMenuList = listBox_viewTask.Items.OfType<StringItem>().ValueList();

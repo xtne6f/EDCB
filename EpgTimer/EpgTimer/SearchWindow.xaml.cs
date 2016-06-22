@@ -17,7 +17,6 @@ namespace EpgTimer
         static EpgAutoAddView autoAddView { get { return mainWindow.autoAddView.epgAutoAddView; } }
 
         private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
-        private MenuUtil mutil = CommonManager.Instance.MUtil;
         private MenuManager mm = CommonManager.Instance.MM;
 
         private CmdExeReserve mc; //予約系コマンド集
@@ -279,7 +278,7 @@ namespace EpgTimer
 
                     List<uint> oldlist = CommonManager.Instance.DB.EpgAutoAddList.Keys.ToList();
 
-                    ret = mutil.AutoAddAdd(CommonUtil.ToList(this.GetAutoAddData()));
+                    ret = MenuUtil.AutoAddAdd(CommonUtil.ToList(this.GetAutoAddData()));
                     if (ret == true)
                     {
                         //以降の処理をEpgTimerSrvからの更新通知後に実行すればReload減らせるが、トラブル増えそうなのでこのまま。
@@ -308,7 +307,7 @@ namespace EpgTimer
                 ret = CheckAutoAddChange(e, 1);
                 if (ret == true)
                 {
-                    ret = mutil.AutoAddChange(CommonUtil.ToList(this.GetAutoAddData()));
+                    ret = MenuUtil.AutoAddChange(CommonUtil.ToList(this.GetAutoAddData()));
                 }
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
@@ -323,7 +322,7 @@ namespace EpgTimer
                 ret = CheckAutoAddChange(e, 2);
                 if (ret == true)
                 {
-                    ret = mutil.AutoAddDelete(CommonUtil.ToList(CommonManager.Instance.DB.EpgAutoAddList[autoAddID]));
+                    ret = MenuUtil.AutoAddDelete(CommonUtil.ToList(CommonManager.Instance.DB.EpgAutoAddList[autoAddID]));
                     if (ret == true)
                     {
                         SetViewMode(SearchMode.NewAdd);
@@ -361,7 +360,7 @@ namespace EpgTimer
 
             if (proc != 2 && Settings.Instance.CautionManyChange == true && searchKeyView.searchKeyDescView.checkBox_keyDisabled.IsChecked != true)
             {
-                if (mutil.CautionManyMessage(lstCtrl.dataList.GetNoReserveList().Count, "予約追加の確認") == false)
+                if (MenuUtil.CautionManyMessage(lstCtrl.dataList.GetNoReserveList().Count, "予約追加の確認") == false)
                 { return false; }
             }
 
@@ -462,7 +461,7 @@ namespace EpgTimer
                     SearchItem item = lstCtrl.SelectSingleItem();
 
                     EpgSearchKeyInfo defKey = GetSearchKey();
-                    defKey.andKey = mutil.TrimEpgKeyword(item.EventName, CmdExeUtil.IsKeyGesture(e));
+                    defKey.andKey = MenuUtil.TrimEpgKeyword(item.EventName, CmdExeUtil.IsKeyGesture(e));
                     defKey.regExpFlag = 0;
                     defKey.serviceList.Clear();
                     UInt64 sidKey = item.EventInfo.Create64Key();

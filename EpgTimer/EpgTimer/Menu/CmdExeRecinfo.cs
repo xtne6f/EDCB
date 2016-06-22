@@ -17,11 +17,11 @@ namespace EpgTimer
         }
         protected override void mc_ShowDialog(object sender, ExecutedRoutedEventArgs e)
         {
-            IsCommandExecuted = true == mutil.OpenRecInfoDialog(dataList[0], this.Owner);
+            IsCommandExecuted = true == MenuUtil.OpenRecInfoDialog(dataList[0], this.Owner);
         }
         protected override void mc_ProtectChange(object sender, ExecutedRoutedEventArgs e)
         {
-            IsCommandExecuted = mutil.RecinfoChgProtect(dataList);
+            IsCommandExecuted = MenuUtil.RecinfoChgProtect(dataList);
         }
         protected override void mc_Delete(object sender, ExecutedRoutedEventArgs e)
         {
@@ -46,7 +46,7 @@ namespace EpgTimer
                 { return; }
             }
 
-            IsCommandExecuted = mutil.RecinfoDelete(dataList);
+            IsCommandExecuted = MenuUtil.RecinfoDelete(dataList);
         }
         protected override void mc_Play(object sender, ExecutedRoutedEventArgs e)
         {
@@ -55,7 +55,7 @@ namespace EpgTimer
         }
         protected override void mc_CopyContent(object sender, ExecutedRoutedEventArgs e)
         {
-            mutil.CopyContent2Clipboard(dataList[0], CmdExeUtil.IsKeyGesture(e));
+            MenuUtil.CopyContent2Clipboard(dataList[0], CmdExeUtil.IsKeyGesture(e));
             IsCommandExecuted = true;
         }
         protected override void mcs_ctxmLoading_switch(ContextMenu ctxm, MenuItem menu)

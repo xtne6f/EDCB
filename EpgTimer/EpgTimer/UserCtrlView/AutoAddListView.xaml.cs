@@ -44,7 +44,7 @@ namespace EpgTimer
                 var newList = View.lstCtrl.dataList.Select(item => item.Data.CloneObj() as T).ToList();
                 newList.ForEach(item => item.DataID = changeIDTable[item.DataID]);
 
-                bool ret = View.mutil.AutoAddChange(newList, false, false, false, false);
+                bool ret = MenuUtil.AutoAddChange(newList, false, false, false, false);
                 if (ret == true)
                 {
                     //dataListと検索ダイアログへのIDの反映。dataListは既にコピーだが、SaveChange成功後に行う

@@ -23,8 +23,6 @@ namespace EpgTimer.Setting
             public Brush Color { get; private set; }
         }
 
-        private MenuUtil mutil = CommonManager.Instance.MUtil;
-
         private MenuSettingData ctxmSetInfo;
 
         public SetEpgView()
@@ -238,11 +236,11 @@ namespace EpgTimer.Setting
         {
             try
             {
-                Settings.Instance.ScrollSize = mutil.MyToNumerical(textBox_mouse_scroll, Convert.ToDouble, 240);
-                Settings.Instance.ServiceWidth = mutil.MyToNumerical(textBox_service_width, Convert.ToDouble, double.MaxValue, 16, 16);//小さいと描画で落ちる
-                Settings.Instance.MinHeight = mutil.MyToNumerical(textBox_minHeight, Convert.ToDouble, double.MaxValue, 0.1, 2);
-                Settings.Instance.MinimumHeight = mutil.MyToNumerical(textBox_minimumHeight, Convert.ToDouble, double.MaxValue, 0, 0);
-                Settings.Instance.DragScroll = mutil.MyToNumerical(textBox_dragScroll, Convert.ToDouble, 1.5);
+                Settings.Instance.ScrollSize = MenuUtil.MyToNumerical(textBox_mouse_scroll, Convert.ToDouble, 240);
+                Settings.Instance.ServiceWidth = MenuUtil.MyToNumerical(textBox_service_width, Convert.ToDouble, double.MaxValue, 16, 16);//小さいと描画で落ちる
+                Settings.Instance.MinHeight = MenuUtil.MyToNumerical(textBox_minHeight, Convert.ToDouble, double.MaxValue, 0.1, 2);
+                Settings.Instance.MinimumHeight = MenuUtil.MyToNumerical(textBox_minimumHeight, Convert.ToDouble, double.MaxValue, 0, 0);
+                Settings.Instance.DragScroll = MenuUtil.MyToNumerical(textBox_dragScroll, Convert.ToDouble, 1.5);
                 Settings.Instance.EpgTitleIndent = (checkBox_title_indent.IsChecked == true);
                 Settings.Instance.EpgPopup = (checkBox_epg_popup.IsChecked == true);
                 Settings.Instance.EpgPopupResOnly = (checkBox_epg_popup_resOnly.IsChecked == true);
@@ -253,11 +251,11 @@ namespace EpgTimer.Setting
                 Settings.Instance.MouseScrollAuto = (checkBox_scrollAuto.IsChecked == true);
                 Settings.Instance.DisplayNotifyEpgChange = (checkBox_displayNotifyChange.IsChecked == true);
                 Settings.Instance.ReserveRectBackground = (checkBox_reserveBackground.IsChecked == true);
-                Settings.Instance.TunerScrollSize = mutil.MyToNumerical(textBox_tuner_mouse_scroll, Convert.ToDouble, 240);
-                Settings.Instance.TunerWidth = mutil.MyToNumerical(textBox_tuner_width, Convert.ToDouble, double.MaxValue, 16, 150);//小さいと描画で落ちる
-                Settings.Instance.TunerMinHeight = mutil.MyToNumerical(textBox_tuner_minHeight, Convert.ToDouble, double.MaxValue, 0.1, 2);
-                Settings.Instance.TunerMinimumLine = mutil.MyToNumerical(textBox_tunerMinLineHeight, Convert.ToDouble, double.MaxValue,0,0);
-                Settings.Instance.TunerDragScroll = mutil.MyToNumerical(textBox_tunerDdragScroll, Convert.ToDouble, 1.5);
+                Settings.Instance.TunerScrollSize = MenuUtil.MyToNumerical(textBox_tuner_mouse_scroll, Convert.ToDouble, 240);
+                Settings.Instance.TunerWidth = MenuUtil.MyToNumerical(textBox_tuner_width, Convert.ToDouble, double.MaxValue, 16, 150);//小さいと描画で落ちる
+                Settings.Instance.TunerMinHeight = MenuUtil.MyToNumerical(textBox_tuner_minHeight, Convert.ToDouble, double.MaxValue, 0.1, 2);
+                Settings.Instance.TunerMinimumLine = MenuUtil.MyToNumerical(textBox_tunerMinLineHeight, Convert.ToDouble, double.MaxValue, 0, 0);
+                Settings.Instance.TunerDragScroll = MenuUtil.MyToNumerical(textBox_tunerDdragScroll, Convert.ToDouble, 1.5);
                 Settings.Instance.TunerMouseScrollAuto = (checkBox_tuner_scrollAuto.IsChecked == true);
                 Settings.Instance.TunerServiceNoWrap = (checkBox_tuner_service_nowrap.IsChecked == true);
                 Settings.Instance.TunerTitleIndent = (checkBox_tuner_title_indent.IsChecked == true);
@@ -271,24 +269,24 @@ namespace EpgTimer.Setting
                 {
                     Settings.Instance.FontName = comboBox_font.SelectedItem as string;
                 }
-                Settings.Instance.FontSize = mutil.MyToNumerical(textBox_fontSize, Convert.ToDouble, 72, 1, 12);
+                Settings.Instance.FontSize = MenuUtil.MyToNumerical(textBox_fontSize, Convert.ToDouble, 72, 1, 12);
                 if (comboBox_fontTitle.SelectedItem != null)
                 {
                     Settings.Instance.FontNameTitle = comboBox_fontTitle.SelectedItem as string;
                 }
-                Settings.Instance.FontSizeTitle = mutil.MyToNumerical(textBox_fontSizeTitle, Convert.ToDouble, 72, 1, 12);
+                Settings.Instance.FontSizeTitle = MenuUtil.MyToNumerical(textBox_fontSizeTitle, Convert.ToDouble, 72, 1, 12);
                 Settings.Instance.FontBoldTitle = (checkBox_fontBoldTitle.IsChecked == true);
 
                 if (comboBox_fontTuner.SelectedItem != null)
                 {
                     Settings.Instance.TunerFontName = comboBox_fontTuner.SelectedItem as string;
                 }
-                Settings.Instance.TunerFontSize = mutil.MyToNumerical(textBox_fontTunerSize, Convert.ToDouble, 72, 1, 12);
+                Settings.Instance.TunerFontSize = MenuUtil.MyToNumerical(textBox_fontTunerSize, Convert.ToDouble, 72, 1, 12);
                 if (comboBox_fontTunerService.SelectedItem != null)
                 {
                     Settings.Instance.TunerFontNameService = comboBox_fontTunerService.SelectedItem as string;
                 }
-                Settings.Instance.TunerFontSizeService = mutil.MyToNumerical(textBox_fontTunerSizeService, Convert.ToDouble, 72, 1, 12);
+                Settings.Instance.TunerFontSizeService = MenuUtil.MyToNumerical(textBox_fontTunerSizeService, Convert.ToDouble, 72, 1, 12);
                 Settings.Instance.TunerFontBoldService = (checkBox_fontTunerBoldService.IsChecked == true);
 
                 Settings.Instance.UseCustomEpgView = (radioButton_1_cust.IsChecked == true);
@@ -338,9 +336,9 @@ namespace EpgTimer.Setting
 
                 //録画済み一覧画面
                 Settings.Instance.PlayDClick = (checkBox_playDClick.IsChecked == true);
-                Settings.Instance.RecInfoDropErrIgnore = mutil.MyToNumerical(textBox_dropErrIgnore, Convert.ToInt64, Settings.Instance.RecInfoDropErrIgnore);
-                Settings.Instance.RecInfoDropWrnIgnore = mutil.MyToNumerical(textBox_dropWrnIgnore, Convert.ToInt64, Settings.Instance.RecInfoDropWrnIgnore);
-                Settings.Instance.RecInfoScrambleIgnore = mutil.MyToNumerical(textBox_scrambleIgnore, Convert.ToInt64, Settings.Instance.RecInfoScrambleIgnore);
+                Settings.Instance.RecInfoDropErrIgnore = MenuUtil.MyToNumerical(textBox_dropErrIgnore, Convert.ToInt64, Settings.Instance.RecInfoDropErrIgnore);
+                Settings.Instance.RecInfoDropWrnIgnore = MenuUtil.MyToNumerical(textBox_dropWrnIgnore, Convert.ToInt64, Settings.Instance.RecInfoDropWrnIgnore);
+                Settings.Instance.RecInfoScrambleIgnore = MenuUtil.MyToNumerical(textBox_scrambleIgnore, Convert.ToInt64, Settings.Instance.RecInfoScrambleIgnore);
                 Settings.Instance.RecinfoErrCriticalDrops = (checkBox_recinfo_errCritical.IsChecked == true);
                 Settings.Instance.RecInfoNoYear = (checkBox_recNoYear.IsChecked == true);
                 Settings.Instance.RecInfoNoSecond = (checkBox_recNoSecond.IsChecked == true);
@@ -368,9 +366,9 @@ namespace EpgTimer.Setting
                 getButtonColors(Settings.Instance.ResBackCustColors, grid_ReserveBackColors);
                 getButtonColors(Settings.Instance.StatCustColors, grid_StatColors);
 
-                Settings.Instance.DisplayNotifyJumpTime = mutil.MyToNumerical(textBox_DisplayJumpTime, Convert.ToDouble, Double.MaxValue, 0, 3);
+                Settings.Instance.DisplayNotifyJumpTime = MenuUtil.MyToNumerical(textBox_DisplayJumpTime, Convert.ToDouble, Double.MaxValue, 0, 3);
                 Settings.Instance.LaterTimeUse = (checkBox_LaterTimeUse.IsChecked == true);
-                Settings.Instance.LaterTimeHour = mutil.MyToNumerical(textBox_LaterTimeHour, Convert.ToInt32, 36, 24, 28) - 24;
+                Settings.Instance.LaterTimeHour = MenuUtil.MyToNumerical(textBox_LaterTimeHour, Convert.ToInt32, 36, 24, 28) - 24;
                 Settings.Instance.DisplayPresetOnSearch = (checkBox_displayPresetOnSearch.IsChecked == true);
                 Settings.Instance.NoStyle = (checkBox_NotNoStyle.IsChecked == true ? 0 : 1);
                 Settings.Instance.DisplayStatus = (checkBox_displayStatus.IsChecked == true);

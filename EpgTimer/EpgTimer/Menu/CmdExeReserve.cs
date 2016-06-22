@@ -79,40 +79,40 @@ namespace EpgTimer
         //以下個別コマンド対応
         protected override void mc_Add(object sender, ExecutedRoutedEventArgs e)
         {
-            IsCommandExecuted = mutil.ReserveAdd(eventListEx, this.recSettingView, 0);
+            IsCommandExecuted = MenuUtil.ReserveAdd(eventListEx, this.recSettingView, 0);
         }
         protected override void mc_AddOnPreset(object sender, ExecutedRoutedEventArgs e)
         {
             uint presetID = (uint)CmdExeUtil.ReadIdData(e, 0, 0xFE);
-            IsCommandExecuted = mutil.ReserveAdd(eventListEx, null, presetID);
+            IsCommandExecuted = MenuUtil.ReserveAdd(eventListEx, null, presetID);
         }
         protected override void mc_ShowDialog(object sender, ExecutedRoutedEventArgs e)
         {
             if (dataList.Count != 0)//予約情報優先
             {
-                IsCommandExecuted = true == mutil.OpenChangeReserveDialog(dataList[0], this.Owner, EpgInfoOpenMode);
+                IsCommandExecuted = true == MenuUtil.OpenChangeReserveDialog(dataList[0], this.Owner, EpgInfoOpenMode);
             }
             else if (eventListEx.Count != 0)
             {
-                IsCommandExecuted = true == mutil.OpenEpgReserveDialog(eventListEx[0], this.Owner, EpgInfoOpenMode);
+                IsCommandExecuted = true == MenuUtil.OpenEpgReserveDialog(eventListEx[0], this.Owner, EpgInfoOpenMode);
             }
         }
         protected override void mc_ShowAddDialog(object sender, ExecutedRoutedEventArgs e)
         {
-            IsCommandExecuted = true == mutil.OpenManualReserveDialog(Owner);
+            IsCommandExecuted = true == MenuUtil.OpenManualReserveDialog(Owner);
         }
         protected override void mc_ChangeOnOff(object sender, ExecutedRoutedEventArgs e)
         {
             //多数アイテム処理の警告。合計数に対して出すので、結構扱いづらい。
-            if (mutil.CautionManyMessage(this.itemCount, "簡易予約/有効←→無効") == false) return;
+            if (MenuUtil.CautionManyMessage(this.itemCount, "簡易予約/有効←→無効") == false) return;
 
-            if (mutil.ReserveChangeOnOff(dataList, this.recSettingView, false) == false) return;
-            IsCommandExecuted = mutil.ReserveAdd(eventListEx, this.recSettingView, 0, false);
+            if (MenuUtil.ReserveChangeOnOff(dataList, this.recSettingView, false) == false) return;
+            IsCommandExecuted = MenuUtil.ReserveAdd(eventListEx, this.recSettingView, 0, false);
         }
         protected override void mc_ChangeRecSetting(object sender, ExecutedRoutedEventArgs e)
         {
             if (mcc_chgRecSetting(e) == false) return;
-            IsCommandExecuted = mutil.ReserveChange(dataList);
+            IsCommandExecuted = MenuUtil.ReserveChange(dataList);
         }
         protected override void mc_ChgResMode(object sender, ExecutedRoutedEventArgs e)
         {
@@ -124,7 +124,7 @@ namespace EpgTimer
             if (data == null)
             {
                 //通常の変更
-                IsCommandExecuted = mutil.ReserveChangeResMode(dataList, id);
+                IsCommandExecuted = MenuUtil.ReserveChangeResMode(dataList, id);
             }
 
             if (dataList.Count != 1) return;//通常はここに引っかかることは無いはず
@@ -132,14 +132,14 @@ namespace EpgTimer
             AutoAddData autoAdd = AutoAddData.AutoAddList(data, id);
             if (autoAdd != null)
             {
-                IsCommandExecuted = mutil.ReserveChangeResModeAutoAdded(dataList, autoAdd);
+                IsCommandExecuted = MenuUtil.ReserveChangeResModeAutoAdded(dataList, autoAdd);
             }
         }
         protected override void mc_ChgBulkRecSet(object sender, ExecutedRoutedEventArgs e)
         {
             var mList = dataList.FindAll(info => info.IsEpgReserve == false);
-            if (mutil.ChangeBulkSet(dataList.RecSettingList(), this.Owner, mList.Count == dataList.Count) == false) return;
-            IsCommandExecuted = mutil.ReserveChange(dataList);
+            if (MenuUtil.ChangeBulkSet(dataList.RecSettingList(), this.Owner, mList.Count == dataList.Count) == false) return;
+            IsCommandExecuted = MenuUtil.ReserveChange(dataList);
         }
         protected override void mc_Delete(object sender, ExecutedRoutedEventArgs e)
         {
@@ -155,7 +155,7 @@ namespace EpgTimer
                     if (CmdExeUtil.CheckKeyboardDeleteCancel(e, dataList.Select(data => data.Title).ToList()) == true)
                     { return; }
                 }
-                IsCommandExecuted = mutil.ReserveDelete(dataList);
+                IsCommandExecuted = MenuUtil.ReserveDelete(dataList);
             }
         }
         protected override void mc_JumpTable(object sender, ExecutedRoutedEventArgs e)
@@ -211,7 +211,7 @@ namespace EpgTimer
             {
                 resData = dataList[0];
             }
-            mutil.SendAutoAdd(resData, CmdExeUtil.IsKeyGesture(e));
+            MenuUtil.SendAutoAdd(resData, CmdExeUtil.IsKeyGesture(e));
             IsCommandExecuted = true;
         }
         protected override void mc_Play(object sender, ExecutedRoutedEventArgs e)
@@ -226,11 +226,11 @@ namespace EpgTimer
         {
             if (eventList.Count != 0)//番組情報優先
             {
-                mutil.CopyTitle2Clipboard(eventList[0].DataTitle, CmdExeUtil.IsKeyGesture(e));
+                MenuUtil.CopyTitle2Clipboard(eventList[0].DataTitle, CmdExeUtil.IsKeyGesture(e));
             }
             else if (dataList.Count != 0)
             {
-                mutil.CopyTitle2Clipboard(dataList[0].DataTitle, CmdExeUtil.IsKeyGesture(e));
+                MenuUtil.CopyTitle2Clipboard(dataList[0].DataTitle, CmdExeUtil.IsKeyGesture(e));
             }
             IsCommandExecuted = true; //itemCount!=0 だが、この条件はこの位置では常に満たされている。
         }
@@ -238,11 +238,11 @@ namespace EpgTimer
         {
             if (eventList.Count != 0)//番組情報優先
             {
-                mutil.CopyContent2Clipboard(eventList[0], CmdExeUtil.IsKeyGesture(e));
+                MenuUtil.CopyContent2Clipboard(eventList[0], CmdExeUtil.IsKeyGesture(e));
             }
             else if (dataList.Count != 0)
             {
-                mutil.CopyContent2Clipboard(dataList[0], CmdExeUtil.IsKeyGesture(e));
+                MenuUtil.CopyContent2Clipboard(dataList[0], CmdExeUtil.IsKeyGesture(e));
             }
             IsCommandExecuted = true;
         }
@@ -250,11 +250,11 @@ namespace EpgTimer
         {
             if (eventList.Count != 0)//番組情報優先
             {
-                mutil.SearchTextWeb(eventList[0].DataTitle, CmdExeUtil.IsKeyGesture(e));
+                MenuUtil.SearchTextWeb(eventList[0].DataTitle, CmdExeUtil.IsKeyGesture(e));
             }
             else if (dataList.Count != 0)
             {
-                mutil.SearchTextWeb(dataList[0].DataTitle, CmdExeUtil.IsKeyGesture(e));
+                MenuUtil.SearchTextWeb(dataList[0].DataTitle, CmdExeUtil.IsKeyGesture(e));
             }
             IsCommandExecuted = true;
         }

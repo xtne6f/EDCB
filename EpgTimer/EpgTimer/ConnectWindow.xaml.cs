@@ -11,7 +11,6 @@ namespace EpgTimer
     /// </summary>
     public partial class ConnectWindow : Window
     {
-        private MenuUtil mutil = CommonManager.Instance.MUtil;
         private const string DefPresetStr = "前回接続時";
 
         public ConnectWindow()
@@ -100,8 +99,8 @@ namespace EpgTimer
         {
             var preset = new NWPresetItem();
             preset.NWServerIP = textBox_srvIP.Text;
-            preset.NWServerPort = mutil.MyToNumerical(textBox_srvPort, Convert.ToUInt32, Settings.Instance.NWServerPort);
-            preset.NWWaitPort = checkBox_clientPort.IsChecked == false ? 0 : mutil.MyToNumerical(textBox_clientPort, Convert.ToUInt32, Settings.Instance.NWWaitPort);
+            preset.NWServerPort = MenuUtil.MyToNumerical(textBox_srvPort, Convert.ToUInt32, Settings.Instance.NWServerPort);
+            preset.NWWaitPort = checkBox_clientPort.IsChecked == false ? 0 : MenuUtil.MyToNumerical(textBox_clientPort, Convert.ToUInt32, Settings.Instance.NWWaitPort);
             preset.NWMacAdd = textBox_mac.Text;
             return preset;
         }

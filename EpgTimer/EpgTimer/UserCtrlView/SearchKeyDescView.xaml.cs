@@ -131,13 +131,11 @@ namespace EpgTimer
                     key.freeCAFlag = 0;
                 }
 
-                var mutil = CommonManager.Instance.MUtil;
-
                 key.chkRecEnd = (byte)(checkBox_chkRecEnd.IsChecked == true ? 1 : 0);
-                key.chkRecDay = mutil.MyToNumerical(textBox_chkRecDay, Convert.ToUInt16, ushort.MinValue);
+                key.chkRecDay = MenuUtil.MyToNumerical(textBox_chkRecDay, Convert.ToUInt16, ushort.MinValue);
                 key.chkRecNoService = (byte)(radioButton_chkRecNoService2.IsChecked == true ? 1 : 0);
-                key.chkDurationMin = mutil.MyToNumerical(textBox_chkDurationMin, Convert.ToUInt16, ushort.MinValue);
-                key.chkDurationMax = mutil.MyToNumerical(textBox_chkDurationMax, Convert.ToUInt16, ushort.MinValue);
+                key.chkDurationMin = MenuUtil.MyToNumerical(textBox_chkDurationMin, Convert.ToUInt16, ushort.MinValue);
+                key.chkDurationMax = MenuUtil.MyToNumerical(textBox_chkDurationMax, Convert.ToUInt16, ushort.MinValue);
             }
             catch (Exception ex)
             {

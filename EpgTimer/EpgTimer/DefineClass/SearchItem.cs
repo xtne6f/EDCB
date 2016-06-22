@@ -9,8 +9,6 @@ namespace EpgTimer
 {
     public class SearchItem : RecSettingItem
     {
-        protected MenuUtil mutil = CommonManager.Instance.MUtil;
-
         protected EpgEventInfo eventInfo = null;
         public virtual EpgEventInfo EventInfo { get { return eventInfo; } set { eventInfo = value; } }
         public ReserveData ReserveInfo { get; set; }
@@ -201,9 +199,9 @@ namespace EpgTimer
             get
             {
                 if (Settings.Instance.NoToolTip == true) return null;
-                if (EventInfo == null) return mutil.GetTooltipBlockStandard("");
+                if (EventInfo == null) return MenuUtil.GetTooltipBlockStandard("");
                 //
-                return mutil.GetTooltipBlockStandard(CommonManager.Instance.ConvertProgramText(EventInfo, EventInfoTextMode.All));
+                return MenuUtil.GetTooltipBlockStandard(CommonManager.Instance.ConvertProgramText(EventInfo, EventInfoTextMode.All));
             }
         }
         public override string ToString()

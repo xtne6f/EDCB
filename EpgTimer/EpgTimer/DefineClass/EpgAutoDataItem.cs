@@ -10,8 +10,6 @@ namespace EpgTimer
     //キーワード予約とプログラム自動登録の共通項目
     public class AutoAddDataItem : RecSettingItem
     {
-        protected MenuUtil mutil = CommonManager.Instance.MUtil;
-
         protected AutoAddData _data;
         public AutoAddData Data { get { return _data; } set { _data = value; } }
 
@@ -124,12 +122,12 @@ namespace EpgTimer
             {
                 if (Settings.Instance.NoToolTip == true) return null;
                 //
-                return mutil.GetTooltipBlockStandard(ConvertInfoText());
+                return MenuUtil.GetTooltipBlockStandard(ConvertInfoText());
             }
         }
         public virtual TextBlock ToolTipViewAutoAddSearch
         {
-            get { return mutil.GetTooltipBlockStandard(ConvertInfoText()); }
+            get { return MenuUtil.GetTooltipBlockStandard(ConvertInfoText()); }
         }
         public virtual String ConvertInfoText() { return ""; }
         public Brush ForeColor

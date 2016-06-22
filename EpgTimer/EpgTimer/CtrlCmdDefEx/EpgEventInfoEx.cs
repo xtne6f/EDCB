@@ -29,7 +29,7 @@ namespace EpgTimer
             var list = GetEpgAutoAddList(IsEnabled);
             if (ByFazy == true)
             {
-                list.AddRange(CommonManager.Instance.MUtil.FazySearchEpgAutoAddData(DataTitle, IsEnabled));
+                list.AddRange(MenuUtil.FazySearchEpgAutoAddData(DataTitle, IsEnabled));
                 list = list.Distinct().ToList();
             }
             return list;

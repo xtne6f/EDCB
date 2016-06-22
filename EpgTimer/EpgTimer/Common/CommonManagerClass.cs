@@ -54,8 +54,6 @@ namespace EpgTimer
         { get; set; }
         public NWConnect NW
         { get; set; }
-        public MenuUtil MUtil
-        { get; set; }
 
         MenuManager _mm;
         public MenuManager MM
@@ -121,10 +119,6 @@ namespace EpgTimer
             if (NW == null)
             {
                 NW = new NWConnect(CtrlCmd);
-            }
-            if (MUtil == null)
-            {
-                MUtil = new MenuUtil(CtrlCmd);
             }
             if (ContentKindDictionary == null)
             {
@@ -1108,7 +1102,7 @@ namespace EpgTimer
 
         public String ConvertTextSearchString(String s)
         {
-            return ReplaceUrl(MUtil.TrimKeyword(s));
+            return ReplaceUrl(MenuUtil.TrimKeyword(s));
         }        
 
         //デフォルト番組表の情報作成

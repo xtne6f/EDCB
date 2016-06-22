@@ -167,7 +167,7 @@ namespace EpgTimer
             {
                 if (ByFazy == true)
                 {
-                    list.AddRange(CommonManager.Instance.MUtil.FazySearchEpgAutoAddData(DataTitle, IsEnabled));
+                    list.AddRange(MenuUtil.FazySearchEpgAutoAddData(DataTitle, IsEnabled));
                 }
             }
             return list.Distinct().ToList();
