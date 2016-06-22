@@ -13,7 +13,7 @@ namespace EpgTimer
     public partial class AddManualAutoAddWindow : Window
     {
         private ManualAutoAddData defKey = null;
-        private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
+        private static CtrlCmdUtil cmd { get { return CommonManager.Instance.CtrlCmd; } }
         private MenuBinds mBinds = new MenuBinds();
 
         private bool chgMode = false;

@@ -10,7 +10,6 @@ namespace EpgTimer
 {
     public class MenuBinds
     {
-        //staticメソッド用にプロパティにしているだけ
         private static MenuManager mm { get { return CommonManager.Instance.MM; } }
 
         private List<ICommand> AppendGestureCmds = new List<ICommand>();

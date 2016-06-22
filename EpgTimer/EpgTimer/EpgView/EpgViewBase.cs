@@ -8,7 +8,7 @@ namespace EpgTimer.EpgView
 {
     public class EpgViewBase : EpgTimer.UserCtrlView.DataViewBase
     {
-        protected CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
+        protected static CtrlCmdUtil cmd { get { return CommonManager.Instance.CtrlCmd; } }
 
         protected CustomEpgTabInfo setViewInfo = null;
         protected List<UInt64> viewCustServiceList = null;

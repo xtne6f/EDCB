@@ -17,7 +17,7 @@ namespace EpgTimer
         
         private RecSettingData recSetting;
         private List<TunerSelectInfo> tunerList = new List<TunerSelectInfo>();
-        private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
+        private static CtrlCmdUtil cmd { get { return CommonManager.Instance.CtrlCmd; } }
 
         private bool initLoad = false;
         public RecSettingView()

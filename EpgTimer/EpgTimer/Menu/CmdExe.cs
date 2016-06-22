@@ -47,8 +47,8 @@ namespace EpgTimer
             Direct//完全に独立して実行、IsCommandCancelも使わない
         }
 
-        protected CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
-        protected MenuManager mm = CommonManager.Instance.MM;
+        protected static CtrlCmdUtil cmd { get { return CommonManager.Instance.CtrlCmd; } }
+        protected static MenuManager mm { get { return CommonManager.Instance.MM; } }
 
         protected Control Owner;
         protected static MainWindow mainWindow { get { return (MainWindow)Application.Current.MainWindow; } }

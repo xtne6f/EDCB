@@ -16,7 +16,7 @@ namespace EpgTimer
     /// </summary>
     public partial class SetContextMenuWindow : Window
     {
-        private MenuManager mm = CommonManager.Instance.MM;
+        private static MenuManager mm { get { return CommonManager.Instance.MM; } }
 
         private static ComboItem[] MenuCodeToTitle = new ComboItem[]{
             new ComboItem(CtxmCode.ReserveView, "予約一覧"),

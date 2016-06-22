@@ -6,7 +6,7 @@ namespace EpgTimer.UserCtrlView
 {
     public class DataViewBase : UserControl
     {
-        protected MenuManager mm = CommonManager.Instance.MM;
+        protected static MenuManager mm { get { return CommonManager.Instance.MM; } }
         protected MenuBinds mBinds = new MenuBinds();
         protected string[] status = { "", "", "", "" };
         protected bool ReloadInfo = true;

@@ -13,11 +13,11 @@ namespace EpgTimer
     public partial class SearchWindow : Window
     {
         //よく使うので
-        static MainWindow mainWindow { get { return (MainWindow)Application.Current.MainWindow; } }
-        static EpgAutoAddView autoAddView { get { return mainWindow.autoAddView.epgAutoAddView; } }
+        private static MainWindow mainWindow { get { return (MainWindow)Application.Current.MainWindow; } }
+        private static EpgAutoAddView autoAddView { get { return mainWindow.autoAddView.epgAutoAddView; } }
 
-        private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
-        private MenuManager mm = CommonManager.Instance.MM;
+        private static CtrlCmdUtil cmd { get { return CommonManager.Instance.CtrlCmd; } }
+        private static MenuManager mm { get { return CommonManager.Instance.MM; } }
 
         private CmdExeReserve mc; //予約系コマンド集
         private MenuBinds mBinds = new MenuBinds();
