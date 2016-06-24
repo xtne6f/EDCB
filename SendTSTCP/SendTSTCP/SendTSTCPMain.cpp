@@ -96,10 +96,7 @@ DWORD CSendTSTCPMain::AddSendAddr(
 		return FALSE;
 	}
 	SEND_INFO Item;
-	Item.strIP = lpcwszIP;
-	string strA = "";
-	WtoA(Item.strIP, strA);
-	Item.dwIP = inet_addr(strA.c_str());
+	WtoA(lpcwszIP, Item.strIP);
 	Item.dwPort = dwPort;
 	if( SEND_TS_TCP_NOHEAD_PORT_MIN <= dwPort && dwPort <= SEND_TS_TCP_NOHEAD_PORT_MAX ){
 		//上位ワードが1のときはヘッダの送信が抑制される
@@ -265,23 +262,31 @@ UINT WINAPI CSendTSTCPMain::ConnectThread(LPVOID pParam)
 						itr->second.bConnect = TRUE;
 					}
 				}else{
-					itr->second.sock = socket(AF_INET, SOCK_STREAM, 0);
+					string strPort;
+					Format(strPort, "%d", (WORD)itr->second.dwPort);
+					struct addrinfo hints = {};
+					hints.ai_flags = AI_NUMERICHOST;
+					hints.ai_socktype = SOCK_STREAM;
+					hints.ai_protocol = IPPROTO_TCP;
+					struct addrinfo* result;
+					if( getaddrinfo(itr->second.strIP.c_str(), strPort.c_str(), &hints, &result) != 0 ){
+						continue;
+					}
+					itr->second.sock = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
 					if( itr->second.sock == INVALID_SOCKET ){
+						freeaddrinfo(result);
 						continue;
 					}
 					ULONG x = 1;
 					ioctlsocket(itr->second.sock,FIONBIO, &x);
 
-					itr->second.addr.sin_family = AF_INET;
-					itr->second.addr.sin_port = htons((WORD)itr->second.dwPort);
-					itr->second.addr.sin_addr.S_un.S_addr = itr->second.dwIP;
-
-					if( connect(itr->second.sock, (struct sockaddr *)&itr->second.addr, sizeof(itr->second.addr)) == SOCKET_ERROR ){
+					if( connect(itr->second.sock, result->ai_addr, (int)result->ai_addrlen) == SOCKET_ERROR ){
 						if( WSAGetLastError() != WSAEWOULDBLOCK ){
 							closesocket(itr->second.sock);
 							itr->second.sock = INVALID_SOCKET;
 						}
 					}
+					freeaddrinfo(result);
 				}
 			}
 		}
@@ -356,12 +361,10 @@ UINT WINAPI CSendTSTCPMain::SendThread(LPVOID pParam)
 			for( itr = pSys->m_SendList.begin(); itr != pSys->m_SendList.end(); itr++){
 				if( itr->second.bConnect == TRUE ){
 					DWORD dwAdjust = HIWORD(itr->second.dwPort) == 1 ? dwSend - sizeof(DWORD)*2 : dwSend;
-					if( dwAdjust > 0 && sendto(itr->second.sock, 
+					if( dwAdjust > 0 && send(itr->second.sock, 
 						(char*)pbSend + (dwSend - dwAdjust),
 						dwAdjust,
-						0,
-						(struct sockaddr *)&itr->second.addr,
-						sizeof(itr->second.addr)
+						0
 						) == INVALID_SOCKET){
 							closesocket(itr->second.sock);
 							itr->second.sock = INVALID_SOCKET;

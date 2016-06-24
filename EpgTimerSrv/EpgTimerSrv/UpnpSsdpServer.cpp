@@ -71,6 +71,24 @@ vector<string> CUpnpSsdpServer::GetNICList()
 	return nicList;
 }
 
+static bool GetInetAddr(unsigned long* addr, const char* host)
+{
+	*addr = htonl(INADDR_NONE);
+	addrinfo hints = {};
+	hints.ai_flags = AI_NUMERICHOST;
+	hints.ai_family = AF_INET;
+	addrinfo* result;
+	if( getaddrinfo(host, NULL, &hints, &result) == 0 ){
+		if( result->ai_addrlen >= sizeof(sockaddr_in) ){
+			*addr = ((sockaddr_in*)result->ai_addr)->sin_addr.s_addr;
+			freeaddrinfo(result);
+			return true;
+		}
+		freeaddrinfo(result);
+	}
+	return false;
+}
+
 UINT WINAPI CUpnpSsdpServer::SsdpThread(LPVOID param)
 {
 	CUpnpSsdpServer* sys = (CUpnpSsdpServer*)param;
@@ -96,10 +114,10 @@ UINT WINAPI CUpnpSsdpServer::SsdpThread(LPVOID param)
 			addr.sin_addr.s_addr = htonl(INADDR_ANY);
 			addr.sin_port = htons(1900);
 			ip_mreq_source mreq = {};
-			mreq.imr_interface.s_addr = INADDR_ANY;
-			mreq.imr_sourceaddr.s_addr = inet_addr(nicList[i].c_str());
-			mreq.imr_multiaddr.s_addr = inet_addr("239.255.255.250");
-			if( bind(sock, (const sockaddr*)&addr, sizeof(addr)) == SOCKET_ERROR ||
+			mreq.imr_interface.s_addr = htonl(INADDR_ANY);
+			if( GetInetAddr(&mreq.imr_sourceaddr.s_addr, nicList[i].c_str()) == false ||
+			    GetInetAddr(&mreq.imr_multiaddr.s_addr, "239.255.255.250") == false ||
+			    bind(sock, (const sockaddr*)&addr, sizeof(addr)) == SOCKET_ERROR ||
 			    setsockopt(sock, IPPROTO_IP, IP_ADD_MEMBERSHIP, (const char*)&mreq, sizeof(mreq)) == SOCKET_ERROR ){
 				closesocket(sock);
 				nicList.erase(nicList.begin() + i);
@@ -239,12 +257,13 @@ void CUpnpSsdpServer::SendNotifyAliveOrByebye(bool byebyeFlag, const vector<stri
 {
 	sockaddr_in addr = {};
 	addr.sin_family = AF_INET;
-	addr.sin_addr.s_addr = inet_addr("239.255.255.250");
+	GetInetAddr(&addr.sin_addr.s_addr, "239.255.255.250");
 	addr.sin_port = htons(1900);
 	for( size_t i = 0; i < nicList.size(); i++ ){
 		SOCKET sock = socket(AF_INET, SOCK_DGRAM, 0);
 		if( sock != INVALID_SOCKET ){
-			unsigned long ipv4 = inet_addr(nicList[i].c_str());
+			unsigned long ipv4;
+			GetInetAddr(&ipv4, nicList[i].c_str());
 			int ttl = 3;
 			if( setsockopt(sock, IPPROTO_IP, IP_MULTICAST_IF, (const char*)&ipv4, sizeof(ipv4)) != SOCKET_ERROR &&
 			    setsockopt(sock, IPPROTO_IP, IP_MULTICAST_TTL, (const char*)&ttl, sizeof(ttl)) != SOCKET_ERROR ){

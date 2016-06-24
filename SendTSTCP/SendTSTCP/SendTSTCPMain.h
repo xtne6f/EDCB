@@ -80,11 +80,9 @@ protected:
 	vector<TS_DATA*> m_TSBuff;
 
 	typedef struct _SEND_INFO{
-		wstring strIP;
-		DWORD dwIP;
+		string strIP;
 		DWORD dwPort;
 		SOCKET sock;
-		struct sockaddr_in addr;
 		BOOL bConnect;
 	}SEND_INFO;
 	map<wstring, SEND_INFO> m_SendList;

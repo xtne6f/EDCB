@@ -2,6 +2,7 @@
 #include "SendCtrlCmd.h"
 #ifndef SEND_CTRL_CMD_NO_TCP
 #include <winsock2.h>
+#include <ws2tcpip.h>
 #pragma comment(lib, "Ws2_32.lib")
 #endif
 #include "StringUtil.h"
@@ -191,18 +192,27 @@ DWORD CSendCtrlCmd::SendTCP(wstring ip, DWORD port, DWORD timeOut, CMD_STREAM* s
 		return CMD_ERR_INVALID_ARG;
 	}
 
-	struct sockaddr_in server;
-	SOCKET sock;
+	string ipA, strPort;
+	WtoA(ip, ipA);
+	Format(strPort, "%d", port);
 
-	sock = socket(AF_INET, SOCK_STREAM, 0);
-	server.sin_family = AF_INET;
-	server.sin_port = htons((WORD)port);
-	string strA = "";
-	WtoA(ip, strA);
-	server.sin_addr.S_un.S_addr = inet_addr(strA.c_str());
+	struct addrinfo hints = {};
+	hints.ai_flags = AI_NUMERICHOST;
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_protocol = IPPROTO_TCP;
+	struct addrinfo* result;
+	if( getaddrinfo(ipA.c_str(), strPort.c_str(), &hints, &result) != 0 ){
+		return CMD_ERR_INVALID_ARG;
+	}
+	SOCKET sock = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
+	if( sock != INVALID_SOCKET &&
+	    connect(sock, result->ai_addr, (int)result->ai_addrlen) == SOCKET_ERROR ){
+		closesocket(sock);
+		sock = INVALID_SOCKET;
+	}
+	freeaddrinfo(result);
 
-	int ret = connect(sock, (struct sockaddr *)&server, sizeof(server));
-	if( ret == SOCKET_ERROR ){
+	if( sock == INVALID_SOCKET ){
 		int a= GetLastError();
 		wstring aa;
 		Format(aa,L"%d",a);
