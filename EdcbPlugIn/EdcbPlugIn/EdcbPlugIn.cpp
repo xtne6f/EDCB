@@ -120,8 +120,9 @@ bool CEdcbPlugIn::CMyEventHandler::OnRecordStatusChange(int Status)
 			CBlockLock lock(&m_outer.m_streamLock);
 			for (map<DWORD, REC_CTRL>::iterator it = m_outer.m_recCtrlMap.begin(); it != m_outer.m_recCtrlMap.end(); ++it) {
 				if (!it->second.filePath.empty()) {
-					std::swap(it->second.filePath, wstring());
-					std::swap(it->second.dropCount, CDropCount());
+					wstring().swap(it->second.filePath);
+					CDropCount sw;
+					std::swap(sw, it->second.dropCount);
 				}
 			}
 		}
