@@ -14,8 +14,8 @@ CSendCtrlCmd::CSendCtrlCmd(void)
 	this->pipeName = CMD2_EPG_SRV_PIPE;
 	this->eventName = CMD2_EPG_SRV_EVENT_WAIT_CONNECT;
 
-	this->ip = L"127.0.0.1";
-	this->port = 5678;
+	this->sendIP = L"127.0.0.1";
+	this->sendPort = 5678;
 
 }
 
@@ -33,14 +33,14 @@ CSendCtrlCmd::~CSendCtrlCmd(void)
 //引数：
 // tcpFlag		[IN] TRUE：TCP/IPモード、FALSE：名前付きパイプモード
 void CSendCtrlCmd::SetSendMode(
-	BOOL tcpFlag
+	BOOL tcpFlag_
 	)
 {
-	if( this->tcpFlag == FALSE && tcpFlag ){
+	if( this->tcpFlag == FALSE && tcpFlag_ ){
 		WSAData wsaData;
 		WSAStartup(MAKEWORD(2, 0), &wsaData);
 		this->tcpFlag = TRUE;
-	}else if( this->tcpFlag && tcpFlag == FALSE ){
+	}else if( this->tcpFlag && tcpFlag_ == FALSE ){
 		WSACleanup();
 		this->tcpFlag = FALSE;
 	}
@@ -54,25 +54,25 @@ void CSendCtrlCmd::SetSendMode(
 // eventName	[IN]排他制御用Eventの名前
 // pipeName		[IN]接続パイプの名前
 void CSendCtrlCmd::SetPipeSetting(
-	LPCWSTR eventName,
-	LPCWSTR pipeName
+	LPCWSTR eventName_,
+	LPCWSTR pipeName_
 	)
 {
-	this->eventName = eventName;
-	this->pipeName = pipeName;
+	this->eventName = eventName_;
+	this->pipeName = pipeName_;
 }
 
 //名前付きパイプモード時の接続先を設定（接尾にプロセスIDを伴うタイプ）
 //引数：
 // pid			[IN]プロセスID
 void CSendCtrlCmd::SetPipeSetting(
-	LPCWSTR eventName,
-	LPCWSTR pipeName,
+	LPCWSTR eventName_,
+	LPCWSTR pipeName_,
 	DWORD pid
 	)
 {
-	Format(this->eventName, L"%s%d", eventName, pid);
-	Format(this->pipeName, L"%s%d", pipeName, pid);
+	Format(this->eventName, L"%s%d", eventName_, pid);
+	Format(this->pipeName, L"%s%d", pipeName_, pid);
 }
 
 //TCP/IPモード時の接続先を設定
@@ -84,8 +84,8 @@ void CSendCtrlCmd::SetNWSetting(
 	DWORD port
 	)
 {
-	this->ip = ip;
-	this->port = port;
+	this->sendIP = ip;
+	this->sendPort = port;
 }
 
 //接続処理時のタイムアウト設定
@@ -104,16 +104,16 @@ static DWORD ReadFileAll(HANDLE hFile, BYTE* lpBuffer, DWORD dwToRead)
 	return dwRet;
 }
 
-DWORD CSendCtrlCmd::SendPipe(LPCWSTR pipeName, LPCWSTR eventName, DWORD timeOut, CMD_STREAM* send, CMD_STREAM* res)
+DWORD CSendCtrlCmd::SendPipe(LPCWSTR pipeName_, LPCWSTR eventName_, DWORD timeOut, CMD_STREAM* send, CMD_STREAM* res)
 {
-	if( pipeName == NULL || eventName == NULL || send == NULL || res == NULL ){
+	if( pipeName_ == NULL || eventName_ == NULL || send == NULL || res == NULL ){
 		return CMD_ERR_INVALID_ARG;
 	}
 
 	//接続待ち
 	//CreateEvent()してはいけない。イベントを作成するのはサーバの仕事のはず
 	//CreateEvent()してしまうとサーバが終了した後は常にタイムアウトまで待たされることになる
-	HANDLE waitEvent = OpenEvent(SYNCHRONIZE, FALSE, eventName);
+	HANDLE waitEvent = OpenEvent(SYNCHRONIZE, FALSE, eventName_);
 	if( waitEvent == NULL ){
 		return CMD_ERR_CONNECT;
 	}
@@ -126,7 +126,7 @@ DWORD CSendCtrlCmd::SendPipe(LPCWSTR pipeName, LPCWSTR eventName, DWORD timeOut,
 	}
 
 	//接続
-	HANDLE pipe = CreateFile( pipeName, GENERIC_READ|GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+	HANDLE pipe = CreateFile( pipeName_, GENERIC_READ|GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 	if( pipe == INVALID_HANDLE_VALUE ){
 		_OutputDebugString(L"*+* ConnectPipe Err:%d\r\n", GetLastError());
 		return CMD_ERR_CONNECT;
@@ -301,7 +301,7 @@ DWORD CSendCtrlCmd::SendCmdStream(CMD_STREAM* send, CMD_STREAM* res)
 	}
 #ifndef SEND_CTRL_CMD_NO_TCP
 	else{
-		ret = SendTCP(this->ip, this->port, this->connectTimeOut, send, res);
+		ret = SendTCP(this->sendIP, this->sendPort, this->connectTimeOut, send, res);
 	}
 #endif
 

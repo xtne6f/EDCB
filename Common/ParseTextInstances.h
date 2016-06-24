@@ -70,9 +70,9 @@ public:
 	//録画済み情報に割り当てる次のIDを設定する
 	DWORD SetNextID(DWORD id) { return this->nextID = max(id, this->nextID); }
 	//AddRecInfo直後に残しておく非プロテクトの録画済み情報の個数を設定する
-	void SetKeepCount(DWORD keepCount = UINT_MAX) { this->keepCount = keepCount; }
-	void SetRecInfoDelFile(bool recInfoDelFile) { this->recInfoDelFile = recInfoDelFile; }
-	void SetRecInfoFolder(LPCWSTR recInfoFolder);
+	void SetKeepCount(DWORD n = UINT_MAX) { this->keepCount = n; }
+	void SetRecInfoDelFile(bool delFile) { this->recInfoDelFile = delFile; }
+	void SetRecInfoFolder(LPCWSTR folder);
 	wstring GetRecInfoFolder() const { return this->recInfoFolder; }
 	//補足の録画情報を取得する
 	static wstring GetExtraInfo(LPCWSTR recFilePath, LPCWSTR extension, const wstring& resultOfGetRecInfoFolder);
@@ -106,7 +106,7 @@ public:
 	CParseRecInfo2Text() : keepCount(UINT_MAX) {}
 	using CParseText<DWORD, PARSE_REC_INFO2_ITEM>::SaveText;
 	DWORD Add(const PARSE_REC_INFO2_ITEM& item);
-	void SetKeepCount(DWORD keepCount = UINT_MAX) { this->keepCount = keepCount; }
+	void SetKeepCount(DWORD n = UINT_MAX) { this->keepCount = n; }
 protected:
 	bool ParseLine(LPCWSTR parseLine, pair<DWORD, PARSE_REC_INFO2_ITEM>& item);
 	bool SaveLine(const pair<DWORD, PARSE_REC_INFO2_ITEM>& item, wstring& saveLine) const;

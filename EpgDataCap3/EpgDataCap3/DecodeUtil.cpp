@@ -14,9 +14,9 @@ CDecodeUtil::CDecodeUtil(void)
 	this->sitTime.dwHighDateTime = 0;
 }
 
-void CDecodeUtil::SetEpgDB(CEpgDBUtil* epgDBUtil)
+void CDecodeUtil::SetEpgDB(CEpgDBUtil* epgDBUtil_)
 {
-	this->epgDBUtil = epgDBUtil;
+	this->epgDBUtil = epgDBUtil_;
 }
 
 void CDecodeUtil::Clear()
@@ -533,11 +533,11 @@ BOOL CDecodeUtil::GetTSID(
 // serviceList				[OUT]サービス情報のリスト（DLL内で自動的にdeleteする。次に取得を行うまで有効）
 BOOL CDecodeUtil::GetServiceListActual(
 	DWORD* serviceListSize,
-	SERVICE_INFO** serviceList
+	SERVICE_INFO** serviceList_
 	)
 {
 	if( this->nitActualInfo.nitSection.empty() || this->sdtActualInfo.sdtSection.empty() ){
-		return GetServiceListSIT(serviceListSize, serviceList);
+		return GetServiceListSIT(serviceListSize, serviceList_);
 	}else{
 		if( (size_t)(this->nitActualInfo.last_section_number+1) != this->nitActualInfo.nitSection.size() ||
 			(size_t)(this->sdtActualInfo.last_section_number+1) != this->sdtActualInfo.sdtSection.size() ){
@@ -662,7 +662,7 @@ BOOL CDecodeUtil::GetServiceListActual(
 		}
 	}
 
-	*serviceList = this->serviceList.get();
+	*serviceList_ = this->serviceList.get();
 
 
 	return TRUE;
@@ -674,7 +674,7 @@ BOOL CDecodeUtil::GetServiceListActual(
 // serviceList				[OUT]サービス情報のリスト（DLL内で自動的にdeleteする。次に取得を行うまで有効）
 BOOL CDecodeUtil::GetServiceListSIT(
 	DWORD* serviceListSize,
-	SERVICE_INFO** serviceList
+	SERVICE_INFO** serviceList_
 	)
 {
 	if( this->sitInfo == NULL || this->patInfo == NULL ){
@@ -754,7 +754,7 @@ BOOL CDecodeUtil::GetServiceListSIT(
 	}
 
 
-	*serviceList = this->serviceList.get();
+	*serviceList_ = this->serviceList.get();
 
 	return TRUE;
 }

@@ -290,9 +290,9 @@ bool CParseRecInfoText::ChgProtectRecInfo(DWORD id, BYTE flag)
 	return false;
 }
 
-void CParseRecInfoText::SetRecInfoFolder(LPCWSTR recInfoFolder)
+void CParseRecInfoText::SetRecInfoFolder(LPCWSTR folder)
 {
-	this->recInfoFolder = recInfoFolder;
+	this->recInfoFolder = folder;
 	ChkFolderPath(this->recInfoFolder);
 }
 

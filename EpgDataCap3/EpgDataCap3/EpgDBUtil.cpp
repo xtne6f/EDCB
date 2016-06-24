@@ -991,7 +991,7 @@ BOOL CEpgDBUtil::GetEpgInfoList(
 	WORD transportStreamID,
 	WORD serviceID,
 	DWORD* epgInfoListSize,
-	EPG_EVENT_INFO** epgInfoList
+	EPG_EVENT_INFO** epgInfoList_
 	)
 {
 	CBlockLock lock(&this->dbLock);
@@ -1050,7 +1050,7 @@ BOOL CEpgDBUtil::GetEpgInfoList(
 		count++;
 	}
 
-	*epgInfoList = this->epgInfoList.get();
+	*epgInfoList_ = this->epgInfoList.get();
 
 	return TRUE;
 }
@@ -1190,7 +1190,7 @@ void CEpgDBUtil::CopyEpgInfo(EPG_EVENT_INFO* destInfo, EVENT_INFO* srcInfo)
 // serviceList				[OUT]サービス情報のリスト（DLL内で自動的にdeleteする。次に取得を行うまで有効）
 void CEpgDBUtil::GetServiceListEpgDB(
 	DWORD* serviceListSize,
-	SERVICE_INFO** serviceList
+	SERVICE_INFO** serviceList_
 	)
 {
 	CBlockLock lock(&this->dbLock);
@@ -1242,7 +1242,7 @@ void CEpgDBUtil::GetServiceListEpgDB(
 		count++;
 	}
 
-	*serviceList = this->serviceDBList.get();
+	*serviceList_ = this->serviceDBList.get();
 }
 
 //指定サービスの現在or次のEPG情報を取得する
@@ -1257,7 +1257,7 @@ BOOL CEpgDBUtil::GetEpgInfo(
 	WORD transportStreamID,
 	WORD serviceID,
 	BOOL nextFlag,
-	EPG_EVENT_INFO** epgInfo
+	EPG_EVENT_INFO** epgInfo_
 	)
 {
 	CBlockLock lock(&this->dbLock);
@@ -1275,16 +1275,16 @@ BOOL CEpgDBUtil::GetEpgInfo(
 	if( itr->second.nowEvent != NULL && nextFlag == FALSE ){
 		this->epgInfo.reset(new EPG_EVENT_INFO);
 		CopyEpgInfo(this->epgInfo.get(), itr->second.nowEvent.get());
-		*epgInfo = this->epgInfo.get();
+		*epgInfo_ = this->epgInfo.get();
 	}else if( itr->second.nextEvent != NULL && nextFlag == TRUE ){
 		this->epgInfo.reset(new EPG_EVENT_INFO);
 		CopyEpgInfo(this->epgInfo.get(), itr->second.nextEvent.get());
-		*epgInfo = this->epgInfo.get();
+		*epgInfo_ = this->epgInfo.get();
 	}
 	if( this->epgInfo != NULL ){
-		if( (*epgInfo)->extInfo == NULL && itr->second.eventMap.count((*epgInfo)->event_id) && itr->second.eventMap[(*epgInfo)->event_id]->extInfo ){
-			(*epgInfo)->extInfo = new EPG_EXTENDED_EVENT_INFO;
-			(*epgInfo)->extInfo->DeepCopy(*itr->second.eventMap[(*epgInfo)->event_id]->extInfo);
+		if( (*epgInfo_)->extInfo == NULL && itr->second.eventMap.count((*epgInfo_)->event_id) && itr->second.eventMap[(*epgInfo_)->event_id]->extInfo ){
+			(*epgInfo_)->extInfo = new EPG_EXTENDED_EVENT_INFO;
+			(*epgInfo_)->extInfo->DeepCopy(*itr->second.eventMap[(*epgInfo_)->event_id]->extInfo);
 		}
 		return TRUE;
 	}
@@ -1306,7 +1306,7 @@ BOOL CEpgDBUtil::SearchEpgInfo(
 	WORD serviceID,
 	WORD eventID,
 	BYTE pfOnlyFlag,
-	EPG_EVENT_INFO** epgInfo
+	EPG_EVENT_INFO** epgInfo_
 	)
 {
 	CBlockLock lock(&this->dbLock);
@@ -1324,16 +1324,16 @@ BOOL CEpgDBUtil::SearchEpgInfo(
 	if( itr->second.nowEvent != NULL && itr->second.nowEvent->event_id == eventID ){
 		this->searchEpgInfo.reset(new EPG_EVENT_INFO);
 		CopyEpgInfo(this->searchEpgInfo.get(), itr->second.nowEvent.get());
-		*epgInfo = this->searchEpgInfo.get();
+		*epgInfo_ = this->searchEpgInfo.get();
 	}else if( itr->second.nextEvent != NULL && itr->second.nextEvent->event_id == eventID ){
 		this->searchEpgInfo.reset(new EPG_EVENT_INFO);
 		CopyEpgInfo(this->searchEpgInfo.get(), itr->second.nextEvent.get());
-		*epgInfo = this->searchEpgInfo.get();
+		*epgInfo_ = this->searchEpgInfo.get();
 	}
 	if( this->searchEpgInfo != NULL ){
-		if( (*epgInfo)->extInfo == NULL && itr->second.eventMap.count(eventID) && itr->second.eventMap[eventID]->extInfo ){
-			(*epgInfo)->extInfo = new EPG_EXTENDED_EVENT_INFO;
-			(*epgInfo)->extInfo->DeepCopy(*itr->second.eventMap[eventID]->extInfo);
+		if( (*epgInfo_)->extInfo == NULL && itr->second.eventMap.count(eventID) && itr->second.eventMap[eventID]->extInfo ){
+			(*epgInfo_)->extInfo = new EPG_EXTENDED_EVENT_INFO;
+			(*epgInfo_)->extInfo->DeepCopy(*itr->second.eventMap[eventID]->extInfo);
 		}
 		return TRUE;
 	}
@@ -1343,7 +1343,7 @@ BOOL CEpgDBUtil::SearchEpgInfo(
 		if( itrEvent != itr->second.eventMap.end() ){
 			this->searchEpgInfo.reset(new EPG_EVENT_INFO);
 			CopyEpgInfo(this->searchEpgInfo.get(), itrEvent->second.get());
-			*epgInfo = this->searchEpgInfo.get();
+			*epgInfo_ = this->searchEpgInfo.get();
 			return TRUE;
 		}
 	}

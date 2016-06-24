@@ -18,8 +18,8 @@ public:
 	// TSID				[IN]TransportStreamID
 	// PIDMap			[IN]PMTのリスト（キーPMTのPID）
 	void SetParam(
-		WORD TSID,
-		map<WORD, PROGRAM_PID_INFO>* PIDMap
+		WORD TSID_,
+		map<WORD, PROGRAM_PID_INFO>* PIDMap_
 	);
 
 	//作成PATのバッファポインタを取得

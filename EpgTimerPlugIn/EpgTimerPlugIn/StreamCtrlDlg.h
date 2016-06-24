@@ -18,7 +18,7 @@ public:
 	CStreamCtrlDlg(void);
 	~CStreamCtrlDlg(void);
 
-	void SetCtrlCmd(CSendCtrlCmd* ctrlCmd, DWORD ctrlID, BOOL chkUdp, BOOL chkTcp, BOOL play, BOOL timeShiftMode);
+	void SetCtrlCmd(CSendCtrlCmd* ctrlCmd, DWORD ctrlID_, BOOL chkUdp, BOOL chkTcp, BOOL play, BOOL timeShiftMode_);
 	void SetMessageCallback(MessageCallbackFunc func, void* param = NULL);
 	DWORD CreateStreamCtrlDialog(HINSTANCE hInstance, HWND parentHWND);
 	void CloseStreamCtrlDialog();

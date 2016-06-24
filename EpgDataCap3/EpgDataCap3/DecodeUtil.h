@@ -12,7 +12,7 @@ class CDecodeUtil
 public:
 	CDecodeUtil(void);
 
-	void SetEpgDB(CEpgDBUtil* epgDBUtil);
+	void SetEpgDB(CEpgDBUtil* epgDBUtil_);
 	void AddTSData(BYTE* data);
 
 	//解析データの現在のストリームＩＤを取得する
@@ -30,7 +30,7 @@ public:
 	// serviceList				[OUT]サービス情報のリスト（DLL内で自動的にdeleteする。次に取得を行うまで有効）
 	BOOL GetServiceListActual(
 		DWORD* serviceListSize,
-		SERVICE_INFO** serviceList
+		SERVICE_INFO** serviceList_
 		);
 
 	//ストリーム内の現在の時間情報を取得する
@@ -95,7 +95,7 @@ protected:
 	// serviceList				[OUT]サービス情報のリスト（DLL内で自動的にdeleteする。次に取得を行うまで有効）
 	BOOL GetServiceListSIT(
 		DWORD* serviceListSize,
-		SERVICE_INFO** serviceList
+		SERVICE_INFO** serviceList_
 		);
 
 };

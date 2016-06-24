@@ -9,10 +9,10 @@ class CParseText
 public:
 	CParseText() {}
 	virtual ~CParseText() {}
-	bool ParseText(LPCWSTR filePath = NULL);
+	bool ParseText(LPCWSTR path = NULL);
 	const map<K, V>& GetMap() const { return this->itemMap; }
 	const wstring& GetFilePath() const { return this->filePath; }
-	void SetFilePath(LPCWSTR filePath) { this->filePath = filePath; }
+	void SetFilePath(LPCWSTR path) { this->filePath = path; }
 protected:
 	bool SaveText() const;
 	virtual bool ParseLine(LPCWSTR parseLine, pair<K, V>& item) = 0;
@@ -24,11 +24,11 @@ protected:
 };
 
 template <class K, class V>
-bool CParseText<K, V>::ParseText(LPCWSTR filePath)
+bool CParseText<K, V>::ParseText(LPCWSTR path)
 {
 	this->itemMap.clear();
-	if( filePath != NULL ){
-		this->filePath = filePath;
+	if( path != NULL ){
+		this->filePath = path;
 	}
 	if( this->filePath.empty() ){
 		return false;

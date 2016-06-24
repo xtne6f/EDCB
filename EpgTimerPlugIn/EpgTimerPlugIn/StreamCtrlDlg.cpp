@@ -23,13 +23,13 @@ CStreamCtrlDlg::~CStreamCtrlDlg(void)
 {
 }
 
-void CStreamCtrlDlg::SetCtrlCmd(CSendCtrlCmd* ctrlCmd, DWORD ctrlID, BOOL chkUdp, BOOL chkTcp, BOOL play, BOOL timeShiftMode)
+void CStreamCtrlDlg::SetCtrlCmd(CSendCtrlCmd* ctrlCmd, DWORD ctrlID_, BOOL chkUdp, BOOL chkTcp, BOOL play, BOOL timeShiftMode_)
 {
 	this->cmd = ctrlCmd;
-	this->ctrlID = ctrlID;
+	this->ctrlID = ctrlID_;
 	this->iniTCP = chkTcp;
 	this->iniUDP = chkUdp;
-	this->timeShiftMode = timeShiftMode;
+	this->timeShiftMode = timeShiftMode_;
 	if( this->hwnd != NULL ){
 		PostMessage(this->hwnd, WM_RESET_GUI, play, 0);
 	}

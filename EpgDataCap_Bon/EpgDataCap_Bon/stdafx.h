@@ -52,3 +52,7 @@ void OutputDebugStringWrapper(LPCWSTR lpOutputString);
 #endif
 
 #include "../../Common/Common.h"
+
+// TODO: ‚±‚ÌŒx‚Í‰Â”\‚È‚ç‰ğŒˆ‚·‚×‚«
+// declaration of 'identifier' hides class member
+#pragma warning(disable : 4458)

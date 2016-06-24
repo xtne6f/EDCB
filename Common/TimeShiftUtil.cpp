@@ -154,9 +154,9 @@ BOOL CTimeShiftUtil::SendTcp(
 }
 
 BOOL CTimeShiftUtil::OpenTimeShift(
-	LPCWSTR filePath,
+	LPCWSTR filePath_,
 	__int64 fileSize,
-	BOOL fileMode
+	BOOL fileMode_
 	)
 {
 	if( Lock() == FALSE ) return FALSE;
@@ -181,7 +181,7 @@ BOOL CTimeShiftUtil::OpenTimeShift(
 	this->availableFileSize = fileSize;
 
 	WIN32_FIND_DATA findData;
-	HANDLE hFind = FindFirstFile(filePath, &findData);
+	HANDLE hFind = FindFirstFile(filePath_, &findData);
 	if( hFind == INVALID_HANDLE_VALUE ){
 		UnLock();
 		return FALSE;
@@ -194,8 +194,8 @@ BOOL CTimeShiftUtil::OpenTimeShift(
 		}
 	}
 
-	this->filePath = filePath;
-	this->fileMode = fileMode;
+	this->filePath = filePath_;
+	this->fileMode = fileMode_;
 	this->currentFilePos = 0;
 
 	UnLock();
