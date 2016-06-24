@@ -116,7 +116,7 @@ void CSendTSTCPDllUtil::UnInitialize()
 	if( m_hModule == NULL || m_iID == -1 ){
 		return ;
 	}
-	DWORD dwRet = pfnUnInitializeDLL(m_iID);
+	pfnUnInitializeDLL(m_iID);
 	m_iID = -1;
 	UnLoadDll();
 	return ;

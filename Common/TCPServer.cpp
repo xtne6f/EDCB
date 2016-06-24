@@ -220,7 +220,7 @@ UINT WINAPI CTCPServer::ServerThread(LPVOID pParam)
 				}
 			}
 		}else if( result == WSA_WAIT_EVENT_0 + 1 ){
-			struct sockaddr_in client;
+			struct sockaddr_in client = {};
 			int len = sizeof(client);
 			SOCKET sock = INVALID_SOCKET;
 			WSANETWORKEVENTS events;
@@ -249,7 +249,7 @@ UINT WINAPI CTCPServer::ServerThread(LPVOID pParam)
 
 					if( stCmd.dataSize > 0 ){
 						stCmd.data = new BYTE[stCmd.dataSize];
-						if( RecvAll(sock, (char*)stCmd.data, stCmd.dataSize, 0) != stCmd.dataSize ){
+						if( RecvAll(sock, (char*)stCmd.data, stCmd.dataSize, 0) != (int)stCmd.dataSize ){
 							break;
 						}
 					}

@@ -427,7 +427,7 @@ bool CReserveManager::ChgReserveData(const vector<RESERVE_DATA>& reserveList, bo
 				        r.recSetting.startMargine != itr->second.recSetting.startMargine ||
 				        r.recSetting.endMargine != itr->second.recSetting.endMargine) ||
 				    r.recSetting.tunerID != itr->second.recSetting.tunerID ){
-					__int64 startTime, startTimeNext;
+					__int64 startTimeNext;
 					CalcEntireReserveTime(&startTime, NULL, itr->second);
 					CalcEntireReserveTime(&startTimeNext, NULL, r);
 					minStartTime = min(min(startTime, startTimeNext), minStartTime);
@@ -1421,7 +1421,6 @@ DWORD CReserveManager::Check()
 				}
 			}
 			if( modified ){
-				CBlockLock lock(&this->managerLock);
 				this->reserveText.SaveText();
 				this->recInfoText.SaveText();
 				this->recInfo2Text.SaveText();

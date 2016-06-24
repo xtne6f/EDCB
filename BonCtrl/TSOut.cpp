@@ -434,10 +434,8 @@ void CTSOut::CheckNeedPID()
 	//PAT作成用のPMTリスト
 	map<WORD, CCreatePATPacket::PROGRAM_PID_INFO> PIDMap;
 	//NITのPID追加しておく
-	CCreatePATPacket::PROGRAM_PID_INFO item;
-	item.PMTPID = 0x10;
-	item.SID = 0;
-	PIDMap.insert(pair<WORD, CCreatePATPacket::PROGRAM_PID_INFO>(item.PMTPID,item));
+	PIDMap[0x10].PMTPID = 0x10;
+	PIDMap[0x10].SID = 0;
 
 	map<WORD, string> pidName;
 	map<WORD, CPMTUtil*>::iterator itrPmt;
@@ -498,7 +496,6 @@ void CTSOut::CheckNeedPID()
 		if( itrService->second->GetSID() == 0xFFFF ){
 			//全サービス対象
 			this->serviceOnlyFlag = FALSE;
-			map<WORD, CPMTUtil*>::iterator itrPmt;
 			for( itrPmt = pmtUtilMap.begin(); itrPmt != pmtUtilMap.end(); itrPmt++ ){
 				//PAT作成用のPMTリスト作成
 				CCreatePATPacket::PROGRAM_PID_INFO item;

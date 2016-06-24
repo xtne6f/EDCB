@@ -234,7 +234,7 @@ DWORD CSendCtrlCmd::SendTCP(wstring ip, DWORD port, DWORD timeOut, CMD_STREAM* s
 	resCmd->dataSize = head[1];
 	if( resCmd->dataSize > 0 ){
 		resCmd->data = new BYTE[resCmd->dataSize];
-		if( RecvAll(sock, (char*)resCmd->data, resCmd->dataSize, 0) != resCmd->dataSize ){
+		if( RecvAll(sock, (char*)resCmd->data, resCmd->dataSize, 0) != (int)resCmd->dataSize ){
 			closesocket(sock);
 			return CMD_ERR;
 		}

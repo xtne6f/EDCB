@@ -786,9 +786,8 @@ BOOL CEpgDBUtil::AddServiceList(const CNITTable* nit)
 	for( size_t i=0; i<nit->TSInfoList.size(); i++ ){
 		const CNITTable::TS_INFO_DATA* tsInfo = &nit->TSInfoList[i];
 		//サービス情報更新用
-		DWORD key = ((DWORD)tsInfo->original_network_id) <<16 | tsInfo->transport_stream_id;
 		map<DWORD, DB_TS_INFO>::iterator itrFind;
-		itrFind = this->serviceInfoList.find(key);
+		itrFind = this->serviceInfoList.find((DWORD)tsInfo->original_network_id << 16 | tsInfo->transport_stream_id);
 		if( itrFind != this->serviceInfoList.end() ){
 			itrFind->second.network_name = network_nameW;
 		}

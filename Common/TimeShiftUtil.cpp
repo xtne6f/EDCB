@@ -293,8 +293,8 @@ UINT WINAPI CTimeShiftUtil::ReadThread(LPVOID param)
 			if( file == INVALID_HANDLE_VALUE ){
 				return FALSE;
 			}
-			LONG setH = (LONG)(sys->currentFilePos>>32);
-			LONG setL = (LONG)(sys->currentFilePos & 0x00000000FFFFFFFF);
+			setH = (LONG)(sys->currentFilePos>>32);
+			setL = (LONG)(sys->currentFilePos & 0x00000000FFFFFFFF);
 			SetFilePointer(file, setL, &setH, FILE_BEGIN);
 
 			lenH = 0;

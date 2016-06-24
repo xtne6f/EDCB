@@ -200,7 +200,7 @@ void CSetDlgNetwork::OnBnClickedButtonDelUdp()
 			if( udpSendList[i].broadcastFlag == TRUE ){
 				add+= L" ブロードキャスト";
 			}
-			int index = ListBox_AddString(hItem, add.c_str());
+			index = ListBox_AddString(hItem, add.c_str());
 			ListBox_SetItemData(hItem, index, i);
 		}
 	}
@@ -262,7 +262,7 @@ void CSetDlgNetwork::OnBnClickedButtonDelTcp()
 		for( int i=0; i<(int)tcpSendList.size(); i++ ){
 			wstring add = L"";
 			Format(add, L"%s:%d",tcpSendList[i].ipString.c_str(), tcpSendList[i].port);
-			int index = ListBox_AddString(hItem, add.c_str());
+			index = ListBox_AddString(hItem, add.c_str());
 			ListBox_SetItemData(hItem, index, i);
 		}
 	}

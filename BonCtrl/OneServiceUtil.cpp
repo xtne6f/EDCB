@@ -191,7 +191,7 @@ BOOL COneServiceUtil::AddTSBuff(
 			CTSPacketUtil packet;
 			if( packet.Set188TS(data + i, 188) == TRUE ){
 				if( packet.PID == this->pmtPID ){
-					DWORD err = createPmt.AddData(&packet);
+					createPmt.AddData(&packet);
 				}
 			}
 		}
@@ -421,7 +421,7 @@ void COneServiceUtil::StopPittariRec()
 	OutputDebugString(L"*:StopPittariRec");
 	BOOL subRec;
 	this->writeFile->GetSaveFilePath(&this->pittariRecFilePath, &subRec);
-	BOOL ret = this->writeFile->EndSave();
+	this->writeFile->EndSave();
 }
 
 //ファイル保存を終了する

@@ -106,7 +106,7 @@ void CPESHeadInfo::SetData(BYTE* bData, DWORD dwSize)
 			PES_header_data_length = bData[dwRead];
 			dwRead++;
 
-			DWORD dwHeadEnd = dwRead+PES_header_data_length;
+			//DWORD dwHeadEnd = dwRead+PES_header_data_length;
 
 			if( PTS_DTS_flags == 0x02 ){
 				PTS = ((__int64)bData[dwRead]&0x0E) << 29 |

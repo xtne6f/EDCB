@@ -517,7 +517,6 @@ BOOL CDecodeUtil::GetTSID(
 		//TSID
 		*transportStreamID = this->patInfo->transport_stream_id;
 		//ONID
-		WORD ONID = 0xFFFF;
 		for( size_t i=0; i<this->sitInfo->descriptorList.size(); i++ ){
 			if( this->sitInfo->descriptorList[i].GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::network_identification_descriptor ){
 				*originalNetworkID = (WORD)this->sitInfo->descriptorList[i].GetNumber(AribDescriptor::network_id);
@@ -540,8 +539,8 @@ BOOL CDecodeUtil::GetServiceListActual(
 	if( this->nitActualInfo.nitSection.empty() || this->sdtActualInfo.sdtSection.empty() ){
 		return GetServiceListSIT(serviceListSize, serviceList);
 	}else{
-		if( this->nitActualInfo.last_section_number+1 != this->nitActualInfo.nitSection.size() ||
-			this->sdtActualInfo.last_section_number+1 != this->sdtActualInfo.sdtSection.size() ){
+		if( (size_t)(this->nitActualInfo.last_section_number+1) != this->nitActualInfo.nitSection.size() ||
+			(size_t)(this->sdtActualInfo.last_section_number+1) != this->sdtActualInfo.sdtSection.size() ){
 			return FALSE;
 		}
 	}

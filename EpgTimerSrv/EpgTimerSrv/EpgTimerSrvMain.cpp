@@ -3193,7 +3193,7 @@ void CEpgTimerSrvMain::PushEpgSearchKeyInfo(CLuaWorkspace& ws, const EPGDB_SEARC
 	if( andKey.compare(pos, 4, L"D!{1") == 0 ){
 		LPWSTR endp;
 		DWORD dur = wcstoul(andKey.c_str() + pos + 3, &endp, 10);
-		if( endp - andKey.c_str() == pos + 12 && endp[0] == L'}' ){
+		if( endp - (andKey.c_str() + pos + 3) == 9 && endp[0] == L'}' ){
 			andKey.erase(pos, 13);
 			durMin = dur / 10000 % 10000;
 			durMax = dur % 10000;

@@ -227,7 +227,7 @@ UINT WINAPI CNotifyManager::SendNotifyThread(LPVOID param)
 	CSendCtrlCmd sendCtrl;
 	BOOL wait1Sec = FALSE;
 	BOOL waitNotify = FALSE;
-	DWORD waitNotifyTick;
+	DWORD waitNotifyTick = 0;
 	while(1){
 		vector<DWORD> registGUI;
 		vector<REGIST_TCP_INFO> registTCP;

@@ -152,7 +152,7 @@ BOOL CARIB8CharDecode::Caption( const BYTE* pbSrc, DWORD dwSrcSize, vector<CAPTI
 	DWORD dwReadCount = 0;
 	while(dwReadCount<dwSrcSize){
 		DWORD dwReadSize = 0;
-		BOOL bRet = Analyze(pbSrc+dwReadCount, dwSrcSize-dwReadCount, &dwReadSize );
+		bRet = Analyze(pbSrc+dwReadCount, dwSrcSize-dwReadCount, &dwReadSize );
 		if( bRet == TRUE ){
 			if( m_strDecode.size() > 0 ){
 				CheckModify();
