@@ -183,6 +183,9 @@
     <ClInclude Include="civetweb.h">
       <Filter>ヘッダー ファイル\civetweb</Filter>
     </ClInclude>
+    <ClInclude Include="civetweb_lua.h">
+      <Filter>ヘッダー ファイル\civetweb</Filter>
+    </ClInclude>
     <ClInclude Include="lua.h">
       <Filter>ヘッダー ファイル\civetweb</Filter>
     </ClInclude>

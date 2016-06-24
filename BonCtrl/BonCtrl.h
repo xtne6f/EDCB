@@ -71,26 +71,11 @@ public:
 	//戻り値：
 	// エラーコード
 	//引数：
-	// space			[IN]変更チャンネルのSpace
-	// ch				[IN]変更チャンネルの物理Ch
-	// SID			[IN]変更チャンネルの物理service_id
-	DWORD SetCh(
-		DWORD space,
-		DWORD ch,
-		WORD SID
-		);
-
-	//チャンネル変更
-	//戻り値：
-	// エラーコード
-	//引数：
 	// ONID			[IN]変更チャンネルのorignal_network_id
 	// TSID			[IN]変更チャンネルの物理transport_stream_id
-	// SID			[IN]変更チャンネルの物理service_id
 	DWORD SetCh(
 		WORD ONID,
-		WORD TSID,
-		WORD SID
+		WORD TSID
 		);
 
 	//チャンネル変更中かどうか
@@ -401,9 +386,7 @@ public:
 	// enableLive	[IN]視聴中に取得する
 	// enableRec	[IN]録画中に取得する
 	// enableRec	[IN]EPG取得するチャンネル一覧
-	// BSBasic		[IN]BSで１チャンネルから基本情報のみ取得するかどうか
-	// CS1Basic		[IN]CS1で１チャンネルから基本情報のみ取得するかどうか
-	// CS2Basic		[IN]CS2で１チャンネルから基本情報のみ取得するかどうか
+	// *Basic		[IN]１チャンネルから基本情報のみ取得するかどうか
 	// backStartWaitSec	[IN]Ch切り替え、録画開始後、バックグラウンドでのEPG取得を開始するまでの秒数
 	void SetBackGroundEpgCap(
 		BOOL enableLive,
@@ -411,6 +394,7 @@ public:
 		BOOL BSBasic,
 		BOOL CS1Basic,
 		BOOL CS2Basic,
+		BOOL CS3Basic,
 		DWORD backStartWaitSec
 		);
 
@@ -463,30 +447,22 @@ protected:
 	HANDLE epgCapBackStopEvent;
 	BOOL enableLiveEpgCap;
 	BOOL enableRecEpgCap;
-	WORD lastSID;
 
 	BOOL epgCapBackBSBasic;
 	BOOL epgCapBackCS1Basic;
 	BOOL epgCapBackCS2Basic;
+	BOOL epgCapBackCS3Basic;
 	DWORD epgCapBackStartWaitSec;
 	DWORD tsBuffMaxCount;
 	int writeBuffMaxCount;
 protected:
-	//BonDriverをロード後の初期化処理
-	//戻り値：
-	// エラーコード
-	DWORD _OpenBonDriver();
-
-	//ロードしているBonDriverの開放本体
-	void _CloseBonDriver();
-
 	DWORD _SetCh(
 		DWORD space,
 		DWORD ch,
 		BOOL chScan = FALSE
 		);
 
-	static void GetEpgDataFilePath(WORD ONID, WORD TSID, wstring& epgDataFilePath, BOOL BSBasic, BOOL CS1Basic, BOOL CS2Basic);
+	static void GetEpgDataFilePath(WORD ONID, WORD TSID, wstring& epgDataFilePath);
 
 	static void RecvCallback(void* param, BYTE* data, DWORD size, DWORD remain);
 	static UINT WINAPI AnalyzeThread(LPVOID param);

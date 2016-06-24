@@ -92,7 +92,7 @@ BOOL CChSetUtil::AddServiceInfo(
 	if( serviceInfo->extInfo != NULL ){
 		item4.serviceType = serviceInfo->extInfo->service_type;
 		item4.partialFlag = serviceInfo->extInfo->partialReceptionFlag;
-		if( item4.serviceType == 0x01 || item4.serviceType == 0xA5 ){
+		if( IsVideoServiceType(item4.serviceType) ){
 			item4.useViewFlag = TRUE;
 		}else{
 			item4.useViewFlag = FALSE;
@@ -135,7 +135,7 @@ BOOL CChSetUtil::AddServiceInfo(
 		}else if( serviceInfo->extInfo->network_name != NULL){
 			item5.networkName = serviceInfo->extInfo->network_name;
 		}
-		if( item5.serviceType == 0x01 || item4.serviceType == 0xA5 ){
+		if( IsVideoServiceType(item4.serviceType) ){
 			item5.epgCapFlag = TRUE;
 			item5.searchFlag = TRUE;
 		}else{
@@ -219,21 +219,25 @@ void CChSetUtil::GetEpgCapService(
 	}
 }
 
-BOOL CChSetUtil::IsEpgCapService(
-	WORD ONID,
-	WORD TSID
+vector<EPGCAP_SERVICE_INFO> CChSetUtil::GetEpgCapServiceAll(
+	int ONID,
+	int TSID
 	)
 {
+	vector<EPGCAP_SERVICE_INFO> ret;
 	map<LONGLONG, CH_DATA5>::const_iterator itrCh5;
 	for( itrCh5 = this->chText5.GetMap().begin(); itrCh5 != this->chText5.GetMap().end(); itrCh5++ ){
-		if( itrCh5->second.originalNetworkID == ONID &&
-			itrCh5->second.transportStreamID == TSID &&
+		if( (ONID < 0 || itrCh5->second.originalNetworkID == ONID) &&
+			(TSID < 0 || itrCh5->second.transportStreamID == TSID) &&
 			itrCh5->second.epgCapFlag == TRUE
 			){
-				return TRUE;
+			ret.push_back(EPGCAP_SERVICE_INFO());
+			ret.back().ONID = itrCh5->second.originalNetworkID;
+			ret.back().TSID = itrCh5->second.transportStreamID;
+			ret.back().SID = itrCh5->second.serviceID;
 		}
 	}
-	return FALSE;
+	return ret;
 }
 
 BOOL CChSetUtil::IsPartial(

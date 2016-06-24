@@ -343,12 +343,9 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 			{
 				wstring moduleFolder;
 				GetModuleFolderPath(moduleFolder);
-				WIN32_FIND_DATA findData;
-				HANDLE hFind = FindFirstFile((moduleFolder + L"\\EpgTimer.lnk").c_str(), &findData);
-				if( hFind != INVALID_HANDLE_VALUE ){
+				if( GetFileAttributes((moduleFolder + L"\\EpgTimer.lnk").c_str()) != INVALID_FILE_ATTRIBUTES ){
 					//EpgTimer.lnk(ショートカット)を優先的に開く
 					ShellExecute(NULL, L"open", (moduleFolder + L"\\EpgTimer.lnk").c_str(), NULL, NULL, SW_SHOWNORMAL);
-					FindClose(hFind);
 				}else{
 					//EpgTimer.exeがあれば起動
 					PROCESS_INFORMATION pi;
@@ -707,6 +704,7 @@ void CEpgTimerSrvMain::ReloadNetworkSetting()
 		this->httpOptions.authenticationDomain = GetPrivateProfileToString(L"SET", L"HttpAuthenticationDomain", L"", iniPath.c_str());
 		this->httpOptions.numThreads = GetPrivateProfileInt(L"SET", L"HttpNumThreads", 5, iniPath.c_str());
 		this->httpOptions.requestTimeout = GetPrivateProfileInt(L"SET", L"HttpRequestTimeoutSec", 120, iniPath.c_str()) * 1000;
+		this->httpOptions.sslCipherList = GetPrivateProfileToString(L"SET", L"HttpSslCipherList", L"HIGH:!aNULL:!MD5", iniPath.c_str());
 		this->httpOptions.sslProtocolVersion = GetPrivateProfileInt(L"SET", L"HttpSslProtocolVersion", 2, iniPath.c_str());
 		this->httpOptions.keepAlive = GetPrivateProfileInt(L"SET", L"HttpKeepAlive", 0, iniPath.c_str()) != 0;
 		this->httpOptions.ports = GetPrivateProfileToString(L"SET", L"HttpPort", L"5510", iniPath.c_str());
@@ -3195,7 +3193,7 @@ void CEpgTimerSrvMain::PushEpgSearchKeyInfo(CLuaWorkspace& ws, const EPGDB_SEARC
 	if( andKey.compare(pos, 4, L"D!{1") == 0 ){
 		LPWSTR endp;
 		DWORD dur = wcstoul(andKey.c_str() + pos + 3, &endp, 10);
-		if( endp - andKey.c_str() == pos + 12 && endp[0] == L'}' ){
+		if( endp - (andKey.c_str() + pos + 3) == 9 && endp[0] == L'}' ){
 			andKey.erase(pos, 13);
 			durMin = dur / 10000 % 10000;
 			durMax = dur % 10000;

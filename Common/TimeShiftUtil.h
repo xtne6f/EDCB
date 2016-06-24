@@ -38,9 +38,9 @@ public:
 	// fileSize		[IN]有効なファイルサイズ。-1でファイルサイズそのままが有効。
 	// fileMode		[IN]録画済みファイル再生モード
 	BOOL OpenTimeShift(
-		LPCWSTR filePath,
+		LPCWSTR filePath_,
 		__int64 fileSize,
-		BOOL fileMode
+		BOOL fileMode_
 		);
 
 	//タイムシフト送信を開始する

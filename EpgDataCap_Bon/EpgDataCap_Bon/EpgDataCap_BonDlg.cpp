@@ -134,7 +134,7 @@ BOOL CEpgDataCap_BonDlg::OnInitDialog()
 	if( err == NO_ERR ){
 		//ƒ`ƒƒƒ“ƒlƒ‹•ÏX
 		if( this->initONID != -1 && this->initTSID != -1 && this->initSID != -1 ){
-			SelectService(this->initONID, this->initTSID, this->initSID);
+			SelectService((WORD)this->initONID, (WORD)this->initTSID, (WORD)this->initSID);
 			this->initONID = -1;
 			this->initTSID = -1;
 			this->initSID = -1;

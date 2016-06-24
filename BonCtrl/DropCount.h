@@ -11,7 +11,7 @@ public:
 
 	void Clear();
 
-	void GetCount(ULONGLONG* drop, ULONGLONG* scramble);
+	void GetCount(ULONGLONG* drop_, ULONGLONG* scramble_);
 	ULONGLONG GetDropCount();
 	ULONGLONG GetScrambleCount();
 
@@ -22,7 +22,7 @@ public:
 	void SetNoLog(BOOL noLogDrop, BOOL noLogScramble);
 
 	void SetPIDName(
-		const map<WORD, string>* pidName
+		const map<WORD, string>* pidName_
 		);
 protected:
 	struct DROP_INFO {

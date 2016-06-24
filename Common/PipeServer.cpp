@@ -35,14 +35,14 @@ CPipeServer::~CPipeServer(void)
 }
 
 BOOL CPipeServer::StartServer(
-	LPCWSTR eventName, 
-	LPCWSTR pipeName, 
+	LPCWSTR eventName_, 
+	LPCWSTR pipeName_, 
 	CMD_CALLBACK_PROC cmdCallback, 
 	void* callbackParam, 
-	BOOL insecureFlag
+	BOOL insecureFlag_
 )
 {
-	if( cmdCallback == NULL || eventName == NULL || pipeName == NULL ){
+	if( cmdCallback == NULL || eventName_ == NULL || pipeName_ == NULL ){
 		return FALSE;
 	}
 	if( this->workThread != NULL ){
@@ -50,9 +50,9 @@ BOOL CPipeServer::StartServer(
 	}
 	this->cmdProc = cmdCallback;
 	this->cmdParam = callbackParam;
-	this->eventName = eventName;
-	this->pipeName = pipeName;
-	this->insecureFlag = insecureFlag;
+	this->eventName = eventName_;
+	this->pipeName = pipeName_;
+	this->insecureFlag = insecureFlag_;
 
 	ResetEvent(this->stopEvent);
 	this->workThread = (HANDLE)_beginthreadex(NULL, 0, ServerThread, (LPVOID)this, CREATE_SUSPENDED, NULL);

@@ -67,12 +67,12 @@ BOOL CWriteMain::_StartSave(
 	wstring saveFolder = L"";
 	GetFileFolder(fileName, saveFolder);
 	GetFileTitle(fileName, saveFileName);
-	wstring savePath = L"";
-	Format(savePath, L"%s\\%s%s", saveFolder.c_str(), saveFileName.c_str(), ext.c_str());
+	wstring savePath_ = L"";
+	Format(savePath_, L"%s\\%s%s", saveFolder.c_str(), saveFileName.c_str(), ext.c_str());
 
-	BOOL ret = dshowCtrl.CreateRunGraph(savePath.c_str());
+	BOOL ret = dshowCtrl.CreateRunGraph(savePath_.c_str());
 	if( ret == TRUE ){
-		this->savePath = savePath;
+		this->savePath = savePath_;
 		//dshowCtrl.ConnectRunGraph();
 	}
 	return ret;

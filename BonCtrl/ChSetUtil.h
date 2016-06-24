@@ -54,10 +54,10 @@ public:
 		vector<EPGCAP_SERVICE_INFO>* chList
 		);
 
-	//EPG取得対象の物理チャンネルかどうか
-	BOOL IsEpgCapService(
-		WORD ONID,
-		WORD TSID
+	//現在のチューナに限定されないEPG取得対象のサービス一覧を取得する
+	vector<EPGCAP_SERVICE_INFO> GetEpgCapServiceAll(
+		int ONID = -1,
+		int TSID = -1
 		);
 
 	//部分受信サービスかどうか
@@ -67,6 +67,15 @@ public:
 		WORD SID
 		);
 
+	//サービスタイプが映像サービスかどうか
+	static BOOL IsVideoServiceType(
+		WORD serviceType
+		){
+		return serviceType == 0x01 //デジタルTV
+			|| serviceType == 0xA5 //プロモーション映像
+			|| serviceType == 0xAD //超高精細度4K専用TV
+			;
+	}
 
 protected:
 	CParseChText4 chText4;

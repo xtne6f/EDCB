@@ -71,16 +71,16 @@ BOOL CNITTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 	return TRUE;
 }
 
-BOOL CNITTable::SDDecode( BYTE* data, DWORD dataSize, vector<AribDescriptor::CDescriptor>* descriptorList, DWORD* decodeReadSize )
+BOOL CNITTable::SDDecode( BYTE* data, DWORD dataSize, vector<AribDescriptor::CDescriptor>* descriptorList_, DWORD* decodeReadSize )
 {
 	BOOL ret = TRUE;
-	if( data == NULL || dataSize == 0 || descriptorList == NULL ){
+	if( data == NULL || dataSize == 0 || descriptorList_ == NULL ){
 		return FALSE;
 	}
 	DWORD decodeSize = 0;
 
-	descriptorList->push_back(AribDescriptor::CDescriptor());
-	AribDescriptor::CDescriptor* item = &descriptorList->back();
+	descriptorList_->push_back(AribDescriptor::CDescriptor());
+	AribDescriptor::CDescriptor* item = &descriptorList_->back();
 
 	static const short parser0x82[] = {
 		AribDescriptor::descriptor_tag, 8,
@@ -110,7 +110,7 @@ BOOL CNITTable::SDDecode( BYTE* data, DWORD dataSize, vector<AribDescriptor::CDe
 		}
 	}
 	if( item->Has(AribDescriptor::d_char) == false ){
-		descriptorList->pop_back();
+		descriptorList_->pop_back();
 		ret = FALSE;
 	}
 

@@ -254,8 +254,8 @@ void CEpgTimerPlugIn::CtrlCmdCallbackInvoked()
 								ch = 0;
 							}
 						}else{
-							if( chInfo.Space == val.space &&
-								chInfo.Channel == val.ch )
+							if( chInfo.Space == (int)val.space &&
+								chInfo.Channel == (int)val.ch )
 							{
 								if( sys->m_pApp->SetChannel(space, ch, val.SID) == true ){
 									resParam->param = CMD_SUCCESS;

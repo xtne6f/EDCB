@@ -1158,7 +1158,7 @@ int CDescriptor::DecodeProperty(const BYTE* data, DWORD dataSize, const short** 
 					if( readSize * 8 + bitOffset + bitSize > dataSize * 8 ){
 						return -1;
 					}
-					if( ppLocal->n == ppLocal->type ){
+					if( ppLocal->n == (DWORD)ppLocal->type ){
 						//スタックが尽きた。このエラーは回復できない
 						return -3;
 					}
@@ -1173,7 +1173,7 @@ int CDescriptor::DecodeProperty(const BYTE* data, DWORD dataSize, const short** 
 					if( readSize * 8 + bitOffset + bitSize > dataSize * 8 ){
 						return -1;
 					}
-					if( ppLocal->n == ppLocal->type ){
+					if( ppLocal->n == (DWORD)ppLocal->type ){
 						return -3;
 					}
 					DESCRIPTOR_PROPERTY dp;

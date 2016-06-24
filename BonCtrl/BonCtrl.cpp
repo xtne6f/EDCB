@@ -36,6 +36,7 @@ CBonCtrl::CBonCtrl(void)
 	this->epgCapBackBSBasic = TRUE;
 	this->epgCapBackCS1Basic = TRUE;
 	this->epgCapBackCS2Basic = TRUE;
+	this->epgCapBackCS3Basic = FALSE;
 	this->epgCapBackStartWaitSec = 30;
 	this->tsBuffMaxCount = 5000;
 	this->writeBuffMaxCount = -1;
@@ -44,59 +45,20 @@ CBonCtrl::CBonCtrl(void)
 
 CBonCtrl::~CBonCtrl(void)
 {
-	_CloseBonDriver();
+	CloseBonDriver();
 
-	if( this->chScanThread != NULL ){
-		::SetEvent(this->chScanStopEvent);
-		// スレッド終了待ち
-		if ( ::WaitForSingleObject(this->chScanThread, 15000) == WAIT_TIMEOUT ){
-			::TerminateThread(this->chScanThread, 0xffffffff);
-		}
-		CloseHandle(this->chScanThread);
-		this->chScanThread = NULL;
-	}
+	StopChScan();
 	if( this->chScanStopEvent != NULL ){
 		CloseHandle(this->chScanStopEvent);
 		this->chScanStopEvent = NULL;
-	}
-
-	if( this->epgCapThread != NULL ){
-		::SetEvent(this->epgCapStopEvent);
-		// スレッド終了待ち
-		if ( ::WaitForSingleObject(this->epgCapThread, 15000) == WAIT_TIMEOUT ){
-			::TerminateThread(this->epgCapThread, 0xffffffff);
-		}
-		CloseHandle(this->epgCapThread);
-		this->epgCapThread = NULL;
 	}
 	if( this->epgCapStopEvent != NULL ){
 		CloseHandle(this->epgCapStopEvent);
 		this->epgCapStopEvent = NULL;
 	}
-
-	if( this->epgCapBackThread != NULL ){
-		::SetEvent(this->epgCapBackStopEvent);
-		// スレッド終了待ち
-		if ( ::WaitForSingleObject(this->epgCapBackThread, 15000) == WAIT_TIMEOUT ){
-			::TerminateThread(this->epgCapBackThread, 0xffffffff);
-		}
-		CloseHandle(this->epgCapBackThread);
-		this->epgCapBackThread = NULL;
-	}
 	if( this->epgCapBackStopEvent != NULL ){
 		CloseHandle(this->epgCapBackStopEvent);
 		this->epgCapBackStopEvent = NULL;
-	}
-
-	if( this->analyzeThread != NULL ){
-		this->analyzeStopFlag = TRUE;
-		::SetEvent(this->analyzeEvent);
-		// スレッド終了待ち
-		if ( ::WaitForSingleObject(this->analyzeThread, 15000) == WAIT_TIMEOUT ){
-			::TerminateThread(this->analyzeThread, 0xffffffff);
-		}
-		CloseHandle(this->analyzeThread);
-		this->analyzeThread = NULL;
 	}
 	if( this->analyzeEvent != NULL ){
 		CloseHandle(this->analyzeEvent);
@@ -144,11 +106,14 @@ DWORD CBonCtrl::OpenBonDriver(
 	int openWait
 )
 {
-	_CloseBonDriver();
+	CloseBonDriver();
 	DWORD ret = ERR_FALSE;
 	if( this->bonUtil.OpenBonDriver(bonDriverFile, RecvCallback, this, openWait) ){
 		wstring bonFile = this->bonUtil.GetOpenBonDriverFileName();
-		ret = _OpenBonDriver();
+		ret = NO_ERR;
+		//解析スレッド起動
+		this->analyzeStopFlag = FALSE;
+		this->analyzeThread = (HANDLE)_beginthreadex(NULL, 0, AnalyzeThread, this, 0, NULL);
 		this->tsOut.ResetChChange();
 
 		this->tsOut.SetBonDriver(bonFile);
@@ -162,13 +127,6 @@ DWORD CBonCtrl::OpenBonDriver(
 	}
 
 	return ret;
-}
-
-//ロードしているBonDriverの開放
-void CBonCtrl::CloseBonDriver()
-{
-	StopBackgroundEpgCap();
-	_CloseBonDriver();
 }
 
 //ロード中のBonDriverのファイル名を取得する（ロード成功しているかの判定）
@@ -215,37 +173,11 @@ DWORD CBonCtrl::SetCh(
 //戻り値：
 // エラーコード
 //引数：
-// space			[IN]変更チャンネルのSpace
-// ch				[IN]変更チャンネルの物理Ch
-// SID			[IN]変更チャンネルの物理service_id
-DWORD CBonCtrl::SetCh(
-	DWORD space,
-	DWORD ch,
-	WORD SID
-)
-{
-	if( this->tsOut.IsRec() == TRUE ){
-		return ERR_FALSE;
-	}
-
-	DWORD ret = ERR_FALSE;
-	ret = _SetCh(space, ch);
-	this->lastSID = SID;
-
-	return ret;
-}
-
-//チャンネル変更
-//戻り値：
-// エラーコード
-//引数：
 // ONID			[IN]変更チャンネルのorignal_network_id
 // TSID			[IN]変更チャンネルの物理transport_stream_id
-// SID			[IN]変更チャンネルの物理service_id
 DWORD CBonCtrl::SetCh(
 	WORD ONID,
-	WORD TSID,
-	WORD SID
+	WORD TSID
 )
 {
 	if( this->tsOut.IsRec() == TRUE ){
@@ -258,7 +190,6 @@ DWORD CBonCtrl::SetCh(
 	DWORD ret = ERR_FALSE;
 	if( this->chUtil.GetCh( ONID, TSID, space, ch ) == TRUE ){
 		ret = _SetCh(space, ch);
-		this->lastSID = SID;
 	}
 
 	return ret;
@@ -342,44 +273,12 @@ float CBonCtrl::GetSignalLevel()
 	return ret;
 }
 
-//BonDriverをロード後の初期化処理
-//戻り値：
-// エラーコード
-DWORD CBonCtrl::_OpenBonDriver()
+//ロードしているBonDriverの開放
+void CBonCtrl::CloseBonDriver()
 {
-	if( this->analyzeThread == NULL ){
-		//解析スレッド起動
-		this->analyzeStopFlag = FALSE;
-		this->analyzeThread = (HANDLE)_beginthreadex(NULL, 0, AnalyzeThread, (LPVOID)this, CREATE_SUSPENDED, NULL);
-		SetThreadPriority( this->analyzeThread, THREAD_PRIORITY_NORMAL );
-		ResumeThread(this->analyzeThread);
-	}
+	StopBackgroundEpgCap();
 
-	return NO_ERR;
-}
-
-//ロードしているBonDriverの開放本体
-void CBonCtrl::_CloseBonDriver()
-{
-	if( this->epgCapBackThread != NULL ){
-		::SetEvent(this->epgCapBackStopEvent);
-		// スレッド終了待ち
-		if ( ::WaitForSingleObject(this->epgCapBackThread, 15000) == WAIT_TIMEOUT ){
-			::TerminateThread(this->epgCapBackThread, 0xffffffff);
-		}
-		CloseHandle(this->epgCapBackThread);
-		this->epgCapBackThread = NULL;
-	}
-
-	if( this->epgCapThread != NULL ){
-		::SetEvent(this->epgCapStopEvent);
-		// スレッド終了待ち
-		if ( ::WaitForSingleObject(this->epgCapThread, 15000) == WAIT_TIMEOUT ){
-			::TerminateThread(this->epgCapThread, 0xffffffff);
-		}
-		CloseHandle(this->epgCapThread);
-		this->epgCapThread = NULL;
-	}
+	StopEpgCap();
 
 	if( this->analyzeThread != NULL ){
 		this->analyzeStopFlag = TRUE;
@@ -720,9 +619,7 @@ DWORD CBonCtrl::StartChScan()
 
 			//受信スレッド起動
 			ResetEvent(this->chScanStopEvent);
-			this->chScanThread = (HANDLE)_beginthreadex(NULL, 0, ChScanThread, (LPVOID)this, CREATE_SUSPENDED, NULL);
-			SetThreadPriority( this->chScanThread, THREAD_PRIORITY_NORMAL );
-			ResumeThread(this->chScanThread);
+			this->chScanThread = (HANDLE)_beginthreadex(NULL, 0, ChScanThread, this, 0, NULL);
 		}
 	}
 
@@ -957,9 +854,7 @@ DWORD CBonCtrl::StartEpgCap(
 
 			//受信スレッド起動
 			ResetEvent(this->epgCapStopEvent);
-			this->epgCapThread = (HANDLE)_beginthreadex(NULL, 0, EpgCapThread, (LPVOID)this, CREATE_SUSPENDED, NULL);
-			SetThreadPriority( this->epgCapThread, THREAD_PRIORITY_NORMAL );
-			ResumeThread(this->epgCapThread);
+			this->epgCapThread = (HANDLE)_beginthreadex(NULL, 0, EpgCapThread, this, 0, NULL);
 		}
 	}
 
@@ -1011,9 +906,7 @@ UINT WINAPI CBonCtrl::EpgCapThread(LPVOID param)
 	DWORD chkCount = 0;
 	DWORD chkWait = 8;
 
-	BOOL chkBS = FALSE;
-	BOOL chkCS1 = FALSE;
-	BOOL chkCS2 = FALSE;
+	BOOL chkONIDs[16] = {};
 
 	wstring folderPath;
 	GetModuleFolderPath( folderPath );
@@ -1026,9 +919,11 @@ UINT WINAPI CBonCtrl::EpgCapThread(LPVOID param)
 	//Common.iniは一般に外部プロセスが変更する可能性のある(はずの)ものなので、利用の直前にチェックする
 	wstring commonIniPath;
 	GetCommonIniPath(commonIniPath);
-	BOOL BSBasic = GetPrivateProfileInt(L"SET", L"BSBasicOnly", 1, commonIniPath.c_str());
-	BOOL CS1Basic = GetPrivateProfileInt(L"SET", L"CS1BasicOnly", 1, commonIniPath.c_str());
-	BOOL CS2Basic = GetPrivateProfileInt(L"SET", L"CS2BasicOnly", 1, commonIniPath.c_str());
+	BOOL basicOnlyONIDs[16] = {};
+	basicOnlyONIDs[4] = GetPrivateProfileInt(L"SET", L"BSBasicOnly", 1, commonIniPath.c_str());
+	basicOnlyONIDs[6] = GetPrivateProfileInt(L"SET", L"CS1BasicOnly", 1, commonIniPath.c_str());
+	basicOnlyONIDs[7] = GetPrivateProfileInt(L"SET", L"CS2BasicOnly", 1, commonIniPath.c_str());
+	basicOnlyONIDs[10] = GetPrivateProfileInt(L"SET", L"CS3BasicOnly", 0, commonIniPath.c_str());
 
 	while(1){
 		if( ::WaitForSingleObject(sys->epgCapStopEvent, wait) != WAIT_TIMEOUT ){
@@ -1050,13 +945,7 @@ UINT WINAPI CBonCtrl::EpgCapThread(LPVOID param)
 			chkNext = FALSE;
 			startCap = FALSE;
 			wait = 1000;
-			if( sys->epgCapChList[chkCount].ONID == 4 ){
-				chkBS = TRUE;
-			}else if( sys->epgCapChList[chkCount].ONID == 6 ){
-				chkCS1 = TRUE;
-			}else if( sys->epgCapChList[chkCount].ONID == 7 ){
-				chkCS2 = TRUE;
-			}
+			chkONIDs[min(sys->epgCapChList[chkCount].ONID, _countof(chkONIDs) - 1)] = TRUE;
 			sys->epgSt_ch = sys->epgCapChList[chkCount];
 		}else{
 			BOOL chChgErr = FALSE;
@@ -1078,30 +967,41 @@ UINT WINAPI CBonCtrl::EpgCapThread(LPVOID param)
 						//取得開始
 						startCap = TRUE;
 						wstring epgDataPath = L"";
-						sys->GetEpgDataFilePath(sys->epgCapChList[chkCount].ONID, sys->epgCapChList[chkCount].TSID, epgDataPath, BSBasic, CS1Basic, CS2Basic);
+						GetEpgDataFilePath(sys->epgCapChList[chkCount].ONID,
+						                   basicOnlyONIDs[min(sys->epgCapChList[chkCount].ONID, _countof(basicOnlyONIDs) - 1)] ? 0xFFFF : sys->epgCapChList[chkCount].TSID,
+						                   epgDataPath);
 						sys->tsOut.StartSaveEPG(epgDataPath);
 						wait = 60*1000;
 					}else{
-						//蓄積状態チェック
-						BOOL leitFlag = sys->chUtil.IsPartial(sys->epgCapChList[chkCount].ONID, sys->epgCapChList[chkCount].TSID, sys->epgCapChList[chkCount].SID);
-						EPG_SECTION_STATUS status = sys->tsOut.GetSectionStatus(leitFlag);
-						if( sys->epgCapChList[chkCount].ONID == 4 && BSBasic == TRUE ){
-							if( status == EpgBasicAll || status == EpgHEITAll ){
-								chkNext = TRUE;
-							}
-						}else if( sys->epgCapChList[chkCount].ONID == 6 && CS1Basic == TRUE ){
-							if( status == EpgBasicAll || status == EpgHEITAll ){
-								chkNext = TRUE;
-							}
-						}else if( sys->epgCapChList[chkCount].ONID == 7 && CS2Basic == TRUE ){
-							if( status == EpgBasicAll || status == EpgHEITAll ){
-								chkNext = TRUE;
-							}
+						vector<EPGCAP_SERVICE_INFO> chkList;
+						if( basicOnlyONIDs[min(sys->epgCapChList[chkCount].ONID, _countof(basicOnlyONIDs) - 1)] ){
+							chkList = sys->chUtil.GetEpgCapServiceAll(sys->epgCapChList[chkCount].ONID);
 						}else{
-							if( leitFlag == FALSE && status == EpgHEITAll ){
+							chkList = sys->chUtil.GetEpgCapServiceAll(sys->epgCapChList[chkCount].ONID, sys->epgCapChList[chkCount].TSID);
+						}
+						//epgCapChListのサービスはEPG取得対象でなかったとしてもチェックしなければならない
+						chkList.push_back(sys->epgCapChList[chkCount]);
+						for( vector<EPGCAP_SERVICE_INFO>::iterator itr = chkList.begin(); itr != chkList.end(); itr++ ){
+							if( itr->ONID == chkList.back().ONID && itr->TSID == chkList.back().TSID && itr->SID == chkList.back().SID ){
+								chkList.pop_back();
+								break;
+							}
+						}
+						//蓄積状態チェック
+						for( vector<EPGCAP_SERVICE_INFO>::iterator itr = chkList.begin(); itr != chkList.end(); itr++ ){
+							BOOL leitFlag = sys->chUtil.IsPartial(itr->ONID, itr->TSID, itr->SID);
+							pair<EPG_SECTION_STATUS, BOOL> status = sys->tsOut.GetSectionStatusService(itr->ONID, itr->TSID, itr->SID, leitFlag);
+							if( status.second == FALSE ){
+								status.first = sys->tsOut.GetSectionStatus(leitFlag);
+							}
+							if( status.first != EpgNoData ){
 								chkNext = TRUE;
-							}else if( leitFlag == TRUE && status == EpgLEITAll ){
-								chkNext = TRUE;
+								if( status.first != EpgHEITAll &&
+								    status.first != EpgLEITAll &&
+								    (status.first != EpgBasicAll || basicOnlyONIDs[min(itr->ONID, _countof(basicOnlyONIDs) - 1)] == FALSE) ){
+									chkNext = FALSE;
+									break;
+								}
 							}
 						}
 						if( chkNext == TRUE ){
@@ -1121,46 +1021,20 @@ UINT WINAPI CBonCtrl::EpgCapThread(LPVOID param)
 					sys->epgSt_err = ST_COMPLETE;
 					return 0;
 				}
-				//BS 1チャンネルのみ？
-				if( sys->epgCapChList[chkCount].ONID == 4 && BSBasic == TRUE && chkBS == TRUE){
-					while(chkCount<(DWORD)sys->epgCapChList.size()){
-						if( sys->epgCapChList[chkCount].ONID != 4 ){
+				//1チャンネルのみ？
+				if( basicOnlyONIDs[min(sys->epgCapChList[chkCount].ONID, _countof(basicOnlyONIDs) - 1)] &&
+				    chkONIDs[sys->epgCapChList[chkCount].ONID] ){
+					chkCount++;
+					while( chkCount < sys->epgCapChList.size() ){
+						if( sys->epgCapChList[chkCount].ONID != sys->epgCapChList[chkCount - 1].ONID ){
 							break;
 						}
 						chkCount++;
-						if( sys->epgCapChList.size() <= chkCount ){
-							//全部チェック終わったので終了
-							sys->epgSt_err = ST_COMPLETE;
-							return 0;
-						}
 					}
-				}
-				//CS1 1チャンネルのみ？
-				if( sys->epgCapChList[chkCount].ONID == 6 && CS1Basic == TRUE && chkCS1 == TRUE ){
-					while(chkCount<(DWORD)sys->epgCapChList.size()){
-						if( sys->epgCapChList[chkCount].ONID != 6 ){
-							break;
-						}
-						chkCount++;
-						if( sys->epgCapChList.size() <= chkCount ){
-							//全部チェック終わったので終了
-							sys->epgSt_err = ST_COMPLETE;
-							return 0;
-						}
-					}
-				}
-				//CS2 1チャンネルのみ？
-				if( sys->epgCapChList[chkCount].ONID == 7 && CS2Basic == TRUE && chkCS2 == TRUE ){
-					while(chkCount<(DWORD)sys->epgCapChList.size()){
-						if( sys->epgCapChList[chkCount].ONID != 7 ){
-							break;
-						}
-						chkCount++;
-						if( sys->epgCapChList.size() <= chkCount ){
-							//全部チェック終わったので終了
-							sys->epgSt_err = ST_COMPLETE;
-							return 0;
-						}
+					if( sys->epgCapChList.size() <= chkCount ){
+						//全部チェック終わったので終了
+						sys->epgSt_err = ST_COMPLETE;
+						return 0;
 					}
 				}
 			}
@@ -1169,21 +1043,13 @@ UINT WINAPI CBonCtrl::EpgCapThread(LPVOID param)
 	return 0;
 }
 
-void CBonCtrl::GetEpgDataFilePath(WORD ONID, WORD TSID, wstring& epgDataFilePath, BOOL BSBasic, BOOL CS1Basic, BOOL CS2Basic)
+void CBonCtrl::GetEpgDataFilePath(WORD ONID, WORD TSID, wstring& epgDataFilePath)
 {
 	wstring epgDataFolderPath = L"";
 	GetSettingPath(epgDataFolderPath);
 	epgDataFolderPath += EPG_SAVE_FOLDER;
 
-	if( ONID == 4 && BSBasic == TRUE ){
-		Format(epgDataFilePath, L"%s\\%04XFFFF_epg.dat", epgDataFolderPath.c_str(), ONID);
-	}else if( ONID == 6 && CS1Basic == TRUE ){
-		Format(epgDataFilePath, L"%s\\%04XFFFF_epg.dat", epgDataFolderPath.c_str(), ONID);
-	}else if( ONID == 7 && CS2Basic == TRUE ){
-		Format(epgDataFilePath, L"%s\\%04XFFFF_epg.dat", epgDataFolderPath.c_str(), ONID);
-	}else{
-		Format(epgDataFilePath, L"%s\\%04X%04X_epg.dat", epgDataFolderPath.c_str(), ONID, TSID);
-	}
+	Format(epgDataFilePath, L"%s\\%04X%04X_epg.dat", epgDataFolderPath.c_str(), ONID, TSID);
 }
 
 //録画中のファイルのファイルパスを取得する
@@ -1229,9 +1095,7 @@ void CBonCtrl::GetRecWriteSize(
 // enableLive	[IN]視聴中に取得する
 // enableRec	[IN]録画中に取得する
 // enableRec	[IN]EPG取得するチャンネル一覧
-// BSBasic		[IN]BSで１チャンネルから基本情報のみ取得するかどうか
-// CS1Basic		[IN]CS1で１チャンネルから基本情報のみ取得するかどうか
-// CS2Basic		[IN]CS2で１チャンネルから基本情報のみ取得するかどうか
+// *Basic		[IN]１チャンネルから基本情報のみ取得するかどうか
 // backStartWaitSec	[IN]Ch切り替え、録画開始後、バックグラウンドでのEPG取得を開始するまでの秒数
 void CBonCtrl::SetBackGroundEpgCap(
 	BOOL enableLive,
@@ -1239,6 +1103,7 @@ void CBonCtrl::SetBackGroundEpgCap(
 	BOOL BSBasic,
 	BOOL CS1Basic,
 	BOOL CS2Basic,
+	BOOL CS3Basic,
 	DWORD backStartWaitSec
 	)
 {
@@ -1247,6 +1112,7 @@ void CBonCtrl::SetBackGroundEpgCap(
 	this->epgCapBackBSBasic = BSBasic;
 	this->epgCapBackCS1Basic = CS1Basic;
 	this->epgCapBackCS2Basic = CS2Basic;
+	this->epgCapBackCS3Basic = CS3Basic;
 	this->epgCapBackStartWaitSec = backStartWaitSec;
 
 	StartBackgroundEpgCap();
@@ -1259,9 +1125,7 @@ void CBonCtrl::StartBackgroundEpgCap()
 		if( this->bonUtil.GetOpenBonDriverFileName().empty() == false ){
 			//受信スレッド起動
 			ResetEvent(this->epgCapBackStopEvent);
-			this->epgCapBackThread = (HANDLE)_beginthreadex(NULL, 0, EpgCapBackThread, (LPVOID)this, CREATE_SUSPENDED, NULL);
-			SetThreadPriority( this->epgCapBackThread, THREAD_PRIORITY_NORMAL );
-			ResumeThread(this->epgCapBackThread);
+			this->epgCapBackThread = (HANDLE)_beginthreadex(NULL, 0, EpgCapBackThread, this, 0, NULL);
 		}
 	}
 }
@@ -1312,11 +1176,19 @@ UINT WINAPI CBonCtrl::EpgCapBackThread(LPVOID param)
 	WORD TSID;
 	sys->tsOut.GetStreamID(&ONID, &TSID);
 
-	if( sys->chUtil.IsEpgCapService(ONID, TSID) == FALSE ){
+	BOOL basicOnly = ONID == 4 && sys->epgCapBackBSBasic ||
+	                 ONID == 6 && sys->epgCapBackCS1Basic ||
+	                 ONID == 7 && sys->epgCapBackCS2Basic ||
+	                 ONID == 10 && sys->epgCapBackCS3Basic;
+	vector<EPGCAP_SERVICE_INFO> chkList = sys->chUtil.GetEpgCapServiceAll(ONID, TSID);
+	if( chkList.empty() == false && basicOnly ){
+		chkList = sys->chUtil.GetEpgCapServiceAll(ONID);
+	}
+	if( chkList.empty() ){
 		return 0;
 	}
 
-	sys->GetEpgDataFilePath(ONID, TSID, epgDataPath, sys->epgCapBackBSBasic, sys->epgCapBackCS1Basic, sys->epgCapBackCS2Basic);
+	GetEpgDataFilePath(ONID, basicOnly ? 0xFFFF : TSID, epgDataPath);
 	sys->tsOut.StartSaveEPG(epgDataPath);
 
 	if( ::WaitForSingleObject(sys->epgCapBackStopEvent, 60*1000) != WAIT_TIMEOUT ){
@@ -1327,25 +1199,20 @@ UINT WINAPI CBonCtrl::EpgCapBackThread(LPVOID param)
 	while(1){
 		//蓄積状態チェック
 		BOOL chkNext = FALSE;
-		BOOL leitFlag = sys->chUtil.IsPartial(ONID, TSID, sys->lastSID);
-		EPG_SECTION_STATUS status = sys->tsOut.GetSectionStatus(leitFlag);
-		if( ONID == 4 && sys->epgCapBackBSBasic == TRUE ){
-			if( status == EpgBasicAll || status == EpgHEITAll ){
-				chkNext = TRUE;
+		for( vector<EPGCAP_SERVICE_INFO>::iterator itr = chkList.begin(); itr != chkList.end(); itr++ ){
+			BOOL leitFlag = sys->chUtil.IsPartial(itr->ONID, itr->TSID, itr->SID);
+			pair<EPG_SECTION_STATUS, BOOL> status = sys->tsOut.GetSectionStatusService(itr->ONID, itr->TSID, itr->SID, leitFlag);
+			if( status.second == FALSE ){
+				status.first = sys->tsOut.GetSectionStatus(leitFlag);
 			}
-		}else if( ONID == 6 && sys->epgCapBackCS1Basic == TRUE ){
-			if( status == EpgBasicAll || status == EpgHEITAll ){
+			if( status.first != EpgNoData ){
 				chkNext = TRUE;
-			}
-		}else if( ONID == 7 && sys->epgCapBackCS2Basic == TRUE ){
-			if( status == EpgBasicAll || status == EpgHEITAll ){
-				chkNext = TRUE;
-			}
-		}else{
-			if( leitFlag == FALSE && status == EpgHEITAll ){
-				chkNext = TRUE;
-			}else if( leitFlag == TRUE && status == EpgLEITAll ){
-				chkNext = TRUE;
+				if( status.first != EpgHEITAll &&
+				    status.first != EpgLEITAll &&
+				    (status.first != EpgBasicAll || basicOnly == FALSE) ){
+					chkNext = FALSE;
+					break;
+				}
 			}
 		}
 

@@ -54,7 +54,7 @@ public:
 		WORD transportStreamID,
 		WORD serviceID,
 		DWORD* epgInfoListSize,
-		EPG_EVENT_INFO** epgInfoList
+		EPG_EVENT_INFO** epgInfoList_
 		);
 
 	//指定サービスの全EPG情報を列挙する
@@ -73,7 +73,7 @@ public:
 	// serviceList				[OUT]サービス情報のリスト（DLL内で自動的にdeleteする。次に取得を行うまで有効）
 	void GetServiceListEpgDB(
 		DWORD* serviceListSize,
-		SERVICE_INFO** serviceList
+		SERVICE_INFO** serviceList_
 		);
 
 	//指定サービスの現在or次のEPG情報を取得する
@@ -88,7 +88,7 @@ public:
 		WORD transportStreamID,
 		WORD serviceID,
 		BOOL nextFlag,
-		EPG_EVENT_INFO** epgInfo
+		EPG_EVENT_INFO** epgInfo_
 		);
 
 	//指定イベントのEPG情報を取得する
@@ -105,7 +105,7 @@ public:
 		WORD serviceID,
 		WORD eventID,
 		BYTE pfOnlyFlag,
-		EPG_EVENT_INFO** epgInfo
+		EPG_EVENT_INFO** epgInfo_
 		);
 
 protected:

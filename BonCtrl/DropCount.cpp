@@ -99,13 +99,13 @@ void CDropCount::SetNoLog(BOOL noLogDrop, BOOL noLogScramble)
 	this->lastLogScramble = noLogScramble ? MAXULONGLONG : this->lastLogScramble == MAXULONGLONG ? 0 : this->lastLogScramble;
 }
 
-void CDropCount::GetCount(ULONGLONG* drop, ULONGLONG* scramble)
+void CDropCount::GetCount(ULONGLONG* drop_, ULONGLONG* scramble_)
 {
-	if( drop != NULL ){
-		*drop = this->drop;
+	if( drop_ != NULL ){
+		*drop_ = this->drop;
 	}
-	if( scramble != NULL ){
-		*scramble = this->scramble;
+	if( scramble_ != NULL ){
+		*scramble_ = this->scramble;
 	}
 }
 
@@ -268,11 +268,11 @@ void CDropCount::SaveLog(wstring filePath)
 }
 
 void CDropCount::SetPIDName(
-	const map<WORD, string>* pidName
+	const map<WORD, string>* pidName_
 	)
 {
 	map<WORD, string>::const_iterator itrIn;
-	for(itrIn = pidName->begin(); itrIn != pidName->end(); itrIn++){
+	for(itrIn = pidName_->begin(); itrIn != pidName_->end(); itrIn++){
 		this->pidName[itrIn->first] = itrIn->second;
 	}
 }

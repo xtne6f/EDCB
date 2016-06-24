@@ -4,7 +4,7 @@
 #include <ws2tcpip.h>
 
 #include "../../Common/StringUtil.h"
-#pragma comment(lib, "wsock32.lib")
+#pragma comment(lib, "Ws2_32.lib")
 
 class CSendTSTCPMain
 {
@@ -63,8 +63,8 @@ protected:
 	HANDLE m_hStopSendEvent;
 	HANDLE m_hSendThread;
 
-	HANDLE m_hEvent;
-	HANDLE m_hEvent2;
+	CRITICAL_SECTION m_sendLock;
+	CRITICAL_SECTION m_buffLock;
 
 	typedef struct _TS_DATA{
 		BYTE* pbBuff;
@@ -90,11 +90,6 @@ protected:
 	map<wstring, SEND_INFO> m_SendList;
 
 protected:
-	BOOL Lock();
-	void UnLock();
-	BOOL Lock2();
-	void UnLock2();
-
 	static UINT WINAPI SendThread(LPVOID pParam);
 	static UINT WINAPI ConnectThread(LPVOID pParam);
 

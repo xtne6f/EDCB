@@ -17,7 +17,7 @@ public:
 	//引数：
 	// tcpFlag		[IN] TRUE：TCP/IPモード、FALSE：名前付きパイプモード
 	void SetSendMode(
-		BOOL tcpFlag
+		BOOL tcpFlag_
 		);
 #endif
 
@@ -27,16 +27,16 @@ public:
 	// eventName	[IN]排他制御用Eventの名前
 	// pipeName		[IN]接続パイプの名前
 	void SetPipeSetting(
-		LPCWSTR eventName,
-		LPCWSTR pipeName
+		LPCWSTR eventName_,
+		LPCWSTR pipeName_
 		);
 
 	//名前付きパイプモード時の接続先を設定（接尾にプロセスIDを伴うタイプ）
 	//引数：
 	// pid			[IN]プロセスID
 	void SetPipeSetting(
-		LPCWSTR eventName,
-		LPCWSTR pipeName,
+		LPCWSTR eventName_,
+		LPCWSTR pipeName_,
 		DWORD pid
 		);
 
@@ -1017,11 +1017,11 @@ protected:
 	DWORD connectTimeOut;
 	wstring eventName;
 	wstring pipeName;
-	wstring ip;
-	DWORD port;
+	wstring sendIP;
+	DWORD sendPort;
 
 protected:
-	DWORD SendPipe(LPCWSTR pipeName, LPCWSTR eventName, DWORD timeOut, CMD_STREAM* send, CMD_STREAM* res);
+	DWORD SendPipe(LPCWSTR pipeName_, LPCWSTR eventName_, DWORD timeOut, CMD_STREAM* send, CMD_STREAM* res);
 #ifndef SEND_CTRL_CMD_NO_TCP
 	DWORD SendTCP(wstring ip, DWORD port, DWORD timeOut, CMD_STREAM* sendCmd, CMD_STREAM* resCmd);
 #endif

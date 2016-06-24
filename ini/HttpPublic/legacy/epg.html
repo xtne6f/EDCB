@@ -49,7 +49,7 @@ maxTime=nil
 st={}
 edcb.htmlEscape=15
 for i,v in ipairs(edcb.GetServiceList() or {}) do
-  if (v.service_type==0x01 or v.service_type==0xA5) and (
+  if (v.service_type==0x01 or v.service_type==0xA5 or v.service_type==0xAD) and (
      tab==0 and v.onid==4 or
      tab==1 and (v.onid==6 or v.onid==7) or
      tab==2 and 0x7880<=v.onid and v.onid<=0x7FE8 or
