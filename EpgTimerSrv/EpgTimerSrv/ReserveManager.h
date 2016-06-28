@@ -166,6 +166,11 @@ private:
 	bool epgCapRequested;
 	bool epgCapWork;
 	bool epgCapSetTimeSync;
+	__int64 epgCapTimeSyncBase;
+	__int64 epgCapTimeSyncDelayMin;
+	__int64 epgCapTimeSyncDelayMax;
+	DWORD epgCapTimeSyncTick;
+	DWORD epgCapTimeSyncQuality;
 	int epgCapBasicOnlyFlags;
 	int shutdownModePending;
 	bool reserveModified;

@@ -1579,6 +1579,7 @@ bool CReserveManager::CheckEpgCap(bool isEpgCap)
 						}
 						this->epgCapWork = true;
 						this->epgCapSetTimeSync = false;
+						this->epgCapTimeSyncBase = -1;
 						this->notifyManager.AddNotify(NOTIFY_UPDATE_EPGCAP_START);
 					}
 				}
@@ -1587,16 +1588,44 @@ bool CReserveManager::CheckEpgCap(bool isEpgCap)
 	}else{
 		//EPG取得中
 		if( this->epgCapTimeSync && this->epgCapSetTimeSync == false ){
-			//時計合わせ(要SE_SYSTEMTIME_NAME特権)
+			DWORD tick = GetTickCount();
 			for( auto itr = this->tunerBankMap.cbegin(); itr != this->tunerBankMap.end(); itr++ ){
 				if( itr->second->GetState() == CTunerBankCtrl::TR_EPGCAP ){
 					__int64 delay = itr->second->DelayTime();
-					if( delay < -10 * I64_1SEC || 10 * I64_1SEC < delay ){
-						SYSTEMTIME setTime;
-						ConvertSystemTime(now + delay, &setTime);
-						_OutputDebugString(L"★SetLocalTime %s%d\r\n", SetLocalTime(&setTime) ? L"" : L"err ", (int)(delay / I64_1SEC));
-						this->epgCapSetTimeSync = true;
+					if( this->epgCapTimeSyncBase < 0 ){
+						if( delay < -10 * I64_1SEC || 10 * I64_1SEC < delay ){
+							//時計合わせが必要かもしれない。遅延時間の観測開始
+							this->epgCapTimeSyncBase = now;
+							this->epgCapTimeSyncDelayMin = delay;
+							this->epgCapTimeSyncDelayMax = delay;
+							this->epgCapTimeSyncTick = tick;
+							this->epgCapTimeSyncQuality = 0;
+							OutputDebugString(L"★SetLocalTime start\r\n");
+						}
+					}else if( delay != 0 ){
+						//遅延時間の揺らぎを記録する(delay==0は未取得と区別できないので除外)
+						this->epgCapTimeSyncDelayMin = min(delay, this->epgCapTimeSyncDelayMin);
+						this->epgCapTimeSyncDelayMax = max(delay, this->epgCapTimeSyncDelayMax);
+						this->epgCapTimeSyncQuality += tick - this->epgCapTimeSyncTick;
 					}
+				}
+			}
+			if( this->epgCapTimeSyncBase >= 0 ){
+				this->epgCapTimeSyncBase += (tick - this->epgCapTimeSyncTick) * (I64_1SEC / 1000);
+				this->epgCapTimeSyncTick = tick;
+				if( now - this->epgCapTimeSyncBase < -3 * I64_1SEC || 3 * I64_1SEC < now - this->epgCapTimeSyncBase ||
+				    this->epgCapTimeSyncDelayMax - this->epgCapTimeSyncDelayMin > 10 * I64_1SEC ){
+					//別のプロセスが時計合わせしたor揺らぎすぎ
+					this->epgCapTimeSyncBase = -1;
+					OutputDebugString(L"★SetLocalTime cancel\r\n");
+				}else if( this->epgCapTimeSyncQuality > 150 * 1000 ){
+					//概ね2チャンネル以上の遅延時間を観測できたはず
+					//時計合わせ(要SE_SYSTEMTIME_NAME特権)
+					__int64 delay = (this->epgCapTimeSyncDelayMax + this->epgCapTimeSyncDelayMin) / 2;
+					SYSTEMTIME setTime;
+					ConvertSystemTime(now + delay, &setTime);
+					_OutputDebugString(L"★SetLocalTime %s%d\r\n", SetLocalTime(&setTime) ? L"" : L"err ", (int)(delay / I64_1SEC));
+					this->epgCapSetTimeSync = true;
 				}
 			}
 		}
