@@ -621,11 +621,11 @@ namespace EpgTimer
             }
         }
 
-        public SolidColorBrush BorderBrush
+        public Brush BorderBrush
         {
             get
             {
-                SolidColorBrush color1 = Brushes.Gainsboro;
+                Brush color1 = Brushes.Gainsboro;
                 if (this.EpgAutoAddInfo.searchInfo.contentList.Count > 0)
                 {
                     byte content_nibble_level_1 = this.EpgAutoAddInfo.searchInfo.contentList[0].content_nibble_level_1;

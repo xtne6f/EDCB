@@ -86,7 +86,7 @@ namespace EpgTimer
             get;
             set;
         }
-        public List<SolidColorBrush> CustContentColorList
+        public List<Brush> CustContentColorList
         {
             get;
             set;
@@ -97,6 +97,16 @@ namespace EpgTimer
             set;
         }
         public SolidColorBrush CustTitle2Color
+        {
+            get;
+            set;
+        }
+        public List<Brush> CustTimeColorList
+        {
+            get;
+            set;
+        }
+        public Brush CustServiceColor
         {
             get;
             set;
@@ -447,7 +457,11 @@ namespace EpgTimer
             }
             if( CustContentColorList == null )
             {
-                CustContentColorList = new List<SolidColorBrush>();
+                CustContentColorList = new List<Brush>();
+            }
+            if (CustTimeColorList == null)
+            {
+                CustTimeColorList = new List<Brush>();
             }
         }
 
@@ -1064,6 +1078,7 @@ namespace EpgTimer
                 for (int i = 0; i < Settings.Instance.ContentColorList.Count; i++)
                 {
                     String name = Settings.Instance.ContentColorList[i];
+                    Color color;
                     if (String.Compare(name, "カスタム") == 0)
                     {
                         UInt32 argb = Settings.Instance.ContentCustColorList[i];
@@ -1072,16 +1087,20 @@ namespace EpgTimer
                         byte g = (byte)((argb & 0x0000FF00) >> 8);
                         byte b = (byte)(argb & 0x000000FF);
 
-                        Color item = Color.FromArgb(0xFF, r, g, b);
-                        SolidColorBrush backColor = new SolidColorBrush();
-                        backColor.Color = item;
-                        backColor.Freeze();
-
-                        CustContentColorList.Add(backColor);
+                        color = Color.FromArgb(0xFF, r, g, b);
                     }
                     else
                     {
-                        CustContentColorList.Add(ColorDef.Instance.ColorTable[name]);
+                        color = ColorDef.ColorFromName(name);
+                    }
+                    if (Settings.Instance.EpgGradation == false)
+                    {
+                        CustContentColorList.Add(new SolidColorBrush(color));
+                        CustContentColorList[CustContentColorList.Count - 1].Freeze();
+                    }
+                    else
+                    {
+                        CustContentColorList.Add(ColorDef.GradientBrush(color));
                     }
                 }
                 if (String.Compare(Settings.Instance.ReserveRectColorNormal, "カスタム") == 0)
@@ -1198,6 +1217,59 @@ namespace EpgTimer
                 else
                 {
                     CustTitle2Color = ColorDef.Instance.ColorTable[Settings.Instance.TitleColor2];
+                }
+                CustTimeColorList.Clear();
+                for (int i = 0; i < Settings.Instance.TimeColorList.Count; i++)
+                {
+                    String name = Settings.Instance.TimeColorList[i];
+                    Color color;
+                    if (String.Compare(name, "カスタム") == 0)
+                    {
+                        UInt32 argb = Settings.Instance.TimeCustColorList[i];
+
+                        byte r = (byte)((argb & 0x00FF0000) >> 16);
+                        byte g = (byte)((argb & 0x0000FF00) >> 8);
+                        byte b = (byte)(argb & 0x000000FF);
+
+                        color = Color.FromArgb(0xFF, r, g, b);
+                    }
+                    else
+                    {
+                        color = ColorDef.ColorFromName(name);
+                    }
+                    if (Settings.Instance.EpgGradationHeader == false)
+                    {
+                        CustTimeColorList.Add(new SolidColorBrush(color));
+                        CustTimeColorList[CustTimeColorList.Count - 1].Freeze();
+                    }
+                    else
+                    {
+                        CustTimeColorList.Add(ColorDef.GradientBrush(color, 0.9, 1.1));
+                    }
+                }
+                Color serviceColor;
+                if (String.Compare(Settings.Instance.ServiceColor, "カスタム") == 0)
+                {
+                    UInt32 argb = Settings.Instance.ServiceCustColor;
+
+                    byte r = (byte)((argb & 0x00FF0000) >> 16);
+                    byte g = (byte)((argb & 0x0000FF00) >> 8);
+                    byte b = (byte)(argb & 0x000000FF);
+
+                    serviceColor = Color.FromArgb(0xFF, r, g, b);
+                }
+                else
+                {
+                    serviceColor = ColorDef.ColorFromName(Settings.Instance.ServiceColor);
+                }
+                if (Settings.Instance.EpgGradationHeader == false)
+                {
+                    CustServiceColor = new SolidColorBrush(serviceColor);
+                    CustServiceColor.Freeze();
+                }
+                else
+                {
+                    CustServiceColor = ColorDef.GradientBrush(serviceColor, 1.0, 2.0);
                 }
             }
             catch (Exception ex)

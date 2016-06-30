@@ -290,5 +290,45 @@ namespace EpgTimer
                 return CommonManager.Instance.ConvertProgramText(this.EventInfo, EventInfoTextMode.All);
             }
         }
+        public Brush BorderBrush
+        {
+            get
+            {
+                Brush color1 = Brushes.White;
+                if (this.EventInfo != null)
+                {
+                    if (this.EventInfo.ContentInfo != null)
+                    {
+                        if (this.EventInfo.ContentInfo.nibbleList.Count > 0)
+                        {
+                            try
+                            {
+                                foreach (EpgContentData info1 in this.EventInfo.ContentInfo.nibbleList)
+                                {
+                                    if (info1.content_nibble_level_1 <= 0x0B || info1.content_nibble_level_1 == 0x0F && Settings.Instance.ContentColorList.Count > info1.content_nibble_level_1)
+                                    {
+                                        color1 = CommonManager.Instance.CustContentColorList[info1.content_nibble_level_1];
+                                        break;
+                                    }
+                                }
+                            }
+                            catch
+                            {
+                            }
+                        }
+                        else
+                        {
+                            color1 = CommonManager.Instance.CustContentColorList[0x10];
+                        }
+                    }
+                    else
+                    {
+                        color1 = CommonManager.Instance.CustContentColorList[0x10];
+                    }
+                }
+
+                return color1;
+            }
+        }
     }
 }

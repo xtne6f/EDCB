@@ -33,175 +33,146 @@ namespace EpgTimer.EpgView
         private bool isDrag = false;
         private bool isDragMoved = false;
 
-        private DispatcherTimer toolTipTimer;
-        private DispatcherTimer toolTipOffTimer; 
-        private Popup toolTip = new Popup();
         private Point lastPopupPos;
-        private ProgramViewItem lastPopupInfo;
+        private ProgramViewItem lastPopupInfo = null;
 
         public ProgramView()
         {
             InitializeComponent();
 
-            toolTipTimer = new DispatcherTimer(DispatcherPriority.Normal);
-            toolTipTimer.Tick += new EventHandler(toolTipTimer_Tick);
-            toolTipTimer.Interval = TimeSpan.FromMilliseconds(1500);
-            toolTipOffTimer = new DispatcherTimer(DispatcherPriority.Normal);
-            toolTipOffTimer.Tick += new EventHandler(toolTipOffTimer_Tick);
-            toolTipOffTimer.Interval = TimeSpan.FromSeconds(10);
-
-            toolTip.Placement = PlacementMode.MousePoint;
-            toolTip.PopupAnimation = PopupAnimation.Fade;
-            toolTip.PlacementTarget = canvas;
-            toolTip.AllowsTransparency = true;
-            toolTip.MouseLeftButtonDown += new MouseButtonEventHandler(toolTip_MouseLeftButtonDown);
-            toolTip.PreviewMouseWheel += new MouseWheelEventHandler(toolTip_PreviewMouseWheel);
         }
 
-        void toolTip_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
-        {
-            toolTipTimer.Stop();
-            toolTipOffTimer.Stop();
-            toolTip.IsOpen = false;
 
-            RaiseEvent(e);
-        }
-
-        void toolTip_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        protected void PopupItem()
         {
-            if (e.ClickCount == 2)
+            if (Settings.Instance.EpgPopup == false) return;
+
+            ProgramViewItem info = null;
+
+            Point cursorPos2 = Mouse.GetPosition(scrollViewer);
+            if (cursorPos2.X < 0 || cursorPos2.Y < 0 ||
+                scrollViewer.ViewportWidth < cursorPos2.X || scrollViewer.ViewportHeight < cursorPos2.Y)
             {
-                toolTipTimer.Stop();
-                toolTipOffTimer.Stop();
-                toolTip.IsOpen = false;
-
-                if (LeftDoubleClick != null)
+                return;
+            }
+            Point cursorPos = Mouse.GetPosition(canvas);
+            foreach (UIElement child in canvas.Children)
+            {
+                EpgViewPanel childPanel = child as EpgViewPanel;
+                if (childPanel != null && childPanel.Items != null && Canvas.GetLeft(child) <= cursorPos.X && cursorPos.X < Canvas.GetLeft(child) + childPanel.Width)
                 {
-                    LeftDoubleClick(sender, lastPopupPos);
+                    foreach (ProgramViewItem item in childPanel.Items)
+                    {
+                        if (item.LeftPos <= cursorPos.X && cursorPos.X < item.LeftPos + item.Width &&
+                            item.TopPos <= cursorPos.Y && cursorPos.Y < item.TopPos + item.Height)
+                        {
+                            if (item == lastPopupInfo) return;
+
+                            info = item;
+                            lastPopupInfo = info;
+                            break;
+                        }
+                    }
+                    break;
                 }
             }
-            else if (e.ClickCount == 1 && Settings.Instance.EpgInfoSingleClick == true)
+
+            if (info == null)
             {
-                toolTipTimer.Stop();
-                toolTipOffTimer.Stop();
-                toolTip.IsOpen = false;
-
-                if (LeftDoubleClick != null)
-                {
-                    LeftDoubleClick(sender, lastPopupPos);
-                }
+                popupItem.Visibility = System.Windows.Visibility.Hidden;
+                lastPopupInfo = null;
+                return;
             }
-        }
 
-        void toolTipOffTimer_Tick(object sender, EventArgs e)
-        {
-            toolTipOffTimer.Stop();
-            toolTip.IsOpen = false;
-        }
+            double sizeNormal = Settings.Instance.FontSize;
+            double sizeTitle = Settings.Instance.FontSizeTitle;
 
-        void toolTipTimer_Tick(object sender, EventArgs e)
-        {
-            toolTipTimer.Stop();
+            FontFamily fontNormal = null;
+            FontFamily fontTitle = null;
             try
             {
-                if (Settings.Instance.EpgToolTip == false)
+                if (Settings.Instance.FontName.Length > 0)
                 {
-                    return;
+                    fontNormal = new FontFamily(Settings.Instance.FontName);
                 }
-                if (MainWindow.GetWindow(this).IsActive == false)
+                if (Settings.Instance.FontNameTitle.Length > 0)
                 {
-                    return;
+                    fontTitle = new FontFamily(Settings.Instance.FontNameTitle);
                 }
-                Point cursorPos2 = Mouse.GetPosition(scrollViewer);
-                if (cursorPos2.X < 0 || cursorPos2.Y < 0 ||
-                    scrollViewer.ViewportWidth < cursorPos2.X || scrollViewer.ViewportHeight < cursorPos2.Y)
+
+                if (fontNormal == null)
                 {
-                    return;
+                    fontNormal = new FontFamily("MS UI Gothic");
                 }
-                Point cursorPos = Mouse.GetPosition(canvas);
-                foreach (UIElement child in canvas.Children)
+                if (fontTitle == null)
                 {
-                    EpgViewPanel childPanel = child as EpgViewPanel;
-                    if (childPanel != null && childPanel.Items != null && Canvas.GetLeft(child) <= cursorPos.X && cursorPos.X < Canvas.GetLeft(child) + childPanel.Width)
-                    {
-                        foreach (ProgramViewItem info in childPanel.Items)
-                        {
-                            if (info.LeftPos <= cursorPos.X && cursorPos.X < info.LeftPos + info.Width &&
-                                info.TopPos <= cursorPos.Y && cursorPos.Y < info.TopPos + info.Height)
-                            {
-                                if (info.TitleDrawErr == false && Settings.Instance.EpgToolTipNoViewOnly == true)
-                                {
-                                    break;
-                                }
-                                String viewTip = "";
-
-                                if (info != null)
-                                {
-                                    if (info.EventInfo.StartTimeFlag == 1)
-                                    {
-                                        viewTip += info.EventInfo.start_time.ToString("yyyy/MM/dd(ddd) HH:mm:ss ～ ");
-                                    }
-                                    else
-                                    {
-                                        viewTip += "未定 ～ ";
-                                    }
-                                    if (info.EventInfo.DurationFlag == 1)
-                                    {
-                                        DateTime endTime = info.EventInfo.start_time + TimeSpan.FromSeconds(info.EventInfo.durationSec);
-                                        viewTip += endTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss") + "\r\n";
-                                    }
-                                    else
-                                    {
-                                        viewTip += "未定\r\n";
-                                    }
-
-                                    if (info.EventInfo.ShortInfo != null)
-                                    {
-                                        viewTip += info.EventInfo.ShortInfo.event_name + "\r\n\r\n";
-                                        viewTip += info.EventInfo.ShortInfo.text_char + "\r\n\r\n";
-                                    }
-                                    if (info.EventInfo.ExtInfo != null)
-                                    {
-                                        viewTip += info.EventInfo.ExtInfo.text_char;
-                                    }
-                                }
-                                Border border = new Border();
-                                border.Background = Brushes.DarkGray;
-
-                                TextBlock block = new TextBlock();
-                                block.Text = viewTip;
-                                block.MaxWidth = 400;
-                                block.TextWrapping = TextWrapping.Wrap;
-                                block.Margin = new Thickness(2);
-
-                                block.Background = CommonManager.Instance.EpgTipsBackColor;
-                                block.Foreground = CommonManager.Instance.EpgTipsForeColor;
-                                border.Child = block;
-                                toolTip.Child = border;
-                                toolTip.IsOpen = true;
-                                toolTipOffTimer.Start();
-
-                                lastPopupInfo = info;
-                                lastPopupPos = cursorPos;
-                            }
-                        }
-                        break;
-                    }
+                    fontTitle =new FontFamily("MS UI Gothic");
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                toolTipTimer.Stop();
-                toolTipOffTimer.Stop();
-                toolTip.IsOpen = false;
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
+
+            popupItemContainer.Background = info.ContentColor;
+            Canvas.SetLeft(popupItem, info.LeftPos);
+            Canvas.SetTop(popupItem, info.TopPos);
+            popupItemContainer.Width = info.Width;
+            popupItemContainer.MinHeight = info.Height;
+
+            FontWeight titleWeight = Settings.Instance.FontBoldTitle ? FontWeights.Bold : FontWeights.Normal;
+
+            string min;
+            if (info.EventInfo.StartTimeFlag == 1)
+            {
+                min = info.EventInfo.start_time.Minute.ToString("d02");
+            }
+            else
+            {
+                min = "未定";
+            }
+
+            minText.Text = min;
+            minText.FontFamily = fontTitle;
+            minText.FontSize = sizeTitle - 0.5;
+            minText.FontWeight = titleWeight;
+            minText.Foreground = CommonManager.Instance.CustTitle1Color;
+            minText.Margin = new Thickness(0.5, -0.5, 0, 0);
+
+            minGrid.Width = new GridLength(sizeNormal * 1.7 + 1);
+
+            if (info.EventInfo.ShortInfo != null)
+            {
+                //必ず文字単位で折り返すためにZWSPを挿入
+                titleText.Text = System.Text.RegularExpressions.Regex.Replace(info.EventInfo.ShortInfo.event_name, "\\w", "$0\u200b");
+                titleText.FontFamily = fontTitle;
+                titleText.FontSize = sizeTitle;
+                titleText.FontWeight = titleWeight;
+                titleText.Foreground = CommonManager.Instance.CustTitle1Color;
+                titleText.Margin = new Thickness(1, 1.5, 5.5, sizeNormal / 2);
+                titleText.LineHeight = sizeTitle + 2;
+
+                infoText.Text = System.Text.RegularExpressions.Regex.Replace(info.EventInfo.ShortInfo.text_char, "\\w", "$0\u200b");
+                infoText.FontFamily = fontNormal;
+                infoText.FontSize = sizeNormal;
+                infoText.FontWeight = FontWeights.Normal;
+                infoText.Foreground = CommonManager.Instance.CustTitle2Color;
+                infoText.Margin = new Thickness(Settings.Instance.EpgTitleIndent ? minGrid.Width.Value + 1 : 1, 0, 9.5, 1);
+                infoText.LineHeight = sizeNormal + 2;
+            }
+            else
+            {
+                titleText.Text = null;
+                infoText.Text = null;
+            }
+
+            popupItem.Visibility = System.Windows.Visibility.Visible;
         }
 
         public void ClearInfo()
         {
-            toolTipTimer.Stop();
-            toolTipOffTimer.Stop();
-            toolTip.IsOpen = false;
+            lastPopupInfo = null;
+            popupItem.Visibility = System.Windows.Visibility.Hidden;
 
             foreach (Rectangle info in reserveBorder)
             {
@@ -239,7 +210,7 @@ namespace EpgTimer.EpgView
                 {
                     Rectangle rect = new Rectangle();
 
-                    SolidColorBrush color;
+                    Brush color;
                     if (info.ReserveInfo.RecSetting.RecMode == 5)
                     {
                         color = CommonManager.Instance.CustContentColorList[0x12];
@@ -274,6 +245,7 @@ namespace EpgTimer.EpgView
                     }
                     rect.Width = info.Width;
                     rect.Height = info.Height;
+                    rect.IsHitTestVisible = false;
 
                     Canvas.SetLeft(rect, info.LeftPos);
                     Canvas.SetTop(rect, info.TopPos);
@@ -351,9 +323,6 @@ namespace EpgTimer.EpgView
                     if (e.LeftButton == MouseButtonState.Pressed && isDrag == true)
                     {
                         isDragMoved = true;
-                        toolTipTimer.Stop();
-                        toolTipOffTimer.Stop();
-                        toolTip.IsOpen = false;
 
                         Point CursorPos = Mouse.GetPosition(null);
                         double MoveX = lastDownMousePos.X - CursorPos.X;
@@ -382,24 +351,7 @@ namespace EpgTimer.EpgView
                         Point CursorPos = Mouse.GetPosition(canvas);
                         if (lastPopupPos != CursorPos)
                         {
-                            toolTipTimer.Stop();
-                            toolTipOffTimer.Stop();
-                            if (toolTip.IsOpen == true)
-                            {
-                                toolTip.IsOpen = false;
-                                lastDownMousePos = Mouse.GetPosition(null);
-                                lastDownHOffset = scrollViewer.HorizontalOffset;
-                                lastDownVOffset = scrollViewer.VerticalOffset;
-                                if (e.LeftButton == MouseButtonState.Pressed)
-                                {
-                                    canvas.CaptureMouse();
-                                    isDrag = true;
-                                }
-
-                            }
-
-                            toolTipTimer.Interval = TimeSpan.FromMilliseconds(Settings.Instance.EpgToolTipViewWait);
-                            toolTipTimer.Start();
+                            PopupItem();
                             lastPopupPos = CursorPos;
                         }
                     }
@@ -415,10 +367,6 @@ namespace EpgTimer.EpgView
         {
             try
             {
-                toolTipTimer.Stop();
-                toolTipOffTimer.Stop();
-                toolTip.IsOpen = false;
-
                 lastDownMousePos = Mouse.GetPosition(null);
                 lastDownHOffset = scrollViewer.HorizontalOffset;
                 lastDownVOffset = scrollViewer.VerticalOffset;
@@ -478,10 +426,6 @@ namespace EpgTimer.EpgView
 
         private void canvas_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
         {
-            toolTipTimer.Stop();
-            toolTipOffTimer.Stop();
-            toolTip.IsOpen = false;
-
             canvas.ReleaseMouseCapture();
             isDrag = false; 
             lastDownMousePos = Mouse.GetPosition(null);
@@ -495,6 +439,13 @@ namespace EpgTimer.EpgView
                     RightClick(sender, cursorPos);
                 }
             }
+        }
+
+        private void canvas_MouseLeave(object sender, MouseEventArgs e)
+        {
+            popupItem.Visibility = System.Windows.Visibility.Hidden;
+            lastPopupInfo = null;
+            lastPopupPos = new Point(-1, -1);
         }
     }
 }

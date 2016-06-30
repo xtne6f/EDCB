@@ -143,10 +143,10 @@ namespace EpgTimer.Setting
                 textBox_service_width.Text = Settings.Instance.ServiceWidth.ToString();
                 textBox_dragScroll.Text = Settings.Instance.DragScroll.ToString();
                 textBox_minimumHeight.Text = Settings.Instance.MinimumHeight.ToString();
-                checkBox_descToolTip.IsChecked = Settings.Instance.EpgToolTip;
                 checkBox_title_indent.IsChecked = Settings.Instance.EpgTitleIndent;
-                checkBox_toolTip_noView_only.IsChecked = Settings.Instance.EpgToolTipNoViewOnly;
-                textBox_toolTipWait.Text = Settings.Instance.EpgToolTipViewWait.ToString();
+                checkBox_epg_popup.IsChecked = Settings.Instance.EpgPopup;
+                checkBox_gradation.IsChecked = Settings.Instance.EpgGradation;
+                checkBox_gradationHeader.IsChecked = Settings.Instance.EpgGradationHeader;
 
                 if (Settings.Instance.UseCustomEpgView == false)
                 {
@@ -258,14 +258,6 @@ namespace EpgTimer.Setting
                 Settings.Instance.ServiceWidth = Convert.ToDouble(textBox_service_width.Text);
                 Settings.Instance.DragScroll = Convert.ToDouble(textBox_dragScroll.Text);
                 Settings.Instance.MinimumHeight = Convert.ToDouble(textBox_minimumHeight.Text);
-                if (checkBox_descToolTip.IsChecked == true)
-                {
-                    Settings.Instance.EpgToolTip = true;
-                }
-                else
-                {
-                    Settings.Instance.EpgToolTip = false;
-                }
                 if (checkBox_title_indent.IsChecked == true)
                 {
                     Settings.Instance.EpgTitleIndent = true;
@@ -274,15 +266,23 @@ namespace EpgTimer.Setting
                 {
                     Settings.Instance.EpgTitleIndent = false;
                 }
-                if (checkBox_toolTip_noView_only.IsChecked == true)
+                Settings.Instance.EpgPopup = (checkBox_epg_popup.IsChecked == true);
+                if (checkBox_gradation.IsChecked == true)
                 {
-                    Settings.Instance.EpgToolTipNoViewOnly = true;
+                    Settings.Instance.EpgGradation = true;
                 }
                 else
                 {
-                    Settings.Instance.EpgToolTipNoViewOnly = false;
+                    Settings.Instance.EpgGradation = false;
                 }
-                Settings.Instance.EpgToolTipViewWait = Convert.ToInt32(textBox_toolTipWait.Text);
+                if (checkBox_gradationHeader.IsChecked == true)
+                {
+                    Settings.Instance.EpgGradationHeader = true;
+                }
+                else
+                {
+                    Settings.Instance.EpgGradationHeader = false;
+                }
 
                 Settings.Instance.ContentColorList[0x00] = ((ColorSelectionItem)(comboBox0.SelectedItem)).ColorName;
                 Settings.Instance.ContentColorList[0x01] = ((ColorSelectionItem)(comboBox1.SelectedItem)).ColorName;

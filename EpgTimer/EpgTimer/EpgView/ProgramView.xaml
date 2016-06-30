@@ -25,9 +25,31 @@
     </UserControl.Resources>
     <Grid>
         <ScrollViewer Name="scrollViewer" HorizontalScrollBarVisibility="Visible" ScrollChanged="scrollViewer_ScrollChanged">
-            <Canvas Name="canvas" HorizontalAlignment="Left" VerticalAlignment="Top" MouseMove="canvas_MouseMove" MouseLeftButtonDown="canvas_MouseLeftButtonDown" MouseLeftButtonUp="canvas_MouseLeftButtonUp" MouseRightButtonDown="canvas_MouseRightButtonDown">
-
+            <Canvas Name="canvas" HorizontalAlignment="Left" VerticalAlignment="Top" MouseMove="canvas_MouseMove" MouseLeftButtonDown="canvas_MouseLeftButtonDown" MouseLeftButtonUp="canvas_MouseLeftButtonUp" MouseRightButtonDown="canvas_MouseRightButtonDown" MouseLeave="canvas_MouseLeave">
                 <local:EpgViewPanel x:Name="epgViewPanel" Background="DarkGray" HorizontalAlignment="Left" VerticalAlignment="Top" />
+                <Canvas Canvas.ZIndex="20" x:Name="popupItem" IsHitTestVisible="False" Visibility="Hidden">
+                    <Grid x:Name="popupItemContainer">
+                        <Border BorderBrush="DarkGray" BorderThickness="0,0.5,1,0.5">
+                            <Border.Background>
+                                <Binding ElementName="popupItemContainer" Path="Background"/>
+                            </Border.Background>
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="12" Opacity="0.5"/>
+                            </Border.Effect>
+                        </Border>
+                        <StackPanel Orientation="Vertical" Margin="0.5">
+                            <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition x:Name="minGrid"/>
+                                <ColumnDefinition x:Name="infoGrid"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock x:Name="minText" Grid.Column="0"/>
+                            <TextBlock x:Name="titleText" Grid.Column="1" TextWrapping="Wrap" LineStackingStrategy="BlockLineHeight"/>
+                            </Grid>
+                            <TextBlock x:Name="infoText" TextWrapping="Wrap" LineStackingStrategy="BlockLineHeight"/>
+                        </StackPanel>
+                    </Grid>
+                </Canvas>
             </Canvas>
         </ScrollViewer>            
     </Grid>
