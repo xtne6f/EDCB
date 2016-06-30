@@ -1,6 +1,7 @@
 ﻿<UserControl x:Class="EpgTimer.RecSettingView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:my="clr-namespace:EpgTimer"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d" 
@@ -9,6 +10,7 @@
         <Style TargetType="{x:Type TextBox}">
             <Setter Property="InputMethod.PreferredImeState" Value="Off" />
         </Style>
+        <my:RecSettingViewInverter x:Key="invert" />
     </UserControl.Resources>
     <Grid>
         <Grid.RowDefinitions>
@@ -17,28 +19,36 @@
         </Grid.RowDefinitions>
         <Label Content="プリセット" Height="28" HorizontalAlignment="Left" Margin="12,4,0,0" Name="label1" VerticalAlignment="Top" />
         <ComboBox Height="24" HorizontalAlignment="Left" Margin="88,5,0,0" Name="comboBox_preSet" VerticalAlignment="Top" Width="197" SelectionChanged="comboBox_preSet_SelectionChanged" />
-        <Button Content="追加" Height="23" HorizontalAlignment="Left" Margin="305,6,0,0" Name="button_add_preset" Style="{StaticResource ButtonStyle1}" VerticalAlignment="Top" Width="48" Click="button_add_preset_Click" />
-        <Button Content="変更" Height="23" HorizontalAlignment="Left" Margin="359,6,0,0" Name="button_chg_preset" Style="{StaticResource ButtonStyle1}" VerticalAlignment="Top" Width="48" Click="button_chg_preset_Click" />
-        <Button Content="削除" Height="23" HorizontalAlignment="Left" Margin="413,6,0,0" Name="button_del_preset" VerticalAlignment="Top" Width="48" Style="{StaticResource ButtonStyle1}" Click="button_del_preset_Click" />
-        <TabControl Grid.Row="1" Name="tabControl1" TabStripPlacement="Bottom">
-            <TabItem Header="録画設定1" Name="tabItem1">
+        <Button Content="追加" Height="23" HorizontalAlignment="Left" Margin="305,6,0,0" Name="button_add_preset" VerticalAlignment="Top" Width="48" Click="button_add_preset_Click" />
+        <Button Content="変更" Height="23" HorizontalAlignment="Left" Margin="359,6,0,0" Name="button_chg_preset" VerticalAlignment="Top" Width="48" Click="button_chg_preset_Click" />
+        <Button Content="削除" Height="23" HorizontalAlignment="Left" Margin="413,6,0,0" Name="button_del_preset" VerticalAlignment="Top" Width="48" Click="button_del_preset_Click" />
+        <Border Grid.Row="1" BorderThickness="1" BorderBrush="#FF8C8E94" Padding="4,1,4,1">
+            <Grid>
                 <Grid>
                     <Label Content="録画モード" Height="28" HorizontalAlignment="Left" Margin="6,6,0,0" Name="label7" VerticalAlignment="Top" />
                     <ComboBox Height="24" HorizontalAlignment="Left" Margin="83,6,0,0" Name="comboBox_recMode" VerticalAlignment="Top" Width="160" ItemsSource="{Binding}"/>
                     <Label Content="イベントリレー追従" Height="28" HorizontalAlignment="Left" Margin="300,6,0,0" Name="label8" VerticalAlignment="Top" />
-                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="415,6,0,0" Name="comboBox_tuijyu" VerticalAlignment="Top" Width="75" ItemsSource="{Binding}" />
-                    <Label Content="ぴったり（？）録画" Height="28" HorizontalAlignment="Left" Margin="300,40,0,0" Name="label9" VerticalAlignment="Top" />
-                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="455,40,0,0" Name="comboBox_pittari" VerticalAlignment="Top" Width="75" ItemsSource="{Binding}" />
-                    <Label Content="優先度" Height="28" HorizontalAlignment="Left" Margin="6,40,0,0" Name="label10" VerticalAlignment="Top" />
-                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="83,40,0,0" Name="comboBox_priority" VerticalAlignment="Top" Width="75" ItemsSource="{Binding}" />
-                    <Label Content="(低 1～5 高)" Height="28" HorizontalAlignment="Left" Margin="174,40,0,0" Name="label20" VerticalAlignment="Top" />
-                    <Label Content="録画フォルダ、使用PlugIn" Height="28" HorizontalAlignment="Left" Margin="7,74,0,0" Name="label2" VerticalAlignment="Top" />
-                    <ListView Height="81" Margin="21,108,79,0" Name="listView_recFolder" VerticalAlignment="Top" Width="590" ItemsSource="{Binding}">
+                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="440,6,0,0" Name="comboBox_tuijyu" VerticalAlignment="Top" Width="75" ItemsSource="{Binding}" />
+                    <Label Content="ぴったり（？）録画" Height="28" HorizontalAlignment="Left" Margin="300,35,0,0" Name="label9" VerticalAlignment="Top" />
+                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="440,35,0,0" Name="comboBox_pittari" VerticalAlignment="Top" Width="75" ItemsSource="{Binding}" />
+                    <Label Content="優先度" Height="28" HorizontalAlignment="Left" Margin="6,35,0,0" Name="label10" VerticalAlignment="Top" />
+                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="83,35,0,0" Name="comboBox_priority" VerticalAlignment="Top" Width="75" ItemsSource="{Binding}" />
+                    <Label Content="録画マージン" Height="28" HorizontalAlignment="Left" Margin="6,64,0,0" Name="label12" VerticalAlignment="Top" />
+                    <CheckBox Content="デフォルト" Height="16" HorizontalAlignment="Left" Margin="160,69,0,0" Name="checkBox_margineDef" VerticalAlignment="Top" />
+                    <Label Content="開始" Height="28" HorizontalAlignment="Left" Margin="255,64,0,0" Name="label13" VerticalAlignment="Top" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_margineDef, Converter={StaticResource invert}}" />
+                    <TextBox Height="24" HorizontalAlignment="Left" Margin="295,66,0,0" Name="textBox_margineStart" VerticalAlignment="Top" Width="57" Text="0" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_margineDef, Converter={StaticResource invert}}" />
+                    <Label Content="終了" Height="28" HorizontalAlignment="Left" Margin="365,64,0,0" Name="label14" VerticalAlignment="Top" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_margineDef, Converter={StaticResource invert}}" />
+                    <TextBox Height="24" HorizontalAlignment="Left" Margin="405,66,0,0" Name="textBox_margineEnd" VerticalAlignment="Top" Width="57" Text="0" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_margineDef, Converter={StaticResource invert}}" />
+                    <Label Content="指定サービス対象データ" Height="28" HorizontalAlignment="Left" Margin="6,93,0,0" Name="label15" VerticalAlignment="Top" />
+                    <CheckBox Content="デフォルト" Height="16" HorizontalAlignment="Left" Margin="160,98,0,0" Name="checkBox_serviceMode" VerticalAlignment="Top" />
+                    <CheckBox Content="字幕を含める" Height="16" HorizontalAlignment="Left" Margin="260,98,0,0" Name="checkBox_serviceCaption" VerticalAlignment="Top" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_serviceMode, Converter={StaticResource invert}}" />
+                    <CheckBox Content="データカルーセルを含める" Height="16" HorizontalAlignment="Left" Margin="370,98,0,0" Name="checkBox_serviceData" VerticalAlignment="Top" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_serviceMode, Converter={StaticResource invert}}" />
+                    <ListView Height="79" Margin="11,125,109,0" Name="listView_recFolder" VerticalAlignment="Top" ItemsSource="{Binding}">
                         <ListView.View>
                             <GridView x:Name="gridView_recFolder">
                                 <GridViewColumn DisplayMemberBinding="{Binding Path=RecFolder}">
                                     <GridViewColumn.Header>
-                                        <GridViewColumnHeader Content="フォルダ" HorizontalContentAlignment="Left"/>
+                                        <GridViewColumnHeader Content="録画フォルダ" HorizontalContentAlignment="Left"/>
                                     </GridViewColumn.Header>
                                 </GridViewColumn>
                                 <GridViewColumn DisplayMemberBinding="{Binding Path=WritePlugIn}">
@@ -51,72 +61,34 @@
                                         <GridViewColumnHeader Content="ファイル名PlugIn" HorizontalContentAlignment="Left"/>
                                     </GridViewColumn.Header>
                                 </GridViewColumn>
+                                <GridViewColumn DisplayMemberBinding="{Binding Path=PartialRecYesNo}">
+                                    <GridViewColumn.Header>
+                                        <GridViewColumnHeader Content="部分受信" HorizontalContentAlignment="Left"/>
+                                    </GridViewColumn.Header>
+                                </GridViewColumn>
                             </GridView>
                         </ListView.View>
                     </ListView>
-                    <Button Content="追加" Height="23" HorizontalAlignment="Right" Margin="0,166,32,0" Name="button_recFolderAdd" VerticalAlignment="Top" Width="41" Click="button_recFolderAdd_Click" Style="{StaticResource ButtonStyle1}" />
-                    <Button Content="変更" Height="23" HorizontalAlignment="Right" Margin="0,137,32,0" Name="button_recFolderChg" Click="button_recFolderChg_Click" Style="{StaticResource ButtonStyle1}" VerticalAlignment="Top" Width="41" />
-                    <Button Content="削除" Height="23" HorizontalAlignment="Right" Margin="0,108,32,0" Name="button_recFolderDel" VerticalAlignment="Top" Width="41" Click="button_recFolderDel_Click" Style="{StaticResource ButtonStyle1}" />
-                    <Label Content="録画後動作" Height="28" HorizontalAlignment="Left" Margin="6,195,0,0" Name="label18" VerticalAlignment="Top" />
-                    <CheckBox Content="デフォルト設定を使用" Height="16" HorizontalAlignment="Left" Margin="83,200,0,0" Name="checkBox_suspendDef" VerticalAlignment="Top" IsChecked="True" Click="checkBox_suspendDef_Click" />
-                    <RadioButton Content="何もしない" Height="16" HorizontalAlignment="Left" Margin="251,200,0,0" Name="radioButton_non" VerticalAlignment="Top" Click="radioButton_suspend_Click" />
-                    <RadioButton Content="スタンバイ" Height="16" HorizontalAlignment="Left" Margin="341,200,0,0" Name="radioButton_standby" VerticalAlignment="Top" Click="radioButton_suspend_Click" />
-                    <RadioButton Content="休止" Height="16" HorizontalAlignment="Left" Margin="431,200,0,0" Name="radioButton_supend" VerticalAlignment="Top" Click="radioButton_suspend_Click" />
-                    <RadioButton Content="シャットダウン" Height="16" HorizontalAlignment="Left" Margin="488,200,0,0" Name="radioButton_shutdown" VerticalAlignment="Top" Click="radioButton_suspend_Click" />
-                    <CheckBox Content="復帰後再起動する" Height="16" HorizontalAlignment="Left" Margin="251,222,0,0" Name="checkBox_reboot" VerticalAlignment="Top" Click="radioButton_suspend_Click" />
-                    <Label Content="録画後実行bat" Height="28" HorizontalAlignment="Left" Margin="7,244,0,0" Name="label16" VerticalAlignment="Top" />
-                    <TextBox Height="24" Margin="111,246,79,0" Name="textBox_bat" VerticalAlignment="Top" />
-                    <Button Content="開く" Height="23" HorizontalAlignment="Right" Margin="0,246,32,0" Name="button_bat" VerticalAlignment="Top" Width="41" Click="button_bat_Click" Style="{StaticResource ButtonStyle1}" />
+                    <Button Content="追加" Height="23" HorizontalAlignment="Right" Margin="0,153,11,0" Name="button_recFolderAdd" VerticalAlignment="Top" Width="93" Click="button_recFolderAdd_Click" />
+                    <Button Content="部分受信追加" Height="23" HorizontalAlignment="Right" Margin="0,181,11,0" Name="button_recFolderAdd_1seg" VerticalAlignment="Top" Width="93" Click="button_recFolderAdd_1seg_Click" />
+                    <Button Content="変更" Height="23" HorizontalAlignment="Right" Margin="0,125,60,0" Name="button_recFolderChg" VerticalAlignment="Top" Width="44" Click="button_recFolderChg_Click" />
+                    <Button Content="削除" Height="23" HorizontalAlignment="Right" Margin="0,125,11,0" Name="button_recFolderDel" VerticalAlignment="Top" Width="44" Click="button_recFolderDel_Click" />
+                    <CheckBox Content="部分受信（ワンセグ）を別ファイルに同時出力する" Height="16" HorizontalAlignment="Left" Margin="30,208,0,0" Name="checkBox_partial" VerticalAlignment="Top" />
+                    <CheckBox Content="後ろの予約を同一ファイルで出力する" Height="16" HorizontalAlignment="Left" Margin="370,208,0,0" Name="checkBox_continueRec" VerticalAlignment="Top" />
+                    <Label Content="使用チューナー強制指定" Height="28" HorizontalAlignment="Left" Margin="6,231,0,0" Name="label23" VerticalAlignment="Top" />
+                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="160,231,0,0" Name="comboBox_tuner" VerticalAlignment="Top" Width="370" ItemsSource="{Binding}" />
+                    <Label Content="録画後動作" Height="28" HorizontalAlignment="Left" Margin="6,260,0,0" Name="label18" VerticalAlignment="Top" />
+                    <CheckBox Content="デフォルト" Height="16" HorizontalAlignment="Left" Margin="90,265,0,0" Name="checkBox_suspendDef" VerticalAlignment="Top" />
+                    <RadioButton Content="何もしない" Height="16" HorizontalAlignment="Left" Margin="185,265,0,0" Name="radioButton_non" VerticalAlignment="Top" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_suspendDef, Converter={StaticResource invert}}" />
+                    <RadioButton Content="スタンバイ" Height="16" HorizontalAlignment="Left" Margin="275,265,0,0" Name="radioButton_standby" VerticalAlignment="Top" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_suspendDef, Converter={StaticResource invert}}" />
+                    <RadioButton Content="休止" Height="16" HorizontalAlignment="Left" Margin="365,265,0,0" Name="radioButton_supend" VerticalAlignment="Top" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_suspendDef, Converter={StaticResource invert}}" />
+                    <RadioButton Content="シャットダウン" Height="16" HorizontalAlignment="Left" Margin="422,265,0,0" Name="radioButton_shutdown" VerticalAlignment="Top" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_suspendDef, Converter={StaticResource invert}}" />
+                    <CheckBox Content="復帰後再起動する" Height="16" HorizontalAlignment="Left" Margin="540,265,0,0" Name="checkBox_reboot" VerticalAlignment="Top" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_suspendDef, Converter={StaticResource invert}}" />
+                    <Label Content="録画後実行bat" Height="28" HorizontalAlignment="Left" Margin="6,289,0,0" Name="label16" VerticalAlignment="Top" />
+                    <TextBox Height="24" Margin="110,291,60,0" Name="textBox_bat" VerticalAlignment="Top" />
+                    <Button Content="開く" Height="23" HorizontalAlignment="Right" Margin="0,291,11,0" Name="button_bat" VerticalAlignment="Top" Width="44" Click="button_bat_Click" />
                 </Grid>
-            </TabItem>
-            <TabItem Header="録画設定2" Name="tabItem2">
-                <Grid>
-                    <Label Content="録画マージン" Height="28" HorizontalAlignment="Left" Margin="6,6,0,0" Name="label12" VerticalAlignment="Top" />
-                    <CheckBox Content="デフォルト設定を使用" Height="16" HorizontalAlignment="Left" Margin="162,11,0,0" Name="checkBox_margineDef" VerticalAlignment="Top" Checked="checkBox_margineDef_Checked" Unchecked="checkBox_margineDef_Unchecked" />
-                    <Label Content="開始" Height="28" HorizontalAlignment="Left" Margin="323,6,0,0" Name="label13" VerticalAlignment="Top" />
-                    <TextBox Height="24" HorizontalAlignment="Left" Margin="369,8,0,0" Name="textBox_margineStart" VerticalAlignment="Top" Width="57" Text="0" />
-                    <Label Content="終了" Height="28" HorizontalAlignment="Left" Margin="453,6,0,0" Name="label14" VerticalAlignment="Top" />
-                    <TextBox Height="24" HorizontalAlignment="Left" Margin="493,8,0,0" Name="textBox_margineEnd" VerticalAlignment="Top" Width="57" Text="0" />
-                    <Label Content="指定サービス対象データ" Height="28" HorizontalAlignment="Left" Margin="6,40,0,0" Name="label15" VerticalAlignment="Top" />
-                    <CheckBox Content="デフォルト設定を使用" Height="16" HorizontalAlignment="Left" Margin="162,45,0,0" Name="checkBox_serviceMode" VerticalAlignment="Top" IsChecked="True" Click="checkBox_serviceMode_Checked" />
-                    <CheckBox Content="字幕データを含める" Height="16" HorizontalAlignment="Left" Margin="330,45,0,0" Name="checkBox_serviceCaption" VerticalAlignment="Top" Click="checkBox_serviceCaption_Checked" />
-                    <CheckBox Content="データカルーセルを含める" Height="16" HorizontalAlignment="Left" Margin="476,45,0,0" Name="checkBox_serviceData" VerticalAlignment="Top" Click="checkBox_serviceCaption_Checked" />
-                    <Label Content="連続録画動作" Height="28" HorizontalAlignment="Left" Margin="7,236,0,0" Name="label22" VerticalAlignment="Top" />
-                    <CheckBox Content="後ろの予約を同一ファイルで出力する" Height="16" HorizontalAlignment="Left" Margin="162,241,0,0" Name="checkBox_continueRec" VerticalAlignment="Top" />
-                    <Label Content="使用チューナー強制指定" Height="28" HorizontalAlignment="Left" Margin="7,270,0,0" Name="label23" VerticalAlignment="Top" />
-                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="162,270,0,0" Name="comboBox_tuner" VerticalAlignment="Top" Width="377" ItemsSource="{Binding}" />
-                    <GroupBox Header="部分受信（ワンセグ）サービス" Height="156" Margin="7,74,0,0" Name="groupBox1" VerticalAlignment="Top">
-                        <Grid>
-                            <CheckBox Content="別ファイルに同時出力する" Height="16" HorizontalAlignment="Left" Margin="6,6,0,0" Name="checkBox_partial" VerticalAlignment="Top" />
-                            <Label Content="録画フォルダ、使用PlugIn" Height="28" HorizontalAlignment="Left" Margin="6,28,0,0" Name="label24" VerticalAlignment="Top" />
-                            <ListView Height="69" Margin="25,54,79,0" Name="listView_recFolder_1seg" VerticalAlignment="Top" Width="567" ItemsSource="{Binding}">
-                                <ListView.View>
-                                    <GridView x:Name="gridView_recFolder_1seg">
-                                        <GridViewColumn DisplayMemberBinding="{Binding Path=RecFolder}">
-                                            <GridViewColumn.Header>
-                                                <GridViewColumnHeader Content="フォルダ" HorizontalContentAlignment="Left"/>
-                                            </GridViewColumn.Header>
-                                        </GridViewColumn>
-                                        <GridViewColumn DisplayMemberBinding="{Binding Path=WritePlugIn}">
-                                            <GridViewColumn.Header>
-                                                <GridViewColumnHeader Content="出力PlugIn" HorizontalContentAlignment="Left"/>
-                                            </GridViewColumn.Header>
-                                        </GridViewColumn>
-                                        <GridViewColumn DisplayMemberBinding="{Binding Path=RecNamePlugIn}">
-                                            <GridViewColumn.Header>
-                                                <GridViewColumnHeader Content="ファイル名PlugIn" HorizontalContentAlignment="Left"/>
-                                            </GridViewColumn.Header>
-                                        </GridViewColumn>
-                                    </GridView>
-                                </ListView.View>
-                            </ListView>
-                            <Button Content="追加" Height="23" HorizontalAlignment="Right" Margin="0,100,32,0" Name="button_recFolderAdd_1seg" VerticalAlignment="Top" Width="41" Click="button_recFolderAdd_1seg_Click" Style="{StaticResource ButtonStyle1}" />
-                            <Button Content="変更" Height="23" HorizontalAlignment="Right" Margin="0,71,32,0" Name="button_recFolderChg_1seg" Style="{StaticResource ButtonStyle1}" VerticalAlignment="Top" Width="41" Click="button_recFolderChg_1seg_Click" />
-                            <Button Content="削除" Height="23" HorizontalAlignment="Right" Margin="0,42,32,0" Name="button_recFolderDel_1seg" VerticalAlignment="Top" Width="41" Click="button_recFolderDel_1seg_Click" Style="{StaticResource ButtonStyle1}" />
-                        </Grid>
-                    </GroupBox>
-                </Grid>
-            </TabItem>
-        </TabControl>
+            </Grid>
+        </Border>
     </Grid>
 </UserControl>

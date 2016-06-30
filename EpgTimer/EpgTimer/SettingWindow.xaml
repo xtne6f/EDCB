@@ -30,7 +30,7 @@
                 </Grid>
             </TabItem>
         </TabControl>
-        <Button Content="OK" Height="23" HorizontalAlignment="Right" Margin="0,0,114,12" Name="button_OK" VerticalAlignment="Bottom" Width="75" Style="{StaticResource ButtonStyle1}" Click="button_OK_Click" />
-        <Button Content="キャンセル" Margin="0,0,12,12" Name="button_cancel" Height="23" VerticalAlignment="Bottom" HorizontalAlignment="Right" Width="75" Style="{StaticResource ButtonStyle1}" Click="button_cancel_Click" />
+        <Button Content="OK" Height="23" HorizontalAlignment="Right" Margin="0,0,114,12" Name="button_OK" VerticalAlignment="Bottom" Width="75" Click="button_OK_Click" />
+        <Button Content="キャンセル" Margin="0,0,12,12" Name="button_cancel" Height="23" VerticalAlignment="Bottom" HorizontalAlignment="Right" Width="75" Click="button_cancel_Click" />
     </Grid>
 </Window>

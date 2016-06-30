@@ -59,7 +59,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="PresentationFramework.Aero" />
-    <Reference Include="PresentationFramework.Classic" />
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
@@ -104,7 +103,6 @@
     <Compile Include="Common\EAAFileClass.cs" />
     <Compile Include="Common\IEPGFileClass.cs" />
     <Compile Include="Common\NWConnectClass.cs" />
-    <Compile Include="Common\ServiceCtrlClass.cs" />
     <Compile Include="NotifyLogWindow.xaml.cs">
       <DependentUpon>NotifyLogWindow.xaml</DependentUpon>
     </Compile>

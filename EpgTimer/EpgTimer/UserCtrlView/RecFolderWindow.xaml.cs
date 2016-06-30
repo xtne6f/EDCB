@@ -13,9 +13,6 @@ using System.Windows.Shapes;
 using System.IO;
 using System.Windows.Interop;
 
-using CtrlCmdCLI;
-using CtrlCmdCLI.Def;
-
 namespace EpgTimer
 {
     /// <summary>
@@ -28,17 +25,6 @@ namespace EpgTimer
         public RecFolderWindow()
         {
             InitializeComponent();
-
-            if (Settings.Instance.NoStyle == 0)
-            {
-                ResourceDictionary rd = new ResourceDictionary();
-                rd.MergedDictionaries.Add(
-                    Application.LoadComponent(new Uri("/PresentationFramework.Aero, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35;component/themes/aero.normalcolor.xaml", UriKind.Relative)) as ResourceDictionary
-                    //Application.LoadComponent(new Uri("/PresentationFramework.Classic, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, ProcessorArchitecture=MSIL;component/themes/Classic.xaml", UriKind.Relative)) as ResourceDictionary
-                    );
-                this.Resources = rd;
-            }
-
 
             String plugInFile = "Write_Default.dll";
             String recNamePlugInFile = "";
@@ -96,7 +82,7 @@ namespace EpgTimer
 
         public void SetDefSetting(RecFileSetInfo info)
         {
-            textBox_recFolder.Text = info.RecFolder;
+            textBox_recFolder.Text = String.Compare(info.RecFolder, "!Default", true) == 0 ? "" : info.RecFolder;
             foreach (string text in comboBox_writePlugIn.Items)
             {
                 if (String.Compare(text, info.WritePlugIn, true) == 0)
@@ -166,12 +152,7 @@ namespace EpgTimer
 
         private void button_ok_Click(object sender, RoutedEventArgs e)
         {
-            if (textBox_recFolder.Text.Length == 0)
-            {
-                MessageBox.Show("録画フォルダが指定されていません。");
-                return;
-            }
-            defSet.RecFolder = textBox_recFolder.Text;
+            defSet.RecFolder = textBox_recFolder.Text == "" ? "!Default" : textBox_recFolder.Text;
             defSet.WritePlugIn = (String)comboBox_writePlugIn.SelectedItem;
             defSet.RecNamePlugIn = (String)comboBox_recNamePlugIn.SelectedItem;
             if (String.Compare(defSet.RecNamePlugIn, "なし", true) == 0)

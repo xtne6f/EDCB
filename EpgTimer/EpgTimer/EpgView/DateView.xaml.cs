@@ -49,10 +49,6 @@ namespace EpgTimer.EpgView
                 while (itemTime < endTime)
                 {
                     Button day = new Button();
-                    if (Settings.Instance.NoStyle == 0)
-                    {
-                        day.Style = (Style)App.Current.Resources["ButtonStyle1"];
-                    }
                     day.Width = 120;
                     day.Content = itemTime.ToString("M/d(ddd)");
                     if (itemTime.DayOfWeek == DayOfWeek.Saturday)
@@ -69,10 +65,6 @@ namespace EpgTimer.EpgView
                     stackPanel_day.Children.Add(day);
 
                     Button hour6 = new Button();
-                    if (Settings.Instance.NoStyle == 0)
-                    {
-                        hour6.Style = (Style)App.Current.Resources["ButtonStyle1"];
-                    }
                     hour6.Width = 40;
                     hour6.Content = itemTime.ToString("6時");
                     hour6.DataContext = itemTime.AddHours(6);
@@ -80,10 +72,6 @@ namespace EpgTimer.EpgView
                     stackPanel_time.Children.Add(hour6);
 
                     Button hour12 = new Button();
-                    if (Settings.Instance.NoStyle == 0)
-                    {
-                        hour12.Style = (Style)App.Current.Resources["ButtonStyle1"];
-                    }
                     hour12.Width = 40;
                     hour12.Content = itemTime.ToString("12時");
                     hour12.DataContext = itemTime.AddHours(12);
@@ -91,10 +79,6 @@ namespace EpgTimer.EpgView
                     stackPanel_time.Children.Add(hour12);
 
                     Button hour18 = new Button();
-                    if (Settings.Instance.NoStyle == 0)
-                    {
-                        hour18.Style = (Style)App.Current.Resources["ButtonStyle1"];
-                    }
                     hour18.Width = 40;
                     hour18.Content = itemTime.ToString("18時");
                     hour18.DataContext = itemTime.AddHours(18);

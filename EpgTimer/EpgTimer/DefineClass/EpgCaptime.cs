@@ -52,6 +52,11 @@ namespace EpgTimer
             get;
             set;
         }
+        public bool CS3BasicOnly
+        {
+            get;
+            set;
+        }
 
         public string ViewTime
         {
@@ -72,7 +77,7 @@ namespace EpgTimer
         {
             get
             {
-                return (BSBasicOnly ? "基本" : "詳細") + "," + (CS1BasicOnly ? "基本" : "詳細") + "," + (CS2BasicOnly ? "基本" : "詳細");
+                return (BSBasicOnly ? "基" : "詳") + "," + (CS1BasicOnly ? "基" : "詳") + "," + (CS2BasicOnly ? "基" : "詳") + "," + (CS3BasicOnly ? "基" : "詳");
             }
         }
     }

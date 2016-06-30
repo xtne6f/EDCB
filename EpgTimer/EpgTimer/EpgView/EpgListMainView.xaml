@@ -128,7 +128,7 @@
                 </GridView>
             </ListView.View>
         </ListView>
-        <Button Content="全チェック" Height="23" HorizontalAlignment="Left" Name="button_chkAll" VerticalAlignment="Bottom" Width="75" Click="button_chkAll_Click" Style="{StaticResource ButtonStyle1}" />
-        <Button Content="全クリア" Height="23" HorizontalAlignment="Left" Margin="80,0,0,0" Name="button_clearAll" VerticalAlignment="Bottom" Width="75" Click="button_clearAll_Click" Style="{StaticResource ButtonStyle1}" />
+        <Button Content="全チェック" Height="23" HorizontalAlignment="Left" Name="button_chkAll" VerticalAlignment="Bottom" Width="75" Click="button_chkAll_Click" />
+        <Button Content="全クリア" Height="23" HorizontalAlignment="Left" Margin="80,0,0,0" Name="button_clearAll" VerticalAlignment="Bottom" Width="75" Click="button_clearAll_Click" />
     </Grid>
 </UserControl>

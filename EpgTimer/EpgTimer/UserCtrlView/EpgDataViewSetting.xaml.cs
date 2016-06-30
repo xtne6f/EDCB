@@ -12,9 +12,6 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-using CtrlCmdCLI;
-using CtrlCmdCLI.Def;
-
 namespace EpgTimer
 {
     /// <summary>
@@ -29,22 +26,6 @@ namespace EpgTimer
 
             try
             {
-                if (Settings.Instance.NoStyle == 1)
-                {
-                    button_searchKey.Style = null;
-                    button_service_addAll.Style = null;
-                    button_service_add.Style = null;
-                    button_service_del.Style = null;
-                    button_service_delAll.Style = null;
-                    button_service_up.Style = null;
-                    button_service_down.Style = null;
-                    button_service_addVideo.Style = null;
-                    button_jyanru_addAll.Style = null;
-                    button_jyanru_add.Style = null;
-                    button_jyanru_del.Style = null;
-                    button_jyanru_delAll.Style = null;
-                }
-
                 comboBox_timeH_week.ItemsSource = CommonManager.Instance.HourDictionary.Values;
                 comboBox_timeH_week.SelectedIndex = 4;
 
@@ -367,7 +348,7 @@ namespace EpgTimer
                 {
                     foreach (ChSet5Item info in listBox_serviceBS.Items)
                     {
-                        if (info.ServiceType != 0x01 && info.ServiceType != 0xA5)
+                        if (ChSet5.IsVideo(info.ServiceType) == false)
                         {
                             continue;
                         }
@@ -390,7 +371,7 @@ namespace EpgTimer
                 {
                     foreach (ChSet5Item info in listBox_serviceCS.Items)
                     {
-                        if (info.ServiceType != 0x01 && info.ServiceType != 0xA5)
+                        if (ChSet5.IsVideo(info.ServiceType) == false)
                         {
                             continue;
                         }
@@ -413,7 +394,7 @@ namespace EpgTimer
                 {
                     foreach (ChSet5Item info in listBox_serviceTere.Items)
                     {
-                        if (info.ServiceType != 0x01 && info.ServiceType != 0xA5)
+                        if (ChSet5.IsVideo(info.ServiceType) == false)
                         {
                             continue;
                         }
@@ -436,7 +417,7 @@ namespace EpgTimer
                 {
                     foreach (ChSet5Item info in listBox_serviceOther.Items)
                     {
-                        if (info.ServiceType != 0x01 && info.ServiceType != 0xA5)
+                        if (ChSet5.IsVideo(info.ServiceType) == false)
                         {
                             continue;
                         }

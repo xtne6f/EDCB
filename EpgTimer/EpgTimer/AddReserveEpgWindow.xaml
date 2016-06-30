@@ -28,7 +28,7 @@
                 </Grid>
             </TabItem>
         </TabControl>
-        <Button Grid.Row="2" Content="予約" Height="23" HorizontalAlignment="Left" Name="button_add_reserve" VerticalAlignment="Top" Width="91" Click="button_add_reserve_Click" Margin="30,8,0,0" Style="{StaticResource ButtonStyle1}" ToolTip="Ctrl + Shift + A"/>
-        <Button Content="キャンセル" Grid.Row="2" Height="23" HorizontalAlignment="Left" Margin="187,8,0,0" Name="button_cancel" VerticalAlignment="Top" Width="103" Click="button_cancel_Click" Style="{StaticResource ButtonStyle1}" ToolTip="Escape"/>
+        <Button Grid.Row="2" Content="予約" Height="23" HorizontalAlignment="Left" Name="button_add_reserve" VerticalAlignment="Top" Width="91" Click="button_add_reserve_Click" Margin="30,8,0,0" ToolTip="Ctrl + Shift + A"/>
+        <Button Content="キャンセル" Grid.Row="2" Height="23" HorizontalAlignment="Left" Margin="187,8,0,0" Name="button_cancel" VerticalAlignment="Top" Width="103" Click="button_cancel_Click" ToolTip="Escape"/>
     </Grid>
 </Window>

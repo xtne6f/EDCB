@@ -12,9 +12,6 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-using CtrlCmdCLI;
-using CtrlCmdCLI.Def;
-
 namespace EpgTimer
 {
     public class EpgAutoDataItem
@@ -37,8 +34,8 @@ namespace EpgTimer
                 String view = "";
                 if (EpgAutoAddInfo != null)
                 {
-                    view = EpgAutoAddInfo.searchInfo.andKey.Substring(EpgAutoAddInfo.searchInfo.andKey.StartsWith("^!{999}") ? 7 : 0);
-                    view = view.Substring(view.StartsWith("C!{999}") ? 7 : 0);
+                    view = System.Text.RegularExpressions.Regex.Replace(
+                        EpgAutoAddInfo.searchInfo.andKey, @"^(?:\^!\{999\})?(?:C!\{999\})?(?:D!\{1[0-9]{8}\})?", "");
                 }
                 return view;
             }
@@ -304,17 +301,17 @@ namespace EpgTimer
                             ChSet5Item chSet5Item1 = ChSet5.Instance.ChList[service1];
                             // SearchKeyDescViewよりコピペ
                             if ((0x7880 <= chSet5Item1.ONID && chSet5Item1.ONID <= 0x7FE8) &&
-                                (chSet5Item1.ServiceType == 0x01 || chSet5Item1.ServiceType == 0xA5))
+                                ChSet5.IsVideo(chSet5Item1.ServiceType))
                             {
                                 network1 = "地デジ";
                             }
                             else if (chSet5Item1.ONID == 0x04 &&
-                              (chSet5Item1.ServiceType == 0x01 || chSet5Item1.ServiceType == 0xA5))
+                              ChSet5.IsVideo(chSet5Item1.ServiceType))
                             {
                                 network1 = "BS";
                             }
                             else if ((chSet5Item1.ONID == 0x06 || chSet5Item1.ONID == 0x07) &&
-                              (chSet5Item1.ServiceType == 0x01 || chSet5Item1.ServiceType == 0xA5))
+                              ChSet5.IsVideo(chSet5Item1.ServiceType))
                             {
                                 network1 = "CS";
                             }

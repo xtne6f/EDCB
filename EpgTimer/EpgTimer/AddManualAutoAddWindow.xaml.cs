@@ -11,9 +11,6 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 
-using CtrlCmdCLI;
-using CtrlCmdCLI.Def;
-
 namespace EpgTimer
 {
     /// <summary>
@@ -31,21 +28,6 @@ namespace EpgTimer
 
             try
             {
-                if (Settings.Instance.NoStyle == 0)
-                {
-                    ResourceDictionary rd = new ResourceDictionary();
-                    rd.MergedDictionaries.Add(
-                        Application.LoadComponent(new Uri("/PresentationFramework.Aero, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35;component/themes/aero.normalcolor.xaml", UriKind.Relative)) as ResourceDictionary
-                        //Application.LoadComponent(new Uri("/PresentationFramework.Classic, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, ProcessorArchitecture=MSIL;component/themes/Classic.xaml", UriKind.Relative)) as ResourceDictionary
-                        );
-                    this.Resources = rd;
-                }
-                else
-                {
-                    button_add.Style = null;
-                    button_cancel.Style = null;
-                }
-
                 comboBox_startHH.DataContext = CommonManager.Instance.HourDictionary.Values;
                 comboBox_startHH.SelectedIndex = 0;
                 comboBox_startMM.DataContext = CommonManager.Instance.MinDictionary.Values;

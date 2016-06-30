@@ -12,9 +12,6 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-using CtrlCmdCLI;
-using CtrlCmdCLI.Def;
-
 namespace EpgTimer
 {
     /// <summary>
@@ -28,12 +25,6 @@ namespace EpgTimer
 
             try
             {
-                if (Settings.Instance.NoStyle == 1)
-                {
-                    button_andIn.Style = null;
-                    button_notIn.Style = null;
-                }
-
                 foreach (String info in Settings.Instance.AndKeyList)
                 {
                     ComboBox_andKey.Items.Add(info);
@@ -131,8 +122,8 @@ namespace EpgTimer
         public void SetSearchKey(EpgSearchKeyInfo key)
         {
             searchKeyDescView.SetSearchKey(key);
-            string s = key.andKey.Substring(key.andKey.StartsWith("^!{999}") ? 7 : 0);
-            ComboBox_andKey.Text = s.Substring(s.StartsWith("C!{999}") ? 7 : 0);
+            ComboBox_andKey.Text = System.Text.RegularExpressions.Regex.Replace(
+                key.andKey, @"^(?:\^!\{999\})?(?:C!\{999\})?(?:D!\{1[0-9]{8}\})?", "");
             ComboBox_notKey.Text = key.notKey;
         }
     }

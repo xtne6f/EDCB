@@ -21,19 +21,19 @@
                     </Grid.RowDefinitions>
                     <CheckBox Content="プログラム予約化（一度プログラム予約化したものは元に戻せません。番組を特定できなくなるため追従もできません。）" Height="16" HorizontalAlignment="Left" Margin="12,12,0,0" Name="checkBox_program" VerticalAlignment="Top" Click="checkBox_program_Click" />
                     <Label Content="番組名" Height="28" HorizontalAlignment="Left" Margin="12,34,0,0" Name="label1" VerticalAlignment="Top" />
-                    <TextBox Height="24" Margin="80,36,0,0" Name="textBox_title" VerticalAlignment="Top" HorizontalAlignment="Left" Width="270" />
+                    <TextBox Height="24" Margin="80,34,0,0" Name="textBox_title" VerticalAlignment="Top" HorizontalAlignment="Left" Width="270" />
                     <Label Content="サービス" HorizontalAlignment="Left" Margin="364,34,0,0" Name="label2" Height="28" VerticalAlignment="Top" />
-                    <ComboBox Height="24" Margin="428,34,0,0" Name="comboBox_service" VerticalAlignment="Top" ItemsSource="{Binding}" HorizontalAlignment="Left" Width="253" />
+                    <ComboBox Height="24" Margin="428,34,0,0" Name="comboBox_service" VerticalAlignment="Top" ItemsSource="{Binding}" HorizontalAlignment="Left" Width="258" />
                     <Label Content="開始日時" Height="28" HorizontalAlignment="Left" Margin="12,60,0,0" Name="label3" VerticalAlignment="Top" />
                     <Label Content="終了日時" Height="28" HorizontalAlignment="Left" Margin="364,60,0,0" Name="label4" VerticalAlignment="Top" />
                     <DatePicker Height="25" HorizontalAlignment="Left" Margin="80,61,0,0" Name="datePicker_start" VerticalAlignment="Top" Width="115" SelectedDateFormat="Short" />
-                    <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding}" Name="comboBox_sh" VerticalAlignment="Top" Width="40" Margin="201,62,0,0" />
-                    <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding}" Margin="247,62,0,0" Name="comboBox_sm" VerticalAlignment="Top" Width="40" />
-                    <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding}" Margin="293,62,0,0" Name="comboBox_ss" VerticalAlignment="Top" Width="40" />
-                    <DatePicker Height="25" HorizontalAlignment="Left" Margin="428,63,0,0" Name="datePicker_end" VerticalAlignment="Top" Width="115" />
-                    <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding}" Margin="549,62,0,0" Name="comboBox_eh" VerticalAlignment="Top" Width="40" />
-                    <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding}" Margin="595,62,0,0" Name="comboBox_em" VerticalAlignment="Top" Width="40" />
-                    <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding}" Margin="641,62,0,0" Name="comboBox_es" VerticalAlignment="Top" Width="40" />
+                    <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding}" Name="comboBox_sh" VerticalAlignment="Top" Width="44" Margin="200,62,0,0" />
+                    <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding}" Margin="247,62,0,0" Name="comboBox_sm" VerticalAlignment="Top" Width="44" />
+                    <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding}" Margin="294,62,0,0" Name="comboBox_ss" VerticalAlignment="Top" Width="44" />
+                    <DatePicker Height="25" HorizontalAlignment="Left" Margin="428,61,0,0" Name="datePicker_end" VerticalAlignment="Top" Width="115" />
+                    <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding}" Margin="548,62,0,0" Name="comboBox_eh" VerticalAlignment="Top" Width="44" />
+                    <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding}" Margin="595,62,0,0" Name="comboBox_em" VerticalAlignment="Top" Width="44" />
+                    <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding}" Margin="642,62,0,0" Name="comboBox_es" VerticalAlignment="Top" Width="44" />
                     <my:RecSettingView x:Name="recSettingView" Grid.Row="1" />
                 </Grid>
             </TabItem>
@@ -46,8 +46,8 @@
                 </Grid>
             </TabItem>
         </TabControl>
-        <Button Grid.Row="1" Content="変更" Height="23" HorizontalAlignment="Left" Name="button_chg_reserve" VerticalAlignment="Top" Width="91" Click="button_chg_reserve_Click" Margin="30,8,0,0" Style="{StaticResource ButtonStyle1}" ToolTip="Ctrl + Shift + C" />
-        <Button Content="削除" Grid.Row="1" Height="23" HorizontalAlignment="Left" Margin="160,8,0,0" Name="button_del_reserve" VerticalAlignment="Top" Width="91" Click="button_del_reserve_Click" Style="{StaticResource ButtonStyle1}" ToolTip="Ctrl + Shift + D" />
-        <Button Content="キャンセル" Grid.Row="1" Height="23" HorizontalAlignment="Left" Margin="290,8,0,0" Name="button_cancel" VerticalAlignment="Top" Width="91" Click="button_cancel_Click" Style="{StaticResource ButtonStyle1}" ToolTip="Escape" />
+        <Button Grid.Row="1" Content="変更" Height="23" HorizontalAlignment="Left" Name="button_chg_reserve" VerticalAlignment="Top" Width="91" Click="button_chg_reserve_Click" Margin="30,8,0,0" ToolTip="Ctrl + Shift + C" />
+        <Button Content="削除" Grid.Row="1" Height="23" HorizontalAlignment="Left" Margin="160,8,0,0" Name="button_del_reserve" VerticalAlignment="Top" Width="91" Click="button_del_reserve_Click" ToolTip="Ctrl + Shift + D" />
+        <Button Content="キャンセル" Grid.Row="1" Height="23" HorizontalAlignment="Left" Margin="290,8,0,0" Name="button_cancel" VerticalAlignment="Top" Width="91" Click="button_cancel_Click" ToolTip="Escape" />
     </Grid>
 </Window>

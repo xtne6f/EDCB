@@ -12,14 +12,14 @@
     </UserControl.Resources>
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="32" />
+            <RowDefinition Height="22" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <CheckBox Content="正規表現モード" Height="16" HorizontalAlignment="Left" Margin="100,12,0,0" Name="checkBox_regExp" VerticalAlignment="Top" />
-        <CheckBox Content="あいまい検索モード" Height="16" HorizontalAlignment="Left" Margin="223,12,0,0" Name="checkBox_aimai" VerticalAlignment="Top" />
-        <CheckBox Content="番組名のみ検索対象にする" Height="16" HorizontalAlignment="Left" Margin="362,12,0,0" Name="checkBox_titleOnly" VerticalAlignment="Top" />
-        <CheckBox Content="大小文字区別" Height="16" HorizontalAlignment="Left" Margin="540,12,0,0" Name="checkBox_case" VerticalAlignment="Top" />
-        <CheckBox Content="検索を無効にする" Height="16" HorizontalAlignment="Left" Margin="658,12,0,0" Name="checkBox_keyDisabled" VerticalAlignment="Top" />
+        <CheckBox Content="正規表現モード" Height="16" HorizontalAlignment="Left" Margin="45,2,0,0" Name="checkBox_regExp" VerticalAlignment="Top" />
+        <CheckBox Content="あいまい検索モード" Height="16" HorizontalAlignment="Left" Margin="168,2,0,0" Name="checkBox_aimai" VerticalAlignment="Top" />
+        <CheckBox Content="番組名のみ検索対象にする" Height="16" HorizontalAlignment="Left" Margin="307,2,0,0" Name="checkBox_titleOnly" VerticalAlignment="Top" />
+        <CheckBox Content="大小文字区別" Height="16" HorizontalAlignment="Left" Margin="485,2,0,0" Name="checkBox_case" VerticalAlignment="Top" />
+        <CheckBox Content="自動登録を無効にする" Height="16" HorizontalAlignment="Left" Margin="600,2,0,0" Name="checkBox_keyDisabled" VerticalAlignment="Top" />
         <TabControl Grid.Row="1" Name="tabControl1" TabStripPlacement="Bottom">
             <TabItem Header="詳細1" Name="tabItem1">
                 <Grid>
@@ -27,9 +27,9 @@
                     <ListBox HorizontalAlignment="Left" Margin="6,40,0,65" Name="listBox_content" Width="238" SelectionMode="Extended" DisplayMemberPath="ListBoxView"/>
                     <CheckBox Content="NOT扱いとする" Height="16" HorizontalAlignment="Left" Margin="6,0,0,40" Name="checkBox_notContent" VerticalAlignment="Bottom" />
                     <ComboBox Height="24" HorizontalAlignment="Left" Margin="6,0,0,6" Name="comboBox_content" VerticalAlignment="Bottom" Width="176" ItemsSource="{Binding}" />
-                    <Button Content="追加" Height="23" HorizontalAlignment="Left" Margin="188,0,0,7" Name="button_content_add" VerticalAlignment="Bottom" Width="56" Style="{StaticResource ButtonStyle1}" Click="button_content_add_Click" />
-                    <Button Content="削除" Height="23" HorizontalAlignment="Left" Margin="188,0,0,36" Name="button_content_del" Style="{StaticResource ButtonStyle1}" VerticalAlignment="Bottom" Width="56" Click="button_content_del_Click" />
-                    <Button Content="全クリア" Height="23" HorizontalAlignment="Left" Margin="126,0,0,36" Name="button_content_clear" Style="{StaticResource ButtonStyle1}" VerticalAlignment="Bottom" Width="56" Click="button_content_clear_Click" />
+                    <Button Content="追加" Height="23" HorizontalAlignment="Left" Margin="188,0,0,7" Name="button_content_add" VerticalAlignment="Bottom" Width="56" Click="button_content_add_Click" />
+                    <Button Content="削除" Height="23" HorizontalAlignment="Left" Margin="188,0,0,36" Name="button_content_del" VerticalAlignment="Bottom" Width="56" Click="button_content_del_Click" />
+                    <Button Content="全クリア" Height="23" HorizontalAlignment="Left" Margin="126,0,0,36" Name="button_content_clear" VerticalAlignment="Bottom" Width="56" Click="button_content_clear_Click" />
                     <Label Content="サービス絞り込み" Height="28" HorizontalAlignment="Left" Margin="286,6,0,0" Name="label2" VerticalAlignment="Top" />
                     <ListView HorizontalAlignment="Left" Margin="286,40,0,7" Name="listView_service" Width="252" SelectionMode="Single" ItemsSource="{Binding}" >
                         <ListView.View>
@@ -57,19 +57,19 @@
                             </GridView>
                         </ListView.View>
                     </ListView>
-                    <Button Content="全チェック" Height="23" Margin="548,11,0,0" Name="button_all_on" VerticalAlignment="Top" HorizontalAlignment="Left" Width="122" Click="button_all_on_Click" Style="{StaticResource ButtonStyle1}" />
-                    <Button Content="映像サービスのみ" Height="23" Margin="548,40,0,0" Name="button_video_on" VerticalAlignment="Top" HorizontalAlignment="Left" Width="122" Click="button_video_on_Click" Style="{StaticResource ButtonStyle1}" />
-                    <Button Content="BS映像のみ" Height="23" Margin="548,69,0,0" Name="button_bs_on" VerticalAlignment="Top" HorizontalAlignment="Left" Width="95" Click="button_bs_on_Click" Style="{StaticResource ButtonStyle1}" />
-                    <Button Content="CS映像のみ" Height="23" Margin="548,98,0,0" Name="button_cs_on" VerticalAlignment="Top" HorizontalAlignment="Left" Width="95" Click="button_cs_on_Click" Style="{StaticResource ButtonStyle1}" />
-                    <Button Content="地デジ映像のみ" Height="23" Margin="548,127,0,0" Name="button_tere_on" VerticalAlignment="Top" HorizontalAlignment="Left" Width="95" Click="button_tere_on_Click" Style="{StaticResource ButtonStyle1}" />
-                    <Button Content="ワンセグのみ" Height="23" Margin="548,156,0,0" Name="button_1seg_on" VerticalAlignment="Top" HorizontalAlignment="Left" Width="95" Click="button_1seg_on_Click" Style="{StaticResource ButtonStyle1}" />
-                    <Button Content="その他のみ" Height="23" HorizontalAlignment="Left" Margin="548,185,0,0" Name="button_other_on" VerticalAlignment="Top" Width="95" Click="button_other_on_Click" Style="{StaticResource ButtonStyle1}" />
-                    <Button Content="全クリア" Height="23" Margin="548,214,0,0" Name="button_all_off" VerticalAlignment="Top" HorizontalAlignment="Left" Width="122" Click="button_all_off_Click" Style="{StaticResource ButtonStyle1}" />
-                    <Button Content="BS映像" Height="23" HorizontalAlignment="Left" Margin="650,69,0,0" Name="button_bs_on2" Style="{StaticResource ButtonStyle1}" VerticalAlignment="Top" Width="84" Click="button_bs_on2_Click" />
-                    <Button Content="CS映像" Height="23" HorizontalAlignment="Left" Margin="650,98,0,0" Name="button_cs_on2" Style="{StaticResource ButtonStyle1}" VerticalAlignment="Top" Width="84" Click="button_cs_on2_Click" />
-                    <Button Content="地デジ映像" Height="23" HorizontalAlignment="Left" Margin="650,127,0,0" Name="button_tere_on2" Style="{StaticResource ButtonStyle1}" VerticalAlignment="Top" Width="84" Click="button_tere_on2_Click" />
-                    <Button Content="ワンセグ" Height="23" HorizontalAlignment="Left" Margin="650,156,0,0" Name="button_1seg_on2" Style="{StaticResource ButtonStyle1}" VerticalAlignment="Top" Width="84" Click="button_1seg_on2_Click" />
-                    <Button Content="その他" Height="23" HorizontalAlignment="Left" Margin="650,185,0,0" Name="button_other_on2" Style="{StaticResource ButtonStyle1}" VerticalAlignment="Top" Width="84" Click="button_other_on2_Click" />
+                    <Button Content="全チェック" Height="23" Margin="548,11,0,0" Name="button_all_on" VerticalAlignment="Top" HorizontalAlignment="Left" Width="122" Click="button_all_on_Click" />
+                    <Button Content="映像サービスのみ" Height="23" Margin="548,40,0,0" Name="button_video_on" VerticalAlignment="Top" HorizontalAlignment="Left" Width="122" Click="button_video_on_Click" />
+                    <Button Content="BS映像のみ" Height="23" Margin="548,69,0,0" Name="button_bs_on" VerticalAlignment="Top" HorizontalAlignment="Left" Width="95" Click="button_bs_on_Click" />
+                    <Button Content="CS映像のみ" Height="23" Margin="548,98,0,0" Name="button_cs_on" VerticalAlignment="Top" HorizontalAlignment="Left" Width="95" Click="button_cs_on_Click" />
+                    <Button Content="地デジ映像のみ" Height="23" Margin="548,127,0,0" Name="button_tere_on" VerticalAlignment="Top" HorizontalAlignment="Left" Width="95" Click="button_tere_on_Click" />
+                    <Button Content="ワンセグのみ" Height="23" Margin="548,156,0,0" Name="button_1seg_on" VerticalAlignment="Top" HorizontalAlignment="Left" Width="95" Click="button_1seg_on_Click" />
+                    <Button Content="その他のみ" Height="23" HorizontalAlignment="Left" Margin="548,185,0,0" Name="button_other_on" VerticalAlignment="Top" Width="95" Click="button_other_on_Click" />
+                    <Button Content="全クリア" Height="23" Margin="548,214,0,0" Name="button_all_off" VerticalAlignment="Top" HorizontalAlignment="Left" Width="122" Click="button_all_off_Click" />
+                    <Button Content="BS映像" Height="23" HorizontalAlignment="Left" Margin="650,69,0,0" Name="button_bs_on2" VerticalAlignment="Top" Width="84" Click="button_bs_on2_Click" />
+                    <Button Content="CS映像" Height="23" HorizontalAlignment="Left" Margin="650,98,0,0" Name="button_cs_on2" VerticalAlignment="Top" Width="84" Click="button_cs_on2_Click" />
+                    <Button Content="地デジ映像" Height="23" HorizontalAlignment="Left" Margin="650,127,0,0" Name="button_tere_on2" VerticalAlignment="Top" Width="84" Click="button_tere_on2_Click" />
+                    <Button Content="ワンセグ" Height="23" HorizontalAlignment="Left" Margin="650,156,0,0" Name="button_1seg_on2" VerticalAlignment="Top" Width="84" Click="button_1seg_on2_Click" />
+                    <Button Content="その他" Height="23" HorizontalAlignment="Left" Margin="650,185,0,0" Name="button_other_on2" VerticalAlignment="Top" Width="84" Click="button_other_on2_Click" />
                 </Grid>
             </TabItem>
             <TabItem Header="詳細2" Name="tabItem2">
@@ -77,22 +77,22 @@
                     <Label Content="時間絞り込み（項目なしで全期間対象）" Height="28" HorizontalAlignment="Left" Margin="6,6,0,0" Name="label3" VerticalAlignment="Top" />
                     <ListBox HorizontalAlignment="Left" Margin="6,40,0,39" Name="listBox_date" Width="164" />
                     <CheckBox Content="NOT扱いとする" Height="16" HorizontalAlignment="Left" Margin="6,0,0,14" Name="checkBox_notDate" VerticalAlignment="Bottom" />
-                    <Button Content="削除" Height="23" HorizontalAlignment="Left" Margin="114,0,0,10" Name="button_date_del" Style="{StaticResource ButtonStyle1}" VerticalAlignment="Bottom" Width="56" Click="button_date_del_Click" />
+                    <Button Content="削除" Height="23" HorizontalAlignment="Left" Margin="114,0,0,10" Name="button_date_del" VerticalAlignment="Bottom" Width="56" Click="button_date_del_Click" />
                     <Label Content="期間" Height="28" HorizontalAlignment="Left" Margin="176,40,0,0" Name="label4" VerticalAlignment="Top" />
-                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="192,74,0,0" Name="comboBox_time_sw" VerticalAlignment="Top" Width="40" ItemsSource="{Binding}" />
-                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="242,74,0,0" Name="comboBox_time_sh" VerticalAlignment="Top" Width="40" ItemsSource="{Binding}" />
-                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="288,74,0,0" Name="comboBox_time_sm" VerticalAlignment="Top" Width="40" ItemsSource="{Binding}" />
+                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="192,74,0,0" Name="comboBox_time_sw" VerticalAlignment="Top" Width="44" ItemsSource="{Binding}" />
+                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="242,74,0,0" Name="comboBox_time_sh" VerticalAlignment="Top" Width="44" ItemsSource="{Binding}" />
+                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="289,74,0,0" Name="comboBox_time_sm" VerticalAlignment="Top" Width="44" ItemsSource="{Binding}" />
                     <Label Content="～" Height="28" HorizontalAlignment="Left" Margin="192,108,0,0" Name="label6" VerticalAlignment="Top" />
-                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="223,108,0,0" Name="comboBox_time_ew" VerticalAlignment="Top" Width="40" ItemsSource="{Binding}" />
-                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="273,108,0,0" Name="comboBox_time_eh" VerticalAlignment="Top" Width="40" ItemsSource="{Binding}" />
-                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="319,108,0,0" Name="comboBox_time_em" VerticalAlignment="Top" Width="40" ItemsSource="{Binding}" />
-                    <Button Content="追加" Height="23" HorizontalAlignment="Left" Margin="375,108,0,0" Name="button_timeAdd" Style="{StaticResource ButtonStyle1}" VerticalAlignment="Top" Width="56" Click="button_timeAdd_Click" />
+                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="223,108,0,0" Name="comboBox_time_ew" VerticalAlignment="Top" Width="44" ItemsSource="{Binding}" />
+                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="273,108,0,0" Name="comboBox_time_eh" VerticalAlignment="Top" Width="44" ItemsSource="{Binding}" />
+                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="320,108,0,0" Name="comboBox_time_em" VerticalAlignment="Top" Width="44" ItemsSource="{Binding}" />
+                    <Button Content="追加" Height="23" HorizontalAlignment="Left" Margin="375,108,0,0" Name="button_timeAdd" VerticalAlignment="Top" Width="56" Click="button_timeAdd_Click" />
                     <Label Content="曜日毎" Height="28" HorizontalAlignment="Left" Margin="176,133,0,0" Name="label5" VerticalAlignment="Top" />
-                    <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding}" Margin="192,179,0,0" Name="comboBox_week_sh" VerticalAlignment="Top" Width="40" />
-                    <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding}" Margin="238,179,0,0" Name="comboBox_week_sm" VerticalAlignment="Top" Width="40" />
+                    <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding}" Margin="192,179,0,0" Name="comboBox_week_sh" VerticalAlignment="Top" Width="44" />
+                    <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding}" Margin="239,179,0,0" Name="comboBox_week_sm" VerticalAlignment="Top" Width="44" />
                     <Label Content="～" Height="28" HorizontalAlignment="Left" Margin="288,175,0,0" Name="label7" VerticalAlignment="Top" />
-                    <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding}" Margin="316,179,0,0" Name="comboBox_week_eh" VerticalAlignment="Top" Width="40" />
-                    <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding}" Margin="362,179,0,0" Name="comboBox_week_em" VerticalAlignment="Top" Width="40" />
+                    <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding}" Margin="316,179,0,0" Name="comboBox_week_eh" VerticalAlignment="Top" Width="44" />
+                    <ComboBox Height="24" HorizontalAlignment="Left" ItemsSource="{Binding}" Margin="363,179,0,0" Name="comboBox_week_em" VerticalAlignment="Top" Width="44" />
                     <CheckBox Content="月" Height="16" HorizontalAlignment="Left" Margin="192,157,0,0" Name="checkBox_mon" VerticalAlignment="Top" />
                     <CheckBox Content="火" Height="16" HorizontalAlignment="Left" Margin="227,157,0,0" Name="checkBox_tue" VerticalAlignment="Top" />
                     <CheckBox Content="水" Height="16" HorizontalAlignment="Left" Margin="262,157,0,0" Name="checkBox_wen" VerticalAlignment="Top" />
@@ -100,12 +100,17 @@
                     <CheckBox Content="金" Height="16" HorizontalAlignment="Left" Margin="332,157,0,0" Name="checkBox_fri" VerticalAlignment="Top" />
                     <CheckBox Content="土" Height="16" HorizontalAlignment="Left" Margin="367,157,0,0" Name="checkBox_sat" VerticalAlignment="Top" />
                     <CheckBox Content="日" Height="16" HorizontalAlignment="Left" Margin="402,157,0,0" Name="checkBox_sun" VerticalAlignment="Top" />
-                    <Button Content="追加" Height="23" HorizontalAlignment="Left" Margin="192,209,0,0" Name="button_weekAdd" Style="{StaticResource ButtonStyle1}" VerticalAlignment="Top" Width="56" Click="button_weekAdd_Click" />
+                    <Button Content="追加" Height="23" HorizontalAlignment="Left" Margin="192,209,0,0" Name="button_weekAdd" VerticalAlignment="Top" Width="56" Click="button_weekAdd_Click" />
                     <Label Content="スクランブル放送" Height="28" HorizontalAlignment="Left" Margin="444,6,0,0" Name="label8" VerticalAlignment="Top" />
-                    <RadioButton Content="無料、有料番組を対象とする" Height="16" HorizontalAlignment="Left" Margin="472,40,0,0" Name="radioButton_free_1" VerticalAlignment="Top" />
-                    <RadioButton Content="無料番組のみ対象とする" Height="16" HorizontalAlignment="Left" Margin="472,62,0,0" Name="radioButton_free_2" VerticalAlignment="Top" />
-                    <RadioButton Content="有料番組のみ対象とする" Height="16" HorizontalAlignment="Left" Margin="472,84,0,0" Name="radioButton_free_3" VerticalAlignment="Top" />
-                    <GroupBox Header="EPG 自動予約登録専用" Height="89" HorizontalAlignment="Left" Margin="444,114,0,0" Name="groupBox1" VerticalAlignment="Top" Width="290">
+                    <RadioButton Content="無料、有料番組を対象とする" Height="16" HorizontalAlignment="Left" Margin="472,30,0,0" Name="radioButton_free_1" VerticalAlignment="Top" />
+                    <RadioButton Content="無料番組のみ対象とする" Height="16" HorizontalAlignment="Left" Margin="472,48,0,0" Name="radioButton_free_2" VerticalAlignment="Top" />
+                    <RadioButton Content="有料番組のみ対象とする" Height="16" HorizontalAlignment="Left" Margin="472,66,0,0" Name="radioButton_free_3" VerticalAlignment="Top" />
+                    <Label Content="番組長で絞り込み（それぞれ0で絞り込み無し）" Height="28" HorizontalAlignment="Left" Margin="444,88,0,0" Name="label13" VerticalAlignment="Top" />
+                    <TextBox Height="24" HorizontalAlignment="Left" Margin="468,112,0,0" Name="textBox_chkDurationMin" VerticalAlignment="Top" Width="48"/>
+                    <Label Content="分以上" Height="28" Margin="514,112,0,0" Name="label12" VerticalAlignment="Top" HorizontalAlignment="Left" Width="46" />
+                    <TextBox Height="24" HorizontalAlignment="Left" Margin="583,112,0,0" Name="textBox_chkDurationMax" VerticalAlignment="Top" Width="48"/>
+                    <Label Content="分以下" Height="28" Margin="629,112,0,0" Name="label14" VerticalAlignment="Top" HorizontalAlignment="Left" Width="46" />
+                    <GroupBox Header="EPG 自動予約登録専用" Height="80" HorizontalAlignment="Left" Margin="444,146,0,0" Name="groupBox1" VerticalAlignment="Top" Width="290">
                         <Grid>
                             <CheckBox Content="同一番組名の録画結果があれば無効で登録する" Height="16" HorizontalAlignment="Left" Margin="6,6,0,0" Name="checkBox_chkRecEnd" VerticalAlignment="Top" />
                             <Label Content="確認対象期間" Height="28" HorizontalAlignment="Left" Margin="22,24,0,0" Name="label9" VerticalAlignment="Top" />

@@ -153,11 +153,11 @@
             -->
         </ListView>
         <StackPanel Grid.Column="1" Name="stackPanel_button">
-            <Button Content="削除" Height="23" Name="button_del" Margin="0,10,0,10" Click="button_del_Click" Style="{StaticResource ButtonStyle1}" ToolTip="Delete" />
-            <Button Content="変更" Height="23" Name="button_change" Margin="0,10,0,10" Click="button_change_Click" Style="{StaticResource ButtonStyle1}" ToolTip="Enter" />
-            <Button Content="無効" Height="23" Name="button_no" Margin="0,10,0,10" Click="button_no_Click" Style="{StaticResource ButtonStyle1}" />
-            <Button Content="プログラム予約追加" Height="23" Name="button_add_manual" Margin="0,10,0,10" Click="button_add_manual_Click" Style="{StaticResource ButtonStyle1}" />
-            <Button Content="追っかけ再生" Height="23" Name="button_timeShiftPlay" Margin="0,10,0,10" Click="timeShiftPlay_Click" Style="{StaticResource ButtonStyle1}" ToolTip="Ctrl + P" />
+            <Button Content="削除" Height="23" Name="button_del" Margin="0,10,0,10" Click="button_del_Click" ToolTip="Delete" />
+            <Button Content="変更" Height="23" Name="button_change" Margin="0,10,0,10" Click="button_change_Click" ToolTip="Enter" />
+            <Button Content="無効" Height="23" Name="button_no" Margin="0,10,0,10" Click="button_no_Click" />
+            <Button Content="プログラム予約追加" Height="23" Name="button_add_manual" Margin="0,10,0,10" Click="button_add_manual_Click" />
+            <Button Content="追っかけ再生" Height="23" Name="button_timeShiftPlay" Margin="0,10,0,10" Click="timeShiftPlay_Click" ToolTip="Ctrl + P" />
         </StackPanel>
     </Grid>
 </UserControl>

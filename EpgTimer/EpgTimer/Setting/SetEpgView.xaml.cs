@@ -13,9 +13,6 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Windows.Markup;
 
-using CtrlCmdCLI;
-using CtrlCmdCLI.Def;
-
 namespace EpgTimer.Setting
 {
     /// <summary>
@@ -55,36 +52,6 @@ namespace EpgTimer.Setting
 
             try
             {
-                if (Settings.Instance.NoStyle == 1)
-                {
-                    button_colorTitle1.Style = null;
-                    button_colorTitle2.Style = null;
-                    button0.Style = null;
-                    button1.Style = null;
-                    button2.Style = null;
-                    button3.Style = null;
-                    button4.Style = null;
-                    button5.Style = null;
-                    button6.Style = null;
-                    button7.Style = null;
-                    button8.Style = null;
-                    button9.Style = null;
-                    button10.Style = null;
-                    button11.Style = null;
-                    button12.Style = null;
-                    button13.Style = null;
-                    button14.Style = null;
-                    button15.Style = null;
-                    button16.Style = null;
-                    button17.Style = null;
-                    button_tab_add.Style = null;
-                    button_tab_chg.Style = null;
-                    button_tab_del.Style = null;
-                    button_tab_up.Style = null;
-                    buttontab_down.Style = null;
-                }
-
-
                 foreach (string name in ColorDef.ColorNames)
                 {
                     colorList.Add(name, new ColorSelectionItem(name, ColorDef.Instance.ColorTable[name]));
