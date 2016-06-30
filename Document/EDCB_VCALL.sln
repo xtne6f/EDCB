@@ -1,6 +1,8 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual C++ Express 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EdcbPlugIn", "..\EdcbPlugIn\EdcbPlugIn\EdcbPlugIn.vcxproj", "{82F324A0-4606-4B96-9F04-97D8E0C9F9C0}"
+EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EpgDataCap_Bon", "..\EpgDataCap_Bon\EpgDataCap_Bon\EpgDataCap_Bon.vcxproj", "{A690F4ED-0014-4346-AC5B-9FB4F2B3D05F}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EpgDataCap3", "..\EpgDataCap3\EpgDataCap3\EpgDataCap3.vcxproj", "{2342998F-86F9-4819-8B01-6E9103F0DCD4}"
@@ -19,6 +21,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Write_AVIVO", "..\Write_AVI
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Write_Default", "..\Write_Default\Write_Default\Write_Default.vcxproj", "{1A31824D-D8E5-4AC5-9D89-354FEC750B94}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Write_OneService", "..\Write_OneService\Write_OneService\Write_OneService.vcxproj", "{92EA5AE6-B81F-4BE4-809E-275F32F166EC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -27,6 +31,14 @@ Global
 		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{82F324A0-4606-4B96-9F04-97D8E0C9F9C0}.Debug|Win32.ActiveCfg = Debug|Win32
+		{82F324A0-4606-4B96-9F04-97D8E0C9F9C0}.Debug|Win32.Build.0 = Debug|Win32
+		{82F324A0-4606-4B96-9F04-97D8E0C9F9C0}.Debug|x64.ActiveCfg = Debug|x64
+		{82F324A0-4606-4B96-9F04-97D8E0C9F9C0}.Debug|x64.Build.0 = Debug|x64
+		{82F324A0-4606-4B96-9F04-97D8E0C9F9C0}.Release|Win32.ActiveCfg = Release|Win32
+		{82F324A0-4606-4B96-9F04-97D8E0C9F9C0}.Release|Win32.Build.0 = Release|Win32
+		{82F324A0-4606-4B96-9F04-97D8E0C9F9C0}.Release|x64.ActiveCfg = Release|x64
+		{82F324A0-4606-4B96-9F04-97D8E0C9F9C0}.Release|x64.Build.0 = Release|x64
 		{A690F4ED-0014-4346-AC5B-9FB4F2B3D05F}.Debug|Win32.ActiveCfg = Debug|Win32
 		{A690F4ED-0014-4346-AC5B-9FB4F2B3D05F}.Debug|Win32.Build.0 = Debug|Win32
 		{A690F4ED-0014-4346-AC5B-9FB4F2B3D05F}.Debug|x64.ActiveCfg = Debug|x64
@@ -95,6 +107,14 @@ Global
 		{1A31824D-D8E5-4AC5-9D89-354FEC750B94}.Release|Win32.Build.0 = Release|Win32
 		{1A31824D-D8E5-4AC5-9D89-354FEC750B94}.Release|x64.ActiveCfg = Release|x64
 		{1A31824D-D8E5-4AC5-9D89-354FEC750B94}.Release|x64.Build.0 = Release|x64
+		{92EA5AE6-B81F-4BE4-809E-275F32F166EC}.Debug|Win32.ActiveCfg = Debug|Win32
+		{92EA5AE6-B81F-4BE4-809E-275F32F166EC}.Debug|Win32.Build.0 = Debug|Win32
+		{92EA5AE6-B81F-4BE4-809E-275F32F166EC}.Debug|x64.ActiveCfg = Debug|x64
+		{92EA5AE6-B81F-4BE4-809E-275F32F166EC}.Debug|x64.Build.0 = Debug|x64
+		{92EA5AE6-B81F-4BE4-809E-275F32F166EC}.Release|Win32.ActiveCfg = Release|Win32
+		{92EA5AE6-B81F-4BE4-809E-275F32F166EC}.Release|Win32.Build.0 = Release|Win32
+		{92EA5AE6-B81F-4BE4-809E-275F32F166EC}.Release|x64.ActiveCfg = Release|x64
+		{92EA5AE6-B81F-4BE4-809E-275F32F166EC}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
