@@ -15,7 +15,7 @@ AssertCsrf(post)
 
 aa={}
 lastRecSetting=nil
-aa.dataID=0+(mg.get_var(mg.request_info.query_string, 'id') or 0)
+aa.dataID=tonumber(mg.get_var(mg.request_info.query_string, 'id')) or 0
 if aa.dataID~=0 then
   for i,v in ipairs(edcb.EnumAutoAdd()) do
     if v.dataID==aa.dataID then
@@ -30,21 +30,21 @@ if aa.dataID~=0 then
 end
 modified=false
 if post and (aa.dataID==0 or lastRecSetting) then
-  presetID=mg.get_var(post, 'presetID')
-  recMode=mg.get_var(post, 'recMode')
-  tuijyuuFlag=mg.get_var(post, 'tuijyuuFlag')
-  priority=mg.get_var(post, 'priority')
-  pittariFlag=mg.get_var(post, 'pittariFlag')
-  suspendMode=mg.get_var(post, 'suspendMode')
+  presetID=tonumber(mg.get_var(post, 'presetID'))
+  recMode=tonumber(mg.get_var(post, 'recMode'))
+  tuijyuuFlag=tonumber(mg.get_var(post, 'tuijyuuFlag')) or 0
+  priority=tonumber(mg.get_var(post, 'priority'))
+  pittariFlag=tonumber(mg.get_var(post, 'pittariFlag')) or 0
+  suspendMode=tonumber(mg.get_var(post, 'suspendMode'))
   rebootFlag=mg.get_var(post, 'rebootFlag')
   useDefMarginFlag=mg.get_var(post, 'useDefMarginFlag')
-  startMargin=mg.get_var(post, 'startMargin')
-  endMargin=mg.get_var(post, 'endMargin')
+  startMargin=tonumber(mg.get_var(post, 'startMargin'))
+  endMargin=tonumber(mg.get_var(post, 'endMargin'))
   serviceMode=mg.get_var(post, 'serviceMode')
   serviceMode_1=mg.get_var(post, 'serviceMode_1')
   serviceMode_2=mg.get_var(post, 'serviceMode_2')
   continueRecFlag=mg.get_var(post, 'continueRecFlag')
-  tunerID=mg.get_var(post, 'tunerID')
+  tunerID=tonumber(mg.get_var(post, 'tunerID'))
   partialRecFlag=mg.get_var(post, 'partialRecFlag')
   if presetID and
      recMode and
@@ -54,12 +54,12 @@ if post and (aa.dataID==0 or lastRecSetting) then
   then
     aa.recSetting=lastRecSetting or {}
     rs=aa.recSetting
-    if 0+presetID~=0xFFFF then
+    if presetID~=0xFFFF then
       rs.batFilePath=''
       rs.recFolderList={}
       rs.partialRecFolder={}
       for i,v in ipairs(edcb.EnumRecPresetInfo()) do
-        if v.id==0+presetID then
+        if v.id==presetID then
           rs.batFilePath=v.recSetting.batFilePath
           rs.recFolderList=v.recSetting.recFolderList
           rs.partialRecFolder=v.recSetting.partialRecFolder
@@ -67,42 +67,42 @@ if post and (aa.dataID==0 or lastRecSetting) then
         end
       end
     end
-    rs.recMode=0+recMode
-    rs.tuijyuuFlag=0+(tuijyuuFlag or 0)~=0
-    rs.priority=0+priority
-    rs.pittariFlag=0+(pittariFlag or 0)~=0
-    rs.suspendMode=0+suspendMode
+    rs.recMode=recMode
+    rs.tuijyuuFlag=tuijyuuFlag~=0
+    rs.priority=priority
+    rs.pittariFlag=pittariFlag~=0
+    rs.suspendMode=suspendMode
     rs.rebootFlag=rebootFlag~=nil
     rs.startMargin=nil
     rs.endMargin=nil
     if not useDefMarginFlag then
-      rs.startMargin=0+startMargin
-      rs.endMargin=0+endMargin
+      rs.startMargin=startMargin
+      rs.endMargin=endMargin
     end
     rs.serviceMode=serviceMode and 0 or 1+(serviceMode_1 and 16 or 0)+(serviceMode_2 and 32 or 0)
     rs.continueRecFlag=continueRecFlag~=nil
-    rs.tunerID=0+tunerID
+    rs.tunerID=tunerID
     rs.partialRecFlag=partialRecFlag and 1 or 0
 
     aa.searchInfo={}
     si=aa.searchInfo
     si.andKey=mg.get_var(post, 'andKey') or ''
     si.notKey=mg.get_var(post, 'notKey') or ''
-    si.regExpFlag=0+(mg.get_var(post, 'regExpFlag') or 0)~=0
-    si.titleOnlyFlag=0+(mg.get_var(post, 'titleOnlyFlag') or 0)~=0
-    si.aimaiFlag=0+(mg.get_var(post, 'aimaiFlag') or 0)~=0
-    si.notContetFlag=0+(mg.get_var(post, 'notContetFlag') or 0)~=0
+    si.regExpFlag=(tonumber(mg.get_var(post, 'regExpFlag')) or 0)~=0
+    si.titleOnlyFlag=(tonumber(mg.get_var(post, 'titleOnlyFlag')) or 0)~=0
+    si.aimaiFlag=(tonumber(mg.get_var(post, 'aimaiFlag')) or 0)~=0
+    si.notContetFlag=(tonumber(mg.get_var(post, 'notContetFlag')) or 0)~=0
     si.notDateFlag=false
-    si.freeCAFlag=0+(mg.get_var(post, 'freeCAFlag') or 0)
-    si.chkRecEnd=0+(mg.get_var(post, 'chkRecEnd') or 0)~=0
-    si.chkRecDay=0+(mg.get_var(post, 'chkRecDay') or 0)
-    si.chkDurationMin=0+(mg.get_var(post, 'chkDurationMin') or 0)
-    si.chkDurationMax=0+(mg.get_var(post, 'chkDurationMax') or 0)
+    si.freeCAFlag=tonumber(mg.get_var(post, 'freeCAFlag')) or 0
+    si.chkRecEnd=(tonumber(mg.get_var(post, 'chkRecEnd')) or 0)~=0
+    si.chkRecDay=tonumber(mg.get_var(post, 'chkRecDay')) or 0
+    si.chkDurationMin=tonumber(mg.get_var(post, 'chkDurationMin')) or 0
+    si.chkDurationMax=tonumber(mg.get_var(post, 'chkDurationMax')) or 0
     si.contentList={}
     for i=0,10000 do
       v=mg.get_var(post, 'contentList', i)
       if not v then break end
-      table.insert(si.contentList, {content_nibble=0+v})
+      table.insert(si.contentList, {content_nibble=tonumber(v) or 0})
     end
     si.serviceList={}
     for i=0,10000 do

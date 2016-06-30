@@ -10,7 +10,7 @@ ct=[=[
 ]=]
 
 edcb.htmlEscape=15
-aa={dataID=0+(mg.get_var(mg.request_info.query_string,'id') or 0)}
+aa={dataID=tonumber(mg.get_var(mg.request_info.query_string,'id')) or 0}
 if aa.dataID==0 then
   ct=ct..'<hr>EPG予約　新規条件追加<hr>\n'
   aa.searchInfo={
@@ -112,7 +112,7 @@ if aa.searchInfo then
   ct=ct..'<input type="checkbox" name="chkRecEnd" value="1"'..(si.chkRecEnd and ' checked="checked"' or '')..'>同一番組名の録画結果があれば無効で登録する<br>\n'
     ..'確認対象期間<input type="text" name="chkRecDay" value="'..si.chkRecDay..'" size="5">日前まで<br><br>\n'
     ..'<hr>録画設定<hr>\n'
-  presetID=0+(mg.get_var(mg.request_info.query_string,'presetID') or 65535)
+  presetID=tonumber(mg.get_var(mg.request_info.query_string,'presetID')) or 65535
   if aa.dataID==0 and presetID==65535 then
     presetID=0
   end

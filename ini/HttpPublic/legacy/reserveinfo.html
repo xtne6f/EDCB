@@ -10,7 +10,7 @@ ct=[=[
 予約詳細<br><br>
 ]=]
 
-id=0+(mg.get_var(mg.request_info.query_string,'id') or 0)
+id=tonumber(mg.get_var(mg.request_info.query_string,'id')) or 0
 recFilePath=edcb.GetRecFilePath and edcb.GetRecFilePath(id) or nil
 edcb.htmlEscape=15
 r=edcb.GetReserveData(id)
@@ -32,7 +32,7 @@ if r then
        ..mg.url_encode(video:gsub('[^\\/]*$','')..'chunk.lua'):gsub('%%2f','/')..'?0='..mg.url_encode(video:match('[^\\/]*$'))..'">chunk.lua</a>]<br>\n' or '')
     ..'<hr>録画設定<hr>\n<form action="reserveinfo.html">'
     ..'<input type="hidden" name="id" value="'..r.reserveID..'">プリセット: <select name="presetID">\n'
-  presetID=0+(mg.get_var(mg.request_info.query_string,'presetID') or 65535)
+  presetID=tonumber(mg.get_var(mg.request_info.query_string,'presetID')) or 65535
   preset=false
   rs=r.recSetting
   for i,v in ipairs(edcb.EnumRecPresetInfo()) do

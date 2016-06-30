@@ -1,12 +1,12 @@
 key={
-  network=0+(mg.get_var(mg.request_info.query_string,'network') or 0),
-  days29=0+(mg.get_var(mg.request_info.query_string,'days') or 0),
+  network=tonumber(mg.get_var(mg.request_info.query_string,'network')) or 0,
+  days29=tonumber(mg.get_var(mg.request_info.query_string,'days')) or 0,
   andKey=mg.get_var(mg.request_info.query_string,'andkey') or '',
   notKey=mg.get_var(mg.request_info.query_string,'notkey') or '',
   contentList={}
 }
 for w in string.gmatch(mg.get_var(mg.request_info.query_string,'genru') or '','[^-]+') do
-  table.insert(key.contentList, {content_nibble=0+w})
+  table.insert(key.contentList, {content_nibble=tonumber(w) or 0})
 end
 edcb.htmlEscape=15
 a=edcb.SearchEpg(key)
@@ -14,9 +14,9 @@ ct={'<?xml version="1.0" encoding="UTF-8" ?'..'>'}
 if not a then
   table.insert(ct, '<entry><err>EPGデータを読み込み中、または存在しません</err></entry>')
 else
-  basic=0+(mg.get_var(mg.request_info.query_string,'basic') or 1)~=0
-  index=math.max(0+(mg.get_var(mg.request_info.query_string,'index') or 0),0)
-  count=math.max(0+(mg.get_var(mg.request_info.query_string,'count') or 200),0)
+  basic=(tonumber(mg.get_var(mg.request_info.query_string,'basic')) or 1)~=0
+  index=math.max(tonumber(mg.get_var(mg.request_info.query_string,'index')) or 0,0)
+  count=math.max(tonumber(mg.get_var(mg.request_info.query_string,'count')) or 200,0)
   countTo=math.min(index+count,#a)
   table.insert(ct, '<entry><total>'..#a..'</total><index>'..index..'</index><count>'..math.max(countTo-index,0)..'</count><items>\r\n')
   for i=index+1,countTo do

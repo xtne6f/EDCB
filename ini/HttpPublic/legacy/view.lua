@@ -9,7 +9,7 @@ XEXT='.webm'
 -- 転送開始前に変換しておく量(bytes)
 XPREPARE=nil
 
-n=0+(mg.get_var(mg.request_info.query_string, 'n') or 0)
+n=tonumber(mg.get_var(mg.request_info.query_string, 'n')) or 0
 proto=n>=10 and 'tcp' or 'udp'
 port=n>=10 and 22230+math.min(n-10, 9) or 1234+math.max(n, 0)
 f=io.popen(

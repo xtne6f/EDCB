@@ -14,23 +14,23 @@ post=ReadPost()
 AssertCsrf(post)
 
 changed=false
-r=edcb.GetReserveData(0+(mg.get_var(mg.request_info.query_string, 'id') or 0))
+r=edcb.GetReserveData(tonumber(mg.get_var(mg.request_info.query_string, 'id')) or 0)
 if post and r then
-  presetID=mg.get_var(post, 'presetID')
-  recMode=mg.get_var(post, 'recMode')
-  tuijyuuFlag=mg.get_var(post, 'tuijyuuFlag')
-  priority=mg.get_var(post, 'priority')
-  pittariFlag=mg.get_var(post, 'pittariFlag')
-  suspendMode=mg.get_var(post, 'suspendMode')
+  presetID=tonumber(mg.get_var(post, 'presetID'))
+  recMode=tonumber(mg.get_var(post, 'recMode'))
+  tuijyuuFlag=tonumber(mg.get_var(post, 'tuijyuuFlag')) or 0
+  priority=tonumber(mg.get_var(post, 'priority'))
+  pittariFlag=tonumber(mg.get_var(post, 'pittariFlag')) or 0
+  suspendMode=tonumber(mg.get_var(post, 'suspendMode'))
   rebootFlag=mg.get_var(post, 'rebootFlag')
   useDefMarginFlag=mg.get_var(post, 'useDefMarginFlag')
-  startMargin=mg.get_var(post, 'startMargin')
-  endMargin=mg.get_var(post, 'endMargin')
+  startMargin=tonumber(mg.get_var(post, 'startMargin'))
+  endMargin=tonumber(mg.get_var(post, 'endMargin'))
   serviceMode=mg.get_var(post, 'serviceMode')
   serviceMode_1=mg.get_var(post, 'serviceMode_1')
   serviceMode_2=mg.get_var(post, 'serviceMode_2')
   continueRecFlag=mg.get_var(post, 'continueRecFlag')
-  tunerID=mg.get_var(post, 'tunerID')
+  tunerID=tonumber(mg.get_var(post, 'tunerID'))
   partialRecFlag=mg.get_var(post, 'partialRecFlag')
   if presetID and
      recMode and
@@ -39,12 +39,12 @@ if post and r then
      (useDefMarginFlag or startMargin and endMargin) and tunerID
   then
     rs=r.recSetting
-    if 0+presetID~=0xFFFF then
+    if presetID~=0xFFFF then
       rs.batFilePath=''
       rs.recFolderList={}
       rs.partialRecFolder={}
       for i,v in ipairs(edcb.EnumRecPresetInfo()) do
-        if v.id==0+presetID then
+        if v.id==presetID then
           rs.batFilePath=v.recSetting.batFilePath
           rs.recFolderList=v.recSetting.recFolderList
           rs.partialRecFolder=v.recSetting.partialRecFolder
@@ -52,21 +52,21 @@ if post and r then
         end
       end
     end
-    rs.recMode=0+recMode
-    rs.tuijyuuFlag=0+(tuijyuuFlag or 0)~=0
-    rs.priority=0+priority
-    rs.pittariFlag=0+(pittariFlag or 0)~=0
-    rs.suspendMode=0+suspendMode
+    rs.recMode=recMode
+    rs.tuijyuuFlag=tuijyuuFlag~=0
+    rs.priority=priority
+    rs.pittariFlag=pittariFlag~=0
+    rs.suspendMode=suspendMode
     rs.rebootFlag=rebootFlag~=nil
     rs.startMargin=nil
     rs.endMargin=nil
     if not useDefMarginFlag then
-      rs.startMargin=0+startMargin
-      rs.endMargin=0+endMargin
+      rs.startMargin=startMargin
+      rs.endMargin=endMargin
     end
     rs.serviceMode=serviceMode and 0 or 1+(serviceMode_1 and 16 or 0)+(serviceMode_2 and 32 or 0)
     rs.continueRecFlag=continueRecFlag~=nil
-    rs.tunerID=0+tunerID
+    rs.tunerID=tunerID
     rs.partialRecFlag=partialRecFlag and 1 or 0
     changed=edcb.ChgReserveData(r)
   end
