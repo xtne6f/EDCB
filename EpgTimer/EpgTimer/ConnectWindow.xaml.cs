@@ -23,6 +23,7 @@ namespace EpgTimer
                 cmb_preset.Items.Add(nowSet);
                 Settings.Instance.NWPreset.ForEach(item => cmb_preset.Items.Add(item.Clone()));
                 cmb_preset.SelectedIndex = FindCmbPresetItem(nowSet, true);
+                this.KeyDown += ViewUtil.KeyDown_Escape_Close();
             }
             catch { }
         }
@@ -36,14 +37,10 @@ namespace EpgTimer
                 Settings.Instance.NWServerPort = data.NWServerPort;
                 Settings.Instance.NWWaitPort = data.NWWaitPort;
                 Settings.Instance.NWMacAdd = data.NWMacAdd;
+                DialogResult = true;
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                return;
-            }
-
-            DialogResult = true;
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
+            return;
         }
 
         private void button_wake_Click(object sender, RoutedEventArgs e)
@@ -71,12 +68,6 @@ namespace EpgTimer
             }
 
             return macAddress;
-        }
-
-        protected override void OnKeyDown(KeyEventArgs e)
-        {
-            ViewUtil.Window_EscapeKey_Close(e, this);
-            base.OnKeyDown(e);
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)

@@ -810,7 +810,7 @@ namespace EpgTimer
             //並べ替え不要
             if (list.Count == 0) return true;
 
-            var autoView = ((MainWindow)Application.Current.MainWindow).autoAddView;
+            var autoView = ViewUtil.MainWindow.autoAddView;
             var view = (list[0] is EpgAutoAddData) ? (AutoAddListView)autoView.epgAutoAddView : autoView.manualAutoAddView;
 
             if (changeID == true)

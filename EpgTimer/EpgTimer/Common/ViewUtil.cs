@@ -15,6 +15,8 @@ namespace EpgTimer
 {
     public static class ViewUtil
     {
+        public static MainWindow MainWindow { get { return (MainWindow)Application.Current.MainWindow; } }
+
         public static Brush EpgDataContentBrush(EpgEventInfo EventInfo)
         {
             if (EventInfo == null) return Brushes.White;
@@ -434,14 +436,17 @@ namespace EpgTimer
             lstBox.Items.Add(text);
         }
 
-        public static bool Window_EscapeKey_Close(KeyEventArgs e, Window win)
+        public static KeyEventHandler KeyDown_Escape_Close()
         {
-            if (win != null && Keyboard.Modifiers == ModifierKeys.None && e.Key == Key.Escape)
+            return new KeyEventHandler((sender, e) =>
             {
-                e.Handled = true;
-                win.Close();
-            }
-            return e.Handled;
+                if (e.Handled == false && Keyboard.Modifiers == ModifierKeys.None && e.Key == Key.Escape)
+                {
+                    e.Handled = true;
+                    var win = CommonUtil.GetTopWindow(sender as Visual);
+                    if (win != null) win.Close();
+                }
+            });
         }
 
         ///<summary>同じアイテムがあってもスクロールするようにしたもの(ItemSource使用時無効)</summary>

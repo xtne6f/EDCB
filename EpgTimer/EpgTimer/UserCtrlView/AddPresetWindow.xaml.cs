@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Input;
 
 namespace EpgTimer
 {
@@ -12,7 +8,6 @@ namespace EpgTimer
     /// </summary>
     public partial class AddPresetWindow : Window
     {
-        private bool chgModeFlag = false;
         public AddPresetWindow()
         {
             InitializeComponent();
@@ -20,16 +15,8 @@ namespace EpgTimer
 
         public void SetMode(bool chgMode)
         {
-            if (chgMode == true)
-            {
-                button_add.Content = "変更";
-                label_chgMsg.Visibility = Visibility.Visible;
-            }
-            else
-            {
-                button_add.Content = "追加";
-            }
-            chgModeFlag = chgMode;
+            button_add.Content = chgMode == true ? "変更" : "追加";
+            label_chgMsg.Visibility = chgMode == true ? Visibility.Visible : Visibility.Hidden;
         }
 
         public void SetName(String name)

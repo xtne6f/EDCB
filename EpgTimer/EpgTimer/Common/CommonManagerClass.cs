@@ -1584,7 +1584,7 @@ namespace EpgTimer
         }
         public UserCtrlView.StatusView GetStatusbar(Visual target = null)
         {
-            return (target is SearchWindow) ? (target as SearchWindow).statusBar : (Application.Current.MainWindow as MainWindow).statusBar;
+            return (target is SearchWindow) ? (target as SearchWindow).statusBar : ViewUtil.MainWindow.statusBar;
         }
     }
 }

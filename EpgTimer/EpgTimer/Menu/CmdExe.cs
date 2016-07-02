@@ -51,7 +51,7 @@ namespace EpgTimer
         protected static MenuManager mm { get { return CommonManager.Instance.MM; } }
 
         protected Control Owner;
-        protected static MainWindow mainWindow { get { return (MainWindow)Application.Current.MainWindow; } }
+        protected static MainWindow mainWindow { get { return ViewUtil.MainWindow; } }
 
         protected Dictionary<ICommand, cmdOption> cmdList = new Dictionary<ICommand, cmdOption>();
 

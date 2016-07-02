@@ -13,8 +13,8 @@ namespace EpgTimer
     public partial class SearchWindow : Window
     {
         //よく使うので
-        private static MainWindow mainWindow { get { return (MainWindow)Application.Current.MainWindow; } }
-        private static EpgAutoAddView autoAddView { get { return mainWindow.autoAddView.epgAutoAddView; } }
+        private static MainWindow mainWindow { get { return ViewUtil.MainWindow; } }
+        private static EpgAutoAddView autoAddView { get { return ViewUtil.MainWindow.autoAddView.epgAutoAddView; } }
 
         private static CtrlCmdUtil cmd { get { return CommonManager.Instance.CtrlCmd; } }
         private static MenuManager mm { get { return CommonManager.Instance.MM; } }
