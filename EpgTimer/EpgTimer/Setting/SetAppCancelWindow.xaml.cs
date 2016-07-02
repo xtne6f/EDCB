@@ -49,6 +49,7 @@ namespace EpgTimer
                 bx.AllowDragDrop();
                 button_process_del.Click += new RoutedEventHandler(bx.button_Delete_Click);
                 button_process_add.Click += ViewUtil.ListBox_TextCheckAdd(listBox_process, textBox_process);
+                textBox_process.KeyDown += ViewUtil.KeyDown_Enter(button_process_add);
             }
         }
 

@@ -45,6 +45,9 @@ namespace EpgTimer
                 bxc.AllowDragDrop();
                 button_chk_del.Click += new RoutedEventHandler(bxc.button_Delete_Click);
                 button_chk_add.Click += ViewUtil.ListBox_TextCheckAdd(listBox_chk_folder, textBox_chk_folder);
+
+                textBox_ext.KeyDown += ViewUtil.KeyDown_Enter(button_add);
+                textBox_chk_folder.KeyDown += ViewUtil.KeyDown_Enter(button_chk_add);
             }
         }
 

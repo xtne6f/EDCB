@@ -47,6 +47,7 @@ namespace EpgTimer
                 Settings.Instance.RecPresetList.ForEach(info => info.LoadRecPresetData());//iniファイルから録画設定をロード
                 Settings.Instance.RecPresetList.ForEach(info => comboBox_preSet.Items.Add(info.Clone()));//現在の処理ならClone()無くても大丈夫
                 comboBox_preSet.SelectedIndex = 0;
+                comboBox_preSet.KeyDown += ViewUtil.KeyDown_Enter(button_reload_preset);
 
                 var bx = new BoxExchangeEdit.BoxExchangeEditor(null, listView_recFolder, true, true, true);
                 bx.targetBoxAllowDoubleClick(bx.TargetBox, (sender, e) => button_recFolderChg.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));

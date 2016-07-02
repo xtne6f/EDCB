@@ -51,6 +51,10 @@ namespace EpgTimer.Setting
                 listBox_bon.IsEnabled = true;
                 ViewUtil.DisableControlChildren(tabItem3);
             }
+            else
+            {
+                textBox_recFolder.KeyDown += ViewUtil.KeyDown_Enter(button_rec_add);
+            }
 
             listBox_Button_Set();
 

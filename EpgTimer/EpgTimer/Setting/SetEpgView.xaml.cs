@@ -65,6 +65,7 @@ namespace EpgTimer.Setting
                 button_tunerFontCustColorService.IsEnabled = !Settings.Instance.TunerColorModeUse;
                 checkBox_tuner_display_offres.IsChecked = Settings.Instance.TunerDisplayOffReserve;
 
+                this.listBox_tab.KeyDown += ViewUtil.KeyDown_Enter(button_tab_chg);
                 var bx = new BoxExchangeEditor(null, this.listBox_tab, true, true, true);
                 bx.targetBoxAllowDoubleClick(bx.TargetBox, (sender, e) => button_tab_chg.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
                 button_tab_del.Click += new RoutedEventHandler(bx.button_Delete_Click);

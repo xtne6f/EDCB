@@ -449,6 +449,18 @@ namespace EpgTimer
             });
         }
 
+        public static KeyEventHandler KeyDown_Enter(Button btn)
+        {
+            return new KeyEventHandler((sender, e) =>
+            {
+                if (e.Handled == false && Keyboard.Modifiers == ModifierKeys.None && e.Key == Key.Enter)
+                {
+                    e.Handled = true;
+                    if (btn != null) btn.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                }
+            });
+        }
+
         ///<summary>同じアイテムがあってもスクロールするようにしたもの(ItemSource使用時無効)</summary>
         //ScrollIntoView()は同じアイテムが複数あると上手く動作しないので、ダミーを使って無理矢理移動させる。
         //同じ理由でSelectedItemも正しく動作しないので、スクロール位置はindexで取るようにする。

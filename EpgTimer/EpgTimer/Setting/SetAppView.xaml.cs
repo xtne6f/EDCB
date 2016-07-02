@@ -598,6 +598,7 @@ namespace EpgTimer.Setting
             var bxi = new BoxExchangeEditor(null, this.listBox_iEPG, true);
             bxi.targetBoxAllowKeyAction(this.listBox_iEPG, new KeyEventHandler((sender, e) => button_del.RaiseEvent(new RoutedEventArgs(Button.ClickEvent))));
             listBox_iEPG.SelectionChanged += ViewUtil.ListBox_TextBoxSyncSelectionChanged(listBox_iEPG, textBox_station);
+            textBox_station.KeyDown += ViewUtil.KeyDown_Enter(button_add);
         }
         private void drag_drop(object sender, DragEventArgs e, Button add, Button ins)
         {
