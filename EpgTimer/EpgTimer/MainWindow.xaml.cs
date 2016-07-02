@@ -972,7 +972,7 @@ namespace EpgTimer
             recInfoView.RefreshMenu();
             autoAddView.RefreshMenu();
             epgView.RefreshMenu();
-            SearchWindow.RefreshMenu(this);
+            SearchWindow.RefreshMenus();
 
             //メインウィンドウの検索ボタン用。
             mBinds.ResetInputBindings(this);

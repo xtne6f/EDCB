@@ -62,7 +62,7 @@ namespace EpgTimer
                 //コマンド集に無いもの
                 mc.AddReplaceCommand(EpgCmds.ReSearch, mc_Research);
                 mc.AddReplaceCommand(EpgCmds.ReSearch2, mc_Research);
-                mc.AddReplaceCommand(EpgCmds.Search, (sender, e) => SearchPg(true));
+                mc.AddReplaceCommand(EpgCmds.Search, button_search_Click);
                 mc.AddReplaceCommand(EpgCmds.AddInDialog, button_add_epgAutoAdd_Click);
                 mc.AddReplaceCommand(EpgCmds.ChangeInDialog, button_chg_epgAutoAdd_Click, (sender, e) => e.CanExecute = winMode == SearchMode.Change);
                 mc.AddReplaceCommand(EpgCmds.DeleteInDialog, button_del_epgAutoAdd_Click, (sender, e) => e.CanExecute = winMode == SearchMode.Change);
@@ -130,11 +130,10 @@ namespace EpgTimer
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
-        public static void RefreshMenu(Window owner_win)
+        public static void RefreshMenus()
         {
-            foreach (SearchWindow win in owner_win.OwnedWindows.OfType<SearchWindow>())
+            foreach (var win in Application.Current.Windows.OfType<SearchWindow>())
             {
-                SearchWindow.RefreshMenu(win);
                 win.RefreshMenu();
             }
         }
@@ -218,6 +217,12 @@ namespace EpgTimer
                 }
             }
             tabItem2.Header = "録画設定" + preset_str;
+        }
+
+        private void button_search_Click(object sender, ExecutedRoutedEventArgs e)
+        {
+            SearchPg(true);
+            CommonManager.Instance.StatusNotifySet(true, "検索を実行", this);
         }
 
         private void SearchPg(bool addSearchLog = false)
@@ -494,7 +499,7 @@ namespace EpgTimer
 
         public static void MinimizeWindows()
         {
-            foreach (SearchWindow win in Application.Current.Windows.OfType<SearchWindow>())
+            foreach (var win in Application.Current.Windows.OfType<SearchWindow>())
             {
                 win.WindowState = WindowState.Minimized;
             }
@@ -537,7 +542,7 @@ namespace EpgTimer
         {
             AllClosing = true;
 
-            foreach (SearchWindow win in Application.Current.Windows.OfType<SearchWindow>())
+            foreach (var win in Application.Current.Windows.OfType<SearchWindow>())
             {
                 win.Close();
             }
@@ -549,7 +554,7 @@ namespace EpgTimer
 
         public static void UpdatesInfo(bool reload = true)
         {
-            foreach (SearchWindow win in Application.Current.Windows.OfType<SearchWindow>())
+            foreach (var win in Application.Current.Windows.OfType<SearchWindow>())
             {
                 win.UpdateInfo(reload);
             }
@@ -589,7 +594,7 @@ namespace EpgTimer
         }
         public static bool UpdatesEpgAutoAddViewSelection()
         {
-            foreach (SearchWindow win in Application.Current.Windows.OfType<SearchWindow>())
+            foreach (var win in Application.Current.Windows.OfType<SearchWindow>())
             {
                 if (win.IsActive == true)
                 {
@@ -650,7 +655,7 @@ namespace EpgTimer
 
         public static void UpdatesParentStatus()
         {
-            foreach (SearchWindow win in Application.Current.Windows.OfType<SearchWindow>())
+            foreach (var win in Application.Current.Windows.OfType<SearchWindow>())
             {
                 win.UpdateParentStatus();
             }
