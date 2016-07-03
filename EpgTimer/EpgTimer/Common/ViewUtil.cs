@@ -497,5 +497,27 @@ namespace EpgTimer
             var element = lb.InputHitTest((Point)(pt ?? Mouse.GetPosition(lb))) as DependencyObject;
             return element == null ? null : lb.ContainerFromElement(element);
         }
+
+        public static int SingleWindowCheck(Type t, bool closeWindow = false)
+        {
+            var wList = Application.Current.Windows.OfType<Window>().Where(w => w.GetType() == t);
+            foreach (var w in wList)
+            {
+                if (closeWindow == true)
+                {
+                    w.Close();
+                }
+                else
+                {
+                    if (w.WindowState == WindowState.Minimized)
+                    {
+                        w.WindowState = WindowState.Normal;
+                    }
+                    w.Visibility = Visibility.Visible;
+                    w.Activate();
+                }
+            }
+            return wList.Count();
+        }
     }
 }

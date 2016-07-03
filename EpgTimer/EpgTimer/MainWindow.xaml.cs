@@ -497,6 +497,10 @@ namespace EpgTimer
         void OpenConnectDialog()
         {
             if (CommonManager.Instance.NWMode == false) return;
+
+            //複数ダイアログの禁止(タスクアイコンからの起動対策)
+            if (ViewUtil.SingleWindowCheck(typeof(ConnectWindow)) != 0) return;
+
             if (connectTimer != null) return;
 
             var dlg = new ConnectWindow();
@@ -509,6 +513,9 @@ namespace EpgTimer
         void ConnectCmd(bool showDialog = false)
         {
             if (CommonManager.Instance.NWMode == false) return;
+
+            //ダイアログが残っているようなら閉じる(タスクアイコンからの起動対策)
+            ViewUtil.SingleWindowCheck(typeof(ConnectWindow), true);
 
             var interval = TimeSpan.FromSeconds(Settings.Instance.WoLWaitSecond + 60);
             var CheckIsConnected = new Action(() =>
@@ -933,6 +940,9 @@ namespace EpgTimer
         {
             SaveViewData();
 
+            //複数ダイアログの禁止(タスクアイコンからの起動対策)
+            if (ViewUtil.SingleWindowCheck(typeof(SettingWindow)) != 0) return;
+
             var setting = new SettingWindow();
             setting.Owner = CommonUtil.GetTopWindow(this);
             if (setting.ShowDialog() == true)
@@ -1068,6 +1078,9 @@ namespace EpgTimer
 
         void SuspendCmd(byte suspendMode)
         {
+            //既にダイアログが出ている場合は閉じる。(タスクアイコンからの起動対策)
+            ViewUtil.SingleWindowCheck(typeof(SuspendCheckWindow), true);
+
             suspendMode = suspendMode == 1 ? suspendMode : (byte)2;
             ErrCode err = cmd.SendChkSuspend();
             if (err != ErrCode.CMD_SUCCESS)
@@ -1148,9 +1161,10 @@ namespace EpgTimer
 
         void OpenNotifyLogDialog()
         {
-            var dlg = new NotifyLogWindow();
-            dlg.Owner = CommonUtil.GetTopWindow(this);
-            dlg.ShowDialog();
+            //複数ダイアログの禁止(タスクアイコンからの起動対策)
+            if (ViewUtil.SingleWindowCheck(typeof(NotifyLogWindow)) != 0) return;
+
+            new NotifyLogWindow { Owner = CommonUtil.GetTopWindow(this) }.ShowDialog();
         }
 
         private void OutsideCmdCallback(CMD_STREAM pCmdParam, CMD_STREAM pResParam, bool networkFlag)
