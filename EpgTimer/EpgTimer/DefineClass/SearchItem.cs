@@ -95,7 +95,7 @@ namespace EpgTimer
             }
         }
         /// <summary>
-        /// 番組放送時間(長さ)
+        /// 番組長
         /// </summary>
         public virtual String ProgramDuration
         {

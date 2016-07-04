@@ -53,7 +53,7 @@
                 </GridViewColumn>
                 <GridViewColumn>
                     <GridViewColumn.Header>
-                        <GridViewColumnHeader Content="時間(長さ)" Uid="ProgramDuration" />
+                        <GridViewColumnHeader Content="長さ" Uid="ProgramDuration" />
                     </GridViewColumn.Header>
                     <GridViewColumn.CellTemplate>
                         <DataTemplate>
