@@ -351,7 +351,9 @@ UINT WINAPI CWriteTSFile::OutThread(LPVOID param)
 			for( size_t i=0; i<sys->fileList.size(); i++ ){
 				if( sys->fileList[i].writeUtil ){
 					DWORD write = 0;
-					sys->fileList[i].writeUtil->AddTSBuff( &itr->front(), (DWORD)itr->size(), &write);
+          if (sys->fileList[i].writeUtil->AddTSBuff(&itr->front(), (DWORD)itr->size(), &write)) {
+            sys->writeTotalSize += write;
+          }
 				}
 			}
 			itr->clear();
