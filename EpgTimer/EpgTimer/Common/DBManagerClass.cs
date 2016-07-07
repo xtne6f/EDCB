@@ -237,26 +237,13 @@ namespace EpgTimer
             RecFileInfoAppend retv = null;
             if (recFileAppendList.TryGetValue(master.ID, out retv) == false)
             {
+                //UpdataDBのときは、取得出来なくても取得済み扱いにする。
                 if (UpdateDB == true)
                 {
-                    var list = recFileInfo.Values.Where(info => info.HasErrPackets == true 
+                    var list = recFileInfo.Values.Where(info => info.HasErrPackets == true
                         && recFileAppendList.ContainsKey(info.ID) == false).ToList();
 
-                    try
-                    {
-                        var extraDatalist = new List<RecFileInfo>();
-                        if (cmd.SendGetRecInfoList(list.Select(info => info.ID).ToList(), ref extraDatalist) == ErrCode.CMD_SUCCESS)
-                        {
-                            extraDatalist.ForEach(item => recFileAppendList.Add(item.ID, new RecFileInfoAppend(item)));
-                        }
-                    }
-                    catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
-
-                    //何か問題があった場合でも何度もSendGetRecInfoList()しないよう残りも全て登録してしまう。
-                    foreach (var item in list.Where(info => recFileAppendList.ContainsKey(info.ID) == false))
-                    {
-                        recFileAppendList.Add(item.ID, new RecFileInfoAppend(item, false));
-                    }
+                    ReadRecFileAppend(list);
 
                     recFileAppendList.TryGetValue(master.ID, out retv);
                 }
@@ -271,6 +258,32 @@ namespace EpgTimer
                 }
             }
             return retv ?? new RecFileInfoAppend(master);
+        }
+        public void ReadRecFileAppend(List<RecFileInfo> list = null)
+        {
+            if (recFileAppendList == null)
+            {
+                recFileAppendList = new Dictionary<uint, RecFileInfoAppend>();
+            }
+
+            list = list ?? recFileInfo.Values.Where(info => recFileAppendList.ContainsKey(info.ID) == false).ToList();
+            if (list.Count == 0) return;
+
+            try
+            {
+                var extraDatalist = new List<RecFileInfo>();
+                if (cmd.SendGetRecInfoList(list.Select(info => info.ID).ToList(), ref extraDatalist) == ErrCode.CMD_SUCCESS)
+                {
+                    extraDatalist.ForEach(item => recFileAppendList.Add(item.ID, new RecFileInfoAppend(item)));
+                }
+            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
+
+            //何か問題があった場合でも何度もSendGetRecInfoList()しないよう残りも全て登録してしまう。
+            foreach (var item in list.Where(info => recFileAppendList.ContainsKey(info.ID) == false))
+            {
+                recFileAppendList.Add(item.ID, new RecFileInfoAppend(item, false));
+            }
         }
         public void ClearRecFileAppend(bool connect = false)
         {
