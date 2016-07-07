@@ -517,7 +517,7 @@ namespace EpgTimer
                         Type type = (item.CommandParameter as EpgCmdParam).Data as Type;
                         int id = (item.CommandParameter as EpgCmdParam).ID;
                         AutoAddData autoAdd = AutoAddData.AutoAddList(type, (uint)id);
-                        if (autoAdd != null && list[0].IsAutoAdded == true)
+                        if (autoAdd != null)
                         {
                             item.IsChecked = autoAdd.GetReserveList().Any(info => info.ReserveID == list[0].ReserveID);
                         }
