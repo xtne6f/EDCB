@@ -320,12 +320,10 @@ namespace EpgTimer
                 if (srclistBox.SelectedItem == null) return;
 
                 var info = (ChSet5Item)srclistBox.SelectedItems[srclistBox.SelectedItems.Count - 1];
-                targetBox.Text = 
+                targetBox.Text =
                     info.ServiceName + "\r\n" +
                     info.NetworkName + "\r\n" +
-                    "OriginalNetworkID : " + info.ONID.ToString() + " (0x" + info.ONID.ToString("X4") + ")\r\n" +
-                    "TransportStreamID : " + info.TSID.ToString() + " (0x" + info.TSID.ToString("X4") + ")\r\n" +
-                    "ServiceID : " + info.SID.ToString() + " (0x" + info.SID.ToString("X4") + ")\r\n";
+                    CommonManager.Convert64KeyString(info.Key);
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }

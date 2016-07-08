@@ -101,7 +101,7 @@ namespace EpgTimer
         public virtual String ServiceName { get { return ""; } }
         public override string ToString()
         {
-            return CommonManager.Instance.ConvertTextSearchString(EventName);
+            return CommonManager.ConvertTextSearchString(EventName);
         }
         public virtual bool KeyEnabled
         {

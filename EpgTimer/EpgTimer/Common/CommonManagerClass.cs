@@ -487,10 +487,25 @@ namespace EpgTimer
         {
             return ((UInt64)ONID) << 32 | ((UInt64)TSID) << 16 | (UInt64)SID;
         }
-
         public static UInt64 Create64PgKey(UInt16 ONID, UInt16 TSID, UInt16 SID, UInt16 EventID)
         {
             return ((UInt64)ONID) << 48 | ((UInt64)TSID) << 32 | ((UInt64)SID) << 16 | (UInt64)EventID;
+        }
+
+        public static String Convert64PGKeyString(UInt64 Key)
+        {
+            return Convert64KeyString(Key >> 16) + "\r\n"
+                + ConvertEpgIDString("EventID", Key);
+        }
+        public static String Convert64KeyString(UInt64 Key)
+        {
+            return ConvertEpgIDString("OriginalNetworkID", Key >> 32) + "\r\n" +
+            ConvertEpgIDString("TransportStreamID", Key >> 16) + "\r\n" +
+            ConvertEpgIDString("ServiceID", Key);
+        }
+        private static String ConvertEpgIDString(String Title, UInt64 id)
+        {
+            return string.Format("{0} : {1} (0x{1:X4})", Title, 0x000000000000FFFF & id);
         }
 
         public static EpgServiceInfo ConvertChSet5To(ChSet5Item item)
@@ -1100,7 +1115,7 @@ namespace EpgTimer
             return flowDoc;
         }
 
-        public String ConvertTextSearchString(String s)
+        public static String ConvertTextSearchString(String s)
         {
             return ReplaceUrl(MenuUtil.TrimKeyword(s));
         }        

@@ -206,7 +206,7 @@ namespace EpgTimer
         }
         public override string ToString()
         {
-            return CommonManager.Instance.ConvertTextSearchString(this.EventName);
+            return CommonManager.ConvertTextSearchString(this.EventName);
         }
         public virtual String Status
         {

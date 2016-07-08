@@ -207,39 +207,59 @@ namespace EpgTimer
             {
                 if (Settings.Instance.NoToolTip == true) return null;
                 //
-                return MenuUtil.GetTooltipBlockStandard(RecInfoText);
+                return MenuUtil.GetTooltipBlockStandard(ConvertInfoText());
             }
         }
         public override string ToString()
         {
-            return CommonManager.Instance.ConvertTextSearchString(this.EventName);
+            return CommonManager.ConvertTextSearchString(this.EventName);
         }
-        public string RecInfoText
+        public string ConvertInfoText()
+        {
+            if (RecInfo == null) return "";
+            //
+            String view = CommonManager.ConvertTimeText(RecInfo.StartTime, RecInfo.DurationSecond, false, false, false) + "\r\n";
+            view += ServiceName + "(" + NetworkName + ")" + "\r\n";
+            view += EventName + "\r\n\r\n";
+
+            view += "録画結果 : " + Result + "\r\n";
+            view += "録画ファイルパス : " + RecFilePath + "\r\n";
+            view += ConvertDropText() + "\r\n";
+            view += ConvertScrambleText()+ "\r\n\r\n";
+
+            view += CommonManager.Convert64PGKeyString(RecInfo.Create64PgKey());
+
+            return view;
+        }
+        public string DropInfoText
         {
             get
             {
-                String view = "";
-                if (RecInfo != null)
-                {
-                    view = CommonManager.ConvertTimeText(RecInfo.StartTime, RecInfo.DurationSecond, false, false, false) + "\r\n";
-
-                    view += ServiceName;
-                    view += "(" + CommonManager.ConvertNetworkNameText(RecInfo.OriginalNetworkID) + ")" + "\r\n";
-                    view += EventName + "\r\n";
-                    view += "\r\n";
-                    view += "録画結果 : " + RecInfo.Comment + "\r\n";
-                    view += "録画ファイルパス : " + RecInfo.RecFilePath + "\r\n";
-                    view += "\r\n";
-
-                    view += "OriginalNetworkID : " + RecInfo.OriginalNetworkID.ToString() + " (0x" + RecInfo.OriginalNetworkID.ToString("X4") + ")\r\n";
-                    view += "TransportStreamID : " + RecInfo.TransportStreamID.ToString() + " (0x" + RecInfo.TransportStreamID.ToString("X4") + ")\r\n";
-                    view += "ServiceID : " + RecInfo.ServiceID.ToString() + " (0x" + RecInfo.ServiceID.ToString("X4") + ")\r\n";
-                    view += "EventID : " + RecInfo.EventID.ToString() + " (0x" + RecInfo.EventID.ToString("X4") + ")\r\n";
-                    view += "\r\n";
-                    view += "Drops : " + RecInfo.Drops.ToString() + "\r\n";
-                    view += "Scrambles : " + RecInfo.Scrambles.ToString() + "\r\n";
-                }
-                return view;
+                if (RecInfo == null) return "";
+                //
+                return ConvertDropText(":") + " " + ConvertScrambleText(":");
+            }
+        }
+        private string ConvertDropText(string delimiter = " : ")
+        {
+            if (Settings.Instance.RecinfoErrCriticalDrops == true)
+            {
+                return "*Drops" + delimiter + RecInfo.DropsCritical.ToString();
+            }
+            else
+            {
+                return "Drops" + delimiter + RecInfo.Drops.ToString();
+            }
+        }
+        private string ConvertScrambleText(string delimiter = " : ")
+        {
+            if (Settings.Instance.RecinfoErrCriticalDrops == true)
+            {
+                return "*Scrambles" + delimiter + RecInfo.ScramblesCritical.ToString();
+            }
+            else
+            {
+                return "Scrambles" + delimiter + RecInfo.Scrambles.ToString();
             }
         }
     }

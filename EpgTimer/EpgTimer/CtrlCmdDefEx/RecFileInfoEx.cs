@@ -16,7 +16,7 @@ namespace EpgTimer
         }
         public UInt64 Create64PgKey()
         {
-            return CommonManager.Create64PgKey(OriginalNetworkID, TransportStreamID, ServiceID, 0xFFFF);
+            return CommonManager.Create64PgKey(OriginalNetworkID, TransportStreamID, ServiceID, EventID);
         }
 
         //簡易ステータス
