@@ -124,7 +124,14 @@ namespace EpgTimer
 
         private void button_Initialize_Click(object sender, RoutedEventArgs e)
         {
-            info = mm.GetDefaultMenuSettingData();
+            if (Keyboard.Modifiers == ModifierKeys.Shift)
+            {
+                mm.SetDefaultGestures(info);
+            }
+            else
+            {
+                info = mm.GetDefaultMenuSettingData();
+            }
             SetData();
         }
 

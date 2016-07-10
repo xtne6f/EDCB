@@ -396,6 +396,16 @@ namespace EpgTimer
             }
         }
 
+        //ショートカットをデフォルト値に戻す
+        public void SetDefaultGestures(MenuSettingData info)
+        {
+            foreach (MenuCmds.CmdData item in MC.DefCmdOptions.Values.Where(item => item.IsSaveSetting == true))
+            {
+                MenuSettingData.CmdSaveData data = info.EasyMenuItems.Find(d => d.GetCommand() == item.Command);
+                if (data != null) data.SetGestuers(item.Gestures);
+            }
+        }
+
         //設定画面へデフォルト値を送る
         public MenuSettingData GetDefaultMenuSettingData()
         {
