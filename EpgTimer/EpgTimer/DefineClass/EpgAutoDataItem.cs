@@ -122,12 +122,12 @@ namespace EpgTimer
             {
                 if (Settings.Instance.NoToolTip == true) return null;
                 //
-                return MenuUtil.GetTooltipBlockStandard(ConvertInfoText());
+                return ViewUtil.GetTooltipBlockStandard(ConvertInfoText());
             }
         }
         public virtual TextBlock ToolTipViewAutoAddSearch
         {
-            get { return MenuUtil.GetTooltipBlockStandard(ConvertInfoText()); }
+            get { return ViewUtil.GetTooltipBlockStandard(ConvertInfoText()); }
         }
         public virtual String ConvertInfoText() { return ""; }
         public Brush ForeColor

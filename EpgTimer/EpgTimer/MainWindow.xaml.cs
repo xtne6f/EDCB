@@ -1340,11 +1340,8 @@ namespace EpgTimer
 
             infoText += sortList[0].StationName + " " + new ReserveItem(sortList[0]).StartTimeShort + " " + sortList[0].Title;
             string endText = (infoCount == 0 ? "" : "\r\n他" + infoCount.ToString());
+            infoText = CommonUtil.LimitLenString(infoText, 63 - endText.Length);
 
-            if (infoText.Length + endText.Length > 63)
-            {
-                infoText = infoText.Substring(0, 60 - endText.Length) + "...";
-            }
             return infoText + endText;
         }
 

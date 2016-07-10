@@ -519,5 +519,15 @@ namespace EpgTimer
             }
             return wList.Count();
         }
+
+        public static TextBlock GetTooltipBlockStandard(string text)
+        {
+            var block = new TextBlock();
+            block.Text = text;
+            block.MaxWidth = 400;
+            block.TextWrapping = TextWrapping.Wrap;
+            return block;
+        }
+
     }
 }

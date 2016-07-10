@@ -19,17 +19,7 @@ namespace EpgTimer
 
         public string Text {
             get { return notifyIcon.Text; }
-            set
-            {
-                if (value.Length > 63)
-                {
-                    notifyIcon.Text = value.Substring(0,60) + "...";
-                }
-                else
-                {
-                    notifyIcon.Text = value;
-                }
-            }
+            set { notifyIcon.Text = CommonUtil.LimitLenString(value, 63); }
         }
         private TaskIconSpec iconSpec = TaskIconSpec.TaskIconNone;
         public TaskIconSpec Icon

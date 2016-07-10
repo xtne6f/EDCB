@@ -81,5 +81,17 @@ namespace EpgTimer
             return topWindow == null ? null : topWindow.RootVisual as Window;
         }
 
+        /// <summary>•¶š”‚ğ§ŒÀ‚µA’´‚¦‚éê‡‚ÍÈ—ª‹L†‚ğ•t—^‚·‚é</summary>
+        public static string LimitLenString(string s, int max_len, string tag = "...")
+        {
+            if (string.IsNullOrEmpty(s) == false && s.Length > max_len)
+            {
+                tag = tag ?? "";
+                max_len = Math.Max(max_len, 0);
+                s = s.Substring(0, Math.Max(0, max_len - tag.Length)) + tag.Substring(0, Math.Min(max_len, tag.Length));
+            }
+            return s;
+        }
+
     }
 }

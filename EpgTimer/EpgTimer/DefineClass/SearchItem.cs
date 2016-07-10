@@ -199,9 +199,9 @@ namespace EpgTimer
             get
             {
                 if (Settings.Instance.NoToolTip == true) return null;
-                if (EventInfo == null) return MenuUtil.GetTooltipBlockStandard("");
+                if (EventInfo == null) return ViewUtil.GetTooltipBlockStandard("");
                 //
-                return MenuUtil.GetTooltipBlockStandard(CommonManager.Instance.ConvertProgramText(EventInfo, EventInfoTextMode.All));
+                return ViewUtil.GetTooltipBlockStandard(CommonManager.Instance.ConvertProgramText(EventInfo, EventInfoTextMode.All));
             }
         }
         public override string ToString()

@@ -642,8 +642,8 @@ namespace EpgTimer
                     string header = title;
                     if (header.Length > str_max)
                     {
-                        header = header.Substring(0, str_max - 3) + "..."; // 長すぎる場合は省略
-                        menuItem.ToolTip = title;
+                        menuItem.ToolTip = ViewUtil.GetTooltipBlockStandard(header);
+                        header = CommonUtil.LimitLenString(header, str_max); // 長すぎる場合は省略
                     }
                     if (Settings.Instance.MenuSet.AutoAddSerachToolTip == true)
                     {
