@@ -21,23 +21,8 @@ namespace EpgTimer
             reserveTuner = null;
             base.Reset();
         }
-        public static new string GetValuePropertyName(string key)
-        {
-            var obj = new SearchItem();
-            if (key == CommonUtil.NameOf(() => obj.StartTime))
-            {
-                return CommonUtil.NameOf(() => obj.StartTimeValue);
-            }
-            else if (key == CommonUtil.NameOf(() => obj.ProgramDuration))
-            {
-                return CommonUtil.NameOf(() => obj.ProgramDurationValue);
-            }
-            else
-            {
-                return RecSettingItem.GetValuePropertyName(key);
-            }
-        }
 
+        public override ulong KeyID { get { return EventInfo == null ? 0 : EventInfo.Create64PgKey(); } }
         public bool IsReserved { get { return (ReserveInfo != null); } }
         public override RecSettingData RecSettingInfo { get { return ReserveInfo != null ? ReserveInfo.RecSetting : null; } }
         public override bool IsManual { get { return ReserveInfo != null ? ReserveInfo.IsManual : false; } }
@@ -194,19 +179,9 @@ namespace EpgTimer
                 return reserveTuner;
             }
         }
-        public virtual TextBlock ToolTipView
+        public override String ConvertInfoText()
         {
-            get
-            {
-                if (Settings.Instance.NoToolTip == true) return null;
-                if (EventInfo == null) return ViewUtil.GetTooltipBlockStandard("");
-                //
-                return ViewUtil.GetTooltipBlockStandard(CommonManager.Instance.ConvertProgramText(EventInfo, EventInfoTextMode.All));
-            }
-        }
-        public override string ToString()
-        {
-            return CommonManager.ConvertTextSearchString(this.EventName);
+            return CommonManager.Instance.ConvertProgramText(EventInfo, EventInfoTextMode.All);
         }
         public virtual String Status
         {
@@ -260,40 +235,28 @@ namespace EpgTimer
                 return CommonManager.Instance.StatResForeColor;
             }
         }
-        public int NowJumpingTable { set; get; }
-        public Brush ForeColor
+        public override Brush ForeColor
         {
             get
             {
                 //番組表へジャンプ時の強調表示
-                switch(NowJumpingTable)
-                {
-                    case 1: return Brushes.Red;
-                    case 2: return CommonManager.Instance.ListDefForeColor;
-                }
-
-                //通常表示
-                if (ReserveInfo == null) return CommonManager.Instance.ListDefForeColor;
+                if (NowJumpingTable != 0 || ReserveInfo == null) return base.ForeColor;
                 //
                 return CommonManager.Instance.RecModeForeColor[ReserveInfo.RecSetting.RecMode];
             }
         }
-        public Brush BackColor
+        public override Brush BackColor
         {
             get
             {
                 //番組表へジャンプ時の強調表示
-                switch (NowJumpingTable)
-                {
-                    case 1: return CommonManager.Instance.ResDefBackColor;
-                    case 2: return Brushes.Red;
-                }
+                if (NowJumpingTable != 0 || ReserveInfo == null) return base.BackColor;
 
                 //通常表示
                 return ViewUtil.ReserveErrBrush(ReserveInfo);
             }
         }
-        public Brush BorderBrush
+        public override Brush BorderBrush
         {
             get
             {

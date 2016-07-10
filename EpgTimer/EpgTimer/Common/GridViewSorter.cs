@@ -11,6 +11,12 @@ using System.Windows.Input;
 
 namespace EpgTimer
 {
+    public interface IGridViewSorterItem
+    {
+        ulong KeyID { get; }
+        string GetValuePropertyName(string key);
+    }
+
     public class GridViewSorter
     {
         Dictionary<GridViewColumnHeader, ListSortDirection> _multiHeaderSortDict = new Dictionary<GridViewColumnHeader, ListSortDirection>();
@@ -252,6 +258,29 @@ namespace EpgTimer
             }
         }
 
+        public static Func<object, ulong> GetKeyFunc(Type t)
+        {
+            if (t.GetInterface(typeof(IGridViewSorterItem).Name) != null)
+            {
+                return info => (info as IGridViewSorterItem).KeyID;
+            }
+            else
+            {
+                return info => (ulong)info.GetHashCode();
+            }
+        }
+        public static Func<string, string> GetValuePropertyFunc(object item)
+        {
+            if (item is IGridViewSorterItem)
+            {
+                return str => (item as IGridViewSorterItem).GetValuePropertyName(str);
+            }
+            else
+            {
+                return str => str;
+            }
+        }
+
         //キャッシュ
         class gvCache
         {
@@ -269,8 +298,8 @@ namespace EpgTimer
             {
                 list = itemList;
                 typeKey = list[0].GetType();
-                Func<object, ulong> getKey = CtrlCmdDefEx.GetKeyFunc(typeKey);
-                getValueKey = CtrlCmdDefEx.GetValuePropertyFunc(typeKey);
+                Func<object, ulong> getKey = GridViewSorter.GetKeyFunc(typeKey);
+                getValueKey = GridViewSorter.GetValuePropertyFunc(list[0]);
 
                 idCache = list.Select(item =>
                 {
@@ -302,12 +331,6 @@ namespace EpgTimer
                             return data == null || data.Count == 0 ? null : data[0];
                         }).ToArray();
                     }
-                    /*
-                    else if (pi1.PropertyType == typeof(GvSortItem))
-                    {
-                        //数値化可能な文字列を格納したstringは想定しない
-                        dCache1 = list.Select(item => (pi1.GetValue(item, null) as GvSortItem).Value).ToArray();
-                    }//*/
                     else if (pi1.PropertyType.GetInterface(typeof(IComparable).Name) != null)
                     {
                         isString = pi1.PropertyType == typeof(string);
@@ -340,19 +363,4 @@ namespace EpgTimer
             }
         }
     }
-
-    /* GridViewSorterを使用するプロパティで、表示とソート用のデータを重畳させる。
-    // 動くが、使いにくいので保留。
-    public class GvSortItem
-    {
-        //値生成は必要時のみ
-        private Func<IComparable> valuef = null;
-        private Func<string> stringf = null;
-
-        public GvSortItem() { }
-        public GvSortItem(Func<IComparable> vf, Func<string> sf) { valuef = vf; stringf = sf; }
-        public IComparable Value { get { return valuef == null ? null : valuef(); } }
-        public override string ToString() { return stringf == null ? "" : stringf(); }
-    }
-    //*/
 }

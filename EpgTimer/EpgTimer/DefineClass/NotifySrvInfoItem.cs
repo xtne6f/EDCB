@@ -2,11 +2,14 @@
 
 namespace EpgTimer
 {
-    public class NotifySrvInfoItem
+    public class NotifySrvInfoItem : GridViewSorterItem
     {
         public NotifySrvInfoItem() { }
         public NotifySrvInfoItem(NotifySrvInfo info) { NotifyInfo = info; }
         public NotifySrvInfo NotifyInfo { get; set; }
+
+        public override ulong KeyID { get { return NotifyInfo == null ? 0 : NotifyInfo.notifyID; } }
+
         public String Time
         {
             get

@@ -19,7 +19,7 @@ namespace EpgTimer
 
         public static Brush EpgDataContentBrush(EpgEventInfo EventInfo)
         {
-            if (EventInfo == null) return Brushes.White;
+            if (EventInfo == null) return null;
             if (EventInfo.ContentInfo == null) return CommonManager.Instance.CustContentColorList[0x10];
 
             return EpgDataContentBrush(EventInfo.ContentInfo.nibbleList);
@@ -76,7 +76,7 @@ namespace EpgTimer
             }
             return CommonManager.Instance.ResDefBackColor;
         }
-        
+
         public static void SetSpecificChgAppearance(Control obj)
         {
             obj.Background = Brushes.LavenderBlush;
@@ -212,16 +212,32 @@ namespace EpgTimer
             }
         }
 
-        public static void ScrollToFindItem(SearchItem target_item, ListBox listBox, bool IsMarking)
+        //指定アイテムまでマーキング付で移動する。
+        public static void JumpToListItem(object target, ListBox listBox, bool IsMarking)
+        {
+            if (target is DataListItemBase)
+            {
+                ulong ID = ((DataListItemBase)target).KeyID;
+                target = listBox.Items.OfType<DataListItemBase>().FirstOrDefault(data => data.KeyID == ID);
+            }
+            ScrollToFindItem(target, listBox, IsMarking);
+        }
+
+        public static void ScrollToFindItem(object target, ListBox listBox, bool IsMarking)
         {
             try
             {
-                ScrollToItem(target_item, listBox);
+                listBox.SelectedItem = target;
+
+                if (target == null) return;
+
+                listBox.ScrollIntoView(target);
 
                 //パネルビューと比較して、こちらでは最後までゆっくり点滅させる。全表示時間は同じ。
                 //ただ、結局スクロールさせる位置がうまく調整できてないので効果は限定的。
-                if (IsMarking == true)
+                if (IsMarking == true && target is DataListItemBase)
                 {
+                    var target_item = target as DataListItemBase;
                     listBox.SelectedItem = null;
 
                     var notifyTimer = new DispatcherTimer();
@@ -243,24 +259,6 @@ namespace EpgTimer
                     };
                     notifyTimer.Start();
                 }
-            }
-            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
-        }
-
-        public static void ScrollToItem(object target_item, ListBox listBox)
-        {
-            try
-            {
-                if (target_item == null) return;
-
-                listBox.SelectedItem = target_item;
-                listBox.ScrollIntoView(target_item);
-
-                //いまいちな感じ
-                //listView_event.ScrollIntoView(listView_event.Items[0]);
-                //listView_event.ScrollIntoView(listView_event.Items[listView_event.Items.Count-1]);
-                //int scrollpos = ((listView_event.SelectedIndex - 5) >= 0 ? listView_event.SelectedIndex - 5 : 0);
-                //listView_event.ScrollIntoView(listView_event.Items[scrollpos]);
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }

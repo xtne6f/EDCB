@@ -229,9 +229,7 @@ namespace EpgTimer
 
         protected override void MoveToProgramItem(EpgEventInfo target, bool IsMarking)
         {
-            ulong PgKey = target.Create64PgKey();
-            SearchItem target_item = lstCtrl.dataList.Find(item => item.EventInfo.Create64PgKey() == PgKey);
-            ViewUtil.ScrollToFindItem(target_item, listView_event, IsMarking);
+            ViewUtil.JumpToListItem(new SearchItem(target), listView_event, IsMarking);
         }
 
         protected override void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)

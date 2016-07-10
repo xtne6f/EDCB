@@ -13,7 +13,7 @@ using System.Windows.Shapes;
 
 namespace EpgTimer
 {
-    public class RecInfoItem
+    public class RecInfoItem : DataListItemBase
     {
         public RecInfoItem() { }
         public RecInfoItem(RecFileInfo item)
@@ -22,23 +22,7 @@ namespace EpgTimer
         }
 
         public RecFileInfo RecInfo { get; set; }
-
-        public static string GetValuePropertyName(string key)
-        {
-            var obj = new RecInfoItem();
-            if (key == CommonUtil.NameOf(() => obj.StartTime))
-            {
-                return CommonUtil.NameOf(() => obj.StartTimeValue);
-            }
-            else if (key == CommonUtil.NameOf(() => obj.ProgramDuration))
-            {
-                return CommonUtil.NameOf(() => obj.ProgramDurationValue);
-            }
-            else
-            {
-                return key;
-            }
-        }
+        public override ulong KeyID { get { return RecInfo == null ? 0 : RecInfo.ID; } }
 
         public bool IsProtect
         {
@@ -170,17 +154,14 @@ namespace EpgTimer
                 return RecInfo.RecFilePath;
             }
         }
-        public Brush ForeColor
+        public override Brush BackColor
         {
             get
             {
-                return CommonManager.Instance.ListDefForeColor;
-            }
-        }
-        public Brush BackColor
-        {
-            get
-            {
+                //番組表へジャンプ時の強調表示
+                if (NowJumpingTable != 0) return base.BackColor;
+
+                //通常表示
                 if (RecInfo != null)
                 {
                     long drops = Settings.Instance.RecinfoErrCriticalDrops == false ? RecInfo.Drops : RecInfo.DropsCritical;
@@ -201,20 +182,7 @@ namespace EpgTimer
                 return CommonManager.Instance.RecEndDefBackColor;
             }
         }
-        public TextBlock ToolTipView
-        {
-            get
-            {
-                if (Settings.Instance.NoToolTip == true) return null;
-                //
-                return ViewUtil.GetTooltipBlockStandard(ConvertInfoText());
-            }
-        }
-        public override string ToString()
-        {
-            return CommonManager.ConvertTextSearchString(this.EventName);
-        }
-        public string ConvertInfoText()
+        public override string ConvertInfoText()
         {
             if (RecInfo == null) return "";
             //

@@ -160,7 +160,7 @@ namespace EpgTimer
             try
             {
                 //更新前の選択情報の保存
-                var oldItems = new ListViewSelectedKeeper(listView, true);
+                var oldItems = new ListViewSelectedKeeper(listView, true, GridViewSorter.GetKeyFunc(typeof(T)));
 
                 listView.ItemsSource = null;
                 dataList.Clear();

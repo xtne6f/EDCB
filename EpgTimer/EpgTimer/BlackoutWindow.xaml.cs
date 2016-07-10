@@ -15,7 +15,10 @@ namespace EpgTimer {
         /// <summary>
         /// 番組表への受け渡し
         /// </summary>
-        public static SearchItem SelectedItem = null;
+        public static object SelectedData = null;
+        public static bool HasData { get { return SelectedData != null; } }
+
+        public static SearchItem SelectedItem { get { return SelectedData as SearchItem; } }
         public static bool HasReserveData { get { return SelectedItem != null && SelectedItem.ReserveInfo != null; } }
         public static bool HasProgramData { get { return SelectedItem != null && SelectedItem.EventInfo != null; } }
 
@@ -24,7 +27,7 @@ namespace EpgTimer {
 
         public static void Clear()
         {
-            SelectedItem = null;
+            SelectedData = null;
             NowJumpTable = false;
         }
 

@@ -16,19 +16,7 @@ namespace EpgTimer
         public AutoAddDataItem() {}
         public AutoAddDataItem(AutoAddData data) { _data = data; }
 
-        public static new string GetValuePropertyName(string key)
-        {
-            var obj = new AutoAddDataItem();
-            if (key == CommonUtil.NameOf(() => obj.NextReserve))
-            {
-                return CommonUtil.NameOf(() => obj.NextReserveValue);
-            }
-            else
-            {
-                return RecSettingItem.GetValuePropertyName(key);
-            }
-        }
-
+        public override ulong KeyID { get { return Data == null ? 0 : Data.DataID; } }
         public override RecSettingData RecSettingInfo { get { return _data != null ? _data.RecSettingInfo : null; } }
 
         public String EventName
@@ -99,10 +87,6 @@ namespace EpgTimer
         }
         public virtual String NetworkName { get { return ""; } }
         public virtual String ServiceName { get { return ""; } }
-        public override string ToString()
-        {
-            return CommonManager.ConvertTextSearchString(EventName);
-        }
         public virtual bool KeyEnabled
         {
             set
@@ -116,49 +100,29 @@ namespace EpgTimer
                 return _data.IsEnabled;
             }
         }
-        public virtual TextBlock ToolTipView
+        public override String ConvertInfoText() { return ""; }
+        public override Brush ForeColor
         {
             get
             {
-                if (Settings.Instance.NoToolTip == true) return null;
+                //番組表へジャンプ時の強調表示
+                if (NowJumpingTable != 0 || _data == null || _data.IsEnabled == true) return base.ForeColor;
                 //
-                return ViewUtil.GetTooltipBlockStandard(ConvertInfoText());
+                //無効の場合
+                return CommonManager.Instance.RecModeForeColor[5];
             }
         }
-        public virtual TextBlock ToolTipViewAutoAddSearch
-        {
-            get { return ViewUtil.GetTooltipBlockStandard(ConvertInfoText()); }
-        }
-        public virtual String ConvertInfoText() { return ""; }
-        public Brush ForeColor
+        public override Brush BackColor
         {
             get
             {
-                if (_data != null)
-                {
-                    if (_data.IsEnabled == false)
-                    {
-                        return CommonManager.Instance.RecModeForeColor[5];
-                    }
-                }
-                return CommonManager.Instance.ListDefForeColor;
+                //番組表へジャンプ時の強調表示
+                if (NowJumpingTable != 0 || _data == null || _data.IsEnabled == true) return base.BackColor;
+                //
+                //無効の場合
+                return CommonManager.Instance.ResNoBackColor;
             }
         }
-        public Brush BackColor
-        {
-            get
-            {
-                if (_data != null)
-                {
-                    if (_data.IsEnabled == false)
-                    {
-                        return CommonManager.Instance.ResNoBackColor;
-                    }
-                }
-                return CommonManager.Instance.ResDefBackColor;
-            }
-        }
-        public virtual Brush BorderBrush { get { return Brushes.White; } }
     }
 
     //T型との関連付け
@@ -351,7 +315,7 @@ namespace EpgTimer
         {
             get
             {
-                if (EpgAutoAddInfo == null) return Brushes.White;
+                if (EpgAutoAddInfo == null) return null;
                 //
                 if (EpgAutoAddInfo.searchInfo.contentList.Count == 0 || EpgAutoAddInfo.searchInfo.notContetFlag != 0)
                 {

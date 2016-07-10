@@ -12,28 +12,6 @@ namespace EpgTimer
         public ManualAutoAddDataItem(ManualAutoAddData item) : base(item) { }
 
         public ManualAutoAddData ManualAutoAddInfo { get { return (ManualAutoAddData)_data; } set { _data = value; } }
-
-        public static new string GetValuePropertyName(string key)
-        {
-            var obj = new ManualAutoAddDataItem();
-            if (key == CommonUtil.NameOf(() => obj.StartTime))
-            {
-                return CommonUtil.NameOf(() => obj.StartTimeValue);
-            }
-            else if (key == CommonUtil.NameOf(() => obj.ProgramDuration))
-            {
-                return CommonUtil.NameOf(() => obj.ProgramDurationValue);
-            }
-            else if (key == CommonUtil.NameOf(() => obj.DayOfWeek))
-            {
-                return CommonUtil.NameOf(() => obj.DayOfWeekValue);
-            }
-            else
-            {
-                return AutoAddDataItem.GetValuePropertyName(key);
-            }
-        }
-
         public override bool IsManual { get { return true; } }
 
         public String DayOfWeek
@@ -157,7 +135,6 @@ namespace EpgTimer
             view += "時間 : " + CommonManager.ConvertTimeText(ManualAutoAddInfo.PgStartTime, ManualAutoAddInfo.durationSecond, true, false, true, true) + "\r\n";
             view += "サービス : " + ServiceName + "(" + NetworkName + ")" + "\r\n";
             view += "自動登録 : " + (KeyEnabled == true ? "有効" : "無効");
-
 
             view += "\r\n\r\n" + ConvertRecSettingText();
             return view;

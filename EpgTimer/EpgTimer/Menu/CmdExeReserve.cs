@@ -181,11 +181,11 @@ namespace EpgTimer
         {
             if (dataList.Count != 0)//予約情報優先
             {
-                BlackoutWindow.SelectedItem = new ReserveItem(dataList[0]);
+                BlackoutWindow.SelectedData = new ReserveItem(dataList[0]);
             }
             else if (eventList.Count != 0)
             {
-                BlackoutWindow.SelectedItem = new SearchItem(eventList[0]);
+                BlackoutWindow.SelectedData = new SearchItem(eventList[0]);
             }
         }
         protected override ReserveData mcs_GetNextReserve()

@@ -451,7 +451,7 @@ namespace EpgTimer
                     SetHideSearchWindow(this);
                     SearchWindow.MinimizeWindows();
 
-                    BlackoutWindow.SelectedItem = item;
+                    BlackoutWindow.SelectedData = item;
                     mainWindow.moveTo_tabItem(code);
                 }));
             }

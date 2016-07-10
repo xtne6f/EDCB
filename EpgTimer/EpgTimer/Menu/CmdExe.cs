@@ -285,7 +285,7 @@ namespace EpgTimer
         }
         protected virtual void mcs_SetBlackoutWindow(SearchItem item = null)
         {
-            BlackoutWindow.SelectedItem = item;
+            BlackoutWindow.SelectedData = item;
         }
         protected virtual ReserveData mcs_GetNextReserve() { return new ReserveData(); }
         protected virtual void mc_ShowAutoAddDialog(object sender, ExecutedRoutedEventArgs e)

@@ -190,64 +190,6 @@ namespace EpgTimer
             weekFlg = (byte)((weekFlg + 7 + shift_day) % 7);
         }
 
-        public static Func<object, ulong> GetKeyFunc(Type t)
-        {
-            if (t == typeof(ReserveItem))
-            {
-                return info => (info as ReserveItem).ReserveInfo.ReserveID;
-            }
-            else if (t == typeof(RecInfoItem))
-            {
-                return info => (info as RecInfoItem).RecInfo.ID;
-            }
-            else if (t.IsSubclassOf(typeof(AutoAddDataItem)))
-            {
-                return info => (info as AutoAddDataItem).Data.DataID;
-            }
-            else if (t == typeof(SearchItem))
-            {
-                return info => (info as SearchItem).EventInfo.Create64PgKey();
-            }
-            else if (t == typeof(NotifySrvInfoItem))
-            {
-                return info => (info as NotifySrvInfoItem).NotifyInfo.notifyID;
-            }
-            else
-            {
-                //必ずしもキーにはなるとは限らないが、エラーにしないため一応返す。
-                return info => (ulong)info.GetHashCode();
-            }
-        }
-
-        //ソート用の代替プロパティ用の変換メソッドを返す
-        public static Func<string, string> GetValuePropertyFunc(Type t)
-        {
-            if (t == typeof(ReserveItem))
-            {
-                return ReserveItem.GetValuePropertyName;
-            }
-            else if (t == typeof(SearchItem))
-            {
-                return SearchItem.GetValuePropertyName;
-            }
-            else if (t == typeof(RecInfoItem))
-            {
-                return RecInfoItem.GetValuePropertyName;
-            }
-            else if (t == typeof(EpgAutoDataItem))
-            {
-                return EpgAutoDataItem.GetValuePropertyName;
-            }
-            else if (t == typeof(ManualAutoAddDataItem))
-            {
-                return ManualAutoAddDataItem.GetValuePropertyName;
-            }
-            else
-            {
-                return str => str;
-            }
-        }
-
         public static UInt64 Create64Key(this EpgServiceInfo obj)
         {
             return CommonManager.Create64Key(obj.ONID, obj.TSID, obj.SID);

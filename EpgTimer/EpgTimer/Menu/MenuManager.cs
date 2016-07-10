@@ -657,7 +657,7 @@ namespace EpgTimer
                     }
                     if (Settings.Instance.MenuSet.AutoAddSerachToolTip == true)
                     {
-                        menuItem.ToolTip = AutoAddDataItemEx.CreateIncetance(autoAdd).ToolTipViewAutoAddSearch;
+                        menuItem.ToolTip = AutoAddDataItemEx.CreateIncetance(autoAdd).ToolTipViewAlways;
                     }
                     menuItem.Header = header;
                     menuItem.Command = cmd;

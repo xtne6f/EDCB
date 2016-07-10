@@ -111,18 +111,9 @@ namespace EpgTimer
 
             if (BlackoutWindow.HasReserveData == true)
             {
-                MoveToReserveItem(BlackoutWindow.SelectedItem.ReserveInfo, BlackoutWindow.NowJumpTable);
+                ViewUtil.JumpToListItem(new ReserveItem(BlackoutWindow.SelectedItem.ReserveInfo), listView_reserve, BlackoutWindow.NowJumpTable);
             }
-
             BlackoutWindow.Clear();
         }
-
-        protected void MoveToReserveItem(ReserveData target, bool IsMarking)
-        {
-            uint ID = target.ReserveID;
-            ReserveItem item = lstCtrl.dataList.Find(data => data.ReserveInfo.ReserveID == ID);
-            ViewUtil.ScrollToFindItem(item, listView_reserve, IsMarking);
-        }
-
     }
 }

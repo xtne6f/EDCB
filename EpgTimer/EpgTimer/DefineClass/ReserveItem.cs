@@ -12,6 +12,8 @@ namespace EpgTimer
         public ReserveItem() { }
         public ReserveItem(ReserveData item) { base.ReserveInfo = item; }
 
+        public override ulong KeyID { get { return ReserveInfo == null ? 0 : ReserveInfo.ReserveID; } }
+
         public override EpgEventInfo EventInfo
         {
             get
@@ -99,16 +101,7 @@ namespace EpgTimer
                 return ReserveInfo.DurationSecond;
             }
         }
-        public override TextBlock ToolTipView
-        {
-            get
-            {
-                if (Settings.Instance.NoToolTip == true) return null;
-                //
-                return ViewUtil.GetTooltipBlockStandard(ConvertInfoText());
-            }
-        }
-        public String ConvertInfoText()
+        public override String ConvertInfoText()
         {
             if (ReserveInfo == null) return "";
             //

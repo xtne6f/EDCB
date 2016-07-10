@@ -1614,6 +1614,17 @@ namespace EpgTimer
                 case CtxmCode.TunerReserveView:
                     tab = this.tabItem_tunerReserve;
                     break;
+                case CtxmCode.RecInfoView:
+                    tab = this.tabItem_recinfo;
+                    break;
+                case CtxmCode.EpgAutoAddView:
+                    tab = this.tabItem_AutoAdd;
+                    this.autoAddView.tabItem_epgAutoAdd.IsSelected = true;
+                    break;
+                case CtxmCode.ManualAutoAddView:
+                    tab = this.tabItem_AutoAdd;
+                    this.autoAddView.tabItem_manualAutoAdd.IsSelected = true;
+                    break;
                 default://CtxmCode.EpgView
                     tab = this.tabItem_epg;
                     break;

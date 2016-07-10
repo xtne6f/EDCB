@@ -98,5 +98,14 @@ namespace EpgTimer
             List<RecInfoItem> sList = lstCtrl.GetSelectedItemsList();
             this.status[2] = sList.Count == 0 ? "" : ViewUtil.ConvertRecinfoStatus(sList, "　選択中");
         }
+        protected override void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            base.UserControl_IsVisibleChanged(sender, e);
+
+            if (this.IsVisible == false) return;
+
+            ViewUtil.JumpToListItem(BlackoutWindow.SelectedData, this.listView_recinfo, BlackoutWindow.NowJumpTable);
+            BlackoutWindow.Clear();
+        }
     }
 }

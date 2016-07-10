@@ -1115,11 +1115,6 @@ namespace EpgTimer
             return flowDoc;
         }
 
-        public static String ConvertTextSearchString(String s)
-        {
-            return ReplaceUrl(MenuUtil.TrimKeyword(s));
-        }        
-
         //デフォルト番組表の情報作成
         public List<CustomEpgTabInfo> CreateDefaultTabInfo()
         {
