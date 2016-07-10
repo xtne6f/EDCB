@@ -55,7 +55,7 @@ namespace EpgTimer
         }
 
         /// <summary>ƒƒ“ƒo–¼‚ğ•Ô‚·B</summary>
-        public static string GetMemberName<T>(Expression<Func<T>> e)
+        public static string NameOf<T>(Expression<Func<T>> e)
         {
             var member = (MemberExpression)e.Body;
             return member.Member.Name;

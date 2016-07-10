@@ -26,9 +26,9 @@ namespace EpgTimer
             {
                 //リストビュー関連の設定
                 lstCtrl = new ListViewController<RecInfoItem>(this);
-                lstCtrl.SetSavePath(CommonUtil.GetMemberName(() => Settings.Instance.RecInfoListColumn)
-                    , CommonUtil.GetMemberName(() => Settings.Instance.RecInfoColumnHead)
-                    , CommonUtil.GetMemberName(() => Settings.Instance.RecInfoSortDirection));
+                lstCtrl.SetSavePath(CommonUtil.NameOf(() => Settings.Instance.RecInfoListColumn)
+                    , CommonUtil.NameOf(() => Settings.Instance.RecInfoColumnHead)
+                    , CommonUtil.NameOf(() => Settings.Instance.RecInfoSortDirection));
                 lstCtrl.SetViewSetting(listView_recinfo, gridView_recinfo, true, true);
                 lstCtrl.SetSelectedItemDoubleClick((sender, e) =>
                 {

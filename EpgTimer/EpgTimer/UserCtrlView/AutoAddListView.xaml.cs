@@ -175,7 +175,7 @@ namespace EpgTimer
             //固有設定
             mc = new CmdExeEpgAutoAdd(this);//ジェネリックでも処理できるが‥
             viewCode = CtxmCode.EpgAutoAddView;
-            ColumnSavePath = CommonUtil.GetMemberName(() => Settings.Instance.AutoAddEpgColumn);
+            ColumnSavePath = CommonUtil.NameOf(() => Settings.Instance.AutoAddEpgColumn);
 
             //初期化の続き
             base.InitAutoAddView();
@@ -199,7 +199,7 @@ namespace EpgTimer
             //固有設定
             mc = new CmdExeManualAutoAdd(this);
             viewCode = CtxmCode.ManualAutoAddView;
-            ColumnSavePath = CommonUtil.GetMemberName(() => Settings.Instance.AutoAddManualColumn);
+            ColumnSavePath = CommonUtil.NameOf(() => Settings.Instance.AutoAddManualColumn);
 
             //録画設定の表示項目を調整
             ColumnList.Remove(ColumnList.Find(data => (data.Header as GridViewColumnHeader).Uid == "Tuijyu"));

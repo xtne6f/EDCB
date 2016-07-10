@@ -29,9 +29,9 @@ namespace EpgTimer
                 list_columns.AddRange(Resources["RecSettingViewColumns"] as GridViewColumnList);
 
                 lstCtrl = new ListViewController<ReserveItem>(this);
-                lstCtrl.SetSavePath(CommonUtil.GetMemberName(() => Settings.Instance.ReserveListColumn)
-                    , CommonUtil.GetMemberName(() => Settings.Instance.ResColumnHead)
-                    , CommonUtil.GetMemberName(() => Settings.Instance.ResSortDirection));
+                lstCtrl.SetSavePath(CommonUtil.NameOf(() => Settings.Instance.ReserveListColumn)
+                    , CommonUtil.NameOf(() => Settings.Instance.ResColumnHead)
+                    , CommonUtil.NameOf(() => Settings.Instance.ResSortDirection));
                 lstCtrl.SetViewSetting(listView_reserve, gridView_reserve, true, true, list_columns);
                 lstCtrl.SetSelectedItemDoubleClick(EpgCmds.ShowDialog);
                 

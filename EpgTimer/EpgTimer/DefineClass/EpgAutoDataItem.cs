@@ -19,9 +19,9 @@ namespace EpgTimer
         public static new string GetValuePropertyName(string key)
         {
             var obj = new AutoAddDataItem();
-            if (key == CommonUtil.GetMemberName(() => obj.NextReserve))
+            if (key == CommonUtil.NameOf(() => obj.NextReserve))
             {
-                return CommonUtil.GetMemberName(() => obj.NextReserveValue);
+                return CommonUtil.NameOf(() => obj.NextReserveValue);
             }
             else
             {

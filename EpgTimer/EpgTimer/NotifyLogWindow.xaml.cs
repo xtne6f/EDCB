@@ -22,7 +22,7 @@ namespace EpgTimer
 
             //リストビュー関連の設定
             lstCtrl = new ListViewController<NotifySrvInfoItem>(this);
-            lstCtrl.SetInitialSortKey(CommonUtil.GetMemberName(() => (new NotifySrvInfoItem()).Time), ListSortDirection.Descending);
+            lstCtrl.SetInitialSortKey(CommonUtil.NameOf(() => (new NotifySrvInfoItem()).Time), ListSortDirection.Descending);
             lstCtrl.SetViewSetting(listView_log, gridView_log, false, true);
         }
         private bool ReloadList()

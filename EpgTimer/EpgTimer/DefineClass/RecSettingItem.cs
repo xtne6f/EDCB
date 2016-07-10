@@ -10,13 +10,13 @@ namespace EpgTimer
         public static string GetValuePropertyName(string key)
         {
             var obj = new RecSettingItem();
-            if (key == CommonUtil.GetMemberName(() => obj.MarginStart))
+            if (key == CommonUtil.NameOf(() => obj.MarginStart))
             {
-                return CommonUtil.GetMemberName(() => obj.MarginStartValue);
+                return CommonUtil.NameOf(() => obj.MarginStartValue);
             }
-            else if (key == CommonUtil.GetMemberName(() => obj.MarginEnd))
+            else if (key == CommonUtil.NameOf(() => obj.MarginEnd))
             {
-                return CommonUtil.GetMemberName(() => obj.MarginEndValue);
+                return CommonUtil.NameOf(() => obj.MarginEndValue);
             }
             else
             {

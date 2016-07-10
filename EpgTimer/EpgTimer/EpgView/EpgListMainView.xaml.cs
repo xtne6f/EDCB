@@ -27,9 +27,9 @@ namespace EpgTimer
             list_columns.AddRange(Resources["RecSettingViewColumns"] as GridViewColumnList);
 
             lstCtrl = new ListViewController<SearchItem>(this);
-            lstCtrl.SetSavePath(CommonUtil.GetMemberName(() => Settings.Instance.EpgListColumn)
-                    , CommonUtil.GetMemberName(() => Settings.Instance.EpgListColumnHead)
-                    , CommonUtil.GetMemberName(() => Settings.Instance.EpgListSortDirection));
+            lstCtrl.SetSavePath(CommonUtil.NameOf(() => Settings.Instance.EpgListColumn)
+                    , CommonUtil.NameOf(() => Settings.Instance.EpgListColumnHead)
+                    , CommonUtil.NameOf(() => Settings.Instance.EpgListSortDirection));
             lstCtrl.SetViewSetting(listView_event, gridView_event, true, true, list_columns);
             lstCtrl.SetSelectedItemDoubleClick(EpgCmds.ShowDialog);
 

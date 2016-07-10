@@ -24,13 +24,13 @@ namespace EpgTimer
         public static new string GetValuePropertyName(string key)
         {
             var obj = new SearchItem();
-            if (key == CommonUtil.GetMemberName(() => obj.StartTime))
+            if (key == CommonUtil.NameOf(() => obj.StartTime))
             {
-                return CommonUtil.GetMemberName(() => obj.StartTimeValue);
+                return CommonUtil.NameOf(() => obj.StartTimeValue);
             }
-            else if (key == CommonUtil.GetMemberName(() => obj.ProgramDuration))
+            else if (key == CommonUtil.NameOf(() => obj.ProgramDuration))
             {
-                return CommonUtil.GetMemberName(() => obj.ProgramDurationValue);
+                return CommonUtil.NameOf(() => obj.ProgramDurationValue);
             }
             else
             {

@@ -802,76 +802,76 @@ namespace EpgTimer
                 if (Instance.ReserveListColumn.Count == 0)
                 {
                     var obj = new ReserveItem();
-                    Instance.ReserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.StartTime), double.NaN));
-                    Instance.ReserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.NetworkName), double.NaN));
-                    Instance.ReserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.ServiceName), double.NaN));
-                    Instance.ReserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.EventName), double.NaN));
-                    Instance.ReserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.RecMode), double.NaN));
-                    Instance.ReserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.Priority), double.NaN));
-                    Instance.ReserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.Tuijyu), double.NaN));
-                    Instance.ReserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.Comment), double.NaN));
-                    Instance.ReserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.RecFileName), double.NaN));
-                    Instance.ResColumnHead = CommonUtil.GetMemberName(() => obj.StartTime);
+                    Instance.ReserveListColumn.Add(new ListColumnInfo(CommonUtil.NameOf(() => obj.StartTime), double.NaN));
+                    Instance.ReserveListColumn.Add(new ListColumnInfo(CommonUtil.NameOf(() => obj.NetworkName), double.NaN));
+                    Instance.ReserveListColumn.Add(new ListColumnInfo(CommonUtil.NameOf(() => obj.ServiceName), double.NaN));
+                    Instance.ReserveListColumn.Add(new ListColumnInfo(CommonUtil.NameOf(() => obj.EventName), double.NaN));
+                    Instance.ReserveListColumn.Add(new ListColumnInfo(CommonUtil.NameOf(() => obj.RecMode), double.NaN));
+                    Instance.ReserveListColumn.Add(new ListColumnInfo(CommonUtil.NameOf(() => obj.Priority), double.NaN));
+                    Instance.ReserveListColumn.Add(new ListColumnInfo(CommonUtil.NameOf(() => obj.Tuijyu), double.NaN));
+                    Instance.ReserveListColumn.Add(new ListColumnInfo(CommonUtil.NameOf(() => obj.Comment), double.NaN));
+                    Instance.ReserveListColumn.Add(new ListColumnInfo(CommonUtil.NameOf(() => obj.RecFileName), double.NaN));
+                    Instance.ResColumnHead = CommonUtil.NameOf(() => obj.StartTime);
                     Instance.ResSortDirection = ListSortDirection.Ascending;
                 }
                 if (Instance.RecInfoListColumn.Count == 0)
                 {
                     var obj = new RecInfoItem();
-                    Instance.RecInfoListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.IsProtect), double.NaN));
-                    Instance.RecInfoListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.StartTime), double.NaN));
-                    Instance.RecInfoListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.NetworkName), double.NaN));
-                    Instance.RecInfoListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.ServiceName), double.NaN));
-                    Instance.RecInfoListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.EventName), double.NaN));
-                    Instance.RecInfoListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.Drops), double.NaN));
-                    Instance.RecInfoListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.Scrambles), double.NaN));
-                    Instance.RecInfoListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.Result), double.NaN));
-                    Instance.RecInfoListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.RecFilePath), double.NaN));
-                    Instance.RecInfoColumnHead = CommonUtil.GetMemberName(() => obj.StartTime);
+                    Instance.RecInfoListColumn.Add(new ListColumnInfo(CommonUtil.NameOf(() => obj.IsProtect), double.NaN));
+                    Instance.RecInfoListColumn.Add(new ListColumnInfo(CommonUtil.NameOf(() => obj.StartTime), double.NaN));
+                    Instance.RecInfoListColumn.Add(new ListColumnInfo(CommonUtil.NameOf(() => obj.NetworkName), double.NaN));
+                    Instance.RecInfoListColumn.Add(new ListColumnInfo(CommonUtil.NameOf(() => obj.ServiceName), double.NaN));
+                    Instance.RecInfoListColumn.Add(new ListColumnInfo(CommonUtil.NameOf(() => obj.EventName), double.NaN));
+                    Instance.RecInfoListColumn.Add(new ListColumnInfo(CommonUtil.NameOf(() => obj.Drops), double.NaN));
+                    Instance.RecInfoListColumn.Add(new ListColumnInfo(CommonUtil.NameOf(() => obj.Scrambles), double.NaN));
+                    Instance.RecInfoListColumn.Add(new ListColumnInfo(CommonUtil.NameOf(() => obj.Result), double.NaN));
+                    Instance.RecInfoListColumn.Add(new ListColumnInfo(CommonUtil.NameOf(() => obj.RecFilePath), double.NaN));
+                    Instance.RecInfoColumnHead = CommonUtil.NameOf(() => obj.StartTime);
                     Instance.RecInfoSortDirection = ListSortDirection.Descending;
                 }
                 if (Instance.AutoAddEpgColumn.Count == 0)
                 {
                     var obj = new EpgAutoDataItem();
-                    Instance.AutoAddEpgColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.EventName), double.NaN));
-                    Instance.AutoAddEpgColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.NotKey), double.NaN));
-                    Instance.AutoAddEpgColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.RegExp), double.NaN));
-                    Instance.AutoAddEpgColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.RecMode), double.NaN));
-                    Instance.AutoAddEpgColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.Priority), double.NaN));
-                    Instance.AutoAddEpgColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.Tuijyu), double.NaN));
+                    Instance.AutoAddEpgColumn.Add(new ListColumnInfo(CommonUtil.NameOf(() => obj.EventName), double.NaN));
+                    Instance.AutoAddEpgColumn.Add(new ListColumnInfo(CommonUtil.NameOf(() => obj.NotKey), double.NaN));
+                    Instance.AutoAddEpgColumn.Add(new ListColumnInfo(CommonUtil.NameOf(() => obj.RegExp), double.NaN));
+                    Instance.AutoAddEpgColumn.Add(new ListColumnInfo(CommonUtil.NameOf(() => obj.RecMode), double.NaN));
+                    Instance.AutoAddEpgColumn.Add(new ListColumnInfo(CommonUtil.NameOf(() => obj.Priority), double.NaN));
+                    Instance.AutoAddEpgColumn.Add(new ListColumnInfo(CommonUtil.NameOf(() => obj.Tuijyu), double.NaN));
                 }
                 if (Instance.AutoAddManualColumn.Count == 0)
                 {
                     var obj = new ManualAutoAddDataItem();
-                    Instance.AutoAddManualColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.DayOfWeek), double.NaN));
-                    Instance.AutoAddManualColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.StartTime), double.NaN));
-                    Instance.AutoAddManualColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.EventName), double.NaN));
-                    Instance.AutoAddManualColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.ServiceName), double.NaN));
-                    Instance.AutoAddManualColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.RecMode), double.NaN));
-                    Instance.AutoAddManualColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.Priority), double.NaN));
+                    Instance.AutoAddManualColumn.Add(new ListColumnInfo(CommonUtil.NameOf(() => obj.DayOfWeek), double.NaN));
+                    Instance.AutoAddManualColumn.Add(new ListColumnInfo(CommonUtil.NameOf(() => obj.StartTime), double.NaN));
+                    Instance.AutoAddManualColumn.Add(new ListColumnInfo(CommonUtil.NameOf(() => obj.EventName), double.NaN));
+                    Instance.AutoAddManualColumn.Add(new ListColumnInfo(CommonUtil.NameOf(() => obj.ServiceName), double.NaN));
+                    Instance.AutoAddManualColumn.Add(new ListColumnInfo(CommonUtil.NameOf(() => obj.RecMode), double.NaN));
+                    Instance.AutoAddManualColumn.Add(new ListColumnInfo(CommonUtil.NameOf(() => obj.Priority), double.NaN));
                 }
                 if (Instance.EpgListColumn.Count == 0)
                 {
                     var obj = new SearchItem();
-                    Instance.EpgListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.Status), double.NaN));
-                    Instance.EpgListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.StartTime), double.NaN));
-                    Instance.EpgListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.NetworkName), double.NaN));
-                    Instance.EpgListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.ServiceName), double.NaN));
-                    Instance.EpgListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.EventName), double.NaN));
-                    Instance.EpgListColumnHead = CommonUtil.GetMemberName(() => obj.StartTime);
+                    Instance.EpgListColumn.Add(new ListColumnInfo(CommonUtil.NameOf(() => obj.Status), double.NaN));
+                    Instance.EpgListColumn.Add(new ListColumnInfo(CommonUtil.NameOf(() => obj.StartTime), double.NaN));
+                    Instance.EpgListColumn.Add(new ListColumnInfo(CommonUtil.NameOf(() => obj.NetworkName), double.NaN));
+                    Instance.EpgListColumn.Add(new ListColumnInfo(CommonUtil.NameOf(() => obj.ServiceName), double.NaN));
+                    Instance.EpgListColumn.Add(new ListColumnInfo(CommonUtil.NameOf(() => obj.EventName), double.NaN));
+                    Instance.EpgListColumnHead = CommonUtil.NameOf(() => obj.StartTime);
                     Instance.EpgListSortDirection = ListSortDirection.Ascending;
                 }
                 if (Instance.SearchWndColumn.Count == 0)
                 {
                     var obj = new SearchItem();
-                    Instance.SearchWndColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.Status), double.NaN));
-                    Instance.SearchWndColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.StartTime), double.NaN));
-                    Instance.SearchWndColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.ProgramDuration), double.NaN));
-                    Instance.SearchWndColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.EventName), double.NaN));
-                    Instance.SearchWndColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.NetworkName), double.NaN));
-                    Instance.SearchWndColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.ServiceName), double.NaN));
-                    Instance.SearchWndColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.ProgramContent), double.NaN));
-                    Instance.SearchWndColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.JyanruKey), double.NaN));
-                    Instance.SearchColumnHead = CommonUtil.GetMemberName(() => obj.StartTime);
+                    Instance.SearchWndColumn.Add(new ListColumnInfo(CommonUtil.NameOf(() => obj.Status), double.NaN));
+                    Instance.SearchWndColumn.Add(new ListColumnInfo(CommonUtil.NameOf(() => obj.StartTime), double.NaN));
+                    Instance.SearchWndColumn.Add(new ListColumnInfo(CommonUtil.NameOf(() => obj.ProgramDuration), double.NaN));
+                    Instance.SearchWndColumn.Add(new ListColumnInfo(CommonUtil.NameOf(() => obj.EventName), double.NaN));
+                    Instance.SearchWndColumn.Add(new ListColumnInfo(CommonUtil.NameOf(() => obj.NetworkName), double.NaN));
+                    Instance.SearchWndColumn.Add(new ListColumnInfo(CommonUtil.NameOf(() => obj.ServiceName), double.NaN));
+                    Instance.SearchWndColumn.Add(new ListColumnInfo(CommonUtil.NameOf(() => obj.ProgramContent), double.NaN));
+                    Instance.SearchWndColumn.Add(new ListColumnInfo(CommonUtil.NameOf(() => obj.JyanruKey), double.NaN));
+                    Instance.SearchColumnHead = CommonUtil.NameOf(() => obj.StartTime);
                     Instance.SearchSortDirection = ListSortDirection.Ascending;
                 }
                 if (Instance.RecInfoDropExclude.Count == 0)

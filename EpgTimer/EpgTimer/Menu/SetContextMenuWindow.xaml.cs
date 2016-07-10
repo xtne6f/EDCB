@@ -89,8 +89,8 @@ namespace EpgTimer
                 stackItems_ges2 = stackPanel_gesture2.Children.OfType<CheckBox>().ToList();
 
                 //個別設定画面用の設定
-                this.comboBoxViewSelect.DisplayMemberPath = CommonUtil.GetMemberName(() => new ComboItem().Value);
-                this.comboBoxViewSelect.SelectedValuePath = CommonUtil.GetMemberName(() => new ComboItem().Key);
+                this.comboBoxViewSelect.DisplayMemberPath = CommonUtil.NameOf(() => new ComboItem().Value);
+                this.comboBoxViewSelect.SelectedValuePath = CommonUtil.NameOf(() => new ComboItem().Key);
                 var bx = new BoxExchangeEditor(this.listBox_Default, this.listBox_Setting, true, true, true, true);
                 bx.AllowDuplication(StringItem.Items(EpgCmdsEx.SeparatorString), StringItem.Cloner, StringItem.Comparator);
                 button_reset.Click += new RoutedEventHandler(bx.button_Reset_Click);
