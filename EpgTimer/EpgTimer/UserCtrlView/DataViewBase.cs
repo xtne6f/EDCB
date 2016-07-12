@@ -32,7 +32,7 @@ namespace EpgTimer.UserCtrlView
         {
             if (this.IsVisible == true || force == true)
             {
-                CommonManager.Instance.StatusSet(status[1], status[2]);
+                StatusManager.StatusSet(status[1], status[2], target:this);
             }
         }
         protected virtual void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)

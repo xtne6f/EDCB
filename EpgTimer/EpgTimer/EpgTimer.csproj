@@ -91,6 +91,7 @@
       <DependentUpon>BlackoutWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="Common\BoxExchangeEditor.cs" />
+    <Compile Include="Common\StatusManager.cs" />
     <Compile Include="CtrlCmdDefEx\EpgEventInfoEx.cs" />
     <Compile Include="CtrlCmdDefEx\RecSettingDataEx.cs" />
     <Compile Include="CtrlCmdDefEx\ReserveDataEx.cs" />

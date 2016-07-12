@@ -189,12 +189,12 @@ namespace EpgTimer
                 if (chgFlag == true)
                 {
                     bool ret = MenuUtil.AutoAddChange(CommonUtil.ToList(defKey));
-                    CommonManager.Instance.StatusNotifySet(ret, "プログラム予約登録を変更");
+                    StatusManager.StatusNotifySet(ret, "プログラム予約登録を変更");
                 }
                 else
                 {
                     bool ret = MenuUtil.AutoAddAdd(CommonUtil.ToList(defKey));
-                    CommonManager.Instance.StatusNotifySet(ret, "プログラム予約登録を追加");
+                    StatusManager.StatusNotifySet(ret, "プログラム予約登録を追加");
                 }
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
@@ -206,7 +206,7 @@ namespace EpgTimer
             if (CheckAutoAddChange(e, 2) == false) return;
             //
             bool ret = MenuUtil.AutoAddDelete(CommonUtil.ToList(defKey));
-            CommonManager.Instance.StatusNotifySet(ret, "プログラム予約登録を削除");
+            StatusManager.StatusNotifySet(ret, "プログラム予約登録を削除");
             DialogResult = true;
         }
 
@@ -215,7 +215,7 @@ namespace EpgTimer
             if (CheckAutoAddChange(e, 3) == false) return;
             //
             bool ret = MenuUtil.AutoAddDelete(CommonUtil.ToList(defKey), true, true);
-            CommonManager.Instance.StatusNotifySet(ret, "プログラム予約登録を予約ごと削除");
+            StatusManager.StatusNotifySet(ret, "プログラム予約登録を予約ごと削除");
             DialogResult = true;
         }
 

@@ -1571,35 +1571,5 @@ namespace EpgTimer
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
             return null;
         }
-
-        public void StatusNotifySet(bool success, string subject, Visual target = null)
-        {
-            if (string.IsNullOrEmpty(subject)) return;
-            StatusNotifySet((success == true ? "" : "中断またはキャンセルされました < ") + subject, null, target);
-        }
-        public void StatusNotifySet(string s3, TimeSpan? interval = null, Visual target = null)
-        {
-            if (Settings.Instance.DisplayStatus == false || Settings.Instance.DisplayStatusNotify == false) return;
-            GetStatusbar(target).SetText(s3: s3, interval: interval);
-        }
-        public void StatusNotifyAppend(string s3, TimeSpan? interval = null, Visual target = null)
-        {
-            if (Settings.Instance.DisplayStatus == false || Settings.Instance.DisplayStatusNotify == false) return;
-            GetStatusbar(target).AppendText(s3: s3, interval: interval);
-        }
-        public void StatusSet(string s1 = null, string s2 = null, string s3 = null, Visual target = null)
-        {
-            if (Settings.Instance.DisplayStatus == false) return;
-            GetStatusbar(target).SetText(s1, s2, s3);
-        }
-        public void StatusAppend(string s1 = "", string s2 = "", string s3 = "", Visual target = null)
-        {
-            if (Settings.Instance.DisplayStatus == false) return;
-            GetStatusbar(target).AppendText(s1, s2, s3);
-        }
-        public UserCtrlView.StatusView GetStatusbar(Visual target = null)
-        {
-            return (target is SearchWindow) ? (target as SearchWindow).statusBar : ViewUtil.MainWindow.statusBar;
-        }
     }
 }

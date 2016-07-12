@@ -236,7 +236,7 @@ namespace EpgTimer
                         if (Settings.Instance.DisplayStatus == true && Settings.Instance.DisplayStatusNotify == true &&
                             e != null && e.Command != null)
                         {
-                            CommonManager.Instance.StatusNotifySet(IsCommandExecuted, GetCmdMessage(e.Command), this.Owner);
+                            StatusManager.StatusNotifySet(IsCommandExecuted, GetCmdMessage(e.Command));
                         }
                     }
                 }
@@ -591,12 +591,12 @@ namespace EpgTimer
             cmdMessage.TryGetValue(icmd, out cmdMsg);
             return GetCmdMessageFormat(cmdMsg, this.itemCount);
         }
-        protected string GetCmdMessageFormat(string cmdMsg, int Count)
+        public string GetCmdMessageFormat(string cmdMsg, int Count)
         {
             if (string.IsNullOrEmpty(cmdMsg) == true) return null;
             return string.Format("{0}(処理数:{1})", cmdMsg, Count);
         }
-        protected virtual void SetCmdMessage()
+        public virtual void SetCmdMessage()
         {
             cmdMessage.Add(EpgCmds.Add, "予約を追加");
             //cmdMessage.Add(EpgCmds.ShowAddDialog, "");

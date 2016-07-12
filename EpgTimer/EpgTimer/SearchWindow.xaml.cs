@@ -103,6 +103,9 @@ namespace EpgTimer
                 //録画プリセット変更時の対応
                 recSettingView.SelectedPresetChanged += new EventHandler(SetRecSettingTabHeader);
 
+                //ステータスバーの登録
+                StatusManager.RegisterStatusbar(this.statusBar, this);
+
                 //ウインドウ位置の復元
                 if (Settings.Instance.SearchWndTop != -100)
                 {
@@ -222,7 +225,7 @@ namespace EpgTimer
         private void button_search_Click(object sender, ExecutedRoutedEventArgs e)
         {
             SearchPg(true);
-            CommonManager.Instance.StatusNotifySet(true, "検索を実行", this);
+            StatusManager.StatusNotifySet(true, "検索を実行");
         }
 
         private void SearchPg(bool addSearchLog = false)
@@ -235,7 +238,7 @@ namespace EpgTimer
                 key.keyDisabledFlag = 0; //無効解除
                 var list = new List<EpgEventInfo>();
 
-                cmd.SendSearchPg(CommonUtil.ToList(key), ref list);
+                CommonManager.Instance.CtrlCmd.SendSearchPg(CommonUtil.ToList(key), ref list);
 
                 lstCtrl.dataList.AddFromEventList(list, false, true);
                 return true;
@@ -301,7 +304,7 @@ namespace EpgTimer
                 }
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
-            CommonManager.Instance.StatusNotifySet(ret, "キーワード予約を追加", this);
+            StatusManager.StatusNotifySet(ret, "キーワード予約を追加");
         }
 
         private void button_chg_epgAutoAdd_Click(object sender, ExecutedRoutedEventArgs e)
@@ -316,7 +319,7 @@ namespace EpgTimer
                 }
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
-            CommonManager.Instance.StatusNotifySet(ret, "キーワード予約を変更", this);
+            StatusManager.StatusNotifySet(ret, "キーワード予約を変更");
         }
 
         private void button_del_epgAutoAdd_Click(object sender, ExecutedRoutedEventArgs e)
@@ -336,7 +339,7 @@ namespace EpgTimer
                 }
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
-            CommonManager.Instance.StatusNotifySet(ret, "キーワード予約を削除", this);
+            StatusManager.StatusNotifySet(ret, "キーワード予約を削除");
         }
 
         //proc 0:追加、1:変更、2:削除
