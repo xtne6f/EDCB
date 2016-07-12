@@ -10,9 +10,6 @@ CTimeShiftUtil::CTimeShiftUtil(void)
     this->readThread = NULL;
     this->readStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 
-	this->sendUdp = NULL;
-	this->sendTcp = NULL;
-
 	this->PCR_PID = 0xFFFF;
 	this->fileMode = FALSE;
 	this->availableFileSize = 0;
@@ -36,6 +33,9 @@ CTimeShiftUtil::~CTimeShiftUtil(void)
 		CloseHandle(this->readStopEvent);
 		this->readStopEvent = NULL;
 	}
+
+	NWPLAY_PLAY_INFO val = {};
+	Send(&val);
 
 	if( this->lockEvent != NULL ){
 		UnLock();
@@ -111,46 +111,86 @@ void CTimeShiftUtil::UnLockBuff(LPCWSTR log)
 	}
 }
 
-//UDPで送信を行う
-//戻り値：
-// TRUE（成功）、FALSE（失敗）
-//引数：
-// udp		[IN]送信クラス。NULLで停止。
-BOOL CTimeShiftUtil::SendUdp(
-	CSendUDP* udp
+BOOL CTimeShiftUtil::Send(
+	NWPLAY_PLAY_INFO* val
 	)
 {
-	if( Lock() == FALSE ) return FALSE;
-	BOOL ret = TRUE;
+	//送信先を設定する
+	WCHAR ip[64];
+	swprintf_s(ip, L"%d.%d.%d.%d", val->ip >> 24, val->ip >> 16 & 0xFF, val->ip >> 8 & 0xFF, val->ip & 0xFF);
 
-	if( LockBuff() == TRUE ){
-		this->sendUdp = udp;
-		UnLockBuff();
+	if( this->sendUdpIP.empty() == false && (val->udp == 0 || this->sendUdpIP != ip) ){
+		this->sendUdpIP.clear();
+		this->sendUdp.CloseUpload();
+		ReleaseMutex(this->udpPortMutex);
+		CloseHandle(this->udpPortMutex);
+	}
+	if( this->sendUdpIP.empty() && val->udp != 0 ){
+		NW_SEND_INFO item;
+		item.ip = val->ip;
+		item.port = 1234;
+		item.ipString = ip;
+		item.broadcastFlag = FALSE;
+		wstring mutexKey;
+		for( ; item.port < 1234 + 100; item.port++ ){
+			Format(mutexKey, L"%s%d_%d", MUTEX_UDP_PORT_NAME, val->ip, item.port);
+			this->udpPortMutex = CreateMutex(NULL, TRUE, mutexKey.c_str());
+			if( this->udpPortMutex ){
+				if( GetLastError() != ERROR_ALREADY_EXISTS ){
+					break;
+				}
+				CloseHandle(this->udpPortMutex);
+				this->udpPortMutex = NULL;
+			}
+		}
+		if( this->udpPortMutex ){
+			OutputDebugString((mutexKey + L"\r\n").c_str());
+			vector<NW_SEND_INFO> sendList(1, item);
+			this->sendUdp.StartUpload(&sendList);
+			this->sendUdpIP = ip;
+			this->sendUdpPort = item.port;
+		}
+	}
+	if( this->sendUdpIP.empty() == false ){
+		val->udpPort = this->sendUdpPort;
 	}
 
-	UnLock();
-	return ret;
-}
-
-//TCPで送信を行う
-//戻り値：
-// TRUE（成功）、FALSE（失敗）
-//引数：
-// tcp		[IN]送信クラス。NULLで停止。
-BOOL CTimeShiftUtil::SendTcp(
-	CSendTCP* tcp
-	)
-{
-	if( Lock() == FALSE ) return FALSE;
-	BOOL ret = TRUE;
-
-	if( LockBuff() == TRUE ){
-		this->sendTcp = tcp;
-		UnLockBuff();
+	if( this->sendTcpIP.empty() == false && (val->tcp == 0 || this->sendTcpIP != ip) ){
+		this->sendTcpIP.clear();
+		this->sendTcp.CloseUpload();
+		ReleaseMutex(this->tcpPortMutex);
+		CloseHandle(this->tcpPortMutex);
 	}
-
-	UnLock();
-	return ret;
+	if( this->sendTcpIP.empty() && val->tcp != 0 ){
+		NW_SEND_INFO item;
+		item.ip = val->ip;
+		item.port = 2230;
+		item.ipString = ip;
+		item.broadcastFlag = FALSE;
+		wstring mutexKey;
+		for( ; item.port < 2230 + 100; item.port++ ){
+			Format(mutexKey, L"%s%d_%d", MUTEX_TCP_PORT_NAME, val->ip, item.port);
+			this->tcpPortMutex = CreateMutex(NULL, TRUE, mutexKey.c_str());
+			if( this->tcpPortMutex ){
+				if( GetLastError() != ERROR_ALREADY_EXISTS ){
+					break;
+				}
+				CloseHandle(this->tcpPortMutex);
+				this->tcpPortMutex = NULL;
+			}
+		}
+		if( this->tcpPortMutex ){
+			OutputDebugString((mutexKey + L"\r\n").c_str());
+			vector<NW_SEND_INFO> sendList(1, item);
+			this->sendTcp.StartUpload(&sendList);
+			this->sendTcpIP = ip;
+			this->sendTcpPort = item.port;
+		}
+	}
+	if( this->sendTcpIP.empty() == false ){
+		val->tcpPort = this->sendTcpPort;
+	}
+	return TRUE;
 }
 
 BOOL CTimeShiftUtil::OpenTimeShift(
@@ -197,6 +237,8 @@ BOOL CTimeShiftUtil::OpenTimeShift(
 	this->filePath = filePath_;
 	this->fileMode = fileMode_;
 	this->currentFilePos = 0;
+
+	//TODO: 定期的にtotalFileSizeとavailableFileSizeを更新する処理を開始する
 
 	UnLock();
 	return TRUE;
@@ -408,11 +450,11 @@ UINT WINAPI CTimeShiftUtil::ReadThread(LPVOID param)
 				}
 				sys->UnLockBuff();
 
-				if( sys->sendUdp != NULL ){
-					sys->sendUdp->SendData(data, dataSize);
+				if( sys->sendUdpIP.empty() == false ){
+					sys->sendUdp.SendData(data, dataSize);
 				}
-				if( sys->sendTcp != NULL ){
-					sys->sendTcp->SendData(data, dataSize);
+				if( sys->sendTcpIP.empty() == false ){
+					sys->sendTcp.SendData(data, dataSize);
 				}
 			}
 			sys->currentFilePos += readSize;
@@ -464,11 +506,11 @@ Err_End:
 		endBuff[i+3] = 0x10;
 	}
 
-	if( sys->sendUdp != NULL ){
-		sys->sendUdp->SendData(endBuff, 188*512);
+	if( sys->sendUdpIP.empty() == false ){
+		sys->sendUdp.SendData(endBuff, 188*512);
 	}
-	if( sys->sendTcp != NULL ){
-		sys->sendTcp->SendData(endBuff, 188*512);
+	if( sys->sendTcpIP.empty() == false ){
+		sys->sendTcp.SendData(endBuff, 188*512);
 	}
 
 	return 0;
@@ -495,51 +537,26 @@ void CTimeShiftUtil::SetAvailableSize(__int64 fileSize)
 	return ;
 }
 
-//現在の送信ファイル位置を取得する
-//戻り値：
-// TRUE（成功）、FALSE（失敗）
-//引数：
-// filePos		[OUT]ファイル位置
-BOOL CTimeShiftUtil::GetCurrentFilePos(__int64* filePos)
+void CTimeShiftUtil::GetFilePos(__int64* filePos, __int64* fileSize)
 {
-	if( Lock() == FALSE ) return FALSE;
+	if( Lock() == FALSE ) return;
 
-	BOOL ret = FALSE;
 	if( filePos != NULL ){
 		*filePos = this->currentFilePos;
-		ret = TRUE;
 	}
-	//_OutputDebugString(L"currentFilePos::%I64d", this->currentFilePos);
-	UnLock();
-	return ret;
-}
-
-//現在有効なファイルサイズを取得する
-//戻り値：
-// TRUE（成功）、FALSE（失敗）
-//引数：
-// filePos		[OUT]ファイルサイズ
-BOOL CTimeShiftUtil::GetTotalFilePos(__int64* filePos)
-{
-	if( Lock() == FALSE ) return FALSE;
-
-	BOOL ret = FALSE;
-	if( filePos != NULL ){
+	if( fileSize != NULL ){
 		if( this->fileMode == TRUE ){
-			*filePos = this->totalFileSize;
+			*fileSize = this->totalFileSize;
 		}else{
 			if( this->availableFileSize != -1 ){
-				*filePos = this->availableFileSize;
+				*fileSize = this->availableFileSize;
 			}else{
-				*filePos = this->totalFileSize;
+				*fileSize = this->totalFileSize;
 			}
 		}
-		ret = TRUE;
 	}
-	//_OutputDebugString(L"totalFileSize::%I64d", *filePos);
-
 	UnLock();
-	return ret;
+	return;
 }
 
 //送信開始位置を変更する

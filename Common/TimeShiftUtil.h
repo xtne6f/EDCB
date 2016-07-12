@@ -12,22 +12,13 @@ public:
 	CTimeShiftUtil(void);
 	~CTimeShiftUtil(void);
 
-	//UDPで送信を行う
+	//UDP/TCP送信を行う
 	//戻り値：
 	// TRUE（成功）、FALSE（失敗）
 	//引数：
-	// udp		[IN]送信クラス。NULLで停止。
-	BOOL SendUdp(
-		CSendUDP* udp
-		);
-
-	//TCPで送信を行う
-	//戻り値：
-	// TRUE（成功）、FALSE（失敗）
-	//引数：
-	// tcp		[IN]送信クラス。NULLで停止。
-	BOOL SendTcp(
-		CSendTCP* tcp
+	// val		[IN/OUT]送信先情報
+	BOOL Send(
+		NWPLAY_PLAY_INFO* val
 		);
 
 	//タイムシフト用ファイルを開く
@@ -58,19 +49,11 @@ public:
 	// fileSize		[IN]有効なファイルサイズ。-1でファイルサイズそのままが有効。
 	void SetAvailableSize(__int64 fileSize);
 
-	//現在の送信ファイル位置を取得する
-	//戻り値：
-	// TRUE（成功）、FALSE（失敗）
+	//現在の送信位置と有効なファイルサイズを取得する
 	//引数：
 	// filePos		[OUT]ファイル位置
-	BOOL GetCurrentFilePos(__int64* filePos);
-
-	//現在有効なファイルサイズを取得する
-	//戻り値：
-	// TRUE（成功）、FALSE（失敗）
-	//引数：
-	// filePos		[OUT]ファイルサイズ
-	BOOL GetTotalFilePos(__int64* filePos);
+	// fileSize		[OUT]ファイルサイズ
+	void GetFilePos(__int64* filePos, __int64* fileSize);
 
 	//送信開始位置を変更する
 	//戻り値：
@@ -82,8 +65,14 @@ public:
 protected:
 	HANDLE lockEvent;
 	HANDLE lockBuffEvent;
-	CSendUDP* sendUdp;
-	CSendTCP* sendTcp;
+	CSendUDP sendUdp;
+	CSendTCP sendTcp;
+	wstring sendUdpIP;
+	wstring sendTcpIP;
+	DWORD sendUdpPort;
+	DWORD sendTcpPort;
+	HANDLE udpPortMutex;
+	HANDLE tcpPortMutex;
 
 	wstring filePath;
 	WORD PCR_PID;

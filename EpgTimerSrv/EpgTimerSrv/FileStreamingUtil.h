@@ -48,23 +48,5 @@ public:
 
 protected:
 	CTimeShiftUtil timeShiftUtil;
-
-	CSendUDP sendUdp;
-	CSendTCP sendTcp;
-
-	DWORD tcpIP;
-	DWORD udpIP;
-
-	vector<HANDLE> udpPortMutex;
-	vector<HANDLE> tcpPortMutex;
-	vector<NW_SEND_INFO> udpSendList;
-	vector<NW_SEND_INFO> tcpSendList;
-
-	HANDLE sizeChkThread;
-	HANDLE sizeChkStopEvent;
-	CSendCtrlCmd cmd;
-	DWORD timeShiftCtrlID;
-protected:
-	static UINT WINAPI SizeChkThread(LPVOID param);
 };
 
