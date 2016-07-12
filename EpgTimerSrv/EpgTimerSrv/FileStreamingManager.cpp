@@ -19,9 +19,7 @@ BOOL CFileStreamingManager::OpenTimeShift(
 	)
 {
 	std::shared_ptr<CTimeShiftUtil> util = std::make_shared<CTimeShiftUtil>();
-	//TODO: ここでfilePathの有効ファイルサイズを調べてfileSizeに格納する
-	__int64 fileSize = 0;
-	if( util->OpenTimeShift(filePath, fileSize, FALSE) == FALSE ){
+	if( util->OpenTimeShift(filePath, FALSE) == FALSE ){
 		return FALSE;
 	}
 	*ctrlID = this->utilMng.push(util);
@@ -34,7 +32,7 @@ BOOL CFileStreamingManager::OpenFile(
 	)
 {
 	std::shared_ptr<CTimeShiftUtil> util = std::make_shared<CTimeShiftUtil>();
-	if( util->OpenTimeShift(filePath, -1, TRUE) == FALSE ){
+	if( util->OpenTimeShift(filePath, TRUE) == FALSE ){
 		return FALSE;
 	}
 	*ctrlID = this->utilMng.push(util);
