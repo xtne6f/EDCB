@@ -11,7 +11,6 @@ namespace EpgTimer
         string DataTitle { get; }
         //ulong DataID { get; }
     }
-
     public interface IBasicPgInfo : IRecWorkMainData
     {
         //string PgTitle { get; }
@@ -21,12 +20,60 @@ namespace EpgTimer
         UInt64 Create64Key();
         UInt64 Create64PgKey();
     }
-
     public interface IAutoAddTargetData : IBasicPgInfo
     {
-        List<EpgAutoAddData> SearchEpgAutoAddList(bool? IsEnabled, bool ByFazy);
+        List<EpgAutoAddData> SearchEpgAutoAddList(bool? IsEnabled = null, bool ByFazy = false);
+        List<ManualAutoAddData> SearchManualAutoAddList(bool? IsEnabled = null);
         List<EpgAutoAddData> GetEpgAutoAddList(bool? IsEnabled = null);
         List<ManualAutoAddData> GetManualAutoAddList(bool? IsEnabled = null);
+    }
+
+    public abstract class AutoAddTargetData : IAutoAddTargetData
+    {
+        public abstract string DataTitle { get; }
+        public abstract DateTime PgStartTime { get; }
+        public abstract uint PgDurationSecond { get; }
+        public abstract UInt64 Create64Key();
+        public abstract UInt64 Create64PgKey();
+        public virtual List<EpgAutoAddData> SearchEpgAutoAddList(bool? IsEnabled = null, bool ByFazy = false)
+        {
+            return SearchEpgAutoAddHitList(this, IsEnabled, ByFazy);
+        }
+        public virtual List<ManualAutoAddData> SearchManualAutoAddList(bool? IsEnabled = null)
+        {
+            return GetManualAutoAddHitList(this, IsEnabled);
+        }
+        public virtual List<EpgAutoAddData> GetEpgAutoAddList(bool? IsEnabled = null)
+        {
+            return GetEpgAutoAddHitList(this, IsEnabled);
+        }
+        public virtual List<ManualAutoAddData> GetManualAutoAddList(bool? IsEnabled = null)
+        {
+            return GetManualAutoAddHitList(this, IsEnabled);
+        }
+
+        public static List<EpgAutoAddData> SearchEpgAutoAddHitList(IAutoAddTargetData info, bool? IsEnabled = null, bool ByFazy = false)
+        {
+            if (info == null) return new List<EpgAutoAddData>();
+            //
+            var list = GetEpgAutoAddHitList(info, IsEnabled);
+            if (ByFazy == true)
+            {
+                list.AddRange(MenuUtil.FazySearchEpgAutoAddData(info.DataTitle, IsEnabled));
+                list = list.Distinct().OrderBy(data => data.DataID).ToList();
+            }
+            return list;
+        }
+        public static List<EpgAutoAddData> GetEpgAutoAddHitList(IAutoAddTargetData info, bool? IsEnabled = null)
+        {
+            return CommonManager.Instance.DB.EpgAutoAddList.Values.GetAutoAddList(IsEnabled)
+                .FindAll(data => data.CheckPgHit(info) == true);//info==nullでもOK
+        }
+        public static List<ManualAutoAddData> GetManualAutoAddHitList(IAutoAddTargetData info, bool? IsEnabled = null)
+        {
+            return CommonManager.Instance.DB.ManualAutoAddList.Values.GetAutoAddList(IsEnabled)
+                .FindAll(data => data.CheckPgHit(info) == true);//info==nullでもOK
+        }
     }
 
     static class CtrlCmdDefEx

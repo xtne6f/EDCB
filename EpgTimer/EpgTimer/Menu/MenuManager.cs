@@ -583,19 +583,11 @@ namespace EpgTimer
 
             if (menu.IsEnabled == false || info == null) return;
 
-            CtxmGenerateChgAutoAddMenuItem(menu, info, EpgCmds.ChgResMode, true, false, 30);
+            CtxmGenerateChgAutoAddMenuItem(menu, info, EpgCmds.ChgResMode, true, false);
 
             if (menu.Items.Count > 2)
             {
                 menu.Items.Insert(2, new Separator());
-                foreach (var item in menu.Items.OfType<MenuItem>())
-                {
-                    Type type = (item.CommandParameter as EpgCmdParam).Data as Type;
-                    if (type != null)
-                    {
-                        item.Header = (type == typeof(EpgAutoAddData) ? "キーワード予約:" : "プログラム自動:") + item.Header;
-                    }
-                }
             }
         }
 
@@ -634,22 +626,24 @@ namespace EpgTimer
             return true;
         }
 
-        private void CtxmGenerateChgAutoAddMenuItem(MenuItem menu, IAutoAddTargetData info, ICommand cmd, bool? IsAutoAddEnabled, bool ByFasy, int str_max = 35)
+        private void CtxmGenerateChgAutoAddMenuItem(MenuItem menu, IAutoAddTargetData info, ICommand cmd, bool? IsAutoAddEnabled, bool ByFazy, int str_max = 35)
         {
             if (info != null)
             {
-                Action<AutoAddData, string, uint> addSubMenuItem = (autoAdd, title, id) =>
+                var addList = new List<AutoAddData>();
+                addList.AddRange(info.SearchEpgAutoAddList(IsAutoAddEnabled, ByFazy));
+                addList.AddRange(info.SearchManualAutoAddList(IsAutoAddEnabled));
+
+                var chkList = new List<AutoAddData>();
+                chkList.AddRange(info.GetEpgAutoAddList(true));
+                chkList.AddRange(info.GetManualAutoAddList(true));
+
+                addList.ForEach(autoAdd =>
                 {
                     var menuItem = new MenuItem();
-                    if (info is RecFileInfo && autoAdd is EpgAutoAddData)
-                    {
-                        menuItem.IsChecked = autoAdd.GetReserveList().FirstOrDefault(data => data.Create64Key() == info.Create64Key()) != null;
-                    }
-                    else
-                    {
-                        menuItem.IsChecked = autoAdd.CheckPgHit(info);
-                    }
-                    string header = title;
+                    menuItem.IsChecked = chkList.Contains(autoAdd);
+
+                    string header = MenuUtil.ConvertAutoddTextMenu(autoAdd);
                     if (header.Length > str_max)
                     {
                         menuItem.ToolTip = ViewUtil.GetTooltipBlockStandard(header);
@@ -663,21 +657,11 @@ namespace EpgTimer
                     menuItem.Command = cmd;
                     menuItem.CommandParameter = new EpgCmdParam(menu.CommandParameter as EpgCmdParam);
                     (menuItem.CommandParameter as EpgCmdParam).Data = autoAdd.GetType();//オブジェクト入れると残るので
-                    (menuItem.CommandParameter as EpgCmdParam).ID = (int)id;
+                    (menuItem.CommandParameter as EpgCmdParam).ID = (int)(autoAdd.DataID);
                     menuItem.Tag = menuItem.Command;
 
                     menu.Items.Add(menuItem);
-                };
-
-                foreach (var data in info.SearchEpgAutoAddList(IsAutoAddEnabled, ByFasy).OrderBy(data => data.DataID))
-                {
-                    addSubMenuItem(data, data.DataTitle == "" ? "(空白)" : data.DataTitle, data.dataID);
-                }
-                foreach (var data in info.GetManualAutoAddList(IsAutoAddEnabled).OrderBy(data => data.DataID))
-                {
-                    var view = new ManualAutoAddDataItem(data);
-                    addSubMenuItem(data, string.Format("({0}){1} {2}", view.DayOfWeek, view.StartTimeShort, data.DataTitle == "" ? "(空白)" : data.DataTitle), data.dataID);
-                }
+                });
             }
         }
 

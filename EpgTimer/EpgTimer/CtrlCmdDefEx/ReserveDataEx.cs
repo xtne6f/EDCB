@@ -6,16 +6,16 @@ using System.Windows;
 
 namespace EpgTimer
 {
-    public partial class ReserveData : IAutoAddTargetData, IRecSetttingData
+    public partial class ReserveData : AutoAddTargetData, IRecSetttingData
     {
-        public string DataTitle { get { return Title; } }
-        public DateTime PgStartTime { get { return StartTime; } }
-        public uint PgDurationSecond { get { return DurationSecond; } }
-        public UInt64 Create64Key()
+        public override string DataTitle { get { return Title; } }
+        public override DateTime PgStartTime { get { return StartTime; } }
+        public override uint PgDurationSecond { get { return DurationSecond; } }
+        public override UInt64 Create64Key()
         {
             return CommonManager.Create64Key(OriginalNetworkID, TransportStreamID, ServiceID);
         }
-        public UInt64 Create64PgKey()
+        public override UInt64 Create64PgKey()
         {
             return CommonManager.Create64PgKey(OriginalNetworkID, TransportStreamID, ServiceID, EventID);
         }
@@ -151,32 +151,17 @@ namespace EpgTimer
                 return IsAutoAdded && Append.IsAutoAddInvalid;
             }
         }
-        public List<EpgAutoAddData> SearchEpgAutoAddList(bool? IsEnabled = null, bool ByFazy = false)
+        public override List<EpgAutoAddData> SearchEpgAutoAddList(bool? IsEnabled = null, bool ByFazy = false)
         {
-            var list = GetEpgAutoAddList(IsEnabled);
-            if (IsEpgReserve == false)
-            {
-                //プログラム予約の場合はそれっぽい番組を選んで、キーワード予約の検索にヒットしていたら選択する。
-                EpgEventInfo trgInfo = this.SearchEventInfoLikeThat();
-                if (trgInfo != null)
-                {
-                    list.AddRange(trgInfo.SearchEpgAutoAddList(IsEnabled, ByFazy));
-                }
-            }
-            else
-            {
-                if (ByFazy == true)
-                {
-                    list.AddRange(MenuUtil.FazySearchEpgAutoAddData(DataTitle, IsEnabled));
-                }
-            }
-            return list.Distinct().ToList();
+            //プログラム予約の場合はそれっぽい番組を選んで、キーワード予約の検索にヒットしていたら選択する。
+            var info = IsEpgReserve == true ? this as IAutoAddTargetData : this.SearchEventInfoLikeThat();
+            return AutoAddTargetData.SearchEpgAutoAddHitList(info, IsEnabled, ByFazy);
         }
-        public List<EpgAutoAddData> GetEpgAutoAddList(bool? IsEnabled = null)
+        public override List<EpgAutoAddData> GetEpgAutoAddList(bool? IsEnabled = null)
         {
             return IsEnabled == null ? Append.EpgAutoList : IsEnabled == true ? Append.EpgAutoListEnabled : Append.EpgAutoListDisabled;
         }
-        public List<ManualAutoAddData> GetManualAutoAddList(bool? IsEnabled = null)
+        public override List<ManualAutoAddData> GetManualAutoAddList(bool? IsEnabled = null)
         {
             return IsEnabled == null ? Append.ManualAutoList : IsEnabled == true ? Append.ManualAutoListEnabled : Append.ManualAutoListDisabled;
         }

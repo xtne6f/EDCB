@@ -5,16 +5,16 @@ using System.Text;
 
 namespace EpgTimer
 {
-    public partial class RecFileInfo : IAutoAddTargetData
+    public partial class RecFileInfo : AutoAddTargetData
     {
-        public string DataTitle { get { return Title; } }
-        public DateTime PgStartTime { get { return StartTime; } }
-        public uint PgDurationSecond { get { return DurationSecond; } }
-        public UInt64 Create64Key()
+        public override string DataTitle { get { return Title; } }
+        public override DateTime PgStartTime { get { return StartTime; } }
+        public override uint PgDurationSecond { get { return DurationSecond; } }
+        public override UInt64 Create64Key()
         {
             return CommonManager.Create64Key(OriginalNetworkID, TransportStreamID, ServiceID);
         }
-        public UInt64 Create64PgKey()
+        public override UInt64 Create64PgKey()
         {
             return CommonManager.Create64PgKey(OriginalNetworkID, TransportStreamID, ServiceID, EventID);
         }
@@ -62,19 +62,16 @@ namespace EpgTimer
             }
         }
 
-        public List<EpgAutoAddData> SearchEpgAutoAddList(bool? IsEnabled = null, bool ByFazy = false)
+        public override List<EpgAutoAddData> SearchEpgAutoAddList(bool? IsEnabled = null, bool ByFazy = false)
         {
             //EpgTimerSrv側のSearch()をEpgTimerで実装してないので、簡易な推定によるもの
             return MenuUtil.FazySearchEpgAutoAddData(DataTitle, IsEnabled);
         }
-        public List<EpgAutoAddData> GetEpgAutoAddList(bool? IsEnabled = null)
+        public override List<EpgAutoAddData> GetEpgAutoAddList(bool? IsEnabled = null)
         {
-            return new List<EpgAutoAddData>();
-        }
-        public List<ManualAutoAddData> GetManualAutoAddList(bool? IsEnabled = null)
-        {
-            return CommonManager.Instance.DB.ManualAutoAddList.Values.GetAutoAddList(IsEnabled)
-                .FindAll(data => data.CheckPgHit(this) == true);
+            //それらしいものを選んでおく
+            return SearchEpgAutoAddList(IsEnabled)
+                .FindAll(data => data.GetReserveList().FirstOrDefault(data2 => data2.Create64Key() == this.Create64Key()) != null);
         }
 
         //AppendData 関係。ID(元データ)に対して一意の情報なので、データ自体はDB側。

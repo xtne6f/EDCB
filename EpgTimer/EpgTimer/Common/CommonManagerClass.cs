@@ -531,6 +531,10 @@ namespace EpgTimer
             return info;
         }
 
+        public static string AdjustSearchText(string s)
+        {
+            return ReplaceUrl(s.ToLower()).Replace("　", " ").Replace("\r\n", "");
+        }
         public static String ReplaceUrl(String url)
         {
             string retText = url;
@@ -608,6 +612,7 @@ namespace EpgTimer
             retText = retText.Replace("＜", "<");
             retText = retText.Replace("＞", ">");
             retText = retText.Replace("？", "?");
+            retText = retText.Replace("！", "!");
             retText = retText.Replace("＿", "_");
             retText = retText.Replace("＋", "+");
             retText = retText.Replace("－", "-");

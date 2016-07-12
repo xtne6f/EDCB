@@ -1023,6 +1023,20 @@ namespace EpgTimer
             return null;
         }
 
+        public static bool? OpenChangeAutoAddDialog(Type t, uint id, Control Owner)
+        {
+            AutoAddData autoAdd = AutoAddData.AutoAddList(t, id);
+            if (t == typeof(EpgAutoAddData))
+            {
+                return OpenChangeEpgAutoAddDialog(autoAdd as EpgAutoAddData);
+            }
+            else if (t == typeof(ManualAutoAddData))
+            {
+                return OpenChangeManualAutoAddDialog(autoAdd as ManualAutoAddData, Owner);
+            }
+            return null;
+        }
+
         public static bool? OpenRecInfoDialog(RecFileInfo info, Control Owner)
         {
             try
@@ -1047,7 +1061,7 @@ namespace EpgTimer
 
         public static List<EpgAutoAddData> FazySearchEpgAutoAddData(string title, bool? IsEnabled = null)
         {
-            Func<string, string> _regulate_str = s => CommonManager.ReplaceUrl(TrimKeyword(s)).ToLower();
+            Func<string, string> _regulate_str = s => CommonManager.AdjustSearchText(TrimKeyword(s));
 
             string title_key = _regulate_str(title);
 
@@ -1064,6 +1078,18 @@ namespace EpgTimer
             return IsEnabled == null ? list : list.FindAll(data => data.IsEnabled == IsEnabled);
         }
 
+        public static string ConvertAutoddTextMenu(AutoAddData data)
+        {
+            if(data is EpgAutoAddData)
+            {
+                return "キーワード予約:" + (data.DataTitle == "" ? "(空白)" : data.DataTitle);
+            }
+            else
+            {
+                var view = new ManualAutoAddDataItem(data as ManualAutoAddData);
+                return "プログラム自動:" + string.Format("({0}){1} {2}", view.DayOfWeek, view.StartTimeShort, view.EventName == "" ? "(空白)" : view.EventName);
+            }
+        }
     }
 
 }

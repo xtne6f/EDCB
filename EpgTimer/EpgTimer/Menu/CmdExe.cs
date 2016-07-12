@@ -290,15 +290,7 @@ namespace EpgTimer
         protected virtual ReserveData mcs_GetNextReserve() { return new ReserveData(); }
         protected virtual void mc_ShowAutoAddDialog(object sender, ExecutedRoutedEventArgs e)
         {
-            AutoAddData autoAdd = AutoAddData.AutoAddList(CmdExeUtil.ReadObjData(e) as Type, (uint)CmdExeUtil.ReadIdData(e));
-            if (autoAdd is EpgAutoAddData)
-            {
-                IsCommandExecuted = true == MenuUtil.OpenChangeEpgAutoAddDialog(autoAdd as EpgAutoAddData);
-            }
-            else if (autoAdd is ManualAutoAddData)
-            {
-                IsCommandExecuted = true == MenuUtil.OpenChangeManualAutoAddDialog(autoAdd as ManualAutoAddData, this.Owner);
-            }
+            IsCommandExecuted = true == MenuUtil.OpenChangeAutoAddDialog(CmdExeUtil.ReadObjData(e) as Type, (uint)CmdExeUtil.ReadIdData(e), this.Owner);
         }
         protected virtual void mc_ToAutoadd(object sender, ExecutedRoutedEventArgs e)
         {
