@@ -17,6 +17,7 @@ namespace EpgTimer
         ManualAutoAddView,
         EpgView,
         SearchWindow,
+        InfoSearchWindow,
         EditChgMenu,    //編集サブメニュー編集用
         EtcWindow       //ショートカットメニューがないダイアログなど用のダミー
     }

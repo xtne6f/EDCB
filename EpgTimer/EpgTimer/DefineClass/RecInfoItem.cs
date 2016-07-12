@@ -205,29 +205,29 @@ namespace EpgTimer
             {
                 if (RecInfo == null) return "";
                 //
-                return ConvertDropText(":") + " " + ConvertScrambleText(":");
+                return ConvertDropText("D:") + " " + ConvertScrambleText("S:");
             }
         }
-        private string ConvertDropText(string delimiter = " : ")
+        private string ConvertDropText(string title = "Drops : ")
         {
             if (Settings.Instance.RecinfoErrCriticalDrops == true)
             {
-                return "*Drops" + delimiter + RecInfo.DropsCritical.ToString();
+                return "*" + title + RecInfo.DropsCritical.ToString();
             }
             else
             {
-                return "Drops" + delimiter + RecInfo.Drops.ToString();
+                return title + RecInfo.Drops.ToString();
             }
         }
-        private string ConvertScrambleText(string delimiter = " : ")
+        private string ConvertScrambleText(string title = "Scrambles : ")
         {
             if (Settings.Instance.RecinfoErrCriticalDrops == true)
             {
-                return "*Scrambles" + delimiter + RecInfo.ScramblesCritical.ToString();
+                return "*" + title + RecInfo.ScramblesCritical.ToString();
             }
             else
             {
-                return "Scrambles" + delimiter + RecInfo.Scrambles.ToString();
+                return title + RecInfo.Scrambles.ToString();
             }
         }
     }

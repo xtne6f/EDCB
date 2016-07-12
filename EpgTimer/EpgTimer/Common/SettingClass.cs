@@ -13,6 +13,8 @@ using System.Windows.Controls;
 
 namespace EpgTimer
 {
+    using UserCtrlView;
+
     class IniFileHandler
     {
         [DllImport("KERNEL32.DLL", CharSet = CharSet.Unicode)]
@@ -349,12 +351,19 @@ namespace EpgTimer
         public List<ListColumnInfo> SearchWndColumn { get; set; }
         public string SearchColumnHead { get; set; }
         public ListSortDirection SearchSortDirection { get; set; }
-        public double SearchWndLeft { get; set; }
-        public double SearchWndTop { get; set; }
-        public double SearchWndWidth { get; set; }
-        public double SearchWndHeight { get; set; }
-        public bool SearchWndPinned { get; set; }
+        public HideableWindowSet SearchWndSet { get; set; }
         public bool SaveSearchKeyword { get; set; }
+        public List<ListColumnInfo> InfoSearchWndColumn { get; set; }
+        public string InfoSearchColumnHead { get; set; }
+        public ListSortDirection InfoSearchSortDirection { get; set; }
+        public string InfoSearchLastWord { get; set; }
+        public bool InfoSearchTitleOnly { get; set; }
+        public bool InfoSearchReserveInfo { get; set; }
+        public bool InfoSearchRecInfo { get; set; }
+        public bool InfoSearchEpgAutoAddInfo { get; set; }
+        public bool InfoSearchManualAutoAddInfo { get; set; }
+        public bool InfoSearchItemTooltip { get; set; }
+        public HideableWindowSet InfoSearchWndSet { get; set; }
         public short AutoSaveNotifyLog { get; set; }
         public bool ShowTray { get; set; }
         public bool MinHide { get; set; }
@@ -535,12 +544,19 @@ namespace EpgTimer
             SearchWndColumn = new List<ListColumnInfo>();
             SearchColumnHead = "";
             SearchSortDirection = ListSortDirection.Ascending;
-            SearchWndLeft = -100;
-            SearchWndTop = -100;
-            SearchWndWidth = -100;
-            SearchWndHeight = -100;
-            SearchWndPinned = false;
+            SearchWndSet = new HideableWindowSet();
             SaveSearchKeyword = true;
+            InfoSearchWndColumn = new List<ListColumnInfo>();
+            InfoSearchColumnHead = "";
+            InfoSearchSortDirection = ListSortDirection.Ascending;
+            InfoSearchLastWord = "";
+            InfoSearchTitleOnly = true;
+            InfoSearchReserveInfo = true;
+            InfoSearchRecInfo = true;
+            InfoSearchEpgAutoAddInfo = true;
+            InfoSearchManualAutoAddInfo = true;
+            InfoSearchItemTooltip = true;
+            InfoSearchWndSet = new HideableWindowSet();
             AutoSaveNotifyLog = 0;
             ShowTray = true;
             MinHide = true;
@@ -874,6 +890,20 @@ namespace EpgTimer
                     Instance.SearchColumnHead = CommonUtil.NameOf(() => obj.StartTime);
                     Instance.SearchSortDirection = ListSortDirection.Ascending;
                 }
+                if (Instance.InfoSearchWndColumn.Count == 0)
+                {
+                    var obj = new InfoSearchItem();
+                    Instance.InfoSearchWndColumn.Add(new ListColumnInfo(CommonUtil.NameOf(() => obj.ViewItemName), double.NaN));
+                    Instance.InfoSearchWndColumn.Add(new ListColumnInfo(CommonUtil.NameOf(() => obj.Status), double.NaN));
+                    Instance.InfoSearchWndColumn.Add(new ListColumnInfo(CommonUtil.NameOf(() => obj.EventName), double.NaN));
+                    Instance.InfoSearchWndColumn.Add(new ListColumnInfo(CommonUtil.NameOf(() => obj.StartTime), double.NaN));
+                    Instance.InfoSearchWndColumn.Add(new ListColumnInfo(CommonUtil.NameOf(() => obj.ProgramDuration), double.NaN));
+                    Instance.InfoSearchWndColumn.Add(new ListColumnInfo(CommonUtil.NameOf(() => obj.NetworkName), double.NaN));
+                    Instance.InfoSearchWndColumn.Add(new ListColumnInfo(CommonUtil.NameOf(() => obj.ServiceName), double.NaN));
+                    Instance.InfoSearchWndColumn.Add(new ListColumnInfo(CommonUtil.NameOf(() => obj.EtcInfo), double.NaN));
+                    Instance.InfoSearchColumnHead = CommonUtil.NameOf(() => obj.StartTime);
+                    Instance.InfoSearchSortDirection = ListSortDirection.Ascending;
+                }
                 if (Instance.RecInfoDropExclude.Count == 0)
                 {
                     Settings.Instance.RecInfoDropExclude = new List<string> { "EIT", "NIT", "CAT", "SDT", "SDTT", "TOT", "ECM", "EMM" };
@@ -1004,6 +1034,7 @@ namespace EpgTimer
                 "再接続",
                 "再接続(前回)",
                 "検索",
+                "予約簡易検索",
                 "スタンバイ",
                 "休止",
                 "終了",

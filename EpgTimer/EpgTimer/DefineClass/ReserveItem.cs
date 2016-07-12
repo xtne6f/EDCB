@@ -62,8 +62,12 @@ namespace EpgTimer
             {
                 if (ReserveInfo == null) return "";
                 //
-                return CommonManager.ConvertTimeText(ReserveInfo.StartTime, ReserveInfo.DurationSecond, Settings.Instance.ResInfoNoYear, Settings.Instance.ResInfoNoSecond);
+                return GetTimeStringReserveStyle(ReserveInfo.StartTime, ReserveInfo.DurationSecond);
             }
+        }
+        public static String GetTimeStringReserveStyle(DateTime time, uint durationSecond)
+        {
+            return CommonManager.ConvertTimeText(time, durationSecond, Settings.Instance.ResInfoNoYear, Settings.Instance.ResInfoNoSecond);
         }
         public override long StartTimeValue
         {
@@ -89,8 +93,12 @@ namespace EpgTimer
             {
                 if (ReserveInfo == null) return "";
                 //
-                return CommonManager.ConvertDurationText(ReserveInfo.DurationSecond, Settings.Instance.ResInfoNoDurSecond);
+                return GetDurationStringReserveStyle(ReserveInfo.DurationSecond);
             }
+        }
+        public static String GetDurationStringReserveStyle(uint durationSecond)
+        {
+            return CommonManager.ConvertDurationText(durationSecond, Settings.Instance.ResInfoNoDurSecond);
         }
         public override UInt32 ProgramDurationValue
         {

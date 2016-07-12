@@ -51,6 +51,7 @@
                         <Separator Style="{StaticResource MiddleLine}" />
                         <CheckBox Content="番組名/ANDキーをコピー" />
                         <CheckBox Content="番組情報をコピー" />
+                        <CheckBox Content="番組名/ANDキーで予約簡易検索" />
                         <CheckBox Content="番組名/ANDキーをネットで検索" />
                         <CheckBox Content="NOTキーをコピー" />
                         <CheckBox Content="NOTキーに貼り付け" />
@@ -82,6 +83,7 @@
                         <Separator Style="{StaticResource MiddleLine}" />
                         <CheckBox Content="記号類を取り除く" Name="checkBox_CopyTitle_Trim" />
                         <CheckBox Content="基本情報のみコピーする" Name="checkBox_CopyContentBasic" />
+                        <CheckBox Content="記号類を取り除く" Name="checkBox_InfoSearchTtile_Trim" />
                         <CheckBox Content="記号類を取り除く" Name="checkBox_SearchTtile_Trim" />
                         <CheckBox Visibility="Hidden" />
                         <CheckBox Content="確認メッセージを表示しない" Name="checkBox_NoMessageNotKEY" />

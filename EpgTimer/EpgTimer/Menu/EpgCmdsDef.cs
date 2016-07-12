@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-
 using System.Windows.Input;
 using System.Reflection;
 
@@ -37,10 +36,12 @@ namespace EpgTimer
         public static RoutedUICommand JumpReserve { get; private set; }
         public static RoutedUICommand JumpTuner { get; private set; }
         public static RoutedUICommand JumpTable { get; private set; }
+        public static RoutedUICommand JumpList { get; private set; }
         public static RoutedUICommand ShowAutoAddDialog { get; private set; }
         public static RoutedUICommand ToAutoadd { get; private set; }
         public static RoutedUICommand ReSearch { get; private set; }
         public static RoutedUICommand ReSearch2 { get; private set; }
+        public static RoutedUICommand InfoSearchTitle { get; private set; }
         public static RoutedUICommand Play { get; private set; }
         public static RoutedUICommand OpenFolder { get; private set; }
         public static RoutedUICommand CopyTitle { get; private set; }
@@ -58,6 +59,7 @@ namespace EpgTimer
         public static RoutedUICommand DeleteInDialog { get; private set; }
         public static RoutedUICommand Delete2InDialog { get; private set; }
         public static RoutedUICommand Search { get; private set; }
+        public static RoutedUICommand InfoSearch { get; private set; }
         public static RoutedUICommand TopItem { get; private set; }
         public static RoutedUICommand UpItem { get; private set; }
         public static RoutedUICommand DownItem { get; private set; }

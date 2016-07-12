@@ -1,0 +1,105 @@
+﻿<local:InfoSearchWindowBase x:Class="EpgTimer.InfoSearchWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:EpgTimer"
+        xmlns:user="clr-namespace:EpgTimer.UserCtrlView"
+        Title="予約簡易検索" Height="600" Width="780" WindowStartupLocation="Manual" Closed="Window_Closed" Activated="Window_Activated" Loaded="Window_Loaded" StateChanged="Window_StateChanged">
+
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="UserCtrlView\ReserveListViewStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
+    <Grid Margin="6">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="auto" />
+        </Grid.RowDefinitions>
+        <StackPanel Grid.Row="0">
+            <GroupBox Header="設定" Margin="0,6,0,0">
+                <StackPanel Margin="6">
+                    <GroupBox Margin="6" Header="検索対象">
+                        <WrapPanel Margin="6">
+                            <CheckBox Margin="0,0,12,0" Content="予約" Name="checkBox_ReserveInfo" />
+                            <CheckBox Margin="0,0,12,0" Content="録画結果" Name="checkBox_RecInfo" />
+                            <CheckBox Margin="0,0,12,0" Content="キーワード予約" Name="checkBox_EpgAutoAddInfo" />
+                            <CheckBox Margin="0,0,12,0" Content="プログラム予約" Name="checkBox_ManualAutoAddInfo" />
+                        </WrapPanel>
+                    </GroupBox>
+                    <WrapPanel Margin="6,0,0,0" >
+                        <CheckBox  Content="タイトルのみ検索" Name="checkBox_TitleOnly" ToolTip="未チェック時は、各詳細ウィンドウまたはツールチップに表示される情報を検索します。" />
+                        <CheckBox  Margin="12,0,0,0" Content="検索結果のツールチップを表示する" Name="checkBox_ShowToolTip" ToolTip="全体設定画面の[動作設定]-[その他]の「ツールチップの表示を抑制する」とは独立して動作します。" Checked="checkBox_ShowToolTip_Checked" Unchecked="checkBox_ShowToolTip_Checked" />
+                    </WrapPanel>
+                </StackPanel>
+            </GroupBox>
+            <DockPanel Margin="0,6,0,0" HorizontalAlignment="Stretch" >
+                <Label Margin="0,0,10,0" Content="検索語"/>
+                <Button DockPanel.Dock="Right" Content="検索" Name="button_search" MinWidth="72" HorizontalAlignment="Right" IsDefault="True" />
+                <TextBox Margin="0,0,20,0" Name="TextBox_SearchWord" HorizontalAlignment="Stretch" />
+            </DockPanel>
+        </StackPanel>
+        <ListView Grid.Row="1" Name="listView_result" Margin="0,5,0,1" Style="{StaticResource DataListViewStyle}" IsTabStop="True">
+            <ListView.View>
+                <GridView x:Name="gridView_result">
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=ViewItemName}">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="種別" Uid="ViewItemName" />
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
+                    <GridViewColumn Width="35">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="状態" Uid="Status" />
+                        </GridViewColumn.Header>
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Path=Status}" Foreground="{Binding Path=StatusColor}"/>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=EventName}">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="番組名/ANDキーワード" Uid="EventName" />
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=StartTime}">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="日時/次の予約" Uid="StartTime" />
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
+                    <GridViewColumn>
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="長さ" Uid="ProgramDuration" />
+                        </GridViewColumn.Header>
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Path=ProgramDuration}" HorizontalAlignment="Right" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=NetworkName}" >
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="ネットワーク" Uid="NetworkName" />
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=ServiceName}">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="サービス名" Uid="ServiceName" />
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=EtcInfo}">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="その他情報" Uid="EtcInfo" />
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
+                </GridView>
+            </ListView.View>
+        </ListView>
+        <DockPanel Grid.Row="2" Margin="0,6,0,0" >
+            <CheckBox DockPanel.Dock="Right" Content="メインウィンドウの前面に表示" Margin="6,0,0,0" VerticalAlignment="Bottom" Name="checkBox_windowPinned" Checked="checkBox_windowPinned_Checked" Unchecked="checkBox_windowPinned_Checked" />
+            <user:StatusView x:Name="statusBar" />
+        </DockPanel>
+    </Grid>
+</local:InfoSearchWindowBase>

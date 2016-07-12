@@ -71,9 +71,11 @@ namespace EpgTimer
             AddCommand(EpgCmds.JumpReserve, Key.F3, ModifierKeys.Shift, isEnable: false);
             AddCommand(EpgCmds.JumpTuner, Key.F3, ModifierKeys.Control, isEnable: false);
             AddCommand(EpgCmds.JumpTable, Key.F3);
+            AddCommand(EpgCmds.JumpList, Key.F3);//簡易検索画面用のジャンプ。とりあえず分けておく。
             AddCommand(EpgCmds.ToAutoadd);
-            AddCommand(EpgCmds.ReSearch);
-            AddCommand(EpgCmds.ReSearch2, isEnable: false);
+            AddCommand(EpgCmds.ReSearch, Key.F, ModifierKeys.Control | ModifierKeys.Shift);
+            AddCommand(EpgCmds.ReSearch2, Key.F, ModifierKeys.Control | ModifierKeys.Alt, isEnable: false);
+            AddCommand(EpgCmds.InfoSearchTitle, isEnable: false);
             AddCommand(EpgCmds.Play, Key.P, ModifierKeys.Control);
             AddCommand(EpgCmds.OpenFolder, isEnable: false);
             AddCommand(EpgCmds.CopyTitle, Key.C, ModifierKeys.Control, isEnable: false);
@@ -92,6 +94,7 @@ namespace EpgTimer
             AddCommand(EpgCmds.DeleteInDialog, Key.X, ModifierKeys.Control | ModifierKeys.Shift, spc: GestureTrg.ToView, gesNeedMenu: false);
             AddCommand(EpgCmds.Delete2InDialog, Key.D, ModifierKeys.Control | ModifierKeys.Shift, spc: GestureTrg.ToView, gesNeedMenu: false);
             AddCommand(EpgCmds.Search, Key.F, ModifierKeys.Control, spc: GestureTrg.ToView, gesNeedMenu: false);
+            AddCommand(EpgCmds.InfoSearch, Key.F, ModifierKeys.Control | ModifierKeys.Shift, spc: GestureTrg.ToView, gesNeedMenu: false);
             AddCommand(EpgCmds.TopItem, Key.Up, ModifierKeys.Control | ModifierKeys.Shift, spc: GestureTrg.ToList | GestureTrg.ToView, gesNeedMenu: false);
             AddCommand(EpgCmds.UpItem, Key.Up, ModifierKeys.Control, spc: GestureTrg.ToList | GestureTrg.ToView, gesNeedMenu: false);
             AddCommand(EpgCmds.DownItem, Key.Down, ModifierKeys.Control, spc: GestureTrg.ToList | GestureTrg.ToView, gesNeedMenu: false);

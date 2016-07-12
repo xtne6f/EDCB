@@ -370,6 +370,19 @@ namespace EpgTimer
             return string.Format("{0}:{1} (有効予約数:{2} 無効予約数:{3})",
                 itemText, list.Count(), onRes.Distinct().Count(), offRes.Distinct().Count());
         }
+        public static string ConvertInfoSearchItemStatus(IEnumerable<InfoSearchItem> list, string itemText)
+        {
+            string det = "";
+            foreach (var key in InfoSearchItem.ViewTypeNameList())
+            {
+                int num = list.Count(item => item.ViewItemName == key);
+                if (num != 0)
+                {
+                    det += string.Format("{0}:{1} ", key.Substring(0, 2), num);
+                }
+            }
+            return string.Format("{0}:{1}", itemText, list.Count()) + (det == "" ? "" : " (" + det.TrimEnd() + ")");
+        }
 
         public static Type GetListBoxItemType(ListBox lb)
         {

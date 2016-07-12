@@ -102,9 +102,11 @@
     <Compile Include="DefineClass\DateTime28.cs" />
     <Compile Include="DefineClass\RecSettingItem.cs" />
     <Compile Include="DefineClass\NWPresetItem.cs" />
+    <Compile Include="DefineClass\InfoSearchItem.cs" />
     <Compile Include="UserCtrlView\AutoAddListView.xaml.cs">
       <DependentUpon>AutoAddListView.xaml</DependentUpon>
     </Compile>
+    <Compile Include="UserCtrlView\SearchWindowBase.cs" />
     <Compile Include="UserCtrlView\DataViewBase.cs" />
     <Compile Include="UserCtrlView\ListViewController.cs" />
     <Compile Include="Menu\MenuSettingData.cs" />
@@ -273,6 +275,9 @@
     <Compile Include="DefineClass\TunerSelectInfo.cs" />
     <Compile Include="UserCtrlView\StatusView.xaml.cs">
       <DependentUpon>StatusView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="InfoSearchWindow.xaml.cs">
+      <DependentUpon>InfoSearchWindow.xaml</DependentUpon>
     </Compile>
     <Page Include="AddManualAutoAddWindow.xaml">
       <SubType>Designer</SubType>
@@ -506,6 +511,10 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="UserCtrlView\UiLayoutStyles.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="InfoSearchWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>

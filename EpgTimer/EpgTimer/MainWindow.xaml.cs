@@ -204,6 +204,7 @@ namespace EpgTimer
                 ButtonGen("再接続", OpenConnectDialog);
                 ButtonGen("再接続(前回)", () => ConnectCmd());
                 ButtonGen("検索", OpenSearchDialog);
+                ButtonGen("予約簡易検索", OpenInfoSearchDialog);
                 ButtonGen("スタンバイ", () => SuspendCmd(1));
                 ButtonGen("休止", () => SuspendCmd(2));
                 ButtonGen("終了", CloseCmd);
@@ -217,8 +218,11 @@ namespace EpgTimer
 
                 //検索ボタンは他と共通でショートカット割り振られているので、その部分はコマンド側で処理する。
                 this.CommandBindings.Add(new CommandBinding(EpgCmds.Search, (sender, e) => CommonButtons_Click("検索")));
+                this.CommandBindings.Add(new CommandBinding(EpgCmds.InfoSearch, (sender, e) => CommonButtons_Click("予約簡易検索")));
                 mBinds.AddInputCommand(EpgCmds.Search);
+                mBinds.AddInputCommand(EpgCmds.InfoSearch);
                 SetSearchButtonTooltip(buttonList["検索"]);
+                SetInfoSearchButtonTooltip(buttonList["予約簡易検索"]);
 
                 if (CommonManager.Instance.NWMode == false)
                 {
@@ -451,7 +455,8 @@ namespace EpgTimer
                     }
                 }
             }
-            EmphasizeSearchButton(SearchWindow.HasHideSearchWindow);
+            EmphasizeButton(SearchWindow.HasHideWindow, "検索");
+            EmphasizeButton(InfoSearchWindow.HasHideWindow, "予約簡易検索");
         }
 
         TabItem TabButtonAdd(string id)
@@ -474,17 +479,26 @@ namespace EpgTimer
 
             //検索ボタン用のツールチップ設定。
             if (id == "検索") SetSearchButtonTooltip(ti);
+            if (id == "予約簡易検索") SetInfoSearchButtonTooltip(ti);
 
             tabControl_main.Items.Add(ti);
             return ti;
         }
         void SetSearchButtonTooltip(FrameworkElement fe)
         {
+            SetButtonTooltip(fe, EpgCmds.Search, new Func<string>(() => SearchWindow.HasHideWindow ? "最後に番組表などへジャンプしたダイアログを復帰します。" : ""));
+        }
+        void SetInfoSearchButtonTooltip(FrameworkElement fe)
+        {
+            SetButtonTooltip(fe, EpgCmds.InfoSearch, new Func<string>(() => InfoSearchWindow.HasHideWindow ? "最後に番組表などへジャンプしたダイアログを復帰します。" : ""));
+        }
+        void SetButtonTooltip(FrameworkElement fe, ICommand cmd, Func<string> addText = null)
+        {
             fe.ToolTip = "";
             fe.ToolTipOpening += (sender, e) =>
             {
-                var keytip = MenuBinds.GetInputGestureText(EpgCmds.Search);
-                var addtip = SearchWindow.HasHideSearchWindow == false ? "" : "最後に番組表などへジャンプした検索/キーワードダイアログを復帰します。";
+                var keytip = MenuBinds.GetInputGestureText(cmd);
+                var addtip = addText == null ? "" : addText();
                 fe.ToolTip = ((string.IsNullOrEmpty(keytip) == true ? "" : keytip + "\r\n") + addtip).TrimEnd();
             };
         }
@@ -628,6 +642,7 @@ namespace EpgTimer
             recInfoView.UpdateInfo();
             epgView.UpdateInfo();
             SearchWindow.UpdatesInfo();
+            InfoSearchWindow.UpdatesInfo();
             return true;
         }
 
@@ -707,6 +722,7 @@ namespace EpgTimer
             else
             {
                 SearchWindow.CloseWindows();
+                InfoSearchWindow.CloseWindows();
 
                 if (initExe == true)
                 {
@@ -778,6 +794,7 @@ namespace EpgTimer
             if (this.WindowState == WindowState.Normal || this.WindowState == WindowState.Maximized)
             {
                 SearchWindow.UpdatesParentStatus();
+                InfoSearchWindow.UpdatesParentStatus();
             }
         }
 
@@ -826,6 +843,7 @@ namespace EpgTimer
                     win.Visibility = Visibility.Visible;
                 }
                 SearchWindow.UpdatesParentStatus();
+                InfoSearchWindow.UpdatesParentStatus();
 
                 taskTray.LastViewState = this.WindowState;
                 Settings.Instance.LastWindowState = this.WindowState;
@@ -970,6 +988,7 @@ namespace EpgTimer
                 autoAddView.UpdateInfo();
                 epgView.UpdateSetting();
                 SearchWindow.UpdatesInfo(false);
+                InfoSearchWindow.UpdatesInfo();
 
                 ResetMainView();
 
@@ -986,6 +1005,7 @@ namespace EpgTimer
             autoAddView.RefreshMenu();
             epgView.RefreshMenu();
             SearchWindow.RefreshMenus();
+            InfoSearchWindow.RefreshMenus();
 
             //メインウィンドウの検索ボタン用。
             mBinds.ResetInputBindings(this);
@@ -998,6 +1018,7 @@ namespace EpgTimer
             if (mode != UpdateViewMode.ReserveInfoNoAutoAdd) autoAddView.UpdateInfo();
             epgView.UpdateReserveInfo();
             SearchWindow.UpdatesInfo(false);
+            InfoSearchWindow.UpdatesInfo();
         }
         /*
         public enum UpdateViewMode : uint
@@ -1035,13 +1056,25 @@ namespace EpgTimer
         void OpenSearchDialog()
         {
             // 最小化したSearchWindowを復帰
-            if (SearchWindow.HasHideSearchWindow == true)
+            if (SearchWindow.HasHideWindow == true)
             {
-                SearchWindow.RestoreHideSearchWindow();
+                SearchWindow.RestoreHideWindow();
             }
             else
             {
                 MenuUtil.OpenSearchEpgDialog();
+            }
+        }
+
+        void OpenInfoSearchDialog()
+        {
+            if (InfoSearchWindow.HasHideWindow == true)
+            {
+                InfoSearchWindow.RestoreHideWindow();
+            }
+            else
+            {
+                MenuUtil.OpenInfoSearchDialog();
             }
         }
 
@@ -1463,6 +1496,7 @@ namespace EpgTimer
                         autoAddView.epgAutoAddView.UpdateInfo();//検索数の更新
                         epgView.UpdateInfo();
                         SearchWindow.UpdatesInfo();
+                        InfoSearchWindow.UpdatesInfo();
 
                         StatusManager.StatusNotifyAppend("EPGデータ更新 < ");
                         GC.Collect();
@@ -1486,6 +1520,7 @@ namespace EpgTimer
                             CommonManager.Instance.DB.ReloadrecFileInfo();
                         }
                         recInfoView.UpdateInfo();
+                        InfoSearchWindow.UpdatesInfo();
                         StatusManager.StatusNotifyAppend("録画済みデータ更新 < ");
                     }
                     break;
@@ -1639,9 +1674,9 @@ namespace EpgTimer
             tab.IsSelected = true;
         }
 
-        public void EmphasizeSearchButton(bool emphasize)
+        public void EmphasizeButton(bool emphasize, string buttonID)
         {
-            Button button1 = buttonList["検索"];
+            Button button1 = buttonList[buttonID];
 
             //検索ボタンを点滅させる
             if (emphasize && Settings.Instance.ViewButtonShowAsTab == false)
@@ -1666,7 +1701,7 @@ namespace EpgTimer
                 button1.BeginAnimation(Button.OpacityProperty, null);
                 button1.Opacity = 1;
                 button1.Effect = null;
-                if (Settings.Instance.ViewButtonList.Contains("検索") == false)
+                if (Settings.Instance.ViewButtonList.Contains(buttonID) == false)
                 {
                     stackPanel_button.Children.Remove(button1);
                 }
@@ -1675,10 +1710,10 @@ namespace EpgTimer
             //もしあればタブとして表示のタブも点滅させる
             if (Settings.Instance.ViewButtonShowAsTab == true)
             {
-                var ti = tabControl_main.Items.OfType<TabItem>().FirstOrDefault(item => item.Uid == "検索");
+                var ti = tabControl_main.Items.OfType<TabItem>().FirstOrDefault(item => item.Uid == buttonID);
                 if (emphasize)
                 {
-                    if (ti == null) ti = TabButtonAdd("検索");
+                    if (ti == null) ti = TabButtonAdd(buttonID);
                     var animation = new DoubleAnimation
                     {
                         From = 1.0,
@@ -1690,7 +1725,7 @@ namespace EpgTimer
                 }
                 else if (ti != null)
                 {
-                    if (Settings.Instance.ViewButtonList.Contains("検索") == false)
+                    if (Settings.Instance.ViewButtonList.Contains(buttonID) == false)
                     {
                         tabControl_main.Items.Remove(ti);
                     }

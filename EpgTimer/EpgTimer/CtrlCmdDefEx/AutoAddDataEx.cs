@@ -64,6 +64,10 @@ namespace EpgTimer
         {
             return IsEnabled == null ? mlist.ToList() : mlist.Where(data => data.IsEnabled == IsEnabled).ToList();
         }
+        public static List<AutoAddData> Clone(this IEnumerable<AutoAddData> src)
+        {
+            return src.Select(data => data.CloneObj()).Cast<AutoAddData>().ToList();
+        }
     }
 
     public partial class EpgAutoAddData : AutoAddData

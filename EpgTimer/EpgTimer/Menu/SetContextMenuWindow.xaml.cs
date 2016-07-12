@@ -26,6 +26,7 @@ namespace EpgTimer
             new ComboItem(CtxmCode.ManualAutoAddView, "プログラム自動予約登録"),
             new ComboItem(CtxmCode.EpgView, "番組表(共通)"),
             new ComboItem(CtxmCode.SearchWindow, "検索/キーワード予約ダイアログ"),
+            new ComboItem(CtxmCode.InfoSearchWindow, "予約簡易検索ダイアログ"),
             new ComboItem(CtxmCode.EditChgMenu, "[編集]サブメニュー")
         };
 
@@ -50,6 +51,7 @@ namespace EpgTimer
 
             new List<ICommand>{EpgCmds.CopyTitle},
             new List<ICommand>{EpgCmds.CopyContent},
+            new List<ICommand>{EpgCmds.InfoSearchTitle},
             new List<ICommand>{EpgCmds.SearchTitle},
             new List<ICommand>{EpgCmds.CopyNotKey},
             new List<ICommand>{EpgCmds.SetNotKey},
@@ -157,6 +159,7 @@ namespace EpgTimer
                 checkBox_EpgKeyword_Trim.IsChecked = info.Keyword_Trim;
                 checkBox_CopyTitle_Trim.IsChecked = info.CopyTitle_Trim;
                 checkBox_CopyContentBasic.IsChecked = info.CopyContentBasic;
+                checkBox_InfoSearchTtile_Trim.IsChecked = info.InfoSearchTitle_Trim;
                 checkBox_SearchTtile_Trim.IsChecked = info.SearchTitle_Trim;
                 textBox_SearchURI.Text = info.SearchURI;
                 checkBox_NoMessageNotKEY.IsChecked = info.NoMessageNotKEY;
@@ -187,7 +190,7 @@ namespace EpgTimer
                 this.listBox_Setting.ItemsSource = null;//初期化ボタンでSetData()使うとき用のリセット。
                 this.comboBoxViewSelect.ItemsSource = MenuCodeToTitle;
                 this.comboBoxViewSelect.SelectedIndex = -1; //初期化ボタンでSetData()使うとき用のリセット。
-                this.comboBoxViewSelect.SelectedIndex = 7; //これでSelectionChanged発生する
+                this.comboBoxViewSelect.SelectedIndex = this.comboBoxViewSelect.Items.Count - 1; //これでSelectionChanged発生する
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
@@ -225,6 +228,7 @@ namespace EpgTimer
                 info.Keyword_Trim = (checkBox_EpgKeyword_Trim.IsChecked == true);
                 info.CopyTitle_Trim = (checkBox_CopyTitle_Trim.IsChecked == true);
                 info.CopyContentBasic = (checkBox_CopyContentBasic.IsChecked == true);
+                info.InfoSearchTitle_Trim = (checkBox_InfoSearchTtile_Trim.IsChecked == true);
                 info.SearchTitle_Trim = (checkBox_SearchTtile_Trim.IsChecked == true);
                 info.SearchURI = textBox_SearchURI.Text;
                 info.NoMessageNotKEY = (checkBox_NoMessageNotKEY.IsChecked == true);

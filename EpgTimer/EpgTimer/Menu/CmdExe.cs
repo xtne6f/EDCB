@@ -101,6 +101,7 @@ namespace EpgTimer
             cmdList.Add(EpgCmds.JumpReserve, new cmdOption(mc_JumpReserve, null, cmdExeType.SingleItem));
             cmdList.Add(EpgCmds.JumpTuner, new cmdOption(mc_JumpTuner, null, cmdExeType.SingleItem));
             cmdList.Add(EpgCmds.JumpTable, new cmdOption(mc_JumpTable, null, cmdExeType.SingleItem));
+            cmdList.Add(EpgCmds.JumpList, new cmdOption(null, null, cmdExeType.Direct));//個別に指定
             cmdList.Add(EpgCmds.ShowAutoAddDialog, new cmdOption(mc_ShowAutoAddDialog, null, cmdExeType.SingleItem, changeDB: true));
             cmdList.Add(EpgCmds.ToAutoadd, new cmdOption(mc_ToAutoadd, null, cmdExeType.SingleItem));
             cmdList.Add(EpgCmds.ReSearch, new cmdOption(null, null, cmdExeType.Direct));//個別に指定
@@ -109,6 +110,7 @@ namespace EpgTimer
             cmdList.Add(EpgCmds.OpenFolder, new cmdOption(mc_OpenFolder, null, cmdExeType.SingleItem));
             cmdList.Add(EpgCmds.CopyTitle, new cmdOption(mc_CopyTitle, null, cmdExeType.SingleItem));
             cmdList.Add(EpgCmds.CopyContent, new cmdOption(mc_CopyContent, null, cmdExeType.SingleItem));
+            cmdList.Add(EpgCmds.InfoSearchTitle, new cmdOption(mc_InfoSearchTitle, null, cmdExeType.SingleItem));
             cmdList.Add(EpgCmds.SearchTitle, new cmdOption(mc_SearchTitle, null, cmdExeType.SingleItem));
             cmdList.Add(EpgCmds.CopyNotKey, new cmdOption(mc_CopyNotKey, null, cmdExeType.SingleItem));
             cmdList.Add(EpgCmds.SetNotKey, new cmdOption(mc_SetNotKey, null, cmdExeType.MultiItem, true, changeDB: true));
@@ -308,6 +310,11 @@ namespace EpgTimer
             IsCommandExecuted = true;
         }
         protected virtual void mc_CopyContent(object sender, ExecutedRoutedEventArgs e) { }
+        protected virtual void mc_InfoSearchTitle(object sender, ExecutedRoutedEventArgs e)
+        {
+            MenuUtil.OpenInfoSearchDialog(dataList[0].DataTitle, CmdExeUtil.IsKeyGesture(e));
+            IsCommandExecuted = true;
+        }
         protected virtual void mc_SearchTitle(object sender, ExecutedRoutedEventArgs e)
         {
             MenuUtil.SearchTextWeb(dataList[0].DataTitle, CmdExeUtil.IsKeyGesture(e));

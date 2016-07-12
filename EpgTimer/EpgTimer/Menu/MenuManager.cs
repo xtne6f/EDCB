@@ -149,6 +149,7 @@ namespace EpgTimer
             AddAppendMenus.Add(new CtxmItemData(cm_Separator));
             AddAppendMenus.Add(new CtxmItemData("番組名をコピー", EpgCmds.CopyTitle));
             AddAppendMenus.Add(new CtxmItemData("番組情報をコピー", EpgCmds.CopyContent));
+            AddAppendMenus.Add(new CtxmItemData("番組名で予約簡易検索", EpgCmds.InfoSearchTitle));
             AddAppendMenus.Add(new CtxmItemData("番組名をネットで検索", EpgCmds.SearchTitle));
 
             var AddMenuSetting = new List<CtxmItemData>();
@@ -211,6 +212,7 @@ namespace EpgTimer
             ctmd.Items.Add(new CtxmItemData("録画フォルダを開く", EpgCmdsEx.OpenFolderMenu));
             ctmd.Items.Add(new CtxmItemData(cm_Separator));
             ctmd.Items.Add(new CtxmItemData("Andキーワードをコピー", EpgCmds.CopyTitle));
+            ctmd.Items.Add(new CtxmItemData("Andキーワードで予約簡易検索", EpgCmds.InfoSearchTitle));
             ctmd.Items.Add(new CtxmItemData("Andキーワードをネットで検索", EpgCmds.SearchTitle));
             ctmd.Items.Add(new CtxmItemData("Notキーワードをコピー", EpgCmds.CopyNotKey));
             ctmd.Items.Add(new CtxmItemData("Notキーワードに貼り付け", EpgCmds.SetNotKey));
@@ -230,6 +232,7 @@ namespace EpgTimer
             ctmd.Items.Add(new CtxmItemData("録画フォルダを開く", EpgCmdsEx.OpenFolderMenu));
             ctmd.Items.Add(new CtxmItemData(cm_Separator));
             ctmd.Items.Add(new CtxmItemData("番組名をコピー", EpgCmds.CopyTitle));
+            ctmd.Items.Add(new CtxmItemData("番組名で予約簡易検索", EpgCmds.InfoSearchTitle));
             ctmd.Items.Add(new CtxmItemData("番組名をネットで検索", EpgCmds.SearchTitle));
             ctmd.Items.AddRange(AddMenuSetting.Clone());
 
@@ -266,6 +269,20 @@ namespace EpgTimer
             ctmd.Items.Add(new CtxmItemData("追っかけ再生", EpgCmds.Play));
             ctmd.Items.Add(new CtxmItemData("録画フォルダを開く", EpgCmdsEx.OpenFolderMenu));
             ctmd.Items.AddRange(AddAppendMenus.Clone());
+            ctmd.Items.AddRange(AddMenuSetting.Clone());
+
+            //メニューアイテム:予約簡易検索
+            ctmd = DefCtxmData[CtxmCode.InfoSearchWindow];
+            ctmd.Items.Add(new CtxmItemData("ダイアログ表示...", EpgCmds.ShowDialog));
+            ctmd.Items.Add(new CtxmItemData("一覧へジャンプ", EpgCmds.JumpList));
+            ctmd.Items.Add(new CtxmItemData("番組名/ANDキーワードで再検索", EpgCmds.ReSearch));
+            ctmd.Items.Add(new CtxmItemData("番組名/ANDキーワードで再検索(別ウィンドウ)", EpgCmds.ReSearch2));
+            ctmd.Items.Add(new CtxmItemData(cm_Separator));
+            ctmd.Items.Add(new CtxmItemData("有効・無効/プロテクト切替え", EpgCmds.ChgOnOff));
+            ctmd.Items.Add(new CtxmItemData("削除", EpgCmds.Delete));
+            ctmd.Items.Add(new CtxmItemData(cm_Separator));
+            ctmd.Items.Add(new CtxmItemData("番組名/ANDキーワードをコピー", EpgCmds.CopyTitle));
+            ctmd.Items.Add(new CtxmItemData("番組名/ANDキーワードをネットで検索", EpgCmds.SearchTitle));
             ctmd.Items.AddRange(AddMenuSetting.Clone());
         }
         private void SetDefGestureCmdList()
@@ -547,6 +564,10 @@ namespace EpgTimer
             else if (icmd == EpgCmds.CopyContent)
             {
                 return _ToggleModeTooltip(Settings.Instance.MenuSet.CopyContentBasic, "取得モード : ", "基本情報のみ", "詳細情報");
+            }
+            else if (icmd == EpgCmds.InfoSearchTitle)
+            {
+                return _ToggleModeTooltip(Settings.Instance.MenuSet.InfoSearchTitle_Trim, "記号除去モード : ", "オン", "オフ");
             }
             else if (icmd == EpgCmds.SearchTitle)
             {

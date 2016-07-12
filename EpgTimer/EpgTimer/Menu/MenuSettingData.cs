@@ -133,6 +133,7 @@ namespace EpgTimer
         public bool Keyword_Trim { get; set; }
         public bool CopyTitle_Trim { get; set; }
         public bool CopyContentBasic { get; set; }
+        public bool InfoSearchTitle_Trim { get; set; }
         public bool SearchTitle_Trim { get; set; }
         public String SearchURI { get; set; }
         public bool NoMessageNotKEY { get; set; }
@@ -153,6 +154,7 @@ namespace EpgTimer
             Keyword_Trim = true;
             CopyTitle_Trim = false;
             CopyContentBasic = false;
+            InfoSearchTitle_Trim = true;
             SearchTitle_Trim = true;
             SearchURI = "https://www.google.co.jp/search?hl=ja&q=";
             NoMessageNotKEY = false;
@@ -175,6 +177,7 @@ namespace EpgTimer
             dest.Keyword_Trim = src.Keyword_Trim;
             dest.CopyTitle_Trim = src.CopyTitle_Trim;
             dest.CopyContentBasic = src.CopyContentBasic;
+            dest.InfoSearchTitle_Trim = src.InfoSearchTitle_Trim;
             dest.SearchTitle_Trim = src.SearchTitle_Trim;
             dest.SearchURI = src.SearchURI;
             dest.NoMessageNotKEY = src.NoMessageNotKEY;

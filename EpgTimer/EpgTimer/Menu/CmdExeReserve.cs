@@ -20,7 +20,8 @@ namespace EpgTimer
         public byte EpgInfoOpenMode { get; set; }
         public RecSettingView recSettingView { get; set; }
 
-        protected object headData = null;//メニューオープン時に使用
+        protected IAutoAddTargetData headData = null;//メニューオープン時に使用
+        protected IAutoAddTargetData headDataEv = null;//番組情報優先先頭データ。headDataは予約情報優先。
         protected List<EpgEventInfo> eventList = new List<EpgEventInfo>();
         protected List<EpgEventInfo> eventListEx = new List<EpgEventInfo>();//reserveData(dataList)とかぶらないもの
 
@@ -40,7 +41,8 @@ namespace EpgTimer
                 dataList = searchList.GetReserveList();
                 eventList = searchList.GetEventList();
                 eventListEx = searchList.GetNoReserveList();
-                headData = searchList.Count == 0 ? null : searchList[0].IsReserved == true ? searchList[0].ReserveInfo as object : searchList[0].EventInfo as object;
+                headData = searchList.Count == 0 ? null : searchList[0].IsReserved == true ? searchList[0].ReserveInfo as IAutoAddTargetData : searchList[0].EventInfo;
+                headDataEv = searchList.Count == 0 ? null : searchList[0].EventInfo;
             }
             else
             {
@@ -54,13 +56,15 @@ namespace EpgTimer
                         eventListEx.Add(epg);
                     }
                 });
-                headData = dataList.Count != 0 ? dataList[0] as object : eventList.Count != 0 ? eventList[0] as object : null;
+                headData = dataList.Count != 0 ? dataList[0] as IAutoAddTargetData : eventList.Count != 0 ? eventList[0] : null;
+                headDataEv = eventList.Count != 0 ? eventList[0] as IAutoAddTargetData : dataList.Count != 0 ? dataList[0] : null;
             }
         }
         protected override void ClearData()
         {
             base.ClearData();
             headData = null;
+            headDataEv = null;
             eventList.Clear();
             eventListEx.Clear();
         }
@@ -224,14 +228,8 @@ namespace EpgTimer
         }
         protected override void mc_CopyTitle(object sender, ExecutedRoutedEventArgs e)
         {
-            if (eventList.Count != 0)//番組情報優先
-            {
-                MenuUtil.CopyTitle2Clipboard(eventList[0].DataTitle, CmdExeUtil.IsKeyGesture(e));
-            }
-            else if (dataList.Count != 0)
-            {
-                MenuUtil.CopyTitle2Clipboard(dataList[0].DataTitle, CmdExeUtil.IsKeyGesture(e));
-            }
+            //番組情報優先
+            MenuUtil.CopyTitle2Clipboard(headDataEv.DataTitle, CmdExeUtil.IsKeyGesture(e));
             IsCommandExecuted = true; //itemCount!=0 だが、この条件はこの位置では常に満たされている。
         }
         protected override void mc_CopyContent(object sender, ExecutedRoutedEventArgs e)
@@ -246,16 +244,16 @@ namespace EpgTimer
             }
             IsCommandExecuted = true;
         }
+        protected override void mc_InfoSearchTitle(object sender, ExecutedRoutedEventArgs e)
+        {
+            //番組情報優先
+            MenuUtil.OpenInfoSearchDialog(headDataEv.DataTitle, CmdExeUtil.IsKeyGesture(e));
+            IsCommandExecuted = true;
+        }
         protected override void mc_SearchTitle(object sender, ExecutedRoutedEventArgs e)
         {
-            if (eventList.Count != 0)//番組情報優先
-            {
-                MenuUtil.SearchTextWeb(eventList[0].DataTitle, CmdExeUtil.IsKeyGesture(e));
-            }
-            else if (dataList.Count != 0)
-            {
-                MenuUtil.SearchTextWeb(dataList[0].DataTitle, CmdExeUtil.IsKeyGesture(e));
-            }
+            //番組情報優先
+            MenuUtil.SearchTextWeb(headDataEv.DataTitle, CmdExeUtil.IsKeyGesture(e));
             IsCommandExecuted = true;
         }
         public void ViewChangeModeSupport()
@@ -332,7 +330,7 @@ namespace EpgTimer
             }
             else if (menu.Tag == EpgCmdsEx.ShowAutoAddDialogMenu)
             {
-                menu.IsEnabled = mm.CtxmGenerateChgAutoAdd(menu, headData as IAutoAddTargetData);
+                menu.IsEnabled = mm.CtxmGenerateChgAutoAdd(menu, headData);
             }
             else if (menu.Tag == EpgCmds.Play)
             {
