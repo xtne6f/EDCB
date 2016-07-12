@@ -4,6 +4,7 @@
 #include "stdafx.h"
 #include "EpgTimerSrv.h"
 #include "EpgTimerSrvMain.h"
+#include "../../Common/PathUtil.h"
 #include "../../Common/ServiceUtil.h"
 #include "../../Common/BlockLock.h"
 

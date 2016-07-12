@@ -1701,7 +1701,7 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 			DWORD processID;
 			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) &&
 			    sys->reserveManager.GetRecFilePath(val, resVal.filePath, &ctrlID, &processID) &&
-			    sys->streamingManager.OpenTimeShift(resVal.filePath.c_str(), processID, ctrlID, &resVal.ctrlID) ){
+			    sys->streamingManager.OpenTimeShift(resVal.filePath.c_str(), &resVal.ctrlID) ){
 				resParam->data = NewWriteVALUE(resVal, resParam->dataSize);
 				resParam->param = CMD_SUCCESS;
 			}

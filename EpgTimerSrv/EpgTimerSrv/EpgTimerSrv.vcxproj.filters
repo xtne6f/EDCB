@@ -138,9 +138,6 @@
     <ClInclude Include="..\..\Common\TCPServer.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
-    <ClInclude Include="FileStreamingUtil.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Common\TimeShiftUtil.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
@@ -271,9 +268,6 @@
     </ClCompile>
     <ClCompile Include="..\..\Common\TCPServer.cpp">
       <Filter>ソース ファイル\Common</Filter>
-    </ClCompile>
-    <ClCompile Include="FileStreamingUtil.cpp">
-      <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Common\TimeShiftUtil.cpp">
       <Filter>ソース ファイル\Common</Filter>
