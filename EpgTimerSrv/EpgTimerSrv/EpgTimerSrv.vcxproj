@@ -100,6 +100,9 @@
       <AdditionalDependencies>lua52.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <DelayLoadDLLs>lua52.dll</DelayLoadDLLs>
     </Link>
+    <Manifest>
+      <AdditionalManifestFiles>DPIAware.manifest %(AdditionalManifestFiles)</AdditionalManifestFiles>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -115,6 +118,9 @@
       <AdditionalDependencies>lua52-x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <DelayLoadDLLs>lua52.dll</DelayLoadDLLs>
     </Link>
+    <Manifest>
+      <AdditionalManifestFiles>DPIAware.manifest %(AdditionalManifestFiles)</AdditionalManifestFiles>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -135,6 +141,9 @@
       <AdditionalDependencies>lua52.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <DelayLoadDLLs>lua52.dll</DelayLoadDLLs>
     </Link>
+    <Manifest>
+      <AdditionalManifestFiles>DPIAware.manifest %(AdditionalManifestFiles)</AdditionalManifestFiles>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -155,6 +164,9 @@
       <AdditionalDependencies>lua52-x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <DelayLoadDLLs>lua52.dll</DelayLoadDLLs>
     </Link>
+    <Manifest>
+      <AdditionalManifestFiles>DPIAware.manifest %(AdditionalManifestFiles)</AdditionalManifestFiles>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
     <None Include="EpgTimerSrv.ico" />
