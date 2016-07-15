@@ -5931,11 +5931,57 @@ mg_url_encode(const char *src, char *dst, size_t dst_len)
 }
 
 
+static int
+mg_escape_chars(const char *src,
+                char *dst,
+                size_t dst_len,
+                const char *escape,
+                const char *ref)
+{
+	char *pos = dst;
+	const char *q, *r;
+	size_t len;
+
+	for (; *src != '\0' && pos < dst + dst_len - 1; src++, pos++) {
+		*pos = *src;
+		q = strchr(escape, *src);
+		if (q != NULL) {
+			for (r = ref; *r != '\0' && q != escape; r += strlen(r) + 1, q--)
+				;
+			len = strlen(r);
+			if (len > 0) {
+				if ((size_t)(dst + dst_len - pos) > len) {
+					strcpy(pos, r);
+					pos += len - 1;
+				} else {
+					break;
+				}
+			}
+		}
+	}
+
+	*pos = '\0';
+	return (*src == '\0') ? (int)(pos - dst) : -1;
+}
+
+
+static void
+mg_utf8_pop_back(char *dst)
+{
+	size_t len = strlen(dst);
+
+	for (; len > 0 && ((unsigned char)dst[len - 1] & 0xc0) == 0x80; len--)
+		;
+	dst[len > 0 ? len - 1 : 0] = '\0';
+}
+
+
 static void
 print_dir_entry(struct de *de)
 {
 	char size[64], mod[64], href[PATH_MAX * 3 /* worst case */];
 	struct tm *tm;
+	char name_esc[PATH_MAX];
 
 	if (de->file.is_directory) {
 		mg_snprintf(de->conn,
@@ -5989,14 +6035,21 @@ print_dir_entry(struct de *de)
 		mod[sizeof(mod) - 1] = '\0';
 	}
 	mg_url_encode(de->file_name, href, sizeof(href));
+
+	if (mg_escape_chars(de->file_name, name_esc, sizeof(name_esc),
+	                    "<>&", "&lt;\0&gt;\0&amp;\0") < 0) {
+		mg_utf8_pop_back(name_esc);
+		strcat(name_esc, "~");
+	}
+
 	de->conn->num_bytes_sent +=
 	    mg_printf(de->conn,
 	              "<tr><td><a href=\"%s%s%s\">%s%s</a></td>"
 	              "<td>&nbsp;%s</td><td>&nbsp;&nbsp;%s</td></tr>\n",
-	              de->conn->request_info.local_uri,
+	              "./",
 	              href,
 	              de->file.is_directory ? "/" : "",
-	              de->file_name,
+	              name_esc,
 	              de->file.is_directory ? "/" : "",
 	              mod,
 	              size);
@@ -6235,6 +6288,7 @@ handle_directory_request(struct mg_connection *conn, const char *dir)
 	struct dir_scan_data data = {NULL, 0, 128};
 	char date[64];
 	time_t curtime = time(NULL);
+	char uri_esc[PATH_MAX];
 
 	if (!scan_directory(conn, dir, &data, dir_scan_callback)) {
 		send_http_error(conn,
@@ -6265,6 +6319,12 @@ handle_directory_request(struct mg_connection *conn, const char *dir)
 	          "Content-Type: text/html; charset=utf-8\r\n\r\n",
 	          date);
 
+	if (mg_escape_chars(conn->request_info.local_uri, uri_esc, sizeof(uri_esc),
+	                    "<>&", "&lt;\0&gt;\0&amp;\0") < 0) {
+		mg_utf8_pop_back(uri_esc);
+		strcat(uri_esc, "~");
+	}
+
 	conn->num_bytes_sent +=
 	    mg_printf(conn,
 	              "<html><head><title>Index of %s</title>"
@@ -6274,8 +6334,8 @@ handle_directory_request(struct mg_connection *conn, const char *dir)
 	              "<th><a href=\"?d%c\">Modified</a></th>"
 	              "<th><a href=\"?s%c\">Size</a></th></tr>"
 	              "<tr><td colspan=\"3\"><hr></td></tr>",
-	              conn->request_info.local_uri,
-	              conn->request_info.local_uri,
+	              uri_esc,
+	              uri_esc,
 	              sort_direction,
 	              sort_direction,
 	              sort_direction);
@@ -6285,7 +6345,7 @@ handle_directory_request(struct mg_connection *conn, const char *dir)
 	    mg_printf(conn,
 	              "<tr><td><a href=\"%s%s\">%s</a></td>"
 	              "<td>&nbsp;%s</td><td>&nbsp;&nbsp;%s</td></tr>\n",
-	              conn->request_info.local_uri,
+	              "",
 	              "..",
 	              "Parent directory",
 	              "-",
@@ -6304,7 +6364,8 @@ handle_directory_request(struct mg_connection *conn, const char *dir)
 		mg_free(data.entries);
 	}
 
-	conn->num_bytes_sent += mg_printf(conn, "%s", "</table></body></html>");
+	conn->num_bytes_sent += mg_printf(conn, "%s",
+	                                  "</table></pre></body></html>");
 	conn->status_code = 200;
 }
 
