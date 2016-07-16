@@ -101,7 +101,7 @@
       <DelayLoadDLLs>lua52.dll</DelayLoadDLLs>
     </Link>
     <Manifest>
-      <AdditionalManifestFiles>DPIAware.manifest %(AdditionalManifestFiles)</AdditionalManifestFiles>
+      <EnableDpiAwareness>true</EnableDpiAwareness>
     </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -119,7 +119,7 @@
       <DelayLoadDLLs>lua52.dll</DelayLoadDLLs>
     </Link>
     <Manifest>
-      <AdditionalManifestFiles>DPIAware.manifest %(AdditionalManifestFiles)</AdditionalManifestFiles>
+      <EnableDpiAwareness>true</EnableDpiAwareness>
     </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -142,7 +142,7 @@
       <DelayLoadDLLs>lua52.dll</DelayLoadDLLs>
     </Link>
     <Manifest>
-      <AdditionalManifestFiles>DPIAware.manifest %(AdditionalManifestFiles)</AdditionalManifestFiles>
+      <EnableDpiAwareness>true</EnableDpiAwareness>
     </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -165,7 +165,7 @@
       <DelayLoadDLLs>lua52.dll</DelayLoadDLLs>
     </Link>
     <Manifest>
-      <AdditionalManifestFiles>DPIAware.manifest %(AdditionalManifestFiles)</AdditionalManifestFiles>
+      <EnableDpiAwareness>true</EnableDpiAwareness>
     </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
