@@ -655,6 +655,11 @@ namespace EpgTimer
                         {
                             rdata.RecSetting.RecMode = 5;
                         }
+                        if (data.IsManual == true && resinfo.IsManual == true)
+                        {
+                            //プログラム予約の場合は名前も追従させる。
+                            rdata.Title = data.DataTitle;
+                        }
                         syncDict.Add(resinfo.ReserveID, rdata);
                     }
                 }
