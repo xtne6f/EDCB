@@ -10,7 +10,7 @@ namespace EpgTimer
 {
     public class CmdExeRecinfo : CmdExe<RecFileInfo>
     {
-        public CmdExeRecinfo(Control owner)
+        public CmdExeRecinfo(UIElement owner)
             : base(owner)
         {
             _copyItemData = RecFileInfoEx.CopyTo;

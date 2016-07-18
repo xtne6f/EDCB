@@ -11,7 +11,7 @@ namespace EpgTimer
     //キーワード予約、プログラム自動登録の共通メソッド
     public class CmdExeAutoAdd<T> : CmdExe<T> where T : AutoAddData, new()
     {
-        public CmdExeAutoAdd(Control owner) : base(owner) { }
+        public CmdExeAutoAdd(UIElement owner) : base(owner) { }
         protected override void mc_ChangeKeyEnabled(object sender, ExecutedRoutedEventArgs e)
         {
             IsCommandExecuted = MenuUtil.AutoAddChangeKeyEnabled(dataList, (byte)CmdExeUtil.ReadIdData(e, 0, 1) == 0);
@@ -85,7 +85,7 @@ namespace EpgTimer
     //プログラム自動登録の固有メソッド
     public class CmdExeManualAutoAdd : CmdExeAutoAdd<ManualAutoAddData>
     {
-        public CmdExeManualAutoAdd(Control owner) : base(owner) { _copyItemData = ManualAutoAddDataEx.CopyTo; }
+        public CmdExeManualAutoAdd(UIElement owner) : base(owner) { _copyItemData = ManualAutoAddDataEx.CopyTo; }
         protected override void mc_ShowDialog(object sender, ExecutedRoutedEventArgs e)
         {
             IsCommandExecuted = true == MenuUtil.OpenChangeManualAutoAddDialog(dataList[0], this.Owner);
@@ -99,7 +99,7 @@ namespace EpgTimer
     //キーワード予約の固有メソッド
     public class CmdExeEpgAutoAdd : CmdExeAutoAdd<EpgAutoAddData>
     {
-        public CmdExeEpgAutoAdd(Control owner) : base(owner) { _copyItemData = EpgAutoAddDataEx.CopyTo; }
+        public CmdExeEpgAutoAdd(UIElement owner) : base(owner) { _copyItemData = EpgAutoAddDataEx.CopyTo; }
         protected override void mc_ShowDialog(object sender, ExecutedRoutedEventArgs e)
         {
             IsCommandExecuted = true == MenuUtil.OpenChangeEpgAutoAddDialog(dataList[0]);

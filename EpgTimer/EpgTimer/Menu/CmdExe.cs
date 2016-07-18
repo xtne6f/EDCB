@@ -50,7 +50,7 @@ namespace EpgTimer
         protected static CtrlCmdUtil cmd { get { return CommonManager.Instance.CtrlCmd; } }
         protected static MenuManager mm { get { return CommonManager.Instance.MM; } }
 
-        protected Control Owner;
+        protected UIElement Owner;
         protected static MainWindow mainWindow { get { return ViewUtil.MainWindow; } }
 
         protected Dictionary<ICommand, cmdOption> cmdList = new Dictionary<ICommand, cmdOption>();
@@ -71,7 +71,7 @@ namespace EpgTimer
 
         protected Dictionary<ICommand, string> cmdMessage = new Dictionary<ICommand, string>();
 
-        public CmdExe(Control owner)
+        public CmdExe(UIElement owner)
         {
             this.Owner = owner;
             cmdList.Add(EpgCmds.Add, new cmdOption(mc_Add, null, cmdExeType.MultiItem, changeDB: true));

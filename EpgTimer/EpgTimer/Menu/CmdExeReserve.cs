@@ -25,7 +25,7 @@ namespace EpgTimer
         protected List<EpgEventInfo> eventList = new List<EpgEventInfo>();
         protected List<EpgEventInfo> eventListEx = new List<EpgEventInfo>();//reserveData(dataList)とかぶらないもの
 
-        public CmdExeReserve(Control owner)
+        public CmdExeReserve(UIElement owner)
             : base(owner)
         {
             _copyItemData = ReserveDataEx.CopyTo;

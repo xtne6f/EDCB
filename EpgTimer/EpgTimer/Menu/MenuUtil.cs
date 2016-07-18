@@ -398,7 +398,7 @@ namespace EpgTimer
             return false;
         }
 
-        public static bool ChangeMarginValue(List<RecSettingData> infoList, bool start, Control owner = null)
+        public static bool ChangeMarginValue(List<RecSettingData> infoList, bool start, UIElement owner = null)
         {
             try
             {
@@ -443,7 +443,7 @@ namespace EpgTimer
             return false;
         }
 
-        public static bool ChangeBulkSet(List<RecSettingData> infoList, Control owner = null, bool pgAll = false)
+        public static bool ChangeBulkSet(List<RecSettingData> infoList, UIElement owner = null, bool pgAll = false)
         {
             try
             {
@@ -464,7 +464,7 @@ namespace EpgTimer
             return false;
         }
 
-        public static bool ChgGenre(List<EpgSearchKeyInfo> infoList, Control owner = null)
+        public static bool ChgGenre(List<EpgSearchKeyInfo> infoList, UIElement owner = null)
         {
             try
             {
@@ -851,7 +851,7 @@ namespace EpgTimer
             return true;
         }
 
-        public static bool? OpenSearchItemWithDialog(SearchItem item, Control Owner, byte openMode = 0)
+        public static bool? OpenSearchItemWithDialog(SearchItem item, UIElement Owner, byte openMode = 0)
         {
             if (item == null) return null;
 
@@ -865,7 +865,7 @@ namespace EpgTimer
             }
         }
 
-        public static bool? OpenEpgReserveDialog(EpgEventInfo Data, Control Owner, byte epgInfoOpenMode = 0)
+        public static bool? OpenEpgReserveDialog(EpgEventInfo Data, UIElement Owner, byte epgInfoOpenMode = 0)
         {
             try
             {
@@ -879,15 +879,15 @@ namespace EpgTimer
             return null;
         }
 
-        public static bool? OpenChangeReserveDialog(ReserveData Data, Control Owner, byte epgInfoOpenMode = 0)
+        public static bool? OpenChangeReserveDialog(ReserveData Data, UIElement Owner, byte epgInfoOpenMode = 0)
         {
             return OpenChgReserveDialog(Data, Owner, epgInfoOpenMode);
         }
-        public static bool? OpenManualReserveDialog(Control Owner)
+        public static bool? OpenManualReserveDialog(UIElement Owner)
         {
             return OpenChgReserveDialog(null, Owner);
         }
-        public static bool? OpenChgReserveDialog(ReserveData Data, Control Owner, byte epgInfoOpenMode = 0)
+        public static bool? OpenChgReserveDialog(ReserveData Data, UIElement Owner, byte epgInfoOpenMode = 0)
         {
             try
             {
@@ -969,15 +969,15 @@ namespace EpgTimer
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
 
-        public static bool? OpenAddManualAutoAddDialog(Control Owner)
+        public static bool? OpenAddManualAutoAddDialog(UIElement Owner)
         {
             return OpenManualAutoAddDialog(null, Owner);
         }
-        public static bool? OpenChangeManualAutoAddDialog(ManualAutoAddData Data, Control Owner)
+        public static bool? OpenChangeManualAutoAddDialog(ManualAutoAddData Data, UIElement Owner)
         {
             return OpenManualAutoAddDialog(Data, Owner);
         }
-        public static bool? OpenManualAutoAddDialog(ManualAutoAddData Data, Control Owner)
+        public static bool? OpenManualAutoAddDialog(ManualAutoAddData Data, UIElement Owner)
         {
             try
             {
@@ -994,7 +994,7 @@ namespace EpgTimer
             return null;
         }
 
-        public static bool? OpenChangeAutoAddDialog(Type t, uint id, Control Owner)
+        public static bool? OpenChangeAutoAddDialog(Type t, uint id, UIElement Owner)
         {
             AutoAddData autoAdd = AutoAddData.AutoAddList(t, id);
             if (t == typeof(EpgAutoAddData))
@@ -1008,7 +1008,7 @@ namespace EpgTimer
             return null;
         }
 
-        public static bool? OpenRecInfoDialog(RecFileInfo info, Control Owner)
+        public static bool? OpenRecInfoDialog(RecFileInfo info, UIElement Owner)
         {
             try
             {
