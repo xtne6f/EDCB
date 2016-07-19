@@ -768,30 +768,30 @@ namespace EpgTimer
                     if (nwMode == false)
                     {
                         Instance.ViewButtonList.Add("設定");
-                        Instance.ViewButtonList.Add("（空白）");
+                        Instance.ViewButtonList.Add(ViewButtonSpacer);
                         Instance.ViewButtonList.Add("検索");
-                        Instance.ViewButtonList.Add("（空白）");
+                        Instance.ViewButtonList.Add(ViewButtonSpacer);
                         Instance.ViewButtonList.Add("スタンバイ");
                         Instance.ViewButtonList.Add("休止");
-                        Instance.ViewButtonList.Add("（空白）");
+                        Instance.ViewButtonList.Add(ViewButtonSpacer);
                         Instance.ViewButtonList.Add("EPG取得");
-                        Instance.ViewButtonList.Add("（空白）");
+                        Instance.ViewButtonList.Add(ViewButtonSpacer);
                         Instance.ViewButtonList.Add("EPG再読み込み");
-                        Instance.ViewButtonList.Add("（空白）");
+                        Instance.ViewButtonList.Add(ViewButtonSpacer);
                         Instance.ViewButtonList.Add("終了");
                     }
                     else
                     {
                         Instance.ViewButtonList.Add("設定");
-                        Instance.ViewButtonList.Add("（空白）");
+                        Instance.ViewButtonList.Add(ViewButtonSpacer);
                         Instance.ViewButtonList.Add("再接続");
-                        Instance.ViewButtonList.Add("（空白）");
+                        Instance.ViewButtonList.Add(ViewButtonSpacer);
                         Instance.ViewButtonList.Add("検索");
-                        Instance.ViewButtonList.Add("（空白）");
+                        Instance.ViewButtonList.Add(ViewButtonSpacer);
                         Instance.ViewButtonList.Add("EPG取得");
-                        Instance.ViewButtonList.Add("（空白）");
+                        Instance.ViewButtonList.Add(ViewButtonSpacer);
                         Instance.ViewButtonList.Add("EPG再読み込み");
-                        Instance.ViewButtonList.Add("（空白）");
+                        Instance.ViewButtonList.Add(ViewButtonSpacer);
                         Instance.ViewButtonList.Add("終了");
                     }
                 }
@@ -800,18 +800,18 @@ namespace EpgTimer
                     if (nwMode == false)
                     {
                         Instance.TaskMenuList.Add("設定");
-                        Instance.TaskMenuList.Add("（セパレータ）");
+                        Instance.TaskMenuList.Add(TaskMenuSeparator);
                         Instance.TaskMenuList.Add("スタンバイ");
                         Instance.TaskMenuList.Add("休止");
-                        Instance.TaskMenuList.Add("（セパレータ）");
+                        Instance.TaskMenuList.Add(TaskMenuSeparator);
                         Instance.TaskMenuList.Add("終了");
                     }
                     else
                     {
                         Instance.TaskMenuList.Add("設定");
-                        Instance.TaskMenuList.Add("（セパレータ）");
+                        Instance.TaskMenuList.Add(TaskMenuSeparator);
                         Instance.TaskMenuList.Add("再接続");
-                        Instance.TaskMenuList.Add("（セパレータ）");
+                        Instance.TaskMenuList.Add(TaskMenuSeparator);
                         Instance.TaskMenuList.Add("終了");
                     }
                 }
@@ -1025,33 +1025,20 @@ namespace EpgTimer
             }
         }
 
-        public List<string> GetViewButtonAllItems()
+        private static List<string> viewButtonIDs = new List<string>();
+        public const string ViewButtonSpacer = "（空白）";
+        public const string TaskMenuSeparator = "（セパレータ）";
+        public static void ResisterViewButtonIDs(IEnumerable<string> list)
         {
-            return new List<string>
-            {
-                "（空白）",
-                "設定",
-                "再接続",
-                "再接続(前回)",
-                "検索",
-                "予約情報検索",
-                "スタンバイ",
-                "休止",
-                "終了",
-                "EPG取得",
-                "EPG再読み込み",
-                "NetworkTV終了",
-                "情報通知ログ",
-                "カスタム１",
-                "カスタム２",
-                "カスタム３"
-            };
+            viewButtonIDs = list == null ? new List<string>() : list.ToList();
+        } 
+        public static List<string> GetViewButtonAllIDs()
+        {
+            return new List<string> { ViewButtonSpacer }.Concat(viewButtonIDs).ToList();
         }
-        public List<string> GetTaskMenuAllItems()
+        public static List<string> GetTaskMenuAllIDs()
         {
-            var taskItem = new List<string> { "（セパレータ）" };
-            taskItem.AddRange(GetViewButtonAllItems().Skip(1));
-            return taskItem;
+            return new List<string> { TaskMenuSeparator }.Concat(viewButtonIDs).ToList();
         }
     }
 }

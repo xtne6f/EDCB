@@ -168,6 +168,7 @@ namespace EpgTimer
 
                 defaultMenu = mm.GetDefaultCtxmSettingForEditor();
                 editMenu = info.ManualMenuItems.Clone();
+                editMenu.ForEach(m => m.Items = m.Items.FindAll(i => defaultMenu.FindData(m.ctxmCode).Items.Contains(i)));
 
                 for (int i = 0; i < SettingTable.Count; i++)
                 {
