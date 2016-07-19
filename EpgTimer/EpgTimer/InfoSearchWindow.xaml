@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:EpgTimer"
         xmlns:user="clr-namespace:EpgTimer.UserCtrlView"
-        Title="予約簡易検索" Height="600" Width="780" WindowStartupLocation="Manual" Closed="Window_Closed" Activated="Window_Activated" Loaded="Window_Loaded" StateChanged="Window_StateChanged">
+        Title="予約情報検索" Height="600" Width="780" WindowStartupLocation="Manual" Closed="Window_Closed" Activated="Window_Activated" Loaded="Window_Loaded" StateChanged="Window_StateChanged">
 
     <Window.Resources>
         <ResourceDictionary>
@@ -59,11 +59,6 @@
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=EventName}">
-                        <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="番組名/ANDキーワード" Uid="EventName" />
-                        </GridViewColumn.Header>
-                    </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=StartTime}">
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="日時/次の予約" Uid="StartTime" />
@@ -87,6 +82,31 @@
                     <GridViewColumn DisplayMemberBinding="{Binding Path=ServiceName}">
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="サービス名" Uid="ServiceName" />
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=EventName}">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="番組名/ANDキーワード" Uid="EventName" />
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=JyanruKey}">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="ジャンル" Uid="JyanruKey" />
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
+                    <GridViewColumn>
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="有効・プロテクト" Tag="有効・無効/プロテクト切替え" Uid="IsEnabled" />
+                        </GridViewColumn.Header>
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <CheckBox IsChecked="{Binding Path=IsEnabled}" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=Comment}">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="予約/録画状況" Uid="Comment" />
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=EtcInfo}">

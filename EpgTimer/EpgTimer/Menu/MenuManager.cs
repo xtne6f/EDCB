@@ -13,6 +13,7 @@ namespace EpgTimer
     {
         private Dictionary<CtxmCode, CtxmData> DefCtxmData;//デフォルトのコンテキストメニュー
         private Dictionary<CtxmCode, List<ICommand>> DefCtxmCmdList;//デフォルトのコンテキストメニューのコマンドリスト
+        private CtxmData AddInfoSearchMenu;//簡易検索用の追加メニュー
 
         private Dictionary<CtxmCode, CtxmData> WorkCtxmData;//現在のコンテキストメニュー
 //        private Dictionary<CtxmCode, List<ICommand>> WorCtxmCmdList;//各ビューのコンテキストメニューのコマンドリスト
@@ -149,7 +150,7 @@ namespace EpgTimer
             AddAppendMenus.Add(new CtxmItemData(cm_Separator));
             AddAppendMenus.Add(new CtxmItemData("番組名をコピー", EpgCmds.CopyTitle));
             AddAppendMenus.Add(new CtxmItemData("番組情報をコピー", EpgCmds.CopyContent));
-            AddAppendMenus.Add(new CtxmItemData("番組名で予約簡易検索", EpgCmds.InfoSearchTitle));
+            AddAppendMenus.Add(new CtxmItemData("番組名で予約情報検索", EpgCmds.InfoSearchTitle));
             AddAppendMenus.Add(new CtxmItemData("番組名をネットで検索", EpgCmds.SearchTitle));
 
             var AddMenuSetting = new List<CtxmItemData>();
@@ -212,7 +213,7 @@ namespace EpgTimer
             ctmd.Items.Add(new CtxmItemData("録画フォルダを開く", EpgCmdsEx.OpenFolderMenu));
             ctmd.Items.Add(new CtxmItemData(cm_Separator));
             ctmd.Items.Add(new CtxmItemData("Andキーワードをコピー", EpgCmds.CopyTitle));
-            ctmd.Items.Add(new CtxmItemData("Andキーワードで予約簡易検索", EpgCmds.InfoSearchTitle));
+            ctmd.Items.Add(new CtxmItemData("Andキーワードで予約情報検索", EpgCmds.InfoSearchTitle));
             ctmd.Items.Add(new CtxmItemData("Andキーワードをネットで検索", EpgCmds.SearchTitle));
             ctmd.Items.Add(new CtxmItemData("Notキーワードをコピー", EpgCmds.CopyNotKey));
             ctmd.Items.Add(new CtxmItemData("Notキーワードに貼り付け", EpgCmds.SetNotKey));
@@ -232,7 +233,7 @@ namespace EpgTimer
             ctmd.Items.Add(new CtxmItemData("録画フォルダを開く", EpgCmdsEx.OpenFolderMenu));
             ctmd.Items.Add(new CtxmItemData(cm_Separator));
             ctmd.Items.Add(new CtxmItemData("番組名をコピー", EpgCmds.CopyTitle));
-            ctmd.Items.Add(new CtxmItemData("番組名で予約簡易検索", EpgCmds.InfoSearchTitle));
+            ctmd.Items.Add(new CtxmItemData("番組名で予約情報検索", EpgCmds.InfoSearchTitle));
             ctmd.Items.Add(new CtxmItemData("番組名をネットで検索", EpgCmds.SearchTitle));
             ctmd.Items.AddRange(AddMenuSetting.Clone());
 
@@ -271,19 +272,23 @@ namespace EpgTimer
             ctmd.Items.AddRange(AddAppendMenus.Clone());
             ctmd.Items.AddRange(AddMenuSetting.Clone());
 
-            //メニューアイテム:予約簡易検索
+            //メニューアイテム:予約情報検索(デフォルト・複数選択)
             ctmd = DefCtxmData[CtxmCode.InfoSearchWindow];
-            ctmd.Items.Add(new CtxmItemData("ダイアログ表示...", EpgCmds.ShowDialog));
-            ctmd.Items.Add(new CtxmItemData("一覧へジャンプ", EpgCmds.JumpList));
+            ctmd.Items.Add(new CtxmItemData("一覧へジャンプ", EpgCmds.JumpListView));
             ctmd.Items.Add(new CtxmItemData("番組名/ANDキーワードで再検索", EpgCmds.ReSearch));
             ctmd.Items.Add(new CtxmItemData("番組名/ANDキーワードで再検索(別ウィンドウ)", EpgCmds.ReSearch2));
             ctmd.Items.Add(new CtxmItemData(cm_Separator));
+            ctmd.Items.Add(new CtxmItemData("ダイアログ表示...", EpgCmds.ShowDialog));
             ctmd.Items.Add(new CtxmItemData("有効・無効/プロテクト切替え", EpgCmds.ChgOnOff));
             ctmd.Items.Add(new CtxmItemData("削除", EpgCmds.Delete));
             ctmd.Items.Add(new CtxmItemData(cm_Separator));
             ctmd.Items.Add(new CtxmItemData("番組名/ANDキーワードをコピー", EpgCmds.CopyTitle));
             ctmd.Items.Add(new CtxmItemData("番組名/ANDキーワードをネットで検索", EpgCmds.SearchTitle));
             ctmd.Items.AddRange(AddMenuSetting.Clone());
+
+            //メニューアイテム:予約情報検索(個別選択の追加メニュー)
+            AddInfoSearchMenu = new CtxmData(CtxmCode.InfoSearchWindow);
+            AddInfoSearchMenu.Items.AddRange(ctmd.Items.Take(3));
         }
         private void SetDefGestureCmdList()
         {
@@ -365,6 +370,13 @@ namespace EpgTimer
                 });
             }
 
+            //セパレータの整理
+            SweepSeparators(ctxm);
+
+            return ctxm;
+        }
+        private void SweepSeparators(CtxmData ctxm)
+        {
             //・連続したセパレータの除去
             for (int i = ctxm.Items.Count - 1; i >= 1; i--)
             {
@@ -382,8 +394,6 @@ namespace EpgTimer
             {
                 ctxm.Items.RemoveAt(0);
             }
-
-            return ctxm;
         }
         private void SetWorkGestureCmdList()
         {
@@ -491,17 +501,41 @@ namespace EpgTimer
             return cmdData != null && cmdData.IsGestureEnabled == false || WorkDelGesCmdList[code].Contains(icmd);
         }
 
+        public List<ICommand> GetViewMenuCmdList(CtxmCode code)
+        {
+            return DefCtxmCmdList[code].ToList();
+        }
         public List<ICommand> GetWorkGestureCmdList(CtxmCode code)
         {
             return WorkGestureCmdList[code].ToList();
         }
 
+        public void CtxmGenerateContextMenuInfoSearch(ContextMenu ctxm, CtxmCode code)
+        {
+            CtxmData data = WorkCtxmData[code].Clone();
+            if (code != CtxmCode.InfoSearchWindow)
+            {
+                //他画面用の簡易検索メニューを削除
+                data.Items.Remove(data.Items.FirstOrDefault(d => d.Command == EpgCmds.InfoSearchTitle));
+
+                //簡易検索用のメニューを先頭に追加
+                var ISData = WorkCtxmData[CtxmCode.InfoSearchWindow].Items.Select(d => d.Command).ToList();
+                data.Items.Insert(0, new CtxmItemData(EpgCmdsEx.SeparatorString, EpgCmdsEx.Separator));
+                data.Items.InsertRange(0, AddInfoSearchMenu.Items.Where(item => ISData.Contains(item.Command)));
+                SweepSeparators(data);
+            }
+            CtxmGenerateContextMenu(data, ctxm, code, true);
+        }
         public void CtxmGenerateContextMenu(ContextMenu ctxm, CtxmCode code, bool shortcutTextforListType)
+        {
+            CtxmGenerateContextMenu(WorkCtxmData[code], ctxm, code, shortcutTextforListType);
+        }
+        private void CtxmGenerateContextMenu(CtxmData data, ContextMenu ctxm, CtxmCode code, bool shortcutTextforListType)
         {
             try
             {
                 ctxm.Name = code.ToString();
-                CtxmConvertToMenuItems(WorkCtxmData[code].Items, ctxm.Items, code, shortcutTextforListType);
+                CtxmConvertToMenuItems(data.Items, ctxm.Items, code, shortcutTextforListType);
             }
             catch (Exception ex)
             {

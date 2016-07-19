@@ -8,7 +8,7 @@ using System.Windows.Input;
 
 namespace EpgTimer
 {
-    public class InfoSearchItem : DataListItemBase, IRecWorkMainData
+    public class InfoSearchItem : RecSettingItem, IRecWorkMainData
     {
         public InfoSearchItem() { tIdx = dTypes.Count - 1; }
         public InfoSearchItem(IRecWorkMainData data)
@@ -19,6 +19,10 @@ namespace EpgTimer
             this.Data = data;
             ViewItem = Activator.CreateInstance(vTypes[tIdx], data) as DataListItemBase;
         }
+
+        public override RecSettingData RecSettingInfo { get { return ViewItem is IRecSetttingData ? (ViewItem as IRecSetttingData).RecSettingInfo : null; } }
+        public override bool IsManual { get { return ViewItem is IRecSetttingData ? (ViewItem as IRecSetttingData).IsManual : false; } }
+
         private int tIdx;
         public IRecWorkMainData Data { get; private set; }
         public DataListItemBase ViewItem { get; private set; }
@@ -121,14 +125,47 @@ namespace EpgTimer
                 else                                        return "";
             }
         }
+        public String JyanruKey
+        {
+            get
+            {
+                if      (ViewItem is ReserveItem)           return ((ReserveItem)ViewItem).JyanruKey;
+                else if (ViewItem is EpgAutoDataItem)       return ((EpgAutoDataItem)ViewItem).JyanruKey;
+                else                                        return "";
+            }
+        }
+        public bool IsEnabled
+        {
+            set
+            {
+                EpgCmds.ChgOnOffCheck.Execute(this, null);
+            }
+            get
+            {
+                if      (ViewItem is ReserveItem)           return ((ReserveItem)ViewItem).IsEnabled;
+                else if (ViewItem is RecInfoItem)           return ((RecInfoItem)ViewItem).IsProtect;
+                else if (ViewItem is AutoAddDataItem)       return ((AutoAddDataItem)ViewItem).KeyEnabled;
+                else                                        return false;
+            }
+        }
+        public String Comment
+        {
+            get
+            {
+                if      (ViewItem is ReserveItem)           return ((ReserveItem)ViewItem).Comment;
+                else if (ViewItem is RecInfoItem)           return ((RecInfoItem)ViewItem).Result;
+                else if (ViewItem is AutoAddDataItem)       return string.Format("検索/予約:{0}/{1}", ((AutoAddDataItem)ViewItem).SearchCount, ((AutoAddDataItem)ViewItem).ReserveCount);
+                else return "";
+            }
+        }
         public String EtcInfo
         {
             get
             {
                 string ret = "";
                 if      (ViewItem is ReserveItem)           ret = ((ReserveItem)ViewItem).ProgramContent;
-                else if (ViewItem is RecInfoItem)           ret = ((RecInfoItem)ViewItem).DropInfoText + " " + ((RecInfoItem)ViewItem).Result;
-                else if (ViewItem is EpgAutoDataItem)       ret = ((EpgAutoDataItem)ViewItem).NotKey;
+                else if (ViewItem is RecInfoItem)           ret = ((RecInfoItem)ViewItem).DropInfoText;
+                else if (ViewItem is EpgAutoDataItem)       ret = string.IsNullOrEmpty(((EpgAutoDataItem)ViewItem).NotKey) == true ? "" : "Not:" + ((EpgAutoDataItem)ViewItem).NotKey;
                 else if (ViewItem is ManualAutoAddDataItem) ret = ((ManualAutoAddDataItem)ViewItem).StartTimeShort + " " + ((ManualAutoAddDataItem)ViewItem).DayOfWeek;
                 ret = ret.Replace("\r\n", " ");//先に長さを確定
                 return ret.Substring(0, Math.Min(50, ret.Length));

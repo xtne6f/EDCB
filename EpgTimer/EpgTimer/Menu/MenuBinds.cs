@@ -67,32 +67,49 @@ namespace EpgTimer
 
         //ショートカットの更新。
         //主要画面用
+        public void DeleteInputBindings(UIElement iTrgView, UIElement iTrgList = null)
+        {
+            try
+            {
+                var deleteCmds = mm.GetViewMenuCmdList(View);
+                deleteCmds.AddRange(AppendGestureCmds);
+                deleteCmds.AddRange(mm.GetWorkGestureCmdList(View));//不要なはずだが安全のため一応
+                deleteCmds = deleteCmds.Distinct().ToList();
+
+                DeleteInputBindingsTo(iTrgView, deleteCmds);
+                DeleteInputBindingsTo(iTrgList, deleteCmds);
+            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
+        }
+        private void DeleteInputBindingsTo(UIElement iTrg, List<ICommand> delList)
+        {
+            if (iTrg == null) return;
+
+            var delBinds = iTrg.InputBindings.OfType<InputBinding>().Where(bind => delList.Contains(bind.Command) == true).ToList();
+            delBinds.ForEach(item => iTrg.InputBindings.Remove(item));
+        }
+        
         public void ResetInputBindings(UIElement iTrgView, UIElement iTrgList = null)
         {
             try
             {
+                DeleteInputBindings(iTrgView, iTrgList);
+
                 var gestureCmds = mm.GetWorkGestureCmdList(View);
                 gestureCmds.AddRange(AppendGestureCmds);
                 gestureCmds = gestureCmds.Distinct().ToList();
 
-                ResetInputBindgsTo(iTrgView, gestureCmds, MenuCmds.GestureTrg.ToView);
-                ResetInputBindgsTo(iTrgList, gestureCmds, MenuCmds.GestureTrg.ToList);
+                AddInputBindgsTo(iTrgView, gestureCmds, MenuCmds.GestureTrg.ToView);
+                AddInputBindgsTo(iTrgList, gestureCmds, MenuCmds.GestureTrg.ToList);
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
-
-        private void ResetInputBindgsTo(UIElement iTrg, List<ICommand> cmdList, MenuCmds.GestureTrg spc)
+        private void AddInputBindgsTo(UIElement iTrg, List<ICommand> cmdList, MenuCmds.GestureTrg spc)
         {
             if (iTrg == null) return;
 
             cmdList.ForEach(icmd =>
             {
-                var delList = iTrg.InputBindings.OfType<InputBinding>().Where(bind => bind.Command == icmd).ToList();
-                delList.ForEach(item => iTrg.InputBindings.Remove(item));
-
                 MenuCmds.CmdData cmdData;
                 if (mm.MC.WorkCmdOptions.TryGetValue(icmd, out cmdData))
                 {
@@ -106,17 +123,6 @@ namespace EpgTimer
                     iTrg.InputBindings.AddRange(GetInputBinding(icmd));
                 }
             });
-
-            //残っている無効なジェスチャを削除。誤って追加されたりしたものがあれば、それも削除される。
-            var delBinds = new List<InputBinding>();
-            foreach (var item in iTrg.InputBindings.OfType<InputBinding>())
-            {
-                if (mm.IsGestureDisableOnView(item.Command, View) == true)
-                {
-                    delBinds.Add(item);
-                }
-            }
-            delBinds.ForEach(item => iTrg.InputBindings.Remove(item));
         }
 
         private List<InputBinding> GetInputBinding(ICommand icmd, int id = 0, object data = null)

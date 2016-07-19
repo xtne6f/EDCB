@@ -131,7 +131,7 @@ namespace EpgTimer
         public void SetSelectedItemDoubleClick(RoutedCommand cmd)
         {
             if (cmd == null) return;
-            SetSelectedItemDoubleClick((sender, e) => cmd.Execute(sender, this.Owner));
+            SetSelectedItemDoubleClick((sender, e) => cmd.Execute(null, listView));
         }
 
         public void SetSelectedItemDoubleClick(MouseButtonEventHandler hdlr)
@@ -244,7 +244,7 @@ namespace EpgTimer
             {
                 listView.SelectedItem = hitItem;
             }
-            cmd.Execute(listView, this.Owner);
+            cmd.Execute(null, listView);
         }
     }
 }

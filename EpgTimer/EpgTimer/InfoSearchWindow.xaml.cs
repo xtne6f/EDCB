@@ -17,6 +17,18 @@ namespace EpgTimer
         private ListViewController<InfoSearchItem> lstCtrl;
         private CmdExe<InfoSearchItem> mc;
 
+        private static Dictionary<Type, CtxmCode> dic_Type_Code = new Dictionary<Type, CtxmCode>
+        {
+            { typeof(InfoSearchItem), CtxmCode.InfoSearchWindow},
+            { typeof(ReserveData), CtxmCode.ReserveView},
+            { typeof(RecFileInfo), CtxmCode.RecInfoView},
+            { typeof(EpgAutoAddData), CtxmCode.EpgAutoAddView},
+            { typeof(ManualAutoAddData), CtxmCode.ManualAutoAddView}
+        };
+        private Dictionary<Type, CmdExeBase> dic_mc = new Dictionary<Type, CmdExeBase>();
+        private Dictionary<Type, MenuBinds> dic_mBinds = new Dictionary<Type, MenuBinds>();
+        private Type selectedType = typeof(InfoSearchItem);
+
         private bool startSearch = false;
 
         public InfoSearchWindow()
@@ -28,12 +40,18 @@ namespace EpgTimer
             try
             {
                 //リストビュー関連の設定
+                var list_columns = Resources["RecSettingViewColumns"] as GridViewColumnList;
+
                 lstCtrl = new ListViewController<InfoSearchItem>(this);
                 lstCtrl.SetSavePath(CommonUtil.NameOf(() => Settings.Instance.InfoSearchWndColumn)
                     , CommonUtil.NameOf(() => Settings.Instance.InfoSearchColumnHead)
                     , CommonUtil.NameOf(() => Settings.Instance.InfoSearchSortDirection));
-                lstCtrl.SetViewSetting(listView_result, gridView_result, true, true);
-                lstCtrl.SetSelectedItemDoubleClick(EpgCmds.ShowDialog);
+                lstCtrl.SetViewSetting(listView_result, gridView_result, true, true, list_columns);
+                lstCtrl.SetSelectedItemDoubleClick((sender, e) =>
+                {
+                    var cmd = (selectedType == typeof(RecFileInfo) && Settings.Instance.PlayDClick == true) ? EpgCmds.Play : EpgCmds.ShowDialog;
+                    cmd.Execute(sender, listView_result);
+                });
 
                 //ステータス変更の設定
                 lstCtrl.SetSelectionChangedEventHandler((sender, e) => this.UpdateStatus(1));
@@ -45,30 +63,63 @@ namespace EpgTimer
                 mc.SetFuncReleaseSelectedData(() => listView_result.UnselectAll());
                 
                 //コマンド集に無いもの
-                mc.AddReplaceCommand(EpgCmds.Search, mc_Search);
-                mc.AddReplaceCommand(EpgCmds.JumpList, mc_JumpTab);
+                mc.AddReplaceCommand(EpgCmds.JumpListView, mc_JumpListView);
                 mc.AddReplaceCommand(EpgCmds.ReSearch, mc_ReSearch);
                 mc.AddReplaceCommand(EpgCmds.ReSearch2, mc_ReSearch);
+                mc.AddReplaceCommand(EpgCmds.Search, mc_Search);
                 mc.AddReplaceCommand(EpgCmds.Cancel, (sender, e) => this.Close());
+                mc.AddReplaceCommand(EpgCmds.ChgOnOffCheck, (sender, e) => lstCtrl.ChgOnOffFromCheckbox(e.Parameter, EpgCmds.ChgOnOff));
 
                 //コマンド集を振り替えるもの
-                mc.AddReplaceCommand(EpgCmds.ShowDialog, mc_ShowDialog);
+                mc.AddReplaceCommand(EpgCmds.ShowDialog, mc_ShowDialog);//Enterキーからの実行が無ければ省略できる
                 mc.AddReplaceCommand(EpgCmds.ChgOnOff, mc_ChgOnOff);
                 mc.AddReplaceCommand(EpgCmds.Delete, mc_Delete);
-
-                //コマンド集からコマンドを登録。
-                mc.ResetCommandBindings(this, listView_result.ContextMenu);
-
-                //コンテキストメニューを開く時の設定
-                listView_result.ContextMenu.Opened += new RoutedEventHandler(mc.SupportContextMenuLoading);
 
                 //ボタンの設定
                 mBinds.View = CtxmCode.InfoSearchWindow;
                 mBinds.SetCommandToButton(button_search, EpgCmds.Search);
                 mBinds.AddInputCommand(EpgCmds.Cancel);//ショートカット登録
 
+                //コンテキストメニューを開く時の設定
+                listView_result.ContextMenu.Opened += (sender, e) => dic_mc[selectedType].SupportContextMenuLoading(sender, e);
+
+                //タイプごとの個別コマンド処理用データの設定
+                dic_mc.Add(typeof(InfoSearchItem), mc);
+                dic_mc.Add(typeof(ReserveData), new CmdExeReserve(this));
+                dic_mc.Add(typeof(RecFileInfo), new CmdExeRecinfo(this));
+                dic_mc.Add(typeof(EpgAutoAddData), new CmdExeEpgAutoAdd(this));
+                dic_mc.Add(typeof(ManualAutoAddData), new CmdExeManualAutoAdd(this));
+                foreach (var data in dic_mc.Values.Skip(1))
+                {
+                    data.SetFuncGetDataList(isAll =>
+                    {
+                        return (isAll == true ? lstCtrl.dataList : lstCtrl.GetSelectedItemsList()).Select(d => d.Data);
+                    });
+                    data.SetFuncSelectSingleData(noChange =>
+                    {
+                        InfoSearchItem item = lstCtrl.SelectSingleItem(noChange);
+                        return item == null ? null : item.Data;
+                    });
+                    data.SetFuncReleaseSelectedData(() => listView_result.UnselectAll());
+                    data.AddReplaceCommand(EpgCmds.ChgOnOff, mc_ChgOnOff);
+                    data.AddReplaceCommand(EpgCmds.JumpReserve, (sender, e) => mc_JumpTab(CtxmCode.ReserveView));
+                    data.AddReplaceCommand(EpgCmds.JumpTuner, (sender, e) => mc_JumpTab(CtxmCode.TunerReserveView));
+                    data.AddReplaceCommand(EpgCmds.JumpTable, (sender, e) => mc_JumpTab(CtxmCode.EpgView));
+                }
+
+                //タイプごとのショートカット情報を登録
+                dic_mBinds.Add(typeof(InfoSearchItem), mBinds);
+                dic_mBinds.Add(typeof(ReserveData), new MenuBinds { View = CtxmCode.ReserveView });
+                dic_mBinds.Add(typeof(RecFileInfo), new MenuBinds { View = CtxmCode.RecInfoView });
+                dic_mBinds.Add(typeof(EpgAutoAddData), new MenuBinds { View = CtxmCode.EpgAutoAddView });
+                dic_mBinds.Add(typeof(ManualAutoAddData), new MenuBinds { View = CtxmCode.ManualAutoAddView });
+
                 //メニューの作成、ショートカットの登録
                 this.RefreshMenu();
+
+                //選択状態に合わせてコマンドなどをセットするようにする。
+                //lstCtrl.SetSelectionChangedEventHandler()は遅延実行なので使わない。
+                this.listView_result.SelectionChanged += (sender, e) => ResetMenu();
 
                 //その他設定
                 TextBox_SearchWord.Text = Settings.Instance.InfoSearchLastWord;
@@ -91,10 +142,25 @@ namespace EpgTimer
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
-        public override void RefreshMenu()
+
+        public override void RefreshMenu() { ResetMenu(true); }
+        public void ResetMenu(bool forceReset = false)
         {
-            mBinds.ResetInputBindings(this, listView_result);
-            mm.CtxmGenerateContextMenu(listView_result.ContextMenu, CtxmCode.InfoSearchWindow, true);
+            var list = lstCtrl.GetSelectedItemsList().Select(item => item.Data).OfType<IRecWorkMainData>().ToList();
+            bool isSame = list.All(item => list[0].GetType() == item.GetType());
+            Type changedType = (list.Count == 0 || isSame == false) ? typeof(InfoSearchItem) : list[0].GetType();
+            if (forceReset == true || selectedType != changedType)
+            {
+                //InfoSearch専用のコマンド・ショートカットはそのままにしておく or 上書きされずそのままになる
+                dic_mc[changedType].ResetCommandBindings(this, listView_result.ContextMenu);
+                if (selectedType != typeof(InfoSearchItem))
+                {
+                    dic_mBinds[selectedType].DeleteInputBindings(this, listView_result);
+                }
+                dic_mBinds[changedType].ResetInputBindings(this, listView_result);
+                mm.CtxmGenerateContextMenuInfoSearch(listView_result.ContextMenu, dic_Type_Code[changedType]);
+                selectedType = changedType;//最後
+            }
         }
 
         public void SetSearchWord(string word)
@@ -105,7 +171,6 @@ namespace EpgTimer
                 TextBox_SearchWord.Text = word;
             }
         }
-        
         private void mc_Search(object sender, ExecutedRoutedEventArgs e)
         {
             Search();
@@ -179,16 +244,14 @@ namespace EpgTimer
         {
             listView_result.Items.Refresh();
         }
-        private void mc_ShowDialog(object sender, RoutedEventArgs e)
-        {
-            if (listView_result.SelectedItem == null) return;
-            //
-            object data = lstCtrl.SelectSingleItem().Data;
 
-            if      (data is ReserveData)       MenuUtil.OpenChangeReserveDialog((ReserveData)data, this);
-            else if (data is RecFileInfo)       MenuUtil.OpenRecInfoDialog((RecFileInfo)data, this);
-            else if (data is EpgAutoAddData)    MenuUtil.OpenChangeEpgAutoAddDialog((EpgAutoAddData)data);
-            else if (data is ManualAutoAddData) MenuUtil.OpenChangeManualAutoAddDialog((ManualAutoAddData)data, this);
+        private void mc_ShowDialog(object sender, ExecutedRoutedEventArgs e)
+        {
+            lstCtrl.SelectSingleItem();//Selection_Changeが走ってRefreshMenuが実行される。
+            if (selectedType != typeof(InfoSearchItem))
+            {
+                EpgCmds.ShowDialog.Execute(e.Parameter, null);
+            }
         }
         private void mc_ChgOnOff(object sender, ExecutedRoutedEventArgs e)
         {
@@ -200,8 +263,8 @@ namespace EpgTimer
             { return; }
 
             MenuUtil.ReserveChangeOnOff(dataList.OfType<ReserveData>().Clone(), null, false);
-            MenuUtil.RecinfoChgProtect(dataList.OfType<RecFileInfo>().Clone());
-            MenuUtil.AutoAddChangeOnOffKeyEnabled(dataList.OfType<AutoAddData>().Clone());
+            MenuUtil.RecinfoChgProtect(dataList.OfType<RecFileInfo>().Clone(), false);
+            MenuUtil.AutoAddChangeOnOffKeyEnabled(dataList.OfType<AutoAddData>().Clone(), false);
 
             StatusManager.StatusNotifySet(true, mc.GetCmdMessageFormat("状態切替を実行", dataList.Count));
         }
@@ -217,25 +280,21 @@ namespace EpgTimer
             if (MenuUtil.CautionManyMessage(dataList.Count, "削除の確認") == false)
             { return; }
 
-            MenuUtil.ReserveDelete(dataList.OfType<ReserveData>().ToList());
-            MenuUtil.RecinfoDelete(dataList.OfType<RecFileInfo>().ToList());
-            MenuUtil.AutoAddDelete(dataList.OfType<AutoAddData>().ToList());
+            MenuUtil.ReserveDelete(dataList.OfType<ReserveData>().ToList(), false);
+            MenuUtil.RecinfoDelete(dataList.OfType<RecFileInfo>().ToList(), false);
+            MenuUtil.AutoAddDelete(dataList.OfType<AutoAddData>().ToList(), false);
 
             StatusManager.StatusNotifySet(true, mc.GetCmdMessageFormat("削除を実行", dataList.Count));
         }
-        private void mc_JumpTab(object sender, ExecutedRoutedEventArgs e)
+        private void mc_JumpTab(CtxmCode trg_code)
         {
-            if (listView_result.SelectedItem == null) return;
-            //
-            object vItem = lstCtrl.SelectSingleItem().ViewItem;
-
-            CtxmCode code = CtxmCode.EtcWindow;
-            if      (vItem is ReserveItem)              code = CtxmCode.ReserveView;
-            else if (vItem is RecInfoItem)              code = CtxmCode.RecInfoView;
-            else if (vItem is EpgAutoDataItem)          code = CtxmCode.EpgAutoAddView;
-            else if (vItem is ManualAutoAddDataItem)    code = CtxmCode.ManualAutoAddView;
-
-            JumpTabAndHide(code, vItem);
+            lstCtrl.SelectSingleItem();
+            JumpTabAndHide(trg_code, dic_mc[selectedType].GetJumpTabItem(trg_code));
+        }
+        private void mc_JumpListView(object sender, ExecutedRoutedEventArgs e)
+        {
+            InfoSearchItem vItem = lstCtrl.SelectSingleItem();//Selection_Changeが走ってRefreshMenuが実行される。
+            JumpTabAndHide(dic_Type_Code[selectedType], vItem == null ? null : vItem.ViewItem);
         }
         private void mc_ReSearch(object sender, ExecutedRoutedEventArgs e)
         {
@@ -297,12 +356,13 @@ namespace EpgTimer
             }
         }
     }
+
     //ジェネリックパラメータTはstatic関係の分割用なので何でもいい
     public class InfoSearchWindowBase : HideableWindow<InfoSearchWindow>
     {
         static InfoSearchWindowBase()
         {
-            buttonID = "予約簡易検索";
+            buttonID = "予約情報検索";
         }
     }
 }

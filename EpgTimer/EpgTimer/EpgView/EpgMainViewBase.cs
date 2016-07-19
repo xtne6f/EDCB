@@ -42,6 +42,7 @@ namespace EpgTimer.EpgView
         }
         public override void RefreshMenu()
         {
+            base.RefreshMenu();
             mBinds.ResetInputBindings(this);
             mm.CtxmGenerateContextMenu(cmdMenu, CtxmCode.EpgView, false);
         }
@@ -129,7 +130,7 @@ namespace EpgTimer.EpgView
         protected void epgProgramView_LeftDoubleClick(object sender, Point cursorPos)
         {
             clickPos = cursorPos;
-            EpgCmds.ShowDialog.Execute(sender, cmdMenu);
+            EpgCmds.ShowDialog.Execute(null, cmdMenu);
         }
         
         /// <summary>右ボタンクリック</summary>

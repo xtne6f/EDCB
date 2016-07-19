@@ -895,11 +895,11 @@ namespace EpgTimer
                     var obj = new InfoSearchItem();
                     Instance.InfoSearchWndColumn.Add(new ListColumnInfo(CommonUtil.NameOf(() => obj.ViewItemName), double.NaN));
                     Instance.InfoSearchWndColumn.Add(new ListColumnInfo(CommonUtil.NameOf(() => obj.Status), double.NaN));
-                    Instance.InfoSearchWndColumn.Add(new ListColumnInfo(CommonUtil.NameOf(() => obj.EventName), double.NaN));
                     Instance.InfoSearchWndColumn.Add(new ListColumnInfo(CommonUtil.NameOf(() => obj.StartTime), double.NaN));
                     Instance.InfoSearchWndColumn.Add(new ListColumnInfo(CommonUtil.NameOf(() => obj.ProgramDuration), double.NaN));
                     Instance.InfoSearchWndColumn.Add(new ListColumnInfo(CommonUtil.NameOf(() => obj.NetworkName), double.NaN));
                     Instance.InfoSearchWndColumn.Add(new ListColumnInfo(CommonUtil.NameOf(() => obj.ServiceName), double.NaN));
+                    Instance.InfoSearchWndColumn.Add(new ListColumnInfo(CommonUtil.NameOf(() => obj.EventName), double.NaN));
                     Instance.InfoSearchWndColumn.Add(new ListColumnInfo(CommonUtil.NameOf(() => obj.EtcInfo), double.NaN));
                     Instance.InfoSearchColumnHead = CommonUtil.NameOf(() => obj.StartTime);
                     Instance.InfoSearchSortDirection = ListSortDirection.Ascending;
@@ -1034,7 +1034,7 @@ namespace EpgTimer
                 "再接続",
                 "再接続(前回)",
                 "検索",
-                "予約簡易検索",
+                "予約情報検索",
                 "スタンバイ",
                 "休止",
                 "終了",

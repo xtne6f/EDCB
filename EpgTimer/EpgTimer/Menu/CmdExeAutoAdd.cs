@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -32,16 +31,7 @@ namespace EpgTimer
         }
         protected override void mc_Delete(object sender, ExecutedRoutedEventArgs e)
         {
-            if (e.Command == EpgCmds.DeleteAll)
-            {
-                if (CmdExeUtil.CheckAllDeleteCancel(e, dataList.Count) == true)
-                { return; }
-            }
-            else
-            {
-                if (CmdExeUtil.CheckKeyboardDeleteCancel(e, dataList.Select(data => data.DataTitle).ToList()) == true)
-                { return; }
-            }
+            if (mcs_DeleteCheck(e) == false) return;
             IsCommandExecuted = MenuUtil.AutoAddDelete(dataList);
         }
         protected override void mc_Delete2(object sender, ExecutedRoutedEventArgs e)
@@ -53,10 +43,6 @@ namespace EpgTimer
         {
             if (CmdExeUtil.CheckAllProcCancel(e, dataList, false) == true) return;
             IsCommandExecuted = MenuUtil.AutoAddChangeSyncReserve(dataList);
-        }
-        protected override void mc_JumpTable(object sender, ExecutedRoutedEventArgs e)
-        {
-            mcs_JumpTab(CtxmCode.EpgView, true);
         }
         protected override ReserveData mcs_GetNextReserve()
         {
@@ -77,7 +63,7 @@ namespace EpgTimer
             }
             else if (menu.Tag == EpgCmdsEx.OpenFolderMenu)
             {
-                mm.CtxmGenerateOpenFolderItems(menu, this.itemCount == 0 ? null : dataList[0].RecSettingInfo);
+                mm.CtxmGenerateOpenFolderItems(menu, this.ItemCount == 0 ? null : dataList[0].RecSettingInfo);
             }
         }
     }

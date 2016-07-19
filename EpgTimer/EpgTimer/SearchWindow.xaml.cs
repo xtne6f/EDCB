@@ -67,8 +67,8 @@ namespace EpgTimer
                 mc.AddReplaceCommand(EpgCmds.ChgOnOffCheck, (sender, e) => lstCtrl.ChgOnOffFromCheckbox(e.Parameter, EpgCmds.ChgOnOff));
 
                 //コマンド集を振り替えるもの
-                mc.AddReplaceCommand(EpgCmds.JumpReserve, (sender, e) => mc_JumpTab(CtxmCode.ReserveView, true));
-                mc.AddReplaceCommand(EpgCmds.JumpTuner, (sender, e) => mc_JumpTab(CtxmCode.TunerReserveView, true, Settings.Instance.TunerDisplayOffReserve == false));
+                mc.AddReplaceCommand(EpgCmds.JumpReserve, (sender, e) => mc_JumpTab(CtxmCode.ReserveView));
+                mc.AddReplaceCommand(EpgCmds.JumpTuner, (sender, e) => mc_JumpTab(CtxmCode.TunerReserveView));
                 mc.AddReplaceCommand(EpgCmds.JumpTable, (sender, e) => mc_JumpTab(CtxmCode.EpgView));
 
                 //コマンド集からコマンドを登録。
@@ -378,18 +378,10 @@ namespace EpgTimer
 
             ChangeAutoAddData(newItem);
         }
-        private void mc_JumpTab(CtxmCode code, bool reserveOnly = false, bool onReserveOnly = false)
+        private void mc_JumpTab(CtxmCode trg_code)
         {
-            if (listView_result.SelectedItem != null)
-            {
-                SearchItem item = lstCtrl.SelectSingleItem();
-
-                reserveOnly |= onReserveOnly;
-                if (reserveOnly && item.IsReserved == false) return;
-                if (onReserveOnly && item.ReserveInfo.IsEnabled == false) return;
-
-                JumpTabAndHide(code, item);
-            }
+            lstCtrl.SelectSingleItem();
+            JumpTabAndHide(trg_code, mc.GetJumpTabItem(trg_code));
         }
         private void mc_Research(object sender, ExecutedRoutedEventArgs e)
         {

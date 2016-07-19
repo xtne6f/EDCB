@@ -94,6 +94,8 @@ namespace EpgTimer.UserCtrlView
         }
         protected void JumpTabAndHide(CtxmCode code, object item)
         {
+            if (item == null) return;
+            //
             if (mainWindow.IsVisible == false || mainWindow.WindowState == WindowState.Minimized)
             {
                 mainWindow.RestoreMinimizedWindow();

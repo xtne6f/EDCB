@@ -60,7 +60,6 @@ namespace EpgTimer
 
             //コンテキストメニュー用
             AddCommand(EpgCmds.Add);
-            AddCommand(EpgCmds.ShowAddDialog, spc: GestureTrg.ToView, isEnable: false);
             AddCommand(EpgCmds.ChgOnOff, Key.S, ModifierKeys.Control);
             AddCommand(EpgCmds.ChgGenre, isEnable: false, isSave: false);
             AddCommand(EpgCmds.Delete, Key.D, ModifierKeys.Control, Key.Delete);
@@ -68,18 +67,19 @@ namespace EpgTimer
             AddCommand(EpgCmds.DeleteAll, Key.D, ModifierKeys.Control | ModifierKeys.Alt, spc: GestureTrg.ToView);
             AddCommand(EpgCmds.AdjustReserve, isEnable: false);
             AddCommand(EpgCmds.ShowDialog, Key.Enter, gesNeedMenu: false);//doubleclickは上手く入らないので省略
+            AddCommand(EpgCmds.ShowAddDialog, spc: GestureTrg.ToView, isEnable: false);
             AddCommand(EpgCmds.JumpReserve, Key.F3, ModifierKeys.Shift, isEnable: false);
             AddCommand(EpgCmds.JumpTuner, Key.F3, ModifierKeys.Control, isEnable: false);
             AddCommand(EpgCmds.JumpTable, Key.F3);
-            AddCommand(EpgCmds.JumpList, Key.F3);//簡易検索画面用のジャンプ。とりあえず分けておく。
+            AddCommand(EpgCmds.JumpListView, Key.F3, ModifierKeys.Alt);//簡易検索画面用のジャンプ。
             AddCommand(EpgCmds.ToAutoadd);
             AddCommand(EpgCmds.ReSearch, Key.F, ModifierKeys.Control | ModifierKeys.Shift);
             AddCommand(EpgCmds.ReSearch2, Key.F, ModifierKeys.Control | ModifierKeys.Alt, isEnable: false);
-            AddCommand(EpgCmds.InfoSearchTitle, isEnable: false);
             AddCommand(EpgCmds.Play, Key.P, ModifierKeys.Control);
             AddCommand(EpgCmds.OpenFolder, isEnable: false);
             AddCommand(EpgCmds.CopyTitle, Key.C, ModifierKeys.Control, isEnable: false);
             AddCommand(EpgCmds.CopyContent, isEnable: false);
+            AddCommand(EpgCmds.InfoSearchTitle, isEnable: false);
             AddCommand(EpgCmds.SearchTitle, isEnable: false);
             AddCommand(EpgCmds.CopyNotKey, Key.X, ModifierKeys.Control, isEnable: false);
             AddCommand(EpgCmds.SetNotKey, Key.V, ModifierKeys.Control, isEnable: false);

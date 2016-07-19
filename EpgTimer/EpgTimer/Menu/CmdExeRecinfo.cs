@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -26,18 +25,7 @@ namespace EpgTimer
         protected override void mc_Delete(object sender, ExecutedRoutedEventArgs e)
         {
             dataList = dataList.GetNoProtectedList();
-            if (dataList.Count == 0) return;
-
-            if (e.Command == EpgCmds.DeleteAll)
-            {
-                if (CmdExeUtil.CheckAllDeleteCancel(e, dataList.Count) == true)
-                { return; }
-            }
-            else
-            {
-                if (CmdExeUtil.CheckKeyboardDeleteCancel(e, dataList.Select(data => data.Title).ToList()) == true)
-                { return; }
-            }
+            if (mcs_DeleteCheck(e) == false) return;
 
             if (IniFileHandler.GetPrivateProfileInt("SET", "RecInfoDelFile", 0, SettingPath.CommonIniPath) == 1)
             {

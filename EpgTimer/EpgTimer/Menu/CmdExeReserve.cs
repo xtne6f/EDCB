@@ -20,6 +20,10 @@ namespace EpgTimer
         public byte EpgInfoOpenMode { get; set; }
         public RecSettingView recSettingView { get; set; }
 
+        protected override int ItemCount
+        {
+            get { return (dataList == null ? 0 : dataList.Count) + (eventListEx == null ? 0 : eventListEx.Count); }
+        }
         protected IAutoAddTargetData headData = null;//メニューオープン時に使用
         protected IAutoAddTargetData headDataEv = null;//番組情報優先先頭データ。headDataは予約情報優先。
         protected List<EpgEventInfo> eventList = new List<EpgEventInfo>();
@@ -68,13 +72,6 @@ namespace EpgTimer
             eventList.Clear();
             eventListEx.Clear();
         }
-        protected override int itemCount
-        { 
-            get 
-            {
-                return (dataList == null ? 0 : dataList.Count) + (eventListEx == null ? 0 : eventListEx.Count); 
-            } 
-        }
         protected override void SelectSingleData()
         {
             base.SelectSingleData();
@@ -108,7 +105,7 @@ namespace EpgTimer
         protected override void mc_ChangeOnOff(object sender, ExecutedRoutedEventArgs e)
         {
             //多数アイテム処理の警告。合計数に対して出すので、結構扱いづらい。
-            if (MenuUtil.CautionManyMessage(this.itemCount, "簡易予約/有効←→無効") == false) return;
+            if (MenuUtil.CautionManyMessage(this.ItemCount, "簡易予約/有効←→無効") == false) return;
 
             if (MenuUtil.ReserveChangeOnOff(dataList, this.recSettingView, false) == false) return;
             IsCommandExecuted = MenuUtil.ReserveAdd(eventListEx, this.recSettingView, 0, false);
@@ -147,50 +144,20 @@ namespace EpgTimer
         }
         protected override void mc_Delete(object sender, ExecutedRoutedEventArgs e)
         {
-            if (dataList.Count != 0)
-            {
-                if (e.Command == EpgCmds.DeleteAll)
-                {
-                    if (CmdExeUtil.CheckAllDeleteCancel(e, dataList.Count) == true)
-                    { return; }
-                }
-                else
-                {
-                    if (CmdExeUtil.CheckKeyboardDeleteCancel(e, dataList.Select(data => data.Title).ToList()) == true)
-                    { return; }
-                }
-                IsCommandExecuted = MenuUtil.ReserveDelete(dataList);
-            }
+            if (mcs_DeleteCheck(e) == false) return;
+            IsCommandExecuted = MenuUtil.ReserveDelete(dataList);
         }
-        protected override void mc_JumpTable(object sender, ExecutedRoutedEventArgs e)
-        {
-            var param = e.Parameter as EpgCmdParam;
-            if (param == null) return;
-
-            if (param.Code == CtxmCode.EpgView)
-            {
-                param.ID = 0;//実際は設定するまでもなく、初期値0。
-                BlackoutWindow.NowJumpTable = true;
-                new BlackoutWindow(mainWindow).showWindow(mainWindow.tabItem_epg.Header.ToString());
-
-                EpgCmds.ViewChgMode.Execute(e.Parameter, (IInputElement)sender);
-                IsCommandExecuted = true;
-            }
-            else
-            {
-                mcs_JumpTab(CtxmCode.EpgView);
-            }
-        }
-        protected override void mcs_SetBlackoutWindow(SearchItem item = null)
+        protected override SearchItem mcs_GetSearchItem()
         {
             if (dataList.Count != 0)//予約情報優先
             {
-                BlackoutWindow.SelectedData = new ReserveItem(dataList[0]);
+                return new ReserveItem(dataList[0]);
             }
             else if (eventList.Count != 0)
             {
-                BlackoutWindow.SelectedData = new SearchItem(eventList[0]);
+                return new SearchItem(eventList[0]);
             }
+            return null;
         }
         protected override ReserveData mcs_GetNextReserve()
         {
@@ -247,19 +214,13 @@ namespace EpgTimer
         protected override void mc_InfoSearchTitle(object sender, ExecutedRoutedEventArgs e)
         {
             //番組情報優先
-            MenuUtil.OpenInfoSearchDialog(headDataEv.DataTitle, CmdExeUtil.IsKeyGesture(e));
-            IsCommandExecuted = true;
+            IsCommandExecuted = true == MenuUtil.OpenInfoSearchDialog(headDataEv.DataTitle, CmdExeUtil.IsKeyGesture(e));
         }
         protected override void mc_SearchTitle(object sender, ExecutedRoutedEventArgs e)
         {
             //番組情報優先
             MenuUtil.SearchTextWeb(headDataEv.DataTitle, CmdExeUtil.IsKeyGesture(e));
             IsCommandExecuted = true;
-        }
-        public void ViewChangeModeSupport()
-        {
-            var cmdPrm = new cmdOption((s, e) => mcs_SetBlackoutWindow(), null, cmdExeType.SingleItem, false, false);
-            GetExecute(cmdPrm)(null, null);
         }
         protected override void mcs_ctxmLoading_switch(ContextMenu ctxm, MenuItem menu)
         {
@@ -368,7 +329,7 @@ namespace EpgTimer
                 return base.GetCmdMessage(icmd);
             }
 
-            string cmdMsg = base.cmdMessage[icmd];
+            string cmdMsg = cmdMessage[icmd];
             if (icmd == EpgCmds.Add && eventListEx.Count == 0)
             {
                 return null;
@@ -378,7 +339,7 @@ namespace EpgTimer
                 if (eventListEx.Count == 0) cmdMsg = "有効・無効切替を実行";
                 else if (dataList.Count == 0) cmdMsg = "簡易予約を実行";
             }
-            return GetCmdMessageFormat(cmdMsg, this.itemCount);
+            return GetCmdMessageFormat(cmdMsg, this.ItemCount);
         }
     }
 }

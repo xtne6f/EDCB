@@ -204,7 +204,7 @@ namespace EpgTimer
                 ButtonGen("再接続", OpenConnectDialog);
                 ButtonGen("再接続(前回)", () => ConnectCmd());
                 ButtonGen("検索", OpenSearchDialog);
-                ButtonGen("予約簡易検索", OpenInfoSearchDialog);
+                ButtonGen("予約情報検索", OpenInfoSearchDialog);
                 ButtonGen("スタンバイ", () => SuspendCmd(1));
                 ButtonGen("休止", () => SuspendCmd(2));
                 ButtonGen("終了", CloseCmd);
@@ -218,11 +218,11 @@ namespace EpgTimer
 
                 //検索ボタンは他と共通でショートカット割り振られているので、その部分はコマンド側で処理する。
                 this.CommandBindings.Add(new CommandBinding(EpgCmds.Search, (sender, e) => CommonButtons_Click("検索")));
-                this.CommandBindings.Add(new CommandBinding(EpgCmds.InfoSearch, (sender, e) => CommonButtons_Click("予約簡易検索")));
+                this.CommandBindings.Add(new CommandBinding(EpgCmds.InfoSearch, (sender, e) => CommonButtons_Click("予約情報検索")));
                 mBinds.AddInputCommand(EpgCmds.Search);
                 mBinds.AddInputCommand(EpgCmds.InfoSearch);
                 SetSearchButtonTooltip(buttonList["検索"]);
-                SetInfoSearchButtonTooltip(buttonList["予約簡易検索"]);
+                SetInfoSearchButtonTooltip(buttonList["予約情報検索"]);
 
                 if (CommonManager.Instance.NWMode == false)
                 {
@@ -456,7 +456,7 @@ namespace EpgTimer
                 }
             }
             EmphasizeButton(SearchWindow.HasHideWindow, "検索");
-            EmphasizeButton(InfoSearchWindow.HasHideWindow, "予約簡易検索");
+            EmphasizeButton(InfoSearchWindow.HasHideWindow, "予約情報検索");
         }
 
         TabItem TabButtonAdd(string id)
@@ -479,7 +479,7 @@ namespace EpgTimer
 
             //検索ボタン用のツールチップ設定。
             if (id == "検索") SetSearchButtonTooltip(ti);
-            if (id == "予約簡易検索") SetInfoSearchButtonTooltip(ti);
+            if (id == "予約情報検索") SetInfoSearchButtonTooltip(ti);
 
             tabControl_main.Items.Add(ti);
             return ti;
@@ -1663,9 +1663,11 @@ namespace EpgTimer
                     tab = this.tabItem_AutoAdd;
                     this.autoAddView.tabItem_manualAutoAdd.IsSelected = true;
                     break;
-                default://CtxmCode.EpgView
+                case CtxmCode.EpgView:
                     tab = this.tabItem_epg;
                     break;
+                default:
+                    return;
             }
             BlackoutWindow.NowJumpTable = true;
             new BlackoutWindow(this).showWindow(tab.Header.ToString());

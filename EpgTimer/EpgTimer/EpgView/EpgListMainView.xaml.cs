@@ -62,6 +62,7 @@ namespace EpgTimer
         }
         public override void RefreshMenu()
         {
+            base.RefreshMenu();
             mBinds.ResetInputBindings(this, listView_event);
             mm.CtxmGenerateContextMenu(listView_event.ContextMenu, CtxmCode.EpgView, true);
         }

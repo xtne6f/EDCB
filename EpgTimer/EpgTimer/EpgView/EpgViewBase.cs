@@ -29,11 +29,13 @@ namespace EpgTimer.EpgView
 
             //コマンド集の初期化
             mc = new CmdExeReserve(this);
-            mc.EpgInfoOpenMode = Settings.Instance.EpgInfoOpenMode;
 
             //コマンド集にないものを登録
             mc.AddReplaceCommand(EpgCmds.ViewChgSet, (sender, e) => ViewSetting(this, null));
-            mc.AddReplaceCommand(EpgCmds.ViewChgMode, cm_chg_viewMode_Click);
+            mc.AddReplaceCommand(EpgCmds.ViewChgMode, mc_ViewChgMode);
+
+            //コマンド集を振り替えるもの
+            mc.AddReplaceCommand(EpgCmds.JumpTable, mc_JumpTable);
         }
 
         public virtual event ViewSettingClickHandler ViewSettingClick = null;
@@ -45,7 +47,7 @@ namespace EpgTimer.EpgView
         }
 
         /// <summary>右クリックメニュー 表示モードイベント呼び出し</summary>
-        protected void cm_chg_viewMode_Click(object sender, ExecutedRoutedEventArgs e)
+        protected void mc_ViewChgMode(object sender, ExecutedRoutedEventArgs e)
         {
             try
             {
@@ -54,7 +56,7 @@ namespace EpgTimer.EpgView
 
                 //BlackWindowに状態を登録。
                 //コマンド集の機能による各ビューの共用メソッド。
-                mc.ViewChangeModeSupport();
+                BlackoutWindow.SelectedData = mc.GetJumpTabItem();
 
                 CustomEpgTabInfo setInfo = setViewInfo.Clone();
                 setInfo.ViewMode = param.ID;
@@ -62,14 +64,27 @@ namespace EpgTimer.EpgView
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
+        protected void mc_JumpTable(object sender, ExecutedRoutedEventArgs e)
+        {
+            var param = e.Parameter as EpgCmdParam;
+            if (param == null) return;
 
-        public virtual void RefreshMenu() { }
+            param.ID = 0;//実際は設定するまでもなく、初期値0。
+            BlackoutWindow.NowJumpTable = true;
+            new BlackoutWindow(ViewUtil.MainWindow).showWindow(ViewUtil.MainWindow.tabItem_epg.Header.ToString());
+
+            mc_ViewChgMode(sender, e);
+        }
+
+        public virtual void RefreshMenu()
+        {
+            mc.EpgInfoOpenMode = Settings.Instance.EpgInfoOpenMode;
+        }
 
         public virtual CustomEpgTabInfo GetViewMode()
         {
             return setViewInfo == null ? null : setViewInfo.Clone();
         }
-
         public virtual void SetViewMode(CustomEpgTabInfo setInfo)
         {
             setViewInfo = setInfo.Clone();

@@ -48,7 +48,8 @@ namespace EpgTimer
 
         public static void CopyContent2Clipboard(ReserveData resInfo, bool NotToggle = false)
         {
-            CopyContent2Clipboard(resInfo.SearchEventInfo(true), NotToggle);
+            EpgEventInfo info = resInfo == null ? null : resInfo.SearchEventInfo(true);
+            CopyContent2Clipboard(info, NotToggle);
         }
 
         public static void CopyContent2Clipboard(RecFileInfo recInfo, bool NotToggle = false)
@@ -565,14 +566,14 @@ namespace EpgTimer
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
             return false;
         }
-        public static bool AutoAddChangeOnOffKeyEnabled(IEnumerable<AutoAddData> itemlist)
+        public static bool AutoAddChangeOnOffKeyEnabled(IEnumerable<AutoAddData> itemlist, bool cautionMany = true)
         {
             try
             {
                 if (AutoAddChangeKeyEnabledCautionMany(itemlist) == false) return false;
 
                 foreach (var item in itemlist) item.IsEnabled = !item.IsEnabled;
-                return AutoAddChange(itemlist, false);
+                return AutoAddChange(itemlist, false, cautionMany);
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
             return false;
@@ -694,14 +695,14 @@ namespace EpgTimer
 
             return syncList;
         }
-        public static bool AutoAddDelete(IEnumerable<AutoAddData> itemlist)
+        public static bool AutoAddDelete(IEnumerable<AutoAddData> itemlist, bool cautionMany = true)
         {
-            return AutoAddDelete(itemlist, Settings.Instance.SyncResAutoAddDelete, false);
+            return AutoAddDelete(itemlist, Settings.Instance.SyncResAutoAddDelete, false, cautionMany);
         }
-        public static bool AutoAddDelete(IEnumerable<AutoAddData> itemlist, bool SyncDelete, bool SyncAll)
+        public static bool AutoAddDelete(IEnumerable<AutoAddData> itemlist, bool SyncDelete, bool SyncAll, bool cautionMany = true)
         {
             //操作前にリストを作成する
-            return AutoAddCmdSend(itemlist, 2, SyncDelete == false ? null : AutoAddSyncDeleteList(itemlist, SyncAll));
+            return AutoAddCmdSend(itemlist, 2, SyncDelete == false ? null : AutoAddSyncDeleteList(itemlist, SyncAll), null, cautionMany);
         }
         private static List<ReserveData> AutoAddSyncDeleteList(IEnumerable<AutoAddData> itemlist, bool SyncAll)
         {
@@ -802,22 +803,22 @@ namespace EpgTimer
             return true;
         }
 
-        public static bool RecinfoChgProtect(List<RecFileInfo> itemlist)
+        public static bool RecinfoChgProtect(List<RecFileInfo> itemlist, bool cautionMany = true)
         {
             try
             {
                 itemlist.ForEach(item => item.ProtectFlag = (byte)(item.ProtectFlag == 0 ? 1 : 0));
-                return ReserveCmdSend(itemlist, cmd.SendChgProtectRecInfo, "録画情報の変更");
+                return ReserveCmdSend(itemlist, cmd.SendChgProtectRecInfo, "録画情報の変更", cautionMany);
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
             return false;
         }
-        public static bool RecinfoDelete(List<RecFileInfo> itemlist)
+        public static bool RecinfoDelete(List<RecFileInfo> itemlist, bool cautionMany = true)
         {
             try
             {
                 List<uint> list = itemlist.Select(item => item.ID).ToList();
-                return ReserveCmdSend(list, cmd.SendDelRecInfo, "録画情報の削除");
+                return ReserveCmdSend(list, cmd.SendDelRecInfo, "録画情報の削除", cautionMany);
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
             return false;

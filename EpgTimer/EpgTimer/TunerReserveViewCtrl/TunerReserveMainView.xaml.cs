@@ -72,7 +72,7 @@ namespace EpgTimer
         void tunerReserveView_LeftDoubleClick(object sender, Point cursorPos)
         {
             clickPos = cursorPos;
-            EpgCmds.ShowDialog.Execute(sender, cmdMenu);
+            EpgCmds.ShowDialog.Execute(null, cmdMenu);
         }
 
         /// <summary>右ボタンクリック</summary>
