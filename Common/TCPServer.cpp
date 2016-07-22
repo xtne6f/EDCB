@@ -244,6 +244,11 @@ UINT WINAPI CTCPServer::ServerThread(LPVOID pParam)
 					if( RecvAll(sock, (char*)head, sizeof(DWORD)*2, 0) != sizeof(DWORD)*2 ){
 						break;
 					}
+					//‘æ2,3ƒoƒCƒg‚Í0‚Å‚È‚¯‚ê‚Î‚È‚ç‚È‚¢
+					if( HIWORD(head[0]) != 0 ){
+						_OutputDebugString(L"Deny TCP cmd:0x%08x\r\n", head[0]);
+						break;
+					}
 					stCmd.param = head[0];
 					stCmd.dataSize = head[1];
 
