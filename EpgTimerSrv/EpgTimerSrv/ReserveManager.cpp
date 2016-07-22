@@ -1823,12 +1823,12 @@ bool CReserveManager::CloseNWTV()
 	return false;
 }
 
-bool CReserveManager::GetRecFilePath(DWORD reserveID, wstring& filePath, DWORD* ctrlID, DWORD* processID) const
+bool CReserveManager::GetRecFilePath(DWORD reserveID, wstring& filePath) const
 {
 	CBlockLock lock(&this->managerLock);
 
 	for( auto itr = this->tunerBankMap.cbegin(); itr != this->tunerBankMap.end(); itr++ ){
-		if( itr->second->GetRecFilePath(reserveID, filePath, ctrlID, processID) ){
+		if( itr->second->GetRecFilePath(reserveID, filePath) ){
 			return true;
 		}
 	}

@@ -1020,15 +1020,13 @@ void CTunerBankCtrl::CloseNWTV()
 	}
 }
 
-bool CTunerBankCtrl::GetRecFilePath(DWORD reserveID, wstring& filePath, DWORD* ctrlID, DWORD* processID) const
+bool CTunerBankCtrl::GetRecFilePath(DWORD reserveID, wstring& filePath) const
 {
 	auto itr = this->reserveMap.find(reserveID);
 	if( itr != this->reserveMap.end() && itr->second.state == TR_REC ){
 		int i = itr->second.ctrlID[0] != 0 ? 0 : 1;
 		if( itr->second.recFilePath[i].empty() == false ){
 			filePath = itr->second.recFilePath[i];
-			*ctrlID = itr->second.ctrlID[i];
-			*processID = this->tunerPid;
 			return true;
 		}
 	}

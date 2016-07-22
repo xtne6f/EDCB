@@ -110,8 +110,8 @@ public:
 	bool SetNWTVCh(bool nwUdp, bool nwTcp, const SET_CH_INFO& chInfo);
 	//ネットワークモードのチューナを閉じる
 	void CloseNWTV();
-	//予約が録画中であればその録画ファイル名などを取得する
-	bool GetRecFilePath(DWORD reserveID, wstring& filePath, DWORD* ctrlID, DWORD* processID) const;
+	//予約が録画中であればその録画ファイル名を取得する
+	bool GetRecFilePath(DWORD reserveID, wstring& filePath) const;
 	//予約情報をもとにファイル名を生成する
 	static wstring ConvertRecName(
 		LPCWSTR recNamePlugIn, const SYSTEMTIME& startTime, DWORD durationSec, LPCWSTR eventName, WORD onid, WORD tsid, WORD sid, WORD eid,

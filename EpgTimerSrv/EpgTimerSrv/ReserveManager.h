@@ -68,8 +68,8 @@ public:
 	bool SetNWTVCh(bool nwUdp, bool nwTcp, const SET_CH_INFO& chInfo, const vector<DWORD>& tunerIDList);
 	//ネットワークモードのチューナを閉じる
 	bool CloseNWTV();
-	//予約が録画中であればその録画ファイル名などを取得する
-	bool GetRecFilePath(DWORD reserveID, wstring& filePath, DWORD* ctrlID, DWORD* processID) const;
+	//予約が録画中であればその録画ファイル名を取得する
+	bool GetRecFilePath(DWORD reserveID, wstring& filePath) const;
 	//指定EPGイベントは録画済みかどうか
 	bool IsFindRecEventInfo(const EPGDB_EVENT_INFO& info, WORD chkDay) const;
 	//自動予約によって作成された指定イベントの予約を無効にする
