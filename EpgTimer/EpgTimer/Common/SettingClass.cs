@@ -765,55 +765,11 @@ namespace EpgTimer
 
                 if (Instance.ViewButtonList.Count == 0)
                 {
-                    if (nwMode == false)
-                    {
-                        Instance.ViewButtonList.Add("設定");
-                        Instance.ViewButtonList.Add(ViewButtonSpacer);
-                        Instance.ViewButtonList.Add("検索");
-                        Instance.ViewButtonList.Add(ViewButtonSpacer);
-                        Instance.ViewButtonList.Add("スタンバイ");
-                        Instance.ViewButtonList.Add("休止");
-                        Instance.ViewButtonList.Add(ViewButtonSpacer);
-                        Instance.ViewButtonList.Add("EPG取得");
-                        Instance.ViewButtonList.Add(ViewButtonSpacer);
-                        Instance.ViewButtonList.Add("EPG再読み込み");
-                        Instance.ViewButtonList.Add(ViewButtonSpacer);
-                        Instance.ViewButtonList.Add("終了");
-                    }
-                    else
-                    {
-                        Instance.ViewButtonList.Add("設定");
-                        Instance.ViewButtonList.Add(ViewButtonSpacer);
-                        Instance.ViewButtonList.Add("再接続");
-                        Instance.ViewButtonList.Add(ViewButtonSpacer);
-                        Instance.ViewButtonList.Add("検索");
-                        Instance.ViewButtonList.Add(ViewButtonSpacer);
-                        Instance.ViewButtonList.Add("EPG取得");
-                        Instance.ViewButtonList.Add(ViewButtonSpacer);
-                        Instance.ViewButtonList.Add("EPG再読み込み");
-                        Instance.ViewButtonList.Add(ViewButtonSpacer);
-                        Instance.ViewButtonList.Add("終了");
-                    }
+                    Instance.ViewButtonList.AddRange(GetViewButtonDefIDs(nwMode));
                 }
                 if (Instance.TaskMenuList.Count == 0)
                 {
-                    if (nwMode == false)
-                    {
-                        Instance.TaskMenuList.Add("設定");
-                        Instance.TaskMenuList.Add(TaskMenuSeparator);
-                        Instance.TaskMenuList.Add("スタンバイ");
-                        Instance.TaskMenuList.Add("休止");
-                        Instance.TaskMenuList.Add(TaskMenuSeparator);
-                        Instance.TaskMenuList.Add("終了");
-                    }
-                    else
-                    {
-                        Instance.TaskMenuList.Add("設定");
-                        Instance.TaskMenuList.Add(TaskMenuSeparator);
-                        Instance.TaskMenuList.Add("再接続");
-                        Instance.TaskMenuList.Add(TaskMenuSeparator);
-                        Instance.TaskMenuList.Add("終了");
-                    }
+                    Instance.TaskMenuList.AddRange(GetTaskMenuDefIDs(nwMode));
                 }
                 if (Instance.ReserveListColumn.Count == 0)
                 {
@@ -993,6 +949,70 @@ namespace EpgTimer
         public static List<string> GetTaskMenuAllIDs()
         {
             return new List<string> { TaskMenuSeparator }.Concat(viewButtonIDs).ToList();
+        }
+        public static List<string> GetViewButtonDefIDs(bool nwMode)
+        {
+            if (nwMode == false)
+            {
+                return new List<string>
+                {
+                    "設定",
+                    ViewButtonSpacer,
+                    "検索",
+                    ViewButtonSpacer,
+                    "スタンバイ",
+                    "休止",
+                    ViewButtonSpacer,
+                    "EPG取得",
+                    ViewButtonSpacer,
+                    "EPG再読み込み",
+                    ViewButtonSpacer,
+                    "終了",
+                };
+            }
+            else
+            {
+                return new List<string>
+                {
+                    "設定",
+                    ViewButtonSpacer,
+                    "再接続",
+                    ViewButtonSpacer,
+                    "検索",
+                    ViewButtonSpacer,
+                    "EPG取得",
+                    ViewButtonSpacer,
+                    "EPG再読み込み",
+                    ViewButtonSpacer,
+                    "終了",
+                };
+            }
+        }
+        public static List<string> GetTaskMenuDefIDs(bool nwMode)
+        {
+            if (nwMode == false)
+            {
+                return new List<string>
+                {
+                    "設定",
+                    TaskMenuSeparator,
+                    "スタンバイ",
+                    "休止",
+                    TaskMenuSeparator,
+                    "終了",
+                };
+            }
+            else
+            {
+                return new List<string>
+                {
+                    "設定",
+                    TaskMenuSeparator,
+                    "再接続",
+                    TaskMenuSeparator,
+                    "終了",
+                };
+            }
         }
 
         public static List<ListColumnInfo> GetDefaultColumn(Type t)

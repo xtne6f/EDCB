@@ -551,11 +551,13 @@ namespace EpgTimer.Setting
             }
         }
 
+        BoxExchangeEditor bxb;
+        BoxExchangeEditor bxt;
         private void listBox_Button_Set()
         {
             //ボタン表示画面の上下ボタンのみ他と同じものを使用する。
-            var bxb = new BoxExchangeEditor(this.listBox_itemBtn, this.listBox_viewBtn, true);
-            var bxt = new BoxExchangeEditor(this.listBox_itemTask, this.listBox_viewTask, true);
+            bxb = new BoxExchangeEditor(this.listBox_itemBtn, this.listBox_viewBtn, true);
+            bxt = new BoxExchangeEditor(this.listBox_itemTask, this.listBox_viewTask, true);
 
             //上部表示ボタン関係
             bxb.AllowDuplication(StringItem.Items(Settings.ViewButtonSpacer), StringItem.Cloner, StringItem.Comparator);
@@ -631,6 +633,18 @@ namespace EpgTimer.Setting
 
             bx.bxDeleteItems(bx.TargetBox);
             reLoadButtonItem(bx, src);
+        }
+        private void button_btnIni_Click(object sender, RoutedEventArgs e)
+        {
+            listBox_viewBtn.Items.Clear();
+            listBox_viewBtn.Items.AddItems(StringItem.Items(Settings.GetViewButtonDefIDs(CommonManager.Instance.NWMode)));
+            reLoadButtonItem(bxb, buttonItem);
+        }
+        private void button_taskIni_Click(object sender, RoutedEventArgs e)
+        {
+            listBox_viewTask.Items.Clear();
+            listBox_viewTask.Items.AddItems(StringItem.Items(Settings.GetTaskMenuDefIDs(CommonManager.Instance.NWMode)));
+            reLoadButtonItem(bxt, taskItem);
         }
         private void reLoadButtonItem(BoxExchangeEditor bx, List<string> src)
         {

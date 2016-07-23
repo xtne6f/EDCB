@@ -99,6 +99,7 @@
                                 <ColumnDefinition Width="3*" />
                             </Grid.ColumnDefinitions>
                             <Label Content="表示ボタン"/>
+                            <Button Content="初期化" Name="button_btnIni" MinWidth="47" HorizontalAlignment="Right" VerticalAlignment="Bottom" Click="button_btnIni_Click" />
                             <ListBox Grid.Row="2" Name="listBox_viewBtn" VerticalAlignment="Stretch" SelectionMode="Extended" />
                             <StackPanel Grid.Row="2" Grid.Column="2" MinWidth="47">
                                 <Button Content="↑" Name="button_btnUp" />
@@ -140,6 +141,7 @@
                                 <ColumnDefinition Width="3*" />
                             </Grid.ColumnDefinitions>
                             <Label Content="表示ボタン"/>
+                            <Button Content="初期化" Name="button_taskIni" MinWidth="47" HorizontalAlignment="Right" VerticalAlignment="Bottom" Click="button_taskIni_Click" />
                             <ListBox Grid.Row="2" Name="listBox_viewTask" VerticalAlignment="Stretch" SelectionMode="Extended" />
                             <StackPanel Grid.Row="2" Grid.Column="2"  MinWidth="47">
                                 <Button Content="↑" Name="button_taskUp" />
