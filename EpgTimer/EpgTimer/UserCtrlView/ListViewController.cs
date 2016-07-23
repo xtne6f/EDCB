@@ -120,7 +120,9 @@ namespace EpgTimer
                 lv.ContextMenu.Closed += (sender, e) => ClickTarget = null;
             }
 
-            gvSelector = new GridViewSelector(gv, this.columnSaveList);
+            gvSelector = new GridViewSelector(gv,
+                column_SavePath == null ? null as Func<List<ListColumnInfo>> : () => Settings.Instance.GetSettings(column_SavePath) as List<ListColumnInfo>,
+                column_SavePath == null ? null as Func<List<ListColumnInfo>> : () => Settings.GetDefaultColumn(Owner.GetType()));
             gvSorter = new GridViewSorter();
             gvInitialSort();
 
@@ -144,15 +146,11 @@ namespace EpgTimer
         {
             try
             {
-                gvSelector.SaveSize(this.columnSaveList);
+                gvSelector.SaveSize();
                 Settings.Instance.SetSettings(sort_HeaderSavePath, this.gvSorter.LastHeader);
                 Settings.Instance.SetSettings(sort_DirectionSavePath, this.gvSorter.LastDirection);
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
-        }
-        private List<ListColumnInfo> columnSaveList
-        {
-            get { return Settings.Instance.GetSettings(column_SavePath) as List<ListColumnInfo>; }
         }
 
         public bool ReloadInfoData(Func<List<T>, bool> reloadData)
