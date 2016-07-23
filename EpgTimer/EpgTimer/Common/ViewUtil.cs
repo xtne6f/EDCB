@@ -540,5 +540,20 @@ namespace EpgTimer
             return block;
         }
 
+        public static void RenameHeader(this IEnumerable<GridViewColumn> list, string uid, object title, string tag = null)
+        {
+            foreach(var item in list)
+            {
+                if(item.Header is GridViewColumnHeader)
+                {
+                    var header = item.Header as GridViewColumnHeader;
+                    if (header.Uid == uid)
+                    {
+                        header.Content = title;
+                        if (tag != null) header.Tag = tag;
+                    }
+                }
+            }
+        }
     }
 }

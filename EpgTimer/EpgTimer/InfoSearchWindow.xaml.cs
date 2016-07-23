@@ -40,7 +40,14 @@ namespace EpgTimer
             try
             {
                 //リストビュー関連の設定
-                var list_columns = Resources["RecSettingViewColumns"] as GridViewColumnList;
+                var list_columns = Resources["ReserveItemViewColumns"] as GridViewColumnList;
+                list_columns.AddRange(Resources["RecSettingViewColumns"] as GridViewColumnList);
+                list_columns.RenameHeader("StartTime", "日時/次の予約");
+                list_columns.RenameHeader("EventName", "番組名/ANDキーワード");
+                list_columns.RenameHeader("ProgramContent", "番組内容/その他情報");
+                list_columns.RenameHeader("IsEnabled", "有効・プロテクト", "有効・無効/プロテクト切替え");
+                list_columns.RenameHeader("Comment", "予約/録画状況");
+                list_columns.RenameHeader("RecFileName", "予定/録画ファイル名");
 
                 lstCtrl = new ListViewController<InfoSearchItem>(this);
                 lstCtrl.SetSavePath(CommonUtil.NameOf(() => Settings.Instance.InfoSearchWndColumn)

@@ -5,6 +5,7 @@ using System.Windows.Media;
 using System.Windows.Controls;
 using System.Windows;
 using System.Windows.Input;
+using System.IO;
 
 namespace EpgTimer
 {
@@ -158,7 +159,7 @@ namespace EpgTimer
                 else return "";
             }
         }
-        public String EtcInfo
+        public String ProgramContent
         {
             get
             {
@@ -171,6 +172,34 @@ namespace EpgTimer
                 return ret.Substring(0, Math.Min(50, ret.Length));
             }
         }
+        public List<String> RecFileName
+        {
+            get
+            {
+                if      (ViewItem is ReserveItem)           return ((ReserveItem)ViewItem).RecFileName;
+                else if (ViewItem is RecInfoItem)           return new List<string> { Path.GetFileName(((RecInfoItem)ViewItem).RecFilePath) };
+                else if (Data is EpgAutoAddData)            return new ReserveItem(((EpgAutoAddData)Data).GetNextReserve()).RecFileName;
+                else                                        return new List<string>();
+            }
+        }
+        public String ReserveTuner
+        {
+            get
+            {
+                if      (ViewItem is ReserveItem)           return ((ReserveItem)ViewItem).ReserveTuner;
+                else if (Data is EpgAutoAddData)            return new ReserveItem(((EpgAutoAddData)Data).GetNextReserve()).ReserveTuner;
+                else                                        return "";
+            }
+        }
+        public override List<String> RecFolder
+        {
+            get
+            {
+                if      (ViewItem is RecInfoItem)           return new List<string> { Path.GetDirectoryName(((RecInfoItem)ViewItem).RecFilePath) };
+                else                                        return base.RecFolder;
+            }
+        }
+
         public String GetSearchText(bool TitleOnly)
         {
             if (TitleOnly == false)
