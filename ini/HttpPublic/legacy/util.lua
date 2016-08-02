@@ -2,8 +2,7 @@
 function _ConvertEpgInfoText2(onid, tsid, sid, eid)
   local s, v = '', edcb.SearchEpg(onid, tsid, sid, eid)
   if v then
-    s=s..(v.startTime and os.date('%Y/%m/%d(%a) %H:%M～', os.time(v.startTime))
-      ..(v.durationSecond and os.date('%H:%M', os.time(v.startTime)+v.durationSecond) or '未定') or '未定')..'\n'
+    s=s..(v.startTime and FormatTimeAndDuration(os.time(v.startTime), v.durationSecond)..(v.durationSecond and '' or '～未定') or '未定')..'\n'
     for i,w in ipairs(edcb.GetServiceList() or {}) do
       if w.onid==v.onid and w.tsid==v.tsid and w.sid==v.sid then
         s=s..w.service_name
@@ -88,20 +87,26 @@ function RecSettingTemplate(rs)
   end
   s=s..'</select><br>\n'
     ..'録画後実行bat（プリセットによる変更のみ対応）: '..rs.batFilePath..'<br>\n'
-    ..'録画フォルダ、使用プラグイン（プリセットによる変更のみ対応）:<table border="1">'
+    ..'録画フォルダ、使用プラグイン（プリセットによる変更のみ対応）:<table>'
     ..'<tr><td>フォルダ</td><td>出力PlugIn</td><td>ファイル名PlugIn</td></tr>\n'
   for i,v in ipairs(rs.recFolderList) do
     s=s..'<tr><td>'..v.recFolder..'</td><td>'..v.writePlugIn..'</td><td>'..v.recNamePlugIn..'</td></tr>\n'
   end
   s=s..'</table>'
     ..'部分受信サービス:<br><input type="checkbox" name="partialRecFlag" value="1"'..(rs.partialRecFlag~=0 and ' checked="checked"' or '')..'>別ファイルに同時出力する<br>\n'
-    ..'録画フォルダ、使用プラグイン（プリセットによる変更のみ対応）:<table border="1">'
+    ..'録画フォルダ、使用プラグイン（プリセットによる変更のみ対応）:<table>'
     ..'<tr><td>フォルダ</td><td>出力PlugIn</td><td>ファイル名PlugIn</td></tr>\n'
   for i,v in ipairs(rs.partialRecFolder) do
     s=s..'<tr><td>'..v.recFolder..'</td><td>'..v.writePlugIn..'</td><td>'..v.recNamePlugIn..'</td></tr>\n'
   end
   s=s..'</table><br>\n'
   return s
+end
+
+--時間の文字列を取得する
+function FormatTimeAndDuration(t,dur)
+  return os.date('%Y/%m/%d(',t)..({'日','月','火','水','木','金','土',})[1+os.date('%w',t)]
+    ..os.date(') %H:%M',t)..(dur and os.date('～%H:%M',t+dur) or '')
 end
 
 --ドキュメントルートへの相対パスを取得する

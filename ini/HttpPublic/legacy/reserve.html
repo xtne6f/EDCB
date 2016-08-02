@@ -3,44 +3,52 @@ PAGE_COUNT=30
 dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
 
 ct=[=[
-<!doctype html><html lang="ja">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="ja">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link rel="stylesheet" type="text/css" href="default.css">
 <title>EpgTimer</title>
 </head>
 <body>
-予約一覧<br><br>
-]=]
+<h1>予約一覧</h1>
+<div class="page-nav">
+  ]=]
 
 edcb.htmlEscape=15
 a=edcb.GetReserveData()
 table.sort(a, function(a,b) return os.time(a.startTime) < os.time(b.startTime) end)
 pageIndex=tonumber(mg.get_var(mg.request_info.query_string,'page')) or 0
 for i=1,(#a+PAGE_COUNT-1)/PAGE_COUNT do
-  ct=ct..(i-1==pageIndex and ((i-1)*PAGE_COUNT+1)..'～ ' or '<a href=\"reserve2.html?page='..(i-1)..'">'..((i-1)*PAGE_COUNT+1)..'～</a> ')
+  ct=ct..(i-1==pageIndex and ((i-1)*PAGE_COUNT+1)..'～ ' or '<a href=\"reserve.html?page='..(i-1)..'">'..((i-1)*PAGE_COUNT+1)..'～</a> ')
 end
 
 ct=ct..[=[
-<br><br>
-<table border="1">
+
+</div>
+<div id="main">
+  <table>
 ]=]
 
 ctt={}
 for i=math.max(1,pageIndex*PAGE_COUNT+1),math.min(#a,(pageIndex+1)*PAGE_COUNT) do
   v=a[i]
-  bg=v.recSetting.recMode==5 and ' bgcolor="#c8c8c8"'
-     or v.overlapMode==1 and ' bgcolor="#ffff00"'
-     or v.overlapMode==2 and ' bgcolor="#ff0000"' or ''
-  table.insert(ctt, '<tr'..bg..'><td>'..os.date('%Y/%m/%d(%a) %H:%M～', os.time(v.startTime))..os.date('%H:%M', os.time(v.startTime)+v.durationSecond)
-    ..'</td><td>'..v.stationName..'</td><td align="right" rowspan="2"><a href="reserveinfo.html?id='..v.reserveID
-    ..'">詳細</a></td></tr><tr'..bg..'><td colspan="2">'..v.title..'</td></tr>\n')
+  table.insert(ctt, '    <tr'
+    ..(v.recSetting.recMode==5 and ' class="disabled"' or v.overlapMode==1 and ' class="partially"' or v.overlapMode==2 and ' class="shortage"' or '')
+    ..'><td><a href="reserveinfo.html?id='..v.reserveID..'">'
+    ..FormatTimeAndDuration(os.time(v.startTime), v.durationSecond)
+    ..'</a></td><td>'..v.stationName..'</td><td>'..v.title..'</td></tr>\n')
 end
 
 ct=ct..table.concat(ctt)..[=[
-</table>
-<a href="view.lua">view.lua</a> (<a href="view.lua?n=10">tcp</a>)
-<br><br>
-<a href="index.html">メニューへ</a><br>
+  </table>
+  <div class="aside">
+    <a href="view.lua">view.lua</a> (<a href="view.lua?n=10">tcp</a>)
+  </div>
+</div>
+<div id="footer">
+  <a href="index.html">メニューへ</a>
+</div>
 </body>
 </html>
 ]=]

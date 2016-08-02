@@ -3,14 +3,17 @@ PAGE_COUNT=30
 dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
 
 ct=[=[
-<!doctype html><html lang="ja">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="ja">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link rel="stylesheet" type="text/css" href="default.css">
 <title>EpgTimer</title>
 </head>
 <body>
-自動予約登録　EPG予約一覧<br><br>
-]=]
+<h1>EPG予約一覧</h1>
+<div class="page-nav">
+  ]=]
 
 edcb.htmlEscape=15
 a=edcb.EnumAutoAdd()
@@ -20,9 +23,10 @@ for i=1,(#a+PAGE_COUNT-1)/PAGE_COUNT do
 end
 
 ct=ct..[=[
-<br><br>
-<a href="autoaddepginfo.html">新規追加</a><br><br>
-<table border="1">
+
+</div>
+<div id="main">
+  <table>
 ]=]
 
 ctt={}
@@ -37,17 +41,23 @@ for i=math.max(1,pageIndex*PAGE_COUNT+1),math.min(#a,(pageIndex+1)*PAGE_COUNT) d
       end
     end
   end
-  table.insert(ctt, '<tr><td>'..v.andKey..'</td><td>'..v.notKey..'</td><td>'
+  table.insert(ctt, '    <tr><td><a href="autoaddepginfo.html?id='..a[i].dataID..'">'
+    ..v.andKey..'&nbsp;</a></td><td>'..v.notKey..'</td><td>'
     ..(#v.contentList>0 and edcb.GetGenreName(v.contentList[1].content_nibble)..(#v.contentList>1 and 'など' or '') or '')..'</td><td>'
     ..serviceName..(#v.serviceList>1 and 'など' or '')..'</td><td>'
     ..(({'全サービス','指定サービスのみ','全サービス（デコード処理なし）','指定サービスのみ（デコード処理なし）','視聴','無効'})[a[i].recSetting.recMode+1] or '')
-    ..'</td><td><a href="autoaddepginfo.html?id='..a[i].dataID..'">詳細</a></td></tr>\n')
+    ..'</td></tr>\n')
 end
 
 ct=ct..table.concat(ctt)..[=[
-</table>
-<br><br>
-<a href="index.html">メニューへ</a><br>
+  </table>
+  <div class="aside">
+    <a href="autoaddepginfo.html">新規追加</a>
+  </div>
+</div>
+<div id="footer">
+  <a href="index.html">メニューへ</a>
+</div>
 </body>
 </html>
 ]=]
