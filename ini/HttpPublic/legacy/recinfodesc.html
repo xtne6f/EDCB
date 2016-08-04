@@ -19,7 +19,7 @@ edcb.htmlEscape=15
 v=edcb.GetRecFileInfo(id)
 if v then
   if w and NativeToDocumentPath(w.recFilePath) then
-    for i,ext in ipairs({'.webm',''}) do
+    for i,ext in ipairs({'.mp4','.webm',''}) do
       edcb.htmlEscape=0
       f=io.open(edcb.Convert('cp932', 'utf-8', w.recFilePath..ext), 'rb')
       edcb.htmlEscape=15
