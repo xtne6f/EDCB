@@ -39,27 +39,19 @@ namespace EpgTimer.Setting
 
             if (CommonManager.Instance.NWMode == true)
             {
-                tabItem1.Foreground = Brushes.Gray;
-                groupBox1.Foreground = Brushes.Gray;
-                radioButton_none.IsEnabled = false;
-                radioButton_standby.IsEnabled = false;
-                radioButton_suspend.IsEnabled = false;
-                radioButton_shutdown.IsEnabled = false;
-                checkBox_reboot.IsEnabled = false;
-                label1.IsEnabled = false;
-                label4.IsEnabled = false;
-                textBox_pcWakeTime.IsEnabled = false;
-                label2.IsEnabled = false;
-                label5.IsEnabled = false;
-                ViewUtil.DisableControlChildren(groupBox2);
+                tabItem1.Foreground = SystemColors.GrayTextBrush;
+                groupBox1.Foreground = SystemColors.GrayTextBrush;
+                ViewUtil.ChangeChildren(grid_rec_stanby, false);
+                button_standbyCtrl.IsEnabled = true;
+                groupBox2.IsEnabled = false;
 
+                tabControl1.SelectedItem = tabItem2;
                 checkBox_back_priority.IsEnabled = false;
                 checkBox_autoDel.IsEnabled = false;
                 checkBox_recname.IsEnabled = false;
                 comboBox_recname.IsEnabled = false;
                 button_recname.IsEnabled = false;
 
-                tabControl1.SelectedItem = tabItem2;
                 checkBox_tcpServer.IsEnabled = false;
                 label41.IsEnabled = false;
                 textBox_tcpPort.IsEnabled = false;
@@ -599,7 +591,7 @@ namespace EpgTimer.Setting
             new BoxExchangeEditor(null, this.listBox_service, true);
             var bxi = new BoxExchangeEditor(null, this.listBox_iEPG, true);
             bxi.targetBoxAllowKeyAction(this.listBox_iEPG, new KeyEventHandler((sender, e) => button_del.RaiseEvent(new RoutedEventArgs(Button.ClickEvent))));
-            listBox_iEPG.SelectionChanged += ViewUtil.ListBox_TextBoxSyncSelectionChanged(listBox_iEPG, textBox_station);
+            bxi.TargetBox.SelectionChanged += ViewUtil.ListBox_TextBoxSyncSelectionChanged(bxi.TargetBox, textBox_station);
             textBox_station.KeyDown += ViewUtil.KeyDown_Enter(button_add);
         }
         private void drag_drop(object sender, DragEventArgs e, Button add, Button ins)

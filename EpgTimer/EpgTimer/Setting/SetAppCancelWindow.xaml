@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="抑制条件" Height="487" Width="443" Loaded="Window_Loaded" ShowInTaskbar="False" WindowStartupLocation="CenterOwner" ResizeMode="NoResize">
 
-    <Grid>
+    <Grid Name="grid_main">
         <Label Content="指定プロセスが起動している場合" Height="28" HorizontalAlignment="Left" Margin="12,12,0,0" VerticalAlignment="Top" />
         <ListBox Height="100" Margin="41,46,26,0" Name="listBox_process" VerticalAlignment="Top" SelectionMode="Extended" />
         <Button Content="削除" Height="23" HorizontalAlignment="Left" Margin="43,152,0,0" Name="button_process_del" VerticalAlignment="Top" Width="52" />

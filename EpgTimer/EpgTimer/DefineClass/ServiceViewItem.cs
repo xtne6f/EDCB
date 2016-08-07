@@ -5,7 +5,7 @@ using System.Text;
 
 namespace EpgTimer
 {
-    public class ServiceViewItem : SelectableItem
+    public class ServiceViewItem : SelectableItemNWMode
     {
         public ServiceViewItem(ChSet5Item info)
         {

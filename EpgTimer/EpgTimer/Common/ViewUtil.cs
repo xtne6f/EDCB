@@ -263,11 +263,13 @@ namespace EpgTimer
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
 
+        /*/未使用
         public static void DisableControlChildren(Control ctrl)
         {
-            ctrl.Foreground = Brushes.Gray;
+            ctrl.Foreground = SystemColors.GrayTextBrush;
             ChangeChildren(ctrl, false);
         }
+        /*/
         public static void ChangeChildren(UIElement ele, bool enabled)
         {
             foreach (var child in LogicalTreeHelper.GetChildren(ele))
@@ -554,6 +556,15 @@ namespace EpgTimer
                     }
                 }
             }
+        }
+
+        //あらゆる意味で中途半端だけど、とりあえずこれで。
+        public static void DisableTextBoxWithMenu(TextBox txtBox)
+        {
+            txtBox.Background = SystemColors.ControlBrush;
+            txtBox.Foreground = SystemColors.GrayTextBrush;
+            txtBox.IsEnabled = true;
+            txtBox.IsReadOnly = true;
         }
     }
 }

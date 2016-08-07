@@ -5,7 +5,7 @@ using System.Text;
 
 namespace EpgTimer
 {
-    public class EpgCaptime : SelectableItem
+    public class EpgCaptime : SelectableItemNWMode
     {
         public string Time
         {

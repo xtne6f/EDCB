@@ -40,20 +40,25 @@ namespace EpgTimer.Setting
                 label1.IsEnabled = true;
                 textBox_setPath.IsEnabled = true;
                 button_setPath.IsEnabled = true;
-                label3.IsEnabled = true;
+                ViewUtil.DisableTextBoxWithMenu(textBox_exe);
+                button_exe.IsEnabled = true;
+                ViewUtil.DisableTextBoxWithMenu(textBox_cmdBon);
                 listBox_recFolder.IsEnabled = true;
-                label4.IsEnabled = true;
-                button_shortCut.IsEnabled = true;
+                ViewUtil.DisableTextBoxWithMenu(textBox_recFolder);
+                button_rec_open.IsEnabled = true;
+                ViewUtil.DisableTextBoxWithMenu(textBox_recInfoFolder);
+                button_recInfoFolder.IsEnabled = true;
                 label5.IsEnabled = true;
-                ViewUtil.DisableControlChildren(tabItem2);
-                grid_tuner.IsEnabled = true;
+                button_shortCut.IsEnabled = true;
+
+                tabItem2.Foreground = SystemColors.GrayTextBrush;
                 ViewUtil.ChangeChildren(grid_tuner, false);
                 listBox_bon.IsEnabled = true;
-                ViewUtil.DisableControlChildren(tabItem3);
-            }
-            else
-            {
-                textBox_recFolder.KeyDown += ViewUtil.KeyDown_Enter(button_rec_add);
+
+                tabItem3.Foreground = SystemColors.GrayTextBrush;
+                ViewUtil.ChangeChildren(grid_epg, false);
+                listView_service.IsEnabled = true;
+                ListView_time.IsEnabled = true;
             }
 
             listBox_Button_Set();
@@ -373,11 +378,11 @@ namespace EpgTimer.Setting
         }
         private void button_exe_Click(object sender, RoutedEventArgs e)
         {
-            CommonManager.GetFileNameByDialog(textBox_exe, false, "", ".exe");
+            CommonManager.GetFileNameByDialog(textBox_exe, false, "", ".exe", true);
         }
         private void button_recInfoFolder_Click(object sender, RoutedEventArgs e)
         {
-            CommonManager.GetFolderNameByDialog(textBox_recInfoFolder, "録画情報保存フォルダの選択");
+            CommonManager.GetFolderNameByDialog(textBox_recInfoFolder, "録画情報保存フォルダの選択", true);
         }
 
         private void listBox_Button_Set()
@@ -387,18 +392,20 @@ namespace EpgTimer.Setting
             var bxb = new BoxExchangeEdit.BoxExchangeEditor(null, this.listBox_bon, true);
             var bxt = new BoxExchangeEdit.BoxExchangeEditor(null, this.ListView_time, true);
 
-            listBox_recFolder.SelectionChanged += ViewUtil.ListBox_TextBoxSyncSelectionChanged(listBox_recFolder, textBox_recFolder);
+            bxr.TargetBox.SelectionChanged += ViewUtil.ListBox_TextBoxSyncSelectionChanged(bxr.TargetBox, textBox_recFolder);
+            bxr.TargetBox.KeyDown += ViewUtil.KeyDown_Enter(button_rec_open);
+            bxr.targetBoxAllowDoubleClick(bxr.TargetBox, (sender, e) => button_rec_open.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
 
             if (CommonManager.Instance.NWMode == false)
             {
                 //録画設定関係
                 bxr.AllowDragDrop();
                 bxr.AllowKeyAction();
-                bxr.targetBoxAllowDoubleClick(bxr.TargetBox, (sender, e) => button_rec_open.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
                 button_rec_up.Click += new RoutedEventHandler(bxr.button_Up_Click);
                 button_rec_down.Click += new RoutedEventHandler(bxr.button_Down_Click);
                 button_rec_del.Click += new RoutedEventHandler(bxr.button_Delete_Click);
                 button_rec_add.Click += ViewUtil.ListBox_TextCheckAdd(listBox_recFolder, textBox_recFolder);
+                textBox_recFolder.KeyDown += ViewUtil.KeyDown_Enter(button_rec_add);
 
                 //チューナ関係関係
                 bxb.AllowDragDrop();
@@ -417,7 +424,7 @@ namespace EpgTimer.Setting
 
         private void button_rec_open_Click(object sender, RoutedEventArgs e)
         {
-            CommonManager.GetFolderNameByDialog(textBox_recFolder, "録画フォルダの選択");
+            CommonManager.GetFolderNameByDialog(textBox_recFolder, "録画フォルダの選択", true);
         }
 
         private void button_shortCut_Click(object sender, RoutedEventArgs e)

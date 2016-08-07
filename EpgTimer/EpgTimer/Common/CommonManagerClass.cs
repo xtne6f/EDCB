@@ -1162,26 +1162,18 @@ namespace EpgTimer
         {
             try
             {
-                if (sender.GetType() == typeof(Hyperlink))
+                if (sender is Hyperlink)
                 {
-                    Hyperlink h = sender as Hyperlink;
-                    System.Diagnostics.Process.Start(h.NavigateUri.ToString());
+                    var h = sender as Hyperlink;
+                    Process.Start(h.NavigateUri.ToString());
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
 
-        public static void GetFolderNameByDialog(TextBox txtBox, string Description = "")
+        public static void GetFolderNameByDialog(TextBox txtBox, string Description = "", bool checkNWPath = false)
         {
-            if (txtBox == null) return;
-            string path = CommonManager.GetFolderNameByDialog(txtBox.Text, Description);
-            if (path != null)
-            {
-                txtBox.Text = path;
-            }
+            GetPathByDialog(txtBox, checkNWPath, path => GetFolderNameByDialog(path, Description));
         }
         public static string GetFolderNameByDialog(string InitialPath = "", string Description = "")
         {
@@ -1215,16 +1207,11 @@ namespace EpgTimer
             return null;
         }
 
-        public static void GetFileNameByDialog(TextBox txtBox, bool isNameOnly, string Title = "", string DefaultExt = "")
+        public static void GetFileNameByDialog(TextBox txtBox, bool isNameOnly, string Title = "", string DefaultExt = "", bool checkNWPath = false)
         {
-            if (txtBox == null) return;
-            string path = CommonManager.GetFileNameByDialog(txtBox.Text, Title, DefaultExt);
-            if (path != null)
-            {
-                txtBox.Text = isNameOnly == true ? Path.GetFileName(path) : path;
-            }
+            GetPathByDialog(txtBox, checkNWPath, path => GetFileNameByDialog(path, isNameOnly, Title, DefaultExt));
         }
-        public static string GetFileNameByDialog(string InitialPath = "", string Title = "", string DefaultExt = "")
+        public static string GetFileNameByDialog(string InitialPath = "", bool isNameOnly = false, string Title = "", string DefaultExt = "")
         {
             try
             {
@@ -1248,7 +1235,7 @@ namespace EpgTimer
                 }
                 if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
                 {
-                    return dlg.FileName;
+                    return isNameOnly == true ? dlg.SafeFileName : dlg.FileName;
                 }
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
@@ -1260,11 +1247,57 @@ namespace EpgTimer
             string path = folder_path.Trim();
             while (path != "")
             {
-                if (System.IO.Directory.Exists(path)) break;
-                path = System.IO.Path.GetDirectoryName(path);
-                path = (path != null ? path : "");
+                if (Directory.Exists(path)) break;
+                path = Path.GetDirectoryName(path) ?? "";
             }
             return path;
+        }
+
+        //ネットワークパス対応のパス設定
+        private static void GetPathByDialog(TextBox tbox, bool checkNWPath, Func<string, string> funcGetPathDialog)
+        {
+            string path = tbox.Text.Trim();
+
+            string base_src = "";
+            string base_nw = "";
+            if (checkNWPath == true && CommonManager.Instance.NWMode == true && path != "" && path.StartsWith("\\\\") == false)
+            {
+                //可能ならUNCパスをサーバ側のパスに戻す。
+                //複数の共有フォルダ使ってる場合はとりあえず諦める。(サーバ側で要逆変換)
+                string path_src = path.TrimEnd('\\');
+                string path_nw = CommonManager.Instance.GetRecPath(path_src).TrimEnd('\\');
+
+                if (path_nw != "" && path_nw != path_src)
+                {
+                    IEnumerable<string> r_src = path_src.Split('\\').Reverse();
+                    IEnumerable<string> r = path_nw.Split('\\').Reverse();
+                    int length_match = -1;
+                    foreach (var item in r.Zip(r_src, (p, ps) => new { nw = p, src = ps }))
+                    {
+                        if (item.nw != item.src) break;
+                        length_match += item.nw.Length + 1;
+                    }
+                    length_match = Math.Max(0, length_match);
+                    base_src = path_src.Substring(0, path_src.Length - length_match).TrimEnd('\\');
+                    base_nw = path_nw.Substring(0, path_nw.Length - length_match).TrimEnd('\\');
+                }
+                if (base_nw != "")
+                {
+                    path = path_nw;
+                }
+            }
+
+            path = funcGetPathDialog(path);
+            if (path != null && tbox.IsEnabled == true && tbox.IsReadOnly == false)
+            {
+                //他のドライブに変ったりしたときは何もしない
+                if (base_nw != "" && path.StartsWith(base_nw) == true)
+                {
+                    path = path.Replace(base_nw, base_src);
+                    if (path.EndsWith(":") == true) path += "\\";//EpgTimerSrvに削除されてしまうが‥
+                }
+                tbox.Text = path;
+            }
         }
 
         public String GetRecPath(String path)
@@ -1273,7 +1306,7 @@ namespace EpgTimer
             try
             {
                 if (String.IsNullOrWhiteSpace(path) == true) return "";
-                if (CommonManager.Instance.NWMode != true) return path;
+                if (NWMode != true) return path;
                 CtrlCmd.SendGetRecFileNetworkPath(path, ref nwPath);
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }

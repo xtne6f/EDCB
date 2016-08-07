@@ -10,10 +10,10 @@
             <TabItem Header="保存フォルダ" Name="tabItem1">
                 <Grid Name="grid_folder">
                     <Label Content="設定関係保存フォルダ" Height="28" HorizontalAlignment="Left" Margin="12,12,0,0" Name="label1" VerticalAlignment="Top" />
-                    <TextBox Height="24" HorizontalAlignment="Left" Margin="157,14,0,0" Name="textBox_setPath" VerticalAlignment="Top" Width="372" ToolTip="{Binding ElementName=textBox_setPath, Path=Text}" ToolTipService.ShowOnDisabled="True" />
+                    <TextBox Height="24" HorizontalAlignment="Left" Margin="157,14,0,0" Name="textBox_setPath" VerticalAlignment="Top" Width="372" />
                     <Button Content="開く" Height="23" HorizontalAlignment="Left" Margin="535,14,0,0" Name="button_setPath" VerticalAlignment="Top" Width="44" Click="button_setPath_Click" />
                     <Label Content="録画用アプリのexe" Height="28" HorizontalAlignment="Left" Margin="12,42,0,0" Name="label2" VerticalAlignment="Top" />
-                    <TextBox Height="24" HorizontalAlignment="Left" Margin="157,44,0,0" Name="textBox_exe" VerticalAlignment="Top" Width="372" ToolTip="{Binding ElementName=textBox_exe, Path=Text}" ToolTipService.ShowOnDisabled="True" />
+                    <TextBox Height="24" HorizontalAlignment="Left" Margin="157,44,0,0" Name="textBox_exe" VerticalAlignment="Top" Width="372" />
                     <Button Content="開く" Height="23" HorizontalAlignment="Left" Margin="535,44,0,0" Name="button_exe" VerticalAlignment="Top" Width="44" Click="button_exe_Click" />
                     <Label Content="コマンドライン引数" Height="28" HorizontalAlignment="Left" Margin="12,72,0,0" VerticalAlignment="Top" />
                     <TextBox Height="24" HorizontalAlignment="Left" Margin="157,74,0,0" Name="textBox_cmdBon" VerticalAlignment="Top" Width="96" />
@@ -31,7 +31,7 @@
                     <Button Content="開く" Height="23" Margin="485,221,0,0" Name="button_rec_open" VerticalAlignment="Top" HorizontalAlignment="Left" Width="44" Click="button_rec_open_Click" />
                     <Button Content="追加" Height="23" Margin="535,221,0,0" Name="button_rec_add" VerticalAlignment="Top" HorizontalAlignment="Left" Width="44" />
                     <Label Content="録画情報保存フォルダ" Height="28" HorizontalAlignment="Left" Margin="12,253,0,0" VerticalAlignment="Top" ToolTip="未指定の場合は録画ファイルと同じ場所に保存されます。" ToolTipService.ShowOnDisabled="True" />
-                    <TextBox Height="24" HorizontalAlignment="Left" Margin="157,255,0,0" Name="textBox_recInfoFolder" VerticalAlignment="Top" Width="372" ToolTip="{Binding ElementName=textBox_recInfoFolder, Path=Text}" ToolTipService.ShowOnDisabled="True" />
+                    <TextBox Height="24" HorizontalAlignment="Left" Margin="157,255,0,0" Name="textBox_recInfoFolder" VerticalAlignment="Top" Width="372" />
                     <Button Content="開く" Height="23" HorizontalAlignment="Left" Margin="535,255,0,0" Name="button_recInfoFolder" VerticalAlignment="Top" Width="44" Click="button_recInfoFolder_Click" />
                     <Label Content="※ 録画中やEPG取得中に設定を変更すると正常動作しなくなる可能性があります。" Height="28" HorizontalAlignment="Left" Margin="12,290,0,0" Name="label4" VerticalAlignment="Top" Foreground="Red" />
                     <Label Content="スタートアップにショートカットを作成する" Height="28" HorizontalAlignment="Left" Margin="12,331,0,0" Name="label5" VerticalAlignment="Top" />
@@ -55,7 +55,7 @@
                 </Grid>
             </TabItem>
             <TabItem Header="EPG取得" Name="tabItem3">
-                <Grid>
+                <Grid Name="grid_epg">
                     <Label Content="EPG取得対象サービス" Height="28" HorizontalAlignment="Left" Margin="12,12,0,0" Name="label21" VerticalAlignment="Top" />
                     <ListView Height="183" HorizontalAlignment="Left" Margin="32,46,0,0" Name="listView_service" VerticalAlignment="Top" Width="196" ItemsSource="{Binding}" >
                         <ListView.ItemContainerStyle>
@@ -69,7 +69,7 @@
                                 <GridViewColumn>
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
-                                            <CheckBox IsChecked="{Binding Path=IsSelected}" />
+                                            <CheckBox IsChecked="{Binding Path=IsSelected}" IsEnabled="{Binding Path=IsEnabled}"/>
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
@@ -98,7 +98,7 @@
                                 <GridViewColumn>
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
-                                            <CheckBox IsChecked="{Binding Path=IsSelected}" />
+                                            <CheckBox IsChecked="{Binding Path=IsSelected}" IsEnabled="{Binding Path=IsEnabled}"/>
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>

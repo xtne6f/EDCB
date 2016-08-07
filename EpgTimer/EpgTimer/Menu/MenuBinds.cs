@@ -57,8 +57,7 @@ namespace EpgTimer
             ICommand icmd = (sender as ICommandSource).Command ;
             CtxmCode code = ((sender as ICommandSource).CommandParameter as EpgCmdParam).Code;
             var obj = sender as FrameworkElement;
-            obj.ToolTip = mm.IsGestureDisableOnView(icmd, code) == true ? null : GetInputGestureText(icmd);
-            obj.ToolTip = obj.ToolTip == null ? "" : obj.ToolTip;
+            obj.ToolTip = (mm.IsGestureDisableOnView(icmd, code) == true ? null : GetInputGestureText(icmd)) ?? "";
             if (obj.ToolTip as string == "")
             {
                 e.Handled = true;

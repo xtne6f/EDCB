@@ -10,7 +10,7 @@
             <TabItem Header="録画動作" Name="tabItem1">
                 <Grid>
                     <GroupBox Header="録画、EPG取得終了後のデフォルト動作" Height="113" Margin="12,12,12,0" Name="groupBox1" VerticalAlignment="Top">
-                        <Grid>
+                        <Grid Name="grid_rec_stanby">
                             <RadioButton Content="何もしない" Height="16" HorizontalAlignment="Left" Margin="119,6,0,0" Name="radioButton_none" VerticalAlignment="Top" />
                             <RadioButton Content="スタンバイ" Height="16" HorizontalAlignment="Left" Margin="217,6,0,0" Name="radioButton_standby" VerticalAlignment="Top" />
                             <RadioButton Content="休止" Height="16" HorizontalAlignment="Left" Margin="315,6,0,0" Name="radioButton_suspend" VerticalAlignment="Top" />

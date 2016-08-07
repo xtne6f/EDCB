@@ -32,4 +32,9 @@ namespace EpgTimer
             }
         }
     }
+
+    public class SelectableItemNWMode : SelectableItem
+    {
+        public bool IsEnabled { get { return CommonManager.Instance.NWMode == false; } }
+    }
 }

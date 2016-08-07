@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
+using System.Windows.Controls;
 
 namespace EpgTimer
 {
@@ -20,21 +21,21 @@ namespace EpgTimer
 
             if (CommonManager.Instance.NWMode == true)
             {
-                button_add.IsEnabled = false;
-                textBox_ext.IsEnabled = false;
-                label2.IsEnabled = false;
-                button_del.IsEnabled = false;
-                button_chk_del.IsEnabled = false;
-                button_chk_add.IsEnabled = false;
-                button_chk_open.IsEnabled = false;
-                textBox_chk_folder.IsEnabled = false;
-                button_OK.IsEnabled = false;
+                ViewUtil.ChangeChildren(grid_main, false);
+                listBox_ext.IsEnabled = true;
+                ViewUtil.DisableTextBoxWithMenu(textBox_ext);
+                listBox_chk_folder.IsEnabled = true;
+                ViewUtil.DisableTextBoxWithMenu(textBox_chk_folder);
+                button_chk_open.IsEnabled = true;
+                button_cancel.IsEnabled = true;
             }
 
             var bxe = new BoxExchangeEditor(null, listBox_ext, true);
             var bxc = new BoxExchangeEditor(null, listBox_chk_folder, true);
             listBox_ext.SelectionChanged += ViewUtil.ListBox_TextBoxSyncSelectionChanged(listBox_ext, textBox_ext);
-            listBox_chk_folder.SelectionChanged += ViewUtil.ListBox_TextBoxSyncSelectionChanged(listBox_chk_folder, textBox_chk_folder);
+            bxc.TargetBox.SelectionChanged += ViewUtil.ListBox_TextBoxSyncSelectionChanged(bxc.TargetBox, textBox_chk_folder);
+            bxc.TargetBox.KeyDown += ViewUtil.KeyDown_Enter(button_chk_open);
+            bxc.targetBoxAllowDoubleClick(bxc.TargetBox, (sender, e) => button_chk_open.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
             if (CommonManager.Instance.NWMode == false)
             {
                 bxe.AllowKeyAction();
@@ -67,7 +68,7 @@ namespace EpgTimer
 
         private void button_chk_open_Click(object sender, RoutedEventArgs e)
         {
-            CommonManager.GetFolderNameByDialog(textBox_chk_folder, "自動削除対象フォルダの選択");
+            CommonManager.GetFolderNameByDialog(textBox_chk_folder, "自動削除対象フォルダの選択", true);
         }
 
         private void button_cancel_Click(object sender, RoutedEventArgs e)

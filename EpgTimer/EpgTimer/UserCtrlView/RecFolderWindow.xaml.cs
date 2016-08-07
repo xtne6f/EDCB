@@ -1,11 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Input;
-using System.IO;
 using System.Windows.Interop;
 
 namespace EpgTimer
@@ -77,48 +72,7 @@ namespace EpgTimer
 
         private void button_folder_Click(object sender, RoutedEventArgs e)
         {
-            string path = textBox_recFolder.Text.Trim();
-
-            string base_src = "";
-            string base_nw = "";
-            if (CommonManager.Instance.NWMode == true && path != "" && path.StartsWith("\\\\") == false)
-            {
-                //可能ならUNCパスをサーバ側のパスに戻す。
-                //複数の共有フォルダ使ってる場合はとりあえず諦める。(サーバ側で要逆変換)
-                string path_src = path.TrimEnd('\\');
-                string path_nw = CommonManager.Instance.GetRecPath(path_src).TrimEnd('\\');
-
-                if (path_nw != "" && path_nw != path_src)
-                {
-                    IEnumerable<string> r_src = path_src.Split('\\').Reverse();
-                    IEnumerable<string> r = path_nw.Split('\\').Reverse();
-                    int length_match = -1;
-                    foreach (var item in r.Zip(r_src, (p, ps) => new { nw = p, src = ps }))
-                    {
-                        if (item.nw != item.src) break;
-                        length_match += item.nw.Length + 1;
-                    }
-                    length_match = Math.Max(0, length_match);
-                    base_src = path_src.Substring(0, path_src.Length - length_match).TrimEnd('\\');
-                    base_nw = path_nw.Substring(0, path_nw.Length - length_match).TrimEnd('\\');
-                }
-                if (base_nw != "")
-                {
-                    path = path_nw;
-                }
-            }
-
-            path = CommonManager.GetFolderNameByDialog(path, "録画フォルダの選択");
-            if (path != null)
-            {
-                //他のドライブに変ったりしたときは何もしない
-                if (base_nw != "" && path.StartsWith(base_nw) == true)
-                {
-                    path = path.Replace(base_nw, base_src);
-                    if (path.EndsWith(":") == true) path += "\\";//EpgTimerSrvに削除されてしまうが‥
-                }
-                textBox_recFolder.Text = path;
-            }
+            CommonManager.GetFolderNameByDialog(textBox_recFolder, "録画フォルダの選択", true);
         }
 
         private void button_write_Click(object sender, RoutedEventArgs e)

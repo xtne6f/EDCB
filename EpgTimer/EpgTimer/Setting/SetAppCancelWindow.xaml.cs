@@ -25,20 +25,10 @@ namespace EpgTimer
 
             if (CommonManager.Instance.NWMode == true)
             {
-                button_process_del.IsEnabled = false;
-                label2.IsEnabled = false;
-                textBox_process.IsEnabled = false;
-                button_process_add.IsEnabled = false;
-                button_process_open.IsEnabled = false;
-                label3.IsEnabled = false;
-                textBox_ng_min.IsEnabled = false;
-                label4.IsEnabled = false;
-                checkBox_ng_fileStreaming.IsEnabled = false;
-                checkBox_ng_shareFile.IsEnabled = false;
-                textBox_ng_usePC_min.IsEnabled = false;
-                label7.IsEnabled = false;
-                checkBox_ng_usePC.IsEnabled = false;
-                button_OK.IsEnabled = false;
+                ViewUtil.ChangeChildren(grid_main, false);
+                listBox_process.IsEnabled = true;
+                ViewUtil.DisableTextBoxWithMenu(textBox_process);
+                button_cancel.IsEnabled = true;
             }
 
             var bx = new BoxExchangeEditor(null, listBox_process, true);

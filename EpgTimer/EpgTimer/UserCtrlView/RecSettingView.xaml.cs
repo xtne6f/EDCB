@@ -50,13 +50,9 @@ namespace EpgTimer
                 comboBox_preSet.KeyDown += ViewUtil.KeyDown_Enter(button_reload_preset);
 
                 var bx = new BoxExchangeEdit.BoxExchangeEditor(null, listView_recFolder, true, true, true);
+                bx.TargetBox.KeyDown += ViewUtil.KeyDown_Enter(button_recFolderChg);
                 bx.targetBoxAllowDoubleClick(bx.TargetBox, (sender, e) => button_recFolderChg.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
                 button_recFolderDel.Click += new RoutedEventHandler(bx.button_Delete_Click);
-
-                if (CommonManager.Instance.NWMode == true)
-                {
-                    button_bat.IsEnabled = false;
-                }
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
@@ -431,7 +427,7 @@ namespace EpgTimer
 
         private void button_bat_Click(object sender, RoutedEventArgs e)
         {
-            CommonManager.GetFileNameByDialog(textBox_bat, false, "", ".bat");
+            CommonManager.GetFileNameByDialog(textBox_bat, false, "", ".bat", true);
         }
 
         private void button_recFolderAdd_Click(object sender, RoutedEventArgs e)

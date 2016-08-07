@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="削除設定" Height="450" Width="587" Loaded="Window_Loaded" ShowInTaskbar="False" ResizeMode="NoResize" WindowStartupLocation="CenterOwner">
 
-    <Grid>
+    <Grid Name="grid_main">
         <Label Content="同時に削除するファイルの拡張子" Height="28" HorizontalAlignment="Left" Margin="12,12,0,0" VerticalAlignment="Top" />
         <ListBox Height="100" Margin="35,46,0,0" Name="listBox_ext" VerticalAlignment="Top" HorizontalAlignment="Left" Width="231" SelectionMode="Extended" />
         <Button Content="削除" Height="23" HorizontalAlignment="Left" Margin="280,123,0,0" Name="button_del" VerticalAlignment="Top" Width="54" />
