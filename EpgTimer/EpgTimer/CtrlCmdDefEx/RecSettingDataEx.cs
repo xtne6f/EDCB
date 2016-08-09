@@ -11,84 +11,94 @@ namespace EpgTimer
         bool IsManual { get; }
     }
 
+    public partial class RecSettingData
+    {
+        public RecPresetItem LookUpPreset(bool IsManual = false, bool CopyData = false)
+        {
+            return LookUpPreset(Settings.Instance.RecPresetList, IsManual, CopyData);
+        }
+        public RecPresetItem LookUpPreset(IEnumerable<RecPresetItem> refdata, bool IsManual = false, bool CopyData = false)
+        {
+            RecPresetItem preset = refdata.FirstOrDefault(p1 =>
+            {
+                return p1.RecPresetData.EqualsSettingTo(this, IsManual);
+            });
+            return preset == null ? new RecPresetItem("登録時", RecPresetItem.CustomID, CopyData == true ? this.Clone() : null) : preset;
+        }
+
+        public List<string> RecFolderViewList
+        {
+            get
+            {
+                var list = new List<string>();
+                List<string> defs = Settings.Instance.DefRecFolders;
+                string def1 = defs.Count == 0 ? "!Default" : defs[0];
+                Func<string, string> AdjustName = (f => f == "!Default" ? def1 : f);
+
+                this.RecFolderList.ForEach(info => list.Add(AdjustName(info.RecFolder)));
+                this.PartialRecFolder.ForEach(info => list.Add("(ワンセグ) " + AdjustName(info.RecFolder)));
+
+                return list;
+            }
+        }
+
+        //真のマージン値
+        public int StartMarginActual
+        {
+            get { return UseMargineFlag != 0 ? StartMargine : Settings.Instance.DefStartMargin; }
+        }
+        public int EndMarginActual
+        {
+            get { return UseMargineFlag != 0 ? EndMargine : Settings.Instance.DefEndMargin; }
+        }
+
+        //指定サービス対象モードの補助
+        public bool ServiceModeIsDefault
+        {
+            get { return (ServiceMode & 0x0Fu) == 0; }
+            set { ServiceMode = (ServiceMode & ~0x0Fu) | (value == true ? 0x00u : 0x01u); }
+        }
+        public bool ServiceCaption
+        {
+            get { return (ServiceMode & 0x10u) != 0; }
+            set { ServiceMode = (ServiceMode & ~0x10u) | (value == true ? 0x10u : 0x00u); }
+        }
+        public bool ServiceData
+        {
+            get { return (ServiceMode & 0x20u) != 0; }
+            set { ServiceMode = (ServiceMode & ~0x20u) | (value == true ? 0x20u : 0x00u); }
+        }
+        public bool ServiceCaptionActual
+        {
+            get { return ServiceModeIsDefault == false ? ServiceCaption : IniFileHandler.GetPrivateProfileInt("SET", "Caption", 1, SettingPath.EdcbIniPath) != 0; }
+        }
+        public bool ServiceDataActual
+        {
+            get { return ServiceModeIsDefault == false ? ServiceData : IniFileHandler.GetPrivateProfileInt("SET", "Data", 0, SettingPath.EdcbIniPath) != 0; }
+        }
+
+        //録画後動作モードの補助。ToRecEndMode()はRecEndMode自体の範囲修正にも使用している。
+        private static int ToRecEndMode(int val) { return (1 <= val && val <= 3) ? val : 0; }
+        private static byte ToSuspendMode(int val) { return (byte)((1 <= val && val <= 3) ? val : 4); }
+        public void SetSuspendMode(bool isDefault, int recEndMode = 0)
+        {
+            SuspendMode = (byte)(isDefault == true ? 0 : ToSuspendMode(recEndMode));
+        }
+        public int RecEndModeActual
+        {
+            get { return ToRecEndMode(SuspendMode != 0 ? SuspendMode : IniFileHandler.GetPrivateProfileInt("SET", "RecEndMode", 2, SettingPath.TimerSrvIniPath)); }
+        }
+        public byte RebootFlagActual
+        {
+            get { return SuspendMode != 0 ? RebootFlag : (byte)IniFileHandler.GetPrivateProfileInt("SET", "Reboot", 0, SettingPath.TimerSrvIniPath); }
+        }
+    }
+
     public static class RecSettingDataEx
     {
         public static List<RecSettingData> RecSettingList(this IEnumerable<IRecSetttingData> list)
         {
             return list.Where(item => item != null).Select(item => item.RecSettingInfo).ToList();
-        }
-
-        public static RecPresetItem LookUpPreset(this RecSettingData data, bool IsManual = false, bool CopyData = false)
-        {
-            return LookUpPreset(data, Settings.Instance.RecPresetList, IsManual, CopyData);
-        }
-        public static RecPresetItem LookUpPreset(this RecSettingData data, IEnumerable<RecPresetItem> refdata, bool IsManual = false, bool CopyData = false)
-        {
-            RecPresetItem preset = refdata.FirstOrDefault(p1 =>
-            {
-                return p1.RecPresetData.EqualsSettingTo(data, IsManual);
-            });
-            return preset == null ? new RecPresetItem("登録時", RecPresetItem.CustomID, CopyData == true ? data.Clone() : null) : preset;
-        }
-
-        public static List<string> GetRecFolderViewList(this RecSettingData recSetting)
-        {
-            var list = new List<string>();
-            List<string> defs = Settings.Instance.DefRecFolders;
-            string def1 = defs.Count == 0 ? "!Default" : defs[0];
-            Func<string, string> AdjustName = (f => f == "!Default" ? def1 : f);
-            if (recSetting != null)
-            {
-                recSetting.RecFolderList.ForEach(info => list.Add(AdjustName(info.RecFolder)));
-                recSetting.PartialRecFolder.ForEach(info => list.Add("(ワンセグ) " + AdjustName(info.RecFolder)));
-            }
-            return list;
-        }
-
-        public static string GetTrueMarginText(this RecSettingData recSetting, bool start)
-        {
-            return CustomTimeFormat(recSetting.GetTrueMargin(start) * (start ? -1 : 1), recSetting.UseMargineFlag);
-        }
-
-        public static int GetTrueMargin(this RecSettingData recSetting, bool start)
-        {
-            if (recSetting == null) return 0;
-
-            int marginTime;
-            if (recSetting.UseMargineFlag == 1)
-            {
-                marginTime = start ? recSetting.StartMargine : recSetting.EndMargine;
-            }
-            else
-            {
-                marginTime = start ? Settings.Instance.DefStartMargin : Settings.Instance.DefEndMargin;
-            }
-            return marginTime;
-        }
-
-        public static double GetTrueMarginForSort(this RecSettingData recSetting, bool start)
-        {
-            if (recSetting == null) return 0;
-            //
-            return recSetting.GetTrueMargin(start) * (start ? -1 : 1) + (recSetting.UseMargineFlag == 1 ? 0.1 : 0);
-        }
-
-        private static string CustomTimeFormat(int span, byte useMarginFlag)
-        {
-            string hours;
-            string minutes;
-            string seconds = (span % 60).ToString("00;00");
-            if (Math.Abs(span) < 3600)
-            {
-                hours = "";
-                minutes = (span / 60).ToString("0;0") + ":";
-            }
-            else
-            {
-                hours = (span / 3600).ToString("0;0") + ":";
-                minutes = ((span % 3600) / 60).ToString("00;00") + ":";
-            }
-            return span.ToString("+;-") + hours + minutes + seconds + (useMarginFlag == 1 ? " " : "*");
         }
 
         public static List<RecSettingData> Clone(this IEnumerable<RecSettingData> src) { return CopyObj.Clone(src, CopyData); }

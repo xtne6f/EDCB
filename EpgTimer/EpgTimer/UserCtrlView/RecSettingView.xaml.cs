@@ -14,8 +14,26 @@ namespace EpgTimer
     public partial class RecSettingView : UserControl
     {
         public virtual event EventHandler SelectedPresetChanged = null;
-        
-        private RecSettingData recSetting;
+
+        private RecSettingData _recSet;
+        private int recEndMode;
+        private RecSettingData recSetting
+        {
+            get { return _recSet; }
+            set
+            {
+                //デフォルトオプションに対する内部の初期値を修正する。
+                _recSet = value;
+                _recSet.StartMargine = _recSet.StartMarginActual;
+                _recSet.EndMargine = _recSet.EndMarginActual;
+                _recSet.ServiceCaption = _recSet.ServiceCaptionActual;
+                _recSet.ServiceData = _recSet.ServiceDataActual;
+                recEndMode = _recSet.RecEndModeActual;
+                _recSet.RebootFlag = _recSet.RebootFlagActual;
+            }
+        }
+
+        private List<RadioButton> recEndModeRadioBtns;
         private List<TunerSelectInfo> tunerList = new List<TunerSelectInfo>();
         private static CtrlCmdUtil cmd { get { return CommonManager.Instance.CtrlCmd; } }
 
@@ -32,6 +50,8 @@ namespace EpgTimer
                 comboBox_tuijyu.DataContext = CommonManager.Instance.YesNoDictionary.Values;
                 comboBox_pittari.DataContext = CommonManager.Instance.YesNoDictionary.Values;
                 comboBox_priority.DataContext = CommonManager.Instance.PriorityDictionary.Values;
+
+                recEndModeRadioBtns = new List<RadioButton> { radioButton_non, radioButton_standby, radioButton_suspend, radioButton_shutdown };
 
                 tunerList.Add(new TunerSelectInfo("自動", 0));
                 foreach (TunerReserveInfo info in CommonManager.Instance.DB.TunerReserveList.Values)
@@ -149,7 +169,7 @@ namespace EpgTimer
 
         public RecPresetItem SelectedPreset(bool isCheckData = false, bool isDisplayManual = false)
         {
-            RecPresetItem preset = comboBox_preSet.SelectedItem as RecPresetItem;
+            var preset = comboBox_preSet.SelectedItem as RecPresetItem;
             if (isCheckData == true)
             {
                 var preset_back = preset;
@@ -174,18 +194,12 @@ namespace EpgTimer
             setInfo.RecMode = ((RecModeInfo)comboBox_recMode.SelectedItem).Value;
             setInfo.Priority = ((PriorityInfo)comboBox_priority.SelectedItem).Value;
             setInfo.TuijyuuFlag = ((YesNoInfo)comboBox_tuijyu.SelectedItem).Value;
-
-            setInfo.ServiceMode = (uint)(checkBox_serviceMode.IsChecked == true ? 0 : 1);
-            if (checkBox_serviceCaption.IsChecked == true)
-            {
-                setInfo.ServiceMode |= 0x10;
-            }
-            if (checkBox_serviceData.IsChecked == true)
-            {
-                setInfo.ServiceMode |= 0x20;
-            }
-
             setInfo.PittariFlag = ((YesNoInfo)comboBox_pittari.SelectedItem).Value;
+
+            setInfo.ServiceModeIsDefault = checkBox_serviceMode.IsChecked == true;
+            setInfo.ServiceCaption = checkBox_serviceCaption.IsChecked == true;
+            setInfo.ServiceData = checkBox_serviceData.IsChecked == true;
+
             setInfo.BatFilePath = textBox_bat.Text;
             setInfo.RecFolderList.Clear();
             setInfo.PartialRecFolder.Clear();
@@ -194,30 +208,23 @@ namespace EpgTimer
                 (view.PartialRec ? setInfo.PartialRecFolder : setInfo.RecFolderList).Add(view.Info);
             }
 
-            if (checkBox_suspendDef.IsChecked == true)
-            {
-                setInfo.SuspendMode = 0;
-            }
-            else if (radioButton_standby.IsChecked == true)
-            {
-                setInfo.SuspendMode = 1;
-            }
-            else if (radioButton_suspend.IsChecked == true)
-            {
-                setInfo.SuspendMode = 2;
-            }
-            else if (radioButton_shutdown.IsChecked == true)
-            {
-                setInfo.SuspendMode = 3;
-            }
-            else if (radioButton_non.IsChecked == true)
-            {
-                setInfo.SuspendMode = 4;
-            }
+            setInfo.SetSuspendMode(checkBox_suspendDef.IsChecked == true, GetRecEndMode());
             setInfo.RebootFlag = (byte)(checkBox_reboot.IsChecked == true ? 1 : 0);
-            
+
             setInfo.UseMargineFlag = (byte)(checkBox_margineDef.IsChecked == true ? 0 : 1);
-            Func<string, int> GetMargin = (text) =>
+            setInfo.StartMargine = GetMargin(textBox_margineStart.Text);
+            setInfo.EndMargine = GetMargin(textBox_margineEnd.Text);
+
+            setInfo.PartialRecFlag = (byte)(checkBox_partial.IsChecked == true ? 1 : 0);
+            setInfo.ContinueRecFlag = (byte)(checkBox_continueRec.IsChecked == true ? 1 : 0);
+            setInfo.TunerID = ((TunerSelectInfo)comboBox_tuner.SelectedItem).ID;
+
+            return setInfo;
+        }
+
+        private static int GetMargin(string text)
+        {
+            try
             {
                 if (text.Length == 0) return 0;
 
@@ -236,17 +243,14 @@ namespace EpgTimer
                 }
 
                 return marginMinus * marginSec;
-            };
-            setInfo.StartMargine = GetMargin(textBox_margineStart.Text);
-            setInfo.EndMargine = GetMargin(textBox_margineEnd.Text);
+            }
+            catch { }
+            return 0;
+        }
 
-            setInfo.PartialRecFlag = (byte)(checkBox_partial.IsChecked == true ? 1 : 0);
-            setInfo.ContinueRecFlag = (byte)(checkBox_continueRec.IsChecked == true ? 1 : 0);
-
-            TunerSelectInfo tuner = comboBox_tuner.SelectedItem as TunerSelectInfo;
-            setInfo.TunerID = tuner.ID;
-
-            return setInfo;
+        private int GetRecEndMode()
+        {
+            return recEndModeRadioBtns.FindIndex(btn => btn.IsChecked == true);
         }
 
         private void UserControl_Loaded(object sender, RoutedEventArgs e)
@@ -267,20 +271,19 @@ namespace EpgTimer
                     if (SelectedPresetChanged != null) SelectedPresetChanged(this, new EventArgs());
                     if (loadingDefSetting != true)
                     {
-                        recSetting = (comboBox_preSet.SelectedItem as RecPresetItem).RecPresetData;
+                        recSetting = (comboBox_preSet.SelectedItem as RecPresetItem).RecPresetData.Clone();
                     }
                     UpdateView();
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
             loadingDefSetting = false;
         }
 
+        private bool OnUpdatingView = false;
         private void UpdateView()
         {
+            OnUpdatingView = true;
             try
             {
                 if (CommonManager.Instance.NWMode == true)
@@ -289,40 +292,12 @@ namespace EpgTimer
                     button_chg_preset.IsEnabled = false;
                     button_del_preset.IsEnabled = false;
                 }
-                foreach (RecModeInfo info in comboBox_recMode.Items)
-                {
-                    if (info.Value == recSetting.RecMode)
-                    {
-                        comboBox_recMode.SelectedItem = info;
-                    }
-                }
-                foreach (PriorityInfo info in comboBox_priority.Items)
-                {
-                    if (info.Value == recSetting.Priority)
-                    {
-                        comboBox_priority.SelectedItem = info;
-                    }
-                }
-                foreach (YesNoInfo info in comboBox_tuijyu.Items)
-                {
-                    if (info.Value == recSetting.TuijyuuFlag)
-                    {
-                        comboBox_tuijyu.SelectedItem = info;
-                    }
-                }
-
+                comboBox_recMode.SelectedItem = comboBox_recMode.Items.OfType<RecModeInfo>().FirstOrDefault(info => info.Value == recSetting.RecMode);
+                comboBox_priority.SelectedItem = comboBox_priority.Items.OfType<PriorityInfo>().FirstOrDefault(info => info.Value == recSetting.Priority);
+                comboBox_tuijyu.SelectedItem = comboBox_tuijyu.Items.OfType<YesNoInfo>().FirstOrDefault(info => info.Value == recSetting.TuijyuuFlag);
+                comboBox_pittari.SelectedItem = comboBox_pittari.Items.OfType<YesNoInfo>().FirstOrDefault(info => info.Value == recSetting.PittariFlag);
                 checkBox_serviceMode.IsChecked = null;//切り替え時のイベント発生のために必要
-                checkBox_serviceMode.IsChecked = ((recSetting.ServiceMode & 0x0F) == 0);
-
-                foreach (YesNoInfo info in comboBox_pittari.Items)
-                {
-                    if (info.Value == recSetting.PittariFlag)
-                    {
-                        comboBox_pittari.SelectedItem = info;
-                    }
-                }
-
-
+                checkBox_serviceMode.IsChecked = recSetting.ServiceModeIsDefault;
                 textBox_bat.Text = recSetting.BatFilePath;
 
                 listView_recFolder.Items.Clear();
@@ -336,57 +311,15 @@ namespace EpgTimer
                 }
 
                 checkBox_suspendDef.IsChecked = null;//切り替え時のイベント発生のために必要
-                checkBox_suspendDef.IsChecked = (recSetting.SuspendMode == 0);
+                checkBox_suspendDef.IsChecked = recSetting.SuspendMode == 0;
                 checkBox_margineDef.IsChecked = null;//切り替え時のイベント発生のために必要
                 checkBox_margineDef.IsChecked = recSetting.UseMargineFlag == 0;
                 checkBox_continueRec.IsChecked = (recSetting.ContinueRecFlag == 1);
                 checkBox_partial.IsChecked = (recSetting.PartialRecFlag == 1);
-
-                foreach (TunerSelectInfo info in comboBox_tuner.Items)
-                {
-                    if (info.ID == recSetting.TunerID)
-                    {
-                        comboBox_tuner.SelectedItem = info;
-                        break;
-                    }
-                }
+                comboBox_tuner.SelectedItem = comboBox_tuner.Items.OfType<TunerSelectInfo>().FirstOrDefault(info => info.ID == recSetting.TunerID);
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
-
-        private void checkBox_suspendDef_Checked(object sender, RoutedEventArgs e)
-        {
-            int recEndMode = 0;
-            bool reboot = false;
-            if (checkBox_suspendDef.IsChecked == true)
-            {
-                recEndMode = IniFileHandler.GetPrivateProfileInt("SET", "RecEndMode", 2, SettingPath.TimerSrvIniPath);
-                reboot = IniFileHandler.GetPrivateProfileInt("SET", "Reboot", 0, SettingPath.TimerSrvIniPath) == 1;
-            }
-            else
-            {
-                recEndMode = recSetting.SuspendMode == 4 ? 0 : recSetting.SuspendMode;
-                reboot = (recSetting.RebootFlag == 1);
-            }
-            checkBox_reboot.IsChecked = reboot;
-            switch (recEndMode)
-            {
-                case 0:
-                    radioButton_non.IsChecked = true;
-                    break;
-                case 1:
-                    radioButton_standby.IsChecked = true;
-                    break;
-                case 2:
-                    radioButton_suspend.IsChecked = true;
-                    break;
-                case 3:
-                    radioButton_shutdown.IsChecked = true;
-                    break;
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
+            OnUpdatingView = false;
         }
 
         private class RecFileSetInfoView
@@ -405,24 +338,39 @@ namespace EpgTimer
         {
             RecSettingData recSet = recSetting.Clone();
             recSet.UseMargineFlag = (byte)(checkBox_margineDef.IsChecked == true ? 0 : 1);
-            textBox_margineStart.Text = recSet.GetTrueMargin(true).ToString();
-            textBox_margineEnd.Text = recSet.GetTrueMargin(false).ToString();
+            if (recSet.UseMargineFlag == 0 && OnUpdatingView == false)
+            {
+                recSetting.StartMargine = GetMargin(textBox_margineStart.Text);
+                recSetting.EndMargine = GetMargin(textBox_margineEnd.Text);
+            }
+            textBox_margineStart.Text = recSet.StartMarginActual.ToString();
+            textBox_margineEnd.Text = recSet.EndMarginActual.ToString();
         }
 
         private void checkBox_serviceMode_Checked(object sender, RoutedEventArgs e)
         {
-            if (checkBox_serviceMode.IsChecked == true)
+            RecSettingData recSet = recSetting.Clone();
+            recSet.ServiceModeIsDefault = checkBox_serviceMode.IsChecked == true;
+            if (recSet.ServiceModeIsDefault == true && OnUpdatingView == false)
             {
-                checkBox_serviceCaption.IsChecked =
-                    IniFileHandler.GetPrivateProfileInt("SET", "Caption", 1, SettingPath.EdcbIniPath) != 0;
-                checkBox_serviceData.IsChecked =
-                    IniFileHandler.GetPrivateProfileInt("SET", "Data", 0, SettingPath.EdcbIniPath) != 0;
+                recSetting.ServiceCaption = checkBox_serviceCaption.IsChecked == true;
+                recSetting.ServiceData = checkBox_serviceData.IsChecked == true;
             }
-            else
+            checkBox_serviceCaption.IsChecked = recSet.ServiceCaptionActual;
+            checkBox_serviceData.IsChecked = recSet.ServiceDataActual;
+        }
+
+        private void checkBox_suspendDef_Checked(object sender, RoutedEventArgs e)
+        {
+            RecSettingData recSet = recSetting.Clone();
+            recSet.SetSuspendMode(checkBox_suspendDef.IsChecked == true, recEndMode);
+            if (recSet.SuspendMode == 0 && OnUpdatingView == false)
             {
-                checkBox_serviceCaption.IsChecked = ((recSetting.ServiceMode & 0x10) > 0);
-                checkBox_serviceData.IsChecked = ((recSetting.ServiceMode & 0x20) > 0);
+                recEndMode = GetRecEndMode();
+                recSetting.RebootFlag = (byte)(checkBox_reboot.IsChecked == true ? 1 : 0);
             }
+            recEndModeRadioBtns[recSet.RecEndModeActual].IsChecked = true;
+            checkBox_reboot.IsChecked = recSet.RebootFlagActual == 1;
         }
 
         private void button_bat_Click(object sender, RoutedEventArgs e)
@@ -513,10 +461,7 @@ namespace EpgTimer
                     }
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
 
         private void button_reload_preset_Click(object sender, RoutedEventArgs e)
@@ -540,10 +485,7 @@ namespace EpgTimer
                     SavePreset();
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
 
         private void button_chg_preset_Click(object sender, RoutedEventArgs e)
@@ -574,10 +516,7 @@ namespace EpgTimer
                     }
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
 
         private void button_recFolderAdd_1seg_Click(object sender, RoutedEventArgs e)

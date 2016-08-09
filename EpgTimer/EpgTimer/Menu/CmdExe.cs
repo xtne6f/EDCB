@@ -626,12 +626,12 @@ namespace EpgTimer
                 }
                 else if (subMenu.Tag == EpgCmdsEx.ChgMarginStartMenu)
                 {
-                    int value = recSettings.All(info => info.GetTrueMargin(true) == recSettings[0].GetTrueMargin(true)) ? recSettings[0].GetTrueMargin(true) : int.MaxValue;
+                    int value = recSettings.All(info => info.StartMarginActual == recSettings[0].StartMarginActual) ? recSettings[0].StartMarginActual : int.MaxValue;
                     subMenu.Header = string.Format("開始マージン : {0} 秒", value == int.MaxValue ? "*" : value.ToString());
                 }
                 else if (subMenu.Tag == EpgCmdsEx.ChgMarginEndMenu)
                 {
-                    int value = recSettings.All(info => info.GetTrueMargin(false) == recSettings[0].GetTrueMargin(false)) ? recSettings[0].GetTrueMargin(false) : int.MaxValue;
+                    int value = recSettings.All(info => info.EndMarginActual == recSettings[0].EndMarginActual) ? recSettings[0].EndMarginActual : int.MaxValue;
                     subMenu.Header = string.Format("終了マージン : {0} 秒", value == int.MaxValue ? "*" : value.ToString());
                 }
             }

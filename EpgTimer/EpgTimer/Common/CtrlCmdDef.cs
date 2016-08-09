@@ -97,7 +97,7 @@ namespace EpgTimer
     }
 
     /// <summary>録画設定情報</summary>
-    public class RecSettingData : ICtrlCmdReadWrite
+    public partial class RecSettingData : ICtrlCmdReadWrite
     {
         /// <summary>録画モード</summary>
         public byte RecMode;

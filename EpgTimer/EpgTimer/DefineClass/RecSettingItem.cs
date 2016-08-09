@@ -17,7 +17,7 @@ namespace EpgTimer
             {
                 if (RecSettingInfo == null) return "";
                 //
-                return RecSettingInfo.GetTrueMarginText(true);
+                return CustomTimeFormat(RecSettingInfo.StartMarginActual * -1);
             }
         }
         public virtual Double MarginStartValue
@@ -26,7 +26,7 @@ namespace EpgTimer
             {
                 if (RecSettingInfo == null) return Double.MinValue;
                 //
-                return RecSettingInfo.GetTrueMarginForSort(true);
+                return CustomMarginValue(RecSettingInfo.StartMarginActual * -1);
             }
         }
         public virtual String MarginEnd
@@ -35,7 +35,7 @@ namespace EpgTimer
             {
                 if (RecSettingInfo == null) return "";
                 //
-                return RecSettingInfo.GetTrueMarginText(false);
+                return CustomTimeFormat(RecSettingInfo.EndMarginActual);
             }
         }
         public virtual Double MarginEndValue
@@ -44,9 +44,31 @@ namespace EpgTimer
             {
                 if (RecSettingInfo == null) return Double.MinValue;
                 //
-                return RecSettingInfo.GetTrueMarginForSort(false);
+                return CustomMarginValue(RecSettingInfo.EndMarginActual);
             }
         }
+        private string CustomTimeFormat(int span)
+        {
+            string hours;
+            string minutes;
+            string seconds = (span % 60).ToString("00;00");
+            if (Math.Abs(span) < 3600)
+            {
+                hours = "";
+                minutes = (span / 60).ToString("0;0") + ":";
+            }
+            else
+            {
+                hours = (span / 3600).ToString("0;0") + ":";
+                minutes = ((span % 3600) / 60).ToString("00;00") + ":";
+            }
+            return span.ToString("+;-") + hours + minutes + seconds + (RecSettingInfo.UseMargineFlag != 0 ? " " : "*");
+        }
+        private Double CustomMarginValue(int span)
+        {
+            return span + (RecSettingInfo.UseMargineFlag != 0 ? 0.1 : 0);
+        }
+
         protected String preset = null;
         public virtual String Preset
         {
@@ -109,7 +131,7 @@ namespace EpgTimer
             {
                 if (RecSettingInfo == null) new List<string>();
                 //
-                return RecSettingInfo.GetRecFolderViewList();
+                return RecSettingInfo.RecFolderViewList;
             }
         }
 
@@ -123,19 +145,9 @@ namespace EpgTimer
             view += "優先度 : " + Priority + "\r\n";
             view += "追従 : " + Tuijyu + "\r\n";
             view += "ぴったり(?): " + Pittari + "\r\n";
-            {
-                bool isDefault = (RecSettingInfo.ServiceMode & 0x01) == 0;
-                bool isCaption = (RecSettingInfo.ServiceMode & 0x10) > 0;
-                bool isData = (RecSettingInfo.ServiceMode & 0x20) > 0;
-                if (isDefault == true)
-                {
-                    isCaption = IniFileHandler.GetPrivateProfileInt("SET", "Caption", 1, SettingPath.EdcbIniPath) != 0;
-                    isData = IniFileHandler.GetPrivateProfileInt("SET", "Data", 0, SettingPath.EdcbIniPath) != 0;
-                }
-                view += "指定サービス対象データ : 字幕含" + (isCaption ? "む" : "まない")
-                                              + " データカルーセル含" + (isData ? "む" : "まない")
-                                              + (isDefault == true ? " (デフォルト)" : "") + "\r\n";
-            }
+            view += "指定サービス対象データ : 字幕含" + (RecSettingInfo.ServiceCaptionActual ? "める" : "めない")
+                                            + " データカルーセル含" + (RecSettingInfo.ServiceDataActual ? "める" : "めない")
+                                            + (RecSettingInfo.ServiceModeIsDefault ? " (デフォルト)" : "") + "\r\n";
             view += "録画実行bat : " + (RecSettingInfo.BatFilePath == "" ? "なし" : RecSettingInfo.BatFilePath) + "\r\n";
             {
                 List<RecFileSetInfo> recFolderList = RecSettingInfo.RecFolderList;
@@ -156,36 +168,15 @@ namespace EpgTimer
                     }
                 }
             }
-            view += "録画マージン : 開始 " + RecSettingInfo.GetTrueMargin(true).ToString() +
-                                  " 終了 " + RecSettingInfo.GetTrueMargin(false).ToString()
+            view += "録画マージン : 開始 " + RecSettingInfo.StartMarginActual.ToString() +
+                                  " 終了 " + RecSettingInfo.EndMarginActual.ToString()
                      + (RecSettingInfo.UseMargineFlag == 0 ? " (デフォルト)" : "") + "\r\n";
-            {
-                bool isDefault = RecSettingInfo.SuspendMode == 0;
-                int recEndMode = RecSettingInfo.SuspendMode;
-                bool reboot = RecSettingInfo.RebootFlag == 1;
-                if (isDefault == true)
-                {
-                    recEndMode = IniFileHandler.GetPrivateProfileInt("SET", "RecEndMode", 2, SettingPath.TimerSrvIniPath);
-                    reboot = IniFileHandler.GetPrivateProfileInt("SET", "Reboot", 0, SettingPath.TimerSrvIniPath) == 1;
-                }
-                view += "録画後動作 : ";
-                switch (recEndMode)
-                {
-                    case 1:
-                        view += "スタンバイ";
-                        break;
-                    case 2:
-                        view += "休止";
-                        break;
-                    case 3:
-                        view += "シャットダウン";
-                        break;
-                    case 4:
-                        view += "何もしない";
-                        break;
-                }
-                view += (reboot == true ? " 復帰後再起動する" : "") + (isDefault == true ? " (デフォルト)" : "") + "\r\n";
-            }
+
+            view += "録画後動作 : "
+                + new string[] { "何もしない", "スタンバイ", "休止", "シャットダウン" }[RecSettingInfo.RecEndModeActual]
+                + (RecSettingInfo.RebootFlagActual == 1 ? " 復帰後再起動する" : "")
+                + (RecSettingInfo.SuspendMode == 0 ? " (デフォルト)" : "") + "\r\n";
+
             if (RecSettingInfo.PartialRecFlag == 0)
             {
                 view += "部分受信 : 同時出力なし\r\n";

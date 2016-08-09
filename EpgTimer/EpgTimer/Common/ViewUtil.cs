@@ -134,8 +134,8 @@ namespace EpgTimer
         //パネルアイテムにマージンを適用。
         public static void ApplyMarginForPanelView(ReserveData resInfo, ref DateTime startTime, ref int duration)
         {
-            int StartMargin = resInfo.RecSetting.GetTrueMargin(true);
-            int EndMargin = resInfo.RecSetting.GetTrueMargin(false);
+            int StartMargin = resInfo.RecSetting.StartMarginActual;
+            int EndMargin = resInfo.RecSetting.EndMarginActual;
 
             if (StartMargin < 0)
             {
@@ -151,8 +151,8 @@ namespace EpgTimer
 
         public static void ApplyMarginForTunerPanelView(ReserveData resInfo, ref DateTime startTime, ref int duration)
         {
-            int StartMargin = resInfo.RecSetting.GetTrueMargin(true);
-            int EndMargin = resInfo.RecSetting.GetTrueMargin(false);
+            int StartMargin = resInfo.RecSetting.StartMarginActual;
+            int EndMargin = resInfo.RecSetting.EndMarginActual;
 
             startTime = resInfo.StartTime.AddSeconds(StartMargin * -1);
             duration = (int)resInfo.DurationSecond + StartMargin + EndMargin;
@@ -323,7 +323,7 @@ namespace EpgTimer
                 if (reserveMode <= 2)
                 {
                     uint sum = (uint)(onlist.Sum(info => info.DurationSecond
-                        + info.RecSetting.GetTrueMargin(true) + info.RecSetting.GetTrueMargin(false)));
+                        + info.RecSetting.StartMarginActual + info.RecSetting.EndMarginActual));
                     text += (reserveMode == 1 ? " 総録画時間:" : " 録画時間:")
                             + CommonManager.ConvertDurationText(sum, false);
                 }

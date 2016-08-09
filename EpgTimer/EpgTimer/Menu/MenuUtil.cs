@@ -377,8 +377,8 @@ namespace EpgTimer
                     {
                         if (info.UseMargineFlag == 0)
                         {
-                            info.StartMargine = info.GetTrueMargin(true);
-                            info.EndMargine = info.GetTrueMargin(false);
+                            info.StartMargine = info.StartMarginActual;
+                            info.EndMargine = info.EndMarginActual;
                         }
 
                         info.UseMargineFlag = 1;

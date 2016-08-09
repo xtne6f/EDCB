@@ -44,8 +44,8 @@ namespace EpgTimer
 
         public bool IsOnRec(int MarginMin = 0)
         {
-            int StartMargin = RecSetting.GetTrueMargin(true) + 60 * MarginMin;
-            int EndMargin = RecSetting.GetTrueMargin(false);
+            int StartMargin = RecSetting.StartMarginActual + 60 * MarginMin;
+            int EndMargin = RecSetting.EndMarginActual;
 
             DateTime startTime = StartTime.AddSeconds(StartMargin * -1);
             int duration = (int)DurationSecond + StartMargin + EndMargin;
@@ -60,12 +60,12 @@ namespace EpgTimer
 
         public DateTime StartTimeWithMargin(int MarginMin = 0)
         {
-            int StartMargin = RecSetting.GetTrueMargin(true) + 60 * MarginMin;
+            int StartMargin = RecSetting.StartMarginActual + 60 * MarginMin;
             return StartTime.AddSeconds(StartMargin * -1);
         }
         public DateTime EndTimeWithMargin()
         {
-            int EndMargin = RecSetting.GetTrueMargin(false);
+            int EndMargin = RecSetting.EndMarginActual;
             return StartTime.AddSeconds((int)DurationSecond + EndMargin);
         }
 
