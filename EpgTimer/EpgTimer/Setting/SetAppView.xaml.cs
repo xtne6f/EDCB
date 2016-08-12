@@ -181,6 +181,18 @@ namespace EpgTimer.Setting
                 {
                     checkBox_noChkYen.IsChecked = true;
                 }
+                switch (IniFileHandler.GetPrivateProfileInt("SET", "DelReserveMode", 2, SettingPath.TimerSrvIniPath))
+                {
+                    case 1:
+                        radioButton_delReserveEnd.IsChecked = true;
+                        break;
+                    case 2:
+                        radioButton_delReserveCancel.IsChecked = true;
+                        break;
+                    default:
+                        radioButton_delReserveDel.IsChecked = true;
+                        break;
+                }
                 if (IniFileHandler.GetPrivateProfileInt("SET", "AutoDelRecInfo", 0, SettingPath.TimerSrvIniPath) == 1)
                 {
                     checkBox_autoDelRecInfo.IsChecked = true;
@@ -551,6 +563,10 @@ namespace EpgTimer.Setting
             }
 
             IniFileHandler.WritePrivateProfileString("SET", "NoChkYen", checkBox_noChkYen.IsChecked == true ? "1" : "0", SettingPath.TimerSrvIniPath);
+
+            IniFileHandler.WritePrivateProfileString("SET", "DelReserveMode",
+                                                     radioButton_delReserveEnd.IsChecked == true ? "1" :
+                                                     radioButton_delReserveCancel.IsChecked == true ? "2" : "0", SettingPath.TimerSrvIniPath);
 
             if (checkBox_autoDelRecInfo.IsChecked == true)
             {

@@ -64,6 +64,10 @@
                     <ComboBox Height="24" HorizontalAlignment="Left" Margin="270,57,0,0" Name="comboBox_recname" VerticalAlignment="Top" Width="160" />
                     <Button Content="設定" Height="23" HorizontalAlignment="Left" Margin="436,58,0,0" Name="button_recname" VerticalAlignment="Top" Width="54" Click="button_recname_Click" />
                     <CheckBox Content="ファイル名の禁則文字の変換対象から「\」を除外する" Height="16" HorizontalAlignment="Left" Margin="6,87,0,0" Name="checkBox_noChkYen" VerticalAlignment="Top" />
+                    <Label Content="録画中の予約削除を" Height="28" HorizontalAlignment="Left" Margin="6,110,0,0" VerticalAlignment="Top" />
+                    <RadioButton Content="削除のみ" Height="16" HorizontalAlignment="Left" Margin="150,116,0,0" Name="radioButton_delReserveDel" VerticalAlignment="Top" />
+                    <RadioButton Content="録画済みに追加" Height="16" HorizontalAlignment="Left" Margin="240,116,0,0" Name="radioButton_delReserveEnd" VerticalAlignment="Top" />
+                    <RadioButton Content="キャンセルとして録画済みに追加" Height="16" HorizontalAlignment="Left" Margin="370,116,0,0" Name="radioButton_delReserveCancel" VerticalAlignment="Top" />
                 </Grid>
             </TabItem>
             <TabItem Header="ボタン表示" Name="tabItem3">
