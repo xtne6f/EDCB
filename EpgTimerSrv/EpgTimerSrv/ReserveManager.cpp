@@ -159,6 +159,7 @@ void CReserveManager::ReloadSetting()
 		this->recNamePlugInFileName = GetPrivateProfileToString(L"SET", L"RecNamePlugInFile", L"RecName_Macro.dll", iniPath.c_str());
 	}
 	this->recNameNoChkYen = GetPrivateProfileInt(L"SET", L"NoChkYen", 0, iniPath.c_str()) != 0;
+	this->delReserveMode = GetPrivateProfileInt(L"SET", L"DelReserveMode", 2, iniPath.c_str());
 
 	for( auto itr = this->tunerBankMap.cbegin(); itr != this->tunerBankMap.end(); itr++ ){
 		itr->second->ReloadSetting();
@@ -456,7 +457,7 @@ void CReserveManager::DelReserveData(const vector<DWORD>& idList)
 {
 	CBlockLock lock(&this->managerLock);
 
-	bool modified = false;
+	vector<CTunerBankCtrl::CHECK_RESULT> retList;
 	__int64 minStartTime = LLONG_MAX;
 	for( size_t i = 0; i < idList.size(); i++ ){
 		map<DWORD, RESERVE_DATA>::const_iterator itr = this->reserveText.GetMap().find(idList[i]);
@@ -464,7 +465,7 @@ void CReserveManager::DelReserveData(const vector<DWORD>& idList)
 			if( itr->second.recSetting.recMode != RECMODE_NO ){
 				//バンクから削除
 				for( auto jtr = this->tunerBankMap.cbegin(); jtr != this->tunerBankMap.end(); jtr++ ){
-					if( jtr->second->DelReserve(idList[i]) ){
+					if( jtr->second->DelReserve(idList[i], this->delReserveMode == 0 ? NULL : &retList) ){
 						break;
 					}
 				}
@@ -472,14 +473,25 @@ void CReserveManager::DelReserveData(const vector<DWORD>& idList)
 				CalcEntireReserveTime(&startTime, NULL, itr->second);
 				minStartTime = min(startTime, minStartTime);
 			}
-			this->reserveText.DelReserve(idList[i]);
+		}
+	}
+	for( auto itrRet = retList.begin(); itrRet != retList.end(); itrRet++ ){
+		//正常終了をキャンセル中断に差し替える
+		if( this->delReserveMode == 2 && itrRet->type == CTunerBankCtrl::CHECK_END ){
+			itrRet->type = CTunerBankCtrl::CHECK_END_CANCEL;
+		}
+	}
+	ProcessRecEnd(retList);
+	bool modified = false;
+	for( size_t i = 0; i < idList.size(); i++ ){
+		if( this->reserveText.DelReserve(idList[i]) ){
 			this->reserveModified = true;
 			modified = true;
 		}
 	}
+	ReloadBankMap(minStartTime);
 	if( modified ){
 		this->reserveText.SaveText();
-		ReloadBankMap(minStartTime);
 		AddNotifyAndPostBat(NOTIFY_UPDATE_RESERVE_INFO);
 	}
 }
@@ -1287,6 +1299,127 @@ void CReserveManager::CheckOverTimeReserve()
 	}
 }
 
+void CReserveManager::ProcessRecEnd(const vector<CTunerBankCtrl::CHECK_RESULT>& retList, int* shutdownMode)
+{
+	vector<BAT_WORK_INFO> batWorkList;
+	bool modified = false;
+	for( auto itrRet = retList.cbegin(); itrRet != retList.end(); itrRet++ ){
+		map<DWORD, RESERVE_DATA>::const_iterator itrRes = this->reserveText.GetMap().find(itrRet->reserveID);
+		if( itrRes != this->reserveText.GetMap().end() ){
+			if( itrRet->type == CTunerBankCtrl::CHECK_END && itrRet->recFilePath.empty() == false &&
+			    itrRet->drops < this->recInfo2DropChk && itrRet->epgEventName.empty() == false ){
+				//録画済みとして登録
+				PARSE_REC_INFO2_ITEM item;
+				item.originalNetworkID = itrRes->second.originalNetworkID;
+				item.transportStreamID = itrRes->second.transportStreamID;
+				item.serviceID = itrRes->second.serviceID;
+				item.startTime = itrRet->epgStartTime;
+				item.eventName = itrRet->epgEventName;
+				this->recInfo2Text.Add(item);
+			}
+
+			REC_FILE_INFO item;
+			item = itrRes->second;
+			if( itrRet->type <= CTunerBankCtrl::CHECK_END_NOT_START_HEAD ){
+				item.recFilePath = itrRet->recFilePath;
+				item.drops = itrRet->drops;
+				item.scrambles = itrRet->scrambles;
+			}
+			switch( itrRet->type ){
+			case CTunerBankCtrl::CHECK_END:
+				if( ConvertI64Time(item.startTime) != ConvertI64Time(item.startTimeEpg) ){
+					item.recStatus = REC_END_STATUS_CHG_TIME;
+					item.comment = L"開始時間が変更されました";
+				}else{
+					item.recStatus = REC_END_STATUS_NORMAL;
+					item.comment = item.recFilePath.empty() ? L"終了" : L"録画終了";
+				}
+				break;
+			case CTunerBankCtrl::CHECK_END_NOT_FIND_PF:
+				item.recStatus = REC_END_STATUS_NOT_FIND_PF;
+				item.comment = L"録画中に番組情報を確認できませんでした";
+				break;
+			case CTunerBankCtrl::CHECK_END_NEXT_START_END:
+				item.recStatus = REC_END_STATUS_NEXT_START_END;
+				item.comment = L"次の予約開始のためにキャンセルされました";
+				break;
+			case CTunerBankCtrl::CHECK_END_END_SUBREC:
+				item.recStatus = REC_END_STATUS_END_SUBREC;
+				item.comment = L"録画終了（空き容量不足で別フォルダへの保存が発生）";
+				break;
+			case CTunerBankCtrl::CHECK_END_NOT_START_HEAD:
+				item.recStatus = REC_END_STATUS_NOT_START_HEAD;
+				item.comment = L"一部のみ録画が実行された可能性があります";
+				break;
+			case CTunerBankCtrl::CHECK_ERR_RECEND:
+				item.recStatus = REC_END_STATUS_ERR_END2;
+				item.comment = L"ファイル保存で致命的なエラーが発生した可能性があります";
+				break;
+			case CTunerBankCtrl::CHECK_END_CANCEL:
+			case CTunerBankCtrl::CHECK_ERR_REC:
+				item.recStatus = REC_END_STATUS_ERR_END;
+				item.comment = L"録画中にキャンセルされた可能性があります";
+				break;
+			case CTunerBankCtrl::CHECK_ERR_RECSTART:
+			case CTunerBankCtrl::CHECK_ERR_CTRL:
+				item.recStatus = REC_END_STATUS_ERR_RECSTART;
+				item.comment = L"録画開始処理に失敗しました（空き容量不足の可能性あり）";
+				break;
+			case CTunerBankCtrl::CHECK_ERR_OPEN:
+				item.recStatus = REC_END_STATUS_OPEN_ERR;
+				item.comment = L"チューナーのオープンに失敗しました";
+				break;
+			case CTunerBankCtrl::CHECK_ERR_PASS:
+				item.recStatus = REC_END_STATUS_START_ERR;
+				item.comment = L"録画時間に起動していなかった可能性があります";
+				break;
+			}
+			this->recInfoText.AddRecInfo(item);
+
+			//バッチ処理追加
+			BAT_WORK_INFO batInfo;
+			AddRecInfoMacro(batInfo.macroList, item);
+			batInfo.macroList.push_back(pair<string, wstring>("AddKey",
+				itrRes->second.comment.compare(0, 8, L"EPG自動予約(") == 0 && itrRes->second.comment.size() >= 9 ?
+				itrRes->second.comment.substr(8, itrRes->second.comment.size() - 9) : wstring()));
+			if( (itrRet->type == CTunerBankCtrl::CHECK_END || itrRet->type == CTunerBankCtrl::CHECK_END_NEXT_START_END || this->errEndBatRun) &&
+			    item.recFilePath.empty() == false && itrRes->second.recSetting.batFilePath.empty() == false && itrRet->continueRec == false ){
+				batInfo.batFilePath = itrRes->second.recSetting.batFilePath;
+				this->batManager.AddBatWork(batInfo);
+			}
+			if( itrRet->type != CTunerBankCtrl::CHECK_ERR_PASS ){
+				batWorkList.resize(batWorkList.size() + 1);
+				batWorkList.back().macroList = batInfo.macroList;
+				if( shutdownMode ){
+					*shutdownMode = MAKEWORD(itrRes->second.recSetting.suspendMode, itrRes->second.recSetting.rebootFlag);
+				}
+			}
+
+			this->reserveText.DelReserve(itrRes->first);
+			this->reserveModified = true;
+			modified = true;
+
+			//予約終了を通知
+			SYSTEMTIME st = item.startTime;
+			SYSTEMTIME stEnd;
+			ConvertSystemTime(ConvertI64Time(st) + item.durationSecond * I64_1SEC, &stEnd);
+			wstring msg;
+			Format(msg, L"%s %04d/%02d/%02d %02d:%02d～%02d:%02d\r\n%s\r\n%s",
+			       item.serviceName.c_str(), st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute,
+			       stEnd.wHour, stEnd.wMinute, item.title.c_str(), item.comment.c_str());
+			this->notifyManager.AddNotifyMsg(NOTIFY_UPDATE_REC_END, msg);
+		}
+	}
+	if( modified ){
+		this->reserveText.SaveText();
+		this->recInfoText.SaveText();
+		this->recInfo2Text.SaveText();
+		AddNotifyAndPostBat(NOTIFY_UPDATE_RESERVE_INFO);
+		AddNotifyAndPostBat(NOTIFY_UPDATE_REC_INFO);
+		AddPostBatWork(batWorkList, L"PostRecEnd.bat");
+	}
+}
+
 DWORD CReserveManager::Check()
 {
 	{
@@ -1313,121 +1446,7 @@ DWORD CReserveManager::Check()
 				}
 			}
 			AddPostBatWork(batWorkList, L"PostRecStart.bat");
-			batWorkList.clear();
-			bool modified = false;
-			for( vector<CTunerBankCtrl::CHECK_RESULT>::const_iterator itrRet = retList.begin(); itrRet != retList.end(); itrRet++ ){
-				map<DWORD, RESERVE_DATA>::const_iterator itrRes = this->reserveText.GetMap().find(itrRet->reserveID);
-				if( itrRes != this->reserveText.GetMap().end() ){
-					if( itrRet->type == CTunerBankCtrl::CHECK_END && itrRet->recFilePath.empty() == false &&
-					    itrRet->drops < this->recInfo2DropChk && itrRet->epgEventName.empty() == false ){
-						//録画済みとして登録
-						PARSE_REC_INFO2_ITEM item;
-						item.originalNetworkID = itrRes->second.originalNetworkID;
-						item.transportStreamID = itrRes->second.transportStreamID;
-						item.serviceID = itrRes->second.serviceID;
-						item.startTime = itrRet->epgStartTime;
-						item.eventName = itrRet->epgEventName;
-						this->recInfo2Text.Add(item);
-					}
-
-					REC_FILE_INFO item;
-					item = itrRes->second;
-					if( itrRet->type <= CTunerBankCtrl::CHECK_END_NOT_START_HEAD ){
-						item.recFilePath = itrRet->recFilePath;
-						item.drops = itrRet->drops;
-						item.scrambles = itrRet->scrambles;
-					}
-					switch( itrRet->type ){
-					case CTunerBankCtrl::CHECK_END:
-						if( ConvertI64Time(item.startTime) != ConvertI64Time(item.startTimeEpg) ){
-							item.recStatus = REC_END_STATUS_CHG_TIME;
-							item.comment = L"開始時間が変更されました";
-						}else{
-							item.recStatus = REC_END_STATUS_NORMAL;
-							item.comment = item.recFilePath.empty() ? L"終了" : L"録画終了";
-						}
-						break;
-					case CTunerBankCtrl::CHECK_END_NOT_FIND_PF:
-						item.recStatus = REC_END_STATUS_NOT_FIND_PF;
-						item.comment = L"録画中に番組情報を確認できませんでした";
-						break;
-					case CTunerBankCtrl::CHECK_END_NEXT_START_END:
-						item.recStatus = REC_END_STATUS_NEXT_START_END;
-						item.comment = L"次の予約開始のためにキャンセルされました";
-						break;
-					case CTunerBankCtrl::CHECK_END_END_SUBREC:
-						item.recStatus = REC_END_STATUS_END_SUBREC;
-						item.comment = L"録画終了（空き容量不足で別フォルダへの保存が発生）";
-						break;
-					case CTunerBankCtrl::CHECK_END_NOT_START_HEAD:
-						item.recStatus = REC_END_STATUS_NOT_START_HEAD;
-						item.comment = L"一部のみ録画が実行された可能性があります";
-						break;
-					case CTunerBankCtrl::CHECK_ERR_RECEND:
-						item.recStatus = REC_END_STATUS_ERR_END2;
-						item.comment = L"ファイル保存で致命的なエラーが発生した可能性があります";
-						break;
-					case CTunerBankCtrl::CHECK_END_CANCEL:
-					case CTunerBankCtrl::CHECK_ERR_REC:
-						item.recStatus = REC_END_STATUS_ERR_END;
-						item.comment = L"録画中にキャンセルされた可能性があります";
-						break;
-					case CTunerBankCtrl::CHECK_ERR_RECSTART:
-					case CTunerBankCtrl::CHECK_ERR_CTRL:
-						item.recStatus = REC_END_STATUS_ERR_RECSTART;
-						item.comment = L"録画開始処理に失敗しました（空き容量不足の可能性あり）";
-						break;
-					case CTunerBankCtrl::CHECK_ERR_OPEN:
-						item.recStatus = REC_END_STATUS_OPEN_ERR;
-						item.comment = L"チューナーのオープンに失敗しました";
-						break;
-					case CTunerBankCtrl::CHECK_ERR_PASS:
-						item.recStatus = REC_END_STATUS_START_ERR;
-						item.comment = L"録画時間に起動していなかった可能性があります";
-						break;
-					}
-					this->recInfoText.AddRecInfo(item);
-
-					//バッチ処理追加
-					BAT_WORK_INFO batInfo;
-					AddRecInfoMacro(batInfo.macroList, item);
-					batInfo.macroList.push_back(pair<string, wstring>("AddKey",
-						itrRes->second.comment.compare(0, 8, L"EPG自動予約(") == 0 && itrRes->second.comment.size() >= 9 ?
-						itrRes->second.comment.substr(8, itrRes->second.comment.size() - 9) : wstring()));
-					if( (itrRet->type == CTunerBankCtrl::CHECK_END || itrRet->type == CTunerBankCtrl::CHECK_END_NEXT_START_END || this->errEndBatRun) &&
-					    item.recFilePath.empty() == false && itrRes->second.recSetting.batFilePath.empty() == false && itrRet->continueRec == false ){
-						batInfo.batFilePath = itrRes->second.recSetting.batFilePath;
-						this->batManager.AddBatWork(batInfo);
-					}
-					if( itrRet->type != CTunerBankCtrl::CHECK_ERR_PASS ){
-						batWorkList.resize(batWorkList.size() + 1);
-						batWorkList.back().macroList = batInfo.macroList;
-						this->shutdownModePending = MAKEWORD(itrRes->second.recSetting.suspendMode, itrRes->second.recSetting.rebootFlag);
-					}
-
-					this->reserveText.DelReserve(itrRes->first);
-					this->reserveModified = true;
-					modified = true;
-
-					//予約終了を通知
-					SYSTEMTIME st = item.startTime;
-					SYSTEMTIME stEnd;
-					ConvertSystemTime(ConvertI64Time(st) + item.durationSecond * I64_1SEC, &stEnd);
-					wstring msg;
-					Format(msg, L"%s %04d/%02d/%02d %02d:%02d～%02d:%02d\r\n%s\r\n%s",
-					       item.serviceName.c_str(), st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute,
-					       stEnd.wHour, stEnd.wMinute, item.title.c_str(), item.comment.c_str());
-					this->notifyManager.AddNotifyMsg(NOTIFY_UPDATE_REC_END, msg);
-				}
-			}
-			if( modified ){
-				this->reserveText.SaveText();
-				this->recInfoText.SaveText();
-				this->recInfo2Text.SaveText();
-				AddNotifyAndPostBat(NOTIFY_UPDATE_RESERVE_INFO);
-				AddNotifyAndPostBat(NOTIFY_UPDATE_REC_INFO);
-				AddPostBatWork(batWorkList, L"PostRecEnd.bat");
-			}
+			ProcessRecEnd(retList, &this->shutdownModePending);
 		}
 		if( this->checkCount % 30 == 0 ){
 			CheckAutoDel();

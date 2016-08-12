@@ -117,7 +117,7 @@ bool CTunerBankCtrl::ChgCtrlReserve(TUNER_RESERVE* reserve)
 	return false;
 }
 
-bool CTunerBankCtrl::DelReserve(DWORD reserveID)
+bool CTunerBankCtrl::DelReserve(DWORD reserveID, vector<CHECK_RESULT>* retList)
 {
 	auto itr = this->reserveMap.find(reserveID);
 	if( itr != this->reserveMap.end() ){
@@ -126,17 +126,47 @@ bool CTunerBankCtrl::DelReserve(DWORD reserveID)
 			CWatchBlock watchBlock(&this->watchContext);
 			CSendCtrlCmd ctrlCmd;
 			ctrlCmd.SetPipeSetting(CMD2_VIEW_CTRL_WAIT_CONNECT, CMD2_VIEW_CTRL_PIPE, this->tunerPid);
+			CHECK_RESULT ret;
+			ret.type = 0;
+			ret.reserveID = reserveID;
+			ret.continueRec = false;
+			ret.drops = 0;
+			ret.scrambles = 0;
+			bool isMainCtrl = true;
 			for( int i = 0; i < 2; i++ ){
 				if( itr->second.ctrlID[i] != 0 ){
-					if( itr->second.state == TR_REC && itr->second.recMode != RECMODE_VIEW ){
-						SET_CTRL_REC_STOP_PARAM param;
-						param.ctrlID = itr->second.ctrlID[i];
-						param.saveErrLog = this->saveErrLog;
-						SET_CTRL_REC_STOP_RES_PARAM resVal;
-						ctrlCmd.SendViewStopRec(param, &resVal);
+					if( itr->second.state == TR_REC ){
+						if( itr->second.recMode == RECMODE_VIEW ){
+							if( isMainCtrl ){
+								ret.type = CHECK_END;
+							}
+						}else{
+							SET_CTRL_REC_STOP_PARAM param;
+							param.ctrlID = itr->second.ctrlID[i];
+							param.saveErrLog = this->saveErrLog;
+							SET_CTRL_REC_STOP_RES_PARAM resVal;
+							if( ctrlCmd.SendViewStopRec(param, &resVal) != CMD_SUCCESS ){
+								if( isMainCtrl ){
+									ret.type = CHECK_ERR_RECEND;
+								}
+							}else if( isMainCtrl ){
+								ret.type = resVal.subRecFlag ? CHECK_END_END_SUBREC :
+								           itr->second.notStartHead ? CHECK_END_NOT_START_HEAD :
+								           itr->second.savedPgInfo == false ? CHECK_END_NOT_FIND_PF : CHECK_END;
+								ret.recFilePath = resVal.recFilePath;
+								ret.drops = resVal.drop;
+								ret.scrambles = resVal.scramble;
+								ret.epgStartTime = itr->second.epgStartTime;
+								ret.epgEventName = itr->second.epgEventName;
+							}
+						}
 					}
 					ctrlCmd.SendViewDeleteCtrl(itr->second.ctrlID[i]);
+					isMainCtrl = false;
 				}
+			}
+			if( ret.type != 0 && retList ){
+				retList->push_back(ret);
 			}
 			if( itr->second.state == TR_REC ){
 				//録画終了に伴ってGUIキープが解除されたかもしれない
