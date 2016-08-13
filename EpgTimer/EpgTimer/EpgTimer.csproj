@@ -96,6 +96,7 @@
     <Compile Include="CtrlCmdDefEx\RecSettingDataEx.cs" />
     <Compile Include="CtrlCmdDefEx\ReserveDataEx.cs" />
     <Compile Include="CtrlCmdDefEx\RecFileInfoEx.cs" />
+    <Compile Include="DefineClass\RadioBtnSelect.cs" />
     <Compile Include="DefineClass\GridViewSorterItem.cs" />
     <Compile Include="DefineClass\StringItem.cs" />
     <Compile Include="DefineClass\DataListItemBase.cs" />

@@ -33,7 +33,7 @@ namespace EpgTimer
             }
         }
 
-        private List<RadioButton> recEndModeRadioBtns;
+        private RadioBtnSelect recEndModeRadioBtns;
         private List<TunerSelectInfo> tunerList = new List<TunerSelectInfo>();
         private static CtrlCmdUtil cmd { get { return CommonManager.Instance.CtrlCmd; } }
 
@@ -51,7 +51,7 @@ namespace EpgTimer
                 comboBox_pittari.DataContext = CommonManager.Instance.YesNoDictionary.Values;
                 comboBox_priority.DataContext = CommonManager.Instance.PriorityDictionary.Values;
 
-                recEndModeRadioBtns = new List<RadioButton> { radioButton_non, radioButton_standby, radioButton_suspend, radioButton_shutdown };
+                recEndModeRadioBtns = new RadioBtnSelect(radioButton_non, radioButton_standby, radioButton_suspend, radioButton_shutdown);
 
                 tunerList.Add(new TunerSelectInfo("自動", 0));
                 foreach (TunerReserveInfo info in CommonManager.Instance.DB.TunerReserveList.Values)
@@ -208,7 +208,7 @@ namespace EpgTimer
                 (view.PartialRec ? setInfo.PartialRecFolder : setInfo.RecFolderList).Add(view.Info);
             }
 
-            setInfo.SetSuspendMode(checkBox_suspendDef.IsChecked == true, GetRecEndMode());
+            setInfo.SetSuspendMode(checkBox_suspendDef.IsChecked == true, recEndModeRadioBtns.Value);
             setInfo.RebootFlag = (byte)(checkBox_reboot.IsChecked == true ? 1 : 0);
 
             setInfo.UseMargineFlag = (byte)(checkBox_margineDef.IsChecked == true ? 0 : 1);
@@ -246,11 +246,6 @@ namespace EpgTimer
             }
             catch { }
             return 0;
-        }
-
-        private int GetRecEndMode()
-        {
-            return recEndModeRadioBtns.FindIndex(btn => btn.IsChecked == true);
         }
 
         private void UserControl_Loaded(object sender, RoutedEventArgs e)
@@ -366,10 +361,10 @@ namespace EpgTimer
             recSet.SetSuspendMode(checkBox_suspendDef.IsChecked == true, recEndMode);
             if (recSet.SuspendMode == 0 && OnUpdatingView == false)
             {
-                recEndMode = GetRecEndMode();
+                recEndMode = recEndModeRadioBtns.Value;
                 recSetting.RebootFlag = (byte)(checkBox_reboot.IsChecked == true ? 1 : 0);
             }
-            recEndModeRadioBtns[recSet.RecEndModeActual].IsChecked = true;
+            recEndModeRadioBtns.Value = recSet.RecEndModeActual;
             checkBox_reboot.IsChecked = recSet.RebootFlagActual == 1;
         }
 
