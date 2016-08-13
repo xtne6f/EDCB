@@ -63,6 +63,12 @@
                         <Button Content="設定" Margin="12,0,0,0" Name="button_recname" Click="button_recname_Click" />
                     </StackPanel>
                     <CheckBox Margin="0,0,12,6" Content="ファイル名の禁則文字の変換対象から「\」を除外する" Name="checkBox_noChkYen" />
+                    <StackPanel Margin="0,0,12,6" Orientation="Horizontal">
+                        <Label Content="録画中の予約削除を" />
+                        <RadioButton Content="削除のみ" Margin="12,0,0,0" Name="radioButton_delReserveDel" />
+                        <RadioButton Content="録画済みに追加" Margin="12,0,0,0" Name="radioButton_delReserveEnd" />
+                        <RadioButton Content="キャンセルとして録画済みに追加" Margin="12,0,0,0" Name="radioButton_delReserveCancel" />
+                    </StackPanel >
                     <StackPanel Margin="0,0,12,6" Orientation="Horizontal" >
                         <CheckBox  Content="録画中または開始直前の予約を変更・削除するとき警告する" Name="checkBox_cautionOnRecChange"/>
                         <TextBox Margin="12,0,0,0" Name="textBox_cautionOnRecMarginMin" Width="62" />

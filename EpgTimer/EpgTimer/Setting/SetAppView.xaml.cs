@@ -35,6 +35,7 @@ namespace EpgTimer.Setting
 
         private List<IEPGStationInfo> stationList;
         private RadioBtnSelect recEndModeRadioBtns;
+        private RadioBtnSelect delReserveModeRadioBtns;
 
         public SetAppView()
         {
@@ -150,6 +151,10 @@ namespace EpgTimer.Setting
                 comboBox_recname.SelectedItem = IniFileHandler.GetPrivateProfileString("SET", "RecNamePlugInFile", "RecName_Macro.dll", SettingPath.TimerSrvIniPath);
 
                 checkBox_noChkYen.IsChecked = IniFileHandler.GetPrivateProfileInt("SET", "NoChkYen", 0, SettingPath.TimerSrvIniPath) == 1;
+
+                delReserveModeRadioBtns = new RadioBtnSelect(radioButton_delReserveDel, radioButton_delReserveEnd, radioButton_delReserveCancel);
+                delReserveModeRadioBtns.Value = IniFileHandler.GetPrivateProfileInt("SET", "DelReserveMode", 2, SettingPath.TimerSrvIniPath);
+
                 checkBox_cautionOnRecChange.IsChecked = Settings.Instance.CautionOnRecChange;
                 textBox_cautionOnRecMarginMin.Text = Settings.Instance.CautionOnRecMarginMin.ToString();
                 checkBox_SyncResAutoAddChange.IsChecked = Settings.Instance.SyncResAutoAddChange;
@@ -327,6 +332,7 @@ namespace EpgTimer.Setting
                 IniFileHandler.WritePrivateProfileString("SET", "RecNamePlugIn", checkBox_recname.IsChecked == true ? "1" : "0", SettingPath.TimerSrvIniPath);
                 IniFileHandler.WritePrivateProfileString("SET", "RecNamePlugInFile", comboBox_recname.SelectedItem as string ?? "", SettingPath.TimerSrvIniPath);
                 IniFileHandler.WritePrivateProfileString("SET", "NoChkYen", checkBox_noChkYen.IsChecked == true ? "1" : "0", SettingPath.TimerSrvIniPath);
+                IniFileHandler.WritePrivateProfileString("SET", "DelReserveMode", delReserveModeRadioBtns.Value < 0 ? null : delReserveModeRadioBtns.Value.ToString(), SettingPath.TimerSrvIniPath);
 
                 Settings.Instance.CautionOnRecChange = checkBox_cautionOnRecChange.IsChecked != false;
                 Settings.Instance.CautionOnRecMarginMin = MenuUtil.MyToNumerical(textBox_cautionOnRecMarginMin, Convert.ToInt32, Settings.Instance.CautionOnRecMarginMin);
