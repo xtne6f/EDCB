@@ -129,7 +129,7 @@ namespace EpgTimer
         {
             get
             {
-                if (RecSettingInfo == null) new List<string>();
+                if (RecSettingInfo == null) return new List<string>();
                 //
                 return RecSettingInfo.RecFolderViewList;
             }
