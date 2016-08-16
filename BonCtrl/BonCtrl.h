@@ -15,6 +15,14 @@
 class CBonCtrl
 {
 public:
+	//チャンネルスキャン、EPG取得のステータス用
+	enum JOB_STATUS {
+		ST_STOP,		//停止中
+		ST_WORKING,		//実行中
+		ST_COMPLETE,	//完了
+		ST_CANCEL,		//キャンセルされた
+	};
+
 	CBonCtrl(void);
 	~CBonCtrl(void);
 
@@ -329,14 +337,14 @@ public:
 
 	//チャンネルスキャンの状態を取得する
 	//戻り値：
-	// エラーコード
+	// ステータス
 	//引数：
 	// space		[OUT]スキャン中の物理CHのspace
 	// ch			[OUT]スキャン中の物理CHのch
 	// chName		[OUT]スキャン中の物理CHの名前
 	// chkNum		[OUT]チェック済みの数
 	// totalNum		[OUT]チェック対象の総数
-	DWORD GetChScanStatus(
+	JOB_STATUS GetChScanStatus(
 		DWORD* space,
 		DWORD* ch,
 		wstring* chName,
@@ -374,10 +382,10 @@ public:
 
 	//EPG取得のステータスを取得する
 	//戻り値：
-	// エラーコード
+	// ステータス
 	//引数：
 	// info			[OUT]取得中のサービス
-	DWORD GetEpgCapStatus(
+	JOB_STATUS GetEpgCapStatus(
 		EPGCAP_SERVICE_INFO* info
 		);
 
@@ -428,7 +436,7 @@ protected:
 	wstring chSt_chName;
 	DWORD chSt_chkNum;
 	DWORD chSt_totalNum;
-	DWORD chSt_err;
+	JOB_STATUS chSt_err;
 	typedef struct _CHK_CH_INFO{
 		DWORD space;
 		DWORD ch;
@@ -441,7 +449,7 @@ protected:
 	HANDLE epgCapStopEvent;
 	vector<EPGCAP_SERVICE_INFO> epgCapChList;
 	EPGCAP_SERVICE_INFO epgSt_ch;
-	DWORD epgSt_err;
+	JOB_STATUS epgSt_err;
 
 	HANDLE epgCapBackThread;
 	HANDLE epgCapBackStopEvent;

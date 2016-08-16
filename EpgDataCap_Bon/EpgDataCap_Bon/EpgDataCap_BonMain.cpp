@@ -206,7 +206,7 @@ DWORD CEpgDataCap_BonMain::SetCh(
 {
 	DWORD err = ERR_FALSE;
 	if( this->bonCtrl.IsRec() == FALSE ){
-		if( this->bonCtrl.GetEpgCapStatus(NULL) == ST_WORKING ){
+		if( this->bonCtrl.GetEpgCapStatus(NULL) == CBonCtrl::ST_WORKING ){
 			this->bonCtrl.StopEpgCap();
 		}
 		err = this->bonCtrl.SetCh(ONID, TSID);
@@ -244,7 +244,7 @@ DWORD CEpgDataCap_BonMain::SetCh(
 {
 	DWORD err = ERR_FALSE;
 	if( this->bonCtrl.IsRec() == FALSE ){
-		if( this->bonCtrl.GetEpgCapStatus(NULL) == ST_WORKING ){
+		if( this->bonCtrl.GetEpgCapStatus(NULL) == CBonCtrl::ST_WORKING ){
 			this->bonCtrl.StopEpgCap();
 		}
 		err = this->bonCtrl.SetCh(space, ch);
@@ -641,14 +641,14 @@ DWORD CEpgDataCap_BonMain::StopChScan()
 
 //チャンネルスキャンの状態を取得する
 //戻り値：
-// エラーコード
+// ステータス
 //引数：
 // space		[OUT]スキャン中の物理CHのspace
 // ch			[OUT]スキャン中の物理CHのch
 // chName		[OUT]スキャン中の物理CHの名前
 // chkNum		[OUT]チェック済みの数
 // totalNum		[OUT]チェック対象の総数
-DWORD CEpgDataCap_BonMain::GetChScanStatus(
+CBonCtrl::JOB_STATUS CEpgDataCap_BonMain::GetChScanStatus(
 	DWORD* space,
 	DWORD* ch,
 	wstring* chName,
@@ -684,10 +684,10 @@ DWORD CEpgDataCap_BonMain::StopEpgCap(
 
 //EPG取得のステータスを取得する
 //戻り値：
-// エラーコード
+// ステータス
 //引数：
 // info			[OUT]取得中のサービス
-DWORD CEpgDataCap_BonMain::GetEpgCapStatus(
+CBonCtrl::JOB_STATUS CEpgDataCap_BonMain::GetEpgCapStatus(
 	EPGCAP_SERVICE_INFO* info
 	)
 {
@@ -799,7 +799,7 @@ void CEpgDataCap_BonMain::CtrlCmdCallbackInvoked()
 		OutputDebugString(L"CMD2_VIEW_APP_SET_CH");
 		{
 			if( sys->bonCtrl.IsRec() == FALSE ){
-				if( sys->bonCtrl.GetEpgCapStatus(NULL) == ST_WORKING ){
+				if( sys->bonCtrl.GetEpgCapStatus(NULL) == CBonCtrl::ST_WORKING ){
 					sys->bonCtrl.StopEpgCap();
 				}
 				SET_CH_INFO val;
@@ -841,7 +841,7 @@ void CEpgDataCap_BonMain::CtrlCmdCallbackInvoked()
 				val = VIEW_APP_ST_ERR_BON;
 			}else if( sys->bonCtrl.IsRec() == TRUE ){
 				val = VIEW_APP_ST_REC;
-			}else if( sys->bonCtrl.GetEpgCapStatus(NULL) == ST_WORKING ){
+			}else if( sys->bonCtrl.GetEpgCapStatus(NULL) == CBonCtrl::ST_WORKING ){
 				val = VIEW_APP_ST_GET_EPG;
 			}else{
 				//VIEW_APP_ST_NORMAL

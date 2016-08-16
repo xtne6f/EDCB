@@ -354,16 +354,16 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 				wstring chName = L"";
 				DWORD chkNum = 0;
 				DWORD totalNum = 0;
-				DWORD status = this->main.GetChScanStatus(&space, &ch, &chName, &chkNum, &totalNum);
-				if( status == ST_WORKING ){
+				CBonCtrl::JOB_STATUS status = this->main.GetChScanStatus(&space, &ch, &chName, &chkNum, &totalNum);
+				if( status == CBonCtrl::ST_WORKING ){
 					wstring log;
 					Format(log, L"%s (%d/%d 残り約 %d 秒)\r\n", chName.c_str(), chkNum, totalNum, (totalNum - chkNum)*10);
 					SetDlgItemText(m_hWnd, IDC_EDIT_LOG, log.c_str());
 					SetTimer(TIMER_CHSCAN_STATSU, 1000, NULL);
-				}else if( status == ST_CANCEL ){
+				}else if( status == CBonCtrl::ST_CANCEL ){
 					KillTimer(TIMER_CHSCAN_STATSU);
 					SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"キャンセルされました\r\n");
-				}else if( status == ST_COMPLETE ){
+				}else if( status == CBonCtrl::ST_COMPLETE ){
 					KillTimer(TIMER_CHSCAN_STATSU);
 					SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"終了しました\r\n");
 					ReloadServiceList();
@@ -407,8 +407,8 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 			{
 				KillTimer( TIMER_EPGCAP_STATSU );
 				EPGCAP_SERVICE_INFO info;
-				DWORD status = this->main.GetEpgCapStatus(&info);
-				if( status == ST_WORKING ){
+				CBonCtrl::JOB_STATUS status = this->main.GetEpgCapStatus(&info);
+				if( status == CBonCtrl::ST_WORKING ){
 					int sel = ComboBox_GetCurSel(GetDlgItem(IDC_COMBO_SERVICE));
 					if( sel != CB_ERR ){
 						DWORD index = (DWORD)ComboBox_GetItemData(GetDlgItem(IDC_COMBO_SERVICE), sel);
@@ -425,10 +425,10 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 
 					SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"EPG取得中\r\n");
 					SetTimer(TIMER_EPGCAP_STATSU, 1000, NULL);
-				}else if( status == ST_CANCEL ){
+				}else if( status == CBonCtrl::ST_CANCEL ){
 					KillTimer(TIMER_EPGCAP_STATSU);
 					SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"キャンセルされました\r\n");
-				}else if( status == ST_COMPLETE ){
+				}else if( status == CBonCtrl::ST_COMPLETE ){
 					KillTimer(TIMER_EPGCAP_STATSU);
 					SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"終了しました\r\n");
 					BtnUpdate(GUI_NORMAL);
@@ -459,7 +459,7 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 				HICON setIcon = this->iconBlue;
 				if( this->main.IsRec() == TRUE ){
 					setIcon = this->iconRed;
-				}else if( this->main.GetEpgCapStatus(NULL) == ST_WORKING ){
+				}else if( this->main.GetEpgCapStatus(NULL) == CBonCtrl::ST_WORKING ){
 					setIcon = this->iconGreen;
 				}else if( this->main.GetOpenBonDriver(NULL) == FALSE ){
 					setIcon = this->iconGray;
@@ -501,7 +501,7 @@ void CEpgDataCap_BonDlg::OnSize(UINT nType, int cx, int cy)
 		HICON setIcon = this->iconBlue;
 		if( this->main.IsRec() == TRUE ){
 			setIcon = this->iconRed;
-		}else if( this->main.GetEpgCapStatus(NULL) == ST_WORKING ){
+		}else if( this->main.GetEpgCapStatus(NULL) == CBonCtrl::ST_WORKING ){
 			setIcon = this->iconGreen;
 		}else if( this->main.GetOpenBonDriver(NULL) == FALSE ){
 			setIcon = this->iconGray;
@@ -687,7 +687,7 @@ void CEpgDataCap_BonDlg::ChgIconStatus(){
 		HICON setIcon = this->iconBlue;
 		if( this->main.IsRec() == TRUE ){
 			setIcon = this->iconRed;
-		}else if( this->main.GetEpgCapStatus(NULL) == ST_WORKING ){
+		}else if( this->main.GetEpgCapStatus(NULL) == CBonCtrl::ST_WORKING ){
 			setIcon = this->iconGreen;
 		}else if( this->main.GetOpenBonDriver(NULL) == FALSE ){
 			setIcon = this->iconGray;
@@ -713,7 +713,7 @@ LRESULT CEpgDataCap_BonDlg::OnTaskbarCreated(WPARAM, LPARAM)
 		HICON setIcon = this->iconBlue;
 		if( this->main.IsRec() == TRUE ){
 			setIcon = this->iconRed;
-		}else if( this->main.GetEpgCapStatus(NULL) == ST_WORKING ){
+		}else if( this->main.GetEpgCapStatus(NULL) == CBonCtrl::ST_WORKING ){
 			setIcon = this->iconGreen;
 		}else if( this->main.GetOpenBonDriver(NULL) == FALSE ){
 			setIcon = this->iconGray;

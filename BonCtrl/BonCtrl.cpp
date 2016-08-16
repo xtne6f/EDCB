@@ -646,14 +646,14 @@ DWORD CBonCtrl::StopChScan()
 
 //チャンネルスキャンの状態を取得する
 //戻り値：
-// エラーコード
+// ステータス
 //引数：
 // space		[OUT]スキャン中の物理CHのspace
 // ch			[OUT]スキャン中の物理CHのch
 // chName		[OUT]スキャン中の物理CHの名前
 // chkNum		[OUT]チェック済みの数
 // totalNum		[OUT]チェック対象の総数
-DWORD CBonCtrl::GetChScanStatus(
+CBonCtrl::JOB_STATUS CBonCtrl::GetChScanStatus(
 	DWORD* space,
 	DWORD* ch,
 	wstring* chName,
@@ -882,10 +882,10 @@ DWORD CBonCtrl::StopEpgCap(
 
 //EPG取得のステータスを取得する
 //戻り値：
-// エラーコード
+// ステータス
 //引数：
 // info			[OUT]取得中のサービス
-DWORD CBonCtrl::GetEpgCapStatus(
+CBonCtrl::JOB_STATUS CBonCtrl::GetEpgCapStatus(
 	EPGCAP_SERVICE_INFO* info
 	)
 {

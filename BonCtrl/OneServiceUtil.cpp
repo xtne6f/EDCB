@@ -213,7 +213,7 @@ BOOL COneServiceUtil::AddTSBuff(
 				}else if( packet.PID == this->pmtPID ){
 					//PMT
 					DWORD err = createPmt.AddData(&packet);
-					if( err == NO_ERR || err == ERR_NO_CHAGE ){
+					if( err == NO_ERR || err == CCreatePMTPacket::ERR_NO_CHAGE ){
 						BYTE* pmtBuff = NULL;
 						DWORD pmtBuffSize = 0;
 						if( createPmt.GetPacket(&pmtBuff, &pmtBuffSize) == TRUE ){
