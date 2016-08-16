@@ -218,18 +218,11 @@ typedef struct _REGIST_TCP_INFO{
 typedef struct _CMD_STREAM{
 	DWORD param;	//送信時コマンド、受信時エラーコード
 	DWORD dataSize;	//dataのサイズ（BYTE単位）
-	BYTE* data;		//送受信するバイナリデータ
+	std::unique_ptr<BYTE[]> data;	//送受信するバイナリデータ（dataSize>0のとき必ず非NULL）
 	_CMD_STREAM(void){
 		param = 0;
 		dataSize = 0;
-		data = NULL;
 	}
-	~_CMD_STREAM(void){
-		delete[] data;
-	}
-private:
-	_CMD_STREAM(const _CMD_STREAM &);
-	_CMD_STREAM & operator= (const _CMD_STREAM &);
 } CMD_STREAM;
 
 //EPG基本情報

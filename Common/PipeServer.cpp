@@ -132,19 +132,19 @@ UINT WINAPI CPipeServer::ServerThread(LPVOID pParam)
 			break;
 		}else if( dwRes == WAIT_OBJECT_0+1 ){
 			//コマンド受信
-			CMD_STREAM stCmd;
-			CMD_STREAM stRes;
 			DWORD dwWrite = 0;
 			DWORD head[2];
-			do{
+			for(;;){
+				CMD_STREAM stCmd;
+				CMD_STREAM stRes;
 				if( ReadFileAll(hPipe, (BYTE*)head, sizeof(head)) != sizeof(head) ){
 					break;
 				}
 				stCmd.param = head[0];
 				stCmd.dataSize = head[1];
 				if( stCmd.dataSize > 0 ){
-					stCmd.data = new BYTE[stCmd.dataSize];
-					if( ReadFileAll(hPipe, stCmd.data, stCmd.dataSize) != stCmd.dataSize ){
+					stCmd.data.reset(new BYTE[stCmd.dataSize]);
+					if( ReadFileAll(hPipe, stCmd.data.get(), stCmd.dataSize) != stCmd.dataSize ){
 						break;
 					}
 				}
@@ -157,7 +157,7 @@ UINT WINAPI CPipeServer::ServerThread(LPVOID pParam)
 						break;
 					}
 					if( stRes.dataSize > 0 ){
-						if( WriteFile(hPipe, stRes.data, stRes.dataSize, &dwWrite, NULL ) == FALSE ){
+						if( WriteFile(hPipe, stRes.data.get(), stRes.dataSize, &dwWrite, NULL ) == FALSE ){
 							break;
 						}
 					}
@@ -168,12 +168,11 @@ UINT WINAPI CPipeServer::ServerThread(LPVOID pParam)
 						break;
 					}
 				}
-				SAFE_DELETE_ARRAY(stCmd.data);
-				SAFE_DELETE_ARRAY(stRes.data);
-				stCmd.dataSize = 0;
-				stRes.dataSize = 0;
-
-			}while(stRes.param == CMD_NEXT || stRes.param == OLD_CMD_NEXT); //Emun用の繰り返し
+				if( stRes.param != CMD_NEXT && stRes.param != OLD_CMD_NEXT ){
+					//Enum用の繰り返しではない
+					break;
+				}
+			}
 
 			FlushFileBuffers(hPipe);
 			DisconnectNamedPipe(hPipe);

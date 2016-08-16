@@ -1100,7 +1100,7 @@ DWORD CSendCtrlCmd::ReceiveCmdData2(DWORD param, T* resVal)
 		WORD ver = 0;
 		DWORD readSize = 0;
 		if( ReadVALUE(&ver, res.data, res.dataSize, &readSize) == FALSE ||
-			ReadVALUE2(ver, resVal, res.data + readSize, res.dataSize - readSize, NULL) == FALSE ){
+			ReadVALUE2(ver, resVal, res.data.get() + readSize, res.dataSize - readSize, NULL) == FALSE ){
 			ret = CMD_ERR;
 		}
 	}
@@ -1131,7 +1131,7 @@ DWORD CSendCtrlCmd::SendAndReceiveCmdData2(DWORD param, const T& val, U* resVal)
 		WORD ver = 0;
 		DWORD readSize = 0;
 		if( ReadVALUE(&ver, res.data, res.dataSize, &readSize) == FALSE ||
-			ReadVALUE2(ver, resVal, res.data + readSize, res.dataSize - readSize, NULL) == FALSE ){
+			ReadVALUE2(ver, resVal, res.data.get() + readSize, res.dataSize - readSize, NULL) == FALSE ){
 			ret = CMD_ERR;
 		}
 	}

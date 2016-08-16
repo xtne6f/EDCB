@@ -177,7 +177,7 @@ int CALLBACK CEpgTimerPlugIn::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam,
 			sys->cmdPool.param = cmdParam->param;
 			sys->cmdPool.dataSize = cmdParam->dataSize;
 			if( cmdParam->dataSize > 0 ){
-				memcpy(sys->cmdPool.data, cmdParam->data, cmdParam->dataSize);
+				memcpy(sys->cmdPool.data, cmdParam->data.get(), cmdParam->dataSize);
 			}
 		}
 		// CtrlCmdCallbackInvoked()をメインスレッドで呼ぶ(デッドロック防止のためタイムアウトつき)
@@ -187,8 +187,8 @@ int CALLBACK CEpgTimerPlugIn::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam,
 			resParam->param = sys->resPool.param;
 			resParam->dataSize = sys->resPool.dataSize;
 			if( resParam->dataSize > 0 ){
-				resParam->data = new BYTE[resParam->dataSize];
-				memcpy(resParam->data, sys->resPool.data, resParam->dataSize);
+				resParam->data.reset(new BYTE[resParam->dataSize]);
+				memcpy(resParam->data.get(), sys->resPool.data, resParam->dataSize);
 			}
 		}
 	}
@@ -228,9 +228,8 @@ void CEpgTimerPlugIn::CtrlCmdCallbackInvoked()
 			wstring bonName;
 			GetFileName(buff, bonName );
 			if( bonName.size() > 0 ){
-				BYTE* newBuff = NewWriteVALUE(bonName, resParam->dataSize);
-				memcpy(resParam->data, newBuff, resParam->dataSize);
-				delete[] newBuff;
+				std::unique_ptr<BYTE[]> newBuff = NewWriteVALUE(bonName, resParam->dataSize);
+				memcpy(resParam->data, newBuff.get(), resParam->dataSize);
 				resParam->param = CMD_SUCCESS;
 			}
 		}

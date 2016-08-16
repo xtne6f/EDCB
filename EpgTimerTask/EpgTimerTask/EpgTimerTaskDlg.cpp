@@ -430,9 +430,9 @@ void CEpgTimerTaskDlg::CmdSrvStatusChg(CMD_STREAM* pCmdParam, CMD_STREAM* pResPa
 	OutputDebugString(L"CEpgTimerTaskDlg::CmdSrvStatusChg");
 	WORD ver = 0;
 	DWORD readSize = 0;
-	ReadVALUE2(CMD_VER, &ver, pCmdParam->data, pCmdParam->dataSize, &readSize);
 	NOTIFY_SRV_INFO status;
-	if( ReadVALUE2(ver, &status, pCmdParam->data+readSize, pCmdParam->dataSize-readSize, NULL) == TRUE ){
+	if( ReadVALUE(&ver, pCmdParam->data, pCmdParam->dataSize, &readSize) &&
+	    ReadVALUE2(ver, &status, pCmdParam->data.get()+readSize, pCmdParam->dataSize-readSize, NULL) ){
 		switch(status.notifyID){
 		case NOTIFY_UPDATE_SRV_STATUS:
 			m_dwSrvStatus = status.param1;
