@@ -2475,7 +2475,7 @@ send_http_error(struct mg_connection *conn, int status, const char *fmt, ...)
 {
 	char buf[MG_BUF_LEN];
 	va_list ap;
-	int len, i, page_handler_found, scope, truncated;
+	int len, i, page_handler_found, scope, truncated, has_body;
 	char date[64];
 	time_t curtime = time(NULL);
 	const char *error_handler = NULL;
@@ -2562,17 +2562,24 @@ send_http_error(struct mg_connection *conn, int status, const char *fmt, ...)
 		/* No custom error page. Send default error page. */
 		gmt_time_string(date, sizeof(date), &curtime);
 
+		/* Errors 1xx, 204 and 304 MUST NOT send a body */
+		has_body = (status > 199 && status != 204 && status != 304);
+
 		conn->must_close = 1;
 		mg_printf(conn, "HTTP/1.1 %d %s\r\n", status, status_text);
 		send_no_cache_header(conn);
+		if (has_body) {
+			mg_printf(conn,
+			          "%s",
+			          "Content-Type: text/plain; charset=utf-8\r\n");
+		}
 		mg_printf(conn,
 		          "Date: %s\r\n"
 		          "Connection: close\r\n\r\n",
 		          date);
 
 		/* Errors 1xx, 204 and 304 MUST NOT send a body */
-		if (status > 199 && status != 204 && status != 304) {
-
+		if (has_body) {
 			mg_printf(conn, "Error %d: %s\n", status, status_text);
 
 			if (fmt != NULL) {
@@ -11744,6 +11751,41 @@ get_uri_type(const char *uri)
 		/* asterisk */
 		return 1;
 	}
+
+	/* Valid URIs according to RFC 3986
+	 * (https://www.ietf.org/rfc/rfc3986.txt)
+	 * must only contain reserved characters :/?#[]@!$&'()*+,;=
+	 * and unreserved characters A-Z a-z 0-9 and -._~
+	 * and % encoded symbols.
+	 */
+	for (i = 0; uri[i] != 0; i++) {
+		if (uri[i] < 33) {
+			/* control characters and spaces are invalid */
+			return 0;
+		}
+		if (uri[i] > 126) {
+			/* non-ascii characters must be % encoded */
+			return 0;
+		} else {
+			switch (uri[i]) {
+			case '"':  /* 34 */
+			case '<':  /* 60 */
+			case '>':  /* 62 */
+			case '\\': /* 92 */
+			case '^':  /* 94 */
+			case '`':  /* 96 */
+			case '{':  /* 123 */
+			case '|':  /* 124 */
+			case '}':  /* 125 */
+				return 0;
+			default:
+				/* character is ok */
+				break;
+			}
+		}
+	}
+
+	/* A relative uri starts with a / character */
 	if (uri[0] == '/') {
 		/* relative uri */
 		return 2;

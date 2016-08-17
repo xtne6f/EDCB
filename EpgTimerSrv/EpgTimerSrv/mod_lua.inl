@@ -1020,7 +1020,7 @@ static const char *LUA_MG_FUNCTIONS =
 	" v=(''..v):lower()"
 	" for i=1,#src do"
 	"  if src:sub(i,i+#v-1):lower()==v then"
-	"   if src:sub(i+#v,i+#v)=='=' then"
+	"   if src:sub(i+#v,i+#v)=='=' and (i<2 or src:sub(i-1,i-1)==' ') then"
 	"    return (src:match('^[^ ]*',i+#v+1):gsub(';$','')"
 	":gsub('^\"(.*)\"$','%1'))"
 	"   end"
