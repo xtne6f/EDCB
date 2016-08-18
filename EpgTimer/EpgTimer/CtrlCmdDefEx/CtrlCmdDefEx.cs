@@ -199,7 +199,7 @@ namespace EpgTimer
             resInfo.Title = epgInfo.DataTitle;
             resInfo.StartTime = epgInfo.start_time;
             resInfo.StartTimeEpg = epgInfo.start_time;
-            resInfo.DurationSecond = (epgInfo.DurationFlag == 0 ? 10 * 60 : epgInfo.durationSec);
+            resInfo.DurationSecond = epgInfo.PgDurationSecond;
 
             UInt64 key = epgInfo.Create64Key();
             if (ChSet5.ChList.ContainsKey(key) == true)

@@ -660,10 +660,10 @@ namespace EpgTimer
 
         public static String ConvertTimeText(EpgEventInfo info)
         {
-            if (info.StartTimeFlag != 1) return "未定 ～ 未定";
+            if (info.StartTimeFlag == 0) return "未定 ～ 未定";
             //
             string reftxt = ConvertTimeText(info.start_time, info.PgDurationSecond, false, false, false, false);
-            return info.DurationFlag == 1 ? reftxt : reftxt.Split(new char[] { '～' })[0] + "～ 未定";
+            return info.DurationFlag != 0 ? reftxt : reftxt.Split(new char[] { '～' })[0] + "～ 未定";
         }
         public static String ConvertTimeText(EpgSearchDateInfo info)
         {

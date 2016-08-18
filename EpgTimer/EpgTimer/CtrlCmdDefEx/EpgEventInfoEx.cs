@@ -8,7 +8,7 @@ namespace EpgTimer
     public partial class EpgEventInfo : AutoAddTargetData
     {
         public override string DataTitle { get { return (ShortInfo == null ? "" : ShortInfo.event_name); } }
-        public override DateTime PgStartTime { get { return StartTimeFlag != 1 ? new DateTime() : start_time; } }
+        public override DateTime PgStartTime { get { return StartTimeFlag == 0 ? new DateTime() : start_time; } }
         public override uint PgDurationSecond { get { return DurationFlag == 0 ? 300 : durationSec; } }
         public override UInt64 Create64Key()
         {

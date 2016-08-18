@@ -93,7 +93,7 @@ namespace EpgTimer.EpgView
             var fontTitle = new FontFamily(Settings.Instance.FontNameTitle);
             FontWeight titleWeight = Settings.Instance.FontBoldTitle == true ? FontWeights.Bold : FontWeights.Normal;
 
-            minText.Text = (epgInfo.StartTimeFlag != 1 ? "未定" : epgInfo.start_time.Minute.ToString("d02"));
+            minText.Text = (epgInfo.StartTimeFlag == 0 ? "未定" : epgInfo.start_time.Minute.ToString("d02"));
             minText.FontFamily = fontTitle;
             minText.FontSize = sizeMin;
             minText.FontWeight = titleWeight;
