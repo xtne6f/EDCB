@@ -238,6 +238,8 @@ namespace EpgTimer
         public int EpgPopupMode { get; set; }
         public bool EpgGradation { get; set; }
         public bool EpgGradationHeader { get; set; }
+        public bool EpgNoDisplayOld { get; set; }
+        public double EpgNoDisplayOldDays { get; set; }
         public string ResColumnHead { get; set; }
         public ListSortDirection ResSortDirection { get; set; }
         public WindowState LastWindowState { get; set; }
@@ -458,6 +460,8 @@ namespace EpgTimer
             EpgPopupMode = 0;
             EpgGradation = true;
             EpgGradationHeader = true;
+            EpgNoDisplayOld = false;
+            EpgNoDisplayOldDays = 1;
             ResColumnHead = "";
             ResSortDirection = ListSortDirection.Ascending;
             LastWindowState = WindowState.Normal;

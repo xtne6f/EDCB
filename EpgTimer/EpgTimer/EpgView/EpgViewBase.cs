@@ -183,6 +183,16 @@ namespace EpgTimer.EpgView
                     }
                 }
 
+                if (Settings.Instance.EpgNoDisplayOld == true)
+                {
+                    foreach (var key in serviceEventList.Keys.ToList())//ここでは要ToList()
+                    {
+                        EpgServiceEventInfo info = serviceEventList[key];
+                        var list = info.eventList.OfAvailable(false, DateTime.Now.AddDays(-Settings.Instance.EpgNoDisplayOldDays)).ToList();
+                        serviceEventList[key] = new EpgServiceEventInfo { serviceInfo = info.serviceInfo, eventList = list };
+                    }
+                }
+
                 return true;
             }
             catch (Exception ex) { CommonUtil.DispatcherMsgBoxShow(ex.Message + "\r\n" + ex.StackTrace); }

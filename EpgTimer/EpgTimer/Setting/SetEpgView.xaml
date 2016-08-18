@@ -100,10 +100,17 @@
                                     <CheckBox Content="番組名と番組内容の表示位置をあわせる" Margin="0,6,0,0" Name="checkBox_title_indent" />
                                     <CheckBox Content="番組表の切り替え時にも強調表示をする" Margin="0,6,0,0" Name="checkBox_displayNotifyChange" />
                                 </StackPanel>
-                                <StackPanel Margin="327,64,0,0" Orientation="Horizontal" VerticalAlignment="Top">
-                                    <Label Content="グラデーション表示を行う" />
-                                    <CheckBox Content="番組" Margin="12,0,0,0" Name="checkBox_gradation" />
-                                    <CheckBox Content="サービス・時刻軸" Margin="12,0,0,0" Name="checkBox_gradationHeader" />
+                                <StackPanel Margin="327,64,0,0" >
+                                    <StackPanel Orientation="Horizontal">
+                                        <Label Content="グラデーション表示を行う" />
+                                        <CheckBox Content="番組" Margin="12,0,0,0" Name="checkBox_gradation" />
+                                        <CheckBox Content="サービス・時刻軸" Margin="12,0,0,0" Name="checkBox_gradationHeader" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" >
+                                        <CheckBox Content="古い番組データの表示を抑制する" Name="checkBox_epgNoDisplayOld" ToolTip="通常はチェック不要です。" />
+                                        <TextBox Width="55" Margin="12,0,0,0" Name="textBox_epgNoDisplayOldDays" />
+                                        <Label Content="日前まで表示" Margin="12,0,0,0" />
+                                    </StackPanel>
                                 </StackPanel>
                             </Grid>
                         </GroupBox>

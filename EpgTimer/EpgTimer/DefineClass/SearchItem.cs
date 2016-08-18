@@ -287,24 +287,12 @@ namespace EpgTimer
         //{
         //    return list.Any(info => item != null && item.IsReserved == true);
         //}
-        public static void AddFromEventList(this ICollection<SearchItem> itemlist, ICollection<EpgEventInfo> eventList, bool isExceptUnknownStartTime, bool isExceptEnded)
+        public static void AddFromEventList(this ICollection<SearchItem> itemlist, IEnumerable<EpgEventInfo> eventList, bool isExceptUnknownStartTime, bool isExceptEnded)
         {
-            if (itemlist == null) return;
+            if (eventList == null) return;
             //
-            DateTime now = DateTime.Now;
-            foreach (EpgEventInfo info in eventList.OfType<EpgEventInfo>())
+            foreach (EpgEventInfo info in eventList.OfAvailable(isExceptUnknownStartTime, isExceptEnded == true ? (DateTime?)DateTime.Now : null))
             {
-                //開始未定を除外
-                if (isExceptUnknownStartTime == true)
-                {
-                    if (info.StartTimeFlag == 0) continue;
-                }
-                //時間の過ぎているものを除外
-                if (isExceptEnded == true)
-                {
-                    if (info.start_time.AddSeconds(info.DurationFlag == 0 ? 0 : info.durationSec) < now) continue;
-                }
-
                 itemlist.Add(new SearchItem(info));
             }
             itemlist.SetReserveData();

@@ -23,5 +23,27 @@ namespace EpgTimer
         {
             return CtrlCmdDefEx.isOnTime(start_time, (int)durationSec);
         }
+
+        public bool IsAvailable(bool isExceptUnknownStartTime, DateTime? exceptEndedTime = null)
+        {
+            //開始未定を除外。開始未定のときは時刻判定をしない。
+            if (StartTimeFlag == 0)
+            {
+                return !isExceptUnknownStartTime;
+            }
+            //指定時刻に終了しているものを除外
+            if (exceptEndedTime != null)
+            {
+                return start_time.AddSeconds(PgDurationSecond) >= exceptEndedTime;
+            }
+            return true;
+        }
+    }
+    public static class EpgEventInfoEx
+    {
+        public static IEnumerable<EpgEventInfo> OfAvailable(this IEnumerable<EpgEventInfo> eventList, bool isExceptUnknownStartTime, DateTime? exceptEndedTime = null)
+        {
+            return eventList.Where(data => data != null && data.IsAvailable(isExceptUnknownStartTime, exceptEndedTime));
+        }
     }
 }

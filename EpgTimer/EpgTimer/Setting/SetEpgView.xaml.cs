@@ -49,6 +49,8 @@ namespace EpgTimer.Setting
                 checkBox_openInfo.IsChecked = (Settings.Instance.EpgInfoOpenMode != 0);
                 checkBox_displayNotifyChange.IsChecked = Settings.Instance.DisplayNotifyEpgChange;
                 checkBox_reserveBackground.IsChecked = Settings.Instance.ReserveRectBackground;
+                checkBox_epgNoDisplayOld.IsChecked = Settings.Instance.EpgNoDisplayOld;
+                textBox_epgNoDisplayOldDays.Text = Settings.Instance.EpgNoDisplayOldDays.ToString();
 
                 textBox_tuner_mouse_scroll.Text = Settings.Instance.TunerScrollSize.ToString();
                 textBox_tuner_width.Text = Settings.Instance.TunerWidth.ToString();
@@ -255,6 +257,9 @@ namespace EpgTimer.Setting
                 Settings.Instance.MouseScrollAuto = (checkBox_scrollAuto.IsChecked == true);
                 Settings.Instance.DisplayNotifyEpgChange = (checkBox_displayNotifyChange.IsChecked == true);
                 Settings.Instance.ReserveRectBackground = (checkBox_reserveBackground.IsChecked == true);
+                Settings.Instance.EpgNoDisplayOld = (checkBox_epgNoDisplayOld.IsChecked == true);
+                Settings.Instance.EpgNoDisplayOldDays = MenuUtil.MyToNumerical(textBox_epgNoDisplayOldDays, Convert.ToDouble, double.MaxValue, double.MinValue, 1);
+
                 Settings.Instance.TunerScrollSize = MenuUtil.MyToNumerical(textBox_tuner_mouse_scroll, Convert.ToDouble, 240);
                 Settings.Instance.TunerWidth = MenuUtil.MyToNumerical(textBox_tuner_width, Convert.ToDouble, double.MaxValue, 16, 150);//小さいと描画で落ちる
                 Settings.Instance.TunerMinHeight = MenuUtil.MyToNumerical(textBox_tuner_minHeight, Convert.ToDouble, double.MaxValue, 0.1, 2);
