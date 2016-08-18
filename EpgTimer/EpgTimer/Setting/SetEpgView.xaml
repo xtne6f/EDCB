@@ -52,7 +52,7 @@
             <TabControl>
                 <TabItem Header="基本">
                     <StackPanel>
-                        <GroupBox Header="フォント" Margin="6,6,6,0" VerticalAlignment="Top" >
+                        <GroupBox Header="フォント" Margin="6,6,6,0" >
                             <StackPanel Orientation="Horizontal">
                                 <Grid>
                                     <Label Content="タイトル" Height="28" HorizontalAlignment="Left" Margin="6,6,0,0" VerticalAlignment="Top" />
@@ -75,7 +75,7 @@
                                 </Grid>
                             </StackPanel>
                         </GroupBox>
-                        <GroupBox Header="表示設定" Margin="6,6,6,0" VerticalAlignment="Top" Height="250">
+                        <GroupBox Header="表示設定" Margin="6,6,6,0" >
                             <Grid>
                                 <Label Content="マウススクロールサイズ" Height="28" HorizontalAlignment="Left" Margin="11,6,0,0" VerticalAlignment="Top" />
                                 <TextBox Height="24" HorizontalAlignment="Left" Margin="165,6,0,0" Name="textBox_mouse_scroll" VerticalAlignment="Top" Width="55" />
@@ -88,15 +88,23 @@
                                 <TextBox Height="24" HorizontalAlignment="Left" Margin="470,36,0,0" Name="textBox_dragScroll" VerticalAlignment="Top" Width="55" />
                                 <Label Content="最低表示行数" Height="28" HorizontalAlignment="Left" Margin="551,6,0,0" VerticalAlignment="Top" />
                                 <TextBox Height="24" HorizontalAlignment="Left" Margin="650,6,0,0" Name="textBox_minimumHeight" VerticalAlignment="Top" Width="55" />
-                                <CheckBox Content="番組内容をポップアップ表示する" Height="16" HorizontalAlignment="Left" Margin="11,70,0,0" Name="checkBox_epg_popup" VerticalAlignment="Top" Click="checkBox_epg_popup_Click" />
-                                <CheckBox Content="予約のある番組のみポップアップする" Height="16" HorizontalAlignment="Left" Margin="32,92,0,0" Name="checkBox_epg_popup_resOnly" VerticalAlignment="Top" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_epg_popup, UpdateSourceTrigger=PropertyChanged}" />
-                                <CheckBox Content="シングルクリックで予約ダイアログを開く" Height="16" HorizontalAlignment="Left" Margin="11,114,0,0" Name="checkBox_singleOpen" VerticalAlignment="Top" />
-                                <CheckBox Content="番組詳細タブを選択した状態で予約ダイアログを開く" Height="16" HorizontalAlignment="Left" Margin="11,136,0,0" Name="checkBox_openInfo" VerticalAlignment="Top" />
-                                <CheckBox Content="番組名と番組内容の表示位置をあわせる" Height="16" HorizontalAlignment="Left" Margin="11,158,0,0" Name="checkBox_title_indent" VerticalAlignment="Top" />
-                                <CheckBox Content="番組表の切り替え時にも強調表示をする" Height="16" HorizontalAlignment="Left" Margin="11,180,0,0" Name="checkBox_displayNotifyChange" VerticalAlignment="Top" />
-                                <Label Content="グラデーション表示を行う" Height="28" HorizontalAlignment="Left" Margin="327,70,0,0" VerticalAlignment="Top" />
-                                <CheckBox Content="番組" Height="16" HorizontalAlignment="Left" Margin="470,76,0,0" Name="checkBox_gradation" VerticalAlignment="Top" />
-                                <CheckBox Content="サービス・時刻軸" Height="16" HorizontalAlignment="Left" Margin="534,76,0,0" Name="checkBox_gradationHeader" VerticalAlignment="Top" />
+                                <StackPanel Margin="11,64,0,0" Width="304" HorizontalAlignment="Left">
+                                    <CheckBox Content="番組内容のポップアップ表示" Margin="0,6,0,0" Name="checkBox_epg_popup" />
+                                    <WrapPanel Margin="20,0,0,0" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_epg_popup, UpdateSourceTrigger=PropertyChanged}" >
+                                        <RadioButton Content="マウスオーバー" Margin="0,6,12,0" Name="radioButton_epg_popup_onOver" />
+                                        <RadioButton Content="クリックしたとき" Margin="0,6,12,0" Name="radioButton_epg_popup_onClick" />
+                                        <RadioButton Content="予約のみマウスオーバーで、他はクリックしたとき" Margin="0,6,12,0" Name="radioButton_epg_popup_resOnly" />
+                                    </WrapPanel>
+                                    <CheckBox Content="シングルクリックで予約ダイアログを開く" Margin="0,6,0,0" Name="checkBox_singleOpen" />
+                                    <CheckBox Content="番組詳細タブを選択した状態で予約ダイアログを開く" Margin="0,6,0,0" Name="checkBox_openInfo" />
+                                    <CheckBox Content="番組名と番組内容の表示位置をあわせる" Margin="0,6,0,0" Name="checkBox_title_indent" />
+                                    <CheckBox Content="番組表の切り替え時にも強調表示をする" Margin="0,6,0,0" Name="checkBox_displayNotifyChange" />
+                                </StackPanel>
+                                <StackPanel Margin="327,64,0,0" Orientation="Horizontal" VerticalAlignment="Top">
+                                    <Label Content="グラデーション表示を行う" />
+                                    <CheckBox Content="番組" Margin="12,0,0,0" Name="checkBox_gradation" />
+                                    <CheckBox Content="サービス・時刻軸" Margin="12,0,0,0" Name="checkBox_gradationHeader" />
+                                </StackPanel>
                             </Grid>
                         </GroupBox>
                     </StackPanel>
@@ -107,7 +115,7 @@
                         <Style TargetType="{x:Type Button}" BasedOn="{StaticResource colorButton}" />
                     </TabItem.Resources>
                     <StackPanel>
-                        <GroupBox Header="ジャンル別背景色" Margin="6,6,6,0" VerticalAlignment="Top" >
+                        <GroupBox Header="ジャンル別背景色" Margin="6,6,6,0" >
                             <Grid x:Name="grid_EpgColors" >
                                 <Label Content="カスタム色" Height="28" HorizontalAlignment="Left" Margin="292,0,0,0" VerticalAlignment="Top" />
                                 <Label Content="カスタム色" Height="28" HorizontalAlignment="Left" Margin="614,0,0,0" VerticalAlignment="Top" />
@@ -155,7 +163,7 @@
                                 <Button Margin="614,206,0,0" Tag="16" />
                             </Grid>
                         </GroupBox>
-                        <GroupBox Header="予約枠" Margin="6,6,6,0" VerticalAlignment="Top" >
+                        <GroupBox Header="予約枠" Margin="6,6,6,0" >
                             <Grid x:Name="grid_EpgColorsReserve" >
                                 <Label Content="通常" Height="28" HorizontalAlignment="Left" Margin="12,0,0,0" VerticalAlignment="Top" />
                                 <Label Content="無効" Height="28" HorizontalAlignment="Left" Margin="390,0,0,0" VerticalAlignment="Top" />
@@ -184,7 +192,7 @@
                         <Style TargetType="{x:Type Button}" BasedOn="{StaticResource colorButton}" />
                     </TabItem.Resources>
                     <StackPanel>
-                        <GroupBox Header="時刻表示背景色" Margin="6,6,6,0" VerticalAlignment="Top" >
+                        <GroupBox Header="時刻表示背景色" Margin="6,6,6,0" >
                             <Grid x:Name="grid_EpgTimeColors">
                                 <Label Content="カスタム色" Height="28" HorizontalAlignment="Left" Margin="292,0,0,0" VerticalAlignment="Top" />
                                 <Label Content="カスタム色" Height="28" HorizontalAlignment="Left" Margin="614,0,0,0" VerticalAlignment="Top" />
@@ -202,7 +210,7 @@
                                 <Button Margin="614,57,0,0" Tag="3" />
                             </Grid>
                         </GroupBox>
-                        <GroupBox Header="その他色設定" Margin="6,6,6,0" VerticalAlignment="Top" >
+                        <GroupBox Header="その他色設定" Margin="6,6,6,0" >
                             <Grid x:Name="grid_EpgEtcColors">
                                 <Label Content="サービス背景色" Height="24" HorizontalAlignment="Left" Margin="12,0,0,0" VerticalAlignment="Top" />
                                 <ComboBox Margin="166,4,0,0" Tag="4" />
@@ -256,7 +264,7 @@
             <TabControl>
                 <TabItem Header="基本">
                     <StackPanel>
-                        <GroupBox Header="フォント" Margin="6,6,6,0" VerticalAlignment="Top" >
+                        <GroupBox Header="フォント" Margin="6,6,6,0" >
                             <StackPanel Orientation="Horizontal">
                                 <Grid>
                                     <Label Content="サービス" Height="28" HorizontalAlignment="Left" Margin="6,6,0,0" VerticalAlignment="Top" />
@@ -279,7 +287,7 @@
                                 </Grid>
                             </StackPanel>
                         </GroupBox>
-                        <GroupBox Header="表示設定" Margin="6,6,6,0" VerticalAlignment="Top" Height="250">
+                        <GroupBox Header="表示設定" Margin="6,6,6,0">
                             <Grid>
                                 <Label Content="マウススクロールサイズ" Height="28" HorizontalAlignment="Left" Margin="11,6,0,0" Name="label47" VerticalAlignment="Top" />
                                 <TextBox Height="24" HorizontalAlignment="Left" Margin="165,6,0,0" Name="textBox_tuner_mouse_scroll" VerticalAlignment="Top" Width="55" />
@@ -292,12 +300,20 @@
                                 <TextBox Height="24" HorizontalAlignment="Left" Margin="650,6,0,0" Name="textBox_tunerMinLineHeight" VerticalAlignment="Top" Width="55" />
                                 <Label Content="ドラッグスクロール倍率" Height="28" HorizontalAlignment="Left" Margin="327,36,0,0" Name="label38" VerticalAlignment="Top" />
                                 <TextBox Height="24" HorizontalAlignment="Left" Margin="470,36,0,0" Name="textBox_tunerDdragScroll" VerticalAlignment="Top" Width="55" />
-                                <CheckBox Content="予約をポップアップ表示する" Height="16" HorizontalAlignment="Left" Margin="11,70,0,0" Name="checkBox_tuner_popup" VerticalAlignment="Top" Click="checkBox_tuner_popup_Click" />
-                                <CheckBox Content="ポップアップに優先度と録画モードを表示する" Height="16" HorizontalAlignment="Left" Margin="32,92,0,0" Name="checkBox_tuner_popup_recInfo" VerticalAlignment="Top" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_tuner_popup, UpdateSourceTrigger=PropertyChanged}" />
-                                <CheckBox Content="シングルクリックで予約ダイアログを開く" Height="16" HorizontalAlignment="Left" Margin="11,114,0,0" Name="checkBox_tunerSingleOpen" VerticalAlignment="Top" />
-                                <CheckBox Content="サービスのフォント色を優先度で変える('色'タブの設定)" Height="16" HorizontalAlignment="Left" Margin="11,136,0,0" Name="checkBox_tunerColorModeUse" VerticalAlignment="Top" ToolTip="チェックされていない場合はこの画面の設定色が使われます。" Click="checkBox_tunerColorModeUse_Click" />
-                                <CheckBox Content="サービス名と番組名の表示位置をあわせる" Height="16" HorizontalAlignment="Left" Margin="11,158,0,0" Name="checkBox_tuner_title_indent" VerticalAlignment="Top" />
-                                <CheckBox Content="サービス名を改行しない" Height="16" HorizontalAlignment="Left" Margin="11,180,0,0" Name="checkBox_tuner_service_nowrap" VerticalAlignment="Top" />
+                                <StackPanel Margin="11,64,0,0" >
+                                    <CheckBox Content="予約のポップアップ表示" Margin="0,6,0,0" Name="checkBox_tuner_popup" />
+                                    <StackPanel Margin="20,0,0,0" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_tuner_popup, UpdateSourceTrigger=PropertyChanged}" >
+                                        <WrapPanel>
+                                            <RadioButton Content="マウスオーバー" Margin="0,6,12,0" Name="radioButton_tuner_popup_onOver" />
+                                            <RadioButton Content="クリックしたとき" Margin="0,6,12,0" Name="radioButton_tuner_popup_onClick" />
+                                        </WrapPanel>
+                                        <CheckBox Content="ポップアップに優先度と録画モードを表示する" Margin="0,6,0,0" Name="checkBox_tuner_popup_recInfo" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_tuner_popup, UpdateSourceTrigger=PropertyChanged}" />
+                                    </StackPanel>
+                                    <CheckBox Content="シングルクリックで予約ダイアログを開く" Margin="0,6,0,0" Name="checkBox_tunerSingleOpen" VerticalAlignment="Top" />
+                                    <CheckBox Content="サービスのフォント色を優先度で変える('色'タブの設定)" Margin="0,6,0,0" Name="checkBox_tunerColorModeUse" VerticalAlignment="Top" ToolTip="チェックされていない場合はこの画面の設定色が使われます。" Click="checkBox_tunerColorModeUse_Click" />
+                                    <CheckBox Content="サービス名と番組名の表示位置をあわせる" Margin="0,6,0,0" Name="checkBox_tuner_title_indent" VerticalAlignment="Top" />
+                                    <CheckBox Content="サービス名を改行しない" Margin="0,6,0,0" Name="checkBox_tuner_service_nowrap" VerticalAlignment="Top" />
+                                </StackPanel>
                                 <CheckBox Content="無効の予約も表示する" Height="16" HorizontalAlignment="Left" Margin="327,70,0,0" Name="checkBox_tuner_display_offres" VerticalAlignment="Top" />
                             </Grid>
                         </GroupBox>
@@ -367,7 +383,7 @@
                         </GroupBox>
                     </StackPanel>
                 </GroupBox>
-                <GroupBox Header="背景色" Margin="6,6,6,0" VerticalAlignment="Top" >
+                <GroupBox Header="背景色" Margin="6,6,6,0" >
                     <GroupBox.Resources>
                         <Style TargetType="{x:Type ComboBox}" BasedOn="{StaticResource colorCombo}" />
                         <Style TargetType="{x:Type Button}" BasedOn="{StaticResource colorButton}" />
@@ -446,7 +462,7 @@
                         <Style TargetType="{x:Type Button}" BasedOn="{StaticResource colorButton}" />
                     </TabItem.Resources>
                     <StackPanel>
-                        <GroupBox Header="各画面共通デフォルト文字色" Margin="6,6,6,0" VerticalAlignment="Top">
+                        <GroupBox Header="各画面共通デフォルト文字色" Margin="6,6,6,0" >
                             <Grid>
                                 <Label Content="カスタム色" Height="28" HorizontalAlignment="Left" Margin="292,0,0,0" VerticalAlignment="Top" />
                                 <Label Content="カスタム色" Height="28" HorizontalAlignment="Left" Margin="614,0,0,0" VerticalAlignment="Top" />
@@ -455,7 +471,7 @@
                                 <Button Margin="292,27,0,0" Name="btn_ListDefFontColor" />
                             </Grid>
                         </GroupBox>
-                        <GroupBox Header="録画モード別文字色" Margin="6,6,6,0" VerticalAlignment="Top">
+                        <GroupBox Header="録画モード別文字色" Margin="6,6,6,0" >
                             <Grid x:Name="grid_ReserveRecModeColors">
                                 <Label Content="全サービス" Height="28" HorizontalAlignment="Left" Margin="12,0,0,0" VerticalAlignment="Top" />
                                 <Label Content="全サービス" Height="28" HorizontalAlignment="Left" Margin="390,-3,0,0" VerticalAlignment="Top" />
@@ -479,7 +495,7 @@
                                 <Button Margin="614,64,0,0" Tag="5" />
                             </Grid>
                         </GroupBox>
-                        <GroupBox Header="予約エラー等背景色" Margin="6,6,6,0" VerticalAlignment="Top">
+                        <GroupBox Header="予約エラー等背景色" Margin="6,6,6,0" >
                             <Grid x:Name="grid_ReserveBackColors">
                                 <Label Content="通常" Height="28" HorizontalAlignment="Left" Margin="12,0,0,0" VerticalAlignment="Top" />
                                 <Label Content="無効" Height="28" HorizontalAlignment="Left" Margin="390,0,0,0" VerticalAlignment="Top" />

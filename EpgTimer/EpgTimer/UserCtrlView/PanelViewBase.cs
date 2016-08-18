@@ -75,16 +75,18 @@ namespace EpgTimer.UserCtrlView
         protected bool isDrag = false;
         protected bool isDragMoved = false;
 
-        protected Point lastPopupPos;
-        protected ViewPanelItemBase lastPopupInfo = null;
+        protected ViewPanelItemBase lastPopInfo = null;
 
         protected virtual bool IsSingleClickOpen { get { return false; } }
         protected virtual double DragScroll { get { return 1; } }
         protected virtual bool IsMouseScrollAuto { get { return false; } }
         protected virtual double ScrollSize { get { return 240; } }
-        protected virtual bool IsPopupEnabled { get { return false; } }
-        protected virtual ViewPanelItemBase GetPopupItem(Point cursorPos) { return null; }
-        protected virtual FrameworkElement PopUp { get { return new FrameworkElement(); } }
+        protected virtual bool IsPopEnabled { get { return false; } }
+        protected virtual bool PopOnOver { get { return false; } }
+        protected virtual bool PopOnClick { get { return false; } }
+        protected virtual ViewPanelItemBase GetPopupItem(Point cursorPos, bool onClick) { return null; }
+        protected virtual FrameworkElement Popup { get { return new FrameworkElement(); } }
+        protected virtual double PopWidth { get { return 150; } }
         protected ScrollViewer scroll;
         protected Canvas cnvs;
 
@@ -102,48 +104,36 @@ namespace EpgTimer.UserCtrlView
 
         protected virtual void PopupClear()
         {
-            if (PopUp != null) PopUp.Visibility = Visibility.Hidden;
-            lastPopupInfo = null;
-            lastPopupPos = new Point(-1, -1);
+            Popup.Visibility = Visibility.Hidden;
+            lastPopInfo = null;
         }
 
-        protected virtual void PopUpWork(bool reset = false)
+        protected virtual void PopUpWork(bool onClick = false)
         {
-            if (IsPopupEnabled == false) return;
-
-            if (reset == true)
-            {
-                PopupClear();
-            }
+            if (IsPopEnabled == false || PopOnOver == false && PopOnClick == false) return;
 
             Point cursorPos = Mouse.GetPosition(scroll);
-            if (lastPopupPos != cursorPos)
+            if (PopOnOver == false && onClick == true && lastPopInfo != null ||
+                cursorPos.X < 0 || cursorPos.Y < 0 ||
+                scroll.ViewportWidth < cursorPos.X || scroll.ViewportHeight < cursorPos.Y)
             {
-                lastPopupPos = cursorPos;
+                PopupClear();
+                return;
+            }
 
-                if (cursorPos.X < 0 || cursorPos.Y < 0 ||
-                    scroll.ViewportWidth < cursorPos.X || scroll.ViewportHeight < cursorPos.Y)
+            ViewPanelItemBase popInfo = GetPopupItem(Mouse.GetPosition(cnvs), onClick);
+            if (popInfo != lastPopInfo)
+            {
+                lastPopInfo = popInfo;
+ 
+                if (popInfo == null || PopOnOver == false && onClick == false)
                 {
                     PopupClear();
                     return;
                 }
 
-                Point itemPos = Mouse.GetPosition(cnvs);
-                ViewPanelItemBase item = GetPopupItem(itemPos);
-
-                if (item != lastPopupInfo)
-                {
-                    lastPopupInfo = item;
-
-                    if (item == null)
-                    {
-                        PopupClear();
-                        return;
-                    }
-
-                    SetPopup(item);
-                    PopUp.Visibility = Visibility.Visible;
-                }
+                SetPopup(popInfo);
+                Popup.Visibility = Visibility.Visible;
             }
         }
 
@@ -152,14 +142,14 @@ namespace EpgTimer.UserCtrlView
         {
             UpdatePopupPosition(popInfo);
 
-            PopUp.Width = popInfo.Width;
+            Popup.Width = PopWidth;
             if (popInfo.TopPos < scroll.ContentVerticalOffset)
             {
-                PopUp.MinHeight = Math.Max(0, popInfo.TopPos + popInfo.Height - scroll.ContentVerticalOffset);
+                Popup.MinHeight = Math.Max(0, popInfo.TopPos + popInfo.Height - scroll.ContentVerticalOffset);
             }
             else
             {
-                PopUp.MinHeight = Math.Max(0, Math.Min(scroll.ContentVerticalOffset + scroll.ViewportHeight - popInfo.TopPos, popInfo.Height));
+                Popup.MinHeight = Math.Max(0, Math.Min(scroll.ContentVerticalOffset + scroll.ViewportHeight - popInfo.TopPos, popInfo.Height));
             }
         }
 
@@ -167,26 +157,26 @@ namespace EpgTimer.UserCtrlView
         protected void UpdatePopupPosition(ViewPanelItemBase popInfo)
         {
             // offsetHが正のとき右にはみ出している
-            double offsetH = popInfo.LeftPos + PopUp.ActualWidth - (scroll.ContentHorizontalOffset + scroll.ViewportWidth);
+            double offsetH = popInfo.LeftPos + Popup.ActualWidth - (scroll.ContentHorizontalOffset + scroll.ViewportWidth);
             // 右にはみ出した分だけ左にずらす
             double left = popInfo.LeftPos - Math.Max(0, offsetH);
             // 左にはみ出てる場合はscrollエリアの左端から表示する
-            Canvas.SetLeft(PopUp, Math.Floor(Math.Max(left, scroll.ContentHorizontalOffset)));
+            Canvas.SetLeft(Popup, Math.Floor(Math.Max(left, scroll.ContentHorizontalOffset)));
 
             // offsetVが正のとき下にはみ出している
-            double offsetV = popInfo.TopPos + PopUp.ActualHeight - (scroll.ContentVerticalOffset + scroll.ViewportHeight);
+            double offsetV = popInfo.TopPos + Popup.ActualHeight - (scroll.ContentVerticalOffset + scroll.ViewportHeight);
             // 下にはみ出した分だけ上にずらす
             double top = popInfo.TopPos - Math.Max(0, offsetV);
             // 上にはみ出てる場合はscrollエリアの上端から表示する
-            Canvas.SetTop(PopUp, Math.Floor(Math.Max(top, scroll.ContentVerticalOffset - 1)));
+            Canvas.SetTop(Popup, Math.Floor(Math.Max(top, scroll.ContentVerticalOffset - 1)));
         }
 
         // PopUp の ActualWidth と ActualHeight を取得するために SizeChanged イベントを捕捉する
         protected virtual void popupItem_SizeChanged(object sender, SizeChangedEventArgs e)
         {
-            if (lastPopupInfo != null)
+            if (lastPopInfo != null)
             {
-                UpdatePopupPosition(lastPopupInfo);
+                UpdatePopupPosition(lastPopInfo);
             }
         }
 
@@ -276,10 +266,7 @@ namespace EpgTimer.UserCtrlView
                     PopUpWork();
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
         protected virtual void canvas_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
@@ -300,11 +287,12 @@ namespace EpgTimer.UserCtrlView
                         LeftDoubleClick(sender, cursorPos);
                     }
                 }
+                else if (PopOnClick == true)
+                {
+                    PopUpWork(true);
+                }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
         protected virtual void canvas_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
@@ -325,10 +313,7 @@ namespace EpgTimer.UserCtrlView
                 }
                 isDragMoved = false;
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
 
         protected virtual void canvas_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
@@ -349,7 +334,7 @@ namespace EpgTimer.UserCtrlView
         }
         protected virtual void canvas_MouseLeave(object sender, MouseEventArgs e)
         {
-            if (IsPopupEnabled == true)
+            if (IsPopEnabled == true)
             {
                 //右クリック時はポップアップを維持
                 if (e.RightButton != MouseButtonState.Pressed)
@@ -372,7 +357,7 @@ namespace EpgTimer.UserCtrlView
                 //マーキング要求のあるとき
                 if (IsMarking == true)
                 {
-                    Rectangle rect = new Rectangle();
+                    var rect = new Rectangle();
 
                     rect.Stroke = Brushes.Red;
                     rect.StrokeThickness = 5;
@@ -409,10 +394,7 @@ namespace EpgTimer.UserCtrlView
                     notifyTimer.Start();
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
 
     }

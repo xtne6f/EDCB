@@ -17,8 +17,11 @@ namespace EpgTimer.TunerReserveViewCtrl
         protected override double DragScroll { get { return Settings.Instance.TunerDragScroll; } }
         protected override bool IsMouseScrollAuto { get { return Settings.Instance.TunerMouseScrollAuto; } }
         protected override double ScrollSize { get { return Settings.Instance.TunerScrollSize; } }
-        protected override bool IsPopupEnabled { get { return Settings.Instance.TunerPopup; } }
-        protected override FrameworkElement PopUp { get { return popupItem; } }
+        protected override bool IsPopEnabled { get { return Settings.Instance.TunerPopup == true; } }
+        protected override bool PopOnOver { get { return Settings.Instance.TunerPopupMode == 0; } }
+        protected override bool PopOnClick { get { return Settings.Instance.TunerPopupMode == 1; } }
+        protected override FrameworkElement Popup { get { return popupItem; } }
+        protected override double PopWidth { get { return Settings.Instance.TunerWidth; } }
 
         public TunerReserveView()
         {
@@ -44,7 +47,7 @@ namespace EpgTimer.TunerReserveViewCtrl
                 reserveViewPanel.ItemFontNormal.ClearCache();
                 reserveViewPanel.ItemFontTitle.ClearCache();
 
-                PopUpWork(true);
+                PopUpWork();
             }
             catch (Exception ex)
             {
@@ -52,7 +55,7 @@ namespace EpgTimer.TunerReserveViewCtrl
             }
         }
 
-        protected override ViewPanelItemBase GetPopupItem(Point cursorPos)
+        protected override ViewPanelItemBase GetPopupItem(Point cursorPos, bool onClick)
         {
             if (reserveViewPanel.Items == null) return null;
 

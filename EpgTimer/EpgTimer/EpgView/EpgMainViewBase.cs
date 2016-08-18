@@ -213,7 +213,7 @@ namespace EpgTimer.EpgView
         protected virtual void NowLineGenerate()
         {
             nowLine = new Line();
-            Canvas.SetZIndex(nowLine, 20);
+            Canvas.SetZIndex(nowLine, 15);
             nowLine.Stroke = Brushes.Red;
             nowLine.StrokeThickness = 3;
             nowLine.Opacity = 0.7;

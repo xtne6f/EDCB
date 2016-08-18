@@ -17,12 +17,15 @@ namespace EpgTimer.EpgView
         protected override double DragScroll { get { return Settings.Instance.DragScroll; } }
         protected override bool IsMouseScrollAuto { get { return Settings.Instance.MouseScrollAuto; } }
         protected override double ScrollSize { get { return Settings.Instance.ScrollSize; } }
-        protected override bool IsPopupEnabled { get { return Settings.Instance.EpgPopup; } }
-        protected override FrameworkElement PopUp { get { return popupItem; } }
+        protected override bool IsPopEnabled { get { return Settings.Instance.EpgPopup == true; } }
+        protected override bool PopOnOver { get { return Settings.Instance.EpgPopupMode != 1; } }
+        protected override bool PopOnClick { get { return Settings.Instance.EpgPopupMode != 0; } }
+        protected override FrameworkElement Popup { get { return popupItem; } }
+        protected override double PopWidth { get { return Settings.Instance.ServiceWidth; } }
 
         private List<ReserveViewItem> reserveList = null;
         private List<Rectangle> rectBorder = new List<Rectangle>();
-        private ReserveViewItem resPopItem = null;
+        private ReserveViewItem popInfoRes = null;
 
         public ProgramView()
         {
@@ -51,22 +54,25 @@ namespace EpgTimer.EpgView
         protected override void PopupClear()
         {
             base.PopupClear();
-            resPopItem = null;
+            popInfoRes = null;
         }
-        protected override ViewPanelItemBase GetPopupItem(Point cursorPos)
+        protected override ViewPanelItemBase GetPopupItem(Point cursorPos, bool onClick)
         {
-            ReserveViewItem lastresPopItem = resPopItem;
-            resPopItem = reserveList == null ? null : reserveList.Find(pg => pg.IsPicked(cursorPos));
+            ProgramViewItem popInfo = GetProgramViewData(cursorPos);
+            ReserveViewItem lastPopInfoRes = popInfoRes;
+            popInfoRes = reserveList == null ? null : reserveList.Find(pg => pg.IsPicked(cursorPos));
 
-            if (Settings.Instance.EpgPopupResOnly == true && resPopItem == null) return null;
+            if (Settings.Instance.EpgPopupMode == 2 && popInfoRes == null && (
+                onClick == false && !(lastPopInfoRes == null && popInfo == lastPopInfo) ||
+                onClick == true && lastPopInfo != null)) return null;
 
             //予約枠を通過したので同じ番組でもポップアップを書き直させる。
-            if (lastresPopItem != resPopItem)
+            if (lastPopInfoRes != popInfoRes)
             {
                 base.PopupClear();
             }
 
-            return GetProgramViewData(cursorPos);
+            return popInfo;
         }
 
         protected override void SetPopup(ViewPanelItemBase item)
@@ -124,9 +130,9 @@ namespace EpgTimer.EpgView
             double marginEpg = 1;
             double marginRes = marginEpg + 3;
             popupItemTextArea.Margin = new Thickness(marginEpg, marginEpg - 2, marginEpg + 3, marginEpg);
-            if (resPopItem != null)
+            if (popInfoRes != null)
             {
-                SetReserveBorder(popupItemBorder, resPopItem);
+                SetReserveBorder(popupItemBorder, popInfoRes);
                 popupItemBorder.Visibility = Visibility.Visible;
                 if (Settings.Instance.ReserveRectBackground == false)
                 {
@@ -199,7 +205,7 @@ namespace EpgTimer.EpgView
                     rectBorder.Add(rect);
                 }
 
-                PopUpWork(true);
+                PopUpWork();
             }
             catch (Exception ex)
             {

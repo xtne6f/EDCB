@@ -228,13 +228,14 @@ namespace EpgTimer
         public bool TunerServiceNoWrap { get; set; }
         public bool TunerTitleIndent { get; set; }
         public bool TunerPopup { get; set; }
+        public int TunerPopupMode { get; set; }
         public bool TunerPopupRecinfo { get; set; }
         public bool TunerInfoSingleClick { get; set; }
         public bool TunerColorModeUse { get; set; }
         public bool TunerDisplayOffReserve { get; set; }
         public bool EpgTitleIndent { get; set; }
         public bool EpgPopup { get; set; }
-        public bool EpgPopupResOnly { get; set; }
+        public int EpgPopupMode { get; set; }
         public bool EpgGradation { get; set; }
         public bool EpgGradationHeader { get; set; }
         public string ResColumnHead { get; set; }
@@ -447,13 +448,14 @@ namespace EpgTimer
             TunerServiceNoWrap = true;
             TunerTitleIndent = true;
             TunerPopup = false;
+            TunerPopupMode = 0;
             TunerPopupRecinfo = false;
             TunerInfoSingleClick = false;
             TunerColorModeUse = false;
             TunerDisplayOffReserve = false;
             EpgTitleIndent = true;
             EpgPopup = true;
-            EpgPopupResOnly = false;
+            EpgPopupMode = 0;
             EpgGradation = true;
             EpgGradationHeader = true;
             ResColumnHead = "";
