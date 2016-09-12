@@ -7,9 +7,6 @@ using System.Windows.Media;
 using System.Collections;
 using System.IO;
 
-using CtrlCmdCLI;
-using CtrlCmdCLI.Def;
-
 namespace EpgTimer
 {
     class CommonManager
@@ -437,11 +434,11 @@ namespace EpgTimer
             if (PriorityDictionary == null)
             {
                 PriorityDictionary = new Dictionary<byte, PriorityInfo>();
-                PriorityDictionary.Add(0x01, new PriorityInfo("1", 0x01));
+                PriorityDictionary.Add(0x01, new PriorityInfo("1 (低)", 0x01));
                 PriorityDictionary.Add(0x02, new PriorityInfo("2", 0x02));
                 PriorityDictionary.Add(0x03, new PriorityInfo("3", 0x03));
                 PriorityDictionary.Add(0x04, new PriorityInfo("4", 0x04));
-                PriorityDictionary.Add(0x05, new PriorityInfo("5", 0x05));
+                PriorityDictionary.Add(0x05, new PriorityInfo("5 (高)", 0x05));
             }
             NWMode = false;
             if (NotifyLogList == null)
@@ -1004,11 +1001,34 @@ namespace EpgTimer
             return retText;
         }
 
+        public void FilePlay(uint reserveID)
+        {
+            if (Settings.Instance.FilePlayOnAirWithExe && (NWMode == false || Settings.Instance.FilePlayExe.Length != 0))
+            {
+                //ファイルパスを取得するため開いてすぐ閉じる
+                var info = new NWPlayTimeShiftInfo();
+                if (CtrlCmd.SendNwTimeShiftOpen(reserveID, ref info) == ErrCode.CMD_SUCCESS)
+                {
+                    CtrlCmd.SendNwPlayClose(info.ctrlID);
+                    if (info.filePath != "")
+                    {
+                        FilePlay(info.filePath);
+                        return;
+                    }
+                }
+                MessageBox.Show("録画ファイルの場所がわかりませんでした。", "追っかけ再生", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            else
+            {
+                TVTestCtrl.StartTimeShift(reserveID);
+            }
+        }
+
         public void FilePlay(String filePath)
         {
             try
             {
-                if (NWMode == false)
+                if (NWMode == false || Settings.Instance.FilePlayExe.Length != 0)
                 {
                     System.Diagnostics.Process process;
                     if (Settings.Instance.FilePlayExe.Length == 0)
@@ -1018,7 +1038,9 @@ namespace EpgTimer
                     else
                     {
                         String cmdLine = Settings.Instance.FilePlayCmd;
-                        cmdLine = cmdLine.Replace("$FilePath$", filePath);
+                        //'$'->'\t'は再帰的な展開を防ぐため
+                        cmdLine = cmdLine.Replace("$FileNameExt$", Path.GetFileName(filePath).Replace('$', '\t'));
+                        cmdLine = cmdLine.Replace("$FilePath$", filePath).Replace('\t', '$');
                         process = System.Diagnostics.Process.Start(Settings.Instance.FilePlayExe, cmdLine);
 
                     }

@@ -9,9 +9,6 @@ using System.Windows.Shapes;
 using System.Windows.Controls;
 using System.Windows;
 
-using CtrlCmdCLI;
-using CtrlCmdCLI.Def;
-
 namespace EpgTimer
 {
     public class SearchItem
@@ -275,6 +272,7 @@ namespace EpgTimer
             get
             {
                 if (this.EventInfo == null) { return null; }
+                if (this.EventInfo.ShortInfo == null) { return null; }
                 //
                 return this.EventInfo.ShortInfo.text_char.Replace("\r\n", " ");
             }

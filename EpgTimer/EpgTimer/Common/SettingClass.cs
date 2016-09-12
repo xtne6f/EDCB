@@ -14,32 +14,41 @@ namespace EpgTimer
 {
     class IniFileHandler
     {
-        [DllImport("KERNEL32.DLL")]
+        [DllImport("KERNEL32.DLL", CharSet = CharSet.Unicode)]
         public static extern uint
           GetPrivateProfileString(string lpAppName,
           string lpKeyName, string lpDefault,
           StringBuilder lpReturnedString, uint nSize,
           string lpFileName);
 
-        [DllImport("KERNEL32.DLL",
-            EntryPoint = "GetPrivateProfileStringA")]
-        public static extern uint
-          GetPrivateProfileStringByByteArray(string lpAppName,
-          string lpKeyName, string lpDefault,
-          byte[] lpReturnedString, uint nSize,
-          string lpFileName);
-
-        [DllImport("KERNEL32.DLL")]
+        [DllImport("KERNEL32.DLL", CharSet = CharSet.Unicode)]
         public static extern int
           GetPrivateProfileInt(string lpAppName,
           string lpKeyName, int nDefault, string lpFileName);
 
-        [DllImport("KERNEL32.DLL")]
+        [DllImport("KERNEL32.DLL", CharSet = CharSet.Unicode)]
         public static extern uint WritePrivateProfileString(
           string lpAppName,
           string lpKeyName,
           string lpString,
           string lpFileName);
+
+        public static string
+          GetPrivateProfileString(string lpAppName,
+          string lpKeyName, string lpDefault, string lpFileName)
+        {
+            StringBuilder buff = null;
+            for (uint n = 512; n <= 1024 * 1024; n *= 2)
+            {
+                //セクション名取得などのNUL文字分割された結果は先頭要素のみ格納される
+                buff = new StringBuilder((int)n);
+                if (GetPrivateProfileString(lpAppName, lpKeyName, lpDefault, buff, n, lpFileName) < n - 2)
+                {
+                    break;
+                }
+            }
+            return buff.ToString();
+        }
     }
 
     class SettingPath
@@ -78,9 +87,8 @@ namespace EpgTimer
         {
             get
             {
-                StringBuilder buff = new StringBuilder(512);
-                IniFileHandler.GetPrivateProfileString("SET", "DataSavePath", DefSettingFolderPath, buff, 512, CommonIniPath);
-                return (Path.IsPathRooted(buff.ToString()) ? "" : ModulePath.TrimEnd('\\') + "\\") + buff.ToString();
+                string path = IniFileHandler.GetPrivateProfileString("SET", "DataSavePath", DefSettingFolderPath, CommonIniPath);
+                return (Path.IsPathRooted(path) ? "" : ModulePath.TrimEnd('\\') + "\\") + path;
             }
         }
         public static void CheckFolderPath(ref string folderPath)
@@ -170,7 +178,6 @@ namespace EpgTimer
         private byte searchKeyFreeCA;
         private byte searchKeyChkRecEnd;
         private UInt16 searchKeyChkRecDay;
-        private List<RecPresetItem> recPresetList;
         private double recInfoColumnWidth0;
         private double recInfoColumnWidth1;
         private double recInfoColumnWidth2;
@@ -187,6 +194,7 @@ namespace EpgTimer
         private bool nwTvModeTCP;
         private string filePlayExe;
         private string filePlayCmd;
+        private bool filePlayOnAirWithExe;
         private List<IEPGStationInfo> iEpgStationList;
         private string nwServerIP;
         private UInt32 nwServerPort;
@@ -592,10 +600,28 @@ namespace EpgTimer
             get { return searchKeyChkRecDay; }
             set { searchKeyChkRecDay = value; }
         }
+        [System.Xml.Serialization.XmlIgnore]
         public List<RecPresetItem> RecPresetList
         {
-            get { return recPresetList; }
-            set { recPresetList = value; }
+            get
+            {
+                var list = new List<RecPresetItem>();
+                list.Add(new RecPresetItem());
+                list[0].DisplayName = "デフォルト";
+                list[0].ID = 0;
+                foreach (string s in IniFileHandler.GetPrivateProfileString("SET", "PresetID", "", SettingPath.TimerSrvIniPath).Split(','))
+                {
+                    uint id;
+                    uint.TryParse(s, out id);
+                    if (list.Exists(p => p.ID == id) == false)
+                    {
+                        list.Add(new RecPresetItem());
+                        list.Last().DisplayName = IniFileHandler.GetPrivateProfileString("REC_DEF" + id, "SetName", "", SettingPath.TimerSrvIniPath);
+                        list.Last().ID = id;
+                    }
+                }
+                return list;
+            }
         }
         public double RecInfoColumnWidth0
         {
@@ -676,6 +702,11 @@ namespace EpgTimer
         {
             get { return filePlayCmd; }
             set { filePlayCmd = value; }
+        }
+        public bool FilePlayOnAirWithExe
+        {
+            get { return filePlayOnAirWithExe; }
+            set { filePlayOnAirWithExe = value; }
         }
         public List<IEPGStationInfo> IEpgStationList
         {
@@ -1011,7 +1042,6 @@ namespace EpgTimer
             searchKeyContentList = new List<ContentKindInfo>();
             searchKeyDateItemList = new List<DateItem>();
             searchKeyServiceList = new List<Int64>();
-            recPresetList = new List<RecPresetItem>();
             recInfoColumnHead = "";
             recInfoSortDirection = ListSortDirection.Ascending;
             tvTestExe = "";
@@ -1021,10 +1051,11 @@ namespace EpgTimer
             nwTvModeTCP = false;
             filePlayExe = "";
             filePlayCmd = "\"$FilePath$\"";
+            filePlayOnAirWithExe = false;
             iEpgStationList = new List<IEPGStationInfo>();
             nwServerIP = "";
             nwServerPort = 4510;
-            nwWaitPort = 4520;
+            nwWaitPort = 0;
             nwMacAdd = "";
             wakeReconnectNW = false;
             suspendCloseNW = false;
@@ -1430,7 +1461,6 @@ namespace EpgTimer
 
         public static void GetDefRecSetting(UInt32 presetID, ref RecSettingData defKey)
         {
-            StringBuilder buff = new StringBuilder(512);
             String defName = "REC_DEF";
             String defFolderName = "REC_DEF_FOLDER";
             String defFolder1SegName = "REC_DEF_FOLDER_1SEG";
@@ -1448,23 +1478,15 @@ namespace EpgTimer
             defKey.ServiceMode = (Byte)IniFileHandler.GetPrivateProfileInt(defName, "ServiceMode", 0, SettingPath.TimerSrvIniPath);
             defKey.PittariFlag = (Byte)IniFileHandler.GetPrivateProfileInt(defName, "PittariFlag", 0, SettingPath.TimerSrvIniPath);
 
-            buff.Clear();
-            IniFileHandler.GetPrivateProfileString(defName, "BatFilePath", "", buff, 512, SettingPath.TimerSrvIniPath);
-            defKey.BatFilePath = buff.ToString();
+            defKey.BatFilePath = IniFileHandler.GetPrivateProfileString(defName, "BatFilePath", "", SettingPath.TimerSrvIniPath);
 
             int count = IniFileHandler.GetPrivateProfileInt(defFolderName, "Count", 0, SettingPath.TimerSrvIniPath);
             for (int i = 0; i < count; i++)
             {
                 RecFileSetInfo folderInfo = new RecFileSetInfo();
-                buff.Clear();
-                IniFileHandler.GetPrivateProfileString(defFolderName, i.ToString(), "", buff, 512, SettingPath.TimerSrvIniPath);
-                folderInfo.RecFolder = buff.ToString();
-                buff.Clear();
-                IniFileHandler.GetPrivateProfileString(defFolderName, "WritePlugIn" + i.ToString(), "Write_Default.dll", buff, 512, SettingPath.TimerSrvIniPath);
-                folderInfo.WritePlugIn = buff.ToString();
-                buff.Clear();
-                IniFileHandler.GetPrivateProfileString(defFolderName, "RecNamePlugIn" + i.ToString(), "", buff, 512, SettingPath.TimerSrvIniPath);
-                folderInfo.RecNamePlugIn = buff.ToString();
+                folderInfo.RecFolder = IniFileHandler.GetPrivateProfileString(defFolderName, i.ToString(), "", SettingPath.TimerSrvIniPath);
+                folderInfo.WritePlugIn = IniFileHandler.GetPrivateProfileString(defFolderName, "WritePlugIn" + i.ToString(), "Write_Default.dll", SettingPath.TimerSrvIniPath);
+                folderInfo.RecNamePlugIn = IniFileHandler.GetPrivateProfileString(defFolderName, "RecNamePlugIn" + i.ToString(), "", SettingPath.TimerSrvIniPath);
 
                 defKey.RecFolderList.Add(folderInfo);
             }
@@ -1473,15 +1495,9 @@ namespace EpgTimer
             for (int i = 0; i < count; i++)
             {
                 RecFileSetInfo folderInfo = new RecFileSetInfo();
-                buff.Clear();
-                IniFileHandler.GetPrivateProfileString(defFolder1SegName, i.ToString(), "", buff, 512, SettingPath.TimerSrvIniPath);
-                folderInfo.RecFolder = buff.ToString();
-                buff.Clear();
-                IniFileHandler.GetPrivateProfileString(defFolder1SegName, "WritePlugIn" + i.ToString(), "Write_Default.dll", buff, 512, SettingPath.TimerSrvIniPath);
-                folderInfo.WritePlugIn = buff.ToString();
-                buff.Clear();
-                IniFileHandler.GetPrivateProfileString(defFolder1SegName, "RecNamePlugIn" + i.ToString(), "", buff, 512, SettingPath.TimerSrvIniPath);
-                folderInfo.RecNamePlugIn = buff.ToString();
+                folderInfo.RecFolder = IniFileHandler.GetPrivateProfileString(defFolder1SegName, i.ToString(), "", SettingPath.TimerSrvIniPath);
+                folderInfo.WritePlugIn = IniFileHandler.GetPrivateProfileString(defFolder1SegName, "WritePlugIn" + i.ToString(), "Write_Default.dll", SettingPath.TimerSrvIniPath);
+                folderInfo.RecNamePlugIn = IniFileHandler.GetPrivateProfileString(defFolder1SegName, "RecNamePlugIn" + i.ToString(), "", SettingPath.TimerSrvIniPath);
 
                 defKey.PartialRecFolder.Add(folderInfo);
             }

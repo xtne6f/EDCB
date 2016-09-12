@@ -3,9 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-using CtrlCmdCLI;
-using CtrlCmdCLI.Def;
-
 using System.Net;
 using System.Net.Sockets;
 using System.IO;
@@ -15,14 +12,13 @@ namespace EpgTimer
 {
     public class NWConnect
     {
-        private CMD_CALLBACK_PROC cmdProc = null;
-        private object cmdParam = null;
+        private Action<CMD_STREAM, CMD_STREAM> cmdProc = null;
 
         private bool connectFlag;
-        private UInt32 serverPort;
         private TcpListener server = null;
+        private TcpClient pollingClient = null;
 
-        private String connectedIP;
+        private IPAddress connectedIP = null;
         private UInt32 connectedPort = 0;
 
         private CtrlCmdUtil cmd = null;
@@ -35,7 +31,7 @@ namespace EpgTimer
             }
         }
 
-        public String ConnectedIP
+        public IPAddress ConnectedIP
         {
             get
             {
@@ -80,37 +76,23 @@ namespace EpgTimer
             client.Send(stream.ToArray(), (int)stream.Position, new IPEndPoint(broad, 0));
         }
 
-        public bool ConnectServer(String srvIP, UInt32 srvPort, UInt32 waitPort, CMD_CALLBACK_PROC pfnCmdProc, object pParam)
+        public bool ConnectServer(IPAddress srvIP, UInt32 srvPort, UInt32 waitPort, Action<CMD_STREAM, CMD_STREAM> pfnCmdProc)
         {
-            if (srvIP.Length == 0)
-            {
-                return false;
-            }
             connectFlag = false;
 
             cmdProc = pfnCmdProc;
-            cmdParam = pParam;
             StartTCPServer(waitPort);
+            pollingClient = null;
 
             cmd.SetSendMode(true);
 
-            String wIPAddress = srvIP;
-            IPAddress[] IpAddress = Dns.GetHostAddresses(srvIP);
+            cmd.SetNWSetting(srvIP.ToString(), srvPort);
 
-            foreach (IPAddress wIP in IpAddress)
+            var status = new NotifySrvInfo();
+            if (waitPort == 0 && cmd.SendGetNotifySrvStatus(ref status) != ErrCode.CMD_SUCCESS ||
+                waitPort != 0 && cmd.SendRegistTCP(waitPort) != ErrCode.CMD_SUCCESS)
             {
-                if (!wIP.IsIPv6LinkLocal)
-                {
-                    wIPAddress = wIP.ToString();
-                    break;
-                }
-            }
-
-            cmd.SetNWSetting(wIPAddress, srvPort);
-
-            //cmd.SetNWSetting(srvIP, srvPort);
-            if (cmd.SendRegistTCP(waitPort) != ErrCode.CMD_SUCCESS)
-            {
+                //サーバが存在しないかロングポーリングに未対応
                 return false;
             }
             else
@@ -118,37 +100,97 @@ namespace EpgTimer
                 connectFlag = true;
                 connectedIP = srvIP;
                 connectedPort = srvPort;
+                if (waitPort == 0)
+                {
+                    pollingClient = new TcpClient();
+                    StartPolling(pollingClient, srvIP, srvPort, 0);
+                }
                 return true;
             }
         }
 
         private bool StartTCPServer(UInt32 port)
         {
-            if (serverPort == port && server != null)
+            if (server != null)
             {
                 return true;
             }
-            if (server != null)
+            if (port != 0)
             {
-                server.Stop();
-                server = null;
+                server = new TcpListener(IPAddress.Any, (int)port);
+                server.Start();
+                server.BeginAcceptTcpClient(new AsyncCallback(DoAcceptTcpClientCallback), server);
             }
-            serverPort = port;
-            server = new TcpListener(IPAddress.Any, (int)port);
-            server.Start();
-            server.BeginAcceptTcpClient(new AsyncCallback(DoAcceptTcpClientCallback), server);
 
             return true;
         }
 
-        private bool StopTCPServer()
+        private static int ReadAll(Stream s, byte[] buffer, int offset, int size)
         {
-            if (server != null)
+            int n = 0;
+            for (int m; n < size && (m = s.Read(buffer, offset + n, size - n)) > 0; n += m) ;
+            return n;
+        }
+
+        private void StartPolling(TcpClient client, IPAddress srvIP, uint srvPort, uint targetCount)
+        {
+            //巡回カウンタがtargetCountよりも大きくなる新しい通知を待ち受ける
+            var w = new CtrlCmdWriter(new MemoryStream());
+            w.Write((ushort)0);
+            w.Write(targetCount);
+            byte[] bHead = new byte[8 + w.Stream.Length];
+            BitConverter.GetBytes((uint)CtrlCmd.CMD_EPG_SRV_GET_STATUS_NOTIFY2).CopyTo(bHead, 0);
+            BitConverter.GetBytes((uint)w.Stream.Length).CopyTo(bHead, 4);
+            w.Stream.Close();
+            w.Stream.ToArray().CopyTo(bHead, 8);
+
+            try
             {
-                server.Stop();
-                server = null;
-            } 
-            return true;
+                client.Connect(srvIP, (int)srvPort);
+            }
+            catch (SocketException ex)
+            {
+                System.Diagnostics.Trace.WriteLine(ex);
+                Interlocked.CompareExchange(ref pollingClient, null, client);
+                return;
+            }
+            NetworkStream stream = client.GetStream();
+            stream.Write(bHead, 0, bHead.Length);
+            stream.BeginRead(bHead, 0, 8, (IAsyncResult ar) =>
+            {
+                using (client)
+                {
+                    int readSize = 0;
+                    try
+                    {
+                        readSize = stream.EndRead(ar);
+                    }
+                    catch (IOException ex)
+                    {
+                        System.Diagnostics.Trace.WriteLine(ex);
+                    }
+                    if (readSize > 0 && ReadAll(stream, bHead, readSize, 8 - readSize) == 8 - readSize)
+                    {
+                        CMD_STREAM stCmd = new CMD_STREAM();
+                        stCmd.uiParam = BitConverter.ToUInt32(bHead, 0);
+                        stCmd.uiSize = BitConverter.ToUInt32(bHead, 4);
+                        stCmd.bData = new byte[stCmd.uiSize];
+                        if (ReadAll(stream, stCmd.bData, 0, stCmd.bData.Length) == stCmd.bData.Length && stCmd.uiParam == (uint)ErrCode.CMD_SUCCESS)
+                        {
+                            //通常の通知コマンドに変換
+                            stCmd.uiParam = (uint)CtrlCmd.CMD_TIMER_GUI_SRV_STATUS_NOTIFY2;
+                            cmdProc.Invoke(stCmd, new CMD_STREAM());
+                            targetCount = stCmd.uiSize;
+                        }
+                    }
+                }
+                //pollingClientが置きかわっていなければ引き続き待ち受ける
+                var nextClient = new TcpClient();
+                if (Interlocked.CompareExchange(ref pollingClient, nextClient, client) == client)
+                {
+                    StartPolling(nextClient, srvIP, srvPort, targetCount);
+                }
+            }, null);
         }
 
         public void DoAcceptTcpClientCallback(IAsyncResult ar)
@@ -156,7 +198,6 @@ namespace EpgTimer
             TcpListener listener = (TcpListener)ar.AsyncState;
 
             TcpClient client = listener.EndAcceptTcpClient(ar);
-            client.ReceiveBufferSize = 1024 * 1024;
 
             NetworkStream stream = client.GetStream();
 
@@ -167,27 +208,21 @@ namespace EpgTimer
             {
                 byte[] bHead = new byte[8];
 
-                if (stream.Read(bHead, 0, bHead.Length) == 8)
+                if (ReadAll(stream, bHead, 0, 8) == 8)
                 {
                     stCmd.uiParam = BitConverter.ToUInt32(bHead, 0);
                     stCmd.uiSize = BitConverter.ToUInt32(bHead, 4);
-                    if (stCmd.uiSize > 0)
+                    stCmd.bData = new byte[stCmd.uiSize];
+                    if (ReadAll(stream, stCmd.bData, 0, stCmd.bData.Length) == stCmd.bData.Length)
                     {
-                        stCmd.bData = new Byte[stCmd.uiSize];
-                    }
-                    int readSize = 0;
-                    while (readSize < stCmd.uiSize)
-                    {
-                        readSize += stream.Read(stCmd.bData, readSize, (int)stCmd.uiSize);
-                    }
-                    cmdProc.Invoke(cmdParam, stCmd, ref stRes);
-
-                    Array.Copy(BitConverter.GetBytes(stRes.uiParam), 0, bHead, 0, sizeof(uint));
-                    Array.Copy(BitConverter.GetBytes(stRes.uiSize), 0, bHead, 4, sizeof(uint));
-                    stream.Write(bHead, 0, 8);
-                    if (stRes.uiSize > 0)
-                    {
-                        stream.Write(stRes.bData, 0, (int)stRes.uiSize);
+                        cmdProc.Invoke(stCmd, stRes);
+                        BitConverter.GetBytes(stRes.uiParam).CopyTo(bHead, 0);
+                        BitConverter.GetBytes(stRes.uiSize).CopyTo(bHead, 4);
+                        stream.Write(bHead, 0, 8);
+                        if (stRes.uiSize > 0)
+                        {
+                            stream.Write(stRes.bData, 0, (int)stRes.uiSize);
+                        }
                     }
                 }
             }

@@ -15,9 +15,6 @@ using System.ComponentModel;
 using System.Collections.ObjectModel;
 using System.Collections;
 
-using CtrlCmdCLI;
-using CtrlCmdCLI.Def;
-
 namespace EpgTimer
 {
     /// <summary>
@@ -34,28 +31,6 @@ namespace EpgTimer
             InitializeComponent();
             try
             {
-                if (Settings.Instance.NoStyle == 1)
-                {
-                    button_content_add.Style = null;
-                    button_content_del.Style = null;
-                    button_all_on.Style = null;
-                    button_video_on.Style = null;
-                    button_bs_on.Style = null;
-                    button_cs_on.Style = null;
-                    button_tere_on.Style = null;
-                    button_1seg_on.Style = null;
-                    button_other_on.Style = null;
-                    button_all_off.Style = null;
-                    button_bs_on2.Style = null;
-                    button_cs_on2.Style = null;
-                    button_tere_on2.Style = null;
-                    button_1seg_on2.Style = null;
-                    button_other_on2.Style = null;
-                    button_date_del.Style = null;
-                    button_timeAdd.Style = null;
-                    button_weekAdd.Style = null;
-                }
-
                 foreach (ChSet5Item info in ChSet5.Instance.ChList.Values)
                 {
                     ServiceItem item = new ServiceItem();
@@ -131,8 +106,13 @@ namespace EpgTimer
                 {
                     key.titleOnlyFlag = 0;
                 }
-                key.andKey = key.andKey.Substring(key.andKey.StartsWith("^!{999}") ? 7 : 0);
-                key.andKey = key.andKey.Substring(key.andKey.StartsWith("C!{999}") ? 7 : 0);
+                uint durMin;
+                uint durMax;
+                if (uint.TryParse(textBox_chkDurationMin.Text, out durMin) &&
+                    uint.TryParse(textBox_chkDurationMax.Text, out durMax) && (durMin > 0 || durMax > 0))
+                {
+                    key.andKey = "D!{" + ((10000 + Math.Min(durMin, 9999)) * 10000 + Math.Min(durMax, 9999)) + "}" + key.andKey;
+                }
                 if (checkBox_case.IsChecked == true)
                 {
                     key.andKey = "C!{999}" + key.andKey;
@@ -242,7 +222,8 @@ namespace EpgTimer
                 {
                     checkBox_titleOnly.IsChecked = false;
                 }
-                if (defKey.andKey.StartsWith("^!{999}"))
+                var match = System.Text.RegularExpressions.Regex.Match(defKey.andKey, @"^((?:\^!\{999\})?)((?:C!\{999\})?)((?:D!\{1[0-9]{8}\})?)");
+                if (match.Groups[1].Value != "")
                 {
                     checkBox_keyDisabled.IsChecked = true;
                 }
@@ -250,13 +231,24 @@ namespace EpgTimer
                 {
                     checkBox_keyDisabled.IsChecked = false;
                 }
-                if (defKey.andKey.StartsWith("C!{999}") || defKey.andKey.StartsWith("^!{999}C!{999}"))
+                if (match.Groups[2].Value != "")
                 {
                     checkBox_case.IsChecked = true;
                 }
                 else
                 {
                     checkBox_case.IsChecked = false;
+                }
+                if (match.Groups[3].Value != "")
+                {
+                    uint dur = uint.Parse(match.Groups[3].Value.Substring(3, 9));
+                    textBox_chkDurationMin.Text = (dur / 10000 % 10000).ToString();
+                    textBox_chkDurationMax.Text = (dur % 10000).ToString();
+                }
+                else
+                {
+                    textBox_chkDurationMin.Text = "0";
+                    textBox_chkDurationMax.Text = "0";
                 }
 
                 listBox_content.Items.Clear();
@@ -395,7 +387,7 @@ namespace EpgTimer
         {
             foreach (ServiceItem info in listView_service.Items)
             {
-                if (info.ServiceInfo.service_type == 0x01 || info.ServiceInfo.service_type == 0xA5)
+                if (ChSet5.IsVideo(info.ServiceInfo.service_type))
                 {
                     info.IsSelected = true;
                 }
@@ -411,7 +403,7 @@ namespace EpgTimer
             foreach (ServiceItem info in listView_service.Items)
             {
                 if (info.ServiceInfo.ONID == 0x04 &&
-                    (info.ServiceInfo.service_type == 0x01 || info.ServiceInfo.service_type == 0xA5))
+                    ChSet5.IsVideo(info.ServiceInfo.service_type))
                 {
                     info.IsSelected = true;
                 }
@@ -427,7 +419,7 @@ namespace EpgTimer
             foreach (ServiceItem info in listView_service.Items)
             {
                 if ((info.ServiceInfo.ONID == 0x06 || info.ServiceInfo.ONID == 0x07) &&
-                    (info.ServiceInfo.service_type == 0x01 || info.ServiceInfo.service_type == 0xA5))
+                    ChSet5.IsVideo(info.ServiceInfo.service_type))
                 {
                     info.IsSelected = true;
                 }
@@ -443,7 +435,7 @@ namespace EpgTimer
             foreach (ServiceItem info in listView_service.Items)
             {
                 if ((0x7880 <= info.ServiceInfo.ONID && info.ServiceInfo.ONID <= 0x7FE8) &&
-                    (info.ServiceInfo.service_type == 0x01 || info.ServiceInfo.service_type == 0xA5))
+                    ChSet5.IsVideo(info.ServiceInfo.service_type))
                 {
                     info.IsSelected = true;
                 }
@@ -540,149 +532,42 @@ namespace EpgTimer
             {
                 return;
             }
-            Int32 start = ((UInt16)comboBox_week_sh.SelectedItem) * 60;
-            start += (UInt16)comboBox_week_sm.SelectedItem;
-            Int32 end = ((UInt16)comboBox_week_eh.SelectedItem) * 60;
-            end += (UInt16)comboBox_week_em.SelectedItem;
-            if (end < start)
-            {
-                MessageBox.Show("開始時間が終了時間より前です");
-                return;
-            }
+            Int32 start = ((UInt16)comboBox_week_sh.SelectedItem) * 60+ (UInt16)comboBox_week_sm.SelectedItem;
+            Int32 end = ((UInt16)comboBox_week_eh.SelectedItem) * 60+ (UInt16)comboBox_week_em.SelectedItem;
 
-            if (checkBox_mon.IsChecked == true)
+            var Add_week = new Action<CheckBox, byte>((chbox, day) =>
             {
-                DateItem item = new DateItem();
-                EpgSearchDateInfo info = new EpgSearchDateInfo();
-                info.startDayOfWeek = 1;
+                if (chbox.IsChecked != true) return;
+                //
+                var info = new EpgSearchDateInfo();
+                info.startDayOfWeek = day;
                 info.startHour = (UInt16)comboBox_week_sh.SelectedItem;
                 info.startMin = (UInt16)comboBox_week_sm.SelectedItem;
-                info.endDayOfWeek = 1;
+                info.endDayOfWeek = info.startDayOfWeek;
                 info.endHour = (UInt16)comboBox_week_eh.SelectedItem;
                 info.endMin = (UInt16)comboBox_week_em.SelectedItem;
+                if (end < start)
+                {
+                    //終了時間は翌日のものとみなす
+                    info.endDayOfWeek = (byte)((info.endDayOfWeek + 1) % 7);
+                }
 
-                String viewText = "";
-                viewText = "月 " + info.startHour.ToString("00") + ":" + info.startMin.ToString("00") +
-                    " ～ " + "月 " + info.endHour.ToString("00") + ":" + info.endMin.ToString("00");
+                string viewText = "日月火水木金土"[info.startDayOfWeek] + " " + info.startHour.ToString("00") + ":" + info.startMin.ToString("00") +
+                    " ～ " + "日月火水木金土"[info.endDayOfWeek] + " " + info.endHour.ToString("00") + ":" + info.endMin.ToString("00");
 
+                var item = new DateItem();
                 item.DateInfo = info;
                 item.ViewText = viewText;
                 listBox_date.Items.Add(item);
-            }
-            if (checkBox_tue.IsChecked == true)
-            {
-                DateItem item = new DateItem();
-                EpgSearchDateInfo info = new EpgSearchDateInfo();
-                info.startDayOfWeek = 2;
-                info.startHour = (UInt16)comboBox_week_sh.SelectedItem;
-                info.startMin = (UInt16)comboBox_week_sm.SelectedItem;
-                info.endDayOfWeek = 2;
-                info.endHour = (UInt16)comboBox_week_eh.SelectedItem;
-                info.endMin = (UInt16)comboBox_week_em.SelectedItem;
+            });
 
-                String viewText = "";
-                viewText = "火 " + info.startHour.ToString("00") + ":" + info.startMin.ToString("00") +
-                    " ～ " + "火 " + info.endHour.ToString("00") + ":" + info.endMin.ToString("00");
-
-                item.DateInfo = info;
-                item.ViewText = viewText;
-                listBox_date.Items.Add(item);
-            }
-            if (checkBox_wen.IsChecked == true)
-            {
-                DateItem item = new DateItem();
-                EpgSearchDateInfo info = new EpgSearchDateInfo();
-                info.startDayOfWeek = 3;
-                info.startHour = (UInt16)comboBox_week_sh.SelectedItem;
-                info.startMin = (UInt16)comboBox_week_sm.SelectedItem;
-                info.endDayOfWeek = 3;
-                info.endHour = (UInt16)comboBox_week_eh.SelectedItem;
-                info.endMin = (UInt16)comboBox_week_em.SelectedItem;
-
-                String viewText = "";
-                viewText = "水 " + info.startHour.ToString("00") + ":" + info.startMin.ToString("00") +
-                    " ～ " + "水 " + info.endHour.ToString("00") + ":" + info.endMin.ToString("00");
-
-                item.DateInfo = info;
-                item.ViewText = viewText;
-                listBox_date.Items.Add(item);
-            }
-            if (checkBox_thu.IsChecked == true)
-            {
-                DateItem item = new DateItem();
-                EpgSearchDateInfo info = new EpgSearchDateInfo();
-                info.startDayOfWeek = 4;
-                info.startHour = (UInt16)comboBox_week_sh.SelectedItem;
-                info.startMin = (UInt16)comboBox_week_sm.SelectedItem;
-                info.endDayOfWeek = 4;
-                info.endHour = (UInt16)comboBox_week_eh.SelectedItem;
-                info.endMin = (UInt16)comboBox_week_em.SelectedItem;
-
-                String viewText = "";
-                viewText = "木 " + info.startHour.ToString("00") + ":" + info.startMin.ToString("00") +
-                    " ～ " + "木 " + info.endHour.ToString("00") + ":" + info.endMin.ToString("00");
-
-                item.DateInfo = info;
-                item.ViewText = viewText;
-                listBox_date.Items.Add(item);
-            }
-            if (checkBox_fri.IsChecked == true)
-            {
-                DateItem item = new DateItem();
-                EpgSearchDateInfo info = new EpgSearchDateInfo();
-                info.startDayOfWeek = 5;
-                info.startHour = (UInt16)comboBox_week_sh.SelectedItem;
-                info.startMin = (UInt16)comboBox_week_sm.SelectedItem;
-                info.endDayOfWeek = 5;
-                info.endHour = (UInt16)comboBox_week_eh.SelectedItem;
-                info.endMin = (UInt16)comboBox_week_em.SelectedItem;
-
-                String viewText = "";
-                viewText = "金 " + info.startHour.ToString("00") + ":" + info.startMin.ToString("00") +
-                    " ～ " + "金 " + info.endHour.ToString("00") + ":" + info.endMin.ToString("00");
-
-                item.DateInfo = info;
-                item.ViewText = viewText;
-                listBox_date.Items.Add(item);
-            }
-            if (checkBox_sat.IsChecked == true)
-            {
-                DateItem item = new DateItem();
-                EpgSearchDateInfo info = new EpgSearchDateInfo();
-                info.startDayOfWeek = 6;
-                info.startHour = (UInt16)comboBox_week_sh.SelectedItem;
-                info.startMin = (UInt16)comboBox_week_sm.SelectedItem;
-                info.endDayOfWeek = 6;
-                info.endHour = (UInt16)comboBox_week_eh.SelectedItem;
-                info.endMin = (UInt16)comboBox_week_em.SelectedItem;
-
-                String viewText = "";
-                viewText = "土 " + info.startHour.ToString("00") + ":" + info.startMin.ToString("00") +
-                    " ～ " + "土 " + info.endHour.ToString("00") + ":" + info.endMin.ToString("00");
-
-                item.DateInfo = info;
-                item.ViewText = viewText;
-                listBox_date.Items.Add(item);
-            }
-            if (checkBox_sun.IsChecked == true)
-            {
-                DateItem item = new DateItem();
-                EpgSearchDateInfo info = new EpgSearchDateInfo();
-                info.startDayOfWeek = 0;
-                info.startHour = (UInt16)comboBox_week_sh.SelectedItem;
-                info.startMin = (UInt16)comboBox_week_sm.SelectedItem;
-                info.endDayOfWeek = 0;
-                info.endHour = (UInt16)comboBox_week_eh.SelectedItem;
-                info.endMin = (UInt16)comboBox_week_em.SelectedItem;
-
-                String viewText = "";
-                viewText = "日 " + info.startHour.ToString("00") + ":" + info.startMin.ToString("00") +
-                    " ～ " + "日 " + info.endHour.ToString("00") + ":" + info.endMin.ToString("00");
-
-                item.DateInfo = info;
-                item.ViewText = viewText;
-                listBox_date.Items.Add(item);
-            }
+            Add_week(checkBox_mon, 1);
+            Add_week(checkBox_tue, 2);
+            Add_week(checkBox_wen, 3);
+            Add_week(checkBox_thu, 4);
+            Add_week(checkBox_fri, 5);
+            Add_week(checkBox_sat, 6);
+            Add_week(checkBox_sun, 0);
         }
 
         private void button_date_del_Click(object sender, RoutedEventArgs e)
@@ -698,7 +583,7 @@ namespace EpgTimer
             foreach (ServiceItem info in listView_service.Items)
             {
                 if (info.ServiceInfo.ONID == 0x04 &&
-                    (info.ServiceInfo.service_type == 0x01 || info.ServiceInfo.service_type == 0xA5))
+                    ChSet5.IsVideo(info.ServiceInfo.service_type))
                 {
                     info.IsSelected = true;
                 }
@@ -710,7 +595,7 @@ namespace EpgTimer
             foreach (ServiceItem info in listView_service.Items)
             {
                 if ((info.ServiceInfo.ONID == 0x06 || info.ServiceInfo.ONID == 0x07) &&
-                    (info.ServiceInfo.service_type == 0x01 || info.ServiceInfo.service_type == 0xA5))
+                    ChSet5.IsVideo(info.ServiceInfo.service_type))
                 {
                     info.IsSelected = true;
                 }
@@ -722,7 +607,7 @@ namespace EpgTimer
             foreach (ServiceItem info in listView_service.Items)
             {
                 if ((0x7880 <= info.ServiceInfo.ONID && info.ServiceInfo.ONID <= 0x7FE8) &&
-                    (info.ServiceInfo.service_type == 0x01 || info.ServiceInfo.service_type == 0xA5))
+                    ChSet5.IsVideo(info.ServiceInfo.service_type))
                 {
                     info.IsSelected = true;
                 }

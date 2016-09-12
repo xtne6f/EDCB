@@ -12,8 +12,8 @@
             <RowDefinition Height="*" />
             <RowDefinition Height="40" />
         </Grid.RowDefinitions>
-        <Button Content="キャンセル" Grid.Row="1" Height="23" HorizontalAlignment="Right" Margin="0,0,12,12" Name="button_cancel" VerticalAlignment="Bottom" Width="75" Click="button_cancel_Click" Style="{StaticResource ButtonStyle1}" />
-        <Button Content="OK" Grid.Row="1" Height="23" HorizontalAlignment="Right" Margin="0,0,122,12" Name="button_OK" VerticalAlignment="Bottom" Width="75" Click="button_OK_Click" Style="{StaticResource ButtonStyle1}" />
+        <Button Content="キャンセル" Grid.Row="1" Height="23" HorizontalAlignment="Right" Margin="0,0,12,12" Name="button_cancel" VerticalAlignment="Bottom" Width="75" Click="button_cancel_Click" />
+        <Button Content="OK" Grid.Row="1" Height="23" HorizontalAlignment="Right" Margin="0,0,122,12" Name="button_OK" VerticalAlignment="Bottom" Width="75" Click="button_OK_Click" />
         <my:EpgDataViewSetting x:Name="epgDataViewSetting" />
     </Grid>
 </Window>

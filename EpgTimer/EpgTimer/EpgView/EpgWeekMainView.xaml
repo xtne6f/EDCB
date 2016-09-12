@@ -25,7 +25,7 @@
                 <RowDefinition Height="40" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
-            <Button Content="現在" Grid.Row="0" Grid.Column="0" Name="button_now" Click="button_now_Click" Style="{StaticResource ButtonStyle1}" />
+            <Button Content="現在" Grid.Row="0" Grid.Column="0" Name="button_now" Click="button_now_Click" />
             <local:TimeView Grid.Row="1" x:Name="timeView" Margin="0,0,0,18"/>
             <local:WeekDayView Grid.Column="1" x:Name="weekDayView" Margin="0,0,18,0"/>
             <local:ProgramView Grid.Column="1" Grid.Row="1" x:Name="epgProgramView" />

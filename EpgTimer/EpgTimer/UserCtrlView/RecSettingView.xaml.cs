@@ -14,9 +14,6 @@ using System.Windows.Shapes;
 using System.IO;
 using System.Windows.Interop;
 
-using CtrlCmdCLI;
-using CtrlCmdCLI.Def;
-
 namespace EpgTimer
 {
     /// <summary>
@@ -39,20 +36,6 @@ namespace EpgTimer
 
             try
             {
-                if (Settings.Instance.NoStyle == 1)
-                {
-                    button_add_preset.Style = null;
-                    button_chg_preset.Style = null;
-                    button_del_preset.Style = null;
-                    button_recFolderAdd.Style = null;
-                    button_recFolderChg.Style = null;
-                    button_recFolderDel.Style = null;
-                    button_bat.Style = null;
-                    button_recFolderAdd_1seg.Style = null;
-                    button_recFolderChg_1seg.Style = null;
-                    button_recFolderDel_1seg.Style = null;
-                }
-
                 Settings.GetDefRecSetting(0, ref recSetting);
 
                 comboBox_recMode.DataContext = CommonManager.Instance.RecModeDictionary.Values;
@@ -131,7 +114,6 @@ namespace EpgTimer
 
         public void SavePreset()
         {
-            Settings.Instance.RecPresetList.Clear();
             string saveID = "";
             for (int i = 0; i < comboBox_preSet.Items.Count; i++)
             {
@@ -186,8 +168,6 @@ namespace EpgTimer
                 IniFileHandler.WritePrivateProfileString(defName, "ContinueRec", info.ContinueRecFlag.ToString(), SettingPath.TimerSrvIniPath);
                 IniFileHandler.WritePrivateProfileString(defName, "PartialRec", info.PartialRecFlag.ToString(), SettingPath.TimerSrvIniPath);
                 IniFileHandler.WritePrivateProfileString(defName, "TunerID", info.TunerID.ToString(), SettingPath.TimerSrvIniPath);
-
-                Settings.Instance.RecPresetList.Add(preItem);
             }
             IniFileHandler.WritePrivateProfileString("SET", "PresetID", saveID, SettingPath.TimerSrvIniPath);
             Settings.SaveToXmlFile();
@@ -267,9 +247,10 @@ namespace EpgTimer
             setInfo.PittariFlag = ((YesNoInfo)comboBox_pittari.SelectedItem).Value;
             setInfo.BatFilePath = textBox_bat.Text;
             setInfo.RecFolderList.Clear();
+            setInfo.PartialRecFolder.Clear();
             foreach (RecFileSetInfoView view in listView_recFolder.Items)
             {
-                setInfo.RecFolderList.Add(view.Info);
+                (view.PartialRec ? setInfo.PartialRecFolder : setInfo.RecFolderList).Add(view.Info);
             }
             if (checkBox_suspendDef.IsChecked == true)
             {
@@ -376,11 +357,6 @@ namespace EpgTimer
             else
             {
                 setInfo.PartialRecFlag = 0;
-            }
-            setInfo.PartialRecFolder.Clear();
-            foreach (RecFileSetInfoView view in listView_recFolder_1seg.Items)
-            {
-                setInfo.PartialRecFolder.Add(view.Info);
             }
             if (checkBox_continueRec.IsChecked == true)
             {
@@ -496,7 +472,11 @@ namespace EpgTimer
                 listView_recFolder.Items.Clear();
                 foreach (RecFileSetInfo info in recSetting.RecFolderList)
                 {
-                    listView_recFolder.Items.Add(new RecFileSetInfoView(GetCopyRecFileSetInfo(info)));
+                    listView_recFolder.Items.Add(new RecFileSetInfoView(GetCopyRecFileSetInfo(info), false));
+                }
+                foreach (RecFileSetInfo info in recSetting.PartialRecFolder)
+                {
+                    listView_recFolder.Items.Add(new RecFileSetInfoView(GetCopyRecFileSetInfo(info), true));
                 }
 
                 if (recSetting.SuspendMode == 0)
@@ -560,11 +540,6 @@ namespace EpgTimer
                 {
                     checkBox_partial.IsChecked = false;
                 }
-                listView_recFolder_1seg.Items.Clear();
-                foreach (RecFileSetInfo info in recSetting.PartialRecFolder)
-                {
-                    listView_recFolder_1seg.Items.Add(new RecFileSetInfoView(GetCopyRecFileSetInfo(info)));
-                }
 
                 foreach (TunerSelectInfo info in comboBox_tuner.Items)
                 {
@@ -593,45 +568,14 @@ namespace EpgTimer
 
         private class RecFileSetInfoView
         {
-            public RecFileSetInfoView(RecFileSetInfo info) { Info = info; }
+            public RecFileSetInfoView(RecFileSetInfo info, bool partialRec) { Info = info; PartialRec = partialRec; }
             public string RecFileName { get { return Info.RecFileName; } }
             public string RecFolder { get { return Info.RecFolder; } }
             public string RecNamePlugIn { get { return Info.RecNamePlugIn; } }
             public string WritePlugIn { get { return Info.WritePlugIn; } }
             public RecFileSetInfo Info { get; private set; }
-        }
-
-        private void checkBox_suspendDef_Click(object sender, RoutedEventArgs e)
-        {
-            checkBox_reboot.IsChecked = false;
-        }
-
-        private void radioButton_suspend_Click(object sender, RoutedEventArgs e)
-        {
-            checkBox_suspendDef.IsChecked = false;
-        }
-
-        private void checkBox_margineDef_Checked(object sender, RoutedEventArgs e)
-        {
-            textBox_margineStart.IsEnabled = false;
-            textBox_margineEnd.IsEnabled = false;
-        }
-
-        private void checkBox_margineDef_Unchecked(object sender, RoutedEventArgs e)
-        {
-            textBox_margineStart.IsEnabled = true;
-            textBox_margineEnd.IsEnabled = true;
-        }
-
-        private void checkBox_serviceMode_Checked(object sender, RoutedEventArgs e)
-        {
-            checkBox_serviceCaption.IsChecked = false;
-            checkBox_serviceData.IsChecked = false;
-        }
-
-        private void checkBox_serviceCaption_Checked(object sender, RoutedEventArgs e)
-        {
-            checkBox_serviceMode.IsChecked = false;
+            public bool PartialRec { get; private set; }
+            public string PartialRecYesNo { get { return PartialRec ? "はい" : "いいえ"; } }
         }
 
         private void button_bat_Click(object sender, RoutedEventArgs e)
@@ -661,7 +605,8 @@ namespace EpgTimer
                 setting.GetSetting(ref setInfo);
                 foreach (RecFileSetInfoView info in listView_recFolder.Items)
                 {
-                    if (String.Compare(setInfo.RecFolder, info.RecFolder, true) == 0 &&
+                    if (info.PartialRec == false &&
+                        String.Compare(setInfo.RecFolder, info.RecFolder, true) == 0 &&
                         String.Compare(setInfo.WritePlugIn, info.WritePlugIn, true) == 0 &&
                         String.Compare(setInfo.RecNamePlugIn, info.RecNamePlugIn, true) == 0)
                     {
@@ -669,7 +614,7 @@ namespace EpgTimer
                         return;
                     }
                 }
-                listView_recFolder.Items.Add(new RecFileSetInfoView(setInfo));
+                listView_recFolder.Items.Add(new RecFileSetInfoView(setInfo, false));
             }
 
         }
@@ -804,26 +749,6 @@ namespace EpgTimer
             }
         }
 
-        private void button_recFolderChg_1seg_Click(object sender, RoutedEventArgs e)
-        {
-            if (listView_recFolder_1seg.SelectedItem != null)
-            {
-                RecFolderWindow setting = new RecFolderWindow();
-                PresentationSource topWindow = PresentationSource.FromVisual(this);
-                if (topWindow != null)
-                {
-                    setting.Owner = (Window)topWindow.RootVisual;
-                }
-                RecFileSetInfo selectInfo = ((RecFileSetInfoView)listView_recFolder_1seg.SelectedItem).Info;
-                setting.SetDefSetting(selectInfo);
-                if (setting.ShowDialog() == true)
-                {
-                    setting.GetSetting(ref selectInfo);
-                }
-                listView_recFolder_1seg.Items.Refresh();
-            }
-        }
-
         private void button_recFolderAdd_1seg_Click(object sender, RoutedEventArgs e)
         {
             RecFolderWindow setting = new RecFolderWindow();
@@ -836,9 +761,10 @@ namespace EpgTimer
             {
                 RecFileSetInfo setInfo = new RecFileSetInfo();
                 setting.GetSetting(ref setInfo);
-                foreach (RecFileSetInfoView info in listView_recFolder_1seg.Items)
+                foreach (RecFileSetInfoView info in listView_recFolder.Items)
                 {
-                    if (String.Compare(setInfo.RecFolder, info.RecFolder, true) == 0 &&
+                    if (info.PartialRec &&
+                        String.Compare(setInfo.RecFolder, info.RecFolder, true) == 0 &&
                         String.Compare(setInfo.WritePlugIn, info.WritePlugIn, true) == 0 &&
                         String.Compare(setInfo.RecNamePlugIn, info.RecNamePlugIn, true) == 0)
                     {
@@ -846,18 +772,22 @@ namespace EpgTimer
                         return;
                     }
                 }
-                listView_recFolder_1seg.Items.Add(new RecFileSetInfoView(setInfo));
+                listView_recFolder.Items.Add(new RecFileSetInfoView(setInfo, true));
             }
         }
 
-        private void button_recFolderDel_1seg_Click(object sender, RoutedEventArgs e)
+
+    }
+
+    public class RecSettingViewInverter : IValueConverter
+    {
+        public object Convert(object v, Type t, object p, System.Globalization.CultureInfo c)
         {
-            if (listView_recFolder_1seg.SelectedItem != null)
-            {
-                listView_recFolder_1seg.Items.RemoveAt(listView_recFolder_1seg.SelectedIndex);
-            }
+            return !(v is bool && (bool)v);
         }
-
-
+        public object ConvertBack(object v, Type t, object p, System.Globalization.CultureInfo c)
+        {
+            return !(v is bool && (bool)v);
+        }
     }
 }

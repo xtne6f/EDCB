@@ -16,8 +16,6 @@ using System.Collections.ObjectModel;
 using System.Collections;
 using System.Text.RegularExpressions;
 
-using CtrlCmdCLI;
-using CtrlCmdCLI.Def;
 
 
 namespace EpgTimer
@@ -481,9 +479,13 @@ namespace EpgTimer
                                 if (this.viewCustContentKindList.Count > 0)
                                 {
                                     bool find = false;
-                                    if (eventInfo.ContentInfo != null)
+                                    if (eventInfo.ContentInfo == null || eventInfo.ContentInfo.nibbleList.Count == 0)
                                     {
-                                        if (eventInfo.ContentInfo.nibbleList.Count > 0)
+                                        //ジャンル情報ない
+                                        find = this.viewCustContentKindList.ContainsKey(0xFFFF);
+                                    }
+                                    else
+                                    {
                                         {
                                             foreach (EpgContentData contentInfo in eventInfo.ContentInfo.nibbleList)
                                             {
@@ -1133,7 +1135,7 @@ namespace EpgTimer
                     SearchItem item = listView_event.SelectedItem as SearchItem;
                     if (item.IsReserved == true)
                     {
-                        CommonManager.Instance.TVTestCtrl.StartTimeShift(item.ReserveInfo.ReserveID);
+                        CommonManager.Instance.FilePlay(item.ReserveInfo.ReserveID);
                     }
                 }
             }

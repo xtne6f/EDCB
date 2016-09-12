@@ -14,6 +14,42 @@ namespace EpgTimer.EpgView
 {
     class EpgViewPanel : FrameworkElement
     {
+        public class ItemFont
+        {
+            public string FamilyName { get; private set; }
+            public bool IsBold { get; private set; }
+            public GlyphTypeface GlyphType { get; private set; }
+            public ushort[] GlyphIndexCache { get; private set; }
+            public float[] GlyphWidthCache { get; private set; }
+
+            public ItemFont(string familyName, bool isBold)
+            {
+                FamilyName = familyName;
+                IsBold = isBold;
+                GlyphTypeface glyphType;
+                if ((new Typeface(new FontFamily(FamilyName),
+                                  FontStyles.Normal,
+                                  IsBold ? FontWeights.Bold : FontWeights.Normal,
+                                  FontStretches.Normal)).TryGetGlyphTypeface(out glyphType))
+                {
+                    GlyphType = glyphType;
+                }
+            }
+            public void PrepareCache()
+            {
+                if (GlyphIndexCache == null)
+                {
+                    GlyphIndexCache = new ushort[ushort.MaxValue + 1];
+                    GlyphWidthCache = new float[ushort.MaxValue + 1];
+                }
+            }
+            public void ClearCache()
+            {
+                GlyphIndexCache = null;
+                GlyphWidthCache = null;
+            }
+        }
+
         public static readonly DependencyProperty BackgroundProperty =
             Panel.BackgroundProperty.AddOwner(typeof(EpgViewPanel));
         private List<ProgramViewItem> items;
@@ -32,6 +68,7 @@ namespace EpgTimer.EpgView
             }
             set
             {
+                //ProgramViewItemの座標系は番組表基準なので、この時点でCanvas.SetLeft()によりEpgViewPanel自身の座標を添付済みでなければならない
                 items = null;
                 items = value;
                 CreateDrawTextList();
@@ -39,6 +76,18 @@ namespace EpgTimer.EpgView
         }
 
         public bool IsTitleIndent
+        {
+            get;
+            set;
+        }
+
+        public ItemFont ItemFontNormal
+        {
+            get;
+            set;
+        }
+
+        public ItemFont ItemFontTitle
         {
             get;
             set;
@@ -59,77 +108,17 @@ namespace EpgTimer.EpgView
                 return;
             }
 
-            Typeface typefaceNormal = null;
-            Typeface typefaceTitle = null;
-            GlyphTypeface glyphTypefaceNormal = null;
-            GlyphTypeface glyphTypefaceTitle = null;
-            try
+            if (ItemFontNormal == null || ItemFontNormal.GlyphType == null ||
+                ItemFontTitle == null || ItemFontTitle.GlyphType == null)
             {
-                if (Settings.Instance.FontName.Length > 0)
-                {
-                    typefaceNormal = new Typeface(new FontFamily(Settings.Instance.FontName),
-                                                 FontStyles.Normal,
-                                                 FontWeights.Normal,
-                                                 FontStretches.Normal);
-                }
-                if (Settings.Instance.FontNameTitle.Length > 0)
-                {
-                    if (Settings.Instance.FontBoldTitle == true)
-                    {
-                        typefaceTitle = new Typeface(new FontFamily(Settings.Instance.FontNameTitle),
-                                                     FontStyles.Normal,
-                                                     FontWeights.Bold,
-                                                     FontStretches.Normal);
-                    }
-                    else
-                    {
-                        typefaceTitle = new Typeface(new FontFamily(Settings.Instance.FontNameTitle),
-                                                     FontStyles.Normal,
-                                                     FontWeights.Normal,
-                                                     FontStretches.Normal);
-                    }
-                }
-                if (!typefaceNormal.TryGetGlyphTypeface(out glyphTypefaceNormal))
-                {
-                    typefaceNormal = null;
-                }
-                if (!typefaceTitle.TryGetGlyphTypeface(out glyphTypefaceTitle))
-                {
-                    typefaceTitle = null;
-                }
-
-                if (typefaceNormal == null)
-                {
-                    typefaceNormal = new Typeface(new FontFamily("MS UI Gothic"),
-                                                 FontStyles.Normal,
-                                                 FontWeights.Normal,
-                                                 FontStretches.Normal);
-                    if (!typefaceNormal.TryGetGlyphTypeface(out glyphTypefaceNormal))
-                    {
-                        MessageBox.Show("フォント指定が不正です");
-                        return;
-                    }
-                }
-                if (typefaceTitle == null)
-                {
-                    typefaceTitle = new Typeface(new FontFamily("MS UI Gothic"),
-                                                 FontStyles.Normal,
-                                                 FontWeights.Bold,
-                                                 FontStretches.Normal);
-                    if (!typefaceTitle.TryGetGlyphTypeface(out glyphTypefaceTitle))
-                    {
-                        MessageBox.Show("フォント指定が不正です");
-                        return;
-                    }
-                }
+                return;
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            ItemFontNormal.PrepareCache();
+            ItemFontTitle.PrepareCache();
 
             try
             {
+                double selfLeft = Canvas.GetLeft(this);
                 double sizeNormal = Settings.Instance.FontSize;
                 double sizeTitle = Settings.Instance.FontSizeTitle;
                 foreach (ProgramViewItem info in Items)
@@ -157,7 +146,7 @@ namespace EpgTimer.EpgView
                             min = "未定 ";
                         }
                         double useHeight = 0;
-                        if (RenderText(min, ref textDrawList, glyphTypefaceTitle, sizeTitle - 0.5, info.Width - 4, info.Height + 10, info.LeftPos - 1, info.TopPos - 1, ref useHeight, CommonManager.Instance.CustTitle1Color, m) == false)
+                        if (RenderText(min, ref textDrawList, ItemFontTitle, sizeTitle - 0.5, info.Width - 4, info.Height + 10, info.LeftPos - selfLeft - 1, info.TopPos - 1, ref useHeight, CommonManager.Instance.CustTitle1Color, m) == false)
                         {
                             info.TitleDrawErr = true;
                             continue;
@@ -170,7 +159,7 @@ namespace EpgTimer.EpgView
                             //タイトル
                             if (info.EventInfo.ShortInfo.event_name.Length > 0)
                             {
-                                if (RenderText(info.EventInfo.ShortInfo.event_name, ref textDrawList, glyphTypefaceTitle, sizeTitle, info.Width - 6 - widthOffset, info.Height - 1 - totalHeight, info.LeftPos + widthOffset, info.TopPos + totalHeight, ref useHeight, CommonManager.Instance.CustTitle1Color, m) == false)
+                                if (RenderText(info.EventInfo.ShortInfo.event_name, ref textDrawList, ItemFontTitle, sizeTitle, info.Width - 6 - widthOffset, info.Height - 1 - totalHeight, info.LeftPos - selfLeft + widthOffset, info.TopPos + totalHeight, ref useHeight, CommonManager.Instance.CustTitle1Color, m) == false)
                                 {
                                     info.TitleDrawErr = true;
                                     continue;
@@ -184,7 +173,7 @@ namespace EpgTimer.EpgView
                             //説明
                             if (info.EventInfo.ShortInfo.text_char.Length > 0)
                             {
-                                if (RenderText(info.EventInfo.ShortInfo.text_char, ref textDrawList, glyphTypefaceNormal, sizeNormal, info.Width - 10 - widthOffset, info.Height - 5 - totalHeight, info.LeftPos + widthOffset, info.TopPos + totalHeight, ref useHeight, CommonManager.Instance.CustTitle2Color, m) == false)
+                                if (RenderText(info.EventInfo.ShortInfo.text_char, ref textDrawList, ItemFontNormal, sizeNormal, info.Width - 10 - widthOffset, info.Height - 5 - totalHeight, info.LeftPos - selfLeft + widthOffset, info.TopPos + totalHeight, ref useHeight, CommonManager.Instance.CustTitle2Color, m) == false)
                                 {
                                     continue;
                                 }
@@ -213,7 +202,7 @@ namespace EpgTimer.EpgView
             }
         }
 
-        protected bool RenderText(String text, ref List<TextDrawItem> textDrawList, GlyphTypeface glyphType, double fontSize, double maxWidth, double maxHeight, double x, double y, ref double useHeight, SolidColorBrush fontColor, Matrix m)
+        protected bool RenderText(String text, ref List<TextDrawItem> textDrawList, ItemFont itemFont, double fontSize, double maxWidth, double maxHeight, double x, double y, ref double useHeight, SolidColorBrush fontColor, Matrix m)
         {
             double totalHeight = 0;
 
@@ -226,8 +215,16 @@ namespace EpgTimer.EpgView
                 double totalWidth = 0;
                 for (int n = 0; n < line.Length; n++)
                 {
-                    ushort glyphIndex = glyphType.CharacterToGlyphMap[line[n]];
-                    double width = glyphType.AdvanceWidths[glyphIndex] * fontSize;
+                    //この辞書検索が負荷の大部分を占めているのでテーブルルックアップする
+                    //ushort glyphIndex = itemFont.GlyphType.CharacterToGlyphMap[line[n]];
+                    //double width = itemFont.GlyphType.AdvanceWidths[glyphIndex] * fontSize;
+                    ushort glyphIndex = itemFont.GlyphIndexCache[line[n]];
+                    if (glyphIndex == 0)
+                    {
+                        itemFont.GlyphIndexCache[line[n]] = glyphIndex = itemFont.GlyphType.CharacterToGlyphMap[line[n]];
+                        itemFont.GlyphWidthCache[glyphIndex] = (float)itemFont.GlyphType.AdvanceWidths[glyphIndex];
+                    }
+                    double width = itemFont.GlyphWidthCache[glyphIndex] * fontSize;
                     if (totalWidth + width > maxWidth)
                     {
                         if (glyphIndexes.Count > 0)
@@ -237,7 +234,7 @@ namespace EpgTimer.EpgView
                             Point origin = new Point(dpix / m.M11, dpiy / m.M22);
                             TextDrawItem item = new TextDrawItem();
                             item.FontColor = fontColor;
-                            item.Text = new GlyphRun(glyphType, 0, false, fontSize,
+                            item.Text = new GlyphRun(itemFont.GlyphType, 0, false, fontSize,
                                 glyphIndexes, origin, advanceWidths, null, null, null, null,
                                 null, null);
                             textDrawList.Add(item);
@@ -270,7 +267,7 @@ namespace EpgTimer.EpgView
                     Point origin = new Point(dpix / m.M11, dpiy / m.M22);
                     TextDrawItem item = new TextDrawItem();
                     item.FontColor = fontColor;
-                    item.Text = new GlyphRun(glyphType, 0, false, fontSize,
+                    item.Text = new GlyphRun(itemFont.GlyphType, 0, false, fontSize,
                         glyphIndexes, origin, advanceWidths, null, null, null, null,
                         null, null);
                     textDrawList.Add(item);
@@ -295,19 +292,20 @@ namespace EpgTimer.EpgView
             
             try
             {
+                double selfLeft = Canvas.GetLeft(this);
                 double sizeNormal = Settings.Instance.FontSize;
                 double sizeTitle = Settings.Instance.FontSizeTitle;
                 Brush bgBrush = Background;
                 foreach (ProgramViewItem info in Items)
                 {
-                    dc.DrawRectangle(bgBrush, null, new Rect(info.LeftPos, info.TopPos, info.Width, 1));
-                    dc.DrawRectangle(bgBrush, null, new Rect(info.LeftPos, info.TopPos + info.Height, info.Width, 1));
+                    dc.DrawRectangle(bgBrush, null, new Rect(info.LeftPos - selfLeft, info.TopPos, info.Width, 1));
+                    dc.DrawRectangle(bgBrush, null, new Rect(info.LeftPos - selfLeft, info.TopPos + info.Height, info.Width, 1));
                     if (info.Height > 1)
                     {
-                        dc.DrawRectangle(info.ContentColor, null, new Rect(info.LeftPos + 0, info.TopPos + 0.5, info.Width - 1, info.Height - 0.5));
+                        dc.DrawRectangle(info.ContentColor, null, new Rect(info.LeftPos - selfLeft, info.TopPos + 0.5, info.Width - 1, info.Height - 0.5));
                         if (textDrawDict.ContainsKey(info))
                         {
-                            dc.PushClip(new RectangleGeometry(new Rect(info.LeftPos + 0, info.TopPos + 0.5, info.Width - 1, info.Height - 0.5)));
+                            dc.PushClip(new RectangleGeometry(new Rect(info.LeftPos - selfLeft, info.TopPos + 0.5, info.Width - 1, info.Height - 0.5)));
                             foreach (TextDrawItem txtinfo in textDrawDict[info])
                             {
                                 dc.DrawGlyphRun(txtinfo.FontColor, txtinfo.Text);

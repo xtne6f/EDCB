@@ -15,8 +15,6 @@ using System.ComponentModel;
 using System.Collections.ObjectModel;
 using System.Collections;
 
-using CtrlCmdCLI;
-using CtrlCmdCLI.Def;
 
 namespace EpgTimer
 {
@@ -43,12 +41,6 @@ namespace EpgTimer
 
             try
             {
-                if (Settings.Instance.NoStyle == 1)
-                {
-                    button_del.Style = null;
-                    button_play.Style = null;
-                }
-
                 foreach (GridViewColumn info in gridView_recinfo.Columns)
                 {
                     GridViewColumnHeader header = info.Header as GridViewColumnHeader;
@@ -342,6 +334,12 @@ namespace EpgTimer
                     RecInfoItem info = listView_recinfo.SelectedItem as RecInfoItem;
                     RecInfoDescWindow dlg = new RecInfoDescWindow();
                     dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
+                    RecFileInfo extraRecInfo = new RecFileInfo();
+                    if (cmd.SendGetRecInfo(info.RecInfo.ID, ref extraRecInfo) == ErrCode.CMD_SUCCESS)
+                    {
+                        info.RecInfo.ProgramInfo = extraRecInfo.ProgramInfo;
+                        info.RecInfo.ErrInfo = extraRecInfo.ErrInfo;
+                    }
                     dlg.SetRecInfo(info.RecInfo);
                     dlg.ShowDialog();
                 }
@@ -421,6 +419,12 @@ namespace EpgTimer
                 RecInfoItem info = listView_recinfo.SelectedItem as RecInfoItem;
                 RecInfoDescWindow dlg = new RecInfoDescWindow();
                 dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
+                RecFileInfo extraRecInfo = new RecFileInfo();
+                if (cmd.SendGetRecInfo(info.RecInfo.ID, ref extraRecInfo) == ErrCode.CMD_SUCCESS)
+                {
+                    info.RecInfo.ProgramInfo = extraRecInfo.ProgramInfo;
+                    info.RecInfo.ErrInfo = extraRecInfo.ErrInfo;
+                }
                 dlg.SetRecInfo(info.RecInfo);
                 dlg.ShowDialog();
             }

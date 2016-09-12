@@ -14,8 +14,6 @@ using System.Windows.Shapes;
 using System.Collections;
 using System.Windows.Threading;
 
-using CtrlCmdCLI;
-using CtrlCmdCLI.Def;
 using EpgTimer.EpgView;
 
 namespace EpgTimer
@@ -48,12 +46,6 @@ namespace EpgTimer
         public EpgWeekMainView()
         {
             InitializeComponent();
-
-            if (Settings.Instance.NoStyle == 1)
-            {
-                button_now.Style = null;
-
-            }
 
             epgProgramView.PreviewMouseWheel += new MouseWheelEventHandler(epgProgramView_PreviewMouseWheel);
             epgProgramView.ScrollChanged += new ScrollChangedEventHandler(epgProgramView_ScrollChanged);
@@ -990,7 +982,7 @@ namespace EpgTimer
                 {
                     return;
                 }
-                CommonManager.Instance.TVTestCtrl.StartTimeShift(reserve.ReserveID);
+                CommonManager.Instance.FilePlay(reserve.ReserveID);
             }
             catch (Exception ex)
             {
@@ -1637,9 +1629,13 @@ namespace EpgTimer
                     if (this.viewCustContentKindList.Count > 0)
                     {
                         bool find = false;
-                        if (eventInfo.ContentInfo != null)
+                        if (eventInfo.ContentInfo == null || eventInfo.ContentInfo.nibbleList.Count == 0)
                         {
-                            if (eventInfo.ContentInfo.nibbleList.Count > 0)
+                            //ジャンル情報ない
+                            find = this.viewCustContentKindList.ContainsKey(0xFFFF);
+                        }
+                        else
+                        {
                             {
                                 foreach (EpgContentData contentInfo in eventInfo.ContentInfo.nibbleList)
                                 {

@@ -12,10 +12,6 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-using CtrlCmdCLI;
-using CtrlCmdCLI.Def;
-using EpgTimer.EpgView;
-
 namespace EpgTimer.EpgView
 {
     /// <summary>
