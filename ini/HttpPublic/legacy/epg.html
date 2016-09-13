@@ -1,0 +1,142 @@
+ONE_MIN_PX=2
+TIME_COLUMN=3
+SORT_BY_REMOCON_KEY_ID=true
+HIDE_SERVICES={
+  --非表示にしたいサービスを['ONID-TSID-SID']=true,のように指定
+  --['1-2345-6789']=true,
+}
+
+dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
+
+ct=[=[
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link rel="stylesheet" type="text/css" href="default.css">
+<title>EpgTimer</title>
+</head>
+<body>
+<h1>番組表</h1>
+<div class="page-nav">
+]=]
+
+tab=tonumber(mg.get_var(mg.request_info.query_string,'tab')) or 0
+page=tonumber(mg.get_var(mg.request_info.query_string,'page')) or 0
+date=tonumber(mg.get_var(mg.request_info.query_string,'date')) or 0
+--dateクエリは今日(深夜4時区切り)を基準(=0)とする
+now=os.time()
+timezone=os.time(os.date('*t',now))-os.time(os.date('!*t',now))
+baseDate=math.floor((now+timezone-4*3600)/(24*3600))
+baseTime=baseDate*24*3600+4*3600-timezone
+
+rt={}
+for i,v in ipairs(edcb.GetReserveData()) do
+  rt[string.format('%04X%04X%04X%04X', v.onid, v.tsid, v.sid, v.eid)]=true
+end
+
+minTime=nil
+maxTime=nil
+st={}
+edcb.htmlEscape=15
+for i,v in ipairs(edcb.GetServiceList() or {}) do
+  if not HIDE_SERVICES[''..v.onid..'-'..v.tsid..'-'..v.sid] and
+     (v.service_type==0x01 or v.service_type==0xA5 or v.service_type==0xAD) and (
+     tab==0 and v.onid==4 or
+     tab==1 and (v.onid==6 or v.onid==7) or
+     tab==2 and 0x7880<=v.onid and v.onid<=0x7FE8 or
+     tab==3 and v.onid~=4 and v.onid~=6 and v.onid~=7 and (v.onid<0x7880 or 0x7FE8<v.onid)) then
+    table.insert(st, v)
+    st[#st].et={}
+    mmt=edcb.GetEventMinMaxTime(v.onid, v.tsid, v.sid)
+    if mmt then
+      minTime=minTime and os.time(mmt.minTime)>minTime and minTime or os.time(mmt.minTime)
+      maxTime=maxTime and os.time(mmt.maxTime)<maxTime and maxTime or os.time(mmt.maxTime)
+    end
+    --表示範囲の番組だけ取得する
+    st[#st].et=edcb.EnumEventInfo({{onid=v.onid, tsid=v.tsid, sid=v.sid}}, {startTime=os.date('*t',baseTime+date*24*3600), durationSecond=25*3600}) or {}
+    table.sort(st[#st].et, function(a,b) return os.time(a.startTime)<os.time(b.startTime) end)
+  end
+end
+
+if SORT_BY_REMOCON_KEY_ID then
+  table.sort(st, function(a,b) return
+    string.format('%04X%04X%04X%04X', a.remote_control_key_id, a.onid, a.tsid, a.sid)<
+    string.format('%04X%04X%04X%04X', b.remote_control_key_id, b.onid, b.tsid, b.sid) end)
+end
+
+for i,v in ipairs({'BS','CS','地デジ','その他'}) do
+  ct=ct..'  '..(tab==i-1 and v or '<a href="epg.html?tab='..(i-1)..'&amp;date='..date..'">'..v..'</a>')..'\n'
+end
+ct=ct..'  ||\n'
+
+if minTime then
+  for i=math.floor((minTime+timezone-4*3600)/(24*3600)),math.floor((maxTime+timezone-4*3600)/(24*3600)) do
+    d=os.date('*t', i*24*3600-timezone)
+    ct=ct..'  '..(i-baseDate~=date and '<a href="epg.html?tab='..tab..'&amp;date='..(i-baseDate)..'">' or '')
+      ..d.month..'/'..d.day..'('..({'日','月','火','水','木','金','土'})[d.wday]..')'..(i-baseDate~=date and '</a>\n' or '\n')
+  end
+end
+ct=ct..'</div>\n<div id="main">\n  <table class="epg-table">\n'
+
+rowHead=''
+for i,v in ipairs(st) do
+  if i%TIME_COLUMN==1 then rowHead=rowHead..'<td></td>\n' end
+  rowHead=rowHead..'<th>'..v.service_name..'</th>\n'
+end
+rowTail='<tr class="epg-row-tail">\n'..rowHead..'</tr>\n'
+rowHead='<tr class="epg-row-head">\n'..rowHead..'</tr>\n'
+
+colHead='<td class="epg-col-head">\n'
+for i=4,28 do
+  colHead=colHead..'<div style="height:'..(ONE_MIN_PX*60-2)..'px">'..i..'</div>'
+end
+colHead=colHead..'</td>\n'
+
+ctt={ct}
+table.insert(ctt, rowHead..'<tr>\n')
+for i,v in ipairs(st) do
+  if i%TIME_COLUMN==1 then table.insert(ctt, colHead) end
+  table.insert(ctt, '<td class="epg-col">\n')
+  lastPx=0
+  for j,w in ipairs(v.et) do
+    startTime=os.time(w.startTime)
+    startPx=math.min(math.floor((startTime-baseTime-date*24*3600)/60)*ONE_MIN_PX, ONE_MIN_PX*60*25)
+    endPx=math.min(math.floor(((
+      w.durationSecond and startTime+w.durationSecond or (j<#v.et and os.time(v.et[j+1].startTime) or startTime) --終了時間未定
+      )-baseTime-date*24*3600)/60)*ONE_MIN_PX, ONE_MIN_PX*60*25)
+    if startPx-lastPx>0 then
+      table.insert(ctt, '<div style="border:0;height:'..(startPx-lastPx)..'px"></div>\n')
+      lastPx=startPx
+    end
+    if endPx-lastPx>2 then
+      cont=w.contentInfoList and #w.contentInfoList>0 and math.floor(w.contentInfoList[1].content_nibble/256)%16 or 16
+      sub=w.eventGroupInfo and #w.eventGroupInfo.eventDataList==1 and (
+        w.eventGroupInfo.eventDataList[1].onid~=w.onid or
+        w.eventGroupInfo.eventDataList[1].tsid~=w.tsid or
+        w.eventGroupInfo.eventDataList[1].sid~=w.sid or
+        w.eventGroupInfo.eventDataList[1].eid~=w.eid)
+      table.insert(ctt, '<div class="cont-'..cont..'" style="height:'..(endPx-lastPx-2)..'px">'
+        ..(rt[string.format('%04X%04X%04X%04X', w.onid, w.tsid, w.sid, w.eid)] and '<b>予</b> ' or '')
+        ..os.date('%M', startTime)
+        ..(sub and '' or ' <a href=\"epginfo.html?id='..w.onid..'-'..w.tsid..'-'..w.sid..'-'..w.eid..'">'
+          ..(w.shortInfo and w.shortInfo.event_name or '&nbsp;')..'</a>')
+        ..'</div>\n')
+      lastPx=endPx
+    end
+  end
+  table.insert(ctt, '</td>\n')
+end
+
+table.insert(ctt, '</tr>\n'..rowTail..[=[
+  </table>
+</div>
+<div id="footer">
+  <a href="index.html">メニューへ</a>
+</div>
+</body>
+</html>
+]=])
+ct=table.concat(ctt)
+zl=Deflate(ct)
+mg.write(Response(200, 'text/html', 'utf-8', zl and #zl or #ct)..(zl and 'Content-Encoding: deflate\r\n' or '')..'\r\n', zl or ct)

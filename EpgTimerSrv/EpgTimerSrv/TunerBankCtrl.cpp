@@ -117,7 +117,7 @@ bool CTunerBankCtrl::ChgCtrlReserve(TUNER_RESERVE* reserve)
 	return false;
 }
 
-bool CTunerBankCtrl::DelReserve(DWORD reserveID)
+bool CTunerBankCtrl::DelReserve(DWORD reserveID, vector<CHECK_RESULT>* retList)
 {
 	auto itr = this->reserveMap.find(reserveID);
 	if( itr != this->reserveMap.end() ){
@@ -126,17 +126,47 @@ bool CTunerBankCtrl::DelReserve(DWORD reserveID)
 			CWatchBlock watchBlock(&this->watchContext);
 			CSendCtrlCmd ctrlCmd;
 			ctrlCmd.SetPipeSetting(CMD2_VIEW_CTRL_WAIT_CONNECT, CMD2_VIEW_CTRL_PIPE, this->tunerPid);
+			CHECK_RESULT ret;
+			ret.type = 0;
+			ret.reserveID = reserveID;
+			ret.continueRec = false;
+			ret.drops = 0;
+			ret.scrambles = 0;
+			bool isMainCtrl = true;
 			for( int i = 0; i < 2; i++ ){
 				if( itr->second.ctrlID[i] != 0 ){
-					if( itr->second.state == TR_REC && itr->second.recMode != RECMODE_VIEW ){
-						SET_CTRL_REC_STOP_PARAM param;
-						param.ctrlID = itr->second.ctrlID[i];
-						param.saveErrLog = this->saveErrLog;
-						SET_CTRL_REC_STOP_RES_PARAM resVal;
-						ctrlCmd.SendViewStopRec(param, &resVal);
+					if( itr->second.state == TR_REC ){
+						if( itr->second.recMode == RECMODE_VIEW ){
+							if( isMainCtrl ){
+								ret.type = CHECK_END;
+							}
+						}else{
+							SET_CTRL_REC_STOP_PARAM param;
+							param.ctrlID = itr->second.ctrlID[i];
+							param.saveErrLog = this->saveErrLog;
+							SET_CTRL_REC_STOP_RES_PARAM resVal;
+							if( ctrlCmd.SendViewStopRec(param, &resVal) != CMD_SUCCESS ){
+								if( isMainCtrl ){
+									ret.type = CHECK_ERR_RECEND;
+								}
+							}else if( isMainCtrl ){
+								ret.type = resVal.subRecFlag ? CHECK_END_END_SUBREC :
+								           itr->second.notStartHead ? CHECK_END_NOT_START_HEAD :
+								           itr->second.savedPgInfo == false ? CHECK_END_NOT_FIND_PF : CHECK_END;
+								ret.recFilePath = resVal.recFilePath;
+								ret.drops = resVal.drop;
+								ret.scrambles = resVal.scramble;
+								ret.epgStartTime = itr->second.epgStartTime;
+								ret.epgEventName = itr->second.epgEventName;
+							}
+						}
 					}
 					ctrlCmd.SendViewDeleteCtrl(itr->second.ctrlID[i]);
+					isMainCtrl = false;
 				}
+			}
+			if( ret.type != 0 && retList ){
+				retList->push_back(ret);
 			}
 			if( itr->second.state == TR_REC ){
 				//録画終了に伴ってGUIキープが解除されたかもしれない
@@ -1020,15 +1050,13 @@ void CTunerBankCtrl::CloseNWTV()
 	}
 }
 
-bool CTunerBankCtrl::GetRecFilePath(DWORD reserveID, wstring& filePath, DWORD* ctrlID, DWORD* processID) const
+bool CTunerBankCtrl::GetRecFilePath(DWORD reserveID, wstring& filePath) const
 {
 	auto itr = this->reserveMap.find(reserveID);
 	if( itr != this->reserveMap.end() && itr->second.state == TR_REC ){
 		int i = itr->second.ctrlID[0] != 0 ? 0 : 1;
 		if( itr->second.recFilePath[i].empty() == false ){
 			filePath = itr->second.recFilePath[i];
-			*ctrlID = itr->second.ctrlID[i];
-			*processID = this->tunerPid;
 			return true;
 		}
 	}
@@ -1068,15 +1096,13 @@ bool CTunerBankCtrl::OpenTuner(bool minWake, bool noView, bool nwUdp, bool nwTcp
 	}
 
 	//原作と異なりイベントオブジェクト"Global\\EpgTimerSrv_OpenTuner_Event"による排他制御はしない
-	//また、シェルがある限り(≒サービスモードでない限り)GUI経由でなく直接CreateProcess()するので注意
-	if( GetShellWindow() == NULL ){
-		OutputDebugString(L"GetShellWindow() failed\r\n");
-		//表示できない可能性が高いのでGUI経由で起動してみる
+	//また、サービスモードでない限りGUI経由でなく直接CreateProcess()するので注意
+	if( this->notifyManager.IsGUI() == FALSE ){
+		//表示できないのでGUI経由で起動してみる
 		CSendCtrlCmd ctrlCmd;
-		map<DWORD, DWORD> registGUIMap;
-		this->notifyManager.GetRegistGUI(&registGUIMap);
-		for( map<DWORD, DWORD>::iterator itr = registGUIMap.begin(); itr != registGUIMap.end(); itr++ ){
-			ctrlCmd.SetPipeSetting(CMD2_GUI_CTRL_WAIT_CONNECT, CMD2_GUI_CTRL_PIPE, itr->first);
+		vector<DWORD> registGUI = this->notifyManager.GetRegistGUI();
+		for( size_t i = 0; i < registGUI.size(); i++ ){
+			ctrlCmd.SetPipeSetting(CMD2_GUI_CTRL_WAIT_CONNECT, CMD2_GUI_CTRL_PIPE, registGUI[i]);
 			if( ctrlCmd.SendGUIExecute(L'"' + strExecute + L'"' + strParam, &this->tunerPid) == CMD_SUCCESS ){
 				//ハンドル開く前に終了するかもしれない
 				this->hTunerProcess = OpenProcess(SYNCHRONIZE | PROCESS_TERMINATE | PROCESS_SET_INFORMATION, FALSE, this->tunerPid);
@@ -1108,13 +1134,15 @@ bool CTunerBankCtrl::OpenTuner(bool minWake, bool noView, bool nwUdp, bool nwTcp
 		for( int i = 0; i < 300; i++ ){
 			Sleep(100);
 			if( WaitForSingleObject(this->hTunerProcess, 0) != WAIT_TIMEOUT ){
-				break;
+				CloseTuner();
+				return false;
 			}else if( ctrlCmd.SendViewSetID(this->tunerID) == CMD_SUCCESS ){
 				ctrlCmd.SetConnectTimeOut(CONNECT_TIMEOUT);
 				//起動ステータスを確認
 				DWORD status;
 				if( ctrlCmd.SendViewGetStatus(&status) == CMD_SUCCESS && status == VIEW_APP_ST_ERR_BON ){
-					break;
+					CloseTuner();
+					return false;
 				}
 				if( standbyRec ){
 					//「予約録画待機中」
@@ -1126,6 +1154,8 @@ bool CTunerBankCtrl::OpenTuner(bool minWake, bool noView, bool nwUdp, bool nwTcp
 				return true;
 			}
 		}
+		TerminateProcess(this->hTunerProcess, 0xFFFFFFFF);
+		_OutputDebugString(L"CTunerBankCtrl::%s: Terminated TunerID=0x%08x\r\n", L"OpenTuner()", this->tunerID);
 		CloseTuner();
 	}
 	return false;
@@ -1138,9 +1168,11 @@ void CTunerBankCtrl::CloseTuner()
 			CWatchBlock watchBlock(&this->watchContext);
 			CSendCtrlCmd ctrlCmd;
 			ctrlCmd.SetPipeSetting(CMD2_VIEW_CTRL_WAIT_CONNECT, CMD2_VIEW_CTRL_PIPE, this->tunerPid);
-			if( ctrlCmd.SendViewAppClose() != CMD_SUCCESS || WaitForSingleObject(this->hTunerProcess, 30000) == WAIT_TIMEOUT ){
+			ctrlCmd.SendViewAppClose();
+			if( WaitForSingleObject(this->hTunerProcess, 30000) == WAIT_TIMEOUT ){
 				//ぶち殺す
 				TerminateProcess(this->hTunerProcess, 0xFFFFFFFF);
+				_OutputDebugString(L"CTunerBankCtrl::%s: Terminated TunerID=0x%08x\r\n", L"CloseTuner()", this->tunerID);
 			}
 		}
 		CBlockLock lock(&this->watchContext.lock);
@@ -1287,7 +1319,7 @@ void CTunerBankCtrl::Watch()
 		if( this->hTunerProcess ){
 			//少なくともhTunerProcessはまだCloseHandle()されていない
 			TerminateProcess(this->hTunerProcess, 0xFFFFFFFF);
-			_OutputDebugString(L"CTunerBankCtrl::Watch(): Terminated TunerID=0x%08x\r\n", this->tunerID);
+			_OutputDebugString(L"CTunerBankCtrl::%s: Terminated TunerID=0x%08x\r\n", L"Watch()", this->tunerID);
 		}
 	}
 }

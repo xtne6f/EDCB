@@ -82,7 +82,8 @@ public:
 	//開始時間の後方移動は注意が必要。後方移動の結果待機状態を明らかに抜けてしまう場合はstartTimeとstartMarginが修正される
 	bool ChgCtrlReserve(TUNER_RESERVE* reserve);
 	//予約を削除する
-	bool DelReserve(DWORD reserveID);
+	//retList: 録画中であれば終了結果を追加
+	bool DelReserve(DWORD reserveID, vector<CHECK_RESULT>* retList = NULL);
 	//開始時間がstartTime以上の待機状態に入っていないすべての予約をクリアする
 	void ClearNoCtrl(__int64 startTime = 0);
 	//予約ID一覧を取得する(ソート済み)
@@ -110,8 +111,8 @@ public:
 	bool SetNWTVCh(bool nwUdp, bool nwTcp, const SET_CH_INFO& chInfo);
 	//ネットワークモードのチューナを閉じる
 	void CloseNWTV();
-	//予約が録画中であればその録画ファイル名などを取得する
-	bool GetRecFilePath(DWORD reserveID, wstring& filePath, DWORD* ctrlID, DWORD* processID) const;
+	//予約が録画中であればその録画ファイル名を取得する
+	bool GetRecFilePath(DWORD reserveID, wstring& filePath) const;
 	//予約情報をもとにファイル名を生成する
 	static wstring ConvertRecName(
 		LPCWSTR recNamePlugIn, const SYSTEMTIME& startTime, DWORD durationSec, LPCWSTR eventName, WORD onid, WORD tsid, WORD sid, WORD eid,

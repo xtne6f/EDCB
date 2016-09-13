@@ -2,12 +2,12 @@
 
 #include "TSPacketUtil.h"
 
-#define ERR_ADD_NEXT		100
-#define ERR_NOT_SUPPORT		101
-
 class CTSBuffUtil
 {
 public:
+	static const DWORD ERR_ADD_NEXT = 100;
+	static const DWORD ERR_NOT_SUPPORT = 101;
+
 	CTSBuffUtil(BOOL supportPES = FALSE);
 
 	//Add188TS()がTRUEを返せばGetSectionBuff()は1回以上成功する。このとき受け取らなかったバッファは次のAdd188TS()で消える

@@ -1,0 +1,52 @@
+PAGE_COUNT=30
+
+dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
+
+ct=[=[
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link rel="stylesheet" type="text/css" href="default.css">
+<title>EpgTimer</title>
+</head>
+<body>
+<h1>録画済み一覧</h1>
+<div class="page-nav">
+  ]=]
+
+edcb.htmlEscape=15
+a=edcb.GetRecFileInfoBasic and edcb.GetRecFileInfoBasic() or edcb.GetRecFileInfo()
+table.sort(a, function(a,b) return os.time(a.startTime) > os.time(b.startTime) end)
+pageIndex=tonumber(mg.get_var(mg.request_info.query_string,'page')) or 0
+for i=1,(#a+PAGE_COUNT-1)/PAGE_COUNT do
+  ct=ct..(i-1==pageIndex and ((i-1)*PAGE_COUNT+1)..'～ ' or '<a href=\"recinfo.html?page='..(i-1)..'">'..((i-1)*PAGE_COUNT+1)..'～</a> ')
+end
+
+ct=ct..[=[
+
+</div>
+<div id="main">
+  <table>
+]=]
+
+ctt={}
+for i=math.max(1,pageIndex*PAGE_COUNT+1),math.min(#a,(pageIndex+1)*PAGE_COUNT) do
+  v=a[i]
+  table.insert(ctt, '    <tr'
+    ..(v.drops>0 and ' class="drops"' or v.scrambles>0 and ' class="scrambles"' or '')
+    ..'><td><a href="recinfodesc.html?id='..v.id..'">'
+    ..FormatTimeAndDuration(os.time(v.startTime), v.durationSecond)
+    ..'</a></td><td>'..v.serviceName..'</td><td>'..v.title..'</td><td>'..v.comment..'</td></tr>\n')
+end
+
+ct=ct..table.concat(ctt)..[=[
+  </table>
+</div>
+<div id="footer">
+  <a href="index.html">メニューへ</a>
+</div>
+</body>
+</html>
+]=]
+mg.write(Response(200, 'text/html', 'utf-8', #ct)..'\r\n', ct)

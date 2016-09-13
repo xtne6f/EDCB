@@ -1,0 +1,64 @@
+PAGE_COUNT=30
+
+dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
+
+ct=[=[
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link rel="stylesheet" type="text/css" href="default.css">
+<title>EpgTimer</title>
+</head>
+<body>
+<h1>EPG予約一覧</h1>
+<div class="page-nav">
+  ]=]
+
+edcb.htmlEscape=15
+a=edcb.EnumAutoAdd()
+pageIndex=tonumber(mg.get_var(mg.request_info.query_string,'page')) or 0
+for i=1,(#a+PAGE_COUNT-1)/PAGE_COUNT do
+  ct=ct..(i-1==pageIndex and ((i-1)*PAGE_COUNT+1)..'～ ' or '<a href=\"autoaddepg.html?page='..(i-1)..'">'..((i-1)*PAGE_COUNT+1)..'～</a> ')
+end
+
+ct=ct..[=[
+
+</div>
+<div id="main">
+  <table>
+]=]
+
+ctt={}
+for i=math.max(1,pageIndex*PAGE_COUNT+1),math.min(#a,(pageIndex+1)*PAGE_COUNT) do
+  v=a[i].searchInfo
+  serviceName=''
+  if #v.serviceList>0 then
+    for j,w in ipairs(edcb.GetChDataList()) do
+      if w.onid==v.serviceList[1].onid and w.tsid==v.serviceList[1].tsid and w.sid==v.serviceList[1].sid then
+        serviceName=w.serviceName
+        break
+      end
+    end
+  end
+  table.insert(ctt, '    <tr><td><a href="autoaddepginfo.html?id='..a[i].dataID..'">'
+    ..v.andKey..'&nbsp;</a></td><td>'..v.notKey..'</td><td>'
+    ..(#v.contentList>0 and edcb.GetGenreName(v.contentList[1].content_nibble)..(#v.contentList>1 and 'など' or '') or '')..'</td><td>'
+    ..serviceName..(#v.serviceList>1 and 'など' or '')..'</td><td>'
+    ..(({'全サービス','指定サービスのみ','全サービス（デコード処理なし）','指定サービスのみ（デコード処理なし）','視聴','無効'})[a[i].recSetting.recMode+1] or '')
+    ..'</td></tr>\n')
+end
+
+ct=ct..table.concat(ctt)..[=[
+  </table>
+  <div class="aside">
+    <a href="autoaddepginfo.html">新規追加</a>
+  </div>
+</div>
+<div id="footer">
+  <a href="index.html">メニューへ</a>
+</div>
+</body>
+</html>
+]=]
+mg.write(Response(200, 'text/html', 'utf-8', #ct)..'\r\n', ct)

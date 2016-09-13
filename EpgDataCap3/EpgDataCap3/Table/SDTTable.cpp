@@ -3,20 +3,8 @@
 
 #include "../ARIB8CharDecode.h"
 
-CSDTTable::CSDTTable(void)
-{
-}
-
-CSDTTable::~CSDTTable(void)
-{
-	Clear();
-}
-
 void CSDTTable::Clear()
 {
-	for( size_t i=0 ;i<serviceInfoList.size(); i++ ){
-		SAFE_DELETE(serviceInfoList[i]);
-	}
 	serviceInfoList.clear();
 }
 
@@ -47,7 +35,8 @@ BOOL CSDTTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 		original_network_id = ((WORD)data[readSize+5])<<8 | data[readSize+6];
 		readSize += 8;
 		while( readSize+4 < (DWORD)section_length+3-4 ){
-			SERVICE_INFO_DATA* item = new SERVICE_INFO_DATA;
+			serviceInfoList.push_back(SERVICE_INFO_DATA());
+			SERVICE_INFO_DATA* item = &serviceInfoList.back();
 			//if( original_network_id == 0x0001 || original_network_id == 0x0003 || original_network_id == 0x000A ){
 			//	item->service_id = ((WORD)data[readSize]&0x0F)<<8 | data[readSize+1];
 			//}else{
@@ -60,29 +49,20 @@ BOOL CSDTTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 			item->free_CA_mode = (data[readSize+3]&0x10)>>4;
 			item->descriptors_loop_length = ((WORD)data[readSize+3]&0x0F)<<8 | data[readSize+4];
 			readSize += 5;
-			BOOL err = FALSE;
 			if( readSize+item->descriptors_loop_length <= (DWORD)section_length+3-4 && item->descriptors_loop_length > 0){
 				if( original_network_id == 0x0001 || original_network_id == 0x0003){
 					if( SDDecode( data+readSize, item->descriptors_loop_length, &(item->descriptorList), NULL ) == FALSE ){
-						err = TRUE;
-					}else{
-						serviceInfoList.push_back(item);
+						serviceInfoList.pop_back();
 					}
 				}else{
 					if( AribDescriptor::CreateDescriptors( data+readSize, item->descriptors_loop_length, &(item->descriptorList), NULL ) == FALSE ){
 						_OutputDebugString( L"++CSDTTable:: descriptor2 err" );
-						SAFE_DELETE(item);
 						return FALSE;
 					}
-					serviceInfoList.push_back(item);
 				}
 			}
 
 			readSize+=item->descriptors_loop_length;
-			if( err == TRUE ){
-				SAFE_DELETE(item);
-			}
-
 		}
 	}else{
 		return FALSE;
@@ -91,7 +71,7 @@ BOOL CSDTTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 	return TRUE;
 }
 
-BOOL CSDTTable::SDDecode( BYTE* data, DWORD dataSize, vector<AribDescriptor::CDescriptor*>* descriptorList, DWORD* decodeReadSize )
+BOOL CSDTTable::SDDecode( BYTE* data, DWORD dataSize, vector<AribDescriptor::CDescriptor>* descriptorList, DWORD* decodeReadSize )
 {
 	BOOL ret = TRUE;
 	if( data == NULL || dataSize == 0 || descriptorList == NULL ){
@@ -99,7 +79,8 @@ BOOL CSDTTable::SDDecode( BYTE* data, DWORD dataSize, vector<AribDescriptor::CDe
 	}
 	DWORD decodeSize = 0;
 
-	AribDescriptor::CDescriptor* item = new AribDescriptor::CDescriptor;
+	descriptorList->push_back(AribDescriptor::CDescriptor());
+	AribDescriptor::CDescriptor* item = &descriptorList->back();
 
 	static const short parser0x82[] = {
 		AribDescriptor::descriptor_tag, 8,
@@ -140,11 +121,10 @@ BOOL CSDTTable::SDDecode( BYTE* data, DWORD dataSize, vector<AribDescriptor::CDe
 		}
 	}
 	if( item->Has(AribDescriptor::service_name) == false ){
-		SAFE_DELETE(item);
+		descriptorList->pop_back();
 		ret = FALSE;
 	}else{
 		item->SetNumber(AribDescriptor::service_type, serviceType);
-		descriptorList->push_back(item);
 	}
 
 	if( decodeReadSize != NULL ){

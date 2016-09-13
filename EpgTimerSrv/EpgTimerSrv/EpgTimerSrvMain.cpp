@@ -11,6 +11,7 @@
 #include "resource.h"
 #include <shellapi.h>
 #include <tlhelp32.h>
+#include <wincrypt.h>
 #include <LM.h>
 #pragma comment (lib, "netapi32.lib")
 
@@ -80,6 +81,7 @@ CEpgTimerSrvMain::~CEpgTimerSrvMain()
 
 bool CEpgTimerSrvMain::Main(bool serviceFlag_)
 {
+	this->notifyManager.SetGUI(!serviceFlag_);
 	this->residentFlag = serviceFlag_;
 
 	DWORD awayMode;
@@ -225,8 +227,8 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		}
 		break;
 	case WM_QUERY_SHUTDOWN:
-		if( GetShellWindow() ){
-			//シェルがあるので直接尋ねる
+		if( ctx->sys->notifyManager.IsGUI() ){
+			//直接尋ねる
 			if( ctx->hDlgQueryShutdown == NULL ){
 				INITCOMMONCONTROLSEX icce;
 				icce.dwSize = sizeof(icce);
@@ -250,6 +252,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				list.back().param1 = ctx->notifySrvStatus;
 			}else{
 				list = ctx->sys->notifyManager.RemoveSentList();
+				ctx->tcpServer.NotifyUpdate();
 			}
 			for( vector<NOTIFY_SRV_INFO>::const_iterator itr = list.begin(); itr != list.end(); itr++ ){
 				if( itr->notifyID == NOTIFY_UPDATE_SRV_STATUS ){
@@ -259,9 +262,14 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 						nid.cbSize = NOTIFYICONDATA_V2_SIZE;
 						nid.hWnd = hwnd;
 						nid.uID = 1;
-						nid.hIcon = (HICON)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(
-							ctx->notifySrvStatus == 1 ? IDI_ICON_RED :
-							ctx->notifySrvStatus == 2 ? IDI_ICON_GREEN : IDI_ICON_BLUE), IMAGE_ICON, 16, 16, LR_SHARED);
+						int iconID = ctx->notifySrvStatus == 1 ? IDI_ICON_RED :
+						             ctx->notifySrvStatus == 2 ? IDI_ICON_GREEN : IDI_ICON_BLUE;
+						HRESULT (WINAPI* pfnLoadIconMetric)(HINSTANCE,PCWSTR,int,HICON*) =
+							(HRESULT (WINAPI*)(HINSTANCE,PCWSTR,int,HICON*))GetProcAddress(GetModuleHandle(L"comctl32.dll"), "LoadIconMetric");
+						if( pfnLoadIconMetric == NULL ||
+						    pfnLoadIconMetric(GetModuleHandle(NULL), MAKEINTRESOURCE(iconID), LIM_SMALL, &nid.hIcon) != S_OK ){
+							nid.hIcon = (HICON)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(iconID), IMAGE_ICON, 16, 16, 0);
+						}
 						if( ctx->notifyActiveTime != LLONG_MAX ){
 							SYSTEMTIME st;
 							ConvertSystemTime(ctx->notifyActiveTime + 30 * I64_1SEC, &st);
@@ -272,6 +280,9 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 						nid.uCallbackMessage = WM_TRAY_PUSHICON;
 						if( Shell_NotifyIcon(NIM_MODIFY, &nid) == FALSE && Shell_NotifyIcon(NIM_ADD, &nid) == FALSE ){
 							SetTimer(hwnd, TIMER_RETRY_ADD_TRAY, 5000, NULL);
+						}
+						if( nid.hIcon ){
+							DestroyIcon(nid.hIcon);
 						}
 					}
 				}else if( itr->notifyID < _countof(ctx->sys->notifyUpdateCount) ){
@@ -340,12 +351,9 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 			{
 				wstring moduleFolder;
 				GetModuleFolderPath(moduleFolder);
-				WIN32_FIND_DATA findData;
-				HANDLE hFind = FindFirstFile((moduleFolder + L"\\EpgTimer.lnk").c_str(), &findData);
-				if( hFind != INVALID_HANDLE_VALUE ){
+				if( GetFileAttributes((moduleFolder + L"\\EpgTimer.lnk").c_str()) != INVALID_FILE_ATTRIBUTES ){
 					//EpgTimer.lnk(ショートカット)を優先的に開く
 					ShellExecute(NULL, L"open", (moduleFolder + L"\\EpgTimer.lnk").c_str(), NULL, NULL, SW_SHOWNORMAL);
-					FindClose(hFind);
 				}else{
 					//EpgTimer.exeがあれば起動
 					PROCESS_INFORMATION pi;
@@ -518,7 +526,18 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 					op = ctx->sys->httpOptions;
 					enableSsdpServer_ = ctx->sys->enableSsdpServer;
 				}
+				if( op.ports.empty() == false && ctx->sys->httpServerRandom.empty() ){
+					HCRYPTPROV prov;
+					if( CryptAcquireContext(&prov, NULL, NULL, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT) ){
+						unsigned __int64 r[4] = {};
+						if( CryptGenRandom(prov, sizeof(r), (BYTE*)r) ){
+							Format(ctx->sys->httpServerRandom, "%016I64x%016I64x%016I64x%016I64x", r[0], r[1], r[2], r[3]);
+						}
+						CryptReleaseContext(prov, 0);
+					}
+				}
 				if( op.ports.empty() == false &&
+				    ctx->sys->httpServerRandom.empty() == false &&
 				    ctx->httpServer.StartServer(op, InitLuaCallback, ctx->sys) &&
 				    enableSsdpServer_ ){
 					//"ddd.xml"の先頭から2KB以内に"<UDN>uuid:{UUID}</UDN>"が必要
@@ -691,8 +710,10 @@ void CEpgTimerSrvMain::ReloadNetworkSetting()
 		}
 		this->httpOptions.accessControlList = GetPrivateProfileToString(L"SET", L"HttpAccessControlList", L"+127.0.0.1", iniPath.c_str());
 		this->httpOptions.authenticationDomain = GetPrivateProfileToString(L"SET", L"HttpAuthenticationDomain", L"", iniPath.c_str());
-		this->httpOptions.numThreads = GetPrivateProfileInt(L"SET", L"HttpNumThreads", 3, iniPath.c_str());
+		this->httpOptions.numThreads = GetPrivateProfileInt(L"SET", L"HttpNumThreads", 5, iniPath.c_str());
 		this->httpOptions.requestTimeout = GetPrivateProfileInt(L"SET", L"HttpRequestTimeoutSec", 120, iniPath.c_str()) * 1000;
+		this->httpOptions.sslCipherList = GetPrivateProfileToString(L"SET", L"HttpSslCipherList", L"HIGH:!aNULL:!MD5", iniPath.c_str());
+		this->httpOptions.sslProtocolVersion = GetPrivateProfileInt(L"SET", L"HttpSslProtocolVersion", 2, iniPath.c_str());
 		this->httpOptions.keepAlive = GetPrivateProfileInt(L"SET", L"HttpKeepAlive", 0, iniPath.c_str()) != 0;
 		this->httpOptions.ports = GetPrivateProfileToString(L"SET", L"HttpPort", L"5510", iniPath.c_str());
 		this->httpOptions.saveLog = enableHttpSrv == 2;
@@ -877,10 +898,9 @@ void CEpgTimerSrvMain::SetShutdown(BYTE shutdownMode)
 bool CEpgTimerSrvMain::QueryShutdown(BYTE rebootFlag, BYTE suspendMode)
 {
 	CSendCtrlCmd ctrlCmd;
-	map<DWORD, DWORD> registGUI;
-	this->notifyManager.GetRegistGUI(&registGUI);
-	for( map<DWORD, DWORD>::iterator itr = registGUI.begin(); itr != registGUI.end(); itr++ ){
-		ctrlCmd.SetPipeSetting(CMD2_GUI_CTRL_WAIT_CONNECT, CMD2_GUI_CTRL_PIPE, itr->first);
+	vector<DWORD> registGUI = this->notifyManager.GetRegistGUI();
+	for( size_t i = 0; i < registGUI.size(); i++ ){
+		ctrlCmd.SetPipeSetting(CMD2_GUI_CTRL_WAIT_CONNECT, CMD2_GUI_CTRL_PIPE, registGUI[i]);
 		//通信できる限り常に成功するので、重複問い合わせを考慮する必要はない
 		if( suspendMode == 0 && ctrlCmd.SendGUIQueryReboot(rebootFlag) == CMD_SUCCESS ||
 		    suspendMode != 0 && ctrlCmd.SendGUIQuerySuspend(rebootFlag, suspendMode) == CMD_SUCCESS ){
@@ -1490,13 +1510,10 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 				if( hFile != INVALID_HANDLE_VALUE ){
 					DWORD dwFileSize = GetFileSize(hFile, NULL);
 					if( dwFileSize != INVALID_FILE_SIZE && dwFileSize != 0 ){
-						BYTE* data = new BYTE[dwFileSize];
+						resParam->data.reset(new BYTE[dwFileSize]);
 						DWORD dwRead;
-						if( ReadFile(hFile, data, dwFileSize, &dwRead, NULL) && dwRead != 0 ){
+						if( ReadFile(hFile, resParam->data.get(), dwFileSize, &dwRead, NULL) && dwRead == dwFileSize ){
 							resParam->dataSize = dwRead;
-							resParam->data = data;
-						}else{
-							delete[] data;
 						}
 					}
 					CloseHandle(hFile);
@@ -1685,11 +1702,9 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 			OutputDebugString(L"CMD2_EPG_SRV_NWPLAY_TF_OPEN\r\n");
 			DWORD val;
 			NWPLAY_TIMESHIFT_INFO resVal;
-			DWORD ctrlID;
-			DWORD processID;
 			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) &&
-			    sys->reserveManager.GetRecFilePath(val, resVal.filePath, &ctrlID, &processID) &&
-			    sys->streamingManager.OpenTimeShift(resVal.filePath.c_str(), processID, ctrlID, &resVal.ctrlID) ){
+			    sys->reserveManager.GetRecFilePath(val, resVal.filePath) &&
+			    sys->streamingManager.OpenTimeShift(resVal.filePath.c_str(), &resVal.ctrlID) ){
 				resParam->data = NewWriteVALUE(resVal, resParam->dataSize);
 				resParam->param = CMD_SUCCESS;
 			}
@@ -1716,7 +1731,7 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 			DWORD readSize;
 			if( ReadVALUE(&ver, cmdParam->data, cmdParam->dataSize, &readSize) ){
 				DWORD reserveID;
-				if( ReadVALUE2(ver, &reserveID, cmdParam->data + readSize, cmdParam->dataSize - readSize, NULL) ){
+				if( ReadVALUE2(ver, &reserveID, cmdParam->data.get() + readSize, cmdParam->dataSize - readSize, NULL) ){
 					RESERVE_DATA info;
 					if( sys->reserveManager.GetReserveData(reserveID, &info) ){
 						resParam->data = NewWriteVALUE2WithVersion(ver, info, resParam->dataSize);
@@ -1733,7 +1748,7 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 			DWORD readSize;
 			if( ReadVALUE(&ver, cmdParam->data, cmdParam->dataSize, &readSize) ){
 				vector<RESERVE_DATA> list;
-				if( ReadVALUE2(ver, &list, cmdParam->data + readSize, cmdParam->dataSize - readSize, NULL) &&
+				if( ReadVALUE2(ver, &list, cmdParam->data.get() + readSize, cmdParam->dataSize - readSize, NULL) &&
 				    sys->reserveManager.AddReserveData(list) ){
 					resParam->data = NewWriteVALUE(ver, resParam->dataSize);
 					resParam->param = CMD_SUCCESS;
@@ -1748,7 +1763,7 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 			DWORD readSize;
 			if( ReadVALUE(&ver, cmdParam->data, cmdParam->dataSize, &readSize) ){
 				vector<RESERVE_DATA> list;
-				if( ReadVALUE2(ver, &list, cmdParam->data + readSize, cmdParam->dataSize - readSize, NULL) &&
+				if( ReadVALUE2(ver, &list, cmdParam->data.get() + readSize, cmdParam->dataSize - readSize, NULL) &&
 				    sys->reserveManager.ChgReserveData(list) ){
 					resParam->data = NewWriteVALUE(ver, resParam->dataSize);
 					resParam->param = CMD_SUCCESS;
@@ -1793,7 +1808,7 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 			DWORD readSize;
 			if( ReadVALUE(&ver, cmdParam->data, cmdParam->dataSize, &readSize) ){
 				vector<EPG_AUTO_ADD_DATA> val;
-				if( ReadVALUE2(ver, &val, cmdParam->data + readSize, cmdParam->dataSize - readSize, NULL) ){
+				if( ReadVALUE2(ver, &val, cmdParam->data.get() + readSize, cmdParam->dataSize - readSize, NULL) ){
 					{
 						CBlockLock lock(&sys->settingLock);
 						for( size_t i = 0; i < val.size(); i++ ){
@@ -1818,7 +1833,7 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 			DWORD readSize;
 			if( ReadVALUE(&ver, cmdParam->data, cmdParam->dataSize, &readSize) ){
 				vector<EPG_AUTO_ADD_DATA> val;
-				if( ReadVALUE2(ver, &val, cmdParam->data + readSize, cmdParam->dataSize - readSize, NULL) ){
+				if( ReadVALUE2(ver, &val, cmdParam->data.get() + readSize, cmdParam->dataSize - readSize, NULL) ){
 					{
 						CBlockLock lock(&sys->settingLock);
 						for( size_t i = 0; i < val.size(); i++ ){
@@ -1863,7 +1878,7 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 			DWORD readSize;
 			if( ReadVALUE(&ver, cmdParam->data, cmdParam->dataSize, &readSize) ){
 				vector<MANUAL_AUTO_ADD_DATA> val;
-				if( ReadVALUE2(ver, &val, cmdParam->data + readSize, cmdParam->dataSize - readSize, NULL) ){
+				if( ReadVALUE2(ver, &val, cmdParam->data.get() + readSize, cmdParam->dataSize - readSize, NULL) ){
 					{
 						CBlockLock lock(&sys->settingLock);
 						for( size_t i = 0; i < val.size(); i++ ){
@@ -1888,7 +1903,7 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 			DWORD readSize;
 			if( ReadVALUE(&ver, cmdParam->data, cmdParam->dataSize, &readSize) ){
 				vector<MANUAL_AUTO_ADD_DATA> val;
-				if( ReadVALUE2(ver, &val, cmdParam->data + readSize, cmdParam->dataSize - readSize, NULL) ){
+				if( ReadVALUE2(ver, &val, cmdParam->data.get() + readSize, cmdParam->dataSize - readSize, NULL) ){
 					{
 						CBlockLock lock(&sys->settingLock);
 						for( size_t i = 0; i < val.size(); i++ ){
@@ -1909,12 +1924,28 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 		}
 		break;
 	case CMD2_EPG_SRV_ENUM_RECINFO2:
+	case CMD2_EPG_SRV_ENUM_RECINFO_BASIC2:
 		{
 			OutputDebugString(L"CMD2_EPG_SRV_ENUM_RECINFO2\r\n");
 			WORD ver;
 			if( ReadVALUE(&ver, cmdParam->data, cmdParam->dataSize, NULL) ){
-				resParam->data = NewWriteVALUE2WithVersion(ver, sys->reserveManager.GetRecFileInfoAll(), resParam->dataSize);
+				resParam->data = NewWriteVALUE2WithVersion(ver,
+					sys->reserveManager.GetRecFileInfoAll(cmdParam->param == CMD2_EPG_SRV_ENUM_RECINFO2), resParam->dataSize);
 				resParam->param = CMD_SUCCESS;
+			}
+		}
+		break;
+	case CMD2_EPG_SRV_GET_RECINFO2:
+		{
+			WORD ver;
+			DWORD readSize;
+			if( ReadVALUE(&ver, cmdParam->data, cmdParam->dataSize, &readSize) ){
+				REC_FILE_INFO info;
+				if( ReadVALUE2(ver, &info.id, cmdParam->data.get() + readSize, cmdParam->dataSize - readSize, NULL) &&
+				    sys->reserveManager.GetRecFileInfo(info.id, &info) ){
+					resParam->data = NewWriteVALUE2WithVersion(ver, info, resParam->dataSize);
+					resParam->param = CMD_SUCCESS;
+				}
 			}
 		}
 		break;
@@ -1925,7 +1956,7 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 			DWORD readSize;
 			if( ReadVALUE(&ver, cmdParam->data, cmdParam->dataSize, &readSize) ){
 				vector<REC_FILE_INFO> list;
-				if( ReadVALUE2(ver, &list, cmdParam->data + readSize, cmdParam->dataSize - readSize, NULL) ){
+				if( ReadVALUE2(ver, &list, cmdParam->data.get() + readSize, cmdParam->dataSize - readSize, NULL) ){
 					sys->reserveManager.ChgProtectRecFileInfo(list);
 					resParam->data = NewWriteVALUE(ver, resParam->dataSize);
 					resParam->param = CMD_SUCCESS;
@@ -1939,7 +1970,7 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 			DWORD readSize;
 			if( ReadVALUE(&ver, cmdParam->data, cmdParam->dataSize, &readSize) ){
 				DWORD count;
-				if( ReadVALUE2(ver, &count, cmdParam->data + readSize, cmdParam->dataSize - readSize, NULL) ){
+				if( ReadVALUE2(ver, &count, cmdParam->data.get() + readSize, cmdParam->dataSize - readSize, NULL) ){
 					NOTIFY_SRV_INFO info;
 					if( sys->notifyManager.GetNotify(&info, count) ){
 						resParam->data = NewWriteVALUE2WithVersion(ver, info, resParam->dataSize);
@@ -2115,6 +2146,8 @@ int CEpgTimerSrvMain::InitLuaCallback(lua_State* L)
 	LuaHelp::reg_function(L, "GetReserveData", LuaGetReserveData, sys);
 	LuaHelp::reg_function(L, "GetRecFilePath", LuaGetRecFilePath, sys);
 	LuaHelp::reg_function(L, "GetRecFileInfo", LuaGetRecFileInfo, sys);
+	LuaHelp::reg_function(L, "GetRecFileInfoBasic", LuaGetRecFileInfoBasic, sys);
+	LuaHelp::reg_function(L, "ChgProtectRecFileInfo", LuaChgProtectRecFileInfo, sys);
 	LuaHelp::reg_function(L, "DelRecFileInfo", LuaDelRecFileInfo, sys);
 	LuaHelp::reg_function(L, "GetTunerReserveAll", LuaGetTunerReserveAll, sys);
 	LuaHelp::reg_function(L, "EnumRecPresetInfo", LuaEnumRecPresetInfo, sys);
@@ -2127,6 +2160,7 @@ int CEpgTimerSrvMain::InitLuaCallback(lua_State* L)
 	LuaHelp::reg_function(L, "GetNotifyUpdateCount", LuaGetNotifyUpdateCount, sys);
 	LuaHelp::reg_function(L, "ListDmsPublicFile", LuaListDmsPublicFile, sys);
 	LuaHelp::reg_int(L, "htmlEscape", 0);
+	LuaHelp::reg_string(L, "serverRandom", sys->httpServerRandom.c_str());
 	lua_setglobal(L, "edcb");
 	return 0;
 }
@@ -2145,15 +2179,7 @@ CEpgTimerSrvMain::CLuaWorkspace::CLuaWorkspace(lua_State* L_)
 
 const char* CEpgTimerSrvMain::CLuaWorkspace::WtoUTF8(const wstring& strIn)
 {
-	this->strOut.resize(strIn.size() * 3 + 1);
-	this->strOut.resize(WideCharToMultiByte(CP_UTF8, 0, strIn.c_str(), -1, &this->strOut[0], (int)this->strOut.size(), NULL, NULL));
-	if( this->strOut.empty() ){
-		//rare case
-		this->strOut.resize(WideCharToMultiByte(CP_UTF8, 0, strIn.c_str(), -1, NULL, 0, NULL, NULL));
-		if( this->strOut.empty() || WideCharToMultiByte(CP_UTF8, 0, strIn.c_str(), -1, &this->strOut[0], (int)this->strOut.size(), NULL, NULL) == 0 ){
-			this->strOut.assign(1, '\0');
-		}
-	}
+	::WtoUTF8(strIn.c_str(), strIn.size(), this->strOut);
 	if( this->htmlEscape != 0 ){
 		LPCSTR rpl[] = { "&amp;", "<lt;", ">gt;", "\"quot;", "'apos;" };
 		for( size_t i = 0; this->strOut[i] != '\0'; i++ ){
@@ -2211,7 +2237,8 @@ int CEpgTimerSrvMain::LuaConvert(lua_State* L)
 			}else if( _stricmp(from, "cp932") == 0 ){
 				AtoW(src, wsrc);
 			}else{
-				return 0;
+				lua_pushnil(L);
+				return 1;
 			}
 			if( _stricmp(to, "utf-8") == 0 ){
 				lua_pushstring(L, ws.WtoUTF8(wsrc));
@@ -2225,7 +2252,8 @@ int CEpgTimerSrvMain::LuaConvert(lua_State* L)
 			}
 		}
 	}
-	return 0;
+	lua_pushnil(L);
+	return 1;
 }
 
 int CEpgTimerSrvMain::LuaGetPrivateProfile(lua_State* L)
@@ -2371,7 +2399,8 @@ int CEpgTimerSrvMain::LuaGetServiceList(lua_State* L)
 		}
 		return 1;
 	}
-	return 0;
+	lua_pushnil(L);
+	return 1;
 }
 
 void CEpgTimerSrvMain::LuaGetEventMinMaxTimeCallback(const vector<EPGDB_EVENT_INFO>* pval, void* param)
@@ -2406,7 +2435,8 @@ int CEpgTimerSrvMain::LuaGetEventMinMaxTime(lua_State* L)
 			return 1;
 		}
 	}
-	return 0;
+	lua_pushnil(L);
+	return 1;
 }
 
 struct EnumEventParam {
@@ -2507,7 +2537,8 @@ int CEpgTimerSrvMain::LuaEnumEventInfo(lua_State* L)
 			}
 		}
 	}
-	return 0;
+	lua_pushnil(L);
+	return 1;
 }
 
 void CEpgTimerSrvMain::LuaSearchEpgCallback(vector<CEpgDBManager::SEARCH_RESULT_EVENT>* pval, void* param)
@@ -2578,7 +2609,8 @@ int CEpgTimerSrvMain::LuaSearchEpg(lua_State* L)
 			return 1;
 		}
 	}
-	return 0;
+	lua_pushnil(L);
+	return 1;
 }
 
 int CEpgTimerSrvMain::LuaAddReserveData(lua_State* L)
@@ -2639,7 +2671,8 @@ int CEpgTimerSrvMain::LuaGetReserveData(lua_State* L)
 			return 1;
 		}
 	}
-	return 0;
+	lua_pushnil(L);
+	return 1;
 }
 
 int CEpgTimerSrvMain::LuaGetRecFilePath(lua_State* L)
@@ -2647,30 +2680,44 @@ int CEpgTimerSrvMain::LuaGetRecFilePath(lua_State* L)
 	CLuaWorkspace ws(L);
 	if( lua_gettop(L) == 1 ){
 		wstring filePath;
-		DWORD ctrlID;
-		DWORD processID;
-		if( ws.sys->reserveManager.GetRecFilePath((DWORD)lua_tointeger(L, 1), filePath, &ctrlID, &processID) ){
+		if( ws.sys->reserveManager.GetRecFilePath((DWORD)lua_tointeger(L, 1), filePath) ){
 			lua_pushstring(L, ws.WtoUTF8(filePath));
 			return 1;
 		}
 	}
-	return 0;
+	lua_pushnil(L);
+	return 1;
 }
 
 int CEpgTimerSrvMain::LuaGetRecFileInfo(lua_State* L)
 {
+	return LuaGetRecFileInfoProc(L, true);
+}
+
+int CEpgTimerSrvMain::LuaGetRecFileInfoBasic(lua_State* L)
+{
+	return LuaGetRecFileInfoProc(L, false);
+}
+
+int CEpgTimerSrvMain::LuaGetRecFileInfoProc(lua_State* L, bool getExtraInfo)
+{
 	CLuaWorkspace ws(L);
 	bool getAll = lua_gettop(L) == 0;
-	DWORD id = 0;
+	vector<REC_FILE_INFO> list;
 	if( getAll ){
 		lua_newtable(L);
+		list = ws.sys->reserveManager.GetRecFileInfoAll(getExtraInfo);
 	}else{
-		id = (DWORD)lua_tointeger(L, 1);
+		DWORD id = (DWORD)lua_tointeger(L, 1);
+		list.resize(1);
+		if( ws.sys->reserveManager.GetRecFileInfo(id, &list.front(), getExtraInfo) == false ){
+			lua_pushnil(L);
+			return 1;
+		}
 	}
-	vector<REC_FILE_INFO> list = ws.sys->reserveManager.GetRecFileInfoAll();
 	for( size_t i = 0; i < list.size(); i++ ){
 		const REC_FILE_INFO& r = list[i];
-		if( getAll || id == r.id ){
+		{
 			lua_newtable(L);
 			LuaHelp::reg_int(L, "id", (int)r.id);
 			LuaHelp::reg_string(L, "recFilePath", ws.WtoUTF8(r.recFilePath));
@@ -2690,13 +2737,25 @@ int CEpgTimerSrvMain::LuaGetRecFileInfo(lua_State* L)
 			LuaHelp::reg_string(L, "programInfo", ws.WtoUTF8(r.programInfo));
 			LuaHelp::reg_string(L, "errInfo", ws.WtoUTF8(r.errInfo));
 			LuaHelp::reg_boolean(L, "protectFlag", r.protectFlag != 0);
-			if( getAll == false && id == r.id ){
-				return 1;
+			if( getAll == false ){
+				break;
 			}
 			lua_rawseti(L, -2, (int)i + 1);
 		}
 	}
-	return getAll ? 1 : 0;
+	return 1;
+}
+
+int CEpgTimerSrvMain::LuaChgProtectRecFileInfo(lua_State* L)
+{
+	CLuaWorkspace ws(L);
+	if( lua_gettop(L) == 2 ){
+		vector<REC_FILE_INFO> list(1);
+		list.front().id = (DWORD)lua_tointeger(L, 1);
+		list.front().protectFlag = lua_toboolean(L, 2) ? 1 : 0;
+		ws.sys->reserveManager.ChgProtectRecFileInfo(list);
+	}
+	return 0;
 }
 
 int CEpgTimerSrvMain::LuaDelRecFileInfo(lua_State* L)
@@ -3136,7 +3195,21 @@ void CEpgTimerSrvMain::PushRecSettingData(CLuaWorkspace& ws, const REC_SETTING_D
 void CEpgTimerSrvMain::PushEpgSearchKeyInfo(CLuaWorkspace& ws, const EPGDB_SEARCH_KEY_INFO& k)
 {
 	lua_State* L = ws.L;
-	LuaHelp::reg_string(L, "andKey", ws.WtoUTF8(k.andKey));
+	wstring andKey = k.andKey;
+	size_t pos = andKey.compare(0, 7, L"^!{999}") ? 0 : 7;
+	pos += andKey.compare(pos, 7, L"C!{999}") ? 0 : 7;
+	int durMin = 0;
+	int durMax = 0;
+	if( andKey.compare(pos, 4, L"D!{1") == 0 ){
+		LPWSTR endp;
+		DWORD dur = wcstoul(andKey.c_str() + pos + 3, &endp, 10);
+		if( endp - (andKey.c_str() + pos + 3) == 9 && endp[0] == L'}' ){
+			andKey.erase(pos, 13);
+			durMin = dur / 10000 % 10000;
+			durMax = dur % 10000;
+		}
+	}
+	LuaHelp::reg_string(L, "andKey", ws.WtoUTF8(andKey));
 	LuaHelp::reg_string(L, "notKey", ws.WtoUTF8(k.notKey));
 	LuaHelp::reg_boolean(L, "regExpFlag", k.regExpFlag != 0);
 	LuaHelp::reg_boolean(L, "titleOnlyFlag", k.titleOnlyFlag != 0);
@@ -3146,6 +3219,8 @@ void CEpgTimerSrvMain::PushEpgSearchKeyInfo(CLuaWorkspace& ws, const EPGDB_SEARC
 	LuaHelp::reg_int(L, "freeCAFlag", k.freeCAFlag);
 	LuaHelp::reg_boolean(L, "chkRecEnd", k.chkRecEnd != 0);
 	LuaHelp::reg_int(L, "chkRecDay", k.chkRecDay);
+	LuaHelp::reg_int(L, "chkDurationMin", durMin);
+	LuaHelp::reg_int(L, "chkDurationMax", durMax);
 	lua_pushstring(L, "contentList");
 	lua_newtable(L);
 	for( size_t i = 0; i < k.contentList.size(); i++ ){
@@ -3253,6 +3328,15 @@ void CEpgTimerSrvMain::FetchEpgSearchKeyInfo(CLuaWorkspace& ws, EPGDB_SEARCH_KEY
 	k.freeCAFlag = (BYTE)LuaHelp::get_int(L, "freeCAFlag");
 	k.chkRecEnd = LuaHelp::get_boolean(L, "chkRecEnd");
 	k.chkRecDay = (WORD)LuaHelp::get_int(L, "chkRecDay");
+	int durMin = LuaHelp::get_int(L, "chkDurationMin");
+	int durMax = LuaHelp::get_int(L, "chkDurationMax");
+	if( durMin > 0 || durMax > 0 ){
+		wstring dur;
+		Format(dur, L"D!{%d}", (10000 + min(max(durMin, 0), 9999)) * 10000 + min(max(durMax, 0), 9999));
+		size_t pos = k.andKey.compare(0, 7, L"^!{999}") ? 0 : 7;
+		pos += k.andKey.compare(pos, 7, L"C!{999}") ? 0 : 7;
+		k.andKey.insert(pos, dur);
+	}
 	lua_getfield(L, -1, "contentList");
 	if( lua_istable(L, -1) ){
 		for( int i = 0;; i++ ){

@@ -1,0 +1,76 @@
+dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
+
+ct=[=[
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link rel="stylesheet" type="text/css" href="default.css">
+<title>EpgTimer</title>
+</head>
+<body>
+<h1>予約詳細</h1>
+<div id="main">
+]=]
+
+id=tonumber(mg.get_var(mg.request_info.query_string,'id')) or 0
+recFilePath=edcb.GetRecFilePath and edcb.GetRecFilePath(id) or nil
+edcb.htmlEscape=15
+r=edcb.GetReserveData(id)
+if r then
+  if recFilePath and NativeToDocumentPath(recFilePath) then
+    for i,ext in ipairs({'.mp4','.webm',''}) do
+      edcb.htmlEscape=0
+      f=io.open(edcb.Convert('cp932', 'utf-8', recFilePath..ext), 'rb')
+      edcb.htmlEscape=15
+      if f then
+        f:close()
+        video=PathToRoot()..NativeToDocumentPath(recFilePath)..ext
+        break
+      end
+    end
+  end
+  epgInfo=_ConvertEpgInfoText2(r.onid, r.tsid, r.sid, r.eid)
+  ct=ct..'  <dl>\n'
+    ..'    <dt>番組情報</dt><dd>'..(#epgInfo>0 and '\n'..string.gsub(epgInfo, '\r?\n', '<br>\n')
+      or FormatTimeAndDuration(os.time(r.startTime), r.durationSecond)..'<br>'..r.stationName..'<br>'..r.title)..'</dd>\n'
+    ..(video and '    <dt>ファイル</dt><dd><a href="'..mg.url_encode(video):gsub('%%2f','/')..'">'..edcb.Convert('utf-8', 'utf-8', video)..'</a> [<a href="'
+       ..mg.url_encode(video:gsub('[^\\/]*$','')..'chunk.lua'):gsub('%%2f','/')..'?0='..mg.url_encode(video:match('[^\\/]*$'))..'">chunk.lua</a>]</dd>\n' or '')
+    ..'    <dt>プリセット</dt><dd>\n'
+    ..'<form action="reserveinfo.html"><div>\n'
+    ..'<input type="hidden" name="id" value="'..r.reserveID..'"><select name="presetID">\n'
+  presetID=tonumber(mg.get_var(mg.request_info.query_string,'presetID')) or 65535
+  preset=false
+  rs=r.recSetting
+  for i,v in ipairs(edcb.EnumRecPresetInfo()) do
+    if v.id==presetID then
+      preset=true
+      rs=v.recSetting
+      ct=ct..'<option value="'..v.id..'" selected="selected">'..v.name..'\n'
+    else
+      ct=ct..'<option value="'..v.id..'">'..v.name..'\n'
+    end
+  end
+  ct=ct..'<option value="65535"'..(preset and '' or ' selected="selected"')..'>予約時\n'
+    ..'</select> <input type="submit" value="録画設定にロード"></div></form></dd>\n'
+    ..'    <dt>録画設定</dt><dd>\n'
+    ..'<form method="POST" action="reservechg.html?id='..r.reserveID
+    ..'"><div><input type="hidden" name="presetID" value="'..(preset and presetID or 65535)..'">\n'
+    ..'<input type="hidden" name="ctok" value="'..CsrfToken()..'">\n'
+    ..RecSettingTemplate(rs)..'<input type="submit" value="変更"></div></form></dd>\n'
+    ..'    <dt>-</dt><dd>\n'
+    ..'<form method="POST" action="reservedel.html?id='..r.reserveID..'"><div>\n'
+    ..'<input type="hidden" name="ctok" value="'..CsrfToken()..'">\n'
+    ..'<input type="submit" value="削除"></div></form></dd>\n'
+    ..'  </dl>\n'
+end
+
+ct=ct..[=[
+</div>
+<div id="footer">
+  <a href="reserve.html">予約一覧へ</a>
+</div>
+</body>
+</html>
+]=]
+mg.write(Response(200, 'text/html', 'utf-8', #ct)..'\r\n', ct)

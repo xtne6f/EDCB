@@ -1,0 +1,55 @@
+PAGE_COUNT=30
+
+dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
+
+ct=[=[
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link rel="stylesheet" type="text/css" href="default.css">
+<title>EpgTimer</title>
+</head>
+<body>
+<h1>予約一覧</h1>
+<div class="page-nav">
+  ]=]
+
+edcb.htmlEscape=15
+a=edcb.GetReserveData()
+table.sort(a, function(a,b) return os.time(a.startTime) < os.time(b.startTime) end)
+pageIndex=tonumber(mg.get_var(mg.request_info.query_string,'page')) or 0
+for i=1,(#a+PAGE_COUNT-1)/PAGE_COUNT do
+  ct=ct..(i-1==pageIndex and ((i-1)*PAGE_COUNT+1)..'～ ' or '<a href=\"reserve.html?page='..(i-1)..'">'..((i-1)*PAGE_COUNT+1)..'～</a> ')
+end
+
+ct=ct..[=[
+
+</div>
+<div id="main">
+  <table>
+]=]
+
+ctt={}
+for i=math.max(1,pageIndex*PAGE_COUNT+1),math.min(#a,(pageIndex+1)*PAGE_COUNT) do
+  v=a[i]
+  table.insert(ctt, '    <tr'
+    ..(v.recSetting.recMode==5 and ' class="disabled"' or v.overlapMode==1 and ' class="partially"' or v.overlapMode==2 and ' class="shortage"' or '')
+    ..'><td><a href="reserveinfo.html?id='..v.reserveID..'">'
+    ..FormatTimeAndDuration(os.time(v.startTime), v.durationSecond)
+    ..'</a></td><td>'..v.stationName..'</td><td>'..v.title..'</td></tr>\n')
+end
+
+ct=ct..table.concat(ctt)..[=[
+  </table>
+  <div class="aside">
+    <a href="view.lua">view.lua</a> (<a href="view.lua?n=10">tcp</a>)
+  </div>
+</div>
+<div id="footer">
+  <a href="index.html">メニューへ</a>
+</div>
+</body>
+</html>
+]=]
+mg.write(Response(200, 'text/html', 'utf-8', #ct)..'\r\n', ct)

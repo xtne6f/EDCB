@@ -168,7 +168,6 @@ HRESULT CPushVideoPin::DoBufferProcessingLoop(void) {
 }
 
 HRESULT CPushVideoPin::FillBuffer(IMediaSample *pSample) {
-	HRESULT hr=E_FAIL;
 	CheckPointer(pSample,E_POINTER);
 	// フレームに書き込み
 	LPBYTE pSampleData=NULL;
@@ -356,7 +355,6 @@ HRESULT CPushAudioPin::DoBufferProcessingLoop(void) {
 }
 
 HRESULT CPushAudioPin::FillBuffer(IMediaSample *pSample) {
-	HRESULT hr=E_FAIL;
 	CheckPointer(pSample,E_POINTER);
 	// フレームに書き込み
 	LPBYTE pSampleData=NULL;
@@ -482,7 +480,6 @@ DWORD CTSSrcFilter::AddTS(BYTE* data, DWORD size)
 		if( packet.Set188TS(data + i, 188) == TRUE ){
 			if( packet.transport_scrambling_control == 0 ){
 				//PMT
-				map<WORD, CPMTUtil*>::iterator itrPmt;
 				if( packet.payload_unit_start_indicator == 1 && packet.data_byteSize > 0){
 					BYTE pointer = packet.data_byte[0];
 					if( pointer+1 < packet.data_byteSize ){

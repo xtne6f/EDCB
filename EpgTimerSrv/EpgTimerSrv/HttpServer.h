@@ -13,8 +13,10 @@ public:
 		std::wstring rootPath;
 		std::wstring accessControlList;
 		std::wstring authenticationDomain;
+		std::wstring sslCipherList;
 		int numThreads;
 		int requestTimeout;
+		int sslProtocolVersion;
 		bool keepAlive;
 		bool saveLog;
 	};

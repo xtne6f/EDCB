@@ -1,5 +1,6 @@
 #include "StdAfx.h"
 #include "DropCount.h"
+#include "../Common/StringUtil.h"
 
 
 CDropCount::CDropCount(void)
@@ -15,29 +16,53 @@ CDropCount::CDropCount(void)
 	this->bonFile = L"";
 }
 
-void CDropCount::AddData(BYTE* data, DWORD size)
+void CDropCount::AddData(const BYTE* data, DWORD size)
 {
 	if( data == NULL || size == 0 ){
 		return ;
 	}
 	for( DWORD i=0; i<size; i+=188 ){
-		CTSPacketUtil packet;
-		if( packet.Set188TS(data+i, 188) == TRUE ){
+		BYTE sync_byte = data[i];
+		BYTE transport_error_indicator = data[i + 1] & 0x80;
+		if( sync_byte == 0x47 && transport_error_indicator == 0 ){
+			WORD pid = (data[i + 1] << 8 | data[i + 2]) & 0x1FFF;
 			map<WORD, DROP_INFO>::iterator itr;
-			itr = this->infoMap.find(packet.PID);
+			itr = this->infoMap.find(pid);
 			if( itr == this->infoMap.end() ){
-				DROP_INFO item;
-				item.PID = packet.PID;
-				item.lastCounter = packet.continuity_counter;
-				item.total++;
-				if( packet.transport_scrambling_control != 0 ){
-					item.scramble++;
-				}
-				this->infoMap.insert(pair<WORD, DROP_INFO>(item.PID, item));
-			}else{
-				CheckCounter(&packet, &(itr->second));
+				BYTE continuity_counter = data[i + 3] & 0x0F;
+				DROP_INFO item = {};
+				item.lastCounter = (continuity_counter + 15) & 0x0F;
+				itr = this->infoMap.insert(pair<WORD, DROP_INFO>(pid, item)).first;
+			}
+			itr->second.total++;
+			if( pid != 0x1FFF ){
+				CheckCounter(data + i, &(itr->second));
 			}
 		}
+	}
+	DWORD tick = GetTickCount();
+	if( tick - this->lastLogTime > 5000 ){
+		if( this->lastLogDrop < this->drop ||
+		    this->lastLogScramble < this->scramble ){
+			string logline;
+			SYSTEMTIME now;
+			GetLocalTime(&now);
+			Format(logline, "%04d/%02d/%02d %02d:%02d:%02d Drop:%I64d Scramble:%I64d Signal: %.02f\r\n",
+				now.wYear,
+				now.wMonth,
+				now.wDay,
+				now.wHour,
+				now.wMinute,
+				now.wSecond,
+				this->drop,
+				this->scramble,
+				this->signalLv
+				);
+			this->log += logline;
+			this->lastLogDrop = max(this->drop, this->lastLogDrop);
+			this->lastLogScramble = max(this->scramble, this->lastLogScramble);
+		}
+		this->lastLogTime = tick;
 	}
 }
 
@@ -49,8 +74,12 @@ void CDropCount::Clear()
 	this->log.clear();
 	this->lastLogTime = 0;
 
-	this->lastLogDrop = 0;
-	this->lastLogScramble = 0;
+	if( this->lastLogDrop != MAXULONGLONG ){
+		this->lastLogDrop = 0;
+	}
+	if( this->lastLogScramble != MAXULONGLONG ){
+		this->lastLogScramble = 0;
+	}
 	this->signalLv = 0;
 }
 
@@ -64,13 +93,19 @@ void CDropCount::SetBonDriver(wstring bonDriver)
 	this->bonFile = bonDriver;
 }
 
-void CDropCount::GetCount(ULONGLONG* drop, ULONGLONG* scramble)
+void CDropCount::SetNoLog(BOOL noLogDrop, BOOL noLogScramble)
 {
-	if( drop != NULL ){
-		*drop = this->drop;
+	this->lastLogDrop = noLogDrop ? MAXULONGLONG : this->lastLogDrop == MAXULONGLONG ? 0 : this->lastLogDrop;
+	this->lastLogScramble = noLogScramble ? MAXULONGLONG : this->lastLogScramble == MAXULONGLONG ? 0 : this->lastLogScramble;
+}
+
+void CDropCount::GetCount(ULONGLONG* drop_, ULONGLONG* scramble_)
+{
+	if( drop_ != NULL ){
+		*drop_ = this->drop;
 	}
-	if( scramble != NULL ){
-		*scramble = this->scramble;
+	if( scramble_ != NULL ){
+		*scramble_ = this->scramble;
 	}
 }
 
@@ -84,98 +119,53 @@ ULONGLONG CDropCount::GetScrambleCount()
 	return this->scramble;
 }
 
-void CDropCount::CheckCounter(CTSPacketUtil* tsPacket, DROP_INFO* info)
+void CDropCount::CheckCounter(const BYTE* packet, DROP_INFO* info)
 {
-	if( tsPacket == NULL || info == NULL ){
-		return;
-	}
-	info->total++;
+	BYTE transport_scrambling_control = packet[3] >> 6;
+	BYTE adaptation_field_control = (packet[3] >> 4) & 0x03;
+	BYTE continuity_counter = packet[3] & 0x0F;
 
-	if( tsPacket->PID == 0x1FFF){
-		return;
-	}
-	if( tsPacket->transport_scrambling_control != 0 ){
+	if( transport_scrambling_control != 0 ){
 		info->scramble++;
 		this->scramble++;
 	}
 	
-	if( tsPacket->adaptation_field_control == 0x00 || tsPacket->adaptation_field_control == 0x02 ){
+	if( adaptation_field_control == 0x00 || adaptation_field_control == 0x02 ){
 		//ペイロードが存在しない場合は意味なし
 		info->duplicateFlag = FALSE;
-		goto CHK_END;
-	}
-	if( info->lastCounter == tsPacket->continuity_counter ){
-		if( tsPacket->adaptation_field_control == 0x01 || tsPacket->adaptation_field_control == 0x03 ){
-			if( tsPacket->transport_scrambling_control == 0 ){
+	}else{
+		BYTE adaptation_field_length = packet[4];
+		BYTE discontinuity_indicator = packet[5] & 0x80;
+		if( info->lastCounter == continuity_counter ){
+			if( adaptation_field_control == 0x01 || adaptation_field_length == 0 || discontinuity_indicator == 0 ){
+				//※厳密には重送判定は前パケットとの完全比較もすべき
 				if( info->duplicateFlag == FALSE ){
 					//重送？一応連続と判定
 					info->duplicateFlag = TRUE;
-					if( tsPacket->adaptation_field_control == 0x02 || tsPacket->adaptation_field_control == 0x03 ){
-						if(tsPacket->discontinuity_indicator == 1){
-							//不連続の判定だが正常
-							info->duplicateFlag = FALSE;
-						}
-					}
-					goto CHK_END;
 				}else{
 					//前回重送と判断してるので不連続
-					info->duplicateFlag = FALSE;
 					info->drop++;
 					this->drop++;
-					goto CHK_END;
 				}
 			}else{
-				goto CHK_END;
-			}
-		}
-	}
-	if( info->lastCounter+1 != tsPacket->continuity_counter ){
-		if( info->lastCounter != 0x0F && tsPacket->continuity_counter != 0x00 ){
-			if(tsPacket->discontinuity_indicator == 1){
 				//不連続の判定だが正常
-				goto CHK_END;
+				info->duplicateFlag = FALSE;
 			}
-			//カウンターが飛んだので不連続
-			ULONGLONG count = 0;
-			if( tsPacket->continuity_counter <= info->lastCounter ){
-				count = (tsPacket->continuity_counter+15) - info->lastCounter;
-			}else{
-				count = tsPacket->continuity_counter - info->lastCounter;
+		}else{
+			//※原作はたぶんlastCounter==15またはcontinuity_counter==0のときの連続判定がバグっていた
+			if( ((info->lastCounter + 1) & 0x0F) != continuity_counter ){
+				if( adaptation_field_control == 0x01 || adaptation_field_length == 0 || discontinuity_indicator == 0 ){
+					//カウンターが飛んだので不連続
+					//※原作はここで差分を加算する
+					info->drop++;
+					this->drop++;
+				}
 			}
-
-			info->drop+= count;
-			this->drop+= count;
-			info->total+= count-1;
-			goto CHK_END;
+			info->duplicateFlag = FALSE;
 		}
 	}
 
-CHK_END:
-	info->lastCounter = tsPacket->continuity_counter;
-	if( GetTickCount() - this->lastLogTime > 5000 ){
-		if( this->lastLogDrop != this->drop ||
-			this->lastLogScramble != this->scramble
-			){
-				wstring log;
-				SYSTEMTIME now;
-				GetLocalTime(&now);
-				Format(log, L"%04d/%02d/%02d %02d:%02d:%02d Drop:%I64d Scramble:%I64d Signal: %.02f",
-					now.wYear,
-					now.wMonth,
-					now.wDay,
-					now.wHour,
-					now.wMinute,
-					now.wSecond,
-					this->drop,
-					this->scramble,
-					this->signalLv
-					);
-				this->log.push_back(log);
-				this->lastLogDrop = this->drop;
-				this->lastLogScramble = this->scramble;
-		}
-		this->lastLogTime = GetTickCount();
-	}
+	info->lastCounter = continuity_counter;
 }
 
 void CDropCount::SaveLog(wstring filePath)
@@ -185,10 +175,8 @@ void CDropCount::SaveLog(wstring filePath)
 		DWORD write;
 
 		string buff;
-		for( size_t i=0; i<log.size(); i++ ){
-			WtoA(log[i], buff);
-			buff += "\r\n";
-			WriteFile(file, buff.c_str(), (DWORD)buff.size(), &write, NULL );
+		if( this->log.empty() == false ){
+			WriteFile(file, this->log.c_str(), (DWORD)this->log.size(), &write, NULL );
 		}
 
 		buff = "\r\n";
@@ -280,17 +268,11 @@ void CDropCount::SaveLog(wstring filePath)
 }
 
 void CDropCount::SetPIDName(
-	map<WORD, string>* pidName
+	const map<WORD, string>* pidName_
 	)
 {
-	map<WORD, string>::iterator itrIn;
-	for(itrIn = pidName->begin(); itrIn != pidName->end(); itrIn++){
-		map<WORD, string>::iterator itrSet;
-		itrSet = this->pidName.find(itrIn->first);
-		if( itrSet != this->pidName.end() ){
-			itrSet->second = itrIn->second;
-		}else{
-			this->pidName.insert(pair<WORD, string>(itrIn->first, itrIn->second));
-		}
+	map<WORD, string>::const_iterator itrIn;
+	for(itrIn = pidName_->begin(); itrIn != pidName_->end(); itrIn++){
+		this->pidName[itrIn->first] = itrIn->second;
 	}
 }

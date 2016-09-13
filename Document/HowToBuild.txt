@@ -56,6 +56,8 @@ WindowsXPで実行可能なファイルを作りたいときは、EpgTimerを除く全プロジェクトの
 
 2.（EpgTimerNWが必要な場合のみ）生成された"EpgTimer.exe"を"EpgTimerNW.exe"というファイル名でコピー
 
+3.（Write_AVIVOが必要な場合のみ）ソリューションエクスプローラ―でWrite_AVIVOを右クリックしてビルド
+
 
 [ビルド(VisualStudio2010)]
 
@@ -64,3 +66,5 @@ WindowsXPで実行可能なファイルを作りたいときは、EpgTimerを除く全プロジェクトの
 2."EpgTimer\EpgTimer.sln"を 右クリック→プログラムから開く→C# 2010 Express で開き、ツール(T)→設定→上級者設定にチェック、[Release][x86]にしてビルド
 
 3.（EpgTimerNWが必要な場合のみ）生成された"EpgTimer.exe"を"EpgTimerNW.exe"というファイル名でコピー
+
+4.（Write_AVIVOが必要な場合のみ）ソリューションエクスプローラ―でWrite_AVIVOを右クリックしてビルド

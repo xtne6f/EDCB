@@ -1,20 +1,8 @@
 #include "StdAfx.h"
 #include "CATTable.h"
 
-CCATTable::CCATTable(void)
-{
-}
-
-CCATTable::~CCATTable(void)
-{
-	Clear();
-}
-
 void CCATTable::Clear()
 {
-	for( size_t i=0 ;i<descriptorList.size(); i++ ){
-		SAFE_DELETE(descriptorList[i]);
-	}
 	descriptorList.clear();
 }
 

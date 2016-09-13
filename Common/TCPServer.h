@@ -6,7 +6,7 @@
 
 #include <winsock2.h>
 #include <ws2tcpip.h>
-#pragma comment(lib, "wsock32.lib")
+#pragma comment(lib, "Ws2_32.lib")
 
 typedef int (CALLBACK *CMD_CALLBACK_PROC)(void* pParam, CMD_STREAM* pCmdParam, CMD_STREAM* pResParam);
 
@@ -24,6 +24,7 @@ public:
 		void* pParam
 		);
 	void StopServer();
+	void NotifyUpdate();
 
 protected:
 	CMD_CALLBACK_PROC m_pCmdProc;
@@ -32,6 +33,7 @@ protected:
 	DWORD m_dwResponseTimeout;
 	wstring m_acl;
 
+	WSAEVENT m_hNotifyEvent;
 	BOOL m_stopFlag;
 	HANDLE m_hThread;
 

@@ -1,6 +1,8 @@
 #include "StdAfx.h"
 #include "SyoboiCalUtil.h"
 
+#include <winhttp.h>
+#pragma comment (lib, "winhttp.lib")
 #include <wincrypt.h>
 #pragma comment (lib, "Crypt32.lib")
 
@@ -12,40 +14,19 @@
 
 #define SYOBOI_UP_URL L"http://cal.syoboi.jp/sch_upload"
 
-CSyoboiCalUtil::CSyoboiCalUtil(void)
-{
-	this->proxyInfo = NULL;
-}
-
-
-CSyoboiCalUtil::~CSyoboiCalUtil(void)
-{
-	SAFE_DELETE(this->proxyInfo);
-}
-
 __int64 CSyoboiCalUtil::GetTimeStamp(SYSTEMTIME startTime)
 {
 	SYSTEMTIME keyTime;
 	keyTime.wYear = 1970;
 	keyTime.wMonth = 1;
 	keyTime.wDay = 1;
-	keyTime.wHour = 0;
+	//UTC+9
+	keyTime.wHour = 9;
 	keyTime.wMinute = 0;
 	keyTime.wSecond = 0;
 	keyTime.wMilliseconds = 0;
 
-	FILETIME keyFTime;
-	SystemTimeToFileTime( &keyTime, &keyFTime );
-	FILETIME startFTime;
-	SystemTimeToFileTime( &startTime, &startFTime );
-
-	__int64 key64Time = ((__int64)keyFTime.dwHighDateTime)<<32 | keyFTime.dwLowDateTime;
-	__int64 start64Time = ((__int64)startFTime.dwHighDateTime)<<32 | startFTime.dwLowDateTime;
-	__int64 totalSec = (start64Time-key64Time)/(I64_1SEC);
-	//UTCのために-9時間
-	totalSec -= 9*60*60;
-
-	return totalSec;
+	return (ConvertI64Time(startTime) - ConvertI64Time(keyTime)) / I64_1SEC;
 }
 
 BOOL CSyoboiCalUtil::UrlEncodeUTF8(LPCWSTR src, DWORD srcSize, string& dest)
@@ -54,72 +35,22 @@ BOOL CSyoboiCalUtil::UrlEncodeUTF8(LPCWSTR src, DWORD srcSize, string& dest)
 		return FALSE;
 	}
 
-	char* pBuff = NULL;
-	int iLen = 0;
+	WtoUTF8(src, dest);
 
-	iLen = WideCharToMultiByte(CP_UTF8, 0, src, -1, NULL, 0, NULL, NULL);
-	pBuff = new char[iLen+1];
-	ZeroMemory(pBuff, iLen+1);
-	WideCharToMultiByte(CP_UTF8, 0, src, -1, pBuff, iLen, NULL, NULL);
-
-	for( int i=0; i<iLen; i++ ){
-		if( ( pBuff[i] >= 'A' && pBuff[i] <= 'Z' ) ||
-			( pBuff[i] >= 'a' && pBuff[i] <= 'z' ) ||
-			( pBuff[i] >= '0' && pBuff[i] <= '9' ) 
+	for( size_t i=0; i<dest.size(); ){
+		if( ( dest[i] >= 'A' && dest[i] <= 'Z' ) ||
+			( dest[i] >= 'a' && dest[i] <= 'z' ) ||
+			( dest[i] >= '0' && dest[i] <= '9' ) 
 			)
 		{
-			dest+=pBuff[i];
-		}else if( pBuff[i] == ' ' ){
-			dest+="%20";
-		}else if( pBuff[i] == '\0' ){
+			i++;
 		}else{
 			char cEnc[4]="";
-			sprintf_s( cEnc, 4, "%%%02X", (BYTE)pBuff[i] );
-			dest+=cEnc;
+			sprintf_s( cEnc, "%%%02X", (BYTE)dest[i] );
+			dest.replace(i, 1, cEnc, 3);
+			i += 3;
 		}
 	}
-
-	delete[] pBuff;
-
-	return TRUE;
-}
-
-BOOL CSyoboiCalUtil::UrlEncodeUTF8(LPCWSTR src, DWORD srcSize, wstring& dest)
-{
-	if( src == NULL || srcSize == 0 ){
-		return FALSE;
-	}
-
-	char* pBuff = NULL;
-	int iLen = 0;
-
-	iLen = WideCharToMultiByte(CP_UTF8, 0, src, -1, NULL, 0, NULL, NULL);
-	pBuff = new char[iLen+1];
-	ZeroMemory(pBuff, iLen+1);
-	WideCharToMultiByte(CP_UTF8, 0, src, -1, pBuff, iLen, NULL, NULL);
-
-	string destBuff;
-
-	for( int i=0; i<iLen; i++ ){
-		if( ( pBuff[i] >= 'A' && pBuff[i] <= 'Z' ) ||
-			( pBuff[i] >= 'a' && pBuff[i] <= 'z' ) ||
-			( pBuff[i] >= '0' && pBuff[i] <= '9' ) 
-			)
-		{
-			destBuff+=pBuff[i];
-		}else if( pBuff[i] == ' ' ){
-			destBuff+="%20";
-		}else if( pBuff[i] == '\0' ){
-		}else{
-			char cEnc[4]="";
-			sprintf_s( cEnc, 4, "%%%02X", (BYTE)pBuff[i] );
-			destBuff+=cEnc;
-		}
-	}
-
-	delete[] pBuff;
-
-	AtoW(destBuff, dest);
 
 	return TRUE;
 }
@@ -144,7 +75,7 @@ BOOL CSyoboiCalUtil::Base64Enc(LPCSTR src, DWORD srcSize, LPWSTR dest, DWORD* de
 	return TRUE;
 }
 
-BOOL CSyoboiCalUtil::SendReserve(vector<RESERVE_DATA>* reserveList, vector<TUNER_RESERVE_INFO>* tunerList)
+BOOL CSyoboiCalUtil::SendReserve(const vector<RESERVE_DATA>* reserveList, const vector<TUNER_RESERVE_INFO>* tunerList)
 {
 	if( reserveList == NULL || tunerList == NULL ){
 		return FALSE;
@@ -166,36 +97,18 @@ BOOL CSyoboiCalUtil::SendReserve(vector<RESERVE_DATA>* reserveList, vector<TUNER
 	CParseServiceChgText srvChg;
 	srvChg.ParseText(textPath.c_str());
 
-	SAFE_DELETE(this->proxyInfo);
-	BOOL useProxy = (BOOL)GetPrivateProfileInt(L"SYOBOI", L"useProxy", 0, iniAppPath.c_str());
-	if( useProxy == TRUE ){
-		this->proxyInfo = new USE_PROXY_INFO;
-
-		wstring buff = GetPrivateProfileToString(L"SYOBOI", L"ProxyServer", L"", iniAppPath.c_str());
-		this->proxyInfo->serverName = new WCHAR[buff.size()+1];
-		wcscpy_s(this->proxyInfo->serverName, buff.size()+1, buff.c_str());
-
-		buff = GetPrivateProfileToString(L"SYOBOI", L"ProxyID", L"", iniAppPath.c_str());
-		if( buff.empty() == false ){
-			this->proxyInfo->userName = new WCHAR[buff.size()+1];
-			wcscpy_s(this->proxyInfo->userName, buff.size()+1, buff.c_str());
-		}else{
-			this->proxyInfo->userName = NULL;
-		}
-
-		buff = GetPrivateProfileToString(L"SYOBOI", L"ProxyPWD", L"", iniAppPath.c_str());
-		if( buff.empty() == false ){
-			this->proxyInfo->password = new WCHAR[buff.size()+1];
-			wcscpy_s(this->proxyInfo->password, buff.size()+1, buff.c_str());
-		}else{
-			this->proxyInfo->password = NULL;
-		}
-
+	wstring proxyServerName;
+	wstring proxyUserName;
+	wstring proxyPassword;
+	if( GetPrivateProfileInt(L"SYOBOI", L"useProxy", 0, iniAppPath.c_str()) != 0 ){
+		proxyServerName = GetPrivateProfileToString(L"SYOBOI", L"ProxyServer", L"", iniAppPath.c_str());
+		proxyUserName = GetPrivateProfileToString(L"SYOBOI", L"ProxyID", L"", iniAppPath.c_str());
+		proxyPassword = GetPrivateProfileToString(L"SYOBOI", L"ProxyPWD", L"", iniAppPath.c_str());
 	}
 
-	this->id=GetPrivateProfileToString(L"SYOBOI", L"userID", L"", iniAppPath.c_str());
+	wstring id=GetPrivateProfileToString(L"SYOBOI", L"userID", L"", iniAppPath.c_str());
 
-	this->pass=GetPrivateProfileToString(L"SYOBOI", L"PWD", L"", iniAppPath.c_str());
+	wstring pass=GetPrivateProfileToString(L"SYOBOI", L"PWD", L"", iniAppPath.c_str());
 
 	int slot = GetPrivateProfileInt(L"SYOBOI", L"slot", 0, iniAppPath.c_str());
 
@@ -203,27 +116,29 @@ BOOL CSyoboiCalUtil::SendReserve(vector<RESERVE_DATA>* reserveList, vector<TUNER
 	
 	wstring epgurl=GetPrivateProfileToString(L"SYOBOI", L"epgurl", L"", iniAppPath.c_str());
 
-	if( this->id.size() == 0 ){
+	if( id.size() == 0 ){
 		_OutputDebugString(L"★SyoboiCalUtil:NoUserID");
 		return FALSE;
 	}
 
 	//Authorization
 	wstring auth = L"";
-	auth = this->id;
+	auth = id;
 	auth += L":";
-	auth += this->pass;
+	auth += pass;
 	string authA;
 	WtoA(auth, authA);
 
 	DWORD destSize = 0;
 	Base64Enc(authA.c_str(), (DWORD)authA.size(), NULL, &destSize);
-	WCHAR* base64 = new WCHAR[destSize];
-	ZeroMemory(base64, destSize*sizeof(WCHAR));
-	Base64Enc(authA.c_str(), (DWORD)authA.size(), base64, &destSize);
+	vector<WCHAR> base64(destSize + 1, L'\0');
+	Base64Enc(authA.c_str(), (DWORD)authA.size(), &base64.front(), &destSize);
+	//無駄なCRLFが混じることがあるため
+	std::replace(base64.begin(), base64.end(), L'\r', L'\0');
+	std::replace(base64.begin(), base64.end(), L'\n', L'\0');
 
 	wstring authHead = L"";
-	Format(authHead, L"Authorization: Basic %s\r\nContent-type: application/x-www-form-urlencoded\r\n", base64);
+	Format(authHead, L"Authorization: Basic %s\r\nContent-type: application/x-www-form-urlencoded\r\n", &base64.front());
 
 	//data
 	wstring dataParam;
@@ -240,7 +155,7 @@ BOOL CSyoboiCalUtil::SendReserve(vector<RESERVE_DATA>* reserveList, vector<TUNER
 		if( dataCount>=200 ){
 			break;
 		}
-		RESERVE_DATA* info = &(*reserveList)[i];
+		const RESERVE_DATA* info = &(*reserveList)[i];
 		if( info->recSetting.recMode == RECMODE_NO || info->recSetting.recMode == RECMODE_VIEW ){
 			continue;
 		}
@@ -280,44 +195,96 @@ BOOL CSyoboiCalUtil::SendReserve(vector<RESERVE_DATA>* reserveList, vector<TUNER
 		data += "&epgurl=";
 		data += utf8;
 	}
+	vector<char> dataBuff(data.begin(), data.end());
 
-	UPLOAD_DATA_LIST upList;
-	upList.listCount = 1;
-	upList.list = new UPLOAD_DATA[1];
-	upList.list->filePathFlag = 0;
-	upList.list->buffSize = (DWORD)data.size();
-	upList.list->buff = new BYTE[data.size()+1];
-	ZeroMemory(upList.list->buff, data.size()+1);
-	memcpy(upList.list->buff, data.c_str(), data.size());
-
-	wstring url;
-	Format(url,L"%s",SYOBOI_UP_URL);
-
-	CWinHTTPUtil http;
-	DWORD result = NO_ERR;
-	result = http.OpenSession(L"EpgTimerSrv", FALSE, useProxy, this->proxyInfo, 15000, 15000, 15000, 15000);
-	if( result != NO_ERR ){
+	//URLの分解
+	URL_COMPONENTS stURL = {};
+	stURL.dwStructSize = sizeof(stURL);
+	stURL.dwSchemeLength = (DWORD)-1;
+	stURL.dwHostNameLength = (DWORD)-1;
+	stURL.dwUrlPathLength = (DWORD)-1;
+	stURL.dwExtraInfoLength = (DWORD)-1;
+	if( WinHttpCrackUrl(SYOBOI_UP_URL, 0, 0, &stURL) == FALSE || stURL.dwHostNameLength == 0 ){
 		return FALSE;
 	}
-	result = http.SendRequest(url.c_str(), NW_VERB_POST, authHead.c_str(), NULL, &upList);
+	wstring host(stURL.lpszHostName, stURL.dwHostNameLength);
+	wstring sendUrl(stURL.lpszUrlPath, stURL.dwUrlPathLength + stURL.dwExtraInfoLength);
 
-
-	DWORD dlSize = 0;
-	http.GetDLBuff(NULL, &dlSize);
-	if( dlSize > 0 ){
-		BYTE* dlBuff = new BYTE[dlSize+1];
-		ZeroMemory(dlBuff, dlSize+1);
-		http.GetDLBuff(dlBuff, &dlSize);
-
-		string response = (char*)dlBuff;
-		SAFE_DELETE_ARRAY(dlBuff);
+	HINTERNET session;
+	if( proxyServerName.empty() ){
+		session = WinHttpOpen(L"EpgTimerSrv", WINHTTP_ACCESS_TYPE_NO_PROXY, WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
+	}else{
+		session = WinHttpOpen(L"EpgTimerSrv", WINHTTP_ACCESS_TYPE_NAMED_PROXY, proxyServerName.c_str(), WINHTTP_NO_PROXY_BYPASS, 0);
+	}
+	if( session == NULL ){
+		return FALSE;
 	}
 
-	http.CloseRequest();
+	LPCWSTR result = L"1";
+	HINTERNET connect = NULL;
+	HINTERNET request = NULL;
 
-	_OutputDebugString(L"★SyoboiCalUtil:SendRequest res:%d", result);
+	if( WinHttpSetTimeouts(session, 15000, 15000, 15000, 15000) == FALSE ){
+		result = L"0 SetTimeouts";
+		goto EXIT;
+	}
+	//コネクションオープン
+	connect = WinHttpConnect(session, host.c_str(), stURL.nPort, 0);
+	if( connect == NULL ){
+		result = L"0 Connect";
+		goto EXIT;
+	}
+	//リクエストオープン
+	request = WinHttpOpenRequest(connect, L"POST", sendUrl.c_str(), NULL, WINHTTP_NO_REFERER, WINHTTP_DEFAULT_ACCEPT_TYPES,
+	                             stURL.nPort == INTERNET_DEFAULT_HTTPS_PORT ? WINHTTP_FLAG_SECURE : 0);
+	if( request == NULL ){
+		result = L"0 OpenRequest";
+		goto EXIT;
+	}
+	if( proxyServerName.empty() == false ){
+		//ProxyのIDかパスワードがあったらセット
+		if( proxyUserName.empty() == false || proxyPassword.empty() == false ){
+			if( WinHttpSetCredentials(request, WINHTTP_AUTH_TARGET_PROXY, WINHTTP_AUTH_SCHEME_BASIC,
+			                          proxyUserName.c_str(), proxyPassword.c_str(), NULL) == FALSE ){
+				result = L"0 SetCredentials";
+				goto EXIT;
+			}
+		}
+	}
+	if( WinHttpSendRequest(request, authHead.c_str(), (DWORD)-1, &dataBuff.front(), (DWORD)dataBuff.size(), (DWORD)dataBuff.size(), 0) == FALSE ){
+		result = L"0 SendRequest";
+		goto EXIT;
+	}
+	if( WinHttpReceiveResponse(request, NULL) == FALSE ){
+		result = L"0 ReceiveResponse";
+		goto EXIT;
+	}
+	//HTTPのステータスコード確認
+	DWORD statusCode;
+	DWORD statusCodeSize = sizeof(statusCode);
+	if( WinHttpQueryHeaders(request, WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER, WINHTTP_HEADER_NAME_BY_INDEX,
+	                        &statusCode, &statusCodeSize, WINHTTP_NO_HEADER_INDEX) == FALSE ){
+		statusCode = 0;
+	}
+	if( statusCode != 200 && statusCode != 201 ){
+		result = L"0 StatusNotOK";
+		goto EXIT;
+	}
 
-	if( result != NO_ERR ){
+EXIT:
+	if( request != NULL ){
+		WinHttpCloseHandle(request);
+	}
+	if( connect != NULL ){
+		WinHttpCloseHandle(connect);
+	}
+	if( session != NULL ){
+		WinHttpCloseHandle(session);
+	}
+
+	_OutputDebugString(L"★SyoboiCalUtil:SendRequest res:%s", result);
+
+	if( result[0] != L'1' ){
 		return FALSE;
 	}
 	return TRUE;

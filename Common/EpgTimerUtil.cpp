@@ -102,8 +102,8 @@ BOOL _MJDtoYMD(DWORD mjd, WORD* y, WORD* m, WORD* d)
 		k=1;
 	}
 
-	*y = yy + k;
-	*m = mm-1-k*12;
+	*y = (WORD)(yy + k);
+	*m = (WORD)(mm-1-k*12);
 
 	return TRUE;
 }

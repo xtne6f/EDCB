@@ -15,7 +15,6 @@
 #include <shellapi.h>
 #include <commdlg.h>
 #include <shlobj.h>
-#include <winsock2.h>
 #pragma comment(lib, "comctl32.lib")
 #pragma comment(lib, "ws2_32.lib")
 
@@ -53,3 +52,7 @@ void OutputDebugStringWrapper(LPCWSTR lpOutputString);
 #endif
 
 #include "../../Common/Common.h"
+
+// TODO: ‚±‚ÌŒx‚Í‰Â”\‚È‚ç‰ğŒˆ‚·‚×‚«
+// declaration of 'identifier' hides class member
+#pragma warning(disable : 4458)

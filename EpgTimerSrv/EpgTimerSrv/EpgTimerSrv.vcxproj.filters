@@ -138,16 +138,7 @@
     <ClInclude Include="..\..\Common\TCPServer.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Common\NWStructDef.h">
-      <Filter>ヘッダー ファイル\Common</Filter>
-    </ClInclude>
-    <ClInclude Include="FileStreamingUtil.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Common\TimeShiftUtil.h">
-      <Filter>ヘッダー ファイル\Common</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Common\TSBuffUtil.h">
       <Filter>ヘッダー ファイル\Common</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Common\TSPacketUtil.h">
@@ -165,9 +156,6 @@
     <ClInclude Include="..\..\BonCtrl\PacketInit.h">
       <Filter>ヘッダー ファイル\BonCtrl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\BonCtrl\PMTUtil.h">
-      <Filter>ヘッダー ファイル\BonCtrl</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\BonCtrl\SendTCP.h">
       <Filter>ヘッダー ファイル\BonCtrl</Filter>
     </ClInclude>
@@ -180,13 +168,13 @@
     <ClInclude Include="NotifyManager.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Common\WinHTTPUtil.h">
-      <Filter>ヘッダー ファイル\Common</Filter>
-    </ClInclude>
     <ClInclude Include="SyoboiCalUtil.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="civetweb.h">
+      <Filter>ヘッダー ファイル\civetweb</Filter>
+    </ClInclude>
+    <ClInclude Include="civetweb_lua.h">
       <Filter>ヘッダー ファイル\civetweb</Filter>
     </ClInclude>
     <ClInclude Include="lua.h">
@@ -275,13 +263,7 @@
     <ClCompile Include="..\..\Common\TCPServer.cpp">
       <Filter>ソース ファイル\Common</Filter>
     </ClCompile>
-    <ClCompile Include="FileStreamingUtil.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\Common\TimeShiftUtil.cpp">
-      <Filter>ソース ファイル\Common</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Common\TSBuffUtil.cpp">
       <Filter>ソース ファイル\Common</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Common\TSPacketUtil.cpp">
@@ -296,9 +278,6 @@
     <ClCompile Include="..\..\BonCtrl\PacketInit.cpp">
       <Filter>ソース ファイル\BonCtrl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\BonCtrl\PMTUtil.cpp">
-      <Filter>ソース ファイル\BonCtrl</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\BonCtrl\SendTCP.cpp">
       <Filter>ソース ファイル\BonCtrl</Filter>
     </ClCompile>
@@ -310,9 +289,6 @@
     </ClCompile>
     <ClCompile Include="NotifyManager.cpp">
       <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Common\WinHTTPUtil.cpp">
-      <Filter>ソース ファイル\Common</Filter>
     </ClCompile>
     <ClCompile Include="SyoboiCalUtil.cpp">
       <Filter>ソース ファイル</Filter>

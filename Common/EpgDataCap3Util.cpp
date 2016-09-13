@@ -28,6 +28,7 @@ BOOL CEpgDataCap3Util::LoadDll(LPCWSTR loadDllFilePath)
 	pfnEnumEpgInfoListEP3 = NULL;
 	pfnClearSectionStatusEP3 = NULL;
 	pfnGetSectionStatusEP3 = NULL;
+	pfnGetSectionStatusServiceEP3 = NULL;
 	pfnGetServiceListActualEP3 = NULL;
 	pfnGetServiceListEpgDBEP3 = NULL;
 	pfnGetEpgInfoEP3 = NULL;
@@ -88,6 +89,8 @@ BOOL CEpgDataCap3Util::LoadDll(LPCWSTR loadDllFilePath)
 		ret = FALSE;
 		goto ERR_END;
 	}
+	pfnGetSectionStatusServiceEP3 = ( GetSectionStatusServiceEP3 ) ::GetProcAddress( module , "GetSectionStatusServiceEP");
+
 	pfnGetServiceListActualEP3 = ( GetServiceListActualEP3 ) ::GetProcAddress( module , "GetServiceListActualEP");
 	if( !pfnGetServiceListActualEP3 ){
 		OutputDebugString(L"GetServiceListActualEPの GetProcAddress に失敗\r\n");
@@ -147,6 +150,7 @@ BOOL CEpgDataCap3Util::UnLoadDll(void)
 	pfnEnumEpgInfoListEP3 = NULL;
 	pfnClearSectionStatusEP3 = NULL;
 	pfnGetSectionStatusEP3 = NULL;
+	pfnGetSectionStatusServiceEP3 = NULL;
 	pfnGetServiceListActualEP3 = NULL;
 	pfnGetServiceListEpgDBEP3 = NULL;
 	pfnGetEpgInfoEP3 = NULL;
@@ -333,6 +337,21 @@ EPG_SECTION_STATUS CEpgDataCap3Util::GetSectionStatus(
 		return EpgNoData;
 	}
 	return pfnGetSectionStatusEP3(id, l_eitFlag);
+}
+
+//指定サービスのEPGデータの蓄積状態を取得する
+pair<EPG_SECTION_STATUS, BOOL> CEpgDataCap3Util::GetSectionStatusService(
+	WORD originalNetworkID,
+	WORD transportStreamID,
+	WORD serviceID,
+	BOOL l_eitFlag
+	)
+{
+	if( module == NULL || id == 0 || pfnGetSectionStatusServiceEP3 == NULL ){
+		return pair<EPG_SECTION_STATUS, BOOL>(EpgNoData, FALSE);
+	}
+	return pair<EPG_SECTION_STATUS, BOOL>(
+		pfnGetSectionStatusServiceEP3(id, originalNetworkID, transportStreamID, serviceID, l_eitFlag), TRUE);
 }
 
 //指定サービスの現在or次のEPG情報を取得する

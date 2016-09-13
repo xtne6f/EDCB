@@ -15,41 +15,15 @@ static char g_szDebugEIT[128];
 CEpgDBUtil::CEpgDBUtil(void)
 {
 	InitializeCriticalSection(&this->dbLock);
-
-	this->epgInfoList = NULL;
-
-	this->epgInfo = NULL;
-	this->searchEpgInfo = NULL;
-
-	this->serviceDBList = NULL;
 }
 
 CEpgDBUtil::~CEpgDBUtil(void)
 {
-	Clear();
-	ClearSectionStatus();
-
-	SAFE_DELETE_ARRAY(this->epgInfoList);
-
-	SAFE_DELETE(this->epgInfo);
-
-	SAFE_DELETE(this->searchEpgInfo);
-
 	DeleteCriticalSection(&this->dbLock);
-
-	SAFE_DELETE_ARRAY(this->serviceDBList);
 }
 
 void CEpgDBUtil::Clear()
 {
-	map<ULONGLONG, SERVICE_EVENT_INFO>::iterator itr;
-	for( itr = this->serviceEventMap.begin(); itr != this->serviceEventMap.end(); itr++ ){
-		for( map<WORD, EVENT_INFO*>::iterator jtr = itr->second.eventMap.begin(); jtr != itr->second.eventMap.end(); jtr++ ){
-			SAFE_DELETE(jtr->second);
-		}
-		SAFE_DELETE(itr->second.nowEvent);
-		SAFE_DELETE(itr->second.nextEvent);
-	}
 	this->serviceEventMap.clear();
 }
 
@@ -58,7 +32,7 @@ void CEpgDBUtil::SetStreamChangeEvent()
 	//ここで[p/f]のリセットはしない
 }
 
-BOOL CEpgDBUtil::AddEIT(WORD PID, CEITTable* eit, __int64 streamTime)
+BOOL CEpgDBUtil::AddEIT(WORD PID, const CEITTable* eit, __int64 streamTime)
 {
 	if( eit == NULL ){
 		return FALSE;
@@ -90,27 +64,27 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, CEITTable* eit, __int64 streamTime)
 			//EPGファイルを入力するときは古い[p/f]による上書きが発生するので、利用側で時系列にするかタイムスタンプを確定させる工夫が必要
 			if( serviceInfo->nowEvent && serviceInfo->nowEvent->time != 0 ||
 			    serviceInfo->nextEvent && serviceInfo->nextEvent->time != 0 ){
-				SAFE_DELETE(serviceInfo->nowEvent);
-				SAFE_DELETE(serviceInfo->nextEvent);
+				serviceInfo->nowEvent.reset();
+				serviceInfo->nextEvent.reset();
 			}
 		}
 		if( eit->eventInfoList.empty() ){
 			//空セクション
 			if( eit->section_number == 0 ){
 				if( serviceInfo->nowEvent && siTag.time >= serviceInfo->nowEvent->time ){
-					SAFE_DELETE(serviceInfo->nowEvent);
+					serviceInfo->nowEvent.reset();
 				}
 			}else{
 				if( serviceInfo->nextEvent && siTag.time >= serviceInfo->nextEvent->time ){
-					SAFE_DELETE(serviceInfo->nextEvent);
+					serviceInfo->nextEvent.reset();
 				}
 			}
 		}
 	}
 	//イベントごとに更新必要が判定
 	for( size_t i=0; i<eit->eventInfoList.size(); i++ ){
-		CEITTable::EVENT_INFO_DATA* eitEventInfo = eit->eventInfoList[i];
-		map<WORD, EVENT_INFO*>::iterator itrEvent;
+		const CEITTable::EVENT_INFO_DATA* eitEventInfo = &eit->eventInfoList[i];
+		map<WORD, std::unique_ptr<EVENT_INFO>>::iterator itrEvent;
 		EVENT_INFO* eventInfo = NULL;
 
 		if( eitEventInfo->running_status == 1 || eitEventInfo->running_status == 3 ){
@@ -136,15 +110,15 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, CEITTable* eit, __int64 streamTime)
 				}else if( serviceInfo->nowEvent == NULL || siTag.time >= serviceInfo->nowEvent->time ){
 					if( serviceInfo->nowEvent == NULL || serviceInfo->nowEvent->event_id != eitEventInfo->event_id ){
 						//イベント入れ替わり
-						SAFE_DELETE(serviceInfo->nowEvent);
+						serviceInfo->nowEvent.reset();
 						if( serviceInfo->nextEvent && serviceInfo->nextEvent->event_id == eitEventInfo->event_id ){
-							serviceInfo->nowEvent = serviceInfo->nextEvent;
-							serviceInfo->nextEvent = NULL;
+							serviceInfo->nowEvent.swap(serviceInfo->nextEvent);
 							serviceInfo->nowEvent->time = 0;
 						}
 					}
 					if( serviceInfo->nowEvent == NULL ){
-						eventInfo = serviceInfo->nowEvent = new EVENT_INFO;
+						eventInfo = new EVENT_INFO;
+						serviceInfo->nowEvent.reset(eventInfo);
 						eventInfo->event_id = eitEventInfo->event_id;
 						eventInfo->time = 0;
 						eventInfo->tagBasic.version = 0xFF;
@@ -152,21 +126,21 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, CEITTable* eit, __int64 streamTime)
 						eventInfo->tagExt.version = 0xFF;
 						eventInfo->tagExt.time = 0;
 					}else{
-						eventInfo = serviceInfo->nowEvent;
+						eventInfo = serviceInfo->nowEvent.get();
 					}
 				}
 			}else{
 				if( serviceInfo->nextEvent == NULL || siTag.time >= serviceInfo->nextEvent->time ){
 					if( serviceInfo->nextEvent == NULL || serviceInfo->nextEvent->event_id != eitEventInfo->event_id ){
-						SAFE_DELETE(serviceInfo->nextEvent);
+						serviceInfo->nextEvent.reset();
 						if( serviceInfo->nowEvent && serviceInfo->nowEvent->event_id == eitEventInfo->event_id ){
-							serviceInfo->nextEvent = serviceInfo->nowEvent;
-							serviceInfo->nowEvent = NULL;
+							serviceInfo->nextEvent.swap(serviceInfo->nowEvent);
 							serviceInfo->nextEvent->time = 0;
 						}
 					}
 					if( serviceInfo->nextEvent == NULL ){
-						eventInfo = serviceInfo->nextEvent = new EVENT_INFO;
+						eventInfo = new EVENT_INFO;
+						serviceInfo->nextEvent.reset(eventInfo);
 						eventInfo->event_id = eitEventInfo->event_id;
 						eventInfo->time = 0;
 						eventInfo->tagBasic.version = 0xFF;
@@ -174,7 +148,7 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, CEITTable* eit, __int64 streamTime)
 						eventInfo->tagExt.version = 0xFF;
 						eventInfo->tagExt.time = 0;
 					}else{
-						eventInfo = serviceInfo->nextEvent;
+						eventInfo = serviceInfo->nextEvent.get();
 					}
 				}
 			}
@@ -188,14 +162,14 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, CEITTable* eit, __int64 streamTime)
 				if( itrEvent == serviceInfo->eventMap.end() ){
 					eventInfo = new EVENT_INFO;
 					eventInfo->event_id = eitEventInfo->event_id;
-					serviceInfo->eventMap.insert(std::make_pair(eventInfo->event_id, eventInfo));
+					serviceInfo->eventMap[eventInfo->event_id].reset(eventInfo);
 					eventInfo->time = 0;
 					eventInfo->tagBasic.version = 0xFF;
 					eventInfo->tagBasic.time = 0;
 					eventInfo->tagExt.version = 0xFF;
 					eventInfo->tagExt.time = 0;
 				}else{
-					eventInfo = itrEvent->second;
+					eventInfo = itrEvent->second.get();
 				}
 			}
 		}
@@ -313,7 +287,7 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, CEITTable* eit, __int64 streamTime)
 	return TRUE;
 }
 
-void CEpgDBUtil::AddBasicInfo(EVENT_INFO* eventInfo, vector<AribDescriptor::CDescriptor*>* descriptorList, WORD onid, WORD tsid)
+void CEpgDBUtil::AddBasicInfo(EVENT_INFO* eventInfo, const vector<AribDescriptor::CDescriptor>* descriptorList, WORD onid, WORD tsid)
 {
 	BOOL foundShort = FALSE;
 	BOOL foundContent = FALSE;
@@ -321,26 +295,26 @@ void CEpgDBUtil::AddBasicInfo(EVENT_INFO* eventInfo, vector<AribDescriptor::CDes
 	BOOL foundGroup = FALSE;
 	BOOL foundRelay = FALSE;
 	for( size_t i=0; i<descriptorList->size(); i++ ){
-		switch( (*descriptorList)[i]->GetNumber(AribDescriptor::descriptor_tag) ){
+		switch( (*descriptorList)[i].GetNumber(AribDescriptor::descriptor_tag) ){
 		case AribDescriptor::short_event_descriptor:
-			AddShortEvent(eventInfo, (*descriptorList)[i]);
+			AddShortEvent(eventInfo, &(*descriptorList)[i]);
 			foundShort = TRUE;
 			break;
 		case AribDescriptor::content_descriptor:
-			AddContent(eventInfo, (*descriptorList)[i]);
+			AddContent(eventInfo, &(*descriptorList)[i]);
 			foundContent = TRUE;
 			break;
 		case AribDescriptor::component_descriptor:
-			AddComponent(eventInfo, (*descriptorList)[i]);
+			AddComponent(eventInfo, &(*descriptorList)[i]);
 			foundComponent = TRUE;
 			break;
 		case AribDescriptor::event_group_descriptor:
-			if( (*descriptorList)[i]->GetNumber(AribDescriptor::group_type) == 1 ){
-				AddEventGroup(eventInfo, (*descriptorList)[i], onid, tsid);
+			if( (*descriptorList)[i].GetNumber(AribDescriptor::group_type) == 1 ){
+				AddEventGroup(eventInfo, &(*descriptorList)[i], onid, tsid);
 				foundGroup = TRUE;
-			}else if( (*descriptorList)[i]->GetNumber(AribDescriptor::group_type) == 2 ||
-			          (*descriptorList)[i]->GetNumber(AribDescriptor::group_type) == 4 ){
-				AddEventRelay(eventInfo, (*descriptorList)[i], onid, tsid);
+			}else if( (*descriptorList)[i].GetNumber(AribDescriptor::group_type) == 2 ||
+			          (*descriptorList)[i].GetNumber(AribDescriptor::group_type) == 4 ){
+				AddEventRelay(eventInfo, &(*descriptorList)[i], onid, tsid);
 				foundRelay = TRUE;
 			}
 			break;
@@ -383,7 +357,7 @@ static WORD UpdateInfoText(LPWSTR& strOut, LPCSTR strIn)
 	return 0;
 }
 
-void CEpgDBUtil::AddShortEvent(EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* shortEvent)
+void CEpgDBUtil::AddShortEvent(EVENT_INFO* eventInfo, const AribDescriptor::CDescriptor* shortEvent)
 {
 	if( eventInfo->shortInfo == NULL ){
 		eventInfo->shortInfo = new EPG_SHORT_EVENT_INFO;
@@ -407,7 +381,7 @@ void CEpgDBUtil::AddShortEvent(EVENT_INFO* eventInfo, AribDescriptor::CDescripto
 	}
 }
 
-BOOL CEpgDBUtil::AddExtEvent(EVENT_INFO* eventInfo, vector<AribDescriptor::CDescriptor*>* descriptorList)
+BOOL CEpgDBUtil::AddExtEvent(EVENT_INFO* eventInfo, const vector<AribDescriptor::CDescriptor>* descriptorList)
 {
 	{
 		BOOL foundFlag = FALSE;
@@ -419,9 +393,9 @@ BOOL CEpgDBUtil::AddExtEvent(EVENT_INFO* eventInfo, vector<AribDescriptor::CDesc
 //		string textBuff = "";
 
 		for( size_t i=0; i<descriptorList->size(); i++ ){
-			if( (*descriptorList)[i]->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::extended_event_descriptor ){
+			if( (*descriptorList)[i].GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::extended_event_descriptor ){
 				foundFlag = TRUE;
-				AribDescriptor::CDescriptor* extEvent = (*descriptorList)[i];
+				const AribDescriptor::CDescriptor* extEvent = &(*descriptorList)[i];
 				AribDescriptor::CDescriptor::CLoopPointer lp;
 				if( extEvent->EnterLoop(lp) ){
 					for( DWORD j=0; extEvent->SetLoopIndex(lp, j); j++ ){
@@ -525,7 +499,7 @@ BOOL CEpgDBUtil::AddExtEvent(EVENT_INFO* eventInfo, vector<AribDescriptor::CDesc
 	return TRUE;
 }
 
-void CEpgDBUtil::AddContent(EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* content)
+void CEpgDBUtil::AddContent(EVENT_INFO* eventInfo, const AribDescriptor::CDescriptor* content)
 {
 	if( eventInfo->contentInfo == NULL ){
 		eventInfo->contentInfo = new EPG_CONTEN_INFO;
@@ -549,7 +523,7 @@ void CEpgDBUtil::AddContent(EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* 
 	}
 }
 
-void CEpgDBUtil::AddComponent(EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* component)
+void CEpgDBUtil::AddComponent(EVENT_INFO* eventInfo, const AribDescriptor::CDescriptor* component)
 {
 	if( eventInfo->componentInfo == NULL ){
 		eventInfo->componentInfo = new EPG_COMPONENT_INFO;
@@ -569,12 +543,12 @@ void CEpgDBUtil::AddComponent(EVENT_INFO* eventInfo, AribDescriptor::CDescriptor
 	}
 }
 
-BOOL CEpgDBUtil::AddAudioComponent(EVENT_INFO* eventInfo, vector<AribDescriptor::CDescriptor*>* descriptorList)
+BOOL CEpgDBUtil::AddAudioComponent(EVENT_INFO* eventInfo, const vector<AribDescriptor::CDescriptor>* descriptorList)
 {
 	{
 		WORD listSize = 0;
 		for( size_t i=0; i<descriptorList->size(); i++ ){
-			if( (*descriptorList)[i]->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::audio_component_descriptor ){
+			if( (*descriptorList)[i].GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::audio_component_descriptor ){
 				listSize++;
 			}
 		}
@@ -589,8 +563,8 @@ BOOL CEpgDBUtil::AddAudioComponent(EVENT_INFO* eventInfo, vector<AribDescriptor:
 		eventInfo->audioInfo->audioList = new EPG_AUDIO_COMPONENT_INFO_DATA[listSize];
 
 		for( size_t i=0, j=0; j<eventInfo->audioInfo->listSize; i++ ){
-			if( (*descriptorList)[i]->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::audio_component_descriptor ){
-				AribDescriptor::CDescriptor* audioComponent = (*descriptorList)[i];
+			if( (*descriptorList)[i].GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::audio_component_descriptor ){
+				const AribDescriptor::CDescriptor* audioComponent = &(*descriptorList)[i];
 				EPG_AUDIO_COMPONENT_INFO_DATA& item = eventInfo->audioInfo->audioList[j++];
 
 				item.stream_content = (BYTE)audioComponent->GetNumber(AribDescriptor::stream_content);
@@ -619,7 +593,7 @@ BOOL CEpgDBUtil::AddAudioComponent(EVENT_INFO* eventInfo, vector<AribDescriptor:
 	return TRUE;
 }
 
-void CEpgDBUtil::AddEventGroup(EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* eventGroup, WORD onid, WORD tsid)
+void CEpgDBUtil::AddEventGroup(EVENT_INFO* eventInfo, const AribDescriptor::CDescriptor* eventGroup, WORD onid, WORD tsid)
 {
 	if( eventInfo->eventGroupInfo == NULL ){
 		eventInfo->eventGroupInfo = new EPG_EVENTGROUP_INFO;
@@ -646,7 +620,7 @@ void CEpgDBUtil::AddEventGroup(EVENT_INFO* eventInfo, AribDescriptor::CDescripto
 	}
 }
 
-void CEpgDBUtil::AddEventRelay(EVENT_INFO* eventInfo, AribDescriptor::CDescriptor* eventGroup, WORD onid, WORD tsid)
+void CEpgDBUtil::AddEventRelay(EVENT_INFO* eventInfo, const AribDescriptor::CDescriptor* eventGroup, WORD onid, WORD tsid)
 {
 	if( eventInfo->eventRelayInfo == NULL ){
 		eventInfo->eventRelayInfo = new EPG_EVENTGROUP_INFO;
@@ -716,32 +690,54 @@ BOOL CEpgDBUtil::CheckSectionAll(const vector<SECTION_FLAG_INFO>& sectionList)
 	return TRUE;
 }
 
+EPG_SECTION_STATUS CEpgDBUtil::GetSectionStatusService(
+	WORD originalNetworkID,
+	WORD transportStreamID,
+	WORD serviceID,
+	BOOL l_eitFlag
+	)
+{
+	CBlockLock lock(&this->dbLock);
+
+	map<ULONGLONG, SERVICE_EVENT_INFO>::const_iterator itr =
+		this->serviceEventMap.find(_Create64Key(originalNetworkID, transportStreamID, serviceID));
+	if( itr != this->serviceEventMap.end() ){
+		if( l_eitFlag ){
+			//L-EITの状況
+			if( itr->second.lastTableID != 0 && itr->second.lastTableID <= 0x4F ){
+				return CheckSectionAll(itr->second.sectionList) ? EpgLEITAll : EpgNeedData;
+			}
+		}else{
+			//H-EITの状況
+			if( itr->second.lastTableID > 0x4F ){
+				//拡張情報がない場合も「たまった」とみなす
+				BOOL extFlag = itr->second.lastTableIDExt == 0 || CheckSectionAll(itr->second.sectionExtList);
+				return CheckSectionAll(itr->second.sectionList) ? (extFlag ? EpgHEITAll : EpgBasicAll) : (extFlag ? EpgExtendAll : EpgNeedData);
+			}
+		}
+	}
+	return EpgNoData;
+}
+
 EPG_SECTION_STATUS CEpgDBUtil::GetSectionStatus(BOOL l_eitFlag)
 {
 	CBlockLock lock(&this->dbLock);
 
 	EPG_SECTION_STATUS status = EpgNoData;
-	BOOL hasDataFlag = FALSE;
-
-	BOOL basicFlag = TRUE;
-	BOOL extFlag = TRUE;
-	BOOL leitFlag = TRUE;
 
 	map<ULONGLONG, SERVICE_EVENT_INFO>::iterator itr;
 	for( itr = this->serviceEventMap.begin(); itr != this->serviceEventMap.end(); itr++ ){
-		if( l_eitFlag == TRUE ){
-			//L-EITの状況
-			if( itr->second.lastTableID != 0 && itr->second.lastTableID <= 0x4F ){
-				hasDataFlag = TRUE;
-				if( CheckSectionAll(itr->second.sectionList) == FALSE ){
-					leitFlag = FALSE;
+		EPG_SECTION_STATUS s = GetSectionStatusService((WORD)(itr->first >> 32), (WORD)(itr->first >> 16), (WORD)itr->first, l_eitFlag);
+		if( s != EpgNoData ){
+			if( status == EpgNoData ){
+				status = l_eitFlag ? EpgLEITAll : EpgHEITAll;
+			}
+			if( l_eitFlag ){
+				if( s == EpgNeedData ){
+					status = EpgNeedData;
 					break;
 				}
-			}
-		}else{
-			//H-EITの状況
-			if( itr->second.lastTableID > 0x4F ){
-				hasDataFlag = TRUE;
+			}else{
 				//サービスリストあるなら映像サービスのみ対象
 				map<ULONGLONG, BYTE>::iterator itrType;
 				itrType = this->serviceList.find(itr->first);
@@ -750,52 +746,21 @@ EPG_SECTION_STATUS CEpgDBUtil::GetSectionStatus(BOOL l_eitFlag)
 						continue;
 					}
 				}
-				//Basic
-				if( CheckSectionAll(itr->second.sectionList) == FALSE ){
-					basicFlag = FALSE;
-				}
-				//Ext
-				if( itr->second.lastTableIDExt != 0 ){
-					if( CheckSectionAll(itr->second.sectionExtList) == FALSE ){
-						extFlag = FALSE;
-					}
-				}
-				if( basicFlag == FALSE && extFlag == FALSE ){
+				if( s == EpgNeedData || s == EpgExtendAll && status == EpgBasicAll || s == EpgBasicAll && status == EpgExtendAll ){
+					status = EpgNeedData;
 					break;
+				}
+				if( status == EpgHEITAll ){
+					status = s;
 				}
 			}
 		}
 	}
 
-	if( hasDataFlag == FALSE ){
-		status = EpgNoData;
-	}else if( l_eitFlag == TRUE ){
-		if( leitFlag == TRUE ){
-//			OutputDebugString(L"EpgLEITAll\r\n");
-			status = EpgLEITAll;
-		}else{
-//			OutputDebugString(L"EpgNeedData\r\n");
-			status = EpgNeedData;
-		}
-	}else{
-		if( basicFlag == TRUE && extFlag == TRUE ){
-//			OutputDebugString(L"EpgHEITAll\r\n");
-			status = EpgHEITAll;
-		}else if( basicFlag == TRUE ){
-//			OutputDebugString(L"EpgBasicAll\r\n");
-			status = EpgBasicAll;
-		}else if( extFlag == TRUE ){
-//			OutputDebugString(L"EpgExtendAll\r\n");
-			status = EpgExtendAll;
-		}else{
-//			OutputDebugString(L"EpgNeedData\r\n");
-			status = EpgNeedData;
-		}
-	}
 	return status;
 }
 
-BOOL CEpgDBUtil::AddServiceList(CNITTable* nit)
+BOOL CEpgDBUtil::AddServiceList(const CNITTable* nit)
 {
 	if( nit == NULL ){
 		return FALSE;
@@ -805,8 +770,8 @@ BOOL CEpgDBUtil::AddServiceList(CNITTable* nit)
 	wstring network_nameW = L"";
 
 	for( size_t i=0; i<nit->descriptorList.size(); i++ ){
-		if( nit->descriptorList[i]->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::network_name_descriptor ){
-			AribDescriptor::CDescriptor* networkName = nit->descriptorList[i];
+		if( nit->descriptorList[i].GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::network_name_descriptor ){
+			const AribDescriptor::CDescriptor* networkName = &nit->descriptorList[i];
 			DWORD srcSize;
 			const char* src = networkName->GetStringOrEmpty(AribDescriptor::d_char, &srcSize);
 			if( srcSize > 0 ){
@@ -819,17 +784,16 @@ BOOL CEpgDBUtil::AddServiceList(CNITTable* nit)
 	}
 
 	for( size_t i=0; i<nit->TSInfoList.size(); i++ ){
-		CNITTable::TS_INFO_DATA* tsInfo = nit->TSInfoList[i];
+		const CNITTable::TS_INFO_DATA* tsInfo = &nit->TSInfoList[i];
 		//サービス情報更新用
-		DWORD key = ((DWORD)tsInfo->original_network_id) <<16 | tsInfo->transport_stream_id;
 		map<DWORD, DB_TS_INFO>::iterator itrFind;
-		itrFind = this->serviceInfoList.find(key);
+		itrFind = this->serviceInfoList.find((DWORD)tsInfo->original_network_id << 16 | tsInfo->transport_stream_id);
 		if( itrFind != this->serviceInfoList.end() ){
 			itrFind->second.network_name = network_nameW;
 		}
 
 		for( size_t j=0; j<tsInfo->descriptorList.size(); j++ ){
-			AribDescriptor::CDescriptor* desc = tsInfo->descriptorList[j];
+			const AribDescriptor::CDescriptor* desc = &tsInfo->descriptorList[j];
 			if( desc->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::service_list_descriptor ){
 				AribDescriptor::CDescriptor::CLoopPointer lp;
 				if( desc->EnterLoop(lp) ){
@@ -874,14 +838,14 @@ BOOL CEpgDBUtil::AddServiceList(CNITTable* nit)
 	return TRUE;
 }
 
-BOOL CEpgDBUtil::AddServiceList(WORD TSID, CSITTable* sit)
+BOOL CEpgDBUtil::AddServiceList(WORD TSID, const CSITTable* sit)
 {
 	CBlockLock lock(&this->dbLock);
 
 	WORD ONID = 0xFFFF;
 	for( size_t i=0; i<sit->descriptorList.size(); i++ ){
-		if( sit->descriptorList[i]->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::network_identification_descriptor ){
-			ONID = (WORD)sit->descriptorList[i]->GetNumber(AribDescriptor::network_id);
+		if( sit->descriptorList[i].GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::network_identification_descriptor ){
+			ONID = (WORD)sit->descriptorList[i].GetNumber(AribDescriptor::network_id);
 		}
 	}
 	if(ONID == 0xFFFF){
@@ -900,11 +864,11 @@ BOOL CEpgDBUtil::AddServiceList(WORD TSID, CSITTable* sit)
 			DB_SERVICE_INFO item;
 			item.original_network_id = ONID;
 			item.transport_stream_id = TSID;
-			item.service_id = sit->serviceLoopList[i]->service_id;
+			item.service_id = sit->serviceLoopList[i].service_id;
 
-			for( size_t j=0; j<sit->serviceLoopList[i]->descriptorList.size(); j++ ){
-				if( sit->serviceLoopList[i]->descriptorList[j]->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::service_descriptor ){
-					AribDescriptor::CDescriptor* service = sit->serviceLoopList[i]->descriptorList[j];
+			for( size_t j=0; j<sit->serviceLoopList[i].descriptorList.size(); j++ ){
+				if( sit->serviceLoopList[i].descriptorList[j].GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::service_descriptor ){
+					const AribDescriptor::CDescriptor* service = &sit->serviceLoopList[i].descriptorList[j];
 					CARIB8CharDecode arib;
 					string service_provider_name = "";
 					string service_name = "";
@@ -933,7 +897,7 @@ BOOL CEpgDBUtil::AddServiceList(WORD TSID, CSITTable* sit)
 	return TRUE;
 }
 
-BOOL CEpgDBUtil::AddSDT(CSDTTable* sdt)
+BOOL CEpgDBUtil::AddSDT(const CSDTTable* sdt)
 {
 	CBlockLock lock(&this->dbLock);
 
@@ -949,11 +913,11 @@ BOOL CEpgDBUtil::AddSDT(CSDTTable* sdt)
 			DB_SERVICE_INFO item;
 			item.original_network_id = sdt->original_network_id;
 			item.transport_stream_id = sdt->transport_stream_id;
-			item.service_id = sdt->serviceInfoList[i]->service_id;
+			item.service_id = sdt->serviceInfoList[i].service_id;
 
-			for( size_t j=0; j<sdt->serviceInfoList[i]->descriptorList.size(); j++ ){
-				if( sdt->serviceInfoList[i]->descriptorList[j]->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::service_descriptor ){
-					AribDescriptor::CDescriptor* service = sdt->serviceInfoList[i]->descriptorList[j];
+			for( size_t j=0; j<sdt->serviceInfoList[i].descriptorList.size(); j++ ){
+				if( sdt->serviceInfoList[i].descriptorList[j].GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::service_descriptor ){
+					const AribDescriptor::CDescriptor* service = &sdt->serviceInfoList[i].descriptorList[j];
 					CARIB8CharDecode arib;
 					string service_provider_name = "";
 					string service_name = "";
@@ -979,16 +943,16 @@ BOOL CEpgDBUtil::AddSDT(CSDTTable* sdt)
 	}else{
 		for(size_t i=0; i<sdt->serviceInfoList.size(); i++ ){
 			map<WORD,DB_SERVICE_INFO>::iterator itrS;
-			itrS = itrTS->second.serviceList.find(sdt->serviceInfoList[i]->service_id);
+			itrS = itrTS->second.serviceList.find(sdt->serviceInfoList[i].service_id);
 			if( itrS == itrTS->second.serviceList.end()){
 				DB_SERVICE_INFO item;
 				item.original_network_id = sdt->original_network_id;
 				item.transport_stream_id = sdt->transport_stream_id;
-				item.service_id = sdt->serviceInfoList[i]->service_id;
+				item.service_id = sdt->serviceInfoList[i].service_id;
 
-				for( size_t j=0; j<sdt->serviceInfoList[i]->descriptorList.size(); j++ ){
-					if( sdt->serviceInfoList[i]->descriptorList[j]->GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::service_descriptor ){
-						AribDescriptor::CDescriptor* service = sdt->serviceInfoList[i]->descriptorList[j];
+				for( size_t j=0; j<sdt->serviceInfoList[i].descriptorList.size(); j++ ){
+					if( sdt->serviceInfoList[i].descriptorList[j].GetNumber(AribDescriptor::descriptor_tag) == AribDescriptor::service_descriptor ){
+						const AribDescriptor::CDescriptor* service = &sdt->serviceInfoList[i].descriptorList[j];
 						CARIB8CharDecode arib;
 						string service_provider_name = "";
 						string service_name = "";
@@ -1027,12 +991,10 @@ BOOL CEpgDBUtil::GetEpgInfoList(
 	WORD transportStreamID,
 	WORD serviceID,
 	DWORD* epgInfoListSize,
-	EPG_EVENT_INFO** epgInfoList
+	EPG_EVENT_INFO** epgInfoList_
 	)
 {
 	CBlockLock lock(&this->dbLock);
-
-	SAFE_DELETE_ARRAY(this->epgInfoList);
 
 	ULONGLONG key = _Create64Key(originalNetworkID, transportStreamID, serviceID);
 
@@ -1042,7 +1004,7 @@ BOOL CEpgDBUtil::GetEpgInfoList(
 		return FALSE;
 	}
 
-	EVENT_INFO* evtPF[2] = {itr->second.nowEvent, itr->second.nextEvent};
+	EVENT_INFO* evtPF[2] = {itr->second.nowEvent.get(), itr->second.nextEvent.get()};
 	if( evtPF[0] == NULL || evtPF[1] && evtPF[0]->event_id > evtPF[1]->event_id ){
 		std::swap(evtPF[0], evtPF[1]);
 	}
@@ -1053,9 +1015,9 @@ BOOL CEpgDBUtil::GetEpgInfoList(
 		return FALSE;
 	}
 	*epgInfoListSize = (DWORD)listSize;
-	this->epgInfoList = new EPG_EVENT_INFO[*epgInfoListSize];
+	this->epgInfoList.reset(new EPG_EVENT_INFO[*epgInfoListSize]);
 
-	map<WORD, EVENT_INFO*>::iterator itrEvt = itr->second.eventMap.begin();
+	map<WORD, std::unique_ptr<EVENT_INFO>>::iterator itrEvt = itr->second.eventMap.begin();
 	DWORD count = 0;
 	while( evtPF[0] || itrEvt != itr->second.eventMap.end() ){
 		EPG_EXTENDED_EVENT_INFO* extInfoSchedule = NULL;
@@ -1077,18 +1039,18 @@ BOOL CEpgDBUtil::GetEpgInfoList(
 				}
 			}else{
 				//[schedule]を出力
-				evt = itrEvt->second;
+				evt = itrEvt->second.get();
 			}
 			itrEvt++;
 		}
-		CopyEpgInfo(this->epgInfoList+count, evt);
+		CopyEpgInfo(this->epgInfoList.get()+count, evt);
 		if( extInfoSchedule ){
 			this->epgInfoList[count].extInfo = extInfoSchedule;
 		}
 		count++;
 	}
 
-	*epgInfoList = this->epgInfoList;
+	*epgInfoList_ = this->epgInfoList.get();
 
 	return TRUE;
 }
@@ -1115,7 +1077,7 @@ BOOL CEpgDBUtil::EnumEpgInfoList(
 	if( itr == this->serviceEventMap.end() ){
 		return FALSE;
 	}
-	const EVENT_INFO* evtPF[2] = {itr->second.nowEvent, itr->second.nextEvent};
+	const EVENT_INFO* evtPF[2] = {itr->second.nowEvent.get(), itr->second.nextEvent.get()};
 	if( evtPF[0] == NULL || evtPF[1] && evtPF[0]->event_id > evtPF[1]->event_id ){
 		std::swap(evtPF[0], evtPF[1]);
 	}
@@ -1131,7 +1093,7 @@ BOOL CEpgDBUtil::EnumEpgInfoList(
 
 	BYTE info[__alignof(EPG_EVENT_INFO) + sizeof(EPG_EVENT_INFO) * 32];
 
-	map<WORD, EVENT_INFO*>::iterator itrEvt = itr->second.eventMap.begin();
+	map<WORD, std::unique_ptr<EVENT_INFO>>::iterator itrEvt = itr->second.eventMap.begin();
 	DWORD count = 0;
 	while( evtPF[0] || itrEvt != itr->second.eventMap.end() ){
 		//デストラクタを呼ばないよう領域だけ割り当て(POD構造体だけなので無問題)、マスターを直接参照して構築する
@@ -1154,7 +1116,7 @@ BOOL CEpgDBUtil::EnumEpgInfoList(
 				}
 			}else{
 				//[schedule]を出力
-				evt = itrEvt->second;
+				evt = itrEvt->second.get();
 			}
 			itrEvt++;
 		}
@@ -1228,15 +1190,13 @@ void CEpgDBUtil::CopyEpgInfo(EPG_EVENT_INFO* destInfo, EVENT_INFO* srcInfo)
 // serviceList				[OUT]サービス情報のリスト（DLL内で自動的にdeleteする。次に取得を行うまで有効）
 void CEpgDBUtil::GetServiceListEpgDB(
 	DWORD* serviceListSize,
-	SERVICE_INFO** serviceList
+	SERVICE_INFO** serviceList_
 	)
 {
 	CBlockLock lock(&this->dbLock);
 
-	SAFE_DELETE_ARRAY(this->serviceDBList);
-
 	*serviceListSize = (DWORD)this->serviceEventMap.size();
-	this->serviceDBList = new SERVICE_INFO[*serviceListSize];
+	this->serviceDBList.reset(new SERVICE_INFO[*serviceListSize]);
 
 	DWORD count = 0;
 	map<ULONGLONG, SERVICE_EVENT_INFO>::iterator itr;
@@ -1282,7 +1242,7 @@ void CEpgDBUtil::GetServiceListEpgDB(
 		count++;
 	}
 
-	*serviceList = this->serviceDBList;
+	*serviceList_ = this->serviceDBList.get();
 }
 
 //指定サービスの現在or次のEPG情報を取得する
@@ -1297,12 +1257,12 @@ BOOL CEpgDBUtil::GetEpgInfo(
 	WORD transportStreamID,
 	WORD serviceID,
 	BOOL nextFlag,
-	EPG_EVENT_INFO** epgInfo
+	EPG_EVENT_INFO** epgInfo_
 	)
 {
 	CBlockLock lock(&this->dbLock);
 
-	SAFE_DELETE(this->epgInfo);
+	this->epgInfo.reset();
 
 	ULONGLONG key = _Create64Key(originalNetworkID, transportStreamID, serviceID);
 
@@ -1313,18 +1273,18 @@ BOOL CEpgDBUtil::GetEpgInfo(
 	}
 
 	if( itr->second.nowEvent != NULL && nextFlag == FALSE ){
-		this->epgInfo = new EPG_EVENT_INFO;
-		CopyEpgInfo(this->epgInfo, itr->second.nowEvent);
-		*epgInfo = this->epgInfo;
+		this->epgInfo.reset(new EPG_EVENT_INFO);
+		CopyEpgInfo(this->epgInfo.get(), itr->second.nowEvent.get());
+		*epgInfo_ = this->epgInfo.get();
 	}else if( itr->second.nextEvent != NULL && nextFlag == TRUE ){
-		this->epgInfo = new EPG_EVENT_INFO;
-		CopyEpgInfo(this->epgInfo, itr->second.nextEvent);
-		*epgInfo = this->epgInfo;
+		this->epgInfo.reset(new EPG_EVENT_INFO);
+		CopyEpgInfo(this->epgInfo.get(), itr->second.nextEvent.get());
+		*epgInfo_ = this->epgInfo.get();
 	}
 	if( this->epgInfo != NULL ){
-		if( (*epgInfo)->extInfo == NULL && itr->second.eventMap.count((*epgInfo)->event_id) && itr->second.eventMap[(*epgInfo)->event_id]->extInfo ){
-			(*epgInfo)->extInfo = new EPG_EXTENDED_EVENT_INFO;
-			(*epgInfo)->extInfo->DeepCopy(*itr->second.eventMap[(*epgInfo)->event_id]->extInfo);
+		if( (*epgInfo_)->extInfo == NULL && itr->second.eventMap.count((*epgInfo_)->event_id) && itr->second.eventMap[(*epgInfo_)->event_id]->extInfo ){
+			(*epgInfo_)->extInfo = new EPG_EXTENDED_EVENT_INFO;
+			(*epgInfo_)->extInfo->DeepCopy(*itr->second.eventMap[(*epgInfo_)->event_id]->extInfo);
 		}
 		return TRUE;
 	}
@@ -1346,12 +1306,12 @@ BOOL CEpgDBUtil::SearchEpgInfo(
 	WORD serviceID,
 	WORD eventID,
 	BYTE pfOnlyFlag,
-	EPG_EVENT_INFO** epgInfo
+	EPG_EVENT_INFO** epgInfo_
 	)
 {
 	CBlockLock lock(&this->dbLock);
 
-	SAFE_DELETE(this->searchEpgInfo);
+	this->searchEpgInfo.reset();
 
 	ULONGLONG key = _Create64Key(originalNetworkID, transportStreamID, serviceID);
 
@@ -1362,28 +1322,28 @@ BOOL CEpgDBUtil::SearchEpgInfo(
 	}
 
 	if( itr->second.nowEvent != NULL && itr->second.nowEvent->event_id == eventID ){
-		this->searchEpgInfo = new EPG_EVENT_INFO;
-		CopyEpgInfo(this->searchEpgInfo, itr->second.nowEvent);
-		*epgInfo = this->searchEpgInfo;
+		this->searchEpgInfo.reset(new EPG_EVENT_INFO);
+		CopyEpgInfo(this->searchEpgInfo.get(), itr->second.nowEvent.get());
+		*epgInfo_ = this->searchEpgInfo.get();
 	}else if( itr->second.nextEvent != NULL && itr->second.nextEvent->event_id == eventID ){
-		this->searchEpgInfo = new EPG_EVENT_INFO;
-		CopyEpgInfo(this->searchEpgInfo, itr->second.nextEvent);
-		*epgInfo = this->searchEpgInfo;
+		this->searchEpgInfo.reset(new EPG_EVENT_INFO);
+		CopyEpgInfo(this->searchEpgInfo.get(), itr->second.nextEvent.get());
+		*epgInfo_ = this->searchEpgInfo.get();
 	}
 	if( this->searchEpgInfo != NULL ){
-		if( (*epgInfo)->extInfo == NULL && itr->second.eventMap.count(eventID) && itr->second.eventMap[eventID]->extInfo ){
-			(*epgInfo)->extInfo = new EPG_EXTENDED_EVENT_INFO;
-			(*epgInfo)->extInfo->DeepCopy(*itr->second.eventMap[eventID]->extInfo);
+		if( (*epgInfo_)->extInfo == NULL && itr->second.eventMap.count(eventID) && itr->second.eventMap[eventID]->extInfo ){
+			(*epgInfo_)->extInfo = new EPG_EXTENDED_EVENT_INFO;
+			(*epgInfo_)->extInfo->DeepCopy(*itr->second.eventMap[eventID]->extInfo);
 		}
 		return TRUE;
 	}
 	if( pfOnlyFlag == 0 ){
-		map<WORD, EVENT_INFO*>::iterator itrEvent;
+		map<WORD, std::unique_ptr<EVENT_INFO>>::iterator itrEvent;
 		itrEvent = itr->second.eventMap.find(eventID);
 		if( itrEvent != itr->second.eventMap.end() ){
-			this->searchEpgInfo = new EPG_EVENT_INFO;
-			CopyEpgInfo(this->searchEpgInfo, itrEvent->second);
-			*epgInfo = this->searchEpgInfo;
+			this->searchEpgInfo.reset(new EPG_EVENT_INFO);
+			CopyEpgInfo(this->searchEpgInfo.get(), itrEvent->second.get());
+			*epgInfo_ = this->searchEpgInfo.get();
 			return TRUE;
 		}
 	}

@@ -19,6 +19,14 @@ using std::map;
 using std::multimap;
 using std::vector;
 
+// 'identifier': unreferenced formal parameter
+#pragma warning(disable : 4100)
+
+#if defined(_MSC_VER) && _MSC_VER < 1900
+// 'class': assignment operator was implicitly defined as deleted
+#pragma warning(disable : 4512)
+#endif
+
 // “KØ‚Å‚È‚¢NULL‚ÌŒŸo—p
 //#undef NULL
 //#define NULL nullptr

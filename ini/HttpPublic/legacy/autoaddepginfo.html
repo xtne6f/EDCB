@@ -1,0 +1,163 @@
+dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
+
+ct=[=[
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link rel="stylesheet" type="text/css" href="default.css">
+<title>EpgTimer</title>
+</head>
+<body>
+]=]
+
+edcb.htmlEscape=15
+aa={dataID=tonumber(mg.get_var(mg.request_info.query_string,'id')) or 0}
+if aa.dataID==0 then
+  ct=ct..'<h1>EPG予約 新規条件追加</h1>\n<div id="main">\n'
+  aa.searchInfo={
+    andKey='',
+    notKey='',
+    regExpFlag=false,
+    titleOnlyFlag=false,
+    aimaiFlag=false,
+    notContetFlag=false,
+    freeCAFlag=0,
+    chkRecEnd=false,
+    chkRecDay=6,
+    chkDurationMin=0,
+    chkDurationMax=0,
+    contentList={},
+    dateList={},
+    serviceList={}
+  }
+else
+  ct=ct..'<h1>EPG予約 条件変更</h1>\n<div id="main">\n'
+  for i,v in ipairs(edcb.EnumAutoAdd()) do
+    if v.dataID==aa.dataID then
+      aa=v
+      break
+    end
+  end
+end
+if aa.searchInfo then
+  si=aa.searchInfo
+  ct=ct..'  <dl>\n'
+    ..'    <dt>プリセット</dt><dd>\n'
+    ..'<form action="autoaddepginfo.html"><div>\n'
+    ..'<input type="hidden" name="id" value="'..aa.dataID..'"><select name="presetID">\n'
+  presetID=tonumber(mg.get_var(mg.request_info.query_string,'presetID')) or 65535
+  if aa.dataID==0 and presetID==65535 then
+    presetID=0
+  end
+  preset=false
+  rs=aa.recSetting
+  for i,v in ipairs(edcb.EnumRecPresetInfo()) do
+    if v.id==presetID then
+      preset=true
+      rs=v.recSetting
+      ct=ct..'<option value="'..v.id..'" selected="selected">'..v.name..'\n'
+    else
+      rs=rs or v.recSetting
+      ct=ct..'<option value="'..v.id..'">'..v.name..'\n'
+    end
+  end
+  if aa.dataID~=0 then
+    ct=ct..'<option value="65535"'..(preset and '' or ' selected="selected"')..'>予約時\n'
+  end
+  ct=ct..'</select> <input type="submit" value="録画設定にロード"></div></form></dd>\n'
+    ..'    <dt>条件</dt><dd>\n'
+    ..'<form method="POST" action="autoaddepgaddchgkey.html?id='..aa.dataID..'">\n'
+    ..'<div><input type="hidden" name="presetID" value="'..(preset and presetID or 65535)..'">\n'
+    ..'<input type="hidden" name="ctok" value="'..CsrfToken()..'"></div>\n'
+    ..'<div class="section"><h2>検索条件</h2>\n'
+    ..'検索キーワード<input type="text" name="andKey" value="'..si.andKey..'" size="25"><br>\n'
+    ..'NOTキーワード<input type="text" name="notKey" value="'..si.notKey..'" size="25"><br>\n'
+    ..'<input type="checkbox" name="regExpFlag" value="1"'..(si.regExpFlag and ' checked="checked"' or '')..'>正規表現\n'
+    ..'<input type="checkbox" name="aimaiFlag" value="1"'..(si.aimaiFlag and ' checked="checked"' or '')..'>あいまい検索モード\n'
+    ..'<input type="checkbox" name="titleOnlyFlag" value="1"'..(si.titleOnlyFlag and ' checked="checked"' or '')..'>番組名のみ検索対象にする<br><br>\n'
+    ..'ジャンル絞り込み<br><select name="contentList" multiple size="5">\n'
+  for i=0,15 do
+    nibble1=edcb.GetGenreName(i*256+255)
+    if nibble1~='' then
+      ct=ct..'<option value="'..(i*256+255)..'"'
+      for j,v in ipairs(si.contentList) do
+        if v.content_nibble==i*256+255 then
+          ct=ct..' selected="selected"'
+          break
+        end
+      end
+      ct=ct..'>'..nibble1..'\n'
+      for j=0,15 do
+        nibble2=edcb.GetGenreName(i*256+j)
+        if nibble2~='' then
+          ct=ct..'<option value="'..(i*256+j)..'"'
+          for k,v in ipairs(si.contentList) do
+            if v.content_nibble==i*256+j then
+              ct=ct..' selected="selected"'
+              break
+            end
+          end
+          ct=ct..'>　'..nibble2..'\n'
+        end
+      end
+    end
+  end
+  ct=ct..'</select><br>\n'
+    ..'<input type="checkbox" name="notContetFlag" value="1"'..(si.notContetFlag and ' checked="checked"' or '')..'>NOT扱い<br><br>\n'
+    ..'サービス絞り込み<br><select name="serviceList" multiple size="5">\n'
+  for i,v in ipairs(edcb.GetChDataList()) do
+    ct=ct..'<option value="'..v.onid..'-'..v.tsid..'-'..v.sid..'"'
+    for j,w in ipairs(si.serviceList) do
+      if w.onid==v.onid and w.tsid==v.tsid and w.sid==v.sid then
+        ct=ct..' selected="selected"'
+        break
+      end
+    end
+    ct=ct..'>('..(
+      v.onid==4 and 'BS' or
+      v.onid==6 and 'CS1' or
+      v.onid==7 and 'CS2' or
+      v.onid==10 and 'スカパーHD' or
+      (v.onid==1 or v.onid==3) and 'スカパーSD' or
+      (0x7880<=v.onid and v.onid<=0x7FE8) and '地デジ' or 'その他')..') '..v.serviceName..'\n'
+  end
+  ct=ct..'</select><br><br><br>\n'
+    ..'時間絞り込み<input type="text" name="dateList" value="'
+  for i,v in ipairs(si.dateList) do
+    ct=ct..(i==1 and '' or ',')
+      ..({'日','月','火','水','木','金','土',})[v.startDayOfWeek%7+1]..'-'..v.startHour..':'..v.startMin..'-'
+      ..({'日','月','火','水','木','金','土',})[v.endDayOfWeek%7+1]..'-'..v.endHour..':'..v.endMin
+  end
+  ct=ct..'" size="25"><br>\n書式：[日～土]-HH:MM-[日～土]-HH:MM, （例：日-23:00-月-5:00,水-3:00-水-5:00）<br><br><br>\n'
+    ..'スクランブル放送:\n<select name="freeCAFlag">\n'
+    ..'<option value="0"'..(si.freeCAFlag==0 and ' selected="selected"' or '')..'>無料、有料番組を対象とする'
+    ..'<option value="1"'..(si.freeCAFlag==1 and ' selected="selected"' or '')..'>無料番組を対象とする'
+    ..'<option value="2"'..(si.freeCAFlag==2 and ' selected="selected"' or '')..'>有料番組を対象とする'
+    ..'</select><br><br>\n'
+  ct=ct..'番組長で絞り込み: <input type="text" name="chkDurationMin" value="'..(si.chkDurationMin or 0)..'" size="5">分以上 '
+    ..'<input type="text" name="chkDurationMax" value="'..(si.chkDurationMax or 0)..'" size="5">分以下<br>\n'
+    ..'※それぞれ0分で絞り込み無し<br><br>\n'
+  ct=ct..'<input type="checkbox" name="chkRecEnd" value="1"'..(si.chkRecEnd and ' checked="checked"' or '')..'>同一番組名の録画結果があれば無効で登録する<br>\n'
+    ..'確認対象期間<input type="text" name="chkRecDay" value="'..si.chkRecDay..'" size="5">日前まで<br>\n'
+    ..'</div><div class="section"><h2>録画設定</h2>\n'..RecSettingTemplate(rs)..'</div>\n'
+    ..'<div><input type="submit" value="'..(aa.dataID==0 and '追加' or '変更')..'"></div></form></dd>\n'
+
+  if aa.dataID~=0 then
+    ct=ct..'    <dt>-</dt><dd>\n'
+      ..'<form method="POST" action="autoaddepgdelkey.html?id='..aa.dataID..'"><div>\n'
+      ..'<input type="hidden" name="ctok" value="'..CsrfToken()..'">\n'
+      ..'<input type="submit" value="削除"></div></form></dd>\n'
+  end
+  ct=ct..'  </dl>\n'
+end
+
+ct=ct..[=[
+</div>
+<div id="footer">
+  <a href="autoaddepg.html">EPG予約一覧へ</a>
+</div>
+</body>
+</html>
+]=]
+mg.write(Response(200, 'text/html', 'utf-8', #ct)..'\r\n', ct)

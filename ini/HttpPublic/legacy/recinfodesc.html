@@ -1,0 +1,57 @@
+dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
+
+ct=[=[
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link rel="stylesheet" type="text/css" href="default.css">
+<title>EpgTimer</title>
+</head>
+<body>
+<h1>録画済み詳細</h1>
+<div id="main">
+]=]
+
+id=tonumber(mg.get_var(mg.request_info.query_string,'id')) or 0
+w=edcb.GetRecFileInfo(id)
+edcb.htmlEscape=15
+v=edcb.GetRecFileInfo(id)
+if v then
+  if w and NativeToDocumentPath(w.recFilePath) then
+    for i,ext in ipairs({'.mp4','.webm',''}) do
+      edcb.htmlEscape=0
+      f=io.open(edcb.Convert('cp932', 'utf-8', w.recFilePath..ext), 'rb')
+      edcb.htmlEscape=15
+      if f then
+        f:close()
+        video=PathToRoot()..NativeToDocumentPath(w.recFilePath)..ext
+        break
+      end
+    end
+  end
+  ct=ct..'  <dl>\n'
+    ..'    <dt>番組名</dt><dd>'..FormatTimeAndDuration(os.time(v.startTime), v.durationSecond)..'<br>'..v.serviceName..'<br>'..v.title..'</dd>\n'
+    ..'    <dt>結果</dt><dd>'..v.comment..'</dd>\n'
+    ..'    <dt>ドロップ</dt><dd>'..v.drops..'</dd>\n'
+    ..'    <dt>スクランブル</dt><dd>'..v.scrambles..'</dd>\n'
+    ..(video and '    <dt>ファイル</dt><dd><a href="'..mg.url_encode(video):gsub('%%2f','/')..'">'..edcb.Convert('utf-8', 'utf-8', video)..'</a> [<a href="'
+       ..mg.url_encode(video:gsub('[^\\/]*$','')..'chunk.lua'):gsub('%%2f','/')..'?0='..mg.url_encode(video:match('[^\\/]*$'))..'">chunk.lua</a>]</dd>\n' or '')
+    ..(#v.programInfo>0 and '    <dt>番組情報</dt><dd>\n'..string.gsub(v.programInfo, '\r?\n', '<br>\n')..'</dd>\n' or '')
+    ..(#v.errInfo>0 and '    <dt>エラーログ</dt><dd>\n'..string.gsub(v.errInfo, '\r?\n', '<br>\n')..'</dd>\n' or '')
+    ..'    <dt>-</dt><dd>\n'
+    ..'<form method="POST" action="recinfodel.html?id='..v.id..'"><div>\n'
+    ..'<input type="hidden" name="ctok" value="'..CsrfToken()..'">\n'
+    ..'<input type="submit" value="削除"></div></form></dd>\n'
+    ..'  </dl>\n'
+end
+
+ct=ct..[=[
+</div>
+<div id="footer">
+  <a href="recinfo.html">録画済み一覧へ</a>
+</div>
+</body>
+</html>
+]=]
+mg.write(Response(200, 'text/html', 'utf-8', #ct)..'\r\n', ct)

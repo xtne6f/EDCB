@@ -93,14 +93,10 @@ public:
 	WORD original_network_id;
 	BYTE data_type;
 	WORD descriptors_loop_length;
-	vector<AribDescriptor::CDescriptor*> descriptorList;
-	WORD data_module_byteSize;
-	BYTE* data_module_byte;
+	vector<AribDescriptor::CDescriptor> descriptorList;
+	vector<BYTE> data_module_byte;
 
 public:
-	CCDTTable(void);
-	~CCDTTable(void);
-
 	BOOL Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize );
 
 protected:

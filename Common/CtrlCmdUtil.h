@@ -297,16 +297,17 @@ inline BOOL ReadVALUE( T* val, const BYTE* buff, DWORD buffSize, DWORD* readSize
 }
 
 template<class T>
-BYTE* NewWriteVALUE( const T& val, DWORD& writeSize )
+inline BOOL ReadVALUE( T* val, const std::unique_ptr<BYTE[]>& buff, DWORD buffSize, DWORD* readSize )
+{
+	return ReadVALUE(val, buff.get(), buffSize, readSize);
+}
+
+template<class T>
+std::unique_ptr<BYTE[]> NewWriteVALUE( const T& val, DWORD& writeSize )
 {
 	DWORD buffSize = CtrlCmdUtilImpl_::WriteVALUE(0, NULL, 0, val);
-	BYTE* buff = new BYTE[buffSize];
-	try{
-		CtrlCmdUtilImpl_::WriteVALUE(0, buff, 0, val);
-	}catch( ... ){
-		delete[] buff;
-		throw;
-	}
+	std::unique_ptr<BYTE[]> buff(new BYTE[buffSize]);
+	CtrlCmdUtilImpl_::WriteVALUE(0, buff.get(), 0, val);
 	writeSize = buffSize;
 	return buff;
 }
@@ -324,27 +325,22 @@ inline BOOL ReadVALUE2( WORD ver, T* val, const BYTE* buff, DWORD buffSize, DWOR
 }
 
 template<class T>
-BYTE* NewWriteVALUE2WithVersion( WORD ver, const T& val, DWORD& writeSize )
+std::unique_ptr<BYTE[]> NewWriteVALUE2WithVersion( WORD ver, const T& val, DWORD& writeSize )
 {
 	//2未満のコマンドバージョンは2として扱う
 	ver = max(ver, 2);
 	DWORD buffSize = CtrlCmdUtilImpl_::WriteVALUE(0, NULL, 0, ver) + CtrlCmdUtilImpl_::WriteVALUE(ver, NULL, 0, val);
-	BYTE* buff = new BYTE[buffSize];
-	try{
-		CtrlCmdUtilImpl_::WriteVALUE(ver, buff, CtrlCmdUtilImpl_::WriteVALUE(0, buff, 0, ver), val);
-	}catch( ... ){
-		delete[] buff;
-		throw;
-	}
+	std::unique_ptr<BYTE[]> buff(new BYTE[buffSize]);
+	CtrlCmdUtilImpl_::WriteVALUE(ver, buff.get(), CtrlCmdUtilImpl_::WriteVALUE(0, buff.get(), 0, ver), val);
 	writeSize = buffSize;
 	return buff;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 //旧バージョンコマンド送信用バイナリ作成関数
-BYTE* DeprecatedNewWriteVALUE( const RESERVE_DATA& val, DWORD& writeSize, BYTE* buff = NULL );
-BOOL DeprecatedReadVALUE( RESERVE_DATA* val, const BYTE* buff, DWORD buffSize );
-BOOL DeprecatedReadVALUE( EPG_AUTO_ADD_DATA* val, const BYTE* buff, DWORD buffSize );
-BYTE* DeprecatedNewWriteVALUE( const EPGDB_EVENT_INFO& val, DWORD& writeSize, BYTE* buff = NULL );
+std::unique_ptr<BYTE[]> DeprecatedNewWriteVALUE( const RESERVE_DATA& val, DWORD& writeSize, std::unique_ptr<BYTE[]>&& buff_ = NULL );
+BOOL DeprecatedReadVALUE( RESERVE_DATA* val, const std::unique_ptr<BYTE[]>& buff_, DWORD buffSize );
+BOOL DeprecatedReadVALUE( EPG_AUTO_ADD_DATA* val, const std::unique_ptr<BYTE[]>& buff_, DWORD buffSize );
+std::unique_ptr<BYTE[]> DeprecatedNewWriteVALUE( const EPGDB_EVENT_INFO& val, DWORD& writeSize, std::unique_ptr<BYTE[]>&& buff_ = NULL );
 
 #endif

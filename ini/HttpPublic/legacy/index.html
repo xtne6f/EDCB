@@ -1,0 +1,26 @@
+dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
+
+ct=[=[
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link rel="stylesheet" type="text/css" href="default.css">
+<title>EpgTimer</title>
+</head>
+<body>
+<h1>メニュー</h1>
+<div class="nav">
+  <ul>
+    <li><a href="reserve.html">予約一覧</a></li>
+    <li><a href="recinfo.html">録画済み一覧</a></li>
+    <li><a href="autoaddepg.html">EPG予約一覧</a></li>
+    <li><a href="epg.html">番組表</a></li>
+    <!--<li><a href="addprogres.html">プログラム予約追加(必要なら自作してください)</a></li>-->
+    <li><a href="]=]..PathToRoot()..[=[video/">/video/</a></li>
+  </ul>
+</div>
+</body>
+</html>
+]=]
+mg.write(Response(200, 'text/html', 'utf-8', #ct)..'\r\n', ct)

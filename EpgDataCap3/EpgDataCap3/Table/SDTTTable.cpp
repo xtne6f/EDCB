@@ -3,20 +3,8 @@
 
 #include "../../../Common/EpgTimerUtil.h"
 
-CSDTTTable::CSDTTTable(void)
-{
-}
-
-CSDTTTable::~CSDTTTable(void)
-{
-	Clear();
-}
-
 void CSDTTTable::Clear()
 {
-	for( size_t i=0 ;i<contentInfoList.size(); i++ ){
-		SAFE_DELETE(contentInfoList[i]);
-	}
 	contentInfoList.clear();
 }
 
@@ -52,7 +40,8 @@ BOOL CSDTTTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 		readSize += 12;
 
 		for( BYTE i=0; readSize+7 < (DWORD)section_length+3-4 && i<num_of_contents; i++ ){
-			CONTENT_INFO_DATA* item = new CONTENT_INFO_DATA;
+			contentInfoList.push_back(CONTENT_INFO_DATA());
+			CONTENT_INFO_DATA* item = &contentInfoList.back();
 			item->group = (data[readSize]&0xF0)>>4;
 			item->target_version = ((WORD)data[readSize]&0x0F)<<8 | data[readSize+1];
 			item->new_version = ((WORD)data[readSize+2])<<4 | (data[readSize+3]&0xF0)>>4;
@@ -85,13 +74,10 @@ BOOL CSDTTTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 			if( readSize+descLength <= (DWORD)section_length+3-4 && descLength > 0 ){
 				if( AribDescriptor::CreateDescriptors( data+readSize, descLength, &item->descriptorList, NULL ) == FALSE ){
 					_OutputDebugString( L"++CSDTTTable:: descriptor err" );
-					SAFE_DELETE(item);
 					return FALSE;
 				}
 				readSize+=descLength;
 			}
-
-			contentInfoList.push_back(item);
 		}
 
 	}else{

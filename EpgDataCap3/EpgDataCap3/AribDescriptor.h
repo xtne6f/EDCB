@@ -313,9 +313,8 @@ namespace AribDescriptor
 			std::vector<std::vector<DESCRIPTOR_PROPERTY>>* pl;
 			DWORD index;
 		};
-		CDescriptor();
-		~CDescriptor();
 		void Clear();
+		static DWORD GetDecodeReadSize(const BYTE* data, DWORD dataSize);
 		bool Decode(const BYTE* data, DWORD dataSize, DWORD* decodeReadSize, const PARSER_PAIR* customParserList = NULL);
 		bool EnterLoop(CLoopPointer& lp, DWORD offset = 0) const;
 		bool SetLoopIndex(CLoopPointer& lp, DWORD index) const;
@@ -333,22 +332,37 @@ namespace AribDescriptor
 			union {
 				DWORD n;
 				std::vector<std::vector<DESCRIPTOR_PROPERTY>>* pl;
-				char s[4];
+				char s[sizeof(char*)];
 				char* ps;
-				BYTE b[4];
+				BYTE b[sizeof(BYTE*)];
 				BYTE* pb;
 			};
+			enum {
+				TYPE_N = 0,
+				TYPE_P = 1,
+				TYPE_MASK = 0xFFF,
+				TYPE_S = 0x1000,
+				TYPE_B = 0x2000,
+			};
+			DESCRIPTOR_PROPERTY() : type(TYPE_N) {}
+			~DESCRIPTOR_PROPERTY();
+			DESCRIPTOR_PROPERTY(const DESCRIPTOR_PROPERTY& o);
+			DESCRIPTOR_PROPERTY& operator=(DESCRIPTOR_PROPERTY&& o);
+			DESCRIPTOR_PROPERTY(DESCRIPTOR_PROPERTY&& o) : type(TYPE_N) { *this = std::move(o); }
+			DESCRIPTOR_PROPERTY& operator=(const DESCRIPTOR_PROPERTY& o) { return *this = DESCRIPTOR_PROPERTY(o); }
 		};
-		CDescriptor(const CDescriptor&);
-		CDescriptor& operator=(const CDescriptor&);
-		static void ClearProperty(std::vector<DESCRIPTOR_PROPERTY>* pp);
-		static int DecodeProperty(const BYTE* data, DWORD dataSize, const short** parser, std::vector<DESCRIPTOR_PROPERTY>* pp, DESCRIPTOR_PROPERTY* ppLocal);
-		static DWORD GetOperand(short id, const DESCRIPTOR_PROPERTY* ppLocal);
+		struct LOCAL_PROPERTY {
+			short id;
+			short type;
+			DWORD n;
+		};
+		static int DecodeProperty(const BYTE* data, DWORD dataSize, const short** parser, std::vector<DESCRIPTOR_PROPERTY>* pp, LOCAL_PROPERTY* ppLocal);
+		static DWORD GetOperand(short id, const LOCAL_PROPERTY* ppLocal);
 		static DWORD DecodeNumber(const BYTE* data, DWORD bitSize, DWORD* readSize, DWORD* bitOffset);
 		const DESCRIPTOR_PROPERTY* FindProperty(short id, CLoopPointer lp) const;
 
 		std::vector<DESCRIPTOR_PROPERTY> rootProperty;
 	};
 
-	BOOL CreateDescriptors(BYTE* data, DWORD dataSize, std::vector<CDescriptor*>* descriptorList, DWORD* decodeReadSize, const PARSER_PAIR* customParserList = NULL);
+	BOOL CreateDescriptors(const BYTE* data, DWORD dataSize, std::vector<CDescriptor>* descriptorList, DWORD* decodeReadSize, const PARSER_PAIR* customParserList = NULL);
 }

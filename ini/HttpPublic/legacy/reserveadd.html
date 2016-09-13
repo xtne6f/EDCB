@@ -1,0 +1,100 @@
+dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
+
+ct=[=[
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link rel="stylesheet" type="text/css" href="default.css">
+<title>EpgTimer</title>
+</head>
+<body>
+<div id="result">]=]
+
+post=ReadPost()
+
+AssertCsrf(post)
+
+added=false
+if post then
+  r={recSetting={}}
+  r.onid=tonumber(mg.get_var(mg.request_info.query_string,'onid')) or 0
+  r.tsid=tonumber(mg.get_var(mg.request_info.query_string,'tsid')) or 0
+  r.sid=tonumber(mg.get_var(mg.request_info.query_string,'sid')) or 0
+  r.eid=tonumber(mg.get_var(mg.request_info.query_string,'eid')) or 0
+  presetID=tonumber(mg.get_var(post, 'presetID'))
+  recMode=tonumber(mg.get_var(post, 'recMode'))
+  tuijyuuFlag=tonumber(mg.get_var(post, 'tuijyuuFlag')) or 0
+  priority=tonumber(mg.get_var(post, 'priority'))
+  pittariFlag=tonumber(mg.get_var(post, 'pittariFlag')) or 0
+  suspendMode=tonumber(mg.get_var(post, 'suspendMode'))
+  rebootFlag=mg.get_var(post, 'rebootFlag')
+  useDefMarginFlag=mg.get_var(post, 'useDefMarginFlag')
+  startMargin=tonumber(mg.get_var(post, 'startMargin'))
+  endMargin=tonumber(mg.get_var(post, 'endMargin'))
+  serviceMode=mg.get_var(post, 'serviceMode')
+  serviceMode_1=mg.get_var(post, 'serviceMode_1')
+  serviceMode_2=mg.get_var(post, 'serviceMode_2')
+  continueRecFlag=mg.get_var(post, 'continueRecFlag')
+  tunerID=tonumber(mg.get_var(post, 'tunerID'))
+  partialRecFlag=mg.get_var(post, 'partialRecFlag')
+  eventInfo=edcb.SearchEpg(r.onid, r.tsid, r.sid, r.eid)
+  if eventInfo and eventInfo.startTime and eventInfo.durationSecond and
+     presetID and
+     recMode and
+     priority and
+     suspendMode and
+     (useDefMarginFlag or startMargin and endMargin) and tunerID
+  then
+    r.title=eventInfo.shortInfo and eventInfo.shortInfo.event_name or ''
+    r.startTime=eventInfo.startTime
+    r.startTimeEpg=eventInfo.startTime
+    r.durationSecond=eventInfo.durationSecond
+    r.stationName=''
+    for i,v in ipairs(edcb.GetServiceList() or {}) do
+      if v.onid==r.onid and v.tsid==r.tsid and v.sid==r.sid then
+        r.stationName=v.service_name
+        break
+      end
+    end
+    rs=r.recSetting
+    rs.batFilePath=''
+    rs.recFolderList={}
+    rs.partialRecFolder={}
+    for i,v in ipairs(edcb.EnumRecPresetInfo()) do
+      if v.id==presetID then
+        rs.batFilePath=v.recSetting.batFilePath
+        rs.recFolderList=v.recSetting.recFolderList
+        rs.partialRecFolder=v.recSetting.partialRecFolder
+        break
+      end
+    end
+    rs.recMode=recMode
+    rs.tuijyuuFlag=tuijyuuFlag~=0
+    rs.priority=priority
+    rs.pittariFlag=pittariFlag~=0
+    rs.suspendMode=suspendMode
+    rs.rebootFlag=rebootFlag~=nil
+    if not useDefMarginFlag then
+      rs.startMargin=startMargin
+      rs.endMargin=endMargin
+    end
+    rs.serviceMode=serviceMode and 0 or 1+(serviceMode_1 and 16 or 0)+(serviceMode_2 and 32 or 0)
+    rs.continueRecFlag=continueRecFlag~=nil
+    rs.tunerID=tunerID
+    rs.partialRecFlag=partialRecFlag and 1 or 0
+    added=edcb.AddReserveData(r)
+  end
+end
+
+ct=ct..(added and '予約を追加しました' or '入力値不正')
+
+ct=ct..[=[
+</div>
+<div id="footer">
+  <a href="epg.html">番組表</a>
+</div>
+</body>
+</html>
+]=]
+mg.write(Response(200, 'text/html', 'utf-8', #ct)..'\r\n', ct)

@@ -12,19 +12,19 @@ CCreatePATPacket::CCreatePATPacket(void)
 // TSID				[IN]TransportStreamID
 // PIDMap			[IN]PMTのリスト
 void CCreatePATPacket::SetParam(
-	WORD TSID,
-	map<WORD, PROGRAM_PID_INFO>* PIDMap
+	WORD TSID_,
+	map<WORD, PROGRAM_PID_INFO>* PIDMap_
 )
 {
 	//変更なければ変える必要なし
-	if( this->TSID == TSID && this->PIDMap.size() == PIDMap->size() ){
+	if( this->TSID == TSID_ && this->PIDMap.size() == PIDMap_->size() ){
 		if( this->PIDMap.size() != 0 ){
 			BOOL bChg = FALSE;
 			map<WORD, PROGRAM_PID_INFO>::iterator itr1;
 			map<WORD, PROGRAM_PID_INFO>::iterator itr2;
 			for( itr1 = this->PIDMap.begin(); itr1 != this->PIDMap.end(); itr1++ ){
-				itr2 = PIDMap->find(itr1->first);
-				if( itr2 == PIDMap->end() ){
+				itr2 = PIDMap_->find(itr1->first);
+				if( itr2 == PIDMap_->end() ){
 					bChg = TRUE;
 					break;
 				}else{
@@ -40,8 +40,8 @@ void CCreatePATPacket::SetParam(
 			}
 		}
 	}
-	this->TSID = TSID;
-	this->PIDMap = *PIDMap;
+	this->TSID = TSID_;
+	this->PIDMap = *PIDMap_;
 
 	this->version++;
 	if( this->version > 31 ){

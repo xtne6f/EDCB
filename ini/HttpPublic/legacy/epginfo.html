@@ -1,0 +1,78 @@
+dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
+
+ct=[=[
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link rel="stylesheet" type="text/css" href="default.css">
+<title>EpgTimer</title>
+</head>
+<body>
+<h1>番組詳細</h1>
+<div id="main">
+  <dl>
+]=]
+
+onid,tsid,sid,eid=(mg.get_var(mg.request_info.query_string,'id') or ''):match('^(%d+)%-(%d+)%-(%d+)%-(%d+)$')
+onid=tonumber(onid) or 0
+tsid=tonumber(tsid) or 0
+sid=tonumber(sid) or 0
+eid=tonumber(eid) or 0
+presetID=tonumber(mg.get_var(mg.request_info.query_string,'presetID')) or 65535
+
+r=nil
+edcb.htmlEscape=15
+for i,v in ipairs(edcb.GetReserveData()) do
+  if v.onid==onid and v.tsid==tsid and v.sid==sid and v.eid==eid then
+    r=v
+    break
+  end
+end
+if not r and presetID==65535 then
+  presetID=0
+end
+
+ct=ct..'    <dt>番組情報</dt><dd>\n'..string.gsub(_ConvertEpgInfoText2(onid, tsid, sid, eid), '\r?\n', '<br>\n')..'</dd>\n'
+  ..'    <dt>プリセット<dt><dd>\n'
+  ..'<form action="epginfo.html"><div>'
+  ..'<input type="hidden" name="id" value="'..onid..'-'..tsid..'-'..sid..'-'..eid..'"><select name="presetID">\n'
+preset=false
+rs=r and r.recSetting or nil
+for i,v in ipairs(edcb.EnumRecPresetInfo()) do
+  if v.id==presetID then
+    preset=true
+    rs=v.recSetting
+    ct=ct..'<option value="'..v.id..'" selected="selected">'..v.name..'\n'
+  else
+    rs=rs or v.recSetting
+    ct=ct..'<option value="'..v.id..'">'..v.name..'\n'
+  end
+end
+if r then
+  ct=ct..'<option value="65535"'..(preset and '' or ' selected="selected"')..'>予約時\n'
+end
+ct=ct..'</select> <input type="submit" value="録画設定にロード"></div></form></dd>\n'
+  ..'    <dt>録画設定<dt><dd>\n'
+  ..'<form method="POST" action="'
+  ..(r and 'reservechg.html?id='..r.reserveID or 'reserveadd.html?onid='..onid..'&amp;tsid='..tsid..'&amp;sid='..sid..'&amp;eid='..eid)
+  ..'"><div><input type="hidden" name="presetID" value="'..(preset and presetID or 65535)..'">\n'
+  ..'<input type="hidden" name="ctok" value="'..CsrfToken()..'">\n'
+  ..RecSettingTemplate(rs)..'<input type="submit" value="'..(r and '変更' or '追加')..'"></div></form></dd>\n'
+if r then
+  ct=ct..'    <dt>-</dt><dd>\n'
+    ..'<form method="POST" action="reservedel.html?id='..r.reserveID..'"><div>\n'
+    ..'<input type="hidden" name="ctok" value="'..CsrfToken()..'">\n'
+    ..'<input type="submit" value="削除"></div></form></dd>\n'
+end
+
+ct=ct..[=[
+  </dl>
+</div>
+<div id="footer">
+  <a href="epg.html">番組表へ</a>
+</div>
+</body>
+</html>
+]=]
+mg.write(Response(200, 'text/html', 'utf-8', #ct)..'\r\n', ct)

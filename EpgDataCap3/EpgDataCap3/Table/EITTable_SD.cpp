@@ -3,20 +3,8 @@
 
 #include "../../../Common/EpgTimerUtil.h"
 
-CEITTable_SD::CEITTable_SD(void)
-{
-}
-
-CEITTable_SD::~CEITTable_SD(void)
-{
-	Clear();
-}
-
 void CEITTable_SD::Clear()
 {
-	for( size_t i=0 ;i<eventInfoList.size(); i++ ){
-		SAFE_DELETE(eventInfoList[i]);
-	}
 	eventInfoList.clear();
 }
 
@@ -49,7 +37,8 @@ BOOL CEITTable_SD::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 
 		readSize += 9;
 		while( readSize+11 < (DWORD)section_length+3-4 ){
-			EVENT_INFO_DATA* item = new EVENT_INFO_DATA;
+			eventInfoList.push_back(EVENT_INFO_DATA());
+			EVENT_INFO_DATA* item = &eventInfoList.back();
 			item->event_id = ((WORD)data[readSize])<<8 | data[readSize+1];
 			if( data[readSize+2] == 0xFF && data[readSize+3] == 0xFF && data[readSize+4] == 0xFF &&
 				data[readSize+5] == 0xFF && data[readSize+6] == 0xFF )
@@ -84,15 +73,12 @@ BOOL CEITTable_SD::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 				}else{
 					if( AribDescriptor::CreateDescriptors( data+readSize, item->descriptors_loop_length, &(item->descriptorList), NULL ) == FALSE ){
 						_OutputDebugString( L"++CEITTable_SD:: descriptor2 err" );
-						SAFE_DELETE(item);
 						return FALSE;
 					}
 				}
 			}
 
 			readSize+=item->descriptors_loop_length;
-
-			eventInfoList.push_back(item);
 		}
 	}else{
 		return FALSE;
@@ -101,7 +87,7 @@ BOOL CEITTable_SD::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 	return TRUE;
 }
 
-BOOL CEITTable_SD::SDDecode( BYTE* data, DWORD dataSize, vector<AribDescriptor::CDescriptor*>* descriptorList, DWORD* decodeReadSize )
+BOOL CEITTable_SD::SDDecode( BYTE* data, DWORD dataSize, vector<AribDescriptor::CDescriptor>* descriptorList, DWORD* decodeReadSize )
 {
 	BOOL ret = TRUE;
 	if( data == NULL || dataSize == 0 || descriptorList == NULL ){
@@ -109,7 +95,7 @@ BOOL CEITTable_SD::SDDecode( BYTE* data, DWORD dataSize, vector<AribDescriptor::
 	}
 	DWORD decodeSize = 0;
 
-	AribDescriptor::CDescriptor* shortItem = NULL;
+	AribDescriptor::CDescriptor shortItem;
 
 	static const short parser0x82[] = {
 		AribDescriptor::descriptor_tag, 8,
@@ -149,9 +135,10 @@ BOOL CEITTable_SD::SDDecode( BYTE* data, DWORD dataSize, vector<AribDescriptor::
 	while( decodeSize + 2 < dataSize ){
 		BYTE* readPos = data+decodeSize;
 		if( readPos[0] == 0x54 ){
-			AribDescriptor::CDescriptor* item = new AribDescriptor::CDescriptor;
+			descriptorList->push_back(AribDescriptor::CDescriptor());
+			AribDescriptor::CDescriptor* item = &descriptorList->back();
 			if( item->Decode(readPos, dataSize - decodeSize, NULL) == false ){
-				delete item;
+				descriptorList->pop_back();
 			}else{
 				AribDescriptor::CDescriptor::CLoopPointer lp;
 				if( item->EnterLoop(lp) ){
@@ -207,28 +194,26 @@ BOOL CEITTable_SD::SDDecode( BYTE* data, DWORD dataSize, vector<AribDescriptor::
 						}
 					}
 				}
-				descriptorList->push_back(item);
 			}
 
 			decodeSize += readPos[1]+2;
 		}else
 		if( readPos[0] == 0x85 ){
 			//コンポーネント
-			AribDescriptor::CDescriptor* item = new AribDescriptor::CDescriptor;
+			descriptorList->push_back(AribDescriptor::CDescriptor());
+			AribDescriptor::CDescriptor* item = &descriptorList->back();
 			if( item->Decode(readPos, dataSize - decodeSize, NULL, parserList) == false ){
-				delete item;
+				descriptorList->pop_back();
 			}else{
 				if( item->GetNumber(AribDescriptor::stream_content) == 0x01 ){
 					//映像。コンポーネント記述子にキャスト
 					item->SetNumber(AribDescriptor::descriptor_tag, AribDescriptor::component_descriptor);
-					descriptorList->push_back(item);
 				}else
 				if( item->GetNumber(AribDescriptor::stream_content) == 0x02 ){
 					//音声。音声コンポーネント記述子にキャスト
 					item->SetNumber(AribDescriptor::descriptor_tag, AribDescriptor::audio_component_descriptor);
-					descriptorList->push_back(item);
 				}else{
-					delete item;
+					descriptorList->pop_back();
 				}
 			}
 			decodeSize += readPos[1]+2;
@@ -236,40 +221,30 @@ BOOL CEITTable_SD::SDDecode( BYTE* data, DWORD dataSize, vector<AribDescriptor::
 		if( readPos[0] == 0x82 ){
 			//番組名
 			if( readPos[2] == 0x01 ){
-				if( shortItem == NULL ){
-					shortItem = new AribDescriptor::CDescriptor;
-				}
-				if( shortItem->Decode(readPos, dataSize - decodeSize, NULL, parserList) == false ){
-					delete shortItem;
-					shortItem = NULL;
-				}else{
+				if( shortItem.Decode(readPos, dataSize - decodeSize, NULL, parserList) ){
 					//日本語版？
 					//短形式イベント記述子にキャスト
-					shortItem->SetNumber(AribDescriptor::descriptor_tag, AribDescriptor::short_event_descriptor);
+					shortItem.SetNumber(AribDescriptor::descriptor_tag, AribDescriptor::short_event_descriptor);
 				}
-			}else if( readPos[2] == 0x02 && shortItem == NULL){
-				shortItem = new AribDescriptor::CDescriptor;
-				if( shortItem->Decode(readPos, dataSize - decodeSize, NULL, parserList) == false ){
-					delete shortItem;
-					shortItem = NULL;
-				}else{
+			}else if( readPos[2] == 0x02 && shortItem.GetNumber(AribDescriptor::descriptor_tag) == 0 ){
+				if( shortItem.Decode(readPos, dataSize - decodeSize, NULL, parserList) ){
 					//英語版？
 					//短形式イベント記述子にキャスト
-					shortItem->SetNumber(AribDescriptor::descriptor_tag, AribDescriptor::short_event_descriptor);
+					shortItem.SetNumber(AribDescriptor::descriptor_tag, AribDescriptor::short_event_descriptor);
 				}
 			}
 			decodeSize += readPos[1]+2;
 		}else
 		if( readPos[0] == 0x83 ){
 			//詳細情報
-			AribDescriptor::CDescriptor* item = new AribDescriptor::CDescriptor;
+			descriptorList->push_back(AribDescriptor::CDescriptor());
+			AribDescriptor::CDescriptor* item = &descriptorList->back();
 			if( item->Decode(readPos, dataSize - decodeSize, NULL, parserList) == false ){
-				delete item;
+				descriptorList->pop_back();
 			}else{
 				//拡張形式イベント記述子にキャスト
 				//TODO: 本当はdescriptor_number等調整すべきだが、後続の処理で一切利用されないので省略する
 				item->SetNumber(AribDescriptor::descriptor_tag, AribDescriptor::extended_event_descriptor);
-				descriptorList->push_back(item);
 			}
 
 			decodeSize += readPos[1]+2;
@@ -278,7 +253,7 @@ BOOL CEITTable_SD::SDDecode( BYTE* data, DWORD dataSize, vector<AribDescriptor::
 			decodeSize += readPos[1]+2;
 		}
 	}
-	if( shortItem != NULL ){
+	if( shortItem.GetNumber(AribDescriptor::descriptor_tag) != 0 ){
 		descriptorList->push_back(shortItem);
 	}
 

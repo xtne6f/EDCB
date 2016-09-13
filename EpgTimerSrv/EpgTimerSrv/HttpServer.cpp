@@ -44,14 +44,17 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, int (*initProc)(lua_Stat
 	wstring modulePath;
 	GetModuleFolderPath(modulePath);
 	string accessLogPath;
-	//ログはfopen()されるのでWtoA()。civetweb.cのACCESS_LOG_FILEとERROR_LOG_FILEの扱いに注意
-	WtoA(modulePath, accessLogPath);
+	//ログは_wfopen()されるのでWtoUTF8()。civetweb.cのACCESS_LOG_FILEとERROR_LOG_FILEの扱いに注意
+	WtoUTF8(modulePath, accessLogPath);
 	string errorLogPath = accessLogPath + "\\HttpError.log";
 	accessLogPath += "\\HttpAccess.log";
 	string sslCertPath;
 	//認証鍵は実質fopen()されるのでWtoA()
 	WtoA(modulePath, sslCertPath);
 	sslCertPath += "\\ssl_cert.pem";
+	string sslPeerPath;
+	WtoA(modulePath, sslPeerPath);
+	sslPeerPath += "\\ssl_peer.pem";
 	string globalAuthPath;
 	//グローバルパスワードは_wfopen()されるのでWtoUTF8()
 	WtoUTF8(modulePath, globalAuthPath);
@@ -64,10 +67,14 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, int (*initProc)(lua_Stat
 
 	string authDomain;
 	WtoUTF8(op.authenticationDomain, authDomain);
+	string sslCipherList;
+	WtoUTF8(op.sslCipherList, sslCipherList);
 	string numThreads;
 	Format(numThreads, "%d", min(max(op.numThreads, 1), 50));
 	string requestTimeout;
 	Format(requestTimeout, "%d", max(op.requestTimeout, 1));
+	string sslProtocolVersion;
+	Format(sslProtocolVersion, "%d", op.sslProtocolVersion);
 
 	//追加のMIMEタイプ
 	CParseContentTypeText contentType;
@@ -79,7 +86,8 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, int (*initProc)(lua_Stat
 	string extraMime;
 	WtoUTF8(extraMimeW, extraMime);
 
-	const char* options[32] = {
+	const char* options[64] = {
+		"ssi_pattern", "",
 		"enable_keep_alive", op.keepAlive ? "yes" : "no",
 		"access_control_list", acl.c_str(),
 		"extra_mime_types", extraMime.c_str(),
@@ -87,9 +95,13 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, int (*initProc)(lua_Stat
 		"document_root", rootPathU.c_str(),
 		"num_threads", numThreads.c_str(),
 		"request_timeout_ms", requestTimeout.c_str(),
+		"ssl_ca_file", sslPeerPath.c_str(),
+		"ssl_default_verify_paths", "no",
+		"ssl_cipher_list", sslCipherList.c_str(),
+		"ssl_protocol_version", sslProtocolVersion.c_str(),
 		"lua_script_pattern", "**.lua$|**.html$|*/api/*$",
 	};
-	int opCount = 2 * 8;
+	int opCount = 2 * 13;
 	if( op.saveLog ){
 		options[opCount++] = "access_log_file";
 		options[opCount++] = accessLogPath.c_str();
@@ -105,17 +117,19 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, int (*initProc)(lua_Stat
 		options[opCount++] = "ssl_certificate";
 		options[opCount++] = sslCertPath.c_str();
 	}
+	wstring sslPeerPathW;
+	AtoW(sslPeerPath, sslPeerPathW);
+	if( GetFileAttributes(sslPeerPathW.c_str()) != INVALID_FILE_ATTRIBUTES || GetLastError() != ERROR_FILE_NOT_FOUND ){
+		//信頼済み証明書ファイルが「存在しないことを確信」できなければ有効にする
+		options[opCount++] = "ssl_verify_peer";
+		options[opCount++] = "yes";
+	}
 	wstring globalAuthPathW;
 	UTF8toW(globalAuthPath, globalAuthPathW);
-	WIN32_FIND_DATA findData;
-	HANDLE hFind = FindFirstFile(globalAuthPathW.c_str(), &findData);
-	if( hFind != INVALID_HANDLE_VALUE || GetLastError() != ERROR_FILE_NOT_FOUND ){
+	if( GetFileAttributes(globalAuthPathW.c_str()) != INVALID_FILE_ATTRIBUTES || GetLastError() != ERROR_FILE_NOT_FOUND ){
 		//グローバルパスワードは「存在しないことを確信」できなければ指定しておく
 		options[opCount++] = "global_auth_file";
 		options[opCount++] = globalAuthPath.c_str();
-		if( hFind != INVALID_HANDLE_VALUE ){
-			FindClose(hFind);
-		}
 	}
 
 	this->initLuaProc = initProc;

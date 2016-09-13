@@ -1,21 +1,17 @@
 #pragma once
 
-#include "FileStreamingUtil.h"
+#include "../../Common/TimeShiftUtil.h"
+#include "../../Common/InstanceManager.h"
 
 class CFileStreamingManager
 {
 public:
-	CFileStreamingManager(void);
-	~CFileStreamingManager(void);
-
-	BOOL CloseAllFile(
+	void CloseAllFile(
 		);
 	BOOL IsStreaming();
 
 	BOOL OpenTimeShift(
 		LPCWSTR filePath,
-		DWORD processID,
-		DWORD exeCtrlID,
 		DWORD* ctrlID
 		);
 	BOOL OpenFile(
@@ -60,19 +56,19 @@ public:
 		);
 
 protected:
-	HANDLE lockEvent;
-
-	DWORD nextCtrlID;
-	map<DWORD, CFileStreamingUtil*> utilMap;
-
-protected:
-	//PublicAPI排他制御用
-	BOOL Lock(LPCWSTR log = NULL, DWORD timeOut = 20*1000);
-	void UnLock(LPCWSTR log = NULL);
-
-	//次に使用する制御IDを取得する
-	//戻り値：
-	// id
-	DWORD GetNextID();
+	//非仮想デストラクタ注意!
+	class CMyInstanceManager : public CInstanceManager<CTimeShiftUtil>
+	{
+	public:
+		void clear() {
+			CBlockLock lock(&this->m_lock);
+			this->m_list.clear();
+		}
+		bool empty() {
+			CBlockLock lock(&this->m_lock);
+			return this->m_list.empty();
+		}
+	};
+	CMyInstanceManager utilMng;
 };
 

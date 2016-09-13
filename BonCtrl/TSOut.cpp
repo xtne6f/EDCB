@@ -434,10 +434,8 @@ void CTSOut::CheckNeedPID()
 	//PAT作成用のPMTリスト
 	map<WORD, CCreatePATPacket::PROGRAM_PID_INFO> PIDMap;
 	//NITのPID追加しておく
-	CCreatePATPacket::PROGRAM_PID_INFO item;
-	item.PMTPID = 0x10;
-	item.SID = 0;
-	PIDMap.insert(pair<WORD, CCreatePATPacket::PROGRAM_PID_INFO>(item.PMTPID,item));
+	PIDMap[0x10].PMTPID = 0x10;
+	PIDMap[0x10].SID = 0;
 
 	map<WORD, string> pidName;
 	map<WORD, CPMTUtil*>::iterator itrPmt;
@@ -462,6 +460,9 @@ void CTSOut::CheckNeedPID()
 				break;
 			case 0x04:
 				name = "MPEG2 AUDIO";
+				break;
+			case 0x24:
+				name = "HEVC VIDEO";
 				break;
 			case 0x06:
 				name = "字幕";
@@ -495,7 +496,6 @@ void CTSOut::CheckNeedPID()
 		if( itrService->second->GetSID() == 0xFFFF ){
 			//全サービス対象
 			this->serviceOnlyFlag = FALSE;
-			map<WORD, CPMTUtil*>::iterator itrPmt;
 			for( itrPmt = pmtUtilMap.begin(); itrPmt != pmtUtilMap.end(); itrPmt++ ){
 				//PAT作成用のPMTリスト作成
 				CCreatePATPacket::PROGRAM_PID_INFO item;
@@ -633,6 +633,22 @@ EPG_SECTION_STATUS CTSOut::GetSectionStatus(
 	if( Lock(L"GetSectionStatus") == FALSE ) return EpgNoData;
 
 	EPG_SECTION_STATUS status = this->epgUtil.GetSectionStatus(l_eitFlag);
+
+	UnLock();
+	return status;
+}
+
+//指定サービスのEPGデータの蓄積状態を取得する
+pair<EPG_SECTION_STATUS, BOOL> CTSOut::GetSectionStatusService(
+	WORD originalNetworkID,
+	WORD transportStreamID,
+	WORD serviceID,
+	BOOL l_eitFlag
+	)
+{
+	if( Lock(L"GetSectionStatusService") == FALSE ) return pair<EPG_SECTION_STATUS, BOOL>(EpgNoData, FALSE);
+
+	pair<EPG_SECTION_STATUS, BOOL> status = this->epgUtil.GetSectionStatusService(originalNetworkID, transportStreamID, serviceID, l_eitFlag);
 
 	UnLock();
 	return status;

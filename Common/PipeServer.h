@@ -11,11 +11,11 @@ public:
 	~CPipeServer(void);
 
 	BOOL StartServer(
-		LPCWSTR eventName, 
-		LPCWSTR pipeName, 
+		LPCWSTR eventName_, 
+		LPCWSTR pipeName_, 
 		CMD_CALLBACK_PROC cmdCallback, 
 		void* callbackParam, 
-		BOOL insecureFlag = FALSE
+		BOOL insecureFlag_ = FALSE
 		);
 	BOOL StopServer(BOOL checkOnlyFlag = FALSE);
 

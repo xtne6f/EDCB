@@ -16,11 +16,19 @@
 CEpgTimerTaskDlg::CEpgTimerTaskDlg()
 	: m_hDlg(NULL)
 {
-	//m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
-	m_hIcon = (HICON)LoadImage( GetModuleHandle(NULL), MAKEINTRESOURCE( IDR_MAINFRAME ), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
-	m_hIcon2 = (HICON)LoadImage( GetModuleHandle(NULL), MAKEINTRESOURCE( IDR_MAINFRAME ), IMAGE_ICON, 32, 32, LR_DEFAULTCOLOR);
-	m_hIconRed = (HICON)LoadImage( GetModuleHandle(NULL), MAKEINTRESOURCE( IDI_ICON_RED ), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
-	m_hIconGreen = (HICON)LoadImage( GetModuleHandle(NULL), MAKEINTRESOURCE( IDI_ICON_GREEN ), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+	HMODULE hModule = GetModuleHandle(NULL);
+	HRESULT (WINAPI* pfnLoadIconMetric)(HINSTANCE,PCWSTR,int,HICON*) =
+		(HRESULT (WINAPI*)(HINSTANCE,PCWSTR,int,HICON*))GetProcAddress(GetModuleHandle(L"comctl32.dll"), "LoadIconMetric");
+	if( pfnLoadIconMetric == NULL ||
+	    pfnLoadIconMetric(hModule, MAKEINTRESOURCE(IDR_MAINFRAME), LIM_SMALL, &m_hIcon) != S_OK ||
+	    pfnLoadIconMetric(hModule, MAKEINTRESOURCE(IDR_MAINFRAME), LIM_LARGE, &m_hIcon2) != S_OK ||
+	    pfnLoadIconMetric(hModule, MAKEINTRESOURCE(IDI_ICON_RED), LIM_SMALL, &m_hIconRed) != S_OK ||
+	    pfnLoadIconMetric(hModule, MAKEINTRESOURCE(IDI_ICON_GREEN), LIM_SMALL, &m_hIconGreen) != S_OK ){
+		m_hIcon = (HICON)LoadImage(hModule, MAKEINTRESOURCE(IDR_MAINFRAME), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+		m_hIcon2 = (HICON)LoadImage(hModule, MAKEINTRESOURCE(IDR_MAINFRAME), IMAGE_ICON, 32, 32, LR_DEFAULTCOLOR);
+		m_hIconRed = (HICON)LoadImage(hModule, MAKEINTRESOURCE(IDI_ICON_RED), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+		m_hIconGreen = (HICON)LoadImage(hModule, MAKEINTRESOURCE(IDI_ICON_GREEN), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+	}
 
 	m_uMsgTaskbarCreated = RegisterWindowMessage(L"TaskbarCreated");
 }
@@ -422,9 +430,9 @@ void CEpgTimerTaskDlg::CmdSrvStatusChg(CMD_STREAM* pCmdParam, CMD_STREAM* pResPa
 	OutputDebugString(L"CEpgTimerTaskDlg::CmdSrvStatusChg");
 	WORD ver = 0;
 	DWORD readSize = 0;
-	ReadVALUE2(CMD_VER, &ver, pCmdParam->data, pCmdParam->dataSize, &readSize);
 	NOTIFY_SRV_INFO status;
-	if( ReadVALUE2(ver, &status, pCmdParam->data+readSize, pCmdParam->dataSize-readSize, NULL) == TRUE ){
+	if( ReadVALUE(&ver, pCmdParam->data, pCmdParam->dataSize, &readSize) &&
+	    ReadVALUE2(ver, &status, pCmdParam->data.get()+readSize, pCmdParam->dataSize-readSize, NULL) ){
 		switch(status.notifyID){
 		case NOTIFY_UPDATE_SRV_STATUS:
 			m_dwSrvStatus = status.param1;

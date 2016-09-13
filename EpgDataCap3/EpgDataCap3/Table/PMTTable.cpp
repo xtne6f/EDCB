@@ -1,24 +1,9 @@
 #include "StdAfx.h"
 #include "PMTTable.h"
 
-CPMTTable::CPMTTable(void)
-{
-}
-
-CPMTTable::~CPMTTable(void)
-{
-	Clear();
-}
-
 void CPMTTable::Clear()
 {
-	for( size_t i=0 ;i<descriptorList.size(); i++ ){
-		SAFE_DELETE(descriptorList[i]);
-	}
 	descriptorList.clear();
-	for( size_t i=0 ;i<ESInfoList.size(); i++ ){
-		SAFE_DELETE(ESInfoList[i]);
-	}
 	ESInfoList.clear();
 }
 
@@ -57,7 +42,8 @@ BOOL CPMTTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 			readSize+=program_info_length;
 		}
 		while( readSize+4 < (DWORD)section_length+3-4 ){
-			ES_INFO_DATA* item = new ES_INFO_DATA;
+			ESInfoList.push_back(ES_INFO_DATA());
+			ES_INFO_DATA* item = &ESInfoList.back();
 			item->stream_type = data[readSize];
 			item->elementary_PID = ((WORD)data[readSize+1]&0x1F)<<8 | data[readSize+2];
 			item->ES_info_length = ((WORD)data[readSize+3]&0x0F)<<8 | data[readSize+4];
@@ -65,12 +51,10 @@ BOOL CPMTTable::Decode( BYTE* data, DWORD dataSize, DWORD* decodeReadSize )
 			if( readSize+item->ES_info_length <= (DWORD)section_length+3-4 && item->ES_info_length > 0){
 				if( AribDescriptor::CreateDescriptors( data+readSize, item->ES_info_length, &(item->descriptorList), NULL ) == FALSE ){
 					_OutputDebugString( L"++CPMTTable:: descriptor2 err" );
-					SAFE_DELETE(item);
 					return FALSE;
 				}
 			}
 			readSize+=item->ES_info_length;
-			ESInfoList.push_back(item);
 		}
 	}else{
 		return FALSE;

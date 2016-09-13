@@ -1,6 +1,57 @@
 #include "stdafx.h"
 #include "StringUtil.h"
 
+namespace
+{
+
+size_t WtoMB(UINT codePage, const WCHAR *in, vector<char>& out, size_t outLenHint)
+{
+	if( out.size() < outLenHint + 1 ){
+		out.resize(outLenHint + 1);
+	}
+	size_t len = WideCharToMultiByte(codePage, 0, in, -1, &out.front(), (int)out.size(), NULL, NULL);
+	if( len == 0 ){
+		//rare case
+		len = WideCharToMultiByte(codePage, 0, in, -1, NULL, 0, NULL, NULL);
+		if( len < out.size() ){
+			len = 0;
+		}else{
+			out.resize(len);
+			len = WideCharToMultiByte(codePage, 0, in, -1, &out.front(), (int)out.size(), NULL, NULL);
+		}
+		if( len == 0 ){
+			out[0] = '\0';
+			len = 1;
+		}
+	}
+	return len - 1;
+}
+
+size_t MBtoW(UINT codePage, const char *in, vector<WCHAR>& out, size_t outLenHint)
+{
+	if( out.size() < outLenHint + 1 ){
+		out.resize(outLenHint + 1);
+	}
+	size_t len = MultiByteToWideChar(codePage, 0, in, -1, &out.front(), (int)out.size());
+	if( len == 0 ){
+		//rare case
+		len = MultiByteToWideChar(codePage, 0, in, -1, NULL, 0);
+		if( len < out.size() ){
+			len = 0;
+		}else{
+			out.resize(len);
+			len = MultiByteToWideChar(codePage, 0, in, -1, &out.front(), (int)out.size());
+		}
+		if( len == 0 ){
+			out[0] = L'\0';
+			len = 1;
+		}
+	}
+	return len - 1;
+}
+
+}
+
 void Format(string& strBuff, const char *format, ...)
 {
 	va_list params;
@@ -96,90 +147,50 @@ void Replace(wstring& strBuff, const wstring& strOld, const wstring& strNew)
 
 void WtoA(const wstring& strIn, string& strOut)
 {
-	strOut.clear();
-	int iLen = (int)strIn.size() * 2 + 1;
-	char* pszBuff = new char[iLen];
-	if( WideCharToMultiByte( 932, 0, strIn.c_str(), -1, pszBuff, iLen, NULL, NULL ) != 0 ){
-		strOut = pszBuff;
-		delete[] pszBuff;
-	}else{
-		//rare case
-		delete[] pszBuff;
-		iLen = WideCharToMultiByte( 932, 0, strIn.c_str(), -1, NULL, 0, NULL, NULL );
-		if( iLen > 0 ){
-			pszBuff = new char[iLen];
-			if( WideCharToMultiByte( 932, 0, strIn.c_str(), -1, pszBuff, iLen, NULL, NULL ) != 0 ){
-				strOut = pszBuff;
-			}
-			delete[] pszBuff;
-		}
-	}
+	vector<char> buff;
+	size_t len = WtoA(strIn.c_str(), strIn.size(), buff);
+	strOut.assign(&buff.front(), &buff.front() + len);
+}
+
+size_t WtoA(const WCHAR *in, size_t inLenHint, vector<char>& out)
+{
+	return WtoMB(932, in, out, inLenHint * 2);
 }
 
 void WtoUTF8(const wstring& strIn, string& strOut)
 {
-	strOut.clear();
-	int iLen = (int)strIn.size() * 3 + 1;
-	char* pszBuff = new char[iLen];
-	if( WideCharToMultiByte( CP_UTF8, 0, strIn.c_str(), -1, pszBuff, iLen, NULL, NULL ) != 0 ){
-		strOut = pszBuff;
-		delete[] pszBuff;
-	}else{
-		//rare case
-		delete[] pszBuff;
-		iLen = WideCharToMultiByte( CP_UTF8, 0, strIn.c_str(), -1, NULL, 0, NULL, NULL );
-		if( iLen > 0 ){
-			pszBuff = new char[iLen];
-			if( WideCharToMultiByte( CP_UTF8, 0, strIn.c_str(), -1, pszBuff, iLen, NULL, NULL ) != 0 ){
-				strOut = pszBuff;
-			}
-			delete[] pszBuff;
-		}
-	}
+	vector<char> buff;
+	size_t len = WtoUTF8(strIn.c_str(), strIn.size(), buff);
+	strOut.assign(&buff.front(), &buff.front() + len);
+}
+
+size_t WtoUTF8(const WCHAR *in, size_t inLenHint, vector<char>& out)
+{
+	return WtoMB(CP_UTF8, in, out, inLenHint * 3);
 }
 
 void AtoW(const string& strIn, wstring& strOut)
 {
-	strOut.clear();
-	int iLen = (int)strIn.size() + 1;
-	WCHAR* pwszBuff = new WCHAR[iLen];
-	if( MultiByteToWideChar( 932, 0, strIn.c_str(), -1, pwszBuff, iLen ) != 0 ){
-		strOut = pwszBuff;
-		delete[] pwszBuff;
-	}else{
-		//rare case
-		delete[] pwszBuff;
-		iLen = MultiByteToWideChar( 932, 0, strIn.c_str(), -1, NULL, 0 );
-		if( iLen > 0 ){
-			pwszBuff = new WCHAR[iLen];
-			if( MultiByteToWideChar( 932, 0, strIn.c_str(), -1, pwszBuff, iLen ) != 0 ){
-				strOut = pwszBuff;
-			}
-			delete[] pwszBuff;
-		}
-	}
+	vector<WCHAR> buff;
+	size_t len = AtoW(strIn.c_str(), strIn.size(), buff);
+	strOut.assign(&buff.front(), &buff.front() + len);
+}
+
+size_t AtoW(const char *in, size_t inLenHint, vector<WCHAR>& out)
+{
+	return MBtoW(932, in, out, inLenHint);
 }
 
 void UTF8toW(const string& strIn, wstring& strOut)
 {
-	strOut.clear();
-	int iLen = (int)strIn.size() + 1;
-	WCHAR* pwszBuff = new WCHAR[iLen];
-	if( MultiByteToWideChar( CP_UTF8, 0, strIn.c_str(), -1, pwszBuff, iLen ) != 0 ){
-		strOut = pwszBuff;
-		delete[] pwszBuff;
-	}else{
-		//rare case
-		delete[] pwszBuff;
-		iLen = MultiByteToWideChar( CP_UTF8, 0, strIn.c_str(), -1, NULL, 0 );
-		if( iLen > 0 ){
-			pwszBuff = new WCHAR[iLen];
-			if( MultiByteToWideChar( CP_UTF8, 0, strIn.c_str(), -1, pwszBuff, iLen ) != 0 ){
-				strOut = pwszBuff;
-			}
-			delete[] pwszBuff;
-		}
-	}
+	vector<WCHAR> buff;
+	size_t len = UTF8toW(strIn.c_str(), strIn.size(), buff);
+	strOut.assign(&buff.front(), &buff.front() + len);
+}
+
+size_t UTF8toW(const char *in, size_t inLenHint, vector<WCHAR>& out)
+{
+	return MBtoW(CP_UTF8, in, out, inLenHint);
 }
 
 BOOL Separate(const string& strIn, const char *sep, string& strLeft, string& strRight)

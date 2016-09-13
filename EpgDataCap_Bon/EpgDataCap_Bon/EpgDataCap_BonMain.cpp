@@ -107,9 +107,10 @@ void CEpgDataCap_BonMain::ReloadSetting()
 	BOOL epgCapBackBSBasic = GetPrivateProfileInt( L"SET", L"EpgCapBackBSBasicOnly", 1, appIniPath.c_str() );
 	BOOL epgCapBackCS1Basic = GetPrivateProfileInt( L"SET", L"EpgCapBackCS1BasicOnly", 1, appIniPath.c_str() );
 	BOOL epgCapBackCS2Basic = GetPrivateProfileInt( L"SET", L"EpgCapBackCS2BasicOnly", 1, appIniPath.c_str() );
+	BOOL epgCapBackCS3Basic = GetPrivateProfileInt( L"SET", L"EpgCapBackCS3BasicOnly", 0, appIniPath.c_str() );
 	DWORD epgCapBackStartWaitSec = (DWORD)GetPrivateProfileInt( L"SET", L"EpgCapBackStartWaitSec", 30, appIniPath.c_str() );
 
-	this->bonCtrl.SetBackGroundEpgCap(epgCapLive, epgCapRec, epgCapBackBSBasic, epgCapBackCS1Basic, epgCapBackCS2Basic, epgCapBackStartWaitSec);
+	this->bonCtrl.SetBackGroundEpgCap(epgCapLive, epgCapRec, epgCapBackBSBasic, epgCapBackCS1Basic, epgCapBackCS2Basic, epgCapBackCS3Basic, epgCapBackStartWaitSec);
 	if( this->sendTcpFlag == FALSE && this->sendUdpFlag == FALSE ){
 		this->bonCtrl.SetScramble(this->nwCtrlID, this->enableScrambleFlag);
 	}
@@ -205,10 +206,10 @@ DWORD CEpgDataCap_BonMain::SetCh(
 {
 	DWORD err = ERR_FALSE;
 	if( this->bonCtrl.IsRec() == FALSE ){
-		if( this->bonCtrl.GetEpgCapStatus(NULL) == ST_WORKING ){
+		if( this->bonCtrl.GetEpgCapStatus(NULL) == CBonCtrl::ST_WORKING ){
 			this->bonCtrl.StopEpgCap();
 		}
-		err = this->bonCtrl.SetCh(ONID, TSID, SID);
+		err = this->bonCtrl.SetCh(ONID, TSID);
 		if( err == NO_ERR ){
 			this->lastONID = ONID;
 			this->lastTSID = TSID;
@@ -243,10 +244,10 @@ DWORD CEpgDataCap_BonMain::SetCh(
 {
 	DWORD err = ERR_FALSE;
 	if( this->bonCtrl.IsRec() == FALSE ){
-		if( this->bonCtrl.GetEpgCapStatus(NULL) == ST_WORKING ){
+		if( this->bonCtrl.GetEpgCapStatus(NULL) == CBonCtrl::ST_WORKING ){
 			this->bonCtrl.StopEpgCap();
 		}
-		err = this->bonCtrl.SetCh(space, ch, SID);
+		err = this->bonCtrl.SetCh(space, ch);
 		if( err == NO_ERR ){
 			this->lastONID = ONID;
 			this->lastTSID = TSID;
@@ -640,14 +641,14 @@ DWORD CEpgDataCap_BonMain::StopChScan()
 
 //チャンネルスキャンの状態を取得する
 //戻り値：
-// エラーコード
+// ステータス
 //引数：
 // space		[OUT]スキャン中の物理CHのspace
 // ch			[OUT]スキャン中の物理CHのch
 // chName		[OUT]スキャン中の物理CHの名前
 // chkNum		[OUT]チェック済みの数
 // totalNum		[OUT]チェック対象の総数
-DWORD CEpgDataCap_BonMain::GetChScanStatus(
+CBonCtrl::JOB_STATUS CEpgDataCap_BonMain::GetChScanStatus(
 	DWORD* space,
 	DWORD* ch,
 	wstring* chName,
@@ -683,10 +684,10 @@ DWORD CEpgDataCap_BonMain::StopEpgCap(
 
 //EPG取得のステータスを取得する
 //戻り値：
-// エラーコード
+// ステータス
 //引数：
 // info			[OUT]取得中のサービス
-DWORD CEpgDataCap_BonMain::GetEpgCapStatus(
+CBonCtrl::JOB_STATUS CEpgDataCap_BonMain::GetEpgCapStatus(
 	EPGCAP_SERVICE_INFO* info
 	)
 {
@@ -798,7 +799,7 @@ void CEpgDataCap_BonMain::CtrlCmdCallbackInvoked()
 		OutputDebugString(L"CMD2_VIEW_APP_SET_CH");
 		{
 			if( sys->bonCtrl.IsRec() == FALSE ){
-				if( sys->bonCtrl.GetEpgCapStatus(NULL) == ST_WORKING ){
+				if( sys->bonCtrl.GetEpgCapStatus(NULL) == CBonCtrl::ST_WORKING ){
 					sys->bonCtrl.StopEpgCap();
 				}
 				SET_CH_INFO val;
@@ -840,7 +841,7 @@ void CEpgDataCap_BonMain::CtrlCmdCallbackInvoked()
 				val = VIEW_APP_ST_ERR_BON;
 			}else if( sys->bonCtrl.IsRec() == TRUE ){
 				val = VIEW_APP_ST_REC;
-			}else if( sys->bonCtrl.GetEpgCapStatus(NULL) == ST_WORKING ){
+			}else if( sys->bonCtrl.GetEpgCapStatus(NULL) == CBonCtrl::ST_WORKING ){
 				val = VIEW_APP_ST_GET_EPG;
 			}else{
 				//VIEW_APP_ST_NORMAL
