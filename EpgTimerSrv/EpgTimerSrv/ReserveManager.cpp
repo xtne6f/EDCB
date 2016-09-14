@@ -262,7 +262,7 @@ bool CReserveManager::GetReserveData(DWORD id, RESERVE_DATA* reserveData, bool g
 	return false;
 }
 
-bool CReserveManager::AddReserveData(const vector<RESERVE_DATA>& reserveList, bool setComment, bool setReserveStatus)
+bool CReserveManager::AddReserveData(const vector<RESERVE_DATA>& reserveList, bool setReserveStatus)
 {
 	CBlockLock lock(&this->managerLock);
 
@@ -274,9 +274,6 @@ bool CReserveManager::AddReserveData(const vector<RESERVE_DATA>& reserveList, bo
 		RESERVE_DATA r = reserveList[i];
 		//すでに終了していないか
 		if( now < ConvertI64Time(r.startTime) + r.durationSecond * I64_1SEC ){
-			if( setComment == false ){
-				r.comment.clear();
-			}
 			r.presentFlag = FALSE;
 			r.overlapMode = RESERVE_EXECUTE;
 			if( setReserveStatus == false ){
@@ -318,7 +315,6 @@ bool CReserveManager::ChgReserveData(const vector<RESERVE_DATA>& reserveList, bo
 		map<DWORD, RESERVE_DATA>::const_iterator itr = this->reserveText.GetMap().find(r.reserveID);
 		if( itr != this->reserveText.GetMap().end() ){
 			//変更できないフィールドを上書き
-			r.comment = itr->second.comment;
 			r.presentFlag = itr->second.presentFlag;
 			r.startTimeEpg = itr->second.startTimeEpg;
 			if( setReserveStatus == false ){
@@ -1147,7 +1143,7 @@ void CReserveManager::CheckTuijyuTuner()
 			ChgReserveData(chgList, true);
 		}
 		if( relayAddList.empty() == false ){
-			AddReserveData(relayAddList, false, true);
+			AddReserveData(relayAddList, true);
 		}
 	}
 }

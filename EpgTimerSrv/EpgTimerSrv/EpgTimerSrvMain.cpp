@@ -1060,7 +1060,7 @@ bool CEpgTimerSrvMain::AutoAddReserveEPG(const EPG_AUTO_ADD_DATA& data)
 		}
 	}
 	});
-	if( setList.empty() == false && this->reserveManager.AddReserveData(setList, true) ){
+	if( setList.empty() == false && this->reserveManager.AddReserveData(setList) ){
 		modified = true;
 	}
 	CBlockLock lock(&this->settingLock);
@@ -3206,6 +3206,7 @@ bool CEpgTimerSrvMain::FetchReserveData(CLuaWorkspace& ws, RESERVE_DATA& r)
 	r.transportStreamID = (WORD)LuaHelp::get_int(L, "tsid");
 	r.serviceID = (WORD)LuaHelp::get_int(L, "sid");
 	r.eventID = (WORD)LuaHelp::get_int(L, "eid");
+	UTF8toW(LuaHelp::get_string(L, "comment"), r.comment);
 	r.reserveID = (WORD)LuaHelp::get_int(L, "reserveID");
 	r.startTimeEpg = LuaHelp::get_time(L, "startTimeEpg");
 	lua_getfield(L, -1, "recSetting");
