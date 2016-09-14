@@ -638,14 +638,34 @@ void CEpgDBManager::SearchEvent(EPGDB_SEARCH_KEY_INFO* key, vector<SEARCH_RESULT
 BOOL CEpgDBManager::IsEqualContent(vector<EPGDB_CONTENT_DATA>* searchKey, vector<EPGDB_CONTENT_DATA>* eventData)
 {
 	for( size_t i=0; i<searchKey->size(); i++ ){
+		EPGDB_CONTENT_DATA c = (*searchKey)[i];
+		if( (c.content_nibble_level_1 & 0xF0) == 0x70 ){
+			//CSŠg’£—pî•ñ‚É•ÏŠ·‚·‚é
+			c.user_nibble_1 = c.content_nibble_level_1 & 0x0F;
+			c.user_nibble_2 = c.content_nibble_level_2;
+			c.content_nibble_level_1 = 0x0E;
+			c.content_nibble_level_2 = 0x01;
+		}
 		for( size_t j=0; j<eventData->size(); j++ ){
-			if( (*searchKey)[i].content_nibble_level_1 == (*eventData)[j].content_nibble_level_1 ){
-				if( (*searchKey)[i].content_nibble_level_2 != 0xFF ){
-					if( (*searchKey)[i].content_nibble_level_2 == (*eventData)[j].content_nibble_level_2 ){
+			if( c.content_nibble_level_1 == (*eventData)[j].content_nibble_level_1 ){
+				if( c.content_nibble_level_2 == 0xFF ){
+					//’†•ª—Ş‚·‚×‚Ä
+					return TRUE;
+				}
+				if( c.content_nibble_level_2 == (*eventData)[j].content_nibble_level_2 ){
+					if( c.content_nibble_level_1 != 0x0E ){
+						//Šg’£‚Å‚È‚¢
 						return TRUE;
 					}
-				}else{
-					return TRUE;
+					if( c.user_nibble_1 == (*eventData)[j].user_nibble_1 ){
+						if( c.user_nibble_2 == 0xFF ){
+							//Šg’£’†•ª—Ş‚·‚×‚Ä
+							return TRUE;
+						}
+						if( c.user_nibble_2 == (*eventData)[j].user_nibble_2 ){
+							return TRUE;
+						}
+					}
 				}
 			}
 		}
