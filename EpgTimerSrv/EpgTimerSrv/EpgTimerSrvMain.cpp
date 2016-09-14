@@ -1102,6 +1102,7 @@ bool CEpgTimerSrvMain::AutoAddReserveProgram(const MANUAL_AUTO_ADD_DATA& data)
 					item.serviceID = data.serviceID;
 					item.eventID = 0xFFFF;
 					item.recSetting = data.recSetting;
+					item.comment = L"ƒvƒƒOƒ‰ƒ€©“®—\–ñ";
 				}
 			}
 		}
