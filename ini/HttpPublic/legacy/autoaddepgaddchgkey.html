@@ -98,6 +98,7 @@ if post and (aa.dataID==0 or lastRecSetting) then
     si.freeCAFlag=tonumber(mg.get_var(post, 'freeCAFlag')) or 0
     si.chkRecEnd=(tonumber(mg.get_var(post, 'chkRecEnd')) or 0)~=0
     si.chkRecDay=tonumber(mg.get_var(post, 'chkRecDay')) or 0
+    si.chkRecNoService=(tonumber(mg.get_var(post, 'chkRecNoService')) or 0)~=0
     si.chkDurationMin=tonumber(mg.get_var(post, 'chkDurationMin')) or 0
     si.chkDurationMax=tonumber(mg.get_var(post, 'chkDurationMax')) or 0
     si.contentList={}

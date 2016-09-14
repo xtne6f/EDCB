@@ -3160,7 +3160,8 @@ void CEpgTimerSrvMain::PushEpgSearchKeyInfo(CLuaWorkspace& ws, const EPGDB_SEARC
 	LuaHelp::reg_boolean(L, "notDateFlag", k.notDateFlag != 0);
 	LuaHelp::reg_int(L, "freeCAFlag", k.freeCAFlag);
 	LuaHelp::reg_boolean(L, "chkRecEnd", k.chkRecEnd != 0);
-	LuaHelp::reg_int(L, "chkRecDay", k.chkRecDay);
+	LuaHelp::reg_int(L, "chkRecDay", k.chkRecDay >= 40000 ? k.chkRecDay % 10000 : k.chkRecDay);
+	LuaHelp::reg_boolean(L, "chkRecNoService", k.chkRecDay >= 40000);
 	LuaHelp::reg_int(L, "chkDurationMin", durMin);
 	LuaHelp::reg_int(L, "chkDurationMax", durMax);
 	lua_pushstring(L, "contentList");
@@ -3272,6 +3273,9 @@ void CEpgTimerSrvMain::FetchEpgSearchKeyInfo(CLuaWorkspace& ws, EPGDB_SEARCH_KEY
 	k.freeCAFlag = (BYTE)LuaHelp::get_int(L, "freeCAFlag");
 	k.chkRecEnd = LuaHelp::get_boolean(L, "chkRecEnd");
 	k.chkRecDay = (WORD)LuaHelp::get_int(L, "chkRecDay");
+	if( LuaHelp::get_boolean(L, "chkRecNoService") ){
+		k.chkRecDay = k.chkRecDay % 10000 + 40000;
+	}
 	int durMin = LuaHelp::get_int(L, "chkDurationMin");
 	int durMax = LuaHelp::get_int(L, "chkDurationMax");
 	if( durMin > 0 || durMax > 0 ){

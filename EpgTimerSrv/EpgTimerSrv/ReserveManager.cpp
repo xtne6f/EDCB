@@ -1868,12 +1868,13 @@ bool CReserveManager::IsFindRecEventInfo(const EPGDB_EVENT_INFO& info, WORD chkD
 				infoEventName = (LPCWSTR)rpl == NULL ? L"" : (LPCWSTR)rpl;
 			}
 			if( infoEventName.empty() == false && info.StartTimeFlag != 0 ){
+				int chkDayActual = chkDay >= 20000 ? chkDay % 10000 : chkDay;
 				map<DWORD, PARSE_REC_INFO2_ITEM>::const_iterator itr;
 				for( itr = this->recInfo2Text.GetMap().begin(); itr != this->recInfo2Text.GetMap().end(); itr++ ){
-					if( itr->second.originalNetworkID == info.original_network_id &&
-					    itr->second.transportStreamID == info.transport_stream_id &&
-					    itr->second.serviceID == info.service_id &&
-					    ConvertI64Time(itr->second.startTime) + chkDay*24*60*60*I64_1SEC > ConvertI64Time(info.start_time) ){
+					if( (chkDay >= 40000 || itr->second.originalNetworkID == info.original_network_id) &&
+					    (chkDay >= 30000 || itr->second.transportStreamID == info.transport_stream_id) &&
+					    (chkDay >= 20000 || itr->second.serviceID == info.service_id) &&
+					    ConvertI64Time(itr->second.startTime) + chkDayActual*24*60*60*I64_1SEC > ConvertI64Time(info.start_time) ){
 						wstring eventName = itr->second.eventName;
 						if( this->recInfo2RegExp.empty() == false ){
 							_bstr_t rpl = regExp->Replace(_bstr_t(eventName.c_str()), _bstr_t());

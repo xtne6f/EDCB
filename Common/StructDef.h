@@ -394,7 +394,7 @@ typedef struct _EPGDB_SEARCH_KEY_INFO{
 	//CMD_VER 3以降
 	//自動予約登録の条件専用
 	BYTE chkRecEnd;					//録画済かのチェックあり
-	WORD chkRecDay;					//録画済かのチェック対象期間
+	WORD chkRecDay;					//録画済かのチェック対象期間（+20000=SID無視,+30000=TS|SID無視,+40000=ON|TS|SID無視）
 	_EPGDB_SEARCH_KEY_INFO(void){
 		andKey = L"";
 		notKey = L"";
