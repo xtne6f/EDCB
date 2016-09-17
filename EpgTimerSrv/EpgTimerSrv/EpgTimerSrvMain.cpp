@@ -984,11 +984,11 @@ bool CEpgTimerSrvMain::AutoAddReserveEPG(const EPG_AUTO_ADD_DATA& data)
 	}
 	__int64 now = GetNowI64Time();
 
+	vector<CEpgDBManager::SEARCH_RESULT_EVENT_DATA> resultList;
 	vector<EPGDB_SEARCH_KEY_INFO> key(1, data.searchInfo);
-	this->epgDB.SearchEpg(&key, [=, &modified, &setList, &addCount](vector<CEpgDBManager::SEARCH_RESULT_EVENT>& resultList)
-	{
+	this->epgDB.SearchEpg(&key, &resultList);
 	for( size_t i = 0; i < resultList.size(); i++ ){
-		const EPGDB_EVENT_INFO& info = *resultList[i].info;
+		const EPGDB_EVENT_INFO& info = resultList[i].info;
 		//ŽžŠÔ–¢’è‚Å‚È‚­‘ÎÛŠúŠÔ“à‚©‚Ç‚¤‚©
 		if( info.StartTimeFlag != 0 && info.DurationFlag != 0 &&
 		    now < ConvertI64Time(info.start_time) && ConvertI64Time(info.start_time) < now + autoAddHour_ * 60 * 60 * I64_1SEC ){
@@ -1059,7 +1059,6 @@ bool CEpgTimerSrvMain::AutoAddReserveEPG(const EPG_AUTO_ADD_DATA& data)
 			}
 		}
 	}
-	});
 	if( setList.empty() == false && this->reserveManager.AddReserveData(setList) ){
 		modified = true;
 	}
