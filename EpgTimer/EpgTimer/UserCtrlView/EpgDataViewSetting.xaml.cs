@@ -51,8 +51,13 @@ namespace EpgTimer
                 }
                 foreach (ContentKindInfo info in CommonManager.Instance.ContentKindDictionary.Values)
                 {
-                    listBox_jyanru.Items.Add(info);
+                    if (info.ID != 0x0FFF)
+                    {
+                        listBox_jyanru.Items.Add(info);
+                    }
                 }
+                //「その他」は後ろ
+                listBox_jyanru.Items.Insert(listBox_jyanru.Items.Count - 1, CommonManager.Instance.ContentKindDictionary[0x0FFF]);
 
                 radioButton_rate.IsChecked = true;
                 radioButton_week.IsChecked = false;

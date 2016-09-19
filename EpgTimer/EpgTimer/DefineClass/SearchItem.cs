@@ -210,13 +210,20 @@ namespace EpgTimer
                     Dictionary<int, List<int>> nibbleDict1 = new Dictionary<int, List<int>>();  // 小ジャンルを大ジャンルでまとめる
                     foreach (EpgContentData ecd1 in eventInfo.ContentInfo.nibbleList)
                     {
-                        if (nibbleDict1.ContainsKey(ecd1.content_nibble_level_1))
+                        int nibble1 = ecd1.content_nibble_level_1;
+                        int nibble2 = ecd1.content_nibble_level_2;
+                        if (nibble1 == 0x0E && nibble2 == 0x01)
                         {
-                            nibbleDict1[ecd1.content_nibble_level_1].Add(ecd1.content_nibble_level_2);
+                            nibble1 = ecd1.user_nibble_1 | 0x70;
+                            nibble2 = ecd1.user_nibble_2;
+                        }
+                        if (nibbleDict1.ContainsKey(nibble1))
+                        {
+                            nibbleDict1[nibble1].Add(nibble2);
                         }
                         else
                         {
-                            nibbleDict1.Add(ecd1.content_nibble_level_1, new List<int>() { ecd1.content_nibble_level_2 });
+                            nibbleDict1.Add(nibble1, new List<int>() { nibble2 });
                         }
                     }
                     foreach (KeyValuePair<int, List<int>> kvp1 in nibbleDict1)

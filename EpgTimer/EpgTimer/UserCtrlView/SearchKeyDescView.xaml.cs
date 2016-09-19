@@ -41,7 +41,17 @@ namespace EpgTimer
                 }
                 listView_service.ItemsSource = serviceList;
 
-                comboBox_content.DataContext = CommonManager.Instance.ContentKindDictionary.Values;
+                var contentList = new List<ContentKindInfo>(CommonManager.Instance.ContentKindDictionary.Count);
+                foreach (ContentKindInfo info in CommonManager.Instance.ContentKindDictionary.Values)
+                {
+                    if (info.ID != 0x0FFF)
+                    {
+                        contentList.Add(info);
+                    }
+                }
+                //「その他」は後ろ
+                contentList.Insert(contentList.Count - 1, CommonManager.Instance.ContentKindDictionary[0x0FFF]);
+                comboBox_content.DataContext = contentList;
                 comboBox_content.SelectedIndex = 0;
 
                 comboBox_time_sw.DataContext = CommonManager.Instance.DayOfWeekDictionary.Values;
@@ -260,6 +270,11 @@ namespace EpgTimer
                     if (CommonManager.Instance.ContentKindDictionary.ContainsKey(contentKey) == true)
                     {
                         listBox_content.Items.Add(CommonManager.Instance.ContentKindDictionary[contentKey]);
+                    }
+                    else
+                    {
+                        //未知のジャンル
+                        listBox_content.Items.Add(new ContentKindInfo("?", "?", item.content_nibble_level_1, item.content_nibble_level_2));
                     }
                 }
 

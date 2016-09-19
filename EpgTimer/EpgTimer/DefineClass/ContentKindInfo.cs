@@ -16,12 +16,13 @@ namespace EpgTimer
             this.SubName = subName;
             this.Nibble1 = nibble1;
             this.Nibble2 = nibble2;
-            this.ID = (UInt16)(((UInt16)nibble1) << 8 | nibble2);
         }
         public UInt16 ID
         {
-            get;
-            set;
+            get
+            {
+                return (UInt16)(Nibble1 << 8 | Nibble2);
+            }
         }
         public String ContentName
         {
