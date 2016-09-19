@@ -78,7 +78,7 @@ if aa.searchInfo then
     ..'<input type="checkbox" name="aimaiFlag" value="1"'..(si.aimaiFlag and ' checked="checked"' or '')..'>あいまい検索モード\n'
     ..'<input type="checkbox" name="titleOnlyFlag" value="1"'..(si.titleOnlyFlag and ' checked="checked"' or '')..'>番組名のみ検索対象にする<br><br>\n'
     ..'ジャンル絞り込み<br><select name="contentList" multiple size="5">\n'
-  for i=0,15 do
+  for _i,i in ipairs({0,1,2,3,4,5,6,7,8,9,10,11,12,13,0x70,0x71,0x72,0x73,0x74,0x75,0x76,0x77,15}) do
     nibble1=edcb.GetGenreName(i*256+255)
     if nibble1~='' then
       ct=ct..'<option value="'..(i*256+255)..'"'
