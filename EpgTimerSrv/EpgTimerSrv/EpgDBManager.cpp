@@ -9,6 +9,8 @@
 #include "../../Common/EpgTimerUtil.h"
 #include "../../Common/EpgDataCap3Util.h"
 
+extern DWORD g_compatFlags;
+
 CEpgDBManager::CEpgDBManager(void)
 {
 	InitializeCriticalSection(&this->epgMapLock);
@@ -381,7 +383,11 @@ void CEpgDBManager::SearchEvent(EPGDB_SEARCH_KEY_INFO* key, vector<SEARCH_RESULT
 	}
 	if( andKey.size() == 0 && key->notKey.size() == 0 && key->contentList.size() == 0 && key->videoList.size() == 0 && key->audioList.size() == 0){
 		//キーワードもジャンル指定もないので検索しない
-		return ;
+		if( g_compatFlags & 0x02 ){
+			//互換動作: キーワードなしの検索を許可する
+		}else{
+			return;
+		}
 	}
 	
 	//キーワード分解

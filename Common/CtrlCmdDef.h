@@ -31,6 +31,7 @@
 #define CMD2_EPG_SRV_UNREGIST_GUI			6 //GUIアプリケーションのパイプ名と接続待機用イベント名の登録を解除
 #define CMD2_EPG_SRV_REGIST_GUI_TCP			7 //TCP接続のGUIアプリケーションのIPとポートを登録（タイマーGUI用のコマンドが飛ぶようになる）
 #define CMD2_EPG_SRV_UNREGIST_GUI_TCP		8 //TCP接続のGUIアプリケーションのIPとポートの登録を解除
+#define CMD2_EPG_SRV_ISREGIST_GUI_TCP		9 //TCP接続のGUIアプリケーションのIPとポートの登録状況確認
 
 #define CMD2_EPG_SRV_ENUM_RESERVE			1011 //予約一覧取得
 #define CMD2_EPG_SRV_GET_RESERVE			1012 //予約情報取得
@@ -49,10 +50,13 @@
 #define CMD2_EPG_SRV_ENUM_RECINFO2			2017 //録画済み情報一覧取得
 #define CMD2_EPG_SRV_CHG_PROTECT_RECINFO2	2019 //録画済み情報のプロテクト変更
 #define CMD2_EPG_SRV_ENUM_RECINFO_BASIC2	2020 //録画済み情報一覧取得（programInfoとerrInfoを除く）
+#define CMD2_EPG_SRV_GET_RECINFO_LIST2		2022 //録画済み情報一覧取得（指定IDリスト）
 #define CMD2_EPG_SRV_GET_RECINFO2			2024 //録画済み情報取得
 #define CMD2_EPG_SRV_ADDCHK_RESERVE2		2030 //サーバー連携用　予約追加できるかのチェック（戻り値 0:追加不可 1:追加可能 2:追加可能だが開始か終了が重なるものあり 3:すでに同じ物がある）
 #define CMD2_EPG_SRV_GET_EPG_FILETIME2		2031 //サーバー連携用　EPGデータファイルのタイムスタンプ取得
 #define CMD2_EPG_SRV_GET_EPG_FILE2			2032 //サーバー連携用　EPGデータファイル取得
+#define CMD2_EPG_SRV_SEARCH_PG2				2125 //番組検索
+#define CMD2_EPG_SRV_SEARCH_PG_BYKEY2		2127 //番組検索、キーごとのイベントを全て返す
 #define CMD2_EPG_SRV_ENUM_AUTO_ADD2			2131 //自動予約登録の条件一覧取得
 #define CMD2_EPG_SRV_ADD_AUTO_ADD2			2132 //自動予約登録の条件追加
 #define CMD2_EPG_SRV_CHG_AUTO_ADD2			2134 //自動予約登録の条件変更
@@ -83,8 +87,10 @@
 #define CMD2_EPG_SRV_EPG_CAP_NOW			1053 //10秒後にEPGデータの取得を行う
 
 #define CMD2_EPG_SRV_FILE_COPY				1060 //指定ファイルを転送する
+#define CMD2_EPG_SRV_FILE_COPY2				2060 //指定ファイルをまとめて転送する
 #define CMD2_EPG_SRV_ENUM_PLUGIN			1061 //PlugInファイルの一覧を取得する（1:ReName、2:Write）
 #define CMD2_EPG_SRV_GET_CHG_CH_TVTEST		1062 //TVTestのチャンネル切り替え用の情報を取得する
+#define CMD2_EPG_SRV_PROFILE_UPDATE			1063 //設定ファイル(ini)の更新を通知させる
 
 #define CMD2_EPG_SRV_NWTV_SET_CH			1070 //ネットワークモードのEpgDataCap_Bonのチャンネルを切り替え
 #define CMD2_EPG_SRV_NWTV_CLOSE				1071 //ネットワークモードで起動中のEpgDataCap_Bonを終了
@@ -98,6 +104,9 @@
 #define CMD2_EPG_SRV_NWPLAY_SET_POS			1085 //ストリーム配信で送信位置をシークする
 #define CMD2_EPG_SRV_NWPLAY_SET_IP			1086 //ストリーム配信で送信先を設定する
 #define CMD2_EPG_SRV_NWPLAY_TF_OPEN			1087 //ストリーム配信用ファイルをタイムシフトモードで開く
+
+//外部アプリ再生用
+#define CMD2_EPG_SRV_GET_NETWORK_PATH		1299 //録画ファイルのネットワークパスを取得
 
 //タイマーGUI（EpgTimer_Bon.exe）用
 #define CMD2_TIMER_GUI_SHOW_DLG				101 //ダイアログを前面に表示
