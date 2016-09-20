@@ -196,6 +196,10 @@ namespace EpgTimer
                     key.chkRecEnd = 0;
                 }
                 key.chkRecDay = Convert.ToUInt16(textBox_chkRecDay.Text.ToString());
+                if (checkBox_chkRecNoService.IsChecked == true)
+                {
+                    key.chkRecDay = (ushort)(key.chkRecDay % 10000 + 40000);
+                }
             }
             catch (Exception ex)
             {
@@ -344,7 +348,8 @@ namespace EpgTimer
                 {
                     checkBox_chkRecEnd.IsChecked = false;
                 }
-                textBox_chkRecDay.Text = defKey.chkRecDay.ToString();
+                textBox_chkRecDay.Text = "" + (defKey.chkRecDay >= 40000 ? defKey.chkRecDay % 10000 : defKey.chkRecDay);
+                checkBox_chkRecNoService.IsChecked = defKey.chkRecDay >= 40000;
             }
             catch (Exception ex)
             {

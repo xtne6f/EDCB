@@ -1098,6 +1098,25 @@ namespace EpgTimer
                 r.Read(ref chkRecEnd);
                 r.Read(ref chkRecDay);
             }
+            if (version >= 5 && r.RemainSize() >= 5)
+            {
+                byte recNoService = 0;
+                r.Read(ref recNoService);
+                if (recNoService != 0)
+                {
+                    chkRecDay = (ushort)(chkRecDay % 10000 + 40000);
+                }
+                ushort durMin = 0;
+                ushort durMax = 0;
+                r.Read(ref durMin);
+                r.Read(ref durMax);
+                if (durMin > 0 || durMax > 0)
+                {
+                    andKey = andKey.Insert(
+                        System.Text.RegularExpressions.Regex.Match(andKey, @"^(?:\^!\{999\})?(?:C!\{999\})?").Length,
+                        "D!{" + ((10000 + Math.Min((int)durMin, 9999)) * 10000 + Math.Min((int)durMax, 9999)) + "}");
+                }
+            }
             r.End();
         }
     }

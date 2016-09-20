@@ -64,6 +64,7 @@ namespace EpgTimer.Setting
                 checkBox_srvResident.IsEnabled = false;
                 checkBox_srvSaveNotifyLog.IsEnabled = false;
                 checkBox_srvSaveDebugLog.IsEnabled = false;
+                checkBox_srvCompatTkntrec.IsEnabled = false;
             }
 
             try
@@ -233,6 +234,8 @@ namespace EpgTimer.Setting
                 }
                 checkBox_srvSaveNotifyLog.IsChecked = IniFileHandler.GetPrivateProfileInt("SET", "SaveNotifyLog", 0, SettingPath.TimerSrvIniPath) != 0;
                 checkBox_srvSaveDebugLog.IsChecked = IniFileHandler.GetPrivateProfileInt("SET", "SaveDebugLog", 0, SettingPath.TimerSrvIniPath) != 0;
+                checkBox_srvCompatTkntrec.Tag = IniFileHandler.GetPrivateProfileInt("SET", "CompatFlags", 0, SettingPath.TimerSrvIniPath);
+                checkBox_srvCompatTkntrec.IsChecked = (int)checkBox_srvCompatTkntrec.Tag % 4096 == 4095;
 
                 int count;
                 count = IniFileHandler.GetPrivateProfileInt("DEL_EXT", "Count", 0, SettingPath.TimerSrvIniPath);
@@ -598,6 +601,10 @@ namespace EpgTimer.Setting
             IniFileHandler.WritePrivateProfileString("SET", "NoBalloonTip", checkBox_srvNoBalloonTip.IsChecked == false ? "0" : "1", SettingPath.TimerSrvIniPath);
             IniFileHandler.WritePrivateProfileString("SET", "SaveNotifyLog", checkBox_srvSaveNotifyLog.IsChecked == false ? "0" : "1", SettingPath.TimerSrvIniPath);
             IniFileHandler.WritePrivateProfileString("SET", "SaveDebugLog", checkBox_srvSaveDebugLog.IsChecked == false ? "0" : "1", SettingPath.TimerSrvIniPath);
+            int compatFlags = (int)checkBox_srvCompatTkntrec.Tag;
+            IniFileHandler.WritePrivateProfileString("SET", "CompatFlags",
+                "" + (checkBox_srvCompatTkntrec.IsChecked == false ? (compatFlags % 4096 == 4095 ? 0 : compatFlags) : (compatFlags % 4096 == 4095 ? compatFlags : 4095)),
+                SettingPath.TimerSrvIniPath);
 
             IniFileHandler.WritePrivateProfileString("DEL_EXT", "Count", extList.Count.ToString(), SettingPath.TimerSrvIniPath);
             for (int i = 0; i < extList.Count; i++)

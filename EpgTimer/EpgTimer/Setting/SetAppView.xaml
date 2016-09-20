@@ -130,6 +130,7 @@
                     <CheckBox Content="バルーンチップでの動作通知を抑制する" Height="16" HorizontalAlignment="Left" Margin="24,296,0,0" Name="checkBox_srvNoBalloonTip" VerticalAlignment="Top" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_srvResident, UpdateSourceTrigger=PropertyChanged}" />
                     <CheckBox Content="情報通知ログをファイルに保存する" Height="16" HorizontalAlignment="Left" Margin="6,318,0,0" Name="checkBox_srvSaveNotifyLog" VerticalAlignment="Top" />
                     <CheckBox Content="デバッグ出力をファイルに保存する" Height="16" HorizontalAlignment="Left" Margin="6,340,0,0" Name="checkBox_srvSaveDebugLog" VerticalAlignment="Top" />
+                    <CheckBox Content="EpgTimerSrvの応答をtkntrec版互換にする" Height="16" HorizontalAlignment="Left" Margin="6,362,0,0" Name="checkBox_srvCompatTkntrec" VerticalAlignment="Top" />
                 </Grid>
             </TabItem>
             <TabItem Header="カスタムボタン" Name="tabItem5">
