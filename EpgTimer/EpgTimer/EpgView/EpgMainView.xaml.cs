@@ -260,7 +260,7 @@ namespace EpgTimer
                             continue;
                         }
                         //ジャンル絞り込み
-                        if (ViewUtil.ContainsContent(eventInfo, this.viewCustContentKindList) == false)
+                        if (ViewUtil.ContainsContent(eventInfo, this.viewCustContentKindList, this.setViewInfo.ViewNotContentFlag) == false)
                         {
                             continue;
                         }

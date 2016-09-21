@@ -82,6 +82,7 @@ namespace EpgTimer
                     listBox_jyanruView.Items.Add(new ContentKindInfo("?", "?", (byte)(id >> 8), (byte)id));
                 }
             }
+            checkBox_notContent.IsChecked = setInfo.ViewNotContentFlag;
         }
 
         /// <summary>
@@ -104,6 +105,7 @@ namespace EpgTimer
 
             info.ViewServiceList = listBox_serviceView.Items.OfType<ChSet5Item>().Select(item => item.Key).ToList();
             info.ViewContentKindList = listBox_jyanruView.Items.OfType<ContentKindInfo>().Select(item => item.ID).ToList();
+            info.ViewNotContentFlag = checkBox_notContent.IsChecked == true;
         }
 
         //サービス選択関係は他でも使用するので

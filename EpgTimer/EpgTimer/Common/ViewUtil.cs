@@ -94,7 +94,7 @@ namespace EpgTimer
         }
         
         //ジャンル絞り込み
-        public static bool ContainsContent(EpgEventInfo info, Dictionary<UInt16, UInt16> ContentKindList)
+        public static bool ContainsContent(EpgEventInfo info, Dictionary<UInt16, UInt16> ContentKindList, bool notContent = false)
         {
             //絞り込み無し
             if (ContentKindList.Count == 0) return true;
@@ -102,33 +102,29 @@ namespace EpgTimer
             //ジャンルデータ'なし'扱い
             if (info.ContentInfo == null || info.ContentInfo.nibbleList.Count == 0)
             {
-                return ContentKindList.ContainsKey(0xFFFF) == true;
+                return ContentKindList.ContainsKey(0xFFFF) == !notContent;
             }
 
             foreach (EpgContentData contentInfo in info.ContentInfo.nibbleList)
             {
-                UInt16 ID1 = (UInt16)(((UInt16)contentInfo.content_nibble_level_1) << 8 | 0xFF);
-                UInt16 ID2 = (UInt16)(((UInt16)contentInfo.content_nibble_level_1) << 8 | contentInfo.content_nibble_level_2);
+                var ID1 = (UInt16)(contentInfo.content_nibble_level_1 << 8 | 0xFF);
+                var ID2 = (UInt16)(contentInfo.content_nibble_level_1 << 8 | contentInfo.content_nibble_level_2);
                 
                 //CS検索の仮対応
-                if (ID2 == 0x0e01)
+                if (ID2 == 0x0E01)
                 {
-                    ID1 = (UInt16)(((UInt16)contentInfo.user_nibble_1) << 8 | 0x70FF);
-                    ID2 = (UInt16)(((UInt16)contentInfo.user_nibble_1) << 8 | 0x7000 | contentInfo.user_nibble_2);
+                    ID1 = (UInt16)((contentInfo.user_nibble_1 | 0x70) << 8 | 0xFF);
+                    ID2 = (UInt16)((contentInfo.user_nibble_1 | 0x70) << 8 | contentInfo.user_nibble_2);
                 }
 
-                if (ContentKindList.ContainsKey(ID1) == true)
+                if (ContentKindList.ContainsKey(ID1) == true || ContentKindList.ContainsKey(ID2) == true)
                 {
-                    return true;
-                }
-                else if (ContentKindList.ContainsKey(ID2) == true)
-                {
-                    return true;
+                    return !notContent;
                 }
             }
 
             //見つからない
-            return false;
+            return notContent;
         }
 
         //パネルアイテムにマージンを適用。

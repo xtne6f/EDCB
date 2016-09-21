@@ -10,6 +10,7 @@ namespace EpgTimer
         {
             ViewServiceList = new List<UInt64>();
             ViewContentKindList = new List<UInt16>();
+            ViewNotContentFlag = false;
             ViewMode = 0;
             NeedTimeOnlyBasic = false;
             NeedTimeOnlyWeek = false;
@@ -27,6 +28,7 @@ namespace EpgTimer
         public int StartTimeWeek { get; set; }
         public List<UInt64> ViewServiceList { get; set; }
         public List<UInt16> ViewContentKindList { get; set; }
+        public bool ViewNotContentFlag { get; set; }
         public bool SearchMode { get; set; }
         public EpgSearchKeyInfo SearchKey { get; set; }
         public bool SearchServiceFromView { get; set; }
@@ -44,6 +46,7 @@ namespace EpgTimer
             dest.StartTimeWeek = src.StartTimeWeek;
             dest.ViewServiceList = src.ViewServiceList.ToList();
             dest.ViewContentKindList = src.ViewContentKindList.ToList();
+            dest.ViewNotContentFlag = src.ViewNotContentFlag;
             dest.SearchMode = src.SearchMode;
             dest.SearchServiceFromView = src.SearchServiceFromView;
             dest.FilterEnded = src.FilterEnded;

@@ -133,7 +133,7 @@ namespace EpgTimer
                         foreach (EpgEventInfo eventInfo in serviceEventList[info.ID].eventList)
                         {
                             //ジャンル絞り込み
-                            if (ViewUtil.ContainsContent(eventInfo, this.viewCustContentKindList) == false)
+                            if (ViewUtil.ContainsContent(eventInfo, this.viewCustContentKindList, this.setViewInfo.ViewNotContentFlag) == false)
                             {
                                 continue;
                             }

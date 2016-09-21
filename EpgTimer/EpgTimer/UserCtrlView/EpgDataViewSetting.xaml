@@ -119,7 +119,10 @@
                                 <ColumnDefinition Width="6" />
                                 <ColumnDefinition Width="40*" />
                             </Grid.ColumnDefinitions>
-                            <Label Grid.ColumnSpan="3" Content="表示ジャンル(未登録で全ジャンル対象)" />
+                            <WrapPanel Grid.ColumnSpan="3">
+                                <Label Content="表示ジャンル(未登録で全ジャンル対象)" HorizontalAlignment="Center" />
+                                <CheckBox Content="NOT扱いとする" Margin="12,0,0,0" Name="checkBox_notContent" HorizontalAlignment="Center" />
+                            </WrapPanel>
                             <ListBox Grid.Row="2" Name="listBox_jyanruView" DisplayMemberPath="ListBoxView" SelectionMode="Extended" />
                             <StackPanel Grid.Row="2" Grid.Column="2" >
                                 <Button Content="全追加" Margin="0,0,0,6" Name="button_jyanru_addAll" />
