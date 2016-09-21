@@ -33,7 +33,7 @@ namespace EpgTimer
                 listBox_serviceOther.ItemsSource = ChSet5.ChList.Values.Where(info => info.IsOther == true);
                 listBox_serviceAll.ItemsSource = ChSet5.ChList.Values;
 
-                listBox_jyanru.ItemsSource = CommonManager.Instance.ContentKindList;
+                listBox_jyanru.ItemsSource = CommonManager.Instance.ContentKindDictionary.Values;
 
                 viewModeRadioBtns = new RadioBtnSelect(radioButton_rate, radioButton_week, radioButton_list);
                 viewModeRadioBtns.Value = 0;
@@ -75,6 +75,11 @@ namespace EpgTimer
                 if (CommonManager.Instance.ContentKindDictionary.ContainsKey(id) == true)
                 {
                     listBox_jyanruView.Items.Add(CommonManager.Instance.ContentKindDictionary[id]);
+                }
+                else
+                {
+                    //未知のジャンル
+                    listBox_jyanruView.Items.Add(new ContentKindInfo("?", "?", (byte)(id >> 8), (byte)id));
                 }
             }
         }
