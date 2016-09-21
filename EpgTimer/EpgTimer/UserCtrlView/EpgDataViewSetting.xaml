@@ -36,9 +36,7 @@
                     <StackPanel Orientation="Horizontal">
                         <CheckBox Content="検索による絞り込みを行う" Name="checkBox_searchMode" />
                         <Button Content="検索条件" Margin="20,0,0,0" Click="button_searchKey_Click" />
-                        <CheckBox Content="表示サービスで検索する" Margin="12,0,0,0" Name="checkBox_searchServiceFromView" />
                     </StackPanel>
-                    <Label Content="(表示ジャンルは検索条件のものを使用。表示サービスは並び順のために設定が必要です。)" />
                 </StackPanel>
                 <TabControl Margin="0,6,0,0" HorizontalAlignment="Stretch">
                     <TabItem Header="表示サービス" >

@@ -60,7 +60,6 @@ namespace EpgTimer
             checkBox_noTimeView_week.IsChecked = setInfo.NeedTimeOnlyWeek;
             comboBox_timeH_week.SelectedIndex = setInfo.StartTimeWeek;
             checkBox_searchMode.IsChecked = setInfo.SearchMode;
-            checkBox_searchServiceFromView.IsChecked = setInfo.SearchServiceFromView;
             checkBox_filterEnded.IsChecked = (setInfo.FilterEnded == true);
 
             foreach (UInt64 id in setInfo.ViewServiceList)
@@ -98,9 +97,10 @@ namespace EpgTimer
             info.NeedTimeOnlyWeek = (checkBox_noTimeView_week.IsChecked == true);
             info.StartTimeWeek = comboBox_timeH_week.SelectedIndex;
             info.SearchMode = (checkBox_searchMode.IsChecked == true);
-            info.SearchServiceFromView = (checkBox_searchServiceFromView.IsChecked == true);
             info.FilterEnded = (checkBox_filterEnded.IsChecked == true);
             info.SearchKey = searchKey.Clone();
+            info.SearchKey.serviceList.Clear();//不要なので削除
+            info.SearchKey.contentList.Clear();//不要なので削除
             info.ID = tabInfoID;
 
             info.ViewServiceList = listBox_serviceView.Items.OfType<ChSet5Item>().Select(item => item.Key).ToList();
@@ -315,32 +315,34 @@ namespace EpgTimer
 
         private void button_searchKey_Click(object sender, RoutedEventArgs e)
         {
+            var tabInfo = new CustomEpgTabInfo();
+            GetSetting(ref tabInfo);
+
             var dlg = new SetDefSearchSettingWindow();
             dlg.Owner = CommonUtil.GetTopWindow(this);
-            EpgSearchKeyInfo setKey = searchKey.Clone();
-            if (checkBox_searchServiceFromView.IsChecked == true)
-            {
-                setKey.serviceList = listBox_serviceView.Items.OfType<ChSet5Item>().Select(ch => (long)ch.Key).ToList();
-            }
-            dlg.SetDefSetting(setKey);
+            dlg.SetDefSetting(tabInfo.GetSearchKeyReloadEpg());
             if (dlg.ShowDialog() == true)
             {
                 searchKey = dlg.GetSetting();
-                if (checkBox_searchServiceFromView.IsChecked == true)
+
+                //サービスリストは表示順を保持する
+                var oldList = listBox_serviceView.Items.OfType<object>().ToList();
+                var newList = searchKey.serviceList.Where(sv => ChSet5.ChList.ContainsKey((ulong)sv) == true).Select(sv => ChSet5.ChList[(ulong)sv]).ToList();
+                listBox_serviceView.UnselectAll();
+                listBox_serviceView.Items.RemoveItems(oldList.Where(sv => newList.Contains(sv) == false));
+                listBox_serviceView.Items.AddItems(newList.Where(sv => oldList.Contains(sv) == false));
+
+                //ジャンルリスト
+                listBox_jyanruView.Items.Clear();
+                foreach (EpgContentData cnt in searchKey.contentList)
                 {
-                    var oldList = listBox_serviceView.Items.OfType<object>().ToList();
-                    var searchList = new List<object>();
-                    foreach (ulong sv in searchKey.serviceList)
+                    var ID = (UInt16)(cnt.content_nibble_level_1 << 8 | cnt.content_nibble_level_2);
+                    if (CommonManager.Instance.ContentKindDictionary.ContainsKey(ID) == true)
                     {
-                        if (ChSet5.ChList.ContainsKey(sv) == true)
-                        {
-                            searchList.Add(ChSet5.ChList[sv]);
-                        }
+                        listBox_jyanruView.Items.Add(CommonManager.Instance.ContentKindDictionary[ID]);
                     }
-                    listBox_serviceView.UnselectAll();
-                    listBox_serviceView.Items.RemoveItems(oldList.Where(sv => searchList.Contains(sv) == false));
-                    listBox_serviceView.Items.AddItems(searchList.Where(sv => oldList.Contains(sv) == false));
                 }
+                checkBox_notContent.IsChecked = searchKey.notContetFlag != 0;
             }
         }
     }
