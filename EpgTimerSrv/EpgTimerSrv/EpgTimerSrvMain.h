@@ -44,8 +44,8 @@ private:
 	bool IsFindShareTSFile() const;
 	//抑制条件のプロセスが起動しているかどうか
 	bool IsFindNoSuspendExe() const;
-	bool AutoAddReserveEPG(const EPG_AUTO_ADD_DATA& data);
-	bool AutoAddReserveProgram(const MANUAL_AUTO_ADD_DATA& data);
+	bool AutoAddReserveEPG(const EPG_AUTO_ADD_DATA& data, const bool noReportNotify = false);
+	bool AutoAddReserveProgram(const MANUAL_AUTO_ADD_DATA& data, const bool noReportNotify = false);
 	//外部制御コマンド関係
 	static int CALLBACK CtrlCmdPipeCallback(void* param, CMD_STREAM* cmdParam, CMD_STREAM* resParam);
 	static int CALLBACK CtrlCmdTcpCallback(void* param, CMD_STREAM* cmdParam, CMD_STREAM* resParam);
