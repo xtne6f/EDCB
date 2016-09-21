@@ -327,21 +327,6 @@ namespace EpgTimer
                 {
                     //何もしない
                 }
-                else if (string.Compare(ext, ".eaa", true) == 0)
-                {
-                    //自動予約登録条件追加
-                    EAAFileClass eaaFile = new EAAFileClass();
-                    if (eaaFile.LoadEAAFile(arg) == true)
-                    {
-                        List<EpgAutoAddData> val = new List<EpgAutoAddData>();
-                        val.Add(eaaFile.AddKey);
-                        cmd.SendAddEpgAutoAdd(val);
-                    }
-                    else
-                    {
-                        MessageBox.Show("解析に失敗しました。");
-                    }
-                }
                 else if (string.Compare(ext, ".tvpid", true) == 0 || string.Compare(ext, ".tvpio", true) == 0)
                 {
                     //iEPG追加
@@ -685,22 +670,7 @@ namespace EpgTimer
             foreach (string path in filePath)
             {
                 String ext = System.IO.Path.GetExtension(path);
-                if (string.Compare(ext, ".eaa", true) == 0)
-                {
-                    //自動予約登録条件追加
-                    EAAFileClass eaaFile = new EAAFileClass();
-                    if (eaaFile.LoadEAAFile(path) == true)
-                    {
-                        List<EpgAutoAddData> val = new List<EpgAutoAddData>();
-                        val.Add(eaaFile.AddKey);
-                        cmd.SendAddEpgAutoAdd(val);
-                    }
-                    else
-                    {
-                        MessageBox.Show("解析に失敗しました。");
-                    }
-                }
-                else if (string.Compare(ext, ".tvpid", true) == 0 || string.Compare(ext, ".tvpio", true) == 0)
+                if (string.Compare(ext, ".tvpid", true) == 0 || string.Compare(ext, ".tvpio", true) == 0)
                 {
                     //iEPG追加
                     IEPGFileClass iepgFile = new IEPGFileClass();
