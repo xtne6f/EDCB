@@ -14,6 +14,7 @@ namespace EpgTimer
         private EpgSearchKeyInfo defKey = new EpgSearchKeyInfo();
         private List<ServiceItem> serviceList = new List<ServiceItem>();
         private Dictionary<Int64, ServiceItem> serviceDict = new Dictionary<long, ServiceItem>();
+        private RadioBtnSelect freeRadioBtns;
 
         public SearchKeyDescView()
         {
@@ -54,6 +55,8 @@ namespace EpgTimer
                 comboBox_week_em.DataContext = CommonManager.Instance.MinDictionary.Values;
                 comboBox_week_em.SelectedIndex = 59;
 
+                freeRadioBtns = new RadioBtnSelect(radioButton_free_1, radioButton_free_2, radioButton_free_3);
+                
                 var bxc = new BoxExchangeEdit.BoxExchangeEditor(null, listBox_content, true, true, true);
                 button_content_clear.Click += new RoutedEventHandler(bxc.button_DeleteAll_Click);
                 button_content_del.Click += new RoutedEventHandler(bxc.button_Delete_Click);
@@ -89,58 +92,19 @@ namespace EpgTimer
                 key.titleOnlyFlag = (byte)(checkBox_titleOnly.IsChecked == true ? 1 : 0);
                 key.caseFlag = (byte)(checkBox_case.IsChecked == true ? 1 : 0);
                 key.keyDisabledFlag = (byte)(checkBox_keyDisabled.IsChecked == true ? 1 : 0);
-
-                key.contentList.Clear();
-                foreach (ContentKindInfo info in listBox_content.Items)
-                {
-                    EpgContentData item = new EpgContentData();
-                    item.content_nibble_level_1 = info.Nibble1;
-                    item.content_nibble_level_2 = info.Nibble2;
-                    key.contentList.Add(item);
-                }
+                key.contentList = listBox_content.Items.OfType<ContentKindInfo>().Select(info => new EpgContentData { content_nibble_level_1 = info.Nibble1, content_nibble_level_2 = info.Nibble2 }).ToList();
                 key.notContetFlag = (byte)(checkBox_notContent.IsChecked == true ? 1 : 0);
-
-                key.serviceList.Clear();
-                foreach (ServiceItem info in listView_service.Items)
-                {
-                    if (info.IsSelected == true)
-                    {
-                        key.serviceList.Add((Int64)info.ID);
-                    }
-                }
-
-                key.dateList.Clear();
-                foreach (DateItem info in listBox_date.Items)
-                {
-                    key.dateList.Add(info.DateInfo);
-                }
+                key.serviceList = listView_service.Items.OfType<ServiceItem>().Where(info => info.IsSelected == true).Select(info => (Int64)info.ID).ToList();
+                key.dateList = listBox_date.Items.OfType<DateItem>().Select(info => info.DateInfo).ToList();
                 key.notDateFlag = (byte)(checkBox_notDate.IsChecked == true ? 1 : 0);
-
-                if (radioButton_free_2.IsChecked == true)
-                {
-                    //無料
-                    key.freeCAFlag = 1;
-                }
-                else if (radioButton_free_3.IsChecked == true)
-                {
-                    //有料
-                    key.freeCAFlag = 2;
-                }
-                else
-                {
-                    key.freeCAFlag = 0;
-                }
-
+                key.freeCAFlag = (byte)freeRadioBtns.Value;
                 key.chkRecEnd = (byte)(checkBox_chkRecEnd.IsChecked == true ? 1 : 0);
                 key.chkRecDay = MenuUtil.MyToNumerical(textBox_chkRecDay, Convert.ToUInt16, ushort.MinValue);
                 key.chkRecNoService = (byte)(radioButton_chkRecNoService2.IsChecked == true ? 1 : 0);
                 key.chkDurationMin = MenuUtil.MyToNumerical(textBox_chkDurationMin, Convert.ToUInt16, ushort.MinValue);
                 key.chkDurationMax = MenuUtil.MyToNumerical(textBox_chkDurationMax, Convert.ToUInt16, ushort.MinValue);
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
 
         private void UpdateView()
@@ -156,9 +120,7 @@ namespace EpgTimer
                 listBox_content.Items.Clear();
                 foreach (EpgContentData item in defKey.contentList)
                 {
-                    int nibble1 = item.content_nibble_level_1;
-                    int nibble2 = item.content_nibble_level_2;
-                    UInt16 contentKey = (UInt16)(nibble1 << 8 | nibble2);
+                    var contentKey = (UInt16)(item.content_nibble_level_1 << 8 | item.content_nibble_level_2);
                     if (CommonManager.Instance.ContentKindDictionary.ContainsKey(contentKey) == true)
                     {
                         listBox_content.Items.Add(CommonManager.Instance.ContentKindDictionary[contentKey]);
@@ -186,18 +148,7 @@ namespace EpgTimer
                 checkBox_notContent.IsChecked = (defKey.notContetFlag == 1);
                 checkBox_notDate.IsChecked = (defKey.notDateFlag == 1);
 
-                switch (defKey.freeCAFlag)
-                {
-                    case 1:
-                        radioButton_free_2.IsChecked = true;
-                        break;
-                    case 2:
-                        radioButton_free_3.IsChecked = true;
-                        break;
-                    default:
-                        radioButton_free_1.IsChecked = true;
-                        break;
-                }
+                freeRadioBtns.Value = defKey.freeCAFlag;
 
                 checkBox_chkRecEnd.IsChecked = (defKey.chkRecEnd == 1);
                 textBox_chkRecDay.Text = defKey.chkRecDay.ToString();
@@ -207,10 +158,7 @@ namespace EpgTimer
                 textBox_chkDurationMin.Text = defKey.chkDurationMin.ToString();
                 textBox_chkDurationMax.Text = defKey.chkDurationMax.ToString();   
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
 
         private void button_content_add_Click(object sender, RoutedEventArgs e)

@@ -108,7 +108,7 @@ namespace EpgTimer
                     }
                     if (dlg.ShowDialog() == true)
                     {
-                        var setInfo = new CustomEpgTabInfo(); ;
+                        var setInfo = new CustomEpgTabInfo();
                         dlg.GetSetting(ref setInfo);
 
                         if (Settings.Instance.UseCustomEpgView == true && Settings.Instance.TryEpgSetting == false)

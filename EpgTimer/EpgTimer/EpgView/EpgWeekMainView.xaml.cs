@@ -170,7 +170,7 @@ namespace EpgTimer
 
                 //必要サービスの抽出
                 int selectIndex = 0;
-                foreach (UInt64 id in viewCustServiceList)
+                foreach (UInt64 id in setViewInfo.ViewServiceList)
                 {
                     EpgServiceEventInfo serviceInfo;
                     if (serviceEventList.TryGetValue(id, out serviceInfo) == true)

@@ -91,7 +91,7 @@ namespace EpgTimer
                 listBox_service.ItemsSource = null;
                 serviceList.Clear();
 
-                foreach (UInt64 id in viewCustServiceList)
+                foreach (UInt64 id in setViewInfo.ViewServiceList)
                 {
                     if (serviceEventList.ContainsKey(id) == true)
                     {

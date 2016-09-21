@@ -16,6 +16,7 @@ namespace EpgTimer
     {
         private EpgSearchKeyInfo searchKey = new EpgSearchKeyInfo();
         private int tabInfoID = -1;
+        private RadioBtnSelect viewModeRadioBtns;
 
         public EpgDataViewSetting()
         {
@@ -34,9 +35,8 @@ namespace EpgTimer
 
                 listBox_jyanru.ItemsSource = CommonManager.Instance.ContentKindList;
 
-                radioButton_rate.IsChecked = true;
-                radioButton_week.IsChecked = false;
-                radioButton_list.IsChecked = false;
+                viewModeRadioBtns = new RadioBtnSelect(radioButton_rate, radioButton_week, radioButton_list);
+                viewModeRadioBtns.Value = 0;
 
                 listBox_Button_Set();
                 listBox_serviceView_ContextMenu_Set();
@@ -54,21 +54,7 @@ namespace EpgTimer
             searchKey = setInfo.SearchKey.Clone();
 
             textBox_tabName.Text = setInfo.TabName;
-            radioButton_rate.IsChecked = false;
-            radioButton_week.IsChecked = false;
-            radioButton_list.IsChecked = false;
-            switch (setInfo.ViewMode)
-            {
-                case 1:
-                    radioButton_week.IsChecked = true;
-                    break;
-                case 2:
-                    radioButton_list.IsChecked = true;
-                    break;
-                default:
-                    radioButton_rate.IsChecked = true;
-                    break;
-            }
+            viewModeRadioBtns.Value = setInfo.ViewMode;
 
             checkBox_noTimeView_rate.IsChecked = setInfo.NeedTimeOnlyBasic;
             checkBox_noTimeView_week.IsChecked = setInfo.NeedTimeOnlyWeek;
@@ -100,15 +86,7 @@ namespace EpgTimer
         public void GetSetting(ref CustomEpgTabInfo info)
         {
             info.TabName = textBox_tabName.Text;
-            info.ViewMode = 0;
-            if (radioButton_week.IsChecked == true)
-            {
-                info.ViewMode = 1;
-            }
-            else if (radioButton_list.IsChecked == true)
-            {
-                info.ViewMode = 2;
-            }
+            info.ViewMode = viewModeRadioBtns.Value;
 
             info.NeedTimeOnlyBasic = (checkBox_noTimeView_rate.IsChecked == true);
             info.NeedTimeOnlyWeek = (checkBox_noTimeView_week.IsChecked == true);

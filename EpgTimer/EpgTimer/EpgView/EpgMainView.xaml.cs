@@ -189,7 +189,7 @@ namespace EpgTimer
                 nowViewTimer.Stop();
                 serviceList.Clear();
 
-                foreach (UInt64 id in viewCustServiceList)
+                foreach (UInt64 id in setViewInfo.ViewServiceList)
                 {
                     if (serviceEventList.ContainsKey(id) == true)
                     {

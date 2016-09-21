@@ -764,31 +764,28 @@ namespace EpgTimer
                 {
                     foreach (EpgContentData info in eventInfo.ContentInfo.nibbleList)
                     {
-                        UInt16 ID1 = (UInt16)(((UInt16)info.content_nibble_level_1) << 8 | 0xFF);
-                        UInt16 ID2 = (UInt16)(((UInt16)info.content_nibble_level_1) << 8 | info.content_nibble_level_2);
-                        if (ID2 == 0x0e01)//CS、仮対応データをそのまま使用。
+                        var ID1 = (UInt16)(info.content_nibble_level_1 << 8 | 0xFF);
+                        var ID2 = (UInt16)(info.content_nibble_level_1 << 8 | info.content_nibble_level_2);
+                        if (ID2 == 0x0E01)//CS、仮対応データをそのまま使用。
                         {
-                            ID1 = (UInt16)(((UInt16)info.user_nibble_1) << 8 | 0x70FF);
-                            ID2 = (UInt16)(((UInt16)info.user_nibble_1) << 8 | 0x7000 | info.user_nibble_2);
+                            ID1 = (UInt16)((info.user_nibble_1 | 0x70) << 8 | 0xFF);
+                            ID2 = (UInt16)((info.user_nibble_1 | 0x70) << 8 | info.user_nibble_2);
                         }
 
                         String content = "";
                         ContentKindInfo kindInfo;
-                        if (ContentKindDictionary.TryGetValue(ID1, out kindInfo) == true)
-                        {
-                            content += kindInfo.ContentName;
-                        }
-                        else
-                        {
-                            content += "不明" + "(0x" + info.content_nibble_level_1.ToString("X2") + info.content_nibble_level_2.ToString("X2") + ")";
-                        }
                         if (ContentKindDictionary.TryGetValue(ID2, out kindInfo) == true)
                         {
-                            content += " - " + kindInfo.SubName;
+                            content += kindInfo.ListBoxView;
+                        }
+                        else if (ContentKindDictionary.TryGetValue(ID1, out kindInfo) == true)
+                        {
+                            content += kindInfo.ContentName + " - " + "不明" + "(0x" + ((byte)ID2).ToString("X2") + ")";
                         }
                         else
                         {
-                            content += " - " + "不明" + "(0x" + info.user_nibble_1.ToString("X2") + info.user_nibble_2.ToString("X2") + ")";
+                            content += "不明(0x" + info.content_nibble_level_1.ToString("X2") + info.content_nibble_level_2.ToString("X2")
+                                                + ")(0x" + info.user_nibble_1.ToString("X2") + info.user_nibble_2.ToString("X2") + ")";
                         }
                         extInfo += content + "\r\n";
                     }
@@ -877,6 +874,7 @@ namespace EpgTimer
                 }
 
                 //イベントリレー
+                var idStr = new Func<string, ushort, string>((name, val) => name + " : " + val.ToString() + "(0x" + val.ToString("X4") + ")");
                 if (eventInfo.EventRelayInfo != null)
                 {
                     if (eventInfo.EventRelayInfo.eventDataList.Count > 0)
@@ -891,22 +889,21 @@ namespace EpgTimer
                             }
                             else
                             {
-                                extInfo += "OriginalNetworkID : " + info.original_network_id.ToString() + " (0x" + info.original_network_id.ToString("X4") + ") ";
-                                extInfo += "TransportStreamID : " + info.transport_stream_id.ToString() + " (0x" + info.transport_stream_id.ToString("X4") + ") ";
-                                extInfo += "ServiceID : " + info.service_id.ToString() + " (0x" + info.service_id.ToString("X4") + ") ";
+                                extInfo += idStr("OriginalNetworkID", info.original_network_id)+ " ";
+                                extInfo += idStr("TransportStreamID", info.transport_stream_id)+ " ";
+                                extInfo += idStr("ServiceID", info.service_id) + " ";
                             }
-                            extInfo += "EventID : " + info.event_id.ToString() + " (0x" + info.event_id.ToString("X4") + ")\r\n";
+                            extInfo += idStr("EventID", info.event_id) + "\r\n";
                             extInfo += "\r\n";
                         }
                         extInfo += "\r\n";
                     }
                 }
 
-                extInfo += "OriginalNetworkID : " + eventInfo.original_network_id.ToString() + " (0x" + eventInfo.original_network_id.ToString("X4") + ")\r\n";
-                extInfo += "TransportStreamID : " + eventInfo.transport_stream_id.ToString() + " (0x" + eventInfo.transport_stream_id.ToString("X4") + ")\r\n";
-                extInfo += "ServiceID : " + eventInfo.service_id.ToString() + " (0x" + eventInfo.service_id.ToString("X4") + ")\r\n";
-                extInfo += "EventID : " + eventInfo.event_id.ToString() + " (0x" + eventInfo.event_id.ToString("X4") + ")\r\n";
-
+                extInfo += idStr("OriginalNetworkID", eventInfo.original_network_id) + "\r\n";
+                extInfo += idStr("TransportStreamID", eventInfo.transport_stream_id) + "\r\n";
+                extInfo += idStr("ServiceID", eventInfo.service_id) + "\r\n";
+                extInfo += idStr("EventID", eventInfo.event_id) + "\r\n";
             }
 
             if (textMode == EventInfoTextMode.All || textMode == EventInfoTextMode.BasicOnly)
@@ -1009,15 +1006,15 @@ namespace EpgTimer
                         if (nibble2 != 0xFF)
                         {
                             if (smallCategory1 != "") { smallCategory1 += ", "; }
-                            if (CommonManager.Instance.ContentKindDictionary.ContainsKey(contentKey2))
+                            if (Instance.ContentKindDictionary.ContainsKey(contentKey2))
                             {
-                                smallCategory1 += CommonManager.Instance.ContentKindDictionary[contentKey2].ToString().Trim();
+                                smallCategory1 += Instance.ContentKindDictionary[contentKey2].ToString().Trim();
                             }
                         }
                     }
                     //
                     if (retText != "") { retText += ", "; }
-                    if (CommonManager.Instance.ContentKindDictionary.ContainsKey(contentKey1))
+                    if (Instance.ContentKindDictionary.ContainsKey(contentKey1))
                     {
                         retText += "[" + CommonManager.Instance.ContentKindDictionary[contentKey1].ToString().Trim();
                         if (smallCategory1 != "") { retText += " - " + smallCategory1; }
