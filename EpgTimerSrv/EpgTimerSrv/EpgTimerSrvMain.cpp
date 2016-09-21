@@ -89,7 +89,7 @@ bool CEpgTimerSrvMain::Main(bool serviceFlag_)
 
 	wstring iniPath;
 	GetModuleIniPath(iniPath);
-	g_compatFlags = GetPrivateProfileInt(L"SET", L"CompatFlags", 0, iniPath.c_str());
+	g_compatFlags = GetPrivateProfileInt(L"SET", L"CompatFlags", 4095, iniPath.c_str());
 
 	DWORD awayMode;
 	OSVERSIONINFOEX osvi;
