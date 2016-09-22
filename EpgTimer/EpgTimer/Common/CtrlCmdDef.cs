@@ -1104,8 +1104,12 @@ namespace EpgTimer
         }
         public void Write(MemoryStream s, ushort version)
         {
-            //andKey装飾のフラグをここで処理
-            string andKey_Send = (caseFlag == 1 ? "C!{999}" : "") + andKey;
+            //装飾フラグをここで処理
+            ushort chkRecDay_Send = (ushort)((chkRecNoService != 0 ? 40000 : 0) + chkRecDay % 10000);
+
+            string andKey_Send = (chkDurationMin > 0 || chkDurationMax > 0 ?
+                "D!{" + ((10000 + Math.Min((int)chkDurationMin, 9999)) * 10000 + Math.Min((int)chkDurationMax, 9999)) + "}" : "") + andKey;
+            andKey_Send = (caseFlag == 1 ? "C!{999}" : "") + andKey_Send;
             andKey_Send = (keyDisabledFlag == 1 ? "^!{999}" : "") + andKey_Send;
 
             var w = new CtrlCmdWriter(s, version);
@@ -1126,13 +1130,7 @@ namespace EpgTimer
             if (version >= 3)
             {
                 w.Write(chkRecEnd);
-                w.Write(chkRecDay);
-            }
-            if (version >= 5)
-            {
-                w.Write(chkRecNoService);
-                w.Write(chkDurationMin);
-                w.Write(chkDurationMax);
+                w.Write(chkRecDay_Send);
             }
             w.End();
         }
@@ -1158,7 +1156,7 @@ namespace EpgTimer
                 r.Read(ref chkRecEnd);
                 r.Read(ref chkRecDay);
             }
-            if (version >= 5)
+            if (version >= 5 && r.RemainSize() >= 5)
             {
                 r.Read(ref chkRecNoService);
                 r.Read(ref chkDurationMin);
@@ -1166,7 +1164,13 @@ namespace EpgTimer
             }
             r.End();
 
-            //andKey装飾のフラグをここで処理
+            //装飾フラグをここで処理
+            if (chkRecDay >= 40000)
+            {
+                chkRecNoService = (byte)(chkRecDay >= 40000 ? 1 : 0);
+                chkRecDay %= 10000;
+            }
+
             if (andKey.StartsWith("^!{999}") == true)//"^!{999}"が前
             {
                 keyDisabledFlag = 1;
@@ -1176,6 +1180,14 @@ namespace EpgTimer
             {
                 caseFlag = 1;
                 andKey = andKey.Substring(7);
+            }
+            if (andKey.Length > 13 && andKey.StartsWith("D!{1") == true && andKey[12] == '}')
+            {
+                uint dur = 0;
+                uint.TryParse(andKey.Substring(4, 8), out dur);
+                andKey = andKey.Substring(13);
+                chkDurationMin = (ushort)(dur / 10000);
+                chkDurationMax = (ushort)(dur % 10000);
             }
         }
     }

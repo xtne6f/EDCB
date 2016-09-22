@@ -313,8 +313,6 @@ namespace EpgTimer
         CMD_EPG_SRV_GET_PG_INFO = 1023,
         /// <summary>番組検索</summary>
         CMD_EPG_SRV_SEARCH_PG = 1025,
-        /// <summary>番組検索(Ver対応版)</summary>
-        CMD_EPG_SRV_SEARCH_PG2 = 2125,
         /// <summary>番組検索(key毎版)</summary>
         CMD_EPG_SRV_SEARCH_PG_BYKEY2 = 2127,
         /// <summary>番組情報一覧取得</summary>
@@ -529,7 +527,7 @@ namespace EpgTimer
         /// <summary>指定イベントの番組情報を取得する</summary>
         public ErrCode SendGetPgInfo(ulong pgID, ref EpgEventInfo val) { object o = val; return SendAndReceiveCmdData(CtrlCmd.CMD_EPG_SRV_GET_PG_INFO, pgID, ref o); }
         /// <summary>指定キーワードで番組情報を検索する</summary>
-        //public ErrCode SendSearchPg(List<EpgSearchKeyInfo> key, ref List<EpgEventInfo> val) { object o = val; return SendAndReceiveCmdData(CtrlCmd.CMD_EPG_SRV_SEARCH_PG, key, ref o); }
+        public ErrCode SendSearchPg(List<EpgSearchKeyInfo> key, ref List<EpgEventInfo> val) { object o = val; return SendAndReceiveCmdData(CtrlCmd.CMD_EPG_SRV_SEARCH_PG, key, ref o); }
         /// <summary>番組情報一覧を取得する</summary>
         public ErrCode SendEnumPgAll(ref List<EpgServiceEventInfo> val) { object o = val;  return ReceiveCmdData(CtrlCmd.CMD_EPG_SRV_ENUM_PG_ALL, ref o); }
         /// <summary>自動予約登録条件を削除する</summary>
@@ -591,8 +589,6 @@ namespace EpgTimer
         public ErrCode SendChgProtectRecInfo(List<RecFileInfo> val) { return SendCmdData2(CtrlCmd.CMD_EPG_SRV_CHG_PROTECT_RECINFO2, val); }
         /// <summary>現在のNOTIFY_UPDATE_SRV_STATUSを取得する</summary>
         public ErrCode SendGetNotifySrvStatus(ref NotifySrvInfo val) { object o = val; return SendAndReceiveCmdData2(CtrlCmd.CMD_EPG_SRV_GET_STATUS_NOTIFY2, 0, ref o); }
-        /// <summary>指定キーワードで番組情報を検索する</summary>
-        public ErrCode SendSearchPg(List<EpgSearchKeyInfo> key, ref List<EpgEventInfo> val) { object o = val; return SendAndReceiveCmdData2(CtrlCmd.CMD_EPG_SRV_SEARCH_PG2, key, ref o); }
         /// <summary>録画ファイルのネットワークパスを取得</summary>
         public ErrCode SendGetRecFileNetworkPath(string path, ref string val) { object o = val; var ret = SendAndReceiveCmdData(CtrlCmd.CMD_EPG_SRV_GET_NETWORK_PATH, path, ref o); val = (string)o; return ret; }
 

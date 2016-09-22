@@ -99,10 +99,10 @@ namespace EpgTimer
                 key.notDateFlag = (byte)(checkBox_notDate.IsChecked == true ? 1 : 0);
                 key.freeCAFlag = (byte)freeRadioBtns.Value;
                 key.chkRecEnd = (byte)(checkBox_chkRecEnd.IsChecked == true ? 1 : 0);
-                key.chkRecDay = MenuUtil.MyToNumerical(textBox_chkRecDay, Convert.ToUInt16, ushort.MinValue);
+                key.chkRecDay = (ushort)MenuUtil.MyToNumerical(textBox_chkRecDay, Convert.ToUInt32, 9999u, 0u, 0u);
                 key.chkRecNoService = (byte)(radioButton_chkRecNoService2.IsChecked == true ? 1 : 0);
-                key.chkDurationMin = MenuUtil.MyToNumerical(textBox_chkDurationMin, Convert.ToUInt16, ushort.MinValue);
-                key.chkDurationMax = MenuUtil.MyToNumerical(textBox_chkDurationMax, Convert.ToUInt16, ushort.MinValue);
+                key.chkDurationMin = (ushort)MenuUtil.MyToNumerical(textBox_chkDurationMin, Convert.ToUInt32, 9999u, 0u, 0u);
+                key.chkDurationMax = (ushort)MenuUtil.MyToNumerical(textBox_chkDurationMax, Convert.ToUInt32, 9999u, 0u, 0u);
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
