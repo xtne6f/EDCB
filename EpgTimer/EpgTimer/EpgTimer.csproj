@@ -136,7 +136,6 @@
       <DependentUpon>ColorSetWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="Common\CopyObj.cs" />
-    <Compile Include="Common\EAAFileClass.cs" />
     <Compile Include="Common\IEPGFileClass.cs" />
     <Compile Include="Menu\MenuUtil.cs" />
     <Compile Include="Common\ViewUtil.cs" />
