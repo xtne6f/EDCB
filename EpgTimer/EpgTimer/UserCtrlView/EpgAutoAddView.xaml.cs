@@ -676,10 +676,5 @@ namespace EpgTimer
             this.moveItem(itemMoveDirections.down);
         }
 
-        private void myPopup_MouseLeave(object sender, MouseEventArgs e)
-        {
-            this.myPopup.IsOpen = false;
-        }
-
     }
 }

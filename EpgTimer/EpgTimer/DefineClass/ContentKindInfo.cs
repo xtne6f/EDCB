@@ -62,28 +62,5 @@ namespace EpgTimer
                 return "  " + SubName;
             }
         }
-        public String ToolTipView
-        {
-            get
-            {
-                if (Settings.Instance.NoToolTip == true)
-                {
-                    return null;
-                }
-                String viewTip = "";
-                if (Nibble2 == 0xFF)
-                {
-                    viewTip = ContentName + "\r\n" +
-                        "id : " + Nibble1.ToString() + "(0x" + Nibble1.ToString("X2") + ")";
-                }
-                else
-                {
-                    viewTip = ContentName + " : " + SubName + "\r\n" +
-                        "id : " + Nibble1.ToString() + "(0x" + Nibble1.ToString("X2") + ")" + "\r\n" +
-                        "sub_id : " + Nibble2.ToString() + "(0x" + Nibble2.ToString("X2") + ")";
-                }
-                return viewTip;
-            }
-        }
     }
 }

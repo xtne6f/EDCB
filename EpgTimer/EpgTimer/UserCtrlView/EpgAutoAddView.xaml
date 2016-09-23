@@ -138,16 +138,5 @@
                 <Button Content="並びを元に戻す" Height="23" Name="button_reloadItem" Click="button_reloadItem_Click" ToolTip="Ctrl + R" IsEnabled="False" />
             </StackPanel>
         </Grid>
-        <Popup Name="myPopup" Placement="Mouse" AllowsTransparency="True" MouseLeave="myPopup_MouseLeave">
-            <Border CornerRadius="3" BorderBrush="DarkSlateGray" BorderThickness="3">
-                <ScrollViewer Padding="0, 15, 0, 15" Background="DarkSlateGray" MaxWidth="400" MaxHeight="500">
-                    <TextBlock Name="myPopupText"  Foreground="GhostWhite" Padding="15, 0, 15, 0" TextWrapping="Wrap">
-                    <TextBlock.Effect>
-                        <DropShadowEffect BlurRadius="5" />
-                    </TextBlock.Effect>
-                    </TextBlock>
-                </ScrollViewer>
-            </Border>
-        </Popup>
     </Grid>
 </UserControl>
