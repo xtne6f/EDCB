@@ -515,11 +515,11 @@ namespace EpgTimer
             EpgSearchDateInfo info = new EpgSearchDateInfo();
 
             info.startDayOfWeek = (byte)Math.Min(comboBox_time_sw.SelectedIndex, 6);
-            info.startHour = (UInt16)comboBox_time_sh.SelectedItem;
-            info.startMin = (UInt16)comboBox_time_sm.SelectedItem;
+            info.startHour = (UInt16)comboBox_time_sh.SelectedIndex;
+            info.startMin = (UInt16)comboBox_time_sm.SelectedIndex;
             info.endDayOfWeek = (byte)Math.Min(comboBox_time_ew.SelectedIndex, 6);
-            info.endHour = (UInt16)comboBox_time_eh.SelectedItem;
-            info.endMin = (UInt16)comboBox_time_em.SelectedItem;
+            info.endHour = (UInt16)comboBox_time_eh.SelectedIndex;
+            info.endMin = (UInt16)comboBox_time_em.SelectedIndex;
 
             String viewText = "";
             viewText = comboBox_time_sw.SelectedItem + " " + info.startHour.ToString("00") + ":" + info.startMin.ToString("00") +
@@ -540,8 +540,8 @@ namespace EpgTimer
             {
                 return;
             }
-            Int32 start = ((UInt16)comboBox_week_sh.SelectedItem) * 60+ (UInt16)comboBox_week_sm.SelectedItem;
-            Int32 end = ((UInt16)comboBox_week_eh.SelectedItem) * 60+ (UInt16)comboBox_week_em.SelectedItem;
+            Int32 start = comboBox_week_sh.SelectedIndex * 60+ comboBox_week_sm.SelectedIndex;
+            Int32 end = comboBox_week_eh.SelectedIndex * 60+ comboBox_week_em.SelectedIndex;
 
             var Add_week = new Action<CheckBox, byte>((chbox, day) =>
             {
@@ -549,11 +549,11 @@ namespace EpgTimer
                 //
                 var info = new EpgSearchDateInfo();
                 info.startDayOfWeek = day;
-                info.startHour = (UInt16)comboBox_week_sh.SelectedItem;
-                info.startMin = (UInt16)comboBox_week_sm.SelectedItem;
+                info.startHour = (UInt16)comboBox_week_sh.SelectedIndex;
+                info.startMin = (UInt16)comboBox_week_sm.SelectedIndex;
                 info.endDayOfWeek = info.startDayOfWeek;
-                info.endHour = (UInt16)comboBox_week_eh.SelectedItem;
-                info.endMin = (UInt16)comboBox_week_em.SelectedItem;
+                info.endHour = (UInt16)comboBox_week_eh.SelectedIndex;
+                info.endMin = (UInt16)comboBox_week_em.SelectedIndex;
                 if (end < start)
                 {
                     //終了時間は翌日のものとみなす
