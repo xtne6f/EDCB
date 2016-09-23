@@ -139,7 +139,10 @@ namespace EpgTimer
         private string serviceColor;
         private UInt32 serviceCustColor;
         private bool reserveRectBackground;
+        private bool epgToolTip;
         private bool epgTitleIndent;
+        private bool epgToolTipNoViewOnly;
+        private int epgToolTipViewWait;
         private bool epgPopup;
         private bool epgGradation;
         private bool epgGradationHeader;
@@ -409,10 +412,25 @@ namespace EpgTimer
             get { return serviceCustColor; }
             set { serviceCustColor = value; }
         }
+        public bool EpgToolTip
+        {
+            get { return epgToolTip; }
+            set { epgToolTip = value; }
+        }
         public bool EpgTitleIndent
         {
             get { return epgTitleIndent; }
             set { epgTitleIndent = value; }
+        }
+        public bool EpgToolTipNoViewOnly
+        {
+            get { return epgToolTipNoViewOnly; }
+            set { epgToolTipNoViewOnly = value; }
+        }
+        public int EpgToolTipViewWait
+        {
+            get { return epgToolTipViewWait; }
+            set { epgToolTipViewWait = value; }
         }
         public bool EpgPopup
         {
@@ -1035,7 +1053,10 @@ namespace EpgTimer
             serviceColor = "LightSlateGray";
             serviceCustColor = 0xFFFFFFFF;
             reserveRectBackground = false;
+            epgToolTip = false;
             epgTitleIndent = true;
+            epgToolTipNoViewOnly = true;
+            epgToolTipViewWait = 1500;
             epgPopup = true;
             epgGradation = true;
             epgGradationHeader = true;
