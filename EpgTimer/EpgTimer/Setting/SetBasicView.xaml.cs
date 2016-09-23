@@ -564,8 +564,8 @@ namespace EpgTimer.Setting
             {
                 if (comboBox_HH.SelectedItem != null && comboBox_MM.SelectedItem != null)
                 {
-                    UInt16 hh = (UInt16)comboBox_HH.SelectedItem;
-                    UInt16 mm = (UInt16)comboBox_MM.SelectedItem;
+                    int hh = comboBox_HH.SelectedIndex;
+                    int mm = comboBox_MM.SelectedIndex;
                     String time = hh.ToString("D2") + ":" + mm.ToString("D2");
                     int wday = comboBox_wday.SelectedIndex;
                     if (1 <= wday && wday <= 7)
