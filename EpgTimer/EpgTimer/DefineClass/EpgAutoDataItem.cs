@@ -92,8 +92,8 @@ namespace EpgTimer
                     if (EpgAutoAddInfo.searchInfo.dateList.Count == 1)
                     {
                         EpgSearchDateInfo info = EpgAutoAddInfo.searchInfo.dateList[0];
-                        view = CommonManager.Instance.DayOfWeekDictionary[info.startDayOfWeek] + " " + info.startHour.ToString("00") + ":" + info.startMin.ToString("00") +
-                            " ～ " + CommonManager.Instance.DayOfWeekDictionary[info.endDayOfWeek] + " " + info.endHour.ToString("00") + ":" + info.endMin.ToString("00");
+                        view = CommonManager.Instance.DayOfWeekArray[info.startDayOfWeek] + " " + info.startHour.ToString("00") + ":" + info.startMin.ToString("00") +
+                            " ～ " + CommonManager.Instance.DayOfWeekArray[info.endDayOfWeek] + " " + info.endHour.ToString("00") + ":" + info.endMin.ToString("00");
                     }
                     else if (EpgAutoAddInfo.searchInfo.dateList.Count > 1)
                     {

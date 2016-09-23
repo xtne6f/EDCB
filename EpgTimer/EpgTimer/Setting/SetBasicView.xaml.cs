@@ -135,9 +135,9 @@ namespace EpgTimer.Setting
                     listBox_bon.SelectedIndex = 0;
                 }
 
-                comboBox_HH.DataContext = CommonManager.Instance.HourDictionary.Values;
+                comboBox_HH.DataContext = Enumerable.Range(0, 24);
                 comboBox_HH.SelectedIndex = 0;
-                comboBox_MM.DataContext = CommonManager.Instance.MinDictionary.Values;
+                comboBox_MM.DataContext = Enumerable.Range(0, 60);
                 comboBox_MM.SelectedIndex = 0;
 
                 serviceList = new List<ServiceItem2>();

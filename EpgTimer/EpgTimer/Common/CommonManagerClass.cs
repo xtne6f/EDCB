@@ -31,37 +31,20 @@ namespace EpgTimer
             get;
             set;
         }
-        public Dictionary<UInt16, ComponentKindInfo> ComponentKindDictionary
+        public IEnumerable<ContentKindInfo> ContentKindList
+        {
+            get
+            {
+                //「その他」をラストへ。各々大分類を前へ
+                return ContentKindDictionary.Values.OrderBy(info => (info.Nibble1 == 0x0F ? 0xF0 : info.Nibble1) << 8 | (info.Nibble2 + 1) & 0xFF);
+            }
+        }
+        public Dictionary<UInt16, string> ComponentKindDictionary
         {
             get;
             set;
         }
-        public Dictionary<byte, DayOfWeekInfo> DayOfWeekDictionary
-        {
-            get;
-            set;
-        }
-        public Dictionary<UInt16, UInt16> HourDictionary
-        {
-            get;
-            set;
-        }
-        public Dictionary<UInt16, UInt16> MinDictionary
-        {
-            get;
-            set;
-        }
-        public Dictionary<byte, RecModeInfo> RecModeDictionary
-        {
-            get;
-            set;
-        }
-        public Dictionary<byte, YesNoInfo> YesNoDictionary
-        {
-            get;
-            set;
-        }
-        public Dictionary<byte, PriorityInfo> PriorityDictionary
+        public string[] DayOfWeekArray
         {
             get;
             set;
@@ -304,134 +287,88 @@ namespace EpgTimer
             }
             if (ComponentKindDictionary == null)
             {
-                ComponentKindDictionary = new Dictionary<UInt16, ComponentKindInfo>();
-                ComponentKindDictionary.Add(0x0101, new ComponentKindInfo(0x01, 0x01, "480i(525i)、アスペクト比4:3"));
-                ComponentKindDictionary.Add(0x0102, new ComponentKindInfo(0x01, 0x02, "480i(525i)、アスペクト比16:9 パンベクトルあり"));
-                ComponentKindDictionary.Add(0x0103, new ComponentKindInfo(0x01, 0x03, "480i(525i)、アスペクト比16:9 パンベクトルなし"));
-                ComponentKindDictionary.Add(0x0104, new ComponentKindInfo(0x01, 0x04, "480i(525i)、アスペクト比 > 16:9"));
-                ComponentKindDictionary.Add(0x0191, new ComponentKindInfo(0x01, 0x91, "2160p、アスペクト比4:3"));
-                ComponentKindDictionary.Add(0x0192, new ComponentKindInfo(0x01, 0x92, "2160p、アスペクト比16:9 パンベクトルあり"));
-                ComponentKindDictionary.Add(0x0193, new ComponentKindInfo(0x01, 0x93, "2160p、アスペクト比16:9 パンベクトルなし"));
-                ComponentKindDictionary.Add(0x0194, new ComponentKindInfo(0x01, 0x94, "2160p、アスペクト比 > 16:9"));
-                ComponentKindDictionary.Add(0x01A1, new ComponentKindInfo(0x01, 0xA1, "480p(525p)、アスペクト比4:3"));
-                ComponentKindDictionary.Add(0x01A2, new ComponentKindInfo(0x01, 0xA2, "480p(525p)、アスペクト比16:9 パンベクトルあり"));
-                ComponentKindDictionary.Add(0x01A3, new ComponentKindInfo(0x01, 0xA3, "480p(525p)、アスペクト比16:9 パンベクトルなし"));
-                ComponentKindDictionary.Add(0x01A4, new ComponentKindInfo(0x01, 0xA4, "480p(525p)、アスペクト比 > 16:9"));
-                ComponentKindDictionary.Add(0x01B1, new ComponentKindInfo(0x01, 0xB1, "1080i(1125i)、アスペクト比4:3"));
-                ComponentKindDictionary.Add(0x01B2, new ComponentKindInfo(0x01, 0xB2, "1080i(1125i)、アスペクト比16:9 パンベクトルあり"));
-                ComponentKindDictionary.Add(0x01B3, new ComponentKindInfo(0x01, 0xB3, "1080i(1125i)、アスペクト比16:9 パンベクトルなし"));
-                ComponentKindDictionary.Add(0x01B4, new ComponentKindInfo(0x01, 0xB4, "1080i(1125i)、アスペクト比 > 16:9"));
-                ComponentKindDictionary.Add(0x01C1, new ComponentKindInfo(0x01, 0xC1, "720p(750p)、アスペクト比4:3"));
-                ComponentKindDictionary.Add(0x01C2, new ComponentKindInfo(0x01, 0xC2, "720p(750p)、アスペクト比16:9 パンベクトルあり"));
-                ComponentKindDictionary.Add(0x01C3, new ComponentKindInfo(0x01, 0xC3, "720p(750p)、アスペクト比16:9 パンベクトルなし"));
-                ComponentKindDictionary.Add(0x01C4, new ComponentKindInfo(0x01, 0xC4, "720p(750p)、アスペクト比 > 16:9"));
-                ComponentKindDictionary.Add(0x01D1, new ComponentKindInfo(0x01, 0xD1, "240p アスペクト比4:3"));
-                ComponentKindDictionary.Add(0x01D2, new ComponentKindInfo(0x01, 0xD2, "240p アスペクト比16:9 パンベクトルあり"));
-                ComponentKindDictionary.Add(0x01D3, new ComponentKindInfo(0x01, 0xD3, "240p アスペクト比16:9 パンベクトルなし"));
-                ComponentKindDictionary.Add(0x01D4, new ComponentKindInfo(0x01, 0xD4, "240p アスペクト比 > 16:9"));
-                ComponentKindDictionary.Add(0x01E1, new ComponentKindInfo(0x01, 0xE1, "1080p(1125p)、アスペクト比4:3"));
-                ComponentKindDictionary.Add(0x01E2, new ComponentKindInfo(0x01, 0xE2, "1080p(1125p)、アスペクト比16:9 パンベクトルあり"));
-                ComponentKindDictionary.Add(0x01E3, new ComponentKindInfo(0x01, 0xE3, "1080p(1125p)、アスペクト比16:9 パンベクトルなし"));
-                ComponentKindDictionary.Add(0x01E4, new ComponentKindInfo(0x01, 0xE4, "1080p(1125p)、アスペクト比 > 16:9"));
-                ComponentKindDictionary.Add(0x0201, new ComponentKindInfo(0x02, 0x01, "1/0モード（シングルモノ）"));
-                ComponentKindDictionary.Add(0x0202, new ComponentKindInfo(0x02, 0x02, "1/0＋1/0モード（デュアルモノ）"));
-                ComponentKindDictionary.Add(0x0203, new ComponentKindInfo(0x02, 0x03, "2/0モード（ステレオ）"));
-                ComponentKindDictionary.Add(0x0204, new ComponentKindInfo(0x02, 0x04, "2/1モード"));
-                ComponentKindDictionary.Add(0x0205, new ComponentKindInfo(0x02, 0x05, "3/0モード"));
-                ComponentKindDictionary.Add(0x0206, new ComponentKindInfo(0x02, 0x06, "2/2モード"));
-                ComponentKindDictionary.Add(0x0207, new ComponentKindInfo(0x02, 0x07, "3/1モード"));
-                ComponentKindDictionary.Add(0x0208, new ComponentKindInfo(0x02, 0x08, "3/2モード"));
-                ComponentKindDictionary.Add(0x0209, new ComponentKindInfo(0x02, 0x09, "3/2＋LFEモード（3/2.1モード）"));
-                ComponentKindDictionary.Add(0x020A, new ComponentKindInfo(0x02, 0x0A, "3/3.1モード"));
-                ComponentKindDictionary.Add(0x020B, new ComponentKindInfo(0x02, 0x0B, "2/0/0-2/0/2-0.1モード"));
-                ComponentKindDictionary.Add(0x020C, new ComponentKindInfo(0x02, 0x0C, "5/2.1モード"));
-                ComponentKindDictionary.Add(0x020D, new ComponentKindInfo(0x02, 0x0D, "3/2/2.1モード"));
-                ComponentKindDictionary.Add(0x020E, new ComponentKindInfo(0x02, 0x0E, "2/0/0-3/0/2-0.1モード"));
-                ComponentKindDictionary.Add(0x020F, new ComponentKindInfo(0x02, 0x0F, "0/2/0-3/0/2-0.1モード"));
-                ComponentKindDictionary.Add(0x0210, new ComponentKindInfo(0x02, 0x10, "2/0/0-3/2/3-0.2モード"));
-                ComponentKindDictionary.Add(0x0211, new ComponentKindInfo(0x02, 0x11, "3/3/3-5/2/3-3/0/0.2モード"));
-                ComponentKindDictionary.Add(0x0240, new ComponentKindInfo(0x02, 0x40, "視覚障害者用音声解説"));
-                ComponentKindDictionary.Add(0x0241, new ComponentKindInfo(0x02, 0x41, "聴覚障害者用音声"));
-                ComponentKindDictionary.Add(0x0501, new ComponentKindInfo(0x05, 0x01, "H.264|MPEG-4 AVC、480i(525i)、アスペクト比4:3"));
-                ComponentKindDictionary.Add(0x0502, new ComponentKindInfo(0x05, 0x02, "H.264|MPEG-4 AVC、480i(525i)、アスペクト比16:9 パンベクトルあり"));
-                ComponentKindDictionary.Add(0x0503, new ComponentKindInfo(0x05, 0x03, "H.264|MPEG-4 AVC、480i(525i)、アスペクト比16:9 パンベクトルなし"));
-                ComponentKindDictionary.Add(0x0504, new ComponentKindInfo(0x05, 0x04, "H.264|MPEG-4 AVC、480i(525i)、アスペクト比 > 16:9"));
-                ComponentKindDictionary.Add(0x0591, new ComponentKindInfo(0x05, 0x91, "H.264|MPEG-4 AVC、2160p、アスペクト比4:3"));
-                ComponentKindDictionary.Add(0x0592, new ComponentKindInfo(0x05, 0x92, "H.264|MPEG-4 AVC、2160p、アスペクト比16:9 パンベクトルあり"));
-                ComponentKindDictionary.Add(0x0593, new ComponentKindInfo(0x05, 0x93, "H.264|MPEG-4 AVC、2160p、アスペクト比16:9 パンベクトルなし"));
-                ComponentKindDictionary.Add(0x0594, new ComponentKindInfo(0x05, 0x94, "H.264|MPEG-4 AVC、2160p、アスペクト比 > 16:9"));
-                ComponentKindDictionary.Add(0x05A1, new ComponentKindInfo(0x05, 0xA1, "H.264|MPEG-4 AVC、480p(525p)、アスペクト比4:3"));
-                ComponentKindDictionary.Add(0x05A2, new ComponentKindInfo(0x05, 0xA2, "H.264|MPEG-4 AVC、480p(525p)、アスペクト比16:9 パンベクトルあり"));
-                ComponentKindDictionary.Add(0x05A3, new ComponentKindInfo(0x05, 0xA3, "H.264|MPEG-4 AVC、480p(525p)、アスペクト比16:9 パンベクトルなし"));
-                ComponentKindDictionary.Add(0x05A4, new ComponentKindInfo(0x05, 0xA4, "H.264|MPEG-4 AVC、480p(525p)、アスペクト比 > 16:9"));
-                ComponentKindDictionary.Add(0x05B1, new ComponentKindInfo(0x05, 0xB1, "H.264|MPEG-4 AVC、1080i(1125i)、アスペクト比4:3"));
-                ComponentKindDictionary.Add(0x05B2, new ComponentKindInfo(0x05, 0xB2, "H.264|MPEG-4 AVC、1080i(1125i)、アスペクト比16:9 パンベクトルあり"));
-                ComponentKindDictionary.Add(0x05B3, new ComponentKindInfo(0x05, 0xB3, "H.264|MPEG-4 AVC、1080i(1125i)、アスペクト比16:9 パンベクトルなし"));
-                ComponentKindDictionary.Add(0x05B4, new ComponentKindInfo(0x05, 0xB4, "H.264|MPEG-4 AVC、1080i(1125i)、アスペクト比 > 16:9"));
-                ComponentKindDictionary.Add(0x05C1, new ComponentKindInfo(0x05, 0xC1, "H.264|MPEG-4 AVC、720p(750p)、アスペクト比4:3"));
-                ComponentKindDictionary.Add(0x05C2, new ComponentKindInfo(0x05, 0xC2, "H.264|MPEG-4 AVC、720p(750p)、アスペクト比16:9 パンベクトルあり"));
-                ComponentKindDictionary.Add(0x05C3, new ComponentKindInfo(0x05, 0xC3, "H.264|MPEG-4 AVC、720p(750p)、アスペクト比16:9 パンベクトルなし"));
-                ComponentKindDictionary.Add(0x05C4, new ComponentKindInfo(0x05, 0xC4, "H.264|MPEG-4 AVC、720p(750p)、アスペクト比 > 16:9"));
-                ComponentKindDictionary.Add(0x05D1, new ComponentKindInfo(0x05, 0xD1, "H.264|MPEG-4 AVC、240p アスペクト比4:3"));
-                ComponentKindDictionary.Add(0x05D2, new ComponentKindInfo(0x05, 0xD2, "H.264|MPEG-4 AVC、240p アスペクト比16:9 パンベクトルあり"));
-                ComponentKindDictionary.Add(0x05D3, new ComponentKindInfo(0x05, 0xD3, "H.264|MPEG-4 AVC、240p アスペクト比16:9 パンベクトルなし"));
-                ComponentKindDictionary.Add(0x05D4, new ComponentKindInfo(0x05, 0xD4, "H.264|MPEG-4 AVC、240p アスペクト比 > 16:9"));
-                ComponentKindDictionary.Add(0x05E1, new ComponentKindInfo(0x05, 0xE1, "H.264|MPEG-4 AVC、1080p(1125p)、アスペクト比4:3"));
-                ComponentKindDictionary.Add(0x05E2, new ComponentKindInfo(0x05, 0xE2, "H.264|MPEG-4 AVC、1080p(1125p)、アスペクト比16:9 パンベクトルあり"));
-                ComponentKindDictionary.Add(0x05E3, new ComponentKindInfo(0x05, 0xE3, "H.264|MPEG-4 AVC、1080p(1125p)、アスペクト比16:9 パンベクトルなし"));
-                ComponentKindDictionary.Add(0x05E4, new ComponentKindInfo(0x05, 0xE4, "H.264|MPEG-4 AVC、1080p(1125p)、アスペクト比 > 16:9"));
-            }
-            if (DayOfWeekDictionary == null)
-            {
-                DayOfWeekDictionary = new Dictionary<byte, DayOfWeekInfo>();
-                DayOfWeekDictionary.Add(0x00, new DayOfWeekInfo("日", 0x00));
-                DayOfWeekDictionary.Add(0x01, new DayOfWeekInfo("月", 0x01));
-                DayOfWeekDictionary.Add(0x02, new DayOfWeekInfo("火", 0x02));
-                DayOfWeekDictionary.Add(0x03, new DayOfWeekInfo("水", 0x03));
-                DayOfWeekDictionary.Add(0x04, new DayOfWeekInfo("木", 0x04));
-                DayOfWeekDictionary.Add(0x05, new DayOfWeekInfo("金", 0x05));
-                DayOfWeekDictionary.Add(0x06, new DayOfWeekInfo("土", 0x06));
-            }
-            if (HourDictionary == null)
-            {
-                HourDictionary = new Dictionary<UInt16, UInt16>();
-                for (UInt16 i = 0; i <= 23; i++)
+                ComponentKindDictionary = new Dictionary<UInt16, string>()
                 {
-                    HourDictionary.Add(i, i);
-                }
+                    { 0x0101, "480i(525i)、アスペクト比4:3" },
+                    { 0x0102, "480i(525i)、アスペクト比16:9 パンベクトルあり" },
+                    { 0x0103, "480i(525i)、アスペクト比16:9 パンベクトルなし" },
+                    { 0x0104, "480i(525i)、アスペクト比 > 16:9" },
+                    { 0x0191, "2160p、アスペクト比4:3" },
+                    { 0x0192, "2160p、アスペクト比16:9 パンベクトルあり" },
+                    { 0x0193, "2160p、アスペクト比16:9 パンベクトルなし" },
+                    { 0x0194, "2160p、アスペクト比 > 16:9" },
+                    { 0x01A1, "480p(525p)、アスペクト比4:3" },
+                    { 0x01A2, "480p(525p)、アスペクト比16:9 パンベクトルあり" },
+                    { 0x01A3, "480p(525p)、アスペクト比16:9 パンベクトルなし" },
+                    { 0x01A4, "480p(525p)、アスペクト比 > 16:9" },
+                    { 0x01B1, "1080i(1125i)、アスペクト比4:3" },
+                    { 0x01B2, "1080i(1125i)、アスペクト比16:9 パンベクトルあり" },
+                    { 0x01B3, "1080i(1125i)、アスペクト比16:9 パンベクトルなし" },
+                    { 0x01B4, "1080i(1125i)、アスペクト比 > 16:9" },
+                    { 0x01C1, "720p(750p)、アスペクト比4:3" },
+                    { 0x01C2, "720p(750p)、アスペクト比16:9 パンベクトルあり" },
+                    { 0x01C3, "720p(750p)、アスペクト比16:9 パンベクトルなし" },
+                    { 0x01C4, "720p(750p)、アスペクト比 > 16:9" },
+                    { 0x01D1, "240p アスペクト比4:3" },
+                    { 0x01D2, "240p アスペクト比16:9 パンベクトルあり" },
+                    { 0x01D3, "240p アスペクト比16:9 パンベクトルなし" },
+                    { 0x01D4, "240p アスペクト比 > 16:9" },
+                    { 0x01E1, "1080p(1125p)、アスペクト比4:3" },
+                    { 0x01E2, "1080p(1125p)、アスペクト比16:9 パンベクトルあり" },
+                    { 0x01E3, "1080p(1125p)、アスペクト比16:9 パンベクトルなし" },
+                    { 0x01E4, "1080p(1125p)、アスペクト比 > 16:9" },
+                    { 0x0201, "1/0モード（シングルモノ）" },
+                    { 0x0202, "1/0＋1/0モード（デュアルモノ）" },
+                    { 0x0203, "2/0モード（ステレオ）" },
+                    { 0x0204, "2/1モード" },
+                    { 0x0205, "3/0モード" },
+                    { 0x0206, "2/2モード" },
+                    { 0x0207, "3/1モード" },
+                    { 0x0208, "3/2モード" },
+                    { 0x0209, "3/2＋LFEモード（3/2.1モード）" },
+                    { 0x020A, "3/3.1モード" },
+                    { 0x020B, "2/0/0-2/0/2-0.1モード" },
+                    { 0x020C, "5/2.1モード" },
+                    { 0x020D, "3/2/2.1モード" },
+                    { 0x020E, "2/0/0-3/0/2-0.1モード" },
+                    { 0x020F, "0/2/0-3/0/2-0.1モード" },
+                    { 0x0210, "2/0/0-3/2/3-0.2モード" },
+                    { 0x0211, "3/3/3-5/2/3-3/0/0.2モード" },
+                    { 0x0240, "視覚障害者用音声解説" },
+                    { 0x0241, "聴覚障害者用音声" },
+                    { 0x0501, "H.264|MPEG-4 AVC、480i(525i)、アスペクト比4:3" },
+                    { 0x0502, "H.264|MPEG-4 AVC、480i(525i)、アスペクト比16:9 パンベクトルあり" },
+                    { 0x0503, "H.264|MPEG-4 AVC、480i(525i)、アスペクト比16:9 パンベクトルなし" },
+                    { 0x0504, "H.264|MPEG-4 AVC、480i(525i)、アスペクト比 > 16:9" },
+                    { 0x0591, "H.264|MPEG-4 AVC、2160p、アスペクト比4:3" },
+                    { 0x0592, "H.264|MPEG-4 AVC、2160p、アスペクト比16:9 パンベクトルあり" },
+                    { 0x0593, "H.264|MPEG-4 AVC、2160p、アスペクト比16:9 パンベクトルなし" },
+                    { 0x0594, "H.264|MPEG-4 AVC、2160p、アスペクト比 > 16:9" },
+                    { 0x05A1, "H.264|MPEG-4 AVC、480p(525p)、アスペクト比4:3" },
+                    { 0x05A2, "H.264|MPEG-4 AVC、480p(525p)、アスペクト比16:9 パンベクトルあり" },
+                    { 0x05A3, "H.264|MPEG-4 AVC、480p(525p)、アスペクト比16:9 パンベクトルなし" },
+                    { 0x05A4, "H.264|MPEG-4 AVC、480p(525p)、アスペクト比 > 16:9" },
+                    { 0x05B1, "H.264|MPEG-4 AVC、1080i(1125i)、アスペクト比4:3" },
+                    { 0x05B2, "H.264|MPEG-4 AVC、1080i(1125i)、アスペクト比16:9 パンベクトルあり" },
+                    { 0x05B3, "H.264|MPEG-4 AVC、1080i(1125i)、アスペクト比16:9 パンベクトルなし" },
+                    { 0x05B4, "H.264|MPEG-4 AVC、1080i(1125i)、アスペクト比 > 16:9" },
+                    { 0x05C1, "H.264|MPEG-4 AVC、720p(750p)、アスペクト比4:3" },
+                    { 0x05C2, "H.264|MPEG-4 AVC、720p(750p)、アスペクト比16:9 パンベクトルあり" },
+                    { 0x05C3, "H.264|MPEG-4 AVC、720p(750p)、アスペクト比16:9 パンベクトルなし" },
+                    { 0x05C4, "H.264|MPEG-4 AVC、720p(750p)、アスペクト比 > 16:9" },
+                    { 0x05D1, "H.264|MPEG-4 AVC、240p アスペクト比4:3" },
+                    { 0x05D2, "H.264|MPEG-4 AVC、240p アスペクト比16:9 パンベクトルあり" },
+                    { 0x05D3, "H.264|MPEG-4 AVC、240p アスペクト比16:9 パンベクトルなし" },
+                    { 0x05D4, "H.264|MPEG-4 AVC、240p アスペクト比 > 16:9" },
+                    { 0x05E1, "H.264|MPEG-4 AVC、1080p(1125p)、アスペクト比4:3" },
+                    { 0x05E2, "H.264|MPEG-4 AVC、1080p(1125p)、アスペクト比16:9 パンベクトルあり" },
+                    { 0x05E3, "H.264|MPEG-4 AVC、1080p(1125p)、アスペクト比16:9 パンベクトルなし" },
+                    { 0x05E4, "H.264|MPEG-4 AVC、1080p(1125p)、アスペクト比 > 16:9" }
+                };
             }
-            if (MinDictionary == null)
+            if (DayOfWeekArray == null)
             {
-                MinDictionary = new Dictionary<UInt16, UInt16>();
-                for (UInt16 i = 0; i <= 59; i++)
-                {
-                    MinDictionary.Add(i, i);
-                }
-            }
-            if (RecModeDictionary == null)
-            {
-                RecModeDictionary = new Dictionary<byte, RecModeInfo>();
-                RecModeDictionary.Add(0x00, new RecModeInfo("全サービス", 0x00));
-                RecModeDictionary.Add(0x01, new RecModeInfo("指定サービス", 0x01));
-                RecModeDictionary.Add(0x02, new RecModeInfo("全サービス（デコード処理なし）", 0x02));
-                RecModeDictionary.Add(0x03, new RecModeInfo("指定サービス（デコード処理なし）", 0x03));
-                RecModeDictionary.Add(0x04, new RecModeInfo("視聴", 0x04));
-                RecModeDictionary.Add(0x05, new RecModeInfo("無効", 0x05));
-            }
-            if (YesNoDictionary == null)
-            {
-                YesNoDictionary = new Dictionary<byte, YesNoInfo>();
-                YesNoDictionary.Add(0x00, new YesNoInfo("しない", 0x00));
-                YesNoDictionary.Add(0x01, new YesNoInfo("する", 0x01));
-            }
-            if (PriorityDictionary == null)
-            {
-                PriorityDictionary = new Dictionary<byte, PriorityInfo>();
-                PriorityDictionary.Add(0x01, new PriorityInfo("1 (低)", 0x01));
-                PriorityDictionary.Add(0x02, new PriorityInfo("2", 0x02));
-                PriorityDictionary.Add(0x03, new PriorityInfo("3", 0x03));
-                PriorityDictionary.Add(0x04, new PriorityInfo("4", 0x04));
-                PriorityDictionary.Add(0x05, new PriorityInfo("5 (高)", 0x05));
+                DayOfWeekArray = new string[] { "日", "月", "火", "水", "木", "金", "土" };
             }
             NWMode = false;
             if (NotifyLogList == null)

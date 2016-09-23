@@ -170,9 +170,6 @@
     <Compile Include="Common\ColorDefClass.cs" />
     <Compile Include="DefineClass\DateItem.cs" />
     <Compile Include="DefineClass\IEPGStationInfo.cs" />
-    <Compile Include="DefineClass\PriorityInfo.cs" />
-    <Compile Include="DefineClass\RecModeInfo.cs" />
-    <Compile Include="DefineClass\YesNoInfo.cs" />
     <Compile Include="EpgDataViewItem.xaml.cs">
       <DependentUpon>EpgDataViewItem.xaml</DependentUpon>
     </Compile>
@@ -379,9 +376,7 @@
     <Compile Include="Common\DBManagerClass.cs" />
     <Compile Include="Common\DefineEnum.cs" />
     <Compile Include="Common\SettingClass.cs" />
-    <Compile Include="DefineClass\ComponentKindInfo.cs" />
     <Compile Include="DefineClass\ContentKindInfo.cs" />
-    <Compile Include="DefineClass\DayOfWeekInfo.cs" />
     <Compile Include="DefineClass\CustomEpgTabInfo.cs" />
     <Compile Include="EpgView\DateView.xaml.cs">
       <DependentUpon>DateView.xaml</DependentUpon>

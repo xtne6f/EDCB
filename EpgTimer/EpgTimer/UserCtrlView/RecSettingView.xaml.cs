@@ -38,13 +38,6 @@ namespace EpgTimer
             {
                 Settings.GetDefRecSetting(0, ref recSetting);
 
-                comboBox_recMode.DataContext = CommonManager.Instance.RecModeDictionary.Values;
-                comboBox_tuijyu.DataContext = CommonManager.Instance.YesNoDictionary.Values;
-                comboBox_pittari.DataContext = CommonManager.Instance.YesNoDictionary.Values;
-                comboBox_priority.DataContext = CommonManager.Instance.PriorityDictionary.Values;
-
-
-
                 tunerList.Add(new TunerSelectInfo("自動", 0));
                 foreach (TunerReserveInfo info in CommonManager.Instance.DB.TunerReserveList.Values)
                 {
@@ -225,9 +218,9 @@ namespace EpgTimer
                 return;
             }
 
-            setInfo.RecMode = ((RecModeInfo)comboBox_recMode.SelectedItem).Value;
-            setInfo.Priority = ((PriorityInfo)comboBox_priority.SelectedItem).Value;
-            setInfo.TuijyuuFlag = ((YesNoInfo)comboBox_tuijyu.SelectedItem).Value;
+            setInfo.RecMode = (byte)comboBox_recMode.SelectedIndex;
+            setInfo.Priority = (byte)(comboBox_priority.SelectedIndex + 1);
+            setInfo.TuijyuuFlag = (byte)comboBox_tuijyu.SelectedIndex;
             if (checkBox_serviceMode.IsChecked == true)
             {
                 setInfo.ServiceMode = 0;
@@ -244,7 +237,7 @@ namespace EpgTimer
                     setInfo.ServiceMode |= 0x20;
                 }
             }
-            setInfo.PittariFlag = ((YesNoInfo)comboBox_pittari.SelectedItem).Value;
+            setInfo.PittariFlag = (byte)comboBox_pittari.SelectedIndex;
             setInfo.BatFilePath = textBox_bat.Text;
             setInfo.RecFolderList.Clear();
             setInfo.PartialRecFolder.Clear();
@@ -411,27 +404,9 @@ namespace EpgTimer
         {
             try
             {
-                foreach (RecModeInfo info in comboBox_recMode.Items)
-                {
-                    if (info.Value == recSetting.RecMode)
-                    {
-                        comboBox_recMode.SelectedItem = info;
-                    }
-                }
-                foreach (PriorityInfo info in comboBox_priority.Items)
-                {
-                    if (info.Value == recSetting.Priority)
-                    {
-                        comboBox_priority.SelectedItem = info;
-                    }
-                }
-                foreach (YesNoInfo info in comboBox_tuijyu.Items)
-                {
-                    if (info.Value == recSetting.TuijyuuFlag)
-                    {
-                        comboBox_tuijyu.SelectedItem = info;
-                    }
-                }
+                comboBox_recMode.SelectedIndex = Math.Min((int)recSetting.RecMode, 5);
+                comboBox_priority.SelectedIndex = Math.Min(Math.Max((int)recSetting.Priority, 1), 5) - 1;
+                comboBox_tuijyu.SelectedIndex = recSetting.TuijyuuFlag != 0 ? 1 : 0;
 
                 if (recSetting.ServiceMode == 0)
                 {
@@ -458,13 +433,7 @@ namespace EpgTimer
                     }
                 }
 
-                foreach (YesNoInfo info in comboBox_pittari.Items)
-                {
-                    if (info.Value == recSetting.PittariFlag)
-                    {
-                        comboBox_pittari.SelectedItem = info;
-                    }
-                }
+                comboBox_pittari.SelectedIndex = recSetting.PittariFlag != 0 ? 1 : 0;
 
 
                 textBox_bat.Text = recSetting.BatFilePath;

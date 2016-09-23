@@ -26,13 +26,32 @@
             <Grid>
                 <Grid>
                     <Label Content="録画モード" Height="28" HorizontalAlignment="Left" Margin="6,6,0,0" Name="label7" VerticalAlignment="Top" />
-                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="83,6,0,0" Name="comboBox_recMode" VerticalAlignment="Top" Width="160" ItemsSource="{Binding}"/>
+                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="83,6,0,0" Name="comboBox_recMode" VerticalAlignment="Top" Width="160">
+                        <ComboBoxItem Content="全サービス" />
+                        <ComboBoxItem Content="指定サービス" />
+                        <ComboBoxItem Content="全サービス（デコード処理なし）" />
+                        <ComboBoxItem Content="指定サービス（デコード処理なし）" />
+                        <ComboBoxItem Content="視聴" />
+                        <ComboBoxItem Content="無効" />
+                    </ComboBox>
                     <Label Content="イベントリレー追従" Height="28" HorizontalAlignment="Left" Margin="300,6,0,0" Name="label8" VerticalAlignment="Top" />
-                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="440,6,0,0" Name="comboBox_tuijyu" VerticalAlignment="Top" Width="75" ItemsSource="{Binding}" />
+                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="440,6,0,0" Name="comboBox_tuijyu" VerticalAlignment="Top" Width="75">
+                        <ComboBoxItem Content="しない" />
+                        <ComboBoxItem Content="する" />
+                    </ComboBox>
                     <Label Content="ぴったり（？）録画" Height="28" HorizontalAlignment="Left" Margin="300,35,0,0" Name="label9" VerticalAlignment="Top" />
-                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="440,35,0,0" Name="comboBox_pittari" VerticalAlignment="Top" Width="75" ItemsSource="{Binding}" />
+                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="440,35,0,0" Name="comboBox_pittari" VerticalAlignment="Top" Width="75">
+                        <ComboBoxItem Content="しない" />
+                        <ComboBoxItem Content="する" />
+                    </ComboBox>
                     <Label Content="優先度" Height="28" HorizontalAlignment="Left" Margin="6,35,0,0" Name="label10" VerticalAlignment="Top" />
-                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="83,35,0,0" Name="comboBox_priority" VerticalAlignment="Top" Width="75" ItemsSource="{Binding}" />
+                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="83,35,0,0" Name="comboBox_priority" VerticalAlignment="Top" Width="75">
+                        <ComboBoxItem Content="1 (低)" />
+                        <ComboBoxItem Content="2" />
+                        <ComboBoxItem Content="3" />
+                        <ComboBoxItem Content="4" />
+                        <ComboBoxItem Content="5 (高)" />
+                    </ComboBox>
                     <Label Content="録画マージン" Height="28" HorizontalAlignment="Left" Margin="6,64,0,0" Name="label12" VerticalAlignment="Top" />
                     <CheckBox Content="デフォルト" Height="16" HorizontalAlignment="Left" Margin="160,69,0,0" Name="checkBox_margineDef" VerticalAlignment="Top" />
                     <Label Content="開始" Height="28" HorizontalAlignment="Left" Margin="255,64,0,0" Name="label13" VerticalAlignment="Top" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_margineDef, Converter={StaticResource invert}}" />
