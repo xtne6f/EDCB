@@ -141,7 +141,7 @@ namespace EpgTimer
             cm_ViewMenu.Items.Add(new CtxmItemData(cm_Separator));
             for (int i = 0; i <= 2; i++)
             {
-                cm_ViewMenu.Items.Add(new CtxmItemData(CommonManager.Instance.ConvertViewModeText(i)
+                cm_ViewMenu.Items.Add(new CtxmItemData(CommonManager.ConvertViewModeText(i)
                     + string.Format(" (_{0})", i + 1), EpgCmds.ViewChgMode, i));
             }
 

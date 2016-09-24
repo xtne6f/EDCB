@@ -197,7 +197,7 @@ namespace EpgTimer
             {
                 var item = listView_event.SelectedItem as SearchItem;
                 EpgEventInfo eventInfo = item.EventInfo;
-                richTextBox_eventInfo.Document = CommonManager.Instance.ConvertDisplayText(eventInfo);
+                richTextBox_eventInfo.Document = CommonManager.ConvertDisplayText(eventInfo);
             }
         }
 

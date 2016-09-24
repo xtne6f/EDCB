@@ -46,8 +46,8 @@ namespace EpgTimer
             //深夜時間関係は、comboBoxの表示だけ変更する手もあるが、
             //オプション変更タイミングなどいろいろ面倒なので、実際の値で処理することにする。
             comboBox_service.ItemsSource = ChSet5.ChList.Values;
-            comboBox_sh.ItemsSource = CommonManager.Instance.CustomHourList;
-            comboBox_eh.ItemsSource = CommonManager.Instance.CustomHourList;
+            comboBox_sh.ItemsSource = CommonManager.CustomHourList;
+            comboBox_eh.ItemsSource = CommonManager.CustomHourList;
             comboBox_sm.ItemsSource = Enumerable.Range(0, 60);
             comboBox_em.ItemsSource = Enumerable.Range(0, 60);
             comboBox_ss.ItemsSource = Enumerable.Range(0, 60);
@@ -163,14 +163,14 @@ namespace EpgTimer
             //放映時刻情報に対してEPGデータ無い場合もあるので、resInfoDisplayとは別にeventInfoDisplayを管理する
             if (CtrlCmdDefEx.EqualsPg(eventInfoDisplay, info) == false)
             {
-                richTextBox_descInfo.Document = CommonManager.Instance.ConvertDisplayText(info);
+                richTextBox_descInfo.Document = CommonManager.ConvertDisplayText(info);
             }
             eventInfoDisplay = info;
         }
 
         private void ResetProgramContent()
         {
-            richTextBox_descInfo.Document = CommonManager.Instance.ConvertDisplayText(null);
+            richTextBox_descInfo.Document = CommonManager.ConvertDisplayText(null);
             eventInfoDisplay = null;
         }
 

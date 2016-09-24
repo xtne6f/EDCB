@@ -33,7 +33,7 @@ namespace EpgTimer
                 listBox_serviceOther.ItemsSource = ChSet5.ChList.Values.Where(info => info.IsOther == true);
                 listBox_serviceAll.ItemsSource = ChSet5.ChList.Values;
 
-                listBox_jyanru.ItemsSource = CommonManager.Instance.ContentKindList;
+                listBox_jyanru.ItemsSource = CommonManager.ContentKindList;
 
                 viewModeRadioBtns = new RadioBtnSelect(radioButton_rate, radioButton_week, radioButton_list);
                 viewModeRadioBtns.Value = 0;
@@ -71,9 +71,9 @@ namespace EpgTimer
             }
             foreach (UInt16 id in setInfo.ViewContentKindList)
             {
-                if (CommonManager.Instance.ContentKindDictionary.ContainsKey(id) == true)
+                if (CommonManager.ContentKindDictionary.ContainsKey(id) == true)
                 {
-                    listBox_jyanruView.Items.Add(CommonManager.Instance.ContentKindDictionary[id]);
+                    listBox_jyanruView.Items.Add(CommonManager.ContentKindDictionary[id]);
                 }
                 else
                 {
@@ -337,9 +337,9 @@ namespace EpgTimer
                 foreach (EpgContentData cnt in searchKey.contentList)
                 {
                     var ID = (UInt16)(cnt.content_nibble_level_1 << 8 | cnt.content_nibble_level_2);
-                    if (CommonManager.Instance.ContentKindDictionary.ContainsKey(ID) == true)
+                    if (CommonManager.ContentKindDictionary.ContainsKey(ID) == true)
                     {
-                        listBox_jyanruView.Items.Add(CommonManager.Instance.ContentKindDictionary[ID]);
+                        listBox_jyanruView.Items.Add(CommonManager.ContentKindDictionary[ID]);
                     }
                 }
                 checkBox_notContent.IsChecked = searchKey.notContetFlag != 0;

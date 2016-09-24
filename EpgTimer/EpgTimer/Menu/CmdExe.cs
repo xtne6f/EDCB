@@ -350,7 +350,7 @@ namespace EpgTimer
         protected virtual void mc_Play(object sender, ExecutedRoutedEventArgs e) { }
         protected virtual void mc_OpenFolder(object sender, ExecutedRoutedEventArgs e)
         {
-            CommonManager.Instance.OpenFolder(CmdExeUtil.ReadObjData(e) as string, "録画フォルダを開く");
+            CommonManager.OpenFolder(CmdExeUtil.ReadObjData(e) as string, "録画フォルダを開く");
             IsCommandExecuted = true;
         }
         protected virtual void mc_CopyTitle(object sender, ExecutedRoutedEventArgs e)
@@ -621,7 +621,7 @@ namespace EpgTimer
                 {
                     uint tunerID = recSettings.All(info => info.TunerID == recSettings[0].TunerID) ? recSettings[0].TunerID : uint.MaxValue;
                     mm.CtxmGenerateTunerMenuItems(subMenu);
-                    subMenu.Header = string.Format("チューナー : {0}", tunerID == uint.MaxValue ? "*" : CommonManager.Instance.ConvertTunerText(tunerID));
+                    subMenu.Header = string.Format("チューナー : {0}", tunerID == uint.MaxValue ? "*" : CommonManager.ConvertTunerText(tunerID));
                     SetCheckmarkSubMenus(subMenu, (int)tunerID);
                 }
                 else if (subMenu.Tag == EpgCmdsEx.ChgMarginStartMenu)

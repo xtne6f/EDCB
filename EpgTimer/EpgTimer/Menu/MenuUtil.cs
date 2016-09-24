@@ -33,11 +33,11 @@ namespace EpgTimer
                 if (setting == true)
                 {
                     //text = eventInfo.ShortInfo.text_char;
-                    text = CommonManager.Instance.ConvertProgramText(eventInfo, EventInfoTextMode.BasicOnly);
+                    text = CommonManager.ConvertProgramText(eventInfo, EventInfoTextMode.BasicOnly);
                 }
                 else
                 {
-                    text = CommonManager.Instance.ConvertProgramText(eventInfo, EventInfoTextMode.All);
+                    text = CommonManager.ConvertProgramText(eventInfo, EventInfoTextMode.All);
                 }
 
                 text = text.TrimEnd() + "\r\n";
@@ -784,7 +784,7 @@ namespace EpgTimer
 
             //並べ替えしなかった
             Dictionary<uint, uint> changeIDTable = null;
-            if (CommonManager.Instance.AutoAddViewOrderCheckAndSave(view, out changeIDTable) == false) return true;
+            if (AutoAddViewOrderCheckAndSave(view, out changeIDTable) == false) return true;
 
             //並べ替え保存時に何か問題があった
             if (changeIDTable == null) return false;
@@ -801,6 +801,22 @@ namespace EpgTimer
                 }
             }
             return true;
+        }
+
+        public static bool? AutoAddViewOrderCheckAndSave(AutoAddListView view, out Dictionary<uint, uint> changeIDTable)
+        {
+            changeIDTable = null;
+            try
+            {
+                if (view == null || view.IsVisible == false || view.dragMover.NotSaved == false) return false;
+                //
+                var cmdPrm = new EpgCmdParam(null);
+                EpgCmds.SaveOrder.Execute(cmdPrm, view);
+                changeIDTable = cmdPrm.Data as Dictionary<uint, uint>;
+                return true;
+            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
+            return null;
         }
 
         public static bool RecinfoChgProtect(List<RecFileInfo> itemlist, bool cautionMany = true)

@@ -40,13 +40,13 @@ namespace EpgTimer
                 mBinds.ResetInputBindings(this);
 
                 //その他設定
-                comboBox_startHH.DataContext = CommonManager.Instance.CustomHourList;
+                comboBox_startHH.DataContext = CommonManager.CustomHourList;
                 comboBox_startHH.SelectedIndex = 0;
                 comboBox_startMM.DataContext = Enumerable.Range(0, 60);
                 comboBox_startMM.SelectedIndex = 0;
                 comboBox_startSS.DataContext = Enumerable.Range(0, 60);
                 comboBox_startSS.SelectedIndex = 0;
-                comboBox_endHH.DataContext = CommonManager.Instance.CustomHourList;
+                comboBox_endHH.DataContext = CommonManager.CustomHourList;
                 comboBox_endHH.SelectedIndex = 0;
                 comboBox_endMM.DataContext = Enumerable.Range(0, 60);
                 comboBox_endMM.SelectedIndex = 0;

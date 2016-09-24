@@ -119,7 +119,7 @@ namespace EpgTimer
             {
                 if (EventInfo == null) return "";
                 //
-                return CommonManager.Instance.ConvertJyanruText(EventInfo);
+                return CommonManager.ConvertJyanruText(EventInfo);
             }
         }
         public bool IsEnabled
@@ -181,7 +181,7 @@ namespace EpgTimer
         }
         public override String ConvertInfoText()
         {
-            return CommonManager.Instance.ConvertProgramText(EventInfo, EventInfoTextMode.All);
+            return CommonManager.ConvertProgramText(EventInfo, EventInfoTextMode.All);
         }
         public virtual String Status
         {

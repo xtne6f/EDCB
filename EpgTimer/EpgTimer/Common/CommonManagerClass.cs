@@ -22,25 +22,6 @@ namespace EpgTimer
         { get; set; }
         public TVTestCtrlClass TVTestCtrl
         { get; set; }
-        public Dictionary<UInt16, ContentKindInfo> ContentKindDictionary
-        { get; set; }
-        public IEnumerable<ContentKindInfo> ContentKindList
-        {
-            get
-            {
-                //「その他」をラストへ。各々大分類を前へ
-                // (Valueの順序は未定義だが、現在の実装的には削除・追加しなければ大丈夫らしい。でも並べ替えておく)
-                return ContentKindDictionary.Values.OrderBy(info => (info.Nibble1 == 0x0F ? 0xF0 : info.Nibble1) << 8 | (info.Nibble2 + 1) & 0xFF);
-            }
-        }
-        public Dictionary<UInt16, string> ComponentKindDictionary
-        { get; set; }
-        public string[] DayOfWeekArray
-        { get; set; }
-        public IEnumerable<int> CustomHourList
-        {
-            get { return Enumerable.Range(0, Settings.Instance.LaterTimeUse == false ? 24 : 37); }
-        }
         public bool NWMode
         { get; set; }
         public List<NotifySrvInfo> NotifyLogList
@@ -113,274 +94,6 @@ namespace EpgTimer
             {
                 NW = new NWConnect(CtrlCmd);
             }
-            if (ContentKindDictionary == null)
-            {
-                ContentKindDictionary = new Dictionary<UInt16, ContentKindInfo>();
-                ContentKindDictionary.Add(0x00FF, new ContentKindInfo("ニュース／報道", "", 0x00, 0xFF));
-                ContentKindDictionary.Add(0x0000, new ContentKindInfo("ニュース／報道", "定時・総合", 0x00, 0x00));
-                ContentKindDictionary.Add(0x0001, new ContentKindInfo("ニュース／報道", "天気", 0x00, 0x01));
-                ContentKindDictionary.Add(0x0002, new ContentKindInfo("ニュース／報道", "特集・ドキュメント", 0x00, 0x02));
-                ContentKindDictionary.Add(0x0003, new ContentKindInfo("ニュース／報道", "政治・国会", 0x00, 0x03));
-                ContentKindDictionary.Add(0x0004, new ContentKindInfo("ニュース／報道", "経済・市況", 0x00, 0x04));
-                ContentKindDictionary.Add(0x0005, new ContentKindInfo("ニュース／報道", "海外・国際", 0x00, 0x05));
-                ContentKindDictionary.Add(0x0006, new ContentKindInfo("ニュース／報道", "解説", 0x00, 0x06));
-                ContentKindDictionary.Add(0x0007, new ContentKindInfo("ニュース／報道", "討論・会談", 0x00, 0x07));
-                ContentKindDictionary.Add(0x0008, new ContentKindInfo("ニュース／報道", "報道特番", 0x00, 0x08));
-                ContentKindDictionary.Add(0x0009, new ContentKindInfo("ニュース／報道", "ローカル・地域", 0x00, 0x09));
-                ContentKindDictionary.Add(0x000A, new ContentKindInfo("ニュース／報道", "交通", 0x00, 0x0A));
-                ContentKindDictionary.Add(0x000F, new ContentKindInfo("ニュース／報道", "その他", 0x00, 0x0F));
-
-                ContentKindDictionary.Add(0x01FF, new ContentKindInfo("スポーツ", "", 0x01, 0xFF));
-                ContentKindDictionary.Add(0x0100, new ContentKindInfo("スポーツ", "スポーツニュース", 0x01, 0x00));
-                ContentKindDictionary.Add(0x0101, new ContentKindInfo("スポーツ", "野球", 0x01, 0x01));
-                ContentKindDictionary.Add(0x0102, new ContentKindInfo("スポーツ", "サッカー", 0x01, 0x02));
-                ContentKindDictionary.Add(0x0103, new ContentKindInfo("スポーツ", "ゴルフ", 0x01, 0x03));
-                ContentKindDictionary.Add(0x0104, new ContentKindInfo("スポーツ", "その他の球技", 0x01, 0x04));
-                ContentKindDictionary.Add(0x0105, new ContentKindInfo("スポーツ", "相撲・格闘技", 0x01, 0x05));
-                ContentKindDictionary.Add(0x0106, new ContentKindInfo("スポーツ", "オリンピック・国際大会", 0x01, 0x06));
-                ContentKindDictionary.Add(0x0107, new ContentKindInfo("スポーツ", "マラソン・陸上・水泳", 0x01, 0x07));
-                ContentKindDictionary.Add(0x0108, new ContentKindInfo("スポーツ", "モータースポーツ", 0x01, 0x08));
-                ContentKindDictionary.Add(0x0109, new ContentKindInfo("スポーツ", "マリン・ウィンタースポーツ", 0x01, 0x09));
-                ContentKindDictionary.Add(0x010A, new ContentKindInfo("スポーツ", "競馬・公営競技", 0x01, 0x0A));
-                ContentKindDictionary.Add(0x010F, new ContentKindInfo("スポーツ", "その他", 0x01, 0x0F));
-
-                ContentKindDictionary.Add(0x02FF, new ContentKindInfo("情報／ワイドショー", "", 0x02, 0xFF));
-                ContentKindDictionary.Add(0x0200, new ContentKindInfo("情報／ワイドショー", "芸能・ワイドショー", 0x02, 0x00));
-                ContentKindDictionary.Add(0x0201, new ContentKindInfo("情報／ワイドショー", "ファッション", 0x02, 0x01));
-                ContentKindDictionary.Add(0x0202, new ContentKindInfo("情報／ワイドショー", "暮らし・住まい", 0x02, 0x02));
-                ContentKindDictionary.Add(0x0203, new ContentKindInfo("情報／ワイドショー", "健康・医療", 0x02, 0x03));
-                ContentKindDictionary.Add(0x0204, new ContentKindInfo("情報／ワイドショー", "ショッピング・通販", 0x02, 0x04));
-                ContentKindDictionary.Add(0x0205, new ContentKindInfo("情報／ワイドショー", "グルメ・料理", 0x02, 0x05));
-                ContentKindDictionary.Add(0x0206, new ContentKindInfo("情報／ワイドショー", "イベント", 0x02, 0x06));
-                ContentKindDictionary.Add(0x0207, new ContentKindInfo("情報／ワイドショー", "番組紹介・お知らせ", 0x02, 0x07));
-                ContentKindDictionary.Add(0x020F, new ContentKindInfo("情報／ワイドショー", "その他", 0x02, 0x0F));
-
-                ContentKindDictionary.Add(0x03FF, new ContentKindInfo("ドラマ", "", 0x03, 0xFF));
-                ContentKindDictionary.Add(0x0300, new ContentKindInfo("ドラマ", "国内ドラマ", 0x03, 0x00));
-                ContentKindDictionary.Add(0x0301, new ContentKindInfo("ドラマ", "海外ドラマ", 0x03, 0x01));
-                ContentKindDictionary.Add(0x0302, new ContentKindInfo("ドラマ", "時代劇", 0x03, 0x02));
-                ContentKindDictionary.Add(0x030F, new ContentKindInfo("ドラマ", "その他", 0x03, 0x0F));
-
-                ContentKindDictionary.Add(0x04FF, new ContentKindInfo("音楽", "", 0x04, 0xFF));
-                ContentKindDictionary.Add(0x0400, new ContentKindInfo("音楽", "国内ロック・ポップス", 0x04, 0x00));
-                ContentKindDictionary.Add(0x0401, new ContentKindInfo("音楽", "海外ロック・ポップス", 0x04, 0x01));
-                ContentKindDictionary.Add(0x0402, new ContentKindInfo("音楽", "クラシック・オペラ", 0x04, 0x02));
-                ContentKindDictionary.Add(0x0403, new ContentKindInfo("音楽", "ジャズ・フュージョン", 0x04, 0x03));
-                ContentKindDictionary.Add(0x0404, new ContentKindInfo("音楽", "歌謡曲・演歌", 0x04, 0x04));
-                ContentKindDictionary.Add(0x0405, new ContentKindInfo("音楽", "ライブ・コンサート", 0x04, 0x05));
-                ContentKindDictionary.Add(0x0406, new ContentKindInfo("音楽", "ランキング・リクエスト", 0x04, 0x06));
-                ContentKindDictionary.Add(0x0407, new ContentKindInfo("音楽", "カラオケ・のど自慢", 0x04, 0x07));
-                ContentKindDictionary.Add(0x0408, new ContentKindInfo("音楽", "民謡・邦楽", 0x04, 0x08));
-                ContentKindDictionary.Add(0x0409, new ContentKindInfo("音楽", "童謡・キッズ", 0x04, 0x09));
-                ContentKindDictionary.Add(0x040A, new ContentKindInfo("音楽", "民族音楽・ワールドミュージック", 0x04, 0x0A));
-                ContentKindDictionary.Add(0x040F, new ContentKindInfo("音楽", "その他", 0x04, 0x0F));
-
-                ContentKindDictionary.Add(0x05FF, new ContentKindInfo("バラエティ", "", 0x05, 0xFF));
-                ContentKindDictionary.Add(0x0500, new ContentKindInfo("バラエティ", "クイズ", 0x05, 0x00));
-                ContentKindDictionary.Add(0x0501, new ContentKindInfo("バラエティ", "ゲーム", 0x05, 0x01));
-                ContentKindDictionary.Add(0x0502, new ContentKindInfo("バラエティ", "トークバラエティ", 0x05, 0x02));
-                ContentKindDictionary.Add(0x0503, new ContentKindInfo("バラエティ", "お笑い・コメディ", 0x05, 0x03));
-                ContentKindDictionary.Add(0x0504, new ContentKindInfo("バラエティ", "音楽バラエティ", 0x05, 0x04));
-                ContentKindDictionary.Add(0x0505, new ContentKindInfo("バラエティ", "旅バラエティ", 0x05, 0x05));
-                ContentKindDictionary.Add(0x0506, new ContentKindInfo("バラエティ", "料理バラエティ", 0x05, 0x06));
-                ContentKindDictionary.Add(0x050F, new ContentKindInfo("バラエティ", "その他", 0x05, 0x0F));
-
-                ContentKindDictionary.Add(0x06FF, new ContentKindInfo("映画", "", 0x06, 0xFF));
-                ContentKindDictionary.Add(0x0600, new ContentKindInfo("映画", "洋画", 0x06, 0x00));
-                ContentKindDictionary.Add(0x0601, new ContentKindInfo("映画", "邦画", 0x06, 0x01));
-                ContentKindDictionary.Add(0x0602, new ContentKindInfo("映画", "アニメ", 0x06, 0x02));
-                ContentKindDictionary.Add(0x060F, new ContentKindInfo("映画", "その他", 0x06, 0x0F));
-
-                ContentKindDictionary.Add(0x07FF, new ContentKindInfo("アニメ／特撮", "", 0x07, 0xFF));
-                ContentKindDictionary.Add(0x0700, new ContentKindInfo("アニメ／特撮", "国内アニメ", 0x07, 0x00));
-                ContentKindDictionary.Add(0x0701, new ContentKindInfo("アニメ／特撮", "海外アニメ", 0x07, 0x01));
-                ContentKindDictionary.Add(0x0702, new ContentKindInfo("アニメ／特撮", "特撮", 0x07, 0x02));
-                ContentKindDictionary.Add(0x070F, new ContentKindInfo("アニメ／特撮", "その他", 0x07, 0x0F));
-
-                ContentKindDictionary.Add(0x08FF, new ContentKindInfo("ドキュメンタリー／教養", "", 0x08, 0xFF));
-                ContentKindDictionary.Add(0x0800, new ContentKindInfo("ドキュメンタリー／教養", "社会・時事", 0x08, 0x00));
-                ContentKindDictionary.Add(0x0801, new ContentKindInfo("ドキュメンタリー／教養", "歴史・紀行", 0x08, 0x01));
-                ContentKindDictionary.Add(0x0802, new ContentKindInfo("ドキュメンタリー／教養", "自然・動物・環境", 0x08, 0x02));
-                ContentKindDictionary.Add(0x0803, new ContentKindInfo("ドキュメンタリー／教養", "宇宙・科学・医学", 0x08, 0x03));
-                ContentKindDictionary.Add(0x0804, new ContentKindInfo("ドキュメンタリー／教養", "カルチャー・伝統文化", 0x08, 0x04));
-                ContentKindDictionary.Add(0x0805, new ContentKindInfo("ドキュメンタリー／教養", "文学・文芸", 0x08, 0x05));
-                ContentKindDictionary.Add(0x0806, new ContentKindInfo("ドキュメンタリー／教養", "スポーツ", 0x08, 0x06));
-                ContentKindDictionary.Add(0x0807, new ContentKindInfo("ドキュメンタリー／教養", "ドキュメンタリー全般", 0x08, 0x07));
-                ContentKindDictionary.Add(0x0808, new ContentKindInfo("ドキュメンタリー／教養", "インタビュー・討論", 0x08, 0x08));
-                ContentKindDictionary.Add(0x080F, new ContentKindInfo("ドキュメンタリー／教養", "その他", 0x08, 0x0F));
-
-                ContentKindDictionary.Add(0x09FF, new ContentKindInfo("劇場／公演", "", 0x09, 0xFF));
-                ContentKindDictionary.Add(0x0900, new ContentKindInfo("劇場／公演", "現代劇・新劇", 0x09, 0x00));
-                ContentKindDictionary.Add(0x0901, new ContentKindInfo("劇場／公演", "ミュージカル", 0x09, 0x01));
-                ContentKindDictionary.Add(0x0902, new ContentKindInfo("劇場／公演", "ダンス・バレエ", 0x09, 0x02));
-                ContentKindDictionary.Add(0x0903, new ContentKindInfo("劇場／公演", "落語・演芸", 0x09, 0x03));
-                ContentKindDictionary.Add(0x0904, new ContentKindInfo("劇場／公演", "歌舞伎・古典", 0x09, 0x04));
-                ContentKindDictionary.Add(0x090F, new ContentKindInfo("劇場／公演", "その他", 0x09, 0x0F));
-
-                ContentKindDictionary.Add(0x0AFF, new ContentKindInfo("趣味／教育", "", 0x0A, 0xFF));
-                ContentKindDictionary.Add(0x0A00, new ContentKindInfo("趣味／教育", "旅・釣り・アウトドア", 0x0A, 0x00));
-                ContentKindDictionary.Add(0x0A01, new ContentKindInfo("趣味／教育", "園芸・ペット・手芸", 0x0A, 0x01));
-                ContentKindDictionary.Add(0x0A02, new ContentKindInfo("趣味／教育", "音楽・美術・工芸", 0x0A, 0x02));
-                ContentKindDictionary.Add(0x0A03, new ContentKindInfo("趣味／教育", "囲碁・将棋", 0x0A, 0x03));
-                ContentKindDictionary.Add(0x0A04, new ContentKindInfo("趣味／教育", "麻雀・パチンコ", 0x0A, 0x04));
-                ContentKindDictionary.Add(0x0A05, new ContentKindInfo("趣味／教育", "車・オートバイ", 0x0A, 0x05));
-                ContentKindDictionary.Add(0x0A06, new ContentKindInfo("趣味／教育", "コンピュータ・ＴＶゲーム", 0x0A, 0x06));
-                ContentKindDictionary.Add(0x0A07, new ContentKindInfo("趣味／教育", "会話・語学", 0x0A, 0x07));
-                ContentKindDictionary.Add(0x0A08, new ContentKindInfo("趣味／教育", "幼児・小学生", 0x0A, 0x08));
-                ContentKindDictionary.Add(0x0A09, new ContentKindInfo("趣味／教育", "中学生・高校生", 0x0A, 0x09));
-                ContentKindDictionary.Add(0x0A0A, new ContentKindInfo("趣味／教育", "大学生・受験", 0x0A, 0x0A));
-                ContentKindDictionary.Add(0x0A0B, new ContentKindInfo("趣味／教育", "生涯教育・資格", 0x0A, 0x0B));
-                ContentKindDictionary.Add(0x0A0C, new ContentKindInfo("趣味／教育", "教育問題", 0x0A, 0x0C));
-                ContentKindDictionary.Add(0x0A0F, new ContentKindInfo("趣味／教育", "その他", 0x0A, 0x0F));
-
-                ContentKindDictionary.Add(0x0BFF, new ContentKindInfo("福祉", "", 0x0B, 0xFF));
-                ContentKindDictionary.Add(0x0B00, new ContentKindInfo("福祉", "高齢者", 0x0B, 0x00));
-                ContentKindDictionary.Add(0x0B01, new ContentKindInfo("福祉", "障害者", 0x0B, 0x01));
-                ContentKindDictionary.Add(0x0B02, new ContentKindInfo("福祉", "社会福祉", 0x0B, 0x02));
-                ContentKindDictionary.Add(0x0B03, new ContentKindInfo("福祉", "ボランティア", 0x0B, 0x03));
-                ContentKindDictionary.Add(0x0B04, new ContentKindInfo("福祉", "手話", 0x0B, 0x04));
-                ContentKindDictionary.Add(0x0B05, new ContentKindInfo("福祉", "文字（字幕）", 0x0B, 0x05));
-                ContentKindDictionary.Add(0x0B06, new ContentKindInfo("福祉", "音声解説", 0x0B, 0x06));
-                ContentKindDictionary.Add(0x0B0F, new ContentKindInfo("福祉", "その他", 0x0B, 0x0F));
-
-                //CSもまとめて検索出来るようにする仮対応。
-                ContentKindDictionary.Add(0x70FF, new ContentKindInfo("スポーツ(CS)", "", 0x70, 0xFF));
-                ContentKindDictionary.Add(0x7000, new ContentKindInfo("スポーツ(CS)", "テニス", 0x70, 0x00));
-                ContentKindDictionary.Add(0x7001, new ContentKindInfo("スポーツ(CS)", "バスケットボール", 0x70, 0x01));
-                ContentKindDictionary.Add(0x7002, new ContentKindInfo("スポーツ(CS)", "ラグビー", 0x70, 0x02));
-                ContentKindDictionary.Add(0x7003, new ContentKindInfo("スポーツ(CS)", "アメリカンフットボール", 0x70, 0x03));
-                ContentKindDictionary.Add(0x7004, new ContentKindInfo("スポーツ(CS)", "ボクシング", 0x70, 0x04));
-                ContentKindDictionary.Add(0x7005, new ContentKindInfo("スポーツ(CS)", "プロレス", 0x70, 0x05));
-                ContentKindDictionary.Add(0x700F, new ContentKindInfo("スポーツ(CS)", "その他", 0x70, 0x0F));
-
-                ContentKindDictionary.Add(0x71FF, new ContentKindInfo("洋画(CS)", "", 0x71, 0xFF));
-                ContentKindDictionary.Add(0x7100, new ContentKindInfo("洋画(CS)", "アクション", 0x71, 0x00));
-                ContentKindDictionary.Add(0x7101, new ContentKindInfo("洋画(CS)", "SF／ファンタジー", 0x71, 0x01));
-                ContentKindDictionary.Add(0x7102, new ContentKindInfo("洋画(CS)", "コメディー", 0x71, 0x02));
-                ContentKindDictionary.Add(0x7103, new ContentKindInfo("洋画(CS)", "サスペンス／ミステリー", 0x71, 0x03));
-                ContentKindDictionary.Add(0x7104, new ContentKindInfo("洋画(CS)", "恋愛／ロマンス", 0x71, 0x04));
-                ContentKindDictionary.Add(0x7105, new ContentKindInfo("洋画(CS)", "ホラー／スリラー", 0x71, 0x05));
-                ContentKindDictionary.Add(0x7106, new ContentKindInfo("洋画(CS)", "ウエスタン", 0x71, 0x06));
-                ContentKindDictionary.Add(0x7107, new ContentKindInfo("洋画(CS)", "ドラマ／社会派ドラマ", 0x71, 0x07));
-                ContentKindDictionary.Add(0x7108, new ContentKindInfo("洋画(CS)", "アニメーション", 0x71, 0x08));
-                ContentKindDictionary.Add(0x7109, new ContentKindInfo("洋画(CS)", "ドキュメンタリー", 0x71, 0x09));
-                ContentKindDictionary.Add(0x710A, new ContentKindInfo("洋画(CS)", "アドベンチャー／冒険", 0x71, 0x0A));
-                ContentKindDictionary.Add(0x710B, new ContentKindInfo("洋画(CS)", "ミュージカル／音楽映画", 0x71, 0x0B));
-                ContentKindDictionary.Add(0x710C, new ContentKindInfo("洋画(CS)", "ホームドラマ", 0x71, 0x0C));
-                ContentKindDictionary.Add(0x710F, new ContentKindInfo("洋画(CS)", "その他", 0x71, 0x0F));
-
-                ContentKindDictionary.Add(0x72FF, new ContentKindInfo("邦画(CS)", "", 0x72, 0xFF));
-                ContentKindDictionary.Add(0x7200, new ContentKindInfo("邦画(CS)", "アクション", 0x72, 0x00));
-                ContentKindDictionary.Add(0x7201, new ContentKindInfo("邦画(CS)", "SF／ファンタジー", 0x72, 0x01));
-                ContentKindDictionary.Add(0x7202, new ContentKindInfo("邦画(CS)", "お笑い／コメディー", 0x72, 0x02));
-                ContentKindDictionary.Add(0x7203, new ContentKindInfo("邦画(CS)", "サスペンス／ミステリー", 0x72, 0x03));
-                ContentKindDictionary.Add(0x7204, new ContentKindInfo("邦画(CS)", "恋愛／ロマンス", 0x72, 0x04));
-                ContentKindDictionary.Add(0x7205, new ContentKindInfo("邦画(CS)", "ホラー／スリラー", 0x72, 0x05));
-                ContentKindDictionary.Add(0x7206, new ContentKindInfo("邦画(CS)", "青春／学園／アイドル", 0x72, 0x06));
-                ContentKindDictionary.Add(0x7207, new ContentKindInfo("邦画(CS)", "任侠／時代劇", 0x72, 0x07));
-                ContentKindDictionary.Add(0x7208, new ContentKindInfo("邦画(CS)", "アニメーション", 0x72, 0x08));
-                ContentKindDictionary.Add(0x7209, new ContentKindInfo("邦画(CS)", "ドキュメンタリー", 0x72, 0x09));
-                ContentKindDictionary.Add(0x720A, new ContentKindInfo("邦画(CS)", "アドベンチャー／冒険", 0x72, 0x0A));
-                ContentKindDictionary.Add(0x720B, new ContentKindInfo("邦画(CS)", "ミュージカル／音楽映画", 0x72, 0x0B));
-                ContentKindDictionary.Add(0x720C, new ContentKindInfo("邦画(CS)", "ホームドラマ", 0x72, 0x0C));
-                ContentKindDictionary.Add(0x720F, new ContentKindInfo("邦画(CS)", "その他", 0x72, 0x0F));
-
-                ContentKindDictionary.Add(0x73FF, new ContentKindInfo("アダルト(CS)", "", 0x73, 0xFF));
-                ContentKindDictionary.Add(0x7300, new ContentKindInfo("アダルト(CS)", "アダルト", 0x73, 0x00));
-                ContentKindDictionary.Add(0x730F, new ContentKindInfo("アダルト(CS)", "その他", 0x73, 0x0F));
-
-                //残り
-                ContentKindDictionary.Add(0x0FFF, new ContentKindInfo("その他", "", 0x0F, 0xFF));
-                ContentKindDictionary.Add(0x0F0F, new ContentKindInfo("その他", "その他", 0x0F, 0x0F));
-
-                ContentKindDictionary.Add(0xFEFF, new ContentKindInfo("不明なジャンル(未実装)", "", 0xFE, 0xFF));
-                ContentKindDictionary.Add(0xFFFF, new ContentKindInfo("ジャンル情報なし", "", 0xFF, 0xFF));
-            }
-            if (ComponentKindDictionary == null)
-            {
-                ComponentKindDictionary = new Dictionary<UInt16, string>()
-                {
-                    { 0x0101, "480i(525i)、アスペクト比4:3" },
-                    { 0x0102, "480i(525i)、アスペクト比16:9 パンベクトルあり" },
-                    { 0x0103, "480i(525i)、アスペクト比16:9 パンベクトルなし" },
-                    { 0x0104, "480i(525i)、アスペクト比 > 16:9" },
-                    { 0x0191, "2160p、アスペクト比4:3" },
-                    { 0x0192, "2160p、アスペクト比16:9 パンベクトルあり" },
-                    { 0x0193, "2160p、アスペクト比16:9 パンベクトルなし" },
-                    { 0x0194, "2160p、アスペクト比 > 16:9" },
-                    { 0x01A1, "480p(525p)、アスペクト比4:3" },
-                    { 0x01A2, "480p(525p)、アスペクト比16:9 パンベクトルあり" },
-                    { 0x01A3, "480p(525p)、アスペクト比16:9 パンベクトルなし" },
-                    { 0x01A4, "480p(525p)、アスペクト比 > 16:9" },
-                    { 0x01B1, "1080i(1125i)、アスペクト比4:3" },
-                    { 0x01B2, "1080i(1125i)、アスペクト比16:9 パンベクトルあり" },
-                    { 0x01B3, "1080i(1125i)、アスペクト比16:9 パンベクトルなし" },
-                    { 0x01B4, "1080i(1125i)、アスペクト比 > 16:9" },
-                    { 0x01C1, "720p(750p)、アスペクト比4:3" },
-                    { 0x01C2, "720p(750p)、アスペクト比16:9 パンベクトルあり" },
-                    { 0x01C3, "720p(750p)、アスペクト比16:9 パンベクトルなし" },
-                    { 0x01C4, "720p(750p)、アスペクト比 > 16:9" },
-                    { 0x01D1, "240p アスペクト比4:3" },
-                    { 0x01D2, "240p アスペクト比16:9 パンベクトルあり" },
-                    { 0x01D3, "240p アスペクト比16:9 パンベクトルなし" },
-                    { 0x01D4, "240p アスペクト比 > 16:9" },
-                    { 0x01E1, "1080p(1125p)、アスペクト比4:3" },
-                    { 0x01E2, "1080p(1125p)、アスペクト比16:9 パンベクトルあり" },
-                    { 0x01E3, "1080p(1125p)、アスペクト比16:9 パンベクトルなし" },
-                    { 0x01E4, "1080p(1125p)、アスペクト比 > 16:9" },
-                    { 0x0201, "1/0モード（シングルモノ）" },
-                    { 0x0202, "1/0＋1/0モード（デュアルモノ）" },
-                    { 0x0203, "2/0モード（ステレオ）" },
-                    { 0x0204, "2/1モード" },
-                    { 0x0205, "3/0モード" },
-                    { 0x0206, "2/2モード" },
-                    { 0x0207, "3/1モード" },
-                    { 0x0208, "3/2モード" },
-                    { 0x0209, "3/2＋LFEモード（3/2.1モード）" },
-                    { 0x020A, "3/3.1モード" },
-                    { 0x020B, "2/0/0-2/0/2-0.1モード" },
-                    { 0x020C, "5/2.1モード" },
-                    { 0x020D, "3/2/2.1モード" },
-                    { 0x020E, "2/0/0-3/0/2-0.1モード" },
-                    { 0x020F, "0/2/0-3/0/2-0.1モード" },
-                    { 0x0210, "2/0/0-3/2/3-0.2モード" },
-                    { 0x0211, "3/3/3-5/2/3-3/0/0.2モード" },
-                    { 0x0240, "視覚障害者用音声解説" },
-                    { 0x0241, "聴覚障害者用音声" },
-                    { 0x0501, "H.264|MPEG-4 AVC、480i(525i)、アスペクト比4:3" },
-                    { 0x0502, "H.264|MPEG-4 AVC、480i(525i)、アスペクト比16:9 パンベクトルあり" },
-                    { 0x0503, "H.264|MPEG-4 AVC、480i(525i)、アスペクト比16:9 パンベクトルなし" },
-                    { 0x0504, "H.264|MPEG-4 AVC、480i(525i)、アスペクト比 > 16:9" },
-                    { 0x0591, "H.264|MPEG-4 AVC、2160p、アスペクト比4:3" },
-                    { 0x0592, "H.264|MPEG-4 AVC、2160p、アスペクト比16:9 パンベクトルあり" },
-                    { 0x0593, "H.264|MPEG-4 AVC、2160p、アスペクト比16:9 パンベクトルなし" },
-                    { 0x0594, "H.264|MPEG-4 AVC、2160p、アスペクト比 > 16:9" },
-                    { 0x05A1, "H.264|MPEG-4 AVC、480p(525p)、アスペクト比4:3" },
-                    { 0x05A2, "H.264|MPEG-4 AVC、480p(525p)、アスペクト比16:9 パンベクトルあり" },
-                    { 0x05A3, "H.264|MPEG-4 AVC、480p(525p)、アスペクト比16:9 パンベクトルなし" },
-                    { 0x05A4, "H.264|MPEG-4 AVC、480p(525p)、アスペクト比 > 16:9" },
-                    { 0x05B1, "H.264|MPEG-4 AVC、1080i(1125i)、アスペクト比4:3" },
-                    { 0x05B2, "H.264|MPEG-4 AVC、1080i(1125i)、アスペクト比16:9 パンベクトルあり" },
-                    { 0x05B3, "H.264|MPEG-4 AVC、1080i(1125i)、アスペクト比16:9 パンベクトルなし" },
-                    { 0x05B4, "H.264|MPEG-4 AVC、1080i(1125i)、アスペクト比 > 16:9" },
-                    { 0x05C1, "H.264|MPEG-4 AVC、720p(750p)、アスペクト比4:3" },
-                    { 0x05C2, "H.264|MPEG-4 AVC、720p(750p)、アスペクト比16:9 パンベクトルあり" },
-                    { 0x05C3, "H.264|MPEG-4 AVC、720p(750p)、アスペクト比16:9 パンベクトルなし" },
-                    { 0x05C4, "H.264|MPEG-4 AVC、720p(750p)、アスペクト比 > 16:9" },
-                    { 0x05D1, "H.264|MPEG-4 AVC、240p アスペクト比4:3" },
-                    { 0x05D2, "H.264|MPEG-4 AVC、240p アスペクト比16:9 パンベクトルあり" },
-                    { 0x05D3, "H.264|MPEG-4 AVC、240p アスペクト比16:9 パンベクトルなし" },
-                    { 0x05D4, "H.264|MPEG-4 AVC、240p アスペクト比 > 16:9" },
-                    { 0x05E1, "H.264|MPEG-4 AVC、1080p(1125p)、アスペクト比4:3" },
-                    { 0x05E2, "H.264|MPEG-4 AVC、1080p(1125p)、アスペクト比16:9 パンベクトルあり" },
-                    { 0x05E3, "H.264|MPEG-4 AVC、1080p(1125p)、アスペクト比16:9 パンベクトルなし" },
-                    { 0x05E4, "H.264|MPEG-4 AVC、1080p(1125p)、アスペクト比 > 16:9" }
-                };
-            }
-            if (DayOfWeekArray == null)
-            {
-                DayOfWeekArray = new string[] { "日", "月", "火", "水", "木", "金", "土" };
-            }
             NWMode = false;
             if (NotifyLogList == null)
             {
@@ -402,6 +115,295 @@ namespace EpgTimer
             {
                 RecModeForeColor = new List<Brush>();
             }
+        }
+
+        public static Dictionary<UInt16, ContentKindInfo> ContentKindDictionary { get; private set; }
+        public static Dictionary<UInt16, string> ComponentKindDictionary { get; private set; }
+        public static List<string> RecModeList { get; private set; }
+        public static List<string> YesNoList { get; private set; }
+        public static List<string> PriorityList { get; private set; }
+        
+        static CommonManager()
+        {
+            ContentKindDictionary = new Dictionary<UInt16, ContentKindInfo>
+            {
+                {0x00FF, new ContentKindInfo("ニュース／報道", "", 0x00, 0xFF)},
+                {0x0000, new ContentKindInfo("ニュース／報道", "定時・総合", 0x00, 0x00)},
+                {0x0001, new ContentKindInfo("ニュース／報道", "天気", 0x00, 0x01)},
+                {0x0002, new ContentKindInfo("ニュース／報道", "特集・ドキュメント", 0x00, 0x02)},
+                {0x0003, new ContentKindInfo("ニュース／報道", "政治・国会", 0x00, 0x03)},
+                {0x0004, new ContentKindInfo("ニュース／報道", "経済・市況", 0x00, 0x04)},
+                {0x0005, new ContentKindInfo("ニュース／報道", "海外・国際", 0x00, 0x05)},
+                {0x0006, new ContentKindInfo("ニュース／報道", "解説", 0x00, 0x06)},
+                {0x0007, new ContentKindInfo("ニュース／報道", "討論・会談", 0x00, 0x07)},
+                {0x0008, new ContentKindInfo("ニュース／報道", "報道特番", 0x00, 0x08)},
+                {0x0009, new ContentKindInfo("ニュース／報道", "ローカル・地域", 0x00, 0x09)},
+                {0x000A, new ContentKindInfo("ニュース／報道", "交通", 0x00, 0x0A)},
+                {0x000F, new ContentKindInfo("ニュース／報道", "その他", 0x00, 0x0F)},
+
+                {0x01FF, new ContentKindInfo("スポーツ", "", 0x01, 0xFF)},
+                {0x0100, new ContentKindInfo("スポーツ", "スポーツニュース", 0x01, 0x00)},
+                {0x0101, new ContentKindInfo("スポーツ", "野球", 0x01, 0x01)},
+                {0x0102, new ContentKindInfo("スポーツ", "サッカー", 0x01, 0x02)},
+                {0x0103, new ContentKindInfo("スポーツ", "ゴルフ", 0x01, 0x03)},
+                {0x0104, new ContentKindInfo("スポーツ", "その他の球技", 0x01, 0x04)},
+                {0x0105, new ContentKindInfo("スポーツ", "相撲・格闘技", 0x01, 0x05)},
+                {0x0106, new ContentKindInfo("スポーツ", "オリンピック・国際大会", 0x01, 0x06)},
+                {0x0107, new ContentKindInfo("スポーツ", "マラソン・陸上・水泳", 0x01, 0x07)},
+                {0x0108, new ContentKindInfo("スポーツ", "モータースポーツ", 0x01, 0x08)},
+                {0x0109, new ContentKindInfo("スポーツ", "マリン・ウィンタースポーツ", 0x01, 0x09)},
+                {0x010A, new ContentKindInfo("スポーツ", "競馬・公営競技", 0x01, 0x0A)},
+                {0x010F, new ContentKindInfo("スポーツ", "その他", 0x01, 0x0F)},
+
+                {0x02FF, new ContentKindInfo("情報／ワイドショー", "", 0x02, 0xFF)},
+                {0x0200, new ContentKindInfo("情報／ワイドショー", "芸能・ワイドショー", 0x02, 0x00)},
+                {0x0201, new ContentKindInfo("情報／ワイドショー", "ファッション", 0x02, 0x01)},
+                {0x0202, new ContentKindInfo("情報／ワイドショー", "暮らし・住まい", 0x02, 0x02)},
+                {0x0203, new ContentKindInfo("情報／ワイドショー", "健康・医療", 0x02, 0x03)},
+                {0x0204, new ContentKindInfo("情報／ワイドショー", "ショッピング・通販", 0x02, 0x04)},
+                {0x0205, new ContentKindInfo("情報／ワイドショー", "グルメ・料理", 0x02, 0x05)},
+                {0x0206, new ContentKindInfo("情報／ワイドショー", "イベント", 0x02, 0x06)},
+                {0x0207, new ContentKindInfo("情報／ワイドショー", "番組紹介・お知らせ", 0x02, 0x07)},
+                {0x020F, new ContentKindInfo("情報／ワイドショー", "その他", 0x02, 0x0F)},
+
+                {0x03FF, new ContentKindInfo("ドラマ", "", 0x03, 0xFF)},
+                {0x0300, new ContentKindInfo("ドラマ", "国内ドラマ", 0x03, 0x00)},
+                {0x0301, new ContentKindInfo("ドラマ", "海外ドラマ", 0x03, 0x01)},
+                {0x0302, new ContentKindInfo("ドラマ", "時代劇", 0x03, 0x02)},
+                {0x030F, new ContentKindInfo("ドラマ", "その他", 0x03, 0x0F)},
+
+                {0x04FF, new ContentKindInfo("音楽", "", 0x04, 0xFF)},
+                {0x0400, new ContentKindInfo("音楽", "国内ロック・ポップス", 0x04, 0x00)},
+                {0x0401, new ContentKindInfo("音楽", "海外ロック・ポップス", 0x04, 0x01)},
+                {0x0402, new ContentKindInfo("音楽", "クラシック・オペラ", 0x04, 0x02)},
+                {0x0403, new ContentKindInfo("音楽", "ジャズ・フュージョン", 0x04, 0x03)},
+                {0x0404, new ContentKindInfo("音楽", "歌謡曲・演歌", 0x04, 0x04)},
+                {0x0405, new ContentKindInfo("音楽", "ライブ・コンサート", 0x04, 0x05)},
+                {0x0406, new ContentKindInfo("音楽", "ランキング・リクエスト", 0x04, 0x06)},
+                {0x0407, new ContentKindInfo("音楽", "カラオケ・のど自慢", 0x04, 0x07)},
+                {0x0408, new ContentKindInfo("音楽", "民謡・邦楽", 0x04, 0x08)},
+                {0x0409, new ContentKindInfo("音楽", "童謡・キッズ", 0x04, 0x09)},
+                {0x040A, new ContentKindInfo("音楽", "民族音楽・ワールドミュージック", 0x04, 0x0A)},
+                {0x040F, new ContentKindInfo("音楽", "その他", 0x04, 0x0F)},
+
+                {0x05FF, new ContentKindInfo("バラエティ", "", 0x05, 0xFF)},
+                {0x0500, new ContentKindInfo("バラエティ", "クイズ", 0x05, 0x00)},
+                {0x0501, new ContentKindInfo("バラエティ", "ゲーム", 0x05, 0x01)},
+                {0x0502, new ContentKindInfo("バラエティ", "トークバラエティ", 0x05, 0x02)},
+                {0x0503, new ContentKindInfo("バラエティ", "お笑い・コメディ", 0x05, 0x03)},
+                {0x0504, new ContentKindInfo("バラエティ", "音楽バラエティ", 0x05, 0x04)},
+                {0x0505, new ContentKindInfo("バラエティ", "旅バラエティ", 0x05, 0x05)},
+                {0x0506, new ContentKindInfo("バラエティ", "料理バラエティ", 0x05, 0x06)},
+                {0x050F, new ContentKindInfo("バラエティ", "その他", 0x05, 0x0F)},
+
+                {0x06FF, new ContentKindInfo("映画", "", 0x06, 0xFF)},
+                {0x0600, new ContentKindInfo("映画", "洋画", 0x06, 0x00)},
+                {0x0601, new ContentKindInfo("映画", "邦画", 0x06, 0x01)},
+                {0x0602, new ContentKindInfo("映画", "アニメ", 0x06, 0x02)},
+                {0x060F, new ContentKindInfo("映画", "その他", 0x06, 0x0F)},
+
+                {0x07FF, new ContentKindInfo("アニメ／特撮", "", 0x07, 0xFF)},
+                {0x0700, new ContentKindInfo("アニメ／特撮", "国内アニメ", 0x07, 0x00)},
+                {0x0701, new ContentKindInfo("アニメ／特撮", "海外アニメ", 0x07, 0x01)},
+                {0x0702, new ContentKindInfo("アニメ／特撮", "特撮", 0x07, 0x02)},
+                {0x070F, new ContentKindInfo("アニメ／特撮", "その他", 0x07, 0x0F)},
+
+                {0x08FF, new ContentKindInfo("ドキュメンタリー／教養", "", 0x08, 0xFF)},
+                {0x0800, new ContentKindInfo("ドキュメンタリー／教養", "社会・時事", 0x08, 0x00)},
+                {0x0801, new ContentKindInfo("ドキュメンタリー／教養", "歴史・紀行", 0x08, 0x01)},
+                {0x0802, new ContentKindInfo("ドキュメンタリー／教養", "自然・動物・環境", 0x08, 0x02)},
+                {0x0803, new ContentKindInfo("ドキュメンタリー／教養", "宇宙・科学・医学", 0x08, 0x03)},
+                {0x0804, new ContentKindInfo("ドキュメンタリー／教養", "カルチャー・伝統文化", 0x08, 0x04)},
+                {0x0805, new ContentKindInfo("ドキュメンタリー／教養", "文学・文芸", 0x08, 0x05)},
+                {0x0806, new ContentKindInfo("ドキュメンタリー／教養", "スポーツ", 0x08, 0x06)},
+                {0x0807, new ContentKindInfo("ドキュメンタリー／教養", "ドキュメンタリー全般", 0x08, 0x07)},
+                {0x0808, new ContentKindInfo("ドキュメンタリー／教養", "インタビュー・討論", 0x08, 0x08)},
+                {0x080F, new ContentKindInfo("ドキュメンタリー／教養", "その他", 0x08, 0x0F)},
+
+                {0x09FF, new ContentKindInfo("劇場／公演", "", 0x09, 0xFF)},
+                {0x0900, new ContentKindInfo("劇場／公演", "現代劇・新劇", 0x09, 0x00)},
+                {0x0901, new ContentKindInfo("劇場／公演", "ミュージカル", 0x09, 0x01)},
+                {0x0902, new ContentKindInfo("劇場／公演", "ダンス・バレエ", 0x09, 0x02)},
+                {0x0903, new ContentKindInfo("劇場／公演", "落語・演芸", 0x09, 0x03)},
+                {0x0904, new ContentKindInfo("劇場／公演", "歌舞伎・古典", 0x09, 0x04)},
+                {0x090F, new ContentKindInfo("劇場／公演", "その他", 0x09, 0x0F)},
+
+                {0x0AFF, new ContentKindInfo("趣味／教育", "", 0x0A, 0xFF)},
+                {0x0A00, new ContentKindInfo("趣味／教育", "旅・釣り・アウトドア", 0x0A, 0x00)},
+                {0x0A01, new ContentKindInfo("趣味／教育", "園芸・ペット・手芸", 0x0A, 0x01)},
+                {0x0A02, new ContentKindInfo("趣味／教育", "音楽・美術・工芸", 0x0A, 0x02)},
+                {0x0A03, new ContentKindInfo("趣味／教育", "囲碁・将棋", 0x0A, 0x03)},
+                {0x0A04, new ContentKindInfo("趣味／教育", "麻雀・パチンコ", 0x0A, 0x04)},
+                {0x0A05, new ContentKindInfo("趣味／教育", "車・オートバイ", 0x0A, 0x05)},
+                {0x0A06, new ContentKindInfo("趣味／教育", "コンピュータ・ＴＶゲーム", 0x0A, 0x06)},
+                {0x0A07, new ContentKindInfo("趣味／教育", "会話・語学", 0x0A, 0x07)},
+                {0x0A08, new ContentKindInfo("趣味／教育", "幼児・小学生", 0x0A, 0x08)},
+                {0x0A09, new ContentKindInfo("趣味／教育", "中学生・高校生", 0x0A, 0x09)},
+                {0x0A0A, new ContentKindInfo("趣味／教育", "大学生・受験", 0x0A, 0x0A)},
+                {0x0A0B, new ContentKindInfo("趣味／教育", "生涯教育・資格", 0x0A, 0x0B)},
+                {0x0A0C, new ContentKindInfo("趣味／教育", "教育問題", 0x0A, 0x0C)},
+                {0x0A0F, new ContentKindInfo("趣味／教育", "その他", 0x0A, 0x0F)},
+
+                {0x0BFF, new ContentKindInfo("福祉", "", 0x0B, 0xFF)},
+                {0x0B00, new ContentKindInfo("福祉", "高齢者", 0x0B, 0x00)},
+                {0x0B01, new ContentKindInfo("福祉", "障害者", 0x0B, 0x01)},
+                {0x0B02, new ContentKindInfo("福祉", "社会福祉", 0x0B, 0x02)},
+                {0x0B03, new ContentKindInfo("福祉", "ボランティア", 0x0B, 0x03)},
+                {0x0B04, new ContentKindInfo("福祉", "手話", 0x0B, 0x04)},
+                {0x0B05, new ContentKindInfo("福祉", "文字（字幕）", 0x0B, 0x05)},
+                {0x0B06, new ContentKindInfo("福祉", "音声解説", 0x0B, 0x06)},
+                {0x0B0F, new ContentKindInfo("福祉", "その他", 0x0B, 0x0F)},
+
+                //CSもまとめて検索出来るようにする仮対応。
+                {0x70FF, new ContentKindInfo("スポーツ(CS)", "", 0x70, 0xFF)},
+                {0x7000, new ContentKindInfo("スポーツ(CS)", "テニス", 0x70, 0x00)},
+                {0x7001, new ContentKindInfo("スポーツ(CS)", "バスケットボール", 0x70, 0x01)},
+                {0x7002, new ContentKindInfo("スポーツ(CS)", "ラグビー", 0x70, 0x02)},
+                {0x7003, new ContentKindInfo("スポーツ(CS)", "アメリカンフットボール", 0x70, 0x03)},
+                {0x7004, new ContentKindInfo("スポーツ(CS)", "ボクシング", 0x70, 0x04)},
+                {0x7005, new ContentKindInfo("スポーツ(CS)", "プロレス", 0x70, 0x05)},
+                {0x700F, new ContentKindInfo("スポーツ(CS)", "その他", 0x70, 0x0F)},
+
+                {0x71FF, new ContentKindInfo("洋画(CS)", "", 0x71, 0xFF)},
+                {0x7100, new ContentKindInfo("洋画(CS)", "アクション", 0x71, 0x00)},
+                {0x7101, new ContentKindInfo("洋画(CS)", "SF／ファンタジー", 0x71, 0x01)},
+                {0x7102, new ContentKindInfo("洋画(CS)", "コメディー", 0x71, 0x02)},
+                {0x7103, new ContentKindInfo("洋画(CS)", "サスペンス／ミステリー", 0x71, 0x03)},
+                {0x7104, new ContentKindInfo("洋画(CS)", "恋愛／ロマンス", 0x71, 0x04)},
+                {0x7105, new ContentKindInfo("洋画(CS)", "ホラー／スリラー", 0x71, 0x05)},
+                {0x7106, new ContentKindInfo("洋画(CS)", "ウエスタン", 0x71, 0x06)},
+                {0x7107, new ContentKindInfo("洋画(CS)", "ドラマ／社会派ドラマ", 0x71, 0x07)},
+                {0x7108, new ContentKindInfo("洋画(CS)", "アニメーション", 0x71, 0x08)},
+                {0x7109, new ContentKindInfo("洋画(CS)", "ドキュメンタリー", 0x71, 0x09)},
+                {0x710A, new ContentKindInfo("洋画(CS)", "アドベンチャー／冒険", 0x71, 0x0A)},
+                {0x710B, new ContentKindInfo("洋画(CS)", "ミュージカル／音楽映画", 0x71, 0x0B)},
+                {0x710C, new ContentKindInfo("洋画(CS)", "ホームドラマ", 0x71, 0x0C)},
+                {0x710F, new ContentKindInfo("洋画(CS)", "その他", 0x71, 0x0F)},
+
+                {0x72FF, new ContentKindInfo("邦画(CS)", "", 0x72, 0xFF)},
+                {0x7200, new ContentKindInfo("邦画(CS)", "アクション", 0x72, 0x00)},
+                {0x7201, new ContentKindInfo("邦画(CS)", "SF／ファンタジー", 0x72, 0x01)},
+                {0x7202, new ContentKindInfo("邦画(CS)", "お笑い／コメディー", 0x72, 0x02)},
+                {0x7203, new ContentKindInfo("邦画(CS)", "サスペンス／ミステリー", 0x72, 0x03)},
+                {0x7204, new ContentKindInfo("邦画(CS)", "恋愛／ロマンス", 0x72, 0x04)},
+                {0x7205, new ContentKindInfo("邦画(CS)", "ホラー／スリラー", 0x72, 0x05)},
+                {0x7206, new ContentKindInfo("邦画(CS)", "青春／学園／アイドル", 0x72, 0x06)},
+                {0x7207, new ContentKindInfo("邦画(CS)", "任侠／時代劇", 0x72, 0x07)},
+                {0x7208, new ContentKindInfo("邦画(CS)", "アニメーション", 0x72, 0x08)},
+                {0x7209, new ContentKindInfo("邦画(CS)", "ドキュメンタリー", 0x72, 0x09)},
+                {0x720A, new ContentKindInfo("邦画(CS)", "アドベンチャー／冒険", 0x72, 0x0A)},
+                {0x720B, new ContentKindInfo("邦画(CS)", "ミュージカル／音楽映画", 0x72, 0x0B)},
+                {0x720C, new ContentKindInfo("邦画(CS)", "ホームドラマ", 0x72, 0x0C)},
+                {0x720F, new ContentKindInfo("邦画(CS)", "その他", 0x72, 0x0F)},
+
+                {0x73FF, new ContentKindInfo("アダルト(CS)", "", 0x73, 0xFF)},
+                {0x7300, new ContentKindInfo("アダルト(CS)", "アダルト", 0x73, 0x00)},
+                {0x730F, new ContentKindInfo("アダルト(CS)", "その他", 0x73, 0x0F)},
+
+                //残り
+                {0x0FFF, new ContentKindInfo("その他", "", 0x0F, 0xFF)},
+                {0x0F0F, new ContentKindInfo("その他", "その他", 0x0F, 0x0F)},
+
+                {0xFEFF, new ContentKindInfo("不明なジャンル(未実装)", "", 0xFE, 0xFF)},
+                {0xFFFF, new ContentKindInfo("ジャンル情報なし", "", 0xFF, 0xFF)}
+            };
+
+            ComponentKindDictionary = new Dictionary<UInt16, string>()
+            {
+                { 0x0101, "480i(525i)、アスペクト比4:3" },
+                { 0x0102, "480i(525i)、アスペクト比16:9 パンベクトルあり" },
+                { 0x0103, "480i(525i)、アスペクト比16:9 パンベクトルなし" },
+                { 0x0104, "480i(525i)、アスペクト比 > 16:9" },
+                { 0x0191, "2160p、アスペクト比4:3" },
+                { 0x0192, "2160p、アスペクト比16:9 パンベクトルあり" },
+                { 0x0193, "2160p、アスペクト比16:9 パンベクトルなし" },
+                { 0x0194, "2160p、アスペクト比 > 16:9" },
+                { 0x01A1, "480p(525p)、アスペクト比4:3" },
+                { 0x01A2, "480p(525p)、アスペクト比16:9 パンベクトルあり" },
+                { 0x01A3, "480p(525p)、アスペクト比16:9 パンベクトルなし" },
+                { 0x01A4, "480p(525p)、アスペクト比 > 16:9" },
+                { 0x01B1, "1080i(1125i)、アスペクト比4:3" },
+                { 0x01B2, "1080i(1125i)、アスペクト比16:9 パンベクトルあり" },
+                { 0x01B3, "1080i(1125i)、アスペクト比16:9 パンベクトルなし" },
+                { 0x01B4, "1080i(1125i)、アスペクト比 > 16:9" },
+                { 0x01C1, "720p(750p)、アスペクト比4:3" },
+                { 0x01C2, "720p(750p)、アスペクト比16:9 パンベクトルあり" },
+                { 0x01C3, "720p(750p)、アスペクト比16:9 パンベクトルなし" },
+                { 0x01C4, "720p(750p)、アスペクト比 > 16:9" },
+                { 0x01D1, "240p アスペクト比4:3" },
+                { 0x01D2, "240p アスペクト比16:9 パンベクトルあり" },
+                { 0x01D3, "240p アスペクト比16:9 パンベクトルなし" },
+                { 0x01D4, "240p アスペクト比 > 16:9" },
+                { 0x01E1, "1080p(1125p)、アスペクト比4:3" },
+                { 0x01E2, "1080p(1125p)、アスペクト比16:9 パンベクトルあり" },
+                { 0x01E3, "1080p(1125p)、アスペクト比16:9 パンベクトルなし" },
+                { 0x01E4, "1080p(1125p)、アスペクト比 > 16:9" },
+                { 0x0201, "1/0モード（シングルモノ）" },
+                { 0x0202, "1/0＋1/0モード（デュアルモノ）" },
+                { 0x0203, "2/0モード（ステレオ）" },
+                { 0x0204, "2/1モード" },
+                { 0x0205, "3/0モード" },
+                { 0x0206, "2/2モード" },
+                { 0x0207, "3/1モード" },
+                { 0x0208, "3/2モード" },
+                { 0x0209, "3/2＋LFEモード（3/2.1モード）" },
+                { 0x020A, "3/3.1モード" },
+                { 0x020B, "2/0/0-2/0/2-0.1モード" },
+                { 0x020C, "5/2.1モード" },
+                { 0x020D, "3/2/2.1モード" },
+                { 0x020E, "2/0/0-3/0/2-0.1モード" },
+                { 0x020F, "0/2/0-3/0/2-0.1モード" },
+                { 0x0210, "2/0/0-3/2/3-0.2モード" },
+                { 0x0211, "3/3/3-5/2/3-3/0/0.2モード" },
+                { 0x0240, "視覚障害者用音声解説" },
+                { 0x0241, "聴覚障害者用音声" },
+                { 0x0501, "H.264|MPEG-4 AVC、480i(525i)、アスペクト比4:3" },
+                { 0x0502, "H.264|MPEG-4 AVC、480i(525i)、アスペクト比16:9 パンベクトルあり" },
+                { 0x0503, "H.264|MPEG-4 AVC、480i(525i)、アスペクト比16:9 パンベクトルなし" },
+                { 0x0504, "H.264|MPEG-4 AVC、480i(525i)、アスペクト比 > 16:9" },
+                { 0x0591, "H.264|MPEG-4 AVC、2160p、アスペクト比4:3" },
+                { 0x0592, "H.264|MPEG-4 AVC、2160p、アスペクト比16:9 パンベクトルあり" },
+                { 0x0593, "H.264|MPEG-4 AVC、2160p、アスペクト比16:9 パンベクトルなし" },
+                { 0x0594, "H.264|MPEG-4 AVC、2160p、アスペクト比 > 16:9" },
+                { 0x05A1, "H.264|MPEG-4 AVC、480p(525p)、アスペクト比4:3" },
+                { 0x05A2, "H.264|MPEG-4 AVC、480p(525p)、アスペクト比16:9 パンベクトルあり" },
+                { 0x05A3, "H.264|MPEG-4 AVC、480p(525p)、アスペクト比16:9 パンベクトルなし" },
+                { 0x05A4, "H.264|MPEG-4 AVC、480p(525p)、アスペクト比 > 16:9" },
+                { 0x05B1, "H.264|MPEG-4 AVC、1080i(1125i)、アスペクト比4:3" },
+                { 0x05B2, "H.264|MPEG-4 AVC、1080i(1125i)、アスペクト比16:9 パンベクトルあり" },
+                { 0x05B3, "H.264|MPEG-4 AVC、1080i(1125i)、アスペクト比16:9 パンベクトルなし" },
+                { 0x05B4, "H.264|MPEG-4 AVC、1080i(1125i)、アスペクト比 > 16:9" },
+                { 0x05C1, "H.264|MPEG-4 AVC、720p(750p)、アスペクト比4:3" },
+                { 0x05C2, "H.264|MPEG-4 AVC、720p(750p)、アスペクト比16:9 パンベクトルあり" },
+                { 0x05C3, "H.264|MPEG-4 AVC、720p(750p)、アスペクト比16:9 パンベクトルなし" },
+                { 0x05C4, "H.264|MPEG-4 AVC、720p(750p)、アスペクト比 > 16:9" },
+                { 0x05D1, "H.264|MPEG-4 AVC、240p アスペクト比4:3" },
+                { 0x05D2, "H.264|MPEG-4 AVC、240p アスペクト比16:9 パンベクトルあり" },
+                { 0x05D3, "H.264|MPEG-4 AVC、240p アスペクト比16:9 パンベクトルなし" },
+                { 0x05D4, "H.264|MPEG-4 AVC、240p アスペクト比 > 16:9" },
+                { 0x05E1, "H.264|MPEG-4 AVC、1080p(1125p)、アスペクト比4:3" },
+                { 0x05E2, "H.264|MPEG-4 AVC、1080p(1125p)、アスペクト比16:9 パンベクトルあり" },
+                { 0x05E3, "H.264|MPEG-4 AVC、1080p(1125p)、アスペクト比16:9 パンベクトルなし" },
+                { 0x05E4, "H.264|MPEG-4 AVC、1080p(1125p)、アスペクト比 > 16:9" }
+            };
+                RecModeList = new List<string> { "サービス", "指定サービス", "全サービス(デコード処理なし)", "指定サービス(デコード処理なし)", "視聴", "無効" };
+                YesNoList = new List<string> { "しない", "する" };
+                PriorityList = new List<string> { "1 (低)", "2", "3", "4", "5 (高)" };
+        }
+
+        public static IEnumerable<ContentKindInfo> ContentKindList
+        {
+            get
+            {
+                //「その他」をラストへ。各々大分類を前へ
+                // (Valueの順序は未定義だが、現在の実装的には削除・追加しなければ大丈夫らしい。でも並べ替えておく)
+                return ContentKindDictionary.Values.OrderBy(info => (info.Nibble1 == 0x0F ? 0xF0 : info.Nibble1) << 8 | (info.Nibble2 + 1) & 0xFF);
+            }
+        }
+
+        public static IEnumerable<int> CustomHourList
+        {
+            get { return Enumerable.Range(0, Settings.Instance.LaterTimeUse == false ? 24 : 37); }
         }
 
         public bool IsConnected { get { return NWMode == false || NW.IsConnected == true; } }
@@ -655,7 +657,7 @@ namespace EpgTimer
             }
         }
 
-        public String ConvertProgramText(EpgEventInfo eventInfo, EventInfoTextMode textMode)
+        public static String ConvertProgramText(EpgEventInfo eventInfo, EventInfoTextMode textMode)
         {
             string retText = "";
             string basicInfo = "";
@@ -870,7 +872,7 @@ namespace EpgTimer
             return retText;
         }
 
-        public String ConvertJyanruText(EpgEventInfo eventInfo)
+        public static String ConvertJyanruText(EpgEventInfo eventInfo)
         {
             if (eventInfo == null || eventInfo.ContentInfo == null)
             {
@@ -881,7 +883,7 @@ namespace EpgTimer
                 return ConvertJyanruText(eventInfo.ContentInfo.nibbleList);
             }
         }
-        public String ConvertJyanruText(EpgSearchKeyInfo searchKeyInfo)
+        public static String ConvertJyanruText(EpgSearchKeyInfo searchKeyInfo)
         {
             if (searchKeyInfo == null)
             {
@@ -892,7 +894,7 @@ namespace EpgTimer
                 return ConvertJyanruText(searchKeyInfo.contentList);
             }
         }
-        public String ConvertJyanruText(List<EpgContentData> nibbleList)
+        public static String ConvertJyanruText(List<EpgContentData> nibbleList)
         {
             String retText = "";
             if (nibbleList != null)
@@ -929,17 +931,17 @@ namespace EpgTimer
                         if (nibble2 != 0xFF)
                         {
                             if (smallCategory1 != "") { smallCategory1 += ", "; }
-                            if (Instance.ContentKindDictionary.ContainsKey(contentKey2))
+                            if (ContentKindDictionary.ContainsKey(contentKey2))
                             {
-                                smallCategory1 += Instance.ContentKindDictionary[contentKey2].ToString().Trim();
+                                smallCategory1 += ContentKindDictionary[contentKey2].ToString().Trim();
                             }
                         }
                     }
                     //
                     if (retText != "") { retText += ", "; }
-                    if (Instance.ContentKindDictionary.ContainsKey(contentKey1))
+                    if (ContentKindDictionary.ContainsKey(contentKey1))
                     {
-                        retText += "[" + CommonManager.Instance.ContentKindDictionary[contentKey1].ToString().Trim();
+                        retText += "[" + ContentKindDictionary[contentKey1].ToString().Trim();
                         if (smallCategory1 != "") { retText += " - " + smallCategory1; }
                         retText += "]";
                     }
@@ -953,29 +955,26 @@ namespace EpgTimer
             return 0 <= val && val < textList.Count ? textList[val] : errText;
         }
 
-        public static List<string> RecModeList = new List<string> { "サービス", "指定サービス", "全サービス(デコード処理なし)", "指定サービス(デコード処理なし)", "視聴", "無効" };
         public static String ConvertRecModeText(int val)
         {
             return ConvertValueText(val, RecModeList);
         }
 
-        public static List<string> YesNoList = new List<string> { "しない", "する" };
         public static String ConvertYesNoText(int val)
         {
             return ConvertValueText(val, YesNoList);
         }
 
-        public static List<string> PriorityList = new List<string> { "1 (低)", "2", "3", "4", "5 (高)" };
         public static String ConvertPriorityText(int val)
         {
             return ConvertValueText(val, PriorityList);
         }
 
-        public String ConvertTunerText(uint tunerID)
+        public static String ConvertTunerText(uint tunerID)
         {
             string tunerName = "";
             TunerReserveInfo info;
-            if (DB.TunerReserveList.TryGetValue(tunerID, out info))
+            if (Instance.DB.TunerReserveList.TryGetValue(tunerID, out info))
             {
                 tunerName = info.tunerName;
             }
@@ -986,14 +985,14 @@ namespace EpgTimer
             return new TunerSelectInfo(tunerName, tunerID).ToString();
         }
 
-        public String ConvertViewModeText(int viewMode)
+        public static String ConvertViewModeText(int viewMode)
         {
             return ConvertValueText(viewMode, new List<string> { "標準モード", "1週間モード", "リスト表示モード" }, "");
         }
 
-        public FlowDocument ConvertDisplayText(EpgEventInfo eventInfo)
+        public static FlowDocument ConvertDisplayText(EpgEventInfo eventInfo)
         {
-            String epgText = CommonManager.Instance.ConvertProgramText(eventInfo, EventInfoTextMode.All);
+            String epgText = ConvertProgramText(eventInfo, EventInfoTextMode.All);
             if (epgText == "") epgText = "番組情報がありません。\r\n" + "またはEPGデータが読み込まれていません。";
             String text = epgText;
             FlowDocument flowDoc = new FlowDocument();
@@ -1079,8 +1078,8 @@ namespace EpgTimer
 
             return setInfo.Where(info => info.ViewServiceList.Count != 0).ToList();
         }
-        
-        void h_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+
+        static void h_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             try
             {
@@ -1187,7 +1186,7 @@ namespace EpgTimer
                 //可能ならUNCパスをサーバ側のパスに戻す。
                 //複数の共有フォルダ使ってる場合はとりあえず諦める。(サーバ側で要逆変換)
                 string path_src = path.TrimEnd('\\');
-                string path_nw = CommonManager.Instance.GetRecPath(path_src).TrimEnd('\\');
+                string path_nw = GetRecPath(path_src).TrimEnd('\\');
 
                 if (path_nw != "" && path_nw != path_src)
                 {
@@ -1222,20 +1221,20 @@ namespace EpgTimer
             }
         }
 
-        public String GetRecPath(String path)
+        public static String GetRecPath(String path)
         {
             var nwPath = "";
             try
             {
                 if (String.IsNullOrWhiteSpace(path) == true) return "";
-                if (NWMode != true) return path;
-                CtrlCmd.SendGetRecFileNetworkPath(path, ref nwPath);
+                if (Instance.NWMode != true) return path;
+                Instance.CtrlCmd.SendGetRecFileNetworkPath(path, ref nwPath);
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
             return nwPath;
         }
 
-        public void OpenFolder(String folderPath, String title = "フォルダを開く")
+        public static void OpenFolder(String folderPath, String title = "フォルダを開く")
         {
             try
             {
@@ -1352,7 +1351,7 @@ namespace EpgTimer
         }
         
         //ReloadCustContentColorList()用のコンバートメソッド
-        private Brush _GetColorBrush(string colorName, uint colorValue = 0
+        private static Brush _GetColorBrush(string colorName, uint colorValue = 0
             , bool gradation = false, double luminance = -1, double saturation = -1)
         {
             Color c = (colorName == "カスタム" ? ColorDef.FromUInt(colorValue) : ColorDef.FromName(colorName));
@@ -1452,7 +1451,7 @@ namespace EpgTimer
 
             try
             {
-                if (CommonManager.Instance.NWMode == false)
+                if (NWMode == false)
                 {
                     foreach (string info in Directory.GetFiles(SettingPath.SettingFolderPath, "*.ChSet4.txt"))
                     {
@@ -1484,7 +1483,7 @@ namespace EpgTimer
             return list;
         }
 
-        private String GetBonFileName(String src)
+        private static String GetBonFileName(String src)
         {
             int pos = src.LastIndexOf(")");
             if (pos < 1)
@@ -1509,22 +1508,6 @@ namespace EpgTimer
                 }
             }
             return src;
-        }
-
-        public bool? AutoAddViewOrderCheckAndSave(AutoAddListView view, out Dictionary<uint, uint> changeIDTable)
-        {
-            changeIDTable = null;
-            try
-            {
-                if (view == null || view.IsVisible == false || view.dragMover.NotSaved == false) return false;
-                //
-                var cmdPrm = new EpgCmdParam(null);
-                EpgCmds.SaveOrder.Execute(cmdPrm, view);
-                changeIDTable = cmdPrm.Data as Dictionary<uint, uint>;
-                return true;
-            }
-            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
-            return null;
         }
     }
 }

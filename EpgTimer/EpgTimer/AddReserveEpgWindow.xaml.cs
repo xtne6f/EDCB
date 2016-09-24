@@ -40,8 +40,8 @@ namespace EpgTimer
         public void SetEventInfo(EpgEventInfo eventData)
         {
             eventInfo = eventData;
-            textBox_info.Text = CommonManager.Instance.ConvertProgramText(eventData, EventInfoTextMode.BasicOnly);
-            richTextBox_descInfo.Document = CommonManager.Instance.ConvertDisplayText(eventInfo);
+            textBox_info.Text = CommonManager.ConvertProgramText(eventData, EventInfoTextMode.BasicOnly);
+            richTextBox_descInfo.Document = CommonManager.ConvertDisplayText(eventInfo);
         }
 
         private void button_add_reserve_Click(object sender, ExecutedRoutedEventArgs e)

@@ -31,26 +31,26 @@ namespace EpgTimer
                 }
                 listView_service.ItemsSource = serviceList;
 
-                comboBox_content.DataContext = CommonManager.Instance.ContentKindList;
+                comboBox_content.DataContext = CommonManager.ContentKindList;
                 comboBox_content.SelectedIndex = 0;
 
-                comboBox_time_sw.DataContext = CommonManager.Instance.DayOfWeekArray;
+                comboBox_time_sw.DataContext = new string[] { "日", "月", "火", "水", "木", "金", "土" };
                 comboBox_time_sw.SelectedIndex = 0;
                 comboBox_time_sh.DataContext = Enumerable.Range(0, 24);
                 comboBox_time_sh.SelectedIndex = 0;
                 comboBox_time_sm.DataContext = Enumerable.Range(0, 60);
                 comboBox_time_sm.SelectedIndex = 0;
-                comboBox_time_ew.DataContext = CommonManager.Instance.DayOfWeekArray;
+                comboBox_time_ew.DataContext = new string[] { "日", "月", "火", "水", "木", "金", "土" };
                 comboBox_time_ew.SelectedIndex = 6;
                 comboBox_time_eh.DataContext = Enumerable.Range(0, 24);
                 comboBox_time_eh.SelectedIndex = 23;
                 comboBox_time_em.DataContext = Enumerable.Range(0, 60);
                 comboBox_time_em.SelectedIndex = 59;
-                comboBox_week_sh.DataContext = CommonManager.Instance.CustomHourList;
+                comboBox_week_sh.DataContext = CommonManager.CustomHourList;
                 comboBox_week_sh.SelectedIndex = 0;
                 comboBox_week_sm.DataContext = Enumerable.Range(0, 60);
                 comboBox_week_sm.SelectedIndex = 0;
-                comboBox_week_eh.DataContext = CommonManager.Instance.CustomHourList;
+                comboBox_week_eh.DataContext = CommonManager.CustomHourList;
                 comboBox_week_eh.SelectedIndex = 23;
                 comboBox_week_em.DataContext = Enumerable.Range(0, 60);
                 comboBox_week_em.SelectedIndex = 59;
@@ -121,9 +121,9 @@ namespace EpgTimer
                 foreach (EpgContentData item in defKey.contentList)
                 {
                     var contentKey = (UInt16)(item.content_nibble_level_1 << 8 | item.content_nibble_level_2);
-                    if (CommonManager.Instance.ContentKindDictionary.ContainsKey(contentKey) == true)
+                    if (CommonManager.ContentKindDictionary.ContainsKey(contentKey) == true)
                     {
-                        listBox_content.Items.Add(CommonManager.Instance.ContentKindDictionary[contentKey]);
+                        listBox_content.Items.Add(CommonManager.ContentKindDictionary[contentKey]);
                     }
                     else
                     {

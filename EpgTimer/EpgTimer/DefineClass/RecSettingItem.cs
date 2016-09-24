@@ -122,7 +122,7 @@ namespace EpgTimer
             {
                 if (RecSettingInfo == null) return "";
                 //
-                return CommonManager.Instance.ConvertTunerText(RecSettingInfo.TunerID);
+                return CommonManager.ConvertTunerText(RecSettingInfo.TunerID);
             }
         }
         public virtual List<String> RecFolder
