@@ -583,7 +583,7 @@ namespace EpgTimer
                 else if (subMenu.Tag == EpgCmdsEx.ChgRecmodeMenu)
                 {
                     byte value = recSettings.All(info => info.RecMode == recSettings[0].RecMode) ? recSettings[0].RecMode : byte.MaxValue;
-                    subMenu.Header = string.Format("録画モード : {0}", value == byte.MaxValue ? "*" : CommonManager.Instance.ConvertRecModeText(value));
+                    subMenu.Header = string.Format("録画モード : {0}", value == byte.MaxValue ? "*" : CommonManager.ConvertRecModeText(value));
                     SetCheckmarkSubMenus(subMenu, value);
                 }
                 else if (subMenu.Tag == EpgCmdsEx.ChgPriorityMenu)
@@ -612,7 +612,7 @@ namespace EpgTimer
                         value = recSettings.All(info => info.PittariFlag == recSettings[0].PittariFlag) ? recSettings[0].PittariFlag : byte.MaxValue;
                         format = "ぴったり（？）録画 : {0}";
                     }
-                    subMenu.Header = string.Format(format, value == byte.MaxValue ? "*" : CommonManager.Instance.YesNoDictionary[value].DisplayName);
+                    subMenu.Header = string.Format(format, value == byte.MaxValue ? "*" : CommonManager.ConvertYesNoText(value));
                     SetCheckmarkSubMenus(subMenu, value);
                     subMenu.IsEnabled = listr.Any(info => info.IsManual == false);
                     subMenu.ToolTip = (subMenu.IsEnabled != true ? "プログラム予約は対象外" : null);

@@ -67,7 +67,7 @@ namespace EpgTimer
             for (int i = 0; i <= 5; i++)
             {
                 cm_ChgRecmodeMenu.Items.Add(new CtxmItemData(string.Format("{0} (_{1})"
-                    , CommonManager.Instance.ConvertRecModeText((byte)i), i), EpgCmds.ChgRecmode, i));
+                    , CommonManager.ConvertRecModeText(i), i), EpgCmds.ChgRecmode, i));
             }
 
             ////優先度
@@ -75,7 +75,7 @@ namespace EpgTimer
             for (int i = 1; i <= 5; i++)
             {
                 cm_ChgPriorityMenu.Items.Add(new CtxmItemData(
-                    CommonManager.Instance.PriorityDictionary[(byte)i].DisplayName.Insert(1, string.Format(" (_{0})", i)), EpgCmds.ChgPriority, i));
+                    CommonManager.ConvertPriorityText(i).Insert(1, string.Format(" (_{0})", i)), EpgCmds.ChgPriority, i));
             }
 
             ////イベントリレー変更
@@ -83,7 +83,7 @@ namespace EpgTimer
             for (int i = 0; i <= 1; i++)
             {
                 cm_ChgRelayMenu.Items.Add(new CtxmItemData(string.Format("{0} (_{1})"
-                    , CommonManager.Instance.YesNoDictionary[(byte)i].DisplayName, i), EpgCmds.ChgRelay, i));
+                    , CommonManager.ConvertYesNoText(i), i), EpgCmds.ChgRelay, i));
             }
 
             ////ぴったり変更
@@ -91,7 +91,7 @@ namespace EpgTimer
             for (int i = 0; i <= 1; i++)
             {
                 cm_ChgPittariMenu.Items.Add(new CtxmItemData(string.Format("{0} (_{1})"
-                    , CommonManager.Instance.YesNoDictionary[(byte)i].DisplayName, i), EpgCmds.ChgPittari, i));
+                    , CommonManager.ConvertYesNoText(i), i), EpgCmds.ChgPittari, i));
             }
 
             ////チューナー変更、実行時、セパレータ以降に一覧を展開する。

@@ -46,10 +46,10 @@ namespace EpgTimer
             {
                 recSetting = Settings.Instance.RecPresetList[0].RecPresetData.Clone();
 
-                comboBox_recMode.DataContext = CommonManager.Instance.RecModeDictionary.Values;
-                comboBox_tuijyu.DataContext = CommonManager.Instance.YesNoDictionary.Values;
-                comboBox_pittari.DataContext = CommonManager.Instance.YesNoDictionary.Values;
-                comboBox_priority.DataContext = CommonManager.Instance.PriorityDictionary.Values;
+                comboBox_recMode.DataContext = CommonManager.RecModeList;
+                comboBox_tuijyu.DataContext = CommonManager.YesNoList;
+                comboBox_pittari.DataContext = CommonManager.YesNoList;
+                comboBox_priority.DataContext = CommonManager.PriorityList;
 
                 recEndModeRadioBtns = new RadioBtnSelect(radioButton_non, radioButton_standby, radioButton_suspend, radioButton_shutdown);
 
@@ -191,10 +191,10 @@ namespace EpgTimer
 
             var setInfo = new RecSettingData();
 
-            setInfo.RecMode = ((RecModeInfo)comboBox_recMode.SelectedItem).Value;
-            setInfo.Priority = ((PriorityInfo)comboBox_priority.SelectedItem).Value;
-            setInfo.TuijyuuFlag = ((YesNoInfo)comboBox_tuijyu.SelectedItem).Value;
-            setInfo.PittariFlag = ((YesNoInfo)comboBox_pittari.SelectedItem).Value;
+            setInfo.RecMode = (byte)comboBox_recMode.SelectedIndex;
+            setInfo.Priority = (byte)(comboBox_priority.SelectedIndex + 1);
+            setInfo.TuijyuuFlag = (byte)comboBox_tuijyu.SelectedIndex;
+            setInfo.PittariFlag = (byte)comboBox_pittari.SelectedIndex;
 
             setInfo.ServiceModeIsDefault = checkBox_serviceMode.IsChecked == true;
             setInfo.ServiceCaption = checkBox_serviceCaption.IsChecked == true;
@@ -287,10 +287,10 @@ namespace EpgTimer
                     button_chg_preset.IsEnabled = false;
                     button_del_preset.IsEnabled = false;
                 }
-                comboBox_recMode.SelectedItem = comboBox_recMode.Items.OfType<RecModeInfo>().FirstOrDefault(info => info.Value == recSetting.RecMode);
-                comboBox_priority.SelectedItem = comboBox_priority.Items.OfType<PriorityInfo>().FirstOrDefault(info => info.Value == recSetting.Priority);
-                comboBox_tuijyu.SelectedItem = comboBox_tuijyu.Items.OfType<YesNoInfo>().FirstOrDefault(info => info.Value == recSetting.TuijyuuFlag);
-                comboBox_pittari.SelectedItem = comboBox_pittari.Items.OfType<YesNoInfo>().FirstOrDefault(info => info.Value == recSetting.PittariFlag);
+                comboBox_recMode.SelectedIndex = Math.Min((int)recSetting.RecMode, 5);
+                comboBox_priority.SelectedIndex = Math.Min(Math.Max((int)recSetting.Priority, 1), 5) - 1;
+                comboBox_tuijyu.SelectedIndex = recSetting.TuijyuuFlag != 0 ? 1 : 0;
+                comboBox_pittari.SelectedIndex = recSetting.PittariFlag != 0 ? 1 : 0;
                 checkBox_serviceMode.IsChecked = null;//切り替え時のイベント発生のために必要
                 checkBox_serviceMode.IsChecked = recSetting.ServiceModeIsDefault;
                 textBox_bat.Text = recSetting.BatFilePath;

@@ -31,28 +31,28 @@ namespace EpgTimer
                 }
                 listView_service.ItemsSource = serviceList;
 
-                comboBox_content.DataContext = CommonManager.Instance.ContentKindDictionary.Values;
+                comboBox_content.DataContext = CommonManager.Instance.ContentKindList;
                 comboBox_content.SelectedIndex = 0;
 
-                comboBox_time_sw.DataContext = CommonManager.Instance.DayOfWeekDictionary.Values;
+                comboBox_time_sw.DataContext = CommonManager.Instance.DayOfWeekArray;
                 comboBox_time_sw.SelectedIndex = 0;
-                comboBox_time_sh.DataContext = CommonManager.Instance.HourDictionary.Values;
+                comboBox_time_sh.DataContext = Enumerable.Range(0, 24);
                 comboBox_time_sh.SelectedIndex = 0;
-                comboBox_time_sm.DataContext = CommonManager.Instance.MinDictionary.Values;
+                comboBox_time_sm.DataContext = Enumerable.Range(0, 60);
                 comboBox_time_sm.SelectedIndex = 0;
-                comboBox_time_ew.DataContext = CommonManager.Instance.DayOfWeekDictionary.Values;
+                comboBox_time_ew.DataContext = CommonManager.Instance.DayOfWeekArray;
                 comboBox_time_ew.SelectedIndex = 6;
-                comboBox_time_eh.DataContext = CommonManager.Instance.HourDictionary.Values;
+                comboBox_time_eh.DataContext = Enumerable.Range(0, 24);
                 comboBox_time_eh.SelectedIndex = 23;
-                comboBox_time_em.DataContext = CommonManager.Instance.MinDictionary.Values;
+                comboBox_time_em.DataContext = Enumerable.Range(0, 60);
                 comboBox_time_em.SelectedIndex = 59;
-                comboBox_week_sh.DataContext = CommonManager.Instance.HourDictionarySelect.Values;
+                comboBox_week_sh.DataContext = CommonManager.Instance.CustomHourList;
                 comboBox_week_sh.SelectedIndex = 0;
-                comboBox_week_sm.DataContext = CommonManager.Instance.MinDictionary.Values;
+                comboBox_week_sm.DataContext = Enumerable.Range(0, 60);
                 comboBox_week_sm.SelectedIndex = 0;
-                comboBox_week_eh.DataContext = CommonManager.Instance.HourDictionarySelect.Values;
+                comboBox_week_eh.DataContext = CommonManager.Instance.CustomHourList;
                 comboBox_week_eh.SelectedIndex = 23;
-                comboBox_week_em.DataContext = CommonManager.Instance.MinDictionary.Values;
+                comboBox_week_em.DataContext = Enumerable.Range(0, 60);
                 comboBox_week_em.SelectedIndex = 59;
 
                 freeRadioBtns = new RadioBtnSelect(radioButton_free_1, radioButton_free_2, radioButton_free_3);
@@ -299,13 +299,11 @@ namespace EpgTimer
             }
 
             EpgSearchDateInfo info = new EpgSearchDateInfo();
-            DayOfWeekInfo startWeek = comboBox_time_sw.SelectedItem as DayOfWeekInfo;
-            DayOfWeekInfo endWeek = comboBox_time_ew.SelectedItem as DayOfWeekInfo;
 
-            info.startDayOfWeek = startWeek.Value;
+            info.startDayOfWeek = (byte)Math.Min(comboBox_time_sw.SelectedIndex, 6);
             info.startHour = (UInt16)comboBox_time_sh.SelectedIndex;
             info.startMin = (UInt16)comboBox_time_sm.SelectedIndex;
-            info.endDayOfWeek = endWeek.Value;
+            info.endDayOfWeek = (byte)Math.Min(comboBox_time_ew.SelectedIndex, 6);
             info.endHour = (UInt16)comboBox_time_eh.SelectedIndex;
             info.endMin = (UInt16)comboBox_time_em.SelectedIndex;
 

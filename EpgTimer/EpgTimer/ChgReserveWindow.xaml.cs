@@ -46,12 +46,12 @@ namespace EpgTimer
             //深夜時間関係は、comboBoxの表示だけ変更する手もあるが、
             //オプション変更タイミングなどいろいろ面倒なので、実際の値で処理することにする。
             comboBox_service.ItemsSource = ChSet5.ChList.Values;
-            comboBox_sh.ItemsSource = CommonManager.Instance.HourDictionarySelect.Values;
-            comboBox_eh.ItemsSource = CommonManager.Instance.HourDictionarySelect.Values;
-            comboBox_sm.ItemsSource = CommonManager.Instance.MinDictionary.Values;
-            comboBox_em.ItemsSource = CommonManager.Instance.MinDictionary.Values;
-            comboBox_ss.ItemsSource = CommonManager.Instance.MinDictionary.Values;
-            comboBox_es.ItemsSource = CommonManager.Instance.MinDictionary.Values;
+            comboBox_sh.ItemsSource = CommonManager.Instance.CustomHourList;
+            comboBox_eh.ItemsSource = CommonManager.Instance.CustomHourList;
+            comboBox_sm.ItemsSource = Enumerable.Range(0, 60);
+            comboBox_em.ItemsSource = Enumerable.Range(0, 60);
+            comboBox_ss.ItemsSource = Enumerable.Range(0, 60);
+            comboBox_es.ItemsSource = Enumerable.Range(0, 60);
         }
 
         public void SetOpenMode(byte mode)

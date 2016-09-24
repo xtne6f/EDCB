@@ -24,7 +24,7 @@ namespace EpgTimer
 
             try
             {
-                comboBox_timeH_week.ItemsSource = CommonManager.Instance.HourDictionary.Values;
+                comboBox_timeH_week.ItemsSource = Enumerable.Range(0, 24);
                 comboBox_timeH_week.SelectedIndex = 4;
 
                 listBox_serviceDttv.ItemsSource = ChSet5.ChList.Values.Where(info => info.IsDttv == true);
@@ -33,7 +33,7 @@ namespace EpgTimer
                 listBox_serviceOther.ItemsSource = ChSet5.ChList.Values.Where(info => info.IsOther == true);
                 listBox_serviceAll.ItemsSource = ChSet5.ChList.Values;
 
-                listBox_jyanru.ItemsSource = CommonManager.Instance.ContentKindDictionary.Values;
+                listBox_jyanru.ItemsSource = CommonManager.Instance.ContentKindList;
 
                 viewModeRadioBtns = new RadioBtnSelect(radioButton_rate, radioButton_week, radioButton_list);
                 viewModeRadioBtns.Value = 0;
