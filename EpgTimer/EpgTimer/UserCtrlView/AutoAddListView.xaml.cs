@@ -45,6 +45,7 @@ namespace EpgTimer
                 newList.ForEach(item => item.DataID = changeIDTable[item.DataID]);
 
                 bool ret = MenuUtil.AutoAddChange(newList, false, false, false, false);
+                StatusManager.StatusNotifySet(ret, "並べ替えを保存");
                 if (ret == true)
                 {
                     //dataListと検索ダイアログへのIDの反映。dataListは既にコピーだが、SaveChange成功後に行う
@@ -53,7 +54,12 @@ namespace EpgTimer
                 }
                 return ret;
             }
-            public override bool RestoreOrder() { return View.ReloadInfoData(); }
+            public override bool RestoreOrder()
+            {
+                bool ret = View.ReloadInfoData();
+                StatusManager.StatusNotifySet(ret, "並べ替えを復元");
+                return ret;
+            }
             public override void ItemMoved() { View.lstCtrl.gvSorter.ResetSortParams(); }
         }
 
