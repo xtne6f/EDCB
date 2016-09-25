@@ -6,6 +6,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using System.Windows.Threading;
 
 namespace EpgTimer.UserCtrlView
 {
@@ -75,21 +76,40 @@ namespace EpgTimer.UserCtrlView
         protected bool isDrag = false;
         protected bool isDragMoved = false;
 
-        protected ViewPanelItemBase lastPopInfo = null;
-
         protected virtual bool IsSingleClickOpen { get { return false; } }
         protected virtual double DragScroll { get { return 1; } }
         protected virtual bool IsMouseScrollAuto { get { return false; } }
         protected virtual double ScrollSize { get { return 240; } }
+
         protected virtual bool IsPopEnabled { get { return false; } }
         protected virtual bool PopOnOver { get { return false; } }
         protected virtual bool PopOnClick { get { return false; } }
         protected virtual ViewPanelItemBase GetPopupItem(Point cursorPos, bool onClick) { return null; }
         protected virtual FrameworkElement Popup { get { return new FrameworkElement(); } }
+        protected ViewPanelItemBase lastPopInfo = null;
         protected virtual double PopWidth { get { return 150; } }
         protected ScrollViewer scroll;
         protected Canvas cnvs;
 
+        protected virtual bool IsTooltipEnabled { get { return false; } }
+        protected virtual int TooltipViweWait { get { return 0; } }
+        protected Rectangle Tooltip { get; private set; }
+        protected ViewPanelItemBase lastToolInfo = null;
+        private DispatcherTimer toolTipTimer;//連続して出現するのを防止する
+        protected virtual ViewPanelItemBase GetTooltipItem(Point cursorPos) { return null; }
+
+        public PanelViewBase()
+        {
+            toolTipTimer = new DispatcherTimer(DispatcherPriority.Normal);
+            toolTipTimer.Tick += new EventHandler(toolTipTimer_Tick);
+
+            Tooltip = new Rectangle();
+            Tooltip.Fill = Brushes.Transparent;
+            Tooltip.Stroke = Brushes.Transparent;
+            //Tooltip.ToolTipClosing += new ToolTipEventHandler((sender, e) => TooltipClear());//何度でも出せるようにする
+            ToolTipService.SetShowDuration(Tooltip, 300000);
+            ToolTipService.SetInitialShowDelay(Tooltip, 0);
+        }
         public virtual void ClearInfo()
         {
             cnvs.ReleaseMouseCapture();
@@ -100,6 +120,7 @@ namespace EpgTimer.UserCtrlView
             cnvs.Width = 0;
 
             PopupClear();
+            TooltipClear();
         }
 
         protected virtual void PopupClear()
@@ -107,38 +128,44 @@ namespace EpgTimer.UserCtrlView
             Popup.Visibility = Visibility.Hidden;
             lastPopInfo = null;
         }
-
         protected virtual void PopUpWork(bool onClick = false)
         {
             if (IsPopEnabled == false || PopOnOver == false && PopOnClick == false) return;
 
-            Point cursorPos = Mouse.GetPosition(scroll);
-            if (PopOnOver == false && onClick == true && lastPopInfo != null ||
-                cursorPos.X < 0 || cursorPos.Y < 0 ||
-                scroll.ViewportWidth < cursorPos.X || scroll.ViewportHeight < cursorPos.Y)
+            try
             {
-                PopupClear();
-                return;
-            }
-
-            ViewPanelItemBase popInfo = GetPopupItem(Mouse.GetPosition(cnvs), onClick);
-            if (popInfo != lastPopInfo)
-            {
-                lastPopInfo = popInfo;
- 
-                if (popInfo == null || PopOnOver == false && onClick == false)
+                Point cursorPos = Mouse.GetPosition(scroll);
+                if (PopOnOver == false && onClick == true && lastPopInfo != null ||
+                    cursorPos.X < 0 || cursorPos.Y < 0 ||
+                    scroll.ViewportWidth < cursorPos.X || scroll.ViewportHeight < cursorPos.Y)
                 {
                     PopupClear();
                     return;
                 }
 
-                SetPopup(popInfo);
-                Popup.Visibility = Visibility.Visible;
+                ViewPanelItemBase popInfo = GetPopupItem(Mouse.GetPosition(cnvs), onClick);
+                if (popInfo != lastPopInfo)
+                {
+                    lastPopInfo = popInfo;
+
+                    if (popInfo == null || PopOnOver == false && onClick == false)
+                    {
+                        PopupClear();
+                        return;
+                    }
+
+                    SetPopupItem(popInfo);
+                    Popup.Visibility = Visibility.Visible;
+                }
+            }
+            catch (Exception ex) 
+            {
+                PopupClear();
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
-
         // PopUpの初期化
-        protected virtual void SetPopup(ViewPanelItemBase popInfo)
+        protected void SetPopupItem(ViewPanelItemBase popInfo)
         {
             UpdatePopupPosition(popInfo);
 
@@ -151,7 +178,10 @@ namespace EpgTimer.UserCtrlView
             {
                 Popup.MinHeight = Math.Max(0, Math.Min(scroll.ContentVerticalOffset + scroll.ViewportHeight - popInfo.TopPos, popInfo.Height));
             }
+
+            SetPopup(popInfo);
         }
+        protected virtual void SetPopup(ViewPanelItemBase popInfo) { }
 
         // PopUp が画面内に収まるように調整する
         protected void UpdatePopupPosition(ViewPanelItemBase popInfo)
@@ -170,7 +200,6 @@ namespace EpgTimer.UserCtrlView
             // 上にはみ出てる場合はscrollエリアの上端から表示する
             Canvas.SetTop(Popup, Math.Floor(Math.Max(top, scroll.ContentVerticalOffset - 1)));
         }
-
         // PopUp の ActualWidth と ActualHeight を取得するために SizeChanged イベントを捕捉する
         protected virtual void popupItem_SizeChanged(object sender, SizeChangedEventArgs e)
         {
@@ -179,6 +208,67 @@ namespace EpgTimer.UserCtrlView
                 UpdatePopupPosition(lastPopInfo);
             }
         }
+
+        protected virtual void TooltipClear()
+        {
+            cnvs.Children.Remove(Tooltip);
+            Tooltip.ToolTip = null;
+            lastToolInfo = null;
+            toolTipTimer.Stop();
+        }
+        protected virtual void TooltipWork()
+        {
+            if (IsTooltipEnabled == false) return;
+
+            try
+            {
+                ViewPanelItemBase toolInfo = GetTooltipItem(Mouse.GetPosition(cnvs));
+                if (toolInfo != lastToolInfo)
+                {
+                    TooltipClear();
+                    if (toolInfo == null) return;
+
+                    lastToolInfo = toolInfo;
+
+                    //ToolTipService.SetBetweenShowDelay()がいまいち思い通り動かないので、タイマーを挟む
+                    toolTipTimer.Interval = TimeSpan.FromMilliseconds(TooltipViweWait);
+                    toolTipTimer.Start();
+                }
+            }
+            catch (Exception ex) 
+            {
+                TooltipClear();
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); 
+            }
+        }
+        void toolTipTimer_Tick(object sender, EventArgs e)
+        {
+            try
+            {
+                toolTipTimer.Stop();
+                cnvs.Children.Remove(Tooltip);
+                SetTooltipItem(lastToolInfo);
+                cnvs.Children.Add(Tooltip);
+            }
+            catch (Exception ex)
+            {
+                TooltipClear();
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+            }
+        }
+        //Tooltipの初期化
+        protected void SetTooltipItem(ViewPanelItemBase toolInfo)
+        {
+            Tooltip.Width = toolInfo.Width;
+            Tooltip.Height = toolInfo.Height;
+            Canvas.SetLeft(Tooltip, Math.Floor(toolInfo.LeftPos));
+            Canvas.SetTop(Tooltip, Math.Floor(toolInfo.TopPos));
+
+            Tooltip.ToolTip = null;
+            SetTooltip(toolInfo);
+            return;
+        }
+        protected virtual void SetTooltip(ViewPanelItemBase toolInfo) { }
 
         /// <summary>マウスホイールイベント呼び出し</summary>
         protected virtual void scrollViewer_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
@@ -264,6 +354,7 @@ namespace EpgTimer.UserCtrlView
                 else
                 {
                     PopUpWork();
+                    TooltipWork();
                 }
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
@@ -341,6 +432,10 @@ namespace EpgTimer.UserCtrlView
                 {
                     PopupClear();
                 }
+            }
+            if (IsTooltipEnabled == true)
+            {
+                TooltipClear();
             }
         }
 

@@ -659,186 +659,191 @@ namespace EpgTimer
 
         public static String ConvertProgramText(EpgEventInfo eventInfo, EventInfoTextMode textMode)
         {
+            if (eventInfo == null) return "";
+
             string retText = "";
-            string basicInfo = "";
-            string extInfo = "";
-            if (eventInfo != null)
+
+            UInt64 key = eventInfo.Create64Key();
+            if (ChSet5.ChList.ContainsKey(key) == true)
             {
-                UInt64 key = eventInfo.Create64Key();
-                if (ChSet5.ChList.ContainsKey(key) == true)
-                {
-                    basicInfo += ChSet5.ChList[key].ServiceName + "(" + ChSet5.ChList[key].NetworkName + ")" + "\r\n";
-                }
+                retText += ChSet5.ChList[key].ServiceName + "(" + ChSet5.ChList[key].NetworkName + ")" + "\r\n";
+            }
 
-                basicInfo += ConvertTimeText(eventInfo) + "\r\n";
+            retText += ConvertTimeText(eventInfo) + "\r\n";
 
-                if (eventInfo.ShortInfo != null)
-                {
-                    basicInfo += eventInfo.ShortInfo.event_name + "\r\n\r\n";
-                    extInfo += eventInfo.ShortInfo.text_char + "\r\n\r\n";
-                }
+            string extText = "";
+            if (eventInfo.ShortInfo != null)
+            {
+                retText += eventInfo.ShortInfo.event_name + "\r\n\r\n";
+                extText = eventInfo.ShortInfo.text_char + "\r\n\r\n";
+            }
 
-                if (eventInfo.ExtInfo != null)
-                {
-                    extInfo += eventInfo.ExtInfo.text_char + "\r\n\r\n";
-                }
+            //基本情報
+            if (textMode == EventInfoTextMode.BasicOnly)
+            {
+                return retText;
+            }
 
-                //ジャンル
-                extInfo += "ジャンル :\r\n";
-                if (eventInfo.ContentInfo != null)
+            retText += extText;
+
+            if (eventInfo.ExtInfo != null)
+            {
+                retText += eventInfo.ExtInfo.text_char + "\r\n\r\n";
+            }
+
+            //テキスト情報(番組表のツールチップ)
+            if (textMode == EventInfoTextMode.TextOnly)
+            {
+                return retText;
+            }
+
+            //ジャンル
+            retText += "ジャンル :\r\n";
+            if (eventInfo.ContentInfo != null)
+            {
+                foreach (EpgContentData info in eventInfo.ContentInfo.nibbleList)
                 {
-                    foreach (EpgContentData info in eventInfo.ContentInfo.nibbleList)
+                    var ID1 = (UInt16)(info.content_nibble_level_1 << 8 | 0xFF);
+                    var ID2 = (UInt16)(info.content_nibble_level_1 << 8 | info.content_nibble_level_2);
+                    if (ID2 == 0x0E01)//CS、仮対応データをそのまま使用。
                     {
-                        var ID1 = (UInt16)(info.content_nibble_level_1 << 8 | 0xFF);
-                        var ID2 = (UInt16)(info.content_nibble_level_1 << 8 | info.content_nibble_level_2);
-                        if (ID2 == 0x0E01)//CS、仮対応データをそのまま使用。
-                        {
-                            ID1 = (UInt16)((info.user_nibble_1 | 0x70) << 8 | 0xFF);
-                            ID2 = (UInt16)((info.user_nibble_1 | 0x70) << 8 | info.user_nibble_2);
-                        }
-
-                        String content = "";
-                        ContentKindInfo kindInfo;
-                        if (ContentKindDictionary.TryGetValue(ID2, out kindInfo) == true)
-                        {
-                            content += kindInfo.ListBoxView;
-                        }
-                        else if (ContentKindDictionary.TryGetValue(ID1, out kindInfo) == true)
-                        {
-                            content += kindInfo.ContentName + " - " + "不明" + "(0x" + ((byte)ID2).ToString("X2") + ")";
-                        }
-                        else
-                        {
-                            content += "不明(0x" + info.content_nibble_level_1.ToString("X2") + info.content_nibble_level_2.ToString("X2")
-                                                + ")(0x" + info.user_nibble_1.ToString("X2") + info.user_nibble_2.ToString("X2") + ")";
-                        }
-                        extInfo += content + "\r\n";
+                        ID1 = (UInt16)((info.user_nibble_1 | 0x70) << 8 | 0xFF);
+                        ID2 = (UInt16)((info.user_nibble_1 | 0x70) << 8 | info.user_nibble_2);
                     }
-                }
-                extInfo += "\r\n";
 
-                //映像
-                extInfo += "映像 :";
-                if (eventInfo.ComponentInfo != null)
-                {
-                    int streamContent = eventInfo.ComponentInfo.stream_content;
-                    int componentType = eventInfo.ComponentInfo.component_type;
-                    UInt16 componentKey = (UInt16)(streamContent << 8 | componentType);
-                    if (ComponentKindDictionary.ContainsKey(componentKey) == true)
+                    String content = "";
+                    ContentKindInfo kindInfo;
+                    if (ContentKindDictionary.TryGetValue(ID2, out kindInfo) == true)
                     {
-                        extInfo += ComponentKindDictionary[componentKey];
+                        content += kindInfo.ListBoxView;
                     }
-                    if (eventInfo.ComponentInfo.text_char.Length > 0)
+                    else if (ContentKindDictionary.TryGetValue(ID1, out kindInfo) == true)
                     {
-                        extInfo += "\r\n";
-                        extInfo += eventInfo.ComponentInfo.text_char;
-                    }
-                }
-                extInfo += "\r\n";
-
-                //音声
-                extInfo += "音声 :\r\n";
-                if (eventInfo.AudioInfo != null)
-                {
-                    foreach (EpgAudioComponentInfoData info in eventInfo.AudioInfo.componentList)
-                    {
-                        int streamContent = info.stream_content;
-                        int componentType = info.component_type;
-                        UInt16 componentKey = (UInt16)(streamContent << 8 | componentType);
-                        if (ComponentKindDictionary.ContainsKey(componentKey) == true)
-                        {
-                            extInfo += ComponentKindDictionary[componentKey];
-                        }
-                        if (info.text_char.Length > 0)
-                        {
-                            extInfo += "\r\n";
-                            extInfo += info.text_char;
-                        }
-                        extInfo += "\r\n";
-                        extInfo += "サンプリングレート :";
-                        switch (info.sampling_rate)
-                        {
-                            case 1:
-                                extInfo += "16kHz";
-                                break;
-                            case 2:
-                                extInfo += "22.05kHz";
-                                break;
-                            case 3:
-                                extInfo += "24kHz";
-                                break;
-                            case 5:
-                                extInfo += "32kHz";
-                                break;
-                            case 6:
-                                extInfo += "44.1kHz";
-                                break;
-                            case 7:
-                                extInfo += "48kHz";
-                                break;
-                            default:
-                                break;
-                        }
-                        extInfo += "\r\n";
-                    }
-                }
-                extInfo += "\r\n";
-
-                //スクランブル
-                if (!ChSet5.IsDttv(eventInfo.original_network_id))
-                {
-                    if (eventInfo.FreeCAFlag == 0)
-                    {
-                        extInfo += "無料放送\r\n";
+                        content += kindInfo.ContentName + " - " + "不明" + "(0x" + ((byte)ID2).ToString("X2") + ")";
                     }
                     else
                     {
-                        extInfo += "有料放送\r\n";
+                        content += "不明(0x" + info.content_nibble_level_1.ToString("X2") + info.content_nibble_level_2.ToString("X2")
+                                            + ")(0x" + info.user_nibble_1.ToString("X2") + info.user_nibble_2.ToString("X2") + ")";
                     }
-                    extInfo += "\r\n";
+                    retText += content + "\r\n";
                 }
+            }
+            retText += "\r\n";
 
-                //イベントリレー
-                var idStr = new Func<string, ushort, string>((name, val) => name + " : " + val.ToString() + "(0x" + val.ToString("X4") + ")");
-                if (eventInfo.EventRelayInfo != null)
+            //映像
+            retText += "映像 :";
+            if (eventInfo.ComponentInfo != null)
+            {
+                int streamContent = eventInfo.ComponentInfo.stream_content;
+                int componentType = eventInfo.ComponentInfo.component_type;
+                UInt16 componentKey = (UInt16)(streamContent << 8 | componentType);
+                if (ComponentKindDictionary.ContainsKey(componentKey) == true)
                 {
-                    if (eventInfo.EventRelayInfo.eventDataList.Count > 0)
-                    {
-                        extInfo += "イベントリレーあり：\r\n";
-                        foreach (EpgEventData info in eventInfo.EventRelayInfo.eventDataList)
-                        {
-                            key = info.Create64Key();
-                            if (ChSet5.ChList.ContainsKey(key) == true)
-                            {
-                                extInfo += ChSet5.ChList[key].ServiceName + "(" + ChSet5.ChList[key].NetworkName + ")" + " ";
-                            }
-                            else
-                            {
-                                extInfo += idStr("OriginalNetworkID", info.original_network_id)+ " ";
-                                extInfo += idStr("TransportStreamID", info.transport_stream_id)+ " ";
-                                extInfo += idStr("ServiceID", info.service_id) + " ";
-                            }
-                            extInfo += idStr("EventID", info.event_id) + "\r\n";
-                            extInfo += "\r\n";
-                        }
-                        extInfo += "\r\n";
-                    }
+                    retText += ComponentKindDictionary[componentKey];
                 }
+                if (eventInfo.ComponentInfo.text_char.Length > 0)
+                {
+                    retText += "\r\n";
+                    retText += eventInfo.ComponentInfo.text_char;
+                }
+            }
+            retText += "\r\n";
 
-                extInfo += idStr("OriginalNetworkID", eventInfo.original_network_id) + "\r\n";
-                extInfo += idStr("TransportStreamID", eventInfo.transport_stream_id) + "\r\n";
-                extInfo += idStr("ServiceID", eventInfo.service_id) + "\r\n";
-                extInfo += idStr("EventID", eventInfo.event_id) + "\r\n";
+            //音声
+            retText += "音声 :\r\n";
+            if (eventInfo.AudioInfo != null)
+            {
+                foreach (EpgAudioComponentInfoData info in eventInfo.AudioInfo.componentList)
+                {
+                    int streamContent = info.stream_content;
+                    int componentType = info.component_type;
+                    UInt16 componentKey = (UInt16)(streamContent << 8 | componentType);
+                    if (ComponentKindDictionary.ContainsKey(componentKey) == true)
+                    {
+                        retText += ComponentKindDictionary[componentKey];
+                    }
+                    if (info.text_char.Length > 0)
+                    {
+                        retText += "\r\n";
+                        retText += info.text_char;
+                    }
+                    retText += "\r\n";
+                    retText += "サンプリングレート :";
+                    switch (info.sampling_rate)
+                    {
+                        case 1:
+                            retText += "16kHz";
+                            break;
+                        case 2:
+                            retText += "22.05kHz";
+                            break;
+                        case 3:
+                            retText += "24kHz";
+                            break;
+                        case 5:
+                            retText += "32kHz";
+                            break;
+                        case 6:
+                            retText += "44.1kHz";
+                            break;
+                        case 7:
+                            retText += "48kHz";
+                            break;
+                        default:
+                            break;
+                    }
+                    retText += "\r\n";
+                }
+            }
+            retText += "\r\n";
+
+            //スクランブル
+            if (!ChSet5.IsDttv(eventInfo.original_network_id))
+            {
+                if (eventInfo.FreeCAFlag == 0)
+                {
+                    retText += "無料放送\r\n";
+                }
+                else
+                {
+                    retText += "有料放送\r\n";
+                }
+                retText += "\r\n";
             }
 
-            if (textMode == EventInfoTextMode.All || textMode == EventInfoTextMode.BasicOnly)
+            //イベントリレー
+            var idStr = new Func<string, ushort, string>((name, val) => name + " : " + val.ToString() + "(0x" + val.ToString("X4") + ")");
+            if (eventInfo.EventRelayInfo != null)
             {
-                retText = basicInfo;
+                if (eventInfo.EventRelayInfo.eventDataList.Count > 0)
+                {
+                    retText += "イベントリレーあり：\r\n";
+                    foreach (EpgEventData info in eventInfo.EventRelayInfo.eventDataList)
+                    {
+                        key = info.Create64Key();
+                        if (ChSet5.ChList.ContainsKey(key) == true)
+                        {
+                            retText += ChSet5.ChList[key].ServiceName + "(" + ChSet5.ChList[key].NetworkName + ")" + " ";
+                        }
+                        else
+                        {
+                            retText += idStr("OriginalNetworkID", info.original_network_id) + " ";
+                            retText += idStr("TransportStreamID", info.transport_stream_id) + " ";
+                            retText += idStr("ServiceID", info.service_id) + " ";
+                        }
+                        retText += idStr("EventID", info.event_id) + "\r\n";
+                        retText += "\r\n";
+                    }
+                    retText += "\r\n";
+                }
             }
-            if (textMode == EventInfoTextMode.All || textMode == EventInfoTextMode.ExtOnly)
-            {
-                retText += extInfo;
-            }
+
+            retText += idStr("OriginalNetworkID", eventInfo.original_network_id) + "\r\n";
+            retText += idStr("TransportStreamID", eventInfo.transport_stream_id) + "\r\n";
+            retText += idStr("ServiceID", eventInfo.service_id) + "\r\n";
+            retText += idStr("EventID", eventInfo.event_id) + "\r\n";
+
             return retText;
         }
 

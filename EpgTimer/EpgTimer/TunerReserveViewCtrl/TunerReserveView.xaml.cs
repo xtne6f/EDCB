@@ -23,6 +23,9 @@ namespace EpgTimer.TunerReserveViewCtrl
         protected override FrameworkElement Popup { get { return popupItem; } }
         protected override double PopWidth { get { return Settings.Instance.TunerWidth; } }
 
+        protected override bool IsTooltipEnabled { get { return Settings.Instance.TunerToolTip == true; } }
+        protected override int TooltipViweWait { get { return Settings.Instance.TunerToolTipViewWait; } }
+
         public TunerReserveView()
         {
             InitializeComponent();
@@ -48,11 +51,9 @@ namespace EpgTimer.TunerReserveViewCtrl
                 reserveViewPanel.ItemFontTitle.ClearCache();
 
                 PopUpWork();
+                TooltipWork();
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
 
         protected override ViewPanelItemBase GetPopupItem(Point cursorPos, bool onClick)
@@ -61,11 +62,8 @@ namespace EpgTimer.TunerReserveViewCtrl
 
             return reserveViewPanel.Items.Find(pg => pg.IsPicked(cursorPos));
         }
-
         protected override void SetPopup(ViewPanelItemBase item)
         {
-            base.SetPopup(item);
-
             var viewInfo = (ReserveViewItem)item;
             var resItem = new ReserveItem(viewInfo.ReserveInfo);
 
@@ -149,6 +147,15 @@ namespace EpgTimer.TunerReserveViewCtrl
             infoText.Foreground = colorNormal;
             infoText.Margin = new Thickness(indentNormal, 0, 0, Math.Floor(sizeNormal / 3));
             infoText.LineHeight = sizeNormal + 2;
+        }
+
+        protected override ViewPanelItemBase GetTooltipItem(Point cursorPos)
+        {
+            return GetPopupItem(cursorPos, false);
+        }
+        protected override void SetTooltip(ViewPanelItemBase toolInfo)
+        {
+            Tooltip.ToolTip = new ReserveItem((toolInfo as ReserveViewItem).ReserveInfo).ToolTipViewAlways;
         }
 
     }

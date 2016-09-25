@@ -227,6 +227,8 @@ namespace EpgTimer
         public double TunerWidth { get; set; }
         public bool TunerServiceNoWrap { get; set; }
         public bool TunerTitleIndent { get; set; }
+        public bool TunerToolTip { get; set; }
+        public int TunerToolTipViewWait { get; set; }
         public bool TunerPopup { get; set; }
         public int TunerPopupMode { get; set; }
         public bool TunerPopupRecinfo { get; set; }
@@ -234,6 +236,9 @@ namespace EpgTimer
         public bool TunerColorModeUse { get; set; }
         public bool TunerDisplayOffReserve { get; set; }
         public bool EpgTitleIndent { get; set; }
+        public bool EpgToolTip { get; set; }
+        public bool EpgToolTipNoViewOnly { get; set; }
+        public int EpgToolTipViewWait { get; set; }
         public bool EpgPopup { get; set; }
         public int EpgPopupMode { get; set; }
         public bool EpgGradation { get; set; }
@@ -449,6 +454,8 @@ namespace EpgTimer
             TunerWidth = 150;
             TunerServiceNoWrap = true;
             TunerTitleIndent = true;
+            TunerToolTip = false;
+            TunerToolTipViewWait = 1500;
             TunerPopup = false;
             TunerPopupMode = 0;
             TunerPopupRecinfo = false;
@@ -456,6 +463,9 @@ namespace EpgTimer
             TunerColorModeUse = false;
             TunerDisplayOffReserve = false;
             EpgTitleIndent = true;
+            EpgToolTip = false;
+            EpgToolTipNoViewOnly = true;
+            EpgToolTipViewWait = 1500;
             EpgPopup = true;
             EpgPopupMode = 0;
             EpgGradation = true;

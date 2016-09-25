@@ -27,6 +27,9 @@ namespace EpgTimer.EpgView
         private List<Rectangle> rectBorder = new List<Rectangle>();
         private ReserveViewItem popInfoRes = null;
 
+        protected override bool IsTooltipEnabled { get { return Settings.Instance.EpgToolTip == true; } }
+        protected override int TooltipViweWait { get { return Settings.Instance.EpgToolTipViewWait; } }
+
         public ProgramView()
         {
             InitializeComponent();
@@ -74,11 +77,8 @@ namespace EpgTimer.EpgView
 
             return popInfo;
         }
-
         protected override void SetPopup(ViewPanelItemBase item)
         {
-            base.SetPopup(item);
-
             var viewInfo = (ProgramViewItem)item;
             EpgEventInfo epgInfo = viewInfo.EventInfo;
 
@@ -145,6 +145,18 @@ namespace EpgTimer.EpgView
             }
         }
 
+        protected override ViewPanelItemBase GetTooltipItem(Point cursorPos)
+        {
+            return GetProgramViewData(cursorPos);
+        }
+        protected override void SetTooltip(ViewPanelItemBase toolInfo)
+        {
+            var info = toolInfo as ProgramViewItem;
+            if (info.TitleDrawErr == false && Settings.Instance.EpgToolTipNoViewOnly == true) return;
+
+            Tooltip.ToolTip = ViewUtil.GetTooltipBlockStandard(CommonManager.ConvertProgramText(info.EventInfo, EventInfoTextMode.TextOnly));
+        }
+
         public ProgramViewItem GetProgramViewData(Point cursorPos)
         {
             try
@@ -206,11 +218,9 @@ namespace EpgTimer.EpgView
                 }
 
                 PopUpWork();
+                TooltipWork();
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
 
         public void SetProgramList(List<ProgramViewItem> programList, double width, double height)
@@ -219,7 +229,6 @@ namespace EpgTimer.EpgView
             programGroupList.Add(new Tuple<double, List<ProgramViewItem>>(width, programList));
             SetProgramList(programGroupList, height);
         }
-
         public void SetProgramList(List<Tuple<double, List<ProgramViewItem>>> programGroupList, double height)
         {
             try
@@ -253,10 +262,7 @@ namespace EpgTimer.EpgView
                 itemFontNormal.ClearCache();
                 itemFontTitle.ClearCache();
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
     }
 }

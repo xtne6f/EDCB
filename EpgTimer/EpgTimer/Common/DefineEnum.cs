@@ -56,7 +56,7 @@ namespace EpgTimer
     {
         All = 0, //基本＋詳細
         BasicOnly = 1, //基本のみ
-        ExtOnly = 2, //詳細のみ
+        TextOnly = 2, //基本＋ジャンルなどを除く番組情報
     };
 
     //CommonDef.hより

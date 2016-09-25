@@ -42,6 +42,9 @@ namespace EpgTimer.Setting
                 epgPopupRadioBtns = new RadioBtnSelect(radioButton_epg_popup_onOver, radioButton_epg_popup_onClick, radioButton_epg_popup_resOnly);
                 epgPopupRadioBtns.Value = Settings.Instance.EpgPopupMode;
                 checkBox_title_indent.IsChecked = Settings.Instance.EpgTitleIndent;
+                checkBox_descToolTip.IsChecked = Settings.Instance.EpgToolTip;
+                checkBox_toolTip_noView_only.IsChecked = Settings.Instance.EpgToolTipNoViewOnly;
+                textBox_toolTipWait.Text = Settings.Instance.EpgToolTipViewWait.ToString();
                 checkBox_singleOpen.IsChecked = Settings.Instance.EpgInfoSingleClick;
                 checkBox_scrollAuto.IsChecked = Settings.Instance.MouseScrollAuto;
                 checkBox_gradation.IsChecked = Settings.Instance.EpgGradation;
@@ -62,6 +65,8 @@ namespace EpgTimer.Setting
                 tunerPopupRadioBtns.Value = Settings.Instance.TunerPopupMode;
                 checkBox_tuner_popup_recInfo.IsChecked = Settings.Instance.TunerPopupRecinfo;
                 checkBox_tuner_title_indent.IsChecked = Settings.Instance.TunerTitleIndent;
+                checkBox_tunerDescToolTip.IsChecked = Settings.Instance.TunerToolTip;
+                textBox_tunerToolTipWait.Text = Settings.Instance.TunerToolTipViewWait.ToString();
                 checkBox_tunerSingleOpen.IsChecked = Settings.Instance.TunerInfoSingleClick;
                 checkBox_tuner_scrollAuto.IsChecked = Settings.Instance.TunerMouseScrollAuto;
                 checkBox_tuner_service_nowrap.IsChecked = Settings.Instance.TunerServiceNoWrap;
@@ -248,6 +253,9 @@ namespace EpgTimer.Setting
                 Settings.Instance.MinimumHeight = MenuUtil.MyToNumerical(textBox_minimumHeight, Convert.ToDouble, double.MaxValue, 0, 0);
                 Settings.Instance.DragScroll = MenuUtil.MyToNumerical(textBox_dragScroll, Convert.ToDouble, 1.5);
                 Settings.Instance.EpgTitleIndent = (checkBox_title_indent.IsChecked == true);
+                Settings.Instance.EpgToolTip = (checkBox_descToolTip.IsChecked == true);
+                Settings.Instance.EpgToolTipNoViewOnly = (checkBox_toolTip_noView_only.IsChecked == true);
+                Settings.Instance.EpgToolTipViewWait = MenuUtil.MyToNumerical(textBox_toolTipWait, Convert.ToInt32, Int32.MaxValue, Int32.MinValue, 1500);
                 Settings.Instance.EpgPopup = (checkBox_epg_popup.IsChecked == true);
                 Settings.Instance.EpgPopupMode = epgPopupRadioBtns.Value;
                 Settings.Instance.EpgGradation = (checkBox_gradation.IsChecked == true);
@@ -268,6 +276,8 @@ namespace EpgTimer.Setting
                 Settings.Instance.TunerMouseScrollAuto = (checkBox_tuner_scrollAuto.IsChecked == true);
                 Settings.Instance.TunerServiceNoWrap = (checkBox_tuner_service_nowrap.IsChecked == true);
                 Settings.Instance.TunerTitleIndent = (checkBox_tuner_title_indent.IsChecked == true);
+                Settings.Instance.TunerToolTip = (checkBox_tunerDescToolTip.IsChecked == true);
+                Settings.Instance.TunerToolTipViewWait = MenuUtil.MyToNumerical(textBox_tunerToolTipWait, Convert.ToInt32, Int32.MaxValue, Int32.MinValue, 1500);
                 Settings.Instance.TunerPopup = (checkBox_tuner_popup.IsChecked == true);
                 Settings.Instance.TunerPopupMode = tunerPopupRadioBtns.Value;
                 Settings.Instance.TunerPopupRecinfo = (checkBox_tuner_popup_recInfo.IsChecked == true);
