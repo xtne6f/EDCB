@@ -226,7 +226,6 @@ namespace EpgTimer.Setting
                 textBox_autoDelRecInfo.Text = IniFileHandler.GetPrivateProfileInt("SET", "AutoDelRecInfoNum", 100, SettingPath.TimerSrvIniPath).ToString();
                 
                 checkBox_timeSync.IsChecked = IniFileHandler.GetPrivateProfileInt("SET", "TimeSync", 0, SettingPath.TimerSrvIniPath) == 1;
-                checkBox_noToolTips.IsChecked = Settings.Instance.NoToolTip;
                 checkBox_noBallonTips.IsChecked = Settings.Instance.NoBallonTips;
                 textBox_ForceHideBalloonTipSec.Text = Settings.Instance.ForceHideBalloonTipSec.ToString();
 
@@ -366,7 +365,6 @@ namespace EpgTimer.Setting
                 IniFileHandler.WritePrivateProfileString("SET", "AutoDelRecInfoNum", textBox_autoDelRecInfo.Text.ToString(), SettingPath.TimerSrvIniPath);
 
                 IniFileHandler.WritePrivateProfileString("SET", "TimeSync", checkBox_timeSync.IsChecked == true ? "1" : "0", SettingPath.TimerSrvIniPath);
-                Settings.Instance.NoToolTip = checkBox_noToolTips.IsChecked == true;
                 Settings.Instance.NoBallonTips = checkBox_noBallonTips.IsChecked == true;
                 Settings.Instance.ForceHideBalloonTipSec = MenuUtil.MyToNumerical(textBox_ForceHideBalloonTipSec, Convert.ToInt32, 255, 0, Settings.Instance.ForceHideBalloonTipSec);
 

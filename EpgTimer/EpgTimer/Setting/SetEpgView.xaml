@@ -473,6 +473,10 @@
                             </StackPanel>
                             <CheckBox Margin="0,6,0,0" Content="検索/キーワード予約ダイアログの録画設定タブにプリセットを表示する" Name="checkBox_displayPresetOnSearch" />
                             <CheckBox Margin="0,6,0,0" Content="テーマを適用する(要再起動)" Name="checkBox_NotNoStyle" />
+                            <StackPanel Margin="0,4,0,-2" Orientation="Horizontal" >
+                                <CheckBox Content="詳細情報のツールチップを表示する  ツールチップの幅" Name="checkBox_toolTips" ToolTip="番組表、使用予定チューナー画面、その他一部画面は個別にツールチップの表示設定があります。" />
+                                <TextBox Margin="6,0,0,0" Name="textBox_ToolTipsWidth" Width="62" />
+                            </StackPanel>
                             <CheckBox Margin="0,6,0,0" Content="ステータス表示をする" Name="checkBox_displayStatus" />
                             <CheckBox Margin="14,6,0,0" Content="主要操作の操作結果を表示をする" Name="checkBox_displayStatusNotify" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_displayStatus, UpdateSourceTrigger=PropertyChanged}" />
                             <GroupBox Header="初期表示画面" Margin="0,6,0,0" >

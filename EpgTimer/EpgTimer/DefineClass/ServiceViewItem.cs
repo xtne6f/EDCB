@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Windows.Controls;
 
 namespace EpgTimer
 {
@@ -20,17 +21,17 @@ namespace EpgTimer
         { 
             get { return ServiceInfo.ServiceName; }
         }
-        public String ToolTipView
+        public TextBlock ToolTipView
         {
             get
             {
                 if (Settings.Instance.NoToolTip == true) return null;
 
-                return 
+                return ViewUtil.GetTooltipBlockStandard(
                     "ServiceName : " + ServiceInfo.ServiceName + "\r\n" +
                     "ServiceType : " + ServiceInfo.ServiceType.ToString() + "(0x" + ServiceInfo.ServiceType.ToString("X2") + ")" + "\r\n" +
                     CommonManager.Convert64KeyString(ServiceInfo.Key) + "\r\n" +
-                    "PartialReception : " + ServiceInfo.PartialFlag.ToString();
+                    "PartialReception : " + ServiceInfo.PartialFlag.ToString());
             }
         }
     }

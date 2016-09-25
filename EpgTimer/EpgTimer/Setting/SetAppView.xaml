@@ -186,7 +186,6 @@
                             <CheckBox Content="EPG取得時に放送波時間でPC時計を同期する" Name="checkBox_timeSync" />
                             <Label Margin="0,-4,0,-4" Content="※EpgTimerSrv.exeが管理者権限で起動している必要があります" />
                         </StackPanel>
-                        <CheckBox Margin="0,6,0,0" Content="ツールチップの表示を抑制する" Name="checkBox_noToolTips" />
                         <CheckBox Margin="0,6,0,0" Content="バルーンチップでの動作通知を抑制する" Name="checkBox_noBallonTips" />
                         <StackPanel Margin="0,4,0,-2" Orientation="Horizontal" >
                             <Label Content="バルーンチップを強制的に閉じる" ToolTip="0でタイムアウト無し"/>

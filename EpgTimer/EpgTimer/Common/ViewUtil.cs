@@ -533,7 +533,7 @@ namespace EpgTimer
         {
             var block = new TextBlock();
             block.Text = text;
-            block.MaxWidth = 400;
+            block.MaxWidth = Settings.Instance.ToolTipWidth;
             block.TextWrapping = TextWrapping.Wrap;
             return block;
         }

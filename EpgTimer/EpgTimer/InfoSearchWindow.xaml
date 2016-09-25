@@ -31,7 +31,7 @@
                     </GroupBox>
                     <WrapPanel Margin="6,0,0,0" >
                         <CheckBox  Content="タイトルのみ検索" Name="checkBox_TitleOnly" ToolTip="未チェック時は、各詳細ウィンドウまたはツールチップに表示される情報を検索します。" />
-                        <CheckBox  Margin="12,0,0,0" Content="検索結果のツールチップを表示する" Name="checkBox_ShowToolTip" ToolTip="全体設定画面の[動作設定]-[その他]の「ツールチップの表示を抑制する」とは独立して動作します。" Checked="checkBox_ShowToolTip_Checked" Unchecked="checkBox_ShowToolTip_Checked" />
+                        <CheckBox  Margin="12,0,0,0" Content="検索結果のツールチップを表示する" Name="checkBox_ShowToolTip" ToolTip="全体設定画面にある[各画面の設定]-[予約一覧・共通]のツールチップ表示設定とは独立して動作します。" Checked="checkBox_ShowToolTip_Checked" Unchecked="checkBox_ShowToolTip_Checked" />
                     </WrapPanel>
                 </StackPanel>
             </GroupBox>

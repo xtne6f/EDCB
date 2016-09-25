@@ -193,6 +193,7 @@ namespace EpgTimer
         public double FontSizeTitle { get; set; }
         public bool FontBoldTitle { get; set; }
         public bool NoToolTip { get; set; }
+        public double ToolTipWidth { get; set; }
         public bool NoBallonTips { get; set; }
         public int ForceHideBalloonTipSec { get; set; }
         public bool PlayDClick { get; set; }
@@ -425,6 +426,7 @@ namespace EpgTimer
             FontSizeTitle = 12;
             FontBoldTitle = true;
             NoToolTip = false;
+            ToolTipWidth = 400;
             NoBallonTips = false;
             ForceHideBalloonTipSec = 0;
             PlayDClick = false;
