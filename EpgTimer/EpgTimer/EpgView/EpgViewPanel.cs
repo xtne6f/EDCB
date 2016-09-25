@@ -99,17 +99,14 @@ namespace EpgTimer.EpgView
                             }
 
                             //詳細
-//                            if (info.EventInfo.ExtInfo != null)
-//                            {
-//                                if (info.EventInfo.ExtInfo.text_char.Length > 0)
-//                                {
-//                                    if (RenderText(info.EventInfo.ExtInfo.text_char, ref textDrawList, glyphTypefaceNormal, sizeNormal, info.Width - 6 - widthOffset, info.Height - 7 - totalHeight, info.LeftPos - selfLeft + widthOffset, info.TopPos - 1 + totalHeight, ref useHeight, colorNormal, m) == false)
-//                                    {
-//                                        continue;
-//                                    }
-//                                    totalHeight += useHeight;
-//                                }
-//                            }
+                            if (Settings.Instance.EpgExtInfoTable == true && info.EventInfo.ExtInfo != null && info.EventInfo.ExtInfo.text_char.Length > 0)
+                            {
+                                if (RenderText(info.EventInfo.ExtInfo.text_char, ref textDrawList, ItemFontNormal, sizeNormal, info.Width - 6 - indentNormal, info.Height - 7 - totalHeight, info.LeftPos - selfLeft + indentNormal, info.TopPos - 2 + totalHeight, ref useHeight, colorNormal, m) == false)
+                                {
+                                    continue;
+                                }
+                                totalHeight += useHeight + sizeNormal;
+                            }
                         }
                     }
                 }

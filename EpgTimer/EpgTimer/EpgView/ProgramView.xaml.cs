@@ -21,7 +21,7 @@ namespace EpgTimer.EpgView
         protected override bool PopOnOver { get { return Settings.Instance.EpgPopupMode != 1; } }
         protected override bool PopOnClick { get { return Settings.Instance.EpgPopupMode != 0; } }
         protected override FrameworkElement Popup { get { return popupItem; } }
-        protected override double PopWidth { get { return Settings.Instance.ServiceWidth; } }
+        protected override double PopWidth { get { return Settings.Instance.ServiceWidth * Settings.Instance.EpgPopupWidth; } }
 
         private List<ReserveViewItem> reserveList = null;
         private List<Rectangle> rectBorder = new List<Rectangle>();
@@ -112,7 +112,12 @@ namespace EpgTimer.EpgView
                 titleText.Margin = new Thickness(indentTitle, 0, 0, Math.Floor(sizeTitle / 3));
                 titleText.LineHeight = sizeTitle + 2;
 
-                infoText.Text = System.Text.RegularExpressions.Regex.Replace(epgInfo.ShortInfo.text_char, ".", "$0\u200b");
+                string iTxt = epgInfo.ShortInfo.text_char;
+                if (Settings.Instance.EpgExtInfoPopup == true && epgInfo.ExtInfo != null)
+                {
+                    iTxt += "\r\n" + epgInfo.ExtInfo.text_char;
+                }
+                infoText.Text = System.Text.RegularExpressions.Regex.Replace(iTxt, ".", "$0\u200b");
                 infoText.FontFamily = fontNormal;
                 infoText.FontSize = sizeNormal;
                 //infoText.FontWeight = FontWeights.Normal;
@@ -154,7 +159,8 @@ namespace EpgTimer.EpgView
             var info = toolInfo as ProgramViewItem;
             if (info.TitleDrawErr == false && Settings.Instance.EpgToolTipNoViewOnly == true) return;
 
-            Tooltip.ToolTip = ViewUtil.GetTooltipBlockStandard(CommonManager.ConvertProgramText(info.EventInfo, EventInfoTextMode.TextOnly));
+            Tooltip.ToolTip = ViewUtil.GetTooltipBlockStandard(CommonManager.ConvertProgramText(info.EventInfo,
+                Settings.Instance.EpgExtInfoTooltip == true ? EventInfoTextMode.TextAll : EventInfoTextMode.BasicText));
         }
 
         public ProgramViewItem GetProgramViewData(Point cursorPos)

@@ -21,7 +21,7 @@ namespace EpgTimer.TunerReserveViewCtrl
         protected override bool PopOnOver { get { return Settings.Instance.TunerPopupMode == 0; } }
         protected override bool PopOnClick { get { return Settings.Instance.TunerPopupMode == 1; } }
         protected override FrameworkElement Popup { get { return popupItem; } }
-        protected override double PopWidth { get { return Settings.Instance.TunerWidth; } }
+        protected override double PopWidth { get { return Settings.Instance.TunerWidth * Settings.Instance.TunerPopupWidth; } }
 
         protected override bool IsTooltipEnabled { get { return Settings.Instance.TunerToolTip == true; } }
         protected override int TooltipViweWait { get { return Settings.Instance.TunerToolTipViewWait; } }

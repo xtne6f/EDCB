@@ -686,13 +686,19 @@ namespace EpgTimer
 
             retText += extText;
 
+            //基本情報+説明(番組表のツールチップなど)
+            if (textMode == EventInfoTextMode.BasicText)
+            {
+                return retText;
+            }
+
             if (eventInfo.ExtInfo != null)
             {
                 retText += eventInfo.ExtInfo.text_char + "\r\n\r\n";
             }
 
-            //テキスト情報(番組表のツールチップ)
-            if (textMode == EventInfoTextMode.TextOnly)
+            //テキスト情報全て(番組表のツールチップなど)
+            if (textMode == EventInfoTextMode.TextAll)
             {
                 return retText;
             }

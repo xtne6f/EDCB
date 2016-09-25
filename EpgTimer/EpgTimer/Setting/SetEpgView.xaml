@@ -90,35 +90,48 @@
                                 <TextBox Height="24" HorizontalAlignment="Left" Margin="650,6,0,0" Name="textBox_minimumHeight" VerticalAlignment="Top" Width="55" />
                                 <StackPanel Margin="11,64,0,0" Width="304" HorizontalAlignment="Left">
                                     <CheckBox Content="番組内容のポップアップ表示" Margin="0,6,0,0" Name="checkBox_epg_popup" />
-                                    <WrapPanel Margin="20,0,0,0" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_epg_popup, UpdateSourceTrigger=PropertyChanged}" >
-                                        <RadioButton Content="マウスオーバー" Margin="0,6,12,0" Name="radioButton_epg_popup_onOver" />
-                                        <RadioButton Content="クリックしたとき" Margin="0,6,12,0" Name="radioButton_epg_popup_onClick" />
-                                        <RadioButton Content="予約のみマウスオーバーで、他はクリックしたとき" Margin="0,6,12,0" Name="radioButton_epg_popup_resOnly" />
+                                    <StackPanel Margin="20,0,0,0" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_epg_popup, UpdateSourceTrigger=PropertyChanged}" >
+                                        <WrapPanel>
+                                            <RadioButton Content="マウスオーバー" Margin="0,6,12,0" Name="radioButton_epg_popup_onOver" />
+                                            <RadioButton Content="クリックしたとき" Margin="0,6,12,0" Name="radioButton_epg_popup_onClick" />
+                                            <RadioButton Content="予約のみマウスオーバーで、他はクリックしたとき" Margin="0,6,12,0" Name="radioButton_epg_popup_resOnly" />
+                                        </WrapPanel>
+                                        <WrapPanel>
+                                            <Label Content="ポップアップの幅　サービスの幅 ×" />
+                                            <TextBox Width="55" Name="textBox_epg_popup_Width" />
+                                            <Label Content="倍" />
+                                        </WrapPanel>
+                                    </StackPanel>
+                                    <CheckBox Content="詳細をツールチップ表示する" Margin="0,6,0,0" Name="checkBox_descToolTip" />
+                                    <StackPanel Margin="20,0,0,0" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_descToolTip, UpdateSourceTrigger=PropertyChanged}" >
+                                        <CheckBox Content="番組名を表示しきれない物のみ表示する" Margin="0,6,0,0" Name="checkBox_toolTip_noView_only" />
+                                        <WrapPanel>
+                                            <Label Content="ツールチップを表示するまでの時間(ミリ秒)" />
+                                            <TextBox Width="55" Margin="12,0,0,0" Name="textBox_toolTipWait" />
+                                        </WrapPanel>
+                                    </StackPanel>
+                                    <Label Content="番組内容を詳しく表示する" />
+                                    <WrapPanel Margin="20,0,0,0" >
+                                        <CheckBox Content="番組表" Margin="0,6,12,0" Name="checkBox_epg_ExtInfo_table" />
+                                        <CheckBox Content="ポップアップ" Margin="0,6,12,0" Name="checkBox_epg_ExtInfo_popup" />
+                                        <CheckBox Content="ツールチップ" Margin="0,6,12,0" Name="checkBox_epg_ExtInfo_tooltip" />
                                     </WrapPanel>
+                                </StackPanel>
+                                <StackPanel Margin="327,64,0,0" >
                                     <CheckBox Content="シングルクリックで予約ダイアログを開く" Margin="0,6,0,0" Name="checkBox_singleOpen" />
                                     <CheckBox Content="番組詳細タブを選択した状態で予約ダイアログを開く" Margin="0,6,0,0" Name="checkBox_openInfo" />
                                     <CheckBox Content="番組名と番組内容の表示位置をあわせる" Margin="0,6,0,0" Name="checkBox_title_indent" />
                                     <CheckBox Content="番組表の切り替え時にも強調表示をする" Margin="0,6,0,0" Name="checkBox_displayNotifyChange" />
-                                </StackPanel>
-                                <StackPanel Margin="327,64,0,0" >
-                                    <StackPanel Orientation="Horizontal">
+                                    <WrapPanel>
+                                        <CheckBox Content="古い番組データの表示を抑制する" Name="checkBox_epgNoDisplayOld" ToolTip="通常はチェック不要です。" />
+                                        <TextBox Width="55" Margin="12,0,0,0" Name="textBox_epgNoDisplayOldDays" />
+                                        <Label Content="日前まで表示" />
+                                    </WrapPanel>
+                                    <WrapPanel>
                                         <Label Content="グラデーション表示を行う" />
                                         <CheckBox Content="番組" Margin="12,0,0,0" Name="checkBox_gradation" />
                                         <CheckBox Content="サービス・時刻軸" Margin="12,0,0,0" Name="checkBox_gradationHeader" />
-                                    </StackPanel>
-                                    <CheckBox Content="詳細をツールチップ表示する" Margin="0,2,0,0" Name="checkBox_descToolTip" />
-                                    <StackPanel Margin="20,0,0,0" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_descToolTip, UpdateSourceTrigger=PropertyChanged}" >
-                                        <CheckBox Content="番組名を表示しきれない物のみ表示する" Margin="0,6,0,0" Name="checkBox_toolTip_noView_only" />
-                                        <StackPanel Orientation="Horizontal" >
-                                            <Label Content="ツールチップを表示するまでの時間(ミリ秒)" />
-                                            <TextBox Width="55" Margin="12,0,0,0" Name="textBox_toolTipWait" />
-                                        </StackPanel>
-                                    </StackPanel>
-                                    <StackPanel Orientation="Horizontal" >
-                                        <CheckBox Content="古い番組データの表示を抑制する" Name="checkBox_epgNoDisplayOld" ToolTip="通常はチェック不要です。" />
-                                        <TextBox Width="55" Margin="12,0,0,0" Name="textBox_epgNoDisplayOldDays" />
-                                        <Label Content="日前まで表示" Margin="12,0,0,0" />
-                                    </StackPanel>
+                                    </WrapPanel>
                                 </StackPanel>
                             </Grid>
                         </GroupBox>
@@ -322,20 +335,25 @@
                                             <RadioButton Content="マウスオーバー" Margin="0,6,12,0" Name="radioButton_tuner_popup_onOver" />
                                             <RadioButton Content="クリックしたとき" Margin="0,6,12,0" Name="radioButton_tuner_popup_onClick" />
                                         </WrapPanel>
-                                        <CheckBox Content="ポップアップに優先度と録画モードを表示する" Margin="0,6,0,0" Name="checkBox_tuner_popup_recInfo" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_tuner_popup, UpdateSourceTrigger=PropertyChanged}" />
+                                        <CheckBox Content="ポップアップに優先度と録画モードを表示する" Margin="0,6,0,0" Name="checkBox_tuner_popup_recInfo" />
+                                        <WrapPanel>
+                                            <Label Content="ポップアップの幅　チューナの幅 ×" />
+                                            <TextBox Width="55" Name="textBox_tuner_popup_Width" />
+                                            <Label Content="倍" />
+                                        </WrapPanel>
                                     </StackPanel>
+                                    <CheckBox Content="詳細をツールチップ表示する" Margin="0,6,0,0" Name="checkBox_tunerDescToolTip" />
+                                    <WrapPanel Margin="20,0,0,0" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_tunerDescToolTip, UpdateSourceTrigger=PropertyChanged}" >
+                                        <Label Content="ツールチップを表示するまでの時間(ミリ秒)" />
+                                        <TextBox Width="55" Margin="12,0,0,0" Name="textBox_tunerToolTipWait" />
+                                    </WrapPanel>
+                                </StackPanel>
+                                <StackPanel Margin="327,64,0,0" >
                                     <CheckBox Content="シングルクリックで予約ダイアログを開く" Margin="0,6,0,0" Name="checkBox_tunerSingleOpen" />
                                     <CheckBox Content="サービスのフォント色を優先度で変える('色'タブの設定)" Margin="0,6,0,0" Name="checkBox_tunerColorModeUse" ToolTip="チェックされていない場合はこの画面の設定色が使われます。" Click="checkBox_tunerColorModeUse_Click" />
                                     <CheckBox Content="サービス名と番組名の表示位置をあわせる" Margin="0,6,0,0" Name="checkBox_tuner_title_indent" />
                                     <CheckBox Content="サービス名を改行しない" Margin="0,6,0,0" Name="checkBox_tuner_service_nowrap" />
-                                </StackPanel>
-                                <StackPanel Margin="327,64,0,0" >
                                     <CheckBox Content="無効の予約も表示する" Margin="0,6,0,0" Name="checkBox_tuner_display_offres" />
-                                    <CheckBox Content="詳細をツールチップ表示する" Margin="0,6,0,0" Name="checkBox_tunerDescToolTip" />
-                                    <StackPanel Orientation="Horizontal" Margin="20,0,0,0" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_tunerDescToolTip, UpdateSourceTrigger=PropertyChanged}" >
-                                        <Label Content="ツールチップを表示するまでの時間(ミリ秒)" />
-                                        <TextBox Width="55" Margin="12,0,0,0" Name="textBox_tunerToolTipWait" />
-                                    </StackPanel>
                                 </StackPanel>
                             </Grid>
                         </GroupBox>
