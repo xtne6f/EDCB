@@ -17,6 +17,7 @@ namespace EpgTimer
             StartTimeWeek = 4;
             SearchMode = false;
             SearchKey = new EpgSearchKeyInfo();
+            SearchGenreNoSyncView = false;
             FilterEnded = false;
             ID = -1;
         }
@@ -30,6 +31,7 @@ namespace EpgTimer
         public bool ViewNotContentFlag { get; set; }
         public bool SearchMode { get; set; }
         public EpgSearchKeyInfo SearchKey { get; set; }
+        public bool SearchGenreNoSyncView { get; set; }
         public bool FilterEnded { get; set; }
         public int ID { get; set; }
 
@@ -37,8 +39,11 @@ namespace EpgTimer
         {
             EpgSearchKeyInfo key = SearchKey.Clone();
             key.serviceList = ViewServiceList.Select(id => (long)id).ToList();
-            key.contentList = ViewContentKindList.Select(id => new EpgContentData { content_nibble_level_1 = (byte)(id >> 8), content_nibble_level_2 = (byte)id }).ToList();
-            key.notContetFlag = (byte)(ViewNotContentFlag == true ? 1 : 0);
+            if (SearchGenreNoSyncView == false)
+            {
+                key.contentList = ViewContentKindList.Select(id => new EpgContentData { content_nibble_level_1 = (byte)(id >> 8), content_nibble_level_2 = (byte)id }).ToList();
+                key.notContetFlag = (byte)(ViewNotContentFlag == true ? 1 : 0);
+            }
             return key;
         }
 
@@ -55,6 +60,7 @@ namespace EpgTimer
             dest.ViewContentKindList = src.ViewContentKindList.ToList();
             dest.ViewNotContentFlag = src.ViewNotContentFlag;
             dest.SearchMode = src.SearchMode;
+            dest.SearchGenreNoSyncView = src.SearchGenreNoSyncView;
             dest.FilterEnded = src.FilterEnded;
             dest.SearchKey = src.SearchKey.Clone();
             dest.ID = src.ID;

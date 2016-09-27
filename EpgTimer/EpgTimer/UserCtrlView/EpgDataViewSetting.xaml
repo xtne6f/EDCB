@@ -32,12 +32,11 @@
                 </Style>
             </TabItem.Resources>
             <DockPanel Margin="6">
-                <StackPanel DockPanel.Dock="Top" >
-                    <StackPanel Orientation="Horizontal">
-                        <CheckBox Content="検索による絞り込みを行う" Name="checkBox_searchMode" />
-                        <Button Content="検索条件" Margin="20,0,0,0" Click="button_searchKey_Click" />
-                    </StackPanel>
-                </StackPanel>
+                <WrapPanel DockPanel.Dock="Top">
+                    <Button Content="検索条件" Click="button_searchKey_Click" />
+                    <CheckBox Margin="12,0,0,0" Content="検索による絞り込みを行う" Name="checkBox_searchMode" />
+                    <CheckBox Margin="12,0,0,0" Content="ジャンルは「表示ジャンル」と別条件で絞り込む" Name="checkBox_searchServiceFromView" />
+                </WrapPanel>
                 <TabControl Margin="0,6,0,0" HorizontalAlignment="Stretch">
                     <TabItem Header="表示サービス" >
                         <Grid Margin="6">

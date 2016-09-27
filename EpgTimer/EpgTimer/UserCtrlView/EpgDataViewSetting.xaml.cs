@@ -60,6 +60,7 @@ namespace EpgTimer
             checkBox_noTimeView_week.IsChecked = setInfo.NeedTimeOnlyWeek;
             comboBox_timeH_week.SelectedIndex = setInfo.StartTimeWeek;
             checkBox_searchMode.IsChecked = setInfo.SearchMode;
+            checkBox_searchServiceFromView.IsChecked = setInfo.SearchGenreNoSyncView;
             checkBox_filterEnded.IsChecked = (setInfo.FilterEnded == true);
 
             foreach (UInt64 id in setInfo.ViewServiceList)
@@ -97,10 +98,10 @@ namespace EpgTimer
             info.NeedTimeOnlyWeek = (checkBox_noTimeView_week.IsChecked == true);
             info.StartTimeWeek = comboBox_timeH_week.SelectedIndex;
             info.SearchMode = (checkBox_searchMode.IsChecked == true);
+            info.SearchGenreNoSyncView = (checkBox_searchServiceFromView.IsChecked == true);
             info.FilterEnded = (checkBox_filterEnded.IsChecked == true);
             info.SearchKey = searchKey.Clone();
             info.SearchKey.serviceList.Clear();//不要なので削除
-            info.SearchKey.contentList.Clear();//不要なので削除
             info.ID = tabInfoID;
 
             info.ViewServiceList = listBox_serviceView.Items.OfType<ChSet5Item>().Select(item => item.Key).ToList();
@@ -332,17 +333,20 @@ namespace EpgTimer
                 listBox_serviceView.Items.RemoveItems(oldList.Where(sv => newList.Contains(sv) == false));
                 listBox_serviceView.Items.AddItems(newList.Where(sv => oldList.Contains(sv) == false));
 
-                //ジャンルリスト
-                listBox_jyanruView.Items.Clear();
-                foreach (EpgContentData cnt in searchKey.contentList)
+                //ジャンルリストの同期はオプションによる
+                if (tabInfo.SearchGenreNoSyncView == false)
                 {
-                    var ID = (UInt16)(cnt.content_nibble_level_1 << 8 | cnt.content_nibble_level_2);
-                    if (CommonManager.ContentKindDictionary.ContainsKey(ID) == true)
+                    listBox_jyanruView.Items.Clear();
+                    foreach (EpgContentData cnt in searchKey.contentList)
                     {
-                        listBox_jyanruView.Items.Add(CommonManager.ContentKindDictionary[ID]);
+                        var ID = (UInt16)(cnt.content_nibble_level_1 << 8 | cnt.content_nibble_level_2);
+                        if (CommonManager.ContentKindDictionary.ContainsKey(ID) == true)
+                        {
+                            listBox_jyanruView.Items.Add(CommonManager.ContentKindDictionary[ID]);
+                        }
                     }
+                    checkBox_notContent.IsChecked = searchKey.notContetFlag != 0;
                 }
-                checkBox_notContent.IsChecked = searchKey.notContetFlag != 0;
             }
         }
     }
