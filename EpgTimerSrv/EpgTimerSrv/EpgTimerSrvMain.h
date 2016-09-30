@@ -76,7 +76,11 @@ private:
 	static int LuaGetChDataList(lua_State* L);
 	static int LuaGetServiceList(lua_State* L);
 	static int LuaGetEventMinMaxTime(lua_State* L);
+	static int LuaGetEventMinMaxTimeArchive(lua_State* L);
+	static int LuaGetEventMinMaxTimeProc(lua_State* L, bool archive);
 	static int LuaEnumEventInfo(lua_State* L);
+	static int LuaEnumEventInfoArchive(lua_State* L);
+	static int LuaEnumEventInfoProc(lua_State* L, bool archive);
 	static int LuaSearchEpg(lua_State* L);
 	static int LuaAddReserveData(lua_State* L);
 	static int LuaChgReserveData(lua_State* L);

@@ -1,6 +1,6 @@
 --EPG情報をTextに変換(EpgTimerUtil.cppから移植)
-function _ConvertEpgInfoText2(onid, tsid, sid, eid)
-  local s, v = '', edcb.SearchEpg(onid, tsid, sid, eid)
+function _ConvertEpgInfoText2(onidOrEpg, tsid, sid, eid)
+  local s, v = '', (type(onidOrEpg)=='table' and onidOrEpg or edcb.SearchEpg(onidOrEpg, tsid, sid, eid))
   if v then
     s=s..(v.startTime and FormatTimeAndDuration(os.time(v.startTime), v.durationSecond)..(v.durationSecond and '' or '～未定') or '未定')..'\n'
     for i,w in ipairs(edcb.GetServiceList() or {}) do

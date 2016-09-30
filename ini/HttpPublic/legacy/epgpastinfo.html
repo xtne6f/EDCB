@@ -1,0 +1,38 @@
+dofile(mg.script_name:gsub('[^\\/]*$','')..'util.lua')
+
+ct=[=[
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link rel="stylesheet" type="text/css" href="default.css">
+<title>EpgTimer</title>
+</head>
+<body>
+<h1>番組詳細</h1>
+<div id="main">
+  <dl>
+]=]
+
+_onid,_tsid,_sid,_startTime=(mg.get_var(mg.request_info.query_string,'id') or ''):match('^(%d+)%-(%d+)%-(%d+)%-(%d+)$')
+_onid=tonumber(_onid) or 0
+_tsid=tonumber(_tsid) or 0
+_sid=tonumber(_sid) or 0
+_startTime=tonumber(_startTime) or 0
+
+edcb.htmlEscape=15
+et=edcb.EnumEventInfoArchive({{onid=_onid, tsid=_tsid, sid=_sid}}, {startTime=os.date('*t',_startTime), durationSecond=1})
+if et and #et~=0 then
+  ct=ct..'    <dt>番組情報</dt><dd>\n'..string.gsub(_ConvertEpgInfoText2(et[1]), '\r?\n', '<br>\n')..'</dd>\n'
+end
+
+ct=ct..[=[
+  </dl>
+</div>
+<div id="footer">
+  <a href="epg.html">番組表へ</a>
+</div>
+</body>
+</html>
+]=]
+mg.write(Response(200, 'text/html', 'utf-8', #ct)..'\r\n', ct)

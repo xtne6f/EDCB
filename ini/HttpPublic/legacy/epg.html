@@ -53,8 +53,18 @@ for i,v in ipairs(edcb.GetServiceList() or {}) do
       minTime=minTime and os.time(mmt.minTime)>minTime and minTime or os.time(mmt.minTime)
       maxTime=maxTime and os.time(mmt.maxTime)<maxTime and maxTime or os.time(mmt.maxTime)
     end
+    mmt=edcb.GetEventMinMaxTimeArchive and edcb.GetEventMinMaxTimeArchive(v.onid, v.tsid, v.sid)
+    if mmt then
+      minTime=minTime and os.time(mmt.minTime)>minTime and minTime or os.time(mmt.minTime)
+      maxTime=maxTime and os.time(mmt.maxTime)<maxTime and maxTime or os.time(mmt.maxTime)
+    end
     --表示範囲の番組だけ取得する
     st[#st].et=edcb.EnumEventInfo({{onid=v.onid, tsid=v.tsid, sid=v.sid}}, {startTime=os.date('*t',baseTime+date*24*3600), durationSecond=25*3600}) or {}
+    for j,w in ipairs(edcb.EnumEventInfoArchive and
+        edcb.EnumEventInfoArchive({{onid=v.onid, tsid=v.tsid, sid=v.sid}}, {startTime=os.date('*t',baseTime+date*24*3600), durationSecond=25*3600}) or {}) do
+      w.past=true
+      table.insert(st[#st].et, w)
+    end
     table.sort(st[#st].et, function(a,b) return os.time(a.startTime)<os.time(b.startTime) end)
   end
 end
@@ -116,10 +126,12 @@ for i,v in ipairs(st) do
         w.eventGroupInfo.eventDataList[1].tsid~=w.tsid or
         w.eventGroupInfo.eventDataList[1].sid~=w.sid or
         w.eventGroupInfo.eventDataList[1].eid~=w.eid)
-      table.insert(ctt, '<div class="cont-'..cont..'" style="height:'..(endPx-lastPx-2)..'px">'
-        ..(rt[string.format('%04X%04X%04X%04X', w.onid, w.tsid, w.sid, w.eid)] and '<b>予</b> ' or '')
+      table.insert(ctt, '<div class="cont-'..cont..(w.past and ' past' or '')..'" style="height:'..(endPx-lastPx-2)..'px">'
+        ..(not w.past and rt[string.format('%04X%04X%04X%04X', w.onid, w.tsid, w.sid, w.eid)] and '<b>予</b> ' or '')
         ..os.date('%M', startTime)
-        ..(sub and '' or ' <a href=\"epginfo.html?id='..w.onid..'-'..w.tsid..'-'..w.sid..'-'..w.eid..'">'
+        ..(sub and '' or ' <a href=\"'
+          ..(w.past and 'epgpastinfo.html?id='..w.onid..'-'..w.tsid..'-'..w.sid..'-'..os.time(w.startTime)
+            or 'epginfo.html?id='..w.onid..'-'..w.tsid..'-'..w.sid..'-'..w.eid)..'">'
           ..(w.shortInfo and w.shortInfo.event_name or '&nbsp;')..'</a>')
         ..'</div>\n')
       lastPx=endPx

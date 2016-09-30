@@ -167,3 +167,7 @@ th, td {
 .cont-12, .cont-13, .cont-14, .cont-16 {
   background: #fff;
 }
+
+.past {
+  opacity: 0.5;
+}
