@@ -139,6 +139,7 @@ void CReserveManager::ReloadSetting()
 	this->defEndMargin = GetPrivateProfileInt(L"SET", L"EndMargin", 2, iniPath.c_str());
 	this->notFindTuijyuHour = GetPrivateProfileInt(L"SET", L"TuijyuHour", 3, iniPath.c_str());
 	this->backPriority = GetPrivateProfileInt(L"SET", L"BackPriority", 1, iniPath.c_str()) != 0;
+	this->fixedTunerPriority = GetPrivateProfileInt(L"SET", L"FixedTunerPriority", 1, iniPath.c_str()) != 0;
 
 	this->recInfoText.SetKeepCount(
 		GetPrivateProfileInt(L"SET", L"AutoDelRecInfo", 0, iniPath.c_str()) == 0 ? UINT_MAX :
@@ -631,10 +632,11 @@ void CReserveManager::ReloadBankMap(__int64 reloadTime)
 			//バンク未決の予約マップ
 			multimap<__int64, const RESERVE_DATA*> sortResMap;
 			for( itrRes = sortTimeMap.begin(); itrRes != itrTime; itrRes++ ){
-				//キーは実効優先度(予約優先度<<60|開始順)
+				//バンク決定順のキーはチューナ固定優先ビットつき実効優先度(予約優先度<<60|チューナ固定優先ビット<<59|開始順)
 				__int64 startOrder = -itrRes->first / I64_1SEC << 16 | itrRes->second->reserveID & 0xFFFF;
 				__int64 priority = (this->backPriority ? itrRes->second->recSetting.priority : ~itrRes->second->recSetting.priority) & 7;
-				sortResMap.insert(std::make_pair((this->backPriority ? -1 : 1) * (priority << 60 | startOrder), itrRes->second));
+				__int64 fixedBit = (this->fixedTunerPriority && itrRes->second->recSetting.tunerID != 0) ? this->backPriority : !this->backPriority;
+				sortResMap.insert(std::make_pair((this->backPriority ? -1 : 1) * (priority << 60 | fixedBit << 59 | startOrder), itrRes->second));
 			}
 			itrTime = sortTimeMap.erase(sortTimeMap.begin(), itrTime);
 
@@ -648,8 +650,9 @@ void CReserveManager::ReloadBankMap(__int64 reloadTime)
 						CHK_RESERVE_DATA item;
 						CalcEntireReserveTime(&item.cutStartTime, &item.cutEndTime, *itr->second);
 						item.cutStartTime -= CTunerBankCtrl::READY_MARGIN * I64_1SEC;
-						item.startOrder = abs(itr->first) & 0x0FFFFFFFFFFFFFFFLL;
-						item.effectivePriority = itr->first;
+						item.startOrder = abs(itr->first) & 0x07FFFFFFFFFFFFFF;
+						//チューナ固定優先ビットを除去
+						item.effectivePriority = (itr->first < 0 ? -1 : 1) * (abs(itr->first) & 0x77FFFFFFFFFFFFFF);
 						item.started = true;
 						item.r = itr->second;
 						//開始済み予約はすべてバンク内で同一チャンネルなのでChkInsertStatus()は不要
@@ -665,8 +668,9 @@ void CReserveManager::ReloadBankMap(__int64 reloadTime)
 				CHK_RESERVE_DATA item;
 				CalcEntireReserveTime(&item.cutStartTime, &item.cutEndTime, *itr->second);
 				item.cutStartTime -= CTunerBankCtrl::READY_MARGIN * I64_1SEC;
-				item.startOrder = abs(itr->first) & 0x0FFFFFFFFFFFFFFFLL;
-				item.effectivePriority = itr->first;
+				item.startOrder = abs(itr->first) & 0x07FFFFFFFFFFFFFF;
+				//チューナ固定優先ビットを除去
+				item.effectivePriority = (itr->first < 0 ? -1 : 1) * (abs(itr->first) & 0x77FFFFFFFFFFFFFF);
 				item.started = false;
 				item.r = itr->second;
 				if( itr->second->recSetting.tunerID != 0 ){
