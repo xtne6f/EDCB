@@ -1970,34 +1970,9 @@ void CReserveManager::AddTimeMacro(vector<pair<string, wstring>>& macroList, con
 		if( p == "E" ){
 			ConvertSystemTime(ConvertI64Time(t) + durationSecond * I64_1SEC, &t);
 		}
-		SYSTEMTIME t28 = t;
-		WORD wHour28 = t.wHour;
-		if( t28.wHour < 4 ){
-			ConvertSystemTime(ConvertI64Time(t28) - 24 * 3600 * I64_1SEC, &t28);
-			wHour28 += 24;
+		for( int i = 0; GetTimeMacroName(i); i++ ){
+			macroList.push_back(std::make_pair(p + GetTimeMacroName(i) + suffix, GetTimeMacroValue(i, t)));
 		}
-		swprintf_s(v, L"%04d", t.wYear);	macroList.push_back(pair<string, wstring>(p + "DYYYY" + suffix, v));
-		swprintf_s(v, L"%02d", t.wYear % 100);	macroList.push_back(pair<string, wstring>(p + "DYY" + suffix, v));
-		swprintf_s(v, L"%02d", t.wMonth);	macroList.push_back(pair<string, wstring>(p + "DMM" + suffix, v));
-		swprintf_s(v, L"%d", t.wMonth);		macroList.push_back(pair<string, wstring>(p + "DM" + suffix, v));
-		swprintf_s(v, L"%02d", t.wDay);		macroList.push_back(pair<string, wstring>(p + "DDD" + suffix, v));
-		swprintf_s(v, L"%d", t.wDay);		macroList.push_back(pair<string, wstring>(p + "DD" + suffix, v));
-		macroList.push_back(pair<string, wstring>(p + "DW" + suffix, L"")); GetDayOfWeekString2(t, macroList.back().second);
-		swprintf_s(v, L"%02d", t.wHour);	macroList.push_back(pair<string, wstring>(p + "THH" + suffix, v));
-		swprintf_s(v, L"%d", t.wHour);		macroList.push_back(pair<string, wstring>(p + "TH" + suffix, v));
-		swprintf_s(v, L"%02d", t.wMinute);	macroList.push_back(pair<string, wstring>(p + "TMM" + suffix, v));
-		swprintf_s(v, L"%d", t.wMinute);	macroList.push_back(pair<string, wstring>(p + "TM" + suffix, v));
-		swprintf_s(v, L"%02d", t.wSecond);	macroList.push_back(pair<string, wstring>(p + "TSS" + suffix, v));
-		swprintf_s(v, L"%d", t.wSecond);	macroList.push_back(pair<string, wstring>(p + "TS" + suffix, v));
-		swprintf_s(v, L"%04d", t28.wYear);	macroList.push_back(pair<string, wstring>(p + "DYYYY28" + suffix, v));
-		swprintf_s(v, L"%02d", t28.wYear % 100);	macroList.push_back(pair<string, wstring>(p + "DYY28" + suffix, v));
-		swprintf_s(v, L"%02d", t28.wMonth);	macroList.push_back(pair<string, wstring>(p + "DMM28" + suffix, v));
-		swprintf_s(v, L"%d", t28.wMonth);	macroList.push_back(pair<string, wstring>(p + "DM28" + suffix, v));
-		swprintf_s(v, L"%02d", t28.wDay);	macroList.push_back(pair<string, wstring>(p + "DDD28" + suffix, v));
-		swprintf_s(v, L"%d", t28.wDay);		macroList.push_back(pair<string, wstring>(p + "DD28" + suffix, v));
-		macroList.push_back(pair<string, wstring>(p + "DW28" + suffix, L"")); GetDayOfWeekString2(t28, macroList.back().second);
-		swprintf_s(v, L"%02d", wHour28);	macroList.push_back(pair<string, wstring>(p + "THH28" + suffix, v));
-		swprintf_s(v, L"%d", wHour28);		macroList.push_back(pair<string, wstring>(p + "TH28" + suffix, v));
 	}
 	swprintf_s(v, L"%02d", durationSecond / 3600);		macroList.push_back(pair<string, wstring>(string("DUHH") + suffix, v));
 	swprintf_s(v, L"%d", durationSecond / 3600);		macroList.push_back(pair<string, wstring>(string("DUH") + suffix, v));

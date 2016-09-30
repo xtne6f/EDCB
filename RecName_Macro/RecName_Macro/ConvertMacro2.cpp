@@ -61,60 +61,29 @@ static BOOL ExpandMacro(wstring var, PLUGIN_RESERVE_INFO* info, wstring& convert
 		var = var.substr(n + 1, var.size() - 1 - (n + 1));
 	}
 
-	wstring strSDW28;
-	SYSTEMTIME t28TimeS;
-	if( 0 <= info->startTime.wHour && info->startTime.wHour < 4 ){
-		GetSumTime(info->startTime, -24*60*60, &t28TimeS);
-		GetDayOfWeekString2(t28TimeS, strSDW28);
-		t28TimeS.wHour+=24;
-	}else{
-		t28TimeS = info->startTime;
-		GetDayOfWeekString2(t28TimeS, strSDW28);
-	}
-
-	SYSTEMTIME tEnd;
-	GetSumTime(info->startTime, info->durationSec, &tEnd);
-
-	wstring strEDW28;
-	SYSTEMTIME t28TimeE;
-	if( 0 <= tEnd.wHour && tEnd.wHour < 4 ){
-		GetSumTime(tEnd, -24*60*60, &t28TimeE);
-		GetDayOfWeekString2(t28TimeE, strEDW28);
-		t28TimeE.wHour+=24;
-	}else{
-		t28TimeE = tEnd;
-		GetDayOfWeekString2(t28TimeE, strEDW28);
+	wstring ret;
+	BOOL found = FALSE;
+	if( var.compare(0, 1, L"S") == 0 || var.compare(0, 1, L"E") == 0 ){
+		for( int i = 0; GetTimeMacroName(i); i++ ){
+			wstring name;
+			AtoW(GetTimeMacroName(i), name);
+			if( var.compare(1, wstring::npos, name) == 0 ){
+				if( var[0] == L'S' ){
+					ret = GetTimeMacroValue(i, info->startTime);
+				}else{
+					SYSTEMTIME tEnd;
+					ConvertSystemTime(ConvertI64Time(info->startTime) + info->durationSec * I64_1SEC, &tEnd);
+					ret = GetTimeMacroValue(i, tEnd);
+				}
+				found = TRUE;
+				break;
+			}
+		}
 	}
 
 	EPG_EVENT_INFO* epgInfo = info->epgInfo;
-	wstring ret;
-	if( var == L"Title" )	ret = info->eventName;
-	else if( var == L"SDYYYY" )	Format(ret, L"%04d", info->startTime.wYear);
-	else if( var == L"SDYY" )	Format(ret, L"%02d", info->startTime.wYear%100);
-	else if( var == L"SDMM" )	Format(ret, L"%02d", info->startTime.wMonth);
-	else if( var == L"SDM" )	Format(ret, L"%d", info->startTime.wMonth);
-	else if( var == L"SDDD" )	Format(ret, L"%02d", info->startTime.wDay);
-	else if( var == L"SDD" )	Format(ret, L"%d", info->startTime.wDay);
-	else if( var == L"SDW" )	GetDayOfWeekString2(info->startTime, ret);
-	else if( var == L"STHH" )	Format(ret, L"%02d", info->startTime.wHour);
-	else if( var == L"STH" )	Format(ret, L"%d", info->startTime.wHour);
-	else if( var == L"STMM" )	Format(ret, L"%02d", info->startTime.wMinute);
-	else if( var == L"STM" )	Format(ret, L"%d", info->startTime.wMinute);
-	else if( var == L"STSS" )	Format(ret, L"%02d", info->startTime.wSecond);
-	else if( var == L"STS" )	Format(ret, L"%d", info->startTime.wSecond);
-	else if( var == L"EDYYYY" )	Format(ret, L"%04d", tEnd.wYear);
-	else if( var == L"EDYY" )	Format(ret, L"%02d", tEnd.wYear%100);
-	else if( var == L"EDMM" )	Format(ret, L"%02d", tEnd.wMonth);
-	else if( var == L"EDM" )	Format(ret, L"%d", tEnd.wMonth);
-	else if( var == L"EDDD" )	Format(ret, L"%02d", tEnd.wDay);
-	else if( var == L"EDD" )	Format(ret, L"%d", tEnd.wDay);
-	else if( var == L"EDW" )	GetDayOfWeekString2(tEnd, ret);
-	else if( var == L"ETHH" )	Format(ret, L"%02d", tEnd.wHour);
-	else if( var == L"ETH" )	Format(ret, L"%d", tEnd.wHour);
-	else if( var == L"ETMM" )	Format(ret, L"%02d", tEnd.wMinute);
-	else if( var == L"ETM" )	Format(ret, L"%d", tEnd.wMinute);
-	else if( var == L"ETSS" )	Format(ret, L"%02d", tEnd.wSecond);
-	else if( var == L"ETS" )	Format(ret, L"%d", tEnd.wSecond);
+	if( found )	{}
+	else if( var == L"Title" )	ret = info->eventName;
 	else if( var == L"ONID10" )	Format(ret, L"%d", info->ONID);
 	else if( var == L"TSID10" )	Format(ret, L"%d", info->TSID);
 	else if( var == L"SID10" )	Format(ret, L"%d", info->SID);
@@ -124,24 +93,6 @@ static BOOL ExpandMacro(wstring var, PLUGIN_RESERVE_INFO* info, wstring& convert
 	else if( var == L"SID16" )	Format(ret, L"%04X", info->SID);
 	else if( var == L"EID16" )	Format(ret, L"%04X", info->EventID);
 	else if( var == L"ServiceName" )	ret = info->serviceName;
-	else if( var == L"SDYYYY28" )	Format(ret, L"%04d", t28TimeS.wYear);
-	else if( var == L"SDYY28" )	Format(ret, L"%02d", t28TimeS.wYear%100);
-	else if( var == L"SDMM28" )	Format(ret, L"%02d", t28TimeS.wMonth);
-	else if( var == L"SDM28" )	Format(ret, L"%d", t28TimeS.wMonth);
-	else if( var == L"SDDD28" )	Format(ret, L"%02d", t28TimeS.wDay);
-	else if( var == L"SDD28" )	Format(ret, L"%d", t28TimeS.wDay);
-	else if( var == L"SDW28" )	ret = strSDW28;
-	else if( var == L"STHH28" )	Format(ret, L"%02d", t28TimeS.wHour);
-	else if( var == L"STH28" )	Format(ret, L"%d", t28TimeS.wHour);
-	else if( var == L"EDYYYY28" )	Format(ret, L"%04d", t28TimeE.wYear);
-	else if( var == L"EDYY28" )	Format(ret, L"%02d", t28TimeE.wYear%100);
-	else if( var == L"EDMM28" )	Format(ret, L"%02d", t28TimeE.wMonth);
-	else if( var == L"EDM28" )	Format(ret, L"%d", t28TimeE.wMonth);
-	else if( var == L"EDDD28" )	Format(ret, L"%02d", t28TimeE.wDay);
-	else if( var == L"EDD28" )	Format(ret, L"%d", t28TimeE.wDay);
-	else if( var == L"EDW28" )	ret = strEDW28;
-	else if( var == L"ETHH28" )	Format(ret, L"%02d", t28TimeE.wHour);
-	else if( var == L"ETH28" )	Format(ret, L"%d", t28TimeE.wHour);
 	else if( var == L"DUHH" )	Format(ret, L"%02d", info->durationSec/(60*60));
 	else if( var == L"DUH" )	Format(ret, L"%d", info->durationSec/(60*60));
 	else if( var == L"DUMM" )	Format(ret, L"%02d", (info->durationSec%(60*60))/60);
