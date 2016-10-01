@@ -8,7 +8,6 @@ using System.Windows.Media.Animation;
 using System.Windows.Media.Effects;
 using System.Windows.Threading;
 using System.Threading; //紅
-using System.Runtime.InteropServices; //紅
 
 namespace EpgTimer
 {
@@ -1354,39 +1353,13 @@ namespace EpgTimer
             return infoText + endText;
         }
 
-        internal struct LASTINPUTINFO
-        {
-            public uint cbSize;
-            public uint dwTime;
-        }
-
-        [DllImport("User32.dll")]
-        private static extern bool GetLastInputInfo(ref LASTINPUTINFO plii);
-
-        [DllImport("Kernel32.dll")]
-        public static extern UInt32 GetTickCount();
-
         private void ShowSleepDialog(UInt16 param)
         {
-            LASTINPUTINFO info = new LASTINPUTINFO();
-            info.cbSize = (uint)System.Runtime.InteropServices.Marshal.SizeOf(info);
-            GetLastInputInfo(ref info);
-
-            // 現在時刻取得
-            UInt64 dwNow = GetTickCount();
-
-            // GetTickCount()は49.7日周期でリセットされるので桁上りさせる
-            if (info.dwTime > dwNow)
-            {
-                dwNow += 0x100000000;
-            }
-
             if (IniFileHandler.GetPrivateProfileInt("NO_SUSPEND", "NoUsePC", 0, SettingPath.TimerSrvIniPath) == 1)
             {
-                UInt32 ngUsePCTime = (UInt32)IniFileHandler.GetPrivateProfileInt("NO_SUSPEND", "NoUsePCTime", 3, SettingPath.TimerSrvIniPath);
-                UInt32 threshold = ngUsePCTime * 60 * 1000;
+                int ngUsePCTime = IniFileHandler.GetPrivateProfileInt("NO_SUSPEND", "NoUsePCTime", 3, SettingPath.TimerSrvIniPath);
 
-                if (ngUsePCTime == 0 || dwNow - info.dwTime < threshold)
+                if (ngUsePCTime == 0 || CommonUtil.GetIdleTimeSec() < ngUsePCTime * 60)
                 {
                     return;
                 }

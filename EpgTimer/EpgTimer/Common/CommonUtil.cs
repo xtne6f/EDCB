@@ -13,6 +13,9 @@ namespace EpgTimer
         [DllImport("user32.dll")]
         static extern bool GetLastInputInfo(ref LASTINPUTINFO plii);
 
+        [DllImport("kernel32.dll")]
+        static extern uint GetTickCount();
+
         // Struct we'll need to pass to the function
         internal struct LASTINPUTINFO
         {
@@ -31,12 +34,8 @@ namespace EpgTimer
         
         public static int GetIdleTimeSec()
         {
-            // Get the system uptime
-            int systemUptime = Environment.TickCount;
-            // The tick at which the last input was recorded
-            int LastInputTicks = 0;
             // The number of ticks that passed since last input
-            int IdleTicks = 0;
+            uint IdleTicks = 0;
 
             // Set the struct
             LASTINPUTINFO LastInputInfo = new LASTINPUTINFO();
@@ -46,12 +45,10 @@ namespace EpgTimer
             // If we have a value from the function
             if (GetLastInputInfo(ref LastInputInfo))
             {
-                // Get the number of ticks at the point when the last activity was seen
-                LastInputTicks = (int)LastInputInfo.dwTime;
                 // Number of idle ticks = system uptime ticks - number of ticks at last input
-                IdleTicks = systemUptime - LastInputTicks;
+                IdleTicks = unchecked(GetTickCount() - LastInputInfo.dwTime);
             }
-            return IdleTicks / 1000;
+            return (int)(IdleTicks / 1000);
         }
 
         /// <summary>ÉÅÉìÉoñºÇï‘Ç∑ÅB</summary>
