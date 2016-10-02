@@ -53,6 +53,7 @@
             <TabItem Header="予約情報管理" Name="tabItem2">
                 <WrapPanel Margin="6,6,0,6" Orientation="Vertical">
                     <CheckBox Margin="0,0,12,6" Content="優先度が同じで時間が重なった場合、後の予約を優先する" Name="checkBox_back_priority" />
+                    <CheckBox Margin="0,0,12,6" Content="優先度が同じ場合、チューナー強制指定された予約を先にチューナー割り当てする" Name="checkBox_fixedTunerPriority" />
                     <StackPanel Margin="0,0,12,6" Orientation="Horizontal">
                         <CheckBox Content="HDDの空きが少ない場合、古い録画ファイルを削除する" Name="checkBox_autoDel" />
                         <Button Content="削除設定" Margin="12,0,0,0" Name="button_autoDel" Click="button_autoDel_Click" />
@@ -177,12 +178,21 @@
                     <TextBox Height="24" HorizontalAlignment="Left" Margin="440,78,0,0" Name="textBox_tcpAcl" VerticalAlignment="Top" Width="220" />
                     <Label Content="無通信タイムアウト(秒)" Height="28" HorizontalAlignment="Left" Margin="212,103,0,0" Name="label_tcpResTo" VerticalAlignment="Top" />
                     <TextBox Height="24" HorizontalAlignment="Left" Margin="365,105,0,0" Name="textBox_tcpResTo" VerticalAlignment="Top" Width="62" />
-                    <CheckBox Content="録画結果を自動的に削除する" Height="16" HorizontalAlignment="Left" Margin="6,130,0,0" Name="checkBox_autoDelRecInfo" VerticalAlignment="Top" />
-                    <CheckBox Content="録画ファイルも削除する" Height="16" HorizontalAlignment="Left" Margin="24,148,0,0" Name="checkBox_autoDelRecFile" VerticalAlignment="Top" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_autoDelRecInfo, UpdateSourceTrigger=PropertyChanged}" />
-                    <Label Content="保持件数" Height="28" HorizontalAlignment="Left" Margin="212,130,0,0" Name="label42" VerticalAlignment="Top" />
-                    <TextBox Height="24" HorizontalAlignment="Left" Margin="276,132,0,0" Name="textBox_autoDelRecInfo" VerticalAlignment="Top" Width="62" />
-                    <WrapPanel Orientation="Vertical" Margin="6,166,0,0">
-                        <StackPanel Margin="0,4,12,0" Name="stackPanel_timeSync">
+                    <WrapPanel Orientation="Vertical" Margin="6,135,0,0">
+                        <StackPanel Margin="0,6,12,0" Orientation="Horizontal" Name="stackPanel_autoDelRecInfo" >
+                            <StackPanel>
+                                <CheckBox Content="録画結果を自動的に削除する" Name="checkBox_autoDelRecInfo" />
+                                <CheckBox Margin="18,4,0,0" Content="録画ファイルも削除する" Name="checkBox_autoDelRecFile" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_autoDelRecInfo, UpdateSourceTrigger=PropertyChanged}" />
+                            </StackPanel>
+                            <Label Content="保持件数" />
+                            <TextBox Name="textBox_autoDelRecInfo" Width="62" />
+                        </StackPanel>
+                        <StackPanel Margin="0,6,12,0" Orientation="Horizontal" Name="stackPanel_epgArchivePeriod" >
+                            <Label Content="EPG取得後も番組情報を" />
+                            <ComboBox Name="comboBox_epgArchivePeriod" Width="47" />
+                            <Label Content="日前まで保存する" />
+                        </StackPanel>
+                        <StackPanel Margin="0,6,12,0" Name="stackPanel_timeSync">
                             <CheckBox Content="EPG取得時に放送波時間でPC時計を同期する" Name="checkBox_timeSync" />
                             <Label Margin="0,-4,0,-4" Content="※EpgTimerSrv.exeが管理者権限で起動している必要があります" />
                         </StackPanel>

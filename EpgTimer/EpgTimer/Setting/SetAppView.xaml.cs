@@ -51,6 +51,7 @@ namespace EpgTimer.Setting
 
                 tabControl1.SelectedItem = tabItem2;
                 checkBox_back_priority.IsEnabled = false;
+                checkBox_fixedTunerPriority.IsEnabled = false;
                 checkBox_autoDel.IsEnabled = false;
                 checkBox_recname.IsEnabled = false;
                 comboBox_recname.IsEnabled = false;
@@ -63,10 +64,8 @@ namespace EpgTimer.Setting
                 textBox_tcpAcl.IsEnabled = false;
                 label_tcpResTo.IsEnabled = false;
                 textBox_tcpResTo.IsEnabled = false;
-                checkBox_autoDelRecInfo.IsEnabled = false;
-                checkBox_autoDelRecFile.IsEnabled = false;
-                label42.IsEnabled = false;
-                textBox_autoDelRecInfo.IsEnabled = false;
+                stackPanel_autoDelRecInfo.IsEnabled = false;
+                stackPanel_epgArchivePeriod.IsEnabled = false;
                 stackPanel_timeSync.IsEnabled = false;
                 checkBox_wakeReconnect.IsEnabled = true;
                 stackPanel_WoLWait.IsEnabled = true;
@@ -121,6 +120,7 @@ namespace EpgTimer.Setting
 
                 //2 予約管理情報
                 checkBox_back_priority.IsChecked = IniFileHandler.GetPrivateProfileInt("SET", "BackPriority", 1, SettingPath.TimerSrvIniPath) == 1;
+                checkBox_fixedTunerPriority.IsChecked = IniFileHandler.GetPrivateProfileInt("SET", "FixedTunerPriority", 1, SettingPath.TimerSrvIniPath) == 1;
                 checkBox_autoDel.IsChecked = IniFileHandler.GetPrivateProfileInt("SET", "AutoDel", 0, SettingPath.TimerSrvIniPath) == 1;
                 int count;
                 count = IniFileHandler.GetPrivateProfileInt("DEL_EXT", "Count", 0, SettingPath.TimerSrvIniPath);
@@ -224,7 +224,10 @@ namespace EpgTimer.Setting
                 checkBox_autoDelRecInfo.IsChecked = IniFileHandler.GetPrivateProfileInt("SET", "AutoDelRecInfo", 0, SettingPath.TimerSrvIniPath) == 1;
                 checkBox_autoDelRecFile.IsChecked = IniFileHandler.GetPrivateProfileInt("SET", "RecInfoDelFile", 0, SettingPath.CommonIniPath) == 1;
                 textBox_autoDelRecInfo.Text = IniFileHandler.GetPrivateProfileInt("SET", "AutoDelRecInfoNum", 100, SettingPath.TimerSrvIniPath).ToString();
-                
+
+                comboBox_epgArchivePeriod.ItemsSource = Enumerable.Range(0, 15);
+                comboBox_epgArchivePeriod.SelectedIndex = Math.Min(Math.Max(IniFileHandler.GetPrivateProfileInt("SET", "EpgArchivePeriodHour", 0, SettingPath.TimerSrvIniPath) / 24, 0), 14);
+
                 checkBox_timeSync.IsChecked = IniFileHandler.GetPrivateProfileInt("SET", "TimeSync", 0, SettingPath.TimerSrvIniPath) == 1;
                 checkBox_noBallonTips.IsChecked = Settings.Instance.NoBallonTips;
                 textBox_ForceHideBalloonTipSec.Text = Settings.Instance.ForceHideBalloonTipSec.ToString();
@@ -316,6 +319,7 @@ namespace EpgTimer.Setting
 
                 //2 予約管理情報
                 IniFileHandler.WritePrivateProfileString("SET", "BackPriority", checkBox_back_priority.IsChecked == true ? "1" : "0", SettingPath.TimerSrvIniPath);
+                IniFileHandler.WritePrivateProfileString("SET", "FixedTunerPriority", checkBox_fixedTunerPriority.IsChecked == true ? "1" : "0", SettingPath.TimerSrvIniPath);
                 IniFileHandler.WritePrivateProfileString("SET", "AutoDel", checkBox_autoDel.IsChecked == true ? "1" : "0", SettingPath.TimerSrvIniPath);
                 IniFileHandler.WritePrivateProfileString("DEL_EXT", "Count", extList.Count.ToString(), SettingPath.TimerSrvIniPath);
                 for (int i = 0; i < extList.Count; i++)
@@ -363,6 +367,8 @@ namespace EpgTimer.Setting
                 IniFileHandler.WritePrivateProfileString("SET", "AutoDelRecInfo", checkBox_autoDelRecInfo.IsChecked == true ? "1" : "0", SettingPath.TimerSrvIniPath);
                 IniFileHandler.WritePrivateProfileString("SET", "RecInfoDelFile", checkBox_autoDelRecFile.IsChecked == true ? "1" : null, SettingPath.CommonIniPath);
                 IniFileHandler.WritePrivateProfileString("SET", "AutoDelRecInfoNum", textBox_autoDelRecInfo.Text.ToString(), SettingPath.TimerSrvIniPath);
+
+                IniFileHandler.WritePrivateProfileString("SET", "EpgArchivePeriodHour", (comboBox_epgArchivePeriod.SelectedIndex * 24).ToString(), SettingPath.TimerSrvIniPath);
 
                 IniFileHandler.WritePrivateProfileString("SET", "TimeSync", checkBox_timeSync.IsChecked == true ? "1" : "0", SettingPath.TimerSrvIniPath);
                 Settings.Instance.NoBallonTips = checkBox_noBallonTips.IsChecked == true;
