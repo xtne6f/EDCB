@@ -127,8 +127,8 @@ namespace EpgTimer
         public bool NoMessageDelete2 { get; set; }
         public bool NoMessageAdjustRes { get; set; }
         public bool CancelAutoAddOff { get; set; }
-        public bool AutoAddFazySerach { get; set; }
-        public bool AutoAddSerachToolTip { get; set; }
+        public bool AutoAddFazySearch { get; set; }
+        public bool AutoAddSearchToolTip { get; set; }
         public bool OpenParentFolder { get; set; }
         public bool Keyword_Trim { get; set; }
         public bool CopyTitle_Trim { get; set; }
@@ -148,8 +148,8 @@ namespace EpgTimer
             NoMessageDelete2 = false;
             NoMessageAdjustRes = false;
             CancelAutoAddOff = false;
-            AutoAddFazySerach = false;
-            AutoAddSerachToolTip = false;
+            AutoAddFazySearch = false;
+            AutoAddSearchToolTip = false;
             OpenParentFolder = false;
             Keyword_Trim = true;
             CopyTitle_Trim = false;
@@ -171,8 +171,8 @@ namespace EpgTimer
             dest.NoMessageDelete2 = src.NoMessageDelete2;
             dest.NoMessageAdjustRes = src.NoMessageAdjustRes;
             dest.CancelAutoAddOff = src.CancelAutoAddOff;
-            dest.AutoAddFazySerach = src.AutoAddFazySerach;
-            dest.AutoAddSerachToolTip = src.AutoAddSerachToolTip;
+            dest.AutoAddFazySearch = src.AutoAddFazySearch;
+            dest.AutoAddSearchToolTip = src.AutoAddSearchToolTip;
             dest.OpenParentFolder = src.OpenParentFolder;
             dest.Keyword_Trim = src.Keyword_Trim;
             dest.CopyTitle_Trim = src.CopyTitle_Trim;

@@ -75,8 +75,8 @@
                         <CheckBox Visibility="Hidden"/>
                         <CheckBox Visibility="Hidden"/>
                         <CheckBox Visibility="Hidden"/>
-                        <CheckBox Content="関連候補も表示する" Name="checkBox_AutoAddFazySerach" />
-                        <CheckBox Content="詳細ツールチップを表示する" Name="checkBox_AutoAddSerachToolTip" ToolTip="全体設定画面にある[各画面の設定]-[予約一覧・共通]のツールチップ表示設定とは独立して動作します。"/>
+                        <CheckBox Content="関連候補も表示する" Name="checkBox_AutoAddFazySearch" />
+                        <CheckBox Content="詳細ツールチップを表示する" Name="checkBox_AutoAddSearchToolTip" ToolTip="全体設定画面にある[各画面の設定]-[予約一覧・共通]のツールチップ表示設定とは独立して動作します。"/>
                         <CheckBox Content="記号類を取り除く" Name="checkBox_EpgKeyword_Trim" />
                         <CheckBox Content="(↑再検索でも共通)" IsEnabled="false" Name="checkBox_EpgKeyword_Trim2" IsChecked="{Binding Path=IsChecked, ElementName=checkBox_EpgKeyword_Trim, UpdateSourceTrigger=PropertyChanged}" />
                         <CheckBox Content="自動登録無効を解除する" Name="checkBox_CancelAutoAddOff" />

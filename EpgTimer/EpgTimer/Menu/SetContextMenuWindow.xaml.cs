@@ -155,8 +155,8 @@ namespace EpgTimer
                 checkBox_NoMessageDelete2.IsChecked = info.NoMessageDelete2;
                 checkBox_NoMessageAdjustRes.IsChecked = info.NoMessageAdjustRes;
                 checkBox_CancelAutoAddOff.IsChecked = info.CancelAutoAddOff;
-                checkBox_AutoAddFazySerach.IsChecked = info.AutoAddFazySerach;
-                checkBox_AutoAddSerachToolTip.IsChecked = info.AutoAddSerachToolTip;
+                checkBox_AutoAddFazySearch.IsChecked = info.AutoAddFazySearch;
+                checkBox_AutoAddSearchToolTip.IsChecked = info.AutoAddSearchToolTip;
                 checkBox_EpgKeyword_Trim.IsChecked = info.Keyword_Trim;
                 checkBox_CopyTitle_Trim.IsChecked = info.CopyTitle_Trim;
                 checkBox_CopyContentBasic.IsChecked = info.CopyContentBasic;
@@ -224,8 +224,8 @@ namespace EpgTimer
                 info.NoMessageDelete2 = (checkBox_NoMessageDelete2.IsChecked == true);
                 info.NoMessageAdjustRes = (checkBox_NoMessageAdjustRes.IsChecked == true);
                 info.CancelAutoAddOff = (checkBox_CancelAutoAddOff.IsChecked == true);
-                info.AutoAddFazySerach = (checkBox_AutoAddFazySerach.IsChecked == true);
-                info.AutoAddSerachToolTip = (checkBox_AutoAddSerachToolTip.IsChecked == true);
+                info.AutoAddFazySearch = (checkBox_AutoAddFazySearch.IsChecked == true);
+                info.AutoAddSearchToolTip = (checkBox_AutoAddSearchToolTip.IsChecked == true);
                 info.ManualMenuItems = editMenu.Clone();
                 info.Keyword_Trim = (checkBox_EpgKeyword_Trim.IsChecked == true);
                 info.CopyTitle_Trim = (checkBox_CopyTitle_Trim.IsChecked == true);
