@@ -193,6 +193,7 @@ namespace EpgTimer
             ctmd.Items.Add(new CtxmItemData("録画情報...", EpgCmds.ShowDialog));
             ctmd.Items.Add(new CtxmItemData("削除", EpgCmds.Delete));
             ctmd.Items.Add(new CtxmItemData("プロテクト←→解除", EpgCmds.ProtectChange));
+            ctmd.Items.Add(new CtxmItemData("番組表へジャンプ", EpgCmds.JumpTable));
             ctmd.Items.Add(new CtxmItemData("自動予約登録変更", EpgCmdsEx.ShowAutoAddDialogMenu));
             ctmd.Items.Add(new CtxmItemData("番組名でキーワード予約作成...", EpgCmds.ToAutoadd));
             ctmd.Items.Add(new CtxmItemData("再生", EpgCmds.Play));

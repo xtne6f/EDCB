@@ -46,11 +46,22 @@ namespace EpgTimer
             MenuUtil.CopyContent2Clipboard(dataList[0], CmdExeUtil.IsKeyGesture(e));
             IsCommandExecuted = true;
         }
+        protected override SearchItem mcs_GetSearchItem()
+        {
+            if (dataList.Count == 0) return null;
+
+            EpgEventInfo info = dataList[0].SearchEventInfo();
+            return info == null ? null : new SearchItem(info);
+        }
         protected override void mcs_ctxmLoading_switch(ContextMenu ctxm, MenuItem menu)
         {
             if (menu.Tag == EpgCmds.Delete || menu.Tag == EpgCmds.DeleteAll)
             {
                 menu.IsEnabled = dataList.HasNoProtected();
+            }
+            else if (menu.Tag == EpgCmds.JumpTable)
+            {
+                menu.IsEnabled = mcs_GetSearchItem() != null;
             }
             else if (menu.Tag == EpgCmdsEx.ShowAutoAddDialogMenu)
             {

@@ -1053,6 +1053,34 @@ namespace EpgTimer
             return null;
         }
 
+        public static EpgEventInfo SearchEventInfoLikeThat(IAutoAddTargetData item, Dictionary<ulong, EpgServiceEventInfo> eventDic)
+        {
+            double dist = double.MaxValue, dist1;
+            EpgEventInfo eventPossible = null;
+
+            UInt64 key = item.Create64Key();
+            if (eventDic.ContainsKey(key) == true)
+            {
+                foreach (EpgEventInfo eventChkInfo in eventDic[key].eventList)
+                {
+                    dist1 = Math.Abs((item.PgStartTime - eventChkInfo.start_time).TotalSeconds);
+                    double overlapLength = CulcOverlapLength(item.PgStartTime, item.PgDurationSecond,
+                                                            eventChkInfo.start_time, eventChkInfo.durationSec);
+
+                    //開始時間が最も近いものを選ぶ。同じ差なら時間が前のものを選ぶ
+                    if (overlapLength >= 0 && (dist > dist1 ||
+                        dist == dist1 && (eventPossible == null || item.PgStartTime > eventChkInfo.start_time)))
+                    {
+                        dist = dist1;
+                        eventPossible = eventChkInfo;
+                        if (dist == 0) break;
+                    }
+                }
+            }
+
+            return eventPossible;
+        }
+
         /// <summary>重複してない場合は負数が返る。</summary>
         public static double CulcOverlapLength(DateTime s1, uint d1, DateTime s2, uint d2)
         {

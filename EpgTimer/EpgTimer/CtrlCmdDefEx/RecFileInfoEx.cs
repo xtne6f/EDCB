@@ -70,6 +70,12 @@ namespace EpgTimer
                 .FindAll(data => data.GetReserveList().FirstOrDefault(data2 => data2.Create64Key() == this.Create64Key()) != null);
         }
 
+        public EpgEventInfo SearchEventInfo()
+        {
+            //それらしいものを選んでみる
+            return MenuUtil.SearchEventInfoLikeThat(this, CommonManager.Instance.DB.ServiceAllEventList);
+        }
+
         //AppendData 関係。ID(元データ)に対して一意の情報なので、データ自体はDB側。
         private RecFileInfoAppend Append1 { get { return CommonManager.Instance.DB.GetRecFileAppend(this, false); } }
         private RecFileInfoAppend Append2 { get { return CommonManager.Instance.DB.GetRecFileAppend(this, true); } }

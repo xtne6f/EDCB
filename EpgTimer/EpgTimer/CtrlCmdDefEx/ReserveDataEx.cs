@@ -92,30 +92,7 @@ namespace EpgTimer
 
         public EpgEventInfo SearchEventInfoLikeThat()
         {
-            double dist = double.MaxValue, dist1;
-            EpgEventInfo eventPossible = null;
-
-            UInt64 key = Create64Key();
-            if (CommonManager.Instance.DB.ServiceEventList.ContainsKey(key) == true)
-            {
-                foreach (EpgEventInfo eventChkInfo in CommonManager.Instance.DB.ServiceEventList[key].eventList)
-                {
-                    dist1 = Math.Abs((StartTime - eventChkInfo.start_time).TotalSeconds);
-                    double overlapLength = MenuUtil.CulcOverlapLength(StartTime, DurationSecond,
-                                                            eventChkInfo.start_time, eventChkInfo.durationSec);
-
-                    //開始時間が最も近いものを選ぶ。同じ差なら時間が前のものを選ぶ
-                    if (overlapLength >= 0 && (dist > dist1 ||
-                        dist == dist1 && (eventPossible == null || StartTime > eventChkInfo.start_time)))
-                    {
-                        dist = dist1;
-                        eventPossible = eventChkInfo;
-                        if (dist == 0) break;
-                    }
-                }
-            }
-
-            return eventPossible;
+            return MenuUtil.SearchEventInfoLikeThat(this, CommonManager.Instance.DB.ServiceEventList);
         }
 
         //AppendData 関係。ID(元データ)に対して一意の情報なので、データ自体はDB側。
