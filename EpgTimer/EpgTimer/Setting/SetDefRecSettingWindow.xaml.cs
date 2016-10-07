@@ -25,8 +25,8 @@ namespace EpgTimer.Setting
         public void SetSettingMode(string title = "")
         {
             Title = (title == "") ? "録画設定変更" : title;
-            button_cancel.Visibility = Visibility.Visible;
-            button_ok.Content = "OK";
+            button_ok.Visibility = Visibility.Visible;
+            button_cancel.Content = "キャンセル";
         }
 
         private void button_ok_Click(object sender, RoutedEventArgs e)
