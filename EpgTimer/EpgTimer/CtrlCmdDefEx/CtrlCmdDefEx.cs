@@ -18,10 +18,13 @@ namespace EpgTimer
         DateTime PgStartTime { get; }
         uint PgDurationSecond { get; }
         UInt64 Create64Key();
-        UInt64 Create64PgKey();
     }
     public interface IAutoAddTargetData : IBasicPgInfo
     {
+        UInt64 Create64PgKey();
+        UInt64 CurrentPgUID();
+        bool IsSamePg(IAutoAddTargetData data);
+        bool IsOnAir();
         List<EpgAutoAddData> SearchEpgAutoAddList(bool? IsEnabled = null, bool ByFazy = false);
         List<ManualAutoAddData> SearchManualAutoAddList(bool? IsEnabled = null);
         List<EpgAutoAddData> GetEpgAutoAddList(bool? IsEnabled = null);
@@ -33,8 +36,27 @@ namespace EpgTimer
         public abstract string DataTitle { get; }
         public abstract DateTime PgStartTime { get; }
         public abstract uint PgDurationSecond { get; }
-        public abstract UInt64 Create64Key();
+        public virtual UInt64 Create64Key() { return Create64PgKey() >> 16; }
         public abstract UInt64 Create64PgKey();
+        public virtual UInt64 CurrentPgUID()
+        {
+            UInt64 key = Create64PgKey();
+            //return (UInt64)(PgStartTime.Ticks) & 0xFFFFFFFF00000000 //上位32bitはこれでも分解能的にはOKだが‥(分解能約7分)
+            return ((UInt64)(new TimeSpan(PgStartTime.Ticks).TotalDays)) << 32
+                | ((UInt32)CommonManager.Create16Key(key >> 16)) << 16 | (UInt16)key;
+        }
+        //CurrentPgUID()は同一のEventIDの番組をチェックするが、こちらは放映時刻をチェックする。
+        //プログラム予約が絡んでいる場合、結果が変わってくる。
+        public virtual bool IsSamePg(IAutoAddTargetData data)
+        {
+            if (data == null) return false;
+            return PgStartTime == data.PgStartTime && PgDurationSecond == data.PgDurationSecond && Create64Key() == data.Create64Key();
+        }
+        public bool IsOnAir()
+        {
+            return CtrlCmdDefEx.isOnTime(PgStartTime, (int)PgDurationSecond);
+        }
+
         public virtual List<EpgAutoAddData> SearchEpgAutoAddList(bool? IsEnabled = null, bool ByFazy = false)
         {
             return SearchEpgAutoAddHitList(this, IsEnabled, ByFazy);
@@ -141,6 +163,15 @@ namespace EpgTimer
             dest.WritePlugIn = src.WritePlugIn;
         }
 
+        public static List<EpgServiceEventInfo> CopyTable(this IEnumerable<EpgServiceEventInfo> src) { return CopyObj.Clone(src, CopyTableData); }
+        public static EpgServiceEventInfo CopyTable(this EpgServiceEventInfo src) { return CopyObj.Clone(src, CopyTableData); }
+        public static void CopyTableTo(this EpgServiceEventInfo src, EpgServiceEventInfo dest) { CopyObj.CopyTo(src, dest, CopyTableData); }
+        private static void CopyTableData(EpgServiceEventInfo src, EpgServiceEventInfo dest)
+        {
+            dest.serviceInfo = src.serviceInfo;
+            dest.eventList = src.eventList.ToList();
+        }
+
         public static bool EqualsTo(this IList<RecFileSetInfo> src, IList<RecFileSetInfo> dest) { return CopyObj.EqualsTo(src, dest, EqualsValue); }
         public static bool EqualsTo(this RecFileSetInfo src, RecFileSetInfo dest) { return CopyObj.EqualsTo(src, dest, EqualsValue); }
         public static bool EqualsValue(RecFileSetInfo src, RecFileSetInfo dest)
@@ -149,39 +180,6 @@ namespace EpgTimer
                 && src.RecFolder == dest.RecFolder
                 && src.RecNamePlugIn == dest.RecNamePlugIn
                 && src.WritePlugIn == dest.WritePlugIn;
-        }
-
-        private static bool EqualsPg(ushort eID1, DateTime start1, uint duration1, ulong key1,
-                                     ushort eID2, DateTime start2, uint duration2, ulong key2, bool IdMode, bool TimeMode)
-        {
-            return (IdMode == false || eID1 == eID2) &&
-                   (TimeMode == false || start1 == start2 && duration1 == duration2) &&
-                    key1 == key2;
-        }
-        public static bool EqualsPg(this ReserveData i1, ReserveData i2, bool IdMode = true, bool TimeMode = false)
-        {
-            if (i1 == null && i2 == null) return true;
-            if (i1 == null || i2 == null) return false;
-            return EqualsPg(i1.EventID, i1.StartTime, i1.DurationSecond, i1.Create64Key(),
-                            i2.EventID, i2.StartTime, i2.DurationSecond, i2.Create64Key(), IdMode, TimeMode);
-        }
-        public static bool EqualsPg(this EpgEventInfo i1, EpgEventInfo i2, bool IdMode = true, bool TimeMode = false)
-        {
-            if (i1 == null && i2 == null) return true;
-            if (i1 == null || i2 == null) return false;
-            return EqualsPg(i1.event_id, i1.start_time, i1.durationSec, i1.Create64Key(),
-                            i2.event_id, i2.start_time, i2.durationSec, i2.Create64Key(), IdMode, TimeMode);
-        }
-        public static bool EqualsPg(this EpgEventInfo i1, ReserveData i2, bool IdMode = true, bool TimeMode = false)
-        {
-            if (i1 == null && i2 == null) return true;
-            if (i1 == null || i2 == null) return false;
-            return EqualsPg(i1.event_id, i1.start_time, i1.durationSec, i1.Create64Key(),
-                            i2.EventID, i2.StartTime, i2.DurationSecond, i2.Create64Key(), IdMode, TimeMode);
-        }
-        public static bool EqualsPg(this ReserveData i1, EpgEventInfo i2, bool IdMode = true, bool TimeMode = false)
-        {
-            return EqualsPg(i2, i1, IdMode, TimeMode);
         }
 
         public static ReserveData ConvertEpgToReserveData(EpgEventInfo epgInfo)

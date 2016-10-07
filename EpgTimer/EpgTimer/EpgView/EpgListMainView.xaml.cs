@@ -201,36 +201,29 @@ namespace EpgTimer
             }
         }
 
+        //過去番組表でイベントIDが重複している場合があるので開始時間も考慮する
         protected override void MoveToReserveItem(ReserveData target, bool IsMarking)
         {
-            uint ID = target.ReserveID;
-            SearchItem target_item = lstCtrl.dataList.Find(item => item.ReserveInfo != null && item.ReserveInfo.ReserveID == ID);
-            if (target_item != null)
+            if (target.IsEpgReserve == true)
             {
-                ViewUtil.ScrollToFindItem(target_item, listView_event, IsMarking);
+                MoveToItem(target, IsMarking);
             }
             else
             {
-                //プログラム予約だと見つからないので、それらしい番組を引っ張ってきて再度確認する。
-                //でもリスト番組表で探すより、プログラム予約でも表示させられる標準モードへ投げてしまった方が良いのかも？
-                EpgEventInfo target_like = target.SearchEventInfoLikeThat();
-                if (target_like != null)
-                {
-                    MoveToProgramItem(target_like, IsMarking);
-                }
-                else
-                {
-                    //それでもダメなら諦める。EPG範囲外の予約などは標準モードでもまともには表示されていないので。
-                    listView_event.SelectedIndex = listView_event.Items.Count - 1;
-                    listView_event.ScrollIntoView(listView_event.SelectedItem);
-                }
-                return;
+                //プログラム予約だと見つからないので、それらしい番組へジャンプする。
+                MoveToItem(target.SearchEventInfoLikeThat(), IsMarking);
             }
         }
-
         protected override void MoveToProgramItem(EpgEventInfo target, bool IsMarking)
         {
-            ViewUtil.JumpToListItem(new SearchItem(target), listView_event, IsMarking);
+            MoveToItem(target, IsMarking);
+        }
+        protected void MoveToItem(IAutoAddTargetData target, bool IsMarking)
+        {
+            if (target == null) return;
+            UInt64 key = target.CurrentPgUID();
+            SearchItem jump_item = lstCtrl.dataList.Find(data => data.EventInfo.CurrentPgUID() == key);
+            ViewUtil.ScrollToFindItem(jump_item, listView_event, IsMarking);
         }
 
         protected override void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)

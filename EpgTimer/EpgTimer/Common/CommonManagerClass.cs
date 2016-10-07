@@ -421,6 +421,18 @@ namespace EpgTimer
 
         public bool IsConnected { get { return NWMode == false || NW.IsConnected == true; } }
 
+        //ChKeyを16ビットに圧縮し、EpgTimerの起動中保持し続ける。
+        private static Dictionary<UInt64, UInt16> chKey64to16Dic = new Dictionary<UInt64, UInt16>();
+        public static UInt16 Create16Key(UInt64 key64)
+        {
+            UInt16 Key16;
+            if (chKey64to16Dic.TryGetValue(key64, out Key16) == false)
+            {
+                Key16 = (UInt16)chKey64to16Dic.Count;
+                chKey64to16Dic.Add(key64, Key16);
+            }
+            return Key16;
+        }
         public static UInt64 Create64Key(UInt16 ONID, UInt16 TSID, UInt16 SID)
         {
             return ((UInt64)ONID) << 32 | ((UInt64)TSID) << 16 | (UInt64)SID;
@@ -877,10 +889,7 @@ namespace EpgTimer
                 }
             }
 
-            retText += idStr("OriginalNetworkID", eventInfo.original_network_id) + "\r\n";
-            retText += idStr("TransportStreamID", eventInfo.transport_stream_id) + "\r\n";
-            retText += idStr("ServiceID", eventInfo.service_id) + "\r\n";
-            retText += idStr("EventID", eventInfo.event_id) + "\r\n";
+            retText += Convert64PGKeyString(eventInfo.Create64PgKey()) + "\r\n";
 
             return retText;
         }

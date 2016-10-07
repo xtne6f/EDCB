@@ -10,10 +10,6 @@ namespace EpgTimer
         public override string DataTitle { get { return Title; } }
         public override DateTime PgStartTime { get { return StartTime; } }
         public override uint PgDurationSecond { get { return DurationSecond; } }
-        public override UInt64 Create64Key()
-        {
-            return CommonManager.Create64Key(OriginalNetworkID, TransportStreamID, ServiceID);
-        }
         public override UInt64 Create64PgKey()
         {
             return CommonManager.Create64PgKey(OriginalNetworkID, TransportStreamID, ServiceID, EventID);

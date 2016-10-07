@@ -22,7 +22,7 @@ namespace EpgTimer
             base.Reset();
         }
 
-        public override ulong KeyID { get { return EventInfo == null ? 0 : EventInfo.Create64PgKey(); } }
+        public override ulong KeyID { get { return EventInfo == null ? 0 : EventInfo.CurrentPgUID(); } }
         public bool IsReserved { get { return (ReserveInfo != null); } }
         public override RecSettingData RecSettingInfo { get { return ReserveInfo != null ? ReserveInfo.RecSetting : null; } }
         public override bool IsManual { get { return ReserveInfo != null ? ReserveInfo.IsManual : false; } }
@@ -300,7 +300,7 @@ namespace EpgTimer
 
         public static void SetReserveData(this ICollection<SearchItem> list)
         {
-            var listKeys = new Dictionary<ulong, SearchItem>();
+            var listKeys = new Dictionary<UInt64, SearchItem>();
 
             foreach (SearchItem listItem1 in list)
             {
@@ -308,7 +308,7 @@ namespace EpgTimer
                 try
                 {
                     listItem1.Reset();
-                    listKeys.Add(listItem1.EventInfo.Create64PgKey(), listItem1);
+                    listKeys.Add(listItem1.EventInfo.CurrentPgUID(), listItem1);
                     listItem1.ReserveInfo = null;
                 }
                 catch { }
@@ -317,7 +317,7 @@ namespace EpgTimer
             SearchItem setItem;
             foreach (ReserveData data in CommonManager.Instance.DB.ReserveList.Values)
             {
-                if (listKeys.TryGetValue(data.Create64PgKey(), out setItem))
+                if (listKeys.TryGetValue(data.CurrentPgUID(), out setItem))
                 {
                     setItem.ReserveInfo = data;
                 }

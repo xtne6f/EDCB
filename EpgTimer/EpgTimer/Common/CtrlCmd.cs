@@ -317,6 +317,10 @@ namespace EpgTimer
         CMD_EPG_SRV_SEARCH_PG_BYKEY2 = 2127,
         /// <summary>番組情報一覧取得</summary>
         CMD_EPG_SRV_ENUM_PG_ALL = 1026,
+        /// <summary>サービス指定で過去番組情報一覧を取得する</summary>
+        CMD_EPG_SRV_ENUM_PG_ARC_INFO = 1028,
+        /// <summary>過去番組情報一覧取得</summary>
+        CMD_EPG_SRV_ENUM_PG_ARC_ALL = 1029,
         /// <summary>自動予約登録の条件一覧取得</summary>
         CMD_EPG_SRV_ENUM_AUTO_ADD = 1031,
         /// <summary>自動予約登録の条件追加</summary>
@@ -524,12 +528,16 @@ namespace EpgTimer
         public ErrCode SendEnumService(ref List<EpgServiceInfo> val) { object o = val; return ReceiveCmdData(CtrlCmd.CMD_EPG_SRV_ENUM_SERVICE, ref o); }
         /// <summary>サービス指定で番組情報を一覧を取得する</summary>
         public ErrCode SendEnumPgInfo(ulong service, ref List<EpgEventInfo> val) { object o = val; return SendAndReceiveCmdData(CtrlCmd.CMD_EPG_SRV_ENUM_PG_INFO, service, ref o); }
+        /// <summary>サービス指定で過去番組情報一覧を取得する</summary>
+        public ErrCode SendEnumPgArcInfo(ulong service, ref List<EpgEventInfo> val) { object o = val; return SendAndReceiveCmdData(CtrlCmd.CMD_EPG_SRV_ENUM_PG_ARC_INFO, service, ref o); }
         /// <summary>指定イベントの番組情報を取得する</summary>
         public ErrCode SendGetPgInfo(ulong pgID, ref EpgEventInfo val) { object o = val; return SendAndReceiveCmdData(CtrlCmd.CMD_EPG_SRV_GET_PG_INFO, pgID, ref o); }
         /// <summary>指定キーワードで番組情報を検索する</summary>
         public ErrCode SendSearchPg(List<EpgSearchKeyInfo> key, ref List<EpgEventInfo> val) { object o = val; return SendAndReceiveCmdData(CtrlCmd.CMD_EPG_SRV_SEARCH_PG, key, ref o); }
         /// <summary>番組情報一覧を取得する</summary>
         public ErrCode SendEnumPgAll(ref List<EpgServiceEventInfo> val) { object o = val;  return ReceiveCmdData(CtrlCmd.CMD_EPG_SRV_ENUM_PG_ALL, ref o); }
+        /// <summary>過去番組情報一覧取得</summary>
+        public ErrCode SendEnumPgArcAll(ref List<EpgServiceEventInfo> val) { object o = val; return ReceiveCmdData(CtrlCmd.CMD_EPG_SRV_ENUM_PG_ARC_ALL, ref o); }
         /// <summary>自動予約登録条件を削除する</summary>
         public ErrCode SendDelEpgAutoAdd(List<uint> val) { return SendCmdData(CtrlCmd.CMD_EPG_SRV_DEL_AUTO_ADD, val); }
         /// <summary>プログラム予約自動登録の条件削除</summary>

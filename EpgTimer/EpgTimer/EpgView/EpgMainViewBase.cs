@@ -162,8 +162,8 @@ namespace EpgTimer.EpgView
 
         protected override void MoveToProgramItem(EpgEventInfo target, bool IsMarking)
         {
-            ulong PgKey = target.Create64PgKey();
-            ProgramViewItem target_item = this.programList.Find(item => item.EventInfo.Create64PgKey() == PgKey);
+            UInt64 key = target.CurrentPgUID();
+            ProgramViewItem target_item = this.programList.Find(item => item.EventInfo.CurrentPgUID() == key);
             this.programView.ScrollToFindItem(target_item, IsMarking);
         }
 

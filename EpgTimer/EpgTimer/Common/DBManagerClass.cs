@@ -22,6 +22,7 @@ namespace EpgTimer
         private bool updateEpgAutoAddAppendReserveInfo = true;
 
         Dictionary<UInt64, EpgServiceEventInfo> serviceEventList = new Dictionary<UInt64, EpgServiceEventInfo>();
+        Dictionary<UInt64, EpgServiceEventInfo> serviceAllEventList = new Dictionary<UInt64, EpgServiceEventInfo>();
         Dictionary<UInt32, ReserveData> reserveList = new Dictionary<UInt32, ReserveData>();
         Dictionary<UInt32, ReserveDataAppend> reserveAppendList = null;
         Dictionary<UInt32, TunerReserveInfo> tunerReserveList = new Dictionary<UInt32, TunerReserveInfo>();
@@ -37,6 +38,10 @@ namespace EpgTimer
         public Dictionary<UInt64, EpgServiceEventInfo> ServiceEventList
         {
             get { return serviceEventList; }
+        }
+        public Dictionary<UInt64, EpgServiceEventInfo> ServiceAllEventList
+        {
+            get { return serviceAllEventList; }
         }
         public Dictionary<UInt32, ReserveData> ReserveList
         {
@@ -314,6 +319,7 @@ namespace EpgTimer
         public void ClearAllDB()
         {
             serviceEventList = new Dictionary<ulong, EpgServiceEventInfo>();
+            serviceAllEventList = new Dictionary<ulong, EpgServiceEventInfo>();
             reserveList = new Dictionary<uint, ReserveData>();
             tunerReserveList = new Dictionary<uint, TunerReserveInfo>();
             recFileInfo = new Dictionary<uint, RecFileInfo>();
@@ -397,21 +403,55 @@ namespace EpgTimer
                     if (cmd == null) return ErrCode.CMD_ERR;
 
                     serviceEventList = new Dictionary<ulong, EpgServiceEventInfo>();
-                    var list = new List<EpgServiceEventInfo>();
+                    serviceAllEventList = serviceEventList;
 
-                    ret = (ErrCode)cmd.SendEnumPgAll(ref list);
+                    var list = new List<EpgServiceEventInfo>();
+                    ret = cmd.SendEnumPgAll(ref list);
                     if (ret != ErrCode.CMD_SUCCESS) return ret;
 
                     list.ForEach(info => serviceEventList.Add(info.serviceInfo.Create64Key(), info));
+
+                    //過去番組含んだリスト
+                    //一部検索などでも使用している
+                    if (Settings.Instance.EpgLoadArcInfo == true)
+                    {
+                        var list2 = new List<EpgServiceEventInfo>();
+                        ret = cmd.SendEnumPgArcAll(ref list2);
+                        if (ret != ErrCode.CMD_SUCCESS) return ret;
+
+                        //基本情報のEPGデータだけ未更新だったりするときがあるようなので一応重複確認する
+                        //重複排除は開始時刻のみチェックなので、幾つかに分割されている場合などは不十分になる
+                        //過去番組はアーカイブを優先する(優先しないなら、Concatの前後を入れ替える)
+                        serviceAllEventList = new Dictionary<ulong, EpgServiceEventInfo>();
+                        foreach (var info in list2.Concat(list))
+                        {
+                            ulong key = info.serviceInfo.Create64Key();
+                            if (serviceAllEventList.ContainsKey(key) == false)
+                            {
+                                serviceAllEventList.Add(key, info.CopyTable());
+                            }
+                            else
+                            {
+                                var timeDic = new Dictionary<DateTime, EpgEventInfo>(); ;
+                                serviceAllEventList[key].eventList.ForEach(data =>
+                                {
+                                    if (data.StartTimeFlag != 0 && timeDic.ContainsKey(data.start_time) == false)
+                                    {
+                                        timeDic.Add(data.start_time, data);
+                                    }
+                                });
+
+                                var addList = info.eventList.Where(data => data.StartTimeFlag == 0 || timeDic.ContainsKey(data.start_time) == false);
+                                serviceAllEventList[key].eventList.AddRange(addList);
+                            }
+                        }
+                    }
 
                     updateEpgData = false;
                     oneTimeReloadEpg = false;
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
             return ret;
         }
 

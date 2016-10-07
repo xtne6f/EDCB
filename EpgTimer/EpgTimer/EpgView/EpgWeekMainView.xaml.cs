@@ -134,8 +134,8 @@ namespace EpgTimer
                         if (info.IsEpgReserve == true && info.DurationSecond != 0)
                         {
                             //予約情報から番組情報を特定し、枠表示位置を再設定する
-                            UInt64 key = info.Create64PgKey();
-                            pgInfo = timeList[chkStartTime].Find(info1 => key == info1.EventInfo.Create64PgKey());
+                            UInt64 key = info.CurrentPgUID();
+                            pgInfo = timeList[chkStartTime].Find(info1 => key == info1.EventInfo.CurrentPgUID());
                         }
 
                         if (pgInfo != null)

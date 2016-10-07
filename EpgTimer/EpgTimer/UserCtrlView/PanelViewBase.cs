@@ -439,7 +439,7 @@ namespace EpgTimer.UserCtrlView
             }
         }
 
-        public virtual void ScrollToFindItem<T>(ViewPanelItem<T> target_item, bool IsMarking)
+        public virtual void ScrollToFindItem(ViewPanelItemBase target_item, bool IsMarking)
         {
             try
             {

@@ -954,6 +954,12 @@ namespace EpgTimer
                     cmd.SendNotifyProfileUpdate();
                 }
 
+                if (setting.setEpgView.IsChangeEpgArcLoadSetting == true)
+                {
+                    CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.EpgData);
+                    CommonManager.Instance.DB.ReloadEpgData();
+                }
+
                 reserveView.UpdateInfo();
                 tunerReserveView.UpdateInfo();
                 recInfoView.UpdateInfo();

@@ -122,10 +122,11 @@
                                     <CheckBox Content="番組詳細タブを選択した状態で予約ダイアログを開く" Margin="0,6,0,0" Name="checkBox_openInfo" />
                                     <CheckBox Content="番組名と番組内容の表示位置をあわせる" Margin="0,6,0,0" Name="checkBox_title_indent" />
                                     <CheckBox Content="番組表の切り替え時にも強調表示をする" Margin="0,6,0,0" Name="checkBox_displayNotifyChange" />
+                                    <CheckBox Content="過去の番組データを読み込む" Margin="0,6,0,0" Name="checkBox_epgLoadArcInfo" ToolTip="検索による絞り込みを使用している場合は読込まれません。&#10;また、番組データの不整合のため表示が乱れる場合があります。" />
                                     <WrapPanel>
-                                        <CheckBox Content="古い番組データの表示を抑制する" Name="checkBox_epgNoDisplayOld" ToolTip="通常はチェック不要です。" />
-                                        <TextBox Width="55" Margin="12,0,0,0" Name="textBox_epgNoDisplayOldDays" />
-                                        <Label Content="日前まで表示" />
+                                        <CheckBox Content="過去の番組データは " Name="checkBox_epgNoDisplayOld" />
+                                        <TextBox Width="55" Name="textBox_epgNoDisplayOldDays" />
+                                        <Label Content="日前まで表示する" />
                                     </WrapPanel>
                                     <WrapPanel>
                                         <Label Content="グラデーション表示を行う" />

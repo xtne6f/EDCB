@@ -55,7 +55,7 @@ namespace EpgTimer
                 eventListEx = new List<EpgEventInfo>();
                 eventList.ForEach(epg => 
                 {
-                    if (dataList.All(res => CtrlCmdDefEx.EqualsPg(epg, res) == false))
+                    if (dataList.All(res => epg.CurrentPgUID() != res.CurrentPgUID()))
                     {
                         eventListEx.Add(epg);
                     }

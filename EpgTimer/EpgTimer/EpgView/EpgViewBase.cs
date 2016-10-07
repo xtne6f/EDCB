@@ -140,7 +140,7 @@ namespace EpgTimer.EpgView
                 {
                     ErrCode err = CommonManager.Instance.DB.ReloadEpgData();
                     if (CommonManager.CmdErrMsgTypical(err, "EPGデータの取得") == false) return false;
-                    serviceEventList = new Dictionary<UInt64, EpgServiceEventInfo>(CommonManager.Instance.DB.ServiceEventList);
+                    serviceEventList = new Dictionary<UInt64, EpgServiceEventInfo>(CommonManager.Instance.DB.ServiceAllEventList);
                 }
                 else
                 {

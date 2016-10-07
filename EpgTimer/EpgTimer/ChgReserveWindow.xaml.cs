@@ -129,10 +129,10 @@ namespace EpgTimer
                     GetReserveTimeInfo(ref resInfo);
 
                     //描画回数の削減を気にしないなら、この条件文は無くてもいい
-                    if (CtrlCmdDefEx.EqualsPg(resInfoDisplay, resInfo, false, true) == false)
+                    if (resInfo.IsSamePg(resInfoDisplay) == false)
                     {
                         //EPGを自動で読み込んでない時でも、元がEPG予約ならその番組情報は表示させられるようにする
-                        if (reserveInfo.IsEpgReserve == true && CtrlCmdDefEx.EqualsPg(reserveInfo, resInfo, false, true) == true)
+                        if (reserveInfo.IsEpgReserve == true && reserveInfo.IsSamePg(resInfo) == true)
                         {
                             SetProgramContent(reserveInfo.SearchEventInfo(true));
                         }
@@ -161,7 +161,7 @@ namespace EpgTimer
         private void SetProgramContent(EpgEventInfo info)
         {
             //放映時刻情報に対してEPGデータ無い場合もあるので、resInfoDisplayとは別にeventInfoDisplayを管理する
-            if (CtrlCmdDefEx.EqualsPg(eventInfoDisplay, info) == false)
+            if (eventInfoDisplay == null || info == null || eventInfoDisplay.CurrentPgUID() != info.CurrentPgUID())
             {
                 richTextBox_descInfo.Document = CommonManager.ConvertDisplayText(info);
             }
@@ -338,7 +338,7 @@ namespace EpgTimer
                     }
 
                     //reserveInfo取得前に保存する。サービスや時間が変わったら、個別予約扱いにする。タイトルのみ変更は見ない。
-                    bool chgManualMode = !CtrlCmdDefEx.EqualsPg(resInfo, reserveInfo, false, true);
+                    bool chgManualMode = !reserveInfo.IsSamePg(resInfo);
 
                     GetReserveTimeInfo(ref reserveInfo);
                     if (reserveInfo.EventID != 0xFFFF || chgManualMode == true)
@@ -427,7 +427,7 @@ namespace EpgTimer
                 var resInfo = new ReserveData();
                 GetReserveTimeInfo(ref resInfo);
 
-                if (reserveInfo.IsEpgReserve == true && CtrlCmdDefEx.EqualsPg(reserveInfo, resInfo, false, true) == true)
+                if (reserveInfo.IsEpgReserve == true && reserveInfo.IsSamePg(resInfo) == true)
                 {
                     //EPG予約で、元の状態に戻る場合
                     textBox_title.Text = reserveInfo.Title;

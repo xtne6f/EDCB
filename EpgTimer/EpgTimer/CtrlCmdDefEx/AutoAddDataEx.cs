@@ -80,7 +80,7 @@ namespace EpgTimer
         public override bool CheckPgHit(IAutoAddTargetData data)
         {
             if (data == null) return false;
-            return this.GetSearchList().Any(info => info.EventInfo.Create64PgKey() == data.Create64PgKey());
+            return this.GetSearchList().Any(info => info.EventInfo.CurrentPgUID() == data.CurrentPgUID());
         }
 
         public override object CloneObj() { return EpgAutoAddDataEx.Clone(this); }
@@ -118,10 +118,6 @@ namespace EpgTimer
         public UInt64 Create64Key()
         {
             return CommonManager.Create64Key(originalNetworkID, transportStreamID, serviceID);
-        }
-        public UInt64 Create64PgKey()
-        {
-            return CommonManager.Create64PgKey(originalNetworkID, transportStreamID, serviceID, 0xFFFF);
         }
 
         public override uint DataID { get { return dataID; } set { dataID = value; } }

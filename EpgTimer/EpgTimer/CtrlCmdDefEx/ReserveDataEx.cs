@@ -11,10 +11,6 @@ namespace EpgTimer
         public override string DataTitle { get { return Title; } }
         public override DateTime PgStartTime { get { return StartTime; } }
         public override uint PgDurationSecond { get { return DurationSecond; } }
-        public override UInt64 Create64Key()
-        {
-            return CommonManager.Create64Key(OriginalNetworkID, TransportStreamID, ServiceID);
-        }
         public override UInt64 Create64PgKey()
         {
             return CommonManager.Create64PgKey(OriginalNetworkID, TransportStreamID, ServiceID, EventID);
@@ -53,11 +49,6 @@ namespace EpgTimer
             return CtrlCmdDefEx.isOnTime(startTime, duration);
         }
 
-        public bool IsOnAir()
-        {
-            return CtrlCmdDefEx.isOnTime(StartTime, (int)DurationSecond);
-        }
-
         public DateTime StartTimeWithMargin(int MarginMin = 0)
         {
             int StartMargin = RecSetting.StartMarginActual + 60 * MarginMin;
@@ -72,7 +63,6 @@ namespace EpgTimer
         public EpgEventInfo SearchEventInfo(bool getSrv = false)
         {
             EpgEventInfo eventInfo = null;
-
             try
             {
                 if (IsEpgReserve == true)
@@ -91,17 +81,12 @@ namespace EpgTimer
                     }
                     if (eventInfo == null && getSrv == true)
                     {
-                        UInt64 pgId = Create64PgKey();
                         eventInfo = new EpgEventInfo();
-                        CommonManager.Instance.CtrlCmd.SendGetPgInfo(pgId, ref eventInfo);
+                        CommonManager.Instance.CtrlCmd.SendGetPgInfo(Create64PgKey(), ref eventInfo);
                     }
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
             return eventInfo;
         }
 
