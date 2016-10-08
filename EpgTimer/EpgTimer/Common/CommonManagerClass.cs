@@ -399,9 +399,9 @@ namespace EpgTimer
                 { 0x05E3, "H.264|MPEG-4 AVC、1080p(1125p)、アスペクト比16:9 パンベクトルなし" },
                 { 0x05E4, "H.264|MPEG-4 AVC、1080p(1125p)、アスペクト比 > 16:9" }
             };
-                RecModeList = new List<string> { "サービス", "指定サービス", "全サービス(デコード処理なし)", "指定サービス(デコード処理なし)", "視聴", "無効" };
-                YesNoList = new List<string> { "しない", "する" };
-                PriorityList = new List<string> { "1 (低)", "2", "3", "4", "5 (高)" };
+            RecModeList = new List<string> { "全サービス", "指定サービス", "全サービス(デコード処理なし)", "指定サービス(デコード処理なし)", "視聴", "無効" };
+            YesNoList = new List<string> { "しない", "する" };
+            PriorityList = new List<string> { "1 (低)", "2", "3", "4", "5 (高)" };
         }
 
         public static IEnumerable<ContentKindInfo> ContentKindList
