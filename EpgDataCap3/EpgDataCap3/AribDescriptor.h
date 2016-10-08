@@ -1,7 +1,12 @@
 #pragma once
 
-#include <vector>
-#include <utility>
+#ifndef NOEXCEPT
+#if defined(_MSC_VER) && _MSC_VER >= 1900
+#define NOEXCEPT noexcept
+#else
+#define NOEXCEPT
+#endif
+#endif
 
 namespace AribDescriptor
 {
@@ -310,7 +315,7 @@ namespace AribDescriptor
 			CLoopPointer() : pl(NULL) {}
 		private:
 			friend CDescriptor;
-			std::vector<std::vector<DESCRIPTOR_PROPERTY>>* pl;
+			vector<vector<DESCRIPTOR_PROPERTY>>* pl;
 			DWORD index;
 		};
 		void Clear();
@@ -331,7 +336,7 @@ namespace AribDescriptor
 			short type;
 			union {
 				DWORD n;
-				std::vector<std::vector<DESCRIPTOR_PROPERTY>>* pl;
+				vector<vector<DESCRIPTOR_PROPERTY>>* pl;
 				char s[sizeof(char*)];
 				char* ps;
 				BYTE b[sizeof(BYTE*)];
@@ -347,8 +352,8 @@ namespace AribDescriptor
 			DESCRIPTOR_PROPERTY() : type(TYPE_N) {}
 			~DESCRIPTOR_PROPERTY();
 			DESCRIPTOR_PROPERTY(const DESCRIPTOR_PROPERTY& o);
-			DESCRIPTOR_PROPERTY& operator=(DESCRIPTOR_PROPERTY&& o);
-			DESCRIPTOR_PROPERTY(DESCRIPTOR_PROPERTY&& o) : type(TYPE_N) { *this = std::move(o); }
+			DESCRIPTOR_PROPERTY& operator=(DESCRIPTOR_PROPERTY&& o) NOEXCEPT;
+			DESCRIPTOR_PROPERTY(DESCRIPTOR_PROPERTY&& o) NOEXCEPT : type(TYPE_N) { *this = std::move(o); }
 			DESCRIPTOR_PROPERTY& operator=(const DESCRIPTOR_PROPERTY& o) { return *this = DESCRIPTOR_PROPERTY(o); }
 		};
 		struct LOCAL_PROPERTY {
@@ -356,13 +361,13 @@ namespace AribDescriptor
 			short type;
 			DWORD n;
 		};
-		static int DecodeProperty(const BYTE* data, DWORD dataSize, const short** parser, std::vector<DESCRIPTOR_PROPERTY>* pp, LOCAL_PROPERTY* ppLocal);
+		static int DecodeProperty(const BYTE* data, DWORD dataSize, const short** parser, vector<DESCRIPTOR_PROPERTY>* pp, LOCAL_PROPERTY* ppLocal);
 		static DWORD GetOperand(short id, const LOCAL_PROPERTY* ppLocal);
 		static DWORD DecodeNumber(const BYTE* data, DWORD bitSize, DWORD* readSize, DWORD* bitOffset);
 		const DESCRIPTOR_PROPERTY* FindProperty(short id, CLoopPointer lp) const;
 
-		std::vector<DESCRIPTOR_PROPERTY> rootProperty;
+		vector<DESCRIPTOR_PROPERTY> rootProperty;
 	};
 
-	BOOL CreateDescriptors(const BYTE* data, DWORD dataSize, std::vector<CDescriptor>* descriptorList, DWORD* decodeReadSize, const PARSER_PAIR* customParserList = NULL);
+	BOOL CreateDescriptors(const BYTE* data, DWORD dataSize, vector<CDescriptor>* descriptorList, DWORD* decodeReadSize, const PARSER_PAIR* customParserList = NULL);
 }

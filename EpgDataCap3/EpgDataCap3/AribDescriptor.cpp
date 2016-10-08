@@ -959,7 +959,7 @@ bool CDescriptor::Decode(const BYTE* data, DWORD dataSize, DWORD* decodeReadSize
 	if( readSize < 0 ){
 		if( readSize == -3 ){
 			//この条件が満たされるときはパーサにミスがある
-			OutputDebugString(L"CDescriptor::DecodeProperty: Parser syntax error\n");
+			OutputDebugString(L"CDescriptor::DecodeProperty: Parser syntax error\r\n");
 		}
 		Clear();
 		return false;
@@ -970,7 +970,7 @@ bool CDescriptor::Decode(const BYTE* data, DWORD dataSize, DWORD* decodeReadSize
 	return true;
 }
 
-int CDescriptor::DecodeProperty(const BYTE* data, DWORD dataSize, const short** parser, std::vector<DESCRIPTOR_PROPERTY>* pp, LOCAL_PROPERTY* ppLocal)
+int CDescriptor::DecodeProperty(const BYTE* data, DWORD dataSize, const short** parser, vector<DESCRIPTOR_PROPERTY>* pp, LOCAL_PROPERTY* ppLocal)
 {
 	DWORD readSize = 0;
 	DWORD bitOffset = 0;
@@ -1042,7 +1042,7 @@ int CDescriptor::DecodeProperty(const BYTE* data, DWORD dataSize, const short** 
 				DESCRIPTOR_PROPERTY& dp = pp->back();
 				dp.id = 0;
 				dp.type = DESCRIPTOR_PROPERTY::TYPE_P;
-				dp.pl = new std::vector<std::vector<DESCRIPTOR_PROPERTY>>;
+				dp.pl = new vector<vector<DESCRIPTOR_PROPERTY>>;
 
 				int loopNum = -1;
 				if( **parser == D_BEGIN_FOR ){
@@ -1206,7 +1206,7 @@ DWORD CDescriptor::GetOperand(short id, const LOCAL_PROPERTY* ppLocal)
 		}
 	}
 	//この条件が満たされるときはパーサにミスがある
-	OutputDebugString(L"CDescriptor::GetOperand: Parser syntax error\n");
+	OutputDebugString(L"CDescriptor::GetOperand: Parser syntax error\r\n");
 	return 0;
 }
 
@@ -1236,9 +1236,9 @@ DWORD CDescriptor::DecodeNumber(const BYTE* data, DWORD bitSize, DWORD* readSize
 
 bool CDescriptor::EnterLoop(CLoopPointer& lp, DWORD offset) const
 {
-	const std::vector<DESCRIPTOR_PROPERTY>* current = lp.pl != NULL ? &(*lp.pl)[lp.index] : &this->rootProperty;
+	const vector<DESCRIPTOR_PROPERTY>* current = lp.pl != NULL ? &(*lp.pl)[lp.index] : &this->rootProperty;
 
-	std::vector<DESCRIPTOR_PROPERTY>::const_iterator itr;
+	vector<DESCRIPTOR_PROPERTY>::const_iterator itr;
 	for( itr = current->begin(); itr != current->end(); ++itr ){
 		if( itr->type == DESCRIPTOR_PROPERTY::TYPE_P && offset-- == 0 ){
 			//空のループには入らない
@@ -1264,9 +1264,9 @@ bool CDescriptor::SetLoopIndex(CLoopPointer& lp, DWORD index) const
 
 const CDescriptor::DESCRIPTOR_PROPERTY* CDescriptor::FindProperty(short id, CLoopPointer lp) const
 {
-	const std::vector<DESCRIPTOR_PROPERTY>* current = lp.pl != NULL ? &(*lp.pl)[lp.index] : &this->rootProperty;
+	const vector<DESCRIPTOR_PROPERTY>* current = lp.pl != NULL ? &(*lp.pl)[lp.index] : &this->rootProperty;
 
-	std::vector<DESCRIPTOR_PROPERTY>::const_iterator itr;
+	vector<DESCRIPTOR_PROPERTY>::const_iterator itr;
 	for( itr = current->begin(); itr != current->end(); ++itr ){
 		if( itr->id == id ){
 			return &*itr;
@@ -1348,7 +1348,7 @@ CDescriptor::DESCRIPTOR_PROPERTY::DESCRIPTOR_PROPERTY(const DESCRIPTOR_PROPERTY&
 	if( type == TYPE_N ){
 		n = o.n;
 	}else if( type == TYPE_P ){
-		pl = new std::vector<std::vector<DESCRIPTOR_PROPERTY>>(*o.pl);
+		pl = new vector<vector<DESCRIPTOR_PROPERTY>>(*o.pl);
 	}else if( type & TYPE_S ){
 		if( (type & TYPE_MASK) >= sizeof(s) ){
 			ps = new char[(type & TYPE_MASK) + 1];
@@ -1366,7 +1366,7 @@ CDescriptor::DESCRIPTOR_PROPERTY::DESCRIPTOR_PROPERTY(const DESCRIPTOR_PROPERTY&
 	}
 }
 
-CDescriptor::DESCRIPTOR_PROPERTY& CDescriptor::DESCRIPTOR_PROPERTY::operator=(DESCRIPTOR_PROPERTY&& o)
+CDescriptor::DESCRIPTOR_PROPERTY& CDescriptor::DESCRIPTOR_PROPERTY::operator=(DESCRIPTOR_PROPERTY&& o) NOEXCEPT
 {
 	id = o.id;
 	std::swap(type, o.type);
@@ -1390,7 +1390,7 @@ CDescriptor::DESCRIPTOR_PROPERTY& CDescriptor::DESCRIPTOR_PROPERTY::operator=(DE
 	return *this;
 }
 
-BOOL CreateDescriptors(const BYTE* data, DWORD dataSize, std::vector<CDescriptor>* descriptorList, DWORD* decodeReadSize, const PARSER_PAIR* customParserList)
+BOOL CreateDescriptors(const BYTE* data, DWORD dataSize, vector<CDescriptor>* descriptorList, DWORD* decodeReadSize, const PARSER_PAIR* customParserList)
 {
 	if( data == NULL || descriptorList == NULL ){
 		return FALSE;
