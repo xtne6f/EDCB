@@ -1,6 +1,6 @@
 #pragma once
 
-#include "./Table/TableUtil.h"
+#include "AribDescriptor.h"
 #include "../../Common/EpgDataCap3Def.h"
 
 class CEpgDBUtil
@@ -9,11 +9,11 @@ public:
 	CEpgDBUtil(void);
 	~CEpgDBUtil(void);
 
-	BOOL AddEIT(WORD PID, const CEITTable* eit, __int64 streamTime);
+	BOOL AddEIT(WORD PID, const AribDescriptor::CDescriptor& eit, __int64 streamTime);
 
-	BOOL AddServiceList(const CNITTable* nit);
-	BOOL AddServiceList(WORD TSID, const CSITTable* sit);
-	BOOL AddSDT(const CSDTTable* sdt);
+	BOOL AddServiceListNIT(const AribDescriptor::CDescriptor& nit);
+	BOOL AddServiceListSIT(WORD TSID, const AribDescriptor::CDescriptor& sit);
+	BOOL AddSDT(const AribDescriptor::CDescriptor& sdt);
 
 	void SetStreamChangeEvent();
 
@@ -197,14 +197,14 @@ protected:
 protected:
 	void Clear();
 	
-	static void AddBasicInfo(EVENT_INFO* eventInfo, const vector<AribDescriptor::CDescriptor>* descriptorList, WORD onid, WORD tsid);
-	static void AddShortEvent(EVENT_INFO* eventInfo, const AribDescriptor::CDescriptor* shortEvent);
-	static BOOL AddExtEvent(EVENT_INFO* eventInfo, const vector<AribDescriptor::CDescriptor>* descriptorList);
-	static void AddContent(EVENT_INFO* eventInfo, const AribDescriptor::CDescriptor* content);
-	static void AddComponent(EVENT_INFO* eventInfo, const AribDescriptor::CDescriptor* component);
-	static BOOL AddAudioComponent(EVENT_INFO* eventInfo, const vector<AribDescriptor::CDescriptor>* descriptorList);
-	static void AddEventGroup(EVENT_INFO* eventInfo, const AribDescriptor::CDescriptor* eventGroup, WORD onid, WORD tsid);
-	static void AddEventRelay(EVENT_INFO* eventInfo, const AribDescriptor::CDescriptor* eventGroup, WORD onid, WORD tsid);
+	static void AddBasicInfo(EVENT_INFO* eventInfo, const AribDescriptor::CDescriptor& eit, AribDescriptor::CDescriptor::CLoopPointer lpParent, WORD onid, WORD tsid);
+	static void AddShortEvent(EVENT_INFO* eventInfo, const AribDescriptor::CDescriptor& eit, AribDescriptor::CDescriptor::CLoopPointer lp);
+	static BOOL AddExtEvent(EVENT_INFO* eventInfo, const AribDescriptor::CDescriptor& eit, AribDescriptor::CDescriptor::CLoopPointer lpParent);
+	static void AddContent(EVENT_INFO* eventInfo, const AribDescriptor::CDescriptor& eit, AribDescriptor::CDescriptor::CLoopPointer lp);
+	static void AddComponent(EVENT_INFO* eventInfo, const AribDescriptor::CDescriptor& eit, AribDescriptor::CDescriptor::CLoopPointer lp);
+	static BOOL AddAudioComponent(EVENT_INFO* eventInfo, const AribDescriptor::CDescriptor& eit, AribDescriptor::CDescriptor::CLoopPointer lpParent);
+	static void AddEventGroup(EVENT_INFO* eventInfo, const AribDescriptor::CDescriptor& eit, AribDescriptor::CDescriptor::CLoopPointer lp, WORD onid, WORD tsid);
+	static void AddEventRelay(EVENT_INFO* eventInfo, const AribDescriptor::CDescriptor& eit, AribDescriptor::CDescriptor::CLoopPointer lp, WORD onid, WORD tsid);
 
 	static BOOL CheckSectionAll(const vector<SECTION_FLAG_INFO>& sectionList);
 
