@@ -19,12 +19,6 @@
     <Filter Include="ソース ファイル\Common">
       <UniqueIdentifier>{914261b4-993c-40e4-a398-833b23198199}</UniqueIdentifier>
     </Filter>
-    <Filter Include="ソース ファイル\Table">
-      <UniqueIdentifier>{32fe1be9-5cbe-4903-81f5-cba6be6d5c43}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="ヘッダー ファイル\Table">
-      <UniqueIdentifier>{611f2980-978b-461e-a71c-5e6d6c36b833}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="ReadMe.txt" />
@@ -44,45 +38,6 @@
     </ClInclude>
     <ClInclude Include="EpgDataCap3Main.h">
       <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="Table\BATTable.h">
-      <Filter>ヘッダー ファイル\Table</Filter>
-    </ClInclude>
-    <ClInclude Include="Table\BITTable.h">
-      <Filter>ヘッダー ファイル\Table</Filter>
-    </ClInclude>
-    <ClInclude Include="Table\CATTable.h">
-      <Filter>ヘッダー ファイル\Table</Filter>
-    </ClInclude>
-    <ClInclude Include="Table\CDTTable.h">
-      <Filter>ヘッダー ファイル\Table</Filter>
-    </ClInclude>
-    <ClInclude Include="Table\EITTable.h">
-      <Filter>ヘッダー ファイル\Table</Filter>
-    </ClInclude>
-    <ClInclude Include="Table\NITTable.h">
-      <Filter>ヘッダー ファイル\Table</Filter>
-    </ClInclude>
-    <ClInclude Include="Table\PATTable.h">
-      <Filter>ヘッダー ファイル\Table</Filter>
-    </ClInclude>
-    <ClInclude Include="Table\PMTTable.h">
-      <Filter>ヘッダー ファイル\Table</Filter>
-    </ClInclude>
-    <ClInclude Include="Table\SDTTable.h">
-      <Filter>ヘッダー ファイル\Table</Filter>
-    </ClInclude>
-    <ClInclude Include="Table\SDTTTable.h">
-      <Filter>ヘッダー ファイル\Table</Filter>
-    </ClInclude>
-    <ClInclude Include="Table\TableUtil.h">
-      <Filter>ヘッダー ファイル\Table</Filter>
-    </ClInclude>
-    <ClInclude Include="Table\TDTTable.h">
-      <Filter>ヘッダー ファイル\Table</Filter>
-    </ClInclude>
-    <ClInclude Include="Table\TOTTable.h">
-      <Filter>ヘッダー ファイル\Table</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Common\EpgTimerUtil.h">
       <Filter>ヘッダー ファイル\Common</Filter>
@@ -120,18 +75,6 @@
     <ClInclude Include="resource.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Table\SITTable.h">
-      <Filter>ヘッダー ファイル\Table</Filter>
-    </ClInclude>
-    <ClInclude Include="Table\EITTable_SD.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="Table\EITTable_SD2.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="Table\PSITable.h">
-      <Filter>ヘッダー ファイル\Table</Filter>
-    </ClInclude>
     <ClInclude Include="AribDescriptor.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
@@ -148,45 +91,6 @@
     </ClCompile>
     <ClCompile Include="EpgDataCap3Main.cpp">
       <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="Table\BATTable.cpp">
-      <Filter>ソース ファイル\Table</Filter>
-    </ClCompile>
-    <ClCompile Include="Table\BITTable.cpp">
-      <Filter>ソース ファイル\Table</Filter>
-    </ClCompile>
-    <ClCompile Include="Table\CATTable.cpp">
-      <Filter>ソース ファイル\Table</Filter>
-    </ClCompile>
-    <ClCompile Include="Table\CDTTable.cpp">
-      <Filter>ソース ファイル\Table</Filter>
-    </ClCompile>
-    <ClCompile Include="Table\EITTable.cpp">
-      <Filter>ソース ファイル\Table</Filter>
-    </ClCompile>
-    <ClCompile Include="Table\NITTable.cpp">
-      <Filter>ソース ファイル\Table</Filter>
-    </ClCompile>
-    <ClCompile Include="Table\PATTable.cpp">
-      <Filter>ソース ファイル\Table</Filter>
-    </ClCompile>
-    <ClCompile Include="Table\PMTTable.cpp">
-      <Filter>ソース ファイル\Table</Filter>
-    </ClCompile>
-    <ClCompile Include="Table\SDTTable.cpp">
-      <Filter>ソース ファイル\Table</Filter>
-    </ClCompile>
-    <ClCompile Include="Table\SDTTTable.cpp">
-      <Filter>ソース ファイル\Table</Filter>
-    </ClCompile>
-    <ClCompile Include="Table\TableUtil.cpp">
-      <Filter>ソース ファイル\Table</Filter>
-    </ClCompile>
-    <ClCompile Include="Table\TDTTable.cpp">
-      <Filter>ソース ファイル\Table</Filter>
-    </ClCompile>
-    <ClCompile Include="Table\TOTTable.cpp">
-      <Filter>ソース ファイル\Table</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Common\EpgTimerUtil.cpp">
       <Filter>ソース ファイル\Common</Filter>
@@ -214,18 +118,6 @@
     </ClCompile>
     <ClCompile Include="..\..\Common\PathUtil.cpp">
       <Filter>ソース ファイル\Common</Filter>
-    </ClCompile>
-    <ClCompile Include="Table\SITTable.cpp">
-      <Filter>ソース ファイル\Table</Filter>
-    </ClCompile>
-    <ClCompile Include="Table\EITTable_SD.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="Table\EITTable_SD2.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="Table\PSITable.cpp">
-      <Filter>ソース ファイル\Table</Filter>
     </ClCompile>
     <ClCompile Include="AribDescriptor.cpp">
       <Filter>ソース ファイル</Filter>
