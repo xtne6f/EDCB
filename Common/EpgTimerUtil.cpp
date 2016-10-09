@@ -61,7 +61,7 @@ static const unsigned long crctable[256] = {
 	0xAFB010B1, 0xAB710D06, 0xA6322BDF, 0xA2F33668,	0xBCB4666D, 0xB8757BDA, 0xB5365D03, 0xB1F740B4
 };
 
-unsigned long _Crc32(int n, BYTE c[])
+unsigned long _Crc32(int n, const BYTE* c)
 {
 	unsigned long r;
 

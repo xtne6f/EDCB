@@ -1,5 +1,6 @@
 #include "StdAfx.h"
 #include "AribDescriptor.h"
+#include "../../Common/EpgTimerUtil.h"
 
 namespace AribDescriptor
 {
@@ -12,10 +13,12 @@ namespace AribDescriptor
 //D_FIN:                パーサ終端
 //D_END:                D_BEGIN*を閉じる
 //D_BEGIN,{即値|参照}:  D_ENDまで過不足なく{即値|参照}サイズだけ入力を消費する
+//D_BEGIN_SUB,{即値|参照},{即値}: D_ENDまで過不足なく{即値|参照}-{即値}サイズだけ入力を消費する
 //D_BEGIN_IF,{参照},{即値L},{即値R}: {参照}が{即値L}以上{即値R}以下の場合にD_ENDまでの区間を有効にする
 //D_BEGIN_IF_NOT,{参照},{即値L},{即値R}: D_BEGIN_IFの否定
 //D_BEGIN_FOR,{参照}:   プロパティのループを作成して{参照}回だけ繰り返す
 //D_BEGIN_FOR_TO_END:   プロパティのループを作成してできるだけ入力を消費するように繰り返す
+//D_DESCRIPTOR_LOOP:    プロパティのループを作成して記述子ループとしてパースし、できるだけ入力を消費する
 //{参照},{即値|参照}:          入力データを{即値|参照}サイズだけ{参照}にDWORD値として格納
 //{参照},D_LOCAL,{即値|参照}:  DWORD値として格納しパース後に捨てる
 //{参照},D_LOCAL_TO_END:       D_LOCALと同様だが、できるだけ入力を消費する
@@ -24,7 +27,7 @@ namespace AribDescriptor
 //{参照},D_BINARY,{即値|参照}: 入力データを{即値|参照}サイズだけ{参照}にバイト列として格納
 //{参照},D_BINARY_TO_END:      D_BINARYと同様だが、できるだけ入力を消費する
 //
-//※D_BEGIN*,D_STRING*,D_BINARY*はバイト(8bit)境界でのみ使用できる
+//※D_BEGIN*,D_DESCRIPTOR_LOOP,D_STRING*,D_BINARY*はバイト(8bit)境界でのみ使用できる
 
 const short audio_component_descriptor_p[] = {
 	descriptor_tag, 8,
@@ -906,9 +909,291 @@ const PARSER_PAIR parserMap[] = {
 	{ 0xFF,										unknown_descriptor_p },
 };
 
+const short program_association_section_p[] = {
+	table_id, 8,
+	section_syntax_indicator, D_LOCAL, 1,
+	reserved, D_LOCAL, 3,
+	section_length, D_LOCAL, 12,
+	D_BEGIN_IF, section_syntax_indicator, 1, 1,
+		D_BEGIN_SUB, section_length, 32,
+			transport_stream_id, 16,
+			reserved, D_LOCAL, 2,
+			version_number, 5,
+			current_next_indicator, 1,
+			section_number, 8,
+			last_section_number, 8,
+			D_BEGIN_FOR_TO_END,
+				program_number, 16,
+				reserved, D_LOCAL, 3,
+				program_map_PID, 13,
+			D_END,
+		D_END,
+		CRC_32, 32,
+	D_END,
+	D_FIN,
+};
+
+const short network_information_section_p[] = {
+	table_id, 8,
+	section_syntax_indicator, D_LOCAL, 1,
+	reserved, D_LOCAL, 3,
+	section_length, D_LOCAL, 12,
+	D_BEGIN_IF, section_syntax_indicator, 1, 1,
+		D_BEGIN_SUB, section_length, 32,
+			network_id, 16,
+			reserved, D_LOCAL, 2,
+			version_number, 5,
+			current_next_indicator, 1,
+			section_number, 8,
+			last_section_number, 8,
+			reserved, D_LOCAL, 4,
+			network_descriptors_length, D_LOCAL, 12,
+			D_BEGIN, network_descriptors_length,
+				D_DESCRIPTOR_LOOP,
+			D_END,
+			reserved, D_LOCAL, 4,
+			transport_stream_loop_length, D_LOCAL, 12,
+			D_BEGIN, transport_stream_loop_length,
+				D_BEGIN_FOR_TO_END,
+					transport_stream_id, 16,
+					original_network_id, 16,
+					reserved, D_LOCAL, 4,
+					transport_descriptors_length, D_LOCAL, 12,
+					D_BEGIN, transport_descriptors_length,
+						D_DESCRIPTOR_LOOP,
+					D_END,
+				D_END,
+			D_END,
+		D_END,
+		CRC_32, 32,
+	D_END,
+	D_FIN,
+};
+
+const short service_description_section_p[] = {
+	table_id, 8,
+	section_syntax_indicator, D_LOCAL, 1,
+	reserved, D_LOCAL, 3,
+	section_length, D_LOCAL, 12,
+	D_BEGIN_IF, section_syntax_indicator, 1, 1,
+		D_BEGIN_SUB, section_length, 32,
+			transport_stream_id, 16,
+			reserved, D_LOCAL, 2,
+			version_number, 5,
+			current_next_indicator, 1,
+			section_number, 8,
+			last_section_number, 8,
+			original_network_id, 16,
+			reserved, D_LOCAL, 8,
+			D_BEGIN_FOR_TO_END,
+				service_id, 16,
+				reserved, D_LOCAL, 3,
+				EIT_user_defined_flags, 3,
+				EIT_schedule_flag, 1,
+				EIT_present_following_flag, 1,
+				running_status, 3,
+				free_CA_mode, 1,
+				descriptors_loop_length, D_LOCAL, 12,
+				D_BEGIN, descriptors_loop_length,
+					D_DESCRIPTOR_LOOP,
+				D_END,
+			D_END,
+		D_END,
+		CRC_32, 32,
+	D_END,
+	D_FIN,
+};
+
+const short event_information_section_p[] = {
+	table_id, 8,
+	section_syntax_indicator, D_LOCAL, 1,
+	reserved, D_LOCAL, 3,
+	section_length, D_LOCAL, 12,
+	D_BEGIN_IF, section_syntax_indicator, 1, 1,
+		D_BEGIN_SUB, section_length, 32,
+			service_id, 16,
+			reserved, D_LOCAL, 2,
+			version_number, 5,
+			current_next_indicator, 1,
+			section_number, 8,
+			last_section_number, 8,
+			transport_stream_id, 16,
+			original_network_id, 16,
+			segment_last_section_number, 8,
+			last_table_id, 8,
+			D_BEGIN_FOR_TO_END,
+				event_id, 16,
+				start_time_mjd, 16,
+				start_time_bcd, 24,
+				d_duration,  24,
+				running_status, 3,
+				free_CA_mode, 1,
+				descriptors_loop_length, D_LOCAL, 12,
+				D_BEGIN, descriptors_loop_length,
+					D_DESCRIPTOR_LOOP,
+				D_END,
+			D_END,
+		D_END,
+		CRC_32, 32,
+	D_END,
+	D_FIN,
+};
+
+const short time_date_section_p[] = {
+	table_id, 8,
+	section_syntax_indicator, D_LOCAL, 1,
+	reserved, D_LOCAL, 3,
+	section_length, D_LOCAL, 12,
+	D_BEGIN_IF, section_syntax_indicator, 0, 0,
+		D_BEGIN, section_length,
+			jst_time_mjd, 16,
+			jst_time_bcd, 24,
+		D_END,
+	D_END,
+	D_FIN,
+};
+
+const short time_offset_section_p[] = {
+	table_id, 8,
+	section_syntax_indicator, D_LOCAL, 1,
+	reserved, D_LOCAL, 3,
+	section_length, D_LOCAL, 12,
+	D_BEGIN_IF, section_syntax_indicator, 0, 0,
+		D_BEGIN_SUB, section_length, 32,
+			jst_time_mjd, 16,
+			jst_time_bcd, 24,
+			reserved, D_LOCAL, 4,
+			descriptors_loop_length, D_LOCAL, 12,
+			D_BEGIN, descriptors_loop_length,
+				D_DESCRIPTOR_LOOP,
+			D_END,
+		D_END,
+		CRC_32, 32,
+	D_END,
+	D_FIN,
+};
+
+const short selection_information_section_p[] = {
+	table_id, 8,
+	section_syntax_indicator, D_LOCAL, 1,
+	reserved, D_LOCAL, 3,
+	section_length, D_LOCAL, 12,
+	D_BEGIN_IF, section_syntax_indicator, 1, 1,
+		D_BEGIN_SUB, section_length, 32,
+			reserved, D_LOCAL, 16,
+			reserved, D_LOCAL, 2,
+			version_number, 5,
+			current_next_indicator, 1,
+			section_number, 8,
+			last_section_number, 8,
+			reserved, D_LOCAL, 4,
+			transmission_info_loop_length, D_LOCAL, 12,
+			D_BEGIN, transmission_info_loop_length,
+				D_DESCRIPTOR_LOOP,
+			D_END,
+			D_BEGIN_FOR_TO_END,
+				service_id, 16,
+				reserved, D_LOCAL, 1,
+				running_status, 3,
+				service_loop_length, 12, D_LOCAL, 12,
+				D_BEGIN, service_loop_length,
+					D_DESCRIPTOR_LOOP,
+				D_END,
+			D_END,
+		D_END,
+		CRC_32, 32,
+	D_END,
+	D_FIN,
+};
+
+const short broadcaster_information_section_p[] = {
+	table_id, 8,
+	section_syntax_indicator, D_LOCAL, 1,
+	reserved, D_LOCAL, 3,
+	section_length, D_LOCAL, 12,
+	D_BEGIN_IF, section_syntax_indicator, 1, 1,
+		D_BEGIN_SUB, section_length, 32,
+			original_network_id, 16,
+			reserved, D_LOCAL, 2,
+			version_number, 5,
+			current_next_indicator, 1,
+			section_number, 8,
+			last_section_number, 8,
+			reserved, D_LOCAL, 3,
+			broadcast_view_propriety, 1,
+			first_descriptors_length, D_LOCAL, 12,
+			D_BEGIN, first_descriptors_length,
+				D_DESCRIPTOR_LOOP,
+			D_END,
+			D_BEGIN_FOR_TO_END,
+				broadcaster_id, 8,
+				reserved, D_LOCAL, 4,
+				broadcaster_descriptors_length, D_LOCAL, 12,
+				D_BEGIN, broadcaster_descriptors_length,
+					D_DESCRIPTOR_LOOP,
+				D_END,
+			D_END,
+		D_END,
+		CRC_32, 32,
+	D_END,
+	D_FIN,
+};
+
+const short* const sectionParserList[] = {
+	program_association_section_p,
+	network_information_section_p,
+	service_description_section_p,
+	event_information_section_p,
+	time_date_section_p,
+	time_offset_section_p,
+	selection_information_section_p,
+	broadcaster_information_section_p,
+};
+
 void CDescriptor::Clear()
 {
 	this->rootProperty.clear();
+}
+
+bool CDescriptor::DecodeSI(const BYTE* data, DWORD dataSize, DWORD* decodeReadSize, si_type type, const PARSER_PAIR* customParserList)
+{
+	Clear();
+
+	if( data == NULL ){
+		return false;
+	}
+
+	//SI型に対応するパーサを選ぶ
+	const short* parser = sectionParserList[type];
+
+	//ローカル参照用スタック
+	LOCAL_PROPERTY localProperty[128];
+	localProperty->id = D_FIN;
+	localProperty->type = _countof(localProperty);
+	localProperty->n = 1;
+
+	int readSize = DecodeProperty(data, dataSize, &parser, &this->rootProperty, localProperty, customParserList);
+	if( readSize < 0 || this->rootProperty.size() < 2 ){
+		if( readSize == -3 ){
+			//この条件が満たされるときはパーサにミスがある
+			OutputDebugString(L"CDescriptor::DecodeProperty: Parser syntax error\r\n");
+		}else if( readSize == -4 ){
+			//記述子ループに異常がある
+			OutputDebugString(L"CDescriptor::DecodeProperty: Invalid descriptor loop error\r\n");
+		}
+		//入力をパースできない
+		Clear();
+		return false;
+	}
+	if( Has(CRC_32) && _Crc32(readSize, data) != 0 ){
+		OutputDebugString(L"CDescriptor::DecodeSI: CRC32 error\r\n");
+		Clear();
+		return false;
+	}
+	if( decodeReadSize != NULL ){
+		*decodeReadSize = readSize;
+	}
+	return true;
 }
 
 DWORD CDescriptor::GetDecodeReadSize(const BYTE* data, DWORD dataSize)
@@ -955,7 +1240,7 @@ bool CDescriptor::Decode(const BYTE* data, DWORD dataSize, DWORD* decodeReadSize
 	localProperty->type = _countof(localProperty);
 	localProperty->n = 1;
 
-	int readSize = DecodeProperty(data, dataSize, &parser, &this->rootProperty, localProperty);
+	int readSize = DecodeProperty(data, dataSize, &parser, &this->rootProperty, localProperty, customParserList);
 	if( readSize < 0 ){
 		if( readSize == -3 ){
 			//この条件が満たされるときはパーサにミスがある
@@ -970,7 +1255,7 @@ bool CDescriptor::Decode(const BYTE* data, DWORD dataSize, DWORD* decodeReadSize
 	return true;
 }
 
-int CDescriptor::DecodeProperty(const BYTE* data, DWORD dataSize, const short** parser, vector<DESCRIPTOR_PROPERTY>* pp, LOCAL_PROPERTY* ppLocal)
+int CDescriptor::DecodeProperty(const BYTE* data, DWORD dataSize, const short** parser, vector<DESCRIPTOR_PROPERTY>* pp, LOCAL_PROPERTY* ppLocal, const PARSER_PAIR* customParserList)
 {
 	DWORD readSize = 0;
 	DWORD bitOffset = 0;
@@ -979,6 +1264,7 @@ int CDescriptor::DecodeProperty(const BYTE* data, DWORD dataSize, const short** 
 	while( **parser != D_FIN && **parser != D_END ){
 		switch( **parser ){
 		case D_BEGIN:
+		case D_BEGIN_SUB:
 			{
 				if( bitOffset != 0 ){
 					return -3;
@@ -986,10 +1272,18 @@ int CDescriptor::DecodeProperty(const BYTE* data, DWORD dataSize, const short** 
 				++*parser;
 				DWORD subSize = GetOperand(**parser, ppLocal) / 8;
 				++*parser;
+				if( *(*parser - 2) == D_BEGIN_SUB ){
+					if( subSize < (DWORD)**parser / 8 ){
+						//消費サイズが負になる。このエラーは回復できない
+						return -2;
+					}
+					subSize -= **parser / 8;
+					++*parser;
+				}
 				if( readSize + subSize > dataSize ){
 					return -1;
 				}
-				int subReadSize = DecodeProperty(data + readSize, subSize, parser, pp, ppLocal);
+				int subReadSize = DecodeProperty(data + readSize, subSize, parser, pp, ppLocal, customParserList);
 				if( subReadSize < 0 ){
 					return subReadSize;
 				}
@@ -1015,7 +1309,7 @@ int CDescriptor::DecodeProperty(const BYTE* data, DWORD dataSize, const short** 
 				DWORD exprR = **parser;
 				++*parser;
 				if( bNot && !(exprL <= val && val <= exprR) || !bNot && (exprL <= val && val <= exprR) ){
-					int subReadSize = DecodeProperty(data + readSize, dataSize - readSize, parser, pp, ppLocal);
+					int subReadSize = DecodeProperty(data + readSize, dataSize - readSize, parser, pp, ppLocal, customParserList);
 					if( subReadSize < 0 ){
 						return subReadSize;
 					}
@@ -1055,7 +1349,7 @@ int CDescriptor::DecodeProperty(const BYTE* data, DWORD dataSize, const short** 
 					dp.pl->resize(dp.pl->size() + 1);
 					const short* parserRollback = *parser;
 					DWORD localRollback = ppLocal->n;
-					int subReadSize = DecodeProperty(data + readSize, dataSize - readSize, parser, &dp.pl->back(), ppLocal);
+					int subReadSize = DecodeProperty(data + readSize, dataSize - readSize, parser, &dp.pl->back(), ppLocal, customParserList);
 					ppLocal->n = localRollback;
 					*parser = parserRollback;
 
@@ -1079,6 +1373,38 @@ int CDescriptor::DecodeProperty(const BYTE* data, DWORD dataSize, const short** 
 					}else if( **parser == D_END ){
 						--n;
 					}
+				}
+			}
+			break;
+		case D_DESCRIPTOR_LOOP:
+			{
+				if( bitOffset != 0 ){
+					return -3;
+				}
+				pp->resize(pp->size() + 1);
+				DESCRIPTOR_PROPERTY& dp = pp->back();
+				dp.id = 0;
+				dp.type = DESCRIPTOR_PROPERTY::TYPE_P;
+				dp.pl = new vector<vector<DESCRIPTOR_PROPERTY>>;
+				DWORD reserveCount = 0;
+				for( DWORD n, m = readSize; (n = CDescriptor::GetDecodeReadSize(data + m, dataSize - m)) != 0; m += n, ++reserveCount );
+				dp.pl->reserve(reserveCount);
+				++*parser;
+
+				CDescriptor desc;
+				while( readSize < dataSize ){
+					DWORD subReadSize;
+					if( !desc.Decode(data + readSize, dataSize - readSize, &subReadSize, customParserList) ){
+						//記述子が異常。このエラーは回復できない
+						return -4;
+					}
+					dp.pl->resize(dp.pl->size() + 1);
+					dp.pl->back().swap(desc.rootProperty);
+					readSize += subReadSize;
+				}
+				if( readSize < dataSize ){
+					//データ長が矛盾する。このエラーは回復できない
+					return -2;
 				}
 			}
 			break;

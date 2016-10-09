@@ -9,7 +9,7 @@ LONGLONG _Create64Key( WORD OriginalNetworkID, WORD TransportStreamID, WORD Serv
 //EventID‚ðunsigned __int64‚Æ‚µ‚ÄƒL[‚É‚·‚é
 ULONGLONG _Create64Key2( WORD OriginalNetworkID, WORD TransportStreamID, WORD ServiceID, WORD EventID );
 //CRC32‚ð‚à‚Æ‚ß‚é
-unsigned long _Crc32(int n,  BYTE c[]);
+unsigned long _Crc32(int n,  const BYTE* c);
 //BCD->DWORD•ÏŠ·
 DWORD _BCDtoDWORD(BYTE* data, BYTE size, BYTE digit);
 //MJD->YYYY/MM/DD•ÏŠ·
