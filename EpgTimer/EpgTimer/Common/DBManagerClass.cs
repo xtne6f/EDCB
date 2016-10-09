@@ -432,16 +432,8 @@ namespace EpgTimer
                             }
                             else
                             {
-                                var timeDic = new Dictionary<DateTime, EpgEventInfo>(); ;
-                                serviceAllEventList[key].eventList.ForEach(data =>
-                                {
-                                    if (data.StartTimeFlag != 0 && timeDic.ContainsKey(data.start_time) == false)
-                                    {
-                                        timeDic.Add(data.start_time, data);
-                                    }
-                                });
-
-                                var addList = info.eventList.Where(data => data.StartTimeFlag == 0 || timeDic.ContainsKey(data.start_time) == false);
+                                var timeSet = new HashSet<DateTime>(serviceAllEventList[key].eventList.Select(data => data.PgStartTime));
+                                var addList = info.eventList.Where(data => data.StartTimeFlag == 0 || timeSet.Contains(data.PgStartTime) == false);
                                 serviceAllEventList[key].eventList.AddRange(addList);
                             }
                         }
