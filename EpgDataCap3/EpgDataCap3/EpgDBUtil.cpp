@@ -237,10 +237,6 @@ BOOL CEpgDBUtil::AddEIT(WORD PID, const Desc::CDescriptor& eit, __int64 streamTi
 		}
 	}
 
-	if( original_network_id == 0x0003 ){
-		return TRUE;
-	}
-	
 	//セクションステータス
 	if( PID != 0x0012 ){
 		//L-EIT

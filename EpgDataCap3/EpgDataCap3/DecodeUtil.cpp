@@ -5,13 +5,13 @@
 #include "ARIB8CharDecode.h"
 #include "../../Common/EpgTimerUtil.h"
 
-//#define SUPPORT_SKY_SD
+#define SUPPORT_SKY_SD
 
 namespace Desc = AribDescriptor;
 
 #ifdef SUPPORT_SKY_SD
 
-static void SDDecodeNIT(const BYTE* section, DWORD sectionSize, Desc::CDescriptor& table_)
+static bool SDDecodeNIT(const BYTE* section, DWORD sectionSize, Desc::CDescriptor& table)
 {
 	static const short parser0x82[] = {
 		Desc::descriptor_tag, 8,
@@ -22,21 +22,38 @@ static void SDDecodeNIT(const BYTE* section, DWORD sectionSize, Desc::CDescripto
 		Desc::D_END,
 		Desc::D_FIN,
 	};
-	Desc::PARSER_PAIR parserList[] = {{0x82, parser0x82}, {0, NULL}};
-	Desc::CDescriptor table;
+	static const short parserUnknown[] = {
+		Desc::descriptor_tag, 8,
+		Desc::descriptor_length, Desc::D_LOCAL, 8,
+		Desc::reserved, Desc::D_LOCAL, Desc::descriptor_length,
+		Desc::D_FIN,
+	};
+	//記述子は基本的にunknown扱いとする
+	Desc::PARSER_PAIR parserList[256] = {};
+	for( BYTE i = 0, j = 0; i < 255; i++ ){
+		//ただしサービスリスト記述子は扱う
+		if( i != Desc::service_list_descriptor ){
+			parserList[j].tag = i;
+			parserList[j++].parser = i == 0x82 ? parser0x82 : parserUnknown;
+		}
+	}
+	if( table.DecodeSI(section, sectionSize, NULL, Desc::TYPE_NIT, parserList) == false ||
+	    table.GetNumber(Desc::network_id) != 1 ){
+		return false;
+	}
 	Desc::CDescriptor::CLoopPointer lp;
-	if( table.DecodeSI(section, sectionSize, NULL, Desc::TYPE_NIT, parserList) && table.EnterLoop(lp) ){
+	if( table.EnterLoop(lp) ){
 		for( DWORD i = 0; table.SetLoopIndex(lp, i); i++ ){
 			if( table.GetNumber(Desc::descriptor_tag, lp) == 0x82 && table.GetNumber(Desc::reserved, lp) == 1 ){
 				//日本語版？ネットワーク記述子にキャスト
 				table.SetNumber(Desc::descriptor_tag, Desc::network_name_descriptor, lp);
-				table_ = table;
 			}
 		}
 	}
+	return true;
 }
 
-static void SDDecodeSDT(const BYTE* section, DWORD sectionSize, Desc::CDescriptor& table_)
+static bool SDDecodeSDT(const BYTE* section, DWORD sectionSize, Desc::CDescriptor& table)
 {
 	static const short parser0x82[] = {
 		Desc::descriptor_tag, 8,
@@ -56,11 +73,26 @@ static void SDDecodeSDT(const BYTE* section, DWORD sectionSize, Desc::CDescripto
 		Desc::D_END,
 		Desc::D_FIN,
 	};
-	Desc::PARSER_PAIR parserList[] = {{0x82, parser0x82}, {0x8A, parser0x8A}, {0, NULL}};
-	Desc::CDescriptor table;
+	static const short parserUnknown[] = {
+		Desc::descriptor_tag, 8,
+		Desc::descriptor_length, Desc::D_LOCAL, 8,
+		Desc::reserved, Desc::D_LOCAL, Desc::descriptor_length,
+		Desc::D_FIN,
+	};
+	//記述子は基本的にunknown扱いとする
+	Desc::PARSER_PAIR parserList[256];
+	for( BYTE i = 0; i < 255; i++ ){
+		parserList[i].tag = i;
+		parserList[i].parser = i == 0x82 ? parser0x82 : i == 0x8A ? parser0x8A : parserUnknown;
+	}
+	parserList[255].tag = 0;
+	parserList[255].parser = NULL;
+	if( table.DecodeSI(section, sectionSize, NULL, Desc::TYPE_SDT, parserList) == false ||
+	    table.GetNumber(Desc::original_network_id) != 1 ){
+		return false;
+	}
 	Desc::CDescriptor::CLoopPointer lp;
-	if( table.DecodeSI(section, sectionSize, NULL, Desc::TYPE_SDT, parserList) && table.EnterLoop(lp) ){
-		bool modified = false;
+	if( table.EnterLoop(lp) ){
 		for( DWORD i = 0; table.SetLoopIndex(lp, i); i++ ){
 			Desc::CDescriptor::CLoopPointer lp0x82, lp2 = lp;
 			if( table.EnterLoop(lp2) ){
@@ -83,17 +115,14 @@ static void SDDecodeSDT(const BYTE* section, DWORD sectionSize, Desc::CDescripto
 					//サービス記述子にキャスト
 					table.SetNumber(Desc::descriptor_tag, Desc::service_descriptor, lp0x82);
 					table.SetNumber(Desc::service_type, service_type == 0x81 ? 0xA1 : service_type, lp0x82);
-					modified = true;
 				}
 			}
 		}
-		if( modified ){
-			table_ = table;
-		}
 	}
+	return true;
 }
 
-static void SDDecodeEIT(const BYTE* section, DWORD sectionSize, Desc::CDescriptor& table_)
+static bool SDDecodeEIT(const BYTE* section, DWORD sectionSize, Desc::CDescriptor& table)
 {
 	static const short parser0x82[] = {
 		Desc::descriptor_tag, 8,
@@ -117,11 +146,26 @@ static void SDDecodeEIT(const BYTE* section, DWORD sectionSize, Desc::CDescripto
 		Desc::D_END,
 		Desc::D_FIN,
 	};
-	Desc::PARSER_PAIR parserList[] = {{0x82, parser0x82}, {0x85, parser0x85}, {0, NULL}};
-	Desc::CDescriptor table;
+	static const short parserUnknown[] = {
+		Desc::descriptor_tag, 8,
+		Desc::descriptor_length, Desc::D_LOCAL, 8,
+		Desc::reserved, Desc::D_LOCAL, Desc::descriptor_length,
+		Desc::D_FIN,
+	};
+	//記述子は基本的にunknown扱いとする
+	Desc::PARSER_PAIR parserList[256];
+	for( BYTE i = 0; i < 255; i++ ){
+		parserList[i].tag = i;
+		parserList[i].parser = i == 0x82 ? parser0x82 : i == 0x85 ? parser0x85 : parserUnknown;
+	}
+	parserList[255].tag = 0;
+	parserList[255].parser = NULL;
+	if( table.DecodeSI(section, sectionSize, NULL, Desc::TYPE_EIT, parserList) == false ||
+	    table.GetNumber(Desc::original_network_id) != 1 ){
+		return false;
+	}
 	Desc::CDescriptor::CLoopPointer lp;
-	if( table.DecodeSI(section, sectionSize, NULL, Desc::TYPE_EIT, parserList) && table.EnterLoop(lp) ){
-		bool modified = false;
+	if( table.EnterLoop(lp) ){
 		for( DWORD i = 0; table.SetLoopIndex(lp, i); i++ ){
 			Desc::CDescriptor::CLoopPointer lp0x82, lp2 = lp;
 			if( table.EnterLoop(lp2) ){
@@ -143,25 +187,20 @@ static void SDDecodeEIT(const BYTE* section, DWORD sectionSize, Desc::CDescripto
 						if( table.GetNumber(Desc::stream_content, lp2) == 1 ){
 							//映像。コンポーネント記述子にキャスト
 							table.SetNumber(Desc::descriptor_tag, Desc::component_descriptor, lp2);
-							modified = true;
 						}else if( table.GetNumber(Desc::stream_content, lp2) == 2 ){
 							//音声。音声コンポーネント記述子にキャスト
 							table.SetNumber(Desc::descriptor_tag, Desc::audio_component_descriptor, lp2);
-							modified = true;
 						}
 					}
 				}
 				if( found0x82 ){
 					//短形式イベント記述子にキャスト
 					table.SetNumber(Desc::descriptor_tag, Desc::short_event_descriptor, lp0x82);
-					modified = true;
 				}
 			}
 		}
-		if( modified ){
-			table_ = table;
-		}
 	}
+	return true;
 }
 
 #endif //SUPPORT_SKY_SD
@@ -263,26 +302,30 @@ void CDecodeUtil::AddTSData(BYTE* data)
 						break;
 					case 0x40:
 					case 0x41:
-						if( this->tableBuff.DecodeSI(section, sectionSize, NULL, Desc::TYPE_NIT) ){
+						{
+							bool ret = this->tableBuff.DecodeSI(section, sectionSize, NULL, Desc::TYPE_NIT);
 #ifdef SUPPORT_SKY_SD
-							if( this->tableBuff.GetNumber(Desc::network_id) == 1 ||
-							    this->tableBuff.GetNumber(Desc::network_id) == 3 ){
-								SDDecodeNIT(section, sectionSize, this->tableBuff);
+							if( ret == false || this->tableBuff.GetNumber(Desc::network_id) == 1 ){
+								ret = SDDecodeNIT(section, sectionSize, this->tableBuff);
 							}
 #endif
-							CheckNIT(tsPacket.PID, this->tableBuff);
+							if( ret ){
+								CheckNIT(tsPacket.PID, this->tableBuff);
+							}
 						}
 						break;
 					case 0x42:
 					case 0x46:
-						if( this->tableBuff.DecodeSI(section, sectionSize, NULL, Desc::TYPE_SDT) ){
+						{
+							bool ret = this->tableBuff.DecodeSI(section, sectionSize, NULL, Desc::TYPE_SDT);
 #ifdef SUPPORT_SKY_SD
-							if( this->tableBuff.GetNumber(Desc::original_network_id) == 1 ||
-							    this->tableBuff.GetNumber(Desc::original_network_id) == 3 ){
-								SDDecodeSDT(section, sectionSize, this->tableBuff);
+							if( ret == false || this->tableBuff.GetNumber(Desc::original_network_id) == 1 ){
+								ret = SDDecodeSDT(section, sectionSize, this->tableBuff);
 							}
 #endif
-							CheckSDT(tsPacket.PID, this->tableBuff);
+							if( ret ){
+								CheckSDT(tsPacket.PID, this->tableBuff);
+							}
 						}
 						break;
 					case 0x70:
@@ -307,13 +350,13 @@ void CDecodeUtil::AddTSData(BYTE* data)
 						break;
 					default:
 						if( 0x4E <= section[0] && section[0] <= 0x6F ){
-							if( this->tableBuff.DecodeSI(section, sectionSize, NULL, Desc::TYPE_EIT) ){
+							bool ret = this->tableBuff.DecodeSI(section, sectionSize, NULL, Desc::TYPE_EIT);
 #ifdef SUPPORT_SKY_SD
-								if( this->tableBuff.GetNumber(Desc::original_network_id) == 1 ||
-								    this->tableBuff.GetNumber(Desc::original_network_id) == 3 ){
-									SDDecodeEIT(section, sectionSize, this->tableBuff);
-								}
+							if( ret == false || this->tableBuff.GetNumber(Desc::original_network_id) == 1 ){
+								ret = SDDecodeEIT(section, sectionSize, this->tableBuff);
+							}
 #endif
+							if( ret ){
 								CheckEIT(tsPacket.PID, this->tableBuff);
 							}
 						}
