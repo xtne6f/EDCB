@@ -37,6 +37,8 @@ namespace EpgTimer.Setting
         private RadioBtnSelect recEndModeRadioBtns;
         private RadioBtnSelect delReserveModeRadioBtns;
 
+        private List<RecPresetItem> recPresetList;
+
         public SetAppView()
         {
             InitializeComponent();
@@ -76,7 +78,6 @@ namespace EpgTimer.Setting
                 checkBox_noChkYen.IsEnabled = false;
                 checkBox_srvSaveNotifyLog.IsEnabled = false;
                 checkBox_srvSaveDebugLog.IsEnabled = false;
-                button_recDef.Content = "録画プリセットを確認";
             }
 
             try
@@ -214,6 +215,8 @@ namespace EpgTimer.Setting
                 checkBox_showTray.IsChecked = Settings.Instance.ShowTray;
                 checkBox_minHide.IsChecked = Settings.Instance.MinHide;
 
+                Settings.Instance.RecPresetList.LoadRecPresetData();
+                recPresetList = Settings.Instance.RecPresetList.Clone();
                 defSearchKey = Settings.Instance.DefSearchKey.Clone();
 
                 checkBox_tcpServer.IsChecked = IniFileHandler.GetPrivateProfileInt("SET", "EnableTCPSrv", 0, SettingPath.TimerSrvIniPath) == 1;
@@ -357,6 +360,8 @@ namespace EpgTimer.Setting
                 Settings.Instance.ShowTray = (bool)checkBox_showTray.IsChecked;
                 Settings.Instance.MinHide = (bool)checkBox_minHide.IsChecked;
 
+                RecPresetItem.SaveRecPresetList(ref recPresetList, true);
+                Settings.Instance.RecPresetList = recPresetList.Clone();
                 Settings.Instance.DefSearchKey = defSearchKey.Clone();
 
                 IniFileHandler.WritePrivateProfileString("SET", "EnableTCPSrv", checkBox_tcpServer.IsChecked == true ? "1" : "0", SettingPath.TimerSrvIniPath);
@@ -522,7 +527,11 @@ namespace EpgTimer.Setting
         {
             var dlg = new SetDefRecSettingWindow();
             dlg.Owner = CommonUtil.GetTopWindow(this);
-            dlg.ShowDialog();
+            dlg.SetPresetList(recPresetList);
+            if (dlg.ShowDialog() == true)
+            {
+                recPresetList = dlg.GetPresetList();
+            }
         }
 
         private void button_searchDef_Click(object sender, RoutedEventArgs e)

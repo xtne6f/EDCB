@@ -11,18 +11,18 @@
     </UserControl.Resources>
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="40" />
+            <RowDefinition Height="auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <StackPanel Margin="12,4,0,0" Orientation="Horizontal" VerticalAlignment="Top">
-            <Label Content="プリセット" />
-            <ComboBox Height="{Binding ElementName=button_reload_preset,Path=ActualHeight}" Margin="6,0,6,0" Name="comboBox_preSet" Width="197" SelectionChanged="comboBox_preSet_SelectionChanged" />
+        <StackPanel Margin="12,4,4,6" Orientation="Horizontal" Name="stackPanel_PresetEdit" >
+            <Label Width="70" Content="プリセット" />
+            <ComboBox Height="{Binding ElementName=button_reload_preset,Path=ActualHeight}" Margin="6,0,6,0" Name="comboBox_preSet" Width="194" SelectionChanged="comboBox_preSet_SelectionChanged" />
             <Button Content="再読込" Margin="6,0,0,0" MinWidth="48" Name="button_reload_preset" Click="button_reload_preset_Click" />
             <Button Content="追加" Margin="6,0,0,0" MinWidth="48" Name="button_add_preset" Click="button_add_preset_Click" />
             <Button Content="変更" Margin="6,0,0,0" MinWidth="48" Name="button_chg_preset" Click="button_chg_preset_Click" />
             <Button Content="削除" Margin="6,0,0,0" MinWidth="48" Name="button_del_preset" Click="button_del_preset_Click" />
         </StackPanel>
-        <Border Grid.Row="1" BorderThickness="1" BorderBrush="#FF8C8E94" Padding="4,1,4,1">
+        <Border Grid.Row="1" BorderThickness="1" BorderBrush="#FF8C8E94" Padding="4,1,4,7">
             <Grid>
                     <Label Content="録画モード" Height="28" HorizontalAlignment="Left" Margin="6,6,0,0" Name="label7" VerticalAlignment="Top" />
                     <ComboBox Height="24" HorizontalAlignment="Left" Margin="83,6,0,0" Name="comboBox_recMode" VerticalAlignment="Top" Width="160" ItemsSource="{Binding}"/>

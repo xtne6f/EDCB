@@ -407,9 +407,8 @@ namespace EpgTimer
 
                 var dlg = new Setting.SetDefRecSettingWindow();
                 dlg.Owner = CommonUtil.GetTopWindow(owner);
-                dlg.SetSettingMode(start == true ? "開始マージン設定" : "終了マージン設定");
+                dlg.SetSettingMode(start == true ? "開始マージン設定" : "終了マージン設定", start == true ? 0 : 1);
                 dlg.recSettingView.SetDefSetting(infoList[0]);
-                dlg.recSettingView.SetChangeMode(start == true ? 0 : 1);
 
                 if (dlg.ShowDialog() == false) return false;
 

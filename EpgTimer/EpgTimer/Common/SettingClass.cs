@@ -284,19 +284,7 @@ namespace EpgTimer
             {
                 if (recPresetList == null)
                 {
-                    recPresetList = new List<RecPresetItem>();
-                    recPresetList.Add(new RecPresetItem("デフォルト", 0));
-                    foreach (string s in IniFileHandler.GetPrivateProfileString("SET", "PresetID", "", SettingPath.TimerSrvIniPath).Split(','))
-                    {
-                        uint id;
-                        uint.TryParse(s, out id);
-                        if (recPresetList.Exists(p => p.ID == id) == false)
-                        {
-                            recPresetList.Add(new RecPresetItem(
-                                IniFileHandler.GetPrivateProfileString("REC_DEF" + id, "SetName", "", SettingPath.TimerSrvIniPath)
-                                , id));
-                        }
-                    }
+                    recPresetList = RecPresetItem.LoadRecPresetList();
                 }
                 return recPresetList;
             }
@@ -847,10 +835,6 @@ namespace EpgTimer
                 if (Instance.RecInfoDropExclude.Count == 0)
                 {
                     Settings.Instance.RecInfoDropExclude = new List<string> { "EIT", "NIT", "CAT", "SDT", "SDTT", "TOT", "ECM", "EMM" };
-                }
-                if (Instance.RecPresetList.Count == 0)
-                {
-                    Instance.RecPresetList.Add(new RecPresetItem("デフォルト", 0));
                 }
             }
             catch (Exception ex)

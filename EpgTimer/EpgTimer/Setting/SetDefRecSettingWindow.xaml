@@ -1,19 +1,51 @@
 ﻿<Window x:Class="EpgTimer.Setting.SetDefRecSettingWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="録画プリセット" Height="530" Width="720" xmlns:my="clr-namespace:EpgTimer" WindowStartupLocation="CenterOwner">
+        Title="録画プリセット設定" SizeToContent="Height" Width="720" xmlns:my="clr-namespace:EpgTimer" WindowStartupLocation="CenterOwner">
 
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="30" />
-            <RowDefinition Height="*" />
-            <RowDefinition Height="40" />
+            <RowDefinition Height="auto" />
+            <RowDefinition Height="auto" />
+            <RowDefinition Height="auto" />
         </Grid.RowDefinitions>
+        <Grid Name="grid_PresetEdit" Margin="12,6,12,6">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="150" />
+                <RowDefinition Height="auto" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="auto" />
+                <ColumnDefinition Width="250" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Label Content="プリセット一覧" VerticalAlignment="Top"/>
+            <ListBox Grid.Column="1" Margin="6,0,6,0" Name="listBox_preset" SelectionMode="Extended" SelectionChanged="listBox_preset_SelectionChanged" />
+            <StackPanel Grid.Column="2" >
+                <WrapPanel>
+                    <Button Margin="0,0,6,0" Content="↑" Width="48" Name="button_up" />
+                    <Button Content="↑↑" Width="48" Name="button_top" />
+                </WrapPanel>
+                <WrapPanel Margin="0,6,0,0">
+                    <Button Margin="0,0,6,0" Content="↓" Width="48" Name="button_down" />
+                    <Button Content="↓↓" Width="48" Name="button_bottom" />
+                </WrapPanel>
+                <TextBlock Margin="0,12,0,0" Text="※一番上のプリセット名は「デフォルト」固定です。保存時に自動的に変更されます。" TextWrapping="Wrap" />
+            </StackPanel>
+            <Label Grid.Row="1" Content="プリセット名" />
+            <TextBox Name="textBox_preset" Grid.Row="1" Grid.Column="1" Margin="6,6,6,6" TextChanged="textBox_preset_TextChanged" />
+            <WrapPanel Grid.Row="1" Grid.Column="2" VerticalAlignment="Center" Margin="0,0,-6,0" >
+                <Button Content="追加" Margin="0,0,6,0" MinWidth="48" Name="button_add" Click="button_add_Click" />
+                <Button Content="削除" Margin="0,0,6,0" MinWidth="48" Name="button_del" />
+            </WrapPanel>
+        </Grid>
         <my:RecSettingView Grid.Row="1" x:Name="recSettingView" />
-        <Label Content="※プリセットの変更を行うには、プリセットごとに変更ボタンを押してください" Height="28" HorizontalAlignment="Left" Margin="12,2,0,0" Name="label1" VerticalAlignment="Top" />
-        <StackPanel Grid.Row="2" Height="40" HorizontalAlignment="Right" Name="stackPanel1" VerticalAlignment="Top" Width="338" Orientation="Horizontal" FlowDirection="RightToLeft">
-            <Button Content="閉じる" Height="23" Name="button_cancel" Width="75" Click="button_cancel_Click" Margin="40,0,0,0" IsCancel="True" />
-            <Button Content="OK" Height="23" Name="button_ok" Click="button_ok_Click" Width="75" Margin="40,0,0,0" Visibility="Collapsed" />
-        </StackPanel>
+        <Grid Grid.Row="2" Margin="24,10,24,12" >
+            <Button Content="保存されている状態に戻す" Name="button_iniLoad" HorizontalAlignment="Left" Click="button_iniLoad_Click" />
+            <StackPanel HorizontalAlignment="Right" Orientation="Horizontal" >
+                <Button Name="button_ok" Content="OK" Click="button_ok_Click" Width="75" Margin="0,0,24,0" />
+                <Button Content="キャンセル" Width="75" Click="button_cancel_Click" IsCancel="True" />
+            </StackPanel>
+        </Grid>
     </Grid>
 </Window>

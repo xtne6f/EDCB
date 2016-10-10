@@ -44,6 +44,13 @@ namespace EpgTimer
 
             try
             {
+                if (CommonManager.Instance.NWMode == true)
+                {
+                    button_add_preset.IsEnabled = false;
+                    button_chg_preset.IsEnabled = false;
+                    button_del_preset.IsEnabled = false;
+                }
+
                 recSetting = Settings.Instance.RecPresetList[0].RecPresetData.Clone();
 
                 comboBox_recMode.DataContext = CommonManager.RecModeList;
@@ -64,7 +71,7 @@ namespace EpgTimer
                 comboBox_tuner.ItemsSource = tunerList;
                 comboBox_tuner.SelectedIndex = 0;
 
-                Settings.Instance.RecPresetList.ForEach(info => info.LoadRecPresetData());//iniファイルから録画設定をロード
+                Settings.Instance.RecPresetList.LoadRecPresetData();
                 Settings.Instance.RecPresetList.ForEach(info => comboBox_preSet.Items.Add(info.Clone()));//現在の処理ならClone()無くても大丈夫
                 comboBox_preSet.SelectedIndex = 0;
                 comboBox_preSet.KeyDown += ViewUtil.KeyDown_Enter(button_reload_preset);
@@ -79,25 +86,11 @@ namespace EpgTimer
 
         public void SavePreset()
         {
-            string saveID = "";
-            for (int i = 0; i < comboBox_preSet.Items.Count; i++)
-            {
-                var preItem = comboBox_preSet.Items[i] as RecPresetItem;
-                if (preItem.IsCustom == true) continue;
+            var list = comboBox_preSet.Items.OfType<RecPresetItem>().Where(item => item.IsCustom == false).ToList();
+            RecPresetItem.SaveRecPresetList(ref list, true);
+            Settings.Instance.RecPresetList = list.Clone();
 
-                preItem.ID = (UInt32)i;
-                preItem.SaveRecPresetData();
-
-                if (preItem.ID != 0)
-                {
-                    saveID += preItem.ID.ToString();
-                    saveID += ",";
-                }
-            }
             comboBox_preSet.Items.Refresh();
-            IniFileHandler.WritePrivateProfileString("SET", "PresetID", saveID, SettingPath.TimerSrvIniPath);
-            Settings.SaveToXmlFile();
-            Settings.Instance.RecPresetList = null;
 
             if (CommonManager.Instance.NWMode == false)
             {
@@ -127,6 +120,7 @@ namespace EpgTimer
                     textBox_margineEnd.SelectAll();
                     break;
             }
+            stackPanel_PresetEdit.Visibility = chgMode == 2 ? Visibility.Collapsed : Visibility.Visible;
         }
 
         //予約データがプリセットに該当するときに、プリセットではなく予約データを画面に読むようにするフラグ
@@ -281,12 +275,6 @@ namespace EpgTimer
             OnUpdatingView = true;
             try
             {
-                if (CommonManager.Instance.NWMode == true)
-                {
-                    button_add_preset.IsEnabled = false;
-                    button_chg_preset.IsEnabled = false;
-                    button_del_preset.IsEnabled = false;
-                }
                 comboBox_recMode.SelectedIndex = Math.Min((int)recSetting.RecMode, 5);
                 comboBox_priority.SelectedIndex = Math.Min(Math.Max((int)recSetting.Priority, 1), 5) - 1;
                 comboBox_tuijyu.SelectedIndex = recSetting.TuijyuuFlag != 0 ? 1 : 0;
