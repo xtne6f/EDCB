@@ -17,6 +17,7 @@ namespace EpgTimer
         private MenuBinds mBinds = new MenuBinds();
 
         private bool chgMode = false;
+        private List<CheckBox> chbxList;
 
         public AddManualAutoAddWindow()
         {
@@ -40,6 +41,10 @@ namespace EpgTimer
                 mBinds.ResetInputBindings(this);
 
                 //その他設定
+                chbxList = new List<CheckBox>(new string[] { "日", "月", "火", "水", "木", "金", "土" }
+                    .Select(wd => new CheckBox { Content = wd, Margin = new Thickness(0, 0, 6, 0) }));
+                chbxList.ForEach(chbx => stackPanel_week.Children.Add(chbx));
+
                 comboBox_startHH.DataContext = CommonManager.CustomHourList;
                 comboBox_startHH.SelectedIndex = 0;
                 comboBox_startMM.DataContext = Enumerable.Range(0, 60);
@@ -141,36 +146,11 @@ namespace EpgTimer
 
                 defKey.startTime = startTime;
                 defKey.durationSecond = duration;
-                
+
+                //曜日の処理、0～6bit目:日～土
                 defKey.dayOfWeekFlag = 0;
-                if (checkBox_week0.IsChecked == true)
-                {
-                    defKey.dayOfWeekFlag |= 0x01;
-                }
-                if (checkBox_week1.IsChecked == true)
-                {
-                    defKey.dayOfWeekFlag |= 0x02;
-                }
-                if (checkBox_week2.IsChecked == true)
-                {
-                    defKey.dayOfWeekFlag |= 0x04;
-                }
-                if (checkBox_week3.IsChecked == true)
-                {
-                    defKey.dayOfWeekFlag |= 0x08;
-                }
-                if (checkBox_week4.IsChecked == true)
-                {
-                    defKey.dayOfWeekFlag |= 0x10;
-                }
-                if (checkBox_week5.IsChecked == true)
-                {
-                    defKey.dayOfWeekFlag |= 0x20;
-                }
-                if (checkBox_week6.IsChecked == true)
-                {
-                    defKey.dayOfWeekFlag |= 0x40;
-                }
+                int val = 0;
+                chbxList.ForEach(chbx => defKey.dayOfWeekFlag |= (byte)((chbx.IsChecked == true ? 0x01 : 0x00) << val++));
 
                 //開始時刻を0～24時に調整する。
                 defKey.RegulateData();
@@ -229,34 +209,9 @@ namespace EpgTimer
                     defKey.ShiftRecDay(-1);
                 }
 
-                if ((defKey.dayOfWeekFlag & 0x01) != 0)
-                {
-                    checkBox_week0.IsChecked = true;
-                }
-                if ((defKey.dayOfWeekFlag & 0x02) != 0)
-                {
-                    checkBox_week1.IsChecked = true;
-                }
-                if ((defKey.dayOfWeekFlag & 0x04) != 0)
-                {
-                    checkBox_week2.IsChecked = true;
-                }
-                if ((defKey.dayOfWeekFlag & 0x08) != 0)
-                {
-                    checkBox_week3.IsChecked = true;
-                }
-                if ((defKey.dayOfWeekFlag & 0x10) != 0)
-                {
-                    checkBox_week4.IsChecked = true;
-                }
-                if ((defKey.dayOfWeekFlag & 0x20) != 0)
-                {
-                    checkBox_week5.IsChecked = true;
-                }
-                if ((defKey.dayOfWeekFlag & 0x40) != 0)
-                {
-                    checkBox_week6.IsChecked = true;
-                }
+                //曜日の処理、0～6bit目:日～土
+                int val = 0;
+                chbxList.ForEach(chbx => chbx.IsChecked = (defKey.dayOfWeekFlag & (0x01 << val++)) != 0);
 
                 checkBox_keyDisabled.IsChecked = defKey.IsEnabled == false;
 

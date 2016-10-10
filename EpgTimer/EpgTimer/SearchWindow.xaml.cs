@@ -61,6 +61,7 @@ namespace EpgTimer
                 mc.AddReplaceCommand(EpgCmds.AddInDialog, button_add_epgAutoAdd_Click);
                 mc.AddReplaceCommand(EpgCmds.ChangeInDialog, button_chg_epgAutoAdd_Click, (sender, e) => e.CanExecute = winMode == SearchMode.Change);
                 mc.AddReplaceCommand(EpgCmds.DeleteInDialog, button_del_epgAutoAdd_Click, (sender, e) => e.CanExecute = winMode == SearchMode.Change);
+                mc.AddReplaceCommand(EpgCmds.Delete2InDialog, button_del2_epgAutoAdd_Click, (sender, e) => e.CanExecute = winMode == SearchMode.Change);
                 mc.AddReplaceCommand(EpgCmds.UpItem, (sender, e) => button_up_down_Click(-1));
                 mc.AddReplaceCommand(EpgCmds.DownItem, (sender, e) => button_up_down_Click(1));
                 mc.AddReplaceCommand(EpgCmds.Cancel, (sender, e) => this.Close());
@@ -85,6 +86,7 @@ namespace EpgTimer
                 mBinds.SetCommandToButton(button_add_epgAutoAdd, EpgCmds.AddInDialog);
                 mBinds.SetCommandToButton(button_chg_epgAutoAdd, EpgCmds.ChangeInDialog);
                 mBinds.SetCommandToButton(button_del_epgAutoAdd, EpgCmds.DeleteInDialog);
+                mBinds.SetCommandToButton(button_del2_epgAutoAdd, EpgCmds.Delete2InDialog);
                 mBinds.SetCommandToButton(button_up_epgAutoAdd, EpgCmds.UpItem);
                 mBinds.SetCommandToButton(button_down_epgAutoAdd, EpgCmds.DownItem);
                 mBinds.AddInputCommand(EpgCmds.Cancel);//ショートカット登録
@@ -158,8 +160,6 @@ namespace EpgTimer
         public void SetViewMode(SearchMode md)
         {
             winMode = md;
-            button_chg_epgAutoAdd.Visibility = (winMode == SearchMode.Change ? Visibility.Visible : Visibility.Hidden);
-            button_del_epgAutoAdd.Visibility = button_chg_epgAutoAdd.Visibility;
             WindowTitleSet();
         }
         public void WindowTitleSet()
@@ -300,13 +300,40 @@ namespace EpgTimer
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
             StatusManager.StatusNotifySet(ret, "キーワード予約を削除");
         }
-        //proc 0:追加、1:変更、2:削除
+        private void button_del2_epgAutoAdd_Click(object sender, ExecutedRoutedEventArgs e)
+        {
+            bool ret = false;
+            try
+            {
+                ret = CheckAutoAddChange(e, 3);
+                if (ret == true)
+                {
+                    ret = MenuUtil.AutoAddDelete(CommonUtil.ToList(CommonManager.Instance.DB.EpgAutoAddList[autoAddID]), true, true);
+                    if (ret == true)
+                    {
+                        SetViewMode(SearchMode.NewAdd);
+                        this.autoAddID = 0;
+                    }
+                }
+            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
+            StatusManager.StatusNotifySet(ret, "キーワード予約を予約ごと削除");
+        }
+        //proc 0:追加、1:変更、2:削除、3:予約ごと削除
         private bool CheckAutoAddChange(ExecutedRoutedEventArgs e, int proc)
         {
-            if (CmdExeUtil.IsDisplayKgMessage(e) == true)
+            if (proc != 3)
             {
-                var strMode = new string[] { "追加", "変更", "削除" }[proc];
-                if (MessageBox.Show("キーワード予約登録を" + strMode + "します。\r\nよろしいですか？", strMode + "の確認", MessageBoxButton.OKCancel) != MessageBoxResult.OK)
+                if (CmdExeUtil.IsDisplayKgMessage(e) == true)
+                {
+                    var strMode = new string[] { "追加", "変更", "削除" }[proc];
+                    if (MessageBox.Show("キーワード予約登録を" + strMode + "します。\r\nよろしいですか？", strMode + "の確認", MessageBoxButton.OKCancel) != MessageBoxResult.OK)
+                    { return false; }
+                }
+            }
+            else
+            {
+                if (CmdExeUtil.CheckAllProcCancel(e, CommonUtil.ToList(CommonManager.Instance.DB.EpgAutoAddList[autoAddID]), true) == true)
                 { return false; }
             }
 
@@ -324,7 +351,7 @@ namespace EpgTimer
                 }
             }
 
-            if (proc != 2 && Settings.Instance.CautionManyChange == true && searchKeyView.searchKeyDescView.checkBox_keyDisabled.IsChecked != true)
+            if (proc < 2 && Settings.Instance.CautionManyChange == true && searchKeyView.searchKeyDescView.checkBox_keyDisabled.IsChecked != true)
             {
                 if (MenuUtil.CautionManyMessage(lstCtrl.dataList.GetNoReserveList().Count, "予約追加の確認") == false)
                 { return false; }
