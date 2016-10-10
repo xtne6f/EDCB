@@ -89,6 +89,7 @@ namespace EpgTimer.Setting
             Settings.Instance.TvTestChgBonWait = MenuUtil.MyToNumerical(textBox_TvTestChgBonWait, Convert.ToInt32, 120000, 0, Settings.Instance.TvTestChgBonWait);
 
             IniFileHandler.WritePrivateProfileString("TVTEST", "Num", listBox_bon.Items.Count.ToString(), SettingPath.TimerSrvIniPath);
+            IniFileHandler.DeletePrivateProfileNumberKeys("TVTEST", SettingPath.TimerSrvIniPath);
             for (int i = 0; i < listBox_bon.Items.Count; i++)
             {
                 string val = listBox_bon.Items[i] as string;

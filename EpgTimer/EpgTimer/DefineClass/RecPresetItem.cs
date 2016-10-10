@@ -148,6 +148,12 @@ namespace EpgTimer
 
             if (list == null) return;
 
+            //古いエントリを削除
+            IniFileHandler.DeletePrivateProfileNumberKeys(null, SettingPath.TimerSrvIniPath, "REC_DEF", "", true);
+            IniFileHandler.DeletePrivateProfileNumberKeys(null, SettingPath.TimerSrvIniPath, "REC_DEF_FOLDER", "", true);
+            IniFileHandler.DeletePrivateProfileNumberKeys(null, SettingPath.TimerSrvIniPath, "REC_DEF_FOLDER_1SEG", "", true);
+
+            //保存
             string saveID = "";
             list.ForEach(item =>
             {

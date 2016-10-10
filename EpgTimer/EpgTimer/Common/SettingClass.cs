@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.IO;
 using System.Reflection;
 using System.Collections;
@@ -24,6 +25,14 @@ namespace EpgTimer
           StringBuilder lpReturnedString, uint nSize,
           string lpFileName);
 
+        [DllImport("KERNEL32.DLL",
+            EntryPoint = "GetPrivateProfileStringA")]
+        public static extern uint
+          GetPrivateProfileStringByByteArray(string lpAppName,
+          string lpKeyName, string lpDefault,
+          byte[] lpReturnedString, uint nSize,
+          string lpFileName);
+        
         [DllImport("KERNEL32.DLL", CharSet = CharSet.Unicode)]
         public static extern int
           GetPrivateProfileInt(string lpAppName,
@@ -51,6 +60,43 @@ namespace EpgTimer
                 }
             }
             return buff.ToString();
+        }
+
+        /// <summary>INIファイルから指定セクションのキー一覧を取得する。lpAppNameにnullを指定すると全セクションの一覧を取得する。</summary>
+        public static string[] GetPrivateProfileKeys(string lpAppName, string lpFileName)
+        {
+            byte[] buff = null;
+            uint resultSize = 0;
+            for (uint n = 1024; n <= 1024 * 1024; n *= 2)
+            {
+                buff = new byte[n];
+                resultSize = GetPrivateProfileStringByByteArray(lpAppName, null, null, buff, n, lpFileName);
+                if (resultSize < n - 2)
+                {
+                    break;
+                }
+            }
+            return Encoding.Default.GetString(buff, 0, (int)resultSize).TrimEnd('\0').Split('\0');
+        }
+
+        /// <summary>INIファイルから連番のキー/セクションを削除する。lpAppNameにnullを指定すると連番セクションを削除する。</summary>
+        public static void DeletePrivateProfileNumberKeys(string lpAppName, string lpFileName, string BaseFront = "", string BaseRear = "", bool deleteBaseName = false)
+        {
+            string numExp = string.IsNullOrEmpty(BaseFront + BaseRear) == false && deleteBaseName  == true ? "*" : "+";
+            foreach (string key in IniFileHandler.GetPrivateProfileKeys(lpAppName, lpFileName))
+            {
+                if (Regex.Match(key, "^" + BaseFront + "\\d" + numExp + BaseRear + "$").Success == true)
+                {
+                    if (lpAppName != null)
+                    {
+                        IniFileHandler.WritePrivateProfileString(lpAppName, key, null, lpFileName);
+                    }
+                    else
+                    {
+                        IniFileHandler.WritePrivateProfileString(key, null, null, lpFileName);
+                    }
+                }
+            }
         }
 
         public static void UpdateSrvProfileIniNW(List<string> iniList = null)

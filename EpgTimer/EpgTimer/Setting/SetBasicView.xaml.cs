@@ -266,6 +266,7 @@ namespace EpgTimer.Setting
                 int recFolderCount = listBox_recFolder.Items.Count == 1 &&
                     string.Compare(((string)listBox_recFolder.Items[0]).TrimEnd('\\'), textBox_setPath.Text.TrimEnd('\\'), true) == 0 ? 0 : listBox_recFolder.Items.Count;
                 IniFileHandler.WritePrivateProfileString("SET", "RecFolderNum", recFolderCount.ToString(), SettingPath.CommonIniPath);
+                IniFileHandler.DeletePrivateProfileNumberKeys("SET", SettingPath.CommonIniPath, "RecFolderPath");
                 for (int i = 0; i < recFolderCount; i++)
                 {
                     string key = "RecFolderPath" + i.ToString();
@@ -346,6 +347,9 @@ namespace EpgTimer.Setting
                 }
 
                 IniFileHandler.WritePrivateProfileString("EPG_CAP", "Count", timeList.Count.ToString(), SettingPath.TimerSrvIniPath);
+                IniFileHandler.DeletePrivateProfileNumberKeys("EPG_CAP", SettingPath.TimerSrvIniPath);
+                IniFileHandler.DeletePrivateProfileNumberKeys("EPG_CAP", SettingPath.TimerSrvIniPath, "", "Select");
+                IniFileHandler.DeletePrivateProfileNumberKeys("EPG_CAP", SettingPath.TimerSrvIniPath, "", "BasicOnlyFlags");
                 for (int i = 0; i < timeList.Count; i++)
                 {
                     EpgCaptime item = timeList[i] as EpgCaptime;
