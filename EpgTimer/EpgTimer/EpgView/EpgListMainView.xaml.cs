@@ -220,9 +220,8 @@ namespace EpgTimer
         }
         protected void MoveToItem(IAutoAddTargetData target, bool IsMarking)
         {
-            if (target == null) return;
-            UInt64 key = target.CurrentPgUID();
-            SearchItem jump_item = lstCtrl.dataList.Find(data => data.EventInfo.CurrentPgUID() == key);
+            UInt64 key = target == null ? 0 : target.CurrentPgUID();
+            SearchItem jump_item = target == null ? null : lstCtrl.dataList.Find(data => data.EventInfo.CurrentPgUID() == key);
             ViewUtil.ScrollToFindItem(jump_item, listView_event, IsMarking);
         }
 
