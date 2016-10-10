@@ -134,17 +134,17 @@ namespace EpgTimer
         public RecSettingData()
         {
             RecMode = 1;
-            Priority = 1;
+            Priority = 2;
             TuijyuuFlag = 1;
-            ServiceMode = 0;
+            ServiceMode = 16;
             PittariFlag = 0;
             BatFilePath = "";
             RecFolderList = new List<RecFileSetInfo>();
             SuspendMode = 0;
             RebootFlag = 0;
             UseMargineFlag = 0;
-            StartMargine = 10;
-            EndMargine = 5;
+            StartMargine = 5;
+            EndMargine = 2;
             ContinueRecFlag = 0;
             PartialRecFlag = 0;
             TunerID = 0;

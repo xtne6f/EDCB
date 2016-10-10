@@ -86,7 +86,7 @@ namespace EpgTimer
         }
         public int RecEndModeActual
         {
-            get { return ToRecEndMode(SuspendMode != 0 ? SuspendMode : IniFileHandler.GetPrivateProfileInt("SET", "RecEndMode", 2, SettingPath.TimerSrvIniPath)); }
+            get { return ToRecEndMode(SuspendMode != 0 ? SuspendMode : IniFileHandler.GetPrivateProfileInt("SET", "RecEndMode", 0, SettingPath.TimerSrvIniPath)); }
         }
         public byte RebootFlagActual
         {
