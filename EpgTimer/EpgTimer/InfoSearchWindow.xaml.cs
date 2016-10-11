@@ -216,19 +216,25 @@ namespace EpgTimer
                         targetItems.AddRange(CommonManager.Instance.DB.ManualAutoAddList.Values);
                     }
 
-                    var hitItems = targetItems.Select(data =>
-                    {
-                        string s = new InfoSearchItem(data).GetSearchText(checkBox_TitleOnly.IsChecked == true);
-                        return new Tuple<IRecWorkMainData, string>(data, CommonManager.AdjustSearchText(s).Replace(" ", ""));
-                    }).ToList();
+                    string sText = CommonManager.AdjustSearchText(TextBox_SearchWord.Text);
+                    string[] sWords = sText.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
 
-                    string[] sWords = CommonManager.AdjustSearchText(TextBox_SearchWord.Text).Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                    foreach (string sWord in sWords)
+                    var hitItems = InfoSearchItem.Items(targetItems).Where(data =>
                     {
-                        hitItems = hitItems.FindAll(s => s.Item2.Contains(sWord));
-                    }
+                        //検索ワードで対象のタイトルまたは詳細をAND検索
+                        string trgText = data.GetSearchText(checkBox_TitleOnly.IsChecked == true);
+                        trgText = CommonManager.AdjustSearchText(trgText).Replace(" ", "");
+                        if (sWords.All(word => trgText.Contains(word)) == true)
+                        {
+                            return true;
+                        }
 
-                    lstCtrl.dataList.AddRange(InfoSearchItem.Items(hitItems.Select(item => item.Item1)));
+                        //キーワード予約を考慮し、逆に対象のタイトルで検索ワードのAND検索もしておく。
+                        string[] trgWords = CommonManager.AdjustSearchText(data.DataTitle).Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                        return trgWords.Count() != 0 && trgWords.All(word => sText.Contains(word));
+                    });
+
+                    lstCtrl.dataList.AddRange(hitItems);
                     return true;
                 });
                 UpdateStatus();
