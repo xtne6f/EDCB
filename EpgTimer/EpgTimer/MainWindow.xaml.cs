@@ -1623,7 +1623,7 @@ namespace EpgTimer
             }
             BlackoutWindow.NowJumpTable = true;
             new BlackoutWindow(this).showWindow(tab.Header.ToString());
-            this.Focus();//チューナ画面やEPG画面でのフォーカス対策。とりあえずこれで解決する。
+            this.Focus();//チューナー画面やEPG画面でのフォーカス対策。とりあえずこれで解決する。
             tab.IsSelected = false;//必ずOnVisibleChanged()を発生させるため。
             tab.IsSelected = true;
         }

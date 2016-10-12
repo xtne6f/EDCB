@@ -39,7 +39,7 @@
                         <CheckBox Content="新規プログラム予約/自動登録..." />
                         <Separator Style="{StaticResource MiddleLine}" />
                         <CheckBox Content="予約一覧へジャンプ" />
-                        <CheckBox Content="チューナ画面へジャンプ" />
+                        <CheckBox Content="チューナー画面へジャンプ" />
                         <CheckBox Content="番組表へジャンプ" />
                         <CheckBox Content="一覧へジャンプ(予約情報検索)" />
                         <CheckBox Content="自動予約登録変更" />

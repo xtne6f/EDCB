@@ -231,8 +231,8 @@ namespace EpgTimer.Setting
                 checkBox_IsVisibleAutoAddViewMoveOnly.IsChecked = Settings.Instance.IsVisibleAutoAddViewMoveOnly;
 
                 foreach (var item in new Dictionary<object, string> {
-                            { CtxmCode.ReserveView, "予約一覧" },{ CtxmCode.TunerReserveView, "使用予定チューナ" },
-                            { CtxmCode.RecInfoView, "録画済み一案" },{ CtxmCode.EpgAutoAddView, "キーワード予約登録" },
+                            { CtxmCode.ReserveView, "予約一覧" },{ CtxmCode.TunerReserveView, "使用予定チューナー" },
+                            { CtxmCode.RecInfoView, "録画済み一覧" },{ CtxmCode.EpgAutoAddView, "キーワード予約登録" },
                             { CtxmCode.ManualAutoAddView, "プログラム予約登録" },{ CtxmCode.EpgView, "番組表" } })
                 {
                     wrapPanel_StartTab.Children.Add(new RadioButton { Tag = item.Key, Content = item.Value });

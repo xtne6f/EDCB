@@ -761,7 +761,7 @@ namespace EpgTimer
                 num = 0x11 + 5;//番組表17色+予約枠5色
                 _FillList(Instance.ContentCustColorList, 0xFFFFFFFF, num);
 
-                //チューナ画面各フォント色
+                //チューナー画面各フォント色
                 num = 2 + 5;//固定色2+優先度色5
                 _FillList(Instance.TunerServiceColors, "Black", num);
                 _FillList(Instance.TunerServiceCustColors, 0xFFFFFFFF, num);
