@@ -1,23 +1,15 @@
 #pragma once
 
 #include "../../BonCtrl/PMTUtil.h"
+#include <list>
 
 // {5DD7D1CB-29BD-420E-ABD4-21FAD67F665C}
 DEFINE_GUID(CLSID_TSSrc, 
 0x5dd7d1cb, 0x29bd, 0x420e, 0xab, 0xd4, 0x21, 0xfa, 0xd6, 0x7f, 0x66, 0x5c);
 
 typedef struct _BUFF_DATA{
-	BYTE* data;				//TSデータ
-	DWORD size;				//dataのサイズ
+	vector<BYTE> data;			//TSデータ
 	LONGLONG timeStamp;
-	_BUFF_DATA(void){
-		data = NULL;
-		size = 0;
-		timeStamp = 0;
-	}
-	~_BUFF_DATA(void){
-		SAFE_DELETE_ARRAY(data);
-	}
 } BUFF_DATA;
 
 class CPushVideoPin : public CSourceStream
@@ -25,7 +17,7 @@ class CPushVideoPin : public CSourceStream
 protected:
     CCritSec m_cSharedState;            // Protects our internal state
 	HANDLE buffLockEvent;
-	vector<BUFF_DATA*> buffData;
+	std::list<BUFF_DATA> buffData;
 public:
 	DECLARE_IUNKNOWN
     CPushVideoPin(HRESULT *phr, CSource *pFilter);
@@ -55,7 +47,7 @@ class CPushAudioPin : public CSourceStream
 protected:
     CCritSec m_cSharedState;            // Protects our internal state
 	HANDLE buffLockEvent;
-	vector<BUFF_DATA*> buffData;
+	std::list<BUFF_DATA> buffData;
 public:
 	DECLARE_IUNKNOWN
     CPushAudioPin(HRESULT *phr, CSource *pFilter);
@@ -90,7 +82,7 @@ private:
     CPushVideoPin *m_pVideoPin;
 	CPushAudioPin *m_pAudioPin;
 
-	map<WORD, CPMTUtil*> pmtUtilMap; //キーPMTのPID
+	map<WORD, CPMTUtil> pmtUtilMap; //キーPMTのPID
 	WORD videoPID;
 	WORD audioPID;
 	WORD PCR_PID;

@@ -349,7 +349,7 @@ protected:
 	BOOL serviceOnlyFlag;
 
 	map<DWORD, COneServiceUtil*> serviceUtilMap; //キー識別ID
-	map<WORD, CPMTUtil*> pmtUtilMap; //キーPMTのPID
+	map<WORD, CPMTUtil> pmtUtilMap; //キーPMTのPID
 	CCATUtil* catUtil;
 
 	map<WORD,WORD> needPIDMap; //キーPID

@@ -41,11 +41,6 @@ CDShowCtrl::~CDShowCtrl(void)
 	SAFE_RELEASE(this->graph);
 	SAFE_RELEASE(this->tsSrc);
 
-	for( size_t i=0; i<this->buffData.size(); i++ ){
-		delete this->buffData[i];
-	}
-	this->buffData.clear();
-
 	CoUninitialize();
 }
 
@@ -454,9 +449,6 @@ BOOL CDShowCtrl::CreateRunGraph(LPCWSTR writeFilePath)
 	AddGraphToRot(this->graph, &m_dwRegister);
 	HRESULT hr;
 
-	for( size_t i=0; i<this->buffData.size(); i++ ){
-		delete this->buffData[i];
-	}
 	this->buffData.clear();
 
 	tsSrc = static_cast<CTSSrcFilter *>(CTSSrcFilter::CreateInstance(NULL, &hr));
@@ -729,17 +721,17 @@ BOOL CDShowCtrl::AddTS(BYTE* data, DWORD size)
 			tsSrc->ClearData();
 			ReConnectScale();
 			RunGraph();
-			for( size_t i=0; i<this->buffData.size(); i++ ){
-				tsSrc->AddTS(this->buffData[i]->data, this->buffData[i]->size);
-				delete this->buffData[i];
+			while( this->buffData.empty() == false ){
+				if( this->buffData.front().empty() == false ){
+					tsSrc->AddTS(&this->buffData.front().front(), (DWORD)this->buffData.front().size());
+				}
+				this->buffData.pop_front();
 			}
-			this->buffData.clear();
 			tsSrc->AddTS(data, size);
 		}else{
-			BUFF_DATA* item = new BUFF_DATA;
-			item->size = size;
-			item->data = new BYTE[item->size];
-			buffData.push_back(item);
+			this->buffData.push_back(vector<BYTE>());
+			//TODO: dataの内容をコピーしなくていいのだろうか？
+			this->buffData.back().resize(size);
 		}
 	}
 

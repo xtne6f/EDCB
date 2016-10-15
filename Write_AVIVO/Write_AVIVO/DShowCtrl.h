@@ -77,7 +77,7 @@ protected:
 
 	BOOL preCreateFlag;
 	DWORD preCount;
-	vector<BUFF_DATA*> buffData;
+	std::list<vector<BYTE>> buffData;
 protected:
 	HRESULT AddGraphToRot(
 		IUnknown *pUnkGraph, 

@@ -2,6 +2,7 @@
 
 #include <winsock2.h>
 #include <ws2tcpip.h>
+#include <list>
 
 #include "../../Common/StringUtil.h"
 #pragma comment(lib, "Ws2_32.lib")
@@ -66,18 +67,7 @@ protected:
 	CRITICAL_SECTION m_sendLock;
 	CRITICAL_SECTION m_buffLock;
 
-	typedef struct _TS_DATA{
-		BYTE* pbBuff;
-		DWORD dwSize;
-		_TS_DATA(void){
-			pbBuff = NULL;
-			dwSize = 0;
-		}
-		~_TS_DATA(void){
-			SAFE_DELETE_ARRAY(pbBuff);
-		}
-	}TS_DATA;
-	vector<TS_DATA*> m_TSBuff;
+	std::list<vector<BYTE>> m_TSBuff;
 
 	typedef struct _SEND_INFO{
 		string strIP;

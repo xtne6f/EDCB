@@ -70,12 +70,6 @@ CPushVideoPin::CPushVideoPin(HRESULT *phr, CSource *pFilter)
 }
 
 CPushVideoPin::~CPushVideoPin() {
-	if( WaitForSingleObject( this->buffLockEvent, 1000 ) == WAIT_OBJECT_0 ){
-		for( size_t i=0; i<this->buffData.size(); i++ ){
-			SAFE_DELETE(this->buffData[i]);
-		}
-		this->buffData.clear();
-	}
 	if( this->buffLockEvent != NULL ){
 		CloseHandle(this->buffLockEvent);
 		this->buffLockEvent = NULL;
@@ -174,23 +168,23 @@ HRESULT CPushVideoPin::FillBuffer(IMediaSample *pSample) {
 	const long size=pSample->GetSize();
 	pSample->GetPointer(&pSampleData);
 
-	BUFF_DATA* data = NULL;
+	std::list<BUFF_DATA> data;
 	if( WaitForSingleObject( this->buffLockEvent, 500 ) == WAIT_OBJECT_0 ){
 		if( this->buffData.size() != 0 ){
-			data = this->buffData[0];
-			this->buffData.erase( this->buffData.begin() );
+			data.splice(data.begin(), this->buffData, this->buffData.begin());
 		}
 		if( this->buffLockEvent != NULL ){
 			SetEvent(this->buffLockEvent);
 		}
 	}
-	if( data != NULL ){
-		REFERENCE_TIME start_time=data->timeStamp;
+	if( data.empty() == false ){
+		REFERENCE_TIME start_time=data.front().timeStamp;
 		REFERENCE_TIME end_time=(start_time+1);
 		pSample->SetTime(&start_time, &end_time);
-		pSample->SetActualDataLength(data->size);
-		memcpy(pSampleData, data->data, data->size);
-		delete data;
+		pSample->SetActualDataLength((int)data.front().data.size());
+		if( data.front().data.empty() == false ){
+			memcpy(pSampleData, &data.front().data.front(), data.front().data.size());
+		}
 	}else{
 		return S_FALSE;
 	}
@@ -199,15 +193,12 @@ HRESULT CPushVideoPin::FillBuffer(IMediaSample *pSample) {
 
 void CPushVideoPin::AddData(BYTE* data, DWORD size, LONGLONG timeStamp)
 {
-	BUFF_DATA* buff = new BUFF_DATA;
-	buff->size = size;
-	buff->data = new BYTE[buff->size];
-	buff->timeStamp = timeStamp;
-	memcpy(buff->data, data, size);
 	while(1){
 		if( WaitForSingleObject( this->buffLockEvent, 500 ) == WAIT_OBJECT_0 ){
 			if( this->buffData.size() < 100 ){
-				this->buffData.push_back(buff);
+				this->buffData.push_back(BUFF_DATA());
+				this->buffData.back().data.assign(data, data + size);
+				this->buffData.back().timeStamp = timeStamp;
 				if( this->buffLockEvent != NULL ){
 					SetEvent(this->buffLockEvent);
 				}
@@ -219,7 +210,6 @@ void CPushVideoPin::AddData(BYTE* data, DWORD size, LONGLONG timeStamp)
 				Sleep(10);
 			}
 		}else{
-			SAFE_DELETE(buff);
 			break;
 		}
 	}
@@ -228,9 +218,6 @@ void CPushVideoPin::AddData(BYTE* data, DWORD size, LONGLONG timeStamp)
 void CPushVideoPin::ClearData()
 {
 	if( WaitForSingleObject( this->buffLockEvent, 1000 ) == WAIT_OBJECT_0 ){
-		for( size_t i=0; i<this->buffData.size(); i++ ){
-			SAFE_DELETE(this->buffData[i]);
-		}
 		this->buffData.clear();
 		if( this->buffLockEvent != NULL ){
 			SetEvent(this->buffLockEvent);
@@ -257,12 +244,6 @@ CPushAudioPin::CPushAudioPin(HRESULT *phr, CSource *pFilter)
 }
 
 CPushAudioPin::~CPushAudioPin() {
-	if( WaitForSingleObject( this->buffLockEvent, 1000 ) == WAIT_OBJECT_0 ){
-		for( size_t i=0; i<this->buffData.size(); i++ ){
-			SAFE_DELETE(this->buffData[i]);
-		}
-		this->buffData.clear();
-	}
 	if( this->buffLockEvent != NULL ){
 		CloseHandle(this->buffLockEvent);
 		this->buffLockEvent = NULL;
@@ -361,23 +342,23 @@ HRESULT CPushAudioPin::FillBuffer(IMediaSample *pSample) {
 	const long size=pSample->GetSize();
 	pSample->GetPointer(&pSampleData);
 
-	BUFF_DATA* data = NULL;
+	std::list<BUFF_DATA> data;
 	if( WaitForSingleObject( this->buffLockEvent, 500 ) == WAIT_OBJECT_0 ){
 		if( this->buffData.size() != 0 ){
-			data = this->buffData[0];
-			this->buffData.erase( this->buffData.begin() );
+			data.splice(data.begin(), this->buffData, this->buffData.begin());
 		}
 		if( this->buffLockEvent != NULL ){
 			SetEvent(this->buffLockEvent);
 		}
 	}
-	if( data != NULL ){
-		REFERENCE_TIME start_time=data->timeStamp;
+	if( data.empty() == false ){
+		REFERENCE_TIME start_time=data.front().timeStamp;
 		REFERENCE_TIME end_time=(start_time+1);
 		pSample->SetTime(&start_time, &end_time);
-		pSample->SetActualDataLength(data->size);
-		memcpy(pSampleData, data->data, data->size);
-		delete data;
+		pSample->SetActualDataLength((int)data.front().data.size());
+		if( data.front().data.empty() == false ){
+			memcpy(pSampleData, &data.front().data.front(), data.front().data.size());
+		}
 	}else{
 		return S_FALSE;
 	}
@@ -387,15 +368,12 @@ HRESULT CPushAudioPin::FillBuffer(IMediaSample *pSample) {
 
 void CPushAudioPin::AddData(BYTE* data, DWORD size, LONGLONG timeStamp)
 {
-	BUFF_DATA* buff = new BUFF_DATA;
-	buff->size = size;
-	buff->data = new BYTE[buff->size];
-	buff->timeStamp = timeStamp;
-	memcpy(buff->data, data, size);
 	while(1){
 		if( WaitForSingleObject( this->buffLockEvent, 500 ) == WAIT_OBJECT_0 ){
 			if( this->buffData.size() < 100 ){
-				this->buffData.push_back(buff);
+				this->buffData.push_back(BUFF_DATA());
+				this->buffData.back().data.assign(data, data + size);
+				this->buffData.back().timeStamp = timeStamp;
 				if( this->buffLockEvent != NULL ){
 					SetEvent(this->buffLockEvent);
 				}
@@ -407,7 +385,6 @@ void CPushAudioPin::AddData(BYTE* data, DWORD size, LONGLONG timeStamp)
 				Sleep(10);
 			}
 		}else{
-			SAFE_DELETE(buff);
 			break;
 		}
 	}
@@ -416,9 +393,6 @@ void CPushAudioPin::AddData(BYTE* data, DWORD size, LONGLONG timeStamp)
 void CPushAudioPin::ClearData()
 {
 	if( WaitForSingleObject( this->buffLockEvent, 1000 ) == WAIT_OBJECT_0 ){
-		for( size_t i=0; i<this->buffData.size(); i++ ){
-			SAFE_DELETE(this->buffData[i]);
-		}
 		this->buffData.clear();
 		if( this->buffLockEvent != NULL ){
 			SetEvent(this->buffLockEvent);
@@ -485,27 +459,22 @@ DWORD CTSSrcFilter::AddTS(BYTE* data, DWORD size)
 					if( pointer+1 < packet.data_byteSize ){
 						if( packet.data_byte[1+pointer] == 0x02 ){
 							//PMT
-							map<WORD, CPMTUtil*>::iterator itrPmt;
+							map<WORD, CPMTUtil>::iterator itrPmt;
 							itrPmt = this->pmtUtilMap.find(packet.PID);
 							if( itrPmt == this->pmtUtilMap.end() ){
-								CPMTUtil* util = new CPMTUtil;
-								this->pmtUtilMap.insert(pair<WORD, CPMTUtil*>(packet.PID, util));
-								if( util->AddPacket(&packet) == TRUE ){
-									CheckPID();
-								}
-							}else{
-								if( itrPmt->second->AddPacket(&packet) == TRUE ){
-									CheckPID();
-								}
+								itrPmt = this->pmtUtilMap.insert(std::make_pair(packet.PID, CPMTUtil())).first;
+							}
+							if( itrPmt->second.AddPacket(&packet) == TRUE ){
+								CheckPID();
 							}
 						}
 					}
 				}else{
 					//PMTの2パケット目かチェック
-					map<WORD, CPMTUtil*>::iterator itrPmt;
+					map<WORD, CPMTUtil>::iterator itrPmt;
 					itrPmt = this->pmtUtilMap.find(packet.PID);
 					if( itrPmt != this->pmtUtilMap.end() ){
-						if( itrPmt->second->AddPacket(&packet) == TRUE ){
+						if( itrPmt->second.AddPacket(&packet) == TRUE ){
 							CheckPID();
 						}
 					}
@@ -600,16 +569,16 @@ void CTSSrcFilter::ClearData()
 
 void CTSSrcFilter::CheckPID()
 {
-	map<WORD, CPMTUtil*>::iterator itrPmt;
+	map<WORD, CPMTUtil>::iterator itrPmt;
 	itrPmt = pmtUtilMap.begin();
 
 	map<WORD,WORD>::iterator itrPID;
-	for( itrPID = itrPmt->second->PIDList.begin(); itrPID != itrPmt->second->PIDList.end(); itrPID++ ){
+	for( itrPID = itrPmt->second.PIDList.begin(); itrPID != itrPmt->second.PIDList.end(); itrPID++ ){
 		if( itrPID->second == 0x02 || itrPID->second == 0x1B ){
 			videoPID = itrPID->first;
 		}else if( itrPID->second == 0x0F || itrPID->second == 0x04 ){
 			audioPID = itrPID->first;
 		}
 	}
-	this->PCR_PID = itrPmt->second->PCR_PID;
+	this->PCR_PID = itrPmt->second.PCR_PID;
 }

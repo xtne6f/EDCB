@@ -47,12 +47,6 @@ CTSOut::~CTSOut(void)
 	}
 	this->serviceUtilMap.clear();
 
-	map<WORD, CPMTUtil*>::iterator itrPmt;
-	for( itrPmt = this->pmtUtilMap.begin(); itrPmt != this->pmtUtilMap.end(); itrPmt++ ){
-		SAFE_DELETE(itrPmt->second);
-	}
-	this->pmtUtilMap.clear();
-
 	SAFE_DELETE(this->catUtil);
 
 	this->epgUtil.UnInitialize();
@@ -175,10 +169,6 @@ void CTSOut::OnChChanged(WORD onid, WORD tsid)
 	}
 	ResetErrCount();
 
-	map<WORD, CPMTUtil*>::iterator itrPmt;
-	for( itrPmt = this->pmtUtilMap.begin(); itrPmt != this->pmtUtilMap.end(); itrPmt++ ){
-		SAFE_DELETE(itrPmt->second);
-	}
 	this->pmtUtilMap.clear();
 }
 
@@ -272,27 +262,22 @@ DWORD CTSOut::AddTSBuff(BYTE* data, DWORD dataSize)
 							if( pointer+1 < packet.data_byteSize ){
 								if( packet.data_byte[1+pointer] == 0x02 ){
 									//PMT
-									map<WORD, CPMTUtil*>::iterator itrPmt;
+									map<WORD, CPMTUtil>::iterator itrPmt;
 									itrPmt = this->pmtUtilMap.find(packet.PID);
 									if( itrPmt == this->pmtUtilMap.end() ){
-										CPMTUtil* util = new CPMTUtil;
-										this->pmtUtilMap.insert(pair<WORD, CPMTUtil*>(packet.PID, util));
-										if( util->AddPacket(&packet) == TRUE ){
-											CheckNeedPID();
-										}
-									}else{
-										if( itrPmt->second->AddPacket(&packet) == TRUE ){
-											CheckNeedPID();
-										}
+										itrPmt = this->pmtUtilMap.insert(std::make_pair(packet.PID, CPMTUtil())).first;
+									}
+									if( itrPmt->second.AddPacket(&packet) == TRUE ){
+										CheckNeedPID();
 									}
 								}
 							}
 						}else{
 							//PMTの2パケット目かチェック
-							map<WORD, CPMTUtil*>::iterator itrPmt;
+							map<WORD, CPMTUtil>::iterator itrPmt;
 							itrPmt = this->pmtUtilMap.find(packet.PID);
 							if( itrPmt != this->pmtUtilMap.end() ){
-								if( itrPmt->second->AddPacket(&packet) == TRUE ){
+								if( itrPmt->second.AddPacket(&packet) == TRUE ){
 									CheckNeedPID();
 								}
 							}
@@ -438,13 +423,13 @@ void CTSOut::CheckNeedPID()
 	PIDMap[0x10].SID = 0;
 
 	map<WORD, string> pidName;
-	map<WORD, CPMTUtil*>::iterator itrPmt;
+	map<WORD, CPMTUtil>::iterator itrPmt;
 	for( itrPmt = pmtUtilMap.begin(); itrPmt != pmtUtilMap.end(); itrPmt++ ){
 		string name = "";
-		Format(name, "PMT(ServiceID 0x%04X)", itrPmt->second->program_number);
+		Format(name, "PMT(ServiceID 0x%04X)", itrPmt->second.program_number);
 		pidName.insert(pair<WORD, string>(itrPmt->first, name));
 		map<WORD, WORD>::iterator itrPID;
-		for( itrPID = itrPmt->second->PIDList.begin(); itrPID != itrPmt->second->PIDList.end(); itrPID++ ){
+		for( itrPID = itrPmt->second.PIDList.begin(); itrPID != itrPmt->second.PIDList.end(); itrPID++ ){
 			switch(itrPID->second){
 			case 0x00:
 				name = "ECM";
@@ -476,7 +461,7 @@ void CTSOut::CheckNeedPID()
 			}
 			pidName.insert(pair<WORD, string>(itrPID->first, name));
 		}
-		pidName.insert(pair<WORD, string>(itrPmt->second->PCR_PID, "PCR"));
+		pidName.insert(pair<WORD, string>(itrPmt->second.PCR_PID, "PCR"));
 		
 	}
 
@@ -500,19 +485,19 @@ void CTSOut::CheckNeedPID()
 				//PAT作成用のPMTリスト作成
 				CCreatePATPacket::PROGRAM_PID_INFO item;
 				item.PMTPID = itrPmt->first;
-				item.SID = itrPmt->second->program_number;
+				item.SID = itrPmt->second.program_number;
 				PIDMap.insert(pair<WORD, CCreatePATPacket::PROGRAM_PID_INFO>(item.PMTPID,item));
 
 				//PMT記載のPIDを登録
 				this->needPIDMap.insert(pair<WORD,WORD>(itrPmt->first, 0));
 				map<WORD,WORD>::iterator itrPID;
-				for( itrPID = itrPmt->second->PIDList.begin(); itrPID != itrPmt->second->PIDList.end(); itrPID++ ){
+				for( itrPID = itrPmt->second.PIDList.begin(); itrPID != itrPmt->second.PIDList.end(); itrPID++ ){
 					this->needPIDMap.insert(pair<WORD,WORD>(itrPID->first, itrPID->second));
 				}
 			}
 		}else{
 			for( itrPmt = pmtUtilMap.begin(); itrPmt != pmtUtilMap.end(); itrPmt++ ){
-				if( itrService->second->GetSID() == itrPmt->second->program_number ){
+				if( itrService->second->GetSID() == itrPmt->second.program_number ){
 					//PMT発見
 					itrService->second->SetPmtPID(this->lastTSID, itrPmt->first);
 					if( catUtil != NULL ){
@@ -523,14 +508,14 @@ void CTSOut::CheckNeedPID()
 					//PAT作成用のPMTリスト作成
 					CCreatePATPacket::PROGRAM_PID_INFO item2;
 					item2.PMTPID = itrPmt->first;
-					item2.SID = itrPmt->second->program_number;
+					item2.SID = itrPmt->second.program_number;
 					PIDMap.insert(pair<WORD, CCreatePATPacket::PROGRAM_PID_INFO>(item2.PMTPID,item2));
 					//_OutputDebugString(L"0x%04x, 0x%04x", itrPmt->first,itrPmt->second->program_number);
 					//PMT記載のPIDを登録
 					this->needPIDMap.insert(pair<WORD,WORD>(itrPmt->first, 0));
-					this->needPIDMap.insert(pair<WORD,WORD>(itrPmt->second->PCR_PID, 0));
+					this->needPIDMap.insert(pair<WORD,WORD>(itrPmt->second.PCR_PID, 0));
 					map<WORD,WORD>::iterator itrPID;
-					for( itrPID = itrPmt->second->PIDList.begin(); itrPID != itrPmt->second->PIDList.end(); itrPID++ ){
+					for( itrPID = itrPmt->second.PIDList.begin(); itrPID != itrPmt->second.PIDList.end(); itrPID++ ){
 						this->needPIDMap.insert(pair<WORD,WORD>(itrPID->first, itrPID->second));
 					}
 				}
