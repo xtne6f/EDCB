@@ -173,7 +173,6 @@
     <None Include="md5.inl" />
     <None Include="mod_lua.inl" />
     <None Include="ReadMe.txt" />
-    <None Include="RegExp.tlb" />
     <None Include="small.ico" />
   </ItemGroup>
   <ItemGroup>

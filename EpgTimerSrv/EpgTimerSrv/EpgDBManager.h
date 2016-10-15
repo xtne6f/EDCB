@@ -3,8 +3,7 @@
 #include "../../Common/StructDef.h"
 #include "../../Common/EpgDataCap3Def.h"
 #include "../../Common/BlockLock.h"
-
-#import "RegExp.tlb" no_namespace named_guids
+#include <regex>
 
 class CEpgDBManager
 {
@@ -40,14 +39,9 @@ public:
 	BOOL SearchEpg(vector<EPGDB_SEARCH_KEY_INFO>* key, P enumProc) {
 		CBlockLock lock(&this->epgMapLock);
 		vector<SEARCH_RESULT_EVENT> result;
-		CoInitialize(NULL);
-		{
-			IRegExpPtr regExp;
-			for( size_t i = 0; i < key->size(); i++ ){
-				SearchEvent(&(*key)[i], result, regExp);
-			}
+		for( size_t i = 0; i < key->size(); i++ ){
+			SearchEvent(&(*key)[i], result);
 		}
-		CoUninitialize();
 		enumProc(result);
 		return TRUE;
 	}
@@ -137,10 +131,10 @@ protected:
 	void ClearEpgData();
 	static UINT WINAPI LoadThread(LPVOID param);
 
-	void SearchEvent(EPGDB_SEARCH_KEY_INFO* key, vector<SEARCH_RESULT_EVENT>& result, IRegExpPtr& regExp);
+	void SearchEvent(EPGDB_SEARCH_KEY_INFO* key, vector<SEARCH_RESULT_EVENT>& result);
 	BOOL IsEqualContent(vector<EPGDB_CONTENT_DATA>* searchKey, vector<EPGDB_CONTENT_DATA>* eventData);
 	static BOOL IsInDateTime(const vector<EPGDB_SEARCH_DATE_INFO>& dateList, const SYSTEMTIME& time);
-	static BOOL IsFindKeyword(BOOL regExpFlag, IRegExpPtr& regExp, BOOL caseFlag, const vector<wstring>* keyList, const wstring& word, BOOL andMode, wstring* findKey = NULL);
+	static BOOL IsFindKeyword(const std::wregex* re, BOOL caseFlag, const vector<wstring>* keyList, const wstring& word, BOOL andMode, wstring* findKey = NULL);
 	static BOOL IsFindLikeKeyword(BOOL caseFlag, const vector<wstring>* keyList, const wstring& word, BOOL andMode, wstring* findKey = NULL);
 
 };

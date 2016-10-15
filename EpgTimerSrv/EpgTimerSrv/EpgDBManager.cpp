@@ -456,7 +456,7 @@ BOOL CEpgDBManager::SearchEpg(vector<EPGDB_SEARCH_KEY_INFO>* key, vector<SEARCH_
 	});
 }
 
-void CEpgDBManager::SearchEvent(EPGDB_SEARCH_KEY_INFO* key, vector<SEARCH_RESULT_EVENT>& result, IRegExpPtr& regExp)
+void CEpgDBManager::SearchEvent(EPGDB_SEARCH_KEY_INFO* key, vector<SEARCH_RESULT_EVENT>& result)
 {
 	if( key == NULL ){
 		return ;
@@ -497,6 +497,8 @@ void CEpgDBManager::SearchEvent(EPGDB_SEARCH_KEY_INFO* key, vector<SEARCH_RESULT
 	//キーワード分解
 	vector<wstring> andKeyList;
 	vector<wstring> notKeyList;
+	std::wregex andKeyRegex;
+	std::wregex notKeyRegex;
 
 	if( key->regExpFlag == FALSE ){
 		//正規表現ではないのでキーワードの分解
@@ -525,14 +527,27 @@ void CEpgDBManager::SearchEvent(EPGDB_SEARCH_KEY_INFO* key, vector<SEARCH_RESULT
 			}while( notBuff.size() != 0 );
 		}
 	}else{
+		auto flags = caseFlag ? std::regex_constants::ECMAScript : std::regex_constants::ECMAScript | std::regex_constants::icase;
 		if( andKey.size() > 0 ){
 			andKeyList.push_back(andKey);
 			//旧い処理では対象を全角空白のまま比較していたため正規表現も全角のケースが多い。特別に置き換える
 			Replace(andKeyList.back(), L"　", L" ");
+			try{
+				andKeyRegex.imbue(std::locale::classic());
+				andKeyRegex.assign(andKeyList.back(), flags);
+			}catch( std::regex_error& ){
+				andKeyRegex = std::wregex();
+			}
 		}
 		if( key->notKey.size() > 0 ){
 			notKeyList.push_back(key->notKey);
 			Replace(notKeyList.back(), L"　", L" ");
+			try{
+				notKeyRegex.imbue(std::locale::classic());
+				notKeyRegex.assign(notKeyList.back(), flags);
+			}catch( std::regex_error& ){
+				notKeyRegex = std::wregex();
+			}
 		}
 	}
 
@@ -702,7 +717,7 @@ void CEpgDBManager::SearchEvent(EPGDB_SEARCH_KEY_INFO* key, vector<SEARCH_RESULT
 					ConvertSearchText(targetWord);
 
 					if( notKeyList.size() != 0 ){
-						if( IsFindKeyword(key->regExpFlag, regExp, caseFlag, &notKeyList, targetWord, FALSE) != FALSE ){
+						if( IsFindKeyword(key->regExpFlag ? &notKeyRegex : NULL, caseFlag, &notKeyList, targetWord, FALSE) != FALSE ){
 							//notキーワード見つかったので対象外
 							continue;
 						}
@@ -715,7 +730,7 @@ void CEpgDBManager::SearchEvent(EPGDB_SEARCH_KEY_INFO* key, vector<SEARCH_RESULT
 								continue;
 							}
 						}else{
-							if( IsFindKeyword(key->regExpFlag, regExp, caseFlag, &andKeyList, targetWord, TRUE, &matchKey) == FALSE ){
+							if( IsFindKeyword(key->regExpFlag ? &andKeyRegex : NULL, caseFlag, &andKeyList, targetWord, TRUE, &matchKey) == FALSE ){
 								//andキーワード見つからなかったので対象外
 								continue;
 							}
@@ -811,36 +826,23 @@ static wstring::const_iterator SearchKeyword(const wstring& str, const wstring& 
 			[](wchar_t l, wchar_t r) { return (L'a' <= l && l <= L'z' ? l - L'a' + L'A' : l) == (L'a' <= r && r <= L'z' ? r - L'a' + L'A' : r); });
 }
 
-BOOL CEpgDBManager::IsFindKeyword(BOOL regExpFlag, IRegExpPtr& regExp, BOOL caseFlag, const vector<wstring>* keyList, const wstring& word, BOOL andMode, wstring* findKey)
+BOOL CEpgDBManager::IsFindKeyword(const std::wregex* re, BOOL caseFlag, const vector<wstring>* keyList, const wstring& word, BOOL andMode, wstring* findKey)
 {
-	if( regExpFlag == TRUE ){
+	if( re != NULL ){
 		//正規表現モード
-		try{
-			if( regExp == NULL ){
-				regExp.CreateInstance(CLSID_RegExp);
-			}
-			if( regExp != NULL && word.size() > 0 && keyList->size() > 0 ){
-				_bstr_t target( word.c_str() );
-				_bstr_t pattern( (*keyList)[0].c_str() );
-
-				regExp->PutGlobal( VARIANT_TRUE );
-				regExp->PutIgnoreCase( caseFlag == FALSE ? VARIANT_TRUE : VARIANT_FALSE );
-				regExp->PutPattern( pattern );
-
-				IMatchCollectionPtr pMatchCol( regExp->Execute( target ) );
-
-				if( pMatchCol->Count > 0 ){
-					if( findKey != NULL ){
-						IMatch2Ptr pMatch( pMatchCol->Item[0] );
-						_bstr_t value( pMatch->Value );
-
-						*findKey = !value ? L"" : value;
-					}
-					return TRUE;
+		if( word.size() > 0 && keyList->size() > 0 ){
+			std::wsmatch m;
+			//TODO: VBScript.RegExpの^と$はそれぞれ文頭と文末にのみマッチする。std::regexでは
+			//      match_not_bolとmatch_not_eolの指定がこれに相当すると考えられるが、VC14時点の実装
+			//      にはバグがあり、^と$を無効化してしまう。一方でこれを指定しない場合、^と$は行頭と
+			//      行末にマッチするので、従来と挙動がかなり変化してしまう。
+			//      (参考) http://cplusplus.github.io/LWG/lwg-active.html#2343
+			if( std::regex_search(word, m, *re, std::regex_constants::match_not_bol | std::regex_constants::match_not_eol) ){
+				if( findKey != NULL ){
+					*findKey = m[0];
 				}
+				return TRUE;
 			}
-		}catch( _com_error& ){
-			//_OutputDebugString(L"%s\r\n", e.ErrorMessage());
 		}
 		return FALSE;
 	}else{

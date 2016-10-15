@@ -1,6 +1,7 @@
 #include "StdAfx.h"
 #include "ReserveManager.h"
 #include <process.h>
+#include <regex>
 #include "../../Common/PathUtil.h"
 #include "../../Common/ReNamePlugInUtil.h"
 #include "../../Common/EpgTimerUtil.h"
@@ -1859,17 +1860,14 @@ bool CReserveManager::IsFindRecEventInfo(const EPGDB_EVENT_INFO& info, WORD chkD
 	CBlockLock lock(&this->managerLock);
 	bool ret = false;
 
-	CoInitialize(NULL);
 	try{
-		IRegExpPtr regExp;
-		regExp.CreateInstance(CLSID_RegExp);
-		if( regExp != NULL && info.shortInfo != NULL ){
+		std::wregex re;
+		if( info.shortInfo != NULL ){
 			wstring infoEventName = info.shortInfo->event_name;
 			if( this->recInfo2RegExp.empty() == false ){
-				regExp->PutGlobal(VARIANT_TRUE);
-				regExp->PutPattern(_bstr_t(this->recInfo2RegExp.c_str()));
-				_bstr_t rpl = regExp->Replace(_bstr_t(infoEventName.c_str()), _bstr_t());
-				infoEventName = (LPCWSTR)rpl == NULL ? L"" : (LPCWSTR)rpl;
+				re.imbue(std::locale::classic());
+				re.assign(this->recInfo2RegExp, std::regex_constants::ECMAScript);
+				infoEventName = std::regex_replace(infoEventName, re, L"", std::regex_constants::match_not_bol | std::regex_constants::match_not_eol);
 			}
 			if( infoEventName.empty() == false && info.StartTimeFlag != 0 ){
 				int chkDayActual = chkDay >= 20000 ? chkDay % 10000 : chkDay;
@@ -1879,12 +1877,8 @@ bool CReserveManager::IsFindRecEventInfo(const EPGDB_EVENT_INFO& info, WORD chkD
 					    (chkDay >= 30000 || itr->second.transportStreamID == info.transport_stream_id) &&
 					    (chkDay >= 20000 || itr->second.serviceID == info.service_id) &&
 					    ConvertI64Time(itr->second.startTime) + chkDayActual*24*60*60*I64_1SEC > ConvertI64Time(info.start_time) ){
-						wstring eventName = itr->second.eventName;
-						if( this->recInfo2RegExp.empty() == false ){
-							_bstr_t rpl = regExp->Replace(_bstr_t(eventName.c_str()), _bstr_t());
-							eventName = (LPCWSTR)rpl == NULL ? L"" : (LPCWSTR)rpl;
-						}
-						if( infoEventName == eventName ){
+						if( infoEventName == (this->recInfo2RegExp.empty() ? itr->second.eventName : std::regex_replace(
+						        itr->second.eventName, re, L"", std::regex_constants::match_not_bol | std::regex_constants::match_not_eol)) ){
 							ret = true;
 							break;
 						}
@@ -1892,10 +1886,9 @@ bool CReserveManager::IsFindRecEventInfo(const EPGDB_EVENT_INFO& info, WORD chkD
 				}
 			}
 		}
-	}catch( _com_error& e ){
-		_OutputDebugString(L"%s\r\n", e.ErrorMessage());
+	}catch( std::regex_error& ){
+		OutputDebugString(L"std::wregex raised exception for RecInfo2RegExp.\r\n");
 	}
-	CoUninitialize();
 
 	return ret;
 }

@@ -40,9 +40,6 @@
     <None Include="EpgTimerSrv.ico">
       <Filter>リソース ファイル</Filter>
     </None>
-    <None Include="RegExp.tlb">
-      <Filter>ソース ファイル</Filter>
-    </None>
     <None Include="mod_lua.inl">
       <Filter>ヘッダー ファイル\civetweb</Filter>
     </None>
