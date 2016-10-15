@@ -175,6 +175,8 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		SendMessage(hwnd, WM_SHOW_TRAY, FALSE, FALSE);
 		ctx->sys->hwndMain = NULL;
 		SetWindowLongPtr(hwnd, GWLP_USERDATA, 0);
+		RemoveProp(hwnd, L"PopupSel");
+		RemoveProp(hwnd, L"PopupSelData");
 		PostQuitMessage(0);
 		return 0;
 	case WM_ENDSESSION:
@@ -355,23 +357,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		//タスクトレイ関係
 		switch( LOWORD(lParam) ){
 		case WM_LBUTTONUP:
-			{
-				wstring moduleFolder;
-				GetModuleFolderPath(moduleFolder);
-				if( GetFileAttributes((moduleFolder + L"\\EpgTimer.lnk").c_str()) != INVALID_FILE_ATTRIBUTES ){
-					//EpgTimer.lnk(ショートカット)を優先的に開く
-					ShellExecute(NULL, L"open", (moduleFolder + L"\\EpgTimer.lnk").c_str(), NULL, NULL, SW_SHOWNORMAL);
-				}else{
-					//EpgTimer.exeがあれば起動
-					PROCESS_INFORMATION pi;
-					STARTUPINFO si = {};
-					si.cb = sizeof(si);
-					if( CreateProcess((moduleFolder + L"\\EpgTimer.exe").c_str(), NULL, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi) != FALSE ){
-						CloseHandle(pi.hThread);
-						CloseHandle(pi.hProcess);
-					}
-				}
-			}
+			SendMessage(hwnd, WM_COMMAND, IDC_BUTTON_GUI, 0);
 			break;
 		case WM_RBUTTONUP:
 			{
@@ -589,6 +575,54 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 			break;
 		}
 		break;
+	case WM_INITMENUPOPUP:
+		if( GetMenuItemID((HMENU)wParam, 0) == IDC_MENU_RESERVE ){
+			//「予約削除」ポップアップを生成
+			vector<RESERVE_DATA> list = ctx->sys->reserveManager.GetReserveDataAll();
+			__int64 maxTime = GetNowI64Time() + 24 * 3600 * I64_1SEC;
+			list.erase(std::remove_if(list.begin(), list.end(), [=](const RESERVE_DATA& a) {
+				return a.recSetting.recMode == RECMODE_NO || ConvertI64Time(a.startTime) > maxTime;
+			}), list.end());
+			std::sort(list.begin(), list.end(), [](const RESERVE_DATA& a, const RESERVE_DATA& b) {
+				return ConvertI64Time(a.startTime) < ConvertI64Time(b.startTime);
+			});
+			HMENU hMenu = (HMENU)wParam;
+			if( list.empty() == false ){
+				DeleteMenu(hMenu, 0, MF_BYPOSITION);
+			}
+			for( UINT i = 0; i < list.size() && i <= IDC_MENU_RESERVE_MAX - IDC_MENU_RESERVE; i++ ){
+				MENUITEMINFO mii;
+				mii.cbSize = sizeof(mii);
+				mii.fMask = MIIM_ID | MIIM_DATA | MIIM_STRING;
+				mii.wID = IDC_MENU_RESERVE + i;
+				mii.dwItemData = list[i].reserveID;
+				SYSTEMTIME endTime;
+				ConvertSystemTime(ConvertI64Time(list[i].startTime) + list[i].durationSecond * I64_1SEC, &endTime);
+				WCHAR text[128];
+				swprintf_s(text, L"%02d:%02d～%02d:%02d%s %.31s 【%.31s】",
+				           list[i].startTime.wHour, list[i].startTime.wMinute, endTime.wHour, endTime.wMinute,
+				           list[i].recSetting.recMode == RECMODE_VIEW ? L"▲" : L"",
+				           list[i].title.c_str(), list[i].stationName.c_str());
+				std::replace(text, text + wcslen(text), L'　', L' ');
+				std::replace(text, text + wcslen(text), L'&', L'＆');
+				mii.dwTypeData = text;
+				InsertMenuItem(hMenu, i, TRUE, &mii);
+			}
+			return 0;
+		}
+		break;
+	case WM_MENUSELECT:
+		if( lParam != 0 && (HIWORD(wParam) & MF_POPUP) == 0 ){
+			MENUITEMINFO mii;
+			mii.cbSize = sizeof(mii);
+			mii.fMask = MIIM_ID | MIIM_DATA;
+			if( GetMenuItemInfo((HMENU)lParam, LOWORD(wParam), FALSE, &mii) ){
+				//WM_COMMANDでは取得できないので、ここで選択内容を記録する
+				SetProp(hwnd, L"PopupSel", (HANDLE)(UINT_PTR)mii.wID);
+				SetProp(hwnd, L"PopupSelData", (HANDLE)mii.dwItemData);
+			}
+		}
+		break;
 	case WM_COMMAND:
 		switch( LOWORD(wParam) ){
 		case IDC_BUTTON_S3:
@@ -602,6 +636,33 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		case IDC_BUTTON_END:
 			if( MessageBox(hwnd, SERVICE_NAME L" を終了します。", L"確認", MB_OKCANCEL | MB_ICONINFORMATION) == IDOK ){
 				SendMessage(hwnd, WM_CLOSE, 0, 0);
+			}
+			break;
+		case IDC_BUTTON_GUI:
+			{
+				wstring moduleFolder;
+				GetModuleFolderPath(moduleFolder);
+				if( GetFileAttributes((moduleFolder + L"\\EpgTimer.lnk").c_str()) != INVALID_FILE_ATTRIBUTES ){
+					//EpgTimer.lnk(ショートカット)を優先的に開く
+					ShellExecute(NULL, L"open", (moduleFolder + L"\\EpgTimer.lnk").c_str(), NULL, NULL, SW_SHOWNORMAL);
+				}else{
+					//EpgTimer.exeがあれば起動
+					PROCESS_INFORMATION pi;
+					STARTUPINFO si = {};
+					si.cb = sizeof(si);
+					if( CreateProcess((moduleFolder + L"\\EpgTimer.exe").c_str(), NULL, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi) ){
+						CloseHandle(pi.hThread);
+						CloseHandle(pi.hProcess);
+					}
+				}
+			}
+			break;
+		default:
+			if( IDC_MENU_RESERVE <= LOWORD(wParam) && LOWORD(wParam) <= IDC_MENU_RESERVE_MAX ){
+				//「予約削除」
+				if( (UINT_PTR)GetProp(hwnd, L"PopupSel") == LOWORD(wParam) ){
+					ctx->sys->reserveManager.DelReserveData(vector<DWORD>(1, (DWORD)(UINT_PTR)GetProp(hwnd, L"PopupSelData")));
+				}
 			}
 			break;
 		}
