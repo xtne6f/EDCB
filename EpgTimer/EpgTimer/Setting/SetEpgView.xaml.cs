@@ -204,6 +204,7 @@ namespace EpgTimer.Setting
                 checkBox_resNoYear.IsChecked = Settings.Instance.ResInfoNoYear;
                 checkBox_resNoSecond.IsChecked = Settings.Instance.ResInfoNoSecond;
                 checkBox_resNoDurSecond.IsChecked = Settings.Instance.ResInfoNoDurSecond;
+                checkBox_TrimSortTitle.IsChecked = Settings.Instance.TrimSortTitle;
 
                 setComboColor1(Settings.Instance.ListDefColor, cmb_ListDefFontColor);
                 setComboColors(Settings.Instance.RecModeFontColors, grid_ReserveRecModeColors);
@@ -392,6 +393,7 @@ namespace EpgTimer.Setting
                 Settings.Instance.ResInfoNoYear = (checkBox_resNoYear.IsChecked == true);
                 Settings.Instance.ResInfoNoSecond = (checkBox_resNoSecond.IsChecked == true);
                 Settings.Instance.ResInfoNoDurSecond = (checkBox_resNoDurSecond.IsChecked == true);
+                Settings.Instance.TrimSortTitle = (checkBox_TrimSortTitle.IsChecked == true);
 
                 Settings.Instance.ListDefColor = getComboColor1(cmb_ListDefFontColor);
                 getComboColors(Settings.Instance.RecModeFontColors, grid_ReserveRecModeColors);

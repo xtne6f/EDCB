@@ -446,6 +446,7 @@ namespace EpgTimer
         public bool IsVisibleAutoAddViewMoveOnly { get; set; }
         public Dock MainViewButtonsDock { get; set; }
         public CtxmCode StartTab { get; set; }
+        public bool TrimSortTitle { get; set; }
 
         public Settings()
         {
@@ -654,6 +655,7 @@ namespace EpgTimer
             IsVisibleAutoAddViewMoveOnly = false;
             MainViewButtonsDock = Dock.Right;
             StartTab = CtxmCode.ReserveView;
+            TrimSortTitle = false;
         }
 
         [NonSerialized()]

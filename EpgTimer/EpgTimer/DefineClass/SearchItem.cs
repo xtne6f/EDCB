@@ -36,6 +36,13 @@ namespace EpgTimer
                 return EventInfo.DataTitle;
             }
         }
+        public virtual String EventNameValue
+        {
+            get
+            {
+                return Settings.Instance.TrimSortTitle == true ? MenuUtil.TrimKeyword(EventName) : EventName;
+            }
+        }
         public virtual String ServiceName
         {
             get
