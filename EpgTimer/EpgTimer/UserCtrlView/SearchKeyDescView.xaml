@@ -26,7 +26,7 @@
                     <Button Content="削除" Height="23" HorizontalAlignment="Left" Margin="188,0,0,36" Name="button_content_del" VerticalAlignment="Bottom" Width="56" />
                     <Button Content="全クリア" Height="23" HorizontalAlignment="Left" Margin="126,0,0,36" Name="button_content_clear" VerticalAlignment="Bottom" Width="56" />
                     <Label Content="サービス絞り込み" Height="28" HorizontalAlignment="Left" Margin="286,6,0,0" Name="label2" VerticalAlignment="Top" />
-                    <ListView HorizontalAlignment="Left" Margin="286,40,0,7" Name="listView_service" Width="252" SelectionMode="Single" ItemsSource="{Binding}" >
+                    <ListView HorizontalAlignment="Left" Margin="286,40,0,7" Name="listView_service" Width="252" SelectionMode="Single" >
                         <ListView.View>
                             <GridView x:Name="gridView_service">
                                 <GridViewColumn>

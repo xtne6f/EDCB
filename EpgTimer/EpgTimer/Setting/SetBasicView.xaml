@@ -57,7 +57,7 @@
             <TabItem Header="EPG取得" Name="tabItem3">
                 <Grid Name="grid_epg">
                     <Label Content="EPG取得対象サービス" Height="28" HorizontalAlignment="Left" Margin="12,12,0,0" Name="label21" VerticalAlignment="Top" />
-                    <ListView Height="183" HorizontalAlignment="Left" Margin="32,46,0,0" Name="listView_service" VerticalAlignment="Top" Width="196" ItemsSource="{Binding}" >
+                    <ListView Height="183" HorizontalAlignment="Left" Margin="32,46,0,0" Name="listView_service" VerticalAlignment="Top" Width="196">
                         <ListView.ItemContainerStyle>
                             <Style TargetType="{x:Type ListViewItem}" BasedOn="{StaticResource {x:Type ListViewItem}}" >
                                 <Setter Property="ToolTipService.ShowDuration" Value="20000" />
@@ -92,7 +92,7 @@
                     <Button Content="全クリア" Height="23" HorizontalAlignment="Left" Margin="234,104,0,0" Name="button_allClear" VerticalAlignment="Top" Width="169" Click="button_allClear_Click" />
                     <Label Content="EPG取得開始時間 (有効にするものにチェック)" Height="28" HorizontalAlignment="Left" Margin="12,235,0,0" Name="label24" VerticalAlignment="Top" />
 
-                    <ListView Height="86" HorizontalAlignment="Left" Margin="32,270,0,0" Name="ListView_time" VerticalAlignment="Top" Width="250" ItemsSource="{Binding}">
+                    <ListView Height="86" HorizontalAlignment="Left" Margin="32,270,0,0" Name="ListView_time" VerticalAlignment="Top" Width="250">
                         <ListView.View>
                             <GridView x:Name="gridView_time">
                                 <GridViewColumn>

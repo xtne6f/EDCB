@@ -42,7 +42,7 @@
                     <CheckBox Content="デフォルト" Height="16" HorizontalAlignment="Left" Margin="160,98,0,0" Name="checkBox_serviceMode" VerticalAlignment="Top" Checked="checkBox_serviceMode_Checked" Unchecked="checkBox_serviceMode_Checked" />
                     <CheckBox Content="字幕を含める" Height="16" HorizontalAlignment="Left" Margin="260,98,0,0" Name="checkBox_serviceCaption" VerticalAlignment="Top" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_serviceMode, Converter={StaticResource invert}}" />
                     <CheckBox Content="データカルーセルを含める" Height="16" HorizontalAlignment="Left" Margin="370,98,0,0" Name="checkBox_serviceData" VerticalAlignment="Top" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_serviceMode, Converter={StaticResource invert}}" />
-                    <ListView Height="79" Margin="11,125,109,0" Name="listView_recFolder" VerticalAlignment="Top" ItemsSource="{Binding}">
+                    <ListView Height="79" Margin="11,125,109,0" Name="listView_recFolder" VerticalAlignment="Top">
                         <ListView.View>
                             <GridView x:Name="gridView_recFolder">
                                 <GridViewColumn DisplayMemberBinding="{Binding Path=RecFolder}">
