@@ -112,7 +112,7 @@ namespace EpgTimer
                 MenuCmds.CmdData cmdData;
                 if (mm.MC.WorkCmdOptions.TryGetValue(icmd, out cmdData))
                 {
-                    if ((cmdData.GesTrg & spc) == spc || cmdData.GesTrg == MenuCmds.GestureTrg.None)
+                    if (((cmdData.GesTrg & spc) == spc || cmdData.GesTrg == MenuCmds.GestureTrg.None) && mm.IsGestureDisableOnView(icmd, this.View) == false)
                     {
                         iTrg.InputBindings.AddRange(GetInputBinding(icmd));
                     }
