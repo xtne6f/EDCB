@@ -118,9 +118,9 @@ namespace EpgTimer.Setting
                     listBox_bon.SelectedIndex = 0;
                 }
 
-                comboBox_HH.DataContext = Enumerable.Range(0, 24);
+                comboBox_HH.ItemsSource = Enumerable.Range(0, 24);
                 comboBox_HH.SelectedIndex = 0;
-                comboBox_MM.DataContext = Enumerable.Range(0, 60);
+                comboBox_MM.ItemsSource = Enumerable.Range(0, 60);
                 comboBox_MM.SelectedIndex = 0;
 
                 serviceList = new List<ServiceViewItem>();
@@ -143,7 +143,7 @@ namespace EpgTimer.Setting
                 catch
                 {
                 }
-                listView_service.DataContext = serviceList;
+                listView_service.ItemsSource = serviceList;
 
                 if (IniFileHandler.GetPrivateProfileInt("SET", "BSBasicOnly", 1, SettingPath.CommonIniPath) == 1)
                 {
@@ -223,7 +223,7 @@ namespace EpgTimer.Setting
                         timeList.Add(item);
                     }
                 }
-                ListView_time.DataContext = timeList;
+                ListView_time.ItemsSource = timeList;
 
                 textBox_ngCapMin.Text = IniFileHandler.GetPrivateProfileInt("SET", "NGEpgCapTime", 20, SettingPath.TimerSrvIniPath).ToString();
                 textBox_ngTunerMin.Text = IniFileHandler.GetPrivateProfileInt("SET", "NGEpgCapTunerTime", 20, SettingPath.TimerSrvIniPath).ToString();

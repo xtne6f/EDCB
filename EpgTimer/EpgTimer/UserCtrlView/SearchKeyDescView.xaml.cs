@@ -31,28 +31,28 @@ namespace EpgTimer
                 }
                 listView_service.ItemsSource = serviceList;
 
-                comboBox_content.DataContext = CommonManager.ContentKindList;
+                comboBox_content.ItemsSource = CommonManager.ContentKindList;
                 comboBox_content.SelectedIndex = 0;
 
-                comboBox_time_sw.DataContext = new string[] { "日", "月", "火", "水", "木", "金", "土" };
+                comboBox_time_sw.ItemsSource = new string[] { "日", "月", "火", "水", "木", "金", "土" };
                 comboBox_time_sw.SelectedIndex = 0;
-                comboBox_time_sh.DataContext = Enumerable.Range(0, 24);
+                comboBox_time_sh.ItemsSource = Enumerable.Range(0, 24);
                 comboBox_time_sh.SelectedIndex = 0;
-                comboBox_time_sm.DataContext = Enumerable.Range(0, 60);
+                comboBox_time_sm.ItemsSource = Enumerable.Range(0, 60);
                 comboBox_time_sm.SelectedIndex = 0;
-                comboBox_time_ew.DataContext = new string[] { "日", "月", "火", "水", "木", "金", "土" };
+                comboBox_time_ew.ItemsSource = new string[] { "日", "月", "火", "水", "木", "金", "土" };
                 comboBox_time_ew.SelectedIndex = 6;
-                comboBox_time_eh.DataContext = Enumerable.Range(0, 24);
+                comboBox_time_eh.ItemsSource = Enumerable.Range(0, 24);
                 comboBox_time_eh.SelectedIndex = 23;
-                comboBox_time_em.DataContext = Enumerable.Range(0, 60);
+                comboBox_time_em.ItemsSource = Enumerable.Range(0, 60);
                 comboBox_time_em.SelectedIndex = 59;
-                comboBox_week_sh.DataContext = CommonManager.CustomHourList;
+                comboBox_week_sh.ItemsSource = CommonManager.CustomHourList;
                 comboBox_week_sh.SelectedIndex = 0;
-                comboBox_week_sm.DataContext = Enumerable.Range(0, 60);
+                comboBox_week_sm.ItemsSource = Enumerable.Range(0, 60);
                 comboBox_week_sm.SelectedIndex = 0;
-                comboBox_week_eh.DataContext = CommonManager.CustomHourList;
+                comboBox_week_eh.ItemsSource = CommonManager.CustomHourList;
                 comboBox_week_eh.SelectedIndex = 23;
-                comboBox_week_em.DataContext = Enumerable.Range(0, 60);
+                comboBox_week_em.ItemsSource = Enumerable.Range(0, 60);
                 comboBox_week_em.SelectedIndex = 59;
 
                 freeRadioBtns = new RadioBtnSelect(radioButton_free_1, radioButton_free_2, radioButton_free_3);

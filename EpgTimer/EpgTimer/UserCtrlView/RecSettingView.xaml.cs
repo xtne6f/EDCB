@@ -53,10 +53,10 @@ namespace EpgTimer
 
                 recSetting = Settings.Instance.RecPresetList[0].RecPresetData.Clone();
 
-                comboBox_recMode.DataContext = CommonManager.RecModeList;
-                comboBox_tuijyu.DataContext = CommonManager.YesNoList;
-                comboBox_pittari.DataContext = CommonManager.YesNoList;
-                comboBox_priority.DataContext = CommonManager.PriorityList;
+                comboBox_recMode.ItemsSource = CommonManager.RecModeList;
+                comboBox_tuijyu.ItemsSource = CommonManager.YesNoList;
+                comboBox_pittari.ItemsSource = CommonManager.YesNoList;
+                comboBox_priority.ItemsSource = CommonManager.PriorityList;
 
                 recEndModeRadioBtns = new RadioBtnSelect(radioButton_non, radioButton_standby, radioButton_suspend, radioButton_shutdown);
 

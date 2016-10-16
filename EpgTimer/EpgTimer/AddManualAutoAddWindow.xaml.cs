@@ -45,17 +45,17 @@ namespace EpgTimer
                     .Select(wd => new CheckBox { Content = wd, Margin = new Thickness(0, 0, 6, 0) }));
                 chbxList.ForEach(chbx => stackPanel_week.Children.Add(chbx));
 
-                comboBox_startHH.DataContext = CommonManager.CustomHourList;
+                comboBox_startHH.ItemsSource = CommonManager.CustomHourList;
                 comboBox_startHH.SelectedIndex = 0;
-                comboBox_startMM.DataContext = Enumerable.Range(0, 60);
+                comboBox_startMM.ItemsSource = Enumerable.Range(0, 60);
                 comboBox_startMM.SelectedIndex = 0;
-                comboBox_startSS.DataContext = Enumerable.Range(0, 60);
+                comboBox_startSS.ItemsSource = Enumerable.Range(0, 60);
                 comboBox_startSS.SelectedIndex = 0;
-                comboBox_endHH.DataContext = CommonManager.CustomHourList;
+                comboBox_endHH.ItemsSource = CommonManager.CustomHourList;
                 comboBox_endHH.SelectedIndex = 0;
-                comboBox_endMM.DataContext = Enumerable.Range(0, 60);
+                comboBox_endMM.ItemsSource = Enumerable.Range(0, 60);
                 comboBox_endMM.SelectedIndex = 0;
-                comboBox_endSS.DataContext = Enumerable.Range(0, 60);
+                comboBox_endSS.ItemsSource = Enumerable.Range(0, 60);
                 comboBox_endSS.SelectedIndex = 0;
 
                 comboBox_service.ItemsSource = ChSet5.ChList.Values;
