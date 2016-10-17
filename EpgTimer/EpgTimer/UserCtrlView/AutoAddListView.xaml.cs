@@ -60,6 +60,12 @@ namespace EpgTimer
                 StatusManager.StatusNotifySet(ret, "並べ替えを復元");
                 return ret;
             }
+            public override void StatusChanged()
+            {
+                //とりあえず今はこれで
+                var tab = View.Parent as TabItem;
+                tab.Header = (tab.Header as string).TrimEnd('*') + (View.dragMover.NotSaved == true ? "*" : "");
+            }
             public override void ItemMoved() { View.lstCtrl.gvSorter.ResetSortParams(); }
         }
 
