@@ -706,7 +706,7 @@ namespace EpgTimer
             //基本情報
             if (textMode == EventInfoTextMode.BasicOnly)
             {
-                return retText;
+                return retText.TrimEnd('\r', '\n');
             }
 
             retText += extText;
@@ -714,7 +714,7 @@ namespace EpgTimer
             //基本情報+説明(番組表のツールチップなど)
             if (textMode == EventInfoTextMode.BasicText)
             {
-                return retText;
+                return retText.TrimEnd('\r', '\n');
             }
 
             if (eventInfo.ExtInfo != null)
@@ -725,7 +725,7 @@ namespace EpgTimer
             //テキスト情報全て(番組表のツールチップなど)
             if (textMode == EventInfoTextMode.TextAll)
             {
-                return retText;
+                return retText.TrimEnd('\r', '\n');
             }
 
             //ジャンル
@@ -1003,7 +1003,7 @@ namespace EpgTimer
                     }
                 }
             }
-            return retText;
+            return retText.TrimEnd('\r', '\n');
         }
 
         static String ConvertValueText(int val, List<string> textList, string errText = "不明")
