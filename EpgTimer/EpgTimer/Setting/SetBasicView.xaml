@@ -5,7 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d" 
              d:DesignHeight="500" d:DesignWidth="780">
-    <Grid>
+
         <TabControl Name="tabControl1">
             <TabItem Header="保存フォルダ" Name="tabItem1">
                 <Grid Name="grid_folder">
@@ -139,5 +139,5 @@
                 </Grid>
             </TabItem>
         </TabControl>
-    </Grid>
+
 </UserControl>
