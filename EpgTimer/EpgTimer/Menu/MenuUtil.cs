@@ -1065,7 +1065,7 @@ namespace EpgTimer
                     //itemが調べている番組に完全に含まれているならそれを選択する
                     double overlapLength = CulcOverlapLength(item.PgStartTime, item.PgDurationSecond,
                                                             eventChkInfo.start_time, eventChkInfo.durationSec);
-                    if (overlapLength == item.PgDurationSecond)
+                    if (overlapLength > 0 && overlapLength == item.PgDurationSecond)
                     {
                         eventPossible = eventChkInfo;
                         break;
