@@ -33,7 +33,6 @@ namespace EpgTimer
         private bool? minimizedStarting = false;
 
         private DispatcherTimer chkTimer = null;
-        private bool needUnRegist = true;
 
         private bool idleShowBalloon = false;
 
@@ -734,13 +733,7 @@ namespace EpgTimer
                 }
                 else
                 {
-                    if (CommonManager.Instance.NW.IsConnected == true && needUnRegist == true)
-                    {
-                        if (cmd.SendUnRegistTCP(Settings.Instance.NWWaitPort) == ErrCode.CMD_ERR_CONNECT)
-                        {
-                            //MessageBox.Show("サーバーに接続できませんでした");
-                        }
-                    }
+                    UnRegistTCP();
                 }
                 if (mutex != null)
                 {
@@ -1096,7 +1089,7 @@ namespace EpgTimer
             ViewUtil.SingleWindowCheck(typeof(SuspendCheckWindow), true);
 
             suspendMode = suspendMode == 1 ? suspendMode : (byte)2;
-            ErrCode err = cmd.SendChkSuspend();
+            ErrCode err = taskTray.Icon == TaskIconSpec.TaskIconGray ? ErrCode.CMD_ERR_CONNECT : cmd.SendChkSuspend();
             if (err != ErrCode.CMD_SUCCESS)
             {
                 if (err == ErrCode.CMD_ERR_CONNECT)
@@ -1113,39 +1106,27 @@ namespace EpgTimer
 
             if (Settings.Instance.SuspendChk == 1)
             {
-                SuspendCheckWindow dlg = new SuspendCheckWindow();
-                dlg.SetMode(0, suspendMode);
-                if (dlg.ShowDialog() == true)
+                var dlg = new SuspendCheckWindow();
+                dlg.SetMode(suspendMode);
+                if (dlg.ShowDialog() != true)
                 {
                     return;
                 }
             }
 
-            ushort cmdVal = suspendMode;
-            if (IniFileHandler.GetPrivateProfileInt("SET", "Reboot", 0, SettingPath.TimerSrvIniPath) == 1)
+            var cmdVal = (ushort)(0xFF00 | suspendMode);
+            if (CommonManager.Instance.NWMode == true && Settings.Instance.SuspendCloseNW == true)
             {
-                cmdVal |= 0x0100;
+                UnRegistTCP();
+                cmd.SendSuspend(cmdVal);
+                CloseCmd();
+                return;
             }
-            if (CommonManager.Instance.NWMode == true)
+            else
             {
-                cmdVal |= 0xFF00;//今はサーバ側の設定を読めてるので無くても大丈夫なはずだけど、一応そのまま
-
-                if (Settings.Instance.SuspendCloseNW == true)
-                {
-                    if (CommonManager.Instance.NW.IsConnected == true)
-                    {
-                        if (cmd.SendUnRegistTCP(Settings.Instance.NWWaitPort) == ErrCode.CMD_ERR_CONNECT)
-                        { }
-
-                        cmd.SendSuspend(cmdVal);
-                        needUnRegist = false;
-                        CloseCmd();
-                        return;
-                    }
-                }
+                SaveData();
+                cmd.SendSuspend(cmdVal);
             }
-            SaveData();
-            cmd.SendSuspend(cmdVal);
         }
 
         void CustumCmd(int id)
@@ -1166,6 +1147,17 @@ namespace EpgTimer
                 }
             }
             catch (Exception ex) { MessageBox.Show(ex.Message); }
+        }
+
+        private bool needUnRegist = true;
+        void UnRegistTCP()
+        {
+            if (Settings.Instance.NWWaitPort != 0 && needUnRegist == true 
+                && CommonManager.Instance.NW.IsConnected == true && taskTray.Icon != TaskIconSpec.TaskIconGray)
+            {
+                cmd.SendUnRegistTCP(Settings.Instance.NWWaitPort);
+            }
+            needUnRegist = false;
         }
 
         void NwTVEndCmd()
@@ -1259,10 +1251,28 @@ namespace EpgTimer
                     {
                         pResParam.uiParam = (uint)ErrCode.CMD_SUCCESS;
 
+                        if (IniFileHandler.GetPrivateProfileInt("NO_SUSPEND", "NoUsePC", 0, SettingPath.TimerSrvIniPath) == 1)
+                        {
+                            int ngUsePCTime = IniFileHandler.GetPrivateProfileInt("NO_SUSPEND", "NoUsePCTime", 3, SettingPath.TimerSrvIniPath);
+                            if (ngUsePCTime == 0 || CommonUtil.GetIdleTimeSec() < ngUsePCTime * 60)
+                            {
+                                break;
+                            }
+                        }
+
                         UInt16 param = 0;
                         (new CtrlCmdReader(new System.IO.MemoryStream(pCmdParam.bData, false))).Read(ref param);
 
-                        Dispatcher.BeginInvoke(new Action(() => ShowSleepDialog(param)));
+                        Dispatcher.BeginInvoke(new Action(() =>
+                        {
+                            var dlg = new SuspendCheckWindow();
+                            dlg.SetMode(param & 0x00FFu);
+                            if (dlg.ShowDialog() == true)
+                            {
+                                SaveData();
+                                cmd.SendSuspend(param);
+                            }
+                        }));
                     }
                     break;
                 case CtrlCmd.CMD_TIMER_GUI_QUERY_REBOOT:
@@ -1274,17 +1284,11 @@ namespace EpgTimer
                     {
                         pResParam.uiParam = (uint)ErrCode.CMD_SUCCESS;
 
-                        UInt16 param = 0;
-                        (new CtrlCmdReader(new System.IO.MemoryStream(pCmdParam.bData, false))).Read(ref param);
-
-                        Byte reboot = (Byte)((param & 0xFF00) >> 8);
-                        Byte suspendMode = (Byte)(param & 0x00FF);
-
                         Dispatcher.BeginInvoke(new Action(() =>
                         {
-                            SuspendCheckWindow dlg = new SuspendCheckWindow();
-                            dlg.SetMode(reboot, suspendMode);
-                            if (dlg.ShowDialog() != true)
+                            var dlg = new SuspendCheckWindow();
+                            dlg.SetMode(0);
+                            if (dlg.ShowDialog() == true)
                             {
                                 SaveData();
                                 cmd.SendReboot();
@@ -1357,31 +1361,6 @@ namespace EpgTimer
             infoText = CommonUtil.LimitLenString(infoText, 63 - endText.Length);
 
             return infoText + endText;
-        }
-
-        private void ShowSleepDialog(UInt16 param)
-        {
-            if (IniFileHandler.GetPrivateProfileInt("NO_SUSPEND", "NoUsePC", 0, SettingPath.TimerSrvIniPath) == 1)
-            {
-                int ngUsePCTime = IniFileHandler.GetPrivateProfileInt("NO_SUSPEND", "NoUsePCTime", 3, SettingPath.TimerSrvIniPath);
-
-                if (ngUsePCTime == 0 || CommonUtil.GetIdleTimeSec() < ngUsePCTime * 60)
-                {
-                    return;
-                }
-            }
-
-            Byte suspendMode = (Byte)(param & 0x00FF);
-
-            {
-                SuspendCheckWindow dlg = new SuspendCheckWindow();
-                dlg.SetMode(0, suspendMode);
-                if (dlg.ShowDialog() != true)
-                {
-                    SaveData();
-                    cmd.SendSuspend(param);
-                }
-            }
         }
 
         void NotifyStatus(NotifySrvInfo status)
