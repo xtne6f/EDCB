@@ -1023,7 +1023,7 @@ namespace EpgTimer
 
         public static String ConvertPriorityText(int val)
         {
-            return ConvertValueText(val, PriorityList);
+            return ConvertValueText(val - 1, PriorityList);
         }
 
         public static String ConvertTunerText(uint tunerID)
