@@ -55,6 +55,7 @@ namespace EpgTimer
         public Brush ResWarBackColor { get; private set; }
         public Brush ResNoBackColor { get; private set; }
         public Brush ResAutoAddMissingBackColor { get; private set; }
+        public Brush ResMultipleBackColor { get; private set; }
         public Brush ListDefForeColor { get; private set; }
         public List<Brush> RecModeForeColor { get; private set; }
         public Brush RecEndDefBackColor { get; private set; }
@@ -1441,6 +1442,7 @@ namespace EpgTimer
                 CustContentColorList.Add(_GetColorBrush(Settings.Instance.ReserveRectColorNoTuner, Settings.Instance.ContentCustColorList[0x13]));
                 CustContentColorList.Add(_GetColorBrush(Settings.Instance.ReserveRectColorWarning, Settings.Instance.ContentCustColorList[0x14]));
                 CustContentColorList.Add(_GetColorBrush(Settings.Instance.ReserveRectColorAutoAddMissing, Settings.Instance.ContentCustColorList[0x15]));
+                CustContentColorList.Add(_GetColorBrush(Settings.Instance.ReserveRectColorMultiple, Settings.Instance.ContentCustColorList[0x16]));
 
                 CustTitle1Color = _GetColorBrush(Settings.Instance.TitleColor1, Settings.Instance.TitleCustColor1);
                 CustTitle2Color = _GetColorBrush(Settings.Instance.TitleColor2, Settings.Instance.TitleCustColor2);
@@ -1479,6 +1481,7 @@ namespace EpgTimer
                 ResErrBackColor = _GetColorBrush(Settings.Instance.ResBackColors[2], Settings.Instance.ResBackCustColors[2]);
                 ResWarBackColor = _GetColorBrush(Settings.Instance.ResBackColors[3], Settings.Instance.ResBackCustColors[3]);
                 ResAutoAddMissingBackColor = _GetColorBrush(Settings.Instance.ResBackColors[4], Settings.Instance.ResBackCustColors[4]);
+                ResMultipleBackColor = _GetColorBrush(Settings.Instance.ResBackColors[5], Settings.Instance.ResBackCustColors[5]);
 
                 StatResForeColor = _GetColorBrush(Settings.Instance.StatColors[0], Settings.Instance.StatCustColors[0]);
                 StatRecForeColor = _GetColorBrush(Settings.Instance.StatColors[1], Settings.Instance.StatCustColors[1]);

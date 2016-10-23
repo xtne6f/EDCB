@@ -113,6 +113,14 @@ namespace EpgTimer
                 return IsAutoAdded && Append.IsAutoAddInvalid;
             }
         }
+        public bool IsMultiple
+        {
+            get
+            {
+                if (Settings.Instance.DisplayReserveMultiple == false) return false;
+                return Append.IsMultiple;
+            }
+        }
         public override List<EpgAutoAddData> SearchEpgAutoAddList(bool? IsEnabled = null, bool ByFazy = false)
         {
             //プログラム予約の場合はそれっぽい番組を選んで、キーワード予約の検索にヒットしていたら選択する。
@@ -183,6 +191,7 @@ namespace EpgTimer
             EpgAutoListEnabled = new List<EpgAutoAddData>();
             ManualAutoList = new List<ManualAutoAddData>();
             ManualAutoListEnabled = new List<ManualAutoAddData>();
+            MultipleEPGList = new List<ReserveData>();
         }
 
         public bool IsAutoAddMissing { get; protected set; }
@@ -193,6 +202,8 @@ namespace EpgTimer
         public List<ManualAutoAddData> ManualAutoList { get; protected set; }
         public List<ManualAutoAddData> ManualAutoListEnabled { get; protected set; }
         public List<ManualAutoAddData> ManualAutoListDisabled { get { return ManualAutoList.FindAll(data => data.IsEnabled == false); } }
+        public bool IsMultiple { get; protected set; }
+        public List<ReserveData> MultipleEPGList { get; protected set; }
 
         //情報の更新をする。
         public void UpdateData()
@@ -201,6 +212,7 @@ namespace EpgTimer
             ManualAutoListEnabled = ManualAutoList.GetAutoAddList(true);
             IsAutoAddMissing = (EpgAutoList.Count + ManualAutoList.Count) == 0;
             IsAutoAddInvalid = (EpgAutoListEnabled.Count + ManualAutoListEnabled.Count) == 0;
+            IsMultiple = MultipleEPGList.Count != 0;
         }
     }
 }

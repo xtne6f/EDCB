@@ -226,7 +226,7 @@ namespace EpgTimer
         private void ReloadReserveData()
         {
             lstCtrl.dataList.SetReserveData();
-            this.listView_result.Items.Refresh();
+            lstCtrl.RefreshListView(true);
             UpdateStatus();
         }
 

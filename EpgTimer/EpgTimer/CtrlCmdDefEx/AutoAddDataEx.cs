@@ -87,7 +87,7 @@ namespace EpgTimer
 
         //EpgAutoAddDataAppend 追加分
         protected override AutoAddDataAppend Append { get { return CommonManager.Instance.DB.GetEpgAutoAddDataAppend(this); } }
-        public override uint SearchCount { get { return (uint)(Append as EpgAutoAddDataAppend).SearchItemList.Count; } }
+        public override uint SearchCount { get { return (Append as EpgAutoAddDataAppend).SearchCount; } }
         public List<SearchItem> GetSearchList() { return (Append as EpgAutoAddDataAppend).SearchItemList; }
     }
 
@@ -211,16 +211,18 @@ namespace EpgTimer
         {
             EpgEventList = eventlist != null ? eventlist : new List<EpgEventInfo>();
             SearchItemList = new List<SearchItem>();
+            SearchCount = 0;
         }
 
         public List<EpgEventInfo> EpgEventList { get; protected set; }
         public List<SearchItem> SearchItemList { get; protected set; }
+        public uint SearchCount { get; protected set; }
 
         //情報の更新をする。
         public override void UpdateCounts()
         {
             SearchItemList = new List<SearchItem>();
-            SearchItemList.AddFromEventList(EpgEventList, false, true);
+            SearchCount = (uint)SearchItemList.AddFromEventList(EpgEventList, false, true);
             ReseveItemList = SearchItemList.GetReserveList();
             base.UpdateCounts();
         }

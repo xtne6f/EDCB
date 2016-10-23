@@ -78,7 +78,7 @@ namespace EpgTimer
         {
             //予約チェック
             lstCtrl.dataList.SetReserveData();
-            listView_event.Items.Refresh();
+            lstCtrl.RefreshListView(true);
         }
 
         protected override void ReloadProgramViewItem()
@@ -105,6 +105,7 @@ namespace EpgTimer
                 listBox_service.ItemsSource = serviceList;
 
                 UpdateEventList(true);
+                ReloadReserveInfo = false;//リストビューでは処理済みになる
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }

@@ -90,6 +90,10 @@ namespace EpgTimer
                     {
                         return CommonManager.Instance.CustContentColorList[0x15];
                     }
+                    if (ReserveInfo.IsMultiple == true)
+                    {
+                        return CommonManager.Instance.CustContentColorList[0x16];
+                    }
                 }
                 return CommonManager.Instance.CustContentColorList[0x11];
             }

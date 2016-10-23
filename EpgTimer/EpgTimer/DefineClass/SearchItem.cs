@@ -148,14 +148,15 @@ namespace EpgTimer
             {
                 if (ReserveInfo == null) return "";
                 //
+                string m = ReserveInfo.IsMultiple == true ? "[重複EPG]" : "";
                 if (ReserveInfo.IsAutoAdded == false)
                 {
-                    return "個別予約(" + (ReserveInfo.IsEpgReserve == true ? "EPG" : "プログラム") + ")";
+                    return m + "個別予約(" + (ReserveInfo.IsEpgReserve == true ? "EPG" : "プログラム") + ")";
                 }
                 else
                 {
                     string s = ReserveInfo.Comment;
-                    return (ReserveInfo.IsAutoAddMissing == true ? "不明な" : ReserveInfo.IsAutoAddInvalid == true ? "無効の" : "")
+                    return m + (ReserveInfo.IsAutoAddMissing == true ? "不明な" : ReserveInfo.IsAutoAddInvalid == true ? "無効の" : "")
                             + (s.StartsWith("EPG自動予約(") == true ? "キーワード予約(" + s.Substring(8) : s);
                 }
             }
@@ -294,41 +295,56 @@ namespace EpgTimer
         //{
         //    return list.Any(info => item != null && item.IsReserved == true);
         //}
-        public static void AddFromEventList(this ICollection<SearchItem> itemlist, IEnumerable<EpgEventInfo> eventList, bool isExceptUnknownStartTime, bool isExceptEnded)
+        public static int AddFromEventList(this ICollection<SearchItem> itemlist, IEnumerable<EpgEventInfo> eventList, bool isExceptUnknownStartTime, bool isExceptEnded)
         {
-            if (eventList == null) return;
+            if (eventList == null) return 0;
             //
             foreach (EpgEventInfo info in eventList.OfAvailable(isExceptUnknownStartTime, isExceptEnded == true ? (DateTime?)DateTime.Now : null))
             {
                 itemlist.Add(new SearchItem(info));
             }
+
+            int searchCount = itemlist.Count;
+
             itemlist.SetReserveData();
+
+            return searchCount;
         }
 
-        public static void SetReserveData(this ICollection<SearchItem> list)
+        public static int SetReserveData(this ICollection<SearchItem> list)
         {
             var listKeys = new Dictionary<UInt64, SearchItem>();
 
-            foreach (SearchItem listItem1 in list)
+            foreach (SearchItem listItem1 in list.ToList())//重複を削除するのでコピー
             {
-                //重複するキーは基本的に無いという前提
-                try
+                UInt64 key = listItem1.EventInfo.CurrentPgUID();
+                if (listKeys.ContainsKey(key) == true)
                 {
-                    listItem1.Reset();
-                    listKeys.Add(listItem1.EventInfo.CurrentPgUID(), listItem1);
-                    listItem1.ReserveInfo = null;
+                    list.Remove(listItem1);
+                    continue;
                 }
-                catch { }
+                listKeys.Add(key, listItem1);
+                listItem1.ReserveInfo = null;
+                listItem1.Reset();
             }
+
+            int startCount = list.Count;
 
             SearchItem setItem;
             foreach (ReserveData data in CommonManager.Instance.DB.ReserveList.Values)
             {
                 if (listKeys.TryGetValue(data.CurrentPgUID(), out setItem))
                 {
+                    if (setItem.IsReserved == true)
+                    {
+                        setItem = new SearchItem(setItem.EventInfo);
+                        list.Add(setItem);
+                    }
                     setItem.ReserveInfo = data;
                 }
             }
+
+            return list.Count - startCount;
         }
 
     }

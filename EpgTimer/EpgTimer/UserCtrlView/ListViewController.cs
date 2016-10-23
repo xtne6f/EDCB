@@ -186,6 +186,12 @@ namespace EpgTimer
             return false;
         }
 
+        public void RefreshListView(bool needSort = false)
+        {
+            if (needSort == true) this.gvSorter.SortByMultiHeader(dataList);
+            listView.Items.Refresh();
+        }
+
         public bool GridViewHeaderClickSort(RoutedEventArgs e)
         {
             try

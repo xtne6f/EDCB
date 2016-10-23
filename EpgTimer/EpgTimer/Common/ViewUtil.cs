@@ -73,6 +73,10 @@ namespace EpgTimer
                 {
                     return CommonManager.Instance.ResAutoAddMissingBackColor;
                 }
+                if (ReserveData.IsMultiple == true)
+                {
+                    return CommonManager.Instance.ResMultipleBackColor;
+                }
             }
             return CommonManager.Instance.ResDefBackColor;
         }

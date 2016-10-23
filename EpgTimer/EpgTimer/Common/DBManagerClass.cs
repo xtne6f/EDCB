@@ -216,6 +216,12 @@ namespace EpgTimer
                     item.GetReserveList().ForEach(info => dict[info.ReserveID].ManualAutoList.Add(item));
                 }
 
+                foreach (ReserveData item in reserveList.Values.Where(data => data.IsEpgReserve == true))
+                {
+                    UInt64 key = item.Create64PgKey();
+                    dict[item.ReserveID].MultipleEPGList.AddRange(reserveList.Values.Where(data => data.Create64PgKey() == key && data != item));
+                }
+
                 foreach (ReserveDataAppend data in dict.Values)
                 {
                     data.UpdateData();

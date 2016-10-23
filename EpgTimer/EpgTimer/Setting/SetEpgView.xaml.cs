@@ -156,6 +156,7 @@ namespace EpgTimer.Setting
                 setComboColor1(Settings.Instance.ReserveRectColorNoTuner, comboBox_reserveNoTuner);
                 setComboColor1(Settings.Instance.ReserveRectColorWarning, comboBox_reserveWarning);
                 setComboColor1(Settings.Instance.ReserveRectColorAutoAddMissing, comboBox_reserveAutoAddMissing);
+                setComboColor1(Settings.Instance.ReserveRectColorMultiple, comboBox_reserveMultiple);
                 setComboColors(Settings.Instance.EpgEtcColors, grid_EpgTimeColors);
                 setComboColors(Settings.Instance.EpgEtcColors, grid_EpgEtcColors);
                 setComboColors(Settings.Instance.TunerServiceColors, grid_TunerFontColor);
@@ -201,6 +202,7 @@ namespace EpgTimer.Setting
                 //予約一覧・共通画面
                 this.ctxmSetInfo = Settings.Instance.MenuSet.Clone();
                 checkBox_displayAutoAddMissing.IsChecked = Settings.Instance.DisplayReserveAutoAddMissing;
+                checkBox_displayMultiple.IsChecked = Settings.Instance.DisplayReserveMultiple;
                 checkBox_resNoYear.IsChecked = Settings.Instance.ResInfoNoYear;
                 checkBox_resNoSecond.IsChecked = Settings.Instance.ResInfoNoSecond;
                 checkBox_resNoDurSecond.IsChecked = Settings.Instance.ResInfoNoDurSecond;
@@ -348,6 +350,7 @@ namespace EpgTimer.Setting
                 Settings.Instance.ReserveRectColorNoTuner = getComboColor1(comboBox_reserveNoTuner);
                 Settings.Instance.ReserveRectColorWarning = getComboColor1(comboBox_reserveWarning);
                 Settings.Instance.ReserveRectColorAutoAddMissing = getComboColor1(comboBox_reserveAutoAddMissing);
+                Settings.Instance.ReserveRectColorMultiple = getComboColor1(comboBox_reserveMultiple);
                 getComboColors(Settings.Instance.EpgEtcColors, grid_EpgTimeColors);
                 getComboColors(Settings.Instance.EpgEtcColors, grid_EpgEtcColors);
                 getComboColors(Settings.Instance.TunerServiceColors, grid_TunerFontColor);
@@ -390,6 +393,7 @@ namespace EpgTimer.Setting
                 //予約一覧画面
                 Settings.Instance.MenuSet = this.ctxmSetInfo.Clone();
                 Settings.Instance.DisplayReserveAutoAddMissing = (checkBox_displayAutoAddMissing.IsChecked != false);
+                Settings.Instance.DisplayReserveMultiple = (checkBox_displayMultiple.IsChecked != false);
                 Settings.Instance.ResInfoNoYear = (checkBox_resNoYear.IsChecked == true);
                 Settings.Instance.ResInfoNoSecond = (checkBox_resNoSecond.IsChecked == true);
                 Settings.Instance.ResInfoNoDurSecond = (checkBox_resNoDurSecond.IsChecked == true);

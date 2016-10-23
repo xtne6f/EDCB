@@ -122,8 +122,9 @@ namespace EpgTimer.EpgView
         protected override bool ReloadInfoData()
         {
             if (ReloadEpgData() == false) return false;
+            ReloadReserveInfo = true;//ReloadProgramViewItem()がキャンセル出来るようにする。
             ReloadProgramViewItem();
-            ReloadReserveInfo = !ReloadReserveData();
+            if (ReloadReserveInfo == true) ReloadReserveInfo = !ReloadReserveData();
             restoreData = null;
             return true;
         }

@@ -254,6 +254,7 @@ namespace EpgTimer
         public string ReserveRectColorNoTuner { get; set; }
         public string ReserveRectColorWarning { get; set; }
         public string ReserveRectColorAutoAddMissing { get; set; }
+        public string ReserveRectColorMultiple { get; set; }
         public bool ReserveRectBackground { get; set; }
         public string TitleColor1 { get; set; }
         public string TitleColor2 { get; set; }
@@ -428,6 +429,7 @@ namespace EpgTimer
         public bool DisplayNotifyEpgChange { get; set; }
         public double DisplayNotifyJumpTime { get; set; }
         public bool DisplayReserveAutoAddMissing { get; set; }
+        public bool DisplayReserveMultiple { get; set; }
         public bool TryEpgSetting { get; set; }
         public bool LaterTimeUse { get; set; }
         public int LaterTimeHour { get; set; }
@@ -477,6 +479,7 @@ namespace EpgTimer
             ReserveRectColorNoTuner = "Red";
             ReserveRectColorWarning = "Yellow";
             ReserveRectColorAutoAddMissing = "Blue";
+            ReserveRectColorMultiple = "Purple";
             ReserveRectBackground = false;
             TitleColor1 = "Black";
             TitleColor2 = "Black";
@@ -637,6 +640,7 @@ namespace EpgTimer
             DisplayNotifyEpgChange = false;
             DisplayNotifyJumpTime = 3;
             DisplayReserveAutoAddMissing = false;
+            DisplayReserveMultiple = true;
             TryEpgSetting = true;
             LaterTimeUse = false;
             LaterTimeHour = 28 - 24;
@@ -760,7 +764,7 @@ namespace EpgTimer
                     };
                     _FillList(Instance.ContentColorList, defColors);
                 }
-                num = 0x11 + 5;//番組表17色+予約枠5色
+                num = 0x11 + 6;//番組表17色+予約枠6色
                 _FillList(Instance.ContentCustColorList, 0xFFFFFFFF, num);
 
                 //チューナー画面各フォント色
@@ -802,7 +806,7 @@ namespace EpgTimer
                 _FillList(Instance.RecModeFontCustColors, 0xFF042271, num);
 
                 //状態別予約背景色
-                num = 5;
+                num = 6;
                 if (Instance.ResBackColors.Count < num)
                 {
                     defColors = new List<string>{
@@ -811,6 +815,7 @@ namespace EpgTimer
                         ,"LightPink"//チューナー不足
                         ,"LightYellow"//一部実行
                         ,"LightBlue"//自動予約登録不明
+                        ,"Thistle"//重複EPG予約
                     };
                     _FillList(Instance.ResBackColors, defColors);
                 }
