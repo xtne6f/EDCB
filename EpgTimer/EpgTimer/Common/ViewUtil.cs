@@ -558,13 +558,21 @@ namespace EpgTimer
             }
         }
 
-        //あらゆる意味で中途半端だけど、とりあえずこれで。
-        public static void DisableTextBoxWithMenu(TextBox txtBox)
+        //無効だけどテキストは選択出来るような感じ
+        public static void SetReadOnlyWithEffect(this TextBox txtBox, bool val)
         {
-            txtBox.Background = SystemColors.ControlBrush;
-            txtBox.Foreground = SystemColors.GrayTextBrush;
+            txtBox.IsReadOnly = val;
             txtBox.IsEnabled = true;
-            txtBox.IsReadOnly = true;
+            if (val == true)
+            {
+                txtBox.Background = SystemColors.ControlBrush;//nullではないみたい;
+                txtBox.Foreground = SystemColors.GrayTextBrush;
+            }
+            else
+            {
+                txtBox.ClearValue(TextBox.BackgroundProperty);
+                txtBox.ClearValue(TextBox.ForegroundProperty);
+            }
         }
     }
 }

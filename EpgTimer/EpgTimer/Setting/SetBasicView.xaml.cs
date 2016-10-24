@@ -40,13 +40,13 @@ namespace EpgTimer.Setting
                 label1.IsEnabled = true;
                 textBox_setPath.IsEnabled = true;
                 button_setPath.IsEnabled = true;
-                ViewUtil.DisableTextBoxWithMenu(textBox_exe);
+                textBox_exe.SetReadOnlyWithEffect(true);
                 button_exe.IsEnabled = true;
-                ViewUtil.DisableTextBoxWithMenu(textBox_cmdBon);
+                textBox_cmdBon.SetReadOnlyWithEffect(true);
                 listBox_recFolder.IsEnabled = true;
-                ViewUtil.DisableTextBoxWithMenu(textBox_recFolder);
+                textBox_recFolder.SetReadOnlyWithEffect(true);
                 button_rec_open.IsEnabled = true;
-                ViewUtil.DisableTextBoxWithMenu(textBox_recInfoFolder);
+                textBox_recInfoFolder.SetReadOnlyWithEffect(true);
                 button_recInfoFolder.IsEnabled = true;
                 label5.IsEnabled = true;
                 button_shortCut.IsEnabled = true;

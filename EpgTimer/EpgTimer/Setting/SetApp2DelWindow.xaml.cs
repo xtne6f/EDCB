@@ -23,9 +23,9 @@ namespace EpgTimer
             {
                 ViewUtil.ChangeChildren(grid_main, false);
                 listBox_ext.IsEnabled = true;
-                ViewUtil.DisableTextBoxWithMenu(textBox_ext);
+                textBox_ext.SetReadOnlyWithEffect(true);
                 listBox_chk_folder.IsEnabled = true;
-                ViewUtil.DisableTextBoxWithMenu(textBox_chk_folder);
+                textBox_chk_folder.SetReadOnlyWithEffect(true);
                 button_chk_open.IsEnabled = true;
                 button_cancel.IsEnabled = true;
             }

@@ -27,7 +27,7 @@ namespace EpgTimer
             {
                 ViewUtil.ChangeChildren(grid_main, false);
                 listBox_process.IsEnabled = true;
-                ViewUtil.DisableTextBoxWithMenu(textBox_process);
+                textBox_process.SetReadOnlyWithEffect(true);
                 button_cancel.IsEnabled = true;
             }
 
