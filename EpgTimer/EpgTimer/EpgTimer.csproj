@@ -165,7 +165,6 @@
     <Compile Include="Common\PipeServer.cs" />
     <Compile Include="Common\RecNamePluginClass.cs" />
     <Compile Include="Common\WritePlugInClass.cs" />
-    <Compile Include="DefineClass\ColorSelectionItem.cs" />
     <Compile Include="Common\ChSet5Class.cs" />
     <Compile Include="Common\ColorDefClass.cs" />
     <Compile Include="DefineClass\DateItem.cs" />

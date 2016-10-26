@@ -407,12 +407,6 @@ namespace EpgTimer
             return key;
         }
 
-        public static UInt32 CreateARGBKey(byte a, byte r, byte g, byte b)
-        {
-            UInt32 key = ((UInt32)a) << 24 | ((UInt32)r) << 16 | ((UInt32)g) << 8 | (UInt32)b;
-            return key;
-        }
-
         public static EpgServiceInfo ConvertChSet5To(ChSet5Item item)
         {
             EpgServiceInfo info = new EpgServiceInfo();
@@ -989,201 +983,99 @@ namespace EpgTimer
             try
             {
                 CustContentColorList.Clear();
+                string name;
+                SolidColorBrush brush;
                 for (int i = 0; i < Settings.Instance.ContentColorList.Count; i++)
                 {
-                    String name = Settings.Instance.ContentColorList[i];
-                    Color color;
-                    if (String.Compare(name, "カスタム") == 0)
-                    {
-                        UInt32 argb = Settings.Instance.ContentCustColorList[i];
-
-                        byte r = (byte)((argb & 0x00FF0000) >> 16);
-                        byte g = (byte)((argb & 0x0000FF00) >> 8);
-                        byte b = (byte)(argb & 0x000000FF);
-
-                        color = Color.FromArgb(0xFF, r, g, b);
-                    }
-                    else
-                    {
-                        color = ColorDef.ColorFromName(name);
-                    }
+                    name = Settings.Instance.ContentColorList[i];
+                    brush = name == "カスタム" ? null : ColorDef.BrushFromName(name);
                     if (Settings.Instance.EpgGradation == false)
                     {
-                        CustContentColorList.Add(new SolidColorBrush(color));
-                        CustContentColorList[CustContentColorList.Count - 1].Freeze();
+                        if (brush == null)
+                        {
+                            (brush = new SolidColorBrush(ColorDef.FromUInt(Settings.Instance.ContentCustColorList[i]))).Freeze();
+                        }
+                        CustContentColorList.Add(brush);
                     }
                     else
                     {
-                        CustContentColorList.Add(ColorDef.GradientBrush(color));
+                        CustContentColorList.Add(ColorDef.GradientBrush(brush == null ? ColorDef.FromUInt(Settings.Instance.ContentCustColorList[i]) : brush.Color));
                     }
                 }
-                if (String.Compare(Settings.Instance.ReserveRectColorNormal, "カスタム") == 0)
+                name = Settings.Instance.ReserveRectColorNormal;
+                brush = name == "カスタム" ? null : ColorDef.BrushFromName(name);
+                if (brush == null)
                 {
-                    UInt32 argb = Settings.Instance.ContentCustColorList[0x11];
-
-                    byte r = (byte)((argb & 0x00FF0000) >> 16);
-                    byte g = (byte)((argb & 0x0000FF00) >> 8);
-                    byte b = (byte)(argb & 0x000000FF);
-
-                    Color item = Color.FromArgb(0xFF, r, g, b);
-                    SolidColorBrush backColor = new SolidColorBrush();
-                    backColor.Color = item;
-                    backColor.Freeze();
-
-                    CustContentColorList.Add(backColor);
+                    (brush = new SolidColorBrush(ColorDef.FromUInt(Settings.Instance.ContentCustColorList[0x11]))).Freeze();
                 }
-                else
+                CustContentColorList.Add(brush);
+                name = Settings.Instance.ReserveRectColorNo;
+                brush = name == "カスタム" ? null : ColorDef.BrushFromName(name);
+                if (brush == null)
                 {
-                    CustContentColorList.Add(ColorDef.Instance.ColorTable[Settings.Instance.ReserveRectColorNormal]);
+                    (brush = new SolidColorBrush(ColorDef.FromUInt(Settings.Instance.ContentCustColorList[0x12]))).Freeze();
                 }
-                if (String.Compare(Settings.Instance.ReserveRectColorNo, "カスタム") == 0)
+                CustContentColorList.Add(brush);
+                name = Settings.Instance.ReserveRectColorNoTuner;
+                brush = name == "カスタム" ? null : ColorDef.BrushFromName(name);
+                if (brush == null)
                 {
-                    UInt32 argb = Settings.Instance.ContentCustColorList[0x12];
-
-                    byte r = (byte)((argb & 0x00FF0000) >> 16);
-                    byte g = (byte)((argb & 0x0000FF00) >> 8);
-                    byte b = (byte)(argb & 0x000000FF);
-
-                    Color item = Color.FromArgb(0xFF, r, g, b);
-                    SolidColorBrush backColor = new SolidColorBrush();
-                    backColor.Color = item;
-                    backColor.Freeze();
-
-                    CustContentColorList.Add(backColor);
+                    (brush = new SolidColorBrush(ColorDef.FromUInt(Settings.Instance.ContentCustColorList[0x13]))).Freeze();
                 }
-                else
+                CustContentColorList.Add(brush);
+                name = Settings.Instance.ReserveRectColorWarning;
+                brush = name == "カスタム" ? null : ColorDef.BrushFromName(name);
+                if (brush == null)
                 {
-                    CustContentColorList.Add(ColorDef.Instance.ColorTable[Settings.Instance.ReserveRectColorNo]);
+                    (brush = new SolidColorBrush(ColorDef.FromUInt(Settings.Instance.ContentCustColorList[0x14]))).Freeze();
                 }
-                if (String.Compare(Settings.Instance.ReserveRectColorNoTuner, "カスタム") == 0)
+                CustContentColorList.Add(brush);
+
+                name = Settings.Instance.TitleColor1;
+                brush = name == "カスタム" ? null : ColorDef.BrushFromName(name);
+                if (brush == null)
                 {
-                    UInt32 argb = Settings.Instance.ContentCustColorList[0x13];
-
-                    byte r = (byte)((argb & 0x00FF0000) >> 16);
-                    byte g = (byte)((argb & 0x0000FF00) >> 8);
-                    byte b = (byte)(argb & 0x000000FF);
-
-                    Color item = Color.FromArgb(0xFF, r, g, b);
-                    SolidColorBrush backColor = new SolidColorBrush();
-                    backColor.Color = item;
-                    backColor.Freeze();
-
-                    CustContentColorList.Add(backColor);
+                    (brush = new SolidColorBrush(ColorDef.FromUInt(Settings.Instance.TitleCustColor1))).Freeze();
                 }
-                else
+                CustTitle1Color = brush;
+                name = Settings.Instance.TitleColor2;
+                brush = name == "カスタム" ? null : ColorDef.BrushFromName(name);
+                if (brush == null)
                 {
-                    CustContentColorList.Add(ColorDef.Instance.ColorTable[Settings.Instance.ReserveRectColorNoTuner]);
+                    (brush = new SolidColorBrush(ColorDef.FromUInt(Settings.Instance.TitleCustColor2))).Freeze();
                 }
-                if (String.Compare(Settings.Instance.ReserveRectColorWarning, "カスタム") == 0)
-                {
-                    UInt32 argb = Settings.Instance.ContentCustColorList[0x14];
-
-                    byte r = (byte)((argb & 0x00FF0000) >> 16);
-                    byte g = (byte)((argb & 0x0000FF00) >> 8);
-                    byte b = (byte)(argb & 0x000000FF);
-
-                    Color item = Color.FromArgb(0xFF, r, g, b);
-                    SolidColorBrush backColor = new SolidColorBrush();
-                    backColor.Color = item;
-                    backColor.Freeze();
-
-                    CustContentColorList.Add(backColor);
-                }
-                else
-                {
-                    CustContentColorList.Add(ColorDef.Instance.ColorTable[Settings.Instance.ReserveRectColorWarning]);
-                }
-
-                if (String.Compare(Settings.Instance.TitleColor1, "カスタム") == 0)
-                {
-                    UInt32 argb = Settings.Instance.TitleCustColor1;
-
-                    byte r = (byte)((argb & 0x00FF0000) >> 16);
-                    byte g = (byte)((argb & 0x0000FF00) >> 8);
-                    byte b = (byte)(argb & 0x000000FF);
-
-                    Color item = Color.FromArgb(0xFF, r, g, b);
-                    SolidColorBrush backColor = new SolidColorBrush();
-                    backColor.Color = item;
-                    backColor.Freeze();
-
-                    CustTitle1Color = backColor;
-                }
-                else
-                {
-                    CustTitle1Color = ColorDef.Instance.ColorTable[Settings.Instance.TitleColor1];
-                }
-                if (String.Compare(Settings.Instance.TitleColor2, "カスタム") == 0)
-                {
-                    UInt32 argb = Settings.Instance.TitleCustColor2;
-
-                    byte r = (byte)((argb & 0x00FF0000) >> 16);
-                    byte g = (byte)((argb & 0x0000FF00) >> 8);
-                    byte b = (byte)(argb & 0x000000FF);
-
-                    Color item = Color.FromArgb(0xFF, r, g, b);
-                    SolidColorBrush backColor = new SolidColorBrush();
-                    backColor.Color = item;
-                    backColor.Freeze();
-
-                    CustTitle2Color = backColor;
-                }
-                else
-                {
-                    CustTitle2Color = ColorDef.Instance.ColorTable[Settings.Instance.TitleColor2];
-                }
+                CustTitle2Color = brush;
                 CustTimeColorList.Clear();
                 for (int i = 0; i < Settings.Instance.TimeColorList.Count; i++)
                 {
-                    String name = Settings.Instance.TimeColorList[i];
-                    Color color;
-                    if (String.Compare(name, "カスタム") == 0)
-                    {
-                        UInt32 argb = Settings.Instance.TimeCustColorList[i];
-
-                        byte r = (byte)((argb & 0x00FF0000) >> 16);
-                        byte g = (byte)((argb & 0x0000FF00) >> 8);
-                        byte b = (byte)(argb & 0x000000FF);
-
-                        color = Color.FromArgb(0xFF, r, g, b);
-                    }
-                    else
-                    {
-                        color = ColorDef.ColorFromName(name);
-                    }
+                    name = Settings.Instance.TimeColorList[i];
+                    brush = name == "カスタム" ? null : ColorDef.BrushFromName(name);
                     if (Settings.Instance.EpgGradationHeader == false)
                     {
-                        CustTimeColorList.Add(new SolidColorBrush(color));
-                        CustTimeColorList[CustTimeColorList.Count - 1].Freeze();
+                        if (brush == null)
+                        {
+                            (brush = new SolidColorBrush(ColorDef.FromUInt(Settings.Instance.TimeCustColorList[i]))).Freeze();
+                        }
+                        CustTimeColorList.Add(brush);
                     }
                     else
                     {
-                        CustTimeColorList.Add(ColorDef.GradientBrush(color, 0.9, 1.1));
+                        CustTimeColorList.Add(ColorDef.GradientBrush(brush == null ? ColorDef.FromUInt(Settings.Instance.TimeCustColorList[i]) : brush.Color, 0.9, 1.1));
                     }
                 }
-                Color serviceColor;
-                if (String.Compare(Settings.Instance.ServiceColor, "カスタム") == 0)
-                {
-                    UInt32 argb = Settings.Instance.ServiceCustColor;
-
-                    byte r = (byte)((argb & 0x00FF0000) >> 16);
-                    byte g = (byte)((argb & 0x0000FF00) >> 8);
-                    byte b = (byte)(argb & 0x000000FF);
-
-                    serviceColor = Color.FromArgb(0xFF, r, g, b);
-                }
-                else
-                {
-                    serviceColor = ColorDef.ColorFromName(Settings.Instance.ServiceColor);
-                }
+                name = Settings.Instance.ServiceColor;
+                brush = name == "カスタム" ? null : ColorDef.BrushFromName(name);
                 if (Settings.Instance.EpgGradationHeader == false)
                 {
-                    CustServiceColor = new SolidColorBrush(serviceColor);
-                    CustServiceColor.Freeze();
+                    if (brush == null)
+                    {
+                        (brush = new SolidColorBrush(ColorDef.FromUInt(Settings.Instance.ServiceCustColor))).Freeze();
+                    }
+                    CustServiceColor = brush;
                 }
                 else
                 {
-                    CustServiceColor = ColorDef.GradientBrush(serviceColor, 1.0, 2.0);
+                    CustServiceColor = ColorDef.GradientBrush(brush == null ? ColorDef.FromUInt(Settings.Instance.ServiceCustColor) : brush.Color, 1.0, 2.0);
                 }
             }
             catch (Exception ex)
