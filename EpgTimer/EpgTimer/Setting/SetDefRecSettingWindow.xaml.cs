@@ -35,6 +35,7 @@ namespace EpgTimer.Setting
         public void SetSettingMode(string title, int chgMode = -1)
         {
             Title = title;
+            button_ok.IsEnabled = chgMode != 2;
             grid_PresetEdit.Visibility = System.Windows.Visibility.Collapsed;
             button_iniLoad.Visibility = System.Windows.Visibility.Collapsed;
             this.recSettingView.SetChangeMode(chgMode);
