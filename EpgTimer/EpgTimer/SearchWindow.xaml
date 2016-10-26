@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:EpgTimer"
         xmlns:user="clr-namespace:EpgTimer.UserCtrlView"
-        Title="検索" Height="600" Width="780" xmlns:my="clr-namespace:EpgTimer" WindowStartupLocation="Manual" Loaded="Window_Loaded" Closed="Window_Closed" Activated="Window_Activated" StateChanged="Window_StateChanged">
+        Title="検索" Height="600" Width="780" xmlns:my="clr-namespace:EpgTimer" Loaded="Window_Loaded" >
 
     <Window.Resources>
         <ResourceDictionary>
@@ -50,8 +50,11 @@
             </ListView.View>
         </ListView>
         <DockPanel Grid.Row="3" Margin="10,0,10,5" >
-            <CheckBox DockPanel.Dock="Right" Content="メインウィンドウの前面に表示" Margin="6,0,0,0" VerticalAlignment="Bottom" Name="checkBox_windowPinned" Checked="checkBox_windowPinned_Checked" Unchecked="checkBox_windowPinned_Checked" />
-            <user:StatusView x:Name="statusBar" />
+            <WrapPanel DockPanel.Dock="Right" VerticalAlignment="Center" >
+                <CheckBox Content="このウィンドウにデータを開く" Margin="6,0,0,0" Name="checkBox_dataReplace" />
+                <CheckBox Content="メインウィンドウの前面に表示" Margin="6,0,0,0" Name="checkBox_windowPinned" />
+            </WrapPanel>
+            <user:StatusView x:Name="statusBar" VerticalAlignment="Center" />
         </DockPanel>
     </Grid>
 </local:SearchWindowBase>

@@ -36,8 +36,34 @@ namespace EpgTimer
                     return CommonManager.Instance.DB.ManualAutoAddList[id];
                 }
             }
-            catch {}
+            catch { }
             return null;
+        }
+        public static ErrCode ReloadDBManagerList(Type t, bool notify = false)
+        {
+            if (t == typeof(EpgAutoAddData))
+            {
+                if (notify == true) CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.AutoAddEpgInfo);
+                return CommonManager.Instance.DB.ReloadEpgAutoAddInfo();
+            }
+            else if (t == typeof(ManualAutoAddData))
+            {
+                if (notify == true) CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.AutoAddManualInfo);
+                return CommonManager.Instance.DB.ReloadManualAutoAddInfo();
+            }
+            return ErrCode.CMD_ERR;
+        }
+        public static IEnumerable<AutoAddData> GetDBManagerList(Type t)
+        {
+            if (t == typeof(EpgAutoAddData))
+            {
+                return CommonManager.Instance.DB.EpgAutoAddList.Values.OfType<AutoAddData>();
+            }
+            else if (t == typeof(ManualAutoAddData))
+            {
+                return CommonManager.Instance.DB.ManualAutoAddList.Values.OfType<AutoAddData>();
+            }
+            return new List<AutoAddData>();
         }
 
         public virtual object CloneObj() { return null; }

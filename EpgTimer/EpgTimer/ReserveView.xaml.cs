@@ -111,9 +111,14 @@ namespace EpgTimer
 
             if (BlackoutWindow.HasReserveData == true)
             {
-                ViewUtil.JumpToListItem(new ReserveItem(BlackoutWindow.SelectedItem.ReserveInfo), listView_reserve, BlackoutWindow.NowJumpTable);
+                ViewUtil.JumpToListItem(BlackoutWindow.SelectedItem.ReserveInfo, listView_reserve, BlackoutWindow.NowJumpTable);
             }
             BlackoutWindow.Clear();
+        }
+
+        protected override void SelectViewItemData(UInt64 id)
+        {
+            ViewUtil.JumpToListItem(id, listView_reserve, false);
         }
     }
 }

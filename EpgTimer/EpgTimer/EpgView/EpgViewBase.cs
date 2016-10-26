@@ -15,7 +15,7 @@ namespace EpgTimer.EpgView
         protected Dictionary<UInt64, EpgServiceEventInfo> serviceEventList = new Dictionary<UInt64, EpgServiceEventInfo>();
 
         protected CmdExeReserve mc; //予約系コマンド集
-        protected bool ReloadReserveInfo = true;
+        protected bool ReloadReserveInfoFlg = true;
 
         protected object restoreData = null;
         public virtual object GetViewState() { return null; }
@@ -89,7 +89,7 @@ namespace EpgTimer.EpgView
             setViewInfo = setInfo.Clone();
             this.viewCustContentKindList = setViewInfo.ViewContentKindList.ToDictionary(id => id, id => id);
 
-            ReloadInfo = true;
+            ReloadInfoFlg = true;
         }
 
         /// 保存関係
@@ -100,14 +100,18 @@ namespace EpgTimer.EpgView
         /// </summary>
         public void UpdateReserveInfo(bool reload = true)
         {
-            ReloadReserveInfo |= reload;
-            if (ReloadReserveInfo == true && this.IsVisible == true)
+            ReloadReserveInfoFlg |= reload;
+            ReloadReserveInfo();
+        }
+        protected void ReloadReserveInfo()
+        {
+            if (ReloadReserveInfoFlg == true && this.IsVisible == true)
             {
-                ReloadReserveInfo = !ReloadReserveData();
+                ReloadReserveInfoFlg = !ReloadReserveInfoData();
                 UpdateStatus();
             }
         }
-        protected bool ReloadReserveData()
+        protected bool ReloadReserveInfoData()
         {
             if (ViewUtil.ReloadReserveData() == false) return false;
             ReloadReserveViewItem();
@@ -115,16 +119,13 @@ namespace EpgTimer.EpgView
         }
         protected virtual void ReloadReserveViewItem() { }
 
-        /// <summary>
-        /// EPGデータ更新通知
-        /// </summary>
-        // public void UpdateInfo() は DataViewBase へ
+        /// <summary>EPGデータ更新</summary>
         protected override bool ReloadInfoData()
         {
             if (ReloadEpgData() == false) return false;
-            ReloadReserveInfo = true;//ReloadProgramViewItem()がキャンセル出来るようにする。
+            ReloadReserveInfoFlg = true;
             ReloadProgramViewItem();
-            if (ReloadReserveInfo == true) ReloadReserveInfo = !ReloadReserveData();
+            if (ReloadReserveInfoFlg == true) ReloadReserveInfoFlg = !ReloadReserveInfoData();
             restoreData = null;
             return true;
         }
@@ -192,8 +193,8 @@ namespace EpgTimer.EpgView
         {
             if (this.IsVisible == false) return;
 
-            UpdateInfo(false);
-            UpdateReserveInfo(false);//こちらを後に。UpdateInfo()が実行された場合は、こちらは素通りになる。
+            ReloadInfo();
+            ReloadReserveInfo();//こちらを後に。ReloadInfo()が実行された場合は、こちらは素通りになる。
 
             // Loaded イベントでは Reload*Data を省略したので
             // この IsVisibleChanged で Reload*Data を見逃してはいけない

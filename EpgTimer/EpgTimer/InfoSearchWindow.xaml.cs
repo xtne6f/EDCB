@@ -7,8 +7,6 @@ using System.Windows.Input;
 
 namespace EpgTimer
 {
-    using UserCtrlView;
-
     /// <summary>
     /// SearchWindow.xaml の相互作用ロジック
     /// </summary>
@@ -35,10 +33,11 @@ namespace EpgTimer
         {
             InitializeComponent();
 
-            chkboxPinned = this.checkBox_windowPinned;
-
             try
             {
+                buttonID = "予約情報検索";
+                base.SetParam(false, checkBox_windowPinned);
+
                 //リストビュー関連の設定
                 var list_columns = Resources["ReserveItemViewColumns"] as GridViewColumnList;
                 list_columns.AddRange(Resources["RecSettingViewColumns"] as GridViewColumnList);
@@ -142,10 +141,6 @@ namespace EpgTimer
 
                 //ステータスバーの登録
                 StatusManager.RegisterStatusbar(this.statusBar, this);
-
-                //ウインドウ位置の復元
-                Settings.Instance.InfoSearchWndSet.SetToWindow(this);
-
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
@@ -237,6 +232,8 @@ namespace EpgTimer
                     lstCtrl.dataList.AddRange(hitItems);
                     return true;
                 });
+
+                this.Title = ViewUtil.WindowTitleText(TextBox_SearchWord.Text, "予約情報検索");
                 UpdateStatus();
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
@@ -321,19 +318,26 @@ namespace EpgTimer
             }
             else
             {
+                WriteWindowSaveData();
+
                 var dlg = new InfoSearchWindow();
                 dlg.SetSearchWord(word);
-                dlg.checkBox_TitleOnly.IsChecked = this.checkBox_TitleOnly.IsChecked;
-                dlg.checkBox_ShowToolTip.IsChecked = this.checkBox_ShowToolTip.IsChecked;
-                dlg.checkBox_ReserveInfo.IsChecked = this.checkBox_ReserveInfo.IsChecked;
-                dlg.checkBox_RecInfo.IsChecked = this.checkBox_RecInfo.IsChecked;
-                dlg.checkBox_EpgAutoAddInfo.IsChecked = this.checkBox_EpgAutoAddInfo.IsChecked;
-                dlg.checkBox_ManualAutoAddInfo.IsChecked = this.checkBox_ManualAutoAddInfo.IsChecked;
-                dlg.Left = this.Left + 50;
-                dlg.Top = this.Top + 25;
-                dlg.checkBox_windowPinned.IsChecked = checkBox_windowPinned.IsChecked;
                 dlg.Show();
             }
+        }
+
+        protected override void WriteWindowSaveData()
+        {
+            Settings.Instance.InfoSearchLastWord = TextBox_SearchWord.Text;
+            Settings.Instance.InfoSearchTitleOnly = checkBox_TitleOnly.IsChecked == true;
+            Settings.Instance.InfoSearchItemTooltip = checkBox_ShowToolTip.IsChecked == true;
+            Settings.Instance.InfoSearchReserveInfo = checkBox_ReserveInfo.IsChecked == true;
+            Settings.Instance.InfoSearchRecInfo = checkBox_RecInfo.IsChecked == true;
+            Settings.Instance.InfoSearchEpgAutoAddInfo = checkBox_EpgAutoAddInfo.IsChecked == true;
+            Settings.Instance.InfoSearchManualAutoAddInfo = checkBox_ManualAutoAddInfo.IsChecked == true;
+            lstCtrl.SaveViewDataToSettings();
+
+            base.WriteWindowSaveData();
         }
         
         private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -344,38 +348,14 @@ namespace EpgTimer
                 Search();
             }
         }
-        protected override void Window_Closed(object sender, EventArgs e)
+
+        protected override bool ReloadInfoData()
         {
-            Settings.Instance.InfoSearchWndSet.GetFromWindow(this);
-            Settings.Instance.InfoSearchLastWord = TextBox_SearchWord.Text;
-            Settings.Instance.InfoSearchTitleOnly = checkBox_TitleOnly.IsChecked == true;
-            Settings.Instance.InfoSearchItemTooltip = checkBox_ShowToolTip.IsChecked == true;
-            Settings.Instance.InfoSearchReserveInfo = checkBox_ReserveInfo.IsChecked == true;
-            Settings.Instance.InfoSearchRecInfo = checkBox_RecInfo.IsChecked == true;
-            Settings.Instance.InfoSearchEpgAutoAddInfo = checkBox_EpgAutoAddInfo.IsChecked == true;
-            Settings.Instance.InfoSearchManualAutoAddInfo = checkBox_ManualAutoAddInfo.IsChecked == true;
-
-            lstCtrl.SaveViewDataToSettings();
-
-            base.Window_Closed(sender, e);
-        }
-
-        protected override void ReloadInfoData()
-        {
-            if (ReloadInfo == true && this.IsVisible == true)
-            {
-                Search();
-                ReloadInfo = false;
-            }
+            Search();
+            return true;
         }
     }
 
     //ジェネリックパラメータTはstatic関係の分割用なので何でもいい
-    public class InfoSearchWindowBase : HideableWindow<InfoSearchWindow>
-    {
-        static InfoSearchWindowBase()
-        {
-            buttonID = "予約情報検索";
-        }
-    }
+    public class InfoSearchWindowBase : HideableWindow<InfoSearchWindow> { }
 }

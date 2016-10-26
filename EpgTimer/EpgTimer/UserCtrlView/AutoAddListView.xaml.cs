@@ -143,40 +143,24 @@ namespace EpgTimer
 
             return lstCtrl.ReloadInfoData(dataList =>
             {
-                DBManager db = CommonManager.Instance.DB;
-                ErrCode err = typeof(T) == typeof(EpgAutoAddData) ? db.ReloadEpgAutoAddInfo() : db.ReloadManualAutoAddInfo();
+                ErrCode err = AutoAddData.ReloadDBManagerList(typeof(T));
                 if (CommonManager.CmdErrMsgTypical(err, "情報の取得") == false) return false;
 
-                ICollection values = typeof(T) == typeof(EpgAutoAddData) ? db.EpgAutoAddList.Values as ICollection : db.ManualAutoAddList.Values as ICollection;
-                dataList.AddRange(values.OfType<T>().Select(info => (S)Activator.CreateInstance(typeof(S), info.CloneObj())));
+                dataList.AddRange(AutoAddData.GetDBManagerList(typeof(T)).Select(info => (S)Activator.CreateInstance(typeof(S), info.CloneObj())));
 
                 dragMover.NotSaved = false;
                 return true;
             });
+        }
+        protected override void SelectViewItemData(UInt64 id)
+        {
+            ViewUtil.JumpToListItem(id, listView_key, false);
         }
         protected override void UpdateStatusData(int mode = 0)
         {
             if (mode == 0) this.status[1] = ViewUtil.ConvertAutoAddStatus(lstCtrl.dataList, "自動予約登録数");
             List<S> sList = lstCtrl.GetSelectedItemsList();
             this.status[2] = sList.Count == 0 ? "" : ViewUtil.ConvertAutoAddStatus(sList, "　選択中");
-        }
-        public void UpdateListViewSelection(uint autoAddID)
-        {
-            if (this.IsVisible == true)
-            {
-                listView_key.UnselectAll();
-
-                if (autoAddID == 0) return;//無くても結果は同じ
-
-                var target = listView_key.Items.OfType<S>()
-                    .FirstOrDefault(item => item.Data.DataID == autoAddID);
-
-                if (target != null)
-                {
-                    listView_key.SelectedItem = target;
-                    listView_key.ScrollIntoView(target);
-                }
-            }
         }
         protected override void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
@@ -201,15 +185,13 @@ namespace EpgTimer
             //初期化の続き
             base.InitAutoAddView();
         }
-        protected override bool ReloadInfoData()
+        protected override void UpdateSelectViewItem()
         {
-            bool ret = base.ReloadInfoData();
-            SearchWindow.UpdatesEpgAutoAddViewSelection();//行選択の更新
-            return ret;
+            SearchWindow.UpdatesViewSelection();
         }
         protected override void PostProcSaveOrder(Dictionary<uint, uint> changeIDTable)
         {
-            SearchWindow.UpdatesEpgAutoAddViewOrderChanged(changeIDTable);
+            SearchWindow.UpdatesAutoAddViewOrderChanged(changeIDTable);
         }
     }
 
@@ -229,7 +211,14 @@ namespace EpgTimer
             //初期化の続き
             base.InitAutoAddView();
         }
-
+        protected override void UpdateSelectViewItem()
+        {
+            AddManualAutoAddWindow.UpdatesViewSelection();
+        }
+        protected override void PostProcSaveOrder(Dictionary<uint, uint> changeIDTable)
+        {
+            AddManualAutoAddWindow.UpdatesAutoAddViewOrderChanged(changeIDTable);
+        }
     }
 
 }

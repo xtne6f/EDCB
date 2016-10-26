@@ -107,5 +107,10 @@ namespace EpgTimer
             ViewUtil.JumpToListItem(BlackoutWindow.SelectedData, this.listView_recinfo, BlackoutWindow.NowJumpTable);
             BlackoutWindow.Clear();
         }
+
+        protected override void SelectViewItemData(UInt64 id)
+        {
+            ViewUtil.JumpToListItem(id, listView_recinfo, false);
+        }
     }
 }

@@ -301,11 +301,7 @@ namespace EpgTimer
         public double EpgNoDisplayOldDays { get; set; }
         public string ResColumnHead { get; set; }
         public ListSortDirection ResSortDirection { get; set; }
-        public WindowState LastWindowState { get; set; }
-        public double MainWndLeft { get; set; }
-        public double MainWndTop { get; set; }
-        public double MainWndWidth { get; set; }
-        public double MainWndHeight { get; set; }
+        public WindowSettingData WndSettings { get; set; }
         public bool CloseMin { get; set; }
         public bool WakeMin { get; set; }
         public bool ViewButtonShowAsTab { get; set; }
@@ -401,7 +397,6 @@ namespace EpgTimer
         public List<ListColumnInfo> SearchWndColumn { get; set; }
         public string SearchColumnHead { get; set; }
         public ListSortDirection SearchSortDirection { get; set; }
-        public HideableWindowSet SearchWndSet { get; set; }
         public bool SaveSearchKeyword { get; set; }
         public List<ListColumnInfo> InfoSearchWndColumn { get; set; }
         public string InfoSearchColumnHead { get; set; }
@@ -413,7 +408,6 @@ namespace EpgTimer
         public bool InfoSearchEpgAutoAddInfo { get; set; }
         public bool InfoSearchManualAutoAddInfo { get; set; }
         public bool InfoSearchItemTooltip { get; set; }
-        public HideableWindowSet InfoSearchWndSet { get; set; }
         public short AutoSaveNotifyLog { get; set; }
         public bool ShowTray { get; set; }
         public bool MinHide { get; set; }
@@ -449,6 +443,7 @@ namespace EpgTimer
         public Dock MainViewButtonsDock { get; set; }
         public CtxmCode StartTab { get; set; }
         public bool TrimSortTitle { get; set; }
+        public bool NotifyWindowAutoReload { get; set; }
 
         public Settings()
         {
@@ -526,11 +521,7 @@ namespace EpgTimer
             EpgNoDisplayOldDays = 1;
             ResColumnHead = "";
             ResSortDirection = ListSortDirection.Ascending;
-            LastWindowState = WindowState.Normal;
-            MainWndLeft = -100;
-            MainWndTop = -100;
-            MainWndWidth = -100;
-            MainWndHeight = -100;
+            WndSettings = new WindowSettingData();
             CloseMin = false;
             WakeMin = false;
             ViewButtonShowAsTab = false;
@@ -612,7 +603,6 @@ namespace EpgTimer
             SearchWndColumn = new List<ListColumnInfo>();
             SearchColumnHead = "";
             SearchSortDirection = ListSortDirection.Ascending;
-            SearchWndSet = new HideableWindowSet();
             SaveSearchKeyword = true;
             InfoSearchWndColumn = new List<ListColumnInfo>();
             InfoSearchColumnHead = "";
@@ -624,7 +614,6 @@ namespace EpgTimer
             InfoSearchEpgAutoAddInfo = true;
             InfoSearchManualAutoAddInfo = true;
             InfoSearchItemTooltip = true;
-            InfoSearchWndSet = new HideableWindowSet();
             AutoSaveNotifyLog = 0;
             ShowTray = true;
             MinHide = true;
@@ -660,6 +649,7 @@ namespace EpgTimer
             MainViewButtonsDock = Dock.Right;
             StartTab = CtxmCode.ReserveView;
             TrimSortTitle = false;
+            NotifyWindowAutoReload = false;
         }
 
         [NonSerialized()]

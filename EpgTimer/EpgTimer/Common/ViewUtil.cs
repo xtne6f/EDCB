@@ -213,17 +213,20 @@ namespace EpgTimer
         }
 
         //指定アイテムまでマーキング付で移動する。
-        public static void JumpToListItem(object target, ListBox listBox, bool IsMarking)
+        public static void JumpToListItem(object target, ListBox listBox, bool IsMarking = false)
         {
-            if (target is DataListItemBase)
+            if (target is GridViewSorterItem)
             {
-                ulong ID = ((DataListItemBase)target).KeyID;
-                target = listBox.Items.OfType<DataListItemBase>().FirstOrDefault(data => data.KeyID == ID);
+                JumpToListItem(((GridViewSorterItem)target).KeyID, listBox, IsMarking);
             }
             ScrollToFindItem(target, listBox, IsMarking);
         }
-
-        public static void ScrollToFindItem(object target, ListBox listBox, bool IsMarking)
+        public static void JumpToListItem(UInt64 gvSorterID, ListBox listBox, bool IsMarking = false)
+        {
+            var target = listBox.Items.OfType<GridViewSorterItem>().FirstOrDefault(data => data.KeyID == gvSorterID);
+            ScrollToFindItem(target, listBox, IsMarking);
+        }
+        public static void ScrollToFindItem(object target, ListBox listBox, bool IsMarking = false)
         {
             try
             {
@@ -423,6 +426,11 @@ namespace EpgTimer
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
 
+        public static string WindowTitleText(string contentTitle, string baseTitle)
+        {
+            return (string.IsNullOrEmpty(contentTitle) == true ? "" : contentTitle + " - ") + baseTitle;
+        }
+
         public static SelectionChangedEventHandler ListBox_TextBoxSyncSelectionChanged(ListBox lstBox, TextBox txtBox)
         {
             return new SelectionChangedEventHandler((sender, e) =>
@@ -573,6 +581,23 @@ namespace EpgTimer
                 txtBox.ClearValue(TextBox.BackgroundProperty);
                 txtBox.ClearValue(TextBox.ForegroundProperty);
             }
+        }
+
+        public static void AdjustWindowPosition(Window win)
+        {
+            foreach (var sc in System.Windows.Forms.Screen.AllScreens)
+            {
+                if (sc.Bounds.Contains((int)win.Left, (int)win.Top) == true)
+                {
+                    if (sc.WorkingArea.Contains((int)(win.Left + 100), (int)(win.Top + 100)) == true)
+                    {
+                        return;
+                    }
+                    break;
+                }
+            }
+            win.Left = double.IsNaN(win.Left) == true ? double.NaN : 100;
+            win.Top = double.IsNaN(win.Top) == true ? double.NaN : 100;
         }
     }
 }

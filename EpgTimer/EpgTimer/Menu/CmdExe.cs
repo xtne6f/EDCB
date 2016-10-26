@@ -340,7 +340,7 @@ namespace EpgTimer
         protected virtual ReserveData mcs_GetNextReserve() { return null; }
         protected virtual void mc_ShowAutoAddDialog(object sender, ExecutedRoutedEventArgs e)
         {
-            IsCommandExecuted = true == MenuUtil.OpenChangeAutoAddDialog(CmdExeUtil.ReadObjData(e) as Type, (uint)CmdExeUtil.ReadIdData(e), this.Owner);
+            IsCommandExecuted = true == MenuUtil.OpenChangeAutoAddDialog(CmdExeUtil.ReadObjData(e) as Type, (uint)CmdExeUtil.ReadIdData(e));
         }
         protected virtual void mc_ToAutoadd(object sender, ExecutedRoutedEventArgs e)
         {
@@ -734,7 +734,7 @@ namespace EpgTimer
         {
             if (CmdExeUtil.IsMessageBeforeCommand(e) == false) return false;
 
-            List<string> titleList = dataList.Select(info => info.DataTitle).ToList();
+            List<string> titleList = dataList.Where(info => info != null).Select(info => info.DataTitle).ToList();
             if (titleList.Count == 0) return false;
 
             var s = IsDelete == true

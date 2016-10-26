@@ -9,14 +9,19 @@ namespace EpgTimer.UserCtrlView
         protected static MenuManager mm { get { return CommonManager.Instance.MM; } }
         protected MenuBinds mBinds = new MenuBinds();
         protected string[] status = { "", "", "", "" };
-        protected bool ReloadInfo = true;
+        protected bool ReloadInfoFlg = true;
 
         public virtual void UpdateInfo(bool reload = true)
         {
-            ReloadInfo |= reload;
-            if (ReloadInfo == true && this.IsVisible == true)
+            ReloadInfoFlg |= reload;
+            ReloadInfo();
+        }
+        protected virtual void ReloadInfo()
+        {
+            if (ReloadInfoFlg == true && this.IsVisible == true)
             {
-                ReloadInfo = !ReloadInfoData();
+                ReloadInfoFlg = !ReloadInfoData();
+                UpdateSelectViewItem();
                 UpdateStatus();
             }
         }
@@ -37,8 +42,19 @@ namespace EpgTimer.UserCtrlView
         }
         protected virtual void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
-            UpdateInfo(false);
+            ReloadInfo();
             RefreshStatus();
         }
+
+        //選択アイテムの更新関係
+        public void SelectViewItem(UInt64 id, bool force = false)
+        {
+            if (this.IsVisible == true || force == true)
+            {
+                SelectViewItemData(id);
+            }
+        }
+        protected virtual void SelectViewItemData(UInt64 id) { }     //DialogWindow -> ListViewView
+        protected virtual void UpdateSelectViewItem() { }   //ListViewView -> DialogWindow  ( ->ListViewView )
     }
 }

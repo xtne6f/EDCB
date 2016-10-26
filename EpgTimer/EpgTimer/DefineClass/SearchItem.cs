@@ -148,17 +148,57 @@ namespace EpgTimer
             {
                 if (ReserveInfo == null) return "";
                 //
-                string m = ReserveInfo.IsMultiple == true ? "[重複EPG]" : "";
+                return (ReserveInfo.IsMultiple == true ? "[重複EPG]" : "")
+                    + (ReserveInfo.IsAutoAddMissing == true ? "不明な" : ReserveInfo.IsAutoAddInvalid == true ? "無効の" : "")
+                    + CommentBase;
+            }
+        }
+        public String CommentBase
+        {
+            get
+            {
+                if (ReserveInfo == null) return "";
+                //
                 if (ReserveInfo.IsAutoAdded == false)
                 {
-                    return m + "個別予約(" + (ReserveInfo.IsEpgReserve == true ? "EPG" : "プログラム") + ")";
+                    return "個別予約(" + (ReserveInfo.IsEpgReserve == true ? "EPG" : "プログラム") + ")";
                 }
                 else
                 {
                     string s = ReserveInfo.Comment;
-                    return m + (ReserveInfo.IsAutoAddMissing == true ? "不明な" : ReserveInfo.IsAutoAddInvalid == true ? "無効の" : "")
-                            + (s.StartsWith("EPG自動予約(") == true ? "キーワード予約(" + s.Substring(8) : s);
+                    return (s.StartsWith("EPG自動予約(") == true ? "キーワード予約(" + s.Substring(8) : s);
                 }
+            }
+        }
+        public List<String> ErrComment
+        {
+            get
+            {
+                var s = new List<string>();
+                if (ReserveInfo != null)
+                {
+                    if (ReserveInfo.OverlapMode == 2)
+                    {
+                        s.Add("チューナー不足(録画不可)");
+                    }
+                    if (ReserveInfo.OverlapMode == 1)
+                    {
+                        s.Add("チューナー不足(一部録画)");
+                    }
+                    if (ReserveInfo.IsAutoAddMissing == true)
+                    {
+                        s.Add("不明な自動予約登録による予約");
+                    }
+                    else if (ReserveInfo.IsAutoAddInvalid == true)
+                    {
+                        s.Add("無効の自動予約登録による予約");
+                    }
+                    if (ReserveInfo.IsMultiple == true)
+                    {
+                        s.Add("重複したEPG予約");
+                    }
+                }
+                return s;
             }
         }
         public List<String> RecFileName

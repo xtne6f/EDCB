@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Windows;
-using System.Windows.Controls;
+﻿using System.Windows;
 using System.Windows.Input;
 
 namespace EpgTimer
@@ -11,7 +6,7 @@ namespace EpgTimer
     /// <summary>
     /// AddReserveEpgWindow.xaml の相互作用ロジック
     /// </summary>
-    public partial class AddReserveEpgWindow : Window
+    public partial class AddReserveEpgWindow : AddReserveEpgWindowBase
     {
         private EpgEventInfo eventInfo = null;
 
@@ -19,8 +14,10 @@ namespace EpgTimer
         {
             InitializeComponent();
 
+            base.SetParam(true, checkBox_windowPinned, checkBox_dataReplace);
+
             //コマンドの登録
-            this.CommandBindings.Add(new CommandBinding(EpgCmds.Cancel, (sender, e) => DialogResult = false));
+            this.CommandBindings.Add(new CommandBinding(EpgCmds.Cancel, (sender, e) => this.Close()));
             this.CommandBindings.Add(new CommandBinding(EpgCmds.AddInDialog, button_add_reserve_Click));
 
             //ボタンの設定
@@ -32,15 +29,13 @@ namespace EpgTimer
             mBinds.ResetInputBindings(this);
         }
 
-        public void SetOpenMode(byte mode)
+        public void SetEventInfo(EpgEventInfo info, int? epgInfoOpenMode = null)
         {
-            tabControl.SelectedIndex = mode;
-        }
-
-        public void SetEventInfo(EpgEventInfo eventData)
-        {
-            eventInfo = eventData;
-            textBox_info.Text = CommonManager.ConvertProgramText(eventData, EventInfoTextMode.BasicOnly);
+            if (info == null) return;
+            if (epgInfoOpenMode != null) tabControl.SelectedIndex = epgInfoOpenMode == 1 ? 1 : 0;
+            eventInfo = info;
+            Title = ViewUtil.WindowTitleText(info.DataTitle, "予約登録");
+            textBox_info.Text = CommonManager.ConvertProgramText(info, EventInfoTextMode.BasicOnly);
             richTextBox_descInfo.Document = CommonManager.ConvertDisplayText(eventInfo);
         }
 
@@ -51,16 +46,13 @@ namespace EpgTimer
                 if (MessageBox.Show("予約を追加します。\r\nよろしいですか？", "追加の確認", MessageBoxButton.OKCancel) != MessageBoxResult.OK)
                 { return; }
             }
+
             bool ret = MenuUtil.ReserveAdd(CommonUtil.ToList(eventInfo), recSettingView);
             StatusManager.StatusNotifySet(ret, "録画予約を追加");
 
             if (ret == false) return;
-            DialogResult = true;
-        }
-
-        private void Window_Closed(object sender, EventArgs e)
-        {
-            ViewUtil.MainWindow.ListFoucsOnVisibleChanged();
+            this.Close();
         }
     }
+    public class AddReserveEpgWindowBase : ReserveWindowBase<AddReserveEpgWindow> { }
 }

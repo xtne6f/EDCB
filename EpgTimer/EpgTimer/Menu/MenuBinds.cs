@@ -107,6 +107,7 @@ namespace EpgTimer
         {
             if (iTrg == null) return;
 
+            cmdList = cmdList.FindAll(icmd => iTrg.InputBindings.OfType<InputBinding>().All(bind => bind.Command != icmd));
             cmdList.ForEach(icmd =>
             {
                 MenuCmds.CmdData cmdData;

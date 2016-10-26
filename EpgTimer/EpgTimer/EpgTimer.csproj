@@ -98,16 +98,18 @@
     <Compile Include="CtrlCmdDefEx\RecFileInfoEx.cs" />
     <Compile Include="DefineClass\RadioBtnSelect.cs" />
     <Compile Include="DefineClass\GridViewSorterItem.cs" />
+    <Compile Include="DefineClass\SerializableDictionary.cs" />
     <Compile Include="DefineClass\StringItem.cs" />
     <Compile Include="DefineClass\DataListItemBase.cs" />
     <Compile Include="DefineClass\DateTime28.cs" />
     <Compile Include="DefineClass\RecSettingItem.cs" />
     <Compile Include="DefineClass\NWPresetItem.cs" />
     <Compile Include="DefineClass\InfoSearchItem.cs" />
+    <Compile Include="DefineClass\WindowSettingData.cs" />
     <Compile Include="UserCtrlView\AutoAddListView.xaml.cs">
       <DependentUpon>AutoAddListView.xaml</DependentUpon>
     </Compile>
-    <Compile Include="UserCtrlView\SearchWindowBase.cs" />
+    <Compile Include="UserCtrlView\AttendantWindow.cs" />
     <Compile Include="UserCtrlView\DataViewBase.cs" />
     <Compile Include="UserCtrlView\ListViewController.cs" />
     <Compile Include="Menu\MenuSettingData.cs" />

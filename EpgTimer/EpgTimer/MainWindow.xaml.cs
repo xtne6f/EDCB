@@ -16,7 +16,7 @@ namespace EpgTimer
     /// </summary>
     public partial class MainWindow : Window
     {
-        private System.Threading.Mutex mutex;
+        private Mutex mutex;
 
         private TaskTrayClass taskTray = null;
         private Dictionary<string, Button> buttonList = new Dictionary<string, Button>();
@@ -149,6 +149,10 @@ namespace EpgTimer
 
             try
             {
+                //ウインドウ位置の復元
+                Settings.Instance.WndSettings.SetSizeToWindow(this);
+                ViewUtil.AdjustWindowPosition(this);
+
                 if (Settings.Instance.WakeMin == true)
                 {
                     if (Settings.Instance.ShowTray && Settings.Instance.MinHide)
@@ -157,33 +161,10 @@ namespace EpgTimer
                     }
                     else
                     {
-                        Dispatcher.BeginInvoke(new Action(() =>
-                        {
-                            this.WindowState = System.Windows.WindowState.Minimized;
-                            minimizedStarting = true;
-                        }));
+                        minimizedStarting = true;
+                        this.WindowState = System.Windows.WindowState.Minimized;
                     }
                 }
-
-                //ウインドウ位置の復元
-                if (Settings.Instance.MainWndTop != -100)
-                {
-                    this.Top = Settings.Instance.MainWndTop;
-                }
-                if (Settings.Instance.MainWndLeft != -100)
-                {
-                    this.Left = Settings.Instance.MainWndLeft;
-                }
-                if (Settings.Instance.MainWndWidth != -100)
-                {
-                    this.Width = Settings.Instance.MainWndWidth;
-                }
-                if (Settings.Instance.MainWndHeight != -100)
-                {
-                    this.Height = Settings.Instance.MainWndHeight;
-                }
-                this.WindowState = Settings.Instance.LastWindowState;
-
 
                 //ステータスバーの登録
                 StatusManager.RegisterStatusbar(this.statusBar, this);
@@ -693,9 +674,10 @@ namespace EpgTimer
             {
                 if (Settings.Instance.WakeReconnectNW == false && this.minimizedStarting == false)
                 {
-                    OpenConnectDialog();
+                    Dispatcher.BeginInvoke(new Action(() => OpenConnectDialog()));
                 }
             }
+            AttendantWindow.UpdatesPinned();
         }
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
@@ -707,8 +689,7 @@ namespace EpgTimer
             }
             else
             {
-                SearchWindow.CloseWindows();
-                InfoSearchWindow.CloseWindows();
+                AttendantWindow.CloseWindows();
 
                 if (initExe == true)
                 {
@@ -747,47 +728,15 @@ namespace EpgTimer
             }
         }
 
-        private void SaveData()
-        {
-            SaveViewData();
-            Settings.SaveToXmlFile();
-        }
-
-        private void SaveViewData()
+        public void SaveData()
         {
             reserveView.SaveViewData();
             recInfoView.SaveViewData();
             autoAddView.SaveViewData();
             epgView.SaveViewData();
-        }
 
-        private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
-        {
-            if (this.WindowState == WindowState.Normal)
-            {
-                if (this.Visibility == Visibility.Visible && this.Width > 0 && this.Height > 0)
-                {
-                    Settings.Instance.MainWndWidth = this.Width;
-                    Settings.Instance.MainWndHeight = this.Height;
-                }
-            }
-            if (this.WindowState == WindowState.Normal || this.WindowState == WindowState.Maximized)
-            {
-                SearchWindow.UpdatesParentStatus();
-                InfoSearchWindow.UpdatesParentStatus();
-            }
-        }
-
-        private void Window_LocationChanged(object sender, EventArgs e)
-        {
-            if (this.WindowState == WindowState.Normal)
-            {
-                if (this.Visibility == Visibility.Visible && this.Top > 0 && this.Left > 0)
-                {
-                    Settings.Instance.MainWndTop = this.Top;
-                    Settings.Instance.MainWndLeft = this.Left;
-                }
-            }
+            Settings.Instance.WndSettings.GetSizeFromWindow(this);
+            Settings.SaveToXmlFile();
         }
 
         private void Window_StateChanged(object sender, EventArgs e)
@@ -803,14 +752,14 @@ namespace EpgTimer
                     }
                 }
             }
-            if (this.WindowState == WindowState.Normal || this.WindowState == WindowState.Maximized)
+            else
             {
                 if (this.minimizedStarting == true)
                 {
                     minimizedStarting = null;
-                    if (Settings.Instance.LastWindowState == WindowState.Normal || Settings.Instance.LastWindowState == WindowState.Maximized)
+                    if (Settings.Instance.WndSettings[this].LastWindowState != WindowState.Minimized)
                     {
-                        this.WindowState = Settings.Instance.LastWindowState;
+                        this.WindowState = Settings.Instance.WndSettings[this].LastWindowState;
                     }
                     minimizedStarting = false;
                     if (CommonManager.Instance.NWMode == true && Settings.Instance.WakeReconnectNW == false && CommonManager.Instance.NW.IsConnected == false)
@@ -822,11 +771,10 @@ namespace EpgTimer
                 {
                     win.Visibility = Visibility.Visible;
                 }
-                SearchWindow.UpdatesParentStatus();
-                InfoSearchWindow.UpdatesParentStatus();
+                AttendantWindow.UpdatesPinned();
 
                 taskTray.LastViewState = this.WindowState;
-                Settings.Instance.LastWindowState = this.WindowState;
+                Settings.Instance.WndSettings[this].LastWindowState = this.WindowState;
             }
             taskTray.Visible = Settings.Instance.ShowTray;
         }
@@ -924,15 +872,13 @@ namespace EpgTimer
 
         void OpenSettingDialog()
         {
-            SaveViewData();
-
             //複数ダイアログの禁止(タスクアイコンからの起動対策)
             if (ViewUtil.SingleWindowCheck(typeof(SettingWindow)) != 0) return;
 
-            var setting = new SettingWindow();
-            setting.Owner = CommonUtil.GetTopWindow(this);
-            if (setting.ShowDialog() == true)
-            {
+            new SettingWindow().Show();
+        }
+        public void RefreshSetting(SettingWindow setting)
+        {
                 if (CommonManager.Instance.NWMode == true)
                 {
                     if (setting.setBasicView.IsChangeSettingPath == true)
@@ -964,7 +910,6 @@ namespace EpgTimer
                 ResetMainView();
 
                 StatusManager.StatusNotifySet("設定変更に伴う画面再構築を実行");
-            }
         }
 
         public void RefreshMenu()
@@ -975,8 +920,7 @@ namespace EpgTimer
             recInfoView.RefreshMenu();
             autoAddView.RefreshMenu();
             epgView.RefreshMenu();
-            SearchWindow.RefreshMenus();
-            InfoSearchWindow.RefreshMenus();
+            AttendantWindow.RefreshMenus();
 
             //メインウィンドウの検索ボタン用。
             mBinds.ResetInputBindings(this);
@@ -1051,8 +995,11 @@ namespace EpgTimer
 
         public void RestoreMinimizedWindow()
         {
-            this.Visibility = Visibility.Visible;
-            this.WindowState = Settings.Instance.LastWindowState;
+            if (this.IsVisible == false || this.WindowState == WindowState.Minimized)
+            {
+                this.Visibility = Visibility.Visible;
+                this.WindowState = Settings.Instance.WndSettings[this].LastWindowState;
+            }
         }
 
         void CloseCmd()
@@ -1170,7 +1117,7 @@ namespace EpgTimer
             //複数ダイアログの禁止(タスクアイコンからの起動対策)
             if (ViewUtil.SingleWindowCheck(typeof(NotifyLogWindow)) != 0) return;
 
-            new NotifyLogWindow { Owner = CommonUtil.GetTopWindow(this) }.ShowDialog();
+            new NotifyLogWindow().Show();
         }
 
         private void OutsideCmdCallback(CMD_STREAM pCmdParam, CMD_STREAM pResParam, bool networkFlag)
@@ -1377,8 +1324,12 @@ namespace EpgTimer
                         idleShowBalloon = true;
                     }
                 }
-                CommonManager.Instance.NotifyLogList.Add(status);
                 CommonManager.Instance.AddNotifySave(status);
+                CommonManager.Instance.NotifyLogList.Add(status);
+                if (Settings.Instance.NotifyWindowAutoReload == true)
+                {
+                    NotifyLogWindow.UpdatesInfo();
+                }
             });
 
             System.Diagnostics.Trace.WriteLine((UpdateNotifyItem)status.notifyID);

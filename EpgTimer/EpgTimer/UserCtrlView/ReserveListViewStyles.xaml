@@ -91,6 +91,16 @@
         </GridViewColumn>
         <GridViewColumn>
             <GridViewColumn.Header>
+                <GridViewColumnHeader Content="エラー状況" Uid="ErrComment" />
+            </GridViewColumn.Header>
+            <GridViewColumn.CellTemplate>
+                <DataTemplate>
+                    <ComboBox ItemsSource="{Binding Path=ErrComment}" SelectedIndex="0" Padding="6,0,5,0"></ComboBox>
+                </DataTemplate>
+            </GridViewColumn.CellTemplate>
+        </GridViewColumn>
+        <GridViewColumn>
+            <GridViewColumn.Header>
                 <GridViewColumnHeader Content="予定ファイル名" Uid="RecFileName" />
             </GridViewColumn.Header>
             <GridViewColumn.CellTemplate>

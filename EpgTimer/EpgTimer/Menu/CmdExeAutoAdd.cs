@@ -74,11 +74,11 @@ namespace EpgTimer
         public CmdExeManualAutoAdd(UIElement owner) : base(owner) { _copyItemData = ManualAutoAddDataEx.CopyTo; }
         protected override void mc_ShowDialog(object sender, ExecutedRoutedEventArgs e)
         {
-            IsCommandExecuted = true == MenuUtil.OpenChangeManualAutoAddDialog(dataList[0], this.Owner);
+            IsCommandExecuted = true == MenuUtil.OpenChangeManualAutoAddDialog(dataList[0]);
         }
         protected override void mc_ShowAddDialog(object sender, ExecutedRoutedEventArgs e)
         {
-            IsCommandExecuted = true == MenuUtil.OpenAddManualAutoAddDialog(Owner);
+            IsCommandExecuted = true == MenuUtil.OpenAddManualAutoAddDialog();
         }
     }
 

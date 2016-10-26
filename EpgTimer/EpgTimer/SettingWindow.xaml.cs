@@ -1,27 +1,26 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 
 namespace EpgTimer
 {
     /// <summary>
     /// SettingWindow.xaml の相互作用ロジック
     /// </summary>
-    public partial class SettingWindow : Window
+    public partial class SettingWindow : AttendantWindow
     {
         public SettingWindow()
         {
             InitializeComponent();
+
+            base.SetParam(false, new CheckBox());
+            this.Pinned = true;
+
+            button_cancel.Click += (sender, e) => this.Close();
         }
+
+        //このメソッドとxamlのWindowStartupLocation="CenterOwner"を削除すると、ウィンドウの位置・サイズ保存されるようになるが、とりあえずこのまま。
+        protected override void WriteWindowSaveData() { Settings.Instance.WndSettings.Remove(this); }
 
         private void button_OK_Click(object sender, RoutedEventArgs e)
         {
@@ -32,26 +31,23 @@ namespace EpgTimer
                 setEpgView.SaveSetting();
                 setOtherAppView.SaveSetting();
 
-                Settings.SaveToXmlFile();
                 if (CommonManager.Instance.NWMode == false)
                 {
                     ChSet5.SaveFile();
                     Settings.Instance.ReloadOtherOptions();//NWでは別途iniの更新通知後に実行される。
                 }
                 CommonManager.Instance.ReloadCustContentColorList();
+
+                this.Close();
+                ViewUtil.MainWindow.SaveData();
+                ViewUtil.MainWindow.RefreshSetting(this);
             }
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
                 MessageBox.Show("不正な入力値によるエラーのため、一部設定のみ更新されました。");
+                this.Close();
             }
-
-            this.DialogResult = true;
-        }
-
-        private void button_cancel_Click(object sender, RoutedEventArgs e)
-        {
-            this.DialogResult = false;
         }
     }
 }

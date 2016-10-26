@@ -105,7 +105,7 @@ namespace EpgTimer
                 listBox_service.ItemsSource = serviceList;
 
                 UpdateEventList(true);
-                ReloadReserveInfo = false;//リストビューでは処理済みになる
+                ReloadReserveInfoFlg = false;//リストビューでは処理済みになる
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
@@ -221,9 +221,7 @@ namespace EpgTimer
         }
         protected void MoveToItem(IAutoAddTargetData target, bool IsMarking)
         {
-            UInt64 key = target == null ? 0 : target.CurrentPgUID();
-            SearchItem jump_item = target == null ? null : lstCtrl.dataList.Find(data => data.EventInfo.CurrentPgUID() == key);
-            ViewUtil.ScrollToFindItem(jump_item, listView_event, IsMarking);
+            ViewUtil.JumpToListItem(target == null ? 0 : target.CurrentPgUID(), listView_event, IsMarking);
         }
 
         protected override void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
