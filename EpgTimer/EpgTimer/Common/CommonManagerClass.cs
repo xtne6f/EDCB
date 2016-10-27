@@ -1411,22 +1411,18 @@ namespace EpgTimer
         private static Brush _GetColorBrush(string colorName, uint colorValue = 0
             , bool gradation = false, double luminance = -1, double saturation = -1)
         {
-            Color c = (colorName == "カスタム" ? ColorDef.FromUInt(colorValue) : ColorDef.FromName(colorName));
+            Color c = (colorName == "カスタム" ? ColorDef.FromUInt(colorValue) : ColorDef.ColorFromName(colorName));
+            Brush brsh;
             if (gradation == false)
             {
-                return ColorDef.SolidBrush(c);
+                brsh = new SolidColorBrush(c);
             }
             else
             {
-                if (luminance == -1)
-                {
-                    return ColorDef.GradientBrush(c);
-                }
-                else
-                {
-                    return ColorDef.GradientBrush(c, luminance, saturation);
-                }
+                brsh = luminance == -1 ? ColorDef.GradientBrush(c) : ColorDef.GradientBrush(c, luminance, saturation);
             }
+            brsh.Freeze();
+            return brsh;
         }
         public void ReloadCustContentColorList()
         {

@@ -24,8 +24,8 @@
                 <Setter.Value>
                     <DataTemplate>
                         <StackPanel Orientation="Horizontal">
-                            <Label BorderBrush="Black" BorderThickness="1" Background="{Binding Path=Color}" Width="20" Height="15" />
-                            <TextBlock Text="{Binding Path=ColorName}" Margin="5,0,0,0" />
+                            <Label BorderBrush="Black" BorderThickness="1" Background="{Binding Path=Value}" Width="20" Height="15" />
+                            <TextBlock Text="{Binding Path=Key}" Margin="5,0,0,0" />
                         </StackPanel>
                     </DataTemplate>
                 </Setter.Value>

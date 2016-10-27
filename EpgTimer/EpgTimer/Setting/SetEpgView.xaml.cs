@@ -10,19 +10,13 @@ using System.Windows.Shapes;
 namespace EpgTimer.Setting
 {
     using BoxExchangeEdit;
+    using ComboItem = KeyValuePair<string, Brush>;
 
     /// <summary>
     /// SetEpgView.xaml の相互作用ロジック
     /// </summary>
     public partial class SetEpgView : UserControl
     {
-        private class ColorReferenceViewItem
-        {
-            public ColorReferenceViewItem(string name, Brush c) { ColorName = name; Color = c; }
-            public string ColorName { get; private set; }
-            public Brush Color { get; private set; }
-        }
-
         private MenuSettingData ctxmSetInfo;
         private RadioBtnSelect epgPopupRadioBtns;
         private RadioBtnSelect tunerPopupRadioBtns;
@@ -121,21 +115,13 @@ namespace EpgTimer.Setting
                 textBox_fontTunerSizeService.Text = Settings.Instance.TunerFontSizeService.ToString();
                 checkBox_fontTunerBoldService.IsChecked = Settings.Instance.TunerFontBoldService;
 
-                var colorReference = ColorDef.ColorTable.ToDictionary
-                    (item => item.Key, item => new ColorReferenceViewItem(item.Key, item.Value));
-                colorReference["カスタム"] = new ColorReferenceViewItem("カスタム", this.Resources["HatchBrush"] as VisualBrush);
+                var colorReference = typeof(Brushes).GetProperties().ToDictionary(p => p.Name, p => new ComboItem(p.Name, (Brush)p.GetValue(null, null)));
+                colorReference.Add("カスタム", new ComboItem("カスタム", this.Resources["HatchBrush"] as VisualBrush));
 
                 var setComboColor1 = new Action<string, ComboBox>((name, cmb) =>
                 {
                     cmb.ItemsSource = colorReference.Values;
-                    try 
-                    {
-                        cmb.SelectedItem = colorReference[name];
-                    }
-                    catch
-                    {
-                        cmb.SelectedItem = colorReference["カスタム"];
-                    }
+                    cmb.SelectedItem = colorReference.ContainsKey(name) == true ? colorReference[name] : colorReference["カスタム"];
                 });
                 var setComboColors = new Action<List<string>, Panel>((list, pnl) =>
                 {
@@ -333,7 +319,7 @@ namespace EpgTimer.Setting
                 Settings.Instance.CustomEpgTabList = listBox_tab.Items.OfType<CustomEpgTabInfo>().ToList();
                 Settings.SetCustomEpgTabInfoID();
 
-                var getComboColor1 = new Func<ComboBox, string>((cmb) => ((ColorReferenceViewItem)(cmb.SelectedItem)).ColorName);
+                var getComboColor1 = new Func<ComboBox, string>((cmb) => ((ComboItem)(cmb.SelectedItem)).Key);
                 var getComboColors = new Action<List<string>, Panel>((list, pnl) =>
                 {
                     foreach (var cmb in pnl.Children.OfType<ComboBox>())
@@ -504,16 +490,14 @@ namespace EpgTimer.Setting
 
         private void button_Color_Click(object sender, RoutedEventArgs e)
         {
-            var btn = sender as Button;
-
             var dlg = new ColorSetWindow();
             dlg.Owner = CommonUtil.GetTopWindow(this);
-            Color item = (btn.Background as SolidColorBrush).Color;
+            Color item = ((SolidColorBrush)((Button)sender).Background).Color;
             dlg.SetColor(item);
             if (dlg.ShowDialog() == true)
             {
                 dlg.GetColor(ref item);
-                (btn.Background as SolidColorBrush).Color = item;
+                ((SolidColorBrush)((Button)sender).Background).Color = item;
             }
         }
 

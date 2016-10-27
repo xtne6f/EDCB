@@ -18,8 +18,6 @@ namespace EpgTimer
     /// </summary>
     public partial class ColorSetWindow : Window
     {
-        SolidColorBrush backColor = new SolidColorBrush();
-
         public ColorSetWindow()
         {
             InitializeComponent();
@@ -27,25 +25,27 @@ namespace EpgTimer
             slider_R.Value = 0xFF;
             slider_G.Value = 0xFF;
             slider_B.Value = 0xFF;
+            slider_A.Value = 0xFF;
             textBox_R.Text = "255";
             textBox_G.Text = "255";
             textBox_B.Text = "255";
+            textBox_A.Text = "255";
 
-            backColor.Color = Color.FromArgb(0xFF, 0xFF, 0xFF, 0xFF);
-
-            rectangle_color.Fill = backColor;
+            rectangle_color.Fill = new SolidColorBrush();
+            ChgColor();
         }
 
         public void SetColor(Color argb)
         {
-            backColor.Color = argb;
-
             slider_R.Value = argb.R;
             slider_G.Value = argb.G;
             slider_B.Value = argb.B;
+            slider_A.Value = argb.A;
             textBox_R.Text = argb.R.ToString();
             textBox_G.Text = argb.G.ToString();
             textBox_B.Text = argb.B.ToString();
+            textBox_A.Text = argb.A.ToString();
+            ChgColor();
         }
 
         public void GetColor(ref Color argb)
@@ -53,11 +53,15 @@ namespace EpgTimer
             argb.R = (byte)slider_R.Value;
             argb.G = (byte)slider_G.Value;
             argb.B = (byte)slider_B.Value;
+            argb.A = (byte)slider_A.Value;
         }
 
         private void ChgColor()
         {
-            backColor.Color = Color.FromArgb(0xFF, (byte)slider_R.Value, (byte)slider_G.Value, (byte)slider_B.Value);
+            if (rectangle_color.Fill != null)
+            {
+                ((SolidColorBrush)rectangle_color.Fill).Color = Color.FromArgb((byte)slider_A.Value, (byte)slider_R.Value, (byte)slider_G.Value, (byte)slider_B.Value);
+            }
         }
 
         private void slider_R_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
@@ -78,76 +82,38 @@ namespace EpgTimer
             ChgColor();
         }
 
+        private void slider_A_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            textBox_A.Text = ((byte)slider_A.Value).ToString();
+            ChgColor();
+        }
+
         private void textBox_R_TextChanged(object sender, TextChangedEventArgs e)
         {
-            try
-            {
-                if (textBox_R.Text.Length == 0)
-                {
-                    textBox_R.Text = "0";
-                }
-                else
-                {
-                    if (Convert.ToInt32(textBox_R.Text) > 255)
-                    {
-                        textBox_R.Text = "255";
-                    }
-                } 
-                slider_R.Value = Convert.ToByte(textBox_R.Text);
-                ChgColor();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            byte val;
+            slider_R.Value = byte.TryParse(textBox_R.Text, out val) ? val : 255;
+            ChgColor();
         }
 
         private void textBox_G_TextChanged(object sender, TextChangedEventArgs e)
         {
-            try
-            {
-                if (textBox_G.Text.Length == 0)
-                {
-                    textBox_G.Text = "0";
-                }
-                else
-                {
-                    if (Convert.ToInt32(textBox_G.Text) > 255)
-                    {
-                        textBox_G.Text = "255";
-                    }
-                } 
-                slider_G.Value = Convert.ToByte(textBox_G.Text);
-                ChgColor();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            byte val;
+            slider_G.Value = byte.TryParse(textBox_G.Text, out val) ? val : 255;
+            ChgColor();
         }
 
         private void textBox_B_TextChanged(object sender, TextChangedEventArgs e)
         {
-            try
-            {
-                if (textBox_B.Text.Length == 0)
-                {
-                    textBox_B.Text = "0";
-                }
-                else
-                {
-                    if (Convert.ToInt32(textBox_B.Text) > 255)
-                    {
-                        textBox_B.Text = "255";
-                    }
-                }
-                slider_B.Value = Convert.ToByte(textBox_B.Text);
-                ChgColor();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            byte val;
+            slider_B.Value = byte.TryParse(textBox_B.Text, out val) ? val : 255;
+            ChgColor();
+        }
+
+        private void textBox_A_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            byte val;
+            slider_A.Value = byte.TryParse(textBox_A.Text, out val) ? val : 255;
+            ChgColor();
         }
 
         private void button_OK_Click(object sender, RoutedEventArgs e)

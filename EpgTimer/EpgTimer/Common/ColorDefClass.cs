@@ -9,49 +9,30 @@ namespace EpgTimer
 {
     public static class ColorDef
     {
-        private static Dictionary<string, SolidColorBrush> colorTable;
-        public static Dictionary<string, SolidColorBrush> ColorTable
-        {
-            get
-            {
-                if (colorTable == null)
-                {
-                    colorTable = typeof(Brushes).GetProperties().ToDictionary(p => p.Name, p => (SolidColorBrush)p.GetValue(null, null));
-                    colorTable.Add("カスタム", Brushes.White);
-                }
-                return colorTable;
-            }
-        }
-        //未使用
-        //public static List<string> ColorNames { get { return ColorTable.Keys.ToList(); } }
-
-        public static Color FromName(string name)
+        public static Color ColorFromName(string name)
         {
             try
             {
-                return (Color)ColorConverter.ConvertFromString(name);
+                return (Color)ColorConverter.ConvertFromString(name);//#形式でも大丈夫
                 //return (Color)typeof(Colors).GetProperty(name).GetValue(null, null);
             }
-            catch 
+            catch
             {
                 return Colors.White;
             }
         }
+        //未使用
+        //public static SolidColorBrush BrushFromName(string name) { return new SolidColorBrush(ColorFromName(name)); }
+
         public static Color FromUInt(UInt32 value)
         {
-            return ColorDef.FromName("#" + value.ToString("X8"));
+            return Color.FromArgb((byte)(value >> 24), (byte)(value >> 16), (byte)(value >> 8), (byte)value);
         }
         public static UInt32 ToUInt(Color c)
         {
-            return ((UInt32)c.A) << 24 | ((UInt32)c.R) << 16 | ((UInt32)c.G) << 8 | (UInt32)c.B;;
+            return ((UInt32)c.A) << 24 | ((UInt32)c.R) << 16 | ((UInt32)c.G) << 8 | (UInt32)c.B;
         }
 
-        public static SolidColorBrush SolidBrush(Color color)
-        {
-            var brsh = new SolidColorBrush(color);
-            brsh.Freeze();
-            return brsh;
-        }
         public static LinearGradientBrush GradientBrush(Color color, double luminance = 0.94, double saturation = 1.2)
         {
             // 彩度を上げる
@@ -84,8 +65,6 @@ namespace EpgTimer
             brush.EndPoint = new Point(0, 1);
             brush.GradientStops.Add(new GradientStop(color, 0.0));
             brush.GradientStops.Add(new GradientStop(color2, 1.0));
-            brush.Freeze();
-
             return brush;
         }
     }
