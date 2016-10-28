@@ -41,6 +41,11 @@ namespace EpgTimer
                 return view;
             }
         }
+        public bool Past
+        {
+            get;
+            set;
+        }
         public String ServiceName
         {
             get;

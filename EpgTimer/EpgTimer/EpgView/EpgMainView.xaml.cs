@@ -312,7 +312,7 @@ namespace EpgTimer
                 if (program != null)
                 {
                     //予約追加ダイアログ表示
-                    AddReserve(program.EventInfo);
+                    AddReserve(program.EventInfo, program.Past == false);
                     return;
                 }
             }
@@ -526,8 +526,9 @@ namespace EpgTimer
                     }
                     else
                     {
-                        menuItemNew.IsEnabled = true;
+                        menuItemNew.IsEnabled = program.Past == false;
                         menuItemAdd.IsEnabled = true;
+                        menuItemPreset.IsEnabled = program.Past == false;
                         menuItemChg.IsEnabled = false;
                         menuItemDel.IsEnabled = false;
                         menuItemAutoAdd.IsEnabled = true;
@@ -647,7 +648,7 @@ namespace EpgTimer
                 {
                     return;
                 }
-                AddReserve(program.EventInfo);
+                AddReserve(program.EventInfo, program.Past == false);
             }
             catch (Exception ex)
             {
@@ -1027,13 +1028,14 @@ namespace EpgTimer
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void AddReserve(EpgEventInfo eventInfo)
+        private void AddReserve(EpgEventInfo eventInfo, bool reservable)
         {
             try
             {
                 AddReserveEpgWindow dlg = new AddReserveEpgWindow();
                 dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
                 dlg.SetOpenMode(Settings.Instance.EpgInfoOpenMode);
+                dlg.SetReservable(reservable);
                 dlg.SetEventInfo(eventInfo);
                 if (dlg.ShowDialog() == true)
                 {
@@ -1195,7 +1197,7 @@ namespace EpgTimer
                         var list = new List<EpgEventInfo>();
                         cmd.SendSearchPg(new List<EpgSearchKeyInfo>() { setViewInfo.SearchKey }, ref list);
                         //サービス毎のリストに変換
-                        var serviceEventList = new Dictionary<ulong, EpgServiceEventInfo>();
+                        var serviceEventList = new Dictionary<ulong, EpgServiceAllEventInfo>();
                         foreach (EpgEventInfo info in list)
                         {
                             ulong id = CommonManager.Create64Key(info.original_network_id, info.transport_stream_id, info.service_id);
@@ -1206,8 +1208,7 @@ namespace EpgTimer
                                     //サービス情報ないので無効
                                     continue;
                                 }
-                                serviceEventList.Add(id, new EpgServiceEventInfo());
-                                serviceEventList[id].serviceInfo = CommonManager.ConvertChSet5To(ChSet5.Instance.ChList[id]);
+                                serviceEventList.Add(id, new EpgServiceAllEventInfo(CommonManager.ConvertChSet5To(ChSet5.Instance.ChList[id])));
                             }
                             serviceEventList[id].eventList.Add(info);
                         }
@@ -1454,7 +1455,8 @@ namespace EpgTimer
                                         //予約情報から番組情報を特定し、枠表示位置を再設定する
                                         foreach (ProgramViewItem pgInfo in timeList[chkTime])
                                         {
-                                            if (viewItem.ReserveInfo.OriginalNetworkID == pgInfo.EventInfo.original_network_id &&
+                                            if (pgInfo.Past == false &&
+                                                viewItem.ReserveInfo.OriginalNetworkID == pgInfo.EventInfo.original_network_id &&
                                                 viewItem.ReserveInfo.TransportStreamID == pgInfo.EventInfo.transport_stream_id &&
                                                 viewItem.ReserveInfo.ServiceID == pgInfo.EventInfo.service_id &&
                                                 viewItem.ReserveInfo.EventID == pgInfo.EventInfo.event_id &&
@@ -1500,7 +1502,7 @@ namespace EpgTimer
         /// <summary>
         /// 番組情報の再描画処理
         /// </summary>
-        private void ReloadProgramViewItem(Dictionary<ulong, EpgServiceEventInfo> serviceEventList)
+        private void ReloadProgramViewItem(Dictionary<ulong, EpgServiceAllEventInfo> serviceEventList)
         {
             try
             {
@@ -1576,8 +1578,10 @@ namespace EpgTimer
 
                     EpgServiceInfo serviceInfo = serviceList[mergePos];
                     UInt64 id = CommonManager.Create64Key(serviceInfo.ONID, serviceInfo.TSID, serviceInfo.SID);
-                    foreach (EpgEventInfo eventInfo in serviceEventList[id].eventList)
+                    int eventInfoIndex = -1;
+                    foreach (EpgEventInfo eventInfo in Enumerable.Concat(serviceEventList[id].eventArcList, serviceEventList[id].eventList))
                     {
+                        bool past = ++eventInfoIndex < serviceEventList[id].eventArcList.Count;
                         if (eventInfo.StartTimeFlag == 0)
                         {
                             //開始未定は除外
@@ -1671,7 +1675,7 @@ namespace EpgTimer
                             }
                         }
 
-                        ProgramViewItem viewItem = new ProgramViewItem(eventInfo);
+                        ProgramViewItem viewItem = new ProgramViewItem(eventInfo, past);
                         viewItem.Height = ((eventInfo.DurationFlag == 0 ? 300 : eventInfo.durationSec) * Settings.Instance.MinHeight) / 60;
                         viewItem.Width = Settings.Instance.ServiceWidth * widthSpan / mergeNum;
                         viewItem.LeftPos = Settings.Instance.ServiceWidth * (servicePos + (double)((mergeNum+i-mergePos-1)/2) / mergeNum);
@@ -1818,7 +1822,8 @@ namespace EpgTimer
                 {
                     foreach (ProgramViewItem item in this.timeList.Values[i])
                     {
-                        if (item.EventInfo.event_id == BlackoutWindow.selectedSearchItem.EventInfo.event_id &&
+                        if (item.Past == false &&
+                            item.EventInfo.event_id == BlackoutWindow.selectedSearchItem.EventInfo.event_id &&
                             item.EventInfo.original_network_id == BlackoutWindow.selectedSearchItem.EventInfo.original_network_id &&
                             item.EventInfo.service_id == BlackoutWindow.selectedSearchItem.EventInfo.service_id &&
                             item.EventInfo.transport_stream_id == BlackoutWindow.selectedSearchItem.EventInfo.transport_stream_id)

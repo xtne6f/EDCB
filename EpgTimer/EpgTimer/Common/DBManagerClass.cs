@@ -6,6 +6,23 @@ using System.Windows;
 
 namespace EpgTimer
 {
+    class EpgServiceAllEventInfo
+    {
+        public readonly EpgServiceInfo serviceInfo;
+        public readonly List<EpgEventInfo> eventList;
+        public readonly List<EpgEventInfo> eventArcList;
+        public EpgServiceAllEventInfo(EpgServiceInfo serviceInfo, List<EpgEventInfo> eventList, List<EpgEventInfo> eventArcList)
+        {
+            this.serviceInfo = serviceInfo;
+            this.eventList = eventList;
+            this.eventArcList = eventArcList;
+        }
+        public EpgServiceAllEventInfo(EpgServiceInfo serviceInfo)
+            : this(serviceInfo, new List<EpgEventInfo>(), new List<EpgEventInfo>())
+        {
+        }
+    }
+
     class DBManager
     {
         private CtrlCmdUtil cmd = null;
@@ -18,7 +35,7 @@ namespace EpgTimer
         private bool noAutoReloadEpg = false;
         private bool oneTimeReloadEpg = false;
 
-        Dictionary<UInt64, EpgServiceEventInfo> serviceEventList = new Dictionary<UInt64, EpgServiceEventInfo>();
+        Dictionary<UInt64, EpgServiceAllEventInfo> serviceEventList = new Dictionary<UInt64, EpgServiceAllEventInfo>();
         Dictionary<UInt32, ReserveData> reserveList = new Dictionary<UInt32, ReserveData>();
         Dictionary<UInt32, TunerReserveInfo> tunerReserveList = new Dictionary<UInt32, TunerReserveInfo>();
         Dictionary<UInt32, RecFileInfo> recFileInfo = new Dictionary<UInt32, RecFileInfo>();
@@ -27,7 +44,7 @@ namespace EpgTimer
         Dictionary<UInt32, ManualAutoAddData> manualAutoAddList = new Dictionary<UInt32, ManualAutoAddData>();
         Dictionary<UInt32, EpgAutoAddData> epgAutoAddList = new Dictionary<UInt32, EpgAutoAddData>();
 
-        public Dictionary<UInt64, EpgServiceEventInfo> ServiceEventList
+        public Dictionary<UInt64, EpgServiceAllEventInfo> ServiceEventList
         {
             get { return serviceEventList; }
         }
@@ -77,7 +94,7 @@ namespace EpgTimer
             epgAutoAddList.Clear();
 
             serviceEventList = null;
-            serviceEventList = new Dictionary<ulong, EpgServiceEventInfo>();
+            serviceEventList = new Dictionary<ulong, EpgServiceAllEventInfo>();
             reserveList = null;
             reserveList = new Dictionary<uint, ReserveData>();
             tunerReserveList = null;
@@ -149,9 +166,9 @@ namespace EpgTimer
             ErrCode ret = ErrCode.CMD_SUCCESS;
             try
             {
-                if (noAutoReloadEpg == true)
+                if (updateEpgData)
                 {
-                    if (updateEpgData == true && oneTimeReloadEpg == true)
+                    if (noAutoReloadEpg == false || oneTimeReloadEpg)
                     {
                         if (cmd == null)
                         {
@@ -161,56 +178,26 @@ namespace EpgTimer
                         {
                             serviceEventList.Clear();
                             serviceEventList = null;
-                            serviceEventList = new Dictionary<ulong, EpgServiceEventInfo>();
+                            serviceEventList = new Dictionary<ulong, EpgServiceAllEventInfo>();
                             List<EpgServiceEventInfo> list = new List<EpgServiceEventInfo>();
                             ret = (ErrCode)cmd.SendEnumPgAll(ref list);
                             if (ret == ErrCode.CMD_SUCCESS)
                             {
+                                var list2 = new List<EpgServiceEventInfo>();
+                                cmd.SendEnumPgArcAll(ref list2);
                                 foreach (EpgServiceEventInfo info in list)
                                 {
                                     UInt64 id = CommonManager.Create64Key(
                                         info.serviceInfo.ONID,
                                         info.serviceInfo.TSID,
                                         info.serviceInfo.SID);
-                                    serviceEventList.Add(id, info);
+                                    //対応する過去番組情報があれば付加する
+                                    int i = list2.FindIndex(info2 => id == CommonManager.Create64Key(info2.serviceInfo.ONID, info2.serviceInfo.TSID, info2.serviceInfo.SID));
+                                    serviceEventList.Add(id, new EpgServiceAllEventInfo(info.serviceInfo, info.eventList, i < 0 ? new List<EpgEventInfo>() : list2[i].eventList));
                                 }
                                 updateEpgData = false;
                                 oneTimeReloadEpg = false;
                             }
-                            list.Clear();
-                            list = null;
-                        }
-                    }
-                }
-                else
-                {
-                    if (updateEpgData == true)
-                    {
-                        if (cmd == null)
-                        {
-                            ret = ErrCode.CMD_ERR;
-                        }
-                        else
-                        {
-                            serviceEventList.Clear();
-                            serviceEventList = null;
-                            serviceEventList = new Dictionary<ulong,EpgServiceEventInfo>();
-                            List<EpgServiceEventInfo> list = new List<EpgServiceEventInfo>();
-                            ret = (ErrCode)cmd.SendEnumPgAll(ref list);
-                            if (ret == ErrCode.CMD_SUCCESS)
-                            {
-                                foreach (EpgServiceEventInfo info in list)
-                                {
-                                    UInt64 id = CommonManager.Create64Key(
-                                        info.serviceInfo.ONID,
-                                        info.serviceInfo.TSID,
-                                        info.serviceInfo.SID);
-                                    serviceEventList.Add(id, info);
-                                }
-                                updateEpgData = false;
-                            }
-                            list.Clear();
-                            list = null;
                         }
                     }
                 }

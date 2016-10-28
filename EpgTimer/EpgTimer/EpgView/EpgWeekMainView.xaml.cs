@@ -37,7 +37,7 @@ namespace EpgTimer
         private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
         private DispatcherTimer nowViewTimer;
         private Line nowLine = null;
-        private Dictionary<UInt64, EpgServiceEventInfo> searchEventList = new Dictionary<UInt64, EpgServiceEventInfo>();
+        private Dictionary<UInt64, EpgServiceAllEventInfo> searchEventList = new Dictionary<UInt64, EpgServiceAllEventInfo>();
 
         private bool updateEpgData = true;
         private bool updateReserveData = true;
@@ -346,7 +346,7 @@ namespace EpgTimer
                 if (program != null)
                 {
                     //予約追加ダイアログ表示
-                    AddReserve(program.EventInfo);
+                    AddReserve(program.EventInfo, program.Past == false);
                     return;
                 }
             }
@@ -535,6 +535,7 @@ namespace EpgTimer
                 menuItemView.Items.Add(menuItemViewSetDlg);
                 if (addMode && program == null)
                 {
+                    menuItemNew.IsEnabled = false;
                     menuItemAdd.IsEnabled = false;
                     menuItemChg.IsEnabled = false;
                     menuItemDel.IsEnabled = false;
@@ -559,8 +560,9 @@ namespace EpgTimer
                     }
                     else
                     {
-                        menuItemNew.IsEnabled = true;
+                        menuItemNew.IsEnabled = program.Past == false;
                         menuItemAdd.IsEnabled = true;
+                        menuItemPreset.IsEnabled = program.Past == false;
                         menuItemChg.IsEnabled = false;
                         menuItemDel.IsEnabled = false;
                         menuItemAutoAdd.IsEnabled = true;
@@ -680,7 +682,7 @@ namespace EpgTimer
                 {
                     return;
                 }
-                AddReserve(program.EventInfo);
+                AddReserve(program.EventInfo, program.Past == false);
             }
             catch (Exception ex)
             {
@@ -1061,13 +1063,14 @@ namespace EpgTimer
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void AddReserve(EpgEventInfo eventInfo)
+        private void AddReserve(EpgEventInfo eventInfo, bool reservable)
         {
             try
             {
                 AddReserveEpgWindow dlg = new AddReserveEpgWindow();
                 dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
                 dlg.SetOpenMode(Settings.Instance.EpgInfoOpenMode);
+                dlg.SetReservable(reservable);
                 dlg.SetEventInfo(eventInfo);
                 if (dlg.ShowDialog() == true)
                 {
@@ -1383,7 +1386,8 @@ namespace EpgTimer
                             //予約情報から番組情報を特定し、枠表示位置を再設定する
                             foreach (ProgramViewItem pgInfo in timeList[chkStartTime])
                             {
-                                if (viewItem.ReserveInfo.OriginalNetworkID == pgInfo.EventInfo.original_network_id &&
+                                if (pgInfo.Past == false &&
+                                    viewItem.ReserveInfo.OriginalNetworkID == pgInfo.EventInfo.original_network_id &&
                                     viewItem.ReserveInfo.TransportStreamID == pgInfo.EventInfo.transport_stream_id &&
                                     viewItem.ReserveInfo.ServiceID == pgInfo.EventInfo.service_id &&
                                     viewItem.ReserveInfo.EventID == pgInfo.EventInfo.event_id &&
@@ -1504,7 +1508,6 @@ namespace EpgTimer
                 foreach (EpgEventInfo eventInfo in list)
                 {
                     UInt64 id = CommonManager.Create64Key(eventInfo.original_network_id, eventInfo.transport_stream_id, eventInfo.service_id);
-                    EpgServiceEventInfo serviceInfo = null;
                     if (searchEventList.ContainsKey(id) == false)
                     {
                         if (ChSet5.Instance.ChList.ContainsKey(id) == false)
@@ -1512,16 +1515,9 @@ namespace EpgTimer
                             //サービス情報ないので無効
                             continue;
                         }
-                        serviceInfo = new EpgServiceEventInfo();
-                        serviceInfo.serviceInfo = CommonManager.ConvertChSet5To(ChSet5.Instance.ChList[id]);
-
-                        searchEventList.Add(id, serviceInfo);
+                        searchEventList.Add(id, new EpgServiceAllEventInfo(CommonManager.ConvertChSet5To(ChSet5.Instance.ChList[id])));
                     }
-                    else
-                    {
-                        serviceInfo = searchEventList[id];
-                    }
-                    serviceInfo.eventList.Add(eventInfo);
+                    searchEventList[id].eventList.Add(eventInfo);
                 }
 
                 //必要サービスの抽出
@@ -1593,7 +1589,7 @@ namespace EpgTimer
                     selectID = CommonManager.Create64Key(serviceInfo.ONID, serviceInfo.TSID, serviceInfo.SID);
                 }
 
-                Dictionary<UInt64, EpgServiceEventInfo> serviceEventList = null;
+                Dictionary<UInt64, EpgServiceAllEventInfo> serviceEventList = null;
                 if (setViewInfo.SearchMode == true)
                 {
                     serviceEventList = searchEventList;
@@ -1604,8 +1600,10 @@ namespace EpgTimer
                 }
 
                 //まず日時のチェック
-                foreach (EpgEventInfo eventInfo in serviceEventList[selectID].eventList)
+                int eventInfoIndex = -1;
+                foreach (EpgEventInfo eventInfo in Enumerable.Concat(serviceEventList[selectID].eventArcList, serviceEventList[selectID].eventList))
                 {
+                    bool past = ++eventInfoIndex < serviceEventList[selectID].eventArcList.Count;
                     if (eventInfo.StartTimeFlag == 0)
                     {
                         //開始未定は除外
@@ -1652,7 +1650,7 @@ namespace EpgTimer
                         }
                     }
 
-                    ProgramViewItem viewItem = new ProgramViewItem(eventInfo);
+                    ProgramViewItem viewItem = new ProgramViewItem(eventInfo, past);
                     viewItem.Height = ((eventInfo.DurationFlag == 0 ? 300 : eventInfo.durationSec) * Settings.Instance.MinHeight) / 60;
                     viewItem.Width = Settings.Instance.ServiceWidth;
                     programList.Add(viewItem);
@@ -1860,7 +1858,8 @@ namespace EpgTimer
                 {
                     foreach (ProgramViewItem item in this.timeList.Values[i])
                     {
-                        if (item.EventInfo.event_id == BlackoutWindow.selectedSearchItem.EventInfo.event_id &&
+                        if (item.Past == false &&
+                            item.EventInfo.event_id == BlackoutWindow.selectedSearchItem.EventInfo.event_id &&
                             item.EventInfo.original_network_id == BlackoutWindow.selectedSearchItem.EventInfo.original_network_id &&
                             item.EventInfo.service_id == BlackoutWindow.selectedSearchItem.EventInfo.service_id &&
                             item.EventInfo.transport_stream_id == BlackoutWindow.selectedSearchItem.EventInfo.transport_stream_id)
