@@ -31,7 +31,6 @@ namespace EpgTimer
 
         private List<UInt64> viewCustServiceList = null;
         private Dictionary<UInt16, UInt16> viewCustContentKindList = new Dictionary<UInt16, UInt16>();
-        private List<SearchItem> programList = new List<SearchItem>();
         private List<ServiceItem> serviceList = new List<ServiceItem>();
 
         string _lastHeaderClicked = null;
@@ -70,7 +69,6 @@ namespace EpgTimer
             listBox_service.ItemsSource = null;
             serviceList.Clear();
             listView_event.ItemsSource = null;
-            programList.Clear();
             serviceEventList.Clear();
             richTextBox_eventInfo.Document.Blocks.Clear();
 
@@ -181,7 +179,6 @@ namespace EpgTimer
                     listBox_service.ItemsSource = null;
                     serviceList.Clear();
                     listView_event.ItemsSource = null;
-                    programList.Clear();
                     serviceEventList.Clear();
 
                     updateEpgData = false;
@@ -444,7 +441,7 @@ namespace EpgTimer
                 listView_event.DataContext = null;
 
                 //listView_event.ItemsSource = null;
-                programList.Clear();
+                var programList = new List<SearchItem>();
 
                 Dictionary<UInt64, EpgServiceEventInfo> eventList = null;
                 if (setViewInfo.SearchMode == true)
