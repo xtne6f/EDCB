@@ -99,7 +99,8 @@ namespace EpgTimer
             try
             {
                 nowViewTimer.Stop();
-                DateTime nowTime = new DateTime(2001, 1, 1, DateTime.Now.Hour, DateTime.Now.Minute, DateTime.Now.Second);
+                DateTime nowTime = DateTime.Now;
+                nowTime = new DateTime(2001, 1, nowTime.Hour < setViewInfo.StartTimeWeek ? 2 : 1, nowTime.Hour, nowTime.Minute, nowTime.Second);
 
                 if (nowLine == null)
                 {
@@ -112,7 +113,7 @@ namespace EpgTimer
                 }
 
                 double posY = 0;
-                DateTime chkNowTime = new DateTime(2001, 1, 1, nowTime.Hour, 0, 0);
+                DateTime chkNowTime = new DateTime(nowTime.Year, nowTime.Month, nowTime.Day, nowTime.Hour, 0, 0);
                 for (int i = 0; i < timeList.Count; i++)
                 {
                     if (chkNowTime == timeList.Keys[i])
@@ -242,7 +243,8 @@ namespace EpgTimer
                 }
                 DateTime startTime = timeList.Keys[0];
 
-                DateTime time = new DateTime(2001, 1, 1, DateTime.Now.Hour, DateTime.Now.Minute, DateTime.Now.Second);
+                DateTime time = DateTime.Now;
+                time = new DateTime(2001, 1, time.Hour < setViewInfo.StartTimeWeek ? 2 : 1, time.Hour, time.Minute, time.Second);
 
                 if (time < startTime)
                 {
