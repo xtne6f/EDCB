@@ -215,15 +215,15 @@ namespace EpgTimer
         //指定アイテムまでマーキング付で移動する。
         public static void JumpToListItem(object target, ListBox listBox, bool IsMarking = false)
         {
-            if (target is GridViewSorterItem)
+            if (target is IGridViewSorterItem)
             {
-                JumpToListItem(((GridViewSorterItem)target).KeyID, listBox, IsMarking);
+                JumpToListItem(((IGridViewSorterItem)target).KeyID, listBox, IsMarking);
             }
             ScrollToFindItem(target, listBox, IsMarking);
         }
         public static void JumpToListItem(UInt64 gvSorterID, ListBox listBox, bool IsMarking = false)
         {
-            var target = listBox.Items.OfType<GridViewSorterItem>().FirstOrDefault(data => data.KeyID == gvSorterID);
+            var target = listBox.Items.OfType<IGridViewSorterItem>().FirstOrDefault(data => data.KeyID == gvSorterID);
             ScrollToFindItem(target, listBox, IsMarking);
         }
         public static void ScrollToFindItem(object target, ListBox listBox, bool IsMarking = false)
@@ -231,8 +231,7 @@ namespace EpgTimer
             try
             {
                 listBox.SelectedItem = target;
-
-                if (target == null) return;
+                if (listBox.SelectedItem == null) return;
 
                 listBox.ScrollIntoView(target);
 

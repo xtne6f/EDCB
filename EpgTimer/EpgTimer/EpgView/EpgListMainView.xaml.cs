@@ -202,18 +202,10 @@ namespace EpgTimer
             }
         }
 
-        //過去番組表でイベントIDが重複している場合があるので開始時間も考慮する
         protected override void MoveToReserveItem(ReserveData target, bool IsMarking)
         {
-            if (target.IsEpgReserve == true)
-            {
-                MoveToItem(target, IsMarking);
-            }
-            else
-            {
-                //プログラム予約だと見つからないので、それらしい番組へジャンプする。
-                MoveToItem(target.SearchEventInfoLikeThat(), IsMarking);
-            }
+            //プログラム予約だと見つからないので、それらしい番組へジャンプする。
+            MoveToItem(target.IsEpgReserve == true ? (IAutoAddTargetData)target : target.SearchEventInfoLikeThat(), IsMarking);
         }
         protected override void MoveToProgramItem(EpgEventInfo target, bool IsMarking)
         {
@@ -221,6 +213,7 @@ namespace EpgTimer
         }
         protected void MoveToItem(IAutoAddTargetData target, bool IsMarking)
         {
+            //過去番組表でイベントIDが重複している場合があるので開始時間も考慮する
             ViewUtil.JumpToListItem(target == null ? 0 : target.CurrentPgUID(), listView_event, IsMarking);
         }
 
