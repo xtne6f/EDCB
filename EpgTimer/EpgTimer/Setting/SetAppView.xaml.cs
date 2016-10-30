@@ -67,7 +67,6 @@ namespace EpgTimer.Setting
                 label_tcpResTo.IsEnabled = false;
                 textBox_tcpResTo.IsEnabled = false;
                 stackPanel_autoDelRecInfo.IsEnabled = false;
-                stackPanel_epgArchivePeriod.IsEnabled = false;
                 stackPanel_timeSync.IsEnabled = false;
                 checkBox_wakeReconnect.IsEnabled = true;
                 stackPanel_WoLWait.IsEnabled = true;
@@ -228,9 +227,6 @@ namespace EpgTimer.Setting
                 checkBox_autoDelRecFile.IsChecked = IniFileHandler.GetPrivateProfileInt("SET", "RecInfoDelFile", 0, SettingPath.CommonIniPath) == 1;
                 textBox_autoDelRecInfo.Text = IniFileHandler.GetPrivateProfileInt("SET", "AutoDelRecInfoNum", 100, SettingPath.TimerSrvIniPath).ToString();
 
-                comboBox_epgArchivePeriod.ItemsSource = Enumerable.Range(0, 15);
-                comboBox_epgArchivePeriod.SelectedIndex = Math.Min(Math.Max(IniFileHandler.GetPrivateProfileInt("SET", "EpgArchivePeriodHour", 0, SettingPath.TimerSrvIniPath) / 24, 0), 14);
-
                 checkBox_timeSync.IsChecked = IniFileHandler.GetPrivateProfileInt("SET", "TimeSync", 0, SettingPath.TimerSrvIniPath) == 1;
                 checkBox_noBallonTips.IsChecked = Settings.Instance.NoBallonTips;
                 textBox_ForceHideBalloonTipSec.Text = Settings.Instance.ForceHideBalloonTipSec.ToString();
@@ -375,8 +371,6 @@ namespace EpgTimer.Setting
                 IniFileHandler.WritePrivateProfileString("SET", "AutoDelRecInfo", checkBox_autoDelRecInfo.IsChecked == true ? "1" : "0", SettingPath.TimerSrvIniPath);
                 IniFileHandler.WritePrivateProfileString("SET", "RecInfoDelFile", checkBox_autoDelRecFile.IsChecked == true ? "1" : null, SettingPath.CommonIniPath);
                 IniFileHandler.WritePrivateProfileString("SET", "AutoDelRecInfoNum", textBox_autoDelRecInfo.Text.ToString(), SettingPath.TimerSrvIniPath);
-
-                IniFileHandler.WritePrivateProfileString("SET", "EpgArchivePeriodHour", (comboBox_epgArchivePeriod.SelectedIndex * 24).ToString(), SettingPath.TimerSrvIniPath);
 
                 IniFileHandler.WritePrivateProfileString("SET", "TimeSync", checkBox_timeSync.IsChecked == true ? "1" : "0", SettingPath.TimerSrvIniPath);
                 Settings.Instance.NoBallonTips = checkBox_noBallonTips.IsChecked == true;

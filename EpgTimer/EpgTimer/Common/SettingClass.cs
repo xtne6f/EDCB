@@ -62,6 +62,13 @@ namespace EpgTimer
             return buff.ToString();
         }
 
+        public static double GetPrivateProfileDouble(string lpAppName, string lpKeyName, double dDefault, string lpFileName)
+        {
+            string s = IniFileHandler.GetPrivateProfileString(lpAppName, lpKeyName, dDefault.ToString(), lpFileName);
+            double.TryParse(s, out dDefault);
+            return dDefault;
+        }
+
         /// <summary>INIファイルから指定セクションのキー一覧を取得する。lpAppNameにnullを指定すると全セクションの一覧を取得する。</summary>
         public static string[] GetPrivateProfileKeys(string lpAppName, string lpFileName)
         {

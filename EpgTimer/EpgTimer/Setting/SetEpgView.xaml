@@ -122,12 +122,21 @@
                                     <CheckBox Content="番組詳細タブを選択した状態で予約ダイアログを開く" Margin="0,6,0,0" Name="checkBox_openInfo" />
                                     <CheckBox Content="番組名と番組内容の表示位置をあわせる" Margin="0,6,0,0" Name="checkBox_title_indent" />
                                     <CheckBox Content="番組表の切り替え時にも強調表示をする" Margin="0,6,0,0" Name="checkBox_displayNotifyChange" />
-                                    <CheckBox Content="過去の番組データを読み込む" Margin="0,6,0,0" Name="checkBox_epgLoadArcInfo" ToolTipService.ShowDuration="60000" ToolTip="[設定]-[動作設定]-[その他]の設定により保存したデータを表示します。&#10;・番組データの不整合のため表示が乱れる場合があります。&#10;・検索による絞り込みを使用している場合は読込まれません。" />
-                                    <WrapPanel>
-                                        <CheckBox Content="過去の番組データは " Name="checkBox_epgNoDisplayOld" />
-                                        <TextBox Width="55" Name="textBox_epgNoDisplayOldDays" />
-                                        <Label Content="日前まで表示する" />
-                                    </WrapPanel>
+                                    <GroupBox Header="過去の番組情報" Margin="0,6,0,0" >
+                                        <StackPanel>
+                                            <StackPanel Name="stackPanel_epgArchivePeriod" Orientation="Horizontal" >
+                                                <Label Content="EPG取得後も" Name="label_epgArchivePeriod1" />
+                                                <TextBox Name="textBox_epgArchivePeriod" Width="55" />
+                                                <Label Content="日前まで保存する　( 最大14日 )" />
+                                            </StackPanel>
+                                            <CheckBox Content="過去の番組情報を表示しない" Name="checkBox_epgNoLoadArcInfo" Margin="0,2,0,2" ToolTipService.ShowDuration="60000" ToolTip="過去の番組情報を読み込まないようにします。&#10;・過去の番組情報を読み込んでいると、番組データの不整合のため表示が乱れる場合があります。&#10;・検索による絞り込みを使用している場合は、元々過去の番組情報は読み込まれていません。" />
+                                            <StackPanel Orientation="Horizontal" ToolTip="前2つのオプションとは関係なく、強制的に表示を制限します。" >
+                                                <CheckBox Content="番組表の表示を" Name="checkBox_epgNoDisplayOld" />
+                                                <TextBox Name="textBox_epgNoDisplayOldDays" Width="55" Margin="6,0,0,0"/>
+                                                <Label Content="日前までに制限する"/>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </GroupBox>
                                     <WrapPanel>
                                         <Label Content="グラデーション表示を行う" />
                                         <CheckBox Content="番組" Margin="12,0,0,0" Name="checkBox_gradation" />

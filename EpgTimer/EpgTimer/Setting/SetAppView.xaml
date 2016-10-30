@@ -187,11 +187,6 @@
                             <Label Content="保持件数" />
                             <TextBox Name="textBox_autoDelRecInfo" Width="62" />
                         </StackPanel>
-                        <StackPanel Margin="0,6,12,0" Orientation="Horizontal" Name="stackPanel_epgArchivePeriod" >
-                            <Label Content="EPG取得後も番組情報を" Name="label_epgArchivePeriod1" ToolTipService.ShowOnDisabled="True" ToolTipService.ShowDuration="60000" ToolTip="保存されている過去の番組データを表示するには、&#10;[設定]-[各画面の設定]-[番組表]で読込むよう設定してください。"/>
-                            <ComboBox Name="comboBox_epgArchivePeriod" Width="47" />
-                            <Label Content="日前まで保存する" ToolTipService.ShowOnDisabled="True" ToolTipService.ShowDuration="60000" ToolTip="{Binding Path=ToolTip, ElementName=label_epgArchivePeriod1}"/>
-                        </StackPanel>
                         <StackPanel Margin="0,6,12,0" Name="stackPanel_timeSync">
                             <CheckBox Content="EPG取得時に放送波時間でPC時計を同期する" Name="checkBox_timeSync" />
                             <Label Margin="0,-4,0,-4" Content="※EpgTimerSrv.exeが管理者権限で起動している必要があります" />

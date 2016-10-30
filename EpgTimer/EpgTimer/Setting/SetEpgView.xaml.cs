@@ -27,6 +27,11 @@ namespace EpgTimer.Setting
         {
             InitializeComponent();
 
+            if (CommonManager.Instance.NWMode == true)
+            {
+                stackPanel_epgArchivePeriod.IsEnabled = false;
+            }
+
             try
             {
                 textBox_mouse_scroll.Text = Settings.Instance.ScrollSize.ToString();
@@ -52,7 +57,12 @@ namespace EpgTimer.Setting
                 checkBox_openInfo.IsChecked = (Settings.Instance.EpgInfoOpenMode != 0);
                 checkBox_displayNotifyChange.IsChecked = Settings.Instance.DisplayNotifyEpgChange;
                 checkBox_reserveBackground.IsChecked = Settings.Instance.ReserveRectBackground;
-                checkBox_epgLoadArcInfo.IsChecked = Settings.Instance.EpgLoadArcInfo;
+
+                int epgArcHour = IniFileHandler.GetPrivateProfileInt("SET", "EpgArchivePeriodHour", 0, SettingPath.TimerSrvIniPath);
+                double epgArcDay = IniFileHandler.GetPrivateProfileDouble("SET", "EpgArchivePeriodDay", 0, SettingPath.TimerSrvIniPath);
+                epgArcDay = (int)(epgArcDay * 24) == epgArcHour ? epgArcDay : epgArcHour / 24d;
+                textBox_epgArchivePeriod.Text = Math.Min(Math.Max(epgArcDay, 0), 14).ToString();
+                checkBox_epgNoLoadArcInfo.IsChecked = !Settings.Instance.EpgLoadArcInfo;
                 checkBox_epgNoDisplayOld.IsChecked = Settings.Instance.EpgNoDisplayOld;
                 textBox_epgNoDisplayOldDays.Text = Settings.Instance.EpgNoDisplayOldDays.ToString();
 
@@ -268,8 +278,12 @@ namespace EpgTimer.Setting
                 Settings.Instance.MouseScrollAuto = (checkBox_scrollAuto.IsChecked == true);
                 Settings.Instance.DisplayNotifyEpgChange = (checkBox_displayNotifyChange.IsChecked == true);
                 Settings.Instance.ReserveRectBackground = (checkBox_reserveBackground.IsChecked == true);
-                IsChangeEpgArcLoadSetting = Settings.Instance.EpgLoadArcInfo != (checkBox_epgLoadArcInfo.IsChecked == true);
-                Settings.Instance.EpgLoadArcInfo = (checkBox_epgLoadArcInfo.IsChecked == true);
+
+                double epgArcDay = MenuUtil.MyToNumerical(textBox_epgArchivePeriod, Convert.ToDouble, 14, 0, 0);
+                IniFileHandler.WritePrivateProfileString("SET", "EpgArchivePeriodHour", ((int)(epgArcDay * 24)).ToString(), SettingPath.TimerSrvIniPath);
+                IniFileHandler.WritePrivateProfileString("SET", "EpgArchivePeriodDay", epgArcDay.ToString(), SettingPath.TimerSrvIniPath);
+                IsChangeEpgArcLoadSetting = Settings.Instance.EpgLoadArcInfo != (checkBox_epgNoLoadArcInfo.IsChecked == false);
+                Settings.Instance.EpgLoadArcInfo = (checkBox_epgNoLoadArcInfo.IsChecked == false);
                 Settings.Instance.EpgNoDisplayOld = (checkBox_epgNoDisplayOld.IsChecked == true);
                 Settings.Instance.EpgNoDisplayOldDays = MenuUtil.MyToNumerical(textBox_epgNoDisplayOldDays, Convert.ToDouble, double.MaxValue, double.MinValue, 1);
 
