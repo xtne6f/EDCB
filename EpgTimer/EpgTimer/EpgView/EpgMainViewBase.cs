@@ -59,6 +59,7 @@ namespace EpgTimer.EpgView
             
             nowViewTimer = new DispatcherTimer(DispatcherPriority.Normal);
             nowViewTimer.Tick += new EventHandler(WaitReDrawNowLine);
+            this.Unloaded += (sender, e) => nowViewTimer.Stop();
 
             button_now.Click += new RoutedEventHandler((sender, e) => MoveNowTime());
         }
