@@ -257,7 +257,7 @@ namespace EpgTimer.Setting
             try
             {
                 Settings.Instance.ScrollSize = MenuUtil.MyToNumerical(textBox_mouse_scroll, Convert.ToDouble, 240);
-                Settings.Instance.ServiceWidth = MenuUtil.MyToNumerical(textBox_service_width, Convert.ToDouble, double.MaxValue, 16, 16);//小さいと描画で落ちる
+                Settings.Instance.ServiceWidth = MenuUtil.MyToNumerical(textBox_service_width, Convert.ToDouble, double.MaxValue, 16, 150);//小さいと描画で落ちる
                 Settings.Instance.MinHeight = MenuUtil.MyToNumerical(textBox_minHeight, Convert.ToDouble, double.MaxValue, 0.1, 2);
                 Settings.Instance.MinimumHeight = MenuUtil.MyToNumerical(textBox_minimumHeight, Convert.ToDouble, double.MaxValue, 0, 0);
                 Settings.Instance.DragScroll = MenuUtil.MyToNumerical(textBox_dragScroll, Convert.ToDouble, 1.5);

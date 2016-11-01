@@ -169,7 +169,7 @@ namespace EpgTimer.UserCtrlView
         {
             UpdatePopupPosition(popInfo);
 
-            Popup.Width = Math.Max(16, PopWidth);
+            Popup.Width = Math.Max(popInfo.Width, PopWidth);
             if (popInfo.TopPos < scroll.ContentVerticalOffset)
             {
                 Popup.MinHeight = Math.Max(0, popInfo.TopPos + popInfo.Height - scroll.ContentVerticalOffset);
