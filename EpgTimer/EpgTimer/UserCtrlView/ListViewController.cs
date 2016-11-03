@@ -190,6 +190,7 @@ namespace EpgTimer
         {
             if (needSort == true) this.gvSorter.SortByMultiHeader(dataList);
             listView.Items.Refresh();
+            if (needSort == true) listView.ScrollIntoView(listView.SelectedItem);
         }
 
         public bool GridViewHeaderClickSort(RoutedEventArgs e)
