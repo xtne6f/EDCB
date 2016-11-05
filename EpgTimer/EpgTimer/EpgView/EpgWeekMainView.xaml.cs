@@ -184,6 +184,9 @@ namespace EpgTimer
                 }
                 //comboBox_service_SelectionChanged()からUpdateProgramView()が走る
                 comboBox_service.SelectedIndex = selectIndex;
+
+                ReDrawNowLine();
+                MoveNowTime();
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
@@ -297,9 +300,6 @@ namespace EpgTimer
                 }
                 timeView.SetTime(dateTimeList, viewCustNeedTimeOnly, true);
                 weekDayView.SetDay(dayList);
-
-                ReDrawNowLine();
-                MoveNowTime();
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
