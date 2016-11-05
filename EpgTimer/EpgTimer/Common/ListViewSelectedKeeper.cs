@@ -56,21 +56,8 @@ namespace EpgTimer
                     //上限越えの場合は、選択を解除して終了。
                     if (oldItems.Count >= this.MaxRestoreNum) return;
 
-                    //選択数が少ないときは逆に遅くなる気もするが、Dictionaryにしておく
-                    var listKeys = new Dictionary<ulong, object>();
-
-                    foreach (object listItem1 in listBox.Items)
-                    {
-                        //重複するキーは基本的に無いという前提
-                        try
-                        {
-                            listKeys.Add(getKey(listItem1), listItem1);
-                        }
-                        catch { }
-                    }
-
-                    var setItems = oldItems.Where(oldItem1 => listKeys.ContainsKey(oldItem1)).Select(item => listKeys[item]);
-                    listBox.SelectedItemsAdd(setItems);
+                    var oldSet = new HashSet<UInt64>(oldItems);
+                    listBox.SelectedItemsAdd(listBox.Items.OfType<object>().Where(item => oldSet.Contains(getKey(item))));
 
                     //画面更新が入るので最後に実行する。SelectedItem==nullのときScrollIntoViewは何もしない。
                     listBox.ScrollIntoView(listBox.SelectedItem);

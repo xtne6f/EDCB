@@ -229,7 +229,7 @@ namespace EpgTimer
                         return trgWords.Count() != 0 && trgWords.All(word => sText.Contains(word));
                     });
 
-                    lstCtrl.dataList.AddRange(hitItems);
+                    dataList.AddRange(hitItems);
                     return true;
                 });
 
