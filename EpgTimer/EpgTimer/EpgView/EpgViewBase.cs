@@ -165,7 +165,7 @@ namespace EpgTimer.EpgView
                                 continue;
                             }
                             serviceInfo = new EpgServiceEventInfo();
-                            serviceInfo.serviceInfo = CommonManager.ConvertChSet5To(ChSet5.ChList[id]);
+                            serviceInfo.serviceInfo = ChSet5.ChList[id].ToInfo();
 
                             serviceEventList.Add(id, serviceInfo);
                         }

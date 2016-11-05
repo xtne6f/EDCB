@@ -161,6 +161,22 @@ namespace EpgTimer
         public bool IsSkyPerfectv { get { return ChSet5.IsSkyPerfectv(ONID); } }
         public bool IsOther { get { return ChSet5.IsOther(ONID); } }
 
+        public EpgServiceInfo ToInfo()
+        {
+            return new EpgServiceInfo
+            {
+                ONID = this.ONID,
+                TSID = this.TSID,
+                SID = this.SID,
+                network_name = this.NetworkName,
+                partialReceptionFlag = this.PartialFlag,
+                remote_control_key_id = this.RemoconID,
+                service_name = this.ServiceName,
+                service_provider_name = this.NetworkName,
+                service_type = (byte)this.ServiceType,
+                ts_name = this.NetworkName
+            };
+        }
         public override string ToString()
         {
             return ServiceName;

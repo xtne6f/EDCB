@@ -459,29 +459,6 @@ namespace EpgTimer
             return string.Format("{0} : {1} (0x{1:X4})", Title, 0x000000000000FFFF & id);
         }
 
-        public static EpgServiceInfo ConvertChSet5To(ChSet5Item item)
-        {
-            EpgServiceInfo info = new EpgServiceInfo();
-            try
-            {
-                info.ONID = item.ONID;
-                info.TSID = item.TSID;
-                info.SID = item.SID;
-                info.network_name = item.NetworkName;
-                info.partialReceptionFlag = item.PartialFlag;
-                info.remote_control_key_id = item.RemoconID;
-                info.service_name = item.ServiceName;
-                info.service_provider_name = item.NetworkName;
-                info.service_type = (byte)item.ServiceType;
-                info.ts_name = item.NetworkName;
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            } 
-            return info;
-        }
-
         public static string AdjustSearchText(string s)
         {
             return ReplaceUrl(s.ToLower()).Replace("　", " ").Replace("\r\n", "");

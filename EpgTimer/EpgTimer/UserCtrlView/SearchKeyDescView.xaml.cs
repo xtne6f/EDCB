@@ -12,8 +12,7 @@ namespace EpgTimer
     public partial class SearchKeyDescView : UserControl
     {
         private EpgSearchKeyInfo defKey = new EpgSearchKeyInfo();
-        private List<ServiceItem> serviceList = new List<ServiceItem>();
-        private Dictionary<Int64, ServiceItem> serviceDict = new Dictionary<long, ServiceItem>();
+        private Dictionary<Int64, ServiceItem> serviceDict = new Dictionary<Int64, ServiceItem>();
         private RadioBtnSelect freeRadioBtns;
 
         public SearchKeyDescView()
@@ -21,15 +20,8 @@ namespace EpgTimer
             InitializeComponent();
             try
             {
-                foreach (ChSet5Item info in ChSet5.ChList.Values)
-                {
-                    ServiceItem item = new ServiceItem();
-
-                    item.ServiceInfo = CommonManager.ConvertChSet5To(info);
-                    serviceList.Add(item);
-                    serviceDict.Add((Int64)item.ID, item);
-                }
-                listView_service.ItemsSource = serviceList;
+                serviceDict = ChSet5.ChList.ToDictionary(info => (Int64)info.Key, info => new ServiceItem(info.Value.ToInfo()));
+                listView_service.ItemsSource = serviceDict.Values;
 
                 comboBox_content.ItemsSource = CommonManager.ContentKindList;
                 comboBox_content.SelectedIndex = 0;

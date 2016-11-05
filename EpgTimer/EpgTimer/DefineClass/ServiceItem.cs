@@ -7,6 +7,8 @@ namespace EpgTimer
 {
     public class ServiceItem : SelectableItem
     {
+        public ServiceItem() { }
+        public ServiceItem(EpgServiceInfo item) { ServiceInfo = item; }
         public EpgServiceInfo ServiceInfo { get; set; }
         public UInt64 ID
         {
