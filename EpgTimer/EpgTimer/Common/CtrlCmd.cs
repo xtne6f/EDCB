@@ -529,7 +529,12 @@ namespace EpgTimer
         /// <summary>サービス指定で番組情報を一覧を取得する</summary>
         public ErrCode SendEnumPgInfo(ulong service, ref List<EpgEventInfo> val) { object o = val; return SendAndReceiveCmdData(CtrlCmd.CMD_EPG_SRV_ENUM_PG_INFO, service, ref o); }
         /// <summary>サービス指定で過去番組情報一覧を取得する</summary>
-        public ErrCode SendEnumPgArcInfo(ulong service, ref List<EpgEventInfo> val) { object o = val; return SendAndReceiveCmdData(CtrlCmd.CMD_EPG_SRV_ENUM_PG_ARC_INFO, service, ref o); }
+        public ErrCode SendEnumPgArcInfo(ulong service, ref List<EpgEventInfo> val)
+        {
+            object o = val; ErrCode retv = SendAndReceiveCmdData(CtrlCmd.CMD_EPG_SRV_ENUM_PG_ARC_INFO, service, ref o);
+            if (retv == ErrCode.CMD_SUCCESS) val.ForEach(info => info.PastDataFlag = true);
+            return retv;
+        }
         /// <summary>指定イベントの番組情報を取得する</summary>
         public ErrCode SendGetPgInfo(ulong pgID, ref EpgEventInfo val) { object o = val; return SendAndReceiveCmdData(CtrlCmd.CMD_EPG_SRV_GET_PG_INFO, pgID, ref o); }
         /// <summary>指定キーワードで番組情報を検索する</summary>
@@ -537,7 +542,12 @@ namespace EpgTimer
         /// <summary>番組情報一覧を取得する</summary>
         public ErrCode SendEnumPgAll(ref List<EpgServiceEventInfo> val) { object o = val;  return ReceiveCmdData(CtrlCmd.CMD_EPG_SRV_ENUM_PG_ALL, ref o); }
         /// <summary>過去番組情報一覧取得</summary>
-        public ErrCode SendEnumPgArcAll(ref List<EpgServiceEventInfo> val) { object o = val; return ReceiveCmdData(CtrlCmd.CMD_EPG_SRV_ENUM_PG_ARC_ALL, ref o); }
+        public ErrCode SendEnumPgArcAll(ref List<EpgServiceEventInfo> val)
+        {
+            object o = val; ErrCode retv = ReceiveCmdData(CtrlCmd.CMD_EPG_SRV_ENUM_PG_ARC_ALL, ref o);
+            if (retv == ErrCode.CMD_SUCCESS) val.ForEach(sInfo => sInfo.eventList.ForEach(info => info.PastDataFlag = true));
+            return retv;
+        }
         /// <summary>自動予約登録条件を削除する</summary>
         public ErrCode SendDelEpgAutoAdd(List<uint> val) { return SendCmdData(CtrlCmd.CMD_EPG_SRV_DEL_AUTO_ADD, val); }
         /// <summary>プログラム予約自動登録の条件削除</summary>

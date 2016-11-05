@@ -795,6 +795,10 @@ namespace EpgTimer
         public EpgEventGroupInfo EventRelayInfo;
         /// <summary>ノンスクランブルフラグ</summary>
         public byte FreeCAFlag;
+
+        /// <summary>EpgTimer内のみ有効/過去番組情報</summary>
+        public bool PastDataFlag;
+        
         public EpgEventInfo()
         {
             original_network_id = 0;
@@ -813,6 +817,7 @@ namespace EpgTimer
             EventGroupInfo = null;
             EventRelayInfo = null;
             FreeCAFlag = 0;
+            PastDataFlag = false;
         }
         public void Write(MemoryStream s, ushort version)
         {

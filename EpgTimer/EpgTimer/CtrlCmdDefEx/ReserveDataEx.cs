@@ -38,6 +38,10 @@ namespace EpgTimer
 
         public bool IsEnabled { get { return RecSetting.RecMode != 5; } }
 
+        public bool IsOver()
+        {
+            return EndTimeWithMargin() <= DateTime.Now;
+        }
         public bool IsOnRec(int MarginMin = 0)
         {
             int StartMargin = RecSetting.StartMarginActual + 60 * MarginMin;

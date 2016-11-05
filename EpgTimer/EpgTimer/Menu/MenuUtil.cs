@@ -223,10 +223,8 @@ namespace EpgTimer
         {
             try
             {
-                if (itemlist.Count == 1)
-                {
-                    if (IsEnableReserveAdd(itemlist[0]) == false) return false;
-                }
+                itemlist = CheckReservable(itemlist);
+                if (itemlist == null) return false;
 
                 var setInfo = new RecSettingData();
                 if (recSettingView != null)
@@ -244,13 +242,10 @@ namespace EpgTimer
 
                 foreach (EpgEventInfo item in itemlist)
                 {
-                    if (item.StartTimeFlag != 0)
-                    {
-                        var resInfo = new ReserveData();
-                        item.ConvertToReserveData(ref resInfo);
-                        resInfo.RecSetting = setInfo;
-                        list.Add(resInfo);
-                    }
+                    var resInfo = new ReserveData();
+                    item.ConvertToReserveData(ref resInfo);
+                    resInfo.RecSetting = setInfo;
+                    list.Add(resInfo);
                 }
 
                 return ReserveAdd(list, cautionMany);
@@ -258,19 +253,36 @@ namespace EpgTimer
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
             return false;
         }
-        public static bool IsEnableReserveAdd(EpgEventInfo item)
+        public static List<EpgEventInfo> CheckReservable(List<EpgEventInfo> list, bool fixlist = true)
         {
-            if (item == null) return false;
+            if (list.Count == 0) return list;
 
-            bool retv = (item.StartTimeFlag != 0);
-            if (retv == false)
+            //開始未定と終了番組を除外
+            list = list.FindAll(item => item.StartTimeFlag != 0);
+            if (list.Count == 0)
             {
                 MessageBox.Show("開始時間未定のため予約できません");
+                return null;
             }
-            return retv;
+            list = list.FindAll(item => item.IsOver() == false);
+            if (list.Count == 0)
+            {
+                MessageBox.Show("放映終了しているため予約できません");
+                return null;
+            }
+            return list;
         }
         public static bool ReserveAdd(List<ReserveData> list, bool cautionMany = true)
         {
+            if (list.Count == 0) return true;
+
+            //録画時間過ぎているものを除外
+            list = list.FindAll(item => item.IsOver() == false);
+            if (list.Count == 0)
+            {
+                MessageBox.Show("録画時間が既に終了しています。\r\n(番組が放映中の場合は録画マージンも確認してください。)");
+                return false;
+            }
             return ReserveCmdSend(list, cmd.SendAddReserve, "予約追加", cautionMany);
         }
 

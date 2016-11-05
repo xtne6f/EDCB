@@ -235,13 +235,17 @@ namespace EpgTimer
         {
             get
             {
-                String[] wiewString = { "", "予", "無", "放", "予+", "無+", "録*", "無*" };
+                String[] wiewString = { "", "予", "無", "放", "予+", "無+", "録*", "無*", "--" };
                 int index = 0;
                 if (EventInfo != null)
                 {
                     if (EventInfo.IsOnAir() == true)
                     {
                         index = 3;
+                    }
+                    else if (EventInfo.IsOver() == true)
+                    {
+                        index = 8;
                     }
                     if (IsReserved == true)
                     {

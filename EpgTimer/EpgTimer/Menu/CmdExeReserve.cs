@@ -107,8 +107,10 @@ namespace EpgTimer
             //多数アイテム処理の警告。合計数に対して出すので、結構扱いづらい。
             if (MenuUtil.CautionManyMessage(this.ItemCount, "簡易予約/有効←→無効") == false) return;
 
-            if (MenuUtil.ReserveChangeOnOff(dataList, this.recSettingView, false) == false) return;
-            IsCommandExecuted = MenuUtil.ReserveAdd(eventListEx, this.recSettingView, 0, false);
+            bool ret1 = MenuUtil.ReserveChangeOnOff(dataList, this.recSettingView, false);
+            var eList = dataList.Count == 0 ? eventListEx : eventListEx.FindAll(data => data.IsReservable == true);
+            bool ret2 = MenuUtil.ReserveAdd(eList, this.recSettingView, 0, false);
+            IsCommandExecuted = !(ret1 == false && ret2 == false || dataList.Count == 0 && ret2 == false || eventListEx.Count == 0 && ret1 == false);
         }
         protected override void mc_ChangeRecSetting(object sender, ExecutedRoutedEventArgs e)
         {
@@ -232,6 +234,16 @@ namespace EpgTimer
                 if (menu.Tag == icmd) menu.IsEnabled = dataList.Count != 0;
             });
 
+            var CheckReservableEpg = new Func<MenuItem, bool>(mi =>
+            {
+                if (eventListEx.Count != 0 && eventListEx.Count(data => data.IsReservable == true) == 0)
+                {
+                    mi.IsEnabled = false;
+                    mi.ToolTip = "放映終了";
+                }
+                return mi.IsEnabled;
+            });
+
             //switch使えないのでifで回す。
             if (menu.Tag == EpgCmds.ChgOnOff)
             {
@@ -240,15 +252,18 @@ namespace EpgTimer
                     menu.Header = "簡易予約";
                     //予約データの有無で切り替える。
 
-                    if (view == CtxmCode.SearchWindow)
+                    if (CheckReservableEpg(menu) == true)
                     {
-                        RecPresetItem preset = (this.Owner as SearchWindow).GetRecSetting().LookUpPreset();
-                        string text = preset.IsCustom == true ? "カスタム設定" : string.Format("プリセット'{0}'", preset.DisplayName);
-                        menu.ToolTip = string.Format("このダイアログの録画設定({0})で予約する", text);
-                    }
-                    else
-                    {
-                        menu.ToolTip = "プリセット'デフォルト'で予約する";
+                        if (view == CtxmCode.SearchWindow)
+                        {
+                            RecPresetItem preset = (this.Owner as SearchWindow).GetRecSetting().LookUpPreset();
+                            string text = preset.IsCustom == true ? "カスタム設定" : string.Format("プリセット'{0}'", preset.DisplayName);
+                            menu.ToolTip = string.Format("このダイアログの録画設定({0})で予約する", text);
+                        }
+                        else
+                        {
+                            menu.ToolTip = "プリセット'デフォルト'で予約する";
+                        }
                     }
                 }
                 else
@@ -268,8 +283,11 @@ namespace EpgTimer
             }
             else if (menu.Tag == EpgCmdsEx.AddMenu)
             {
-                menu.IsEnabled = eventListEx.Count != 0;//未予約アイテムがあれば有効
-                mm.CtxmGenerateAddOnPresetItems(menu);
+                if (CheckReservableEpg(menu) == true)
+                {
+                    menu.IsEnabled = eventListEx.Count != 0;//未予約アイテムがあれば有効
+                    mm.CtxmGenerateAddOnPresetItems(menu);
+                }
             }
             else if (menu.Tag == EpgCmdsEx.ChgMenu)
             {

@@ -313,7 +313,7 @@ namespace EpgTimer
                     if (eventInfoNow != null && (reserveInfo.IsManual == true || reserveInfo.IsSamePg(eventInfoNow) == false))
                     {
                         //基本的にAddReserveEpgWindowと同じ処理内容
-                        if (MenuUtil.IsEnableReserveAdd(eventInfoNow) == false) return;
+                        if (MenuUtil.CheckReservable(CommonUtil.ToList(eventInfoNow)) == null) return;
                         eventInfoNow.ConvertToReserveData(ref resInfo);
                         resInfo.Comment = "";
                     }
@@ -325,20 +325,20 @@ namespace EpgTimer
 
                 resInfo.RecSetting = recSettingView.GetRecSetting();
 
+                bool ret = false;
                 if (addMode == AddMode.Change)
                 {
-                    bool ret = MenuUtil.ReserveChange(CommonUtil.ToList(resInfo));
+                    ret = MenuUtil.ReserveChange(CommonUtil.ToList(resInfo));
                     StatusManager.StatusNotifySet(ret, "録画予約を変更");
                 }
                 else
                 {
-                    bool ret = MenuUtil.ReserveAdd(CommonUtil.ToList(resInfo));
+                    ret = MenuUtil.ReserveAdd(CommonUtil.ToList(resInfo));
                     StatusManager.StatusNotifySet(ret, "録画予約を追加");
                 }
+                if (ret == true) this.Close();
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
-
-            this.Close();
         }
         private void button_del_reserve_Click(object sender, ExecutedRoutedEventArgs e)
         {

@@ -1,4 +1,5 @@
 ﻿using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 
 namespace EpgTimer
@@ -18,7 +19,7 @@ namespace EpgTimer
 
             //コマンドの登録
             this.CommandBindings.Add(new CommandBinding(EpgCmds.Cancel, (sender, e) => this.Close()));
-            this.CommandBindings.Add(new CommandBinding(EpgCmds.AddInDialog, button_add_reserve_Click));
+            this.CommandBindings.Add(new CommandBinding(EpgCmds.AddInDialog, button_add_reserve_Click, (sender, e) => e.CanExecute = eventInfo != null && eventInfo.IsOver() == false));
 
             //ボタンの設定
             var mBinds = new MenuBinds();
@@ -37,6 +38,7 @@ namespace EpgTimer
             Title = ViewUtil.WindowTitleText(info.DataTitle, "予約登録");
             textBox_info.Text = CommonManager.ConvertProgramText(info, EventInfoTextMode.BasicOnly);
             richTextBox_descInfo.Document = CommonManager.ConvertDisplayText(eventInfo);
+            (tabControl.Items[0] as TabItem).Header = info.IsOver() == true ? "放映終了" : "予約";
         }
 
         private void button_add_reserve_Click(object sender, ExecutedRoutedEventArgs e)
@@ -50,8 +52,7 @@ namespace EpgTimer
             bool ret = MenuUtil.ReserveAdd(CommonUtil.ToList(eventInfo), recSettingView);
             StatusManager.StatusNotifySet(ret, "録画予約を追加");
 
-            if (ret == false) return;
-            this.Close();
+            if (ret == true) this.Close();
         }
     }
     public class AddReserveEpgWindowBase : ReserveWindowBase<AddReserveEpgWindow> { }
