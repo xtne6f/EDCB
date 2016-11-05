@@ -65,26 +65,26 @@ namespace EpgTimer
         private void SetAddMode(AddMode mode)
         {
             addMode = mode;
+            mBinds.SetCommandToButton(button_chg_reserve, mode == AddMode.Change ? EpgCmds.ChangeInDialog : EpgCmds.AddInDialog);
+            button_del_reserve.Visibility = mode == AddMode.Add ? Visibility.Collapsed : Visibility.Visible;
+            checkBox_dataReplace.Visibility = mode == AddMode.Add ? Visibility.Collapsed : Visibility.Visible;
+            stack_Status.Visibility = mode == AddMode.Add ? Visibility.Collapsed : Visibility.Visible;
+            stack_Status.IsEnabled = mode == AddMode.Change;
             switch (mode)
             {
                 case AddMode.Add:
                     button_chg_reserve.Content = "予約";
-                    mBinds.SetCommandToButton(button_chg_reserve, EpgCmds.AddInDialog);
-                    button_del_reserve.Visibility = Visibility.Collapsed;
                     this.EnableDataChange = false;
-                    checkBox_dataReplace.Visibility = Visibility.Collapsed;
-                    stack_Status.Visibility = Visibility.Hidden;
                     break;
                 case AddMode.Re_Add:
                     button_chg_reserve.Content = "再予約";
-                    mBinds.SetCommandToButton(button_chg_reserve, EpgCmds.AddInDialog);
+                    checkBox_releaseAutoAdd.IsChecked = false;
+                    text_Status.ItemsSource = null;
+                    label_errStar.Content = null;
                     //なお、削除ボタンはCanExeの判定でグレーアウトする。
                     break;
                 case AddMode.Change:
                     button_chg_reserve.Content = "変更";
-                    mBinds.SetCommandToButton(button_chg_reserve, EpgCmds.ChangeInDialog);
-                    button_del_reserve.Visibility = Visibility.Visible;//今は無くても同じ
-                    stack_Status.Visibility = Visibility.Visible;
                     break;
             }
         }
@@ -318,7 +318,7 @@ namespace EpgTimer
                         resInfo.Comment = "";
                     }
                 }
-                if (checkBox_releaseAutoAdd.IsChecked == true)
+                if (addMode != AddMode.Change || checkBox_releaseAutoAdd.IsChecked == true)
                 {
                     resInfo.Comment = "";
                 }
