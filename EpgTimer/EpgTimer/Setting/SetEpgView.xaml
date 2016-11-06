@@ -14,7 +14,7 @@
             </VisualBrush.Visual>
         </VisualBrush>
         <Style x:Key="colorCombo" TargetType="{x:Type ComboBox}" BasedOn="{StaticResource {x:Type ComboBox}}">
-            <Setter Property="ToolTip" Value="{Binding RelativeSource={RelativeSource Self}, Path=SelectedItem.ColorName}"/>
+            <Setter Property="ToolTip" Value="{Binding RelativeSource={RelativeSource Self}, Path=SelectedItem.Key}"/>
             <Setter Property="ToolTipService.ShowOnDisabled" Value="True"/>
             <Setter Property="Height" Value="24"/>
             <Setter Property="Width" Value="120"/>
