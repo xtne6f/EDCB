@@ -16,18 +16,12 @@ namespace EpgTimer
 {
     class CommonManager
     {
-        public CtrlCmdUtil CtrlCmd
-        { get; set; }
-        public DBManager DB
-        { get; set; }
-        public TVTestCtrlClass TVTestCtrl
-        { get; set; }
-        public bool NWMode
-        { get; set; }
-        public List<NotifySrvInfo> NotifyLogList
-        { get; set; }
-        public NWConnect NW
-        { get; set; }
+        public CtrlCmdUtil CtrlCmd { get; private set; }
+        public DBManager DB { get; private set; }
+        public TVTestCtrlClass TVTestCtrl { get; private set; }
+        public bool NWMode { get; set; }
+        public List<NotifySrvInfo> NotifyLogList { get; private set; }
+        public NWConnect NW { get; private set; }
 
         MenuManager _mm;
         public MenuManager MM
@@ -79,43 +73,16 @@ namespace EpgTimer
 
         public CommonManager()
         {
-            if (CtrlCmd == null)
-            {
-                CtrlCmd = new CtrlCmdUtil();
-            }
-            if (DB == null)
-            {
-                DB = new DBManager(CtrlCmd);
-            }
-            if (TVTestCtrl == null)
-            {
-                TVTestCtrl = new TVTestCtrlClass(CtrlCmd);
-            }
-            if (NW == null)
-            {
-                NW = new NWConnect(CtrlCmd);
-            }
+            CtrlCmd = new CtrlCmdUtil();
+            DB = new DBManager(CtrlCmd);
+            TVTestCtrl = new TVTestCtrlClass(CtrlCmd);
+            NW = new NWConnect(CtrlCmd);
             NWMode = false;
-            if (NotifyLogList == null)
-            {
-                NotifyLogList = new List<NotifySrvInfo>();
-            }
-            if( CustContentColorList == null )
-            {
-                CustContentColorList = new List<Brush>();
-            }
-            if (CustTunerServiceColorPri == null)
-            {
-                CustTunerServiceColorPri = new List<Brush>();
-            }
-            if (CustTimeColorList == null)
-            {
-                CustTimeColorList = new List<Brush>();
-            }
-            if (RecModeForeColor == null)
-            {
-                RecModeForeColor = new List<Brush>();
-            }
+            NotifyLogList = new List<NotifySrvInfo>();
+            CustContentColorList = new List<Brush>();
+            CustTunerServiceColorPri = new List<Brush>();
+            CustTimeColorList = new List<Brush>();
+            RecModeForeColor = new List<Brush>();
         }
 
         public static Dictionary<UInt16, ContentKindInfo> ContentKindDictionary { get; private set; }
