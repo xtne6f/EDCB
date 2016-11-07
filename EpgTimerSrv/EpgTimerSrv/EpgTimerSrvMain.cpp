@@ -537,8 +537,9 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				return ConvertI64Time(a.startTime) < ConvertI64Time(b.startTime);
 			});
 			HMENU hMenu = (HMENU)wParam;
-			if( list.empty() == false ){
-				DeleteMenu(hMenu, 0, MF_BYPOSITION);
+			while( GetMenuItemCount(hMenu) > 0 && DeleteMenu(hMenu, 0, MF_BYPOSITION) );
+			if( list.empty() ){
+				InsertMenu(hMenu, 0, MF_GRAYED | MF_BYPOSITION, IDC_MENU_RESERVE, L"(24ŽžŠÔˆÈ“à‚É—\–ñ‚È‚µ)");
 			}
 			for( UINT i = 0; i < list.size() && i <= IDC_MENU_RESERVE_MAX - IDC_MENU_RESERVE; i++ ){
 				MENUITEMINFO mii;
