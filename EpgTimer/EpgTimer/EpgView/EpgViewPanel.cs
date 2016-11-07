@@ -281,9 +281,6 @@ namespace EpgTimer.EpgView
         protected override void OnRender(DrawingContext dc)
         {
             dc.DrawRectangle(Background, null, new Rect(RenderSize));
-            this.VisualTextRenderingMode = TextRenderingMode.ClearType;
-            this.VisualTextHintingMode = TextHintingMode.Fixed;
-            this.UseLayoutRounding = true;
 
             if (Items == null)
             {
