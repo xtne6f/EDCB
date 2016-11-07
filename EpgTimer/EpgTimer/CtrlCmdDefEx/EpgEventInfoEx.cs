@@ -20,10 +20,6 @@ namespace EpgTimer
         {
             get { return StartTimeFlag != 0 && IsOver() != true; }
         }
-        public bool IsOver()
-        {
-            return PgStartTime.AddSeconds(PgDurationSecond) <= DateTime.Now;
-        }
         public bool IsAvailable(bool isExceptUnknownStartTime, DateTime? exceptEndedTime = null)
         {
             //開始未定を除外。開始未定のときは時刻判定をしない。

@@ -47,7 +47,7 @@ namespace EpgTimer
                 return CustomMarginValue(RecSettingInfo.EndMarginActual);
             }
         }
-        private string CustomTimeFormat(int span)
+        protected string CustomTimeFormat(int span)
         {
             string hours;
             string minutes;
@@ -64,7 +64,7 @@ namespace EpgTimer
             }
             return span.ToString("+;-") + hours + minutes + seconds + (RecSettingInfo.UseMargineFlag != 0 ? " " : "*");
         }
-        private Double CustomMarginValue(int span)
+        protected Double CustomMarginValue(int span)
         {
             return span + (RecSettingInfo.UseMargineFlag != 0 ? 0.1 : 0);
         }

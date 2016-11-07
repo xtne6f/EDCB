@@ -24,7 +24,9 @@ namespace EpgTimer
         UInt64 Create64PgKey();
         UInt64 CurrentPgUID();
         bool IsSamePg(IAutoAddTargetData data);
-        bool IsOnAir();
+        bool IsOnAir(DateTime? time);
+        bool IsOver(DateTime? time);
+        int OnTime(DateTime? time);
         List<EpgAutoAddData> SearchEpgAutoAddList(bool? IsEnabled = null, bool ByFazy = false);
         List<ManualAutoAddData> SearchManualAutoAddList(bool? IsEnabled = null);
         List<EpgAutoAddData> GetEpgAutoAddList(bool? IsEnabled = null);
@@ -52,9 +54,17 @@ namespace EpgTimer
             if (data == null) return false;
             return PgStartTime == data.PgStartTime && PgDurationSecond == data.PgDurationSecond && Create64Key() == data.Create64Key();
         }
-        public bool IsOnAir()
+        public virtual bool IsOnAir(DateTime? time = null) { return OnTime(time) == 0; }
+        public virtual bool IsOver(DateTime? time = null) { return OnTime(time) > 0; }
+        /// <summary>-1:開始前、0:録画中、1:終了</summary>
+        public virtual int OnTime(DateTime? time = null)
         {
-            return CtrlCmdDefEx.isOnTime(PgStartTime, (int)PgDurationSecond);
+            return onTime(PgStartTime, PgDurationSecond, time);
+        }
+        protected static int onTime(DateTime startTime, uint duration, DateTime? time = null)
+        {
+            time = time ?? DateTime.Now;
+            return startTime.AddSeconds(duration) <= time ? 1 : startTime <= time ? 0 : -1;
         }
 
         public virtual List<EpgAutoAddData> SearchEpgAutoAddList(bool? IsEnabled = null, bool ByFazy = false)
@@ -244,13 +254,5 @@ namespace EpgTimer
         {
             return CommonManager.Create64Key(obj.original_network_id, obj.transport_stream_id, obj.service_id);
         }
-
-        public static bool isOnTime(DateTime startTime, int duration)
-        {
-            if (startTime > System.DateTime.Now) return false;
-            //
-            return (startTime + TimeSpan.FromSeconds(duration) >= System.DateTime.Now);
-        }
-
     }
 }

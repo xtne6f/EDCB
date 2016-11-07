@@ -1280,8 +1280,8 @@ namespace EpgTimer
             if (Settings.Instance.ShowTray == false) return "";
 
             var sortList = CommonManager.Instance.DB.ReserveList.Values
-                .Where(info => info.IsEnabled == true && info.EndTimeWithMargin() > DateTime.Now)
-                .OrderBy(info => info.StartTimeWithMargin()).ToList();
+                .Where(info => info.IsEnabled == true && info.IsOver() == false)
+                .OrderBy(info => info.StartTimeActual).ToList();
 
             string infoText = Settings.Instance.UpdateTaskText == true && taskTray.Icon == TaskIconSpec.TaskIconGray ? "[未接続]\r\n(?)" : "";
 
@@ -1293,10 +1293,10 @@ namespace EpgTimer
                 infoText += "録画中:";
                 infoCount = sortList.Count(info => info.IsOnRec()) - 1;
             }
-            else if (Settings.Instance.UpdateTaskText == true && sortList[0].IsOnRec(60) == true) //1時間以内に開始されるもの
+            else if (Settings.Instance.UpdateTaskText == true && sortList[0].OnTime(DateTime.Now.AddHours(1)) >= 0) //1時間以内に開始されるもの
             {
                 infoText += "まもなく録画:";
-                infoCount = sortList.Count(info => info.IsOnRec(60)) - 1;
+                infoCount = sortList.Count(info => info.OnTime(DateTime.Now.AddHours(1)) >= 0) - 1;
             }
             else
             {

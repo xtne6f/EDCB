@@ -181,6 +181,10 @@ namespace EpgTimer
                     {
                         s.Add("チューナー不足(録画不可)");
                     }
+                    if (ReserveInfo.DurationActual <= 0)
+                    {
+                        s.Add("不可マージン設定(録画不可)");
+                    }
                     if (ReserveInfo.OverlapMode == 1)
                     {
                         s.Add("チューナー不足(一部録画)");
@@ -225,6 +229,42 @@ namespace EpgTimer
                     reserveTuner = new TunerSelectInfo(tName, tID).ToString();
                 }
                 return reserveTuner;
+            }
+        }
+        public override String MarginStart
+        {
+            get
+            {
+                if (ReserveInfo == null) return "";
+                //
+                return CustomTimeFormat(ReserveInfo.StartMarginResActual * -1);
+            }
+        }
+        public override Double MarginStartValue
+        {
+            get
+            {
+                if (ReserveInfo == null) return Double.MinValue;
+                //
+                return CustomMarginValue(ReserveInfo.StartMarginResActual * -1);
+            }
+        }
+        public override String MarginEnd
+        {
+            get
+            {
+                if (ReserveInfo == null) return "";
+                //
+                return CustomTimeFormat(ReserveInfo.EndMarginResActual);
+            }
+        }
+        public override Double MarginEndValue
+        {
+            get
+            {
+                if (ReserveInfo == null) return Double.MinValue;
+                //
+                return CustomMarginValue(ReserveInfo.EndMarginResActual);
             }
         }
         public override String ConvertInfoText()

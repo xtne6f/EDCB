@@ -324,8 +324,7 @@ namespace EpgTimer
             {
                 if (reserveMode <= 2)
                 {
-                    uint sum = (uint)(onlist.Sum(info => info.DurationSecond
-                        + info.RecSetting.StartMarginActual + info.RecSetting.EndMarginActual));
+                    uint sum = (uint)(onlist.Sum(info => info.DurationActual));
                     text += (reserveMode == 1 ? " 総録画時間:" : " 録画時間:")
                             + CommonManager.ConvertDurationText(sum, false);
                 }

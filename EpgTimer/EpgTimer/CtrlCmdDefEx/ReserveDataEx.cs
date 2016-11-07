@@ -38,30 +38,29 @@ namespace EpgTimer
 
         public bool IsEnabled { get { return RecSetting.RecMode != 5; } }
 
-        public bool IsOver()
+        public bool IsOnRec(DateTime? time = null) { return OnTime(time) == 0; }
+        public override bool IsOnAir(DateTime? time = null) { return base.OnTime(time) == 0; }
+        /// <summary>-1:開始前、0:録画中、1:終了</summary>
+        public override int OnTime(DateTime? time = null)
         {
-            return EndTimeWithMargin() <= DateTime.Now;
-        }
-        public bool IsOnRec(int MarginMin = 0)
-        {
-            int StartMargin = RecSetting.StartMarginActual + 60 * MarginMin;
-            int EndMargin = RecSetting.EndMarginActual;
-
-            DateTime startTime = StartTime.AddSeconds(StartMargin * -1);
-            int duration = (int)DurationSecond + StartMargin + EndMargin;
-
-            return CtrlCmdDefEx.isOnTime(startTime, duration);
+            return onTime(StartTimeActual, DurationActual, time);
         }
 
-        public DateTime StartTimeWithMargin(int MarginMin = 0)
+        public DateTime StartTimeActual
         {
-            int StartMargin = RecSetting.StartMarginActual + 60 * MarginMin;
-            return StartTime.AddSeconds(StartMargin * -1);
+            get { return StartTime.AddSeconds(StartMarginResActual * -1); }
         }
-        public DateTime EndTimeWithMargin()
+        public UInt32 DurationActual
         {
-            int EndMargin = RecSetting.EndMarginActual;
-            return StartTime.AddSeconds((int)DurationSecond + EndMargin);
+            get { return (UInt32)Math.Max(0, DurationSecond + StartMarginResActual + EndMarginResActual); }
+        }
+        public Int32 StartMarginResActual
+        {
+            get { return (Int32)Math.Max(-DurationSecond, RecSetting.StartMarginActual); }
+        }
+        public Int32 EndMarginResActual
+        {
+            get { return (Int32)Math.Max(-DurationSecond, RecSetting.EndMarginActual); }
         }
 
         public EpgEventInfo SearchEventInfo(bool getSrv = false)
