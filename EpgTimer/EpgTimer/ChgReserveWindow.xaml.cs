@@ -174,13 +174,10 @@ namespace EpgTimer
                 Dispatcher.BeginInvoke(new Action(() => textBox_title.Text = resInfo.Title), DispatcherPriority.Render);
 
                 comboBox_service.SelectedIndex = 0;
-                foreach (ChSet5Item ch in comboBox_service.Items)
+                ChSet5Item ch;
+                if (ChSet5.ChList.TryGetValue(resInfo.Create64Key(), out ch) == true)
                 {
-                    if (ch.Key == resInfo.Create64Key())
-                    {
-                        comboBox_service.SelectedItem = ch;
-                        break;
-                    }
+                    comboBox_service.SelectedItem = ch;
                 }
 
                 DateTime startTime = resInfo.StartTime;
@@ -191,12 +188,12 @@ namespace EpgTimer
                 bool late_start = use28 && startTime.Hour + 24 < comboBox_sh.Items.Count && DateTime28.IsLateHour(startTime.Hour);
                 bool late_end = use28 && endTime.Hour + 24 < comboBox_eh.Items.Count && DateTime28.JudgeLateHour(endTime, startTime);
 
-                datePicker_start.SelectedDate = startTime.AddDays(late_start == true ? -1 : 0);
+                datePicker_start.SelectedDate = startTime.Date.AddDays(late_start == true ? -1 : 0);
                 comboBox_sh.SelectedIndex = startTime.Hour + (late_start == true ? 24 : 0);
                 comboBox_sm.SelectedIndex = startTime.Minute;
                 comboBox_ss.SelectedIndex = startTime.Second;
 
-                datePicker_end.SelectedDate = endTime.AddDays(late_end == true ? -1 : 0);
+                datePicker_end.SelectedDate = endTime.Date.AddDays(late_end == true ? -1 : 0);
                 comboBox_eh.SelectedIndex = endTime.Hour + (late_end == true ? 24 : 0);
                 comboBox_em.SelectedIndex = endTime.Minute;
                 comboBox_es.SelectedIndex = endTime.Second;
@@ -211,44 +208,25 @@ namespace EpgTimer
             try
             {
                 resInfo.Title = textBox_title.Text;
-                ChSet5Item ch = comboBox_service.SelectedItem as ChSet5Item;
+                var ch = comboBox_service.SelectedItem as ChSet5Item;
 
                 resInfo.StationName = ch.ServiceName;
                 resInfo.OriginalNetworkID = ch.ONID;
                 resInfo.TransportStreamID = ch.TSID;
                 resInfo.ServiceID = ch.SID;
 
-                //深夜時間帯の処理
-                DateTime date_start = datePicker_start.SelectedDate.Value.AddDays((int)(comboBox_sh.SelectedIndex / 24));
-                DateTime date_end = datePicker_end.SelectedDate.Value.AddDays((int)(comboBox_eh.SelectedIndex / 24));
+                resInfo.StartTime = datePicker_start.SelectedDate.Value.Date
+                    .AddHours(comboBox_sh.SelectedIndex)
+                    .AddMinutes(comboBox_sm.SelectedIndex)
+                    .AddSeconds(comboBox_ss.SelectedIndex);
 
-                resInfo.StartTime = new DateTime(date_start.Year, date_start.Month, date_start.Day,
-                    comboBox_sh.SelectedIndex % 24,
-                    comboBox_sm.SelectedIndex,
-                    comboBox_ss.SelectedIndex,
-                    0,
-                    DateTimeKind.Utc
-                    );
-                resInfo.StartTimeEpg = resInfo.StartTime;
+                DateTime endTime = datePicker_end.SelectedDate.Value.Date
+                    .AddHours(comboBox_eh.SelectedIndex)
+                    .AddMinutes(comboBox_em.SelectedIndex)
+                    .AddSeconds(comboBox_es.SelectedIndex);
 
-                DateTime endTime = new DateTime(date_start.Year, date_end.Month, date_end.Day,
-                    comboBox_eh.SelectedIndex % 24,
-                    comboBox_em.SelectedIndex,
-                    comboBox_es.SelectedIndex,
-                    0,
-                    DateTimeKind.Utc
-                    );
-                if (resInfo.StartTime > endTime)
-                {
-                    resInfo.DurationSecond = 0;
-                    return -2;
-                }
-                else
-                {
-                    TimeSpan duration = endTime - resInfo.StartTime;
-                    resInfo.DurationSecond = (uint)duration.TotalSeconds;
-                    return 0;
-                }
+                resInfo.DurationSecond = (uint)Math.Max(0, (endTime - resInfo.StartTime).TotalSeconds);
+                return resInfo.StartTime > endTime ? -2 : 0;
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
             return -1;
