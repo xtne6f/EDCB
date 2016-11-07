@@ -48,7 +48,7 @@ namespace EpgTimer
             {
                 CommonManager.Instance.DB.SetNoAutoReloadEPG(Settings.Instance.NgAutoEpgLoadNW);
                 cmd.SetSendMode(true);
-                cmd.SetNWSetting("", Settings.Instance.NWServerPort);
+                cmd.SetNWSetting(null, 0);
             }
 
             CommonManager.Instance.MM.ReloadWorkData();
