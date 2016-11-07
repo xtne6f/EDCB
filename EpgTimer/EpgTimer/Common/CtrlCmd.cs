@@ -439,7 +439,7 @@ namespace EpgTimer
         private int connectTimeOut = 15000;
         private string eventName = "Global\\EpgTimerSrvConnect";
         private string pipeName = "EpgTimerSrvPipe";
-        private string ip = "127.0.0.1";
+        private System.Net.IPAddress ip = System.Net.IPAddress.Loopback;
         private uint port = 5678;
         // TODO: 本来この排他用オブジェクトは不要だが、このクラスの利用側がマルチスレッドを考慮していないようなので念のため従来仕様に合わせる
         private object thisLock = new object();
@@ -459,7 +459,7 @@ namespace EpgTimer
             }
         }
         /// <summary>TCP/IPモード時の接続先を設定</summary>
-        public void SetNWSetting(string ip, uint port)
+        public void SetNWSetting(System.Net.IPAddress ip, uint port)
         {
             lock (thisLock)
             {
@@ -666,8 +666,7 @@ namespace EpgTimer
         {
             lock (thisLock)
             {
-                System.Net.IPAddress addr;
-                if (System.Net.IPAddress.TryParse(ip, out addr) == false)
+                if (ip == null)
                 {
                     return ErrCode.CMD_ERR_CONNECT;
                 }
@@ -676,7 +675,7 @@ namespace EpgTimer
                 {
                     try
                     {
-                        tcp.Connect(addr, (int)port);
+                        tcp.Connect(ip, (int)port);
                     }
                     catch (System.Net.Sockets.SocketException)
                     {
