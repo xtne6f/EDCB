@@ -26,13 +26,13 @@ namespace EpgTimer
                 comboBox_content.ItemsSource = CommonManager.ContentKindList;
                 comboBox_content.SelectedIndex = 0;
 
-                comboBox_time_sw.ItemsSource = new string[] { "日", "月", "火", "水", "木", "金", "土" };
+                comboBox_time_sw.ItemsSource = CommonManager.DayOfWeekArray;
                 comboBox_time_sw.SelectedIndex = 0;
                 comboBox_time_sh.ItemsSource = Enumerable.Range(0, 24);
                 comboBox_time_sh.SelectedIndex = 0;
                 comboBox_time_sm.ItemsSource = Enumerable.Range(0, 60);
                 comboBox_time_sm.SelectedIndex = 0;
-                comboBox_time_ew.ItemsSource = new string[] { "日", "月", "火", "水", "木", "金", "土" };
+                comboBox_time_ew.ItemsSource = CommonManager.DayOfWeekArray;
                 comboBox_time_ew.SelectedIndex = 6;
                 comboBox_time_eh.ItemsSource = Enumerable.Range(0, 24);
                 comboBox_time_eh.SelectedIndex = 23;

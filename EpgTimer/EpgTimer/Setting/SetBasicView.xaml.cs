@@ -118,6 +118,7 @@ namespace EpgTimer.Setting
                     listBox_bon.SelectedIndex = 0;
                 }
 
+                comboBox_wday.ItemsSource = new string[] { "" }.Concat(CommonManager.DayOfWeekArray);
                 comboBox_HH.ItemsSource = Enumerable.Range(0, 24);
                 comboBox_HH.SelectedIndex = 0;
                 comboBox_MM.ItemsSource = Enumerable.Range(0, 60);

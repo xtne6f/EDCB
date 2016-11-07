@@ -49,8 +49,8 @@ namespace EpgTimer
                 StatusManager.RegisterStatusbar(this.statusBar, this);
 
                 //その他設定
-                chbxList = new List<CheckBox>(new string[] { "日", "月", "火", "水", "木", "金", "土" }
-                    .Select(wd => new CheckBox { Content = wd, Margin = new Thickness(0, 0, 6, 0) }));
+                chbxList = CommonManager.DayOfWeekArray.Select(wd => 
+                    new CheckBox { Content = wd, Margin = new Thickness(0, 0, 6, 0) }).ToList();
                 chbxList.ForEach(chbx => stackPanel_week.Children.Add(chbx));
 
                 comboBox_startHH.ItemsSource = CommonManager.CustomHourList;

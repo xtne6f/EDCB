@@ -88,6 +88,7 @@ namespace EpgTimer
         public static Dictionary<UInt16, ContentKindInfo> ContentKindDictionary { get; private set; }
         public static Dictionary<Int32, string> AttributeInfoDictionary { get; private set; }
         public static Dictionary<UInt16, string> ComponentKindDictionary { get; private set; }
+        public static string[] DayOfWeekArray { get; private set; }
         public static List<string> RecModeList { get; private set; }
         public static List<string> YesNoList { get; private set; }
         public static List<string> PriorityList { get; private set; }
@@ -367,6 +368,7 @@ namespace EpgTimer
                 { 0x05E3, "H.264|MPEG-4 AVC、1080p(1125p)、アスペクト比16:9 パンベクトルなし" },
                 { 0x05E4, "H.264|MPEG-4 AVC、1080p(1125p)、アスペクト比 > 16:9" }
             };
+            DayOfWeekArray = new string[] { "日", "月", "火", "水", "木", "金", "土" };
             RecModeList = new List<string> { "全サービス", "指定サービス", "全サービス(デコード処理なし)", "指定サービス(デコード処理なし)", "視聴", "無効" };
             YesNoList = new List<string> { "しない", "する" };
             PriorityList = new List<string> { "1 (低)", "2", "3", "4", "5 (高)" };
