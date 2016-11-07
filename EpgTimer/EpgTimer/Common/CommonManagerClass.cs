@@ -104,23 +104,10 @@ namespace EpgTimer
 
         public CommonManager()
         {
-            if (CtrlCmd == null)
-            {
-                CtrlCmd = new CtrlCmdUtil();
-            }
-            if (DB == null)
-            {
-                DB = new DBManager(CtrlCmd);
-            }
-            if (TVTestCtrl == null)
-            {
-                TVTestCtrl = new TVTestCtrlClass(CtrlCmd);
-            }
-            if (NW == null)
-            {
-                NW = new NWConnect(CtrlCmd);
-            }
-            if (ContentKindDictionary == null)
+            CtrlCmd = new CtrlCmdUtil();
+            DB = new DBManager(CtrlCmd);
+            TVTestCtrl = new TVTestCtrlClass(CtrlCmd);
+            NW = new NWConnect(CtrlCmd);
             {
                 ContentKindDictionary = new Dictionary<UInt16, ContentKindInfo>();
                 ContentKindDictionary.Add(0x00FF, new ContentKindInfo("ニュース／報道", "", 0x00, 0xFF));
@@ -295,7 +282,6 @@ namespace EpgTimer
 
                 ContentKindDictionary.Add(0xFFFF, new ContentKindInfo("なし", "", 0xFF, 0xFF));
             }
-            if (ComponentKindDictionary == null)
             {
                 ComponentKindDictionary = new Dictionary<UInt16, string>()
                 {
@@ -376,23 +362,11 @@ namespace EpgTimer
                     { 0x05E4, "H.264|MPEG-4 AVC、1080p(1125p)、アスペクト比 > 16:9" }
                 };
             }
-            if (DayOfWeekArray == null)
-            {
-                DayOfWeekArray = new string[] { "日", "月", "火", "水", "木", "金", "土" };
-            }
+            DayOfWeekArray = new string[] { "日", "月", "火", "水", "木", "金", "土" };
             NWMode = false;
-            if (NotifyLogList == null)
-            {
-                NotifyLogList = new List<NotifySrvInfo>();
-            }
-            if( CustContentColorList == null )
-            {
-                CustContentColorList = new List<Brush>();
-            }
-            if (CustTimeColorList == null)
-            {
-                CustTimeColorList = new List<Brush>();
-            }
+            NotifyLogList = new List<NotifySrvInfo>();
+            CustContentColorList = new List<Brush>();
+            CustTimeColorList = new List<Brush>();
         }
 
         public static UInt64 Create64Key(UInt16 ONID, UInt16 TSID, UInt16 SID)
