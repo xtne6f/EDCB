@@ -9,7 +9,7 @@ namespace EpgTimer.EpgView
 {
     class EpgViewPanel : EpgTimer.UserCtrlView.PanelBase
     {
-        private Dictionary<ProgramViewItem, List<TextDrawItem>> textDrawDict = new Dictionary<ProgramViewItem, List<TextDrawItem>>();
+        private List<List<TextDrawItem>> textDrawLists;
 
         //ProgramViewItemの座標系は番組表基準なので、この時点でCanvas.SetLeft()によりEpgViewPanel自身の座標を添付済みでなければならない
         public List<ProgramViewItem> Items { get; set; }
@@ -28,10 +28,12 @@ namespace EpgTimer.EpgView
 
         protected void CreateDrawTextList()
         {
-            textDrawDict = new Dictionary<ProgramViewItem, List<TextDrawItem>>();
+            textDrawLists = null;
             Matrix m = PresentationSource.FromVisual(Application.Current.MainWindow).CompositionTarget.TransformToDevice;
 
             if (Items == null) return;
+
+            textDrawLists = new List<List<TextDrawItem>>(Items.Count);
 
             if (ItemFontNormal == null || ItemFontNormal.GlyphType == null ||
                 ItemFontTitle == null || ItemFontTitle.GlyphType == null)
@@ -55,7 +57,7 @@ namespace EpgTimer.EpgView
                 foreach (ProgramViewItem info in Items)
                 {
                     List<TextDrawItem> textDrawList = new List<TextDrawItem>();
-                    textDrawDict[info] = textDrawList;
+                    textDrawLists.Add(textDrawList);
                     if (info.Height > 2)
                     {
                         if (info.Height < sizeTitle + 3)
@@ -199,7 +201,7 @@ namespace EpgTimer.EpgView
             Brush bgBrush = Background;
             dc.DrawRectangle(bgBrush, null, new Rect(RenderSize));
 
-            if (Items == null)
+            if (Items == null || textDrawLists == null || Items.Count < textDrawLists.Count)
             {
                 return;
             }
@@ -215,22 +217,20 @@ namespace EpgTimer.EpgView
                 // 表示しようとするタブのみ GlyphRun を行うことで、最初の応答時間を削減することにする。
                 CreateDrawTextList();
 
-                foreach (ProgramViewItem info in Items)
+                for (int i = 0; i < textDrawLists.Count; i++)
                 {
+                    ProgramViewItem info = Items[i];
                     dc.DrawRectangle(bgBrush, null, new Rect(info.LeftPos - selfLeft, info.TopPos, info.Width, 1));
                     dc.DrawRectangle(bgBrush, null, new Rect(info.LeftPos - selfLeft, info.TopPos + info.Height, info.Width, 1));
                     if (info.Height > 1)
                     {
                         dc.DrawRectangle(info.ContentColor, null, new Rect(info.LeftPos - selfLeft, info.TopPos + 0.5, info.Width - 1, info.Height - 0.5));
-                        if (textDrawDict.ContainsKey(info))
+                        dc.PushClip(new RectangleGeometry(new Rect(info.LeftPos - selfLeft, info.TopPos + 0.5, info.Width - 1, info.Height - 0.5)));
+                        foreach (TextDrawItem txtinfo in textDrawLists[i])
                         {
-                            dc.PushClip(new RectangleGeometry(new Rect(info.LeftPos - selfLeft, info.TopPos + 0.5, info.Width - 1, info.Height - 0.5)));
-                            foreach (TextDrawItem txtinfo in textDrawDict[info])
-                            {
-                                dc.DrawGlyphRun(txtinfo.FontColor, txtinfo.Text);
-                            }
-                            dc.Pop();
+                            dc.DrawGlyphRun(txtinfo.FontColor, txtinfo.Text);
                         }
+                        dc.Pop();
                     }
                 }
             }
