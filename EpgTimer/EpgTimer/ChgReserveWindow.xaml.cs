@@ -116,7 +116,7 @@ namespace EpgTimer
         {
             if (info == null) return;
             SetReserveInfo(info);
-            UpdateWindow();
+            UpdateWindow(true);
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -124,7 +124,7 @@ namespace EpgTimer
             UpdateWindow();
         }
 
-        private void UpdateWindow()
+        private void UpdateWindow(bool noTabChange = false)
         {
             if (reserveInfo == null)
             {
@@ -157,8 +157,9 @@ namespace EpgTimer
             eventInfoNow = null;
             resInfoDisplay = null;
 
+            int selectedTab = noTabChange == true ? tabControl.SelectedIndex : openMode;
             tabControl.SelectedIndex = -1;
-            tabControl.SelectedIndex = openMode;
+            tabControl.SelectedIndex = selectedTab;
         }
 
         private void SetReserveTimeInfo(ReserveData resInfo)
