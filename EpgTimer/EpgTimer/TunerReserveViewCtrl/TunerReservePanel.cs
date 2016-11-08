@@ -10,9 +10,6 @@ namespace EpgTimer.TunerReserveViewCtrl
     {
         public List<ReserveViewItem> Items { get; set; }
 
-        public ItemFont ItemFontNormal { get; set; }
-        public ItemFont ItemFontTitle { get; set; }
-
         public TunerReservePanel()
         {
             this.VisualTextRenderingMode = TextRenderingMode.ClearType;
@@ -113,6 +110,8 @@ namespace EpgTimer.TunerReserveViewCtrl
 
             if (Items == null) return;
 
+            var ItemFontNormal = ItemFontCache.ItemFont(Settings.Instance.TunerFontName, false);
+            var ItemFontTitle = ItemFontCache.ItemFont(Settings.Instance.TunerFontNameService, Settings.Instance.TunerFontBoldService);
             if (ItemFontNormal == null || ItemFontNormal.GlyphType == null ||
                 ItemFontTitle == null || ItemFontTitle.GlyphType == null)
             {
@@ -121,9 +120,6 @@ namespace EpgTimer.TunerReserveViewCtrl
 
             try
             {
-                ItemFontNormal.PrepareCache();
-                ItemFontTitle.PrepareCache();
-
                 // ビットマップフォントがかすれる問題 とりあえず整数にしておく
                 double sizeMin = Settings.Instance.TunerFontSize;
                 double sizeTitle = Settings.Instance.TunerFontSizeService;
@@ -192,9 +188,6 @@ namespace EpgTimer.TunerReserveViewCtrl
                         }
                     }
                 }
-
-                ItemFontNormal.ClearCache();
-                ItemFontTitle.ClearCache();
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }

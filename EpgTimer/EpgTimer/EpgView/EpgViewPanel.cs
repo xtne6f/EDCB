@@ -22,9 +22,6 @@ namespace EpgTimer.EpgView
             }
         }
 
-        public ItemFont ItemFontNormal { get; set; }
-        public ItemFont ItemFontTitle { get; set; }
-
         public EpgViewPanel()
         {
             // これらの設定を OnRender 中に行うと、再度 OnRender イベントが発生してしまうようだ。
@@ -42,13 +39,13 @@ namespace EpgTimer.EpgView
             Matrix m = PresentationSource.FromVisual(Application.Current.MainWindow).CompositionTarget.TransformToDevice;
             textDrawLists = new List<List<TextDrawItem>>(Items.Count);
 
+            var ItemFontNormal = ItemFontCache.ItemFont(Settings.Instance.FontName, false);
+            var ItemFontTitle = ItemFontCache.ItemFont(Settings.Instance.FontNameTitle, Settings.Instance.FontBoldTitle);
             if (ItemFontNormal == null || ItemFontNormal.GlyphType == null ||
                 ItemFontTitle == null || ItemFontTitle.GlyphType == null)
             {
                 return;
             }
-            ItemFontNormal.PrepareCache();
-            ItemFontTitle.PrepareCache();
 
             try
             {

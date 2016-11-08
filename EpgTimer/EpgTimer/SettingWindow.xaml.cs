@@ -37,6 +37,7 @@ namespace EpgTimer
                     Settings.Instance.ReloadOtherOptions();//NWでは別途iniの更新通知後に実行される。
                 }
                 CommonManager.Instance.ReloadCustContentColorList();
+                ItemFontCache.Clear();
 
                 this.Close();
                 ViewUtil.MainWindow.SaveData();

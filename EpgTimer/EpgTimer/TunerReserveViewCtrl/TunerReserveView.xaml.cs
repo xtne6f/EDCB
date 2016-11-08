@@ -38,8 +38,6 @@ namespace EpgTimer.TunerReserveViewCtrl
             {
                 canvas.Height = Math.Ceiling(height + 1);//右端のチューナ列の線を描画するため+1。他の+1も同じ。
                 canvas.Width = Math.Ceiling(width + 1);
-                reserveViewPanel.ItemFontNormal = new TunerReservePanel.ItemFont(Settings.Instance.TunerFontName, false);
-                reserveViewPanel.ItemFontTitle = new TunerReservePanel.ItemFont(Settings.Instance.TunerFontNameService, Settings.Instance.TunerFontBoldService);
                 reserveViewPanel.Height = canvas.Height;
                 reserveViewPanel.Width = canvas.Width;
                 reserveViewPanel.Items = reserveList;

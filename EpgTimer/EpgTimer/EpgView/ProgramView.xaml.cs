@@ -244,17 +244,13 @@ namespace EpgTimer.EpgView
                         canvas.Children.RemoveAt(i--);
                     }
                 }
-                var itemFontNormal = new EpgViewPanel.ItemFont(Settings.Instance.FontName, false);
-                var itemFontTitle = new EpgViewPanel.ItemFont(Settings.Instance.FontNameTitle, Settings.Instance.FontBoldTitle);
                 double totalWidth = 0;
                 foreach (var programList in programGroupList)
                 {
-                    EpgViewPanel item = new EpgViewPanel();
+                    var item = new EpgViewPanel();
                     item.Background = epgViewPanel.Background;
                     item.Height = Math.Ceiling(height);
                     item.Width = programList.Width;
-                    item.ItemFontNormal = itemFontNormal;
-                    item.ItemFontTitle = itemFontTitle;
                     Canvas.SetLeft(item, totalWidth);
                     item.Items = programList.Data;
                     item.InvalidateVisual();
@@ -263,8 +259,6 @@ namespace EpgTimer.EpgView
                 }
                 canvas.Height = Math.Ceiling(height);
                 canvas.Width = totalWidth;
-                itemFontNormal.ClearCache();
-                itemFontTitle.ClearCache();
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
