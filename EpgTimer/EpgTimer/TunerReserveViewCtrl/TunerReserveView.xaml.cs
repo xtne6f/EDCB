@@ -45,9 +45,6 @@ namespace EpgTimer.TunerReserveViewCtrl
                 reserveViewPanel.Items = reserveList;
                 reserveViewPanel.InvalidateVisual();
 
-                reserveViewPanel.ItemFontNormal.ClearCache();
-                reserveViewPanel.ItemFontTitle.ClearCache();
-
                 PopUpWork();
                 TooltipWork();
             }

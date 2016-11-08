@@ -10,9 +10,17 @@ namespace EpgTimer.EpgView
     class EpgViewPanel : EpgTimer.UserCtrlView.PanelBase
     {
         private List<List<TextDrawItem>> textDrawLists;
-
-        //ProgramViewItemの座標系は番組表基準なので、この時点でCanvas.SetLeft()によりEpgViewPanel自身の座標を添付済みでなければならない
-        public List<ProgramViewItem> Items { get; set; }
+        private List<ProgramViewItem> items;
+        public List<ProgramViewItem> Items
+        {
+            get { return items; }
+            set
+            {
+                //ProgramViewItemの座標系は番組表基準なので、この時点でCanvas.SetLeft()によりEpgViewPanel自身の座標を添付済みでなければならない
+                items = value;
+                CreateDrawTextList();
+            }
+        }
 
         public ItemFont ItemFontNormal { get; set; }
         public ItemFont ItemFontTitle { get; set; }
@@ -29,10 +37,9 @@ namespace EpgTimer.EpgView
         protected void CreateDrawTextList()
         {
             textDrawLists = null;
-            Matrix m = PresentationSource.FromVisual(Application.Current.MainWindow).CompositionTarget.TransformToDevice;
-
             if (Items == null) return;
 
+            Matrix m = PresentationSource.FromVisual(Application.Current.MainWindow).CompositionTarget.TransformToDevice;
             textDrawLists = new List<List<TextDrawItem>>(Items.Count);
 
             if (ItemFontNormal == null || ItemFontNormal.GlyphType == null ||
@@ -113,10 +120,7 @@ namespace EpgTimer.EpgView
                     }
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
 
         protected bool RenderText(String text, ref List<TextDrawItem> textDrawList, ItemFont itemFont, double fontSize, double maxWidth, double maxHeight, double x, double y, ref double useHeight, Brush fontColor, Matrix m)
@@ -212,11 +216,6 @@ namespace EpgTimer.EpgView
                 double sizeNormal = Settings.Instance.FontSize;
                 double sizeTitle = Settings.Instance.FontSizeTitle;
 
-                // Items 設定時に CreateDrawTextList を行うと、番組表に複数のタブを設定していると
-                // 全てのタブの GlyphRun を一度に生成しようとするので、最初の表示までに多くの時間がかかる。
-                // 表示しようとするタブのみ GlyphRun を行うことで、最初の応答時間を削減することにする。
-                CreateDrawTextList();
-
                 for (int i = 0; i < textDrawLists.Count; i++)
                 {
                     ProgramViewItem info = Items[i];
@@ -234,10 +233,7 @@ namespace EpgTimer.EpgView
                     }
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
     }
 

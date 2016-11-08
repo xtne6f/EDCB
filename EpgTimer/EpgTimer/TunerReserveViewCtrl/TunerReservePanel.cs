@@ -118,11 +118,12 @@ namespace EpgTimer.TunerReserveViewCtrl
             {
                 return;
             }
-            ItemFontNormal.PrepareCache();
-            ItemFontTitle.PrepareCache();
 
             try
             {
+                ItemFontNormal.PrepareCache();
+                ItemFontTitle.PrepareCache();
+
                 // ビットマップフォントがかすれる問題 とりあえず整数にしておく
                 double sizeMin = Settings.Instance.TunerFontSize;
                 double sizeTitle = Settings.Instance.TunerFontSizeService;
@@ -191,11 +192,11 @@ namespace EpgTimer.TunerReserveViewCtrl
                         }
                     }
                 }
+
+                ItemFontNormal.ClearCache();
+                ItemFontTitle.ClearCache();
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
     }
 }
