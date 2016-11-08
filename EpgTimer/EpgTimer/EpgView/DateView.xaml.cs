@@ -21,31 +21,21 @@ namespace EpgTimer.EpgView
 
         public void ClearInfo()
         {
-            grid_days.Children.Clear();
+            stackPanel_day.Children.Clear();
+            stackPanel_time.Children.Clear();
         }
 
         public void SetTime(List<DateTime> timeList)
         {
             try
             {
-                grid_days.Children.Clear();
+                ClearInfo();
                 if (timeList.Count() == 0) return;
-
-                bool isWrap = false; //true にすると画面端で折り返すようになるが‥(オプション未使用)
-                var stack_days = isWrap == false ? (Panel)new StackPanel { Orientation = Orientation.Horizontal } : new WrapPanel();
-                grid_days.Children.Add(stack_days);
 
                 DateTime itemTime = timeList.First().Date;
                 while (itemTime <= timeList.Last())
                 {
-                    var stack_1day = new StackPanel();
-                    stack_days.Children.Add(stack_1day);
-
                     var day_btn = new Button();
-                    var stack_hour = new StackPanel { Orientation = Orientation.Horizontal };
-                    stack_1day.Children.Add(day_btn);
-                    stack_1day.Children.Add(stack_hour);
-
                     day_btn.Padding = new Thickness(1);
                     day_btn.Width = 120;
                     day_btn.Content = itemTime.ToString("M/d(ddd)");
@@ -59,6 +49,7 @@ namespace EpgTimer.EpgView
                     }
                     day_btn.DataContext = itemTime;
                     day_btn.Click += new RoutedEventHandler(button_time_Click);
+                    stackPanel_day.Children.Add(day_btn);
 
                     for (int i = 6; i <= 18; i += 6)
                     {
@@ -68,7 +59,7 @@ namespace EpgTimer.EpgView
                         hour_btn.Content = itemTime.ToString(i.ToString() + "時");
                         hour_btn.DataContext = itemTime.AddHours(i);
                         hour_btn.Click += new RoutedEventHandler(button_time_Click);
-                        stack_hour.Children.Add(hour_btn);
+                        stackPanel_time.Children.Add(hour_btn);
                     }
 
                     itemTime += TimeSpan.FromDays(1);
