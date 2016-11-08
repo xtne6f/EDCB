@@ -37,8 +37,8 @@ namespace EpgTimer.TunerReserveViewCtrl
                     return false;
                 }
                 totalHeight += Math.Floor(2 + fontSize);
-                List<ushort> glyphIndexes = new List<ushort>();
-                List<double> advanceWidths = new List<double>();
+                var glyphIndexes = new List<ushort>();
+                var advanceWidths = new List<double>();
                 double totalWidth = 0;
                 for (int n = 0; n < line.Length; n++)
                 {
@@ -62,8 +62,8 @@ namespace EpgTimer.TunerReserveViewCtrl
                             glyphIndexes[glyphIndexes.Count - 1] = glyphIndex;
                             advanceWidths[advanceWidths.Count - 1] = width;
 
-                            Point origin = new Point(x + 2, y + totalHeight);
-                            GlyphRun glyphRun = new GlyphRun(itemFont.GlyphType, 0, false, fontSize,
+                            var origin = new Point(x + 2, y + totalHeight);
+                            var glyphRun = new GlyphRun(itemFont.GlyphType, 0, false, fontSize,
                                 glyphIndexes, origin, advanceWidths, null, null, null, null,
                                 null, null);
 
@@ -75,8 +75,8 @@ namespace EpgTimer.TunerReserveViewCtrl
                         else
                         {
                             //次の行いけるので今までの分出力
-                            Point origin = new Point(x + 2, y + totalHeight);
-                            GlyphRun glyphRun = new GlyphRun(itemFont.GlyphType, 0, false, fontSize,
+                            var origin = new Point(x + 2, y + totalHeight);
+                            var glyphRun = new GlyphRun(itemFont.GlyphType, 0, false, fontSize,
                                 glyphIndexes, origin, advanceWidths, null, null, null, null,
                                 null, null);
 
@@ -93,8 +93,8 @@ namespace EpgTimer.TunerReserveViewCtrl
                 }
                 if (glyphIndexes.Count > 0)
                 {
-                    Point origin = new Point(x + 2, y + totalHeight);
-                    GlyphRun glyphRun = new GlyphRun(itemFont.GlyphType, 0, false, fontSize,
+                    var origin = new Point(x + 2, y + totalHeight);
+                    var glyphRun = new GlyphRun(itemFont.GlyphType, 0, false, fontSize,
                         glyphIndexes, origin, advanceWidths, null, null, null, null,
                         null, null);
 
@@ -106,14 +106,14 @@ namespace EpgTimer.TunerReserveViewCtrl
         }
         protected override void OnRender(DrawingContext dc)
         {
+            //背景だけは先に描画
             dc.DrawRectangle(Background, null, new Rect(RenderSize));
 
             if (Items == null) return;
 
             var ItemFontNormal = ItemFontCache.ItemFont(Settings.Instance.TunerFontName, false);
             var ItemFontTitle = ItemFontCache.ItemFont(Settings.Instance.TunerFontNameService, Settings.Instance.TunerFontBoldService);
-            if (ItemFontNormal == null || ItemFontNormal.GlyphType == null ||
-                ItemFontTitle == null || ItemFontTitle.GlyphType == null)
+            if (ItemFontNormal.GlyphType == null || ItemFontTitle.GlyphType == null)
             {
                 return;
             }

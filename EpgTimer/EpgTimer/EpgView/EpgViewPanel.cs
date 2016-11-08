@@ -9,18 +9,7 @@ namespace EpgTimer.EpgView
 {
     class EpgViewPanel : EpgTimer.UserCtrlView.PanelBase
     {
-        private List<List<TextDrawItem>> textDrawLists;
-        private List<ProgramViewItem> items;
-        public List<ProgramViewItem> Items
-        {
-            get { return items; }
-            set
-            {
-                //ProgramViewItemの座標系は番組表基準なので、この時点でCanvas.SetLeft()によりEpgViewPanel自身の座標を添付済みでなければならない
-                items = value;
-                CreateDrawTextList();
-            }
-        }
+        public List<ProgramViewItem> Items { get; set; }
 
         public EpgViewPanel()
         {
@@ -31,20 +20,18 @@ namespace EpgTimer.EpgView
             this.UseLayoutRounding = true;
         }
 
-        protected void CreateDrawTextList()
+        protected List<List<TextDrawItem>> CreateDrawTextList()
         {
-            textDrawLists = null;
-            if (Items == null) return;
+            if (Items == null) return null;
 
             Matrix m = PresentationSource.FromVisual(Application.Current.MainWindow).CompositionTarget.TransformToDevice;
-            textDrawLists = new List<List<TextDrawItem>>(Items.Count);
+            var textDrawLists = new List<List<TextDrawItem>>(Items.Count);
 
             var ItemFontNormal = ItemFontCache.ItemFont(Settings.Instance.FontName, false);
             var ItemFontTitle = ItemFontCache.ItemFont(Settings.Instance.FontNameTitle, Settings.Instance.FontBoldTitle);
-            if (ItemFontNormal == null || ItemFontNormal.GlyphType == null ||
-                ItemFontTitle == null || ItemFontTitle.GlyphType == null)
+            if (ItemFontNormal.GlyphType == null || ItemFontTitle.GlyphType == null)
             {
-                return;
+                return null;
             }
 
             try
@@ -60,7 +47,7 @@ namespace EpgTimer.EpgView
 
                 foreach (ProgramViewItem info in Items)
                 {
-                    List<TextDrawItem> textDrawList = new List<TextDrawItem>();
+                    var textDrawList = new List<TextDrawItem>();
                     textDrawLists.Add(textDrawList);
                     if (info.Height > 2)
                     {
@@ -116,8 +103,10 @@ namespace EpgTimer.EpgView
                         }
                     }
                 }
+                return textDrawLists;
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
+            return null;
         }
 
         protected bool RenderText(String text, ref List<TextDrawItem> textDrawList, ItemFont itemFont, double fontSize, double maxWidth, double maxHeight, double x, double y, ref double useHeight, Brush fontColor, Matrix m)
@@ -128,8 +117,8 @@ namespace EpgTimer.EpgView
             foreach (string line in lineText)
             {
                 totalHeight += Math.Floor(2 + fontSize);
-                List<ushort> glyphIndexes = new List<ushort>();
-                List<double> advanceWidths = new List<double>();
+                var glyphIndexes = new List<ushort>();
+                var advanceWidths = new List<double>();
                 double totalWidth = 0;
                 for (int n = 0; n < line.Length; n++)
                 {
@@ -150,8 +139,8 @@ namespace EpgTimer.EpgView
                         {
                             double dpix = Math.Ceiling((x + 2) * m.M11);
                             double dpiy = Math.Ceiling((y + totalHeight) * m.M22);
-                            Point origin = new Point(dpix / m.M11, dpiy / m.M22);
-                            TextDrawItem item = new TextDrawItem();
+                            var origin = new Point(dpix / m.M11, dpiy / m.M22);
+                            var item = new TextDrawItem();
                             item.FontColor = fontColor;
                             item.Text = new GlyphRun(itemFont.GlyphType, 0, false, fontSize,
                                 glyphIndexes, origin, advanceWidths, null, null, null, null,
@@ -183,8 +172,8 @@ namespace EpgTimer.EpgView
                 {
                     double dpix = Math.Ceiling((x + 2) * m.M11);
                     double dpiy = Math.Ceiling((y + totalHeight) * m.M22);
-                    Point origin = new Point(dpix / m.M11, dpiy / m.M22);
-                    TextDrawItem item = new TextDrawItem();
+                    var origin = new Point(dpix / m.M11, dpiy / m.M22);
+                    var item = new TextDrawItem();
                     item.FontColor = fontColor;
                     item.Text = new GlyphRun(itemFont.GlyphType, 0, false, fontSize,
                         glyphIndexes, origin, advanceWidths, null, null, null, null,
@@ -201,12 +190,13 @@ namespace EpgTimer.EpgView
         {
             Brush bgBrush = Background;
             dc.DrawRectangle(bgBrush, null, new Rect(RenderSize));
+            List<List<TextDrawItem>> textDrawLists = CreateDrawTextList();
 
             if (Items == null || textDrawLists == null || Items.Count < textDrawLists.Count)
             {
                 return;
             }
-            
+
             try
             {
                 double selfLeft = Canvas.GetLeft(this); 
