@@ -84,9 +84,9 @@ namespace EpgTimer.UserCtrlView
         protected virtual bool IsPopEnabled { get { return false; } }
         protected virtual bool PopOnOver { get { return false; } }
         protected virtual bool PopOnClick { get { return false; } }
-        protected virtual ViewPanelItemBase GetPopupItem(Point cursorPos, bool onClick) { return null; }
+        protected virtual PanelItem GetPopupItem(Point cursorPos, bool onClick) { return null; }
         protected virtual FrameworkElement Popup { get { return new FrameworkElement(); } }
-        protected ViewPanelItemBase lastPopInfo = null;
+        protected PanelItem lastPopInfo = null;
         protected virtual double PopWidth { get { return 150; } }
         protected ScrollViewer scroll;
         protected Canvas cnvs;
@@ -94,9 +94,9 @@ namespace EpgTimer.UserCtrlView
         protected virtual bool IsTooltipEnabled { get { return false; } }
         protected virtual int TooltipViweWait { get { return 0; } }
         protected Rectangle Tooltip { get; private set; }
-        protected ViewPanelItemBase lastToolInfo = null;
+        protected PanelItem lastToolInfo = null;
         private DispatcherTimer toolTipTimer;//連続して出現するのを防止する
-        protected virtual ViewPanelItemBase GetTooltipItem(Point cursorPos) { return null; }
+        protected virtual PanelItem GetTooltipItem(Point cursorPos) { return null; }
 
         public PanelViewBase()
         {
@@ -143,7 +143,7 @@ namespace EpgTimer.UserCtrlView
                     return;
                 }
 
-                ViewPanelItemBase popInfo = GetPopupItem(Mouse.GetPosition(cnvs), onClick);
+                PanelItem popInfo = GetPopupItem(Mouse.GetPosition(cnvs), onClick);
                 if (popInfo != lastPopInfo)
                 {
                     lastPopInfo = popInfo;
@@ -165,7 +165,7 @@ namespace EpgTimer.UserCtrlView
             }
         }
         // PopUpの初期化
-        protected void SetPopupItem(ViewPanelItemBase popInfo)
+        protected void SetPopupItem(PanelItem popInfo)
         {
             UpdatePopupPosition(popInfo);
 
@@ -181,10 +181,10 @@ namespace EpgTimer.UserCtrlView
 
             SetPopup(popInfo);
         }
-        protected virtual void SetPopup(ViewPanelItemBase popInfo) { }
+        protected virtual void SetPopup(PanelItem popInfo) { }
 
         // PopUp が画面内に収まるように調整する
-        protected void UpdatePopupPosition(ViewPanelItemBase popInfo)
+        protected void UpdatePopupPosition(PanelItem popInfo)
         {
             // offsetHが正のとき右にはみ出している
             double offsetH = popInfo.LeftPos + Popup.ActualWidth - (scroll.ContentHorizontalOffset + scroll.ViewportWidth);
@@ -222,7 +222,7 @@ namespace EpgTimer.UserCtrlView
 
             try
             {
-                ViewPanelItemBase toolInfo = GetTooltipItem(Mouse.GetPosition(cnvs));
+                PanelItem toolInfo = GetTooltipItem(Mouse.GetPosition(cnvs));
                 if (toolInfo != lastToolInfo)
                 {
                     TooltipClear();
@@ -257,7 +257,7 @@ namespace EpgTimer.UserCtrlView
             }
         }
         //Tooltipの初期化
-        protected void SetTooltipItem(ViewPanelItemBase toolInfo)
+        protected void SetTooltipItem(PanelItem toolInfo)
         {
             Tooltip.Width = toolInfo.Width;
             Tooltip.Height = toolInfo.Height;
@@ -268,7 +268,7 @@ namespace EpgTimer.UserCtrlView
             SetTooltip(toolInfo);
             return;
         }
-        protected virtual void SetTooltip(ViewPanelItemBase toolInfo) { }
+        protected virtual void SetTooltip(PanelItem toolInfo) { }
 
         /// <summary>マウスホイールイベント呼び出し</summary>
         protected virtual void scrollViewer_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
@@ -439,7 +439,7 @@ namespace EpgTimer.UserCtrlView
             }
         }
 
-        public virtual void ScrollToFindItem(ViewPanelItemBase target_item, bool IsMarking)
+        public virtual void ScrollToFindItem(PanelItem target_item, bool IsMarking)
         {
             try
             {

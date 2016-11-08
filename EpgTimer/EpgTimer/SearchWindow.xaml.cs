@@ -181,7 +181,7 @@ namespace EpgTimer
 
                 CommonManager.Instance.CtrlCmd.SendSearchPg(CommonUtil.ToList(key), ref list);
 
-                dataList.AddFromEventList(list, false, true);
+                dataList.AddRange(list.ToSearchList(true));
                 return true;
             });
 

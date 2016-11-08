@@ -379,40 +379,32 @@ namespace EpgTimer
         //{
         //    return list.Any(info => item != null && item.IsReserved == true);
         //}
-        public static int AddFromEventList(this ICollection<SearchItem> itemlist, IEnumerable<EpgEventInfo> eventList, bool isExceptUnknownStartTime, bool isExceptEnded)
+        public static List<SearchItem> ToSearchList(this IEnumerable<EpgEventInfo> eventList, bool isExceptEnded = false)
         {
-            if (eventList == null) return 0;
+            if (eventList == null) return new List<SearchItem>();
             //
-            foreach (EpgEventInfo info in eventList.OfAvailable(isExceptUnknownStartTime, isExceptEnded == true ? (DateTime?)DateTime.Now : null))
-            {
-                itemlist.Add(new SearchItem(info));
-            }
-
-            int searchCount = itemlist.Count;
-
-            itemlist.SetReserveData();
-
-            return searchCount;
+            var list = eventList.Where(info => isExceptEnded == false || info.IsOver() == false)
+                                .Select(info => new SearchItem(info)).ToList();
+            list.SetReserveData();
+            return list;
         }
-
-        public static int SetReserveData(this ICollection<SearchItem> list)
+        public static void SetReserveData(this ICollection<SearchItem> list)
         {
             var listKeys = new Dictionary<UInt64, SearchItem>();
-
-            foreach (SearchItem listItem1 in list.ToList())//重複を削除するのでコピー
+            var delList = new List<SearchItem>();
+            foreach (SearchItem item in list)
             {
-                UInt64 key = listItem1.EventInfo.CurrentPgUID();
+                UInt64 key = item.EventInfo.CurrentPgUID();
                 if (listKeys.ContainsKey(key) == true)
                 {
-                    list.Remove(listItem1);
+                    delList.Add(item);
                     continue;
                 }
-                listKeys.Add(key, listItem1);
-                listItem1.ReserveInfo = null;
-                listItem1.Reset();
+                listKeys.Add(key, item);
+                item.ReserveInfo = null;
+                item.Reset();
             }
-
-            int startCount = list.Count;
+            delList.ForEach(item => list.Remove(item));
 
             SearchItem setItem;
             foreach (ReserveData data in CommonManager.Instance.DB.ReserveList.Values)
@@ -427,8 +419,6 @@ namespace EpgTimer
                     setItem.ReserveInfo = data;
                 }
             }
-
-            return list.Count - startCount;
         }
 
     }

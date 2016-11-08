@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -16,7 +15,6 @@ namespace EpgTimer
     /// </summary>
     public partial class TunerReserveMainView : DataViewBase
     {
-        private List<TunerNameViewItem> tunerList = new List<TunerNameViewItem>();
         private List<ReserveViewItem> reserveList = new List<ReserveViewItem>();
         private Point clickPos;
 
@@ -48,18 +46,6 @@ namespace EpgTimer
         {
             mBinds.ResetInputBindings(this);
             mm.CtxmGenerateContextMenu(cmdMenu, CtxmCode.TunerReserveView, false);
-        }
-
-        /// <summary>保持情報のクリア</summary>
-        public bool ClearInfo()
-        {
-            tunerReserveView.ClearInfo();
-            tunerReserveTimeView.ClearInfo();
-            tunerReserveNameView.ClearInfo();
-            tunerList = new List<TunerNameViewItem>();
-            reserveList = new List<ReserveViewItem>();
-
-            return true;
         }
 
         /// <summary>表示スクロールイベント呼び出し</summary>
@@ -108,9 +94,10 @@ namespace EpgTimer
                 tunerReserveView.ClearInfo();
                 tunerReserveTimeView.ClearInfo();
                 tunerReserveNameView.ClearInfo();
-                List<DateTime> timeList = new List<DateTime>();
-                tunerList.Clear();
                 reserveList.Clear();
+
+                var tunerList = new List<PanelItem<TunerReserveInfo>>();
+                var timeList = new List<DateTime>();
 
                 List<TunerReserveInfo> tunerReserveList = CommonManager.Instance.DB.TunerReserveList.Values
                     .OrderBy(info => info.tunerID).ToList();//多分大丈夫だけど一応ソートしておく
@@ -125,48 +112,36 @@ namespace EpgTimer
                 }
 
                 //チューナ不足と無効予約はアイテムがなければ非表示
-                var delList = tunerReserveList.Where(item => item.tunerID == 0xFFFFFFFF && item.reserveList.Count == 0).ToList();
-                delList.ForEach(item => tunerReserveList.Remove(item));
+                tunerReserveList.RemoveAll(item => item.tunerID == 0xFFFFFFFF && item.reserveList.Count == 0);
 
                 double tunerWidthSingle = Settings.Instance.TunerWidth;
                 double leftPos = 0;
+                var resDic = CommonManager.Instance.DB.ReserveList;
                 tunerReserveList.ForEach(info =>
                 {
                     double tunerWidth = tunerWidthSingle;
-
+                    
                     var tunerAddList = new List<ReserveViewItem>();
-                    foreach(UInt32 reserveID in info.reserveList)
+
+                    foreach (ReserveData resInfo in info.reserveList.Where(id => resDic.ContainsKey(id) == true).Select(id => resDic[id]))
                     {
-                        ReserveData reserveInfo;
-                        if (CommonManager.Instance.DB.ReserveList.TryGetValue(reserveID,out reserveInfo) == false)
-                        {
-                            continue;
-                        }
-                        var newItem = new ReserveViewItem(reserveInfo);
+                        var newItem = new ReserveViewItem(resInfo);
+                        reserveList.Add(newItem);
 
-                        //マージンを適用
-                        DateTime startTime = reserveInfo.StartTime;
-                        Int32 duration = (Int32)reserveInfo.DurationSecond;
-                        ViewUtil.ApplyMarginForTunerPanelView(reserveInfo, ref startTime, ref duration);
-
-                        newItem.Height = duration * Settings.Instance.TunerMinHeight / 60;
+                        //横位置の設定
                         newItem.Width = tunerWidthSingle;
                         newItem.LeftPos = leftPos;
 
+                        //列を拡げて表示する処置
                         foreach (ReserveViewItem addedItem in tunerAddList)
                         {
                             ReserveData addedInfo = addedItem.ReserveInfo;
 
-                            //マージンを適用
-                            DateTime startTimeAdd = addedInfo.StartTime;
-                            Int32 durationAdd = (Int32)addedInfo.DurationSecond;
-                            ViewUtil.ApplyMarginForTunerPanelView(addedInfo, ref startTimeAdd, ref durationAdd);
-
-                            if (MenuUtil.CulcOverlapLength(startTime, (UInt32)duration, startTimeAdd, (UInt32)durationAdd) > 0)
+                            if (MenuUtil.CulcOverlapLength(resInfo.StartTimeActual, resInfo.DurationActual, addedInfo.StartTimeActual, addedInfo.DurationActual) > 0)
                             {
                                 if (newItem.LeftPos <= addedItem.LeftPos)
                                 {
-                                    if (reserveInfo.Create64Key() == addedInfo.Create64Key())
+                                    if (resInfo.Create64Key() == addedInfo.Create64Key())
                                     {
                                         newItem.LeftPos = addedItem.LeftPos;
                                     }
@@ -181,66 +156,32 @@ namespace EpgTimer
                                 }
                             }
                         }
-
-                        reserveList.Add(newItem);
                         tunerAddList.Add(newItem);
 
-                        //必要時間リストの構築
-                        var chkStartTime = new DateTime(startTime.Year, startTime.Month, startTime.Day, startTime.Hour, 0, 0);
-                        DateTime EndTime = startTime.AddSeconds(duration);
-                        while (chkStartTime <= EndTime)
-                        {
-                            int index = timeList.BinarySearch(chkStartTime);
-                            if (index < 0)
-                            {
-                                timeList.Insert(~index, chkStartTime);
-                            }
-                            chkStartTime = chkStartTime.AddHours(1);
-                        }
-
+                        //マージン込みの時間でリストを構築
+                        ViewUtil.AddTimeList(timeList, resInfo.StartTimeActual, resInfo.DurationActual);
                     }
 
-                    tunerList.Add(new TunerNameViewItem(info, tunerWidth));
+                    tunerList.Add(new PanelItem<TunerReserveInfo>(info) { Width = tunerWidth });
                     leftPos += tunerWidth;
                 });
 
-                //表示位置設定
-                foreach (ReserveViewItem item in reserveList)
+                //縦位置の設定
+                timeList = timeList.Distinct().OrderBy(time => time).ToList();
+                reserveList.ForEach(item =>
                 {
-                    //マージンを適用
-                    DateTime startTime = item.ReserveInfo.StartTime;
-                    Int32 dummy = 0;
-                    ViewUtil.ApplyMarginForTunerPanelView(item.ReserveInfo, ref startTime, ref dummy);
+                    ViewUtil.SetItemVerticalPos(timeList, item, item.ReserveInfo.StartTimeActual, item.ReserveInfo.DurationActual, Settings.Instance.TunerMinHeight, true);
 
-                    var chkStartTime = new DateTime(startTime.Year, startTime.Month, startTime.Day, startTime.Hour, 0, 0);
-                    int index = timeList.BinarySearch(chkStartTime);
-                    if (index >= 0)
-                    {
-                        item.TopPos = (index * 60 + (startTime - chkStartTime).TotalMinutes) * Settings.Instance.TunerMinHeight;
-                    }
-                }
-
-                //ごく小さいマージンの表示を抑制する。
-                reserveList.ForEach(info =>
-                {
-                    info.TopPos = Math.Round(info.TopPos);
-                    info.Height = Math.Round(info.Height);
+                    //ごく小さいマージンの表示を抑制する。
+                    item.TopPos = Math.Round(item.TopPos);
+                    item.Height = Math.Round(item.Height);
                 });
 
                 //最低表示行数を適用。また、最低表示高さを確保して、位置も調整する。
-                ViewUtil.ModifierMinimumLine<ReserveData, ReserveViewItem>(reserveList, Settings.Instance.TunerMinimumLine, Settings.Instance.TunerFontSizeService);
+                ViewUtil.ModifierMinimumLine(reserveList, Settings.Instance.TunerMinimumLine, Settings.Instance.TunerFontSizeService);
 
                 //必要時間リストの修正。最低表示行数の適用で下に溢れた分を追加する。
-                if (reserveList.Count != 0 && timeList.Count > 0)
-                {
-                    double bottom = reserveList.Max(info => info.TopPos + info.Height);
-                    int end = (int)(bottom / (60 * Settings.Instance.TunerMinHeight)) + 1;
-                    while (end > timeList.Count)
-                    {
-                        DateTime time_tail = timeList[timeList.Count - 1].AddHours(1);
-                        timeList.Add(time_tail);
-                    }
-                }
+                ViewUtil.AdjustTimeList(reserveList, timeList, Settings.Instance.TunerMinHeight);
 
                 tunerReserveTimeView.SetTime(timeList);
                 tunerReserveNameView.SetTunerInfo(tunerList);

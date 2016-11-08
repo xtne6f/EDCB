@@ -4,10 +4,10 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 
-using EpgTimer.EpgView;
-
 namespace EpgTimer
 {
+    using EpgView;
+
     /// <summary>
     /// EpgListMainView.xaml の相互作用ロジック
     /// </summary>
@@ -36,10 +36,6 @@ namespace EpgTimer
             //ステータス変更の設定
             lstCtrl.SetSelectionChangedEventHandler((sender, e) => this.UpdateStatus(1));
 
-            InitCommand();
-        }
-        protected override void InitCommand()
-        {
             base.InitCommand();
 
             //コマンド集の初期化の続き
@@ -86,21 +82,12 @@ namespace EpgTimer
             try
             {
                 //表示していたサービスの保存
-                Dictionary<UInt64, bool> lastSID = serviceList.ToDictionary(s => s.ID, s => s.IsSelected);
+                var lastSID = new HashSet<UInt64>(serviceList.Where(s => s.IsSelected == false).Select(s => s.ID));
 
                 listBox_service.ItemsSource = null;
-                serviceList.Clear();
 
-                foreach (UInt64 id in setViewInfo.ViewServiceList)
-                {
-                    if (serviceEventList.ContainsKey(id) == true)
-                    {
-                        var item = new ServiceItem();
-                        item.ServiceInfo = serviceEventList[id].serviceInfo;
-                        item.IsSelected = lastSID.ContainsKey(id) == false || lastSID[id];
-                        serviceList.Add(item);
-                    }
-                }
+                serviceList = serviceEventList.Select(item => new ServiceItem(item.serviceInfo)).ToList();
+                serviceList.ForEach(item => item.IsSelected = lastSID.Contains(item.ID) == false);
 
                 listBox_service.ItemsSource = serviceList;
 
@@ -109,64 +96,24 @@ namespace EpgTimer
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
-
         private void UpdateEventList(bool scroll = false)
         {
-            lstCtrl.ReloadInfoData(reloadEventList);
+            lstCtrl.ReloadInfoData(dataList =>
+            {
+                if (serviceEventList.Count != serviceList.Count) return false;
+
+                foreach (var list in serviceEventList.Zip(serviceList, (f, s) => new { f, s })
+                                            .Where(d => d.s.IsSelected == true).Select(d => d.f.eventList))
+                {
+                    dataList.AddRange(list.Where(e => e.IsGroupMainEvent == true).ToSearchList(setViewInfo.FilterEnded));
+                }
+                return true;
+            });
 
             if (scroll == true)
             {
-                //lstCtrl内のジャンプがReloadReserveData()にキャンセルされるので、ReloadProgramViewItem()からのとき再実行しておく。
-                Dispatcher.BeginInvoke(new Action(() => listView_event.ScrollIntoView(listView_event.SelectedItem)));
+                listView_event.ScrollIntoView(listView_event.SelectedItem);
             }
-        }
-
-        private bool reloadEventList(List<SearchItem> dataList)
-        {
-            //絞り込んだイベントリストを作成
-            var eventList = new List<EpgEventInfo>();
-            foreach (ServiceItem info in serviceList)
-            {
-                if (info.IsSelected == true)
-                {
-                    if (serviceEventList.ContainsKey(info.ID) == true)
-                    {
-                        foreach (EpgEventInfo eventInfo in serviceEventList[info.ID].eventList)
-                        {
-                            //ジャンル絞り込み
-                            if (ViewUtil.ContainsContent(eventInfo, this.viewCustContentKindList, this.setViewInfo.ViewNotContentFlag) == false)
-                            {
-                                continue;
-                            }
-                            //イベントグループのチェック
-                            if (eventInfo.EventGroupInfo != null)
-                            {
-                                bool spanFlag = false;
-                                foreach (EpgEventData data in eventInfo.EventGroupInfo.eventDataList)
-                                {
-                                    if (info.ServiceInfo.Create64Key() == data.Create64Key())
-                                    {
-                                        spanFlag = true;
-                                        break;
-                                    }
-                                }
-
-                                if (spanFlag == false)
-                                {
-                                    //サービス２やサービス３の結合されるべきもの
-                                    continue;
-                                }
-                            }
-                            eventList.Add(eventInfo);
-                        }
-                    }
-                }
-            }
-
-            //SearchItemリストを作成
-            lstCtrl.dataList.AddFromEventList(eventList, true, setViewInfo.FilterEnded);
-
-            return true;
         }
 
         private void CheckBox_Changed(object sender, RoutedEventArgs e)
@@ -193,13 +140,9 @@ namespace EpgTimer
         private void listView_event_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             richTextBox_eventInfo.Document.Blocks.Clear();
-            scrollViewer1.ScrollToHome();
-            if (listView_event.SelectedItem != null)
-            {
-                var item = listView_event.SelectedItem as SearchItem;
-                EpgEventInfo eventInfo = item.EventInfo;
-                richTextBox_eventInfo.Document = CommonManager.ConvertDisplayText(eventInfo);
-            }
+            if (listView_event.SelectedItem == null) return;
+            //
+            richTextBox_eventInfo.Document = CommonManager.ConvertDisplayText((listView_event.SelectedItem as SearchItem).EventInfo);
         }
 
         protected override void MoveToReserveItem(ReserveData target, bool IsMarking)

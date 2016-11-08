@@ -1079,15 +1079,17 @@ namespace EpgTimer
             return null;
         }
 
-        public static EpgEventInfo SearchEventInfoLikeThat(IAutoAddTargetData item, Dictionary<ulong, EpgServiceEventInfo> eventDic)
+        public static EpgEventInfo SearchEventInfoLikeThat(IAutoAddTargetData item, bool includeArc = false)
         {
             double dist = double.MaxValue;
             EpgEventInfo eventPossible = null;
 
             UInt64 key = item.Create64Key();
+            var eventDic = CommonManager.Instance.DB.ServiceEventList;
             if (eventDic.ContainsKey(key) == true)
             {
-                foreach (EpgEventInfo eventChkInfo in eventDic[key].eventList)
+                var eList = includeArc == true ? eventDic[key].eventMergeList : eventDic[key].eventList;
+                foreach (EpgEventInfo eventChkInfo in eList)
                 {
                     //itemが調べている番組に完全に含まれているならそれを選択する
                     double overlapLength = CulcOverlapLength(item.PgStartTime, item.PgDurationSecond,

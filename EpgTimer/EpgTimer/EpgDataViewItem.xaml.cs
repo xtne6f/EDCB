@@ -89,14 +89,18 @@ namespace EpgTimer
             viewCtrl.SetViewMode(setInfo);
             if (state != null) SetViewState(state);
             grid_main.Children.Clear();
-            grid_main.Children.Add(viewCtrl as UIElement);
+            grid_main.Children.Add(viewCtrl);
         }
 
         private void item_ViewSettingClick(object sender, object param)
         {
             try
             {
-                if (param == null)
+                if (param is CustomEpgTabInfo)
+                {
+                    this.SetViewMode(param as CustomEpgTabInfo);
+                }
+                else
                 {
                     var dlg = new EpgDataViewSettingWindow();
                     dlg.Owner = CommonUtil.GetTopWindow(this);
@@ -124,14 +128,8 @@ namespace EpgTimer
                         viewCtrl.UpdateInfo();
                     }
                 }
-                else
-                {
-                    CustomEpgTabInfo setInfo = param as CustomEpgTabInfo;
-                    this.SetViewMode(setInfo);
-                }
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
-
     }
 }

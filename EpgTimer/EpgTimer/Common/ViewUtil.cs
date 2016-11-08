@@ -131,44 +131,40 @@ namespace EpgTimer
             return notContent;
         }
 
-        //パネルアイテムにマージンを適用。
-        public static void ApplyMarginForPanelView(ReserveData resInfo, ref DateTime startTime, ref int duration)
+        public static void AddTimeList(ICollection<DateTime> timeList, DateTime startTime, UInt32 duration)
         {
-            int StartMargin = resInfo.RecSetting.StartMarginActual;
-            int EndMargin = resInfo.RecSetting.EndMarginActual;
-
-            if (StartMargin < 0)
+            AddTimeList(timeList, startTime, startTime.AddSeconds(duration));
+        }
+        public static void AddTimeList(ICollection<DateTime> timeList, DateTime startTime, DateTime lastTime)
+        {
+            var chkStartTime = new DateTime(startTime.Year, startTime.Month, startTime.Day, startTime.Hour, 0, 0);
+            while (chkStartTime <= lastTime)
             {
-                //メモ:番組長より長いマイナスマージンの扱いは?
-                startTime = startTime.AddSeconds(StartMargin * -1);
-                duration += StartMargin;
-            }
-            if (EndMargin < 0)
-            {
-                duration += EndMargin;
+                timeList.Add(chkStartTime);
+                chkStartTime += TimeSpan.FromHours(1);
             }
         }
 
-        public static void ApplyMarginForTunerPanelView(ReserveData resInfo, ref DateTime startTime, ref int duration)
+        public static void SetItemVerticalPos(List<DateTime> timeList, PanelItem item, DateTime startTime, UInt32 duration, double MinutesHeight, bool NeedTimeOnly)
         {
-            int StartMargin = resInfo.RecSetting.StartMarginActual;
-            int EndMargin = resInfo.RecSetting.EndMarginActual;
-
-            startTime = resInfo.StartTime.AddSeconds(StartMargin * -1);
-            duration = (int)resInfo.DurationSecond + StartMargin + EndMargin;
+            item.Height = duration * MinutesHeight / 60;
+            var chkStartTime = NeedTimeOnly == false ? timeList[0] : new DateTime(startTime.Year, startTime.Month, startTime.Day, startTime.Hour, 0, 0);
+            int offset = NeedTimeOnly == false ? 0 : 60 * timeList.BinarySearch(chkStartTime);
+            if (offset >= 0)
+            {
+                item.TopPos = (offset + (startTime - chkStartTime).TotalMinutes) * MinutesHeight;
+            }
         }
 
         //最低表示高さ
         public const double PanelMinimumHeight = 2;
-
-        //最低表示行数を適用。また、最低表示高さを確保して、位置も調整する。
-        public static void ModifierMinimumLine<T, S>(List<S> list, double minimumLine, double fontHeight) where S : ViewPanelItem<T>
+        public static void ModifierMinimumLine(IEnumerable<PanelItem> list, double minimumLine, double fontHeight)
         {
-            list.Sort((x, y) => Math.Sign(x.LeftPos - y.LeftPos) * 2 + Math.Sign(x.TopPos - y.TopPos));
+            //list.Sort((x, y) => Math.Sign(x.LeftPos - y.LeftPos) * 2 + Math.Sign(x.TopPos - y.TopPos));
             double minimum = Math.Max((fontHeight + 2) * minimumLine, PanelMinimumHeight);
             double lastLeft = double.MinValue;
             double lastBottom = 0;
-            foreach (S item in list)
+            foreach (PanelItem item in list.OrderBy(item => item.LeftPos * 1e6 + item.TopPos))
             {
                 if (lastLeft != item.LeftPos)
                 {
@@ -188,27 +184,12 @@ namespace EpgTimer
             }
         }
 
-        public static void SetTimeList(List<ProgramViewItem> programList, SortedList<DateTime, List<ProgramViewItem>> timeList)
+        public static void AdjustTimeList(IEnumerable<PanelItem> list, List<DateTime> timeList, double MinutesHeight)
         {
-            foreach (ProgramViewItem item in programList)
+            if (list.Count() != 0 && timeList.Count > 0)
             {
-                double top = Math.Min(item.TopPos, item.TopPosDef);
-                double bottom = Math.Max(item.TopPos + item.Height, item.TopPosDef + item.HeightDef);
-                int index = Math.Max((int)(top / (60 * Settings.Instance.MinHeight)), 0);
-                int end = (int)(bottom / (60 * Settings.Instance.MinHeight)) + 1;
-
-                //必要時間リストの修正。最低表示行数の適用で下に溢れた分を追加する。
-                while (end > timeList.Count)
-                {
-                    DateTime time_tail = timeList.Keys[timeList.Count - 1].AddHours(1);
-                    timeList.Add(time_tail, new List<ProgramViewItem>());
-                }
-
-                //必要時間リストと時間と番組の関連づけ。
-                while (index < end)
-                {
-                    timeList.Values[index++].Add(item);
-                }
+                double bottom = list.Max(info => info.TopPos + info.Height);
+                AddTimeList(timeList, timeList.Last().AddHours(1), timeList.First().AddMinutes(bottom / MinutesHeight));
             }
         }
 

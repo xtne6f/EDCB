@@ -6,13 +6,15 @@ using System.Windows.Input;
 
 namespace EpgTimer.EpgView
 {
+    public delegate void ViewSettingClickHandler(object sender, object param);
+
     public class EpgViewBase : EpgTimer.UserCtrlView.DataViewBase
     {
         protected static CtrlCmdUtil cmd { get { return CommonManager.Instance.CtrlCmd; } }
 
         protected CustomEpgTabInfo setViewInfo = null;
         protected Dictionary<UInt16, UInt16> viewCustContentKindList = new Dictionary<UInt16, UInt16>();
-        protected Dictionary<UInt64, EpgServiceEventInfo> serviceEventList = new Dictionary<UInt64, EpgServiceEventInfo>();
+        protected List<EpgServiceEventInfo> serviceEventList = new List<EpgServiceEventInfo>();
 
         protected CmdExeReserve mc; //予約系コマンド集
         protected bool ReloadReserveInfoFlg = true;
@@ -138,11 +140,12 @@ namespace EpgTimer.EpgView
                 if (setViewInfo == null) return true;
                 if (CommonManager.Instance.IsConnected == false) return false;
 
+                Dictionary<UInt64, EpgServiceAllEventInfo> serviceDic;
                 if (setViewInfo.SearchMode == false)
                 {
                     ErrCode err = CommonManager.Instance.DB.ReloadEpgData();
                     if (CommonManager.CmdErrMsgTypical(err, "EPGデータの取得") == false) return false;
-                    serviceEventList = new Dictionary<UInt64, EpgServiceEventInfo>(CommonManager.Instance.DB.ServiceAllEventList);
+                    serviceDic = CommonManager.Instance.DB.ServiceEventList;
                 }
                 else
                 {
@@ -152,35 +155,32 @@ namespace EpgTimer.EpgView
                     if (CommonManager.CmdErrMsgTypical(err, "EPGデータの取得") == false) return false;
 
                     //サービス毎のリストに変換
-                    serviceEventList = new Dictionary<UInt64, EpgServiceEventInfo>();
-                    foreach (EpgEventInfo eventInfo in list)
-                    {
-                        UInt64 id = eventInfo.Create64Key();
-                        EpgServiceEventInfo serviceInfo;
-                        if (serviceEventList.TryGetValue(id, out serviceInfo) == false)
-                        {
-                            if (ChSet5.ChList.ContainsKey(id) == false)
-                            {
-                                //サービス情報ないので無効
-                                continue;
-                            }
-                            serviceInfo = new EpgServiceEventInfo();
-                            serviceInfo.serviceInfo = ChSet5.ChList[id].ToInfo();
-
-                            serviceEventList.Add(id, serviceInfo);
-                        }
-                        serviceInfo.eventList.Add(eventInfo);
-                    }
+                    serviceDic = list.GroupBy(info => info.Create64Key())
+                        .Where(gr => ChSet5.ChList.ContainsKey(gr.Key) == true)
+                        .ToDictionary(gr => gr.Key, gr => new EpgServiceAllEventInfo(ChSet5.ChList[gr.Key].ToInfo(), gr.ToList()));
                 }
 
-                if (Settings.Instance.EpgNoDisplayOld == true)
+                //並び順はViewServiceListによる。eventListはこの後すぐ作り直すのでとりあえずそのままもらう。
+                serviceEventList = setViewInfo.ViewServiceList.Distinct()
+                    .Where(id => serviceDic.ContainsKey(id) == true).Select(id => serviceDic[id])
+                    .Select(info => new EpgServiceEventInfo { serviceInfo = info.serviceInfo, eventList = info.eventMergeList }).ToList();
+
+                var keyTime = DateTime.Now.AddDays(-Settings.Instance.EpgNoDisplayOldDays);
+                foreach (EpgServiceEventInfo item in serviceEventList)
                 {
-                    foreach (var key in serviceEventList.Keys.ToList())//ここでは要ToList()
-                    {
-                        EpgServiceEventInfo info = serviceEventList[key];
-                        var list = info.eventList.OfAvailable(false, DateTime.Now.AddDays(-Settings.Instance.EpgNoDisplayOldDays)).ToList();
-                        serviceEventList[key] = new EpgServiceEventInfo { serviceInfo = info.serviceInfo, eventList = list };
-                    }
+                    item.eventList = item.eventList.FindAll(eventInfo =>
+                        //開始時間未定を除外
+                        (eventInfo.StartTimeFlag != 0)
+
+                        //自動登録されたりするので、サービス別番組表では表示させる
+                        //&& (eventInfo.IsGroupMainEvent == true)
+
+                        //過去番組表示抑制
+                        && (Settings.Instance.EpgNoDisplayOld == false || eventInfo.IsOver(keyTime) == false)
+
+                        //ジャンル絞り込み
+                        && (ViewUtil.ContainsContent(eventInfo, viewCustContentKindList, setViewInfo.ViewNotContentFlag) == true)
+                    );
                 }
 
                 return true;
@@ -194,12 +194,7 @@ namespace EpgTimer.EpgView
             if (this.IsVisible == false) return;
 
             ReloadInfo();
-            ReloadReserveInfo();//こちらを後に。ReloadInfo()が実行された場合は、こちらは素通りになる。
-
-            // Loaded イベントでは Reload*Data を省略したので
-            // この IsVisibleChanged で Reload*Data を見逃してはいけない
-            // (EpgWeekMainでの追加処理用)
-            OnLoadingSubProc();
+            ReloadReserveInfo();//ReloadInfo()が実行された場合は、こちらは素通りになる。
 
             //「番組表へジャンプ」の場合、またはオプションで指定のある場合に強調表示する。
             bool isMarking = BlackoutWindow.NowJumpTable || Settings.Instance.DisplayNotifyEpgChange;
@@ -211,13 +206,11 @@ namespace EpgTimer.EpgView
             {
                 MoveToProgramItem(BlackoutWindow.SelectedItem.EventInfo, isMarking);
             }
-
             BlackoutWindow.Clear();
 
             RefreshStatus();
         }
 
-        protected virtual void OnLoadingSubProc() { }
         protected virtual void MoveToReserveItem(ReserveData target, bool IsMarking) { }
         protected virtual void MoveToProgramItem(EpgEventInfo target, bool IsMarking) { }
     }

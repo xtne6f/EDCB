@@ -143,10 +143,8 @@ namespace EpgTimer
             {
                 return CreateTabItem();
             }
-            else
-            {
-                this.Views.ForEach(view => view.UpdateInfo(reload));
-            }
+
+            this.Views.ForEach(view => view.UpdateInfo(reload));
             return true;
         }
 

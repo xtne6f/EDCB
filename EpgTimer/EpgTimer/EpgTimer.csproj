@@ -175,7 +175,6 @@
       <DependentUpon>SetOtherAppView.xaml</DependentUpon>
     </Compile>
     <Compile Include="Common\TVTestCtrlClass.cs" />
-    <Compile Include="DefineClass\TunerNameViewItem.cs" />
     <Compile Include="SuspendCheckWindow.xaml.cs">
       <DependentUpon>SuspendCheckWindow.xaml</DependentUpon>
     </Compile>

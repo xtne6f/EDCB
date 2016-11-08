@@ -247,8 +247,8 @@ namespace EpgTimer
         //情報の更新をする。
         public override void UpdateCounts()
         {
-            SearchItemList = new List<SearchItem>();
-            SearchCount = (uint)SearchItemList.AddFromEventList(EpgEventList, false, true);
+            SearchItemList = EpgEventList.ToSearchList(true);
+            SearchCount = (uint)EpgEventList.Count(item => item.IsOver() == false);
             ReseveItemList = SearchItemList.GetReserveList();
             base.UpdateCounts();
         }

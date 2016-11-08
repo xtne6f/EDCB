@@ -95,7 +95,7 @@ namespace EpgTimer
 
         public EpgEventInfo SearchEventInfoLikeThat()
         {
-            return MenuUtil.SearchEventInfoLikeThat(this, CommonManager.Instance.DB.ServiceEventList);
+            return MenuUtil.SearchEventInfoLikeThat(this);
         }
 
         //AppendData 関係。ID(元データ)に対して一意の情報なので、データ自体はDB側。

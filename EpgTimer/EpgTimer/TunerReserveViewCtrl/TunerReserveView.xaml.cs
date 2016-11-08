@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text.RegularExpressions;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Media;
 
 namespace EpgTimer.TunerReserveViewCtrl
@@ -56,13 +54,13 @@ namespace EpgTimer.TunerReserveViewCtrl
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
 
-        protected override ViewPanelItemBase GetPopupItem(Point cursorPos, bool onClick)
+        protected override PanelItem GetPopupItem(Point cursorPos, bool onClick)
         {
             if (reserveViewPanel.Items == null) return null;
 
             return reserveViewPanel.Items.Find(pg => pg.IsPicked(cursorPos));
         }
-        protected override void SetPopup(ViewPanelItemBase item)
+        protected override void SetPopup(PanelItem item)
         {
             var viewInfo = (ReserveViewItem)item;
             var resItem = new ReserveItem(viewInfo.ReserveInfo);
@@ -149,11 +147,11 @@ namespace EpgTimer.TunerReserveViewCtrl
             infoText.LineHeight = sizeNormal + 2;
         }
 
-        protected override ViewPanelItemBase GetTooltipItem(Point cursorPos)
+        protected override PanelItem GetTooltipItem(Point cursorPos)
         {
             return GetPopupItem(cursorPos, false);
         }
-        protected override void SetTooltip(ViewPanelItemBase toolInfo)
+        protected override void SetTooltip(PanelItem toolInfo)
         {
             Tooltip.ToolTip = new ReserveItem((toolInfo as ReserveViewItem).ReserveInfo).ToolTipViewAlways;
         }

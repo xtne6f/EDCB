@@ -1,16 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 
 namespace EpgTimer.EpgView
@@ -30,12 +22,12 @@ namespace EpgTimer.EpgView
             stackPanel_day.Children.Clear();
         }
 
-        public void SetDay(System.Collections.SortedList dayList)
+        public void SetDay(List<DateTime> dayList)
         {
             try
             {
                 stackPanel_day.Children.Clear();
-                foreach (DateTime time in dayList.Values)
+                foreach (DateTime time in dayList)
                 {
                     TextBlock item = new TextBlock();
 
@@ -76,10 +68,7 @@ namespace EpgTimer.EpgView
                     stackPanel_day.Children.Add(item);
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
     }
 }

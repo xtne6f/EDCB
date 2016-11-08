@@ -7,17 +7,12 @@ using System.Windows.Media;
 
 namespace EpgTimer
 {
-    public class ViewPanelItemBase
+    public class PanelItem
     {
-        public ViewPanelItemBase() { TitleDrawErr = false; }
-
         public double Width { get; set; }
         public double Height { get; set; }
         public double LeftPos { get; set; }
         public double TopPos { get; set; }
-
-        public double HeightDef { get; set; }
-        public double TopPosDef { get; set; }
 
         public bool TitleDrawErr { get; set; }
 
@@ -28,29 +23,28 @@ namespace EpgTimer
         }
     }
 
-    public class ViewPanelItem<T> : ViewPanelItemBase
+    public class PanelItem<T> : PanelItem
     {
-        protected T _data = default(T);
-        public T Data { get { return _data; } set { _data = value; } }
-        public ViewPanelItem(T info) : base() { _data = info; }
+        public T Data { get; protected set; }
+        public PanelItem(T info) : base() { Data = info; }
     }
 
     public static class ViewPanelItemEx
     {
-        public static List<T> GetHitDataList<T>(this IEnumerable<ViewPanelItem<T>> list, Point cursorPos)
+        public static List<T> GetHitDataList<T>(this IEnumerable<PanelItem<T>> list, Point cursorPos)
         {
             return list.Where(info => info != null && info.IsPicked(cursorPos)).Select(info => info.Data).ToList();
         }
-        public static List<T> GetDataList<T>(this IEnumerable<ViewPanelItem<T>> list)
+        public static List<T> GetDataList<T>(this IEnumerable<PanelItem<T>> list)
         {
             return list.Where(info => info != null).Select(info => info.Data).ToList();
         }
     }
 
-    public class ProgramViewItem : ViewPanelItem<EpgEventInfo>
+    public class ProgramViewItem : PanelItem<EpgEventInfo>
     {
         public ProgramViewItem(EpgEventInfo info) : base(info) { }
-        public EpgEventInfo EventInfo { get { return _data; } set { _data = value; } }
+        public EpgEventInfo EventInfo { get { return Data; } protected set { Data = value; } }
 
         public Brush ContentColor
         {

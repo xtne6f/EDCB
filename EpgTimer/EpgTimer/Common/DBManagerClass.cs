@@ -7,6 +7,34 @@ using System.IO;
 
 namespace EpgTimer
 {
+    public class EpgServiceAllEventInfo //: EpgServiceEventInfo
+    {
+        public readonly EpgServiceInfo serviceInfo;
+        public readonly List<EpgEventInfo> eventList;
+        public readonly List<EpgEventInfo> eventArcList;
+        public readonly List<EpgEventInfo> eventMergeList;
+        public EpgServiceAllEventInfo(EpgServiceInfo serviceInfo, List<EpgEventInfo> eventList = null, List<EpgEventInfo> eventArcList = null)
+        {
+            this.serviceInfo = serviceInfo;
+            this.eventList = eventList ?? new List<EpgEventInfo>();
+            this.eventArcList = eventArcList ?? new List<EpgEventInfo>();
+
+            //基本情報のEPGデータだけ未更新だったりするときがあるようなので一応重複確認する
+            //重複排除は開始時刻のみチェックなので、幾つかに分割されている場合などは不十分になる
+            //過去番組はアーカイブを優先する
+            if (this.eventList.Count != 0 && this.eventArcList.Count != 0)
+            {
+                var timeSet = new HashSet<DateTime>(eventArcList.Select(data => data.PgStartTime));//無いはずだが時間未定(PgStartTime=DateTime.MinValue)は吸収
+                var addList = eventList.Where(data => timeSet.Contains(data.PgStartTime) == false);//時間未定(PgStartTime=DateTime.MaxValue)は通過する。
+                this.eventMergeList = eventArcList.Concat(addList).ToList();
+            }
+            else
+            {
+                this.eventMergeList = this.eventList.Count != 0 ? eventList : this.eventArcList;
+            }
+        }
+    }
+
     class DBManager
     {
         private CtrlCmdUtil cmd = null;
@@ -21,8 +49,7 @@ namespace EpgTimer
         private bool updateEpgAutoAddAppend = true;
         private bool updateEpgAutoAddAppendReserveInfo = true;
 
-        Dictionary<UInt64, EpgServiceEventInfo> serviceEventList = new Dictionary<UInt64, EpgServiceEventInfo>();
-        Dictionary<UInt64, EpgServiceEventInfo> serviceAllEventList = new Dictionary<UInt64, EpgServiceEventInfo>();
+        Dictionary<UInt64, EpgServiceAllEventInfo> serviceEventList = new Dictionary<UInt64, EpgServiceAllEventInfo>();
         Dictionary<UInt32, ReserveData> reserveList = new Dictionary<UInt32, ReserveData>();
         Dictionary<UInt32, ReserveDataAppend> reserveAppendList = null;
         Dictionary<UInt32, TunerReserveInfo> tunerReserveList = new Dictionary<UInt32, TunerReserveInfo>();
@@ -35,13 +62,9 @@ namespace EpgTimer
         Dictionary<UInt32, EpgAutoAddData> epgAutoAddList = new Dictionary<UInt32, EpgAutoAddData>();
         Dictionary<UInt32, EpgAutoAddDataAppend> epgAutoAddAppendList = null;
 
-        public Dictionary<UInt64, EpgServiceEventInfo> ServiceEventList
+        public Dictionary<UInt64, EpgServiceAllEventInfo> ServiceEventList
         {
             get { return serviceEventList; }
-        }
-        public Dictionary<UInt64, EpgServiceEventInfo> ServiceAllEventList
-        {
-            get { return serviceAllEventList; }
         }
         public Dictionary<UInt32, ReserveData> ReserveList
         {
@@ -324,8 +347,7 @@ namespace EpgTimer
 
         public void ClearAllDB()
         {
-            serviceEventList = new Dictionary<ulong, EpgServiceEventInfo>();
-            serviceAllEventList = new Dictionary<ulong, EpgServiceEventInfo>();
+            serviceEventList = new Dictionary<ulong, EpgServiceAllEventInfo>();
             reserveList = new Dictionary<uint, ReserveData>();
             tunerReserveList = new Dictionary<uint, TunerReserveInfo>();
             recFileInfo = new Dictionary<uint, RecFileInfo>();
@@ -408,40 +430,31 @@ namespace EpgTimer
                 {
                     if (cmd == null) return ErrCode.CMD_ERR;
 
-                    serviceEventList = new Dictionary<ulong, EpgServiceEventInfo>();
-                    serviceAllEventList = serviceEventList;
+                    serviceEventList = new Dictionary<ulong, EpgServiceAllEventInfo>();
 
                     var list = new List<EpgServiceEventInfo>();
-                    ret = cmd.SendEnumPgAll(ref list);
+                    ret = (ErrCode)cmd.SendEnumPgAll(ref list);
                     if (ret != ErrCode.CMD_SUCCESS) return ret;
 
-                    list.ForEach(info => serviceEventList.Add(info.serviceInfo.Create64Key(), info));
-
-                    //過去番組含んだリスト
-                    //一部検索などでも使用している
+                    var list2 = new List<EpgServiceEventInfo>();
                     if (Settings.Instance.EpgLoadArcInfo == true)
                     {
-                        var list2 = new List<EpgServiceEventInfo>();
-                        ret = cmd.SendEnumPgArcAll(ref list2);
-                        if (ret != ErrCode.CMD_SUCCESS) return ret;
-
-                        //基本情報のEPGデータだけ未更新だったりするときがあるようなので一応重複確認する
-                        //重複排除は開始時刻のみチェックなので、幾つかに分割されている場合などは不十分になる
-                        //過去番組はアーカイブを優先する(優先しないなら、Concatの前後を入れ替える)
-                        serviceAllEventList = new Dictionary<ulong, EpgServiceEventInfo>();
-                        foreach (var info in list2.Concat(list))
+                        cmd.SendEnumPgArcAll(ref list2);
+                    }
+                    foreach (EpgServiceEventInfo info in list)
+                    {
+                        UInt64 id = info.serviceInfo.Create64Key();
+                        //対応する過去番組情報があれば付加する
+                        int i = list2.FindIndex(info2 => id == info2.serviceInfo.Create64Key());
+                        serviceEventList.Add(id, new EpgServiceAllEventInfo(info.serviceInfo, info.eventList, i < 0 ? new List<EpgEventInfo>() : list2[i].eventList));
+                    }
+                    //過去番組情報が残っていればサービスリストに加える
+                    foreach (EpgServiceEventInfo info in list2)
+                    {
+                        UInt64 id = info.serviceInfo.Create64Key();
+                        if (serviceEventList.ContainsKey(id) == false)
                         {
-                            ulong key = info.serviceInfo.Create64Key();
-                            if (serviceAllEventList.ContainsKey(key) == false)
-                            {
-                                serviceAllEventList.Add(key, info.CopyTable());
-                            }
-                            else
-                            {
-                                var timeSet = new HashSet<DateTime>(serviceAllEventList[key].eventList.Select(data => data.PgStartTime));
-                                var addList = info.eventList.Where(data => data.StartTimeFlag == 0 || timeSet.Contains(data.PgStartTime) == false);
-                                serviceAllEventList[key].eventList.AddRange(addList);
-                            }
+                            serviceEventList.Add(id, new EpgServiceAllEventInfo(info.serviceInfo, new List<EpgEventInfo>(), info.eventList));
                         }
                     }
 

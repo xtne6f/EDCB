@@ -15,7 +15,7 @@
             <Button Content="" Padding="1"/>
             <Button Content="" Padding="1"/>
         </StackPanel>
-        <ComboBox Height="23" HorizontalAlignment="Left" Margin="40,0,0,0" Name="comboBox_service" VerticalAlignment="Center" Width="227" SelectionChanged="comboBox_service_SelectionChanged" />
+        <ComboBox Height="23" HorizontalAlignment="Left" Margin="40,0,0,0" Name="comboBox_service" VerticalAlignment="Center" Width="227" DisplayMemberPath="Value" SelectionChanged="comboBox_service_SelectionChanged" />
         <Button Content="標準モード" Height="23" HorizontalAlignment="Left" Margin="273,0,0,0" Name="button_go_Main" VerticalAlignment="Center" Width="66" />
         <Grid Grid.Row="1" Name="grid_PG">
             <Grid.ColumnDefinitions>

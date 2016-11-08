@@ -43,8 +43,8 @@ namespace EpgTimer
         public virtual UInt64 CurrentPgUID()
         {
             UInt64 key = Create64PgKey();
-            //return (UInt64)(PgStartTime.Ticks) & 0xFFFFFFFF00000000 //上位32bitはこれでも分解能的にはOKだが‥(分解能約7分)
-            return ((UInt64)(new TimeSpan(PgStartTime.Ticks).TotalDays)) << 32
+            //return ((UInt64)(new TimeSpan(PgStartTime.Ticks).TotalDays)) << 32
+            return (UInt64)(PgStartTime.Ticks) & 0xFFFFFF0000000000 //分解能約1日
                 | ((UInt32)CommonManager.Create16Key(key >> 16)) << 16 | (UInt16)key;
         }
         //CurrentPgUID()は同一のEventIDの番組をチェックするが、こちらは放映時刻をチェックする。
@@ -171,15 +171,6 @@ namespace EpgTimer
             dest.RecFolder = src.RecFolder;
             dest.RecNamePlugIn = src.RecNamePlugIn;
             dest.WritePlugIn = src.WritePlugIn;
-        }
-
-        public static List<EpgServiceEventInfo> CopyTable(this IEnumerable<EpgServiceEventInfo> src) { return CopyObj.Clone(src, CopyTableData); }
-        public static EpgServiceEventInfo CopyTable(this EpgServiceEventInfo src) { return CopyObj.Clone(src, CopyTableData); }
-        public static void CopyTableTo(this EpgServiceEventInfo src, EpgServiceEventInfo dest) { CopyObj.CopyTo(src, dest, CopyTableData); }
-        private static void CopyTableData(EpgServiceEventInfo src, EpgServiceEventInfo dest)
-        {
-            dest.serviceInfo = src.serviceInfo;
-            dest.eventList = src.eventList.ToList();
         }
 
         public static bool EqualsTo(this IList<RecFileSetInfo> src, IList<RecFileSetInfo> dest) { return CopyObj.EqualsTo(src, dest, EqualsValue); }

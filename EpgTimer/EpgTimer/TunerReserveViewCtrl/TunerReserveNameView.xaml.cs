@@ -1,16 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace EpgTimer.TunerReserveViewCtrl
 {
@@ -29,16 +20,16 @@ namespace EpgTimer.TunerReserveViewCtrl
             stackPanel_tuner.Children.Clear();
         }
 
-        public void SetTunerInfo(List<TunerNameViewItem> tunerInfo)
+        public void SetTunerInfo(List<PanelItem<TunerReserveInfo>> tunerInfo)
         {
             stackPanel_tuner.Children.Clear();
-            foreach (TunerNameViewItem info in tunerInfo)
+            foreach (var info in tunerInfo)
             {
                 TextBlock item = new TextBlock();
-                item.Text = info.TunerInfo.tunerName;
-                if (info.TunerInfo.tunerID != 0xFFFFFFFF)
+                item.Text = info.Data.tunerName;
+                if (info.Data.tunerID != 0xFFFFFFFF)
                 {
-                    item.Text += "\r\nID: " + info.TunerInfo.tunerID.ToString("X8");
+                    item.Text += "\r\nID: " + info.Data.tunerID.ToString("X8");
                 }
                 item.Width = info.Width - 4;
                 item.Margin = new Thickness(2, 2, 2, 2);
@@ -50,5 +41,4 @@ namespace EpgTimer.TunerReserveViewCtrl
             }
         }
     }
-
 }

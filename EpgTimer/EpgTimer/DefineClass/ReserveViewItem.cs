@@ -7,10 +7,10 @@ using System.Windows.Media;
 
 namespace EpgTimer
 {
-    public class ReserveViewItem : ViewPanelItem<ReserveData>
+    public class ReserveViewItem : PanelItem<ReserveData>
     {
         public ReserveViewItem(ReserveData info) : base(info) { }
-        public ReserveData ReserveInfo { get { return _data; } set { _data = value; } }
+        public ReserveData ReserveInfo { get { return Data; } protected set { Data = value; } }
 
         public Brush ForeColorPriTuner
         {

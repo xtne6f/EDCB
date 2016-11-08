@@ -59,7 +59,7 @@ namespace EpgTimer.EpgView
             base.PopupClear();
             popInfoRes = null;
         }
-        protected override ViewPanelItemBase GetPopupItem(Point cursorPos, bool onClick)
+        protected override PanelItem GetPopupItem(Point cursorPos, bool onClick)
         {
             ProgramViewItem popInfo = GetProgramViewData(cursorPos);
             ReserveViewItem lastPopInfoRes = popInfoRes;
@@ -77,7 +77,7 @@ namespace EpgTimer.EpgView
 
             return popInfo;
         }
-        protected override void SetPopup(ViewPanelItemBase item)
+        protected override void SetPopup(PanelItem item)
         {
             var viewInfo = (ProgramViewItem)item;
             EpgEventInfo epgInfo = viewInfo.EventInfo;
@@ -150,11 +150,11 @@ namespace EpgTimer.EpgView
             }
         }
 
-        protected override ViewPanelItemBase GetTooltipItem(Point cursorPos)
+        protected override PanelItem GetTooltipItem(Point cursorPos)
         {
             return GetProgramViewData(cursorPos);
         }
-        protected override void SetTooltip(ViewPanelItemBase toolInfo)
+        protected override void SetTooltip(PanelItem toolInfo)
         {
             var info = toolInfo as ProgramViewItem;
             if (info.TitleDrawErr == false && Settings.Instance.EpgToolTipNoViewOnly == true) return;
@@ -231,11 +231,9 @@ namespace EpgTimer.EpgView
 
         public void SetProgramList(List<ProgramViewItem> programList, double width, double height)
         {
-            var programGroupList = new List<Tuple<double, List<ProgramViewItem>>>();
-            programGroupList.Add(new Tuple<double, List<ProgramViewItem>>(width, programList));
-            SetProgramList(programGroupList, height);
+            SetProgramList(CommonUtil.ToList(new PanelItem<List<ProgramViewItem>>(programList) { Width = width }), height);
         }
-        public void SetProgramList(List<Tuple<double, List<ProgramViewItem>>> programGroupList, double height)
+        public void SetProgramList(List<PanelItem<List<ProgramViewItem>>> programGroupList, double height)
         {
             try
             {
@@ -254,14 +252,14 @@ namespace EpgTimer.EpgView
                     EpgViewPanel item = new EpgViewPanel();
                     item.Background = epgViewPanel.Background;
                     item.Height = Math.Ceiling(height);
-                    item.Width = programList.Item1;
+                    item.Width = programList.Width;
                     item.ItemFontNormal = itemFontNormal;
                     item.ItemFontTitle = itemFontTitle;
                     Canvas.SetLeft(item, totalWidth);
-                    item.Items = programList.Item2;
+                    item.Items = programList.Data;
                     item.InvalidateVisual();
                     canvas.Children.Add(item);
-                    totalWidth += programList.Item1;
+                    totalWidth += programList.Width;
                 }
                 canvas.Height = Math.Ceiling(height);
                 canvas.Width = totalWidth;
