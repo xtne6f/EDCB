@@ -42,14 +42,8 @@ namespace EpgTimer.TunerReserveViewCtrl
                 double totalWidth = 0;
                 for (int n = 0; n < line.Length; n++)
                 {
-                    ushort glyphIndex = itemFont.GlyphIndexCache[line[n]];
-                    if (glyphIndex == 0)
-                    {
-                        itemFont.GlyphType.CharacterToGlyphMap.TryGetValue(line[n], out glyphIndex);
-                        itemFont.GlyphIndexCache[line[n]] = glyphIndex;
-                        itemFont.GlyphWidthCache[glyphIndex] = (float)itemFont.GlyphType.AdvanceWidths[glyphIndex];
-                    }
-                    double width = itemFont.GlyphWidthCache[glyphIndex] * fontSize;
+                    ushort glyphIndex = itemFont.GlyphIndex(line[n]);
+                    double width = itemFont.GlyphWidth(glyphIndex) * fontSize;
                     if (totalWidth + width > maxWidth)
                     {
                         if (nowrap == true) break;//改行しない場合ここで終り
@@ -58,9 +52,9 @@ namespace EpgTimer.TunerReserveViewCtrl
                         if (totalHeight + fontSize > maxHeight)
                         {
                             //次の行無理
-                            glyphIndex = itemFont.GlyphType.CharacterToGlyphMap['…'];
+                            glyphIndex = itemFont.GlyphIndex('…');
                             glyphIndexes[glyphIndexes.Count - 1] = glyphIndex;
-                            advanceWidths[advanceWidths.Count - 1] = width;
+                            advanceWidths[advanceWidths.Count - 1] = itemFont.GlyphWidth(glyphIndex) * fontSize;
 
                             var origin = new Point(x + 2, y + totalHeight);
                             var glyphRun = new GlyphRun(itemFont.GlyphType, 0, false, fontSize,

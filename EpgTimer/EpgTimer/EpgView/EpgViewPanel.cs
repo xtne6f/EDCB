@@ -125,14 +125,8 @@ namespace EpgTimer.EpgView
                     //この辞書検索が負荷の大部分を占めているのでテーブルルックアップする
                     //ushort glyphIndex = itemFont.GlyphType.CharacterToGlyphMap[line[n]];
                     //double width = itemFont.GlyphType.AdvanceWidths[glyphIndex] * fontSize;
-                    ushort glyphIndex = itemFont.GlyphIndexCache[line[n]];
-                    if (glyphIndex == 0)
-                    {
-                        itemFont.GlyphType.CharacterToGlyphMap.TryGetValue(line[n], out glyphIndex);
-                        itemFont.GlyphIndexCache[line[n]] = glyphIndex;
-                        itemFont.GlyphWidthCache[glyphIndex] = (float)itemFont.GlyphType.AdvanceWidths[glyphIndex];
-                    }
-                    double width = itemFont.GlyphWidthCache[glyphIndex] * fontSize;
+                    ushort glyphIndex = itemFont.GlyphIndex(line[n]);
+                    double width = itemFont.GlyphWidth(glyphIndex) * fontSize;
                     if (totalWidth + width > maxWidth)
                     {
                         if (glyphIndexes.Count > 0)
