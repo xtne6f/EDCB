@@ -237,7 +237,7 @@ namespace EpgTimer
                 SetProgramViewItemVertical();
 
                 epgProgramView.SetProgramList(programGroupList, timeList.Count * 60 * Settings.Instance.MinHeight);
-                timeView.SetTime(timeList, viewCustNeedTimeOnly, false);
+                timeView.SetTime(timeList, false);
                 dateView.SetTime(timeList);
                 serviceView.SetService(primeServiceList);
 

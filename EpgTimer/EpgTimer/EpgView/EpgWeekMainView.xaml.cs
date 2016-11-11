@@ -139,7 +139,7 @@ namespace EpgTimer
                     dayList.Count * Settings.Instance.ServiceWidth,
                     timeList.Count * 60 * Settings.Instance.MinHeight);
 
-                timeView.SetTime(timeList, viewCustNeedTimeOnly, true);
+                timeView.SetTime(timeList, true);
                 weekDayView.SetDay(dayList);
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }

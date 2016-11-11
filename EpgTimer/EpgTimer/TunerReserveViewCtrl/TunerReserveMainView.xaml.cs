@@ -183,7 +183,7 @@ namespace EpgTimer
                 //必要時間リストの修正。最低表示行数の適用で下に溢れた分を追加する。
                 ViewUtil.AdjustTimeList(reserveList, timeList, Settings.Instance.TunerMinHeight);
 
-                tunerReserveTimeView.SetTime(timeList);
+                tunerReserveTimeView.SetTime(timeList, false, true);
                 tunerReserveNameView.SetTunerInfo(tunerList);
                 tunerReserveView.SetReserveList(reserveList,
                     leftPos,

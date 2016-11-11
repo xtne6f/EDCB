@@ -5,6 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d" 
              xmlns:local="clr-namespace:EpgTimer.UserCtrlView"
+             xmlns:epgview="clr-namespace:EpgTimer.EpgView"
              d:DesignHeight="300" d:DesignWidth="300" xmlns:my="clr-namespace:EpgTimer.TunerReserveViewCtrl" IsVisibleChanged="UserControl_IsVisibleChanged">
     <Grid>
         <Grid.ColumnDefinitions>
@@ -15,7 +16,7 @@
             <RowDefinition Height="auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <my:TunerReserveTimeView Grid.Row="1" Margin="0,0,0,18" x:Name="tunerReserveTimeView" MouseRightButtonUp="sub_erea_MouseRightButtonUp" />
+        <epgview:TimeView Grid.Row="1" Margin="0,0,0,18" x:Name="tunerReserveTimeView" Background="LightSlateGray" MouseRightButtonUp="sub_erea_MouseRightButtonUp" />
         <my:TunerReserveNameView Grid.Column="1" Margin="0,0,18,0" x:Name="tunerReserveNameView" MouseRightButtonUp="sub_erea_MouseRightButtonUp" />
         <my:TunerReserveView Grid.Column="1" Grid.Row="1" x:Name="tunerReserveView" />
     </Grid>

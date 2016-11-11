@@ -186,9 +186,6 @@
       <DependentUpon>TunerReserveNameView.xaml</DependentUpon>
     </Compile>
     <Compile Include="TunerReserveViewCtrl\TunerReservePanel.cs" />
-    <Compile Include="TunerReserveViewCtrl\TunerReserveTimeView.xaml.cs">
-      <DependentUpon>TunerReserveTimeView.xaml</DependentUpon>
-    </Compile>
     <Compile Include="TunerReserveViewCtrl\TunerReserveView.xaml.cs">
       <DependentUpon>TunerReserveView.xaml</DependentUpon>
     </Compile>
@@ -343,10 +340,6 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="TunerReserveViewCtrl\TunerReserveNameView.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Include="TunerReserveViewCtrl\TunerReserveTimeView.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
