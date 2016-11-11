@@ -58,7 +58,7 @@ namespace EpgTimer
             g = Math.Min(g, 255);
             b = Math.Min(b, 255);
 
-            var color2 = Color.FromRgb((byte)r, (byte)g, (byte)b);
+            var color2 = Color.FromArgb(color.A, (byte)r, (byte)g, (byte)b);
             
             var brush = new LinearGradientBrush();
             brush.StartPoint = new Point(0, 0.5);
