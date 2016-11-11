@@ -10,16 +10,86 @@ using System.Windows.Threading;
 
 namespace EpgTimer.UserCtrlView
 {
-    public class PanelBase : FrameworkElement //とりあえず。TunerReservePanelとEpgViewPanel結構実装違う
+    public class PanelBase : Panel
     {
-        public static readonly DependencyProperty BackgroundProperty =
-            Panel.BackgroundProperty.AddOwner(typeof(PanelBase));
-
-        public Brush Background
+        public PanelBase()
         {
-            set { SetValue(BackgroundProperty, value); }
-            get { return (Brush)GetValue(BackgroundProperty); }
+            this.VisualTextRenderingMode = TextRenderingMode.ClearType;
+            this.VisualTextHintingMode = TextHintingMode.Fixed;
+            this.UseLayoutRounding = true;
         }
+
+        protected virtual bool RenderText(List<TextDrawItem> textDrawList, String text, ItemFont itemFont, double fontSize, double maxWidth, double maxHeight, double x, double y, ref double useHeight, Brush fontColor, bool nowrap = false)
+        {
+            //にじみ対策関連
+            double mx = ViewUtil.MainWindow.DeviceMatrix.M11;
+            double my = ViewUtil.MainWindow.DeviceMatrix.M22;
+
+            x = Math.Ceiling((x + 2) * mx) / mx;
+            y -= 2;
+            useHeight = 0;
+            double lineHeight = 2 + fontSize;
+
+            string[] lines = text.Replace("\r", "").Split('\n');
+            foreach (string line in lines)
+            {
+                useHeight += lineHeight;
+                var glyphIndexes = new List<ushort>();
+                var advanceWidths = new List<double>();
+                double totalWidth = 0;
+
+                foreach (char c in line)
+                {
+                    //この辞書検索が負荷の大部分を占めているのでテーブルルックアップする
+                    //ushort glyphIndex = itemFont.GlyphType.CharacterToGlyphMap[c];
+                    //double width = itemFont.GlyphType.AdvanceWidths[glyphIndex] * fontSize;
+                    ushort glyphIndex = itemFont.GlyphIndex(c);
+                    double width = itemFont.GlyphWidth(glyphIndex) * fontSize;
+
+                    if (totalWidth + width > maxWidth)
+                    {
+                        if (glyphIndexes.Count > 0)
+                        {
+                            var origin = new Point(x, Math.Ceiling((y + useHeight) * my) / my);
+                            var glyphRun = new GlyphRun(itemFont.GlyphType, 0, false, fontSize,
+                                glyphIndexes, origin, advanceWidths, null, null, null, null, null, null);
+                            textDrawList.Add(new TextDrawItem { FontColor = fontColor, Text = glyphRun });
+                        }
+                        if (nowrap == true) return true;//改行しない場合は終り
+                        if (useHeight > maxHeight) return false;//次の行無理
+
+                        //次の行へ
+                        useHeight += lineHeight;
+                        glyphIndexes = new List<ushort>();
+                        advanceWidths = new List<double>();
+                        totalWidth = 0;
+                    }
+
+                    glyphIndexes.Add(glyphIndex);
+                    advanceWidths.Add(width);
+                    totalWidth += width;
+                }
+                if (glyphIndexes.Count > 0)
+                {
+                    var origin = new Point(x, Math.Ceiling((y + useHeight) * my) / my);
+                    var glyphRun = new GlyphRun(itemFont.GlyphType, 0, false, fontSize,
+                        glyphIndexes, origin, advanceWidths, null, null, null, null, null, null);
+                    textDrawList.Add(new TextDrawItem { FontColor = fontColor, Text = glyphRun });
+                }
+            }
+            return true;
+        }
+        protected void DrawTextDrawList(DrawingContext dc, List<TextDrawItem> textDrawList, Rect clipArea)
+        {
+            dc.PushClip(new RectangleGeometry(clipArea));
+            textDrawList.ForEach(info => dc.DrawGlyphRun(info.FontColor, info.Text));
+            dc.Pop();
+        }
+    }
+    public class TextDrawItem
+    {
+        public Brush FontColor;
+        public GlyphRun Text;
     }
     
     public class PanelViewBase : UserControl
@@ -150,14 +220,14 @@ namespace EpgTimer.UserCtrlView
             // 右にはみ出した分だけ左にずらす
             double left = popInfo.LeftPos - Math.Max(0, offsetH);
             // 左にはみ出てる場合はscrollエリアの左端から表示する
-            Canvas.SetLeft(Popup, Math.Floor(Math.Max(left, scroll.ContentHorizontalOffset)));
+            Canvas.SetLeft(Popup, Math.Max(left, scroll.ContentHorizontalOffset));
 
             // offsetVが正のとき下にはみ出している
             double offsetV = popInfo.TopPos + Popup.ActualHeight - (scroll.ContentVerticalOffset + scroll.ViewportHeight);
             // 下にはみ出した分だけ上にずらす
             double top = popInfo.TopPos - Math.Max(0, offsetV);
             // 上にはみ出てる場合はscrollエリアの上端から表示する
-            Canvas.SetTop(Popup, Math.Floor(Math.Max(top, scroll.ContentVerticalOffset - 1)));
+            Canvas.SetTop(Popup, Math.Max(top, scroll.ContentVerticalOffset - 1));
         }
         // PopUp の ActualWidth と ActualHeight を取得するために SizeChanged イベントを捕捉する
         protected virtual void popupItem_SizeChanged(object sender, SizeChangedEventArgs e)

@@ -6,154 +6,54 @@ using System.Windows.Media;
 
 namespace EpgTimer.TunerReserveViewCtrl
 {
-    class TunerReservePanel : EpgTimer.UserCtrlView.PanelBase
+    using EpgTimer.UserCtrlView;
+
+    class TunerReservePanel : PanelBase
     {
         public List<ReserveViewItem> Items { get; set; }
 
-        public TunerReservePanel()
+        protected List<List<TextDrawItem>> CreateDrawTextList()
         {
-            this.VisualTextRenderingMode = TextRenderingMode.ClearType;
-            this.VisualTextHintingMode = TextHintingMode.Fixed;
-            this.UseLayoutRounding = true;
-        }
+            if (Items == null) return null;
 
-        protected bool RenderText(String text, DrawingContext dc, ItemFont itemFont, Brush brush, double fontSize, double maxWidth, double maxHeight, double x, double y, ref double useHeight, bool nowrap = false)
-        {
-            if (maxHeight < fontSize + 2)
-            {
-                useHeight = 0;
-                return false;
-            }
-            double totalHeight = 0;
-
-            string[] lineText = text.Replace("\r", "").Split('\n');
-            foreach (string line in lineText)
-            {
-                //高さ確認
-                if (totalHeight + fontSize > maxHeight)
-                {
-                    //これ以上は無理
-                    useHeight = totalHeight;
-                    return false;
-                }
-                totalHeight += Math.Floor(2 + fontSize);
-                var glyphIndexes = new List<ushort>();
-                var advanceWidths = new List<double>();
-                double totalWidth = 0;
-                for (int n = 0; n < line.Length; n++)
-                {
-                    ushort glyphIndex = itemFont.GlyphIndex(line[n]);
-                    double width = itemFont.GlyphWidth(glyphIndex) * fontSize;
-                    if (totalWidth + width > maxWidth)
-                    {
-                        if (nowrap == true) break;//改行しない場合ここで終り
-                        if (totalWidth == 0) return false;//一文字も置けなかった(glyphIndexesなどのCount=0のまま)
-
-                        if (totalHeight + fontSize > maxHeight)
-                        {
-                            //次の行無理
-                            glyphIndex = itemFont.GlyphIndex('…');
-                            glyphIndexes[glyphIndexes.Count - 1] = glyphIndex;
-                            advanceWidths[advanceWidths.Count - 1] = itemFont.GlyphWidth(glyphIndex) * fontSize;
-
-                            var origin = new Point(x + 2, y + totalHeight);
-                            var glyphRun = new GlyphRun(itemFont.GlyphType, 0, false, fontSize,
-                                glyphIndexes, origin, advanceWidths, null, null, null, null,
-                                null, null);
-
-                            dc.DrawGlyphRun(brush, glyphRun);
-
-                            useHeight = totalHeight;
-                            return false;
-                        }
-                        else
-                        {
-                            //次の行いけるので今までの分出力
-                            var origin = new Point(x + 2, y + totalHeight);
-                            var glyphRun = new GlyphRun(itemFont.GlyphType, 0, false, fontSize,
-                                glyphIndexes, origin, advanceWidths, null, null, null, null,
-                                null, null);
-
-                            dc.DrawGlyphRun(brush, glyphRun);
-                            totalHeight += fontSize + 2;
-                            glyphIndexes = new List<ushort>();
-                            advanceWidths = new List<double>();
-                            totalWidth = 0;
-                        }
-                    }
-                    glyphIndexes.Add(glyphIndex);
-                    advanceWidths.Add(width);
-                    totalWidth += width;
-                }
-                if (glyphIndexes.Count > 0)
-                {
-                    var origin = new Point(x + 2, y + totalHeight);
-                    var glyphRun = new GlyphRun(itemFont.GlyphType, 0, false, fontSize,
-                        glyphIndexes, origin, advanceWidths, null, null, null, null,
-                        null, null);
-
-                    dc.DrawGlyphRun(brush, glyphRun);
-                }
-            }
-            useHeight = Math.Floor(totalHeight);
-            return true;
-        }
-        protected override void OnRender(DrawingContext dc)
-        {
-            //背景だけは先に描画
-            dc.DrawRectangle(Background, null, new Rect(RenderSize));
-
-            if (Items == null) return;
-
-            var ItemFontNormal = ItemFontCache.ItemFont(Settings.Instance.TunerFontName, false);
-            var ItemFontTitle = ItemFontCache.ItemFont(Settings.Instance.TunerFontNameService, Settings.Instance.TunerFontBoldService);
-            if (ItemFontNormal.GlyphType == null || ItemFontTitle.GlyphType == null)
-            {
-                return;
-            }
+            var textDrawLists = new List<List<TextDrawItem>>(Items.Count);
 
             try
             {
-                // ビットマップフォントがかすれる問題 とりあえず整数にしておく
+                var ItemFontNormal = ItemFontCache.ItemFont(Settings.Instance.TunerFontName, false);
+                var ItemFontTitle = ItemFontCache.ItemFont(Settings.Instance.TunerFontNameService, Settings.Instance.TunerFontBoldService);
+                if (ItemFontNormal.GlyphType == null || ItemFontTitle.GlyphType == null)
+                {
+                    return null;
+                }
+
                 double sizeMin = Settings.Instance.TunerFontSize;
                 double sizeTitle = Settings.Instance.TunerFontSizeService;
                 double sizeNormal = Settings.Instance.TunerFontSize;
-                double indentTitle = Math.Floor(sizeMin * 1.7);
-                double indentNormal = Math.Floor(Settings.Instance.TunerTitleIndent ? indentTitle : 2);
-                Brush colorTitle = CommonManager.Instance.CustTunerServiceColor;
+                double indentTitle = Math.Floor(sizeMin * 1.7);//にじみ対策ではなくポップアップとの位置合わせ
+                double indentNormal = Settings.Instance.TunerTitleIndent ? indentTitle : 2;
+                Brush colorTitleBase = CommonManager.Instance.CustTunerServiceColor;
                 Brush colorNormal = CommonManager.Instance.CustTunerTextColor;
 
                 //録画中のものを後で描画する
-                List<ReserveViewItem> postdrawList = Items.Where(info => info.ReserveInfo.IsOnRec()).ToList();
-                postdrawList.ForEach(info => Items.Remove(info));
-                Items.AddRange(postdrawList);
+                Items = Items.Where(info => info.ReserveInfo.IsOnRec() == false)
+                    .Concat(Items.Where(info => info.ReserveInfo.IsOnRec() == true)).ToList();
 
                 foreach (ReserveViewItem info in Items)
                 {
-                    colorTitle = Settings.Instance.TunerColorModeUse == true ? info.ForeColorPriTuner : colorTitle;
+                    var textDrawList = new List<TextDrawItem>();
+                    textDrawLists.Add(textDrawList);
 
-                    double dInfoTopPos = Math.Floor(info.TopPos);
-                    double dInfoHeight = Math.Floor(info.Height);
-
-                    dc.DrawRectangle(info.BorderBrushTuner, null, new Rect(info.LeftPos, dInfoTopPos, info.Width + 1, Math.Max(dInfoHeight + 1, 0)));
-                    if (dInfoHeight > 2)
+                    if (info.Height > 2)
                     {
-                        dc.DrawRectangle(info.BackColorTuner, null, new Rect(info.LeftPos + 1, dInfoTopPos + 1, info.Width - 1, dInfoHeight - 1));
-                        if (dInfoHeight < 4 + sizeTitle + 2)
-                        {
-                            //高さ足りない
-                            info.TitleDrawErr = true;
-                            continue;
-                        }
-
                         double totalHeight = 0;
                         double useHeight = 0;
+                        var colorTitle = Settings.Instance.TunerColorModeUse == true ? info.ForeColorPriTuner : colorTitleBase;
 
                         //分
                         string min = info.ReserveInfo.StartTime.Minute.ToString("d02");
-                        if (RenderText(min, dc, ItemFontNormal, colorTitle, sizeMin, info.Width - 4, dInfoHeight - 4, info.LeftPos, dInfoTopPos - 2, ref useHeight) == false)
+                        if (RenderText(textDrawList, min, ItemFontNormal, sizeMin, info.Width - 4, info.Height - 4, info.LeftPos, info.TopPos, ref useHeight, colorTitle) == false)
                         {
-                            info.TitleDrawErr = true;
                             continue;
                         }
 
@@ -162,24 +62,50 @@ namespace EpgTimer.TunerReserveViewCtrl
                         {
                             string serviceName = info.ReserveInfo.StationName
                                 + "(" + CommonManager.ConvertNetworkNameText(info.ReserveInfo.OriginalNetworkID) + ")";
-                            if (RenderText(serviceName, dc, ItemFontTitle, colorTitle, sizeTitle, info.Width - 6 - indentTitle, dInfoHeight - 6 - totalHeight, info.LeftPos + indentTitle, dInfoTopPos - 2 + totalHeight, ref useHeight, Settings.Instance.TunerServiceNoWrap) == false)
+                            if (RenderText(textDrawList, serviceName, ItemFontTitle, sizeTitle, info.Width - 6 - indentTitle, info.Height - 6 - totalHeight, info.LeftPos + indentTitle, info.TopPos + totalHeight, ref useHeight, colorTitle, Settings.Instance.TunerServiceNoWrap) == false)
                             {
-                                info.TitleDrawErr = true;
                                 continue;
                             }
-                            totalHeight += Math.Floor(useHeight + sizeTitle / 3);
+                            totalHeight += useHeight + sizeTitle / 3;
                         }
 
                         //番組名
                         if (info.ReserveInfo.Title.Length > 0)
                         {
-                            if (RenderText(info.ReserveInfo.Title, dc, ItemFontNormal, colorNormal, sizeNormal, info.Width - 6 - indentNormal, dInfoHeight - 6 - totalHeight, info.LeftPos + indentNormal, dInfoTopPos - 2 + totalHeight, ref useHeight) == false)
+                            if (RenderText(textDrawList, info.ReserveInfo.Title, ItemFontNormal, sizeNormal, info.Width - 6 - indentNormal, info.Height - 6 - totalHeight, info.LeftPos + indentNormal, info.TopPos + totalHeight, ref useHeight, colorNormal) == false)
                             {
-                                info.TitleDrawErr = true;
                                 continue;
                             }
-                            totalHeight += useHeight + sizeNormal;
                         }
+                    }
+                }
+            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
+
+            return textDrawLists;
+        }
+
+        protected override void OnRender(DrawingContext dc)
+        {
+            try
+            {
+                dc.DrawRectangle(Background, null, new Rect(RenderSize));
+
+                List<List<TextDrawItem>> textDrawLists = CreateDrawTextList();
+                if (Items == null || textDrawLists == null || Items.Count < textDrawLists.Count)
+                {
+                    return;
+                }
+
+                for (int i = 0; i < textDrawLists.Count; i++)
+                {
+                    ReserveViewItem info = Items[i];
+                    dc.DrawRectangle(info.BorderBrushTuner, null, new Rect(info.LeftPos, info.TopPos, info.Width + 1, Math.Max(info.Height + 1, 0)));
+                    if (info.Height > 1)
+                    {
+                        var textArea = new Rect(info.LeftPos + 1, info.TopPos + 1, info.Width - 1, info.Height - 1);
+                        dc.DrawRectangle(info.BackColorTuner, null, textArea);
+                        DrawTextDrawList(dc, textDrawLists[i], textArea);
                     }
                 }
             }

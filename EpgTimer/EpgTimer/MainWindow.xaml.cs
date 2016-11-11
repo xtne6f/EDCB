@@ -4,6 +4,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Effects;
 using System.Windows.Threading;
@@ -35,6 +36,9 @@ namespace EpgTimer
         private DispatcherTimer chkTimer = null;
 
         private bool idleShowBalloon = false;
+
+        //にじみ対策用(拡大表示時には十分ではないが無いよりは良い)
+        public Matrix DeviceMatrix;
 
         public MainWindow()
         {
@@ -670,6 +674,7 @@ namespace EpgTimer
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
+            this.DeviceMatrix = PresentationSource.FromVisual(Application.Current.MainWindow).CompositionTarget.TransformToDevice;
             if (CommonManager.Instance.NWMode == true && CommonManager.Instance.NW.IsConnected == false)
             {
                 if (Settings.Instance.WakeReconnectNW == false && this.minimizedStarting == false)

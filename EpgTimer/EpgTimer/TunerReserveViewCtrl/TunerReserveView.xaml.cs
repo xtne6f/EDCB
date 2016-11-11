@@ -65,8 +65,8 @@ namespace EpgTimer.TunerReserveViewCtrl
 
             double sizeTitle = Settings.Instance.TunerFontSizeService;
             double sizeNormal = Settings.Instance.TunerFontSize;
-            double indentTitle = Math.Floor(Settings.Instance.TunerPopupRecinfo == false ? sizeNormal * 1.7 : 2);
-            double indentNormal = Math.Floor(Settings.Instance.TunerTitleIndent == true ? indentTitle : 2);
+            double indentTitle = Math.Floor(Settings.Instance.TunerPopupRecinfo == false ? sizeNormal * 1.7 : 2);//にじみ対策ではなくポップアップとの位置合わせ
+            double indentNormal = Settings.Instance.TunerTitleIndent == true ? indentTitle : 2;
             var fontTitle = new FontFamily(Settings.Instance.TunerFontNameService);
             var fontNormal = new FontFamily(Settings.Instance.TunerFontName);
             FontWeight weightTitle = Settings.Instance.TunerFontBoldService == true ? FontWeights.Bold : FontWeights.Normal;
@@ -104,7 +104,7 @@ namespace EpgTimer.TunerReserveViewCtrl
                 recInfoText.FontSize = sizeNormal;
                 //recInfoText.FontWeight = FontWeights.Normal;
                 recInfoText.Foreground = colorTitle;
-                recInfoText.Margin = new Thickness(0, 0, 0, Math.Floor(sizeTitle / 3));
+                recInfoText.Margin = new Thickness(0, 0, 0, sizeTitle / 3);
                 recInfoText.LineHeight = sizeNormal + 2;
             }
             else

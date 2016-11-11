@@ -87,8 +87,8 @@ namespace EpgTimer.EpgView
             double sizeMin = Settings.Instance.FontSizeTitle - 1;
             double sizeTitle = Settings.Instance.FontSizeTitle;
             double sizeNormal = Settings.Instance.FontSize;
-            double indentTitle = Math.Floor(sizeMin * 1.7 + 1);
-            double indentNormal = Math.Floor(Settings.Instance.EpgTitleIndent ? indentTitle : 3);
+            double indentTitle = Math.Floor(sizeMin * 1.7 + 1);//にじみ対策ではなくポップアップとの位置合わせ
+            double indentNormal = Settings.Instance.EpgTitleIndent ? indentTitle : 3;
             var fontNormal = new FontFamily(Settings.Instance.FontName);
             var fontTitle = new FontFamily(Settings.Instance.FontNameTitle);
             FontWeight titleWeight = Settings.Instance.FontBoldTitle == true ? FontWeights.Bold : FontWeights.Normal;
@@ -109,7 +109,7 @@ namespace EpgTimer.EpgView
                 titleText.FontSize = sizeTitle;
                 titleText.FontWeight = titleWeight;
                 titleText.Foreground = CommonManager.Instance.CustTitle1Color;
-                titleText.Margin = new Thickness(indentTitle, 0, 0, Math.Floor(sizeTitle / 3));
+                titleText.Margin = new Thickness(indentTitle, 0, 0, sizeTitle / 3);
                 titleText.LineHeight = sizeTitle + 2;
 
                 string iTxt = epgInfo.ShortInfo.text_char;
@@ -122,7 +122,7 @@ namespace EpgTimer.EpgView
                 infoText.FontSize = sizeNormal;
                 //infoText.FontWeight = FontWeights.Normal;
                 infoText.Foreground = CommonManager.Instance.CustTitle2Color;
-                infoText.Margin = new Thickness(indentNormal, 0, 0, Math.Floor(sizeNormal / 3));
+                infoText.Margin = new Thickness(indentNormal, 0, 0, sizeNormal / 3);
                 infoText.LineHeight = sizeNormal + 2;
             }
             else
