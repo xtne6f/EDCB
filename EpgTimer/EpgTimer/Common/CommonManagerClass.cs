@@ -1197,6 +1197,20 @@ namespace EpgTimer
                 return epgTipsForeColor;
             }
         }
+        private SolidColorBrush epgBackColor = null;
+        public SolidColorBrush EpgBackColor
+        {
+            get
+            {
+                if (epgBackColor == null)
+                {
+                    Color item = Color.FromArgb(0xFF, Settings.Instance.EpgBackColorR, Settings.Instance.EpgBackColorG, Settings.Instance.EpgBackColorB);
+                    epgBackColor = new SolidColorBrush(item);
+                    epgBackColor.Freeze();
+                }
+                return epgBackColor;
+            }
+        }
 
         public void AddNotifySave(NotifySrvInfo notifyInfo)
         {

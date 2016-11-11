@@ -439,6 +439,7 @@ namespace EpgTimer.EpgView
                 {
                     itemFontTitle = new EpgViewPanel.ItemFont("MS UI Gothic", Settings.Instance.FontBoldTitle);
                 }
+                epgViewPanel.Background = CommonManager.Instance.EpgBackColor;
                 double totalWidth = 0;
                 foreach (var programList in programGroupList)
                 {

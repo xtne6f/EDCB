@@ -262,6 +262,9 @@ namespace EpgTimer
         public byte EpgTipsForeColorR { get; set; }
         public byte EpgTipsForeColorG { get; set; }
         public byte EpgTipsForeColorB { get; set; }
+        public byte EpgBackColorR { get; set; }
+        public byte EpgBackColorG { get; set; }
+        public byte EpgBackColorB { get; set; }
         public bool EpgInfoSingleClick { get; set; }
         public byte EpgInfoOpenMode { get; set; }
         public UInt32 ExecBat { get; set; }
@@ -396,6 +399,9 @@ namespace EpgTimer
             EpgTipsForeColorR = 0;
             EpgTipsForeColorG = 0;
             EpgTipsForeColorB = 0;
+            EpgBackColorR = 0xA9;
+            EpgBackColorG = 0xA9;
+            EpgBackColorB = 0xA9;
             EpgInfoSingleClick = false;
             EpgInfoOpenMode = 0;
             ExecBat = 0;

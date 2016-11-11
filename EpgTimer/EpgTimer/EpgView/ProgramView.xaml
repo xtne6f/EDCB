@@ -29,7 +29,7 @@
                 <local:EpgViewPanel x:Name="epgViewPanel" Background="DarkGray" HorizontalAlignment="Left" VerticalAlignment="Top" />
                 <Canvas Canvas.ZIndex="20" x:Name="popupItem" IsHitTestVisible="False" Visibility="Hidden">
                     <Grid x:Name="popupItemContainer">
-                        <Border BorderBrush="DarkGray" BorderThickness="0,0.5,1,0.5">
+                        <Border BorderBrush="{Binding ElementName=epgViewPanel, Path=Background}" BorderThickness="0,0.5,1,0.5">
                             <Border.Background>
                                 <Binding ElementName="popupItemContainer" Path="Background"/>
                             </Border.Background>
