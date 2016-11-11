@@ -65,7 +65,7 @@ namespace EpgTimer
                         return Brushes.Black;
                     }
                 }
-                return Brushes.DarkGray;
+                return Brushes.LightGray;
             }
         }
         public Brush BorderBrush
