@@ -244,6 +244,7 @@ namespace EpgTimer.EpgView
                         canvas.Children.RemoveAt(i--);
                     }
                 }
+                epgViewPanel.Background = CommonManager.Instance.EpgBackColor;
                 double totalWidth = 0;
                 foreach (var programList in programGroupList)
                 {

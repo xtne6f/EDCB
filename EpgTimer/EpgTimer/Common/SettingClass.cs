@@ -770,7 +770,7 @@ namespace EpgTimer
                 _FillList(Instance.TunerServiceCustColors, 0xFFFFFFFF, num);
 
                 //番組表の時間軸のデフォルトの背景色、その他色
-                num = 5;
+                num = 6;
                 if (Instance.EpgEtcColors.Count < num)
                 {
                     defColors = new List<string>{
@@ -779,6 +779,7 @@ namespace EpgTimer
                         ,"LightSalmon"      //12-17時
                         ,"CornflowerBlue"   //18-23時
                         ,"LightSlateGray"   //サービス色
+                        ,"DarkGray"         //番組表背景色
                     };
                     _FillList(Instance.EpgEtcColors, defColors);
                 }

@@ -44,6 +44,7 @@ namespace EpgTimer
         public List<Brush> CustTunerServiceColorPri { get; private set; }
         public List<Brush> CustTimeColorList { get; private set; }
         public Brush CustServiceColor { get; private set; }
+        public Brush EpgBackColor { get; private set; }
         public Brush ResDefBackColor { get; private set; }
         public Brush ResErrBackColor { get; private set; }
         public Brush ResWarBackColor { get; private set; }
@@ -1404,6 +1405,7 @@ namespace EpgTimer
                 }
 
                 CustServiceColor = _GetColorBrush(Settings.Instance.EpgEtcColors[4], Settings.Instance.EpgEtcCustColors[4], Settings.Instance.EpgGradationHeader, 1.0, 2.0);
+                EpgBackColor = _GetColorBrush(Settings.Instance.EpgEtcColors[5], Settings.Instance.EpgEtcCustColors[5]);
 
                 RecEndDefBackColor = _GetColorBrush(Settings.Instance.RecEndColors[0], Settings.Instance.RecEndCustColors[0]);
                 RecEndErrBackColor = _GetColorBrush(Settings.Instance.RecEndColors[1], Settings.Instance.RecEndCustColors[1]);
