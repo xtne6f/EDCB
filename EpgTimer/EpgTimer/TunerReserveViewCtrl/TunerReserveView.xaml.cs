@@ -19,7 +19,8 @@ namespace EpgTimer.TunerReserveViewCtrl
         protected override bool PopOnOver { get { return Settings.Instance.TunerPopupMode == 0; } }
         protected override bool PopOnClick { get { return Settings.Instance.TunerPopupMode == 1; } }
         protected override FrameworkElement Popup { get { return popupItem; } }
-        protected override double PopWidth { get { return Settings.Instance.TunerWidth * Settings.Instance.TunerPopupWidth; } }
+        protected override double PopWidth { get { return (Settings.Instance.TunerWidth + 1) * Settings.Instance.TunerPopupWidth; } }
+        protected override double PopHeightOffset { get { return 1; } }
 
         protected override bool IsTooltipEnabled { get { return Settings.Instance.TunerToolTip == true; } }
         protected override int TooltipViweWait { get { return Settings.Instance.TunerToolTipViewWait; } }
@@ -65,7 +66,7 @@ namespace EpgTimer.TunerReserveViewCtrl
 
             double sizeTitle = Settings.Instance.TunerFontSizeService;
             double sizeNormal = Settings.Instance.TunerFontSize;
-            double indentTitle = Math.Floor(Settings.Instance.TunerPopupRecinfo == false ? sizeNormal * 1.7 : 2);//にじみ対策ではなくポップアップとの位置合わせ
+            double indentTitle = Settings.Instance.TunerPopupRecinfo == false ? sizeNormal * 1.7 : 2;
             double indentNormal = Settings.Instance.TunerTitleIndent == true ? indentTitle : 2;
             var fontTitle = new FontFamily(Settings.Instance.TunerFontNameService);
             var fontNormal = new FontFamily(Settings.Instance.TunerFontName);
@@ -138,7 +139,7 @@ namespace EpgTimer.TunerReserveViewCtrl
             infoText.FontSize = sizeNormal;
             //infoText.FontWeight = FontWeights.Normal;
             infoText.Foreground = colorNormal;
-            infoText.Margin = new Thickness(indentNormal, 0, 0, Math.Floor(sizeNormal / 3));
+            infoText.Margin = new Thickness(indentNormal, 0, 0, 0);
             infoText.LineHeight = sizeNormal + 2;
         }
 

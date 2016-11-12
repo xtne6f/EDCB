@@ -26,7 +26,7 @@ namespace EpgTimer.EpgView
             stackPanel_service.Children.Clear();
             foreach (EpgServiceInfo info in serviceList)
             {
-                TextBlock item = new TextBlock();
+                var item = new TextBlock();
                 item.Text = info.service_name;
                 if (info.remote_control_key_id != 0)
                 {
@@ -36,9 +36,9 @@ namespace EpgTimer.EpgView
                 {
                     item.Text += "\r\n" + info.network_name + " " + info.SID.ToString();
                 }
-                item.Width = Settings.Instance.ServiceWidth - 2;
+                item.Width = Settings.Instance.ServiceWidth - 1;
                 item.Padding = new Thickness(0, 0, 0, 2);
-                item.Margin = new Thickness(1, 1, 1, 1);
+                item.Margin = new Thickness(0, 1, 1, 1);
                 item.Background = CommonManager.Instance.CustServiceColor;
                 item.Foreground = Brushes.White;
                 item.TextAlignment = TextAlignment.Center;

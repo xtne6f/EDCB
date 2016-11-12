@@ -25,16 +25,17 @@ namespace EpgTimer.TunerReserveViewCtrl
             stackPanel_tuner.Children.Clear();
             foreach (var info in tunerInfo)
             {
-                TextBlock item = new TextBlock();
+                var item = new TextBlock();
                 item.Text = info.Data.tunerName;
                 if (info.Data.tunerID != 0xFFFFFFFF)
                 {
                     item.Text += "\r\nID: " + info.Data.tunerID.ToString("X8");
                 }
-                item.Width = info.Width - 4;
-                item.Margin = new Thickness(2, 2, 2, 2);
                 item.Background = Brushes.AliceBlue;
                 item.Foreground = Brushes.Black;
+                item.Width = info.Width - 1;
+                item.Padding = new Thickness(0, 0, 0, 2);
+                item.Margin = new Thickness(0, 1, 1, 1);
                 item.TextAlignment = TextAlignment.Center;
                 item.FontSize = 12;
                 stackPanel_tuner.Children.Add(item);

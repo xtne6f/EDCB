@@ -43,10 +43,10 @@ namespace EpgTimer.EpgView
                     stackPanel_time.Children.Add(item);
                     item.TextAlignment = TextAlignment.Center;
                     item.FontSize = 12;
+                    item.Margin = new Thickness(1, 0, 1, 1);
 
                     if (tunerMode == false)
                     {
-                        item.Margin = new Thickness(1, 1, 1, 0);
                         item.Height = 60 * Settings.Instance.MinHeight - item.Margin.Top - item.Margin.Bottom;
                         if (weekMode == false)
                         {
@@ -67,7 +67,6 @@ namespace EpgTimer.EpgView
                     }
                     else
                     {
-                        item.Margin = new Thickness(2, 2, 2, 2);
                         item.Height = 60 * Settings.Instance.TunerMinHeight - item.Margin.Top - item.Margin.Bottom;
                         item.Text = time.ToString("M/d\r\n" + (item.Height >= h3L ? "(ddd)\r\n" : ""))
                                                             + (item.Height >= h6L ? "\r\n" : "") + HourMod;

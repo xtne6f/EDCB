@@ -53,6 +53,13 @@ namespace EpgTimer
                 return ViewUtil.EpgDataContentBrush(EventInfo);
             }
         }
+        public Brush BorderBrush
+        {
+            get
+            {
+                return Brushes.DarkGray;
+            }
+        }
     }
 
 }

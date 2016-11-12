@@ -31,8 +31,8 @@ namespace EpgTimer.EpgView
                 double sizeMin = Settings.Instance.FontSizeTitle - 1;
                 double sizeTitle = Settings.Instance.FontSizeTitle;
                 double sizeNormal = Settings.Instance.FontSize;
-                double indentTitle = Math.Floor(sizeMin * 1.7);//にじみ対策ではなくポップアップとの位置合わせ
-                double indentNormal = Settings.Instance.EpgTitleIndent ? indentTitle : 2;
+                double indentTitle = sizeMin * 1.7;
+                double indentNormal = Settings.Instance.EpgTitleIndent ? indentTitle : 3;
                 Brush colorTitle = CommonManager.Instance.CustTitle1Color;
                 Brush colorNormal = CommonManager.Instance.CustTitle2Color;
 
@@ -55,7 +55,7 @@ namespace EpgTimer.EpgView
 
                         //分
                         string min = (info.EventInfo.StartTimeFlag == 0 ? "未定 " : info.EventInfo.start_time.Minute.ToString("d02"));
-                        if (RenderText(textDrawList, min, ItemFontTitle, sizeMin, info.Width - 4, info.Height + 10, leftPos - 1, info.TopPos, ref useHeight, colorTitle) == false)
+                        if (RenderText(textDrawList, min, ItemFontTitle, sizeMin, info.Width - 4, info.Height + 10, leftPos, info.TopPos, ref useHeight, colorTitle) == false)
                         {
                             info.TitleDrawErr = true;
                             continue;
@@ -117,12 +117,10 @@ namespace EpgTimer.EpgView
                 for (int i = 0; i < textDrawLists.Count; i++)
                 {
                     ProgramViewItem info = Items[i];
-                    //現状では無くても同じ
-                    //dc.DrawRectangle(Background, null, new Rect(info.LeftPos - offset, info.TopPos, info.Width, 1));
-                    //dc.DrawRectangle(Background, null, new Rect(info.LeftPos - offset, info.TopPos + info.Height, info.Width, 1));
+                    dc.DrawRectangle(info.BorderBrush, null, new Rect(info.LeftPos - offset, info.TopPos, info.Width + 1, Math.Max(info.Height + 0.5, 1)));
                     if (info.Height > 1)
                     {
-                        var textArea = new Rect(info.LeftPos - offset, info.TopPos + 0.5, info.Width - 1, info.Height - 0.5);
+                        var textArea = new Rect(info.LeftPos - offset + 1, info.TopPos + 0.5, info.Width - 1, info.Height - 0.5);
                         dc.DrawRectangle(info.ContentColor, null, textArea);
                         DrawTextDrawList(dc, textDrawLists[i], textArea);
                     }

@@ -117,6 +117,7 @@ namespace EpgTimer.UserCtrlView
         protected virtual FrameworkElement Popup { get { return new FrameworkElement(); } }
         protected PanelItem lastPopInfo = null;
         protected virtual double PopWidth { get { return 150; } }
+        protected virtual double PopHeightOffset { get { return 0; } }
         protected ScrollViewer scroll;
         protected Canvas cnvs;
 
@@ -201,11 +202,11 @@ namespace EpgTimer.UserCtrlView
             Popup.Width = Math.Max(popInfo.Width, PopWidth);
             if (popInfo.TopPos < scroll.ContentVerticalOffset)
             {
-                Popup.MinHeight = Math.Max(0, popInfo.TopPos + popInfo.Height - scroll.ContentVerticalOffset);
+                Popup.MinHeight = Math.Max(0, popInfo.TopPos + popInfo.Height + PopHeightOffset - scroll.ContentVerticalOffset);
             }
             else
             {
-                Popup.MinHeight = Math.Max(0, Math.Min(scroll.ContentVerticalOffset + scroll.ViewportHeight - popInfo.TopPos, popInfo.Height));
+                Popup.MinHeight = Math.Max(0, Math.Min(scroll.ContentVerticalOffset + scroll.ViewportHeight - popInfo.TopPos, popInfo.Height + PopHeightOffset));
             }
 
             SetPopup(popInfo);
@@ -227,7 +228,7 @@ namespace EpgTimer.UserCtrlView
             // 下にはみ出した分だけ上にずらす
             double top = popInfo.TopPos - Math.Max(0, offsetV);
             // 上にはみ出てる場合はscrollエリアの上端から表示する
-            Canvas.SetTop(Popup, Math.Max(top, scroll.ContentVerticalOffset - 1));
+            Canvas.SetTop(Popup, Math.Max(top, scroll.ContentVerticalOffset));
         }
         // PopUp の ActualWidth と ActualHeight を取得するために SizeChanged イベントを捕捉する
         protected virtual void popupItem_SizeChanged(object sender, SizeChangedEventArgs e)

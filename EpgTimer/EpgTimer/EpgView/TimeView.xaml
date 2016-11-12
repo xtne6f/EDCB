@@ -5,7 +5,7 @@
     <Grid>
         <TextBlock Text="14/04" Margin="1,1,1,0" Padding="2,0,2,0" Visibility="Hidden"/>
         <ScrollViewer Name="scrollViewer" VerticalScrollBarVisibility="Hidden" >
-            <StackPanel Name="stackPanel_time" />
+            <StackPanel Name="stackPanel_time" Margin="0,1,0,0"/>
         </ScrollViewer>            
     </Grid>
 </UserControl>

@@ -30,7 +30,7 @@ namespace EpgTimer.TunerReserveViewCtrl
                 double sizeMin = Settings.Instance.TunerFontSize;
                 double sizeTitle = Settings.Instance.TunerFontSizeService;
                 double sizeNormal = Settings.Instance.TunerFontSize;
-                double indentTitle = Math.Floor(sizeMin * 1.7);//にじみ対策ではなくポップアップとの位置合わせ
+                double indentTitle = sizeMin * 1.7;
                 double indentNormal = Settings.Instance.TunerTitleIndent ? indentTitle : 2;
                 Brush colorTitleBase = CommonManager.Instance.CustTunerServiceColor;
                 Brush colorNormal = CommonManager.Instance.CustTunerTextColor;
@@ -100,7 +100,7 @@ namespace EpgTimer.TunerReserveViewCtrl
                 for (int i = 0; i < textDrawLists.Count; i++)
                 {
                     ReserveViewItem info = Items[i];
-                    dc.DrawRectangle(info.BorderBrushTuner, null, new Rect(info.LeftPos, info.TopPos, info.Width + 1, Math.Max(info.Height + 1, 0)));
+                    dc.DrawRectangle(info.BorderBrushTuner, null, new Rect(info.LeftPos, info.TopPos, info.Width + 1, Math.Max(info.Height + 1, 1)));
                     if (info.Height > 1)
                     {
                         var textArea = new Rect(info.LeftPos + 1, info.TopPos + 1, info.Width - 1, info.Height - 1);

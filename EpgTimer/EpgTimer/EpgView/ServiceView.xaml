@@ -1,10 +1,10 @@
 ﻿<UserControl x:Class="EpgTimer.EpgView.ServiceView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             MinWidth="30" MinHeight="30">
+             MinWidth="25" MinHeight="25">
 
     <ScrollViewer Name="scrollViewer" VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Hidden">
-        <StackPanel Name="stackPanel_service" Background="Silver" Orientation="Horizontal"/>
+        <StackPanel Name="stackPanel_service" Background="Silver" Orientation="Horizontal" Margin="1,0,0,0"/>
     </ScrollViewer>
 
 </UserControl>

@@ -21,7 +21,8 @@ namespace EpgTimer.EpgView
         protected override bool PopOnOver { get { return Settings.Instance.EpgPopupMode != 1; } }
         protected override bool PopOnClick { get { return Settings.Instance.EpgPopupMode != 0; } }
         protected override FrameworkElement Popup { get { return popupItem; } }
-        protected override double PopWidth { get { return Settings.Instance.ServiceWidth * Settings.Instance.EpgPopupWidth; } }
+        protected override double PopWidth { get { return (Settings.Instance.ServiceWidth + 1) * Settings.Instance.EpgPopupWidth; } }
+        protected override double PopHeightOffset { get { return 0.5; } }
 
         private List<ReserveViewItem> reserveList = null;
         private List<Rectangle> rectBorder = new List<Rectangle>();
@@ -85,12 +86,13 @@ namespace EpgTimer.EpgView
             var viewInfo = (ProgramViewItem)item;
             EpgEventInfo epgInfo = viewInfo.EventInfo;
 
+            popupItem.BorderBrush = viewInfo.BorderBrush;
             popupItem.Background = viewInfo.ContentColor;
 
             double sizeMin = Settings.Instance.FontSizeTitle - 1;
             double sizeTitle = Settings.Instance.FontSizeTitle;
             double sizeNormal = Settings.Instance.FontSize;
-            double indentTitle = Math.Floor(sizeMin * 1.7 + 1);//にじみ対策ではなくポップアップとの位置合わせ
+            double indentTitle = sizeMin * 1.7;
             double indentNormal = Settings.Instance.EpgTitleIndent ? indentTitle : 3;
             var fontNormal = new FontFamily(Settings.Instance.FontName);
             var fontTitle = new FontFamily(Settings.Instance.FontNameTitle);
@@ -107,7 +109,7 @@ namespace EpgTimer.EpgView
             if (epgInfo.ShortInfo != null)
             {
                 //必ず文字単位で折り返すためにZWSPを挿入 (\\w を使うと記号の間にZWSPが入らない)
-                titleText.Text = System.Text.RegularExpressions.Regex.Replace(epgInfo.ShortInfo.event_name, ".", "$0\u200b");
+                titleText.Text = System.Text.RegularExpressions.Regex.Replace(epgInfo.ShortInfo.event_name.TrimEnd('\r', '\n'), ".", "$0\u200b");
                 titleText.FontFamily = fontTitle;
                 titleText.FontSize = sizeTitle;
                 titleText.FontWeight = titleWeight;
@@ -115,17 +117,17 @@ namespace EpgTimer.EpgView
                 titleText.Margin = new Thickness(indentTitle, 0, 0, sizeTitle / 3);
                 titleText.LineHeight = sizeTitle + 2;
 
-                string iTxt = epgInfo.ShortInfo.text_char;
+                string iTxt = epgInfo.ShortInfo.text_char.TrimEnd('\r','\n');
                 if (Settings.Instance.EpgExtInfoPopup == true && epgInfo.ExtInfo != null)
                 {
-                    iTxt += "\r\n" + epgInfo.ExtInfo.text_char;
+                    iTxt += "\r\n" + epgInfo.ExtInfo.text_char.TrimEnd('\r', '\n');
                 }
                 infoText.Text = System.Text.RegularExpressions.Regex.Replace(iTxt, ".", "$0\u200b");
                 infoText.FontFamily = fontNormal;
                 infoText.FontSize = sizeNormal;
                 //infoText.FontWeight = FontWeights.Normal;
                 infoText.Foreground = CommonManager.Instance.CustTitle2Color;
-                infoText.Margin = new Thickness(indentNormal, 0, 0, sizeNormal / 3);
+                infoText.Margin = new Thickness(indentNormal, 0, 0, 0);
                 infoText.LineHeight = sizeNormal + 2;
             }
             else
@@ -243,15 +245,16 @@ namespace EpgTimer.EpgView
                 ClearEpgViewPanel();
 
                 epgViewPanel.Background = CommonManager.Instance.EpgBackColor;
-                double totalWidth = 0;
-                epgViewPanel.Height = Math.Ceiling(height);
+                epgViewPanel.Height = Math.Ceiling(height) + 1;
                 epgViewPanel.Width = ViewUtil.GetScreenWidthMax();
                 canvas.Children.Add(epgViewPanel);
+
+                double totalWidth = 1;//枠線の調整用、多分あんまり良くないやり方
                 foreach (var programList in programGroupList)
                 {
                     var item = new EpgViewPanel();
                     item.Background = epgViewPanel.Background;
-                    item.Height = Math.Ceiling(height);
+                    item.Height = epgViewPanel.Height;
                     item.Width = programList.Width;
                     Canvas.SetLeft(item, totalWidth);
                     item.Items = programList.Data;
@@ -259,7 +262,7 @@ namespace EpgTimer.EpgView
                     canvas.Children.Add(item);
                     totalWidth += programList.Width;
                 }
-                canvas.Height = Math.Ceiling(height);
+                canvas.Height = epgViewPanel.Height;
                 canvas.Width = totalWidth;
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
