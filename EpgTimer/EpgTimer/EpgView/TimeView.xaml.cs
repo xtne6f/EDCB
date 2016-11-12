@@ -17,6 +17,7 @@ namespace EpgTimer.EpgView
         {
             InitializeComponent();
             scrollViewer.PreviewMouseWheel += new MouseWheelEventHandler((sende, e) => e.Handled = true);
+            this.Background = CommonManager.Instance.EpgTimeBorderColor;
         }
 
         public void ClearInfo()
@@ -47,13 +48,15 @@ namespace EpgTimer.EpgView
 
                     if (tunerMode == false)
                     {
+                        item.Foreground = CommonManager.Instance.EpgTimeFontColor;
+                        item.Background = CommonManager.Instance.CustTimeColorList[time1.Hour / 6];
                         item.Height = 60 * Settings.Instance.MinHeight - item.Margin.Top - item.Margin.Bottom;
                         if (weekMode == false)
                         {
                             item.Inlines.Add(new Run(time.ToString("M/d\r\n")));
                             if (item.Height >= h3L)
                             {
-                                var color = time.DayOfWeek == DayOfWeek.Sunday ? Brushes.Red : time.DayOfWeek == DayOfWeek.Saturday ? Brushes.Blue : Brushes.White;
+                                var color = time.DayOfWeek == DayOfWeek.Sunday ? Brushes.Red : time.DayOfWeek == DayOfWeek.Saturday ? Brushes.Blue : item.Foreground;
                                 var weekday = new Run(time.ToString("ddd")) { Foreground = color, FontWeight = FontWeights.Bold };
                                 item.Inlines.AddRange(new Run[] { new Run("("), weekday, new Run(")") });
                             }
@@ -61,17 +64,14 @@ namespace EpgTimer.EpgView
                         if (item.Height >= h3L) item.Inlines.Add(new LineBreak());
                         if (item.Height >= h6L) item.Inlines.Add(new LineBreak());
                         item.Inlines.Add(new Run(HourMod) { FontSize = 13, FontWeight = FontWeights.Bold });
-
-                        item.Foreground = Brushes.White;
-                        item.Background = CommonManager.Instance.CustTimeColorList[time1.Hour / 6];
                     }
                     else
                     {
+                        item.Foreground = time.DayOfWeek == DayOfWeek.Sunday ? Brushes.Red : time.DayOfWeek == DayOfWeek.Saturday ? Brushes.Blue : CommonManager.Instance.TunerTimeFontColor;
+                        item.Background = CommonManager.Instance.TunerTimeBackColor;
                         item.Height = 60 * Settings.Instance.TunerMinHeight - item.Margin.Top - item.Margin.Bottom;
                         item.Text = time.ToString("M/d\r\n" + (item.Height >= h3L ? "(ddd)\r\n" : ""))
                                                             + (item.Height >= h6L ? "\r\n" : "") + HourMod;
-                        item.Foreground = time.DayOfWeek == DayOfWeek.Sunday ? Brushes.Red : time.DayOfWeek == DayOfWeek.Saturday ? Brushes.Blue : Brushes.Black;
-                        item.Background = Brushes.AliceBlue;
                     }
                 }
             }

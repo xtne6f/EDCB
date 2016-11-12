@@ -22,6 +22,7 @@ namespace EpgTimer.Setting
         private RadioBtnSelect tunerPopupRadioBtns;
 
         public bool IsChangeEpgArcLoadSetting { get; private set; }
+        //public bool IsClearColorSetting { get; private set; }
 
         public SetEpgView()
         {
@@ -157,6 +158,7 @@ namespace EpgTimer.Setting
                 setComboColors(Settings.Instance.EpgEtcColors, grid_EpgEtcColors);
                 setComboColors(Settings.Instance.TunerServiceColors, grid_TunerFontColor);
                 setComboColors(Settings.Instance.TunerServiceColors, grid_TunerColors);
+                setComboColors(Settings.Instance.TunerServiceColors, grid_TunerEtcColors);
 
                 var setButtonColor1 = new Action<uint, Button>((clr, btn) => btn.Background = new SolidColorBrush(ColorDef.FromUInt(clr)));
                 var setButtonColors = new Action<List<uint>, Panel>((list, pnl) =>
@@ -175,6 +177,7 @@ namespace EpgTimer.Setting
                 setButtonColors(Settings.Instance.EpgEtcCustColors, grid_EpgEtcColors);
                 setButtonColors(Settings.Instance.TunerServiceCustColors, grid_TunerFontColor);
                 setButtonColors(Settings.Instance.TunerServiceCustColors, grid_TunerColors);
+                setButtonColors(Settings.Instance.TunerServiceCustColors, grid_TunerEtcColors);
 
                 //録画済み一覧画面
                 textBox_dropErrIgnore.Text = Settings.Instance.RecInfoDropErrIgnore.ToString();
@@ -355,6 +358,7 @@ namespace EpgTimer.Setting
                 getComboColors(Settings.Instance.EpgEtcColors, grid_EpgEtcColors);
                 getComboColors(Settings.Instance.TunerServiceColors, grid_TunerFontColor);
                 getComboColors(Settings.Instance.TunerServiceColors, grid_TunerColors);
+                getComboColors(Settings.Instance.TunerServiceColors, grid_TunerEtcColors);
 
                 var getButtonColor1 = new Func<Button, uint>((btn) => ColorDef.ToUInt((btn.Background as SolidColorBrush).Color));
                 var getButtonColors = new Action<List<uint>, Panel>((list, pnl) =>
@@ -374,6 +378,7 @@ namespace EpgTimer.Setting
                 getButtonColors(Settings.Instance.EpgEtcCustColors, grid_EpgEtcColors);
                 getButtonColors(Settings.Instance.TunerServiceCustColors, grid_TunerFontColor);
                 getButtonColors(Settings.Instance.TunerServiceCustColors, grid_TunerColors);
+                getButtonColors(Settings.Instance.TunerServiceCustColors, grid_TunerEtcColors);
 
                 //録画済み一覧画面
                 Settings.Instance.PlayDClick = (checkBox_playDClick.IsChecked == true);
@@ -531,5 +536,20 @@ namespace EpgTimer.Setting
                 this.ctxmSetInfo = dlg.info.Clone();
             }
         }
+        /*
+        private void button_color_reset_Click(object sender, RoutedEventArgs e)
+        {
+            if (MessageBoxResult.OK == MessageBox.Show("設定ウィンドウが閉じ、全ての色設定を初期化します。\r\n" + "(色設定以外の設定は保存されます。)", "色設定の初期化", MessageBoxButton.OKCancel, MessageBoxImage.Question, MessageBoxResult.Cancel))
+            {
+                var setting = CommonUtil.GetTopWindow(this) as SettingWindow;
+                if (setting == null)
+                {
+                    MessageBox.Show("不明な原因により失敗しました。", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+                IsClearColorSetting = true;
+                setting.button_OK.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            }
+        }*/
     }
 }

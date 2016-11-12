@@ -454,6 +454,8 @@ namespace EpgTimer
 
         public Settings()
         {
+            ResetColorSetting();
+            
             UseCustomEpgView = false;
             CustomEpgTabList = new List<CustomEpgTabInfo>();
             MinHeight = 2;
@@ -472,28 +474,11 @@ namespace EpgTimer
             PlayDClick = false;
             RecinfoErrCriticalDrops = false;
             DragScroll = 1.5;
-            ContentColorList = new List<string>();
-            ContentCustColorList = new List<uint>();
-            EpgEtcColors = new List<string>();
-            EpgEtcCustColors = new List<uint>();
-            ReserveRectColorNormal = "Lime";
-            ReserveRectColorNo = "Black";
-            ReserveRectColorNoTuner = "Red";
-            ReserveRectColorWarning = "Yellow";
-            ReserveRectColorAutoAddMissing = "Blue";
-            ReserveRectColorMultiple = "Purple";
-            ReserveRectBackground = false;
-            TitleColor1 = "Black";
-            TitleColor2 = "Black";
-            TitleCustColor1 = 0xFFFFFFFF;
-            TitleCustColor2 = 0xFFFFFFFF;
             TunerFontNameService = System.Drawing.SystemFonts.DefaultFont.Name;
             TunerFontSizeService = 12;
             TunerFontBoldService = true;
             TunerFontName = System.Drawing.SystemFonts.DefaultFont.Name;
             TunerFontSize = 12;
-            TunerServiceColors = new List<string>();
-            TunerServiceCustColors = new List<uint>();
             TunerMinHeight = 2;
             TunerMinimumLine = 0;
             TunerDragScroll = 1.5;
@@ -585,16 +570,6 @@ namespace EpgTimer
             ChkSrvRegistInterval = 5;
             TvTestOpenWait = 2000;
             TvTestChgBonWait = 2000;
-            RecEndColors = new List<string>();
-            RecEndCustColors = new List<uint>();
-            ListDefColor = "カスタム";
-            ListDefCustColor= 0xFF042271;
-            RecModeFontColors = new List<string>();
-            RecModeFontCustColors= new List<uint>();
-            ResBackColors = new List<string>();
-            ResBackCustColors= new List<uint>();
-            StatColors = new List<string>();
-            StatCustColors= new List<uint>();
             EpgInfoSingleClick = false;
             EpgInfoOpenMode = 0;
             ExecBat = 0;
@@ -673,22 +648,6 @@ namespace EpgTimer
             set { _instance = value; }
         }
 
-        //色リストの初期化用
-        private static void _FillList<T>(List<T> list, T val, int num)
-        {
-            if (list.Count < num)
-            {
-                list.AddRange(Enumerable.Repeat(val, num - list.Count));
-            }
-        }
-        private static void _FillList<T>(List<T> list, List<T> val)
-        {
-            if (list.Count < val.Count)
-            {
-                list.AddRange(val.Skip(list.Count));
-            }
-        }
-
         /// <summary>
         /// 設定ファイルロード関数
         /// </summary>
@@ -733,104 +692,8 @@ namespace EpgTimer
 
                 SetCustomEpgTabInfoID();
 
-                int num;
-                List<string> defColors = new List<string>();
-
-                //番組表の背景色
-                num = 0x11;//番組表17色。過去に16色時代があった。
-                if (Instance.ContentColorList.Count < num)
-                {
-                    defColors = new List<string>{
-                        "LightYellow"
-                        ,"Lavender"
-                        ,"LavenderBlush"
-                        ,"MistyRose"
-                        ,"Honeydew"
-                        ,"LightCyan"
-                        ,"PapayaWhip"
-                        ,"Pink"
-                        ,"LightYellow"
-                        ,"PapayaWhip"
-                        ,"AliceBlue"
-                        ,"AliceBlue"
-                        ,"White"
-                        ,"White"
-                        ,"White"
-                        ,"WhiteSmoke"
-                        ,"White"
-                    };
-                    _FillList(Instance.ContentColorList, defColors);
-                }
-                num = 0x11 + 6;//番組表17色+予約枠6色
-                _FillList(Instance.ContentCustColorList, 0xFFFFFFFF, num);
-
-                //チューナー画面各フォント色
-                num = 2 + 5;//固定色2+優先度色5
-                _FillList(Instance.TunerServiceColors, "Black", num);
-                _FillList(Instance.TunerServiceCustColors, 0xFFFFFFFF, num);
-
-                //番組表の時間軸のデフォルトの背景色、その他色
-                num = 6;
-                if (Instance.EpgEtcColors.Count < num)
-                {
-                    defColors = new List<string>{
-                        "MediumPurple"      //00-05時
-                        ,"LightSeaGreen"    //06-11時
-                        ,"LightSalmon"      //12-17時
-                        ,"CornflowerBlue"   //18-23時
-                        ,"LightSlateGray"   //サービス色
-                        ,"DarkGray"         //番組表背景色
-                    };
-                    _FillList(Instance.EpgEtcColors, defColors);
-                }
-                _FillList(Instance.EpgEtcCustColors, 0xFFFFFFFF, num);
-
-                //録画済み一覧背景色
-                num = 3;
-                if (Instance.RecEndColors.Count < num)
-                {
-                    defColors = new List<string>{
-                        "White"//デフォルト
-                        ,"LightPink"//エラー
-                        ,"LightYellow"//ワーニング
-                    };
-                    _FillList(Instance.RecEndColors, defColors);
-                }
-                _FillList(Instance.RecEndCustColors, 0xFFFFFFFF, num);
-
-                //録画モード別予約文字色
-                num = 6;
-                _FillList(Instance.RecModeFontColors, "カスタム", num);
-                _FillList(Instance.RecModeFontCustColors, 0xFF042271, num);
-
-                //状態別予約背景色
-                num = 6;
-                if (Instance.ResBackColors.Count < num)
-                {
-                    defColors = new List<string>{
-                        "White"//通常
-                        ,"LightGray"//無効
-                        ,"LightPink"//チューナー不足
-                        ,"LightYellow"//一部実行
-                        ,"LightBlue"//自動予約登録不明
-                        ,"Thistle"//重複EPG予約
-                    };
-                    _FillList(Instance.ResBackColors, defColors);
-                }
-                _FillList(Instance.ResBackCustColors, 0xFFFFFFFF, num);
-
-                //予約状態列文字色
-                num = 3;
-                if (Instance.StatColors.Count < num)
-                {
-                    defColors = new List<string>{
-                        "Blue"//予約中
-                        ,"OrangeRed"//録画中
-                        ,"LimeGreen"//放送中
-                    };
-                    _FillList(Instance.StatColors, defColors);
-                }
-                _FillList(Instance.StatCustColors, 0xFFFFFFFF, num);
+                //色設定関係
+                Instance.SetColorSetting();
 
                 if (Instance.ViewButtonList.Count == 0)
                 {
@@ -1183,6 +1046,165 @@ namespace EpgTimer
                 };
             }
             return null;
+        }
+
+        public void ResetColorSetting()
+        {
+            ContentColorList = new List<string>();
+            ContentCustColorList = new List<uint>();
+            EpgEtcColors = new List<string>();
+            EpgEtcCustColors = new List<uint>();
+            ReserveRectColorNormal = "Lime";
+            ReserveRectColorNo = "Black";
+            ReserveRectColorNoTuner = "Red";
+            ReserveRectColorWarning = "Yellow";
+            ReserveRectColorAutoAddMissing = "Blue";
+            ReserveRectColorMultiple = "Purple";
+            ReserveRectBackground = false;
+            TitleColor1 = "Black";
+            TitleColor2 = "Black";
+            TitleCustColor1 = 0xFFFFFFFF;
+            TitleCustColor2 = 0xFFFFFFFF;
+            TunerServiceColors = new List<string>();
+            TunerServiceCustColors = new List<uint>();
+            RecEndColors = new List<string>();
+            RecEndCustColors = new List<uint>();
+            ListDefColor = "カスタム";
+            ListDefCustColor = 0xFF042271;
+            RecModeFontColors = new List<string>();
+            RecModeFontCustColors = new List<uint>();
+            ResBackColors = new List<string>();
+            ResBackCustColors = new List<uint>();
+            StatColors = new List<string>();
+            StatCustColors = new List<uint>();
+        }
+        //色リストの初期化用
+        private static void _FillList<T>(List<T> list, T val, int num)
+        {
+            if (list.Count < num) list.AddRange(Enumerable.Repeat(val, num - list.Count));
+        }
+        private static void _FillList<T>(List<T> list, IEnumerable<T> val)
+        {
+            if (list.Count < val.Count()) list.AddRange(val.Skip(list.Count));
+        }
+        public void SetColorSetting()
+        {
+            int num;
+            //番組表の背景色
+            num = 0x11;//番組表17色。過去に16色時代があった。
+            if (ContentColorList.Count < num)
+            {
+                var defColors = new string[]{
+                        "LightYellow"
+                        ,"Lavender"
+                        ,"LavenderBlush"
+                        ,"MistyRose"
+                        ,"Honeydew"
+                        ,"LightCyan"
+                        ,"PapayaWhip"
+                        ,"Pink"
+                        ,"LightYellow"
+                        ,"PapayaWhip"
+                        ,"AliceBlue"
+                        ,"AliceBlue"
+                        ,"White"
+                        ,"White"
+                        ,"White"
+                        ,"WhiteSmoke"
+                        ,"White"
+                    };
+                _FillList(ContentColorList, defColors);
+            }
+            num = 0x11 + 6;//番組表17色+予約枠6色
+            _FillList(ContentCustColorList, 0xFFFFFFFF, num);
+
+            //番組表の時間軸のデフォルトの背景色、その他色
+            num = 12;
+            if (EpgEtcColors.Count < num)
+            {
+                var defColors = new string[]{
+                        "MediumPurple"      //00-05時
+                        ,"LightSeaGreen"    //06-11時
+                        ,"LightSalmon"      //12-17時
+                        ,"CornflowerBlue"   //18-23時
+                        ,"LightSlateGray"   //サービス背景色
+                        ,"DarkGray"         //番組表背景色
+                        ,"DarkGray"         //番組枠色
+                        ,"White"            //サービス文字
+                        ,"Silver"           //サービス枠色
+                        ,"White"            //時間文字色
+                        ,"White"            //時間枠色
+                        ,"LightSlateGray"   //一週間モード日付枠色
+                    };
+                _FillList(EpgEtcColors, defColors);
+            }
+            _FillList(EpgEtcCustColors, 0xFFFFFFFF, num);
+
+            //チューナー画面各色、保存名はServiceColorsだが他も含む。
+            num = 2 + 5 + 8;//固定色2+優先度色5+ 追加の画面色
+            if (TunerServiceColors.Count < num)
+            {
+                var defColors = Enumerable.Repeat("Black", 7)
+                    .Concat(new string[]{
+                        "DarkGray"          //チューナ画面背景色
+                        ,"LightGray"        //予約枠色
+                        ,"Black"            //時間文字色
+                        ,"AliceBlue"        //時間背景色
+                        ,"LightSlateGray"   //時間枠色
+                        ,"Black"            //チューナー名文字色
+                        ,"AliceBlue"        //チューナー名背景色
+                        ,"LightSlateGray"   //チューナー名枠色
+                    });
+                _FillList(TunerServiceColors, defColors);
+            }
+            _FillList(TunerServiceCustColors, 0xFFFFFFFF, num);
+
+            //録画済み一覧背景色
+            num = 3;
+            if (RecEndColors.Count < num)
+            {
+                var defColors = new string[]{
+                        "White"         //デフォルト
+                        ,"LightPink"    //エラー
+                        ,"LightYellow"  //ワーニング
+                    };
+                _FillList(RecEndColors, defColors);
+            }
+            _FillList(RecEndCustColors, 0xFFFFFFFF, num);
+
+            //録画モード別予約文字色
+            num = 6;
+            _FillList(RecModeFontColors, "カスタム", num);
+            _FillList(RecModeFontCustColors, 0xFF042271, num);
+
+            //状態別予約背景色
+            num = 6;
+            if (ResBackColors.Count < num)
+            {
+                var defColors = new string[]{
+                        "White"         //通常
+                        ,"LightGray"    //無効
+                        ,"LightPink"    //チューナー不足
+                        ,"LightYellow"  //一部実行
+                        ,"LightBlue"    //自動予約登録不明
+                        ,"Thistle"      //重複EPG予約
+                    };
+                _FillList(ResBackColors, defColors);
+            }
+            _FillList(ResBackCustColors, 0xFFFFFFFF, num);
+
+            //予約状態列文字色
+            num = 3;
+            if (StatColors.Count < num)
+            {
+                var defColors = new List<string>{
+                        "Blue"      //予約中
+                        ,"OrangeRed"//録画中
+                        ,"LimeGreen"//放送中
+                    };
+                _FillList(StatColors, defColors);
+            }
+            _FillList(StatCustColors, 0xFFFFFFFF, num);
         }
     }
 }

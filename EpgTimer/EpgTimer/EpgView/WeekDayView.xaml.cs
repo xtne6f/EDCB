@@ -15,6 +15,7 @@ namespace EpgTimer.EpgView
         public WeekDayView()
         {
             InitializeComponent();
+            this.Background = CommonManager.Instance.EpgWeekdayBorderColor;
         }
 
         public void ClearInfo()

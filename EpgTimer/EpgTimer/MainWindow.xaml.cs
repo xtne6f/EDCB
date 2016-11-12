@@ -332,6 +332,9 @@ namespace EpgTimer
             StatusbarReset();       //ステータスバーリセット
             ResetTaskMenu();        //タスクバーのリセット
             ChkTimerWork();         //タスクツールチップ、接続維持用タイマーリセット
+
+            //その他更新
+            tunerReserveView.RefreshView();
         }
 
         private void ResetViewButtonColumn()

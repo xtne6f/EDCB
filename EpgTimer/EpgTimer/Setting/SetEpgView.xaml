@@ -238,7 +238,7 @@
                         <Style TargetType="{x:Type Button}" BasedOn="{StaticResource colorButton}" />
                     </TabItem.Resources>
                     <StackPanel>
-                        <GroupBox Header="時刻表示背景色" Margin="6,6,6,0" >
+                        <GroupBox Header="時刻表示色設定" Margin="6,6,6,0" >
                             <Grid x:Name="grid_EpgTimeColors">
                                 <Label Content="カスタム色" Height="28" HorizontalAlignment="Left" Margin="292,0,0,0" VerticalAlignment="Top" />
                                 <Label Content="カスタム色" Height="28" HorizontalAlignment="Left" Margin="614,0,0,0" VerticalAlignment="Top" />
@@ -246,21 +246,42 @@
                                 <Label Content="06～11時" Height="28" HorizontalAlignment="Left" Margin="390,23,0,0" VerticalAlignment="Top" />
                                 <Label Content="12～17時" Height="28" HorizontalAlignment="Left" Margin="12,53,0,0" VerticalAlignment="Top" />
                                 <Label Content="18～23時" Height="28" HorizontalAlignment="Left" Margin="390,53,0,0" VerticalAlignment="Top" />
+                                <Label Content="時刻表示文字色" Height="24" HorizontalAlignment="Left" Margin="12,83,0,0" VerticalAlignment="Top" />
+                                <Label Content="時刻表示枠色" Height="24" HorizontalAlignment="Left" Margin="390,83,0,0" VerticalAlignment="Top" />
                                 <ComboBox Margin="166,27,0,0" Tag="0" />
                                 <ComboBox Margin="488,27,0,0" Tag="1" />
                                 <ComboBox Margin="166,57,0,0" Tag="2" />
                                 <ComboBox Margin="488,57,0,0" Tag="3" />
+                                <ComboBox Margin="166,87,0,0" Tag="9" />
+                                <ComboBox Margin="488,87,0,0" Tag="10" />
                                 <Button Margin="292,27,0,0" Tag="0" />
                                 <Button Margin="614,27,0,0" Tag="1" />
                                 <Button Margin="292,57,0,0" Tag="2" />
                                 <Button Margin="614,57,0,0" Tag="3" />
+                                <Button Margin="292,87,0,0" Tag="9" />
+                                <Button Margin="614,87,0,0" Tag="10" />
                             </Grid>
                         </GroupBox>
                         <GroupBox Header="その他色設定" Margin="6,6,6,0" >
                             <Grid x:Name="grid_EpgEtcColors">
-                                <Label Content="サービス背景色" Height="24" HorizontalAlignment="Left" Margin="12,0,0,0" VerticalAlignment="Top" />
-                                <ComboBox Margin="166,4,0,0" Tag="4" />
-                                <Button Margin="292,4,0,0" Tag="4" />
+                                <Label Content="番組表背景色" Height="24" HorizontalAlignment="Left" Margin="12,0,0,0" VerticalAlignment="Top" />
+                                <Label Content="番組枠色" Height="24" HorizontalAlignment="Left" Margin="12,30,0,0" VerticalAlignment="Top" />
+                                <Label Content="1週間モード日付枠色" Height="24" HorizontalAlignment="Left" Margin="12,60,0,0" VerticalAlignment="Top" />
+                                <Label Content="サービス文字色" Height="24" HorizontalAlignment="Left" Margin="390,00,00,0" VerticalAlignment="Top" />
+                                <Label Content="サービス背景色" Height="24" HorizontalAlignment="Left" Margin="390,30,0,0" VerticalAlignment="Top" />
+                                <Label Content="サービス枠色" Height="24" HorizontalAlignment="Left" Margin="390,60,00,0" VerticalAlignment="Top" />
+                                <ComboBox Margin="166,4,0,0" Tag="5" />
+                                <ComboBox Margin="166,34,0,0" Tag="6" />
+                                <ComboBox Margin="166,64,0,0" Tag="11" />
+                                <ComboBox Margin="488,4,0,0" Tag="7" />
+                                <ComboBox Margin="488,34,0,0" Tag="4" />
+                                <ComboBox Margin="488,64,0,0" Tag="8" />
+                                <Button Margin="292,4,0,0" Tag="5" />
+                                <Button Margin="292,34,0,0" Tag="6" />
+                                <Button Margin="292,64,0,0" Tag="11" />
+                                <Button Margin="614,4,0,0" Tag="7" />
+                                <Button Margin="614,34,0,0" Tag="4" />
+                                <Button Margin="614,64,0,0" Tag="8" />
                             </Grid>
                         </GroupBox>
                     </StackPanel>
@@ -382,7 +403,7 @@
                         <Style TargetType="{x:Type ComboBox}" BasedOn="{StaticResource colorCombo}" />
                         <Style TargetType="{x:Type Button}" BasedOn="{StaticResource colorButton}" />
                     </TabItem.Resources>
-                    <Grid>
+                    <StackPanel>
                         <GroupBox Header="優先度別サービス色設定" Margin="6,6,6,0" VerticalAlignment="Top" >
                             <Grid x:Name="grid_TunerColors" >
                                 <TextBlock Text="※" HorizontalAlignment="Left" Margin="385,27,0,0" VerticalAlignment="Top" />
@@ -405,7 +426,36 @@
                                 <Button Margin="292,147,0,0" Tag="2" />
                             </Grid>
                         </GroupBox>
-                    </Grid>
+                        <GroupBox Header="その他色設定" Margin="6,6,6,0" >
+                            <Grid x:Name="grid_TunerEtcColors">
+                                <Label Content="カスタム色" Height="28" HorizontalAlignment="Left" Margin="614,-28,0,0" VerticalAlignment="Top" />
+                                <Label Content="予約表示エリア背景色" Height="24" HorizontalAlignment="Left" Margin="12,0,0,0" VerticalAlignment="Top" />
+                                <Label Content="予約枠色" Height="24" HorizontalAlignment="Left" Margin="390,0,0,0" VerticalAlignment="Top" />
+                                <Label Content="時刻表示文字色" Height="24" HorizontalAlignment="Left" Margin="12,30,0,0" VerticalAlignment="Top" />
+                                <Label Content="時刻表示背景色" Height="24" HorizontalAlignment="Left" Margin="12,60,0,0" VerticalAlignment="Top" />
+                                <Label Content="時刻表示枠色" Height="24" HorizontalAlignment="Left" Margin="12,90,0,0" VerticalAlignment="Top" />
+                                <Label Content="チューナー文字色" Height="24" HorizontalAlignment="Left" Margin="390,30,0,0" VerticalAlignment="Top" />
+                                <Label Content="チューナー背景色" Height="24" HorizontalAlignment="Left" Margin="390,60,0,0" VerticalAlignment="Top" />
+                                <Label Content="チューナー枠色" Height="24" HorizontalAlignment="Left" Margin="390,90,0,0" VerticalAlignment="Top" />
+                                <ComboBox Margin="166,4,0,0" Tag="7" />
+                                <ComboBox Margin="488,4,0,0" Tag="8" />
+                                <ComboBox Margin="166,34,0,0" Tag="9" />
+                                <ComboBox Margin="166,64,0,0" Tag="10" />
+                                <ComboBox Margin="166,94,0,0" Tag="11" />
+                                <ComboBox Margin="488,34,0,0" Tag="12" />
+                                <ComboBox Margin="488,64,0,0" Tag="13" />
+                                <ComboBox Margin="488,94,0,0" Tag="14" />
+                                <Button Margin="292,4,0,0" Tag="7" />
+                                <Button Margin="614,4,0,0" Tag="8" />
+                                <Button Margin="292,34,0,0" Tag="9" />
+                                <Button Margin="292,64,0,0" Tag="10" />
+                                <Button Margin="292,94,0,0" Tag="11" />
+                                <Button Margin="614,34,0,0" Tag="12" />
+                                <Button Margin="614,64,0,0" Tag="13" />
+                                <Button Margin="614,94,0,0" Tag="14" />
+                            </Grid>
+                        </GroupBox>
+                    </StackPanel>
                 </TabItem>
             </TabControl>
         </TabItem>

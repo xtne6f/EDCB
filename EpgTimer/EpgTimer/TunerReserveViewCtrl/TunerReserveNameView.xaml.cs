@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media;
 
 namespace EpgTimer.TunerReserveViewCtrl
 {
@@ -31,11 +30,11 @@ namespace EpgTimer.TunerReserveViewCtrl
                 {
                     item.Text += "\r\nID: " + info.Data.tunerID.ToString("X8");
                 }
-                item.Background = Brushes.AliceBlue;
-                item.Foreground = Brushes.Black;
                 item.Width = info.Width - 1;
                 item.Padding = new Thickness(0, 0, 0, 2);
                 item.Margin = new Thickness(0, 1, 1, 1);
+                item.Background = CommonManager.Instance.TunerNameBackColor;
+                item.Foreground = CommonManager.Instance.TunerNameFontColor;
                 item.TextAlignment = TextAlignment.Center;
                 item.FontSize = 12;
                 stackPanel_tuner.Children.Add(item);

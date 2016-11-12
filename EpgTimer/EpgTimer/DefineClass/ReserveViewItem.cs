@@ -62,10 +62,10 @@ namespace EpgTimer
                     }
                     if (ReserveInfo.IsEnabled == false)
                     {
-                        return Brushes.Black;
+                        return CommonManager.Instance.CustContentColorList[0x12];
                     }
                 }
-                return Brushes.LightGray;
+                return CommonManager.Instance.TunerReserveBorderColor;
             }
         }
         public Brush BorderBrush

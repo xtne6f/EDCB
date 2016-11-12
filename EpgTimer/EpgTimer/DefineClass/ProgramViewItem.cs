@@ -57,7 +57,7 @@ namespace EpgTimer
         {
             get
             {
-                return Brushes.DarkGray;
+                return CommonManager.Instance.EpgBorderColor;
             }
         }
     }

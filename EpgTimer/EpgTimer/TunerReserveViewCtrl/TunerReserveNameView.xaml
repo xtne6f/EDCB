@@ -4,7 +4,7 @@
              MinWidth="25" MinHeight="25">
 
         <ScrollViewer Name="scrollViewer" VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Hidden">
-            <StackPanel Name="stackPanel_tuner" Background="LightSlateGray" Orientation="Horizontal" Margin="1,0,0,0"/>
+            <StackPanel Name="stackPanel_tuner" Orientation="Horizontal" Margin="1,0,0,0"/>
         </ScrollViewer>
 
 </UserControl>

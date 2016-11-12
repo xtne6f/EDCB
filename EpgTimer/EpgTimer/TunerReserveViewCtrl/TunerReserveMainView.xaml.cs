@@ -47,6 +47,12 @@ namespace EpgTimer
             mBinds.ResetInputBindings(this);
             mm.CtxmGenerateContextMenu(cmdMenu, CtxmCode.TunerReserveView, false);
         }
+        public void RefreshView()
+        {
+            tunerReserveView.reserveViewPanel.Background = CommonManager.Instance.TunerBackColor;
+            tunerReserveTimeView.Background = CommonManager.Instance.TunerTimeBorderColor;
+            tunerReserveNameView.Background = CommonManager.Instance.TunerNameBorderColor;
+        }
 
         /// <summary>表示スクロールイベント呼び出し</summary>
         void tunerReserveView_ScrollChanged(object sender, ScrollChangedEventArgs e)

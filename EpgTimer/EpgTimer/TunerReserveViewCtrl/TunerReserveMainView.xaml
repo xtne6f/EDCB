@@ -16,7 +16,7 @@
             <RowDefinition Height="auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <epgview:TimeView Grid.Row="1" Margin="0,0,0,17" x:Name="tunerReserveTimeView" Background="LightSlateGray" MouseRightButtonUp="sub_erea_MouseRightButtonUp" />
+        <epgview:TimeView Grid.Row="1" Margin="0,0,0,17" x:Name="tunerReserveTimeView" MouseRightButtonUp="sub_erea_MouseRightButtonUp" />
         <my:TunerReserveNameView Grid.Column="1" Margin="0,0,17,0" x:Name="tunerReserveNameView" MouseRightButtonUp="sub_erea_MouseRightButtonUp" />
         <my:TunerReserveView Grid.Column="1" Grid.Row="1" x:Name="tunerReserveView" />
     </Grid>

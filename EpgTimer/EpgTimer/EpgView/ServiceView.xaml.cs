@@ -2,7 +2,6 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows.Media;
 
 namespace EpgTimer.EpgView
 {
@@ -14,6 +13,7 @@ namespace EpgTimer.EpgView
         public ServiceView()
         {
             InitializeComponent();
+            this.Background = CommonManager.Instance.EpgServiceBorderColor;
         }
 
         public void ClearInfo()
@@ -39,8 +39,8 @@ namespace EpgTimer.EpgView
                 item.Width = Settings.Instance.ServiceWidth - 1;
                 item.Padding = new Thickness(0, 0, 0, 2);
                 item.Margin = new Thickness(0, 1, 1, 1);
-                item.Background = CommonManager.Instance.CustServiceColor;
-                item.Foreground = Brushes.White;
+                item.Background = CommonManager.Instance.EpgServiceBackColor;
+                item.Foreground = CommonManager.Instance.EpgServiceFontColor;
                 item.TextAlignment = TextAlignment.Center;
                 item.FontSize = 12;
                 item.MouseLeftButtonDown += new MouseButtonEventHandler(item_MouseLeftButtonDown);

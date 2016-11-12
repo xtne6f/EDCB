@@ -42,9 +42,23 @@ namespace EpgTimer
         public Brush CustTunerServiceColor { get; private set; }
         public Brush CustTunerTextColor { get; private set; }
         public List<Brush> CustTunerServiceColorPri { get; private set; }
+        public Brush TunerBackColor { get; private set; }
+        public Brush TunerReserveBorderColor { get; private set; }
+        public Brush TunerTimeFontColor { get; private set; }
+        public Brush TunerTimeBackColor { get; private set; }
+        public Brush TunerTimeBorderColor { get; private set; }
+        public Brush TunerNameFontColor { get; private set; }
+        public Brush TunerNameBackColor { get; private set; }
+        public Brush TunerNameBorderColor { get; private set; }
         public List<Brush> CustTimeColorList { get; private set; }
-        public Brush CustServiceColor { get; private set; }
+        public Brush EpgServiceBackColor { get; private set; }
         public Brush EpgBackColor { get; private set; }
+        public Brush EpgBorderColor { get; private set; }
+        public Brush EpgServiceFontColor { get; private set; }
+        public Brush EpgServiceBorderColor { get; private set; }
+        public Brush EpgTimeFontColor { get; private set; }
+        public Brush EpgTimeBorderColor { get; private set; }
+        public Brush EpgWeekdayBorderColor { get; private set; }
         public Brush ResDefBackColor { get; private set; }
         public Brush ResErrBackColor { get; private set; }
         public Brush ResWarBackColor { get; private set; }
@@ -1397,6 +1411,14 @@ namespace EpgTimer
                 {
                     CustTunerServiceColorPri.Add(_GetColorBrush(Settings.Instance.TunerServiceColors[i], Settings.Instance.TunerServiceCustColors[i]));
                 }
+                TunerBackColor = _GetColorBrush(Settings.Instance.TunerServiceColors[7 + 0], Settings.Instance.TunerServiceCustColors[7 + 0]);
+                TunerReserveBorderColor = _GetColorBrush(Settings.Instance.TunerServiceColors[7 + 1], Settings.Instance.TunerServiceCustColors[7 + 1]);
+                TunerTimeFontColor = _GetColorBrush(Settings.Instance.TunerServiceColors[7 + 2], Settings.Instance.TunerServiceCustColors[7 + 2]);
+                TunerTimeBackColor = _GetColorBrush(Settings.Instance.TunerServiceColors[7 + 3], Settings.Instance.TunerServiceCustColors[7 + 3]);
+                TunerTimeBorderColor = _GetColorBrush(Settings.Instance.TunerServiceColors[7 + 4], Settings.Instance.TunerServiceCustColors[7 + 4]);
+                TunerNameFontColor = _GetColorBrush(Settings.Instance.TunerServiceColors[7 + 5], Settings.Instance.TunerServiceCustColors[7 + 5]);
+                TunerNameBackColor = _GetColorBrush(Settings.Instance.TunerServiceColors[7 + 6], Settings.Instance.TunerServiceCustColors[7 + 6]);
+                TunerNameBorderColor = _GetColorBrush(Settings.Instance.TunerServiceColors[7 + 7], Settings.Instance.TunerServiceCustColors[7 + 7]);
 
                 CustTimeColorList.Clear();
                 for (int i = 0; i < Settings.Instance.EpgEtcColors.Count; i++)
@@ -1404,8 +1426,14 @@ namespace EpgTimer
                     CustTimeColorList.Add(_GetColorBrush(Settings.Instance.EpgEtcColors[i], Settings.Instance.EpgEtcCustColors[i], Settings.Instance.EpgGradationHeader));
                 }
 
-                CustServiceColor = _GetColorBrush(Settings.Instance.EpgEtcColors[4], Settings.Instance.EpgEtcCustColors[4], Settings.Instance.EpgGradationHeader, 1.0, 2.0);
+                EpgServiceBackColor = _GetColorBrush(Settings.Instance.EpgEtcColors[4], Settings.Instance.EpgEtcCustColors[4], Settings.Instance.EpgGradationHeader, 1.0, 2.0);
                 EpgBackColor = _GetColorBrush(Settings.Instance.EpgEtcColors[5], Settings.Instance.EpgEtcCustColors[5]);
+                EpgBorderColor = _GetColorBrush(Settings.Instance.EpgEtcColors[6], Settings.Instance.EpgEtcCustColors[6]);
+                EpgServiceFontColor = _GetColorBrush(Settings.Instance.EpgEtcColors[7], Settings.Instance.EpgEtcCustColors[7]);
+                EpgServiceBorderColor = _GetColorBrush(Settings.Instance.EpgEtcColors[8], Settings.Instance.EpgEtcCustColors[8]);
+                EpgTimeFontColor = _GetColorBrush(Settings.Instance.EpgEtcColors[9], Settings.Instance.EpgEtcCustColors[9]);
+                EpgTimeBorderColor = _GetColorBrush(Settings.Instance.EpgEtcColors[10], Settings.Instance.EpgEtcCustColors[10]);
+                EpgWeekdayBorderColor = _GetColorBrush(Settings.Instance.EpgEtcColors[11], Settings.Instance.EpgEtcCustColors[11]);
 
                 RecEndDefBackColor = _GetColorBrush(Settings.Instance.RecEndColors[0], Settings.Instance.RecEndCustColors[0]);
                 RecEndErrBackColor = _GetColorBrush(Settings.Instance.RecEndColors[1], Settings.Instance.RecEndCustColors[1]);
