@@ -44,7 +44,10 @@ namespace EpgTimer.EpgView
             reserveList = null;
             rectBorder.ForEach(item => canvas.Children.Remove(item));
             rectBorder.Clear();
-
+            ClearEpgViewPanel();
+        }
+        private void ClearEpgViewPanel()
+        {
             for (int i = 0; i < canvas.Children.Count; i++)
             {
                 if (canvas.Children[i] is EpgViewPanel)
@@ -237,15 +240,13 @@ namespace EpgTimer.EpgView
         {
             try
             {
-                for (int i = 0; i < canvas.Children.Count; i++)
-                {
-                    if (canvas.Children[i] is EpgViewPanel)
-                    {
-                        canvas.Children.RemoveAt(i--);
-                    }
-                }
+                ClearEpgViewPanel();
+
                 epgViewPanel.Background = CommonManager.Instance.EpgBackColor;
                 double totalWidth = 0;
+                epgViewPanel.Height = Math.Ceiling(height);
+                epgViewPanel.Width = ViewUtil.GetScreenWidthMax();
+                canvas.Children.Add(epgViewPanel);
                 foreach (var programList in programGroupList)
                 {
                     var item = new EpgViewPanel();
