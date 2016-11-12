@@ -26,7 +26,7 @@ namespace EpgTimer
 
             try
             {
-                comboBox_timeH_week.ItemsSource = CommonManager.Instance.HourDictionary.Values;
+                comboBox_timeH_week.ItemsSource = Enumerable.Range(0, 24);
                 comboBox_timeH_week.SelectedIndex = 4;
 
 
@@ -49,10 +49,7 @@ namespace EpgTimer
                         listBox_serviceOther.Items.Add(info);
                     }
                 }
-                foreach (ContentKindInfo info in CommonManager.Instance.ContentKindDictionary.Values)
-                {
-                    listBox_jyanru.Items.Add(info);
-                }
+                listBox_jyanru.ItemsSource = CommonManager.Instance.ContentKindList;
 
                 radioButton_rate.IsChecked = true;
                 radioButton_week.IsChecked = false;

@@ -12,8 +12,6 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Threading; //紅
-using System.Windows.Interop; //紅
-using System.Runtime.InteropServices; //紅
 
 namespace EpgTimer
 {
@@ -43,18 +41,16 @@ namespace EpgTimer
         {
             string appName = System.IO.Path.GetFileNameWithoutExtension(System.Reflection.Assembly.GetEntryAssembly().Location);
             CommonManager.Instance.NWMode = appName.StartsWith("EpgTimerNW", StringComparison.OrdinalIgnoreCase);
-            //CommonManager.Instance.NWMode = true;
 
+            Settings.LoadFromXmlFile(CommonManager.Instance.NWMode);
             if (CommonManager.Instance.NWMode == true)
             {
-                Settings.LoadFromXmlFileNW();
                 CommonManager.Instance.DB.SetNoAutoReloadEPG(Settings.Instance.NgAutoEpgLoadNW);
                 cmd.SetSendMode(true);
-                cmd.SetNWSetting("", Settings.Instance.NWServerPort);
+                cmd.SetNWSetting(null, 0);
             }
             else
             {
-                Settings.LoadFromXmlFile();
                 try
                 {
                     using (var sr = new System.IO.StreamReader(SettingPath.SettingFolderPath + "\\ChSet5.txt", Encoding.Default))
@@ -326,21 +322,6 @@ namespace EpgTimer
                 if (string.Compare(ext, ".exe", true) == 0)
                 {
                     //何もしない
-                }
-                else if (string.Compare(ext, ".eaa", true) == 0)
-                {
-                    //自動予約登録条件追加
-                    EAAFileClass eaaFile = new EAAFileClass();
-                    if (eaaFile.LoadEAAFile(arg) == true)
-                    {
-                        List<EpgAutoAddData> val = new List<EpgAutoAddData>();
-                        val.Add(eaaFile.AddKey);
-                        cmd.SendAddEpgAutoAdd(val);
-                    }
-                    else
-                    {
-                        MessageBox.Show("解析に失敗しました。");
-                    }
                 }
                 else if (string.Compare(ext, ".tvpid", true) == 0 || string.Compare(ext, ".tvpio", true) == 0)
                 {
@@ -685,22 +666,7 @@ namespace EpgTimer
             foreach (string path in filePath)
             {
                 String ext = System.IO.Path.GetExtension(path);
-                if (string.Compare(ext, ".eaa", true) == 0)
-                {
-                    //自動予約登録条件追加
-                    EAAFileClass eaaFile = new EAAFileClass();
-                    if (eaaFile.LoadEAAFile(path) == true)
-                    {
-                        List<EpgAutoAddData> val = new List<EpgAutoAddData>();
-                        val.Add(eaaFile.AddKey);
-                        cmd.SendAddEpgAutoAdd(val);
-                    }
-                    else
-                    {
-                        MessageBox.Show("解析に失敗しました。");
-                    }
-                }
-                else if (string.Compare(ext, ".tvpid", true) == 0 || string.Compare(ext, ".tvpio", true) == 0)
+                if (string.Compare(ext, ".tvpid", true) == 0 || string.Compare(ext, ".tvpio", true) == 0)
                 {
                     //iEPG追加
                     IEPGFileClass iepgFile = new IEPGFileClass();
@@ -1231,39 +1197,13 @@ namespace EpgTimer
             }
         }
 
-        internal struct LASTINPUTINFO
-        {
-            public uint cbSize;
-            public uint dwTime;
-        }
-
-        [DllImport("User32.dll")]
-        private static extern bool GetLastInputInfo(ref LASTINPUTINFO plii);
-
-        [DllImport("Kernel32.dll")]
-        public static extern UInt32 GetTickCount();
-
         private void ShowSleepDialog(UInt16 param)
         {
-            LASTINPUTINFO info = new LASTINPUTINFO();
-            info.cbSize = (uint)System.Runtime.InteropServices.Marshal.SizeOf(info);
-            GetLastInputInfo(ref info);
-
-            // 現在時刻取得
-            UInt64 dwNow = GetTickCount();
-
-            // GetTickCount()は49.7日周期でリセットされるので桁上りさせる
-            if (info.dwTime > dwNow)
-            {
-                dwNow += 0x100000000;
-            }
-
             if (IniFileHandler.GetPrivateProfileInt("NO_SUSPEND", "NoUsePC", 0, SettingPath.TimerSrvIniPath) == 1)
             {
-                UInt32 ngUsePCTime = (UInt32)IniFileHandler.GetPrivateProfileInt("NO_SUSPEND", "NoUsePCTime", 3, SettingPath.TimerSrvIniPath);
-                UInt32 threshold = ngUsePCTime * 60 * 1000;
+                int ngUsePCTime = IniFileHandler.GetPrivateProfileInt("NO_SUSPEND", "NoUsePCTime", 3, SettingPath.TimerSrvIniPath);
 
-                if (ngUsePCTime == 0 || dwNow - info.dwTime < threshold)
+                if (ngUsePCTime == 0 || CommonUtil.GetIdleTimeSec() < ngUsePCTime * 60)
                 {
                     return;
                 }

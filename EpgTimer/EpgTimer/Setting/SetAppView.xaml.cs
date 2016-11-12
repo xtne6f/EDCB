@@ -57,6 +57,9 @@ namespace EpgTimer.Setting
                 checkBox_autoDelRecInfo.IsEnabled = false;
                 label42.IsEnabled = false;
                 textBox_autoDelRecInfo.IsEnabled = false;
+                label_epgArchivePeriod1.IsEnabled = false;
+                comboBox_epgArchivePeriod.IsEnabled = false;
+                label_epgArchivePeriod2.IsEnabled = false;
                 checkBox_timeSync.IsEnabled = false;
                 checkBox_wakeReconnect.IsEnabled = true;
                 checkBox_suspendClose.IsEnabled = true;
@@ -64,6 +67,7 @@ namespace EpgTimer.Setting
                 checkBox_srvResident.IsEnabled = false;
                 checkBox_srvSaveNotifyLog.IsEnabled = false;
                 checkBox_srvSaveDebugLog.IsEnabled = false;
+                checkBox_srvCompatTkntrec.IsEnabled = false;
             }
 
             try
@@ -169,6 +173,10 @@ namespace EpgTimer.Setting
                 {
                     checkBox_back_priority.IsChecked = true;
                 }
+                if (IniFileHandler.GetPrivateProfileInt("SET", "FixedTunerPriority", 1, SettingPath.TimerSrvIniPath) == 1)
+                {
+                    checkBox_fixedTunerPriority.IsChecked = true;
+                }
                 if (IniFileHandler.GetPrivateProfileInt("SET", "AutoDel", 0, SettingPath.TimerSrvIniPath) == 1)
                 {
                     checkBox_autoDel.IsChecked = true;
@@ -198,6 +206,9 @@ namespace EpgTimer.Setting
                     checkBox_autoDelRecInfo.IsChecked = true;
                 }
                 textBox_autoDelRecInfo.Text = IniFileHandler.GetPrivateProfileInt("SET", "AutoDelRecInfoNum", 100, SettingPath.TimerSrvIniPath).ToString();
+
+                comboBox_epgArchivePeriod.ItemsSource = Enumerable.Range(0, 15);
+                comboBox_epgArchivePeriod.SelectedIndex = Math.Min(Math.Max(IniFileHandler.GetPrivateProfileInt("SET", "EpgArchivePeriodHour", 0, SettingPath.TimerSrvIniPath) / 24, 0), 14);
 
                 if (IniFileHandler.GetPrivateProfileInt("SET", "TimeSync", 0, SettingPath.TimerSrvIniPath) == 1)
                 {
@@ -233,6 +244,8 @@ namespace EpgTimer.Setting
                 }
                 checkBox_srvSaveNotifyLog.IsChecked = IniFileHandler.GetPrivateProfileInt("SET", "SaveNotifyLog", 0, SettingPath.TimerSrvIniPath) != 0;
                 checkBox_srvSaveDebugLog.IsChecked = IniFileHandler.GetPrivateProfileInt("SET", "SaveDebugLog", 0, SettingPath.TimerSrvIniPath) != 0;
+                checkBox_srvCompatTkntrec.Tag = IniFileHandler.GetPrivateProfileInt("SET", "CompatFlags", 0, SettingPath.TimerSrvIniPath);
+                checkBox_srvCompatTkntrec.IsChecked = (int)checkBox_srvCompatTkntrec.Tag % 4096 == 4095;
 
                 int count;
                 count = IniFileHandler.GetPrivateProfileInt("DEL_EXT", "Count", 0, SettingPath.TimerSrvIniPath);
@@ -537,6 +550,9 @@ namespace EpgTimer.Setting
             {
                 IniFileHandler.WritePrivateProfileString("SET", "BackPriority", "0", SettingPath.TimerSrvIniPath);
             }
+
+            IniFileHandler.WritePrivateProfileString("SET", "FixedTunerPriority", checkBox_fixedTunerPriority.IsChecked == true ? "1" : "0", SettingPath.TimerSrvIniPath);
+
             if (checkBox_autoDel.IsChecked == true)
             {
                 IniFileHandler.WritePrivateProfileString("SET", "AutoDel", "1", SettingPath.TimerSrvIniPath);
@@ -578,6 +594,8 @@ namespace EpgTimer.Setting
             }
             IniFileHandler.WritePrivateProfileString("SET", "AutoDelRecInfoNum", textBox_autoDelRecInfo.Text.ToString(), SettingPath.TimerSrvIniPath);
 
+            IniFileHandler.WritePrivateProfileString("SET", "EpgArchivePeriodHour", (comboBox_epgArchivePeriod.SelectedIndex * 24).ToString(), SettingPath.TimerSrvIniPath);
+
             if (checkBox_timeSync.IsChecked == true)
             {
                 IniFileHandler.WritePrivateProfileString("SET", "TimeSync", "1", SettingPath.TimerSrvIniPath);
@@ -598,6 +616,10 @@ namespace EpgTimer.Setting
             IniFileHandler.WritePrivateProfileString("SET", "NoBalloonTip", checkBox_srvNoBalloonTip.IsChecked == false ? "0" : "1", SettingPath.TimerSrvIniPath);
             IniFileHandler.WritePrivateProfileString("SET", "SaveNotifyLog", checkBox_srvSaveNotifyLog.IsChecked == false ? "0" : "1", SettingPath.TimerSrvIniPath);
             IniFileHandler.WritePrivateProfileString("SET", "SaveDebugLog", checkBox_srvSaveDebugLog.IsChecked == false ? "0" : "1", SettingPath.TimerSrvIniPath);
+            int compatFlags = (int)checkBox_srvCompatTkntrec.Tag;
+            IniFileHandler.WritePrivateProfileString("SET", "CompatFlags",
+                "" + (checkBox_srvCompatTkntrec.IsChecked == false ? (compatFlags % 4096 == 4095 ? 0 : compatFlags) : (compatFlags % 4096 == 4095 ? compatFlags : 4095)),
+                SettingPath.TimerSrvIniPath);
 
             IniFileHandler.WritePrivateProfileString("DEL_EXT", "Count", extList.Count.ToString(), SettingPath.TimerSrvIniPath);
             for (int i = 0; i < extList.Count; i++)

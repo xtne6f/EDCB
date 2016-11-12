@@ -41,28 +41,28 @@ namespace EpgTimer
                 }
                 listView_service.ItemsSource = serviceList;
 
-                comboBox_content.DataContext = CommonManager.Instance.ContentKindDictionary.Values;
+                comboBox_content.DataContext = CommonManager.Instance.ContentKindList;
                 comboBox_content.SelectedIndex = 0;
 
-                comboBox_time_sw.DataContext = CommonManager.Instance.DayOfWeekDictionary.Values;
+                comboBox_time_sw.DataContext = CommonManager.Instance.DayOfWeekArray;
                 comboBox_time_sw.SelectedIndex = 0;
-                comboBox_time_sh.DataContext = CommonManager.Instance.HourDictionary.Values;
+                comboBox_time_sh.DataContext = Enumerable.Range(0, 24);
                 comboBox_time_sh.SelectedIndex = 0;
-                comboBox_time_sm.DataContext = CommonManager.Instance.MinDictionary.Values;
+                comboBox_time_sm.DataContext = Enumerable.Range(0, 60);
                 comboBox_time_sm.SelectedIndex = 0;
-                comboBox_time_ew.DataContext = CommonManager.Instance.DayOfWeekDictionary.Values;
+                comboBox_time_ew.DataContext = CommonManager.Instance.DayOfWeekArray;
                 comboBox_time_ew.SelectedIndex = 6;
-                comboBox_time_eh.DataContext = CommonManager.Instance.HourDictionary.Values;
+                comboBox_time_eh.DataContext = Enumerable.Range(0, 24);
                 comboBox_time_eh.SelectedIndex = 23;
-                comboBox_time_em.DataContext = CommonManager.Instance.MinDictionary.Values;
+                comboBox_time_em.DataContext = Enumerable.Range(0, 60);
                 comboBox_time_em.SelectedIndex = 59;
-                comboBox_week_sh.DataContext = CommonManager.Instance.HourDictionary.Values;
+                comboBox_week_sh.DataContext = Enumerable.Range(0, 24);
                 comboBox_week_sh.SelectedIndex = 0;
-                comboBox_week_sm.DataContext = CommonManager.Instance.MinDictionary.Values;
+                comboBox_week_sm.DataContext = Enumerable.Range(0, 60);
                 comboBox_week_sm.SelectedIndex = 0;
-                comboBox_week_eh.DataContext = CommonManager.Instance.HourDictionary.Values;
+                comboBox_week_eh.DataContext = Enumerable.Range(0, 24);
                 comboBox_week_eh.SelectedIndex = 23;
-                comboBox_week_em.DataContext = CommonManager.Instance.MinDictionary.Values;
+                comboBox_week_em.DataContext = Enumerable.Range(0, 60);
                 comboBox_week_em.SelectedIndex = 59;
             }
             catch (Exception ex)
@@ -186,6 +186,10 @@ namespace EpgTimer
                     key.chkRecEnd = 0;
                 }
                 key.chkRecDay = Convert.ToUInt16(textBox_chkRecDay.Text.ToString());
+                if (checkBox_chkRecNoService.IsChecked == true)
+                {
+                    key.chkRecDay = (ushort)(key.chkRecDay % 10000 + 40000);
+                }
             }
             catch (Exception ex)
             {
@@ -261,6 +265,11 @@ namespace EpgTimer
                     {
                         listBox_content.Items.Add(CommonManager.Instance.ContentKindDictionary[contentKey]);
                     }
+                    else
+                    {
+                        //未知のジャンル
+                        listBox_content.Items.Add(new ContentKindInfo("?", "?", item.content_nibble_level_1, item.content_nibble_level_2));
+                    }
                 }
 
                 foreach (ServiceItem info in serviceDict.Values)
@@ -282,8 +291,8 @@ namespace EpgTimer
 
                     String viewText = "";
 
-                    viewText = CommonManager.Instance.DayOfWeekDictionary[info.startDayOfWeek].DisplayName + " " + info.startHour.ToString("00") + ":" + info.startMin.ToString("00") +
-                        " ～ " + CommonManager.Instance.DayOfWeekDictionary[info.endDayOfWeek].DisplayName + " " + info.endHour.ToString("00") + ":" + info.endMin.ToString("00");
+                    viewText = CommonManager.Instance.DayOfWeekArray[info.startDayOfWeek] + " " + info.startHour.ToString("00") + ":" + info.startMin.ToString("00") +
+                        " ～ " + CommonManager.Instance.DayOfWeekArray[info.endDayOfWeek] + " " + info.endHour.ToString("00") + ":" + info.endMin.ToString("00");
 
                     item.DateInfo = info;
                     item.ViewText = viewText;
@@ -329,7 +338,8 @@ namespace EpgTimer
                 {
                     checkBox_chkRecEnd.IsChecked = false;
                 }
-                textBox_chkRecDay.Text = defKey.chkRecDay.ToString();
+                textBox_chkRecDay.Text = "" + (defKey.chkRecDay >= 40000 ? defKey.chkRecDay % 10000 : defKey.chkRecDay);
+                checkBox_chkRecNoService.IsChecked = defKey.chkRecDay >= 40000;
             }
             catch (Exception ex)
             {
@@ -503,19 +513,17 @@ namespace EpgTimer
 
             DateItem item = new DateItem();
             EpgSearchDateInfo info = new EpgSearchDateInfo();
-            DayOfWeekInfo startWeek = comboBox_time_sw.SelectedItem as DayOfWeekInfo;
-            DayOfWeekInfo endWeek = comboBox_time_ew.SelectedItem as DayOfWeekInfo;
 
-            info.startDayOfWeek = startWeek.Value;
-            info.startHour = (UInt16)comboBox_time_sh.SelectedItem;
-            info.startMin = (UInt16)comboBox_time_sm.SelectedItem;
-            info.endDayOfWeek = endWeek.Value;
-            info.endHour = (UInt16)comboBox_time_eh.SelectedItem;
-            info.endMin = (UInt16)comboBox_time_em.SelectedItem;
+            info.startDayOfWeek = (byte)Math.Min(comboBox_time_sw.SelectedIndex, 6);
+            info.startHour = (UInt16)comboBox_time_sh.SelectedIndex;
+            info.startMin = (UInt16)comboBox_time_sm.SelectedIndex;
+            info.endDayOfWeek = (byte)Math.Min(comboBox_time_ew.SelectedIndex, 6);
+            info.endHour = (UInt16)comboBox_time_eh.SelectedIndex;
+            info.endMin = (UInt16)comboBox_time_em.SelectedIndex;
 
             String viewText = "";
-            viewText = startWeek.DisplayName + " " + info.startHour.ToString("00") + ":" + info.startMin.ToString("00") +
-                " ～ " + endWeek.DisplayName + " " + info.endHour.ToString("00") + ":" + info.endMin.ToString("00");
+            viewText = comboBox_time_sw.SelectedItem + " " + info.startHour.ToString("00") + ":" + info.startMin.ToString("00") +
+                " ～ " + comboBox_time_ew.SelectedItem + " " + info.endHour.ToString("00") + ":" + info.endMin.ToString("00");
 
             item.DateInfo = info;
             item.ViewText = viewText;
@@ -532,8 +540,8 @@ namespace EpgTimer
             {
                 return;
             }
-            Int32 start = ((UInt16)comboBox_week_sh.SelectedItem) * 60+ (UInt16)comboBox_week_sm.SelectedItem;
-            Int32 end = ((UInt16)comboBox_week_eh.SelectedItem) * 60+ (UInt16)comboBox_week_em.SelectedItem;
+            Int32 start = comboBox_week_sh.SelectedIndex * 60+ comboBox_week_sm.SelectedIndex;
+            Int32 end = comboBox_week_eh.SelectedIndex * 60+ comboBox_week_em.SelectedIndex;
 
             var Add_week = new Action<CheckBox, byte>((chbox, day) =>
             {
@@ -541,11 +549,11 @@ namespace EpgTimer
                 //
                 var info = new EpgSearchDateInfo();
                 info.startDayOfWeek = day;
-                info.startHour = (UInt16)comboBox_week_sh.SelectedItem;
-                info.startMin = (UInt16)comboBox_week_sm.SelectedItem;
+                info.startHour = (UInt16)comboBox_week_sh.SelectedIndex;
+                info.startMin = (UInt16)comboBox_week_sm.SelectedIndex;
                 info.endDayOfWeek = info.startDayOfWeek;
-                info.endHour = (UInt16)comboBox_week_eh.SelectedItem;
-                info.endMin = (UInt16)comboBox_week_em.SelectedItem;
+                info.endHour = (UInt16)comboBox_week_eh.SelectedIndex;
+                info.endMin = (UInt16)comboBox_week_em.SelectedIndex;
                 if (end < start)
                 {
                     //終了時間は翌日のものとみなす

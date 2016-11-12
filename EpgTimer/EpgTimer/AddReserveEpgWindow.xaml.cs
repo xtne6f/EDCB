@@ -30,7 +30,14 @@ namespace EpgTimer
 
         public void SetOpenMode(byte mode)
         {
-            tabControl.SelectedIndex = mode;
+            tabControl.SelectedIndex = mode == 0 && tabItem_reserve.IsEnabled ? 0 : 1;
+        }
+
+        public void SetReservable(bool reservable)
+        {
+            tabItem_reserve.IsEnabled = reservable;
+            button_add_reserve.IsEnabled = reservable;
+            SetOpenMode((byte)tabControl.SelectedIndex);
         }
 
         public void SetEventInfo(EpgEventInfo eventData)

@@ -193,7 +193,7 @@ namespace EpgTimer
 
 
                     //デフォルト表示
-                    foreach (EpgServiceEventInfo info in CommonManager.Instance.DB.ServiceEventList.Values)
+                    foreach (EpgServiceAllEventInfo info in CommonManager.Instance.DB.ServiceEventList.Values)
                     {
                         if (info.serviceInfo.ONID == 0x0004)
                         {

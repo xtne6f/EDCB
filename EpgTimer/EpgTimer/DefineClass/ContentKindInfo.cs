@@ -16,12 +16,13 @@ namespace EpgTimer
             this.SubName = subName;
             this.Nibble1 = nibble1;
             this.Nibble2 = nibble2;
-            this.ID = (UInt16)(((UInt16)nibble1) << 8 | nibble2);
         }
         public UInt16 ID
         {
-            get;
-            set;
+            get
+            {
+                return (UInt16)(Nibble1 << 8 | Nibble2);
+            }
         }
         public String ContentName
         {
@@ -59,29 +60,6 @@ namespace EpgTimer
             else
             {
                 return "  " + SubName;
-            }
-        }
-        public String ToolTipView
-        {
-            get
-            {
-                if (Settings.Instance.NoToolTip == true)
-                {
-                    return null;
-                }
-                String viewTip = "";
-                if (Nibble2 == 0xFF)
-                {
-                    viewTip = ContentName + "\r\n" +
-                        "id : " + Nibble1.ToString() + "(0x" + Nibble1.ToString("X2") + ")";
-                }
-                else
-                {
-                    viewTip = ContentName + " : " + SubName + "\r\n" +
-                        "id : " + Nibble1.ToString() + "(0x" + Nibble1.ToString("X2") + ")" + "\r\n" +
-                        "sub_id : " + Nibble2.ToString() + "(0x" + Nibble2.ToString("X2") + ")";
-                }
-                return viewTip;
             }
         }
     }

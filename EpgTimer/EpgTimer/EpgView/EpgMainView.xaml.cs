@@ -32,7 +32,6 @@ namespace EpgTimer
         private bool viewCustNeedTimeOnly = false;
         private List<EpgServiceInfo> serviceList = new List<EpgServiceInfo>();
         private SortedList<DateTime, List<ProgramViewItem>> timeList = new SortedList<DateTime, List<ProgramViewItem>>();
-        private List<ProgramViewItem> programList = new List<ProgramViewItem>();
         private List<ReserveViewItem> reserveList = new List<ReserveViewItem>();
         private Point clickPos;
         private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
@@ -78,13 +77,10 @@ namespace EpgTimer
             dateView.ClearInfo();
             timeList.Clear();
             serviceList.Clear();
-            programList.Clear();
             reserveList.Clear();
 
             serviceList = null;
             serviceList = new List<EpgServiceInfo>();
-            programList = null;
-            programList = new List<ProgramViewItem>();
             reserveList = null;
             reserveList = new List<ReserveViewItem>();
 
@@ -274,11 +270,9 @@ namespace EpgTimer
         /// マウス位置から番組情報を取得する
         /// </summary>
         /// <param name="cursorPos">[IN]マウス位置</param>
-        /// <param name="program">[OUT]番組情報</param>
-        /// <returns>falseで存在しない</returns>
-        private bool GetProgramItem(Point cursorPos, ref EpgEventInfo program)
+        /// <returns>nullで存在しない</returns>
+        private ProgramViewItem GetProgramItem(Point cursorPos)
         {
-            try
             {
                 int timeIndex = (int)(cursorPos.Y / (60 * Settings.Instance.MinHeight));
                 if (0 <= timeIndex && timeIndex < timeList.Count)
@@ -288,17 +282,12 @@ namespace EpgTimer
                         if (pgInfo.LeftPos <= cursorPos.X && cursorPos.X < pgInfo.LeftPos + pgInfo.Width &&
                             pgInfo.TopPos <= cursorPos.Y && cursorPos.Y < pgInfo.TopPos + pgInfo.Height)
                         {
-                            program = pgInfo.EventInfo;
-                            return true;
+                            return pgInfo;
                         }
                     }
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-            return false;
+            return null;
         }
 
         /// <summary>
@@ -319,11 +308,11 @@ namespace EpgTimer
                     return;
                 }
                 //番組情報あるかチェック
-                EpgEventInfo program = new EpgEventInfo();
-                if (GetProgramItem(cursorPos, ref program) == true)
+                ProgramViewItem program = GetProgramItem(cursorPos);
+                if (program != null)
                 {
                     //予約追加ダイアログ表示
-                    AddReserve(program);
+                    AddReserve(program.EventInfo, program.Past == false);
                     return;
                 }
             }
@@ -345,15 +334,11 @@ namespace EpgTimer
                 //右クリック表示メニューの作成
                 clickPos = cursorPos;
                 ReserveData reserve = new ReserveData();
-                EpgEventInfo program = new EpgEventInfo();
-                bool noItem = false;
+                ProgramViewItem program = null;
                 bool addMode = false;
                 if (GetReserveItem(cursorPos, ref reserve) == false)
                 {
-                    if (GetProgramItem(cursorPos, ref program) == false)
-                    {
-                        noItem = true;
-                    }
+                    program = GetProgramItem(cursorPos);
                     addMode = true;
                 }
                 ContextMenu menu = new ContextMenu();
@@ -514,7 +499,7 @@ namespace EpgTimer
                 menuItemView.Items.Add(menuItemChgViewMode3);
                 menuItemView.Items.Add(separate3);
                 menuItemView.Items.Add(menuItemViewSetDlg);                
-                if (noItem == true)
+                if (addMode && program == null)
                 {
                     menuItemNew.IsEnabled = false;
                     menuItemAdd.IsEnabled = false;
@@ -541,8 +526,9 @@ namespace EpgTimer
                     }
                     else
                     {
-                        menuItemNew.IsEnabled = true;
+                        menuItemNew.IsEnabled = program.Past == false;
                         menuItemAdd.IsEnabled = true;
+                        menuItemPreset.IsEnabled = program.Past == false;
                         menuItemChg.IsEnabled = false;
                         menuItemDel.IsEnabled = false;
                         menuItemAutoAdd.IsEnabled = true;
@@ -582,11 +568,12 @@ namespace EpgTimer
                 MenuItem meun = sender as MenuItem;
                 UInt32 presetID = (UInt32)meun.DataContext;
 
-                EpgEventInfo eventInfo = new EpgEventInfo();
-                if (GetProgramItem(clickPos, ref eventInfo) == false)
+                ProgramViewItem program = GetProgramItem(clickPos);
+                if (program == null)
                 {
                     return;
                 }
+                EpgEventInfo eventInfo = program.EventInfo;
                 if (eventInfo.StartTimeFlag == 0)
                 {
                     MessageBox.Show("開始時間未定のため予約できません");
@@ -656,12 +643,12 @@ namespace EpgTimer
         {
             try
             {
-                EpgEventInfo program = new EpgEventInfo();
-                if (GetProgramItem(clickPos, ref program) == false)
+                ProgramViewItem program = GetProgramItem(clickPos);
+                if (program == null)
                 {
                     return;
                 }
-                AddReserve(program);
+                AddReserve(program.EventInfo, program.Past == false);
             }
             catch (Exception ex)
             {
@@ -829,11 +816,12 @@ namespace EpgTimer
                     return;
                 }
 
-                EpgEventInfo program = new EpgEventInfo();
-                if (GetProgramItem(clickPos, ref program) == false)
+                ProgramViewItem programView = GetProgramItem(clickPos);
+                if (programView == null)
                 {
                     return;
                 }
+                EpgEventInfo program = programView.EventInfo;
 
                 SearchWindow dlg = new SearchWindow();
                 dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
@@ -866,11 +854,12 @@ namespace EpgTimer
         {
             try
             {
-                EpgEventInfo eventInfo = new EpgEventInfo();
-                if (GetProgramItem(clickPos, ref eventInfo) == false)
+                ProgramViewItem program = GetProgramItem(clickPos);
+                if (program == null)
                 {
                     return;
                 }
+                EpgEventInfo eventInfo = program.EventInfo;
                 
                 if (eventInfo.StartTimeFlag == 0)
                 {
@@ -991,11 +980,11 @@ namespace EpgTimer
                     CustomEpgTabInfo setInfo = new CustomEpgTabInfo();
                     setViewInfo.CopyTo(ref setInfo);
                     setInfo.ViewMode = (int)item.DataContext;
-                    EpgEventInfo program = new EpgEventInfo();
-                    if (GetProgramItem(clickPos, ref program) == true)
+                    ProgramViewItem program = GetProgramItem(clickPos);
+                    if (program != null)
                     {
                         SearchItem searchitem = new SearchItem();
-                        searchitem.EventInfo = program;
+                        searchitem.EventInfo = program.EventInfo;
                         BlackoutWindow.selectedSearchItem = searchitem;
                     }
                     else
@@ -1039,13 +1028,14 @@ namespace EpgTimer
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void AddReserve(EpgEventInfo eventInfo)
+        private void AddReserve(EpgEventInfo eventInfo, bool reservable)
         {
             try
             {
                 AddReserveEpgWindow dlg = new AddReserveEpgWindow();
                 dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
                 dlg.SetOpenMode(Settings.Instance.EpgInfoOpenMode);
+                dlg.SetReservable(reservable);
                 dlg.SetEventInfo(eventInfo);
                 if (dlg.ShowDialog() == true)
                 {
@@ -1203,7 +1193,26 @@ namespace EpgTimer
                     updateEpgData = false;
                     if (setViewInfo.SearchMode == true)
                     {
-                        ReloadProgramViewItemForSearch();
+                        //番組情報の検索
+                        var list = new List<EpgEventInfo>();
+                        cmd.SendSearchPg(new List<EpgSearchKeyInfo>() { setViewInfo.SearchKey }, ref list);
+                        //サービス毎のリストに変換
+                        var serviceEventList = new Dictionary<ulong, EpgServiceAllEventInfo>();
+                        foreach (EpgEventInfo info in list)
+                        {
+                            ulong id = CommonManager.Create64Key(info.original_network_id, info.transport_stream_id, info.service_id);
+                            if (serviceEventList.ContainsKey(id) == false)
+                            {
+                                if (ChSet5.Instance.ChList.ContainsKey(id) == false)
+                                {
+                                    //サービス情報ないので無効
+                                    continue;
+                                }
+                                serviceEventList.Add(id, new EpgServiceAllEventInfo(CommonManager.ConvertChSet5To(ChSet5.Instance.ChList[id])));
+                            }
+                            serviceEventList[id].eventList.Add(info);
+                        }
+                        ReloadProgramViewItem(serviceEventList);
                     }
                     else
                     {
@@ -1260,7 +1269,7 @@ namespace EpgTimer
                             return false;
                         }
 
-                        ReloadProgramViewItem();
+                        ReloadProgramViewItem(CommonManager.Instance.DB.ServiceEventList);
 
                     }
                     MoveNowTime();
@@ -1446,7 +1455,8 @@ namespace EpgTimer
                                         //予約情報から番組情報を特定し、枠表示位置を再設定する
                                         foreach (ProgramViewItem pgInfo in timeList[chkTime])
                                         {
-                                            if (viewItem.ReserveInfo.OriginalNetworkID == pgInfo.EventInfo.original_network_id &&
+                                            if (pgInfo.Past == false &&
+                                                viewItem.ReserveInfo.OriginalNetworkID == pgInfo.EventInfo.original_network_id &&
                                                 viewItem.ReserveInfo.TransportStreamID == pgInfo.EventInfo.transport_stream_id &&
                                                 viewItem.ReserveInfo.ServiceID == pgInfo.EventInfo.service_id &&
                                                 viewItem.ReserveInfo.EventID == pgInfo.EventInfo.event_id &&
@@ -1492,344 +1502,17 @@ namespace EpgTimer
         /// <summary>
         /// 番組情報の再描画処理
         /// </summary>
-        private void ReloadProgramViewItem()
+        private void ReloadProgramViewItem(Dictionary<ulong, EpgServiceAllEventInfo> serviceEventList)
         {
             try
             {
                 epgProgramView.ClearInfo();
                 timeList.Clear();
-                programList.Clear();
-                programList = null;
-                programList = new List<ProgramViewItem>();
+                var programList = new List<ProgramViewItem>();
                 nowViewTimer.Stop();
 
                 //必要サービスの抽出
                 serviceList.Clear();
-
-                foreach (UInt64 id in viewCustServiceList)
-                {
-                    if (CommonManager.Instance.DB.ServiceEventList.ContainsKey(id) == true)
-                    {
-                        EpgServiceInfo serviceInfo = CommonManager.Instance.DB.ServiceEventList[id].serviceInfo;
-                        if (serviceList.Exists(i => i.ONID == serviceInfo.ONID && i.TSID == serviceInfo.TSID && i.SID == serviceInfo.SID) == false)
-                        {
-                            serviceList.Add(serviceInfo);
-                        }
-                    }
-                }
-
-
-                //必要番組の抽出と時間チェック
-                List<EpgServiceInfo> primeServiceList = new List<EpgServiceInfo>();
-                //番組表でまとめて描画する矩形の幅と番組集合のリスト
-                var programGroupList = new List<Tuple<double, List<ProgramViewItem>>>();
-                int groupSpan = 1;
-                int mergePos = 0;
-                int mergeNum = 0;
-                int servicePos = -1;
-                for (int i = 0; i < serviceList.Count; i++)
-                {
-                    //TSIDが同じでSIDが逆順に登録されているときは併合する
-                    int spanCheckNum = 1;
-                    if (--mergePos < i - mergeNum)
-                    {
-                        EpgServiceInfo curr = serviceList[i];
-                        for (mergePos = i; mergePos + 1 < serviceList.Count; mergePos++)
-                        {
-                            EpgServiceInfo next = serviceList[mergePos + 1];
-                            if (next.ONID != curr.ONID || next.TSID != curr.TSID || next.SID >= curr.SID)
-                            {
-                                break;
-                            }
-                            curr = next;
-                        }
-                        mergeNum = mergePos + 1 - i;
-                        servicePos++;
-                        //正順のときは貫きチェックするサービス数を調べる
-                        for (; mergeNum == 1 && i + spanCheckNum < serviceList.Count; spanCheckNum++)
-                        {
-                            EpgServiceInfo next = serviceList[i + spanCheckNum];
-                            if (next.ONID != curr.ONID || next.TSID != curr.TSID)
-                            {
-                                break;
-                            }
-                            else if (next.SID < curr.SID)
-                            {
-                                spanCheckNum--;
-                                break;
-                            }
-                            curr = next;
-                        }
-                        if (--groupSpan <= 0)
-                        {
-                            groupSpan = spanCheckNum;
-                            programGroupList.Add(new Tuple<double, List<ProgramViewItem>>(Settings.Instance.ServiceWidth * groupSpan, new List<ProgramViewItem>()));
-                        }
-                        primeServiceList.Add(serviceList[mergePos]);
-                    }
-
-                    EpgServiceInfo serviceInfo = serviceList[mergePos];
-                    UInt64 id = CommonManager.Create64Key(serviceInfo.ONID, serviceInfo.TSID, serviceInfo.SID);
-                    foreach (EpgEventInfo eventInfo in CommonManager.Instance.DB.ServiceEventList[id].eventList)
-                    {
-                        if (eventInfo.StartTimeFlag == 0)
-                        {
-                            //開始未定は除外
-                            continue;
-                        }
-                        //ジャンル絞り込み
-                        if (this.viewCustContentKindList.Count > 0)
-                        {
-                            bool find = false;
-                            if (eventInfo.ContentInfo == null || eventInfo.ContentInfo.nibbleList.Count == 0)
-                            {
-                                //ジャンル情報ない
-                                find = this.viewCustContentKindList.ContainsKey(0xFFFF);
-                            }
-                            else
-                            {
-                                {
-                                    foreach (EpgContentData contentInfo in eventInfo.ContentInfo.nibbleList)
-                                    {
-                                        UInt16 ID1 = (UInt16)(((UInt16)contentInfo.content_nibble_level_1) << 8 | 0xFF);
-                                        UInt16 ID2 = (UInt16)(((UInt16)contentInfo.content_nibble_level_1) << 8 | contentInfo.content_nibble_level_2);
-                                        if (this.viewCustContentKindList.ContainsKey(ID1) == true)
-                                        {
-                                            find = true;
-                                            break;
-                                        }
-                                        else if (this.viewCustContentKindList.ContainsKey(ID2) == true)
-                                        {
-                                            find = true;
-                                            break;
-                                        }
-                                    }
-                                }
-                            }
-                            if (find == false)
-                            {
-                                //ジャンル見つからないので除外
-                                continue;
-                            }
-                        }
-                        //イベントグループのチェック
-                        int widthSpan = 1;
-                        if (eventInfo.EventGroupInfo != null)
-                        {
-                            bool spanFlag = false;
-                            foreach (EpgEventData data in eventInfo.EventGroupInfo.eventDataList)
-                            {
-                                if (serviceInfo.ONID == data.original_network_id &&
-                                    serviceInfo.TSID == data.transport_stream_id &&
-                                    serviceInfo.SID == data.service_id)
-                                {
-                                    spanFlag = true;
-                                    break;
-                                }
-                            }
-
-                            if (spanFlag == false)
-                            {
-                                //サービス２やサービス３の結合されるべきもの
-                                continue;
-                            }
-                            else
-                            {
-                                //横にどれだけ貫くかチェック
-                                int count = 1;
-                                while (mergeNum == 1 ? count < spanCheckNum : count < mergeNum - (mergeNum+i-mergePos-1)/2)
-                                {
-                                    EpgServiceInfo nextInfo = serviceList[mergeNum == 1 ? i + count : mergePos - count];
-                                    bool findNext = false;
-                                    foreach (EpgEventData data in eventInfo.EventGroupInfo.eventDataList)
-                                    {
-                                        if (nextInfo.ONID == data.original_network_id &&
-                                            nextInfo.TSID == data.transport_stream_id &&
-                                            nextInfo.SID == data.service_id)
-                                        {
-                                            widthSpan++;
-                                            findNext = true;
-                                        }
-                                    }
-                                    if (findNext == false)
-                                    {
-                                        break;
-                                    }
-                                    count++;
-                                }
-                            }
-                        }
-
-                        ProgramViewItem viewItem = new ProgramViewItem(eventInfo);
-                        viewItem.Height = ((eventInfo.DurationFlag == 0 ? 300 : eventInfo.durationSec) * Settings.Instance.MinHeight) / 60;
-                        viewItem.Width = Settings.Instance.ServiceWidth * widthSpan / mergeNum;
-                        viewItem.LeftPos = Settings.Instance.ServiceWidth * (servicePos + (double)((mergeNum+i-mergePos-1)/2) / mergeNum);
-                        //viewItem.TopPos = (eventInfo.start_time - startTime).TotalMinutes * Settings.Instance.MinHeight;
-                        programGroupList[programGroupList.Count - 1].Item2.Add(viewItem);
-                        programList.Add(viewItem);
-
-                        //日付チェック
-                        DateTime EndTime;
-                        if (eventInfo.DurationFlag == 0)
-                        {
-                            //終了未定
-                            EndTime = eventInfo.start_time.AddSeconds(30 * 10);
-                        }
-                        else
-                        {
-                            EndTime = eventInfo.start_time.AddSeconds(eventInfo.durationSec);
-                        }
-                        //必要時間リストの構築
-                        DateTime chkStartTime = new DateTime(eventInfo.start_time.Year, eventInfo.start_time.Month, eventInfo.start_time.Day, eventInfo.start_time.Hour, 0, 0);
-                        while (chkStartTime <= EndTime)
-                        {
-                            if (timeList.ContainsKey(chkStartTime) == false)
-                            {
-                                timeList.Add(chkStartTime, new List<ProgramViewItem>());
-                            }
-                            chkStartTime = chkStartTime.AddHours(1);
-                        }
-                    }
-                }
-
-                //必要時間のチェック
-                if (viewCustNeedTimeOnly == false)
-                {
-                    //番組のない時間帯を追加
-                    for (int i = 1; i < timeList.Count; i++)
-                    {
-                        if (timeList.Keys[i] > timeList.Keys[i - 1].AddHours(1))
-                        {
-                            timeList.Add(timeList.Keys[i - 1].AddHours(1), new List<ProgramViewItem>());
-                        }
-                    }
-
-                    //番組の表示位置設定
-                    foreach (ProgramViewItem item in programList)
-                    {
-                        item.TopPos = (item.EventInfo.start_time - timeList.Keys[0]).TotalMinutes * Settings.Instance.MinHeight;
-                    }
-                }
-                else
-                {
-                    //番組の表示位置設定
-                    foreach (ProgramViewItem item in programList)
-                    {
-                        DateTime chkStartTime = new DateTime(item.EventInfo.start_time.Year,
-                            item.EventInfo.start_time.Month,
-                            item.EventInfo.start_time.Day,
-                            item.EventInfo.start_time.Hour,
-                            0,
-                            0);
-                        if (timeList.ContainsKey(chkStartTime) == true)
-                        {
-                            int index = timeList.IndexOfKey(chkStartTime);
-                            item.TopPos = (index * 60 + (item.EventInfo.start_time - chkStartTime).TotalMinutes) * Settings.Instance.MinHeight;
-                        }
-                    }
-                }
-
-                if (Settings.Instance.MinimumHeight > 0)
-                {
-                    //最低表示行数を適用
-                    programList.Sort((x, y) => Math.Sign(x.LeftPos - y.LeftPos) * 2 + Math.Sign(x.TopPos - y.TopPos));
-                    double minimum = (Settings.Instance.FontSizeTitle + 2) * Settings.Instance.MinimumHeight;
-                    double lastLeft = double.MinValue;
-                    double lastBottom = 0;
-                    foreach (ProgramViewItem item in programList)
-                    {
-                        if (lastLeft != item.LeftPos)
-                        {
-                            lastLeft = item.LeftPos;
-                            lastBottom = double.MinValue;
-                        }
-                        item.Height = Math.Max(item.Height, minimum);
-                        if (item.TopPos < lastBottom)
-                        {
-                            item.Height = Math.Max(item.TopPos + item.Height - lastBottom, minimum);
-                            item.TopPos = lastBottom;
-                        }
-                        lastBottom = item.TopPos + item.Height;
-                    }
-                }
-
-                //必要時間リストと時間と番組の関連づけ
-                foreach (ProgramViewItem item in programList)
-                {
-                    int index = Math.Max((int)(item.TopPos / (60 * Settings.Instance.MinHeight)), 0);
-                    while (index < Math.Min((int)((item.TopPos + item.Height) / (60 * Settings.Instance.MinHeight)) + 1, timeList.Count))
-                    {
-                        timeList.Values[index++].Add(item);
-                    }
-                }
-
-                epgProgramView.SetProgramList(
-                    programGroupList,
-                    timeList.Count * 60 * Settings.Instance.MinHeight);
-
-                List<DateTime> dateTimeList = new List<DateTime>();
-                foreach (var item in timeList)
-                {
-                    dateTimeList.Add(item.Key);
-                }
-                timeView.SetTime(dateTimeList, viewCustNeedTimeOnly, false);
-                dateView.SetTime(dateTimeList);
-                serviceView.SetService(primeServiceList);
-
-                ReDrawNowLine();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
-
-        /// <summary>
-        /// 番組情報の再描画処理
-        /// </summary>
-        private void ReloadProgramViewItemForSearch()
-        {
-            try
-            {
-                epgProgramView.ClearInfo();
-                timeList.Clear();
-                programList.Clear();
-                nowViewTimer.Stop();
-
-                serviceList.Clear();
-
-                //番組情報の検索
-                List<EpgSearchKeyInfo> keyList = new List<EpgSearchKeyInfo>();
-                keyList.Add(setViewInfo.SearchKey);
-                List<EpgEventInfo> list = new List<EpgEventInfo>();
-
-                cmd.SendSearchPg(keyList, ref list);
-
-                //サービス毎のリストに変換
-                Dictionary<UInt64, EpgServiceEventInfo> serviceEventList = new Dictionary<UInt64, EpgServiceEventInfo>();
-                foreach (EpgEventInfo eventInfo in list)
-                {
-                    UInt64 id = CommonManager.Create64Key(eventInfo.original_network_id, eventInfo.transport_stream_id, eventInfo.service_id);
-                    EpgServiceEventInfo serviceInfo = null;
-                    if (serviceEventList.ContainsKey(id) == false)
-                    {
-                        if (ChSet5.Instance.ChList.ContainsKey(id) == false)
-                        {
-                            //サービス情報ないので無効
-                            continue;
-                        }
-                        serviceInfo = new EpgServiceEventInfo();
-                        serviceInfo.serviceInfo = CommonManager.ConvertChSet5To(ChSet5.Instance.ChList[id]);
-
-                        serviceEventList.Add(id, serviceInfo);
-                    }
-                    else
-                    {
-                        serviceInfo = serviceEventList[id];
-                    }
-                    serviceInfo.eventList.Add(eventInfo);
-                }
-
 
                 foreach (UInt64 id in viewCustServiceList)
                 {
@@ -1895,8 +1578,10 @@ namespace EpgTimer
 
                     EpgServiceInfo serviceInfo = serviceList[mergePos];
                     UInt64 id = CommonManager.Create64Key(serviceInfo.ONID, serviceInfo.TSID, serviceInfo.SID);
-                    foreach (EpgEventInfo eventInfo in serviceEventList[id].eventList)
+                    int eventInfoIndex = -1;
+                    foreach (EpgEventInfo eventInfo in Enumerable.Concat(serviceEventList[id].eventArcList, serviceEventList[id].eventList))
                     {
+                        bool past = ++eventInfoIndex < serviceEventList[id].eventArcList.Count;
                         if (eventInfo.StartTimeFlag == 0)
                         {
                             //開始未定は除外
@@ -1918,6 +1603,11 @@ namespace EpgTimer
                                     {
                                         UInt16 ID1 = (UInt16)(((UInt16)contentInfo.content_nibble_level_1) << 8 | 0xFF);
                                         UInt16 ID2 = (UInt16)(((UInt16)contentInfo.content_nibble_level_1) << 8 | contentInfo.content_nibble_level_2);
+                                        if (ID2 == 0x0E01)
+                                        {
+                                            ID1 = (UInt16)((contentInfo.user_nibble_1 | 0x70) << 8 | 0xFF);
+                                            ID2 = (UInt16)((contentInfo.user_nibble_1 | 0x70) << 8 | contentInfo.user_nibble_2);
+                                        }
                                         if (this.viewCustContentKindList.ContainsKey(ID1) == true)
                                         {
                                             find = true;
@@ -1985,7 +1675,7 @@ namespace EpgTimer
                             }
                         }
 
-                        ProgramViewItem viewItem = new ProgramViewItem(eventInfo);
+                        ProgramViewItem viewItem = new ProgramViewItem(eventInfo, past);
                         viewItem.Height = ((eventInfo.DurationFlag == 0 ? 300 : eventInfo.durationSec) * Settings.Instance.MinHeight) / 60;
                         viewItem.Width = Settings.Instance.ServiceWidth * widthSpan / mergeNum;
                         viewItem.LeftPos = Settings.Instance.ServiceWidth * (servicePos + (double)((mergeNum+i-mergePos-1)/2) / mergeNum);
@@ -2128,16 +1818,21 @@ namespace EpgTimer
             }
             else if (BlackoutWindow.selectedSearchItem != null)
             {
-                foreach (ProgramViewItem programViewItem1 in this.programList)
+                for (int i = 0; i < this.timeList.Count; i++)
                 {
-                    if (programViewItem1.EventInfo.event_id == BlackoutWindow.selectedSearchItem.EventInfo.event_id &&
-                        programViewItem1.EventInfo.original_network_id == BlackoutWindow.selectedSearchItem.EventInfo.original_network_id &&
-                        programViewItem1.EventInfo.service_id == BlackoutWindow.selectedSearchItem.EventInfo.service_id &&
-                        programViewItem1.EventInfo.transport_stream_id == BlackoutWindow.selectedSearchItem.EventInfo.transport_stream_id)
+                    foreach (ProgramViewItem item in this.timeList.Values[i])
                     {
-                        this.epgProgramView.scrollViewer.ScrollToHorizontalOffset(programViewItem1.LeftPos - 100);
-                        this.epgProgramView.scrollViewer.ScrollToVerticalOffset(programViewItem1.TopPos - 100);
-                        break;
+                        if (item.Past == false &&
+                            item.EventInfo.event_id == BlackoutWindow.selectedSearchItem.EventInfo.event_id &&
+                            item.EventInfo.original_network_id == BlackoutWindow.selectedSearchItem.EventInfo.original_network_id &&
+                            item.EventInfo.service_id == BlackoutWindow.selectedSearchItem.EventInfo.service_id &&
+                            item.EventInfo.transport_stream_id == BlackoutWindow.selectedSearchItem.EventInfo.transport_stream_id)
+                        {
+                            this.epgProgramView.scrollViewer.ScrollToHorizontalOffset(item.LeftPos - 100);
+                            this.epgProgramView.scrollViewer.ScrollToVerticalOffset(item.TopPos - 100);
+                            i = this.timeList.Count - 1;
+                            break;
+                        }
                     }
                 }
                 BlackoutWindow.selectedSearchItem = null;

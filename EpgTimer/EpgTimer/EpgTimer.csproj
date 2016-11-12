@@ -100,7 +100,6 @@
     <Compile Include="Setting\ColorSetWindow.xaml.cs">
       <DependentUpon>ColorSetWindow.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Common\EAAFileClass.cs" />
     <Compile Include="Common\IEPGFileClass.cs" />
     <Compile Include="Common\NWConnectClass.cs" />
     <Compile Include="NotifyLogWindow.xaml.cs">
@@ -166,14 +165,10 @@
     <Compile Include="Common\PipeServer.cs" />
     <Compile Include="Common\RecNamePluginClass.cs" />
     <Compile Include="Common\WritePlugInClass.cs" />
-    <Compile Include="DefineClass\ColorSelectionItem.cs" />
     <Compile Include="Common\ChSet5Class.cs" />
     <Compile Include="Common\ColorDefClass.cs" />
     <Compile Include="DefineClass\DateItem.cs" />
     <Compile Include="DefineClass\IEPGStationInfo.cs" />
-    <Compile Include="DefineClass\PriorityInfo.cs" />
-    <Compile Include="DefineClass\RecModeInfo.cs" />
-    <Compile Include="DefineClass\YesNoInfo.cs" />
     <Compile Include="EpgDataViewItem.xaml.cs">
       <DependentUpon>EpgDataViewItem.xaml</DependentUpon>
     </Compile>
@@ -197,9 +192,6 @@
     </Compile>
     <Compile Include="EpgView\EpgWeekMainView.xaml.cs">
       <DependentUpon>EpgWeekMainView.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="KeyWordWindow.xaml.cs">
-      <DependentUpon>KeyWordWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="Setting\SetDefSearchSettingWindow.xaml.cs">
       <DependentUpon>SetDefSearchSettingWindow.xaml</DependentUpon>
@@ -371,10 +363,6 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="KeyWordWindow.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -387,9 +375,7 @@
     <Compile Include="Common\DBManagerClass.cs" />
     <Compile Include="Common\DefineEnum.cs" />
     <Compile Include="Common\SettingClass.cs" />
-    <Compile Include="DefineClass\ComponentKindInfo.cs" />
     <Compile Include="DefineClass\ContentKindInfo.cs" />
-    <Compile Include="DefineClass\DayOfWeekInfo.cs" />
     <Compile Include="DefineClass\CustomEpgTabInfo.cs" />
     <Compile Include="EpgView\DateView.xaml.cs">
       <DependentUpon>DateView.xaml</DependentUpon>

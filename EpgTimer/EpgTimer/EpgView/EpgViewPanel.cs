@@ -53,7 +53,7 @@ namespace EpgTimer.EpgView
         public static readonly DependencyProperty BackgroundProperty =
             Panel.BackgroundProperty.AddOwner(typeof(EpgViewPanel));
         private List<ProgramViewItem> items;
-        private Dictionary<ProgramViewItem, List<TextDrawItem>> textDrawDict = new Dictionary<ProgramViewItem, List<TextDrawItem>>();
+        private List<List<TextDrawItem>> textDrawLists;
         public Brush Background
         {
             set { SetValue(BackgroundProperty, value); }
@@ -95,9 +95,7 @@ namespace EpgTimer.EpgView
 
         protected void CreateDrawTextList()
         {
-            textDrawDict.Clear();
-            textDrawDict = null;
-            textDrawDict = new Dictionary<ProgramViewItem, List<TextDrawItem>>();
+            textDrawLists = null;
             Matrix m = PresentationSource.FromVisual(Application.Current.MainWindow).CompositionTarget.TransformToDevice;
 
             this.VisualTextRenderingMode = TextRenderingMode.ClearType;
@@ -107,6 +105,7 @@ namespace EpgTimer.EpgView
             {
                 return;
             }
+            textDrawLists = new List<List<TextDrawItem>>(Items.Count);
 
             if (ItemFontNormal == null || ItemFontNormal.GlyphType == null ||
                 ItemFontTitle == null || ItemFontTitle.GlyphType == null)
@@ -124,7 +123,7 @@ namespace EpgTimer.EpgView
                 foreach (ProgramViewItem info in Items)
                 {
                     List<TextDrawItem> textDrawList = new List<TextDrawItem>();
-                    textDrawDict[info] = textDrawList;
+                    textDrawLists.Add(textDrawList);
                     if (info.Height > 2)
                     {
                         if (info.Height < sizeTitle + 3)
@@ -281,11 +280,8 @@ namespace EpgTimer.EpgView
         protected override void OnRender(DrawingContext dc)
         {
             dc.DrawRectangle(Background, null, new Rect(RenderSize));
-            this.VisualTextRenderingMode = TextRenderingMode.ClearType;
-            this.VisualTextHintingMode = TextHintingMode.Fixed;
-            this.UseLayoutRounding = true;
 
-            if (Items == null)
+            if (Items == null || textDrawLists == null || Items.Count < textDrawLists.Count)
             {
                 return;
             }
@@ -296,22 +292,20 @@ namespace EpgTimer.EpgView
                 double sizeNormal = Settings.Instance.FontSize;
                 double sizeTitle = Settings.Instance.FontSizeTitle;
                 Brush bgBrush = Background;
-                foreach (ProgramViewItem info in Items)
+                for (int i = 0; i < textDrawLists.Count; i++)
                 {
+                    ProgramViewItem info = Items[i];
                     dc.DrawRectangle(bgBrush, null, new Rect(info.LeftPos - selfLeft, info.TopPos, info.Width, 1));
                     dc.DrawRectangle(bgBrush, null, new Rect(info.LeftPos - selfLeft, info.TopPos + info.Height, info.Width, 1));
                     if (info.Height > 1)
                     {
                         dc.DrawRectangle(info.ContentColor, null, new Rect(info.LeftPos - selfLeft, info.TopPos + 0.5, info.Width - 1, info.Height - 0.5));
-                        if (textDrawDict.ContainsKey(info))
+                        dc.PushClip(new RectangleGeometry(new Rect(info.LeftPos - selfLeft, info.TopPos + 0.5, info.Width - 1, info.Height - 0.5)));
+                        foreach (TextDrawItem txtinfo in textDrawLists[i])
                         {
-                            dc.PushClip(new RectangleGeometry(new Rect(info.LeftPos - selfLeft, info.TopPos + 0.5, info.Width - 1, info.Height - 0.5)));
-                            foreach (TextDrawItem txtinfo in textDrawDict[info])
-                            {
-                                dc.DrawGlyphRun(txtinfo.FontColor, txtinfo.Text);
-                            }
-                            dc.Pop();
+                            dc.DrawGlyphRun(txtinfo.FontColor, txtinfo.Text);
                         }
+                        dc.Pop();
                     }
                 }
             }

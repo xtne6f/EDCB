@@ -110,12 +110,13 @@
                     <Label Content="分以上" Height="28" Margin="514,112,0,0" Name="label12" VerticalAlignment="Top" HorizontalAlignment="Left" Width="46" />
                     <TextBox Height="24" HorizontalAlignment="Left" Margin="583,112,0,0" Name="textBox_chkDurationMax" VerticalAlignment="Top" Width="48"/>
                     <Label Content="分以下" Height="28" Margin="629,112,0,0" Name="label14" VerticalAlignment="Top" HorizontalAlignment="Left" Width="46" />
-                    <GroupBox Header="EPG 自動予約登録専用" Height="80" HorizontalAlignment="Left" Margin="444,146,0,0" Name="groupBox1" VerticalAlignment="Top" Width="290">
+                    <GroupBox Header="EPG 自動予約登録専用" Height="94" HorizontalAlignment="Left" Margin="444,144,0,0" Name="groupBox1" VerticalAlignment="Top" Width="290">
                         <Grid>
                             <CheckBox Content="同一番組名の録画結果があれば無効で登録する" Height="16" HorizontalAlignment="Left" Margin="6,6,0,0" Name="checkBox_chkRecEnd" VerticalAlignment="Top" />
                             <Label Content="確認対象期間" Height="28" HorizontalAlignment="Left" Margin="22,24,0,0" Name="label9" VerticalAlignment="Top" />
                             <TextBox Height="24" HorizontalAlignment="Left" Margin="110,26,0,0" Name="textBox_chkRecDay" VerticalAlignment="Top" Width="40" />
                             <Label Content="日前まで" Height="28" HorizontalAlignment="Left" Margin="156,24,0,0" Name="label10" VerticalAlignment="Top" />
+                            <CheckBox Content="全てのサービスで無効にする" Height="16" HorizontalAlignment="Left" Margin="22,54,0,0" Name="checkBox_chkRecNoService" VerticalAlignment="Top" />
                         </Grid>
                     </GroupBox>
                 </Grid>

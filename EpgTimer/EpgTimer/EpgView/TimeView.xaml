@@ -12,7 +12,7 @@
     </UserControl.Resources>
     <Grid>
         <ScrollViewer Name="scrollViewer" VerticalScrollBarVisibility="Hidden" PreviewMouseWheel="scrollViewer_PreviewMouseWheel">
-            <StackPanel Name="stackPanel_time" Background="LightSlateGray" />
+            <StackPanel Name="stackPanel_time" Background="White" />
         </ScrollViewer>            
     </Grid>
 </UserControl>

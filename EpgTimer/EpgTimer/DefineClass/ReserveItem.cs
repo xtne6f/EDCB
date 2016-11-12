@@ -379,11 +379,11 @@ namespace EpgTimer
             }
         }
 
-        public SolidColorBrush BorderBrush
+        public Brush BorderBrush
         {
             get
             {
-                SolidColorBrush color1 = Brushes.White;
+                Brush color1 = Brushes.White;
                 if (this.EventInfo != null)
                 {
                     if (this.EventInfo.ContentInfo != null)
