@@ -37,6 +37,10 @@ namespace EpgTimer.EpgView
 
             base.scroll = scrollViewer;
             base.cnvs = canvas;
+
+            epgViewPanel.Background = CommonManager.Instance.EpgBackColor;
+            epgViewPanel.Height = ViewUtil.GetScreenHeightMax();
+            epgViewPanel.Width = ViewUtil.GetScreenWidthMax();
         }
 
         public override void ClearInfo()
@@ -56,6 +60,8 @@ namespace EpgTimer.EpgView
                     canvas.Children.RemoveAt(i--);
                 }
             }
+            //デフォルト状態に戻す
+            canvas.Children.Add(epgViewPanel);
         }
 
         protected override void PopupClear()
@@ -244,17 +250,12 @@ namespace EpgTimer.EpgView
             {
                 ClearEpgViewPanel();
 
-                epgViewPanel.Background = CommonManager.Instance.EpgBackColor;
-                epgViewPanel.Height = Math.Ceiling(height) + 1;
-                epgViewPanel.Width = ViewUtil.GetScreenWidthMax();
-                canvas.Children.Add(epgViewPanel);
-
                 double totalWidth = 1;//枠線の調整用、多分あんまり良くないやり方
                 foreach (var programList in programGroupList)
                 {
                     var item = new EpgViewPanel();
                     item.Background = epgViewPanel.Background;
-                    item.Height = epgViewPanel.Height;
+                    item.Height = Math.Ceiling(height + 1);
                     item.Width = programList.Width;
                     Canvas.SetLeft(item, totalWidth);
                     item.Items = programList.Data;
@@ -262,8 +263,11 @@ namespace EpgTimer.EpgView
                     canvas.Children.Add(item);
                     totalWidth += programList.Width;
                 }
-                canvas.Height = epgViewPanel.Height;
-                canvas.Width = totalWidth;
+                canvas.Height = Math.Ceiling(height + 1);
+                canvas.Width = Math.Max(totalWidth, ViewUtil.GetScreenWidthMax());
+                canvas.Margin = new Thickness(0, 0, Math.Min(0, totalWidth - ViewUtil.GetScreenWidthMax()), 0);
+                epgViewPanel.Height = Math.Max(canvas.Height, ViewUtil.GetScreenHeightMax());
+                epgViewPanel.Width = canvas.Width;
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }

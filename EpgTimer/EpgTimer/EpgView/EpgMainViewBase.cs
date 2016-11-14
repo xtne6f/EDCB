@@ -85,11 +85,12 @@ namespace EpgTimer.EpgView
             //時間リストを構築
             if (viewCustNeedTimeOnly == true)
             {
+                var timeSet = new HashSet<DateTime>();
                 foreach (ProgramViewItem item in programList.Values)
                 {
-                    ViewUtil.AddTimeList(timeList, GetViewTime(item.EventInfo.start_time), item.EventInfo.PgDurationSecond);
+                    ViewUtil.AddTimeList(timeSet, GetViewTime(item.EventInfo.start_time), item.EventInfo.PgDurationSecond);
                 }
-                timeList = timeList.Distinct().OrderBy(time => time).ToList();
+                timeList.AddRange(timeSet.OrderBy(time => time));
             }
 
             //縦位置を設定
@@ -105,19 +106,19 @@ namespace EpgTimer.EpgView
             ViewUtil.AdjustTimeList(programList.Values, timeList, Settings.Instance.MinHeight);
         }
 
-        protected virtual ReserveViewItem AddReserveViewItem(ReserveData resInfo, ref ProgramViewItem refPgItem)
+        protected virtual ReserveViewItem AddReserveViewItem(ReserveData resInfo, ref ProgramViewItem refPgItem, bool SearchEvent = false)
         {
             //マージン適用前
             DateTime startTime = GetViewTime(resInfo.StartTime);
-            DateTime chkStartTime = new DateTime(startTime.Year, startTime.Month, startTime.Day, startTime.Hour, 0, 0);
+            DateTime chkStartTime = startTime.Date.AddHours(startTime.Hour);
 
             //離れた時間のプログラム予約など、番組表が無いので表示不可
             int index = timeList.BinarySearch(chkStartTime);
             if (index < 0) return null;
 
-            //番組の外側に予約枠が飛び出さないようなマージンを作成。
-            double StartMargin = Math.Min(0, resInfo.StartMarginResActual);
-            double EndMargin = Math.Min(0, resInfo.EndMarginResActual);
+            //EPG予約の場合は番組の外側に予約枠が飛び出さないようなマージンを作成。
+            double StartMargin = resInfo.IsEpgReserve == false ? resInfo.StartMarginResActual : Math.Min(0, resInfo.StartMarginResActual);
+            double EndMargin = resInfo.IsEpgReserve == false ? resInfo.EndMarginResActual : Math.Min(0, resInfo.EndMarginResActual);
 
             //duationがマイナスになる場合は後で処理される
             startTime = startTime.AddSeconds(-StartMargin);
@@ -128,11 +129,21 @@ namespace EpgTimer.EpgView
 
             //予約情報から番組情報を特定し、枠表示位置を再設定する
             refPgItem = null;
-            if (resInfo.IsEpgReserve == true && resInfo.DurationSecond != 0)
+            programList.TryGetValue(resInfo.CurrentPgUID(), out refPgItem);
+            if (refPgItem == null && SearchEvent == true)
             {
-                programList.TryGetValue(resInfo.CurrentPgUID(), out refPgItem);
+                EpgEventInfo epgInfo = resInfo.SearchEventInfoLikeThat();
+                if (epgInfo != null)
+                {
+                    EpgEventInfo epgRefInfo = epgInfo.GetGroupMainEvent();
+                    if (epgRefInfo != null)
+                    {
+                        programList.TryGetValue(epgRefInfo.CurrentPgUID(), out refPgItem);
+                    }
+                }
             }
-            if (refPgItem != null)
+
+            if (resInfo.IsEpgReserve == true && refPgItem != null && resInfo.DurationSecond != 0)
             {
                 resItem.Height = Math.Max(refPgItem.Height * duration / resInfo.DurationSecond, ViewUtil.PanelMinimumHeight);
                 resItem.TopPos = refPgItem.TopPos + Math.Min(refPgItem.Height - resItem.Height, refPgItem.Height * (-StartMargin) / resInfo.DurationSecond);

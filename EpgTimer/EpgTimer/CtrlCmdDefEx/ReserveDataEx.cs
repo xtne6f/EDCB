@@ -70,18 +70,7 @@ namespace EpgTimer
             {
                 if (IsEpgReserve == true)
                 {
-                    UInt64 key = Create64Key();
-                    if (CommonManager.Instance.DB.ServiceEventList.ContainsKey(key) == true)
-                    {
-                        foreach (EpgEventInfo eventChkInfo in CommonManager.Instance.DB.ServiceEventList[key].eventList)
-                        {
-                            if (eventChkInfo.event_id == EventID)
-                            {
-                                eventInfo = eventChkInfo;
-                                break;
-                            }
-                        }
-                    }
+                    eventInfo = MenuUtil.SearchEventInfo(this.Create64PgKey());
                     if (eventInfo == null && getSrv == true)
                     {
                         eventInfo = new EpgEventInfo();

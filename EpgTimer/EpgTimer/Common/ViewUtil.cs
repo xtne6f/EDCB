@@ -137,7 +137,7 @@ namespace EpgTimer
         }
         public static void AddTimeList(ICollection<DateTime> timeList, DateTime startTime, DateTime lastTime)
         {
-            var chkStartTime = new DateTime(startTime.Year, startTime.Month, startTime.Day, startTime.Hour, 0, 0);
+            var chkStartTime = startTime.Date.AddHours(startTime.Hour); ;
             while (chkStartTime <= lastTime)
             {
                 timeList.Add(chkStartTime);
@@ -148,7 +148,7 @@ namespace EpgTimer
         public static void SetItemVerticalPos(List<DateTime> timeList, PanelItem item, DateTime startTime, UInt32 duration, double MinutesHeight, bool NeedTimeOnly)
         {
             item.Height = duration * MinutesHeight / 60;
-            var chkStartTime = NeedTimeOnly == false ? timeList[0] : new DateTime(startTime.Year, startTime.Month, startTime.Day, startTime.Hour, 0, 0);
+            var chkStartTime = NeedTimeOnly == false ? timeList[0] : startTime.Date.AddHours(startTime.Hour);
             int offset = NeedTimeOnly == false ? 0 : 60 * timeList.BinarySearch(chkStartTime);
             if (offset >= 0)
             {
@@ -498,6 +498,10 @@ namespace EpgTimer
             return element == null ? null : lb.ContainerFromElement(element);
         }
 
+        public static double GetScreenHeightMax()
+        {
+            return System.Windows.Forms.Screen.AllScreens.Max(sc => sc.WorkingArea.Height);
+        }
         public static double GetScreenWidthMax()
         {
             return System.Windows.Forms.Screen.AllScreens.Max(sc => sc.WorkingArea.Width);

@@ -62,46 +62,45 @@ namespace EpgTimer
             {
                 reserveList.Clear();
 
-                foreach (ReserveData info in CommonManager.Instance.DB.ReserveList.Values)
+                var serviceReserveList = CommonManager.Instance.DB.ReserveList.Values.ToLookup(data => data.Create64Key());
+                int mergePos = 0;
+                int mergeNum = 0;
+                int servicePos = -1;
+                for (int i = 0; i < serviceEventList.Count; i++)
                 {
-                    int mergePos = 0;
-                    int mergeNum = 0;
-                    int servicePos = -1;
-                    for (int i = 0; i < serviceEventList.Count; i++)
+                    //TSIDが同じでSIDが逆順に登録されているときは併合する
+                    if (--mergePos < i - mergeNum)
                     {
-                        //TSIDが同じでSIDが逆順に登録されているときは併合する
-                        if (--mergePos < i - mergeNum)
+                        EpgServiceInfo curr = serviceEventList[i].serviceInfo;
+                        for (mergePos = i; mergePos + 1 < serviceEventList.Count; mergePos++)
                         {
-                            EpgServiceInfo curr = serviceEventList[i].serviceInfo;
-                            for (mergePos = i; mergePos + 1 < serviceEventList.Count; mergePos++)
+                            EpgServiceInfo next = serviceEventList[mergePos + 1].serviceInfo;
+                            if (next.ONID != curr.ONID || next.TSID != curr.TSID || next.SID >= curr.SID)
                             {
-                                EpgServiceInfo next = serviceEventList[mergePos + 1].serviceInfo;
-                                if (next.ONID != curr.ONID || next.TSID != curr.TSID || next.SID >= curr.SID)
-                                {
-                                    break;
-                                }
-                                curr = next;
+                                break;
                             }
-                            mergeNum = mergePos + 1 - i;
-                            servicePos++;
+                            curr = next;
                         }
-                        if (serviceEventList[mergePos].serviceInfo.Create64Key() == info.Create64Key())
+                        mergeNum = mergePos + 1 - i;
+                        servicePos++;
+                    }
+                    var key = serviceEventList[mergePos].serviceInfo.Create64Key();
+                    if (serviceReserveList.Contains(key) == true)
+                    {
+                        foreach (var info in serviceReserveList[key])
                         {
                             ProgramViewItem refPgItem = null;
-                            ReserveViewItem resItem = AddReserveViewItem(info, ref refPgItem);
+                            ReserveViewItem resItem = AddReserveViewItem(info, ref refPgItem, true);
                             if (resItem != null)
                             {
                                 //横位置の設定
-                                resItem.LeftPos = Settings.Instance.ServiceWidth * (servicePos + (double)((mergeNum + i - mergePos - 1) / 2) / mergeNum);
-                                if (refPgItem == null)
+                                if (refPgItem != null && refPgItem.Data.Create64Key() != key)
                                 {
-                                    //eventIDはあるが、統合されていて表示から見つけられない場合の処理もここに含まれる。
-                                    refPgItem = programList.Values.FirstOrDefault(info1 => info1.LeftPos == resItem.LeftPos
-                                        && info1.TopPos <= resItem.TopPos && resItem.TopPos < info1.TopPos + info1.Height);
+                                    refPgItem = null;
                                 }
                                 resItem.Width = refPgItem != null ? refPgItem.Width : Settings.Instance.ServiceWidth / mergeNum;
+                                resItem.LeftPos = Settings.Instance.ServiceWidth * (servicePos + (double)((mergeNum + i - mergePos - 1) / 2) / mergeNum);
                             }
-                            break;
                         }
                     }
                 }

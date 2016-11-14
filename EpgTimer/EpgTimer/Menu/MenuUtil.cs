@@ -1079,6 +1079,14 @@ namespace EpgTimer
             return null;
         }
 
+        public static EpgEventInfo SearchEventInfo(UInt64 pgKey)
+        {
+            if (CommonManager.Instance.DB.ServiceEventList.ContainsKey(pgKey >> 16) == false) return null;
+            //
+            UInt16 eventID = (ushort)pgKey;
+            return CommonManager.Instance.DB.ServiceEventList[pgKey >> 16].eventList.Find(info => info.event_id == eventID);
+        }
+
         public static EpgEventInfo SearchEventInfoLikeThat(IAutoAddTargetData item, bool includeArc = false)
         {
             double dist = double.MaxValue;

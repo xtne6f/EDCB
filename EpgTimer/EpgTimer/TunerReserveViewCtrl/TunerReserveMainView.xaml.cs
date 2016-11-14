@@ -103,7 +103,7 @@ namespace EpgTimer
                 reserveList.Clear();
 
                 var tunerList = new List<PanelItem<TunerReserveInfo>>();
-                var timeList = new List<DateTime>();
+                var timeSet = new HashSet<DateTime>();
 
                 List<TunerReserveInfo> tunerReserveList = CommonManager.Instance.DB.TunerReserveList.Values
                     .OrderBy(info => info.tunerID).ToList();//多分大丈夫だけど一応ソートしておく
@@ -165,7 +165,7 @@ namespace EpgTimer
                         tunerAddList.Add(newItem);
 
                         //マージン込みの時間でリストを構築
-                        ViewUtil.AddTimeList(timeList, resInfo.StartTimeActual, resInfo.DurationActual);
+                        ViewUtil.AddTimeList(timeSet, resInfo.StartTimeActual, resInfo.DurationActual);
                     }
 
                     tunerList.Add(new PanelItem<TunerReserveInfo>(info) { Width = tunerWidth });
@@ -173,7 +173,7 @@ namespace EpgTimer
                 });
 
                 //縦位置の設定
-                timeList = timeList.Distinct().OrderBy(time => time).ToList();
+                var timeList = new List<DateTime>(timeSet.OrderBy(time => time));
                 reserveList.ForEach(item =>
                 {
                     ViewUtil.SetItemVerticalPos(timeList, item, item.ReserveInfo.StartTimeActual, item.ReserveInfo.DurationActual, Settings.Instance.TunerMinHeight, true);

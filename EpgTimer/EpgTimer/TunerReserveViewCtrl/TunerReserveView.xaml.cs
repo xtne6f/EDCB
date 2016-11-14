@@ -31,6 +31,9 @@ namespace EpgTimer.TunerReserveViewCtrl
 
             base.scroll = scrollViewer;
             base.cnvs = canvas;
+
+            reserveViewPanel.Height = ViewUtil.GetScreenHeightMax();
+            reserveViewPanel.Width = ViewUtil.GetScreenWidthMax();
         }
 
         public void SetReserveList(List<ReserveViewItem> reserveList, double width, double height)
@@ -39,7 +42,7 @@ namespace EpgTimer.TunerReserveViewCtrl
             {
                 canvas.Height = Math.Ceiling(height + 1);//右端のチューナ列の線を描画するため+1。他の+1も同じ。
                 canvas.Width = Math.Ceiling(width + 1);
-                reserveViewPanel.Height = canvas.Height;
+                reserveViewPanel.Height = Math.Max(canvas.Height, ViewUtil.GetScreenHeightMax());
                 reserveViewPanel.Width = Math.Max(canvas.Width, ViewUtil.GetScreenWidthMax());
                 reserveViewPanel.Items = reserveList;
                 reserveViewPanel.InvalidateVisual();

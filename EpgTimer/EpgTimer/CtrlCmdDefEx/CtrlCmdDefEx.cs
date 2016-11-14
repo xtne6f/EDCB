@@ -245,5 +245,9 @@ namespace EpgTimer
         {
             return CommonManager.Create64Key(obj.original_network_id, obj.transport_stream_id, obj.service_id);
         }
+        public static UInt64 Create64PgKey(this EpgEventData obj)
+        {
+            return CommonManager.Create64PgKey(obj.original_network_id, obj.transport_stream_id, obj.service_id, obj.event_id);
+        }
     }
 }
