@@ -74,27 +74,6 @@ namespace EpgTimer.EpgView
                 + ViewUtil.ConvertReserveStatus(reserveList.GetDataList(), "　予約");
         }
 
-        /// <summary>表示位置を現在の時刻にスクロールする</summary>
-        protected void MoveNowTime()
-        {
-            try
-            {
-                if (timeList.Count == 0) return;
-
-                DateTime time = GetViewTime(DateTime.Now);
-                for (int i = 0; i < timeList.Count; i++)
-                {
-                    if (time < timeList[i])
-                    {
-                        double pos = (int)((i - 2) * 60 * Settings.Instance.MinHeight);
-                        programView.scrollViewer.ScrollToVerticalOffset(Math.Max(0, Math.Ceiling(pos)));
-                        break;
-                    }
-                }
-            }
-            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
-        }
-
         protected virtual DateTime GetViewTime(DateTime time)
         {
             return time;
@@ -202,7 +181,6 @@ namespace EpgTimer.EpgView
             ReserveViewItem target_item = this.reserveList.Find(item => item.ReserveInfo.ReserveID == ID);
             this.programView.ScrollToFindItem(target_item, IsMarking);
         }
-
         protected override void MoveToProgramItem(EpgEventInfo target, bool IsMarking)
         {
             ProgramViewItem target_item;
@@ -210,6 +188,17 @@ namespace EpgTimer.EpgView
             this.programView.ScrollToFindItem(target_item, IsMarking);
         }
 
+        /// <summary>表示位置を現在の時刻にスクロールする</summary>
+        protected void MoveNowTime()
+        {
+            try
+            {
+                int idx = timeList.BinarySearch(GetViewTime(DateTime.Now));
+                double pos = ((idx < 0 ? ~idx : idx) - 2) * 60 * Settings.Instance.MinHeight;
+                programView.scrollViewer.ScrollToVerticalOffset(Math.Max(0, Math.Ceiling(pos)));
+            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
+        }
         /// <summary>現在ライン表示</summary>
         protected virtual void ReDrawNowLine()
         {
@@ -217,34 +206,13 @@ namespace EpgTimer.EpgView
             {
                 nowViewTimer.Stop();
 
+                if (timeList.Count == 0) return;
+
                 DateTime nowTime = GetViewTime(DateTime.Now);
-                DateTime chkNowTime = new DateTime(nowTime.Year, nowTime.Month, nowTime.Day, nowTime.Hour, 0, 0);
+                int idx = timeList.BinarySearch(nowTime.Date.AddHours(nowTime.Hour));
+                double posY = (idx < 0 ? ~idx * 60 : (idx * 60 + nowTime.Minute)) * Settings.Instance.MinHeight;
 
-                double posY = 0;
-                for (int i = 0; i < timeList.Count; i++)
-                {
-                    if (chkNowTime == timeList[i])
-                    {
-                        posY = Math.Ceiling((i * 60 + (nowTime - chkNowTime).TotalMinutes) * Settings.Instance.MinHeight);
-                        break;
-                    }
-                    else if (chkNowTime < timeList[i])
-                    {
-                        //時間省かれてる
-                        posY = Math.Ceiling(i * 60 * Settings.Instance.MinHeight);
-                        break;
-                    }
-                }
-                if (posY > programView.canvas.Height)
-                {
-                    NowLineDelete();
-                    return;
-                }
-
-                if (nowLine == null)
-                {
-                    NowLineGenerate();
-                }
+                if (nowLine == null) NowLineGenerate();
 
                 nowLine.X1 = 0;
                 nowLine.Y1 = posY;
@@ -256,7 +224,6 @@ namespace EpgTimer.EpgView
             }
             catch { }
         }
-
         protected virtual void NowLineGenerate()
         {
             nowLine = new Line();
@@ -268,11 +235,24 @@ namespace EpgTimer.EpgView
             nowLine.IsHitTestVisible = false;
             this.programView.canvas.Children.Add(nowLine);
         }
-
         protected virtual void NowLineDelete()
         {
             nowViewTimer.Stop();
             this.programView.canvas.Children.Remove(nowLine);
+            nowLine = null;
+        }
+
+        protected override void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            if (this.IsVisible == false)
+            {
+                nowViewTimer.Stop();
+            }
+            else if (nowLine != null)
+            {
+                ReDrawNowLine();
+            }
+            base.UserControl_IsVisibleChanged(sender, e);
         }
     }
 }

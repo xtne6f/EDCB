@@ -29,17 +29,6 @@ namespace EpgTimer
             base.SetViewMode(setInfo);
         }
 
-        /// <summary>現在ライン表示</summary>
-        protected override void ReDrawNowLine()
-        {
-            if (timeList.Count == 0 || DateTime.Now < timeList[0])
-            {
-                NowLineDelete();
-                return;
-            }
-            base.ReDrawNowLine();
-        }
-
         /// <summary>表示位置変更</summary>
         void epgDateView_TimeButtonClick(object sender, RoutedEventArgs e)
         {
@@ -133,7 +122,7 @@ namespace EpgTimer
                 epgProgramView.ClearInfo();
                 timeList.Clear();
                 programList.Clear();
-                nowViewTimer.Stop();
+                NowLineDelete();
 
                 if (serviceEventList.Count == 0) return;
 

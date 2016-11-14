@@ -86,8 +86,6 @@ namespace EpgTimer
                 comboBox_service.SelectedIndex = Math.Max(0, serviceEventList.FindIndex(info => info.serviceInfo.Create64Key() == selectID));
 
                 UpdateProgramView();
-
-                ReDrawNowLine();
                 MoveNowTime();
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
@@ -102,7 +100,7 @@ namespace EpgTimer
                 epgProgramView.ClearInfo();
                 timeList.Clear();
                 programList.Clear();
-                nowViewTimer.Stop();
+                NowLineDelete();
                 dayList.Clear();
 
                 UInt64 selectID = GetSelectID(true);
@@ -141,6 +139,8 @@ namespace EpgTimer
 
                 timeView.SetTime(timeList, true);
                 weekDayView.SetDay(dayList);
+
+                ReDrawNowLine();
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
