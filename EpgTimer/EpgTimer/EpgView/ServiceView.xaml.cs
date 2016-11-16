@@ -30,7 +30,13 @@ namespace EpgTimer.EpgView
                 service1.Width = Settings.Instance.ServiceWidth - 1;
                 service1.Margin = new Thickness(0, 1, 1, 1);
                 service1.Background = CommonManager.Instance.EpgServiceBackColor;
-                service1.MouseLeftButtonDown += new MouseButtonEventHandler(item_MouseLeftButtonDown);
+                service1.MouseLeftButtonDown += (sender, e) =>
+                {
+                    if (e.ClickCount != 2) return;
+                    //
+                    var serviceInfo = ((FrameworkElement)sender).DataContext as EpgServiceInfo;
+                    CommonManager.Instance.TVTestCtrl.SetLiveCh(serviceInfo.ONID, serviceInfo.TSID, serviceInfo.SID);
+                };
                 service1.DataContext = info;
 
                 var text = ViewUtil.GetPanelTextBlock(info.service_name);
@@ -44,19 +50,6 @@ namespace EpgTimer.EpgView
                 service1.Children.Add(text);
 
                 stackPanel_service.Children.Add(service1);
-            }
-        }
-
-        void item_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-        {
-            if (e.ClickCount == 2)
-            {
-                if (sender.GetType() == typeof(TextBlock))
-                {
-                    TextBlock item = sender as TextBlock;
-                    EpgServiceInfo serviceInfo = item.DataContext as EpgServiceInfo;
-                    CommonManager.Instance.TVTestCtrl.SetLiveCh(serviceInfo.ONID, serviceInfo.TSID, serviceInfo.SID);
-                }
             }
         }
     }
