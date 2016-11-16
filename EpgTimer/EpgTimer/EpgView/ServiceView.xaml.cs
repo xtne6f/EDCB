@@ -26,26 +26,24 @@ namespace EpgTimer.EpgView
             stackPanel_service.Children.Clear();
             foreach (EpgServiceInfo info in serviceList)
             {
-                var item = new TextBlock();
-                item.Text = info.service_name;
-                if (info.remote_control_key_id != 0)
-                {
-                    item.Text += "\r\n" + info.remote_control_key_id.ToString();
-                }
-                else
-                {
-                    item.Text += "\r\n" + info.network_name + " " + info.SID.ToString();
-                }
-                item.Width = Settings.Instance.ServiceWidth - 1;
-                item.Padding = new Thickness(0, 0, 0, 2);
-                item.Margin = new Thickness(0, 1, 1, 1);
-                item.Background = CommonManager.Instance.EpgServiceBackColor;
-                item.Foreground = CommonManager.Instance.EpgServiceFontColor;
-                item.TextAlignment = TextAlignment.Center;
-                item.FontSize = 12;
-                item.MouseLeftButtonDown += new MouseButtonEventHandler(item_MouseLeftButtonDown);
-                item.DataContext = info;
-                stackPanel_service.Children.Add(item);
+                var service1 = new StackPanel();
+                service1.Width = Settings.Instance.ServiceWidth - 1;
+                service1.Margin = new Thickness(0, 1, 1, 1);
+                service1.Background = CommonManager.Instance.EpgServiceBackColor;
+                service1.MouseLeftButtonDown += new MouseButtonEventHandler(item_MouseLeftButtonDown);
+                service1.DataContext = info;
+
+                var text = ViewUtil.GetPanelTextBlock(info.service_name);
+                text.Margin = new Thickness(1, 0, 1, 0);
+                text.Foreground = CommonManager.Instance.EpgServiceFontColor;
+                service1.Children.Add(text);
+
+                text = ViewUtil.GetPanelTextBlock(info.remote_control_key_id != 0 ? info.remote_control_key_id.ToString() : info.network_name + " " + info.SID.ToString());
+                text.Margin = new Thickness(1, 0, 1, 2);
+                text.Foreground = CommonManager.Instance.EpgServiceFontColor;
+                service1.Children.Add(text);
+
+                stackPanel_service.Children.Add(service1);
             }
         }
 

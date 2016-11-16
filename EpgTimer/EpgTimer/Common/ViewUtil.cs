@@ -587,5 +587,15 @@ namespace EpgTimer
             win.Left = double.IsNaN(win.Left) == true ? double.NaN : 100;
             win.Top = double.IsNaN(win.Top) == true ? double.NaN : 100;
         }
+
+        public static TextBlock GetPanelTextBlock(string s = null)
+        {
+            return new TextBlock
+            {
+                Text = s,
+                TextAlignment = TextAlignment.Center,
+                FontSize = 12,
+            };
+        }
     }
 }

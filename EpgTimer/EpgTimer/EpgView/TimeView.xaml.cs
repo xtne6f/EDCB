@@ -40,10 +40,8 @@ namespace EpgTimer.EpgView
                     DateTime time = timeMod.DateTimeMod;
                     string HourMod = timeMod.HourMod.ToString();
 
-                    var item = new TextBlock();
+                    var item = ViewUtil.GetPanelTextBlock();
                     stackPanel_time.Children.Add(item);
-                    item.TextAlignment = TextAlignment.Center;
-                    item.FontSize = 12;
                     item.Margin = new Thickness(1, 0, 1, 1);
 
                     if (tunerMode == false)
