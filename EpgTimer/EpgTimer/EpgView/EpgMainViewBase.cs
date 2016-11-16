@@ -205,7 +205,7 @@ namespace EpgTimer.EpgView
             try
             {
                 int idx = timeList.BinarySearch(GetViewTime(DateTime.Now));
-                double pos = ((idx < 0 ? ~idx : idx) - 2) * 60 * Settings.Instance.MinHeight;
+                double pos = ((idx < 0 ? ~idx : idx) - 1) * 60 * Settings.Instance.MinHeight - 120;
                 programView.scrollViewer.ScrollToVerticalOffset(Math.Max(0, Math.Ceiling(pos)));
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
