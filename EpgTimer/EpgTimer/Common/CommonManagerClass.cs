@@ -1369,7 +1369,7 @@ namespace EpgTimer
         }
         
         //ReloadCustContentColorList()用のコンバートメソッド
-        private static Brush _GetColorBrush(string colorName, uint colorValue = 0
+        public static Brush _GetColorBrush(string colorName, uint colorValue = 0
             , bool gradation = false, double luminance = -1, double saturation = -1)
         {
             Color c = (colorName == "カスタム" ? ColorDef.FromUInt(colorValue) : ColorDef.ColorFromName(colorName));

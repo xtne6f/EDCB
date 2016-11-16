@@ -51,14 +51,7 @@ namespace EpgTimer.EpgView
                         item.Foreground = Brushes.Black;
                         backgroundColor = Colors.White;
                     }
-                    if (Settings.Instance.EpgGradationHeader == false)
-                    {
-                        item.Background = new SolidColorBrush(backgroundColor);
-                    }
-                    else
-                    {
-                        item.Background = ColorDef.GradientBrush(backgroundColor, 0.8);
-                    }
+                    item.Background = CommonManager._GetColorBrush(backgroundColor.ToString(), 0, Settings.Instance.EpgGradationHeader, 0.8, 1.2);
 
                     item.Padding = new Thickness(0, 0, 0, 2);
                     item.Margin = new Thickness(0, 1, 1, 1);
