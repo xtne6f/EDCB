@@ -26,6 +26,7 @@ th, td {
 }
 
 .page-nav {
+  margin-top: 0.5em;
   margin-bottom: 0.5em;
 }
 
@@ -84,10 +85,43 @@ th, td {
 }
 
 .epg-col-head > div {
-  background: #bbf;
   border: 1px solid #aaa;
-  color: #000;
+  box-sizing: border-box;
+  color: #fff;
+  font-weight: bold;
   text-align: center;
+}
+
+.t4, .t5 {
+  background: #0277bd;
+}
+
+.t6, .t7 {
+  background: #00695c;
+}
+
+.t8, .t9, .t10 {
+  background: #558b2f;
+}
+
+.t11, .t12, .t13 {
+  background: #f9a825;
+}
+
+.t14, .t15, .t16 {
+  background: #ef6c00;
+}
+
+.t17, .t18, .t19 {
+  background: #c62828;
+}
+
+.t20, .t21, .t22 {
+  background: #6a1b9a;
+}
+
+.t23, .t0, .t1, .t2, .t3 {
+  background: #283593;
 }
 
 .epg-col {
@@ -102,9 +136,14 @@ th, td {
   border-color: #aaa;
   border-style: solid;
   border-width: 1px 0;
+  box-sizing: border-box;
   color: #000;
   overflow: auto;
   width: 150px;
+}
+
+.epg-col > div > a:link {
+  text-decoration: none;
 }
 
 .epg-col > div > b {
@@ -166,4 +205,8 @@ th, td {
 
 .cont-12, .cont-13, .cont-14, .cont-16 {
   background: #fff;
+}
+
+.past {
+  opacity: 0.5;
 }

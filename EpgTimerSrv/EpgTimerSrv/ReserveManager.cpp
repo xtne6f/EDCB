@@ -139,6 +139,7 @@ void CReserveManager::ReloadSetting()
 	this->defEndMargin = GetPrivateProfileInt(L"SET", L"EndMargin", 2, iniPath.c_str());
 	this->notFindTuijyuHour = GetPrivateProfileInt(L"SET", L"TuijyuHour", 3, iniPath.c_str());
 	this->backPriority = GetPrivateProfileInt(L"SET", L"BackPriority", 1, iniPath.c_str()) != 0;
+	this->fixedTunerPriority = GetPrivateProfileInt(L"SET", L"FixedTunerPriority", 1, iniPath.c_str()) != 0;
 
 	this->recInfoText.SetKeepCount(
 		GetPrivateProfileInt(L"SET", L"AutoDelRecInfo", 0, iniPath.c_str()) == 0 ? UINT_MAX :
@@ -634,10 +635,11 @@ void CReserveManager::ReloadBankMap(__int64 reloadTime)
 			//バンク未決の予約マップ
 			multimap<__int64, const RESERVE_DATA*> sortResMap;
 			for( itrRes = sortTimeMap.begin(); itrRes != itrTime; itrRes++ ){
-				//キーは実効優先度(予約優先度<<60|開始順)
+				//バンク決定順のキーはチューナ固定優先ビットつき実効優先度(予約優先度<<60|チューナ固定優先ビット<<59|開始順)
 				__int64 startOrder = -itrRes->first / I64_1SEC << 16 | itrRes->second->reserveID & 0xFFFF;
 				__int64 priority = (this->backPriority ? itrRes->second->recSetting.priority : ~itrRes->second->recSetting.priority) & 7;
-				sortResMap.insert(std::make_pair((this->backPriority ? -1 : 1) * (priority << 60 | startOrder), itrRes->second));
+				__int64 fixedBit = (this->fixedTunerPriority && itrRes->second->recSetting.tunerID != 0) ? this->backPriority : !this->backPriority;
+				sortResMap.insert(std::make_pair((this->backPriority ? -1 : 1) * (priority << 60 | fixedBit << 59 | startOrder), itrRes->second));
 			}
 			itrTime = sortTimeMap.erase(sortTimeMap.begin(), itrTime);
 
@@ -651,8 +653,9 @@ void CReserveManager::ReloadBankMap(__int64 reloadTime)
 						CHK_RESERVE_DATA item;
 						CalcEntireReserveTime(&item.cutStartTime, &item.cutEndTime, *itr->second);
 						item.cutStartTime -= CTunerBankCtrl::READY_MARGIN * I64_1SEC;
-						item.startOrder = abs(itr->first) & 0x0FFFFFFFFFFFFFFFLL;
-						item.effectivePriority = itr->first;
+						item.startOrder = abs(itr->first) & 0x07FFFFFFFFFFFFFF;
+						//チューナ固定優先ビットを除去
+						item.effectivePriority = (itr->first < 0 ? -1 : 1) * (abs(itr->first) & 0x77FFFFFFFFFFFFFF);
 						item.started = true;
 						item.r = itr->second;
 						//開始済み予約はすべてバンク内で同一チャンネルなのでChkInsertStatus()は不要
@@ -668,8 +671,9 @@ void CReserveManager::ReloadBankMap(__int64 reloadTime)
 				CHK_RESERVE_DATA item;
 				CalcEntireReserveTime(&item.cutStartTime, &item.cutEndTime, *itr->second);
 				item.cutStartTime -= CTunerBankCtrl::READY_MARGIN * I64_1SEC;
-				item.startOrder = abs(itr->first) & 0x0FFFFFFFFFFFFFFFLL;
-				item.effectivePriority = itr->first;
+				item.startOrder = abs(itr->first) & 0x07FFFFFFFFFFFFFF;
+				//チューナ固定優先ビットを除去
+				item.effectivePriority = (itr->first < 0 ? -1 : 1) * (abs(itr->first) & 0x77FFFFFFFFFFFFFF);
 				item.started = false;
 				item.r = itr->second;
 				if( itr->second->recSetting.tunerID != 0 ){
@@ -1973,34 +1977,9 @@ void CReserveManager::AddTimeMacro(vector<pair<string, wstring>>& macroList, con
 		if( p == "E" ){
 			ConvertSystemTime(ConvertI64Time(t) + durationSecond * I64_1SEC, &t);
 		}
-		SYSTEMTIME t28 = t;
-		WORD wHour28 = t.wHour;
-		if( t28.wHour < 4 ){
-			ConvertSystemTime(ConvertI64Time(t28) - 24 * 3600 * I64_1SEC, &t28);
-			wHour28 += 24;
+		for( int i = 0; GetTimeMacroName(i); i++ ){
+			macroList.push_back(std::make_pair(p + GetTimeMacroName(i) + suffix, GetTimeMacroValue(i, t)));
 		}
-		swprintf_s(v, L"%04d", t.wYear);	macroList.push_back(pair<string, wstring>(p + "DYYYY" + suffix, v));
-		swprintf_s(v, L"%02d", t.wYear % 100);	macroList.push_back(pair<string, wstring>(p + "DYY" + suffix, v));
-		swprintf_s(v, L"%02d", t.wMonth);	macroList.push_back(pair<string, wstring>(p + "DMM" + suffix, v));
-		swprintf_s(v, L"%d", t.wMonth);		macroList.push_back(pair<string, wstring>(p + "DM" + suffix, v));
-		swprintf_s(v, L"%02d", t.wDay);		macroList.push_back(pair<string, wstring>(p + "DDD" + suffix, v));
-		swprintf_s(v, L"%d", t.wDay);		macroList.push_back(pair<string, wstring>(p + "DD" + suffix, v));
-		macroList.push_back(pair<string, wstring>(p + "DW" + suffix, L"")); GetDayOfWeekString2(t, macroList.back().second);
-		swprintf_s(v, L"%02d", t.wHour);	macroList.push_back(pair<string, wstring>(p + "THH" + suffix, v));
-		swprintf_s(v, L"%d", t.wHour);		macroList.push_back(pair<string, wstring>(p + "TH" + suffix, v));
-		swprintf_s(v, L"%02d", t.wMinute);	macroList.push_back(pair<string, wstring>(p + "TMM" + suffix, v));
-		swprintf_s(v, L"%d", t.wMinute);	macroList.push_back(pair<string, wstring>(p + "TM" + suffix, v));
-		swprintf_s(v, L"%02d", t.wSecond);	macroList.push_back(pair<string, wstring>(p + "TSS" + suffix, v));
-		swprintf_s(v, L"%d", t.wSecond);	macroList.push_back(pair<string, wstring>(p + "TS" + suffix, v));
-		swprintf_s(v, L"%04d", t28.wYear);	macroList.push_back(pair<string, wstring>(p + "DYYYY28" + suffix, v));
-		swprintf_s(v, L"%02d", t28.wYear % 100);	macroList.push_back(pair<string, wstring>(p + "DYY28" + suffix, v));
-		swprintf_s(v, L"%02d", t28.wMonth);	macroList.push_back(pair<string, wstring>(p + "DMM28" + suffix, v));
-		swprintf_s(v, L"%d", t28.wMonth);	macroList.push_back(pair<string, wstring>(p + "DM28" + suffix, v));
-		swprintf_s(v, L"%02d", t28.wDay);	macroList.push_back(pair<string, wstring>(p + "DDD28" + suffix, v));
-		swprintf_s(v, L"%d", t28.wDay);		macroList.push_back(pair<string, wstring>(p + "DD28" + suffix, v));
-		macroList.push_back(pair<string, wstring>(p + "DW28" + suffix, L"")); GetDayOfWeekString2(t28, macroList.back().second);
-		swprintf_s(v, L"%02d", wHour28);	macroList.push_back(pair<string, wstring>(p + "THH28" + suffix, v));
-		swprintf_s(v, L"%d", wHour28);		macroList.push_back(pair<string, wstring>(p + "TH28" + suffix, v));
 	}
 	swprintf_s(v, L"%02d", durationSecond / 3600);		macroList.push_back(pair<string, wstring>(string("DUHH") + suffix, v));
 	swprintf_s(v, L"%d", durationSecond / 3600);		macroList.push_back(pair<string, wstring>(string("DUH") + suffix, v));

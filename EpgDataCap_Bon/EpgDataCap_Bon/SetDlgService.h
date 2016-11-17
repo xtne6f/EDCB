@@ -30,12 +30,7 @@ protected:
 	wstring commonIniPath;
 	wstring appIniPath;
 
-	typedef struct _CH_SET_INFO{
-		wstring bonFile;
-		wstring chSetPath;
-		CParseChText4 chSet;
-	}CH_SET_INFO;
-	map<wstring, CH_SET_INFO*> chList;
+	map<wstring, CParseChText4> chList;
 	wstring lastSelect;
 
 	BOOL FindBonFileName(wstring src, wstring& dllName);

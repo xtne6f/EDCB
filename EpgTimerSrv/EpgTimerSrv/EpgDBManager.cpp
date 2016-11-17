@@ -8,6 +8,7 @@
 #include "../../Common/PathUtil.h"
 #include "../../Common/EpgTimerUtil.h"
 #include "../../Common/EpgDataCap3Util.h"
+#include "../../Common/CtrlCmdUtil.h"
 
 extern DWORD g_compatFlags;
 
@@ -18,6 +19,7 @@ CEpgDBManager::CEpgDBManager(void)
     this->loadThread = NULL;
     this->loadStop = FALSE;
     this->initialLoadDone = FALSE;
+	this->archivePeriodSec = 0;
 }
 
 CEpgDBManager::~CEpgDBManager(void)
@@ -27,6 +29,13 @@ CEpgDBManager::~CEpgDBManager(void)
 	ClearEpgData();
 
 	DeleteCriticalSection(&this->epgMapLock);
+}
+
+void CEpgDBManager::SetArchivePeriod(int periodSec)
+{
+	CBlockLock lock(&this->epgMapLock);
+	//それほど長くない期間に制限する。より長期保存を許す場合は負荷に気をつけること
+	this->archivePeriodSec = min(periodSec, 14 * 24 * 3600);
 }
 
 void CEpgDBManager::ClearEpgData()
@@ -70,9 +79,9 @@ UINT WINAPI CEpgDBManager::LoadThread(LPVOID param)
 
 	//EPGファイルの検索
 	vector<wstring> epgFileList;
-	wstring epgDataPath = L"";
-	GetSettingPath(epgDataPath);
-	epgDataPath += EPG_SAVE_FOLDER;
+	wstring settingPath;
+	GetSettingPath(settingPath);
+	wstring epgDataPath = settingPath + EPG_SAVE_FOLDER;
 
 	wstring searchKey = epgDataPath;
 	searchKey += L"\\*_epg.dat";
@@ -232,6 +241,64 @@ UINT WINAPI CEpgDBManager::LoadThread(LPVOID param)
 	{ //CBlockLock
 	CBlockLock lock(&sys->epgMapLock);
 
+	__int64 arcMax = GetNowI64Time();
+	__int64 arcMin = sys->archivePeriodSec <= 0 ? LLONG_MAX : arcMax - sys->archivePeriodSec * I64_1SEC;
+	arcMax += 3600 * I64_1SEC;
+
+	if( arcMin < LLONG_MAX && sys->epgArchive.empty() ){
+		vector<BYTE> buff;
+		HANDLE file = CreateFile((settingPath + L"\\EpgArc.dat").c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+		if( file != INVALID_HANDLE_VALUE ){
+			DWORD dwSize = GetFileSize(file, NULL);
+			if( dwSize != 0 && dwSize != INVALID_FILE_SIZE ){
+				buff.resize(dwSize);
+				DWORD dwRead;
+				if( ReadFile(file, &buff.front(), dwSize, &dwRead, NULL) == FALSE || dwRead != dwSize ){
+					buff.clear();
+				}
+			}
+			CloseHandle(file);
+		}
+		if( buff.empty() == false ){
+			WORD ver;
+			DWORD readSize;
+			vector<EPGDB_SERVICE_EVENT_INFO> list;
+			if( ReadVALUE(&ver, &buff.front(), (DWORD)buff.size(), &readSize) &&
+			    ReadVALUE2(ver, &list, &buff.front() + readSize, (DWORD)buff.size() - readSize, NULL) ){
+				for( size_t i = 0; i < list.size(); i++ ){
+					LONGLONG key = _Create64Key(list[i].serviceInfo.ONID, list[i].serviceInfo.TSID, list[i].serviceInfo.SID);
+					sys->epgArchive[key] = std::move(list[i]);
+				}
+			}
+		}
+	}
+	//アーカイブから古いイベントを消す
+	for( auto itr = sys->epgArchive.begin(); itr != sys->epgArchive.end(); itr++ ){
+		itr->second.eventList.erase(std::remove_if(itr->second.eventList.begin(), itr->second.eventList.end(), [=](const EPGDB_EVENT_INFO& a) {
+			return ConvertI64Time(a.start_time) <= arcMin || ConvertI64Time(a.start_time) >= arcMax;
+		}), itr->second.eventList.end());
+	}
+	//イベントをアーカイブに移動する
+	for( auto itr = sys->epgMap.begin(); arcMin < LLONG_MAX && itr != sys->epgMap.end(); itr++ ){
+		auto itrArc = sys->epgArchive.find(itr->first);
+		if( itrArc != sys->epgArchive.end() ){
+			itrArc->second.serviceInfo = std::move(itr->second.serviceInfo);
+		}
+		for( size_t i = 0; i < itr->second.eventList.size(); i++ ){
+			if( itr->second.eventList[i].StartTimeFlag &&
+			    itr->second.eventList[i].DurationFlag &&
+			    ConvertI64Time(itr->second.eventList[i].start_time) < arcMax &&
+			    ConvertI64Time(itr->second.eventList[i].start_time) > arcMin ){
+				if( itrArc == sys->epgArchive.end() ){
+					//サービスを追加
+					itrArc = sys->epgArchive.insert(std::make_pair(itr->first, EPGDB_SERVICE_EVENT_INFO())).first;
+					itrArc->second.serviceInfo = std::move(itr->second.serviceInfo);
+				}
+				itrArc->second.eventList.push_back(std::move(itr->second.eventList[i]));
+			}
+		}
+	}
+
 	sys->ClearEpgData();
 
 	for( DWORD i=0; i<serviceListSize; i++ ){
@@ -258,6 +325,43 @@ UINT WINAPI CEpgDBManager::LoadThread(LPVOID param)
 			item->serviceInfo.remote_control_key_id = serviceList[i].extInfo->remote_control_key_id;
 		}
 		epgUtil.EnumEpgInfoList(item->serviceInfo.ONID, item->serviceInfo.TSID, item->serviceInfo.SID, EnumEpgInfoListProc, item);
+	}
+
+	//アーカイブから不要なイベントを消す
+	for( auto itr = sys->epgMap.cbegin(); arcMin < LLONG_MAX && itr != sys->epgMap.end(); itr++ ){
+		auto itrArc = sys->epgArchive.find(itr->first);
+		if( itrArc != sys->epgArchive.end() ){
+			//主データベースの最古より新しいものは不要
+			__int64 minStart = LLONG_MAX;
+			for( size_t i = 0; i < itr->second.eventList.size(); i++ ){
+				if( itr->second.eventList[i].StartTimeFlag && ConvertI64Time(itr->second.eventList[i].start_time) < minStart ){
+					minStart = ConvertI64Time(itr->second.eventList[i].start_time);
+				}
+			}
+			itrArc->second.eventList.erase(std::remove_if(itrArc->second.eventList.begin(), itrArc->second.eventList.end(), [=](const EPGDB_EVENT_INFO& a) {
+				return ConvertI64Time(a.start_time) + a.durationSec * I64_1SEC > minStart;
+			}), itrArc->second.eventList.end());
+		}
+	}
+	//アーカイブから空のサービスを消す
+	for( auto itr = sys->epgArchive.begin(); itr != sys->epgArchive.end(); ){
+		if( itr->second.eventList.empty() ){
+			sys->epgArchive.erase(itr++);
+		}else{
+			itr++;
+		}
+	}
+	if( arcMin < LLONG_MAX ){
+		vector<const EPGDB_SERVICE_EVENT_INFO*> valp;
+		valp.reserve(sys->epgArchive.size());
+		for( auto itr = sys->epgArchive.cbegin(); itr != sys->epgArchive.end(); valp.push_back(&(itr++)->second) );
+		DWORD buffSize;
+		std::unique_ptr<BYTE[]> buff = NewWriteVALUE2WithVersion(5, valp, buffSize);
+		HANDLE file = CreateFile((settingPath + L"\\EpgArc.dat").c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+		if( file != INVALID_HANDLE_VALUE ){
+			WriteFile(file, buff.get(), buffSize, &buffSize, NULL);
+			CloseHandle(file);
+		}
 	}
 
 	} //CBlockLock

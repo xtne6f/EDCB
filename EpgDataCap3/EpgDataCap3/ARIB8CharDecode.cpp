@@ -251,6 +251,9 @@ BOOL CARIB8CharDecode::Analyze( const BYTE* pbSrc, DWORD dwSrcSize, DWORD* pdwRe
 			}
 			dwReadSize += dwReadBuff;
 		}
+		if( dwReadBuff == 0 ){
+			return FALSE;
+		}
 	}
 
 	*pdwReadSize = dwReadSize;

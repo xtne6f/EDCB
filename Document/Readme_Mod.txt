@@ -64,9 +64,7 @@ EpgDataCap_Bon.exe.errというテキストファイルに出力するようにしました(スタックト
 ■Readme_EpgTimer.txt■
 "EpgTimer.exe"を"EpgTimerNW～.exe"にファイル名をリネームすることで、EpgTimerNW相
 当の動作になります。～には任意の文字列を指定可能で、この文字列が異なるEpgTimerNW
-は多重起動できます。EpgTimer.exeはniisaka氏(https://github.com/niisaka)デザイン
-のEPG番組表をベースにしたniisaka版と、従来に近いlegacy版の2種類あります。気分で
-使い分けてください。録画済み番組情報"RecInfo2Data.bin"はテキスト形式になって
+は多重起動できます。録画済み番組情報"RecInfo2Data.bin"はテキスト形式になって
 "RecInfo2.txt"に移動しました。移行する場合は「同一番組無効登録」機能のための情報
 がリセットされるので注意してください。
 
@@ -89,6 +87,9 @@ EpgDataCap_Bon.exe.errというテキストファイルに出力するようにしました(スタックト
   ・自動登録を無効にする【追加】
     自動予約登録条件に追加するとき、その条件を無効にする(予約されなくなる)かどう
     かです。通常の検索で使用する意味はありません。
+  ・同一番組名の録画結果があれば無効で登録する
+    ・全てのサービスで無効にする【追加】
+      同一サービスかどうかのチェックを省略し、同一番組名のみで判断します。
 
 ◇録画設定
   ・追従
@@ -135,6 +136,9 @@ EpgDataCap_Bon.exe.errというテキストファイルに出力するようにしました(スタックト
         廃止しました(常にオフ)。
       ・同一物理チャンネルで連続となるチューナーの使用を優先する
         廃止しました(常にオン)。
+      ・優先度が同じ場合、チューナー強制指定された予約を先に割り当てする【追加】
+        概ね、原作の「デフォルトアルゴリズム」と「アルゴリズム2」の違いと考えて
+        ください(現アルゴリズムについては後述Q&A参照)。
       ・ファイル名の禁則文字の変換対象から「\」を除外する【追加】
         PlugInが返すファイル名の禁則文字の変換対象から「\」を除外して、フォルダ
         階層を表現できるようにします(EpgTimerSrv.iniのNoChkYenに相当)。
@@ -165,6 +169,9 @@ EpgDataCap_Bon.exe.errというテキストファイルに出力するようにしました(スタックト
         権(コントロールパネル→ローカルセキュリティポリシー→システム時刻の変更)
         が必要です。判断は任せますが管理者起動させるよりもユーザにこの特権を与え
         るほうがマシな気がします。
+      ・EPG取得後も番組情報をX日前まで保存する【追加】
+        EPG取得後は過去の番組情報が消えますが、これを"EpgArc.dat"というファイル
+        に保存して、番組表などに利用できるようにします。
       ・EpgTimerSrvを常駐させる【追加】
         ・タスクトレイアイコンを表示する【追加】
         ・バルーンチップでの動作通知を抑制する【追加】
@@ -175,6 +182,11 @@ EpgDataCap_Bon.exe.errというテキストファイルに出力するようにしました(スタックト
       ・デバッグ出力をファイルに保存する【追加】
         EpgTimerSrvのデバッグ出力(OutputDebugStringW)をEpgTimerSrvのあるフォルダ
         のEpgTimerSrvDebugLog.txtに保存します。
+      ・EpgTimerSrvの応答をtkntrec版互換にする【追加】
+        ※変更はEpgTimerSrv再起動後に適用されます。
+        EpgTimerに対するEpgTimerSrvのふるまいをtkntrec版のEpgTimerSrvと同じにし
+        ます。つまりtkntrec版のEpgTimerも利用できるようにします。以前のEpgTimer
+        や一部の外部ツールとの通信は非互換になる点に注意してください。
       ・サーバー間連携
         廃止しました。
       ・タスクトレイアイコンを表示する【追加】
@@ -191,8 +203,6 @@ EpgDataCap_Bon.exe.errというテキストファイルに出力するようにしました(スタックト
         ・最低表示行数【追加】
           短時間の番組でも最低この行数だけ高さを確保します。短時間の番組が続くと
           下にずれるので、実用的には0.8程度をお勧めします。
-        その他、niisaka版とlegacy版とで項目に若干違いがありますが、特に説明不要
-        だと思うので省略します。
     ●表示項目
       ・カスタマイズ表示
         表示条件→表示サービスで、同一TSのサービス(全サービス録画でまとめて録画
@@ -356,10 +366,13 @@ EpgDataCap_Bon.exe.errというテキストファイルに出力するようにしました(スタックト
 ◇予約割り振りのアルゴリズムの変更
   廃止しました。
 
+◇正常に録画を行えた番組情報の蓄積数を変更する
+  RecInfo2Maxのデフォルトは1000です(仕様変更でなく誤表記)。
+
 ◇正常に録画を行えた番組情報として判断するためのドロップ数を変更する
   ドロップカウントの仕様変更により、RecInfo2DropChkのデフォルトは2になりました。
 
-◇ブラウザから表示できるようにする
+◇ブラウザから表示できるようにする / DLNAのDMSぽい機能を使う
   「CivetWebの組み込みについて」を参照。
 
 ◇録画後bat起動時の形式を変える
@@ -369,9 +382,6 @@ EpgDataCap_Bon.exe.errというテキストファイルに出力するようにしました(スタックト
   NoStyleが0(デフォルト)のとき、EpgTimerのあるフォルダにEpgTimer.exe.rd.xamlがあ
   れば、そこに定義されたリソースを適用します【追加】。iniフォルダに簡単なサンプ
   ルを用意したので参考にしてください。
-
-◇DLNAのDMSぽい機能を使う
-  「CivetWebの組み込みについて」を参照。
 
 ◇同一番組無効登録で番組名の比較の際に無視する文字列を指定する【追加】
   [無]や[生]などのついた番組名も同一番組として扱いたい場合に利用することを想定し
@@ -482,20 +492,22 @@ DoS耐性は期待できませんし、パス無しの公開サーバとしての利用もお勧めできません。
 
 "ssl_cert.pem"(秘密鍵+自己署名証明書)の作成手順は本家ドキュメントに従わないほうが良いです。暗号強度が
 「SSL/TLS暗号設定ガイドライン」(https://www.ipa.go.jp/security/vuln/ssl_crypt_config.html)を満たしていません。
-(作成手順例、鵜呑みにしないこと)
+(作成手順例、鵜呑みにしないこと。bashの場合はtype→cat)
 > openssl genrsa -out server.key 2048
 > openssl req -new -key server.key -out server.csr
 > openssl x509 -req -days 3650 -sha256 -in server.csr -signkey server.key -out server.crt
-> copy server.crt ssl_cert.pem
-> type server.key >> ssl_cert.pem
+  (入力項目はデフォルトでOK。ブラウザの証明書例外追加時に"server.crt"と拇印が等しいかだけ注意する)
+> type server.crt >ssl_cert.pem
+> type server.key >>ssl_cert.pem
 
 "ssl_peer.pem"(信頼済みクライアント証明書リスト)の作成手順例
 > openssl genrsa -out client.key 2048
 > openssl req -new -key client.key -out client.csr
 > openssl x509 -req -days 3650 -sha256 -in client.csr -signkey client.key -out client.crt
-> copy client.crt > ssl_peer.pem
+> type client.crt >ssl_peer.pem
 > openssl pkcs12 -export -inkey client.key -in client.crt -out edcb_key.p12 -name "edcb_key"
-> (↑"edcb_key.p12"(クライアントの秘密鍵)はブラウザ等にインポートする)
+  (↑"edcb_key.p12"(クライアントの秘密鍵)はブラウザ等にインポートする)
+  (パスワードを入力するために"winpty openssl～"とする必要があるかもしれない)
 
 "glpasswd"(ダイジェスト認証ファイル)の簡単な作り方(ユーザ名root、認証領域mydomain.com、パスワードtest)
 > set <nul /p "x=root:mydomain.com:test" | openssl md5
@@ -529,6 +541,9 @@ S GetGenreName( 大分類*256+中分類:I )
   中分類を0xFFとすると大分類の文字列が返る。
   存在しないとき空文字列。
   例えばedcb.GetGenreName(0x0205)は'グルメ・料理'が返る。
+  大分類に0x70を加えるとTR-B15の「広帯域CSデジタル放送拡張用情報」の文字列が返る。
+  (この0x70に対する特別扱いは自動予約検索条件でも同様)
+  例えばedcb.GetGenreName(0x7205)は'ホラー／スリラー'が返る。
 
 S GetComponentTypeName( コンポーネント内容*256+コンポーネント種別:I )
   STD-B10のコンポーネント記述子の文字列を取得する
@@ -582,17 +597,21 @@ B EpgCapNow()
   プロセス起動直後はnil(失敗)。
 
 {minTime:TIME, maxTime:TIME}|nil GetEventMinMaxTime( ネットワークID:I, TSID:I, サービスID:I )
+{minTime:TIME, maxTime:TIME}|nil GetEventMinMaxTimeArchive( ネットワークID:I, TSID:I, サービスID:I )
   指定サービスの全イベントについて最小開始時間と最大開始時間を取得する
   開始時間未定でないイベントが1つもなければnil。
+  *Archive()は過去イベントが対象。
 
 <イベント情報>のリスト|nil EnumEventInfo( {onid:I|nil, tsid:I|nil, sid:I|nil}のリスト [, {startTime:TIME|nil, durationSecond:I|nil} ] )
-  指定サービスの全イベント情報を取得する(onid>tsid>sid>eidソート)
+<イベント情報>のリスト|nil EnumEventInfoArchive( {onid:I|nil, tsid:I|nil, sid:I|nil}のリスト [, {startTime:TIME|nil, durationSecond:I|nil} ] )
+  指定サービスの全イベント情報を取得する(onid>tsid>sid>eidソート、*Archive()は未ソート)
   リストのいずれかにマッチしたサービスについて取得する。
   onid,tsid,sidフィールドを各々nilとすると、各々すべてのIDにマッチする。
   プロセス起動直後はnil(失敗)。
   第2引数にイベントの開始時間の範囲を指定できる。
   ・開始時間がstartTime以上～startTime+durationSecond未満のイベントにマッチ
   ・空テーブルのときは開始時間未定のイベントにマッチ
+  *Archive()は過去イベントが対象。※再利用の可能性があるため、過去イベントのeidをIDとして扱うべきでない。
 
 <イベント情報>のリスト|nil SearchEpg( <自動予約検索条件> )
 <イベント情報>|nil SearchEpg( ネットワークID:I, TSID:I, サービスID:I, イベントID:I )
@@ -852,10 +871,12 @@ I GetNotifyUpdateCount( 通知ID:I )
   freeCAFlag:I|nil=スクランブル放送(0=限定なし(省略時),1=無料のみ,2=有料のみ)
   chkRecEnd:B|nil=録画済かのチェックあり(省略時false)
   chkRecDay:I|nil=録画済かのチェック対象期間(省略時0)
+  chkRecNoService:B|nil=録画済チェックでサービスを無視する(省略時false)
   chkDurationMin:I|nil=番組最小長(分)(省略時0)
   chkDurationMax:I|nil=番組最大長(分)(省略時0)
   contentList:{
     content_nibble:I=大分類*256+中分類
+    user_nibble:I|nil=独自ジャンル大分類*256+独自ジャンル中分類(省略時0)
   }のリスト=対象ジャンル
   dateList:{
     startDayOfWeek:I=検索開始曜日(0=日,1=月...)

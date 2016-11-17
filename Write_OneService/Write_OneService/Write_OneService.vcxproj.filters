@@ -1,0 +1,132 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="ソース ファイル">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="ヘッダー ファイル">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="リソース ファイル">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="ソース ファイル\Common">
+      <UniqueIdentifier>{cf4f2454-8327-4fdf-9f5b-7adaf4f18a3e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル\Common">
+      <UniqueIdentifier>{02d89fec-3b30-4041-95d1-b404b2bd701f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\BonCtrl">
+      <UniqueIdentifier>{5220d91e-4ab5-4d23-8d49-1c0b28f885e9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル\BonCtrl">
+      <UniqueIdentifier>{c2e8530c-0476-4e0d-a70c-aa761c1b3264}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="stdafx.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="targetver.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Write_PlugIn.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="WriteMain.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Common\Util.h">
+      <Filter>ヘッダー ファイル\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Common\StringUtil.h">
+      <Filter>ヘッダー ファイル\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Common\PathUtil.h">
+      <Filter>ヘッダー ファイル\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BonCtrl\PacketInit.h">
+      <Filter>ヘッダー ファイル\BonCtrl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Common\TSPacketUtil.h">
+      <Filter>ヘッダー ファイル\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BonCtrl\CreatePATPacket.h">
+      <Filter>ヘッダー ファイル\BonCtrl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Common\StructDef.h">
+      <Filter>ヘッダー ファイル\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Common\EpgTimerUtil.h">
+      <Filter>ヘッダー ファイル\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Common\EpgDataCap3Def.h">
+      <Filter>ヘッダー ファイル\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Common\TimeUtil.h">
+      <Filter>ヘッダー ファイル\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BonCtrl\CATUtil.h">
+      <Filter>ヘッダー ファイル\BonCtrl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Common\ErrDef.h">
+      <Filter>ヘッダー ファイル\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Common\TSBuffUtil.h">
+      <Filter>ヘッダー ファイル\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\BonCtrl\PMTUtil.h">
+      <Filter>ヘッダー ファイル\BonCtrl</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Write_OneService.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="dllmain.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="WriteMain.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Common\Util.cpp">
+      <Filter>ソース ファイル\Common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Common\StringUtil.cpp">
+      <Filter>ソース ファイル\Common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Common\PathUtil.cpp">
+      <Filter>ソース ファイル\Common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BonCtrl\PacketInit.cpp">
+      <Filter>ソース ファイル\BonCtrl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Common\TSPacketUtil.cpp">
+      <Filter>ソース ファイル\Common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BonCtrl\CreatePATPacket.cpp">
+      <Filter>ソース ファイル\BonCtrl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Common\EpgTimerUtil.cpp">
+      <Filter>ソース ファイル\Common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Common\TimeUtil.cpp">
+      <Filter>ソース ファイル\Common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BonCtrl\CATUtil.cpp">
+      <Filter>ソース ファイル\BonCtrl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Common\TSBuffUtil.cpp">
+      <Filter>ソース ファイル\Common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\BonCtrl\PMTUtil.cpp">
+      <Filter>ソース ファイル\BonCtrl</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

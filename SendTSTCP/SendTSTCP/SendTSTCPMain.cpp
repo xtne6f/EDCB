@@ -59,11 +59,6 @@ CSendTSTCPMain::~CSendTSTCPMain(void)
 	}
 	m_SendList.clear();
 
-	for( int i=0; i<(int)m_TSBuff.size(); i++ ){
-		SAFE_DELETE(m_TSBuff[i]);
-	}
-	m_TSBuff.clear();
-
 	WSACleanup();
 }
 
@@ -203,16 +198,10 @@ DWORD CSendTSTCPMain::AddSendData(
 
 	if( m_hSendThread != NULL || m_hConnectThread != NULL){
 		CBlockLock lock(&m_buffLock);
-		TS_DATA* pItem = new TS_DATA;
-		pItem->pbBuff = new BYTE[dwSize];
-		ZeroMemory( pItem->pbBuff, dwSize );
-		memcpy( pItem->pbBuff, pbData, dwSize );
-		pItem->dwSize = dwSize;
-
-		m_TSBuff.push_back(pItem);
+		m_TSBuff.push_back(vector<BYTE>());
+		m_TSBuff.back().assign(pbData, pbData + dwSize);
 		if( m_TSBuff.size() > 500 ){
-			SAFE_DELETE(m_TSBuff[0]);
-			m_TSBuff.erase(m_TSBuff.begin());
+			m_TSBuff.pop_front();
 		}
 	}
 	return TRUE;
@@ -224,9 +213,6 @@ DWORD CSendTSTCPMain::ClearSendBuff(
 	)
 {
 	CBlockLock lock(&m_buffLock);
-	for( int i=0; i<(int)m_TSBuff.size(); i++ ){
-		SAFE_DELETE(m_TSBuff[i]);
-	}
 	m_TSBuff.clear();
 
 	return TRUE;
@@ -305,47 +291,22 @@ UINT WINAPI CSendTSTCPMain::SendThread(LPVOID pParam)
 			break;
 		}
 
-		DWORD dwSend = 0;
-		BYTE* pbSend = NULL;
+		vector<BYTE> buffSend;
 		{
 		CBlockLock lock(&pSys->m_buffLock);
-/*
-		if( pSys->m_TSBuff.size() >= 3 ){
-
-			dwSend = sizeof(DWORD)*2 + pSys->m_TSBuff[0]->dwSize + pSys->m_TSBuff[1]->dwSize + pSys->m_TSBuff[2]->dwSize;
-			pbSend = new BYTE[dwSend];
-			DWORD dwCmd[2] = {0,0};
-			dwCmd[0]=dwCount;
-			dwCmd[1]=pSys->m_TSBuff[0]->dwSize + pSys->m_TSBuff[1]->dwSize + pSys->m_TSBuff[2]->dwSize;
-			memcpy(pbSend, (BYTE*)&dwCmd, sizeof(DWORD)*2);
-			memcpy(pbSend+sizeof(DWORD)*2, pSys->m_TSBuff[0]->pbBuff, pSys->m_TSBuff[0]->dwSize);
-			memcpy(pbSend+sizeof(DWORD)*2+pSys->m_TSBuff[0]->dwSize, pSys->m_TSBuff[1]->pbBuff, pSys->m_TSBuff[1]->dwSize);
-			memcpy(pbSend+sizeof(DWORD)*2+pSys->m_TSBuff[0]->dwSize+pSys->m_TSBuff[1]->dwSize, pSys->m_TSBuff[2]->pbBuff, pSys->m_TSBuff[2]->dwSize);
-
-			SAFE_DELETE(pSys->m_TSBuff[0]);
-			SAFE_DELETE(pSys->m_TSBuff[1]);
-			SAFE_DELETE(pSys->m_TSBuff[2]);
-			pSys->m_TSBuff.erase( pSys->m_TSBuff.begin() );
-			pSys->m_TSBuff.erase( pSys->m_TSBuff.begin() );
-			pSys->m_TSBuff.erase( pSys->m_TSBuff.begin() );
-		}
-*/
 
 		if( pSys->m_TSBuff.size() >= 2 ){
-
-			dwSend = sizeof(DWORD)*2 + pSys->m_TSBuff[0]->dwSize + pSys->m_TSBuff[1]->dwSize;
-			pbSend = new BYTE[dwSend];
+			std::list<vector<BYTE>>::iterator itrNext = pSys->m_TSBuff.begin();
 			DWORD dwCmd[2] = {0,0};
 			dwCmd[0]=dwCount;
-			dwCmd[1]=pSys->m_TSBuff[0]->dwSize + pSys->m_TSBuff[1]->dwSize;
-			memcpy(pbSend, (BYTE*)&dwCmd, sizeof(DWORD)*2);
-			memcpy(pbSend+sizeof(DWORD)*2, pSys->m_TSBuff[0]->pbBuff, pSys->m_TSBuff[0]->dwSize);
-			memcpy(pbSend+sizeof(DWORD)*2+pSys->m_TSBuff[0]->dwSize, pSys->m_TSBuff[1]->pbBuff, pSys->m_TSBuff[1]->dwSize);
+			dwCmd[1]=(DWORD)(pSys->m_TSBuff.front().size() + (++itrNext)->size());
+			buffSend.reserve(sizeof(dwCmd) + dwCmd[1]);
+			buffSend.assign((BYTE*)dwCmd, (BYTE*)dwCmd + sizeof(dwCmd));
+			buffSend.insert(buffSend.end(), pSys->m_TSBuff.front().begin(), pSys->m_TSBuff.front().end());
+			buffSend.insert(buffSend.end(), itrNext->begin(), itrNext->end());
 
-			SAFE_DELETE(pSys->m_TSBuff[0]);
-			SAFE_DELETE(pSys->m_TSBuff[1]);
-			pSys->m_TSBuff.erase( pSys->m_TSBuff.begin() );
-			pSys->m_TSBuff.erase( pSys->m_TSBuff.begin() );
+			pSys->m_TSBuff.pop_front();
+			pSys->m_TSBuff.pop_front();
 		}
 		if( pSys->m_TSBuff.size() < 2 ){
 			dwWait = 10;
@@ -354,16 +315,16 @@ UINT WINAPI CSendTSTCPMain::SendThread(LPVOID pParam)
 		//dwWait = pSys->m_TSBuff.size() < 2 ? 10 : 0;
 
 		} //m_buffLock
-		if( pbSend != NULL ){
+		if( buffSend.empty() == false ){
 			CBlockLock lock(&pSys->m_sendLock);
 
 			map<wstring, SEND_INFO>::iterator itr;
 			for( itr = pSys->m_SendList.begin(); itr != pSys->m_SendList.end(); itr++){
 				if( itr->second.bConnect == TRUE ){
-					DWORD dwAdjust = HIWORD(itr->second.dwPort) == 1 ? dwSend - sizeof(DWORD)*2 : dwSend;
-					if( dwAdjust > 0 && send(itr->second.sock, 
-						(char*)pbSend + (dwSend - dwAdjust),
-						dwAdjust,
+					size_t adjust = HIWORD(itr->second.dwPort) == 1 ? buffSend.size() - sizeof(DWORD)*2 : buffSend.size();
+					if( adjust > 0 && send(itr->second.sock, 
+						(char*)&buffSend.front() + (buffSend.size() - adjust),
+						(int)adjust,
 						0
 						) == INVALID_SOCKET){
 							closesocket(itr->second.sock);
@@ -373,9 +334,6 @@ UINT WINAPI CSendTSTCPMain::SendThread(LPVOID pParam)
 					dwCount++;
 				}
 			}
-		}
-		if( pbSend != NULL ){
-			delete[] pbSend;
 		}
 	}
 	return 0;

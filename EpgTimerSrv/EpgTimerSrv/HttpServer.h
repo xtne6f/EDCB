@@ -1,6 +1,6 @@
 #pragma once
 #include "lua.hpp"
-#include <string>
+#include "UpnpSsdpServer.h"
 
 struct mg_context;
 struct mg_connection;
@@ -19,6 +19,7 @@ public:
 		int sslProtocolVersion;
 		bool keepAlive;
 		bool saveLog;
+		bool enableSsdpServer;
 	};
 	CHttpServer();
 	~CHttpServer();
@@ -30,6 +31,7 @@ private:
 	int (*initLuaProc)(lua_State*);
 	void* initLuaParam;
 	HMODULE hLuaDll;
+	CUpnpSsdpServer upnpSsdpServer;
 };
 
 namespace LuaHelp

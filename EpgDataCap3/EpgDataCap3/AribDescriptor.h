@@ -1,7 +1,12 @@
 #pragma once
 
-#include <vector>
-#include <utility>
+#ifndef NOEXCEPT
+#if defined(_MSC_VER) && _MSC_VER >= 1900
+#define NOEXCEPT noexcept
+#else
+#define NOEXCEPT
+#endif
+#endif
 
 namespace AribDescriptor
 {
@@ -9,10 +14,12 @@ namespace AribDescriptor
 		D_FIN = -1,
 		D_END = 0x1F00,
 		D_BEGIN,
+		D_BEGIN_SUB,
 		D_BEGIN_IF,
 		D_BEGIN_IF_NOT,
 		D_BEGIN_FOR,
 		D_BEGIN_FOR_TO_END,
+		D_DESCRIPTOR_LOOP,
 		D_LOCAL,
 		D_LOCAL_TO_END,
 		D_STRING,
@@ -236,6 +243,35 @@ namespace AribDescriptor
 		still_picture_flag,
 		sequence_end_code_flag,
 		video_encode_format,
+		section_syntax_indicator,
+		section_length,
+		version_number,
+		current_next_indicator,
+		section_number,
+		last_section_number,
+		segment_last_section_number,
+		last_table_id,
+		start_time_mjd,
+		start_time_bcd,
+		running_status,
+		free_CA_mode,
+		descriptors_loop_length,
+		CRC_32,
+		jst_time_mjd,
+		jst_time_bcd,
+		transmission_info_loop_length,
+		service_loop_length,
+		program_number,
+		program_map_PID,
+		network_descriptors_length,
+		transport_stream_loop_length,
+		transport_descriptors_length,
+		EIT_user_defined_flags,
+		EIT_schedule_flag,
+		EIT_present_following_flag,
+		broadcast_view_propriety,
+		first_descriptors_length,
+		broadcaster_descriptors_length,
 	};
 
 	enum {
@@ -294,6 +330,17 @@ namespace AribDescriptor
 		//system_management_descriptor				= 0xFE,
 	};
 
+	enum si_type {
+		TYPE_PAT,
+		TYPE_NIT,
+		TYPE_SDT,
+		TYPE_EIT,
+		TYPE_TDT,
+		TYPE_TOT,
+		TYPE_SIT,
+		TYPE_BIT,
+	};
+
 	struct PARSER_PAIR {
 		BYTE tag;
 		const short* parser;
@@ -310,10 +357,11 @@ namespace AribDescriptor
 			CLoopPointer() : pl(NULL) {}
 		private:
 			friend CDescriptor;
-			std::vector<std::vector<DESCRIPTOR_PROPERTY>>* pl;
+			vector<vector<DESCRIPTOR_PROPERTY>>* pl;
 			DWORD index;
 		};
 		void Clear();
+		bool DecodeSI(const BYTE* data, DWORD dataSize, DWORD* decodeReadSize, si_type type, const PARSER_PAIR* customParserList = NULL);
 		static DWORD GetDecodeReadSize(const BYTE* data, DWORD dataSize);
 		bool Decode(const BYTE* data, DWORD dataSize, DWORD* decodeReadSize, const PARSER_PAIR* customParserList = NULL);
 		bool EnterLoop(CLoopPointer& lp, DWORD offset = 0) const;
@@ -331,7 +379,7 @@ namespace AribDescriptor
 			short type;
 			union {
 				DWORD n;
-				std::vector<std::vector<DESCRIPTOR_PROPERTY>>* pl;
+				vector<vector<DESCRIPTOR_PROPERTY>>* pl;
 				char s[sizeof(char*)];
 				char* ps;
 				BYTE b[sizeof(BYTE*)];
@@ -347,8 +395,8 @@ namespace AribDescriptor
 			DESCRIPTOR_PROPERTY() : type(TYPE_N) {}
 			~DESCRIPTOR_PROPERTY();
 			DESCRIPTOR_PROPERTY(const DESCRIPTOR_PROPERTY& o);
-			DESCRIPTOR_PROPERTY& operator=(DESCRIPTOR_PROPERTY&& o);
-			DESCRIPTOR_PROPERTY(DESCRIPTOR_PROPERTY&& o) : type(TYPE_N) { *this = std::move(o); }
+			DESCRIPTOR_PROPERTY& operator=(DESCRIPTOR_PROPERTY&& o) NOEXCEPT;
+			DESCRIPTOR_PROPERTY(DESCRIPTOR_PROPERTY&& o) NOEXCEPT : type(TYPE_N) { *this = std::move(o); }
 			DESCRIPTOR_PROPERTY& operator=(const DESCRIPTOR_PROPERTY& o) { return *this = DESCRIPTOR_PROPERTY(o); }
 		};
 		struct LOCAL_PROPERTY {
@@ -356,13 +404,13 @@ namespace AribDescriptor
 			short type;
 			DWORD n;
 		};
-		static int DecodeProperty(const BYTE* data, DWORD dataSize, const short** parser, std::vector<DESCRIPTOR_PROPERTY>* pp, LOCAL_PROPERTY* ppLocal);
+		static int DecodeProperty(const BYTE* data, DWORD dataSize, const short** parser, vector<DESCRIPTOR_PROPERTY>* pp, LOCAL_PROPERTY* ppLocal, const PARSER_PAIR* customParserList);
 		static DWORD GetOperand(short id, const LOCAL_PROPERTY* ppLocal);
 		static DWORD DecodeNumber(const BYTE* data, DWORD bitSize, DWORD* readSize, DWORD* bitOffset);
 		const DESCRIPTOR_PROPERTY* FindProperty(short id, CLoopPointer lp) const;
 
-		std::vector<DESCRIPTOR_PROPERTY> rootProperty;
+		vector<DESCRIPTOR_PROPERTY> rootProperty;
 	};
 
-	BOOL CreateDescriptors(const BYTE* data, DWORD dataSize, std::vector<CDescriptor>* descriptorList, DWORD* decodeReadSize, const PARSER_PAIR* customParserList = NULL);
+	BOOL CreateDescriptors(const BYTE* data, DWORD dataSize, vector<CDescriptor>* descriptorList, DWORD* decodeReadSize, const PARSER_PAIR* customParserList = NULL);
 }

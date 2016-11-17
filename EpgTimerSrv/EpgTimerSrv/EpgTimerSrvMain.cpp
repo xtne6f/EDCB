@@ -1,7 +1,6 @@
 #include "StdAfx.h"
 #include "EpgTimerSrvMain.h"
 #include "SyoboiCalUtil.h"
-#include "UpnpSsdpServer.h"
 #include "../../Common/PipeServer.h"
 #include "../../Common/TCPServer.h"
 #include "../../Common/SendCtrlCmd.h"
@@ -17,11 +16,6 @@
 
 //互換動作のためのグローバルなフラグ(この手法は綺麗ではないが最もシンプルなので)
 DWORD g_compatFlags;
-
-static const char UPNP_URN_DMS_1[] = "urn:schemas-upnp-org:device:MediaServer:1";
-static const char UPNP_URN_CDS_1[] = "urn:schemas-upnp-org:service:ContentDirectory:1";
-static const char UPNP_URN_CMS_1[] = "urn:schemas-upnp-org:service:ConnectionManager:1";
-static const char UPNP_URN_AVT_1[] = "urn:schemas-upnp-org:service:AVTransport:1";
 
 enum {
 	WM_RESET_SERVER = WM_APP,
@@ -41,7 +35,6 @@ struct MAIN_WINDOW_CONTEXT {
 	CPipeServer pipeServer;
 	CTCPServer tcpServer;
 	CHttpServer httpServer;
-	CUpnpSsdpServer upnpServer;
 	HANDLE resumeTimer;
 	__int64 resumeTime;
 	WORD shutdownModePending;
@@ -165,7 +158,6 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		if( ctx->resumeTimer ){
 			CloseHandle(ctx->resumeTimer);
 		}
-		ctx->upnpServer.Stop();
 		ctx->httpServer.StopServer();
 		ctx->tcpServer.StopServer();
 		ctx->pipeServer.StopServer();
@@ -175,6 +167,8 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		SendMessage(hwnd, WM_SHOW_TRAY, FALSE, FALSE);
 		ctx->sys->hwndMain = NULL;
 		SetWindowLongPtr(hwnd, GWLP_USERDATA, 0);
+		RemoveProp(hwnd, L"PopupSel");
+		RemoveProp(hwnd, L"PopupSelData");
 		PostQuitMessage(0);
 		return 0;
 	case WM_ENDSESSION:
@@ -355,23 +349,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		//タスクトレイ関係
 		switch( LOWORD(lParam) ){
 		case WM_LBUTTONUP:
-			{
-				wstring moduleFolder;
-				GetModuleFolderPath(moduleFolder);
-				if( GetFileAttributes((moduleFolder + L"\\EpgTimer.lnk").c_str()) != INVALID_FILE_ATTRIBUTES ){
-					//EpgTimer.lnk(ショートカット)を優先的に開く
-					ShellExecute(NULL, L"open", (moduleFolder + L"\\EpgTimer.lnk").c_str(), NULL, NULL, SW_SHOWNORMAL);
-				}else{
-					//EpgTimer.exeがあれば起動
-					PROCESS_INFORMATION pi;
-					STARTUPINFO si = {};
-					si.cb = sizeof(si);
-					if( CreateProcess((moduleFolder + L"\\EpgTimer.exe").c_str(), NULL, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi) != FALSE ){
-						CloseHandle(pi.hThread);
-						CloseHandle(pi.hProcess);
-					}
-				}
-			}
+			SendMessage(hwnd, WM_COMMAND, IDC_BUTTON_GUI, 0);
 			break;
 		case WM_RBUTTONUP:
 			{
@@ -528,15 +506,12 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 			}
 			break;
 		case TIMER_RESET_HTTP_SERVER:
-			ctx->upnpServer.Stop();
 			if( ctx->httpServer.StopServer(true) ){
 				KillTimer(hwnd, TIMER_RESET_HTTP_SERVER);
 				CHttpServer::SERVER_OPTIONS op;
-				bool enableSsdpServer_;
 				{
 					CBlockLock lock(&ctx->sys->settingLock);
 					op = ctx->sys->httpOptions;
-					enableSsdpServer_ = ctx->sys->enableSsdpServer;
 				}
 				if( op.ports.empty() == false && ctx->sys->httpServerRandom.empty() ){
 					HCRYPTPROV prov;
@@ -548,50 +523,60 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 						CryptReleaseContext(prov, 0);
 					}
 				}
-				if( op.ports.empty() == false &&
-				    ctx->sys->httpServerRandom.empty() == false &&
-				    ctx->httpServer.StartServer(op, InitLuaCallback, ctx->sys) &&
-				    enableSsdpServer_ ){
-					//"ddd.xml"の先頭から2KB以内に"<UDN>uuid:{UUID}</UDN>"が必要
-					char dddBuf[2048] = {};
-					HANDLE hFile = CreateFile((op.rootPath + L"\\dlna\\dms\\ddd.xml").c_str(),
-					                          GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-					if( hFile != INVALID_HANDLE_VALUE ){
-						DWORD dwRead;
-						ReadFile(hFile, dddBuf, sizeof(dddBuf) - 1, &dwRead, NULL);
-						CloseHandle(hFile);
-					}
-					string dddStr = dddBuf;
-					size_t udnFrom = dddStr.find("<UDN>uuid:");
-					if( udnFrom != string::npos && dddStr.size() > udnFrom + 10 + 36 && dddStr.compare(udnFrom + 10 + 36, 6, "</UDN>") == 0 ){
-						string notifyUuid(dddStr, udnFrom + 5, 41);
-						//最後にみつかった':'より後ろか先頭を_wtoiした結果を通知ポートとする
-						unsigned short notifyPort = (unsigned short)_wtoi(op.ports.c_str() +
-							(op.ports.find_last_of(':') == wstring::npos ? 0 : op.ports.find_last_of(':') + 1));
-						//UPnPのUDP(Port1900)部分を担当するサーバ
-						LPCSTR targetArray[] = { "upnp:rootdevice", UPNP_URN_DMS_1, UPNP_URN_CDS_1, UPNP_URN_CMS_1, UPNP_URN_AVT_1 };
-						vector<CUpnpSsdpServer::SSDP_TARGET_INFO> targetList(2 + _countof(targetArray));
-						targetList[0].target = notifyUuid;
-						Format(targetList[0].location, "http://$HOST$:%d/dlna/dms/ddd.xml", notifyPort);
-						targetList[0].usn = targetList[0].target;
-						targetList[0].notifyFlag = true;
-						targetList[1].target = "ssdp:all";
-						targetList[1].location = targetList[0].location;
-						targetList[1].usn = notifyUuid + "::" + "upnp:rootdevice";
-						targetList[1].notifyFlag = false;
-						for( size_t i = 2; i < targetList.size(); i++ ){
-							targetList[i].target = targetArray[i - 2];
-							targetList[i].location = targetList[0].location;
-							targetList[i].usn = notifyUuid + "::" + targetList[i].target;
-							targetList[i].notifyFlag = true;
-						}
-						ctx->upnpServer.Start(targetList);
-					}else{
-						OutputDebugString(L"Invalid ddd.xml\r\n");
-					}
+				if( op.ports.empty() == false && ctx->sys->httpServerRandom.empty() == false ){
+					ctx->httpServer.StartServer(op, InitLuaCallback, ctx->sys);
 				}
 			}
 			break;
+		}
+		break;
+	case WM_INITMENUPOPUP:
+		if( GetMenuItemID((HMENU)wParam, 0) == IDC_MENU_RESERVE ){
+			//「予約削除」ポップアップを生成
+			vector<RESERVE_DATA> list = ctx->sys->reserveManager.GetReserveDataAll();
+			__int64 maxTime = GetNowI64Time() + 24 * 3600 * I64_1SEC;
+			list.erase(std::remove_if(list.begin(), list.end(), [=](const RESERVE_DATA& a) {
+				return a.recSetting.recMode == RECMODE_NO || ConvertI64Time(a.startTime) > maxTime;
+			}), list.end());
+			std::sort(list.begin(), list.end(), [](const RESERVE_DATA& a, const RESERVE_DATA& b) {
+				return ConvertI64Time(a.startTime) < ConvertI64Time(b.startTime);
+			});
+			HMENU hMenu = (HMENU)wParam;
+			while( GetMenuItemCount(hMenu) > 0 && DeleteMenu(hMenu, 0, MF_BYPOSITION) );
+			if( list.empty() ){
+				InsertMenu(hMenu, 0, MF_GRAYED | MF_BYPOSITION, IDC_MENU_RESERVE, L"(24時間以内に予約なし)");
+			}
+			for( UINT i = 0; i < list.size() && i <= IDC_MENU_RESERVE_MAX - IDC_MENU_RESERVE; i++ ){
+				MENUITEMINFO mii;
+				mii.cbSize = sizeof(mii);
+				mii.fMask = MIIM_ID | MIIM_DATA | MIIM_STRING;
+				mii.wID = IDC_MENU_RESERVE + i;
+				mii.dwItemData = list[i].reserveID;
+				SYSTEMTIME endTime;
+				ConvertSystemTime(ConvertI64Time(list[i].startTime) + list[i].durationSecond * I64_1SEC, &endTime);
+				WCHAR text[128];
+				swprintf_s(text, L"%02d:%02d～%02d:%02d%s %.31s 【%.31s】",
+				           list[i].startTime.wHour, list[i].startTime.wMinute, endTime.wHour, endTime.wMinute,
+				           list[i].recSetting.recMode == RECMODE_VIEW ? L"▲" : L"",
+				           list[i].title.c_str(), list[i].stationName.c_str());
+				std::replace(text, text + wcslen(text), L'　', L' ');
+				std::replace(text, text + wcslen(text), L'&', L'＆');
+				mii.dwTypeData = text;
+				InsertMenuItem(hMenu, i, TRUE, &mii);
+			}
+			return 0;
+		}
+		break;
+	case WM_MENUSELECT:
+		if( lParam != 0 && (HIWORD(wParam) & MF_POPUP) == 0 ){
+			MENUITEMINFO mii;
+			mii.cbSize = sizeof(mii);
+			mii.fMask = MIIM_ID | MIIM_DATA;
+			if( GetMenuItemInfo((HMENU)lParam, LOWORD(wParam), FALSE, &mii) ){
+				//WM_COMMANDでは取得できないので、ここで選択内容を記録する
+				SetProp(hwnd, L"PopupSel", (HANDLE)(UINT_PTR)mii.wID);
+				SetProp(hwnd, L"PopupSelData", (HANDLE)mii.dwItemData);
+			}
 		}
 		break;
 	case WM_COMMAND:
@@ -607,6 +592,33 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		case IDC_BUTTON_END:
 			if( MessageBox(hwnd, SERVICE_NAME L" を終了します。", L"確認", MB_OKCANCEL | MB_ICONINFORMATION) == IDOK ){
 				SendMessage(hwnd, WM_CLOSE, 0, 0);
+			}
+			break;
+		case IDC_BUTTON_GUI:
+			{
+				wstring moduleFolder;
+				GetModuleFolderPath(moduleFolder);
+				if( GetFileAttributes((moduleFolder + L"\\EpgTimer.lnk").c_str()) != INVALID_FILE_ATTRIBUTES ){
+					//EpgTimer.lnk(ショートカット)を優先的に開く
+					ShellExecute(NULL, L"open", (moduleFolder + L"\\EpgTimer.lnk").c_str(), NULL, NULL, SW_SHOWNORMAL);
+				}else{
+					//EpgTimer.exeがあれば起動
+					PROCESS_INFORMATION pi;
+					STARTUPINFO si = {};
+					si.cb = sizeof(si);
+					if( CreateProcess((moduleFolder + L"\\EpgTimer.exe").c_str(), NULL, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi) ){
+						CloseHandle(pi.hThread);
+						CloseHandle(pi.hProcess);
+					}
+				}
+			}
+			break;
+		default:
+			if( IDC_MENU_RESERVE <= LOWORD(wParam) && LOWORD(wParam) <= IDC_MENU_RESERVE_MAX ){
+				//「予約削除」
+				if( (UINT_PTR)GetProp(hwnd, L"PopupSel") == LOWORD(wParam) ){
+					ctx->sys->reserveManager.DelReserveData(vector<DWORD>(1, (DWORD)(UINT_PTR)GetProp(hwnd, L"PopupSelData")));
+				}
 			}
 			break;
 		}
@@ -729,8 +741,8 @@ void CEpgTimerSrvMain::ReloadNetworkSetting()
 		this->httpOptions.keepAlive = GetPrivateProfileInt(L"SET", L"HttpKeepAlive", 0, iniPath.c_str()) != 0;
 		this->httpOptions.ports = GetPrivateProfileToString(L"SET", L"HttpPort", L"5510", iniPath.c_str());
 		this->httpOptions.saveLog = enableHttpSrv == 2;
+		this->httpOptions.enableSsdpServer = GetPrivateProfileInt(L"SET", L"EnableDMS", 0, iniPath.c_str()) != 0;
 	}
-	this->enableSsdpServer = GetPrivateProfileInt(L"SET", L"EnableDMS", 0, iniPath.c_str()) != 0;
 
 	PostMessage(this->hwndMain, WM_RESET_SERVER, 0, 0);
 }
@@ -739,10 +751,12 @@ void CEpgTimerSrvMain::ReloadSetting()
 {
 	this->reserveManager.ReloadSetting();
 
-	CBlockLock lock(&this->settingLock);
-
 	wstring iniPath;
 	GetModuleIniPath(iniPath);
+	this->epgDB.SetArchivePeriod(GetPrivateProfileInt(L"SET", L"EpgArchivePeriodHour", 0, iniPath.c_str()) * 3600);
+
+	CBlockLock lock(&this->settingLock);
+
 	if( this->residentFlag == false ){
 		int residentMode = GetPrivateProfileInt(L"SET", L"ResidentMode", 0, iniPath.c_str());
 		if( residentMode >= 1 ){
@@ -1295,6 +1309,20 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 			}
 		}
 		break;
+	case CMD2_EPG_SRV_ENUM_PG_ARC_INFO:
+		OutputDebugString(L"CMD2_EPG_SRV_ENUM_PG_ARC_INFO\r\n");
+		if( sys->epgDB.IsInitialLoadingDataDone() == FALSE ){
+			resParam->param = CMD_ERR_BUSY;
+		}else{
+			LONGLONG serviceKey;
+			if( ReadVALUE(&serviceKey, cmdParam->data, cmdParam->dataSize, NULL) ){
+				sys->epgDB.EnumArchiveEventInfo(serviceKey, [=](const vector<EPGDB_EVENT_INFO>& val) {
+					resParam->param = CMD_SUCCESS;
+					resParam->data = NewWriteVALUE(val, resParam->dataSize);
+				});
+			}
+		}
+		break;
 	case CMD2_EPG_SRV_SEARCH_PG:
 		OutputDebugString(L"CMD2_EPG_SRV_SEARCH_PG\r\n");
 		if( sys->epgDB.IsInitialLoadingDataDone() == FALSE ){
@@ -1543,6 +1571,20 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 			resParam->param = CMD_ERR_BUSY;
 		}else{
 			sys->epgDB.EnumEventAll([=](const map<LONGLONG, EPGDB_SERVICE_EVENT_INFO>& val) {
+				vector<const EPGDB_SERVICE_EVENT_INFO*> valp;
+				valp.reserve(val.size());
+				for( auto itr = val.cbegin(); itr != val.end(); valp.push_back(&(itr++)->second) );
+				resParam->param = CMD_SUCCESS;
+				resParam->data = NewWriteVALUE(valp, resParam->dataSize);
+			});
+		}
+		break;
+	case CMD2_EPG_SRV_ENUM_PG_ARC_ALL:
+		OutputDebugString(L"CMD2_EPG_SRV_ENUM_PG_ARC_ALL\r\n");
+		if( sys->epgDB.IsInitialLoadingDataDone() == FALSE ){
+			resParam->param = CMD_ERR_BUSY;
+		}else{
+			sys->epgDB.EnumArchiveEventAll([=](const map<LONGLONG, EPGDB_SERVICE_EVENT_INFO>& val) {
 				vector<const EPGDB_SERVICE_EVENT_INFO*> valp;
 				valp.reserve(val.size());
 				for( auto itr = val.cbegin(); itr != val.end(); valp.push_back(&(itr++)->second) );
@@ -2396,7 +2438,9 @@ int CEpgTimerSrvMain::InitLuaCallback(lua_State* L)
 	LuaHelp::reg_function(L, "GetChDataList", LuaGetChDataList, sys);
 	LuaHelp::reg_function(L, "GetServiceList", LuaGetServiceList, sys);
 	LuaHelp::reg_function(L, "GetEventMinMaxTime", LuaGetEventMinMaxTime, sys);
+	LuaHelp::reg_function(L, "GetEventMinMaxTimeArchive", LuaGetEventMinMaxTimeArchive, sys);
 	LuaHelp::reg_function(L, "EnumEventInfo", LuaEnumEventInfo, sys);
+	LuaHelp::reg_function(L, "EnumEventInfoArchive", LuaEnumEventInfoArchive, sys);
 	LuaHelp::reg_function(L, "SearchEpg", LuaSearchEpg, sys);
 	LuaHelp::reg_function(L, "AddReserveData", LuaAddReserveData, sys);
 	LuaHelp::reg_function(L, "ChgReserveData", LuaChgReserveData, sys);
@@ -2663,12 +2707,21 @@ int CEpgTimerSrvMain::LuaGetServiceList(lua_State* L)
 
 int CEpgTimerSrvMain::LuaGetEventMinMaxTime(lua_State* L)
 {
+	return LuaGetEventMinMaxTimeProc(L, false);
+}
+
+int CEpgTimerSrvMain::LuaGetEventMinMaxTimeArchive(lua_State* L)
+{
+	return LuaGetEventMinMaxTimeProc(L, true);
+}
+
+int CEpgTimerSrvMain::LuaGetEventMinMaxTimeProc(lua_State* L, bool archive)
+{
 	CLuaWorkspace ws(L);
 	if( lua_gettop(L) == 3 ){
 		__int64 minMaxTime[2] = { LLONG_MAX, LLONG_MIN };
-		ws.sys->epgDB.EnumEventInfo(_Create64Key(
-			(WORD)lua_tointeger(L, 1), (WORD)lua_tointeger(L, 2), (WORD)lua_tointeger(L, 3)),
-			[&minMaxTime](const vector<EPGDB_EVENT_INFO>& val) {
+		__int64 serviceKey = _Create64Key((WORD)lua_tointeger(L, 1), (WORD)lua_tointeger(L, 2), (WORD)lua_tointeger(L, 3));
+		auto enumProc = [&minMaxTime](const vector<EPGDB_EVENT_INFO>& val) -> void {
 			for( size_t i = 0; i < val.size(); i++ ){
 				if( val[i].StartTimeFlag ){
 					__int64 startTime = ConvertI64Time(val[i].start_time);
@@ -2676,7 +2729,12 @@ int CEpgTimerSrvMain::LuaGetEventMinMaxTime(lua_State* L)
 					minMaxTime[1] = max(minMaxTime[1], startTime);
 				}
 			}
-		});
+		};
+		if( archive ){
+			ws.sys->epgDB.EnumArchiveEventInfo(serviceKey, enumProc);
+		}else{
+			ws.sys->epgDB.EnumEventInfo(serviceKey, enumProc);
+		}
 		if( minMaxTime[0] != LLONG_MAX ){
 			lua_newtable(ws.L);
 			SYSTEMTIME st;
@@ -2692,6 +2750,16 @@ int CEpgTimerSrvMain::LuaGetEventMinMaxTime(lua_State* L)
 }
 
 int CEpgTimerSrvMain::LuaEnumEventInfo(lua_State* L)
+{
+	return LuaEnumEventInfoProc(L, false);
+}
+
+int CEpgTimerSrvMain::LuaEnumEventInfoArchive(lua_State* L)
+{
+	return LuaEnumEventInfoProc(L, true);
+}
+
+int CEpgTimerSrvMain::LuaEnumEventInfoProc(lua_State* L, bool archive)
 {
 	CLuaWorkspace ws(L);
 	if( lua_gettop(L) >= 1 && lua_istable(L, 1) ){
@@ -2718,7 +2786,7 @@ int CEpgTimerSrvMain::LuaEnumEventInfo(lua_State* L)
 			key.push_back(LuaHelp::isnil(L, "sid") ? -1 : LuaHelp::get_int(L, "sid"));
 			lua_pop(L, 1);
 		}
-		BOOL ret = ws.sys->epgDB.EnumEventAll([=, &ws, &key](const map<LONGLONG, EPGDB_SERVICE_EVENT_INFO>& val) {
+		auto enumProc = [=, &ws, &key](const map<LONGLONG, EPGDB_SERVICE_EVENT_INFO>& val) -> void {
 			lua_newtable(ws.L);
 			int n = 0;
 			for( auto itr = val.cbegin(); itr != val.end(); itr++ ){
@@ -2744,8 +2812,11 @@ int CEpgTimerSrvMain::LuaEnumEventInfo(lua_State* L)
 					}
 				}
 			}
-		});
-		if( ret ){
+		};
+		if( archive ){
+			ws.sys->epgDB.EnumArchiveEventAll(enumProc);
+			return 1;
+		}else if( ws.sys->epgDB.EnumEventAll(enumProc) ){
 			return 1;
 		}
 	}
